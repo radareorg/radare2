@@ -1704,10 +1704,10 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 				str[len] = 0;
 				r_str_filter (str, -1);
 				res = r_str_appendf (res, "\"%s\"", str);
-			} break;
+				break;
+			}
 			default:
 				res = r_str_appendf (res, "0x%08" PFMT64x "", arg);
-				break;
 			}
 		} else {
 			res = r_str_appendf (res, "0x%08" PFMT64x "", arg);
@@ -1787,7 +1787,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			break;
 		}
 		pj_a (pj);
-	} break;
+		break;
+	}
 	case 'r':
 		// Setup for ESIL to REIL conversion
 		esil = r_anal_esil_new (stacksize, iotrap, addrsize);
@@ -3821,7 +3822,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			afCc (core, r_str_trim_head_ro (input + 2));
 		}
 		break;
-	case 'c':{ // "afc"
+	case 'c': { // "afc"
 		RAnalFunction *fcn = NULL;
 		if (!input[2] || input[2] == ' ' || input[2] == 'r' || input[2] == 'a') {
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -3934,7 +3935,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (json) {
 				r_cons_printf ("%s\n", r_strbuf_drain (json_buf));
 			}
-		} break;
+			break;
+		}
 		case 'R': { // "afcR"
 			/* very slow, but im tired of waiting for having this, so this is the quickest implementation */
 			int i;
@@ -3952,14 +3954,14 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				free (res);
 			}
 			free (cc);
-			}
 			break;
+		}
 		case '?': // "afc?"
 		default:
 			r_core_cmd_help (core, help_msg_afc);
 		}
-		}
 		break;
+	}
 	case 'B': // "afB" // set function bits
 		if (input[2] == ' ') {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
@@ -3983,8 +3985,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'e': // "afbe"
 			anal_bb_edge (core, input + 3);
 			break;
-		case 'F': // "afbF"
-			{
+		case 'F': { // "afbF"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 			if (fcn) {
 				RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, core->offset);
@@ -3999,8 +4000,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					r_warn_if_reached ();
 				}
 			}
-			}
 			break;
+		}
 		case 0:
 		case ' ': // "afb "
 		case 'q': // "afbq"
@@ -4020,8 +4021,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '+': // "afb+"
 			anal_fcn_add_bb (core, input + 3);
 			break;
-		case 'c': // "afbc"
-			{
+		case 'c': { // "afbc"
 			const char *ptr = input + 3;
 			ut64 addr = r_num_math (core->num, ptr);
 			ut32 color;
@@ -4039,13 +4039,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					}
 				}
 			}
-			}
-			break;
-		default:
-		case '?':
-			r_core_cmd_help (core, help_msg_afb);
 			break;
 		}
+		case '?':
+		default:
+			r_core_cmd_help (core, help_msg_afb);
+		} // end of switch (input[2])
 		break;
 	case 'n': // "afn"
 		switch (input[2]) {
@@ -4056,26 +4055,23 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				free (r_core_anal_fcn_autoname (core, core->offset, 1, 0));
 			}
 			break;
-		case 'a': // "afna"
-			{
+		case 'a': { // "afna"
 			char *name = r_core_anal_fcn_autoname (core, core->offset, 0, 0);
 			if (name) {
 				r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
 				free (name);
 			}
-			}
 			break;
+		}
 		case '.': // "afn."
-		case 0: // "afn"
-			{
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-				if (fcn) {
-					r_cons_printf ("%s\n", fcn->name);
-				}
+		case 0: { // "afn"
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+			if (fcn) {
+				r_cons_printf ("%s\n", fcn->name);
 			}
 			break;
-		case ' ': // "afn "
-			{
+		}
+		case ' ': { // "afn "
 			ut64 off = core->offset;
 			char *p, *name = strdup (r_str_trim_head_ro (input + 3));
 			if ((p = strchr (name, ' '))) {
@@ -4097,22 +4093,20 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 			}
 			free (name);
-			}
-			break;
-		default:
-			r_core_cmd_help (core, help_msg_afn);
 			break;
 		}
+		default:
+			r_core_cmd_help (core, help_msg_afn);
+		} // end of switch (input[2])
 		break;
-	case 'S': // afS"
-		{
+	case 'S': { // afS"
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 		if (fcn) {
 			fcn->maxstack = r_num_math (core->num, input + 3);
 			//fcn->stack = fcn->maxstack;
 		}
-		}
 		break;
+	}
 #if 0
 	/* this is undocumented and probably have no uses. plz discuss */
 	case 'e': // "afe"

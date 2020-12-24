@@ -1056,7 +1056,8 @@ static int cmd_type(void *data, const char *input) {
 			print_keys (TDB, core, stdifunion, printkey_cb, false);
 			break;
 		}
-	} break;
+		break;
+	}
 	case 'k': // "tk"
 		res = (input[1] == ' ')
 			? sdb_querys (TDB, NULL, -1, input + 2)
@@ -1154,8 +1155,9 @@ static int cmd_type(void *data, const char *input) {
 				print_struct_union_list_json (TDB, stdifstruct);
 			}
 			break;
-		}
-	} break;
+		} // end of switch (input[1])
+		break;
+	}
 	case 'e': { // "te"
 		char *res = NULL, *temp = strchr (input, ' ');
 		Sdb *TDB = core->anal->sdb_types;
@@ -1273,15 +1275,17 @@ static int cmd_type(void *data, const char *input) {
 			}
 			free (name);
 			ls_free (l);
-		} break;
+			break;
 		}
+		} // end of switch (input[1])
 		free (name);
 		if (res) {
 			r_cons_println (res);
 		} else if (member_name) {
 			eprintf ("Invalid enum member\n");
 		}
-	} break;
+		break;
+	}
 	case ' ':
 		showFormat (core, input + 1, 0);
 		break;
@@ -1499,7 +1503,8 @@ static int cmd_type(void *data, const char *input) {
 			eprintf (" tx             list functions and the types they use\n");
 			break;
 		}
-	} break;
+		break;
+	}
 	// ta: moved to anal hints (aht)- just for tail, at the moment
 	case 'a': // "ta"
 		switch (input[1]) {
@@ -1509,7 +1514,8 @@ static int cmd_type(void *data, const char *input) {
 			} else {
 				eprintf ("Usage: tail [number] [file]\n");
 			}
-		} break;
+			break;
+		}
 		default:
 			eprintf ("[WARNING] \"ta\" is deprecated. Use \"aht\" instead.\n");
 		}
@@ -1803,7 +1809,8 @@ static int cmd_type(void *data, const char *input) {
 			eprintf ("This is not an typedef\n");
 		}
 		free (s);
-	} break;
+		break;
+	}
 	case '?':
 		show_help (core);
 		break;

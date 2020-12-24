@@ -763,7 +763,8 @@ static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **mem
 			r_warn_if_reached ();
 			break;
 		}
-	} break;
+		break;
+	}
 	case NEAR_POINTER:
 		*member_format = "p2";
 		break;
@@ -846,7 +847,8 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 			}
 		}
 		r_strbuf_append (names, name);
-	} break;
+		break;
+	}
 	case eLF_POINTER: {
 		int size = 4;
 		if (type_info->get_val) {
@@ -855,7 +857,8 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		snprintf (tmp_format, 5, "p%d", size);
 		member_format = tmp_format;
 		r_strbuf_append (names, name);
-	} break;
+		break;
+	}
 	case eLF_CLASS:
 	case eLF_UNION:
 	case eLF_STRUCTURE: {
@@ -871,17 +874,20 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		}
 		r_strbuf_appendf (names, "(%s)%s", field_name, name);
 		free (field_name);
-	} break;
+		break;
+	}
 	// TODO complete the type with additional info
 	case eLF_BITFIELD: {
 		member_format = "B";
 		r_strbuf_appendf (names, "(uint)%s", name);
-	} break;
+		break;
+	}
 	 // TODO complete the type with additional info
 	case eLF_ENUM: {
 		member_format = "E";
 		r_strbuf_appendf (names, "(int)%s", name);
-	} break;
+		break;
+	}
 	case eLF_ARRAY: {
 		int size = 0;
 		if (type_info->get_val) {
@@ -890,7 +896,8 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		snprintf (tmp_format, 5, "[%d]", size);
 		member_format = tmp_format;
 		r_strbuf_append (names, name); // TODO complete the type with additional info
-	} break;
+		break;
+	}
 
 	default:
 		r_warn_if_reached (); // Unhandled type format

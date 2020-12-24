@@ -47,12 +47,17 @@ You may find some additional notes on this topic in doc/vim.
 * Tabs are used for indentation. In a switch statement, the
   cases are indented at the switch level.
 
+* Switch-cases where local variables are needed should be refactored into
+  separate functions instead of using braces. Even so, if braced scope syntax
+  is used, put `break;` statement inside the scope.
+
 ```c
 switch (n) {
 case 1:
 	break;
-case 2:
+case 2: {
 	break;
+}
 default:
 }
 ```
