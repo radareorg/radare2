@@ -1510,7 +1510,7 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 		"sc@syscall(%d);\n"
 		"main@global(0) { sc(%p,%d,%d);\n"
 		":int3\n"
-		"}\n", num, (void*)addr, size, io_perms_to_prot (perms));
+		"}\n", num, (void*)(size_t)addr, size, io_perms_to_prot (perms));
 
 	r_egg_reset (dbg->egg);
 	r_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);

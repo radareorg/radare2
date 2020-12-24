@@ -2106,7 +2106,7 @@ static RList *dex_fields(RBinFile *bf) {
 	ut32 checksum = r_buf_read_le32 (bf->buf);
 	ROW ("dex_checksum", 4, checksum, "x");
 	ut8 signature[20];
-	ROW ("dex_signature", 8, signature, "[20]c");
+	ROW ("dex_signature", 8, (size_t)signature, "[20]c");
 	ut32 size = r_buf_read_le32 (bf->buf);
 	ROW ("dex_size", 4, size, "x");
 	ut32 header_size = r_buf_read_le32 (bf->buf);
