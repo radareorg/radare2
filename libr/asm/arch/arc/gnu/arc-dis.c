@@ -48,7 +48,7 @@
 #define dbg (0)
 #endif
 
-/* Classification of the opcodes for the decoder to print 
+/* Classification of the opcodes for the decoder to print
    the instructions.  */
 
 typedef enum
