@@ -420,7 +420,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "srl", 3)) {
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "sraiw")) {
-			esilprintf (op, "%s,%s,>>>>,%s,=,", ARG (2), ARG (1), ARG (0),ARG (2));
+			esilprintf (op, "%s,%s,>>>>,%s,=,", ARG (2), ARG (1), ARG (0));
 			r_strbuf_appendf (&op->esil, "%s,64,-,%s,~=", ARG (2), ARG(0));
 		} else if (!strncmp (name, "sra", 3)) {
 			esilprintf (op, "%s,%s,>>>>,%s,=", ARG (2), ARG (1), ARG (0));
