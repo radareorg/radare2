@@ -27,7 +27,7 @@ static int get_int(const char *s, int limit) {
 	if (i >= 0) {
 		return i;
 	}
-	if (sscanf (s, "0x%x%n", &i, &n) == 1 && n == strlen (s) && i <= limit) {
+	if (!strncmp (s, "0x", 2) && sscanf (s, "%x%n", &i, &n) == 1 && n == strlen (s) && i <= limit) {
 		return i;
 	}
 	return -1;
