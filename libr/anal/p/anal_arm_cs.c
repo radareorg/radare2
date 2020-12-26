@@ -2341,7 +2341,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_TST:
-		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,:=", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "0,%s,%s,&,==", ARG(1), ARG(0));
 		break;
 	case ARM_INS_LDRD:
 	case ARM_INS_LDRB:
