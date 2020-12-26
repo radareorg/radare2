@@ -4,7 +4,7 @@ CMDS=<<EOF
 !!rasm2 -L~4004
 EOF
 EXPECT=<<EOF
-_dAe  4          i4004       LGPL3   Intel 4004 microprocessor
+adAe  4          i4004       LGPL3   Intel 4004 microprocessor
 EOF
 RUN
 

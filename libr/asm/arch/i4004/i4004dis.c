@@ -48,15 +48,15 @@ static const char *i4004_f[16] = {
 	"invalid"
 };
 
-static int i4004_get_ins_len (ut8 hex) {
-	ut8 high = (hex & 0xf0)>>4;
+static int i4004_get_ins_len(ut8 hex) {
+	ut8 high = (hex & 0xf0) >> 4;
 	int ret = i4004_ins_len[high];
 	if (ret == 3)
 		ret = (hex & 1) ? 1 : 2;
 	return ret;
 }
 
-static int i4004dis (RAsmOp *op, const ut8 *buf, int len) {
+static int i4004dis(RAsmOp *op, const ut8 *buf, int len) {
 	int rlen = i4004_get_ins_len (*buf);
 	ut8 high = (*buf & 0xf0) >> 4;
 	ut8 low = (*buf & 0xf);
