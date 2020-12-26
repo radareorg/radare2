@@ -51,3 +51,19 @@ EXPECT=<<EOF
 0xfffffffffffffff0
 EOF
 RUN
+
+NAME=RISC-V ESIL for compressed word instructions
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=64
+wx 7d76518f1d26319e119f
+aei
+aeim
+5aes
+ar a4
+EOF
+EXPECT=<<EOF
+0x00000ff2
+EOF
+RUN
