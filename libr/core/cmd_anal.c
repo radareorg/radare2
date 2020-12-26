@@ -2474,7 +2474,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		bbaddr = addr;
 	}
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			return false;
 		}
