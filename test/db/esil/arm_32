@@ -525,6 +525,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tst nz
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 050010e3 0100a003
+pd 2
+ao 2~esil
+aei
+ar r0=4
+2aes
+ar?r0
+EOF
+EXPECT=<<EOF
+            0x00000000      050010e3       tst r0, 5
+            0x00000004      0100a003       moveq r0, 1
+esilcost: 0
+esil: 0,5,r0,&,==,$z,zf,:=,31,$s,nf,:=
+esilcost: 0
+esil: zf,?{,1,r0,=,}
+0x00000004
+EOF
+RUN
+
 NAME=ldr r0, [r1, 7]
 FILE=malloc://0x200
 CMDS=<<EOF
