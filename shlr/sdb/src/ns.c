@@ -144,7 +144,7 @@ SDB_API bool sdb_ns_unset (Sdb *s, const char *name, Sdb *r) {
 	return false;
 }
 
-SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
+SDB_API int sdb_ns_set(Sdb *s, const char *name, Sdb *r) {
 	SdbNs *ns;
 	SdbListIter *it;
 	ut32 hash = sdb_hash (name);

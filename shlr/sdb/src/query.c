@@ -68,7 +68,7 @@ SDB_API int sdb_queryf (Sdb *s, const char *fmt, ...) {
         return ret;
 }
 
-SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ...) {
+SDB_API char *sdb_querysf(Sdb *s, char *buf, size_t buflen, const char *fmt, ...) {
         char string[4096];
         char *ret;
         va_list ap;
