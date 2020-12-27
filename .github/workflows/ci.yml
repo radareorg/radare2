@@ -306,6 +306,31 @@ jobs:
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
 
+  build-spaces:
+    name: Build spaces
+    continue-on-error: true
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Install from a directory with spaces
+      run: |
+        git clone . "spa ces" ; cd "spa ces" ; ./sys/install.sh > /dev/null ; cd ..
+        r2 -v
+    - name: Install to a directory with spaces
+      run: |
+        ./sys/install.sh "/usr/spa ces" > /dev/null
+        PATH="/usr/spa ces/bin:$PATH" r2 -v
+    - name: Upload test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results-static
+        path: test/results.json
+
   build-static:
     name: Build static
     # FIXME: ignore error until all tests properly pass
