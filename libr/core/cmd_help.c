@@ -216,9 +216,11 @@ static const char *help_msg_question_v[] = {
 	"$FS", "", "function size (linear length)",
 	"$Fs", "", "size of the current basic block",
 	"$FSS", "", "function size (sum bb sizes)",
+	"$i", "{n}", "address of nth instruction forward",
+	"$I", "{n}", "address of nth instruction backward (s $I1@$Fe) #last instr in bb",
 	"$j", "", "jump address (e.g. jmp 0x10, jz 0x10 => 0x10)",
 	"$Ja", "", "get nth jump of function",
-	"$k{kv}", "", "get value of an sdb query value",
+	"$k", "{kv}", "get value of an sdb query value",
 	"$l", "", "opcode length",
 	"$M", "", "map address (lowest map address)",
 	"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
@@ -842,7 +844,7 @@ static int cmd_help(void *data, const char *input) {
 			const char *vars[] = {
 				"$$", "$$$", "$?", "$B", "$b", "$c", "$Cn", "$D", "$DB", "$DD", "$Dn",
 				"$e", "$f", "$F", "$Fb", "$FB", "$Fe", "$FE", "$Ff", "$Fi", "$FI", "$Fj",
-				"$fl", "$FS", "$Fs", "$FSS", "$j", "$Ja", "$l", "$M", "$m", "$MM", "$O",
+				"$fl", "$FS", "$Fs", "$FSS", "$i", "$j", "$Ja", "$l", "$M", "$m", "$MM", "$O",
 				"$o", "$p", "$P", "$r", "$s", "$S", "$SS", "$v", "$w", "$Xn", NULL
 			};
 			const bool wideOffsets = r_config_get_i (core->config, "scr.wideoff");

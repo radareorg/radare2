@@ -439,6 +439,84 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 	return NULL;
 }
 
+static ut64 numvar_instruction_backward(RCore *core, const char *input) {
+	// N forward instructions
+	int i, ret;
+	int n = 1;
+	if (isdigit (input[0])) {
+		n = atoi (input);
+	} else if (input[0] == '{') {
+		n = atoi (input + 1);
+	}
+	if (n < 1) {
+		eprintf ("Invalid negative value%c", 10);
+		n = 1;
+	}
+	int numinstr = n;
+	// N previous instructions
+	ut64 addr = core->offset;
+	ut64 val = addr;
+	if (r_core_prevop_addr (core, core->offset, numinstr, &addr)) {
+		val = addr;
+	} else {
+		ut8 data[32];
+		addr = core->offset;
+		const int mininstrsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+		for (i = 0; i < numinstr; i++) {
+			ut64 prev_addr = r_core_prevop_addr_force (core, addr, 1);
+			if (prev_addr == UT64_MAX) {
+				prev_addr = addr - mininstrsize;
+			}
+			if (prev_addr == UT64_MAX || prev_addr >= core->offset) {
+				break;
+			}
+			RAnalOp op = {0};
+			ret = r_anal_op (core->anal, &op, prev_addr, data,
+				sizeof (data), R_ANAL_OP_MASK_BASIC);
+			if (ret < 1) {
+				ret = 1;
+			}
+			if (op.size < mininstrsize) {
+				op.size = mininstrsize;
+			}
+			val -= op.size;
+			r_anal_op_fini (&op);
+			addr = prev_addr;
+		}
+	}
+	return val;
+}
+
+static ut64 numvar_instruction(RCore *core, const char *input) {
+	ut64 addr = core->offset;
+	// N forward instructions
+	ut8 data[32];
+	int i, ret;
+	ut64 val = addr;
+	int n = 1;
+	if (input[0] == '{') {
+		n = atoi (input + 1);
+	}
+	if (n < 1) {
+		eprintf ("Invalid negative value%c", 10);
+		n = 1;
+	}
+	for (i = 0; i < n; i++) {
+		r_io_read_at (core->io, val, data, sizeof (data));
+		RAnalOp op;
+		ret = r_anal_op (core->anal, &op, val, data,
+			sizeof (data), R_ANAL_OP_MASK_BASIC);
+		if (ret < 1) {
+			ret = 1;
+		}
+		val += op.size;
+		r_anal_op_fini (&op);
+		//val += ret;
+	}
+	return val;
+	
+}
+
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RAnalFunction *fcn;
@@ -544,6 +622,16 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		r_anal_op_fini (&op); // we don't need strings or pointers, just values, which are not nullified in fini
 		// XXX the above line is assuming op after fini keeps jump, fail, ptr, val, size and r_anal_op_is_eob()
 		switch (str[1]) {
+		case 'i': // "$i"
+			if (ok) {
+				*ok = true;
+			}
+			return numvar_instruction (core, str + 2);
+		case 'I': // "$I"
+			if (ok) {
+				*ok = true;
+			}
+			return numvar_instruction_backward (core, str + 2);
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str + 2);
 		case 'k': // $k{kv}
