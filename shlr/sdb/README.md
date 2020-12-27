@@ -43,6 +43,18 @@ To compile with Emscripten for Javascript:
 
 	make CC=emcc EXT_EXE=.js
 
+To crosscompile with meson:
+
+```
+$ cat > cross-file.txt <<EOF
+[properties]
+exe_wrapper = 'wine'
+and then run meson build --cross-file cross-file.txt ; ninja -C build. It should work and it should create another binary called sdb_native.
+EOF
+$ meson build --cross-file cross-file.txt
+$ ninja -C build
+```
+
 Changes
 -------
 I have modified cdb code a little to create smaller databases and
