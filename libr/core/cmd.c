@@ -3074,6 +3074,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
 		ret = r_core_cmd_subst_i (core, cmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
+		if (*cmd == 's') {
+			// do not restore tmpseek if the command executed is the 's'eek
+			tmpseek = false;
+		}
 		if (ret && *cmd == 'q') {
 			free (cr);
 			goto beach;
