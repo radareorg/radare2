@@ -187,20 +187,21 @@ static const char *help_msg_question[] = {
 static const char *help_msg_question_v[] = {
 	"Usage: ?v [$.]","","",
 	"flag", "", "offset of flag",
+	"$", "{ev}", "get value of eval config variable",
 	"$$", "", "here (current virtual seek)",
 	"$$$", "", "current non-temporary virtual seek",
 	"$?", "", "last comparison value",
 	"$alias", "=value", "alias commands (simple macros)",
 	"$B", "", "base address (aligned lowest map address)",
 	"$b", "", "block size",
-	"$c,$r", "", "get width and height of terminal",
+	"$c", "", "get terminal width in character columns",
 	"$Cn", "", "get nth call of function",
 	"$D", "", "current debug map base address ?v $D @ rsp",
 	"$DB", "", "same as dbg.baddr, progam base address",
 	"$DD", "", "current debug map size",
 	"$Dn", "", "get nth data reference in function",
 	"$e", "", "1 if end of block, else 0",
-	"$e{flag}", "", "end of flag (flag->offset + flag->size)",
+	"$e", "{flag}", "end of flag (flag->offset + flag->size)",
 	"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
 	"$F", "", "Same as $FB",
 	"$Fb", "", "begin of basic block",
@@ -226,16 +227,15 @@ static const char *help_msg_question_v[] = {
 	"$o", "", "here (current disk io offset)",
 	"$p", "", "getpid()",
 	"$P", "", "pid of children (only in debug)",
-	"$r", "", "get console height",
-	"$r{reg}", "", "get value of named register",
+	"$r", "", "get console height (in rows, see $c for columns)",
+	"$r", "{reg}", "get value of named register",
 	"$s", "", "file size",
 	"$S", "", "section offset",
 	"$SS", "", "section size",
-	"$s{flag}", "", "get size of flag",
+	"$s", "{flag}", "get size of flag",
 	"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"$Xn", "", "get nth xref of function",
-	"${ev}", "", "get value of eval config variable",
 	"RNum", "", "$variables usable in math expressions",
 	NULL
 };
@@ -455,7 +455,6 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 	free (l);
 	free (s);
 }
-
 
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -916,7 +915,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'l': // "?l"
 		if (input[1] == 'q') {
-			for (input+=2; input[0] == ' '; input++);
+			for (input += 2; input[0] == ' '; input++);
 			core->num->value = strlen (input);
 		} else {
 			for (input++; input[0] == ' '; input++);

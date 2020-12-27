@@ -295,7 +295,6 @@ static bool __isMapped(RCore *core, ut64 addr, int perm) {
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -572,7 +571,6 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			free (bptr);
 			free (out);
 			return ret;
-			break;
 		case '{': // ${ev} eval var
 			bptr = strdup (str + 2);
 			ptr = strchr (bptr, '}');
