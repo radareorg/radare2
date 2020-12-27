@@ -1967,11 +1967,15 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 
 		if (!strncmp (help_cmd, usage_str, strlen (usage_str))) {
 			/* Usage header */
-			r_cons_printf ("%s%s %s  %s%s\n",
-				pal_args_color, help_cmd, help_args, help_desc, pal_reset);
-			continue;
-		}
-		if (!help_args[0] && !help_desc[0]) {
+			r_cons_printf ("%s%s",pal_args_color, help_cmd);
+			if (help_args[0]) {
+				r_cons_printf (" %s", help_args);
+			}
+			if (help_desc[0]) {
+				r_cons_printf ("  %s", help_desc);
+			}
+			r_cons_printf ("%s\n", pal_reset);
+		} else if (!help_args[0] && !help_desc[0]) {
 			/* Section header, no need to indent it */
 			r_cons_printf ("%s%s%s\n", pal_help_color, help_cmd, pal_reset);
 		} else {
