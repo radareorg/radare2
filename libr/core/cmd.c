@@ -7094,7 +7094,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
-		return r_cmd_status2int(core_cmd_tsr2cmd (core, cstr, false, log));
+		return r_cmd_status2int (core_cmd_tsr2cmd (core, cstr, false, log));
 	}
 
 	int ret = false, i;
