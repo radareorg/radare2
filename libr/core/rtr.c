@@ -585,7 +585,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		args = "";
 	}
 
-	if (!r_core_file_open (core, file, R_PERM_R, 0)) {
+	if (!r_core_file_open (core, file, R_PERM_RX, 0)) {
 		eprintf ("Cannot open file (%s)\n", file);
 		return -1;
 	}

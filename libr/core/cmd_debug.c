@@ -5323,10 +5323,10 @@ static int cmd_debug(void *data, const char *input) {
 					r_debug_detach (core->dbg, core->dbg->pid);
 				}
 			}
+			// Remove registers from the flag list
+			r_core_cmd0 (core, ".dr-*");
 			// Reopen and rebase the original file
 			r_core_cmd0 (core, "oo");
-			// Remove registers from the flag list
-			r_core_cmd0 (core, "~dr-");
 			break;
 		case '?': // "do?"
 		default:
