@@ -442,7 +442,6 @@ static ut16 thumb_disasm_pushpop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 static ut16 thumb_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	short load = (inst >> 11) & 0x01;
 	short i;
-	short last;
 	bool first = true;
 
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s %s!, {", load ? "ldmia" : "stmia", tbl_regs[(inst >> 8) & 0x07]);
