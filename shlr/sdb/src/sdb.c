@@ -184,7 +184,7 @@ SDB_API int sdb_count(Sdb *s) {
 	return count;
 }
 
-static void sdb_fini(Sdb* s, int donull) {
+static void sdb_fini(Sdb* s, bool donull) {
 	if (!s) {
 		return;
 	}
@@ -218,7 +218,7 @@ SDB_API bool sdb_free(Sdb* s) {
 		s->refs--;
 		if (s->refs < 1) {
 			s->refs = 0;
-			sdb_fini (s, 0);
+			sdb_fini (s, false);
 			s->ht = NULL;
 			free (s);
 			return true;
@@ -1096,14 +1096,14 @@ SDB_API void sdb_config(Sdb *s, int options) {
 }
 
 SDB_API bool sdb_unlink(Sdb* s) {
-	sdb_fini (s, 1);
+	sdb_fini (s, true);
 	return sdb_disk_unlink (s);
 }
 
 SDB_API void sdb_drain(Sdb *s, Sdb *f) {
 	if (s && f) {
 		f->refs = s->refs;
-		sdb_fini (s, 1);
+		sdb_fini (s, true);
 		*s = *f;
 		free (f);
 	}
