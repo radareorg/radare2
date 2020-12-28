@@ -140,6 +140,7 @@ static int help(void) {
 		"  -F      stdin slurp code hex ;  rax2 -F < shellcode.[c/py/js]\n"
 		"  -h      help                 ;  rax2 -h\n"
 		"  -i      dump as C byte array ;  rax2 -i < bytes\n"
+		"  -I      IP address <-> LONG  ;  rax2 -I 3530468537\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
@@ -209,6 +210,7 @@ static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 			case 'L': flags ^= 1 << 19; break;
 			case 'i': flags ^= 1 << 21; break;
 			case 'o': flags ^= 1 << 22; break;
+			case 'I': flags ^= 1 << 23; break;
 			case 'v': return r_main_version_print ("rax2");
 			case '\0':
 				*_flags = flags;
@@ -339,7 +341,6 @@ dotherax:
 				printf ("\n");
 			}
 		}
-		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 17)) { // -B (bin -> str)
 		int i = 0;
@@ -369,7 +370,6 @@ dotherax:
 			n = (st64) (st8) n;
 		}
 		printf ("%" PFMT64d "\n", n);
-		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 15)) { // -N
 		ut64 n = r_num_math (num, str);
@@ -399,7 +399,6 @@ dotherax:
 				printf ("\n");
 			}
 		}
-		fflush (stdout);
 		return true;
 	} else if (flags & (1 << 10)) { // -u
 		char buf[8];
@@ -543,14 +542,14 @@ dotherax:
 		if (i % byte_per_col == 0) {
 			printf("\n  ");
 		}
-		printf ("0x%02x\n", (ut8) str[len-1]);
+		printf ("0x%02x\n", (ut8) str[len - 1]);
 		printf ("};\n");
 		printf ("unsigned int buf_len = %d;\n", len);
 		return true;
 	} else if (flags & (1 << 22)) { // -o
 		// check -r
 		// flags & (1 << 18)
-		char *asnum, *modified_str;
+		char *modified_str;
 
 		// To distinguish octal values.
 		if (*str != '0') {
@@ -566,12 +565,27 @@ dotherax:
 			return false;
 		}
 
-		asnum = r_num_as_string (NULL, n, false);
+		char *asnum = r_num_as_string (NULL, n, false);
 		if (asnum) {
 			printf ("%s", asnum);
 			free (asnum);
 		} else {
-			printf("No String Possible");
+			eprintf ("No String Possible\n");
+			return false;
+		}
+		return true;
+	} else if (flags & (1 << 23)) { // -I
+		if (strchr (str, '.')) {
+			ut32 ip32 = 0;
+			ut8 *ip = (ut8*)&ip32;
+			sscanf (str, "%hhd.%hhd.%hhd.%hhd", &ip[0], &ip[1], &ip[2], &ip[3]);
+			printf ("0x%08x\n", ip32);
+		} else {
+			ut32 ip32 = (ut32)r_num_math (NULL, str);
+			ut8 *ip = (ut8*)&ip32;
+			char ipaddr[32];
+			snprintf (ipaddr, sizeof (ipaddr), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+			printf ("%s\n", ipaddr);
 		}
 		return true;
 	}
