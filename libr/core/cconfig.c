@@ -536,6 +536,7 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 			for (i = 0; i < n; i++) {
 				const char *word = r_str_word_get0 (c, i);
 				if (word && *word) {
+					// leaks
 					SETOPTIONS (node, strdup (word), NULL);
 				}
 			}
