@@ -546,7 +546,7 @@ SDB_API void sdbkv_free(SdbKv *kv) {
 	}
 }
 
-static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32 cas) {
+static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, bool owned, ut32 cas) {
 	ut32 vlen, klen;
 	SdbKv *kv;
 	bool found;
@@ -628,11 +628,11 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 }
 
 SDB_API int sdb_set_owned(Sdb* s, const char *key, char *val, ut32 cas) {
-	return sdb_set_internal (s, key, val, 1, cas);
+	return sdb_set_internal (s, key, val, true, cas);
 }
 
 SDB_API int sdb_set(Sdb* s, const char *key, const char *val, ut32 cas) {
-	return sdb_set_internal (s, key, (char*)val, 0, cas);
+	return sdb_set_internal (s, key, (char *)val, false, cas);
 }
 
 static bool sdb_foreach_list_cb(void *user, const char *k, const char *v) {
