@@ -89,7 +89,6 @@ typedef struct r_io_bank_t {
 	ut32 id;
 } RIOBank;
 
-
 typedef struct r_io_undo_w_t {
 	int set;
 	ut64 off;
