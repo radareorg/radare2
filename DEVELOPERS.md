@@ -103,11 +103,12 @@ if (a == b) {
   example of a good name could be "out_buffer:" if the goto frees "buffer".
   Avoid using GW-BASIC names like "err1:" and "err2:".
 
-* Use `r_return_*` functions to check preconditions that are caused by
-  programmers' errors. Please note the difference between conditions that should
-  never happen, and that are handled through `r_return_*` functions, and
-  conditions that can happen at runtime (e.g. malloc returns NULL, input coming
-  from user, etc.), and should be handled in the usual way through if-else.
+* Use `r_return_*` macros to check preconditions that are caused by
+  programmers' errors. Please, keep in mind:
+  * conditions that should never happen should be handled through
+    `r_return_*` macros;
+  * runtime conditions (e.g. malloc returns NULL, input coming from user,
+    etc.) should be handled in the usual way through if-else.
 
 ```c
 int check(RCore *c, int a, int b) {
