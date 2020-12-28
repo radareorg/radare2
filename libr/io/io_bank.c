@@ -100,7 +100,7 @@ static bool banks_list_cb(void *user, void *data, ut32 id) {
 }
 
 R_API char *r_io_banks_list(RIO *io, int mode) {
-	if (!io || !io->banks) {
+ 	r_return_val_if_fail (io && io->banks, NULL);`
 		return NULL;
 	}
 	BanksLister bl = { io, r_strbuf_new ("") };
