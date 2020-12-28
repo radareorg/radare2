@@ -68,11 +68,12 @@ jobs:
             compiler: gcc
             newshell: true
             run_tests: true
-            meson_options: -Db_coverage=true -Duse_webui=true
-            coverage: true
-            enabled: true
-            timeout: 60
-            cflags: '-Werror -Wno-cpp'
+            # meson_options: -Db_coverage=true -Duse_webui=true
+            meson_options: -Duse_webui=true
+            ## coverage: true
+            # enabled: true
+            # timeout: 60
+            # cflags: '-Werror -Wno-cpp'
           - name: macos-acr-clang-tests
             os: macos-latest
             build_system: acr
@@ -198,9 +199,9 @@ jobs:
         NEWSHELL: ${{ matrix.newshell }}
         ASAN: ${{ matrix.asan }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
-    - name: Upload coverage info
-      uses: codecov/codecov-action@v1
-      if: matrix.coverage == '1' && matrix.enabled
+    # - name: Upload coverage info
+    #   uses: codecov/codecov-action@v1
+    #   if: matrix.coverage == '1' && matrix.enabled
     - name: Run fuzz tests
       if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
       run: |
