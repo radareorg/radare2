@@ -1,5 +1,6 @@
 sdb_files = [
-  'pokered'
+  'pokered',
+  'ascii'
 ]
 
 foreach file : sdb_files
