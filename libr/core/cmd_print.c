@@ -1559,7 +1559,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				sdb_unset (core->print->formats, input + 3, 0);
 			}
 		} else {
-			char *name = strdup (input + (input[1]? 2: 1));
+			char *name = strdup (input + (input[1] ? 2 : 1));
 			char *space = strchr (name, ' ');
 			char *eq = strchr (name, '=');
 			char *dot = strchr (name, '.');
@@ -1579,16 +1579,12 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					// pf.foo=xxx
 					sdb_set (core->print->formats, name, space, 0);
 				}
-				free (name);
-				free (input);
-				return;
+				goto err_name;
 			}
 
 			if (!strchr (name, '.') && !sdb_const_get (core->print->formats, name, NULL)) {
 				eprintf ("Cannot find '%s' format.\n", name);
-				free (name);
-				free (input);
-				return;
+				goto err_name;
 			}
 
 			char *delim = strchr (name, '.');
@@ -1600,9 +1596,11 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			}
 
 			/* Load format from name into fmt to get the size */
-			/* This make sure the whole structure will be printed */
+			/* Make sure the structure will be printed entirely */
 			char *fmt = sdb_get (core->print->formats, name, NULL);
 			if (fmt) {
+				// TODO: what is +10 magic number?
+				// Backtracks to commit e5e23c237755cdeb13ba15938c93ada590e453db / issue #2808
 				int size = r_print_format_struct_size (core->print, fmt, mode, 0) + 10;
 				if (size > core->blocksize) {
 					r_core_block_size (core, size);
@@ -1625,41 +1623,41 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				r_print_format (core->print, core->offset,
 					core->block, core->blocksize, name, mode, NULL, NULL);
 			}
+		err_name:
 			free (name);
 			free (fmt);
 		}
 	} else {
-		/* This make sure the structure will be printed entirely */
+		/* Make sure the structure will be printed entirely */
 		const char *fmt = r_str_trim_head_ro (input + 1);
 		int struct_sz = r_print_format_struct_size (core->print, fmt, mode, 0);
 		int size = R_MAX (core->blocksize, struct_sz);
 		ut8 *buf = calloc (1, size);
-		if (!buf) {
-			eprintf ("cannot allocate %d byte(s)\n", size);
-			goto stage_left;
-		}
+		if (!buf) { goto err_buf; }
 		memcpy (buf, core->block, core->blocksize);
-		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
-		bool syntax_ok = true;
+
 		char *args = strdup (fmt);
-		if (!args) {
-			r_cons_printf ("Error: Mem Allocation.");
-			free (args);
-			goto stage_left;
-		}
+		if (!args) { goto err_args; }
+
+		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
 		const char *arg1 = strtok (args, " ");
 		if (arg1 && r_str_isnumber (arg1)) {
-			syntax_ok = false;
-			r_cons_printf ("Usage: pf [0|cnt][format-string]\n");
+			r_core_cmd_help (core, (const char *[]){
+				"Usage:", "pf [0|cnt][format-string]", "",
+				NULL
+			});
+			goto err_arg1;
 		}
+
+		r_print_format (core->print, core->offset,
+			buf, size, fmt, mode, NULL, NULL);
+	err_arg1:
 		free (args);
-		if (syntax_ok) {
-			r_print_format (core->print, core->offset,
-				buf, size, fmt, mode, NULL, NULL);
-		}
+	err_args:
 		free (buf);
+	err_buf:
+		;
 	}
-stage_left:
 	free (input);
 	r_core_block_size (core, o_blocksize);
 }
@@ -1715,11 +1713,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	rows = len / nb_cols;
 
 	chars = calloc (nb_cols * 40, sizeof (char));
-	if (!chars) goto err_chars;
+	if (!chars) { goto err_chars; }
 	note = calloc (nb_cols, sizeof (char *));
-	if (!note) goto err_note;
+	if (!note) { goto err_note; }
 	bytes = calloc (nb_cons_cols * 40, sizeof (char));
-	if (!bytes) goto err_bytes;
+	if (!bytes) { goto err_bytes; }
 #if 1
 	int addrpadlen = strlen (sdb_fmt ("%08"PFMT64x, addr)) - 8;
 	char addrpad[32];
@@ -5582,7 +5580,7 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				// XXX: issue with small blocks
 				if (*input == 'D' && use_blocksize > 0) {
-l = use_blocksize;
+					l = use_blocksize;
 					if (l > R_CORE_MAX_DISASM) { // pD
 						eprintf ("Block size too big\n");
 						return 1;
