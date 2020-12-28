@@ -383,7 +383,7 @@ R_API RIOPlugin *r_io_plugin_resolve_fd(RIO *io, int fd);
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many);
 
 /* bank */
-R_API void r_io_map_bank(RIO *io, RIOBank *bank);
+R_API void r_io_use_bank(RIO *io, RIOBank *bank);
 R_API RIOBank* r_io_new_bank(const char *name);
 R_API bool r_io_bank_add_map(RIO *io, RIOBank *bank, ut32 map_id);
 R_API void r_io_bank_free(RIOBank *bank);
