@@ -5,12 +5,15 @@ LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 null:=
 SPACE:=$(null) $(null)
 
-ifeq ($(LIBR)$(R2DIR),)
+ifeq ($(LIBR),)
+ifeq ($(R2DIR),)
 $(error ERROR: Cannot find R2DIR. Please define this variable)
-endif
-
+else
 LIBR=$(R2DIR)/libr
 MSVC=$(R2DIR)/msvc
+endif
+endif
+
 SHLR:=$(LIBR)/../shlr
 
 include $(LIBR)/../global.mk
