@@ -3392,7 +3392,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	p = r_sys_getenv ("R2_CFG_NEWSHELL");
-	SETCB ("cfg.newshell", p? "true": "false", &cb_newshell, "Use new commands parser");
+	SETCB ("cfg.newshell", r_str_bool (p && atoi (p)), &cb_newshell, "Use new commands parser");
 	free (p);
 	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
 
