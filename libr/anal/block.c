@@ -851,9 +851,9 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 	return true;
 }
 
-static bool automerge_get_predecessors_cb(void *user, const ut64 k) {
+static bool automerge_get_predecessors_cb(void *user, const void *k) {
 	AutomergeCtx *ctx = user;
-	const RAnalFunction *fcn = (const RAnalFunction *)(size_t)k;
+	const RAnalFunction *fcn = (const RAnalFunction *)k;
 	RListIter *it;
 	RAnalBlock *block;
 	r_list_foreach (fcn->bbs, it, block) {
@@ -948,6 +948,6 @@ beach:
 	ht_up_free (ctx.predecessors);
 	ht_up_free (ctx.visited_blocks);
 	ht_up_free (ctx.blocks);
-	ht_up_free (relevant_fcns);
+	set_p_free (relevant_fcns);
 	r_list_free (fixup_candidates);
 }
