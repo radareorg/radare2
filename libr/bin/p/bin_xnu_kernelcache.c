@@ -186,13 +186,14 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	}
 
 	RRebaseInfo *rebase_info = r_rebase_info_new_from_mach0 (fbuf, main_mach0);
+	RKernelCacheObj *obj = NULL;
 
 	RPrelinkRange *prelink_range = get_prelink_info_range_from_mach0 (main_mach0);
 	if (!prelink_range) {
 		goto beach;
 	}
 
-	RKernelCacheObj *obj = R_NEW0 (RKernelCacheObj);
+	obj = R_NEW0 (RKernelCacheObj);
 	if (!obj) {
 		R_FREE (prelink_range);
 		goto beach;
@@ -239,6 +240,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 
 beach:
 	r_buf_free (fbuf);
+	obj->cache_buf = NULL;
 	MACH0_(mach0_free) (main_mach0);
 	return false;
 }
@@ -1499,7 +1501,7 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 			continue;
 		}
 
-		ut64 *routines = (ut64 *) malloc (n_routines * sizeof (ut64));
+		ut64 *routines = (ut64 *) calloc (n_routines, sizeof (ut64));
 		if (!routines) {
 			goto beach;
 		}

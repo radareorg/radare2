@@ -1133,10 +1133,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			R_FREE (tmp);
 		}
 		pdbopts.symbol_store_path = (char *)r_config_get (core.config, "pdb.symstore");
-		int r = r_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
-		r_core_file_free (fh);
-		r_core_fini (&core);
-		return r;
+		r_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
 	}
 
 	if ((tmp = r_sys_getenv ("RABIN2_PREFIX"))) {

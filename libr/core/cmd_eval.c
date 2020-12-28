@@ -206,6 +206,7 @@ static void nextpal(RCore *core, int mode) {
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
+	// spaguetti!
 	if (home) {
 		files = r_sys_dir (home);
 		r_list_foreach (files, iter, fn) {
@@ -217,7 +218,10 @@ static void nextpal(RCore *core, int mode) {
 						r_list_free (files);
 						return;
 					}
-					eprintf ("%s %s %s\n", nfn, curtheme, fn);
+					eprintf ("%s %s %s\n",
+						r_str_get (nfn),
+						r_str_get (curtheme),
+						r_str_get (fn));
 					if (nfn && !strcmp (nfn, curtheme)) {
 						r_list_free (files);
 						files = NULL;
@@ -237,6 +241,7 @@ static void nextpal(RCore *core, int mode) {
 			}
 		}
 		r_list_free (files);
+		files = NULL;
 		R_FREE (home);
 	}
 
@@ -252,7 +257,10 @@ static void nextpal(RCore *core, int mode) {
 						r_list_free (files);
 						return;
 					}
-					eprintf ("%s %s %s\n", nfn, curtheme, fn);
+					eprintf ("%s %s %s\n",
+						r_str_get (nfn),
+						r_str_get (curtheme),
+						r_str_get (fn));
 					if (nfn && !strcmp (nfn, curtheme)) {
 						free (curtheme);
 						curtheme = strdup (fn);
@@ -350,8 +358,8 @@ static int cmd_eval(void *data, const char *input) {
 					e++;
 				}
 			}
-		} else if (strlen (input)>3) {
-			char *v, *k = strdup (input+3);
+		} else if (strlen (input) > 3) {
+			char *v, *k = strdup (input + 3);
 			if (!k) break;
 			v = strchr (k, '=');
 			if (v) {
@@ -527,7 +535,8 @@ static int cmd_eval(void *data, const char *input) {
 			}
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, "");
 			const char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
-			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->context->pal.wordhl);
+			char *dup = r_str_newf ("%s \"%s%s\"", r_str_get (str), r_str_get (word),
+				color_code ? color_code : r_cons_singleton ()->context->pal.wordhl);
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
 			r_str_argv_free (argv);
 			R_FREE (word);

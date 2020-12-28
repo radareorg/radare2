@@ -224,16 +224,16 @@ typedef struct r_core_plugin_t {
 	r_warn_if_fail (name##_cd)
 
 #ifdef R_API
-R_API int r_core_plugin_init(RCmd *cmd);
-R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
-R_API int r_core_plugin_check(RCmd *cmd, const char *a0);
-R_API int r_core_plugin_fini(RCmd *cmd);
+R_API bool r_core_plugin_init(RCmd *cmd);
+R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
+R_API bool r_core_plugin_check(RCmd *cmd, const char *a0);
+R_API bool r_core_plugin_fini(RCmd *cmd);
 
 R_API RCmd *r_cmd_new(void);
 R_API RCmd *r_cmd_free(RCmd *cmd);
-R_API int r_cmd_set_data(RCmd *cmd, void *data);
-R_API int r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
-R_API int r_core_del(RCmd *cmd, const char *command);
+R_API void r_cmd_set_data(RCmd *cmd, void *data);
+R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);
+R_API bool r_core_del(RCmd *cmd, const char *command);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args);
 R_API RCmdDesc *r_cmd_get_root(RCmd *cmd);
@@ -292,8 +292,8 @@ R_API const char *r_cmd_parsed_args_cmd(RCmdParsedArgs *arg);
 R_API RCmdMacroItem *r_cmd_macro_item_new(void);
 R_API void r_cmd_macro_item_free(RCmdMacroItem *item);
 R_API void r_cmd_macro_init(RCmdMacro *mac);
-R_API int r_cmd_macro_add(RCmdMacro *mac, const char *name);
-R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name);
+R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *name);
+R_API bool r_cmd_macro_rm(RCmdMacro *mac, const char *_name);
 R_API void r_cmd_macro_list(RCmdMacro *mac);
 R_API void r_cmd_macro_meta(RCmdMacro *mac);
 R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name);
@@ -302,7 +302,7 @@ R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 R_API bool r_cmd_alias_del(RCmd *cmd, const char *k);
 R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz);
 R_API int r_cmd_alias_set(RCmd *cmd, const char *k, const char *v, int remote);
-R_API char *r_cmd_alias_get(RCmd *cmd, const char *k, int remote);
+R_API const char *r_cmd_alias_get(RCmd *cmd, const char *k, int remote);
 R_API void r_cmd_alias_free(RCmd *cmd);
 R_API void r_cmd_macro_fini(RCmdMacro *mac);
 

@@ -135,7 +135,6 @@ static bool __connect_unix(RSocket *s, const char *file) {
 
 	if (connect (sock, (struct sockaddr *)&addr, sizeof(addr))==-1) {
 		close (sock);
-		free (s);
 		return false;
 	}
 	s->fd = sock;

@@ -66,7 +66,7 @@ static RBinInfo *info(RBinFile *bf) {
 	// FIXME: Needed to fix issue with PLT resolving. Can we get away with setting this for all children bins?
 	ret->has_lit = true;
 
-	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt ("0x%08x", obj->hdr->flags), 0);
+	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt ("0x%08"PFMT64x, obj->hdr->flags), 0);
 	sdb_num_set (bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 
 	if (obj->streams.system_info) {
@@ -338,7 +338,7 @@ static RList *mem(RBinFile *bf) {
 			a_protect = mem_info->allocation_protect;
 		}
 		location = &(module->memory);
-		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT64x" state=0x%08"PFMT64x
+		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT32x" state=0x%08"PFMT64x
 					" type=0x%08"PFMT64x" allocation_protect=0x%08"PFMT64x" Memory_Section",
 					location->rva, state, type, a_protect));
 

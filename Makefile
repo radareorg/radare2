@@ -14,7 +14,7 @@ BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null ||
 else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
-DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
+DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d libr/util/d
 USE_ZIP=YES
 ZIP=zip
 
@@ -61,10 +61,9 @@ all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C libr
 	${MAKE} -C binr
 
-#.PHONY: libr/include/r_version.h
-GIT_TAP=$(shell git describe --tags --match "[0-9]*" 2>/dev/null || echo $(VERSION))
+GIT_TAP=$(shell git tag -l --sort=refname | grep '^[0-9]\.[0-9]' | tail -n1 || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
-R2_VER=$(shell grep VERSION configure.acr | head -n1 | awk '{print $$2}')
+R2_VER=$(shell ./configure -qV)
 ifdef SOURCE_DATE_EPOCH
 GIT_NOW=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u "+%Y-%m-%d")
 else
@@ -218,10 +217,10 @@ install-doc-symlink:
 	for FILE in $(shell cd doc ; ls) ; do \
 		ln -fs "$(PWD)/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
-install love: install-doc install-man install-www install-pkgconfig
-	cd libr && ${MAKE} install
-	cd binr && ${MAKE} install
-	cd shlr && ${MAKE} install
+install: install-doc install-man install-www install-pkgconfig
+	$(MAKE) -C libr install
+	$(MAKE) -C binr install
+	$(MAKE) -C shlr install
 	for DIR in ${DATADIRS} ; do $(MAKE) -C "$$DIR" install ; done
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
@@ -234,7 +233,6 @@ install love: install-doc install-man install-www install-pkgconfig
 	#${INSTALL_SCRIPT} "${PWD}/sys/r1-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
-	$(SHELL) sys/ldconfig.sh
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/radare2/last/
 
 install-www:

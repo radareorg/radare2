@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake */
+/* radare - LGPL - Copyright 2013-2020 - pancake */
 
 #include <r_core.h>
 #include <errno.h>
@@ -100,11 +100,12 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	} else if (printfmt == FMT_RAW) {
 		res = r_str_appendf (res, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
 			isdir?'d': fch,
-			u_rwx? u_rwx: "-",
+			r_str_get_fail (u_rwx, "-"),
 			r_str_rwx_i ((perm >> 3) & 7),
 			r_str_rwx_i (perm & 7),
 			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
+		//TODO PJ
 		if (nth > 0) {
 			res = r_str_append (res, ",");
 		}
@@ -414,8 +415,8 @@ R_API char *r_syscmd_join(const char *file1, const char *file2) {
 						char *out = r_str_new (field);
 						char *first = strchr (str1, ' ');
 						char *second = strchr (str2, ' ');
-						r_str_append (out, first ? first : " ");
-						r_str_append (out, second ? second : " ");
+						r_str_append (out, r_str_get_fail (first, " "));
+						r_str_append (out, r_str_get_fail (second, " "));
 						r_list_append (list, out);
 					}
 				}

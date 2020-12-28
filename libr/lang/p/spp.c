@@ -9,12 +9,12 @@ static RLang *Glang = NULL;
 #include <spp.h>
 #include "spp_r2.inc"
 
-static int lang_spp_init(RLang *l) {
+static bool lang_spp_init(RLang *l) {
 	Glang = l;
 	return true;
 }
 
-static int lang_spp_run(RLang *lang, const char *code, int len) {
+static bool lang_spp_run(RLang *lang, const char *code, int len) {
 	Output out;
 	out.fout = NULL;
 	out.cout = r_strbuf_new (NULL);
@@ -29,7 +29,7 @@ static int lang_spp_run(RLang *lang, const char *code, int len) {
 	return true;
 }
 
-static int lang_spp_file(RLang *lang, const char *file) {
+static bool lang_spp_file(RLang *lang, const char *file) {
 	size_t len;
 	char *code = r_file_slurp (file, &len);
 	if (code) {

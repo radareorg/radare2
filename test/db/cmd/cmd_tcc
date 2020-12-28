@@ -6,9 +6,10 @@ tcc-*
 tcc
 EOF
 EXPECT=<<EOF
-ms
-amd64
 swift
+amd64
+amd64syscall
+ms
 reg
 EOF
 RUN
@@ -17,9 +18,10 @@ NAME=tcc
 FILE=bins/elf/ls
 CMDS=tcc
 EXPECT=<<EOF
-ms
-amd64
 swift
+amd64
+amd64syscall
+ms
 reg
 EOF
 RUN
@@ -32,14 +34,16 @@ tccl
 tcc*
 EOF
 EXPECT=<<EOF
-["rax ms (rcx, rdx, r8, r9, stack);","rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);","rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;","rdi reg (rdi, rsi, rdx, rcx);"]
-rax ms (rcx, rdx, r8, r9, stack);
-rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
+["rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;","rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);","rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);","rax ms (rcx, rdx, r8, r9, stack);","rdi reg (rdi, rsi, rdx, rcx);"]
 rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;
+rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
+rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);
+rax ms (rcx, rdx, r8, r9, stack);
 rdi reg (rdi, rsi, rdx, rcx);
-tfc rax ms (rcx, rdx, r8, r9, stack);
-tfc rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
 tfc rax r13.swift (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4) r12;
+tfc rax amd64 (rdi, rsi, rdx, rcx, r8, r9, xmm0, xmm1, xmm2, xmm3, xmm4);
+tfc rax amd64syscall (rdi, rsi, rdx, r10, r8, r9);
+tfc rax ms (rcx, rdx, r8, r9, stack);
 tfc rdi reg (rdi, rsi, rdx, rcx);
 EOF
 RUN

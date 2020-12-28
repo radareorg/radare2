@@ -621,8 +621,11 @@ static void selection_widget_down(int steps) {
 	}
 }
 
-static void print_rline_task(void *core) {
-	r_cons_clear_line (0);
+static void print_rline_task(void *_core) {
+	RCore *core =(RCore *)_core;
+	if (core->cons->context->color_mode) {
+		r_cons_clear_line (0);
+	}
 	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data);
 	r_cons_flush ();
 }
@@ -734,7 +737,7 @@ R_API void r_line_autocomplete(void) {
 			I.buffer.index, strlen (I.buffer.data), ' ');
 		const char *t = end_word != NULL?
 				end_word: I.buffer.data + I.buffer.index;
-		int largv0 = strlen (argv[0]? argv[0]: "");
+		int largv0 = strlen (r_str_get (argv[0]));
 		size_t len_t = strlen (t);
 		p[largv0]='\0';
 
@@ -897,8 +900,12 @@ static void __print_prompt(void) {
                 r_cons_gotoxy (0,  cons->rows);
                 r_cons_flush ();
 	}
-	r_cons_clear_line (0);
-	printf ("\r%s%s", Color_RESET, I.prompt);
+	if (cons->context->color_mode > 0) {
+		r_cons_clear_line (0);
+		printf ("\r%s%s", Color_RESET, I.prompt);
+	} else {
+		printf ("\r%s", I.prompt);
+	}
 	fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 	printf ("\r%s", I.prompt);
 	if (I.buffer.index > cols) {
@@ -912,7 +919,9 @@ static void __print_prompt(void) {
 	}
 	len = I.buffer.index - i;
 	if (len > 0 && (i + len) <= I.buffer.length) {
-		fwrite (I.buffer.data + i, 1, len, stdout);
+		if (i<I.buffer.length) {
+			fwrite (I.buffer.data + i, 1, len, stdout);
+		}
 	}
 	fflush (stdout);
 }
@@ -1054,7 +1063,7 @@ static void __vi_mode(void) {
 		if (I.echo) {
 			__print_prompt ();
 		}
-		if (I.vi_mode != CONTROL_MODE) {		// exit if insert mode is selected
+		if (I.vi_mode != CONTROL_MODE) {	// exit if insert mode is selected
 			__update_prompt_color ();
 			break;
 		}
@@ -1088,13 +1097,15 @@ static void __vi_mode(void) {
 		case 'r': {
 			char c =  r_cons_readchar ();
 			I.buffer.data[I.buffer.index] = c;
-			} break;
+			break;
+		}
 		case 'x':
 			while (rep--) {
 				__delete_next_char ();
-			} break;
+			}
+			break;
 		case 'c':
-			I.vi_mode = INSERT_MODE;			// goto insert mode
+			I.vi_mode = INSERT_MODE;	// goto insert mode
 		case 'd': {
 			char c = r_cons_readchar ();
 			while (rep--) {
@@ -1111,7 +1122,8 @@ static void __vi_mode(void) {
 					if (I.hud) {
 						I.hud->vi = false;
 					}
-					} break;
+					break;
+				}
 				case 'W':
 					kill_Word ();
 					break;
@@ -1140,8 +1152,9 @@ static void __vi_mode(void) {
 					I.buffer.index = 0;
 					break;
 				} __print_prompt ();
-			}
-			} break;
+			} // end of while (rep--)
+			break;
+		} // end of case 'd'
 		case 'I':
 			if (I.hud) {
 				I.hud->vi = false;
@@ -1169,11 +1182,13 @@ static void __vi_mode(void) {
 				gcomp = false;
 			} else {
 				I.buffer.index = I.buffer.length;
-			} break;
+			}
+			break;
 		case 'p':
 			while (rep--) {
 				paste ();
-			} break;
+			}
+			break;
 		case 'a':
 			__move_cursor_right ();
 		case 'i':
@@ -1185,35 +1200,43 @@ static void __vi_mode(void) {
 		case 'h':
 			while (rep--) {
 				__move_cursor_left ();
-			} break;
+			}
+			break;
 		case 'l':
 			while (rep--) {
 				__move_cursor_right ();
-			} break;
+			}
+			break;
 		case 'E':
 			while (rep--) {
 				vi_cmd_E ();
-			} break;
+			}
+			break;
 		case 'e':
 			while (rep--) {
 				vi_cmd_e ();
-			} break;
+			}
+			break;
 		case 'B':
 			while (rep--) {
 				vi_cmd_B ();
-			} break;
+			}
+			break;
 		case 'b':
 			while (rep--) {
 				vi_cmd_b ();
-			} break;
+			}
+			break;
 		case 'W':
 			while (rep--) {
 				vi_cmd_W ();
-			} break;
+			}
+			break;
 		case 'w':
 			while (rep--) {
 				vi_cmd_w ();
-			} break;
+			}
+			break;
 		default:					// escape key
 			ch = tolower (r_cons_arrow_to_hjkl (ch));
 			switch (ch) {
@@ -1325,7 +1348,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		buf[0] = ch;
 #endif
 #endif
-		if (I.echo) {
+		if (I.echo && cons->context->color_mode) {
 			r_cons_clear_line (0);
 		}
 		(void)r_cons_get_size (&rows);

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2019 pancake */
+/* radare2 - LGPL - Copyright 2015-2020 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
@@ -9,11 +9,6 @@
 #ifdef _MSC_VER
 #include <process.h>
 #endif
-
-static int lang_pipe_run(RLang *lang, const char *code, int len);
-static int lang_pipe_file(RLang *lang, const char *file) {
-	return lang_pipe_run (lang, file, -1);
-}
 
 #if __WINDOWS__
 static HANDLE myCreateChildProcess(const char * szCmdline) {
@@ -133,7 +128,7 @@ static void env(const char *s, int f) {
 }
 #endif
 
-static int lang_pipe_run(RLang *lang, const char *code, int len) {
+static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 #if __UNIX__
 	int safe_in = dup (0);
 	int child, ret;
@@ -197,8 +192,8 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			}
 			buf[sizeof (buf) - 1] = 0;
 			res = lang->cmd_str ((RCore*)lang->user, buf);
-			//eprintf ("%d %s\n", ret, buf);
 			if (res) {
+				// r_cons_print (res);
 				(void) write (input[1], res, strlen (res) + 1);
 				free (res);
 			} else {
@@ -295,6 +290,10 @@ beach:
 	return hproc != NULL;
 #endif
 #endif
+}
+
+static bool lang_pipe_file(RLang *lang, const char *file) {
+	return lang_pipe_run (lang, file, -1);
 }
 
 static RLangPlugin r_lang_plugin_pipe = {

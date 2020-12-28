@@ -724,7 +724,7 @@ static int redirect_socket_to_pty(RSocket *sock) {
 #if HAVE_PTY
 	// directly duplicating the fds using dup2() creates problems
 	// in case of interactive applications
-	int fdm, fds;
+	int fdm = -1, fds = -1;
 
 	if (dyn_openpty && dyn_openpty (&fdm, &fds, NULL, NULL, NULL) == -1) {
 		perror ("opening pty");
@@ -735,8 +735,12 @@ static int redirect_socket_to_pty(RSocket *sock) {
 
 	if (child_pid == -1) {
 		eprintf ("cannot fork\n");
-		close(fdm);
-		close(fds);
+		if (fdm != -1) {
+			close (fdm);
+		}
+		if (fds != -1) {
+			close (fds);
+		}
 		return -1;
 	}
 
@@ -773,7 +777,10 @@ static int redirect_socket_to_pty(RSocket *sock) {
 		}
 
 		free (buff);
-		close (fdm);
+		if (fdm != -1) {
+			close (fdm);
+			fdm = -1;
+		}
 		r_socket_free (sock);
 		exit (0);
 	}
@@ -783,7 +790,9 @@ static int redirect_socket_to_pty(RSocket *sock) {
 	if (dyn_login_tty) {
 		dyn_login_tty (fds);
 	}
-	close (fdm);
+	if (fdm != -1) {
+		close (fdm);
+	}
 
 	// disable the echo on slave stdin
 	struct termios t;

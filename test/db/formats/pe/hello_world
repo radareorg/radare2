@@ -33,7 +33,7 @@ EOF
 EXPECT=<<EOF
             ;-- main:
             ;-- section..text:
-            0x00401000      68f0204000     push str.Hello__World       ; 0x4020f0 ; "Hello, World!" ; [00] -r-x section size 4096 named .text
+            0x00401000      68f0204000     push str.Hello__World_      ; 0x4020f0 ; "Hello, World!" ; [00] -r-x section size 4096 named .text
 EOF
 RUN
 
@@ -58,7 +58,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             ;-- main:
-            0x00401380      68304b4000     push str.Hello__World       ; 0x404b30 ; "Hello, World!"
+            0x00401380      68304b4000     push str.Hello__World_      ; 0x404b30 ; "Hello, World!"
 EOF
 RUN
 

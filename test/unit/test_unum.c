@@ -3,7 +3,7 @@
 
 static RNum *num;
 
-bool test_r_num_units() {
+bool test_r_num_units(void) {
 	char humansz[8];
 	const struct {
 		const char *expected_res;
@@ -44,7 +44,7 @@ bool test_r_num_units() {
 	mu_end;
 }
 
-bool test_r_num_minmax_swap_i() {
+bool test_r_num_minmax_swap_i(void) {
 	int a = -1, b = 2;
 	r_num_minmax_swap_i (&a, &b);
 	mu_assert_eq (a == -1 && b == 2, 1, "a < b -> a < b");
@@ -54,7 +54,7 @@ bool test_r_num_minmax_swap_i() {
 	mu_end;
 }
 
-bool test_r_num_minmax_swap() {
+bool test_r_num_minmax_swap(void) {
 	ut64 a = 1, b = 2;
 	r_num_minmax_swap (&a, &b);
 	mu_assert_eq (a == 1 && b == 2, 1, "a < b -> a < b");
@@ -64,7 +64,7 @@ bool test_r_num_minmax_swap() {
 	mu_end;
 }
 
-bool test_r_num_between() {
+bool test_r_num_between(void) {
 	mu_assert_eq (r_num_between (num, "1 2 3"), 1, "1 <= 2 <= 3");
 	mu_assert_eq (r_num_between (num, "3 2 1"), 0, "3 <= 2 <= 1");
 	mu_assert_eq (r_num_between (num, "1 1 1"), 1, "1 <= 1 <= 1");
@@ -76,7 +76,7 @@ bool test_r_num_between() {
 	mu_end;
 }
 
-bool test_r_num_str_len() {
+bool test_r_num_str_len(void) {
 	mu_assert_eq (r_num_str_len ("1"), 1, "\"1\"");
 	mu_assert_eq (r_num_str_len ("1+1"), 3, "\"1+1\"");
 	mu_assert_eq (r_num_str_len ("1 + 1"), 5, "\"1 + 1\"");
@@ -92,7 +92,7 @@ bool test_r_num_str_len() {
     mu_end;
 }
 
-bool test_r_num_str_split() {
+bool test_r_num_str_split(void) {
 	char *str = malloc (0x20);
 	strcpy (str, "1 1 + 2 1 + (2 + 3) 4 ");
 	//expected "1\01 + 2\01 + (2 + 3)\04\0"
@@ -106,7 +106,7 @@ bool test_r_num_str_split() {
     mu_end;
 }
 
-bool test_r_num_str_split_list() {
+bool test_r_num_str_split_list(void) {
 	char *s;
 	char *str = malloc (0x20);
 	strcpy (str, "1 1 + 2 1 + (2 + 3) 4 ");
@@ -126,7 +126,7 @@ bool test_r_num_str_split_list() {
     mu_end;
 }
 
-bool all_tests() {
+bool all_tests(void) {
 	mu_run_test (test_r_num_units);
 	mu_run_test (test_r_num_minmax_swap_i);
 	mu_run_test (test_r_num_minmax_swap);

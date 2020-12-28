@@ -60,23 +60,31 @@ libsdb_sources = [
   'src/sdb.c',
   'src/sdbht.c',
   'src/util.c',
+  'src/text.c'
 ]
 
 sdb_inc = include_directories(['.', 'src'])
+rpath_lib = ''
+rpath_exe = ''
+if get_option('local') and get_option('default_library') == 'shared'
+  rpath_lib = '$ORIGIN'
+  rpath_exe = '$ORIGIN/../' + get_option('libdir')
+endif
 
 libsdb = both_libraries('sdb', libsdb_sources,
   include_directories: sdb_inc,
   implicit_include_directories: false,
   soversion: sdb_libversion,
-  install: not meson.is_subproject()
+  install: not meson.is_subproject(),
+  install_rpath: rpath_lib
 )
 
-if meson.is_subproject()
-  sdb_dep = declare_dependency(
-    link_with: libsdb.get_static_lib(),
-    include_directories: sdb_inc
-  )
-else
+sdb_dep = declare_dependency(
+  link_with: libsdb.get_static_lib(),
+  include_directories: sdb_inc
+)
+
+if not meson.is_subproject()
   include_files = [
     'src/buffer.h',
     'src/cdb.h',
@@ -106,8 +114,20 @@ sdb_exe = executable('sdb', 'src/main.c',
   include_directories: sdb_inc,
   link_with: [link_with],
   install: not meson.is_subproject(),
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )
+
+if meson.is_cross_build()
+  sdb_native_exe = executable('sdb_native', 'src/main.c',
+    include_directories: sdb_inc,
+    link_with: [link_with],
+    install: false,
+    implicit_include_directories: false
+  )
+else
+  sdb_native_exe = sdb_exe
+endif
 
 if not meson.is_subproject()
   install_man(['src/sdb.1'])
@@ -135,4 +155,5 @@ if not meson.is_subproject()
   endif
 
   subdir('test/bench')
+  subdir('test/unit')
 endif

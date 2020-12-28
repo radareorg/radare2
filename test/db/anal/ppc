@@ -403,7 +403,7 @@ fcn.1000b540:
     sym.imp.calloc
 
 sym._init:
-    loc.imp.__gmon_start
+    loc.imp.__gmon_start__
     fcn.100015e0
     fcn.100264c0
 
@@ -524,5 +524,57 @@ Vtable Found at 0x10001764
 0x10001768 : No Name found
 0x1000176c : No Name found
 
+EOF
+RUN
+
+NAME=aoj f0ff2194
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+wx f0ff2194
+aoj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "opcode": "stwu r1, -0x10(r1)",
+    "disasm": "stwu r1, -0x10(r1)",
+    "pseudo": "word[r1 - 0x10] = r1",
+    "description": "Store Word with Update",
+    "mnemonic": "stwu",
+    "mask": "ffffffff",
+    "esil": "r1,-16,r1,+,=[4],-16,r1,+=",
+    "sign": false,
+    "prefix": 0,
+    "id": 594,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": "r1"
+        },
+        {
+          "type": "mem",
+          "base": "r1",
+          "disp": -16
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "f0ff2194",
+    "size": 4,
+    "type": "store",
+    "esilcost": 12,
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stack": "inc",
+    "stackptr": 16,
+    "family": "cpu"
+  }
+]
 EOF
 RUN

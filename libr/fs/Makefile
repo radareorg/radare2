@@ -1,5 +1,5 @@
 NAME=r_fs
-R2DEPS=r_util r_io r_socket
+R2DEPS=r_util r_io r_socket r_hash r_cons r_crypto
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch
 
 SHLR=../../shlr/

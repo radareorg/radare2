@@ -7,9 +7,10 @@ e asm.bits = 64
 afcl
 EOF
 EXPECT=<<EOF
-ms
-amd64
 swift
+amd64
+amd64syscall
+ms
 reg
 EOF
 RUN

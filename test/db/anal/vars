@@ -110,7 +110,7 @@ FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-afc=ms
+e anal.cc=ms
 wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
 aa
 pd 13
@@ -177,7 +177,7 @@ ARGS=-a x86 -b 64
 CMDS=<<EOF
 e asm.flags=false
 e anal.vars.stackname = true
-afc=ms
+e anal.cc=ms
 wx 488bc448895808488970104889781841574881ecb00000008364242000488d48884c8d9c24b0000000498b5b10498b7318498b7b20498be3415fc3
 af
 aaef
@@ -187,12 +187,12 @@ EOF
 EXPECT=<<EOF
 afvR
    var_c0h  0x18
-   var_30h  0x21,0x35
-   var_28h  0x0
+   var_30h  0x21
+   var_28h
    var_20h  0x29
    var_18h  0x2d
    var_10h  0x31
-   var_a0h  0x1d
+   var_a0h
 afvW
    var_c0h  0x18
    var_30h
@@ -250,7 +250,7 @@ afvR
     var_ch  0x18,0x22
     var_eh  0x16,0x1e
     var_fh  0x10
-    var_4h  0x2a,0x2c
+    var_4h  0x2c
 afvW
       arg1
       arg2
@@ -293,5 +293,36 @@ afvW
 |           0x0000002a      bd46           mov sp, r7
 |           0x0000002c      5df8047b       ldr r7, [sp], 4
 \           0x00000030      7047           bx lr
+EOF
+RUN
+
+NAME=Takeover variables
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx e805000000e80600000039d1742577145589e583ec048b5d088b4d0c895dfc83f90174098b45fc8945fc49ebf28b45fc89ec5dc3
+aac
+afv  @ 10
+afvx @ 10
+afv  @ 16
+afvx @ 16
+EOF
+EXPECT=<<EOF
+afvR
+afvW
+var int32_t var_4h_2 @ ebp-0x4
+var int32_t var_4h @ ebp+0x0
+arg int32_t arg_8h @ ebp+0x8
+arg int32_t arg_ch @ ebp+0xc
+afvR
+    arg_8h  0x16
+    arg_ch  0x19
+  var_4h_2
+    var_4h  0x24,0x2d
+afvW
+    arg_8h
+    arg_ch
+  var_4h_2  0x1c
+    var_4h  0x27
 EOF
 RUN

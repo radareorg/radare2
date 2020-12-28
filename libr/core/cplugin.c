@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake */
+/* radare - LGPL - Copyright 2010-2020 - pancake */
 
 /* covardly copied from r_cmd */
 
@@ -12,7 +12,7 @@ static RCorePlugin *cmd_static_plugins[] = {
 	R_CORE_STATIC_PLUGINS
 };
 
-R_API int r_core_plugin_fini(RCmd *cmd) {
+R_API bool r_core_plugin_fini(RCmd *cmd) {
 	RListIter *iter;
 	RCorePlugin *plugin;
 	if (!cmd->plist) {
@@ -29,16 +29,17 @@ R_API int r_core_plugin_fini(RCmd *cmd) {
 	return true;
 }
 
-R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
-	if (!cmd || (plugin && plugin->init && !plugin->init (cmd, NULL))) {
+R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
+	r_return_val_if_fail (cmd && plugin, false);
+	if (plugin->init && !plugin->init (cmd, NULL)) {
 		return false;
 	}
 	r_list_append (cmd->plist, plugin);
 	return true;
 }
 
-R_API int r_core_plugin_init(RCmd *cmd) {
-	int i;
+R_API bool r_core_plugin_init(RCmd *cmd) {
+	size_t i;
 	cmd->plist = r_list_newf (NULL); // memleak or dblfree
 	for (i = 0; cmd_static_plugins[i]; i++) {
 		if (!r_core_plugin_add (cmd, cmd_static_plugins[i])) {
@@ -49,7 +50,7 @@ R_API int r_core_plugin_init(RCmd *cmd) {
 	return true;
 }
 
-R_API int r_core_plugin_check(RCmd *cmd, const char *a0) {
+R_API bool r_core_plugin_check(RCmd *cmd, const char *a0) {
 	RListIter *iter;
 	RCorePlugin *cp;
 	r_list_foreach (cmd->plist, iter, cp) {

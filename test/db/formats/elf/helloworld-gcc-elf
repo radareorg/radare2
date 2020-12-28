@@ -40,7 +40,7 @@ NAME=x86 - init_array detection
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=aa;afl~0x080482e0[3]
 EXPECT=<<EOF
-loc.imp.__gmon_start
+loc.imp.__gmon_start__
 EOF
 RUN
 
@@ -58,8 +58,8 @@ CMDS=C
 EXPECT=<<EOF
 0x00000000 CCu "[29] ---- section size 599 named .strtab"
 0x08048134 CCu "[01] -r-- section size 19 named .interp"
-0x08048148 CCu "[02] -r-- section size 32 named .note.ABI_tag"
-0x08048168 CCu "[03] -r-- section size 36 named .note.gnu.build_id"
+0x08048148 CCu "[02] -r-- section size 32 named .note.ABI-tag"
+0x08048168 CCu "[03] -r-- section size 36 named .note.gnu.build-id"
 0x0804818c CCu "[04] -r-- section size 32 named .gnu.hash"
 0x080481ac CCu "[05] -r-- section size 80 named .dynsym"
 0x080481fc CCu "[06] -r-- section size 74 named .dynstr"
@@ -156,8 +156,8 @@ CMDS=C*
 EXPECT=<<EOF
 CCu base64:WzI5XSAtLS0tIHNlY3Rpb24gc2l6ZSA1OTkgbmFtZWQgLnN0cnRhYg== @ 0x00000000
 CCu base64:WzAxXSAtci0tIHNlY3Rpb24gc2l6ZSAxOSBuYW1lZCAuaW50ZXJw @ 0x08048134
-CCu base64:WzAyXSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAubm90ZS5BQklfdGFn @ 0x08048148
-CCu base64:WzAzXSAtci0tIHNlY3Rpb24gc2l6ZSAzNiBuYW1lZCAubm90ZS5nbnUuYnVpbGRfaWQ= @ 0x08048168
+CCu base64:WzAyXSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAubm90ZS5BQkktdGFn @ 0x08048148
+CCu base64:WzAzXSAtci0tIHNlY3Rpb24gc2l6ZSAzNiBuYW1lZCAubm90ZS5nbnUuYnVpbGQtaWQ= @ 0x08048168
 CCu base64:WzA0XSAtci0tIHNlY3Rpb24gc2l6ZSAzMiBuYW1lZCAuZ251Lmhhc2g= @ 0x0804818c
 CCu base64:WzA1XSAtci0tIHNlY3Rpb24gc2l6ZSA4MCBuYW1lZCAuZHluc3lt @ 0x080481ac
 CCu base64:WzA2XSAtci0tIHNlY3Rpb24gc2l6ZSA3NCBuYW1lZCAuZHluc3Ry @ 0x080481fc
@@ -461,7 +461,7 @@ EXPECT=<<EOF
 0x080482c0 64 section..plt
 0x080482c0 0 sym..plt
 0x080482d0 16 sym.imp.puts
-0x080482e0 16 loc.imp.__gmon_start
+0x080482e0 16 loc.imp.__gmon_start__
 0x080482f0 16 sym.imp.__libc_start_main
 0x08048300 1 entry0
 0x08048300 404 section..text
@@ -485,13 +485,13 @@ EXPECT=<<EOF
 0x080484a8 0 sym..rodata
 0x080484a8 4 obj._fp_hw
 0x080484ac 4 obj._IO_stdin_used
-0x080484b0 13 str.Hello_world
+0x080484b0 13 str.Hello_world_
 0x080484c0 44 section..eh_frame_hdr
 0x080484c0 44 segment.GNU_EH_FRAME
 0x080484c0 0 sym..eh_frame_hdr
 0x080484ec 176 section..eh_frame
 0x080484ec 0 sym..eh_frame
-0x08048598 0 obj.__FRAME_END
+0x08048598 0 obj.__FRAME_END__
 0x0804959c 4 section..init_array
 0x0804959c 284 segment.LOAD1
 0x0804959c 0 sym..init_array
@@ -503,8 +503,8 @@ EXPECT=<<EOF
 0x080495a0 0 loc.__init_array_end
 0x080495a4 4 section..jcr
 0x080495a4 0 sym..jcr
-0x080495a4 0 obj.__JCR_LIST
-0x080495a4 0 obj.__JCR_END
+0x080495a4 0 obj.__JCR_LIST__
+0x080495a4 0 obj.__JCR_END__
 0x080495a8 232 section..dynamic
 0x080495a8 232 segment.DYNAMIC
 0x080495a8 0 sym..dynamic
@@ -513,9 +513,9 @@ EXPECT=<<EOF
 0x08049690 0 sym..got
 0x08049694 24 section..got.plt
 0x08049694 0 sym..got.plt
-0x08049694 0 obj._GLOBAL_OFFSET_TABLE
+0x08049694 0 obj._GLOBAL_OFFSET_TABLE_
 0x080496a0 4 reloc.puts
-0x080496a4 4 reloc.__gmon_start
+0x080496a4 4 reloc.__gmon_start__
 0x080496a8 4 reloc.__libc_start_main
 0x080496ac 8 section..data
 0x080496ac 0 sym..data
@@ -527,7 +527,7 @@ EXPECT=<<EOF
 0x080496b4 1 obj.completed.5979
 0x080496b4 0 loc._edata
 0x080496b4 0 loc.__bss_start
-0x080496b4 0 obj.__TMC_END
+0x080496b4 0 obj.__TMC_END__
 0x080496b8 0 loc._end
 EOF
 RUN

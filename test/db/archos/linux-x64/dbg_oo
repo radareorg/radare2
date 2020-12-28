@@ -1,5 +1,5 @@
 NAME=dbg.oo 10
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 BROKEN=1
 CMDS=<<EOF
@@ -13,7 +13,7 @@ EOF
 RUN
 
 NAME=dbg.ood 10
-FILE=/bin/ls
+FILE=bins/elf/ls-focal
 ARGS=-d
 BROKEN=1
 CMDS=<<EOF

@@ -1,0 +1,49 @@
+NAME=aoj 4140f008
+FILE=-
+CMDS=<<EOF
+e asm.arch=sysz
+e asm.bits=64
+wx 4140f008
+aoj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "opcode": "la %r4, 8(%r15)",
+    "disasm": "la %r4, 8(%r15)",
+    "pseudo": "la %r4,8(%r15) ",
+    "description": "Load Address",
+    "mnemonic": "la",
+    "mask": "ffffffff",
+    "sign": false,
+    "prefix": 0,
+    "id": 0,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": "4"
+        },
+        {
+          "type": "mem",
+          "base": "15",
+          "disp": 8
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "4140f008",
+    "size": 4,
+    "type": "null",
+    "esilcost": 0,
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stackptr": 0,
+    "family": "cpu"
+  }
+]
+EOF
+RUN

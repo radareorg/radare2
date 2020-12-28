@@ -13,6 +13,7 @@ dalvik.pseudo
 m68k.pseudo
 mips.pseudo
 ppc.pseudo
+riscv.pseudo
 sh.pseudo
 tms320.pseudo
 v850.pseudo

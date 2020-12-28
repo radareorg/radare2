@@ -25,9 +25,9 @@ static char *__core_visual_tab_string(RCore *core, const char *kolor) {
 			RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, i);
 			const char *name = (tab && *tab->name)? tab->name: NULL;
 			if (i == core->visual.tab) {
-				str = r_str_appendf (str, Color_WHITE"_/ %s \\_%s", name? name: "t=", kolor);
+				str = r_str_appendf (str, Color_WHITE"_/ %s \\_%s", r_str_get_fail (name, "t="), kolor);
 			} else {
-				str = r_str_appendf (str, "_%s(%d)_", name?name: "", i+ 1);
+				str = r_str_appendf (str, "_%s(%d)_", r_str_get (name), i + 1);
 			}
 		}
 	} else {
@@ -41,9 +41,9 @@ static char *__core_visual_tab_string(RCore *core, const char *kolor) {
 				name = tab->name;
 			}
 			if (i==core->visual.tab) {
-				str = r_str_appendf (str, "_/ %d:%s \\_", i + 1, name? name: "'=");
+				str = r_str_appendf (str, "_/ %d:%s \\_", i + 1, r_str_get_fail (name, "'="));
 			} else {
-				str = r_str_appendf (str, "_(t%d%s%s)__", i + 1, name?":":"", name?name: "");
+				str = r_str_appendf (str, "_(t%d%s%s)__", i + 1, name ? ":" : "", r_str_get (name));
 			}
 		}
 	}

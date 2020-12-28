@@ -2,8 +2,8 @@ NAME=adr emulation
 FILE=malloc://0x200
 CMDS=<<EOF
 e io.cache=true
-e asm.bits=16
 e asm.arch=arm
+e asm.bits=16
 s 0x0008735c
 wx 30a1
 w radare_emulation\x00 @ 0x87420
@@ -22,8 +22,8 @@ NAME=clz
 FILE=malloc://0x200
 CMDS=<<EOF
 e io.cache=true
-e asm.bits=16
 e asm.arch=arm
+e asm.bits=16
 wa clz r0, r1
 aer r1=0x80000000
 aes
@@ -47,8 +47,8 @@ NAME=addw emulation
 FILE=malloc://0x200
 CMDS=<<EOF
 e io.cache=true
-e asm.bits=16
 e asm.arch=arm
+e asm.bits=16
 s 0x00088a1c 
 wx 0ff26c71
 w addw_emulation\x00 @ 0x8918c

@@ -319,6 +319,7 @@ static ut32 arm_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 		}
 	}
 
+	//TODO PJ
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s %s%s, {", load ? "ldm" : "stm", tbl_addrmode[addrmode],
 			get_cond (inst), tbl_regs[get_nibble (inst, 4)], writeback ? "!" : "");
 	for (i=0;i<=15;i++) {
@@ -441,6 +442,7 @@ static ut16 thumb_disasm_pushpop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 	}
 	last = i;
 
+	//TODO PJ
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s {", load ? "pop" : "push");
 
 	for (i=0;i<=7;i++) {
@@ -473,6 +475,7 @@ static ut16 thumb_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut16 inst)
 	}
 	last = i;
 
+	//TODO PJ
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s %s!, {", load ? "ldmia" : "stmia", tbl_regs[(inst >> 8) & 0x07]);
 
 	for (i=0;i<=7;i++) {

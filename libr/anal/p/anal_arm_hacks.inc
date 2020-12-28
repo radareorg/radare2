@@ -105,7 +105,7 @@ static int hack_handle_dp_imm(ut32 insn, RAnalOp *op) {
 		const bool sf = (insn >> 31) & 0x1;
 		const bool op_ = (insn >> 30) & 0x1;
 		const bool S = (insn >> 29) & 0x1;
-		const bool o2 = (insn >> 2) & 0x1;
+		const bool o2 = (insn >> 22) & 0x1;
 		if (sf && !S && !o2) {
 			if (op_ ) {
 				// subg
@@ -147,8 +147,8 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 	int ret = -1;
 	// Hacky support for ARMv8.3 and ARMv8.5
 	if (a->bits == 64 && len >= 4) {
-		ut32 *insn = (ut32 *)buf;
-		int insn_class = (*insn >> 25) & 0xf;
+		ut32 insn = r_read_ble32 (buf, a->big_endian);
+		int insn_class = (insn >> 25) & 0xf;
 		// xpaci // e#43c1da
 		if (!memcmp (buf + 1, "\x43\xc1\xda", 3)) {
 			op->type = R_ANAL_OP_TYPE_MOV;
@@ -170,18 +170,18 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		case 5:
 		case 13:
 			// irg, subp, gmi, subps
-			ret = hack_handle_dp_reg (*insn, op);
+			ret = hack_handle_dp_reg (insn, op);
 			break;
 		// Data Processing -- Immediate
 		case 8:
 		case 9:
 			// addg, subg
-			ret = hack_handle_dp_imm (*insn, op);
+			ret = hack_handle_dp_imm (insn, op);
 			break;
 		case 10:
 		case 11:
 			// bti
-			ret = hack_handle_br_exc_sys (*insn, op);
+			ret = hack_handle_br_exc_sys (insn, op);
 			break;
 		// Loads and Stores
 		case 4:
@@ -189,7 +189,7 @@ static inline int hackyArmAnal(RAnal *a, RAnalOp *op, const ut8 *buf, int len) {
 		case 12:
 		case 14:
 			// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
-			ret = hack_handle_ldst (*insn, op);
+			ret = hack_handle_ldst (insn, op);
 			break;
 		default:
 			break;

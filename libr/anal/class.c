@@ -509,7 +509,7 @@ R_API RAnalClassErr r_anal_class_method_get(RAnal *anal, const char *class_name,
 	}
 	sdb_anext (cur, NULL);
 
-	meth->vtable_offset = atoi (cur);
+	meth->vtable_offset = atoll (cur);
 
 	free (content);
 
@@ -556,7 +556,7 @@ R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const c
 }
 
 R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth) {
-	char *content = sdb_fmt ("%"PFMT64u"%c%d", meth->addr, SDB_RS, meth->vtable_offset);
+	char *content = sdb_fmt ("%"PFMT64u"%c%"PFMT64d, meth->addr, SDB_RS, meth->vtable_offset);
 	RAnalClassErr err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
 		return err;

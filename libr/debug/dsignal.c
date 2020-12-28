@@ -97,6 +97,7 @@ static bool siglistjsoncb (void *p, const char *k, const char *v) {
 		} else {
 			r_cons_strcat (",");
 		}
+		//TODO PJ
 		r_cons_printf ("{\"signum\":\"%s\",\"name\":\"%s\",\"option\":", k, v);
 		if (opt & R_DBG_SIGNAL_CONT) {
 			r_cons_strcat ("\"cont\"");

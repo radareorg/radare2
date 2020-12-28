@@ -78,7 +78,7 @@ static void cmd_mount_ls (RCore *core, const char *input) {
 		}
 		r_list_free (list);
 	}
-	const char *path = *input? input: "/";
+	const char *path = *input ? input : "/";
 	r_list_foreach (core->fs->roots, iter, root) {
 		// TODO: adjust contents between //
 		if (!strncmp (path, root->path, strlen (path))) {

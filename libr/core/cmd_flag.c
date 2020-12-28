@@ -253,7 +253,7 @@ static void __printRecursive (RCore *core, RList *flags, const char *prefix, int
 		}
 		if (mode == '*') {
 			r_cons_printf ("agn %s %s\n", fn, fn + prefix_len);
-			r_cons_printf ("age %s %s\n", *prefix? prefix: "root", fn);
+			r_cons_printf ("age %s %s\n", *prefix ? prefix : "root", fn);
 		} else {
 			r_cons_printf ("%s %s\n", r_str_pad (' ', prefix_len), fn + prefix_len);
 		}
@@ -315,7 +315,7 @@ static void cmd_fz(RCore *core, const char *input) {
 		{
 			const char *a = NULL, *b = NULL;
 			r_flag_zone_around (core->flags, core->offset, &a, &b);
-			r_cons_printf ("%s %s\n", a?a:"~", b?b:"~");
+			r_cons_printf ("%s %s\n", r_str_get_fail (a, "~"), r_str_get_fail (b, "~"));
 		}
 		break;
 	case ':': // "fz:"
@@ -431,7 +431,7 @@ static bool __tableItemCallback(RFlagItem *flag, void *user) {
 		RTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
 		const char *addr = sdb_fmt ("0x%08"PFMT64x, flag->offset);
-		r_table_add_row (t, addr, sdb_fmt ("%d", flag->size), spaceName, flag->name, NULL);
+		r_table_add_row (t, addr, sdb_fmt ("%"PFMT64d, flag->size), spaceName, flag->name, NULL);
 	}
 	return true;
 }
@@ -811,20 +811,24 @@ rep:
 		}
 		break;
 	case 'a':
-		if (input[1] == ' '){
+		if (input[1] == ' ') {
 			RFlagItem *fi;
 			R_FREE (str);
 			str = strdup (input+2);
 			ptr = strchr (str, '=');
-			if (!ptr)
+			if (!ptr) {
 				ptr = strchr (str, ' ');
-			if (ptr) *ptr++ = 0;
+			}
+			if (ptr) {
+				*ptr++ = 0;
+			}
 			name = (char *)r_str_trim_head_ro (str);
 			ptr = (char *)r_str_trim_head_ro (ptr);
 			fi = r_flag_get (core->flags, name);
-			if (!fi)
+			if (!fi) {
 				fi = r_flag_set (core->flags, name,
 					core->offset, 1);
+			}
 			if (fi) {
 				r_flag_item_set_alias (fi, ptr);
 			} else {
@@ -835,17 +839,17 @@ rep:
 		}
 		break;
 	case 'V': // visual marks
-		switch(input[1]) {
+		switch (input[1]) {
 		case '-':
 			r_core_visual_mark_reset (core);
 			break;
 		case ' ':
 			{
-				const int n = atoi (input + 1);
-				if (n + ST8_MAX + 1 < UT8_MAX) {
+				int n = atoi (input + 1);
+				if (n + ASCII_MAX + 1 < UT8_MAX) {
 					const char *arg = strchr (input + 2, ' ');
 					ut64 addr = arg? r_num_math (core->num, arg): core->offset;
-					r_core_visual_mark_set (core, n + ST8_MAX + 1, addr);
+					r_core_visual_mark_set (core, n + ASCII_MAX + 1, addr);
 				}
 			}
 			break;
@@ -992,6 +996,10 @@ rep:
 			}
 		}
 		if (addFlag) {
+			if (!r_name_check (cstr)) {
+				eprintf ("Invalid flag name '%s'.\n", cstr);
+				return false;
+			}
 			item = r_flag_set (core->flags, cstr, off, bsze);
 		}
 		if (item && comment) {
@@ -1618,7 +1626,9 @@ rep:
 	case '?':
 	default:
 		if (input[1]) {
-			core->num->value = r_flag_get (core->flags, input + 1)? 1: 0;
+			const char *arg = r_str_trim_head_ro (input + 1);
+			RFlagItem *fi = r_flag_get (core->flags, arg);
+			core->num->value = fi? 1: 0;
 		} else {
 			r_core_cmd_help (core, help_msg_f);
 			break;

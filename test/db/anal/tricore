@@ -114,3 +114,44 @@ gpr	pc	.32	160	0
 
 EOF
 RUN
+
+NAME= Instruction descriptions for TriCore
+FILE=bins/tricore/return_0.elf
+CMDS=<<EOF
+e asm.describe = 1
+s 0x80000004
+pd 30
+EOF
+EXPECT=<<EOF
+            0x80000004      8c80           ld.h d15, [a8]0             ; load half word
+            0x80000006      0000           nop                         ; nop operation
+            0x80000008      8c80           ld.h d15, [a8]0             ; load half word
+            0x8000000a      0000           nop                         ; nop operation
+            0x8000000c      8c80           ld.h d15, [a8]0             ; load half word
+            0x8000000e      0000           nop                         ; nop operation
+            0x80000010      8c80           ld.h d15, [a8]0             ; load half word
+            0x80000012      0000           nop                         ; nop operation
+            0x80000014      85f12000       ld.w d1, 0xf0000020         ; load word
+            0x80000018      6f010400       jz.t d1, 0, 0x80000020      ; jump if zero bit
+            0x8000001c      5d006800       jl 0x800000ec               ; jump and link
+            0x80000020      910000ad       movh.a sp, 53248            ; move high to address
+            0x80000024      d9aa6000       lea sp, [sp]1056 <0xd0000420> ; load effective address
+            0x80000028      7b00000d       movh d0, 53248              ; move high
+            0x8000002c      1b008200       addi d0, d0, 2080           ; add immediate
+            0x80000030      cd80e20f       mtcr #0xfe28, d0            ; move to core register
+            0x80000034      0d00c004       isync                       ; synchronize instructions
+            0x80000038      7b000008       movh d0, 32768              ; move high
+            0x8000003c      1b003000       addi d0, d0, 768            ; add immediate
+            0x80000040      cd40e20f       mtcr #0xfe24, d0            ; move to core register
+            0x80000044      0d00c004       isync                       ; synchronize instructions
+            0x80000048      4d40e00f       mfcr d0, #0xfe04            ; move from core register
+            0x8000004c      8ff04701       or d0, d0, 127              ; bitwise or
+            0x80000050      8f00c801       andn d0, d0, 128
+            0x80000054      cd40e00f       mtcr #0xfe04, d0            ; move to core register
+            0x80000058      0d00c004       isync                       ; synchronize instructions
+            0x8000005c      4d40e00f       mfcr d0, #0xfe04            ; move from core register
+            0x80000060      8f005001       or d0, d0, 256              ; bitwise or
+            0x80000064      cd40e00f       mtcr #0xfe04, d0            ; move to core register
+            0x80000068      0d00c004       isync                       ; synchronize instructions
+EOF
+RUN

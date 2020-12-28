@@ -26,7 +26,14 @@ static RStrBuf *buf_global = NULL;
 static unsigned char bytes[8];
 
 static int cris_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
-	memcpy (myaddr, bytes, length);
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 8) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
 

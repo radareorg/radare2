@@ -34,7 +34,8 @@ static RList *fields(RBinFile *bf) {
 	}
 
 	#define ROWL(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt, false));
+		r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, \
+				sdb_fmt ("0x%08"PFMT64x, (ut64)val), fmt, false));
 
 	struct PE_(r_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	ut64 addr = bin->rich_header_offset ? bin->rich_header_offset : 128;
@@ -227,7 +228,7 @@ static void header(RBinFile *bf) {
 	rbin->cb_printf ("  SizeOfUninitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfUninitializedData);
 	rbin->cb_printf ("  AddressOfEntryPoint : 0x%x\n", bin->nt_headers->optional_header.AddressOfEntryPoint);
 	rbin->cb_printf ("  BaseOfCode : 0x%x\n", bin->nt_headers->optional_header.BaseOfCode);
-	rbin->cb_printf ("  ImageBase : 0x%x\n", bin->nt_headers->optional_header.ImageBase);
+	rbin->cb_printf ("  ImageBase : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.ImageBase);
 	rbin->cb_printf ("  SectionAlignment : 0x%x\n", bin->nt_headers->optional_header.SectionAlignment);
 	rbin->cb_printf ("  FileAlignment : 0x%x\n", bin->nt_headers->optional_header.FileAlignment);
 	rbin->cb_printf ("  MajorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorOperatingSystemVersion);
@@ -242,10 +243,10 @@ static void header(RBinFile *bf) {
 	rbin->cb_printf ("  CheckSum : 0x%x\n", bin->nt_headers->optional_header.CheckSum);
 	rbin->cb_printf ("  Subsystem : 0x%x\n", bin->nt_headers->optional_header.Subsystem);
 	rbin->cb_printf ("  DllCharacteristics : 0x%x\n", bin->nt_headers->optional_header.DllCharacteristics);
-	rbin->cb_printf ("  SizeOfStackReserve : 0x%x\n", bin->nt_headers->optional_header.SizeOfStackReserve);
-	rbin->cb_printf ("  SizeOfStackCommit : 0x%x\n", bin->nt_headers->optional_header.SizeOfStackCommit);
-	rbin->cb_printf ("  SizeOfHeapReserve : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeapReserve);
-	rbin->cb_printf ("  SizeOfHeapCommit : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeapCommit);
+	rbin->cb_printf ("  SizeOfStackReserve : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfStackReserve);
+	rbin->cb_printf ("  SizeOfStackCommit : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfStackCommit);
+	rbin->cb_printf ("  SizeOfHeapReserve : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfHeapReserve);
+	rbin->cb_printf ("  SizeOfHeapCommit : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfHeapCommit);
 	rbin->cb_printf ("  LoaderFlags : 0x%x\n", bin->nt_headers->optional_header.LoaderFlags);
 	rbin->cb_printf ("  NumberOfRvaAndSizes : 0x%x\n", bin->nt_headers->optional_header.NumberOfRvaAndSizes);
 	RListIter *it;

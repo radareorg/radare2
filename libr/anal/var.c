@@ -236,6 +236,18 @@ R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn) {
 	r_pvector_clear (&fcn->vars);
 }
 
+R_API void r_anal_function_delete_unused_vars(RAnalFunction *fcn) {
+	void **v;
+	RPVector *vars_clone = (RPVector *)r_vector_clone ((RVector *)&fcn->vars);
+	r_pvector_foreach (vars_clone, v) {
+		RAnalVar *var = *v;
+		if (r_vector_empty (&var->accesses)) {
+			r_anal_function_delete_var (fcn, var);
+		}
+	}
+	r_pvector_free (vars_clone);
+}
+
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 	r_return_if_fail (fcn && var);
 	r_pvector_remove_data (&fcn->vars, var);
@@ -451,11 +463,11 @@ R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_add
 		acc = r_vector_insert (&var->accesses, index, NULL);
 		acc->offset = offset;
 		acc->type = 0;
-		acc->reg = r_str_constpool_get (&var->fcn->anal->constpool, reg);
 	}
 
 	acc->type |= (ut8)access_type;
 	acc->stackptr = stackptr;
+	acc->reg = r_str_constpool_get (&var->fcn->anal->constpool, reg);
 
 	// add the inverse reference from the instruction to the var
 	RPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
@@ -996,7 +1008,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				}
 			}
 			if (!vname) {
-				name = r_str_newf ("arg%lu", i + 1);
+				name = r_str_newf ("arg%zu", i + 1);
 				vname = name;
 			}
 			r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);

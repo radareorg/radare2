@@ -321,6 +321,7 @@ struct r_core_t {
 	char *table_query;
 	int sync_index; // used for http.sync and T=
 	struct r_core_t *c2;
+	RTable *table;
 	RCoreAutocomplete *autocomplete;
 	int autocomplete_type;
 	int maxtab;
@@ -406,7 +407,7 @@ R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
 R_API char *r_core_editor(const RCore *core, const char *file, const char *str);
 R_API int r_core_fgets(char *buf, int len);
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off);
-R_API int r_core_cmdf(RCore *core, const char *fmt, ...);
+R_API int r_core_cmdf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_core_flush(RCore *core, const char *cmd);
 R_API int r_core_cmd0(RCore *core, const char *cmd);
 R_API void r_core_cmd_init(RCore *core);
@@ -448,7 +449,6 @@ R_API int r_core_visual_anal_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive);
-R_API bool r_core_visual_panels_root(RCore *core, RPanelsRoot *panels_root);
 R_API void r_core_visual_browse(RCore *core, const char *arg);
 R_API int r_core_visual_cmd(RCore *core, const char *arg);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
@@ -467,13 +467,18 @@ R_API ut64 r_core_get_asmqjmps(RCore *core, const char *str);
 R_API void r_core_set_asmqjmps(RCore *core, char *str, size_t len, int i);
 R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 
+// core/panels.c
+R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root);
+R_API void r_core_panels_save(RCore *core, const char *_name);
+R_API bool r_core_panels_load(RCore *core, const char *_name);
+
 R_API void r_core_anal_type_init(RCore *core);
+R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int depth);
 R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn);
 R_API void r_core_anal_inflags (RCore *core, const char *glob);
 R_API bool cmd_anal_objc (RCore *core, const char *input, bool auto_anal);
 R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
-R_API void r_core_anal_esil_graph(RCore *core, const char *expr);
 
 R_API void r_core_list_io(RCore *core);
 R_API RListInfo *r_listinfo_new (const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra);
@@ -556,7 +561,7 @@ R_API int r_core_yank_file_all (RCore *core, const char *input);
 R_API void r_core_loadlibs_init(RCore *core);
 R_API int r_core_loadlibs(RCore *core, int where, const char *path);
 R_API int r_core_cmd_buffer(RCore *core, const char *buf);
-R_API int r_core_cmdf(RCore *core, const char *fmt, ...);
+R_API int r_core_cmdf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_core_cmd0(RCore *core, const char *cmd);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each);
@@ -840,7 +845,7 @@ typedef struct {
 
 R_API bool core_anal_bbs(RCore *core, const char* input);
 R_API bool core_anal_bbs_range (RCore *core, const char* input);
-R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose);
+R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, int mode);
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr);
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);

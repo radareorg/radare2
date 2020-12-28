@@ -7,18 +7,18 @@ EOF
 EXPECT=<<EOF
 
 Vtable Found at 0x00400ce8
-0x00400ce8 : method.A.greet
-0x00400cf0 : method.C.printValue
+0x00400ce8 : method.A.greet__
+0x00400cf0 : method.C.printValue__
 
 
 Vtable Found at 0x00400d08
-0x00400d08 : method.A.greet
-0x00400d10 : method.B.printValue
+0x00400d08 : method.A.greet__
+0x00400d10 : method.B.printValue__
 
 
 Vtable Found at 0x00400d28
-0x00400d28 : method.A.greet
-0x00400d30 : method.A.printValue
+0x00400d28 : method.A.greet__
+0x00400d30 : method.A.printValue__
 
 EOF
 RUN
@@ -80,5 +80,16 @@ Vtable Found at 0x0041219c
 Vtable Found at 0x004121f8
 0x004121f8 : No Name found
 
+EOF
+RUN
+
+NAME=avj
+FILE=bins/elf/analysis/elf-virtualtable
+CMDS=<<EOF
+aaa
+avj
+EOF
+EXPECT=<<EOF
+[{"offset":4197608,"methods":[{"offset":4197064,"name":"method.A.greet__"},{"offset":4197368,"name":"method.C.printValue__"}]},{"offset":4197640,"methods":[{"offset":4197064,"name":"method.A.greet__"},{"offset":4197250,"name":"method.B.printValue__"}]},{"offset":4197672,"methods":[{"offset":4197064,"name":"method.A.greet__"},{"offset":4197108,"name":"method.A.printValue__"}]}]
 EOF
 RUN

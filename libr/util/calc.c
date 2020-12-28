@@ -20,7 +20,7 @@ static inline RNumCalcValue Nsetf(double v) { RNumCalcValue n; n.d = v; n.n = (u
 static inline RNumCalcValue Naddi(RNumCalcValue n, ut64 v) { n.d += (double)v; n.n += v; return n; }
 static inline RNumCalcValue Nsubi(RNumCalcValue n, ut64 v) { n.d -= (double)v; n.n -= v; return n; }
 static inline RNumCalcValue Nneg(RNumCalcValue n) { n.n = ~n.n; return n; }
-static inline RNumCalcValue Norr(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n |= v.n; return n; }
+static inline RNumCalcValue Nor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n |= v.n; return n; }
 static inline RNumCalcValue Nxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n ^= v.n; return n; }
 static inline RNumCalcValue Nand(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n &= v.n; return n; }
 static inline RNumCalcValue Nadd(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n += v.n; return n; }
@@ -94,7 +94,7 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 		case RNCPLUS: left = Nadd (left, term (num, nc, 1)); break;
 		case RNCMINUS: left = Nsub (left, term (num, nc, 1)); break;
 		case RNCXOR: left = Nxor (left, term (num, nc, 1)); break;
-		case RNCORR: left = Norr (left, term (num, nc, 1)); break;
+		case RNCOR: left = Nor (left, term (num, nc, 1)); break;
 		case RNCAND: left = Nand (left, term (num, nc, 1)); break;
 		default:
 			return left;
@@ -161,8 +161,8 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		return Naddi (prim (num, nc, 1), 1);
 	case RNCDEC:
 		return Naddi (prim (num, nc, 1), -1);
-	case RNCORR:
-		return Norr (v, prim (num, nc, 1));
+	case RNCOR:
+		return Nor (v, prim (num, nc, 1));
 	case RNCMINUS:
 		return Nsub (v, prim (num, nc, 1));
 	case RNCLEFTP:
@@ -233,7 +233,7 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	char c;
 	str[0] = 0;
 	while (cin_get (num, nc, &c)) {
-		if (c != '_' && c!=':' && c!='.' && !isalnum ((ut8)c)) {
+		if (c != '_' && c != ':' && c != '.' && !isalnum ((ut8)c)) {
 			cin_putback (num, nc, c);
 			break;
 		}

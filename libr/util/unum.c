@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake */
 
 #if __WINDOWS__
 #include <stdlib.h>
@@ -11,8 +11,7 @@
 
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
-// TODO: rename to r_num_srand()
-static void r_srand(int seed) {
+static void r_num_srand(int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	// no-op
 	(void)seed;
@@ -30,7 +29,7 @@ static int r_rand(int mod) {
 }
 
 R_API void r_num_irand(void) {
-	r_srand (r_time_now ());
+	r_num_srand (r_time_now ());
 }
 
 R_API int r_num_rand(int max) {
@@ -540,7 +539,7 @@ R_API int r_num_to_bits(char *out, ut64 num) {
 	return size;
 }
 
-R_API int r_num_to_trits(char *out, ut64 num) {
+R_API int r_num_to_ternary(char *out, ut64 num) {
 	if (out == NULL) {
 		return false;
 	}

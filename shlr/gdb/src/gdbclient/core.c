@@ -233,8 +233,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		}
 	}
 	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
-		ret = gdbr_connect_lldb (g);
-		goto end;
+		if ((ret = gdbr_connect_lldb (g)) < 0) {
+			goto end;
+		}
 	}
 	// Query the thread / process id
 	g->stub_features.qC = true;
@@ -249,7 +250,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	// Check if vCont is supported
 	gdbr_check_vcont (g);
 	// Set pid/thread for operations other than "step" and "continue"
-	if (gdbr_select (g, g->pid, 0) < 0) {
+	if (gdbr_select (g, g->pid, g->tid) < 0) {
 		// return -1;
 	}
 	// Set thread for "step" and "continue" operations

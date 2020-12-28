@@ -3,6 +3,15 @@
 
 //TODO test r_str_chop_path
 
+bool test_r_str_wrap(void) {
+	char *s = r_str_wrap ("hello world\nhow are you\n", 5);
+	char *res = strdup ("hello \nworld\nhow ar\ne you\n");
+	mu_assert_streq (s, res, "error, invalid string wrapping");
+	free (s);
+	free (res);
+	mu_end;
+}
+
 bool test_r_str_replace_char_once(void) {
 	char* str = strdup ("hello world");
 	(void) r_str_replace_char_once (str, 'l', 'x');
@@ -488,6 +497,7 @@ bool test_r_str_encoded_json(void) {
 }
 
 bool all_tests () {
+	mu_run_test (test_r_str_wrap);
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
 	mu_run_test (test_r_str_replace_char);

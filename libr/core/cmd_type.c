@@ -491,22 +491,30 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 			if (var2) {
 				char *val = sdb_array_get (TDB, var2, 0, NULL);
 				if (val) {
+					char *arr = sdb_array_get (TDB, var2, 2, NULL);
+					int arrnum = atoi (arr);
+					free (arr);
 					if (multiline) {
 						r_cons_printf ("\t%s", val);
 						if (p && p[0] != '\0') {
 							r_cons_printf ("%s%s", strstr (val, " *")? "": " ", p);
+							if (arrnum) {
+								r_cons_printf ("[%d]", arrnum);
+							}
 						}
+						r_cons_println (";");
 					} else {
-						r_cons_printf ("%s%s %s;", space, val, p);
+						r_cons_printf ("%s%s %s", space, val, p);
+						if (arrnum) {
+							r_cons_printf ("[%d]", arrnum);
+						}
+						r_cons_print (";");
 						space = " ";
 					}
+					free (val);
 				}
-				if (multiline) {
-					r_cons_println (";");
-				}
-				free (val);
+				free (var2);
 			}
-			free (var2);
 			free (p);
 		}
 		free (var);
@@ -609,7 +617,7 @@ static void printFunctionType(RCore *core, const char *input) {
 	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
 	pj_ks (pj, "name", name);
 	const char *ret_type = sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0);
-	pj_ks (pj, "ret", ret_type? ret_type: "void");
+	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < args; i++) {
@@ -667,6 +675,7 @@ static bool print_link_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
+//TODO PJ
 static bool print_link_json_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
 	return true;
@@ -689,6 +698,7 @@ static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
+//TODO PJ
 static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
@@ -1046,7 +1056,8 @@ static int cmd_type(void *data, const char *input) {
 			print_keys (TDB, core, stdifunion, printkey_cb, false);
 			break;
 		}
-	} break;
+		break;
+	}
 	case 'k': // "tk"
 		res = (input[1] == ' ')
 			? sdb_querys (TDB, NULL, -1, input + 2)
@@ -1144,8 +1155,9 @@ static int cmd_type(void *data, const char *input) {
 				print_struct_union_list_json (TDB, stdifstruct);
 			}
 			break;
-		}
-	} break;
+		} // end of switch (input[1])
+		break;
+	}
 	case 'e': { // "te"
 		char *res = NULL, *temp = strchr (input, ' ');
 		Sdb *TDB = core->anal->sdb_types;
@@ -1263,15 +1275,17 @@ static int cmd_type(void *data, const char *input) {
 			}
 			free (name);
 			ls_free (l);
-		} break;
+			break;
 		}
+		} // end of switch (input[1])
 		free (name);
 		if (res) {
 			r_cons_println (res);
 		} else if (member_name) {
 			eprintf ("Invalid enum member\n");
 		}
-	} break;
+		break;
+	}
 	case ' ':
 		showFormat (core, input + 1, 0);
 		break;
@@ -1489,7 +1503,8 @@ static int cmd_type(void *data, const char *input) {
 			eprintf (" tx             list functions and the types they use\n");
 			break;
 		}
-	} break;
+		break;
+	}
 	// ta: moved to anal hints (aht)- just for tail, at the moment
 	case 'a': // "ta"
 		switch (input[1]) {
@@ -1499,7 +1514,8 @@ static int cmd_type(void *data, const char *input) {
 			} else {
 				eprintf ("Usage: tail [number] [file]\n");
 			}
-		} break;
+			break;
+		}
 		default:
 			eprintf ("[WARNING] \"ta\" is deprecated. Use \"aht\" instead.\n");
 		}
@@ -1793,7 +1809,8 @@ static int cmd_type(void *data, const char *input) {
 			eprintf ("This is not an typedef\n");
 		}
 		free (s);
-	} break;
+		break;
+	}
 	case '?':
 		show_help (core);
 		break;

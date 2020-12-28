@@ -40,7 +40,7 @@ typedef int (*RPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RPrintSectionGet)(void *user, ut64 addr);
 typedef const char *(*RPrintColorFor)(void *user, ut64 addr, bool verbose);
-typedef char *(*RPrintHasRefs)(void *user, ut64 addr, bool verbose);
+typedef char *(*RPrintHasRefs)(void *user, ut64 addr, int mode);
 
 typedef struct r_print_zoom_t {
 	ut8 *buf;
@@ -128,6 +128,7 @@ typedef struct r_print_t {
 	// HACK: Used to temporarily disable the progress bar when it doesn't make sense to have it,
 	// eg. when setting the default flag tags on startup. Does not override scr.progressbar.
 	bool enable_progressbar;
+	RCharset *charset;
 } RPrint;
 
 #ifdef R_API

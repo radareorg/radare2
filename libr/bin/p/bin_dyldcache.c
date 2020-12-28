@@ -283,7 +283,7 @@ static void r_dyld_locsym_entries_by_offset(RDyldCache *cache, RList *symbols, H
 		for (j = 0; j != entry->nlistCount; j++) {
 			struct MACH0_(nlist) *nlist = &locsym->nlists[j + entry->nlistStartIndex];
 			bool found;
-			const char *key = sdb_fmt ("%"PFMT64x, nlist->n_value);
+			const char *key = sdb_fmt ("%"PFMT64x, (ut64)nlist->n_value);
 			ht_pp_find (hash, key, &found);
 			if (found) {
 				continue;
@@ -2023,7 +2023,7 @@ static void header(RBinFile *bf) {
 	}
 
 	pj_end (pj);
-	p (pj_string (pj));
+	p ("%s", pj_string (pj));
 
 beach:
 	pj_free (pj);

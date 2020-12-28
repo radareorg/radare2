@@ -8,7 +8,7 @@ static char *hack_handle_dp_imm(ut32 insn) {
 		const bool sf = (insn >> 31) & 0x1;
 		const bool op = (insn >> 30) & 0x1;
 		const bool S = (insn >> 29) & 0x1;
-		const bool o2 = (insn >> 2) & 0x1;
+		const bool o2 = (insn >> 22) & 0x1;
 		if (sf && !S && !o2) {
 			if (op) {
 				mnemonic = "subg";
@@ -221,26 +221,26 @@ static int hackyArmAsm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char *buf_asm = NULL;
     // Hacky support for ARMv8.5
 	if (a->bits == 64 && len >= 4) {
-		ut32 *insn = (ut32 *)buf;
-		int insn_class = (*insn >> 25) & 0xf;
+		ut32 insn = r_read_ble32 (buf, a->big_endian);
+		int insn_class = (insn >> 25) & 0xf;
 		switch (insn_class) {
 		// Data Processing -- Register
 		case 5:
 		case 13:
 			// irg, subp, gmi, subps
-			buf_asm = hack_handle_dp_reg (*insn);
+			buf_asm = hack_handle_dp_reg (insn);
 			break;
 		// Data Processing -- Immediate
 		case 8:
 		case 9:
 			// addg, subg
-			buf_asm = hack_handle_dp_imm (*insn);
+			buf_asm = hack_handle_dp_imm (insn);
 			break;
 		// Branches, Exception generating, and System instructions
 		case 10:
 		case 11:
 			// bti
-			buf_asm = hack_handle_br_exc_sys (*insn);
+			buf_asm = hack_handle_br_exc_sys (insn);
 			break;
 		// Loads and Stores
 		case 4:
@@ -248,7 +248,7 @@ static int hackyArmAsm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		case 12:
 		case 14:
 			// stg, stzgm, ldg, stzg, st2g, stgm, stz2g, ldgm, stgp
-			buf_asm = hack_handle_ldst (*insn);
+			buf_asm = hack_handle_ldst (insn);
 			break;
 		default:
 			break;

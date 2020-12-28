@@ -244,14 +244,14 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 				pj_i (pj, 32);
 				pj_i (pj, 64);
 				pj_end (pj);
-				pj_ks (pj, "license", h->license? h->license: "unknown");
+				pj_ks (pj, "license", r_str_get_fail (h->license, "unknown"));
 				pj_ks (pj, "description", h->desc);
 				pj_ks (pj, "features", feat);
 				pj_end (pj);
 			} else {
 				printf ("%s%s  %-9s  %-11s %-7s %s",
 					feat, feat2, bits, h->name,
-					h->license? h->license: "unknown", h->desc);
+					r_str_get_fail (h->license, "unknown"), h->desc);
 				if (h->author) {
 					printf (" (by %s)", h->author);
 				}

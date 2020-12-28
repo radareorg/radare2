@@ -11,7 +11,7 @@ LINK=-lm
 endif
 endif
 
-OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o
+OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o charset.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
 OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o donut.o print_code.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
@@ -21,7 +21,7 @@ OBJS+=seven.o randomart.o zip.o debruijn.o log.o getopt.o table.o
 OBJS+=utf8.o utf16.o utf32.o strbuf.o lib.o name.o spaces.o signal.o syscmd.o
 OBJS+=udiff.o bdiff.o stack.o queue.o tree.o idpool.o assert.o
 OBJS+=punycode.o pkcs7.o x509.o asn1.o astr.o json_parser.o json_indent.o skiplist.o
-OBJS+=pj.o rbtree.o intervaltree.o qrcode.o vector.o str_constpool.o str_trim.o
+OBJS+=pj.o rbtree.o intervaltree.o qrcode.o vector.o skyline.o str_constpool.o str_trim.o
 OBJS+=ascii_table.o protobuf.o graph_drawable.o
 OBJS+=annotated_code.o
 
@@ -36,6 +36,8 @@ else
 endif
 
 include deps.mk
+
+CWD=$(shell pwd)
 
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
@@ -65,10 +67,15 @@ ifeq (${BUILD_OS},haiku)
 endif
 
 EXTRA_PRE+=spp_config
+EXTRA_PRE+=charsets
 
 include ../rules.mk
 include sdb.mk
 include spp.mk
+
+charsets:
+	$(MAKE) -C d
+.PHONY: charsets
 
 sync-regex regex-sync:
 	-rm -rf src/

@@ -8,6 +8,7 @@
 #include "r_util/r_str_util.h"
 #include <r_userconf.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <assert.h>
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
@@ -70,6 +71,7 @@
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64
+
 
 // HACK to fix capstone-android-mips build
 #undef mips
@@ -262,7 +264,7 @@ extern "C" {
 #define __packed __attribute__((__packed__))
 #endif
 
-typedef int (*PrintfCallback)(const char *str, ...);
+typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
 
 /* compile-time introspection helpers */
 #define CTO(y,z) ((size_t) &((y*)0)->z)

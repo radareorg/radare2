@@ -17,20 +17,20 @@
 #define INSOP64(x) insn->detail->arm64.operands[x]
 
 /* arm32 */
-#define REG(x) r_str_get (cs_reg_name (*handle, insn->detail->arm.operands[x].reg))
-#define REG64(x) r_str_get (cs_reg_name (*handle, insn->detail->arm64.operands[x].reg))
+#define REG(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm.operands[x].reg))
+#define REG64(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm64.operands[x].reg))
 #define REGID64(x) insn->detail->arm64.operands[x].reg
 #define REGID(x) insn->detail->arm.operands[x].reg
 #define IMM(x) (ut32)(insn->detail->arm.operands[x].imm)
 #define INSOP(x) insn->detail->arm.operands[x]
-#define MEMBASE(x) r_str_get (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.base))
-#define MEMBASE64(x) r_str_get (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.base))
+#define MEMBASE(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.base))
+#define MEMBASE64(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.base))
 #define REGBASE(x) insn->detail->arm.operands[x].mem.base
 #define REGBASE64(x) insn->detail->arm64.operands[x].mem.base
 // s/index/base|reg/
-#define MEMINDEX(x) r_str_get (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.index))
+#define MEMINDEX(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm.operands[x].mem.index))
 #define HASMEMINDEX(x) (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
-#define MEMINDEX64(x) r_str_get (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
+#define MEMINDEX64(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) (insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
@@ -63,8 +63,6 @@
 #define ISPREINDEX64() ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64()))
 #define ISPOSTINDEX64() ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64()))
 
-static RRegItem base_regs[4];
-static RRegItem regdelta_regs[4];
 static HtUU *ht_itblock = NULL;
 static HtUU *ht_it = NULL;
 
@@ -227,131 +225,135 @@ static const char *cc_name(arm_cc cc) {
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	r_strbuf_init (buf);
-	r_strbuf_append (buf, "{");
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+	pj_o (pj);
+	pj_ka (pj, "operands");
 	cs_arm *x = &insn->detail->arm;
-	r_strbuf_append (buf, "\"operands\":[");
 	for (i = 0; i < x->op_count; i++) {
-		cs_arm_op *op = &x->operands[i];
-		if (i > 0) {
-			r_strbuf_append (buf, ",");
-		}
-		r_strbuf_append (buf, "{");
+		cs_arm_op *op = x->operands + i;
+		pj_o (pj);
 		switch (op->type) {
 		case ARM_OP_REG:
-			r_strbuf_append (buf, "\"type\":\"reg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case ARM_OP_IMM:
-			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", (st32)op->imm);
+			pj_ks (pj, "type", "imm");
+			pj_ki (pj, "value", op->imm);
 			break;
 		case ARM_OP_MEM:
-			r_strbuf_append (buf, "\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.base != ARM_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
 			if (op->mem.index != ARM_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
+				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
 			}
-			r_strbuf_appendf (buf, ",\"scale\":%d", op->mem.scale);
-			r_strbuf_appendf (buf, ",\"disp\":%d", op->mem.disp);
+			pj_ki (pj, "scale", op->mem.scale);
+			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		case ARM_OP_FP:
-			r_strbuf_append (buf, "\"type\":\"fp\"");
-			r_strbuf_appendf (buf, ",\"value\":%lf", op->fp);
+			pj_ks (pj, "type", "fp");
+			pj_kd (pj, "value", op->fp);
 			break;
 		case ARM_OP_CIMM:
-			r_strbuf_append (buf, "\"type\":\"cimm\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", (st32)op->imm);
+			pj_ks (pj, "type", "cimm");
+			pj_ki (pj, "value", op->imm);
 			break;
 		case ARM_OP_PIMM:
-			r_strbuf_append (buf, "\"type\":\"pimm\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", (st32)op->imm);
+			pj_ks (pj, "type", "pimm");
+			pj_ki (pj, "value", op->imm);
 			break;
 		case ARM_OP_SETEND:
-			r_strbuf_append (buf, "\"type\":\"setend\"");
+			pj_ks (pj, "type", "setend");
 			switch (op->setend) {
 			case ARM_SETEND_BE:
-				r_strbuf_append (buf, ",\"value\":\"be\"");
+				pj_ks (pj, "value", "be");
 				break;
 			case ARM_SETEND_LE:
-				r_strbuf_append (buf, ",\"value\":\"le\"");
+				pj_ks (pj, "value", "le");
 				break;
 			default:
-				r_strbuf_append (buf, ",\"value\":\"invalid\"");
+				pj_ks (pj, "value", "invalid");
 				break;
 			}
 			break;
 		case ARM_OP_SYSREG:
-			r_strbuf_append (buf, "\"type\":\"sysreg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "sysreg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		default:
-			r_strbuf_append (buf, ",\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
 		if (op->shift.type != ARM_SFT_INVALID) {
-			r_strbuf_append (buf, ",\"shift\":{");
+			pj_ko (pj, "shift");
 			switch (op->shift.type) {
 			case ARM_SFT_ASR:
 			case ARM_SFT_LSL:
 			case ARM_SFT_LSR:
 			case ARM_SFT_ROR:
 			case ARM_SFT_RRX:
-				r_strbuf_appendf (buf, "\"type\":\"%s\"", shift_type_name (op->shift.type));
-				r_strbuf_appendf (buf, ",\"value\":\"%u\"", op->shift.value);
+				pj_ks (pj, "type", shift_type_name (op->shift.type));
+				pj_kn (pj, "value", (ut64)op->shift.value);
 				break;
 			case ARM_SFT_ASR_REG:
 			case ARM_SFT_LSL_REG:
 			case ARM_SFT_LSR_REG:
 			case ARM_SFT_ROR_REG:
 			case ARM_SFT_RRX_REG:
-				r_strbuf_appendf (buf, "\"type\":\"%s\"", shift_type_name (op->shift.type));
-				r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->shift.value));
+				pj_ks (pj, "type", shift_type_name (op->shift.type));
+				pj_ks (pj, "value", cs_reg_name (handle, op->shift.value));
 				break;
 			default:
 				break;
 			}
-			r_strbuf_append (buf, "}");
+			pj_end (pj); /* o shift */
 		}
 		if (op->vector_index != -1) {
-			r_strbuf_appendf (buf, ",\"vector_index\":\"%d\"", op->vector_index);
+			pj_ki (pj, "vector_index", op->vector_index);
 		}
 		if (op->subtracted) {
-			r_strbuf_append (buf, ",\"subtracted\":true");
+			pj_kb (pj, "subtracted", true);
 		}
-		r_strbuf_append (buf, "}");
+		pj_end (pj); /* o operand */
 	}
-	r_strbuf_append (buf, "]");
+	pj_end (pj); /* a operands */
 	if (x->usermode) {
-		r_strbuf_append (buf, ",\"usermode\":true");
+		pj_kb (pj, "usermode", true);
 	}
 	if (x->update_flags) {
-		r_strbuf_append (buf, ",\"update_flags\":true");
+		pj_kb (pj, "update_flags", true);
 	}
 	if (x->writeback) {
-		r_strbuf_append (buf, ",\"writeback\":true");
+		pj_kb (pj, "writeback", true);
 	}
 	if (x->vector_size) {
-		r_strbuf_appendf (buf, ",\"vector_size\":%d", x->vector_size);
+		pj_ki (pj, "vector_size", x->vector_size);
 	}
 	if (x->vector_data != ARM_VECTORDATA_INVALID) {
-		r_strbuf_appendf (buf, ",\"vector_data\":\"%s\"", vector_data_type_name (x->vector_data));
+		pj_ks (pj, "vector_data", vector_data_type_name (x->vector_data));
 	}
 	if (x->cps_mode != ARM_CPSMODE_INVALID) {
-		r_strbuf_appendf (buf, ",\"cps_mode\":%d", x->cps_mode);
+		pj_ki (pj, "cps_mode", x->cps_mode);
 	}
 	if (x->cps_flag != ARM_CPSFLAG_INVALID) {
-		r_strbuf_appendf (buf, ",\"cps_flag\":%d", x->cps_flag);
+		pj_ki (pj, "cps_flag", x->cps_flag);
 	}
 	if (x->cc != ARM_CC_INVALID && x->cc != ARM_CC_AL) {
-		r_strbuf_appendf (buf, ",\"cc\":\"%s\"", cc_name (x->cc));
+		pj_ks (pj, "cc", cc_name (x->cc));
 	}
 	if (x->mem_barrier != ARM_MB_INVALID) {
-		r_strbuf_appendf (buf, ",\"mem_barrier\":%d", x->mem_barrier - 1);
+		pj_ki (pj, "mem_barrier", x->mem_barrier - 1);
 	}
-	r_strbuf_append (buf, "}");
+	pj_end (pj);
+
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int arm64_reg_width(int reg) {
@@ -509,134 +511,138 @@ static const char *vess_name(arm64_vess vess) {
 
 static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	r_strbuf_init (buf);
-	r_strbuf_append (buf, "{");
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+	pj_o (pj);
+	pj_ka (pj, "operands");
 	cs_arm64 *x = &insn->detail->arm64;
-	r_strbuf_append (buf, "\"operands\":[");
 	for (i = 0; i < x->op_count; i++) {
-		cs_arm64_op *op = &x->operands[i];
-		if (i > 0) {
-			r_strbuf_append (buf, ",");
-		}
-		r_strbuf_append (buf, "{");
+		cs_arm64_op *op = x->operands + i;
+		pj_o (pj);
 		switch (op->type) {
 		case ARM64_OP_REG:
-			r_strbuf_append (buf, "\"type\":\"reg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
 		case ARM64_OP_REG_MRS:
-			r_strbuf_append (buf, "\"type\":\"reg_mrs\"");
+			pj_ks (pj, "type", "reg_mrs");
 			// TODO value
 			break;
 		case ARM64_OP_REG_MSR:
-			r_strbuf_append (buf, "\"type\":\"reg_msr\"");
+			pj_ks (pj, "type", "reg_msr");
 			// TODO value
 			break;
 		case ARM64_OP_IMM:
-			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
+			pj_ks (pj, "type", "imm");
+			pj_kN (pj, "value", op->imm);
 			break;
 		case ARM64_OP_MEM:
-			r_strbuf_append (buf, "\"type\":\"mem\"");
+			pj_ks (pj, "type", "mem");
 			if (op->mem.base != ARM64_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
 			if (op->mem.index != ARM64_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"index\":\"%s\"", cs_reg_name (handle, op->mem.index));
+				pj_ks (pj, "index", cs_reg_name (handle, op->mem.index));
 			}
-			r_strbuf_appendf (buf, ",\"disp\":%d", op->mem.disp);
+			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		case ARM64_OP_FP:
-			r_strbuf_append (buf, "\"type\":\"fp\"");
-			r_strbuf_appendf (buf, ",\"value\":%lf", op->fp);
+			pj_ks (pj, "type", "fp");
+			pj_kd (pj, "value", op->fp);
 			break;
 		case ARM64_OP_CIMM:
-			r_strbuf_append (buf, "\"type\":\"cimm\"");
-			r_strbuf_appendf (buf, ",\"value\":%" PFMT64d, (st64)op->imm);
+			pj_ks (pj, "type", "cimm");
+			pj_kN (pj, "value", op->imm);
 			break;
 		case ARM64_OP_PSTATE:
-			r_strbuf_append (buf, "\"type\":\"pstate\"");
+			pj_ks (pj, "type", "pstate");
 			switch (op->pstate) {
 			case ARM64_PSTATE_SPSEL:
-				r_strbuf_append (buf, ",\"value\":\"spsel\"");
+				pj_ks (pj, "value", "spsel");
 				break;
 			case ARM64_PSTATE_DAIFSET:
-				r_strbuf_append (buf, ",\"value\":\"daifset\"");
+				pj_ks (pj, "value", "daifset");
 				break;
 			case ARM64_PSTATE_DAIFCLR:
-				r_strbuf_append (buf, ",\"value\":\"daifclr\"");
+				pj_ks (pj, "value", "daifclr");
 				break;
 			default:
-				r_strbuf_appendf (buf, ",\"value\":%d", op->pstate);
+				pj_ki (pj, "value", op->pstate);
 			}
 			break;
 		case ARM64_OP_SYS:
-			r_strbuf_append (buf, "\"type\":\"sys\"");
-			r_strbuf_appendf (buf, ",\"value\":%u", op->sys);
+			pj_ks (pj, "type", "sys");
+			pj_kn (pj, "value", (ut64)op->sys);
 			break;
 		case ARM64_OP_PREFETCH:
-			r_strbuf_append (buf, "\"type\":\"prefetch\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", op->prefetch - 1);
+			pj_ks (pj, "type", "prefetch");
+			pj_ki (pj, "value", op->prefetch - 1);
 			break;
 		case ARM64_OP_BARRIER:
-			r_strbuf_append (buf, "\"type\":\"prefetch\"");
-			r_strbuf_appendf (buf, ",\"value\":%d", op->barrier - 1);
+			pj_ks (pj, "type", "prefetch");
+			pj_ki (pj, "value", op->barrier - 1);
 			break;
 		default:
-			r_strbuf_append (buf, ",\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
 		if (op->shift.type != ARM64_SFT_INVALID) {
-			r_strbuf_append (buf, ",\"shift\":{");
+			pj_ko (pj, "shift");
 			switch (op->shift.type) {
 			case ARM64_SFT_LSL:
-				r_strbuf_append (buf, "\"type\":\"lsl\"");
+				pj_ks (pj, "type", "lsl");
 				break;
 			case ARM64_SFT_MSL:
-				r_strbuf_append (buf, "\"type\":\"msl\"");
+				pj_ks (pj, "type", "msl");
 				break;
 			case ARM64_SFT_LSR:
-				r_strbuf_append (buf, "\"type\":\"lsr\"");
+				pj_ks (pj, "type", "lsr");
 				break;
 			case ARM64_SFT_ASR:
-				r_strbuf_append (buf, "\"type\":\"asr\"");
+				pj_ks (pj, "type", "asr");
 				break;
 			case ARM64_SFT_ROR:
-				r_strbuf_append (buf, "\"type\":\"ror\"");
+				pj_ks (pj, "type", "ror");
 				break;
 			default:
 				break;
 			}
-			r_strbuf_appendf (buf, ",\"value\":\"%u\"", op->shift.value);
-			r_strbuf_append (buf, "}");
+			pj_kn (pj, "value", (ut64)op->shift.value);
+			pj_end (pj);
 		}
 		if (op->ext != ARM64_EXT_INVALID) {
-			r_strbuf_appendf (buf, ",\"ext\":\"%s\"", extender_name (op->ext));
+			pj_ks (pj, "ext", extender_name (op->ext));
 		}
 		if (op->vector_index != -1) {
-			r_strbuf_appendf (buf, ",\"vector_index\":\"%d\"", op->vector_index);
+			pj_ki (pj, "vector_index", op->vector_index);
 		}
 		if (op->vas != ARM64_VAS_INVALID) {
-			r_strbuf_appendf (buf, ",\"vas\":\"%s\"", vas_name (op->vas));
+			pj_ks (pj, "vas", vas_name (op->vas));
 		}
 #if CS_API_MAJOR == 4
 		if (op->vess != ARM64_VESS_INVALID) {
-			r_strbuf_appendf (buf, ",\"vess\":\"%s\"", vess_name (op->vess));
+			pj_ks (pj, "vess", vess_name (op->vess));
 		}
 #endif
-		r_strbuf_append (buf, "}");
+		pj_end (pj);
 	}
-	r_strbuf_append (buf, "]");
+	pj_end (pj);
 	if (x->update_flags) {
-		r_strbuf_append (buf, ",\"update_flags\":true");
+		pj_kb (pj, "update_flags", true);
 	}
 	if (x->writeback) {
-		r_strbuf_append (buf, ",\"writeback\":true");
+		pj_kb (pj, "writeback", true);
 	}
 	if (x->cc != ARM64_CC_INVALID && x->cc != ARM64_CC_AL && x->cc != ARM64_CC_NV) {
-		r_strbuf_appendf (buf, ",\"cc\":\"%s\"", cc_name64 (x->cc));
+		pj_ks (pj, "cc", cc_name64 (x->cc));
 	}
-	r_strbuf_append (buf, "}");
+	pj_end (pj);
+
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 static int decode_sign_ext(arm64_extender extender) {
@@ -837,12 +843,12 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 		if (ISSHIFTED (n)) {
 			sprintf (buf, "%u,%s,%s",
 			LSHIFT2 (n),
-			r_str_get (cs_reg_name (*handle,
+			r_str_getf (cs_reg_name (*handle,
 				insn->detail->arm.operands[n].reg)),
 			DECODE_SHIFT (n));
 		} else {
 			sprintf (buf, "%s",
-			r_str_get (cs_reg_name (*handle,
+			r_str_getf (cs_reg_name (*handle,
 				insn->detail->arm.operands[n].reg)));
 		}
 		break;
@@ -1275,26 +1281,30 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			} else {
 				// I really don't like the DUP / tmp approach but its better than doubling the calculation
 				if (LSHIFT2_64(1)) {
-					r_strbuf_appendf (&op->esil, "%s,%d,%"PFMT64d",%s,+,DUP,tmp,=,[%d],%s,=",
-							MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%s,%d,%"PFMT64d",%s,+",
+							MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1));
 				} else if ((int)MEMDISP64(1) < 0){
-					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,-,DUP,tmp,=,[%d],%s,=",
-							-(st64)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,-",
+							-(st64)MEMDISP64(1), MEMBASE64(1));
 				} else {
-					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,+,DUP,tmp,=,[%d],%s,=",
-							MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,+",
+							MEMDISP64(1), MEMBASE64(1));
 				}
+
+				r_strbuf_append (&op->esil, ",DUP,tmp,=");
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
 				}
-				else if (ISPOSTINDEX32()) {
+
+				r_strbuf_appendf (&op->esil, ",[%d],%s,=", size, REG64 (0));
+
+				if (ISPOSTINDEX32()) {
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
-					}
-					else {
+					} else {
 						r_strbuf_appendf (&op->esil, ",tmp,%"PFMT64d",+,%s,=", IMM64(2), REG64(1));
 					}
 				}
@@ -1364,26 +1374,30 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				}
 			} else {
 				if (LSHIFT2_64(1)) {
-					r_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64d",%s,+,DUP,tmp,=,[%d],~,%s,=",
-							size*8, MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64d",%s",
+							size*8, MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1));
 				} else if ((int)MEMDISP64(1) < 0){
-					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,-,DUP,tmp,=,[%d],~,%s,=",
-							size*8, -(st64)MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,-",
+							size*8, -(st64)MEMDISP64(1), MEMBASE64(1));
 				} else {
-					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,+,DUP,tmp,=,[%d],~,%s,=",
-							size*8, MEMDISP64(1), MEMBASE64(1), size, REG64(0));
+					r_strbuf_appendf (&op->esil, "%d,%"PFMT64d",%s,+",
+							size*8, MEMDISP64(1), MEMBASE64(1));
 				}
+
+				r_strbuf_append (&op->esil, ",DUP,tmp,=");
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
 				}
-				else if (ISPOSTINDEX32()) {
+
+				r_strbuf_appendf (&op->esil, ",[%d],~,%s,=", size, REG64(0));
+				
+				if (ISPOSTINDEX32()) {
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
-					}
-					else {
+					} else {
 						r_strbuf_appendf (&op->esil, ",tmp,%"PFMT64d",+,%s,=", IMM64(2), REG64(1));
 					}
 				}
@@ -1489,26 +1503,30 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				}
 			} else {
 				if (LSHIFT2_64(1)) {
-					r_strbuf_appendf (&op->esil, "%s,%s,%d,%"PFMT64d",%s,+,DUP,tmp,=,=[%d]",
-							REG64(0), MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1), size);
-				} else if ((int)MEMDISP64(1) < 0){
-					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,-,DUP,tmp,=,=[%d]",
-							REG64(0), -(st64)MEMDISP64(1), MEMBASE64(1), size);
+					r_strbuf_appendf (&op->esil, "%s,%s,%d,%"PFMT64d",%s,+",
+							REG64(0), MEMBASE64(1), LSHIFT2_64(1), MEMDISP64(1), DECODE_SHIFT64(1));
+				} else if ((int)MEMDISP64 (1) < 0) {
+					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,-",
+							REG64(0), -(st64)MEMDISP64(1), MEMBASE64(1));
 				} else {
-					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,+,DUP,tmp,=,=[%d]",
-							REG64(0), MEMDISP64(1), MEMBASE64(1), size);
+					r_strbuf_appendf (&op->esil, "%s,%"PFMT64d",%s,+",
+							REG64(0), MEMDISP64(1), MEMBASE64(1));
 				}
+
+				r_strbuf_append (&op->esil, ",DUP,tmp,=");
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
 				if (ISPREINDEX32()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64(1));
 				}
-				else if (ISPOSTINDEX32()) {
+
+				r_strbuf_appendf (&op->esil, ",=[%d]", size);
+
+				if (ISPOSTINDEX32()) {
 					if (ISREG64(2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64(2), REG64(1));
-					}
-					else {
+					} else {
 						r_strbuf_appendf (&op->esil, ",tmp,%"PFMT64d",+,%s,=", IMM64(2), REG64(1));
 					}
 				}
@@ -2323,7 +2341,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_TST:
-		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,:=", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "0,%s,%s,&,==", ARG(1), ARG(0));
 		break;
 	case ARM_INS_LDRD:
 	case ARM_INS_LDRB:
@@ -2752,6 +2770,20 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
 	case ARM64_INS_ADD:
+		if (ISREG64 (0) && REGID64 (0) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			if (ISIMM64 (1)) {
+				//add sp, 0x54
+				op->stackptr = -IMM (1);
+			} else if (ISIMM64 (2) && ISREG64 (1) && REGID64 (1) == ARM64_REG_SP) {
+				//add sp, sp, 0x10
+				op->stackptr = -IMM64 (2);
+			}
+			op->val = op->stackptr;
+		} else {
+			op->stackop = R_ANAL_STACK_RESET;
+			op->stackptr = 0;
+		}
 		op->cycles = 1;
 		/* fallthru */
 	case ARM64_INS_ADC:
@@ -2899,10 +2931,18 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_STLXRH:
 	case ARM64_INS_STXRB:
 		op->type = R_ANAL_OP_TYPE_STORE;
-		if (REGBASE64(1) == ARM64_REG_X29) {
-			op->stackop = R_ANAL_STACK_SET;
-			op->stackptr = 0;
-			op->ptr = -MEMDISP64(1);
+		if (ISPREINDEX64 () && REGBASE64 (2) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -MEMDISP64 (2);
+		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM64 (3);
+		} else if (ISPREINDEX32 () && REGBASE64 (1) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -MEMDISP64 (1);
+		} else if (ISPOSTINDEX32 () && REGID64 (1) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM64 (2);
 		}
 		break;
 	case ARM64_INS_LDUR:
@@ -2917,6 +2957,19 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDPSW:
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
+		if (ISPREINDEX64 () && REGBASE64 (2) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -MEMDISP64 (2);
+		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM64 (3);
+		} else if (ISPREINDEX32 () && REGBASE64 (1) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -MEMDISP64 (1);
+		} else if (ISPOSTINDEX32 () && REGID64 (1) == ARM64_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -IMM64 (2);
+		}
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			if (insn->detail->arm.cc != ARM_CC_AL) {
@@ -3112,13 +3165,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 2;
-		op->ireg = r_str_get (cs_reg_name (handle, INSOP (0).mem.index));
+		op->ireg = r_str_getf (cs_reg_name (handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_TBB: // byte jump table
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->cycles = 2;
 		op->ptrsize = 1;
-		op->ireg = r_str_get (cs_reg_name (handle, INSOP (0).mem.index));
+		op->ireg = r_str_getf (cs_reg_name (handle, INSOP (0).mem.index));
 		break;
 	case ARM_INS_PLD:
 		op->type = R_ANAL_OP_TYPE_LEA; // not really a lea, just a prefetch
@@ -3188,6 +3241,17 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case ARM_INS_ADD:
+		if (ISREG (0) && REGID (0) == ARM_REG_SP) {
+			op->stackop = R_ANAL_STACK_INC;
+			if (ISIMM (1)) {
+				//add sp, 0x54
+				op->stackptr = -IMM (1);
+			} else if (ISIMM (2) && ISREG (1) && REGID (1) == ARM_REG_SP) {
+				//add sp, sp, 0x10
+				op->stackptr = -IMM (2);
+			}
+			op->val = op->stackptr;
+		}
 	case ARM_INS_ADC:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC) {
@@ -3199,7 +3263,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
 				op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
 				op->refptr = 4;
-				op->reg = r_str_get (cs_reg_name (handle, INSOP (2).reg));
+				op->reg = r_str_getf (cs_reg_name (handle, INSOP (2).reg));
 				break;
 			}
 		}
@@ -3290,7 +3354,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (ISIMM(1)) {
 			op->ptr = IMM(1);
 		}
-		op->reg = r_str_get (cs_reg_name (handle, INSOP (0).reg));
+		op->reg = r_str_getf (cs_reg_name (handle, INSOP (0).reg));
 		/* fall-thru */
 	case ARM_INS_VCMP:
 		op->type = R_ANAL_OP_TYPE_CMP;
@@ -3398,7 +3462,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
-				op->ireg = r_str_get (cs_reg_name (handle, INSOP (1).mem.index));
+				op->ireg = r_str_getf (cs_reg_name (handle, INSOP (1).mem.index));
 				break;
 			}
 		}
@@ -3532,20 +3596,20 @@ static bool is_valid(arm_reg reg) {
 	return reg != ARM_REG_INVALID;
 }
 
-static int parse_reg_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm_op armop = INSOP (reg_num);
 	switch (armop.type) {
 	case ARM_OP_REG:
-		reg_base->name = (char *)cs_reg_name (handle, armop.reg);
+		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
 		break;
 	case ARM_OP_MEM:
 		if (is_valid (armop.mem.base) && is_valid (armop.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.base);
-			reg_delta->name = (char *)cs_reg_name (handle, armop.mem.index);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
+			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		} else if (is_valid (armop.mem.base)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.base);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
 		} else if (is_valid (armop.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.index);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		}
 		break;
 	default:
@@ -3568,27 +3632,27 @@ static char *reg_list[] = {
 	"x30"
 };
 
-static int parse_reg64_name(RRegItem *reg_base, RRegItem *reg_delta, csh handle, cs_insn *insn, int reg_num) {
+static int parse_reg64_name(RReg *reg, RRegItem **reg_base, RRegItem **reg_delta, csh handle, cs_insn *insn, int reg_num) {
 	cs_arm64_op armop = INSOP64 (reg_num);
 	switch (armop.type) {
 	case ARM64_OP_REG:
-		reg_base->name = (char *)cs_reg_name (handle, armop.reg);
+		*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.reg), R_REG_TYPE_ALL);
 		break;
 	case ARM64_OP_MEM:
 		if (is_valid64 (armop.mem.base) && is_valid64 (armop.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.base);
-			reg_delta->name = (char *)cs_reg_name (handle, armop.mem.index);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
+			*reg_delta = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		} else if (is_valid64 (armop.mem.base)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.base);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.base), R_REG_TYPE_ALL);
 		} else if (is_valid64 (armop.mem.index)) {
-			reg_base->name = (char *)cs_reg_name (handle, armop.mem.index);
+			*reg_base = r_reg_get (reg, cs_reg_name (handle, armop.mem.index), R_REG_TYPE_ALL);
 		}
 		break;
 	default:
 		break;
 	}
-	if (reg_base->name && *reg_base->name == 'w') {
-		reg_base->name = reg_list[atoi (reg_base->name + 1)];
+	if (*reg_base && *(*reg_base)->name == 'w') {
+		*reg_base = r_reg_get (reg, reg_list[atoi ((*reg_base)->name + 1)], R_REG_TYPE_ALL);
 	}
 	return 0;
 }
@@ -3615,37 +3679,42 @@ static void set_opdir(RAnalOp *op) {
         }
 }
 
-static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
+static void set_src_dst(RAnalValue *val, RReg *reg, csh *handle, cs_insn *insn, int x, int bits) {
 	cs_arm_op armop = INSOP (x);
 	cs_arm64_op arm64op = INSOP64 (x);
 	if (bits == 64) {
-		parse_reg64_name (&base_regs[x], &regdelta_regs[x], *handle, insn, x);
+		parse_reg64_name (reg, &val->reg, &val->regdelta, *handle, insn, x);
 	} else {
-		parse_reg_name (&base_regs[x], &regdelta_regs[x], *handle, insn, x);
+		parse_reg_name (reg, &val->reg, &val->regdelta, *handle, insn, x);
 	}
-	switch (armop.type) {
-	case ARM_OP_REG:
-		break;
-	case ARM_OP_MEM:
-		if (bits == 64) {
+	if (bits == 64) {
+		switch (arm64op.type) {
+		case ARM64_OP_REG:
+			break;
+		case ARM64_OP_MEM:
 			val->delta = arm64op.mem.disp;
-		} else {
+			break;
+		case ARM64_OP_IMM:
+			val->imm = arm64op.imm;
+			break;
+		default:
+			break;
+		}
+	} else {
+		switch (armop.type) {
+		case ARM_OP_REG:
+			break;
+		case ARM_OP_MEM:
 			val->mul = armop.mem.scale;
 			val->delta = armop.mem.disp;
-		}
-		val->regdelta = &regdelta_regs[x];
-		break;
-	case ARM_OP_IMM:
-		if (bits == 64) {
-			val->imm = arm64op.imm;
-		} else {
+			break;
+		case ARM_OP_IMM:
 			val->imm = armop.imm;
+			break;
+		default:
+			break;
 		}
-		break;
-	default:
-		break;
 	}
-	val->reg = &base_regs[x];
 }
 
 static void create_src_dst(RAnalOp *op) {
@@ -3653,18 +3722,12 @@ static void create_src_dst(RAnalOp *op) {
 	op->src[1] = r_anal_value_new ();
 	op->src[2] = r_anal_value_new ();
 	op->dst = r_anal_value_new ();
-	ZERO_FILL (base_regs[0]);
-	ZERO_FILL (base_regs[1]);
-	ZERO_FILL (base_regs[2]);
-	ZERO_FILL (base_regs[3]);
-	ZERO_FILL (regdelta_regs[0]);
-	ZERO_FILL (regdelta_regs[1]);
-	ZERO_FILL (regdelta_regs[2]);
-	ZERO_FILL (regdelta_regs[3]);
 }
 
-static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
+static void op_fillval (RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
+	int i, j;
+	int count = bits == 64 ? insn->detail->arm64.op_count : insn->detail->arm.op_count;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_CMP:
@@ -3686,22 +3749,54 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_ROL:
 	case R_ANAL_OP_TYPE_CAST:
-		set_src_dst (op->src[2], &handle, insn, 3, bits);
-		set_src_dst (op->src[1], &handle, insn, 2, bits);
-		set_src_dst (op->src[0], &handle, insn, 1, bits);
-		set_src_dst (op->dst, &handle, insn, 0, bits);
+#if CS_API_MAJOR > 3
+		for (i = 1; i < count; i++) {
+			if (bits == 64) {
+				cs_arm64_op arm64op = INSOP64 (i);
+				if (arm64op.access == CS_AC_WRITE) {
+					continue;
+				}
+			} else {
+				cs_arm_op armop = INSOP (i);
+
+				if (armop.access == CS_AC_WRITE) {
+					continue;
+				}
+			}
+			break;
+		}
+#endif
+		for (j = 0; j < 3; j++, i++) {
+			set_src_dst (op->src[j], anal->reg, &handle, insn, i, bits);
+		}
+		set_src_dst (op->dst, anal->reg, &handle, insn, 0, bits);
 		break;
 	case R_ANAL_OP_TYPE_STORE:
-		set_src_dst (op->dst, &handle, insn, 1, bits);
-		set_src_dst (op->src[0], &handle, insn, 0, bits);
+		if (count > 2) {
+			if (bits == 64) {
+				cs_arm64_op arm64op = INSOP64 (count - 1);
+				if (arm64op.type == ARM64_OP_IMM) {
+					count--;
+				}
+			} else {
+				cs_arm_op armop = INSOP (count - 1);
+				if (armop.type == ARM_OP_IMM) {
+					count--;
+				}
+			}
+		}
+		set_src_dst (op->dst, anal->reg, &handle, insn, --count, bits);
+		for (j = 0; j < 3 && j < count; j++) {
+			set_src_dst (op->src[j], anal->reg, &handle, insn, j, bits);
+		}
 		break;
 	default:
 		break;
 	}
 	if ((bits == 64) && HASMEMINDEX64 (1)) {
-		op->ireg = r_str_get (cs_reg_name (handle, INSOP64 (1).mem.index));
+		op->ireg = r_str_getf (cs_reg_name (handle, INSOP64 (1).mem.index));
 	} else if (HASMEMINDEX (1)) {
-		op->ireg = r_str_get (cs_reg_name (handle, INSOP (1).mem.index));
+		op->ireg = r_str_getf (cs_reg_name (handle, INSOP (1).mem.index));
 		op->scale = INSOP (1).mem.scale;
 	}
 }
@@ -3777,7 +3872,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		set_opdir (op);
 		if (mask & R_ANAL_OP_MASK_VAL) {
-			op_fillval (op, handle, insn, a->bits);
+			op_fillval (a, op, handle, insn, a->bits);
 		}
 		cs_free (insn, n);
 	}
@@ -4329,6 +4424,7 @@ static RList *anal_preludes(RAnal *anal) {
 		KW("\x00\x00\x2d\xe9", 4, "\x0f\x0f\xff\xff", 4);
 		break;
 	case 64:
+		KW ("\xf0\x0f\x00\xf8", 4, "\xf0\x0f\x00\xff", 4);
 		KW ("\xf0\x00\x00\xd1", 4, "\xf0\x00\x00\xff", 4);
 		KW ("\xf0\x00\x00\xa9", 4, "\xf0\x00\x00\xff", 4);
 		KW ("\x7f\x23\x03\xd5\xff", 5, NULL, 0);

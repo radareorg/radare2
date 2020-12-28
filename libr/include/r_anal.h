@@ -184,12 +184,6 @@ enum {
 	R_ANAL_FQUALIFIER_VIRTUAL = 5,
 };
 
-/*--------------------Function Conventions-----------*/
-//XXX don't use them in the future
-#define R_ANAL_CC_TYPE_STDCALL 0
-#define R_ANAL_CC_TYPE_PASCAL 1
-#define R_ANAL_CC_TYPE_FASTCALL 'A' // syscall
-#define R_ANAL_CC_TYPE_SYSV 8
 #define R_ANAL_CC_MAXARG 16
 
 enum {
@@ -771,6 +765,7 @@ typedef enum {
 #define ARGPREFIX "arg"
 
 typedef enum {
+	R_ANAL_VAR_ACCESS_TYPE_PTR = 0,
 	R_ANAL_VAR_ACCESS_TYPE_READ = (1 << 0),
 	R_ANAL_VAR_ACCESS_TYPE_WRITE = (1 << 1)
 } RAnalVarAccessType;
@@ -929,6 +924,7 @@ typedef struct r_anal_bb_t {
 	int parent_stackptr;
 	ut64 cmpval;
 	const char *cmpreg;
+	ut32 bbhash; // calculated with xxhash
 
 	RList *fcns;
 	RAnal *anal;
@@ -1258,13 +1254,13 @@ typedef struct r_anal_esil_cfg_t {
 	RGraph *g;
 } RAnalEsilCFG;
 
-typedef enum {
+enum {
 	R_ANAL_ESIL_DFG_BLOCK_CONST = 1,
 	R_ANAL_ESIL_DFG_BLOCK_VAR = 2,
 	R_ANAL_ESIL_DFG_BLOCK_PTR = 4,
 	R_ANAL_ESIL_DFG_BLOCK_RESULT = 8,
 	R_ANAL_ESIL_DFG_BLOCK_GENERATIVE = 16,
-} RAnalEsilDFGBlockType;
+};	//RAnalEsilDFGBlockType
 
 typedef struct r_anal_esil_dfg_t {
 	ut32 idx;
@@ -1282,7 +1278,7 @@ typedef struct r_anal_esil_dfg_node_t {
 	// add more info here
 	ut32 idx;
 	RStrBuf *content;
-	RAnalEsilDFGBlockType type;
+	ut32 /*RAnalEsilDFGBlockType*/ type;
 } RAnalEsilDFGNode;
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
@@ -1460,6 +1456,12 @@ R_API void r_anal_block_automerge(RList *blocks);
 // return true iff an instruction in the given basic block starts at the given address
 R_API bool r_anal_block_op_starts_at(RAnalBlock *block, ut64 addr);
 
+// Updates bbhash based on current bytes inside the block
+R_API void r_anal_block_update_hash(RAnalBlock *block);
+
+// returns true if a byte in the given basic block was modified
+R_API bool r_anal_block_was_modified(RAnalBlock *block);
+
 // ---------------------------------------
 
 /* function.c */
@@ -1513,6 +1515,9 @@ R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn);
 // returns whether the function contains a basic block that contains addr
 // This is completely independent of fcn->addr, which is only the entrypoint!
 R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr);
+
+// returns true if function bytes were modified
+R_API bool r_anal_function_was_modified(RAnalFunction *fcn);
 
 /* anal.c */
 R_API RAnal *r_anal_new(void);
@@ -1630,7 +1635,8 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 R_API void r_anal_fcn_invalidate_read_ahead_cache(void);
 
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
-
+R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size);
+R_API void r_anal_function_update_analysis(RAnalFunction *fcn);
 
 #define R_ANAL_FCN_VARKIND_LOCAL 'v'
 
@@ -1686,6 +1692,7 @@ R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, 
 R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
+R_API void r_anal_function_delete_unused_vars(RAnalFunction *fcn);
 R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var);
 R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
@@ -1801,6 +1808,9 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_default(RAnal *anal);
+R_API void r_anal_set_cc_default(RAnal *anal, const char *convention);
+R_API const char *r_anal_syscc_default(RAnal *anal);
+R_API void r_anal_set_syscc_default(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name);
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr);
 
@@ -2107,10 +2117,11 @@ R_API RAnalEsilCFG *r_anal_esil_cfg_op(RAnalEsilCFG *cfg, RAnal *anal, RAnalOp *
 R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg);
 R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg);
 
-R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new (RAnalEsilDFG *edf, const char *c);
+R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c);
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RReg *regs);
 R_API void r_anal_esil_dfg_free(RAnalEsilDFG *dfg);
 R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *dfg, const char *expr);
+R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg);
 R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg);
 R_API RStrBuf *r_anal_esil_dfg_filter_expr(RAnal *anal, const char *expr, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);

@@ -1931,7 +1931,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		colorend = Color_RESET;
 	}
 
-	r_table_set_columnsf (t, "ssss", "role", "reg", "value", "ref");
+	r_table_set_columnsf (t, "ssss", "role", "reg", "value", "refstr");
 	r_list_foreach (list, iter, r) {
 		if (r->size != bits) {
 			continue;
@@ -1978,7 +1978,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 		free (rrstr);
 	}
 
-	char *s = (mode == 'j')? r_table_tojson(t): r_table_tostring(t);
+	char *s = (mode == 'j')? r_table_tojson (t): r_table_tostring (t);
 	r_cons_print (s);
 	free (s);
 	r_table_free (t);
@@ -2253,9 +2253,9 @@ static void __tableRegList (RCore *core, RReg *reg, const char *str) {
 					sdb_fmt ("%d", e->index),
 					sdb_fmt ("%d", i),
 					r_str_bool (e->is_float),
-					e->name? e->name: "",
-					e->flags? e->flags: "",
-					e->comment? e->comment: "",
+					r_str_get (e->name),
+					r_str_get (e->flags),
+					r_str_get (e->comment),
 					NULL
 					);
 		}
@@ -3376,7 +3376,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				r_cons_printf ("breakpoint %s %s %s\n",
 						r_str_rwx_i (bpi->perm),
 						bpi->enabled ?  "enabled" : "disabled",
-						bpi->name ? bpi->name : "");
+						r_str_get (bpi->name));
 			}
 		}
 		break;
@@ -3413,7 +3413,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		} else {
 			RBreakpointItem *bp;
 			r_list_foreach (core->dbg->bp->bps, iter, bp) {
-				r_cons_printf ("0x%08"PFMT64x" %s\n", bp->addr, r_str_get2 (bp->expr));
+				r_cons_printf ("0x%08"PFMT64x" %s\n", bp->addr, r_str_get (bp->expr));
 			}
 		}
 		break;
@@ -3470,14 +3470,15 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				char *flagdesc, *flagdesc2, *pcstr, *spstr;
 				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
+				//TODO PJ
 				r_cons_printf ("%s{\"idx\":%d,\"pc\":%s,\"sp\":%s,\"frame_size\":%d,"
 						"\"fname\":\"%s\",\"desc\":\"%s%s\"}", (i ? " ," : ""),
 						i,
 						pcstr, spstr,
 						(int)frame->size,
 						fcn ? fcn->name : "",
-						flagdesc ? flagdesc : "",
-						flagdesc2 ? flagdesc2 : "");
+						r_str_get (flagdesc),
+						r_str_get (flagdesc2));
 				i++;
 				free (flagdesc);
 				free (flagdesc2);
@@ -3552,8 +3553,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						pcstr, spstr,
 						(int)frame->size,
 						fcn ? fcn->name : "??",
-						flagdesc ? flagdesc : "",
-						flagdesc2 ? flagdesc2 : "");
+						r_str_get (flagdesc),
+						r_str_get (flagdesc2));
 				free (flagdesc);
 				free (flagdesc2);
 				free (pcstr);
@@ -5102,7 +5103,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (rdi) {
 					const char *s = r_signal_to_string (core->dbg->reason.signum);
 					P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
-					P ("signal=%s\n", s? s: "none");
+					P ("signal=%s\n", r_str_get_fail (s, "none"));
 					P ("signum=%d\n", core->dbg->reason.signum);
 					P ("sigpid=%d\n", core->dbg->reason.tid);
 					P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
@@ -5186,7 +5187,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (rdi) {
 					const char *s = r_signal_to_string (core->dbg->reason.signum);
 					P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
-					P ("\"signal\":\"%s\",", s? s: "none");
+					P ("\"signal\":\"%s\",", r_str_get_fail (s, "none"));
 					P ("\"signum\":%d,", core->dbg->reason.signum);
 					P ("\"sigpid\":%d,", core->dbg->reason.tid);
 					P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
@@ -5303,6 +5304,11 @@ static int cmd_debug(void *data, const char *input) {
 			if (!core || !core->io || !core->io->desc || !r_config_get_i (core->config, "cfg.debug")) {
 				eprintf ("No open debug session\n");
 				break;
+			}
+			// Stop trace session
+			if (core->dbg->session) {
+				r_debug_session_free (core->dbg->session);
+				core->dbg->session = NULL;
 			}
 			// Kill debugee and all child processes
 			if (core->dbg && core->dbg->h && core->dbg->h->pids && core->dbg->pid != -1) {

@@ -907,7 +907,7 @@ static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
 		m->rw?PROT_READ|PROT_WRITE:PROT_READ,
 		MAP_SHARED, fd, (off_t)m->base);
 	if (m->buf == MAP_FAILED) {
-		R_FREE (m);
+		m->buf = NULL;
 	}
 	return m;
 }
@@ -1254,7 +1254,7 @@ R_API RList* r_file_globsearch (const char *_globbed_path, int maxdepth) {
 			glob_ptr = last_slash + 1;
 			if (globbed_path[0] == '~') {
 				char *rpath = r_str_newlen (globbed_path + 2, last_slash - globbed_path - 1);
-				path = r_str_home (rpath ? rpath : "");
+				path = r_str_home (r_str_get (rpath));
 				free (rpath);
 			} else {
 				path = r_str_newlen (globbed_path, last_slash - globbed_path + 1);

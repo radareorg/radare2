@@ -747,7 +747,8 @@ static void free_object(pyc_object *object) {
 		free_object (cobj->name);
 		free_object (cobj->lnotab);
 		free (object->data);
-	} break;
+		break;
+	}
 	case TYPE_REF:
 		free_object (object->data);
 		break;
@@ -820,7 +821,8 @@ static pyc_object *copy_object(pyc_object *object) {
 		dst->name = copy_object (src->name);
 		dst->lnotab = copy_object (src->lnotab);
 		copy->data = dst;
-	} break;
+		break;
+	}
 	case TYPE_REF:
 		copy->data = copy_object (object->data);
 		break;
@@ -1155,7 +1157,7 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	}
 	section = R_NEW0 (RBinSection);
 	symbol = R_NEW0 (RBinSymbol);
-	prefix = r_str_newf ("%s%s%s", prefix? prefix: "",
+	prefix = r_str_newf ("%s%s%s", r_str_get (prefix),
 		prefix? ".": "", (const char *)cobj->name->data);
 	if (!prefix || !section || !symbol) {
 		goto fail;

@@ -16,7 +16,7 @@ RUN
 
 NAME=pe64 cc
 FILE=bins/pe/tls64.exe
-CMDS=afc=
+CMDS=e anal.cc
 EXPECT=<<EOF
 ms
 EOF

@@ -255,11 +255,13 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 		if (!rvar) {
 			return;
 		}
+		char *t = strdup (type);
 		__var_retype (anal, rvar, NULL, type, false, false);
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		if (lvar) {
-			__var_retype (anal, lvar, NULL, type, false, false);
+			__var_retype (anal, lvar, NULL, t, false, false);
 		}
+		free (t);
 	}
 }
 
@@ -429,7 +431,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 				get_src_regname (core, instr_addr, tmp, sizeof (tmp));
 				ut64 ptr = get_addr (trace, tmp, j);
 				if (ptr == xaddr) {
-					__var_retype (anal, var, name, type? type: "int", memref, false);
+					__var_retype (anal, var, name, r_str_get_fail (type, "int"), memref, false);
 				}
 			}
 			r_anal_op_free (op);

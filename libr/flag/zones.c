@@ -262,7 +262,7 @@ R_API bool r_flag_zone_list(RFlag *f, int mode) {
 	r_list_foreach (DB, iter, zi) {
 		if (mode == '*') {
 			f->cb_printf ("fz %s @ 0x08%"PFMT64x"\n", zi->name, zi->from);
-			f->cb_printf ("f %s %d 0x08%"PFMT64x"\n", zi->name,
+			f->cb_printf ("f %s %"PFMT64d" 0x08%"PFMT64x"\n", zi->name,
 				zi->to - zi->from, zi->from);
 		} else {
 			f->cb_printf ("0x08%"PFMT64x"  0x%08"PFMT64x"  %s\n",

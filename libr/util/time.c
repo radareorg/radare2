@@ -63,8 +63,9 @@ R_API char *r_time_stamp_to_str(ut32 timeStamp) {
 	gettimeofday (&tv, (void*) &tz);
 	gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
 	ts += (time_t)gmtoff;
-	char *res = strdup (ctime (&ts));
+	char *res = malloc(ASCTIME_BUF_MINLEN);
 	if (res) {
+		ctime_r (&ts, res);
 		r_str_trim (res); // XXX we probably need an r_str_trim_dup()
 	}
 	return res;
@@ -198,11 +199,20 @@ R_API const char *r_time_to_string (ut64 ts) {
 	return r_time_stamp_to_str (l);
 }
 
-R_API char *r_asctime_r(const struct tm *tm, char *buf, size_t size) {
+R_API char *r_asctime_r(const struct tm *tm, char *buf) {
 #if __WINDOWS__
-	errno_t err = asctime_s (buf, size, tm);
+	errno_t err = asctime_s (buf, ASCTIME_BUF_MINLEN, tm);
 	return err? NULL: buf;
 #else
 	return asctime_r (tm, buf);
+#endif
+}
+
+R_API char *r_ctime_r(const time_t *timer, char *buf) {
+#if __WINDOWS__
+	errno_t err = ctime_s (buf, ASCTIME_BUF_MINLEN, timer);
+	return err? NULL: buf;
+#else
+	return ctime_r (timer, buf);
 #endif
 }

@@ -34,6 +34,7 @@ static const char *rwxstr[] = {
 	[15] = "rwx",
 };
 
+
 R_API int r_str_casecmp(const char *s1, const char *s2) {
 #ifdef _MSC_VER
 	return stricmp (s1, s2);
@@ -820,11 +821,15 @@ R_API char *r_str_word_get_first(const char *text) {
 }
 
 R_API const char *r_str_get(const char *str) {
-	return str? str: nullstr_c;
+	return str? str: nullstr;
 }
 
-R_API const char *r_str_get2(const char *str) {
-	return str? str: nullstr;
+R_API const char *r_str_get_fail(const char *str, const char *failstr) {
+	return str? str: failstr;
+}
+
+R_API const char *r_str_getf(const char *str) {
+	return str? str: nullstr_c;
 }
 
 R_API char *r_str_ndup(const char *ptr, int len) {
@@ -885,7 +890,7 @@ R_API char *r_str_append(char *ptr, const char *string) {
 	if (string && !ptr) {
 		return strdup (string);
 	}
-	if (!string) {
+	if (R_STR_ISEMPTY (string)) {
 		return ptr;
 	}
 	int plen = strlen (ptr);
@@ -1356,6 +1361,33 @@ R_API char *r_str_escape(const char *buf) {
 	return r_str_escape_ (buf, false, true, true, false, true);
 }
 
+R_API char *r_str_sanitize_r2(const char *buf) {
+	r_return_val_if_fail (buf, NULL);
+	char *new_buf = malloc (1 + strlen (buf) * 2);
+	if (!new_buf) {
+		return NULL;
+	}
+	const char *p = buf;
+	char *q = new_buf;
+	while (*p) {
+		switch (*p) {
+		case ';':
+		case '$':
+		case '`':
+		case '\\':
+		case '"':
+			*q++ = ' ';
+			p++;
+			break;
+		default:
+			*q++ = *p++;
+			break;
+		}
+	}
+	*q = '\0';
+	return new_buf;
+}
+
 // Return MUST BE surrounded by double-quotes
 R_API char *r_str_escape_sh(const char *buf) {
 	r_return_val_if_fail (buf, NULL);
@@ -1521,7 +1553,7 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 		size_t loop = 0;
 		size_t i = 0;
 		size_t increment = encoding == PJ_ENCODING_STR_ARRAY ? 4 : 2;
-		
+
 		if (!SZT_MUL_OVFCHK (((buf_sz * increment) + 1), SZT_MAX)) {
 			return NULL;
 		}
@@ -1534,7 +1566,7 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 
 		const char *format = encoding == PJ_ENCODING_STR_ARRAY ? "%03u," : "%02X";
 		while (buf[loop] != '\0' && i < (new_sz - 1)) {
-			snprintf (encoded_str + i, sizeof (encoded_str), format, (ut8) buf[loop]);
+			snprintf (encoded_str + i, new_sz - i, format, (ut8) buf[loop]);
 			loop++;
 			i += increment;
 		}
@@ -1645,7 +1677,7 @@ R_API char *r_str_escape_utf8_for_json_strip(const char *buf, int buf_size) {
 					*q++ = "0123456789abcdef"[ch >> 4 * i & 0xf];
 				}
 			}
-		} else { 
+		} else {
 			ch_bytes = 1;
 		}
 		p += ch_bytes;
@@ -3102,6 +3134,39 @@ R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y,
 	return ret;
 }
 
+// TODO: improve loop to wrap by words
+R_API char *r_str_wrap(const char *str, int w) {
+	char *r, *ret;
+	if (w < 1 || !str) {
+		return strdup ("");
+	}
+	size_t r_size = 8 * strlen (str);
+	r = ret = malloc (r_size);
+	char *end = r + r_size;
+	int cw = 0;
+	while (*str && r + 1 < end) {
+		if (*str == '\t') {
+			// skip
+		} else if (*str == '\r') {
+			// skip
+		} else if (*str == '\n') {
+			*r++ = *str++;
+			cw = 0;
+		} else {
+			if (cw > w) {
+				*r++ = '\n';
+				*r++ = *str++;
+				cw = 1;
+			} else {
+				*r++ = *str++;
+				cw++;
+			}
+		}
+	}
+	*r = 0;
+	return ret;
+}
+
 R_API const char * r_str_tok(const char *str1, const char b, size_t len) {
 	const char *p = str1;
 	size_t i = 0;
@@ -3720,6 +3785,7 @@ R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev
 	}
 	return d;
 }
+
 
 // version.c
 #include <r_userconf.h>

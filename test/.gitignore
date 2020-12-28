@@ -1,5 +1,7 @@
 /bins
 /fuzz/targets
+/.tmp
+results.json
 
 unit/*.dSYM/
 node_modules/

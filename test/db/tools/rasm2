@@ -4,7 +4,7 @@ CMDS=<<EOF
 !!rasm2 -L~4004
 EOF
 EXPECT=<<EOF
-_dAe  4          i4004       LGPL3   Intel 4004 microprocessor
+adAe  4          i4004       LGPL3   Intel 4004 microprocessor
 EOF
 RUN
 
@@ -114,7 +114,6 @@ RUN
 
 NAME=rasm2 #1167 3
 FILE=-
-BROKEN=1
 CMDS=!rasm2 -s att -a x86.as -b 64 "test %rbx, %rax" 
 EXPECT=<<EOF
 4885d8
@@ -123,7 +122,6 @@ RUN
 
 NAME=rasm2 #1167 4
 FILE=-
-BROKEN=1
 CMDS=!rasm2 -s intel -a x86.as -b 64 "test rax, rbx" 
 EXPECT=<<EOF
 4885d8
@@ -499,9 +497,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rasm2 -a x86 -r push ebp
+NAME=rasm2 -a x86 -b 64 -r push ebp
 FILE=-
-CMDS=!rasm2 -a x86 -r push ebp
+CMDS=!rasm2 -a x86 -b 64 -r push ebp
 EXPECT=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -564,5 +562,75 @@ EXPECT=<<EOF
 0x00000008   2                     0900  nop
 0x0000000a   2                     0b42  jsr @r2
 0x0000000c   2                     e031  cmp/eq r14, r1
+EOF
+RUN
+
+NAME=rasm2 -a ppc.as -b 64 "std r31, -8(r1)"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a ppc.as -b 64 "std r31, -8(r1)"
+EXPECT=<<EOF
+f8ffe1fb
+EOF
+RUN
+
+NAME=rasm2 -a ppc -b 64 -d f8ffe1fb
+FILE=-
+CMDS=!rasm2 -a ppc -b 64 -d f8ffe1fb
+EXPECT=<<EOF
+std r31, -8(r1)
+EOF
+RUN
+
+NAME=rasm2 -a ppc.as -b 32 -e "mr r10, r4"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a ppc.as -b 32 -e "mr r10, r4"
+EXPECT=<<EOF
+7c8a2378
+EOF
+RUN
+
+NAME=rasm2 -a ppc -b 32 -d 78238a7c
+FILE=-
+CMDS=!rasm2 -a ppc -b 32 -d 78238a7c
+EXPECT=<<EOF
+mr r10, r4
+EOF
+RUN
+
+NAME=rasm2 -a arm.as -b 16 "wfe"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a arm.as -b 16 "wfe"
+EXPECT=<<EOF
+20bf
+EOF
+RUN
+
+NAME=rasm2 -a arm.as -b 32 "add fp, sp, 0"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a arm.as -b 32 "add fp, sp, 0"
+EXPECT=<<EOF
+00b08de2
+EOF
+RUN
+
+NAME=rasm2 -a arm.as -b 32 -e "ldr fp, [sp], 4"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a arm.as -b 32 -e "ldr fp, [sp], 4"
+EXPECT=<<EOF
+e49db004
+EOF
+RUN
+
+NAME=rasm2 -a arm.as -b 64 "sub sp, sp, 16"
+FILE=-
+BROKEN=1
+CMDS=!rasm2 -a arm.as -b 64 "sub sp, sp, 16"
+EXPECT=<<EOF
+ff4300d1
 EOF
 RUN

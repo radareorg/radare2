@@ -1,100 +1,177 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_util.h>
 
-R_API bool r_name_validate_char(const char ch) {
-	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT(ch))) {
+/* Validate if char is printable , why not use ISPRINTABLE() ?? */
+R_API bool r_name_validate_print(const char ch) {
+	// TODO: support utf8
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
 		return true;
 	}
 	switch (ch) {
-	case ':':
+	case '(':
+	case ')':
+	case '[':
+	case ']':
+	case '<':
+	case '+':
+	case '-':
+	case '>':
+	case '$':
+	case '%':
+	case '@':
+	case ' ':
 	case '.':
+	case ',':
+	case ':':
+	case '_':
+		return true;
+	case '\b':
+	case '\t':
+	case '\n':
+	case '\r':
+		// must be replaced with ' ' and trimmed later
+		return false;
+	}
+	return false;
+}
+
+// used to determine if we want to replace those chars with '_' in r_name_filter()
+R_API bool r_name_validate_dash(const char ch) {
+	switch (ch) {
+	case ' ':
+	case '-':
+	case '_':
+	case '/':
+	case '\\':
+	case '(':
+	case ')':
+	case '[':
+	case ']':
+	case '<':
+	case '>':
+	case '!':
+	case '?':
+	case '$':
+	case ';':
+	case '%':
+	case '@':
+	case '`':
+	case ',':
+	case '"':
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_name_validate_char(const char ch) {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
+		return true;
+	}
+	switch (ch) {
+	case '.':
+	case ':':
 	case '_':
 		return true;
 	}
 	return false;
 }
 
-R_API bool r_name_check(const char *name) {
-	/* Cannot start by number */
-	if (!name || !*name || IS_DIGIT (*name)) {
+R_API bool r_name_validate_first(const char ch) {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+		return true;
+	}
+	switch (ch) {
+	case '_':
+	case ':':
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_name_check(const char *s) {
+	if (!r_name_validate_first (*s)) {
 		return false;
 	}
-	/* Cannot contain non-alphanumeric chars + [:._] */
-	for (; *name != '\0'; name++) {
-		if (!r_name_validate_char (*name)) {
+	for (s++; *s; s++) {
+		if (!r_name_validate_char (*s)) {
 			return false;
 		}
 	}
 	return true;
 }
 
-static inline bool is_special_char (char *name) {
-	const char n = *name;
+static inline bool is_special_char(char n) {
 	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
 
-R_API bool r_name_filter(char *name, int maxlen) {
-	size_t i, len;
-	if (!name) {
-		return false;
+R_API const char *r_name_filter_ro(const char *a) {
+	while (*a++ == '_');
+	return a - 1;
+}
+
+// filter string for printing purposes
+R_API bool r_name_filter_print(char *s) {
+	char *es = s + strlen (s);
+	char *os = s;
+	while (*s && s < es) {
+		int us = r_utf8_size ((const ut8*)s);
+		if (us > 1) {
+			s += us;	
+			continue;
+		}
+		if (!r_name_validate_print (*s)) {
+			r_str_cpy (s, s + 1);
+		}
+		s++;
 	}
-	if (maxlen < 0) {
-		maxlen = strlen (name);
+	return os;
+}
+
+R_API bool r_name_filter(char *s, int maxlen) {
+	// if maxlen == -1 : R_FLAG_NAME_SIZE
+	// maxlen is ignored, the function signature must change
+	if (maxlen > 0) {
+		int slen = strlen (s);
+		if (slen > maxlen) {
+			s[maxlen] = 0;
+		}
 	}
-	r_str_trim (name);
-	char *oname = name;
-	for (i = 0; *name; name++, i++) {
-		if (maxlen && i > maxlen) {
-			*name = '\0';
+	char *os = s;
+	while (*s) {
+		if (r_name_validate_first (*s)) {
 			break;
 		}
-		if (!r_name_validate_char (*name) && *name != '\\') {
-			*name = '_';
-			//		r_str_ccpy (name, name+1, 0);
-			//name--;
+		if (r_name_validate_dash (*s)) {
+			*s = '_';
+			break;
+		}
+		r_str_cpy (s, s + 1);
+	}
+	for (s++; *s; s++) {
+		if (*s == '\\') {
+			if (is_special_char (s[1])) {
+				*s = '_';
+			} else {
+				r_str_cpy (s, s + 1);
+				s--;
+			}
+		}
+		if (!r_name_validate_char (*s)) {
+			if (r_name_validate_dash (*s)) {
+				*s = '_';
+			} else {
+				r_str_cpy (s, s + 1);
+				s--;
+			}
 		}
 	}
-	while (i > 0) {
-		if (*(name - 1) == '\\' && is_special_char (name)) {
-			*name = '_';
-			*(name - 1) = '_';
-		}
-		if (*name == '\\') {
-			*name = '_';
-		}
-		name--;
-		i--;
-	}
-	if (*name == '\\') {
-		*name = '_';
-	}
-	// trimming trailing and leading underscores
-	len = strlen (name);
-	for (; len > 0 && *(name + len - 1) == '_'; len--) {
-		;
-	}
-	if (!len) { // name consists only of underscores
-		return r_name_check (oname);
-	}
-	for (i = 0; *(name + i) == '_'; i++, len--) {
-		;
-	}
-	memmove (name, name + i, len);
-	*(name + len) = '\0';
-	return r_name_check (oname);
+	r_str_trim (os);
+	return r_name_check (os);
 }
 
 R_API char *r_name_filter2(const char *name) {
-	size_t i;
-	while (!IS_PRINTABLE (*name)) {
-		name++;
-	}
-	char *res = strdup (name);
-	for (i = 0; res[i]; i++) {
-		if (!r_name_validate_char (res[i])) {
-			res[i] = '_';
-		}
-	}
-	return res;
+	char *s = strdup (name);
+	r_name_filter (s, -1);
+	return s;
 }

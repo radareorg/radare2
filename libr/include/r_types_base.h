@@ -3,6 +3,7 @@
 
 #include <ctype.h>
 #include <sys/types.h>
+#include <limits.h>
 
 #define cut8 const unsigned char
 #define ut64 unsigned long long
@@ -70,6 +71,8 @@ typedef struct _utX {
 #undef UT64_MIN
 #undef UT32_MAX
 #undef UT32_MIN
+#undef UT16_MIN
+#undef UT8_MIN
 #define ST64_MAX ((st64)0x7FFFFFFFFFFFFFFFULL)
 #define ST64_MIN ((st64)(-ST64_MAX-1))
 #define UT64_MAX 0xFFFFFFFFFFFFFFFFULL
@@ -80,6 +83,7 @@ typedef struct _utX {
 #define UT64_16U 0xFFFFFFFFFFFF0000ULL
 #define UT64_8U  0xFFFFFFFFFFFFFF00ULL
 #define UT32_MIN 0U
+#define UT16_MIN 0U
 #define UT32_GT0 0x80000000U
 #define UT32_LT0 0x7FFFFFFFU
 #define ST32_MAX 0x7FFFFFFF
@@ -141,6 +145,22 @@ typedef struct _utX {
 #define B_UNSET(x, n)    ((x) &= ~(1ULL << (n)))
 #define B_TOGGLE(x, n)   ((x) ^= (1ULL << (n)))
 
+#define B11111 31
+#define B11110 30
+#define B11101 29
+#define B11100 28
+#define B11011 27
+#define B11010 26
+#define B11001 25
+#define B11000 24
+#define B10111 23
+#define B10110 22
+#define B10101 21
+#define B10100 20
+#define B10011 19
+#define B10010 18
+#define B10001 17
+#define B10000 16
 #define B1111 15
 #define B1110 14
 #define B1101 13

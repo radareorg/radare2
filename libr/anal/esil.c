@@ -542,11 +542,8 @@ R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 	return ret;
 }
 
-// sign extension operator for use in idiv, imul, movsx* 
-// and other instructions involving signed values, extends n bit value to 64 bit value
-// example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
-// output  : 0xffffffffffffff81
-static bool esil_signext(RAnalEsil *esil) {
+R_API int r_anal_esil_signext(RAnalEsil *esil, bool assign) {
+	bool ret = false;
 	ut64 src, dst;
 
 	char *p_src = r_anal_esil_pop (esil);
@@ -558,8 +555,6 @@ static bool esil_signext(RAnalEsil *esil) {
 		ERR ("esil_of: empty stack");
 		free (p_src);
 		return false;
-	} else {
-		free (p_src);
 	}
 
 	char *p_dst = r_anal_esil_pop (esil);
@@ -584,7 +579,31 @@ static bool esil_signext(RAnalEsil *esil) {
 	}
 
 	// dst = (dst & ((1U << src_bit) - 1)); // clear upper bits
-	return r_anal_esil_pushnum (esil, ((src ^ m) - m));
+	if (assign) {
+		ret = r_anal_esil_reg_write (esil, p_src, ((src ^ m) - m));
+	} else {
+		ret = r_anal_esil_pushnum (esil, ((src ^ m) - m));
+	}
+
+	free (p_src);
+	return ret;
+}
+
+// sign extension operator for use in idiv, imul, movsx*
+// and other instructions involving signed values, extends n bit value to 64 bit value
+// example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
+// output  : 0xffffffffffffff81
+static bool esil_signext(RAnalEsil *esil) {
+	return r_anal_esil_signext(esil, false);
+}
+
+// sign extension assignement
+// example : > "ae 0x81,a0,="
+//           > "ae 8,a0,~="   ( <src bit width>,register,~= )
+// output  : > ar a0
+//           0xffffff81
+static bool esil_signexteq(RAnalEsil *esil) {
+	return r_anal_esil_signext(esil, true);
 }
 
 static bool esil_zf(RAnalEsil *esil) {
@@ -1304,8 +1323,8 @@ static bool esil_asr(RAnalEsil *esil) {
 				ut64 mask = (regsize - 1);
 				param_num &= mask;
 				ut64 left_bits = 0;
-				if (op_num & (1UL << (regsize - 1))) {
-					left_bits = (1UL << param_num) - 1;
+				if (op_num & (1ULL << (regsize - 1))) {
+					left_bits = (1ULL << param_num) - 1;
 					left_bits <<= regsize - param_num;
 				}
 				op_num = left_bits | (op_num >> param_num);
@@ -1540,18 +1559,6 @@ static bool esil_mod(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool detect_fpu_div_exception(ut64 a, ut64 b) {
-	// division by zero
-	if (b == UT64_MIN) {
-		return true;
-	}
-	// undefined result (0x80000 / -1) cant be represented
-	if (a == UT64_GT0 && b == UT64_MAX) {
-		return true;
-	}
-	return false;
-}
-
 static bool esil_signed_mod(RAnalEsil *esil) {
 	bool ret = false;
 	st64 s, d;
@@ -1559,7 +1566,7 @@ static bool esil_signed_mod(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, (ut64 *)&d)) {
-			if (detect_fpu_div_exception (d, s)) {
+			if (ST64_DIV_OVFCHK (d, s)) {
 				if (esil->verbose > 0) {
 					eprintf ("0x%08"PFMT64x" esil_mod: Division by zero!\n", esil->address);
 				}
@@ -1638,7 +1645,7 @@ static bool esil_signed_div(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, (ut64 *)&d)) {
-			if (detect_fpu_div_exception (d, s)) {
+			if (ST64_DIV_OVFCHK (d, s)) {
 				ERR ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
@@ -3173,7 +3180,7 @@ R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word) {
 		}
 		int ew = evalWord (esil, word, &str);
 		eprintf ("ew %d\n", ew);
-		eprintf ("--> %s\n", r_str_get (str));
+		eprintf ("--> %s\n", r_str_getf (str));
 	}
 	return true;
 }
@@ -3238,6 +3245,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("$r", esil_rs, 1, 0, OT_UNK);
 	OP ("$$", esil_address, 1, 0, OT_UNK);
 	OP ("~", esil_signext, 1, 2, OT_MATH);
+	OP ("~=", esil_signexteq, 0, 2, OT_MATH);
 	OP ("==", esil_cmp, 0, 2, OT_MATH);
 	OP ("<", esil_smaller, 1, 2, OT_MATH);
 	OP (">", esil_bigger, 1, 2, OT_MATH);

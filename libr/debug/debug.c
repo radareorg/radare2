@@ -458,38 +458,35 @@ R_API int r_debug_stop(RDebug *dbg) {
 
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	if (arch && dbg && dbg->h) {
-		bool rc = r_sys_arch_match (dbg->h->arch, arch);
-		if (rc) {
-			switch (bits) {
-			case 27:
-				if (dbg->h->bits == 27) {
-					dbg->bits = 27;
-				}
-				break;
-			case 32:
-				if (dbg->h->bits & R_SYS_BITS_32) {
-					dbg->bits = R_SYS_BITS_32;
-				}
-				break;
-			case 64:
-				dbg->bits = R_SYS_BITS_64;
-				break;
+		switch (bits) {
+		case 27:
+			if (dbg->h->bits == 27) {
+				dbg->bits = 27;
 			}
-			if (!dbg->h->bits) {
-				dbg->bits = dbg->h->bits;
-			} else if (!(dbg->h->bits & dbg->bits)) {
-				dbg->bits = dbg->h->bits & R_SYS_BITS_64;
-				if (!dbg->bits) {
-					dbg->bits = dbg->h->bits & R_SYS_BITS_32;
-				}
-				if (!dbg->bits) {
-					dbg->bits = R_SYS_BITS_32;
-				}
+			break;
+		case 32:
+			if (dbg->h->bits & R_SYS_BITS_32) {
+				dbg->bits = R_SYS_BITS_32;
 			}
-			free (dbg->arch);
-			dbg->arch = strdup (arch);
-			return true;
+			break;
+		case 64:
+			dbg->bits = R_SYS_BITS_64;
+			break;
 		}
+		if (!dbg->h->bits) {
+			dbg->bits = dbg->h->bits;
+		} else if (!(dbg->h->bits & dbg->bits)) {
+			dbg->bits = dbg->h->bits & R_SYS_BITS_64;
+			if (!dbg->bits) {
+				dbg->bits = dbg->h->bits & R_SYS_BITS_32;
+			}
+			if (!dbg->bits) {
+				dbg->bits = R_SYS_BITS_32;
+			}
+		}
+		free (dbg->arch);
+		dbg->arch = strdup (arch);
+		return true;
 	}
 	return false;
 }
@@ -620,7 +617,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		dbg->tid = tid;
 	}
 
-	r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+	free (r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid)));
 
 	// Synchronize with the current thread's data
 	if (dbg->corebind.core) {
@@ -1470,7 +1467,7 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	reg = (int)r_debug_reg_get (dbg, sysreg);
 	si = r_syscall_get (dbg->anal->syscall, reg, -1);
 	if (si) {
-		sysname = si->name? si->name: "unknown";
+		sysname = r_str_get_fail (si->name, "unknown");
 		args = si->args;
 	} else {
 		sysname = "unknown";

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - inisider */
+/* radare - LGPL - Copyright 2014-2020 - inisider */
 
 #include <r_pdb.h>
 #include <r_bin.h>
@@ -43,8 +43,8 @@ static void free_pdb_stream(void *stream) {
 
 /**
  * @brief Create a type name from offset
- * 
- * @param offset 
+ *
+ * @param offset
  * @return char* Name or NULL if error
  */
 static char *create_type_name_from_offset(ut64 offset) {
@@ -646,7 +646,7 @@ static SimpleTypeKind get_simple_type_kind (PDB_SIMPLE_TYPES type) {
 
 /**
  * @brief Maps simple type into a format string for `pf`
- * 
+ *
  * @param simple_type
  * @param member_format pointer to assert member format to
  * @return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
@@ -763,7 +763,8 @@ static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **mem
 			r_warn_if_reached ();
 			break;
 		}
-	} break;
+		break;
+	}
 	case NEAR_POINTER:
 		*member_format = "p2";
 		break;
@@ -795,7 +796,7 @@ static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **mem
 
 /**
  * @brief Creates the format string and puts it into format
- * 
+ *
  * @param type_info Information about the member type
  * @param format buffer for the formatting string
  * @param names buffer for the member names
@@ -846,7 +847,8 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 			}
 		}
 		r_strbuf_append (names, name);
-	} break;
+		break;
+	}
 	case eLF_POINTER: {
 		int size = 4;
 		if (type_info->get_val) {
@@ -855,7 +857,8 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		snprintf (tmp_format, 5, "p%d", size);
 		member_format = tmp_format;
 		r_strbuf_append (names, name);
-	} break;
+		break;
+	}
 	case eLF_CLASS:
 	case eLF_UNION:
 	case eLF_STRUCTURE: {
@@ -871,17 +874,20 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		}
 		r_strbuf_appendf (names, "(%s)%s", field_name, name);
 		free (field_name);
-	} break;
+		break;
+	}
 	// TODO complete the type with additional info
 	case eLF_BITFIELD: {
 		member_format = "B";
 		r_strbuf_appendf (names, "(uint)%s", name);
-	} break;
+		break;
+	}
 	 // TODO complete the type with additional info
 	case eLF_ENUM: {
 		member_format = "E";
 		r_strbuf_appendf (names, "(int)%s", name);
-	} break;
+		break;
+	}
 	case eLF_ARRAY: {
 		int size = 0;
 		if (type_info->get_val) {
@@ -890,7 +896,8 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 		snprintf (tmp_format, 5, "[%d]", size);
 		member_format = tmp_format;
 		r_strbuf_append (names, name); // TODO complete the type with additional info
-	} break;
+		break;
+	}
 
 	default:
 		r_warn_if_reached (); // Unhandled type format
@@ -919,7 +926,7 @@ static inline bool is_printable_type(ELeafType type) {
 
 /**
  * @brief Gets the name of the enum base type
- * 
+ *
  * @param type_info Enum TypeInfo
  * @return char* name of the base type
  */
@@ -941,7 +948,7 @@ static char *get_enum_base_type_name(STypeInfo *type_info) {
 
 /**
  * @brief Prints out structure and class leaf types
- * 
+ *
  * @param name Name of the structure/class
  * @param size Size of the structure/class
  * @param members List of members
@@ -974,7 +981,7 @@ static void print_struct(const char *name, const int size, const RList *members,
 
 /**
  * @brief Prints out union leaf type
- * 
+ *
  * @param name Name of the union
  * @param size Size of the union
  * @param members List of members
@@ -1007,7 +1014,7 @@ static void print_union(const char *name, const int size, const RList *members, 
 
 /**
  * @brief Prints out enum leaf type
- * 
+ *
  * @param name Name of the enum
  * @param type type of the enum
  * @param members List of cases
@@ -1035,7 +1042,7 @@ static void print_enum(const char *name, const char *type, const RList *members,
 
 /**
  * @brief Prints out types in a default format "idpi" command
- * 
+ *
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
@@ -1047,7 +1054,7 @@ static void print_types_regular(const RPdb *pdb, const RList *types) {
 		SType *type = r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
-		if (!is_printable_type (type_info->leaf_type)) {
+		if (!type || !is_printable_type (type_info->leaf_type)) {
 			continue;
 		}
 		// skip forward references
@@ -1092,7 +1099,7 @@ static void print_types_regular(const RPdb *pdb, const RList *types) {
 
 /**
  * @brief Prints out types in a json format - "idpij" command
- * 
+ *
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
@@ -1106,7 +1113,7 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
 		SType *type = r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
-		if (!is_printable_type (type_info->leaf_type)) {
+		if (!type || !is_printable_type (type_info->leaf_type)) {
 			continue;
 		}
 		// skip forward references
@@ -1210,7 +1217,7 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
 
 /**
  * @brief Creates pf commands from PDB types - "idpi*" command
- * 
+ *
  * @param pdb pdb structure for printing function
  * @param types List of types
  */
@@ -1222,7 +1229,7 @@ static void print_types_format(const RPdb *pdb, const RList *types) {
 		SType *type = r_list_iter_get (it);
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types and enums
-		if (!is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
+		if (!type || !is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
 			continue;
 		}
 		// skip forward references
@@ -1299,7 +1306,7 @@ static void print_types_format(const RPdb *pdb, const RList *types) {
 
 /**
  * @brief Prints out all the type information in regular,json or pf format
- * 
+ *
  * @param pdb PDB information
  * @param mode printing mode
  */
@@ -1374,13 +1381,9 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		gdata = (SGlobal *)r_list_iter_get (it);
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
+			char *filtered_name;
 			name = r_bin_demangle_msvc (gdata->name.name);
 			name = (name) ? name : strdup (gdata->name.name);
-			if (name && format != 'd') {
-				char *_name = name;
-				name = r_name_filter2 (_name);
-				free (_name);
-			}
 			switch (format) {
 			case 2:
 			case 'j': // JSON
@@ -1394,10 +1397,13 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			case 1:
 			case '*':
 			case 'r':
+				filtered_name = r_name_filter2 (r_str_trim_head_ro (name));
 				pdb->cb_printf ("f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
-					name,
+					filtered_name,
 					(ut64) (img_base + omap_remap ((omap) ? (omap->stream) : 0, gdata->offset + sctn_header->virtual_address)),
 					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
+				pdb->cb_printf ("\"fN pdb.%s %s\"\n", filtered_name, name);
+				free (filtered_name);
 				break;
 			case 'd':
 			default:

@@ -199,19 +199,19 @@ R_API bool r_lang_set_argv(RLang *lang, int argc, char **argv) {
 	return false;
 }
 
-R_API int r_lang_run(RLang *lang, const char *code, int len) {
+R_API bool r_lang_run(RLang *lang, const char *code, int len) {
 	if (lang->cur && lang->cur->run) {
 		return lang->cur->run (lang, code, len);
 	}
 	return false;
 }
 
-R_API int r_lang_run_string(RLang *lang, const char *code) {
+R_API bool r_lang_run_string(RLang *lang, const char *code) {
 	return r_lang_run (lang, code, strlen (code));
 }
 
-R_API int r_lang_run_file(RLang *lang, const char *file) {
-	int ret = false;
+R_API bool r_lang_run_file(RLang *lang, const char *file) {
+	bool ret = false;
 	if (lang->cur) {
 		if (!lang->cur->run_file) {
 			if (lang->cur->run) {
@@ -232,7 +232,7 @@ R_API int r_lang_run_file(RLang *lang, const char *file) {
 }
 
 /* TODO: deprecate or make it more modular .. reading from stdin in a lib?!? wtf */
-R_API int r_lang_prompt(RLang *lang) {
+R_API bool r_lang_prompt(RLang *lang) {
 	char buf[1024];
 	const char *p;
 

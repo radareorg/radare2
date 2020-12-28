@@ -195,7 +195,6 @@ EOF
 RUN
 
 NAME=Custom types in project file
-BROKEN=1
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 tk char **=type
@@ -224,15 +223,15 @@ tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
 "td struct Foo { int bar; int x; int y; };"
-Ps custom_types > /dev/null
+Ps costom_types > /dev/null
 t- char **
 t- Foo
 tk~?char **
 tk~?Foo
-Po custom_types > /dev/null
+Po costom_types > /dev/null
 tk~?char **
 tk~?Foo
-Pd custom_types > /dev/null
+Pd costom_types > /dev/null
 EOF
 EXPECT=<<EOF
 5
@@ -359,17 +358,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Save project for a file with asm.bits=32 and check the value after loading again
+NAME=Save project for a file with x86_16 and check the value after loading again
 FILE=bins/src/hello.c
 ARGS=
 CMDS=<<EOF
 e dir.projects = .tmp/
+e asm.arch=x86
 e asm.bits=16
 Ps sun > /dev/null
 Po sun > /dev/null
+e asm.arch
 e asm.bits
 EOF
 EXPECT=<<EOF
+x86
 16
 EOF
 RUN

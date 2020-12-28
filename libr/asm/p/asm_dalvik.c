@@ -501,7 +501,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			strasm = NULL;
 			size = 2;
 		}
-		r_strbuf_set (&op->buf_asm, strasm? strasm: "invalid");
+		r_strbuf_set (&op->buf_asm, r_str_get_fail (strasm, "invalid"));
 	} else if (len > 0) {
 		r_strbuf_set (&op->buf_asm, "invalid");
 		op->size = len;

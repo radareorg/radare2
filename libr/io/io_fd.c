@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - condret */
+/* radare2 - LGPL - Copyright 2017-2020 - condret */
 
 #include <r_io.h>
 
@@ -125,4 +125,40 @@ R_API int r_io_fd_get_current(RIO *io) {
 		return io->desc->fd;
 	}
 	return -1;
+}
+
+R_API int r_io_fd_get_next(RIO *io, int fd) {
+	r_return_val_if_fail (io, -1);
+	int ret = fd;
+	if (!r_id_storage_get_next (io->files, (ut32 *)&ret)) {
+		return -1;
+	}
+	return ret;
+}
+
+R_API int r_io_fd_get_prev(RIO *io, int fd) {
+	r_return_val_if_fail (io, -1);
+	int ret = fd;
+	if (!r_id_storage_get_prev (io->files, (ut32 *)&ret)) {
+		return -1;
+	}
+	return ret;
+}
+
+R_API int r_io_fd_get_highest(RIO *io) {
+	r_return_val_if_fail (io, -1);
+	int fd = -1;
+	if (!r_id_storage_get_highest (io->files, (ut32 *)&fd)) {
+		return -1;
+	}
+	return fd;
+}
+
+R_API int r_io_fd_get_lowest(RIO *io) {
+	r_return_val_if_fail (io, -1);
+	int fd = -1;
+	if (!r_id_storage_get_lowest (io->files, (ut32 *)&fd)) {
+		return -1;
+	}
+	return fd;
 }

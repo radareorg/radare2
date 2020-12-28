@@ -14,12 +14,10 @@
 extern "C" {
 #endif
 
-enum {
-	R_SYS_BITS_8 = 1,
-	R_SYS_BITS_16 = 2,
-	R_SYS_BITS_32 = 4,
-	R_SYS_BITS_64 = 8,
-};
+#define R_SYS_BITS_8 1
+#define R_SYS_BITS_16 2
+#define R_SYS_BITS_32 4
+#define R_SYS_BITS_64 8
 
 typedef struct {
 	char *sysname;

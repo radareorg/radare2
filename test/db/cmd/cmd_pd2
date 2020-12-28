@@ -406,7 +406,7 @@ EXPECT=<<EOF
         ,=< 0x08048598      jg 0x804859e
         |   0x0804859a      cmp al, byte [esp + 0x27]
        ,`-> 0x0804859e      je 0x80485b3
-       |    0x080485a0      mov dword [esp], str.Wrong
+       |    0x080485a0      mov dword [esp], str.Wrong_
        |    0x080485a7      call sym.imp.puts
        |    0x080485ac      mov eax, 1
       ,=.-> 0x080485b1      jmp 0x80485f9
@@ -540,13 +540,13 @@ pd 1 @ 0x080493ca
 EOF
 EXPECT=<<EOF
 |           0x080493b4      call 0x80490b0                             ; sym.imp.strlen ; size_t strlen(const char *s)
-|           0x080493ca      call 0x80490e0                             ; sym.imp.QString::fromAscii_helper_char_const___int
+|           0x080493ca      call 0x80490e0                             ; sym.imp.QString::fromAscii_helper_char_const__int_
 |                                                                      ; QString::fromAscii_helper(char const*, int)
 
 |           ; sym.imp.strlen
 |           ; size_t strlen(const char *s)
 |           0x080493b4      call 0x80490b0
-|           ; sym.imp.QString::fromAscii_helper_char_const___int
+|           ; sym.imp.QString::fromAscii_helper_char_const__int_
 |           ; QString::fromAscii_helper(char const*, int)
 |           0x080493ca      call 0x80490e0
 EOF

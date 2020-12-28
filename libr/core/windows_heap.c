@@ -1254,7 +1254,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		switch (format) {
 		case 'f':
 			if (heapInfo->heaps[i].BlockCount > 50000) {
-				go = r_cons_yesno ('n', "Are you sure you want to add %"PFMT64u" flags? (y/N)", heapInfo->heaps[i].BlockCount);
+				go = r_cons_yesno ('n', "Are you sure you want to add %lu flags? (y/N)", heapInfo->heaps[i].BlockCount);
 			}
 			break;
 		case 'j':

@@ -13,6 +13,7 @@ extern const RCmdDescHelp macro_help;
 extern const RCmdDescHelp pointer_help;
 extern const RCmdDescHelp stdin_help;
 extern const RCmdDescHelp interpret_help;
+extern const RCmdDescHelp table_help;
 extern const RCmdDescHelp search_help;
 extern const RCmdDescHelp rap_help;
 extern const RCmdDescHelp help_help;

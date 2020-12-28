@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
+        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-acr-clang-tests, macos-meson-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
         ignore_error: [false]
         include:
           - name: linux-acr-gcc-tests
@@ -73,11 +73,19 @@ jobs:
             enabled: true
             timeout: 60
             cflags: '-Werror -Wno-cpp'
-          - name: macos-clang-tests
+          - name: macos-acr-clang-tests
             os: macos-latest
             build_system: acr
             compiler: clang
             run_tests: true
+            enabled: true
+            timeout: 60
+          - name: macos-meson-clang-tests
+            os: macos-latest
+            build_system: meson
+            compiler: clang
+            run_tests: true
+            meson_options: -Duse_webui=true
             enabled: true
             timeout: 60
           - name: linux-gcc-tests-asan
@@ -123,7 +131,7 @@ jobs:
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
     - name: Install meson and ninja
       if: matrix.build_system == 'meson' && matrix.enabled
-      run: pip3 install --user meson==0.52.0 ninja==1.10.0
+      run: pip3 install --user meson==0.55.3 ninja==1.10.0
     - name: Install test dependencies
       if: matrix.run_tests && matrix.enabled
       run: pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
@@ -145,7 +153,7 @@ jobs:
     - name: Build with Meson
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
-        export PATH=${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         if [ "$ASAN" == "true" ]; then
           export CFLAGS="-DASAN=1 ${CFLAGS}"
         fi
@@ -166,7 +174,7 @@ jobs:
       if: matrix.build_system == 'meson' && matrix.enabled
       run: |
         # Install the radare2
-        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
         export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
         ninja -C build install
@@ -207,6 +215,12 @@ jobs:
       env:
         NEWSHELL: ${{ matrix.newshell }}
         ASAN_OPTIONS: ${{ matrix.asan_options }}
+    - name: Upload test results
+      if: matrix.run_tests && matrix.enabled
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results-${{ matrix.name }}
+        path: test/results.json
 
   build-centos6:
     name: Build on CentOS 6
@@ -315,6 +329,12 @@ jobs:
         r2r -v
         cd test
         make
+    - name: Upload test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results-static
+        path: test/results.json
+
 
   create-tarball:
     name: Create source tarball

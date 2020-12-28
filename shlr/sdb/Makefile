@@ -35,7 +35,7 @@ pkgconfig:
 src/sdb_version.h:
 	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb_version.h
 
-CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c
+CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c text.c
 CFILES+=json.c ns.c lock.c util.c disk.c query.c array.c fmt.c main.c
 EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 #EMCCFLAGS+=--embed-file sdb.data
@@ -75,7 +75,7 @@ install-dirs:
 
 INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht_uu.h src/ht_up.h src/ht_pp.h src/types.h
 INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h src/sdbht.h
-INCFILES+=src/dict.h
+INCFILES+=src/dict.h src/set.h src/ht_inc.h
 
 install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${DESTDIR}${MANDIR}

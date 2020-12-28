@@ -805,6 +805,7 @@ RUN
 NAME=ts function pointer test
 FILE=-
 CMDS=<<EOF
+e asm.bits=64
 ws hello @ 0xc
 "td struct foo {int x; int (*fp)(int a , int b ); char *b;};"
 ts foo
@@ -840,6 +841,21 @@ EXPECT=<<EOF
 struct three_elements {
 	int32_t x;
 	char y;
+	float z;
+};
+EOF
+RUN
+
+NAME=tsc with array
+FILE=-
+CMDS=<<EOF
+"td struct with_array{int x; char y[50]; float z;}"
+tsc with_array
+EOF
+EXPECT=<<EOF
+struct with_array {
+	int32_t x;
+	char y[50];
 	float z;
 };
 EOF
@@ -1612,5 +1628,44 @@ fcn.0000c0f0
 =
 fcn.00011b90
 fcn.00014d50
+EOF
+RUN
+
+NAME=aht aligned
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+"td struct foo {char gap;int bar __attribute__((__aligned__(4)));};"
+"td struct foo2 {char gap[1];int bar __attribute__((__aligned__(4)));};"
+"td struct foo3 {char gap[3];int bar __attribute__((__aligned__(4)));};"
+"td struct foo4 {char gap[4];int bar;};"
+"td struct foo5 {int gap;int bar;};"
+ahts 4 ~foo
+?e =
+wx c7400400000000
+aht foo.bar
+pd 1
+EOF
+EXPECT=<<EOF
+foo.bar
+foo2.bar
+foo3.bar
+foo4.bar
+foo5.bar
+=
+            0x00000000      c74004000000.  mov dword [rax + foo.bar], 0
+EOF
+RUN
+
+NAME=ahts nested
+FILE=-
+CMDS=<<EOF
+"td struct foo {int bar;int cow;};"
+"td struct spam {int ham;struct foo _foo;int eggs;};"
+ahts 8 ~spam
+EOF
+EXPECT=<<EOF
+spam._foo.cow
 EOF
 RUN

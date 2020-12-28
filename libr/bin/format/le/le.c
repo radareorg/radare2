@@ -538,12 +538,12 @@ RList *r_bin_le_get_relocs(r_bin_le_obj_t *bin) {
 			ut64 off = (ut64)h->impproc + nameoff + bin->headerOff;
 			char *proc_name = __read_nonnull_str_at (bin->buf, &off);
 			char *mod_name = __get_modname_by_ord (bin, ordinal);
-			imp->name = r_str_newf ("%s.%s", mod_name ? mod_name : "", proc_name ? proc_name : "");
+			imp->name = r_str_newf ("%s.%s", r_str_get (mod_name), r_str_get (proc_name));
 			rel->import = imp;
 			break;
 		}
 		case INTERNALENTRY:
-			rel->addend = (ut64)r_list_get_n (entries, ordinal - 1);
+			rel->addend = (ut64)(size_t)r_list_get_n (entries, ordinal - 1);
 			break;
 		}
 		if (header.target & F_TARGET_ADDITIVE) {

@@ -35,15 +35,15 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	for (i=0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op != NULL; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
-				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
-					if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
-						const char *w = argv[ ops[i].str[j]-'0' ];
+				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
+					if (ops[i].str[j] >= '0' && ops[i].str[j] <= '9') {
+						const char *w = argv[ops[i].str[j] - '0'];
 						if (w != NULL) {
-							strcpy(newstr+k, w);
-							k += strlen(w)-1;
+							strcpy (newstr + k, w);
+							k += strlen (w) - 1;
 						}
 					} else {
 						newstr[k] = ops[i].str[j];
@@ -105,17 +105,14 @@ static int parse(RParse *p, const char *data, char *str) {
 			num = (char *)r_str_lchr (buf, ',');
 		}
 		if (num) {
-			n = atoi (num+1);
+			n = atoi (num + 1);
 			*ptr = '[';
-			memmove (num+1, ptr, strlen (ptr)+1);
+			r_str_cpy (num + 1, ptr);
 			ptr = (char*)r_str_lchr (buf, ']');
 			if (n && ptr) {
 				char *rest = strdup (ptr+1);
-				if (n > 0) {
-					sprintf (ptr, "+%d]%s", n, rest);
-				} else {
-					sprintf (ptr, "%d]%s", n, rest);
-				}
+				size_t dist = strlen (data) + 1 - (ptr - buf);
+				snprintf (ptr, dist, "%+d]%s", n, rest);
 				free (rest);
 			}
 		} else {

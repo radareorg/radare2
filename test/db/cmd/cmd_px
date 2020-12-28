@@ -185,15 +185,15 @@ pxr 48 @ 0x00600ae0
 pxr 24 @ 0x00600ae0+32
 EOF
 EXPECT=<<EOF
-0x00600ae0 0x000000000040055e   ^.@..... @reloc.printf 4195678 (.plt) R X 'push 0'
-0x00600ae8 0x000000000040056e   n.@..... @reloc.puts 4195694 (.plt) R X 'push 1'
-0x00600af0 0x000000000040057e   ~.@..... @reloc.__libc_start_main 4195710 (.plt) R X 'push 2'
-0x00600af8 0x000000000040058e   ..@..... @reloc.fgets 4195726 (.plt) R X 'push 3'
-0x00600b00 0x000000000040059e   ..@..... @reloc.strcmp 4195742 (.plt) R X 'push 4'
-0x00600b08 0x00000000004005ae   ..@..... @reloc.fflush 4195758 (.plt) R X 'push 5'
+0x00600ae0 0x000000000040055e   ^.@..... @ reloc.printf 4195678 .plt R X 'push 0'
+0x00600ae8 0x000000000040056e   n.@..... @ reloc.puts 4195694 .plt R X 'push 1'
+0x00600af0 0x000000000040057e   ~.@..... @ reloc.__libc_start_main 4195710 .plt R X 'push 2'
+0x00600af8 0x000000000040058e   ..@..... @ reloc.fgets 4195726 .plt R X 'push 3'
+0x00600b00 0x000000000040059e   ..@..... @ reloc.strcmp 4195742 .plt R X 'push 4'
+0x00600b08 0x00000000004005ae   ..@..... @ reloc.fflush 4195758 .plt R X 'push 5'
 ===
-0x00600b00 0x000000000040059e   ..@..... @reloc.strcmp 4195742 (.plt) R X 'push 4'
-0x00600b08 0x00000000004005ae   ..@..... @reloc.fflush 4195758 (.plt) R X 'push 5'
+0x00600b00 0x000000000040059e   ..@..... @ reloc.strcmp 4195742 .plt R X 'push 4'
+0x00600b08 0x00000000004005ae   ..@..... @ reloc.fflush 4195758 .plt R X 'push 5'
 0x00600b10 ..[ null bytes ]..   00000000 loc.__data_start
 EOF
 RUN
@@ -209,76 +209,124 @@ pxr 32@0x00600ae0
 pxr2j 16@0x00600ae0~{}
 EOF
 EXPECT=<<EOF
-0x00600ae0 0x0040055e  ^.@. @reloc.printf 4195678 (.plt) R X 'push 0'
+0x00600ae0 0x0040055e  ^.@. @ reloc.printf 4195678 .plt R X 'push 0'
 0x00600ae4 ..[ null bytes ]..   00000000 
-0x00600ae8 0x0040056e  n.@. @reloc.puts 4195694 (.plt) R X 'push 1'
+0x00600ae8 0x0040056e  n.@. @ reloc.puts 4195694 .plt R X 'push 1'
 0x00600aec ..[ null bytes ]..   00000000 
-0x00600af0 0x0040057e  ~.@. @reloc.__libc_start_main 4195710 (.plt) R X 'push 2'
+0x00600af0 0x0040057e  ~.@. @ reloc.__libc_start_main 4195710 .plt R X 'push 2'
 0x00600af4 ..[ null bytes ]..   00000000 
-0x00600af8 0x0040058e  ..@. @reloc.fgets 4195726 (.plt) R X 'push 3'
+0x00600af8 0x0040058e  ..@. @ reloc.fgets 4195726 .plt R X 'push 3'
 0x00600afc ..[ null bytes ]..   00000000 
-0x00600ae0 0x000000000040055e   ^.@..... @reloc.printf 4195678 (.plt) R X 'push 0'
-0x00600ae8 0x000000000040056e   n.@..... @reloc.puts 4195694 (.plt) R X 'push 1'
-0x00600af0 0x000000000040057e   ~.@..... @reloc.__libc_start_main 4195710 (.plt) R X 'push 2'
-0x00600af8 0x000000000040058e   ..@..... @reloc.fgets 4195726 (.plt) R X 'push 3'
-0x00600ae0 5e05  ^. @reloc.printf 1374 (.symtab)
-0x00600ae2 4000  @. 64 (.shstrtab) ascii ('@')
+0x00600ae0 0x000000000040055e   ^.@..... @ reloc.printf 4195678 .plt R X 'push 0'
+0x00600ae8 0x000000000040056e   n.@..... @ reloc.puts 4195694 .plt R X 'push 1'
+0x00600af0 0x000000000040057e   ~.@..... @ reloc.__libc_start_main 4195710 .plt R X 'push 2'
+0x00600af8 0x000000000040058e   ..@..... @ reloc.fgets 4195726 .plt R X 'push 3'
+0x00600ae0 5e05  ^. @ reloc.printf 1374 .symtab
+0x00600ae2 4000  @. 64 .shstrtab ascii ('@')
 0x00600ae4 0000  ..
 0x00600ae6 0000  ..
-0x00600ae8 6e05  n. @reloc.puts 1390 (.symtab)
-0x00600aea 4000  @. 64 (.shstrtab) ascii ('@')
+0x00600ae8 6e05  n. @ reloc.puts 1390 .symtab
+0x00600aea 4000  @. 64 .shstrtab ascii ('@')
 0x00600aec 0000  ..
 0x00600aee 0000  ..
-0x00600af0 7e05  ~. @reloc.__libc_start_main 1406 (.symtab)
-0x00600af2 4000  @. 64 (.shstrtab) ascii ('@')
+0x00600af0 7e05  ~. @ reloc.__libc_start_main 1406 .symtab
+0x00600af2 4000  @. 64 .shstrtab ascii ('@')
 0x00600af4 0000  ..
 0x00600af6 0000  ..
-0x00600af8 8e05  .. @reloc.fgets 1422 (.symtab)
-0x00600afa 4000  @. 64 (.shstrtab) ascii ('@')
+0x00600af8 8e05  .. @ reloc.fgets 1422 .symtab
+0x00600afa 4000  @. 64 .shstrtab ascii ('@')
 0x00600afc 0000  ..
 0x00600afe 0000  ..
-0x00600ae0 0x0040055e  ^.@. @reloc.printf (.plt) R X 'push 0'
+0x00600ae0 0x0040055e  ^.@. @ reloc.printf .plt R X 'push 0'
 0x00600ae4 ..[ null bytes ]..   00000000 
-0x00600ae8 0x0040056e  n.@. @reloc.puts (.plt) R X 'push 1'
+0x00600ae8 0x0040056e  n.@. @ reloc.puts .plt R X 'push 1'
 0x00600aec ..[ null bytes ]..   00000000 
-0x00600af0 0x0040057e  ~.@. @reloc.__libc_start_main (.plt) R X 'push 2'
+0x00600af0 0x0040057e  ~.@. @ reloc.__libc_start_main .plt R X 'push 2'
 0x00600af4 ..[ null bytes ]..   00000000 
-0x00600af8 0x0040058e  ..@. @reloc.fgets (.plt) R X 'push 3'
+0x00600af8 0x0040058e  ..@. @ reloc.fgets .plt R X 'push 3'
 0x00600afc ..[ null bytes ]..   00000000 
 [
   {
     "addr": 6294240,
-    "value": 4195678,
-    "ref": "(.plt) R X 'push 0'"
+    "value": 1374,
+    "refstr": "1374 .symtab",
+    "ref": {
+      "addr": 1374,
+      "value": "1374",
+      "section": ".symtab"
+    }
   },
   {
     "addr": 6294242,
     "value": 64,
-    "ref": "64 (.shstrtab) ascii ('@')"
+    "refstr": "64 .shstrtab ascii ('@')",
+    "ref": {
+      "addr": 64,
+      "value": "64",
+      "section": ".shstrtab",
+      "attr": [
+        "ascii"
+      ]
+    }
   },
   {
     "addr": 6294244,
     "value": 0,
-    "ref": "0 loc.imp.__gmon_start"
+    "refstr": "0",
+    "ref": {
+      "addr": 0,
+      "value": "0",
+      "attr": [
+        
+      ]
+    }
   },
   {
     "addr": 6294246,
-    "value": 91095040
+    "value": 0,
+    "refstr": "0",
+    "ref": {
+      "addr": 0,
+      "value": "0",
+      "attr": [
+        
+      ]
+    }
   },
   {
     "addr": 6294248,
-    "value": 4195694,
-    "ref": "(.plt) R X 'push 1'"
+    "value": 1390,
+    "refstr": "1390 .symtab",
+    "ref": {
+      "addr": 1390,
+      "value": "1390",
+      "section": ".symtab"
+    }
   },
   {
     "addr": 6294250,
     "value": 64,
-    "ref": "64 (.shstrtab) ascii ('@')"
+    "refstr": "64 .shstrtab ascii ('@')",
+    "ref": {
+      "addr": 64,
+      "value": "64",
+      "section": ".shstrtab",
+      "attr": [
+        "ascii"
+      ]
+    }
   },
   {
     "addr": 6294252,
     "value": 0,
-    "ref": "0 loc.imp.__gmon_start"
+    "refstr": "0",
+    "ref": {
+      "addr": 0,
+      "value": "0",
+      "attr": [
+        
+      ]
+    }
   }
 ]
 EOF

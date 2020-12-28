@@ -328,7 +328,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
 				char *r2prefix = r_str_r2_prefix (R2_SDB_OPCODES);
-				char *file = r_str_newf ("%s/%s.sdb", r_str_get (r2prefix), h->arch);
+				char *file = r_str_newf ("%s/%s.sdb", r_str_getf (r2prefix), h->arch);
 				if (file) {
 					r_asm_set_cpu (a, NULL);
 					sdb_free (a->pair);
@@ -1021,6 +1021,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
 					char *inc = r_buf_to_string (op.buf_inc);
 					r_buf_free (op.buf_inc);
+					op.buf_inc = NULL;
 					if (inc) {
 						ret += r_hex_str2bin (inc, acode->bytes + idx + ret);
 						free (inc);

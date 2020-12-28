@@ -93,6 +93,7 @@ asm_plugins = [
   'nios2',
   'or1k',
   'pic',
+  'ppc_as',
   'ppc_cs',
   'ppc_gnu',
   'propeller',
@@ -108,6 +109,7 @@ asm_plugins = [
   'tricore',
   'v810',
   'v850',
+  'v850_gnu',
   'vax',
   'wasm',
   'ws',
@@ -328,6 +330,7 @@ parse_plugins = [
   'mips_pseudo',
   'ppc_pseudo',
   'sh_pseudo',
+  'riscv_pseudo',
   'v850_pseudo',
   'wasm_pseudo',
   'x86_pseudo',
@@ -382,6 +385,7 @@ include_files =[
   'include/r_types.h',
   'include/r_util.h',
   'include/r_vector.h',
+  'include/r_skyline.h',
 ]
 install_headers(include_files, install_dir: r2_incdir)
 

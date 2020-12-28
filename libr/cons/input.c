@@ -51,13 +51,13 @@ R_API int r_cons_controlz(int ch) {
 static int __parseMouseEvent(void) {
 	char xpos[32];
 	char ypos[32];
-	(void)r_cons_readchar (); // skip first char
+	(void) r_cons_readchar (); // skip first char
 	int ch2 = r_cons_readchar ();
 
 	// [32M - mousedown
 	// [35M - mouseup
 	if (ch2 == ';') {
-		int i;
+		size_t i;
 		// read until next ;
 		for (i = 0; i < sizeof (xpos) - 1; i++) {
 			char ch = r_cons_readchar ();
@@ -210,7 +210,9 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				}
 				pos[p++] = 0;
 				y = atoi (pos);
-				r_cons_set_click (x, y);
+				if (ch == 'm') { // mouse up only
+					r_cons_set_click (x, y);
+				}
 			}
 			return 0;
 		case '[':
@@ -245,9 +247,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			break;
 		case '3':
 			// handle mouse down /up events (35 vs 32)
-			__parseMouseEvent();
+			__parseMouseEvent ();
 			return 0;
-			break;
 		case '2':
 			ch = r_cons_readchar ();
 			switch (ch) {
@@ -339,7 +340,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 		case 'b': ch = 'J'; break; // shift+down
 		case 'c': ch = 'L'; break; // shift+right
 		case 'd': ch = 'H'; break; // shift+left
-		case 'M': ch = __parseMouseEvent (); break;
+		// case 'm': ch = __parseMouseEvent (); break; // mouse down
+		case 'M': ch = __parseMouseEvent (); break; // mouse up
 		}
 		break;
 	}
@@ -418,8 +420,8 @@ static int __cons_readchar_w32(ut32 usec) {
 	is_arrow = false;
 	DWORD mode, out;
 	HANDLE h;
-	INPUT_RECORD irInBuf = { { 0 } };
-	CONSOLE_SCREEN_BUFFER_INFO info = { { 0 } };
+	INPUT_RECORD irInBuf = { 0 };
+	CONSOLE_SCREEN_BUFFER_INFO info = { 0 };
 	bool mouse_enabled = I->mouse;
 	bool click_n_drag = false;
 	void *bed;

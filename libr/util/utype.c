@@ -195,7 +195,7 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 }
 
 R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
-	int i, prev_typesize, typesize = 0;
+	int i, cur_offset, next_offset = 0;
 	char *res = NULL;
 
 	if (offset < 0) {
@@ -223,17 +223,28 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 			free (subtype);
 			break;
 		}
-		int val = r_num_math (NULL, r_str_word_get0 (subtype, len - 1));
-		int arrsz = val ? val : 1;
-		if ((typesize / 8) == offset) {
+		cur_offset = r_num_math (NULL, r_str_word_get0 (subtype, len - 2));
+		if (cur_offset > 0 && cur_offset < next_offset) {
+			free (subtype);
+			break;
+		}
+		if (!cur_offset) {
+			cur_offset = next_offset;
+		}
+		if (cur_offset == offset) {
 			res = r_str_newf ("%s.%s", type, name);
 			free (subtype);
 			break;
 		}
-		prev_typesize = typesize;
-		typesize += r_type_get_bitsize (TDB, subtype) * arrsz;
+		int arrsz = r_num_math (NULL, r_str_word_get0 (subtype, len - 1));
+		int fsize = (r_type_get_bitsize (TDB, subtype) * (arrsz ? arrsz : 1)) / 8;
+		if (!fsize) {
+			free (subtype);
+			break;
+		}
+		next_offset = cur_offset + fsize;
 		// Handle nested structs
-		if (offset < (typesize / 8)) {
+		if (offset > cur_offset && offset < next_offset) {
 			char *nested_type = (char *)r_str_word_get0 (subtype, 0);
 			if (r_str_startswith (nested_type, "struct ") && !r_str_endswith (nested_type, " *")) {
 				len = r_str_split (nested_type, ' ');
@@ -242,7 +253,7 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 					break;
 				}
 				nested_type = (char *)r_str_word_get0 (nested_type, 1);
-				char *nested_res = r_type_get_struct_memb (TDB, nested_type, offset - (prev_typesize / 8));
+				char *nested_res = r_type_get_struct_memb (TDB, nested_type, offset - cur_offset);
 				if (nested_res) {
 					len = r_str_split(nested_res, '.');
 					res = r_str_newf ("%s.%s.%s", type, name, r_str_word_get0 (nested_res, len - 1));

@@ -300,7 +300,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 				r_strbuf_append (sig, "?;");
 			} else {
 				const char *buff = getstr (bin, type_desc_id);
-				r_strbuf_append (sig, buff? buff: "?;");
+				r_strbuf_append (sig, r_str_get_fail (buff, "?;"));
 			}
 		}
 		free (typeidx_buf);
@@ -787,7 +787,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->bclass = r_bin_dex_get_version (bf->o->bin_obj);
 	ret->rclass = strdup ("class");
 	ret->os = strdup ("linux");
-	ret->subsystem = strdup (dexSubsystem? dexSubsystem: "java");
+	ret->subsystem = strdup (r_str_get_fail (dexSubsystem, "java"));
 	ret->machine = strdup ("Dalvik VM");
 	h = &ret->sum[0];
 	h->type = "sha1";
@@ -1113,12 +1113,12 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		if (dexdump) {
 			const char *accessStr = createAccessFlagStr (
 				accessFlags, kAccessForField);
-			bin->cb_printf ("    #%d              : (in %s;)\n", i,
+			bin->cb_printf ("    #%zu              : (in %s;)\n", i,
 					 cls->name);
 			bin->cb_printf ("      name          : '%s'\n", fieldName);
 			bin->cb_printf ("      type          : '%s'\n", type_str);
 			bin->cb_printf ("      access        : 0x%04x (%s)\n",
-					 (ut32)accessFlags, accessStr? accessStr: "");
+					 (ut32)accessFlags, r_str_get (accessStr));
 		}
 		r_list_append (dex->methods_list, sym);
 
@@ -1491,7 +1491,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		goto beach;
 	}
 	const char *str = createAccessFlagStr (c->access_flags, kAccessForClass);
-	cls->visibility_str = strdup (str? str: "");
+	cls->visibility_str = strdup (r_str_get (str));
 	r_list_append (dex->classes_list, cls);
 	if (dexdump) {
 		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls->name);
@@ -1665,7 +1665,7 @@ static bool dex_loadcode(RBinFile *bf) {
 		for (i = 0; i < bin->header.class_size; i++) {
 			struct dex_class_t *c = &bin->classes[i];
 			if (dexdump) {
-				cb_printf ("Class #%d            -\n", i);
+				cb_printf ("Class #%zu            -\n", i);
 			}
 			parse_class (bf, c, i, methods, &sym_count);
 		}
@@ -2106,7 +2106,7 @@ static RList *dex_fields(RBinFile *bf) {
 	ut32 checksum = r_buf_read_le32 (bf->buf);
 	ROW ("dex_checksum", 4, checksum, "x");
 	ut8 signature[20];
-	ROW ("dex_signature", 8, signature, "[20]c");
+	ROW ("dex_signature", 8, (size_t)signature, "[20]c");
 	ut32 size = r_buf_read_le32 (bf->buf);
 	ROW ("dex_size", 4, size, "x");
 	ut32 header_size = r_buf_read_le32 (bf->buf);

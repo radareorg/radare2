@@ -76,6 +76,7 @@ static const char *help_msg_root[] = {
 	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
 	"(macro arg0 arg1)",  "", "manage scripting macros",
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
+	",", "[?] [/jhr]", "create a dummy table import from file and query it to filter/sort",
 	"_", "[?]", "Print last output",
 	"=","[?] [cmd]", "send/listen for remote commands (rap://, raps://, udp://, http://, <fd>)",
 	"<","[...]", "push escaped string into the RCons.readChar buffer",
@@ -104,7 +105,8 @@ static const char *help_msg_root[] = {
 	"t","[?]", "types, noreturn, signatures, C parser and more",
 	"T","[?] [-] [num|msg]", "Text log utility (used to chat, sync, log, ...)",
 	"u","[?]", "uname/undo seek/write",
-	"v","", "visual mode (v! = panels, vv = fcnview, vV = fcngraph, vVV = callgraph)",
+	"v","", "panels mode",
+	"V", "", "visual mode (Vv = func/var anal, VV = graph mode, ...)",
 	"w","[?] [str]", "multiple write operations",
 	"x","[?] [len]", "alias for 'px' (print hexadecimal)",
 	"y","[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
@@ -534,7 +536,7 @@ static int cmd_help(void *data, const char *input) {
 			return false;
 		}
 		r_list_foreach (tmp, iter, map) {
-			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
 		}
 		r_list_free (tmp);
 		break;
@@ -663,17 +665,15 @@ static int cmd_help(void *data, const char *input) {
 					pj_ks (pj, "float", sdb_fmt ("%ff", f));
 					pj_ks (pj, "double", sdb_fmt ("%lf", d));
 					pj_ks (pj, "binary", sdb_fmt ("0b%s", out));
-					r_num_to_trits (out, n);
-					pj_ks (pj, "trits", sdb_fmt ("0t%s", out));
+					r_num_to_ternary (out, n);
+					pj_ks (pj, "ternary", sdb_fmt ("0t%s", out));
 				} else {
 					r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
 					r_cons_printf ("float:  %ff\n", f);
 					r_cons_printf ("double: %lf\n", d);
 					r_cons_printf ("binary  0b%s\n", out);
-
-					/* ternary */
-					r_num_to_trits (out, n);
-					r_cons_printf ("trits   0t%s\n", out);
+					r_num_to_ternary (out, n);
+					r_cons_printf ("ternary 0t%s\n", out);
 				}
 			}
 			if (*input ==  'j') {
@@ -1107,7 +1107,7 @@ static int cmd_help(void *data, const char *input) {
 				r_num_math (core->num, input+2): core->offset;
 			RIOMap *map = r_io_map_get_paddr (core->io, n);
 			if (map) {
-				o = n + map->itv.addr - map->delta;
+				o = n + r_io_map_begin (map) - map->delta;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
 			} else {
 				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);
@@ -1123,7 +1123,7 @@ static int cmd_help(void *data, const char *input) {
 				r_num_math (core->num, input + 2): core->offset;
 			RIOMap *map = r_io_map_get (core->io, n);
 			if (map) {
-				o = n - map->itv.addr + map->delta;
+				o = n - r_io_map_begin (map) + map->delta;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);
 			} else {
 				r_cons_printf ("no map at 0x%08"PFMT64x"\n", n);
