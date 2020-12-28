@@ -94,7 +94,7 @@ static bool cb_diff_sort(void *_core, void *_node) {
 	RConfigNode *node = _node;
 	const char *column = node->value;
 	RCore *core = _core;
-	if (column && strcmp (column, "?")) {
+	if (column && *column != '?') {
 		if (!strcmp (column, "name")) {
 			core->anal->columnSort = (RListComparator)compareName;
 		} else if (!strcmp (column, "namelen")) {
@@ -596,7 +596,7 @@ static bool cb_asmarch(void *user, void *data) {
 	if (core && core->anal && core->anal->bits) {
 		bits = core->anal->bits;
 	}
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		update_asmarch_options (core, node);
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			/* print more verbose help instead of plain option values */
@@ -736,7 +736,7 @@ static bool cb_asmbits(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		update_asmbits_options (core, node);
 		print_node_options (node);
 		return false;
@@ -986,7 +986,7 @@ static void update_asmparser_options(RCore *core, RConfigNode *node) {
 static bool cb_asmparser(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		update_asmparser_options (core, node);
 		print_node_options (node);
 		return false;
@@ -1003,7 +1003,7 @@ typedef struct {
 static bool cb_binstrenc (void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		print_node_options (node);
 		r_cons_printf ("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
 		               "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
@@ -1117,7 +1117,7 @@ static bool cb_maxname (void *user, void *data) {
 
 static bool cb_midflags (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		print_node_options (node);
 		return false;
 	}
@@ -1127,7 +1127,7 @@ static bool cb_midflags (void *user, void *data) {
 static bool cb_strfilter(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for bin.str.filter:\n"
 				"a  only alphanumeric printable\n"
@@ -1338,7 +1338,7 @@ static bool cb_cfg_fortunes(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	// TODO CN_BOOL option does not receive the right hand side of assignment as an argument
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		r_core_fortune_list (core);
 		return false;
 	}
@@ -1347,7 +1347,7 @@ static bool cb_cfg_fortunes(void *user, void *data) {
 
 static bool cb_cfg_fortunes_type(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		r_core_fortune_list_types ();
 		return false;
 	}
@@ -1365,7 +1365,7 @@ static void check_decompiler(const char* name) {
 static bool cb_cmdpdc(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		r_cons_printf ("pdc\n");
 		// spaguetti
 		check_decompiler ("r2retdec");
@@ -1633,7 +1633,7 @@ static bool cb_dbgstatus(void *user, void *data) {
 static bool cb_dbgbackend(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (!strcmp (node->value, "?")) {
+	if (*node->value == '?') {
 		r_debug_plugin_list (core->dbg, 'q');
 		return false;
 	}
@@ -2169,7 +2169,7 @@ static bool cb_scr_color_grep_highlight(void *user, void *data) {
 static bool cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (!strcmp (node->value, "?")) {
+	if (*node->value == '?') {
 		eprintf ("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
 		return false;
 	}
@@ -2310,7 +2310,7 @@ static bool cb_scrflush(void *user, void *data) {
 static bool cb_scrstrconv(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for scr.strconv:\n"
 				"  asciiesc  convert to ascii with non-ascii chars escaped\n"
@@ -2333,13 +2333,12 @@ static bool cb_scrstrconv(void *user, void *data) {
 
 static bool cb_graphformat(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	if (!strcmp (node->value, "?")) {
+	if (*node->value == '?') {
 		r_cons_printf ("png\njpg\npdf\nps\nsvg\njson\n");
 		return false;
 	}
 	return true;
 }
-
 
 static bool cb_exectrap(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
@@ -2656,7 +2655,7 @@ static bool cb_binminstr(void *user, void *data) {
 static bool cb_searchin(void *user, void *data) {
 	RCore *core = (RCore*)user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for search.in (depends on .from/.to and io.va):\n"
 			"raw                search in raw io (ignoring bounds)\n"
@@ -2703,7 +2702,7 @@ static bool cb_dirpfx(RCore *core, RConfigNode *node) {
 
 static bool cb_analsyscc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
-		if (!strcmp (node->value, "?")) {
+		if (*node->value == '?') {
 			r_core_cmd0 (core, "afcl");
 			return false;
 		}
@@ -2714,7 +2713,7 @@ static bool cb_analsyscc(RCore *core, RConfigNode *node) {
 
 static bool cb_analcc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
-		if (!strcmp (node->value, "?")) {
+		if (*node->value == '?') {
 			r_core_cmd0 (core, "afcl");
 			return false;
 		}
@@ -3540,7 +3539,6 @@ R_API int r_core_config_init(RCore *core) {
 
 
 	/* cmd */
-	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETCB ("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF ("cmd.bp", "", "Run when a breakpoint is hit");
