@@ -58,7 +58,7 @@ R_API void r_io_bank_rename(RIOBank *bank, const char *name) {
 	}
 }
 
-R_API void r_io_map_bank(RIO *io, RIOBank *bank) {
+R_API void r_io_use_bank(RIO *io, RIOBank *bank) {
 	if (!io || !bank || !bank->map_refs) {
 		return;
 	}
