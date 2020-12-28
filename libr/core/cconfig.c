@@ -1200,6 +1200,7 @@ static void list_available_plugins(const char *path) {
 	RListIter *iter;
 	const char *fn;
 	RList *files = r_sys_dir (path);
+	r_list_sort (files, (RListComparator)strcmp);
 	r_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.' && r_str_endswith (fn, ".sdb")) {
 			char *f = strdup (fn);
