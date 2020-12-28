@@ -322,8 +322,8 @@ jobs:
         sudo apt-get --assume-yes install python3-wheel python3-setuptools
         pip3 install --user meson==0.55.3 ninja==1.10.0
         git config --global pull.rebase false
-        git clone --depth 1 https://github.com/radareorg/radare2 "spa ces" ; cd "spa ces" ; meson build > /dev/null ; ninja -C build ; sudo ninja -C build install ; cd ..
-        r2 -v
+        git clone --depth 1 https://github.com/radareorg/radare2 "spa ces" ; cd "spa ces" ; meson --prefix=/tmp/r2 build > /dev/null ; ninja -C build ; ninja -C build install ; cd ..
+        PATH=/tmp/r2/bin:$PATH r2 -v
     - name: Install to a directory with spaces using ACR/MAKE
       run: |
         ./configure --prefix=/usr/local; make uninstall
