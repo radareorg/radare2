@@ -10,10 +10,9 @@ It is distributed as a standalone binary and a library.
 There's also the sdbtypes: a vala library that implements
 several data structures on top of an sdb or a memcache instance.
 
+[![GHA](https://github.com/radareorg/sdb/workflows/ci/badge.svg)](https://github.com/radareorg/sdb/actions?query=workflow%3Aci)
+[![GHA](https://api.travis-ci.org/radareorg/sdb.svg)](https://travis-ci.org/radareorg/sdb)
 [![Travis](https://api.travis-ci.org/radareorg/sdb.svg)](https://travis-ci.org/radareorg/sdb)
-
-[![Appveyor](https://ci.appveyor.com/api/projects/status/github/radareorg/sdb?branch=master&svg=true)](https://ci.appveyor.com/project/radareorg/sdb)
-
 [![Build Status](https://scan.coverity.com/projects/1651/badge.svg)](https://scan.coverity.com/projects/1651)
 
 Author
