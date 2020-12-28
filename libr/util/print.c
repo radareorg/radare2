@@ -1605,7 +1605,7 @@ R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned i
 	}
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		if (enable_colors) {
-			p->cb_printf ("%s%4d%s%% %s%6d%s/%6d ", Color_GREEN, pc * 100 / total, Color_RESET, Color_GREEN, pc, Color_RESET, total, Color_YELLOW);
+			p->cb_printf ("%s%4d%s%% %s%6d%s/%6d%s ", Color_GREEN, pc * 100 / total, Color_RESET, Color_GREEN, pc, Color_RESET, total, Color_YELLOW);
 		} else {
 			p->cb_printf ("%4d%% %6d/%6d ", pc * 100 / total, pc, total);
 		}
