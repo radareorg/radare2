@@ -30,7 +30,7 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) 
 		free (map);
 		return NULL;
 	}
-	map->ts = r_time_now();
+	map->ts = r_time_now ();
 	map->fd = fd;
 	map->delta = delta;
 	if ((UT64_MAX - size + 1) < addr) {
