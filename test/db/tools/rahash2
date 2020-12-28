@@ -50,9 +50,9 @@ NAME=rahash2 -a md5,sha1,sha256 -r
 FILE=-
 CMDS=!rahash2 -a md5,sha1,sha256 -r bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
-bins/elf/analysis/hello-linux-x86_64: e file.md5=c957bd5bd6204470256bc15248ccafd4
-bins/elf/analysis/hello-linux-x86_64: e file.sha1=687c82d13cb27f0600d8e57edc784282c1732f56
-bins/elf/analysis/hello-linux-x86_64: e file.sha256=7bdbf25324af1946ec0b16dbf928875a588a786f7c279cd115729c5a3a297a55
+bins/elf/analysis/hello-linux-x86_64: CC file md5:c957bd5bd6204470256bc15248ccafd4
+bins/elf/analysis/hello-linux-x86_64: CC file sha1:687c82d13cb27f0600d8e57edc784282c1732f56
+bins/elf/analysis/hello-linux-x86_64: CC file sha256:7bdbf25324af1946ec0b16dbf928875a588a786f7c279cd115729c5a3a297a55
 EOF
 RUN
 
@@ -60,9 +60,9 @@ NAME=rahash2 -b10 -a md5,sha1,sha256 -r
 FILE=-
 CMDS=!rahash2 -b10 -a md5,sha1,sha256 -r bins/elf/analysis/hello-linux-x86_64
 EXPECT=<<EOF
-bins/elf/analysis/hello-linux-x86_64: e file.md5=c957bd5bd6204470256bc15248ccafd4
-bins/elf/analysis/hello-linux-x86_64: e file.sha1=687c82d13cb27f0600d8e57edc784282c1732f56
-bins/elf/analysis/hello-linux-x86_64: e file.sha256=7bdbf25324af1946ec0b16dbf928875a588a786f7c279cd115729c5a3a297a55
+bins/elf/analysis/hello-linux-x86_64: CC file md5:c957bd5bd6204470256bc15248ccafd4
+bins/elf/analysis/hello-linux-x86_64: CC file sha1:687c82d13cb27f0600d8e57edc784282c1732f56
+bins/elf/analysis/hello-linux-x86_64: CC file sha256:7bdbf25324af1946ec0b16dbf928875a588a786f7c279cd115729c5a3a297a55
 EOF
 RUN
 

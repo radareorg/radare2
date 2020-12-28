@@ -104,7 +104,7 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 		}
 		break;
 	case 1:
-		printf ("e file.%s=", hname);
+		printf ("CC file %s:", hname);
 		do_hash_hexprint (c, dlen, ule, rad);
 		break;
 	case 'n':

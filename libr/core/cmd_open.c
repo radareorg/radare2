@@ -224,7 +224,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			char *filename = strchr (arg, ' ');
 			if (filename && *filename && (filename[1] == '/' || filename[1] == '.')) {
 				int saved_fd = r_io_fd_get_current (core->io);
-				RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_R, 0);
+				RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_RX, 0);
 				if (desc) {
 					*filename = 0;
 					ut64 addr = r_num_math (core->num, arg);
@@ -1102,7 +1102,7 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 	desc->referer = desc->uri;
 	desc->uri = strdup (uri);
 
-	if ((file = r_core_file_open (core, uri, R_PERM_R | R_PERM_W, addr))) {
+	if ((file = r_core_file_open (core, uri, R_PERM_RW, addr))) {
 		fd = file->fd;
 		core->num->value = fd;
 		// if no baddr is defined, use the one provided by the file
@@ -1142,7 +1142,8 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & R_PERM_W)) {
 		eprintf ("Cannot debug file (%s) with permissions set to 0x%x.\n"
 			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
-		r_io_reopen (core->io, ofile->fd, R_PERM_R, 644);
+		r_io_reopen (core->io, ofile->fd, R_PERM_RX, 755);
+		// r_io_reopen (core->io, ofile->fd, R_PERM_R, 644);
 		desc = r_io_desc_get (core->io, ofile->fd);
 	}
 
@@ -1857,7 +1858,8 @@ static int cmd_open(void *data, const char *input) {
 						eprintf ("Nothing to do.\n");
 					}
 				} else {
-					r_io_reopen (core->io, fd, R_PERM_R, 644);
+					// r_io_reopen (core->io, fd, R_PERM_R, 644);
+					r_io_reopen (core->io, fd, R_PERM_RX, 755);
 				}
 			}
 			break;
@@ -1885,7 +1887,7 @@ static int cmd_open(void *data, const char *input) {
 			r_core_fini (core);
 			r_core_init (core);
 			r_core_task_sync_begin (&core->tasks);
-			if (!r_core_file_open (core, input + 2, R_PERM_R, 0)) {
+			if (!r_core_file_open (core, input + 2, R_PERM_RX, 0)) {
 				eprintf ("Cannot open file\n");
 			}
 			(void)r_core_bin_load (core, NULL, baddr);

@@ -272,25 +272,6 @@ R_API RConfigNode* r_config_node_get(RConfig *cfg, const char *name) {
 	return ht_pp_find (cfg->ht, name, NULL);
 }
 
-R_API bool r_config_set_getter(RConfig *cfg, const char *key, RConfigCallback cb) {
-	r_return_val_if_fail (cfg && key, false);
-	RConfigNode *node = r_config_node_get (cfg, key);
-	if (node) {
-		node->getter = cb;
-		return true;
-	}
-	return false;
-}
-
-R_API bool r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb) {
-	RConfigNode *node = r_config_node_get (cfg, key);
-	if (node) {
-		node->setter = cb;
-		return true;
-	}
-	return false;
-}
-
 R_API const char* r_config_get(RConfig *cfg, const char *name) {
 	r_return_val_if_fail (cfg && name, NULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
