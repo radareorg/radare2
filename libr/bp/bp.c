@@ -327,7 +327,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			break;
 		case 'j':
 			pj_o (pj);
-			pj_kS (pj, "addr", b->addr);
+			pj_kN (pj, "addr", b->addr);
 			pj_ki (pj, "size", b->size);
 			pj_ks (pj, "perm", r_str_rwx_i (b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
 			pj_kb (pj, "hw", b->hw);
@@ -344,7 +344,8 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	}
 	if (rad == 'j') {
 		pj_end (pj);
-		bp->cb_printf ("%s\n", pj_drain (pj));
+		bp->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 	return n;
 }
