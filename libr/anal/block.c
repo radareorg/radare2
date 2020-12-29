@@ -851,7 +851,7 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 	return true;
 }
 
-static bool automerge_get_predecessors_cb(void *user, const ut64 k, const void *v) {
+static bool automerge_get_predecessors_cb(void *user, ut64 k) {
 	AutomergeCtx *ctx = user;
 	const RAnalFunction *fcn = (const RAnalFunction *)(size_t)k;
 	RListIter *it;
@@ -880,7 +880,7 @@ R_API void r_anal_block_automerge(RList *blocks) {
 		.blocks = ht_up_new0 ()
 	};
 
-	HtUP *relevant_fcns = ht_up_new0 (); // all the functions that contain some of our blocks (ht abused as a set)
+	SetU *relevant_fcns = set_u_new ();
 	RList *fixup_candidates = r_list_new (); // used further down
 	if (!ctx.predecessors || !ctx.visited_blocks || !ctx.blocks || !relevant_fcns || !fixup_candidates) {
 		goto beach;
@@ -893,13 +893,13 @@ R_API void r_anal_block_automerge(RList *blocks) {
 		RListIter *fit;
 		RAnalFunction *fcn;
 		r_list_foreach (block->fcns, fit, fcn) {
-			ht_up_insert (relevant_fcns, (ut64)(size_t)fcn, NULL);
+			set_u_add (relevant_fcns, (ut64)(size_t)fcn);
 		}
 		ht_up_insert (ctx.blocks, block->addr, block);
 	}
 
 	// Get the single predecessors we might want to merge with
-	ht_up_foreach (relevant_fcns, automerge_get_predecessors_cb, &ctx);
+	set_u_foreach (relevant_fcns, automerge_get_predecessors_cb, &ctx);
 
 	// Now finally do the merging
 	RListIter *tmp;
@@ -948,6 +948,6 @@ beach:
 	ht_up_free (ctx.predecessors);
 	ht_up_free (ctx.visited_blocks);
 	ht_up_free (ctx.blocks);
-	ht_up_free (relevant_fcns);
+	set_u_free (relevant_fcns);
 	r_list_free (fixup_candidates);
 }
