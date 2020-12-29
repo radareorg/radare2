@@ -306,6 +306,40 @@ jobs:
       env:
         PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
 
+  build-spaces:
+    name: Build spaces
+    continue-on-error: true
+    runs-on: ubuntu-20.04
+    steps:
+    #- name: XXX this is not possible with make Install from a directory with spaces
+    #  run: |
+    #    git config pull.rebase false
+    #    git clone --depth 1 https://github.com/radareorg/radare2 "spa ces" ; cd "spa ces" ; ./sys/install.sh > /dev/null ; cd ..
+    #    r2 -v
+    # - name: Install to a directory with spaces using ACR/MAKE
+    #  run: |
+    #    git config --global pull.rebase false
+    #    git clone --depth 1 https://github.com/radareorg/radare2
+    #    cd radare2
+    #    ./configure --prefix=/usr/local; make uninstall
+    #    ./configure --prefix=/usr; make uninstall
+    #    ./sys/install.sh "/usr/spa ces" > /dev/null
+    #    LD_LIBRARY_PATH="/usr/spa ces/lib" PATH="/usr/spa ces/bin:$PATH" r2 -v
+    #    cd ..
+    - name: Build on a directory with spaces (meson only)
+      run: |
+        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
+        sudo apt-get --assume-yes install python3-wheel python3-setuptools
+        pip3 install --user meson==0.55.3 ninja==1.10.0
+        git config --global pull.rebase false
+        git clone --depth 1 https://github.com/radareorg/radare2 "spa ces"
+        cd "spa ces"
+        meson --prefix="/tmp/r 2" build > /dev/null
+        ninja -C build > /dev/null
+        ninja -C build install ; cd ..
+        find "/tmp/r 2"
+        LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
+
   build-static:
     name: Build static
     # FIXME: ignore error until all tests properly pass
