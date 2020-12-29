@@ -209,19 +209,22 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			eprintf ("JSON (-j) + disasm (-D) not yet implemented\n");
 		}
 		if (ro->json_started) {
-			printf (",\n");
+			printf (",");
 		}
 		ro->json_started = true;
-		printf ("{\"offset\":%"PFMT64d ",", op->a_off);
-		printf ("\"from\":\"");
-		for (i = 0; i < op->a_len; i++) {
-			printf ("%02x", op->a_buf[i]);
+		{
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			pj_kn (pj, "offset", op->a_off);
+			char *hex_from = r_hex_bin2strdup (op->a_buf, op->a_len);
+			pj_ks (pj, "from", hex_from);
+			char *hex_to = r_hex_bin2strdup (op->b_buf, op->b_len);
+			pj_ks (pj, "to", hex_to);
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			printf ("%s\n", s);
+			free (s);
 		}
-		printf ("\", \"to\":\"");
-		for (i = 0; i < op->b_len; i++) {
-			printf ("%02x", op->b_buf[i]);
-		}
-		printf ("\"}");
 		return 1;
 	case 0:
 	default:
