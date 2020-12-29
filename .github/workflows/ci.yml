@@ -337,7 +337,7 @@ jobs:
         meson --prefix="/tmp/r 2" build > /dev/null
         ninja -C build > /dev/null
         ninja -C build install ; cd ..
-        LD_LIBRARY_PATH="/tmp/r 2/lib" "/tmp/r 2/r2" -v
+        LD_LIBRARY_PATH="/tmp/r 2/lib" "/tmp/r 2/bin/r2" -v
 
   build-static:
     name: Build static
