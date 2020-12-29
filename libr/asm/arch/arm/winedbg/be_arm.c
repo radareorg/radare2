@@ -75,7 +75,7 @@ static char const tbl_sregops_t[][5] = {
 };
 
 static ut32 db_get_inst(const ut8* buf, int size) {
-	 ut32 result = 0;
+	ut32 result = 0;
 
 	switch (size) {
 	case 4:
@@ -92,7 +92,7 @@ static ut32 arm_disasm_branch(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	short link = (inst >> 24) & 0x01;
 	int offset = (inst << 2) & 0x03ffffff;
 
-	if (offset & 0x02000000){
+	if (offset & 0x02000000) {
 		offset |= 0xfc000000;
 	}
 	offset += 8;
@@ -111,8 +111,7 @@ static ut32 arm_disasm_mul(struct winedbg_arm_insn *arminsn, ut32 inst) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "mla%s%s %s, %s, %s, %s", get_cond (inst), condcodes ? "s" : "",
 				tbl_regs[get_nibble (inst, 4)], tbl_regs[get_nibble (inst, 0)],
 				tbl_regs[get_nibble (inst, 2)], tbl_regs[get_nibble (inst, 3)]);
-	}
-	else {
+	} else {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, "mul%s%s %s, %s, %s", get_cond (inst), condcodes ? "s" : "",
 				tbl_regs[get_nibble (inst, 4)], tbl_regs[get_nibble (inst, 0)],
 				tbl_regs[get_nibble (inst, 2)]);
@@ -138,11 +137,6 @@ static ut32 arm_disasm_swp(struct winedbg_arm_insn *arminsn, ut32 inst) {
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "swp%s%s %s, %s, [%s]", get_cond (inst), byte ? "b" : "",
 			tbl_regs[get_nibble (inst, 3)], tbl_regs[get_nibble (inst, 0)],
 			tbl_regs[get_nibble (inst, 4)]);
-	return 0;
-}
-
-static ut32 arm_disasm_branchreg(struct winedbg_arm_insn *arminsn, ut32 inst) {
-	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "b%s %s", get_cond (inst), tbl_regs[get_nibble (inst, 0)]);
 	return 0;
 }
 
@@ -197,37 +191,31 @@ static ut32 arm_disasm_dataprocessing(struct winedbg_arm_insn *arminsn, ut32 ins
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s", tbl_dataops[opcode], condcodes ? "s" : "", get_cond (inst));
 	if (!no_dst) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %s, ", tbl_regs[get_nibble (inst, 3)]);
-	}
-	else {
+	} else {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " ");	
 	}
 	if (no_op1) {
 		if (immediate) {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "#%u", ROR32 (inst & 0xff, 2 * get_nibble (inst, 2)));
-		}
-		else {
+		} else {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s", tbl_regs[get_nibble (inst, 0)]);
 		}
 	} else {
 		if (immediate) {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s, #%u", tbl_regs[get_nibble (inst, 4)],
 					ROR32 (inst & 0xff, 2 * get_nibble (inst, 2)));
-		}
-		else if (((inst >> 4) & 0xff) == 0x00) { /* no shift */
+		} else if (((inst >> 4) & 0xff) == 0x00) { /* no shift */
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s, %s", tbl_regs[get_nibble (inst, 4)],
 					tbl_regs[get_nibble (inst, 0)]);
-		}
-		else if (((inst >> 4) & 0x09) == 0x01) { /* register shift */
+		} else if (((inst >> 4) & 0x09) == 0x01) { /* register shift */
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s, %s, %s %s", tbl_regs[get_nibble (inst, 4)],
 					tbl_regs[get_nibble (inst, 0)],
 					tbl_shifts[(inst >> 5) & 0x03], tbl_regs[(inst >> 8) & 0x0f]);
-		}
-		else if (((inst >> 4) & 0x01) == 0x00) { /* immediate shift */
+		} else if (((inst >> 4) & 0x01) == 0x00) { /* immediate shift */
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s, %s, %s #%d", tbl_regs[get_nibble (inst, 4)],
 					tbl_regs[get_nibble (inst, 0)], tbl_shifts[(inst >> 5) & 0x03],
 					(inst >> 7) & 0x1f);
-		}
-		else {
+		} else {
 			return inst;
 		}
 	}
@@ -243,43 +231,33 @@ static ut32 arm_disasm_singletrans(struct winedbg_arm_insn *arminsn, ut32 inst) 
 	short immediate = !((inst >> 25) & 0x01);
 	short offset    = inst & 0x0fff;
 
-	if (!direction) {
-		offset *= -1;
-	}
-
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s%s", load ? "ldr" : "str", byte ? "b" : "", writeback ? "t" : "",
 			get_cond (inst));
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %s, ", tbl_regs[get_nibble (inst, 3)]);
 	if (indexing) {
 		if (immediate) {
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s, #%d]", tbl_regs[get_nibble (inst, 4)], offset);
-		}
-		else if (((inst >> 4) & 0xff) == 0x00) { /* no shift */
+			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s, #%s%d]", tbl_regs[get_nibble (inst, 4)], direction ? "" : "-", offset);
+		} else if (((inst >> 4) & 0xff) == 0x00) { /* no shift */
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s, %s]", tbl_regs[get_nibble (inst, 4)],
 					tbl_regs[get_nibble (inst, 0)]);
-		}
-		else if (((inst >> 4) & 0x01) == 0x00) {/* immediate shift (there's no register shift) */
+		} else if (((inst >> 4) & 0x01) == 0x00) {/* immediate shift (there's no register shift) */
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s, %s, %s #%d]", tbl_regs[get_nibble (inst, 4)],
 					tbl_regs[get_nibble (inst, 0)], tbl_shifts[(inst >> 5) & 0x03],
 					(inst >> 7) & 0x1f);
-		}
-		else {
+		} else {
 			return inst;
 		}
 	} else {
 		if (immediate) {
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s], #%d", tbl_regs[get_nibble (inst, 4)], offset);
-		}
-		else if (((inst >> 4) & 0xff) == 0x00) { /* no shift */
+			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s], #%s%d", tbl_regs[get_nibble (inst, 4)], direction ? "" : "-", offset);
+		} else if (((inst >> 4) & 0xff) == 0x00) { /* no shift */
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s], %s", tbl_regs[get_nibble (inst, 4)],
 					tbl_regs[get_nibble (inst, 0)]);
-		}
-		else if (((inst >> 4) & 0x01) == 0x00) { /* immediate shift (there's no register shift) */
+		} else if (((inst >> 4) & 0x01) == 0x00) { /* immediate shift (there's no register shift) */
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s], %s, %s #%d", tbl_regs[get_nibble (inst, 4)],
 					tbl_regs[get_nibble (inst, 0)], tbl_shifts[(inst >> 5) & 0x03],
 					(inst >> 7) & 0x1f);
-		}
-		else {
+		} else {
 			return inst;
 		}
 	}
@@ -296,26 +274,20 @@ static ut32 arm_disasm_halfwordtrans(struct winedbg_arm_insn *arminsn, ut32 inst
 	short indexing  = (inst >> 24) & 0x01;
 	short offset    = ((inst >> 4) & 0xf0) + (inst & 0x0f);
 
-	if (!direction){
-		offset *= -1;
-	}
-
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s%s%s", load ? "ldr" : "str", sign ? "s" : "",
 			halfword ? "h" : (sign ? "b" : ""), writeback ? "t" : "", get_cond (inst));
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %s, ", tbl_regs[get_nibble (inst, 3)]);
 	if (indexing) {
 		if (immediate) {
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s, #%d]", tbl_regs[get_nibble (inst, 4)], offset);
-		}
-		else {
+			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s, #%s%d]", tbl_regs[get_nibble (inst, 4)], direction ? "" : "-", offset);
+		} else {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s, %s]", tbl_regs[get_nibble (inst, 4)],
 					tbl_regs[get_nibble (inst, 0)]);
 		}
 	} else {
 		if (immediate) {
-			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s], #%d", tbl_regs[get_nibble (inst, 4)], offset);
-		}
-		else {
+			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s], #%s%d", tbl_regs[get_nibble (inst, 4)], direction ? "" : "-", offset);
+		} else {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "[%s], %s", tbl_regs[get_nibble (inst, 4)],
 					tbl_regs[get_nibble (inst, 0)]);
 		}
@@ -333,7 +305,7 @@ static ut32 arm_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s %s%s, {", load ? "ldm" : "stm", tbl_addrmode[addrmode],
 			get_cond (inst), tbl_regs[get_nibble (inst, 4)], writeback ? "!" : "");
-	for (i = 0; i <= 15; i++, inst >>= 1) {
+	for (i = 0; i < 16; i++, inst >>= 1) {
 		if (inst & 1) {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s", first ? "" : ", ", tbl_regs[i]);
 			first = false;
@@ -385,17 +357,13 @@ static ut32 arm_disasm_coprocdatatrans(struct winedbg_arm_insn *arminsn, ut32 in
 	ut16 indexing  = (inst >> 24) & 0x01;
 	short offset    = (inst & 0xff) << 2;
 
-	if (!direction) {
-		offset *= -1;
-	}
-
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s", load ? "ldc" : "stc", translen ? "l" : "", get_cond (inst));
 	if (indexing) {
-		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %u, cr%u, [%s, #%d]%s", CPnum, CRd, tbl_regs[get_nibble (inst, 4)],
-			offset, writeback ? "!" : "");
+		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %u, cr%u, [%s, #%s%d]%s", CPnum, CRd, tbl_regs[get_nibble (inst, 4)],
+			direction ? "" : "-", offset, writeback ? "!" : "");
 	} else {
-		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %u, cr%u, [%s], #%d", CPnum, CRd, tbl_regs[get_nibble (inst, 4)],
-			offset);
+		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %u, cr%u, [%s], #%s%d", CPnum, CRd, tbl_regs[get_nibble (inst, 4)],
+			direction ? "" : "-", offset);
 	}
 	return 0;
 }
@@ -445,7 +413,7 @@ static ut16 thumb_disasm_pushpop(struct winedbg_arm_insn *arminsn, ut16 inst) {
 
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s {", load ? "pop" : "push");
 
-	for (i = 0; i <= 7; i++, inst >>= 1) {
+	for (i = 0; i < 8; i++, inst >>= 1) {
 		if (inst & 1) {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s", first ? "" : ", ", tbl_regs[i]);
 			first = false;
@@ -466,7 +434,7 @@ static ut16 thumb_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut16 inst)
 
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s %s!, {", load ? "ldmia" : "stmia", tbl_regs[(inst >> 8) & 0x07]);
 
-	for (i = 0; i <= 7; i++, inst >>= 1) {
+	for (i = 0; i < 8; i++, inst >>= 1) {
 		if (inst & 1) {
 			arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s", first ? "" : ", ", tbl_regs[i]);
 			first = false;
@@ -758,7 +726,6 @@ static const struct inst_arm tbl_arm[] = {
 	{ 0x0f8000f0, 0x00800090, arm_disasm_longmul },
 	{ 0x0fb00ff0, 0x01000090, arm_disasm_swp },
 	{ 0x0e000090, 0x00000090, arm_disasm_halfwordtrans },
-	{ 0x0ffffff0, 0x012fff00, arm_disasm_branchreg },
 	{ 0x0ffffff0, 0x012fff10, arm_disasm_branchxchg },
 	{ 0x0fbf0fff, 0x010f0000, arm_disasm_mrstrans },
 	{ 0x0dbef000, 0x0128f000, arm_disasm_msrtrans },
