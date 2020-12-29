@@ -318,10 +318,14 @@ jobs:
     #    r2 -v
     - name: Install to a directory with spaces using ACR/MAKE
       run: |
+        git config --global pull.rebase false
+        git clone --depth 1 https://github.com/radareorg/radare2
+        cd radare2
         ./configure --prefix=/usr/local; make uninstall
         ./configure --prefix=/usr; make uninstall
         ./sys/install.sh "/usr/spa ces" > /dev/null
         LD_LIBRARY_PATH="/usr/spa ces/lib" PATH="/usr/spa ces/bin:$PATH" r2 -v
+        cd ..
     - name: Build on a directory with spaces (meson only)
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
