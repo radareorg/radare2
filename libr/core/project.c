@@ -770,14 +770,10 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	SdbListIter *it;
 	SdbNs *ns;
 	char *old_prj_name = NULL;
-	r_return_val_if_fail(prj_name && *prj_name, false);
+	r_return_val_if_fail (prj_name && *prj_name, false);
 	script_path = get_project_script_path (core, prj_name);
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		eprintf ("radare2 does not support projects on debugged bins\n");
-		return false;
-	}
-	if (r_config_get_i (core->config, "asm.emu")) {
-		eprintf ("radare2 does not support projects on emulated bins\n");
 		return false;
 	}
 	if (!script_path) {
