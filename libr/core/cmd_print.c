@@ -1570,8 +1570,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				return;
 			}
 
-			if (!strchr (name, '.') &&
-			!sdb_get (core->print->formats, name, NULL)) {
+			if (!strchr (name, '.') && !sdb_const_get (core->print->formats, name, NULL)) {
 				eprintf ("Cannot find '%s' format.\n", name);
 				free (name);
 				free (input);
@@ -1588,8 +1587,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 
 			/* Load format from name into fmt to get the size */
 			/* This make sure the whole structure will be printed */
-			const char *fmt = NULL;
-			fmt = sdb_get (core->print->formats, name, NULL);
+			char *fmt = sdb_get (core->print->formats, name, NULL);
 			if (fmt) {
 				int size = r_print_format_struct_size (core->print, fmt, mode, 0) + 10;
 				if (size > core->blocksize) {
@@ -1614,6 +1612,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					core->block, core->blocksize, name, mode, NULL, NULL);
 			}
 			free (name);
+			free (fmt);
 		}
 	} else {
 		/* This make sure the structure will be printed entirely */

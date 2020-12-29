@@ -3074,6 +3074,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
 		ret = r_core_cmd_subst_i (core, cmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
+		if (*cmd == 's') {
+			// do not restore tmpseek if the command executed is the 's'eek
+			tmpseek = false;
+		}
 		if (ret && *cmd == 'q') {
 			free (cr);
 			goto beach;
@@ -3677,7 +3681,7 @@ escape_backtick:
 	}
 
 	/* temporary seek commands */
-	// if (*cmd != '(' && *cmd != '"') {
+	// if (*cmd != '(' && *cmd != '"') 
 	if (*cmd != '"') {
 		ptr = strchr (cmd, '@');
 		if (ptr == cmd + 1 && *cmd == '?') {
@@ -7090,7 +7094,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (core->use_tree_sitter_r2cmd) {
-		return r_cmd_status2int(core_cmd_tsr2cmd (core, cstr, false, log));
+		return r_cmd_status2int (core_cmd_tsr2cmd (core, cstr, false, log));
 	}
 
 	int ret = false, i;

@@ -184,7 +184,7 @@ SDB_API int sdb_count(Sdb *s) {
 	return count;
 }
 
-static void sdb_fini(Sdb* s, int donull) {
+static void sdb_fini(Sdb* s, bool donull) {
 	if (!s) {
 		return;
 	}
@@ -218,7 +218,7 @@ SDB_API bool sdb_free(Sdb* s) {
 		s->refs--;
 		if (s->refs < 1) {
 			s->refs = 0;
-			sdb_fini (s, 0);
+			sdb_fini (s, false);
 			s->ht = NULL;
 			free (s);
 			return true;
@@ -546,7 +546,7 @@ SDB_API void sdbkv_free(SdbKv *kv) {
 	}
 }
 
-static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32 cas) {
+static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, bool owned, ut32 cas) {
 	ut32 vlen, klen;
 	SdbKv *kv;
 	bool found;
@@ -628,11 +628,11 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 }
 
 SDB_API int sdb_set_owned(Sdb* s, const char *key, char *val, ut32 cas) {
-	return sdb_set_internal (s, key, val, 1, cas);
+	return sdb_set_internal (s, key, val, true, cas);
 }
 
 SDB_API int sdb_set(Sdb* s, const char *key, const char *val, ut32 cas) {
-	return sdb_set_internal (s, key, (char*)val, 0, cas);
+	return sdb_set_internal (s, key, (char *)val, false, cas);
 }
 
 static bool sdb_foreach_list_cb(void *user, const char *k, const char *v) {
@@ -1096,14 +1096,14 @@ SDB_API void sdb_config(Sdb *s, int options) {
 }
 
 SDB_API bool sdb_unlink(Sdb* s) {
-	sdb_fini (s, 1);
+	sdb_fini (s, true);
 	return sdb_disk_unlink (s);
 }
 
 SDB_API void sdb_drain(Sdb *s, Sdb *f) {
 	if (s && f) {
 		f->refs = s->refs;
-		sdb_fini (s, 1);
+		sdb_fini (s, true);
 		*s = *f;
 		free (f);
 	}

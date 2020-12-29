@@ -585,9 +585,6 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 		if (use_json) {
 			pj_o (pj);
 			pj_k (pj, "desc");
-		}
-
-		if (use_json) {
 			rtti_msvc_print_base_class_descriptor_json (pj, bcd);
 		} else {
 			rtti_msvc_print_base_class_descriptor (bcd, "\t\t");

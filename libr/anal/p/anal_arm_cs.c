@@ -283,7 +283,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 			break;
 		case ARM_OP_SYSREG:
 			pj_ks (pj, "type", "sysreg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+			pj_ks (pj, "value", r_str_get_fail (cs_reg_name (handle, op->reg), ""));
 			break;
 		default:
 			pj_ks (pj, "type", "invalid");
