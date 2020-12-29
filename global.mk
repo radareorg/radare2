@@ -3,6 +3,15 @@ _INCLUDE_GLOBAL_MK_=1
 DESTDIR=
 COMPILER?=gcc
 
+SPACE:=
+SPACE+=
+ifneq (,$(findstring $(SPACE),$(PREFIX)))
+$(error PREFIX cannot contain spaces)
+endif
+ifneq (,$(findstring $(SPACE),$(shell pwd)))
+$(error Current working directory cannot contain spaces)
+endif
+
 TOP:=$(dir $(lastword $(MAKEFILE_LIST)))
 LTOP:=$(TOP)/libr
 STOP:=$(TOP)/shlr
