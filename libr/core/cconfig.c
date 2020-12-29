@@ -3788,6 +3788,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "Convert string before display");
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
 	SETBPREF ("scr.confirmquit", "false", "Confirm on quit");
+	SETBPREF ("scr.progressbar", "true", "Display a progress bar when running scripts.");
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
