@@ -658,16 +658,14 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
 	r_str_write (fd, "# r2 rdb project file\n");
-	if (!core->bin->is_debugger && !r_config_get_i (core->config, "asm.emu")) {
-		if (core->bin->file) {
-			char *fpath = r_file_abspath (core->bin->file);
-			if (fpath) {
-				char *reopen = r_str_newf ("\"o %s\"\n", fpath);
-				if (reopen) {
-					r_str_write (fd, reopen);
-					free (reopen);
-					free (fpath);
-				}
+	if (core->bin->file) {
+		char *fpath = r_file_abspath (core->bin->file);
+		if (fpath) {
+			char *reopen = r_str_newf ("\"o %s\"\n", fpath);
+			if (reopen) {
+				r_str_write (fd, reopen);
+				free (reopen);
+				free (fpath);
 			}
 		}
 	}
@@ -774,6 +772,14 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	char *old_prj_name = NULL;
 	r_return_val_if_fail(prj_name && *prj_name, false);
 	script_path = get_project_script_path (core, prj_name);
+	if (core->bin->is_debugger) {
+		eprintf ("radare2 does not support projects on debugged bins\n");
+		return false;
+	}
+	if (r_config_get_i (core->config, "asm.emu")) {
+		eprintf ("radare2 does not support projects on emulated bins\n");
+		return false;
+	}
 	if (!script_path) {
 		eprintf ("Invalid project name '%s'\n", prj_name);
 		return false;
