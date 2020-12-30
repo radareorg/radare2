@@ -1021,6 +1021,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -Zj
+FILE=bins/pe/base.exe
+CMDS=!rabin2 -Zj ${R2_FILE}
+EXPECT=<<EOF
+{"size":216569}
+EOF
+RUN
+
 NAME=rabin2 -H
 FILE=bins/pe/base.exe
 CMDS=!rabin2 -H ${R2_FILE} | grep -c "Machine : 0x14c"
@@ -1034,6 +1042,14 @@ FILE=bins/elf/analysis/dwarftest
 CMDS=!rabin2 -d ${R2_FILE} | grep -c "0x00400535	/tmp/r2-regressions/.//dwarftest.c"
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=rabin2 -dj
+FILE=bins/elf/analysis/dwarftest
+CMDS=!rabin2 -dj ${R2_FILE}
+EXPECT=<<EOF
+{"dwarf":[[{"name":"CC","file":"dwarftest.c","line_num":7,"addr":4195637},{"name":"CL","file":"dwarftest.c","line_num":7,"line":"","addr":4195637}],[{"name":"CC","file":"dwarftest.c","line_num":4,"addr":4195629},{"name":"CL","file":"dwarftest.c","line_num":4,"line":"","addr":4195629}],[{"name":"CC","file":"dwarftest.c","line_num":12,"addr":4195673},{"name":"CL","file":"dwarftest.c","line_num":12,"line":"","addr":4195673}],[{"name":"CC","file":"dwarftest.c","line_num":8,"addr":4195646},{"name":"CL","file":"dwarftest.c","line_num":8,"line":"","addr":4195646}],[{"name":"CC","file":"dwarftest.c","line_num":7,"addr":4195660},{"name":"CL","file":"dwarftest.c","line_num":7,"line":"","addr":4195660}],[{"name":"CC","file":"dwarftest.c","line_num":7,"addr":4195656},{"name":"CL","file":"dwarftest.c","line_num":7,"line":"","addr":4195656}],[{"name":"CC","file":"dwarftest.c","line_num":11,"addr":4195666},{"name":"CL","file":"dwarftest.c","line_num":11,"line":"","addr":4195666}],[{"name":"CC","file":"dwarftest.c","line_num":12,"addr":4195671},{"name":"CL","file":"dwarftest.c","line_num":12,"line":"","addr":4195671}]]}
 EOF
 RUN
 

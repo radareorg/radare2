@@ -359,6 +359,31 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=o: obj
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+obj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "name": "malloc://512",
+    "iofd": 3,
+    "bfid": 0,
+    "size": 512,
+    "obj": {
+      "arch": "x86",
+      "bits": 64,
+      "binoffset": 0,
+      "objsize": 512
+    }
+  }
+]
+EOF
+RUN
+
 NAME=o+ writable maps fix
 FILE=--
 CMDS=<<EOF
