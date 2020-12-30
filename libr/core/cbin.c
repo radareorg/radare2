@@ -1018,7 +1018,6 @@ static int bin_info(RCore *r, int mode, ut64 laddr) {
 				for (j = 0; j < h->len; j++) {
 					snprintf (buf + 2 * j, 3, "%02x", h->buf[j]);
 				}
-				buf[2 * h->len] = '\0';
 				pj_ks (pj, "hex", buf);
 				free (buf);
 				pj_end (pj);
