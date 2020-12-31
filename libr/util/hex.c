@@ -14,9 +14,9 @@ R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
 	} else if (c >= 'a' && c <= 'f') {
 		*val = (ut8)(*val) * 16 + (c - 'a' + 10);
 	} else {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 R_API char *r_hex_from_py_str(char *out, const char *code) {
