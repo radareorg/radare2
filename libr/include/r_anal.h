@@ -1095,21 +1095,23 @@ R_API bool r_anal_esil_claim_source(ESIL *esil, ut32 src_id);
 R_API void r_anal_esil_release_source(ESIL *esil, ut32 src_id);
 R_API void r_anal_esil_sources_fini(ESIL *esil);
 
-typedef bool (*RAnalEsilInterruptCB)(ESIL *esil, ut32 interrupt, void *user);
+typedef bool (*RAnalEsilHandlerCB)(ESIL *esil, ut32 h, void *user);
 
-typedef struct r_anal_esil_interrupt_handler_t {
+typedef struct r_anal_esil_handler_t {
 	const ut32 num;
 	const char* name;
 	void *(*init)(ESIL *esil);
-	RAnalEsilInterruptCB cb;
+	RAnalEsilHandlerCB cb;
 	void (*fini)(void *user);
-} RAnalEsilInterruptHandler;
+} RAnalEsilHandler;
 
 typedef struct r_anal_esil_interrupt_t {
-	RAnalEsilInterruptHandler *handler;
+	RAnalEsilHandler *handler;
 	void *user;
 	ut32 src_id;
 } RAnalEsilInterrupt;
+
+typedef RAnalEsilInterrupt RAnalEsilSyscall;	// semantic sugar
 
 typedef struct r_anal_esil_change_reg_t {
 	int idx;
@@ -1184,8 +1186,10 @@ typedef struct r_anal_esil_t {
 	char *current_opstr;
 	RIDStorage *sources;
 	SdbMini *interrupts;
+	SdbMini *syscalls;
 	//this is a disgusting workaround, because we have no ht-like storage without magic keys, that you cannot use, with int-keys
 	RAnalEsilInterrupt *intr0;
+	RAnalEsilSyscall *sysc0;
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	RAnalEsilTrace *trace;
@@ -1603,14 +1607,21 @@ R_API int r_anal_esil_get_parm(RAnalEsil *esil, const char *str, ut64 *num);
 R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str);
 
 // esil_interrupt.c
-R_API void r_anal_esil_interrupts_init(RAnalEsil *esil);
-R_API RAnalEsilInterrupt *r_anal_esil_interrupt_new(RAnalEsil *esil, ut32 src_id, RAnalEsilInterruptHandler *ih);
+R_API void r_anal_esil_handlers_init(RAnalEsil *esil);
+R_API RAnalEsilInterrupt *r_anal_esil_interrupt_new(RAnalEsil *esil, ut32 src_id, RAnalEsilHandler *ih);
+R_API RAnalEsilSyscall *r_anal_esil_syscall_new(RAnalEsil *esil, ut32 src_id, RAnalEsilHandler *sh);
 R_API void r_anal_esil_interrupt_free(RAnalEsil *esil, RAnalEsilInterrupt *intr);
+R_API void r_anal_esil_syscall_free(RAnalEsil *esil, RAnalEsilSyscall *sysc);
 R_API bool r_anal_esil_set_interrupt(RAnalEsil *esil, RAnalEsilInterrupt *intr);
+R_API bool r_anal_esil_set_syscall(RAnalEsil *esil, RAnalEsilSyscall *sysc);
 R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, ut32 intr_num);
-R_API bool r_anal_esil_load_interrupts(RAnalEsil *esil, RAnalEsilInterruptHandler **handlers, ut32 src_id);
+R_API int r_anal_esil_do_syscall(RAnalEsil *esil, ut32 sysc_num);
+R_API bool r_anal_esil_load_interrupts(RAnalEsil *esil, RAnalEsilHandler **handlers, ut32 src_id);
+R_API bool r_anal_esil_load_syscalls(RAnalEsil *esil, RAnalEsilHandler **handlers, ut32 src_id);
 R_API bool r_anal_esil_load_interrupts_from_lib(RAnalEsil *esil, const char *path);
-R_API void r_anal_esil_interrupts_fini(RAnalEsil *esil);
+R_API bool r_anal_esil_load_syscalls_from_lib(RAnalEsil *esil, const char *path);
+R_API bool r_anal_esil_load_handlers_from_lib(RAnalEsil *esil, const char *path);
+R_API void r_anal_esil_handlers_fini(RAnalEsil *esil);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);

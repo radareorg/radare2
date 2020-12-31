@@ -103,7 +103,7 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsiz
 	esil->ops = ht_pp_new (NULL, esil_ops_free, NULL);
 	esil->iotrap = iotrap;
 	r_anal_esil_sources_init (esil);
-	r_anal_esil_interrupts_init (esil);
+	r_anal_esil_handlers_init (esil);
 	esil->addrmask = genmask (addrsize - 1);
 	return esil;
 }
@@ -170,7 +170,7 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	}
 	ht_pp_free (esil->ops);
 	esil->ops = NULL;
-	r_anal_esil_interrupts_fini (esil);
+	r_anal_esil_handlers_fini (esil);
 	r_anal_esil_sources_fini (esil);
 	sdb_free (esil->stats);
 	esil->stats = NULL;
@@ -1018,6 +1018,14 @@ static bool esil_interrupt(RAnalEsil *esil) {
 	ut64 interrupt;
 	if (popRN (esil, &interrupt)) {
 		return r_anal_esil_fire_interrupt (esil, (ut32)interrupt);
+	}
+	return false;
+}
+
+static bool esil_syscall(RAnalEsil *esil) {
+	ut64 syscall;
+	if (popRN (esil, &syscall)) {
+		return r_anal_esil_do_syscall (esil, (ut32)syscall);
 	}
 	return false;
 }
@@ -3726,6 +3734,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 #define	OT_MEMR	R_ANAL_ESIL_OP_TYPE_MEM_READ
 
 	OP ("$", esil_interrupt, 0, 1, OT_UNK);		//hm, type seems a bit wrong
+	OP ("()", esil_syscall, 0, 1, OT_UNK);		//same
 	OP ("$z", esil_zf, 1, 0, OT_UNK);
 	OP ("$c", esil_cf, 1, 1, OT_UNK);
 	OP ("$b", esil_bf, 1, 1, OT_UNK);

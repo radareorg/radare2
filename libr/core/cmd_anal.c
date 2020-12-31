@@ -178,6 +178,9 @@ static const char *help_msg_ae[] = {
 	"aeli", "", "list loaded ESIL interrupts",
 	"aeli", " [file]", "load ESIL interrupts from shared object",
 	"aelir", " [interrupt number]", "remove ESIL interrupt and free it if needed",
+	"aels", "", "list loaded ESIL syscalls",
+	"aels", " [file]", "load ESIL syscalls from shared object",
+	"aelsr", " [syscall number]", "remove ESIL syscall and free it if needed",
 	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
@@ -5891,9 +5894,13 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int off) {
 }
 
 static const char _handler_no_name[] = "<no name>";
-static int _aeli_iter(dictkv* kv, void* ud) {
+static void _aeli_print(ut64 k, RAnalEsilInterrupt *interrupt) {
+	r_cons_printf ("%3" PFMT64x ": %s\n", k, interrupt->handler->name ? interrupt->handler->name : _handler_no_name);
+}
+
+static int _aeli_iter(dictkv* kv, void* ud) {	// also works for "aels"
 	RAnalEsilInterrupt* interrupt = kv->u;
-	r_cons_printf ("%3" PFMT64x ": %s\n", kv->k, interrupt->handler->name ? interrupt->handler->name : _handler_no_name);
+	_aeli_print (kv->k, interrupt);
 	return 0;
 }
 
@@ -6525,21 +6532,63 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			switch (input[2]) {
 			case ' ': // "aeli" with arguments
 				if (!r_anal_esil_load_interrupts_from_lib (esil, input + 3)) {
-					eprintf ("Failed to load interrupts from '%s'.", input + 3);
+					eprintf ("Failed to load interrupts from '%s'.\n", input + 3);
 				}
 				break;
 			case 0: // "aeli" with no args
 				if (esil && esil->interrupts) {
+					if (esil->intr0) {
+						_aeli_print (0ULL, esil->intr0);
+					}
 					dict_foreach (esil->interrupts, _aeli_iter, NULL);
 				}
 				break;
 			case 'r': // "aelir"
 				if (esil && esil->interrupts) {
-					RAnalEsilInterrupt* interrupt = dict_getu (esil->interrupts, r_num_math (core->num, input + 3));
-					r_anal_esil_interrupt_free (esil, interrupt);
+					const ut32 intr_num = r_num_math (core->num, input + 3);
+					if (intr_num) {
+						RAnalEsilInterrupt* interrupt = dict_getu (esil->interrupts, intr_num);
+						r_anal_esil_interrupt_free (esil, interrupt);
+					} else {
+						r_anal_esil_interrupt_free (esil, esil->intr0);
+					}
 				}
 				break;
 			}
+			break;
+		case 's': // aels interrupts
+			switch (input[2]) {
+			case ' ': // "aels" with arguments
+				if (!r_anal_esil_load_syscalls_from_lib (esil, input + 3)) {
+					eprintf ("Failed to load syscalls from '%s'.\n", input + 3);
+				}
+				break;
+			case 0: // "aels" with no args
+				if (esil && esil->syscalls) {
+					if (esil->sysc0) {
+						_aeli_print (0ULL, esil->sysc0);
+					}
+					dict_foreach (esil->syscalls, _aeli_iter, NULL);
+				}
+				break;
+			case 'r': // "aelsr"
+				if (esil && esil->syscalls) {
+					const ut32 sysc_num = r_num_math (core->num, input + 3);
+					if (sysc_num) {
+						RAnalEsilSyscall *syscall = dict_getu (esil->syscalls, sysc_num);
+						r_anal_esil_syscall_free (esil, syscall);
+					} else {
+						r_anal_esil_syscall_free (esil, esil->sysc0);
+					}
+				}
+				break;
+			}
+			break;
+		case ' ': // "ael"
+			if (r_anal_esil_load_handlers_from_lib (esil, input + 2)) {
+				eprintf ("Failed to load handlers from '%s'.\n", input + 2);
+			}
+			break;
 		}
 		break;
 	case 'g': // "aeg"
