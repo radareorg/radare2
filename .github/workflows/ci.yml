@@ -863,6 +863,8 @@ jobs:
     if: github.event_name == 'push'
     steps:
     - uses: actions/checkout@v2
+    - name: Moving the Dockerfile to the root
+      run: cp -f dist/docker/Dockerfile .
     - name: Publish to Registry
       uses: docker/build-push-action@v1
       with:

@@ -128,7 +128,7 @@ before_install:
     if [ "${FUZZIT}" == "1" ]; then
       docker pull gcr.io/fuzzit-public/builders:llvm9.v1
     elif [ "$TRAVIS_OS_NAME" != "osx" ] && [ "$NODOCKER" != "1" ]; then
-      docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis .
+      docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f dist/docker/Dockerfile.travis .
     fi
 
 script:
