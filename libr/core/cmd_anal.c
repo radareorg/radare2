@@ -368,7 +368,7 @@ static const char *help_msg_afb[] = {
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
 	"afbc", " [addr] [color(ut32)]", "set a color for the bb at a given address",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
-	"afbi", "", "print current basic block information",
+	"afbi", "[j]", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
 	"afbr", "", "Show addresses of instructions which leave the function",
 	"afbt", "", "Show basic blocks of current function in a table",
@@ -2441,66 +2441,70 @@ static void anal_bb_list(RCore *core, const char *input) {
 	}
 }
 
-static void bb_to_pj(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, const ut64 addr) {
+static void print_bb(PJ *pj, const RAnalBlock *b, const RAnalFunction *fcn, const ut64 addr) {
 	RListIter *iter2;
 	RAnalBlock *b2;
+	int outputs = (b->jump != UT64_MAX) + (b->fail != UT64_MAX);
 	int inputs = 0;
-	int outputs = 0;
 	r_list_foreach (fcn->bbs, iter2, b2) {
-		if (b2->jump == b->addr) {
-			inputs++;
-		}
-		if (b2->fail == b->addr) {
-			inputs++;
-		}
+		inputs += (b2->jump == b->addr) + (b2->fail == b->addr);
 	}
-	if (b->jump != UT64_MAX) {
-		outputs ++;
-	}
-	if (b->fail != UT64_MAX) {
-		outputs ++;
-	}
-	pj_o (pj);
-	if (b->jump != UT64_MAX) {
-		pj_kn (pj, "jump", b->jump);
-	}
-	if (b->fail != UT64_MAX) {
-		pj_kn (pj, "fail", b->fail);
-	}
-	if (b->switch_op) {
-		pj_k (pj, "switch_op");
+	ut64 opaddr = __opaddr (b, addr);
+	if (pj) {
 		pj_o (pj);
-		pj_kn (pj, "addr", b->switch_op->addr);
-		pj_kn (pj, "min_val", b->switch_op->min_val);
-		pj_kn (pj, "def_val", b->switch_op->def_val);
-		pj_kn (pj, "max_val", b->switch_op->max_val);
-		pj_k (pj, "cases");
-		pj_a (pj);
-		{
-		RListIter *case_op_iter;
-		RAnalCaseOp *case_op;
-		r_list_foreach (b->switch_op->cases, case_op_iter, case_op) {
+		if (b->jump != UT64_MAX) {
+			pj_kn (pj, "jump", b->jump);
+		}
+		if (b->fail != UT64_MAX) {
+			pj_kn (pj, "fail", b->fail);
+		}
+		if (b->switch_op) {
+			pj_k (pj, "switch_op");
 			pj_o (pj);
-			pj_kn (pj, "addr", case_op->addr);
-			pj_kn (pj, "jump", case_op->jump);
-			pj_kn (pj, "value", case_op->value);
+			pj_kn (pj, "addr", b->switch_op->addr);
+			pj_kn (pj, "min_val", b->switch_op->min_val);
+			pj_kn (pj, "def_val", b->switch_op->def_val);
+			pj_kn (pj, "max_val", b->switch_op->max_val);
+			pj_k (pj, "cases");
+			pj_a (pj);
+			{
+			RListIter *case_op_iter;
+			RAnalCaseOp *case_op;
+			r_list_foreach (b->switch_op->cases, case_op_iter, case_op) {
+				pj_o (pj);
+				pj_kn (pj, "addr", case_op->addr);
+				pj_kn (pj, "jump", case_op->jump);
+				pj_kn (pj, "value", case_op->value);
+				pj_end (pj);
+			}
+			}
+			pj_end (pj);
 			pj_end (pj);
 		}
+		pj_kn (pj, "opaddr", opaddr);
+		pj_kn (pj, "addr", b->addr);
+		pj_ki (pj, "size", b->size);
+		pj_ki (pj, "inputs", inputs);
+		pj_ki (pj, "outputs", outputs);
+		pj_ki (pj, "ninstr", b->ninstr);
+		pj_kb (pj, "traced", b->traced);
+		pj_end (pj);
+	} else {
+		if (b->switch_op) {
+			RList *unique_cases = r_list_uniq (b->switch_op->cases, casecmp);
+			outputs += r_list_length (unique_cases);
+			r_list_free (unique_cases);
 		}
-		pj_end (pj);
-		pj_end (pj);
+		if (b->jump != UT64_MAX) {
+			r_cons_printf ("jump: 0x%08"PFMT64x"\n", b->jump);
+		}
+		if (b->fail != UT64_MAX) {
+			r_cons_printf ("fail: 0x%08"PFMT64x"\n", b->fail);
+		}
+		r_cons_printf ("opaddr: 0x%08"PFMT64x"\n", opaddr);
+		r_cons_printf ("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
+			b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced));
 	}
-	{
-	ut64 opaddr = __opaddr (b, addr);
-	pj_kn (pj, "opaddr", opaddr);
-	}
-	pj_kn (pj, "addr", b->addr);
-	pj_ki (pj, "size", b->size);
-	pj_ki (pj, "inputs", inputs);
-	pj_ki (pj, "outputs", outputs);
-	pj_ki (pj, "ninstr", b->ninstr);
-	pj_kb (pj, "traced", b->traced);
-	pj_end (pj);
 }
 
 static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
@@ -2585,106 +2589,78 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 		t = r_table_new ();
 		r_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
 	}
-	if (fcn->bbs) {
-		r_list_foreach (fcn->bbs, iter, b) {
-			if (one) {
-				if (bbaddr != UT64_MAX && (bbaddr < b->addr || bbaddr >= (b->addr + b->size))) {
-					continue;
-				}
+	r_list_foreach (fcn->bbs, iter, b) {
+		if (one) {
+			if (bbaddr != UT64_MAX && (bbaddr < b->addr || bbaddr >= (b->addr + b->size))) {
+				continue;
 			}
-			switch (mode) {
-			case 't':
-				r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
-				break;
-			case 'r':
-				if (b->jump == UT64_MAX) {
-					ut64 retaddr = r_anal_bb_opaddr_i (b, b->ninstr - 1);
-					if (retaddr == UT64_MAX) {
-						break;
-					}
+		}
+		switch (mode) {
+		case 't':
+			r_table_add_rowf (t, "xdxx", b->addr, b->size, b->jump, b->fail);
+			break;
+		case 'r':
+			if (b->jump == UT64_MAX) {
+				ut64 retaddr = r_anal_bb_opaddr_i (b, b->ninstr - 1);
+				if (retaddr == UT64_MAX) {
+					break;
+				}
 
-					if (!strcmp (input, "*")) {
-						r_cons_printf ("db 0x%08"PFMT64x"\n", retaddr);
-					} else if (!strcmp (input, "-*")) {
-						r_cons_printf ("db-0x%08"PFMT64x"\n", retaddr);
-					} else {
-						r_cons_printf ("0x%08"PFMT64x"\n", retaddr);
-					}
+				if (!strcmp (input, "*")) {
+					r_cons_printf ("db 0x%08"PFMT64x"\n", retaddr);
+				} else if (!strcmp (input, "-*")) {
+					r_cons_printf ("db-0x%08"PFMT64x"\n", retaddr);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x"\n", retaddr);
 				}
-				break;
-			case '*':
-				r_cons_printf ("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n",
-					b->addr & 0xFFFFF, b->addr);
-				break;
-			case 'q':
-				r_cons_printf ("0x%08" PFMT64x "\n", b->addr);
-				break;
-			case 'j':
-				bb_to_pj (pj, b, fcn, addr);
-				break;
-			case 'i':
-				{
-				RListIter *iter2;
-				RAnalBlock *b2;
-				int inputs = 0;
-				int outputs = 0;
-				r_list_foreach (fcn->bbs, iter2, b2) {
-					if (b2->jump == b->addr) {
-						inputs++;
-					}
-					if (b2->fail == b->addr) {
-						inputs++;
-					}
-				}
-				if (b->jump != UT64_MAX) {
-					outputs ++;
-				}
-				if (b->fail != UT64_MAX) {
-					outputs ++;
-				}
-				if (b->switch_op) {
-					RList *unique_cases = r_list_uniq (b->switch_op->cases, casecmp);
-					outputs += r_list_length (unique_cases);
-					r_list_free (unique_cases);
-				}
-				if (b->jump != UT64_MAX) {
-					r_cons_printf ("jump: 0x%08"PFMT64x"\n", b->jump);
-				}
-				if (b->fail != UT64_MAX) {
-					r_cons_printf ("fail: 0x%08"PFMT64x"\n", b->fail);
-				}
-				{
-					ut64 opaddr = __opaddr (b, addr);
-					r_cons_printf ("opaddr: 0x%08"PFMT64x"\n", opaddr);
-				}
-				r_cons_printf ("addr: 0x%08" PFMT64x "\nsize: %" PFMT64d "\ninputs: %d\noutputs: %d\nninstr: %d\ntraced: %s\n",
-					b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced));
-				}
-				break;
-			default:
-				tp = r_debug_trace_get (core->dbg, b->addr);
-				r_cons_printf ("0x%08" PFMT64x " 0x%08" PFMT64x " %02X:%04X %" PFMT64d,
-					b->addr, b->addr + b->size,
-					tp? tp->times: 0, tp? tp->count: 0,
-					b->size);
-				if (b->jump != UT64_MAX) {
-					r_cons_printf (" j 0x%08" PFMT64x, b->jump);
-				}
-				if (b->fail != UT64_MAX) {
-					r_cons_printf (" f 0x%08" PFMT64x, b->fail);
-				}
-				if (b->switch_op) {
-					RAnalCaseOp *cop;
-					RListIter *iter;
-					RList *unique_cases = r_list_uniq (b->switch_op->cases, casecmp);
-					r_list_foreach (unique_cases, iter, cop) {
-						r_cons_printf (" s 0x%08" PFMT64x, cop->addr);
-					}
-					r_list_free (unique_cases);
-				}
-				r_cons_newline ();
-				break;
 			}
+			break;
+		case '*':
+			r_cons_printf ("f bb.%05" PFMT64x " = 0x%08" PFMT64x "\n",
+				b->addr & 0xFFFFF, b->addr);
+			break;
+		case 'q':
+			r_cons_printf ("0x%08" PFMT64x "\n", b->addr);
+			break;
+		case 'j':
+			print_bb (pj, b, fcn, addr);
+			break;
+		case 'i':
+			if (*input == 'j') { // "afbij"
+				pj = r_core_pj_new (core);
+				if (!pj) {
+					return false;
+				}
+				print_bb (pj, b, fcn, addr);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
+			} else {
+				print_bb (NULL, b, fcn, addr);
+			}
+			break;
+		default:
+			tp = r_debug_trace_get (core->dbg, b->addr);
+			r_cons_printf ("0x%08" PFMT64x " 0x%08" PFMT64x " %02X:%04X %" PFMT64d,
+				b->addr, b->addr + b->size,
+				tp? tp->times: 0, tp? tp->count: 0,
+				b->size);
+			if (b->jump != UT64_MAX) {
+				r_cons_printf (" j 0x%08" PFMT64x, b->jump);
+			}
+			if (b->fail != UT64_MAX) {
+				r_cons_printf (" f 0x%08" PFMT64x, b->fail);
+			}
+			if (b->switch_op) {
+				RAnalCaseOp *cop;
+				RListIter *iter;
+				RList *unique_cases = r_list_uniq (b->switch_op->cases, casecmp);
+				r_list_foreach (unique_cases, iter, cop) {
+					r_cons_printf (" s 0x%08" PFMT64x, cop->addr);
+				}
+				r_list_free (unique_cases);
+			}
+			r_cons_newline ();
+			break;
 		}
 	}
 	if (mode == 't') {
@@ -10763,30 +10739,19 @@ static int cmd_anal(void *data, const char *input) {
 			if (input[2] && input[2] != '.') {
 				addr = r_num_math (core->num, input + 2);
 			}
-			RAnalBlock *b = r_anal_get_block_at (core->anal, addr);
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-			if (b && fcn) {
-				PJ *pj = r_core_pj_new (core);
-				if (!pj) {
-					return 1;
-				}
-				bb_to_pj (pj, b, fcn, addr);
-				r_cons_println (pj_string (pj));
-				pj_free (pj);
-			}
+			r_core_cmdf (core, "afbij @ 0x%"PFMT64x, addr);
 			break;
 		}
 		case 0:
-		case ' ': // "ab "
+		case ' ': { // "ab "
 			// find block
-			{
 			ut64 addr = core->offset;
 			if (input[1] && input[1] != '.') {
 				addr = r_num_math (core->num, input + 1);
 			}
 			r_core_cmdf (core, "afbi @ 0x%"PFMT64x, addr);
-			}
 			break;
+		}
 		default:
 			r_core_cmd_help (core, help_msg_ab);
 			break;
