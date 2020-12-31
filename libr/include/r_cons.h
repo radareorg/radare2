@@ -380,10 +380,11 @@ typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MOD
 typedef struct r_cons_context_t {
 	RConsGrep grep;
 	RStack *cons_stack;
-	char *buffer;
+	char *buffer; // TODO: replace with RStrBuf
 	size_t buffer_len;
 	size_t buffer_sz;
-
+	RStrBuf *error; // r_cons_eprintf / r_cons_errstr / r_cons_errmode
+	int errmode;
 	bool breaked;
 	RStack *break_stack;
 	RConsEvent event_interrupt;
@@ -784,6 +785,25 @@ R_API int r_cons_win_eprintf(bool vmode, const char *fmt, ...) R_PRINTF_CHECK(2,
 R_API int r_cons_win_vhprintf(DWORD hdl, bool vmode, const char *fmt, va_list ap);
 #endif
 
+#if 0
+
+Flush Print Buffer
+  0     0     0     null
+  0     0     1     quiet
+  0     1     0     echo
+  0     1     1     buffer
+  1     0     1     flush
+
+#endif
+
+enum {
+	R_CONS_ERRMODE_NULL,   // no buffer no print = null
+	R_CONS_ERRMODE_QUIET,  // buffer no print = quiet
+	R_CONS_ERRMODE_ECHO,   // no buffer, print = like eprintf()
+	R_CONS_ERRMODE_BUFFER, // no buffer, print = like eprintf()
+	R_CONS_ERRMODE_FLUSH,  // no buffer, print = like eprintf + log
+};
+
 R_API void r_cons_push(void);
 R_API void r_cons_pop(void);
 R_API RConsContext *r_cons_context_new(R_NULLABLE RConsContext *parent);
@@ -799,6 +819,11 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig);
 R_API char *r_cons_editor(const char *file, const char *str);
 R_API void r_cons_reset(void);
 R_API void r_cons_reset_colors(void);
+R_API char *r_cons_errstr(void);
+R_API void r_cons_errmode(int mode);
+R_API void r_cons_errmodes(const char *mode);
+R_API int r_cons_eprintf(const char *format, ...);
+R_API void r_cons_eflush(void);
 R_API void r_cons_print_clear(void);
 R_API void r_cons_echo(const char *msg);
 R_API void r_cons_zero(void);

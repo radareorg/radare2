@@ -21,7 +21,7 @@ static bool is_valid_project_name(const char *name) {
 		case '-':
 			continue;
 		}
-		if (isalpha(name[i])) {
+		if (isalpha (name[i])) {
 			continue;
 		}
 		if (IS_DIGIT (name[i])) {
@@ -540,7 +540,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 
 static int fdc;		//this is a ugly, remove it, when we have $fd
 
-static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
+static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 	RList *maps = NULL;
 	RListIter *iter;
 	RIOMap *map;
