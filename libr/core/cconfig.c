@@ -1413,7 +1413,6 @@ static bool cb_cmdrepeat(void *user, void *data) {
 }
 
 static bool cb_screrrmode(void *user, void *data) {
-	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (*node->value == '?') {
 		r_cons_printf ("Valid values: null, echo, buffer, quiet, flush\n");
@@ -1422,6 +1421,7 @@ static bool cb_screrrmode(void *user, void *data) {
 	r_cons_errmodes (node->value);
 	return true;
 }
+
 static bool cb_scrnull(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
