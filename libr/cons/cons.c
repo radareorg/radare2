@@ -1234,7 +1234,7 @@ R_API char *r_cons_errstr(void) {
 
 R_API int r_cons_eprintf(const char *format, ...) {
 	va_list ap;
-	r_return_val_if_fail (R_STR_ISEMPTY (format), -1);
+	r_return_val_if_fail (!R_STR_ISEMPTY (format), -1);
 	va_start (ap, format);
 	switch (I.context->errmode) {
 	case R_CONS_ERRMODE_NULL:
