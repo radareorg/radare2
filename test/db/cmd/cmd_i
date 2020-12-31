@@ -4276,6 +4276,60 @@ fs *
 EOF
 RUN
 
+NAME=iRj
+FILE=bins/pe/standard.exe
+CMDS=iRj~{}
+EXPECT=<<EOF
+[
+  {
+    "name": "1576",
+    "index": 0,
+    "type": "ICON",
+    "vaddr": 4198784,
+    "size": 5672,
+    "lang": "LANG_NEUTRAL",
+    "timestamp": "Thu Jan  1 00:00:00 1970"
+  },
+  {
+    "name": "10",
+    "index": 1,
+    "type": "STRING",
+    "vaddr": 4205072,
+    "size": 76,
+    "lang": "LANG_NEUTRAL",
+    "timestamp": "Thu Jan  1 00:00:00 1970"
+  },
+  {
+    "name": "788",
+    "index": 2,
+    "type": "GROUP_ICON",
+    "vaddr": 4204464,
+    "size": 20,
+    "lang": "LANG_NEUTRAL",
+    "timestamp": "Thu Jan  1 00:00:00 1970"
+  },
+  {
+    "name": "1",
+    "index": 3,
+    "type": "VERSION",
+    "vaddr": 4204496,
+    "size": 452,
+    "lang": "LANG_NEUTRAL",
+    "timestamp": "Thu Jan  1 00:00:00 1970"
+  },
+  {
+    "name": "1",
+    "index": 4,
+    "type": "MANIFEST",
+    "vaddr": 4204960,
+    "size": 74,
+    "lang": "LANG_NEUTRAL",
+    "timestamp": "Thu Jan  1 00:00:00 1970"
+  }
+]
+EOF
+RUN
+
 NAME=izzz*
 FILE=bins/mach0/fatmach0-3true
 CMDS=izzz*~appleca
