@@ -3369,7 +3369,12 @@ R_API int r_core_config_init(RCore *core) {
 	/* prj */
 	SETPREF ("prj.name", "", "Name of current project");
 	SETBPREF ("prj.files", "false", "Save the target binary inside the project directory");
-	SETBPREF ("prj.git", "false", "Every project is a git repo and saving is committing");
+	{
+		char *p = r_file_path ("git");
+		bool found = (p && *p == '/');
+		SETBPREF ("prj.git", r_str_bool (found), "Use git to share your project and version changes");
+		free (p);
+	}
 	SETBPREF ("prj.zip", "false", "Use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
 	SETBPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");

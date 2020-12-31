@@ -1062,6 +1062,7 @@ RUN
 NAME=delete memory format with Cf-
 FILE=bins/dmg/src/Hello
 CMDS=<<EOF
+e prj.git=false
 e asm.arch=x86
 e asm.bits=64
 pd 1
