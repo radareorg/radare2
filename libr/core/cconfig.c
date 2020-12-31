@@ -1271,7 +1271,6 @@ static bool cb_cfgdebug(void *user, void *data) {
 	}
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
-		core->bin->is_debugger = true;
 		r_debug_use (core->dbg, dbgbackend);
 		if (!strcmp (r_config_get (core->config, "cmd.prompt"), "")) {
 			r_config_set (core->config, "cmd.prompt", ".dr*");
@@ -1285,7 +1284,6 @@ static bool cb_cfgdebug(void *user, void *data) {
 		}
 	} else {
 		r_debug_use (core->dbg, NULL);
-		core->bin->is_debugger = false;
 	}
 	return true;
 }
@@ -1521,7 +1519,7 @@ static bool cb_dbg_forks(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_forks = node->i_value;
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1560,7 +1558,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 #if __linux__
 	RCore *core = (RCore*) user;
 	core->dbg->trace_execs = node->i_value;
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 #else
@@ -1575,7 +1573,7 @@ static bool cb_dbg_clone(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_clone = node->i_value;
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1599,7 +1597,7 @@ static bool cb_dbg_aftersc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_aftersyscall = node->i_value;
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;

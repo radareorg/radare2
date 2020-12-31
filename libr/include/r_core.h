@@ -360,9 +360,8 @@ typedef struct r_core_item_t {
 	char *fcnname;
 } RCoreItem;
 
-
-R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr);
-R_API void r_core_item_free (RCoreItem *ci);
+R_API RCoreItem *r_core_item_at(RCore *core, ut64 addr);
+R_API void r_core_item_free(RCoreItem *ci);
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
 

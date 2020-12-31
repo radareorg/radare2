@@ -329,7 +329,6 @@ struct r_bin_t {
 	RIOBind iob;
 	RConsBind consb;
 	char *force;
-	int is_debugger;
 	bool want_dbginfo;
 	int filter; // symbol filtering
 	char strfilter; // string filtering

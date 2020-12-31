@@ -202,7 +202,7 @@ beach:
 
 static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 	ut64 off;
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		off = r_debug_reg_get (core->dbg, input);
 		if (!is_silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
