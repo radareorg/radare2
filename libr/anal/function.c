@@ -211,13 +211,13 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	ht_up_delete (fcn->anal->ht_addr_fun, fcn->addr);
 
 	// relocate the var accesses (their addrs are relative to the function addr)
-	st64 delta = (st64)addr - (st64)fcn->addr;
+	st64 delta = addr - fcn->addr;
 	void **it;
 	r_pvector_foreach (&fcn->vars, it) {
 		RAnalVar *var = *it;
 		RAnalVarAccess *acc;
 		r_vector_foreach (&var->accesses, acc) {
-			acc->offset -= delta;
+			acc->offset -= (ut64)delta;
 		}
 	}
 	InstVarsRelocateCtx ctx = {
