@@ -366,7 +366,7 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 			r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
 		if ((mode & R_MODE_JSON) && array == 0) {
-			r_cons_strcat ("}\n");
+			r_cons_print ("}");
 		}
 	} else {
 		eprintf ("No file selected\n");
@@ -603,7 +603,6 @@ static int cmd_info(void *data, const char *input) {
 				r_cons_print ("{");
 				r_bin_list_archs (core->bin, 'j');
 				r_cons_print ("}");
-				newline = true;
 			} else {
 				r_bin_list_archs (core->bin, 1);
 				newline = false;
@@ -663,7 +662,7 @@ static int cmd_info(void *data, const char *input) {
 						}
 					}
 					pj_end (pj);
-					r_cons_printf ("%s\n", pj_string (pj));
+					r_cons_print (pj_string (pj));
 					pj_free (pj);
 				} else { // "it"
 					if (!equal) {
@@ -925,9 +924,6 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'i': { // "ii"
-			if (input[1] == 'j') {
-				newline = true;
-			}
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
 				(obj && obj->imports)? r_list_length (obj->imports): 0);
@@ -955,9 +951,6 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'V': // "iV"
 			RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
-			if (input[1] == 'j') {
-				newline = true;
-			}
 			break;
 		case 'T': // "iT"
 		case 'C': // "iC" // rabin2 -C create // should be deprecated and just use iT (or find a better name)
@@ -1249,8 +1242,9 @@ static int cmd_info(void *data, const char *input) {
 	}
 done:
 	if (is_array && !is_izzzj && !is_idpij) {
-		r_cons_printf ("}\n");
-	} else if (newline) {
+		r_cons_printf ("}");
+	}
+	if (newline || mode == R_MODE_JSON) {
 		r_cons_newline ();
 	}
 redone:
