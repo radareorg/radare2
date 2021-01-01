@@ -451,7 +451,7 @@ static int cmd_info(void *data, const char *input) {
 	bool newline = r_cons_is_interactive ();
 	int fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
-	int i, va = core->io->va || core->bin->is_debugger;
+	int i, va = core->io->va || r_config_get_i (core->config, "cfg.debug");
 	int mode = 0; //R_MODE_SIMPLE;
 	bool rdump = false;
 	int is_array = 0;

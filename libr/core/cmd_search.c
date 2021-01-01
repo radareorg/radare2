@@ -876,7 +876,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			append_bound (list, core->io, search_itv, core->offset, 1, 5);
 		}
 	} else if (!strncmp (mode, "dbg.", 4)) {
-		if (core->bin->is_debugger) {
+		if (r_config_get_i (core->config, "cfg.debug")) {
 			int mask = 0;
 			int add = 0;
 			bool heap = false;
@@ -3699,7 +3699,7 @@ reread:
 		}
 		break;
 	case 'E': // "/E"
-		if (core->bin && core->bin->is_debugger) {
+		if (core->bin && r_config_get_i (core->config, "cfg.debug")) {
 			r_debug_map_sync (core->dbg);
 		}
 		do_esil_search (core, &param, input);
