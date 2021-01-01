@@ -1108,7 +1108,6 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
 
 	RListIter *it = r_list_iterator (types);
 
-	pj_o (pj);
 	pj_ka (pj, "types");
 
 	while (r_list_iter_next (it)) {
@@ -1214,7 +1213,6 @@ static void print_types_json(const RPdb *pdb, PJ *pj, const RList *types) {
 			break;
 		}
 	}
-	pj_end (pj);
 	pj_end (pj);
 }
 
@@ -1366,7 +1364,6 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 
 	if (format == 'j') {
-		pj_o (pj);
 		pj_ka (pj, "gvars");
 	}
 	gsym_data_stream = (SGDATAStream *)gsym->stream;
@@ -1423,7 +1420,6 @@ static void print_gvars(RPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		}
 	}
 	if (format == 'j') {
-		pj_end (pj);
 		pj_end (pj);
 	}
 }

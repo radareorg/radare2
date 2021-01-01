@@ -197,6 +197,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case 'j': // "obj"
 	case '*': // "ob*"
 		r_core_bin_list (core, input[1]);
+		if (input[1] == 'j') {
+			r_cons_newline ();
+		}
 		break;
 	case '.': // "ob."
 		{
