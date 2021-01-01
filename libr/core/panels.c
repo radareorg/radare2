@@ -5878,8 +5878,6 @@ static void __handle_menu(RCore *core, const int key) {
 			if (parent->selectedIndex > 0) {
 				parent->selectedIndex--;
 				__update_menu_contents (core, menu, parent);
-			} else if (menu->depth == 2) {
-				menu->depth--;
 			}
 		}
 		break;
