@@ -758,6 +758,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		} else {
 			free (outputptr);
 		}
+		free (mysterr);
 		return ret;
 	}
 	return false;
