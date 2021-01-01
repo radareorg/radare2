@@ -6,7 +6,7 @@
 #include <r_core.h>
 #include <r_list.h>
 
-#define ACCESS_CMP(x, y) ((x) - ((RAnalVarAccess *)y)->offset)
+#define ACCESS_CMP(x, y) ((st64)((ut64)(x) - ((RAnalVarAccess *)y)->offset))
 
 R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var) {
 	char *fmt = r_type_format (anal->sdb_types, var->type);
@@ -292,7 +292,7 @@ R_API ut64 r_anal_var_addr(RAnalVar *var) {
 }
 
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
-	st64 offset = (st64)addr - (st64)fcn->addr;
+	st64 offset = addr - fcn->addr;
 	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
 	if (!inst_accesses) {
 		return ST64_MAX;
@@ -322,7 +322,7 @@ R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, u
 }
 
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr) {
-	st64 offset = (st64)addr - (st64)fcn->addr;
+	st64 offset = addr - fcn->addr;
 	RPVector *inst_accesses = ht_up_find (fcn->inst_vars, offset, NULL);
 	if (!inst_accesses) {
 		return NULL;
@@ -402,7 +402,7 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 
 R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr) {
 	r_return_val_if_fail (fcn, NULL);
-	return ht_up_find (fcn->inst_vars, (st64)op_addr - (st64)fcn->addr, NULL);
+	return ht_up_find (fcn->inst_vars, op_addr - fcn->addr, NULL);
 }
 
 R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr) {
@@ -450,7 +450,7 @@ R_API RAnalVar *r_anal_var_get_dst_var(RAnalVar *var) {
 
 R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_addr, int access_type, st64 stackptr) {
 	r_return_if_fail (var);
-	st64 offset = (st64)access_addr - (st64)var->fcn->addr;
+	st64 offset = access_addr - var->fcn->addr;
 
 	// accesses are stored ordered by offset, use binary search to get the matching existing or the index to insert a new one
 	size_t index;
@@ -485,7 +485,7 @@ R_API void r_anal_var_set_access(RAnalVar *var, const char *reg, ut64 access_add
 
 R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address) {
 	r_return_if_fail (var);
-	st64 offset = (st64)address - (st64)var->fcn->addr;
+	st64 offset = address - var->fcn->addr;
 	size_t index;
 	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
 	if (index >= var->accesses.len) {
@@ -518,7 +518,7 @@ R_API void r_anal_var_clear_accesses(RAnalVar *var) {
 
 R_API RAnalVarAccess *r_anal_var_get_access_at(RAnalVar *var, ut64 addr) {
 	r_return_val_if_fail (var, NULL);
-	st64 offset = (st64)addr - (st64)var->fcn->addr;
+	st64 offset = addr - var->fcn->addr;
 	size_t index;
 	r_vector_lower_bound (&var->accesses, offset, index, ACCESS_CMP);
 	if (index >= var->accesses.len) {
