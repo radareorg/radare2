@@ -389,13 +389,15 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	{
 		RIO *io = bf->rbin->iob.io;
 		RCoreBind *cb = &io->corebind;
-		const bool cfg_debug = cb->cfgGet (cb->core, "cfg.debug");
-		if (!cfg_debug) {
-			if (!to || to > r_buf_size (bf->buf)) {
-				to = r_buf_size (bf->buf);
-			}
-			if (!to) {
-				return;
+		if (cb && cb->cfgGet) {
+			const bool cfg_debug = cb->cfgGet (cb->core, "cfg.debug");
+			if (!cfg_debug) {
+				if (!to || to > r_buf_size (bf->buf)) {
+					to = r_buf_size (bf->buf);
+				}
+				if (!to) {
+					return;
+				}
 			}
 		}
 	}
