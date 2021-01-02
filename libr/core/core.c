@@ -2599,7 +2599,7 @@ static void __init_autocomplete_default (RCore* core) {
 	}
 }
 
-static void __init_autocomplete (RCore* core) {
+static void __init_autocomplete(RCore* core) {
 	int i;
 	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
@@ -2699,7 +2699,7 @@ static RFlagItem *core_flg_fcn_set(RFlag *f, const char *name, ut64 addr, ut32 s
 	return res;
 }
 
-R_API void r_core_autocomplete_reload (RCore *core) {
+R_API void r_core_autocomplete_reload(RCore *core) {
 	r_return_if_fail (core);
 	r_core_autocomplete_free (core->autocomplete);
 	__init_autocomplete (core);
@@ -2763,6 +2763,7 @@ R_API bool r_core_init(RCore *core) {
 	core->cmdremote = 0;
 	core->incomment = false;
 	core->config = NULL;
+	core->prj = r_project_new ();
 	core->http_up = false;
 	core->use_tree_sitter_r2cmd = false;
 	ZERO_FILL (core->root_cmd_descriptor);
@@ -3008,6 +3009,7 @@ R_API void r_core_fini(RCore *c) {
 	free (c->cmdqueue);
 	free (c->lastcmd);
 	free (c->stkcmd);
+	r_project_free (c->prj);
 	r_list_free (c->visual.tabs);
 	free (c->block);
 	r_core_autocomplete_free (c->autocomplete);

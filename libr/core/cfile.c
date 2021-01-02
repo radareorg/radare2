@@ -925,9 +925,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		if (cp && *cp) {
 			r_core_cmd (r, cp, 0);
 		}
-		char *absfile = r_file_abspath (file);
-		r_config_set (r->config, "file.path", absfile);
-		free (absfile);
 	}
 	// check load addr to make sure its still valid
 	r_bin_bind (r->bin, &(fh->binb));

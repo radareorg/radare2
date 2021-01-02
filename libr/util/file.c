@@ -27,7 +27,7 @@
 
 #define BS 1024
 
-static int file_stat (const char *file, struct stat* const pStat) {
+static int file_stat(const char *file, struct stat* const pStat) {
 	r_return_val_if_fail (file && pStat, -1);
 #if __WINDOWS__
 	wchar_t *wfile = r_utf8_to_utf16 (file);
@@ -1046,7 +1046,7 @@ R_API void r_file_mmap_free(RMmap *m) {
 	free (m);
 }
 
-R_API char *r_file_temp (const char *prefix) {
+R_API char *r_file_temp(const char *prefix) {
 	if (!prefix) {
 		prefix = "";
 	}
@@ -1181,7 +1181,7 @@ R_API char *r_file_tmpdir(void) {
 	return path;
 }
 
-R_API bool r_file_copy (const char *src, const char *dst) {
+R_API bool r_file_copy(const char *src, const char *dst) {
 	/* TODO: implement in C */
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
 #if HAVE_COPYFILE_H
@@ -1212,7 +1212,7 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 #endif
 }
 
-static void recursive_search_glob (const char *path, const char *glob, RList* list, int depth) {
+static void recursive_search_glob(const char *path, const char *glob, RList* list, int depth) {
 	if (depth < 1) {
 		return;
 	}
@@ -1239,7 +1239,7 @@ static void recursive_search_glob (const char *path, const char *glob, RList* li
 	r_list_free (dir);
 }
 
-R_API RList* r_file_globsearch (const char *_globbed_path, int maxdepth) {
+R_API RList* r_file_globsearch(const char *_globbed_path, int maxdepth) {
 	char *globbed_path = strdup (_globbed_path);
 	RList *files = r_list_newf (free);
 	char *glob = strchr (globbed_path, '*');
