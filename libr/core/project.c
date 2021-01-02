@@ -510,12 +510,6 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 	} else {
 		eprintf ("Cannot open project info (%s)\n", prj);
 	}
-#if 0
-	if (file) {
-		r_cons_printf ("Project: %s\n", prj);
-		r_cons_printf ("FilePath: %s\n", file);
-	}
-#endif
 	free (prj);
 	return file;
 }
@@ -752,11 +746,10 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	bool ret = true;
 	SdbListIter *it;
 	SdbNs *ns;
-	char *old_prj_name = NULL;
 	r_return_val_if_fail (prj_name && *prj_name, false);
 	char *script_path = get_project_script_path (core, prj_name);
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		eprintf ("radare2 does not support projects on debugged bins\n");
+		eprintf ("radare2 does not support projects on debugged bins.\n");
 		return false;
 	}
 	if (!script_path) {
@@ -816,11 +809,6 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		}
 	}
 
-	const char *old_prj_name_conf = r_config_get (core->config, "prj.name");
-	if (old_prj_name_conf) {
-		old_prj_name = strdup (old_prj_name_conf);
-	}
-	r_config_set (core->config, "prj.name", prj_name);
 	if (r_config_get_i (core->config, "prj.simple")) {
 		if (!simple_project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
 			eprintf ("Cannot open '%s' for writing\n", prj_name);
@@ -884,12 +872,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (scr_null) {
 		r_config_set_i (core->config, "scr.null", true);
 	}
-	if (!ret && old_prj_name) {
-		// reset prj.name on fail
-		r_config_set (core->config, "prj.name", old_prj_name);
-	}
 	free (script_path);
-	free (old_prj_name);
 	return ret;
 }
 

@@ -224,9 +224,11 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'i': // "Pi"
 		if (file && *file) {
-			char *prjName = r_core_project_name (core, file);
-			r_cons_println (prjName);
-			free (prjName);
+			char *prj_name = r_core_project_name (core, file);
+			if (!R_STR_ISEMPTY (prj_name)) {
+				r_cons_println (prj_name);
+				free (prj_name);
+			}
 		} else if (r_project_is_loaded (core->prj)) {
 			r_cons_println (core->prj->name);
 			r_cons_println (core->prj->path);
