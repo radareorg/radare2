@@ -1148,7 +1148,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			} else {
 				const char *prj = r_config_get (r->config, "prj.name");
 				if (prj && *prj) {
-					pfile = r_core_project_info (r, prj);
+					pfile = r_core_project_name (r, prj);
 					if (pfile) {
 						if (!fh) {
 							fh = r_core_file_open (r, pfile, perms, mapaddr);
@@ -1303,12 +1303,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 
 		r_core_seek (r, r->offset, true); // read current block
-
+#if 0
 		/* check if file.path has changed */
 		if (iod && !strstr (iod->uri, "://")) {
 			const char *npath;
 			char *path = strdup (r_config_get (r->config, "file.path"));
-			has_project = r_core_project_open (r, r_config_get (r->config, "prj.name"), false);
+			has_project = r_core_project_open (r, r_config_get (r->config, "prj.name"));
 			iod = r->io ? r_io_desc_get (r->io, fh->fd) : NULL;
 			if (has_project) {
 				r_config_set (r->config, "bin.strings", "false");
@@ -1319,6 +1319,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 			free (path);
 		}
+#endif
 
 		r_list_foreach (evals, iter, cmdn) {
 			r_config_eval (r->config, cmdn, false);

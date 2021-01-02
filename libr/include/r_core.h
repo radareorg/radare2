@@ -238,9 +238,24 @@ typedef struct r_core_tasks_t {
 	bool oneshot_running;
 } RCoreTaskScheduler;
 
+typedef struct r_core_project_t {
+	char *name;
+	char *path;
+} RProject;
+
+R_API RProject *r_project_new(void);
+R_API bool r_project_rename(RProject *p, const char *newname);
+R_API bool r_project_is_git(RProject *p);
+R_API void r_project_close(RProject *p);
+R_API bool r_project_open(RProject *p, const char *prjname, const char *path);
+R_API void r_project_save(RProject *p);
+R_API void r_project_free(RProject *p);
+R_API bool r_project_is_loaded(RProject *p);
+
 struct r_core_t {
 	RBin *bin;
 	RConfig *config;
+	RProject *prj;
 	ut64 offset; // current seek
 	ut64 prompt_offset; // temporarily set to offset to have $$ in expressions always stay the same during temp seeks
 	ut32 blocksize;
@@ -530,8 +545,10 @@ R_API void r_core_fortune_list(RCore *core);
 R_API void r_core_fortune_print_random(RCore *core);
 
 /* project */
+#if 0
 R_API bool r_core_project_load(RCore *core, const char *prjfile, const char *rcfile);
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prjfile, const char *rcfile);
+#endif
 R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile);
 
 #define R_CORE_FOREIGN_ADDR -1
@@ -681,13 +698,13 @@ R_API int r_core_zdiff(RCore *c, RCore *c2);
 R_API int r_core_gdiff(RCore *core1, RCore *core2);
 R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2);
 
-R_API bool r_core_project_open(RCore *core, const char *file, bool thready);
+R_API bool r_core_project_open(RCore *core, const char *file);
 R_API int r_core_project_cat(RCore *core, const char *name);
 R_API int r_core_project_delete(RCore *core, const char *prjfile);
 R_API int r_core_project_list(RCore *core, int mode);
 R_API bool r_core_project_save_script(RCore *core, const char *file, int opts);
 R_API bool r_core_project_save(RCore *core, const char *file);
-R_API char *r_core_project_info(RCore *core, const char *file);
+R_API char *r_core_project_name(RCore *core, const char *file);
 R_API char *r_core_project_notes_file (RCore *core, const char *file);
 
 R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);

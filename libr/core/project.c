@@ -7,6 +7,8 @@
 #define USE_R2 1
 #include <spp/spp.h>
 
+// project apis to be used from cmd_project.c
+
 static bool is_valid_project_name(const char *name) {
 	int i;
 	if (r_str_endswith (name, ".zip")) {
@@ -33,6 +35,7 @@ static bool is_valid_project_name(const char *name) {
 }
 
 static char *get_project_script_path(RCore *core, const char *file) {
+	r_return_val_if_fail (core && !R_STR_ISEMPTY (file), NULL);
 	const char *magic = "# r2 rdb project file";
 	char *data, *prjfile;
 	if (r_file_is_abspath (file)) {
@@ -45,7 +48,7 @@ static char *get_project_script_path(RCore *core, const char *file) {
 		prjfile = r_str_append (prjfile, R_SYS_DIR);
 		prjfile = r_str_append (prjfile, file);
 		if (!r_file_exists (prjfile) || r_file_is_directory (prjfile)) {
-			prjfile = r_str_append (prjfile, R_SYS_DIR "rc");
+			prjfile = r_str_append (prjfile, R_SYS_DIR "rc.r2");
 		}
 	}
 	data = r_file_slurp (prjfile, NULL);
@@ -75,7 +78,7 @@ R_API bool r_core_is_project(RCore *core, const char *name) {
 		if (!path) {
 			return false;
 		}
-		if (r_str_endswith (path, R_SYS_DIR "rc") && r_file_exists (path)) {
+		if (r_str_endswith (path, R_SYS_DIR "rc.r2") && r_file_exists (path)) {
 			ret = true;
 		} else {
 			path = r_str_append (path, ".d");
@@ -142,45 +145,44 @@ R_API int r_core_project_list(RCore *core, int mode) {
 }
 
 static inline void remove_project_file(char * path) {
-		if (r_file_exists (path)) {
-			r_file_rm (path);
-			eprintf ("rm %s\n", path);
-		}
+	if (r_file_exists (path)) {
+		r_file_rm (path);
+		eprintf ("rm %s\n", path);
+	}
 }
 
 static inline void remove_notes_file(const char *pd) {
-		char *notes_txt = r_str_newf ("%s%s%s", pd, R_SYS_DIR, "notes.txt");
-		if (r_file_exists (notes_txt)) {
-			r_file_rm (notes_txt);
-			eprintf ("rm %s\n", notes_txt);
-		}
-		free(notes_txt);
+	char *notes_txt = r_file_new (pd, "notes.txt", NULL);
+	if (r_file_exists (notes_txt)) {
+		r_file_rm (notes_txt);
+		eprintf ("rm %s\n", notes_txt);
+	}
+	free (notes_txt);
 }
 
 static inline void remove_rop_directory(const char *prj_dir) {
-		char *rop_d = r_str_newf ("%s%s%s", prj_dir, R_SYS_DIR, "rop.d");
+	char *rop_d = r_file_new (prj_dir, "rop.d", NULL);
 
-		if (r_file_is_directory (rop_d)) {
-			char *f;
-			RListIter *iter;
-			RList *files = r_sys_dir (rop_d);
-			r_list_foreach (files, iter, f) {
-				char *filepath = r_str_append (strdup (rop_d), R_SYS_DIR);
-				filepath = r_str_append (filepath, f);
-				if (!r_file_is_directory (filepath)) {
-					eprintf ("rm %s\n", filepath);
-					r_file_rm (filepath);
-				}
-
-				free (filepath);
+	if (r_file_is_directory (rop_d)) {
+		char *f;
+		RListIter *iter;
+		RList *files = r_sys_dir (rop_d);
+		r_list_foreach (files, iter, f) {
+			char *filepath = r_str_append (strdup (rop_d), R_SYS_DIR);
+			filepath = r_str_append (filepath, f);
+			if (!r_file_is_directory (filepath)) {
+				eprintf ("rm %s\n", filepath);
+				r_file_rm (filepath);
 			}
 
-			r_file_rm (rop_d);
-			eprintf ("rm %s\n", rop_d);
-			r_list_free (files);
+			free (filepath);
 		}
+		r_file_rm (rop_d);
+		eprintf ("rm %s\n", rop_d);
+		r_list_free (files);
+	}
 
-		free (rop_d);
+	free (rop_d);
 }
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
@@ -211,14 +213,11 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 static bool load_project_rop(RCore *core, const char *prjfile) {
+	r_return_val_if_fail (core && !R_STR_ISEMPTY (prjfile), false);
 	char *path, *db = NULL, *path_ns;
 	bool found = 0;
 	SdbListIter *it;
 	SdbNs *ns;
-
-	if (!prjfile || !*prjfile) {
-		return false;
-	}
 
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	Sdb *nop_db = sdb_ns (rop_db, "nop", false);
@@ -230,12 +229,12 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	char *rc_path = get_project_script_path (core, prjfile);
 	char *prj_dir = r_file_dirname (rc_path);
 
-	if (r_str_endswith (prjfile, R_SYS_DIR "rc")) {
+	if (r_str_endswith (prjfile, R_SYS_DIR "rc.r2")) {
 		// XXX
 		eprintf ("ENDS WITH\n");
 		path = strdup (prjfile);
 		path[strlen (path) - 3] = 0;
-	} else if (r_file_fexists ("%s%s%src", R_SYS_DIR, prj_dir, prjfile)) {
+	} else if (r_file_fexists ("%s%s%src.r2", R_SYS_DIR, prj_dir, prjfile)) {
 		path = r_str_newf ("%s%s%s", R_SYS_DIR, prj_dir, prjfile);
 	} else {
 		if (*prjfile == R_SYS_DIR[0]) {
@@ -371,14 +370,12 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 	return th;
 }
 
-/*** ^^^ thready ***/
-
 static ut64 get_project_laddr(RCore *core, const char *prjfile) {
 	ut64 laddr = 0;
 	char *buf = r_file_slurp (prjfile, NULL);
 	char *pos;
 	if (buf) {
-		if ((pos = strstr(buf, "\"e bin.laddr = "))) {
+		if ((pos = strstr (buf, "\"e bin.laddr = "))) {
 			laddr = r_num_math (NULL, pos + 15);
 		}
 		free (buf);
@@ -507,19 +504,8 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 			if (feof (fd)) {
 				break;
 			}
-			if (!strncmp (buf, "\"e file.path = ", 15)) {
+			if (!strncmp (buf, "\"e prj.name = ", 14)) {
 				buf[strlen (buf) - 2] = 0;
-				file = r_str_new (buf + 15);
-				break;
-			}
-			if (!strncmp (buf, "\"e file.lastpath = ", 19)) {
-				buf[strlen (buf) - 2] = 0;
-				file = r_str_new (buf + 19);
-				break;
-			}
-			// TODO: deprecate before 1.0
-			if (!strncmp (buf, "e file.path = ", 14)) {
-				buf[strlen (buf) - 1] = 0;
 				file = r_str_new (buf + 14);
 				break;
 			}
@@ -619,7 +605,6 @@ static bool simple_project_save_script(RCore *core, const char *file, int opts) 
 		r_cons_flush ();
 	}
 
-
 	r_cons_singleton ()->fdout = fdold;
 	r_cons_singleton ()->context->is_interactive = true;
 
@@ -671,10 +656,7 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 			}
 		}
 	}
-	// Set file.path and file.lastpath to empty string to signal
 	// new behaviour to project load routine (see io maps below).
-	r_config_set (core->config, "file.path", "");
-	r_config_set (core->config, "file.lastpath", "");
 	if (opts & R_CORE_PRJ_EVAL) {
 		r_str_write (fd, "# eval\n");
 		r_config_list (core->config, NULL, true);

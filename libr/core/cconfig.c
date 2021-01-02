@@ -2135,24 +2135,6 @@ static bool cb_io_oxff(void *user, void *data) {
 	return true;
 }
 
-static bool cb_filepath(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	char *pikaboo = strstr (node->value, "://");
-	if (pikaboo) {
-		if (pikaboo[3] == '/') {
-			r_config_set (core->config, "file.lastpath", node->value);
-			char *ovalue = node->value;
-			node->value = strdup (pikaboo + 3);
-			free (ovalue);
-			return true;
-		}
-		return false;
-	}
-	r_config_set (core->config, "file.lastpath", node->value);
-	return true;
-}
-
 static bool cb_ioautofd(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2551,6 +2533,37 @@ static bool cb_binverbose(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->bin->verbose = node->i_value;
 	return true;
+}
+
+static bool cb_prjname(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	const char *prjname = node->value;
+	if (*prjname == '?') {
+		r_core_project_list (core, 0);
+		return false;
+	}
+	if (r_project_is_loaded (core->prj)) {
+		if (*prjname) {
+			if (!strcmp (prjname, core->prj->name)) {
+				return false;
+			}
+			if (r_project_rename (core->prj, prjname)) {
+				return true;
+			}
+			eprintf ("Cannot rename project.\n");
+		} else {
+			r_project_close (core->prj);
+		}
+	} else {
+		if (*prjname) {
+			if (r_project_open (core->prj, prjname, NULL)) {
+				return true;
+			}
+			eprintf ("Cannot open project.\n");
+		}
+	}
+	return false;
 }
 
 static bool cb_rawstr(void *user, void *data) {
@@ -3365,7 +3378,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.verbose", "false", &cb_binverbose, "Show RBin warnings when loading binaries");
 
 	/* prj */
-	SETPREF ("prj.name", "", "Name of current project");
+	SETCB ("prj.name", "", &cb_prjname, "Name of current project");
 	SETBPREF ("prj.files", "false", "Save the target binary inside the project directory");
 	{
 		char *p = r_file_path ("git");
@@ -3860,8 +3873,6 @@ R_API int r_core_config_init(RCore *core) {
 	/* file */
 	SETBPREF ("file.info", "true", "RBin info loaded");
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
-	SETCB ("file.path", "", &cb_filepath, "Path of current file");
-	SETPREF ("file.lastpath", "", "Path of current file");
 	SETPREF ("file.type", "", "Type of current file");
 	SETI ("file.loadalign", 1024, "Alignment of load addresses");
 	SETI ("file.openmany", 1, "Maximum number of files opened at once");
