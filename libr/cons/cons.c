@@ -123,6 +123,7 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 }
 
 static void cons_context_deinit(RConsContext *context) {
+	R_FREE (context->error);
 	r_stack_free (context->cons_stack);
 	context->cons_stack = NULL;
 	r_stack_free (context->break_stack);
