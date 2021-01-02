@@ -1436,7 +1436,7 @@ static int r_debug_heap(RCore *core, const char *input) {
 	return true;
 }
 
-static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, int mode, bool symbols_only, RCoreBinFilter *filter) {
+static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, PJ *pj, int mode, bool symbols_only, RCoreBinFilter *filter) {
 	int fd;
 	if ((fd = r_io_fd_open (core->io, file, R_PERM_R, 0)) == -1) {
 		return false;
@@ -1456,7 +1456,7 @@ static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, int mode,
 	} else if (mode == R_MODE_SET || mode == R_MODE_RADARE) {
 		action &= ~R_CORE_BIN_ACC_ENTRIES & ~R_CORE_BIN_ACC_MAIN;
 	}
-	r_core_bin_info (core, action, mode, 1, filter, NULL);
+	r_core_bin_info (core, action, pj, mode, 1, filter, NULL);
 	RBinFile *bf = r_bin_cur (core->bin);
 	r_bin_file_delete (core->bin, bf->id);
 	r_bin_file_set_cur_binfile (core->bin, obf);
@@ -1583,6 +1583,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					symbols_only = false;
 					input++;
 				}
+				PJ *pj = NULL;
 				switch (input[1]) {
 				case 's':
 					mode = R_MODE_SET;
@@ -1592,6 +1593,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					break;
 				case 'j':
 					mode = R_MODE_JSON;
+					pj = r_core_pj_new (core);
+					if (!pj) {
+						return false;
+					}
 					break;
 				case 'q':
 					mode = input[2] == 'q' ? input++, R_MODE_SIMPLEST : R_MODE_SIMPLE;
@@ -1645,7 +1650,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 								             file, map->size, baddr, R_SYS_DEVNULL);
 							}
 						}
-						get_bin_info (core, file, baddr, mode, symbols_only, &filter);
+						get_bin_info (core, file, baddr, pj, mode, symbols_only, &filter);
 						if (newfile) {
 							if (!r_file_rm (newfile)) {
 								eprintf ("Error when removing %s\n", newfile);
@@ -1654,9 +1659,13 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						}
 					} else {
 						r_bin_set_baddr (core->bin, map->addr);
-						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'), true, &filter, NULL);
+						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, pj, input[1] == '*', true, &filter, NULL);
 						r_bin_set_baddr (core->bin, baddr);
 					}
+				}
+				if (mode == R_MODE_JSON) {
+					r_cons_println (pj_string (pj));
+					pj_free (pj);
 				}
 				free (ptr);
 			}
@@ -1688,7 +1697,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						filter.name = (char *) closest_symbol->name;
 
 						r_bin_set_baddr (core->bin, map->addr);
-						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, false, true, &filter, NULL);
+						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, NULL, false, true, &filter, NULL);
 					}
 				}
 			}
@@ -5071,10 +5080,8 @@ static int cmd_debug(void *data, const char *input) {
 	case 'L': // "dL"
 		switch (input[1]) {
 		case 'q':
-			r_debug_plugin_list (core->dbg, 'q');
-			break;
 		case 'j':
-			r_debug_plugin_list (core->dbg, 'j');
+			r_debug_plugin_list (core->dbg, input[1]);
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_dL);
