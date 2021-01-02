@@ -339,7 +339,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	int zflag = 0;
 	bool do_connect = false;
 	bool fullfile = false;
-	int has_project;
 	bool zerosep = false;
 	int help = 0;
 	enum { LOAD_BIN_ALL, LOAD_BIN_NOTHING, LOAD_BIN_STRUCTURES_ONLY } load_bin = LOAD_BIN_ALL;

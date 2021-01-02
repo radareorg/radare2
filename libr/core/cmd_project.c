@@ -42,15 +42,14 @@ static void cmd_project_init(RCore *core, RCmdDesc *parent) {
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	const char *file, *arg;
+	const char *file;
 	const char *fileproject = r_config_get (core->config, "prj.name");
-	char *str = NULL;
 
 	if (!input) {
 		return false;
 	}
-	str = strdup (fileproject);
-	arg = strchr (input, ' ');
+	char *str = strdup (fileproject);
+	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg++;
 	} else {
