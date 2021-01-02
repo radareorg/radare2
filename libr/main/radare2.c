@@ -820,8 +820,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	prj = r_config_get (r->config, "prj.name");
 	if (prj && *prj) {
-		r_core_project_open (r, prj, false);
+		char *p = strdup (prj);
+		r_core_project_open (r, p);
 		r_config_set (r->config, "bin.strings", "false");
+		free (p);
 	}
 
 	if (do_connect) {

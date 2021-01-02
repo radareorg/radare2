@@ -337,13 +337,31 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	free (str);
 }
 
-/*** vvv thready ***/
-
 typedef struct {
 	RCore *core;
 	char *prj_name;
 	char *rc_path;
 } projectState;
+
+static bool r_core_project_load(RCore *core, const char *prj_name, const char *rcpath) {
+	if (r_project_is_loaded (core->prj)) {
+		eprintf ("o--;e prj.name=\n");
+		return false;
+	}
+	if (!r_project_open (core->prj, prj_name, rcpath)) {
+		return false;
+	}
+	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
+	const bool scr_interactive = r_cons_is_interactive ();
+	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
+	(void) load_project_rop (core, prj_name);
+	bool ret = r_core_cmd_file (core, rcpath);
+	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
+	r_config_set_i (core->config, "scr.interactive", scr_interactive);
+	r_config_set_i (core->config, "scr.prompt", scr_prompt);
+	r_config_bump (core->config, "asm.arch");
+	return ret;
+}
 
 static RThreadFunctionRet project_load_background(RThread *th) {
 	projectState *ps = th->user;
@@ -383,26 +401,27 @@ static ut64 get_project_laddr(RCore *core, const char *prjfile) {
 	return laddr;
 }
 
-R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
-	bool askuser = true;
+R_API bool r_core_project_open(RCore *core, const char *prjfile) {
+	r_return_val_if_fail (core && !R_STR_ISEMPTY (prjfile), false);
 	int ret, close_current_session = 1;
-	char *oldbin;
-	const char *newbin;
 	ut64 mapaddr = 0;
-	if (!prjfile || !*prjfile) {
-		return false;
-	}
-	if (thready) {
-		eprintf ("Loading projects in a thread has been deprecated. Use tasks\n");
-		return false;
+	if (r_project_is_loaded (core->prj)) {
+		eprintf ("Theres a project already opened\n");
+		bool ccs = r_cons_yesno ('y', "Close current session? (Y/n)");
+		if (ccs) {
+			// r_core_cmd0 (core, "e prj.name=;o--");
+			r_core_cmd0 (core, "o--");
+		} else {
+			eprintf ("Project not loaded.\n");
+			return false;
+		}
 	}
 	char *prj = get_project_script_path (core, prjfile);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
 		return false;
 	}
-	char *filepath = r_core_project_info (core, prj);
-	// eprintf ("OPENING (%s) from %s\n", prj, r_config_get (core->config, "file.path"));
+	char *filepath = r_core_project_name (core, prj);
 	/* if it is not an URI */
 	if (!filepath) {
 		eprintf ("Cannot retrieve information for project '%s'\n", prj);
@@ -424,26 +443,13 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	}
  cookiefactory:
 	;
-	const char *file_path = r_config_get (core->config, "file.path");
-	if (!file_path || !*file_path) {
-		file_path = r_config_get (core->config, "file.lastpath");
-	}
-	oldbin = strdup (file_path);
-	if (!strcmp (prjfile, r_config_get (core->config, "prj.name"))) {
-		// eprintf ("Reloading project\n");
-		askuser = false;
-#if 0
-		free (prj);
-		free (filepath);
-		return false;
-#endif
-	}
-	if (askuser) {
+	if (r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive ()) {
 			close_current_session = r_cons_yesno ('y', "Close current session? (Y/n)");
 		}
 	}
 	if (close_current_session) {
+		r_core_cmd0 (core, "e prj.name=;o--");
 		// delete
 		r_core_file_close_fd (core, -1);
 		r_io_close_all (core->io);
@@ -471,23 +477,13 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
 	}
 	/* load sdb stuff in here */
 	ret = r_core_project_load (core, prjfile, prj);
-	if (filepath[0]) {
-		newbin = r_config_get (core->config, "file.path");
-		if (!newbin || !*newbin) {
-			newbin = r_config_get (core->config, "file.lastpath");
-		}
-		if (strcmp (oldbin, newbin)) {
-			eprintf ("WARNING: file.path changed: %s => %s\n", oldbin, newbin);
-		}
-	}
 beach:
-	free (oldbin);
 	free (filepath);
 	free (prj);
 	return ret;
 }
 
-R_API char *r_core_project_info(RCore *core, const char *prjfile) {
+R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 	FILE *fd;
 	char buf[256], *file = NULL;
 	char *prj = get_project_script_path (core, prjfile);
@@ -579,6 +575,10 @@ static bool simple_project_save_script(RCore *core, const char *file, int opts) 
 		r_config_list (core->config, NULL, true);
 		r_cons_flush ();
 	}
+
+	r_core_cmdf (core, "o*");
+	// r_core_cmdf (core, "om**");
+	r_core_cmdf (core, "wc*");
 
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_str_write (fd, "# functions\n");
@@ -894,23 +894,10 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 }
 
 R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
-	char *notes_txt;
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	char *prjpath = r_file_abspath (prjdir);
-	notes_txt = r_str_newf ("%s"R_SYS_DIR "%s"R_SYS_DIR "notes.txt", prjpath, prj_name);
+	char *notes_txt = r_file_new (prjpath, prj_name, "notes.txt", NULL);
 	free (prjpath);
 	return notes_txt;
 }
 
-R_API bool r_core_project_load(RCore *core, const char *prj_name, const char *rcpath) {
-	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
-	const bool scr_interactive = r_cons_is_interactive ();
-	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
-	(void) load_project_rop (core, prj_name);
-	bool ret = r_core_cmd_file (core, rcpath);
-	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
-	r_config_set_i (core->config, "scr.interactive", scr_interactive);
-	r_config_set_i (core->config, "scr.prompt", scr_prompt);
-	r_config_bump (core->config, "asm.arch");
-	return ret;
-}
