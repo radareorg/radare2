@@ -69,24 +69,23 @@ static int cmd_project(void *data, const char *input) {
 			eprintf ("Usage: Pc [prjname]\n");
 		}
 		break;
-	case 'o':
-		//	if (r_file_is_regular (file))
-		if (input[1] == '&') {
+	case 'o': // "Po"
+		if (input[1] == '&') { // "Po&"
 			r_core_cmdf (core, "& Po %s", file);
-		} else if (input[1]) {
-			r_core_project_open (core, file, false);
+		} else if (input[1]) { // "Po"
+			r_core_project_open (core, file);
 		} else {
-			if (file && *file) {
+			if (str && *str) {
 				r_cons_println (file);
 			}
 		}
 		break;
-	case 'd':
-	case '-':
+	case 'd': // "Pd"
+	case '-': // "P-"
 		r_core_project_delete (core, file);
 		break;
 	case 's':
-		if (!file || !file[0]) { /* if no argument specified use current project */
+		if (R_STR_ISEMPTY (file)) {
 			file = str;
 		}
 		if (r_core_project_save (core, file)) {
@@ -223,11 +222,14 @@ static int cmd_project(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'i':
+	case 'i': // "Pi"
 		if (file && *file) {
-			char *prjName = r_core_project_info (core, file);
+			char *prjName = r_core_project_name (core, file);
 			r_cons_println (prjName);
 			free (prjName);
+		} else if (r_project_is_loaded (core->prj)) {
+			r_cons_println (core->prj->name);
+			r_cons_println (core->prj->path);
 		}
 		break;
 	case 0:

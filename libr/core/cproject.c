@@ -10,9 +10,20 @@ R_API RProject *r_project_new(void) {
 }
 
 R_API bool r_project_rename(RProject *p, const char *newname) {
-	// check if the newname is available
-	// move directory
-	// update path and file fields in p
+	if (!r_project_is_loaded (p)) {
+		return false;
+	}
+	char *newprjdir = r_file_new (p->path, "..", newname, NULL);
+	if (r_file_exists (newprjdir)) {
+		eprintf ("Cannot rename.\n");
+		free (newprjdir);
+		return false;
+	}
+	r_file_move (p->path, newprjdir);
+	free (p->path);
+	p->path = newprjdir;
+	free (p->name);
+	p->name = strdup (newname);
 	return false;
 }
 
