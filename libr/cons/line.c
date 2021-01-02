@@ -35,6 +35,7 @@ R_API void r_line_free(void) {
 	// XXX: prompt out of the heap?
 	free ((void *)I.prompt);
 	I.prompt = NULL;
+	r_list_free (I.kill_ring);
 	r_line_hist_free ();
 	r_line_completion_fini (&I.completion);
 }
