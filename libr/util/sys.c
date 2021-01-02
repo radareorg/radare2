@@ -1239,12 +1239,12 @@ R_API void r_sys_set_environ(char **e) {
 
 R_API char *r_sys_whoami (char *buf) {
 	char _buf[32];
-	int pid = getpid ();
+	int uid = getuid ();
 	int hasbuf = (buf)? 1: 0;
 	if (!hasbuf) {
 		buf = _buf;
 	}
-	sprintf (buf, "pid%d", pid);
+	sprintf (buf, "uid%d", uid);
 	return hasbuf? buf: strdup (buf);
 }
 
