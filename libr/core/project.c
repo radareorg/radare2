@@ -750,12 +750,11 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	bool scr_null = false;
 	bool ret = true;
-	char *script_path, *prj_dir;
 	SdbListIter *it;
 	SdbNs *ns;
 	char *old_prj_name = NULL;
 	r_return_val_if_fail (prj_name && *prj_name, false);
-	script_path = get_project_script_path (core, prj_name);
+	char *script_path = get_project_script_path (core, prj_name);
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		eprintf ("radare2 does not support projects on debugged bins\n");
 		return false;
@@ -764,7 +763,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		eprintf ("Invalid project name '%s'\n", prj_name);
 		return false;
 	}
-	if (r_str_endswith (script_path, R_SYS_DIR "rc")) {
+	char *prj_dir = NULL;
+	if (r_str_endswith (script_path, R_SYS_DIR "rc.r2")) {
 		/* new project format */
 		prj_dir = r_file_dirname (script_path);
 	} else {
@@ -780,7 +780,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			r_file_rm (script_path);
 			r_sys_mkdirp (prj_dir);
 			eprintf ("Please remove: rm -rf %s %s.d\n", prj_name, prj_name);
-			char *rc = r_str_newf ("%s" R_SYS_DIR "rc", prj_dir);
+			char *rc = r_str_newf ("%s" R_SYS_DIR "rc.r2", prj_dir);
 			if (!rc) {
 				free (prj_dir);
 				free (script_path);
@@ -835,7 +835,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 
 	if (r_config_get_i (core->config, "prj.files")) {
 		eprintf ("TODO: prj.files: support copying more than one file into the project directory\n");
-		char *bin_file = r_core_project_info (core, prj_name);
+		char *bin_file = r_core_project_name (core, prj_name);
 		const char *bin_filename = r_file_basename (bin_file);
 		char *prj_bin_dir = r_str_newf ("%s" R_SYS_DIR "bin", prj_dir);
 		char *prj_bin_file = r_str_newf ("%s" R_SYS_DIR "%s", prj_bin_dir, bin_filename);

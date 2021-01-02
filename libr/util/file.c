@@ -42,6 +42,33 @@ static int file_stat(const char *file, struct stat* const pStat) {
 #endif // __WINDOWS__
 }
 
+// r_file_new("", "bin", NULL) -> /bin
+// r_file_new(".", "bin", NULL) -> ./bin
+// r_file_new("/", "bin", NULL) -> //bin # shall we be stricts?
+R_API char *r_file_new(const char *root, ...) {
+	va_list ap;
+	va_start (ap, root);
+	RStrBuf *sb = r_strbuf_new ("");
+	char *home = r_str_home (NULL);
+	const char *arg = va_arg (ap, char *);
+	r_strbuf_append (sb, arg);
+	arg = va_arg (ap, char *);
+	while (arg) {
+		if (!strcmp (arg, "~")) {
+			arg = home;
+		}
+		r_strbuf_append (sb, R_SYS_DIR);
+		r_strbuf_append (sb, arg);
+		arg = va_arg (ap, char *);
+	}
+	va_end (ap);
+	free (home);
+	char *path = r_strbuf_drain (sb);
+	char *abs = r_file_abspath (path);
+	free (path);
+	return abs;
+}
+
 R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	r_return_val_if_fail (filename, false);
 	int fd;
@@ -737,6 +764,29 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 		}
 	}
 	fclose (fd);
+	return true;
+}
+
+R_API bool r_file_move(const char *src, const char *dst) {
+	r_return_val_if_fail (!R_STR_ISEMPTY (src) && !R_STR_ISEMPTY (dst), false);
+	if (r_sandbox_enable (0)) {
+		return false;
+	}
+	// rename fails when files are in different mountpoints
+	// in this situation it needs to be copied and removed
+	if (rename (src, dst) != 0) {
+		char *a = r_str_escape (src);
+		char *b = r_str_escape (dst);
+		char *input = r_str_newf ("\"%s\" \"%s\"", a, b);
+#if __WINDOWS__
+		int rc = r_sys_cmdf ("move %s", input);
+#else
+		int rc = r_sys_cmdf ("mv %s", input);
+#endif
+		free (a);
+		free (b);
+		return rc == 0;
+	}
 	return true;
 }
 
