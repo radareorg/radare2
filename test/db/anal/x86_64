@@ -1068,10 +1068,13 @@ e asm.bits=64
 pd 1
 Cf 1 x
 pd 1
+e scr.interactive=false
 Ps temp_proj
 Cf-
 pd 1
+e scr.interactive=false
 Ps temp_proj
+e scr.interactive=false
 Po temp_proj
 pd 1
 EOF
@@ -1079,9 +1082,7 @@ EXPECT=<<EOF
             0x00000000      57             push rdi
             0x00000000 pf x # size=1
 0x00000000 = 0x6c726f57
-temp_proj
             0x00000000      57             push rdi
-temp_proj
             0x00000000      57             push rdi
 EOF
 RUN

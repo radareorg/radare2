@@ -2,11 +2,15 @@ NAME=Import project
 FILE=malloc://512
 CMDS=<<EOF
 e prj.git=false
+e scr.interactive=false
 e dir.projects = bins/other/projects
+CC hello world
+C*
 Po test > /dev/null
 C*
 EOF
 EXPECT=<<EOF
+CCu base64:aGVsbG8gd29ybGQ= @ 0x00000000
 CCu base64:U29tZSB0ZXN0 @ 0x00404890
 EOF
 RUN
@@ -20,6 +24,7 @@ e asm.arch = x86
 e anal.arch = x86
 e dir.projects = ../bin/
 CC Some test @ 0x00404890
+Ps import2
 Po import2 > /dev/null
 CC*
 EOF
@@ -59,7 +64,7 @@ e prj.git=false
 e dir.projects = .tmp/
 CC "Some other test" @ 0x00404890
 Ps testexp > /dev/null
-cat .tmp/testexp/rc | grep base64
+cat .tmp/testexp/rc.r2 | grep base64
 rmdir -p .tmp/testexp
 EOF
 EXPECT=<<EOF
@@ -80,7 +85,7 @@ Ps testset > /dev/null
 C- @ 0x00404890
 C- @ 0x00404800
 Po project.r2
-cat .tmp/testset/rc | grep CC
+cat .tmp/testset/rc.r2 | grep CC
 rmdir -p .tmp/testset
 EOF
 EXPECT=<<EOF
@@ -106,14 +111,25 @@ EOF
 RUN
 
 NAME=Import mapped project
-FILE=malloc://512
+FILE=malloc://0xf000
 CMDS=<<EOF
 e prj.git=false
 e dir.projects = bins/other/projects/
-Po resetc64 > /dev/null
+e io.cache=true
+wx 4ce2fc@0xc000
+echo Saved `pu 3 @ 0xc000`
+# Ps resetc64
+pu 3 @2
+pu 3 @0xc000
+Po resetc64
+echo Loaded `pu 3 @ 0xc000`
 pu 3 @0xc000
 EOF
 EXPECT=<<EOF
+Saved %4c%e2%fc
+%00%00%00
+%4c%e2%fc
+Loaded %4c%e2%fc
 %4c%e2%fc
 EOF
 RUN
@@ -270,18 +286,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
 NAME=Save project for a binary without saving its info
 FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
 e prj.git=false
 e dir.projects = .tmp/
-Ps blub > /dev/null
+# Ps blub > /dev/null
 Po blub > /dev/null
 i~format
 EOF
 EXPECT=<<EOF
+format   elf64
 EOF
 RUN
 
@@ -290,14 +306,15 @@ FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e prj.git=false
 e dir.projects = .tmp/
-aaa
-Ps beer
-  # Following command hangs:
-  # Po beer
-y
+e scr.interactive=false
+Po beer
+echo Info: `Pi`
+aflc
+e scr.interactive=false
 EOF
 EXPECT=<<EOF
-beer
+Info: beer
+13
 EOF
 RUN
 
@@ -313,8 +330,10 @@ om*~?
 om*~[2]
 EOF
 EXPECT=<<EOF
-1
-0x00001337
+3
+0x00600910
+0x006006e0
+0x00400000
 EOF
 RUN
 
@@ -361,7 +380,6 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
-
 
 NAME=Delete a saved project and used directory (with P-)
 FILE=bins/elf/analysis/main
@@ -468,6 +486,7 @@ EXPECT=<<EOF
 5
 EOF
 RUN
+
 NAME=Reopening project with changes loading
 FILE=bins/elf/analysis/main
 CMDS=<<EOF

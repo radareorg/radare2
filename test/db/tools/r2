@@ -21,30 +21,6 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
-NAME=r2 -
-FILE=-
-CMDS=e file.path
-EXPECT=<<EOF
-
-EOF
-RUN
-
-NAME=r2 -
-FILE=-
-CMDS=e file.lastpath
-EXPECT=<<EOF
-
-EOF
-RUN
-
-NAME=r2 --
-FILE=--
-CMDS=e file.path
-EXPECT=<<EOF
-
-EOF
-RUN
-
 NAME=r2 --
 FILE=bins/elf/bomb
 CMDS=r2 -s main -qcs bins/elf/bomb
