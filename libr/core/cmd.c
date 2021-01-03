@@ -7210,9 +7210,9 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			}
 			*nl = '\0';
 			r = r_core_cmd (core, data, 0);
-			if (r < 0) { //== -1) {
+			if (r < 0) {
 				data = nl + 1;
-				ret = -1; //r; //false;
+				ret = -1;
 				break;
 			}
 			r_cons_flush ();

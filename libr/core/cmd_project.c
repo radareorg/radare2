@@ -63,7 +63,7 @@ static int cmd_project(void *data, const char *input) {
 	}
 	file = arg;
 	switch (input[0]) {
-	case 'c':
+	case 'c': // "Pc"
 		if (input[1] == ' ') {
 			r_core_project_cat (core, input + 2);
 		} else {
