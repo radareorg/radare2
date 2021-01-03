@@ -419,7 +419,7 @@ static int cmd_eval(void *data, const char *input) {
 				const char *th;
 				r_list_foreach (themes_list, th_iter, th) {
 					if (curtheme && !strcmp (curtheme, th)) {
-						r_cons_printf ("> %s\n", th);
+						r_cons_printf ("- %s\n", th);
 					} else {
 						r_cons_printf ("  %s\n", th);
 					}

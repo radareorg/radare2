@@ -1,3 +1,16 @@
+NAME=eco-ecn
+FILE=-
+CMDS=<<EOF
+eco~^-
+ecn
+eco~^-
+EOF
+EXPECT=<<EOF
+- default
+- lima
+EOF
+RUN
+
 NAME=ec* fgbg
 FILE=-
 CMDS=<<EOF
