@@ -683,6 +683,7 @@ static const char *help_msg_ar[] = {
 	"aro", "", "Show old (previous) register values",
 	"arp", "[?] <file>", "Load register profile from file",
 	"ars", "", "Stack register state",
+	"arS", "", "Show the size of the register profile",
 	"art", "", "List all register types",
 	"arw", " <hexnum>", "Set contents of the register arena",
 	NULL

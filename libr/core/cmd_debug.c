@@ -337,6 +337,7 @@ static const char *help_msg_dr[] = {
 	"drrj", "", "Show registers references (telescoping) in JSON format",
 	// TODO: 'drs' to swap register arenas and display old register valuez
 	"drs", "[?]", "Stack register states",
+	"drS", "", "Show the size of the register profile",
 	"drt", "[?]", "Show all register types",
 	"drw"," <hexnum>", "Set contents of the register arena",
 	"drx", "[?]", "Show debug registers",
