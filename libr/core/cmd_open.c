@@ -1664,7 +1664,6 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '-': // "o--"
-			eprintf ("All core files, io, anal and flags info purged.\n");
 			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);

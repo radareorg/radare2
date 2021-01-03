@@ -7,6 +7,8 @@
 #define USE_R2 1
 #include <spp/spp.h>
 
+#define PROJECT_EXPERIMENTAL 0
+
 // project apis to be used from cmd_project.c
 
 static bool is_valid_project_name(const char *name) {
@@ -344,6 +346,9 @@ typedef struct {
 } projectState;
 
 static bool r_core_project_load(RCore *core, const char *prj_name, const char *rcpath) {
+	if (R_STR_ISEMPTY (prj_name)) {
+		prj_name = r_core_project_name (core, rcpath);
+	}
 	if (r_project_is_loaded (core->prj)) {
 		eprintf ("o--;e prj.name=\n");
 		return false;
@@ -360,6 +365,7 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	r_config_set_i (core->config, "scr.interactive", scr_interactive);
 	r_config_set_i (core->config, "scr.prompt", scr_prompt);
 	r_config_bump (core->config, "asm.arch");
+	r_config_set (core->config, "prj.name", prj_name);
 	return ret;
 }
 
@@ -388,25 +394,11 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 	return th;
 }
 
-static ut64 get_project_laddr(RCore *core, const char *prjfile) {
-	ut64 laddr = 0;
-	char *buf = r_file_slurp (prjfile, NULL);
-	char *pos;
-	if (buf) {
-		if ((pos = strstr (buf, "\"e bin.laddr = "))) {
-			laddr = r_num_math (NULL, pos + 15);
-		}
-		free (buf);
-	}
-	return laddr;
-}
-
-R_API bool r_core_project_open(RCore *core, const char *prjfile) {
-	r_return_val_if_fail (core && !R_STR_ISEMPTY (prjfile), false);
+R_API bool r_core_project_open(RCore *core, const char *prj_path) {
+	r_return_val_if_fail (core && !R_STR_ISEMPTY (prj_path), false);
 	int ret, close_current_session = 1;
-	ut64 mapaddr = 0;
 	if (r_project_is_loaded (core->prj)) {
-		eprintf ("Theres a project already opened\n");
+		eprintf ("There's a project already opened\n");
 		bool ccs = r_cons_yesno ('y', "Close current session? (Y/n)");
 		if (ccs) {
 			// r_core_cmd0 (core, "e prj.name=;o--");
@@ -416,33 +408,12 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile) {
 			return false;
 		}
 	}
-	char *prj = get_project_script_path (core, prjfile);
-	if (!prj) {
-		eprintf ("Invalid project name '%s'\n", prjfile);
+	char *prj_name = r_core_project_name (core, prj_path);
+	char *prj_script = get_project_script_path (core, prj_path);
+	if (!prj_script) {
+		eprintf ("Invalid project name '%s'\n", prj_path);
 		return false;
 	}
-	char *filepath = r_core_project_name (core, prj);
-	/* if it is not an URI */
-	if (!filepath) {
-		eprintf ("Cannot retrieve information for project '%s'\n", prj);
-		free (prj);
-		return false;
-	}
-
-	if (!filepath[0]) {
-		goto cookiefactory;
-	}
-	if (!strstr (filepath, "://")) {
-		/* check if path exists */
-		if (!r_file_exists (filepath)) {
-			eprintf ("Cannot find file '%s'\n", filepath);
-			free (prj);
-			free (filepath);
-			return false;
-		}
-	}
- cookiefactory:
-	;
 	if (r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive ()) {
 			close_current_session = r_cons_yesno ('y', "Close current session? (Y/n)");
@@ -456,36 +427,20 @@ R_API bool r_core_project_open(RCore *core, const char *prjfile) {
 		r_anal_purge (core->anal);
 		r_flag_unset_all (core->flags);
 		r_bin_file_delete_all (core->bin);
-		// open new file
-		// TODO: handle read/read-write mode
-		if (filepath[0]) {
-			/* Old-style project without embedded on commands to open all files.  */
-			if (!r_core_file_open (core, filepath, 0, UT64_MAX)) {
-				eprintf ("Cannot open file '%s'\n", filepath);
-				ret = false;
-				goto beach;
-			}
-		}
-	}
-	mapaddr = get_project_laddr (core, prj);
-	if (mapaddr) {
-		r_config_set_i (core->config, "bin.laddr", mapaddr);
-	}
-	if (filepath[0] && close_current_session && r_config_get_i (core->config, "file.info")) {
-		mapaddr = r_config_get_i (core->config, "file.offset");
-		(void)r_core_bin_load (core, filepath, mapaddr? mapaddr: UT64_MAX);
 	}
 	/* load sdb stuff in here */
-	ret = r_core_project_load (core, prjfile, prj);
-beach:
-	free (filepath);
-	free (prj);
+	ret = r_core_project_load (core, prj_name, prj_script);
+	free (prj_name);
+	free (prj_script);
 	return ret;
 }
 
 R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 	FILE *fd;
 	char buf[256], *file = NULL;
+	if (*prjfile != '/') {
+		return strdup (prjfile);
+	}
 	char *prj = get_project_script_path (core, prjfile);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
@@ -511,10 +466,29 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 		eprintf ("Cannot open project info (%s)\n", prj);
 	}
 	free (prj);
+	if (R_STR_ISEMPTY (file)) {
+		free (file);
+		file = strdup (prjfile);
+		char *slash = (char *)r_str_lchr (file, R_SYS_DIR[0]); 
+		if (slash) {
+			*slash = 0;
+			slash = (char *)r_str_lchr (file, R_SYS_DIR[0]); 
+			if (slash) {
+				char *res = strdup (slash + 1);
+				free (file);
+				file = res;
+			} else {
+				R_FREE (file);
+			}
+		} else {
+			R_FREE (file);
+		}
+	}
 	return file;
 }
 
-static int fdc;		//this is a ugly, remove it, when we have $fd
+#if PROJECT_EXPERIMENTAL
+static int fdc; // TODO: move into a struct passed to the foreach instead of global
 
 static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 	RList *maps = NULL;
@@ -536,6 +510,7 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 	}
 	return true;
 }
+#endif
 
 static bool simple_project_save_script(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
@@ -637,26 +612,13 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
 	r_str_write (fd, "# r2 rdb project file\n");
-	if (core->bin->file) {
-		if (!r_config_get_i (core->config, "asm.emu")) {
-			char *fpath = r_file_abspath (core->bin->file);
-			if (fpath) {
-				char *reopen = r_str_newf ("\"o %s\"\n", fpath);
-				if (reopen) {
-					r_str_write (fd, reopen);
-					free (reopen);
-					free (fpath);
-				}
-			}
-		}
-	}
 	// new behaviour to project load routine (see io maps below).
 	if (opts & R_CORE_PRJ_EVAL) {
 		r_str_write (fd, "# eval\n");
 		r_config_list (core->config, NULL, true);
 		r_cons_flush ();
 	}
-
+	r_core_cmd (core, "o*", 0);
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_str_write (fd, "# functions\n");
 		r_str_write (fd, "fs functions\n");
@@ -671,11 +633,13 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 		r_flag_space_pop (core->flags);
 		r_cons_flush ();
 	}
+#if PROJECT_EXPERIMENTAL
 	if (opts & R_CORE_PRJ_IO_MAPS && core->io && core->io->files) {
 		fdc = 3;
 		r_id_storage_foreach (core->io->files, (RIDStorageForeachCb)store_files_and_maps, core);
 		r_cons_flush ();
 	}
+#endif
 	{
 		r_core_cmd (core, "fz*", 0);
 		r_cons_flush ();
