@@ -1296,10 +1296,25 @@ static bool cb_dirhome(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dir_projects(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
+	if (value) {
+		char *newva = r_file_abspath (value);
+		free (node->value);
+		node->value = newva;
+	}
+	return true;
+}
+
 static bool cb_dirtmp(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
-	r_sys_setenv (R_SYS_TMP, value);
+	if (value) {
+		char *newva = r_file_abspath (value);
+		free (node->value);
+		node->value = newva;
+	}
 	return true;
 }
 
@@ -3492,9 +3507,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "Path of the tmp directory");
 	free (p);
 #if __ANDROID__
-	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
+	SETCB ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", &cb_dir_projects, "Default path for projects");
 #else
-	SETPREF ("dir.projects", R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS), "Default path for projects");
+	SETCB ("dir.projects", R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS), &cb_dir_projects, "Default path for projects");
 #endif
 	SETCB ("dir.zigns", R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
 	SETPREF ("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");

@@ -401,7 +401,6 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 		eprintf ("There's a project already opened\n");
 		bool ccs = r_cons_yesno ('y', "Close current session? (Y/n)");
 		if (ccs) {
-			// r_core_cmd0 (core, "e prj.name=;o--");
 			r_core_cmd0 (core, "o--");
 		} else {
 			eprintf ("Project not loaded.\n");
@@ -847,4 +846,3 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 	free (prjpath);
 	return notes_txt;
 }
-
