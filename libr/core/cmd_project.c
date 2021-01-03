@@ -235,8 +235,9 @@ static int cmd_project(void *data, const char *input) {
 			r_cons_println (core->prj->path);
 		}
 		break;
+	case 'l':
 	case 0:
-	case 'j':
+	case 'j': // "Pj"
 		r_core_project_list (core, input[0]);
 		break;
 	default:
