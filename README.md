@@ -93,11 +93,11 @@ don't need to reinstall every time you change something in the builddir.
 
 Alternatively you can also build with meson + ninja:
 
-	$ ./sys/meson.py --prefix=/usr --shared --install
+	$ sys/meson.py --prefix=/usr --shared --install
 
 Or install in your home with meson + ninja:
 
-	$ ./sys/meson.py --prefix=/home/$USER/r2meson --local --shared --install
+	$ sys/meson.py --prefix=$HOME/r2meson --local --shared --install
 
 ## Uninstall
 

@@ -461,6 +461,7 @@ static bool test_r_big_powm(void) {
 	r_big_free (a);
 	r_big_free (b);
 	r_big_free (c);
+	r_big_free (m);
 	mu_end;
 }
 
