@@ -85,26 +85,30 @@ static int cmd_project(void *data, const char *input) {
 	case '-': // "P-"
 		r_core_project_delete (core, file);
 		break;
-	case 's':
+	case 's': // "Ps"
 		if (R_STR_ISEMPTY (file)) {
 			file = str;
 		}
-		if (r_core_project_save (core, file)) {
-			r_cons_println (file);
+		if (!R_STR_ISEMPTY (file)) {
+			if (!r_core_project_save (core, file)) {
+				r_cons_eprintf ("Cannot save project.\n");
+			}
+		} else {
+			r_cons_eprintf ("Use: Ps [projectname]\n");
 		}
 		break;
-	case 'S':
+	case 'S': // "PS"
 		if (input[1] == ' ') {
 			r_core_project_save_script (core, input + 2, R_CORE_PRJ_ALL);
 		} else {
-			eprintf ("Usage: PS [file]\n");
+			r_cons_eprintf ("Usage: PS [file]\n");
 		}
 		break;
 	case 'n': // "Pn"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_Pn);
 		} else if (!fileproject || !*fileproject) {
-			eprintf ("No project\n");
+			r_cons_eprintf ("No project\n");
 		} else {
 			switch (input[1]) {
 			case '-': // "Pn-"
