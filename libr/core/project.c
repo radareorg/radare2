@@ -678,6 +678,7 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 		r_core_cmd (core, "$*", 0);
 		r_cons_flush ();
 	}
+	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf ("# seek\n"
 			"s 0x%08"PFMT64x "\n", core->offset);
