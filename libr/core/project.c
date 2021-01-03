@@ -702,8 +702,6 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	return project_save_script (core, file, opts);
 }
 
-#define TRANSITION 1
-
 R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	bool scr_null = false;
 	bool ret = true;
@@ -728,25 +726,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	if (r_file_exists (script_path)) {
 		if (r_file_is_directory (script_path)) {
-			eprintf ("WTF. rc is a directory?\n");
-		}
-		if (r_str_endswith (prj_dir, ".d")) {
-			eprintf ("Upgrading project...\n");
-#if TRANSITION
-			r_file_rm (script_path);
-			r_sys_mkdirp (prj_dir);
-			eprintf ("Please remove: rm -rf %s %s.d\n", prj_name, prj_name);
-			char *rc = r_str_newf ("%s" R_SYS_DIR "rc.r2", prj_dir);
-			if (!rc) {
-				free (prj_dir);
-				free (script_path);
-				return false;
-			}
-			free (script_path);
-			script_path = rc;
-			free (prj_dir);
-			prj_dir = r_file_dirname (script_path);
-#endif
+			eprintf ("Structural error: rc.r2 shouldnt be a directory.\n");
 		}
 	}
 	if (!prj_dir) {
