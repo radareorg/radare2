@@ -99,6 +99,10 @@ static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 		// TODO: move logic here
 		break;
 	case 'n': // next
+		if (curtheme && !strcmp (curtheme, "default")) {
+			curtheme = r_str_dup (curtheme, fn);
+			getNext = false;
+		}
 		if (getNext) {
 			curtheme = r_str_dup (curtheme, fn);
 			getNext = false;
@@ -209,6 +213,7 @@ static void nextpal(RCore *core, int mode) {
 	// spaguetti!
 	if (home) {
 		files = r_sys_dir (home);
+		r_list_sort (files, (RListComparator)strcmp);
 		r_list_foreach (files, iter, fn) {
 			if (*fn && *fn != '.') {
 				if (mode == 'p') {
@@ -248,6 +253,7 @@ static void nextpal(RCore *core, int mode) {
 	path = r_str_r2_prefix (R2_THEMES R_SYS_DIR);
 	if (path) {
 		files = r_sys_dir (path);
+		r_list_sort (files, (RListComparator)strcmp);
 		r_list_foreach (files, iter, fn) {
 			if (*fn && *fn != '.') {
 				if (mode == 'p') {
@@ -266,7 +272,7 @@ static void nextpal(RCore *core, int mode) {
 						curtheme = strdup (fn);
 						goto done;
 					}
-				} else {
+				} else { // next
 					if (!nextpal_item (core, mode, fn, ctr++)) {
 						goto done;
 					}
@@ -415,7 +421,7 @@ static int cmd_eval(void *data, const char *input) {
 				const char *th;
 				r_list_foreach (themes_list, th_iter, th) {
 					if (curtheme && !strcmp (curtheme, th)) {
-						r_cons_printf ("> %s\n", th);
+						r_cons_printf ("- %s\n", th);
 					} else {
 						r_cons_printf ("  %s\n", th);
 					}

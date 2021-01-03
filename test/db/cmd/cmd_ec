@@ -1,3 +1,28 @@
+NAME=eco-ecn
+FILE=-
+CMDS=<<EOF
+eco~^-
+ecn
+eco~^-
+ecn
+eco~^-
+ecp
+eco~^-
+ecp
+eco~^-
+ecp
+eco~^-
+EOF
+EXPECT=<<EOF
+- default
+- basic
+- behelit
+- basic
+- ayu
+- ayu
+EOF
+RUN
+
 NAME=ec* fgbg
 FILE=-
 CMDS=<<EOF
