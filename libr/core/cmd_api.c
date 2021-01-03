@@ -460,7 +460,9 @@ static void fill_children_chars(RStrBuf *sb, RCmdDesc *cd) {
 		r_strbuf_prepend (&csb, "<");
 		r_strbuf_append (&csb, ">");
 	}
-	r_strbuf_append (sb, r_strbuf_drain_nofree (&csb));
+	char *tmp = r_strbuf_drain_nofree (&csb);
+	r_strbuf_append (sb, tmp);
+	free (tmp);
 }
 
 static bool show_children_shortcut(RCmdDesc *cd) {
