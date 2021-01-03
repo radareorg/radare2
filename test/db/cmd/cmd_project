@@ -275,6 +275,7 @@ NAME=Save project for a binary without saving its info
 FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
+e prj.git=false
 e dir.projects = .tmp/
 Ps blub > /dev/null
 Po blub > /dev/null
