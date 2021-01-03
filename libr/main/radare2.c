@@ -351,7 +351,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	bool do_list_io_plugins = false;
 	char *file = NULL;
 	char *pfile = NULL;
-	char *debugbackend = strdup ("native");
 	const char *asmarch = NULL;
 	const char *asmos = NULL;
 	const char *forcebin = NULL;
@@ -450,7 +449,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	set_color_default (r);
 	bool load_l = true;
-
+	char *debugbackend = strdup ("native");
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
 	while ((c = r_getopt_next (&opt)) != -1) {
