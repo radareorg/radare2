@@ -99,6 +99,10 @@ static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 		// TODO: move logic here
 		break;
 	case 'n': // next
+		if (curtheme && !strcmp (curtheme, "default")) {
+			curtheme = r_str_dup (curtheme, fn);
+			getNext = false;
+		}
 		if (getNext) {
 			curtheme = r_str_dup (curtheme, fn);
 			getNext = false;
@@ -266,7 +270,7 @@ static void nextpal(RCore *core, int mode) {
 						curtheme = strdup (fn);
 						goto done;
 					}
-				} else {
+				} else { // next
 					if (!nextpal_item (core, mode, fn, ctr++)) {
 						goto done;
 					}
