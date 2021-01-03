@@ -43,6 +43,9 @@ R_API void r_project_close(RProject *p) {
 R_API bool r_project_open(RProject *p, const char *name, const char *path) {
 	r_return_val_if_fail (p && !R_STR_ISEMPTY (name), false);
 	if (r_project_is_loaded (p)) {
+		if (!strcmp (name, p->name)) {
+			return true;
+		}
 		return false;
 	}
 	p->name = strdup (name);
