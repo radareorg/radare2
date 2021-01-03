@@ -786,7 +786,11 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			if (!r_file_is_directory (git_dir)) {
 				r_sys_cmd ("git init");
 			}
-			r_sys_cmd ("git add * ; git commit -a");
+			if (r_cons_is_interactive ()) {
+				r_sys_cmd ("git add * ; git commit -a");
+			} else {
+				r_sys_cmd ("git add * ; git commit -a -m commit");
+			}
 		} else {
 			eprintf ("Cannot chdir %s\n", prj_dir);
 		}
