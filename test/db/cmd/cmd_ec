@@ -15,11 +15,11 @@ eco~^-
 EOF
 EXPECT=<<EOF
 - default
-- lima
-- bright
-- lima
-- xvilka
-- xvilka
+- basic
+- behelit
+- basic
+- ayu
+- ayu
 EOF
 RUN
 
