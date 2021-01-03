@@ -420,12 +420,6 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	}
 	if (close_current_session) {
 		r_core_cmd0 (core, "e prj.name=;o--");
-		// delete
-		r_core_file_close_fd (core, -1);
-		r_io_close_all (core->io);
-		r_anal_purge (core->anal);
-		r_flag_unset_all (core->flags);
-		r_bin_file_delete_all (core->bin);
 	}
 	/* load sdb stuff in here */
 	ret = r_core_project_load (core, prj_name, prj_script);
@@ -821,6 +815,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		r_config_set_i (core->config, "scr.null", true);
 	}
 	free (script_path);
+	r_config_set (core->config, "prj.name", prj_name);
 	return ret;
 }
 
