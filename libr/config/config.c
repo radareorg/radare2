@@ -336,9 +336,7 @@ R_API const char* r_config_node_type(RConfigNode *node) {
 R_API RConfigNode* r_config_set_cb(RConfig *cfg, const char *name, const char *value, RConfigCallback cb) {
 	RConfigNode *node = r_config_set (cfg, name, value);
 	if (node && (node->setter = cb)) {
-		if (!cb (cfg->user, node)) {
-			return NULL;
-		}
+		(void)cb (cfg->user, node);
 	}
 	return node;
 }

@@ -2546,7 +2546,7 @@ static bool cb_prjname(void *user, void *data) {
 	if (r_project_is_loaded (core->prj)) {
 		if (*prjname) {
 			if (!strcmp (prjname, core->prj->name)) {
-				return false;
+				return true;
 			}
 			if (r_project_rename (core->prj, prjname)) {
 				return true;
