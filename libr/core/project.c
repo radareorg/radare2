@@ -570,7 +570,7 @@ static bool simple_project_save_script(RCore *core, const char *file, int opts) 
 		r_cons_flush ();
 	}
 
-	r_core_cmdf (core, "o*");
+	r_core_cmd0 (core, "o*");
 	// r_core_cmdf (core, "om**");
 	r_core_cmdf (core, "wc*");
 
@@ -615,14 +615,14 @@ static bool simple_project_save_script(RCore *core, const char *file, int opts) 
 
 static bool project_save_script(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
-	int fd, fdold;
+	int fdold;
 
-	if (!file || *file == '\0') {
+	if (R_STR_ISEMPTY (file)) {
 		return false;
 	}
 
 	filename = r_str_word_get_first (file);
-	fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
+	int fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
 	if (fd == -1) {
 		free (filename);
 		return false;
