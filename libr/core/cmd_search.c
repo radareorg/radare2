@@ -457,7 +457,6 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (!pos) {
 				pos = strdup ("");
 			}
-			free (buf);
 			if (param->outmode == R_MODE_JSON) {
 				wrd = getstring (buf + prectx, len);
 				s = r_str_newf ("%s%s%s", pre, wrd, pos);
@@ -466,6 +465,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 				s = r_str_newf (use_color ? ".%s"Color_YELLOW "%s"Color_RESET "%s."
 					: "\"%s%s%s\"", pre, wrd, pos);
 			}
+			free (buf);
 			free (pre);
 			free (wrd);
 			free (pos);
