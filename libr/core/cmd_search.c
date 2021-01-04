@@ -1179,6 +1179,9 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		pj_ka (pj, "opcodes");
 		r_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
+			if (!buf) {
+				return;
+			}
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
