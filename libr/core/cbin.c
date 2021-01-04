@@ -737,7 +737,9 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	int bits = core->anal->bits;
 	Sdb *cc = core->anal->sdb_cc;
-
+	if (!R_STR_ISEMPTY (anal_arch)) {
+		return;
+	}
 	char *dbpath = r_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "cc-%s-%d.sdb"),
 		dir_prefix, anal_arch, bits);
 	char *dbhomepath = r_str_newf (R_JOIN_3_PATHS ("~", R2_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
@@ -758,18 +760,22 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		sdb_concat_by_path (cc, dbhomepath);
 		cc->path = strdup (dbhomepath);
 	}
-	// same as "tcc `arcc`"
-	char *s = r_reg_profile_to_cc (core->anal->reg);
-	if (s) {
-		if (!r_anal_cc_set (core->anal, s)) {
-			eprintf ("Warning: Invalid CC from reg profile.\n");
+	if (core->anal->reg->profile) {
+		// same as "tcc `arcc`"
+		char *s = r_reg_profile_to_cc (core->anal->reg);
+		if (s) {
+			if (!r_anal_cc_set (core->anal, s)) {
+				eprintf ("Warning: Invalid CC from reg profile.\n");
+			}
+			free (s);
+		} else {
+			eprintf ("Warning: Cannot derive CC from reg profile.\n");
 		}
-		free (s);
+		if (sdb_isempty (core->anal->sdb_cc)) {
+			eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", anal_arch);
+		}
 	} else {
-		eprintf ("Warning: Cannot derive CC from reg profile.\n");
-	}
-	if (sdb_isempty (core->anal->sdb_cc)) {
-		eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", anal_arch);
+		eprintf ("Warning: Missing regprofile for '%s'. Cannot derive CC from it.\n", anal_arch);
 	}
 	free (dbpath);
 	free (dbhomepath);
