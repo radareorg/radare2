@@ -5578,7 +5578,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 					}
 				}
 				if (isValidMatch) {
-					cb (core, addr, value, vsize, hitctr, cb_user);
+					cb (core, addr, value, vsize, cb_user);
 					if (analStrings && stringAt (core, addr)) {
 						add_string_ref (mycore, addr, value);
 					}
