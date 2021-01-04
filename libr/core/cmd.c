@@ -1758,7 +1758,7 @@ static int cmd_kuery(void *data, const char *input) {
 	Sdb *s = core->sdb;
 
 	char *cur_pos = NULL, *cur_cmd = NULL, *next_cmd = NULL;
-	char *temp_pos = NULL, *temp_cmd = NULL, *temp_storage = NULL;
+	char *temp_pos = NULL, *temp_cmd = NULL;
 
 	switch (input[0]) {
 
@@ -1787,36 +1787,34 @@ static int cmd_kuery(void *data, const char *input) {
 
 			free (next_cmd);
 			next_cmd = r_str_newf ("anal/%s/*", cur_cmd);
-			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
+			char *query_result = sdb_querys (s, NULL, 0, next_cmd);
 
-			if (!temp_storage) {
-				out += cur_pos - out + 1;
+			if (!query_result) {
+				out = cur_pos + 1;
 				continue;
 			}
 
-			while (*temp_storage) {
-				temp_pos = strchr (temp_storage, '\n');
+			char *temp = query_result;
+			while (*temp) {
+				temp_pos = strchr (temp, '\n');
 				if (!temp_pos) {
 					break;
 				}
-				temp_cmd = r_str_ndup (temp_storage, temp_pos - temp_storage);
+				temp_cmd = r_str_ndup (temp, temp_pos - temp);
 				pj_s (pj, temp_cmd);
-				temp_storage += temp_pos - temp_storage + 1;
+				temp = temp_pos + 1;
 			}
-			out += cur_pos - out + 1;
+			out = cur_pos + 1;
+			free (query_result);
 		}
 		pj_end (pj);
 		pj_end (pj);
 		pj_end (pj);
-		char *a = pj_drain (pj);
-		if (a) {
-			r_cons_println (a);
-			free (a);
-		}
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 		R_FREE (next_cmd);
 		free (next_cmd);
 		free (cur_cmd);
-		free (temp_storage);
 		break;
 
 	case ' ':

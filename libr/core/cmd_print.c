@@ -4191,6 +4191,7 @@ dsmap {
 #define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 
 static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int optype, int limit) {
+
 	int p = 0;
 	const bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	int i;
@@ -5910,11 +5911,14 @@ l = use_blocksize;
 				);
 		} else if (input[1] == 'j') { // "pmj"
 			const char *filename = r_str_trim_head_ro (input + 2);
-			r_core_magic (core, filename, true, true);
+			PJ *pj = r_core_pj_new (core);
+			r_core_magic (core, filename, true, pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
 		} else {
 			// XXX: need cmd_magic header for r_core_magic
 			const char *filename = r_str_trim_head_ro (input + 1);
-			r_core_magic (core, filename, true, false);
+			r_core_magic (core, filename, true, NULL);
 		}
 		break;
 	case 'u': // "pu"

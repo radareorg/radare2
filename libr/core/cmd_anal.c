@@ -9393,7 +9393,7 @@ static bool archIsThumbable(RCore *core) {
 	return false;
 }
 
-static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, int count, void *user) {
+static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	bool asterisk = user != NULL;
 	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
