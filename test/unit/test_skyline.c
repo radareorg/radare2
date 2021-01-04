@@ -17,6 +17,7 @@ bool test_r_skyline(void) {
 	mu_assert_true (r_skyline_contains (&sky, 0) && r_skyline_contains (&sky, 3),
 		"Skyline should still contain 0 to 3 after overlap");
 	mu_assert_eq ((size_t)r_skyline_get (&sky, 0), 3, "r_skyline_get should get third map");
+	r_skyline_fini (&sky);
 	mu_end;
 }
 
