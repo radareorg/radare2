@@ -214,33 +214,35 @@ static void nextpal(RCore *core, int mode) {
 	if (home) {
 		files = r_sys_dir (home);
 		r_list_sort (files, (RListComparator)strcmp);
-		r_list_foreach (files, iter, fn) {
-			if (*fn && *fn != '.') {
-				if (mode == 'p') {
-					const char *nfn = iter->n? iter->n->data: NULL;
-					if (!curtheme) {
-						free (home);
-						r_list_free (files);
-						return;
-					}
-					eprintf ("%s %s %s\n",
-						r_str_get (nfn),
-						r_str_get (curtheme),
-						r_str_get (fn));
-					if (nfn && !strcmp (nfn, curtheme)) {
-						r_list_free (files);
-						files = NULL;
-						free (curtheme);
-						curtheme = strdup (fn);
-						R_FREE (home);
-						goto done;
-					}
-				} else {
-					if (!nextpal_item (core, mode, fn, ctr++)) {
-						r_list_free (files);
-						files = NULL;
-						R_FREE (home);
-						goto done;
+		if (files) {
+			r_list_foreach (files, iter, fn) {
+				if (*fn && *fn != '.') {
+					if (mode == 'p') {
+						const char *nfn = iter->n? iter->n->data: NULL;
+						if (!curtheme) {
+							free (home);
+							r_list_free (files);
+							return;
+						}
+						eprintf ("%s %s %s\n",
+							r_str_get (nfn),
+							r_str_get (curtheme),
+							r_str_get (fn));
+						if (nfn && !strcmp (nfn, curtheme)) {
+							r_list_free (files);
+							files = NULL;
+							free (curtheme);
+							curtheme = strdup (fn);
+							R_FREE (home);
+							goto done;
+						}
+					} else {
+						if (!nextpal_item (core, mode, fn, ctr++)) {
+							r_list_free (files);
+							files = NULL;
+							R_FREE (home);
+							goto done;
+						}
 					}
 				}
 			}
@@ -253,28 +255,30 @@ static void nextpal(RCore *core, int mode) {
 	path = r_str_r2_prefix (R2_THEMES R_SYS_DIR);
 	if (path) {
 		files = r_sys_dir (path);
-		r_list_sort (files, (RListComparator)strcmp);
-		r_list_foreach (files, iter, fn) {
-			if (*fn && *fn != '.') {
-				if (mode == 'p') {
-					const char *nfn = iter->n? iter->n->data: NULL;
-					if (!curtheme) {
-						free (home);
-						r_list_free (files);
-						return;
-					}
-					eprintf ("%s %s %s\n",
-						r_str_get (nfn),
-						r_str_get (curtheme),
-						r_str_get (fn));
-					if (nfn && !strcmp (nfn, curtheme)) {
-						free (curtheme);
-						curtheme = strdup (fn);
-						goto done;
-					}
-				} else { // next
-					if (!nextpal_item (core, mode, fn, ctr++)) {
-						goto done;
+		if (files) {
+			r_list_sort (files, (RListComparator)strcmp);
+			r_list_foreach (files, iter, fn) {
+				if (*fn && *fn != '.') {
+					if (mode == 'p') {
+						const char *nfn = iter->n? iter->n->data: NULL;
+						if (!curtheme) {
+							free (home);
+							r_list_free (files);
+							return;
+						}
+						eprintf ("%s %s %s\n",
+							r_str_get (nfn),
+							r_str_get (curtheme),
+							r_str_get (fn));
+						if (nfn && !strcmp (nfn, curtheme)) {
+							free (curtheme);
+							curtheme = strdup (fn);
+							goto done;
+						}
+					} else { // next
+						if (!nextpal_item (core, mode, fn, ctr++)) {
+							goto done;
+						}
 					}
 				}
 			}
@@ -377,10 +381,10 @@ static int cmd_eval(void *data, const char *input) {
 			free (k);
 		}
 		return true;
-	case 'x': // exit
+	case 'x': // "ecox"
 		// XXX we need headers for the cmd_xxx files.
 		return cmd_quit (data, "");
-	case 'j': // json
+	case 'j': // "ecoj"
 		r_config_list (core->config, NULL, 'j');
 		break;
 	case 'v': // verbose
