@@ -308,13 +308,17 @@ CMDS=<<EOF
 e prj.git=false
 e dir.projects = .tmp/
 e scr.interactive=false
+aa
+Ps beer
+e scr.interactive=false
 Po beer
 echo Info: `Pi~Info`
 aflc
 e scr.interactive=false
 EOF
 EXPECT=<<EOF
-Info: beer
+Info:
+13
 EOF
 RUN
 
