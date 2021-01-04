@@ -3218,7 +3218,9 @@ static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
 
 		if (!bin->cms && cert->wCertificateType == PE_WIN_CERT_TYPE_PKCS_SIGNED_DATA) {
 			bin->cms = r_pkcs7_parse_cms (cert->bCertificate, cert->dwLength - 6);
-			bin->spcinfo = r_pkcs7_parse_spcinfo (bin->cms);
+			if (bin->cms) {
+				bin->spcinfo = r_pkcs7_parse_spcinfo (bin->cms);
+			}
 		}
 
 		security_directory->certificates[security_directory->length] = cert;

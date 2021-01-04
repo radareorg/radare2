@@ -2955,7 +2955,7 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	if (bin->g_sections) {
 		return bin->g_sections;
 	}
-	if (!bin->shdr) {
+	if (!bin->shdr && bin->phdr) {
 		//we don't give up search in phdr section
 		return get_sections_from_phdr (bin);
 	}
