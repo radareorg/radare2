@@ -453,7 +453,7 @@ static const char *help_msg_pi[] = {
 	"pif", "[?]", "print instructions of function",
 	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
-	"piu", "[q] [limit]", "disasm until ujmp or ret is found (see pdp)",
+	"piu", "[q] [optype]", "disassemble until instruction of given optype is found (See /atl)",
 	"pix", "  [hexpairs]", "alias for pdx and pad",
 	NULL
 };
@@ -4188,13 +4188,12 @@ dsmap {
 }
 #endif
 
-static void disasm_until_ret(RCore *core, ut64 addr, char type_print, const char *arg) {
+#define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
+
+static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int optype, int limit) {
 	int p = 0;
 	const bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	int i, limit = 1024;
-	if (arg && *arg && arg[1]) {
-		limit = r_num_math (core->num, arg + 1);
-	}
+	int i;
 	for (i = 0; i < limit; i++) {
 		RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM);
 		if (op) {
@@ -4213,12 +4212,8 @@ static void disasm_until_ret(RCore *core, ut64 addr, char type_print, const char
 					r_cons_printf ("0x%08"PFMT64x"  %10s %s\n", addr + p, "", m);
 				}
 			}
-			switch (op->type & 0xfffff) {
-			case R_ANAL_OP_TYPE_RET:
-			case R_ANAL_OP_TYPE_UJMP:
+			if ((op->type & 0xfffff) == optype) {
 				goto beach;
-				break;
-
 			}
 			if (op->type == R_ANAL_OP_TYPE_JMP) {
 				addr = op->jump;
@@ -4250,7 +4245,7 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 			n = r_read_ble32 (buf + p, be);
 		}
 		r_cons_printf ("[0x%08"PFMT64x"] 0x%08"PFMT64x"\n", addr + p, n);
-		disasm_until_ret (core, n, type_print, NULL);
+		disasm_until_optype (core, n, type_print, R_ANAL_OP_TYPE_RET, 1024);
 		if (core->rasm->bits == 64) {
 			p += 8;
 		} else {
@@ -5010,9 +5005,27 @@ static int cmd_print(void *data, const char *input) {
 			// r_cons_printf ("|Usage: pi[defj] [num]\n");
 			r_core_cmd_help (core, help_msg_pi);
 			break;
-		case 'u': // "piu" disasm until ret/jmp . todo: accept arg to specify type
-			disasm_until_ret (core, core->offset, input[2], input + 2);
-			break;
+		case 'u': // "piu" disasm until given optype
+		{
+			int optype = -1;
+			char print_type = 0;
+			const char *_input = input;
+			if (_input[2] && _input[2] != ' ') {
+				print_type = _input[2];
+				_input++;
+			}
+			if (_input[2] && _input[3]) {
+				// TODO: add limit as arg
+				const char *instruction = r_str_word_get_first (_input + 3);
+				optype = r_anal_optype_from_string (instruction);
+				if (optype == -1) {
+					optype = R_ANAL_OP_TYPE_RET;
+				}
+			} else {
+				optype = R_ANAL_OP_TYPE_RET;
+			}
+			disasm_until_optype (core, core->offset, print_type, optype, 1024);
+		} break;
 		case 'x': // "pix"
 			__cmd_pad (core, r_str_trim_head_ro (input + 2));
 			break;
