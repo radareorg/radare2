@@ -4191,7 +4191,6 @@ dsmap {
 #define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
 
 static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int optype, int limit) {
-
 	int p = 0;
 	const bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	int i;
