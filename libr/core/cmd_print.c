@@ -453,7 +453,7 @@ static const char *help_msg_pi[] = {
 	"pif", "[?]", "print instructions of function",
 	"pij", "", "print N instructions in JSON",
 	"pir", "", "like 'pdr' but with 'pI' output",
-	"piu", "[q] [instruction]", "disassemble until instruction of given optype is found",
+	"piu", "[q] [optype]", "disassemble until instruction of given optype is found (See /atl)",
 	"pix", "  [hexpairs]", "alias for pdx and pad",
 	NULL
 };
