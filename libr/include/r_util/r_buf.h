@@ -43,7 +43,7 @@ struct r_buf_t {
 	void *priv;
 	ut8 *whole_buf;
 	bool readonly;
-	int Oxff_priv;
+	ut8 Oxff_priv;
 	int refctr;
 };
 
