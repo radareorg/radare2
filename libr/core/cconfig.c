@@ -3422,7 +3422,9 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	free (p);
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
-	SETPREF ("cfg.user", r_sys_whoami (buf), "Set current username/pid");
+	char *whoami = r_sys_whoami ();
+	SETPREF ("cfg.user", whoami, "Set current username/pid");
+	free (whoami);
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
 	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "Type of fortunes to show (tips, fun)");
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");

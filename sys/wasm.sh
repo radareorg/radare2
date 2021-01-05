@@ -15,7 +15,7 @@ export AR="emar"
 CFGFLAGS="./configure --prefix=/usr --disable-debugger --with-compiler=wasm --with-libr"
 
 make mrproper
-cp -f plugins.emscripten.cfg plugins.cfg
+cp -f dist/plugins-cfg/plugins.emscripten.cfg plugins.cfg
 ./configure-plugins
 
 ./configure ${CFGFLAGS} --host=wasm && \

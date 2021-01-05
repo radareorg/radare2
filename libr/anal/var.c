@@ -1008,7 +1008,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				}
 			}
 			if (!vname) {
-				name = r_str_newf ("arg%zu", i + 1);
+				name = r_str_newf ("arg%u", (int)i + 1);
 				vname = name;
 			}
 			r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);

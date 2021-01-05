@@ -1,0 +1,874 @@
+name: CI
+
+
+on:
+  push:
+    branches:
+    - '*'
+  schedule:
+    - cron: '0 18 * * 1,3,5' # Three-weekly at 18:00 UTC on Monday, Wednesday, and Friday
+  pull_request:
+    branches:
+    - master
+    - 'release-*'
+
+jobs:
+  # TODO: build r2-bindings
+
+  build-and-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.ignore_error }}
+    timeout-minutes: ${{ matrix.timeout }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [linux-acr-gcc-tests, linux-acr-clang-build, linux-acr-clang-tests, linux-meson-gcc-build, linux-meson-gcc-tests, linux-meson-gcc-newshell-tests, macos-acr-clang-tests, macos-meson-clang-tests, linux-gcc-tests-asan, capstone-v3, capstone-v5]
+        ignore_error: [false]
+        include:
+          - name: linux-acr-gcc-tests
+            os: ubuntu-latest
+            build_system: acr
+            compiler: gcc
+            run_tests: true
+            enabled: true
+            timeout: 45
+          - name: linux-acr-clang-tests
+            os: ubuntu-latest
+            build_system: acr
+            compiler: clang
+            run_tests: true
+            enabled: ${{ github.event_name != 'pull_request' }}
+            timeout: 45
+          - name: linux-meson-gcc-tests
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            run_tests: true
+            meson_options: -Duse_webui=true
+            enabled: ${{ github.event_name != 'pull_request' }}
+            timeout: 45
+            cflags: '-Werror -Wno-cpp'
+          - name: linux-acr-clang-build
+            os: ubuntu-latest
+            build_system: acr
+            compiler: clang
+            enabled: ${{ github.event_name == 'pull_request' }}
+            timeout: 45
+          - name: linux-meson-gcc-build
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            enabled: ${{ github.event_name == 'pull_request' }}
+            timeout: 45
+            cflags: '-Werror -Wno-cpp'
+          - name: linux-meson-gcc-newshell-tests
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            newshell: true
+            run_tests: true
+            meson_options: -Db_coverage=true -Duse_webui=true
+            coverage: true
+            enabled: true
+            timeout: 60
+            cflags: '-Werror -Wno-cpp'
+          - name: macos-acr-clang-tests
+            os: macos-latest
+            build_system: acr
+            compiler: clang
+            run_tests: true
+            enabled: true
+            timeout: 60
+          - name: macos-meson-clang-tests
+            os: macos-latest
+            build_system: meson
+            compiler: clang
+            run_tests: true
+            meson_options: -Duse_webui=true
+            enabled: true
+            timeout: 60
+          - name: linux-gcc-tests-asan
+            os: ubuntu-20.04
+            build_system: meson
+            compiler: gcc
+            cflags: '-DR2_ASSERT_STDOUT=1 -Werror -Wno-cpp'
+            meson_options: -Db_sanitize=address,undefined -Duse_webui=true
+            asan: true
+            asan_options: 'detect_leaks=0,detect_odr_violation=0,allocator_may_return_null=1'
+            run_tests: true
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'asan') }}
+            timeout: 100
+            # NOTE: asan errors ignored for release- branch for now, because there are too many issues that would block the release
+            ignore_error: ${{ github.event_name == 'push' && contains(github.ref, 'release-') }}
+          - name: capstone-v3
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Duse_capstone_version=v3
+            run_tests: false
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            timeout: 45
+            cflags: '-Werror -Wno-cpp'
+          - name: capstone-v5
+            os: ubuntu-latest
+            build_system: meson
+            compiler: gcc
+            meson_options: -Duse_capstone_version=v5
+            run_tests: false
+            enabled: ${{ github.event_name != 'pull_request' || contains(github.head_ref, 'capstone') }}
+            timeout: 45
+            cflags: '-Werror -Wno-cpp'
+
+    steps:
+    - uses: actions/checkout@v2
+      if: matrix.enabled
+    - name: Install pkg-config with Homebrew
+      if: matrix.os == 'macos-latest' && matrix.enabled
+      run: brew install pkg-config
+    - name: Install python
+      if: (matrix.run_tests || matrix.build_system == 'meson') && matrix.os != 'macos-latest' && matrix.enabled
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools
+    - name: Install meson and ninja
+      if: matrix.build_system == 'meson' && matrix.enabled
+      run: pip3 install --user meson==0.55.3 ninja==1.10.0
+    - name: Install test dependencies
+      if: matrix.run_tests && matrix.enabled
+      run: pip3 install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+    - name: Install clang
+      if: matrix.compiler == 'clang' && matrix.os == 'ubuntu-latest' && matrix.enabled
+      run: sudo apt-get --assume-yes install clang
+    - name: Checkout our Testsuite Binaries
+      if: matrix.enabled
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Configure with ACR and build
+      if: matrix.build_system == 'acr' && matrix.enabled
+      run: ./configure --prefix=${HOME} && make
+      env:
+        CC: ${{ matrix.compiler }}
+        CFLAGS: ${{ matrix.cflags }}
+    - name: Build with Meson
+      if: matrix.build_system == 'meson' && matrix.enabled
+      run: |
+        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
+        if [ "$ASAN" == "true" ]; then
+          export CFLAGS="-DASAN=1 ${CFLAGS}"
+        fi
+        meson --prefix=${HOME} ${{ matrix.meson_options }} build && ninja -C build
+      env:
+        ASAN: ${{ matrix.asan }}
+        CC: ${{ matrix.compiler }}
+        CFLAGS: ${{ matrix.cflags }}
+    - name: Install with make
+      if: matrix.build_system == 'acr' && matrix.enabled
+      run: |
+        # Install the radare2
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        make install
+    - name: Install with meson
+      if: matrix.build_system == 'meson' && matrix.enabled
+      run: |
+        # Install the radare2
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        ninja -C build install
+    - name: Run tests
+      if: matrix.run_tests && matrix.enabled
+      run: |
+        # Running the test suite
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        if [ "$NEWSHELL" == "true" ]; then
+          export R2_CFG_NEWSHELL=1
+        fi
+        if [ "$ASAN" == "true" ]; then
+          export ASAN=1
+        fi
+        cd test
+        radare2 -N -Qc 'e cfg.newshell' -
+        make
+      env:
+        NEWSHELL: ${{ matrix.newshell }}
+        ASAN: ${{ matrix.asan }}
+        ASAN_OPTIONS: ${{ matrix.asan_options }}
+    - name: Upload coverage info
+      uses: codecov/codecov-action@v1
+      if: matrix.coverage == '1' && matrix.enabled
+    - name: Run fuzz tests
+      if: matrix.run_tests && matrix.enabled && (github.event_name != 'pull_request' || contains(github.event.pull_request.head.ref, 'fuzz'))
+      run: |
+        export PATH=${HOME}/bin:${HOME}/.local/bin:${PATH}
+        export LD_LIBRARY_PATH=${HOME}/lib/$(uname -m)-linux-gnu:${HOME}/lib:${HOME}/lib64:${LD_LIBRARY_PATH}
+        export PKG_CONFIG_PATH=${HOME}/lib/pkgconfig:${HOME}/lib/$(uname -m)-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}
+        if [ "$NEWSHELL" == "true" ]; then
+          export R2_CFG_NEWSHELL=1
+        fi
+        cd test
+        make fuzz-tests
+      env:
+        NEWSHELL: ${{ matrix.newshell }}
+        ASAN_OPTIONS: ${{ matrix.asan_options }}
+    - name: Upload test results
+      if: matrix.run_tests && matrix.enabled
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results-${{ matrix.name }}
+        path: test/results.json
+
+  build-centos6:
+    name: Build on CentOS 6
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'centos') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    container: centos:6
+    steps:
+    - name: Install tools
+      run: yum install -y patch unzip git gcc make
+    - name: Checkout r2
+      run: |
+        git clone https://github.com/${{ github.repository }}
+        cd radare2
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+    - name: Configure with ACR and build
+      run: ./configure --prefix=/usr && make CS_RELEASE=1
+      working-directory: radare2
+    - name: Install with make
+      run: make install
+      working-directory: radare2
+    - name: Run tests
+      run: cd test/unit && make
+      working-directory: radare2
+      env:
+        # `make install` installs, for some unknown reasons, pkgconfig files in
+        # /usr/lib and not in /usr/lib64, thus pkg-config cannot find the right
+        # .pc files if the right path is not specified
+        PKG_CONFIG_PATH: /usr/lib/pkgconfig
+
+  build-debian:
+    name: Build on old Debian ${{ matrix.container }}
+    if: contains(github.head_ref, 'debian') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    strategy:
+        matrix:
+            container:
+                - debian:wheezy
+                - debian:jessie
+
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+
+    steps:
+    - name: Fix containers (Wheezy)
+      if: matrix.container == 'debian:wheezy'
+      run: |
+          sed -i '/deb http:\/\/deb.debian.org\/debian wheezy-updates main/d' /etc/apt/sources.list
+          echo "deb http://archive.debian.org/debian wheezy main" > /etc/apt/sources.list
+          echo "deb http://archive.debian.org/debian-security wheezy/updates main" >> /etc/apt/sources.list
+          echo "Acquire::Check-Valid-Until no;" > /etc/apt/apt.conf.d/99no-check-valid-until
+
+    - name: Install tools
+      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config libc6-i386 build-essential
+    - name: Install Python source build dependcies
+      run: apt-get install --yes checkinstall libbz2-dev libc6-dev libgdbm-dev libncursesw5-dev libreadline-gplv2-dev libssl-dev libsqlite3-dev tk-dev
+    - name: Install Python from source
+      run: |
+        curl -o Python-3.6.11.tgz https://www.python.org/ftp/python/3.6.11/Python-3.6.11.tgz
+        tar -zxvf Python-3.6.11.tgz
+        cd Python-3.6.11/
+        ./configure
+        make install
+    - name: Checkout r2
+      run: |
+        git clone https://github.com/${{ github.repository }}
+        cd radare2
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+    - name: Checkout our Testsuite Binaries
+      run: git clone https://github.com/radareorg/radare2-testbins test/bins
+    - name: Configure with ACR and build
+      run: ./configure --prefix=/usr && make
+      working-directory: radare2
+    - name: Install with make
+      run: make install
+      working-directory: radare2
+    - name: Install test dependencies
+      run: python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+    - name: Run tests
+      # FIXME: debug tests fail on debian for now, let's ignore all tests for the moment
+      run: cd test && make || exit 0
+      working-directory: radare2
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+
+  build-spaces:
+    name: Build spaces
+    continue-on-error: true
+    runs-on: ubuntu-20.04
+    steps:
+    #- name: XXX this is not possible with make Install from a directory with spaces
+    #  run: |
+    #    git config pull.rebase false
+    #    git clone --depth 1 https://github.com/radareorg/radare2 "spa ces" ; cd "spa ces" ; ./sys/install.sh > /dev/null ; cd ..
+    #    r2 -v
+    # - name: Install to a directory with spaces using ACR/MAKE
+    #  run: |
+    #    git config --global pull.rebase false
+    #    git clone --depth 1 https://github.com/radareorg/radare2
+    #    cd radare2
+    #    ./configure --prefix=/usr/local; make uninstall
+    #    ./configure --prefix=/usr; make uninstall
+    #    ./sys/install.sh "/usr/spa ces" > /dev/null
+    #    LD_LIBRARY_PATH="/usr/spa ces/lib" PATH="/usr/spa ces/bin:$PATH" r2 -v
+    #    cd ..
+    - name: Build on a directory with spaces (meson only)
+      run: |
+        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
+        sudo apt-get --assume-yes install python3-wheel python3-setuptools
+        pip3 install --user meson==0.55.3 ninja==1.10.0
+        git config --global pull.rebase false
+        git clone --depth 1 https://github.com/radareorg/radare2 "spa ces"
+        cd "spa ces"
+        meson --prefix="/tmp/r 2" build > /dev/null
+        ninja -C build > /dev/null
+        ninja -C build install ; cd ..
+        find "/tmp/r 2"
+        LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
+
+  build-static:
+    name: Build static
+    # FIXME: ignore error until all tests properly pass
+    continue-on-error: true
+    if: contains(github.head_ref, 'static') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Install static
+      run: |
+        ./sys/static.sh
+        sudo make symstall
+    - name: Run tests
+      run: |
+        r2 -v
+        r2r -v
+        cd test
+        make
+    - name: Upload test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: test-results-static
+        path: test/results.json
+
+
+  create-tarball:
+    name: Create source tarball
+    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-')
+    needs: [build-and-test]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Extract r2 version
+      shell: bash
+      run: echo "##[set-output name=branch;]$(python sys/version.py)"
+      id: extract_version
+    - name: Download capstone
+      run: |
+        ./configure
+        make -C shlr capstone
+        rm -rf shlr/capstone/.git
+        git clean -dxf .
+        rm -rf .git
+    - name: Create archive
+      run: |
+        cd ..
+        cp -r radare2 radare2-${{ steps.extract_version.outputs.branch}}
+        tar cvzf radare2-src.tar.gz radare2-${{ steps.extract_version.outputs.branch}}
+        mv radare2-src.tar.gz radare2/
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-src
+        path: radare2-src.tar.gz
+
+  build-deb:
+    name: Build deb package for ${{ matrix.container }}
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    needs: [build-and-test]
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [debian-buster, ubuntu-1804]
+        include:
+          - name: debian-buster
+            container: debian:buster
+          - name: ubuntu-1804
+            container: ubuntu:18.04
+    steps:
+    - name: Install tools
+      run: apt-get update && apt-get install --yes patch unzip git gcc make curl pkg-config xz-utils
+    - name: Checkout r2
+      run: |
+        git clone https://github.com/${{ github.repository }}
+        cd radare2
+        git fetch origin ${{ github.ref }}
+        git checkout -b local_branch FETCH_HEAD
+    - name: Preparing the deb package
+      run: |
+        sys/debian.sh
+        mv radare2_*_amd64.deb radare2_amd64.deb
+        mv radare2-dev_*_amd64.deb radare2-dev_amd64.deb
+      working-directory: radare2
+    - name: Upload deb file
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2-${{ matrix.name }}-deb
+        path: radare2/radare2_amd64.deb
+    - name: Upload -dev deb file
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2-dev-${{ matrix.name }}-deb
+        path: radare2/radare2-dev_amd64.deb
+
+  build-osx-pkg:
+    name: Build OSX package
+    runs-on: macos-latest
+    if: contains(github.head_ref, 'osx') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install pkg-config with Homebrew
+      run: brew install pkg-config
+    - name: Create OSX package
+      run: |
+        ./sys/osx-pkg.sh
+        mv sys/osx-pkg/radare2-*.pkg sys/osx-pkg/radare2.pkg
+    - name: Upload .pkg file
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2.pkg
+        path: sys/osx-pkg/radare2.pkg
+
+  build-windows:
+    name: Build Windows zip/installer ${{ matrix.name }}
+    runs-on: windows-latest
+    if: contains(github.head_ref, 'windows') || (github.event_name == 'push' && contains(github.ref, 'release-'))
+    needs: [build-and-test]
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [vs2019_static, clang_cl]
+        include:
+          - name: vs2019_static
+            compiler: cl
+            meson_options: --default-library=static -Dstatic_runtime=true
+          - name: clang_cl
+            compiler: clang-cl
+            meson_options: --default-library=shared
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja
+    - name: Extract r2 version
+      shell: pwsh
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
+    - name: Build with meson + ninja
+      shell: pwsh
+      run: |
+        .github\vsdevenv.ps1
+        meson --buildtype=release --prefix=$PWD\radare2-install build ${{ matrix.meson_options }}
+        ninja -C build
+        ninja -C build install
+    - name: Create zip artifact
+      shell: pwsh
+      run: 7z a radare2-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip $PWD\radare2-install
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
+        path: .\radare2-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}.zip
+    - uses: actions/checkout@v2
+      with:
+        repository: radareorg/radare2-win-installer
+        path: ./radare2-win-installer
+    - name: Create installer
+      shell: pwsh
+      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2_installer-${{ matrix.name }}-${{ steps.extract_version.outputs.branch }}
+        path: radare2-win-installer\Output\radare2.exe
+
+  build-ios-cydia:
+    name: Build iOS Cydia packages
+    runs-on: macos-latest
+    if: contains(github.head_ref, 'ios') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Extract r2 version
+      shell: bash
+      run: echo "##[set-output name=branch;]$(python sys/version.py)"
+      id: extract_version
+    - name: Install pkg-config/ldid2 with Homebrew
+      run: brew install pkg-config ldid
+    - name: Create cydia32 package
+      run: ./sys/ios-cydia32.sh
+    - name: List sys/cydia
+      run: ls -lahR ./sys/cydia
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
+        path: ./sys/cydia/radare2/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+    - name: Create cydia package
+      run: ./sys/ios-cydia.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
+        path: ./sys/cydia/radare2/radare2_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+
+  build-android:
+    name: Build Android ${{ matrix.name }} package
+    runs-on: ubuntu-latest
+    if: contains(github.head_ref, 'android') || (contains(github.ref, 'release-') && github.event_name == 'push') || github.event_name == 'schedule'
+    needs: [build-and-test]
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [x86_64, arm, aarch64]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Compile with meson
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        ninja -C build && ninja -C build install
+    - name: Create radare2-android-${{ matrix.name }}.tar.gz
+      run: |
+        cd /tmp
+        rm -rf android-dir/include android-dir/lib
+        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -cvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-android-${{ matrix.name }}
+        path: /tmp/radare2-android-${{ matrix.name }}.tar.gz
+
+  build-extras:
+    name: Build radare2 extras and r2pipe
+    if: contains(github.head_ref, 'extras') || contains(github.ref, 'release-') || github.event_name == 'schedule'
+    needs: [create-tarball]
+    runs-on: ubuntu-latest
+    env:
+      TESTS: 'armthumb baleful bcl ba2 blackfin blessr2 keystone-lib keystone lang-duktape mc6809 microblaze msil pcap ppcdisasm psosvm swf unicorn-lib unicorn vc4 x86udis x86bea x86tab x86olly x86zyan z80-nc'
+      R2PIPE_TESTS: 'r2pipe-go r2pipe-js r2pipe-py'
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2-src
+        path: ./
+    - name: Extract source tarball
+      run: mkdir radare2 && tar -C radare2 --strip-components=1 -xvf radare2-src.tar.gz
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install wget unzip python3-wheel python3-setuptools build-essential python3-pip && sudo pip3 install meson ninja
+    - name: Install radare2
+      run: |
+        export PATH=$PATH:/usr/local/bin
+        meson --prefix=/usr --buildtype=release build && ninja -C build && sudo ninja -C build install
+        sudo ln -s radare2 /usr/bin/r2
+      working-directory: radare2
+    - name: Init r2pm
+      run: r2pm init && r2pm update
+    - name: Compile and install plugins
+      run: |
+        set -e
+        for p in $TESTS ; do
+          echo $p
+          r2pm -i $p
+        done
+        set +e
+    - name: Compile and install r2pipe
+      run: |
+        set -e
+        for p in $R2PIPE_TESTS ; do
+          echo $p
+          r2pm -i $p
+        done
+        set +e
+
+  test-deb:
+    name: Test deb packages for ${{ matrix.container }}
+    runs-on: ubuntu-latest
+    needs: [build-deb]
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [debian-buster, ubuntu-1804]
+        include:
+          - name: debian-buster
+            container: debian:buster
+          - name: ubuntu-1804
+            container: ubuntu:18.04
+    steps:
+    - name: Install tools
+      run: apt-get update && apt-get install --yes gcc pkg-config
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2-${{ matrix.name }}-deb
+        path: ./
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2-dev-${{ matrix.name }}-deb
+        path: ./
+    - name: Install radare2 debs
+      run: apt-get update && apt-get install ./radare2*.deb
+    - name: Check that installed radare2 runs
+      run: radare2 -qcq /bin/ls
+    - name: Check that libraries can be used
+      shell: bash
+      run: |
+        echo -e "#include <r_util.h>\nint main(int argc, char **argv) { return r_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        gcc -o test test.c $(pkg-config --libs --cflags r_util)
+        ./test
+
+  test-osx-pkg:
+    name: Test OSX pkg
+    runs-on: macos-latest
+    needs: [build-osx-pkg]
+    steps:
+    - name: Install pkg-config with Homebrew
+      run: brew install pkg-config
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2.pkg
+        path: ./
+    - name: Install radare2.pkg
+      run: sudo installer -pkg ./radare2.pkg -target /
+    - name: Check that installed radare2 runs
+      run: radare2 -qcq /bin/ls
+    - name: Check that libraries can be used
+      run: |
+        echo -e "#include <r_util.h>\nint main(int argc, char **argv) { return r_str_newf (\"%s\", argv[0]) != NULL? 0: 1; }" > test.c
+        clang -o test test.c $(pkg-config --libs --cflags r_util)
+        ./test
+
+  test-windows-clang_cl:
+    name: Test Windows installer built with clang_cl
+    runs-on: windows-latest
+    needs: [build-windows]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Install pkg-config
+      shell: pwsh
+      run: choco install -y pkgconfiglite
+    - name: Extract r2 version
+      shell: pwsh
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
+    - uses: actions/download-artifact@v2
+      with:
+        name: radare2_installer-clang_cl-${{ steps.extract_version.outputs.branch }}
+        path: ./
+    - name: Install radare.exe
+      shell: pwsh
+      run: Start-Process -Wait -FilePath .\radare2.exe -ArgumentList "/SP- /SILENT" -PassThru
+    - name: Check that installed radare2 runs
+      shell: pwsh
+      run: ~\AppData\Local\Programs\radare2\bin\radare2.exe -qcq .\radare2.exe
+    - name: Check that libraries can be used
+      shell: pwsh
+      run: |
+        .github\vsdevenv.ps1
+        $env:PATH = "$env:PATH;C:$env:HOMEPATH\AppData\Local\Programs\radare2\bin"
+        $env:PKG_CONFIG_PATH = "C:$env:HOMEPATH\AppData\Local\Programs\radare2\lib\pkgconfig"
+        $env:PKG_CONFIG_PATH
+        pkg-config --list-all
+        echo "#include <r_util.h>`nint main(int argc, char **argv) { return r_str_newf (`"%s`", argv[0]) != NULL? 0: 1; }" > test.c
+        cl -IC:$env:HOMEPATH\AppData\Local\Programs\radare2\include\libr -IC:$env:HOMEPATH\AppData\Local\Programs\radare2\include\libr\sdb /Fetest.exe test.c /link /libpath:C:$env:HOMEPATH\AppData\Local\Programs\radare2\lib r_util.lib
+        .\test.exe
+
+  create-release:
+    name: Create draft release and upload artifacts
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'release-')
+    needs: [
+      build-and-test,
+      build-centos6,
+      build-debian,
+      build-static,
+      test-deb,
+      build-android,
+      test-osx-pkg,
+      test-windows-clang_cl,
+      build-ios-cydia,
+      build-extras
+    ]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Extract r2 version
+      shell: bash
+      run: echo "##[set-output name=branch;]$(python sys/version.py)"
+      id: extract_version
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          tag_name: ${{ steps.extract_version.outputs.branch }}
+          release_name: Release ${{ steps.extract_version.outputs.branch }}
+          draft: true
+          prerelease: false
+    - uses: actions/download-artifact@v2
+    - name: Display structure of downloaded files
+      run: ls -R
+    - name: Upload radare2 src tarball
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-src/radare2-src.tar.gz
+          asset_name: radare2-src-${{ steps.extract_version.outputs.branch }}.tar.gz
+          asset_content_type: application/zip
+    - name: Upload radare2 debian:buster package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-debian-buster-deb/radare2_amd64.deb
+          asset_name: radare2-debian-buster_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2-dev debian:buster package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-dev-debian-buster-deb/radare2-dev_amd64.deb
+          asset_name: radare2-dev-debian-buster_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2 ubuntu:18.04 package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-ubuntu-1804-deb/radare2_amd64.deb
+          asset_name: radare2-ubuntu-1804_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2-dev ubuntu:18.04 package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-dev-ubuntu-1804-deb/radare2-dev_amd64.deb
+          asset_name: radare2-dev-ubuntu-1804_${{ steps.extract_version.outputs.branch }}_amd64.deb
+          asset_content_type: application/zip
+    - name: Upload radare2 android x86_64 tar.gz
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-android-x86_64/radare2-android-x86_64.tar.gz
+          asset_name: radare2-${{ steps.extract_version.outputs.branch }}-android-x86_64.tar.gz
+          asset_content_type: application/zip
+    - name: Upload radare2 android arm tar.gz
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-android-arm/radare2-android-arm.tar.gz
+          asset_name: radare2-${{ steps.extract_version.outputs.branch }}-android-arm.tar.gz
+          asset_content_type: application/zip
+    - name: Upload radare2 android aarch64 tar.gz
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-android-aarch64/radare2-android-aarch64.tar.gz
+          asset_name: radare2-${{ steps.extract_version.outputs.branch }}-android-aarch64.tar.gz
+          asset_content_type: application/zip
+    - name: Upload radare2 OSX pkg
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2.pkg/radare2.pkg
+          asset_name: radare2-macos-${{ steps.extract_version.outputs.branch }}.pkg
+          asset_content_type: application/zip
+    - name: Upload radare2 windows archive
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip/radare2-vs2019_static-${{ steps.extract_version.outputs.branch }}.zip
+          asset_name: radare2-windows-static-${{ steps.extract_version.outputs.branch }}.zip
+          asset_content_type: application/zip
+    - name: Upload radare2 windows installer
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2_installer-clang_cl-${{ steps.extract_version.outputs.branch }}/radare2.exe
+          asset_name: radare2_installer-${{ steps.extract_version.outputs.branch }}.exe
+          asset_content_type: application/zip
+    - name: Upload radare2 iOS arm32 cydia package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+          asset_name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+          asset_content_type: application/zip
+    - name: Upload radare2 iOS aarch64 cydia package
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./radare2_${{ steps.extract_version.outputs.branch }}_iphoneos-arm/radare2_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+          asset_name: radare2-aarch64_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+          asset_content_type: application/zip
+
+  publish-docker-image:
+    name: Publish Docker image on Docker Hub
+    needs: [build-and-test]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Moving the Dockerfile to the root
+      run: cp -f dist/docker/Dockerfile .
+    - name: Publish to Registry
+      uses: docker/build-push-action@v1
+      with:
+        repository: ${{ secrets.DOCKER_USERNAME }}/radare2
+        tag_with_ref:  true
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}

@@ -87,4 +87,3 @@ R_API void r_core_item_free (RCoreItem *ci) {
 	free (ci->data);
 	free (ci);
 }
-

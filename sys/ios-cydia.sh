@@ -94,9 +94,10 @@ if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else
 	RV=0
+	export CC="ios-sdk-gcc"
 	if [ $fromscratch = 1 ]; then
 		make clean
-		cp -f plugins.ios.cfg plugins.cfg
+		cp -f dist/plugins-cfg/plugins.ios.cfg plugins.cfg
 		if [ "$static" = 1 ]; then
 			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
 			--with-compiler=ios-sdk --target=arm-unknown-darwin --with-libr
