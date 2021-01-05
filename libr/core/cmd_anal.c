@@ -377,9 +377,9 @@ static const char *help_msg_afb[] = {
 };
 
 static const char *help_msg_afc[] = {
-	"Usage:", "afc[agl?]", "",
-	"afc", " convention", "Manually set calling convention for current function",
-	"afc", "", "Show Calling convention for the Current function",
+	"Usage:", "afc[agl?]", "# see also tcc command to manage all calling conventions",
+	"afc", " ccname", "Manually set calling convention for current function",
+	"afc", "", "Show Calling convention for the Current function (same as tcc)",
 	"afcr", "[j]", "Show register usage for the current function",
 	"afca", "", "Analyse function for finding the current calling convention",
 	"afcf", "[j] [name]", "Prints return type function(arg1, arg2...), see afij",
@@ -964,13 +964,6 @@ static void type_cmd(RCore *core, const char *input) {
 		break;
 	}
 	r_cons_break_pop ();
-}
-
-static bool cc_print(void *p, const char *k, const char *v) {
-	if (!strcmp (v, "cc")) {
-		r_cons_println (k);
-	}
-	return true;
 }
 
 static void find_refs(RCore *core, const char *glob) {
@@ -3833,10 +3826,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			cmd_anal_fcn_sig (core, input + 3);
 			break;
 		case 'k': // "afck"
-			r_core_cmd0 (core, "k anal/cc/*");
+			cmd_afck (core, NULL);
 			break;
 		case 'l': // "afcl" list all function Calling conventions.
-			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
+			cmd_tcc (core, input + 3);
 			break;
 		case 'o': { // "afco"
 			char *dbpath = r_str_trim_dup (input + 3);

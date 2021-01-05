@@ -70,6 +70,41 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	return true;
 }
 
+R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
+	r_return_if_fail (anal && pj && name);
+	int i;
+	// get cc by name and print the expr
+	if (r_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
+		return;
+	}
+	const char *ret = sdb_const_get (DB, sdb_fmt ("cc.%s.ret", name), 0);
+	if (!ret) {
+		return;
+	}
+	pj_ks (pj, "ret", ret);
+	char *sig = r_anal_cc_get (anal, name);
+	pj_ks (pj, "signature", sig);
+	free (sig);
+	pj_ka (pj, "args");
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+		const char *k = sdb_fmt ("cc.%s.arg%d", name, i);
+		const char *arg = sdb_const_get (DB, k, 0);
+		if (!arg) {
+			break;
+		}
+		pj_s (pj, arg);
+	}
+	pj_end (pj);
+	const char *argn = sdb_const_get (DB, sdb_fmt ("cc.%s.argn", name), 0);
+	if (argn) {
+		pj_ks (pj, "argn", argn);
+	}
+	const char *error = r_anal_cc_error (anal, name);
+	if (error) {
+		pj_ks (pj, "error", error);
+	}
+}
+
 R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	r_return_val_if_fail (anal && name, NULL);
 	int i;

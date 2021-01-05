@@ -38,13 +38,13 @@ static const char *help_msg_t[] = {
 };
 
 static const char *help_msg_tcc[] = {
-	"Usage: tfc", "[-name]", "# type function calling conventions",
+	"Usage: tcc", "[-name]", "# type function calling conventions (see also afc? and arcc)",
 	"tcc", "", "List all calling convcentions",
-	"tcc", " r0 pascal(r0,r1,r2)", "Show signature for the 'pascal' calling convention",
+	"tcc", " r0 pascal(r0,r1,r2)", "Define signature for pascall cc (see also arcc)",
 	"tcc", "-pascal", "Remove the pascal cc",
 	"tcc-*", "", "Unregister all the calling conventions",
 	"tcck", "", "List calling conventions in k=v",
-	"tccl", "", "List the cc signatures",
+	"tccl", "", "List cc signatures (return ccname (arg0, arg1, ..) err;)",
 	"tccj", "", "List them in JSON",
 	"tcc*", "", "List them as r2 commands",
 	NULL
@@ -193,7 +193,65 @@ static void show_help(RCore *core) {
 	r_core_cmd_help (core, help_msg_t);
 }
 
-static void __core_cmd_tcc(RCore *core, const char *input) {
+static bool cc_cb(void *p, const char *k, const char *v) {
+	if (!strcmp (v, "cc")) {
+		RList *list = (RList*)p;
+		r_list_append (list, (void*)k);
+	}
+	return true;
+}
+
+static void cmd_afcl(RCore *core, const char *input) {
+	int mode = 0;
+	PJ *pj = NULL;
+	if (input) {
+		mode = *input;
+		if (*input == 'j') {
+			pj = r_core_pj_new (core);
+			pj_o (pj);
+		}
+	}
+	RList *list = r_list_newf (NULL);
+	sdb_foreach (core->anal->sdb_cc, cc_cb, list);
+	char *cc;
+	RListIter *iter;
+	r_list_sort (list, (RListComparator)strcmp);
+	r_list_foreach (list, iter, cc) {
+		if (pj) {
+			pj_ko (pj, cc);
+			r_anal_cc_get_json (core->anal, pj, cc);
+			pj_end (pj);
+		} else if (mode == 'l') {
+			char *sig = r_anal_cc_get (core->anal, cc);
+			r_cons_println (sig);
+			free (sig);
+		} else if (mode == '*') {
+			char *ccexpr = r_anal_cc_get (core->anal, cc);
+			r_cons_printf ("tfc %s\n", ccexpr);
+			free (ccexpr);
+		} else {
+			r_cons_println (cc);
+		}
+	}
+	r_list_free (list);
+	if (pj) {
+		pj_end (pj);
+		char *j = pj_drain (pj);
+		r_cons_println (j);
+		free (j);
+	}
+}
+
+static void cmd_afck(RCore *core, const char *c) {
+	const char *s = "anal/cc/*";
+	char *out = sdb_querys (core->sdb, NULL, 0, s);
+	if (out) {
+		r_cons_print (out);
+	}
+	free (out);
+}
+
+static void cmd_tcc(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_tcc);
@@ -206,64 +264,20 @@ static void __core_cmd_tcc(RCore *core, const char *input) {
 		}
 		break;
 	case 0:
-		r_core_cmd0 (core, "afcl");
-		break;
-	case 'j':
-		{
-			char *ccs = r_core_cmd_strf (core, "afcl");
-			r_str_trim (ccs);
-			RList *list = r_str_split_list (ccs, "\n", 0);
-			RListIter *iter;
-			const char *cc;
-			PJ *pj = pj_new ();
-			pj_a (pj);
-			r_list_foreach (list, iter, cc) {
-				char *ccexpr = r_anal_cc_get (core->anal, cc);
-				// TODO: expose this as an object, not just an array of strings
-				pj_s (pj, ccexpr);
-				free (ccexpr);
-			}
-			pj_end (pj);
-			r_cons_printf ("%s\n", pj_string (pj));
-			pj_free (pj);
-			r_list_free (list);
-			free (ccs);
-		}
+		cmd_afcl (core, "");
 		break;
 	case 'l':
-		{
-			char *ccs = r_core_cmd_strf (core, "afcl");
-			r_str_trim (ccs);
-			RList *list = r_str_split_list (ccs, "\n", 0);
-			RListIter *iter;
-			const char *cc;
-			r_list_foreach (list, iter, cc) {
-				char *ccexpr = r_anal_cc_get (core->anal, cc);
-				r_cons_printf ("%s\n", ccexpr);
-				free (ccexpr);
-			}
-			r_list_free (list);
-			free (ccs);
-		}
+		cmd_afcl (core, "l");
+		break;
+	case 'j':
+		cmd_afcl (core, "j");
+		break;
 		break;
 	case '*':
-		{
-			char *ccs = r_core_cmd_strf (core, "afcl");
-			r_str_trim (ccs);
-			RList *list = r_str_split_list (ccs, "\n", 0);
-			RListIter *iter;
-			const char *cc;
-			r_list_foreach (list, iter, cc) {
-				char *ccexpr = r_anal_cc_get (core->anal, cc);
-				r_cons_printf ("tfc %s\n", ccexpr);
-				free (ccexpr);
-			}
-			r_list_free (list);
-			free (ccs);
-		}
+		cmd_afcl (core, "*");
 		break;
 	case 'k':
-		r_core_cmd0 (core, "afck");
+		cmd_afck (core, NULL);
 		break;
 	case ' ':
 		if (strchr (input, '(')) {
@@ -1070,12 +1084,12 @@ static int cmd_type(void *data, const char *input) {
 	case 'c': // "tc"
 		switch (input[1]) {
 		case 'c': // "tcc" -- calling conventions
-			__core_cmd_tcc (core, input + 2);
+			cmd_tcc (core, input + 2);
 			break;
 		case '?': //"tc?"
 			r_core_cmd_help (core, help_msg_tc);
 			break;
-		case ' ': {
+		case ' ': { // "tcc "
 			const char *type = r_str_trim_head_ro (input + 1);
 			const char *name = type ? strchr (type, '.') : NULL;
 			if (name && type) {
@@ -1094,13 +1108,13 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		}
-		case '*':
+		case '*': // "tc*"
 			r_core_cmd0 (core, "ts*");
 			break;
-		case 0:
+		case 0: // "tc"
 			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");
 			break;
-		case 'd':
+		case 'd': // "tcd"
 			r_core_cmd0 (core, "tud;tsd;ttc;ted");
 			break;
 		default:
