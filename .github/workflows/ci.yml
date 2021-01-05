@@ -126,7 +126,6 @@ jobs:
         mkdir -p rpmbuild/SOURCES
         cd rpmbuild/SOURCES
         wget https://github.com/radareorg/radare2/archive/5860c3efc12d4b75e72bdce4b1d3834599620913/radare2-5.1.0-git.tar.gz
-	pwd
         cd -
         rpmbuild -ba radare2.spec
     - name: Pub
