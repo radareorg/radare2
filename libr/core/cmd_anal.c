@@ -1284,21 +1284,27 @@ static int var_cmd(RCore *core, const char *str) {
 		var_help (core, *str);
 		return res;
 	}
-	if (str[0] == 'j') {
-		// "afvj"
-		//TODO PJ
-		r_cons_printf ("{\"sp\":");
-		r_core_cmd0 (core, "afvsj");
-		r_cons_printf (",\"bp\":");
-		r_core_cmd0 (core, "afvbj");
-		r_cons_printf (",\"reg\":");
-		r_core_cmd0 (core, "afvrj");
-		r_cons_printf ("}\n");
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+	PJ *pj = NULL;
+	if (str[0] == 'j') { // "afvj"
+		pj = r_core_pj_new (core);
+		if (!pj) {
+			return false;
+		}
+		pj_o (pj);
+		pj_k (pj, "sp");
+		r_anal_var_list_show (core->anal, fcn, 's', 'j', pj);
+		pj_k (pj, "bp");
+		r_anal_var_list_show (core->anal, fcn, 'b', 'j', pj);
+		pj_k (pj, "reg");
+		r_anal_var_list_show (core->anal, fcn, 'r', 'j', pj);
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 		return true;
 	}
 	char *p = strdup (str);
 	char *ostr = p;
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	/* Variable access CFvs = set fun var */
 	switch (str[0]) {
 	case '-': // "afv-"
@@ -1322,16 +1328,17 @@ static int var_cmd(RCore *core, const char *str) {
 			if (name) {
 				name = r_str_trim_head_ro (name);
 			}
-			PJ *pj = NULL;
 			if (str[1] == 'j') {
-				pj = pj_new ();
+				pj = r_core_pj_new (core);
+				if (!pj) {
+					return false;
+				}
 			}
 			list_vars (core, fcn, pj, str[0], name);
 			if (str[1] == 'j') {
 				pj_end (pj);
-				char *j = pj_drain (pj);
-				r_cons_printf ("%s\n", j);
-				free (j);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
 			}
 			return true;
 		} else {
@@ -1466,15 +1473,14 @@ static int var_cmd(RCore *core, const char *str) {
 	case '*': // "afv[bsr]*"
 		r_anal_var_list_show (core->anal, fcn, type, str[1], NULL);
 		break;
-	case 'j': { // "afv[bsr]j"
-		PJ *pj = pj_new ();
+	case 'j':  // "afv[bsr]j"
+		pj = r_core_pj_new (core);
 		if (!pj) {
-			return -1;
+			return false;
 		}
 		r_anal_var_list_show (core->anal, fcn, type, str[1], pj);
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
-	}
 		break;
 	case '.': // "afv[bsr]."
 		r_anal_var_list_show (core->anal, fcn, core->offset, 0, NULL);
@@ -1776,7 +1782,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	}
 	switch (fmt) {
 	case 'j': {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			break;
 		}
@@ -3253,7 +3259,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 		SdbKv *kv;
 		char *names[100];
 		int i;
-		for (i = 0;i<100;i++) {
+		for (i = 0; i < 100; i++) {
 			names[i] = NULL;
 		}
 		ls_foreach (ls, it, kv) {
@@ -3291,7 +3297,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	}
 	r_table_query (t, (*input)?input + 1: "");
 	char *ts = isJson? r_table_tojson(t): r_table_tostring (t);
-	r_cons_printf ("%s", ts);
+	r_cons_printf ("%s%s", ts, isJson ? "\n" : "");
 	free (ts);
 	r_table_free (t);
 	r_core_seek (core, oseek, true);
@@ -3374,7 +3380,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 		if (input[2] == 'j') { // afdj
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			if (!pj) {
 				return false;
 			}
@@ -3497,7 +3503,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'j':
 			{
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-				PJ *pj = pj_new ();
+				PJ *pj = r_core_pj_new (core);
 				if (!pj) {
 					return false;
 				}
@@ -3844,47 +3850,50 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
-			RStrBuf *json_buf = r_strbuf_new ("{");
+			PJ *pj;
 			bool json = input[3] == 'j';
+			if (json) {
+				pj = r_core_pj_new (core);
+				if (!pj) {
+					return false;
+				}
+				pj_o (pj);
+			}
 
 			char *cmd = r_str_newf ("cc.%s.ret", fcn->cc);
 			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
-					r_strbuf_appendf (json_buf, "\"ret\":\"%s\"", regname);
+					pj_ks (pj, "ret", regname);
 				} else {
 					r_cons_printf ("%s: %s\n", cmd, regname);
 				}
 			}
 			free (cmd);
-
-			bool isFirst = true;
+			if (json) {
+				pj_ka (pj, "args");
+			}
 			for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 				cmd = r_str_newf ("cc.%s.arg%d", fcn->cc, i);
 				regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 				if (regname) {
 					if (json) {
-						if (isFirst) {
-							r_strbuf_appendf (json_buf, ",\"args\":[\"%s\"", regname);
-							isFirst = false;
-						} else {
-							r_strbuf_appendf (json_buf, ",\"%s\"", regname);
-						}
+						pj_s (pj, regname);
 					} else {
 						r_cons_printf ("%s: %s\n", cmd, regname);
 					}
 				}
 				free (cmd);
 			}
-			if (!isFirst) {
-				r_strbuf_append (json_buf, "]");
+			if (json) {
+				pj_end (pj);
 			}
 
 			cmd = r_str_newf ("cc.%s.self", fcn->cc);
 			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
-					r_strbuf_appendf (json_buf, ",\"self\":\"%s\"", regname);
+					pj_ks (pj, "self", regname);
 				} else {
 					r_cons_printf ("%s: %s\n", cmd, regname);
 				}
@@ -3894,16 +3903,16 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {
-					r_strbuf_appendf (json_buf, ",\"error\":\"%s\"", regname);
+					pj_ks (pj, "error", regname);
 				} else {
 					r_cons_printf ("%s: %s\n", cmd, regname);
 				}
 			}
 			free (cmd);
-
-			r_strbuf_append (json_buf, "}");
 			if (json) {
-				r_cons_printf ("%s\n", r_strbuf_drain (json_buf));
+				pj_end (pj);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
 			}
 			break;
 		}
@@ -4327,9 +4336,15 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 // size: 0: bits; -1: any; >0: exact size
 static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
+	PJ *pj = NULL;
 	if (mode == 'i') {
 		r_core_debug_ri (core, core->anal->reg, 0);
 		return;
+	} else if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
 	}
 	RReg *hack = core->dbg->reg;
 	const char *use_color;
@@ -4355,26 +4370,14 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			if (!strcmp (core->anal->cur->arch, "arm") && bits == 16) {
 				bits = 32;
 			}
-			/* workaround for 6502 */
-			if (!strcmp (core->anal->cur->arch, "6502") && bits == 8) {
-				mode2 = mode == 'j' ? 'J' : mode;
+			/* workaround for 6502 and avr*/
+			if ((!strcmp (core->anal->cur->arch, "6502") && bits == 8)
+				|| (!strcmp (core->anal->cur->arch, "avr") && bits == 8)) {
 				if (mode == 'j') {
-					r_cons_printf ("{");
+					mode2 = 'J';
+					pj_o (pj);
 				}
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
-				if (mode == 'j') {
-					r_cons_printf (",");
-				}
-			}
-			if (!strcmp (core->anal->cur->arch, "avr") && bits == 8) {
-				mode2 = mode == 'j' ? 'J' : mode;
-				if (mode == 'j') {
-					r_cons_printf ("{");
-				}
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
-				if (mode == 'j') {
-					r_cons_printf (",");
-				}
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, pj, mode2, use_color); // XXX detect which one is current usage
 			}
 		}
 	}
@@ -4388,14 +4391,19 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 				pcbits = reg->size;
 			}
 			if (pcbits) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, mode, use_color); // XXX detect which one is current usage
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, mode, use_color); // XXX detect which one is current usage
 			}
 		}
 	}
-	r_debug_reg_list (core->dbg, type, bits, mode2, use_color);
-	if (mode2 == 'J') {
-		r_cons_print ("}\n");
+	r_debug_reg_list (core->dbg, type, bits, pj, mode2, use_color);
+	if (mode == 'j') {
+		if (mode2 == 'J') {
+			pj_end (pj);
+		}
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
+	
 	core->dbg->reg = hack;
 }
 
@@ -4673,11 +4681,11 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'd': // "ard"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 3, use_color); // XXX detect which one is current usage
 		break;
 	case 'o': // "aro"
 		r_reg_arena_swap (core->dbg->reg, false);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 0, use_color); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case '=': // "ar="
@@ -4727,7 +4735,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case '*': // "ar*"
 	case 'R': // "arR"
 	case 'j': // "arj"
-	case 'i': // "arj"
+	case 'i': // "ari"
 	case '\0': // "ar"
 		__anal_reg_list (core, type, size, str[0]);
 		break;
@@ -9184,6 +9192,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	ut64 from, to;
 	int rad;
+	PJ *pj = NULL;
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_aar);
 		return 0;
@@ -9192,6 +9201,12 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	if (*input == 'j' || *input == '*') {
 		rad = *input;
 		input++;
+		if (rad == 'j') {
+			pj = r_core_pj_new (core);
+			if (!pj) {
+				return 0;
+			}
+		}
 	} else {
 		rad = 0;
 	}
@@ -9215,9 +9230,8 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				return 0;
 			}
 			if (rad == 'j') {
-				r_cons_printf ("{");
+				pj_o (pj);
 			}
-			int nth = 0;
 			r_list_foreach (list, iter, map) {
 				from = r_io_map_begin (map);
 				to = r_io_map_end (map);
@@ -9230,17 +9244,19 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 					eprintf ("Skipping huge range\n");
 				} else {
 					if (rad == 'j') {
-						r_cons_printf ("%s\"mapid\":\"%d\",\"refs\":{", nth? ",": "", map->id);
+						pj_ki (pj, "mapid", map->id);
+						pj_ko (pj, "refs");
 					}
-					r_core_anal_search_xrefs (core, from, to, rad);
+					r_core_anal_search_xrefs (core, from, to, pj, rad);
 					if (rad == 'j') {
-						r_cons_printf ("}");
+						pj_end (pj);
 					}
-					nth++;
 				}
 			}
 			if (rad == 'j') {
-				r_cons_printf ("}\n");
+				pj_end (pj);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
 			}
 			free (ptr);
 			r_list_free (list);
@@ -9264,11 +9280,13 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 		return false;
 	}
 	if (rad == 'j') {
-		r_cons_printf ("{");
+		pj_o (pj);
 	}
-	bool res = r_core_anal_search_xrefs (core, from, to, rad);
+	bool res = r_core_anal_search_xrefs (core, from, to, pj, rad);
 	if (rad == 'j') {
-		r_cons_printf ("}\n");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
 	return res;
 }

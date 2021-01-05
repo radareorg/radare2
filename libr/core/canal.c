@@ -3921,7 +3921,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
-static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, int count, int rad, int cfg_debug, bool cfg_anal_strings) {
+static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_anal_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
 	// the number of false positives. In debugger mode, the reference
@@ -3961,11 +3961,9 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 			r_anal_xrefs_set (core->anal, at, xref_to, type);
 		}
 	} else if (rad == 'j') {
-		// Output JSON
-		if (count > 0) {
-			r_cons_printf (",");
-		}
-		r_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, at);
+		char *key = sdb_fmt ("0x%"PFMT64x, xref_to);
+		char *value = sdb_fmt ("0x%"PFMT64x, at);
+		pj_ks (pj, key, value);
 	} else {
 		int len = 0;
 		// Display in radare commands format
@@ -3991,7 +3989,7 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 	return true;
 }
 
-R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
+R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	ut64 at;
@@ -4053,32 +4051,32 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			}
 			// find references
 			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
-				if (found_xref (core, op.addr, op.val, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.val, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
-				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 			}
 			// find references
 			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
-				if (found_xref (core, op.addr, op.disp, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.disp, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 			}
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
-				if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CODE, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 				break;
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_CCALL:
-				if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 				break;
@@ -4088,7 +4086,8 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			case R_ANAL_OP_TYPE_IRJMP:
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCJMP:
-				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CODE, count++, rad, cfg_debug, cfg_anal_strings)) {
+				count++;
+				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 				break;
@@ -4097,7 +4096,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			case R_ANAL_OP_TYPE_RCALL:
 			case R_ANAL_OP_TYPE_IRCALL:
 			case R_ANAL_OP_TYPE_UCCALL:
-				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 				break;

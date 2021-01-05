@@ -2338,7 +2338,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case '-': // "dr-"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '-', 0);
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '-', 0);
 		break;
 	case '?': // "dr?"
 		if (str[1]) {
@@ -2717,10 +2717,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		} else { // drm # no arg
 			if (str[1] == 'y') { // drmy
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_YMM, false);
-				r_debug_reg_list (core->dbg, R_REG_TYPE_YMM, 256, 0, 0);
+				r_debug_reg_list (core->dbg, R_REG_TYPE_YMM, 256, NULL, 0, 0);
 			} else { // drm
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_XMM, false);
-				r_debug_reg_list (core->dbg, R_REG_TYPE_XMM, 128, 0, 0);
+				r_debug_reg_list (core->dbg, R_REG_TYPE_XMM, 128, NULL, 0, 0);
 			}
 		}
 		//r_debug_drx_list (core->dbg);
@@ -2816,11 +2816,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 				type = r_reg_type_by_name (str + 2);
 				r_debug_reg_sync (core->dbg, type, false);
-				r_debug_reg_list (core->dbg, type, size, rad, use_color);
+				r_debug_reg_list (core->dbg, type, size, NULL, rad, use_color);
 			} else {
 				if (type != R_REG_TYPE_LAST) {
 					r_debug_reg_sync (core->dbg, type, false);
-					r_debug_reg_list (core->dbg, type, size, rad, use_color);
+					r_debug_reg_list (core->dbg, type, size, NULL, rad, use_color);
 				} else {
 					eprintf ("cmd_debug_reg: unknown type\n");
 				}
@@ -2846,11 +2846,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'd': // "drd"
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3, use_color); // xxx detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 3, use_color); // xxx detect which one is current usage
 		break;
 	case 'o': // "dro"
 		r_reg_arena_swap (core->dbg->reg, false);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0, use_color); // xxx detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, 0, use_color); // xxx detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, false);
 		break;
 	case ',': // "dr,"
@@ -2866,19 +2866,19 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (r_config_get_i (core->config, "cfg.debug")) {
 				if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 					if (pcbits && pcbits != bits) {
-						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, str[0], use_color); // xxx detect which one is current usage
+						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '=', use_color); // xxx detect which one is current usage
 					}
-					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color); // xxx detect which one is current usage
+					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '=', use_color); // xxx detect which one is current usage
 					if (pcbits2) {
-						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, str[0], use_color); // xxx detect which one is current usage
+						r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '=', use_color); // xxx detect which one is current usage
 					}
 				} //else eprintf ("cannot retrieve registers from pid %d\n", core->dbg->pid);
 			} else {
 				RReg *orig = core->dbg->reg;
 				core->dbg->reg = core->anal->reg;
 				if (pcbits && pcbits != bits)
-					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, str[0], use_color); // xxx detect which one is current usage
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0], use_color); // xxx detect which one is current usage
+					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '=', use_color); // xxx detect which one is current usage
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '=', use_color); // xxx detect which one is current usage
 				core->dbg->reg = orig;
 			}
 		}
@@ -2886,9 +2886,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case '.':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 			int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, '.', use_color);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '.', use_color);
 			if (pcbits2) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, '.', use_color);
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '.', use_color);
 			}
 		}
 		break;
@@ -2896,9 +2896,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 			int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
 			r_cons_printf ("fs+regs\n");
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, '*', use_color);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '*', use_color);
 			if (pcbits2) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, '*', use_color);
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '*', use_color);
 			}
 			r_flag_space_pop (core->flags);
 			r_cons_printf ("fs-\n");
@@ -2928,7 +2928,15 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					pcbits = reg->size;
 				}
 			}
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, str[0], use_color);
+			if (str[0] == 'j') {
+				PJ *pj = r_core_pj_new (core);
+				if (!pj) {
+					return;
+				}
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, pj, 'j', use_color);
+			} else {
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, 0, use_color);
+			}
 		} else {
 			eprintf ("cannot retrieve registers from pid %d\n", core->dbg->pid);
 		}
@@ -2971,7 +2979,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 
 		size = atoi (str + 1);
 		if (size) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, size, str[0], use_color);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, size, NULL, str[0], use_color);
 		} else {
 			char *comma = strchr (str + 1, ',');
 			if (comma) {
