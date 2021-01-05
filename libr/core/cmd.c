@@ -92,10 +92,10 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_write.c"
 #include "cmd_cmp.c"
 #include "cmd_eval.c"
+#include "cmd_type.c"
 #include "cmd_anal.c"
 #include "cmd_open.c"
 #include "cmd_meta.c"
-#include "cmd_type.c"
 #include "cmd_egg.c"
 #include "cmd_info.c"
 #include "cmd_macro.c"
@@ -1761,7 +1761,6 @@ static int cmd_kuery(void *data, const char *input) {
 	char *temp_pos = NULL, *temp_cmd = NULL;
 
 	switch (input[0]) {
-
 	case 'j':
 		out = sdb_querys (s, NULL, 0, "anal/**");
 		if (!out) {
@@ -1816,7 +1815,6 @@ static int cmd_kuery(void *data, const char *input) {
 		free (next_cmd);
 		free (cur_cmd);
 		break;
-
 	case ' ':
 		if (s) {
 			out = sdb_querys (s, NULL, 0, input + 1);

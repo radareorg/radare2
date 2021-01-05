@@ -751,16 +751,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		return;
 	}
 	sdb_reset (cc);
-	R_FREE (cc->path);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (cc, dbpath);
-		cc->path = strdup (dbpath);
-	}
-	if (r_file_exists (dbhomepath)) {
-		sdb_concat_by_path (cc, dbhomepath);
-		cc->path = strdup (dbhomepath);
-	}
-	if (core->anal->reg->profile) {
+	{
 		// same as "tcc `arcc`"
 		char *s = r_reg_profile_to_cc (core->anal->reg);
 		if (s) {
@@ -771,6 +762,15 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		} else {
 			eprintf ("Warning: Cannot derive CC from reg profile.\n");
 		}
+	}
+	R_FREE (cc->path);
+	if (r_file_exists (dbhomepath)) {
+		sdb_concat_by_path (cc, dbhomepath);
+		cc->path = strdup (dbhomepath);
+	}
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (cc, dbpath);
+		cc->path = strdup (dbpath);
 	}
 	if (sdb_isempty (core->anal->sdb_cc)) {
 		eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", anal_arch);
