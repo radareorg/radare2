@@ -16,7 +16,7 @@ static bool test_r_id_storage_toomany(void) {
 
 static bool test_r_id_storage_wrong(void) {
 	bool r;
-	ut32 id0, id1;
+	ut32 id0;
 	RIDStorage *ids = r_id_storage_new (20, 10);
 	r = r_id_storage_add (ids, "aaa", &id0);
 	mu_assert_false (r, "id0");
@@ -57,7 +57,6 @@ static bool test_r_id_storage_prev_next_eq_1(void) {
 	id = id0;
 	r = r_id_storage_get_prev (ids, &id);
 	mu_assert_false (r, "get_prev(0) doesnt exist");
-	ut32 n = id;
 	id = id1;
 	r = r_id_storage_get_prev (ids, &id);
 	mu_assert_true (r, "get_prev(1) must exist");
@@ -80,7 +79,6 @@ static bool test_r_id_storage_prev_next_min(void) {
 	id = id0;
 	r = r_id_storage_get_prev (ids, &id);
 	mu_assert_false (r, "get_prev(0) doesnt exist");
-	ut32 n = id;
 	id = id1;
 	r = r_id_storage_get_prev (ids, &id);
 	mu_assert_true (r, "get_prev(1) must exist");
@@ -93,7 +91,7 @@ static bool test_r_id_storage_prev_next_min(void) {
 
 static bool test_r_id_storage_empty(void) {
 	// test if next reverts prev (modulo wrap 2)
-	ut32 id, _id = 0;
+	ut32 _id = 0;
 	RIDStorage *ids = r_id_storage_new (0, 15);
 	bool r = r_id_storage_get_prev (ids, &_id);
 	mu_assert_false (r, "get prev from none");
