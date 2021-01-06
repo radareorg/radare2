@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_bind.h>
+#include <r_util/r_big.h>
 
 // should these be here?
 #include <math.h>
@@ -427,6 +428,18 @@ R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 	char str[64];
 	snprintf (str, sizeof (str) - 1, "0x%" PFMT64x, num);
 	return r_anal_esil_push (esil, str);
+}
+
+R_API bool r_anal_esil_pushbig(RAnalEsil *esil, ut8 *num, ut32 size) {
+	RNumBig *big_num = r_big_new();
+	memcpy(big_num, num, size % R_BIG_ARRAY_SIZE);
+	return r_anal_esil_push (esil, r_big_to_hexstr(big_num));
+}
+
+// these numbers are jacked
+R_API RNumBig* r_anal_esil_get_big(RAnalEsil *esil, const char *str, RNumBig *big_num) {
+	r_big_from_hexstr(big_num, str);
+	return big_num;
 }
 
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
@@ -2912,27 +2925,6 @@ static bool esil_set_delay_slot(RAnalEsil *esil) {
 	return ret;
 }
 
-/*
-	OP ("NAN", esil_is_nan, 1, 1, OT_MATH);
-	OP ("I2D", esil_int_to_double, 1, 1, OT_MATH);
-	OP ("D2I", esil_double_to_int, 1, 1, OT_MATH);
-	OP ("D2F", esil_double_to_float, 1, 2, OT_MATH);
-	OP ("F2D", esil_float_to_double, 1, 2, OT_MATH);
-	OP ("F==", esil_float_cmp, 1, 2, OT_MATH);
-	OP ("F!=", esil_float_negcmp, 1, 2, OT_MATH);
-	OP ("F<", esil_float_less, 1, 2, OT_MATH);
-	OP ("F<=", esil_float_lesseq, 1, 2, OT_MATH);
-	OP ("F+", esil_float_add, 1, 2, OT_MATH);
-	OP ("F-", esil_float_sub, 1, 2, OT_MATH);
-	OP ("F*", esil_float_mul, 1, 2, OT_MATH);
-	OP ("F/", esil_float_div, 1, 2, OT_MATH);
-	OP ("-F", esil_float_neg, 1, 1, OT_MATH);
-	OP ("CEIL", esil_float_ceil, 1, 1, OT_MATH);
-	OP ("FLOOR", esil_float_floor, 1, 1, OT_MATH);
-	OP ("ROUND", esil_float_round, 1, 1, OT_MATH);
-	OP ("SQRT", esil_float_sqrt, 1, 1, OT_MATH);
-*/
-
 static int esil_get_parm_float(RAnalEsil *esil, const char *str, double *num)
 {
 	return r_anal_esil_get_parm(esil, str, (ut64 *)num);
@@ -3058,8 +3050,7 @@ static bool esil_float_to_double(RAnalEsil *esil) {
 			ret = esil_pushnum_float(esil, (double)(*(double *)&d));
 		}
 		/*else if(s == 10)
-			ret = esil_pushnum_float(esil, (double)(*(long double *)&d));
-		*/
+			ret = esil_pushnum_float(esil, (double)(*(long double *)&d));*/
 		else {
 			ret = esil_pushnum_float(esil, d);
 		}
@@ -3179,10 +3170,12 @@ static bool esil_float_add(RAnalEsil *esil) {
 			double tmp = s + d;
 			(void)(tmp); // suppress unused warning
 			int raised = fetestexcept(FE_OVERFLOW);
-			if (raised & FE_OVERFLOW)
+			if (raised & FE_OVERFLOW) {
 				ret = esil_pushnum_float(esil, 0.0 / 0.0);
-			else
+			}
+			else {
 				ret = esil_pushnum_float(esil, s + d);
+			}
 		}
 	}
 	else {
@@ -3245,10 +3238,12 @@ static bool esil_float_mul(RAnalEsil *esil) {
 			double tmp = s * d;
 			(void)(tmp);
 			int raised = fetestexcept(FE_OVERFLOW);
-			if (raised & FE_OVERFLOW)
+			if (raised & FE_OVERFLOW) {
 				ret = esil_pushnum_float(esil, 0.0 / 0.0);
-			else
+			}
+			else {
 				ret = esil_pushnum_float(esil, s * d);
+			}
 		}
 	}
 	else {
