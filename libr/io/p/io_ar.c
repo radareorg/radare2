@@ -20,9 +20,9 @@ static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 		filename += 2;
 	}
 
-	RBuffer *b = ar_open_file (arname, filename);
-	if (b) {
-		res = r_io_desc_new (io, &r_io_plugin_ar, filename, rw, mode, b);
+	RArFp *arf = ar_open_file (arname, filename);
+	if (arf) {
+		res = r_io_desc_new (io, &r_io_plugin_ar, filename, rw, mode, arf);
 	}
 	free (url);
 	return res;
@@ -34,60 +34,46 @@ static RList *r_io_ar_open_many(RIO *io, const char *file, int rw, int mode) {
 }
 
 static ut64 r_io_ar_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	RBuffer *b;
-	ut64 seek_val = 0;
+	r_return_val_if_fail (io && fd && fd->data, -1);
 
-	if (!fd || !fd->data) {
+	RArFp *arf = (RArFp *) fd->data;
+	ut64 size = arf->end - arf->start;
+	switch (whence) {
+	case SEEK_SET:
+		io->off = R_MIN (size, offset);
+		break;
+	case SEEK_CUR:
+		io->off = R_MIN (size, io->off + offset);
+		break;
+	case SEEK_END:
+		io->off = size;
+		break;
+	default:
 		return -1;
 	}
 
-	b = fd->data;
-	seek_val = r_buf_tell (b);
-
-	switch (whence) {
-	case SEEK_SET:
-		seek_val = (r_buf_size (b) < offset)? r_buf_size (b) : offset;
-		io->off = seek_val;
-		r_buf_seek (b, seek_val, R_BUF_SET);
-		return seek_val;
-	case SEEK_CUR:
-		seek_val = (r_buf_size (b) < offset)? r_buf_size (b) : offset;
-		io->off = seek_val;
-		r_buf_seek (b, seek_val, R_BUF_SET);
-		return seek_val;
-	case SEEK_END:
-		seek_val = r_buf_size (b);
-		io->off = seek_val;
-		r_buf_seek (b, seek_val, R_BUF_SET);
-		return seek_val;
-	}
-	return seek_val;
+	return io->off;
 }
 
 static int r_io_ar_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	RBuffer *b;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	b = fd->data;
-	return ar_read_at (b, io->off, buf, count);
+	return ar_read_at ((RArFp *) fd->data, io->off, buf, count);
 }
 
 static int r_io_ar_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	RBuffer *b = NULL;
 	if (!fd || !fd->data || !buf) {
 		return -1;
 	}
-	return ar_write_at (b, io->off, (void *) buf, count);
+	return ar_write_at ((RArFp *) fd->data, io->off, (void *) buf, count);
 }
 
 static int r_io_ar_close(RIODesc *fd) {
-	RBuffer *b = NULL;
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	b = fd->data;
-	return ar_close (b);
+	return ar_close ((RArFp *) fd->data);
 }
 
 RIOPlugin r_io_plugin_ar = {
