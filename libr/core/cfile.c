@@ -101,9 +101,9 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	if (isdebug) {
 		int newtid = newpid;
 		// XXX - select the right backend
-		if (odesc) {
-			newpid = r_io_fd_get_pid (core->io, odesc->fd);
-			newtid = r_io_fd_get_tid (core->io, odesc->fd);
+		if (core->io->desc) {
+			newpid = r_io_fd_get_pid (core->io, core->io->desc->fd);
+			newtid = r_io_fd_get_tid (core->io, core->io->desc->fd);
 #if __linux__
 			core->dbg->main_pid = newpid;
 			newtid = newpid;
@@ -128,7 +128,6 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			}
 		}
 		r_core_file_close_fd (core, odesc->fd);
-		odesc = NULL;
 		eprintf ("File %s reopened in %s mode\n", path,
 			(perm & R_PERM_W)? "read-write": "read-only");
 
@@ -162,8 +161,10 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	} else {
 		eprintf ("Cannot reopen\n");
 	}
-	core->switch_file_view = 1;
-	r_core_block_read (core);
+	if (core->io->desc) {
+		core->switch_file_view = 1;
+		r_core_block_read (core);
+	}
 	r_core_seek (core, origoff, true);
 	if (isdebug) {
 		r_core_cmd0 (core, ".dm*");
