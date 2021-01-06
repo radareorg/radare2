@@ -2117,7 +2117,7 @@ static int cmd_resize(void *data, const char *input) {
 		return true;
 	}
 
-	ut64 oldsize = (core->file) ? r_io_fd_size (core->io, core->file->fd): 0;
+	ut64 oldsize = (core->io->desc) ? r_io_fd_size (core->io, core->io->desc->fd): 0;
 	switch (*input) {
 	case 'a': // "r..."
 		if (r_str_startswith (input, "adare2")) {
@@ -2144,7 +2144,7 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		return true;
 	case '\0':
-		if (core->file) {
+		if (core->io->desc) {
 			if (oldsize != -1) {
 				r_cons_printf ("%"PFMT64d"\n", oldsize);
 			}
@@ -2163,7 +2163,7 @@ static int cmd_resize(void *data, const char *input) {
 			return true;
 		}
 	case 'h':
-		if (core->file) {
+		if (core->io->desc) {
 			if (oldsize != -1) {
 				char humansz[8];
 				r_num_units (humansz, sizeof (humansz), oldsize);

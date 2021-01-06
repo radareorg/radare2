@@ -736,7 +736,7 @@ static int cmd_seek(void *data, const char *input) {
 	break;
 	case 'G': // "sG"
 	{
-		if (!core->file) {
+		if (!core->io->desc) {
 			break;
 		}
 		RIOMap *map = r_io_map_get (core->io, core->offset);
@@ -744,7 +744,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (map) {
 			r_core_seek (core, r_io_map_end (map) + 2, true);
 		} else {
-			r_core_seek (core, r_io_fd_size (core->io, core->file->fd), true);
+			r_core_seek (core, r_io_fd_size (core->io, core->io->desc->fd), true);
 		}
 	}
 	break;

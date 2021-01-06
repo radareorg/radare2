@@ -510,7 +510,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		case 'f':
 		{
 			ut64 off, len, sz, namelen;
-			RIODesc *desc = core && core->file ? r_io_desc_get (core->io, core->file->fd) : NULL;
+			RIODesc *desc = core->io->desc;
 			if (sscanf (cmd + 2, "%"PFMT64x",%"PFMT64x, &off, &len) != 2) {
 				strcpy (out_buf, "E00");
 				return 0;

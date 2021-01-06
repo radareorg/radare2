@@ -38,7 +38,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
 	RIODesc *yankdesc = NULL;
-	ut64 fd = core->file? core->file->fd: -1, yank_file_sz = 0,
+	ut64 fd = core->io->desc ? core->io->desc->fd: -1, yank_file_sz = 0,
 	     loadaddr = 0, addr = offset;
 	int res = false;
 

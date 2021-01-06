@@ -3715,9 +3715,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 	}
 	RIOMap *map = r_io_map_get (core->io, core->offset);
-	RIODesc *desc = map
-		? r_io_desc_get (core->io, map->fd)
-		: core->file? r_io_desc_get (core->io, core->file->fd): NULL;
+	RIODesc *desc = map ? r_io_desc_get (core->io, map->fd) : core->io->desc;
 	filename = desc? desc->name: "";
 
 	{ /* get flag with delta */

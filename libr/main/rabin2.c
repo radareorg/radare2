@@ -556,7 +556,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
 	const char *op = NULL;
-	RCoreFile *fh = NULL;
 	RCoreBinFilter filter;
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int rawstr = 0;
@@ -1043,11 +1042,10 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 
 	if (file && *file) {
-		if ((fh = r_core_file_open (&core, file, R_PERM_R, 0))) {
+		if (r_core_file_open (&core, file, R_PERM_R, 0)) {
 			fd = r_io_fd_get_current (core.io);
 			if (fd == -1) {
 				eprintf ("r_core: Cannot open file '%s'\n", file);
-				r_core_file_free (fh);
 				r_core_fini (&core);
 				return 1;
 			}
@@ -1072,7 +1070,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");
-			r_core_file_free (fh);
 			r_core_fini (&core);
 			return 1;
 		}
@@ -1101,7 +1098,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				sdb_query (bin->cur->sdb, query);
 			}
 		}
-		r_core_file_free (fh);
 		r_core_fini (&core);
 		return 0;
 	}
@@ -1197,7 +1193,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 	pj_free (pj);
 	r_cons_flush ();
-	r_core_file_free (fh);
 	r_core_fini (&core);
 	r_lib_free (l);
 

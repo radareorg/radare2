@@ -780,8 +780,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				free (bptr);
 				free (out);
 				return ret;
-			} else if (core->file) {
-				return r_io_fd_size (core->io, core->file->fd);
+			} else if (core->io->desc) {
+				return r_io_fd_size (core->io, core->io->desc->fd);
 			}
 			return 0LL;
 		case 'w': // $w word size
@@ -2911,7 +2911,6 @@ R_API bool r_core_init(RCore *core) {
 
 	r_core_bind (core, &(core->anal->coreb));
 
-	core->file = NULL;
 	core->files = r_list_newf ((RListFree)r_core_file_free);
 	core->offset = 0LL;
 	core->prompt_offset = 0LL;
@@ -3019,7 +3018,6 @@ R_API void r_core_fini(RCore *c) {
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
-	//r_core_file_free (c->file);
 	//c->file = NULL;
 	R_FREE (c->table_query);
 	r_list_free (c->files);
@@ -3406,7 +3404,7 @@ reaccept:
 						int fd = r_io_fd_get_current (core->io);
 						r_core_bin_load (core, NULL, baddr);
 						r_io_map_add (core->io, fd, perm, 0, 0, r_io_fd_size (core->io, fd));
-						if (core->file) {
+						if (core->io->desc) {
 							pipefd = fd;
 						} else {
 							pipefd = -1;
@@ -3547,8 +3545,8 @@ reaccept:
 				r_socket_read_block (c, buf, 9);
 				x = r_read_at_be64 (buf, 1);
 				if (buf[0] == 2) {
-					if (core->file) {
-						x = r_io_fd_size (core->io, core->file->fd);
+					if (core->io->desc) {
+						x = r_io_fd_size (core->io, core->io->desc->fd);
 					} else {
 						x = 0;
 					}

@@ -333,7 +333,7 @@ static int bin_is_executable(RBinObject *obj){
 static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	int array = 0;
-	if (core->file) {
+	if (core->io->desc) {
 		if (mode & R_MODE_JSON) {
 			if (!(mode & R_MODE_ARRAY)) {
 				pj_o (pj);
@@ -396,9 +396,9 @@ static bool is_equal_file_hashes(RList *lfile_hashes, RList *rfile_hashes, bool 
 
 static int __r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
-	RCoreFile *cf = r_core_file_cur (r);
-	if (cf) {
-		RBinFile *bf = r_bin_file_find_by_fd (r->bin, cf->fd);
+	RIODesc *cd = r->io->desc;
+	if (cd) {
+		RBinFile *bf = r_bin_file_find_by_fd (r->bin, cd->fd);
 		if (bf) {
 			result = r_bin_reload (r->bin, bf->id, baseaddr);
 		}

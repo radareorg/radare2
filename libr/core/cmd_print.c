@@ -3521,8 +3521,8 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				from = map->addr;
 			}
 		} else {
-			if (core->file && core->io) {
-				totalsize = r_io_fd_size (core->io, core->file->fd);
+			if (core->io && core->io->desc) {
+				totalsize = r_io_fd_size (core->io, core->io->desc->fd);
 				if ((st64) totalsize < 1) {
 					totalsize = UT64_MAX;
 				}
