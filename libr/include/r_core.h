@@ -269,7 +269,6 @@ struct r_core_t {
 	/* files */
 	RCons *cons;
 	RIO *io;
-	RCoreFile *file;
 	RList *files;
 	RNum *num;
 	ut64 rc; // command's return code .. related to num->value;
@@ -512,10 +511,6 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args);
 R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr);
 R_API RCoreFile * r_core_file_find_by_fd(RCore* core, ut64 fd);
 R_API RCoreFile * r_core_file_find_by_name (RCore * core, const char * name);
-R_API RCoreFile * r_core_file_cur (RCore *r);
-R_API int r_core_file_set_by_fd(RCore *core, ut64 fd);
-R_API int r_core_file_set_by_name(RCore *core, const char * name);
-R_API int r_core_file_set_by_file (RCore * core, RCoreFile *cf);
 R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach);
 
 R_API void r_core_file_free(RCoreFile *cf);

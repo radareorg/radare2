@@ -1086,12 +1086,11 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 }
 
 R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
-	RCoreFile *ofile = core->file;
-	RIODesc *desc;
+	RIODesc *desc = core->io->desc;
 	RCoreFile *file;
 	int fd;
 
-	if (!ofile || !(desc = r_io_desc_get (core->io, ofile->fd)) || !desc->uri) {
+	if (!desc || !desc->uri) {
 		eprintf ("No file open?\n");
 		return;
 	}
@@ -1132,10 +1131,9 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 }
 
 R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
-	RCoreFile *ofile = core->file;
-	RIODesc *desc;
+	RIODesc *desc = core->io->desc;
 
-	if (!ofile || !(desc = r_io_desc_get (core->io, ofile->fd)) || !desc->uri) {
+	if (!desc || !desc->uri) {
 		eprintf ("No file open?\n");
 		return;
 	}
@@ -1145,12 +1143,12 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & R_PERM_W)) {
 		eprintf ("Cannot debug file (%s) with permissions set to 0x%x.\n"
 			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
-		r_io_reopen (core->io, ofile->fd, R_PERM_RX, 755);
+		r_io_reopen (core->io, desc->fd, R_PERM_RX, 755);
 		// r_io_reopen (core->io, ofile->fd, R_PERM_R, 644);
-		desc = r_io_desc_get (core->io, ofile->fd);
+		desc = r_io_desc_get (core->io, desc->fd);
 	}
 
-	RBinFile *bf = r_bin_file_find_by_fd (core->bin, ofile->fd);
+	RBinFile *bf = r_bin_file_find_by_fd (core->bin, desc->fd);
 	char *binpath = (bf && bf->file) ? strdup (bf->file) : NULL;
 	if (!binpath) {
 		if (r_file_exists (desc->name)) {
@@ -1629,16 +1627,9 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case 'u': { // "ou"
-		RListIter *iter = NULL;
-		RCoreFile *f;
 		core->switch_file_view = 0;
 		int num = atoi (input + 2);
 
-		r_list_foreach (core->files, iter, f) {
-			if (f->fd == num) {
-				core->file = f;
-			}
-		}
 		r_io_use_fd (core->io, num);
 		RBinFile *bf = r_bin_file_find_by_fd (core->bin, num);
 		if (bf) {
@@ -1789,11 +1780,11 @@ static int cmd_open(void *data, const char *input) {
 				r_core_file_reopen (core, NULL, R_PERM_RW, 0);
 				break;
 			case 'n': // "oonn"
-				if ('?' == input[3] || !core->file) {
+				if ('?' == input[3] || !core->io->desc) {
 					r_core_cmd_help (core, help_msg_oonn);
 					break;
 				}
-				RIODesc *desc = r_io_desc_get (core->io, core->file->fd);
+				RIODesc *desc = r_io_desc_get (core->io, core->io->desc->fd);
 				if (desc) {
 					perms = core->io->desc->perm;
 					if (input[3] == '+') {

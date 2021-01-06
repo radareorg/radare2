@@ -1123,7 +1123,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 								filepath = file? strstr (file, "://"): NULL;
 								filepath = filepath ? filepath + 3 : pfile;
 							}
-							if (r->file && iod && (iod->fd == r->file->fd) && iod->name) {
+							if (r->io->desc && iod && (iod->fd == r->io->desc->fd) && iod->name) {
 								filepath = iod->name;
 							}
 							/* Load rbin info from r2 dbg:// or r2 /bin/ls */
@@ -1230,7 +1230,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			ret = 1;
 			goto beach;
 		}
-		if (!r->file) { // no given file
+		if (!r->io->desc) { // no given file
 			ret = 1;
 			goto beach;
 		}
@@ -1257,7 +1257,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "asm.os", asmos);
 		}
 
-		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin && \
+		debug = r->io->desc && iod && (r->io->desc->fd == iod->fd) && iod->plugin && \
 			iod->plugin->isdbg;
 		if (debug) {
 			r_core_setup_debugger (r, debugbackend, baddr == UT64_MAX);

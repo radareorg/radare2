@@ -259,7 +259,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 	ut64 from = itv.addr, to = r_itv_end (itv);
 	int size; // , sz = sizeof (buf);
 
-	int fd = core->file->fd;
+	int fd = core->io->desc->fd;
 	RBuffer *b = r_buf_new_with_io (&core->anal->iob, fd);
 	r_cons_break_push (NULL, NULL);
 	while (from < to) {
@@ -964,8 +964,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 				if (core->io->va) {
 					/* TODO: section size? */
 				} else {
-					if (core->file) {
-						to = r_io_fd_size (core->io, core->file->fd);
+					if (core->io->desc) {
+						to = r_io_fd_size (core->io, core->io->desc->fd);
 					}
 				}
 			}

@@ -1278,9 +1278,9 @@ static bool cb_cfgdebug(void *user, void *data) {
 		if (!strcmp (dbgbackend, "bf")) {
 			r_config_set (core->config, "asm.arch", "bf");
 		}
-		if (core->file) {
-			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->file->fd),
-					r_io_fd_get_tid (core->io, core->file->fd));
+		if (core->io->desc) {
+			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->io->desc->fd),
+					r_io_fd_get_tid (core->io, core->io->desc->fd));
 		}
 	} else {
 		r_debug_use (core->dbg, NULL);

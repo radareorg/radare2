@@ -580,7 +580,7 @@ static bool bin_raw_strings(RCore *r, PJ *pj, int mode, int va) {
 		r_io_read_at (r->io, 0, tmp, bf->size);
 		r_buf_write_at (bf->buf, 0, tmp, bf->size);
 	}
-	if (!r->file) {
+	if (!r->io->desc) {
 		eprintf ("Core file not open\n");
 		if (IS_MODE_JSON (mode)) {
 			pj_a (pj);
@@ -594,7 +594,7 @@ static bool bin_raw_strings(RCore *r, PJ *pj, int mode, int va) {
 		if (!bf) {
 			return false;
 		}
-		RIODesc *desc = r_io_desc_get (r->io, r->file->fd);
+		RIODesc *desc = r->io->desc;
 		if (!desc) {
 			free (bf);
 			return false;
@@ -605,7 +605,7 @@ static bool bin_raw_strings(RCore *r, PJ *pj, int mode, int va) {
 			free (bf);
 			return false;
 		}
-		bf->buf = r_buf_new_with_io (&r->bin->iob, r->file->fd);
+		bf->buf = r_buf_new_with_io (&r->bin->iob, r->io->desc->fd);
 		bf->o = NULL;
 		bf->rbin = r->bin;
 		new_bf = true;
