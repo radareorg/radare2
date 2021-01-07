@@ -72,7 +72,7 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 		r_config_eval (c->config, e, false);
 	}
 	if (f) {
-		RCoreFile * rfile = NULL;
+		RIODesc * rfile = NULL;
 #if __WINDOWS__
 		char *winf = r_acp_to_utf8 (f);
 		rfile = r_core_file_open (c, winf, 0, 0);

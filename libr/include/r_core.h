@@ -135,15 +135,6 @@ typedef struct r_core_log_t {
 	RStrpool *sp;
 } RCoreLog;
 
-typedef struct r_core_file_t {
-	int dbg;
-	int fd;
-	RBinBind binb;
-	const struct r_core_t *core;
-	ut8 alive;
-} RCoreFile;
-
-
 typedef struct r_core_times_t {
 	ut64 loadlibs_init_time;
 	ut64 loadlibs_time;
@@ -269,7 +260,6 @@ struct r_core_t {
 	/* files */
 	RCons *cons;
 	RIO *io;
-	RList *files;
 	RNum *num;
 	ut64 rc; // command's return code .. related to num->value;
 	RLib *lib;
@@ -506,23 +496,17 @@ R_API void r_core_visual_mark_reset(RCore *core);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API bool r_core_serve(RCore *core, RIODesc *fd);
-R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int binload);
+
+// RCoreFile APIs (bind, riodesc + rbinfile)
+R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int binload);
 R_API void r_core_file_reopen_debug(RCore *core, const char *args);
 R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr);
-R_API RCoreFile * r_core_file_find_by_fd(RCore* core, ut64 fd);
-R_API RCoreFile * r_core_file_find_by_name (RCore * core, const char * name);
-R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach);
-
-R_API void r_core_file_free(RCoreFile *cf);
-R_API RCoreFile *r_core_file_open(RCore *core, const char *file, int flags, ut64 loadaddr);
-R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr);
-R_API RCoreFile *r_core_file_get_by_fd(RCore *core, int fd);
-R_API int r_core_file_close(RCore *core, RCoreFile *fh);
-R_API bool r_core_file_close_fd(RCore *core, int fd);
+R_API RIODesc *r_core_file_open(RCore *core, const char *file, int flags, ut64 loadaddr);
+R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int flags, ut64 loadaddr);
 R_API bool r_core_file_close_all_but(RCore *core);
-R_API int r_core_file_list(RCore *core, int mode);
-R_API int r_core_file_binlist(RCore *core);
-R_API bool r_core_file_bin_raise(RCore *core, ut32 num);
+
+
+R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach);
 R_API int r_core_seek_delta(RCore *core, st64 addr);
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size);
 R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size);
@@ -530,7 +514,6 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op);
 R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op);
 R_API int r_core_set_file_by_fd (RCore * core, ut64 bin_fd);
 R_API int r_core_set_file_by_name (RBin * bin, const char * name);
-R_API ut32 r_core_file_cur_fd (RCore *core);
 
 R_API void r_core_debug_rr (RCore *core, RReg *reg, int mode);
 
@@ -671,7 +654,9 @@ R_API int r_core_get_prc_cols(RCore *core);
 R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
 
+// both do the same, we should get rid of one of them
 R_API bool r_core_bin_raise (RCore *core, ut32 bfid);
+R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile);
 
 R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile);
 R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);

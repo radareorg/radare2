@@ -11,8 +11,7 @@
 
 #include <r_core.h>
 
-static bool is_valid_gdb_file(RCoreFile *fh) {
-	RIODesc *d = fh && fh->core ? r_io_desc_get (fh->core->io, fh->fd) : NULL;
+static bool is_valid_gdb_file(RIODesc *d) {
 	return d && strncmp (d->name, "gdb://", 6);
 }
 
@@ -331,7 +330,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	RListIter *iter;
 	int do_analysis = 0;
 	char *cmdn, *tmp;
-	RCoreFile *fh = NULL;
+	RIODesc *fh = NULL;
 	RIODesc *iod = NULL;
 	const char *patchfile = NULL;
 	int debug = 0;
@@ -1174,7 +1173,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			}
 		} else {
-			RCoreFile *f = r_core_file_open (r, pfile, perms, mapaddr);
+			RIODesc *f = r_core_file_open (r, pfile, perms, mapaddr);
 			if (f) {
 				fh = f;
 			}

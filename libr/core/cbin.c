@@ -130,8 +130,6 @@ static void pair_str(PJ *pj, const char *key, const char *val) {
 	}
 }
 
-R_API int r_core_bin_set_cur(RCore *core, RBinFile *binfile);
-
 static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	if (va == VA_TRUE) {
 		if (paddr != UT64_MAX) {
@@ -347,19 +345,24 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 	return false;
 }
 
-R_API int r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
+R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
+	r_return_val_if_fail (core && binfile, false);
+	ut32 fd = UT32_MAX;
 	if (!core->bin) {
 		return false;
 	}
 	if (!binfile) {
-		// Find first available binfile
-		ut32 fd = r_core_file_cur_fd (core);
-		binfile = fd != (ut32)-1
-				  ? r_bin_file_find_by_fd (core->bin, fd)
-				  : NULL;
-		if (!binfile) {
-			return false;
+		if (core && core->io->desc) {
+			fd = core->io->desc->fd;
 		}
+	}
+	// Find first available binfile
+	if (fd == UT32_MAX) {
+		return false;
+	}
+	binfile = r_bin_file_find_by_fd (core->bin, fd);
+	if (!binfile) {
+		return false;
 	}
 	r_bin_file_set_cur_binfile (core->bin, binfile);
 	return true;
@@ -2786,7 +2789,9 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	} else if (IS_MODE_NORMAL (mode) && printHere) {
 		r_cons_printf ("Current section\n");
 	} else if (IS_MODE_SET (mode)) {
-		fd = r_core_file_cur_fd (r);
+		if (r && r->io->desc) {
+			fd = r->io->desc->fd;
+		}
 		r_flag_space_set (r->flags, print_segments? R_FLAGS_FS_SEGMENTS: R_FLAGS_FS_SECTIONS);
 	}
 	if (IS_MODE_NORMAL (mode)) {

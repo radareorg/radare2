@@ -2911,7 +2911,6 @@ R_API bool r_core_init(RCore *core) {
 
 	r_core_bind (core, &(core->anal->coreb));
 
-	core->files = r_list_newf ((RListFree)r_core_file_free);
 	core->offset = 0LL;
 	core->prompt_offset = 0LL;
 	r_core_cmd_init (core);
@@ -3020,7 +3019,6 @@ R_API void r_core_fini(RCore *c) {
 	// TODO: sync all dbs?
 	//c->file = NULL;
 	R_FREE (c->table_query);
-	r_list_free (c->files);
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
 	r_core_task_scheduler_fini (&c->tasks);
