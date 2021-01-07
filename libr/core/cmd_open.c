@@ -21,7 +21,6 @@ static const char *help_msg_o[] = {
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"of"," [file]","open file and map it at addr 0 as read-only",
-	"oi","[-|idx]","alias for o, but using index instead of fd",
 	"oj","[?]	","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
 	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
@@ -1087,7 +1086,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 
 R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 	RIODesc *desc = core->io->desc;
-	RCoreFile *file;
+	RIODesc *file;
 	int fd;
 
 	if (!desc || !desc->uri) {
@@ -1111,9 +1110,9 @@ R_API void r_core_file_reopen_remote_debug(RCore *core, char *uri, ut64 addr) {
 		if (addr == 0) {
 			desc = r_io_desc_get (core->io, file->fd);
 			if (desc->plugin->isdbg) {
-				addr = r_debug_get_baddr(core->dbg, desc->name);
+				addr = r_debug_get_baddr (core->dbg, desc->name);
 			} else {
-				addr = r_bin_get_baddr (file->binb.bin);
+				addr = r_bin_get_baddr (core->bin);
 			}
 		}
 		r_core_bin_load (core, uri, addr);
@@ -1235,6 +1234,19 @@ static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
+	RCore *core = (RCore *)user;
+	RPrint *p = core->print;
+	RIODesc *desc = (RIODesc *)data;
+	RBinFile *bf = r_bin_file_find_by_fd (core->bin, desc->fd);
+	if (bf && bf->file) {
+		p->cb_printf ("o %s 0x%08"PFMT64x" %s\n", desc->uri, bf->o->baddr, r_str_rwx_i (desc->perm));
+	} else {
+		// TODO: get associated map and rebase it?
+		p->cb_printf ("on %s\n", desc->uri);
+	}
+	return true;
+}
 static bool desc_list_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
@@ -1297,7 +1309,7 @@ static int cmd_open(void *data, const char *input) {
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 	ut64 addr = 0LL;
 	int argc, fd = -1;
-	RCoreFile *file;
+	RIODesc *file;
 	RIODesc *desc;
 	bool write = false;
 	const char *ptr = NULL;
@@ -1358,7 +1370,7 @@ static int cmd_open(void *data, const char *input) {
 	}
 	case 'n': // "on"
 		if (input[1] == '*') {
-			r_core_file_list (core, 'n');
+			eprintf ("OTDO%c", 10); // r_core_file_list (core, 'n');
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"
@@ -1406,7 +1418,6 @@ static int cmd_open(void *data, const char *input) {
 		core->num->value = fd;
 		r_core_block_read (core);
 		return 0;
-#if 1
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
 		ptr = r_str_trim_head_ro (input + 2);
@@ -1422,29 +1433,6 @@ static int cmd_open(void *data, const char *input) {
 		core->num->value = fd;
 		r_str_argv_free (argv);
 		return 0;
-#else
-		{
-			if ((input[1] == 's') && (input[2] == ' ')) {
-				silence = true;
-				input++;
-			}
-			addr = 0; // honor bin.baddr ?
-			const char *argv0 = r_str_trim_head_ro (input + 2);
-			if ((file = r_core_file_open (core, argv0, perms, addr))) {
-				fd = file->fd;
-				if (!silence) {
-					eprintf ("%d\n", fd);
-				}
-				r_core_bin_load (core, argv0, baddr);
-			} else {
-				eprintf ("cannot open file %s\n", argv0);
-			}
-			r_str_argv_free (argv);
-		}
-		r_core_block_read (core);
-		return 0;
-		break;
-#endif
 	case 'p': // "op"
 		/* handle prioritize */
 		if (input[1]) {
@@ -1556,7 +1544,7 @@ static int cmd_open(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_o_star);
 			break;
 		}
-		r_core_file_list (core, (int)(*input));
+		r_id_storage_foreach (core->io->files, desc_list_cmds_cb, core);
 		break;
 	case 'j': // "oj"
 		if ('?' == input[1]) {
@@ -1587,45 +1575,6 @@ static int cmd_open(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'i': // "oi"
-		switch (input[1]) {
-		case ' ': // "oi "
-			{
-				RListIter *iter = NULL;
-				RCoreFile *f;
-				int nth = r_num_math (core->num, input + 2);
-				int count = 0;
-				r_list_foreach (core->files, iter, f) {
-					if (count == nth) {
-						r_io_use_fd (core->io, f->fd);
-						break;
-					}
-					count++;
-				}
-			}
-			break;
-		case '-': // "oi-"
-			{
-				RListIter *iter = NULL;
-				RCoreFile *f;
-				int nth = r_num_math (core->num, input + 2);
-				int count = 0;
-				r_list_foreach (core->files, iter, f) {
-					if (count == nth) {
-						r_core_file_close_fd (core, f->fd);
-						break;
-					}
-					count++;
-				}
-			}
-			break;
-		case 'j': // "oij"
-		case '*': // "oi*"
-		case 0: // "oi"
-			r_core_file_list (core, input[1]);
-			break;
-		}
-		break;
 	case 'u': { // "ou"
 		core->switch_file_view = 0;
 		int num = atoi (input + 2);
@@ -1647,15 +1596,10 @@ static int cmd_open(void *data, const char *input) {
 			r_core_file_close_all_but (core);
 			break;
 		case '*': // "o-*"
-			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
-			if (core->files) {
-				r_list_purge (core->files);
-			}
 			break;
 		case '-': // "o--"
-			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
 
@@ -1676,7 +1620,7 @@ static int cmd_open(void *data, const char *input) {
 		default:
 			{
 				int fd = (int)r_num_math (core->num, input + 1);
-				if (!r_core_file_close_fd (core, fd)) {
+				if (!r_io_fd_close (core->io, fd)) {
 					eprintf ("Unable to find file descriptor %d\n", fd);
 				}
 			}
