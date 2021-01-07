@@ -39,3 +39,21 @@ EXPECT=<<EOF
 0x08000070  8d50 ff48 8b45 f889 d148 8d15 0000 0000  .P.H.E...H......
 EOF
 RUN
+
+NAME=ar short with space
+FILE=ar://bins/ar/filetable_spaces.a// s_spaces
+CMDS=x 16
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  7368 6f72 7473 7061 6365 0aff ffff ffff  shortspace......
+EOF
+RUN
+
+NAME=ar long with space
+FILE=ar://bins/ar/filetable_spaces.a// longgggggggggggggggggspaces
+CMDS=x 16
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  6c6f 6e67 7370 6163 650a ffff ffff ffff  longspace.......
+EOF
+RUN
