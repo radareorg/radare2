@@ -70,20 +70,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=oi-
-FILE=malloc://1024
-CMDS=oi-
-EXPECT=<<EOF
-EOF
-RUN
-
-NAME=oi-2
-FILE=--
-CMDS=o bins/mach0/fatmach0-3true
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=o-[0]
 FILE=malloc://1024
 CMDS=o- `o~[0]`;o
@@ -98,14 +84,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=oij-pj
+NAME=oj-pj
 FILE=<<EOF
 bins/elf/crackme0x05
 bins/elf/crackme0x00b
 EOF
-CMDS=oij
+CMDS=oj
 EXPECT=<<EOF
-[{"raised":false,"fd":3,"uri":"bins/elf/crackme0x05","from":0,"writable":false,"size":7656},{"raised":true,"fd":5,"uri":"bins/elf/crackme0x00b","from":0,"writable":false,"size":7375}]
+[{"raised":false,"fd":3,"uri":"bins/elf/crackme0x05","from":0,"writable":false,"size":7656},{"raised":false,"fd":4,"uri":"null://4","from":0,"writable":true,"size":4},{"raised":true,"fd":5,"uri":"bins/elf/crackme0x00b","from":0,"writable":false,"size":7375},{"raised":false,"fd":6,"uri":"null://8","from":0,"writable":true,"size":8}]
 EOF
 RUN
 
