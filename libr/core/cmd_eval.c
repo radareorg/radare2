@@ -213,8 +213,8 @@ static void nextpal(RCore *core, int mode) {
 	// spaguetti!
 	if (home) {
 		files = r_sys_dir (home);
-		r_list_sort (files, (RListComparator)strcmp);
 		if (files) {
+			r_list_sort (files, (RListComparator)strcmp);
 			r_list_foreach (files, iter, fn) {
 				if (*fn && *fn != '.') {
 					if (mode == 'p') {
