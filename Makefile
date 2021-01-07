@@ -282,7 +282,6 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
-	$(SHELL) sys/ldconfig.sh
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
 
 deinstall uninstall:
