@@ -322,22 +322,72 @@ Info:
 EOF
 RUN
 
-NAME=Save project for a binary without saving its info at a specific map offset
+NAME=Save project with baddr
+FILE=bins/elf/analysis/main
+ARGS=-B 0x1337
+CMDS=<<EOF
+e prj.git=false
+e dir.projects = .tmp/
+o
+om
+om*
+?e --
+Pd hand
+Ps hand > /dev/null
+Po hand > /dev/null
+om*
+?e --
+om*~?
+om*~[2]
+EOF
+EXPECT=<<EOF
+ 3 * r-x 0x000021da bins/elf/analysis/main
+ 4 - rw- 0x00000008 null://8
+ 3 fd: 3 +0x00000000 0x00001337 - 0x00001a12 r-x fmap.LOAD0
+ 2 fd: 3 +0x000006e0 0x00201a17 - 0x00201c46 r-- fmap.LOAD1
+ 1 fd: 4 +0x00000000 0x00201c47 - 0x00201c4e rw- mmap.LOAD1
+om 4 0x00201c47 0x00000008 0x00000000 rw- mmap.LOAD1
+om 3 0x00201a17 0x00000230 0x000006e0 r-- fmap.LOAD1
+om 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
+--
+om 4 0x00201c47 0x00000008 0x00000000 rw- mmap.LOAD1
+om 3 0x00201a17 0x00000230 0x000006e0 r-- fmap.LOAD1
+om 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
+--
+3
+0x00201c47
+0x00201a17
+0x00001337
+EOF
+RUN
+
+NAME=Save project with maddr
 FILE=bins/elf/analysis/main
 ARGS=-n -m 0x1337
 CMDS=<<EOF
 e prj.git=false
 e dir.projects = .tmp/
+o
+om
+om*
+?e --
+Pd hand
 Ps hand > /dev/null
 Po hand > /dev/null
+om*
+?e --
 om*~?
 om*~[2]
 EOF
 EXPECT=<<EOF
-3
-0x00600910
-0x006006e0
-0x00400000
+ 3 * r-x 0x000021da bins/elf/analysis/main
+ 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x 
+om 3 0x00001337 0x000021da 0x00000000 r-x
+--
+om 3 0x00000000 0x000021da 0x00000000 r--
+--
+1
+0x00000000
 EOF
 RUN
 
