@@ -307,3 +307,15 @@ d "bti" 1f2403d5
 d "bti c" 5f2403d5
 d "bti j" 9f2403d5
 d "bti jc" df2403d5
+a "sbfm w0, w1, 31, 5" 20141f13 # alias
+a "sbfm x3, x2, 8, 63" 43fc4893
+a "ubfm w0, w1, 2, 31" 207c0253 # alias
+a "ubfm x2, x3, 63, 7" 621c7fd3
+ad "sbfiz w4, w5, 0x1f, 1" a4000113
+ad "sbfiz x6, x7, 1, 0x3f" e6f87f93
+ad "ubfiz w8, w9, 1, 0xf" 28391f53
+ad "ubfiz x10, x11, 6, 0x13" 6a497ad3
+ad "sbfx w12, w13, 0xf, 0x10" ac790f13
+ad "sbfx x14, x15, 0x21, 0x1b" eeed6193
+ad "ubfx w16, w17, 0x1d, 2" 307a1d53
+ad "ubfx x18, x19, 2, 0x39" 72ea42d3
