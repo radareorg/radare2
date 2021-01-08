@@ -75,7 +75,7 @@ static char *name_from_table(ut64 off, filetable *tbl) {
 		return -1;                                                                       \
 	}
 
-/* -1 error, 0 end, 1 contnue */
+/* -1 error, 0 continue, 1 finished */
 static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 	r_return_val_if_fail (arf && arf->buf && tbl, -1);
 	RBuffer *b = arf->buf;
@@ -103,12 +103,12 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 	int r = r_buf_read (b, (ut8 *)&h, sizeof (h));
 	if (r != sizeof (h)) {
 		if (r == 0) {
-			return 0; // no more file
+			return 1; // no more file
 		}
 		if (r < 0) {
-			eprintf ("io_ar: io error\n");
+			eprintf ("AR read io error\n");
 		} else {
-			eprintf ("io_ar: Invalid file length\n");
+			eprintf ("Malformed AR: Invalid length while parsing header at 0x%" PFMT64x "\n", h_off);
 		}
 		return -1;
 	}
@@ -207,12 +207,29 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 		return -1;
 	}
 
-	return 1;
+	return 0;
 }
 #undef VERIFY_AR_NUM_FIELD
 
+typedef struct single_file_data {
+	const char *name;
+	RArFp **ret;
+} single_file_data;
+
+static int __ar_open_file_cb(RArFp *arf, void *user) {
+	single_file_data *data = user;
+	if (!data->name) {
+		printf ("%s\n", arf->name);
+	} else if (!strcmp (data->name, arf->name)) {
+		*data->ret = arf;
+		return 1; // stop success
+	}
+	ar_close (arf);
+	return 0; // continue
+}
+
 /**
- * \brief Open specific file withen a ar/lib file.
+ * \brief Open specific file within a ar/lib file.
  * \param arname the name of the .a file
  * \param filename the name of file in the .a file that you wish to open
  * \return a handle of the internal filename or NULL
@@ -221,10 +238,64 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
  * listed.
  */
 R_API RArFp *ar_open_file(const char *arname, const char *filename) {
+	RArFp *ret = NULL;
+	single_file_data data;
+	data.name = filename;
+	data.ret = &ret;
+	if (ar_open_all_cb (arname, (RArOpenManyCB)__ar_open_file_cb, (void *)&data) < 0) {
+		ar_close (ret);
+		return NULL;
+	}
+	return ret;
+}
+
+static int __ar_open_list_cb(RArFp *arf, void *user) {
+	RList *l = user;
+	if (!r_list_append (l, arf)) {
+		ar_close (arf);
+		return -1; // stop error
+	}
+	return 0; // continue
+}
+
+/**
+ * \brief Get a RList* of handles to every file in ar
+ * \param arname the name of the .a file
+ * \return RList* containg a RArFp* per file
+ *
+ * Open an ar/lib file by name. If filename is NULL, then archive files will be
+ * listed.
+ */
+R_API RList *ar_open_all(const char *arname) {
+	RList *list = r_list_newf ((RListFree)ar_close);
+	if (!list) {
+		return NULL;
+	}
+	if (ar_open_all_cb (arname, (RArOpenManyCB)__ar_open_list_cb, (void *)list) > 0) {
+		return list;
+	}
+	r_list_free (list);
+	return NULL;
+}
+
+/**
+ * \brief Send all files in AR file to callback
+ * \param arname the name of the .a file
+ * \param cb callback function
+ * \param user (void *) data to be passed to callback
+ * \return bool success or error
+ *
+ * Each file in AR will be parsed into a RArFp* and sent to the callback. The
+ * callback is trusted to close all the RArFp*'s it receives. Callback should
+ * return an int <0 on error, 0 if the callback wants to receive more files and
+ * >0 if it's done.
+ */
+R_API int ar_open_all_cb(const char *arname, RArOpenManyCB cb, void *user) {
+	r_return_val_if_fail (arname, -1);
 	RBuffer *b = r_buf_new_file (arname, O_RDWR, 0);
 	if (!b) {
 		r_sys_perror (__FUNCTION__);
-		return NULL;
+		return -1;
 	}
 
 	r_buf_seek (b, 0, R_BUF_END);
@@ -233,53 +304,59 @@ R_API RArFp *ar_open_file(const char *arname, const char *filename) {
 
 	if (!ar_check_magic (b)) {
 		r_buf_free (b);
-		return NULL;
+		return -1;
 	}
 
-	RArFp *arf = arfp_new (b, NULL);
-	if (!arf) {
+	filetable tbl = { NULL, 0, 0 };
+
+	ut32 *refc = R_NEW (ut32);
+	if (!refc) {
 		r_buf_free (b);
-		return NULL;
+		free (refc);
+		return -1;
 	}
+	/* The refcount is artificially inflated here. This allows the callback to
+	 * use ar_close without fear of free'ing the RBuffer. The refcounter must
+	 * be decremented later before returning.
+	*/
+	*refc = 1;
 
-	filetable tbl = {NULL, 0, 0};
-	int r;
-	while ((r = ar_parse_header (arf, &tbl, arsize)) > 0) {
-		if (filename) {
-			if (!strcmp (filename, arf->name)) {
-				// found the right file
-				break;
-			}
-		} else {
-			printf ("%s\n", arf->name);
+	int r = 0;
+	while (!r) {
+		RArFp *arf = arfp_new (b, refc);
+		if (!arf) {
+			r = -1;
+			break;
 		}
-
-		// clean RArFp for next loop
-		arf_clean_name (arf);
+		r = ar_parse_header (arf, &tbl, arsize);
+		if (!r) {
+			r = cb (arf, user);
+		} else {
+			ar_close (arf);
+		}
 	}
 
 	free (tbl.data);
 
-	if (r <= 0) {
-		if (r == 0 && filename) {
-			eprintf ("Cound not find file '%s' in archive '%s'\n", filename, arname);
-		}
-		ar_close (arf); // results in buf being free'd
-		return NULL;
+	if (*refc == 1) {
+		// the cb closed all the RArFp's, so we free these resources
+		free (refc);
+		r_buf_free (b);
+	} else {
+		// return recf to true value
+		(*refc)--;
 	}
 
-	return arf;
+	return r;
 }
 
 R_API int ar_close(RArFp *f) {
 	if (f) {
 		free (f->name);
-		if (f->refcount) {
-			(*f->refcount)--;
-		}
+		(*f->refcount)--;
 
 		// no more files open, clean underlying buffer
-		if (!f->refcount || f->refcount == 0) {
+		if (*f->refcount == 0) {
 			free (f->refcount);
 			r_buf_free (f->buf);
 		}
