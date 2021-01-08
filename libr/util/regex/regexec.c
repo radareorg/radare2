@@ -147,9 +147,6 @@ R_API int r_regex_exec(const RRegex *preg, const char *string, size_t nmatch, RR
 	if (((int)nmatch) < 0) {
 		return R_REGEX_INVARG;
 	}
-	if (!(eflags & R_REGEX_STARTEND)) {
-		memset (pmatch, 0, nmatch);
-	}
 	struct re_guts *g = preg->re_g;
 	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2) {
 		return R_REGEX_BADPAT;

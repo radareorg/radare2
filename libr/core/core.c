@@ -1641,7 +1641,7 @@ static bool find_e_opts(RCore *core, RLineCompletion *completion, RLineBuffer *b
 	const char *pattern = "e (.*)=";
 	RRegex *rx = r_regex_new (pattern, "e");
 	const size_t nmatch = 2;
-	RRegexMatch pmatch[2];
+	RRegexMatch pmatch[2] = {0};
 	bool ret = false;
 
 	// required to get the new list of items to autocomplete for cmd.pdc at least

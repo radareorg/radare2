@@ -150,13 +150,6 @@ R_API bool r_regex_match(const char *pattern, const char *flags, const char *tex
 	int rc = r_regex_exec (&rx, text, 0, 0, re_flags);
 	r_regex_fini (&rx);
 	return rc == 0;
-#if 0
-	regex_t preg;
-	regmatch_t pmatch[NUM_MATCHES];
-	if (regcomp(&preg, reg, REG_EXTENDED))
-		return -1;
-	return (regexec (&preg, str, NUM_MATCHES, pmatch, 0))?1:0;
-#endif
 }
 
 R_API RList *r_regex_match_list(RRegex *rx, const char *text) {

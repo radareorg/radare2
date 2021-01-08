@@ -8,9 +8,10 @@ static int test_regex(void) {
 	if (rc) {
 		printf ("error\n");
 	} else {
-		const size_t nmatch = 32;
-		RRegexMatch pmatch[nmatch];
-		rc = r_regex_exec (&rx, "patata", nmatch, pmatch, 0);
+		#define NMATCH 32
+		RRegexMatch pmatch[NMATCH] = {0};
+		memset (pmatch, 0, sizeof (RRegexMatch) * NMATCH);
+		rc = r_regex_exec (&rx, "patata", NMATCH, pmatch, 0);
 		mu_assert_eq (rc, R_REGEX_NOMATCH, "'mov eax'~=/patata/");
 
 		rc = r_regex_exec (&rx, "hillow", 0, 0, 0);
@@ -50,7 +51,7 @@ static int test_or(void) {
 	mu_assert_eq (res, 0, "mov ebx /(eax|ebx)/e");
 
 	const size_t nmatch = -1;
-	RRegexMatch pmatch[32];
+	RRegexMatch pmatch[32] = {0};
 
 	res = r_regex_exec (rx, "mov eax", nmatch, pmatch, -1);
 	if (res == R_REGEX_INVARG) {
