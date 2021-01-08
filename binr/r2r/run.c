@@ -936,6 +936,14 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 	if (expect_err && strcmp (out->err, expect_err) != 0) {
 		return false;
 	}
+	const char *regexp_out = test->regexp_out.value;
+	if (regexp_out && !r_regex_match (regexp_out, "e", out->out)) {
+		return false;
+	}
+	const char *regexp_err = test->regexp_err.value;
+	if (regexp_err && !r_regex_match (regexp_err, "e", out->err)) {
+		return false;
+	}
 	return true;
 }
 
