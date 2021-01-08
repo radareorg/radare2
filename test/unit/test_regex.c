@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <r_regex.h>
 #include "minunit.h"
 
@@ -9,7 +10,8 @@ static int test_regex(void) {
 		printf ("error\n");
 	} else {
 		const size_t nmatch = 32;
-		RRegexMatch pmatch[nmatch] = {0};
+		RRegexMatch pmatch[nmatch];
+		memset (pmatch, 0, sizeof (RRegexMatch) * nmatch);
 		rc = r_regex_exec (&rx, "patata", nmatch, pmatch, 0);
 		mu_assert_eq (rc, R_REGEX_NOMATCH, "'mov eax'~=/patata/");
 
