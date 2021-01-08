@@ -11,7 +11,9 @@ typedef enum optype_t {
 	ARM_GPR = 1,
 	ARM_CONSTANT = 2,
 	ARM_FP = 4,
-	ARM_MEM_OPT = 8
+	ARM_MEM_OPT = 8,
+	ARM_SHIFT = 16,
+	ARM_EXTEND = 32
 } OpType;
 
 typedef enum regtype_t {
@@ -24,11 +26,18 @@ typedef enum regtype_t {
 } RegType;
 
 typedef enum shifttype_t {
-	ARM_NO_SHIFT = -1,
 	ARM_LSL = 0,
 	ARM_LSR = 1,
 	ARM_ASR = 2,
-	ARM_ROR = 3
+	ARM_ROR = 3,
+	ARM_UXTB,
+	ARM_UXTH,
+	ARM_UXTW,
+	ARM_UXTX,
+	ARM_SXTB,
+	ARM_SXTH,
+	ARM_SXTW,
+	ARM_SXTX
 } ShiftType;
 
 typedef enum logicalop_t {
@@ -48,11 +57,13 @@ typedef struct operand_t {
 		};
 		struct {
 			ut64 immediate;
-			int sign;
+			bool sign;
+			bool preindex;
 		};
 		struct {
 			ut64 shift_amount;
 			ShiftType shift;
+			bool amount_present;
 		};
 		struct {
 			ut32 mem_option;
@@ -67,6 +78,7 @@ typedef struct Opcode_t {
 	ut32 op[3];
 	size_t op_len;
 	ut8 opcode[3];
+	bool writeback;
 	int operands_count;
 	Operand operands[MAX_OPERANDS];
 } ArmOp;
@@ -288,7 +300,7 @@ static ut32 cmp(ArmOp *op) {
 
 	data = k | (op->operands[0].reg & 0x18) << 13 | op->operands[0].reg << 29 | op->operands[1].reg << 8;
 
-	if (op->operands[2].shift != ARM_NO_SHIFT) {
+	if (op->operands[2].type != ARM_SHIFT) {
 		data |= op->operands[2].shift_amount << 18 | op->operands[2].shift << 14;
 	}
 	return data;
@@ -394,72 +406,147 @@ static ut32 reglsop(ArmOp *op, int k) {
 	return data;
 }
 
-// Byte load/store ops
-static ut32 bytelsop(ArmOp *op, int k) {
+// load/store ops
+static ut32 lsop(ArmOp *op, int k, ut64 addr) {
 	ut32 data = UT32_MAX;
-
-	if (op->operands[0].reg_type & ARM_REG64) {
+	int op_count = op->operands_count;
+	if (k == 0x00000098) { // ldrsw
+		if (op->operands[0].type & ARM_GPR
+			&& op->operands[1].type & ARM_CONSTANT) { // (literal)
+			st64 offset = op->operands[1].immediate - addr;
+			if (op->operands[0].reg_type & ARM_REG32 || offset & 0x3
+				|| offset >= 0x100000 || offset < -0x100000) {
+				return data;
+			}
+			offset >>= 2;
+			data = k | (offset & 0x7f800) >> 3 | (offset & 0x7f8) << 13
+				| (offset & 0x7) << 29 | op->operands[0].reg << 24;
+			return data;
+		}
+		k = 0x000080b8;
+	}
+	if (op->operands[0].type != ARM_GPR || op->operands[1].type != ARM_GPR
+		|| op->operands[1].reg_type & ARM_REG32) {
 		return data;
 	}
-	if (op->operands[1].reg_type & ARM_REG32) {
-		return data;
+	k |= op->operands[0].reg << 24 | (op->operands[1].reg & 0x7) << 29 | (op->operands[1].reg & 0x18) << 13;
+	if (!strcmp (op->mnemonic, "ldrb") || !strcmp (op->mnemonic, "ldrh")
+		|| !strcmp (op->mnemonic, "strb") || !strcmp (op->mnemonic, "strh")) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			return data;
+		}
+	} else if (!strcmp (op->mnemonic, "ldrsw")) {
+		if (op->operands[0].reg_type & ARM_REG32) {
+			return data;
+		}
+	} else { // ldrsh, ldrsb
+		if (op->operands[0].reg_type & ARM_REG32) {
+			k |= 0x00004000;
+		}
 	}
+	char width = op->mnemonic[strlen (op->mnemonic) - 1];
 	if (op->operands[2].type & ARM_GPR) {
-		if ((k & 0xf) != 8) {
-			k--;
+		k |= 0x00482000;
+		if (op->operands[3].type == ARM_EXTEND) {
+			switch (op->operands[3].shift) {
+			case ARM_SXTW:
+				k |= 0x00800000;
+			// fall through
+			case ARM_UXTW:
+				if (op->operands[2].reg_type & ARM_REG64) {
+					return data;
+				}
+				break;
+			case ARM_SXTX:
+				k |= 0x00a00000;
+				if (op->operands[2].reg_type & ARM_REG32) {
+					return data;
+				}
+				break;
+			default:
+				return data;
+			}
+		} else if (op->operands[3].type == ARM_SHIFT) {
+			if (op->operands[3].shift != ARM_LSL
+				|| op->operands[2].reg_type & ARM_REG32) {
+				return data;
+			}
+			k |= 0x00200000;
 		}
-		k += 0x00682000;
-		data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
-		data |= op->operands[2].reg << 8;
+		if (op->operands[3].type == ARM_EXTEND || op->operands[3].type == ARM_SHIFT) {
+			if (width == 'b') {
+				if (op->operands[3].shift_amount) {
+					return data;
+				}
+				if (op->operands[3].amount_present) {
+					k |= 0x00100000;
+				}
+			} else if (width == 'h') {
+				switch (op->operands[3].shift_amount) {
+				case 1:
+					k |= 0x00100000;
+				// fall through
+				case 0:
+					break;
+				default:
+					return data;
+				}
+			} else { // w
+				switch (op->operands[3].shift_amount) {
+				case 2:
+					k |= 0x00100000;
+				// fall through
+				case 0:
+					break;
+				default:
+					return data;
+				}
+			}
+		} else { // lsl 0 by default
+			if (op->operands[2].reg_type & ARM_REG32) {
+				return data;
+			}
+			k |= 0x00200000;
+		}
+		data = k | op->operands[2].reg << 8;
 		return data;
 	}
-
-	int n = op->operands[2].immediate;
-	if (n > 0xfff || n < -0x100) {
-		return UT32_MAX;
+	if (op_count > 2 && op->operands[2].type != ARM_CONSTANT) {
+		return data;
 	}
-	// Half ops
-	int halfop = false;
-	if ((k & 0xf) == 8) {
-		halfop = true;
-		if (n == 0 || (countTrailingZeros(n) && n > 0)) {
-			k++;
-		}
-	} else {
+	if (op->writeback && !op->operands[2].preindex) {
+		return data;
+	}
+	int n = op_count == 2 ? 0 : op->operands[2].immediate;
+	if (!op->writeback && (op_count == 2 || op->operands[2].preindex)) { // unsigned offset
 		if (n < 0) {
-			k--;
+			return data;
 		}
-	}
-
-	data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
-
-	int imm = n;
-	int low_shift = 20;
-	int high_shift = 8;
-	int top_shift = 10;
-	if (n < 0) {
-		imm = 0xfff + (n + 1);
-	}
-	if (halfop) {
-		if (imm & 0x1 || n < 0) {
-			data |= (0xf & imm) << low_shift ;
-			data |= (0x7 & (imm >> 4)) << high_shift;
-			data |= (0x7 & (imm >> 6)) << top_shift;
-		} else {
-			data |= (0xf & imm) << (low_shift - 3);
-			data |= (0x7 & (imm >> 4)) << (high_shift + 13);
-			data |= (0x7 & (imm >> 7)) << (top_shift  - 2);
+		if (width == 'b') {
+			if (n > 0xfff) {
+				return data;
+			}
+		} else if (width == 'h') {
+			if (n > 0x1ffe || n & 1) {
+				return data;
+			}
+			n >>= 1;
+		} else { // w
+			if (n > 0x3ffc || n & 3) {
+				return data;
+			}
+			n >>= 2;
 		}
-	} else {
-		if (n < 0) {
-			data |= (0xf & imm) << 20;
-			data |= (0x1f & (imm >> 4)) << 8;
-		} else {
-			data |= (0xf & imm) << 18;
-			data |= (0x3 & (imm >> 4)) << 22;
-			data |= (0x7 & (imm >> 6)) << 8;
-		}
+		data = k | (n & 0x3f) << 18 | (n & 0xfc0) << 2 | 1;
+		return data;
 	}
+	if (n < -0x100 || n >= 0x100) {
+		return data;
+	}
+	if (op->operands[2].preindex) {
+		k |= 0x00080000;
+	}
+	data = k | (n & 0x1f0) << 4 | (n & 0xf) << 20 | 0x00040000;
 	return data;
 }
 
@@ -532,7 +619,7 @@ static ut32 bdot(ArmOp *op, ut64 addr, int k) {
 	return data;
 }
 
-static ut32 mem_barrier (ArmOp *op, ut64 addr, int k) {
+static ut32 mem_barrier(ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
 	data = k;
 	if (!strncmp (op->mnemonic, "isb", 3)) {
@@ -683,7 +770,7 @@ static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 
 		if (op->operands_count == 4) {
 			Operand shift_op = op->operands[3];
-			if (shift_op.shift != ARM_NO_SHIFT) {
+			if (shift_op.type == ARM_SHIFT) {
 				data |= (shift_op.shift_amount & 0x3f) << 10;
 				data |= (shift_op.shift & 0x3) << 22;
 			}
@@ -828,6 +915,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 	int imm_count = 0;
 	int mem_opt = 0;
 	int msr_op_index = 0;
+	size_t index_bound = strcspn (t, "]");
 	if (!token) {
 		return false;
 	}
@@ -848,7 +936,6 @@ static bool parseOperands(char* str, ArmOp *op) {
 		}
 		op->operands[operand].type = ARM_NOTYPE;
 		op->operands[operand].reg_type = ARM_UNDEFINED;
-		op->operands[operand].shift = ARM_NO_SHIFT;
 
 		//parse MSR (immediate) operand 1
 		if (strcmp (op->mnemonic, "msr") == 0 && operand == 1) {
@@ -887,22 +974,86 @@ static bool parseOperands(char* str, ArmOp *op) {
 		}
 
 		if (!strncmp (token, "lsl", 3)) {
+			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_LSL;
 		} else if (!strncmp (token, "lsr", 3)) {
+			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_LSR;
 		} else if (!strncmp (token, "asr", 3)) {
+			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_ASR;
 		} else if (!strncmp (token, "ror", 3)) {
+			op->operands[operand].type = ARM_SHIFT;
 			op->operands[operand].shift = ARM_ROR;
+		} else if (!strncmp (token, "uxtb", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_UXTB;
+		} else if (!strncmp (token, "uxth", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_UXTH;
+		} else if (!strncmp (token, "uxtw", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_UXTW;
+		} else if (!strncmp (token, "uxtx", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_UXTX;
+		} else if (!strncmp (token, "sxtb", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_SXTB;
+		} else if (!strncmp (token, "sxth", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_SXTH;
+		} else if (!strncmp (token, "sxtw", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_SXTW;
+		} else if (!strncmp (token, "sxtx", 4)) {
+			op->operands[operand].type = ARM_EXTEND;
+			op->operands[operand].shift = ARM_SXTX;
 		}
-		if (strlen (token) > 4 && op->operands[operand].shift != ARM_NO_SHIFT) {
+		if (op->operands[operand].type == ARM_SHIFT) {
 			op->operands_count ++;
-			op->operands[operand].shift_amount = r_num_math (NULL, token + 4);
+			token += 3;
+			while (*token && *token == ' ') {
+				token++;
+			}
+			if (*token == '#') {
+				token++;
+			}
+			if (!*token || !isdigit(*token)) {
+				return false;
+			}
+			op->operands[operand].shift_amount = r_num_math (NULL, token);
+			op->operands[operand].amount_present = true;
 			if (op->operands[operand].shift_amount > 63) {
 				free (t);
 				return false;
 			}
 			operand ++;
+			token = next;
+			continue;
+		}
+		if (op->operands[operand].type == ARM_EXTEND) {
+			op->operands_count++;
+			token += 4;
+			while (*token && *token == ' ') {
+				token++;
+			}
+			bool present = false;
+			if (*token == '#') {
+				present = true;
+				++token;
+			}
+			if (!*token || !isdigit(*token)) {
+				if (present) {
+					return false;
+				}
+				op->operands[operand].shift_amount = 0;
+				op->operands[operand].amount_present = false;
+			} else {
+				op->operands[operand].shift_amount = r_num_math (NULL, token);
+				op->operands[operand].amount_present = true;
+			}
+			operand++;
 			token = next;
 			continue;
 		}
@@ -1001,6 +1152,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands_count ++;
 			op->operands[operand].type = ARM_CONSTANT;
 			op->operands[operand].immediate = r_num_math (NULL, token + 1);
+			op->operands[operand].preindex = token - t < index_bound;
 			imm_count++;
 			break;
 		case '-':
@@ -1010,6 +1162,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			op->operands_count ++;
 			op->operands[operand].type = ARM_CONSTANT;
 			op->operands[operand].immediate = r_num_math (NULL, token);
+			op->operands[operand].preindex = token - t < index_bound;
 			imm_count++;
 			break;
 		}
@@ -1036,6 +1189,7 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 	space[0] = '\0';
 	op->mnemonic = in;
 	space ++;
+	op->writeback = strstr (space, "]!") != NULL;
 	return parseOperands (space, op);
 }
 
@@ -1098,31 +1252,31 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrb", 4)) {
-		*op = bytelsop (&ops, 0x00004039);
+		*op = lsop (&ops, 0x00004038, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrh", 4)) {
-		*op = bytelsop (&ops, 0x00004078);
+		*op = lsop (&ops, 0x00004078, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrsh", 5)) {
-		*op = bytelsop (&ops, 0x0000c078);
+		*op = lsop (&ops, 0x00008078, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrsw", 5)) {
-		*op = bytelsop (&ops, 0x000080b8);
+		*op = lsop (&ops, 0x00000098, addr);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldrsb", 5)) {
-		*op = bytelsop (&ops, 0x0000c039);
+		*op = lsop (&ops, 0x00008038, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "strb", 4)) {
-		*op = bytelsop (&ops, 0x00000039);
+		*op = lsop (&ops, 0x00000038, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "strh", 4)) {
-		*op = bytelsop (&ops, 0x00000078);
+		*op = lsop (&ops, 0x00000078, -1);
 		return *op != -1;
 	}
 	if (!strncmp (str, "ldr", 3)) {

@@ -119,90 +119,89 @@ a "ldr x5, [x1, -0x20]" 25005ef8
 a "ldr x5, [x1, -0x32]" 25e05cf8
 a "ldr x8, [x3, 0x10]" 680840f9
 a "ldr x8, [x3, x1]" 686861f8
-a "ldrb w2, [x7, -10]" e2605f38
-a "ldrb w2, [x7, -133]" e2b05738
-a "ldrb w2, [x7, -256]" e2005038
-a "ldrb w2, [x7, 113]" e2c44139
-a "ldrb w2, [x7, 236]" e2b04339
-a "ldrb w2, [x8, -10]" 02615f38
-a "ldrb w2, [x8, -133]" 02b15738
-a "ldrb w2, [x8, -256]" 02015038
-a "ldrb w2, [x8, 113]" 02c54139
-a "ldrb w2, [x8, 236]" 02b14339
-a "ldrb w3, [x7, -10]" e3605f38
-a "ldrb w3, [x7, -133]" e3b05738
-a "ldrb w3, [x7, -256]" e3005038
-a "ldrb w3, [x7, 113]" e3c44139
-a "ldrb w3, [x7, 236]" e3b04339
-a "ldrb w3, [x8, -10]" 03615f38
-a "ldrb w3, [x8, -133]" 03b15738
-a "ldrb w3, [x8, -256]" 03015038
-a "ldrb w3, [x8, 113]" 03c54139
-a "ldrb w3, [x8, 236]" 03b14339
-a "ldrb w3, [x8, x2]" 03696238
-a "ldrh w2, [x7, -10]" e2605f78
-a "ldrh w2, [x7, -133]" e2b05778
-a "ldrh w2, [x7, -256]" e2005078
-a "ldrh w2, [x7, 113]" e2104778
-a "ldrh w2, [x7, 236]" e2d84179
-a "ldrh w2, [x8, -10]" 02615f78
-a "ldrh w2, [x8, -133]" 02b15778
-a "ldrh w2, [x8, -256]" 02015078
-a "ldrh w2, [x8, 113]" 02114778
-a "ldrh w2, [x8, 236]" 02d94179
-a "ldrh w3, [x7, -10]" e3605f78
-a "ldrh w3, [x7, -133]" e3b05778
-a "ldrh w3, [x7, -256]" e3005078
-a "ldrh w3, [x7, 113]" e3104778
-a "ldrh w3, [x7, 236]" e3d84179
-a "ldrh w3, [x8, -10]" 03615f78
-a "ldrh w3, [x8, -133]" 03b15778
-a "ldrh w3, [x8, -256]" 03015078
-a "ldrh w3, [x8, 113]" 03114778
-a "ldrh w3, [x8, 236]" 03d94179
-a "ldrh w3, [x8, x6]" 03696678
-a "ldrsb w2, [x7, -10]" e260df38
-a "ldrsb w2, [x7, -133]" e2b0d738
-a "ldrsb w2, [x7, -256]" e200d038
-a "ldrsb w2, [x7, 113]" e2c4c139
-a "ldrsb w2, [x7, 236]" e2b0c339
-a "ldrsb w2, [x8, -10]" 0261df38
-a "ldrsb w2, [x8, -133]" 02b1d738
-a "ldrsb w2, [x8, -256]" 0201d038
-a "ldrsb w2, [x8, 113]" 02c5c139
-a "ldrsb w2, [x8, 236]" 02b1c339
-a "ldrsb w3, [x7, -10]" e360df38
-a "ldrsb w3, [x7, -133]" e3b0d738
-a "ldrsb w3, [x7, -256]" e300d038
-a "ldrsb w3, [x7, 113]" e3c4c139
-a "ldrsb w3, [x7, 236]" e3b0c339
-a "ldrsb w3, [x8, -10]" 0361df38
-a "ldrsb w3, [x8, -133]" 03b1d738
-a "ldrsb w3, [x8, -256]" 0301d038
-a "ldrsb w3, [x8, 113]" 03c5c139
-a "ldrsb w3, [x8, 236]" 03b1c339
-a "ldrsb w3, [x8, x1]" 0369e138
-a "ldrsh w2, [x7, -10]" e260df78
-a "ldrsh w2, [x7, -133]" e2b0d778
-a "ldrsh w2, [x7, -256]" e200d078
-a "ldrsh w2, [x7, 113]" e210c778
-a "ldrsh w2, [x7, 236]" e2d8c179
-a "ldrsh w2, [x8, -10]" 0261df78
-a "ldrsh w2, [x8, -133]" 02b1d778
-a "ldrsh w2, [x8, -256]" 0201d078
-a "ldrsh w2, [x8, 113]" 0211c778
-a "ldrsh w2, [x8, 236]" 02d9c179
-a "ldrsh w3, [x7, -10]" e360df78
-a "ldrsh w3, [x7, -133]" e3b0d778
-a "ldrsh w3, [x7, -256]" e300d078
-a "ldrsh w3, [x7, 113]" e310c778
-a "ldrsh w3, [x7, 236]" e3d8c179
-a "ldrsh w3, [x8, -10]" 0361df78
-a "ldrsh w3, [x8, -133]" 03b1d778
-a "ldrsh w3, [x8, -256]" 0301d078
-a "ldrsh w3, [x8, 113]" 0311c778
-a "ldrsh w3, [x8, 236]" 03d9c179
-a "ldrsh w3, [x8, x3]" 0369e378
+ad "ldrb w2, [x7, -0xa]!" e26c5f38
+ad "ldrb w2, [x7, -0x85]!" e2bc5738
+ad "ldrb w2, [x7, -0x100]!" e20c5038
+ad "ldrb w2, [x7, 0x71]!" e21c4738
+ad "ldrb w2, [x7, 0xec]!" e2cc4e38
+ad "ldrb w2, [x8, -0xa]!" 026d5f38
+ad "ldrb w2, [x8, -0x85]!" 02bd5738
+ad "ldrb w2, [x8, -0x100]!" 020d5038
+ad "ldrb w2, [x8], 0x70" 02054738
+ad "ldrb w2, [x8], 0xec" 02c54e38
+ad "ldrb w3, [x7, -0xa]!" e36c5f38
+ad "ldrb w4, [x7, -0x85]!" e4bc5738
+ad "ldrb w5, [x7, -0x100]!" e50c5038
+ad "ldrb w6, [x7], 0x71" e6144738
+ad "ldrb w7, [x7]" e7004039
+ad "ldrb w7, [x7, 0xfff]" e7fc7f39
+ad "ldrb w8, [x30, -0xa]!" c86f5f38
+ad "ldrb w9, [x29, -0x85]!" a9bf5738
+ad "ldrb w10, [x28, -0x100]!" 8a0f5038
+ad "ldrb w11, [x27, 0x71]" 6bc74139
+ad "ldrb w12, [x26], 0xec" 4cc74e38
+ad "ldrb w13, [x25, x2]" 2d6b6238
+ad "ldrb w5, [x24, x0, lsl 0]" 057b6038
+ad "ldrh w2, [x23, -0xa]!" e26e5f78
+ad "ldrh w2, [x22, -0x85]!" c2be5778
+ad "ldrh w2, [x21, -0x100]!" a20e5078
+ad "ldrh w18, [x26]" 52034079
+ad "ldrh w2, [x20, 0x71]!" 821e4778
+ad "ldrh w2, [x19], 0xec" 62c64e78
+ad "ldrh w2, [x18, -0xa]!" 426e5f78
+ad "ldrh w2, [x17, -0x85]!" 22be5778
+ad "ldrh w2, [x16, -0x100]!" 020e5078
+ad "ldrh w2, [x15, 0x71]!" e21d4778
+ad "ldrh w2, [x14, 0xf08]" c2115e79
+ad "ldrh w3, [x13, -0xa]!" a36d5f78
+ad "ldrh w3, [x12, -0x85]!" 83bd5778
+ad "ldrh w3, [x8, x6]" 03696678
+ad "ldrh w3, [x8, x6, lsl 1]" 03796678
+ad "ldrsb w2, [x7, -0xa]!" e26cdf38
+ad "ldrsb x2, [x0, -0x85]!" 02bc9738
+ad "ldrsb w2, [x1, -0x100]!" 220cd038
+ad "ldrsb x2, [sp, 0x71]!" e21f8738
+ad "ldrsb w2, [x3, 0xec]!" 62ccce38
+ad "ldrsb x2, [x4, -0xa]!" 826c9f38
+ad "ldrsb w2, [x5, -0x85]!" a2bcd738
+ad "ldrsb x2, [x6, -0x100]!" c20c9038
+ad "ldrsb w11, [x12]" 8b01c039
+ad "ldrsb w2, [x7, 0xfff]" e2fcff39
+ad "ldrsb x2, [x8], 0xf0" 02058f38
+ad "ldrsb w3, [x9, -0xa]!" 236ddf38
+ad "ldrsb x3, [x10, -0x85]!" 43bd9738
+ad "ldrsb w3, [x11, -0x100]!" 630dd038
+ad "ldrsb x3, [x12], 0x70" 83058738
+ad "ldrsb w0, [x13, w14, uxtw 0]" a059ee38
+ad "ldrsb w0, [x15, x16, lsl 0]" e079f038
+ad "ldrsb w0, [x17, w18, sxtw]" 20caf238
+ad "ldrsb w0, [x19, x20, sxtx 0]" 60faf438
+ad "ldrsb w0, [x21, x22]" a06af638
+ad "ldrsh w2, [x7, -0xa]!" e26cdf78
+ad "ldrsh x2, [x7, -0x85]!" e2bc9778
+ad "ldrsh w2, [x7, -0x100]!" e20cd078
+ad "ldrsh w2, [x7, 0x71]!" e21cc778
+ad "ldrsh x2, [x7, 0xec]!" e2cc8e78
+ad "ldrsh x2, [x8, -0xa]!" 026d9f78
+ad "ldrsh w2, [x8], 0x71" 0215c778
+ad "ldrsh x2, [x8], 0xec" 02c58e78
+ad "ldrsh x0, [x1]" 20008079
+ad "ldrsh w3, [x7, 0x72]" e3e4c079
+ad "ldrsh x3, [x7, 0x1ffe]" e3fcbf79
+ad "ldrsh w3, [x8, x3]" 0369e378
+ad "ldrsh w1, [x2, w3, uxtw 1]" 4158e378
+ad "ldrsw x15, [sp, -0xc]!" ef4f9fb8
+ad "ldrsw x15, [sp, 0xc]!" efcf80b8
+ad "ldrsw x0, [x1]" 200080b9
+ad "ldrsw x15, [sp, 0xc]" ef0f80b9
+ad "ldrsw x15, [sp], 0xc" efc780b8
+ad "ldrsw x15, [sp, 0x3ffc]" efffbfb9
+ad "ldrsw x8, [x12, x9]" 8869a9b8
+ad "ldrsw x8, [x12, w9, uxtw]" 8849a9b8
+ad "ldrsw x8, [x12, x9, lsl 2]" 8879a9b8
+ad "ldrsw x8, [x12, x9, sxtx 2]" 88f9a9b8
+ad "ldrsw x5, 0xffffc" e5ff7f98
+ad "ldrsw x5, 0xfffffffffff00000" 05008098
 a "mov x20, x0" f40300aa
 a "mov x9, 5" a90080d2
 a "mov x7, 0x51" 270a80d2
@@ -231,48 +230,28 @@ a "str w3, [x8, -133]" 03b117b8
 a "str w3, [x8, -256]" 030110b8
 a "str w3, [x8, 113]" 031107b8
 a "str w3, [x8, 236]" 03ed00b9
-a "strb w2, [x7, -10]" e2601f38
-a "strb w2, [x7, -133]" e2b01738
-a "strb w2, [x7, -256]" e2001038
-a "strb w2, [x7, 113]" e2c40139
-a "strb w2, [x7, 236]" e2b00339
-a "strb w2, [x8, -10]" 02611f38
-a "strb w2, [x8, -133]" 02b11738
-a "strb w2, [x8, -256]" 02011038
-a "strb w2, [x8, 113]" 02c50139
-a "strb w2, [x8, 236]" 02b10339
-a "strb w3, [x7, -10]" e3601f38
-a "strb w3, [x7, -133]" e3b01738
-a "strb w3, [x7, -256]" e3001038
-a "strb w3, [x7, 113]" e3c40139
-a "strb w3, [x7, 236]" e3b00339
-a "strb w3, [x8, -10]" 03611f38
-a "strb w3, [x8, -133]" 03b11738
-a "strb w3, [x8, -256]" 03011038
-a "strb w3, [x8, 113]" 03c50139
-a "strb w3, [x8, 236]" 03b10339
-a "strb w3, [x8, x4]" 03692438
-a "strh w2, [x7, -10]" e2601f78
-a "strh w2, [x7, -133]" e2b01778
-a "strh w2, [x7, -256]" e2001078
-a "strh w2, [x7, 113]" e2100778
-a "strh w2, [x7, 236]" e2d80179
-a "strh w2, [x8, -10]" 02611f78
-a "strh w2, [x8, -133]" 02b11778
-a "strh w2, [x8, -256]" 02011078
-a "strh w2, [x8, 113]" 02110778
-a "strh w2, [x8, 236]" 02d90179
-a "strh w3, [x7, -10]" e3601f78
-a "strh w3, [x7, -133]" e3b01778
-a "strh w3, [x7, -256]" e3001078
-a "strh w3, [x7, 113]" e3100778
-a "strh w3, [x7, 236]" e3d80179
-a "strh w3, [x8, -10]" 03611f78
-a "strh w3, [x8, -133]" 03b11778
-a "strh w3, [x8, -256]" 03011078
-a "strh w3, [x8, 113]" 03110778
-a "strh w3, [x8, 236]" 03d90179
-a "strh w3, [x8, x2]" 03692278
+ad "strb w2, [x7, -0xa]!" e26c1f38
+ad "strb w2, [x7, -0x85]!" e2bc1738
+ad "strb w2, [x7, -0x100]!" e20c1038
+ad "strb w2, [x7, 0x71]!" e21c0738
+ad "strb w24, [x23]" f8020039
+ad "strb w2, [x7, 0xfff]" e2fc3f39
+ad "strb w2, [x8], 0xff" 02f50f38
+ad "strb w3, [x8, x4]" 03692438
+ad "strb w10, [sp, w15, uxtw]" ea4b2f38
+ad "strb w23, [x28, x17, lsl 0]" 977b3138
+ad "strb w2, [x3, w1, sxtw 0]" 62d82138
+ad "strb w4, [x5, x6, sxtx]" a4e82638
+ad "strh w2, [x7, -0xa]!" e26c1f78
+ad "strh w2, [x7, -0x100]!" e20c1078
+ad "strh w2, [x7, 0xff]!" e2fc0f78
+ad "strh w5, [x14]" c5010079
+ad "strh w2, [x7, 0x1ffe]" e2fc3f79
+ad "strh w3, [x8, x2]" 03692278
+ad "strh w20, [sp, w19, uxtw]" f44b3378
+ad "strh w28, [sp, x26, lsl 1]" fc7b3a78
+ad "strh w18, [x30, w0, sxtw]" d2cb2078
+ad "strh w16, [x25, x5, sxtx 1]" 30fb2578
 a "stur w2, [x7, -10]" e2601fb8
 a "stur w2, [x7, -133]" e2b017b8
 a "stur w2, [x7, -256]" e20010b8
