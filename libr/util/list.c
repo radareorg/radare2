@@ -282,8 +282,8 @@ R_API void *r_list_pop(RList *list) {
 		}
 		data = iter->data;
 		free (iter);
+		list->length--;
 	}
-	list->length--;
 	return data;
 }
 
@@ -302,8 +302,8 @@ R_API void *r_list_pop_head(RList *list) {
 		}
 		data = iter->data;
 		free (iter);
+		list->length--;
 	}
-	list->length--;
 	return data;
 }
 
