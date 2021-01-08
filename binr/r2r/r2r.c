@@ -591,22 +591,30 @@ static RThreadFunctionRet worker_th(RThread *th) {
 	return R_TH_STOP;
 }
 
-static void print_diff(const char *actual, const char *expected, bool diffchar) {
+static void print_diff(const char *actual, const char *expected, bool diffchar, const char *regexp) {
 	RDiff *d = r_diff_new ();
 #ifdef __WINDOWS__
 	d->diff_cmd = "git diff --no-index";
 #endif
+	char *output = (char *)actual;
+	RRegex *rx = r_regex_new (regexp, "en");
+	if (regexp) {
+		RList *matches = r_regex_match_list (rx, actual);
+		output = r_list_to_str (matches, '\0');
+		r_list_free (matches);
+	}
+	r_regex_free (rx);
 	if (diffchar) {
 		RDiffChar *diff = r_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
 		if (diff) {
 			r_diffchar_print (diff);
 			r_diffchar_free (diff);
-			return;
+			goto cleanup;
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
 	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected),
-	                                      (const ut8 *)actual, (int)strlen (actual));
+	                                      (const ut8 *)output, (int)strlen (output));
 	r_diff_free (d);
 
 	RList *lines = r_str_split_duplist (uni, "\n", false);
@@ -652,6 +660,10 @@ static void print_diff(const char *actual, const char *expected, bool diffchar) 
 	r_list_free (lines);
 	free (uni);
 	printf ("\n");
+cleanup:
+	if (regexp) {
+		free (output);
+	}
 }
 
 static R2RProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,
@@ -673,6 +685,16 @@ static R2RProcessOutput *print_runner(const char *file, const char *args[], size
 	return NULL;
 }
 
+R_API bool r_test_cmp_cmd_output(const char *output, const char *expect, const char *regexp) {
+	if (regexp) {
+		if (!r_regex_match (regexp, "e", output)) {
+			return true;
+		}
+		return false;
+	}
+	return !strcmp (expect, output);
+}
+
 static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	if (result->run_failed) {
 		printf (Color_RED "RUN FAILED (e.g. wrong radare2 path)" Color_RESET "\n");
@@ -682,15 +704,23 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	case R2R_TEST_TYPE_CMD: {
 		r2r_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
 		const char *expect = result->test->cmd_test->expect.value;
-		if (expect && strcmp (result->proc_out->out, expect)) {
+		const char *out = result->proc_out->out;
+		const char *regexp_out = result->test->cmd_test->regexp_out.value;
+		if (!expect && regexp_out) {
+			if (!r_test_cmp_cmd_output (out, expect, regexp_out)) {
+				printf ("-- stdout\n");
+				print_diff (out, expect, false, regexp_out);
+			}
+		} else if (expect && !r_test_cmp_cmd_output (out, expect, regexp_out)) {
 			printf ("-- stdout\n");
-			print_diff (result->proc_out->out, expect, false);
+			print_diff (out, expect, false, regexp_out);
 		}
 		expect = result->test->cmd_test->expect_err.value;
 		const char *err = result->proc_out->err;
-		if (expect && strcmp (err, expect)) {
+		const char *regexp_err = result->test->cmd_test->regexp_err.value;
+		if (expect && !r_test_cmp_cmd_output (err, expect, regexp_err)) {
 			printf ("-- stderr\n");
-			print_diff (err, expect, false);
+			print_diff (err, expect, false, regexp_err);
 		} else if (*err) {
 			printf ("-- stderr\n%s\n", err);
 		}
@@ -768,7 +798,9 @@ static void print_state(R2RState *state, ut64 prev_completed) {
 
 	// [x/x] OK  42 BR  0 ...
 	printf (R_CONS_CLEAR_LINE);
-	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", (ut64)r_pvector_len (&state->results), (ut64)r_pvector_len (&state->db->tests));
+	ut64 a = (ut64)r_pvector_len (&state->results);
+	ut64 b = (ut64)r_pvector_len (&state->db->tests);
+	int w = printf ("[%"PFMT64u"/%"PFMT64u"]", a, b);
 	while (w >= 0 && w < 20) {
 		printf (" ");
 		w++;
@@ -1085,6 +1117,7 @@ static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results
 static void interact_diffchar(R2RTestResultInfo *result) {
 	const char *actual = result->proc_out->out;
 	const char *expected = result->test->cmd_test->expect.value;
+	const char *regexp_out = result->test->cmd_test->regexp_out.value;
 	printf ("-- stdout\n");
-	print_diff (actual, expected, true);
+	print_diff (actual, expected, true, regexp_out);
 }

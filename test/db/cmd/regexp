@@ -64,3 +64,11 @@ EXPECT=<<EOF
 0x000001bd hit0_1 ""Test123 ab""
 EOF
 RUN
+
+NAME=regextest
+FILE=--
+CMDS=<<EOF
+?e hello world
+EOF
+REGEXP_OUT=wor
+RUN
