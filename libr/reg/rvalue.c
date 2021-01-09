@@ -285,7 +285,10 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 	int off = BITS2BYTES (item->offset);
 	off += (packidx * packbytes);
 	if (regset->arena->size - off - 1 >= 0) {
-		memcpy (&ret, regset->arena->bytes + off, packbytes);
+		int i;
+		for (i = packbytes - 1; i >= 0; i--) {
+			ret = (ret << 8) | regset->arena->bytes[off + i];
+		}
 	}
 	return ret;
 }
@@ -311,7 +314,10 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	off += (packidx * packbytes);
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
 		ut8 *dst = reg->regset[item->arena].arena->bytes + off;
-		memcpy (dst, (ut8*)&val, packbytes);
+		int i;
+		for (i = 0; i < packbytes; i++, val >>= 8) {
+			dst[i] = val & 0xff;
+		}
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, val);
