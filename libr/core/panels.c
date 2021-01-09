@@ -2849,7 +2849,7 @@ static void __direction_panels_cursor_cb(void *user, int direction) {
 	int sub;
 	switch ((Direction)direction) {
 	case LEFT:
-		if (!core->print->cur_enabled) {
+		if (core->print->cur_enabled) {
 			break;
 		}
 		if (cur->view->sx > 0) {
