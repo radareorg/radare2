@@ -3331,6 +3331,11 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin) {
 	case PE_IMAGE_FILE_MACHINE_ARM64:
 		arch = strdup ("arm");
 		break;
+	case PE_IMAGE_FILE_MACHINE_RISCV32:
+	case PE_IMAGE_FILE_MACHINE_RISCV64:
+	case PE_IMAGE_FILE_MACHINE_RISCV128:
+		arch = strdup ("riscv");
+		break;
 	default:
 		arch = strdup ("x86");
 	}
@@ -4006,6 +4011,9 @@ char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin) {
 		case PE_IMAGE_FILE_MACHINE_THUMB: machine = "Thumb"; break;
 		case PE_IMAGE_FILE_MACHINE_TRICORE: machine = "Tricore"; break;
 		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2: machine = "WCE Mips V2"; break;
+		case PE_IMAGE_FILE_MACHINE_RISCV32: machine = "RISC-V 32-bit"; break;
+		case PE_IMAGE_FILE_MACHINE_RISCV64: machine = "RISC-V 64-bit"; break;
+		case PE_IMAGE_FILE_MACHINE_RISCV128: machine = "RISC-V 128-bit"; break;
 		default: machine = "unknown";
 		}
 	}
