@@ -127,69 +127,69 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	static const char *kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
 		{
 			/* class, inner class */
-			"PUBLIC", /* 0x0001 */
-			"PRIVATE", /* 0x0002 */
-			"PROTECTED", /* 0x0004 */
-			"STATIC", /* 0x0008 */
-			"FINAL", /* 0x0010 */
+			"public", /* 0x0001 */
+			"private", /* 0x0002 */
+			"protected", /* 0x0004 */
+			"static", /* 0x0008 */
+			"final", /* 0x0010 */
 			"?", /* 0x0020 */
 			"?", /* 0x0040 */
 			"?", /* 0x0080 */
 			"?", /* 0x0100 */
-			"INTERFACE", /* 0x0200 */
-			"ABSTRACT", /* 0x0400 */
+			"interface", /* 0x0200 */
+			"abstract", /* 0x0400 */
 			"?", /* 0x0800 */
-			"SYNTHETIC", /* 0x1000 */
-			"ANNOTATION", /* 0x2000 */
-			"ENUM", /* 0x4000 */
+			"synthetic", /* 0x1000 */
+			"annotation", /* 0x2000 */
+			"enum", /* 0x4000 */
 			"?", /* 0x8000 */
-			"VERIFIED", /* 0x10000 */
-			"OPTIMIZED", /* 0x20000 */
+			"verified", /* 0x10000 */
+			"optimized", /* 0x20000 */
 		},
 		{
 			/* method */
-			"PUBLIC", /* 0x0001 */
-			"PRIVATE", /* 0x0002 */
-			"PROTECTED", /* 0x0004 */
-			"STATIC", /* 0x0008 */
-			"FINAL", /* 0x0010 */
-			"SYNCHRONIZED", /* 0x0020 */
-			"BRIDGE", /* 0x0040 */
-			"VARARGS", /* 0x0080 */
-			"NATIVE", /* 0x0100 */
+			"public", /* 0x0001 */
+			"private", /* 0x0002 */
+			"protected", /* 0x0004 */
+			"static", /* 0x0008 */
+			"final", /* 0x0010 */
+			"synchronized", /* 0x0020 */
+			"bridge", /* 0x0040 */
+			"varargs", /* 0x0080 */
+			"native", /* 0x0100 */
 			"?", /* 0x0200 */
-			"ABSTRACT", /* 0x0400 */
-			"STRICT", /* 0x0800 */
-			"SYNTHETIC", /* 0x1000 */
+			"abstract", /* 0x0400 */
+			"strict", /* 0x0800 */
+			"synthetic", /* 0x1000 */
 			"?", /* 0x2000 */
 			"?", /* 0x4000 */
-			"MIRANDA", /* 0x8000 */
-			"CONSTRUCTOR", /* 0x10000 */
-			"DECLARED_SYNCHRONIZED", /* 0x20000 */
+			"miranda", /* 0x8000 */
+			"constructor", /* 0x10000 */
+			"declared_synchronized", /* 0x20000 */
 		},
 		{
 			/* field */
-			"PUBLIC", /* 0x0001 */
-			"PRIVATE", /* 0x0002 */
-			"PROTECTED", /* 0x0004 */
-			"STATIC", /* 0x0008 */
-			"FINAL", /* 0x0010 */
+			"public", /* 0x0001 */
+			"private", /* 0x0002 */
+			"protected", /* 0x0004 */
+			"static", /* 0x0008 */
+			"final", /* 0x0010 */
 			"?", /* 0x0020 */
-			"VOLATILE", /* 0x0040 */
-			"TRANSIENT", /* 0x0080 */
+			"volatile", /* 0x0040 */
+			"transient", /* 0x0080 */
 			"?", /* 0x0100 */
 			"?", /* 0x0200 */
 			"?", /* 0x0400 */
 			"?", /* 0x0800 */
-			"SYNTHETIC", /* 0x1000 */
+			"synthetic", /* 0x1000 */
 			"?", /* 0x2000 */
-			"ENUM", /* 0x4000 */
+			"enum", /* 0x4000 */
 			"?", /* 0x8000 */
 			"?", /* 0x10000 */
 			"?", /* 0x20000 */
 		},
 	};
-	size_t i, count = countOnes (flags);
+	size_t i, count = r_num_bit_count (flags);
 	const int kLongest = 21;
 	const int maxSize = (count + 1) * (kLongest + 1);
 	char* str, *cp;
@@ -221,11 +221,11 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	return str;
 }
 
-static const char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
-	if (type_idx < 0 || type_idx >= bin->header.types_size) {
+static const char *dex_type_descriptor(RBinDexObj *dex, int type_idx) {
+	if (type_idx < 0 || type_idx >= dex->header.types_size) {
 		return NULL;
 	}
-	return getstr (bin, bin->types[type_idx].descriptor_id);
+	return getstr (dex, dex->types[type_idx].descriptor_id);
 }
 
 static ut16 type_desc(RBinDexObj *bin, ut16 type_idx) {
@@ -717,8 +717,9 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = r_bin_dex_new_buf (buf);
-	return *bin_obj != NULL;
+	RBinDexObj *o = r_bin_dex_new_buf (buf, bf->rbin->verbose);
+	*bin_obj = o;
+	return o != NULL;
 }
 
 static ut64 baddr(RBinFile *bf) {
