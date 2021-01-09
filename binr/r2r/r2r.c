@@ -597,13 +597,13 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 	d->diff_cmd = "git diff --no-index";
 #endif
 	char *output = (char *)actual;
-	RRegex *rx = r_regex_new (regexp, "en");
 	if (regexp) {
+		RRegex *rx = r_regex_new (regexp, "en");
 		RList *matches = r_regex_match_list (rx, actual);
 		output = r_list_to_str (matches, '\0');
 		r_list_free (matches);
+		r_regex_free (rx);
 	}
-	r_regex_free (rx);
 	if (diffchar) {
 		RDiffChar *diff = r_diffchar_new ((const ut8 *)expected, (const ut8 *)actual);
 		if (diff) {
@@ -706,19 +706,14 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 		const char *expect = result->test->cmd_test->expect.value;
 		const char *out = result->proc_out->out;
 		const char *regexp_out = result->test->cmd_test->regexp_out.value;
-		if (!expect && regexp_out) {
-			if (!r_test_cmp_cmd_output (out, expect, regexp_out)) {
-				printf ("-- stdout\n");
-				print_diff (out, expect, false, regexp_out);
-			}
-		} else if (expect && !r_test_cmp_cmd_output (out, expect, regexp_out)) {
+		if ((expect || regexp_out) && !r_test_cmp_cmd_output (out, expect, regexp_out)) {
 			printf ("-- stdout\n");
 			print_diff (out, expect, false, regexp_out);
 		}
 		expect = result->test->cmd_test->expect_err.value;
 		const char *err = result->proc_out->err;
 		const char *regexp_err = result->test->cmd_test->regexp_err.value;
-		if (expect && !r_test_cmp_cmd_output (err, expect, regexp_err)) {
+		if ((expect || regexp_err) && !r_test_cmp_cmd_output (err, expect, regexp_err)) {
 			printf ("-- stderr\n");
 			print_diff (err, expect, false, regexp_err);
 		} else if (*err) {
