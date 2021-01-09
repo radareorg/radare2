@@ -764,13 +764,19 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		eprintf ("Error: new (fcn)\n");
 		return false;
 	}
-	fcn->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
+	const char *cc = r_anal_cc_default (core->anal);
+	if (cc) {
+		fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
+	} else {
+		eprintf ("Unknown calling convention\n");
+	}
 #if 0
 	if (!fcn->cc) {
 		fcn->cc = strdup ("reg");
 	}
-#endif
 	r_warn_if_fail (!core->anal->sdb_cc->path || fcn->cc);
+#endif
+	r_warn_if_fail (fcn->cc);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
