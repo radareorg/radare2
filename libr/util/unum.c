@@ -28,6 +28,20 @@ static int r_rand(int mod) {
 #endif
 }
 
+// This function count bits set on 32bit words
+R_API size_t r_num_bit_count(ut32 val) {
+	/* visual studio doesnt supports __buitin_clz */
+#if defined(_MSC_VER) || defined(__TINYC__)
+	size_t count = 0;
+	val = val - ((val >> 1) & 0x55555555);
+	val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
+	count = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+	return count;
+#else
+	return __builtin_clz (val);
+#endif
+}
+
 R_API void r_num_irand(void) {
 	r_num_srand (r_time_now ());
 }
