@@ -121,6 +121,7 @@ typedef struct r_bin_dex_obj_t {
 	char *version;
 	Sdb *kv;
 	char **cal_strings;
+	bool verbose;
 } RBinDexObj;
 
 struct r_bin_dex_str_t {
@@ -160,7 +161,7 @@ struct dex_debug_local_t {
 
 char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin);
 void r_bin_dex_free(struct r_bin_dex_obj_t *bin);
-struct r_bin_dex_obj_t *r_bin_dex_new_buf(RBuffer *buf);
+struct r_bin_dex_obj_t *r_bin_dex_new_buf(RBuffer *buf, bool verbose);
 struct r_bin_dex_str_t *r_bin_dex_get_strings(struct r_bin_dex_obj_t *bin);
 
 #endif

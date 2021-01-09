@@ -648,7 +648,7 @@ R_API st64 r_buf_uleb128(RBuffer *b, ut64 *v) {
 	do {
 		ut8 data;
 		st64 r = r_buf_read (b, &data, sizeof (data));
-		if (r <= 0) {
+		if (r < 1) {
 			return -1;
 		}
 		c = data & 0xff;

@@ -67,7 +67,8 @@ static ut64 get_method_flags(ut64 MA) {
 	return flags;
 }
 
-static ut64 offset_of_method_idx(RBinFile *bf, struct r_bin_dex_obj_t *dex, int idx) {
+static ut64 offset_of_method_idx(RBinFile *bf, int idx) {
+	// RBinDexObj *dex = bf->o->bin_obj;
 	// ut64 off = dex->header.method_offset + idx;
 	return sdb_num_get (mdb, sdb_fmt ("method.%d", idx), 0);
 }
@@ -112,23 +113,6 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 		return (const char *)ptr;
 	}
 	return NULL;
-}
-
-//  TODO move to util
-static int countOnes(ut32 val) {
-	if (!val) {
-		return 0;
-	}
-	/* visual studio doesnt supports __buitin_clz */
-#if defined(_MSC_VER) || defined(__TINYC__)
-	int count = 0;
-	val = val - ((val >> 1) & 0x55555555);
-	val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
-	count = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-	return count;
-#else
-	return __builtin_clz (val);
-#endif
 }
 
 typedef enum {
@@ -876,7 +860,7 @@ static RList *strings(RBinFile *bf) {
 			ptr->vaddr = ptr->paddr = bin->strings[i];
 			ptr->size = len;
 			ptr->length = len;
-			ptr->ordinal = i+1;
+			ptr->ordinal = i + 1;
 			r_list_append (ret, ptr);
 		} else {
 			free (ptr);
@@ -1590,10 +1574,10 @@ beach:
 	return;
 }
 
-static bool is_class_idx_in_code_classes(RBinDexObj *bin, int class_idx) {
+static bool is_class_idx_in_code_classes(RBinDexObj *dex, int class_idx) {
 	int i;
-	for (i = 0; i < bin->header.class_size; i++) {
-		if (class_idx == bin->classes[i].class_id) {
+	for (i = 0; i < dex->header.class_size; i++) {
+		if (class_idx == dex->classes[i].class_id) {
 			return true;
 		}
 	}
@@ -1672,20 +1656,20 @@ static bool dex_loadcode(RBinFile *bf) {
 	}
 	if (methods) {
 		int import_count = 0;
-		int sym_count = bin->methods_list->length;
+		int sym_count = dex->methods_list->length;
 
-		for (i = 0; i < bin->header.method_size; i++) {
+		for (i = 0; i < dex->header.method_size; i++) {
 			int len = 0;
 			if (methods[i]) {
 				continue;
 			}
-			if (bin->methods[i].class_id >= bin->header.types_size) {
+			if (dex->methods[i].class_id >= dex->header.types_size) {
 				continue;
 			}
-			if (is_class_idx_in_code_classes (bin, bin->methods[i].class_id)) {
+			if (is_class_idx_in_code_classes (dex, dex->methods[i].class_id)) {
 				continue;
 			}
-			const char *className = getstr (bin, bin->types[bin->methods[i].class_id].descriptor_id);
+			const char *className = getstr (dex, dex->types[dex->methods[i].class_id].descriptor_id);
 			if (!className) {
 				continue;
 			}
@@ -1707,8 +1691,8 @@ static bool dex_loadcode(RBinFile *bf) {
 				continue;
 			}
 			r_str_replace_char (class_name, ';', 0);
-			const char *method_name = dex_method_name (bin, i);
-			char *signature = dex_method_signature (bin, i);
+			const char *method_name = dex_method_name (dex, i);
+			char *signature = dex_method_signature (dex, i);
 			if (!R_STR_ISEMPTY (method_name)) {
 				RBinImport *imp = R_NEW0 (RBinImport);
 				if (!imp) {
@@ -1721,12 +1705,12 @@ static bool dex_loadcode(RBinFile *bf) {
 				imp->type = "FUNC";
 				imp->bind = "NONE";
 				imp->ordinal = import_count++;
-				r_list_append (bin->imports_list, imp);
+				r_list_append (dex->imports_list, imp);
 
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
 				if (!sym) {
 					free (methods);
-					free (signature);
+					free ((void *)signature);
 					free (class_name);
 					return false;
 				}
@@ -1736,13 +1720,13 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym->bind = "NONE";
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
-				sym->paddr = sym->vaddr = bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
+				sym->paddr = sym->vaddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
-				r_list_append (bin->methods_list, sym);
+				r_list_append (dex->methods_list, sym);
 				const char *mname = sdb_fmt ("method.%"PFMT64d, (ut64)i);
 				sdb_num_set (mdb, mname, sym->paddr, 0);
 			}
-			free (signature);
+			free ((void *)signature);
 			free (class_name);
 		}
 		free (methods);
@@ -1752,11 +1736,11 @@ static bool dex_loadcode(RBinFile *bf) {
 
 static RList* imports(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
-	if (!bin->imports_list) {
+	RBinDexObj *dex = (RBinDexObj*) bf->o->bin_obj;
+	if (!dex->imports_list) {
 		dex_loadcode (bf);
 	}
-	return bin->imports_list;
+	return dex->imports_list;
 }
 
 static RList *trycatch(RBinFile *bf) {
@@ -1862,7 +1846,7 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 	switch (type) {
 	case 'm': // methods
 		// TODO: ADD CHECK
-		return offset_of_method_idx (bf, dex, idx);
+		return offset_of_method_idx (bf, idx);
 	case 'f':
 		return dex_field_offset (dex, idx);
 	case 'o': // objects
@@ -1885,7 +1869,7 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 
 static char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	simplifiedDemangling = sd; // XXX kill globals
-	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
+	RBinDexObj *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
 		return dex_method_fullname (dex, idx);

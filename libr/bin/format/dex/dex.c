@@ -4,6 +4,8 @@
 #include <r_util.h>
 #include "dex.h"
 
+#define bprintf if (dex->verbose) eprintf
+
 char* r_bin_dex_get_version(RBinDexObj *bin) {
 	r_return_val_if_fail (bin, NULL);
 	char* version = calloc (1, 8);

@@ -185,7 +185,6 @@ static RList *symbols (RBinFile *bf) {
 
 	RListIter *is_exp = NULL;
 	RBinWasmCodeEntry *func;
-	// RBinWasmExportEntry *export = NULL;
 	r_list_foreach (codes, iter, func) {
 		if (!(ptr = R_NEW0 (RBinSymbol))) {
 			goto bad_alloc;
