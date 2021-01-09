@@ -2050,17 +2050,25 @@ PUSH { r4, r5, r6, r7, lr }
 		r_strbuf_appendf (&op->esil, "%d,sp,=[*]",
 			insn->detail->arm.op_count);
 		break;
+	case ARM_INS_STMDA:
+	case ARM_INS_STMDB:
 	case ARM_INS_STM:
-		r_strbuf_setf (&op->esil, "%s", "");
+	case ARM_INS_STMIB: {
+		int direction = (insn->id == ARM_INS_STMDA || insn->id == ARM_INS_STMDB ? -1 : 1);
+		int offset = direction > 0 ? -1 : -insn->detail->arm.op_count;
+		if (insn->id == ARM_INS_STMDA || insn->id == ARM_INS_STMIB) {
+			offset++;
+		}
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf (&op->esil, "%s,%s,%d,%c,=[4],",
-				REG (i), ARG (0), R_ABS ((i - 1) * 4), i > 0? '+': '-');
+			r_strbuf_appendf (&op->esil, "%s,%s,%d,+,=[4],",
+				REG (i), ARG (0), (i + offset) * 4);
 		}
 		if (insn->detail->arm.writeback == true) { //writeback, reg should be incremented
 			r_strbuf_appendf (&op->esil, "%d,%s,+=,",
-				(insn->detail->arm.op_count - 1) * 4, ARG (0));
+				direction * (insn->detail->arm.op_count - 1) * 4, ARG (0));
 		}
 		break;
+	}
 	case ARM_INS_VSTMIA:
 		r_strbuf_set (&op->esil, "");
 		width = 0;
@@ -2141,15 +2149,24 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%d,sp,+=",
 			4 * insn->detail->arm.op_count);
 		break;
+	case ARM_INS_LDMDA:
+	case ARM_INS_LDMDB:
 	case ARM_INS_LDM:
+	case ARM_INS_LDMIB: {
+		int direction = (insn->id == ARM_INS_LDMDA || insn->id == ARM_INS_LDMDB) ? -1 : 1;
+		int offset = direction > 0 ? -1 : -insn->detail->arm.op_count;
+		if (insn->id == ARM_INS_LDMDA || insn->id == ARM_INS_LDMIB) {
+			offset++;
+		}
 		for (i = 1; i < insn->detail->arm.op_count; i++) {
-			r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=,", ARG (0), (i - 1) * 4, REG (i));
+			r_strbuf_appendf (&op->esil, "%s,%d,+,[4],%s,=,", ARG (0), (i + offset) * 4, REG (i));
 		}
-		if (insn->detail->arm.writeback) { //writeback, reg should be incremented
+		if (insn->detail->arm.writeback) {
 			r_strbuf_appendf (&op->esil, "%d,%s,+=,",
-				(insn->detail->arm.op_count - 1) * 4, ARG (0));
+				direction * (insn->detail->arm.op_count - 1) * 4, ARG (0));
 		}
-        break;
+		break;
+	}
 	case ARM_INS_CMP:
 		r_strbuf_appendf (&op->esil, "%s,%s,==", ARG (1), ARG (0));
 		break;
