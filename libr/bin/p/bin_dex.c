@@ -1587,68 +1587,65 @@ static bool is_class_idx_in_code_classes(RBinDexObj *dex, int class_idx) {
 
 static bool dex_loadcode(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, false);
-
+	RBinDexObj *dex = bf->o->bin_obj;
+	dex->verbose = true;
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
-	RBinDexObj *bin = bf->o->bin_obj;
 	size_t i;
 	int *methods = NULL;
 	int sym_count = 0;
-
 	// doublecheck??
-	if (bin->methods_list) {
+	if (dex->methods_list) {
 		return false;
 	}
-	bin->version = r_bin_dex_get_version (bin);
-	bin->code_from = UT64_MAX;
-	bin->code_to = 0;
-	bin->methods_list = r_list_newf ((RListFree)free);
-	if (!bin->methods_list) {
+	dex->version = r_bin_dex_get_version (dex);
+	dex->code_from = UT64_MAX;
+	dex->code_to = 0;
+	dex->methods_list = r_list_newf ((RListFree)free);
+	if (!dex->methods_list) {
 		return false;
 	}
-	bin->imports_list = r_list_newf ((RListFree)free);
-	if (!bin->imports_list) {
-		r_list_free (bin->methods_list);
+	dex->imports_list = r_list_newf ((RListFree)free);
+	if (!dex->imports_list) {
+		r_list_free (dex->methods_list);
 		return false;
 	}
-	bin->lines_list = r_list_newf ((RListFree)free);
-	if (!bin->lines_list) {
-		r_list_free (bin->methods_list);
-		r_list_free (bin->imports_list);
+	dex->lines_list = r_list_newf ((RListFree)free);
+	if (!dex->lines_list) {
 		return false;
 	}
-	bin->classes_list = r_list_newf ((RListFree)r_bin_class_free);
-	if (!bin->classes_list) {
-		r_list_free (bin->methods_list);
-		r_list_free (bin->imports_list);
-		r_list_free (bin->lines_list);
+	dex->classes_list = r_list_newf ((RListFree)r_bin_class_free);
+	if (!dex->classes_list) {
+		r_list_free (dex->methods_list);
+		r_list_free (dex->lines_list);
+		r_list_free (dex->imports_list);
 		return false;
 	}
 
-	if (bin->header.method_size>bin->size) {
-		bin->header.method_size = 0;
+	if (dex->header.method_size>dex->size) {
+		dex->header.method_size = 0;
 		return false;
 	}
 
 	/* WrapDown the header sizes to avoid huge allocations */
-	bin->header.method_size = R_MIN (bin->header.method_size, bin->size);
-	bin->header.class_size = R_MIN (bin->header.class_size, bin->size);
-	bin->header.strings_size = R_MIN (bin->header.strings_size, bin->size);
+	dex->header.method_size = R_MIN (dex->header.method_size, dex->size);
+	dex->header.class_size = R_MIN (dex->header.class_size, dex->size);
+	dex->header.strings_size = R_MIN (dex->header.strings_size, dex->size);
 
 	// TODO: is this posible after R_MIN ??
-	if (bin->header.strings_size > bin->size) {
+	if (dex->header.strings_size > dex->size) {
 		eprintf ("Invalid strings size\n");
 		return false;
 	}
 	dexSubsystem = NULL;
 
-	if (bin->classes) {
-		ut64 amount = sizeof (int) * bin->header.method_size;
-		if (amount > UT32_MAX || amount < bin->header.method_size) {
+	if (dex->classes) {
+		ut64 amount = sizeof (int) * dex->header.method_size;
+		if (amount > UT32_MAX || amount < dex->header.method_size) {
 			return false;
 		}
 		methods = calloc (1, amount + 1);
-		for (i = 0; i < bin->header.class_size; i++) {
-			struct dex_class_t *c = &bin->classes[i];
+		for (i = 0; i < dex->header.class_size; i++) {
+			struct dex_class_t *c = &dex->classes[i];
 			if (dexdump) {
 				cb_printf ("Class #%zu            -\n", i);
 			}
