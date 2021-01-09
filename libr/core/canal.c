@@ -756,13 +756,10 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	ut64 *next = NULL;
 	int fcnlen;
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
+	r_warn_if_fail (fcn);
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 	if (!fcnpfx) {
 		fcnpfx = "fcn";
-	}
-	if (!fcn) {
-		eprintf ("Error: new (fcn)\n");
-		return false;
 	}
 	const char *cc = r_anal_cc_default (core->anal);
 	if (cc) {
@@ -770,12 +767,6 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	} else {
 		eprintf ("Unknown calling convention\n");
 	}
-#if 0
-	if (!fcn->cc) {
-		fcn->cc = strdup ("reg");
-	}
-	r_warn_if_fail (!core->anal->sdb_cc->path || fcn->cc);
-#endif
 	r_warn_if_fail (fcn->cc);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
