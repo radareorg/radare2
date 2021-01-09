@@ -1865,7 +1865,7 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 	return -1;
 }
 
-static char *getname(RBinFile *bf, int type, int idx, bool sd) {
+static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	simplifiedDemangling = sd; // XXX kill globals
 	RBinDexObj *dex = bf->o->bin_obj;
 	switch (type) {
