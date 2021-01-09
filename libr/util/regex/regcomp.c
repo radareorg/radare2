@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include "r_regex.h"
 #include "r_util/r_str.h"
+#include "r_util/r_assert.h"
 
 #include "utils.h"
 #include "regex2.h"
@@ -177,6 +178,7 @@ R_API RList *r_regex_match_list(RRegex *rx, const char *text) {
 }
 
 R_API RRegex *r_regex_new(const char *pattern, const char *flags) {
+	r_return_val_if_fail (pattern, NULL);
 	RRegex *r, rx = {0};
 	if (r_regex_init (&rx, pattern, r_regex_flags (flags))) {
 		return NULL;
