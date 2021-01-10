@@ -10,7 +10,7 @@ static const char *r_io_get_individual_schema(const char *file) {
 	if (!strncmp ("arall://", file, 8)) {
 		return "ar://";
 	}
-	if (!strncmp ("liball://", file, 9)) {
+	if (r_str_startswith (file, "liball://")) {
 		return "lib://";
 	}
 	return NULL;
