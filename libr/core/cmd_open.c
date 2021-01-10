@@ -1243,8 +1243,20 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 		p->cb_printf ("o %s 0x%08"PFMT64x" %s\n", desc->uri, bf->o->baddr, r_str_rwx_i (desc->perm));
 	} else {
 		if (!strstr (desc->uri, "null://")) {
-			// TODO: get associated map and rebase it?
-			p->cb_printf ("on %s\n", desc->uri);
+			ut64 maddr = 0LL;
+			RList *maps = r_io_map_get_for_fd (core->io, desc->fd);
+			RListIter *iter;
+			RIOMap *map;
+			r_list_foreach (maps, iter, map) {
+				maddr = map->itv.addr + map->delta;
+				// XXX only reloading the first map is not correct but works for some generic cases
+				break;
+			}
+			if (maddr != 0LL) {
+				p->cb_printf ("on %s 0x%08"PFMT64x"\n", desc->uri, maddr);
+			} else {
+				p->cb_printf ("on %s\n", desc->uri);
+			}
 		}
 	}
 	return true;
