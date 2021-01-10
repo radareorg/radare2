@@ -104,53 +104,52 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         path: dist/debian/*/*.deb
-  linux-meson-rpm:
-    runs-on: ubuntu-18.04
-    container: centos:8
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Prepare Skeleton
-      run: |
-        mkdir -p SOURCES SPECS
-        cp -f dist/rpm/*spec SPECS
-        wget -O https://github.com/radareorg/radare2/archive/master/radare2-5.1.0-git.tar.gz
-    - name: rpmbuild
-      uses: robertdebock/rpmbuild-action@1.1.1
-    - name: Pub
-      uses: actions/upload-artifact@v2
-      with:
-        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
-  centos-meson-rpm:
-    runs-on: ubuntu-18.04
-    container: centos:8
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: rpmbuild
-      uses: robertdebock/rpmbuild-action@1.1.1
-    - name: Install tools for CentOS:8
-      run: |
-        yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
-        pip3.8 install meson ninja r2pipe
-    - name: Building with Meson
-      run: |
-        meson build
-        ninja -C build
-        ninja -C build install
-    - name: RPM Packaging
-      run: |
-        cp -f dist/rpm/radare2.spec .
-        rpmdev-setuptree
-        mkdir -p rpmbuild/SOURCES
-        cd rpmbuild/SOURCES
-        wget https://github.com/radareorg/radare2/archive/5860c3efc12d4b75e72bdce4b1d3834599620913/radare2-5.1.0-git.tar.gz
-        cd -
-        rpmbuild -ba radare2.spec
-    - name: Pub
-      uses: actions/upload-artifact@v2
-      with:
-        path: rpmbuild/RPMS/*/*.rpm
+## RPM PACKAGES DISABLED
+#  linux-meson-rpm:
+#    runs-on: ubuntu-18.04
+#    container: centos:8
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - name: Prepare Skeleton
+#      run: |
+#        mkdir -p SOURCES SPECS
+#        cp -f dist/rpm/*spec SPECS
+#        wget -O https://github.com/radareorg/radare2/archive/master/radare2-5.1.0-git.tar.gz
+#    - name: rpmbuild
+#      uses: robertdebock/rpmbuild-action@1.1.1
+#    - name: Pub
+#      uses: actions/upload-artifact@v2
+#      with:
+#        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
+#  centos-meson-rpm:
+#    runs-on: ubuntu-18.04
+#    container: centos:8
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - name: Install tools for CentOS:8
+#      run: |
+#        yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
+#        pip3.8 install meson ninja r2pipe
+#    - name: Building with Meson
+#      run: |
+#        meson build
+#        ninja -C build
+#        ninja -C build install
+#    - name: RPM Packaging
+#      run: |
+#        cp -f dist/rpm/radare2.spec .
+#        rpmdev-setuptree
+#        mkdir -p rpmbuild/SOURCES
+#        cd rpmbuild/SOURCES
+#        wget https://github.com/radareorg/radare2/archive/5860c3efc12d4b75e72bdce4b1d3834599620913/radare2-5.1.0-git.tar.gz
+#        cd -
+#        rpmbuild -ba radare2.spec
+#    - name: Pub
+#      uses: actions/upload-artifact@v2
+#      with:
+#        path: rpmbuild/RPMS/*/*.rpm
   linux-asan:
     runs-on: ubuntu-latest
     if: contains(github.ref, 'release-')
