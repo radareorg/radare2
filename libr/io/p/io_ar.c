@@ -33,7 +33,7 @@ static int r_io_ar_close(RIODesc *fd) {
 
 static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 	r_return_val_if_fail (r_io_ar_plugin_open (io, file, false), NULL);
-	char *arname = strstr (file, "://") + 3;
+	const char *arname = strstr (file, "://") + 3;
 	char *filename = strstr (arname, "//");
 	if (filename) {
 		*filename = 0;
