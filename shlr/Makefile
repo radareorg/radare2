@@ -128,6 +128,7 @@ $(SDB_LIBA):
 	$(MAKE) sdb-target
 
 sdbs: $(SDB_HOST)
+	$(MAKE) $(SDB_LIBA)
 
 sdb-host:
 	@echo
@@ -139,6 +140,7 @@ sdb-host:
 	$(MAKE) -C sdb/src "CC=${HOST_CC}" LDFLAGS='${HOST_LDFLAGS}' CPPFLAGS='' CFLAGS='${HOST_CFLAGS} ${PIC}' bin
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/src/.sdb${BUILD_EXT_EXE}
 	cp -f sdb/src/sdb${BUILD_EXT_EXE} sdb/sdb$(BUILD_EXT_EXE)
+	rm -f $(SDB_LIBA)
 	-file sdb/sdb$(BUILD_EXT_EXE)
 
 sdb-target:
