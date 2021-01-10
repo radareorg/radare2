@@ -90,7 +90,7 @@ static RList *r_io_ar_open_many(RIO *io, const char *file, int rw, int mode) {
 	data.rw = rw;
 	data.mode = mode;
 	data.arname = strstr (file, "://") + 3;
-	data.list = r_list_newf ((RListFree *)r_io_ar_close);
+	data.list = r_list_newf ((RListFree)r_io_ar_close);
 	if (data.list && ar_open_all_cb (data.arname, (RArOpenManyCB)__io_ar_list, (void *)&data) < 0) {
 		r_list_free (data.list);
 		return NULL;
