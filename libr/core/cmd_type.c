@@ -1114,7 +1114,7 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd0 (core, "ts*");
 			break;
 		case 0: // "tc"
-			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec;tcc");
+			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");
 			break;
 		case 'd': // "tcd"
 			r_core_cmd0 (core, "tud;tsd;ttc;ted");
