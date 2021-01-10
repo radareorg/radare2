@@ -55,7 +55,7 @@ typedef struct ar_many_data {
 	const char *schema;
 	const char *arname;
 	RIO *io;
-	int rw;
+	bool rw;
 	int mode;
 	RList *list;
 } ar_many_data;
