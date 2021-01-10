@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2021 - pancake, maijin */
 
 #include <r_core.h>
 #include <r_util/r_graph_drawable.h>
@@ -7255,14 +7255,13 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 	RSyscallItem *si;
 	RListIter *iter;
 	RList *list;
-	RNum *num = NULL;
 	int n;
 
 	switch (input[0]) {
 	case 'c': // "asc"
 		if (input[1] == 'a') {
 			if (input[2] == ' ') {
-				if (!isalpha ((ut8)input[3]) && (n = r_num_math (num, input + 3)) >= 0 ) {
+				if (!isalpha ((ut8)input[3]) && (n = r_num_math (core->num, input + 3)) >= 0 ) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
 						r_cons_printf (".equ SYS_%s %s\n", si->name, syscallNumber (n));
@@ -7286,7 +7285,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] == ' ') {
-				if (!isalpha ((ut8)input[2]) && (n = r_num_math (num, input + 2)) >= 0 ) {
+				if (!isalpha ((ut8)input[2]) && (n = r_num_math (core->num, input + 2)) >= 0) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
 						r_cons_printf ("#define SYS_%s %s\n", si->name, syscallNumber (n));
@@ -7320,8 +7319,11 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			if (sc_number != 0) {
 				r_cons_printf ("%s\n", syscallNumber (sc_number));
 			} else {
-				int sc_number = r_num_math (num, sc_name);
+				sc_number = r_num_math (core->num, sc_name);
 				si = r_syscall_get (core->anal->syscall, sc_number, -1);
+				if (!si) {
+					si = r_syscall_get (core->anal->syscall, -1, sc_number);
+				}
 				if (si) {
 					r_cons_println (si->name);
 				} else {
