@@ -110,6 +110,25 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Prepare Skeleton
+      run: |
+        mkdir -p SOURCES SPECS
+        cp -f dist/rpm/*spec SPECS
+        wget -O https://github.com/radareorg/radare2/archive/master/radare2-5.1.0-git.tar.gz
+    - name: rpmbuild
+      uses: robertdebock/rpmbuild-action@1.1.1
+    - name: Pub
+      uses: actions/upload-artifact@v2
+      with:
+        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
+  centos-meson-rpm:
+    runs-on: ubuntu-18.04
+    container: centos:8
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: rpmbuild
+      uses: robertdebock/rpmbuild-action@1.1.1
     - name: Install tools for CentOS:8
       run: |
         yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
