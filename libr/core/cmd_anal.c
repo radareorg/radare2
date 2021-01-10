@@ -7315,17 +7315,17 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		break;
 	case 'l': // "asl"
 		if (input[1] == ' ') {
-			if (!isalpha ((ut8)input[2]) && (n = r_num_math (num, input + 2)) >= 0 ) {
-				si = r_syscall_get (core->anal->syscall, n, -1);
-				if (si)
-					r_cons_println (si->name);
-				else eprintf ("Unknown syscall number\n");
+			const char *sc_name = r_str_trim_head_ro (input + 2);
+			int sc_number = r_syscall_get_num (core->anal->syscall, sc_name);
+			if (sc_number != 0) {
+				r_cons_printf ("%s\n", syscallNumber (sc_number));
 			} else {
-				n = r_syscall_get_num (core->anal->syscall, input + 2);
-				if (n != -1) {
-					r_cons_printf ("%s\n", syscallNumber (n));
+				int sc_number = r_num_math (num, sc_name);
+				si = r_syscall_get (core->anal->syscall, sc_number, -1);
+				if (si) {
+					r_cons_println (si->name);
 				} else {
-					eprintf ("Unknown syscall name\n");
+					eprintf ("Unknown syscall number\n");
 				}
 			}
 		} else {
