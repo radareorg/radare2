@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -574,15 +574,21 @@ static void load_scripts_for(RCore *core, const char *name) {
 typedef struct {
 	const char *name;
 	bool found;
-} RCoreFileData;
+} MyFileData;
 
 static bool filecb(void *user, void *data, ut32 id) {
-	RCoreFileData *fd = user;
+	MyFileData *filedata = user;
 	RIODesc *desc = (RIODesc *)data;
-	if (!strcmp (desc->name, fd->name)) {
-		fd->found = true;
+	if (!strcmp (desc->name, filedata->name)) {
+		filedata->found = true;
 	}
 	return true;
+}
+
+static bool file_is_loaded(RCore *core, const char *lib) {
+	MyFileData filedata = {lib, false};
+	r_id_storage_foreach (r->io->files, filecb, &filedata);
+	return filedata.found;
 }
 
 typedef struct {
@@ -727,13 +733,10 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		RListIter *iter;
 		RList *libs = r_bin_get_libs (r->bin);
 		r_list_foreach (libs, iter, lib) {
-			eprintf ("[bin.libs] Opening %s\n", lib);
-			RCoreFileData filedata = {lib, false};
-			r_id_storage_foreach (r->io->files, filecb, &filedata);
-			if (filedata.found) {
-				eprintf ("Already opened\n");
+			if (file_is_loaded (core, lib)) {
 				continue;
 			}
+			eprintf ("[bin.libs] Opening %s\n", lib);
 			ut64 baddr = r_io_map_location (r->io, 0x200000);
 			if (baddr != UT64_MAX) {
 				r_core_file_loadlib (r, lib, baddr);
