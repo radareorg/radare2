@@ -85,7 +85,7 @@ jobs:
     - name: Building static r2
       run: |
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
-        sys/static.sh > /dev/null
+        NOLTO=1 sys/static.sh
         make -C binr/blob
         xz binr/blob/radare2
     - name: Pub
@@ -241,7 +241,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [x86_64, arm, aarch64]
+      #  name: [x86_64, arm, aarch64]
+        name: [aarch64]
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
