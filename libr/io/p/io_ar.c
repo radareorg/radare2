@@ -7,7 +7,7 @@
 
 
 static const char *r_io_get_individual_schema(const char *file) {
-	if (!strncmp ("arall://", file, 8)) {
+	if (r_str_startswith (file, "arall://")) {
 		return "ar://";
 	}
 	if (r_str_startswith (file, "liball://")) {
