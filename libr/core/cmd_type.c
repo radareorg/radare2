@@ -227,7 +227,7 @@ static void cmd_afcl(RCore *core, const char *input) {
 			free (sig);
 		} else if (mode == '*') {
 			char *ccexpr = r_anal_cc_get (core->anal, cc);
-			r_cons_printf ("tfc %s\n", ccexpr);
+			r_cons_printf ("tcc %s\n", ccexpr);
 			free (ccexpr);
 		} else {
 			r_cons_println (cc);
@@ -1104,6 +1104,8 @@ static int cmd_type(void *data, const char *input) {
 					r_core_cmdf (core, "ttc %s", name);
 				} else if (r_str_startswith (type, "func")) {
 					r_core_cmdf (core, "tfc %s", name);
+				} else {
+					eprintf ("unk\n");
 				}
 			}
 			break;

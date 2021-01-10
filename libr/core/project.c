@@ -539,6 +539,7 @@ static bool simple_project_save_script(RCore *core, const char *file, int opts) 
 	}
 
 	r_core_cmd0 (core, "o*");
+	r_core_cmd0 (core, "tcc*");
 	// r_core_cmdf (core, "om**");
 	r_core_cmdf (core, "wc*");
 
@@ -612,6 +613,7 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 		r_cons_flush ();
 	}
 	r_core_cmd (core, "o*", 0);
+	r_core_cmd0 (core, "tcc*");
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_str_write (fd, "# functions\n");
 		r_str_write (fd, "fs functions\n");
