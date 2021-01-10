@@ -9,7 +9,8 @@
 static const char *r_io_get_individual_schema(const char *file) {
 	if (!strncmp ("arall://", file, 8)) {
 		return "ar://";
-	} else if (!strncmp ("liball://", file, 9)) {
+	}
+	if (!strncmp ("liball://", file, 9)) {
 		return "lib://";
 	}
 	return NULL;
