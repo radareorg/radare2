@@ -71,7 +71,7 @@ static int __io_ar_list(RArFp *arf, void *user) {
 		return -1; // stop error
 	}
 
-	des->name = strdup(arf->name);
+	des->name = strdup (arf->name);
 	if (!r_list_append (data->list, des)) {
 		r_io_ar_close (des);
 		return -1; // stop error
