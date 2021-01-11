@@ -4,7 +4,6 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_bind.h>
-#include <r_util/r_big.h>
 
 // should these be here?
 #include <math.h>
@@ -428,18 +427,6 @@ R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 	char str[64];
 	snprintf (str, sizeof (str) - 1, "0x%" PFMT64x, num);
 	return r_anal_esil_push (esil, str);
-}
-
-R_API bool r_anal_esil_pushbig(RAnalEsil *esil, ut8 *num, ut32 size) {
-	RNumBig *big_num = r_big_new();
-	memcpy(big_num, num, size % R_BIG_ARRAY_SIZE);
-	return r_anal_esil_push (esil, r_big_to_hexstr(big_num));
-}
-
-// these numbers are jacked
-R_API RNumBig* r_anal_esil_get_big(RAnalEsil *esil, const char *str, RNumBig *big_num) {
-	r_big_from_hexstr(big_num, str);
-	return big_num;
 }
 
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
@@ -2925,13 +2912,11 @@ static bool esil_set_delay_slot(RAnalEsil *esil) {
 	return ret;
 }
 
-static int esil_get_parm_float(RAnalEsil *esil, const char *str, double *num)
-{
+static int esil_get_parm_float(RAnalEsil *esil, const char *str, double *num) {
 	return r_anal_esil_get_parm(esil, str, (ut64 *)num);
 }
 
-static bool esil_pushnum_float(RAnalEsil *esil, double num)
-{
+static bool esil_pushnum_float(RAnalEsil *esil, double num) {
 	return r_anal_esil_pushnum(esil, *(ut64 *)&num);
 }
 
@@ -3001,17 +2986,11 @@ static bool esil_double_to_float(RAnalEsil *esil) {
 			ret = r_anal_esil_pushnum(esil, *(ut64 *)&d);
 		} else if (s == 32) {
 			float f = (float)d;
-			ret = r_anal_esil_pushnum(esil, *(ut64 *)&f);
+			ret = r_anal_esil_pushnum(esil, *(ut32 *)&f);
 		} else if (s == 64) {
 			double f = (double)d;
 			ret = r_anal_esil_pushnum(esil, *(ut64 *)&f);
-		}
-		/* TODO: support long double
-		else if(s == 10) {
-			long double f = (long double)d;
-			ret = r_anal_esil_pushnum(esil, *(ut64 *)&f);
-		}*/
-		else {
+		} else {
 			ret = r_anal_esil_pushnum(esil, *(ut64 *)&d);
 		}
 	} else {
@@ -3033,16 +3012,11 @@ static bool esil_float_to_double(RAnalEsil *esil) {
 	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(d) || isinf(d)) {
 			ret = esil_pushnum_float(esil, d);
-		}
-		else if (s == 32) {
+		} else if (s == 32) {
 			ret = esil_pushnum_float(esil, (double)(*(float  *)&d));
-		}
-		else if (s == 64) {
+		} else if (s == 64) {
 			ret = esil_pushnum_float(esil, (double)(*(double *)&d));
-		}
-		/*else if(s == 80)
-			ret = esil_pushnum_float(esil, (double)(*(long double *)&d));*/
-		else {
+		} else {
 			ret = esil_pushnum_float(esil, d);
 		}
 	} else {
