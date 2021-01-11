@@ -3251,9 +3251,9 @@ static void agraph_follow_innodes(RAGraph *g, bool in) {
 	}
 	r_cons_gotoxy (0, 2);
 	r_cons_printf (in? "Input nodes:\n": "Output nodes:\n");
-	RGraphNode *gn = an->gnode;
 	RList *options = r_list_newf (NULL);
 	RList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
+	RGraphNode *gn;
 	r_list_foreach (gnodes, iter, gn) {
 		RANode *an = get_anode (gn);
 		RGraphNode *gnn = agraph_get_title (g, an, in);
