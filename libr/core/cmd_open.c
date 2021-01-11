@@ -1142,9 +1142,9 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	if (!(desc->plugin && desc->plugin->isdbg) && (desc->perm & R_PERM_W)) {
 		eprintf ("Cannot debug file (%s) with permissions set to 0x%x.\n"
 			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
-		r_io_reopen (core->io, desc->fd, R_PERM_RX, 755);
-		// r_io_reopen (core->io, ofile->fd, R_PERM_R, 644);
-		desc = r_io_desc_get (core->io, desc->fd);
+		int fd = desc->fd;
+		r_io_reopen (core->io, fd, R_PERM_RX, 755);
+		desc = r_io_desc_get (core->io, fd);
 	}
 
 	RBinFile *bf = r_bin_file_find_by_fd (core->bin, desc->fd);
