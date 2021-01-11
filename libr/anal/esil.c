@@ -2942,13 +2942,11 @@ static bool esil_is_nan(RAnalEsil *esil) {
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
 			ret = r_anal_esil_pushnum(esil, isnan(s));
-		}
-		else {
+		} else {
 			ERR("esil_is_nan: invalid parameters.");
 		}
 		free(src);
-	}
-	else {
+	} else {
 		ERR("esil_is_nan: fail to get argument from stack.");
 	}
 	return ret;
@@ -2961,13 +2959,11 @@ static bool esil_int_to_double(RAnalEsil *esil) {
 	if (src) {
 		if (r_anal_esil_get_parm(esil, src, (ut64 *)&s)) {
 			ret = esil_pushnum_float(esil, (double)s * 1.0);
-		}
-		else {
+		} else {
 			ERR("esil_int_to_float: invalid parameters.");
 		}
 		free(src);
-	}
-	else {
+	} else {
 		ERR("esil_int_to_float: fail to get argument from stack.");
 	}
 	return ret;
@@ -2983,13 +2979,11 @@ static bool esil_double_to_int(RAnalEsil *esil) {
 				ERR("esil_float_to_int: nan or inf detected.");
 			}
 			ret = r_anal_esil_pushnum(esil, (st64)(s));
-		}
-		else {
+		} else {
 			ERR("esil_float_to_int: invalid parameters.");
 		}
 		free(src);
-	}
-	else {
+	} else {
 		ERR("esil_float_to_int: fail to get argument from stack.");
 	}
 	return ret;
@@ -3005,12 +2999,10 @@ static bool esil_double_to_float(RAnalEsil *esil) {
 	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(d) || isinf(d)) {
 			ret = r_anal_esil_pushnum(esil, *(ut64 *)&d);
-		}
-		else if (s == 4) {
+		} else if (s == 32) {
 			float f = (float)d;
 			ret = r_anal_esil_pushnum(esil, *(ut64 *)&f);
-		}
-		else if (s == 8) {
+		} else if (s == 64) {
 			double f = (double)d;
 			ret = r_anal_esil_pushnum(esil, *(ut64 *)&f);
 		}
@@ -3022,8 +3014,7 @@ static bool esil_double_to_float(RAnalEsil *esil) {
 		else {
 			ret = r_anal_esil_pushnum(esil, *(ut64 *)&d);
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_to_float: invalid parameters.");
 	}
 
@@ -3043,19 +3034,18 @@ static bool esil_float_to_double(RAnalEsil *esil) {
 		if (isnan(d) || isinf(d)) {
 			ret = esil_pushnum_float(esil, d);
 		}
-		else if (s == 4) {
+		else if (s == 32) {
 			ret = esil_pushnum_float(esil, (double)(*(float  *)&d));
 		}
-		else if (s == 8) {
+		else if (s == 64) {
 			ret = esil_pushnum_float(esil, (double)(*(double *)&d));
 		}
-		/*else if(s == 10)
+		/*else if(s == 80)
 			ret = esil_pushnum_float(esil, (double)(*(long double *)&d));*/
 		else {
 			ret = esil_pushnum_float(esil, d);
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_to_float: invalid parameters.");
 	}
 	free(dst);
@@ -3072,12 +3062,10 @@ static bool esil_float_cmp(RAnalEsil *esil) {
 	if (src && dst && esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
 			ret = r_anal_esil_pushnum(esil, 0);
-		}
-		else {
+		} else {
 			ret = r_anal_esil_pushnum(esil, fabs(s - d) <= DBL_EPSILON);
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_cmp: invalid parameters.");
 	}
 	free(dst);
@@ -3094,12 +3082,10 @@ static bool esil_float_negcmp(RAnalEsil *esil) {
 	if (src && dst && esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
 			ret = r_anal_esil_pushnum(esil, 0);
-		}
-		else {
+		} else {
 			ret = r_anal_esil_pushnum(esil, fabs(s - d) >= DBL_EPSILON);
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_negcmp: invalid parameters.");
 	}
 	free(dst);
@@ -3116,12 +3102,10 @@ static bool esil_float_less(RAnalEsil *esil) {
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
 			ret = r_anal_esil_pushnum(esil, 0);
-		}
-		else {
+		} else {
 			ret = r_anal_esil_pushnum(esil, s < d);
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_less: invalid parameters.");
 	}
 	free(dst);
@@ -3138,12 +3122,10 @@ static bool esil_float_lesseq(RAnalEsil *esil) {
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
 			ret = r_anal_esil_pushnum(esil, 0);
-		}
-		else {
+		} else {
 			ret = r_anal_esil_pushnum(esil, s <= d);
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_lesseq: invalid parameters.");
 	}
 	free(dst);
@@ -3161,24 +3143,20 @@ static bool esil_float_add(RAnalEsil *esil) {
 	{
 		if (isnan(s)) {
 			ret = esil_pushnum_float(esil, s);
-		}
-		else if (isnan(d)) {
+		} else if (isnan(d)) {
 			ret = esil_pushnum_float(esil, d);
-		}
-		else {
+		} else {
 			feclearexcept(FE_OVERFLOW);
 			double tmp = s + d;
 			(void)(tmp); // suppress unused warning
 			int raised = fetestexcept(FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
 				ret = esil_pushnum_float(esil, 0.0 / 0.0);
-			}
-			else {
+			} else {
 				ret = esil_pushnum_float(esil, s + d);
 			}
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_add: invalid parameters.");
 	}
 	free(dst);
@@ -3195,24 +3173,20 @@ static bool esil_float_sub(RAnalEsil *esil) {
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
 			ret = esil_pushnum_float(esil, s);
-		}
-		else if (isnan(d)) {
+		} else if (isnan(d)) {
 			ret = esil_pushnum_float(esil, d);
-		}
-		else {
+		} else {
 			feclearexcept(FE_OVERFLOW);
 			double tmp = d - s;
 			(void)(tmp);
 			int raised = fetestexcept(FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
 				ret = esil_pushnum_float(esil, 0.0 / 0.0);
-			}
-			else {
+			} else {
 				ret = esil_pushnum_float(esil, d - s);
 			}
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_sub: invalid parameters.");
 	}
 	free(dst);
@@ -3229,24 +3203,20 @@ static bool esil_float_mul(RAnalEsil *esil) {
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
 			ret = esil_pushnum_float(esil, s);
-		}
-		else if (isnan(d)) {
+		} else if (isnan(d)) {
 			ret = esil_pushnum_float(esil, d);
-		}
-		else {
+		} else {
 			feclearexcept(FE_OVERFLOW);
 			double tmp = s * d;
 			(void)(tmp);
 			int raised = fetestexcept(FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
 				ret = esil_pushnum_float(esil, 0.0 / 0.0);
-			}
-			else {
+			} else {
 				ret = esil_pushnum_float(esil, s * d);
 			}
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_mul: invalid parameters.");
 	}
 	free(dst);
@@ -3263,22 +3233,20 @@ static bool esil_float_div(RAnalEsil *esil) {
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
 			ret = esil_pushnum_float(esil, s);
-		}
-		else if (isnan(d)) {
+		} else if (isnan(d)) {
 			ret = esil_pushnum_float(esil, d);
-		}
-		else {
+		} else {
 			feclearexcept(FE_OVERFLOW);
 			double tmp = d / s;
 			(void)(tmp);
 			int raised = fetestexcept(FE_OVERFLOW);
-			if (raised & FE_OVERFLOW)
+			if (raised & FE_OVERFLOW) {
 				ret = esil_pushnum_float(esil, 0.0 / 0.0);
-			else
+			} else {
 				ret = esil_pushnum_float(esil, d / s);
+			}
 		}
-	}
-	else {
+	} else {
 		ERR("esil_float_div: invalid parameters.");
 	}
 	free(dst);
@@ -3294,13 +3262,11 @@ static bool esil_float_neg(RAnalEsil *esil) {
 	if (src)	{
 		if (esil_get_parm_float(esil, src, &s)) {
 			ret = esil_pushnum_float(esil, -s);
-		}
-		else {
+		} else {
 			ERR("esil_float_neg: invalid parameters.");
 		}
 		free(src);
-	}
-	else {
+	} else {
 		ERR("esil_float_neg: fail to get element from stack.");
 	}
 	return ret;
@@ -3315,17 +3281,14 @@ static bool esil_float_ceil(RAnalEsil *esil) {
 		if (esil_get_parm_float(esil, src, &s)) {
 			if (isnan(s)) {
 				ret = esil_pushnum_float(esil, s);
-			}
-			else {
+			} else {
 				ret = esil_pushnum_float(esil, ceil(s));
 			}
-		}
-		else {
+		} else {
 			ERR("esil_float_ceil: invalid parameters.");
 		}
 		free(src);
-	}
-	else {
+	} else {
 		ERR("esil_float_ceil: fail to get element from stack.");
 	}
 	return ret;
@@ -3340,17 +3303,14 @@ static bool esil_float_floor(RAnalEsil *esil) {
 		if (esil_get_parm_float(esil, src, &s)) {
 			if (isnan(s)) {
 				ret = esil_pushnum_float(esil, s);
-			}
-			else {
+			} else {
 				ret = esil_pushnum_float(esil, floor(s));
 			}
-		}
-		else {
+		} else {
 			ERR("esil_float_floor: invalid parameters.");
 		}
 		free(src);
-	}
-	else {
+	} else {
 		ERR("esil_float_floor: fail to get element from stack.");
 	}
 
@@ -3366,17 +3326,14 @@ static bool esil_float_round(RAnalEsil *esil) {
 		if (esil_get_parm_float(esil, src, &s)) {
 			if (isnan(s)) {
 				ret = esil_pushnum_float(esil, s);
-			}
-			else {
+			} else {
 				ret = esil_pushnum_float(esil, round(s));
 			}
-		}
-		else {
+		} else {
 			ERR("esil_float_round: invalid parameters.");
 		}
 		free(src);
-	}
-	else {
+	} else {
 		ERR("esil_float_round: fail to get element from stack.");
 	}
 	return ret;
@@ -3391,17 +3348,14 @@ static bool esil_float_sqrt(RAnalEsil *esil) {
 		if (esil_get_parm_float(esil, src, &s)) {
 			if (isnan(s)) {
 				ret = esil_pushnum_float(esil, s);
-			}
-			else {
+			} else {
 				ret = esil_pushnum_float(esil, sqrt(s));
 			}
-		}
-		else {
+		} else {
 			ERR("esil_float_sqrt: invalid parameters.");
 		}
 		free(src);
-	}
-	else {
+	} else {
 		ERR("esil_float_sqrt: fail to get element from stack.");
 	}
 	return ret;
