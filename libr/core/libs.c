@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_core.h"
 #include "config.h"
@@ -36,6 +36,7 @@ CB (debug, dbg)
 CB (bp, dbg->bp)
 CB (lang, lang)
 CB (anal, anal)
+CB (anal_esil, anal_esil)
 CB (asm, rasm)
 CB (parse, parser)
 CB (bin, bin)
@@ -101,6 +102,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BP, "debugger breakpoint plugins", bp);
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
+	DF (ESIL, "esil emulation plugins", esil);
 	DF (ASM, "(dis)assembler plugins", asm);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
@@ -115,6 +117,10 @@ static bool __isScriptFilename(const char *name) {
 		ext++;
 		if (!strcmp (ext, "py")
 		||  !strcmp (ext, "js")
+		||  !strcmp (ext, "v")
+		||  !strcmp (ext, "c")
+		||  !strcmp (ext, "vala")
+		||  !strcmp (ext, "pl")
 		||  !strcmp (ext, "lua")) {
 			return true;
 		}
@@ -122,7 +128,7 @@ static bool __isScriptFilename(const char *name) {
 	return false;
 }
 
-R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
+R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 	ut64 prev = r_time_now_mono ();
 	__loadSystemPlugins (core, where, path);
 	/* TODO: all those default plugin paths should be defined in r_lib */
@@ -137,12 +143,11 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	char *file;
 	r_list_foreach (files, iter, file) {
 		if (__isScriptFilename (file)) {
-			r_core_cmdf (core, ". %s/%s", homeplugindir, file);
+			r_core_cmdf (core, "\". %s/%s\"", homeplugindir, file);
 		}
 	}
-	
+	r_list_free (files);
 	free (homeplugindir);
 	core->times->loadlibs_time = r_time_now_mono () - prev;
-	r_list_free (files);
 	return true;
 }

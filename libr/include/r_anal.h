@@ -642,7 +642,8 @@ typedef struct r_anal_t {
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
 	RAnalRange *limit; // anal.from, anal.to
-	RList *plugins;
+	RList *plugins; // anal plugins
+	RList *esil_plugins;
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
@@ -1334,6 +1335,18 @@ typedef struct r_anal_plugin_t {
 	RAnalEsilTrapCB esil_trap; // traps / exceptions
 	RAnalEsilCB esil_fini; // deinitialize
 } RAnalPlugin;
+
+typedef struct r_anal_esil_plugin_t {
+	char *name;
+	char *desc;
+	char *license;
+	char *arch;
+	char *author;
+	char *version;
+
+	bool (*init)(void *user);
+	bool (*fini)(void *user);
+} RAnalEsilPlugin;
 
 /*----------------------------------------------------------------------------------------------*/
 int * (r_anal_compare) (RAnalFunction , RAnalFunction );
