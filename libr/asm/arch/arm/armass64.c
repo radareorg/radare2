@@ -100,8 +100,8 @@ static int get_mem_option(char *token) {
 	return -1;
 }
 
-static int countLeadingZeros(ut32 x) {
-	int count = 0;
+static int countLeadingZeros(ut64 x) {
+	int count = 64;
 	while (x) {
 		x >>= 1;
 		--count;
@@ -109,15 +109,11 @@ static int countLeadingZeros(ut32 x) {
 	return count;
 }
 
-static int countTrailingZeros(ut32 x) {
+static int countTrailingZeros(ut64 x) {
 	int count = 0;
-	while (x > 0) {
-		if ((x & 1) == 1) {
-			break;
-		} else {
-			count ++;
-			x = x >> 1;
-		}
+	while (x && !(x & 1)) {
+		count++;
+		x >>= 1;
 	}
 	return count;
 }
@@ -142,28 +138,42 @@ static int calcNegOffset(int n, int shift) {
 	return 0xff & (0xff - a);
 }
 
-static int countLeadingOnes(ut32 x) {
+static int countLeadingOnes(ut64 x) {
 	return countLeadingZeros (~x);
 }
 
-static int countTrailingOnes(ut32 x) {
+static int countTrailingOnes(ut64 x) {
 	return countTrailingZeros (~x);
 }
 
-static bool isMask(ut32 value) {
+static bool isMask(ut64 value) {
   return value && ((value + 1) & value) == 0;
 }
 
-static bool isShiftedMask (ut32 value) {
+static bool isShiftedMask (ut64 value) {
   return value && isMask ((value - 1) | value);
 }
 
-static ut32 decodeBitMasksWithSize(ut32 imm, ut8 reg_size) {
+// https://llvm.org/doxygen/AArch64AddressingModes_8h_source.html
+static ut32 encodeBitMasksWithSize(ut64 imm, ut32 reg_size) {
+	if (imm == 0 || imm == UT64_MAX || (reg_size != 64
+		&& (imm >> reg_size != 0 || imm == (~0ULL >> (64 - reg_size))))) {
+		return UT32_MAX;
+	}
 	// get element size
-	int size = reg_size;
+	ut32 size = reg_size;
+	do {
+		size >>= 1;
+		ut64 mask = (1ull << size) - 1;
+		if ((imm & mask) != ((imm >> size) & mask)) {
+			size <<= 1;
+			break;
+		}
+   } while (size > 2);
 	// determine rot to make element be 0^m 1^n
 	ut32 cto, i;
-	ut32 mask = ((ut64) - 1LL) >> (64 - size);
+	ut64 mask = UT64_MAX >> (64 - size);
+	imm &= mask;
 
 	if (isShiftedMask (imm)) {
 		i = countTrailingZeros (imm);
@@ -191,7 +201,7 @@ static ut32 decodeBitMasksWithSize(ut32 imm, ut8 reg_size) {
 	nimms |= (cto - 1);
 	// Extract and toggle seventh bit to make N field.
 	ut32 n = ((nimms >> 6) & 1) ^ 1;
-	ut64 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
+	ut32 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
 	return encoding;
 }
 
@@ -260,6 +270,11 @@ static ut32 mov(ArmOp *op) {
 				return data;
 			}
 		}
+		ut32 bitmask = encodeBitMasksWithSize (op->operands[1].immediate, bits); // orr
+		check_cond (bitmask != UT32_MAX);
+		data = k | 0xe0030032;
+		data |= (bitmask & 0x3f) << 18 | (bitmask & 0x1fc0) << 2;
+		return data;
 	}
 	if (!strcmp (op->mnemonic, "movz")) {
 		k |= 0x8052;
@@ -756,7 +771,7 @@ static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 		data |= (opc & 3) << 29;
 
 		ut32 imm_orig = op->operands[2].immediate;
-		ut32 imm = decodeBitMasksWithSize (invert? ~imm_orig: imm_orig, is64bit? 64: 32);
+		ut32 imm = encodeBitMasksWithSize (invert? ~imm_orig: imm_orig, is64bit? 64: 32);
 		if (imm == UT32_MAX) {
 			return UT32_MAX;
 		}
