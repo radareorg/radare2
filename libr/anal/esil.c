@@ -3081,7 +3081,7 @@ static bool esil_float_less(RAnalEsil *esil) {
 		if (isnan(s) || isnan(d)) {
 			ret = r_anal_esil_pushnum(esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum(esil, s < d);
+			ret = r_anal_esil_pushnum(esil, d < s);
 		}
 	} else {
 		ERR("esil_float_less: invalid parameters.");
@@ -3101,7 +3101,7 @@ static bool esil_float_lesseq(RAnalEsil *esil) {
 		if (isnan(s) || isnan(d)) {
 			ret = r_anal_esil_pushnum(esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum(esil, s <= d);
+			ret = r_anal_esil_pushnum(esil, d <= s);
 		}
 	} else {
 		ERR("esil_float_lesseq: invalid parameters.");

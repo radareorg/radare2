@@ -389,6 +389,37 @@ static int arm64_reg_width(int reg) {
 	case ARM64_REG_W28:
 	case ARM64_REG_W29:
 	case ARM64_REG_W30:
+	case ARM64_REG_S0:
+	case ARM64_REG_S1:
+	case ARM64_REG_S2:
+	case ARM64_REG_S3:
+	case ARM64_REG_S4:
+	case ARM64_REG_S5:
+	case ARM64_REG_S6:
+	case ARM64_REG_S7:
+	case ARM64_REG_S8:
+	case ARM64_REG_S9:
+	case ARM64_REG_S10:
+	case ARM64_REG_S11:
+	case ARM64_REG_S12:
+	case ARM64_REG_S13:
+	case ARM64_REG_S14:
+	case ARM64_REG_S15:
+	case ARM64_REG_S16:
+	case ARM64_REG_S17:
+	case ARM64_REG_S18:
+	case ARM64_REG_S19:
+	case ARM64_REG_S20:
+	case ARM64_REG_S21:
+	case ARM64_REG_S22:
+	case ARM64_REG_S23:
+	case ARM64_REG_S24:
+	case ARM64_REG_S25:
+	case ARM64_REG_S26:
+	case ARM64_REG_S27:
+	case ARM64_REG_S28:
+	case ARM64_REG_S29:
+	case ARM64_REG_S30:
 		return 32;
 		break;
 	default:
@@ -769,61 +800,61 @@ const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 	switch (cond_type) {
 	case ARM_CC_EQ:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "zf,?{,");
+		r_strbuf_appendf (&op->esil, "zf,?{,");
 		break;
 	case ARM_CC_NE:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "zf,!,?{,");
+		r_strbuf_appendf (&op->esil, "zf,!,?{,");
 		break;
 	case ARM_CC_HS:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "cf,?{,");
+		r_strbuf_appendf (&op->esil, "cf,?{,");
 		break;
 	case ARM_CC_LO:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "cf,!,?{,");
+		r_strbuf_appendf (&op->esil, "cf,!,?{,");
 		break;
 	case ARM_CC_MI:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,?{,");
+		r_strbuf_appendf (&op->esil, "nf,?{,");
 		break;
 	case ARM_CC_PL:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,!,?{,");
+		r_strbuf_appendf (&op->esil, "nf,!,?{,");
 		break;
 	case ARM_CC_VS:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "vf,?{,");
+		r_strbuf_appendf (&op->esil, "vf,?{,");
 		break;
 	case ARM_CC_VC:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "vf,!,?{,");
+		r_strbuf_appendf (&op->esil, "vf,!,?{,");
 		break;
 	case ARM_CC_HI:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "cf,zf,!,&,?{,");
+		r_strbuf_appendf (&op->esil, "cf,zf,!,&,?{,");
 		break;
 	case ARM_CC_LS:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "cf,!,zf,|,?{,");
+		r_strbuf_appendf (&op->esil, "cf,!,zf,|,?{,");
 		break;
 	case ARM_CC_GE:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,vf,^,!,?{,");
+		r_strbuf_appendf (&op->esil, "nf,vf,^,!,?{,");
 		break;
 	case ARM_CC_LT:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,vf,^,?{,");
+		r_strbuf_appendf (&op->esil, "nf,vf,^,?{,");
 		break;
 	case ARM_CC_GT:
 		// zf == 0 && nf == vf
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "zf,!,nf,vf,^,!,&,?{,");
+		r_strbuf_appendf (&op->esil, "zf,!,nf,vf,^,!,&,?{,");
 		break;
 	case ARM_CC_LE:
 		// zf == 1 || nf != vf
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "zf,nf,vf,^,|,?{,");
+		r_strbuf_appendf (&op->esil, "zf,nf,vf,^,|,?{,");
 		break;
 	case ARM_CC_AL:
 		// always executed
@@ -958,6 +989,24 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 }
 
+#define FPOPCALL(opchar) arm64fpmath(a, op, addr, buf, len, handle, insn, opchar, 0)
+#define FPOPCALL_NEGATE(opchar) arm64fpmath(a, op, addr, buf, len, handle, insn, opchar, 1)
+
+// floating point math instruction helper
+static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
+	int size = REGSIZE64(1)*8;
+
+	const char *r0 = REG64(0);
+	const char *r1 = REG64(1);
+	const char *r2 = REG64(2);
+
+	if (!negate) {
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F%s,D2F,%s,=", size, r2, size, r1, opchar, r0);
+	} else {
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F%s,-F,D2F,%s,=", size, r2, size, r1, opchar, r0);
+	}
+}
+
 static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 
 	const char *postfix = NULL;
@@ -1044,7 +1093,6 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	}
 	case ARM64_INS_UMADDL:
-	case ARM64_INS_FMADD:
 	case ARM64_INS_MADD:
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,+,%s,=",
 			REG64 (2), REG64 (1), REG64 (3), REG64 (0));
@@ -1141,7 +1189,137 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
 		break;
+	case ARM64_INS_FCMP:
+	case ARM64_INS_FCMPE:
+	case ARM64_INS_FCCMP:
+	case ARM64_INS_FCCMPE:
+	{
+		int size = REGSIZE64(1)*8;
+
+		if (ISREG64 (1)) {
+			r_strbuf_setf (&op->esil, 
+				"%d,%s,F2D,NAN,%d,%s,F2D,NAN,|,vf,:="
+				",%d,%s,F2D,%d,%s,F2D,F==,vf,|,zf,:="
+				",%d,%s,F2D,%d,%s,F2D,F<,vf,|,nf,:=",
+				size, REG64 (1), size, REG64 (0),
+				size, REG64 (1), size, REG64 (0),
+				size, REG64 (1), size, REG64 (0)
+			);	
+		} else {
+			r_strbuf_setf (&op->esil, 
+				"%d,%s,F2D,NAN,vf,:="
+				",0,I2D,%d,%s,F2D,F==,vf,|,zf,:="
+				",0,I2D,%d,%s,F2D,F<,vf,|,nf,:=",
+				size, REG64 (0),
+				size, REG64 (0),
+				size, REG64 (0)
+			);
+		}
+
+		if (insn->id == ARM64_INS_FCCMP || insn->id == ARM64_INS_FCCMPE) {
+			r_strbuf_appendf (&op->esil, ",");
+			arm_prefix_cond(op, insn->detail->arm64.cc);
+			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64(2));
+		}
+
+		break;
+	}
+	case ARM64_INS_FCVT:
+	{
+		int dstsz = REGSIZE64(0)*8;
+		int srcsz = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,%d,%s,F2D,D2F,%s,=", dstsz, srcsz, REG64 (1), REG64 (0));
+		break;
+	}
+	case ARM64_INS_FCVTAU:
+	case ARM64_INS_FCVTAS:
+	case ARM64_INS_FCVTMU:
+	case ARM64_INS_FCVTMS:
+	case ARM64_INS_FCVTNU:
+	case ARM64_INS_FCVTNS:
+	case ARM64_INS_FCVTPU:
+	case ARM64_INS_FCVTPS:
+	case ARM64_INS_FCVTZU:
+	case ARM64_INS_FCVTZS:
+	{
+		// TODO: unsigned int won't be right, idk entirely what it even means
+		// also the rounding mode... idk i hate floats
+		int srcsz = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,%s,F2D,D2I,%s,=", srcsz, REG64 (1), REG64 (0));
+		break;
+	}
+	case ARM64_INS_FABS:
+	{
+		int size = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,F<,?{,-F,},D2F,%s,=", size, REG64 (1), REG64 (0));
+		break;
+	}
+	case ARM64_INS_FNEG:
+	{
+		int size = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,D2F,%s,=", size, REG64 (1), REG64 (0));
+		break;
+	}
+	case ARM64_INS_FMIN:
+	{
+		int size = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,?{,%s,}{,%s,},%s,=", 
+			size, REG64 (2), size, REG64 (1), REG64 (1), REG64 (2), REG64 (0));
+		break;
+	}
+	case ARM64_INS_FMAX:
+	{
+		int size = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,!,?{,%s,}{,%s,},%s,=", 
+			size, REG64 (2), size, REG64 (1), REG64 (1), REG64 (2), REG64 (0));
+		break;
+	}
+	case ARM64_INS_FADD:
+		FPOPCALL("+");
+		break;
+	case ARM64_INS_FSUB:
+		FPOPCALL("-");
+		break;
+	case ARM64_INS_FMUL:
+		FPOPCALL("*");
+		break;
+	case ARM64_INS_FNMUL:
+		FPOPCALL_NEGATE("*");
+		break;
+	case ARM64_INS_FMADD:
+	{
+		int size = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F+,D2F,%s,=", 
+			size, REG64 (1), size, REG64 (2), size, REG64 (3), REG64 (0));
+
+		break;
+	}
+	case ARM64_INS_FNMADD:
+	{
+		int size = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F+,-F,D2F,%s,=", 
+			size, REG64 (1), size, REG64 (2), size, REG64 (3), REG64 (0));
+			
+		break;
+	}
+	case ARM64_INS_FMSUB:
+	{
+		int size = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F-,D2F,%s,=", 
+			size, REG64 (1), size, REG64 (2), size, REG64 (3), REG64 (0));
+
+		break;
+	}
+	case ARM64_INS_FNMSUB:
+	{
+		int size = REGSIZE64(1)*8;
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F-,-F,D2F,%s,=", 
+			size, REG64 (1), size, REG64 (2), size, REG64 (3), REG64 (0));
+			
+		break;
+	}
 	case ARM64_INS_FDIV:
+		FPOPCALL("/");
 		break;
 	case ARM64_INS_SDIV:
 	{
@@ -1429,7 +1607,6 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 		}
-	case ARM64_INS_FCMP:
 	case ARM64_INS_CCMP:
 	case ARM64_INS_CCMN:
 	case ARM64_INS_TST: // cmp w8, 0xd
@@ -1444,6 +1621,12 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			// cmp w10, w11
 			SHIFTED_REG64_APPEND(&op->esil, 1);
 			r_strbuf_appendf (&op->esil, ",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", REG64(0), bits - 1, bits, bits -1);
+		}
+
+		if (insn->id == ARM64_INS_CCMP || insn->id == ARM64_INS_CCMN) {
+			r_strbuf_appendf (&op->esil, ",");
+			arm_prefix_cond(op, insn->detail->arm64.cc);
+			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64d",<<,|,pstate,:=", IMM64(2));
 		}
 		break;
 		}
@@ -4017,37 +4200,39 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	wzr	.32	?	0\n"
 
 		/* 32bit float sub-registers */
-		"gpr	s0	.32	0	0\n"
-		"gpr	s1	.32	8	0\n"
-		"gpr	s2	.32	16	0\n"
-		"gpr	s3	.32	24	0\n"
-		"gpr	s4	.32	32	0\n"
-		"gpr	s5	.32	40	0\n"
-		"gpr	s6	.32	48	0\n"
-		"gpr	s7	.32	56	0\n"
-		"gpr	s8	.32	64	0\n"
-		"gpr	s9	.32	72	0\n"
-		"gpr	s10	.32	80	0\n"
-		"gpr	s11	.32	88	0\n"
-		"gpr	s12	.32	96	0\n"
-		"gpr	s13	.32	104	0\n"
-		"gpr	s14	.32	112	0\n"
-		"gpr	s15	.32	120	0\n"
-		"gpr	s16	.32	128	0\n"
-		"gpr	s17	.32	136	0\n"
-		"gpr	s18	.32	144	0\n"
-		"gpr	s19	.32	152	0\n"
-		"gpr	s20	.32	160	0\n"
-		"gpr	s21	.32	168	0\n"
-		"gpr	s22	.32	176	0\n"
-		"gpr	s23	.32	184	0\n"
-		"gpr	s24	.32	192	0\n"
-		"gpr	s25	.32	200	0\n"
-		"gpr	s26	.32	208	0\n"
-		"gpr	s27	.32	216	0\n"
-		"gpr	s28	.32	224	0\n"
-		"gpr	s29	.32	232	0\n"
-		"gpr	s30	.32	240	0\n"
+		"gpr	s0	.32	288	0\n"
+		"gpr	s1	.32	304	0\n"
+		"gpr	s2	.32	320	0\n"
+		"gpr	s3	.32	336	0\n"
+		"gpr	s4	.32	352	0\n"
+		"gpr	s5	.32	368	0\n"
+		"gpr	s6	.32	384	0\n"
+		"gpr	s7	.32	400	0\n"
+		"gpr	s8	.32	416	0\n"
+		"gpr	s9	.32	432	0\n"
+		"gpr	s10	.32	448	0\n"
+		"gpr	s11	.32	464	0\n"
+		"gpr	s12	.32	480	0\n"
+		"gpr	s13	.32	496	0\n"
+		"gpr	s14	.32	512	0\n"
+		"gpr	s15	.32	528	0\n"
+		"gpr	s16	.32	544	0\n"
+		"gpr	s17	.32	560	0\n"
+		"gpr	s18	.32	576	0\n"
+		"gpr	s19	.32	592	0\n"
+		"gpr	s20	.32	608	0\n"
+		"gpr	s21	.32	624	0\n"
+		"gpr	s22	.32	640	0\n"
+		"gpr	s23	.32	656	0\n"
+		"gpr	s24	.32	672	0\n"
+		"gpr	s25	.32	688	0\n"
+		"gpr	s26	.32	704	0\n"
+		"gpr	s27	.32	720	0\n"
+		"gpr	s28	.32	736	0\n"
+		"gpr	s29	.32	752	0\n"
+		"gpr	s30	.32	768	0\n"
+		"gpr	s31	.32	784	0\n"
+
 		/* 64bit */
 		"gpr	x0	.64	0	0\n" // x0
 		"gpr	x1	.64	8	0\n" // x0
@@ -4081,39 +4266,109 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	x29	.64	232	0\n"
 		"gpr	x30	.64	240	0\n"
 		"gpr	tmp	.64	288	0\n"
+
 		/* 64bit double */
-		"gpr	d0	.64	0	0\n" // x0
-		"gpr	d1	.64	8	0\n" // x0
-		"gpr	d2	.64	16	0\n" // x0
-		"gpr	d3	.64	24	0\n" // x0
-		"gpr	d4	.64	32	0\n" // x0
-		"gpr	d5	.64	40	0\n" // x0
-		"gpr	d6	.64	48	0\n" // x0
-		"gpr	d7	.64	56	0\n" // x0
-		"gpr	d8	.64	64	0\n" // x0
-		"gpr	d9	.64	72	0\n" // x0
-		"gpr	d10	.64	80	0\n" // x0
-		"gpr	d11	.64	88	0\n" // x0
-		"gpr	d12	.64	96	0\n" // x0
-		"gpr	d13	.64	104	0\n" // x0
-		"gpr	d14	.64	112	0\n" // x0
-		"gpr	d15	.64	120	0\n" // x0
-		"gpr	d16	.64	128	0\n" // x0
-		"gpr	d17	.64	136	0\n" // x0
-		"gpr	d18	.64	144	0\n" // x0
-		"gpr	d19	.64	152	0\n" // x0
-		"gpr	d20	.64	160	0\n" // x0
-		"gpr	d21	.64	168	0\n" // x0
-		"gpr	d22	.64	176	0\n" // x0
-		"gpr	d23	.64	184	0\n" // x0
-		"gpr	d24	.64	192	0\n" // x0
-		"gpr	d25	.64	200	0\n" // x0
-		"gpr	d26	.64	208	0\n" // x0
-		"gpr	d27	.64	216	0\n"
-		"gpr	d28	.64	224	0\n"
-		"gpr	d29	.64	232	0\n"
-		"gpr	d30	.64	240	0\n"
-		"gpr	dsp	.64	248	0\n"
+		"gpr	d0	.64	288	0\n"
+		"gpr	d1	.64	304	0\n"
+		"gpr	d2	.64	320	0\n"
+		"gpr	d3	.64	336	0\n"
+		"gpr	d4	.64	352	0\n"
+		"gpr	d5	.64	368	0\n"
+		"gpr	d6	.64	384	0\n"
+		"gpr	d7	.64	400	0\n"
+		"gpr	d8	.64	416	0\n"
+		"gpr	d9	.64	432	0\n"
+		"gpr	d10	.64	448	0\n"
+		"gpr	d11	.64	464	0\n"
+		"gpr	d12	.64	480	0\n"
+		"gpr	d13	.64	496	0\n"
+		"gpr	d14	.64	512	0\n"
+		"gpr	d15	.64	528	0\n"
+		"gpr	d16	.64	544	0\n"
+		"gpr	d17	.64	560	0\n"
+		"gpr	d18	.64	576	0\n"
+		"gpr	d19	.64	592	0\n"
+		"gpr	d20	.64	608	0\n"
+		"gpr	d21	.64	624	0\n"
+		"gpr	d22	.64	640	0\n"
+		"gpr	d23	.64	656	0\n"
+		"gpr	d24	.64	672	0\n"
+		"gpr	d25	.64	688	0\n"
+		"gpr	d26	.64	704	0\n"
+		"gpr	d27	.64	720	0\n"
+		"gpr	d28	.64	736	0\n"
+		"gpr	d29	.64	752	0\n"
+		"gpr	d30	.64	768	0\n"
+		"gpr	d31	.64	784	0\n"
+
+		/* 128 bit vector */
+		"gpr	v0	.128	288	0\n"
+		"gpr	v1	.128	304	0\n"
+		"gpr	v2	.128	320	0\n"
+		"gpr	v3	.128	336	0\n"
+		"gpr	v4	.128	352	0\n"
+		"gpr	v5	.128	368	0\n"
+		"gpr	v6	.128	384	0\n"
+		"gpr	v7	.128	400	0\n"
+		"gpr	v8	.128	416	0\n"
+		"gpr	v9	.128	432	0\n"
+		"gpr	v10	.128	448	0\n"
+		"gpr	v11	.128	464	0\n"
+		"gpr	v12	.128	480	0\n"
+		"gpr	v13	.128	496	0\n"
+		"gpr	v14	.128	512	0\n"
+		"gpr	v15	.128	528	0\n"
+		"gpr	v16	.128	544	0\n"
+		"gpr	v17	.128	560	0\n"
+		"gpr	v18	.128	576	0\n"
+		"gpr	v19	.128	592	0\n"
+		"gpr	v20	.128	608	0\n"
+		"gpr	v21	.128	624	0\n"
+		"gpr	v22	.128	640	0\n"
+		"gpr	v23	.128	656	0\n"
+		"gpr	v24	.128	672	0\n"
+		"gpr	v25	.128	688	0\n"
+		"gpr	v26	.128	704	0\n"
+		"gpr	v27	.128	720	0\n"
+		"gpr	v28	.128	736	0\n"
+		"gpr	v29	.128	752	0\n"
+		"gpr	v30	.128	768	0\n"
+		"gpr	v31	.128	784	0\n"
+
+		/* 128 bit vector high 64 */
+		"gpr	v0h	.64	296	0\n"
+		"gpr	v1h	.64	312	0\n"
+		"gpr	v2h	.64	328	0\n"
+		"gpr	v3h	.64	344	0\n"
+		"gpr	v4h	.64	360	0\n"
+		"gpr	v5h	.64	376	0\n"
+		"gpr	v6h	.64	392	0\n"
+		"gpr	v7h	.64	408	0\n"
+		"gpr	v8h	.64	424	0\n"
+		"gpr	v9h	.64	440	0\n"
+		"gpr	v10h	.64	456	0\n"
+		"gpr	v11h	.64	472	0\n"
+		"gpr	v12h	.64	488	0\n"
+		"gpr	v13h	.64	504	0\n"
+		"gpr	v14h	.64	520	0\n"
+		"gpr	v15h	.64	536	0\n"
+		"gpr	v16h	.64	552	0\n"
+		"gpr	v17h	.64	568	0\n"
+		"gpr	v18h	.64	584	0\n"
+		"gpr	v19h	.64	600	0\n"
+		"gpr	v20h	.64	616	0\n"
+		"gpr	v21h	.64	632	0\n"
+		"gpr	v22h	.64	648	0\n"
+		"gpr	v23h	.64	664	0\n"
+		"gpr	v24h	.64	680	0\n"
+		"gpr	v25h	.64	696	0\n"
+		"gpr	v26h	.64	712	0\n"
+		"gpr	v27h	.64	728	0\n"
+		"gpr	v28h	.64	744	0\n"
+		"gpr	v29h	.64	760	0\n"
+		"gpr	v30h	.64	776	0\n"
+		"gpr	v31h	.64	792	0\n"
+
 		/*  foo */
 		"gpr	fp	.64	232	0\n" // fp = x29
 		"gpr	lr	.64	240	0\n" // lr = x30
