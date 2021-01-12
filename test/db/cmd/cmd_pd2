@@ -9,6 +9,27 @@ s+2048
 pd 1~?
 EOF
 EXPECT=<<EOF
+258
+129
+1
+EOF
+RUN
+
+NAME=Cd999nometa
+FILE=-
+CMDS=<<EOF
+e asm.meta=false
+Cd 4096
+pd 2~?
+so
+pd 1~?
+so -1
+pd 1~?
+EOF
+EXPECT=<<EOF
+3
+1
+2
 EOF
 RUN
 
