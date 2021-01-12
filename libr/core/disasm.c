@@ -3630,10 +3630,6 @@ static void ds_align_comment(RDisasmState *ds) {
 
 static void ds_print_dwarf(RDisasmState *ds) {
 	if (ds->show_dwarf) {
-		int len = ds->opstr? strlen (ds->opstr): 0;
-		if (len < 30) {
-			len = 30 - len;
-		}
 		// TODO: cache value in ds
 		int dwarfFile = (int)ds->dwarfFile + (int)ds->dwarfAbspath;
 		free (ds->sl);

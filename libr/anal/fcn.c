@@ -454,7 +454,6 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 	block->parent_stackptr -= ctx->stack_diff;
 	r_anal_function_add_block (our_fcn, block);
 	// TODO: add block->ninstr from our_fcn considering delay slots
-	our_fcn += block->ninstr;
 	r_anal_block_unref (block);
 	return true;
 }

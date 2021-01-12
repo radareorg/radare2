@@ -6124,7 +6124,6 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 		}
 		tmp_cfg += strlen (tmp_cfg) + 1;
 	}
-	p_cfg += strlen (p_cfg) + 1;
 	free (panels_config);
 	if (!panels->n_panels) {
 		free (tmp_cfg);
