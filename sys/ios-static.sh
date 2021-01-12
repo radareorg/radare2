@@ -63,8 +63,8 @@ fi
 
 if [ "${CLEAN_BUILD}" = 1 ] ; then
 ${MAKE} clean
-cp -f plugins.tiny.cfg plugins.cfg
-cp -f plugins.ios.cfg plugins.cfg
+# cp -f plugins.tiny.cfg plugins.cfg
+cp -f dist/plugins-cfg/plugins.ios.cfg plugins.cfg
 
 ./configure --prefix="${PREFIX}" \
 	${CFGFLAGS} \

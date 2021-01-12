@@ -15,7 +15,7 @@ export AR="emar"
 CFGFLAGS="--prefix=/usr"
 
 make mrproper
-cp -f plugins.tiny.cfg plugins.cfg
+cp -f dist/plugins-cfg/plugins.tiny.cfg plugins.cfg
 ./configure-plugins
 
 # shellcheck disable=SC2086
