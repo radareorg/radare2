@@ -3797,25 +3797,26 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 	}
 	off = bin->delay_import_directory_offset;
 	if (off < bin->size && off > 0) {
-		int didi = 0;
-		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size) {
+		if (off + sizeof (PE_(image_delay_import_directory)) > bin->size) {
 			goto beach;
 		}
-		int r = read_image_delay_import_directory (bin->b, off + didi * sizeof (curr_delay_import_dir),
-			&curr_delay_import_dir);
-		if (r != sizeof (curr_delay_import_dir)) {
-			goto beach;
-		}
-		if (!curr_delay_import_dir.Attributes) {
-			dll_name_offset = bin_pe_rva_to_paddr (bin,
-				curr_delay_import_dir.Name - PE_(r_bin_pe_get_image_base)(bin));
-			import_func_name_offset = curr_delay_import_dir.DelayImportNameTable -
-			PE_(r_bin_pe_get_image_base)(bin);
-		} else {
-			dll_name_offset = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name);
-			import_func_name_offset = curr_delay_import_dir.DelayImportNameTable;
-		}
-		while ((curr_delay_import_dir.Name != 0) && (curr_delay_import_dir.DelayImportAddressTable !=0)) {
+		int didi;
+		for (didi = 0;; didi++) {
+			int r = read_image_delay_import_directory (bin->b, off + didi * sizeof (curr_delay_import_dir),
+					&curr_delay_import_dir);
+			if (r != sizeof (curr_delay_import_dir)) {
+				goto beach;
+			}
+			if ((curr_delay_import_dir.Name == 0) || (curr_delay_import_dir.DelayImportAddressTable == 0)) {
+				break;
+			}
+			if (!curr_delay_import_dir.Attributes) {
+				dll_name_offset = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name - PE_(r_bin_pe_get_image_base)(bin));
+				import_func_name_offset = curr_delay_import_dir.DelayImportNameTable - PE_(r_bin_pe_get_image_base)(bin);
+			} else {
+				dll_name_offset = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name);
+				import_func_name_offset = curr_delay_import_dir.DelayImportNameTable;
+			}
 			if (dll_name_offset > bin->size || dll_name_offset + PE_NAME_LENGTH > bin->size) {
 				goto beach;
 			}
@@ -3823,17 +3824,10 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 			if (rr < 5) {
 				goto beach;
 			}
-
 			dll_name[PE_NAME_LENGTH] = '\0';
 			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name, import_func_name_offset,
 				curr_delay_import_dir.DelayImportAddressTable)) {
 				break;
-			}
-			didi++;
-			r = read_image_delay_import_directory (bin->b, off + didi * sizeof (curr_delay_import_dir),
-				&curr_delay_import_dir);
-			if (r != sizeof (curr_delay_import_dir)) {
-				goto beach;
 			}
 		}
 	}
