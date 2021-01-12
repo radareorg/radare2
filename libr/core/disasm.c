@@ -2928,13 +2928,6 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 	if (!ds->asm_meta) {
 		return false;
 	}
-#if 0
-	UNUSED
-	char key[100];
-	Sdb *s = core->anal->sdb_meta;
-	snprintf (key, sizeof (key), "meta.0x%" PFMT64x, ds->at);
-	const char *infos = sdb_const_get (s, key, 0);
-#endif
 	RPVector *metas = r_meta_get_all_in (core->anal, ds->at, R_META_TYPE_ANY);
 	if (!metas) {
 		return false;
@@ -3032,15 +3025,19 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			}
 			ds->oplen = mi_size - delta;
 			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-			// TODO do not pass a copy in parameter buf that is possibly to small for this
-			// print operation
-			int size = R_MIN (mi_size, len - idx);
+			int size = mi_size;
 			if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, size)) {
-				r_cons_printf ("hex length=%d delta=%d\n", size , delta);
-				r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1, 1);
+				if (size > delta) {
+					r_cons_printf ("hex size=%d delta=%d\n", size , delta);
+					r_print_hexdump (core->print, ds->at,
+						buf + idx, size - delta, 16, 1, 1);
+				} else {
+					r_cons_printf ("hex size=%d hexlen=%d delta=%d",
+						size, hexlen, delta);
+				}
 			}
 			core->print->flags |= R_PRINT_FLAGS_HEADER;
-			ds->asmop.size = (int)mi_size;
+			ds->asmop.size = (int)size - (node->start - ds->at);
 			R_FREE (ds->line);
 			R_FREE (ds->line_col);
 			R_FREE (ds->refline);
@@ -3296,34 +3293,6 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	}
 	return true;
 }
-
-#if 0
-static void ds_print_import_name(RDisasmState *ds) {
-	RListIter *iter = NULL;
-	RBinReloc *rel = NULL;
-	RCore * core = ds->core;
-
-	switch (ds->analop.type) {
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_CJMP:
-	case R_ANAL_OP_TYPE_CALL:
-		if (core->bin->cur->o->imports && core->bin->cur->o->relocs) {
-			r_list_foreach (core->bin->cur->o->relocs, iter, rel) {
-				if ((rel->vaddr == ds->analop.jump) &&
-					(rel->import != NULL)) {
-					if (ds->show_color) {
-						r_cons_strcat (ds->color_fname);
-					}
-					// TODO: handle somehow ordinals import
-					ds_align_comment (ds);
-					r_cons_printf ("  ; (imp.%s)", rel->import->name);
-					ds_print_color_reset (ds);
-				}
-			}
-		}
-	}
-}
-#endif
 
 static void ds_print_sysregs(RDisasmState *ds) {
 	RCore *core = ds->core;
