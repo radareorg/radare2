@@ -3403,7 +3403,6 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	SETBPREF ("prj.zip", "false", "Use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
-	SETBPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");
 
 	/* cfg */
 	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use when printing strings");
