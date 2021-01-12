@@ -209,62 +209,84 @@ static inline ut32 encodeImm9(ut32 n) {
 }
 
 static ut32 mov(ArmOp *op) {
-	int k = 0;
+	ut32 k = 0;
 	ut32 data = UT32_MAX;
-	if (!strncmp (op->mnemonic, "movz", 4)) {
-		if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x80d2;
-		} else if (op->operands[0].reg_type & ARM_REG32) {
-			k = 0x8052;
+	check_cond (op->operands_count >= 2);
+	check_cond (op->operands[0].type == ARM_GPR);
+	int bits = (op->operands[0].reg_type & ARM_REG64) ? 64 : 32;
+	if (bits == 64) {
+		k = 0x0080;
+	}
+	k |= encode1reg (op);
+	if (!strcmp (op->mnemonic, "mov")) {
+		check_cond (op->operands_count == 2);
+		if (op->operands[1].type == ARM_GPR) {
+			check_cond (bits == ((op->operands[1].reg_type & ARM_REG64) ? 64 : 32));
+			if (op->operands[0].reg_type & ARM_SP || op->operands[1].reg_type & ARM_SP) { // alias of add
+				k |= 0x0011;
+				data = k | encode2regs (op);
+				return data;
+			}
+			k |= 0xe003002a; // alias of orr
+			data = k | op->operands[1].reg << 8;
+			return data;
 		}
-	} else if (!strncmp (op->mnemonic, "movk", 4)) {
-		if (op->operands[0].reg_type & ARM_REG32) {
-			k = 0x8072;
-		} else if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x80f2;
+		check_cond (op->operands[1].type & ARM_CONSTANT);
+		ut64 imm = op->operands[1].immediate;
+		ut64 imm_inverse = ~imm;
+		if (bits == 32) {
+			check_cond (imm <= 0xffffffff || imm_inverse <= 0xffffffff);
+			imm &= 0xffffffff;
+			imm_inverse &= 0xffffffff;
 		}
-	} else if (!strncmp (op->mnemonic, "movn", 4)) {
-		if (op->operands[0].reg_type & ARM_REG32) {
-			k = 0x8012;
-		} else if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x8092;
+		int shift;
+		ut64 mask = 0xffff;
+		for (shift = 0; shift < bits; shift += 16, mask <<= 16) {
+			if (imm == (imm & mask)) { // movz
+				data = k | 0x00008052;
+				imm >>= shift;
+				data |= (imm & 7) << 29 | (imm & 0x7f8) << 13 | (imm & 0xf800) >> 3;
+				data |= shift << 9;
+				return data;
+			}
 		}
-	} else if (!strncmp (op->mnemonic, "mov", 3)) {
-		//printf ("%d - %d [%d]\n", op->operands[0].type, op->operands[1].type, ARM_GPR);
-		if (op->operands[0].reg_type & ARM_REG64) {
-            if (op->operands[1].reg_type & ARM_REG64) {
-                k = 0xe00300aa;
-            } else if (op->operands[1].type & ARM_CONSTANT) {
-                k = 0x80d2;
-            } else {
-                return data;
-            }
-        } else if (op->operands[0].reg_type & ARM_REG32) {
-            if (op->operands[1].reg_type & ARM_REG32) {
-                k = 0xe003002a;
-            } else if (op->operands[1].type & ARM_CONSTANT) {
-                k = 0x8052;
-            } else {
-                return data;
-            }
-        }
-		if (op->operands[0].type & ARM_GPR) {
-            if (op->operands[1].type & ARM_GPR) {
-                data = k | op->operands[1].reg << 8;
-            } else if (op->operands[1].type & ARM_CONSTANT) {
-                ut32 imm = op->operands[1].immediate << 1;
-                data = k | ((imm & 0xf) << 28) | ((imm & 0x1f0) << 12) ;
-            }
-			data |= encode1reg (op);
-        }
+		mask = 0xffff;
+		for (shift = 0; shift < bits; shift += 16, mask <<= 16) {
+			if (imm_inverse == (imm_inverse & mask)) { // movn
+				data = k | 0x00008012;
+				imm_inverse >>= shift;
+				data |= (imm_inverse & 7) << 29 | (imm_inverse & 0x7f8) << 13 | (imm_inverse & 0xf800) >> 3;
+				data |= shift << 9;
+				return data;
+			}
+		}
+	}
+	if (!strcmp (op->mnemonic, "movz")) {
+		k |= 0x8052;
+	} else if (!strcmp (op->mnemonic, "movk")) {
+		k |= 0x8072;
+	} else if (!strcmp (op->mnemonic, "movn")) {
+		k |= 0x8012;
+	} else {
 		return data;
 	}
-
+	check_cond (op->operands[1].type == ARM_CONSTANT);
+	ut64 imm = op->operands[1].immediate;
+	check_cond (imm <= 0xffff);
+	int shift = 0;
+	if (op->operands_count >= 3) {
+		check_cond (op->operands_count == 3);
+		check_cond (op->operands[2].type == ARM_SHIFT);
+		check_cond (op->operands[2].shift == ARM_LSL);
+		shift = op->operands[2].shift_amount;
+		check_cond (!(shift & 0xf));
+		check_cond (shift < bits);
+	}
 	data = k;
-	data |= encode1reg (op); // arg(0)
-	data |= ((op->operands[1].immediate & 7) << 29); // arg(1)
-	data |= (((op->operands[1].immediate >> 3) & 0xff) << 16); // arg(1)
-	data |= ((op->operands[1].immediate >> 10) << 7); // arg(1)
+	data |= (imm & 7) << 29; // arg(1)
+	data |= (imm & 0x7f8) << 13; // arg(1)
+	data |= (imm & 0xf800) >> 3; // arg(1)
+	data |= shift << 9; // arg(2)
 	return data;
 }
 
@@ -1102,6 +1124,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			} else if (!strncmp(token + 1, "sp", 2)) {
 				// WSP
 				op->operands[operand].reg = 31;
+				op->operands[operand].reg_type |= ARM_SP;
 			} else {
 				op->operands[operand].reg = r_num_math (NULL, token + 1);
 			}

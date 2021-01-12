@@ -202,13 +202,53 @@ ad "ldrsw x8, [x12, x9, lsl 2]" 8879a9b8
 ad "ldrsw x8, [x12, x9, sxtx 2]" 88f9a9b8
 ad "ldrsw x5, 0xffffc" e5ff7f98
 ad "ldrsw x5, 0xfffffffffff00000" 05008098
-a "mov x20, x0" f40300aa
-a "mov x9, 5" a90080d2
-a "mov x7, 0x51" 270a80d2
-a "mov w19, 0x9a" 53138052
-a "movk x16, 15" f00180f2
-a "movn x6, 2" 46008092
-a "movz x1, 5" a10080d2
+ad "mov x20, x0" f40300aa
+ad "mov w2, wsp" e2030011
+ad "mov sp, x20" 9f020091
+ad "mov w5, w18" e503122a
+ad "mov x23, x4" f70304aa
+a "mov x9, 0x5" a90080d2
+dB "mov x9, 0x5" a90080d2
+a "mov w7, 0xffff" e7ff9f52
+dB "mov w12, 0xffff" e7ff9fd2
+a "mov w15, 0xacdb0000" 6f9bb552
+dB "mov w15, 0xacdb0000" 6f9bb552
+a "mov w15, 0xffff0000" efffbf52
+dB "mov w15, 0xffff0000" efffbf52
+a "mov x30, 0x884800000000" 1e09d1d2
+dB "mov x30, 0x884800000000" 1e09d1d2
+a "mov x29, 0xffff00000000" fdffdfd2
+dB "mov x29, 0xffff00000000" fdffdfd2
+a "mov x27, 0x3721000000000000" 3be4e6d2
+dB "mov x27, 0x3721000000000000" 3be4e6d2
+a "mov x26, 0xffff000000000000" faffffd2
+dB "mov x26, 0xffff000000000000" faffffd2
+a "mov w25, 0xffffcfc7" 19078612
+dB "mov w25, 0xffffcfc7" 19078612
+a "mov w24, 0xffffffff" 18008012
+dB "mov w24, 0xffffffff" 18008012
+a "mov w23, 0xdeadffff" 572aa412
+dB "mov w23, 0xdeadffff" 572aa412
+a "mov x22, 0xffffffffffff1024" 76fb9d92
+dB "mov x22, 0xffffffffffff1024" 76fb9d92
+a "mov x21, 0xffffffff2048ffff" f5f6bb92
+dB "mov x21, 0xffffffff2048ffff" f5f6bb92
+a "mov x20, 0xffff4096ffffffff" 34edd792
+dB "mov x20, 0xffff4096ffffffff" 34edd792
+a "mov x19, 0x8192ffffffffffff" b3cdef92
+dB "mov x19, 0x8192ffffffffffff" b3cdef92
+a "mov x18, 0xffffffffffffffff" 12008092
+dB "mov x18, 0xffffffffffffffff" 12008092
+ad "movk x16, 0xf" f00180f2
+ad "movk w13, 0xffff, lsl 16" edffbf72
+a "movn x6, 0x2" 46008092 # alias
+ad "movn x7, 0, lsl 16" 0700a092
+a "movn x22, 0xabcd, lsl 48" b679f592 # alias
+ad "movn w9, 0, lsl 16" 0900a012
+a "movz x1, 0x5" a10080d2 # alias
+ad "movz w10, 0, lsl 16" 0a00a052
+a "movz x17, 0x5fff, lsl 32" f1ffcbd2 # alias
+ad "movz x11, 0, lsl 32" 0b00c0d2
 a "nop" 1f2003d5
 a "str w2, [x7, -10]" e2601fb8
 a "str w2, [x7, -133]" e2b017b8
