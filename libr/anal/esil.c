@@ -3125,7 +3125,7 @@ static bool esil_float_add(RAnalEsil *esil) {
 			(void)(tmp); // suppress unused warning
 			int raised = fetestexcept(FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float(esil, 0.0 / 0.0);
+				ret = esil_pushnum_float(esil, R_NAN);
 			} else {
 				ret = esil_pushnum_float(esil, s + d);
 			}
@@ -3155,7 +3155,7 @@ static bool esil_float_sub(RAnalEsil *esil) {
 			(void)(tmp);
 			int raised = fetestexcept(FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float(esil, 0.0 / 0.0);
+				ret = esil_pushnum_float(esil, R_NAN);
 			} else {
 				ret = esil_pushnum_float(esil, d - s);
 			}
@@ -3185,7 +3185,7 @@ static bool esil_float_mul(RAnalEsil *esil) {
 			(void)(tmp);
 			int raised = fetestexcept(FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float(esil, 0.0 / 0.0);
+				ret = esil_pushnum_float(esil, R_NAN);
 			} else {
 				ret = esil_pushnum_float(esil, s * d);
 			}
@@ -3215,7 +3215,7 @@ static bool esil_float_div(RAnalEsil *esil) {
 			(void)(tmp);
 			int raised = fetestexcept(FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float(esil, 0.0 / 0.0);
+				ret = esil_pushnum_float(esil, R_NAN);
 			} else {
 				ret = esil_pushnum_float(esil, d / s);
 			}
