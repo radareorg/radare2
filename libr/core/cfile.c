@@ -587,7 +587,7 @@ static bool filecb(void *user, void *data, ut32 id) {
 
 static bool file_is_loaded(RCore *core, const char *lib) {
 	MyFileData filedata = {lib, false};
-	r_id_storage_foreach (r->io->files, filecb, &filedata);
+	r_id_storage_foreach (core->io->files, filecb, &filedata);
 	return filedata.found;
 }
 
@@ -733,7 +733,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		RListIter *iter;
 		RList *libs = r_bin_get_libs (r->bin);
 		r_list_foreach (libs, iter, lib) {
-			if (file_is_loaded (core, lib)) {
+			if (file_is_loaded (r, lib)) {
 				continue;
 			}
 			eprintf ("[bin.libs] Opening %s\n", lib);
