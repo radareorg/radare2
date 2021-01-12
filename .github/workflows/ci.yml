@@ -132,8 +132,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Packaging for Debian
-      cflags: '-Werror -Wno-cpp'
-      run: sys/debian.sh
+      run: export CFLAGS="-Werror -Wno-cpp"; sys/debian.sh
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
@@ -231,8 +230,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Building Radare2
-      cflags: '-Werror -Wno-cpp'
-      run: sys/install.sh > /dev/null
+      run: export CFLAGS="-Werror -Wno-cpp"; sys/install.sh > /dev/null
     - name: Running tests
       run: make tests
     - name: Pub
