@@ -1914,7 +1914,7 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 		}
 		esil = R_STRBUF_SAFEGET (&op->esil);
 		eprintf ("0x%08"PFMT64x" %d %s\n", at, op->size, esil);
-		at += op->size;
+		// at += op->size;
 		// esilIsRet()
 		// esilIsCall()
 		// esilIsJmp()
