@@ -59,7 +59,7 @@ jobs:
 
   windows-dist:
     name: windows-${{ matrix.name }}
-    if: contains(github.ref, 'release-')
+#    if: contains(github.ref, 'release-')
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -271,7 +271,7 @@ jobs:
 
   android-build:
     runs-on: ubuntu-latest
-    if: contains(github.ref, 'release-')
+#    if: contains(github.ref, 'release-')
     strategy:
       fail-fast: false
       matrix:
