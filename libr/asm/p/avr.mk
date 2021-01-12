@@ -1,5 +1,7 @@
 OBJ_AVR=asm_avr.o
-#OBJ_AVR+=../arch/avr/disasm.o
+OBJ_AVR+=../arch/avr/avr_disasm.o
+OBJ_AVR+=../arch/avr/format.o
+OBJ_AVR+=../arch/avr/disasm.o
 
 STATIC_OBJ+=${OBJ_AVR}
 TARGET_AVR=asm_avr.${EXT_SO}
