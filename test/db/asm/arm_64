@@ -239,6 +239,10 @@ a "mov x19, 0x8192ffffffffffff" b3cdef92
 dB "mov x19, 0x8192ffffffffffff" b3cdef92
 a "mov x18, 0xffffffffffffffff" 12008092
 dB "mov x18, 0xffffffffffffffff" 12008092
+a "mov w17, 0x00fc00fc" f1970e32
+dB "mov w17, 0x00fc00fc" f1970e32
+a "mov x16, 0xaaaaaaaaaaaaaaaa" f0f301b2
+dB "mov x16, 0xaaaaaaaaaaaaaaaa" f0f301b2
 ad "movk x16, 0xf" f00180f2
 ad "movk w13, 0xffff, lsl 16" edffbf72
 a "movn x6, 0x2" 46008092 # alias
