@@ -505,83 +505,6 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 }
 #endif
 
-static bool simple_project_save_script(RCore *core, const char *file, int opts) {
-	char *filename, *hl, *ohl = NULL;
-	int fd, fdold;
-
-	if (!file || * file == '\0') {
-		return false;
-	}
-
-	filename = r_str_word_get_first (file);
-	fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
-	if (fd == -1) {
-		free (filename);
-		return false;
-	}
-
-	hl = r_cons_singleton ()->highlight;
-	if (hl) {
-		ohl = strdup (hl);
-		r_cons_highlight (NULL);
-	}
-
-	fdold = r_cons_singleton ()->fdout;
-	r_cons_singleton ()->fdout = fd;
-	r_cons_singleton ()->context->is_interactive = false; // NOES must use api
-
-	r_str_write (fd, "# r2 rdb project file\n");
-
-	if (opts & R_CORE_PRJ_EVAL) {
-		r_str_write (fd, "# eval\n");
-		r_config_list (core->config, NULL, true);
-		r_cons_flush ();
-	}
-
-	r_core_cmd0 (core, "o*");
-	r_core_cmd0 (core, "tcc*");
-	// r_core_cmdf (core, "om**");
-	r_core_cmdf (core, "wc*");
-
-	if (opts & R_CORE_PRJ_FCNS) {
-		r_str_write (fd, "# functions\n");
-		r_str_write (fd, "fs functions\n");
-		r_core_cmd (core, "afl*", 0);
-		r_cons_flush ();
-	}
-
-	if (opts & R_CORE_PRJ_FLAGS) {
-		r_str_write (fd, "# flags\n");
-		r_core_cmd (core, "f.**", 0);
-		r_cons_flush ();
-	}
-	if (opts & R_CORE_PRJ_META) {
-		r_str_write (fd, "# meta\n");
-		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1);
-		r_cons_flush ();
-		r_core_cmd (core, "fV*", 0);
-		r_cons_flush ();
-	}
-	if (opts & R_CORE_PRJ_XREFS) {
-		r_str_write (fd, "# xrefs\n");
-		r_core_cmd (core, "ax*", 0);
-		r_cons_flush ();
-	}
-
-	r_cons_singleton ()->fdout = fdold;
-	r_cons_singleton ()->context->is_interactive = true;
-
-	if (ohl) {
-		r_cons_highlight (ohl);
-		free (ohl);
-	}
-
-	close (fd);
-	free (filename);
-
-	return true;
-}
-
 static bool project_save_script(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
 	int fdold;
@@ -749,16 +672,9 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		}
 	}
 
-	if (r_config_get_i (core->config, "prj.simple")) {
-		if (!simple_project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
-			eprintf ("Cannot open '%s' for writing\n", prj_name);
-			ret = false;
-		}
-	} else {
-		if (!project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
-			eprintf ("Cannot open '%s' for writing\n", prj_name);
-			ret = false;
-		}
+	if (!project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
+		eprintf ("Cannot open '%s' for writing\n", prj_name);
+		ret = false;
 	}
 
 	if (r_config_get_i (core->config, "prj.files")) {
