@@ -2390,6 +2390,9 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		ds->refline = strdup ("");
 		ds->refline2 = strdup ("");
 		ds->prev_line_col = strdup ("");
+		ds->line = NULL;
+		ds->line_col = NULL;
+		ds->prev_line_col = NULL;
 	}
 }
 
