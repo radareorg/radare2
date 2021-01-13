@@ -249,7 +249,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install meson ninja r2pipe
+        pip install r2pipe
     - name: Building Radare2
       run: export CFLAGS="-O2"; sys/install.sh
     - name: Running tests
