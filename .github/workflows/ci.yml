@@ -1,6 +1,12 @@
 name: CI
 
-on: push
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+#  schedule:
+#    - cron: '0 0 * * 1'
 
 # python sys\meson.py --release --backend vs2019 --shared --install --prefix="%cd%\radar    e2_dist" --webui
 
@@ -24,10 +30,12 @@ jobs:
   #      with:
   #        path: radare2_dist/*
   build-spaces:
-    name: Build spaces
-    continue-on-error: true
+    name: linux-meson-spaces
+#    continue-on-error: true
     runs-on: ubuntu-20.04
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
     #- name: XXX this is not possible with make Install from a directory with spaces
     #  run: |
     #    git config pull.rebase false
@@ -47,19 +55,21 @@ jobs:
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel python3-setuptools
-        pip3 install --user meson==0.55.3 ninja==1.10.0
+        sudo pip3 install meson==0.55.3 ninja==1.10.0
         git config --global pull.rebase false
-        git clone --depth 1 https://github.com/radareorg/radare2 "spa ces"
+        git clone --depth 1 . "spa ces"
         cd "spa ces"
-        meson --prefix="/tmp/r 2" build > /dev/null
-        ninja -C build > /dev/null
-        ninja -C build install ; cd ..
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
+        meson --prefix="/tmp/r 2" build
+        ninja -C build
+        ninja -C build install
+        cd ..
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
 
   windows-dist:
     name: windows-${{ matrix.name }}
-#    if: contains(github.ref, 'release-')
+#    if: contains(github.ref, 'ci-')
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -132,7 +142,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Packaging for Debian
-      run: export CFLAGS="-Werror -Wno-cpp"; sys/debian.sh
+      run: sys/debian.sh
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
@@ -183,9 +193,9 @@ jobs:
 #      uses: actions/upload-artifact@v2
 #      with:
 #        path: rpmbuild/RPMS/*/*.rpm
-  linux-asan:
+  linux-asan-fuzz:
     runs-on: ubuntu-latest
-    if: contains(github.ref, 'release-')
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -194,20 +204,26 @@ jobs:
         pip install r2pipe
         sys/sanitize.sh
     - name: Running tests
-      run: make tests
+      run: |
+        export LD_LIBRARY_PATH=/usr/local/lib
+        make tests
     - name: Run fuzz tests
       run: make -C test fuzz-tests
   linux-test:
     runs-on: ubuntu-latest
+#    if: contains(github.ref, 'ci-')
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Building Radare2
       run: |
-        pip install r2pipe
+        pip install r2pipe wheel
+        export CFLAGS="-O2 -Wno-unused-result"
         sys/install.sh
     - name: Running tests
-      run: make tests
+      run: |
+        export LD_LIBRARY_PATH=/usr/local/lib
+        make tests
 
   # Apple
   macos-acr:
@@ -218,28 +234,25 @@ jobs:
     - name: Packaging
       run: dist/macos/build-pkg.sh
     - name: Building Radare2
-      run: sys/install.sh > /dev/null
+      run: sys/install.sh
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
         path: dist/macos/*.pkg
   macos-test:
     runs-on: macos-latest
-    if: contains(github.ref, 'mac-')
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Building Radare2
-      run: export CFLAGS="-Werror -Wno-cpp"; sys/install.sh > /dev/null
+      run: export CFLAGS="-O2 -Werror -Wno-cpp -Wno-stringop-truncation"; sys/install.sh
     - name: Running tests
       run: make tests
-    - name: Pub
-      uses: actions/upload-artifact@v2
-      with:
-        path: dist/macos/*.pkg
 
   # Mobile
   ios-cydia:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
@@ -256,7 +269,7 @@ jobs:
 #     - uses: actions/upload-artifact@v2
 #       with:
 #         name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
-#         path: ./sys/cydia/radare2/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+#         path: ./dist/cydia/radare2/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
     - name: Create cydia package
       run: ./sys/ios-cydia.sh
     - name: Create iOS SDK
@@ -267,16 +280,15 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: radare2_iphoneos-arm
-        path: ./sys/cydia/radare2/*.deb
+        path: ./dist/cydia/radare2*/*.deb
 
   android-build:
     runs-on: ubuntu-latest
-#    if: contains(github.ref, 'release-')
     strategy:
       fail-fast: false
       matrix:
       #  name: [x86_64, arm, aarch64]
-        name: [aarch64]
+        name: [x86_64, aarch64]
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
