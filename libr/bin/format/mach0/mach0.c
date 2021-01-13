@@ -2292,7 +2292,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 	struct section_t *sections;
-	char segname[64], sectname[64], raw_segname[17];
+	char sectname[64], raw_segname[17];
 	size_t i, j, to;
 
 	/* for core files */
