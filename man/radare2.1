@@ -19,7 +19,7 @@
 .Op Fl r Ar rarun2
 .Op Fl R Ar rr2rule
 .Op Fl s Ar addr
-.Op Fl 0AdDwntLquvVxX
+.Op Fl 0AdDwntLquUvVxX
 .Ar -|--|=|file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -102,6 +102,8 @@ Get binary information using a thread
 Avoid computing the file hashes
 .It Fl u
 Set bin.filter=false to load rbin info without filtering names
+.It Fl U
+Run sys/install.sh to update r2 from git
 .It Fl v
 Show version information and exit (Use -qv to get just the version number)
 .It Fl V

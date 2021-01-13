@@ -323,6 +323,43 @@ static void set_color_default(RCore *r) {
 	free (tmp);
 }
 
+static int r2up(const char *argv0) {
+#if __UNIX__
+	int rc = 1;
+	char *lnk = NULL;
+	char *rot = NULL;
+	char *abs = r_file_path (argv0);
+	if (!abs) {
+		eprintf ("Cannot find executable in PATH.\n");
+		goto floor;
+	}
+	lnk = r_file_readlink (abs);
+	if (!lnk || !strcmp (abs, lnk)) {
+		eprintf ("Only installations with sys/install.sh can be updated.\n");
+		goto floor;
+	}
+	rot = r_file_new (argv0, "..", "..", NULL);
+	if (!rot) {
+		eprintf ("Cannot find r2 git source directory.\n");
+		goto floor;
+	}
+	eprintf ("About to update r2 from git, press ^C to cancel the operation.\n");
+	eprintf ("cd %s\n", rot);
+	eprintf ("sys/install.sh");
+	r_cons_any_key (NULL);
+	chdir (rot);
+	rc = r_sys_cmd ("sys/install.sh");
+floor:
+	free (rot);
+	free (lnk);
+	free (abs);
+	return rc;
+#else
+	eprintf ("Not yet supported for this platform\n");
+	return 1;
+#endif
+}
+
 R_API int r_main_radare2(int argc, const char **argv) {
 	RCore *r;
 	bool forcequit = false;
@@ -450,7 +487,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	const char *project_name = NULL;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
+	r_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuUXt");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case '=':
@@ -468,6 +505,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set_i (r->config, "scr.color", COLOR_MODE_DISABLED);
 			quiet = true;
 			break;
+		case 'U':
+			return r2up (argv[0]);
 		case 'u':
 			r_config_set (r->config, "bin.filter", "false");
 			break;
