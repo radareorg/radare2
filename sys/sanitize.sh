@@ -24,9 +24,17 @@ echo "========================================================================="
 printf "\033[0m"
 sleep 1
 
+# memory leaks are detected by default, can only be disabled via env var
+HAVE_LEAKS=1
 for a in $SANITIZE ; do
 	export CFLAGS="${CFLAGS} -fsanitize=$a"
+	if [ "$a" = leak ]; then
+		HAVE_LEAKS=0
+	fi
 done
+if [ "${HAVE_LEAKS}" = 0 ]; then
+	export ASAN_OPTIONS=detect_leaks=0
+fi
 if [ "`uname`" != Darwin ]; then
 	for a in $SANITIZE ; do
 		export LDFLAGS="${LDFLAGS} -fsanitize=$a"
