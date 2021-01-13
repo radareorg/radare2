@@ -235,12 +235,12 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 	// get pseudo instruction
 	ins = ins_str[1 + 2 + hash_code * 4];
 	if (!ins /*|| ins_str[4 * hash_code] == 0*/) {
-		fprintf(stderr, "Invalid instruction %s /hash %x\n", ins, hash_code);
+		eprintf ("Invalid instruction %s /hash %x\n", r_str_get (ins), hash_code);
 		*err_code = -1;
 		return NULL;
 	}
 	if (hash_code == 0x19C) {
-		res_decode = get_token_decoded(hash_code, "MMMMxxxxmm", 10, NULL, ret_ins_bits,
+		res_decode = get_token_decoded (hash_code, "MMMMxxxxmm", 10, NULL, ret_ins_bits,
 			reg_len_dec, magic_value, ins_pos + ins_off, ins_len, two_ins, err_code);
 		if (*err_code < 0) {
 			return NULL;
@@ -258,7 +258,7 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 	while (*pos) {
 		if (*pos == '`') {
 			pos++;
-			aux = strchr(pos, '`');
+			aux = strchr (pos, '`');
 			if (!aux || pos == aux) {
 				fprintf(stderr, "Invalid instruction %s\n", ins);
 				free (res_decode);
@@ -864,7 +864,7 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				res = "<4>";
 			}
 		}
-		res = strdup(res);
+		res = strdup (res);
 		break;
 	case 78:
 		if (!r_str_ncasecmp (ins_token, "q_SAT", 5)) {
