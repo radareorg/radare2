@@ -762,11 +762,11 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		fcnpfx = "fcn";
 	}
 	const char *cc = r_anal_cc_default (core->anal);
-	if (cc) {
-		fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
-	} else {
-		eprintf ("Unknown calling convention\n");
+	if (!cc) {
+		eprintf ("Warning: set your favourite calling convention in `e anal.cc=?`\n");
+		cc = "reg";
 	}
+	fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
 	r_warn_if_fail (fcn->cc);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
