@@ -2917,7 +2917,9 @@ static int esil_get_parm_float(RAnalEsil *esil, const char *str, double *num) {
 }
 
 static bool esil_pushnum_float(RAnalEsil *esil, double num) {
-	return r_anal_esil_pushnum(esil, *(ut64 *)&num);
+	RNumFloat n;
+	n.f64 = num;
+	return r_anal_esil_pushnum(esil, n.u64);
 }
 
 static bool esil_is_nan(RAnalEsil *esil) {
@@ -2939,11 +2941,11 @@ static bool esil_is_nan(RAnalEsil *esil) {
 
 static bool esil_int_to_double(RAnalEsil *esil) {
 	bool ret = false;
-	st64 s;
+	RNumFloat s;
 	char *src = r_anal_esil_pop(esil);
 	if (src) {
-		if (r_anal_esil_get_parm(esil, src, (ut64 *)&s)) {
-			ret = esil_pushnum_float(esil, (double)s * 1.0);
+		if (r_anal_esil_get_parm(esil, src, &s.u64)) {
+			ret = esil_pushnum_float(esil, (double)(s.s64) * 1.0);
 		} else {
 			ERR("esil_int_to_float: invalid parameters.");
 		}
@@ -2956,14 +2958,14 @@ static bool esil_int_to_double(RAnalEsil *esil) {
 
 static bool esil_double_to_int(RAnalEsil *esil) {
 	bool ret = false;
-	double s;
+	RNumFloat s;
 	char *src = r_anal_esil_pop(esil);
 	if (src) {
-		if (esil_get_parm_float(esil, src, &s)) {
-			if (isnan(s) || isinf(s)) {
+		if (esil_get_parm_float(esil, src, &s.f64)) {
+			if (isnan(s.f64) || isinf(s.f64)) {
 				ERR("esil_float_to_int: nan or inf detected.");
 			}
-			ret = r_anal_esil_pushnum(esil, (st64)(s));
+			ret = r_anal_esil_pushnum(esil, (st64)(s.f64));
 		} else {
 			ERR("esil_float_to_int: invalid parameters.");
 		}
@@ -2976,22 +2978,23 @@ static bool esil_double_to_int(RAnalEsil *esil) {
 
 static bool esil_double_to_float(RAnalEsil *esil) {
 	bool ret = false;
-	double d;
+	RNumFloat d;
+	RNumFloat f;
 	ut64 s = 0;
 	char *dst = r_anal_esil_pop(esil);
 	char *src = r_anal_esil_pop(esil);
 
-	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
-		if (isnan(d) || isinf(d)) {
-			ret = r_anal_esil_pushnum(esil, *(ut64 *)&d);
+	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d.f64)) {
+		if (isnan(d.f64) || isinf(d.f64)) {
+			ret = r_anal_esil_pushnum(esil, d.u64);
 		} else if (s == 32) {
-			float f = (float)d;
-			ret = r_anal_esil_pushnum(esil, *(ut32 *)&f);
+			f.f32 = (float)d.f64;
+			ret = r_anal_esil_pushnum(esil, f.u32);
 		} else if (s == 64) {
-			double f = (double)d;
-			ret = r_anal_esil_pushnum(esil, *(ut64 *)&f);
+			ret = r_anal_esil_pushnum(esil, d.u64);
+		/* TODO handle 80 bit and 128 bit floats */
 		} else {
-			ret = r_anal_esil_pushnum(esil, *(ut64 *)&d);
+			ret = r_anal_esil_pushnum(esil, d.u64);
 		}
 	} else {
 		ERR("esil_float_to_float: invalid parameters.");
@@ -3004,20 +3007,21 @@ static bool esil_double_to_float(RAnalEsil *esil) {
 
 static bool esil_float_to_double(RAnalEsil *esil) {
 	bool ret = false;
-	double d;
+	RNumFloat d;
 	ut64 s = 0;
 	char *dst = r_anal_esil_pop(esil);
 	char *src = r_anal_esil_pop(esil);
 
-	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
-		if (isnan(d) || isinf(d)) {
-			ret = esil_pushnum_float(esil, d);
+	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d.f64)) {
+		if (isnan(d.f64) || isinf(d.f64)) {
+			ret = esil_pushnum_float(esil, d.f64);
 		} else if (s == 32) {
-			ret = esil_pushnum_float(esil, (double)(*(float  *)&d));
+			ret = esil_pushnum_float(esil, (double)d.f32);
 		} else if (s == 64) {
-			ret = esil_pushnum_float(esil, (double)(*(double *)&d));
+			ret = esil_pushnum_float(esil, d.f64);
+		/* TODO handle 80 bit and 128 bit floats */
 		} else {
-			ret = esil_pushnum_float(esil, d);
+			ret = esil_pushnum_float(esil, d.f64);
 		}
 	} else {
 		ERR("esil_float_to_float: invalid parameters.");

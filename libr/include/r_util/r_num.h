@@ -12,6 +12,18 @@ typedef struct {
 	ut64 n;
 } RNumCalcValue;
 
+typedef union {
+	ut16   u16;
+	ut32   u32;
+	ut64   u64;
+	st16   s16;
+	st32   s32;
+	st64   s64;
+	float  f32;
+	double f64;
+	/* long double f80; */
+} RNumFloat;
+
 typedef enum {
 	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
 	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
