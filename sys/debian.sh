@@ -18,10 +18,16 @@ DEVDIR=dist/debian/radare2-dev/root
 # clean
 rm -rf "${PKGDIR}" "${DEVDIR}"
 
+export CFLAGS="-O2 -Werror -Wno-cpp"
+export CFLAGS="${CFLAGS} -Wno-unused-result"
+export CFLAGS="${CFLAGS} -Wno-stringpop-truncation"
 # build
 ./configure --prefix=/usr > /dev/null
+[ $? != 0 ] && exit 1
 make -j4 > /dev/null
+[ $? != 0 ] && exit 1
 make install DESTDIR="${PWD}/${PKGDIR}" > /dev/null
+[ $? != 0 ] && exit 1
 
 # dev-split
 mkdir -p "${DEVDIR}/usr/include"
