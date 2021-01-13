@@ -186,27 +186,19 @@ static int _rv_ins_cmp(void *incoming, void *in, void *user) {
 
 static bool _edf_reg_set(RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
 	r_return_val_if_fail (dfg && !dfg->malloc_failed && reg, false);
-	const ut32 _reg_strlen = 4 + strlen (reg);
-	char *_reg = R_NEWS0 (char, _reg_strlen + 1);
-	if (!_reg) {
-		// no need for assert here, it's not a bug if malloc fails
-		return false;
-	}
-	strncat (_reg, "reg.", _reg_strlen);
-	strncat (_reg, reg, _reg_strlen);
+	char *_reg = r_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		//no assert to prevent memleaks
 		free (_reg);
 		return false;
 	}
+	free (_reg);
 	EsilDFGRegVar *rv = R_NEW0 (EsilDFGRegVar);
 	if (!rv) {
-		free (_reg);
 		return false;
 	}
 
 	const ut64 v = sdb_num_get (dfg->regs, _reg, NULL);
-	free (_reg);
 	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
 	rv->to = v & UT32_MAX;
 	r_queue_enqueue (dfg->todo, rv);
@@ -322,25 +314,13 @@ static int _rv_find_cmp(void *incoming, void *in, void *user) {
 
 static RGraphNode *_edf_origin_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	r_return_val_if_fail (dfg && reg, NULL);
-	const ut32 _reg_strlen = 4 + strlen (reg);
-	char *_reg = R_NEWS0 (char, _reg_strlen + 1);
-	if (!_reg) {
-		return NULL;
-	}
-	strncat (_reg, "reg.", _reg_strlen);
-	strncat (_reg, reg, _reg_strlen);
+	char *_reg = r_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		free (_reg);
 		return NULL;
 	}
 	free (_reg);
-	const ut32 origin_reg_strlen = 4 + strlen (reg);
-	char *origin_reg = R_NEWS0 (char, origin_reg_strlen + 1);
-	if (!origin_reg) {
-		return NULL;
-	}
-	strncat (origin_reg, "ori.", origin_reg_strlen);
-	strncat (origin_reg, reg, origin_reg_strlen);
+	char *origin_reg = r_str_newf ("ori.%s", reg);
 	RGraphNode *origin_reg_node = sdb_ptr_get (dfg->regs, origin_reg, 0);
 	if (origin_reg_node) {
 		free (origin_reg);
@@ -359,13 +339,7 @@ static RGraphNode *_edf_origin_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 
 static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	r_return_val_if_fail (dfg && reg, NULL);
-	const ut32 _reg_strlen = 4 + strlen (reg);
-	char *_reg = R_NEWS0 (char, _reg_strlen + 1);
-	if (!_reg) {
-		return NULL;
-	}
-	strncat (_reg, "reg.", _reg_strlen);
-	strncat (_reg, reg, _reg_strlen);
+	char *_reg = r_str_newf ("reg.%s", reg);
 	if (!sdb_num_exists (dfg->regs, _reg)) {
 		free (_reg);
 		return NULL;
@@ -470,13 +444,7 @@ beach:
 
 static bool _edf_var_set(RAnalEsilDFG *dfg, const char *var, RGraphNode *node) {
 	r_return_val_if_fail (dfg && var, false);
-	const ut32 _var_strlen = 4 + strlen (var);
-	char *_var = R_NEWS0 (char, _var_strlen + 1);
-	if (!_var) {
-		return false;
-	}
-	strncat (_var, "var.", _var_strlen);
-	strncat (_var, var, _var_strlen);
+	char *_var = r_str_newf ("var.%s", var);
 	const bool ret = !sdb_ptr_set (dfg->regs, _var, node, 0);
 	free (_var);
 	return ret;
@@ -484,15 +452,9 @@ static bool _edf_var_set(RAnalEsilDFG *dfg, const char *var, RGraphNode *node) {
 
 static RGraphNode *_edf_var_get(RAnalEsilDFG *dfg, const char *var) {
 	r_return_val_if_fail (dfg && var, NULL);
-	const ut32 _var_strlen = 4 + strlen (var);
-	char *_var = R_NEWS0 (char, _var_strlen + 1);
-	if (!_var) {
-		return NULL;
-	}
-	strncat (_var, "var.", _var_strlen);
-	strncat (_var, var, _var_strlen);
-	RGraphNode *ret = sdb_ptr_get (dfg->regs, _var, NULL);
-	free (_var);
+	char *k = r_str_newf ("var.%s", var);
+	RGraphNode *ret = sdb_ptr_get (dfg->regs, k, NULL);
+	free (k);
 	return ret;
 }
 
@@ -921,10 +883,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_new(RReg *regs) {
 		const ut32 from = ri->offset;
 		const ut32 to = from + ri->size - 1; // closed intervals because of FUCK YOU
 		const ut64 v = to | (((ut64)from) << 32);
-		const ut32 reg_strlen = 4 + strlen (ri->name) + 1;
-		char *reg = R_NEWS0 (char, reg_strlen);
-		strncat (reg, "reg.", reg_strlen);
-		strncat (reg, ri->name, reg_strlen);
+		char *reg = r_str_newf ("reg.%s", ri->name);
 		sdb_num_set (dfg->regs, reg, v, 0);
 		free (reg);
 	}
