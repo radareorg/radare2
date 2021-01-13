@@ -192,13 +192,14 @@ static bool _edf_reg_set(RAnalEsilDFG *dfg, const char *reg, RGraphNode *node) {
 		free (_reg);
 		return false;
 	}
-	free (_reg);
 	EsilDFGRegVar *rv = R_NEW0 (EsilDFGRegVar);
 	if (!rv) {
+		free (_reg);
 		return false;
 	}
 
 	const ut64 v = sdb_num_get (dfg->regs, _reg, NULL);
+	free (_reg);
 	rv->from = (v & (UT64_MAX ^ UT32_MAX)) >> 32;
 	rv->to = v & UT32_MAX;
 	r_queue_enqueue (dfg->todo, rv);
@@ -1167,13 +1168,15 @@ R_API RStrBuf *r_anal_esil_dfg_filter(RAnalEsilDFG *dfg, const char *reg) {
 	// dfs the graph starting at node of esp-register
 	r_graph_dfs_node_reverse (dfg->flow, resolve_me, &vi);
 
-	RBIter ator;
-	RAnalEsilDFGNode *node;
-	r_rbtree_cont_foreach (filter.tree, ator, node) {
-		// resolve results to opstr here
-		RStrBuf *resolved = get_resolved_expr (&filter, node);
-		r_strbuf_append (filtered, r_strbuf_get (resolved));
-		r_strbuf_free (resolved);
+	if (filter.tree->root) {
+		RBIter ator;
+		RAnalEsilDFGNode *node;
+		r_rbtree_cont_foreach (filter.tree, ator, node) {
+			// resolve results to opstr here
+			RStrBuf *resolved = get_resolved_expr (&filter, node);
+			r_strbuf_append (filtered, r_strbuf_get (resolved));
+			r_strbuf_free (resolved);
+		}
 	}
 	{
 		char *sanitized = r_str_replace (r_str_replace (strdup (r_strbuf_get (filtered)), ",,", ",", 1), ",,", ",", 1);
