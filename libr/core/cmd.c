@@ -7093,7 +7093,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 		return r_cmd_status2int (core_cmd_tsr2cmd (core, cstr, false, log));
 	}
 
-	bool ret = false;
+	int ret = false;
 	size_t i;
 	if (core->cmdfilter) {
 		const char *invalid_chars = ";|>`@";
