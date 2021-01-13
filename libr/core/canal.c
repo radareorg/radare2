@@ -2355,13 +2355,12 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	int usenames = r_config_get_i (core->config, "graph.json.usenames");;
 	RAnalFunction *fcni;
 	RAnalRef *fcnr;
-	PJ *pj;
+	PJ *pj = NULL;
 
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 
-	switch (fmt)
-	{
+	switch (fmt) {
 	case R_GRAPH_FORMAT_JSON:
 		pj = pj_new ();
 		if (!pj) {
@@ -2475,8 +2474,7 @@ repeat:
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
 			char *fcnr_name = (flag && flag->name) ? flag->name : r_str_newf ("unk.0x%"PFMT64x, fcnr->addr);
-			switch(fmt)
-			{
+			switch (fmt) {
 			case R_GRAPH_FORMAT_GMLFCN:
 				if (iteration == 0) {
 					r_cons_printf ("  node [\n"
@@ -2546,8 +2544,7 @@ repeat:
 	if (iteration == 0 && fmt == R_GRAPH_FORMAT_GMLFCN) {
 		iteration++;
 	}
-	switch(fmt)
-	{
+	switch (fmt) {
 	case R_GRAPH_FORMAT_GML:
 	case R_GRAPH_FORMAT_GMLFCN:
 	case R_GRAPH_FORMAT_JSON:
