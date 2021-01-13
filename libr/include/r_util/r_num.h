@@ -93,13 +93,6 @@ R_API double r_num_sin(double a);
 R_API size_t r_num_bit_count(ut32 val);
 R_API double r_num_get_float(RNum *num, const char *str);
 
-#define R_NAN r_num_nan()
-
-static inline double r_num_nan() {
-	union { ut64 i; double d;} r_nan = { 0x7ff8000000000000 };
-	return r_nan.d;
-}
-
 static inline st64 r_num_abs(st64 num) {
 	return num < 0 ? -num : num;
 }
