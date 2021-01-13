@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h>
 #include <r_types_base.h>
@@ -2749,8 +2749,18 @@ static bool cb_analsyscc(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_analcc_getter(RCore *core, RConfigNode *node) {
+	const char *cc = r_anal_cc_default (core->anal);
+	if (cc) {
+		free (node->value);
+		node->value = strdup (cc);
+	}
+	return true;
+}
+
 static bool cb_analcc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
+		node->getter = (RConfigCallback)cb_analcc_getter;
 		if (*node->value == '?') {
 			r_core_cmd0 (core, "afcl");
 			return false;
