@@ -7088,13 +7088,13 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 	return ret;
 }
 
-R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
+R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	if (core->use_tree_sitter_r2cmd) {
 		return r_cmd_status2int (core_cmd_tsr2cmd (core, cstr, false, log));
 	}
 
-	int ret = false, i;
-
+	bool ret = false;
+	size_t i;
 	if (core->cmdfilter) {
 		const char *invalid_chars = ";|>`@";
 		for (i = 0; invalid_chars[i]; i++) {
