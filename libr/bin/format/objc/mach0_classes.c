@@ -129,9 +129,8 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, 0);
 
 	mach0_ut r;
-	mach0_ut addr;
+	ut64 addr;
 
-	static RList *sctns = NULL;
 	RListIter *iter = NULL;
 	RBinSection *s = NULL;
 	RBinObject *obj = bf->o;
@@ -141,16 +140,14 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 		return bin->va2pa (p, offset, left, bf);
 	}
 
+	RList *sctns = r_bin_plugin_mach.sections (bf);
 	if (!sctns) {
-		sctns = r_bin_plugin_mach.sections (bf);
-		if (!sctns) {
-			// retain just for debug
-			// eprintf ("there is no sections\n");
-			return 0;
-		}
+		// retain just for debug
+		// eprintf ("there is no sections\n");
+		return 0;
 	}
 
-	addr = p;
+	addr = (ut64)p & 0xFFFFFFFFF;
 	r_list_foreach (sctns, iter, s) {
 		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
 			if (offset) {
