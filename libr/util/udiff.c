@@ -522,8 +522,8 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 	const size_t len_b = strlen ((const char *)b);
 	const size_t len_long = len_a > len_b ? len_a : len_b;
 	const size_t dim = len_long + 1;
-	ut8 *dup_a = malloc (len_long);
-	ut8 *dup_b = malloc (len_long);
+	char *dup_a = malloc (len_long);
+	char *dup_b = malloc (len_long);
 	st16 *align_table = malloc (dim * dim * sizeof (st16));
 	ut8 *align_a = malloc (2 * len_long);
 	ut8 *align_b = malloc (2 * len_long);
@@ -536,11 +536,10 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 		return NULL;
 	}
 
-	// Copy strings (note that strncpy does pad with nulls)
-	strncpy ((char *)dup_a, (const char *)a, len_long);
-	a = dup_a;
-	strncpy ((char *)dup_b, (const char *)b, len_long);
-	b = dup_b;
+	snprintf (dup_a, len_long, "%s", a);
+	a = (const ut8*)dup_a;
+	snprintf (dup_b, len_long, "%s", b);
+	b = (const ut8*)dup_b;
 
 	// Fill table
 	size_t row, col;

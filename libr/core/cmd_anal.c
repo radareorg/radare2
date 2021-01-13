@@ -3850,7 +3850,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		case 'r': {	// "afcr"
 			int i;
-			PJ *pj;
+			PJ *pj = NULL;
 			bool json = input[3] == 'j';
 			if (json) {
 				pj = r_core_pj_new (core);
@@ -4126,7 +4126,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'j': // "afxj"
 		case ' ': // "afx "
 		{
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
 			if (input[2] == 'j') {
 				pj_a (pj);
 			}
