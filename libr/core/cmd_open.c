@@ -443,8 +443,8 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		case 'r': {
 			// Need FIFO order here
 			char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
-					map->fd, r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i(map->perm),
-					map->name ? " " : "", r_str_get (map->name));
+					map->fd, r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
+					R_STR_ISEMPTY (map->name)? "" : " ", r_str_get (map->name));
 			if (om_cmd) {
 				om_cmds = r_str_prepend (om_cmds, om_cmd);
 				free (om_cmd);
@@ -1256,6 +1256,9 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 				p->cb_printf ("on %s 0x%08"PFMT64x"\n", desc->uri, maddr);
 			} else {
 				p->cb_printf ("on %s\n", desc->uri);
+			}
+			r_list_foreach (maps, iter, map) {
+				p->cb_printf ("omn 0x%08"PFMT64x" %s\n", map->itv.addr, map->name);
 			}
 		}
 	}
