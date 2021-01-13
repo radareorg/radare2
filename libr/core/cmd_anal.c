@@ -7267,6 +7267,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
 						r_cons_printf (".equ SYS_%s %s\n", si->name, syscallNumber (n));
+						r_syscall_item_free (si);
 					}
 					else eprintf ("Unknown syscall number\n");
 				} else {
@@ -7291,6 +7292,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
 						r_cons_printf ("#define SYS_%s %s\n", si->name, syscallNumber (n));
+						r_syscall_item_free (si);
 					}
 					else eprintf ("Unknown syscall number\n");
 				} else {
@@ -7328,6 +7330,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 				}
 				if (si) {
 					r_cons_println (si->name);
+					r_syscall_item_free (si);
 				} else {
 					eprintf ("Unknown syscall number\n");
 				}

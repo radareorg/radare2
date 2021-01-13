@@ -1407,6 +1407,7 @@ static void w_handler_common(RCore *core, const char *input) {
 	if (!r_core_write_at (core, core->offset, (const ut8 *)str, len)) {
 		cmd_write_fail (core);
 	}
+	free (str);
 	WSEEK (core, len);
 	r_core_block_read (core);
 }
