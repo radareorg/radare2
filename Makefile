@@ -202,6 +202,7 @@ install-man-symlink:
 	cd "${DESTDIR}${MANDIR}/man1" && ln -fs radare2.1 r2.1
 	for FILE in *.7 ; do \
 		ln -fs "${PWD}/man/$$FILE" "${DESTDIR}${MANDIR}/man7/$$FILE" ; done
+	cd "${DESTDIR}${MANDIR}/man1" && ln -fs radare2.1 r2.1
 
 install-doc:
 	mkdir -p "${DESTDIR}${DOCDIR}"
