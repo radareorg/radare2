@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2020 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -18,7 +18,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		mal->offset = 0;
-		mal->buf = r_socket_http_get (pathname, &code, &rlen);
+		mal->buf = (ut8*)r_socket_http_get (pathname, &code, &rlen);
 		if (mal->buf && rlen > 0) {
 			mal->size = rlen;
 			return r_io_desc_new (io, &r_io_plugin_malloc, pathname, R_PERM_RW | rw, mode, mal);
