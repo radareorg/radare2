@@ -31,7 +31,7 @@ jobs:
   #        path: radare2_dist/*
   build-spaces:
     name: linux-meson-spaces
-#    continue-on-error: true
+    continue-on-error: true
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
@@ -69,7 +69,7 @@ jobs:
 
   windows-dist:
     name: windows-${{ matrix.name }}
-#    if: contains(github.ref, 'ci-')
+#    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -116,7 +116,7 @@ jobs:
       run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2_installer-git
+        name: radare2_installer-git.exe
         path: radare2-win-installer\Output\radare2.exe
 
   # LINUX
@@ -146,6 +146,7 @@ jobs:
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
+        name: radare2_debian_amd64.zip
         path: dist/debian/*/*.deb
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
