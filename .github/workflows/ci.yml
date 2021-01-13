@@ -249,7 +249,7 @@ jobs:
     - name: Building Radare2
       run: export CFLAGS="-O2"; sys/install.sh
     - name: Running tests
-      run: make tests
+      run: pip3 install r2pipe; make tests
 
   # Mobile
   ios-cydia:
