@@ -6916,8 +6916,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			core_anal_bytes (core, core->block, len, count, 0);
 		}
 		break;
-	case 'f':
-		{
+	case 'f': // "aof"
+		if (strlen (input + 1) > 1) {
 			RAnalOp aop = R_EMPTY;
 			ut8 data[32];
 			r_io_read_at (core->io, core->offset, data, sizeof (data));
