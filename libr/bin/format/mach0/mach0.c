@@ -4034,7 +4034,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 	}
 	for (n = 0; n < mh->ncmds; n++) {
 		READWORD ();
-		int lcType = word;
+		ut32 lcType = word;
 		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
 			cb_printf ("pf.%s @ 0x%08"PFMT64x"\n", pf_definition, pvaddr - 4);
