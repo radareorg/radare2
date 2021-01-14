@@ -69,7 +69,7 @@ static char *prpsinfo_get_psargs(char *buffer, int len) {
 		paux[i] = buffer[i];
 	}
 	paux[i] = '\0';
-	strncat (p, paux, len - bytes_left - 1);
+	snprintf (p + bytes_left, len - bytes_left, "%s", paux);
 	return p;
 }
 
