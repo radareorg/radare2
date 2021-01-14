@@ -420,6 +420,7 @@ static int arm64_reg_width(int reg) {
 	case ARM64_REG_S28:
 	case ARM64_REG_S29:
 	case ARM64_REG_S30:
+	case ARM64_REG_S31:
 		return 32;
 		break;
 	default:
@@ -523,6 +524,68 @@ static const char *vas_name(arm64_vas vas) {
 	}
 }
 
+static const int vas_size(arm64_vas vas) {
+	switch (vas) {
+	case ARM64_VAS_8B:
+	case ARM64_VAS_16B:
+		return 8;
+	case ARM64_VAS_4H:
+	case ARM64_VAS_8H:
+		return 16;
+	case ARM64_VAS_2S:
+	case ARM64_VAS_4S:
+		return 32;
+	case ARM64_VAS_2D:
+	case ARM64_VAS_1D:
+		return 64;
+	case ARM64_VAS_1Q:
+		return 128;
+#if CS_API_MAJOR > 4
+	case ARM64_VAS_1B:
+	case ARM64_VAS_4B:
+		return 8;
+	case ARM64_VAS_2H:
+	case ARM64_VAS_1H:
+		return 16;
+	case ARM64_VAS_1S:
+		return 32;
+#endif
+	default:
+		return 64;
+	}
+}
+
+static const int vas_count(arm64_vas vas) {
+	switch (vas) {
+	case ARM64_VAS_16B:
+		return 16;
+	case ARM64_VAS_8B:
+	case ARM64_VAS_8H:
+		return 8;
+	case ARM64_VAS_4S:
+	case ARM64_VAS_4H:
+		return 4;
+	case ARM64_VAS_2D:
+	case ARM64_VAS_2S:
+		return 2;
+	case ARM64_VAS_1D:
+	case ARM64_VAS_1Q:
+		return 1;
+#if CS_API_MAJOR > 4
+	case ARM64_VAS_4B:
+		return 4;
+	case ARM64_VAS_2H:
+		return 2;
+	case ARM64_VAS_1B:
+	case ARM64_VAS_1H:
+	case ARM64_VAS_1S:
+		return 1;
+#endif
+	default:
+		return 64;
+	}
+}
+
 #if CS_API_MAJOR == 4
 static const char *vess_name(arm64_vess vess) {
 	switch (vess) {
@@ -536,6 +599,23 @@ static const char *vess_name(arm64_vess vess) {
 		return "d";
 	default:
 		return "";
+	}
+}
+#endif
+
+#if CS_API_MAJOR == 4
+static const int vess_size(arm64_vess vess) {
+	switch (vess) {
+	case ARM64_VESS_B:
+		return 8;
+	case ARM64_VESS_H:
+		return 16;
+	case ARM64_VESS_S:
+		return 32;
+	case ARM64_VESS_D:
+		return 64;
+	default:
+		return 64;
 	}
 }
 #endif
@@ -791,6 +871,16 @@ static int regsize64(cs_insn *insn, int n) {
 #define REGSIZE64(x) regsize64 (insn, x)
 #define REGSIZE32(x) regsize32 (insn, x)
 
+static int vector_size(cs_arm64_op *op) {
+	if (op->vess) {
+		return vess_size(op->vess);
+	} else if (op->vas) {
+		return vas_size(op->vas);
+	} else {
+		return 64;
+	}
+}
+
 // return postfix
 const char* arm_prefix_cond(RAnalOp *op, int cond_type) {
 	const char *close_cond[2];
@@ -907,26 +997,90 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define ARG(x) arg(a, handle, insn, str[x], x)
 
-#define SHIFTED_REG64_APPEND(sb, n) shifted_reg64_append(sb, handle, insn, n)
+#define VEC64(n) insn->detail->arm64.operands[n].vess
+#define VEC64_APPEND(sb, n, i) vector64_append(sb, handle, insn, n, i)
+#define VEC64_MASK(sh, sz) (bitmask_by_width[63]^(bitmask_by_width[sz-1]<<sh))
+
+static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i) {
+	cs_arm64_op op = INSOP64 (n);
+
+	if (op.vector_index != -1) {
+		i = op.vector_index;
+	}
+
+	if ((op.vess || op.vas) && i != -1) {
+		int size = vector_size(&op);
+		int shift = i * size;
+		char *regc = "l";
+		if (shift >= 64) {
+			shift -= 64;
+			regc = "h";
+		}
+
+		if (shift > 0) {
+			r_strbuf_appendf (sb, "0x%"PFMT64x",%d,%s%s,>>,&", 
+				bitmask_by_width[size-1], shift, REG64 (n), regc);
+		} else {
+			r_strbuf_appendf (sb, "0x%"PFMT64x",%s%s,&", 
+				bitmask_by_width[size-1], REG64 (n), regc);
+		}
+	} else {
+		r_strbuf_appendf (sb, "%s", REG64 (n));
+	}
+}
+
+#define VEC64_DST_APPEND(sb, n, i) vector64_dst_append(sb, handle, insn, n, i)
+
+static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i) {
+	cs_arm64_op op = INSOP64 (n);
+
+	if (op.vector_index != -1) {
+		i = op.vector_index;
+	}
+
+	if ((op.vess || op.vas) && i != -1) {
+		int size = vector_size(&op);
+		int shift = i * size;
+		char *regc = "l";
+		ut64 mask = bitmask_by_width[size-1];
+		if (shift >= 64) {
+			shift -= 64;
+			regc = "h";
+		}
+
+		if (shift > 0) {
+			r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s", 
+				shift, mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
+		} else {
+			r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s,0x%"PFMT64x",&,|,%s%s", 
+				mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
+		}
+	} else {
+		r_strbuf_appendf (sb, "%s", REG64 (n));
+	}
+}
+
+#define SHIFTED_REG64_APPEND(sb, n, i) shifted_reg64_append(sb, handle, insn, n, i)
 
 // do the sign extension here as well, but honestly this whole thing should maybe be redesigned
-static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n) {
+static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i) {
+	cs_arm64_op op = INSOP64 (n);
 	int signext = EXT64(n);
 	const char *rn;
 
 	if (HASMEMINDEX64(n)) {
 		rn = MEMINDEX64(n);
-	}
-	else {
+	} else {
 		rn = REG64(n);
 	}
 
-	if (LSHIFT2_64(n)) {
-		if (insn->detail->arm64.operands[n].shift.type != ARM64_SFT_ASR) {
+	if (op.vess || op.vas) {
+		VEC64_APPEND (sb, n, i);
+	} else if (LSHIFT2_64(n)) {
+		if (op.shift.type != ARM64_SFT_ASR) {
 			if (signext) {
 				r_strbuf_appendf (sb, "%d,%d,%s,~,%s", LSHIFT2_64(n), signext, rn, DECODE_SHIFT64(n));
-			}
-			else {
+			} else {
 				r_strbuf_appendf (sb, "%d,%s,%s", LSHIFT2_64(n), rn, DECODE_SHIFT64(n));
 			}
 		} else {
@@ -939,17 +1093,14 @@ static void shifted_reg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n)
 			if (signext) {
 				r_strbuf_appendf (sb, "%d,%d,%s,~,%s,1,%d,%s,~,<<<,1,&,?{,%"PFMT64u",}{,0,},|",
 					LSHIFT2_64(n), signext, rn, DECODE_SHIFT64(n), signext, REG64(n), (ut64)missing_ones);
-			}
-			else {
+			} else {
 				r_strbuf_appendf (sb, "%d,%s,%s,1,%s,<<<,1,&,?{,%"PFMT64u",}{,0,},|",
 					LSHIFT2_64(n), rn, DECODE_SHIFT64(n), rn, (ut64)missing_ones);
 			}
 		}
-	}
-	else if (signext) {
+	} else if (signext) {
 		r_strbuf_appendf (sb, "%d,%s,~", signext, rn);
-	}
-	else {
+	} else {
 		r_strbuf_appendf (sb, "%s", rn);
 	}
 }
@@ -963,9 +1114,25 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	const char *r0 = REG64(0);
 	const char *r1 = REG64(1);
 
-	if (ISREG64(2)) {
-		if (LSHIFT2_64 (2) || EXT64(2)) {
-			SHIFTED_REG64_APPEND(&op->esil, 2);
+	cs_arm64_op dst = INSOP64 (0);
+
+	if (dst.vas) {
+		int end = vas_count(dst.vas);
+
+		for (int i = 0; i < end; i++) {
+			VEC64_APPEND(&op->esil, 2, i);
+			if (negate) {
+				r_strbuf_appendf (&op->esil, ",-1,^");
+			}
+			r_strbuf_appendf (&op->esil, ",");
+			VEC64_APPEND(&op->esil, 1, i);
+			r_strbuf_appendf (&op->esil, ",%s,", opchar);
+			VEC64_DST_APPEND(&op->esil, 0, i);
+			r_strbuf_appendf (&op->esil, ",=,");
+		}
+	} else if (ISREG64(2)) {
+		if (LSHIFT2_64 (2) || EXT64(2) || VEC64 (2)) {
+			SHIFTED_REG64_APPEND(&op->esil, 2, -1);
 			if (negate) {
 				r_strbuf_appendf (&op->esil, ",-1,^");
 			}
@@ -985,7 +1152,6 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		} else {
 			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,%s,%s,=", i2, r1, opchar, r0);
 		}
-
 	}
 }
 
@@ -996,14 +1162,25 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
 	int size = REGSIZE64(1)*8;
 
-	const char *r0 = REG64(0);
-	const char *r1 = REG64(1);
-	const char *r2 = REG64(2);
+	cs_arm64_op dst = INSOP64 (0);
+	int start = -1;
+	int end = 0; 
+	if (dst.vas) {
+		start = 0;
+		end = vas_count(dst.vas);
+	}
 
-	if (!negate) {
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F%s,D2F,%s,=", size, r2, size, r1, opchar, r0);
-	} else {
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F%s,-F,D2F,%s,=", size, r2, size, r1, opchar, r0);
+	for (int i = start; i < end; i++) {
+		r_strbuf_appendf (&op->esil, "%d,DUP,", size);
+		VEC64_APPEND (&op->esil, 2, i);
+		if (negate) {
+			r_strbuf_appendf (&op->esil, ",-F");	
+		}
+		r_strbuf_appendf (&op->esil, ",F2D,%d,", size);
+		VEC64_APPEND (&op->esil, 1, i);
+		r_strbuf_appendf (&op->esil, ",F2D,F%s,D2F,", opchar);	
+		VEC64_DST_APPEND (&op->esil, 0, i);
+		r_strbuf_appendf (&op->esil, ",=,");
 	}
 }
 
@@ -1151,7 +1328,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 		if (ISREG64(2)) {
 			if (LSHIFT2_64 (2) || EXT64(2)) {
-				SHIFTED_REG64_APPEND(&op->esil, 2);
+				SHIFTED_REG64_APPEND(&op->esil, 2, -1);
 				r_strbuf_appendf (&op->esil, ",%d,%%,%s,>>,%s,=", size, r1, r0);
 			} else {
 				const char *r2 = REG64(2);
@@ -1171,7 +1348,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 		if (ISREG64(2)) {
 			if (LSHIFT2_64 (2) || EXT64(2)) {
-				SHIFTED_REG64_APPEND(&op->esil, 2);
+				SHIFTED_REG64_APPEND(&op->esil, 2, -1);
 				r_strbuf_appendf (&op->esil, ",%d,%%,%s,<<,%s,=", size, r1, r0);
 			} else {
 				const char *r2 = REG64(2);
@@ -1189,6 +1366,22 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_NOP:
 		r_strbuf_setf (&op->esil, ",");
 		break;
+	case ARM64_INS_FMOV:
+	{
+		cs_arm64_op dst = INSOP64 (0);
+		cs_arm64_op src = INSOP64 (1);
+
+		if (dst.vess && src.vess) {
+			r_strbuf_setf (&op->esil, "%sh,%sh,=,%sl,%sl,=", 
+				REG64 (1), REG64 (0), REG64 (1), REG64 (0));
+		} else {
+			VEC64_APPEND (&op->esil, 1, -1);
+			r_strbuf_appendf (&op->esil, ",");
+			VEC64_DST_APPEND (&op->esil, 0, -1);
+			r_strbuf_appendf (&op->esil, ",=");
+		}
+		break;
+	}
 	case ARM64_INS_FCMP:
 	case ARM64_INS_FCMPE:
 	case ARM64_INS_FCCMP:
@@ -1450,7 +1643,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		if (ISMEM64(1)) {
 			if (HASMEMINDEX64(1)) {
 				if (LSHIFT2_64(1) || EXT64(1)) {
-					SHIFTED_REG64_APPEND(&op->esil, 1);
+					SHIFTED_REG64_APPEND(&op->esil, 1, -1);
 					r_strbuf_appendf (&op->esil, ",%s,+,[%d],%s,=", MEMBASE64(1), size, REG64(0));
 				} else {
 					r_strbuf_appendf (&op->esil, "%s,%s,+,[%d],%s,=",
@@ -1544,7 +1737,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			if (HASMEMINDEX64(1)) {
 				if (LSHIFT2_64(1) || EXT64(1)) {
 					r_strbuf_appendf (&op->esil, "%d,%s,", size*8, MEMBASE64(1));
-					SHIFTED_REG64_APPEND(&op->esil, 1);
+					SHIFTED_REG64_APPEND(&op->esil, 1, -1);
 					r_strbuf_appendf (&op->esil, ",+,[%d],~,%s,=", size, REG64(0));
 				} else {
 					r_strbuf_appendf (&op->esil, "%d,%s,%s,+,[%d],~,%s,=",
@@ -1619,7 +1812,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", IMM64(1) << LSHIFT2_64(1), REG64(0), bits - 1, bits, bits - 1);
 		} else {
 			// cmp w10, w11
-			SHIFTED_REG64_APPEND(&op->esil, 1);
+			SHIFTED_REG64_APPEND(&op->esil, 1, -1);
 			r_strbuf_appendf (&op->esil, ",%s,==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", REG64(0), bits - 1, bits, bits -1);
 		}
 
@@ -1678,7 +1871,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			if (HASMEMINDEX64(1)) {
 				if (LSHIFT2_64(1) || EXT64(1)) {
 					r_strbuf_appendf (&op->esil, "%s,%s,", REG64(0), MEMBASE64(1));
-					SHIFTED_REG64_APPEND(&op->esil, 1);
+					SHIFTED_REG64_APPEND(&op->esil, 1, -1);
 					r_strbuf_appendf (&op->esil, ",+,=[%d]", size);
 				} else {
 					r_strbuf_appendf (&op->esil, "%s,%s,%s,+,=[%d]",
@@ -1927,7 +2120,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 		if (ISREG64(2)) {
 			if (LSHIFT2_64 (2)) {
-				SHIFTED_REG64_APPEND(&op->esil, 2);
+				SHIFTED_REG64_APPEND(&op->esil, 2, -1);
 				r_strbuf_appendf (&op->esil, ",%d,%%,%s,>>>>,%s,=", size, r1, r0);
 			} else {
 				const char *r2 = REG64(2);
@@ -2018,7 +2211,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_NEGS:
 #endif
 		if (LSHIFT2_64 (1)) {
-			SHIFTED_REG64_APPEND (&op->esil, 1);
+			SHIFTED_REG64_APPEND (&op->esil, 1, -1);
 		} else {
 			r_strbuf_appendf (&op->esil, "%s", REG64 (1));
 		}
@@ -4334,6 +4527,40 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	v29	.128	752	0\n"
 		"gpr	v30	.128	768	0\n"
 		"gpr	v31	.128	784	0\n"
+
+		/* 64bit double */
+		"gpr	v0l	.64	288	0\n"
+		"gpr	v1l	.64	304	0\n"
+		"gpr	v2l	.64	320	0\n"
+		"gpr	v3l	.64	336	0\n"
+		"gpr	v4l	.64	352	0\n"
+		"gpr	v5l	.64	368	0\n"
+		"gpr	v6l	.64	384	0\n"
+		"gpr	v7l	.64	400	0\n"
+		"gpr	v8l	.64	416	0\n"
+		"gpr	v9l	.64	432	0\n"
+		"gpr	v10l	.64	448	0\n"
+		"gpr	v11l	.64	464	0\n"
+		"gpr	v12l	.64	480	0\n"
+		"gpr	v13l	.64	496	0\n"
+		"gpr	v14l	.64	512	0\n"
+		"gpr	v15l	.64	528	0\n"
+		"gpr	v16l	.64	544	0\n"
+		"gpr	v17l	.64	560	0\n"
+		"gpr	v18l	.64	576	0\n"
+		"gpr	v19l	.64	592	0\n"
+		"gpr	v20l	.64	608	0\n"
+		"gpr	v21l	.64	624	0\n"
+		"gpr	v22l	.64	640	0\n"
+		"gpr	v23l	.64	656	0\n"
+		"gpr	v24l	.64	672	0\n"
+		"gpr	v25l	.64	688	0\n"
+		"gpr	v26l	.64	704	0\n"
+		"gpr	v27l	.64	720	0\n"
+		"gpr	v28l	.64	736	0\n"
+		"gpr	v29l	.64	752	0\n"
+		"gpr	v30l	.64	768	0\n"
+		"gpr	v31l	.64	784	0\n"
 
 		/* 128 bit vector high 64 */
 		"gpr	v0h	.64	296	0\n"
