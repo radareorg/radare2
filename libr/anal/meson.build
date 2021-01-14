@@ -11,7 +11,6 @@ r_anal_sources = [
   'data.c',
   'diff.c',
   'esil.c',
-  'esil2reil.c',
   'esil_stats.c',
   'esil_trace.c',
   'esil_interrupt.c',
