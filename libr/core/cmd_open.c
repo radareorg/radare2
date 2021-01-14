@@ -389,8 +389,10 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			r_table_visual_list (table, list, core->offset, core->blocksize,
 				r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 			char *table_text = r_table_tostring (table);
-			r_cons_printf ("\n%s\n", table_text);
-			r_free (table_text);
+			if (table_text) {
+				r_cons_printf ("\n%s\n", table_text);
+				r_free (table_text);
+			}
 			r_table_free (table);
 			r_list_free (list);
 		} break;
@@ -1258,6 +1260,9 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 				p->cb_printf ("on %s\n", desc->uri);
 			}
 			r_list_foreach (maps, iter, map) {
+				if (R_STR_ISEMPTY (map->name)) {
+					continue;
+				}
 				p->cb_printf ("omn 0x%08"PFMT64x" %s\n", map->itv.addr, map->name);
 			}
 		}

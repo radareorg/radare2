@@ -371,9 +371,9 @@ o
 om
 om*
 ?e --
-Pd hand
-Ps hand > /dev/null
-Po hand > /dev/null
+Pd hond
+Ps hond > /dev/null
+Po hond > /dev/null
 om*
 ?e --
 om*~?
