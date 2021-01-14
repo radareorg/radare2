@@ -132,7 +132,7 @@ static int main_help(int line) {
 #endif
 		" -T           do not compute file hashes\n"
 		" -u           set bin.filter=false to get raw sym/sec/cls names\n"
-		" -U           update r2 from git (sys/install.sh only)\n"
+		" -U           update r2 from git (WIP and EXPERIMENTAL)\n"
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
 		" -x           open without exec-flag (asm.emu will not work), See io.exec\n"
