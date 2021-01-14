@@ -644,7 +644,6 @@ static const char *help_msg_ao[] = {
 	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
 	"aoe", " N", "display esil form for N opcodes",
 	"aoef", " expr", "filter esil expression of opcode by given output",
-	"aor", " N", "display reil form for N opcodes",
 	"aos", " N", "display size of N opcodes",
 	"aom", " [id]", "list current or all mnemonics for current arch",
 	"aod", " [mnemonic]", "describe opcode for asm.arch",
@@ -1756,10 +1755,6 @@ static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
 }
 
 static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int fmt) {
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	bool iotrap = r_config_get_i (core->config, "esil.iotrap");
-	bool romem = r_config_get_i (core->config, "esil.romem");
-	bool stats = r_config_get_i (core->config, "esil.stats");
 	bool be = core->print->big_endian;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
@@ -1773,7 +1768,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	RAnalOp op = {0};
 	ut64 addr;
 	PJ *pj = NULL;
-	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	int totalsize = 0;
 
 	// Variables required for setting up ESIL to REIL conversion
@@ -1789,15 +1783,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		pj_a (pj);
 		break;
 	}
-	case 'r':
-		// Setup for ESIL to REIL conversion
-		esil = r_anal_esil_new (stacksize, iotrap, addrsize);
-		if (!esil) {
-			return;
-		}
-		r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
-		r_anal_esil_set_pc (esil, core->offset);
-		break;
 	}
 	for (i = idx = ret = 0; idx < len && (!nops || (nops && i < nops)); i++, idx += ret) {
 		addr = core->offset + idx;
@@ -6578,20 +6563,6 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		} break;
 	case 't': // "aet"
 		switch (input[1]) {
-		case 'r': // "aetr"
-		{
-			// anal ESIL to REIL.
-			RAnalEsil *esil = r_anal_esil_new (stacksize, iotrap, addrsize);
-			if (!esil) {
-				return;
-			}
-			r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
-			r_anal_esil_set_pc (esil, core->offset);
-			r_anal_esil_parse (esil, input + 2);
-			r_anal_esil_dumpstack (esil);
-			r_anal_esil_free (esil);
-			break;
-		}
 		case 's': // "aets"
 			switch (input[2]) {
 			case '+': // "aets+"
