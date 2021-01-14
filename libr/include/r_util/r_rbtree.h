@@ -35,7 +35,7 @@ typedef struct r_rb_iter_t {
 	// current depth
 	// if len == 0, the iterator is at the end/empty
 	// else path[len-1] is the current node
-	int len;
+	size_t len;
 
 	// current path from root to the current node
 	// excluding nodes into whose right (or left, for reverse iteration) branch the iterator has descended
