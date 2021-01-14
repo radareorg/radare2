@@ -42,11 +42,13 @@ typedef struct {
 } RTableRow;
 
 typedef struct {
+	char *name;
 	RList *rows;
 	RList *cols;
 	int totalCols;
 	bool showHeader;
 	bool showFancy;
+	bool showSQL;
 	bool showJSON;
 	bool showCSV;
 	bool showR2;
@@ -61,7 +63,7 @@ R_API void r_table_row_free(void *_row);
 R_API void r_table_column_free(void *_col);
 R_API RTableColumn *r_table_column_clone(RTableColumn *col);
 R_API RTableColumnType *r_table_type(const char *name);
-R_API RTable *r_table_new(void);
+R_API RTable *r_table_new(const char *name);
 R_API RTable *r_table_clone(const RTable *t);
 R_API void r_table_free(RTable *t);
 R_API int r_table_column_nth(RTable *t, const char *name);
@@ -74,6 +76,7 @@ R_API void r_table_add_row_list(RTable *t, RList *items);
 R_API char *r_table_tofancystring(RTable *t);
 R_API char *r_table_tosimplestring(RTable *t);
 R_API char *r_table_tostring(RTable *t);
+R_API char *r_table_tosql(RTable *t);
 R_API char *r_table_tocsv(RTable *t);
 R_API char *r_table_tor2cmds(RTable *t);
 R_API char *r_table_tojson(RTable *t);

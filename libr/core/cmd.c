@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
 
 #define INTERACTIVE_MAX_REP 1024
 
@@ -1458,7 +1458,7 @@ static void cmd_table_header(RCore *core, char *s) {
 		return;
 	}
 	if (!core->table) {
-		core->table = r_core_table (core);
+		core->table = r_core_table (core, "header");
 	}
 	size_t i = 0;
 	r_list_foreach (list, iter, s) {
@@ -1492,7 +1492,7 @@ static bool display_table_filter(RCore *core, const char *input) {
 static int cmd_table(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	if (!core->table) {
-		core->table = r_table_new ();
+		core->table = r_table_new ("table");
 	}
 	switch (*input) {
 	case 'h': // table header columns
@@ -1502,7 +1502,7 @@ static int cmd_table(void *data, const char *input) {
 	case 'r': // add row
 		{
 			if (!core->table) {
-				core->table = r_table_new ();
+				core->table = r_table_new ("table");
 			}
 			char *args = r_str_trim_dup (input + 1);
 			if (*args) {
@@ -1515,7 +1515,7 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case '-':
 		r_table_free (core->table);
-		core->table = r_table_new ();
+		core->table = r_table_new ("table");
 		break;
 	case '/':
 		// query here

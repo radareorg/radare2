@@ -889,7 +889,7 @@ typedef struct r_core_task_t {
 typedef void (*RCoreTaskOneShot)(void *);
 
 R_API void r_core_echo(RCore *core, const char *msg);
-R_API RTable *r_core_table(RCore *core);
+R_API RTable *r_core_table(RCore *core, const char *name);
 
 R_API void r_core_task_scheduler_init (RCoreTaskScheduler *tasks, RCore *core);
 R_API void r_core_task_scheduler_fini (RCoreTaskScheduler *tasks);

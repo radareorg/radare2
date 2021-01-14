@@ -3219,7 +3219,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		pj_a (pj);
 		break;
 	case 'h': { // "p-h"
-		t = r_core_table (core);
+		t = r_core_table (core, "navbar");
 		if (!t) {
 			goto cleanup;
 		}
@@ -4456,7 +4456,7 @@ static char *__op_refs(RCore *core, RAnalOp *op, int n) {
 
 static void r_core_disasm_table(RCore * core, int l, const char *input) {
 	int i;
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "disasm");
 	char *arg = strchr (input, ' ');
 	if (arg) {
 		input = arg + 1;
@@ -4520,7 +4520,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	PJ *pj = NULL;
 	RTable *t = NULL;
 	if (mode == ',') {
-		t = r_table_new ();
+		t = r_table_new ("pxr");
 		RTableColumnType *n = r_table_type ("number");
 		RTableColumnType *s = r_table_type ("string");
 		r_table_add_column (t, n, "addr", 0);

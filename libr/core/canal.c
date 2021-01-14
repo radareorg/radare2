@@ -3198,7 +3198,7 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	RAnalFunction *fcn;
 	RListIter *iter;
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "fcns");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
 	r_table_add_column (t, typeNumber, "addr", 0);
@@ -3307,7 +3307,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 			}
 			r_list_append (flist, info);
 		}
-		RTable *table = r_core_table (core);
+		RTable *table = r_core_table (core, "functions");
 		r_table_visual_list (table, flist, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		r_cons_printf ("\n%s\n", r_table_tostring (table));

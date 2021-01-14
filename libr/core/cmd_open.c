@@ -385,7 +385,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				}
 				r_list_append (list, info);
 			}
-			RTable *table = r_core_table (core);
+			RTable *table = r_core_table (core, "bins");
 			r_table_visual_list (table, list, core->offset, core->blocksize,
 				r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 			char *table_text = r_table_tostring (table);
@@ -538,7 +538,7 @@ static void cmd_omf(RCore *core, const char *input) {
 }
 
 static void r_core_cmd_omt(RCore *core, const char *arg) {
-	RTable *t = r_table_new ();
+	RTable *t = r_table_new ("iomaps");
 
 	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
@@ -884,7 +884,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 			r_list_append (list, info);
 		}
-		RTable *table = r_core_table (core);
+		RTable *table = r_core_table (core, "maps");
 		r_table_visual_list (table, list, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		char *tablestr = r_table_tostring (table);

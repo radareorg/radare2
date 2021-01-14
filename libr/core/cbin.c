@@ -372,7 +372,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 	bool b64str = r_config_get_i (r->config, "bin.b64str");
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	int maxstr = r_config_get_i (r->config, "bin.maxstr");
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "strings");
 	r_return_if_fail (table);
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
@@ -1688,7 +1688,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = r_config_get (r->config, "bin.lang");
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "relocs");
 	r_return_val_if_fail (table, false);
 	RBIter iter;
 	RBinReloc *reloc = NULL;
@@ -1946,7 +1946,7 @@ static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "imports");
 	r_return_val_if_fail (table, false);
 	RBinImport *import;
 	RListIter *iter;
@@ -2237,7 +2237,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 	bool none = true;
 
 	int i = 0, lastfs = 's';
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "symbols");
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (IS_MODE_JSON (mode)) {
 		if (!printHere) {
@@ -2667,7 +2667,7 @@ static int bin_map_sections_to_segments(RBin *bin, PJ *pj, int mode) {
 	RList *sections = r_list_new ();
 	RList *segments = r_list_new ();
 	RList *tmp = r_bin_get_sections (bin);
-	RTable *table = r_table_new ();
+	RTable *table = r_table_new ("segments");
 	RTableColumnType *typeString = r_table_type ("string");
 
 	r_table_add_column (table, typeString, "Segment", 0);
@@ -2721,7 +2721,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	RBinInfo *info = NULL;
 	RList *sections;
 	RListIter *iter;
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "sections");
 	r_return_val_if_fail (table, false);
 	int i = 0;
 	int fd = -1;
@@ -2764,7 +2764,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			RListInfo *info = r_listinfo_new (s->name, pitv, vitv, s->perm, strdup (humansz));
 			r_list_append (list, info);
 		}
-		RTable *table = r_core_table (r);
+		RTable *table = r_core_table (r, "sections");
 		r_table_visual_list (table, list, r->offset, -1, cols, r->io->va);
 		if (r->table_query) {
 			r_table_query (table, r->table_query);

@@ -177,6 +177,7 @@ R_API int r_str_unescape(char *buf);
 R_API char *r_str_sanitize_r2(const char *buf);
 R_API char *r_str_escape(const char *buf);
 R_API char *r_str_escape_sh(const char *buf);
+R_API char *r_str_escape_sql(const char *buf);
 R_API char *r_str_escape_dot(const char *buf);
 R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash, bool colors);
 R_API char *r_str_escape_utf8(const char *buf, bool show_asciidot, bool esc_bslash);
