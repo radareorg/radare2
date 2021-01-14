@@ -1388,6 +1388,12 @@ R_API char *r_str_sanitize_r2(const char *buf) {
 	return new_buf;
 }
 
+R_API char *r_str_escape_sql(const char *buf) {
+	r_return_val_if_fail (buf, NULL);
+	char *res = r_str_replace (strdup (buf), "'", "\\'", true);
+	return res;
+}
+
 // Return MUST BE surrounded by double-quotes
 R_API char *r_str_escape_sh(const char *buf) {
 	r_return_val_if_fail (buf, NULL);

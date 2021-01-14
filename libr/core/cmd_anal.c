@@ -2300,7 +2300,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 		pj_o (pj);
 		pj_ka (pj, "blocks");
 	} else if (mode == ',' || mode == 't') {
-		table = r_table_new ();
+		table = r_table_new ("bbs");
 		RTableColumnType *s = r_table_type ("string");
 		RTableColumnType *n = r_table_type ("number");
 		r_table_add_column (table, n, "addr", 0);
@@ -2575,7 +2575,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			}
 			r_list_append (flist, info);
 		}
-		RTable *table = r_core_table (core);
+		RTable *table = r_core_table (core, "fcnbbs");
 		r_table_visual_list (table, flist, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		r_cons_printf ("\n%s\n", r_table_tostring (table));
@@ -2586,7 +2586,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 
 	RTable *t = NULL;
 	if (mode == 't') {
-		t = r_table_new ();
+		t = r_table_new ("fcnbbs");
 		r_table_set_columnsf (t, "xdxx", "addr", "size", "jump", "fail");
 	}
 	r_list_foreach (fcn->bbs, iter, b) {
@@ -3177,7 +3177,7 @@ static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
 	} else if (*input == 't') {
 		SdbList *ls = sdb_foreach_list (db, true);
 		SdbListIter *it;
-		RTable *t = r_table_new ();
+		RTable *t = r_table_new ("fcnstats");
 		SdbKv *kv;
 		RTableColumnType *typeString = r_table_type ("string");
 		RTableColumnType *typeNumber = r_table_type ("number");
@@ -3240,7 +3240,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 		}
 		ls_free (ls);
 	}
-	RTable *t = r_table_new ();
+	RTable *t = r_table_new ("fcnallstats");
 	SdbList *ls = sdb_foreach_list (d, true);
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");

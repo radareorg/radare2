@@ -1931,7 +1931,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
 	RRegItem *r;
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "regs");
 
 	if (mode == 'j') {
 		r_config_set_i (core->config, "scr.color", false);
@@ -2245,7 +2245,7 @@ static char *__table_format_string(RTable *t, int fmt) {
 static void __tableRegList (RCore *core, RReg *reg, const char *str) {
 	int i;
 	RRegItem *e;
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "regprofile");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
 	RTableColumnType *typeBoolean = r_table_type ("boolean");

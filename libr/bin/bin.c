@@ -1025,7 +1025,7 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 	if (!nbinfile) {
 		return;
 	}
-	RTable *table = r_table_new ();
+	RTable *table = r_table_new ("bins");
 	const char *fmt = "dXnss";
 	if (mode == 'j') {
 		pj_ka (pj, "bins");

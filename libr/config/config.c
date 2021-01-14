@@ -351,7 +351,7 @@ R_API RConfigNode* r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue,
 	return node;
 }
 
-static bool __is_true_or_false(const char *s) {
+static inline bool is_true_or_false(const char *s) {
 	return s && (!r_str_casecmp (s, "true") || !r_str_casecmp (s, "false"));
 }
 
@@ -416,7 +416,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 		if (!cfg->lock) {
 			node = r_config_node_new (name, value);
 			if (node) {
-				if (__is_true_or_false (value)) {
+				if (is_true_or_false (value)) {
 					node->flags |= CN_BOOL;
 					node->i_value = r_str_is_true (value)? 1: 0;
 				}

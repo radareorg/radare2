@@ -3887,8 +3887,8 @@ R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd
 	return false;
 }
 
-R_API RTable *r_core_table(RCore *core) {
-	RTable *table = r_table_new ();
+R_API RTable *r_core_table(RCore *core, const char *name) {
+	RTable *table = r_table_new (R_STR_ISEMPTY (name)? "table": name);
 	if (table) {
 		table->cons = core->cons;
 	}

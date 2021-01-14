@@ -5,7 +5,7 @@
 //TODO test r_str_chop_path
 
 bool test_r_table(void) {
-	RTable *t = r_table_new ();
+	RTable *t = r_table_new ("test1");
 
 	// r_table_fromcsv (t, csv);
 	RTableColumnType *typeString = r_table_type ("string");
@@ -32,7 +32,7 @@ bool test_r_table(void) {
 }
 
 RTable *__table_test_data1() {
-	RTable *t = r_table_new ();
+	RTable *t = r_table_new ("test2");
 
 	r_table_add_column (t, r_table_type ("string"), "ascii", 0);
 	r_table_add_column (t, r_table_type ("number"), "code", 0);
@@ -250,7 +250,7 @@ bool test_r_table_columns () {
 	RTable *t = NULL;
 #define CREATE_TABLE                                                   \
 	r_table_free (t);                                              \
-	t = r_table_new ();                                            \
+	t = r_table_new ("test");                                      \
 	r_table_add_column (t, r_table_type ("number"), "name", 0);    \
 	r_table_add_column (t, r_table_type ("number"), "address", 0); \
 	r_table_add_row (t, "hello", "100", NULL);                     \
