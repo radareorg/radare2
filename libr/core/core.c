@@ -3114,10 +3114,9 @@ static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
 	p_len = R_MAX (0, w - 6);
 	if (file_len + tmp_len + OTHRSCH >= p_len) {
 		size_t dots_size = sizeof (DOTS);
-		size_t chop_point = (size_t)(p_len - OTHRSCH - file_len - dots_size - 1);
-		if (chop_point < (max_tmp_size - dots_size - 1)) {
-			tmp[chop_point] = '\0';
-			strncat (tmp, DOTS, dots_size);
+		size_t chop_point = (size_t)(p_len - OTHRSCH - file_len - dots_size);
+		if (chop_point < max_tmp_size - dots_size) {
+			snprintf (tmp + chop_point, dots_size, "%s", DOTS);
 		}
 	}
 }

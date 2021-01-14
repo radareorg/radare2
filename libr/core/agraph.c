@@ -247,11 +247,12 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int left) {
 	const char *shortcut = sdb_const_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", nodetitle), 0);
 	if (shortcut) {
+		size_t n = strlen (title);
 		if (g->can->color) {
 			// XXX: do not hardcode color here
-			strncat (title, sdb_fmt (Color_YELLOW"[o%s]"Color_RESET,  shortcut), left);
+			snprintf (title + n, left, "%s", sdb_fmt (Color_YELLOW"[o%s]"Color_RESET,  shortcut));
 		} else {
-			strncat (title, sdb_fmt ("[o%s]", shortcut), left);
+			snprintf (title + n, left, "%s", sdb_fmt ("[o%s]", shortcut));
 		}
 	}
 }
@@ -303,7 +304,7 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 			} else {
 				snprintf (title, sizeof (title) - 1, "__%s__", str);
 			}
-			append_shortcut (g, title, n->title, sizeof (title) - strlen (title) - 1);
+			append_shortcut (g, title, n->title, sizeof (title) - strlen (title));
 			W (r_str_ansi_crop (title, delta_x, 0, 20, 1));
 		}
 	} else {
@@ -364,7 +365,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		} else {
 			char *color = g->can->color ? Color_RESET : "";
 			snprintf (title, sizeof (title) - 1, " %s%s ", color, n->title);
-			append_shortcut (g, title, n->title, sizeof (title) - strlen (title) - 1);
+			append_shortcut (g, title, n->title, sizeof (title) - strlen (title));
 		}
 		if ((delta_x < strlen (title)) && G (n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
 			char *res = r_str_ansi_crop (title, delta_x, 0, n->w - BORDER_WIDTH, 1);

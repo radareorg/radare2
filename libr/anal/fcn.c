@@ -1978,9 +1978,10 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
-	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
 	char *pos;
-	strncat (str_to_find, anal->reg->name[R_REG_NAME_BP], 39);
+	char str_to_find[40];
+	snprintf (str_to_find, sizeof (str_to_find),
+		"\"type\":\"reg\",\"value\":\"%s", anal->reg->name[R_REG_NAME_BP]);
 	if (!fcn) {
 		return;
 	}
