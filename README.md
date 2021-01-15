@@ -33,7 +33,7 @@ To learn more you may read the [official radare2 book](https://book.rada.re),
 the source code, or browse the web for blog posts or presentations from
 [r2con](https://www.youtube.com/c/r2con).
 
-You may also want to meet other perople in r2land. use the following chats:
+You may also want to meet other people in r2land. use the following chats:
 
 * irc.freenode.net `#radare` `#radare_side`
 * [Telegram](https://t.me/radare)
