@@ -47,7 +47,8 @@ static const char *help_msg_CC[] = {
 	"CC", "", "list all comments in human friendly form",
 	"CC*", "", "list all comments in r2 commands",
 	"CC+", " [text]", "append comment at current address",
-	"CC,", " [file]", "show or set comment file",
+	"CC,", " [table-query]", "list comments in table format",
+	"CCF", " [file]", "show or set comment file",
 	"CC-", " @ cmt_addr", "remove comment at given address",
 	"CC.", "", "show comment at current offset",
 	"CCf", "", "list comments in function",
@@ -346,8 +347,11 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_CC);
 		break;
 	case ',': // "CC,"
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, ',', input + 2);
+		break;
+	case 'F': // "CC,"
 		if (input[2]=='?') {
-			eprintf ("Usage: CC, [file]\n");
+			eprintf ("Usage: CCF [file]\n");
 		} else if (input[2] == ' ') {
 			const char *fn = input+2;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
@@ -385,7 +389,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		  }
 		break;
 	case 0: // "CC"
-		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 0);
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 0, NULL);
 		break;
 	case 'f': // "CCf"
 		switch (input[2]) {
@@ -409,19 +413,22 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				}
 			}
 			break;
+		case ',': // "CCf,"
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, ',', core->offset, input + 3);
+			break;
 		case 'j': // "CCfj"
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 'j', core->offset, NULL);
 			break;
 		case '*': // "CCf*"
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 1, core->offset);
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 1, core->offset, NULL);
 			break;
 		default:
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 0, core->offset);
+			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 0, core->offset, NULL);
 			break;
 		}
 		break;
 	case 'j': // "CCj"
-		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 'j');
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 'j', input + 2);
 		break;
 	case '!':
 		{
@@ -464,7 +471,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		}
 		break;
 	case '*': // "CC*"
-		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 1);
+		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 1, NULL);
 		break;
 	case '-': // "CC-"
 		if (input[2] == '*') { // "CC-*"
@@ -558,7 +565,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_Ct);
 		break;
 	case 0: // "Ct"
-		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 0);
+		r_meta_print_list_all (core->anal, R_META_TYPE_VARTYPE, 0, NULL);
 		break;
 	case ' ': // "Ct <vartype comment> @ addr"
 		{
@@ -660,10 +667,10 @@ static int cmd_meta_others(RCore *core, const char *input) {
 		}
 		break;
 	case '*': // "Cf*", "Cd*", ...
-		r_meta_print_list_all (core->anal, input[0], 1);
+		r_meta_print_list_all (core->anal, input[0], 1, NULL);
 		break;
 	case 'j': // "Cfj", "Cdj", ...
-		r_meta_print_list_all (core->anal, input[0], 'j');
+		r_meta_print_list_all (core->anal, input[0], 'j', NULL);
 		break;
 	case '!': // "Cf!", "Cd!", ...
 		{
@@ -731,7 +738,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case 'a':
 	case '8':
 		if (type != 'z' && !input[1] && !core->tmpseek) {
-			r_meta_print_list_all (core->anal, type, 0);
+			r_meta_print_list_all (core->anal, type, 0, NULL);
 			break;
 		}
 		if (type == 'z') {
@@ -1014,19 +1021,20 @@ static int cmd_meta(void *data, const char *input) {
 		r_comment_vars (core, input + 1);
 		break;
 	case '\0': // "C"
-		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 0);
+		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 0, NULL);
 		break;
+	case ',': // "C,"
 	case 'j': // "Cj"
 	case '*': { // "C*"
 		if (!input[0] || input[1] == '.') {
-			r_meta_print_list_at (core->anal, core->offset, *input);
+			r_meta_print_list_at (core->anal, core->offset, *input, input + 2);
 		} else {
-			r_meta_print_list_all (core->anal, R_META_TYPE_ANY, *input);
+			r_meta_print_list_all (core->anal, R_META_TYPE_ANY, *input, input + 2);
 		}
 		break;
 	}
 	case '.': { // "C."
-		r_meta_print_list_at (core->anal, core->offset, 0);
+		r_meta_print_list_at (core->anal, core->offset, 0, NULL);
 		break;
 	}
 	case 'L': // "CL"
