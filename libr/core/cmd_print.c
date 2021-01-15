@@ -330,7 +330,7 @@ static const char *help_msg_pd[] = {
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
-	"pdt", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
+	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
 	NULL
 };
@@ -5271,6 +5271,7 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 			processed_cmd = true;
 			break;
+		case ',': // "pd,"
 		case 't': // "pdt"
 			r_core_disasm_table (core, l, r_str_trim_head_ro (input + 2));
 			pd_result = 0;

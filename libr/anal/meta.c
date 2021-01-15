@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2020 - nibble, pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2008-2021 */
 
 #include <r_anal.h>
 #include <r_core.h>
@@ -524,12 +524,12 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *
 			continue;
 		}
 		if (t) {
-			const char *type = r_meta_type_to_string (item->type);
+			const char *mtyp = r_meta_type_to_string (item->type);
 			const char *name = item->str;
 			r_table_add_rowf (t, "xxss",
 				node->start,
 				r_meta_node_size (node),
-				type, name);
+				mtyp, name);
 		} else {
 			r_meta_print (a, item, node->start, r_meta_node_size (node), rad, pj, true);
 		}
