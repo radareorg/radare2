@@ -1901,9 +1901,9 @@ R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type);
 
 R_API const char *r_meta_type_to_string(int type);
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
-R_API void r_meta_print_list_all(RAnal *a, int type, int rad);
-R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad);
-R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr);
+R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq);
+R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq);
+R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr, const char *tq);
 
 /* hints */
 
