@@ -4690,6 +4690,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 			}
 			if (key) {
 				if (ds->asm_types < 1) {
+					free (key);
 					break;
 				}
 				const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
@@ -4704,6 +4705,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 							r_str_getf (key));
 					if (!nargs) {
 						ds_comment_end (ds, "void)");
+						free (key);
 						break;
 					}
 				}
@@ -4746,11 +4748,13 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				}
 				ds_comment_end (ds, "");
 				r_list_free (list);
+				free (key);
 				break;
 			} else {
 				r_list_free (list);
 				// function name not resolved
 				r_warn_if_fail (!key);
+				free (key);
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
 					// @TODO: fcn->nargs should be updated somewhere and used here instead

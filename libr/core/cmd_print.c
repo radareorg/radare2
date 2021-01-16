@@ -2555,7 +2555,7 @@ static void _handle_call(RCore *core, char *line, char **str) {
 static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	const char *linecolor = NULL;
 	char *ox, *qo, *string = NULL;
-	char *line, *s, *str, *string2 = NULL;
+	char *line, *s, *string2 = NULL;
 	char *switchcmp = NULL;
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
 	bool show_comments = r_config_get_i (core->config, "asm.comments");
@@ -2612,6 +2612,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	}
 	for (i = 0; i < count; i++) {
 		ut64 addr = UT64_MAX;
+		char *str;
 		ox = strstr (line, "0x");
 		qo = strchr (line, '\"');
 		R_FREE (string);
@@ -2705,7 +2706,6 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		}
 #endif
 		if (str) {
-			str = strdup (str);
 			char *qoe = NULL;
 			if (!qoe) {
 				qoe = strchr (str + 1, '\x1b');
@@ -2738,12 +2738,11 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			}
 		}
 		if (str) {
-			str = strdup (str);
 			char *qoe = strchr (str, ';');
 			if (qoe) {
-				char* t = str;
 				str = r_str_ndup (str, qoe - str);
-				free (t);
+			} else {
+				str = strdup (str);
 			}
 		}
 		if (str) {
@@ -2865,13 +2864,13 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				}
 			}
 		}
+		free (str);
 		line += strlen (line) + 1;
 	}
 	// r_cons_printf ("%s", s);
 	free (string2);
 	free (string);
 	free (s);
-	free (str);
 	free (switchcmp);
 restore_conf:
 	r_config_set_i (core->config, "asm.offset", show_offset);
