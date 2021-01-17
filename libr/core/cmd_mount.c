@@ -11,7 +11,7 @@ static const char *help_msg_m[] = {
 	"mc", " [file]", "Cat: Show the contents of the given file",
 	"md", " /", "List directory contents for path",
 	"mf", "[?] [o|n]", "Search files for given filename or for offset",
-	"mg", " /foo", "Get fs file/dir and dump it to disk",
+	"mg", " /foo [offset] [size]", "Get fs file/dir and dump it to disk",
 	"mi", " /foo/bar", "Get offset and size of given file",
 	"mj", "", "List mounted filesystems in JSON",
 	"mo", " /foo/bar", "Open given file into a malloc://",
@@ -314,7 +314,16 @@ static int cmd_mount(void *data, const char *_input) {
 				memmove (localFile, slash + 1, strlen (slash));
 			}
 			r_fs_read (core->fs, file, 0, file->size);
-			r_file_dump (localFile, file->data, file->size, false);
+			size_t block_addr = 0;
+			r_file_dump (localFile, 0, file->size, false);
+			while (block_addr < file->size) {
+				int bytes_read = r_fs_read (core->fs, file, block_addr, core->blocksize);
+				r_file_dump (localFile, file->data, count, true);
+				if (block_addr != core->blocksize) {
+					break;
+				}
+				block_addr += count;
+			}
 			r_fs_close (core->fs, file);
 			eprintf ("File '%s' created.\n", localFile);
 			free (localFile);
