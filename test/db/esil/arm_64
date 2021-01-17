@@ -893,3 +893,20 @@ EXPECT=<<EOF
 0x00000005
 EOF
 RUN
+
+NAME=fmul s0, s3, v0.s[1]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wx 6090a05f # fmul s0, s3, v0.s[1]
+aeip
+ar s3=0x40800000 # float 4.0
+ar d0=0x40a0000000000000 # float 5.0
+aes
+aer s0
+EOF
+EXPECT=<<EOF
+0x41a00000
+EOF
+RUN
