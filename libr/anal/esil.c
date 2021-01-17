@@ -1696,6 +1696,50 @@ static bool esil_diveq(RAnalEsil *esil) {
 	return ret;
 }
 
+// 128 bit multiplication result
+static void mult64to128(ut64 op1, ut64 op2, ut64 *hi, ut64 *lo) {
+    ut64 u1 = (op1 & 0xffffffff);
+    ut64 v1 = (op2 & 0xffffffff);
+    ut64 t = (u1 * v1);
+    ut64 w3 = (t & 0xffffffff);
+    ut64 k = (t >> 32);
+
+    op1 >>= 32;
+    t = (op1 * v1) + k;
+    k = (t & 0xffffffff);
+    ut64 w1 = (t >> 32);
+
+    op2 >>= 32;
+    t = (u1 * op2) + k;
+    k = (t >> 32);
+
+    *hi = (op1 * op2) + w1 + k;
+    *lo = (t << 32) + w3;
+}
+
+static bool esil_long_mul(RAnalEsil *esil) {
+	bool ret = false;
+	ut64 s, d; 
+	ut64 hi, lo;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+		if (dst && r_anal_esil_get_parm (esil, dst, &d)) {
+			mult64to128(s, d, &hi, &lo);
+			r_anal_esil_pushnum (esil, hi);
+			r_anal_esil_pushnum (esil, lo);
+			ret = true;
+		} else {
+			ERR ("esil_long_mul: empty stack");
+		}
+	} else {
+		ERR ("esil_long_mul: invalid parameters");
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
 static bool esil_mul(RAnalEsil *esil) {
 	bool ret = false;
 	ut64 s, d;
@@ -2939,13 +2983,17 @@ static bool esil_is_nan(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_int_to_double(RAnalEsil *esil) {
+static bool esil_int_to_double(RAnalEsil *esil, int sign) {
 	bool ret = false;
 	RNumFloat s;
 	char *src = r_anal_esil_pop(esil);
 	if (src) {
 		if (r_anal_esil_get_parm(esil, src, &s.u64)) {
-			ret = esil_pushnum_float(esil, (double)(s.s64) * 1.0);
+			if (sign) {
+				ret = esil_pushnum_float(esil, (double)(s.s64) * 1.0);
+			} else {
+				ret = esil_pushnum_float(esil, (double)(s.u64) * 1.0);
+			}
 		} else {
 			ERR("esil_int_to_float: invalid parameters.");
 		}
@@ -2954,6 +3002,14 @@ static bool esil_int_to_double(RAnalEsil *esil) {
 		ERR("esil_int_to_float: fail to get argument from stack.");
 	}
 	return ret;
+}
+
+static bool esil_signed_to_double(RAnalEsil *esil) {
+	return esil_int_to_double(esil, 1);
+}
+
+static bool esil_unsigned_to_double(RAnalEsil *esil) {
+	return esil_int_to_double(esil, 0);
 }
 
 static bool esil_double_to_int(RAnalEsil *esil) {
@@ -3117,8 +3173,7 @@ static bool esil_float_add(RAnalEsil *esil) {
 	char *dst = r_anal_esil_pop(esil);
 	char *src = r_anal_esil_pop(esil);
 
-	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d))
-	{
+	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
 			ret = esil_pushnum_float(esil, s);
 		} else if (isnan(d)) {
@@ -3702,6 +3757,7 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("!=", esil_negeq, 0, 1, OT_MATH | OT_REGW);
 	OP ("=", esil_eq, 0, 2, OT_REGW);
 	OP (":=", esil_weak_eq, 0, 2, OT_REGW);
+	OP ("L*", esil_long_mul, 2, 2, OT_MATH);
 	OP ("*", esil_mul, 1, 2, OT_MATH);
 	OP ("*=", esil_muleq, 0, 2, OT_MATH | OT_REGW);
 	OP ("^", esil_xor, 1, 2, OT_MATH);
@@ -3814,7 +3870,9 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 
 	/* we all float down here */
 	OP ("NAN", esil_is_nan, 1, 1, OT_MATH);
-	OP ("I2D", esil_int_to_double, 1, 1, OT_MATH);
+	OP ("I2D", esil_signed_to_double, 1, 1, OT_MATH);
+	OP ("S2D", esil_signed_to_double, 1, 1, OT_MATH);
+	OP ("U2D", esil_unsigned_to_double, 1, 1, OT_MATH);
 	OP ("D2I", esil_double_to_int, 1, 1, OT_MATH);
 	OP ("D2F", esil_double_to_float, 1, 2, OT_MATH);
 	OP ("F2D", esil_float_to_double, 1, 2, OT_MATH);
