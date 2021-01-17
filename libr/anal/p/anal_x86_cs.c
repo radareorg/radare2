@@ -407,9 +407,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	const char *counter = (a->bits==16)?"cx":
 		(a->bits==32)?"ecx":"rcx";
 
-	if (op->prefix & R_ANAL_OP_PREFIX_REP) {
-		esilprintf (op, "%s,!,?{,BREAK,},", counter);
-	}
+	bool repe = false;
 
 	switch (insn->id) {
 	case X86_INS_FNOP:
@@ -970,7 +968,6 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		esilprintf (op, "%s,%s", arg0, arg1);
 		break;
 	// XXX: case X86_INS_AAS: too tough to implement. BCD is deprecated anyways
-	case X86_INS_CMP:
 	case X86_INS_CMPPD:
 	case X86_INS_CMPPS:
 	case X86_INS_CMPSW:
@@ -978,6 +975,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_CMPSQ:
 	case X86_INS_CMPSB:
 	case X86_INS_CMPSS:
+		repe = true;
+	case X86_INS_CMP:
 	case X86_INS_TEST:
 		{
 			ut32 bitsize;
@@ -1888,7 +1887,18 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 
 	if (op->prefix & R_ANAL_OP_PREFIX_REP) {
-		r_strbuf_appendf (&op->esil, ",%s,--=,%s,?{,5,GOTO,}", counter, counter);
+		r_strbuf_prepend (&op->esil, ",!,?{,BREAK,},");
+		r_strbuf_prepend (&op->esil, counter);
+		if (repe) {
+			r_strbuf_appendf (&op->esil, ",%s,--=,zf,!,?{,BREAK,},0,GOTO", counter);
+		} else {
+			r_strbuf_appendf (&op->esil, ",%s,--=,0,GOTO", counter);
+		}
+	}
+	if (op->prefix & R_ANAL_OP_PREFIX_REPNE) {
+		r_strbuf_prepend (&op->esil, ",!,?{,BREAK,},");
+		r_strbuf_prepend (&op->esil, counter);
+		r_strbuf_appendf (&op->esil, ",%s,--=,zf,?{,BREAK,},0,GOTO", counter);
 	}
 }
 
