@@ -592,8 +592,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-
-NAME=avr no warnings.
+NAME=avr no warnings
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
@@ -607,10 +606,9 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
-
 NAME=avr stop anal when invalid instruction is found
 FILE=bins/firmware/arduino_avr.bin
-BROKEN=1
+ARGS=-e asm.os=linux
 CMDS=<<EOF
 e asm.arch=avr
 aaa
