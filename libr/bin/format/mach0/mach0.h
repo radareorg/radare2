@@ -171,7 +171,7 @@ struct MACH0_(obj_t) {
 	bool verbose;
 	ut64 header_at;
 	void *user;
-	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
+	ut64 (*va2pa)(ut64 p, ut64 *offset, ut64 *left, RBinFile *bf);
 	struct symbol_t *symbols;
 	ut64 main_addr;
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);

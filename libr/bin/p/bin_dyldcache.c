@@ -101,7 +101,7 @@ typedef struct _r_bin_image {
 
 static RList * pending_bin_files = NULL;
 
-static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left);
+static ut64 dyva2pa(ut64 addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut64 *offset, ut64 *left);
 
 static void free_bin(RDyldBinImage *bin) {
 	if (!bin) {
@@ -300,7 +300,7 @@ static void r_dyld_locsym_entries_by_offset(RDyldCache *cache, RList *symbols, H
 			sym->type = "LOCAL";
 			sym->vaddr = nlist->n_value;
 			ut64 slide = rebase_infos_get_slide (cache);
-			sym->paddr = va2pa (nlist->n_value, cache->hdr, cache->maps, cache->buf, slide, NULL, NULL);
+			sym->paddr = dyva2pa (nlist->n_value, cache->hdr, cache->maps, cache->buf, slide, NULL, NULL);
 
 			int len = locsym->strings_size - nlist->n_strx;
 			ut32 k;
@@ -347,7 +347,7 @@ static void r_dyldcache_free(RDyldCache *cache) {
 	R_FREE (cache);
 }
 
-static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left) {
+static ut64 dyva2pa(ut64 addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut64 *offset, ut64 *left) {
 	ut64 res = UT64_MAX;
 	uint32_t i;
 
@@ -369,7 +369,8 @@ static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, cache_map_t *maps, RBuffer *c
 	return res;
 }
 
-static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
+static ut64 bin_obj_va2pa(ut64 p, ut64 *offset, ut64 *left, RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, UT64_MAX);
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return 0;
 	}
@@ -380,7 +381,7 @@ static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {
 	}
 
 	ut64 slide = rebase_infos_get_slide (cache);
-	ut64 res = va2pa (p, cache->hdr, cache->maps, cache->buf, slide, offset, left);
+	ut64 res = dyva2pa (p, cache->hdr, cache->maps, cache->buf, slide, offset, left);
 	if (res == UT64_MAX) {
 		res = 0;
 	}
@@ -931,7 +932,7 @@ static HtPP * create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_h
 }
 
 static void carve_deps_at_address(RBuffer *cache_buf, cache_img_t *img, cache_hdr_t *hdr, cache_map_t *maps, HtPP *path_to_idx, ut64 address, int *deps) {
-	ut64 pa = va2pa (address, hdr, maps, cache_buf, 0, NULL, NULL);
+	ut64 pa = dyva2pa (address, hdr, maps, cache_buf, 0, NULL, NULL);
 	if (pa == UT64_MAX) {
 		return;
 	}
@@ -1072,7 +1073,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 		if (deps && !deps[i]) {
 			continue;
 		}
-		ut64 pa = va2pa (img[i].address, hdr, maps, cache_buf, 0, NULL, NULL);
+		ut64 pa = dyva2pa (img[i].address, hdr, maps, cache_buf, 0, NULL, NULL);
 		if (pa == UT64_MAX) {
 			continue;
 		}
@@ -1456,7 +1457,7 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 		return NULL;
 	}
 
-	ut64 offset = va2pa (hdr->accelerateInfoAddr, hdr, maps, cache_buf, 0, NULL, NULL);
+	ut64 offset = dyva2pa (hdr->accelerateInfoAddr, hdr, maps, cache_buf, 0, NULL, NULL);
 	if (!offset) {
 		return NULL;
 	}

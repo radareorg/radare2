@@ -103,7 +103,6 @@ struct MACH0_(SCategory) {
 	mach0_ut properties;
 };
 
-static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf);
 static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBinSymbol *sym);
 static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass);
 static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass);
@@ -113,7 +112,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs);
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out);
 static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out);
-static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
+static char *read_str(RBinFile *bf, ut64 p, ut64 *offset, ut64 *left);
 static char *get_class_name(mach0_ut p, RBinFile *bf);
 static bool is_thumb(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
@@ -125,11 +124,8 @@ static bool is_thumb(RBinFile *bf) {
 	return false;
 }
 
-static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
+static ut64 va2pa(ut64 vaddr, ut64 *pa, ut64 *left, RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, 0);
-
-	mach0_ut r;
-	mach0_ut addr;
 
 	static RList *sctns = NULL;
 	RListIter *iter = NULL;
@@ -138,7 +134,7 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t)*) obj->bin_obj;
 	if (bin->va2pa) {
-		return bin->va2pa (p, offset, left, bf);
+		return bin->va2pa (vaddr, pa, left, bf);
 	}
 
 	if (!sctns) {
@@ -150,27 +146,24 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) {
 		}
 	}
 
-	addr = p;
 	r_list_foreach (sctns, iter, s) {
-		if (addr >= s->vaddr && addr < s->vaddr + s->vsize) {
-			if (offset) {
-				*offset = addr - s->vaddr;
+		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
+			if (pa) {
+				*pa = vaddr - s->vaddr;
 			}
 			if (left) {
-				*left = s->vsize - (addr - s->vaddr);
+				*left = s->vsize - (vaddr - s->vaddr);
 			}
-			r = (s->paddr - obj->boffset  + (addr - s->vaddr));
-			return r;
+			return (s->paddr - obj->boffset  + (vaddr - s->vaddr));
 		}
 	}
 
-	if (offset) {
-		*offset = 0;
+	if (pa) {
+		*pa = 0;
 	}
 	if (left) {
 		*left = 0;
 	}
-
 	return 0;
 }
 
@@ -192,7 +185,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	struct MACH0_(SIVarList) il = {0};
 	struct MACH0_(SIVar) i;
 	mach0_ut r;
-	ut32 offset, left, j;
+	ut64 offset, left, j;
 
 	int len;
 	bool bigendian;
@@ -202,10 +195,8 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	ut8 sivar[sizeof (struct MACH0_(SIVar))] = {0};
 	ut8 offs[sizeof (mach0_ut)] = {0};
 
-	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("uncorrect RBinFile pointer\n");
-		return;
-	}
+	r_return_if_fail (bf && bf->o && bf->o->bin_obj && bf->o->info);
+
 	bigendian = bf->o->info->big_endian;
 	if (!(r = va2pa (p, &offset, &left, bf))) {
 		return;
@@ -222,6 +213,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	if (left < sizeof (struct MACH0_(SIVarList))) {
 		if (r_buf_read_at (bf->buf, r, sivarlist, left) != left) {
 			return;
+
 		}
 	} else {
 		len = r_buf_read_at (bf->buf, r, sivarlist, sizeof (struct MACH0_(SIVarList)));
@@ -375,7 +367,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	struct MACH0_(SObjcPropertyList) opl;
 	struct MACH0_(SObjcProperty) op;
 	mach0_ut r;
-	ut32 offset, left, j;
+	ut64 offset, left, j;
 	char *name = NULL;
 	int len;
 	bool bigendian;
@@ -517,7 +509,7 @@ error:
 static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static) {
 	struct MACH0_(SMethodList) ml;
 	mach0_ut r;
-	ut32 offset, left, i;
+	ut64 offset, left, i;
 	char *name = NULL;
   	char *rtype = NULL;
 	int len;
@@ -712,7 +704,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	struct MACH0_(SProtocolList) pl = { 0 };
 	struct MACH0_(SProtocol) pc;
 	char *class_name = NULL;
-	ut32 offset, left, i, j;
+	ut64 offset, left, i, j;
 	mach0_ut q, r;
 	int len;
 	bool bigendian;
@@ -903,23 +895,19 @@ static char *demangle_classname(const char *s) {
 }
 
 static char *get_class_name(mach0_ut p, RBinFile *bf) {
-	struct MACH0_(obj_t) *bin;
-	ut32 offset, left;
-	ut64 r;
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj && bf->o->info, NULL);
+
+	ut64 r, offset, left;
 	int len;
 	bool bigendian;
 	ut8 sc[sizeof (mach0_ut)] = {0};
 	const ut32 ptr_size = sizeof (mach0_ut);
 
-	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("Invalid RBinFile pointer\n");
-		return NULL;
-	}
-	if (!p) {
+	if (p == 0) {
 		return NULL;
 	}
 	bigendian = bf->o->info->big_endian;
-	bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
+	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
 
 	if (!(r = va2pa (p, &offset, &left, bf))) {
 		return NULL;
@@ -936,7 +924,7 @@ static char *get_class_name(mach0_ut p, RBinFile *bf) {
 	if (left < sizeof (sc)) {
 		return NULL;
 	}
-	len = r_buf_read_at (bf->buf, r + 4 * ptr_size, sc, sizeof (sc));
+	len = r_buf_read_at (bf->buf, r + (4 * ptr_size), sc, sizeof (sc));
 	if (len != sizeof (sc)) {
 		return NULL;
 	}
@@ -1000,7 +988,7 @@ static char *get_class_name(mach0_ut p, RBinFile *bf) {
 static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass) {
 	struct MACH0_(obj_t) *bin;
 	struct MACH0_(SClassRoT) cro = { 0 };
-	ut32 offset, left, i;
+	ut64 offset, left, i;
 	ut64 r, s;
 	int len;
 	bool bigendian;
@@ -1062,7 +1050,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 	cro.baseProperties = r_read_ble (&scro[i], bigendian, 8 * sizeof (mach0_ut));
 
 	s = r;
-	if ((r = va2pa (cro.name, NULL, &left, bf))) {
+	if ((r = va2pa (RO_DATA_PTR (cro.name), NULL, &left, bf))) {
 		if (left < 1 || r + left < r) {
 			return;
 		}
@@ -1121,21 +1109,20 @@ static mach0_ut get_isa_value(void) {
 }
 
 void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, RSkipList *relocs) {
+	r_return_if_fail (bf && bf->o && bf->o->info);
+
 	struct MACH0_(SClass) c = { 0 };
 	const int size = sizeof (struct MACH0_(SClass));
-	mach0_ut r = 0;
-	ut32 offset = 0, left = 0;
+	ut64 r = 0;
+	ut64 offset = 0, left = 0;
 	ut32 is_meta_class = 0;
 	int len;
 	bool bigendian;
 	ut8 sc[sizeof (struct MACH0_(SClass))] = {0};
 	ut32 i;
 
-	if (!bf || !bf->o || !bf->o->info) {
-		return;
-	}
 	bigendian = bf->o->info->big_endian;
-	if (!(r = va2pa (p, &offset, &left, bf))) {
+	if (!(r = va2pa (p, &offset , &left, bf))) {
 		return;
 	}
 	if ((r + left) < r || (r + size) < r) {
@@ -1283,15 +1270,11 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 	R_FREE (sections);
 
 	if (!is_found) {
-		// retain just for debug
-		// eprintf ("there is no section __objc_classlist\n");
 		goto get_classes_error;
 	}
 	// end of seaching of section with name __objc_classlist
 
 	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
-		// retain just for debug
-		// eprintf ("RList<RBinClass> allocation error\n");
 		goto get_classes_error;
 	}
 	// start of getting information about each class in file
@@ -1302,18 +1285,12 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 			break;
 		}
 		if (!(klass = R_NEW0 (RBinClass))) {
-			// retain just for debug
-			// eprintf ("RBinClass allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->methods = r_list_new ())) {
-			// retain just for debug
-			// eprintf ("RList<RBinField> allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->fields = r_list_new ())) {
-			// retain just for debug
-			// eprintf ("RList<RBinSymbol> allocation error\n");
 			goto get_classes_error;
 		}
 		size = sizeof (mach0_ut);
@@ -1327,7 +1304,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 		if (len != sizeof (mach0_ut)) {
 			goto get_classes_error;
 		}
-		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
+		p = r_read_ble (&pp, bigendian, 8 * sizeof (mach0_ut));
 		MACH0_(get_class_t) (p, bf, klass, false, relocs);
 		if (!klass->name) {
 			klass->name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
@@ -1429,7 +1406,7 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipLis
 	struct MACH0_(SCategory) c = { 0 };
 	const int size = sizeof (struct MACH0_(SCategory));
 	mach0_ut r = 0;
-	ut32 offset = 0, left = 0;
+	ut64 offset = 0, left = 0;
 	int len;
 	bool bigendian = bf->o->info->big_endian;
 	ut8 sc[sizeof (struct MACH0_(SCategory))] = {0};
@@ -1549,8 +1526,7 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipLis
 }
 
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out) {
-	r_return_val_if_fail (out, false);
-	r_return_val_if_fail (bf && bf->o && bf->o->info, false);
+	r_return_val_if_fail (out && bf && bf->o && bf->o->info, false);
 
 	size_t ptr_size = sizeof (mach0_ut);
 	ut8 pp[sizeof (mach0_ut)] = {0};
@@ -1568,29 +1544,30 @@ static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out) {
 
 static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out) {
 	r_return_val_if_fail (bf, false);
-	ut32 offset = 0, left = 0;
-	mach0_ut paddr = va2pa (vaddr, &offset, &left, bf);
+	ut64 offset = 0, left = 0;
+	ut64 paddr = va2pa (vaddr, &offset, &left, bf);
 	if (paddr == 0 || left < sizeof (mach0_ut)) {
 		return false;
 	}
 	return read_ptr_pa (bf, paddr, out);
 }
 
-static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
+static char *read_str(RBinFile *bf, ut64 va, ut64 *offset, ut64 *left) {
 	r_return_val_if_fail (bf && offset && left, NULL);
 
-	mach0_ut paddr = va2pa (p, offset, left, bf);
-	if (paddr == 0 || *left <= 1) {
+	ut64 pa = va2pa (va, offset, left, bf);
+	if (!pa || *left <= 1) {
 		return NULL;
 	}
 
-	int name_len = R_MIN (MAX_CLASS_NAME_LEN, *left);
+	size_t name_len = R_MIN (MAX_CLASS_NAME_LEN, *left);
 	char *name = calloc (1, name_len + 1);
-	int len = r_buf_read_at (bf->buf, paddr, (ut8 *)name, name_len);
-	if (len < name_len) {
-		eprintf ("Error reading\n");
-		R_FREE (name);
-		return NULL;
+	if (name) {
+		int len = r_buf_read_at (bf->buf, pa, (ut8 *)name, name_len);
+		if (len < name_len) {
+			R_FREE (name);
+			return NULL;
+		}
 	}
 
 	return name;
