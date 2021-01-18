@@ -64,8 +64,9 @@ R_API int r_list_length(const RList *list) {
 
 /* remove all elements of a list */
 R_API void r_list_purge(RList *list) {
-	r_return_if_fail (list);
-
+	if (!list) {
+		return;
+	}
 	RListIter *it = list->head;
 	while (it) {
 		RListIter *next = it->n;

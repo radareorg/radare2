@@ -620,9 +620,9 @@ static int cmp(RConfigNode *a, RConfigNode *b) {
 	return strcmp (a->name, b->name);
 }
 
-R_API void r_config_lock(RConfig *cfg, int l) {
+R_API void r_config_lock(RConfig *cfg, bool lock) {
 	r_list_sort (cfg->nodes, (RListComparator) cmp);
-	cfg->lock = l;
+	cfg->lock = lock;
 }
 
 R_API bool r_config_readonly(RConfig *cfg, const char *key) {
@@ -647,7 +647,7 @@ R_API RConfig* r_config_new(void *user) {
 	}
 	cfg->user = user;
 	cfg->num = NULL;
-	cfg->lock = 0;
+	cfg->lock = false;
 	cfg->cb_printf = (void *) printf;
 	return cfg;
 }
