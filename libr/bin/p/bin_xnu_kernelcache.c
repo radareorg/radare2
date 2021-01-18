@@ -200,7 +200,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	}
 
 	RCFValueDict *prelink_info = NULL;
-	if (main_mach0->hdr.filetype != MH_FILESET) {
+	if (main_mach0->hdr.filetype != MH_FILESET && prelink_range->range.size) {
 		prelink_info = r_cf_value_dict_parse (fbuf, prelink_range->range.offset,
 				prelink_range->range.size, R_CF_OPTION_SKIP_NSDATA);
 		if (!prelink_info) {
@@ -2139,7 +2139,8 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 							ptr_value = ((ut64)p->high8 << 56) | p->target;
 							ptr_value += obj->baddr;
 						}
-					} else if (obj->chained_starts[i]->pointer_format == DYLD_CHAINED_PTR_ARM64E_CACHE) {
+					} else if (obj->chained_starts[i]->pointer_format == DYLD_CHAINED_PTR_64_KERNEL_CACHE ||
+							obj->chained_starts[i]->pointer_format == DYLD_CHAINED_PTR_ARM64E_KERNEL) {
 						bool is_auth = IS_PTR_AUTH (raw_ptr);
 						stride = 4;
 						if (is_auth) {
