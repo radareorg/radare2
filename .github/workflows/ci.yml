@@ -284,7 +284,7 @@ jobs:
         zip -r /tmp/r2ios-sdk.zip *
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2_iphoneos-arm
+        name: radare2_iphoneos-arm64.zip
         path: ./dist/cydia/radare2*/*.deb
 
   android-build:
@@ -310,5 +310,5 @@ jobs:
         tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -cvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2-android-${{ matrix.name }}
+        name: radare2-android-${{ matrix.name }}.tar.gz
         path: /tmp/radare2-android-${{ matrix.name }}.tar.gz
