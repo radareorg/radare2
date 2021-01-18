@@ -1,0 +1,78 @@
+NAME=function rebase
+FILE=bins/pe/hello_world/hello_world_od64bit.exe
+ARGS=-d
+CMDS=<<EOF
+?v main-`e bin.baddr`
+doc
+?v main-`e bin.baddr`
+EOF
+EXPECT=<<EOF
+0x1000
+0x1000
+EOF
+RUN
+
+NAME=bp rebase
+FILE=bins/pe/hello_world/hello_world_od64bit.exe
+ARGS=-d
+CMDS=<<EOF
+db main
+?v main-`db~main[0]`
+doc
+?v main-`db~main[0]`
+EOF
+EXPECT=<<EOF
+0x0
+0x0
+EOF
+RUN
+
+NAME=ref rebase
+FILE=bins/pe/hello_world/hello_world_od64bit.exe
+ARGS=-d
+CMDS=<<EOF
+aa
+?v `axt main~entry0[1]`-`e bin.baddr`
+doc
+?v `axt main~entry0[1]`-`e bin.baddr`
+EOF
+EXPECT=<<EOF
+0x1203
+0x1203
+EOF
+RUN
+
+NAME=flag rebase
+FILE=bins/pe/hello_world/hello_world_od64bit.exe
+ARGS=-d
+CMDS=<<EOF
+fs test
+f testflag @ main+10
+?v `f~testflag[0]`-`e bin.baddr`
+doc
+?v `f~testflag[0]`-`e bin.baddr`
+EOF
+EXPECT=<<EOF
+0x100a
+0x100a
+EOF
+RUN
+
+NAME=var rebase
+FILE=bins/pe/hello_world/hello_world_od64bit.exe
+ARGS=-d
+CMDS=<<EOF
+aa
+afv @ entry0
+doc
+afv @ entry0
+EOF
+EXPECT=<<EOF
+var int64_t var_20h @ rsp+0x48
+var int64_t var_8h @ rsp+0x68
+var int64_t var_10h @ rsp+0x70
+var int64_t var_20h @ rsp+0x48
+var int64_t var_8h @ rsp+0x68
+var int64_t var_10h @ rsp+0x70
+EOF
+RUN
