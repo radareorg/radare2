@@ -20,7 +20,7 @@ typedef bool (*RConfigCallback)(void *user, void *data);
 
 typedef struct r_config_node_t {
 	char *name;
-	int flags;
+	ut32 flags;
 	char *value;
 	ut64 i_value;
 	ut64 *cb_ptr_q;
@@ -35,12 +35,12 @@ typedef struct r_config_node_t {
 R_API const char *r_config_node_type(RConfigNode *node);
 
 typedef struct r_config_t {
-	int lock;
 	void *user;
 	RNum *num;
 	PrintfCallback cb_printf;
 	RList *nodes;
 	HtPP *ht;
+	bool lock;
 } RConfig;
 
 typedef struct r_config_hold_num_t {
