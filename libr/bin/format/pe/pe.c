@@ -442,11 +442,11 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 	int i = 0, len;
 	Sdb* db = NULL;
 	char* sdb_module = NULL;
-	char* symname;
-	char* filename;
+	char* symname = NULL;
+	char* filename = NULL;
 	char* symdllname = NULL;
 
-	if (!dll_name || *dll_name == '0') {
+	if (!dll_name || !*dll_name || *dll_name == '0') {
 		return 0;
 	}
 
@@ -490,7 +490,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
 					filename = sdb_fmt ("%s.sdb", symdllname);
-					if (r_file_exists (filename)) {
+					if (filename && r_file_exists (filename)) {
 						db = sdb_new (NULL, filename, 0);
 					} else {
 						const char *dirPrefix = r_sys_prefix (NULL);
