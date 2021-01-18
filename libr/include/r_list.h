@@ -28,7 +28,6 @@ typedef struct r_list_t {
 typedef struct r_list_range_t {
 	HtPP *h;
 	RList *l;
-	//RListComparator c;
 } RListRange;
 
 // RListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
@@ -42,7 +41,6 @@ typedef struct r_oflist_t {
 #endif
 
 #ifdef R_API
-// #define R_LIST_NEW(x,y) x = r_list_new (); x->free = (RListFree)y
 #define r_list_foreach(list, it, pos)\
 	if (list)\
 		for (it = list->head; it && (pos = it->data, 1); it = it->n)

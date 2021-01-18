@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2020 - pancake */
+/* radare - LGPL - Copyright 2006-2021 - pancake */
 
 #include "r_config.h"
 
@@ -12,8 +12,27 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	node->value = strdup (r_str_get (value));
 	node->flags = CN_RW | CN_STR;
 	node->i_value = r_num_get (NULL, value);
-	node->options = r_list_new ();
+	node->options = NULL;
 	return node;
+}
+
+R_API char *r_config_node_to_string(RConfigNode *node) {
+	return (node && node->name)? strdup (node->name): NULL;
+}
+
+R_API void r_config_node_purge_options(RConfigNode *node) {
+	if (node->options) {
+		r_list_purge (node->options);
+	} else {
+		node->options = r_list_newf (free);
+	}
+}
+
+R_API void r_config_node_add_option(RConfigNode *node, const char *option) {
+	if (!node->options) {
+		node->options = r_list_newf (free);
+	}
+	r_list_append (node->options, strdup (option));
 }
 
 R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
@@ -28,7 +47,7 @@ R_API RConfigNode* r_config_node_clone(RConfigNode *n) {
 	cn->i_value = n->i_value;
 	cn->flags = n->flags;
 	cn->setter = n->setter;
-	cn->options = r_list_clone (n->options);
+	cn->options = n->options? r_list_clone (n->options): NULL;
 	return cn;
 }
 
@@ -86,7 +105,7 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 				free (es);
 			}
 			cfg->cb_printf ("\"ro\":%s", r_str_bool (r_config_node_is_ro (node)));
-			if (!r_list_empty (node->options)) {
+			if (node->options && !r_list_empty (node->options)) {
 				isFirst = true;
 				cfg->cb_printf (",\"options\":[");
 				r_list_foreach (node->options, iter, option) {
@@ -114,7 +133,7 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 				node->name, node->value, sfx, 
 				r_config_node_is_ro (node) ? "(ro)" : "",
 				node->desc);
-			if (!r_list_empty (node->options)) {
+			if (node->options && !r_list_empty (node->options)) {
 				isFirst = true;
 				cfg->cb_printf(" [");
 				r_list_foreach (node->options, iter, option) {
