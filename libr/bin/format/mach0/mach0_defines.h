@@ -1485,7 +1485,8 @@ enum {
 	DYLD_CHAINED_PTR_32          = 3,
 	DYLD_CHAINED_PTR_32_CACHE    = 4,
 	DYLD_CHAINED_PTR_32_FIRMWARE = 5,
-	DYLD_CHAINED_PTR_ARM64E_CACHE = 8, /* TODO: figure out the right name */
+	DYLD_CHAINED_PTR_ARM64E_KERNEL = 7,
+	DYLD_CHAINED_PTR_64_KERNEL_CACHE = 8,
 };
 
 struct dyld_chained_ptr_arm64e_rebase {
