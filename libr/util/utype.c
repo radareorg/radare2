@@ -381,7 +381,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
-		char *struct_name;
+		char *struct_name = NULL;
 		const char *tfmt = NULL;
 		bool isStruct = false;
 		bool isEnum = false;
@@ -431,7 +431,9 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				}
 				if (isStruct) {
 					fmt = r_str_append (fmt, "?");
-					vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
+					if (struct_name) {
+						vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
+					}
 					vars = r_str_append (vars, " ");
 				} else if (isEnum) {
 					fmt = r_str_append (fmt, "E");
