@@ -316,6 +316,7 @@ static int cmd_mount(void *data, const char *_input) {
 			size_t block_addr = 0;
 			int bytes_read = 0;
 			int blocksize = file->size < core->blocksize ? file->size : core->blocksize;
+			r_sys_truncate (localFile, 0);
 			while (block_addr < file->size) {
 				if (file->size - block_addr < blocksize) {
 					bytes_read = r_fs_read (core->fs, file, block_addr, file->size - block_addr);
