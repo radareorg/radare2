@@ -313,16 +313,20 @@ static int cmd_mount(void *data, const char *_input) {
 			if (slash) {
 				memmove (localFile, slash + 1, strlen (slash));
 			}
-			r_fs_read (core->fs, file, 0, file->size);
 			size_t block_addr = 0;
-			r_file_dump (localFile, 0, file->size, false);
+			int bytes_read = 0;
+			int blocksize = file->size < core->blocksize ? file->size : core->blocksize;
 			while (block_addr < file->size) {
-				int bytes_read = r_fs_read (core->fs, file, block_addr, core->blocksize);
-				r_file_dump (localFile, file->data, count, true);
-				if (block_addr != core->blocksize) {
+				if (file->size - block_addr < blocksize) {
+					bytes_read = r_fs_read (core->fs, file, block_addr, file->size - block_addr);
+				} else {
+					bytes_read = r_fs_read (core->fs, file, block_addr, blocksize);
+				}
+				r_file_dump (localFile, file->data, bytes_read, true);
+				block_addr += bytes_read;
+				if (bytes_read != blocksize){
 					break;
 				}
-				block_addr += count;
 			}
 			r_fs_close (core->fs, file);
 			eprintf ("File '%s' created.\n", localFile);
