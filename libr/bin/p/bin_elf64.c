@@ -33,6 +33,13 @@ static void headers64(RBinFile *bf) {
 	p ("0x00000018  Entrypoint  0x%08"PFMT64x"\n", r_buf_read_le64_at (bf->buf, 0x18));
 	p ("0x00000020  PhOff       0x%08"PFMT64x"\n", r_buf_read_le64_at (bf->buf, 0x20));
 	p ("0x00000028  ShOff       0x%08"PFMT64x"\n", r_buf_read_le64_at (bf->buf, 0x28));
+	p ("0x00000030  Flags       0x%08x\n", r_buf_read_le32_at (bf->buf, 0x30));
+	p ("0x00000034  EhSize      %d\n", r_buf_read_le16_at (bf->buf, 0x34));
+	p ("0x00000036  PhentSize   %d\n", r_buf_read_le16_at (bf->buf, 0x36));
+	p ("0x00000038  PhNum       %d\n", r_buf_read_le16_at (bf->buf, 0x38));
+	p ("0x0000003a  ShentSize   %d\n", r_buf_read_le16_at (bf->buf, 0x3a));
+	p ("0x0000003c  ShNum       %d\n", r_buf_read_le16_at (bf->buf, 0x3c));
+	p ("0x0000003e  ShrStrndx   %d\n", r_buf_read_le16_at (bf->buf, 0x3e));
 }
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
