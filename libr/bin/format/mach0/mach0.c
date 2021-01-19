@@ -2432,6 +2432,7 @@ static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
 		return true;
 	}
 	ht_pp_insert (hash, key, "1");
+	free (key);
 	return false;
 }
 
@@ -2505,13 +2506,13 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		}
 		if (len) {
 			ut64 flags = read_uleb128 (&p, end);
-		if (flags == UT64_MAX) {
-			break;
-		}
+			if (flags == UT64_MAX) {
+				break;
+			}
 			ut64 offset = read_uleb128 (&p, end);
-		if (offset == UT64_MAX) {
-			break;
-		}
+			if (offset == UT64_MAX) {
+				break;
+			}
 			ut64 resolver = 0;
 			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
 			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
@@ -2564,7 +2565,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			goto beach;
 		}
 		if (state->i == child_count) {
-			r_list_pop (states);
+			free (r_list_pop (states));
 			continue;
 		}
 		if (!state->next_child) {
@@ -3147,6 +3148,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs,
 
 		struct reloc_t *reloc = R_NEW0 (struct reloc_t);
 		if (!reloc) {
+			free (sym_name);
 			return;
 		}
 
@@ -3159,7 +3161,9 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs,
 		reloc->size = a_info.r_length;
 		r_str_ncpy (reloc->name, sym_name, sizeof (reloc->name) - 1);
 		r_skiplist_insert (relocs, reloc);
+		free (sym_name);
 	}
+	free (info);
 }
 
 static bool is_valid_ordinal_table_size(ut64 size) {
@@ -3521,7 +3525,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			}
 			if (parse_import_ptr (bin, reloc, bin->dysymtab.iundefsym + j)) {
 				reloc->ord = j;
-				r_skiplist_insert (relocs, reloc);
+				r_skiplist_insert_autofree (relocs, reloc);
 			} else {
 				R_FREE (reloc);
 			}

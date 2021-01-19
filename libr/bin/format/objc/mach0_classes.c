@@ -1338,11 +1338,13 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 		}
 		r_list_append (ret, klass);
 	}
+	r_skiplist_free (relocs);
 	return ret;
 
 get_classes_error:
 	r_list_free (sctns);
 	r_list_free (ret);
+	r_skiplist_free (relocs);
 	// XXX DOUBLE FREE r_bin_class_free (klass);
 	return NULL;
 }
