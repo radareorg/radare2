@@ -673,6 +673,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			break;
 		case 'c': // $c console width
 			return r_cons_get_size (NULL);
+		case 'd': // $d - same as 'op'
+			if (core->io && core->io->desc) {
+				return core->io->desc->fd;
+			}
+			return 0;
 		case 'r': // $r
 			if (str[2] == '{') {
 				bptr = strdup (str + 3);
