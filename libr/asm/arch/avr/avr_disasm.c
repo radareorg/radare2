@@ -24,24 +24,15 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
+#include <r_types.h>
+
 #include "avr_disasm.h"
 #include "errorcodes.h"
-#include "avr_instructionset.c"
-#include <r_types.h>
-/* AVR instructionSet is defined in avrinstructionset.c */
-//extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 
-/* Ugly public variables that are shared across format_disasm.c and avr_disasm.c. As much as
- * I didn't want to do it (and instead would have liked to find a clean & clever solution that
- * doesn't expose anything between the two interfaces), for now this was the quickest (and cleanest?)
- * way to get this special case (32-bit opcode) taken care of. */
-/* Variable to keep track of long instructions that have been found and are to be printed. */
-static int AVR_Long_Instruction = 0;
-/* Variable to hold the address of the long instructions */
-static uint32_t AVR_Long_Address;
-/* A copy of the AVR long instruction, we need to keep this so we know information about the
- * instruction (mnemonic, operands) after we've read the next 16-bits from the program file. */
-static disassembledInstruction longInstruction;
+/* AVR instructionSet is defined in avrinstructionset.c */
+#include "avr_instructionset.h"
+#include "avr_instructionset.c"
 
 /* Disassembles/decodes operands back to their original form. */
 static int disassembleOperands(disassembledInstruction *dInstruction);
@@ -55,10 +46,10 @@ static int lookupInstruction(uint16_t opcode, int offset);
 
 
 /* Disassembles an assembled instruction, including its operands. */
-static int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction) {
+int disassembleInstruction(avrDisassembleContext *context, disassembledInstruction *dInstruction, const assembledInstruction aInstruction) {
 	int insidx, i;
 	
-	if (!dInstruction)
+	if (!dInstruction || !context)
 		return ERROR_INVALID_ARGUMENTS;
 	
 	
@@ -72,24 +63,23 @@ static int disassembleInstruction(disassembledInstruction *dInstruction, const a
 	/*** AVR SPECIFIC */
 	/* If a long instruction was found in the last instruction disassembly,
 	 * extract the rest of the address, and indicate that it is to be printed */
-	if (AVR_Long_Instruction == AVR_LONG_INSTRUCTION_FOUND) {
-		AVR_Long_Instruction = AVR_LONG_INSTRUCTION_PRINT;
-		AVR_Long_Address |= aInstruction.opcode;
+	if (context->status == AVR_LONG_INSTRUCTION_FOUND) {
+		context->status = AVR_LONG_INSTRUCTION_PRINT;
+		context->longAddress |= aInstruction.opcode;
 		/* We must multiply by two, because every instruction is 2 bytes,
 		 * so in order to jump/call to the right address (which increments by
 		 * two for every instruction), we must multiply this distance by two. */
 		//printf ("ii=%d\n", insidx);
-                if(!strcmp(longInstruction.instruction->mnemonic,"call")||
-                   !strcmp(longInstruction.instruction->mnemonic,"jmp"))
-	        {
-			AVR_Long_Address *= 2;
-                }
-		*dInstruction = longInstruction;
+        if(!strcmp(context->longInstruction.instruction->mnemonic, "call")||
+           !strcmp(context->longInstruction.instruction->mnemonic, "jmp")) {
+			context->longAddress *= 2;
+        }
+		*dInstruction = context->longInstruction;
 		return 0;
 	/* If a long instruction was printed in the last instruction disassembly,
 	 * reset the AVR_Call_Instruction variable back to zero. */
-	} else if (AVR_Long_Instruction == AVR_LONG_INSTRUCTION_PRINT) {
-		AVR_Long_Instruction = 0;
+	} else if (context->status == AVR_LONG_INSTRUCTION_PRINT) {
+		context->status = 0;
 	}
 
 	/* Copy over the address, and reference to the instruction, set
@@ -106,9 +96,9 @@ static int disassembleInstruction(disassembledInstruction *dInstruction, const a
 		/* If this is an instruction with a long absolute operand, indicate that a long instruction has been found,
 		 * and extract the first part of the long address. */
 		if (dInstruction->instruction->operandTypes[i] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
-			AVR_Long_Instruction = AVR_LONG_INSTRUCTION_FOUND;
-			AVR_Long_Address = dInstruction->operands[i] << 16;
-			longInstruction = *dInstruction;
+			context->status = AVR_LONG_INSTRUCTION_FOUND;
+			context->longAddress = dInstruction->operands[i] << 16;
+			context->longInstruction = *dInstruction;
 		}
 	}
 	
@@ -116,11 +106,11 @@ static int disassembleInstruction(disassembledInstruction *dInstruction, const a
 	if (disassembleOperands(dInstruction) < 0)
 		return ERROR_INVALID_ARGUMENTS; /* Only possible error for disassembleOperands() */
 
-	if (AVR_Long_Instruction == AVR_LONG_INSTRUCTION_FOUND) {
+	if (context->status == AVR_LONG_INSTRUCTION_FOUND) {
 		/* If we found a long instruction (32-bit one),
 		 * Copy this instruction over to our special longInstruction variable, that
 		 * will exist even after we move onto the next 16-bits */
-		longInstruction = *dInstruction;
+		context->longInstruction = *dInstruction;
 	}
 
 	return 0;
