@@ -36,15 +36,10 @@ CZ=gzip -f
 endif
 PWD=$(shell pwd)
 
-# For echo without quotes
-Q='
-ESC=
 ifeq ($(BUILD_OS),windows)
 ifeq ($(OSTYPE),mingw32)
 ifneq (,$(findstring mingw32-make,$(MAKE)))
 ifneq ($(APPVEYOR),True)
-	Q=
-	ESC=^
 	LC_ALL=C
 	export LC_ALL
 endif
@@ -72,18 +67,18 @@ endif
 
 libr/include/r_version.h:
 	@echo Generating r_version.h file
-	@echo $(Q)#ifndef R_VERSION_H$(Q) > $@.tmp
-	@echo $(Q)#define R_VERSION_H 1$(Q) >> $@.tmp
-	@echo $(Q)#define R2_VERSION_COMMIT $(R2VC)$(Q) >> $@.tmp
-	@echo $(Q)#define R2_VERSION $(ESC)"$(R2_VERSION)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#define R2_VERSION_MAJOR $(R2_VERSION_MAJOR)$(Q) >> $@.tmp
-	@echo $(Q)#define R2_VERSION_MINOR $(R2_VERSION_MINOR)$(Q) >> $@.tmp
-	@echo $(Q)#define R2_VERSION_PATCH $(R2_VERSION_PATCH)$(Q) >> $@.tmp
-	@echo $(Q)#define R2_VERSION_NUMBER $(R2_VERSION_NUMBER)$(Q) >> $@.tmp
-	@echo $(Q)#define R2_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#define R2_BIRTH $(ESC)"$(GIT_NOW)$(BUILDSEC)$(ESC)"$(Q) >> $@.tmp
-	@echo $(Q)#endif$(Q) >> $@.tmp
+	@echo '#ifndef R_VERSION_H' > $@.tmp
+	@echo '#define R_VERSION_H 1' >> $@.tmp
+	@echo '#define R2_VERSION_COMMIT $(R2VC)' >> $@.tmp
+	@echo '#define R2_VERSION "$(R2_VERSION)"' >> $@.tmp
+	@echo '#define R2_VERSION_MAJOR $(R2_VERSION_MAJOR)' >> $@.tmp
+	@echo '#define R2_VERSION_MINOR $(R2_VERSION_MINOR)' >> $@.tmp
+	@echo '#define R2_VERSION_PATCH $(R2_VERSION_PATCH)' >> $@.tmp
+	@echo '#define R2_VERSION_NUMBER $(R2_VERSION_NUMBER)' >> $@.tmp
+	@echo '#define R2_GITTAP $(ESC)"$(GIT_TAP)$(ESC)"' >> $@.tmp
+	@echo '#define R2_GITTIP $(ESC)"$(GIT_TIP)$(ESC)"' >> $@.tmp
+	@echo '#define R2_BIRTH $(ESC)"$(GIT_NOW)$(BUILDSEC)$(ESC)"' >> $@.tmp
+	@echo '#endif' >> $@.tmp
 	@mv -f $@.tmp $@
 	@rm -f $@.tmp
 
