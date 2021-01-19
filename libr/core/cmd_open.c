@@ -24,7 +24,7 @@ static const char *help_msg_o[] = {
 	"oj","[?]	","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
 	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-	"onn"," [file]","open file without creating any map or parsing headers with rbin)",
+	"onn"," [file] ([rwx])","open file without creating any map or parsing headers with rbin)",
 	"oo","[?+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"oq","","list all open files",
@@ -1242,17 +1242,6 @@ static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-static ut64 getmaddr(RCore *core, RIODesc *desc) {
-	RList *maps = r_io_map_get_for_fd (core->io, desc->fd);
-	RListIter *iter;
-	RIOMap *map;
-	ut64 lowest = UT64_MAX;
-	r_list_foreach (maps, iter, map) {
-		return map->itv.addr + map->delta;
-	}
-	return (lowest == UT64_MAX)? 0: lowest;
-}
-
 static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
 	RPrint *p = core->print;
@@ -1261,8 +1250,7 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	if (bf) {
 		p->cb_printf ("o %s 0x%08"PFMT64x" %s\n", desc->uri, bf->o->baddr, r_str_rwx_i (desc->perm));
 	} else {
-		// p->cb_printf ("onn %s 0x%08"PFMT64x"\n", desc->uri, getmaddr (core, desc), r_str_rwx_i (desc->perm));
-		p->cb_printf ("onn %s\n", desc->uri, getmaddr (core, desc), r_str_rwx_i (desc->perm));
+		p->cb_printf ("onn %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
 	}
 	if (strstr (desc->uri, "null://")) {
 		// null descs dont want to be mapped
@@ -1355,12 +1343,18 @@ static bool cmd_op(RCore *core, char mode, int fd) {
 }
 
 static bool cmd_onn(RCore *core, const char* input) {
-	const char *ptr = r_str_trim_head_ro (input + 2);
+	char *ptr = r_str_trim_dup (input + 2);
 	int perms = R_PERM_R;
+	char *arg_perm = strchr (ptr, ' ');
+	if (arg_perm) {
+		*arg_perm++ = 0;
+		perms = r_str_rwx (arg_perm);
+	}
 	ut64 addr = 0LL;
 	RIODesc *desc = r_io_open_at (core->io, ptr, perms, 0644, addr);
 	if (!desc || desc->fd == -1) {
 		eprintf ("Cannot open file '%s'\n", ptr);
+		free (ptr);
 		return false;
 	}
 	RList *maps = r_io_map_get_for_fd (core->io, desc->fd);
@@ -1372,6 +1366,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 		}
 		r_list_free (maps);
 	}
+	free (ptr);
 	return true;
 }
 
