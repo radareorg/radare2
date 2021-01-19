@@ -234,7 +234,7 @@ NAME=: 32bit - strings count
 FILE=bins/mdmp/hello.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-10281
+10277
 EOF
 RUN
 
@@ -364,7 +364,7 @@ NAME=: 64bit - strings count
 FILE=bins/mdmp/hello64.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-22898
+22901
 EOF
 RUN
 

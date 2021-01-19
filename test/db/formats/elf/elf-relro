@@ -2,7 +2,7 @@ NAME=ELF: arm64 relocs crashing
 FILE=-
 CMDS=!!rabin2 -qzz bins/elf/librsjni_androix.so~?
 EXPECT=<<EOF
-549
+548
 EOF
 RUN
 
