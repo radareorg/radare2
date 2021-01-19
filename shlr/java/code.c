@@ -55,9 +55,12 @@ static int enter_switch_op (ut64 addr, const ut8* bytes, int len) {
 		return 0;
 	}
 	int sz = 4;
-	int sz2 = (4 - (addr+1) % 4) + (addr+1)  % 4;
-	IFDBG eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04"PFMT64x", BYTES_CONSUMED%%4 = 0x%04x\n",
-		sz2, BYTES_CONSUMED, sz);
+
+	IFDBG {
+		int sz2 = (4 - (addr+1) % 4) + (addr+1)  % 4;
+		eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04"PFMT64x", BYTES_CONSUMED%%4 = 0x%04x\n",
+			sz2, BYTES_CONSUMED, sz);
+	}
 	init_switch_op ();
 	IN_SWITCH_OP = 1;
 	SWITCH_OP.addr = addr;
