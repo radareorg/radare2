@@ -990,10 +990,20 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			if (insn->id == X86_INS_TEST) {
 				esilprintf (op, "0,%s,%s,&,==,$z,zf,:=,$p,pf,:=,%u,$s,sf,:=,0,cf,:=,0,of,:=",
 					src, dst, bitsize - 1);
-			} else {
+			} else if (insn->id == X86_INS_CMP) {
 				esilprintf (op,
-					"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,3,$b,af,:=",
+					"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,"\
+					"%s,0x%"PFMT64x",-,!,%u,$o,^,of,:=,3,$b,af,:=",
 					src, dst, bitsize, bitsize - 1, src, 1ULL << (bitsize - 1), bitsize - 1);
+			} else {
+				char *rsrc = (char *)cs_reg_name(*handle, INSOP(1).mem.base);
+				char *rdst = (char *)cs_reg_name(*handle, INSOP(0).mem.base);
+				const int width = INSOP(0).size;
+				esilprintf (op,
+					"%s,%s,==,$z,zf,:=,%u,$b,cf,:=,$p,pf,:=,%u,$s,sf,:=,%s,0x%"PFMT64x","\
+					"-,!,%u,$o,^,of,:=,3,$b,af,:=,df,?{,%d,%s,-=,%d,%s,-=,}{,%d,%s,+=,%d,%s,+=,}",
+					src, dst, bitsize, bitsize - 1, src, 1ULL << (bitsize - 1), bitsize - 1,
+					width, rsrc, width, rdst, width, rsrc, width, rdst);
 			}
 		}
 		break;
