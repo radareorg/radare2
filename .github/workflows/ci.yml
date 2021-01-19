@@ -125,12 +125,21 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Building static r2
+    - name: Building static r2 with acr
       run: |
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
         NOLTO=1 sys/static.sh
         make -C binr/blob
         xz binr/blob/radare2
+    - name: Pub
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2-static.xz
+        path: binr/blob/radare2.xz
+    - name: Static static r2 with meson 
+      run: |
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        ninja -C build && ninja -C build install
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
