@@ -80,18 +80,18 @@ static int mips_r(ut8 *b, int op, int rs, int rt, int rd, int sa, int fun) {
 //^this will keep the below mips_r fuctions working
 // diff instructions use a diff arg order (add is rd, rs, rt - sll is rd, rt, sa - sllv is rd, rt, rs
 //static int mips_r (ut8 *b, int op, int rd, int rs, int rt, int sa, int fun) {
-	if (rs == -1 || rt == -1) {
+	if (rs < 0 || rt < 0 || rd < 0 || sa < 0) {
 		return -1;
 	}
-	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3); // 2
-	b[2] = (rs<<5) | (rt&0x1f); // 1
-	b[1] = ((rd<<3)&0xff) | (sa>>2); // 0
-	b[0] = (fun&0x3f) | ((sa&3)<<6);
+	b[3] = ((op << 2) & 0xfc) | ((rs >> 3) & 3); // 2
+	b[2] = (rs << 5) | (rt & 0x1f); // 1
+	b[1] = ((rd << 3) & 0xff) | (sa >> 2); // 0
+	b[0] = (fun & 0x3f) | ((sa & 3) << 6);
 	return 4;
 }
 
 static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
-	if (rs == -1 || rt == -1) {
+	if (rs < 0 || rt < 0) {
 		return -1;
 	}
 	if (is_branch) {
@@ -102,18 +102,18 @@ static int mips_i(ut8 *b, int op, int rs, int rt, int imm, int is_branch) {
 			imm = 0;
 		}
 	}
-	b[3] = ((op<<2)&0xfc) | ((rs>>3)&3);
-	b[2] = (rs<<5) | (rt);
-	b[1] = (imm>>8) &0xff;
+	b[3] = ((op << 2) & 0xfc) | ((rs >> 3) & 3);
+	b[2] = (rs << 5) | (rt);
+	b[1] = (imm >> 8)  & 0xff;
 	b[0] = imm & 0xff;
 	return 4;
 }
 
 static int mips_j(ut8 *b, int op, int addr) {
 	addr /= 4;
-	b[3] = ((op<<2)&0xfc) | ((addr>>24)&3);
-	b[2] = (addr>>16)&0xff;
-	b[1] = (addr>>8) &0xff;
+	b[3] = ((op << 2) & 0xfc) | ((addr >> 24) & 3);
+	b[2] = (addr >> 16) & 0xff;
+	b[1] = (addr >> 8)  & 0xff;
 	b[0] = addr & 0xff;
 	return 4;
 }
@@ -145,14 +145,22 @@ static int getreg(const char *p) {
 }
 
 R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
-	int i, hasp, is_branch;
-	char *s = strdup (str);
+	int i, hasp;
 	char w0[32], w1[32], w2[32], w3[32];
+	char *s = strdup (str);
+	if (!s) {
+		return -1;
+	}
+
 	r_str_replace_char (s, ',', ' ');
 	hasp = r_str_replace_char (s, '(', ' ');
 	r_str_replace_char (s, ')', ' ');
+
 	*out = 0;
-	*w0=*w1=*w2=*w3=0;
+	*w0 = 0;
+	*w1 = 0;
+	*w2 = 0;
+	*w3 = 0;
 
 	if (!strncmp (s, "jalr", 4) && !strchr (s, ',')) {
 		char opstr[32];
@@ -161,6 +169,9 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 			snprintf (opstr, sizeof (opstr), "jalr ra ra %s", arg + 1);
 			free (s);
 			s = strdup (opstr);
+			if (!s) {
+				return -1;
+			}
 		}
 	}
 
@@ -184,52 +195,113 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out) {
 					strcpy (w3, tmp);
 				}
 				switch (ops[i].type) {
-				case 'R': //reg order diff per instruction 'group' - ordered to number of likelyhood to call (add > mfhi)
+				case 'R': {
+					// reg order diff per instruction 'group' - ordered to number of likelyhood to call (add > mfhi)
+					int op = 0, rs = 0, rt = 0, rd = 0, sa = 0, fn = 0;
+					bool invalid = false;
 					switch (ops[i].args) {
-					case 3: return mips_r (out, 0, getreg (w2), getreg (w3), getreg (w1), 0, ops[i].n); break;
+					case 3:
+						rs = getreg (w2);
+						rt = getreg (w3);
+						rd = getreg (w1);
+						fn = ops[i].n;
+						break;
 					case -3:
 						if (ops[i].n > -1) {
-							return mips_r (out, 0, 0, getreg (w2), getreg (w1), getreg (w3), ops[i].n);
-							break;
+							rt = getreg (w2);
+							rd = getreg (w1);
+							sa = getreg (w3);
+							fn = ops[i].n;
 						} else {
-							return mips_r (out, 0, getreg (w3), getreg (w2), getreg (w1), 0, (-1 * ops[i].n));
-							break;
+							rs = getreg (w3);
+							rt = getreg (w2);
+							rd = getreg (w1);
+							fn = (-1 * ops[i].n);
 						}
-					case 2: return mips_r (out, 0, getreg (w1), getreg (w2), 0, 0, ops[i].n); break;
-					case 1: return mips_r (out, 0, getreg (w1), 0, 0, 0, ops[i].n);
-					case -2: return mips_r (out, 0, getreg (w2), 0, getreg (w1), 0, ops[i].n); break;
-					case -1: return mips_r (out, 0, 0, 0, getreg (w1), 0, ops[i].n);
-					case 0: return mips_r (out, 0, 0, 0, 0, 0, ops[i].n);
+						break;
+					case 2:
+						rs = getreg (w1);
+						rt = getreg (w2);
+						fn = ops[i].n;
+						break;
+					case 1:
+						rs = getreg (w1);
+						fn = ops[i].n;
+						break;
+					case -2:
+						rs = getreg (w2);
+						rd = getreg (w1);
+						fn = ops[i].n;
+						break;
+					case -1:
+						rd = getreg (w1);
+						fn = ops[i].n;
+						break;
+					case 0:
+						fn = ops[i].n;
+						break;
+					default:
+						invalid = true;
+						break;
+					}
+					if (!invalid) {
+						free (s);
+						return mips_r (out, op, rs, rt, rd, sa, fn);
 					}
 					break;
+				}
 				case 'I':
-				case 'B':
-					is_branch = ops[i].type == 'B';
+				case 'B': {
+					bool invalid = false;
+					int op = 0, rs = 0, rt = 0, imm = 0, is_branch = ops[i].type == 'B';
 					switch (ops[i].args) {
-					case 2: return mips_i (out, ops[i].n, 0, getreg (w1), getreg (w2), is_branch); break;
-					case 3: return mips_i (out, ops[i].n, getreg (w2), getreg (w1), getreg (w3), is_branch); break;
+					case 2:
+						op = ops[i].n;
+						rt = getreg (w1);
+						imm = getreg (w2);
+						break;
+					case 3:
+						op = ops[i].n;
+						rs = getreg (w2);
+						rt = getreg (w1);
+						imm = getreg (w3);
+						break;
 					case -2:
 						if (ops[i].n > 0) {
-							return mips_i (out, ops[i].n, getreg (w1), 0, getreg (w2), is_branch);
-							break;
+							op = ops[i].n;
+							rs = getreg (w1);
+							imm = getreg (w2);
 						} else {
-							return mips_i (out, (-1 * ops[i].n), getreg (w1), ops[i].x, getreg (w2), is_branch);
-							break;
+							op = (-1 * ops[i].n);
+							rs = getreg (w1);
+							rt = ops[i].x;
+							imm = getreg (w2);
 						}
-
+						break;
 					case -1:
 						if (ops[i].n > 0) {
-							return mips_i (out, ops[i].n, 0, 0, getreg (w1), is_branch);
-							break;
+							op = ops[i].n;
+							imm = getreg (w1);
 						} else {
-							return mips_i (out, (-1 * ops[i].n), 0, ops[i].x, getreg (w1), is_branch);
-							break;
+							op = (-1 * ops[i].n);
+							rt = ops[i].x;
+							imm = getreg (w1);
 						}
+						break;
+					default:
+						invalid = true;
+						break;
+					}
+					if (!invalid) {
+						free (s);
+						return mips_i (out, op, rs, rt, imm, is_branch);
 					}
 					break;
+				}
 				case 'J':
-					switch (ops[i].args) {
-					case 1: return mips_j (out, ops[i].n, getreg (w1)); break;
+					if (ops[i].args == 1) {
+						free (s);
+						return mips_j (out, ops[i].n, getreg (w1));
 					}
 					break;
 				case 'N': // nop

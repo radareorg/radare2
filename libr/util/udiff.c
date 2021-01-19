@@ -533,6 +533,7 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 		free (align_table);
 		free (align_a);
 		free (align_b);
+		free (diffchar);
 		return NULL;
 	}
 
