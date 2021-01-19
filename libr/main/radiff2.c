@@ -1107,8 +1107,10 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			eprintf ("Cannot open '%s'\n", r_str_getf (ro.file));
 		}
 		c2 = opencore (&ro, ro.file2);
-		if (!c || !c2) {
+		if (!c2) {
 			eprintf ("Cannot open '%s'\n", r_str_getf (ro.file2));
+		}
+		if (!c || !c2) {
 			return 1;
 		}
 		c->c2 = c2;
