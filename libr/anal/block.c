@@ -212,6 +212,7 @@ R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
 R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 	if (block->addr == addr) {
 		r_anal_block_set_size (block, size);
+		r_anal_block_update_hash (block);
 		return true;
 	}
 	if (r_anal_get_block_at (block->anal, addr)) {
@@ -764,6 +765,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 
 	// Chop the block. Resize and remove all destination addrs
 	r_anal_block_set_size (block, addr - block->addr);
+	r_anal_block_update_hash (block);
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
 	r_anal_switch_op_free (block->switch_op);
