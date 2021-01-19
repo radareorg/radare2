@@ -1712,7 +1712,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		if (r_pvector_len (&r->io->cache) == 0) {
 			r_config_set (r->config, "io.cache", "false");
 		} else {
-			r_config_set (r->config, "io.cache.read", "false");
+			r_config_set (r->config, "io.cache.read", "true");
 		}
 	}
 
