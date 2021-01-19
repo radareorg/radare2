@@ -252,7 +252,9 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 		break;
 	case 'q':
 		r_list_foreach (cfg->nodes, iter, node) {
-			cfg->cb_printf ("%s\n", node->name);
+			if (!str || (str && (!strncmp (str, node->name, len)))) {
+				cfg->cb_printf ("%s\n", node->name);
+			}
 		}
 		break;
 	case 'J':
@@ -310,11 +312,19 @@ R_API const char* r_config_get(RConfig *cfg, const char *name) {
 
 R_API bool r_config_toggle(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
-	if (node && r_config_node_is_bool (node)) {
-		(void)r_config_set_i (cfg, name, !node->i_value);
-		return true;
+	if (!node) {
+		return false;
 	}
-	return false;
+	if (!r_config_node_is_bool (node)) {
+		eprintf ("(error: '%s' is not a boolean variable)\n", name);
+		return false;
+	}
+	if (r_config_node_is_ro (node)) {
+		eprintf ("(error: '%s' config key is read only)\n", name);
+		return false;
+	}
+	(void)r_config_set_i (cfg, name, !node->i_value);
+	return true;
 }
 
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
