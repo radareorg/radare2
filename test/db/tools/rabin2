@@ -653,6 +653,13 @@ va       true
 0x00000018  Entrypoint  0x08048300
 0x0000001c  PhOff       0x00000034
 0x00000020  ShOff       0x000007cc
+0x00000024  Flags       0x00000000
+0x00000028  EhSize      52
+0x0000002a  PhentSize   32
+0x0000002c  PhNum       8
+0x0000002e  ShentSize   40
+0x00000030  ShNum       30
+0x00000032  ShrStrndx   27
 [Linked libraries]
 libc.so.6
 

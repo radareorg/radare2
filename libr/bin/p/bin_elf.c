@@ -11,6 +11,13 @@ static void headers32(RBinFile *bf) {
 	p ("0x00000018  Entrypoint  0x%08x\n", r_buf_read_le32_at (bf->buf, 0x18));
 	p ("0x0000001c  PhOff       0x%08x\n", r_buf_read_le32_at (bf->buf, 0x1c));
 	p ("0x00000020  ShOff       0x%08x\n", r_buf_read_le32_at (bf->buf, 0x20));
+	p ("0x00000024  Flags       0x%08x\n", r_buf_read_le32_at (bf->buf, 0x24));
+	p ("0x00000028  EhSize      %d\n", r_buf_read_le16_at (bf->buf, 0x28));
+	p ("0x0000002a  PhentSize   %d\n", r_buf_read_le16_at (bf->buf, 0x2a));
+	p ("0x0000002c  PhNum       %d\n", r_buf_read_le16_at (bf->buf, 0x2c));
+	p ("0x0000002e  ShentSize   %d\n", r_buf_read_le16_at (bf->buf, 0x2e));
+	p ("0x00000030  ShNum       %d\n", r_buf_read_le16_at (bf->buf, 0x30));
+	p ("0x00000032  ShrStrndx   %d\n", r_buf_read_le16_at (bf->buf, 0x32));
 }
 
 static bool check_buffer(RBuffer *buf) {
