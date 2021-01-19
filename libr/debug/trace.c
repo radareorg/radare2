@@ -121,6 +121,10 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 		switch (val->type) {
 		case R_ANAL_VAL_REG:
 		{
+			if (!val->reg) {
+				R_LOG_ERROR("invalid register, unable to trace register state\n");
+				continue;
+			}
 			ut64 data = r_reg_get_value (dbg->reg, val->reg);
 
 			// add reg write
