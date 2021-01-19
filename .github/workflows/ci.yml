@@ -29,6 +29,18 @@ jobs:
   #      uses: actions/upload-artifact@v2
   #      with:
   #        path: radare2_dist/*
+  build-resymlink:
+    name: linux-acr-resymlink
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Installing with symlinks
+      run: sys/install.sh
+    - name: Uninstalling
+      run: sudo make uninstall
+    - name: Reinstalling without symlinks
+      run: sudo make install
   build-spaces:
     name: linux-meson-spaces
     continue-on-error: true
