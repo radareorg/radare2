@@ -2258,6 +2258,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			s->size = (bin->sects[i].flags == S_ZEROFILL) ? 0 : (ut64)bin->sects[i].size;
 			// XXX flags
 			s->paddr = (ut64)bin->sects[i].offset;
+			s->paddr += bf->o->boffset;
 			int segment_index = 0;
 			//s->perm =prot2perm (bin->segs[j].initprot);
 			for (j = 0; j < bin->nsegs; j++) {
