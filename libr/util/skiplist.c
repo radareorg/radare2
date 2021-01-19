@@ -198,6 +198,15 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	return x;
 }
 
+R_API bool r_skiplist_insert_autofree(RSkipList* list, void* data) {
+	RSkipListNode* node = r_skiplist_insert (list, data);
+	if (node && data != node->data) { // duplicate
+		free (data);
+		return false;
+	}
+	return true;
+}
+
 // Delete node with data as it's payload.
 R_API bool r_skiplist_delete(RSkipList* list, void* data) {
 	return delete_element (list, data, true);

@@ -3525,10 +3525,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			}
 			if (parse_import_ptr (bin, reloc, bin->dysymtab.iundefsym + j)) {
 				reloc->ord = j;
-				RSkipListNode *node = r_skiplist_insert (relocs, reloc);
-				if (node && reloc != node->data) {
-					free (reloc);
-				}
+				r_skiplist_insert_autofree (relocs, reloc);
 			} else {
 				R_FREE (reloc);
 			}
