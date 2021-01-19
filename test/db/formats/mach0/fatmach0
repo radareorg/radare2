@@ -236,3 +236,27 @@ nth paddr       vaddr      bind   type size lib name
 2    0x00005f94 0x90000f94 LOCAL  FUNC 0        imp.exit
 EOF
 RUN
+
+NAME=fatmach0 objc
+FILE=bins/mach0/modernobjc-noarm64
+ARGS=-a arm
+CMDS=ic
+EXPECT=<<EOF
+0x100009298 [0x100001e90 - 0x100001e90]      0 class 0 ViewController
+0x100001e90 method 0      viewDidLoad
+0x1000092c0 [0x100001ee4 - 0x1000020a4]    448 class 0 AppDelegate
+0x100001ee4 method 0      application:didFinishLaunchingWithOptions:
+0x100001f74 method 1      application:configurationForConnectingSceneSession:options:
+0x1000020a4 method 2      application:didDiscardSceneSessions:
+0x100009310 [0x1000021d0 - 0x100002494]    708 class 0 SceneDelegate
+0x1000021d0 method 0      scene:willConnectToSession:options:
+0x100002280 method 1      sceneDidDisconnect:
+0x1000022d4 method 2      sceneDidBecomeActive:
+0x100002328 method 3      sceneWillResignActive:
+0x10000237c method 4      sceneWillEnterForeground:
+0x1000023d0 method 5      sceneDidEnterBackground:
+0x100002424 method 6      window
+0x100002450 method 7      setWindow:
+0x100002494 method 8      .cxx_destruct
+EOF
+RUN
