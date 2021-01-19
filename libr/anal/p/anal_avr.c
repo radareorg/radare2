@@ -1597,10 +1597,10 @@ OPCODE_DESC opcodes[] = {
 	INST_LAST
 };
 
-static void set_invalid_op(RAnalysisOp *op, ut64 addr) {
+static void set_invalid_op(RAnalOp *op, ut64 addr) {
 	// Unknown or invalid instruction.
-	op->family = R_ANALYSIS_OP_FAMILY_UNKNOWN;
-	op->type = R_ANALYSIS_OP_TYPE_UNK;
+	op->family = R_ANAL_OP_FAMILY_UNKNOWN;
+	op->type = R_ANAL_OP_TYPE_UNK;
 	op->addr = addr;
 	op->nopcode = 1;
 	op->cycles = 1;

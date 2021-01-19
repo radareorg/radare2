@@ -138,6 +138,8 @@ jobs:
         path: binr/blob/radare2.xz
     - name: Static static r2 with meson 
       run: |
+        sudo apt-get --assume-yes install python3-wheel python3-setuptools
+        sudo pip3 install meson==0.55.3 ninja==1.10.0
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
     - name: Pub
