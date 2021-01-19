@@ -3244,7 +3244,6 @@ static void agraph_follow_innodes(RAGraph *g, bool in) {
 	if (!an) {
 		return;
 	}
-	RGraphNode *gn = an->gnode;
 	const RList *list = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	int nth = -1;
 	if (r_list_length (list) == 0) {
@@ -3252,6 +3251,7 @@ static void agraph_follow_innodes(RAGraph *g, bool in) {
 	}
 	r_cons_gotoxy (0, 2);
 	r_cons_printf (in? "Input nodes:\n": "Output nodes:\n");
+	RGraphNode *gn = an->gnode;
 	RList *options = r_list_newf (NULL);
 	RList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	r_list_foreach (gnodes, iter, gn) {

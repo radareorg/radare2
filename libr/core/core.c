@@ -3575,10 +3575,9 @@ reaccept:
 				if (cmd == 'G') {
 					// silly http emulation over rap://
 					char line[256] = {0};
-					char *cmd = line;
 					r_socket_read_block (c, (ut8*)line, sizeof (line));
 					if (!strncmp (line, "ET /cmd/", 8)) {
-						cmd = line + 8;
+						char *cmd = line + 8;
 						char *http = strstr (cmd, "HTTP");
 						if (http) {
 							*http = 0;

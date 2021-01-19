@@ -841,7 +841,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
-	int rowbytes = p->cols;
 	if (step < len) {
 		len = len - (len % step);
 	}
@@ -1026,6 +1025,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 
 	// is this necessary?
 	r_print_set_screenbounds (p, addr);
+	int rowbytes;
 	int rows = 0;
 	int bytes = 0;
 	bool printValue = true;
