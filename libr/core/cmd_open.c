@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_bin.h>
 #include <r_debug.h>
@@ -24,6 +24,7 @@ static const char *help_msg_o[] = {
 	"oj","[?]	","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
 	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
+	"onn"," [file]","open file without creating any map or parsing headers with rbin)",
 	"oo","[?+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"oq","","list all open files",
@@ -562,6 +563,69 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 	r_table_free (t);
 }
 
+static bool cmd_om(RCore *core, const char *input) {
+	char *s = strdup (input + 2);
+	if (!s) {
+		return false;
+	}
+	if (strchr (s, ' ')) {
+		int fd = 0, rwx = 0;
+		ut64 size = 0, vaddr = 0, paddr = 0;
+		const char *name = NULL;
+		bool rwx_arg = false;
+		RIODesc *desc = NULL;
+		int words = r_str_word_set0 (s);
+		switch (words) {
+		case 6:
+			name = r_str_word_get0 (s, 5);
+			// fallthrough
+		case 5:
+			rwx = r_str_rwx (r_str_word_get0 (s, 4));
+			rwx_arg = true;
+			// fallthrough
+		case 4:
+			paddr = r_num_math (core->num, r_str_word_get0 (s, 3));
+			// fallthrough
+		case 3:
+			size = r_num_math (core->num, r_str_word_get0 (s, 2));
+			// fallthrough
+		case 2:
+			vaddr = r_num_math (core->num, r_str_word_get0 (s, 1));
+			// fallthrough
+		case 1:
+			fd = r_num_math (core->num, r_str_word_get0 (s, 0));
+			break;
+		}
+		if (fd < 3) {
+			eprintf ("wrong fd, it must be greater than 3\n");
+			return false;
+		}
+		desc = r_io_desc_get (core->io, fd);
+		if (desc) {
+			if (!size) {
+				size = r_io_fd_size (core->io, fd);
+			}
+			RIOMap *map = r_io_map_add (core->io, fd, rwx_arg ? rwx : desc->perm, paddr, vaddr, size);
+			if (map) {
+				if (name) {
+					r_io_map_set_name (map, name);
+				}
+			} else {
+				eprintf ("Cannot add map.\n");
+			}
+		}
+	} else {
+		int fd = r_io_fd_get_current (core->io);
+		if (r_io_desc_get (core->io, fd)) {
+			map_list (core->io, 0, core->print, fd);
+		} else {
+			eprintf ("Invalid fd %d\n", (int)fd);
+		}
+	}
+	free (s);
+	return true;
+}
+
 static void cmd_open_map(RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
@@ -677,65 +741,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		r_core_cmd_omt (core, input + 2);
 		break;
 	case ' ': // "om"
-		s = strdup (input + 2);
-		if (!s) {
-			break;
-		}
-		if (strchr (s, ' ')) {
-			int fd = 0, rwx = 0;
-			ut64 size = 0, vaddr = 0, paddr = 0;
-			const char *name = NULL;
-			bool rwx_arg = false;
-			RIODesc *desc = NULL;
-			int words = r_str_word_set0 (s);
-			switch (words) {
-			case 6:
-				name = r_str_word_get0 (s, 5);
-				// fallthrough
-			case 5:
-				rwx = r_str_rwx (r_str_word_get0 (s, 4));
-				rwx_arg = true;
-				// fallthrough
-			case 4:
-				paddr = r_num_math (core->num, r_str_word_get0 (s, 3));
-				// fallthrough
-			case 3:
-				size = r_num_math (core->num, r_str_word_get0 (s, 2));
-				// fallthrough
-			case 2:
-				vaddr = r_num_math (core->num, r_str_word_get0 (s, 1));
-				// fallthrough
-			case 1:
-				fd = r_num_math (core->num, r_str_word_get0 (s, 0));
-				break;
-			}
-			if (fd < 3) {
-				eprintf ("wrong fd, it must be greater than 3\n");
-				break;
-			}
-			desc = r_io_desc_get (core->io, fd);
-			if (desc) {
-				if (!size) {
-					size = r_io_fd_size (core->io, fd);
-				}
-				map = r_io_map_add (core->io, fd, rwx_arg ? rwx : desc->perm, paddr, vaddr, size);
-				if (map) {
-					if (name) {
-						r_io_map_set_name (map, name);
-					}
-				} else {
-					eprintf ("Cannot add map.\n");
-				}
-			}
-		} else {
-			int fd = r_io_fd_get_current (core->io);
-			if (r_io_desc_get (core->io, fd)) {
-				map_list (core->io, 0, core->print, fd);
-			} else {
-				eprintf ("Invalid fd %d\n", (int)fd);
-			}
-		}
-		R_FREE (s);
+		cmd_om (core, input);
 		break;
 	case 'n': // "omn"
 		if (input[2] == '.') { // "omn."
@@ -1255,7 +1261,8 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	if (bf) {
 		p->cb_printf ("o %s 0x%08"PFMT64x" %s\n", desc->uri, bf->o->baddr, r_str_rwx_i (desc->perm));
 	} else {
-		p->cb_printf ("on %s 0x%08"PFMT64x"\n", desc->uri, getmaddr (core, desc)); //perms?
+		// p->cb_printf ("onn %s 0x%08"PFMT64x"\n", desc->uri, getmaddr (core, desc), r_str_rwx_i (desc->perm));
+		p->cb_printf ("onn %s\n", desc->uri, getmaddr (core, desc), r_str_rwx_i (desc->perm));
 	}
 	if (strstr (desc->uri, "null://")) {
 		// null descs dont want to be mapped
@@ -1271,18 +1278,22 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 		bool map_from_bin = false;
 		r_list_foreach (list, iter2, sec) {
 			if (sec->is_segment) {
-				if (sec->vaddr == map->itv.addr) {
+				if (sec->vaddr == map->itv.addr && sec->size == map->itv.size) {
 					map_from_bin = true;
 					break;
 				}
 			}
 		}
 		if (!map_from_bin) {
+			// ut64 paddr = 0; // map->itv.addr;
 			ut64 paddr = map->itv.addr;
+			if (paddr == map->itv.addr) {
+				paddr = 0;
+			}
 			ut64 vaddr = map->itv.addr + map->delta;
-			ut64 size = map->itv.size;
+			ut64 vsize = map->itv.size;
 			p->cb_printf ("om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
-				vaddr, size, paddr, r_str_rwx_i (map->perm), r_str_get(map->name));
+				vaddr, vsize, paddr, r_str_rwx_i (map->perm), r_str_get (map->name));
 		}
 	}
 	return true;
@@ -1341,6 +1352,27 @@ static bool cmd_op(RCore *core, char mode, int fd) {
 		eprintf ("Invalid RBinFile.id number.\n");
 	}
 	return false;
+}
+
+static bool cmd_onn(RCore *core, const char* input) {
+	const char *ptr = r_str_trim_head_ro (input + 2);
+	int perms = R_PERM_R;
+	ut64 addr = 0LL;
+	RIODesc *desc = r_io_open_at (core->io, ptr, perms, 0644, addr);
+	if (!desc || desc->fd == -1) {
+		eprintf ("Cannot open file '%s'\n", ptr);
+		return false;
+	}
+	RList *maps = r_io_map_get_for_fd (core->io, desc->fd);
+	if (maps) {
+		RIOMap *map;
+		RListIter *iter;
+		r_list_foreach (maps, iter, map) {
+			r_io_map_del (core->io, map->id);
+		}
+		r_list_free (maps);
+	}
+	return true;
 }
 
 static int cmd_open(void *data, const char *input) {
@@ -1409,6 +1441,10 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 	}
 	case 'n': // "on"
+		if (input[1] == 'n') {
+			cmd_onn (core, input);
+			return 0;
+		}
 		if (input[1] == '*') {
 			eprintf ("OTDO%c", 10); // r_core_file_list (core, 'n');
 			return 0;
