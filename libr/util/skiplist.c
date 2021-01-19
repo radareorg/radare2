@@ -201,7 +201,9 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 R_API bool r_skiplist_insert_autofree(RSkipList* list, void* data) {
 	RSkipListNode* node = r_skiplist_insert (list, data);
 	if (node && data != node->data) { // duplicate
-		free (data);
+		if (list->freefn) {
+			list->freefn (data);
+		}
 		return false;
 	}
 	return true;
