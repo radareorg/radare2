@@ -11,7 +11,7 @@ static const char *help_msg_m[] = {
 	"mc", " [file]", "Cat: Show the contents of the given file",
 	"md", " /", "List directory contents for path",
 	"mf", "[?] [o|n]", "Search files for given filename or for offset",
-	"mg", " /foo [offset] [size]", "Get fs file/dir and dump it to disk",
+	"mg", " /foo [offset, size]", "Get fs file/dir and dump it to disk",
 	"mi", " /foo/bar", "Get offset and size of given file",
 	"mj", "", "List mounted filesystems in JSON",
 	"mo", " /foo/bar", "Open given file into a malloc://",
@@ -301,25 +301,43 @@ static int cmd_mount(void *data, const char *_input) {
 			input++;
 		}
 		ptr = strchr (input, ' ');
+		char *input2 = strdup(ptr);
 		if (ptr) {
 			*ptr++ = 0;
 		} else {
 			ptr = "./";
 		}
-		file = r_fs_open (core->fs, input, false);
+		char *filename = input;
+		int offset = 0;
+		int size = 0;
+		if (*input2 == ' ') {
+			input2++;
+		}
+		char *args = strchr (input2, ' ');
+		if (args) {
+			*args++ = 0;
+			if (*input2 == '0' && input2[1] == 'x') {
+				input2 += 2;
+				offset = strtol(input2, NULL, 16);
+			}
+			size = atoi(args);
+		}
+
+		file = r_fs_open (core->fs, filename, false);
 		if (file) {
-			char *localFile = strdup (input);
+			char *localFile = strdup (filename);
 			char *slash = (char *)r_str_rchr (localFile, NULL, '/');
 			if (slash) {
 				memmove (localFile, slash + 1, strlen (slash));
 			}
-			size_t block_addr = 0;
+			size_t block_addr = offset;
 			int bytes_read = 0;
 			int blocksize = file->size < core->blocksize ? file->size : core->blocksize;
+			size = size > 0 ? size : file->size;
 			r_sys_truncate (localFile, 0);
-			while (block_addr < file->size) {
-				if (file->size - block_addr < blocksize) {
-					bytes_read = r_fs_read (core->fs, file, block_addr, file->size - block_addr);
+			while (block_addr < size) {
+				if (size - block_addr < blocksize) {
+					bytes_read = r_fs_read (core->fs, file, block_addr, size - block_addr);
 				} else {
 					bytes_read = r_fs_read (core->fs, file, block_addr, blocksize);
 				}
@@ -332,7 +350,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_fs_close (core->fs, file);
 			eprintf ("File '%s' created.\n", localFile);
 			free (localFile);
-		} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
+		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
 			eprintf ("Cannot open file\n");
 		}
 		break;
