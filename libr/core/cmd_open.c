@@ -1236,35 +1236,53 @@ static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static ut64 getmaddr(RCore *core, RIODesc *desc) {
+	RList *maps = r_io_map_get_for_fd (core->io, desc->fd);
+	RListIter *iter;
+	RIOMap *map;
+	ut64 lowest = UT64_MAX;
+	r_list_foreach (maps, iter, map) {
+		return map->itv.addr + map->delta;
+	}
+	return (lowest == UT64_MAX)? 0: lowest;
+}
+
 static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
 	RPrint *p = core->print;
 	RIODesc *desc = (RIODesc *)data;
 	RBinFile *bf = r_bin_file_find_by_fd (core->bin, desc->fd);
-	if (bf && bf->file) {
+	if (bf) {
 		p->cb_printf ("o %s 0x%08"PFMT64x" %s\n", desc->uri, bf->o->baddr, r_str_rwx_i (desc->perm));
 	} else {
-		if (!strstr (desc->uri, "null://")) {
-			ut64 maddr = 0LL;
-			RList *maps = r_io_map_get_for_fd (core->io, desc->fd);
-			RListIter *iter;
-			RIOMap *map;
-			r_list_foreach (maps, iter, map) {
-				maddr = map->itv.addr + map->delta;
-				// XXX only reloading the first map is not correct but works for some generic cases
-				break;
-			}
-			if (maddr != 0LL) {
-				p->cb_printf ("on %s 0x%08"PFMT64x"\n", desc->uri, maddr);
-			} else {
-				p->cb_printf ("on %s\n", desc->uri);
-			}
-			r_list_foreach (maps, iter, map) {
-				if (R_STR_ISEMPTY (map->name)) {
-					continue;
+		p->cb_printf ("on %s 0x%08"PFMT64x"\n", desc->uri, getmaddr (core, desc)); //perms?
+	}
+	if (strstr (desc->uri, "null://")) {
+		// null descs dont want to be mapped
+		return true;
+	}
+
+	RList *list = r_bin_get_sections (core->bin);
+	RList *maps = r_io_map_get_for_fd (core->io, desc->fd);
+	RListIter *iter, *iter2;
+	RBinSection *sec;
+	RIOMap *map;
+	r_list_foreach (maps, iter, map) {
+		bool map_from_bin = false;
+		r_list_foreach (list, iter2, sec) {
+			if (sec->is_segment) {
+				if (sec->vaddr == map->itv.addr) {
+					map_from_bin = true;
+					break;
 				}
-				p->cb_printf ("omn 0x%08"PFMT64x" %s\n", map->itv.addr, map->name);
 			}
+		}
+		if (!map_from_bin) {
+			ut64 paddr = map->itv.addr;
+			ut64 vaddr = map->itv.addr + map->delta;
+			ut64 size = map->itv.size;
+			p->cb_printf ("om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
+				vaddr, size, paddr, r_str_rwx_i (map->perm), r_str_get(map->name));
 		}
 	}
 	return true;
