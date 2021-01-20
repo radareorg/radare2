@@ -139,4 +139,3 @@ repository and run all the tests in order to verify that no changes break any fu
 
 We run those tests on every commit, and they are also executed with ASAN
 and valgrind on different platforms to catch other unwanted 'features'.
-
