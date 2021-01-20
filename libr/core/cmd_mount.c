@@ -321,7 +321,7 @@ static int cmd_mount(void *data, const char *_input) {
 			ptr = "./";
 		}
 		const char *filename = r_str_trim_head_ro(input);
-		
+	
 		file = r_fs_open (core->fs, filename, false);
 		if (file) {
 			char *localFile = strdup (filename);
@@ -329,25 +329,28 @@ static int cmd_mount(void *data, const char *_input) {
 			if (slash) {
 				memmove (localFile, slash + 1, strlen (slash));
 			}
-			size_t block_addr = offset;
-			int bytes_read = 0;
+			size_t ptr = offset;
+			int total_bytes_read = 0;
 			int blocksize = file->size < core->blocksize ? file->size : core->blocksize;
 			size = size > 0 ? size : file->size;
 			r_sys_truncate (localFile, 0);
-			while (block_addr < size) {
-				if (size - block_addr < blocksize) {
-					bytes_read = r_fs_read (core->fs, file, block_addr, size - block_addr);
+			while (total_bytes_read < size && ptr < file->size) {
+				int bytes_read = 0;
+				if (size - total_bytes_read < blocksize) {
+					bytes_read = r_fs_read (core->fs, file, ptr, size - total_bytes_read);
 				} else {
-					bytes_read = r_fs_read (core->fs, file, block_addr, blocksize);
+					bytes_read = r_fs_read (core->fs, file, ptr, blocksize);
 				}
 				r_file_dump (localFile, file->data, bytes_read, true);
-				block_addr += bytes_read;
-				if (bytes_read != blocksize){
-					break;
-				}
+				ptr += bytes_read;
+				total_bytes_read += bytes_read;
 			}
 			r_fs_close (core->fs, file);
-			eprintf ("File '%s' created.\n", localFile);
+			if (offset) {
+				eprintf ("File '%s' created. (offset: 0x%"PFMT64x" size: %d bytes)\n", localFile, (unsigned long long) offset, size);
+			} else {
+				eprintf ("File '%s' created. (size: %d bytes)\n", localFile, size);
+			}
 			free (localFile);
 		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
 			eprintf ("Cannot open file\n");
