@@ -4341,7 +4341,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_core_cmd0 (core, "so;.aeg*");
 			break;
 		case '2':
-			r_core_cmd0 (core, "so-1;.aeg*");
+			r_core_cmd0 (core, "so -1;.aeg*");
 			break;
 		case '=':
 		{         // TODO: edit
