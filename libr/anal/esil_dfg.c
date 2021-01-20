@@ -389,7 +389,7 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 			//only need to insert in the tree
 			part_rv = R_NEW (EsilDFGRegVar);
 			if (!part_rv) {
-				R_FREE (rv); // Why free part_rv? it is null!
+				R_FREE (rv);
 				dfg->malloc_failed = true;
 				break;
 			}
