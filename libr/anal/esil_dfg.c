@@ -389,7 +389,7 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 			//only need to insert in the tree
 			part_rv = R_NEW (EsilDFGRegVar);
 			if (!part_rv) {
-				R_FREE (part_rv);
+				R_FREE (rv); // Why free part_rv? it is null!
 				dfg->malloc_failed = true;
 				break;
 			}
@@ -403,8 +403,8 @@ static RGraphNode *_edf_reg_get(RAnalEsilDFG *dfg, const char *reg) {
 	if (dfg->malloc_failed) {
 		while (!r_queue_is_empty (dfg->todo)) {
 			free (r_queue_dequeue (dfg->todo));
-			goto beach;
 		}
+		goto beach; // Outside loop!
 	}
 	switch (parts->size) {
 	case 0:
