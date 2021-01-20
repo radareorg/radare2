@@ -11,7 +11,7 @@ static const char *help_msg_m[] = {
 	"mc", " [file]", "Cat: Show the contents of the given file",
 	"md", " /", "List directory contents for path",
 	"mf", "[?] [o|n]", "Search files for given filename or for offset",
-	"mg", " /foo [offset, size]", "Get fs file/dir and dump it to disk",
+	"mg", " /foo [offset size]", "Get fs file/dir and dump it to disk",
 	"mi", " /foo/bar", "Get offset and size of given file",
 	"mj", "", "List mounted filesystems in JSON",
 	"mo", " /foo/bar", "Open given file into a malloc://",
@@ -297,32 +297,31 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'g': // "mg"
 		input++;
+		int offset = 0;
+		int size = 0;
 		if (*input == ' ') {
 			input++;
 		}
 		ptr = strchr (input, ' ');
-		char *input2 = strdup(ptr);
 		if (ptr) {
 			*ptr++ = 0;
+			char *input2 = strdup(ptr++);
+			const char *args = r_str_trim_head_ro (input2);
+			if (args) {
+				if (*args == '0' && args[1] == 'x') {
+					args += 2;
+					offset = strtol(args, NULL, 16);
+					args = strchr(args, ' ');
+					if (args) {
+						size = atoi(r_str_trim_head_ro(args));
+					}
+				}
+			}
 		} else {
 			ptr = "./";
 		}
-		char *filename = input;
-		int offset = 0;
-		int size = 0;
-		if (*input2 == ' ') {
-			input2++;
-		}
-		char *args = strchr (input2, ' ');
-		if (args) {
-			*args++ = 0;
-			if (*input2 == '0' && input2[1] == 'x') {
-				input2 += 2;
-				offset = strtol(input2, NULL, 16);
-			}
-			size = atoi(args);
-		}
-
+		const char *filename = r_str_trim_head_ro(input);
+		
 		file = r_fs_open (core->fs, filename, false);
 		if (file) {
 			char *localFile = strdup (filename);
