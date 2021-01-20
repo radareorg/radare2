@@ -745,7 +745,7 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 	ut64 io_off = io->off;
 	int result = obj->original_io_read (io, fd, internal_buffer, count);
 	if (result == count) {
-		rebase_buffer (obj, io_off, fd, internal_buffer, count);
+		rebase_buffer (obj, io_off - bf->o->boffset, fd, internal_buffer, count);
 		memcpy (buf, internal_buffer, result);
 	}
 	return result;
