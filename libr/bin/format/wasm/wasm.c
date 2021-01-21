@@ -279,7 +279,7 @@ static void *parse_type_entry (RBuffer *b, ut64 max) {
 			goto beach;
 		}
 	}
-	int j;
+	ut32 j;
 	for (j = 0; j < count; j++) {
 		if (!(consume_s7_r (b, max, (st8 *)&ptr->param_types[j]))) {
 			goto beach;
@@ -459,11 +459,7 @@ static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 			R_FREE (name);
 			return false;
 		}
-		if (name->len >= sizeof (name->name)) {
-			// XXX: proper fix is removing fixed symbol name size imho, need to chk docs and try some samples first
-			name->len = sizeof (name->name) - 1;
-			eprintf ("%d vs %d truncated name %c", name->len, sizeof (struct r_bin_wasm_name_t),10);
-		}
+		name->name = malloc (name->len + 1);
 		if (!(consume_str_r (b, max, name->len, (char *)name->name))) {
 			R_FREE (name);
 			return false;
@@ -479,7 +475,7 @@ static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 	return true;
 }
 
-static void *parse_custom_name_entry (RBuffer *b, ut64 max) {
+static void *parse_custom_name_entry(RBuffer *b, ut64 max) {
 	RBinWasmCustomNameEntry *ptr = NULL;
 	size_t i;
 	if (!(ptr = R_NEW0 (RBinWasmCustomNameEntry))) {
@@ -504,10 +500,10 @@ static void *parse_custom_name_entry (RBuffer *b, ut64 max) {
 			goto beach;
 		}
 
+		ptr->mod_name->name = malloc (ptr->mod_name->len);
 		if (!(consume_str_r (b, max, ptr->mod_name->len, (char *)ptr->mod_name->name))) {
 			goto beach;
 		}
-
 		ptr->mod_name->name[ptr->mod_name->len] = 0;
 		break;
 	case R_BIN_WASM_NAMETYPE_Function:
@@ -883,6 +879,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 			if (!(consume_u32_r (b, max, &ptr->name_len))) {
 				goto beach;
 			}
+			ptr->name = malloc (ptr->name_len);
 			if (consume_str_r (b, max, ptr->name_len, (char *)ptr->name) < ptr->name_len) {
 				goto beach;
 			}
@@ -890,57 +887,57 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 			break;
 		case R_BIN_WASM_SECTION_TYPE:
 			// eprintf("section type: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "type");
+			ptr->name = strdup ("type");
 			ptr->name_len = 4;
 			break;
 		case R_BIN_WASM_SECTION_IMPORT:
 			// eprintf("section import: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "import");
+			ptr->name = strdup ("import");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_FUNCTION:
 			// eprintf("section function: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "function");
+			ptr->name = strdup ("function");
 			ptr->name_len = 8;
 			break;
 		case R_BIN_WASM_SECTION_TABLE:
 			// eprintf("section table: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "table");
+			ptr->name = strdup ("table");
 			ptr->name_len = 5;
 			break;
 		case R_BIN_WASM_SECTION_MEMORY:
 			// eprintf("section memory: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "memory");
+			ptr->name = strdup ("memory");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_GLOBAL:
 			// eprintf("section global: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "global");
+			ptr->name = strdup ("global");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_EXPORT:
 			// eprintf("section export: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "export");
+			ptr->name = strdup ("export");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_START:
 			// eprintf("section start: 0x%x\n", (ut32)b->cur);
-			strcpy (ptr->name, "start");
+			ptr->name = strdup ("start");
 			ptr->name_len = 5;
 			break;
 		case R_BIN_WASM_SECTION_ELEMENT:
 			// eprintf("section element: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "element");
+			ptr->name = strdup ("element");
 			ptr->name_len = 7;
 			break;
 		case R_BIN_WASM_SECTION_CODE:
 			// eprintf("section code: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "code");
+			ptr->name = strdup ("code");
 			ptr->name_len = 4;
 			break;
 		case R_BIN_WASM_SECTION_DATA:
 			// eprintf("section data: 0x%x, ", (ut32)b->cur);
-			strcpy (ptr->name, "data");
+			ptr->name = strdup ("data");
 			ptr->name_len = 4;
 			break;
 		default:
