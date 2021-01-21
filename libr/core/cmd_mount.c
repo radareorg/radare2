@@ -308,18 +308,19 @@ static int cmd_mount(void *data, const char *_input) {
 			char *input2 = strdup (ptr++);
 			const char *args = r_str_trim_head_ro (input2);
 			if (args) {
-				if (*args == '0' && args[1] == 'x') {
-					args += 2;
-					offset = strtol(args, NULL, 16);
-					args = strchr(args, ' ');
-					if (args) {
-						size = atoi(r_str_trim_head_ro(args));
-					}
+				ptr = strchr(args, ' ');
+				if (ptr) {
+					*ptr++=0;
+					size = r_num_math(NULL, ptr);
 				}
+				offset = r_num_math(NULL, args);
 			}
 		} else {
 			ptr = "./";
 		}
+		eprintf("OFFSET: %d\n", offset);
+		eprintf("SIZE: %d\n", size);
+
 		const char *filename = r_str_trim_head_ro(input);
 	
 		file = r_fs_open (core->fs, filename, false);
