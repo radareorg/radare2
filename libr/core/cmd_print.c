@@ -4411,7 +4411,7 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 	pj_raw (pj, "\"");
 	pj_kn (pj, "offset", core->offset);
 	pj_ks (pj, "section", section_name);
-	pj_ki (pj, "legnth", len);
+	pj_ki (pj, "length", len);
 	pj_ks (pj, "type", type);
 	pj_end (pj);
 	r_cons_println (pj_string (pj));
