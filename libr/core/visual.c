@@ -43,7 +43,6 @@ static const char *printfmtColumns[NPF] = {
 	"pCc", // PC//  copypasteable views
 };
 
-
 // to print the stack in the debugger view
 #define PRINT_HEX_FORMATS 10
 #define PRINT_3_FORMATS 2
@@ -1572,6 +1571,7 @@ repeat:
 		RStrBuf *rsb = r_strbuf_new ("");
 		r_core_visual_append_help (rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
 		ret = r_cons_less_str (r_strbuf_get (rsb), "?");
+		r_strbuf_free (rsb);
 		goto repeat;
 	} else if (ch == 9) { // TAB
 		xrefsMode = !xrefsMode;
@@ -3038,8 +3038,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					ut64 addr = UT64_MAX;
 					if (isDisasmPrint (core->printidx)) {
 						if (core->print->screen_bounds == core->offset) {
-							ut64 addr = core->print->screen_bounds;
-							addr += r_asm_disassemble (core->rasm, &op, core->block, 32);
+							r_asm_disassemble (core->rasm, &op, core->block, 32);
 						}
 						if (addr == core->offset || addr == UT64_MAX) {
 							addr = core->offset + 48;
@@ -3714,9 +3713,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		}
 	}
 	RIOMap *map = r_io_map_get (core->io, core->offset);
-	RIODesc *desc = map
-		? r_io_desc_get (core->io, map->fd)
-		: core->file? r_io_desc_get (core->io, core->file->fd): NULL;
+	RIODesc *desc = map ? r_io_desc_get (core->io, map->fd) : core->io->desc;
 	filename = desc? desc->name: "";
 
 	{ /* get flag with delta */

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h>
 #include <r_types_base.h>
@@ -28,7 +28,7 @@ static void set_options(RConfigNode *node, ...) {
 	va_start (argp, node);
 	option = va_arg (argp, char *);
 	while (option) {
-		r_list_append (node->options, option);
+		r_config_node_add_option (node, option);
 		option = va_arg (argp, char *);
 	}
 	va_end (argp);
@@ -44,10 +44,12 @@ static bool isGdbPlugin(RCore *core) {
 }
 
 static void print_node_options(RConfigNode *node) {
-	RListIter *iter;
-	char *option;
-	r_list_foreach (node->options, iter, option) {
-		r_cons_printf ("%s\n", option);
+	if (node->options) {
+		RListIter *iter;
+		char *option;
+		r_list_foreach (node->options, iter, option) {
+			r_cons_printf ("%s\n", option);
+		}
 	}
 }
 
@@ -94,7 +96,7 @@ static bool cb_diff_sort(void *_core, void *_node) {
 	RConfigNode *node = _node;
 	const char *column = node->value;
 	RCore *core = _core;
-	if (column && strcmp (column, "?")) {
+	if (column && *column != '?') {
 		if (!strcmp (column, "name")) {
 			core->anal->columnSort = (RListComparator)compareName;
 		} else if (!strcmp (column, "namelen")) {
@@ -358,9 +360,11 @@ static void update_analarch_options(RCore *core, RConfigNode *node) {
 	RAnalPlugin *h;
 	RListIter *it;
 	if (core && core->anal && node) {
-		r_list_purge (node->options);
+		r_config_node_purge_options (node);
 		r_list_foreach (core->anal->plugins, it, h) {
-			SETOPTIONS (node, h->name, NULL);
+			if (h->name) {
+				SETOPTIONS (node, h->name, NULL);
+			}
 		}
 	}
 }
@@ -508,13 +512,12 @@ static bool cb_asmassembler(void *user, void *data) {
 static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
 	r_return_if_fail (core && core->rasm && node);
 	RListIter *iter;
-	r_list_purge (node->options);
+	r_config_node_purge_options (node);
 	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
 	RList *optl = r_str_split_list (opts, "\n", 0);
 	char *opt;
-	node->options->free = free;
 	r_list_foreach (optl, iter, opt) {
-		SETOPTIONS (node, strdup (opt), NULL);
+		SETOPTIONS (node, opt, NULL);
 	}
 	r_list_free (optl);
 	free (opts);
@@ -528,7 +531,7 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	if (!arch || !*arch) {
 		return;
 	}
-	r_list_purge (node->options);
+	r_config_node_purge_options (node);
 	r_list_foreach (core->rasm->plugins, iter, h) {
 		if (h->cpus && !strcmp (arch, h->name)) {
 			char *c = strdup (h->cpus);
@@ -536,7 +539,8 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 			for (i = 0; i < n; i++) {
 				const char *word = r_str_word_get0 (c, i);
 				if (word && *word) {
-					SETOPTIONS (node, strdup (word), NULL);
+					node->options->free = free;
+					SETOPTIONS (node, word, NULL);
 				}
 			}
 			free (c);
@@ -562,9 +566,11 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (core && node && core->rasm) {
-		r_list_purge (node->options);
+		r_config_node_purge_options (node);
 		r_list_foreach (core->rasm->plugins, iter, h) {
-			SETOPTIONS (node, h->name, NULL);
+			if (h->name) {
+				SETOPTIONS (node, h->name, NULL);
+			}
 		}
 	}
 }
@@ -573,11 +579,12 @@ static void update_asmbits_options(RCore *core, RConfigNode *node) {
 	if (core && core->rasm && core->rasm->cur && node) {
 		int bits = core->rasm->cur->bits;
 		int i;
-		node->options->free = free;
-		r_list_purge (node->options);
+		r_config_node_purge_options (node);
 		for (i = 1; i <= bits; i <<= 1) {
 			if (i & bits) {
-				SETOPTIONS (node, r_str_newf ("%d", i), NULL);
+				char *a = r_str_newf ("%d", i);
+				SETOPTIONS (node, a, NULL);
+				free (a);
 			}
 		}
 	}
@@ -596,7 +603,7 @@ static bool cb_asmarch(void *user, void *data) {
 	if (core && core->anal && core->anal->bits) {
 		bits = core->anal->bits;
 	}
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		update_asmarch_options (core, node);
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			/* print more verbose help instead of plain option values */
@@ -736,7 +743,7 @@ static bool cb_asmbits(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		update_asmbits_options (core, node);
 		print_node_options (node);
 		return false;
@@ -823,10 +830,9 @@ static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
 			char *features = strdup (core->rasm->cur->features);
 			argc = r_str_split (features, ',');
 			for (i = 0; i < argc; i++) {
-				node->options->free = free;
 				const char *feature = r_str_word_get0 (features, i);
 				if (feature) {
-					r_list_append (node->options, strdup (feature));
+					r_config_node_add_option (node, feature);
 				}
 			}
 			free (features);
@@ -976,7 +982,7 @@ static void update_asmparser_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
 	RParsePlugin *parser;
 	if (core && node && core->parser && core->parser->parsers) {
-		r_list_purge (node->options);
+		r_config_node_purge_options (node);
 		r_list_foreach (core->parser->parsers, iter, parser) {
 			SETOPTIONS (node, parser->name, NULL);
 		}
@@ -986,7 +992,7 @@ static void update_asmparser_options(RCore *core, RConfigNode *node) {
 static bool cb_asmparser(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		update_asmparser_options (core, node);
 		print_node_options (node);
 		return false;
@@ -1003,7 +1009,7 @@ typedef struct {
 static bool cb_binstrenc (void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		print_node_options (node);
 		r_cons_printf ("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
 		               "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
@@ -1117,7 +1123,7 @@ static bool cb_maxname (void *user, void *data) {
 
 static bool cb_midflags (void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		print_node_options (node);
 		return false;
 	}
@@ -1127,7 +1133,7 @@ static bool cb_midflags (void *user, void *data) {
 static bool cb_strfilter(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for bin.str.filter:\n"
 				"a  only alphanumeric printable\n"
@@ -1199,6 +1205,7 @@ static void list_available_plugins(const char *path) {
 	RListIter *iter;
 	const char *fn;
 	RList *files = r_sys_dir (path);
+	r_list_sort (files, (RListComparator)strcmp);
 	r_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.' && r_str_endswith (fn, ".sdb")) {
 			char *f = strdup (fn);
@@ -1215,7 +1222,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	const char *cf = r_str_trim_head_ro (node->value);
 	if (!*cf) {
-		return false;
+		return true;
 	}
 
 	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
@@ -1269,7 +1276,6 @@ static bool cb_cfgdebug(void *user, void *data) {
 	}
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
-		core->bin->is_debugger = true;
 		r_debug_use (core->dbg, dbgbackend);
 		if (!strcmp (r_config_get (core->config, "cmd.prompt"), "")) {
 			r_config_set (core->config, "cmd.prompt", ".dr*");
@@ -1277,13 +1283,12 @@ static bool cb_cfgdebug(void *user, void *data) {
 		if (!strcmp (dbgbackend, "bf")) {
 			r_config_set (core->config, "asm.arch", "bf");
 		}
-		if (core->file) {
-			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->file->fd),
-					r_io_fd_get_tid (core->io, core->file->fd));
+		if (core->io->desc) {
+			r_debug_select (core->dbg, r_io_fd_get_pid (core->io, core->io->desc->fd),
+					r_io_fd_get_tid (core->io, core->io->desc->fd));
 		}
 	} else {
 		r_debug_use (core->dbg, NULL);
-		core->bin->is_debugger = false;
 	}
 	return true;
 }
@@ -1296,10 +1301,25 @@ static bool cb_dirhome(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dir_projects(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
+	if (value) {
+		char *newva = r_file_abspath (value);
+		free (node->value);
+		node->value = newva;
+	}
+	return true;
+}
+
 static bool cb_dirtmp(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	char *value = R_STR_ISNOTEMPTY (node->value)? node->value: NULL;
-	r_sys_setenv (R_SYS_TMP, value);
+	if (value) {
+		char *newva = r_file_abspath (value);
+		free (node->value);
+		node->value = newva;
+	}
 	return true;
 }
 
@@ -1338,7 +1358,7 @@ static bool cb_cfg_fortunes(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	// TODO CN_BOOL option does not receive the right hand side of assignment as an argument
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		r_core_fortune_list (core);
 		return false;
 	}
@@ -1347,7 +1367,7 @@ static bool cb_cfg_fortunes(void *user, void *data) {
 
 static bool cb_cfg_fortunes_type(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		r_core_fortune_list_types ();
 		return false;
 	}
@@ -1365,7 +1385,7 @@ static void check_decompiler(const char* name) {
 static bool cb_cmdpdc(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		r_cons_printf ("pdc\n");
 		// spaguetti
 		check_decompiler ("r2retdec");
@@ -1407,6 +1427,16 @@ static bool cb_cmdrepeat(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cmdrepeat = node->i_value;
+	return true;
+}
+
+static bool cb_screrrmode(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	if (*node->value == '?') {
+		r_cons_printf ("Valid values: null, echo, buffer, quiet, flush\n");
+		return false;
+	}
+	r_cons_errmodes (node->value);
 	return true;
 }
 
@@ -1509,7 +1539,7 @@ static bool cb_dbg_forks(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_forks = node->i_value;
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1548,7 +1578,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 #if __linux__
 	RCore *core = (RCore*) user;
 	core->dbg->trace_execs = node->i_value;
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 #else
@@ -1563,7 +1593,7 @@ static bool cb_dbg_clone(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_clone = node->i_value;
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1587,7 +1617,7 @@ static bool cb_dbg_aftersc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_aftersyscall = node->i_value;
-	if (core->bin->is_debugger) {
+	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1633,7 +1663,7 @@ static bool cb_dbgstatus(void *user, void *data) {
 static bool cb_dbgbackend(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (!strcmp (node->value, "?")) {
+	if (*node->value == '?') {
 		r_debug_plugin_list (core->dbg, 'q');
 		return false;
 	}
@@ -2125,24 +2155,6 @@ static bool cb_io_oxff(void *user, void *data) {
 	return true;
 }
 
-static bool cb_filepath(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	char *pikaboo = strstr (node->value, "://");
-	if (pikaboo) {
-		if (pikaboo[3] == '/') {
-			r_config_set (core->config, "file.lastpath", node->value);
-			char *ovalue = node->value;
-			node->value = strdup (pikaboo + 3);
-			free (ovalue);
-			return true;
-		}
-		return false;
-	}
-	r_config_set (core->config, "file.lastpath", node->value);
-	return true;
-}
-
 static bool cb_ioautofd(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2169,7 +2181,7 @@ static bool cb_scr_color_grep_highlight(void *user, void *data) {
 static bool cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (!strcmp (node->value, "?")) {
+	if (*node->value == '?') {
 		eprintf ("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
 		return false;
 	}
@@ -2310,7 +2322,7 @@ static bool cb_scrflush(void *user, void *data) {
 static bool cb_scrstrconv(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for scr.strconv:\n"
 				"  asciiesc  convert to ascii with non-ascii chars escaped\n"
@@ -2333,13 +2345,12 @@ static bool cb_scrstrconv(void *user, void *data) {
 
 static bool cb_graphformat(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	if (!strcmp (node->value, "?")) {
+	if (*node->value == '?') {
 		r_cons_printf ("png\njpg\npdf\nps\nsvg\njson\n");
 		return false;
 	}
 	return true;
 }
-
 
 static bool cb_exectrap(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
@@ -2544,6 +2555,37 @@ static bool cb_binverbose(void *user, void *data) {
 	return true;
 }
 
+static bool cb_prjname(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	const char *prjname = node->value;
+	if (*prjname == '?') {
+		r_core_project_list (core, 0);
+		return false;
+	}
+	if (r_project_is_loaded (core->prj)) {
+		if (*prjname) {
+			if (!strcmp (prjname, core->prj->name)) {
+				return true;
+			}
+			if (r_project_rename (core->prj, prjname)) {
+				return true;
+			}
+			eprintf ("Cannot rename project.\n");
+		} else {
+			r_project_close (core->prj);
+		}
+	} else {
+		if (*prjname) {
+			if (r_project_open (core->prj, prjname, NULL)) {
+				return true;
+			}
+			eprintf ("Cannot open project.\n");
+		}
+	}
+	return false;
+}
+
 static bool cb_rawstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2656,7 +2698,7 @@ static bool cb_binminstr(void *user, void *data) {
 static bool cb_searchin(void *user, void *data) {
 	RCore *core = (RCore*)user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (node->value[0] == '?') {
+	if (*node->value == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for search.in (depends on .from/.to and io.va):\n"
 			"raw                search in raw io (ignoring bounds)\n"
@@ -2703,7 +2745,7 @@ static bool cb_dirpfx(RCore *core, RConfigNode *node) {
 
 static bool cb_analsyscc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
-		if (!strcmp (node->value, "?")) {
+		if (*node->value == '?') {
 			r_core_cmd0 (core, "afcl");
 			return false;
 		}
@@ -2712,9 +2754,19 @@ static bool cb_analsyscc(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_analcc_getter(RCore *core, RConfigNode *node) {
+	const char *cc = r_anal_cc_default (core->anal);
+	if (cc) {
+		free (node->value);
+		node->value = strdup (cc);
+	}
+	return true;
+}
+
 static bool cb_analcc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
-		if (!strcmp (node->value, "?")) {
+		node->getter = (RConfigCallback)cb_analcc_getter;
+		if (*node->value == '?') {
 			r_core_cmd0 (core, "afcl");
 			return false;
 		}
@@ -3138,8 +3190,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("dbg.glibc.fc_offset", 0x148, "First chunk offset from brk_start");
 #endif
 	SETBPREF ("dbg.glibc.demangle", "false", "Demangle linked-lists pointers introduced in glibc 2.32");
-	SETPREF ("dbg.libc.dbglib", "", "Set libc debug library file");
-
 	SETBPREF ("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF ("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
 	SETICB ("esil.verbose", 0, &cb_esilverbose, "Show ESIL verbose level (0, 1, 2)");
@@ -3358,15 +3408,19 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.verbose", "false", &cb_binverbose, "Show RBin warnings when loading binaries");
 
 	/* prj */
-	SETPREF ("prj.name", "", "Name of current project");
+	SETCB ("prj.name", "", &cb_prjname, "Name of current project");
 	SETBPREF ("prj.files", "false", "Save the target binary inside the project directory");
-	SETBPREF ("prj.git", "false", "Every project is a git repo and saving is committing");
+	{
+		char *p = r_file_path ("git");
+		bool found = (p && *p == '/');
+		SETBPREF ("prj.git", r_str_bool (found), "Use git to share your project and version changes");
+		free (p);
+	}
 	SETBPREF ("prj.zip", "false", "Use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
-	SETBPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");
 
 	/* cfg */
-	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use in pse");
+	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use when printing strings");
 	SETBPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
 	SETBPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
@@ -3382,7 +3436,9 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	free (p);
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
-	SETPREF ("cfg.user", r_sys_whoami (buf), "Set current username/pid");
+	char *whoami = r_sys_whoami ();
+	SETPREF ("cfg.user", whoami, "Set current username/pid");
+	free (whoami);
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
 	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "Type of fortunes to show (tips, fun)");
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");
@@ -3392,7 +3448,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	p = r_sys_getenv ("R2_CFG_NEWSHELL");
-	SETCB ("cfg.newshell", p? "true": "false", &cb_newshell, "Use new commands parser");
+	SETCB ("cfg.newshell", r_str_bool (p && atoi (p)), &cb_newshell, "Use new commands parser");
 	free (p);
 	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
 
@@ -3467,9 +3523,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "Path of the tmp directory");
 	free (p);
 #if __ANDROID__
-	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
+	SETCB ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", &cb_dir_projects, "Default path for projects");
 #else
-	SETPREF ("dir.projects", R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS), "Default path for projects");
+	SETCB ("dir.projects", R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS), &cb_dir_projects, "Default path for projects");
 #endif
 	SETCB ("dir.zigns", R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
 	SETPREF ("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
@@ -3540,7 +3596,6 @@ R_API int r_core_config_init(RCore *core) {
 
 
 	/* cmd */
-	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETCB ("cmd.demangle", "false", &cb_bdc, "run xcrun swift-demangle and similar if available (SLOW)");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF ("cmd.bp", "", "Run when a breakpoint is hit");
@@ -3782,6 +3837,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("scr.color.args", "true", "Colorize arguments and variables of functions");
 	SETBPREF ("scr.color.bytes", "true", "Colorize bytes that represent the opcodes of the instruction");
 	SETCB ("scr.null", "false", &cb_scrnull, "Show no output");
+	SETCB ("scr.errmode", "echo", &cb_screrrmode, "Error string handling");
 	SETCB ("scr.utf8", r_str_bool (r_cons_is_utf8()), &cb_utf8, "Show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "Show curved UTF-8 corners (requires scr.utf8)");
 	SETBPREF ("scr.demo", "false", "Use demoscene effects if available");
@@ -3790,6 +3846,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "Convert string before display");
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
 	SETBPREF ("scr.confirmquit", "false", "Confirm on quit");
+	SETBPREF ("scr.progressbar", "false", "Display a progress bar when running scripts.");
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "Escape the backslash");
@@ -3845,16 +3902,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("io.unalloc.ch", ".", &cb_io_unalloc_ch, "Char to display if byte is unallocated");
 
 	/* file */
-	SETPREF ("file.desc", "", "User defined file description (used by projects)");
-	SETPREF ("file.md5", "", "MD5 sum of current file");
 	SETBPREF ("file.info", "true", "RBin info loaded");
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
-	SETCB ("file.path", "", &cb_filepath, "Path of current file");
-	SETPREF ("file.lastpath", "", "Path of current file");
 	SETPREF ("file.type", "", "Type of current file");
 	SETI ("file.loadalign", 1024, "Alignment of load addresses");
 	SETI ("file.openmany", 1, "Maximum number of files opened at once");
-	SETPREF ("file.location", "", "Is the file 'local', 'remote', or 'memory'");
 	/* magic */
 	SETI ("magic.depth", 100, "Recursivity depth in magic description strings");
 

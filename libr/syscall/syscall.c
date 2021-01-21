@@ -52,6 +52,9 @@ static Sdb *openDatabase(Sdb *db, const char *name) {
 		} else {
 			db = sdb_new (0, file, 0);
 		}
+	} else {
+		sdb_free (db);
+		db = sdb_new0 ();
 	}
 	free (file);
 	return db;

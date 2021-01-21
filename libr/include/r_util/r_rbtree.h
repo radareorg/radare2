@@ -35,7 +35,7 @@ typedef struct r_rb_iter_t {
 	// current depth
 	// if len == 0, the iterator is at the end/empty
 	// else path[len-1] is the current node
-	int len;
+	size_t len;
 
 	// current path from root to the current node
 	// excluding nodes into whose right (or left, for reverse iteration) branch the iterator has descended
@@ -113,10 +113,10 @@ R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, vo
 R_API void *r_rbtree_cont_first(RContRBTree *tree);
 
 #define r_rbtree_cont_foreach(tree, it, dat) \
-	for ((it) = r_rbtree_first (&tree->root->node); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RContRBNode, node)->data); r_rbtree_iter_next (&(it)))
+	for ((it) = r_rbtree_first ((tree)->root ? &(tree)->root->node : NULL); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RContRBNode, node)->data); r_rbtree_iter_next (&(it)))
 
 #define r_rbtree_cont_foreach_prev(tree, it, dat) \
-	for ((it) = r_rbtree_last (&tree->root->node); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RContRBNode, node)->data); r_rbtree_iter_prev (&(it)))
+	for ((it) = r_rbtree_last ((tree)->root ? &(tree)->root->node : NULL); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RContRBNode, node)->data); r_rbtree_iter_prev (&(it)))
 
 R_API void r_rbtree_cont_free(RContRBTree *tree);
 

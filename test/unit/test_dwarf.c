@@ -748,6 +748,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	r_list_free (line_list);
 	r_bin_dwarf_free_debug_abbrev (da);
 	r_io_free (io);
+	r_bin_free (bin);
 	mu_end;
 }
 

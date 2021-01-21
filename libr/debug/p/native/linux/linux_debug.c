@@ -92,7 +92,7 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 		dbg->reason.signum = siginfo.si_signo;
-		dbg->stopaddr = (ut64)siginfo.si_addr;
+		dbg->stopaddr = (ut64)(size_t)siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
 		// TODO: DO MORE RDEBUGREASON HERE
@@ -1218,7 +1218,11 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		int ri,rj;
 		for (ri = 0; ri < 16; ri++)	{
 			for (rj=0; rj < 4; rj++)	{
+#ifdef __ANDROID__
+				ymm_space[ri*8+rj] = ((struct _libc_fpstate*) &xstate.fpstate)->_xmm[ri].element[rj];
+#else
 				ymm_space[ri*8+rj] = xstate.fpstate._xmm[ri].element[rj];
+#endif
 			}
 			for (rj=0; rj < 4; rj++)	{
 				ymm_space[ri*8+(rj+4)] = xstate.ymmh.ymmh_space[ri*4+rj];

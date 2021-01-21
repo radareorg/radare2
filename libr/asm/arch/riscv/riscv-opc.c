@@ -629,7 +629,7 @@ static const struct riscv_opcode riscv_builtin_opcodes[] =
 {"c.andi",    "C",   "Cs,Cj,Cs",  MATCH_C_ANDI, MASK_C_ANDI, match_opcode, 0 },
 {"c.addiw",   "64C", "d,Cj,CU",  MATCH_C_ADDIW, MASK_C_ADDIW, match_rd_nonzero, 0 },
 {"c.addw",    "64C", "Cs,Ct,Cs",  MATCH_C_ADDW, MASK_C_ADDW, match_opcode, 0 },
-{"c.subw",    "64C", "Cs,Ct",  MATCH_C_SUBW, MASK_C_SUBW, match_opcode, 0 },
+{"c.subw",    "64C", "Cs,Cs,Ct",  MATCH_C_SUBW, MASK_C_SUBW, match_opcode, 0 },
 {"c.ldsp",    "64C", "d,Cn(Cc)",  MATCH_C_LDSP, MASK_C_LDSP, match_rd_nonzero, 0 },
 {"c.ld",      "64C", "Ct,Cl(Cs)",  MATCH_C_LD, MASK_C_LD, match_opcode, 0 },
 {"c.sdsp",    "64C", "CV,CN(Cc)",  MATCH_C_SDSP, MASK_C_SDSP, match_opcode, 0 },

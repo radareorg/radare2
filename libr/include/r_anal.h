@@ -1548,7 +1548,7 @@ R_API void r_anal_purge_imports(RAnal *anal);
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
 R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v);
-R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i);
+R_API ut16 r_anal_bb_offset_inst(const RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i);
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 addr);
 R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i);
@@ -1800,6 +1800,7 @@ R_API bool r_anal_cc_exist(RAnal *anal, const char *convention);
 R_API void r_anal_cc_del(RAnal *anal, const char *name);
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr);
 R_API char *r_anal_cc_get(RAnal *anal, const char *name);
+R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name);
 R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n);
 R_API const char *r_anal_cc_self(RAnal *anal, const char *convention);
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self);
@@ -1900,9 +1901,9 @@ R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type);
 
 R_API const char *r_meta_type_to_string(int type);
 R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int rad, PJ *pj, bool show_full);
-R_API void r_meta_print_list_all(RAnal *a, int type, int rad);
-R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad);
-R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr);
+R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq);
+R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq);
+R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr, const char *tq);
 
 /* hints */
 

@@ -67,7 +67,8 @@ static ut64 get_method_flags(ut64 MA) {
 	return flags;
 }
 
-static ut64 offset_of_method_idx(RBinFile *bf, struct r_bin_dex_obj_t *dex, int idx) {
+static ut64 offset_of_method_idx(RBinFile *bf, int idx) {
+	// RBinDexObj *dex = bf->o->bin_obj;
 	// ut64 off = dex->header.method_offset + idx;
 	return sdb_num_get (mdb, sdb_fmt ("method.%d", idx), 0);
 }
@@ -114,23 +115,6 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 	return NULL;
 }
 
-//  TODO move to util
-static int countOnes(ut32 val) {
-	if (!val) {
-		return 0;
-	}
-	/* visual studio doesnt supports __buitin_clz */
-#if defined(_MSC_VER) || defined(__TINYC__)
-	int count = 0;
-	val = val - ((val >> 1) & 0x55555555);
-	val = (val & 0x33333333) + ((val >> 2) & 0x33333333);
-	count = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-	return count;
-#else
-	return __builtin_clz (val);
-#endif
-}
-
 typedef enum {
 	kAccessForClass = 0,
 	kAccessForMethod = 1,
@@ -143,69 +127,69 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	static const char *kAccessStrings[kAccessForMAX][NUM_FLAGS] = {
 		{
 			/* class, inner class */
-			"PUBLIC", /* 0x0001 */
-			"PRIVATE", /* 0x0002 */
-			"PROTECTED", /* 0x0004 */
-			"STATIC", /* 0x0008 */
-			"FINAL", /* 0x0010 */
+			"public", /* 0x0001 */
+			"private", /* 0x0002 */
+			"protected", /* 0x0004 */
+			"static", /* 0x0008 */
+			"final", /* 0x0010 */
 			"?", /* 0x0020 */
 			"?", /* 0x0040 */
 			"?", /* 0x0080 */
 			"?", /* 0x0100 */
-			"INTERFACE", /* 0x0200 */
-			"ABSTRACT", /* 0x0400 */
+			"interface", /* 0x0200 */
+			"abstract", /* 0x0400 */
 			"?", /* 0x0800 */
-			"SYNTHETIC", /* 0x1000 */
-			"ANNOTATION", /* 0x2000 */
-			"ENUM", /* 0x4000 */
+			"synthetic", /* 0x1000 */
+			"annotation", /* 0x2000 */
+			"enum", /* 0x4000 */
 			"?", /* 0x8000 */
-			"VERIFIED", /* 0x10000 */
-			"OPTIMIZED", /* 0x20000 */
+			"verified", /* 0x10000 */
+			"optimized", /* 0x20000 */
 		},
 		{
 			/* method */
-			"PUBLIC", /* 0x0001 */
-			"PRIVATE", /* 0x0002 */
-			"PROTECTED", /* 0x0004 */
-			"STATIC", /* 0x0008 */
-			"FINAL", /* 0x0010 */
-			"SYNCHRONIZED", /* 0x0020 */
-			"BRIDGE", /* 0x0040 */
-			"VARARGS", /* 0x0080 */
-			"NATIVE", /* 0x0100 */
+			"public", /* 0x0001 */
+			"private", /* 0x0002 */
+			"protected", /* 0x0004 */
+			"static", /* 0x0008 */
+			"final", /* 0x0010 */
+			"synchronized", /* 0x0020 */
+			"bridge", /* 0x0040 */
+			"varargs", /* 0x0080 */
+			"native", /* 0x0100 */
 			"?", /* 0x0200 */
-			"ABSTRACT", /* 0x0400 */
-			"STRICT", /* 0x0800 */
-			"SYNTHETIC", /* 0x1000 */
+			"abstract", /* 0x0400 */
+			"strict", /* 0x0800 */
+			"synthetic", /* 0x1000 */
 			"?", /* 0x2000 */
 			"?", /* 0x4000 */
-			"MIRANDA", /* 0x8000 */
-			"CONSTRUCTOR", /* 0x10000 */
-			"DECLARED_SYNCHRONIZED", /* 0x20000 */
+			"miranda", /* 0x8000 */
+			"constructor", /* 0x10000 */
+			"declared_synchronized", /* 0x20000 */
 		},
 		{
 			/* field */
-			"PUBLIC", /* 0x0001 */
-			"PRIVATE", /* 0x0002 */
-			"PROTECTED", /* 0x0004 */
-			"STATIC", /* 0x0008 */
-			"FINAL", /* 0x0010 */
+			"public", /* 0x0001 */
+			"private", /* 0x0002 */
+			"protected", /* 0x0004 */
+			"static", /* 0x0008 */
+			"final", /* 0x0010 */
 			"?", /* 0x0020 */
-			"VOLATILE", /* 0x0040 */
-			"TRANSIENT", /* 0x0080 */
+			"volatile", /* 0x0040 */
+			"transient", /* 0x0080 */
 			"?", /* 0x0100 */
 			"?", /* 0x0200 */
 			"?", /* 0x0400 */
 			"?", /* 0x0800 */
-			"SYNTHETIC", /* 0x1000 */
+			"synthetic", /* 0x1000 */
 			"?", /* 0x2000 */
-			"ENUM", /* 0x4000 */
+			"enum", /* 0x4000 */
 			"?", /* 0x8000 */
 			"?", /* 0x10000 */
 			"?", /* 0x20000 */
 		},
 	};
-	size_t i, count = countOnes (flags);
+	size_t i, count = r_num_bit_count (flags);
 	const int kLongest = 21;
 	const int maxSize = (count + 1) * (kLongest + 1);
 	char* str, *cp;
@@ -237,11 +221,11 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	return str;
 }
 
-static const char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
-	if (type_idx < 0 || type_idx >= bin->header.types_size) {
+static const char *dex_type_descriptor(RBinDexObj *dex, int type_idx) {
+	if (type_idx < 0 || type_idx >= dex->header.types_size) {
 		return NULL;
 	}
-	return getstr (bin, bin->types[type_idx].descriptor_id);
+	return getstr (dex, dex->types[type_idx].descriptor_id);
 }
 
 static ut16 type_desc(RBinDexObj *bin, ut16 type_idx) {
@@ -733,8 +717,9 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	*bin_obj = r_bin_dex_new_buf (buf);
-	return *bin_obj != NULL;
+	RBinDexObj *o = r_bin_dex_new_buf (buf, bf->rbin->verbose);
+	*bin_obj = o;
+	return o != NULL;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -876,7 +861,7 @@ static RList *strings(RBinFile *bf) {
 			ptr->vaddr = ptr->paddr = bin->strings[i];
 			ptr->size = len;
 			ptr->length = len;
-			ptr->ordinal = i+1;
+			ptr->ordinal = i + 1;
 			r_list_append (ret, ptr);
 		} else {
 			free (ptr);
@@ -1590,10 +1575,10 @@ beach:
 	return;
 }
 
-static bool is_class_idx_in_code_classes(RBinDexObj *bin, int class_idx) {
+static bool is_class_idx_in_code_classes(RBinDexObj *dex, int class_idx) {
 	int i;
-	for (i = 0; i < bin->header.class_size; i++) {
-		if (class_idx == bin->classes[i].class_id) {
+	for (i = 0; i < dex->header.class_size; i++) {
+		if (class_idx == dex->classes[i].class_id) {
 			return true;
 		}
 	}
@@ -1602,68 +1587,65 @@ static bool is_class_idx_in_code_classes(RBinDexObj *bin, int class_idx) {
 
 static bool dex_loadcode(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, false);
-
+	RBinDexObj *dex = bf->o->bin_obj;
+	dex->verbose = true;
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
-	RBinDexObj *bin = bf->o->bin_obj;
 	size_t i;
 	int *methods = NULL;
 	int sym_count = 0;
-
 	// doublecheck??
-	if (bin->methods_list) {
+	if (dex->methods_list) {
 		return false;
 	}
-	bin->version = r_bin_dex_get_version (bin);
-	bin->code_from = UT64_MAX;
-	bin->code_to = 0;
-	bin->methods_list = r_list_newf ((RListFree)free);
-	if (!bin->methods_list) {
+	dex->version = r_bin_dex_get_version (dex);
+	dex->code_from = UT64_MAX;
+	dex->code_to = 0;
+	dex->methods_list = r_list_newf ((RListFree)free);
+	if (!dex->methods_list) {
 		return false;
 	}
-	bin->imports_list = r_list_newf ((RListFree)free);
-	if (!bin->imports_list) {
-		r_list_free (bin->methods_list);
+	dex->imports_list = r_list_newf ((RListFree)free);
+	if (!dex->imports_list) {
+		r_list_free (dex->methods_list);
 		return false;
 	}
-	bin->lines_list = r_list_newf ((RListFree)free);
-	if (!bin->lines_list) {
-		r_list_free (bin->methods_list);
-		r_list_free (bin->imports_list);
+	dex->lines_list = r_list_newf ((RListFree)free);
+	if (!dex->lines_list) {
 		return false;
 	}
-	bin->classes_list = r_list_newf ((RListFree)r_bin_class_free);
-	if (!bin->classes_list) {
-		r_list_free (bin->methods_list);
-		r_list_free (bin->imports_list);
-		r_list_free (bin->lines_list);
+	dex->classes_list = r_list_newf ((RListFree)r_bin_class_free);
+	if (!dex->classes_list) {
+		r_list_free (dex->methods_list);
+		r_list_free (dex->lines_list);
+		r_list_free (dex->imports_list);
 		return false;
 	}
 
-	if (bin->header.method_size>bin->size) {
-		bin->header.method_size = 0;
+	if (dex->header.method_size>dex->size) {
+		dex->header.method_size = 0;
 		return false;
 	}
 
 	/* WrapDown the header sizes to avoid huge allocations */
-	bin->header.method_size = R_MIN (bin->header.method_size, bin->size);
-	bin->header.class_size = R_MIN (bin->header.class_size, bin->size);
-	bin->header.strings_size = R_MIN (bin->header.strings_size, bin->size);
+	dex->header.method_size = R_MIN (dex->header.method_size, dex->size);
+	dex->header.class_size = R_MIN (dex->header.class_size, dex->size);
+	dex->header.strings_size = R_MIN (dex->header.strings_size, dex->size);
 
 	// TODO: is this posible after R_MIN ??
-	if (bin->header.strings_size > bin->size) {
+	if (dex->header.strings_size > dex->size) {
 		eprintf ("Invalid strings size\n");
 		return false;
 	}
 	dexSubsystem = NULL;
 
-	if (bin->classes) {
-		ut64 amount = sizeof (int) * bin->header.method_size;
-		if (amount > UT32_MAX || amount < bin->header.method_size) {
+	if (dex->classes) {
+		ut64 amount = sizeof (int) * dex->header.method_size;
+		if (amount > UT32_MAX || amount < dex->header.method_size) {
 			return false;
 		}
 		methods = calloc (1, amount + 1);
-		for (i = 0; i < bin->header.class_size; i++) {
-			struct dex_class_t *c = &bin->classes[i];
+		for (i = 0; i < dex->header.class_size; i++) {
+			struct dex_class_t *c = &dex->classes[i];
 			if (dexdump) {
 				cb_printf ("Class #%zu            -\n", i);
 			}
@@ -1672,20 +1654,20 @@ static bool dex_loadcode(RBinFile *bf) {
 	}
 	if (methods) {
 		int import_count = 0;
-		int sym_count = bin->methods_list->length;
+		int sym_count = dex->methods_list->length;
 
-		for (i = 0; i < bin->header.method_size; i++) {
+		for (i = 0; i < dex->header.method_size; i++) {
 			int len = 0;
 			if (methods[i]) {
 				continue;
 			}
-			if (bin->methods[i].class_id >= bin->header.types_size) {
+			if (dex->methods[i].class_id >= dex->header.types_size) {
 				continue;
 			}
-			if (is_class_idx_in_code_classes (bin, bin->methods[i].class_id)) {
+			if (is_class_idx_in_code_classes (dex, dex->methods[i].class_id)) {
 				continue;
 			}
-			const char *className = getstr (bin, bin->types[bin->methods[i].class_id].descriptor_id);
+			const char *className = getstr (dex, dex->types[dex->methods[i].class_id].descriptor_id);
 			if (!className) {
 				continue;
 			}
@@ -1707,8 +1689,8 @@ static bool dex_loadcode(RBinFile *bf) {
 				continue;
 			}
 			r_str_replace_char (class_name, ';', 0);
-			const char *method_name = dex_method_name (bin, i);
-			char *signature = dex_method_signature (bin, i);
+			const char *method_name = dex_method_name (dex, i);
+			char *signature = dex_method_signature (dex, i);
 			if (!R_STR_ISEMPTY (method_name)) {
 				RBinImport *imp = R_NEW0 (RBinImport);
 				if (!imp) {
@@ -1721,12 +1703,12 @@ static bool dex_loadcode(RBinFile *bf) {
 				imp->type = "FUNC";
 				imp->bind = "NONE";
 				imp->ordinal = import_count++;
-				r_list_append (bin->imports_list, imp);
+				r_list_append (dex->imports_list, imp);
 
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
 				if (!sym) {
 					free (methods);
-					free (signature);
+					free ((void *)signature);
 					free (class_name);
 					return false;
 				}
@@ -1736,13 +1718,13 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym->bind = "NONE";
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
-				sym->paddr = sym->vaddr = bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
+				sym->paddr = sym->vaddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
-				r_list_append (bin->methods_list, sym);
+				r_list_append (dex->methods_list, sym);
 				const char *mname = sdb_fmt ("method.%"PFMT64d, (ut64)i);
 				sdb_num_set (mdb, mname, sym->paddr, 0);
 			}
-			free (signature);
+			free ((void *)signature);
 			free (class_name);
 		}
 		free (methods);
@@ -1752,11 +1734,11 @@ static bool dex_loadcode(RBinFile *bf) {
 
 static RList* imports(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
-	RBinDexObj *bin = (RBinDexObj*) bf->o->bin_obj;
-	if (!bin->imports_list) {
+	RBinDexObj *dex = (RBinDexObj*) bf->o->bin_obj;
+	if (!dex->imports_list) {
 		dex_loadcode (bf);
 	}
-	return bin->imports_list;
+	return dex->imports_list;
 }
 
 static RList *trycatch(RBinFile *bf) {
@@ -1862,7 +1844,7 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 	switch (type) {
 	case 'm': // methods
 		// TODO: ADD CHECK
-		return offset_of_method_idx (bf, dex, idx);
+		return offset_of_method_idx (bf, idx);
 	case 'f':
 		return dex_field_offset (dex, idx);
 	case 'o': // objects
@@ -1883,9 +1865,9 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 	return -1;
 }
 
-static char *getname(RBinFile *bf, int type, int idx, bool sd) {
+static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	simplifiedDemangling = sd; // XXX kill globals
-	struct r_bin_dex_obj_t *dex = bf->o->bin_obj;
+	RBinDexObj *dex = bf->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
 		return dex_method_fullname (dex, idx);
@@ -2106,7 +2088,7 @@ static RList *dex_fields(RBinFile *bf) {
 	ut32 checksum = r_buf_read_le32 (bf->buf);
 	ROW ("dex_checksum", 4, checksum, "x");
 	ut8 signature[20];
-	ROW ("dex_signature", 8, signature, "[20]c");
+	ROW ("dex_signature", 8, (size_t)signature, "[20]c");
 	ut32 size = r_buf_read_le32 (bf->buf);
 	ROW ("dex_size", 4, size, "x");
 	ut32 header_size = r_buf_read_le32 (bf->buf);

@@ -121,6 +121,10 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 		switch (val->type) {
 		case R_ANAL_VAL_REG:
 		{
+			if (!val->reg) {
+				R_LOG_ERROR("invalid register, unable to trace register state\n");
+				continue;
+			}
 			ut64 data = r_reg_get_value (dbg->reg, val->reg);
 
 			// add reg write
@@ -194,19 +198,19 @@ R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
 	dbg->trace->addresses = (str&&*str)? strdup (str): NULL;
 }
 
-R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
+R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr) {
 	int tag = dbg->trace->tag;
 	return ht_pp_find (dbg->trace->ht,
 		sdb_fmt ("trace.%d.%"PFMT64x, tag, addr), NULL);
 }
 
-static int cmpaddr (const void *_a, const void *_b) {
+static int cmpaddr(const void *_a, const void *_b) {
 	const RListInfo *a = _a, *b = _b;
 	return (r_itv_begin (a->pitv) > r_itv_begin (b->pitv))? 1:
 		 (r_itv_begin (a->pitv) < r_itv_begin (b->pitv))? -1: 0;
 }
 
-R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
+R_API void r_debug_trace_list(RDebug *dbg, int mode, ut64 offset) {
 	int tag = dbg->trace->tag;
 	RListIter *iter;
 	bool flag = false;
@@ -247,7 +251,7 @@ R_API void r_debug_trace_list (RDebug *dbg, int mode, ut64 offset) {
 	}
 	if (flag) {
 		r_list_sort (info_list, cmpaddr);
-		RTable *table = r_table_new ();
+		RTable *table = r_table_new ("traces");
 		table->cons = r_cons_singleton();
 		RIO *io = dbg->iob.io;
 		r_table_visual_list (table, info_list, offset, 1,

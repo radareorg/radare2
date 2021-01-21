@@ -165,7 +165,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				if (is_wide32) {
 					str_type = R_STRING_TYPE_WIDE32;
 				} else {
-					bool is_wide = needle + rc + 2 < to && !w[0] && w[1] && !w[2];
+					bool is_wide = needle + rc + 4 < to && !w[0] && w[1] && !w[2] && w[3] && !w[4];
 					str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
 				}
 			} else {
@@ -353,7 +353,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		pj_end (pj);
 		RIO *io = bin->iob.io;
 		if (io) {
-			io->cb_printf ("%s\n", pj_string (pj));
+			io->cb_printf ("%s", pj_string (pj));
 		}
 		pj_free (pj);
 	}
@@ -386,12 +386,19 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 	if (min < 0) {
 		return;
 	}
-	if (!bf->rbin->is_debugger) {
-		if (!to || to > r_buf_size (bf->buf)) {
-			to = r_buf_size (bf->buf);
-		}
-		if (!to) {
-			return;
+	{
+		RIO *io = bf->rbin->iob.io;
+		RCoreBind *cb = &io->corebind;
+		if (cb && cb->cfgGet) {
+			const bool cfg_debug = cb->cfgGet (cb->core, "cfg.debug");
+			if (!cfg_debug) {
+				if (!to || to > r_buf_size (bf->buf)) {
+					to = r_buf_size (bf->buf);
+				}
+				if (!to) {
+					return;
+				}
+			}
 		}
 	}
 	if (raw != 2) {

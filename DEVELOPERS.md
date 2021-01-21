@@ -47,12 +47,17 @@ You may find some additional notes on this topic in doc/vim.
 * Tabs are used for indentation. In a switch statement, the
   cases are indented at the switch level.
 
+* Switch-cases where local variables are needed should be refactored into
+  separate functions instead of using braces. Even so, if braced scope syntax
+  is used, put `break;` statement inside the scope.
+
 ```c
 switch (n) {
 case 1:
 	break;
-case 2:
+case 2: {
 	break;
+}
 default:
 }
 ```
@@ -98,11 +103,12 @@ if (a == b) {
   example of a good name could be "out_buffer:" if the goto frees "buffer".
   Avoid using GW-BASIC names like "err1:" and "err2:".
 
-* Use `r_return_*` functions to check preconditions that are caused by
-  programmers' errors. Please note the difference between conditions that should
-  never happen, and that are handled through `r_return_*` functions, and
-  conditions that can happen at runtime (e.g. malloc returns NULL, input coming
-  from user, etc.), and should be handled in the usual way through if-else.
+* Use `r_return_*` macros to check preconditions that are caused by
+  programmers' errors. Please, keep in mind:
+  * conditions that should never happen should be handled through
+    `r_return_*` macros;
+  * runtime conditions (e.g. malloc returns NULL, input coming from user,
+    etc.) should be handled in the usual way through if-else.
 
 ```c
 int check(RCore *c, int a, int b) {
@@ -310,17 +316,17 @@ Vim/Neovim:
 
 ```vim
 setl cindent
-setl tabstop=4
+setl tabstop=8
 setl noexpandtab
-setl cino=:0,+0,(2,J0,{1,}0,>4,)1,m2
+setl cino=:0,+0,(2,J0,{1,}0,>8,)1,m1
 ```
 
 Emacs:
 
 ```elisp
 (c-add-style "radare2"
-             '((c-basic-offset . 4)
-               (tab-width . 4)
+             '((c-basic-offset . 8)
+               (tab-width . 8)
                (indent-tabs-mode . t)
                ;;;; You would need (put 'c-auto-align-backslashes 'safe-local-variable 'booleanp) to enable this
                ;; (c-auto-align-backslashes . nil)

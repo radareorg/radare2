@@ -1,7 +1,7 @@
 # config.mk.tail
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-# neat???!? trick to support path with spaces
+
 null:=
 SPACE:=$(null) $(null)
 
@@ -16,7 +16,6 @@ endif
 
 SHLR:=$(LIBR)/../shlr
 
-#include $(LIBR)/../config-user.mk
 include $(LIBR)/../global.mk
 include $(LIBR)/../mk/${COMPILER}.mk
 
@@ -24,7 +23,6 @@ CFLAGS+=${CFLAGS_APPEND}
 CFLAGS+=${CPPFLAGS}
 
 ifeq (1,1)
-#$(WITHPIC),1)
 LINK+=$(subst r_,-L$(LIBR)/,$(R2DEPS))
 LINK+=$(subst r_,-lr_,$(R2DEPS))
 LINK+=$(subst r_,-L$(LIBR)/,$(BINDEPS))
@@ -36,9 +34,6 @@ ifneq ($(R2DEPS),)
 LINK+=$(shell echo ${R2DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
 endif
 endif
-
-# Compiler: see mk/gcc.mk
-# CC CFLAGS CC_LIB CC_AR LINK
 
 # Debug
 ifneq ($(OSTYPE),mingw32)

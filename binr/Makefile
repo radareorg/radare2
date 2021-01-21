@@ -6,11 +6,7 @@ BTOP=$(shell pwd)
 
 .PHONY: all clean install install-symlink deinstall uninstall mrproper preload
 
-BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent rasign2
-
-ifeq ($(WANT_R2R),1)
-    BINS+=r2r
-endif
+BINS=r2r rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent rasign2
 
 LIBR2=$(call libname-version,libr2.$(EXT_SO),${LIBVERSION})
 
@@ -33,8 +29,6 @@ install:
 	done
 	${INSTALL_SCRIPT} "$(BTOP)/r2pm/r2pm" "${DESTDIR}${BINDIR}/r2pm"
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
-	#mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
-	#cp -rf r2pm/d/* "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
 	-cd "${DESTDIR}${BINDIR}" && rm -f r2 ; ln -fs radare2 r2 ; ln -fs radare2 r2p
 ifeq ($(WITHPIC),1)
 	${INSTALL_LIB} "preload/libr2.$(EXT_SO)" "${DESTDIR}${LIBDIR}"

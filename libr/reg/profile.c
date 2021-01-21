@@ -295,6 +295,10 @@ static char *gdb_to_r2_profile(const char *gdb) {
 		}
 		if ((ptr1 = strchr (ptr, '\n'))) {
 			*ptr1 = '\0';
+		} else {
+			eprintf ("Could not parse line: %s (missing \\n)\n", ptr);
+			r_strbuf_free (sb);
+			return false;
 		}
 		ret = sscanf (ptr, " %s %d %d %d %d %s %s", name, &number, &rel,
 			&offset, &size, type, groups);
@@ -302,6 +306,7 @@ static char *gdb_to_r2_profile(const char *gdb) {
 		if (ret < 6) {
 			if (*ptr != '*') {
 				eprintf ("Could not parse line: %s\n", ptr);
+				r_strbuf_free (sb);
 				return false;
 			}
 			ptr = ptr1 + 1;

@@ -1,5 +1,6 @@
 NAME=1: k syscall/
 FILE=malloc://512
+ARGS=-a x86 -k linux
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
@@ -13,6 +14,7 @@ RUN
 
 NAME=2: k syscall/
 FILE=malloc://512
+ARGS=-a x86 -k linux
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64

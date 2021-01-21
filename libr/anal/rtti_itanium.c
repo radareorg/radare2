@@ -532,10 +532,10 @@ static vmi_class_type_info *create_vmi_class_type(ut64 vtable_addr, char *name, 
 
 /**
  * @brief Try to parse as much valid looking RTTI as you can
- * 
- * @param context 
- * @param vtable_addr 
- * @param rtti_addr 
+ *
+ * @param context
+ * @param vtable_addr
+ * @param rtti_addr
  * @return class_type_info* NULL if not even default class RTTI could be parsed or error
  */
 static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr, ut64 rtti_addr) {
@@ -544,7 +544,7 @@ static class_type_info *raw_rtti_parse(RVTableContext *context, ut64 vtable_addr
 		                   |--------------------------------------|
 		                   |               type_name              |
 		                   |--------------------------------------| --- enough for __class_type_info
-		                   |  __class_type_info *base_type        | 
+		                   |  __class_type_info *base_type        |
 		                   |--------------------------------------| --- enough for __si_class_type_info
 		                   |              uint flags              | --- must be atleast 16bits, it's 32 bit for 64-bit Itanium ABI
 		                   |--------------------------------------|
@@ -775,9 +775,9 @@ static void recovery_apply_vtable(RVTableContext *context, const char *class_nam
 
 /**
  * @brief Add any base class information about the type into anal/classes
- * 
- * @param context 
- * @param cti 
+ *
+ * @param context
+ * @param cti
  */
 static void add_class_bases(RVTableContext *context, const class_type_info *cti) {
 	class_type_info base_info;
@@ -794,7 +794,8 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 			r_anal_class_base_set (context->anal, cti->name, &base);
 			r_anal_class_base_fini (&base);
 		}
-	} break;
+		break;
+	}
 	case R_TYPEINFO_TYPE_VMI_CLASS: {
 		vmi_class_type_info *vmi_class = (void *)cti;
 		for (i = 0; i < vmi_class->vmi_base_count; i++) {
@@ -807,7 +808,8 @@ static void add_class_bases(RVTableContext *context, const class_type_info *cti)
 				r_anal_class_base_fini (&base);
 			}
 		}
-	} break;
+		break;
+	}
 	default: // other types have no parent classes
 		break;
 	}

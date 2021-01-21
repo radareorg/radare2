@@ -332,3 +332,50 @@ EXPECT=<<EOF
 0xffffffffffffff12
 EOF
 RUN
+
+NAME=sign extension assignement
+FILE=-
+CMDS=<<EOF
+e asm.arch=riscv
+e asm.bits=32
+"ae 0x8007,a0,=,0x5,a1,=,16,a0,~=,8,a1,~="
+ar a0
+ar a1
+EOF
+EXPECT=<<EOF
+0xffff8007
+0x00000005
+EOF
+RUN
+
+NAME=float int to double
+FILE=-
+CMDS="ae 9,I2D"
+EXPECT=<<EOF
+0x4022000000000000
+EOF
+RUN
+
+NAME=float double to int
+FILE=-
+CMDS="ae 9,I2D,D2I"
+EXPECT=<<EOF
+0x9
+EOF
+RUN
+
+NAME=float double to float (32)
+FILE=-
+CMDS="ae 32,9,I2D,D2F"
+EXPECT=<<EOF
+0x41100000
+EOF
+RUN
+
+NAME=float math
+FILE=-
+CMDS="ae 9,I2D,SQRT,4,I2D,F+,3,I2D,F/,6,I2D,F*"
+EXPECT=<<EOF
+0x4004924924924924
+EOF
+RUN

@@ -303,14 +303,14 @@ data_off            : 552 (0x000228)
 
 Class #0            -
   Class descriptor  : 'LHello;'
-  Access flags      : 0x0001 (PUBLIC)
+  Access flags      : 0x0001 (public)
   Superclass        : 'Ljava/lang/Object;'
   Interfaces        -
   Static fields     -
     #0              : (in LHello;)
       name          : 'localVar2'
       type          : 'I'
-      access        : 0x0008 (STATIC)
+      access        : 0x0008 (static)
   Instance fields   -
     #0              : (in LHello;)
       name          : 'localVar'
@@ -320,7 +320,7 @@ Class #0            -
     #0              : (in LHello;)
       name          : '<init>'
       type          : '()V'
-      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      access        : 0x10001 (public constructor)
       code          -
       registers     : 2
       ins           : 1
@@ -337,7 +337,7 @@ Class #0            -
     #1              : (in LHello;)
       name          : 'main'
       type          : '([Ljava/lang/String;)V'
-      access        : 0x0009 (PUBLIC STATIC)
+      access        : 0x0009 (public static)
       code          -
       registers     : 3
       ins           : 1
@@ -354,7 +354,7 @@ Class #0            -
     #0              : (in LHello;)
       name          : 'foo'
       type          : '(I)V'
-      access        : 0x0001 (PUBLIC)
+      access        : 0x0001 (public)
       code          -
       registers     : 5
       ins           : 2
@@ -371,7 +371,7 @@ Class #0            -
 
 Class #1            -
   Class descriptor  : 'LWorld;'
-  Access flags      : 0x0001 (PUBLIC)
+  Access flags      : 0x0001 (public)
   Superclass        : 'Ljava/lang/Object;'
   Interfaces        -
   Static fields     -
@@ -388,7 +388,7 @@ Class #1            -
     #0              : (in LWorld;)
       name          : '<init>'
       type          : '()V'
-      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      access        : 0x10001 (public constructor)
       code          -
       registers     : 2
       ins           : 1
@@ -406,7 +406,7 @@ Class #1            -
     #0              : (in LWorld;)
       name          : 'foo'
       type          : '(I)V'
-      access        : 0x0001 (PUBLIC)
+      access        : 0x0001 (public)
       code          -
       registers     : 5
       ins           : 2

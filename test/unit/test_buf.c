@@ -122,6 +122,7 @@ bool test_r_buf_file(void) {
 	// Cleanup
 	r_buf_free (b);
 	unlink (filename);
+	free (filename);
 	mu_end;
 }
 
@@ -165,6 +166,7 @@ bool test_r_buf_mmap(void) {
 	// Cleanup
 	r_buf_free (b);
 	unlink(filename);
+	free (filename);
 	mu_end;
 }
 

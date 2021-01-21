@@ -11,21 +11,26 @@
 #undef eprintf
 #define eprintf(...) fprintf(stderr,__VA_ARGS__)
 
+// Copied from https://gcc.gnu.org/wiki/Visibility
 #ifndef SDB_API
-#if defined(__GNUC__) && __GNUC__ >= 4
-#define SDB_API __attribute__((visibility("default")))
-#else
-#define SDB_API
+	#undef SDB_IPI
+	#if defined _WIN32 || defined __CYGWIN__
+		#ifdef __GNUC__
+			#define SDB_API __attribute__ ((dllexport))
+		#else
+			#define SDB_API __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
+		#endif
+		#define SDB_IPI
+	#else
+	#if __GNUC__ >= 4
+		#define SDB_API __attribute__ ((visibility ("default")))
+		#define SDB_IPI  __attribute__ ((visibility ("hidden")))
+	#else
+		#define SDB_API
+		#define SDB_IPI
+	#endif
+	#endif
 #endif
-#endif
-
-#ifndef SDB_IPI
-#if defined(__GNUC__) && __GNUC__ >= 4
-// __attribute__((visibility("hidden")))
-#endif
-#define SDB_IPI static
-#endif
-
 
 #if MINGW || __MINGW32__ || __MINGW64__
 #define __MINGW__ 1

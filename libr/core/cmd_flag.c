@@ -440,7 +440,7 @@ static void cmd_flag_table(RCore *core, const char *input) {
 	const char fmt = *input++;
 	const char *q = input;
 	FlagTableData ftd = {0};
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "flags");
 	ftd.t = t;
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");

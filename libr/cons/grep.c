@@ -195,11 +195,11 @@ while_end:
 	}
 	if (len > 0 && str[len] == '?') {
 		grep->counter = 1;
-		strncpy (buf, str, R_MIN (len, sizeof (buf) - 1));
+		r_str_ncpy (buf, str, R_MIN (len, sizeof (buf) - 1));
 		buf[len] = 0;
 		len--;
 	} else {
-		strncpy (buf, str, sizeof (buf) - 1);
+		r_str_ncpy (buf, str, sizeof (buf) - 1);
 	}
 
 	ptr = buf;
@@ -320,7 +320,7 @@ while_end:
 				eprintf ("too many grep strings\n");
 				break;
 			}
-			strncpy (grep->strings[grep->nstrings - 1],
+			r_str_ncpy (grep->strings[grep->nstrings - 1],
 				optr, R_CONS_GREP_WORD_SIZE - 1);
 		} while (ptr);
 	} else {

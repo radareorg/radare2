@@ -37,3 +37,42 @@ EXPECT=<<EOF
   FileVersion: duplicates are authorized
 EOF
 RUN
+
+NAME=PE: versioninfo json
+FILE=bins/pe/version_std.exe
+CMDS=iVj~{}
+EXPECT=<<EOF
+{
+  "VS_FIXEDFILEINFO": {
+    "Signature": 4277077181,
+    "StrucVersion": 4294967295,
+    "FileVersion": "65535.65535.65535.65535",
+    "ProductVersion": "65535.65535.65535.65535",
+    "FileFlagsMask": 4294967295,
+    "FileFlags": 0,
+    "FileOS": 0,
+    "FileType": 0,
+    "FileSubType": 0
+  },
+  "StringTable": {
+    "FileDescription": "a PE with \"standard\" version info",
+    "FileVersion": "compulsory for version tab",
+    "LegalCopyright": "corkami.com",
+    "StringFileInfo": "",
+    "Comments": "",
+    "CompanyName": "",
+    "InternalName": "",
+    "LegalTrademarks": "",
+    "OriginalFilename": "",
+    "PrivateBuild": "",
+    "ProductName": "",
+    "ProductVersion": "",
+    "SpecialBuild": "",
+    "": "",
+    " ": "",
+    " ** EAT AT JOE\"S **": "best hamburger in town",
+    "FileVersion": "duplicates are authorized"
+  }
+}
+EOF
+RUN

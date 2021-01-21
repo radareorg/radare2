@@ -1388,6 +1388,12 @@ R_API char *r_str_sanitize_r2(const char *buf) {
 	return new_buf;
 }
 
+R_API char *r_str_escape_sql(const char *buf) {
+	r_return_val_if_fail (buf, NULL);
+	char *res = r_str_replace (strdup (buf), "'", "\\'", true);
+	return res;
+}
+
 // Return MUST BE surrounded by double-quotes
 R_API char *r_str_escape_sh(const char *buf) {
 	r_return_val_if_fail (buf, NULL);
@@ -3145,7 +3151,11 @@ R_API char *r_str_wrap(const char *str, int w) {
 	char *end = r + r_size;
 	int cw = 0;
 	while (*str && r + 1 < end) {
-		if (*str == '\n') {
+		if (*str == '\t') {
+			// skip
+		} else if (*str == '\r') {
+			// skip
+		} else if (*str == '\n') {
 			*r++ = *str++;
 			cw = 0;
 		} else {
@@ -3344,16 +3354,17 @@ R_API size_t *r_str_split_lines(char *str, size_t *count) {
 }
 
 R_API bool r_str_isnumber(const char *str) {
-	if (!str || !*str) {
+	if (!str || (!IS_DIGIT (*str) && *str != '-')) {
 		return false;
 	}
-	bool isnum = IS_DIGIT (*str) || *str == '-';
-	while (isnum && *++str) {
+
+	while (*++str) {
 		if (!IS_DIGIT (*str)) {
-			isnum = false;
+			return false;
 		}
 	}
-	return isnum;
+
+	return true;
 }
 
 /* TODO: optimize to start searching by the end of the string */

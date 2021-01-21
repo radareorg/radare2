@@ -48,27 +48,27 @@ int gdbr_init(libgdbr_t *g, bool is_server) {
 	return 0;
 }
 
-int gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
+bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits) {
 	if (!g) {
-		return -1;
+		return false;
 	}
 	if (g->target.valid && g->registers) {
-		return 0;
+		return true;
 	}
 
 	const char *regprofile = gdbr_get_reg_profile (arch, bits);
 	if (!regprofile) {
 		eprintf ("cannot find gdb reg_profile\n");
-		return -1;
+		return false;
 	}
 	if (!gdbr_set_reg_profile (g, regprofile)) {
-		return -1;
+		return false;
 	}
 	g->target.arch = arch;
 	g->target.bits = bits;
 	g->target.valid = true;
 
-	return 0;
+	return true;
 }
 
 const char *gdbr_get_reg_profile(int arch, int bits) {
@@ -99,6 +99,9 @@ const char *gdbr_get_reg_profile(int arch, int bits) {
 	case R_SYS_ARCH_LM32:
 #include "reg/lm32.h"
 		break;
+	case R_SYS_ARCH_RISCV:
+#include "reg/riscv.h"
+		break;
 	case R_SYS_ARCH_MIPS:
 #include "reg/mips.h"
 		break;
@@ -113,7 +116,7 @@ const char *gdbr_get_reg_profile(int arch, int bits) {
 }
 
 int gdbr_set_reg_profile(libgdbr_t *g, const char *str) {
-	if (!g) {
+	if (!g || !str) {
 		return -1;
 	}
 	gdb_reg_t *registers = arch_parse_reg_profile (str);

@@ -4,7 +4,7 @@ case "$1" in
 	: # nothing to do here
 	;;
 *)
-	[ plugins.def.cfg -nt ./plugins.cfg ] && rm -f plugins.cfg
+	[ dist/plugins-cfg/plugins.def.cfg -nt ./plugins.cfg ] && rm -f plugins.cfg
 	./configure-plugins $*
 	;;
 esac

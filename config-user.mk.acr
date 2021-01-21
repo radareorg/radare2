@@ -19,7 +19,6 @@ HAVE_JEMALLOC=@HAVE_JEMALLOC@
 HAVE_FORK=@HAVE_FORK@
 WANT_DYLINK=@WANT_DYLINK@
 WITH_LIBR=@WITH_LIBR@
-WANT_R2R=@WANT_R2R@
 
 MKPLUGINS=mk/stat.mk mk/sloc.mk
 
@@ -89,9 +88,6 @@ LIBUV_LDFLAGS=@LIBUV_LDFLAGS@
 
 HAVE_PTRACE=@HAVE_PTRACE@
 USE_PTRACE_WRAP=@USE_PTRACE_WRAP@
-
-GIT_TIP:=$(shell (git rev-parse HEAD 2>/dev/null || echo HEAD ))
-GIT_TAP:=$(shell (git describe --tags 2>/dev/null || echo ${VERSION} ))
 
 CLOCK_LDFLAGS+=@CLOCK_LDFLAGS@
 

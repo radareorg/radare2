@@ -329,7 +329,6 @@ struct r_bin_t {
 	RIOBind iob;
 	RConsBind consb;
 	char *force;
-	int is_debugger;
 	bool want_dbginfo;
 	int filter; // symbol filtering
 	char strfilter; // string filtering
@@ -457,7 +456,7 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinFile *bf, int type, int idx);
-	char* (*get_name)(RBinFile *bf, int type, int idx, bool simplified);
+	const char* (*get_name)(RBinFile *bf, int type, int idx, bool simplified);
 	ut64 (*get_vaddr)(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
 	char* (*demangle)(const char *str);
@@ -687,8 +686,8 @@ R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
-R_API void r_bin_list(RBin *bin, int format);
-R_API bool r_bin_list_plugin(RBin *bin, const char *name, int json);
+R_API void r_bin_list(RBin *bin, PJ *pj, int format);
+R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json);
 R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz);
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf);
 R_API void r_bin_force_plugin(RBin *bin, const char *pname);
@@ -735,7 +734,7 @@ R_API RBinObject *r_bin_cur_object(RBin *bin);
 R_API bool r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API bool r_bin_select_bfid(RBin *bin, ut32 bf_id);
 R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
-R_API void r_bin_list_archs(RBin *bin, int mode);
+R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode);
 R_API RBuffer *r_bin_create(RBin *bin, const char *plugin_name, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
 R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RList *files);
 

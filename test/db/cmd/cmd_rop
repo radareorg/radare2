@@ -143,7 +143,6 @@ e asm.bits=32
 EOF
 EXPECT=<<EOF
 [{"opcodes":[{"offset":180,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":182,"size":5,"opcode":"mov eax, 1","type":"mov"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":15},{"opcodes":[{"offset":183,"size":2,"opcode":"add dword [eax], eax","type":"add"},{"offset":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":12},{"opcodes":[{"offset":184,"size":2,"opcode":"add byte [eax], al","type":"add"},{"offset":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"offset":192,"size":2,"opcode":"int 0x80","type":"swi"},{"offset":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":11}]
-
 EOF
 RUN
 
@@ -232,5 +231,103 @@ EXPECT=<<EOF
   0x08048425                 53  push ebx
   0x08048426         e805ffffff  call 0x8048330
 
+EOF
+RUN
+
+NAME=search rop for AVR
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=avr
+e scr.color=false
+wx 11241fbecfefd8e0debfcdbf12e0a0e0b1e0e6e3f4e302c005900d92a431b107d9f722e0a4e1b2e001c01d92ae3cb207e1f710e0c2e6d0e004c02197fe010e94041ac136d107c9f70e944f090c9456160c940000ef92ff920f931f93cf93df93cdb7deb7c054d1090fb6f894debf0fbecdbf6ce071e08fe192e00e946b04ce0101967c018e010f5c1f4ffc011192e017f107e1f720e330e0a7016ae08fe192e00e94d8080297f8f0c801d701fd01ee19ff092d91222321f0fc012193cf01f6cfe00ff11f108260e071e0c8010e949816892b49f46de171e08fe192e00e946b0481e090e008c066e471e08fe192e00e946b0480e090e0c05cdf4f0fb6f894debf0fbecdbfdf91cf911f910f91ff90ef9008956de671e08fe192e00e946b0485b1805885b908956fe771e08fe192e00e946b048bb180588bb908956de671e08fe192e00e946b0485b1805885b985b1805885b985b1805885b908956fe771e08fe192e00e946b048bb180588bb98bb180588bb98bb180588bb908950f931f93cf93df93cdb7deb727970fb6f894debf0fbecdbf9c018e010f5f1f4fd801ad01401b510bf90191919f01992311f09d93f6cffa01e00ff11f10826fe871e0c8010e949816892b81f40e948c00892bf9f027960fb6f894debf0fbecdbfdf91cf911f910f910c940f0163e971e0c8010e949816892b61f427960fb6f894debf0fbecdbf
+/R ldi
+q
+EOF
+EXPECT=<<EOF
+  0x0000000e               a0e0  ldi r26, 0x00
+  0x00000010               b1e0  ldi r27, 0x01
+  0x00000012               e6e3  ldi r30, 0x36
+  0x00000014               f4e3  ldi r31, 0x34
+  0x00000016               02c0  rjmp 0x1c
+
+  0x00000020               d9f7  brne 0x18
+  0x00000022               22e0  ldi r18, 0x02
+  0x00000024               a4e1  ldi r26, 0x14
+  0x00000026               b2e0  ldi r27, 0x02
+  0x00000028               01c0  rjmp 0x2c
+
+  0x00000030               e1f7  brne 0x2a
+  0x00000032               10e0  ldi r17, 0x00
+  0x00000034               c2e6  ldi r28, 0x62
+  0x00000036               d0e0  ldi r29, 0x00
+  0x00000038               04c0  rjmp 0x42
+
+  0x00000072               6ce0  ldi r22, 0x0c
+  0x00000074               71e0  ldi r23, 0x01
+  0x00000076               8fe1  ldi r24, 0x1f
+  0x00000078               92e0  ldi r25, 0x02
+  0x0000007a           0e946b04  call 0x8d6
+
+  0x00000098               a701  movw r20, r14
+  0x0000009a               6ae0  ldi r22, 0x0a
+  0x0000009c               8fe1  ldi r24, 0x1f
+  0x0000009e               92e0  ldi r25, 0x02
+  0x000000a0           0e94d808  call 0x11b0
+
+  0x000000c4               1082  std z+0, r1
+  0x000000c6               60e0  ldi r22, 0x00
+  0x000000c8               71e0  ldi r23, 0x01
+  0x000000ca               c801  movw r24, r16
+  0x000000cc           0e949816  call 0x2d30
+
+  0x000000d4               6de1  ldi r22, 0x1d
+  0x000000d6               71e0  ldi r23, 0x01
+  0x000000d8               8fe1  ldi r24, 0x1f
+  0x000000da               92e0  ldi r25, 0x02
+  0x000000dc           0e946b04  call 0x8d6
+
+  0x000000de               6b04  cpc r6, r11
+  0x000000e0               81e0  ldi r24, 0x01
+  0x000000e2               90e0  ldi r25, 0x00
+  0x000000e4               08c0  rjmp 0xf6
+
+  0x000000e6               66e4  ldi r22, 0x46
+  0x000000e8               71e0  ldi r23, 0x01
+  0x000000ea               8fe1  ldi r24, 0x1f
+  0x000000ec               92e0  ldi r25, 0x02
+  0x000000ee           0e946b04  call 0x8d6
+
+  0x00000112               6de6  ldi r22, 0x6d
+  0x00000114               71e0  ldi r23, 0x01
+  0x00000116               8fe1  ldi r24, 0x1f
+  0x00000118               92e0  ldi r25, 0x02
+  0x0000011a           0e946b04  call 0x8d6
+
+  0x00000126               6fe7  ldi r22, 0x7f
+  0x00000128               71e0  ldi r23, 0x01
+  0x0000012a               8fe1  ldi r24, 0x1f
+  0x0000012c               92e0  ldi r25, 0x02
+  0x0000012e           0e946b04  call 0x8d6
+
+  0x0000013a               6de6  ldi r22, 0x6d
+  0x0000013c               71e0  ldi r23, 0x01
+  0x0000013e               8fe1  ldi r24, 0x1f
+  0x00000140               92e0  ldi r25, 0x02
+  0x00000142           0e946b04  call 0x8d6
+
+  0x0000015a               6fe7  ldi r22, 0x7f
+  0x0000015c               71e0  ldi r23, 0x01
+  0x0000015e               8fe1  ldi r24, 0x1f
+  0x00000160               92e0  ldi r25, 0x02
+  0x00000162           0e946b04  call 0x8d6
+
+  0x000001b6               1082  std z+0, r1
+  0x000001b8               6fe8  ldi r22, 0x8f
+  0x000001ba               71e0  ldi r23, 0x01
+  0x000001bc               c801  movw r24, r16
+  0x000001be           0e949816  call 0x2d30
+
+EOF
+EXPECT_ERR=<<EOF
 EOF
 RUN

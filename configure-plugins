@@ -33,7 +33,7 @@ help () {
 cfg=./plugins.cfg
 
 if [ ! -f "$cfg" ]; then
-  cp -f ./plugins.def.cfg plugins.cfg
+  cp -f dist/plugins-cfg/plugins.def.cfg plugins.cfg
 fi
 
 load () {
@@ -42,7 +42,7 @@ load () {
     . $cfg
   else
     echo "configure-plugins: Loading $1 .."
-    . "$1" #plugins.def.cfg
+    . "$1"
   fi
 }
 
@@ -186,7 +186,7 @@ make_ () { : ; }
 
 MODE=""
 DONOTHING=0
-DEFCFG=./plugins.def.cfg
+DEFCFG=dist/plugins-cfg/plugins.def.cfg
 
 rmstatic() {
   C=0

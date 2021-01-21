@@ -248,7 +248,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		types |= R_ANAL_ADDR_TYPE_FUNC;
 	}
 	// check registers
-	if (core->bin && core->bin->is_debugger && core->dbg) { // TODO: if cfg.debug here
+	if (core->bin && core->dbg && r_config_get_i (core->config, "cfg.debug")) {
 		RDebugMap *map;
 		RListIter *iter;
 		// use 'dm'
@@ -756,16 +756,18 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	ut64 *next = NULL;
 	int fcnlen;
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
+	r_warn_if_fail (fcn);
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 	if (!fcnpfx) {
 		fcnpfx = "fcn";
 	}
-	if (!fcn) {
-		eprintf ("Error: new (fcn)\n");
-		return false;
+	const char *cc = r_anal_cc_default (core->anal);
+	if (!cc) {
+		eprintf ("Warning: set your favourite calling convention in `e anal.cc=?`\n");
+		cc = "reg";
 	}
-	fcn->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
-	r_warn_if_fail (!core->anal->sdb_cc->path || fcn->cc);
+	fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
+	r_warn_if_fail (fcn->cc);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
@@ -1912,7 +1914,7 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 		}
 		esil = R_STRBUF_SAFEGET (&op->esil);
 		eprintf ("0x%08"PFMT64x" %d %s\n", at, op->size, esil);
-		at += op->size;
+		// at += op->size;
 		// esilIsRet()
 		// esilIsCall()
 		// esilIsJmp()
@@ -2310,7 +2312,7 @@ R_API RGraph *r_core_anal_importxrefs(RCore *core) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	bool lit = info? info->has_lit: false;
-	bool va = core->io->va || core->bin->is_debugger;
+	bool va = core->io->va || r_config_get_i (core->config, "cfg.debug");
 
 	RListIter *iter;
 	RBinImport *imp;
@@ -2353,13 +2355,12 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	int usenames = r_config_get_i (core->config, "graph.json.usenames");;
 	RAnalFunction *fcni;
 	RAnalRef *fcnr;
-	PJ *pj;
+	PJ *pj = NULL;
 
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 
-	switch (fmt)
-	{
+	switch (fmt) {
 	case R_GRAPH_FORMAT_JSON:
 		pj = pj_new ();
 		if (!pj) {
@@ -2473,8 +2474,7 @@ repeat:
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
 			char *fcnr_name = (flag && flag->name) ? flag->name : r_str_newf ("unk.0x%"PFMT64x, fcnr->addr);
-			switch(fmt)
-			{
+			switch (fmt) {
 			case R_GRAPH_FORMAT_GMLFCN:
 				if (iteration == 0) {
 					r_cons_printf ("  node [\n"
@@ -2544,8 +2544,7 @@ repeat:
 	if (iteration == 0 && fmt == R_GRAPH_FORMAT_GMLFCN) {
 		iteration++;
 	}
-	switch(fmt)
-	{
+	switch (fmt) {
 	case R_GRAPH_FORMAT_GML:
 	case R_GRAPH_FORMAT_GMLFCN:
 	case R_GRAPH_FORMAT_JSON:
@@ -3103,9 +3102,6 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	}
 	r_cons_printf ("\ncyclomatic-cost: %d", r_anal_function_cost (fcn));
 	r_cons_printf ("\ncyclomatic-complexity: %d", r_anal_function_complexity (fcn));
-	if (!R_STR_ISEMPTY (fcn->cc)) {
-		r_cons_printf ("\ncc: %s", fcn->cc);
-	}
 	r_cons_printf ("\nbits: %d", fcn->bits);
 	r_cons_printf ("\ntype: %s", r_anal_fcntype_tostring (fcn->type));
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
@@ -3202,7 +3198,7 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	RAnalFunction *fcn;
 	RListIter *iter;
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "fcns");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
 	r_table_add_column (t, typeNumber, "addr", 0);
@@ -3311,7 +3307,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 			}
 			r_list_append (flist, info);
 		}
-		RTable *table = r_core_table (core);
+		RTable *table = r_core_table (core, "functions");
 		r_table_visual_list (table, flist, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		r_cons_printf ("\n%s\n", r_table_tostring (table));
@@ -3782,9 +3778,6 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	// ???
 	// XXX must read bytes correctly
 	do_bckwrd_srch = bckwrds = core->search->bckwrds;
-	if (core->file) {
-		r_io_use_fd (core->io, core->file->fd);
-	}
 	if (!ref) {
 		eprintf ("Null reference search is not supported\n");
 		free (buf);
@@ -3919,7 +3912,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
-static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, int count, int rad, int cfg_debug, bool cfg_anal_strings) {
+static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_anal_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
 	// the number of false positives. In debugger mode, the reference
@@ -3959,11 +3952,9 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 			r_anal_xrefs_set (core->anal, at, xref_to, type);
 		}
 	} else if (rad == 'j') {
-		// Output JSON
-		if (count > 0) {
-			r_cons_printf (",");
-		}
-		r_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, at);
+		char *key = sdb_fmt ("0x%"PFMT64x, xref_to);
+		char *value = sdb_fmt ("0x%"PFMT64x, at);
+		pj_ks (pj, key, value);
 	} else {
 		int len = 0;
 		// Display in radare commands format
@@ -3989,7 +3980,7 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 	return true;
 }
 
-R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
+R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	ut64 at;
@@ -4051,32 +4042,32 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			}
 			// find references
 			if ((st64)op.val > asm_sub_varmin && op.val != UT64_MAX && op.val != UT32_MAX) {
-				if (found_xref (core, op.addr, op.val, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.val, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
-				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 			}
 			// find references
 			if (op.addr > 512 && op.disp > 512 && op.disp && op.disp != UT64_MAX) {
-				if (found_xref (core, op.addr, op.disp, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.disp, R_ANAL_REF_TYPE_DATA, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 			}
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
-				if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CODE, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 				break;
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_CCALL:
-				if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 				break;
@@ -4086,7 +4077,8 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			case R_ANAL_OP_TYPE_IRJMP:
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCJMP:
-				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CODE, count++, rad, cfg_debug, cfg_anal_strings)) {
+				count++;
+				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CODE, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 				break;
@@ -4095,7 +4087,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			case R_ANAL_OP_TYPE_RCALL:
 			case R_ANAL_OP_TYPE_IRCALL:
 			case R_ANAL_OP_TYPE_UCCALL:
-				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings)) {
+				if (found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL, pj, rad, cfg_debug, cfg_anal_strings)) {
 					count++;
 				}
 				break;
@@ -5576,7 +5568,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 					}
 				}
 				if (isValidMatch) {
-					cb (core, addr, value, vsize, hitctr, cb_user);
+					cb (core, addr, value, vsize, cb_user);
 					if (analStrings && stringAt (core, addr)) {
 						add_string_ref (mycore, addr, value);
 					}

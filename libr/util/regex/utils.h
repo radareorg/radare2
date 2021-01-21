@@ -43,14 +43,6 @@
 
 #define STRLCPY(x,y,z) { strncpy ((x),(y),(z)); (x)[(z)? (z) - 1: 0] = 0; }
 
-/* switch off assertions (if not already off) if no REDEBUG */
-#ifndef REDEBUG
-#ifndef NDEBUG
-#define	NDEBUG	/* no assertions please */
-#endif
-#endif
-#include <assert.h>
-
 /* for old systems with bcopy() but no memmove() */
 #ifdef USEBCOPY
 #define	memmove(d, s, c)	bcopy(s, d, c)

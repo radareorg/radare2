@@ -747,7 +747,8 @@ static void free_object(pyc_object *object) {
 		free_object (cobj->name);
 		free_object (cobj->lnotab);
 		free (object->data);
-	} break;
+		break;
+	}
 	case TYPE_REF:
 		free_object (object->data);
 		break;
@@ -820,7 +821,8 @@ static pyc_object *copy_object(pyc_object *object) {
 		dst->name = copy_object (src->name);
 		dst->lnotab = copy_object (src->lnotab);
 		copy->data = dst;
-	} break;
+		break;
+	}
 	case TYPE_REF:
 		copy->data = copy_object (object->data);
 		break;
@@ -1002,7 +1004,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	ut8 code = get_ut8 (buffer, &error);
 	ut8 flag = code & FLAG_REF;
-	RListIter *ref_idx;
+	RListIter *ref_idx = NULL;
 	ut8 type = code & ~FLAG_REF;
 
 	if (error) {
@@ -1119,17 +1121,10 @@ static pyc_object *get_object(RBuffer *buffer) {
 		return NULL;
 	}
 
-	/* for debugging purpose
-    if (ret == NULL) {
-        eprintf("***%d***\n", type);
-    }
-    */
-
-	if (flag) {
+	if (flag && ref_idx) {
 		free_object (ref_idx->data);
 		ref_idx->data = copy_object (ret);
 	}
-
 	return ret;
 }
 

@@ -210,9 +210,9 @@ int gdbr_init(libgdbr_t *g, bool is_server);
 /*!
  * \brief Function initializes the architecture of the gdbsession
  * \param architecture defines the architecure used (registersize, and such)
- * \returns a failure code
+ * \returns false on failure
  */
-int gdbr_set_architecture(libgdbr_t *g, int arch, int bits);
+bool gdbr_set_architecture(libgdbr_t *g, int arch, int bits);
 
 /*!
  * \brief Function get gdb registers profile based on arch and bits

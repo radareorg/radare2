@@ -222,6 +222,9 @@ R_API int r_sandbox_system(const char *x, int n) {
 			char *argv0 = r_file_path (argv[0]);
 			pid_t pid = 0;
 			int r = posix_spawn (&pid, argv0, NULL, NULL, argv, NULL);
+			if (r != 0) {
+				return -1;
+			}
 			int status;
 			int s = waitpid (pid, &status, 0);
 			return WEXITSTATUS (s);

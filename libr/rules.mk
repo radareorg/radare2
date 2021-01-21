@@ -80,14 +80,14 @@ endif
 ifeq ($(WITH_LIBS),1)
 $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
-	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
-	  test $$a -nt ${LIBSO} && do=1 ; \
+	  do=0 ; [ ! -e "${LIBSO}" ] && do=1 ; \
+	  test "$$a" -nt "${LIBSO}" && do=1 ; \
 	  if [ $$do = 1 ]; then \
 	    [ -n "${SILENT}" ] && \
 	    echo "LD $(LIBSO)" || \
 	    echo "\"${CC_LIB} ${LIBNAME} ${OBJS} ${SHARED_OBJ} ${LINK} ${LDFLAGS}\"" ; \
 	    ${CC_LIB} ${LIBNAME} ${CFLAGS} ${OBJS} ${SHARED_OBJ} ${LINK} ${LDFLAGS} || exit 1; \
-	    [ -f "$(LIBR)/stripsyms.sh" ] && sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; \
+	    [ -f "$(LIBR)/stripsyms.sh" ] && sh "$(LIBR)/stripsyms.sh" "${LIBSO}" ${NAME} ; \
 	  break ; \
 	fi ; done
 else

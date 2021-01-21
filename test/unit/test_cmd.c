@@ -166,6 +166,7 @@ bool test_cmd_descriptor_group(void) {
 	free (h);
 
 	r_cmd_free (cmd);
+	r_cmd_parsed_args_free (pa);
 	mu_end;
 }
 

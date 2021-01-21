@@ -4,23 +4,19 @@
 #include <r_list.h>
 
 /* Print out the JSON body for memory maps in the passed map region */
-static void print_debug_map_json(RDebug *dbg, RDebugMap *map, bool prefix_comma) {
-	dbg->cb_printf ("%s{", prefix_comma ? ",": "");
+static void print_debug_map_json(RDebugMap *map, PJ *pj) {
+	pj_o (pj);
 	if (map->name && *map->name) {
-		char *escaped_name = r_str_escape (map->name);
-		dbg->cb_printf ("\"name\":\"%s\",", escaped_name);
-		free (escaped_name);
+		pj_ks (pj, "name", map->name);
 	}
 	if (map->file && *map->file) {
-		char *escaped_path = r_str_escape (map->file);
-		dbg->cb_printf ("\"file\":\"%s\",", escaped_path);
-		free (escaped_path);
+		pj_ks (pj, "file", map->file);
 	}
-	dbg->cb_printf ("\"addr\":%" PFMT64u ",", map->addr);
-	dbg->cb_printf ("\"addr_end\":%" PFMT64u ",", map->addr_end);
-	dbg->cb_printf ("\"type\":\"%c\",", map->user?'u':'s');
-	dbg->cb_printf ("\"perm\":\"%s\"", r_str_rwx_i (map->perm));
-	dbg->cb_printf ("}");
+	pj_kn (pj, "addr", map->addr);
+	pj_kn (pj, "addr_end", map->addr_end);
+	pj_ks (pj, "type", map->user ? "u" : "s");
+	pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+	pj_end (pj);
 }
 
 /* Write the memory map header describing the line columns */
@@ -82,16 +78,20 @@ static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const c
 
 R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 	int i;
-	bool notfirst = false;
 	RListIter *iter;
 	RDebugMap *map;
+	PJ *pj = NULL;
 	if (!dbg) {
 		return;
 	}
 
 	switch (input[0]) {
 	case 'j': // "dmj" add JSON opening array brace
-		dbg->cb_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 		break;
 	case '*': // "dm*" don't print a header for r2 commands output
 		break;
@@ -105,8 +105,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 		r_list_foreach (maps, iter, map) {
 			switch (input[0]) {
 			case 'j': // "dmj"
-				print_debug_map_json (dbg, map, notfirst);
-				notfirst = true;
+				print_debug_map_json (map, pj);
 				break;
 			case '*': // "dm*"
 				{
@@ -140,8 +139,10 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 		}
 	}
 
-	if (input[0] == 'j') { // "dmj" add JSON closing array brace
-		dbg->cb_printf ("]\n");
+	if (pj) { // "dmj" add JSON closing array brace
+		pj_end (pj);
+		dbg->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 }
 

@@ -34,10 +34,10 @@
  * and so that the printing of the formatted operand is not hard coded into the format operand code.
  * If an addressLabelPrefix is specified in formattingOptions (option is set and string is not NULL),
  * it will print the relative branch/jump/call with this prefix and the destination address as the label. */
-static int formatDisassembledOperand(char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
+static int formatDisassembledOperand(avrDisassembleContext *context, char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
 
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-static int printDisassembledInstruction(char *out, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+int printDisassembledInstruction(avrDisassembleContext *context, char *out, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	//char fmt[64];
 	int retVal, i;
 	char strOperand[256];
@@ -45,7 +45,7 @@ static int printDisassembledInstruction(char *out, const disassembledInstruction
 
 	/* If we just found a long instruction, there is nothing to be printed yet, since we don't
 	 * have the entire long address ready yet. */
-	if (AVR_Long_Instruction == AVR_LONG_INSTRUCTION_FOUND)
+	if (context->status == AVR_LONG_INSTRUCTION_FOUND)
 		return 0;
 
 	strcat (out, dInstruction.instruction->mnemonic);
@@ -58,7 +58,7 @@ static int printDisassembledInstruction(char *out, const disassembledInstruction
 		if (i > 0 && i != dInstruction.instruction->numOperands)
 			strcat (out, ", ");
 		/* Format the disassembled operand into the string strOperand, and print it */
-		retVal = formatDisassembledOperand(strOperand, i, dInstruction, fOptions);
+		retVal = formatDisassembledOperand(context, strOperand, i, dInstruction, fOptions);
 		if (retVal < 0)
 			return retVal;
 		/* Print the operand and free if it's not NULL */
@@ -74,7 +74,7 @@ static int printDisassembledInstruction(char *out, const disassembledInstruction
  * and so that the printing of the formatted operand is not hard coded into the format operand code.
  * If an addressLabelPrefix is specified in formattingOptions (option is set and string is not NULL), 
  * it will print the relative branch/jump/call with this prefix and the destination address as the label. */
-static int formatDisassembledOperand(char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+static int formatDisassembledOperand(avrDisassembleContext *context, char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	char binary[9];
 	int retVal;
 
@@ -153,7 +153,7 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 	case OPERAND_LONG_ABSOLUTE_ADDRESS:
 		retVal = sprintf(strOperand, "%s%0*x",
 			OPERAND_PREFIX_ABSOLUTE_ADDRESS,
-			fOptions.addressFieldWidth, AVR_Long_Address);
+			fOptions.addressFieldWidth, context->longAddress);
 		break;
 	case OPERAND_IO_REGISTER:
 		retVal = sprintf(strOperand, "%s%02x",

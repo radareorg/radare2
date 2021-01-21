@@ -442,11 +442,11 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 	int i = 0, len;
 	Sdb* db = NULL;
 	char* sdb_module = NULL;
-	char* symname;
-	char* filename;
+	char* symname = NULL;
+	char* filename = NULL;
 	char* symdllname = NULL;
 
-	if (!dll_name || *dll_name == '0') {
+	if (!dll_name || !*dll_name || *dll_name == '0') {
 		return 0;
 	}
 
@@ -490,7 +490,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
 					filename = sdb_fmt ("%s.sdb", symdllname);
-					if (r_file_exists (filename)) {
+					if (filename && r_file_exists (filename)) {
 						db = sdb_new (NULL, filename, 0);
 					} else {
 						const char *dirPrefix = r_sys_prefix (NULL);
@@ -3218,7 +3218,9 @@ static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
 
 		if (!bin->cms && cert->wCertificateType == PE_WIN_CERT_TYPE_PKCS_SIGNED_DATA) {
 			bin->cms = r_pkcs7_parse_cms (cert->bCertificate, cert->dwLength - 6);
-			bin->spcinfo = r_pkcs7_parse_spcinfo (bin->cms);
+			if (bin->cms) {
+				bin->spcinfo = r_pkcs7_parse_spcinfo (bin->cms);
+			}
 		}
 
 		security_directory->certificates[security_directory->length] = cert;
@@ -3328,6 +3330,11 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin) {
 		break;
 	case PE_IMAGE_FILE_MACHINE_ARM64:
 		arch = strdup ("arm");
+		break;
+	case PE_IMAGE_FILE_MACHINE_RISCV32:
+	case PE_IMAGE_FILE_MACHINE_RISCV64:
+	case PE_IMAGE_FILE_MACHINE_RISCV128:
+		arch = strdup ("riscv");
 		break;
 	default:
 		arch = strdup ("x86");
@@ -3674,8 +3681,8 @@ static int read_image_debug_directory_entry(RBuffer *b, ut64 addr, PE_(image_deb
 }
 
 int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t)* bin, SDebugInfo* res) {
-	PE_(image_debug_directory_entry) img_dbg_dir_entry;
-	PE_(image_data_directory) * dbg_dir;
+	PE_(image_debug_directory_entry) img_dbg_dir_entry = {0};
+	PE_(image_data_directory) *dbg_dir = NULL;
 	PE_DWord dbg_dir_offset;
 	ut8* dbg_data = 0;
 	int result = 0;
@@ -3790,25 +3797,26 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 	}
 	off = bin->delay_import_directory_offset;
 	if (off < bin->size && off > 0) {
-		int didi = 0;
-		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size) {
+		if (off + sizeof (PE_(image_delay_import_directory)) > bin->size) {
 			goto beach;
 		}
-		int r = read_image_delay_import_directory (bin->b, off + didi * sizeof (curr_delay_import_dir),
-			&curr_delay_import_dir);
-		if (r != sizeof (curr_delay_import_dir)) {
-			goto beach;
-		}
-		if (!curr_delay_import_dir.Attributes) {
-			dll_name_offset = bin_pe_rva_to_paddr (bin,
-				curr_delay_import_dir.Name - PE_(r_bin_pe_get_image_base)(bin));
-			import_func_name_offset = curr_delay_import_dir.DelayImportNameTable -
-			PE_(r_bin_pe_get_image_base)(bin);
-		} else {
-			dll_name_offset = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name);
-			import_func_name_offset = curr_delay_import_dir.DelayImportNameTable;
-		}
-		while ((curr_delay_import_dir.Name != 0) && (curr_delay_import_dir.DelayImportAddressTable !=0)) {
+		int didi;
+		for (didi = 0;; didi++) {
+			int r = read_image_delay_import_directory (bin->b, off + didi * sizeof (curr_delay_import_dir),
+					&curr_delay_import_dir);
+			if (r != sizeof (curr_delay_import_dir)) {
+				goto beach;
+			}
+			if ((curr_delay_import_dir.Name == 0) || (curr_delay_import_dir.DelayImportAddressTable == 0)) {
+				break;
+			}
+			if (!curr_delay_import_dir.Attributes) {
+				dll_name_offset = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name - PE_(r_bin_pe_get_image_base)(bin));
+				import_func_name_offset = curr_delay_import_dir.DelayImportNameTable - PE_(r_bin_pe_get_image_base)(bin);
+			} else {
+				dll_name_offset = bin_pe_rva_to_paddr (bin, curr_delay_import_dir.Name);
+				import_func_name_offset = curr_delay_import_dir.DelayImportNameTable;
+			}
 			if (dll_name_offset > bin->size || dll_name_offset + PE_NAME_LENGTH > bin->size) {
 				goto beach;
 			}
@@ -3816,17 +3824,10 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 			if (rr < 5) {
 				goto beach;
 			}
-
 			dll_name[PE_NAME_LENGTH] = '\0';
 			if (!bin_pe_parse_imports (bin, &imports, &nimp, dll_name, import_func_name_offset,
 				curr_delay_import_dir.DelayImportAddressTable)) {
 				break;
-			}
-			didi++;
-			r = read_image_delay_import_directory (bin->b, off + didi * sizeof (curr_delay_import_dir),
-				&curr_delay_import_dir);
-			if (r != sizeof (curr_delay_import_dir)) {
-				goto beach;
 			}
 		}
 	}
@@ -4004,6 +4005,9 @@ char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin) {
 		case PE_IMAGE_FILE_MACHINE_THUMB: machine = "Thumb"; break;
 		case PE_IMAGE_FILE_MACHINE_TRICORE: machine = "Tricore"; break;
 		case PE_IMAGE_FILE_MACHINE_WCEMIPSV2: machine = "WCE Mips V2"; break;
+		case PE_IMAGE_FILE_MACHINE_RISCV32: machine = "RISC-V 32-bit"; break;
+		case PE_IMAGE_FILE_MACHINE_RISCV64: machine = "RISC-V 64-bit"; break;
+		case PE_IMAGE_FILE_MACHINE_RISCV128: machine = "RISC-V 128-bit"; break;
 		default: machine = "unknown";
 		}
 	}

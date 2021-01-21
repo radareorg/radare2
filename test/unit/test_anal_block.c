@@ -666,6 +666,7 @@ bool test_r_anal_block_chop_noreturn(void) {
 	r_anal_block_chop_noreturn (b, 0x111);
 
 	assert_invariants (anal);
+	r_anal_free (anal);
 
 	mu_end;
 }
