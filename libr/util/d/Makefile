@@ -1,6 +1,6 @@
 FILES=pokered ascii
 F_SDB=$(addsuffix .sdb,$(FILES))
-SDB=$(SHLR)/sdb/sdb
+SDB=../../../sdb/sdb
 
 include ../../../config-user.mk
 include ../../../global.mk
