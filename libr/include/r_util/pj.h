@@ -47,7 +47,7 @@ R_API const char *pj_string(PJ *pj);
 //R_API PJ *pj_begin(char type, PrintfCallback cb);
 /* close the current json list or array */
 R_API PJ *pj_end(PJ *j);
-R_API char *pj_fmt(PrintfCallback p, const char *fmt, ...);
+R_API void pj_raw(PJ *j, const char *k);
 
 /* object, array */
 /* open new json list { */

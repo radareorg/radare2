@@ -370,15 +370,20 @@ static int cmd_plugins(void *data, const char *input) {
 		RCorePlugin *cp;
 		switch (input[1]) {
 		case 'j': {
-			//TODO PJ
-			r_cons_printf ("[");
-			bool is_first_element = true;
-			r_list_foreach (core->rcmd->plist, iter, cp) {
-				r_cons_printf ("%s{\"Name\":\"%s\",\"Description\":\"%s\"}",
-					is_first_element? "" : ",", cp->name, cp->desc);
-				is_first_element = false;
+			PJ *pj = r_core_pj_new (core);
+			if (!pj) {
+				return 1;
 			}
-			r_cons_printf ("]\n");
+			pj_a (pj);
+			r_list_foreach (core->rcmd->plist, iter, cp) {
+				pj_o (pj);
+				pj_ks (pj, "Name", cp->name);
+				pj_ks (pj, "Description", cp->desc);
+				pj_end (pj);
+			}
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
 			break;
 			}
 		case 0:
