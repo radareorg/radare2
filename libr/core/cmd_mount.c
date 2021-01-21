@@ -305,7 +305,7 @@ static int cmd_mount(void *data, const char *_input) {
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr++ = 0;
-			char *input2 = strdup(ptr++);
+			char *input2 = strdup (ptr++);
 			const char *args = r_str_trim_head_ro (input2);
 			if (args) {
 				if (*args == '0' && args[1] == 'x') {
