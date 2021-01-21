@@ -116,8 +116,6 @@ static RList *classes_from_symbols(RBinFile *bf) {
 				if (!mn) {
 					mn = strstr (dn, cn);
 					if (mn && mn[strlen (cn)] == '.') {
-						mn += strlen (cn) + 1;
-						// eprintf ("METHOD %s  %s\n", sym->classname, mn);
 						r_list_append (c->methods, sym);
 					}
 				}

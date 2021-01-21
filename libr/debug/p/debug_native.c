@@ -91,7 +91,7 @@ R_API RList *r_w32_dbg_maps(RDebug *);
 /* begin of debugger code */
 #if DEBUGGER
 
-#if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN))
+#if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN)) && !__APPLE__
 static int r_debug_handle_signals(RDebug *dbg) {
 #if __KFBSD__
 	return bsd_handle_signals (dbg);
@@ -173,6 +173,7 @@ static int r_debug_native_detach (RDebug *dbg, int pid) {
 #endif
 }
 
+#if __WINDOWS__ || __linux__
 static int r_debug_native_select(RDebug *dbg, int pid, int tid) {
 #if __WINDOWS__
 	return w32_select (dbg, pid, tid);
@@ -182,6 +183,7 @@ static int r_debug_native_select(RDebug *dbg, int pid, int tid) {
 	return -1;
 #endif
 }
+#endif
 
 static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 // XXX: num is ignored
@@ -1510,7 +1512,7 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 		"sc@syscall(%d);\n"
 		"main@global(0) { sc(%p,%d,%d);\n"
 		":int3\n"
-		"}\n", num, (void*)addr, size, io_perms_to_prot (perms));
+		"}\n", num, (void*)(size_t)addr, size, io_perms_to_prot (perms));
 
 	r_egg_reset (dbg->egg);
 	r_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);

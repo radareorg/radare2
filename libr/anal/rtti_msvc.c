@@ -502,7 +502,7 @@ R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context,
 
 static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *context, ut64 atAddress, int mode, bool strict) {
 	bool use_json = mode == 'j';
-	PJ *pj;
+	PJ *pj = NULL;
 
 	ut64 colRefAddr = atAddress - context->word_size;
 	ut64 colAddr;
@@ -585,9 +585,6 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 		if (use_json) {
 			pj_o (pj);
 			pj_k (pj, "desc");
-		}
-
-		if (use_json) {
 			rtti_msvc_print_base_class_descriptor_json (pj, bcd);
 		} else {
 			rtti_msvc_print_base_class_descriptor (bcd, "\t\t");
@@ -609,7 +606,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 			}
 		}
 
-		if(use_json) {
+		if (use_json) {
 			pj_end (pj);
 		}
 	}

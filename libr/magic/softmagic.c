@@ -283,11 +283,11 @@ static int check_fmt(RMagic *ms, struct r_magic *m) {
 		return 0;
 	}
 
-	rc = r_regex_comp (&rx, "%[-0-9\\.]*s", R_REGEX_EXTENDED|R_REGEX_NOSUB);
+	rc = r_regex_init (&rx, "%[-0-9\\.]*s", R_REGEX_EXTENDED|R_REGEX_NOSUB);
 	if (rc) {
-		char errmsg[512];
-		r_regex_error (rc, &rx, errmsg, sizeof (errmsg) - 1);
+		char *errmsg = r_regex_error (&rx, rc);
 		file_magerror (ms, "regex error %d, (%s)", rc, errmsg);
+		free (errmsg);
 		return -1;
 	} else {
 		rc = r_regex_exec (&rx, R_MAGIC_DESC, 0, 0, 0);
@@ -1421,20 +1421,21 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	case FILE_REGEX: {
 		int rc;
 		RRegex rx;
-		char errmsg[512];
+		char *errmsg;
 
 		if (!ms->search.s) {
 			return 0;
 		}
 
 		l = 0;
-		rc = r_regex_comp (&rx, m->value.s,
+		rc = r_regex_init (&rx, m->value.s,
 		    R_REGEX_EXTENDED|R_REGEX_NEWLINE|
 		    ((m->str_flags & STRING_IGNORE_CASE) ? R_REGEX_ICASE : 0));
 		if (rc) {
-			(void)r_regex_error(rc, &rx, errmsg, sizeof(errmsg) - 1);
+			errmsg = r_regex_error(&rx, rc);
 			file_magerror(ms, "regex error %d, (%s)",
 			    rc, errmsg);
+			free (errmsg);
 			v = (ut64) - 1;
 		} else {
 			RRegexMatch pmatch[1];
@@ -1462,8 +1463,9 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 				v = 1;
 				break;
 			default:
-				(void)r_regex_error (rc, &rx, errmsg, sizeof (errmsg) - 1);
+				errmsg = r_regex_error (&rx, rc);
 				file_magerror (ms, "regexec error %d, (%s)", rc, errmsg);
+				free (errmsg);
 				v = UT64_MAX;
 				break;
 			}

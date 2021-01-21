@@ -486,13 +486,17 @@ R_API bool r_syscmd_mv(const char *input) {
 		eprintf ("Usage: mv src dst\n");
 		return false;
 	}
-	input = input + 2;
-	if (!r_sandbox_enable (0)) {
-#if __WINDOWS__
-		r_sys_cmdf ("move %s", input);
-#else
-		r_sys_cmdf ("mv %s", input);
-#endif
+	char *inp = strdup (input + 2);
+	char *arg = strchr (inp, ' ');
+	bool rc = false;
+	if (arg) {
+		*arg++ = 0;
+		if (!(rc = r_file_move (inp, arg))) {
+			eprintf ("Cannot move file\n");
+		}
+	} else {
+		eprintf ("Usage: mv src dst\n");
 	}
-	return false;
+	free (inp);
+	return rc;
 }

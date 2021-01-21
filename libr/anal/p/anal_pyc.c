@@ -86,10 +86,6 @@ static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RA
 		} else {
 			oparg = data[1] + extended_arg;
 		}
-		extended_arg = 0;
-		if (op_code == ops->extended_arg) {
-			extended_arg = is_python36? (oparg << 8): (oparg * 65536);
-		}
 	}
 
 	if (op_obj->type & HASJABS) {

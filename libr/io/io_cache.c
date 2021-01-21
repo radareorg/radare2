@@ -76,6 +76,9 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 			io->cached = cached;
 			c->written = false;
 			r_pvector_remove_data (&io->cache, c);
+			free (c->data);
+			free (c->odata);
+			free (c);
 			invalidated++;
 		}
 	}

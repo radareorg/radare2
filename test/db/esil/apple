@@ -5,7 +5,7 @@ s main
 aei
 aeim
 e asm.emu=true
-e asm.emustr=false
+e emu.str=false
 pd 4~!--
 EOF
 EXPECT=<<EOF
@@ -111,7 +111,7 @@ FILE=bins/mach0/test-arm32
 CMDS=<<EOF
 af
 e asm.emu=true
-e asm.emustr=true
+e emu.str=true
 pdf~?str.string
 EOF
 EXPECT=<<EOF
@@ -124,7 +124,7 @@ FILE=bins/mach0/test-arm64
 CMDS=<<EOF
 af
 e asm.emu=true
-e asm.emustr=true
+e emu.str=true
 pdf~?str.string
 EOF
 EXPECT=<<EOF

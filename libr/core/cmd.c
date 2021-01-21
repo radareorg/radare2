@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
 
 #define INTERACTIVE_MAX_REP 1024
 
@@ -92,10 +92,10 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_write.c"
 #include "cmd_cmp.c"
 #include "cmd_eval.c"
+#include "cmd_type.c"
 #include "cmd_anal.c"
 #include "cmd_open.c"
 #include "cmd_meta.c"
-#include "cmd_type.c"
 #include "cmd_egg.c"
 #include "cmd_info.c"
 #include "cmd_macro.c"
@@ -571,7 +571,8 @@ static int cmd_undo(void *data, const char *input) {
 				.glob = NULL
 			};
 			r_core_undo_print (core, 1, &cond);
-			} break;
+			break;
+		}
 		case '*': // "uc*"
 			r_core_undo_print (core, 1, NULL);
 			break;
@@ -1457,7 +1458,7 @@ static void cmd_table_header(RCore *core, char *s) {
 		return;
 	}
 	if (!core->table) {
-		core->table = r_core_table (core);
+		core->table = r_core_table (core, "header");
 	}
 	size_t i = 0;
 	r_list_foreach (list, iter, s) {
@@ -1491,7 +1492,7 @@ static bool display_table_filter(RCore *core, const char *input) {
 static int cmd_table(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	if (!core->table) {
-		core->table = r_table_new ();
+		core->table = r_table_new ("table");
 	}
 	switch (*input) {
 	case 'h': // table header columns
@@ -1501,7 +1502,7 @@ static int cmd_table(void *data, const char *input) {
 	case 'r': // add row
 		{
 			if (!core->table) {
-				core->table = r_table_new ();
+				core->table = r_table_new ("table");
 			}
 			char *args = r_str_trim_dup (input + 1);
 			if (*args) {
@@ -1514,7 +1515,7 @@ static int cmd_table(void *data, const char *input) {
 		break;
 	case '-':
 		r_table_free (core->table);
-		core->table = r_table_new ();
+		core->table = r_table_new ("table");
 		break;
 	case '/':
 		// query here
@@ -1757,10 +1758,9 @@ static int cmd_kuery(void *data, const char *input) {
 	Sdb *s = core->sdb;
 
 	char *cur_pos = NULL, *cur_cmd = NULL, *next_cmd = NULL;
-	char *temp_pos = NULL, *temp_cmd = NULL, *temp_storage = NULL;
+	char *temp_pos = NULL, *temp_cmd = NULL;
 
 	switch (input[0]) {
-
 	case 'j':
 		out = sdb_querys (s, NULL, 0, "anal/**");
 		if (!out) {
@@ -1786,38 +1786,35 @@ static int cmd_kuery(void *data, const char *input) {
 
 			free (next_cmd);
 			next_cmd = r_str_newf ("anal/%s/*", cur_cmd);
-			temp_storage = sdb_querys (s, NULL, 0, next_cmd);
+			char *query_result = sdb_querys (s, NULL, 0, next_cmd);
 
-			if (!temp_storage) {
-				out += cur_pos - out + 1;
+			if (!query_result) {
+				out = cur_pos + 1;
 				continue;
 			}
 
-			while (*temp_storage) {
-				temp_pos = strchr (temp_storage, '\n');
+			char *temp = query_result;
+			while (*temp) {
+				temp_pos = strchr (temp, '\n');
 				if (!temp_pos) {
 					break;
 				}
-				temp_cmd = r_str_ndup (temp_storage, temp_pos - temp_storage);
+				temp_cmd = r_str_ndup (temp, temp_pos - temp);
 				pj_s (pj, temp_cmd);
-				temp_storage += temp_pos - temp_storage + 1;
+				temp = temp_pos + 1;
 			}
-			out += cur_pos - out + 1;
+			out = cur_pos + 1;
+			free (query_result);
 		}
 		pj_end (pj);
 		pj_end (pj);
 		pj_end (pj);
-		char *a = pj_drain (pj);
-		if (a) {
-			r_cons_println (a);
-			free (a);
-		}
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 		R_FREE (next_cmd);
 		free (next_cmd);
 		free (cur_cmd);
-		free (temp_storage);
 		break;
-
 	case ' ':
 		if (s) {
 			out = sdb_querys (s, NULL, 0, input + 1);
@@ -2120,7 +2117,7 @@ static int cmd_resize(void *data, const char *input) {
 		return true;
 	}
 
-	ut64 oldsize = (core->file) ? r_io_fd_size (core->io, core->file->fd): 0;
+	ut64 oldsize = (core->io->desc) ? r_io_fd_size (core->io, core->io->desc->fd): 0;
 	switch (*input) {
 	case 'a': // "r..."
 		if (r_str_startswith (input, "adare2")) {
@@ -2147,7 +2144,7 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		return true;
 	case '\0':
-		if (core->file) {
+		if (core->io->desc) {
 			if (oldsize != -1) {
 				r_cons_printf ("%"PFMT64d"\n", oldsize);
 			}
@@ -2166,7 +2163,7 @@ static int cmd_resize(void *data, const char *input) {
 			return true;
 		}
 	case 'h':
-		if (core->file) {
+		if (core->io->desc) {
 			if (oldsize != -1) {
 				char humansz[8];
 				r_num_units (humansz, sizeof (humansz), oldsize);
@@ -2993,7 +2990,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		goto beach;
 	}
 	if (*icmd && !strchr (icmd, '"')) {
-		char *hash = icmd;
+		char *hash;
 		for (hash = icmd + 1; *hash; hash++) {
 			if (*hash == '\\') {
 				hash++;
@@ -3073,6 +3070,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
 		ret = r_core_cmd_subst_i (core, cmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
+		if (*cmd == 's') {
+			// do not restore tmpseek if the command executed is the 's'eek
+			tmpseek = false;
+		}
 		if (ret && *cmd == 'q') {
 			free (cr);
 			goto beach;
@@ -3676,7 +3677,7 @@ escape_backtick:
 	}
 
 	/* temporary seek commands */
-	// if (*cmd != '(' && *cmd != '"') {
+	// if (*cmd != '(' && *cmd != '"') 
 	if (*cmd != '"') {
 		ptr = strchr (cmd, '@');
 		if (ptr == cmd + 1 && *cmd == '?') {
@@ -7075,7 +7076,7 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 		}
 		ret = r_core_cmd_subst (core, rcmd);
 		if (ret == -1) {
-			eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
+			r_cons_eprintf ("|ERROR| Invalid command '%s' (0x%02x)\n", rcmd, *rcmd);
 			break;
 		}
 		if (!ptr) {
@@ -7087,13 +7088,13 @@ static int run_cmd_depth(RCore *core, char *cmd) {
 	return ret;
 }
 
-R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
+R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	if (core->use_tree_sitter_r2cmd) {
-		return r_cmd_status2int(core_cmd_tsr2cmd (core, cstr, false, log));
+		return r_cmd_status2int (core_cmd_tsr2cmd (core, cstr, false, log));
 	}
 
-	int ret = false, i;
-
+	int ret = false;
+	size_t i;
 	if (core->cmdfilter) {
 		const char *invalid_chars = ";|>`@";
 		for (i = 0; invalid_chars[i]; i++) {
@@ -7182,10 +7183,22 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	if (!odata) {
 		return false;
 	}
+	size_t line_count = r_str_char_count(lines, '\n');
+
+#if __UNIX__
+	const bool istty = r_cons_isatty ();
+#else
+	const bool istty = true;
+#endif
+	const bool show_progress_bar = core->print->enable_progressbar && r_config_get_i (core->config, "scr.interactive") && r_config_get_i (core->config, "scr.progressbar") && istty;
+	size_t current_line = 0;
 	nl = strchr (odata, '\n');
 	if (nl) {
 		r_cons_break_push (NULL, NULL);
 		do {
+			if (show_progress_bar) {
+				r_print_progressbar_with_count (core->print, current_line++, line_count, 80, true);
+			}
 			if (r_cons_is_breaked ()) {
 				free (odata);
 				r_cons_break_pop ();
@@ -7193,9 +7206,9 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			}
 			*nl = '\0';
 			r = r_core_cmd (core, data, 0);
-			if (r < 0) { //== -1) {
+			if (r < 0) {
 				data = nl + 1;
-				ret = -1; //r; //false;
+				ret = -1;
 				break;
 			}
 			r_cons_flush ();
@@ -7212,6 +7225,10 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			r_core_task_yield (&core->tasks);
 		} while ((nl = strchr (data, '\n')));
 		r_cons_break_pop ();
+		if (show_progress_bar) {
+			r_print_progressbar_with_count (core->print, line_count, line_count, 80, true);
+			r_cons_newline ();
+		}
 	}
 	if (ret >= 0 && data && *data) {
 		r_core_cmd (core, data, 0);

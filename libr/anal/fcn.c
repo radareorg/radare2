@@ -122,6 +122,7 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 		}
 		if (bb->addr + bb->size >= eof) {
 			r_anal_block_set_size (bb, eof - bb->addr);
+			r_anal_block_update_hash (bb);
 		}
 		if (bb->jump != UT64_MAX && bb->jump >= eof) {
 			bb->jump = UT64_MAX;
@@ -453,7 +454,6 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 	block->parent_stackptr -= ctx->stack_diff;
 	r_anal_function_add_block (our_fcn, block);
 	// TODO: add block->ninstr from our_fcn considering delay slots
-	our_fcn += block->ninstr;
 	r_anal_block_unref (block);
 	return true;
 }
@@ -1978,9 +1978,10 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 static void __anal_fcn_check_bp_use(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
-	char str_to_find[40] = "\"type\":\"reg\",\"value\":\"";
 	char *pos;
-	strncat (str_to_find, anal->reg->name[R_REG_NAME_BP], 39);
+	char str_to_find[40];
+	snprintf (str_to_find, sizeof (str_to_find),
+		"\"type\":\"reg\",\"value\":\"%s", anal->reg->name[R_REG_NAME_BP]);
 	if (!fcn) {
 		return;
 	}

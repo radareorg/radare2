@@ -7,6 +7,10 @@
 #define USE_R2 1
 #include <spp/spp.h>
 
+#define PROJECT_EXPERIMENTAL 0
+
+// project apis to be used from cmd_project.c
+
 static bool is_valid_project_name(const char *name) {
 	int i;
 	if (r_str_endswith (name, ".zip")) {
@@ -21,10 +25,7 @@ static bool is_valid_project_name(const char *name) {
 		case '-':
 			continue;
 		}
-		if (name[i] >= 'a' && name[i] <= 'z') {
-			continue;
-		}
-		if (name[i] >= 'A' && name[i] <= 'Z') {
+		if (isalpha (name[i])) {
 			continue;
 		}
 		if (IS_DIGIT (name[i])) {
@@ -36,6 +37,7 @@ static bool is_valid_project_name(const char *name) {
 }
 
 static char *get_project_script_path(RCore *core, const char *file) {
+	r_return_val_if_fail (core && !R_STR_ISEMPTY (file), NULL);
 	const char *magic = "# r2 rdb project file";
 	char *data, *prjfile;
 	if (r_file_is_abspath (file)) {
@@ -48,7 +50,7 @@ static char *get_project_script_path(RCore *core, const char *file) {
 		prjfile = r_str_append (prjfile, R_SYS_DIR);
 		prjfile = r_str_append (prjfile, file);
 		if (!r_file_exists (prjfile) || r_file_is_directory (prjfile)) {
-			prjfile = r_str_append (prjfile, R_SYS_DIR "rc");
+			prjfile = r_str_append (prjfile, R_SYS_DIR "rc.r2");
 		}
 	}
 	data = r_file_slurp (prjfile, NULL);
@@ -78,7 +80,7 @@ R_API bool r_core_is_project(RCore *core, const char *name) {
 		if (!path) {
 			return false;
 		}
-		if (r_str_endswith (path, R_SYS_DIR "rc") && r_file_exists (path)) {
+		if (r_str_endswith (path, R_SYS_DIR "rc.r2") && r_file_exists (path)) {
 			ret = true;
 		} else {
 			path = r_str_append (path, ".d");
@@ -145,45 +147,44 @@ R_API int r_core_project_list(RCore *core, int mode) {
 }
 
 static inline void remove_project_file(char * path) {
-		if (r_file_exists (path)) {
-			r_file_rm (path);
-			eprintf ("rm %s\n", path);
-		}
+	if (r_file_exists (path)) {
+		r_file_rm (path);
+		eprintf ("rm %s\n", path);
+	}
 }
 
-static inline void remove_notes_file(char *prjDir) {
-		char *notes_txt = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "notes.txt");
-		if (r_file_exists (notes_txt)) {
-			r_file_rm (notes_txt);
-			eprintf ("rm %s\n", notes_txt);
-		}
-		free(notes_txt);
+static inline void remove_notes_file(const char *pd) {
+	char *notes_txt = r_file_new (pd, "notes.txt", NULL);
+	if (r_file_exists (notes_txt)) {
+		r_file_rm (notes_txt);
+		eprintf ("rm %s\n", notes_txt);
+	}
+	free (notes_txt);
 }
 
-static inline void remove_rop_directory(char *prjDir) {
-		char *rop_d = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
+static inline void remove_rop_directory(const char *prj_dir) {
+	char *rop_d = r_file_new (prj_dir, "rop.d", NULL);
 
-		if (r_file_is_directory (rop_d)) {
-			char *f;
-			RListIter *iter;
-			RList *files = r_sys_dir (rop_d);
-			r_list_foreach (files, iter, f) {
-				char *filepath = r_str_append (strdup (rop_d), R_SYS_DIR);
-				filepath = r_str_append (filepath, f);
-				if (!r_file_is_directory (filepath)) {
-					eprintf ("rm %s\n", filepath);
-					r_file_rm (filepath);
-				}
-
-				free (filepath);
+	if (r_file_is_directory (rop_d)) {
+		char *f;
+		RListIter *iter;
+		RList *files = r_sys_dir (rop_d);
+		r_list_foreach (files, iter, f) {
+			char *filepath = r_str_append (strdup (rop_d), R_SYS_DIR);
+			filepath = r_str_append (filepath, f);
+			if (!r_file_is_directory (filepath)) {
+				eprintf ("rm %s\n", filepath);
+				r_file_rm (filepath);
 			}
 
-			r_file_rm (rop_d);
-			eprintf ("rm %s\n", rop_d);
-			r_list_free (files);
+			free (filepath);
 		}
+		r_file_rm (rop_d);
+		eprintf ("rm %s\n", rop_d);
+		r_list_free (files);
+	}
 
-		free (rop_d);
+	free (rop_d);
 }
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
@@ -196,32 +197,29 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		return false;
 	}
 	if (r_core_is_project (core, prjfile)) {
-		char *prjDir = r_file_dirname (path);
-		if (!prjDir) {
+		char *prj_dir = r_file_dirname (path);
+		if (!prj_dir) {
 			eprintf ("Cannot resolve directory\n");
 			free (path);
 			return false;
 		}
 		remove_project_file (path);
-		remove_notes_file (prjDir);
-		remove_rop_directory (prjDir);
+		remove_notes_file (prj_dir);
+		remove_rop_directory (prj_dir);
 		// remove directory only if it's empty
-		r_file_rm (prjDir);
-		free (prjDir);
+		r_file_rm (prj_dir);
+		free (prj_dir);
 	}
 	free (path);
 	return 0;
 }
 
 static bool load_project_rop(RCore *core, const char *prjfile) {
+	r_return_val_if_fail (core && !R_STR_ISEMPTY (prjfile), false);
 	char *path, *db = NULL, *path_ns;
 	bool found = 0;
 	SdbListIter *it;
 	SdbNs *ns;
-
-	if (!prjfile || !*prjfile) {
-		return false;
-	}
 
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
 	Sdb *nop_db = sdb_ns (rop_db, "nop", false);
@@ -230,30 +228,30 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	Sdb *arithm_db = sdb_ns (rop_db, "arithm", false);
 	Sdb *arithmct_db = sdb_ns (rop_db, "arithm_ct", false);
 
-	char *rcPath = get_project_script_path (core, prjfile);
-	char *prjDir = r_file_dirname (rcPath);
+	char *rc_path = get_project_script_path (core, prjfile);
+	char *prj_dir = r_file_dirname (rc_path);
 
-	if (r_str_endswith (prjfile, R_SYS_DIR "rc")) {
+	if (r_str_endswith (prjfile, R_SYS_DIR "rc.r2")) {
 		// XXX
 		eprintf ("ENDS WITH\n");
 		path = strdup (prjfile);
 		path[strlen (path) - 3] = 0;
-	} else if (r_file_fexists ("%s%s%src", R_SYS_DIR, prjDir, prjfile)) {
-		path = r_str_newf ("%s%s%s", R_SYS_DIR, prjDir, prjfile);
+	} else if (r_file_fexists ("%s%s%src.r2", R_SYS_DIR, prj_dir, prjfile)) {
+		path = r_str_newf ("%s%s%s", R_SYS_DIR, prj_dir, prjfile);
 	} else {
 		if (*prjfile == R_SYS_DIR[0]) {
 			db = r_str_newf ("%s.d", prjfile);
 			if (!db) {
-				free (prjDir);
-				free (rcPath);
+				free (prj_dir);
+				free (rc_path);
 				return false;
 			}
 			path = strdup (db);
 		} else {
-			db = r_str_newf ("%s" R_SYS_DIR "%s.d", prjDir, prjfile);
+			db = r_str_newf ("%s" R_SYS_DIR "%s.d", prj_dir, prjfile);
 			if (!db) {
-				free (prjDir);
-				free (rcPath);
+				free (prj_dir);
+				free (rc_path);
 				return false;
 			}
 			path = r_file_abspath (db);
@@ -261,8 +259,8 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	}
 	if (!path) {
 		free (db);
-		free (prjDir);
-		free (rcPath);
+		free (prj_dir);
+		free (rc_path);
 		return false;
 	}
 	if (rop_db) {
@@ -281,13 +279,13 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	if (!rop_db) {
 		free (db);
 		free (path);
-		free (prjDir);
-		free (rcPath);
+		free (prj_dir);
+		free (rc_path);
 		return false;
 	}
 	sdb_ns_set (core->sdb, "rop", rop_db);
 
-	path_ns = r_str_newf ("%s" R_SYS_DIR "rop", prjDir);
+	path_ns = r_str_newf ("%s" R_SYS_DIR "rop", prj_dir);
 	if (!r_file_exists (path_ns)) {
 		path_ns = r_str_append (path_ns, ".sdb");
 	}
@@ -309,8 +307,8 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	free (path);
 	free (path_ns);
 	free (db);
-	free (prjDir);
-	free (rcPath);
+	free (prj_dir);
+	free (rc_path);
 	return true;
 }
 
@@ -341,161 +339,101 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	free (str);
 }
 
-/*** vvv thready ***/
-
 typedef struct {
 	RCore *core;
-	char *prjName;
-	char *rcPath;
-} ProjectState;
+	char *prj_name;
+	char *rc_path;
+} projectState;
+
+static bool r_core_project_load(RCore *core, const char *prj_name, const char *rcpath) {
+	if (R_STR_ISEMPTY (prj_name)) {
+		prj_name = r_core_project_name (core, rcpath);
+	}
+	if (r_project_is_loaded (core->prj)) {
+		eprintf ("o--;e prj.name=\n");
+		return false;
+	}
+	if (!r_project_open (core->prj, prj_name, rcpath)) {
+		return false;
+	}
+	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
+	const bool scr_interactive = r_cons_is_interactive ();
+	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
+	(void) load_project_rop (core, prj_name);
+	bool ret = r_core_cmd_file (core, rcpath);
+	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
+	r_config_set_i (core->config, "scr.interactive", scr_interactive);
+	r_config_set_i (core->config, "scr.prompt", scr_prompt);
+	r_config_bump (core->config, "asm.arch");
+	r_config_set (core->config, "prj.name", prj_name);
+	return ret;
+}
 
 static RThreadFunctionRet project_load_background(RThread *th) {
-	ProjectState *ps = th->user;
-	r_core_project_load (ps->core, ps->prjName, ps->rcPath);
-	free (ps->prjName);
-	free (ps->rcPath);
+	projectState *ps = th->user;
+	r_core_project_load (ps->core, ps->prj_name, ps->rc_path);
+	free (ps->prj_name);
+	free (ps->rc_path);
 	free (ps);
 	return R_TH_STOP;
 }
 
-R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const char *rcPath) {
-	ProjectState *ps = R_NEW0 (ProjectState);
+R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const char *rc_path) {
+	projectState *ps = R_NEW0 (projectState);
 	ps->core = core;
-	ps->prjName = strdup (prjName);
-	ps->rcPath = strdup (rcPath);
+	ps->prj_name = strdup (prj_name);
+	ps->rc_path = strdup (rc_path);
 	RThread *th = r_th_new (project_load_background, ps, false);
 	if (th) {
 		r_th_start (th, true);
 		char thname[32] = {0};
-		size_t thlen = R_MIN (strlen (prjName), sizeof (thname) - 1);
-		r_str_ncpy (thname, prjName, thlen);
+		size_t thlen = R_MIN (strlen (prj_name), sizeof (thname) - 1);
+		r_str_ncpy (thname, prj_name, thlen);
 		r_th_setname (th, thname);
 	}
 	return th;
 }
 
-/*** ^^^ thready ***/
-
-static ut64 getProjectLaddr(RCore *core, const char *prjfile) {
-	ut64 laddr = 0;
-	char *buf = r_file_slurp (prjfile, NULL);
-	char *pos;
-	if (buf) {
-		if ((pos = strstr(buf, "\"e bin.laddr = "))) {
-			laddr = r_num_math (NULL, pos + 15);
-		}
-		free (buf);
-	}
-	return laddr;
-}
-
-R_API bool r_core_project_open(RCore *core, const char *prjfile, bool thready) {
-	bool askuser = true;
+R_API bool r_core_project_open(RCore *core, const char *prj_path) {
+	r_return_val_if_fail (core && !R_STR_ISEMPTY (prj_path), false);
 	int ret, close_current_session = 1;
-	char *oldbin;
-	const char *newbin;
-	ut64 mapaddr = 0;
-	if (!prjfile || !*prjfile) {
-		return false;
-	}
-	if (thready) {
-		eprintf ("Loading projects in a thread has been deprecated. Use tasks\n");
-		return false;
-	}
-	char *prj = get_project_script_path (core, prjfile);
-	if (!prj) {
-		eprintf ("Invalid project name '%s'\n", prjfile);
-		return false;
-	}
-	char *filepath = r_core_project_info (core, prj);
-	// eprintf ("OPENING (%s) from %s\n", prj, r_config_get (core->config, "file.path"));
-	/* if it is not an URI */
-	if (!filepath) {
-		eprintf ("Cannot retrieve information for project '%s'\n", prj);
-		free (prj);
-		return false;
-	}
-
-	if (!filepath[0]) {
-		goto cookiefactory;
-	}
-	if (!strstr (filepath, "://")) {
-		/* check if path exists */
-		if (!r_file_exists (filepath)) {
-			eprintf ("Cannot find file '%s'\n", filepath);
-			free (prj);
-			free (filepath);
+	if (r_project_is_loaded (core->prj)) {
+		eprintf ("There's a project already opened\n");
+		bool ccs = r_cons_yesno ('y', "Close current session? (Y/n)");
+		if (ccs) {
+			r_core_cmd0 (core, "o--");
+		} else {
+			eprintf ("Project not loaded.\n");
 			return false;
 		}
 	}
- cookiefactory:
-	;
-	const char *file_path = r_config_get (core->config, "file.path");
-	if (!file_path || !*file_path) {
-		file_path = r_config_get (core->config, "file.lastpath");
-	}
-	oldbin = strdup (file_path);
-	if (!strcmp (prjfile, r_config_get (core->config, "prj.name"))) {
-		// eprintf ("Reloading project\n");
-		askuser = false;
-#if 0
-		free (prj);
-		free (filepath);
+	char *prj_name = r_core_project_name (core, prj_path);
+	char *prj_script = get_project_script_path (core, prj_path);
+	if (!prj_script) {
+		eprintf ("Invalid project name '%s'\n", prj_path);
 		return false;
-#endif
 	}
-	if (askuser) {
+	if (r_project_is_loaded (core->prj)) {
 		if (r_cons_is_interactive ()) {
 			close_current_session = r_cons_yesno ('y', "Close current session? (Y/n)");
 		}
 	}
 	if (close_current_session) {
-		// delete
-		r_core_file_close_fd (core, -1);
-		r_io_close_all (core->io);
-		r_anal_purge (core->anal);
-		r_flag_unset_all (core->flags);
-		r_bin_file_delete_all (core->bin);
-		// open new file
-		// TODO: handle read/read-write mode
-		if (filepath[0]) {
-			/* Old-style project without embedded on commands to open all files.  */
-			if (!r_core_file_open (core, filepath, 0, UT64_MAX)) {
-				eprintf ("Cannot open file '%s'\n", filepath);
-				ret = false;
-				goto beach;
-			}
-		}
-	}
-	mapaddr = getProjectLaddr (core, prj);
-	if (mapaddr) {
-		r_config_set_i (core->config, "bin.laddr", mapaddr);
-	}
-	if (filepath[0] && close_current_session && r_config_get_i (core->config, "file.info")) {
-		mapaddr = r_config_get_i (core->config, "file.offset");
-		(void)r_core_bin_load (core, filepath, mapaddr? mapaddr: UT64_MAX);
+		r_core_cmd0 (core, "e prj.name=;o--");
 	}
 	/* load sdb stuff in here */
-	ret = r_core_project_load (core, prjfile, prj);
-	if (filepath[0]) {
-		newbin = r_config_get (core->config, "file.path");
-		if (!newbin || !*newbin) {
-			newbin = r_config_get (core->config, "file.lastpath");
-		}
-		if (strcmp (oldbin, newbin)) {
-			eprintf ("WARNING: file.path changed: %s => %s\n", oldbin, newbin);
-		}
-	}
-beach:
-	free (oldbin);
-	free (filepath);
-	free (prj);
+	ret = r_core_project_load (core, prj_name, prj_script);
+	free (prj_name);
+	free (prj_script);
 	return ret;
 }
 
-R_API char *r_core_project_info(RCore *core, const char *prjfile) {
+R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 	FILE *fd;
 	char buf[256], *file = NULL;
+	if (*prjfile != '/') {
+		return strdup (prjfile);
+	}
 	char *prj = get_project_script_path (core, prjfile);
 	if (!prj) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
@@ -510,19 +448,8 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 			if (feof (fd)) {
 				break;
 			}
-			if (!strncmp (buf, "\"e file.path = ", 15)) {
+			if (!strncmp (buf, "\"e prj.name = ", 14)) {
 				buf[strlen (buf) - 2] = 0;
-				file = r_str_new (buf + 15);
-				break;
-			}
-			if (!strncmp (buf, "\"e file.lastpath = ", 19)) {
-				buf[strlen (buf) - 2] = 0;
-				file = r_str_new (buf + 19);
-				break;
-			}
-			// TODO: deprecate before 1.0
-			if (!strncmp (buf, "e file.path = ", 14)) {
-				buf[strlen (buf) - 1] = 0;
 				file = r_str_new (buf + 14);
 				break;
 			}
@@ -531,19 +458,32 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	} else {
 		eprintf ("Cannot open project info (%s)\n", prj);
 	}
-#if 0
-	if (file) {
-		r_cons_printf ("Project: %s\n", prj);
-		r_cons_printf ("FilePath: %s\n", file);
-	}
-#endif
 	free (prj);
+	if (R_STR_ISEMPTY (file)) {
+		free (file);
+		file = strdup (prjfile);
+		char *slash = (char *)r_str_lchr (file, R_SYS_DIR[0]); 
+		if (slash) {
+			*slash = 0;
+			slash = (char *)r_str_lchr (file, R_SYS_DIR[0]); 
+			if (slash) {
+				char *res = strdup (slash + 1);
+				free (file);
+				file = res;
+			} else {
+				R_FREE (file);
+			}
+		} else {
+			R_FREE (file);
+		}
+	}
 	return file;
 }
 
-static int fdc;		//this is a ugly, remove it, when we have $fd
+#if PROJECT_EXPERIMENTAL
+static int fdc; // TODO: move into a struct passed to the foreach instead of global
 
-static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
+static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 	RList *maps = NULL;
 	RListIter *iter;
 	RIOMap *map;
@@ -563,90 +503,18 @@ static bool store_files_and_maps (RCore *core, RIODesc *desc, ut32 id) {
 	}
 	return true;
 }
-
-static bool simple_project_save_script(RCore *core, const char *file, int opts) {
-	char *filename, *hl, *ohl = NULL;
-	int fd, fdold;
-
-	if (!file || * file == '\0') {
-		return false;
-	}
-
-	filename = r_str_word_get_first (file);
-	fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
-	if (fd == -1) {
-		free (filename);
-		return false;
-	}
-
-	hl = r_cons_singleton ()->highlight;
-	if (hl) {
-		ohl = strdup (hl);
-		r_cons_highlight (NULL);
-	}
-
-	fdold = r_cons_singleton ()->fdout;
-	r_cons_singleton ()->fdout = fd;
-	r_cons_singleton ()->context->is_interactive = false; // NOES must use api
-
-	r_str_write (fd, "# r2 rdb project file\n");
-
-	if (opts & R_CORE_PRJ_EVAL) {
-		r_str_write (fd, "# eval\n");
-		r_config_list (core->config, NULL, true);
-		r_cons_flush ();
-	}
-
-	if (opts & R_CORE_PRJ_FCNS) {
-		r_str_write (fd, "# functions\n");
-		r_str_write (fd, "fs functions\n");
-		r_core_cmd (core, "afl*", 0);
-		r_cons_flush ();
-	}
-
-	if (opts & R_CORE_PRJ_FLAGS) {
-		r_str_write (fd, "# flags\n");
-		r_core_cmd (core, "f.**", 0);
-		r_cons_flush ();
-	}
-	if (opts & R_CORE_PRJ_META) {
-		r_str_write (fd, "# meta\n");
-		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1);
-		r_cons_flush ();
-		r_core_cmd (core, "fV*", 0);
-		r_cons_flush ();
-	}
-	if (opts & R_CORE_PRJ_XREFS) {
-		r_str_write (fd, "# xrefs\n");
-		r_core_cmd (core, "ax*", 0);
-		r_cons_flush ();
-	}
-
-
-	r_cons_singleton ()->fdout = fdold;
-	r_cons_singleton ()->context->is_interactive = true;
-
-	if (ohl) {
-		r_cons_highlight (ohl);
-		free (ohl);
-	}
-
-	close (fd);
-	free (filename);
-
-	return true;
-}
+#endif
 
 static bool project_save_script(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
-	int fd, fdold;
+	int fdold;
 
-	if (!file || *file == '\0') {
+	if (R_STR_ISEMPTY (file)) {
 		return false;
 	}
 
 	filename = r_str_word_get_first (file);
-	fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
+	int fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, 0644);
 	if (fd == -1) {
 		free (filename);
 		return false;
@@ -661,30 +529,14 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 	r_cons_singleton ()->fdout = fd;
 	r_cons_singleton ()->context->is_interactive = false;
 	r_str_write (fd, "# r2 rdb project file\n");
-	if (!core->bin->is_debugger && !r_config_get_i (core->config, "asm.emu")) {
-		if (core->bin->file) {
-			char *fpath = r_file_abspath (core->bin->file);
-			if (fpath) {
-				char *reopen = r_str_newf ("\"o %s\"\n", fpath);
-				if (reopen) {
-					r_str_write (fd, reopen);
-					free (reopen);
-					free (fpath);
-				}
-			}
-		}
-		
-	}
-	// Set file.path and file.lastpath to empty string to signal
 	// new behaviour to project load routine (see io maps below).
-	r_config_set (core->config, "file.path", "");
-	r_config_set (core->config, "file.lastpath", "");
 	if (opts & R_CORE_PRJ_EVAL) {
 		r_str_write (fd, "# eval\n");
 		r_config_list (core->config, NULL, true);
 		r_cons_flush ();
 	}
-
+	r_core_cmd (core, "o*", 0);
+	r_core_cmd0 (core, "tcc*");
 	if (opts & R_CORE_PRJ_FCNS) {
 		r_str_write (fd, "# functions\n");
 		r_str_write (fd, "fs functions\n");
@@ -699,18 +551,20 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 		r_flag_space_pop (core->flags);
 		r_cons_flush ();
 	}
+#if PROJECT_EXPERIMENTAL
 	if (opts & R_CORE_PRJ_IO_MAPS && core->io && core->io->files) {
 		fdc = 3;
 		r_id_storage_foreach (core->io->files, (RIDStorageForeachCb)store_files_and_maps, core);
 		r_cons_flush ();
 	}
+#endif
 	{
 		r_core_cmd (core, "fz*", 0);
 		r_cons_flush ();
 	}
 	if (opts & R_CORE_PRJ_META) {
 		r_str_write (fd, "# meta\n");
-		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1);
+		r_meta_print_list_all (core->anal, R_META_TYPE_ANY, 1, NULL);
 		r_cons_flush ();
 		r_core_cmd (core, "fV*", 0);
 		r_cons_flush ();
@@ -743,6 +597,7 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 		r_core_cmd (core, "$*", 0);
 		r_cons_flush ();
 	}
+	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf ("# seek\n"
 			"s 0x%08"PFMT64x "\n", core->offset);
@@ -763,63 +618,42 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 	return true;
 }
 
-// TODO: rename to r_core_project_save_script
 R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	return project_save_script (core, file, opts);
 }
 
-#define TRANSITION 1
-
-R_API bool r_core_project_save(RCore *core, const char *prjName) {
+R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	bool scr_null = false;
 	bool ret = true;
-	char *scriptPath, *prjDir;
 	SdbListIter *it;
 	SdbNs *ns;
-	char *oldPrjName = NULL;
-
-	if (!prjName || !*prjName) {
+	r_return_val_if_fail (prj_name && *prj_name, false);
+	char *script_path = get_project_script_path (core, prj_name);
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		eprintf ("radare2 does not support projects on debugged bins.\n");
 		return false;
 	}
-	scriptPath = get_project_script_path (core, prjName);
-	if (!scriptPath) {
-		eprintf ("Invalid project name '%s'\n", prjName);
+	if (!script_path) {
+		eprintf ("Invalid project name '%s'\n", prj_name);
 		return false;
 	}
-	if (r_str_endswith (scriptPath, R_SYS_DIR "rc")) {
+	char *prj_dir = NULL;
+	if (r_str_endswith (script_path, R_SYS_DIR "rc.r2")) {
 		/* new project format */
-		prjDir = r_file_dirname (scriptPath);
+		prj_dir = r_file_dirname (script_path);
 	} else {
-		prjDir = r_str_newf ("%s.d", scriptPath);
+		prj_dir = r_str_newf ("%s.d", script_path);
 	}
-	if (r_file_exists (scriptPath)) {
-		if (r_file_is_directory (scriptPath)) {
-			eprintf ("WTF. rc is a directory?\n");
-		}
-		if (r_str_endswith (prjDir, ".d")) {
-			eprintf ("Upgrading project...\n");
-#if TRANSITION
-			r_file_rm (scriptPath);
-			r_sys_mkdirp (prjDir);
-			eprintf ("Please remove: rm -rf %s %s.d\n", prjName, prjName);
-			char *rc = r_str_newf ("%s" R_SYS_DIR "rc", prjDir);
-			if (!rc) {
-				free (prjDir);
-				free (scriptPath);
-				return false;
-			}
-			free (scriptPath);
-			scriptPath = rc;
-			free (prjDir);
-			prjDir = r_file_dirname (scriptPath);
-#endif
+	if (r_file_exists (script_path)) {
+		if (r_file_is_directory (script_path)) {
+			eprintf ("Structural error: rc.r2 shouldnt be a directory.\n");
 		}
 	}
-	if (!prjDir) {
-		prjDir = strdup (prjName);
+	if (!prj_dir) {
+		prj_dir = strdup (prj_name);
 	}
-	if (!r_file_exists (prjDir)) {
-		r_sys_mkdirp (prjDir);
+	if (!r_file_exists (prj_dir)) {
+		r_sys_mkdirp (prj_dir);
 	}
 	if (r_config_get_i (core->config, "scr.null")) {
 		r_config_set_i (core->config, "scr.null", false);
@@ -831,108 +665,82 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 	if (rop_db) {
 		/* set filepath for all the rop sub-dbs */
 		ls_foreach (rop_db->ns, it, ns) {
-			char *rop_path = r_str_newf ("%s" R_SYS_DIR "rop.d" R_SYS_DIR "%s", prjDir, ns->name);
+			char *rop_path = r_str_newf ("%s" R_SYS_DIR "rop.d" R_SYS_DIR "%s", prj_dir, ns->name);
 			sdb_file (ns->sdb, rop_path);
 			sdb_sync (ns->sdb);
 			free (rop_path);
 		}
 	}
 
-	const char *oldPrjNameC = r_config_get (core->config, "prj.name");
-	if (oldPrjNameC) {
-		oldPrjName = strdup (oldPrjNameC);
-	}
-	r_config_set (core->config, "prj.name", prjName);
-	if (r_config_get_i (core->config, "prj.simple")) {
-		if (!simple_project_save_script (core, scriptPath, R_CORE_PRJ_ALL)) {
-			eprintf ("Cannot open '%s' for writing\n", prjName);
-			ret = false;
-		}
-	} else {
-		if (!project_save_script (core, scriptPath, R_CORE_PRJ_ALL)) {
-			eprintf ("Cannot open '%s' for writing\n", prjName);
-			ret = false;
-		}
+	if (!project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
+		eprintf ("Cannot open '%s' for writing\n", prj_name);
+		ret = false;
 	}
 
 	if (r_config_get_i (core->config, "prj.files")) {
 		eprintf ("TODO: prj.files: support copying more than one file into the project directory\n");
-		char *binFile = r_core_project_info (core, prjName);
-		const char *binFileName = r_file_basename (binFile);
-		char *prjBinDir = r_str_newf ("%s" R_SYS_DIR "bin", prjDir);
-		char *prjBinFile = r_str_newf ("%s" R_SYS_DIR "%s", prjBinDir, binFileName);
-		r_sys_mkdirp (prjBinDir);
-		if (!r_file_copy (binFile, prjBinFile)) {
-			eprintf ("Warning: Cannot copy '%s' into '%s'\n", binFile, prjBinFile);
+		char *bin_file = r_core_project_name (core, prj_name);
+		const char *bin_filename = r_file_basename (bin_file);
+		char *prj_bin_dir = r_str_newf ("%s" R_SYS_DIR "bin", prj_dir);
+		char *prj_bin_file = r_str_newf ("%s" R_SYS_DIR "%s", prj_bin_dir, bin_filename);
+		r_sys_mkdirp (prj_bin_dir);
+		if (!r_file_copy (bin_file, prj_bin_file)) {
+			eprintf ("Warning: Cannot copy '%s' into '%s'\n", bin_file, prj_bin_file);
 		}
-		free (prjBinFile);
-		free (prjBinDir);
-		free (binFile);
+		free (prj_bin_file);
+		free (prj_bin_dir);
+		free (bin_file);
 	}
 	if (r_config_get_i (core->config, "prj.git")) {
 		char *cwd = r_sys_getdir ();
-		char *gitDir = r_str_newf ("%s" R_SYS_DIR ".git", prjDir);
-		if (r_sys_chdir (prjDir)) {
-			if (!r_file_is_directory (gitDir)) {
+		char *git_dir = r_str_newf ("%s" R_SYS_DIR ".git", prj_dir);
+		if (r_sys_chdir (prj_dir)) {
+			if (!r_file_is_directory (git_dir)) {
 				r_sys_cmd ("git init");
 			}
-			r_sys_cmd ("git add * ; git commit -a");
+			if (r_cons_is_interactive ()) {
+				r_sys_cmd ("git add * ; git commit -a");
+			} else {
+				r_sys_cmd ("git add * ; git commit -a -m commit");
+			}
 		} else {
-			eprintf ("Cannot chdir %s\n", prjDir);
+			eprintf ("Cannot chdir %s\n", prj_dir);
 		}
 		r_sys_chdir (cwd);
-		free (gitDir);
+		free (git_dir);
 		free (cwd);
 	}
 	if (r_config_get_i (core->config, "prj.zip")) {
 		char *cwd = r_sys_getdir ();
-		const char *prjName = r_file_basename (prjDir);
-		if (r_sys_chdir (prjDir)) {
-			if (!strchr (prjName, '\'')) {
+		const char *prj_name = r_file_basename (prj_dir);
+		if (r_sys_chdir (prj_dir)) {
+			if (!strchr (prj_name, '\'')) {
 				r_sys_chdir ("..");
 				r_sys_cmdf ("rm -f '%s.zip'; zip -r '%s'.zip '%s'",
-					prjName, prjName, prjName);
+					prj_name, prj_name, prj_name);
 			} else {
 				eprintf ("Command injection attempt?\n");
 			}
 		} else {
-			eprintf ("Cannot chdir %s\n", prjDir);
+			eprintf ("Cannot chdir %s\n", prj_dir);
 		}
 		r_sys_chdir (cwd);
 		free (cwd);
 	}
-	// LEAK : not always in heap free (prjName);
-	free (prjDir);
+	// LEAK : not always in heap free (prj_name);
+	free (prj_dir);
 	if (scr_null) {
 		r_config_set_i (core->config, "scr.null", true);
 	}
-	if (!ret && oldPrjName) {
-		// reset prj.name on fail
-		r_config_set (core->config, "prj.name", oldPrjName);
-	}
-	free (scriptPath);
-	free (oldPrjName);
+	free (script_path);
+	r_config_set (core->config, "prj.name", prj_name);
 	return ret;
 }
 
-R_API char *r_core_project_notes_file(RCore *core, const char *prjName) {
-	char *notes_txt;
+R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	char *prjpath = r_file_abspath (prjdir);
-	notes_txt = r_str_newf ("%s"R_SYS_DIR "%s"R_SYS_DIR "notes.txt", prjpath, prjName);
+	char *notes_txt = r_file_new (prjpath, prj_name, "notes.txt", NULL);
 	free (prjpath);
 	return notes_txt;
-}
-
-R_API bool r_core_project_load(RCore *core, const char *prjName, const char *rcpath) {
-	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
-	const bool scr_interactive = r_cons_is_interactive ();
-	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
-	(void) load_project_rop (core, prjName);
-	bool ret = r_core_cmd_file (core, rcpath);
-	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
-	r_config_set_i (core->config, "scr.interactive", scr_interactive);
-	r_config_set_i (core->config, "scr.prompt", scr_prompt);
-	r_config_bump (core->config, "asm.arch");
-	return ret;
 }

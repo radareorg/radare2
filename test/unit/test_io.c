@@ -5,7 +5,6 @@ bool test_r_io_cache(void) {
 	RIO *io = r_io_new ();
 	r_io_open (io, "malloc://15", R_PERM_RW, 0);
 	r_io_write (io, (ut8 *)"ZZZZZZZZZZZZZZZ", 15);
-	r_io_cache_init (io);
 	mu_assert_false (r_io_cache_at (io, 0), "Cache shouldn't exist at 0");
 	mu_assert_false (r_io_cache_at (io, 10), "Cache shouldn't exist at 10");
 	mu_assert_true (r_io_cache_write (io, 0, (ut8 *)"AAAAA", 5), "Cache write at 0 failed");

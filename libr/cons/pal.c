@@ -224,7 +224,7 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
 
 	ctx->cpal.graph_box          = (RColor) RColor_NULL;
-	ctx->cpal.graph_box2         = (RColor) RColor_BLUE;
+	ctx->cpal.graph_box2         = (RColor) RColor_YELLOW;
 	ctx->cpal.graph_box3         = (RColor) RColor_MAGENTA;
 	ctx->cpal.graph_box4         = (RColor) RColor_GRAY;
 	ctx->cpal.graph_true         = (RColor) RColor_GREEN;
@@ -367,8 +367,8 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			rcolor.b = colors[i].rcolor.b;
 			rcolor.id16 = colors[i].rcolor.id16;
 			if (!outcol) {
-				strncat (out, colors[i].code,
-					sizeof (out) - strlen (out) - 1);
+				size_t n = strlen (out);
+				snprintf (out + n, sizeof (out) - n, "%s", colors[i].code);
 			}
 		}
 		if (bgcolor && !strcmp (bgcolor, colors[i].name)) {
@@ -378,8 +378,8 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			rcolor.b2 = colors[i].rcolor.b;
 			rcolor.id16 = colors[i].rcolor.id16;
 			if (!outcol) {
-				strncat (out, colors[i].bgcode,
-					sizeof (out) - strlen (out) - 1);
+				size_t n = strlen (out);
+				snprintf (out + n, sizeof (out) - n, "%s", colors[i].bgcode);
 			}
 		}
 	}

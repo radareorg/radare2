@@ -5,8 +5,10 @@
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
-	CFLAGS="${CFLAGS} -flto"
-	LDFLAGS="${LDFLAGS} -flto"
+	if [ "$NOLTO" != 1 ]; then
+		CFLAGS="${CFLAGS} -flto"
+		LDFLAGS="${LDFLAGS} -flto"
+	fi
 	if [ -n "`gcc -v 2>&1 | grep gcc`" ]; then
 		export AR=gcc-ar
 	fi
@@ -44,8 +46,7 @@ if [ 1 = "${DOCFG}" ]; then
 		${MAKE} mrproper > /dev/null 2>&1
 	fi
 	export CFLAGS="${CFLAGS} -fPIC"
-	#cp -f plugins.static.cfg plugins.cfg
-	cp -f plugins.static.nogpl.cfg plugins.cfg
+	cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
 	./configure-plugins || exit 1
 	#./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv --disable-loadlibs || exit 1
 	./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv || exit 1

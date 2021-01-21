@@ -41,8 +41,9 @@
  * different r, d, K, k, s, etc. characters in the opcode, which all stand 
  * for a different operand type, because they are clearly written out 
  * in the instruction set data structure.
- */ 
-static instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS] = {
+ */
+
+instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS] = {
 	{"break", 0x9598, 0, {0x0000, 0x0000}, {OPERAND_NONE, OPERAND_NONE}},
 	{"clc", 0x9488, 0, {0x0000, 0x0000}, {OPERAND_NONE, OPERAND_NONE}},
 	{"clh", 0x94d8, 0, {0x0000, 0x0000}, {OPERAND_NONE, OPERAND_NONE}},

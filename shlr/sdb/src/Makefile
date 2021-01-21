@@ -44,7 +44,12 @@ endif
 	${AR} q libsdb.a ${OBJ}
 	${RANLIB} libsdb.a
 
+ifeq ($(CC),tcc)
+libsdb.${SOVER}:
+	@echo TCC doesnt support shared libs on macos
+else
 libsdb.${SOVER}: sdb_objs2
+endif
 ifneq ($(EXT_SO),${SOVER})
 	ln -fs libsdb.${SOVER} libsdb.${EXT_SO}
 endif

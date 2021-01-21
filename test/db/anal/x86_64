@@ -1062,15 +1062,19 @@ RUN
 NAME=delete memory format with Cf-
 FILE=bins/dmg/src/Hello
 CMDS=<<EOF
+e prj.git=false
 e asm.arch=x86
 e asm.bits=64
 pd 1
 Cf 1 x
 pd 1
+e scr.interactive=false
 Ps temp_proj
 Cf-
 pd 1
+e scr.interactive=false
 Ps temp_proj
+e scr.interactive=false
 Po temp_proj
 pd 1
 EOF
@@ -1078,9 +1082,7 @@ EXPECT=<<EOF
             0x00000000      57             push rdi
             0x00000000 pf x # size=1
 0x00000000 = 0x6c726f57
-temp_proj
             0x00000000      57             push rdi
-temp_proj
             0x00000000      57             push rdi
 EOF
 RUN
@@ -1501,7 +1503,7 @@ aaa
 afi @@@F~?pascal
 EOF
 EXPECT=<<EOF
-130
+65
 EOF
 RUN
 
@@ -2535,7 +2537,6 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 4
 cyclomatic-complexity: 0
-cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2595,7 +2596,6 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 6
 cyclomatic-complexity: 1
-cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2671,7 +2671,6 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
-cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
@@ -2755,7 +2754,6 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 7
 cyclomatic-complexity: 0
-cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 3
@@ -2848,7 +2846,6 @@ stackframe: 0
 call-convention: amd64
 cyclomatic-cost: 9
 cyclomatic-complexity: 0
-cc: amd64
 bits: 64
 type: fcn [NEW]
 num-bbs: 4

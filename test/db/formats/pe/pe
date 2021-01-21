@@ -437,3 +437,19 @@ EXPECT=<<EOF
 0   0x00000200  0x205 0x00401000  0x1000 -rwx sect_0
 EOF
 RUN
+
+NAME=EFI bootloader rv64
+FILE=bins/efi/haiku_loader_riscv64.efi
+CMDS=ia~machine
+EXPECT=<<EOF
+machine  RISC-V 64-bit
+EOF
+RUN
+
+NAME=EFI bootloader x86_64
+FILE=bins/efi/haiku_loader_amd64.efi
+CMDS=ia~machine
+EXPECT=<<EOF
+machine  AMD 64
+EOF
+RUN

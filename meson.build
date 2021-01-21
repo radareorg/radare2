@@ -507,7 +507,7 @@ install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
 libr2sdb = static_library('r2sdb', sdb_files,
   include_directories: sdb_inc,
   implicit_include_directories: false,
-  c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
+  c_args: host_machine.system() == 'windows' ? '-DSDB_IPI= -DSDB_API=__declspec(dllexport)' : [],
 )
 
 sdb_dep = declare_dependency(

@@ -510,7 +510,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 		case 'f':
 		{
 			ut64 off, len, sz, namelen;
-			RIODesc *desc = core && core->file ? r_io_desc_get (core->io, core->file->fd) : NULL;
+			RIODesc *desc = core->io->desc;
 			if (sscanf (cmd + 2, "%"PFMT64x",%"PFMT64x, &off, &len) != 2) {
 				strcpy (out_buf, "E00");
 				return 0;
@@ -585,7 +585,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		args = "";
 	}
 
-	if (!r_core_file_open (core, file, R_PERM_R, 0)) {
+	if (!r_core_file_open (core, file, R_PERM_RX, 0)) {
 		eprintf ("Cannot open file (%s)\n", file);
 		return -1;
 	}

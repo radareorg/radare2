@@ -1,4 +1,4 @@
-.Dd Jul 28, 2017
+.Dd Dec 28, 2020
 .Dt RAX2 1
 .Sh NAME
 .Nm rax2
@@ -21,6 +21,10 @@ Keep the same base as the input data
 Swap endian.
 .It Fl F
 Read C strings from stdin and output in hexpairs. Useful to load shellcodes
+.It Fl i
+Dump stdin to C array in stdout (xxd replacement)
+.It Fl I
+Convert LONG to/from IP ADDRESS
 .It Fl l
 Append newline to the decoded output for human friendly-ness
 .It Fl K

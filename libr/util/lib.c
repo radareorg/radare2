@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2020 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include <r_util.h>
 #include <r_lib.h>
@@ -11,7 +11,7 @@ static bool __has_debug = false;
 
 /* XXX : this must be registered in runtime */
 static const char *r_lib_types[] = {
-	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr",
+	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr", "bin_ldr",
 	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", NULL
 };
 

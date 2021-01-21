@@ -95,3 +95,10 @@ Hello world!
 EOF
 RUN
 
+NAME=ood check for ptrace errors
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+ood
+EOF
+REGEXP_ERR=reopened
+RUN

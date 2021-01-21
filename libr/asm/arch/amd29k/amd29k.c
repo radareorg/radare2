@@ -420,6 +420,14 @@ const amd29k_instruction_t amd29k_instructions[N_AMD29K_INSTRUCTIONS] = {
 	{ CPU_ANY,   "xor",       R_ANAL_OP_TYPE_XOR,  0x95 , decode_ra_rb_rci  , NULL },
 };
 
+static bool is_cpu(const char* cpu, const amd29k_instruction_t *in) {
+	return cpu[0] == in->cpu[0] &&
+			cpu[1] == in->cpu[1] &&
+			cpu[2] == in->cpu[2] &&
+			cpu[3] == in->cpu[3] &&
+			cpu[4] == in->cpu[4];
+}
+
 bool amd29k_instr_decode(const ut8* buffer, const ut32 buffer_size, amd29k_instr_t* instruction, const char* cpu) {
 	if (!buffer || buffer_size < 4 || !instruction || (cpu && strlen (cpu) < 5)) {
 		return false;
@@ -441,12 +449,7 @@ bool amd29k_instr_decode(const ut8* buffer, const ut32 buffer_size, amd29k_instr
 			instruction->mnemonic = in->mnemonic;
 			instruction->op_type = in->op_type;
 			return true;
-		} else if (in->cpu[0] != '*' && in->cpu[3] == '0' && in->mask == buffer[0]) {
-			in->decode (instruction, buffer);
-			instruction->mnemonic = in->mnemonic;
-			instruction->op_type = in->op_type;
-			return true;
-		} else if (in->cpu[0] != '*' && in->cpu[3] == '5' && in->mask == buffer[0]) {
+		} else if (in->cpu[0] != '*' && in->mask == buffer[0] && is_cpu(cpu, in)) {
 			in->decode (instruction, buffer);
 			instruction->mnemonic = in->mnemonic;
 			instruction->op_type = in->op_type;

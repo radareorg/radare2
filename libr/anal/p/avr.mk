@@ -1,4 +1,7 @@
 OBJ_AVR=anal_avr.o
+OBJ_AVR+=../../asm/arch/avr/avr_disasm.o
+OBJ_AVR+=../../asm/arch/avr/format.o
+OBJ_AVR+=../../asm/arch/avr/disasm.o
 
 STATIC_OBJ+=${OBJ_AVR}
 TARGET_AVR=anal_avr.${EXT_SO}

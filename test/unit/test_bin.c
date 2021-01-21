@@ -15,7 +15,7 @@ bool test_r_bin(void) {
 
 	RList *sections = r_bin_get_sections (bin);
 	// XXX this is wrong, because its returning the sections and the segments, we need another api here
-	mu_assert_eq(r_list_length (sections), 39, "r_bin_get_sections");
+	mu_assert_eq (r_list_length (sections), 39, "r_bin_get_sections");
 
 	r_bin_free (bin);
 	r_io_free (io);

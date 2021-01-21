@@ -147,9 +147,11 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 				goto fail;
 			}
 			if (!(test->expect.value || test->expect_err.value)) {
-				eprintf (LINEFMT "Error: Test without EXPECT or EXPECT_ERR key"
-				         " (did you forget an EOF?)\n", file, linenum);
-				goto fail;
+				if (!(test->regexp_out.value || test->regexp_err.value)) {
+					eprintf (LINEFMT "Error: Test without EXPECT or EXPECT_ERR key"
+						 " (did you forget an EOF?)\n", file, linenum);
+					goto fail;
+				}
 			}
 			r_pvector_push (ret, test);
 			test = r2r_cmd_test_new ();

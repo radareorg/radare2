@@ -18,7 +18,7 @@ static void rasign_show_help(void) {
 }
 
 static RCore *opencore(const char *fname) {
-	RCoreFile * rfile = NULL;
+	RIODesc * rfile = NULL;
 	RCore *c = r_core_new ();
 	if (!c) {
 		eprintf ("Count not get core\n");

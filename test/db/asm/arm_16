@@ -1,4 +1,3 @@
-#!/usr/bin/env node bin/r2r.js
 #a "ldr r0, [r1]" 0868
 #a "ldr r1, [r3]" 1968
 #a "ldr r0, [r0, 0x74]" 406f

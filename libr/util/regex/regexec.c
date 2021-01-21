@@ -48,7 +48,6 @@
 #include <limits.h>
 #include <ctype.h>
 #include <r_regex.h>
-
 #include "utils.h"
 #include "regex2.h"
 
@@ -132,6 +131,8 @@
 R_API bool r_regex_check(const RRegex *rr, const char *str) {
 	return r_regex_exec (rr, str, 0, NULL, rr->re_flags);
 }
+
+
 /*
  - regexec - interface for matching
  *
@@ -139,31 +140,23 @@ R_API bool r_regex_check(const RRegex *rr, const char *str) {
  * when choosing which matcher to call.  Also, by this point the matchers
  * have been prototyped.
  */
-int				/* 0 success, R_REGEX_NOMATCH failure */
-r_regex_exec(const RRegex *preg, const char *string, size_t nmatch,
-	RRegexMatch pmatch[], int eflags)
-{
-	struct re_guts *g;
-#ifdef REDEBUG
-#	define	GOODFLAGS(f)	(f)
-#else
-#	define	GOODFLAGS(f)	((f)&(R_REGEX_NOTBOL|R_REGEX_NOTEOL|R_REGEX_STARTEND))
-#endif
+R_API int r_regex_exec(const RRegex *preg, const char *string, size_t nmatch, RRegexMatch pmatch[], int eflags) {
 	if (!preg || !string) {
 		return R_REGEX_ASSERT;
 	}
-
-	g = preg->re_g;
+	if (((int)nmatch) < 0) {
+		return R_REGEX_INVARG;
+	}
+	struct re_guts *g = preg->re_g;
 	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2) {
-		return (R_REGEX_BADPAT);
+		return R_REGEX_BADPAT;
 	}
 	if (g->iflags & BAD) { /* backstop for no-debug case */
-		return (R_REGEX_BADPAT);
+		return R_REGEX_BADPAT;
 	}
-	eflags = GOODFLAGS(eflags);
+	eflags |= (R_REGEX_NOTBOL | R_REGEX_NOTEOL | R_REGEX_STARTEND);
 	if (g->nstates <= CHAR_BIT * sizeof (states1) && !(eflags & R_REGEX_LARGE)) {
-		return(smatcher(g, (char *)string, nmatch, pmatch, eflags));
-	} else {
-		return (lmatcher (g, (char *)string, nmatch, pmatch, eflags));
+		return smatcher (g, (char *)string, nmatch, pmatch, eflags);
 	}
+	return lmatcher (g, (char *)string, nmatch, pmatch, eflags);
 }

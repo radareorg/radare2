@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
 
 #include <r_asm.h>
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	const ut8 *b;
-	int rep = 1;
+	size_t rep = 1;
 
 	/* Count repetitions of the current instruction, unless it's a trap. */
 	if (*buf != 0x00 && *buf != 0xff) {

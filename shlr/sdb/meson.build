@@ -118,6 +118,17 @@ sdb_exe = executable('sdb', 'src/main.c',
   implicit_include_directories: false
 )
 
+if meson.is_cross_build()
+  sdb_native_exe = executable('sdb_native', 'src/main.c',
+    include_directories: sdb_inc,
+    link_with: [link_with],
+    install: false,
+    implicit_include_directories: false
+  )
+else
+  sdb_native_exe = sdb_exe
+endif
+
 if not meson.is_subproject()
   install_man(['src/sdb.1'])
 endif

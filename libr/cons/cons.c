@@ -97,6 +97,8 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
 	context->breaked = false;
 	context->cmd_depth = R_CONS_CMD_DEPTH + 1;
+	context->error = r_strbuf_new ("");
+	context->errmode = R_CONS_ERRMODE_ECHO;
 	context->buffer = NULL;
 	context->buffer_sz = 0;
 	context->lastEnabled = true;
@@ -121,6 +123,7 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 }
 
 static void cons_context_deinit(RConsContext *context) {
+	R_FREE (context->error);
 	r_stack_free (context->cons_stack);
 	context->cons_stack = NULL;
 	r_stack_free (context->break_stack);
@@ -215,19 +218,19 @@ R_API void r_cons_println(const char* str) {
 R_API void r_cons_printat(const char *str, int x, char y) {
 	int i, o, len;
 	int h, w = r_cons_get_size (&h);
-	r_cons_gotoxy (x, y);
 	int lines = 0;
 	for (o = i = len = 0; str[i]; i++, len++) {
 		if (str[i] == '\n') {
 			r_cons_gotoxy (x, y + lines);
-			int wlen = R_MIN (len - x, w - x);
+			int wlen = R_MIN (len, w);
 			r_cons_memcat (str + o, wlen);
 			o = i + 1;
 			len = 0;
 			lines++;
 		}
 	}
-	if (len > 1) {
+	if (len > 0) {
+		r_cons_gotoxy (x, y + lines);
 		r_cons_memcat (str + o, len);
 	}
 }
@@ -381,6 +384,17 @@ R_API bool r_cons_is_breaked(void) {
 	return I.context->breaked;
 }
 
+R_API void r_cons_line(int x, int y, int x2, int y2, int ch) {
+	char chstr[2] = {ch, 0};
+	int X, Y;
+	for (X = x; X < x2; X++) {
+		for (Y = y; Y < y2; Y++) {
+			r_cons_gotoxy (X, Y);
+			r_cons_print (chstr);
+		}
+	}
+}
+
 R_API int r_cons_get_cur_line(void) {
 	int curline = 0;
 #if __WINDOWS__
@@ -493,8 +507,7 @@ R_API void r_cons_enable_highlight(const bool enable) {
 }
 
 R_API bool r_cons_enable_mouse(const bool enable) {
-	if ((I.mouse && enable)
-	    || (!I.mouse && !enable)) {
+	if ((I.mouse && enable) || (!I.mouse && !enable)) {
 		return I.mouse;
 	}
 #if __WINDOWS__
@@ -892,10 +905,21 @@ R_API void r_cons_echo(const char *msg) {
 	}
 }
 
+R_API void r_cons_eflush(void) {
+	char *s = r_cons_errstr ();
+	if (s) {
+		eprintf ("%s", s);
+		free (s);
+	}
+}
+
 R_API void r_cons_flush(void) {
 	const char *tee = I.teefile;
 	if (I.noflush) {
 		return;
+	}
+	if (I.context->errmode == R_CONS_ERRMODE_FLUSH) {
+		r_cons_eflush ();
 	}
 	if (I.null) {
 		r_cons_reset ();
@@ -1181,6 +1205,56 @@ R_API int r_cons_printf(const char *format, ...) {
 	va_end (ap);
 
 	return 0;
+}
+
+R_API void r_cons_errmode(int mode) {
+	I.context->errmode = mode;
+}
+
+R_API void r_cons_errmodes(const char *mode) {
+	int m = -1;
+	if (!strcmp (mode, "echo")) {
+		m = R_CONS_ERRMODE_ECHO;
+	} else if (!strcmp (mode, "null")) {
+		m = R_CONS_ERRMODE_NULL;
+	} else if (!strcmp (mode, "buffer")) {
+		m = R_CONS_ERRMODE_BUFFER;
+	} else if (!strcmp (mode, "quiet")) {
+		m = R_CONS_ERRMODE_QUIET;
+	} else if (!strcmp (mode, "flush")) {
+		m = R_CONS_ERRMODE_FLUSH;
+	}
+	I.context->errmode = m;
+}
+
+R_API char *r_cons_errstr(void) {
+	char *s = r_strbuf_drain (I.context->error);
+	I.context->error = NULL;
+	return s;
+}
+
+R_API int r_cons_eprintf(const char *format, ...) {
+	va_list ap;
+	r_return_val_if_fail (!R_STR_ISEMPTY (format), -1);
+	va_start (ap, format);
+	switch (I.context->errmode) {
+	case R_CONS_ERRMODE_NULL:
+		break;
+	case R_CONS_ERRMODE_ECHO:
+		vfprintf (stderr, format, ap);
+		break;
+	case R_CONS_ERRMODE_QUIET:
+	case R_CONS_ERRMODE_BUFFER:
+	case R_CONS_ERRMODE_FLUSH:
+		if (!I.context->error) {
+			I.context->error = r_strbuf_new ("");
+		}
+		r_strbuf_vappendf (I.context->error, format, ap);
+		break;
+	}
+	va_end (ap);
+
+	return r_strbuf_length (I.context->error);
 }
 
 R_API int r_cons_get_column(void) {
@@ -1957,11 +2031,15 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 
 		if (!strncmp (help_cmd, usage_str, strlen (usage_str))) {
 			/* Usage header */
-			r_cons_printf ("%s%s %s  %s%s\n",
-				pal_args_color, help_cmd, help_args, help_desc, pal_reset);
-			continue;
-		}
-		if (!help_args[0] && !help_desc[0]) {
+			r_cons_printf ("%s%s",pal_args_color, help_cmd);
+			if (help_args[0]) {
+				r_cons_printf (" %s", help_args);
+			}
+			if (help_desc[0]) {
+				r_cons_printf ("  %s", help_desc);
+			}
+			r_cons_printf ("%s\n", pal_reset);
+		} else if (!help_args[0] && !help_desc[0]) {
 			/* Section header, no need to indent it */
 			r_cons_printf ("%s%s%s\n", pal_help_color, help_cmd, pal_reset);
 		} else {

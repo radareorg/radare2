@@ -1,3 +1,19 @@
+NAME=linux syscall
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+asl $$ @@= 1 2 3 4
+EOF
+EXPECT=<<EOF
+write
+open
+close
+stat
+EOF
+RUN
+
 NAME=imul 1 arg
 FILE=-
 CMDS=<<EOF

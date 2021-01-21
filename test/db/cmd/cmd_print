@@ -596,7 +596,7 @@ EOF
 RUN
 
 NAME=print raw lines
-FILE=bins/other/projects/resetc64
+FILE=bins/other/projects/resetc64/rc.r2
 CMDS=<<EOF
 sl 5
 prl 1~[0]

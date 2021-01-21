@@ -1,4 +1,5 @@
 /*	$OpenBSD: regerror.c,v 1.13 2005/08/05 13:03:00 espie Exp $ */
+/* radare2: pancake 2020 */
 /*-
  * Copyright (c) 1992, 1993, 1994 Henry Spencer.
  * Copyright (c) 1992, 1993, 1994
@@ -40,11 +41,8 @@
 #include <ctype.h>
 #include <limits.h>
 #include <stdlib.h>
-#include "r_regex.h"
-
+#include "r_util.h"
 #include "utils.h"
-
-static char *regatoi(const RRegex*, char *, int);
 
 static struct rerr {
 	int code;
@@ -71,31 +69,47 @@ static struct rerr {
 };
 
 /*
+ - regatoi - internal routine to implement R_REGEX_ATOI
+ */
+static char * regatoi(const RRegex *preg, char *localbuf, size_t localbufsize) {
+	struct rerr *r;
+
+	for (r = rerrs; r->code != 0; r++) {
+		if (!strcmp (r->name, preg->re_endp)) {
+			break;
+		}
+	}
+	if (r->code == 0) {
+		return "0";
+	}
+
+	(void)snprintf (localbuf, localbufsize, "%d", r->code);
+	return(localbuf);
+}
+
+/*
  - regerror - the interface to error numbers
  = extern size_t regerror(int, const regex_t *, char *, size_t);
  */
-/* ARGSUSED */
-size_t
-r_regex_error(int errcode, const RRegex *preg, char *errbuf, size_t errbuf_size)
-{
+R_API char *r_regex_error(RRegex *rx, int errcode) {
+	size_t errbuf_size = 128;
+	char *errbuf = malloc (errbuf_size);
 	struct rerr *r;
-	size_t len;
 	int target = errcode &~ R_REGEX_ITOA;
 	char *s;
 	char convbuf[50];
 
 	if (errcode == R_REGEX_ATOI) {
-		s = regatoi(preg, convbuf, sizeof convbuf);
+		s = regatoi (rx, convbuf, sizeof convbuf);
 	} else {
 		for (r = rerrs; r->code != 0; r++) {
 			if (r->code == target) {
 				break;
 			}
 		}
-
-		if (errcode&R_REGEX_ITOA) {
+		if (errcode & R_REGEX_ITOA) {
 			if (r->code != 0) {
-				STRLCPY (convbuf, r->name, sizeof (convbuf)-1);
+				r_str_ncpy (convbuf, r->name, sizeof (convbuf)-1);
 			} else {
 				snprintf (convbuf, sizeof convbuf, "R_REGEX_0x%x", target);
 			}
@@ -104,32 +118,8 @@ r_regex_error(int errcode, const RRegex *preg, char *errbuf, size_t errbuf_size)
 			s = r->explain;
 		}
 	}
-
-	len = strlen(s) + 1;
-	if (errbuf_size > 0) {
-		STRLCPY(errbuf, s, errbuf_size - 1);
+	if (!R_STR_ISEMPTY (s)) {
+		r_str_ncpy (errbuf, s, errbuf_size - 1);
 	}
-
-	return len;
-}
-
-/*
- - regatoi - internal routine to implement R_REGEX_ATOI
- */
-static char *
-regatoi(const RRegex *preg, char *localbuf, int localbufsize)
-{
-	struct rerr *r;
-
-	for (r = rerrs; r->code != 0; r++) {
-		if (strcmp (r->name, preg->re_endp) == 0) {
-			break;
-		}
-	}
-	if (r->code == 0) {
-		return ("0");
-	}
-
-	(void)snprintf(localbuf, localbufsize, "%d", r->code);
-	return(localbuf);
+	return errbuf;
 }

@@ -11,8 +11,7 @@
 
 #include <r_core.h>
 
-static bool is_valid_gdb_file(RCoreFile *fh) {
-	RIODesc *d = fh && fh->core ? r_io_desc_get (fh->core->io, fh->fd) : NULL;
+static bool is_valid_gdb_file(RIODesc *d) {
 	return d && strncmp (d->name, "gdb://", 6);
 }
 
@@ -331,15 +330,13 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	RListIter *iter;
 	int do_analysis = 0;
 	char *cmdn, *tmp;
-	RCoreFile *fh = NULL;
+	RIODesc *fh = NULL;
 	RIODesc *iod = NULL;
 	const char *patchfile = NULL;
-	const char *prj = NULL;
 	int debug = 0;
 	int zflag = 0;
 	bool do_connect = false;
 	bool fullfile = false;
-	int has_project;
 	bool zerosep = false;
 	int help = 0;
 	enum { LOAD_BIN_ALL, LOAD_BIN_NOTHING, LOAD_BIN_STRUCTURES_ONLY } load_bin = LOAD_BIN_ALL;
@@ -351,7 +348,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	bool do_list_io_plugins = false;
 	char *file = NULL;
 	char *pfile = NULL;
-	char *debugbackend = strdup ("native");
 	const char *asmarch = NULL;
 	const char *asmos = NULL;
 	const char *forcebin = NULL;
@@ -450,6 +446,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	set_color_default (r);
 	bool load_l = true;
+	char *debugbackend = strdup ("native");
+	const char *project_name = NULL;
 
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
@@ -592,7 +590,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				LISTS_FREE ();
 				return 0;
 			}
-			r_config_set (r->config, "prj.name", opt.arg);
+			project_name = opt.arg;
 			break;
 		case 'P':
 			if (R_STR_ISEMPTY (opt.arg)) {
@@ -820,10 +818,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 	r_bin_force_plugin (r->bin, forcebin);
 
-	prj = r_config_get (r->config, "prj.name");
-	if (prj && *prj) {
-		r_core_project_open (r, prj, false);
-		r_config_set (r->config, "bin.strings", "false");
+	if (project_name) {
+		r_core_project_open (r, project_name);
 	}
 
 	if (do_connect) {
@@ -947,7 +943,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (envprofile);
 			return 1;
 		}
-	} else if (strcmp (argv[opt.ind - 1], "--") && !(r_config_get (r->config, "prj.name") && r_config_get (r->config, "prj.name")[0]) ) {
+	} else if (strcmp (argv[opt.ind - 1], "--") && !project_name) {
 		if (debug) {
 			if (asmbits) {
 				r_config_set (r->config, "asm.bits", asmbits);
@@ -1126,7 +1122,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 								filepath = file? strstr (file, "://"): NULL;
 								filepath = filepath ? filepath + 3 : pfile;
 							}
-							if (r->file && iod && (iod->fd == r->file->fd) && iod->name) {
+							if (r->io->desc && iod && (iod->fd == r->io->desc->fd) && iod->name) {
 								filepath = iod->name;
 							}
 							/* Load rbin info from r2 dbg:// or r2 /bin/ls */
@@ -1147,9 +1143,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					}
 				}
 			} else {
-				const char *prj = r_config_get (r->config, "prj.name");
-				if (prj && *prj) {
-					pfile = r_core_project_info (r, prj);
+				if (project_name) {
+					pfile = r_core_project_name (r, project_name);
 					if (pfile) {
 						if (!fh) {
 							fh = r_core_file_open (r, pfile, perms, mapaddr);
@@ -1178,7 +1173,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			}
 		} else {
-			RCoreFile *f = r_core_file_open (r, pfile, perms, mapaddr);
+			RIODesc *f = r_core_file_open (r, pfile, perms, mapaddr);
 			if (f) {
 				fh = f;
 			}
@@ -1234,7 +1229,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			ret = 1;
 			goto beach;
 		}
-		if (!r->file) { // no given file
+		if (!r->io->desc) { // no given file
 			ret = 1;
 			goto beach;
 		}
@@ -1261,7 +1256,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_set (r->config, "asm.os", asmos);
 		}
 
-		debug = r->file && iod && (r->file->fd == iod->fd) && iod->plugin && \
+		debug = r->io->desc && iod && (r->io->desc->fd == iod->fd) && iod->plugin && \
 			iod->plugin->isdbg;
 		if (debug) {
 			r_core_setup_debugger (r, debugbackend, baddr == UT64_MAX);
@@ -1304,22 +1299,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		}
 
 		r_core_seek (r, r->offset, true); // read current block
-
-		/* check if file.path has changed */
-		if (iod && !strstr (iod->uri, "://")) {
-			const char *npath;
-			char *path = strdup (r_config_get (r->config, "file.path"));
-			has_project = r_core_project_open (r, r_config_get (r->config, "prj.name"), false);
-			iod = r->io ? r_io_desc_get (r->io, fh->fd) : NULL;
-			if (has_project) {
-				r_config_set (r->config, "bin.strings", "false");
-			}
-			npath = r_config_get (r->config, "file.path");
-			if (!quiet && path && *path && npath && strcmp (path, npath)) {
-				eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
-			}
-			free (path);
-		}
 
 		r_list_foreach (evals, iter, cmdn) {
 			r_config_eval (r->config, cmdn, false);
@@ -1477,7 +1456,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					}
 				}
 
-				prj = r_config_get (r->config, "prj.name");
+				const char *prj = r_config_get (r->config, "prj.name");
 				if (no_question_save) {
 					if (prj && *prj && y_save_project){
 						r_core_project_save (r, prj);

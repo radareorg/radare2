@@ -14,6 +14,7 @@ R_API bool r_file_is_directory(const char *str);
 R_API bool r_file_is_regular(const char *str);
 
 R_API bool r_file_truncate(const char *filename, ut64 newsize);
+R_API char *r_file_new(const char *root, ...);
 R_API ut64 r_file_size(const char *str);
 R_API char *r_file_root(const char *root, const char *path);
 R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base);
@@ -48,7 +49,8 @@ R_API char *r_file_slurp_lines_from_bottom(const char *file, int line);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 R_API char *r_file_readlink(const char *path);
-R_API bool r_file_copy (const char *src, const char *dst);
+R_API bool r_file_copy(const char *src, const char *dst);
+R_API bool r_file_move(const char *src, const char *dst);
 R_API RList* r_file_globsearch (const char *globbed_path, int maxdepth);
 R_API RMmap *r_file_mmap_arch (RMmap *map, const char *filename, int fd);
 

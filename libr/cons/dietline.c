@@ -1063,7 +1063,7 @@ static void __vi_mode(void) {
 		if (I.echo) {
 			__print_prompt ();
 		}
-		if (I.vi_mode != CONTROL_MODE) {		// exit if insert mode is selected
+		if (I.vi_mode != CONTROL_MODE) {	// exit if insert mode is selected
 			__update_prompt_color ();
 			break;
 		}
@@ -1097,13 +1097,15 @@ static void __vi_mode(void) {
 		case 'r': {
 			char c =  r_cons_readchar ();
 			I.buffer.data[I.buffer.index] = c;
-			} break;
+			break;
+		}
 		case 'x':
 			while (rep--) {
 				__delete_next_char ();
-			} break;
+			}
+			break;
 		case 'c':
-			I.vi_mode = INSERT_MODE;			// goto insert mode
+			I.vi_mode = INSERT_MODE;	// goto insert mode
 		case 'd': {
 			char c = r_cons_readchar ();
 			while (rep--) {
@@ -1120,7 +1122,8 @@ static void __vi_mode(void) {
 					if (I.hud) {
 						I.hud->vi = false;
 					}
-					} break;
+					break;
+				}
 				case 'W':
 					kill_Word ();
 					break;
@@ -1149,8 +1152,9 @@ static void __vi_mode(void) {
 					I.buffer.index = 0;
 					break;
 				} __print_prompt ();
-			}
-			} break;
+			} // end of while (rep--)
+			break;
+		} // end of case 'd'
 		case 'I':
 			if (I.hud) {
 				I.hud->vi = false;
@@ -1178,11 +1182,13 @@ static void __vi_mode(void) {
 				gcomp = false;
 			} else {
 				I.buffer.index = I.buffer.length;
-			} break;
+			}
+			break;
 		case 'p':
 			while (rep--) {
 				paste ();
-			} break;
+			}
+			break;
 		case 'a':
 			__move_cursor_right ();
 		case 'i':
@@ -1194,35 +1200,43 @@ static void __vi_mode(void) {
 		case 'h':
 			while (rep--) {
 				__move_cursor_left ();
-			} break;
+			}
+			break;
 		case 'l':
 			while (rep--) {
 				__move_cursor_right ();
-			} break;
+			}
+			break;
 		case 'E':
 			while (rep--) {
 				vi_cmd_E ();
-			} break;
+			}
+			break;
 		case 'e':
 			while (rep--) {
 				vi_cmd_e ();
-			} break;
+			}
+			break;
 		case 'B':
 			while (rep--) {
 				vi_cmd_B ();
-			} break;
+			}
+			break;
 		case 'b':
 			while (rep--) {
 				vi_cmd_b ();
-			} break;
+			}
+			break;
 		case 'W':
 			while (rep--) {
 				vi_cmd_W ();
-			} break;
+			}
+			break;
 		case 'w':
 			while (rep--) {
 				vi_cmd_w ();
-			} break;
+			}
+			break;
 		default:					// escape key
 			ch = tolower (r_cons_arrow_to_hjkl (ch));
 			switch (ch) {

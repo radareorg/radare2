@@ -20,7 +20,7 @@ bool test_r_hex_from_code() {
 	r = r_hex_from_code (s);
 	mu_assert_streq (r, "41424344", s);
 	free (r);
-	s = "char *s = \"\n\r\e\"";
+	s = "char *s = \"\n\r\033\"";
 	r = r_hex_from_code (s);
 	mu_assert_streq (r, "0a0d1b", s);
 	free (r);
@@ -71,7 +71,7 @@ bool test_r_hex_from_c() {
 	r = r_hex_from_c (s);
 	mu_assert_streq (r, "41424344", s);
 	free (r);
-	s = "char *s = \"\n\r\e\"";
+	s = "char *s = \"\n\r\033\"";
 	r = r_hex_from_c (s);
 	mu_assert_streq (r, "0a0d1b", s);
 	free (r);

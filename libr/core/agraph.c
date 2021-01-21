@@ -247,11 +247,12 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int left) {
 	const char *shortcut = sdb_const_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", nodetitle), 0);
 	if (shortcut) {
+		size_t n = strlen (title);
 		if (g->can->color) {
 			// XXX: do not hardcode color here
-			strncat (title, sdb_fmt (Color_YELLOW"[o%s]"Color_RESET,  shortcut), left);
+			snprintf (title + n, left, "%s", sdb_fmt (Color_YELLOW"[o%s]"Color_RESET,  shortcut));
 		} else {
-			strncat (title, sdb_fmt ("[o%s]", shortcut), left);
+			snprintf (title + n, left, "%s", sdb_fmt ("[o%s]", shortcut));
 		}
 	}
 }
@@ -303,7 +304,7 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 			} else {
 				snprintf (title, sizeof (title) - 1, "__%s__", str);
 			}
-			append_shortcut (g, title, n->title, sizeof (title) - strlen (title) - 1);
+			append_shortcut (g, title, n->title, sizeof (title) - strlen (title));
 			W (r_str_ansi_crop (title, delta_x, 0, 20, 1));
 		}
 	} else {
@@ -364,7 +365,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		} else {
 			char *color = g->can->color ? Color_RESET : "";
 			snprintf (title, sizeof (title) - 1, " %s%s ", color, n->title);
-			append_shortcut (g, title, n->title, sizeof (title) - strlen (title) - 1);
+			append_shortcut (g, title, n->title, sizeof (title) - strlen (title));
 		}
 		if ((delta_x < strlen (title)) && G (n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
 			char *res = r_str_ansi_crop (title, delta_x, 0, n->w - BORDER_WIDTH, 1);
@@ -3243,7 +3244,6 @@ static void agraph_follow_innodes(RAGraph *g, bool in) {
 	if (!an) {
 		return;
 	}
-	RGraphNode *gn = an->gnode;
 	const RList *list = in? an->gnode->in_nodes: an->gnode->out_nodes;
 	int nth = -1;
 	if (r_list_length (list) == 0) {
@@ -3253,6 +3253,7 @@ static void agraph_follow_innodes(RAGraph *g, bool in) {
 	r_cons_printf (in? "Input nodes:\n": "Output nodes:\n");
 	RList *options = r_list_newf (NULL);
 	RList *gnodes = in? an->gnode->in_nodes: an->gnode->out_nodes;
+	RGraphNode *gn;
 	r_list_foreach (gnodes, iter, gn) {
 		RANode *an = get_anode (gn);
 		RGraphNode *gnn = agraph_get_title (g, an, in);
@@ -3516,7 +3517,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	}
 
 	// allow to change the current function during debugging
-	if (g->is_instep && core->bin->is_debugger) {
+	if (g->is_instep && r_config_get_i (core->config, "cfg.debug")) {
 		// seek only when the graph node changes
 		const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 		RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
@@ -4477,6 +4478,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			RStrBuf *rsb = r_strbuf_new ("");
 			r_core_visual_append_help (rsb, "Visual Graph Mode (VV) Help", help_msg_visual_graph);
 			ret = r_cons_less_str (r_strbuf_get (rsb), "?");
+			r_strbuf_free (rsb);
 			break;
 		case '"':
 			r_config_toggle (core->config, "graph.refs");
@@ -4960,7 +4962,9 @@ R_API RAGraph *create_agraph_from_graph(const RGraph/*<RGraphNodeInfo>*/ *graph)
 	}
 	result_agraph->need_reload_nodes = false;
 	// Cache lookup to build edges
-	HtPP /*<RGraphNode *node, RANode *anode>*/ *hashmap = ht_pp_new0 ();
+	HtPPOptions pointer_options = { 0 };
+	HtPP /*<RGraphNode *node, RANode *anode>*/ *hashmap = ht_pp_new_opt (&pointer_options);
+	
 	if (!hashmap) {
 		r_agraph_free (result_agraph);
 		return NULL;

@@ -11,7 +11,7 @@
 
 #define SKIPLIST_MAX_DEPTH 31
 
-static RSkipListNode *r_skiplist_node_new (void *data, int level) {
+static RSkipListNode *r_skiplist_node_new(void *data, int level) {
 	RSkipListNode *res = R_NEW0 (RSkipListNode);
 	if (!res) {
 		return NULL;
@@ -25,7 +25,7 @@ static RSkipListNode *r_skiplist_node_new (void *data, int level) {
 	return res;
 }
 
-static void r_skiplist_node_free (RSkipList *list, RSkipListNode *node) {
+static void r_skiplist_node_free(RSkipList *list, RSkipListNode *node) {
 	if (node) {
 		if (list->freefn && node->data) {
 			list->freefn (node->data);
@@ -35,7 +35,7 @@ static void r_skiplist_node_free (RSkipList *list, RSkipListNode *node) {
 	}
 }
 
-static void init_head (RSkipListNode *head) {
+static void init_head(RSkipListNode *head) {
 	int i;
 	for (i = 0; i <= SKIPLIST_MAX_DEPTH; i++) {
 		head->forward[i] = head;
@@ -196,6 +196,17 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	list->list_level = new_level;
 	list->size++;
 	return x;
+}
+
+R_API bool r_skiplist_insert_autofree(RSkipList* list, void* data) {
+	RSkipListNode* node = r_skiplist_insert (list, data);
+	if (node && data != node->data) { // duplicate
+		if (list->freefn) {
+			list->freefn (data);
+		}
+		return false;
+	}
+	return true;
 }
 
 // Delete node with data as it's payload.

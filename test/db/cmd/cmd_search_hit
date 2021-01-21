@@ -19,8 +19,8 @@ w hello @ 10
 psz @@/j hello
 EOF
 EXPECT=<<EOF
-[{"offset":10,"type":"string","data":"hello"}hello
-]
+hello
+[{"offset":10,"type":"string","data":"hello"}]
 EOF
 RUN
 

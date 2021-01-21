@@ -41,6 +41,8 @@
 #include <limits.h>
 #include <stdlib.h>
 #include "r_regex.h"
+#include "r_util/r_str.h"
+#include "r_util/r_assert.h"
 
 #include "utils.h"
 #include "regex2.h"
@@ -138,29 +140,40 @@ static char nuls[10];		/* place to point scanner in event of error */
 #define	DROP(n)	(p->slen -= (n))
 
 
-R_API int r_regex_match (const char *pattern, const char *flags, const char *text) {
-	int ret;
+R_API bool r_regex_match(const char *pattern, const char *flags, const char *text) {
 	RRegex rx;
 	int re_flags = r_regex_flags (flags);
-	if (r_regex_comp (&rx, pattern, re_flags)) {
-		eprintf ("FAIL TO COMPILE %s\n", pattern);
-		return 0;
+	if (r_regex_init (&rx, pattern, re_flags)) {
+		eprintf ("r_regex_match: /%s/ fails to compile.\n", pattern);
+		return false;
 	}
-	ret = r_regex_exec (&rx, text, 0, 0, re_flags);
+	int rc = r_regex_exec (&rx, text, 0, 0, re_flags);
 	r_regex_fini (&rx);
-	return ret? 0: 1;
-#if 0
-	regex_t preg;
-	regmatch_t pmatch[NUM_MATCHES];
-	if (regcomp(&preg, reg, REG_EXTENDED))
-		return -1;
-	return (regexec (&preg, str, NUM_MATCHES, pmatch, 0))?1:0;
-#endif
+	return rc == 0;
+}
+
+R_API RList *r_regex_match_list(RRegex *rx, const char *text) {
+	RList *list = r_list_newf (free);
+	RRegexMatch match;
+
+	/* Initialize the boundaries for R_REGEX_STARTEND */
+	match.rm_so = 0;
+	match.rm_eo = strlen (text);
+	while (!r_regex_exec (rx, text, 1, &match, rx->re_flags | R_REGEX_STARTEND)) {
+		size_t entry_len = match.rm_eo - match.rm_so + 1;
+		char *entry = r_str_ndup (text + match.rm_so, entry_len);
+		r_list_append (list, entry);
+		/* Update the boundaries for R_REGEX_STARTEND */
+		match.rm_so = match.rm_eo;
+		match.rm_eo = strlen (text);
+	}
+	return list;
 }
 
 R_API RRegex *r_regex_new(const char *pattern, const char *flags) {
+	r_return_val_if_fail (pattern, NULL);
 	RRegex *r, rx = {0};
-	if (r_regex_comp (&rx, pattern, r_regex_flags (flags))) {
+	if (r_regex_init (&rx, pattern, r_regex_flags (flags))) {
 		return NULL;
 	}
 	r = R_NEW (RRegex);
@@ -232,18 +245,12 @@ R_API void r_regex_free(RRegex *preg) {
  - regcomp - interface for parser and compilation
  - 0 success, otherwise R_REGEX_something
  */
-R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
+R_API int r_regex_init(RRegex *preg, const char *pattern, int cflags) {
 	struct parse pa;
-	struct re_guts *g;
 	struct parse *p = &pa;
 	int i;
 	size_t len;
-#ifdef REDEBUG
-#	define	GOODFLAGS(f)	(f)
-#else
-#	define	GOODFLAGS(f)	((f)&~R_REGEX_DUMP)
-#endif
-	cflags = GOODFLAGS (cflags);
+	cflags &= ~R_REGEX_DUMP;
 	if (!preg || ((cflags & R_REGEX_EXTENDED) && (cflags & R_REGEX_NOSPEC))) {
 		return R_REGEX_INVARG;
 	}
@@ -256,7 +263,7 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 		len = strlen ((char *)pattern);
 	}
 	/* do the mallocs early so failure handling is easy */
-	g = (struct re_guts *)calloc (sizeof (struct re_guts) + (NC - 1), sizeof (cat_t));
+	struct re_guts *g = (struct re_guts *)calloc (sizeof (struct re_guts) + (NC - 1), sizeof (cat_t));
 	if (!g) {
 		return R_REGEX_ESPACE;
 	}
@@ -340,12 +347,10 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 	preg->re_nsub = g->nsub;
 	preg->re_g = g;
 	preg->re_magic = MAGIC1;
-#ifndef REDEBUG
 	/* not debugging, so can't rely on the asssert() in regexec() */
 	if (g->iflags & BAD) {
 		SETERROR (R_REGEX_ASSERT);
 	}
-#endif
 	if (p->error) {
 		r_regex_fini (preg);
 	}
@@ -1388,7 +1393,7 @@ static void mcadd( struct parse *p, cset *cs, char *cp) {
 	}
 	cs->multis = np;
 
-	STRLCPY(cs->multis + oldend - 1, cp, cs->smultis - oldend + 1);
+	r_str_ncpy (cs->multis + oldend - 1, cp, cs->smultis - oldend + 1);
 }
 
 /*

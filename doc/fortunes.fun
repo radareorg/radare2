@@ -276,7 +276,6 @@ Use rabin2 to discover the real TRUTH
 **** COMMODORE 64 RADARE V2 ****  64K RAM SYSTEM  38911 DISASM BYTES FREE  READY.
 Most likely your core dump fell into a blackhole, can't see it.
 Long time no C
-radare2 is power, France is pancake.
 Come to C me!
 Unable to locate package gdb
 You C it, you fix it!
@@ -291,5 +290,4 @@ For a full documentation see `r2 -qc iz /lib/libr_core.so`
 I like my binary stripped.
 Now 8-bit clean with better ＡＳＣＩＩ!
 Please insert disc 2 and press any key to continue...
-You aren't losing functionality, you are losing the illusion that you ever had anything reliable. -- Darren J. Moffat, OpenSolaris developer
 DOOM all the things!

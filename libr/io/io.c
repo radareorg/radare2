@@ -205,6 +205,8 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 			}
 		}
 	}
+	// ensure no double free with r_list_close and r_io_free
+	desc_list->free = NULL;
 	return desc_list;
 }
 

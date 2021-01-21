@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2020 - pancake */
+/* radare - LGPL - Copyright 2019-2021 - pancake */
 
 #include <r_util/r_table.h>
 #include "r_cons.h"
@@ -91,10 +91,11 @@ R_API RTableColumn *r_table_column_clone(RTableColumn *col) {
 	return c;
 }
 
-R_API RTable *r_table_new(void) {
+R_API RTable *r_table_new(const char *name) {
 	RTable *t = R_NEW0 (RTable);
 	if (t) {
 		t->showHeader = true;
+		t->name = strdup (name);
 		t->cols = r_list_newf (r_table_column_free);
 		t->rows = r_list_newf (r_table_row_free);
 		t->showSum = false;
@@ -108,6 +109,7 @@ R_API void r_table_free(RTable *t) {
 	}
 	r_list_free (t->cols);
 	r_list_free (t->rows);
+	free (t->name);
 	free (t);
 }
 
@@ -405,8 +407,14 @@ static int __strbuf_append_col_aligned(RStrBuf *sb, RTableColumn *col, const cha
 }
 
 R_API char *r_table_tostring(RTable *t) {
+	if (!t) { // guard
+		return strdup ("");
+	}
 	if (t->showR2) {
 		return r_table_tor2cmds (t);
+	}
+	if (t->showSQL) {
+		return r_table_tosql (t);
 	}
 	if (t->showCSV) {
 		return r_table_tocsv (t);
@@ -504,6 +512,57 @@ R_API char *r_table_tor2cmds(RTable *t) {
 			c++;
 		}
 		r_strbuf_append (sb, "\n");
+	}
+	return r_strbuf_drain (sb);
+}
+
+R_API char *r_table_tosql(RTable *t) {
+	r_return_val_if_fail (t, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
+	RTableRow *row;
+	RTableColumn *col;
+	RListIter *iter, *iter2;
+
+	const char *table_name = R_STR_ISEMPTY (t->name)? "r2": t->name;
+	r_strbuf_appendf (sb, "CREATE TABLE %s (", table_name);
+	bool primary_key = true;
+	r_list_foreach (t->cols, iter, col) {
+		const char *type = col->type == &r_table_type_string? "VARCHAR": "NUMERIC(20)";
+		const char *comma = iter->n? ", ": "";
+		const char *pkey = primary_key? " PRIMARY KEY": "";
+		char *s = r_str_escape_sql (col->name);
+		r_strbuf_appendf (sb, "%s %s%s%s", s, type, pkey, comma);
+		free (s);
+		primary_key = false;
+	}
+	r_strbuf_appendf (sb, ");\n");
+
+	r_list_foreach (t->rows, iter, row) {
+		const char *item;
+		int c = 0;
+		r_strbuf_appendf (sb, "INSERT INTO %s (", table_name);
+		r_list_foreach (t->cols, iter2, col) {
+			const char *comma = iter2->n? ", ": "";
+			char *s = r_str_escape_sql (col->name);
+			r_strbuf_appendf (sb, "%s%s", s, comma);
+			free (s);
+		}
+		r_strbuf_append (sb, ") VALUES (");
+		r_list_foreach (row->items, iter2, item) {
+			RTableColumn *col = r_list_get_n (t->cols, c);
+			if (col) {
+				const char *comma = iter2->n? ", ": "";
+				if (col->type == &r_table_type_string) {
+					char *s = r_str_escape_sql (item);
+					r_strbuf_appendf (sb, "'%s'%s", s, comma);
+					free (s);
+				} else {
+					r_strbuf_appendf (sb, "%s%s", item, comma);
+				}
+			}
+			c++;
+		}
+		r_strbuf_append (sb, ");\n");
 	}
 	return r_strbuf_drain (sb);
 }
@@ -971,6 +1030,7 @@ R_API const char *r_table_help(void) {
 		" :fancy         .tostring() == .tofancystring()\n"
 		" :json          .tostring() == .tojson()\n"
 		" :simple        simple table output without lines\n"
+		" :sql           .tostring() == .tosql() # export table contents in SQL statements\n"
 		" :quiet         do not print column names header\n";
 }
 
@@ -982,6 +1042,8 @@ static bool __table_special(RTable *t, const char *columnName) {
 		t->showHeader = true;
 	} else if (!strcmp (columnName, ":fancy")) {
 		t->showFancy = true;
+	} else if (!strcmp (columnName, ":sql")) {
+		t->showSQL = true;
 	} else if (!strcmp (columnName, ":simple")) {
 		t->showFancy = false;
 	} else if (!strcmp (columnName, ":r2")) {
@@ -1191,7 +1253,7 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 }
 
 R_API RTable *r_table_clone(const RTable *t) {
-	RTable *o = r_table_new ();
+	RTable *o = r_table_new (t->name);
 	RTableColumn *col;
 	RTableRow *row;
 	RListIter *iter;

@@ -28,7 +28,6 @@ typedef struct r_list_t {
 typedef struct r_list_range_t {
 	HtPP *h;
 	RList *l;
-	//RListComparator c;
 } RListRange;
 
 // RListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
@@ -42,7 +41,6 @@ typedef struct r_oflist_t {
 #endif
 
 #ifdef R_API
-// #define R_LIST_NEW(x,y) x = r_list_new (); x->free = (RListFree)y
 #define r_list_foreach(list, it, pos)\
 	if (list)\
 		for (it = list->head; it && (pos = it->data, 1); it = it->n)
@@ -59,20 +57,18 @@ typedef struct r_oflist_t {
 #define r_list_foreach_prev_safe(list, it, tmp, pos) \
 	for (it = list->tail; it && (pos = it->data, tmp = it->p, 1); it = tmp)
 #ifndef _R_LIST_C_
-#define r_list_push(x, y) r_list_append (x, y)
+#define r_list_push(x, y) r_list_append ((x), (y))
 #define r_list_iterator(x) (x)? (x)->head: NULL
 // #define r_list_empty(x) (!x || (!(x->head) && !(x->tail)))
 #define r_list_empty(x) (!(x) || !(x)->length)
 #define r_list_head(x) ((x)? (x)->head: NULL)
 #define r_list_tail(x) ((x)? (x)->tail: NULL)
 
-#define r_list_iter_get(x)\
-	x->data;\
-	x = x->n
-#define r_list_iter_next(x) (x? 1: 0)
+#define r_list_iter_get(x) (x)->data; (x)=(x)->n
+#define r_list_iter_next(x) ((x)? 1: 0)
 
-#define r_list_iter_cur(x) x->p
-#define r_list_iter_free(x) x
+#define r_list_iter_cur(x) (x)->p
+#define r_list_iter_free(x) (x)
 #endif
 R_API RList *r_list_new(void);
 R_API RList *r_list_newf(RListFree f);

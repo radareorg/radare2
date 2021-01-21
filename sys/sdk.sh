@@ -14,7 +14,7 @@ fi
 export CFLAGS="-Os -fPIC"
 make mrproper
 if [ -z "${R2_PLUGINS_CFG}" ]; then
-	R2_PLUGINS_CFG=plugins.bin.cfg
+	R2_PLUGINS_CFG=dist/plugins-cfg/plugins.bin.cfg
 fi
 cp -f "${R2_PLUGINS_CFG}" plugins.cfg
 #./configure-plugins

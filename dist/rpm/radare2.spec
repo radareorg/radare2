@@ -1,19 +1,20 @@
-%global         gituser         radare
+%global         gituser         radareorg
 %global         gitname         radare2
-#global         commit          a093958b6d24015d82782eb20a2e10d8f4afcd85
-%global         commit          5a3dab0a86e1452c0bb0c13d869f95b41f50b9a9
+#global         commit          5a3dab0a86e1452c0bb0c13d869f95b41f50b9a9
+%global         commit          5860c3efc12d4b75e72bdce4b1d3834599620913
 %global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           radare2
-Version:        0.10.0
+Version:        5.1.0
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
 License:        LGPLv3
-URL:            http://radare.org/
+URL:            https://www.radare.org/
 #Source0:        http://radare.org/get/%{name}-%{version}.tar.gz
 #Source0:        http://radare.org/get/%{name}-%{version}.tar.xz
-Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-%{shortcommit}.tar.gz
+# Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-%{shortcommit}.tar.gz
+Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-git.tar.gz
 
 
 BuildRequires:  file-devel
@@ -106,6 +107,9 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 
 
 %changelog
+* Sat Oct 10 2020 pancake <pancake@nopcode.org> 5.1.0
+- update for latest centos8 and r2 codebase
+
 * Sat Oct 10 2015 Michal Ambroz <rebus at, seznam.cz> 0.10.0-1
 - build for Fedora for alpha of 0.10.0
 

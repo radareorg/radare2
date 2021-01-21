@@ -1,3 +1,26 @@
+NAME=seekinstr
+FILE=bins//mach0/ired-arm64
+ARGS=-e cfg.newshell=false
+CMDS=<<EOF
+# TODO: this test doesnt work on newshell
+afr
+?v $Fe
+s $I1@$Fe
+pi 1
+?v $Fb
+s $i1
+pi 1
+?v $Fb
+EOF
+EXPECT=<<EOF
+0x1000058e4
+b.lt 0x100005d34
+0x100005864
+ldr x21, [x20, 8]
+0x1000058e4
+EOF
+RUN
+
 NAME=seekop
 FILE=bins//mach0/ired-arm64
 CMDS=<<EOF

@@ -303,7 +303,8 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 		break;
 	}
 
-	strncat(cmd->operands, dstbuf, sizeof (cmd->operands) - 1 - strlen(cmd->operands));
+	size_t n = strlen (cmd->operands);
+	snprintf (cmd->operands + n, sizeof (cmd->operands) - n, "%s", dstbuf);
 	decode_emulation(instr, cmd);
 	return ret;
 }
@@ -312,10 +313,8 @@ static int decode_twoop_opcode(ut16 instr, ut16 op1, ut16 op2, struct msp430_cmd
 {
 	ut8 opcode = get_twoop_opcode(instr);
 
-	snprintf (cmd->instr, sizeof (cmd->instr), "%s", two_op_instrs[opcode]);
-	if (get_bw (instr)) {
-		strncat (cmd->instr, ".b", sizeof (cmd->instr) - 1 - strlen(cmd->instr));
-	}
+	snprintf (cmd->instr, sizeof (cmd->instr), "%s%s", two_op_instrs[opcode],
+		get_bw (instr) ? ".b" : "");
 
 	cmd->opcode = opcode;
 	return decode_addressing_mode (instr, op1, op2, cmd);

@@ -33,6 +33,7 @@ size: 62
 is-pure: true
 realsz: 62
 stackframe: 0
+call-convention: reg
 cyclomatic-cost: 0
 cyclomatic-complexity: 1
 bits: 32
