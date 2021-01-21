@@ -1127,10 +1127,10 @@ INST_HANDLER (rcall) {	// RCALL k
 		return;
 	}
 	// target address
-	op->jump = (op->addr
-		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
+	op->jump = op->addr + (
+		(((((buf[1] & 0xf) << 8) | buf[0]) << 1)
 			| (((buf[1] & 0x8) ? ~((int) 0x1fff) : 0)))
-		+ 2) & CPU_PC_MASK (cpu);
+		+ 2);
 	op->fail = op->addr + op->size;
 	// esil
 	ESIL_A ("pc,");				// esil already points to next
@@ -1174,16 +1174,10 @@ INST_HANDLER (reti) {	// RETI
 }
 
 INST_HANDLER (rjmp) {	// RJMP k
-	op->jump = (op->addr
-#ifdef _MSC_VER
-#pragma message ("anal_avr.c: WARNING: Probably broken on windows")
-		+ ((((( buf[1] & 0xf) << 9) | (buf[0] << 1)))
+	st32 jump = ((((( buf[1] & 0xf) << 9) | (buf[0] << 1)))
 			| (buf[1] & 0x8 ? ~(0x1fff) : 0))
-#else
-		+ ((((( (typeof (op->jump)) buf[1] & 0xf) << 9) | ((typeof (op->jump)) buf[0] << 1)))
-			| (buf[1] & 0x8 ? ~((typeof (op->jump)) 0x1fff) : 0))
-#endif
-		+ 2) & CPU_PC_MASK (cpu);
+		+ 2;
+	op->jump = op->addr + jump;
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);
 }
 
@@ -1697,11 +1691,11 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		!strcmp (mnemonic, "truncated")) {
 		op->eob = true;
 		op->mnemonic = strdup(mnemonic);
-		size = -2;
+		return -1;
 	}
 
-	if (!op || size < 0) {
-		return size;
+	if (!op) {
+		return -1;
 	}
 
 	// select cpu info
