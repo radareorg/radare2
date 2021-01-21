@@ -1810,7 +1810,7 @@ RUN
 NAME=two-operand line highlight; asm.highlight ecHw fix; ec wordhl/linehl
 FILE=bins/elf/redpill
 CMDS=<<EOF
-. bins/src/palette.r2
+. scripts/palette.r2
 e scr.color=3
 e emu.str=true
 e emu.pre=true
@@ -2222,6 +2222,6 @@ pi 1 @e:asm.imm.trim=true
 EOF
 EXPECT=<<EOF
 and esp, 0xfffffff0
-and esp, 
+and esp,
 EOF
 RUN

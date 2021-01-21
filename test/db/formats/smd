@@ -129,7 +129,7 @@ RUN
 NAME=smd strings
 FILE=malloc://256k
 CMDS=<<EOF
-. bins/src/smd_strings.r2
+. scripts/smd_strings.r2
 e bin.str.filter=U
 izz
 EOF
@@ -137,7 +137,7 @@ EXPECT=<<EOF
 [Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
-0   0x00000100 0x00000100 160 161          ascii SEGA GENESIS    (C)SEGA 1995.MARCART. BRADESCO                                  CART. BRADESCO                                  GM 00000001-00W`J               
+0   0x00000100 0x00000100 160 161          ascii SEGA GENESIS    (C)SEGA 1995.MARCART. BRADESCO                                  CART. BRADESCO                                  GM 00000001-00W`J
 6   0x00007974 0x00007974 24  25           ascii AT&FV0B0+FCLASS=1;+FF=1\r
 7   0x00007ad9 0x00007ad9 15  16           ascii NMEMORIA CHEIA.
 8   0x00007ae9 0x00007ae9 13  14           ascii SEM PORTADORA
@@ -163,8 +163,8 @@ nth paddr      vaddr      len size section type  string
 28  0x00007c57 0x00007c57 23  24           ascii DATA,HIST.,DOCTO,VALOR,
 29  0x00007c74 0x00007c74 15  16           ascii SALDO VINCULADO
 30  0x00007c8d 0x00007c8d 45  46           ascii SALDO DISPONIVEL,SALDO VINCULADO,SALDO TOTAL,
-31  0x00007ccd 0x00007ccd 14  15           ascii  ERRO CLASS 1 
-33  0x00007cf3 0x00007cf3 15  16           ascii SALDO ATUAL    
+31  0x00007ccd 0x00007ccd 14  15           ascii  ERRO CLASS 1
+33  0x00007cf3 0x00007cf3 15  16           ascii SALDO ATUAL
 34  0x00007d03 0x00007d03 64  65           ascii DATA,SALDO TOTAL,DATA,SALDO VINCULADO,DATA,SALDO C/L PROGRAMADO,
 35  0x00007d44 0x00007d44 20  21           ascii FALHA DE COMUNICACAO
 36  0x00007d59 0x00007d59 15  16           ascii HOST INOPERANTE
