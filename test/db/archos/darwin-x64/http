@@ -1,6 +1,6 @@
 NAME==h
 FILE=--
-CMDS=!!scripts/test-webserver.sh
+CMDS=!scripts/test-webserver.sh
 EXPECT=<<EOF
             ; [14] -r-x section size 594 named .text
             ;-- entry0:
@@ -56,5 +56,3 @@ open http://localhost:9292/
 r2 -C http://localhost:9292/cmd/
 EOF
 RUN
-
-

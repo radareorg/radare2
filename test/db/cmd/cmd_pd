@@ -2222,6 +2222,6 @@ pi 1 @e:asm.imm.trim=true
 EOF
 EXPECT=<<EOF
 and esp, 0xfffffff0
-and esp, 
+and esp,
 EOF
 RUN
