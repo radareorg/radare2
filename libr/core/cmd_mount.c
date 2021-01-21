@@ -318,9 +318,6 @@ static int cmd_mount(void *data, const char *_input) {
 		} else {
 			ptr = "./";
 		}
-		eprintf("OFFSET: %d\n", offset);
-		eprintf("SIZE: %d\n", size);
-
 		const char *filename = r_str_trim_head_ro(input);
 	
 		file = r_fs_open (core->fs, filename, false);
