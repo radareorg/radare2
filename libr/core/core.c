@@ -3033,9 +3033,9 @@ R_API void r_core_fini(RCore *c) {
 	c->rasm = NULL;
 	c->print = r_print_free (c->print);
 	c->bin = (r_bin_free (c->bin), NULL);
-	c->lang = (r_lang_free (c->lang), NULL);
 	c->dbg = (r_debug_free (c->dbg), NULL);
-	r_io_free (c->io);
+	c->io = (r_io_free (c->io), NULL);
+	c->lang = (r_lang_free (c->lang), NULL);
 	r_config_free (c->config);
 	/* after r_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
