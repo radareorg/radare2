@@ -459,7 +459,11 @@ static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 			R_FREE (name);
 			return false;
 		}
-
+		if (name->len >= sizeof (name->name)) {
+			// XXX: proper fix is removing fixed symbol name size imho, need to chk docs and try some samples first
+			name->len = sizeof (name->name) - 1;
+			eprintf ("%d vs %d truncated name %c", name->len, sizeof (struct r_bin_wasm_name_t),10);
+		}
 		if (!(consume_str_r (b, max, name->len, (char *)name->name))) {
 			R_FREE (name);
 			return false;
