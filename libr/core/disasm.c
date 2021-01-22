@@ -6176,7 +6176,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			break;
 		}
 	}
-	// r_cons_printf ("]");
 	core->offset = old_offset;
 	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
@@ -6202,8 +6201,13 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		buf = malloc (l + 1);
 		r_io_read_at (core->io, addr, buf, l);
 	}
+	PJ *pj = NULL;
 	if (mode == 'j') {
-		r_cons_print ("[");
+		pj = r_core_pj_new (core);
+		if (!pj) {
+			return 0;
+		}
+		pj_a (pj);
 	}
 	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < l; i++) {
@@ -6269,10 +6273,12 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				}
 				break;
 			case 'j': {
-				//TODO PJ
 				char *op_hex = r_asm_op_get_hex (&asmop);
-				r_cons_printf ("{\"addr\":%08"PFMT64d",\"bytes\":\"%s\",\"inst\":\"%s\"}%s",
-					addr + i, op_hex, r_asm_op_get_asm (&asmop), ",");
+				pj_o (pj);
+				pj_kn (pj, "addr", addr + i);
+				pj_ks (pj, "bytes", op_hex);
+				pj_ks (pj, "inst", r_asm_op_get_asm (&asmop));
+				pj_end (pj);
 				free (op_hex);
 				break;
 			}
@@ -6291,7 +6297,9 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		free (buf);
 	}
 	if (mode == 'j') {
-		r_cons_printf ("{}]\n");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
 	ds_free (ds);
 	return count;

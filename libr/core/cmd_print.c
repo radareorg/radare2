@@ -5498,7 +5498,6 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				cmd_pdj (core, input + 2, block);
 			}
-			r_cons_newline ();
 			pd_result = 0;
 			break;
 		case 'J': // pdJ

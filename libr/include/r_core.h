@@ -895,7 +895,7 @@ R_API void r_core_task_scheduler_init (RCoreTaskScheduler *tasks, RCore *core);
 R_API void r_core_task_scheduler_fini (RCoreTaskScheduler *tasks);
 R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id);
 R_API RCoreTask *r_core_task_get_incref(RCoreTaskScheduler *scheduler, int id);
-R_API void r_core_task_print(RCore *core, RCoreTask *task, int mode);
+R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode);
 R_API void r_core_task_list(RCore *core, int mode);
 R_API int r_core_task_running_tasks_count(RCoreTaskScheduler *scheduler);
 R_API const char *r_core_task_status(RCoreTask *task);
