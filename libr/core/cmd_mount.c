@@ -313,7 +313,7 @@ static int cmd_mount(void *data, const char *_input) {
 					*ptr++ = 0;
 					size = r_num_math (core->num, ptr);
 				}
-				offset = r_num_math(NULL, args);
+				offset = r_num_math (core->num, args);
 			}
 		} else {
 			ptr = "./";
