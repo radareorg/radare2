@@ -2360,7 +2360,6 @@ EXPECT=<<EOF
     "type2_num": 0
   }
 ]
-
 EOF
 RUN
 

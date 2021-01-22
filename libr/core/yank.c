@@ -248,16 +248,24 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 				}
 				r_cons_newline ();
 				break;
-			case 'j':
-				//TODO PJ
-				{
-					r_cons_printf ("{\"addr\":%"PFMT64u",\"bytes\":\"", core->yank_addr);
-					for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-						r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
-					}
-					r_cons_printf ("\"}\n");
+			case 'j': {
+				PJ *pj = r_core_pj_new (core);
+				if (!pj) {
+					break;
 				}
+				pj_o (pj);
+				pj_kn (pj, "addr", core->yank_addr);
+				RStrBuf *buf = r_strbuf_new ("");
+				for (i = pos; i < r_buf_size (core->yank_buf); i++) {
+					r_strbuf_appendf (buf, "%02x", r_buf_read8_at (core->yank_buf, i));
+				}
+				pj_ks (pj, "bytes", r_strbuf_get (buf));
+				r_strbuf_free (buf);
+				pj_end (pj);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
 				break;
+			}
 			case '*':
 				//r_cons_printf ("yfx ");
 				r_cons_printf ("wx ");
