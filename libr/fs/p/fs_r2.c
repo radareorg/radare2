@@ -79,8 +79,9 @@ static RFSFile* fs_r2_open(RFSRoot *root, const char *path, bool create) {
 	for (i = 0; routes[i].path; i++) {
 		const char *cwd = routes[i].path;
 		if (routes[i].cat && !strncmp (path, cwd, strlen (cwd))) {
-			routes[i].cat (root, NULL, path);
-			return NULL;
+			RFSFile* file = r_fs_file_new (root, path);
+			routes[i].cat (root, file, path);
+			return file;
 		}
 	}
 	return NULL;
@@ -134,7 +135,10 @@ static int __version(RFSRoot *root, RFSFile *file, const char *path) {
 }
 
 static int __flags_cat(RFSRoot *root, RFSFile *file, const char *path) {
-	r_return_val_if_fail (root && path, 0);
+	if (!file) {
+		return -1;
+	}
+	r_return_val_if_fail (root && path, -1);
 	const char *last = r_str_rchr (path, NULL, '/');
 	if (last) {
 		last++;
@@ -142,18 +146,10 @@ static int __flags_cat(RFSRoot *root, RFSFile *file, const char *path) {
 		last = path;
 	}
 	char *res = root->cob.cmdstrf (root->cob.core, "?v %s", last);
-	if (file) {
-		file->ptr = NULL;
-		file->data = (ut8*)res;
-		file->p = root->p;
-		file->size = strlen (res);
-	} else {
-		file = r_fs_file_new (root, path);
-		file->ptr = NULL;
-		file->data = (ut8*)res;
-		file->p = root->p;
-		file->size = strlen (res);
-	}
+	file->ptr = NULL;
+	file->data = (ut8*)res;
+	file->p = root->p;
+	file->size = strlen (res);
 	return file->size;
 }
 
@@ -167,7 +163,7 @@ static int __bsize_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 static int __bsize_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	char *res = root->cob.cmdstrf (root->cob.core, "b");
 	if (!file) {
-		file = r_fs_file_new (root, path);
+		return -1;
 	}
 	file->ptr = NULL;
 	file->data = (ut8*)res;
@@ -186,7 +182,7 @@ static int __seek_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 static int __seek_cat(RFSRoot *root, RFSFile *file, const char *path) {
 	char *res = root->cob.cmdstrf (root->cob.core, "s");
 	if (!file) {
-		file = r_fs_file_new (root, path);
+		return -1;
 	}
 	file->ptr = NULL;
 	file->data = (ut8*)res;
@@ -206,17 +202,18 @@ static int __cfg_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 }
 
 static int __cfg_cat(RFSRoot *root, RFSFile *file, const char *path) {
+	if (!file) {
+		return -1;
+	}
 	if (strlen (path) < 6) {
-		return 0;
+		return -1;
 	}
 	char *a = strdup (path + 5);
 	r_str_replace_char (a, '/', '.');
 	char *res = root->cob.cmdstrf (root->cob.core, "e %s", a);
 	// root->iob.io->cb_printf ("%s\n", res);
 	// eprintf ("%s", res);
-	if (!file) {
-		file = r_fs_file_new (root, path);
-	}
+
 	file->ptr = NULL;
 	file->data = (ut8*)res;
 	file->p = root->p;
