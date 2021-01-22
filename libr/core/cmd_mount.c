@@ -311,7 +311,7 @@ static int cmd_mount(void *data, const char *_input) {
 				ptr = strchr (args, ' ');
 				if (ptr) {
 					*ptr++ = 0;
-					size = r_num_math(NULL, ptr);
+					size = r_num_math (core->num, ptr);
 				}
 				offset = r_num_math(NULL, args);
 			}
