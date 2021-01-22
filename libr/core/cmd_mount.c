@@ -310,7 +310,7 @@ static int cmd_mount(void *data, const char *_input) {
 			if (args) {
 				ptr = strchr (args, ' ');
 				if (ptr) {
-					*ptr++=0;
+					*ptr++ = 0;
 					size = r_num_math(NULL, ptr);
 				}
 				offset = r_num_math(NULL, args);
