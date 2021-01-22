@@ -64,7 +64,7 @@ R_API int r_bin_demangle_type(const char *str) {
 
 R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
 	int type = -1;
-	if (!str || !*str) {
+	if (R_STR_ISEMPTY (str)) {
 		return NULL;
 	}
 	RBin *bin = bf? bf->rbin: NULL;
@@ -80,7 +80,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	if (!strncmp (str, "imp.", 4)) {
 		str += 4;
 	}
-	if (o) {
+	if (o && libs) {
 		bool found = false;
 		r_list_foreach (o->libs, iter, lib) {
 			size_t len = strlen (lib);
@@ -93,15 +93,14 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 				break;
 			}
 		}
-		if (!found) {
-			lib = NULL;
-		}
-		size_t len = strlen (bin->file);
-		if (!r_str_ncasecmp (str, bin->file, len)) {
-			lib = bin->file;
-			str += len;
-			if (*str == '_') {
-				str++;
+		if (found) {
+			size_t len = strlen (bin->file);
+			if (!r_str_ncasecmp (str, bin->file, len)) {
+				lib = bin->file;
+				str += len;
+				if (*str == '_') {
+					str++;
+				}
 			}
 		}
 	}
@@ -137,17 +136,3 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	}
 	return demangled;
 }
-
-#ifdef TEST
-main() {
-	char *out, str[128];
-	strncpy (str, "_Z1hic", sizeof (str)-1);
-	strncpy (str, "main(Ljava/lang/String;I)V", sizeof (str)-1);
-	strncpy (str, "main([Ljava/lang/String;)V", sizeof (str)-1);
-	strncpy (str, "foo([III)Ljava/lang/Integer;", sizeof (str)-1);
-	//out = cplus_demangle_v3 (str, flags);
-	out = r_bin_demangle_java (str); //, flags);
-	printf ("INPUT (%s)\n", str);
-	printf ("OUTPUT (%s)\n", out);
-}
-#endif
