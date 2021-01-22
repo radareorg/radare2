@@ -318,7 +318,7 @@ static int cmd_mount(void *data, const char *_input) {
 		} else {
 			ptr = "./";
 		}
-		const char *filename = r_str_trim_head_ro(input);
+		const char *filename = r_str_trim_head_ro (input);
 	
 		file = r_fs_open (core->fs, filename, false);
 		if (file) {
