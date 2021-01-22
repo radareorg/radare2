@@ -211,16 +211,17 @@ static char *r_bin_wasm_type_entry_to_string(RBinWasmTypeEntry *ptr) {
 #endif
 
 // Free
-static void r_bin_wasm_free_types (RBinWasmTypeEntry *ptr) {
+static void r_bin_wasm_free_types(RBinWasmTypeEntry *ptr) {
 	if (ptr) {
 		free (ptr->param_types);
 	}
 	free (ptr);
 }
 
-static void r_bin_wasm_free_codes (RBinWasmCodeEntry *ptr) {
+static void r_bin_wasm_free_codes(RBinWasmCodeEntry *ptr) {
 	if (ptr) {
 		free (ptr->locals);
+		free (ptr->name);
 	}
 	free (ptr);
 }
@@ -437,14 +438,14 @@ beach:
 	return NULL;
 }
 
-static bool parse_namemap (RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
+static bool parse_namemap(RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 	size_t i;
 	if (!(consume_u32_r (b, max, count))) {
 		return false;
 	}
 
 	for (i = 0; i < *count; i++) {
-		struct r_bin_wasm_name_t *name = R_NEW0 (struct r_bin_wasm_name_t);
+		RBinWasmName*name = R_NEW0 (RBinWasmName);
 		if (!name) {
 			return false;
 		}
@@ -805,9 +806,7 @@ void r_bin_wasm_destroy (RBinFile *bf) {
 	r_list_foreach (bin->g_names, iter, nam) {
 		switch (nam->type) {
 		case R_BIN_WASM_NAMETYPE_Module:
-			if (nam->mod_name) {
-				free (nam->mod_name);
-			}
+			R_FREE (nam->mod_name);
 			break;
 		case R_BIN_WASM_NAMETYPE_Function:
 			if (nam->func) {
@@ -1221,7 +1220,6 @@ RList *r_bin_wasm_get_datas (RBinWasmObj *bin) {
 }
 
 RList *r_bin_wasm_get_custom_names (RBinWasmObj *bin) {
-	RBinWasmSection *cust = NULL;
 	RList *customs = NULL;
 
 	r_return_val_if_fail (bin && bin->g_sections, NULL);
@@ -1233,7 +1231,12 @@ RList *r_bin_wasm_get_custom_names (RBinWasmObj *bin) {
 		return r_list_new ();
 	}
 	// support for multiple "name" sections against spec
-	if (!(cust = (RBinWasmSection *)r_list_first (customs)) || strncmp (cust->name, "name", 5)) {
+	RBinWasmSection *cust = (RBinWasmSection *)r_list_first (customs);
+	if (!cust || !cust->name) {
+		r_list_free (customs);
+		return r_list_new ();
+	}
+	if (strcmp (cust->name, "name")) {
 		r_list_free (customs);
 		return r_list_new ();
 	}

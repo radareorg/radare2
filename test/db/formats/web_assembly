@@ -5,6 +5,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=WASM: Wasm - dotnet open
+FILE=bins/wasm/dotnet.wasm
+CMDS=<<EOF
+i
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=WASM: Wasm - detection
 FILE=bins/wasm/basic.wasm
 CMDS=iI~os
