@@ -308,7 +308,7 @@ static int cmd_mount(void *data, const char *_input) {
 			char *input2 = strdup (ptr++);
 			const char *args = r_str_trim_head_ro (input2);
 			if (args) {
-				ptr = strchr(args, ' ');
+				ptr = strchr (args, ' ');
 				if (ptr) {
 					*ptr++=0;
 					size = r_num_math(NULL, ptr);
