@@ -10,7 +10,6 @@ FILE=-
 CMDS=e asm.pseudo=1; e asm.arch=x86; e asm.bits=64; wx 7299; pdj 1
 EXPECT=<<EOF
 [{"offset":0,"esil":"cf,?{,18446744073709551515,rip,=,}","refptr":false,"fcn_addr":0,"fcn_last":0,"size":2,"opcode":"if (((unsigned) var) < 0) goto 0xffffffffffffff9b","disasm":"jb 0xffffffffffffff9b","bytes":"7299","family":"cpu","type":"cjmp","reloc":false,"type_num":2147483649,"type2_num":0,"jump":-101,"fail":2}]
-
 EOF
 RUN
 
