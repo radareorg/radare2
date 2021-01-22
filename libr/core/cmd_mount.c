@@ -341,13 +341,15 @@ static int cmd_mount(void *data, const char *_input) {
 				} else {
 					bytes_read = r_fs_read (core->fs, file, ptr, blocksize);
 				}
-				r_file_dump (localFile, file->data, bytes_read, true);
+				if (bytes_read > 0) {
+					r_file_dump (localFile, file->data, bytes_read, true);
+				}
 				ptr += bytes_read;
 				total_bytes_read += bytes_read;
 			}
 			r_fs_close (core->fs, file);
 			if (offset) {
-				eprintf ("File '%s' created. (offset: 0x%"PFMT64x" size: %d bytes)\n", localFile, (unsigned long long) offset, size);
+				eprintf ("File '%s' created. (offset: 0x%"PFMT64x" size: %d bytes)\n", localFile, (ut64) offset, size);
 			} else {
 				eprintf ("File '%s' created. (size: %d bytes)\n", localFile, size);
 			}
