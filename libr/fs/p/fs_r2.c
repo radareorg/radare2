@@ -101,18 +101,18 @@ static int fs_r2_write(RFSFile *file, ut64 addr, const ut8 *data, int len) {
 			}
 		}
 	}
-	return 0;
+	return -1;
 }
 
 static int fs_r2_read(RFSFile *file, ut64 addr, int len) {
-	int i;
+	size_t i;
 	const char *path = file->name;
 	for (i = 0; routes[i].path; i++) {
 		if (routes[i].cat && !strncmp (path, routes[i].path, strlen (routes[i].path))) {
 			return routes[i].cat (file->root, file, path);
 		}
 	}
-	return 0;
+	return -1;
 }
 
 static void fs_r2_close(RFSFile *file) {
@@ -123,9 +123,7 @@ static void fs_r2_close(RFSFile *file) {
 static int __version(RFSRoot *root, RFSFile *file, const char *path) {
 	char *res = root->cob.cmdstrf (root->cob.core, "?V");
 	/// root->iob.io->cb_printf ("%s\n", res);
-	if (!file) {
-		file = r_fs_file_new (root, path);
-	}
+	r_return_val_if_fail(root&&file&&path, -1);
 	file->ptr = NULL;
 	free (file->data);
 	file->data = (ut8*)res;
