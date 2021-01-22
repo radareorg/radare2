@@ -63,7 +63,6 @@ R_API int r_bin_demangle_type(const char *str) {
 }
 
 R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs) {
-	r_return_val_if_fail (bf && str, NULL);
 	int type = -1;
 	if (R_STR_ISEMPTY (str)) {
 		return NULL;
