@@ -38,7 +38,7 @@ R_API size_t r_num_bit_count(ut32 val) {
 	count = (((val + (val >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 	return count;
 #else
-	return __builtin_clz (val);
+	return val? __builtin_clz (val): 0;
 #endif
 }
 
