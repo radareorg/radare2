@@ -10,6 +10,7 @@
 #include <r_parse.h>
 
 static char* get_fcn_name(RAnal *anal, ut32 fcn_id) {
+return NULL;
 	r_cons_push ();
 	char *s = anal->coreb.cmdstrf (anal->coreb.core, "is~FUNC[6:%u]", fcn_id);
 	r_cons_pop ();

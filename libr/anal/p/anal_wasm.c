@@ -23,6 +23,7 @@ static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
 	if (!read_u32_leb128 (&data[1], &data[len - 1], &fcn_id)) {
 		return UT64_MAX;
 	}
+#if 0
 	r_cons_push ();
 	// 0xfff.. are bad addresses for wasm
 	// cgvwzq: 0xfff... can be external imported JS funcs
@@ -33,6 +34,7 @@ static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
 		free (s);
 		return n;
 	}
+#endif
 	return UT64_MAX;
 }
 
@@ -449,6 +451,8 @@ static char *get_reg_profile(RAnal *anal) {
 		"=BP	bp\n"
 		"=SP	sp\n"
 		"=A0	r0\n"
+		"=A1	r1\n"
+		"=A2	r2\n"
 		"gpr	sp	.32	0	0\n" // stack pointer
 		"gpr	pc	.32	4	0\n" // program counter
 		"gpr	bp	.32	8	0\n" // base pointer // unused
