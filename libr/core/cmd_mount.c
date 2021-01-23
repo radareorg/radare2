@@ -331,8 +331,9 @@ static int cmd_mount(void *data, const char *_input) {
 			int total_bytes_read = 0;
 			int blocksize = file->size < core->blocksize ? file->size : core->blocksize;
 			size = size > 0 ? size : file->size;
-			if (!r_sys_truncate (localFile, 0)) {
+			if (r_file_exists(localFile) && !r_sys_truncate (localFile, 0)) {
 				eprintf ("Cannot create file %s\n", localFile);
+				break;
 			}
 			while (total_bytes_read < size && ptr < file->size) {
 				int bytes_read = 0;
