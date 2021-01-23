@@ -85,11 +85,11 @@ static bool siglistcb (void *p, const char *k, const char *v) {
 	return true;
 }
 
-static bool siglistjsoncb (void *p, const char *k, const char *v) {
+static bool siglistjsoncb(void *p, const char *k, const char *v) {
 	static char key[32] = "cfg.";
 	RDebug *dbg = (RDebug *)p;
 	int opt;
-	if (atoi (k)>0) {
+	if (atoi (k) > 0) {
 		strncpy (key + 4, k, 20);
 		opt = (int)sdb_num_get (DB, key, 0);
 		if (dbg->_mode == 2) {
@@ -97,16 +97,24 @@ static bool siglistjsoncb (void *p, const char *k, const char *v) {
 		} else {
 			r_cons_strcat (",");
 		}
-		//TODO PJ
-		r_cons_printf ("{\"signum\":\"%s\",\"name\":\"%s\",\"option\":", k, v);
-		if (opt & R_DBG_SIGNAL_CONT) {
-			r_cons_strcat ("\"cont\"");
-		} else if (opt & R_DBG_SIGNAL_SKIP) {
-			r_cons_strcat ("\"skip\"");
-		} else {
-			r_cons_strcat ("null");
+		PJ *pj = pj_new ();
+		if (!pj) {
+			return false;
 		}
-		r_cons_strcat ("}");
+		pj_o (pj);
+		pj_ks (pj, "signum", k);
+		pj_ks (pj, "name", v);
+		pj_k (pj, "option");
+		if (opt & R_DBG_SIGNAL_CONT) {
+			pj_s (pj, "cont");
+		} else if (opt & R_DBG_SIGNAL_SKIP) {
+			pj_s (pj, "skip");
+		} else {
+			pj_null (pj);
+		}
+		pj_end (pj);
+		r_cons_print (pj_string (pj));
+		pj_free (pj);
 	}
 	return true;
 }
