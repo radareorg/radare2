@@ -1286,12 +1286,12 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			RDiff *d = r_diff_new ();
 			if (d) {
 				d->verbose = ro.verbose;
-				if (ro.mode == MODE_DIST_LEVENSTEIN) {
-					d->type = 'l';
-				} else if (ro.mode == MODE_DIST_MYERS) {
+				if (ro.mode == MODE_DIST_MYERS) {
 					d->type = 'm';
 				} else {
-					d->type = 0;
+					// FIXME: 'l' (r_diff_buffers_distance_levenstein) is buggy. See
+					// commented code in test/unit/test_diff.c
+					d->type = '\0';
 				}
 				r_diff_buffers_distance (d, bufa, (ut32)sza, bufb, (ut32)szb, &ro.count, &sim);
 				r_diff_free (d);
