@@ -553,7 +553,7 @@ R_API int r_core_yank_file_all (RCore *core, const char *input);
 #define R_CORE_LOADLIBS_ALL UT32_MAX
 
 R_API void r_core_loadlibs_init(RCore *core);
-R_API int r_core_loadlibs(RCore *core, int where, const char *path);
+R_API bool r_core_loadlibs(RCore *core, int where, const char *path);
 R_API int r_core_cmd_buffer(RCore *core, const char *buf);
 R_API int r_core_cmdf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_core_cmd0(RCore *core, const char *cmd);

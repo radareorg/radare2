@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <string.h>
 #include "r_config.h"
@@ -14,6 +14,7 @@ static const char *help_msg_L[] = {
 	"Ll", "", "list lang plugins (same as #!)",
 	"LL", "", "lock screen",
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
+	"Le", "", "list esil plugins",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
 	"LD", "", "list supported decompilers (e cmd.pdc=?)",
@@ -335,6 +336,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'm': // "Lm"
 		r_core_cmdf (core, "mL%s", input + 1);
+		break;
+	case 'e': // "Le"
+		r_core_cmdf (core, "aeL%s", input + 1);
 		break;
 	case 'd': // "Ld"
 		r_core_cmdf (core, "dL%s", input + 1);

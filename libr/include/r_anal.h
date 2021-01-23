@@ -641,6 +641,7 @@ typedef struct r_anal_t {
 	int pcalign; // asm.pcalign
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
+	struct r_anal_esil_plugin_t *esil_cur; // ???
 	RAnalRange *limit; // anal.from, anal.to
 	RList *plugins; // anal plugins
 	RList *esil_plugins;
@@ -1539,8 +1540,10 @@ R_API RAnal *r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free (RAnalPlugin *p);
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo);
+R_API int r_anal_esil_add(RAnal *anal, RAnalEsilPlugin *foo);
 R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_use(RAnal *anal, const char *name);
+R_API bool r_anal_esil_use(RAnal *anal, const char *name);
 R_API bool r_anal_set_reg_profile(RAnal *anal);
 R_API char *r_anal_get_reg_profile(RAnal *anal);
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr);
@@ -2208,6 +2211,7 @@ extern RAnalPlugin r_anal_plugin_xcore_cs;
 extern RAnalPlugin r_anal_plugin_xtensa;
 extern RAnalPlugin r_anal_plugin_z80;
 extern RAnalPlugin r_anal_plugin_pyc;
+extern RAnalEsilPlugin r_esil_plugin_dummy;
 #ifdef __cplusplus
 }
 #endif

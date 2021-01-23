@@ -174,6 +174,7 @@ static const char *help_msg_ae[] = {
 	"aeip", "", "initialize ESIL program counter to curseek",
 	"aek", " [query]", "perform sdb query on ESIL.info",
 	"aek-", "", "resets the ESIL.info sdb instance",
+	"aeL", "", "list ESIL plugins",
 	"aeli", "", "list loaded ESIL interrupts",
 	"aeli", " [file]", "load ESIL interrupts from shared object",
 	"aelir", " [interrupt number]", "remove ESIL interrupt and free it if needed",
@@ -6512,6 +6513,15 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				sdb_reset (esil->stats);
 			}
 			break;
+		}
+		break;
+	case 'L': // aeL commands
+		{
+			RAnalEsilPlugin *p;
+			RListIter *iter;
+			r_list_foreach (core->anal->esil_plugins, iter, p) {
+				r_cons_printf ("%s\n", p->name);
+			}
 		}
 		break;
 	case 'l': // ael commands
