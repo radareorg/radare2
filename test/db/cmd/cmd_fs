@@ -824,3 +824,75 @@ fido		60179/tcp			# fidonet EMSI over TCP
 
 EOF
 RUN
+
+NAME=cat r2fs bsize
+FILE=-
+CMDS=<<EOF
+m r2 /r2
+mc /r2/bsize
+EOF
+EXPECT=<<EOF
+0x100
+
+EOF
+RUN
+
+NAME=cat r2fs cfg
+FILE=-
+CMDS=<<EOF
+m r2 /r2
+mc /r2/cfg/file/info
+EOF
+EXPECT=<<EOF
+true
+
+EOF
+RUN
+
+NAME=cat r2fs flags ls
+FILE=bins/elf/ls
+CMDS=<<EOF
+m r2 /r2
+mc /r2/flags/strings/str.shell
+EOF
+EXPECT=<<EOF
+0x1b30f
+
+EOF
+RUN
+
+NAME=cat r2fs seek ls
+FILE=bins/elf/ls
+CMDS=<<EOF
+m r2 /r2
+mc /r2/seek
+EOF
+EXPECT=<<EOF
+0x5ae0
+
+EOF
+RUN
+
+NAME=mg file
+FILE=bins/fs/ext2.img
+CMDS=<<EOF
+mg /root/bin/ls
+o ./ls
+i~size
+EOF
+EXPECT=<<EOF
+size     0x1ee78
+EOF
+RUN
+
+NAME=mg file custom size
+FILE=bins/fs/fat.img
+CMDS=<<EOF
+mg /root/bin/ls 0x0 5
+o ./ls
+i~size
+EOF
+EXPECT=<<EOF
+size     0x5
+EOF
+RUN

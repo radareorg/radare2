@@ -277,23 +277,22 @@ R_API void r_fs_close(RFS* fs, RFSFile* file) {
 
 R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len) {
 	if (len < 1) {
-		return false;
+		return -1;
 	}
 	if (fs && file) {
 		// TODO: fill file->data ? looks like dupe of rbuffer 
 		if (file->p && file->p->write) {
-			file->p->write (file, addr, data, len);
-			return true;
+			return file->p->write (file, addr, data, len);;
 		}
 		eprintf ("r_fs_write: file->p->write is null\n");
 	}
-	return false;
+	return -1;
 }
 
 R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 	if (len < 1) {
 		eprintf ("r_fs_read: too short read\n");
-		return false;
+		return -1;
 	}
 	if (fs && file) {
 		if (file->p && file->p->read) {
@@ -301,13 +300,12 @@ R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 				free (file->data);
 				file->data = calloc (1, len + 1);
 			}
-			file->p->read (file, addr, len);
-			return true;
+			return file->p->read (file, addr, len);
 		} else {
 			eprintf ("r_fs_read: file->p->read is null\n");
 		}
 	}
-	return false;
+	return -1;
 }
 
 R_API RList* r_fs_dir(RFS* fs, const char* p) {
