@@ -61,6 +61,7 @@ bool test_lemon_const_folder(void) {
 	RStrBuf *filtered = r_anal_esil_dfg_filter (dfg, "eax");
 	const bool cmp_result = !strcmp(r_strbuf_get(filtered), "0x2,eax,:=");
 	r_strbuf_free (filtered);
+	r_anal_esil_dfg_free (dfg);
 	r_anal_free (anal);
 	
 	mu_assert_true (cmp_result, "esil dfg const folding is broken");

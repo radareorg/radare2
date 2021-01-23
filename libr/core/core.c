@@ -2044,7 +2044,7 @@ R_API int r_core_fgets(char *buf, int len) {
 		rli->completion.run = autocomplete;
 		rli->completion.run_user = rli->user;
 	} else {
-		rli->history.data = NULL;
+		r_line_hist_free ();
 		r_line_completion_set (&rli->completion, 0, NULL);
 		rli->completion.run = NULL;
 		rli->completion.run_user = NULL;
