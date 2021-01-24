@@ -11,12 +11,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
   capstone_version = get_option('use_capstone_version')
 
-  use_capstone5 = get_option('use_capstone5')
-  if use_capstone5
-    warning('use_capstone5 is deprecated. Use -Duse_capstone_version=v5 instead.')
-    capstone_version = 'v5'
-  endif
-
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
   if res.returncode() == 0
     if not git_exe.found()

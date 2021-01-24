@@ -91,8 +91,8 @@ for a in $* ; do
 	esac
 done
 
-if [ "${USE_CS5}" = 1 ]; then
-	CFGARG="${CFGARG} --with-capstone5"
+if [ "${USE_CS4}" = 1 ]; then
+	CFGARG="${CFGARG} --with-capstone4"
 fi
 
 if [ "${OSNAME}" = Linux ] && [ -n "${PREFIX}" ] && [ "${PREFIX}" != /usr ]; then

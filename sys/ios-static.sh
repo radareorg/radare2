@@ -70,7 +70,7 @@ cp -f dist/plugins-cfg/plugins.ios.cfg plugins.cfg
 	${CFGFLAGS} \
 	--with-ostype=darwin --with-libr \
 	--without-gpl --without-fork --without-libuv \
-	--with-compiler=ios-sdk --with-capstone5 \
+	--with-compiler=ios-sdk \
 	--target=arm-unknown-darwin
 fi
 
