@@ -1064,18 +1064,6 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	return 0;
 }
 
-R_API bool r_is_heap (void *p) {
-	void *q = malloc (8);
-	ut64 mask = UT64_MAX;
-	ut64 addr = (ut64)(size_t)q;
-	addr >>= 16;
-	addr <<= 16;
-	mask >>= 16;
-	mask <<= 16;
-	free (q);
-	return (((ut64)(size_t)p) == mask);
-}
-
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
 	// TODO: add maximum path length support

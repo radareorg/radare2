@@ -927,7 +927,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			print (color_title);
 		}
 		if (base < 32) {
-			ut32 opad = (ut32) (addr >> 32);
 			{ // XXX: use r_print_addr_header
 				int i, delta;
 				char soff[32];
@@ -958,7 +957,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 			/* column after number, before hex data */
 			print ((col == 1)? "|": space);
-			opad >>= 4;
 			if (use_hdroff)  {
 				k = addr & 0xf;
 				K = (addr >> 4) & 0xf;
