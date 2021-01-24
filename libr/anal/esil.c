@@ -564,11 +564,13 @@ R_API int r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 
 	char *p_dst = r_anal_esil_pop (esil);
 	if (!p_dst) {
+		free (p_src);
 		return false;
 	}
 
 	if (!r_anal_esil_get_parm (esil, p_dst, &dst)) {
 		ERR ("esil_of: empty stack");
+		free (p_src);
 		free (p_dst);
 		return false;
 	} else {
@@ -796,6 +798,8 @@ static bool esil_eq(RAnalEsil *esil) {
 		if (esil->verbose) {
 			eprintf ("Missing elements in the esil stack for '=' at 0x%08"PFMT64x"\n", esil->address);
 		}
+		free (src);
+		free (dst);
 		return false;
 	}
 	if (ispackedreg (esil, dst)) {
@@ -821,7 +825,6 @@ static bool esil_eq(RAnalEsil *esil) {
 	} else {
 		ERR ("esil_eq: invalid parameters");
 	}
-
 beach:
 	free (src);
 	free (dst);
@@ -1110,16 +1113,17 @@ static bool esil_if(RAnalEsil *esil) {
 		esil->skip++;
 		return true;
 	}
+	bool ret = false;
 	char *src = r_anal_esil_pop (esil);
 	if (src && r_anal_esil_get_parm (esil, src, &num)) {
 		// condition not matching, skipping until
 		if (!num) {
 			esil->skip++;
 		}
-		free (src);
-		return true;
+		ret = true;
 	}
-	return false;
+	free (src);
+	return ret;
 }
 
 static bool esil_lsl(RAnalEsil *esil) {
@@ -2136,6 +2140,8 @@ static bool esil_peek_some(RAnalEsil *esil) {
 					char *foo = r_anal_esil_pop (esil);
 					if (!foo) {
 						ERR ("Cannot pop in peek");
+						free (dst);
+						free (count);
 						return 0;
 					}
 					const ut32 read = r_anal_esil_mem_read (esil, ptr, a, 4);
