@@ -4,12 +4,12 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type size lib name
-----------------------------------------------------
-0    0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
-1    0x00000d8e 0x00000d8e GLOBAL NONE 0        WNDPROC
-2    0x00002b5a 0x00002b5a GLOBAL NONE 0        DIAL_ABOUT
-0    0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+0   0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
+1   0x00000d8e 0x00000d8e GLOBAL NONE 0        WNDPROC
+2   0x00002b5a 0x00002b5a GLOBAL NONE 0        DIAL_ABOUT
+0   0x00000a00 0x00000a00 NONE   NONE 0        ANIM8
 EOF
 RUN
 

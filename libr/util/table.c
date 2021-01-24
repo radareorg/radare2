@@ -218,7 +218,11 @@ R_API void r_table_add_rowf(RTable *t, const char *fmt, ...) {
 			{
 				ut64 n = va_arg (ap, ut64);
 				if (n == UT64_MAX) {
-					r_list_append (list, strdup ("-1"));
+					if (*f == 'X') {
+						r_list_append (list, strdup ("----------"));
+					} else {
+						r_list_append (list, strdup ("-1"));
+					}
 				} else {
 					if (*f == 'X') {
 						r_list_append (list, r_str_newf ("0x%08"PFMT64x, n));
