@@ -13,6 +13,7 @@
 	}\
 	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *p, void *u) { return true; }
 
+// TODO: deprecate this
 #define CB_COPY(x, y)\
 	static int __lib_ ## x ## _cb (RLibPlugin * pl, void *user, void *data) {\
 		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data;\
@@ -102,7 +103,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BP, "debugger breakpoint plugins", bp);
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
-	DF (ESIL, "esil emulation plugins", anal);
+	DF (ESIL, "esil emulation plugins", anal_esil);
 	DF (ASM, "(dis)assembler plugins", asm);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
