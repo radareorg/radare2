@@ -342,7 +342,7 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
         switch (type) {
         case 'f': // fcnidx
 		{
-			char *r = r_bin_wasm_get_function_name (bin, idx);
+			const char *r = r_bin_wasm_get_function_name (bin, idx);
 			return r? strdup (r): NULL;
 		}
 	}
