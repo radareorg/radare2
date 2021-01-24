@@ -314,6 +314,7 @@ typedef struct r_debug_t {
 
 	Sdb *sgnls;
 	RCoreBind corebind;
+	PJ *pj;
 	// internal use only
 	int _mode;
 	RNum *num;
@@ -490,7 +491,7 @@ R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action);
 /* handle.c */
 R_API void r_debug_plugin_init(RDebug *dbg);
 R_API int r_debug_plugin_set(RDebug *dbg, const char *str);
-R_API int r_debug_plugin_list(RDebug *dbg, int mode);
+R_API bool r_debug_plugin_list(RDebug *dbg, int mode);
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo);
 R_API bool r_debug_plugin_set_reg_profile(RDebug *dbg, const char *str);
 

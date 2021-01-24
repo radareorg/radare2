@@ -4148,7 +4148,10 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 				}
 		}
 	} else if (*input == 'j') {
+		core->dbg->pj = r_core_pj_new (core);
 		r_debug_signal_list (core->dbg, 2);
+		pj_free (core->dbg->pj);
+		core->dbg->pj = NULL;
 	} else if (!*input) {
 		r_debug_signal_list (core->dbg, 0);
 #if 0
@@ -5094,8 +5097,13 @@ static int cmd_debug(void *data, const char *input) {
 	case 'L': // "dL"
 		switch (input[1]) {
 		case 'q':
-		case 'j':
 			r_debug_plugin_list (core->dbg, input[1]);
+			break;
+		case 'j':
+			core->dbg->pj = r_core_pj_new (core);
+			r_debug_plugin_list (core->dbg, 'j');
+			pj_free (core->dbg->pj);
+			core->dbg->pj = NULL;
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_dL);

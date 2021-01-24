@@ -200,6 +200,7 @@ R_API PJ *pj_kb(PJ *j, const char *k, bool v) {
 
 R_API PJ *pj_null(PJ *j) {
 	r_return_val_if_fail (j, j);
+	pj_comma (j);
 	pj_raw (j, "null");
 	return j;
 }
