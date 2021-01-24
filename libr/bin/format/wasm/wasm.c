@@ -11,7 +11,7 @@ typedef size_t (*ConsumeFcn) (const ut8 *p, const ut8 *max, ut32 *out_value);
 typedef void *(*ParseEntryFcn) (RBuffer *b, ut64 max);
 
 // RBuffer consume functions
-static ut32 consume_r (RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fcn) {
+static ut32 consume_r(RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fcn) {
 	r_return_val_if_fail (b && n_out && consume_fcn, 0);
 
 	size_t n;
@@ -36,7 +36,7 @@ static ut32 consume_r (RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_f
 	return tmp;
 }
 
-static size_t consume_u32_r (RBuffer *b, ut64 max, ut32 *out) {
+static size_t consume_u32_r(RBuffer *b, ut64 max, ut32 *out) {
 	size_t n = 0;
 	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
 	if (out) {
@@ -45,7 +45,7 @@ static size_t consume_u32_r (RBuffer *b, ut64 max, ut32 *out) {
 	return n;
 }
 
-static size_t consume_u7_r (RBuffer *b, ut64 max, ut8 *out) {
+static size_t consume_u7_r(RBuffer *b, ut64 max, ut8 *out) {
 	size_t n;
 	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
 	if (out) {
@@ -54,7 +54,7 @@ static size_t consume_u7_r (RBuffer *b, ut64 max, ut8 *out) {
 	return n;
 }
 
-static size_t consume_s7_r (RBuffer *b, ut64 max, st8 *out) {
+static size_t consume_s7_r(RBuffer *b, ut64 max, st8 *out) {
 	size_t n;
 	ut32 tmp = consume_r (b, max, &n, (ConsumeFcn)read_i32_leb128);
 	if (out) {
@@ -63,7 +63,7 @@ static size_t consume_s7_r (RBuffer *b, ut64 max, st8 *out) {
 	return n;
 }
 
-static size_t consume_u1_r (RBuffer *b, ut64 max, ut8 *out) {
+static size_t consume_u1_r(RBuffer *b, ut64 max, ut8 *out) {
 	size_t n;
 	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
 	if (out) {
@@ -156,15 +156,14 @@ static size_t consume_limits_r(RBuffer *b, ut64 max, struct r_bin_wasm_resizable
 
 // Utils
 static RList *r_bin_wasm_get_sections_by_id(RList *sections, ut8 id) {
-	RBinWasmSection *sec = NULL;
 	RList *ret = r_list_newf (NULL);
-	if (!ret) {
-		return NULL;
-	}
-	RListIter *iter;
-	r_list_foreach (sections, iter, sec) {
-		if (sec->id == id) {
-			r_list_append (ret, sec);
+	if (ret) {
+		RBinWasmSection *sec;
+		RListIter *iter;
+		r_list_foreach (sections, iter, sec) {
+			if (sec->id == id) {
+				r_list_append (ret, sec);
+			}
 		}
 	}
 	return ret;
@@ -217,16 +216,16 @@ static char *r_bin_wasm_type_entry_to_string(RBinWasmTypeEntry *ptr) {
 static void r_bin_wasm_free_types(RBinWasmTypeEntry *ptr) {
 	if (ptr) {
 		free (ptr->param_types);
+		free (ptr);
 	}
-	free (ptr);
 }
 
 static void r_bin_wasm_free_codes(RBinWasmCodeEntry *ptr) {
 	if (ptr) {
 		free (ptr->locals);
 		free (ptr->name);
+		free (ptr);
 	}
-	free (ptr);
 }
 
 // Parsing
@@ -315,6 +314,7 @@ static void *parse_import_entry(RBuffer *b, ut64 max) {
 	if (!(consume_u32_r (b, max, &ptr->module_len))) {
 		goto beach;
 	}
+	max = R_MIN (max, ptr->module_len);
 	if (consume_str_r (b, max, ptr->module_len, ptr->module_str) < ptr->module_len) {
 		goto beach;
 	}
