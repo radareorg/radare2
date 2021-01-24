@@ -286,12 +286,11 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		case 'm':
 			return r_diff_buffers_distance_myers (d, a, la, b, lb, distance, similarity);
 		case 'l':
-			return r_diff_buffers_distance_levenshtein (d, a, la, b, lb, distance, similarity);
 		default:
 			break;
 		}
 	}
-	return false;
+	return r_diff_buffers_distance_levenshtein (d, a, la, b, lb, distance, similarity);
 }
 
 // Use Needleman–Wunsch to diffchar.
