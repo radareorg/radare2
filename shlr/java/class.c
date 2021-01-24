@@ -2077,7 +2077,7 @@ R_API RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(RBinJavaObj *bin, 
 	name_idx = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	nsz = R_BIN_JAVA_UINT (buffer, offset);
-	offset += 4;
+	// DEAD INCREMENT offset += 4;
 
 	char *name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, name_idx);
 	if (!name) {
