@@ -324,7 +324,8 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut
 		// set = 2 is reserved for lea, where the operand is a memory address,
 		// but the corresponding memory is not loaded.
 		if (set == 1) {
-			if (setarg[strlen (setarg) - 1] == ',') {
+			size_t len = strlen (setarg);
+			if (len > 0 && setarg[len - 1] == ',') {
 				snprintf (buf_, BUF_SZ, "%s,%s%s=[%d]", out, setarg,
 					gop->bits == 32 ? "0xffffffff,&," : "", op.size==10?8:op.size);
 			} else {
