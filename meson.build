@@ -218,6 +218,7 @@ subdir('libr')
 
 conf_data = configuration_data()
 conf_data.set('plugins_core', '&r_core_plugin_' + ', &r_core_plugin_'.join(core_plugins) + ', 0')
+conf_data.set('plugins_esil', '&r_esil_plugin_' + ', &r_esil_plugin_'.join(esil_plugins) + ', 0')
 conf_data.set('plugins_anal', '&r_anal_plugin_' + ', &r_anal_plugin_'.join(anal_plugins) + ', 0')
 conf_data.set('plugins_asm', '&r_asm_plugin_' + ', &r_asm_plugin_'.join(asm_plugins) + ', 0')
 conf_data.set('plugins_bp', '&r_bp_plugin_' + ', &r_bp_plugin_'.join(bp_plugins) + ', 0')

@@ -2212,6 +2212,7 @@ extern RAnalPlugin r_anal_plugin_xtensa;
 extern RAnalPlugin r_anal_plugin_z80;
 extern RAnalPlugin r_anal_plugin_pyc;
 extern RAnalEsilPlugin r_esil_plugin_dummy;
+
 #ifdef __cplusplus
 }
 #endif

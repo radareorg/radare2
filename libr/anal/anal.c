@@ -215,7 +215,7 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 
 R_API bool r_anal_esil_use(RAnal *anal, const char *name) {
 	RListIter *it;
-	RAnalPlugin *h;
+	RAnalEsilPlugin *h;
 
 	if (anal) {
 		r_list_foreach (anal->esil_plugins, it, h) {
