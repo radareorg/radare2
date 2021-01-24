@@ -978,7 +978,7 @@ static void find_refs(RCore *core, const char *glob) {
 		return;
 	}
 	eprintf ("Finding references of flags matching '%s'...\n", glob);
-	snprintf (cmd, sizeof (cmd) - 1, ".(findstref) @@= `f~%s[0]`", glob);
+	snprintf (cmd, sizeof (cmd) - 1, ".(findstref) @@=`f~%s[0]`", glob);
 	r_core_cmd0 (core, "(findstref;f here=$$;s entry0;/r here;f-here)");
 	r_core_cmd0 (core, cmd);
 	r_core_cmd0 (core, "(-findstref)");
@@ -9641,7 +9641,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'f':
 		if (input[1] == 'e') {  // "aafe"
-			r_core_cmd0 (core, "aef@@f");
+			r_core_cmd0 (core, "aef@@F");
 		} else if (input[1] == 'r') {
 			ut64 cur = core->offset;
 			bool hasnext = r_config_get_i (core->config, "anal.hasnext");
@@ -9668,7 +9668,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_config_set_i (core->config, "anal.hasnext", analHasnext);
 		} else {
 			r_cons_printf ("Usage: aaf[e|r|t] - analyze all functions again\n");
-			r_cons_printf (" aafe = aef@@f\n");
+			r_cons_printf (" aafe = aef@@F\n");
 			r_cons_printf ("aafr [len] = analyze all consecutive functions in section\n");
 			r_cons_printf (" aaft = recursive type matching in all functions\n");
 			r_cons_printf (" aaf  = afr@@c:isq\n");
@@ -9706,11 +9706,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 's': // "aas"
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
-		r_core_cmd0 (core, "af @@ entry*");
+		r_core_cmd0 (core, "af @@f:entry*");
 		break;
 	case 'S': // "aaS"
-		r_core_cmd0 (core, "af @@ sym.*");
-		r_core_cmd0 (core, "af @@ entry*");
+		r_core_cmd0 (core, "af @@f:sym.*");
+		r_core_cmd0 (core, "af @@f:entry*");
 		break;
 	case 'F': // "aaF" "aaFa"
 		if (!input[1] || input[1] == ' ' || input[1] == 'a') {
@@ -9785,8 +9785,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					oldstr = r_print_rowlog (core->print, "Find function and symbol names from golang binaries (aang)");
 					r_print_rowlog_done (core->print, oldstr);
 					r_core_anal_autoname_all_golang_fcns (core);
-					oldstr = r_print_rowlog (core->print, "Analyze all flags starting with sym.go. (aF @@ sym.go.*)");
-					r_core_cmd0 (core, "aF @@ sym.go.*");
+					oldstr = r_print_rowlog (core->print, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
+					r_core_cmd0 (core, "aF @@f:sym.go.*");
 					r_print_rowlog_done (core->print, oldstr);
 				}
 				r_core_task_yield (&core->tasks);
