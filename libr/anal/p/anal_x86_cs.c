@@ -324,7 +324,12 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel, ut
 		// set = 2 is reserved for lea, where the operand is a memory address,
 		// but the corresponding memory is not loaded.
 		if (set == 1) {
-			snprintf (buf_, BUF_SZ, "%s,%s=[%d]", out, setarg, op.size==10?8:op.size);
+			if (setarg[strlen (setarg) - 1] == ',') {
+				snprintf (buf_, BUF_SZ, "%s,%s%s=[%d]", out, setarg,
+					gop->bits == 32 ? "0xffffffff,&," : "", op.size==10?8:op.size);
+			} else {
+				snprintf (buf_, BUF_SZ, "%s,%s=[%d]", out, setarg, op.size==10?8:op.size);
+			}
 			strncpy (out, buf_, BUF_SZ);
 		} else if (set == 0) {
 			if (!*out) {
