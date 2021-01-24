@@ -7,9 +7,8 @@ enum {
 	MODE_DIFF,
 	MODE_DIFF_STRS,
 	MODE_DIFF_IMPORTS,
-	MODE_DIST,
 	MODE_DIST_MYERS,
-	MODE_DIST_LEVENSTEIN,
+	MODE_DIST_LEVENSHTEIN,
 	MODE_CODE,
 	MODE_GRAPH,
 	MODE_COLS,
@@ -17,15 +16,15 @@ enum {
 };
 
 enum {
-        GRAPH_DEFAULT_MODE,
-        GRAPH_SDB_MODE,
-        GRAPH_JSON_MODE,
-        GRAPH_JSON_DIS_MODE,
-        GRAPH_TINY_MODE,
-        GRAPH_INTERACTIVE_MODE,
-        GRAPH_DOT_MODE,
-        GRAPH_STAR_MODE,
-        GRAPH_GML_MODE
+	GRAPH_DEFAULT_MODE,
+	GRAPH_SDB_MODE,
+	GRAPH_JSON_MODE,
+	GRAPH_JSON_DIS_MODE,
+	GRAPH_TINY_MODE,
+	GRAPH_INTERACTIVE_MODE,
+	GRAPH_DOT_MODE,
+	GRAPH_STAR_MODE,
+	GRAPH_GML_MODE
 };
 
 typedef struct {
@@ -1040,12 +1039,10 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'h':
 			return show_help (1);
 		case 's':
-			if (ro.mode == MODE_DIST) {
-				ro.mode = MODE_DIST_LEVENSTEIN;
-			} else if (ro.mode == MODE_DIST_LEVENSTEIN) {
-				ro.mode = MODE_DIST_MYERS;
+			if (ro.mode == MODE_DIST_MYERS) {
+				ro.mode = MODE_DIST_LEVENSHTEIN;
 			} else {
-				ro.mode = MODE_DIST;
+				ro.mode = MODE_DIST_MYERS;
 			}
 			break;
 		case 'S':
@@ -1279,19 +1276,16 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		}
 		r_diff_free (d);
 		break;
-	case MODE_DIST:
 	case MODE_DIST_MYERS:
-	case MODE_DIST_LEVENSTEIN:
+	case MODE_DIST_LEVENSHTEIN:
 		{
 			RDiff *d = r_diff_new ();
 			if (d) {
 				d->verbose = ro.verbose;
-				if (ro.mode == MODE_DIST_LEVENSTEIN) {
-					d->type = 'l';
-				} else if (ro.mode == MODE_DIST_MYERS) {
+				if (ro.mode == MODE_DIST_MYERS) {
 					d->type = 'm';
 				} else {
-					d->type = 0;
+					d->type = 'l';
 				}
 				r_diff_buffers_distance (d, bufa, (ut32)sza, bufb, (ut32)szb, &ro.count, &sim);
 				r_diff_free (d);
