@@ -916,7 +916,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
                 __generate_graph (c, off);
                 r_core_agraph_print (c, use_utf8, "");
                 r_cons_reset_colors ();
-        break;
+        	break;
         }
 }
 
@@ -990,7 +990,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 'm':{
 		        const char *tmp = opt.arg;
-		        switch(tmp[0]) {
+		        switch (tmp[0]) {
 	                case 'i': ro.gmode = GRAPH_INTERACTIVE_MODE; break;
 	                case 'k': ro.gmode = GRAPH_SDB_MODE; break;
 	                case 'j': ro.gmode = GRAPH_JSON_MODE; break;
