@@ -1,11 +1,10 @@
-/* radare2 - LGPL - Copyright 2013-2019 - pancake */
+/* radare2 - LGPL - Copyright 2013-2020 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
 
-#if CSNEXT
-
 #include <capstone.h>
+#if CS_API_MAJOR >= 5
 #include <riscv.h>
 
 // http://www.mrc.uidaho.edu/mrc/people/jff/digital/RISCVir.html
@@ -105,7 +104,7 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
 	PJ *pj = pj_new ();
 	if (!pj) {
-		return:
+		return;
 	}
 	pj_o (pj);
 	pj_ka (pj, "operands");

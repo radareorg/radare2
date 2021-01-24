@@ -878,9 +878,12 @@ static int regsize64(cs_insn *insn, int n) {
 
 
 static int vector_size(cs_arm64_op *op) {
+#if CS_API_MAJOR == 4
 	if (op->vess) {
 		return vess_size(op->vess);
-	} else if (op->vas) {
+	}
+#endif
+	if (op->vas) {
 		return vas_size(op->vas);
 	} else {
 		return 64;
@@ -1014,7 +1017,12 @@ static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int 
 		i = op.vector_index;
 	}
 
-	if ((op.vess || op.vas) && i != -1) {
+#if CS_API_MAJOR == 4
+	const bool isvessas = (op.vess || op.vas);
+#else
+	const bool isvessas = op.vas;
+#endif
+	if (isvessas && i != -1) {
 		int size = vector_size(&op);
 		int shift = i * size;
 		char *regc = "l";
@@ -1043,12 +1051,16 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 	if (op.vector_index != -1) {
 		i = op.vector_index;
 	}
-
-	if ((op.vess || op.vas) && i != -1) {
-		int size = vector_size(&op);
+#if CS_API_MAJOR == 4
+	const bool isvessas = (op.vess || op.vas);
+#else
+	const bool isvessas = op.vas;
+#endif
+	if (isvessas && i != -1) {
+		int size = vector_size (&op);
 		int shift = i * size;
 		char *regc = "l";
-		ut64 mask = bitmask_by_width[size-1];
+		ut64 mask = bitmask_by_width[size - 1];
 		if (shift >= 64) {
 			shift -= 64;
 			regc = "h";
@@ -1133,7 +1145,12 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 		r_strbuf_appendf (sb, "%d,", shift);
 	}
 
-	if (op.vess || op.vas) {
+#if CS_API_MAJOR == 4
+	const bool isvessas = (op.vess || op.vas);
+#else
+	const bool isvessas = op.vas;
+#endif
+	if (isvessas) {
 		VEC64_APPEND (sb, n, i);
 	} else {
 		r_strbuf_appendf (sb, "%s", rn);
