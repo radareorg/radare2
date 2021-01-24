@@ -763,7 +763,9 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	}
 	const char *cc = r_anal_cc_default (core->anal);
 	if (!cc) {
-		eprintf ("Warning: set your favourite calling convention in `e anal.cc=?`\n");
+		if (r_anal_cc_once (core->anal)) {
+			eprintf ("Warning: set your favourite calling convention in `e anal.cc=?`\n");
+		}
 		cc = "reg";
 	}
 	fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
