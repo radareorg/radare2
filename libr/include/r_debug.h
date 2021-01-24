@@ -314,6 +314,7 @@ typedef struct r_debug_t {
 
 	Sdb *sgnls;
 	RCoreBind corebind;
+	PJ *pj;
 	// internal use only
 	int _mode;
 	RNum *num;

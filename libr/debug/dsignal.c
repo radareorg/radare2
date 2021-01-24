@@ -92,29 +92,18 @@ static bool siglistjsoncb(void *p, const char *k, const char *v) {
 	if (atoi (k) > 0) {
 		strncpy (key + 4, k, 20);
 		opt = (int)sdb_num_get (DB, key, 0);
-		if (dbg->_mode == 2) {
-			dbg->_mode = 0;
-		} else {
-			r_cons_strcat (",");
-		}
-		PJ *pj = pj_new ();
-		if (!pj) {
-			return false;
-		}
-		pj_o (pj);
-		pj_ks (pj, "signum", k);
-		pj_ks (pj, "name", v);
-		pj_k (pj, "option");
+		pj_o (dbg->pj);
+		pj_ks (dbg->pj, "signum", k);
+		pj_ks (dbg->pj, "name", v);
+		pj_k (dbg->pj, "option");
 		if (opt & R_DBG_SIGNAL_CONT) {
-			pj_s (pj, "cont");
+			pj_s (dbg->pj, "cont");
 		} else if (opt & R_DBG_SIGNAL_SKIP) {
-			pj_s (pj, "skip");
+			pj_s (dbg->pj, "skip");
 		} else {
-			pj_null (pj);
+			pj_null (dbg->pj);
 		}
-		pj_end (pj);
-		r_cons_print (pj_string (pj));
-		pj_free (pj);
+		pj_end (dbg->pj);
 	}
 	return true;
 }
@@ -127,10 +116,13 @@ R_API void r_debug_signal_list(RDebug *dbg, int mode) {
 		sdb_foreach (DB, siglistcb, dbg);
 		break;
 	case 2:
-		r_cons_strcat ("[");
+		if (!dbg->pj) {
+			return;
+		}
+		pj_a (dbg->pj);
 		sdb_foreach (DB, siglistjsoncb, dbg);
-		r_cons_strcat ("]");
-		r_cons_newline();
+		pj_end (dbg->pj);
+		r_cons_println (pj_string (dbg->pj));
 		break;
 	}
 	dbg->_mode = 0;

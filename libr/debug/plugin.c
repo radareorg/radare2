@@ -59,7 +59,7 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	RListIter *iter;
 	PJ *pj = NULL;
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = dbg->pj;
 		if (!pj) {
 			return false;
 		}
@@ -86,7 +86,6 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	if (mode == 'j') {
 		pj_end (pj);
 		dbg->cb_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	}
 	return true;
 }
