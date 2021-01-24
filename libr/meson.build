@@ -1,3 +1,7 @@
+esil_plugins = [
+  'dummy'
+]
+
 anal_plugins = [
   '6502',
   '8051',
