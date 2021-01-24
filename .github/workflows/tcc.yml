@@ -20,7 +20,7 @@ jobs:
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
-          ./configure --prefix=/usr
+          sh ./configure --prefix=/usr
           make
           sudo make install
 
