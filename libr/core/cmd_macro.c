@@ -13,9 +13,6 @@ static const char *help_msg_lparen[] = {
 	"", "Argument support:", "",
 	"(foo x y; $0 @ $1)", "", "define fun with args (x - $0; y - $1)",
 	".(foo 128 0x804800)", "", "call it with args",
-	"", "Iterations:", "",
-	".(foo;() $@)", "", "define iterator returning iter index",
-	"x @@ .(foo)", "", "iterate over them",
 	NULL
 };
 
