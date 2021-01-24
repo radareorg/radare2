@@ -202,8 +202,12 @@ static bool r_bin_coff_init_scn_va(struct r_bin_coff_obj *obj) {
 	int i;
 	ut64 va = 0;
 	for (i = 0; i < obj->hdr.f_nscns; i++) {
+		ut64 sz = obj->scn_hdrs[i].s_size;
+		if (sz < 16) {
+			sz = 16;
+		}
 		obj->scn_va[i] = va;
-		va += obj->scn_hdrs[i].s_size;
+		va += sz;
 		va = R_ROUND (va, 16ULL);
 	}
 	return true;
