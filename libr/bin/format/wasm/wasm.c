@@ -76,6 +76,7 @@ static size_t consume_str_r(RBuffer *b, ut64 max, size_t sz, char *out) {
 	r_return_val_if_fail (b, 0);
 	ut64 cur = r_buf_tell (b);
 	*out = 0;
+	max = R_MIN (max, sz);
 	if (max >= r_buf_size (b) || cur > max) {
 		return 0;
 	}
