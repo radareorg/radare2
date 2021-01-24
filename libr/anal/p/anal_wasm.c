@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2020 - xvilka, deroad */
+/* radare2 - LGPL - Copyright 2017-2021 - xvilka, deroad */
 
 #include <string.h>
 #include <r_types.h>
@@ -19,23 +19,10 @@ static ut64 addr_old = UT64_MAX;
 // finds the address of the call function (essentially where to jump to).
 static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
 	ut32 fcn_id;
-
-	if (!read_u32_leb128 (&data[1], &data[len - 1], &fcn_id)) {
+	if (len < 2 || !read_u32_leb128 (&data[1], &data[len - 1], &fcn_id)) {
 		return UT64_MAX;
 	}
-#if 0
-	r_cons_push ();
-	// 0xfff.. are bad addresses for wasm
-	// cgvwzq: 0xfff... can be external imported JS funcs
-	char *s = anal->coreb.cmdstrf (anal->coreb.core, "is~FUNC[2:%u]", fcn_id);
-	r_cons_pop ();
-	if (s) {
-		ut64 n = r_num_get (NULL, s);
-		free (s);
-		return n;
-	}
-#endif
-	return UT64_MAX;
+	return anal->binb.get_offset (anal->binb.bin, 'f', fcn_id);
 }
 
 static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 expected_type, ut32 depth, bool use_else) {
