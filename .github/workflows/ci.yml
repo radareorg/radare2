@@ -66,7 +66,7 @@ jobs:
     - name: Build on a directory with spaces (meson only)
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
-        sudo apt-get --assume-yes install python3-wheel python3-setuptools
+        sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
         sudo pip3 install meson==0.55.3 ninja==1.10.0
         git config --global pull.rebase false
         git clone --depth 1 . "spa ces"
@@ -150,7 +150,7 @@ jobs:
         path: binr/blob/radare2.xz
     - name: Static static r2 with meson 
       run: |
-        sudo apt-get --assume-yes install python3-wheel python3-setuptools
+        sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
         sudo pip3 install meson==0.55.3 ninja==1.10.0
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
@@ -219,6 +219,7 @@ jobs:
 #        path: rpmbuild/RPMS/*/*.rpm
   linux-asan-fuzz:
     runs-on: ubuntu-latest
+    continue-on-error: true
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
     - name: Checkout
@@ -227,6 +228,8 @@ jobs:
       run: |
         pip install r2pipe
         sys/sanitize.sh
+    - name: Installing tools for the testsuite
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
     - name: Running tests
       run: |
         export LD_LIBRARY_PATH=/usr/local/lib
@@ -310,6 +313,28 @@ jobs:
         name: radare2_iphoneos-arm64.zip
         path: ./dist/cydia/radare2*/*.deb
 
+  android-arm64:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Compile with acr
+      run: |
+        export V=r21d
+        wget -q https://dl.google.com/android/repository/android-ndk-$V-linux-x86_64.zip
+        unzip -q *.zip -d /tmp/ndk
+        export NDK=/tmp/ndk/android-ndk-$V/
+        export PATH="$NDK/bin:/tmp/ndk/bin:${PATH}"
+        echo NDK=$NDK > ~/.r2androidrc
+        sys/android-build.sh arm64
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-android-aarch64.tar.gz
+        path: ./*.aarch64.tar.gz
+
   android-build:
     runs-on: ubuntu-latest
     strategy:
@@ -320,7 +345,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: sudo apt-get --assume-yes install pax wget unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+      run: sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with meson
       run: |
         export PATH=${HOME}/.local/bin:${PATH}

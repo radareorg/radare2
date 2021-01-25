@@ -33,7 +33,9 @@ EXPECT=<<EOF
 	<script type="text/javascript" src="m/vendors/jquery.min.js"></script>
 	<script type="text/javascript" src="m/r2.js"></script>
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+
+EOF
 RUN
 
 NAME=r2 remote webserver two
