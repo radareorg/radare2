@@ -39,7 +39,7 @@ while : ; do
 	shift
 done
 
-if [ "${UID}" = 0 ]; then
+if [ "$(id -u)" = 0 ]; then
 	echo "[XX] Do not run this script as root!"
 	if [ -n "${SUDO_USER}" ]; then
 		echo "[--] Downgrading credentials to ${SUDO_USER}"
