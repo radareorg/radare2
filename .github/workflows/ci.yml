@@ -325,6 +325,7 @@ jobs:
       run: |
         sys/android-ndk-install.sh
         sys/android-build.sh arm64
+        ls -l
     - uses: actions/upload-artifact@v2
       with:
         name: radare2-android-aarch64.tar.gz
