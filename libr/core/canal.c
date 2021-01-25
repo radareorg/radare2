@@ -89,8 +89,7 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
 }
 
-
-static char *getFunctionName(RCore *core, ut64 addr) {
+static char *get_function_name(RCore *core, ut64 addr) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf && bf->o) {
 		Sdb *kv = bf->o->addr2klassmethod;
@@ -100,17 +99,8 @@ static char *getFunctionName(RCore *core, ut64 addr) {
 			return res;
 		}
 	}
-	RListIter *iter;
-	RFlagItem *flag;
-	const RList* flags = r_flag_get_list (core->flags, addr);
-	const char *name = NULL;
-	r_list_foreach (flags, iter, flag) {
-		name = flag->name;
-		if (r_str_startswith (name, "sym.")) {
-			break;
-		}
-	}
-	return name ? strdup (name) : NULL;
+	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
+	return (flag && flag->name) ? strdup (flag->name) : NULL;
 }
 
 static RCore *mycore = NULL;
@@ -778,7 +768,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		fcn->bits = core->anal->bits;
 	}
 	fcn->addr = at;
-	fcn->name = getFunctionName (core, at);
+	fcn->name = get_function_name (core, at);
 
 	if (!fcn->name) {
 		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
