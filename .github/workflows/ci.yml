@@ -232,6 +232,7 @@ jobs:
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
     - name: Running tests
       run: |
+        export ASAN_OPTIONS=detect_leaks=0
         export LD_LIBRARY_PATH=/usr/local/lib
         make tests
     - name: Run fuzz tests
