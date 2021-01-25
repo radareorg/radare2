@@ -350,7 +350,7 @@ static inline bool match_hist_line(char *hist_line, char *cur_line) {
 
 static void setup_hist_match(RLine *line) {
 	if (line->history.do_setup_match) {
-		R_FREE(line->history.match);
+		R_FREE (line->history.match);
 		if (*line->buffer.data) {
 			line->history.match = strdup (line->buffer.data);
 		}
