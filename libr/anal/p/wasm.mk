@@ -1,4 +1,5 @@
 OBJ_WASM=anal_wasm.o
+WASM_ROOT=../asm/arch/wasm
 CFLAGS+=-I$(WASM_ROOT)
 
 STATIC_OBJ+=${OBJ_WASM}
