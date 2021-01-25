@@ -328,7 +328,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: radare2-android-aarch64.tar.gz
-        path: ./*.aarch64.tar.gz
+        path: radare2*android*aarch64.tar.gz
 
   android-build:
     runs-on: ubuntu-latest
