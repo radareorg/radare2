@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2020 - pancake */
+/* radare2 - LGPL - Copyright 2013-2021 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -1023,7 +1023,7 @@ static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int 
 	const bool isvessas = op.vas;
 #endif
 	if (isvessas && i != -1) {
-		int size = vector_size(&op);
+		int size = vector_size (&op);
 		int shift = i * size;
 		char *regc = "l";
 		if (shift >= 64) {
@@ -1031,12 +1031,14 @@ static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int 
 			regc = "h";
 		}
 
+		size_t s = sizeof (bitmask_by_width) / sizeof (*bitmask_by_width);
+		int width = size > 0? (size - 1) % s: 0;
 		if (shift > 0) {
 			r_strbuf_appendf (sb, "0x%"PFMT64x",%d,%s%s,>>,&", 
-				bitmask_by_width[size-1], shift, REG64 (n), regc);
+				bitmask_by_width[width], shift, REG64 (n), regc);
 		} else {
 			r_strbuf_appendf (sb, "0x%"PFMT64x",%s%s,&", 
-				bitmask_by_width[size-1], REG64 (n), regc);
+				bitmask_by_width[width], REG64 (n), regc);
 		}
 	} else {
 		r_strbuf_appendf (sb, "%s", REG64 (n));
@@ -1060,7 +1062,9 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 		int size = vector_size (&op);
 		int shift = i * size;
 		char *regc = "l";
-		ut64 mask = bitmask_by_width[size - 1];
+		size_t s = sizeof (bitmask_by_width) / sizeof (*bitmask_by_width);
+		int width = size > 0? (size - 1) % s: 0;
+		ut64 mask = bitmask_by_width[width];
 		if (shift >= 64) {
 			shift -= 64;
 			regc = "h";
