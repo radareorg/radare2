@@ -232,6 +232,7 @@ jobs:
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
     - name: Running tests
       run: |
+        export ASAN_OPTIONS=detect_leaks=0
         export LD_LIBRARY_PATH=/usr/local/lib
         make tests
     - name: Run fuzz tests
@@ -325,10 +326,11 @@ jobs:
       run: |
         sys/android-ndk-install.sh
         sys/android-build.sh arm64
+        ls -l
     - uses: actions/upload-artifact@v2
       with:
         name: radare2-android-aarch64.tar.gz
-        path: ./*.aarch64.tar.gz
+        path: radare2*android*aarch64.tar.gz
 
   android-build:
     runs-on: ubuntu-latest
