@@ -17,7 +17,9 @@ echo Downloading NDK $V...
 wget -c -q https://dl.google.com/android/repository/android-ndk-$V-$O-x86_64.zip
 echo Unzipping in /tmp/ndkzip
 unzip -q *.zip -d /tmp/ndkzip
-echo NDK=/tmp/ndkzip/* > $HOME/.r2androidrc
+export NDK=$(ls -d /tmp/ndkzip/* | head -n1)
+echo NDK=${NDK}
+echo NDK=${NDK} > $HOME/.r2androidrc
 python $NDK/build/tools/make_standalone_toolchain.py \
         --arch arm64 --api 28 --install-dir toolchain
 echo Initializing Toolchain /tmp/ndk
