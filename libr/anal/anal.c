@@ -188,6 +188,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	free (a->os);
 	free (a->zign_path);
 	r_list_free (a->plugins);
+	r_list_free (a->esil_plugins);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
 	r_spaces_fini (&a->meta_spaces);
 	r_spaces_fini (&a->zign_spaces);

@@ -335,7 +335,7 @@ struct r_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RList *ropchain;
 	bool use_tree_sitter_r2cmd;
-
+	char *theme;
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
 
@@ -382,7 +382,7 @@ typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 #ifdef R_API
 //#define r_core_ncast(x) (RCore*)(size_t)(x)
 R_API RList *r_core_list_themes(RCore *core);
-R_API char *r_core_get_theme(void);
+R_API char *r_core_get_theme(RCore *core);
 R_API const char *r_core_get_section_name(RCore *core, ut64 addr);
 R_API RCons *r_core_get_cons(RCore *core);
 R_API RBin *r_core_get_bin(RCore *core);

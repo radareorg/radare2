@@ -561,7 +561,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	int rawstr = 0;
 	int fd = -1;
 	RCore core = {0};
-	RLib *l = NULL;
 	ut64 at = UT64_MAX;
 
 	r_core_init (&core);
@@ -572,7 +571,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
 		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
 		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
-		l = r_lib_new (NULL, NULL);
+		RLib *l = r_lib_new (NULL, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
@@ -593,6 +592,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (extrasdir);
 		free (bindingsdir);
 		free (path);
+		r_lib_free (l);
 	}
 	free (tmp);
 
@@ -1194,7 +1194,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	pj_free (pj);
 	r_cons_flush ();
 	r_core_fini (&core);
-	r_lib_free (l);
 
 	return 0;
 }

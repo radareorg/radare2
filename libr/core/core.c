@@ -2820,6 +2820,7 @@ R_API bool r_core_init(RCore *core) {
 	core->fixedarch = false;
 	core->fixedbits = false;
 
+	core->theme = strdup ("default");
 	/* initialize libraries */
 	core->cons = r_cons_new ();
 	if (core->cons->refcnt == 1) {
@@ -3042,6 +3043,7 @@ R_API void r_core_fini(RCore *c) {
 	should probably need to add a r_config_free_payload callback */
 	r_cons_free ();
 	r_cons_singleton ()->teefile = NULL; // HACK
+	free (c->theme);
 	r_search_free (c->search);
 	r_flag_free (c->flags);
 	r_fs_free (c->fs);

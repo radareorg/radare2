@@ -4316,7 +4316,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		r_cons_rgb_str (cstr, sizeof (cstr), &rcolor);
 		char *esc = strchr (cstr + 1, '\x1b');
-		char *curtheme = r_core_get_theme ();
+		char *curtheme = r_core_get_theme (core);
 
 		r_cons_printf ("# Use '.' to randomize current color and ':' to randomize palette\n");
 		r_cons_printf ("# Press '"Color_RED"rR"Color_GREEN"gG"Color_BLUE"bB"Color_RESET
