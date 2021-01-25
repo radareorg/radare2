@@ -847,8 +847,9 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 
 // TODO: deprecate?
 R_API char *r_str_dup(char *ptr, const char *string) {
-	free (ptr);
-	return r_str_new (string);
+	char *str = r_str_new (string);
+	free (ptr); // in case ptr == string
+	return str;
 }
 
 R_API char *r_str_prepend(char *ptr, const char *string) {

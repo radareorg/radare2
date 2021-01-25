@@ -64,7 +64,6 @@ static const char *help_msg_eco[] = {
 	NULL
 };
 
-static char *curtheme = "default";
 static bool getNext = false;
 
 static void cmd_eval_init(RCore *core, RCmdDesc *parent) {
@@ -85,12 +84,12 @@ static bool load_theme(RCore *core, const char *path) {
 	return res;
 }
 
-static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
+static bool nextpal_item(RCore *core, PJ *pj, int mode, const char *file) {
 	const char *fn = r_str_lchr (file, '/');
 	if (!fn) fn = file;
 	switch (mode) {
 	case 'j': // json
-		r_cons_printf ("%s\"%s\"", ctr?",":"", fn);
+		pj_s (pj, fn);
 		break;
 	case 'l': // list
 		r_cons_println (fn);
@@ -99,20 +98,20 @@ static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 		// TODO: move logic here
 		break;
 	case 'n': // next
-		if (curtheme && !strcmp (curtheme, "default")) {
-			curtheme = r_str_dup (curtheme, fn);
+		if (core->theme && !strcmp (core->theme, "default")) {
+			core->theme = r_str_dup (core->theme, fn);
 			getNext = false;
 		}
 		if (getNext) {
-			curtheme = r_str_dup (curtheme, fn);
+			core->theme = r_str_dup (core->theme, fn);
 			getNext = false;
 			return false;
-		} else if (curtheme) {
-			if (!strcmp (curtheme, fn)) {
+		} else if (core->theme) {
+			if (!strcmp (core->theme, fn)) {
 				getNext = true;
 			}
 		} else {
-			curtheme = r_str_dup (curtheme, fn);
+			core->theme = r_str_dup (core->theme, fn);
 			return false;
 		}
 		break;
@@ -127,7 +126,7 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 		return false;
 	}
 	if (!r_str_cmp (_arg, "default", strlen (_arg))) {
-		curtheme = strdup (_arg);
+		core->theme = r_str_dup (core->theme, _arg);
 		r_cons_pal_init (core->cons->context);
 		return true;
 	}
@@ -143,10 +142,10 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 
 	if (!load_theme (core, home)) {
 		if (load_theme (core, path)) {
-			curtheme = r_str_dup (curtheme, arg);
+			core->theme = r_str_dup (core->theme, arg);
 		} else {
 			if (load_theme (core, arg)) {
-				curtheme = r_str_dup (curtheme, arg);
+				core->theme = r_str_dup (core->theme, arg);
 			} else {
 				char *absfile = r_file_abspath (arg);
 				eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
@@ -173,8 +172,8 @@ static void list_themes_in_path(RList *list, const char *path) {
 	r_list_free (files);
 }
 
-R_API char *r_core_get_theme (void) {
-	return curtheme;
+R_API char *r_core_get_theme (RCore *core) {
+	return core->theme;
 }
 
 R_API RList *r_core_list_themes(RCore *core) {
@@ -203,13 +202,17 @@ static void nextpal(RCore *core, int mode) {
 	RListIter *iter;
 	const char *fn;
 	char *path = NULL;
-	int ctr = 0;
+	PJ *pj = NULL;
+	if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
+	}
 	char *home = r_str_home (R2_HOME_THEMES R_SYS_DIR);
 
 	getNext = false;
-	if (mode == 'j') {
-		r_cons_printf ("[");
-	}
 	// spaguetti!
 	if (home) {
 		files = r_sys_dir (home);
@@ -219,25 +222,25 @@ static void nextpal(RCore *core, int mode) {
 				if (*fn && *fn != '.') {
 					if (mode == 'p') {
 						const char *nfn = iter->n? iter->n->data: NULL;
-						if (!curtheme) {
+						if (!core->theme) {
 							free (home);
 							r_list_free (files);
 							return;
 						}
 						eprintf ("%s %s %s\n",
 							r_str_get (nfn),
-							r_str_get (curtheme),
+							r_str_get (core->theme),
 							r_str_get (fn));
-						if (nfn && !strcmp (nfn, curtheme)) {
+						if (nfn && !strcmp (nfn, core->theme)) {
 							r_list_free (files);
 							files = NULL;
-							free (curtheme);
-							curtheme = strdup (fn);
+							free (core->theme);
+							core->theme = strdup (fn);
 							R_FREE (home);
 							goto done;
 						}
 					} else {
-						if (!nextpal_item (core, mode, fn, ctr++)) {
+						if (!nextpal_item (core, pj, mode, fn)) {
 							r_list_free (files);
 							files = NULL;
 							R_FREE (home);
@@ -261,22 +264,22 @@ static void nextpal(RCore *core, int mode) {
 				if (*fn && *fn != '.') {
 					if (mode == 'p') {
 						const char *nfn = iter->n? iter->n->data: NULL;
-						if (!curtheme) {
+						if (!core->theme) {
 							free (home);
 							r_list_free (files);
 							return;
 						}
 						eprintf ("%s %s %s\n",
 							r_str_get (nfn),
-							r_str_get (curtheme),
+							r_str_get (core->theme),
 							r_str_get (fn));
-						if (nfn && !strcmp (nfn, curtheme)) {
-							free (curtheme);
-							curtheme = strdup (fn);
+						if (nfn && !strcmp (nfn, core->theme)) {
+							free (core->theme);
+							core->theme = strdup (fn);
 							goto done;
 						}
 					} else { // next
-						if (!nextpal_item (core, mode, fn, ctr++)) {
+						if (!nextpal_item (core, pj, mode, fn)) {
 							goto done;
 						}
 					}
@@ -288,21 +291,23 @@ static void nextpal(RCore *core, int mode) {
 done:
 	free (path);
 	if (getNext) {
-		R_FREE (curtheme);
+		R_FREE (core->theme);
 		nextpal (core, mode);
 		return;
 	}
-	if (mode == 'l' && !curtheme && !r_list_empty (files)) {
+	if (mode == 'l' && !core->theme && !r_list_empty (files)) {
 		//nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
-		if (curtheme) {
-			r_core_cmdf (core, "eco %s", curtheme);
+		if (core->theme) {
+			r_core_cmdf (core, "eco %s", core->theme);
 		}
 	}
 	r_list_free (files);
 	files = NULL;
 	if (mode == 'j') {
-		r_cons_printf ("]\n");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	}
 }
 
@@ -381,10 +386,10 @@ static int cmd_eval(void *data, const char *input) {
 			free (k);
 		}
 		return true;
-	case 'x': // "ecox"
+	case 'x': // "ex"
 		// XXX we need headers for the cmd_xxx files.
 		return cmd_quit (data, "");
-	case 'j': // "ecoj"
+	case 'j': // "ej"
 		r_config_list (core->config, NULL, 'j');
 		break;
 	case 'v': // verbose
@@ -407,29 +412,25 @@ static int cmd_eval(void *data, const char *input) {
 			} else if (input[2] == ' ') {
 				cmd_load_theme (core, input + 3);
 			} else if (input[2] == 'o') {
-				cmd_load_theme (core, r_core_get_theme ());
+				cmd_load_theme (core, core->theme);
 			} else if (input[2] == 'c' || input[2] == '.') {
-				r_cons_printf ("%s\n", r_core_get_theme ());
+				r_cons_printf ("%s\n", core->theme);
 			} else if (input[2] == '?') {
 				r_core_cmd_help (core, help_msg_eco);
-			} else if (input[2] == 'q') {
-				RList *themes_list = r_core_list_themes (core);
-				RListIter *th_iter;
-				const char *th;
-				r_list_foreach (themes_list, th_iter, th) {
-					r_cons_printf ("%s\n", th);
-				}
 			} else {
 				RList *themes_list = r_core_list_themes (core);
 				RListIter *th_iter;
 				const char *th;
 				r_list_foreach (themes_list, th_iter, th) {
-					if (curtheme && !strcmp (curtheme, th)) {
+					if (input[2] == 'q') {
+						r_cons_printf ("%s\n", th);
+					} else if (core->theme && !strcmp (core->theme, th)) {
 						r_cons_printf ("- %s\n", th);
 					} else {
 						r_cons_printf ("  %s\n", th);
 					}
 				}
+				r_list_free (themes_list);
 			}
 			break;
 		case 's': r_cons_pal_show (); break; // "ecs"
