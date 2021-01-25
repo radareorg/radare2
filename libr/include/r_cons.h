@@ -973,10 +973,12 @@ typedef struct r_selection_widget_t {
 
 typedef struct r_line_hist_t {
 	char **data;
+	char *match;
 	int size;
 	int index;
 	int top;
 	int autosave;
+	bool do_setup_match;
 } RLineHistory;
 
 typedef struct r_line_buffer_t {
