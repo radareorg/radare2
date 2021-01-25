@@ -22,5 +22,3 @@ echo NDK=${NDK}
 echo NDK=${NDK} > $HOME/.r2androidrc
 python $NDK/build/tools/make_standalone_toolchain.py \
         --arch arm64 --api 28 --install-dir toolchain
-echo Initializing Toolchain /tmp/ndk
-sys/android-shell.sh
