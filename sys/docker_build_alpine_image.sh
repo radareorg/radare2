@@ -186,7 +186,7 @@ RUN set -o pipefail && \
 			echo "alias q=\"exit\"" >>/root/.bashrc \
 		) \
 	) && ( \
-		[ "$gname" == "root" ] || \
+		[ "$gname" = "root" ] || \
 		( \
 			groupadd -f $gname && \
 			(groupmod -g $gid $gname 2>/dev/null || true) && \
