@@ -323,12 +323,7 @@ jobs:
       run: sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with acr
       run: |
-        export V=r21d
-        wget -q https://dl.google.com/android/repository/android-ndk-$V-linux-x86_64.zip
-        unzip -q *.zip -d /tmp/ndk
-        export NDK=/tmp/ndk/android-ndk-$V/
-        export PATH="$NDK/bin:/tmp/ndk/bin:${PATH}"
-        echo NDK=$NDK > ~/.r2androidrc
+        sys/android-ndk-install.sh
         sys/android-build.sh arm64
     - uses: actions/upload-artifact@v2
       with:
