@@ -77,15 +77,15 @@ if [ ! -x /work ]; then
 			if [ "`uname`" = "Darwin" ]; then
 				NDK="${HOME}/Library/Android/sdk/ndk-bundle/"
 			else
-				NDK="${HOME}/Downloads/android-ndk-r7b"
+				NDK="${HOME}/Downloads/android-ndk-r21d"
 			fi
 		fi
-		[ -z "${NDK}" ] && NDK="${HOME}/Downloads/android-ndk-r7b"
+		[ -z "${NDK}" ] && NDK="${HOME}/Downloads/android-ndk-r21d"
 	fi
 fi
 
 echo ROOT=$ROOT
-echo NDK=$NDK
+echo NDK="$NDK"
 echo NDK_ARCH=$NDK_ARCH
 
 echo "Building the standalone NDK toolchain..."
@@ -101,7 +101,7 @@ if [ "${BUILD}" != 0 ]; then
 		echo "echo NDK=/path/to/ndk  > ~/.r2androidrc" >&2
 		exit 1
 	fi
-	PATH=/tmp/ndk/bin:$PATH
+	PATH="/tmp/ndk/bin:$PATH"
 	export PATH
 	export CFLAGS
 	export NDK
