@@ -5724,7 +5724,10 @@ toro:
 			} else if (ds->immtrim) {
 				free (ds->opstr);
 				ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
-				r_parse_immtrim (ds->opstr);
+				char *res = r_parse_immtrim (ds->opstr);
+				if (res) {
+					ds->opstr = res;
+				}
 			} else if (ds->use_esil) {
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop,
@@ -6493,7 +6496,10 @@ toro:
 						opstr = (R_STRBUF_SAFEGET (&analop.esil));
 					}
 					if (asm_immtrim) {
-						r_parse_immtrim (opstr);
+						char *res = r_parse_immtrim (opstr);
+						if (res) {
+							opstr = res;
+						}
 					}
 					r_cons_println (opstr);
 				}
@@ -6507,7 +6513,10 @@ toro:
 					r_str_case (asm_str, 1);
 				}
 				if (asm_immtrim) {
-					r_parse_immtrim (asm_str);
+					char *res = r_parse_immtrim (asm_str);
+					if (res) {
+						asm_str = res;
+					}
 				}
 				if (subnames) {
 					RAnalHint *hint = r_anal_hint_get (core->anal, at);
