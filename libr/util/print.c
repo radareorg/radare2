@@ -2025,7 +2025,7 @@ static bool issymbol(char c) {
 static bool check_arg_name(RPrint *print, char *p, ut64 func_addr) {
 	if (func_addr && print->exists_var) {
 		int z;
-		for (z = 0; p[z] && (isalpha (p[z]) || isdigit (p[z]) || p[z] == '_'); z++) {
+		for (z = 0; p[z] && (isalpha ((unsigned char)p[z]) || isdigit ((unsigned char)p[z]) || p[z] == '_'); z++) {
 			;
 		}
 		char tmp = p[z];

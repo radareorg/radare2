@@ -226,7 +226,7 @@ static int get_template_params(const char *sym, size_t *amount_of_read_chars, ch
 			}
 			sym += ret + 1;
 			SDataType data_type;
-			if (isdigit (*sym)) {
+			if (isdigit ((unsigned char)*sym)) {
 				err = parse_data_type (sym, &data_type, &ret);
 				*str_type_code = r_str_newf ("&%s %s%s", data_type.left, str.type_str, data_type.right);
 				free (data_type.left);
@@ -1921,7 +1921,7 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 		curr_pos++;
 	}
 
-	if (isdigit (*curr_pos)) {
+	if (isdigit ((unsigned char)*curr_pos)) {
 		err = parse_data_type (curr_pos, &data_type, &len);
 		if (err != eDemanglerErrOK) {
 			goto parse_microsoft_mangled_name_err;
@@ -1935,7 +1935,7 @@ static EDemanglerErr parse_microsoft_mangled_name(const char *sym, char **demang
 		*demangled_name = r_str_append (*demangled_name, data_type.right);
 		free (data_type.left);
 		free (data_type.right);
-	} else if (isalpha (*curr_pos)) {
+	} else if (isalpha ((unsigned char)*curr_pos)) {
 		err = parse_function (curr_pos, &type_code_str, demangled_name, &len);
 		curr_pos += len;
 	} else {

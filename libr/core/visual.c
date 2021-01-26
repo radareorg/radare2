@@ -3806,9 +3806,9 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			int i;
 			for(i=0;i<6;i++) {
 				if (core->printidx == i) {
-					pm[i + 1] = toupper(pm[i + 1]);
+					pm[i + 1] = toupper((unsigned char)pm[i + 1]);
 				} else {
-					pm[i + 1] = tolower(pm[i + 1]);
+					pm[i + 1] = tolower((unsigned char)pm[i + 1]);
 				}
 			}
 			if (core->print->cur_enabled) {
