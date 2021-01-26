@@ -606,7 +606,6 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 			out = str;	/* TODO: show error, invalid var name? */
 			eprintf ("Something is really wrong\n");
 		}
-		free(ret);
 		ret = strdup (out);
 		free (oldstr);
 	} else if (*str == '"' || *str == '\'') {
