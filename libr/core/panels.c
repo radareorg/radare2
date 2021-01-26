@@ -1557,7 +1557,7 @@ static void __cursor_down(RCore *core) {
 }
 
 static void __save_panel_pos(RPanel* panel) {
-	if(!panel){
+	if (!panel) {
 		return;
 	}
 	__set_geometry (&panel->view->prevPos, panel->view->pos.x, panel->view->pos.y,
