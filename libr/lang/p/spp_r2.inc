@@ -214,7 +214,7 @@ static TAG_CALLBACK(spp_r2_ifeq) {
 static TAG_CALLBACK(spp_r2_hex) {
 	size_t i;
 	for (i = 0; buf[i]; i++) {
-		if (isdigit (buf[i])) {
+		if (isdigit ((unsigned char)buf[i])) {
 			int ch, b = buf[i + 2];
 			buf[i + 2] = '\0';
 			sscanf (buf + i, "%02x", &ch);

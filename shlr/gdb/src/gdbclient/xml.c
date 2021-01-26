@@ -513,7 +513,7 @@ static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags) {
 		// To avoid duplicates. This skips flags if first char is same. i.e.
 		// for x86_64, it will skip VIF because VM already occurred. This is
 		// same as default reg-profiles in r2
-		c = tolower (flags->fields[i].name[0]) - 'a';
+		c = tolower ((unsigned char)flags->fields[i].name[0]) - 'a';
 		if (fc[c]) {
 			continue;
 		}
@@ -647,7 +647,7 @@ static RList *_extract_flags(char *flagstr) {
 				goto exit_err;
 			}
 			tmp1 += 7;
-			if (!isdigit (*tmp1)) {
+			if (!isdigit ((unsigned char)*tmp1)) {
 				goto exit_err;
 			}
 			tmpflag->fields[num_fields].bit_num = (ut32) strtoul (tmp1, NULL, 10);
@@ -656,7 +656,7 @@ static RList *_extract_flags(char *flagstr) {
 				goto exit_err;
 			}
 			tmp1 += 5;
-			if (!isdigit (*tmp1)) {
+			if (!isdigit ((unsigned char)*tmp1)) {
 				goto exit_err;
 			}
 			tmpflag->fields[num_fields].sz = (ut32) strtoul (tmp1, NULL, 10) + 1;
@@ -799,7 +799,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			goto exit_err;
 		}
 		tmp1 += 9;
-		if (!isdigit (*tmp1)) {
+		if (!isdigit ((unsigned char)*tmp1)) {
 			goto exit_err;
 		}
 		regsize = strtoul (tmp1, NULL, 10);
@@ -807,7 +807,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		regnum = UINT32_MAX;
 		if ((tmp1 = strstr (regstr, "regnum="))) {
 			tmp1 += 8;
-			if (!isdigit (*tmp1)) {
+			if (!isdigit ((unsigned char)*tmp1)) {
 				goto exit_err;
 			}
 			regnum = strtoul (tmp1, NULL, 10);

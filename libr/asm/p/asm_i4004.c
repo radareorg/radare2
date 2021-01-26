@@ -51,7 +51,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 			goto beach;
 		}
 		strncpy (mnemonic, str, n);
-		while (*++p && isspace (*p));
+		while (*++p && isspace ((unsigned char)*p));
 		n = strcspn (p, ", "); // next separator
 		if (n > sizeof (arg0) - 1) {
 			goto beach;
@@ -63,7 +63,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 			while (*++p) {
 				if (*p == ',') {
 					comma++;
-				} else if (!isspace(*p)) {
+				} else if (!isspace((unsigned char)*p)) {
 					break;
 				}
 			}

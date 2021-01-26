@@ -239,7 +239,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		}
 	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
 		ret = r_num_tailff (num, str + 5);
-	} else if (str[0] == '0' && tolower (str[1]) == 'x') {
+	} else if (str[0] == '0' && tolower ((unsigned char)str[1]) == 'x') {
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
 			// Support 0x1000_f000_4000

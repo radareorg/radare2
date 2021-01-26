@@ -4215,7 +4215,7 @@ static int mymemwrite2(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 
 static char *ssa_get(RAnalEsil *esil, const char *reg) {
 	RDisasmState *ds = esil->user;
-	if (isdigit (*reg)) {
+	if (isdigit ((unsigned char)*reg)) {
 		return strdup (reg);
 	}
 	if (!ds->ssa) {
@@ -4234,7 +4234,7 @@ static void ssa_set(RAnalEsil *esil, const char *reg) {
 static int myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	RDisasmState *ds = esil->user;
 	if (ds && ds->show_emu_ssa) {
-		if (!isdigit (*name)) {
+		if (!isdigit ((unsigned char)*name)) {
 			char *r = ssa_get (esil, name);
 			ds_comment_esil (ds, true, false, "<%s", r);
 			free (r);

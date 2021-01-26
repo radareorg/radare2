@@ -588,7 +588,7 @@ dotherax:
 		return true;
 	}
 
-	if  (str[0] == '0' && (tolower (str[1]) == 'x')) {
+	if  (str[0] == '0' && (tolower ((unsigned char)str[1]) == 'x')) {
 		out_mode = (flags & 32)? '0': 'I';
 	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';

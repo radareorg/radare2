@@ -25,7 +25,7 @@ static bool is_valid_project_name(const char *name) {
 		case '-':
 			continue;
 		}
-		if (isalpha (name[i])) {
+		if (isalpha ((unsigned char)name[i])) {
 			continue;
 		}
 		if (IS_DIGIT (name[i])) {

@@ -163,7 +163,7 @@ static bool is_valid_guid(const char *guid) {
 	}
 	size_t i;
 	for (i = 0; guid[i]; i++) {
-		if (!isxdigit (guid[i])) {
+		if (!isxdigit ((unsigned char)guid[i])) {
 			return false;
 		}
 	}

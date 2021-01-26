@@ -414,9 +414,9 @@ R_API int r_cons_get_cur_line(void) {
 	if (isatty (fileno (stdin))) {
 		if (write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION)) != -1) {
 			if (read (0, buf, sizeof (buf)) != sizeof (buf)) {
-				if (isdigit (buf[2])) {
+				if (isdigit ((unsigned char)buf[2])) {
 					curline = (buf[2] - '0');
-				} if (isdigit (buf[3])) {
+				} if (isdigit ((unsigned char)buf[3])) {
 					curline = curline * 10 + (buf[3] - '0');
 				}
 			}

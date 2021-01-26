@@ -239,15 +239,15 @@ static int str_iwhitecasecmp(char const*a, char const*b) {
 		if (!*a || !*b) {
 			break;
 		}
-		if (isspace (*a)) {
+		if (isspace ((unsigned char)*a)) {
 			a += 1;
 			continue;
 		}
-		if (isspace (*b)) {
+		if (isspace ((unsigned char)*b)) {
 			b += 1;
 			continue;
 		}
-		if (tolower (*a) == tolower (*b)) {
+		if (tolower ((unsigned char)*a) == tolower ((unsigned char)*b)) {
 			a += 1;
 			b += 1;
 			continue;
@@ -277,14 +277,14 @@ static bool pattern_match(char const*str, char const*pattern) {
 	}
 
 	while (pattern[ti] != '\0') {
-		while (isspace (str[si]) && !isspace (pattern[ti])) {
+		while (isspace ((unsigned char)str[si]) && !isspace ((unsigned char)pattern[ti])) {
 			si += 1;
 		}
-		if (isspace (pattern[ti])) {
+		if (isspace ((unsigned char)pattern[ti])) {
 			ti += 1;
 			continue;
 		}
-		if (tolower (pattern[ti]) == tolower (str[si])) {
+		if (tolower ((unsigned char)pattern[ti]) == tolower ((unsigned char)str[si])) {
 			si += 1;
 			ti += 1;
 		}
@@ -326,13 +326,13 @@ static bool is_indirect_reg(char const*str)
 
 	if (str[0] == '@' ) {
 		return r_str_ansi_nlen (str, 4) == 3
-			&& tolower (str[1]) == 'r'
+			&& tolower ((unsigned char)str[1]) == 'r'
 			&& (str[2] == '0' || str[2] == '1');
 	}
 
 	if (str[0] == '[' ) {
 		return r_str_ansi_nlen (str, 5) == 4
-			&& tolower (str[1]) == 'r'
+			&& tolower ((unsigned char)str[1]) == 'r'
 			&& (str[2] == '0' || str[2] == '1')
 			&& str[3] == ']';
 	}
@@ -345,7 +345,7 @@ static bool is_indirect_reg(char const*str)
  */
 static bool is_reg(char const*str)
 {
-	return str && tolower (str[0]) == 'r' && r_str_ansi_nlen (str, 3) == 2
+	return str && tolower ((unsigned char)str[0]) == 'r' && r_str_ansi_nlen (str, 3) == 2
 		&& '0' <= str[1] && str[1] <= '7';
 }
 

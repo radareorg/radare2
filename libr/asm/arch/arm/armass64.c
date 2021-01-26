@@ -1067,7 +1067,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			if (*token == '#') {
 				token++;
 			}
-			if (!*token || !isdigit(*token)) {
+			if (!*token || !isdigit((unsigned char)*token)) {
 				return false;
 			}
 			op->operands[operand].shift_amount = r_num_math (NULL, token);
@@ -1091,7 +1091,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 				present = true;
 				++token;
 			}
-			if (!*token || !isdigit(*token)) {
+			if (!*token || !isdigit((unsigned char)*token)) {
 				if (present) {
 					return false;
 				}

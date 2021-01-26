@@ -2226,7 +2226,7 @@ mpc_val_t *mpcf_float(mpc_val_t *x) {
 
 mpc_val_t *mpcf_strtriml(mpc_val_t *x) {
   char *s = x;
-  while (isspace(*s)) {
+  while (isspace((unsigned char)*s)) {
     memmove(s, s+1, strlen(s));
   }
   return s;
@@ -2235,7 +2235,7 @@ mpc_val_t *mpcf_strtriml(mpc_val_t *x) {
 mpc_val_t *mpcf_strtrimr(mpc_val_t *x) {
   char *s = x;
   size_t l = strlen(s);
-  while (isspace(s[l-1])) {
+  while (isspace((unsigned char)s[l-1])) {
     s[l-1] = '\0'; l--;
   }
   return s;
@@ -3614,4 +3614,3 @@ static void mpc_optimise_unretained(mpc_parser_t *p, int force) {
 void mpc_optimise(mpc_parser_t *p) {
   mpc_optimise_unretained(p, 1);
 }
-
