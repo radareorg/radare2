@@ -443,7 +443,7 @@ static ut64 numvar_instruction_backward(RCore *core, const char *input) {
 	// N forward instructions
 	int i, ret;
 	int n = 1;
-	if (isdigit (input[0])) {
+	if (isdigit ((unsigned char)input[0])) {
 		n = atoi (input);
 	} else if (input[0] == '{') {
 		n = atoi (input + 1);

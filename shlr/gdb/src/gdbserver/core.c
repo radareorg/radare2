@@ -290,7 +290,7 @@ static int _server_handle_Hg(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (g->data_len <= 2 || isalpha (g->data[2])) {
+	if (g->data_len <= 2 || isalpha ((unsigned char)g->data[2])) {
 		return send_msg (g, "E01");
 	}
 	// Hg-1 = "all threads", Hg0 = "pick any thread"
@@ -315,7 +315,7 @@ static int _server_handle_Hc(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (g->data_len <= 2 || isalpha (g->data[2])) {
+	if (g->data_len <= 2 || isalpha ((unsigned char)g->data[2])) {
 		return send_msg (g, "E01");
 	}
 	// Hc-1 = "all threads", Hc0 = "pick any thread"
@@ -420,7 +420,7 @@ static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (!isxdigit (g->data[1])) {
+	if (!isxdigit ((unsigned char)g->data[1])) {
 		return send_msg (g, "E01");
 	}
 	regnum = strtol (g->data + 1, NULL, 16);
@@ -448,11 +448,11 @@ static int _server_handle_P(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 	if (send_ack (g) < 0) {
 		return -1;
 	}
-	if (!isxdigit (g->data[1]) || !(ptr = strchr (g->data, '='))) {
+	if (!isxdigit ((unsigned char)g->data[1]) || !(ptr = strchr (g->data, '='))) {
 		return send_msg (g, "E01");
 	}
 	ptr++;
-	if (!isxdigit (*ptr)) {
+	if (!isxdigit ((unsigned char)*ptr)) {
 		return send_msg (g, "E01");
 	}
 	regnum = strtol (g->data + 1, NULL, 16);

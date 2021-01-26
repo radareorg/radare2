@@ -261,7 +261,8 @@ else
 endif
 
 # handle openssl library
-sys_openssl = dependency('openssl', required: false)
+static_sys_openssl = get_option('static_sys_openssl')
+sys_openssl = dependency('openssl', required: false, static: static_sys_openssl)
 use_sys_openssl = false
 if sys_openssl.found() and get_option('use_sys_openssl')
   message('Using system openssl library')

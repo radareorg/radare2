@@ -209,7 +209,7 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 	for (start = i; str[i]; i++) {
 		if (str[i] == '/' && str[i - 1] != '\\') {
 			break;
-		} else if (str[i - 1] == '\\' && isalpha (str[i])) {
+		} else if (str[i - 1] == '\\' && isalpha ((unsigned char)str[i])) {
 			specials++;
 		}
 	}

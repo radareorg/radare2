@@ -1412,7 +1412,7 @@ static void load_table_asciiart(RCore *core, RTable *t, RList *lines) {
 					free (ss);
 					continue;
 				}
-				if (isdigit (*ss)) {
+				if (isdigit ((unsigned char)*ss)) {
 					int col = r_list_length (items);
 					RTableColumn *c = r_list_get_n (t->cols, col);
 					if (c) {
@@ -5066,7 +5066,7 @@ static void replace_whitespaces(char *s, char ch) {
 				s++;
 			}
 		}
-		if (isspace (*s)) {
+		if (isspace ((unsigned char)*s)) {
 			*s = ch;
 		}
 		s++;

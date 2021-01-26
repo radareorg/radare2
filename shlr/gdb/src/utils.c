@@ -168,7 +168,7 @@ int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 			}
 			return -1;
 		}
-		if (!isxdigit (*src)) {
+		if (!isxdigit ((unsigned char)*src)) {
 			return -1;
 		}
 		if (r_str_startswith (ptr1, "-1")) {
@@ -176,7 +176,7 @@ int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 			*tid = -1;
 			return 0;
 		}
-		if (!isxdigit (*ptr1)) {
+		if (!isxdigit ((unsigned char)*ptr1)) {
 			return -1;
 		}
 		*pid = (int) strtol (src, NULL, 16);
@@ -187,7 +187,7 @@ int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
 		*tid = -1;
 		return 0;
 	}
-	if (!isxdigit (*src)) {
+	if (!isxdigit ((unsigned char)*src)) {
 		return -1;
 	}
 	*pid = *tid = (int) strtol (src, NULL, 16);

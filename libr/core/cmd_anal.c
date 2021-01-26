@@ -8053,7 +8053,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'i': // "ahi"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_ahi);
-		} else if (isdigit (input[1])) {
+		} else if (isdigit ((unsigned char)input[1])) {
 			r_anal_hint_set_nword (core->anal, core->offset, input[1] - '0');
 			input++;
 		} else if (input[1] == '-') { // "ahi-"
