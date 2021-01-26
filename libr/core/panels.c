@@ -1582,7 +1582,7 @@ static void __maximize_panel_size(RPanels *panels) {
 }
 
 static void __dismantle_panel(RPanels *ps, RPanel *p) {
-	if(!p){
+	if (!p) {
 		return;
 	}
 	RPanel *justLeftPanel = NULL, *justRightPanel = NULL, *justUpPanel = NULL, *justDownPanel = NULL;
