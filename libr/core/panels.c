@@ -1067,7 +1067,7 @@ static void __set_rcb(RPanels *ps, RPanel *p) {
 }
 
 static void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd) {
-	if(!p){
+	if (!p) {
 		return;
 	}
 	RPanelModel *m = p->model;
@@ -7059,4 +7059,3 @@ static void __init_new_panels_root(RCore *core) {
 	__panels_layout (panels);
 	core->panels = prev;
 }
-
