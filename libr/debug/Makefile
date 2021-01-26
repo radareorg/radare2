@@ -6,7 +6,7 @@ R2DEPS+=r_socket
 CFLAGS+=-DR2_PLUGIN_INCORE
 
 ifeq ($(OSTYPE),bsd)
-LDFLAGS=-lkvm
+LDFLAGS+=-lkvm
 endif
 
 foo:
