@@ -1873,7 +1873,7 @@ static void __create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R
 	if (!__check_panel_num (core)) {
 		return;
 	}
-	if(!panel){
+	if (!panel) {
 		return;
 	}
 	switch (dir) {
