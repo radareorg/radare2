@@ -1842,7 +1842,7 @@ static void __init_sdb(RCore *core) {
 }
 
 static void __free_panel_model(RPanel *panel) {
-	if(!panel){
+	if (!panel) {
 		return;
 	}
 	free (panel->model->title);
