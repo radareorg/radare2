@@ -1067,7 +1067,7 @@ static void __set_rcb(RPanels *ps, RPanel *p) {
 }
 
 static void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd) {
-	if(!p){
+	if (!p) {
 		return;
 	}
 	RPanelModel *m = p->model;
@@ -1557,7 +1557,7 @@ static void __cursor_down(RCore *core) {
 }
 
 static void __save_panel_pos(RPanel* panel) {
-	if(!panel){
+	if (!panel) {
 		return;
 	}
 	__set_geometry (&panel->view->prevPos, panel->view->pos.x, panel->view->pos.y,
@@ -1582,7 +1582,7 @@ static void __maximize_panel_size(RPanels *panels) {
 }
 
 static void __dismantle_panel(RPanels *ps, RPanel *p) {
-	if(!p){
+	if (!p) {
 		return;
 	}
 	RPanel *justLeftPanel = NULL, *justRightPanel = NULL, *justUpPanel = NULL, *justDownPanel = NULL;
@@ -1842,7 +1842,7 @@ static void __init_sdb(RCore *core) {
 }
 
 static void __free_panel_model(RPanel *panel) {
-	if(!panel){
+	if (!panel) {
 		return;
 	}
 	free (panel->model->title);
@@ -1873,7 +1873,7 @@ static void __create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R
 	if (!__check_panel_num (core)) {
 		return;
 	}
-	if(!panel){
+	if (!panel) {
 		return;
 	}
 	switch (dir) {
@@ -7059,4 +7059,3 @@ static void __init_new_panels_root(RCore *core) {
 	__panels_layout (panels);
 	core->panels = prev;
 }
-
