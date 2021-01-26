@@ -785,16 +785,16 @@ R_API int r_core_visual_types(RCore *core) {
 				/* TODO: edit field */
 			} else {
 				switch (h_opt) {
-				case 0:{ // type
+				case 0: { // type
 					/* TODO: do something with this data */
 					char *r = NULL;
 					r = prompt ("name: ", vt.curname);
-					if(r){
-						free(r);
+					if (r) {
+						free (r);
 					}
 					r = prompt ("pf: ", vt.curfmt);
-					if(r){
-						free(r);
+					if (r) {
+						free (r);
 					}
 					break;
 				}
