@@ -5,11 +5,16 @@
 #include <r_list.h>
 #include <r_io.h>
 #include <config.h>
+#include "../config.h"
 
 R_LIB_VERSION(r_anal);
 
 static RAnalPlugin *anal_static_plugins[] = {
 	R_ANAL_STATIC_PLUGINS
+};
+
+static RAnalEsilPlugin *esil_static_plugins[] = {
+	R_ESIL_STATIC_PLUGINS
 };
 
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
@@ -76,6 +81,20 @@ static void r_meta_item_free(void *_item) {
 	}
 }
 
+R_API void r_anal_esil_plugin_free (RAnalEsilPlugin *p) {
+	if (p && p->fini) {
+		p->fini (NULL);
+	}
+}
+
+R_API int r_anal_esil_add(RAnal *anal, RAnalEsilPlugin *foo) {
+	if (foo->init) {
+		foo->init (anal->user);
+	}
+	r_list_append (anal->esil_plugins, foo);
+	return true;
+}
+
 R_API RAnal *r_anal_new(void) {
 	int i;
 	RAnal *anal = R_NEW0 (RAnal);
@@ -137,6 +156,12 @@ R_API RAnal *r_anal_new(void) {
 			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
+	anal->esil_plugins = r_list_newf ((RListFree) r_anal_esil_plugin_free);
+	if (anal->esil_plugins) {
+		for (i = 0; esil_static_plugins[i]; i++) {
+			r_anal_esil_add (anal, esil_static_plugins[i]);
+		}
+	}
 	return anal;
 }
 
@@ -163,6 +188,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	free (a->os);
 	free (a->zign_path);
 	r_list_free (a->plugins);
+	r_list_free (a->esil_plugins);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
 	r_spaces_fini (&a->meta_spaces);
 	r_spaces_fini (&a->zign_spaces);
@@ -186,6 +212,22 @@ R_API RAnal *r_anal_free(RAnal *a) {
 
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 	anal->user = user;
+}
+
+R_API bool r_anal_esil_use(RAnal *anal, const char *name) {
+	RListIter *it;
+	RAnalEsilPlugin *h;
+
+	if (anal) {
+		r_list_foreach (anal->esil_plugins, it, h) {
+			if (!h->name || strcmp (h->name, name)) {
+				continue;
+			}
+			anal->esil_cur = h;
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {

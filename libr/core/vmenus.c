@@ -2311,6 +2311,28 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	}
 }
 
+static void show_config_options(RCore *core, const char *opt) {
+	RConfigNode *node = r_config_node_get (core->config, opt);
+	if (node && !r_list_empty (node->options)) {
+		int h, w = r_cons_get_size (&h);
+		const char *item;
+		RListIter *iter;
+		RStrBuf *sb = r_strbuf_new (" Options: ");
+		r_list_foreach (node->options, iter, item) {
+			r_strbuf_appendf (sb, "%s%s", iter->p? ", ": "", item);
+			if (r_strbuf_length (sb) + 5 >= w) {
+				char *s = r_strbuf_drain (sb);
+				r_cons_println (s);
+				free (s);
+				sb = r_strbuf_new ("");
+			}
+		}
+		char *s = r_strbuf_drain (sb);
+		r_cons_println (s);
+		free (s);
+	}
+}
+
 R_API void r_core_visual_config(RCore *core) {
 	char *fs = NULL, *fs2 = NULL, *desc = NULL;
 	int i, j, ch, hit, show;
@@ -2360,7 +2382,7 @@ R_API void r_core_visual_config(RCore *core) {
 				option--;
 				continue;
 			}
-			r_cons_printf ("\n Sel:%s \n\n", fs);
+			r_cons_printf ("\n Sel: %s \n\n", fs);
 			break;
 		case 1: // flag selection
 			r_cons_printf ("[EvalSpace < Variables: %s]\n\n", fs);
@@ -2369,7 +2391,7 @@ R_API void r_core_visual_config(RCore *core) {
 			// TODO: cut -d '.' -f 1 | sort | uniq !!!
 			r_list_foreach (core->config->nodes, iter, bt) {
 				if (!r_str_ccmp (bt->name, fs, '.')) {
-					if (option==i) {
+					if (option == i) {
 						fs2 = bt->name;
 						desc = bt->desc;
 						hit = 1;
@@ -2382,14 +2404,15 @@ R_API void r_core_visual_config(RCore *core) {
 					i++;
 				}
 			}
-			if (!hit && j>0) {
-				option = i-1;
+			if (!hit && j > 0) {
+				option = i - 1;
 				continue;
 			}
-			if (fs2 != NULL) {
+			if (fs2) {
 				// TODO: Break long lines.
-				r_cons_printf ("\n Selected: %s (%s)\n\n",
-					fs2, desc);
+				r_cons_printf ("\n Selected: %s (%s)\n", fs2, desc);
+				show_config_options (core, fs2);
+				r_cons_newline ();
 			}
 		}
 
@@ -2405,9 +2428,9 @@ R_API void r_core_visual_config(RCore *core) {
 
 		switch (ch) {
 		case 'j': option++; break;
-		case 'k': option = (option<=0)? 0: option-1; break;
-		case 'J': option+=4; break;
-		case 'K': option = (option<=3)? 0: option-4; break;
+		case 'k': option = (option < 1)? 0: option - 1; break;
+		case 'J': option += 4; break;
+		case 'K': option = (option < 4)? 0: option - 4; break;
 		case 'h':
 		case 'b': // back
 			menu = 0;
@@ -2569,8 +2592,9 @@ R_API void r_core_visual_mounts(RCore *core) {
 		}
 		if (mode==2) {
 			r_str_trim_path (path);
-			str = path + strlen (path);
-			strncat (path, "/", sizeof (path)-strlen (path)-1);
+			size_t n = strlen (path);
+			str = path + n;
+			snprintf (str, sizeof (path) - n, "/");
 			list = r_fs_dir (core->fs, path);
 			file = r_list_get_n (list, dir);
 			if (file && file->type != 'd') {
@@ -2636,12 +2660,14 @@ R_API void r_core_visual_mounts(RCore *core) {
 					list = NULL;
 				} else if (mode == 2){
 					r_str_trim_path (path);
-					strncat (path, "/", sizeof (path)-strlen (path)-1);
+					size_t n = strlen (path);
+					snprintf (path + n, sizeof (path) - n, "/");
 					list = r_fs_dir (core->fs, path);
 					file = r_list_get_n (list, dir);
 					if (file) {
 						if (file->type == 'd') {
-							strncat (path, file->name, sizeof (path)-strlen (path)-1);
+							n = strlen (path);
+							snprintf (path + n, sizeof (path) - n, "%s", file->name);
 							r_str_trim_path (path);
 							if (root && strncmp (root, path, strlen (root) - 1)) {
 								strncpy (path, root, sizeof (path) - 1);
@@ -2738,12 +2764,14 @@ R_API void r_core_visual_mounts(RCore *core) {
 			case 'g':
 				if (mode == 2) {
 					r_str_trim_path (path);
-					str = path + strlen (path);
-					strncat (path, "/", sizeof (path)-strlen (path)-1);
+					size_t n = strlen (path);
+					str = path + n;
+					snprintf (str, sizeof (path) - n, "/");
 					list = r_fs_dir (core->fs, path);
 					file = r_list_get_n (list, dir);
 					if (file && root) {
-						strncat (path, file->name, sizeof (path)-strlen (path)-1);
+						n = strlen (path);
+						snprintf (path + n, sizeof (path) - n, "%s", file->name);
 						r_str_trim_path (path);
 						if (strncmp (root, path, strlen (root) - 1)) {
 							strncpy (path, root, sizeof (path) - 1);
@@ -4288,7 +4316,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		r_cons_rgb_str (cstr, sizeof (cstr), &rcolor);
 		char *esc = strchr (cstr + 1, '\x1b');
-		char *curtheme = r_core_get_theme ();
+		char *curtheme = r_core_get_theme (core);
 
 		r_cons_printf ("# Use '.' to randomize current color and ':' to randomize palette\n");
 		r_cons_printf ("# Press '"Color_RED"rR"Color_GREEN"gG"Color_BLUE"bB"Color_RESET

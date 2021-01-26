@@ -1184,13 +1184,30 @@ static RList* fields(RBinFile *bf) {
 		ROW ("PhOff", 4, r_buf_read_le32_at (bf->buf, addr), "x");
 		addr += 0x4;
 		ROW ("ShOff", 4, r_buf_read_le32_at (bf->buf, addr), "x");
+		addr += 0x4;
 	} else {
 		ROW ("Entry point", 8, r_buf_read_le64_at (bf->buf, addr), "x");
 		addr += 0x8;
 		ROW ("PhOff", 8, r_buf_read_le64_at (bf->buf, addr), "x");
 		addr += 0x8;
 		ROW ("ShOff", 8, r_buf_read_le64_at (bf->buf, addr), "x");
+		addr += 0x8;
 	}
+
+	ROW ("Flags", 4, r_buf_read_le32_at (bf->buf, addr), "x");
+	addr += 0x4;
+	ROW ("EhSize", 2, r_buf_read_le16_at (bf->buf, addr), "x");
+	addr += 0x2;
+	ROW ("PhentSize", 2, r_buf_read_le16_at (bf->buf, addr), "x");
+	addr += 0x2;
+	ROW ("PhNum", 2, r_buf_read_le16_at (bf->buf, addr), "x");
+	addr += 0x2;
+	ROW ("ShentSize", 2, r_buf_read_le16_at (bf->buf, addr), "x");
+	addr += 0x2;
+	ROW ("ShNum", 2, r_buf_read_le16_at (bf->buf, addr), "x");
+	addr += 0x2;
+	ROW ("ShrStrndx", 2, r_buf_read_le16_at (bf->buf, addr), "x");
+
 	return ret;
 }
 

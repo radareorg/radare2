@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h>
 #include <r_types_base.h>
@@ -28,7 +28,7 @@ static void set_options(RConfigNode *node, ...) {
 	va_start (argp, node);
 	option = va_arg (argp, char *);
 	while (option) {
-		r_list_append (node->options, option);
+		r_config_node_add_option (node, option);
 		option = va_arg (argp, char *);
 	}
 	va_end (argp);
@@ -44,10 +44,12 @@ static bool isGdbPlugin(RCore *core) {
 }
 
 static void print_node_options(RConfigNode *node) {
-	RListIter *iter;
-	char *option;
-	r_list_foreach (node->options, iter, option) {
-		r_cons_printf ("%s\n", option);
+	if (node->options) {
+		RListIter *iter;
+		char *option;
+		r_list_foreach (node->options, iter, option) {
+			r_cons_printf ("%s\n", option);
+		}
 	}
 }
 
@@ -358,9 +360,11 @@ static void update_analarch_options(RCore *core, RConfigNode *node) {
 	RAnalPlugin *h;
 	RListIter *it;
 	if (core && core->anal && node) {
-		r_list_purge (node->options);
+		r_config_node_purge_options (node);
 		r_list_foreach (core->anal->plugins, it, h) {
-			SETOPTIONS (node, h->name, NULL);
+			if (h->name) {
+				SETOPTIONS (node, h->name, NULL);
+			}
 		}
 	}
 }
@@ -508,13 +512,12 @@ static bool cb_asmassembler(void *user, void *data) {
 static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
 	r_return_if_fail (core && core->rasm && node);
 	RListIter *iter;
-	r_list_purge (node->options);
+	r_config_node_purge_options (node);
 	char *opts = r_core_cmd_str (core, "e cmd.pdc=?");
 	RList *optl = r_str_split_list (opts, "\n", 0);
 	char *opt;
-	node->options->free = free;
 	r_list_foreach (optl, iter, opt) {
-		SETOPTIONS (node, strdup (opt), NULL);
+		SETOPTIONS (node, opt, NULL);
 	}
 	r_list_free (optl);
 	free (opts);
@@ -528,7 +531,7 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	if (!arch || !*arch) {
 		return;
 	}
-	r_list_purge (node->options);
+	r_config_node_purge_options (node);
 	r_list_foreach (core->rasm->plugins, iter, h) {
 		if (h->cpus && !strcmp (arch, h->name)) {
 			char *c = strdup (h->cpus);
@@ -536,8 +539,8 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 			for (i = 0; i < n; i++) {
 				const char *word = r_str_word_get0 (c, i);
 				if (word && *word) {
-					// leaks
-					SETOPTIONS (node, strdup (word), NULL);
+					node->options->free = free;
+					SETOPTIONS (node, word, NULL);
 				}
 			}
 			free (c);
@@ -563,9 +566,11 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (core && node && core->rasm) {
-		r_list_purge (node->options);
+		r_config_node_purge_options (node);
 		r_list_foreach (core->rasm->plugins, iter, h) {
-			SETOPTIONS (node, h->name, NULL);
+			if (h->name) {
+				SETOPTIONS (node, h->name, NULL);
+			}
 		}
 	}
 }
@@ -574,11 +579,12 @@ static void update_asmbits_options(RCore *core, RConfigNode *node) {
 	if (core && core->rasm && core->rasm->cur && node) {
 		int bits = core->rasm->cur->bits;
 		int i;
-		node->options->free = free;
-		r_list_purge (node->options);
+		r_config_node_purge_options (node);
 		for (i = 1; i <= bits; i <<= 1) {
 			if (i & bits) {
-				SETOPTIONS (node, r_str_newf ("%d", i), NULL);
+				char *a = r_str_newf ("%d", i);
+				SETOPTIONS (node, a, NULL);
+				free (a);
 			}
 		}
 	}
@@ -824,10 +830,9 @@ static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
 			char *features = strdup (core->rasm->cur->features);
 			argc = r_str_split (features, ',');
 			for (i = 0; i < argc; i++) {
-				node->options->free = free;
 				const char *feature = r_str_word_get0 (features, i);
 				if (feature) {
-					r_list_append (node->options, strdup (feature));
+					r_config_node_add_option (node, feature);
 				}
 			}
 			free (features);
@@ -977,7 +982,7 @@ static void update_asmparser_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
 	RParsePlugin *parser;
 	if (core && node && core->parser && core->parser->parsers) {
-		r_list_purge (node->options);
+		r_config_node_purge_options (node);
 		r_list_foreach (core->parser->parsers, iter, parser) {
 			SETOPTIONS (node, parser->name, NULL);
 		}
@@ -2749,8 +2754,18 @@ static bool cb_analsyscc(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_analcc_getter(RCore *core, RConfigNode *node) {
+	const char *cc = r_anal_cc_default (core->anal);
+	if (cc) {
+		free (node->value);
+		node->value = strdup (cc);
+	}
+	return true;
+}
+
 static bool cb_analcc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
+		node->getter = (RConfigCallback)cb_analcc_getter;
 		if (*node->value == '?') {
 			r_core_cmd0 (core, "afcl");
 			return false;
@@ -3372,6 +3387,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "a", "8", "p", "e", "u", "i", "U", "f", NULL);
 	SETCB ("bin.filter", "true", &cb_binfilter, "Filter symbol names to fix dupped names");
 	SETCB ("bin.force", "", &cb_binforce, "Force that rbin plugin");
+	SETPREF ("bin.cache", "false", "Enable io.cache and fall to io.cache.read if bin needs to patch relocs");
 	SETPREF ("bin.lang", "", "Language for bin.demangle");
 	SETBPREF ("bin.demangle", "true", "Import demangled symbols from RBin");
 	SETBPREF ("bin.demangle.libs", "false", "Show library name on demangled symbols names");
@@ -3403,7 +3419,6 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	SETBPREF ("prj.zip", "false", "Use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
-	SETBPREF ("prj.simple", "false", "Use simple project saving style (functions, comments, options)");
 
 	/* cfg */
 	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use when printing strings");
@@ -3422,7 +3437,9 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	free (p);
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
-	SETPREF ("cfg.user", r_sys_whoami (buf), "Set current username/pid");
+	char *whoami = r_sys_whoami ();
+	SETPREF ("cfg.user", whoami, "Set current username/pid");
+	free (whoami);
 	SETCB ("cfg.fortunes", "true", &cb_cfg_fortunes, "If enabled show tips at start");
 	SETCB ("cfg.fortunes.type", "tips,fun", &cb_cfg_fortunes_type, "Type of fortunes to show (tips, fun)");
 	SETBPREF ("cfg.fortunes.clippy", "false", "Use ?E instead of ?e");

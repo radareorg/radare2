@@ -284,7 +284,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	int n = 0;
 	RBreakpointItem *b;
 	RListIter *iter;
-	PJ *pj;
+	PJ *pj = NULL;
 	if (rad == 'j') {
 		pj = pj_new ();
 		if (!pj) {
@@ -294,8 +294,25 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	}
 	//eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
-		switch (rad) {
-		case 0:
+		if (pj) {
+			pj_o (pj);
+			pj_kN (pj, "addr", b->addr);
+			pj_ki (pj, "size", b->size);
+			pj_ks (pj, "perm", r_str_rwx_i (b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
+			pj_kb (pj, "hw", b->hw);
+			pj_kb (pj, "trace", b->trace);
+			pj_kb (pj, "enabled", b->enabled);
+			pj_kb (pj, "valid", r_bp_is_valid (bp, b));
+			pj_ks (pj, "data", r_str_get (b->data));
+			pj_ks (pj, "cond", r_str_get (b->cond));
+			pj_end (pj);
+		} else if (rad) {
+			if (b->module_name) {
+				bp->cb_printf ("dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
+			} else {
+				bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
+			}
+		} else {
 			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
 				" %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
@@ -311,38 +328,10 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				r_str_get (b->cond),
 				r_str_get (b->name),
 				r_str_get (b->module_name));
-			break;
-		case 1:
-		case 'r':
-		case '*':
-			// TODO: add command, tracing, enable, ..
-			if (b->module_name) {
-			    	bp->cb_printf ("dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
-			} else {
-				bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
-			}
-			//b->trace? "trace": "break",
-			//b->enabled? "enabled": "disabled",
-			//r_str_get (b->data));
-			break;
-		case 'j':
-			pj_o (pj);
-			pj_kN (pj, "addr", b->addr);
-			pj_ki (pj, "size", b->size);
-			pj_ks (pj, "perm", r_str_rwx_i (b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
-			pj_kb (pj, "hw", b->hw);
-			pj_kb (pj, "trace", b->trace);
-			pj_kb (pj, "enabled", b->enabled);
-			pj_kb (pj, "valid", r_bp_is_valid (bp, b));
-			pj_ks (pj, "data", r_str_get (b->data));
-			pj_ks (pj, "cond", r_str_get (b->cond));
-			pj_end (pj);
-			break;
 		}
-		/* TODO: Show list of pids and trace points, conditionals */
 		n++;
 	}
-	if (rad == 'j') {
+	if (pj) {
 		pj_end (pj);
 		bp->cb_printf ("%s\n", pj_string (pj));
 		pj_free (pj);

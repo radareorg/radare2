@@ -331,9 +331,9 @@ CMDS=is
 EXPECT=<<EOF
 [Symbols]
 
-nth paddr       vaddr      bind   type size lib name
-----------------------------------------------------
-1    0x00000000 0x00010ddc GLOBAL FUNC 0        grepmain
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+1   0x00000000 0x00010ddc GLOBAL FUNC 0        grepmain
 EOF
 RUN
 

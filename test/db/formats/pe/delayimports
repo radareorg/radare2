@@ -23,3 +23,263 @@ EXPECT=<<EOF
 push 0x401018
 EOF
 RUN
+
+NAME=PE: delay imports from multiple dlls 32
+FILE=bins/pe/delayimports_multilib32.exe
+CMDS=<<EOF
+ii
+is
+EOF
+EXPECT=<<EOF
+[Imports]
+nth vaddr      bind type lib                               name
+---------------------------------------------------------------
+1   0x00403054 NONE FUNC VCRUNTIME140.dll                  __current_exception_context
+2   0x00403058 NONE FUNC VCRUNTIME140.dll                  __current_exception
+3   0x0040305c NONE FUNC VCRUNTIME140.dll                  memset
+4   0x00403060 NONE FUNC VCRUNTIME140.dll                  _except_handler4_common
+1   0x00403080 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll terminate
+2   0x00403084 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _seh_filter_exe
+3   0x00403088 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _controlfp_s
+4   0x0040308c NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _initialize_onexit_table
+5   0x00403090 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _set_app_type
+6   0x00403094 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _crt_atexit
+7   0x00403098 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _register_thread_local_exe_atexit_callback
+8   0x0040309c NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _c_exit
+9   0x004030a0 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _cexit
+10  0x004030a4 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll __p___argv
+11  0x004030a8 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll __p___argc
+12  0x004030ac NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _register_onexit_function
+13  0x004030b0 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _exit
+14  0x004030b4 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll exit
+15  0x004030b8 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _initterm_e
+16  0x004030bc NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _initterm
+17  0x004030c0 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _get_initial_narrow_environment
+18  0x004030c4 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _initialize_narrow_environment
+19  0x004030c8 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _configure_narrow_argv
+1   0x00403078 NONE FUNC api-ms-win-crt-math-l1-1-0.dll    __setusermatherr
+1   0x004030d0 NONE FUNC api-ms-win-crt-stdio-l1-1-0.dll   __p__commode
+2   0x004030d4 NONE FUNC api-ms-win-crt-stdio-l1-1-0.dll   _set_fmode
+1   0x00403070 NONE FUNC api-ms-win-crt-locale-l1-1-0.dll  _configthreadlocale
+1   0x00403068 NONE FUNC api-ms-win-crt-heap-l1-1-0.dll    _set_new_mode
+1   0x00403000 NONE FUNC KERNEL32.dll                      TerminateProcess
+2   0x00403004 NONE FUNC KERNEL32.dll                      GetLastError
+3   0x00403008 NONE FUNC KERNEL32.dll                      GetSystemInfo
+4   0x0040300c NONE FUNC KERNEL32.dll                      VirtualProtect
+5   0x00403010 NONE FUNC KERNEL32.dll                      VirtualQuery
+6   0x00403014 NONE FUNC KERNEL32.dll                      IsDebuggerPresent
+7   0x00403018 NONE FUNC KERNEL32.dll                      InitializeSListHead
+8   0x0040301c NONE FUNC KERNEL32.dll                      GetSystemTimeAsFileTime
+9   0x00403020 NONE FUNC KERNEL32.dll                      GetCurrentThreadId
+10  0x00403024 NONE FUNC KERNEL32.dll                      GetCurrentProcessId
+11  0x00403028 NONE FUNC KERNEL32.dll                      QueryPerformanceCounter
+12  0x0040302c NONE FUNC KERNEL32.dll                      IsProcessorFeaturePresent
+13  0x00403030 NONE FUNC KERNEL32.dll                      RaiseException
+14  0x00403034 NONE FUNC KERNEL32.dll                      GetCurrentProcess
+15  0x00403038 NONE FUNC KERNEL32.dll                      SetUnhandledExceptionFilter
+16  0x0040303c NONE FUNC KERNEL32.dll                      UnhandledExceptionFilter
+17  0x00403040 NONE FUNC KERNEL32.dll                      LoadLibraryExA
+18  0x00403044 NONE FUNC KERNEL32.dll                      GetProcAddress
+19  0x00403048 NONE FUNC KERNEL32.dll                      GetModuleHandleW
+20  0x0040304c NONE FUNC KERNEL32.dll                      FreeLibrary
+1   0x00404018 NONE FUNC HID.DLL                           HidD_FlushQueue
+2   0x0040401c NONE FUNC HID.DLL                           HidD_FreePreparsedData
+3   0x00404020 NONE FUNC HID.DLL                           HidD_GetHidGuid
+1   0x00404030 NONE FUNC wlanapi.dll                       WFDCloseHandle
+2   0x00404034 NONE FUNC wlanapi.dll                       WFDCancelOpenSession
+3   0x00404038 NONE FUNC wlanapi.dll                       WFDCloseSession
+1   0x00404028 NONE FUNC winbio.dll                        WinBioAcquireFocus
+
+[Symbols]
+
+nth paddr      vaddr      bind type size lib                               name
+-------------------------------------------------------------------------------
+1   0x00001854 0x00403054 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception_context
+2   0x00001858 0x00403058 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception
+3   0x0000185c 0x0040305c NONE FUNC 0    VCRUNTIME140.dll                  imp.memset
+4   0x00001860 0x00403060 NONE FUNC 0    VCRUNTIME140.dll                  imp._except_handler4_common
+1   0x00001880 0x00403080 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.terminate
+2   0x00001884 0x00403084 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._seh_filter_exe
+3   0x00001888 0x00403088 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._controlfp_s
+4   0x0000188c 0x0040308c NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initialize_onexit_table
+5   0x00001890 0x00403090 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._set_app_type
+6   0x00001894 0x00403094 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._crt_atexit
+7   0x00001898 0x00403098 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._register_thread_local_exe_atexit_callback
+8   0x0000189c 0x0040309c NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._c_exit
+9   0x000018a0 0x004030a0 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._cexit
+10  0x000018a4 0x004030a4 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.__p___argv
+11  0x000018a8 0x004030a8 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.__p___argc
+12  0x000018ac 0x004030ac NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._register_onexit_function
+13  0x000018b0 0x004030b0 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._exit
+14  0x000018b4 0x004030b4 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.exit
+15  0x000018b8 0x004030b8 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initterm_e
+16  0x000018bc 0x004030bc NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initterm
+17  0x000018c0 0x004030c0 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._get_initial_narrow_environment
+18  0x000018c4 0x004030c4 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initialize_narrow_environment
+19  0x000018c8 0x004030c8 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._configure_narrow_argv
+1   0x00001878 0x00403078 NONE FUNC 0    api-ms-win-crt-math-l1-1-0.dll    imp.__setusermatherr
+1   0x000018d0 0x004030d0 NONE FUNC 0    api-ms-win-crt-stdio-l1-1-0.dll   imp.__p__commode
+2   0x000018d4 0x004030d4 NONE FUNC 0    api-ms-win-crt-stdio-l1-1-0.dll   imp._set_fmode
+1   0x00001870 0x00403070 NONE FUNC 0    api-ms-win-crt-locale-l1-1-0.dll  imp._configthreadlocale
+1   0x00001868 0x00403068 NONE FUNC 0    api-ms-win-crt-heap-l1-1-0.dll    imp._set_new_mode
+1   0x00001800 0x00403000 NONE FUNC 0    KERNEL32.dll                      imp.TerminateProcess
+2   0x00001804 0x00403004 NONE FUNC 0    KERNEL32.dll                      imp.GetLastError
+3   0x00001808 0x00403008 NONE FUNC 0    KERNEL32.dll                      imp.GetSystemInfo
+4   0x0000180c 0x0040300c NONE FUNC 0    KERNEL32.dll                      imp.VirtualProtect
+5   0x00001810 0x00403010 NONE FUNC 0    KERNEL32.dll                      imp.VirtualQuery
+6   0x00001814 0x00403014 NONE FUNC 0    KERNEL32.dll                      imp.IsDebuggerPresent
+7   0x00001818 0x00403018 NONE FUNC 0    KERNEL32.dll                      imp.InitializeSListHead
+8   0x0000181c 0x0040301c NONE FUNC 0    KERNEL32.dll                      imp.GetSystemTimeAsFileTime
+9   0x00001820 0x00403020 NONE FUNC 0    KERNEL32.dll                      imp.GetCurrentThreadId
+10  0x00001824 0x00403024 NONE FUNC 0    KERNEL32.dll                      imp.GetCurrentProcessId
+11  0x00001828 0x00403028 NONE FUNC 0    KERNEL32.dll                      imp.QueryPerformanceCounter
+12  0x0000182c 0x0040302c NONE FUNC 0    KERNEL32.dll                      imp.IsProcessorFeaturePresent
+13  0x00001830 0x00403030 NONE FUNC 0    KERNEL32.dll                      imp.RaiseException
+14  0x00001834 0x00403034 NONE FUNC 0    KERNEL32.dll                      imp.GetCurrentProcess
+15  0x00001838 0x00403038 NONE FUNC 0    KERNEL32.dll                      imp.SetUnhandledExceptionFilter
+16  0x0000183c 0x0040303c NONE FUNC 0    KERNEL32.dll                      imp.UnhandledExceptionFilter
+17  0x00001840 0x00403040 NONE FUNC 0    KERNEL32.dll                      imp.LoadLibraryExA
+18  0x00001844 0x00403044 NONE FUNC 0    KERNEL32.dll                      imp.GetProcAddress
+19  0x00001848 0x00403048 NONE FUNC 0    KERNEL32.dll                      imp.GetModuleHandleW
+20  0x0000184c 0x0040304c NONE FUNC 0    KERNEL32.dll                      imp.FreeLibrary
+1   0x00002618 0x00404018 NONE FUNC 0    HID.DLL                           imp.HidD_FlushQueue
+2   0x0000261c 0x0040401c NONE FUNC 0    HID.DLL                           imp.HidD_FreePreparsedData
+3   0x00002620 0x00404020 NONE FUNC 0    HID.DLL                           imp.HidD_GetHidGuid
+1   0x00002630 0x00404030 NONE FUNC 0    wlanapi.dll                       imp.WFDCloseHandle
+2   0x00002634 0x00404034 NONE FUNC 0    wlanapi.dll                       imp.WFDCancelOpenSession
+3   0x00002638 0x00404038 NONE FUNC 0    wlanapi.dll                       imp.WFDCloseSession
+1   0x00002628 0x00404028 NONE FUNC 0    winbio.dll                        imp.WinBioAcquireFocus
+EOF
+RUN
+
+NAME=PE: delay imports from multiple dlls 64
+FILE=bins/pe/delayimports_multilib64.exe
+CMDS=<<EOF
+ii
+is
+EOF
+EXPECT=<<EOF
+[Imports]
+nth vaddr       bind type lib                               name
+----------------------------------------------------------------
+1   0x1400030c0 NONE FUNC VCRUNTIME140.dll                  __current_exception
+2   0x1400030c8 NONE FUNC VCRUNTIME140.dll                  __current_exception_context
+3   0x1400030d0 NONE FUNC VCRUNTIME140.dll                  memset
+4   0x1400030d8 NONE FUNC VCRUNTIME140.dll                  __C_specific_handler
+1   0x140003118 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _register_onexit_function
+2   0x140003120 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _initialize_onexit_table
+3   0x140003128 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _set_app_type
+4   0x140003130 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _crt_atexit
+5   0x140003138 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _seh_filter_exe
+6   0x140003140 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _register_thread_local_exe_atexit_callback
+7   0x140003148 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _c_exit
+8   0x140003150 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _cexit
+9   0x140003158 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll __p___argv
+10  0x140003160 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll __p___argc
+11  0x140003168 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _exit
+12  0x140003170 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll exit
+13  0x140003178 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _initterm_e
+14  0x140003180 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _initterm
+15  0x140003188 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _get_initial_narrow_environment
+16  0x140003190 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _initialize_narrow_environment
+17  0x140003198 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll _configure_narrow_argv
+18  0x1400031a0 NONE FUNC api-ms-win-crt-runtime-l1-1-0.dll terminate
+1   0x140003108 NONE FUNC api-ms-win-crt-math-l1-1-0.dll    __setusermatherr
+1   0x1400031b0 NONE FUNC api-ms-win-crt-stdio-l1-1-0.dll   __p__commode
+2   0x1400031b8 NONE FUNC api-ms-win-crt-stdio-l1-1-0.dll   _set_fmode
+1   0x1400030f8 NONE FUNC api-ms-win-crt-locale-l1-1-0.dll  _configthreadlocale
+1   0x1400030e8 NONE FUNC api-ms-win-crt-heap-l1-1-0.dll    _set_new_mode
+1   0x140003000 NONE FUNC KERNEL32.dll                      GetCurrentProcess
+2   0x140003008 NONE FUNC KERNEL32.dll                      GetLastError
+3   0x140003010 NONE FUNC KERNEL32.dll                      GetSystemInfo
+4   0x140003018 NONE FUNC KERNEL32.dll                      VirtualProtect
+5   0x140003020 NONE FUNC KERNEL32.dll                      VirtualQuery
+6   0x140003028 NONE FUNC KERNEL32.dll                      IsDebuggerPresent
+7   0x140003030 NONE FUNC KERNEL32.dll                      InitializeSListHead
+8   0x140003038 NONE FUNC KERNEL32.dll                      GetSystemTimeAsFileTime
+9   0x140003040 NONE FUNC KERNEL32.dll                      GetCurrentThreadId
+10  0x140003048 NONE FUNC KERNEL32.dll                      GetCurrentProcessId
+11  0x140003050 NONE FUNC KERNEL32.dll                      QueryPerformanceCounter
+12  0x140003058 NONE FUNC KERNEL32.dll                      IsProcessorFeaturePresent
+13  0x140003060 NONE FUNC KERNEL32.dll                      TerminateProcess
+14  0x140003068 NONE FUNC KERNEL32.dll                      RaiseException
+15  0x140003070 NONE FUNC KERNEL32.dll                      SetUnhandledExceptionFilter
+16  0x140003078 NONE FUNC KERNEL32.dll                      UnhandledExceptionFilter
+17  0x140003080 NONE FUNC KERNEL32.dll                      RtlVirtualUnwind
+18  0x140003088 NONE FUNC KERNEL32.dll                      RtlLookupFunctionEntry
+19  0x140003090 NONE FUNC KERNEL32.dll                      RtlCaptureContext
+20  0x140003098 NONE FUNC KERNEL32.dll                      LoadLibraryExA
+21  0x1400030a0 NONE FUNC KERNEL32.dll                      GetProcAddress
+22  0x1400030a8 NONE FUNC KERNEL32.dll                      GetModuleHandleW
+23  0x1400030b0 NONE FUNC KERNEL32.dll                      FreeLibrary
+1   0x140005040 NONE FUNC HID.DLL                           HidD_FlushQueue
+2   0x140005048 NONE FUNC HID.DLL                           HidD_FreePreparsedData
+3   0x140005050 NONE FUNC HID.DLL                           HidD_GetHidGuid
+1   0x140005070 NONE FUNC wlanapi.dll                       WFDCloseHandle
+2   0x140005078 NONE FUNC wlanapi.dll                       WFDCancelOpenSession
+3   0x140005080 NONE FUNC wlanapi.dll                       WFDCloseSession
+1   0x140005060 NONE FUNC winbio.dll                        WinBioAcquireFocus
+
+[Symbols]
+
+nth paddr      vaddr       bind type size lib                               name
+--------------------------------------------------------------------------------
+1   0x00001ac0 0x1400030c0 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception
+2   0x00001ac8 0x1400030c8 NONE FUNC 0    VCRUNTIME140.dll                  imp.__current_exception_context
+3   0x00001ad0 0x1400030d0 NONE FUNC 0    VCRUNTIME140.dll                  imp.memset
+4   0x00001ad8 0x1400030d8 NONE FUNC 0    VCRUNTIME140.dll                  imp.__C_specific_handler
+1   0x00001b18 0x140003118 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._register_onexit_function
+2   0x00001b20 0x140003120 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initialize_onexit_table
+3   0x00001b28 0x140003128 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._set_app_type
+4   0x00001b30 0x140003130 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._crt_atexit
+5   0x00001b38 0x140003138 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._seh_filter_exe
+6   0x00001b40 0x140003140 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._register_thread_local_exe_atexit_callback
+7   0x00001b48 0x140003148 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._c_exit
+8   0x00001b50 0x140003150 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._cexit
+9   0x00001b58 0x140003158 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.__p___argv
+10  0x00001b60 0x140003160 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.__p___argc
+11  0x00001b68 0x140003168 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._exit
+12  0x00001b70 0x140003170 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.exit
+13  0x00001b78 0x140003178 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initterm_e
+14  0x00001b80 0x140003180 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initterm
+15  0x00001b88 0x140003188 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._get_initial_narrow_environment
+16  0x00001b90 0x140003190 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._initialize_narrow_environment
+17  0x00001b98 0x140003198 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp._configure_narrow_argv
+18  0x00001ba0 0x1400031a0 NONE FUNC 0    api-ms-win-crt-runtime-l1-1-0.dll imp.terminate
+1   0x00001b08 0x140003108 NONE FUNC 0    api-ms-win-crt-math-l1-1-0.dll    imp.__setusermatherr
+1   0x00001bb0 0x1400031b0 NONE FUNC 0    api-ms-win-crt-stdio-l1-1-0.dll   imp.__p__commode
+2   0x00001bb8 0x1400031b8 NONE FUNC 0    api-ms-win-crt-stdio-l1-1-0.dll   imp._set_fmode
+1   0x00001af8 0x1400030f8 NONE FUNC 0    api-ms-win-crt-locale-l1-1-0.dll  imp._configthreadlocale
+1   0x00001ae8 0x1400030e8 NONE FUNC 0    api-ms-win-crt-heap-l1-1-0.dll    imp._set_new_mode
+1   0x00001a00 0x140003000 NONE FUNC 0    KERNEL32.dll                      imp.GetCurrentProcess
+2   0x00001a08 0x140003008 NONE FUNC 0    KERNEL32.dll                      imp.GetLastError
+3   0x00001a10 0x140003010 NONE FUNC 0    KERNEL32.dll                      imp.GetSystemInfo
+4   0x00001a18 0x140003018 NONE FUNC 0    KERNEL32.dll                      imp.VirtualProtect
+5   0x00001a20 0x140003020 NONE FUNC 0    KERNEL32.dll                      imp.VirtualQuery
+6   0x00001a28 0x140003028 NONE FUNC 0    KERNEL32.dll                      imp.IsDebuggerPresent
+7   0x00001a30 0x140003030 NONE FUNC 0    KERNEL32.dll                      imp.InitializeSListHead
+8   0x00001a38 0x140003038 NONE FUNC 0    KERNEL32.dll                      imp.GetSystemTimeAsFileTime
+9   0x00001a40 0x140003040 NONE FUNC 0    KERNEL32.dll                      imp.GetCurrentThreadId
+10  0x00001a48 0x140003048 NONE FUNC 0    KERNEL32.dll                      imp.GetCurrentProcessId
+11  0x00001a50 0x140003050 NONE FUNC 0    KERNEL32.dll                      imp.QueryPerformanceCounter
+12  0x00001a58 0x140003058 NONE FUNC 0    KERNEL32.dll                      imp.IsProcessorFeaturePresent
+13  0x00001a60 0x140003060 NONE FUNC 0    KERNEL32.dll                      imp.TerminateProcess
+14  0x00001a68 0x140003068 NONE FUNC 0    KERNEL32.dll                      imp.RaiseException
+15  0x00001a70 0x140003070 NONE FUNC 0    KERNEL32.dll                      imp.SetUnhandledExceptionFilter
+16  0x00001a78 0x140003078 NONE FUNC 0    KERNEL32.dll                      imp.UnhandledExceptionFilter
+17  0x00001a80 0x140003080 NONE FUNC 0    KERNEL32.dll                      imp.RtlVirtualUnwind
+18  0x00001a88 0x140003088 NONE FUNC 0    KERNEL32.dll                      imp.RtlLookupFunctionEntry
+19  0x00001a90 0x140003090 NONE FUNC 0    KERNEL32.dll                      imp.RtlCaptureContext
+20  0x00001a98 0x140003098 NONE FUNC 0    KERNEL32.dll                      imp.LoadLibraryExA
+21  0x00001aa0 0x1400030a0 NONE FUNC 0    KERNEL32.dll                      imp.GetProcAddress
+22  0x00001aa8 0x1400030a8 NONE FUNC 0    KERNEL32.dll                      imp.GetModuleHandleW
+23  0x00001ab0 0x1400030b0 NONE FUNC 0    KERNEL32.dll                      imp.FreeLibrary
+1   0x00002e40 0x140005040 NONE FUNC 0    HID.DLL                           imp.HidD_FlushQueue
+2   0x00002e48 0x140005048 NONE FUNC 0    HID.DLL                           imp.HidD_FreePreparsedData
+3   0x00002e50 0x140005050 NONE FUNC 0    HID.DLL                           imp.HidD_GetHidGuid
+1   0x00002e70 0x140005070 NONE FUNC 0    wlanapi.dll                       imp.WFDCloseHandle
+2   0x00002e78 0x140005078 NONE FUNC 0    wlanapi.dll                       imp.WFDCancelOpenSession
+3   0x00002e80 0x140005080 NONE FUNC 0    wlanapi.dll                       imp.WFDCloseSession
+1   0x00002e60 0x140005060 NONE FUNC 0    winbio.dll                        imp.WinBioAcquireFocus
+EOF
+RUN

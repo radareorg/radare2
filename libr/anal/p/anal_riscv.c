@@ -52,7 +52,7 @@ static struct riscv_opcode *get_opcode(insn_t word) {
 #define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 3 : OP_MASK_OP))
 
 	if (!init) {
-		int i;
+		size_t i;
 		for (i=0;i<OP_MASK_OP+1; i++) {
 			riscv_hash[i] = 0;
 		}

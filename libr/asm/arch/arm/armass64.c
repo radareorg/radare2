@@ -100,8 +100,8 @@ static int get_mem_option(char *token) {
 	return -1;
 }
 
-static int countLeadingZeros(ut32 x) {
-	int count = 0;
+static int countLeadingZeros(ut64 x) {
+	int count = 64;
 	while (x) {
 		x >>= 1;
 		--count;
@@ -109,15 +109,11 @@ static int countLeadingZeros(ut32 x) {
 	return count;
 }
 
-static int countTrailingZeros(ut32 x) {
+static int countTrailingZeros(ut64 x) {
 	int count = 0;
-	while (x > 0) {
-		if ((x & 1) == 1) {
-			break;
-		} else {
-			count ++;
-			x = x >> 1;
-		}
+	while (x && !(x & 1)) {
+		count++;
+		x >>= 1;
 	}
 	return count;
 }
@@ -142,28 +138,42 @@ static int calcNegOffset(int n, int shift) {
 	return 0xff & (0xff - a);
 }
 
-static int countLeadingOnes(ut32 x) {
+static int countLeadingOnes(ut64 x) {
 	return countLeadingZeros (~x);
 }
 
-static int countTrailingOnes(ut32 x) {
+static int countTrailingOnes(ut64 x) {
 	return countTrailingZeros (~x);
 }
 
-static bool isMask(ut32 value) {
+static bool isMask(ut64 value) {
   return value && ((value + 1) & value) == 0;
 }
 
-static bool isShiftedMask (ut32 value) {
+static bool isShiftedMask (ut64 value) {
   return value && isMask ((value - 1) | value);
 }
 
-static ut32 decodeBitMasksWithSize(ut32 imm, ut8 reg_size) {
+// https://llvm.org/doxygen/AArch64AddressingModes_8h_source.html
+static ut32 encodeBitMasksWithSize(ut64 imm, ut32 reg_size) {
+	if (imm == 0 || imm == UT64_MAX || (reg_size != 64
+		&& (imm >> reg_size != 0 || imm == (~0ULL >> (64 - reg_size))))) {
+		return UT32_MAX;
+	}
 	// get element size
-	int size = reg_size;
+	ut32 size = reg_size;
+	do {
+		size >>= 1;
+		ut64 mask = (1ull << size) - 1;
+		if ((imm & mask) != ((imm >> size) & mask)) {
+			size <<= 1;
+			break;
+		}
+   } while (size > 2);
 	// determine rot to make element be 0^m 1^n
 	ut32 cto, i;
-	ut32 mask = ((ut64) - 1LL) >> (64 - size);
+	ut64 mask = UT64_MAX >> (64 - size);
+	imm &= mask;
 
 	if (isShiftedMask (imm)) {
 		i = countTrailingZeros (imm);
@@ -191,7 +201,7 @@ static ut32 decodeBitMasksWithSize(ut32 imm, ut8 reg_size) {
 	nimms |= (cto - 1);
 	// Extract and toggle seventh bit to make N field.
 	ut32 n = ((nimms >> 6) & 1) ^ 1;
-	ut64 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
+	ut32 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
 	return encoding;
 }
 
@@ -209,62 +219,89 @@ static inline ut32 encodeImm9(ut32 n) {
 }
 
 static ut32 mov(ArmOp *op) {
-	int k = 0;
+	ut32 k = 0;
 	ut32 data = UT32_MAX;
-	if (!strncmp (op->mnemonic, "movz", 4)) {
-		if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x80d2;
-		} else if (op->operands[0].reg_type & ARM_REG32) {
-			k = 0x8052;
+	check_cond (op->operands_count >= 2);
+	check_cond (op->operands[0].type == ARM_GPR);
+	int bits = (op->operands[0].reg_type & ARM_REG64) ? 64 : 32;
+	if (bits == 64) {
+		k = 0x0080;
+	}
+	k |= encode1reg (op);
+	if (!strcmp (op->mnemonic, "mov")) {
+		check_cond (op->operands_count == 2);
+		if (op->operands[1].type == ARM_GPR) {
+			check_cond (bits == ((op->operands[1].reg_type & ARM_REG64) ? 64 : 32));
+			if (op->operands[0].reg_type & ARM_SP || op->operands[1].reg_type & ARM_SP) { // alias of add
+				k |= 0x0011;
+				data = k | encode2regs (op);
+				return data;
+			}
+			k |= 0xe003002a; // alias of orr
+			data = k | op->operands[1].reg << 8;
+			return data;
 		}
-	} else if (!strncmp (op->mnemonic, "movk", 4)) {
-		if (op->operands[0].reg_type & ARM_REG32) {
-			k = 0x8072;
-		} else if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x80f2;
+		check_cond (op->operands[1].type & ARM_CONSTANT);
+		ut64 imm = op->operands[1].immediate;
+		ut64 imm_inverse = ~imm;
+		if (bits == 32) {
+			check_cond (imm <= 0xffffffff || imm_inverse <= 0xffffffff);
+			imm &= 0xffffffff;
+			imm_inverse &= 0xffffffff;
 		}
-	} else if (!strncmp (op->mnemonic, "movn", 4)) {
-		if (op->operands[0].reg_type & ARM_REG32) {
-			k = 0x8012;
-		} else if (op->operands[0].reg_type & ARM_REG64) {
-			k = 0x8092;
+		int shift;
+		ut64 mask = 0xffff;
+		for (shift = 0; shift < bits; shift += 16, mask <<= 16) {
+			if (imm == (imm & mask)) { // movz
+				data = k | 0x00008052;
+				imm >>= shift;
+				data |= (imm & 7) << 29 | (imm & 0x7f8) << 13 | (imm & 0xf800) >> 3;
+				data |= shift << 9;
+				return data;
+			}
 		}
-	} else if (!strncmp (op->mnemonic, "mov", 3)) {
-		//printf ("%d - %d [%d]\n", op->operands[0].type, op->operands[1].type, ARM_GPR);
-		if (op->operands[0].reg_type & ARM_REG64) {
-            if (op->operands[1].reg_type & ARM_REG64) {
-                k = 0xe00300aa;
-            } else if (op->operands[1].type & ARM_CONSTANT) {
-                k = 0x80d2;
-            } else {
-                return data;
-            }
-        } else if (op->operands[0].reg_type & ARM_REG32) {
-            if (op->operands[1].reg_type & ARM_REG32) {
-                k = 0xe003002a;
-            } else if (op->operands[1].type & ARM_CONSTANT) {
-                k = 0x8052;
-            } else {
-                return data;
-            }
-        }
-		if (op->operands[0].type & ARM_GPR) {
-            if (op->operands[1].type & ARM_GPR) {
-                data = k | op->operands[1].reg << 8;
-            } else if (op->operands[1].type & ARM_CONSTANT) {
-                ut32 imm = op->operands[1].immediate << 1;
-                data = k | ((imm & 0xf) << 28) | ((imm & 0x1f0) << 12) ;
-            }
-			data |= encode1reg (op);
-        }
+		mask = 0xffff;
+		for (shift = 0; shift < bits; shift += 16, mask <<= 16) {
+			if (imm_inverse == (imm_inverse & mask)) { // movn
+				data = k | 0x00008012;
+				imm_inverse >>= shift;
+				data |= (imm_inverse & 7) << 29 | (imm_inverse & 0x7f8) << 13 | (imm_inverse & 0xf800) >> 3;
+				data |= shift << 9;
+				return data;
+			}
+		}
+		ut32 bitmask = encodeBitMasksWithSize (op->operands[1].immediate, bits); // orr
+		check_cond (bitmask != UT32_MAX);
+		data = k | 0xe0030032;
+		data |= (bitmask & 0x3f) << 18 | (bitmask & 0x1fc0) << 2;
 		return data;
 	}
-
+	if (!strcmp (op->mnemonic, "movz")) {
+		k |= 0x8052;
+	} else if (!strcmp (op->mnemonic, "movk")) {
+		k |= 0x8072;
+	} else if (!strcmp (op->mnemonic, "movn")) {
+		k |= 0x8012;
+	} else {
+		return data;
+	}
+	check_cond (op->operands[1].type == ARM_CONSTANT);
+	ut64 imm = op->operands[1].immediate;
+	check_cond (imm <= 0xffff);
+	int shift = 0;
+	if (op->operands_count >= 3) {
+		check_cond (op->operands_count == 3);
+		check_cond (op->operands[2].type == ARM_SHIFT);
+		check_cond (op->operands[2].shift == ARM_LSL);
+		shift = op->operands[2].shift_amount;
+		check_cond (!(shift & 0xf));
+		check_cond (shift < bits);
+	}
 	data = k;
-	data |= encode1reg (op); // arg(0)
-	data |= ((op->operands[1].immediate & 7) << 29); // arg(1)
-	data |= (((op->operands[1].immediate >> 3) & 0xff) << 16); // arg(1)
-	data |= ((op->operands[1].immediate >> 10) << 7); // arg(1)
+	data |= (imm & 7) << 29; // arg(1)
+	data |= (imm & 0x7f8) << 13; // arg(1)
+	data |= (imm & 0xf800) >> 3; // arg(1)
+	data |= shift << 9; // arg(2)
 	return data;
 }
 
@@ -734,7 +771,7 @@ static ut32 logical(ArmOp *op, bool invert, LogicalOp opc) {
 		data |= (opc & 3) << 29;
 
 		ut32 imm_orig = op->operands[2].immediate;
-		ut32 imm = decodeBitMasksWithSize (invert? ~imm_orig: imm_orig, is64bit? 64: 32);
+		ut32 imm = encodeBitMasksWithSize (invert? ~imm_orig: imm_orig, is64bit? 64: 32);
 		if (imm == UT32_MAX) {
 			return UT32_MAX;
 		}
@@ -1102,6 +1139,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			} else if (!strncmp(token + 1, "sp", 2)) {
 				// WSP
 				op->operands[operand].reg = 31;
+				op->operands[operand].reg_type |= ARM_SP;
 			} else {
 				op->operands[operand].reg = r_num_math (NULL, token + 1);
 			}
@@ -1247,222 +1285,118 @@ static bool handlePAC(ut32 *op, const char *str) {
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = {0};
 	if (!parseOpcode (str, &ops)) {
+		free (ops.mnemonic);
 		return false;
 	}
 	/* TODO: write tests for this and move out the regsize logic into the mov */
 	if (!strncmp (str, "mov", 3)) {
 		*op = mov (&ops);
-		return *op != -1;
-	}
-	if (!strncmp (str, "cb", 2)) {
+	} else if (!strncmp (str, "cb", 2)) {
 		*op = cb (&ops);
-		return *op != -1;
-	}
-	if (!strncmp (str, "cmp", 3)) {
+	} else if (!strncmp (str, "cmp", 3)) {
 		*op = cmp (&ops);
-		return *op != -1;
-	}
-	if (!strncmp (str, "ldrb", 4)) {
+	} else if (!strncmp (str, "ldrb", 4)) {
 		*op = lsop (&ops, 0x00004038, -1);
-		return *op != -1;
-	}
-	if (!strncmp (str, "ldrh", 4)) {
+	} else if (!strncmp (str, "ldrh", 4)) {
 		*op = lsop (&ops, 0x00004078, -1);
-		return *op != -1;
-	}
-	if (!strncmp (str, "ldrsh", 5)) {
+	} else if (!strncmp (str, "ldrsh", 5)) {
 		*op = lsop (&ops, 0x00008078, -1);
-		return *op != -1;
-	}
-	if (!strncmp (str, "ldrsw", 5)) {
+	} else if (!strncmp (str, "ldrsw", 5)) {
 		*op = lsop (&ops, 0x00000098, addr);
-		return *op != -1;
-	}
-	if (!strncmp (str, "ldrsb", 5)) {
+	} else if (!strncmp (str, "ldrsb", 5)) {
 		*op = lsop (&ops, 0x00008038, -1);
-		return *op != -1;
-	}
-	if (!strncmp (str, "strb", 4)) {
+	} else if (!strncmp (str, "strb", 4)) {
 		*op = lsop (&ops, 0x00000038, -1);
-		return *op != -1;
-	}
-	if (!strncmp (str, "strh", 4)) {
+	} else if (!strncmp (str, "strh", 4)) {
 		*op = lsop (&ops, 0x00000078, -1);
-		return *op != -1;
-	}
-	if (!strncmp (str, "ldr", 3)) {
+	} else if (!strncmp (str, "ldr", 3)) {
 		*op = reglsop (&ops, 0x000040f8);
-		return *op != -1;
-	}
-	if (!strncmp (str, "stur", 4)) {
+	} else if (!strncmp (str, "stur", 4)) {
 		*op = regsluop (&ops, 0x000000f8);
-		return *op != -1;
-	}
-	if (!strncmp (str, "ldur", 4)) {
+	} else if (!strncmp (str, "ldur", 4)) {
 		*op = regsluop (&ops, 0x000040f8);
-		return *op != -1;
-	}
-	if (!strncmp (str, "str", 3)) {
+	} else if (!strncmp (str, "str", 3)) {
 		*op = reglsop (&ops, 0x000000f8);
-		return *op != -1;
-	}
-	if (!strncmp (str, "stp", 3)) {
+	} else if (!strncmp (str, "stp", 3)) {
 		*op = stp (&ops, 0x000000a9);
-		return *op != -1;
-	}
-	if (!strncmp (str, "ldp", 3)) {
+	} else if (!strncmp (str, "ldp", 3)) {
 		*op = stp (&ops, 0x000040a9);
-		return *op != -1;
-	}
-	if (!strncmp (str, "sub", 3)) { // w
+	} else if (!strncmp (str, "sub", 3)) { // w
 		*op = arithmetic (&ops, 0xd1);
-		return *op != -1;
-	}
-	if (!strncmp (str, "add x", 5)) {
+	} else if (!strncmp (str, "add x", 5)) {
 		*op = arithmetic (&ops, 0x91);
-		return *op != -1;
-	}
-	if (!strncmp (str, "add w", 5)) {
+	} else if (!strncmp (str, "add w", 5)) {
 		*op = arithmetic (&ops, 0x11);
-		return *op != -1;
-	}
-	if (!strncmp (str, "adr x", 5)) { // w
+	} else if (!strncmp (str, "adr x", 5)) { // w
 		*op = adr (&ops, addr);
-		return *op != -1;
-	}
-	if (!strncmp (str, "adrp x", 6)) {
+	} else if (!strncmp (str, "adrp x", 6)) {
 		*op = adrp (&ops, addr, 0x00000090);
-		return *op != -1;
-	}
-	if (!strncmp (str, "neg", 3)) {
+	} else if (!strncmp (str, "neg", 3)) {
 		*op = neg (&ops);
-		return *op != -1;
-	}
-	if (!strcmp (str, "isb")) {
+	} else if (!strcmp (str, "isb")) {
 		*op = 0xdf3f03d5;
-		return *op != -1;
-	}
-	// PAC
-	if (handlePAC (op, str)) {
+	} else if (handlePAC (op, str)) { // PAC
+		free (ops.mnemonic);
 		return true;
-	}
-	if (!strcmp (str, "nop")) {
+	} else if (!strcmp (str, "nop")) {
 		*op = 0x1f2003d5;
-		return *op != -1;
-	}
-	if (!strcmp (str, "ret")) {
+	} else if (!strcmp (str, "ret")) {
 		*op = 0xc0035fd6;
-		return true;
-	}
-	if (!strncmp (str, "msr ", 4)) {
+	} else if (!strncmp (str, "msr ", 4)) {
 		*op = msr (&ops, 0);
-		if (*op != UT32_MAX) {
-			return true;
-		}
-	}
-	if (!strncmp (str, "mrs ", 4)) {
+	} else if (!strncmp (str, "mrs ", 4)) {
 		*op = msr (&ops, 1);
-		if (*op != UT32_MAX) {
-			return true;
-		}
-	}
-	if (!strncmp (str, "ands ", 5)) {
+	} else if (!strncmp (str, "ands ", 5)) {
 		*op = logical (&ops, false, ARM_ANDS);
-		return *op != UT32_MAX;
-	}
-	if (!strncmp (str, "and ", 4)) {
+	} else if (!strncmp (str, "and ", 4)) {
 		*op = logical (&ops, false, ARM_AND);
-		return *op != UT32_MAX;
-	}
-	if (!strncmp (str, "bics ", 5)) {
+	} else if (!strncmp (str, "bics ", 5)) {
 		*op = logical (&ops, true, ARM_ANDS);
-		return *op != UT32_MAX;
-	}
-	if (!strncmp (str, "bic ", 4)) {
+	} else if (!strncmp (str, "bic ", 4)) {
 		*op = logical (&ops, true, ARM_AND);
-		return *op != UT32_MAX;
-	}
-	if (!strncmp (str, "eon ", 4)) {
+	} else if (!strncmp (str, "eon ", 4)) {
 		*op = logical (&ops, true, ARM_EOR);
-		return *op != UT32_MAX;
-	}
-	if (!strncmp (str, "eor ", 4)) {
+	} else if (!strncmp (str, "eor ", 4)) {
 		*op = logical (&ops, false, ARM_EOR);
-		return *op != UT32_MAX;
-	}
-	if (!strncmp (str, "orn ", 4)) {
+	} else if (!strncmp (str, "orn ", 4)) {
 		*op = logical (&ops, true, ARM_ORR);
-		return *op != UT32_MAX;
-	}
-	if (!strncmp (str, "orr ", 4)) {
+	} else if (!strncmp (str, "orr ", 4)) {
 		*op = logical (&ops, false, ARM_ORR);
-		return *op != UT32_MAX;
-	}
-	if (!strncmp (str, "svc ", 4)) { // system level exception
+	} else if (!strncmp (str, "svc ", 4)) { // system level exception
 		*op = exception (&ops, 0x010000d4);
-		return *op != -1;
-	}
-	if (!strncmp (str, "hvc ", 4)) { // hypervisor level exception
+	} else if (!strncmp (str, "hvc ", 4)) { // hypervisor level exception
 		*op = exception (&ops, 0x020000d4);
-		return *op != -1;
-	}
-	if (!strncmp (str, "smc ", 4)) { // secure monitor exception
+	} else if (!strncmp (str, "smc ", 4)) { // secure monitor exception
 		*op = exception (&ops, 0x030000d4);
-		return *op != -1;
-	}
-	if (!strncmp (str, "brk ", 4)) { // breakpoint
+	} else if (!strncmp (str, "brk ", 4)) { // breakpoint
 		*op = exception (&ops, 0x000020d4);
-		return *op != -1;
-	}
-	if (!strncmp (str, "hlt ", 4)) { // halt
+	} else if (!strncmp (str, "hlt ", 4)) { // halt
 		*op = exception (&ops, 0x000040d4);
-		return *op != -1;
-	}
-	if (!strncmp (str, "b ", 2)) {
+	} else if (!strncmp (str, "b ", 2)) {
 		*op = branch (&ops, addr, 0x14);
-		return *op != -1;
-	}
-	if (!strncmp (str, "b.eq ", 5)) {
+	} else if (!strncmp (str, "b.eq ", 5)) {
 		*op = bdot (&ops, addr, 0x00000054);
-		return *op != -1;
-	}
-	if (!strncmp (str, "b.hs ", 5)) {
+	} else if (!strncmp (str, "b.hs ", 5)) {
 		*op = bdot (&ops, addr, 0x02000054);
-		return *op != -1;
-	}
-	if (!strncmp (str, "bl ", 3)) {
+	} else if (!strncmp (str, "bl ", 3)) {
 		*op = branch (&ops, addr, 0x94);
-		return *op != -1;
-	}
-	if (!strncmp (str, "br x", 4)) {
+	} else if (!strncmp (str, "br x", 4)) {
 		*op = branch (&ops, addr, 0x1fd6);
-		return *op != -1;
-	}
-	if (!strncmp (str, "blr x", 5)) {
+	} else if (!strncmp (str, "blr x", 5)) {
 		*op = branch (&ops, addr, 0x3fd6);
-		return *op != -1;
-	}
-	if (!strncmp (str, "dmb ", 4)) {
+	} else if (!strncmp (str, "dmb ", 4)) {
 		*op = mem_barrier (&ops, addr, 0xbf3003d5);
-		return *op != -1;
-	}
-	if (!strncmp (str, "dsb ", 4)) {
+	} else if (!strncmp (str, "dsb ", 4)) {
 		*op = mem_barrier (&ops, addr, 0x9f3003d5);
-		return *op != -1;
-	}
-	if (!strncmp (str, "isb", 3)) {
+	} else if (!strncmp (str, "isb", 3)) {
 		*op = mem_barrier (&ops, addr, 0xdf3f03d5);
-		return *op != -1;
-	}
-	if (!strncmp (str, "sbfiz ", 6) || !strncmp (str, "sbfm ", 5)
+	} else if (!strncmp (str, "sbfiz ", 6) || !strncmp (str, "sbfm ", 5)
 		|| !strncmp (str, "sbfx ", 5)) {
 		*op = bitfield (&ops, 0x00000013);
-		return *op != UT32_MAX;
-	}
-	if (!strncmp (str, "ubfiz ", 6) || !strncmp (str, "ubfm ", 5)
+	} else if (!strncmp (str, "ubfiz ", 6) || !strncmp (str, "ubfm ", 5)
 		|| !strncmp (str, "ubfx ", 5)) {
 		*op = bitfield (&ops, 0x00000053);
-		return *op != UT32_MAX;
 	}
-	return false;
+	free (ops.mnemonic);
+	return *op != UT32_MAX;
 }

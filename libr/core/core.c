@@ -673,6 +673,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			break;
 		case 'c': // $c console width
 			return r_cons_get_size (NULL);
+		case 'd': // $d - same as 'op'
+			if (core->io && core->io->desc) {
+				return core->io->desc->fd;
+			}
+			return 0;
 		case 'r': // $r
 			if (str[2] == '{') {
 				bptr = strdup (str + 3);
@@ -1901,14 +1906,13 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		SdbList *sls = sdb_foreach_list (core->print->formats, false);
 		SdbListIter *iter;
 		SdbKv *kv;
-		int j = 0;
 		ls_foreach (sls, iter, kv) {
 			int len = strlen (buf->data + chr);
 			int minlen = R_MIN (len,  strlen (sdbkv_key (kv)));
 			if (!len || !strncmp (buf->data + chr, sdbkv_key (kv), minlen)) {
 				char *p = strchr (buf->data + chr, '.');
 				if (p) {
-					j += autocomplete_pfele (core, completion, sdbkv_key (kv), pfx, j, p + 1);
+					autocomplete_pfele (core, completion, sdbkv_key (kv), pfx, 0, p + 1);
 					break;
 				} else {
 					char *s = r_str_newf ("pf%s.%s", pfx, sdbkv_key (kv));
@@ -2040,7 +2044,7 @@ R_API int r_core_fgets(char *buf, int len) {
 		rli->completion.run = autocomplete;
 		rli->completion.run_user = rli->user;
 	} else {
-		rli->history.data = NULL;
+		r_line_hist_free ();
 		r_line_completion_set (&rli->completion, 0, NULL);
 		rli->completion.run = NULL;
 		rli->completion.run_user = NULL;
@@ -2816,6 +2820,7 @@ R_API bool r_core_init(RCore *core) {
 	core->fixedarch = false;
 	core->fixedbits = false;
 
+	core->theme = strdup ("default");
 	/* initialize libraries */
 	core->cons = r_cons_new ();
 	if (core->cons->refcnt == 1) {
@@ -3029,15 +3034,16 @@ R_API void r_core_fini(RCore *c) {
 	c->rasm = NULL;
 	c->print = r_print_free (c->print);
 	c->bin = (r_bin_free (c->bin), NULL);
-	c->lang = (r_lang_free (c->lang), NULL);
 	c->dbg = (r_debug_free (c->dbg), NULL);
-	r_io_free (c->io);
+	c->io = (r_io_free (c->io), NULL);
+	c->lang = (r_lang_free (c->lang), NULL);
 	r_config_free (c->config);
 	/* after r_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a r_config_free_payload callback */
 	r_cons_free ();
 	r_cons_singleton ()->teefile = NULL; // HACK
+	free (c->theme);
 	r_search_free (c->search);
 	r_flag_free (c->flags);
 	r_fs_free (c->fs);
@@ -3114,10 +3120,9 @@ static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
 	p_len = R_MAX (0, w - 6);
 	if (file_len + tmp_len + OTHRSCH >= p_len) {
 		size_t dots_size = sizeof (DOTS);
-		size_t chop_point = (size_t)(p_len - OTHRSCH - file_len - dots_size - 1);
-		if (chop_point < (max_tmp_size - dots_size - 1)) {
-			tmp[chop_point] = '\0';
-			strncat (tmp, DOTS, dots_size);
+		size_t chop_point = (size_t)(p_len - OTHRSCH - file_len - dots_size);
+		if (chop_point < max_tmp_size - dots_size) {
+			snprintf (tmp + chop_point, dots_size, "%s", DOTS);
 		}
 	}
 }
@@ -3576,10 +3581,9 @@ reaccept:
 				if (cmd == 'G') {
 					// silly http emulation over rap://
 					char line[256] = {0};
-					char *cmd = line;
 					r_socket_read_block (c, (ut8*)line, sizeof (line));
 					if (!strncmp (line, "ET /cmd/", 8)) {
-						cmd = line + 8;
+						char *cmd = line + 8;
 						char *http = strstr (cmd, "HTTP");
 						if (http) {
 							*http = 0;
@@ -3888,8 +3892,8 @@ R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd
 	return false;
 }
 
-R_API RTable *r_core_table(RCore *core) {
-	RTable *table = r_table_new ();
+R_API RTable *r_core_table(RCore *core, const char *name) {
+	RTable *table = r_table_new (R_STR_ISEMPTY (name)? "table": name);
 	if (table) {
 		table->cons = core->cons;
 	}

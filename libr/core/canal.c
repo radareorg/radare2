@@ -89,8 +89,7 @@ static int cmpaddr (const void *_a, const void *_b) {
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
 }
 
-
-static char *getFunctionName(RCore *core, ut64 addr) {
+static char *get_function_name(RCore *core, ut64 addr) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf && bf->o) {
 		Sdb *kv = bf->o->addr2klassmethod;
@@ -100,17 +99,8 @@ static char *getFunctionName(RCore *core, ut64 addr) {
 			return res;
 		}
 	}
-	RListIter *iter;
-	RFlagItem *flag;
-	const RList* flags = r_flag_get_list (core->flags, addr);
-	const char *name = NULL;
-	r_list_foreach (flags, iter, flag) {
-		name = flag->name;
-		if (r_str_startswith (name, "sym.")) {
-			break;
-		}
-	}
-	return name ? strdup (name) : NULL;
+	RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, addr);
+	return (flag && flag->name) ? strdup (flag->name) : NULL;
 }
 
 static RCore *mycore = NULL;
@@ -756,21 +746,20 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	ut64 *next = NULL;
 	int fcnlen;
 	RAnalFunction *fcn = r_anal_function_new (core->anal);
+	r_warn_if_fail (fcn);
 	const char *fcnpfx = r_config_get (core->config, "anal.fcnprefix");
 	if (!fcnpfx) {
 		fcnpfx = "fcn";
 	}
-	if (!fcn) {
-		eprintf ("Error: new (fcn)\n");
-		return false;
+	const char *cc = r_anal_cc_default (core->anal);
+	if (!cc) {
+		if (r_anal_cc_once (core->anal)) {
+			eprintf ("Warning: set your favourite calling convention in `e anal.cc=?`\n");
+		}
+		cc = "reg";
 	}
-	fcn->cc = r_str_constpool_get (&core->anal->constpool, r_anal_cc_default (core->anal));
-#if 0
-	if (!fcn->cc) {
-		fcn->cc = strdup ("reg");
-	}
-#endif
-	r_warn_if_fail (!core->anal->sdb_cc->path || fcn->cc);
+	fcn->cc = r_str_constpool_get (&core->anal->constpool, cc);
+	r_warn_if_fail (fcn->cc);
 	hint = r_anal_hint_get (core->anal, at);
 	if (hint && hint->bits == 16) {
 		// expand 16bit for function
@@ -779,7 +768,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 		fcn->bits = core->anal->bits;
 	}
 	fcn->addr = at;
-	fcn->name = getFunctionName (core, at);
+	fcn->name = get_function_name (core, at);
 
 	if (!fcn->name) {
 		fcn->name = r_str_newf ("%s.%08"PFMT64x, fcnpfx, at);
@@ -1742,9 +1731,9 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 							diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
 							diffstr = r_str_replace (diffstr, "\"", "'", 1);
 							r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
-							"color=\"black\", fontname=\"Courier\","
+							"color=\"black\", fontname=\"%s\","
 							" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-							bbi->addr, difftype, diffstr, fcn->name,
+							bbi->addr, difftype, diffstr, font, fcn->name,
 							bbi->addr);
 						}
 						free (diffstr);
@@ -1766,9 +1755,9 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 							free (title);
 						} else {
 							r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
-									"color=\"black\", fontname=\"Courier\","
+									"color=\"black\", fontname=\"%s\","
 									" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-									bbi->addr, difftype, str, fcn->name, bbi->addr);
+									bbi->addr, difftype, str, font, fcn->name, bbi->addr);
 						}
 					}
 					r_diff_free (d);
@@ -1917,7 +1906,7 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 		}
 		esil = R_STRBUF_SAFEGET (&op->esil);
 		eprintf ("0x%08"PFMT64x" %d %s\n", at, op->size, esil);
-		at += op->size;
+		// at += op->size;
 		// esilIsRet()
 		// esilIsCall()
 		// esilIsJmp()
@@ -2358,13 +2347,12 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	int usenames = r_config_get_i (core->config, "graph.json.usenames");;
 	RAnalFunction *fcni;
 	RAnalRef *fcnr;
-	PJ *pj;
+	PJ *pj = NULL;
 
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 
-	switch (fmt)
-	{
+	switch (fmt) {
 	case R_GRAPH_FORMAT_JSON:
 		pj = pj_new ();
 		if (!pj) {
@@ -2382,14 +2370,16 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	case R_GRAPH_FORMAT_DOT:
 		if (!is_html) {
 			const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
-			const char * gv_node = r_config_get (core->config, "graph.gv.node");
+			char * gv_node = strdup (r_config_get (core->config, "graph.gv.node"));
 			const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
 			const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
 			if (!gv_edge || !*gv_edge) {
 				gv_edge = "arrowhead=\"normal\" style=bold weight=2";
 			}
 			if (!gv_node || !*gv_node) {
-				gv_node = "penwidth=4 fillcolor=white style=filled fontname=\"Courier New Bold\" fontsize=14 shape=box";
+				const char *font = r_config_get (core->config, "graph.font");
+				free (gv_node);
+				gv_node = r_str_newf ("penwidth=4 fillcolor=white style=filled fontname=\"%s Bold\" fontsize=14 shape=box", font);
 			}
 			if (!gv_grph || !*gv_grph) {
 				gv_grph = "bgcolor=azure";
@@ -2405,6 +2395,7 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 					"node [%s];\n"
 					"edge [%s];\n", gv_grph, font, gv_spline,
 					gv_node, gv_edge);
+			free (gv_node);
 		}
 		break;
 	}
@@ -2478,8 +2469,7 @@ repeat:
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
 			char *fcnr_name = (flag && flag->name) ? flag->name : r_str_newf ("unk.0x%"PFMT64x, fcnr->addr);
-			switch(fmt)
-			{
+			switch (fmt) {
 			case R_GRAPH_FORMAT_GMLFCN:
 				if (iteration == 0) {
 					r_cons_printf ("  node [\n"
@@ -2549,8 +2539,7 @@ repeat:
 	if (iteration == 0 && fmt == R_GRAPH_FORMAT_GMLFCN) {
 		iteration++;
 	}
-	switch(fmt)
-	{
+	switch (fmt) {
 	case R_GRAPH_FORMAT_GML:
 	case R_GRAPH_FORMAT_GMLFCN:
 	case R_GRAPH_FORMAT_JSON:
@@ -3204,7 +3193,7 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	RAnalFunction *fcn;
 	RListIter *iter;
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "fcns");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
 	r_table_add_column (t, typeNumber, "addr", 0);
@@ -3313,7 +3302,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 			}
 			r_list_append (flist, info);
 		}
-		RTable *table = r_core_table (core);
+		RTable *table = r_core_table (core, "functions");
 		r_table_visual_list (table, flist, core->offset, core->blocksize,
 			r_cons_get_size (NULL), r_config_get_i (core->config, "scr.color"));
 		r_cons_printf ("\n%s\n", r_table_tostring (table));

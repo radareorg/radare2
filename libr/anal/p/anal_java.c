@@ -11,15 +11,10 @@
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/class.h"
 
-#ifdef IFDBG
-#define dprintf eprintf
-#endif
-
 #define DO_THE_DBG 0
 #define IFDBG  if(DO_THE_DBG)
-#define IFINT  if(0)
 
-ut64 METHOD_START = 0;
+static ut64 METHOD_START = 0;
 
 static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj);
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2020 - pancake, Oddcoder */
+/* radare - LGPL - Copyright 2011-2021 - pancake, Oddcoder */
 
 /* Universal calling convention implementation based on sdb */
 
@@ -68,6 +68,10 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	free (e);
 	free (args);
 	return true;
+}
+
+R_API bool r_anal_cc_once(RAnal *anal) {
+	return sdb_add (DB, "warn", "once", 0);
 }
 
 R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {

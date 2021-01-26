@@ -372,7 +372,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 	bool b64str = r_config_get_i (r->config, "bin.b64str");
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	int maxstr = r_config_get_i (r->config, "bin.maxstr");
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "strings");
 	r_return_if_fail (table);
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
@@ -1688,7 +1688,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
 	const char *lang = r_config_get (r->config, "bin.lang");
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "relocs");
 	r_return_val_if_fail (table, false);
 	RBIter iter;
 	RBinReloc *reloc = NULL;
@@ -1700,9 +1700,20 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
+	const bool bin_cache = r_config_get_i (r->config, "bin.cache");
+	if (bin_cache) {
+		r_config_set (r->config, "io.cache", "true");
+	}
 	RBNode *relocs = r_bin_patch_relocs (r->bin);
 	if (!relocs) {
 		relocs = r_bin_get_relocs (r->bin);
+	}
+	if (bin_cache) {
+		if (r_pvector_len (&r->io->cache) == 0) {
+			r_config_set (r->config, "io.cache", "false");
+		} else {
+			r_config_set (r->config, "io.cache.read", "true");
+		}
 	}
 
 	if (IS_MODE_RAD (mode)) {
@@ -1946,7 +1957,7 @@ static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "imports");
 	r_return_val_if_fail (table, false);
 	RBinImport *import;
 	RListIter *iter;
@@ -2237,7 +2248,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 	bool none = true;
 
 	int i = 0, lastfs = 's';
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "symbols");
 	bool bin_demangle = r_config_get_i (r->config, "bin.demangle");
 	if (IS_MODE_JSON (mode)) {
 		if (!printHere) {
@@ -2277,7 +2288,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 		}
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_table_set_columnsf (table, "dssssdss", "nth", "paddr","vaddr","bind", "type", "size", "lib", "name");
+		r_table_set_columnsf (table, "dXXssdss", "nth", "paddr","vaddr","bind", "type", "size", "lib", "name");
 	}
 
 	size_t count = 0;
@@ -2454,10 +2465,10 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 			const char *type = r_str_get_fail (symbol->type, "NONE");
 			const char *name = r_str_getf (sn.demname? sn.demname: sn.name);
 			// const char *fwd = r_str_getf (symbol->forwarder);
-			r_table_add_rowf (table, "dssssdss",
+			r_table_add_rowf (table, "dXXssdss",
 					symbol->ordinal,
-					symbol->paddr == UT64_MAX ? " ----------": sdb_fmt (" 0x%08"PFMT64x, symbol->paddr),
-					sdb_fmt("0x%08"PFMT64x, addr),
+					symbol->paddr,
+					addr,
 					bind,
 					type,
 					symbol->size,
@@ -2667,7 +2678,7 @@ static int bin_map_sections_to_segments(RBin *bin, PJ *pj, int mode) {
 	RList *sections = r_list_new ();
 	RList *segments = r_list_new ();
 	RList *tmp = r_bin_get_sections (bin);
-	RTable *table = r_table_new ();
+	RTable *table = r_table_new ("segments");
 	RTableColumnType *typeString = r_table_type ("string");
 
 	r_table_add_column (table, typeString, "Segment", 0);
@@ -2721,7 +2732,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	RBinInfo *info = NULL;
 	RList *sections;
 	RListIter *iter;
-	RTable *table = r_core_table (r);
+	RTable *table = r_core_table (r, "sections");
 	r_return_val_if_fail (table, false);
 	int i = 0;
 	int fd = -1;
@@ -2764,7 +2775,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			RListInfo *info = r_listinfo_new (s->name, pitv, vitv, s->perm, strdup (humansz));
 			r_list_append (list, info);
 		}
-		RTable *table = r_core_table (r);
+		RTable *table = r_core_table (r, "sections");
 		r_table_visual_list (table, list, r->offset, -1, cols, r->io->va);
 		if (r->table_query) {
 			r_table_query (table, r->table_query);
@@ -3329,7 +3340,7 @@ static void classdump_java(RCore *r, RBinClass *c) {
 	r_cons_printf ("public class %s {\n", cn);
 	free (pn);
 	r_list_foreach (c->fields, iter2, f) {
-		if (f->name && r_regex_match ("ivar","e", f->name)) {
+		if (f->name && r_regex_match ("ivar", "e", f->name)) {
 			r_cons_printf ("  public %s %s\n", f->type, f->name);
 		}
 	}
@@ -3471,6 +3482,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 			r_list_foreach (c->fields, iter2, f) {
 				char *fn = r_str_newf ("field.%s.%s", c->name, f->name);
+				r_name_filter (fn, 0);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
 				r_cons_printf ("\"f %s = 0x%08"PFMT64x"\"\n", fn, at);
 				free (fn);

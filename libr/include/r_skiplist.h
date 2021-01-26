@@ -29,6 +29,7 @@ R_API RSkipList* r_skiplist_new(RListFree freefn, RListComparator comparefn);
 R_API void r_skiplist_free(RSkipList *list);
 R_API void r_skiplist_purge(RSkipList *list);
 R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data);
+R_API bool r_skiplist_insert_autofree(RSkipList* list, void* data);
 R_API bool r_skiplist_delete(RSkipList* list, void* data);
 R_API bool r_skiplist_delete_node(RSkipList *list, RSkipListNode *node);
 R_API RSkipListNode* r_skiplist_find(RSkipList* list, void* data);

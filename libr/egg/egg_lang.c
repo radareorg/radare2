@@ -587,12 +587,12 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 					for (i = 0; i < egg->lang.nsyscalls; i++) {
 						if (!strcmp (egg->lang.syscalls[i].name, egg->lang.callname)) {
 							free (oldstr);
-							return strdup (egg->lang.syscalls[i].arg);
+							return strdup (r_str_get (egg->lang.syscalls[i].arg));
 						}
 					}
-					eprintf ("Unknown arg for syscall '%s'\n", egg->lang.callname);
+					eprintf ("Unknown arg for syscall '%s'\n", r_str_get (egg->lang.callname));
 				} else {
-					eprintf ("NO CALLNAME '%s'\n", egg->lang.callname);
+					eprintf ("NO CALLNAME '%s'\n", r_str_get (egg->lang.callname));
 				}
 			}
 		} else if (!strncmp (str + 1, "reg", 3)) {
@@ -1161,7 +1161,6 @@ static void rcc_next(REgg *egg) {
 		if (*ptr) {
 			eq = strchr (ptr, '=');
 			if (eq) {
-				char *p = (char *) skipspaces (ptr);
 				vs = egg->lang.varsize;
 				*buf = *eq = '\x00';
 				e->mathop (egg, '=', vs, '$', "0", e->regs (egg, 1));
@@ -1172,7 +1171,7 @@ static void rcc_next(REgg *egg) {
 				R_FREE (egg->lang.mathline);
 				tmp = NULL;
 				// following code block is too ugly, oh noes
-				p = r_egg_mkvar (egg, buf, ptr, 0);
+				char *p = r_egg_mkvar (egg, buf, ptr, 0);
 				if (is_var (p)) {
 					char *q = r_egg_mkvar (egg, buf, p, 0);
 					if (q) {

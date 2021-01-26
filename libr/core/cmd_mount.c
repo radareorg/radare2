@@ -11,7 +11,7 @@ static const char *help_msg_m[] = {
 	"mc", " [file]", "Cat: Show the contents of the given file",
 	"md", " /", "List directory contents for path",
 	"mf", "[?] [o|n]", "Search files for given filename or for offset",
-	"mg", " /foo", "Get fs file/dir and dump it to disk",
+	"mg", " /foo [offset size]", "Get fs file/dir and dump it to disk",
 	"mi", " /foo/bar", "Get offset and size of given file",
 	"mj", "", "List mounted filesystems in JSON",
 	"mo", " /foo/bar", "Open given file into a malloc://",
@@ -297,28 +297,65 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'g': // "mg"
 		input++;
+		int offset = 0;
+		int size = 0;
 		if (*input == ' ') {
 			input++;
 		}
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr++ = 0;
+			char *input2 = strdup (ptr++);
+			const char *args = r_str_trim_head_ro (input2);
+			if (args) {
+				ptr = strchr (args, ' ');
+				if (ptr) {
+					*ptr++ = 0;
+					size = r_num_math (core->num, ptr);
+				}
+				offset = r_num_math (core->num, args);
+			}
 		} else {
 			ptr = "./";
 		}
-		file = r_fs_open (core->fs, input, false);
+		const char *filename = r_str_trim_head_ro (input);
+	
+		file = r_fs_open (core->fs, filename, false);
 		if (file) {
-			char *localFile = strdup (input);
+			char *localFile = strdup (filename);
 			char *slash = (char *)r_str_rchr (localFile, NULL, '/');
 			if (slash) {
 				memmove (localFile, slash + 1, strlen (slash));
 			}
-			r_fs_read (core->fs, file, 0, file->size);
-			r_file_dump (localFile, file->data, file->size, false);
+			size_t ptr = offset;
+			int total_bytes_read = 0;
+			int blocksize = file->size < core->blocksize ? file->size : core->blocksize;
+			size = size > 0 ? size : file->size;
+			if (r_file_exists (localFile) && !r_sys_truncate (localFile, 0)) {
+				eprintf ("Cannot create file %s\n", localFile);
+				break;
+			}
+			while (total_bytes_read < size && ptr < file->size) {
+				int bytes_read = 0;
+				if (size - total_bytes_read < blocksize) {
+					bytes_read = r_fs_read (core->fs, file, ptr, size - total_bytes_read);
+				} else {
+					bytes_read = r_fs_read (core->fs, file, ptr, blocksize);
+				}
+				if (bytes_read > 0) {
+					r_file_dump (localFile, file->data, bytes_read, true);
+				}
+				ptr += bytes_read;
+				total_bytes_read += bytes_read;
+			}
 			r_fs_close (core->fs, file);
-			eprintf ("File '%s' created.\n", localFile);
+			if (offset) {
+				eprintf ("File '%s' created. (offset: 0x%"PFMT64x" size: %d bytes)\n", localFile, (ut64) offset, size);
+			} else {
+				eprintf ("File '%s' created. (size: %d bytes)\n", localFile, size);
+			}
 			free (localFile);
-		} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
+		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
 			eprintf ("Cannot open file\n");
 		}
 		break;

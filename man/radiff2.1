@@ -42,7 +42,7 @@ Compare the list of imports
 .It Fl n
 Suppress address names (show only addresses) when code diffing.
 .It Fl O
-Do code diffing with all bytes instead of just the fixed opcode bytes
+Do code diffing with opcode bytes only.
 .It Fl p
 Use physical addressing (io.va=0)
 .It Fl q
@@ -54,9 +54,9 @@ Show two column hexdump diffing.
 .It Fl X
 Show two column hexII diffing.
 .It Fl s
-Calculate text distance from two files.
+Compute edit distance (no substitution, Eugene W. Myers' O(ND) diff algorithm) between two files.
 .It Fl ss
-Same as before but using the Levenstein algorithm (faster but sometimes buggy)
+Compute Levenshtein edit distance (substitution is allowed, O(N^2)) between two files.
 .It Fl S Ar [name, namelen, dist, size, ...]
 Specify which column of the code diffing algo use for diffing
 .It Fl t Ar 0\-100

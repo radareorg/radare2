@@ -168,7 +168,7 @@ FILE=bins/pe/flare_notepad.ex
 CMDS=<<EOF
 e anal.bb.maxsize = 2048
 aaa
-pdf~ret?
+pdf~?ret
 EOF
 EXPECT=<<EOF
 1

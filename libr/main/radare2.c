@@ -1506,8 +1506,6 @@ beach:
 	free (envprofile);
 	free (debugbackend);
 	r_core_free (r);
-	r_cons_set_raw (0);
-	r_cons_free ();
 	LISTS_FREE ();
 	R_FREE (pfile);
 	return ret;

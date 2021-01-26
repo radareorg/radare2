@@ -841,7 +841,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
-	int rowbytes = p->cols;
 	if (step < len) {
 		len = len - (len % step);
 	}
@@ -928,7 +927,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			print (color_title);
 		}
 		if (base < 32) {
-			ut32 opad = (ut32) (addr >> 32);
 			{ // XXX: use r_print_addr_header
 				int i, delta;
 				char soff[32];
@@ -959,7 +957,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 			/* column after number, before hex data */
 			print ((col == 1)? "|": space);
-			opad >>= 4;
 			if (use_hdroff)  {
 				k = addr & 0xf;
 				K = (addr >> 4) & 0xf;
@@ -1026,6 +1023,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 
 	// is this necessary?
 	r_print_set_screenbounds (p, addr);
+	int rowbytes;
 	int rows = 0;
 	int bytes = 0;
 	bool printValue = true;

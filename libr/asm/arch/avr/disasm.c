@@ -1,24 +1,30 @@
-#include "avr_disasm.c"
-#include "format.c"
+#include "avr_disasm.h"
+#include "format.h"
+#include <string.h>
 #include <r_types_base.h>
 
-static int avrdis (char *out, ut64 addr, cut8 *buf, int len) {
+int avr_decode (char *out, ut64 addr, cut8 *buf, int len) {
 	formattingOptions opt = { 0 };
 	disassembledInstruction dins;
 	assembledInstruction ins;
-	AVR_Long_Instruction = 0;
-	AVR_Long_Address = 0;
+	avrDisassembleContext context = { 0 };
+	int opsize = 2;
+
 	if (len < 2) {
 		strcpy (out, "truncated");
 		return -1;
 	}
+	// be sure that the buffer is always set.
 	ins.address = addr;
 	ins.opcode = (buf[0] | buf[1] << 8); // | (buf[2]<<16) | (buf[3]<<24);
-	if (disassembleInstruction (&dins, ins)) {
+
+	out[0] = 0;
+
+	if (disassembleInstruction (&context, &dins, ins)) {
 		strcpy (out, "invalid");
 		return -1;
 	}
-	if (AVR_Long_Instruction) {
+	if (context.status > 0) {
 		if (len < 4) {
 			strcpy (out, "truncated");
 			return -1;
@@ -30,34 +36,21 @@ static int avrdis (char *out, ut64 addr, cut8 *buf, int len) {
 			(buf[3]<<24) | (buf[2]<<16) | \
 			(buf[1]<<8) | (buf[0]);
 		*/
-		if (disassembleInstruction (&dins, ins)) {
+		if (disassembleInstruction (&context, &dins, ins)) {
 			strcpy (out, "invalid");
 			return -1;
 		}
-		printDisassembledInstruction (out, dins, opt);
-		return 4;
+		if (printDisassembledInstruction (&context, out, dins, opt) < 0) {
+			strcpy (out, "invalid");
+			return -1;
+		}
+		opsize = 4;
+	} else if (printDisassembledInstruction (&context, out, dins, opt) < 0) {
+		strcpy (out, "invalid");
+		return -1;
 	}
-	printDisassembledInstruction (out, dins, opt);
-	//printf ("0x%08"PFMT64x" %s\n", addr, out);
-	return 2;
-}
-
-#if TEST
-int main() {
-	ut64 addr = 0;
-	int ret = 0;
-	char *code = "\x8a\xb7\x42\xac\x80\x1e";
-	char opcode[65];
-	int delta = 0;
-	int len;
-	len = strlen (code);
-	for (;delta<len;){
-		ret = avrdis (opcode, addr+delta, code+delta, len-delta);
-		if (ret == -1)
-			break;
-//		printf ("0x%08"PFMT64x"  %s\n", addr+delta, opcode);
-		delta += ret;
+	if (out[0] == '.' || !out[0]) {
+		strcpy (out, "invalid");
 	}
-	return 0;
+	return opsize;
 }
-#endif

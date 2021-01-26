@@ -1,0 +1,9 @@
+OBJ_ESIL_DUMMY=esil_dummy.o
+
+STATIC_OBJ+=${OBJ_ESIL_DUMMY}
+TARGET_ESIL_DUMMY=esil_dummy.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_ESIL_DUMMY}
+
+${TARGET_ESIL_DUMMY}: ${OBJ_ESIL_DUMMY}
+	${CC} $(call libname,esil_dummy) ${LDFLAGS} ${CFLAGS} -o esil_dummy.${EXT_SO} ${OBJ_ESIL_DUMMY}

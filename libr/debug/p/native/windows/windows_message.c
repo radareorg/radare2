@@ -277,7 +277,7 @@ static window *__window_from_handle(HANDLE hwnd) {
 }
 
 static RTable *__create_window_table(void) {
-	RTable *tbl = r_table_new ();
+	RTable *tbl = r_table_new ("windows");
 	if (!tbl) {
 		return NULL;
 	}

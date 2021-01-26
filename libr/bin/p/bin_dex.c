@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2020 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2011-2021 - pancake, h4ng3r */
 
 #include <r_cons.h>
 #include <r_types.h>
@@ -1865,7 +1865,7 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 	return -1;
 }
 
-static char *getname(RBinFile *bf, int type, int idx, bool sd) {
+static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	simplifiedDemangling = sd; // XXX kill globals
 	RBinDexObj *dex = bf->o->bin_obj;
 	switch (type) {
@@ -2145,8 +2145,9 @@ static RList* libs(RBinFile *bf) {
 			char *n = r_str_newf ("%s%s%s", path, R_SYS_DIR, file);
 			if (strcmp (n, bf->file)) {
 				r_list_append (ret, n);
+			} else {
+				free (n);
 			}
-			free (n);
 		}
 	}
 	r_list_free (files);

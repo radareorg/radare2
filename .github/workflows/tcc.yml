@@ -1,9 +1,10 @@
-name: Radare2 CI - build with TinyCC compiler
+name: TCC
 
 on:
-  schedule:
-    # “At 00:00 on every Tuesday, Thursday, and Saturday”
-    - cron:  '0 13 * * 2,4,6'
+  push:
+    branches:
+      - master
+  pull_request:
 
 jobs:
   build:
@@ -19,7 +20,7 @@ jobs:
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
-          ./configure --prefix=/usr
+          sh ./configure --prefix=/usr
           make
           sudo make install
 
@@ -30,6 +31,11 @@ jobs:
           repository: radareorg/radare2-testbins
           path: test/bins
 
+    - name: Install dependencies
+      run: |
+        sudo apt-get --assume-yes install wheel setuptools || true
+        sudo python -m pip install --upgrade pip
+        pip install r2pipe
     - name: Configure, build and install
       env:
           CC: tcc
@@ -37,11 +43,6 @@ jobs:
           ./configure --prefix=/usr --with-compiler=tcc
           make
           sudo make install
-
-    - name: Install test dependencies
-      run: |
-          sudo apt-get --assume-yes install python3-wheel python3-setuptools
-          python3 -m pip install --user 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
 
     - name: Run tests
       env:

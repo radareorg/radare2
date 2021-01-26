@@ -343,6 +343,21 @@ R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistor
 	return 1;
 }
 
+static inline bool match_hist_line(char *hist_line, char *cur_line) {
+	// Starts with but not equal to
+	return r_str_startswith (hist_line, cur_line) && strcmp (hist_line, cur_line);
+}
+
+static void setup_hist_match(RLine *line) {
+	if (line->history.do_setup_match) {
+		R_FREE (line->history.match);
+		if (*line->buffer.data) {
+			line->history.match = strdup (line->buffer.data);
+		}
+	}
+	line->history.do_setup_match = false;
+}
+
 R_API int r_line_hist_cmd_up(RLine *line) {
 	if (line->hist_up) {
 		return line->hist_up (line->user);
@@ -351,7 +366,22 @@ R_API int r_line_hist_cmd_up(RLine *line) {
 		inithist ();
 	}
 	if (line->history.index > 0 && line->history.data) {
-		strncpy (line->buffer.data, line->history.data[--line->history.index], R_LINE_BUFSIZE - 1);
+		setup_hist_match (line);
+		if (line->history.match) {
+			int i;
+			for (i= line->history.index - 1; i >= 0; i--) {
+				if (match_hist_line (line->history.data[i], line->history.match)) {
+					line->history.index = i;
+					break;
+				}
+			}
+			if (i < 0) {
+				return false;
+			}
+		} else {
+			line->history.index--;
+		}
+		strncpy (line->buffer.data, line->history.data[line->history.index], R_LINE_BUFSIZE - 1);
 		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 		return true;
 	}
@@ -362,17 +392,29 @@ R_API int r_line_hist_cmd_down(RLine *line) {
 	if (line->hist_down) {
 		return line->hist_down (line->user);
 	}
-	line->buffer.index = 0;
 	if (!line->history.data) {
 		inithist ();
 	}
-	if (line->history.index == line->history.top) {
-		return false;
+	setup_hist_match (line);
+	if (line->history.match) {
+		int i;
+		for (i = line->history.index + 1; i < line->history.top; i++) {
+			if (match_hist_line (line->history.data[i], line->history.match)) {
+				break;
+			}
+		}
+		line->history.index = i;
+	} else {
+		line->history.index++;
 	}
-	line->history.index++;
-	if (line->history.index == line->history.top) {
-		line->buffer.data[0] = '\0';
-		line->buffer.index = line->buffer.length = 0;
+	if (line->history.index >= line->history.top) {
+		line->history.index = line->history.top;
+		if (line->history.match) {
+			strncpy (line->buffer.data, line->history.match, R_LINE_BUFSIZE - 1);
+		} else {
+			line->buffer.data[0] = '\0';
+		}
+		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 		return false;
 	}
 	if (line->history.data && line->history.data[line->history.index]) {
@@ -1067,6 +1109,8 @@ static void __vi_mode(void) {
 			__update_prompt_color ();
 			break;
 		}
+		bool o_do_setup_match = I.history.do_setup_match;
+		I.history.do_setup_match = true;
 		ch = r_cons_readchar ();
 		while (IS_DIGIT (ch)) {			// handle commands like 3b
 			if (ch == '0' && rep == 0) {	// to handle the command 0
@@ -1241,9 +1285,11 @@ static void __vi_mode(void) {
 			ch = tolower (r_cons_arrow_to_hjkl (ch));
 			switch (ch) {
 			case 'k': 			// up
+ 				I.history.do_setup_match = o_do_setup_match;
 				r_line_hist_up ();
 				break;
 			case 'j':			// down
+ 				I.history.do_setup_match = o_do_setup_match;
 				r_line_hist_down ();
 				break;
 			case 'l':			// right
@@ -1348,6 +1394,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		buf[0] = ch;
 #endif
 #endif
+		bool o_do_setup_match = I.history.do_setup_match;
+		I.history.do_setup_match = true;
 		if (I.echo && cons->context->color_mode) {
 			r_cons_clear_line (0);
 		}
@@ -1529,6 +1577,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					gcomp_idx--;
 				}
 			} else {
+				I.history.do_setup_match = o_do_setup_match;
 				r_line_hist_down ();
 			}
 			break;
@@ -1543,6 +1592,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			} else if (gcomp) {
 				gcomp_idx++;
 			} else {
+				I.history.do_setup_match = o_do_setup_match;
 				r_line_hist_up ();
 			}
 			break;
@@ -1687,9 +1737,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							selection_widget_draw ();
 						} else if (gcomp) {
 							gcomp_idx++;
-						} else if (r_line_hist_up () == -1) {
-							r_cons_break_pop ();
-							return NULL;
+						} else {
+							I.history.do_setup_match = o_do_setup_match;
+							if (r_line_hist_up () == -1) {
+								r_cons_break_pop ();
+								return NULL;
+							}
 						}
 						break;
 					case 'B':	// down arrow
@@ -1704,9 +1757,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							if (gcomp_idx > 0) {
 								gcomp_idx--;
 							}
-						} else if (r_line_hist_down () == -1) {
-							r_cons_break_pop ();
-							return NULL;
+						} else {
+							I.history.do_setup_match = o_do_setup_match;
+							if (r_line_hist_down () == -1) {
+								r_cons_break_pop ();
+								return NULL;
+							}
 						}
 						break;
 					case 'C':	// right arrow

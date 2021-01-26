@@ -39,7 +39,6 @@ R_API void r_sys_set_environ(char **e);
 R_API int r_sys_fork(void);
 // nocleanup = false => exit(); true => _exit()
 R_API void r_sys_exit(int status, bool nocleanup);
-R_API bool r_is_heap (void *p);
 R_API bool r_sys_stop(void);
 R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);
@@ -65,7 +64,7 @@ R_API char *r_sys_getenv(const char *key);
 R_API bool r_sys_getenv_asbool(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
 R_API int r_sys_clearenv(void);
-R_API char *r_sys_whoami(char *buf);
+R_API char *r_sys_whoami(void);
 R_API char *r_sys_getdir(void);
 R_API int r_sys_chdir(const char *s);
 R_API bool r_sys_aslr(int val);

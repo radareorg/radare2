@@ -189,7 +189,7 @@ Usage example:
 rep cmpsb
 ---------
 
-	cx,!,?{,BREAK,},esi,[1],edi,[1],^,!,?{,BREAK,},esi,++,edi,++,cx,--,LOOP
+	ecx,!,?{,BREAK,},edi,[1],esi,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,edi,[1],0x80,-,!,7,$o,^,of,:=,3,$b,af,:=,df,?{,1,edi,-=,1,esi,-=,}{,1,edi,+=,1,esi,+=,},ecx,--=,zf,!,?{,BREAK,},0,GOTO
 
 
 Unimplemented/unhandled instructions

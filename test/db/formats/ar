@@ -10,9 +10,9 @@ NAME=ar file symbols
 FILE=ar://bins/ar/libgdbr.a//xml.o
 CMDS=is~xml
 EXPECT=<<EOF
-1    0x00000000 0x08000000 LOCAL  FILE   0        xml.c
-7    0x000009b3 0x080009b3 LOCAL  FUNC   5373     gdbr_parse_target_xml
-17   0x00000040 0x08000040 GLOBAL FUNC   152      gdbr_read_target_xml
+1   0x00000000 0x08000000 LOCAL  FILE   0        xml.c
+7   0x000009b3 0x080009b3 LOCAL  FUNC   5373     gdbr_parse_target_xml
+17  0x00000040 0x08000040 GLOBAL FUNC   152      gdbr_read_target_xml
 EOF
 RUN
 

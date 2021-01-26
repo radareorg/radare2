@@ -1,3 +1,4 @@
+static insn_head_t c55x_list[] = {
 {
 	.byte = 0x00,
 	.size = 0x03,
@@ -3970,3 +3971,4 @@
 		.syntax = NULL,
 	},
 },
+};

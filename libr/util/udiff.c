@@ -167,219 +167,6 @@ R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb)
 		: r_diff_buffers_static (d, a, la, b, lb);
 }
 
-R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	r_return_val_if_fail (a && b, false);
-	const bool verbose = d? d->verbose: false;
-	/*
-	More memory efficient version on Levenshtein Distance from:
-	https://en.wikipedia.org/wiki/Levenshtein_distance
-	http://www.codeproject.com/Articles/13525/Fast-memory-efficient-Levenshtein-algorithm
-	ObM..
-
-	8/July/2016 - More time efficient Levenshtein Distance. Now runs in about O(N*sum(MDistance)) instead of O(NM)
-	In real world testing the speedups for similar files are immense. Processing of
-	radiff2 -sV routerA/firmware_extract/bin/httpd routerB/firmware_extract/bin/httpd
-	reduced from 28 hours to about 13 minutes.
-	*/
-	int i, j;
-	const ut8 *aBufPtr;
-	const ut8 *bBufPtr;
-	ut32 aLen;
-	ut32 bLen;
-
-	// temp pointer will be used to switch v0 and v1 after processing the inner loop.
-	int *temp;
-	int *v0, *v1;
-
-	// We need these variables outside the context of the loops as we need to
-	// survive multiple loop iterations.
-	// start and stop are used in our inner loop
-	// colMin tells us the current 'best' edit distance.
-	// extendStop & extendStart are used when we get 'double up' edge conditions
-	// that require us to keep some more data.
-	int start = 0;
-	int stop = 0;
-	int smallest;
-	int colMin = 0;
-	int extendStop = 0;
-	int extendStart = 0;
-
-	//we could move cost into the 'i' loop.
-	int cost = 0;
-
-	// loops can get very big, this can be removed, but it's currently in there for debugging
-	// and optimisation testing.
-	ut64 loops = 0;
-
-	// We need the longest file to be 'A' because our optimisation tries to stop and start
-	// around the diagonal.
-	//  AAAAAAA
-	// B*
-	// B *
-	// B  *____
-	// if we have them the other way around and we terminate on the diagonal, we won't have
-	// inspected all the bytes of file B..
-	//  AAAA
-	// B*
-	// B *
-	// B  *
-	// B   *
-	// B   ?
-
-	if (la < lb) {
-		aBufPtr = b;
-		bBufPtr = a;
-		aLen = lb;
-		bLen = la;
-	} else {
-		aBufPtr = a;
-		bBufPtr = b;
-		aLen = la;
-		bLen = lb;
-	}
-	stop = bLen;
-	// Preliminary tests
-
-	// one or both buffers empty?
-	if (aLen == 0 || bLen == 0) {
-		if (distance) {
-			*distance = R_MAX (aLen, bLen);
-		}
-		if (similarity) {
-			*similarity = aLen == bLen? 1.0: 0.0;
-		}
-		return true;
-	}
-
-	//IF the files are the same size and are identical, then we have matching files
-	if (aLen == bLen && !memcmp (aBufPtr, bBufPtr, aLen)) {
-		if (distance) {
-			*distance = 0;
-		}
-		if (similarity) {
-			*similarity = 1.0;
-		}
-		return true;
-	}
-	// Only calloc if we have to do some processing
-
-	// calloc v0 & v1 and check they initialised
-	v0 = (int*) calloc ((bLen + 3), sizeof (int));
-	if (!v0) {
-		eprintf ("Error: cannot allocate %i bytes.", bLen + 3);
-		return false;
-	}
-
-	v1 = (int*) calloc ((bLen + 3), sizeof (int));
-	if (!v1) {
-		eprintf ("Error: cannot allocate %i bytes", 2 * (bLen + 3));
-		free (v0);
-		return false;
-	}
-
-	// initialise v0 and v1.
-	// With optimisiation we only strictly we only need to initialise v0[0..2]=0..2 & v1[0] = 1;
-	for (i = 0; i < bLen + 1 ; i++) {
-		v0[i] = i;
-		v1[i] = i + 1;
-	}
-
-	// Outer loop = the length of the longest input file.
-	for (i = 0; i < aLen; i++) {
-
-		// We're going to stop the inner loop at:
-		// bLen (so we don't run off the end of our array)
-		// or 'two below the diagonal' PLUS any extension we need for 'double up' edge values
-		// (see extendStop for logic)
-		stop = R_MIN ((i + extendStop + 2), bLen);
-
-		// We need a value in the result column (v1[start]).
-		// If you look at the loop below, we need it because we look at v1[j] as one of the
-		// potential shortest edit distances.
-		// In all cases where the edit distance can't 'reach',
-		// the value of v1[start] simply increments.
-		if (start > bLen) {
-			break;
-		}
-		v1[start] = v0[start] + 1;
-
-		// need to have a bigger number in colMin than we'll ever encounter in the inner loop
-		colMin = aLen;
-
-		// Inner loop does all the work:
-		for (j = start; j <= stop; j++) {
-			loops++;
-
-			// The main levenshtein comparison:
-			cost = (aBufPtr[i] == bBufPtr[j]) ? 0 : 1;
-			smallest = R_MIN ((v1[j] + 1), (v0[j + 1] + 1));
-			smallest = R_MIN (smallest, (v0[j] + cost));
-
-			// populate the next two entries in v1.
-			// only really required if this is the last loop.
-			if (j + 2 > bLen + 3) {
-				break;
-			}
-			v1[j + 1] = smallest;
-			v1[j + 2] = smallest + 1;
-
-			// If we have seen a smaller number, it's the new column Minimum
-			colMin = R_MIN ((colMin), (smallest));
-
-		}
-
-		// We're going to start at i+1 next iteration
-		// The column minimum is the current edit distance
-		// This distance is the minimum 'search width' from the optimal 'i' diagonal
-		// The extendStart picks up an edge case where we have a match on the first iteration
-		// We update extendStart after we've set start for the next iteration.
-		start = i + 1 - colMin - extendStart;
-
-		// If the last processed entry is a match, AND
-		// the current byte in 'a' and the previous processed entry in 'b' aren't a match
-		// then we need to extend our search below the optimal 'i' diagonal. because we'll
-		// have a vertical double up condition in our last two values of the results column.
-		// j-2 is used because j++ increments prior to loop exit in the processing loop above.
-		if (!cost && aBufPtr[i] != bBufPtr[j - 2]) {
-			extendStop ++;
-		}
-
-		// If new start would be a match then we have a horizontal 'double up'
-		// which means we need to keep an extra row of data
-		// so don't increment the start counter this time, BUT keep
-		// extendStart up our sleeves for next iteration.
-		if (i + 1 < aLen && start < bLen && aBufPtr[i + 1] == bBufPtr[start]) {
-			start --;
-			extendStart ++;
-		}
-		//Switch v0 and v1 pointers via temp pointer
-		temp = v0;
-		v0 = v1;
-		v1 = temp;
-
-		//Print a processing update every 10K of outer loop
-		if (verbose && i % 10000==0) {
-			eprintf ("\rProcessing %d of %d\r", i, aLen);
-		}
-	}
-	//Clean up output on loop exit (purely aesthetic)
-	if (verbose) {
-		eprintf ("\rProcessing %d of %d (loops=%"PFMT64d")\n", i, aLen,loops);
-	}
-	if (distance) {
-		// the final distance is the last byte we processed in the inner loop.
-		// v0 is used instead of v1 because we switched the pointers before exiting the outer loop
-		*distance = v0[stop];
-	}
-	if (similarity) {
-		double diff = (double) (v0[stop]) / (double) (R_MAX (aLen, bLen));
-		*similarity = (double)1 - diff;
-	}
-	free (v0);
-	free (v1);
-	return true;
-}
-
 // Eugene W. Myers' O(ND) diff algorithm
 // Returns edit distance with costs: insertion=1, deletion=1, no substitution
 R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
@@ -437,7 +224,7 @@ out:
 	return true;
 }
 
-R_API bool r_diff_buffers_distance_original(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+R_API bool r_diff_buffers_distance_levenshtein(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
 	if (!a || !b) {
 		return false;
 	}
@@ -499,12 +286,11 @@ R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b
 		case 'm':
 			return r_diff_buffers_distance_myers (d, a, la, b, lb, distance, similarity);
 		case 'l':
-			return r_diff_buffers_distance_levenstein (d, a, la, b, lb, distance, similarity);
 		default:
 			break;
 		}
 	}
-	return r_diff_buffers_distance_original (d, a, la, b, lb, distance, similarity);
+	return r_diff_buffers_distance_levenshtein (d, a, la, b, lb, distance, similarity);
 }
 
 // Use Needleman–Wunsch to diffchar.
@@ -522,8 +308,8 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 	const size_t len_b = strlen ((const char *)b);
 	const size_t len_long = len_a > len_b ? len_a : len_b;
 	const size_t dim = len_long + 1;
-	ut8 *dup_a = malloc (len_long);
-	ut8 *dup_b = malloc (len_long);
+	char *dup_a = malloc (len_long);
+	char *dup_b = malloc (len_long);
 	st16 *align_table = malloc (dim * dim * sizeof (st16));
 	ut8 *align_a = malloc (2 * len_long);
 	ut8 *align_b = malloc (2 * len_long);
@@ -533,14 +319,14 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 		free (align_table);
 		free (align_a);
 		free (align_b);
+		free (diffchar);
 		return NULL;
 	}
 
-	// Copy strings (note that strncpy does pad with nulls)
-	strncpy ((char *)dup_a, (const char *)a, len_long);
-	a = dup_a;
-	strncpy ((char *)dup_b, (const char *)b, len_long);
-	b = dup_b;
+	snprintf (dup_a, len_long, "%s", a);
+	a = (const ut8*)dup_a;
+	snprintf (dup_b, len_long, "%s", b);
+	b = (const ut8*)dup_b;
 
 	// Fill table
 	size_t row, col;

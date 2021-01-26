@@ -7,9 +7,8 @@ enum {
 	MODE_DIFF,
 	MODE_DIFF_STRS,
 	MODE_DIFF_IMPORTS,
-	MODE_DIST,
 	MODE_DIST_MYERS,
-	MODE_DIST_LEVENSTEIN,
+	MODE_DIST_LEVENSHTEIN,
 	MODE_CODE,
 	MODE_GRAPH,
 	MODE_COLS,
@@ -17,15 +16,15 @@ enum {
 };
 
 enum {
-        GRAPH_DEFAULT_MODE,
-        GRAPH_SDB_MODE,
-        GRAPH_JSON_MODE,
-        GRAPH_JSON_DIS_MODE,
-        GRAPH_TINY_MODE,
-        GRAPH_INTERACTIVE_MODE,
-        GRAPH_DOT_MODE,
-        GRAPH_STAR_MODE,
-        GRAPH_GML_MODE
+	GRAPH_DEFAULT_MODE,
+	GRAPH_SDB_MODE,
+	GRAPH_JSON_MODE,
+	GRAPH_JSON_DIS_MODE,
+	GRAPH_TINY_MODE,
+	GRAPH_INTERACTIVE_MODE,
+	GRAPH_DOT_MODE,
+	GRAPH_STAR_MODE,
+	GRAPH_GML_MODE
 };
 
 typedef struct {
@@ -424,7 +423,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static int show_help(int v) {
-	printf ("Usage: radiff2 [-abBcCdjrspOxuUvV] [-A[A]] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
+	printf ("Usage: radiff2 [-abBcCdeGhijnrOpqsSxuUvVzZ] [-A[A]] [-g sym] [-m graph_mode][-t %%] [file] [file]\n");
 	if (v) {
 		printf (
 			"  -a [arch]  specify architecture plugin to use (x86, arm, ..)\n"
@@ -916,7 +915,7 @@ static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
                 __generate_graph (c, off);
                 r_core_agraph_print (c, use_utf8, "");
                 r_cons_reset_colors ();
-        break;
+        	break;
         }
 }
 
@@ -990,7 +989,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			break;
 		case 'm':{
 		        const char *tmp = opt.arg;
-		        switch(tmp[0]) {
+		        switch (tmp[0]) {
 	                case 'i': ro.gmode = GRAPH_INTERACTIVE_MODE; break;
 	                case 'k': ro.gmode = GRAPH_SDB_MODE; break;
 	                case 'j': ro.gmode = GRAPH_JSON_MODE; break;
@@ -1040,12 +1039,10 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		case 'h':
 			return show_help (1);
 		case 's':
-			if (ro.mode == MODE_DIST) {
-				ro.mode = MODE_DIST_LEVENSTEIN;
-			} else if (ro.mode == MODE_DIST_LEVENSTEIN) {
-				ro.mode = MODE_DIST_MYERS;
+			if (ro.mode == MODE_DIST_MYERS) {
+				ro.mode = MODE_DIST_LEVENSHTEIN;
 			} else {
-				ro.mode = MODE_DIST;
+				ro.mode = MODE_DIST_MYERS;
 			}
 			break;
 		case 'S':
@@ -1107,8 +1104,10 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			eprintf ("Cannot open '%s'\n", r_str_getf (ro.file));
 		}
 		c2 = opencore (&ro, ro.file2);
-		if (!c || !c2) {
+		if (!c2) {
 			eprintf ("Cannot open '%s'\n", r_str_getf (ro.file2));
+		}
+		if (!c || !c2) {
 			return 1;
 		}
 		c->c2 = c2;
@@ -1277,19 +1276,16 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		}
 		r_diff_free (d);
 		break;
-	case MODE_DIST:
 	case MODE_DIST_MYERS:
-	case MODE_DIST_LEVENSTEIN:
+	case MODE_DIST_LEVENSHTEIN:
 		{
 			RDiff *d = r_diff_new ();
 			if (d) {
 				d->verbose = ro.verbose;
-				if (ro.mode == MODE_DIST_LEVENSTEIN) {
-					d->type = 'l';
-				} else if (ro.mode == MODE_DIST_MYERS) {
+				if (ro.mode == MODE_DIST_MYERS) {
 					d->type = 'm';
 				} else {
-					d->type = 0;
+					d->type = 'l';
 				}
 				r_diff_buffers_distance (d, bufa, (ut32)sza, bufb, (ut32)szb, &ro.count, &sim);
 				r_diff_free (d);

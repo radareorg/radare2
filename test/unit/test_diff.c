@@ -32,22 +32,13 @@ bool test_r_diff_buffers_distance(void) {
 	int i;
 
 	// Levenshtein edit distance (deletion/insertion/substitution)
-	diff->type = '\0';
+	diff->type = 'l';
 	for (i = 0; tests[i].a; i++) {
 		size_t la = strlen ((const char *)tests[i].a), lb = strlen ((const char *)tests[i].b);
 		r_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
-		snprintf (msg, sizeof msg, "original %s/%s distance", tests[i].a, tests[i].b);
+		snprintf (msg, sizeof msg, "levenshtein %s/%s distance", tests[i].a, tests[i].b);
 		mu_assert_eq (distance, tests[i].dis_distance, msg);
 	}
-
-	// Broken r_diff_buffers_distance_levenshtein, uncomment and see why it is incorrect
-	// diff->type = 'l';
-	// for (i = 0; i < R_ARRAY_SIZE (tests); i++) {
-	// 	size_t la = strlen (tests[i].a), lb = strlen ((const char *)tests[i].b);
-	// 	r_diff_buffers_distance (diff, tests[i].a, la, tests[i].b, lb, &distance, NULL);
-	// 	snprintf (msg, sizeof msg, "levenshtein %s/%s distance", tests[i].a, tests[i].b);
-	// 	mu_assert_eq (distance, tests[i].dis_distance, msg);
-	// }
 
 	// Eugene W. Myers' O(ND) diff algorithm, deletion/insertion edit distance
 	diff->type = 'm';

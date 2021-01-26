@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - qnix */
+/* radare - LGPL - Copyright 2015-2021 - qnix */
 
 #include <r_types.h>
 #include <r_util.h>

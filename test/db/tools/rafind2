@@ -122,7 +122,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=rafind2 -E 
+NAME=rafind2 -E
 FILE=-
 BROKEN=1
 CMDS=!rafind2 -E "134513440,eip,4,esp,-=,esp,=[],eip,=" bins/elf/ioli/crackme0x00
@@ -205,7 +205,7 @@ RUN
 
 NAME=rafind2 -F
 FILE=-
-CMDS=!rafind2 -F scripts/keyword bins/mach0/FileDP
+CMDS=!rafind2 -F bins/src/keyword bins/mach0/FileDP
 EXPECT=<<EOF
 0x4e9
 0x6f5
@@ -222,4 +222,3 @@ EXPECT=<<EOF
 0x34ab
 EOF
 RUN
-

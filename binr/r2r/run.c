@@ -1076,11 +1076,11 @@ rip:
 		if (proc->ret != 0) {
 			goto ship;
 		}
-		free (hex);
 		char *disasm = r_strbuf_drain_nofree (&proc->out);
 		r_str_trim (disasm);
 		out->disasm = disasm;
 ship:
+		free (hex);
 		r_pvector_pop (&args);
 		r_pvector_pop (&args);
 		r2r_subprocess_free (proc);

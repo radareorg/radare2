@@ -222,13 +222,13 @@ CMDS=iE
 EXPECT=<<EOF
 [Exports]
 
-nth paddr       vaddr      bind   type size lib name
-----------------------------------------------------
-2    0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
-3    0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
-4    0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V
-7    0x000002f4 0x000002f4 GLOBAL FUNC 20       LWorld.method.<init>()V
-8    0x00000318 0x00000318 GLOBAL FUNC 68       LWorld.method.foo(I)V
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+2   0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
+3   0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
+4   0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V
+7   0x000002f4 0x000002f4 GLOBAL FUNC 20       LWorld.method.<init>()V
+8   0x00000318 0x00000318 GLOBAL FUNC 68       LWorld.method.foo(I)V
 EOF
 RUN
 
@@ -427,8 +427,8 @@ NAME=DEX radare2installer.dex classes (is getProper)
 FILE=bins/dex/org.radare.radare2installer.dex
 CMDS=is~getProper
 EXPECT=<<EOF
-1649  0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
-1650  0x00006a28 0x00006a28 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+1649 0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
+1650 0x00006a28 0x00006a28 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 EOF
 RUN
 

@@ -1,6 +1,6 @@
 NAME==h
 FILE=--
-CMDS=!!scripts/test-webserver.sh
+CMDS=!scripts/test-webserver.sh
 EXPECT=<<EOF
             ; [14] -r-x section size 594 named .text
             ;-- entry0:
@@ -33,7 +33,9 @@ EXPECT=<<EOF
 	<script type="text/javascript" src="m/vendors/jquery.min.js"></script>
 	<script type="text/javascript" src="m/r2.js"></script>
 EOF
-EXPECT_ERR=
+EXPECT_ERR=<<EOF
+
+EOF
 RUN
 
 NAME=r2 remote webserver two
@@ -56,5 +58,3 @@ open http://localhost:9292/
 r2 -C http://localhost:9292/cmd/
 EOF
 RUN
-
-

@@ -1715,13 +1715,13 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	     different from that of the source register size,
 	     e.g. in strb/ldrb.  */
 	  size = aarch64_get_qualifier_esize (qualifier);
-	  if (!value_in_range_p (opnd->addr.offset.imm, 0, 4095 * size))
+	  if (!value_in_range_p (imm, 0, 4095 * size))
 	    {
 	      set_offset_out_of_range_error (mismatch_detail, idx,
 					     0, 4095 * size);
 	      return 0;
 	    }
-	  if (!value_aligned_p (opnd->addr.offset.imm, size))
+	  if (!value_aligned_p (imm, size))
 	    {
 	      set_unaligned_error (mismatch_detail, idx, size);
 	      return 0;

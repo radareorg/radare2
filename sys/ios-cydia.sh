@@ -45,28 +45,28 @@ makeDeb() {
 	make install DESTDIR=/tmp/r2ios
 	rm -rf /tmp/r2ios/${PREFIX}/share/radare2/*/www/*/node_modules
 	( cd /tmp/r2ios && tar czvf ../r2ios-${CPU}.tar.gz ./* )
-	rm -rf $(ROOT)
-	mkdir -p $(ROOT)
-	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C $(ROOT)
-	rm -f $(ROOT)/${PREFIX}/lib/*.{a,dylib,dSYM}
+	rm -rf "${ROOT}"
+	mkdir -p "${ROOT}"
+	sudo tar xpzvf /tmp/r2ios-${CPU}.tar.gz -C "${ROOT}"
+	rm -f ${ROOT}/${PREFIX}/lib/*.{a,dylib,dSYM}
 	if [ "$static" = 1 ]; then
 	(
-		rm -f $(ROOT)/${PREFIX}/bin/*
-		cp -f binr/blob/radare2 $(ROOT)/${PREFIX}/bin
-		cd $(ROOT)/${PREFIX}/bin
+		rm -f ${ROOT}/${PREFIX}/bin/*
+		cp -f binr/blob/radare2 "${ROOT}/${PREFIX}/bin"
+		cd ${ROOT}/${PREFIX}/bin
 		for a in r2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2 ; do ln -fs radare2 $a ; done
 	)
 		echo "Signing radare2"
-		ldid2 -Sbinr/radare2/radare2_ios.xml $(ROOT)/usr/bin/radare2
+		ldid2 -Sbinr/radare2/radare2_ios.xml ${ROOT}/usr/bin/radare2
 	else
-		for a in $(ROOT)/usr/bin/* $(ROOT)/usr/lib/*.dylib ; do
+		for a in "${ROOT}/usr/bin/"* "${ROOT}/usr/lib/"*.dylib ; do
 			echo "Signing $a"
 			ldid2 -Sbinr/radare2/radare2_ios.xml $a
 		done
 	fi
 	if [ "${STOW}" = 1 ]; then
 		(
-		cd $(ROOT)/
+		cd "${ROOT}/"
 		mkdir -p usr/bin
 		# stow
 		echo "Stowing ${PREFIX} into /usr..."
@@ -94,9 +94,10 @@ if [ $onlymakedeb = 1 ]; then
 	makeDeb
 else
 	RV=0
+	export CC="ios-sdk-gcc"
 	if [ $fromscratch = 1 ]; then
 		make clean
-		cp -f plugins.ios.cfg plugins.cfg
+		cp -f dist/plugins-cfg/plugins.ios.cfg plugins.cfg
 		if [ "$static" = 1 ]; then
 			./configure --prefix="${PREFIX}" --with-ostype=darwin --without-libuv \
 			--with-compiler=ios-sdk --target=arm-unknown-darwin --with-libr

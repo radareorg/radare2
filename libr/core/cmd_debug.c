@@ -1295,8 +1295,12 @@ show_help:
 		r_core_cmd_help (core, help_msg_dmm);
 		return;
 	}
-	PJ *pj = pj_new ();
+	PJ *pj = NULL;
 	if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
 		pj_a (pj);
 	}
 	// TODO: honor mode
@@ -1349,7 +1353,7 @@ show_help:
 beach:
 	if (mode == 'j') {
 		pj_end (pj);
-		r_cons_printf ("%s\n", pj_string (pj));
+		r_cons_println (pj_string (pj));
 	}
 	pj_free (pj);
 	r_list_free (list);
@@ -1927,7 +1931,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	RList *list = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	RListIter *iter;
 	RRegItem *r;
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "regs");
 
 	if (mode == 'j') {
 		r_config_set_i (core->config, "scr.color", false);
@@ -2104,7 +2108,10 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 			RListIter *iter;
 			RRegItem *r;
 			int i;
-			PJ *pj = pj_new ();
+			PJ *pj = r_core_pj_new (core);
+			if (!pj) {
+				return;
+			}
 			pj_o (pj);
 			pj_k (pj, "alias_info");
 			pj_a (pj);
@@ -2238,7 +2245,7 @@ static char *__table_format_string(RTable *t, int fmt) {
 static void __tableRegList (RCore *core, RReg *reg, const char *str) {
 	int i;
 	RRegItem *e;
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "regprofile");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
 	RTableColumnType *typeBoolean = r_table_type ("boolean");
@@ -2311,7 +2318,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				r = r_reg_get (core->dbg->reg, name , -1);
 				if (r) {
 					if (json_out) {
-						PJ *pj = pj_new ();
+						PJ *pj = r_core_pj_new (core);
+						if (!pj) {
+							return;
+						}
 						pj_o (pj);
 						if (r->comment) {
 							pj_ks (pj, r->name, r->comment);
@@ -2384,7 +2394,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				i = 0;
 				PJ *pj = NULL;
 				if (json_out) {
-					pj = pj_new ();
+					pj = r_core_pj_new (core);
+					if (!pj) {
+						return;
+					}
 					pj_a (pj);
 				}
 				r_list_foreach (rs->regs, iter, r) {
@@ -2785,7 +2798,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			rad = str[1];
 			str++;
 			if (rad == 'j' && !str[1]) {
-				PJ *pj = pj_new ();
+				PJ *pj = r_core_pj_new (core);
 				if (!pj) {
 					break;
 				}
@@ -3108,7 +3121,7 @@ static void asciiart_backtrace(RCore *core, RList *frames) {
 	}
 }
 
-static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char** flagdesc, char** flagdesc2, char** pcstr, char** spstr, bool hex_format) {
+static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char** flagdesc, char** flagdesc2, char** pcstr, char** spstr) {
 	RFlagItem *f = r_flag_get_at (core->flags, frame->addr, true);
 	*flagdesc = NULL;
 	*flagdesc2 = NULL;
@@ -3148,7 +3161,7 @@ static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char*
 		free (*flagdesc2);
 		*flagdesc2 = NULL;
 	}
-	if (hex_format) {
+	if (pcstr && spstr) {
 		if (core->dbg->bits & R_SYS_BITS_64) {
 			*pcstr = r_str_newf ("0x%-16" PFMT64x, frame->addr);
 			*spstr = r_str_newf ("0x%-16" PFMT64x, frame->sp);
@@ -3158,17 +3171,6 @@ static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char*
 		} else {
 			*pcstr = r_str_newf ("0x%" PFMT64x, frame->addr);
 			*spstr = r_str_newf ("0x%" PFMT64x, frame->sp);
-		}
-	} else {
-		if (core->dbg->bits & R_SYS_BITS_64) {
-			*pcstr = r_str_newf ("%" PFMT64d, frame->addr);
-			*spstr = r_str_newf ("%" PFMT64d, frame->sp);
-		} else if (core->dbg->bits & R_SYS_BITS_32) {
-			*pcstr = r_str_newf ("%" PFMT64d, frame->addr);
-			*spstr = r_str_newf ("%" PFMT64d, frame->sp);
-		} else {
-			*pcstr = r_str_newf ("%" PFMT64d, frame->addr);
-			*spstr = r_str_newf ("%" PFMT64d, frame->sp);
 		}
 	}
 }
@@ -3368,7 +3370,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	RDebugFrame *frame;
 	RListIter *iter;
 	const char *p;
-	bool hex_format;
 	bool watch = false;
 	RList *list;
 	ut64 addr, idx;
@@ -3475,37 +3476,42 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				eprintf ("Cannot unset tracepoint\n");
 			}
 			break;
-		case 'j': // "dbtj"
+		case 'j': { // "dbtj"
+			PJ *pj = r_core_pj_new (core);
+			if (!pj) {
+				return;
+			}
 			addr = UT64_MAX;
 			if (input[2] == ' ' && input[3]) {
 				addr = r_num_math (core->num, input + 2);
 			}
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
-			hex_format = false;
-			r_cons_printf ("[");
+			pj_a (pj);
 			r_list_foreach (list, iter, frame) {
-				char *flagdesc, *flagdesc2, *pcstr, *spstr;
-				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
+				char *flagdesc, *flagdesc2, *desc;
+				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, NULL, NULL);
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
-				//TODO PJ
-				r_cons_printf ("%s{\"idx\":%d,\"pc\":%s,\"sp\":%s,\"frame_size\":%d,"
-						"\"fname\":\"%s\",\"desc\":\"%s%s\"}", (i ? " ," : ""),
-						i,
-						pcstr, spstr,
-						(int)frame->size,
-						fcn ? fcn->name : "",
-						r_str_get (flagdesc),
-						r_str_get (flagdesc2));
+				desc = r_str_newf ("%s%s", r_str_get (flagdesc), r_str_get (flagdesc2));
+				pj_o (pj);
+				pj_ki (pj, "idx", i);
+				pj_kn (pj, "pc", frame->addr);
+				pj_kn (pj, "sp", frame->sp);
+				pj_ki (pj, "frame_size", frame->size);
+				pj_ks (pj, "fname", fcn ? fcn->name : "");
+				pj_ks (pj, "desc", desc);
+				pj_end (pj);
 				i++;
 				free (flagdesc);
 				free (flagdesc2);
-				free (pcstr);
-				free (spstr);
+				free (desc);
 			}
-			r_cons_printf ("]\n");
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
 			r_list_free (list);
 			break;
+		}
 		case '=': // dbt=
 			addr = UT64_MAX;
 			if (input[2] == ' ' && input[3]) {
@@ -3561,10 +3567,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
-			hex_format = true;
 			r_list_foreach (list, iter, frame) {
 				char *flagdesc, *flagdesc2, *pcstr, *spstr;
-				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
+				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr);
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
 				r_cons_printf ("%d  %s sp: %s  %-5d"
 						"[%s]  %s %s\n", i++,
@@ -4143,7 +4148,10 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 				}
 		}
 	} else if (*input == 'j') {
+		core->dbg->pj = r_core_pj_new (core);
 		r_debug_signal_list (core->dbg, 2);
+		pj_free (core->dbg->pj);
+		core->dbg->pj = NULL;
 	} else if (!*input) {
 		r_debug_signal_list (core->dbg, 0);
 #if 0
@@ -5089,8 +5097,13 @@ static int cmd_debug(void *data, const char *input) {
 	case 'L': // "dL"
 		switch (input[1]) {
 		case 'q':
-		case 'j':
 			r_debug_plugin_list (core->dbg, input[1]);
+			break;
+		case 'j':
+			core->dbg->pj = r_core_pj_new (core);
+			r_debug_plugin_list (core->dbg, 'j');
+			pj_free (core->dbg->pj);
+			core->dbg->pj = NULL;
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_dL);

@@ -43,7 +43,6 @@ static const char *printfmtColumns[NPF] = {
 	"pCc", // PC//  copypasteable views
 };
 
-
 // to print the stack in the debugger view
 #define PRINT_HEX_FORMATS 10
 #define PRINT_3_FORMATS 2
@@ -3039,8 +3038,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					ut64 addr = UT64_MAX;
 					if (isDisasmPrint (core->printidx)) {
 						if (core->print->screen_bounds == core->offset) {
-							ut64 addr = core->print->screen_bounds;
-							addr += r_asm_disassemble (core->rasm, &op, core->block, 32);
+							r_asm_disassemble (core->rasm, &op, core->block, 32);
 						}
 						if (addr == core->offset || addr == UT64_MAX) {
 							addr = core->offset + 48;

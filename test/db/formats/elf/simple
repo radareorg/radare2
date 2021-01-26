@@ -107,10 +107,10 @@ is~getpid
 f~getpid
 EOF
 EXPECT=<<EOF
-581   0x000c9420 0x000c9420 WEAK   FUNC   12        getpid
-965   0x000c9420 0x000c9420 GLOBAL FUNC   12        __getpid
-3577  0x000c9420 0x000c9420 LOCAL  FUNC   12        __GI___getpid
-3807  0x000c9420 0x000c9420 LOCAL  FUNC   12        __GI_getpid
+581  0x000c9420 0x000c9420 WEAK   FUNC   12        getpid
+965  0x000c9420 0x000c9420 GLOBAL FUNC   12        __getpid
+3577 0x000c9420 0x000c9420 LOCAL  FUNC   12        __GI___getpid
+3807 0x000c9420 0x000c9420 LOCAL  FUNC   12        __GI_getpid
 0x000c9420 12 sym.getpid
 0x000c9420 12 sym.__getpid
 0x000c9420 12 sym.__GI___getpid

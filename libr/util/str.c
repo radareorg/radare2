@@ -847,8 +847,9 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 
 // TODO: deprecate?
 R_API char *r_str_dup(char *ptr, const char *string) {
-	free (ptr);
-	return r_str_new (string);
+	char *str = r_str_new (string);
+	free (ptr); // in case ptr == string
+	return str;
 }
 
 R_API char *r_str_prepend(char *ptr, const char *string) {
@@ -1386,6 +1387,12 @@ R_API char *r_str_sanitize_r2(const char *buf) {
 	}
 	*q = '\0';
 	return new_buf;
+}
+
+R_API char *r_str_escape_sql(const char *buf) {
+	r_return_val_if_fail (buf, NULL);
+	char *res = r_str_replace (strdup (buf), "'", "\\'", true);
+	return res;
 }
 
 // Return MUST BE surrounded by double-quotes
@@ -3348,16 +3355,17 @@ R_API size_t *r_str_split_lines(char *str, size_t *count) {
 }
 
 R_API bool r_str_isnumber(const char *str) {
-	if (!str || !*str) {
+	if (!str || (!IS_DIGIT (*str) && *str != '-')) {
 		return false;
 	}
-	bool isnum = IS_DIGIT (*str) || *str == '-';
-	while (isnum && *++str) {
+
+	while (*++str) {
 		if (!IS_DIGIT (*str)) {
-			isnum = false;
+			return false;
 		}
 	}
-	return isnum;
+
+	return true;
 }
 
 /* TODO: optimize to start searching by the end of the string */

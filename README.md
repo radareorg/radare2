@@ -9,11 +9,10 @@
                              --pancake
 ```
 
-| Service | Badge | Badge |
+| **Build&Test** | [![Tests Status](https://github.com/radareorg/radare2/workflows/CI/badge.svg)](https://github.com/radareorg/radare2/actions?query=workflow%3A%22CI%22) | [![Build Status](https://travis-ci.com/radareorg/radare2.svg?branch=master)](https://travis-ci.com/radareorg/radare2)|
 |----------|------|--------|
-| **Build&Test** | [![Tests Status](https://github.com/radareorg/radare2/workflows/Radare2%20CI/badge.svg)](https://github.com/radareorg/radare2/actions?query=workflow%3A%22Radare2+CI%22) | [![Build Status](https://travis-ci.com/radareorg/radare2.svg?branch=master)](https://travis-ci.com/radareorg/radare2)|
 | **CodeQuality** | [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) |
-| **Infrastructure** | [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) | [![codecov](https://codecov.io/gh/radareorg/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radareorg/radare2) |
+| **Coverage** | [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) | [![codecov](https://codecov.io/gh/radareorg/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radareorg/radare2) |
 <a href="https://repology.org/metapackage/radare2">
 <img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
 </a>
@@ -34,7 +33,7 @@ To learn more you may read the [official radare2 book](https://book.rada.re),
 the source code, or browse the web for blog posts or presentations from
 [r2con](https://www.youtube.com/c/r2con).
 
-You may also want to meet other perople in r2land. use the following chats:
+You may also want to meet other people in r2land. use the following chats:
 
 * irc.freenode.net `#radare` `#radare_side`
 * [Telegram](https://t.me/radare)

@@ -221,6 +221,7 @@ static int get_template_params(const char *sym, size_t *amount_of_read_chars, ch
 			sym += 2;
 			size_t ret = get_namespace_and_name (sym, &str, NULL, true);
 			if (!ret) {
+				free_type_code_str_struct (&str);
 				return eDemanglerErrUncorrectMangledSymbol;
 			}
 			sym += ret + 1;
@@ -398,7 +399,6 @@ static size_t get_operator_code(const char *buf, RList *names_l, bool memorize) 
 			return 0;
 		}
 		r_list_append (names_l, str_info);
-		buf += i;
 		read_len += i;
 		break;
 	}
@@ -1151,7 +1151,6 @@ static inline const char *get_calling_convention(char calling_convention) {
 
 static EDemanglerErr parse_function_args(const char *sym, char **demangled_args, size_t *read_chars) {
 	EDemanglerErr err = eDemanglerErrOK;
-	bool is_abbr_type = false;
 	const char *curr_pos = sym;
 	size_t len = 0;
 
@@ -1166,6 +1165,7 @@ static EDemanglerErr parse_function_args(const char *sym, char **demangled_args,
 	while (*curr_pos && *curr_pos != 'Z') {
 		if (*curr_pos != '@') {
 			char *tmp;
+			bool is_abbr_type = false;
 			if (len) {
 				copy_string (&func_str, ", ", 0);
 			}
@@ -1173,6 +1173,7 @@ static EDemanglerErr parse_function_args(const char *sym, char **demangled_args,
 			if (err != eDemanglerErrOK) {
 				// abbreviation of type processing
 				if ((*curr_pos >= '0') && (*curr_pos <= '9')) {
+					free (tmp);
 					tmp = r_list_get_n (abbr_types, (ut32)(*curr_pos - '0'));
 					if (!tmp) {
 						err = eDemanglerErrUncorrectMangledSymbol;
@@ -1183,6 +1184,7 @@ static EDemanglerErr parse_function_args(const char *sym, char **demangled_args,
 					is_abbr_type = true;
 				} else {
 					err = eDemanglerErrUncorrectMangledSymbol;
+					free (tmp);
 					break;
 				}
 			}
@@ -1194,7 +1196,7 @@ static EDemanglerErr parse_function_args(const char *sym, char **demangled_args,
 
 			copy_string (&func_str, tmp, 0);
 
-			if (strncmp (tmp, "void", 4) == 0 && strlen (tmp) == 4) {
+			if (!strcmp (tmp, "void")) {
 				// arguments list is void
 				if (!is_abbr_type) {
 					free (tmp);
@@ -1621,23 +1623,29 @@ static EDemanglerErr parse_data_type(const char *sym, SDataType *data_type, size
 				}
 				size_t i = get_namespace_and_name (curr_pos, &str, NULL, true);
 				if (!i) {
+					free_type_code_str_struct (&str);
 					return eDemanglerErrUncorrectMangledSymbol;
 				}
 				curr_pos += i;
 				if (*(curr_pos + 1) != '@') {
 					STypeCodeStr str2;
 					if (!init_type_code_str_struct (&str2)) {
+						free_type_code_str_struct (&str);
 						return eDemanglerErrMemoryAllocation;
 					}
 					i = get_namespace_and_name (curr_pos + 1, &str2, NULL, true);
 					if (!i) {
+						free_type_code_str_struct (&str);
+						free_type_code_str_struct (&str2);
 						return eDemanglerErrUncorrectMangledSymbol;
 					}
 					curr_pos += i + 1;
 					data_type->right = r_str_newf ("{for `%s's `%s'}", str.type_str, str2.type_str);
+					free_type_code_str_struct (&str2);
 				} else {
 					data_type->right = r_str_newf ("{for `%s'}", str.type_str);
 				}
+				free_type_code_str_struct (&str);
 			} else {
 				data_type->right = strdup ("");
 			}
@@ -1665,6 +1673,7 @@ static EDemanglerErr parse_function_type(const char *sym, SDataType *data_type,
 		} \
 		data_type->left = modifier_str; \
 		data_type->right = r_str_newf ("`adjustor{%s}'", num); \
+		free (num);\
 		*is_implicit_this_pointer = true; \
 		curr_pos += state.amount_of_read_chars; \
 		break; \

@@ -20,6 +20,9 @@ install:
 		cp "${CWD}/$$FILE" "${R2_CHARSETS_PATH}/$$FILE" ; \
 	done
 
+uninstall:
+	rm -rf "$(R2_CHARSETS_PATH)"
+
 symstall install-symlink:
 	mkdir -p "$(R2_CHARSETS_PATH)"
 	for FILE in *.sdb ; do \

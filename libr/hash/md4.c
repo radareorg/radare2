@@ -128,7 +128,7 @@ static void mdfour64(ut32 *M, ut32 *A, ut32 *B, ut32 *C, ut32 *D) {
 static void copy64(ut32 *M, const ut8 *in) {
 	int i;
 	for (i = 0; i < 16; i++) {
-		M[i] = (in[i * 4 + 3] << 24) | (in[i * 4 + 2] << 16) |
+		M[i] = ((ut32)in[i * 4 + 3] << 24) | (in[i * 4 + 2] << 16) |
 		(in[i * 4 + 1] << 8) | (in[i * 4 + 0] << 0);
 	}
 }

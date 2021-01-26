@@ -335,7 +335,7 @@ struct r_core_t {
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RList *ropchain;
 	bool use_tree_sitter_r2cmd;
-
+	char *theme;
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
 
@@ -382,7 +382,7 @@ typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 #ifdef R_API
 //#define r_core_ncast(x) (RCore*)(size_t)(x)
 R_API RList *r_core_list_themes(RCore *core);
-R_API char *r_core_get_theme(void);
+R_API char *r_core_get_theme(RCore *core);
 R_API const char *r_core_get_section_name(RCore *core, ut64 addr);
 R_API RCons *r_core_get_cons(RCore *core);
 R_API RBin *r_core_get_bin(RCore *core);
@@ -405,7 +405,7 @@ R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr);
 R_API int r_core_lines_currline (RCore *core);
 R_API void r_core_prompt_loop(RCore *core);
 R_API ut64 r_core_pava(RCore *core, ut64 addr);
-R_API int r_core_cmd(RCore *core, const char *cmd, int log);
+R_API int r_core_cmd(RCore *core, const char *cmd, bool log);
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
 R_API char *r_core_editor(const RCore *core, const char *file, const char *str);
 R_API int r_core_fgets(char *buf, int len);
@@ -553,7 +553,7 @@ R_API int r_core_yank_file_all (RCore *core, const char *input);
 #define R_CORE_LOADLIBS_ALL UT32_MAX
 
 R_API void r_core_loadlibs_init(RCore *core);
-R_API int r_core_loadlibs(RCore *core, int where, const char *path);
+R_API bool r_core_loadlibs(RCore *core, int where, const char *path);
 R_API int r_core_cmd_buffer(RCore *core, const char *buf);
 R_API int r_core_cmdf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_core_cmd0(RCore *core, const char *cmd);
@@ -889,13 +889,13 @@ typedef struct r_core_task_t {
 typedef void (*RCoreTaskOneShot)(void *);
 
 R_API void r_core_echo(RCore *core, const char *msg);
-R_API RTable *r_core_table(RCore *core);
+R_API RTable *r_core_table(RCore *core, const char *name);
 
 R_API void r_core_task_scheduler_init (RCoreTaskScheduler *tasks, RCore *core);
 R_API void r_core_task_scheduler_fini (RCoreTaskScheduler *tasks);
 R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id);
 R_API RCoreTask *r_core_task_get_incref(RCoreTaskScheduler *scheduler, int id);
-R_API void r_core_task_print(RCore *core, RCoreTask *task, int mode);
+R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode);
 R_API void r_core_task_list(RCore *core, int mode);
 R_API int r_core_task_running_tasks_count(RCoreTaskScheduler *scheduler);
 R_API const char *r_core_task_status(RCoreTask *task);

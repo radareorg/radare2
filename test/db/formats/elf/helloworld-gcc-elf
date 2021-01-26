@@ -614,6 +614,5 @@ EXPECT=<<EOF
   }
 ]
 
-
 EOF
 RUN

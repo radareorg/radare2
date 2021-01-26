@@ -66,7 +66,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		isdev = true;
 	}
 
-	rw |= R_PERM_W;
 	if (isdev) {
 		port = strchr (host, '@');
 		if (port) {

@@ -13,6 +13,8 @@ https://en.wikipedia.org/wiki/Atmel_AVR_instruction_set
 #include <r_asm.h>
 #include <r_anal.h>
 
+#include "../../asm/arch/avr/disasm.h"
+
 static RDESContext desctx;
 
 typedef struct _cpu_const_tag {
@@ -1125,10 +1127,10 @@ INST_HANDLER (rcall) {	// RCALL k
 		return;
 	}
 	// target address
-	op->jump = (op->addr
-		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
+	op->jump = op->addr + (
+		(((((buf[1] & 0xf) << 8) | buf[0]) << 1)
 			| (((buf[1] & 0x8) ? ~((int) 0x1fff) : 0)))
-		+ 2) & CPU_PC_MASK (cpu);
+		+ 2);
 	op->fail = op->addr + op->size;
 	// esil
 	ESIL_A ("pc,");				// esil already points to next
@@ -1172,16 +1174,10 @@ INST_HANDLER (reti) {	// RETI
 }
 
 INST_HANDLER (rjmp) {	// RJMP k
-	op->jump = (op->addr
-#ifdef _MSC_VER
-#pragma message ("anal_avr.c: WARNING: Probably broken on windows")
-		+ ((((( buf[1] & 0xf) << 9) | (buf[0] << 1)))
+	st32 jump = ((((( buf[1] & 0xf) << 9) | (buf[0] << 1)))
 			| (buf[1] & 0x8 ? ~(0x1fff) : 0))
-#else
-		+ ((((( (typeof (op->jump)) buf[1] & 0xf) << 9) | ((typeof (op->jump)) buf[0] << 1)))
-			| (buf[1] & 0x8 ? ~((typeof (op->jump)) 0x1fff) : 0))
-#endif
-		+ 2) & CPU_PC_MASK (cpu);
+		+ 2;
+	op->jump = op->addr + jump;
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);
 }
 
@@ -1595,6 +1591,18 @@ OPCODE_DESC opcodes[] = {
 	INST_LAST
 };
 
+static void set_invalid_op(RAnalOp *op, ut64 addr) {
+	// Unknown or invalid instruction.
+	op->family = R_ANAL_OP_FAMILY_UNKNOWN;
+	op->type = R_ANAL_OP_TYPE_UNK;
+	op->addr = addr;
+	op->nopcode = 1;
+	op->cycles = 1;
+	op->size = 2;
+	// set an esil trap to prevent the execution of it
+	r_strbuf_set (&op->esil, "1,$");
+}
+
 static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
 	if (len < 2) {
@@ -1644,7 +1652,7 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 			return opcode_desc;
 		}
 	}
-
+#if 0
 	// ignore reserved opcodes (if they have not been caught by the previous loop)
 	if ((ins & 0xff00) == 0xff00 && (ins & 0xf) > 7) {
 		goto INVALID_OP;
@@ -1662,6 +1670,10 @@ INVALID_OP:
 	// launch esil trap (for communicating upper layers about this weird
 	// and stinky situation
 	r_strbuf_set (&op->esil, "1,$");
+#else
+INVALID_OP:
+	set_invalid_op (op, addr);
+#endif
 
 	return NULL;
 }
@@ -1669,10 +1681,21 @@ INVALID_OP:
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	CPU_MODEL *cpu;
 	ut64 offset;
+	int size = -1;
+	char mnemonic[32] = {0};
 
-	// init op
+	set_invalid_op (op, addr);
+
+	size = avr_decode (mnemonic, addr, buf, len);
+	if (!strcmp (mnemonic, "invalid") ||
+		!strcmp (mnemonic, "truncated")) {
+		op->eob = true;
+		op->mnemonic = strdup(mnemonic);
+		return -1;
+	}
+
 	if (!op) {
-		return 2;
+		return -1;
 	}
 
 	// select cpu info
@@ -1698,7 +1721,10 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	// process opcode
 	avr_op_analyze (anal, op, addr, buf, len, cpu);
 
-	return op->size;
+	op->mnemonic = strdup(mnemonic);
+	op->size = size;
+
+	return size;
 }
 
 static bool avr_custom_des (RAnalEsil *esil) {
@@ -1909,6 +1935,7 @@ static int esil_avr_fini(RAnalEsil *esil) {
 static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pcl\n"
+		"=SN	r24\n"
 		"=SP	sp\n"
 		"=BP    y\n"
 // explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html

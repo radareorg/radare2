@@ -148,7 +148,11 @@ R_API int r_sys_fork(void) {
 #endif
 }
 
-#if HAVE_SIGACTION
+#if __WINDOWS__
+R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
+	return -1;
+}
+#elif HAVE_SIGACTION
 R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
 	struct sigaction sigact = { };
 	int ret, i;
@@ -171,7 +175,6 @@ R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
 			return ret;
 		}
 	}
-
 	return 0;
 }
 #else
@@ -1061,18 +1064,6 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	return 0;
 }
 
-R_API bool r_is_heap (void *p) {
-	void *q = malloc (8);
-	ut64 mask = UT64_MAX;
-	ut64 addr = (ut64)(size_t)q;
-	addr >>= 16;
-	addr <<= 16;
-	mask >>= 16;
-	mask <<= 16;
-	free (q);
-	return (((ut64)(size_t)p) == mask);
-}
-
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
 	// TODO: add maximum path length support
@@ -1237,15 +1228,18 @@ R_API void r_sys_set_environ(char **e) {
 	env = e;
 }
 
-R_API char *r_sys_whoami (char *buf) {
-	char _buf[32];
-	int uid = getuid ();
-	int hasbuf = (buf)? 1: 0;
-	if (!hasbuf) {
-		buf = _buf;
+R_API char *r_sys_whoami(void) {
+	char buf[32];
+#if __WINDOWS__
+	DWORD buf_sz = sizeof (buf);
+	if (!GetUserName(buf, (LPDWORD)&buf_sz) ) {
+		return strdup ("?");
 	}
-	sprintf (buf, "uid%d", uid);
-	return hasbuf? buf: strdup (buf);
+#else
+	int uid = getuid ();
+	snprintf (buf, sizeof (buf), "uid%d", uid);
+#endif
+	return strdup (buf);
 }
 
 R_API int r_sys_getpid(void) {

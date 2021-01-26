@@ -334,7 +334,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	}
 	r_list_free (flags);
 	r_list_free (regs);
-	free (g->target.regprofile);
+	R_FREE (g->target.regprofile);
 	if (profile) {
 		g->target.regprofile = strdup (profile);
 		free (profile);
@@ -553,6 +553,10 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 		// apple's debugserver on ios9
 		if (strstr (xml_data, "com.apple.debugserver.arm64")) {
 			g->target.arch = R_SYS_ARCH_ARM;
+			g->target.bits = 64;
+		} else if (strstr (xml_data, "org.gnu.gdb.riscv")) {
+			// openocd mips?
+			g->target.arch = R_SYS_ARCH_RISCV;
 			g->target.bits = 64;
 		} else if (strstr (xml_data, "org.gnu.gdb.mips")) {
 			// openocd mips?

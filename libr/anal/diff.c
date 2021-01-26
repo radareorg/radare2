@@ -186,7 +186,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	if (fcns) {
 		r_list_foreach (fcns, iter, fcn) {
 			r_list_foreach (fcns2, iter2, fcn2) {
-				if (fcn->name && fcn2->name && strcmp (fcn->name, fcn2->name)) {
+				if (!fcn->name || !fcn2->name || strcmp (fcn->name, fcn2->name)) {
 					continue;
 				}
 				r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size,
