@@ -1951,7 +1951,7 @@ static bool esil_poke_n(RAnalEsil *esil, int bits) {
 					}
 					goto out;
 				}
-				ret = -1;
+				ret = 0;
 				goto out;
 			}
 			// this is a internal peek performed before a poke

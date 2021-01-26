@@ -491,7 +491,7 @@ static char *__show_status_input(RCore *core, const char *msg) {
 }
 
 static bool __check_panel_type(RPanel *panel, const char *type) {
-	if (!panel->model->cmd || !type) {
+	if (!panel || !panel->model->cmd || !type) {
 		return false;
 	}
 	char *tmp = r_str_new (panel->model->cmd);
@@ -1067,6 +1067,9 @@ static void __set_rcb(RPanels *ps, RPanel *p) {
 }
 
 static void __init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd) {
+	if(!p){
+		return;
+	}
 	RPanelModel *m = p->model;
 	RPanelView *v = p->view;
 	m->type = PANEL_TYPE_DEFAULT;
@@ -1554,22 +1557,34 @@ static void __cursor_down(RCore *core) {
 }
 
 static void __save_panel_pos(RPanel* panel) {
+	if(!panel){
+		return;
+	}
 	__set_geometry (&panel->view->prevPos, panel->view->pos.x, panel->view->pos.y,
 			panel->view->pos.w, panel->view->pos.h);
 }
 
 static void __restore_panel_pos(RPanel* panel) {
+	if(!panel){
+		return;
+	}
 	__set_geometry (&panel->view->pos, panel->view->prevPos.x, panel->view->prevPos.y,
 			panel->view->prevPos.w, panel->view->prevPos.h);
 }
 
 static void __maximize_panel_size(RPanels *panels) {
 	RPanel *cur = __get_cur_panel (panels);
+	if(!cur){
+		return;
+	}
 	__set_geometry (&cur->view->pos, 0, 1, panels->can->w, panels->can->h - 1);
 	cur->view->refresh = true;
 }
 
 static void __dismantle_panel(RPanels *ps, RPanel *p) {
+	if(!p){
+		return;
+	}
 	RPanel *justLeftPanel = NULL, *justRightPanel = NULL, *justUpPanel = NULL, *justDownPanel = NULL;
 	RPanel *tmpPanel = NULL;
 	bool leftUpValid = false, leftDownValid = false, rightUpValid = false, rightDownValid = false,
@@ -1827,6 +1842,9 @@ static void __init_sdb(RCore *core) {
 }
 
 static void __free_panel_model(RPanel *panel) {
+	if(!panel){
+		return;
+	}
 	free (panel->model->title);
 	free (panel->model->cmd);
 	free (panel->model->cmdStrCache);
@@ -1853,6 +1871,9 @@ static void __replace_cmd(RCore *core, const char *title, const char *cmd) {
 
 static void __create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char* title, const char *cmd) {
 	if (!__check_panel_num (core)) {
+		return;
+	}
+	if(!panel){
 		return;
 	}
 	switch (dir) {

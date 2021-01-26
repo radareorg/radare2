@@ -787,8 +787,15 @@ R_API int r_core_visual_types(RCore *core) {
 				switch (h_opt) {
 				case 0: // type
 					/* TODO: do something with this data */
-					prompt ("name: ", vt.curname);
-					prompt ("pf: ", vt.curfmt);
+					char *r = NULL;
+					r = prompt ("name: ", vt.curname);
+					if(r){
+						free(r);
+					}
+					r = prompt ("pf: ", vt.curfmt);
+					if(r){
+						free(r);
+					}
 					break;
 				case 1: // enum
 				case 2: // struct

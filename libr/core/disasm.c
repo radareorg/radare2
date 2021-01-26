@@ -366,7 +366,7 @@ static const char *get_utf8_char(const char line, RDisasmState *ds) {
 	case '>': return ds->core->cons->vline[ARROW_RIGHT];
 	case ':': return ds->core->cons->vline[LINE_UP];
 	case '|': return ds->core->cons->vline[LINE_VERT];
-	case '=': return ds->core->cons->vline[LINE_HORIZ];
+	case '=':
 	case '-': return ds->core->cons->vline[LINE_HORIZ];
 	case ',': return ds->core->cons->vline[CORNER_TL];
 	case '.': return ds->core->cons->vline[CORNER_TR];
@@ -2389,7 +2389,6 @@ static void ds_update_ref_lines(RDisasmState *ds) {
 		free (ds->prev_line_col);
 		ds->refline = strdup ("");
 		ds->refline2 = strdup ("");
-		ds->prev_line_col = strdup ("");
 		ds->line = NULL;
 		ds->line_col = NULL;
 		ds->prev_line_col = NULL;
@@ -5762,7 +5761,6 @@ toro:
 				core->parser->flagspace = ofs;
 				free (ds->opstr);
 				ds->opstr = asm_str;
-				core->parser->flagspace = ofs; // ???
 			} else {
 				ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
 			}
@@ -6208,6 +6206,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
 		if (!pj) {
+			ds_free (ds);
 			return 0;
 		}
 		pj_a (pj);
@@ -6409,13 +6408,7 @@ toro:
 				}
 				continue;
 			case R_META_TYPE_STRING:
-				//r_cons_printf (".string: %s\n", meta->str);
-				i += meta_size;
-				continue;
 			case R_META_TYPE_FORMAT:
-				//r_cons_printf (".format : %s\n", meta->str);
-				i += meta_size;
-				continue;
 			case R_META_TYPE_MAGIC:
 				//r_cons_printf (".magic : %s\n", meta->str);
 				i += meta_size;

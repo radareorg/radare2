@@ -1148,8 +1148,10 @@ static void __vi_mode(void) {
 				__delete_next_char ();
 			}
 			break;
-		case 'c':
+		case 'c': {
 			I.vi_mode = INSERT_MODE;	// goto insert mode
+			break;
+		}
 		case 'd': {
 			char c = r_cons_readchar ();
 			while (rep--) {
@@ -1235,6 +1237,7 @@ static void __vi_mode(void) {
 			break;
 		case 'a':
 			__move_cursor_right ();
+			break;
 		case 'i':
 			I.vi_mode = INSERT_MODE;
 			if (I.hud) {
@@ -1832,6 +1835,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						break;
 					case 0x37:	// HOME xrvt-unicode
 						r_cons_readchar ();
+						break;
 					case 0x48:	// HOME
 						if (I.sel_widget) {
 							selection_widget_up (I.sel_widget->options_len - 1);
