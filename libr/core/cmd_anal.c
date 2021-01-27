@@ -6690,12 +6690,12 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 				if (fcn) {
 					switch (input[2]) {
-					case 'j': // "aeafj"
-						cmd_aea (core, 1<<4, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
-						break;
-					default:
-						cmd_aea (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
-						break;
+						case 'j': // "aeafj"
+							cmd_aea (core, 1<<4, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
+							break;
+						default:
+							cmd_aea (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
+							break;
 					}
 					break;
 				}
