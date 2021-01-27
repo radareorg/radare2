@@ -102,6 +102,7 @@ static bool strbuf_rev_prepend_char(RStrBuf *sb, const char *s, int c) {
 	char *sb_str = sb->ptr ? sb->ptr : sb->buf;
 	char *pivot = strrchr (sb_str, c);
 	if (!pivot) {
+		free (ns);
 		return false;
 	}
 	size_t idx = pivot - sb_str;
@@ -869,12 +870,12 @@ static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind
 		case 6: return "r6";
 		case 7: return "r7";
 		case 8: return "r8";
-		case 9: return "r8";
-		case 10: return "r9";
-		case 11: return "r10";
-		case 12: return "r11";
-		case 13: return "r12";
-		case 14: return "r13";
+		case 9: return "r9";
+		case 10: return "r10";
+		case 11: return "r11";
+		case 12: return "r12";
+		case 13: return "r13";
+		case 14: return "r14";
 		case 15: return "r15";
 		case 16: return "r16";
 		case 17: return "r17";

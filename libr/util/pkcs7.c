@@ -326,6 +326,7 @@ R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length) {
 		container->contentType = r_asn1_stringify_oid (object->list.objects[0]->sector, object->list.objects[0]->length);
 		if (!container->contentType) {
 			r_asn1_free_object (object);
+			free (container);
 			return NULL;
 		}
 	}

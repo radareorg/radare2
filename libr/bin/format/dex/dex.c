@@ -344,7 +344,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		}
 	}
 	dexhdr->method_size = methods_size / sizeof (struct dex_method_t);
-	dex->methods = (struct dex_method_t *) calloc (methods_size + 1, 1);
+	dex->methods = (struct dex_method_t *) calloc (methods_size + 1, sizeof (struct dex_method_t));
 	for (i = 0; i < dexhdr->method_size; i++) {
 		ut64 offset = dexhdr->method_offset + i * sizeof (struct dex_method_t);
 		if (offset + 8 > dex->size) {
@@ -365,7 +365,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		types_size = dex->size - dexhdr->types_offset;
 	}
 	dexhdr->types_size = types_size / sizeof (struct dex_type_t);
-	dex->types = (struct dex_type_t *) calloc (types_size + 1, 1);
+	dex->types = (struct dex_type_t *) calloc (types_size + 1, sizeof (struct dex_type_t));
 	for (i = 0; i < dexhdr->types_size; i++) {
 		ut64 offset = dexhdr->types_offset + i * sizeof (struct dex_type_t);
 		if (offset + 4 > dex->size) {
@@ -388,7 +388,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		}
 	}
 	dexhdr->fields_size = fields_size / sizeof (struct dex_field_t);
-	dex->fields = (struct dex_field_t *) calloc (fields_size + 1, 1);
+	dex->fields = (struct dex_field_t *) calloc (fields_size + 1, sizeof (struct dex_field_t));
 	for (i = 0; i < dexhdr->fields_size; i++) {
 		ut64 offset = dexhdr->fields_offset + i * sizeof (struct dex_field_t);
 		if (offset + 8 > dex->size) {
@@ -415,7 +415,7 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		}
 	}
 	dexhdr->prototypes_size = protos_size / sizeof (struct dex_proto_t);
-	dex->protos = (struct dex_proto_t *) calloc (protos_size + 1, 1);
+	dex->protos = (struct dex_proto_t *) calloc (protos_size + 1, sizeof (struct dex_proto_t));
 	for (i = 0; i < dexhdr->prototypes_size; i++) {
 		ut64 offset = dexhdr->prototypes_offset + i * sizeof (struct dex_proto_t);
 		if (offset + 12 > dex->size) {

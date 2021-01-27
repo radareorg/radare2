@@ -774,6 +774,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 
 	GHT bin = main_arena->GH(fastbinsY)[bin_num];
 	if (!bin) {
+        free (cnk);
 		return -1;
 	}
 
@@ -1122,6 +1123,11 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 	if (!r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)))) {
 		eprintf ("Cannot read");
+		free (cnk);
+		free (cnk_next);
+		r_cons_canvas_free (can);
+		r_config_hold_restore (hc);
+		r_config_hold_free (hc);
 		return;
 	}
 	size_tmp = (cnk->size >> 3) << 3;

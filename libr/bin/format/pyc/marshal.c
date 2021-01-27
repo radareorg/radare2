@@ -337,6 +337,7 @@ static pyc_object *get_complex_object(RBuffer *buffer) {
 	}
 	ut8 *s1 = malloc (n1 + 1);
 	if (!s1) {
+		free (ret);
 		return NULL;
 	}
 	/* object contain string representation of the number */
@@ -1025,14 +1026,19 @@ static pyc_object *get_object(RBuffer *buffer) {
 
 	switch (type) {
 	case TYPE_NULL:
+		free_object (ret);
 		return NULL;
 	case TYPE_TRUE:
+		free_object (ret);
 		return get_true_object ();
 	case TYPE_FALSE:
+		free_object (ret);
 		return get_false_object ();
 	case TYPE_NONE:
+		free_object (ret);
 		return get_none_object ();
 	case TYPE_REF:
+		free_object (ret);
 		return get_ref_object (buffer);
 	case TYPE_SMALL_TUPLE:
 		ret = get_small_tuple_object (buffer);
@@ -1108,16 +1114,16 @@ static pyc_object *get_object(RBuffer *buffer) {
 		ret = get_set_object (buffer);
 		break;
 	case TYPE_STOPITER:
-		ret = R_NEW0 (pyc_object);
-		break;
 	case TYPE_ELLIPSIS:
 		ret = R_NEW0 (pyc_object);
 		break;
 	case TYPE_UNKNOWN:
 		eprintf ("Get not implemented for type 0x%x\n", type);
+		free_object (ret);
 		return NULL;
 	default:
 		eprintf ("Undefined type in get_object (0x%x)\n", type);
+		free_object (ret);
 		return NULL;
 	}
 

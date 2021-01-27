@@ -509,6 +509,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				r_cons_flush ();
 				LISTS_FREE ();
 				free (envprofile);
+                free (debugbackend);
 				return 0;
 			}
 			break;
@@ -532,6 +533,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'H':
 			main_print_var (opt.arg);
 			LISTS_FREE ();
+            free (debugbackend);
 			return 0;
 		case 'i':
 			if (R_STR_ISEMPTY (opt.arg)) {
@@ -587,6 +589,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				r_core_project_list (r, 0);
 				r_cons_flush ();
 				free (envprofile);
+                free (debugbackend);
 				LISTS_FREE ();
 				return 0;
 			}

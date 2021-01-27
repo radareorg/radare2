@@ -507,10 +507,12 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	char *ret_reg = NULL;
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	if (!pc) {
+        free (buf);
 		return;
 	}
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	if (!r) {
+		free (buf);
 		return;
 	}
 	r_cons_break_push (NULL, NULL);

@@ -785,11 +785,15 @@ R_API int r_core_visual_types(RCore *core) {
 				/* TODO: edit field */
 			} else {
 				switch (h_opt) {
-				case 0: // type
+				case 0: { // type
 					/* TODO: do something with this data */
-					prompt ("name: ", vt.curname);
-					prompt ("pf: ", vt.curfmt);
+					char *r = NULL;
+					r = prompt ("name: ", vt.curname);
+					free (r);
+					r = prompt ("pf: ", vt.curfmt);
+					free (r);
 					break;
+				}
 				case 1: // enum
 				case 2: // struct
 					free (optword);

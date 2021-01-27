@@ -1582,7 +1582,6 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 		*end = '\0';
 		times = r_num_math (NULL, fmt + i + 1);
 		fmt = end + 1;
-		i = 0;
 	}
 	if (fmt[0] == '0') {
 		mode |= R_PRINT_UNIONMODE;

@@ -1926,6 +1926,8 @@ static int cmd_open(void *data, const char *input) {
 			if ((fdx == -1) || (fd == -1) || (fdx == fd)) {
 				free (inp);
 				break;
+			} else {
+				free (inp);
 			}
 			r_io_desc_exchange (core->io, fd, fdx);
 			r_core_block_read (core);

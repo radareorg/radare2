@@ -2809,6 +2809,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	}
 	ht_pp_free (hash);
 	// bin->symbols = symbols;
+    free (symbols);
 	return list;
 }
 
