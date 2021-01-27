@@ -618,9 +618,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 		if (!strcmp (key, keys[i].name)) {
 			rcolor = RCOLOR_AT (i);
 			char *r = r_cons_pal_parse (val, rcolor);
-            if (r) {
-                free (r);
-            }
+			free (r);
 			return true;
 		}
 	}

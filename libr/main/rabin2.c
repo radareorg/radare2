@@ -888,9 +888,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				R_FREE (file);
 			}
 			char *r = stdin_gets (true);
-			if (r) {
-				free (r);
-			}
+			free (r);
 		} else {
 			res = __demangleAs (bin, type, file);
 			if (res && *res) {

@@ -653,9 +653,9 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			if (rad == 'j') {
 				pj = pj_new ();
 				if (!pj) {
-                    if (str != hashstr) {
-                        free (str);
-                    }
+					if (str != hashstr) {
+						free (str);
+					}
                     free (iv);
 					return 1;
 				}

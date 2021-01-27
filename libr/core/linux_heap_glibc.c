@@ -1123,7 +1123,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 
 	if (!r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)))) {
 		eprintf ("Cannot read");
-        free (cnk);
+		free (cnk);
 		free (cnk_next);
 		r_cons_canvas_free (can);
 		r_config_hold_restore (hc);

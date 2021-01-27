@@ -512,7 +512,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	}
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	if (!r) {
-        free (buf);
+		free (buf);
 		return;
 	}
 	r_cons_break_push (NULL, NULL);
