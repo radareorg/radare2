@@ -2681,7 +2681,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					break;
 				default:
 					eprintf ("Unkown comamnd");
-					free (name);
 					return;
 				}
 			}
