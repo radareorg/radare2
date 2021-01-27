@@ -6615,33 +6615,33 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'A': // "aeA"
 		switch (input[1]){
-			case '?':
-				r_core_cmd_help (core, help_msg_aea);
-				break;
-			case 'r':
-				cmd_aea (core, 1 + (1<<1), core->offset, r_num_math (core->num, input+2));
-				break;
-			case 'w':
-				cmd_aea (core, 1 + (1<<2), core->offset, r_num_math (core->num, input+2));
-				break;
-			case 'n':
-				cmd_aea (core, 1 + (1<<3), core->offset, r_num_math (core->num, input+2));
-				break;
-			case 'j':
-				cmd_aea (core, 1 + (1<<4), core->offset, r_num_math (core->num, input+2));
-				break;
-			case '*':
-				cmd_aea (core, 1 + (1<<5), core->offset, r_num_math (core->num, input+2));
-				break;
-			case 'f': {
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-				if (fcn) {
-					cmd_aea (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
-				}
-				break;
+		case '?':
+			r_core_cmd_help (core, help_msg_aea);
+			break;
+		case 'r':
+			cmd_aea (core, 1 + (1<<1), core->offset, r_num_math (core->num, input+2));
+			break;
+		case 'w':
+			cmd_aea (core, 1 + (1<<2), core->offset, r_num_math (core->num, input+2));
+			break;
+		case 'n':
+			cmd_aea (core, 1 + (1<<3), core->offset, r_num_math (core->num, input+2));
+			break;
+		case 'j':
+			cmd_aea (core, 1 + (1<<4), core->offset, r_num_math (core->num, input+2));
+			break;
+		case '*':
+			cmd_aea (core, 1 + (1<<5), core->offset, r_num_math (core->num, input+2));
+			break;
+		case 'f': {
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+			if (fcn) {
+				cmd_aea (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
 			}
-			default:
-				cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input[1]?input+2:input+1));
+			break;
+			}
+		default:
+			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input[1]?input+2:input+1));
 		}
 		break;
 	case 'a': {// "aea"
@@ -6654,69 +6654,69 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		ut64 newPC = core->offset + op->size;
 		r_reg_setv (reg, "PC", newPC);
 		switch (input[1]) {
-			case '?':
-				r_core_cmd_help (core, help_msg_aea);
+		case '?':
+			r_core_cmd_help (core, help_msg_aea);
+			break;
+		case 'r':
+			cmd_aea (core, 1<<1, core->offset, r_num_math (core->num, input+2));
+			break;
+		case 'w':
+			cmd_aea (core, 1<<2, core->offset, r_num_math (core->num, input+2));
+			break;
+		case 'n':
+			cmd_aea (core, 1<<3, core->offset, r_num_math (core->num, input+2));
+			break;
+		case 'j':
+			cmd_aea (core, 1<<4, core->offset, r_num_math (core->num, input+2));
+			break;
+		case '*':
+			cmd_aea (core, 1<<5, core->offset, r_num_math (core->num, input+2));
+			break;
+		case 'B': { // "aeaB"
+			bool json = input[2] == 'j';
+			int a = json? 3: 2;
+			ut64 addr = (input[a] == ' ')? r_num_math (core->num, input + a): core->offset;
+			RList *l = r_anal_get_blocks_in (core->anal, addr);
+			RAnalBlock *b;
+			RListIter *iter;
+			r_list_foreach (l, iter, b) {
+				int mode = json? (1<<4): 1;
+				cmd_aea (core, mode, b->addr, b->size);
 				break;
-			case 'r':
-				cmd_aea (core, 1<<1, core->offset, r_num_math (core->num, input+2));
-				break;
-			case 'w':
-				cmd_aea (core, 1<<2, core->offset, r_num_math (core->num, input+2));
-				break;
-			case 'n':
-				cmd_aea (core, 1<<3, core->offset, r_num_math (core->num, input+2));
-				break;
-			case 'j':
-				cmd_aea (core, 1<<4, core->offset, r_num_math (core->num, input+2));
-				break;
-			case '*':
-				cmd_aea (core, 1<<5, core->offset, r_num_math (core->num, input+2));
-				break;
-			case 'B': { // "aeaB"
-				bool json = input[2] == 'j';
-				int a = json? 3: 2;
-				ut64 addr = (input[a] == ' ')? r_num_math (core->num, input + a): core->offset;
-				RList *l = r_anal_get_blocks_in (core->anal, addr);
-				RAnalBlock *b;
-				RListIter *iter;
-				r_list_foreach (l, iter, b) {
-					int mode = json? (1<<4): 1;
-					cmd_aea (core, mode, b->addr, b->size);
+			}
+			break;
+		}
+		case 'f': { // "aeaf"
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+			if (fcn) {
+				switch (input[2]) {
+				case 'j': // "aeafj"
+					cmd_aea (core, 1<<4, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
+					break;
+				default:
+					cmd_aea (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
 					break;
 				}
 				break;
 			}
-			case 'f': { // "aeaf"
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-				if (fcn) {
-					switch (input[2]) {
-						case 'j': // "aeafj"
-							cmd_aea (core, 1<<4, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
-							break;
-						default:
-							cmd_aea (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
-							break;
-					}
+		}
+		case 'b': { // "aeab"
+			RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
+			if (bb) {
+				switch (input[2]) {
+				case 'j': // "aeabj"
+					cmd_aea (core, 1<<4, bb->addr, bb->size);
+					break;
+				default:
+					cmd_aea (core, 1, bb->addr, bb->size);
 					break;
 				}
 			}
-			case 'b': { // "aeab"
-				RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
-				if (bb) {
-					switch (input[2]) {
-					case 'j': // "aeabj"
-						cmd_aea (core, 1<<4, bb->addr, bb->size);
-						break;
-					default:
-						cmd_aea (core, 1, bb->addr, bb->size);
-						break;
-					}
-				}
 			}
-			default: {
-				const char *arg = input[1]? input + 2: "";
-				ut64 len = r_num_math (core->num, arg);
-				cmd_aea (core, 0, core->offset, len);
+		default: {
+			const char *arg = input[1]? input + 2: "";
+			ut64 len = r_num_math (core->num, arg);
+			cmd_aea (core, 0, core->offset, len);
 			}
 		}
 		r_reg_setv (reg, "PC", pc);
