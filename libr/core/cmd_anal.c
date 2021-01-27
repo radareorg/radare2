@@ -6614,29 +6614,37 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'A': // "aeA"
-		if (input[1] == '?') {
+		switch (input[1]){
+		case '?':
 			r_core_cmd_help (core, help_msg_aea);
-		} else if (input[1] == 'r') {
+			break;
+		case 'r':
 			cmd_aea (core, 1 + (1<<1), core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == 'w') {
+			break;
+		case 'w':
 			cmd_aea (core, 1 + (1<<2), core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == 'n') {
+			break;
+		case 'n':
 			cmd_aea (core, 1 + (1<<3), core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == 'j') {
+			break;
+		case 'j':
 			cmd_aea (core, 1 + (1<<4), core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == '*') {
+			break;
+		case '*':
 			cmd_aea (core, 1 + (1<<5), core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == 'f') {
+			break;
+		case 'f': {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 			if (fcn) {
 				cmd_aea (core, 1, r_anal_function_min_addr (fcn), r_anal_function_linear_size (fcn));
 			}
-		} else {
+			break;
+			}
+		default:
 			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input[1]?input+2:input+1));
 		}
 		break;
-	case 'a': // "aea"
-		{
+	case 'a': {// "aea"
 		RReg *reg = core->anal->reg;
 		ut64 pc = r_reg_getv (reg, "PC");
 		RAnalOp *op = r_core_anal_op (core, pc, 0);
@@ -6645,19 +6653,26 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		ut64 newPC = core->offset + op->size;
 		r_reg_setv (reg, "PC", newPC);
-		if (input[1] == '?') {
+		switch (input[1]) {
+		case '?':
 			r_core_cmd_help (core, help_msg_aea);
-		} else if (input[1] == 'r') {
+			break;
+		case 'r':
 			cmd_aea (core, 1<<1, core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == 'w') {
+			break;
+		case 'w':
 			cmd_aea (core, 1<<2, core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == 'n') {
+			break;
+		case 'n':
 			cmd_aea (core, 1<<3, core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == 'j') {
+			break;
+		case 'j':
 			cmd_aea (core, 1<<4, core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == '*') {
+			break;
+		case '*':
 			cmd_aea (core, 1<<5, core->offset, r_num_math (core->num, input+2));
-		} else if (input[1] == 'b') { // "aeab"
+			break;
+		case 'B': { // "aeaB"
 			bool json = input[2] == 'j';
 			int a = json? 3: 2;
 			ut64 addr = (input[a] == ' ')? r_num_math (core->num, input + a): core->offset;
@@ -6669,9 +6684,10 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				cmd_aea (core, mode, b->addr, b->size);
 				break;
 			}
-		} else if (input[1] == 'f') {
+			break;
+		}
+		case 'f': { // "aeaf"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
-                        // "aeafj"
 			if (fcn) {
 				switch (input[2]) {
 				case 'j': // "aeafj"
@@ -6683,7 +6699,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				}
 				break;
 			}
-		} else if (input[1] == 'b') { // "aeab"
+		}
+		case 'b': { // "aeab"
 			RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
 			if (bb) {
 				switch (input[2]) {
@@ -6695,14 +6712,16 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					break;
 				}
 			}
-		} else {
+			}
+		default: {
 			const char *arg = input[1]? input + 2: "";
 			ut64 len = r_num_math (core->num, arg);
 			cmd_aea (core, 0, core->offset, len);
+			}
 		}
 		r_reg_setv (reg, "PC", pc);
-}
 		break;
+	}
 	case 'x': { // "aex"
 		char *hex;
 		int ret, bufsz;

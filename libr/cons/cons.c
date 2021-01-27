@@ -1054,7 +1054,7 @@ R_API void r_cons_print_fps(int col) {
 	if (prev) {
 		ut64 now = r_time_now_mono ();
 		st64 diff = (st64)(now - prev);
-		if (diff < 0) {
+		if (diff <= 0) {
 			fps = 0;
 		} else {
 			fps = (diff < 1000000)? (1000000.0 / diff): 0;
@@ -1268,7 +1268,7 @@ R_API int r_cons_get_column(void) {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_memcat(const char *str, int len) {
-	if (len < 0) {
+	if (R_STR_ISEMPTY (str) || len < 0) {
 		return -1;
 	}
 	if (I.echo) {
