@@ -107,6 +107,7 @@ R_API int r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 			if (is_diff) {
 				r_cons_printf ("0x%08"PFMT64x " has changed\n", w->addr);
 			}
+			break;
 		case 'o': // old contents
 		// use tmpblocksize
 		default:

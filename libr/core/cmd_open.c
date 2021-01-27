@@ -312,8 +312,8 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			break;
 		}
 		tmp = r_str_word_get0 (v, 0);
-		id = *v && r_is_valid_input_num_value (core->num, tmp)
-			? r_get_input_num_value (core->num, tmp): UT32_MAX;
+		id = *v && (r_is_valid_input_num_value (core->num, tmp)
+			? r_get_input_num_value (core->num, tmp): UT32_MAX);
 		if (n == 2) {
 			tmp = r_str_word_get0 (v, 1);
 		} else {
