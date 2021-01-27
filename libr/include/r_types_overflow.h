@@ -53,6 +53,7 @@ static inline bool overflow_name(type_base a, type_base b) { \
 }
 #define UNSIGNED_DIV_OVERFLOW_CHECK(overflow_name, type_base, type_min, type_max) \
 static inline bool overflow_name(type_base a, type_base b) { \
+	(void)(a); \
 	return !b; \
 }
 

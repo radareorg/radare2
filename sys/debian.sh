@@ -20,7 +20,7 @@ rm -rf "${PKGDIR}" "${DEVDIR}"
 
 export CFLAGS="-O2 -Werror -Wno-cpp"
 export CFLAGS="${CFLAGS} -Wno-unused-result"
-export CFLAGS="${CFLAGS} -Wno-stringpop-truncation"
+export CFLAGS="${CFLAGS} -Wno-stringop-truncation"
 # build
 ./configure --prefix=/usr > /dev/null
 [ $? != 0 ] && exit 1
