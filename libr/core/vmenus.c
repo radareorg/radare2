@@ -789,13 +789,9 @@ R_API int r_core_visual_types(RCore *core) {
 					/* TODO: do something with this data */
 					char *r = NULL;
 					r = prompt ("name: ", vt.curname);
-					if (r) {
-						free (r);
-					}
+					free (r);
 					r = prompt ("pf: ", vt.curfmt);
-					if (r) {
-						free (r);
-					}
+					free (r);
 					break;
 				}
 				case 1: // enum
