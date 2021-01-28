@@ -1233,6 +1233,20 @@ static bool cb_cfgcharset(void *user, void *data) {
 		char *syscs = r_str_newf ("%s%s.sdb", cs, cf);
 		if (r_file_exists (syscs)) {
 			rc = r_charset_open (core->print->charset, syscs);
+
+			SdbListIter *iter;
+			SdbKv *kv;
+			SdbList *sdbls = sdb_foreach_list (core->print->charset->db, true);
+			Sdb *db = sdb_new0();
+			ls_foreach (sdbls, iter, kv) {
+				const char *new_key = kv->base.value;
+				const char *new_value = kv->base.key;
+				sdb_add (db, new_value, new_key, 0);
+			}
+			ls_free (sdbls);
+			core->print->charset->db_char_to_hex = db;
+
+
 		} else {
 			rc = r_charset_open (core->print->charset, cf);
 		}

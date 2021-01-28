@@ -2025,8 +2025,29 @@ static int cmd_write(void *data, const char *input) {
 		wA_handler_old (core, input + 1);
 		break;
 	case ' ': // "w"
-		w_handler_old (core, input + 1);
+	{
+		size_t len = core->blocksize;
+		const char *current_charset = r_config_get (core->config, "cfg.charset");
+		if (R_STR_ISEMPTY (current_charset)) {
+			w_handler_old (core, input + 1);
+		} else {
+			if (len > 0) {
+				size_t out_len = len * 10;
+				ut8 *out = calloc (len, 10);
+				if (out) {
+					ut8 *data = malloc (len);
+					if (data) {
+						//r_io_read_at (core->io, core->offset, data, len);
+						r_charset_encode_str (core->print->charset, out, out_len, (const unsigned char *) input + 1, len);
+						w_handler_old (core, (const char *)out);
+						free (data);
+					}
+					free (out);
+				}
+			}
+		}
 		break;
+	}
 	case 'z': // "wz"
 		wz_handler_old (core, input + 1);
 		break;

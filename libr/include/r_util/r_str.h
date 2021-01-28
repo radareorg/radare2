@@ -30,6 +30,7 @@ typedef struct r_charset_rune_t {
 
 typedef struct r_charset_t {
 	Sdb *db;
+	Sdb *db_char_to_hex;
 	RCharsetRune *custom_charset;
 	size_t remaining;
 } RCharset;
