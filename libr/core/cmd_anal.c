@@ -6087,71 +6087,70 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		print_esil_dfg_as_commands (core, dfg);
 		r_anal_esil_dfg_free (dfg);
 		return;
-	} else {
-		switch (argv[0][0]) {
-		case '*':	// "aeg*"
-		{
-			RAnalOp *aop = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_ESIL);
-			if (!aop) {
+	}
+	switch (argv[0][0]) {
+	case '*':	// "aeg*"
+	{
+		RAnalOp *aop = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_ESIL);
+		if (!aop) {
+			return;
+		}
+		const char *esilstr = r_strbuf_get (&aop->esil);
+		if (R_STR_ISNOTEMPTY (esilstr)) {
+			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
+			if (!dfg) {
+				r_anal_op_free (aop);
 				return;
 			}
-			const char *esilstr = r_strbuf_get (&aop->esil);
-			if (R_STR_ISNOTEMPTY (esilstr)) {
-				RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, esilstr);
-				if (!dfg) {
-					r_anal_op_free (aop);
-					return;
-				}
-				print_esil_dfg_as_commands (core, dfg);
-				r_anal_esil_dfg_free (dfg);
-			}
+			print_esil_dfg_as_commands (core, dfg);
+			r_anal_esil_dfg_free (dfg);
 		}
-		break;
-		case 'i':	// "aegi"
-		case 'v':	// "aegv"
-		{
-			RConfigHold *hc = r_config_hold_new (core->config);
-			if (!hc) {
-				return;
-			}
-			r_config_hold_s (hc, "cmd.gprompt",  NULL);
-			r_config_set (core->config, "cmd.gprompt", "pi 1");
-			r_core_cmd0 (core, ".aeg*;aggv");
-			r_config_hold_free (hc);
+	}
+	break;
+	case 'i':	// "aegi"
+	case 'v':	// "aegv"
+	{
+		RConfigHold *hc = r_config_hold_new (core->config);
+		if (!hc) {
+			return;
 		}
-		break;
-		case 'f':	// "aegf"
-		{
-			RStrBuf *filtered = r_anal_esil_dfg_filter_expr (core->anal, argv[1], argv[2]);
+		r_config_hold_s (hc, "cmd.gprompt",  NULL);
+		r_config_set (core->config, "cmd.gprompt", "pi 1");
+		r_core_cmd0 (core, ".aeg*;aggv");
+		r_config_hold_free (hc);
+	}
+	break;
+	case 'f':	// "aegf"
+	{
+		RStrBuf *filtered = r_anal_esil_dfg_filter_expr (core->anal, argv[1], argv[2]);
+		if (filtered) {
+			r_cons_printf ("%s\n", r_strbuf_get (filtered));
+			r_strbuf_free (filtered);
+		}
+	}
+	break;
+	case 'c':	// "aegc"
+	{
+		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
+		if (!dfg) {
+			return;
+		}
+		r_anal_esil_dfg_fold_const (core->anal, dfg);
+		if (argv[0][1] == 'f') {	// "aegcf"
+			RStrBuf *filtered = r_anal_esil_dfg_filter (dfg, argv[2]);
 			if (filtered) {
 				r_cons_printf ("%s\n", r_strbuf_get (filtered));
 				r_strbuf_free (filtered);
 			}
+		} else {
+			print_esil_dfg_as_commands (core, dfg);
 		}
-		break;
-		case 'c':	// "aegc"
-		{
-			RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
-			if (!dfg) {
-				return;
-			}
-			r_anal_esil_dfg_fold_const (core->anal, dfg);
-			if (argv[0][1] == 'f') {	// "aegcf"
-				RStrBuf *filtered = r_anal_esil_dfg_filter (dfg, argv[2]);
-				if (filtered) {
-					r_cons_printf ("%s\n", r_strbuf_get (filtered));
-					r_strbuf_free (filtered);
-				}
-			} else {
-				print_esil_dfg_as_commands (core, dfg);
-			}
-			r_anal_esil_dfg_free (dfg);
-		}
-		break;
-		case '?':	// "aeg?"
-		default:
-			r_core_cmd_help (core, help_msg_aeg);
-		}
+		r_anal_esil_dfg_free (dfg);
+	}
+	break;
+	case '?':	// "aeg?"
+	default:
+		r_core_cmd_help (core, help_msg_aeg);
 	}
 }
 
