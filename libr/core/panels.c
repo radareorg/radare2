@@ -301,6 +301,7 @@ static void __update_edge_x(RCore *core, int x) {
 	int tmp_x = 0;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p0 = __get_panel (panels, i);
+		if (!p0) continue;
 		if (p0->view->pos.x - 2 <= panels->mouse_orig_x &&
 				panels->mouse_orig_x <= p0->view->pos.x + 2) {
 			tmp_x = p0->view->pos.x;
@@ -308,6 +309,7 @@ static void __update_edge_x(RCore *core, int x) {
 			p0->view->pos.w -= x;
 			for (j = 0; j < panels->n_panels; j++) {
 				RPanel *p1 = __get_panel (panels, j);
+				if (!p1) continue;
 				if (p1->view->pos.x + p1->view->pos.w - 1 == tmp_x) {
 					p1->view->pos.w += x;
 				}
@@ -322,6 +324,7 @@ static void __update_edge_y(RCore *core, int y) {
 	int tmp_y = 0;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p0 = __get_panel (panels, i);
+		if (!p0) continue;
 		if (p0->view->pos.y - 2 <= panels->mouse_orig_y &&
 				panels->mouse_orig_y <= p0->view->pos.y + 2) {
 			tmp_y = p0->view->pos.y;
@@ -329,6 +332,7 @@ static void __update_edge_y(RCore *core, int y) {
 			p0->view->pos.h -= y;
 			for (j = 0; j < panels->n_panels; j++) {
 				RPanel *p1 = __get_panel (panels, j);
+				if (!p1) continue;
 				if (p1->view->pos.y + p1->view->pos.h - 1 == tmp_y) {
 					p1->view->pos.h += y;
 				}
@@ -363,6 +367,7 @@ static bool __check_if_mouse_x_on_edge(RCore *core, int x, int y) {
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
+		if (!panel) continue;
 		if (x > panel->view->pos.x - (edge_x - 1) && x <= panel->view->pos.x + edge_x) {
 			panels->mouse_on_edge_x = true;
 			panels->mouse_orig_x = x;
@@ -378,6 +383,7 @@ static bool __check_if_mouse_y_on_edge(RCore *core, int x, int y) {
 	int i = 0;
 	for (; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
+		if (!panel) continue;
 		if (x > panel->view->pos.x && x <= panel->view->pos.x + panel->view->pos.w + edge_y) {
 			if (y > 2 && y >= panel->view->pos.y && y <= panel->view->pos.y + edge_y) {
 				panels->mouse_on_edge_y = true;
@@ -416,6 +422,7 @@ static void __check_edge(RCore *core) {
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
+		if (!panel) continue;
 		if (panel->view->pos.x + panel->view->pos.w == core->panels->can->w) {
 			panel->view->edge |= (1 << PANEL_EDGE_RIGHT);
 		} else {
@@ -642,6 +649,7 @@ static int __get_panel_idx_in_pos(RCore *core, int x, int y) {
 	int i = -1;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
+		if (!p) continue;
 		if (x >= p->view->pos.x && x < p->view->pos.x + p->view->pos.w) {
 			if (y >= p->view->pos.y && y < p->view->pos.y + p->view->pos.h) {
 				break;
@@ -656,6 +664,7 @@ static void __handlePrompt(RCore *core, RPanels *panels) {
 	int i;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
+		if (!p) continue;
 		if (__check_panel_type (p, PANEL_CMD_DISASSEMBLY)) {
 			__set_panel_addr (core, p, core->offset);
 			break;
@@ -898,6 +907,7 @@ static void __panel_all_clear(RPanels *panels) {
 	RPanel *panel = NULL;
 	for (i = 0; i < panels->n_panels; i++) {
 		panel = __get_panel (panels, i);
+		if (!panel) continue;
 		r_cons_canvas_fill (panels->can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
 	}
 	r_cons_canvas_print (panels->can);
@@ -906,6 +916,10 @@ static void __panel_all_clear(RPanels *panels) {
 
 static void __layout_default(RPanels *panels) {
 	RPanel *p0 = __get_panel (panels, 0);
+	if (!p0){
+		eprintf("_get_panel (...,0) return null");
+		return;
+	}
 	int h, w = r_cons_get_size (&h);
 	if (panels->n_panels <= 1) {
 		__set_geometry (&p0->view->pos, 0, 1, w, h - 1);
@@ -920,6 +934,7 @@ static void __layout_default(RPanels *panels) {
 	int i, total_h = 0;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
+		if (!p) continue;
 		int tmp_w = R_MAX (w - colpos, 0);
 		int tmp_h = 0;
 		if (i + 1 == panels->n_panels) {
@@ -944,6 +959,7 @@ static void __layout_equal_hor(RPanels *panels) {
 	int i, cw = 0;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
+		if (!p) continue;
 		__set_geometry(&p->view->pos, cw, 1, pw, h - 1);
 		cw += pw - 1;
 		if (i == panels->n_panels - 2) {
@@ -958,6 +974,7 @@ static void __adjust_side_panels(RCore *core) {
 	RPanels *panels = core->panels;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = __get_panel (panels, i);
+		if (!p) continue;
 		if (p->view->pos.x == 0) {
 			if (p->view->pos.w >= PANEL_CONFIG_SIDEPANEL_W) {
 				p->view->pos.x += PANEL_CONFIG_SIDEPANEL_W - 1;
@@ -972,6 +989,7 @@ static void __update_help(RCore *core, RPanels *ps) {
 	int i;
 	for (i = 0; i < ps->n_panels; i++) {
 		RPanel *p = __get_panel (ps, i);
+		if (!p) continue;
 		if (!strncmp (p->model->cmd, help, strlen (help))) {
 			RStrBuf *rsb = r_strbuf_new (NULL);
 			const char *title;
@@ -6733,7 +6751,7 @@ virtualmouse:
 	case '[':
 		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
 			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
- 		} else {
+		} else {
 			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
 			if (cmtcol > 2) {
 				r_config_set_i (core->config, "asm.cmt.col", cmtcol - 2);
