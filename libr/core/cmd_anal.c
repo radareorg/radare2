@@ -303,7 +303,7 @@ static const char *help_msg_aeC[] = {
 
 static const char *help_msg_aeg[] = {
 	"Usage:", "aeg[cfiv*]", " [...]",
-	"aeg",  "", "analyze current instruction as an esil graph",
+	"aeg", "", "analyze current instruction as an esil graph",
 	"aegf", "", "analyze given expression and filter for register",
 	"aeg*", "", "analyze current instruction as an esil graph",
 	"aegv", "", "analyse and launch the visual interactive mode (.aeg*;aggv == aegv)",
@@ -6087,7 +6087,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		print_esil_dfg_as_commands (core, dfg);
 		r_anal_esil_dfg_free (dfg);
 		return;
-	}else{
+	} else {
 		switch (argv[0][0]) {
 		case '*':	// "aeg*"
 		{
