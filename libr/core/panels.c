@@ -301,11 +301,8 @@ static void __update_edge_x(RCore *core, int x) {
 	int tmp_x = 0;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p0 = __get_panel (panels, i);
-		if (!p0) {
-			continue;
-		}
-		if (p0->view->pos.x - 2 <= panels->mouse_orig_x &&
-				panels->mouse_orig_x <= p0->view->pos.x + 2) {
+		if (p0 && (p0->view->pos.x - 2 <= panels->mouse_orig_x &&
+				panels->mouse_orig_x <= p0->view->pos.x + 2)) {
 			tmp_x = p0->view->pos.x;
 			p0->view->pos.x += x;
 			p0->view->pos.w -= x;
