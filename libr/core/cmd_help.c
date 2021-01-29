@@ -113,7 +113,7 @@ static const char *help_msg_root[] = {
 	"z", "[?]", "zignatures management",
 	"?[??]","[expr]", "Help or evaluate math expression",
 	"?$?", "", "show available '$' variables and aliases",
-	"?@?", "", "misc help for '@' (seek), '~' (grep) (see ~?""?)",
+	"?@?", "", "misc help for '@' (seek), '~' (grep) (see ~?\"\"?)",
 	"?>?", "", "output redirection",
 	"?|?", "", "help for '|' (pipe)",
 	NULL

@@ -736,8 +736,8 @@ static int cmd_info(void *data, const char *input) {
 		case 'H': // "iH"
 			if (input[1] == 'H') { // "iHH"
 				RBININFO ("header", R_CORE_BIN_ACC_HEADER, NULL, -1);
-				break;
 			}
+			break;
 		case 'h': // "ih"
 			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
 			break;

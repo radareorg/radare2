@@ -4018,10 +4018,8 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 				if (q) {
 					*q++ = 0;
 					dev = p[0];
-					if (q) {
-						r_debug_esil_watch (core->dbg, perm, dev, q);
-						done = 1;
-					}
+					r_debug_esil_watch (core->dbg, perm, dev, q);
+					done = 1;
 				}
 			}
 			if (!done) {

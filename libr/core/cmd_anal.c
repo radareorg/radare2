@@ -306,7 +306,7 @@ static const char *help_msg_aeg[] = {
 	"aeg", "", "analyze current instruction as an esil graph",
 	"aegf", "", "analyze given expression and filter for register",
 	"aeg*", "", "analyze current instruction as an esil graph",
-	"aegv" "", "analyse and launch the visual interactive mode (.aeg*;aggv == aegv)",
+	"aegv", "", "analyse and launch the visual interactive mode (.aeg*;aggv == aegv)",
 	NULL
 };
 
@@ -1189,12 +1189,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name) {
 				r_cons_println (f->name);
 			} else {
 				pj_o (pj);
-				if (name) {
-					pj_ks (pj, "old_name", f->name);
-					pj_ks (pj, "new_name", name);
-				} else {
-					pj_ks (pj, "name", f->name);
-				}
+				pj_ks (pj, "name", f->name);
 				if (f->realname) {
 					pj_ks (pj, "realname", f->realname);
 				}
@@ -1280,7 +1275,7 @@ static int var_cmd(RCore *core, const char *str) {
 		r_core_cmd0 (core, "afvr");
 		return true;
 	}
-	if (!str[0] || str[1] == '?'|| str[0] == '?') {
+	if (str[1] == '?'|| str[0] == '?') {
 		var_help (core, *str);
 		return res;
 	}
@@ -6086,7 +6081,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		r_core_cmd0 (core, ".aeg*;agg");
 		return;
 	}
-	if (argc == 1) {	// "aeg"
+	if ((argc == 1) && !argv[0][0]) {	// "aeg"
 		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[0]);
 		r_return_if_fail (dfg);
 		print_esil_dfg_as_commands (core, dfg);
@@ -8193,6 +8188,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		} else if (input[1] == '-') { // "ahr-"
 			r_anal_hint_unset_ret (core->anal, core->offset);
 		}
+		break;
 	case '*': // "ah*"
 	case 'j': // "ahj"
 	case '\0': // "ah"
@@ -9708,6 +9704,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			cmd_anal_calls (core, input + 1, false, false);
 			break;
 		}
+		break;
 	case 'j': // "aaj"
 		cmd_anal_jumps (core, input + 1);
 		break;
