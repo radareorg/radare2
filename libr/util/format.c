@@ -2426,14 +2426,18 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i+= (size == -1)? 4: 4 * size;
 					break;
 				case 'D':
-					if (isptr) {
-						if (p->bits == 64) {
-							i += r_print_format_disasm (p, addr64, size);
-						} else {
-							i += r_print_format_disasm (p, addr, size);
-						}
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for disassembler!\n");
 					} else {
-						i += r_print_format_disasm (p, seeki, size);
+						if (isptr) {
+							if (p->bits == 64) {
+								i += r_print_format_disasm (p, addr64, size);
+							} else {
+								i += r_print_format_disasm (p, addr, size);
+							}
+						} else {
+							i += r_print_format_disasm (p, seeki, size);
+						}
 					}
 					break;
 				case 'o':
@@ -2483,28 +2487,44 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 					break;
 				case 's':
-					if (r_print_format_string (p, seeki, addr64, addr, 0, mode) == 0) {
-						i += (size==-1) ? 4 : 4*size;
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for strings!\n");
+					} else {
+						if (r_print_format_string (p, seeki, addr64, addr, 0, mode) == 0) {
+							i += (size==-1) ? 4 : 4*size;
+						}
 					}
 					break;
 				case 'S':
-					if (r_print_format_string (p, seeki, addr64, addr, 1, mode) == 0) {
-						i += (size == -1) ? 8 : 8 * size;
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for strings!\n");
+					} else {
+						if (r_print_format_string (p, seeki, addr64, addr, 1, mode) == 0) {
+							i += (size == -1) ? 8 : 8 * size;
+						}
 					}
 					break;
 				case 'B': // resolve bitfield
 					if (size >= ARRAYINDEX_COEF) {
 						size %= ARRAYINDEX_COEF;
 					}
-					r_print_format_bitfield (p, seeki, fmtname, fieldname, addr, mode, size);
-					i+=(size == -1)? 1: size;
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for bitfields!\n");
+					} else {
+						r_print_format_bitfield (p, seeki, fmtname, fieldname, addr, mode, size);
+						i+=(size == -1)? 1: size;
+					}
 					break;
 				case 'E': // resolve enum
-					if (size >= ARRAYINDEX_COEF) {
-						size %= ARRAYINDEX_COEF;
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for enums!\n");
+					} else {
+						if (size >= ARRAYINDEX_COEF) {
+							size %= ARRAYINDEX_COEF;
+						}
+						r_print_format_enum (p, seeki, fmtname, fieldname, addr, mode, size);
+						i += (size == -1)? 1: size;
 					}
-					r_print_format_enum (p, seeki, fmtname, fieldname, addr, mode, size);
-					i += (size == -1)? 1: size;
 					break;
 				case 'r':
 					if (fmtname) {
