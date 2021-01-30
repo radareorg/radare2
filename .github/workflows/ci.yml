@@ -131,8 +131,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install meson ninja r2pipe wget
     - name: Build with meson + ninja
+      shell: cmd
       run: |
-        "%vsdir%\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"
+        call "%vsdir%\VC\Auxiliary\Build\vcvars64.bat"
         meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
