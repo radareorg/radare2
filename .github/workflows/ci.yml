@@ -8,27 +8,8 @@ on:
 #  schedule:
 #    - cron: '0 0 * * 1'
 
-# python sys\meson.py --release --backend vs2019 --shared --install --prefix="%cd%\radar    e2_dist" --webui
 
 jobs:
-  # Windows
-  #  windows-mingw:
-  #    runs-on: windows-latest
-  #    steps:
-  #    - name: Checkout
-  #      uses: actions/checkout@v2
-  #    - name: Windows Dependencies
-  #      run: |
-  #        pip install meson ninja r2pipe
-  #    - name: Building Radare2
-  #      run: |
-  #        meson --buildtype=release --prefix=$PWD\radare2_dist build
-  #        ninja -C build
-  #        ninja -C build install
-  #    - name: Pub
-  #      uses: actions/upload-artifact@v2
-  #      with:
-  #        path: radare2_dist/*
   build-resymlink:
     name: linux-acr-resymlink
     runs-on: ubuntu-20.04
@@ -114,7 +95,7 @@ jobs:
       run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2_w32-installer-git.exe
+        name: radare2-w32-installer-git.exe
         path: radare2-win-installer\Output\radare2.exe
   w64-meson:
     runs-on: windows-latest
@@ -130,7 +111,9 @@ jobs:
     - name: Build with meson + ninja
       shell: pwsh
       run: |
-        cmd '/c call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"'
+        # cmd '/c call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"'
+        sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "x86_64"
+        # meson_options: --default-library=shared|static -Dstatic_runtime=true --backend vs2019
         meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
@@ -154,63 +137,6 @@ jobs:
       with:
         name: radare2-w64-installer-git.zip
         path: radare2-win-installer\Output\radare2.exe
-
-  windows-dist:
-    name: windows-${{ matrix.name }}
-#    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        name: [vs2019_static, clang_cl]
-        include:
-          - name: vs2019_static
-            compiler: cl
-            meson_options: --default-library=static -Dstatic_runtime=true
-          - name: clang_cl
-            compiler: clang-cl
-            meson_options: --default-library=shared
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install meson ninja r2pipe
-    - name: Extract r2 version
-      shell: pwsh
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
-      id: extract_version
-    - name: Build with meson + ninja
-      shell: pwsh
-      run: |
-        .github\vsdevenv.ps1
-        meson --buildtype=release --prefix=$PWD\radare2-install build ${{ matrix.meson_options }}
-        ninja -C build
-        ninja -C build install
-    - name: Create zip artifact
-      shell: pwsh
-      run: 7z a radare2-git.zip $PWD\radare2-install
-    - uses: actions/upload-artifact@v2
-      with:
-        name: radare2-git.zip
-        path: .\radare2-git.zip
-    - uses: actions/checkout@v2
-      with:
-        repository: radareorg/radare2-win-installer
-        path: ./radare2-win-installer
-    - name: Create installer
-      shell: pwsh
-      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
-    - uses: actions/upload-artifact@v2
-      with:
-        name: radare2-git.zip
-        path: radare2-git.zip
-    - uses: actions/upload-artifact@v2
-      with:
-        name: radare2_installer-git.exe
-        path: radare2-win-installer\Output\radare2.exe
-
   # LINUX
   linux-static:
     runs-on: ubuntu-latest
