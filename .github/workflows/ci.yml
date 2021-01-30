@@ -106,6 +106,10 @@ jobs:
       with:
         repository: radareorg/radare2-win-installer
         path: ./radare2-win-installer
+    - name: Extract r2 version for the installer
+      shell: pwsh
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
     - name: Create installer
       shell: pwsh
       run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
@@ -147,6 +151,10 @@ jobs:
       with:
         repository: radareorg/radare2-win-installer
         path: ./radare2-win-installer
+    - name: Extract r2 version for the installer
+      shell: pwsh
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
     - name: Create installer
       shell: pwsh
       run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
