@@ -96,7 +96,6 @@ jobs:
         ninja -C build
         ninja -C build install
     - name: Create zip artifact
-      shell: pwsh
       run: 7z a radare2-git.zip $PWD\radare2-install
     - uses: actions/upload-artifact@v2
       with:
@@ -133,7 +132,7 @@ jobs:
         pip install meson ninja r2pipe wget
     - name: Build with meson + ninja
       run: |
-        "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"
+        "%vsdir%\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"
         meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
