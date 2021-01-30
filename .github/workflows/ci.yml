@@ -140,7 +140,7 @@ jobs:
       run: |
         .github\vsdevenv.ps1
         "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        meson --buildtype=release --prefix=$PWD\radare2-install build --cross-file x64-windows
+        meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
     - name: Create zip artifact
