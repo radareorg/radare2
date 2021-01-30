@@ -132,8 +132,6 @@ jobs:
         pip install meson ninja r2pipe wget
     - name: Setup the 64bit toolchain
       shell: cmd
-      # run: call "%vsdir%\VC\Auxiliary\Build\vcvars64.bat"
-      # run: CALL "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"
       run: "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsx64.bat"
     - name: Build with meson + ninja
       run: |
