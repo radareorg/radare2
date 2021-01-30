@@ -139,7 +139,7 @@ jobs:
       shell: pwsh
       run: |
         .github\vsdevenv.ps1
-        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         meson --buildtype=release --prefix=$PWD\radare2-install build --cross-file x64-windows
         ninja -C build
         ninja -C build install
