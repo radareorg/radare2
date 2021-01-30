@@ -134,7 +134,6 @@ jobs:
     - name: Build with meson + ninja
       shell: pwsh
       run: |
-        cmd "/c set"
         cmd '/c call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"'
         sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "x86_64"
         meson --buildtype=release --prefix=$PWD\radare2-install build
