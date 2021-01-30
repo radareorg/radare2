@@ -78,6 +78,89 @@ jobs:
         cd ..
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
+  meson-w32:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja r2pipe wget
+    - name: Extract r2 version
+      shell: pwsh
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
+    - name: Build with meson + ninja
+      shell: pwsh
+      run: |
+        .github\vsdevenv.ps1
+        meson --buildtype=release --prefix=$PWD\radare2-install build ${{ matrix.meson_options }}
+        ninja -C build
+        ninja -C build install
+    - name: Create zip artifact
+      shell: pwsh
+      run: 7z a radare2-git.zip $PWD\radare2-install
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-w32-git.zip
+        path: .\radare2-git.zip
+    - uses: actions/checkout@v2
+      with:
+        repository: radareorg/radare2-win-installer
+        path: ./radare2-win-installer
+    - name: Create installer
+      shell: pwsh
+      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2_w32-installer-git.exe
+        path: radare2-win-installer\Output\radare2.exe
+  meson-w64:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Preparing nmake
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja r2pipe wget
+    - name: Extract r2 version
+      shell: pwsh
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
+    - name: Build with meson + ninja
+      shell: pwsh
+      run: |
+        .github\vsdevenv.ps1
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        meson --buildtype=release --prefix=$PWD\radare2-install build --cross-file x64-windows
+        ninja -C build
+        ninja -C build install
+    - name: Create zip artifact
+      shell: pwsh
+      run: 7z a radare2-git.zip $PWD\radare2-install
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-w64-git.zip
+        path: .\radare2-git.zip
+    - uses: actions/checkout@v2
+      with:
+        repository: radareorg/radare2-win-installer
+        path: ./radare2-win-installer
+    - name: Create installer
+      shell: pwsh
+      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-w64-installer-git.zip
+        path: radare2-win-installer\Output\radare2.exe
 
   windows-dist:
     name: windows-${{ matrix.name }}
