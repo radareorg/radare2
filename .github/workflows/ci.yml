@@ -78,7 +78,7 @@ jobs:
         cd ..
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
-  meson-w32:
+  w32-meson:
     runs-on: windows-latest
     steps:
     - name: Checkout
@@ -88,15 +88,11 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install meson ninja r2pipe wget
-    - name: Extract r2 version
-      shell: pwsh
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
-      id: extract_version
     - name: Build with meson + ninja
       shell: pwsh
       run: |
         .github\vsdevenv.ps1
-        meson --buildtype=release --prefix=$PWD\radare2-install build ${{ matrix.meson_options }}
+        meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
     - name: Create zip artifact
@@ -117,7 +113,7 @@ jobs:
       with:
         name: radare2_w32-installer-git.exe
         path: radare2-win-installer\Output\radare2.exe
-  meson-w64:
+  w64-meson:
     runs-on: windows-latest
     steps:
     - name: Checkout
@@ -131,15 +127,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install meson ninja r2pipe wget
-    - name: Extract r2 version
-      shell: pwsh
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
-      id: extract_version
     - name: Build with meson + ninja
       shell: pwsh
       run: |
         .github\vsdevenv.ps1
         "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        set VSLANG=1033
         meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
