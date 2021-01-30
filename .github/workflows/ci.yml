@@ -132,9 +132,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install meson ninja r2pipe wget
     - name: Build with meson + ninja
-      shell: pwsh
       run: |
-        .github\vsdevenv.ps1
         "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" "x86_64"
         set VSLANG=1033
         meson --buildtype=release --prefix=$PWD\radare2-install build
