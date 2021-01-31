@@ -611,7 +611,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				continue;
 			}
 			char *sa = r_sys_getenv ("R2R_SKIP_ARCHOS");
-			bool skip_archos = skip_archos? !strcmp (sa, "1"): false;
+			bool skip_archos = sa? !strcmp (sa, "1"): false;
 			free (sa);
 			if (sa) {
 				if ((!strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos"))
