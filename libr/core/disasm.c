@@ -3030,8 +3030,18 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, size)) {
 				if (size > delta) {
 					r_cons_printf ("hex size=%d delta=%d\n", size , delta);
-					r_print_hexdump (core->print, ds->at,
-						buf + idx, size - delta, 16, 1, 1);
+					int remaining = size - delta;
+					remaining = R_MAX (remaining, 0);
+					if (remaining > (len - delta)) {
+						ut8 *b = calloc (1, size - delta);
+						memcpy (b, buf, len);
+						r_print_hexdump (core->print, ds->at,
+								b + idx, remaining, 16, 1, 1);
+						free (b);
+					} else {
+						r_print_hexdump (core->print, ds->at,
+							buf + idx, remaining, 16, 1, 1);
+					}
 				} else {
 					r_cons_printf ("hex size=%d hexlen=%d delta=%d",
 						size, hexlen, delta);

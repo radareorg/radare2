@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2021 - thestr4ng3r */
 
 #include "r2r.h"
 #include <assert.h>

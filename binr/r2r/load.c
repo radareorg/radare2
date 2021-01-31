@@ -613,7 +613,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			char *sa = r_sys_getenv ("R2R_SKIP_ARCHOS");
 			bool skip_archos = sa? !strcmp (sa, "1"): false;
 			free (sa);
-			if (sa) {
+			if (skip_archos) {
 				if ((!strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos"))
 					&& strcmp (subname, R2R_ARCH_OS)) {
 					eprintf ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
