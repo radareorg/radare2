@@ -29,13 +29,13 @@ CMDS=<<EOF
 dm~?
 db sym.imp.puts
 dc~?
-dm~?
+dm~map.?
 dc
 EOF
 EXPECT=<<EOF
 9
 0
-18
+8
 Hello world!
 EOF
 RUN
