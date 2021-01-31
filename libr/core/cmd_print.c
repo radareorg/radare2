@@ -5793,7 +5793,7 @@ l = use_blocksize;
 						ut8 *data = malloc (len);
 						if (data) {
 							r_io_read_at (core->io, core->offset, data, len);
-							r_charset_encode_str (core->print->charset, out, out_len, data, len);
+							r_charset_encode_str (core->print->charset, out, out_len, data, len, false);
 							r_print_string (core->print, core->offset,
 								out, len, 0);
 							free (data);
@@ -5882,7 +5882,7 @@ l = use_blocksize;
 							ut8 *data = malloc (len);
 							if (data) {
 								r_io_read_at (core->io, core->offset, data, len);
-								r_charset_encode_str (core->print->charset, out, out_len, data, len);
+								r_charset_encode_str (core->print->charset, out, out_len, data, len, false);
 								r_print_string (core->print, core->offset,
 									out, len, R_PRINT_STRING_ZEROEND);
 								free (data);

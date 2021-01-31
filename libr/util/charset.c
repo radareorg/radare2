@@ -76,7 +76,7 @@ R_API RCharsetRune *search_from_hex(RCharsetRune *r, const ut8 *hx) {
 }
 
 // assumes out is as big as in_len
-R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
+R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len, bool opt_stop_at_error) {
 	char k[32];
 	char *o = (char*)out;
 	int i;
@@ -84,7 +84,17 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		ut8 ch_in = in[i];
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
 		const char *v = sdb_const_get (rc->db, k, 0);
-		strcpy (o, r_str_get_fail (v, "?"));
+		const char *ret = r_str_get_fail (v, "?");
+		if (opt_stop_at_error == true) {
+			if (ret[0] == '?') {
+				return o - (char*)out;
+			} else {
+				strcpy (o, ret);
+			}
+		} else {
+			strcpy (o, ret);
+		}
+
 		o += strlen (o);
 	}
 	return o - (char*)out;
