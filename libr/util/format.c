@@ -2426,6 +2426,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i+= (size == -1)? 4: 4 * size;
 					break;
 				case 'D':
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for disassembler!\n");
+					}
 					if (isptr) {
 						if (p->bits == 64) {
 							i += r_print_format_disasm (p, addr64, size);
@@ -2483,11 +2486,17 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					}
 					break;
 				case 's':
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for strings!\n");
+					}
 					if (r_print_format_string (p, seeki, addr64, addr, 0, mode) == 0) {
 						i += (size==-1) ? 4 : 4*size;
 					}
 					break;
 				case 'S':
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for strings!\n");
+					}
 					if (r_print_format_string (p, seeki, addr64, addr, 1, mode) == 0) {
 						i += (size == -1) ? 8 : 8 * size;
 					}
@@ -2496,10 +2505,16 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (size >= ARRAYINDEX_COEF) {
 						size %= ARRAYINDEX_COEF;
 					}
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for bitfields!\n");
+					}
 					r_print_format_bitfield (p, seeki, fmtname, fieldname, addr, mode, size);
 					i+=(size == -1)? 1: size;
 					break;
 				case 'E': // resolve enum
+					if (MUSTSET) {
+						eprintf ("Set val not implemented yet for enums!\n");
+					}
 					if (size >= ARRAYINDEX_COEF) {
 						size %= ARRAYINDEX_COEF;
 					}
