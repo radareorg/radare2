@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_crypto.h"
 #include "r_config.h"
@@ -1867,8 +1867,9 @@ static int wa_handler_old(void *data, const char *input) {
 
 static int wb_handler_old(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int len = strlen (input);
-	ut8 *buf = malloc (len + 2);
+	size_t len = strlen (input);
+	const size_t buf_size = len + 2;
+	ut8 *buf = malloc (buf_size);
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	if (buf) {
 		len = r_hex_str2bin (input, buf);
@@ -1880,11 +1881,12 @@ static int wb_handler_old(void *data, const char *input) {
 				WSEEK (core, core->blocksize);
 			}
 			r_core_block_read (core);
-		} else
+		} else {
 			eprintf ("Wrong argument\n");
+		}
 		free (buf);
 	} else {
-		eprintf ("Cannot malloc %d\n", len + 1);
+		eprintf ("Cannot malloc %zd\n", buf_size);
 	}
 	return 0;
 }
@@ -1980,9 +1982,6 @@ static int cmd_write(void *data, const char *input) {
 	}
 
 	switch (*input) {
-	case 'B': // "wB"
-		wB_handler_old (data, input + 1);
-		break;
 	case '0': // "w0"
 		w0_handler_old (data, input + 1);
 		break;
@@ -1994,6 +1993,18 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case '6': // "w6"
 		w6_handler_old (core, input + 1);
+		break;
+	case 'a': // "wa"
+		wa_handler_old (core, input + 1);
+		break;
+	case 'b': // "wb"
+		wb_handler_old (core, input + 1);
+		break;
+	case 'B': // "wB"
+		wB_handler_old (data, input + 1);
+		break;
+	case 'c': // "wc"
+		wc_handler_old (core, input + 1);
 		break;
 	case 'h': // "wh"
 		wh_handler_old (core, input + 1);
@@ -2013,9 +2024,6 @@ static int cmd_write(void *data, const char *input) {
 	case 'A': // "wA"
 		wA_handler_old (core, input + 1);
 		break;
-	case 'c': // "wc"
-		wc_handler_old (core, input + 1);
-		break;
 	case ' ': // "w"
 		w_handler_old (core, input + 1);
 		break;
@@ -2033,12 +2041,6 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'x': // "wx"
 		wx_handler_old (core, input + 1);
-		break;
-	case 'a': // "wa"
-		wa_handler_old (core, input + 1);
-		break;
-	case 'b': // "wb"
-		wb_handler_old (core, input + 1);
 		break;
 	case 'm': // "wm"
 		wm_handler_old (core, input + 1);
