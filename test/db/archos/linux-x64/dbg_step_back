@@ -1,70 +1,93 @@
-NAME=dbg.stepback
+NAME=test breakpoint in main
 FILE=bins/elf/analysis/ls-linux-x86_64-zlul
 ARGS=-d -e dbg.bpsysign=true
 CMDS=<<EOF
 db main
-db 0x004028fe
 dc
-dts+
-dc
-dsb
-dsb
-dr rbx,rcx,r12,rip
+db-main
+dr?rip
+?v main
 dk 9
 EOF
 EXPECT=<<EOF
-0x00000001
-0x00000001
-0x00404870
-0x004028f9
+0x004028a0
+0x4028a0
 EOF
 RUN
 
-NAME=debug stepback from callee
-FILE=bins/elf/analysis/calls_x64
-ARGS=-d
-CMDS=<<EOF
-db main
-db 0x0040052f
-dc
-dts+
-dc
-dr rax,rbx,rcx,r10,rbp,rip
-dsb
-dsb
-dr rax,rbx,rcx,r10,rbp,rip
-dk 9
-EOF
-EXPECT=<<EOF
-0x00400574
-0x00000000
-0x00400590
-0x00000003
-0x00400590
-0x0040052f
-0x00400574
-0x00000000
-0x00400590
-0x00000003
-0x00400590
-0x00400575
-EOF
-RUN
+# NAME=dbg.stepback
+# FILE=bins/elf/analysis/ls-linux-x86_64-zlul
+# ARGS=-d -e dbg.bpsysign=true
+# CMDS=<<EOF
+# db main
+# dc
+# db 0x004028fe
+# dts+
+# dc
+# dsb
+# ?e rip
+# dr rip
+# dsb
+# ?e rip
+# dr rip
+# ?e rbx,rcx,r12,rip
+# dr rbx,rcx,r12,rip
+# dk 9
+# EOF
+# EXPECT=<<EOF
+# 0x00000001
+# 0x00000001
+# 0x00404870
+# 0x004028f9
+# EOF
+# RUN
 
-NAME=debug stepback from caller
-FILE=bins/elf/analysis/calls_x64
-ARGS=-d -e dbg.bpsysign=true
-CMDS=<<EOF
-db main
-db 0x0040057c
-dc
-dts+
-dc
-dsb
-dsb
-dr rip
-EOF
-EXPECT=<<EOF
-0x0040053b
-EOF
-RUN
+# NAME=debug stepback from callee
+# FILE=bins/elf/analysis/calls_x64
+# ARGS=-d
+# CMDS=<<EOF
+# db main
+# dc
+# db-main
+# db 0x0040052f
+# dts+
+# dc
+# dr rax,rbx,rcx,r10,rbp,rip
+# dsb
+# dsb
+# dr rax,rbx,rcx,r10,rbp,rip
+# dk 9
+# EOF
+# EXPECT=<<EOF
+# 0x00400574
+# 0x00000000
+# 0x00400590
+# 0x00000003
+# 0x00400590
+# 0x0040052f
+# 0x00400574
+# 0x00000000
+# 0x00400590
+# 0x00000003
+# 0x00400590
+# 0x00400575
+# EOF
+# RUN
+# 
+# NAME=debug stepback from caller
+# FILE=bins/elf/analysis/calls_x64
+# ARGS=-d -e dbg.bpsysign=true
+# CMDS=<<EOF
+# db main
+# db 0x0040057c
+# dc
+# dts+
+# dc
+# dsb
+# dsb
+# dr rip
+# EOF
+# EXPECT=<<EOF
+# 0x0040053b
+# EOF
+# RUN

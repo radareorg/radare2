@@ -50,5 +50,5 @@ jobs:
       run: |
         r2 -v
         r2r -v
-        cd test
-        make
+        export R2R_SKIP_ARCHOS=1
+        make -C test

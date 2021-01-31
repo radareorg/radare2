@@ -6,7 +6,7 @@ dm~?/
 dk 9
 EOF
 EXPECT=<<EOF
-4
+6
 EOF
 RUN
 
@@ -18,7 +18,7 @@ dm~?
 dk 9
 EOF
 EXPECT=<<EOF
-7
+9
 EOF
 RUN
 
@@ -29,13 +29,13 @@ CMDS=<<EOF
 dm~?
 db sym.imp.puts
 dc~?
-dm~?
+dm~map.?
 dc
 EOF
 EXPECT=<<EOF
-7
+9
 0
-14
+8
 Hello world!
 EOF
 RUN
