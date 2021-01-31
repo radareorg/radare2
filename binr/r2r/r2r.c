@@ -61,7 +61,8 @@ static int help(bool verbose) {
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
 		" -o [file]    output test run information in JSON format to file"
 		"\n"
-		"Supported test types: @json @unit @fuzz @cmds\n"
+		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
+		"Supported test types: @json @unit @fuzz @arch @cmds\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
 	return 1;
