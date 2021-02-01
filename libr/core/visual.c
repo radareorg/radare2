@@ -4128,8 +4128,8 @@ static void visual_refresh(RCore *core) {
 				break;
 			}
 			snprintf (debugstr, sizeof (debugstr),
-					"?0;%s %d @ %"PFMT64d";cl;"
-					"?1;%s %d @ %"PFMT64d";",
+					"?t0;%s %d @ %"PFMT64d";cl;"
+					"?t1;%s %d @ %"PFMT64d";",
 					pxw, size, splitPtr,
 					pxw, size, core->offset);
 			core->print->screen_bounds = 1LL;
@@ -4313,7 +4313,7 @@ dodo:
 
 			if (cmdvhex && *cmdvhex) {
 				snprintf (debugstr, sizeof (debugstr),
-					"?0;f tmp;ssr %s;%s;?1;%s;?1;"
+					"?t0;f tmp;ssr %s;%s;?1;%s;?1;"
 					"ss tmp;f-tmp;pd $r", reg, cmdvhex,
 					ref? "drr": "dr=");
 				debugstr[sizeof (debugstr) - 1] = 0;
@@ -4323,8 +4323,8 @@ dodo:
 				const int absdelta = R_ABS (delta);
 				snprintf (debugstr, sizeof (debugstr),
 					"diq;?0;f tmp;ssr %s;%s %d@$$%c%d;"
-					"?1;%s;"
-					"?1;ss tmp;f-tmp;afal;pd $r",
+					"?t1;%s;"
+					"?t1;ss tmp;f-tmp;afal;pd $r",
 					reg, pxa? "pxa": pxw, size, sign, absdelta,
 					ref? "drr": "dr=");
 			}
