@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2019 - pancake */
+/* radare - LGPL - Copyright 2010-2021 - pancake */
 
 #include <ht_uu.h>
 #include <r_core.h>
@@ -110,6 +110,7 @@ static const char *help_msg_slash_c[] = {
 	"/cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
 	"/cd", "", "Search for ASN1/DER certificates",
 	"/cr", "", "Search for ASN1/DER private keys (RSA and ECC)",
+	"/cu", "", "Search for UDS CAN database tables (binbloom)",
 	NULL
 };
 
@@ -343,6 +344,46 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 
 static int count_functions(RCore *core) {
 	return r_list_length (core->anal->fcns);
+}
+
+R_API int r_core_search_uds(RCore *core, bool log) {
+	int ret = -1;
+	const char *where = r_config_get (core->config, "search.in");
+
+	RList *list = r_core_get_boundaries_prot (core, R_PERM_R, where, "search");
+	RListIter *iter;
+	RIOMap *p;
+
+	if (!list) {
+		return -1;
+	}
+
+	r_list_foreach (list, iter, p) {
+		eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " (%"PFMT64d")" ,
+			r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv), r_itv_size (p->itv));
+		ut64 addr = p->itv.addr;
+		ut64 size = r_itv_size (p->itv);
+		ut8 *data = malloc (size);
+		if (!data) {
+			continue;
+		}
+		eprintf ("\r[>] Reading %s 0x%"PFMT64x " - 0x%"PFMT64x " (%"PFMT64d")" ,
+			r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv), r_itv_size (p->itv));
+		r_io_read_at (core->io, addr, data, size);
+		eprintf ("\r[>] Finding UDS %s 0x%"PFMT64x " - 0x%"PFMT64x " (%"PFMT64d")" ,
+			r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv), r_itv_size (p->itv));
+		RSearchUds *uds;
+		RListIter *uds_iter;
+		RList *uds_list = r_search_find_uds (core->search, addr, data, size);
+		r_list_foreach (uds_list, uds_iter, uds) {
+			eprintf ("0x%08" PFMT64x " score=%d\n", uds->addr, uds->score);
+			r_cons_printf ("f uds.%"PFMT64x".%d=0x%08" PFMT64x "\n", uds->addr, uds->stride, uds->addr);
+		}
+		r_list_free (uds_list);
+		free (data);
+	}
+	r_list_free (list);
+	return ret;
 }
 
 R_API int r_core_search_preludes(RCore *core, bool log) {
@@ -3320,6 +3361,12 @@ reread:
 				}
 			}
 			break;
+		case 'u': // "cu"
+			{
+				r_core_search_uds (core, true);
+				dosearch = false;
+				break;
+			}
 		case 'a': // "ca"
 			{
 				RSearchKeyword *kw;
