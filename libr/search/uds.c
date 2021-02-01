@@ -25,8 +25,8 @@
 
 
 static unsigned char UDS[] = {
-    0x10, 0x11, 0x27, 0x28, 0x3E, 0x83, 0x84, 0x85, 0x86, 0x87, 0x22, 0x23, 0x24, 0x2A, 0x2C, 0x2D, 0x2E, 0x3D, 0x14,
-    0x19, 0x2F, 0x31, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x18, 0x3B, 0x20, 0x21, 0x1A
+	0x10, 0x11, 0x27, 0x28, 0x3E, 0x83, 0x84, 0x85, 0x86, 0x87, 0x22, 0x23, 0x24, 0x2A, 0x2C, 0x2D, 0x2E, 0x3D, 0x14,
+	0x19, 0x2F, 0x31, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x18, 0x3B, 0x20, 0x21, 0x1A
 };
 
 #if 0
@@ -71,18 +71,19 @@ R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size
 			memcpy(UDS_local, UDS, UDS_SIZE);
 			max_score = 0;
 			for (k = 0; k < CANDB_SIZE; k += stride) {
-				int flag = 0;
+				bool flag = false;
 				for (j = 0; j < UDS_SIZE; j++) {
 					// printf("j=%d, k=%d ", j, k);
 					if ((data[i + k] == UDS_local[j]) && (UDS_local[j] != 0)) {
 						//printf("at %#08x + %#08x, data=%#02x (j=%d, stride=%d)\n", i, k, data[i+k], j, stride);
 						max_score++;
 						UDS_local[j] = 0;
-						flag = 1;
+						flag = true;
 					}
 				}
-				if (flag == 0)
+				if (!flag) {
 					break;
+				}
 			}
 			//  if (max_score) printf("Score at %#08x for stride %d: %d\n", i, stride, max_score);
 			if (max_score > score[i]) {
@@ -110,15 +111,15 @@ R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size
 		uh->addr = addr + candb_position;
 		r_list_append (list, uh);
 #if 1
-		printf("UDS DB position: %x with a score of %d and a stride of %d:\n", candb_position, max_score, max_stride);
+		eprintf ("UDS DB position: %x with a score of %d and a stride of %d:\n", candb_position, max_score, max_stride);
 		for (unsigned int k = candb_position; k < candb_position + max_score * max_stride; k++) score[k] = 0; // skip all other references to this same candb
 		for (i = 0; i < max_score; i++) {
 			for (j = 0; j < max_stride; j++) {
-				printf("%02x ", data[candb_position + i * max_stride + j]);
+				eprintf ("%02x ", data[candb_position + i * max_stride + j]);
 			}
-			printf("\n");
+			eprintf ("\n");
 		}
-		printf("\n");
+		eprintf ("\n");
 #endif
 		score[candb_position] = 0;
 	}
@@ -126,4 +127,3 @@ R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size
 	free (stride_score);
 	return list;
 }
-
