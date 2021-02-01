@@ -243,9 +243,13 @@ jobs:
       run: |
         export ASAN_OPTIONS=detect_leaks=0
         export LD_LIBRARY_PATH=/usr/local/lib
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make tests
     - name: Run fuzz tests
-      run: make -C test fuzz-tests
+      run: |
+        export ASAN_OPTIONS=detect_leaks=0
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        make -C test fuzz-tests
   linux-test:
     runs-on: ubuntu-latest
 #    if: contains(github.ref, 'ci-')
