@@ -3,6 +3,7 @@ r_search_sources = [
   'bytepat.c',
   'keyword.c',
   'regexp.c',
+  'uds.c',
   'privkey-find.c',
   'search.c',
   'strings.c'

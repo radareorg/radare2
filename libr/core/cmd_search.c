@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2019 - pancake */
+/* radare - LGPL - Copyright 2010-2021 - pancake */
 
 #include <ht_uu.h>
 #include <r_core.h>
@@ -110,6 +110,7 @@ static const char *help_msg_slash_c[] = {
 	"/cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
 	"/cd", "", "Search for ASN1/DER certificates",
 	"/cr", "", "Search for ASN1/DER private keys (RSA and ECC)",
+	"/cu", "[*qj]", "Search for UDS CAN database tables (binbloom)",
 	NULL
 };
 
@@ -341,8 +342,76 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	return preludecnt;
 }
 
-static int count_functions(RCore *core) {
-	return r_list_length (core->anal->fcns);
+R_API int r_core_search_uds(RCore *core, int mode) {
+	int ret = 0;
+	const char *where = r_config_get (core->config, "search.in");
+
+	RList *list = r_core_get_boundaries_prot (core, R_PERM_R, where, "search");
+	RListIter *iter;
+	RIOMap *p;
+	PJ *pj = NULL;
+
+	bool verbose = (mode == 0);
+	if (!list) {
+		return -1;
+	}
+	if (mode == 'j') {
+		pj = r_core_pj_new (core);
+		pj_a (pj);
+	}
+
+	r_list_foreach (list, iter, p) {
+		if (!mode) {
+			eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " (%"PFMT64d")" ,
+					r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv), r_itv_size (p->itv));
+		}
+		ut64 addr = p->itv.addr;
+		ut64 size = r_itv_size (p->itv);
+		ut8 *data = malloc (size);
+		if (!data) {
+			continue;
+		}
+		if (!mode) {
+			eprintf ("\r[>] Reading %s 0x%"PFMT64x " - 0x%"PFMT64x " (%"PFMT64d")" ,
+				r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv), r_itv_size (p->itv));
+		}
+		r_io_read_at (core->io, addr, data, size);
+		if (!mode) {
+			eprintf ("\r[>] Finding UDS %s 0x%"PFMT64x " - 0x%"PFMT64x " (%"PFMT64d")" ,
+				r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv), r_itv_size (p->itv));
+		}
+		RSearchUds *uds;
+		RListIter *uds_iter;
+		RList *uds_list = r_search_find_uds (core->search, addr, data, size, verbose);
+		r_list_foreach (uds_list, uds_iter, uds) {
+			if (pj) {
+				pj_o (pj);
+				pj_kn (pj, "addr", uds->addr);
+				pj_ki (pj, "score", uds->score);
+				pj_ki (pj, "stride", uds->stride);
+				pj_end (pj);
+			} else {
+				if (mode == '*') {
+					r_cons_printf ("f uds.%"PFMT64x".%d=0x%08" PFMT64x "\n", uds->addr, uds->stride, uds->addr);
+				}
+				if (mode != 'q') {
+					// use table instead?
+					eprintf ("0x%08" PFMT64x " score=%d stride=%d\n", uds->addr, uds->score, uds->stride);
+				}
+			}
+			ret++;
+		}
+		r_list_free (uds_list);
+		free (data);
+	}
+	r_list_free (list);
+	if (mode == 'j') {
+		pj_end (pj);
+		char *s = pj_drain (pj);
+		r_cons_println (s);
+		free (s);
+	}
+	return ret;
 }
 
 R_API int r_core_search_preludes(RCore *core, bool log) {
@@ -360,7 +429,7 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 		return -1;
 	}
 
-	int fc0 = count_functions (core);
+	size_t fc0 = r_list_length (core->anal->fcns);
 	r_list_foreach (list, iter, p) {
 		if (log) {
 			eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ",
@@ -397,10 +466,10 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 			eprintf ("done\n");
 		}
 	}
-	int fc1 = count_functions (core);
 	if (log) {
 		if (list) {
-			eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
+			size_t fc1 = r_list_length (core->anal->fcns);
+			eprintf ("Analyzed %d functions based on preludes\n", (int)(fc1 - fc0));
 		} else {
 			eprintf ("No executable section found, cannot analyze anything. Use 'S' to change or define permissions of sections\n");
 		}
@@ -3320,6 +3389,17 @@ reread:
 				}
 			}
 			break;
+		case 'u': // "cu"
+			{
+				bool v = r_config_get_i (core->config, "search.verbose");
+				int mode = input[2];
+				if (!mode && !v) {
+					mode = 'q';
+				}
+				(void)r_core_search_uds (core, mode);
+				dosearch = false;
+				break;
+			}
 		case 'a': // "ca"
 			{
 				RSearchKeyword *kw;
