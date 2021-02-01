@@ -52,7 +52,7 @@ static int is_unique_UDS(unsigned int position) {
 }
 #endif
 
-R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size_t size) {
+R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size_t size, bool verbose) {
 	RList *list = r_list_newf (free);
 	if (size < (CANDB_SIZE * 2)) {
 		eprintf ("requires at least 1024 bytes. %zd\n", size);
@@ -105,23 +105,29 @@ R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size
 				candb_position = i;
 			}
 		}
+		if (max_score == 0) {
+			continue;
+		}
 		RSearchUds *uh = R_NEW0 (RSearchUds);
+		if (!uh) {
+			break;
+		}
 		uh->score = max_score;
 		uh->stride = max_stride;
 		uh->addr = addr + candb_position;
 		r_list_append (list, uh);
-#if 1
-		eprintf ("UDS DB position: %x with a score of %d and a stride of %d:\n", candb_position, max_score, max_stride);
-		unsigned int k;
-		for (k = candb_position; k < candb_position + max_score * max_stride; k++) score[k] = 0; // skip all other references to this same candb
-		for (i = 0; i < max_score; i++) {
-			for (j = 0; j < max_stride; j++) {
-				eprintf ("%02x ", data[candb_position + i * max_stride + j]);
+		if (verbose) {
+			eprintf ("UDS DB position: %x with a score of %d and a stride of %d:\n", candb_position, max_score, max_stride);
+			unsigned int k;
+			for (k = candb_position; k < candb_position + max_score * max_stride; k++) score[k] = 0; // skip all other references to this same candb
+			for (i = 0; i < max_score; i++) {
+				for (j = 0; j < max_stride; j++) {
+					eprintf ("%02x ", data[candb_position + i * max_stride + j]);
+				}
+				eprintf ("\n");
 			}
 			eprintf ("\n");
 		}
-		eprintf ("\n");
-#endif
 		score[candb_position] = 0;
 	}
 	free (score);

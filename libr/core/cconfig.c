@@ -3854,6 +3854,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* search */
 	SETCB ("search.contiguous", "true", &cb_contiguous, "Accept contiguous/adjacent search hits");
+	SETBPREF ("search.verbose", "true", "Make the output of search commands verbose");
 	SETICB ("search.align", 0, &cb_searchalign, "Only catch aligned search hits");
 	SETI ("search.chunk", 0, "Chunk size for /+ (default size is asm.bits/8");
 	SETI ("search.esilcombo", 8, "Stop search after N consecutive hits");

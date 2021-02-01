@@ -90,7 +90,7 @@ R_API RSearch *r_search_free(RSearch *s);
 
 /* keyword management */
 R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len);
-R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size_t size);
+R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size_t size, bool verbose);
 R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len);
 R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len);
 

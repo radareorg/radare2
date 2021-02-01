@@ -1,0 +1,11 @@
+NAME=/cu search for possible UDS tables
+FILE=bins/elf/analysis/ls-linux64
+ARGS=-n
+CMDS=<<EOF
+/cuj
+EOF
+EXPECT=<<EOF
+[{"addr":102769,"score":7,"stride":20},{"addr":11772,"score":6,"stride":24},{"addr":14055,"score":6,"stride":32},{"addr":14151,"score":6,"stride":16},{"addr":87675,"score":6,"stride":32},{"addr":87751,"score":6,"stride":18},{"addr":87771,"score":6,"stride":16},{"addr":87787,"score":6,"stride":10},{"addr":87797,"score":6,"stride":8},{"addr":87813,"score":6,"stride":14},{"addr":87848,"score":6,"stride":12},{"addr":87916,"score":6,"stride":24},{"addr":102745,"score":6,"stride":32},{"addr":102749,"score":6,"stride":28},{"addr":102757,"score":6,"stride":28},{"addr":102789,"score":6,"stride":20},{"addr":11316,"score":5,"stride":24},{"addr":11796,"score":5,"stride":24},{"addr":13847,"score":5,"stride":16},{"addr":14087,"score":5,"stride":32}]
+EOF
+RUN
+
