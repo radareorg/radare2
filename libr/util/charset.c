@@ -22,6 +22,8 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 	r_return_val_if_fail (c && cs, false);
 	sdb_reset (c->db);
 	sdb_open (c->db, cs);
+	sdb_reset (c->db_char_to_hex);
+	sdb_open (c->db_char_to_hex, cs);
 	return true;
 }
 
@@ -76,24 +78,43 @@ R_API RCharsetRune *search_from_hex(RCharsetRune *r, const ut8 *hx) {
 }
 
 // assumes out is as big as in_len
-R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len, bool opt_stop_at_error) {
+R_API size_t r_charset_encode_str(Sdb *sdb, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
 	char k[32];
 	char *o = (char*)out;
 	int i;
 	for (i = 0; i < in_len; i++) {
 		ut8 ch_in = in[i];
+
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
-		const char *v = sdb_const_get (rc->db, k, 0);
+		const char *v = sdb_const_get (sdb, k, 0);
 		const char *ret = r_str_get_fail (v, "?");
-		if (opt_stop_at_error == true) {
-			if (ret[0] == '?') {
-				return o - (char*)out;
-			} else {
-				strcpy (o, ret);
-			}
-		} else {
-			strcpy (o, ret);
-		}
+
+		strcpy (o, ret);
+
+		o += strlen (o);
+	}
+
+	return o - (char*)out;
+}
+
+// assumes out is as big as in_len
+R_API size_t r_charset_decode_str(Sdb *sdb, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
+	char k[32];
+	char *o = (char*)out;
+	int i;
+	for (i = 0; i < in_len; i++) {
+		ut8 ch_in = in[i];
+
+		//zero terminate the string
+		snprintf (k, sizeof (k), "%c", ch_in);//snprintf (k, sizeof (k), "0x%02x", ch_in);
+		char *v = sdb_get (sdb, k, 0);
+		memmove(v, v+2, strlen (v));
+
+		//convert to ascii
+		char str_hx[32];
+		snprintf (str_hx, sizeof (str_hx), "%c", (char) strtol( v, 0, 16));
+		const char *ret = r_str_get_fail (str_hx, "?");
+		strcpy (o, ret);
 
 		o += strlen (o);
 	}
