@@ -112,7 +112,8 @@ R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size
 		r_list_append (list, uh);
 #if 1
 		eprintf ("UDS DB position: %x with a score of %d and a stride of %d:\n", candb_position, max_score, max_stride);
-		for (unsigned int k = candb_position; k < candb_position + max_score * max_stride; k++) score[k] = 0; // skip all other references to this same candb
+		unsigned int k;
+		for (k = candb_position; k < candb_position + max_score * max_stride; k++) score[k] = 0; // skip all other references to this same candb
 		for (i = 0; i < max_score; i++) {
 			for (j = 0; j < max_stride; j++) {
 				eprintf ("%02x ", data[candb_position + i * max_stride + j]);
