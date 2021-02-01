@@ -469,15 +469,36 @@ static int cmd_help(void *data, const char *input) {
 	RList *tmp;
 
 	switch (input[0]) {
-	case '0': // "?0"
-		core->curtab = 0;
-		break;
-	case '1': // "?1"
-		if (core->curtab < 0) {
+	case 't': { // "?t"
+		switch (input[1]) {
+		case '0':
 			core->curtab = 0;
+			break;
+		case '1':
+			if (core->curtab < 0) {
+				core->curtab = 0;
+			}
+			core->curtab ++;
+			break;
+		case ' ':
+			{
+				struct r_prof_t prof;
+				r_prof_start (&prof);
+				r_core_cmd (core, input + 1, 0);
+				r_prof_end (&prof);
+				core->num->value = (ut64)(int)prof.result;
+				eprintf ("%lf\n", prof.result);
+				break;
+			}
+		default:
+			eprintf ("Usage: ?t[0,1] [cmd]\n");
+			eprintf ("?t pd 32 # show time needed to run 'pd 32'\n");
+			eprintf ("?t0 # select first visual tab\n");
+			eprintf ("?t1 # select next visual tab\n");
+			break;
 		}
-		core->curtab ++;
 		break;
+		}
 	case 'r': // "?r"
 		{ // TODO : Add support for 64bit random numbers
 		ut64 b = 0;
@@ -1190,15 +1211,6 @@ static int cmd_help(void *data, const char *input) {
 		}
 		r_cons_println (rstr);
 		free (rstr);
-		break;
-	}
-	case 't': { // "?t"
-		struct r_prof_t prof;
-		r_prof_start (&prof);
-		r_core_cmd (core, input + 1, 0);
-		r_prof_end (&prof);
-		core->num->value = (ut64)(int)prof.result;
-		eprintf ("%lf\n", prof.result);
 		break;
 	}
 	case '?': // "??"
