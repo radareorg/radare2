@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_asm.h"
 #include "r_core.h"
@@ -91,6 +91,7 @@ static const char* help_msg_pr[] = {
 	"prc", "[=fep..]", "print bytes as colors in palette",
 	"prg", "[?]", "print raw GUNZIPped block",
 	"pri", "[aA2r]", "print raw image, honor hex.cols",
+	"print", "[f][ln]", "print, println, printf, printfln",
 	"prl", "", "print raw with lines offsets",
 	"prx", "", "printable chars with real offset (hyew)",
 	"prz", "", "print raw zero terminated string",
@@ -738,6 +739,22 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 			r_cons_printf (Color_RESET);
 		}
 		r_cons_newline ();
+	}
+}
+
+static void cmd_printmsg(RCore *core, const char *input) {
+	if (!strcmp (input, "ln")) {
+		r_cons_newline ();
+	} else if (!strncmp (input, "ln ", 3)) {
+		r_cons_println (input + 3);
+	} else if (!strncmp (input, " ", 1)) {
+		r_cons_print (input + 1);
+	} else if (!strncmp (input, "f ", 2)) {
+		eprintf ("TODO: waiting for r2shell\n");
+	} else if (!strncmp (input, "fln ", 2)) {
+		eprintf ("TODO: waiting for r2shell\n");
+	} else {
+		eprintf ("Usage: print, println, printf, printfln");
 	}
 }
 
@@ -5984,12 +6001,11 @@ l = use_blocksize;
 	case 'r': // "pr"
 		switch (input[1]) {
 		case 'i': // "pri" // color raw image
-			{
+			if (input[2] == 'n') {
+				cmd_printmsg (core, input + 4);
+			} else {
 				// TODO: do colormap and palette conversions here
-				int mode = 0;
-				if (r_config_get (core->config, "scr.color") == 0) {
-					mode = 'a';
-				}
+				int mode = r_config_get_i (core->config, "scr.color")? 0: 'a';
 				int cols = r_config_get_i (core->config, "hex.cols");
 				r_cons_image (core->block, core->blocksize, cols, mode);
 			}

@@ -235,3 +235,13 @@ EXPECT=<<EOF
 2
 EOF
 RUN
+
+NAME="println"
+FILE=-
+CMDS=<<EOF
+print hello;print world;println
+EOF
+EXPECT=<<EOF
+helloworld
+EOF
+RUN
