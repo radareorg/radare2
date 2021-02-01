@@ -1,3 +1,5 @@
+// https://github.com/quarkslab/binbloom/blob/master/binbloom.c
+
 /* Copyright 2020 G. Heilles
  * Copyright 2020 Quarkslab
  *
@@ -17,16 +19,6 @@
 #include <r_list.h>
 #include <r_util.h>
 #include <r_search.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <assert.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <math.h>
 
 #define UDS_SIZE sizeof (UDS)
 #define CANDB_SIZE 512
@@ -63,7 +55,7 @@ static int is_unique_UDS(unsigned int position) {
 R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size_t size) {
 	RList *list = r_list_newf (free);
 	if (size < (CANDB_SIZE * 2)) {
-		eprintf ("requires at least 1024 bytes. %d\n", size);
+		eprintf ("requires at least 1024 bytes. %zd\n", size);
 		return NULL;
 	}
 	unsigned int i, j, k, max_score, stride;
