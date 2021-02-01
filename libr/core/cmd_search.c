@@ -110,7 +110,7 @@ static const char *help_msg_slash_c[] = {
 	"/cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
 	"/cd", "", "Search for ASN1/DER certificates",
 	"/cr", "", "Search for ASN1/DER private keys (RSA and ECC)",
-	"/cu", "", "Search for UDS CAN database tables (binbloom)",
+	"/cu", "[*qj]", "Search for UDS CAN database tables (binbloom)",
 	NULL
 };
 
