@@ -1021,7 +1021,7 @@ static bool esil_interrupt(RAnalEsil *esil) {
 }
 
 static bool esil_syscall(RAnalEsil *esil) {
-	ut64 syscall;
+	ut64 sc;
 	if (popRN (esil, &sc)) {
 		return r_anal_esil_do_syscall (esil, (ut32)sc);
 	}
