@@ -18,29 +18,13 @@ static RAnalEsilHandler *_get_syscall(RAnalEsil *esil, ut32 sysc_num) {
 	return sysc_num ? (RAnalEsilHandler *)dict_getu (esil->syscalls, sysc_num) : esil->sysc0;
 }
 
-static void _del_interrupt(RAnalEsil *esil, ut32 intr_num) {
-	if (intr_num) {
-		dict_del (esil->interrupts, intr_num);
-	} else {
-		esil->intr0 = NULL;
-	}
-}
-
-static void _del_syscall(RAnalEsil *esil, ut32 sysc_num) {
-	if (sysc_num) {
-		dict_del (esil->syscalls, sysc_num);
-	} else {
-		esil->sysc0 = NULL;
-	}
-}
-
 R_API void r_anal_esil_handlers_init(RAnalEsil *esil) {
 	r_return_if_fail (esil);
-	esil->interrupts = dict_new (sizeof (ut32), NULL);
+	esil->interrupts = dict_new (sizeof (ut32), free);
 	if (!esil->interrupts) {
 		return;
 	}
-	esil->syscalls = dict_new (sizeof (ut32), NULL);
+	esil->syscalls = dict_new (sizeof (ut32), free);
 	if (!esil->syscalls) {
 		dict_free (esil->interrupts);
 		return;
@@ -115,13 +99,11 @@ R_API void r_anal_esil_handlers_fini(RAnalEsil *esil) {
 	if (esil) {
 		if (esil->interrupts) {
 			R_FREE (esil->intr0);
-			esil->interrupts->f = free;
 			dict_free (esil->interrupts);
 			esil->interrupts = NULL;
 		}
 		if (esil->syscalls) {
 			R_FREE (esil->sysc0);
-			esil->syscalls->f = free;
 			dict_free (esil->syscalls);
 			esil->syscalls = NULL;
 		}
