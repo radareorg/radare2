@@ -1143,6 +1143,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			R_ABS((int)INSOP(0).imm));
 		break;
 	case X86_INS_SYSCALL:
+		esilprintf (op, "rax,()");
+		break;
 	case X86_INS_SYSENTER:
 	case X86_INS_SYSEXIT:
 		break;

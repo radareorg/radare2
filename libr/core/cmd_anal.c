@@ -175,9 +175,6 @@ static const char *help_msg_ae[] = {
 	"aek", " [query]", "perform sdb query on ESIL.info",
 	"aek-", "", "resets the ESIL.info sdb instance",
 	"aeL", "", "list ESIL plugins",
-	"aeli", "", "list loaded ESIL interrupts",
-	"aeli", " [file]", "load ESIL interrupts from shared object",
-	"aelir", " [interrupt number]", "remove ESIL interrupt and free it if needed",
 	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
@@ -5890,13 +5887,6 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int off) {
 	r_reg_setv (core->dbg->reg, "SP", cursp);
 }
 
-static const char _handler_no_name[] = "<no name>";
-static int _aeli_iter(dictkv* kv, void* ud) {
-	RAnalEsilInterrupt* interrupt = kv->u;
-	r_cons_printf ("%3" PFMT64x ": %s\n", kv->k, interrupt->handler->name ? interrupt->handler->name : _handler_no_name);
-	return 0;
-}
-
 static void r_anal_aefa(RCore *core, const char *arg) {
 	ut64 to = r_num_math (core->num, arg);
 	ut64 at, from = core->offset;
@@ -6516,29 +6506,6 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			RListIter *iter;
 			r_list_foreach (core->anal->esil_plugins, iter, p) {
 				r_cons_printf ("%s\n", p->name);
-			}
-		}
-		break;
-	case 'l': // ael commands
-		switch (input[1]) {
-		case 'i': // aeli interrupts
-			switch (input[2]) {
-			case ' ': // "aeli" with arguments
-				if (!r_anal_esil_load_interrupts_from_lib (esil, input + 3)) {
-					eprintf ("Failed to load interrupts from '%s'.", input + 3);
-				}
-				break;
-			case 0: // "aeli" with no args
-				if (esil && esil->interrupts) {
-					dict_foreach (esil->interrupts, _aeli_iter, NULL);
-				}
-				break;
-			case 'r': // "aelir"
-				if (esil && esil->interrupts) {
-					RAnalEsilInterrupt* interrupt = dict_getu (esil->interrupts, r_num_math (core->num, input + 3));
-					r_anal_esil_interrupt_free (esil, interrupt);
-				}
-				break;
 			}
 		}
 		break;
