@@ -248,6 +248,7 @@ jobs:
     - name: Run fuzz tests
       run: |
         export ASAN_OPTIONS=detect_leaks=0
+        export R2R_SKIP_ARCHOS=1
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests
   linux-test:
