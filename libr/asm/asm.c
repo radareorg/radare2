@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
 
 #include <stdio.h>
 #include <r_core.h>
@@ -139,7 +139,18 @@ static inline int r_asm_pseudo_byte(RAsmOp *op, char *input) {
 
 static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
 	int i, repeat = 0, size=0, value=0;
-	sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
+	if (strchr (input, ',')) {
+		int res = sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
+		if (res != 3) {
+			eprintf ("Invalid usage of .fill repeat,size,value\n");
+			eprintf ("for example: .fill 1,0x100,0\n");
+			return -1;
+		}
+	} else {
+		ut64 v = r_num_math (NULL, input);
+		size = (int)v;
+		repeat = 1;
+	}
 	size *= (sizeof (value) * repeat);
 	if (size > 0) {
 		ut8 *buf = malloc (size);
@@ -921,6 +932,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 					ret = r_asm_pseudo_bits (a, ptr+6);
 				} else if (!strncmp (ptr, ".fill ", 6)) {
 					ret = r_asm_pseudo_fill (&op, ptr+6);
+					if (ret == -1) {
+						goto fail;
+					}
 				} else if (!strncmp (ptr, ".kernel ", 8)) {
 					r_syscall_setup (a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 8);
 				} else if (!strncmp (ptr, ".cpu ", 5)) {

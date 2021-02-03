@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble, maijin */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble, maijin */
 
 #include <r_anal.h>
 #include <r_asm.h>
@@ -304,15 +304,48 @@ static int rasm_show_help(int v) {
 			" If '-l' value is greater than output length, output is padded with nops\n"
 			" If the last argument is '-' reads from stdin\n");
 		printf ("Environment:\n"
-			" RASM2_NOPLUGINS  do not load shared plugins (speedup loading)\n"
-			" RASM2_ARCH       same as rasm2 -a\n"
-			" RASM2_BITS       same as rasm2 -b\n"
-			" R_DEBUG          if defined, show error messages and crash signal\n"
+			" RASM2_NOPLUGINS   do not load shared plugins (speedup loading)\n"
+			" RASM2_ARCH        same as rasm2 -a\n"
+			" RASM2_BITS        same as rasm2 -b\n"
+			" R2_DEBUG          if defined, show error messages and crash signal\n"
+			" R2_DEBUG_ASSERT=1 lldb -- r2 to get proper backtrace of the runtime assert\n"
 			"");
 	}
 	if (v == 2) {
-		printf ("Supported Assembler directives:\n");
+		printf ("Preprocessor directives:\n");
 		r_asm_list_directives ();
+		printf ("Assembler directives:\n");
+		printf (".intel_syntax\n"
+			".att_syntax     sets e asm.syntax=att to use AT&T syntax parser\n"
+			".endian [0,1]   default endian is system endian, 0=little, 1=big\n"
+			".big_endian     call e cfg.bigendian=true, same as .endian 1\n"
+			".lil_endian     call e cfg.bigendian=false, same as .endian 0\n"
+			".asciz \"msg\" zero byte terminated string\n"
+			".string         non-null terminated string\n"
+			".ascii          same as .string\n"
+			".align          force a specific alignment when writing code\n"
+			".arm            set asm.bits=32 when asm.arch=arm\n"
+			".thumb          set asm.bits=16 when asm.arch=arm\n"
+			".arch [mips]    specify asm.arch\n"
+			".bits [32|64]   specify 8,16,32,64 e asm.bits\n"
+			".fill [count]   fill N bytes with zeroes\n"
+			".kernel [ios]   set asm.os=linux,windows,macos,...\n"
+			".cpu [name]     set asm.cpu=?\n"
+			".os [os]        same as .kernel\n"
+			".hex 102030     set bytes in linear hexpair string, no endian applied\n"
+			".int16 [num]    write int16 number honoring endian\n"
+			".int32 [num]    same for 32bit\n"
+			".int64 [num]    same for 64bit\n"
+			".size           N/A\n"
+			".section        N/A\n"
+			".byte 0x10,0x20 space or comma separated list of byte values\n"
+			".glob           N/A\n"
+			".equ K=V        define K to be replaced with V in the lines below\n"
+			".org            change the PC=$$ to make relative instructions work\n"
+			".text           tell the linker where the code starts\n"
+			".data           tell the linker where the data starts\n"
+			".incbin foo.bin include binary file\n"
+			);
 	}
 	return 0;
 }
