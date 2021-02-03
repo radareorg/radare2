@@ -1026,7 +1026,8 @@ repeat:
 				bb->jump = op->jump;
 				bb->fail = UT64_MAX;
 			}
-			ret = r_anal_fcn_bb (anal, fcn, op->jump, depth - 1);
+			// -1
+			ret = r_anal_fcn_bb (anal, fcn, op->jump, depth);
 			int tc = anal->opt.tailcall;
 			if (tc) {
 				// eprintf ("TAIL CALL AT 0x%llx\n", op->addr);
@@ -1197,7 +1198,7 @@ repeat:
 						}
 						r_anal_op_free (prev_op);
 						if (!case_table) {
-							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, op->ptr, op->ptr, anal->bits >> 3, table_size, default_case, ret);
+							ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr, op->ptr, op->ptr, anal->bits >> 3, table_size, default_case, ret);
 						}
 					}
 				} else if (op->ptr != UT64_MAX && op->reg) { // direct jump
