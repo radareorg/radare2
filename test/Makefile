@@ -54,4 +54,4 @@ unit unit_tests: bins
 	$(MAKE) -C unit
 	$(MAKE) -C unit run
 
-.PHONY: all clean unit install uninstall
+.PHONY: all clean unit install uninstall r2r-tests fuzz-tests keystone swf dwarf yara

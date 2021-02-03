@@ -7,7 +7,6 @@ B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
-R2R=test
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent r2r)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
@@ -383,8 +382,8 @@ shot:
 	scp "radare2-$${DATE}.${TAREXT}" \
 		radare.org:/srv/http/radareorg/get/shot
 
-tests:
-	$(MAKE) -C $(R2R)
+tests test:
+	$(MAKE) -C test
 
 macos-sign:
 	$(MAKE) -C binr/radare2 macos-sign
