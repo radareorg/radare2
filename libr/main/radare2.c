@@ -589,7 +589,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				r_core_project_list (r, 0);
 				r_cons_flush ();
 				free (envprofile);
-                free (debugbackend);
+				free (debugbackend);
 				LISTS_FREE ();
 				return 0;
 			}

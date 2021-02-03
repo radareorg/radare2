@@ -600,6 +600,9 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		const char *subname;
 		RStrBuf subpath;
 		r_strbuf_init (&subpath);
+		char *sa = r_sys_getenv ("R2R_SKIP_ARCHOS");
+		bool skip_archos = (sa && !strcmp (sa, "1"));
+		free (sa);
 		bool ret = true;
 		r_list_foreach (dir, it, subname) {
 			if (*subname == '.') {
@@ -610,17 +613,9 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				eprintf ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies.\n", path, subname);
 				continue;
 			}
-			char *sa = r_sys_getenv ("R2R_SKIP_ARCHOS");
-			bool skip_archos = sa? !strcmp (sa, "1"): false;
-			free (sa);
-			if (skip_archos) {
-				if ((!strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos"))
-					&& strcmp (subname, R2R_ARCH_OS)) {
-					eprintf ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
-					continue;
-				}
-			} else {
-				eprintf ("Skipping %s"R_SYS_DIR"%s because of R2R_SKIP_ARCHOS == 1.\n", path, subname);
+			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos");
+			if (is_archos_folder && (skip_archos || strcmp (subname, R2R_ARCH_OS))) {
+				eprintf ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
 				continue;
 			}
 			r_strbuf_setf (&subpath, "%s%s%s", path, R_SYS_DIR, subname);
