@@ -288,13 +288,12 @@ static bool regs_exist(RAnalValue *src, RAnalValue *dst) {
 }
 
 // 0 if not skipped; 1 if skipped; 2 if skipped before
-static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb, ut64 addr,
-                   int oplen, int un_idx, int *idx) {
+static int skip_hp(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, RAnalBlock *bb, ut64 addr, int oplen, int un_idx, int *idx) {
 	// this step is required in order to prevent infinite recursion in some cases
 	if ((addr + un_idx - oplen) == fcn->addr) {
 		// use addr instead of op->addr to mark repeat
 		if (!anal->flb.exist_at (anal->flb.f, "skip", 4, addr)) {
-			char *name = r_str_newf ("skip.%"PFMT64u, addr);
+			char *name = r_str_newf ("skip.%"PFMT64x,  addr);
 			anal->flb.set (anal->flb.f, name, addr, oplen);
 			free (name);
 			fcn->addr += oplen;
@@ -564,13 +563,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		r_sys_usleep (anal->sleep);
 	}
 
-	if (depth < 1) {
-		if (anal->verbose) {
-			eprintf ("Anal went too deep at address 0x%"PFMT64x ".\n", addr);
-		}
-		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
-	}
-
 	// check if address is readable //:
 	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
 		if (addr != UT64_MAX && !anal->iob.io->va) {
@@ -764,7 +756,7 @@ repeat:
 					bb->jump = at + oplen;
 					if (from_addr != bb->addr) {
 						bb->fail = handle_addr;
-						ret = r_anal_fcn_bb (anal, fcn, handle_addr, depth);
+						ret = r_anal_fcn_bb (anal, fcn, handle_addr, depth - 1);
 						eprintf ("(%s) 0x%08"PFMT64x"\n", handle, handle_addr);
 						if (bb->size == 0) {
 							r_anal_function_remove_block (fcn, bb);
@@ -882,8 +874,7 @@ repeat:
 					movdisp = op->disp;
 				}
 			}
-			if (anal->opt.hpskip && regs_exist (op->src[0], op->dst)
-			&& !strcmp (op->src[0]->reg->name, op->dst->reg->name)) {
+			if (anal->opt.hpskip && regs_exist (op->src[0], op->dst) && !strcmp (op->src[0]->reg->name, op->dst->reg->name)) {
 				skip_ret = skip_hp (anal, fcn, op, bb, addr, oplen, delay.un_idx, &idx);
 				if (skip_ret == 1) {
 					goto repeat;
@@ -1491,7 +1482,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 		const int shadow_store = 0x28; // First 4 args + retaddr
 		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow_store;
 	}
-	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth);
+	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth - 1);
 	if (ret < 0) {
 		if (anal->verbose) {
 			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
@@ -2090,7 +2081,7 @@ static bool analize_addr_cb(ut64 addr, void *user) {
 	RAnalBlock *existing_bb = r_anal_get_block_at (anal, addr);
 	if (!existing_bb || !r_list_contains (ctx->fcn->bbs, existing_bb)) {
 		int old_len = r_list_length (ctx->fcn->bbs);
-		r_anal_fcn_bb (ctx->fcn->anal, ctx->fcn, addr, anal->opt.depth);
+		r_anal_fcn_bb (ctx->fcn->anal, ctx->fcn, addr, anal->opt.depth - 1);
 		if (old_len != r_list_length (ctx->fcn->bbs)) {
 			r_anal_block_recurse (r_anal_get_block_at (anal, addr), mark_as_visited, user);
 		}
@@ -2175,7 +2166,7 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 		// analyze edges that don't have a block
 		RAnalBlock *bb = r_anal_get_block_at (anal, fcn->addr);
 		if (!bb) {
-			r_anal_fcn_bb (anal, fcn, fcn->addr, anal->opt.depth);
+			r_anal_fcn_bb (anal, fcn, fcn->addr, anal->opt.depth - 1);
 			bb = r_anal_get_block_at (anal, fcn->addr);
 			if (!bb) {
 				continue;

@@ -3437,7 +3437,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		if (addr_end < addr) {
 			eprintf ("Invalid address ranges\n");
 		} else {
-			int depth = 1;
 			ut64 a, b;
 			const char *c;
 			a = r_config_get_i (core->config, "anal.from");
@@ -3451,8 +3450,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) {
 				r_anal_function_resize (fcn, addr_end - addr);
 			}
-			r_core_anal_fcn (core, addr, UT64_MAX,
-					R_ANAL_REF_TYPE_NULL, depth);
+			r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (fcn) {
 				r_anal_function_resize (fcn, addr_end - addr);
@@ -7142,7 +7140,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
 						fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
 						if (!fcn) {
-							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
+							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth - 1);
 						}
 					}
 #else
@@ -7153,7 +7151,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 						// add xref here
 						r_anal_xrefs_set (core->anal, addr, op.jump, R_ANAL_REF_TYPE_CALL);
 						if (r_io_is_valid_offset (core->io, op.jump, 1)) {
-							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
+							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth - 1);
 						}
 					}
 #endif
