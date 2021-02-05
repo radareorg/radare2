@@ -332,20 +332,24 @@ R_API bool r_config_get_b(RConfig *cfg, const char *name) {
 }
 
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
+	r_return_val_if_fail (cfg, 0ULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->getter) {
 			node->getter (cfg->user, node);
 		}
-		if (node->i_value || !strcmp (node->value, "false")) {
+		if (node->i_value) {
 			return node->i_value;
+		}
+		if (!strcmp (node->value, "false")) {
+			return 0;
 		}
 		if (!strcmp (node->value, "true")) {
 			return 1;
 		}
 		return (ut64) r_num_math (cfg->num, node->value);
 	}
-	return (ut64) 0LL;
+	return 0ULL;
 }
 
 R_API const char* r_config_node_type(RConfigNode *node) {

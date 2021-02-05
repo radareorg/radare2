@@ -1867,14 +1867,14 @@ static bool cb_iopcache(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if ((bool)node->i_value) {
 		if (core) {
-			r_config_set_i (core->config, "io.pcache.read", true);
-			r_config_set_i (core->config, "io.pcache.write", true);
+			r_config_set_b (core->config, "io.pcache.read", true);
+			r_config_set_b (core->config, "io.pcache.write", true);
 		}
 	} else {
 		if (core && core->io) {
 			r_io_desc_cache_fini_all (core->io);
-			r_config_set_i (core->config, "io.pcache.read", false);
-			r_config_set_i (core->config, "io.pcache.write", false);
+			r_config_set_b (core->config, "io.pcache.read", false);
+			r_config_set_b (core->config, "io.pcache.write", false);
 		}
 	}
 	return true;
@@ -1892,7 +1892,7 @@ static bool cb_iopcacheread(void *user, void *data) {
 			core->io->p_cache &= 2;
 			if (!(core->io->p_cache & 2)) {
 				r_io_desc_cache_fini_all (core->io);
-				r_config_set_i (core->config, "io.pcache", false);
+				r_config_set_b (core->config, "io.pcache", false);
 			}
 		}
 	}
@@ -1911,7 +1911,7 @@ static bool cb_iopcachewrite(void *user, void *data) {
 			core->io->p_cache &= 1;
 			if (!(core->io->p_cache & 1)) {
 				r_io_desc_cache_fini_all (core->io);
-				r_config_set_i (core->config, "io.pcache", false);
+				r_config_set_b (core->config, "io.pcache", false);
 			}
 		}
 	}

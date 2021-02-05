@@ -6104,7 +6104,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		if (!hc) {
 			return;
 		}
-		r_config_hold_s (hc, "cmd.gprompt",  NULL);
+		r_config_hold (hc, "cmd.gprompt",  NULL);
 		r_config_set (core->config, "cmd.gprompt", "pi 1");
 		r_core_cmd0 (core, ".aeg*;aggv");
 		r_config_hold_free (hc);
@@ -8869,7 +8869,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'J': { // "agfJ"
 			// Honor asm.graph=false in json as well
 			RConfigHold *hc = r_config_hold_new (core->config);
-			r_config_hold_i (hc, "asm.offset", NULL);
+			r_config_hold (hc, "asm.offset", NULL);
 			const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
 			r_config_set_i (core->config, "asm.offset", o_graph_offset);
 			r_core_anal_graph (core, r_num_math (core->num, input + 2),

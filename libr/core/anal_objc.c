@@ -81,9 +81,9 @@ static void objc_analyze(RCore *core) {
 	r_core_cmd0 (core, "aar");
 	if (!strcmp ("arm", r_config_get (core->config, "asm.arch"))) {
 		const bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
-		r_config_set_i (core->config, "emu.lazy", true);
+		r_config_set_b (core->config, "emu.lazy", true);
 		r_core_cmd0 (core, "aae");
-		r_config_set_i (core->config, "emu.lazy", emu_lazy);
+		r_config_set_b (core->config, "emu.lazy", emu_lazy);
 	}
 	r_print_rowlog_done (core->print, oldstr);
 }

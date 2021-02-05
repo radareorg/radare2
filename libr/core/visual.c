@@ -105,7 +105,7 @@ R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, b
 		return;
 	}
 	hold = r_config_hold_new (core->config);
-	r_config_hold_s (hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
+	r_config_hold (hold, "asm.hint.pos", "asm.cmt.col", "asm.offset", "asm.lines",
 	"asm.indent", "asm.bytes", "asm.comments", "asm.dwarf", "asm.usercomments", "asm.instr", NULL);
 	if (for_graph) {
 		r_config_set (core->config, "asm.hint.pos", "-2");

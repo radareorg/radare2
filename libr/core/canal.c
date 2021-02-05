@@ -1677,7 +1677,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				} else if (!is_json) {
 					nodes++;
 					RConfigHold *hc = r_config_hold_new (core->config);
-					r_config_hold_i (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
+					r_config_hold (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
 							"asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
 					RDiff *d = r_diff_new ();
 					r_config_set_i (core->config, "scr.utf8", 0);
@@ -2047,7 +2047,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	}
 
 	RConfigHold *hc = r_config_hold_new (core->config);
-	r_config_hold_i (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
+	r_config_hold (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
 	  "asm.cmt.right", "asm.cmt.col", "asm.lines.fcn", "asm.bytes", NULL);
 	/*r_config_set_i (core->config, "scr.color", 0);*/
 	r_config_set_i (core->config, "scr.utf8", 0);
@@ -3623,12 +3623,12 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		return false;
 	}
 
-	r_config_hold_i (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
+	r_config_hold (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
 	//opts |= R_CORE_ANAL_GRAPHBODY;
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
 	if (!is_json_format_disasm) {
-		r_config_hold_i (hc, "asm.bytes", NULL);
+		r_config_hold (hc, "asm.bytes", NULL);
 		r_config_set_i (core->config, "asm.bytes", 0);
 	}
 	if (!is_html && !is_json && !is_keva && !is_star) {

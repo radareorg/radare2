@@ -189,11 +189,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	if (!hc) {
 		return false;
 	}
-	r_config_hold_i (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
-	r_config_hold_i (hc, "asm.offset", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
-	r_config_hold_i (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
-	r_config_hold_i (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
-	r_config_hold_i (hc, "io.cache", NULL);
+	r_config_hold (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
+	r_config_hold (hc, "asm.offset", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
+	r_config_hold (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
+	r_config_hold (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
+	r_config_hold (hc, "io.cache", NULL);
 	if (!fcn) {
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		r_config_hold_free (hc);
