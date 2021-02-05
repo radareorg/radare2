@@ -14,8 +14,7 @@ static bool anal_emul_init(RCore *core, RConfigHold *hc, RDebugTrace **dt, RAnal
 	*et = core->anal->esil->trace;
 	core->dbg->trace = r_debug_trace_new ();
 	core->anal->esil->trace = r_anal_esil_trace_new (core->anal->esil);
-	r_config_hold_i (hc, "esil.romem", "dbg.trace",
-			"esil.nonull", "dbg.follow", NULL);
+	r_config_hold (hc, "esil.romem", "dbg.trace", "esil.nonull", "dbg.follow", NULL);
 	r_config_set (core->config, "esil.romem", "true");
 	r_config_set (core->config, "dbg.trace", "true");
 	r_config_set (core->config, "esil.nonull", "true");

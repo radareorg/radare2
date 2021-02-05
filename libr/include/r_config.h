@@ -16,6 +16,15 @@ R_LIB_VERSION_HEADER(r_config);
 #define CN_RO    0x000010
 #define CN_RW    0x000020
 
+#if LEFTOVER_FOR_MY_FUTURE_SELF
+// type != attrib
+#define R_CONFIG_NODE_TYPE_BOOL  0x000001
+#define R_CONFIG_NODE_TYPE_INT   0x000002
+#define R_CONFIG_NODE_TYPE_STR   0x000008
+#define R_CONFIG_NODE_TYPE_RO    0x000010
+#define R_CONFIG_NODE_TYPE_RW    0x000020
+#endif
+
 typedef bool (*RConfigCallback)(void *user, void *data);
 
 typedef struct r_config_node_t {
@@ -43,28 +52,17 @@ typedef struct r_config_t {
 	bool lock;
 } RConfig;
 
-typedef struct r_config_hold_num_t {
-	char *key;
-	ut64 value;
-} RConfigHoldNum;
-
-typedef struct r_config_hold_char_t {
-	char *key;
-	char *value;
-} RConfigHoldChar;
-
 typedef struct r_config_hold_t { 
 	RConfig *cfg;
-	RList *list_num; //list of RConfigHoldNum to hold numeric values 
-	RList *list_char; //list of RConfigHoldChar to hold char values
+	RList *list;
 } RConfigHold;
 
 #ifdef R_API
 
+// TODO: simplify this API?
 R_API RConfigHold* r_config_hold_new(RConfig *cfg);
+R_API bool r_config_hold(RConfigHold *h, ...);
 R_API void r_config_hold_free(RConfigHold *h);
-R_API bool r_config_hold_i(RConfigHold *h, ...);
-R_API bool r_config_hold_s(RConfigHold *h, ...);
 R_API void r_config_hold_restore(RConfigHold *h);
 
 R_API RConfig *r_config_new(void *user);
@@ -74,7 +72,7 @@ R_API void r_config_free(RConfig *cfg);
 R_API void r_config_lock(RConfig *cfg, bool lock);
 R_API bool r_config_eval(RConfig *cfg, const char *str, bool many);
 R_API void r_config_bump(RConfig *cfg, const char *key);
-R_API bool r_config_get_b(RConfig *cfg, const char *name) {
+R_API bool r_config_get_b(RConfig *cfg, const char *name);
 R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b);
 R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i);
 R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *value, RConfigCallback cb);

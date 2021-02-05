@@ -1038,12 +1038,12 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 	} else if (r_str_endswith (file, ".html")) {
 		const bool httpSandbox = r_config_get_i (core->config, "http.sandbox");
 		char *httpIndex = strdup (r_config_get (core->config, "http.index"));
-		r_config_set_i (core->config, "http.sandbox", 0);
+		r_config_set_b (core->config, "http.sandbox", false);
 		char *absfile = r_file_abspath (file);
 		r_config_set (core->config, "http.index", absfile);
 		free (absfile);
 		r_core_cmdf (core, "=H");
-		r_config_set_i (core->config, "http.sandbox", httpSandbox);
+		r_config_set_b (core->config, "http.sandbox", httpSandbox);
 		r_config_set (core->config, "http.index", httpIndex);
 		free (httpIndex);
 		ret = true;
@@ -2812,7 +2812,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		return -1;
 	}
 	si = r_cons_is_interactive ();
-	r_config_set_i (core->config, "scr.interactive", 0);
+	r_config_set_b (core->config, "scr.interactive", false);
 	if (!r_config_get_i (core->config, "scr.color.pipe")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -3156,7 +3156,7 @@ static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbith
 	core->fixedbits = true;
 	// XXX: why?
 	*cmd_ignbithints = r_config_get_i (core->config, "anal.ignbithints");
-	r_config_set_i (core->config, "anal.ignbithints", 1);
+	r_config_set_b (core->config, "anal.ignbithints", true);
 	return true;
 }
 
@@ -3382,8 +3382,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					r_list_free (tmpenvs);
 					return ret;
 				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
-					scr_html = r_config_get_i (core->config, "scr.html");
-					r_config_set_i (core->config, "scr.html", true);
+					scr_html = r_config_get_b (core->config, "scr.html");
+					r_config_set_b (core->config, "scr.html", true);
 				} else if (!strcmp (ptr + 1, "T")) { // "|T"
 					scr_color = r_config_get_i (core->config, "scr.color");
 					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -3407,8 +3407,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					r_list_free (tmpenvs);
 					return 0;
 				} else { // "|"
-					scr_html = r_config_get_i (core->config, "scr.html");
-					r_config_set_i (core->config, "scr.html", 0);
+					scr_html = r_config_get_b (core->config, "scr.html");
+					r_config_set_b (core->config, "scr.html", false);
 					scr_color = r_config_get_i (core->config, "scr.color");
 					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 				}
@@ -3427,7 +3427,7 @@ escape_pipe:
 		if (ret == -1) {
 			eprintf ("command error(%s)\n", cmd);
 			if (scr_html != -1) {
-				r_config_set_i (core->config, "scr.html", scr_html);
+				r_config_set_b (core->config, "scr.html", scr_html);
 			}
 			if (scr_color != -1) {
 				r_config_set_i (core->config, "scr.color", scr_color);
@@ -3457,7 +3457,7 @@ escape_pipe:
 			r_cons_break_pop ();
 			r_cons_grep_parsecmd (ptr + 2, "`");
 			if (scr_html != -1) {
-				r_config_set_i (core->config, "scr.html", scr_html);
+				r_config_set_b (core->config, "scr.html", scr_html);
 			}
 			if (scr_color != -1) {
 				r_config_set_i (core->config, "scr.color", scr_color);
@@ -5637,11 +5637,11 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_fromto_command) {
 	RConfigHold *hc = r_config_hold_new (core->config);
 	int i;
 	for (i = 0; fromvars[i]; i++) {
-		r_config_hold_i (hc, fromvars[i], NULL);
+		r_config_hold (hc, fromvars[i], NULL);
 		r_config_set_i (core->config, fromvars[i], from_val);
 	}
 	for (i = 0; tovars[i]; i++) {
-		r_config_hold_i (hc, tovars[i], NULL);
+		r_config_hold (hc, tovars[i], NULL);
 		r_config_set_i (core->config, tovars[i], to_val);
 	}
 
@@ -5765,7 +5765,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(tmp_eval_command) {
 		char *eq = strchr (arg_str, '=');
 		if (eq) {
 			*eq = 0;
-			r_config_hold_s (hc, arg_str, NULL);
+			r_config_hold (hc, arg_str, NULL);
 			r_config_set (core->config, arg_str, eq + 1);
 		} else {
 			eprintf ("Missing '=' in e: expression (%s)\n", arg_str);

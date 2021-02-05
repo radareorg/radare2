@@ -2023,7 +2023,7 @@ static int __step_cb(void *user) {
 
 static void __panel_single_step_over(RCore *core) {
 	bool io_cache = r_config_get_i (core->config, "io.cache");
-	r_config_set_i (core->config, "io.cache", false);
+	r_config_set_b (core->config, "io.cache", false);
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		r_core_cmd (core, "dso", 0);
 		r_core_cmd (core, ".dr*", 0);
@@ -2031,7 +2031,7 @@ static void __panel_single_step_over(RCore *core) {
 		r_core_cmd (core, "aeso", 0);
 		r_core_cmd (core, ".ar*", 0);
 	}
-	r_config_set_i (core->config, "io.cache", io_cache);
+	r_config_set_b (core->config, "io.cache", io_cache);
 }
 
 static int __step_over_cb(void *user) {
@@ -3438,7 +3438,7 @@ static void __set_breakpoints_on_cursor(RCore *core, RPanel *panel) {
 static void __insert_value(RCore *core) {
 	if (!r_config_get_i (core->config, "io.cache")) {
 		if (__show_status_yesno (core, 1, "Insert is not available because io.cache is off. Turn on now?(Y/n)")) {
-			r_config_set_i (core->config, "io.cache", 1);
+			r_config_set_b (core->config, "io.cache", true);
 			(void)__show_status (core, "io.cache is on and insert is available now.");
 		} else {
 			(void)__show_status (core, "You can always turn on io.cache in Menu->Edit->io.cache");
@@ -3545,16 +3545,18 @@ static bool __handle_cursor_mode(RCore *core, const int key) {
 		break;
 	case ']':
 		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
-			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
+			const int cols = r_config_get_i (core->config, "hex.cols");
+			r_config_set_i (core->config, "hex.cols", cols + 1);
 		} else {
-			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
+			const int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
 			r_config_set_i (core->config, "asm.cmt.col", cmtcol + 2);
 		}
 		cur->view->refresh = true;
 		break;
 	case '[':
 		if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
-			r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+			const int cols = r_config_get_i (core->config, "hex.cols");
+			r_config_set_i (core->config, "hex.cols", cols - 1);
  		} else {
 			int cmtcol = r_config_get_i (core->config, "asm.cmt.col");
 			if (cmtcol > 2) {
@@ -5124,7 +5126,7 @@ static int __esil_step_range_cb(void *user) {
 
 static int __io_cache_on_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_config_set_i (core->config, "io.cache", 1);
+	r_config_set_b (core->config, "io.cache", true);
 	(void)__show_status (core, "io.cache is on");
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	return 0;
@@ -5132,7 +5134,7 @@ static int __io_cache_on_cb(void *user) {
 
 static int __io_cache_off_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_config_set_i (core->config, "io.cache", 0);
+	r_config_set_b (core->config, "io.cache", false);
 	(void)__show_status (core, "io.cache is off");
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	return 0;
@@ -5667,13 +5669,13 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 
 static void demo_end(RCore *core, RConsCanvas *can) {
 	bool utf8 = r_config_get_i (core->config, "scr.utf8");
-	r_config_set_i (core->config, "scr.utf8", 0);
+	r_config_set_b (core->config, "scr.utf8", false);
 	RPanel *cur = __get_cur_panel (core->panels);
 	cur->view->refresh = true;
 	firstRun= false;
 	__panels_refresh (core);
 	firstRun= true;
-	r_config_set_i (core->config, "scr.utf8", utf8);
+	r_config_set_b (core->config, "scr.utf8", utf8);
 	char *s = r_cons_canvas_to_string (can);
 	if (s) {
 		// TODO drop utf8!!
@@ -5749,7 +5751,7 @@ static void __panels_refresh(RCore *core) {
 	RStrBuf *title = r_strbuf_new (" ");
 	bool utf8 = r_config_get_i (core->config, "scr.utf8");
 	if (firstRun) {
-		r_config_set_i (core->config, "scr.utf8", 0);
+		r_config_set_b (core->config, "scr.utf8", false);
 	}
 
 	__refresh_core_offset (core);
@@ -5842,7 +5844,7 @@ static void __panels_refresh(RCore *core) {
 			}
 		}
 		firstRun = false;
-		r_config_set_i (core->config, "scr.utf8", utf8);
+		r_config_set_b (core->config, "scr.utf8", utf8);
 		RPanel *cur = __get_cur_panel (core->panels);
 		cur->view->refresh = true;
 		__panels_refresh (core);
@@ -6489,18 +6491,18 @@ virtualmouse:
 	case 'r':
 		if (r_config_get_i (core->config, "asm.hint.call")) {
 			r_config_toggle (core->config, "asm.hint.call");
-			r_config_set_i (core->config, "asm.hint.jmp", true);
+			r_config_set_b (core->config, "asm.hint.jmp", true);
 		} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
 			r_config_toggle (core->config, "asm.hint.jmp");
-			r_config_set_i (core->config, "asm.hint.emu", true);
+			r_config_set_b (core->config, "asm.hint.emu", true);
 		} else if (r_config_get_i (core->config, "asm.hint.emu")) {
 			r_config_toggle (core->config, "asm.hint.emu");
-			r_config_set_i (core->config, "asm.hint.lea", true);
+			r_config_set_b (core->config, "asm.hint.lea", true);
 		} else if (r_config_get_i (core->config, "asm.hint.lea")) {
 			r_config_toggle (core->config, "asm.hint.lea");
-			r_config_set_i (core->config, "asm.hint.call", true);
+			r_config_set_b (core->config, "asm.hint.call", true);
 		} else {
-			r_config_set_i (core->config, "asm.hint.call", true);
+			r_config_set_b (core->config, "asm.hint.call", true);
 		}
 		break;
 	case 'R':

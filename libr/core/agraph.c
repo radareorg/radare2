@@ -2086,7 +2086,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	if (!hc) {
 		return NULL;
 	}
-	r_config_hold_i (hc, "asm.lines", "asm.bytes",
+	r_config_hold (hc, "asm.lines", "asm.bytes",
 		"asm.cmt.col", "asm.marks", "asm.offset",
 		"asm.comments", "asm.cmt.right", "asm.bb.line", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
@@ -4204,7 +4204,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	if (!hc) {
 		return false;
 	}
-	r_config_hold_i (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
+	r_config_hold (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w, h);

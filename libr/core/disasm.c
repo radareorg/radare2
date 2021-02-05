@@ -766,7 +766,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->nb = 0;
 	ds->flagspace_ports = r_flag_space_get (core->flags, "ports");
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
-	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmt.right");
+	ds->show_comment_right_default = r_config_get_b (core->config, "asm.cmt.right");
 	ds->show_comment_right = ds->show_comment_right_default;
 	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flags.inbytes");
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
@@ -4635,7 +4635,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 		r_anal_esil_parse (esil, esilstr);
 	}
 	r_anal_esil_stack_free (esil);
-	r_config_hold_i (hc, "io.cache", NULL);
+	r_config_hold (hc, "io.cache", NULL);
 	r_config_set (core->config, "io.cache", "true");
 	if (!ds->show_comments) {
 		goto beach;
@@ -6354,7 +6354,7 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	int midbb = r_config_get_i (core->config, "asm.bb.middle");
 	bool asmmarks = r_config_get_i (core->config, "asm.marks");
-	r_config_set_i (core->config, "asm.marks", false);
+	r_config_set_b (core->config, "asm.marks", false);
 	i = 0;
 	j = 0;
 	RAnalMetaItem *meta = NULL;
@@ -6553,7 +6553,7 @@ toro:
 		i = 0;
 		goto toro;
 	}
-	r_config_set_i (core->config, "asm.marks", asmmarks);
+	r_config_set_b (core->config, "asm.marks", asmmarks);
 	r_cons_break_pop ();
 	r_core_seek (core, old_offset, true);
 	return err;
@@ -6624,9 +6624,9 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 	r_reg_arena_push (reg);
 	RConfigHold *chold = r_config_hold_new (core->config);
-	r_config_hold_i (chold, "io.cache", "asm.lines", NULL);
-	r_config_set_i (core->config, "io.cache", true);
-	r_config_set_i (core->config, "asm.lines", false);
+	r_config_hold (chold, "io.cache", "asm.lines", NULL);
+	r_config_set_b (core->config, "io.cache", true);
+	r_config_set_b (core->config, "asm.lines", false);
 	const char *strip = r_config_get (core->config, "asm.strip");
 	const int max_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	int min_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);

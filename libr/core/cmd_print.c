@@ -2575,24 +2575,24 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	char *line, *s, *string2 = NULL;
 	char *switchcmp = NULL;
 	int i, count, use_color = r_config_get_i (core->config, "scr.color");
-	bool show_comments = r_config_get_i (core->config, "asm.comments");
-	bool show_offset = r_config_get_i (core->config, "asm.offset");
-	bool asm_tabs = r_config_get_i (core->config, "asm.tabs");
-	bool scr_html = r_config_get_i (core->config, "scr.html");
-	bool asm_dwarf = r_config_get_i (core->config, "asm.dwarf");
-	bool asm_flags = r_config_get_i (core->config, "asm.flags");
-	bool asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
-	bool asm_emu = r_config_get_i (core->config, "asm.emu");
-	bool emu_str = r_config_get_i (core->config, "emu.str");
+	bool show_comments = r_config_get_b (core->config, "asm.comments");
+	bool show_offset = r_config_get_b (core->config, "asm.offset");
+	bool asm_tabs = r_config_get_b (core->config, "asm.tabs");
+	bool scr_html = r_config_get_b (core->config, "scr.html");
+	bool asm_dwarf = r_config_get_b (core->config, "asm.dwarf");
+	bool asm_flags = r_config_get_b (core->config, "asm.flags");
+	bool asm_cmt_right = r_config_get_b (core->config, "asm.cmt.right");
+	bool asm_emu = r_config_get_b (core->config, "asm.emu");
+	bool emu_str = r_config_get_b (core->config, "emu.str");
 	r_config_set_i (core->config, "emu.str", true);
 	RConsPrintablePalette *pal = &core->cons->context->pal;
 	// force defaults
-	r_config_set_i (core->config, "asm.offset", true);
-	r_config_set_i (core->config, "asm.dwarf", true);
 	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-	r_config_set_i (core->config, "asm.tabs", 0);
-	r_config_set_i (core->config, "scr.html", 0);
-	r_config_set_i (core->config, "asm.cmt.right", true);
+	r_config_set_b (core->config, "asm.offset", true);
+	r_config_set_b (core->config, "asm.dwarf", true);
+	r_config_set_b (core->config, "asm.tabs", false);
+	r_config_set_b (core->config, "scr.html", false);
+	r_config_set_b (core->config, "asm.cmt.right", true);
 
 	r_cons_push ();
 	line = NULL;
@@ -2890,12 +2890,12 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	free (s);
 	free (switchcmp);
 restore_conf:
-	r_config_set_i (core->config, "asm.offset", show_offset);
-	r_config_set_i (core->config, "asm.dwarf", asm_dwarf);
-	r_config_set_i (core->config, "asm.tabs", asm_tabs);
-	r_config_set_i (core->config, "scr.html", scr_html);
-	r_config_set_i (core->config, "asm.emu", asm_emu);
-	r_config_set_i (core->config, "emu.str", emu_str);
+	r_config_set_b (core->config, "asm.offset", show_offset);
+	r_config_set_b (core->config, "asm.dwarf", asm_dwarf);
+	r_config_set_b (core->config, "asm.tabs", asm_tabs);
+	r_config_set_b (core->config, "scr.html", scr_html);
+	r_config_set_b (core->config, "asm.emu", asm_emu);
+	r_config_set_b (core->config, "emu.str", emu_str);
 }
 
 static void algolist(int mode) {
@@ -5071,7 +5071,7 @@ static int cmd_print(void *data, const char *input) {
 					PJ *pj = NULL;
 
 					// check for bounds
-					if (input[3] !=0) {
+					if (input[3] != 0) {
 						if (input[3] == 'j') { // "pifcj"
 							pj = pj_new ();
 							pj_a (pj);
@@ -5099,19 +5099,15 @@ static int cmd_print(void *data, const char *input) {
 
 						// store current configurations
 						RConfigHold *hc = r_config_hold_new (core->config);
-						r_config_hold_i (hc, "asm.offset", NULL);
-						r_config_hold_i (hc, "asm.comments", NULL);
-						r_config_hold_i (hc, "asm.tabs", NULL);
-						r_config_hold_i (hc, "asm.bytes", NULL);
-						r_config_hold_i (hc, "emu.str", NULL);
+						r_config_hold (hc, "asm.offset", "asm.comments", "asm.tabs", "asm.bytes", "emu.str", NULL);
 
 
 						// temporarily replace configurations
-						r_config_set_i (core->config, "asm.offset", false);
-						r_config_set_i (core->config, "asm.comments", false);
+						r_config_set_b (core->config, "asm.offset", false);
+						r_config_set_b (core->config, "asm.comments", false);
 						r_config_set_i (core->config, "asm.tabs", 0);
-						r_config_set_i (core->config, "asm.bytes", false);
-						r_config_set_i (core->config, "emu.str", false);
+						r_config_set_b (core->config, "asm.bytes", false);
+						r_config_set_b (core->config, "emu.str", false);
 
 						// iterate over all call references
 						r_list_foreach (refs, iter, refi) {
