@@ -2908,13 +2908,11 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case '*': // "dr*"
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 			int pcbits2, pcbits = grab_bits (core, str + 1, &pcbits2);
-			r_cons_printf ("fs+regs\n");
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '*', use_color);
 			if (pcbits2) {
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits2, NULL, '*', use_color);
 			}
 			r_flag_space_pop (core->flags);
-			r_cons_printf ("fs-\n");
 		}
 		break;
 	case 'i': // "dri"
