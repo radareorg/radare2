@@ -267,7 +267,7 @@ typedef struct r_bin_object_t {
 	struct r_bin_plugin_t *plugin;
 	int lang;
 	Sdb *kv;
-	Sdb *addr2klassmethod;
+	HtUP *addr2klassmethod;
 	void *bin_obj; // internal pointer used by formats
 } RBinObject;
 
