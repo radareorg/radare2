@@ -46,10 +46,11 @@ FILE=-
 CMDS=<<EOF
 wx 7f7f7f7f7f7f7f7f92a4aba5e3b1a4afaba8a2a0b3a8ada67f7f7f7fa0b1a1a8b3b1a0b1b87fa2aea3a47f7f7f7f7f7fa1b87f8cb182a7a4a4b9a47f9c9b7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
 e cfg.charset=pokered
-"w hello-world\x00this-is-very-new"
+w hello-world-this-is-very-new
+wx 00 @ 12
 ps 28
 EOF
 EXPECT=<<EOF
-????????????????????????????
+hello-world-?his-is-very-new
 EOF
 RUN
