@@ -135,6 +135,9 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	if (!head) {
 		return false;
 	}
+	if (rad == 1 || rad == '*') {
+		dbg->cb_printf ("fs+%s\n", R_FLAGS_FS_REGISTERS);
+	}
 	r_list_foreach (head, iter, item) {
 		ut64 value;
 		utX valueBig;
@@ -278,6 +281,9 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 				break;
 		}
 		n++;
+	}
+	if (rad == 1 || rad == '*') {
+		dbg->cb_printf ("fs-\n");
 	}
 beach:
 	if (isJson) {
