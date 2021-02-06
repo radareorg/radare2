@@ -85,7 +85,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
 	ut8 *free_levels;
-	int res, sz = 0, count = 0;
+	int sz = 0, count = 0;
 	ut64 opc = addr;
 
 	memset (&op, 0, sizeof (op));
@@ -177,13 +177,13 @@ do_skip:
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
-			if (!(res = add_refline (list, sten, addr, op.jump, &count))) {
+			if (!add_refline (list, sten, addr, op.jump, &count)) {
 				r_anal_op_fini (&op);
 				goto sten_err;
 			}
 			// add false branch in case its set and its not a call, useful for bf, maybe others
 			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
-				if (!(res = add_refline (list, sten, addr, op.fail, &count))) {
+				if (!add_refline (list, sten, addr, op.fail, &count)) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
@@ -202,7 +202,7 @@ do_skip:
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					goto __next;
 				}
-				if (!(res = add_refline (list, sten, op.switch_op->addr, caseop->jump, &count))) {
+				if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count)) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
