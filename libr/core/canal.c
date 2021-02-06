@@ -3247,8 +3247,14 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		return 0;
 	}
 	if (*rad == '.') {
-		RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
-		__fcn_print_default (core, fcn, false);
+		RList *fcns = r_anal_get_functions_in (core->anal, core->offset);
+		if (!fcns || r_list_empty (fcns)) {
+			eprintf ("No functions at current address.\n");
+			r_list_free (fcns);
+			return -1;
+		}
+		fcn_list_default (core, fcns, false);
+		r_list_free (fcns);
 		return 0;
 	}
 
