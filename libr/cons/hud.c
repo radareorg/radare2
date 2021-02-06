@@ -254,7 +254,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 #endif
 		r_cons_visual_flush ();
 		(void) r_line_readline ();
-		strncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE); 				// to search
+		r_str_ncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE);
 
 		if (!hud->activate) {
 			hud->top_entry_n = 0;

@@ -321,7 +321,7 @@ while_end:
 				break;
 			}
 			r_str_ncpy (grep->strings[grep->nstrings - 1],
-				optr, R_CONS_GREP_WORD_SIZE - 1);
+				optr, R_CONS_GREP_WORD_SIZE);
 		} while (ptr);
 	} else {
 		grep->str = strdup (ptr);
