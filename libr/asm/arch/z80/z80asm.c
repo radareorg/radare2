@@ -217,7 +217,7 @@ static int readcommand(const char **p) {
 static void readlabel(const char **p, int store) {
 	const char *c, *d, *pos, *dummy;
 	int i, j;
-	struct label *buf, *previous;
+	struct label *previous;
 	for (d = *p; *d && *d != ';'; d++) {
 		;
 	}
@@ -244,40 +244,8 @@ static void readlabel(const char **p, int store) {
 		*p = c;
 		return;
 	}
-	if (!(buf = malloc (sizeof (struct label) + c - *p))) {
-		eprintf ("not enough memory to store label %s\n", *p);
-#if 0
-		*p = c;
-		return;
-	}
-	// not used and dead code.
-	// originally it was saved into lastlabel value.
-	// now only leaks bytes.
-	strncpy (buf->name, *p, c - *p - 1);
-	buf->name[c - *p - 1] = 0;
+
 	*p = c;
-	buf->value = addr;
-	// lastlabel = buf;
-	if (previous) {
-		buf->next = previous->next;
-	} else {
-		buf->next = NULL;
-	}
-	buf->prev = previous;
-	buf->valid = 1;
-	buf->busy = 0;
-	buf->ref = NULL;
-	if (buf->prev) {
-		buf->prev->next = buf;
-	}
-	if (buf->next) {
-		buf->next->prev = buf;
-	}
-	// leaks here since buf is not used.
-#else
-	}
-	*p = c;
-#endif
 }
 
 static int compute_ref(struct reference *ref, int allow_invalid) {
@@ -810,56 +778,52 @@ static int rd_sp(const char **p) {
 
 /* do the actual work */
 static int assemble(const char *str, unsigned char *_obuf) {
-	int ifcount = 0, noifcount = 0;
 	const char *ptr;
 	char *bufptr;
 	int r, s;			/* registers */
 
 	obuflen = 0;
 	obuf = _obuf;
-	/* continue assembling until the last input file is done */
-	// for (file = 0; file < infilecount; file++)
-	do {
-		int cmd, cont = 1;
-		// XXX: must free
-		z80buffer = strdup (str);
-		if (!cont) {
-			break;		/* break to next source file */
-		}
-		// if (havelist)
-		// fprintf (listfile, "%04x", addr);
-		for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\n'));) {
-			*bufptr = ' ';
-		}
-		for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\r'));) {
-			*bufptr = ' ';
-		}
-		ptr = z80buffer;
-		// lastlabel = NULL;
-		baseaddr = addr;
-		++stack[sp].line;
-		ptr = delspc (ptr);
-		if (!*ptr) {
-			continue;
-		}
-		if (!noifcount && !define_macro) {
-			readlabel (&ptr, 1);
-		} else {
-			readlabel (&ptr, 0);
-		}
-		ptr = delspc (ptr);
-		if (!*ptr) {
-			continue;
-		}
-		comma = 0;
-		indexed = 0;
-		indexjmp = 0;
-		writebyte = 0;
-		readbyte = 0;
-		readword = 0;
-		cmd = readcommand (&ptr) - 1;
-		int i, have_quote;
-		switch (cmd) {
+	int cmd, cont = 1;
+	// XXX: must free
+	z80buffer = strdup (str);
+	if (!cont) {
+		return obuflen;
+	}
+	// if (havelist)
+	// fprintf (listfile, "%04x", addr);
+	for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\n'));) {
+		*bufptr = ' ';
+	}
+	for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\r'));) {
+		*bufptr = ' ';
+	}
+	ptr = z80buffer;
+	// lastlabel = NULL;
+	baseaddr = addr;
+	++stack[sp].line;
+	ptr = delspc (ptr);
+	if (!*ptr) {
+		return obuflen;
+	}
+	if (!define_macro) {
+		readlabel (&ptr, 1);
+	} else {
+		readlabel (&ptr, 0);
+	}
+	ptr = delspc (ptr);
+	if (!*ptr) {
+		return obuflen;
+	}
+	comma = 0;
+	indexed = 0;
+	indexjmp = 0;
+	writebyte = 0;
+	readbyte = 0;
+	readword = 0;
+	cmd = readcommand (&ptr) - 1;
+	int i, have_quote;
+	switch (cmd) {
 		case Z80_ADC:
 			if (!(r = rd_a_hl (&ptr))) {
 				break;
@@ -869,13 +833,15 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					break;
 				}
 				wrtb (0xED);
-				wrtb (0x4A + 0x10 * --r);
+				r--;
+				wrtb (0x4A + 0x10 * r);
 				break;
 			}
 			if (!(r = rd_r (&ptr))) {
 				break;
 			}
-			wrtb (0x88 + --r);
+			r--;
+			wrtb (0x88 + r);
 			break;
 		case Z80_ADD:
 			if (!(r = rd_r_add (&ptr))) {
@@ -885,7 +851,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				if (!(r = rd_rrxx (&ptr))) {
 					break;
 				}
-				wrtb (0x09 + 0x10 * --r);		/* ADD HL/IX/IY, qq  */
+				r--;
+				wrtb (0x09 + 0x10 * r);		/* ADD HL/IX/IY, qq  */
 				break;
 			}
 			if (has_argument (&ptr)) {
@@ -896,16 +863,19 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				if (!(r = rd_r (&ptr))) {
 					break;
 				}
-				wrtb (0x80 + --r);		/* ADD A,r  */
+				r--;
+				wrtb (0x80 + r);		/* ADD A,r  */
 				break;
 			}
-			wrtb (0x80 + --r);		/* ADD r  */
+			r--;
+			wrtb (0x80 + r);		/* ADD r  */
 			break;
 		case Z80_AND:
 			if (!(r = rd_r (&ptr))) {
 				break;
 			}
-			wrtb (0xA0 + --r);
+			r--;
+			wrtb (0xA0 + r);
 			break;
 		case Z80_BIT:
 			if (!rd_0_7 (&ptr)) {
@@ -920,7 +890,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			break;
 		case Z80_CALL:
 			if ((r = rd_cc (&ptr))) {
-				wrtb (0xC4 + 8 * --r);
+				r--;
+				wrtb (0xC4 + 8 * r);
 				rd_comma (&ptr);
 			} else {
 				wrtb (0xCD);
@@ -933,7 +904,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			if (!(r = rd_r (&ptr))) {
 				break;
 			}
-			wrtb (0xB8 + --r);
+			r--;
+			wrtb (0xB8 + r);
 			break;
 		case Z80_CPD:
 			wrtb (0xED);
@@ -962,10 +934,12 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			if (r < 0) {
-				wrtb (0x05 - 8 * ++r);
+				r--;
+				wrtb (0x05 - 8 * r);
 				break;
 			}
-			wrtb (0x0B + 0x10 * --r);
+			r--;
+			wrtb (0x0B + 0x10 * r);
 			break;
 		case Z80_DI:
 			wrtb (0xF3);
@@ -982,23 +956,23 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			switch (r) {
-			case DE:
-				if (!rd_hl (&ptr)) {
+				case DE:
+					if (!rd_hl (&ptr)) {
+						break;
+					}
+					wrtb (0xEB);
 					break;
-				}
-				wrtb (0xEB);
-				break;
-			case AF:
-				if (!rd_af_(&ptr)) {
+				case AF:
+					if (!rd_af_(&ptr)) {
+						break;
+					}
+					wrtb (0x08);
 					break;
-				}
-				wrtb (0x08);
-				break;
-			default:
-				if (!rd_hlx (&ptr)) {
-					break;
-				}
-				wrtb (0xE3);
+				default:
+					if (!rd_hlx (&ptr)) {
+						break;
+					}
+					wrtb (0xE3);
 			}
 			break;
 		case Z80_EXX:
@@ -1012,7 +986,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			wrtb (0xED);
-			wrtb (0x46 + 8 * --r);
+			r--;
+			wrtb (0x46 + 8 * r);
 			break;
 		case Z80_IN:
 			if (!(r = rd_in (&ptr))) {
@@ -1034,17 +1009,20 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			wrtb (0xED);
-			wrtb (0x40 + 8 * --r);
+			r--;
+			wrtb (0x40 + 8 * r);
 			break;
 		case Z80_INC:
 			if (!(r = rd_r_rr (&ptr))) {
 				break;
 			}
 			if (r < 0) {
-				wrtb (0x04 - 8 * ++r);
+				r++;
+				wrtb (0x04 - 8 * r);
 				break;
 			}
-			wrtb (0x03 + 0x10 * --r);
+			r--;
+			wrtb (0x03 + 0x10 * r);
 			break;
 		case Z80_IND:
 			wrtb (0xED);
@@ -1069,7 +1047,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			if (r) {
-				wrtb (0xC2 + 8 * --r);
+				r--;
+				wrtb (0xC2 + 8 * r);
 				rd_comma (&ptr);
 			} else {
 				wrtb (0xC3);
@@ -1087,105 +1066,106 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			switch (r) {
-			case ld_BC:
-			case ld_DE:
-				if (!rd_a (&ptr)) {
+				case ld_BC:
+				case ld_DE:
+					if (!rd_a (&ptr)) {
+						break;
+					}
+					wrtb (0x02 + 0x10 * (r == ld_DE ? 1 : 0));
 					break;
-				}
-				wrtb (0x02 + 0x10 * (r == ld_DE));
-				break;
-			case ld_HL:
-				r = rd_ld_hl (&ptr);
-				wrtb (0x70 + --r);
-				break;
-			case ld_NN:
-				if (!(r = rd_ld_nn (&ptr))) {
+				case ld_HL:
+					r = rd_ld_hl (&ptr) - 1;
+					wrtb (0x70 + r);
 					break;
-				}
-				if (r == ld_nnA || r == ld_nnHL) {
-					wrtb (0x22 + 0x10 * (r == ld_nnA));
-					break;
-				}
-				wrtb (0xED);
-				wrtb (0x43 + 0x10 * --r);
-				break;
-			case ldA:
-				if (!(r = rd_lda (&ptr))) {
-					break;
-				}
-				if (r == A_NN) {
-					wrtb (0x3A);
-					break;
-				}
-				if (r == A_I || r == A_R) {
+				case ld_NN:
+					if (!(r = rd_ld_nn (&ptr))) {
+						break;
+					}
+					if (r == ld_nnA || r == ld_nnHL) {
+						wrtb (0x22 + 0x10 * (r == ld_nnA ? 1 : 0));
+						break;
+					}
 					wrtb (0xED);
-					wrtb (0x57 + 8 * (r == A_R));
+					wrtb (0x43 + 0x10 * --r);
 					break;
-				}
-				if (r == A_N) {
-					char n = r_num_math (NULL, readbyte);
-					wrtb (0x3E);
-					wrtb (n);
+				case ldA:
+					if (!(r = rd_lda (&ptr))) {
+						break;
+					}
+					if (r == A_NN) {
+						wrtb (0x3A);
+						break;
+					}
+					if (r == A_I || r == A_R) {
+						wrtb (0xED);
+						wrtb (0x57 + 8 * (r == A_R ? 1 : 0));
+						break;
+					}
+					if (r == A_N) {
+						char n = r_num_math (NULL, readbyte);
+						wrtb (0x3E);
+						wrtb (n);
+						break;
+					}
+					if (r < 0) {
+						r++;
+						wrtb (0x0A - 0x10 * r);
+						break;
+					}
+					wrtb (0x78 + --r);
 					break;
-				}
-				if (r < 0) {
-					wrtb (0x0A - 0x10 * ++r);
+				case ldB:
+				case ldC:
+				case ldD:
+				case ldE:
+				case ldH:
+				case ldL:
+					if (!(s = rd_ldbcdehla (&ptr))) {
+						break;
+					}
+					if (s == 7) {
+						char n = r_num_math (NULL, readbyte);
+						wrtb (0x08 * (r - 7) + 0x6);
+						wrtb (n);
+					} else {
+						wrtb (0x40 + 0x08 * (r -7) + (s - 1));
+					}
 					break;
-				}
-				wrtb (0x78 + --r);
-				break;
-			case ldB:
-			case ldC:
-			case ldD:
-			case ldE:
-			case ldH:
-			case ldL:
-				if (!(s = rd_ldbcdehla (&ptr))) {
+				case ldBC:
+				case ldDE:
+					s = rd_nn_nn (&ptr);
+					if (s == _NN) {
+						wrtb (0xED);
+						wrtb (0x4B + 0x10 * (r == ldDE ? 1 : 0));
+						break;
+					}
+					wrtb (0x01 + (r == ldDE ? 1 : 0) * 0x10);
 					break;
-				}
-				if (s == 7) {
-					char n = r_num_math (NULL, readbyte);
-					wrtb (0x08 * (r - 7) + 0x6);
-					wrtb (n);
-				} else {
-					wrtb (0x40 + 0x08 * (r -7) + (s - 1));
-				}
-				break;
-			case ldBC:
-			case ldDE:
-				s = rd_nn_nn (&ptr);
-				if (s == _NN) {
+				case ldHL:
+					r = rd_nn_nn (&ptr);
+					wrtb (0x21 + (r == _NN ? 1 : 0) * 9);
+					break;
+				case ldI:
+				case ldR:
+					if (!rd_a (&ptr)) {
+						break;
+					}
 					wrtb (0xED);
-					wrtb (0x4B + 0x10 * (r == ldDE));
+					wrtb (0x47 + 0x08 * (r == ldR ? 1 : 0));
 					break;
-				}
-				wrtb (0x01 + (r == ldDE) * 0x10);
-				break;
-			case ldHL:
-				r = rd_nn_nn (&ptr);
-				wrtb (0x21 + (r == _NN) * 9);
-				break;
-			case ldI:
-			case ldR:
-				if (!rd_a (&ptr)) {
+				case ldSP:
+					r = rd_sp (&ptr);
+					if (r == SPHL) {
+						wrtb (0xF9);
+						break;
+					}
+					if (r == SPNN) {
+						wrtb (0x31);
+						break;
+					}
+					wrtb (0xED);
+					wrtb (0x7B);
 					break;
-				}
-				wrtb (0xED);
-				wrtb (0x47 + 0x08 * (r == ldR));
-				break;
-			case ldSP:
-				r = rd_sp (&ptr);
-				if (r == SPHL) {
-					wrtb (0xF9);
-					break;
-				}
-				if (r == SPNN) {
-					wrtb (0x31);
-					break;
-				}
-				wrtb (0xED);
-				wrtb (0x7B);
-				break;
 			}
 			break;
 		case Z80_LDD:
@@ -1215,7 +1195,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			if (!(r = rd_r (&ptr))) {
 				break;
 			}
-			wrtb (0xB0 + --r);
+			r--;
+			wrtb (0xB0 + r);
 			break;
 		case Z80_OTDR:
 			wrtb (0xED);
@@ -1234,7 +1215,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					break;
 				}
 				wrtb (0xED);
-				wrtb (0x41 + 8 * --r);
+				r--;
+				wrtb (0x41 + 8 * r);
 				break;
 			}
 			if (!rd_a (&ptr)) {
@@ -1254,13 +1236,15 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			if (!(r = rd_stack (&ptr))) {
 				break;
 			}
-			wrtb (0xC1 + 0x10 * --r);
+			r--;
+			wrtb (0xC1 + 0x10 * r);
 			break;
 		case Z80_PUSH:
 			if (!(r = rd_stack (&ptr))) {
 				break;
 			}
-			wrtb (0xC5 + 0x10 * --r);
+			r--;
+			wrtb (0xC5 + 0x10 * r);
 			break;
 		case Z80_RES:
 			if (!rd_0_7 (&ptr)) {
@@ -1271,14 +1255,16 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0x80 + --r);
+			r--;
+			wrtb (0x80 + r);
 			break;
 		case Z80_RET:
 			if (!(r = rd_cc (&ptr))) {
 				wrtb (0xC9);
 				break;
 			}
-			wrtb (0xC0 + 8 * --r);
+			r--;
+			wrtb (0xC0 + 8 * r);
 			break;
 		case Z80_RETI:
 			wrtb (0xED);
@@ -1293,7 +1279,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0x10 + --r);
+			r--;
+			wrtb (0x10 + r);
 			break;
 		case Z80_RLA:
 			wrtb (0x17);
@@ -1303,7 +1290,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0x00 + --r);
+			r--;
+			wrtb (0x00 + r);
 			break;
 		case Z80_RLCA:
 			wrtb (0x07);
@@ -1317,7 +1305,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0x18 + --r);
+			r--;
+			wrtb (0x18 + r);
 			break;
 		case Z80_RRA:
 			wrtb (0x1F);
@@ -1327,7 +1316,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0x08 + --r);
+			r--;
+			wrtb (0x08 + r);
 			break;
 		case Z80_RRCA:
 			wrtb (0x0F);
@@ -1348,13 +1338,15 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					break;
 				}
 				wrtb (0xED);
-				wrtb (0x42 + 0x10 * --r);
+				r--;
+				wrtb (0x42 + 0x10 * r);
 				break;
 			}
 			if (!(r = rd_r (&ptr))) {
 				break;
 			}
-			wrtb (0x98 + --r);
+			r--;
+			wrtb (0x98 + r);
 			break;
 		case Z80_SCF:
 			wrtb (0x37);
@@ -1368,35 +1360,40 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0xC0 + --r);
+			r--;
+			wrtb (0xC0 + r);
 			break;
 		case Z80_SLA:
 			if (!(r = rd_r_(&ptr))) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0x20 + --r);
+			r--;
+			wrtb (0x20 + r);
 			break;
 		case Z80_SLI:
 			if (!(r = rd_r_(&ptr))) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0x30 + --r);
+			r--;
+			wrtb (0x30 + r);
 			break;
 		case Z80_SRA:
 			if (!(r = rd_r_(&ptr))) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0x28 + --r);
+			r--;
+			wrtb (0x28 + r);
 			break;
 		case Z80_SRL:
 			if (!(r = rd_r_(&ptr))) {
 				break;
 			}
 			wrtb (0xCB);
-			wrtb (0x38 + --r);
+			r--;
+			wrtb (0x38 + r);
 			break;
 		case Z80_SUB:
 			if (!(r = rd_r (&ptr))) {
@@ -1411,13 +1408,15 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					break;
 				}
 			}
-			wrtb (0x90 + --r);
+			r--;
+			wrtb (0x90 + r);
 			break;
 		case Z80_XOR:
 			if (!(r = rd_r (&ptr))) {
 				break;
 			}
-			wrtb (0xA8 + --r);
+			r--;
+			wrtb (0xA8 + r);
 			break;
 		case Z80_DEFB:
 		case Z80_DB:
@@ -1455,7 +1454,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			break;
 		case Z80_DEFW:
 		case Z80_DW:
-			if (!(r = rd_word (&ptr, ','))) {
+			if (!rd_word (&ptr, ',')) {
 				eprintf ("No data for word definition\n");
 				break;
 			}
@@ -1465,7 +1464,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					break;
 				}
 				++ptr;
-				if (!(r = rd_word (&ptr, ','))) {
+				if (!rd_word (&ptr, ',')) {
 					eprintf ("Missing expression in defw\n");
 				}
 			}
@@ -1475,7 +1474,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			r = rd_expr (&ptr, ',', NULL, sp, 1);
 			if (r < 0) {
 				eprintf ("ds should have its first argument >=0"
-					" (not -0x%x)\n", -r);
+						" (not -0x%x)\n", -r);
 				break;
 			}
 			ptr = delspc (ptr);
@@ -1496,30 +1495,12 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			addr = rd_expr (&ptr, '\0', NULL, sp, 1) & 0xffff;
 			break;
 		case Z80_IF:
-			if (rd_expr (&ptr, '\0', NULL, sp, 1)) {
-				ifcount++;
-			} else {
-				noifcount++;
-			}
 			break;
 		case Z80_ELSE:
-			if (ifcount == 0) {
-				eprintf ("else without if\n");
-				break;
-			}
-			noifcount = 1;
-			ifcount--;
+			eprintf ("else without if\n");
 			break;
 		case Z80_ENDIF:
-			if (noifcount == 0 && ifcount == 0) {
-				eprintf ("endif without if\n");
-				break;
-			}
-			if (noifcount) {
-				noifcount--;
-			} else {
-				ifcount--;
-			}
+			eprintf ("endif without if\n");
 			break;
 		case Z80_ENDM:
 			if (stack[sp].file) {
@@ -1532,9 +1513,8 @@ static int assemble(const char *str, unsigned char *_obuf) {
 		default:
 			// eprintf ("command or comment expected (was %s)\n", ptr);
 			return 0;
-		}
-	} while (false);
-	// free (infile);
+	}
+
 	return obuflen;
 }
 
