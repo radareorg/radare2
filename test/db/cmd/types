@@ -1674,3 +1674,16 @@ EXPECT=<<EOF
 spam._foo.cow
 EOF
 RUN
+
+NAME=aaft io.va side effect
+FILE=-
+ARGS=-eio.va=0 -a x86 -b 64
+CMDS=<<EOF
+af
+aaft
+e io.va
+EOF
+EXPECT=<<EOF
+false
+EOF
+RUN
