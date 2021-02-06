@@ -3912,7 +3912,8 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
         {
           /* Branch instruction with 3 operands, Translation is required
              only for the third operand. Print the first 2 operands */
-          strncpy(buf, operand, sizeof (buf) - 1);
+          strncpy(buf, operand, sizeof (buf));
+          buf[sizeof (buf) - 1] = '\0';
           tmpBuffer = strtok(buf,"@");
           (*func) (stream, "%s", tmpBuffer);
           i = strlen(tmpBuffer) + 1;
