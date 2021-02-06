@@ -1510,8 +1510,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (reti,   0xffff, 0x9518, 4,      2,   RET    ), // RETI
 	INST_DECL (sleep,  0xffff, 0x9588, 1,      2,   NOP    ), // SLEEP
 	INST_DECL (spm,    0xffff, 0x95e8, 1,      2,   TRAP   ), // SPM ...
-	INST_DECL (bclr,   0xff8f, 0x9488, 1,      2,   SWI    ), // BCLR s
-	INST_DECL (bset,   0xff8f, 0x9408, 1,      2,   SWI    ), // BSET s
+	INST_DECL (bclr,   0xff8f, 0x9488, 1,      2,   MOV    ), // BCLR s
+	INST_DECL (bset,   0xff8f, 0x9408, 1,      2,   MOV    ), // BSET s
 	INST_DECL (fmul,   0xff88, 0x0308, 2,      2,   MUL    ), // FMUL Rd, Rr
 	INST_DECL (fmuls,  0xff88, 0x0380, 2,      2,   MUL    ), // FMULS Rd, Rr
 	INST_DECL (fmulsu, 0xff88, 0x0388, 2,      2,   MUL    ), // FMULSU Rd, Rr
@@ -1524,7 +1524,7 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (movw,   0xff00, 0x0100, 1,      2,   MOV    ), // MOVW Rd+1:Rd, Rr+1:Rr
 	INST_DECL (muls,   0xff00, 0x0200, 2,      2,   AND    ), // MUL Rd, Rr
 	INST_DECL (asr,    0xfe0f, 0x9405, 1,      2,   SAR    ), // ASR Rd
-	INST_DECL (com,    0xfe0f, 0x9400, 1,      2,   SWI    ), // BLD Rd, b
+	INST_DECL (com,    0xfe0f, 0x9400, 1,      2,   NOT    ), // BLD Rd, b
 	INST_DECL (dec,    0xfe0f, 0x940a, 1,      2,   SUB    ), // DEC Rd
 	INST_DECL (elpm,   0xfe0f, 0x9006, 0,      2,   LOAD   ), // ELPM Rd, Z
 	INST_DECL (elpm,   0xfe0f, 0x9007, 0,      2,   LOAD   ), // ELPM Rd, Z+
@@ -1550,8 +1550,8 @@ OPCODE_DESC opcodes[] = {
 	INST_DECL (swap,   0xfe0f, 0x9402, 1,      2,   SAR    ), // SWAP Rd
 	INST_DECL (call,   0xfe0e, 0x940e, 0,      4,   CALL   ), // CALL k
 	INST_DECL (jmp,    0xfe0e, 0x940c, 2,      4,   JMP    ), // JMP k
-	INST_DECL (bld,    0xfe08, 0xf800, 1,      2,   SWI    ), // BLD Rd, b
-	INST_DECL (bst,    0xfe08, 0xfa00, 1,      2,   SWI    ), // BST Rd, b
+	INST_DECL (bld,    0xfe08, 0xf800, 1,      2,   MOV    ), // BLD Rd, b
+	INST_DECL (bst,    0xfe08, 0xfa00, 1,      2,   MOV    ), // BST Rd, b
 	INST_DECL (sbix,   0xff00, 0x9900, 2,      2,   CJMP   ), // SBIC A, b
 	INST_DECL (sbix,   0xff00, 0x9b00, 2,      2,   CJMP   ), // SBIS A, b
 	INST_DECL (sbrx,   0xfe08, 0xfc00, 2,      2,   CJMP   ), // SBRC Rr, b
