@@ -541,9 +541,10 @@ static bool mnem_add(char const*const*arg, ut16 pc, ut8**out) {
 		return false;
 	}
 	switch (arg[1][0]) {
-	break; case '@': case '[':
+	case '@':
+	case '[':
 		return singlearg_register (0x26, arg[1], out);
-	break; case '#':
+	case '#':
 		return singlearg_immediate (0x24, arg[1], out);
 	}
 	if (is_reg (arg[1])) {

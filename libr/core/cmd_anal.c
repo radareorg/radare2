@@ -11,8 +11,7 @@ static const char *help_msg_a[] = {
 	"a*", "", "same as afl*;ah*;ax*",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
 	"a8", " [hexpairs]", "analyze bytes",
-	"ab", "[b] [addr]", "analyze block at given address",
-	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
+	"ab", "[?]", "analyze basic block",
 	"ac", "[?]", "manage classes",
 	"aC", "[?]", "analyze function call",
 	"aCe", "[?]", "same as aC, but uses esil with abte to emulate the function",
@@ -91,7 +90,7 @@ static const char *help_msg_aar[] = {
 };
 
 static const char *help_msg_ab[] = {
-	"Usage:", "ab", "",
+	"Usage:", "ab", "# analyze basic block",
 	"ab", " [addr]", "show basic block information at given address",
 	"ab.", "", "same as: ab $$",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
@@ -99,7 +98,7 @@ static const char *help_msg_ab[] = {
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[,qj]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
-	"abt[?]", " [addr] [num]", "find num paths from current offset to addr",
+	"abt", "[?] [addr] [num]", "find num paths from current offset to addr",
 	NULL
 };
 
@@ -122,8 +121,8 @@ static const char *help_msg_abt[] = {
 
 static const char *help_msg_ac[] = {
 	"Usage:", "ac", "anal classes commands",
-	"acl[j*]", "", "list all classes",
-	"acll[j]", " (class_name)", "list all or single class detailed",
+	"acl", "[j*]", "list all classes",
+	"acll", "[j] (class_name)", "list all or single class detailed",
 	"ac", " [class name]", "add class",
 	"ac-", " [class name]", "delete class",
 	"acn", " [class name] [new class name]", "rename class",
@@ -158,7 +157,8 @@ static const char *help_msg_ae[] = {
 	"ae", " [expr]", "evaluate ESIL expression",
 	"ae?", "", "show this help",
 	"ae??", "", "show ESIL help",
-	"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
+	"aea", "[f] [count]", "analyse n esil instructions accesses (regs, mem..)",
+	"aeA", "[f] [count]", "analyse n bytes for their esil accesses (regs, mem..)",
 	"aeC", "[arg0 arg1..] @ addr", "appcall in esil",
 	"aec", "[?]", "continue until ^C",
 	"aecs", "", "continue until syscall",
@@ -2904,7 +2904,7 @@ static bool fcnNeedsPrefix(const char *name) {
 	return (!strchr (name, '.'));
 }
 
-static char * getFunctionName (RCore *core, ut64 off, const char *name, bool prefix) {
+static char * getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
 	const char *fcnpfx = "";
 	if (prefix) {
 		if (fcnNeedsPrefix (name) && (!fcnpfx || !*fcnpfx)) {
@@ -7845,7 +7845,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			pj_free (pj);
 		} else { // "axf"
 			RAsmOp asmop;
-			RList *list, *list_ = NULL;
+			RList *list = NULL;
 			RAnalRef *ref;
 			RListIter *iter;
 			char *space = strchr (input, ' ');
@@ -7856,7 +7856,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			}
 			RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (input[1] == '.') { // "axf."
-				list = list_ = r_anal_xrefs_get_from (core->anal, addr);
+				list = r_anal_xrefs_get_from (core->anal, addr);
 				if (!list) {
 					list = r_anal_function_get_refs (fcn);
 				}

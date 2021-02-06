@@ -186,7 +186,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			free (offset);
 			offset = strdup (v);
 		}
-		if ((flagname = strstr (dup, ".cparse"))) {
+		if (strstr (dup, ".cparse")) {
 			if (IS_MODE_RAD (mode)) {
 				r_cons_printf ("\"td %s\"\n", v);
 			} else if (IS_MODE_SET (mode)) {

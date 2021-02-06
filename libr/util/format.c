@@ -53,7 +53,7 @@ static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *a
 }
 
 static int r_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
-	int size = 0, len = strlen (s);
+	size_t len = strlen (s);
 	if (s[0] == '*' && len >= 4) { // value pointed by the address
 		ut64 addr;
 		int offset = (int)r_num_math (num, s + 1);
@@ -61,7 +61,7 @@ static int r_get_size(RNum *num, ut8 *buf, int endian, const char *s) {
 		return addr;
 	}
 	// flag handling doesnt seems to work here
-	return size = r_num_math (num, s);
+	return r_num_math (num, s);
 }
 
 static void r_print_format_u128(const RPrint* p, int endian, int mode,
