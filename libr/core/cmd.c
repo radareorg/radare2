@@ -788,11 +788,71 @@ static void aliascmd(RCore *core, const char *str) {
 	}
 }
 
+static void cmd_remote(RCore *core, const char *input, bool retry) {
+	if (!*input) {
+		return;
+	}
+	if (*input == '?') {
+		r_cons_printf ("Usage: =r localhost:9999\n");
+		return;
+	}
+	char *host = strdup (input);
+	char *port = strchr (host, ':');
+	if (port) {
+		*port++ = 0;
+	}
+	RSocket *s = r_socket_new (false);
+repeat:
+	if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 1500)) {
+		char buf[1024];
+		void *bed = r_cons_sleep_begin ();
+		r_cons_break_push (NULL, NULL);
+		for (;;) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			r_socket_printf (s, "[0x%08"PFMT64x"]> ", core->offset);
+			r_socket_flush (s);
+			memset (buf, 0, sizeof (buf));
+			r_socket_block_time (s, true, 99999, 0);
+			if (r_socket_read (s, (ut8*)buf, sizeof (buf) - 1) < 1) {
+				break;
+			}
+			if (*buf == 'q') {
+				break;
+			}
+			const bool orig = r_config_get_b (core->config, "scr.interactive");
+			r_config_set_b (core->config, "scr.interactive", false);
+			char *res = r_core_cmd_str (core, buf);
+			r_config_set_b (core->config, "scr.interactive", orig);
+			r_socket_printf (s, "%s\n", res);
+			r_socket_flush (s);
+			free (res);
+		}
+		r_cons_break_pop ();
+		r_cons_sleep_end (bed);
+	} else {
+		if (retry) {
+			r_sys_sleep (1);
+			goto repeat;
+		}
+	}
+	r_socket_close (s);
+	r_socket_free (s);
+	free (host);
+}
+
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '\0': // "="
 		r_core_rtr_list (core);
+		break;
+	case 'r': // "=r"
+		cmd_remote (core, r_str_trim_head_ro (input + 1), false);
+		break;
+	case 'R': // "=R"
+		cmd_remote (core, r_str_trim_head_ro (input + 1), true);
 		break;
 	case 'j': // "=j"
 		eprintf ("TODO: list connections in json\n");
