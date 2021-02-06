@@ -116,14 +116,12 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 	reg_type = *reg_arg;
 	res = NULL;
 
-	//printf ("REG_TYPE %d %d\n", reg_type, ins_bits);
-
 	switch (reg_type) {
 	case 33:
 		res = get_reg_name_1 ((ins_bits >> 1) | ((ins_bits & 1) << 6));
 		break;
 	case 100:
-		if (r_str_ncasecmp (reg_arg, "d (ALLx", 6)) {
+		if (r_str_ncasecmp (reg_arg, "d(ALLx", 6)) {
 			eprintf ("invalid register! %s\n", reg_arg);
 			*err_code = -1;
 			return NULL;
@@ -606,7 +604,7 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				break;
 			case '!':
 				//strncpy (buff_aux, reg_arg + 1, 8);
-				reg_arg+=10;
+				reg_arg += 10;
 				//ins_bits2 = get_ins_bits (hash_code, ins_pos, buff_aux, 8);
 				break;
 			}
