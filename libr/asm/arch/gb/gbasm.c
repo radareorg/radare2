@@ -86,7 +86,7 @@ static bool gb_parse_cb2 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	return false;
 }
 
-static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base, ut8 alt) {
+static int gb_parse_arith1(ut8 *buf, const int minlen, char *buf_asm, ut8 base, ut8 alt) {
 	int i;
 	ut64 num;
 	if (strlen (buf_asm) < minlen) {
@@ -112,10 +112,10 @@ static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base,
 	return 1;
 }
 
-static bool gb_parse_ld1 (ut8 *buf, const int minlen, char *buf_asm) {
+static bool gb_parse_ld1(ut8 *buf, const int minlen, char *buf_asm) {
 	int i;
 	r_str_replace_in (buf_asm, strlen (buf_asm), ", ", ",", true);
-	if ((i = strlen (buf_asm)) < minlen) {
+	if (strlen (buf_asm) < minlen) {
 		return false;
 	}
 	r_str_do_until_token (str_op, buf_asm, '\0');

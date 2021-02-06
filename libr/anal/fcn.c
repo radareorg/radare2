@@ -649,7 +649,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			}
 		}
 		if (skipAnalysis) {
-			ret = 0;
 			gotoBeach (R_ANAL_RET_END);
 		}
 	}
