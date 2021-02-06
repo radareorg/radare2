@@ -121,10 +121,11 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		// XXX - select the right backend
 		if (core->io->desc) {
 			newpid = r_io_fd_get_pid (core->io, core->io->desc->fd);
-			newtid = r_io_fd_get_tid (core->io, core->io->desc->fd);
 #if __linux__
 			core->dbg->main_pid = newpid;
 			newtid = newpid;
+#else
+			newtid = r_io_fd_get_tid (core->io, core->io->desc->fd);
 #endif
 		}
 		// Reset previous pid and tid

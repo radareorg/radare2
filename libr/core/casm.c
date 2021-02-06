@@ -121,7 +121,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	tokens[tokcount] = NULL;
 	r_cons_break_push (NULL, NULL);
 	char *opst = NULL;
-	for (at = from, matchcount = 0; at < to; at += core->blocksize) {
+	for (at = from; at < to; at += core->blocksize) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}

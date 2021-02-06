@@ -739,7 +739,6 @@ get_namespace_and_name_err:
 	if (amount_of_names) {
 		*amount_of_names = tmp_len;
 	}
-	it = r_list_iterator (names_l);
 	r_list_foreach_prev (names_l, it, str_info) {
 		copy_string (type_code_str, str_info->str_ptr, str_info->len);
 
@@ -748,7 +747,6 @@ get_namespace_and_name_err:
 		}
 	}
 	r_list_free (names_l);
-
 	return read_len;
 }
 

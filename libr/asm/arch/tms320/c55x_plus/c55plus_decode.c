@@ -673,11 +673,11 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		}
 		if (reg_arg) {
 			if (*reg_arg == 'H') {
-				res = "hi (";
+				res = "hi(";
 			} else if (*reg_arg == 'L') {
-				res = "lo (";
+				res = "lo(";
 			} else if (*reg_arg == 'd') {
-				res = "dbl (";
+				res = "dbl(";
 			} else if (*reg_arg == ')') {
 				res = ")";
 			} else {

@@ -1325,13 +1325,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (comment) {
 						if (p && p->colorfor) {
 							a = p->colorfor (p->user, addr + j, true);
-							if (a && *a) {
-								b = Color_RESET;
-							} else {
-								a = b = "";
+							if (R_STR_ISEMPTY (a)) {
+								a = "";
 							}
 						} else {
-							a = b = "";
+							a = "";
 						}
 						printfmt ("%s  ; %s", a, comment);
 						free (comment);
