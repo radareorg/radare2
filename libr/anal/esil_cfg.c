@@ -233,7 +233,6 @@ void _handle_fi_leave (EsilCfgGen *gen, ut32 id, const bool has_next) {
 		r_graph_add_edge (gen->cfg->g, gen->cur, leaving_node);
 		r_rbtree_cont_insert (gen->blocks, leaving_node, _graphnode_esilbb_insert_cmp, NULL);
 		gen->cur = leaving_node;
-		cur_bb = leaving_bb;
 	}
 	r_graph_add_edge (gen->cfg->g, cookie->is_else ? cookie->if_block : cookie->else_block, gen->cur);
 	free (cookie);

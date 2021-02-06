@@ -159,7 +159,11 @@ do_skip:
 
 		// This can segfault if opcode length and buffer check fails
 		r_anal_op_fini (&op);
-		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		int rc = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		if (rc <= 0) {
+			sz = 1;
+			goto __next;
+		}
 		sz = op.size;
 		if (sz <= 0) {
 			sz = 1;

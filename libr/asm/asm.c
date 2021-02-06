@@ -627,7 +627,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	ut64 pc = a->pc;
 	RAsmOp op;
 	ut64 idx;
-	size_t ret, slen;
+	size_t ret;
 	const size_t addrbytes = a->user? ((RCore *)a->user)->io->addrbytes: 1;
 
 	if (!(acode = r_asm_code_new ())) {
@@ -640,7 +640,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	if (!(buf_asm = r_strbuf_new (NULL))) {
 		return r_asm_code_free (acode);
 	}
-	for (idx = ret = slen = 0; idx + addrbytes <= len; idx += (addrbytes * ret)) {
+	for (idx = 0; idx + addrbytes <= len; idx += (addrbytes * ret)) {
 		r_asm_set_pc (a, pc + idx);
 		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
 		if (ret < 1) {
@@ -686,7 +686,7 @@ static void *__dup_val(const void *v) {
 }
 
 R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
-	int num, stage, ret, idx, ctr, i, j, linenum = 0;
+	int num, stage, ret, idx, ctr, i, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL;
 	const char *asmcpu = NULL;
 	RAsmCode *acode = NULL;
@@ -803,7 +803,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 		}
 		inComment = false;
 		r_asm_set_pc (a, pc);
-		for (idx = ret = i = j = 0, off = a->pc; i <= ctr; i++, idx += ret) {
+		for (idx = ret = i = 0, off = a->pc; i <= ctr; i++, idx += ret) {
 			buf_token = tokens[i];
 			if (!buf_token) {
 				continue;
