@@ -906,7 +906,7 @@ static bool cmd_anal_aaft(RCore *core) {
 	RAnalFunction *fcn;
 	ut64 seek;
 	const char *io_cache_key = "io.pcache.write";
-	bool io_cache = r_config_get_i (core->config, io_cache_key);
+	bool io_cache = r_config_get_b (core->config, io_cache_key);
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		eprintf ("TOFIX: aaft can't run in debugger mode.\n");
 		return false;
@@ -915,6 +915,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		// XXX. we shouldnt need this, but it breaks 'r2 -c aaa -w ls'
 		r_config_set_i (core->config, io_cache_key, true);
 	}
+	const bool iova = r_config_get_b (core->config, "io.va");
 	seek = core->offset;
 	r_reg_arena_push (core->anal->reg);
 	r_reg_arena_zero (core->anal->reg);
@@ -934,6 +935,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		}
 		__add_vars_sdb (core, fcn);
 	}
+	r_config_set_b (core->config, "io.va", iova);
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
 	r_config_set_i (core->config, io_cache_key, io_cache);
