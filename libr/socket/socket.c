@@ -762,23 +762,25 @@ R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 	if (s->fd != R_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		va_copy (ap0, ap);
-		size_t len = vsnprintf (NULL, 0, fmt, ap0) + 1;
-		char *buf = calloc (len, 1);
-		vsnprintf (buf, len, fmt, ap);
-		size_t left = len ;
-		size_t done = 0;
-		while (left >= 0) {
-			int res = r_socket_write (s, buf + done, left);
-			if (res < 1) {
-				break;
+		size_t len = vsnprintf (NULL, 0, fmt, ap0);
+		char *buf = calloc (len + 1, 1);
+		if (buf) {
+			vsnprintf (buf, len + 1, fmt, ap);
+			size_t left = len;
+			size_t done = 0;
+			while (left > 0) {
+				int res = r_socket_write (s, buf + done, left);
+				if (res < 1) {
+					break;
+				}
+				if (res == left) {
+					break;
+				}
+				left -= res;
+				done += res;
 			}
-			if (res == left) {
-				break;
-			}
-			left -= res;
-			done += res;
+			free (buf);
 		}
-		free (buf);
 		va_end (ap);
 	}
 }

@@ -157,6 +157,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int x, const char *headers);
 R_API void r_socket_http_close(RSocketHTTPRequest *rs);
 R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *olen);
+R_API void r_socket_http_free(RSocketHTTPRequest *rs);
 
 typedef int (*rap_server_open)(void *user, const char *file, int flg, int mode);
 typedef int (*rap_server_seek)(void *user, ut64 offset, int whence);
