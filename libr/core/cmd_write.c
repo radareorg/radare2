@@ -2035,7 +2035,7 @@ static int cmd_write(void *data, const char *input) {
 				size_t in_len = strlen (input + 1);
 				ut8 *out = malloc (in_len); //suppose in len = out len TODO: change it
 				if (out) {
-					r_charset_decode_str (core->print->charset->db_char_to_hex, out, in_len, (const unsigned char *) input + 1, in_len);
+					r_charset_decode_str (core->print->charset, out, in_len, (const unsigned char *) input + 1, in_len);
 					w_handler_old (core, (const char *)out);
 					free (out);
 				}
