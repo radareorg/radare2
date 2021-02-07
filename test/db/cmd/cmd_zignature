@@ -894,7 +894,7 @@ EXPECT=<<EOF
 0x00458320 18 flirt.release_libc_mem
 0x004585d0 692 flirt.new_composite_name
 0x00459170 2074 flirt._nl_find_locale
-0x00459990 1821 flirt._nl_intern_locale_data
+0x00459990 576 flirt._nl_intern_locale_data
 0x00459bd0 1488 flirt._nl_load_locale
 0x0045a1a0 94 flirt._nl_unload_locale
 0x0045a200 1312 flirt._nl_load_locale_from_archive

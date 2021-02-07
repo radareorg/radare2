@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2019 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2021 - nibble, alvaro, pancake, th3str4ng3r */
 
 #include <r_anal.h>
 #include <r_parse.h>
@@ -42,10 +42,26 @@ static void apply_switch(RAnal *anal, ut64 switch_addr, ut64 jmptbl_addr, ut64 c
 // analyze a jmptablle inside a function // maybe rename to r_anal_fcn_jmptbl() ?
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr) {
 	const int depth = 50;
-	return try_walkthrough_jmptbl (anal, fcn, block, depth, jmpaddr, table, table, tablesize, tablesize, default_addr, false);
+	return try_walkthrough_jmptbl (anal, fcn, block, depth, jmpaddr, 0, table, table, tablesize, tablesize, default_addr, false);
 }
 
-R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
+static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, ut64 jmpptr, int depth) {
+       const ut64 block_size = block->size;
+       (void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
+       if (block->size != block_size) {
+               // block was be split during anal and does not contain the
+               // jmp instruction anymore, so we need to search for it and get it again
+               RAnalSwitchOp *sop = block->switch_op;
+	       block = r_anal_get_block_at (anal, ip);
+               if (!block) {
+                       r_warn_if_reached ();
+                       return;
+               }
+               block->switch_op = sop;
+       }
+}
+
+R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
 	bool ret = ret0;
 	if (jmptbl_size == 0) {
 		jmptbl_size = JMPTBL_MAXSZ;
@@ -117,8 +133,9 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		r_meta_set_data_at (anal, jmpptr_idx_off, 1);
 		r_anal_hint_set_immbase (anal, jmpptr_idx_off, 10);
 
-		apply_case (anal, block, ip, sz, jmpptr, case_idx, jmptbl_loc + jmpptr_idx * sz);
-		(void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
+		int casenum = case_idx + start_casenum_shift;
+		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + jmpptr_idx * sz);
+		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
 	if (case_idx > 0) {
@@ -133,7 +150,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	return ret;
 }
 
-R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
+R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
 	bool ret = ret0;
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
@@ -197,8 +214,12 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 				break;
 			}
 		}
-		apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
-		(void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
+		//apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
+		//(void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
+		int case_idx = offs / sz;
+		int casenum = case_idx + start_casenum_shift;
+		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs);
+		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
 	if (offs > 0) {
@@ -212,8 +233,29 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	return ret;
 }
 
-// TODO: RENAME
-R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case) {
+static bool detect_casenum_shift(RAnalOp *op, RRegItem **cmp_reg, st64 *start_casenum_shift) {
+	if (!*cmp_reg) {
+		return true;
+	}
+	if (op->dst && op->dst->reg && op->dst->reg->offset == (*cmp_reg)->offset) {
+		if (op->type == R_ANAL_OP_TYPE_LEA && op->ptr == UT64_MAX) {
+			*start_casenum_shift = -(st64)op->disp;
+		} else if (op->val != UT64_MAX) {
+			if (op->type == R_ANAL_OP_TYPE_ADD) {
+				*start_casenum_shift = -(st64)op->val;
+			} else if (op->type == R_ANAL_OP_TYPE_SUB) {
+				*start_casenum_shift = op->val;
+			}
+		} else if (op->type == R_ANAL_OP_TYPE_MOV) {
+			*cmp_reg = op->src[0]->reg;
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift) {
 	bool isValid = false;
 	bool foundCmp = false;
 	int i;
@@ -230,8 +272,12 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 	// search for a cmp register with a reasonable size
 	anal->iob.read_at (anal->iob.io, lea_addr, (ut8 *)buf, search_sz);
 
-	for (i = 0; i + 8 < search_sz; i++) {
-		int len = r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ANAL_OP_MASK_BASIC);
+	RVector v;
+	r_vector_init (&v, sizeof (ut64), NULL, NULL);
+	int len = 0;
+	RRegItem *cmp_reg = NULL;
+	for (i = 0; i + 8 < search_sz; i += len) {
+		len = r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ANAL_OP_MASK_BASIC);
 		if (len < 1) {
 			len = 1;
 		}
@@ -265,9 +311,36 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 			isValid = tmp_aop.refptr < 0x200;
 			*table_size = tmp_aop.refptr + 1;
 		}
+		r_vector_push (&v, &i);
+		r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ANAL_OP_MASK_VAL);
+		if (tmp_aop.dst && tmp_aop.dst->reg) {
+			cmp_reg = tmp_aop.dst->reg;
+		} else if (tmp_aop.reg) {
+			cmp_reg = r_reg_get (anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
+		} else if (tmp_aop.src[0] && tmp_aop.src[0]->reg) {
+			cmp_reg = tmp_aop.src[0]->reg;
+		}
+		r_anal_op_fini (&tmp_aop);
 		// TODO: check the jmp for whether val is included in valid range or not (ja vs jae)
 		foundCmp = true;
 	}
+	if (isValid) {
+		*start_casenum_shift = 0;
+		void **it;
+		r_vector_foreach_prev (&v, it) {
+			const ut64 op_off = *(ut64 *)it;
+			ut64 op_addr = lea_addr + op_off;
+			r_anal_op (anal, &tmp_aop, op_addr,
+					buf + op_off, search_sz - op_off,
+					R_ANAL_OP_MASK_VAL);
+			if (detect_casenum_shift (&tmp_aop, &cmp_reg, start_casenum_shift)) {
+				r_anal_op_fini (&tmp_aop);
+				break;
+			}
+			r_anal_op_fini (&tmp_aop);
+		}
+	}
+	r_vector_fini (&v);
 	free (buf);
 	return isValid;
 }
@@ -303,7 +376,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
 		jmpptr = jmptbl_loc + offs;
 		apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
-		(void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
+		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
 	if (offs > 0) {
@@ -315,7 +388,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	return ret;
 }
 
-R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case) {
+R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift) {
 	bool isValid = false;
 	int i;
 	RListIter *iter;
@@ -373,9 +446,10 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 		}
 	}
 
-	for (i = 0; i < prev_bb->op_pos_size; i++) {
-		ut64 prev_pos = prev_bb->op_pos[i];
-		ut64 op_addr = prev_bb->addr + prev_pos;
+	RRegItem *cmp_reg = NULL;
+	for (i = prev_bb->ninstr - 1; i >= 0; i--) {
+		const ut64 prev_pos = r_anal_bb_offset_inst (prev_bb, i);
+		const ut64 op_addr = r_anal_bb_opaddr_i (prev_bb, i);
 		if (prev_pos >= prev_bb->size) {
 			continue;
 		}
@@ -404,9 +478,42 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 			isValid = tmp_aop.refptr < 0x200;
 			*table_size = tmp_aop.refptr + 1;
 		}
+		if (isValid) {
+			r_anal_op_fini (&tmp_aop);
+			r_anal_op (anal, &tmp_aop, op_addr,
+					bb_buf + prev_pos, buflen,
+					R_ANAL_OP_MASK_VAL);
+			if (tmp_aop.dst && tmp_aop.dst->reg) {
+				cmp_reg = tmp_aop.dst->reg;
+			} else if (tmp_aop.reg) {
+				cmp_reg = r_reg_get(anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
+			} else if (tmp_aop.src[0] && tmp_aop.src[0]->reg) {
+				cmp_reg = tmp_aop.src[0]->reg;
+			}
+		}
 		r_anal_op_fini (&tmp_aop);
 		// TODO: check the jmp for whether val is included in valid range or not (ja vs jae)
 		break;
+	}
+	if (isValid) {
+		*start_casenum_shift = 0;
+		for (i--; i >= 0; i--) {
+			const ut64 prev_pos = r_anal_bb_offset_inst (prev_bb, i);
+			const ut64 op_addr = r_anal_bb_opaddr_i (prev_bb, i);
+			if (prev_pos >= prev_bb->size) {
+				continue;
+			}
+			int buflen = prev_bb->size - prev_pos;
+			r_anal_op (anal, &tmp_aop, op_addr,
+					bb_buf + prev_pos, buflen,
+					R_ANAL_OP_MASK_VAL);
+			if (detect_casenum_shift (&tmp_aop, &cmp_reg, start_casenum_shift)) {
+				r_anal_op_fini (&tmp_aop);
+				break;
+			}
+
+			r_anal_op_fini (&tmp_aop);
+		}
 	}
 	free (bb_buf);
 	// eprintf ("switch at 0x%" PFMT64x "\n\tdefault case 0x%" PFMT64x "\n\t#cases: %d\n",
