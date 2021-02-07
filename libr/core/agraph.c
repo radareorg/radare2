@@ -4128,6 +4128,7 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 
 static const char *help_msg_visual_graph[] = {
 	":e cmd.gprompt=agft", "show tinygraph in one side",
+	"@",            "toggle graph.layout between 0 and 1",
 	"+/-/0",        "zoom in/out/default",
 	";",            "add comment in current basic block",
 	". (dot)",      "center graph to the current node",
@@ -4469,6 +4470,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		}
+		case '@': // tab
+			r_config_set_i (core->config, "graph.layout",
+				r_config_get_i (core->config, "graph.layout")? 0: 1);
+			discroll = 0;
+			g->layout = r_config_get_i (core->config, "graph.layout");
+			g->need_reload_nodes = true;
+			agraph_update_seek (g, get_anode (g->curnode), true);
+			break;
 		case 9: // tab
 			agraph_next_node (g);
 			discroll = 0;
