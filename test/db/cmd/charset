@@ -11,7 +11,7 @@ EOF
 EXPECT=<<EOF
 ascii
 pokered
-????????????????????????????????
+\xa6\xb1\xae\xb4\xad\xa3\x7f\xb3\xae\x7f\xaf\xb1\xae\xb3\xa4\xa2\xb3I\xa8\xb3\xb2\xa4\xab\xa5\x7f\xa5\xb1\xae\xac\x7f\xa8\xb3
 ground-to-protect?itself-from-it
 EOF
 RUN
@@ -26,7 +26,7 @@ e cfg.charset=pokered
 ps $b
 ps  # should be the same as ps $b but its not
 psz
-e cfg.charset=
+e cfg.charset=?
 ps $b
 psz
 EOF
@@ -35,9 +35,9 @@ ascii
 pokered
 --------Self-replicating----arbi
 --------Self-replicating----arbi
-
-\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x7f\x92\xa4\xab\xa5\xe3\xb1\xa4\xaf\xab\xa8\xa2\xa0\xb3\xa8\xad\xa6\x7f\x7f\x7f\x7f\xa0\xb1\xa1\xa8
-
+ascii
+pokered
+--------Self-replicating----arbi
 EOF
 RUN
 
