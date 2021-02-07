@@ -24,6 +24,20 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 	sdb_open (c->db, cs);
 	sdb_reset (c->db_char_to_hex);
 	sdb_open (c->db_char_to_hex, cs);
+
+	c->db_char_to_hex = sdb_new0 ();
+
+	SdbListIter *iter;
+	SdbKv *kv;
+	SdbList *sdbls = sdb_foreach_list (c->db, true);
+
+	ls_foreach (sdbls, iter, kv) {
+		const char *new_key = kv->base.value;
+		const char *new_value = kv->base.key;
+		sdb_add (c->db_char_to_hex, new_key, new_value, 0);
+	}
+	ls_free (sdbls);
+
 	return true;
 }
 

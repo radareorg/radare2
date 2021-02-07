@@ -1226,39 +1226,13 @@ static bool cb_cfgcharset(void *user, void *data) {
 	}
 
 	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
-	bool rc = true;
+	bool rc = false;
 	if (*cf == '?') {
 		list_available_plugins (cs);
 	} else {
 		char *syscs = r_str_newf ("%s%s.sdb", cs, cf);
-		core->print->charset->db_char_to_hex = sdb_new0 ();
 		if (r_file_exists (syscs)) {
 			rc = r_charset_open (core->print->charset, syscs);
-			SdbListIter *iter;
-			SdbKv *kv;
-			SdbList *sdbls = sdb_foreach_list (core->print->charset->db, true);
-
-			ls_foreach (sdbls, iter, kv) {
-				const char *new_key = kv->base.value;
-				const char *new_value = kv->base.key;
-				//snprintf (k, sizeof (k), "0x%02x", (unsigned int) new_key);
-				sdb_add (core->print->charset->db_char_to_hex, new_key, new_value, 0);
-			}
-			//const char *to_debug = sdb_const_get (core->print->charset->db_char_to_hex, "A", 0);
-			ls_free (sdbls);
-		} else {
-			rc = r_charset_open (core->print->charset, syscs);
-			SdbListIter *iter;
-			SdbKv *kv;
-			SdbList *sdbls = sdb_foreach_list (core->print->charset->db, true);
-
-			ls_foreach (sdbls, iter, kv) {
-				const char *new_key = kv->base.value;
-				const char *new_value = kv->base.key;
-				//snprintf (k, sizeof (k), "0x%02x", (unsigned int) new_key);
-				sdb_add (core->print->charset->db_char_to_hex, new_key, new_value, 0);
-			}
-			ls_free (sdbls);
 		}
 		if (!rc) {
 			eprintf ("Warning: Cannot load charset file '%s' '%s'.\n", syscs, cf);

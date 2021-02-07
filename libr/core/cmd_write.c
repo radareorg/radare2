@@ -2027,7 +2027,7 @@ static int cmd_write(void *data, const char *input) {
 	case ' ': // "w"
 	{
 		size_t len = core->blocksize;
-		const char *curcs= r_config_get (core->config, "cfg.charset");
+		const char *curcs = r_config_get (core->config, "cfg.charset");
 		if (R_STR_ISEMPTY (curcs)) {
 			w_handler_old (core, input + 1);
 		} else {
