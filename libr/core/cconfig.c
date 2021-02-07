@@ -1226,15 +1226,13 @@ static bool cb_cfgcharset(void *user, void *data) {
 	}
 
 	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
-	bool rc = true;
+	bool rc = false;
 	if (*cf == '?') {
 		list_available_plugins (cs);
 	} else {
 		char *syscs = r_str_newf ("%s%s.sdb", cs, cf);
 		if (r_file_exists (syscs)) {
 			rc = r_charset_open (core->print->charset, syscs);
-		} else {
-			rc = r_charset_open (core->print->charset, cf);
 		}
 		if (!rc) {
 			eprintf ("Warning: Cannot load charset file '%s' '%s'.\n", syscs, cf);

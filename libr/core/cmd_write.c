@@ -2025,8 +2025,24 @@ static int cmd_write(void *data, const char *input) {
 		wA_handler_old (core, input + 1);
 		break;
 	case ' ': // "w"
-		w_handler_old (core, input + 1);
+	{
+		size_t len = core->blocksize;
+		const char *curcs = r_config_get (core->config, "cfg.charset");
+		if (R_STR_ISEMPTY (curcs)) {
+			w_handler_old (core, input + 1);
+		} else {
+			if (len > 0) {
+				size_t in_len = strlen (input + 1);
+				ut8 *out = malloc (in_len); //suppose in len = out len TODO: change it
+				if (out) {
+					r_charset_decode_str (core->print->charset, out, in_len, (const unsigned char *) input + 1, in_len);
+					w_handler_old (core, (const char *)out);
+					free (out);
+				}
+			}
+		}
 		break;
+	}
 	case 'z': // "wz"
 		wz_handler_old (core, input + 1);
 		break;
