@@ -11,6 +11,7 @@ SDB_OBJS+=cdb_make.o
 SDB_OBJS+=ht_uu.o
 SDB_OBJS+=ht_up.o
 SDB_OBJS+=ht_pp.o
+SDB_OBJS+=ht_pu.o
 SDB_OBJS+=sdbht.o
 SDB_OBJS+=json.o
 SDB_OBJS+=lock.o
