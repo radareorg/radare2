@@ -14,6 +14,7 @@ SDB_OBJS+=ht_pp.o
 SDB_OBJS+=ht_pu.o
 SDB_OBJS+=sdbht.o
 SDB_OBJS+=json.o
+SDB_OBJS+=text.o
 SDB_OBJS+=lock.o
 SDB_OBJS+=ls.o
 SDB_OBJS+=ns.o
