@@ -39,6 +39,7 @@
 #if __WIN32__ || __MINGW__ || __WINDOWS__ || _MSC_VER
 #define __SDB_WINDOWS__ 1
 #define DIRSEP '\\'
+#define lseek _lseek
 #include <windows.h>
 #include <io.h>
 #else

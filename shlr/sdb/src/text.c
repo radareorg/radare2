@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2020 - thestr4ng3r */
+/* sdb - MIT - Copyright 2020-2021 - thestr4ng3r */
 
 #include "sdb.h"
 
@@ -265,7 +265,7 @@ static void load_process_line(LoadCtx *ctx) {
 	ctx->state = STATE_NEWLINE;
 }
 
-static inline char unescape_raw_char (char c) {
+static inline char unescape_raw_char(char c) {
 	switch (c) {
 	case 'n':
 		return '\n';
@@ -431,3 +431,38 @@ beach:
 	return r;
 }
 
+SDB_API bool sdb_text_check(Sdb *s, const char *file) {
+	char buf[64];
+	int fd = open (file, O_RDONLY | O_BINARY);
+	if (fd < 0) {
+		return false;
+	}
+	struct stat st;
+	if (fstat (fd, &st) || !st.st_size) {
+		close (fd);
+		return false;
+	}
+	int count = read (fd, buf, R_MIN (st.st_size, (off_t)sizeof (buf)));
+	close (fd);
+	bool is_ascii = true;
+	bool has_eq = false;
+	bool has_nl = false;
+	buf[sizeof (buf) - 1] = 0;
+	char *p = buf;
+	while (*p) {
+		if (*p == '=') {
+			has_eq = true;
+		} else if (*p == '\n') {
+			if (!has_eq) {
+				break;
+			}
+			has_nl = true;
+		} else if (!has_eq) {
+			if (*p < 10 || *p > '~') {
+				is_ascii = false;
+			}
+		}
+		p++;
+	}
+	return count > 4 && is_ascii && has_nl && has_eq;
+}

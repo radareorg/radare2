@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2012-2016 - pancake */
+/* sdb - MIT - Copyright 2012-2021 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -20,8 +20,6 @@ SDB_API const char *sdb_lock_file(const char *f) {
 	return buf;
 }
 
-#define os_getpid() getpid()
-
 SDB_API bool sdb_lock(const char *s) {
 	int fd;
 	char *pid, pidstr[64];
@@ -32,7 +30,7 @@ SDB_API bool sdb_lock(const char *s) {
 	if (fd == -1) {
 		return false;
 	}
-	pid = sdb_itoa (getpid(), pidstr, 10);
+	pid = sdb_itoa (getpid (), pidstr, 10);
 	if (pid) {
 		if ((write (fd, pid, strlen (pid)) < 0)
 			|| (write (fd, "\n", 1) < 0)) {
@@ -52,7 +50,7 @@ SDB_API int sdb_lock_wait(const char *s) {
 #if __SDB_WINDOWS__
 	 	Sleep (500); // hack
 #else
-	// TODO use lockf() here .. flock is not much useful (fd, LOCK_EX);
+		// TODO use lockf() here .. flock is not much useful (fd, LOCK_EX);
 	 	sleep (1); // hack
 #endif
  	}

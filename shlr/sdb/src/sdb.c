@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2018 - pancake */
+/* sdb - MIT - Copyright 2011-2021 - pancake */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -60,13 +60,14 @@ SDB_API Sdb* sdb_new(const char *path, const char *name, int lock) {
 	s->db.fd = -1;
 	s->fd = -1;
 	s->refs = 1;
+	s->ht = sdb_ht_new ();
 	if (path && !*path) {
 		path = NULL;
 	}
 	if (name && *name && strcmp (name, "-")) {
 		if (path && *path) {
-			int plen = strlen (path);
-			int nlen = strlen (name);
+			size_t plen = strlen (path);
+			size_t nlen = strlen (name);
 			s->dir = malloc (plen + nlen + 2);
 			if (!s->dir) {
 				free (s);
@@ -112,7 +113,6 @@ SDB_API Sdb* sdb_new(const char *path, const char *name, int lock) {
 	if (!s->ns) {
 		goto fail;
 	}
-	s->ht = sdb_ht_new ();
 	s->lock = lock;
 	// if open fails ignore
 	if (global_hook) {
@@ -369,7 +369,7 @@ SDB_API bool sdb_exists(Sdb* s, const char *key) {
 	ut32 pos;
 	char ch;
 	bool found;
-	int klen = strlen (key) + 1;
+	size_t klen = strlen (key) + 1;
 	if (!s) {
 		return false;
 	}
@@ -396,6 +396,9 @@ SDB_API int sdb_open(Sdb *s, const char *file) {
 		return -1;
 	}
 	if (file) {
+		if (sdb_text_check (s, file)) {
+			return sdb_text_load (s, file);
+		}
 		if (s->fd != -1) {
 			close (s->fd);
 			s->fd = -1;
