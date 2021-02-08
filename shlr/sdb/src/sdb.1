@@ -1,4 +1,4 @@
-.Dd May 7, 2015
+.Dd Feb 7, 2021
 .Dt SDB 1
 .Os
 .Sh NAME
@@ -17,6 +17,10 @@ SDB is a simple disk and memory string-based key-value database. It is based on 
 Decode stdin as base64 and prints to result to stdout
 .It Fl D
 Find differences between two databases
+.It Fl C
+Create the C and H files for a perfect hash implementation of the contents of the given Sdb
+.It Fl G
+Create the gperf file used by -C
 .It Fl e
 Encode stdin in base64 and prints to stdout
 .It Fl h

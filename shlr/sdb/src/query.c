@@ -753,11 +753,11 @@ next_quote:
 				*json++ = 0;
 				ok = sdb_json_set (s, cmd, json, val, 0);
 			} else {
-				while (*val && isspace ((unsigned char)*val)) {
+				while (*val && isspace (*val)) {
 					val++;
 				}
 				int i = strlen (cmd) - 1;
-				while (i >= 0 && isspace ((unsigned char)cmd[i])) {
+				while (i >= 0 && isspace (cmd[i])) {
 					cmd[i] = '\0';
 					i--;
 				}
