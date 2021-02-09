@@ -343,10 +343,10 @@ R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
 	}
 }
 
-R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
+R_API void r_anal_set_big_endian(RAnal *anal, int bigend) {
+	r_return_if_fail (anal);
 	anal->big_endian = bigend;
 	anal->reg->big_endian = bigend;
-	return true;
 }
 
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
@@ -390,10 +390,10 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 }
 
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
+	r_return_if_fail (anal);
 	RAnalBlock *bbi;
-	RAnalFunction *fcni;
 	RListIter *iter2;
-	fcni = r_anal_get_fcn_in (anal, addr, 0);
+	RAnalFunction *fcni = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcni) {
 		r_list_foreach (fcni->bbs, iter2, bbi) {
 			if (addr >= bbi->addr && addr < (bbi->addr + bbi->size)) {
@@ -401,14 +401,6 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 				break;
 			}
 		}
-	}
-}
-
-R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color) {
-	RAnalBlock *bbi;
-	bbi = r_anal_bb_from_offset (anal, addr);
-	if (bbi) {
-		bbi->colorize = color;
 	}
 }
 

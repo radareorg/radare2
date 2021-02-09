@@ -912,7 +912,7 @@ typedef struct r_anal_bb_t {
 	ut64 fail;
 	bool traced;
 	bool folded;
-	ut32 colorize;
+	RColor color;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
 	RAnalCond *cond;
@@ -1529,11 +1529,11 @@ R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr);
 R_API bool r_anal_set_bits(RAnal *anal, int bits);
 R_API bool r_anal_set_os(RAnal *anal, const char *os);
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
-R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
+R_API void r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API const char *r_anal_fcntype_tostring(int type);
-R_API int r_anal_fcn_bb (RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
+R_API int r_anal_fcn_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
 R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
 R_API void r_anal_add_import(RAnal *anal, const char *imp);
@@ -2039,8 +2039,6 @@ R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name);
 R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode);
 R_API void r_anal_rtti_print_all(RAnal *anal, int mode);
 R_API void r_anal_rtti_recover_all(RAnal *anal);
-
-R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color);
 
 R_API RList *r_anal_preludes(RAnal *anal);
 R_API bool r_anal_is_prelude(RAnal *anal, const ut8 *data, int len);

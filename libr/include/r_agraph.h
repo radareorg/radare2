@@ -9,6 +9,7 @@ typedef struct r_ascii_node_t {
 	RGraphNode *gnode;
 	char *title;
 	char *body;
+	char *color;
 
 	int x;
 	int y;

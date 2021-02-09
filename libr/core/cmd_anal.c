@@ -364,7 +364,7 @@ static const char *help_msg_afb[] = {
 	"afb.", " [addr]", "show info of current basic block",
 	"afb=", "", "display ascii-art bars for basic block regions",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
-	"afbc", " [addr] [color(ut32)]", "set a color for the bb at a given address",
+	"afbc", " [color] ([addr])", "colorize basic block",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afbi", "[j]", "print current basic block information",
 	"afbj", " [addr]", "show basic blocks information in json",
@@ -3297,6 +3297,45 @@ static void cmd_afsj(RCore *core, const char *arg) {
 	}
 }
 
+static void r2cmd_afbc(RCore *core, const char *input) {
+	r_return_if_fail (core && input);
+	char *ptr = strdup (input);
+	if (!ptr) {
+		return;
+	}
+	if (*ptr == '?') {
+		eprintf ("Usage: afbc red @ addrOfBlock\n");
+	} else if (!*ptr) {
+		RAnalBlock *bb = r_anal_get_block_at (core->anal, core->offset);
+		if (bb && (bb->color.r || bb->color.g || bb->color.b)) {
+			char *s = r_cons_rgb_str (NULL, -1, &bb->color);
+			if (s) {
+				char *name = r_cons_rgb_tostring (bb->color.r, bb->color.g, bb->color.b);
+				r_cons_printf ("%s%s"Color_RESET"\n", s, name);
+				free (name);
+				free (s);
+			}
+		}
+	} else {
+		ut64 addr = core->offset;
+		char *space = strchr (ptr, ' ');
+		if (space) {
+			*space++ = 0;
+			addr = r_num_math (core->num, space);
+		}
+		RColor color = {0};
+		(void)r_cons_pal_parse (ptr, &color);
+		if (color.r || color.g || color.b) {
+			RAnalBlock *bb = r_anal_get_block_at (core->anal, addr);
+			if (bb) {
+				bb->color = color;
+			}
+		} else {
+			eprintf ("Invalid color? (%s)\n", ptr);
+		}
+	}
+	free (ptr);
+}
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	char i;
 
@@ -3959,8 +3998,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					r_warn_if_reached ();
 				}
 			}
+			}
 			break;
-		}
 		case 0:
 		case ' ': // "afb "
 		case 'q': // "afbq"
@@ -3980,30 +4019,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '+': // "afb+"
 			anal_fcn_add_bb (core, input + 3);
 			break;
-		case 'c': { // "afbc"
-			const char *ptr = input + 3;
-			ut64 addr = r_num_math (core->num, ptr);
-			ut32 color;
-			ptr = strchr (ptr, ' ');
-			if (ptr) {
-				ptr = strchr (ptr + 1, ' ');
-				if (ptr) {
-					color = r_num_math (core->num, ptr + 1);
-					RAnalOp *op = r_core_op_anal (core, addr, R_ANAL_OP_MASK_ALL);
-					if (op) {
-						r_anal_colorize_bb (core->anal, addr, color);
-						r_anal_op_free (op);
-					} else {
-						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
-					}
-				}
-			}
+		case 'c': // "afbc"
+			r2cmd_afbc (core, r_str_trim_head_ro (input + 3));
 			break;
-		}
-		case '?':
 		default:
 			r_core_cmd_help (core, help_msg_afb);
-		} // end of switch (input[2])
+			break;
+		}
 		break;
 	case 'n': // "afn"
 		switch (input[2]) {
@@ -4015,21 +4037,21 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			break;
 		case 'a': { // "afna"
-			char *name = r_core_anal_fcn_autoname (core, core->offset, 0, 0);
-			if (name) {
-				r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
-				free (name);
-			}
-			break;
-		}
+				  char *name = r_core_anal_fcn_autoname (core, core->offset, 0, 0);
+				  if (name) {
+					  r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
+					  free (name);
+				  }
+				  break;
+			  }
 		case '.': // "afn."
 		case 0: { // "afn"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 			if (fcn) {
 				r_cons_printf ("%s\n", fcn->name);
 			}
+			}
 			break;
-		}
 		case ' ': { // "afn "
 			ut64 off = core->offset;
 			char *p, *name = strdup (r_str_trim_head_ro (input + 3));
@@ -4052,10 +4074,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 			}
 			free (name);
+			}
 			break;
-		}
 		default:
 			r_core_cmd_help (core, help_msg_afn);
+			break;
 		} // end of switch (input[2])
 		break;
 	case 'S': { // afS"
@@ -4168,7 +4191,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			pj_free (pj);
 			break;
-		}
+			}
 		default:
 			eprintf ("Wrong command. Look at af?\n");
 			break;
@@ -8529,11 +8552,8 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 		u = r_agraph_get_node (core->graph, args[0]);
 		v = r_agraph_get_node (core->graph, args[1]);
 		if (!u || !v) {
-			if (!u) {
-				r_cons_printf ("Node %s not found!\n", args[0]);
-			} else {
-				r_cons_printf ("Node %s not found!\n", args[1]);
-			}
+			const char *arg = args[u? 1: 0];
+			r_cons_printf ("Node %s not found!\n", arg);
 			r_str_argv_free (args);
 			break;
 		}
@@ -8560,8 +8580,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 	case 0:
 		core->graph->can->linemode = r_config_get_i (core->config, "graph.linemode");
 		core->graph->can->color = r_config_get_i (core->config, "scr.color");
-		r_agraph_set_title (core->graph,
-			r_config_get (core->config, "graph.title"));
+		r_agraph_set_title (core->graph, r_config_get (core->config, "graph.title"));
 		r_agraph_print (core->graph);
 		break;
 	case 't': { // "aggt" - tiny graph
@@ -8576,9 +8595,13 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 	case 'k': // "aggk"
 	{
 		Sdb *db = r_agraph_get_sdb (core->graph);
-		char *o = sdb_querys (db, "null", 0, "*");
-		r_cons_print (o);
-		free (o);
+		if (db) {
+			char *o = sdb_querys (db, "null", 0, "*");
+			if (o) {
+				r_cons_print (o);
+				free (o);
+			}
+		}
 		break;
 	}
 	case 'v': // "aggv"
