@@ -46,7 +46,7 @@ static const char *printfmtColumns[NPF] = {
 // to print the stack in the debugger view
 #define PRINT_HEX_FORMATS 10
 #define PRINT_3_FORMATS 2
-#define PRINT_4_FORMATS 7
+#define PRINT_4_FORMATS 9
 #define PRINT_5_FORMATS 8
 
 static int currentFormat = 0;
@@ -61,7 +61,7 @@ static const char *print3Formats[PRINT_3_FORMATS] = { //  not used at all. its h
 };
 static int current4format = 0;
 static const char *print4Formats[PRINT_4_FORMATS] = {
-	"prc", "prc=a", "pxAv", "pxx", "p=e $r-2", "pq 64", "pk 64"
+	"prc", "p2", "prc=a", "pxAv", "pxx", "p=e $r-2", "pq 64", "pk 64", "pri",
 };
 static int current5format = 0;
 static const char *print5Formats[PRINT_5_FORMATS] = {
