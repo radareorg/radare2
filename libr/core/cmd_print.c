@@ -6650,7 +6650,15 @@ l = use_blocksize;
 				r_cons_printf ("|Usage: p2 [number of bytes representing tiles]\n"
 					"NOTE: Only full tiles will be printed\n");
 			} else {
-				r_print_2bpp_tiles (core->print, core->block, len / 16);
+				RConsContext *c = core->cons->context;
+				const char **colors = (const char *[]) {
+					c->pal.mov, //black
+					c->pal.nop, //dark
+					c->pal.cmp, //light
+					c->pal.jmp, //white
+				};
+				const int cols = r_config_get_i (core->config, "hex.cols");
+				r_print_2bpp_tiles (core->print, core->block, len - 1, cols / 4, colors);
 			}
 		}
 		break;
