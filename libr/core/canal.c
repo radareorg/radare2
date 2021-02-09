@@ -1643,7 +1643,11 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 				pj_ki (pj, "times", t->times);
 				pj_end (pj);
 			}
-			pj_kn (pj, "colorize", bbi->colorize);
+			if (bbi->color.r || bbi->color.g || bbi->color.b) {
+				char *s = r_cons_rgb_tostring (bbi->color.r, bbi->color.g, bbi->color.b);
+				pj_ks (pj, "color", s);
+				free (s);
+			}
 			pj_k (pj, "ops");
 			pj_a (pj);
 			if (buf) {

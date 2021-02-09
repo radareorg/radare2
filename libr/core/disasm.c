@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake, dso */
 
 #include "r_core.h"
 
@@ -2037,10 +2037,18 @@ static void ds_print_pre(RDisasmState *ds, bool fcnline) {
 	default:
 		return;
 	}
-
-	r_cons_printf ("%s%s%s ",
-		COLOR (ds, color_fline), c,
-		COLOR_RESET (ds));
+	char *kolor = strdup (ds->color_fline);
+	RAnalBlock *bb;
+	RList *list = r_anal_get_blocks_in (core->anal, ds->at);
+	RListIter *iter;
+	r_list_foreach (list, iter, bb) {
+		if (bb->color.r || bb->color.g || bb->color.b) {
+			kolor = r_cons_rgb_str (NULL, -1, &bb->color);
+		}
+	}
+	r_cons_printf ("%s%s%s ", kolor, c, COLOR_RESET (ds));
+	r_list_free (list);
+	free (kolor);
 }
 
 static void ds_show_comments_describe(RDisasmState *ds) {

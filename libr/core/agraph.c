@@ -1,4 +1,4 @@
-/* Copyright radare2 - 2014-2020 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2021 - pancake, ret2libc */
 
 #include <r_core.h>
 #include <r_cons.h>
@@ -370,6 +370,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		if ((delta_x < strlen (title)) && G (n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
 			char *res = r_str_ansi_crop (title, delta_x, 0, n->w - BORDER_WIDTH, 1);
 			W (res);
+			W (Color_RESET);
 			free (res);
 		}
 	}
@@ -425,6 +426,12 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		r_cons_canvas_circle (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
 	} else {
 		r_cons_canvas_box (g->can, n->x, n->y, n->w, n->h, get_node_color (color, cur));
+	}
+	if (n->color) {
+		const char *pad = r_str_pad ('#', n->w);
+		char *f = r_str_newf ("%s%s%s", n->color, pad, Color_RESET);
+		G (n->x, n->y);
+		W (f);
 	}
 }
 
@@ -2236,6 +2243,10 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		} else {
 			free (body);
 		}
+		R_FREE (node->color);
+		if (bb->color.r || bb->color.g || bb->color.b) {
+			node->color = r_cons_rgb_str (NULL, -1, &bb->color);
+		}
 		free (title);
 		core->keep_asmqjmps = true;
 	}
@@ -3662,7 +3673,7 @@ R_API Sdb *r_agraph_get_sdb(RAGraph *g) {
 	g->need_update_dim = true;
 	g->need_set_layout = true;
 	(void)check_changes (g, false, NULL, NULL);
-	//remove_dummy_nodes (g);
+	// remove_dummy_nodes (g);
 	return g->db;
 }
 
@@ -3843,7 +3854,7 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b) {
 	r_return_if_fail (g && a && b);
 	r_graph_add_edge (g->graph, a->gnode, b->gnode);
 	if (a->title && b->title) {
-		char *k = sdb_fmt ("agraph.nodes.%s.neighbours", a->title);
+		const char *k = sdb_fmt ("agraph.nodes.%s.neighbours", a->title);
 		sdb_array_add (g->db, k, b->title, 0);
 	}
 }
@@ -3851,7 +3862,7 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b) {
 R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	r_return_if_fail (g && a && b);
 	if (a->title && b->title) {
-		char *k = sdb_fmt ("agraph.nodes.%s.neighbours", a->title);
+		const char *k = sdb_fmt ("agraph.nodes.%s.neighbours", a->title);
 		sdb_array_insert (g->db, k, nth, b->title, 0);
 	}
 	r_graph_add_edge_at (g->graph, a->gnode, b->gnode, nth);
@@ -3867,6 +3878,7 @@ R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b) {
 }
 
 R_API void r_agraph_reset(RAGraph *g) {
+	r_return_if_fail (g);
 	agraph_free_nodes (g);
 	r_graph_reset (g->graph);
 	r_agraph_set_title (g, NULL);
