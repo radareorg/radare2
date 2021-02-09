@@ -207,8 +207,8 @@ R_API void r_print_progressbar_with_count(RPrint *pr, unsigned int pc, unsigned 
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions);
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
 R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
-R_API void r_print_2bpp_row(RPrint *p, ut8 *buf);
-R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
+R_API void r_print_2bpp_row(RPrint *p, ut8 *buf, const char **colors);
+R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, const char **colors);
 R_API char * r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
 R_API const char * r_print_color_op_type(RPrint *p, ut32 anal_type);
 R_API void r_print_set_interrupted(int i);

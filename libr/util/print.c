@@ -1845,7 +1845,7 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	}
 }
 
-R_API void r_print_2bpp_row(RPrint *p, ut8 *buf) {
+R_API void r_print_2bpp_row(RPrint *p, ut8 *buf, const char **colors) {
 	const bool useColor = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	int i, c = 0;
 	for (i = 0; i < 8; i++) {
@@ -1855,30 +1855,17 @@ R_API void r_print_2bpp_row(RPrint *p, ut8 *buf) {
 		if (buf[0] & ((1 << 7) >> i)) {
 			c++;
 		}
+		const char *chstr = ".=*@";
+		const char ch = chstr[c % 4];
 		if (useColor) {
-			char *color = "";
-			switch (c) {
-			case 0:
-				color = Color_BGWHITE;
-				break;
-			case 1:
-				color = Color_BGRED;
-				break;
-			case 2:
-				color = Color_BGBLUE;
-				break;
-			case 3:
-				color = Color_BGBLACK;
-				break;
-			}
+			const char *color = "";
+			color = colors[c]; // c is by definition 0, 1, 2 or 3
 			if (p) {
-				p->cb_printf ("%s  ", color);
+				p->cb_printf ("%s%c%c"Color_RESET, color, ch, ch);
 			} else {
-				printf ("%s  ", color);
+				printf ("%s%c%c"Color_RESET, color, ch, ch);
 			}
 		} else {
-			const char *chstr = "#=-.";
-			const char ch = chstr[c % 4];
 			if (p) {
 				p->cb_printf ("%c%c", ch, ch);
 			} else {
@@ -1889,22 +1876,48 @@ R_API void r_print_2bpp_row(RPrint *p, ut8 *buf) {
 	}
 }
 
-R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles) {
+static void r_print_2bpp_newline(RPrint *p, bool useColor) {
+	if (p) {
+		if (useColor) {
+			p->cb_printf (Color_RESET "\n");
+		} else {
+			p->cb_printf ("\n");
+		}
+	} else {
+		printf ("\n");
+	}
+}
+
+R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, const char **colors) {
+	if (!colors) {
+		colors = (const char *[]){
+			Color_BGWHITE,
+			Color_BGRED,
+			Color_BGBLUE,
+			Color_BGBLACK,
+		};
+	}
 	int i, r;
 	const bool useColor = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
-	for (i = 0; i < 8; i++) {
-		for (r = 0; r < tiles; r++) {
-			r_print_2bpp_row (p, buf + 2 * i + r * 16);
-		}
-		if (p) {
-			if (useColor) {
-				p->cb_printf (Color_RESET "\n");
-			} else {
-				p->cb_printf ("\n");
+	int rows = buflen / tiles;
+	int row, delta = 0;
+	// hex.cols = 64 = 256 byte stride
+	int stride = tiles * 16;
+	bool eof = false;
+	for (row = 1; row < rows; row++) {
+		for (i = 0; i < 8 && !eof; i++) {
+			for (r = 0; r < tiles; r++) {
+				//int off = delta + 2 * i + r * 16;
+				int off = delta + (2 * i) + (r * 16);
+				if (off >= buflen) {
+					eof = true;
+					break;
+				}
+				r_print_2bpp_row (p, buf + off, colors);
 			}
-		} else {
-			printf ("\n");
+			r_print_2bpp_newline (p, useColor);
 		}
+		delta += stride;
 	}
 }
 
