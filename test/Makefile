@@ -1,5 +1,8 @@
 all: r2r-tests unit_tests
 
+arm.v35:
+	${RUNTEST} db/extras/asm/arm.v35_64
+
 bins:
 	git clone --depth 1 https://github.com/radareorg/radare2-testbins bins
 
@@ -24,13 +27,13 @@ m68k-extras: bins
 	${RUNTEST} db/extras/asm/m68k
 
 mc6809: bins
-	${RUNTEST} db/extras/asm/x86.udis
+	${RUNTEST} db/extras/asm/mc6809
 
 microblaze: bins
 	${RUNTEST} db/extras/asm/microblaze.gnu
 
 udis86: bins
-	${RUNTEST} db/extras/asm/mc6809
+	${RUNTEST} db/extras/asm/x86.udis_*
 
 olly-extras: bins
 	${RUNTEST} db/extras/asm/x86.olly
