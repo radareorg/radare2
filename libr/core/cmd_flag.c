@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -1165,12 +1165,12 @@ rep:
 		case '?':
 			r_core_cmd_help (core, help_msg_fs);
 			break;
-		case '+':
-			r_flag_space_push (core->flags, input+2);
+		case '+': // "fs+"
+			r_flag_space_push (core->flags, r_str_trim_head_ro (input + 2));
 			break;
 		case 'r':
-			if (input[2] ==' ') {
-				char *newname = strdup (input + 3);
+			if (input[2] == ' ') {
+				char *newname = r_str_trim_dup (input + 3);
 				r_str_trim (newname);
 				r_flag_space_rename (core->flags, NULL, newname);
 				free (newname);
@@ -1197,13 +1197,13 @@ rep:
 				r_flag_space_pop (core->flags);
 				break;
 			default:
-				r_flag_space_unset (core->flags, input+2);
+				r_flag_space_unset (core->flags, r_str_trim_head_ro (input + 2));
 				break;
 			}
 			break;
 		case ' ':
 		{
-			char *name = strdup (input + 2);
+			char *name = r_str_trim_dup (input + 2);
 			r_str_trim (name);
 			r_flag_space_set (core->flags, name);
 			free (name);
