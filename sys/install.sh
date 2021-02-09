@@ -1,8 +1,13 @@
 #!/bin/sh
 
-MAKE=make
-gmake --help >/dev/null 2>&1
-[ $? = 0 ] && MAKE=gmake
+if [ "$(id -u)" = 0 ]; then
+	echo "[XX] Do not run this script as root!"
+	if [ -n "${SUDO_USER}" ]; then
+		echo "[--] Downgrading credentials to ${SUDO_USER}"
+		exec sudo -u "${SUDO_USER}" sys/install.sh $*
+	fi
+	exit 1
+fi
 
 # if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }
 ARGS=""
@@ -39,15 +44,9 @@ while : ; do
 	shift
 done
 
-if [ "${UID}" = 0 ]; then
-	echo "[XX] Do not run this script as root!"
-	if [ -n "${SUDO_USER}" ]; then
-		echo "[--] Downgrading credentials to ${SUDO_USER}"
-		exec sudo -u "${SUDO_USER}" sys/install.sh $*
-	fi
-	exit 1
-fi
-
+MAKE=make
+gmake --help >/dev/null 2>&1
+[ $? = 0 ] && MAKE=gmake
 ${MAKE} --help 2>&1 | grep -q gnu
 if [ $? != 0 ]; then
 	echo "You need GNU Make to build me"
