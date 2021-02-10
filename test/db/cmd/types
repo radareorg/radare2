@@ -109,6 +109,7 @@ FILE=bins/elf/libverifyPass.so
 CMDS=<<EOF
 e anal.vars.stackname=true
 e asm.lines.bb = false
+e asm.lines.jmp = false
 e io.cache=false
 e io.cache.read=false
 wc-*
