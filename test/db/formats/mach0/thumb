@@ -26,7 +26,7 @@ NAME=BatteryLife thumb/arm
 FILE=bins/mach0/BatteryLife.arm_32.0
 CMDS=<<EOF
 e asm.bytes=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.comments=0
 pd 1~push
 e anal.in=range

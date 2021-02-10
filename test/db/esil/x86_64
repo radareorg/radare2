@@ -384,7 +384,7 @@ NAME=x86-64 linux syscall
 FILE=bins/elf/syscall_x86
 CMDS=<<EOF
 e asm.bytes=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e emu.str=1
 e asm.cmt.col=30
 pd 5~write

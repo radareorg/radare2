@@ -312,6 +312,7 @@ e asm.arch=x86
 e asm.bits=32
 e asm.flags.middle=0
 e asm.lines.bb=false
+e asm.lines.jmp=false
 f mid.flag = 4
 wx 31ed4989d15e4889e2
 pd 4
@@ -330,6 +331,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.midflags=2
 f mid.flag = 5
 wx 31ed4989d15e4889e2
@@ -350,6 +352,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.flags.middle=2
 f mid.flag = 4
 wx 31ed4989d15e4889e2
@@ -371,6 +374,7 @@ e asm.arch=x86
 e asm.bits=32
 wx 66b8eb0531c074f9e89090909090
 e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.flags.middle=2
 f mid.flag = 2
 f mid.flag2 = 9

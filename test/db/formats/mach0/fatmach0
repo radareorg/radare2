@@ -16,7 +16,7 @@ CMDS=<<EOF
 e asm.bits
 e asm.bytes=0
 e asm.flags=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 pd 1
 EOF
 EXPECT=<<EOF
@@ -30,7 +30,7 @@ FILE=bins/mach0/BatteryLife.arm_64.1
 CMDS=<<EOF
 e asm.bytes=0
 e asm.flags=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 pd 1
 EOF
 EXPECT=<<EOF
