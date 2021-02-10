@@ -1,4 +1,4 @@
-NAME=asm.bb.middle disasm
+NAME=asm.bbmiddle disasm
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
 e anal.vars.stackname=true
@@ -7,10 +7,10 @@ e asm.comments=false
 e asm.var=false
 s 0x560e67
 af
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pD 0x560eb3-$$
 ?e
-e asm.bb.middle=false
+e asm.bbmiddle=false
 pD 0x560eb3-$$
 EOF
 EXPECT=<<EOF
@@ -82,7 +82,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.middle json
+NAME=asm.bbmiddle json
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -95,17 +95,17 @@ af
 ?e
 ?e ----1----
 ?e
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pDj 19~{}
 ?e
 ?e ----2----
 ?e
-e asm.bb.middle=false
+e asm.bbmiddle=false
 pDj 19~{}
 ?e
 ?e ----3----
 ?e
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pdfj~{}
 EOF
 EXPECT=<<EOF
@@ -520,7 +520,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.middle and pdi
+NAME=asm.bbmiddle and pdi
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -530,10 +530,10 @@ e anal.jmp.mid=true
 e io.cache=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pdi 6
 ?e
-e asm.bb.middle=false
+e asm.bbmiddle=false
 pdi 6
 EOF
 EXPECT=<<EOF
@@ -555,7 +555,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.middle and pif
+NAME=asm.bbmiddle and pif
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -565,10 +565,10 @@ e anal.jmp.mid=true
 e io.cache=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pif
 ?e
-e asm.bb.middle=false
+e asm.bbmiddle=false
 pif
 EOF
 EXPECT=<<EOF
@@ -587,14 +587,14 @@ jmp 3
 EOF
 RUN
 
-NAME=asm.bb.middle and asm.flags.middle
+NAME=asm.bbmiddle and asm.flags.middle
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
 e asm.bytes=true
 e asm.xrefs=false
 s 0x560e67
 af
-e asm.bb.middle=true
+e asm.bbmiddle=true
 e asm.flags.middle=2
 f sym.dummy @ 0x560e7d
 pd 2 @ 0x560e7a

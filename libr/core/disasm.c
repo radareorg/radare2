@@ -624,7 +624,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->atabsonce = r_config_get_i (core->config, "asm.tabs.once");
 	ds->atabsoff = r_config_get_i (core->config, "asm.tabs.off");
 	ds->midflags = r_config_get_i (core->config, "asm.flags.middle");
-	ds->midbb = r_config_get_i (core->config, "asm.bb.middle");
+	ds->midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	core->parser->pseudo = ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
@@ -649,7 +649,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_types = r_config_get_i (core->config, "asm.types");
 	ds->foldxrefs = r_config_get_i (core->config, "asm.xrefs.fold");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
-	ds->show_lines_bb = ds->show_lines ? r_config_get_i (core->config, "asm.lines.bb") : false;
+	ds->show_lines_bb = ds->show_lines ? r_config_get_i (core->config, "asm.lines.jmp") : false;
 	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
@@ -668,7 +668,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
 	ds->show_offset = r_config_get_i (core->config, "asm.offset");
 	ds->show_offdec = r_config_get_i (core->config, "asm.decoff");
-	ds->show_bbline = r_config_get_i (core->config, "asm.bb.line");
+	ds->show_bbline = r_config_get_i (core->config, "asm.lines.bb");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");
 	ds->show_section_perm = r_config_get_i (core->config, "asm.section.perm");
@@ -6360,7 +6360,7 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	r_cons_break_push (NULL, NULL);
 	r_core_seek (core, address, false);
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
-	int midbb = r_config_get_i (core->config, "asm.bb.middle");
+	int midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	bool asmmarks = r_config_get_i (core->config, "asm.marks");
 	r_config_set_b (core->config, "asm.marks", false);
 	i = 0;

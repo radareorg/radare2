@@ -47,7 +47,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdrj and pirj ignore asm.bb.middle
+NAME=pdrj and pirj ignore asm.bbmiddle
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -57,7 +57,7 @@ e anal.jmp.mid=true
 e io.cache=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
-e asm.bb.middle=true
+e asm.bbmiddle=true
 ?e
 pdr
 ?e

@@ -4128,7 +4128,7 @@ static void __printPattern(RCore *core, const char *_input) {
 
 static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type, bool fromHere) {
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
-	const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
+	const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
 	core->anal->gp = saved_gp;
 	if (fromHere) {
 		if (b->addr < core->offset) {
@@ -4153,11 +4153,11 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	if (b->parent_stackptr != INT_MAX) {
 		core->anal->stackptr = b->parent_stackptr;
 	}
-	r_config_set_i (core->config, "asm.bb.middle", false);
+	r_config_set_i (core->config, "asm.bbmiddle", false);
 	p_type == 'D'
 	? r_core_cmdf (core, "pD %"PFMT64u" @0x%"PFMT64x, b->size, b->addr)
 	: r_core_cmdf (core, "pI %"PFMT64u" @0x%"PFMT64x, b->size, b->addr);
-	r_config_set (core->config, "asm.bb.middle", orig_bb_middle);
+	r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
 
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr) {
@@ -4319,8 +4319,8 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char type_print, bool fromHere) {
 	RListIter *iter;
 	RAnalBlock *b = NULL;
-	const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
-	r_config_set_i (core->config, "asm.bb.middle", false);
+	const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
+	r_config_set_i (core->config, "asm.bbmiddle", false);
 	PJ *pj = NULL;
 
 	// XXX: hack must be reviewed/fixed in code analysis
@@ -4361,7 +4361,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	} else {
-		bool asm_lines = r_config_get_i (core->config, "asm.lines.bb");
+		bool asm_lines = r_config_get_i (core->config, "asm.lines.jmp");
 		bool emu = r_config_get_i (core->config, "asm.emu");
 		ut64 saved_gp = 0;
 		ut8 *saved_arena = NULL;
@@ -4370,7 +4370,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			saved_gp = core->anal->gp;
 			saved_arena = r_reg_arena_peek (core->anal->reg);
 		}
-		r_config_set_i (core->config, "asm.lines.bb", 0);
+		r_config_set_i (core->config, "asm.lines.jmp", 0);
 		r_list_foreach (f->bbs, iter, b) {
 			pr_bb (core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
 		}
@@ -4382,9 +4382,9 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			}
 		}
 		core->anal->stackptr = saved_stackptr;
-		r_config_set_i (core->config, "asm.lines.bb", asm_lines);
+		r_config_set_i (core->config, "asm.lines.jmp", asm_lines);
 	}
-	r_config_set (core->config, "asm.bb.middle", orig_bb_middle);
+	r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
 }
 
 static inline char cmd_pxb_p(char input) {
@@ -5418,8 +5418,8 @@ static int cmd_print(void *data, const char *input) {
 				if (f && input[2] == 'j') { // "pdfj"
 					RAnalBlock *b;
 					ut32 fcn_size = r_anal_function_realsize (f);
-					const char *orig_bb_middle = r_config_get (core->config, "asm.bb.middle");
-					r_config_set_i (core->config, "asm.bb.middle", false);
+					const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
+					r_config_set_i (core->config, "asm.bbmiddle", false);
 					pj = pj_new ();
 					if (!pj) {
 						break;
@@ -5447,7 +5447,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf ("%s\n", pj_string (pj));
 					pj_free (pj);
 					pd_result = 0;
-					r_config_set (core->config, "asm.bb.middle", orig_bb_middle);
+					r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
 				} else if (f) {
 					ut64 linearsz = r_anal_function_linear_size (f);
 					ut64 realsz = r_anal_function_realsize (f);

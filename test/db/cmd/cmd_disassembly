@@ -172,7 +172,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e scr.utf8=0
-e asm.lines.bb=1
+e asm.lines.jmp=1
 e asm.comments=0
 wx 803d1ca0040833740ceb1c83c004a318a0088ffd2a118a00408b1085d275eb
 pd 12~?=
