@@ -8477,7 +8477,7 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 		char *newbody = NULL;
 		char **args, *body;
 		int n_args, B_LEN = strlen ("base64:");
-		int color = -1;
+		char *color = NULL;
 		input++;
 		args = r_str_argv (input, &n_args);
 		if (n_args < 1 || n_args > 3) {
@@ -8501,15 +8501,18 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 			}
 			body = r_str_append (body, "\n");
 			if (n_args > 2) {
-				color = atoi (args[2]);
+				RColor kolor = {0};
+				(void)r_cons_pal_parse (args[2], &kolor);
+				color = r_cons_rgb_str (NULL, -1, &kolor);
 			}
 		} else {
 			body = strdup ("");
 		}
-		r_agraph_add_node_with_color (core->graph, args[0], body, color);
+		r_agraph_add_node (core->graph, args[0], body, color);
 		r_str_argv_free (args);
 		free (body);
-		//free newbody it's not necessary since r_str_append reallocate the space
+		free (color);
+		// free newbody it's not necessary since r_str_append reallocate the space
 		break;
 	}
 	case '-': { // "agn-"

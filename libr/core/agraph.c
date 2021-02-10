@@ -326,7 +326,7 @@ static void tiny_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	}
 }
 
-static char *get_node_color (int color, int cur) {
+static char *get_node_color(int color, int cur) {
         RCons *cons = r_cons_singleton ();
         if (color == -1) {
                 return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
@@ -726,7 +726,7 @@ static void create_dummy_nodes(RAGraph *g) {
 
 		r_agraph_del_edge (g, from, to);
 		for (i = 1; i < diff_layer; i++) {
-			RANode *dummy = r_agraph_add_node (g, NULL, NULL);
+			RANode *dummy = r_agraph_add_node (g, NULL, NULL, NULL);
 			if (!dummy) {
 				return;
 			}
@@ -2361,8 +2361,9 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		}
 		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
 		char *title = get_title (bb->addr);
-
-		RANode *node = r_agraph_add_node (g, title, body);
+		char *color = (bb->color.r || bb->color.g || bb->color.b)? r_cons_rgb_str (NULL, -1, &bb->color): NULL;
+		RANode *node = r_agraph_add_node (g, title, body, color);
+		free (color);
 		shortcuts = g->is_interactive ? r_config_get_i (core->config, "graph.nodejmps") : false;
 
 		if (shortcuts) {
@@ -2449,7 +2450,7 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	r_core_seek (core, f->addr, true);
 
 	char *title = get_title (fcn->addr);
-	fcn_anode = r_agraph_add_node (g, title, "");
+	fcn_anode = r_agraph_add_node (g, title, "", NULL);
 
 	free (title);
 	if (!fcn_anode) {
@@ -2476,7 +2477,7 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		char *body = get_body (core, ref->addr, size, mode2opts (g));
 		title = get_title (ref->addr);
 
-		node = r_agraph_add_node (g, title, body);
+		node = r_agraph_add_node (g, title, body, NULL);
 		if (!node) {
 			return false;
 		}
@@ -3716,7 +3717,7 @@ R_API void r_agraph_set_title(RAGraph *g, const char *title) {
 	sdb_set (g->db, "agraph.title", g->title, 0);
 }
 
-R_API RANode *r_agraph_add_node_with_color(const RAGraph *g, const char *title, const char *body, int color) {
+R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body, const char *color) {
 	RANode *res = r_agraph_get_node (g, title);
 	if (res) {
 		return res;
@@ -3733,7 +3734,8 @@ R_API RANode *r_agraph_add_node_with_color(const RAGraph *g, const char *title, 
 	res->is_dummy = false;
 	res->is_reversed = false;
 	res->klass = -1;
-	res->difftype = color;
+	res->color = color? strdup (color): NULL;
+	res->difftype = -1;
 	res->gnode = r_graph_add_node (g->graph, res);
 	sdb_num_set (g->nodes, res->title, (ut64) (size_t) res, 0);
 	if (res->title) {
@@ -3753,10 +3755,6 @@ R_API RANode *r_agraph_add_node_with_color(const RAGraph *g, const char *title, 
 		sdb_set_owned (g->db, sdb_fmt ("agraph.nodes.%s.body", res->title), s, 0);
 	}
 	return res;
-}
-
-R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body) {
-	return r_agraph_add_node_with_color(g, title, body, -1);
 }
 
 R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
@@ -4296,6 +4294,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		exit_graph = true;
 		is_error = !ret;
 	}
+	get_bbupdate (g, core, fcn);
 
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = grd;
@@ -4591,11 +4590,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				r_core_cmd0 (core, "e!asm.hint.call");
 			}
 			break;
-		case '$':
-			r_core_cmd (core, "dr PC=$$", 0);
-			r_core_cmd (core, "sr PC", 0);
-			g->need_reload_nodes = true;
-			break;
 		case 'R':
 			if (r_config_get_i (core->config, "scr.randpal")) {
 				r_core_cmd0 (core, "ecr");
@@ -4607,6 +4601,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
 			get_bbupdate (g, core, fcn);
+			break;
+		case '$':
+			r_core_cmd (core, "dr PC=$$", 0);
+			r_core_cmd (core, "sr PC", 0);
+			g->need_reload_nodes = true;
 			break;
 		case '!':
 			r_core_panels_root (core, core->panels_root);
@@ -4996,7 +4995,7 @@ R_API RAGraph *create_agraph_from_graph(const RGraph/*<RGraphNodeInfo>*/ *graph)
 	// Traverse the list, create new ANode for each Node
 	r_list_foreach (graph->nodes, iter, node) {
 		RGraphNodeInfo *info = node->data;
-		RANode *a_node = r_agraph_add_node (result_agraph, info->title, info->body);
+		RANode *a_node = r_agraph_add_node (result_agraph, info->title, info->body, NULL);
 		if (!a_node) {
 			goto failure;
 		}
