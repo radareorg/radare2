@@ -4493,40 +4493,46 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 }
 
 static void ds_print_bbline(RDisasmState *ds) {
-	if (ds->show_bbline && ds->at) {
-		RAnalBlock *bb = NULL;
-		RAnalFunction *f_before = NULL;
-		if (ds->fcn) {
-			bb = r_anal_fcn_bbget_at (ds->core->anal, ds->fcn, ds->at);
+	if (!ds->show_bbline || !ds->at) {
+		return;
+	}
+	RAnalBlock *bb = NULL;
+	RAnalFunction *f_before = NULL;
+	if (ds->fcn) {
+		bb = r_anal_fcn_bbget_at (ds->core->anal, ds->fcn, ds->at);
+	} else {
+		f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
+	}
+	if ((ds->fcn && bb && ds->fcn->addr != ds->at) || (!ds->fcn && f_before)) {
+		ds_begin_line (ds);
+		// adapted from ds_setup_pre ()
+		ds->cmtcount = 0;
+		if (!ds->show_functions || !ds->show_lines_fcn) {
+			ds->pre = DS_PRE_NONE;
 		} else {
-			f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
-		}
-		if ((ds->fcn && bb && ds->fcn->addr != ds->at) || (!ds->fcn && f_before)) {
-			ds_begin_line (ds);
-			// adapted from ds_setup_pre ()
-			ds->cmtcount = 0;
-			if (!ds->show_functions || !ds->show_lines_fcn) {
-				ds->pre = DS_PRE_NONE;
-			} else {
-				ds->pre = DS_PRE_EMPTY;
-				if (!f_before) {
-					f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
-				}
-				if (f_before == ds->fcn) {
-					ds->pre = DS_PRE_FCN_MIDDLE;
-				}
+			ds->pre = DS_PRE_EMPTY;
+			if (!f_before) {
+				f_before = fcnIn (ds, ds->at - 1, R_ANAL_FCN_TYPE_NULL);
 			}
-			ds_print_pre (ds, true);
-			if (!ds->linesright && ds->show_lines_bb && ds->line) {
-				char *refline, *reflinecol = NULL;
-				ds_update_ref_lines (ds);
-				refline = ds->refline2;
-				reflinecol = ds->prev_line_col;
-				ds_print_ref_lines (refline, reflinecol, ds);
+			if (f_before == ds->fcn) {
+				ds->pre = DS_PRE_FCN_MIDDLE;
 			}
-			r_cons_printf ("|");
-			ds_newline (ds);
 		}
+		ds_print_pre (ds, true);
+		if (ds->show_section && ds->line_col) {
+			const char *sn = r_core_get_section_name (ds->core, ds->at);
+			size_t snl = strlen (sn) + 4;
+			r_cons_printf ("%s", r_str_pad (' ', R_MAX (10, snl - 1)));
+		}
+		if (!ds->linesright && ds->show_lines_bb && ds->line) {
+			char *refline, *reflinecol = NULL;
+			ds_update_ref_lines (ds);
+			refline = ds->refline2;
+			reflinecol = ds->prev_line_col;
+			ds_print_ref_lines (refline, reflinecol, ds);
+		}
+		r_cons_printf ("|");
+		ds_newline (ds);
 	}
 }
 

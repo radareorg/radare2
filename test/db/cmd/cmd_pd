@@ -1613,7 +1613,6 @@ EOF
 RUN
 
 NAME=asm.lines.bb with asm.sections
-BROKEN=1
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
 e scr.utf8=false
@@ -1627,20 +1626,20 @@ s 0x0040294b
 pd 10
 EOF
 EXPECT=<<EOF
-|           0x0040294b      c6059ea72100.  mov byte [0x0061d0f0], 0
-|           0x00402952      83f802         cmp eax, 2
-|       ,=< 0x00402955      0f8483080000   je 0x4031de
-|       |   |
-|       |   0x0040295b      83f803         cmp eax, 3
-|      ,==< 0x0040295e      742f           je 0x40298f
-|      ||   |
-|      ||   0x00402960      83e801         sub eax, 1
-|     ,===< 0x00402963      7405           je 0x40296a
-|     |||   |
-|     |||   0x00402965      e8b6f8ffff     call sym.imp.abort
-|     |||   |
-|     `---> 0x0040296a      bf01000000     mov edi, 1
-|      ||   0x0040296f      e80cf9ffff     call sym.imp.isatty
+|        .text            0x0040294b      c6059ea72100.  mov byte [0x0061d0f0], 0
+|        .text            0x00402952      83f802         cmp eax, 2
+|        .text        ,=< 0x00402955      0f8483080000   je 0x4031de
+|                     |   |
+|        .text        |   0x0040295b      83f803         cmp eax, 3
+|        .text       ,==< 0x0040295e      742f           je 0x40298f
+|                    ||   |
+|        .text       ||   0x00402960      83e801         sub eax, 1
+|        .text      ,===< 0x00402963      7405           je 0x40296a
+|                   |||   |
+|        .text      |||   0x00402965      e8b6f8ffff     call sym.imp.abort
+|                   |||   |
+|        .text      `---> 0x0040296a      bf01000000     mov edi, 1
+|        .text       ||   0x0040296f      e80cf9ffff     call sym.imp.isatty
 EOF
 RUN
 NAME=pd @a overwrites anal hints
