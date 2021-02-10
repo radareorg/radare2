@@ -32,7 +32,8 @@ typedef struct r_charset_t {
 	Sdb *db;
 	Sdb *db_char_to_hex;
 	RCharsetRune *custom_charset;
-	size_t remaining;
+	size_t encode_maxkeylen;
+	size_t decode_maxkeylen;
 } RCharset;
 
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
