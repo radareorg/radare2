@@ -2,7 +2,7 @@ NAME=att subrel
 FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 e asm.syntax=att
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=false
 pd 20
@@ -40,7 +40,7 @@ CMDS=<<EOF
 af
 e asm.syntax=att
 e asm.var=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=false
 pd 20
@@ -78,7 +78,7 @@ CMDS=<<EOF
 aa; s main
 e asm.syntax=att
 e asm.var=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=false
 pdf
@@ -106,7 +106,7 @@ CMDS=<<EOF
 aa; s main
 e asm.syntax=att
 e asm.var=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=false
 e asm.sub.varonly=false

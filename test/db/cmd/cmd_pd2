@@ -379,10 +379,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.line fcnline glitches fix, bblines btw bb & non-bb
+NAME=asm.lines.bb fcnline glitches fix, bblines btw bb & non-bb
 FILE=bins/elf/before-after-main
 CMDS=<<EOF
-e asm.bb.line=true
+e asm.lines.bb=true
 e asm.bytes=false
 e asm.comments=false
 e asm.fcnsig=false
@@ -422,13 +422,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-# asm.bb.line with no analysis is not supported, since backward jump targets
+# asm.lines.bb with no analysis is not supported, since backward jump targets
 # can't be determined completely without analysis of the whole function
 # (assuming no jumps from outside the function into the middle)
-NAME=asm.bb.line no-anal
+NAME=asm.lines.bb no-anal
 FILE=bins/elf/lab2
 CMDS=<<EOF
-e asm.bb.line=true
+e asm.lines.bb=true
 e asm.bytes=false
 e asm.comments=false
 e io.cache=true
@@ -452,11 +452,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.line glitch fix (#12516)
+NAME=asm.lines.bb glitch fix (#12516)
 FILE=bins/elf/ls
 CMDS=<<EOF
 e anal.vars.stackname=true
-e asm.bb.line=true
+e asm.lines.bb=true
 e asm.bytes=false
 e asm.comments=false
 e io.cache=true

@@ -289,7 +289,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.os=linux
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.lines.out=false
 e asm.bytes=false
 e asm.indentspace=0
@@ -456,7 +456,7 @@ e asm.os=linux
 e asm.emu=true
 e asm.bytes=0
 e asm.cmt.col=20
-e asm.lines.bb=false
+e asm.lines.jmp=false
 pd 20~write,exit
 EOF
 EXPECT=<<EOF
@@ -475,7 +475,7 @@ e asm.emu=true
 e emu.write=true
 e asm.bytes=0
 e asm.cmt.col=20
-e asm.lines.bb=false
+e asm.lines.jmp=false
 aeim
 s 0x00402ade
 pd 4~printf

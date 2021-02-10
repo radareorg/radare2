@@ -1,7 +1,7 @@
 NAME=pd call sym bug
 FILE=bins/mach0/hello-objc-arm
 CMDS=<<EOF
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=0
 s sym.static_int_Test::callMeNot__
@@ -45,7 +45,7 @@ RUN
 NAME=pd call sym bug
 FILE=bins/mach0/hello-objc-arm
 CMDS=<<EOF
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=0
 s sym.static_int_Test::callMeNot
@@ -65,7 +65,7 @@ s 0x5e50
 e asm.bits=32
 af; afn eip
 pd 1 @ 0x5f16~:0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=0
 EOF
@@ -82,7 +82,7 @@ s 0x5e50
 e asm.bits=64
 af; afn eip
 pd 1 @ 0x5f16~:0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=0
 EOF
@@ -98,7 +98,7 @@ s 0x5e50
 e asm.bits=64
 af; afn rip
 pd 1 @ 0x5f16~:0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=0
 EOF
@@ -112,7 +112,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.comments=false
 pD@x:8d15d0830408
 EOF
@@ -175,14 +175,14 @@ mov r9, rdx
 EOF
 RUN
 
-NAME=indent asm.lines.fcn=0, asm.lines.bb=1 for issue 9316
+NAME=indent asm.lines.fcn=0, asm.lines.jmp=1 for issue 9316
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 af+ 0 test
 e asm.lines.fcn=0
-e asm.lines.bb=1
+e asm.lines.jmp=1
 pd 2
 EOF
 EXPECT=<<EOF
@@ -192,14 +192,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=indent asm.lines.fcn=1, asm.lines.bb=0 for issue 9316
+NAME=indent asm.lines.fcn=1, asm.lines.jmp=0 for issue 9316
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 af+ 0 test
 e asm.lines.fcn=1
-e asm.lines.bb=0
+e asm.lines.jmp=0
 pd 2
 EOF
 EXPECT=<<EOF

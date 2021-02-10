@@ -113,7 +113,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 90
-e asm.lines.bb=0
+e asm.lines.jmp=0
 b 1
 pd
 pd 1
@@ -131,7 +131,7 @@ e asm.bits=64
 e asm.arch = x86
 e anal.arch = x86
 wx b8ffffffff
-e asm.lines.bb=0
+e asm.lines.jmp=0
 pd 1
 EOF
 EXPECT=<<EOF
@@ -144,7 +144,7 @@ FILE=malloc://128
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e asm.lines.bb=0
+e asm.lines.jmp=0
 pd@x:90
 EOF
 EXPECT=<<EOF
@@ -191,7 +191,7 @@ e asm.bits=64
 aaaa
 e asm.pseudo=true
 e asm.offset=false
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.marks=false
 e asm.nbytes=0
 e asm.comments=false
@@ -522,7 +522,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 488d85c0f9ffff488985b8f9ffff4585f6
-e asm.lines.bb = false
+e asm.lines.jmp = false
 e asm.lbytes = true
 e asm.nbytes = 6
 pd 3
@@ -558,7 +558,7 @@ e asm.sub.rel=false
 e asm.arch=x86
 e asm.bits=64
 wx 488d0502000000
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.comments=false
 pd 1
 e asm.sub.rel=true
@@ -577,7 +577,7 @@ e anal.vars.stackname=true
 e asm.arch=x86
 e asm.bits=64
 e asm.sub.var=true
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.bytes=false
 e asm.comments=false
 e asm.lines.fcn=false
@@ -1194,7 +1194,7 @@ CMDS=<<EOF
 aa; s main
 e asm.syntax=att
 e asm.var=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.comments=false
 pdf
@@ -1238,7 +1238,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 9090
-e asm.lines.bb=0
+e asm.lines.jmp=0
 pdJ 2
 EOF
 EXPECT=<<EOF
@@ -1252,7 +1252,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 wx 90
-e asm.lines.bb=0
+e asm.lines.jmp=0
 CCu base64:dGVzdAo=
 pdJ 1
 CCu base64:dGVzdCAid2l0aCBxdW90ZXMiCg==
@@ -1562,7 +1562,7 @@ NAME=pd @B
 FILE=-
 CMDS=<<EOF
 e asm.functions=false
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.comments=false
 e scr.color=0
 e asm.arch=x86
@@ -1582,12 +1582,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.line
+NAME=asm.lines.bb
 FILE=bins/elf/analysis/ls2
 CMDS=<<EOF
 e scr.utf8=false
 e scr.color=0
-e asm.bb.line=true
+e asm.lines.bb=true
 e asm.comments=false
 s main
 af
@@ -1612,12 +1612,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=asm.lines.bb with asm.sections
+BROKEN=1
+FILE=bins/elf/analysis/ls2
+CMDS=<<EOF
+e scr.utf8=false
+e scr.color=0
+e asm.section=true
+e asm.lines.bb=true
+e asm.comments=false
+s main
+af
+s 0x0040294b
+pd 10
+EOF
+EXPECT=<<EOF
+|           0x0040294b      c6059ea72100.  mov byte [0x0061d0f0], 0
+|           0x00402952      83f802         cmp eax, 2
+|       ,=< 0x00402955      0f8483080000   je 0x4031de
+|       |   |
+|       |   0x0040295b      83f803         cmp eax, 3
+|      ,==< 0x0040295e      742f           je 0x40298f
+|      ||   |
+|      ||   0x00402960      83e801         sub eax, 1
+|     ,===< 0x00402963      7405           je 0x40296a
+|     |||   |
+|     |||   0x00402965      e8b6f8ffff     call sym.imp.abort
+|     |||   |
+|     `---> 0x0040296a      bf01000000     mov edi, 1
+|      ||   0x0040296f      e80cf9ffff     call sym.imp.isatty
+EOF
+RUN
 NAME=pd @a overwrites anal hints
 FILE=bins/elf/analysis/ls-linux64
 CMDS=<<EOF
 e asm.comments=false
 e asm.functions=false
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.flags=false
 ahb 16
 aha arm

@@ -1332,7 +1332,7 @@ FILE=bins/mach0/mac-ls
 CMDS=<<EOF
 s 0x1000039b6
 af
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.lines.fcn=false
 e asm.stackptr=true
 pdr~0x100003b27[1]
@@ -1364,7 +1364,7 @@ e asm.arch = x86
 e asm.bits=64
 e scr.color = false
 e io.va=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.cmt.right=10
 wx 488b3541100000
@@ -1386,7 +1386,7 @@ e asm.arch = x86
 e asm.bits=64
 e scr.color = false
 e io.va=1
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e asm.bytes=0
 e asm.cmt.right=10
 wx 488b3541100000
@@ -2385,7 +2385,7 @@ RUN
 NAME=refs with aar
 FILE=bins/elf/crackme
 CMDS=<<EOF
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.lines.fcn=false
 aar
 pd 1 @0x400730
@@ -2407,7 +2407,7 @@ RUN
 NAME=refs with afr
 FILE=bins/elf/crackme
 CMDS=<<EOF
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.lines.fcn=false
 e anal.jmp.cref=true
 aa
@@ -2432,7 +2432,7 @@ NAME=cjmp data refs with aar
 FILE=malloc://10000
 CMDS=<<EOF
 e asm.arch=8051
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.lines.fcn=false
 wx 307401000022
 aar
@@ -2448,7 +2448,7 @@ NAME=cjmp data refs with afr
 FILE=malloc://10000
 CMDS=<<EOF
 e asm.arch=8051
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.lines.fcn=false
 wx 307401000022
 aa
@@ -2520,10 +2520,10 @@ afi
 ?e
 afb
 ?e
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pdf
 ?e
-e asm.bb.middle=false
+e asm.bbmiddle=false
 pdf
 EOF
 EXPECT=<<EOF
@@ -2573,10 +2573,10 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e anal.nopskip=false
-e asm.bb.middle=true
+e asm.bbmiddle=true
 e anal.jmp.mid=true
 e io.cache=true
-"(show_fcn bin; wx $0; af-*; af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; e asm.bb.middle=true; pdf; ?e; e asm.bb.middle=false; pdf)"
+"(show_fcn bin; wx $0; af-*; af; afi; ?e; afb; ?e; pdr; ?e; agf; ?e; e asm.bbmiddle=true; pdf; ?e; e asm.bbmiddle=false; pdf)"
 .(show_fcn b8210000c1ebfdbb2c000000cc)
 ?e
 .(show_fcn b8210000c1ebfdbb2c000000ebf6)
@@ -3042,7 +3042,7 @@ e asm.emu=true
 e emu.write=true
 e asm.bytes=0
 e asm.cmt.col=20
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e io.cache=true
 aeim
 s 0x00402aee
@@ -3063,7 +3063,7 @@ e asm.emu=true
 e emu.write=true
 e asm.bytes=0
 e asm.cmt.col=20
-e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.lines.fcn=false
 aa
 aeim

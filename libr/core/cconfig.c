@@ -3282,11 +3282,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
 	SETCB ("asm.flags.real", "false", &cb_flag_realnames,
 	       "Show flags' unfiltered realnames instead of names, except realnames from demangling");
-	SETBPREF ("asm.bb.line", "false", "Show empty line after every basic block");
-	SETBPREF ("asm.bb.middle", "true", "Realign disassembly if a basic block starts in the middle of an instruction");
 	SETBPREF ("asm.lbytes", "true", "Align disasm bytes to left");
 	SETBPREF ("asm.lines", "true", "Show ASCII-art lines at disassembly");
-	SETBPREF ("asm.lines.bb", "true", "Show flow lines at jumps");
+	SETBPREF ("asm.lines.jmp", "true", "Show flow lines at jumps");
+	SETBPREF ("asm.lines.bb", "false", "Show empty line after every basic block");
 	SETBPREF ("asm.lines.call", "false", "Enable call lines");
 	SETBPREF ("asm.lines.ret", "false", "Show separator lines after ret");
 	SETBPREF ("asm.lines.out", "true", "Show out of block lines");
@@ -3297,6 +3296,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("asm.sub.varmin", 0x100, &cb_asmsubvarmin, "Minimum value to substitute in instructions (asm.sub.var)");
 	SETCB ("asm.sub.tail", "false", &cb_asmsubtail, "Replace addresses with prefix .. syntax");
 	SETBPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
+	SETBPREF ("asm.bbmiddle", "true", "Realign disassembly if a basic block starts in the middle of an instruction");
 	SETBPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETBPREF ("asm.offset", "true", "Show offsets in disassembly");
 	SETBPREF ("hex.offset", "true", "Show offsets in hex-dump");
