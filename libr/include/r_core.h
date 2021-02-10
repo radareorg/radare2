@@ -433,6 +433,7 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
 R_API int r_core_cmd_file(RCore *core, const char *file);
 R_API int r_core_cmd_lines(RCore *core, const char *lines);
 R_API int r_core_cmd_command(RCore *core, const char *command);
+R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls);
 R_API bool r_core_run_script (RCore *core, const char *file);
 R_API bool r_core_seek(RCore *core, ut64 addr, bool rb);
 R_API bool r_core_visual_bit_editor(RCore *core);
@@ -586,7 +587,7 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to);
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *addr);
-R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2);
+R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2);
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose);
 R_API ut64 r_core_anal_address (RCore *core, ut64 addr);
 R_API void r_core_anal_undefine(RCore *core, ut64 off);
@@ -607,7 +608,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 R_API int r_core_esil_step_back(RCore *core);
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
 R_API bool r_core_anal_bb_seek(RCore *core, ut64 addr);
-R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
+R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth);
 R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump, int mode);
 R_API void r_core_anal_autoname_all_fcns(RCore *core);
 R_API void r_core_anal_autoname_all_golang_fcns(RCore *core);

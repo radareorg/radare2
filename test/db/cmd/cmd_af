@@ -1,17 +1,15 @@
-NAME=af localflag
-FILE=bins/mach0/mac-ls2
+NAME=afcf ls
+FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.calls=false
-af
-aflc
-e anal.calls=true
-af-*
-af
-aflc
+af@main
+afcf main @ 0
+afcf @ main
+afcfj @ main
 EOF
 EXPECT=<<EOF
-1
-33
+int main (int argc, char **argv);
+int main (int argc, char **argv);
+[{"name":"main","return":"int","args":[{"name":"argc","type":"int"},{"name":"argv","type":"char **"}],"count":2}]
 EOF
 RUN
 
@@ -94,7 +92,7 @@ RUN
 
 NAME=afll
 FILE=bins/mach0/ls-osx-x86_64
-CMDS=aa ; afll~?entry0
+CMDS=aa ; afll~?main
 EXPECT=<<EOF
 1
 EOF
@@ -261,9 +259,9 @@ afcf @ main
 afcfj @ main
 EOF
 EXPECT=<<EOF
-int main (int argc, char **argv, char **envp);
-int main (int argc, char **argv, char **envp);
-[{"name":"main","return":"int","args":[{"name":"argc","type":"int"},{"name":"argv","type":"char **"},{"name":"envp","type":"char **"}],"count":3}]
+int main ();
+int main ();
+[{"name":"main","return":"int","args":[],"count":0}]
 EOF
 RUN
 

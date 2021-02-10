@@ -874,36 +874,33 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
 	RListIter *iter;
 	RAnalVar *var;
-	int arg_count = 0;
+	size_t arg_count = 0;
 
+	char *args = r_str_newf ("func.%s.args", fcn->name);
 	RList *all_vars = cache.rvars;
 	r_list_join (all_vars, cache.bvars);
 	r_list_join (all_vars, cache.svars);
-
-	RStrBuf key, value;
-	r_strbuf_init (&key);
-	r_strbuf_init (&value);
-
 	r_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
-			if (!r_strbuf_setf (&key, "func.%s.arg.%d", fcn->name, arg_count) ||
-				!r_strbuf_setf (&value, "%s,%s", var->type, var->name)) {
-				goto exit;
+			char *name = var->name;
+			char *k = r_str_newf ("func.%s.arg.%zu", fcn->name, arg_count++);
+			const char *o = sdb_const_get (core->anal->sdb_types, k, 0);
+			char *vname = o?strchr (o, ','):NULL;
+			if (vname) name = vname+1;
+			char *v = o?strdup(o): r_str_newf ("%s,%s", var->type, name);
+			 /// eprintf("arg (%s) %s -- %s%c", k, v, var->name, 10);
+			char *s = strdup (name);
+			free (var->name);
+			var->name=s;
+			if (!o) {
+				sdb_set (core->anal->sdb_types, k, v, 0);
 			}
-			sdb_set (core->anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&value), 0);
-			arg_count++;
+			free (k);
+			free (v);
 		}
 	}
-	if (arg_count > 0) {
-		if (!r_strbuf_setf (&key, "func.%s.args", fcn->name) ||
-			!r_strbuf_setf (&value, "%d", arg_count)) {
-			goto exit;
-		}
-		sdb_set (core->anal->sdb_types, r_strbuf_get (&key), r_strbuf_get (&value), 0);
-	}
-exit:
-	r_strbuf_fini (&key);
-	r_strbuf_fini (&value);
+	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
+	free (args);
 	r_anal_fcn_vars_cache_fini (&cache);
 }
 
@@ -3343,6 +3340,105 @@ static void cmd_afbc(RCore *core, const char *input) {
 	}
 	free (ptr);
 }
+
+R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) {
+	int depth = r_config_get_i (core->config, "anal.depth");
+	RAnalFunction *fcn = NULL;
+
+	//r_core_anal_undefine (core, core->offset);
+	r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
+	fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+	if (fcn) {
+		/* ensure we use a proper name */
+		__setFunctionName (core, addr, fcn->name, false);
+		if (core->anal->opt.vars) {
+			r_core_recover_vars (core, fcn, true);
+		}
+		__add_vars_sdb (core, fcn);
+	} else {
+		if (core->anal->verbose) {
+			eprintf ("Warning: Unable to analyze function at 0x%08"PFMT64x"\n", addr);
+		}
+	}
+	if (anal_calls) {
+		fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
+		if (fcn) {
+			RAnalRef *ref;
+			RListIter *iter;
+			RList *refs = r_anal_function_get_refs (fcn);
+			r_list_foreach (refs, iter, ref) {
+				if (ref->addr == UT64_MAX) {
+					//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
+					continue;
+				}
+				if (ref->type != R_ANAL_REF_TYPE_CODE && ref->type != R_ANAL_REF_TYPE_CALL) {
+					/* only follow code/call references */
+					continue;
+				}
+				if (!r_io_is_valid_offset (core->io, ref->addr, !core->anal->opt.noncode)) {
+					continue;
+				}
+				r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
+				/* use recursivity here */
+#if 1
+				RAnalFunction *f = r_anal_get_function_at (core->anal, ref->addr);
+				if (f) {
+					RListIter *iter;
+					RAnalRef *ref;
+					RList *refs1 = r_anal_function_get_refs (f);
+					r_list_foreach (refs1, iter, ref) {
+						if (!r_io_is_valid_offset (core->io, ref->addr, !core->anal->opt.noncode)) {
+							continue;
+						}
+						if (ref->type != 'c' && ref->type != 'C') {
+							continue;
+						}
+						r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
+						// recursively follow fcn->refs again and again
+					}
+					r_list_free (refs1);
+				} else {
+					f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
+					if (f) {
+						/* cut function */
+						r_anal_function_resize (f, addr - fcn->addr);
+						r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth - 1);
+						f = r_anal_get_function_at (core->anal, fcn->addr);
+					}
+					if (!f) {
+						eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
+					}
+				}
+#endif
+			}
+			r_list_free (refs);
+			if (core->anal->opt.vars) {
+				r_core_recover_vars (core, fcn, true);
+			}
+		}
+	}
+	if (name) {
+		if (*name && !__setFunctionName (core, addr, name, true)) {
+			eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
+		}
+	}
+	r_core_anal_propagate_noreturn (core, addr);
+#if 0
+	// XXX THIS IS VERY SLOW
+	if (core->anal->opt.vars) {
+		RListIter *iter;
+		RAnalFunction *fcni = NULL;
+		r_list_foreach (core->anal->fcns, iter, fcni) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			r_core_recover_vars (core, fcni, true);
+		}
+	}
+#endif
+	flag_every_function (core);
+}
+
 static int cmd_anal_fcn(RCore *core, const char *input) {
 	char i;
 
@@ -4218,122 +4314,28 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case ' ': // "af "
 	case '\0': // "af"
 		{
-		char *uaddr = NULL, *name = NULL;
-		int depth = r_config_get_i (core->config, "anal.depth");
-		bool analyze_recursively = r_config_get_i (core->config, "anal.calls");
-		RAnalFunction *fcn = NULL;
-		ut64 addr = core->offset;
-		if (input[1] == 'r') {
-			input++;
-			analyze_recursively = true;
-		}
-
-		// first undefine
-		if (input[0] && input[1] == ' ') {
-			name = strdup (r_str_trim_head_ro (input + 2));
-			uaddr = strchr (name, ' ');
-			if (uaddr) {
-				*uaddr++ = 0;
-				addr = r_num_math (core->num, uaddr);
+			bool anal_calls = false;
+			if (input[0] && input[1] == 'r') {
+				input++;
+				anal_calls = true;
+			} else {
+				anal_calls = r_config_get_i (core->config, "anal.calls");
 			}
-			// depth = 1; // or 1?
-			// disable hasnext
-		}
-		//r_core_anal_undefine (core, core->offset);
-		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
-		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-		if (fcn) {
-			/* ensure we use a proper name */
-			__setFunctionName (core, addr, fcn->name, false);
-			if (core->anal->opt.vars) {
-				r_core_recover_vars (core, fcn, true);
-			}
-			__add_vars_sdb (core, fcn);
-		} else {
-			if (core->anal->verbose) {
-				eprintf ("Warning: Unable to analyze function at 0x%08"PFMT64x"\n", addr);
-			}
-		}
-		if (analyze_recursively) {
-			fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
-			if (fcn) {
-				RAnalRef *ref;
-				RListIter *iter;
-				RList *refs = r_anal_function_get_refs (fcn);
-				r_list_foreach (refs, iter, ref) {
-					if (ref->addr == UT64_MAX) {
-						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
-						continue;
-					}
-					if (ref->type != R_ANAL_REF_TYPE_CODE && ref->type != R_ANAL_REF_TYPE_CALL) {
-						/* only follow code/call references */
-						continue;
-					}
-					if (!r_io_is_valid_offset (core->io, ref->addr, !core->anal->opt.noncode)) {
-						continue;
-					}
-					r_core_anal_fcn (core, ref->addr, fcn->addr, R_ANAL_REF_TYPE_CALL, depth);
-					/* use recursivity here */
-#if 1
-					RAnalFunction *f = r_anal_get_function_at (core->anal, ref->addr);
-					if (f) {
-						RListIter *iter;
-						RAnalRef *ref;
-						RList *refs1 = r_anal_function_get_refs (f);
-						r_list_foreach (refs1, iter, ref) {
-							if (!r_io_is_valid_offset (core->io, ref->addr, !core->anal->opt.noncode)) {
-								continue;
-							}
-							if (ref->type != 'c' && ref->type != 'C') {
-								continue;
-							}
-							r_core_anal_fcn (core, ref->addr, f->addr, R_ANAL_REF_TYPE_CALL, depth);
-							// recursively follow fcn->refs again and again
-						}
-						r_list_free (refs1);
-					} else {
-						f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
-						if (f) {
-							/* cut function */
-							r_anal_function_resize (f, addr - fcn->addr);
-							r_core_anal_fcn (core, ref->addr, fcn->addr,
-									R_ANAL_REF_TYPE_CALL, depth);
-							f = r_anal_get_function_at (core->anal, fcn->addr);
-						}
-						if (!f) {
-							eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", fcn->addr);
-						}
-					}
-#endif
+			ut64 addr = core->offset;
+			char *name = NULL;
+			// first undefine
+			if (input[0] && input[1] == ' ') {
+				name = strdup (r_str_trim_head_ro (input + 2));
+				char *uaddr = strchr (name, ' ');
+				if (uaddr) {
+					*uaddr++ = 0;
+					addr = r_num_math (core->num, uaddr);
 				}
-				r_list_free (refs);
-				if (core->anal->opt.vars) {
-					r_core_recover_vars (core, fcn, true);
-				}
+				// depth = 1; // or 1?
+				// disable hasnext
 			}
+			r_core_af (core, addr, name, anal_calls);
 		}
-		if (name) {
-			if (*name && !__setFunctionName (core, addr, name, true)) {
-				eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
-			}
-			free (name);
-		}
-		r_core_anal_propagate_noreturn (core, addr);
-#if 0
-		// XXX THIS IS VERY SLOW
-		if (core->anal->opt.vars) {
-			RListIter *iter;
-			RAnalFunction *fcni = NULL;
-			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				r_core_recover_vars (core, fcni, true);
-			}
-		}
-#endif
-		flag_every_function (core);
-	}
 		break;
 	default:
 		return false;

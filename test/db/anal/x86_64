@@ -2024,6 +2024,7 @@ EXPECT=<<EOF
 cdecl
             ; CALL XREF from main @ 0x80484db
 / (fcn) sym.nonfastcaslled 51
+// void sym.nonfastcaslled (int32_t arg_8h, int32_t arg_ch, int32_t arg_10h, int32_t arg_14h);
 |           ; var int32_t var_10h @ ebp-0x10
 |           ; var int32_t var_ch @ ebp-0xc
 |           ; arg int32_t arg_8h @ ebp+0x8
