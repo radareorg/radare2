@@ -5,7 +5,7 @@
 
 #define MAX_SCAN_SIZE 0x7ffffff
 // should be 1 unless it makes the CI sad
-#define MINDEP 0
+#define MINDEP 1
 
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
