@@ -16,6 +16,7 @@
 
 /* speedup analysis by removing some function overlapping checks */
 #define JAYRO_04 1
+#define MINDEP 0
 
 // 16 KB is the maximum size for a basic block
 #define MAX_FLG_NAME_SIZE 64
@@ -515,7 +516,6 @@ static inline bool does_arch_destroys_dst(const char *arch) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
-#if 1
 	if (depth < 1) {
 		if (anal->verbose) {
 			eprintf ("Too deep fcn_recurse at 0x%"PFMT64x "\n", addr);
@@ -523,7 +523,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
 	// TODO Store all this stuff in the heap so we save memory in the stack
-#endif
 	RAnalOp *op = NULL;
 	const bool continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
@@ -756,7 +755,7 @@ repeat:
 					bb->jump = at + oplen;
 					if (from_addr != bb->addr) {
 						bb->fail = handle_addr;
-						ret = r_anal_fcn_bb (anal, fcn, handle_addr, depth - 1);
+						ret = r_anal_fcn_bb (anal, fcn, handle_addr, depth - MINDEP);
 						eprintf ("(%s) 0x%08"PFMT64x"\n", handle, handle_addr);
 						if (bb->size == 0) {
 							r_anal_function_remove_block (fcn, bb);
@@ -1482,7 +1481,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int r
 		const int shadow_store = 0x28; // First 4 args + retaddr
 		fcn->stack = fcn->maxstack = fcn->reg_save_area = shadow_store;
 	}
-	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth - 1);
+	int ret = r_anal_fcn_bb (anal, fcn, addr, anal->opt.depth - MINDEP);
 	if (ret < 0) {
 		if (anal->verbose) {
 			eprintf ("Failed to analyze basic block at 0x%"PFMT64x"\n", addr);
@@ -2081,7 +2080,7 @@ static bool analize_addr_cb(ut64 addr, void *user) {
 	RAnalBlock *existing_bb = r_anal_get_block_at (anal, addr);
 	if (!existing_bb || !r_list_contains (ctx->fcn->bbs, existing_bb)) {
 		int old_len = r_list_length (ctx->fcn->bbs);
-		r_anal_fcn_bb (ctx->fcn->anal, ctx->fcn, addr, anal->opt.depth - 1);
+		r_anal_fcn_bb (ctx->fcn->anal, ctx->fcn, addr, anal->opt.depth - MINDEP);
 		if (old_len != r_list_length (ctx->fcn->bbs)) {
 			r_anal_block_recurse (r_anal_get_block_at (anal, addr), mark_as_visited, user);
 		}
@@ -2166,7 +2165,7 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 		// analyze edges that don't have a block
 		RAnalBlock *bb = r_anal_get_block_at (anal, fcn->addr);
 		if (!bb) {
-			r_anal_fcn_bb (anal, fcn, fcn->addr, anal->opt.depth - 1);
+			r_anal_fcn_bb (anal, fcn, fcn->addr, anal->opt.depth - MINDEP);
 			bb = r_anal_get_block_at (anal, fcn->addr);
 			if (!bb) {
 				continue;

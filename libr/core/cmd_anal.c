@@ -4,6 +4,8 @@
 #include <r_util/r_graph_drawable.h>
 
 #define MAX_SCAN_SIZE 0x7ffffff
+// should be 1 unless it makes the CI sad
+#define MINDEP 0
 
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
@@ -7138,7 +7140,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
 						fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
 						if (!fcn) {
-							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth - 1);
+							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth - MINDEP);
 						}
 					}
 #else
@@ -7149,7 +7151,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 						// add xref here
 						r_anal_xrefs_set (core->anal, addr, op.jump, R_ANAL_REF_TYPE_CALL);
 						if (r_io_is_valid_offset (core->io, op.jump, 1)) {
-							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth - 1);
+							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth - MINDEP);
 						}
 					}
 #endif
