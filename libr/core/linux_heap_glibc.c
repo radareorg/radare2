@@ -633,7 +633,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 	snprintf (title, sizeof (title) - 1, "bin @ 0x%"PFMT64x"\n", (ut64)bin);
 	snprintf (chunk, sizeof (chunk) - 1, "fd: 0x%"PFMT64x"\nbk: 0x%"PFMT64x"\n",
 		(ut64)cnk->fd, (ut64)cnk->bk);
-	bin_node = r_agraph_add_node (g, title, chunk);
+	bin_node = r_agraph_add_node (g, title, chunk, NULL);
 	prev_node = bin_node;
 
 	while (cnk->bk != bin) {
@@ -649,7 +649,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 		snprintf (title, sizeof (title) - 1, "Chunk @ 0x%"PFMT64x"\n", (ut64)next);
 		snprintf (chunk, sizeof (chunk) - 1, "fd: 0x%"PFMT64x"\nbk: 0x%"PFMT64x"\n",
 			(ut64)cnk->fd, (ut64)cnk->bk);
-		next_node = r_agraph_add_node (g, title, chunk);
+		next_node = r_agraph_add_node (g, title, chunk, NULL);
 		r_agraph_add_edge (g, prev_node, next_node);
 		r_agraph_add_edge (g, next_node, prev_node);
 		prev_node = next_node;
@@ -1186,7 +1186,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 				node_title = r_str_newf ("  Malloc chunk @ 0x%"PFMT64x" ", (ut64)prev_chunk);
 				node_data = r_str_newf ("[corrupted] size: 0x%"PFMT64x"\n fd: 0x%"PFMT64x", bk: 0x%"PFMT64x
 					"\nHeap graph could not be recovered\n", (ut64)cnk->size, (ut64)cnk->fd, (ut64)cnk->bk);
-				r_agraph_add_node (g, node_title, node_data);
+				r_agraph_add_node (g, node_title, node_data, NULL);
 				if (first_node) {
 					first_node = false;
 				}
@@ -1329,7 +1329,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		case 'g':
 			node_title = r_str_newf ("  Malloc chunk @ 0x%"PFMT64x" ", (ut64)prev_chunk_addr);
 			node_data = r_str_newf ("size: 0x%"PFMT64x" status: %s\n", (ut64)prev_chunk_size, status);
-			chunk_node = r_agraph_add_node (g, node_title, node_data);
+			chunk_node = r_agraph_add_node (g, node_title, node_data, NULL);
 			if (first_node) {
 				first_node = false;
 			} else {
@@ -1366,7 +1366,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		r_cons_printf ("f heap.end = 0x%08"PFMT64x"\n", (ut64)brk_end);
 		break;
 	case 'g':
-		top = r_agraph_add_node (g, top_title, top_data);
+		top = r_agraph_add_node (g, top_title, top_data, NULL);
 		if (!first_node) {
 			r_agraph_add_edge (g, prev_node, top);
 			free (node_data);
