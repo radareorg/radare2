@@ -378,6 +378,7 @@ RUN
 
 NAME=af skips symbols
 FILE=bins/elf/analysis/guess-number-riscv64
+ARGS=-e bin.dbginfo=0
 CMDS=<<EOF
 af @ sym.fstatat
 af @ sym.__syscall_error
