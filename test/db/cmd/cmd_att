@@ -84,16 +84,16 @@ e asm.comments=false
 pdf
 EOF
 EXPECT=<<EOF
-/ 42: int main (int argc, char **argv, char **envp);
+/ 42: int main (int argc, char **argv);
 | 0x004004a6      pushq %rbp
 | 0x004004a7      movq %rsp, %rbp
-| 0x004004aa      movq arg_8h, %rax
+| 0x004004aa      movq argc, %rax
 | 0x004004af      movq -8(%rsp), %rax
-| 0x004004b4      movq arg_8h, %rax
+| 0x004004b4      movq argc, %rax
 | 0x004004b8      movq var_8h, %rax
-| 0x004004bc      movq arg_18h, %rax
+| 0x004004bc      movq argv, %rax
 | 0x004004c1      movq -0x18(%rsp), %rax
-| 0x004004c6      movq arg_18h, %rax
+| 0x004004c6      movq argv, %rax
 | 0x004004ca      movq var_18h, %rax
 | 0x004004ce      leave
 \ 0x004004cf      retq
@@ -113,16 +113,16 @@ e asm.sub.varonly=false
 pdf
 EOF
 EXPECT=<<EOF
-/ 42: int main (int argc, char **argv, char **envp);
+/ 42: int main (int argc, char **argv);
 | 0x004004a6      pushq %rbp
 | 0x004004a7      movq %rsp, %rbp
-| 0x004004aa      movq arg_8h(%rsp), %rax
+| 0x004004aa      movq argc(%rsp), %rax
 | 0x004004af      movq -8(%rsp), %rax
-| 0x004004b4      movq arg_8h(%rbp), %rax
+| 0x004004b4      movq argc(%rbp), %rax
 | 0x004004b8      movq var_8h(%rbp), %rax
-| 0x004004bc      movq arg_18h(%rsp), %rax
+| 0x004004bc      movq argv(%rsp), %rax
 | 0x004004c1      movq -0x18(%rsp), %rax
-| 0x004004c6      movq arg_18h(%rbp), %rax
+| 0x004004c6      movq argv(%rbp), %rax
 | 0x004004ca      movq var_18h(%rbp), %rax
 | 0x004004ce      leave
 \ 0x004004cf      retq

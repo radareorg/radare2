@@ -142,7 +142,7 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 
 #define gotoBeach(x) ret = x; goto beach;
 
-static bool isInvalidMemory(RAnal *anal, const ut8 *buf, int len) {
+static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
 	if (anal->opt.nonull > 0) {
 		int i;
 		const int count = R_MIN (len, anal->opt.nonull);
@@ -158,12 +158,18 @@ static bool isInvalidMemory(RAnal *anal, const ut8 *buf, int len) {
 	return !memcmp (buf, "\xff\xff\xff\xff", R_MIN (len, 4));
 }
 
-static bool isSymbolNextInstruction(RAnal *anal, RAnalOp *op) {
-	r_return_val_if_fail (anal && op && anal->flb.get_at, false);
+static bool is_symbol_flag(const char *name) {
+	return strstr (name, "imp.")
+		|| strstr (name, "dbg.")
+		|| strstr (name, "sym.")
+		|| !strncmp (name, "entry", 5)
+		|| !strcmp (name, "main");
+}
 
+static bool next_instruction_is_symbol(RAnal *anal, RAnalOp *op) {
+	r_return_val_if_fail (anal && op && anal->flb.get_at, false);
 	RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->addr + op->size, false);
-	return (fi && fi->name && (strstr (fi->name, "imp.") || strstr (fi->name, "sym.")
-			|| strstr (fi->name, "entry") || strstr (fi->name, "main")));
+	return (fi && fi->name && is_symbol_flag (fi->name));
 }
 
 static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 lea_ptr, ut64 *jmptbl_addr, ut64 *casetbl_addr, RAnalOp *jmp_aop) {
@@ -680,7 +686,7 @@ repeat:
 			eprintf ("Failed to read\n");
 			break;
 		}
-		if (isInvalidMemory (anal, buf, bytes_read)) {
+		if (is_invalid_memory (anal, buf, bytes_read)) {
 			if (anal->verbose) {
 				eprintf ("Warning: FFFF opcode at 0x%08"PFMT64x "\n", at);
 			}
@@ -1212,7 +1218,7 @@ repeat:
 		case R_ANAL_OP_TYPE_IJMP:
 		case R_ANAL_OP_TYPE_IRJMP:
 			// if the next instruction is a symbol
-			if (anal->opt.ijmp && isSymbolNextInstruction (anal, op)) {
+			if (anal->opt.ijmp && next_instruction_is_symbol (anal, op)) {
 				gotoBeach (R_ANAL_RET_END);
 			}
 			// switch statement
@@ -2298,9 +2304,9 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 		}
 		r_list_foreach_safe (bb->fcns, it2, tmp, fcn) {			
 			if (align > 1) {
-				if ((end_write < r_anal_bb_opaddr_i (bb, bb->ninstr - 1)) 
+				if ((end_write < r_anal_bb_opaddr_i (bb, bb->ninstr - 1))
 					&& (!bb->switch_op || end_write < bb->switch_op->addr)) {
-					// Special case when instructions are aligned and we don't 
+					// Special case when instructions are aligned and we don't
 					// need to worry about a write messing with the jump instructions
 					clear_bb_vars (fcn, bb, addr > bb->addr ? addr : bb->addr, end_write);
 					update_var_analysis (fcn, align, addr > bb->addr ? addr : bb->addr, end_write);

@@ -8,7 +8,7 @@ pd 1 @main
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d
-/ 44: int main (int argc, char **argv, char **envp);
+/ 44: int main ();
 |           ; var int64_t var_4h @ rbp-0x4
 |           0x0040052d      55             push rbp                    ; dwarftest.c:4
 EOF
@@ -36,7 +36,7 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x10c1
             ;-- main:
-/ 139: int dbg.main (int argc, char **argv, char **envp);
+/ 139: int dbg.main ();
 |           ; var int output @ rbp-0x24
 |           ; var Bird *b @ rbp-0x20
 |           ; var Mammal *m @ rbp-0x18
@@ -48,7 +48,7 @@ EXPECT=<<EOF
 |           0x00001248      bf08000000     mov edi, 8
 |           0x0000124d      e81efeffff     call sym.imp.operator_new_unsigned_long_
 |           0x00001252      4889c3         mov rbx, rax
-|           0x00001255      4889df         mov rdi, rbx
+|           0x00001255      4889df         mov rdi, rbx                ; int64_t arg1
 |           0x00001258      e827010000     call dbg.Bird::Bird()
 |           0x0000125d      48895de0       mov qword [b], rbx
 |           0x00001261      bf08000000     mov edi, 8
@@ -161,8 +161,8 @@ EXPECT=<<EOF
 |           0x00005857      488dbc24a800.  lea rdi, [var_a8h]
 |           0x0000585f      ff15b3430300   call qword [dbg._print]     ; [0x39c18:8]=0xa2d0 dbg._print
 |           0x00005865      488d84248000.  lea rax, [numbers]
-|           0x0000586d      4889c7         mov rdi, rax
-|           0x00005870      be0a000000     mov esi, 0xa
+|           0x0000586d      4889c7         mov rdi, rax                ; int64_t arg1
+|           0x00005870      be0a000000     mov esi, 0xa                ; int64_t arg2
 |           0x00005875      e8f6f9ffff     call sym rust::bubble_sort::h0777bc845caabc60 ; dbg.bubble_sort<i32>
 |           0x0000587a      488b05f72a03.  mov rax, qword [0x00038378] ; [0x38378:8]=0x38358
 |           0x00005881      488d8c248000.  lea rcx, [numbers]
@@ -391,8 +391,8 @@ EXPECT=<<EOF
 |           0x00401991      66897df8       mov word [mag], di
 |           0x00401995      668975f0       mov word [szel], si
 |           0x00401999      b801000000     mov eax, 1
-|           0x0040199e      bf01000000     mov edi, 1
-|           0x004019a3      89c6           mov esi, eax
+|           0x0040199e      bf01000000     mov edi, 1                  ; int64_t arg2
+|           0x004019a3      89c6           mov esi, eax                ; int64_t arg_8h
 |           0x004019a5      e8b6a10200     call sym.CRT____GOTOXY_TCRTCOORD_TCRTCOORD
 |           0x004019aa      66448b65f0     mov r12w, word [szel]
 |           0x004019af      66c745ec0100   mov word [i], 1

@@ -145,16 +145,13 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 /* This function display list of arg with some colors */
 
 R_API void r_core_print_func_args(RCore *core) {
-	RListIter *iter;
+	r_return_if_fail (core && core->anal && core->anal->reg);
+
+
 	bool color = r_config_get_i (core->config, "scr.color");
-	if (!core->anal) {
-		return;
-	}
-	if (!core->anal->reg) {
-		return;
-	}
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 cur_addr = r_reg_getv (core->anal->reg, pc);
+	RListIter *iter;
 	RAnalOp *op = r_core_anal_op (core, cur_addr, R_ANAL_OP_MASK_BASIC);
 	if (!op) {
 		return;
