@@ -515,7 +515,7 @@ static inline bool does_arch_destroys_dst(const char *arch) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
-#if 0
+#if 1
 	if (depth < 1) {
 		if (anal->verbose) {
 			eprintf ("Too deep fcn_recurse at 0x%"PFMT64x "\n", addr);

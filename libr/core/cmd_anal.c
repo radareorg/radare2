@@ -2707,9 +2707,8 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 	return false;
 }
 
-static int anal_fcn_add_bb(RCore *core, const char *input) {
+static int cmd_afbplus(RCore *core, const char *input) {
 	// fcn_addr bb_addr bb_size [jump] [fail]
-	char *ptr;
 	const char *ptr2 = NULL;
 	ut64 fcnaddr = -1LL, addr = -1LL;
 	ut64 size = 0LL;
@@ -2718,8 +2717,7 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	RAnalFunction *fcn = NULL;
 	RAnalDiff *diff = NULL;
 
-	while (*input == ' ') input++;
-	ptr = strdup (input);
+	char *ptr = r_str_trim_dup (input);
 
 	switch (r_str_word_set0 (ptr)) {
 	case 6:
@@ -2753,7 +2751,7 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 			eprintf ("afb+: Cannot add basic block at 0x%08"PFMT64x"\n", addr);
 		}
 	} else {
-		eprintf ("afb+ Cannot find function at 0x%" PFMT64x " from 0x%08"PFMT64x" -> 0x%08"PFMT64x"\n",
+		eprintf ("afb+ No function at 0x%" PFMT64x " from 0x%08"PFMT64x" -> 0x%08"PFMT64x"\n",
 				fcnaddr, addr, jump);
 	}
 	r_anal_diff_free (diff);
@@ -2761,7 +2759,7 @@ static int anal_fcn_add_bb(RCore *core, const char *input) {
 	return true;
 }
 
-static void r_core_anal_nofunclist  (RCore *core, const char *input) {
+static void r_core_anal_nofunclist(RCore *core, const char *input) {
 	int minlen = (int)(input[0]==' ') ? r_num_math (core->num, input + 1): 16;
 	ut64 code_size = r_num_get (core->num, "$SS");
 	ut64 base_addr = r_num_get (core->num, "$S");
@@ -2830,10 +2828,10 @@ static void r_core_anal_nofunclist  (RCore *core, const char *input) {
 			r_cons_printf ("0x%08"PFMT64x"  %6" PFMT64u "\n", base_addr+chunk_offset, chunk_size);
 		}
 	}
-	free(bitmap);
+	free (bitmap);
 }
 
-static void r_core_anal_fmap  (RCore *core, const char *input) {
+static void r_core_anal_fmap(RCore *core, const char *input) {
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int cols = r_config_get_i (core->config, "hex.cols") * 4;
 	ut64 code_size = r_num_get (core->num, "$SS");
@@ -2841,14 +2839,13 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	RAnalBlock *b;
-	char* bitmap;
 	int assigned;
 	ut64 i;
 
 	if (code_size < 1) {
 		return;
 	}
-	bitmap = calloc (1, code_size+64);
+	char *bitmap = calloc (1, code_size + 64);
 	if (!bitmap) {
 		return;
 	}
@@ -2890,7 +2887,8 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 			r_cons_printf ("%c", bitmap[i] ? bitmap[i] : '.' );
 		}
 	}
-	r_cons_printf ("\n%d / %" PFMT64u " (%.2lf%%) bytes assigned to a function\n", assigned, code_size, 100.0*( (float) assigned) / code_size);
+	r_cons_printf ("\n%d / %" PFMT64u " (%.2lf%%) bytes assigned to a function\n",
+		assigned, code_size, 100.0*( (float) assigned) / code_size);
 	free(bitmap);
 }
 
@@ -3297,7 +3295,7 @@ static void cmd_afsj(RCore *core, const char *arg) {
 	}
 }
 
-static void r2cmd_afbc(RCore *core, const char *input) {
+static void cmd_afbc(RCore *core, const char *input) {
 	r_return_if_fail (core && input);
 	char *ptr = strdup (input);
 	if (!ptr) {
@@ -4015,10 +4013,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			anal_fcn_list_bb (core, input[2]? " $$": input + 2, true);
 			break;
 		case '+': // "afb+"
-			anal_fcn_add_bb (core, input + 3);
+			cmd_afbplus (core, input + 3);
 			break;
 		case 'c': // "afbc"
-			r2cmd_afbc (core, r_str_trim_head_ro (input + 3));
+			cmd_afbc (core, r_str_trim_head_ro (input + 3));
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_afb);
