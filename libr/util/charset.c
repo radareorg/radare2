@@ -113,24 +113,35 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 
 // assumes out is as big as in_len
 R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
-	char k[32];
 	char *o = (char*)out;
-	int i;
-	for (i = 0; i < in_len; i++) {
-		ut8 ch_in = in[i];
+	size_t last_char_size;
+	size_t maxkeylen = 8;
 
-		//zero terminate the string
-		snprintf (k, sizeof (k), "%c", ch_in);//snprintf (k, sizeof (k), "0x%02x", ch_in);
-		char *v = sdb_get (rc->db_char_to_hex, k, 0);
-		memmove(v, v+2, strlen (v));
+	size_t cur, j;
+	for (cur = 0; cur < in_len; ) {
+		char *str = r_str_ndup((char *)in, maxkeylen);
+		for (j = in_len ; j > 0; j--) {
+			//zero terminate the string
+			str[j] = '\0';
 
-		//convert to ascii
-		char str_hx[32];
-		snprintf (str_hx, sizeof (str_hx), "%c", (char) strtol( v, 0, 16));
-		const char *ret = r_str_get_fail (str_hx, "?");
-		strcpy (o, ret);
+			const char *v = sdb_const_get (rc->db_char_to_hex, (char *) str+cur, 0);
+			if (v) {
+				//convert to ascii
+				char *str_hx = malloc(maxkeylen);
+				snprintf (str_hx, maxkeylen, "%c", (char) strtol(v, 0, 16));//in the future handle multiple chars output
+				const char *ret = r_str_get_fail (str_hx, "?");
 
-		o += strlen (o);
+				//concatenate
+				strcpy (o, ret);
+				o += strlen (o);
+
+				//pass for multiple chars
+				last_char_size = strlen ( (char *)str+cur);
+				cur += last_char_size;
+				free (str_hx);
+			}
+		}
+		free (str);
 	}
 	return o - (char*)out;
 }
