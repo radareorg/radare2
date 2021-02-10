@@ -516,12 +516,14 @@ static inline bool does_arch_destroys_dst(const char *arch) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
+#if !MINDEP
 	if (depth < 1) {
 		if (anal->verbose) {
 			eprintf ("Too deep fcn_recurse at 0x%"PFMT64x "\n", addr);
 		}
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
+#endif
 	// TODO Store all this stuff in the heap so we save memory in the stack
 	RAnalOp *op = NULL;
 	const bool continue_after_jump = anal->opt.afterjmp;
@@ -561,6 +563,14 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	if (anal->sleep) {
 		r_sys_usleep (anal->sleep);
 	}
+#if MINDEP
+	if (depth < 1) {
+		if (anal->verbose) {
+			eprintf ("Too deep fcn_recurse at 0x%"PFMT64x "\n", addr);
+		}
+		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
+	}
+#endif
 
 	// check if address is readable //:
 	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
