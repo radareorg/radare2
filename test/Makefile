@@ -18,7 +18,7 @@ fuzz-tests: bins
 	r2r -LF bins/fuzzed @fuzz
 
 keystone: bins
-	${RUNTEST} db/extras/asm/x86.ks_
+	${RUNTEST} db/extras/asm/x86.ks_*
 
 swf: bins
 	${RUNTEST} db/extras/cmd/swf
