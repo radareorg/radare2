@@ -352,8 +352,8 @@ typedef struct r_cons_canvas_t {
 #define RUNE_CURVE_CORNER_BR "╯"
 #define RUNE_CURVE_CORNER_BL "╰"
 #define RUNE_LONG_LINE_HORIZ "―"
-#define UTF_CIRCLE "\u25EF"
-#define UTF_BLOCK "\u2588"
+#define UTF8_CIRCLE "\u25EF"
+#define UTF8_BLOCK "\u2588"
 
 // Emoji
 #define UTF8_POLICE_CARS_REVOLVING_LIGHT "🚨"

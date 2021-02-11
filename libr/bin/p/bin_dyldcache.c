@@ -914,15 +914,15 @@ static HtPU *create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hd
 	if (!path_to_idx) {
 		return NULL;
 	}
-	for (size_t i = 0; i != hdr->imagesCount; i++) {
+	size_t i;
+	for (i = 0; i != hdr->imagesCount; i++) {
 		char file[256];
 		if (r_buf_read_at (cache_buf, img[i].pathFileOffset, (ut8*) &file, sizeof (file)) != sizeof (file)) {
 			continue;
 		}
-		file[255] = 0;
+		file[sizeof (file) - 1] = 0;
 		ht_pu_insert (path_to_idx, file, (ut64)i);
 	}
-
 	return path_to_idx;
 }
 
