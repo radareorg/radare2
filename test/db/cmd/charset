@@ -12,7 +12,7 @@ EXPECT=<<EOF
 ascii
 pokered
 \xa6\xb1\xae\xb4\xad\xa3\x7f\xb3\xae\x7f\xaf\xb1\xae\xb3\xa4\xa2\xb3I\xa8\xb3\xb2\xa4\xab\xa5\x7f\xa5\xb1\xae\xac\x7f\xa8\xb3
-ground-to-protect?itself-from-it
+ground-to-protect<PAGE>itself-fr
 EOF
 RUN
 
@@ -53,6 +53,6 @@ wx 00 @ 12
 ps 28
 EOF
 EXPECT=<<EOF
-hello-world-?his-is-very-new
+hello-world-<NULL>his-is-ver
 EOF
 RUN
