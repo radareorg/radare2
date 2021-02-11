@@ -54,13 +54,14 @@ R_API void r_big_from_hexstr(RNumBig *b, const char *str) {
 R_API char *r_big_to_hexstr(RNumBig *b) {
 	char *tmp = BN_bn2hex (b);
 	char *res;
+	size_t i;
 	if (tmp[0] == '-') {
 		res = r_str_newf ("-0x%s", &tmp[1]);
 	} else {
 		res = r_str_newf ("0x%s", tmp);
 	}
 	OPENSSL_free (tmp);
-	for (size_t i = 0; res[i]; i++) {
+	for (i = 0; res[i]; i++) {
 		res[i] = tolower (res[i]);
 	}
 	return res;

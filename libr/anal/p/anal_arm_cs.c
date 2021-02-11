@@ -1174,12 +1174,12 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 
 static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate, int sign) {
 	cs_arm64_op dst = INSOP64 (0);
-	int c = (OPCOUNT64 () > 2) ? 1 : 0;
+	int i, c = (OPCOUNT64 () > 2) ? 1 : 0;
 
 	if (dst.vas) {
 		int end = vas_count(dst.vas);
 
-		for (int i = 0; i < end; i++) {
+		for (i = 0; i < end; i++) {
 			VECARG64_APPEND (&op->esil, 2, i, sign);
 			if (negate) {
 				r_strbuf_appendf (&op->esil, ",-1,^");
@@ -1209,7 +1209,7 @@ static void arm64math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 
 // floating point math instruction helper
 static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, const char *opchar, int negate) {
-	int size = REGSIZE64 (1)*8;
+	int i, size = REGSIZE64 (1)*8;
 
 	cs_arm64_op dst = INSOP64 (0);
 	int start = -1;
@@ -1220,7 +1220,7 @@ static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		end = vas_count(dst.vas);
 	}
 
-	for (int i = start; i < end; i++) {
+	for (i = start; i < end; i++) {
 		if (convert) r_strbuf_appendf (&op->esil, "%d,DUP,", size);
 		VEC64_APPEND (&op->esil, 2, i);
 		if (convert) r_strbuf_appendf (&op->esil, ",F2D");
