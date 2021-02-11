@@ -888,6 +888,8 @@ RUN
 NAME=mg file custom size
 FILE=bins/fs/fat.img
 CMDS=<<EOF
+mkdir /tmp/fsfat
+cd /tmp/fsfat
 mg /root/bin/ls 0x0 5
 o ./ls
 i~size
