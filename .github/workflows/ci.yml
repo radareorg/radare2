@@ -276,7 +276,7 @@ jobs:
     - name: Packaging
       run: dist/macos/build-pkg.sh
     - name: Building Radare2
-      run: sys/install.sh
+      run: sys/install.sh && make -C dist/macos
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
