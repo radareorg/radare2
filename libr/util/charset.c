@@ -104,7 +104,6 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		const char *ret = r_str_get_fail (v, "?");
 
 		strcpy (o, ret);
-
 		o += strlen (o);
 	}
 
@@ -114,12 +113,13 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 // assumes out is as big as in_len
 R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
 	char *o = (char*)out;
-	size_t last_char_size;
-	size_t maxkeylen = 8;
 
-	size_t cur, j;
+	bool found;
+	size_t maxkeylen = 8;
+	size_t cur, j, last_char_size;
 	for (cur = 0; cur < in_len; ) {
 		char *str = r_str_ndup((char *)in, maxkeylen);
+		found = false;
 		for (j = in_len ; j > 0; j--) {
 			//zero terminate the string
 			str[j] = '\0';
@@ -133,13 +133,29 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 
 				//concatenate
 				strcpy (o, ret);
-				o += strlen (o);
+				size_t increment = strlen (o);
+				if (increment > 0) {
+					o += increment;
+				} else {
+					o += 1;
+				}
 
 				//pass for multiple chars
 				last_char_size = strlen ( (char *)str+cur);
-				cur += last_char_size;
+				found = true;
 				free (str_hx);
+				if (last_char_size <= 0) {
+					cur += 1;
+				} else {
+					cur += last_char_size;
+				}
+				break;
 			}
+		}
+		if (!found == false) {
+			strcpy (o, "?");
+			o += strlen ("?");
+			cur ++;
 		}
 		free (str);
 	}
