@@ -17,7 +17,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Installing with symlinks
-      run: sys/install.sh
+      run: |
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation -std=gnu89 -Wgcc-compat"
+        sys/install.sh
     - name: Uninstalling
       run: sudo make uninstall
     - name: Reinstalling without symlinks
@@ -52,7 +54,7 @@ jobs:
         git config --global pull.rebase false
         git clone --depth 1 . "spa ces"
         cd "spa ces"
-        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation -std=gnu89 -Wgcc-compat -Werror"
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
         meson --prefix="/tmp/r 2" build
         ninja -C build
         ninja -C build install
