@@ -2767,7 +2767,6 @@ R_API bool r_core_init(RCore *core) {
 	core->config = NULL;
 	core->prj = r_project_new ();
 	core->http_up = false;
-	core->use_tree_sitter_r2cmd = false;
 	ZERO_FILL (core->root_cmd_descriptor);
 	core->print = r_print_new ();
 	core->ropchain = r_list_newf ((RListFree)free);

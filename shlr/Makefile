@@ -25,11 +25,6 @@ else
 WGET?=curl -o
 endif
 
-# NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/meson.build
-TS_URL=https://github.com/tree-sitter/tree-sitter.git
-TS_BRA=master
-TS_TIP=86a5dabbcbdac650c53a889183bf56d7e721e09e
-
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.2
 CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
@@ -59,7 +54,7 @@ CS_REV=
 CS_PATCHES=1
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwinkd bochs tree-sitter-sync sdbs
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwinkd bochs sdbs
 
 ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
@@ -93,7 +88,7 @@ all:
 	exit 1
 endif
 
-preall: libwinkd capstone-build tree-sitter-build radare2-shell-parser-build bochs
+preall: libwinkd capstone-build bochs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -313,38 +308,6 @@ ifeq ($(WITHOUT_PULL),1)
 else
 	cd ../../radare2-webui/www/m && git pull ; npm i ; $(MAKE) release
 endif
-
-tree-sitter-build: tree-sitter/libtree-sitter.$(EXT_AR)
-
-tree-sitter/libtree-sitter.$(EXT_AR): tree-sitter/lib/src/lib.o
-	$(AR) rvs $@ $<
-	$(RANLIB) $@
-
-tree-sitter/lib/src/lib.o:
-	$(CC) $(NEWSHELL_CFLAGS) -c tree-sitter/lib/src/lib.c -o $@ -Itree-sitter/lib/include -Itree-sitter/lib/src $(CFLAGS)
-
-tree-sitter-sync:
-	rm -rf tree-sitter tree-sitter.vc
-	"$(SHELL)" clone_3rd_repo.sh tree-sitter.vc "${TS_URL}" "${TS_BRA}" "${TS_TIP}"
-	mkdir -p tree-sitter/lib
-	cp -rf ./tree-sitter.vc/lib/src ./tree-sitter/lib
-	cp -rf ./tree-sitter.vc/lib/include ./tree-sitter/lib
-	rm -rf tree-sitter.vc
-
-radare2-shell-parser-build: radare2-shell-parser/libshell-parser.$(EXT_AR)
-
-radare2-shell-parser/libshell-parser.$(EXT_AR): radare2-shell-parser/src/parser.o radare2-shell-parser/src/scanner.o
-	$(AR) rvs $@ radare2-shell-parser/src/parser.o radare2-shell-parser/src/scanner.o
-	$(RANLIB) $@
-
-radare2-shell-parser/src/parser.o: radare2-shell-parser/src/parser.c
-	$(CC) $(NEWSHELL_CFLAGS) -c radare2-shell-parser/src/parser.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
-
-radare2-shell-parser/src/scanner.o: radare2-shell-parser/src/scanner.c
-	$(CC) -c radare2-shell-parser/src/scanner.c -o $@ -Iradare2-shell-parser/src/tree_sitter -Itree-sitter/lib/include $(CFLAGS)
-
-SHLRS+=tree-sitter/libtree-sitter.a
-SHLRS+=radare2-shell-parser/libshell-parser.a
 
 www-sync-m sync-www-m: ../../radare2-webui/dist/m
 	cp -rf ../../radare2-webui/dist/m www/m.tmp

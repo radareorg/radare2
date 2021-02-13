@@ -300,6 +300,7 @@ struct r_core_t {
 	char *lastcmd;
 	char *cmdlog;
 	bool cfglog; // cfg.corelog
+	bool use_newshell; // cfg.corelog
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
 	R_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks
@@ -347,7 +348,6 @@ struct r_core_t {
 	bool scr_gadgets;
 	bool log_events; // core.c:cb_event_handler : log actions from events if cfg.log.events is set
 	RList *ropchain;
-	bool use_tree_sitter_r2cmd;
 	char *theme;
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
