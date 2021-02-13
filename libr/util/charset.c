@@ -122,11 +122,13 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		//zero terminate the string
 		snprintf (k, sizeof (k), "%c", ch_in);//snprintf (k, sizeof (k), "0x%02x", ch_in);
 		char *v = sdb_get (rc->db_char_to_hex, k, 0);
-		memmove(v, v+2, strlen (v));
+		if (strlen (v) < 2) {
+			continue;
+		}
 
 		//convert to ascii
 		char str_hx[32];
-		snprintf (str_hx, sizeof (str_hx), "%c", (char) strtol( v, 0, 16));
+		snprintf (str_hx, sizeof (str_hx), "%c", (char) strtol( v+2, 0, 16));
 		const char *ret = r_str_get_fail (str_hx, "?");
 		strcpy (o, ret);
 
