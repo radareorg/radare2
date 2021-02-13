@@ -1191,7 +1191,7 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 	RCons *cons = (RCons *) table->cons;
 	table->showHeader = false;
 	const char *h_line = cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = cons->use_utf8 ? UTF8_BLOCK : "#";
+	const char *block = cons->use_utf8 ? R_UTF8_BLOCK : "#";
 	int j, i;
 	width -= 80;
 	if (width < 1) {
