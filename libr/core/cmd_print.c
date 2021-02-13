@@ -5779,9 +5779,8 @@ l = use_blocksize;
 			}
 			break;
 		case 'j': // "psj"
-			if (l > 0) {
+			{
 				ut8 *s = decode_text (core, core->offset, l, false);
-				r_print_string (core->print, core->offset, s, l, 0);
 				print_json_string (core, (const char *) s, l, NULL);
 				free (s);
 			}
