@@ -62,6 +62,7 @@ jobs:
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
   w32-meson:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-latest
     steps:
     - name: Checkout
@@ -343,6 +344,7 @@ jobs:
         path: ./dist/cydia/radare2*/*.deb
 
   android-acr-aarch64:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -361,6 +363,7 @@ jobs:
         path: radare2*android*aarch64.tar.gz
 
   android-meson:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
