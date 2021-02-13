@@ -124,7 +124,7 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 	char *o = (char*)out;
 
 	size_t maxkeylen = rc->encode_maxkeylen;
-	size_t cur, j, last_char_size;
+	size_t cur, j;
 	for (cur = 0; cur < in_len; cur++) {
 		size_t left = in_len - cur;
 		size_t toread = R_MIN (left, maxkeylen);
@@ -141,7 +141,8 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 				if (!str_hx) {
 					break;
 				}
-				snprintf (str_hx, maxkeylen + 1, "%c", (char) strtol (v, 0, 16));//in the future handle multiple chars output
+				//in the future handle multiple chars output
+				snprintf (str_hx, maxkeylen + 1, "%c", (char) strtol (v, 0, 16));
 				const char *ret = r_str_get_fail (str_hx, "?");
 
 				// concatenate
@@ -152,9 +153,6 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 				} else {
 					o ++;
 				}
-
-				//pass for multiple chars
-				last_char_size = strlen ( (char *)str + cur);
 				found = true;
 				free (str_hx);
 				break;
