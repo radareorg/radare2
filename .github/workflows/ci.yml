@@ -184,7 +184,7 @@ jobs:
         name: radare2_debian_amd64.zip
         path: dist/debian/*/*.deb
   linux-acr-deb-32:
-    runs-on: ubuntu-18.04-i386
+    runs-on: ubuntu-18.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
