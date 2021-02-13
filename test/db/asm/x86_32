@@ -655,7 +655,7 @@ d "unpcklps xmm0, xmmword [eax]" 0f1400
 d "unpckhps xmm0, xmmword [eax]" 0f1500
 d "movlps xmm0, qword [eax]" 0f1200
 d "movlps qword [eax], xmm0" 0f1300
-dB "movhlps xmm0, xmm0" 0f12c0
+d "movhlps xmm0, xmm0" 0f12c0
 dB "movlhps xmm0, xmm0" 0f1600
 d "movhps xmm0, qword [eax]" 0f1600
 d "movhps qword [eax], xmm0" 0f1700
@@ -1432,7 +1432,7 @@ a "mov [esp-2], ebx" 895c24fe
 a "mov [esp-233], ebx" 899c2417ffffff
 a "mov [esp+454], ebx" 899c24c6010000
 aB "mov es, word [eax]" 8e00
-a "movhlps xmm0, xmm0" 0f12c0
+aB "movhlps xmm0, xmm0" 0f12c0
 aB "movhpd qword [eax], xmm0" 660f1700
 aB "movhpd xmm0, qword [eax]" 660f1600
 aB "movhps qword [eax], xmm0" 0f17
