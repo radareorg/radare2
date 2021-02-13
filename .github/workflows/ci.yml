@@ -189,7 +189,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Packaging for 32bit Debian
-      run: sys/debian.sh
+      run: |
+        sudo apt install gcc-multilib
+        export CFLAGS=-m32
+        sys/debian.sh
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
