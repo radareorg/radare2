@@ -1263,7 +1263,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'b': // "pFb"
 		{
-			char *s = r_protobuf_decode(data, size, input[1] == 'v');
+			char *s = r_protobuf_decode (data, size, input[1] == 'v');
 			if (s) {
 				r_cons_printf ("%s", s);
 				free (s);
@@ -4626,6 +4626,26 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	}
 }
 
+static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
+	const char *current_charset = r_config_get (core->config, "cfg.charset");
+	ut8 *out = calloc (len, 10);
+	if (out) {
+		r_io_read_at (core->io, core->offset, out, len);
+		if (zeroend) {
+			len = (size_t)r_str_nlen ((const char*)out, len);
+		}
+		if (!R_STR_ISEMPTY (current_charset)) {
+			size_t out_len = len * 10;
+			ut8 *data = out;
+			out = calloc (len, 10);
+			r_io_read_at (core->io, core->offset, data, len);
+			r_charset_encode_str (core->print->charset, out, out_len, data, len);
+			free (data);
+		}
+	}
+	return out;
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	st64 l;
@@ -5632,15 +5652,6 @@ l = use_blocksize;
 		case '?': // "ps?"
 			r_core_cmd_help (core, help_msg_ps);
 			break;
-		case 'j': // "psj"
-			if (l > 0) {
-				if (input[2] == ' ' && input[3]) {
-					len = r_num_math (core->num, input + 3);
-					len = R_MIN (len, core->blocksize);
-				}
-				print_json_string (core, (const char *) core->block, len, NULL);
-			}
-			break;
 		case 'i': // "psi"
 			if (l > 0) {
 				ut8 *buf = malloc (1024 + 1);
@@ -5720,27 +5731,14 @@ l = use_blocksize;
 			break;
 		case 'z': // "psz"
 			if (l > 0) {
-				char *s = malloc (core->blocksize + 1);
-				int i, j;
-				if (s) {
-					// TODO: filter more chars?
-					for (i = j = 0; i < core->blocksize; i++) {
-						char ch = (char) core->block[i];
-						if (!ch) {
-							break;
-						}
-						if (IS_PRINTABLE (ch)) {
-							s[j++] = ch;
-						}
-					}
-					s[j] = '\0';
-					if (input[2] == 'j') { // pszj
-						print_json_string (core, (const char *) s, j, NULL);
-					} else {
-						r_cons_println (s);
-					}
-					free (s);
+				ut8 *s = decode_text (core, core->offset, l, true);
+				if (input[2] == 'j') { // pszj
+					print_json_string (core, (const char *) s,
+						r_str_nlen ((const char*)s, l), NULL);
+				} else {
+					r_print_string (core->print, core->offset, s, l, R_PRINT_STRING_ZEROEND);
 				}
+				free (s);
 			}
 			break;
 		case 'p': // "psp"
@@ -5780,28 +5778,19 @@ l = use_blocksize;
 				}
 			}
 			break;
-        case ' ': // "ps"
-		{
-			const char *current_charset = r_config_get (core->config, "cfg.charset");
-			if (R_STR_ISEMPTY (current_charset)) {
-				r_print_string (core->print, core->offset, core->block, l, 0);
-			} else {
-				if (len > 0) {
-					size_t out_len = len * 10;
-					ut8 *out = calloc (len, 10);
-					if (out) {
-						ut8 *data = malloc (len);
-						if (data) {
-							r_io_read_at (core->io, core->offset, data, len);
-							r_charset_encode_str (core->print->charset, out, out_len, data, len);
-							r_print_string (core->print, core->offset,
-								out, len, 0);
-							free (data);
-						}
-						free (out);
-					}
-				}
+		case 'j': // "psj"
+			if (l > 0) {
+				ut8 *s = decode_text (core, core->offset, l, false);
+				r_print_string (core->print, core->offset, s, l, 0);
+				print_json_string (core, (const char *) s, l, NULL);
+				free (s);
 			}
+			break;
+		case ' ': // "ps"
+		{
+			ut8 *s = decode_text (core, core->offset, l, false);
+			r_print_string (core->print, core->offset, s, l, 0);
+			free (s);
 			break;
 		}
 		case 'u': // "psu"
