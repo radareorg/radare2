@@ -293,9 +293,7 @@ jobs:
     - name: Building Radare2
       run: |
         # treesitter doesnt build with this because of treesitter
-        export CFLAGS="-O2 -Werror -Wno-unused-result -std=gnu89 -Wno-unicode"
         export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-unicode -Wno-unneeded-internal-declaration"
-        export CFLAGS="-O2"
         sys/install.sh && make -C dist/macos
     - name: Pub
       uses: actions/upload-artifact@v2
