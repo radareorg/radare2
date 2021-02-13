@@ -18,7 +18,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Installing with symlinks
       run: |
-        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation -std=gnu89 -Wno-unicode"
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
         sys/install.sh
     - name: Uninstalling
       run: sudo make uninstall
@@ -295,7 +295,9 @@ jobs:
     - name: Packaging
       run: dist/macos/build-pkg.sh
     - name: Building Radare2
-      run: sys/install.sh && make -C dist/macos
+      run: |
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation -std=gnu89 -Wno-unicode"
+        sys/install.sh && make -C dist/macos
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
