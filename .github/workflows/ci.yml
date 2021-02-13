@@ -168,7 +168,7 @@ jobs:
       with:
         name: radare2-static.xz
         path: binr/blob/radare2.xz
-  linux-acr-deb:
+  linux-acr-deb-64:
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
@@ -180,7 +180,7 @@ jobs:
       with:
         name: radare2_debian_amd64.zip
         path: dist/debian/*/*.deb
-  linux-acr-deb:
+  linux-acr-deb-32:
     runs-on: ubuntu-18.04-i386
     steps:
     - name: Checkout
