@@ -34,6 +34,14 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 	ls_foreach (sdbls, iter, kv) {
 		const char *new_key = kv->base.value;
 		const char *new_value = kv->base.key;
+		const size_t key_len = strlen (new_key);
+		const size_t val_len = strlen (new_value);
+		if (key_len > c->encode_maxkeylen) {
+			c->encode_maxkeylen = key_len;
+		}
+		if (val_len > c->decode_maxkeylen) {
+			c->decode_maxkeylen = val_len;
+		}
 		sdb_add (c->db_char_to_hex, new_key, new_value, 0);
 	}
 	ls_free (sdbls);
@@ -43,6 +51,7 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 
 // rune
 R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx) {
+	r_return_val_if_fail (ch && hx, NULL);
 	RCharsetRune* c = R_NEW0 (RCharsetRune);
 	if (!c) {
 		return NULL;
@@ -114,48 +123,46 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
 	char *o = (char*)out;
 
-	bool found;
-	size_t maxkeylen = 8;
+	size_t maxkeylen = rc->encode_maxkeylen;
 	size_t cur, j, last_char_size;
-	for (cur = 0; cur < in_len; ) {
-		char *str = r_str_ndup((char *)in, maxkeylen);
-		found = false;
-		for (j = in_len ; j > 0; j--) {
+	for (cur = 0; cur < in_len; cur++) {
+		size_t left = in_len - cur;
+		size_t toread = R_MIN (left, maxkeylen);
+		char *str = r_str_ndup ((char *)in + cur, toread + 1);
+		bool found = false;
+		for (j = toread; cur < in_len && j > 0; j--) {
 			//zero terminate the string
 			str[j] = '\0';
 
-			const char *v = sdb_const_get (rc->db_char_to_hex, (char *) str+cur, 0);
+			const char *v = sdb_const_get (rc->db_char_to_hex, (char *) str, 0);
 			if (v) {
 				//convert to ascii
-				char *str_hx = malloc(maxkeylen);
-				snprintf (str_hx, maxkeylen, "%c", (char) strtol(v, 0, 16));//in the future handle multiple chars output
+				char *str_hx = malloc (1 + maxkeylen);
+				if (!str_hx) {
+					break;
+				}
+				snprintf (str_hx, maxkeylen + 1, "%c", (char) strtol (v, 0, 16));//in the future handle multiple chars output
 				const char *ret = r_str_get_fail (str_hx, "?");
 
-				//concatenate
+				// concatenate
 				strcpy (o, ret);
 				size_t increment = strlen (o);
 				if (increment > 0) {
 					o += increment;
 				} else {
-					o += 1;
+					o ++;
 				}
 
 				//pass for multiple chars
-				last_char_size = strlen ( (char *)str+cur);
+				last_char_size = strlen ( (char *)str + cur);
 				found = true;
 				free (str_hx);
-				if (last_char_size <= 0) {
-					cur += 1;
-				} else {
-					cur += last_char_size;
-				}
 				break;
 			}
 		}
-		if (!found == false) {
+		if (!found) {
 			strcpy (o, "?");
 			o += strlen ("?");
-			cur ++;
 		}
 		free (str);
 	}
