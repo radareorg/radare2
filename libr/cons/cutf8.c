@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2020 - pancake */
+/* radare - LGPL - Copyright 2015-2021 - pancake */
 
 // Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <r_cons.h>
@@ -8,19 +8,22 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <errno.h>
+#if R_UTF8_DETECT_LOCALE
+#include <locale.h>
+#endif
 
 #define RD_EOF   (-1)
 #define RD_EIO   (-2)
 
 /* select utf8 terminal detection method */
-#define UTF8_DETECT_ENV 1
-#define UTF8_DETECT_LOCALE 0
-#define UTF8_DETECT_CURSOR 0
+#define R_UTF8_DETECT_ENV 1
+#define R_UTF8_DETECT_LOCALE 0
+#define R_UTF8_DETECT_CURSOR 0
 
-#if UTF8_DETECT_CURSOR
+#if R_UTF8_DETECT_CURSOR
 static inline int rd(const int fd) {
-	unsigned char   buffer[4];
-	ssize_t         n;
+	ut8 buffer[4];
+	ssize_t n;
 
 	for (;;) {
 		n = read(fd, buffer, 1);
@@ -74,7 +77,7 @@ int current_tty(void) {
 #endif
 }
 
-#if UTF8_DETECT_CURSOR
+#if R_UTF8_DETECT_CURSOR
 /* As the tty for current cursor position.
  * This function returns 0 if success, errno code otherwise.
  * Actual errno will be unchanged.
@@ -150,20 +153,22 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 
 		/* Parse rows. */
 		rows = 0;
-		res = rd(tty);
-		while (IS_DIGIT(res)) {
+		res = rd (tty);
+		while (IS_DIGIT (res)) {
 			rows = 10 * rows + res - '0';
 			res = rd(tty);
 		}
 
-		if (res != ';')
+		if (res != ';') {
 			break;
+		}
 
 		/* Parse cols. */
 		cols = 0;
-		res = rd(tty);
-		if (res==-1)
+		res = rd (tty);
+		if (res == -1) {
 			break;
+		}
 		while (IS_DIGIT(res)) {
 			cols = 10 * cols + res - '0';
 			res = rd(tty);
@@ -173,18 +178,21 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 			break;
 
 		/* Success! */
-		if (rowptr)
+		if (rowptr) {
 			*rowptr = rows;
-		if (colptr)
+		}
+		if (colptr) {
 			*colptr = cols;
+		}
 		ret = 0;
 
 	} while (0);
 
 	/* Restore saved terminal settings. */
 	res = tcsetattr (tty, TCSANOW, &saved);
-	if (res == -1 && !ret)
+	if (res == -1 && !ret) {
 		ret = errno;
+	}
 
 	/* Done. */
 	return ret;
@@ -193,7 +201,7 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 
 R_API bool r_cons_is_utf8(void) {
 	bool ret = false;
-#if UTF8_DETECT_ENV
+#if R_UTF8_DETECT_ENV
 	const char *keys[] = { "LC_ALL", "LC_CTYPE", "LANG", NULL };
 	const char **key = keys;
 	for (; *key; key++) {
@@ -206,15 +214,14 @@ R_API bool r_cons_is_utf8(void) {
 		}
 	}
 #endif
-#if UTF8_DETECT_LOCALE
-#include <locale.h>
-	const char *ctype = setlocale(LC_CTYPE, NULL);
+#if R_UTF8_DETECT_LOCALE
+	const char *ctype = setlocale (LC_CTYPE, NULL);
 	if ( (ctype != NULL) && (ctype = strchr(ctype, '.')) && ctype++ &&
 		(r_str_casecmp(ctype, "UTF-8") == 0 || r_str_casecmp(ctype, "UTF8") == 0)) {
 		return true;
 	}
 #endif
-#if UTF8_DETECT_CURSOR
+#if R_UTF8_DETECT_CURSOR
 	int row = 0, col = 0;
 	int row2 = 0, col2 = 0;
 	int fd = current_tty ();

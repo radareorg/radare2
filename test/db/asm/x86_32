@@ -1432,7 +1432,7 @@ a "mov [esp-2], ebx" 895c24fe
 a "mov [esp-233], ebx" 899c2417ffffff
 a "mov [esp+454], ebx" 899c24c6010000
 aB "mov es, word [eax]" 8e00
-a "movhlps xmm0, xmm0" 0f12c0
+aB "movhlps xmm0, xmm0" 0f12c0
 aB "movhpd qword [eax], xmm0" 660f1700
 aB "movhpd xmm0, qword [eax]" 660f1600
 aB "movhps qword [eax], xmm0" 0f17

@@ -9482,7 +9482,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 				r_io_map_end (map)));
 			r_print_rowlog_done (core->print, oldstr);
 			(void)r_core_search_value_in_range (core, map->itv,
-				r_io_map_begin (map), r_io_map_end (map), vsize, _CbInRangeAav, (void *)asterisk);
+				r_io_map_begin (map), r_io_map_end (map), vsize, _CbInRangeAav, (void *)(size_t)asterisk);
 		}
 		r_list_free (list);
 	} else {
@@ -9521,7 +9521,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 				}
 				oldstr = r_print_rowlog (core->print, sdb_fmt ("0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x" (aav)", from, to, begin, end));
 				r_print_rowlog_done (core->print, oldstr);
-				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, _CbInRangeAav, (void *)asterisk);
+				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, _CbInRangeAav, (void *)(size_t)asterisk);
 			}
 		}
 		r_list_free (list);

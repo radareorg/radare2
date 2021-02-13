@@ -74,7 +74,7 @@ R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *vline = p->cons->use_utf8 ? RUNE_LINE_VERT : "|";
-	const char *block = p->cons->use_utf8 ? UTF8_BLOCK : "#";
+	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->call;
 	kol[1] = pal->jmp;
@@ -1567,7 +1567,7 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 		p = &staticp;
 	}
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = p->cons->use_utf8 ? UTF8_BLOCK : "#";
+	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
 
 	pc = R_MAX (0, R_MIN (100, pc));
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
@@ -1592,7 +1592,7 @@ R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned i
 	}
 	const bool enable_colors = p && (p->flags & R_PRINT_FLAGS_COLOR);
 	const char *h_line = p->cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
-	const char *block = p->cons->use_utf8? UTF8_BLOCK: "#";
+	const char *block = p->cons->use_utf8? R_UTF8_BLOCK: "#";
 
 	total = R_MAX (1, total);
 	pc = R_MAX (0, R_MIN (total, pc));
@@ -1634,7 +1634,7 @@ R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned i
 
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
 	const char *h_line = p->cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
-	const char *block = p->cons->use_utf8? UTF8_BLOCK: "#";
+	const char *block = p->cons->use_utf8? R_UTF8_BLOCK: "#";
 	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
 	int j = 0;
 	p->cb_printf ("|");
@@ -1729,7 +1729,7 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 static inline void printHistBlock (RPrint *p, int k, int cols) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = p->cons->use_utf8 ? UTF8_BLOCK : "#";
+	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->nop;
 	kol[1] = pal->mov;

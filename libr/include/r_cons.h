@@ -352,20 +352,20 @@ typedef struct r_cons_canvas_t {
 #define RUNE_CURVE_CORNER_BR "╯"
 #define RUNE_CURVE_CORNER_BL "╰"
 #define RUNE_LONG_LINE_HORIZ "―"
-#define UTF8_CIRCLE "\u25EF"
-#define UTF8_BLOCK "\u2588"
+#define R_UTF8_CIRCLE "\u25EF"
+#define R_UTF8_BLOCK "\u2588"
 
 // Emoji
-#define UTF8_POLICE_CARS_REVOLVING_LIGHT "🚨"
-#define UTF8_WHITE_HEAVY_CHECK_MARK "✅"
-#define UTF8_SEE_NO_EVIL_MONKEY "🙈"
-#define UTF8_SKULL_AND_CROSSBONES "☠"
-#define UTF8_KEYBOARD "⌨"
-#define UTF8_LEFT_POINTING_MAGNIFYING_GLASS "🔍"
-#define UTF8_DOOR "🚪"
+#define R_UTF8_POLICE_CARS_REVOLVING_LIGHT "🚨"
+#define R_UTF8_WHITE_HEAVY_CHECK_MARK "✅"
+#define R_UTF8_SEE_NO_EVIL_MONKEY "🙈"
+#define R_UTF8_SKULL_AND_CROSSBONES "☠"
+#define R_UTF8_KEYBOARD "⌨"
+#define R_UTF8_LEFT_POINTING_MAGNIFYING_GLASS "🔍"
+#define R_UTF8_DOOR "🚪"
 
 // Variation Selectors
-#define UTF8_VS16 "\xef\xb8\x8f"
+#define R_UTF8_VS16 "\xef\xb8\x8f"
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
