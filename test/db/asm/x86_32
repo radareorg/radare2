@@ -655,7 +655,7 @@ d "unpcklps xmm0, xmmword [eax]" 0f1400
 d "unpckhps xmm0, xmmword [eax]" 0f1500
 d "movlps xmm0, qword [eax]" 0f1200
 d "movlps qword [eax], xmm0" 0f1300
-d "movhlps xmm0, xmm0" 0f12c0
+dB "movhlps xmm0, xmm0" 0f12c0
 dB "movlhps xmm0, xmm0" 0f1600
 d "movhps xmm0, qword [eax]" 0f1600
 d "movhps qword [eax], xmm0" 0f1700
