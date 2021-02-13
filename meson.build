@@ -261,14 +261,19 @@ else
 endif
 
 # handle openssl library
-static_sys_openssl = get_option('static_sys_openssl')
-sys_openssl = dependency('openssl', required: false, static: static_sys_openssl)
-use_sys_openssl = false
-if sys_openssl.found() and get_option('use_sys_openssl')
-  message('Using system openssl library')
-  use_sys_openssl = true
+if get_option('use_ssl')
+  static_sys_openssl = get_option('static_sys_openssl')
+  sys_openssl = dependency('openssl', required: false, static: static_sys_openssl)
+  use_sys_openssl = false
+  if sys_openssl.found() and get_option('use_sys_openssl')
+    message('Using system openssl library')
+    use_sys_openssl = true
+  else
+    message('Using bundled openssl code')
+  endif
 else
-  message('Using bundled openssl code')
+  sys_openssl = false
+  use_sys_openssl = false
 endif
 
 # handle libuv library
