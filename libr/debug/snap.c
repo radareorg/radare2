@@ -17,6 +17,12 @@ R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		eprintf ("Invalid map size\n");
 		return NULL;
 	}
+	// TODO: Support streaming memory snapshots to avoid big allocations
+	if (map->size > dbg->maxsnapsize) {
+		char *us = r_num_units (NULL, 0, map->size);
+		eprintf ("Not snapping map %s (%s > dbg.maxsnapsize)\n", map->name, us);
+		return NULL;
+	}
 
 	RDebugSnap *snap = R_NEW0 (RDebugSnap);
 	if (!snap) {

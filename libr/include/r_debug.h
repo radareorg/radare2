@@ -320,6 +320,7 @@ typedef struct r_debug_t {
 	RNum *num;
 	REgg *egg;
 	bool verbose;
+	size_t maxsnapsize;
 	bool main_arena_resolved; /* is the main_arena resolved already? */
 	int glibc_version;
 } RDebug;

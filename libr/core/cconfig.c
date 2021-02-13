@@ -1510,6 +1510,13 @@ static bool cb_dbg_btalgo(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dbg_maxsnapsize(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->dbg->maxsnapsize = r_num_calc (core->num, node->value);
+	return true;
+}
+
 static bool cb_dbg_libs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3533,6 +3540,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("stack.size", 64,  "Size in bytes of stack hexdump in visual debug");
 	SETI ("stack.delta", 0,  "Delta for the stack dump");
 
+	SETCB ("dbg.maxsnapsize", "32M", &cb_maxsnapsize, "Dont make snapshots of maps bigger than a specific size");
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
 	SETBPREF ("dbg.skipover", "false", "Make dso perform a dss (same goes for esil and visual/graph");
 	SETI ("dbg.hwbp", 0, "Set HW or SW breakpoints");
