@@ -35,11 +35,11 @@ ascii
 pokered
 --------Self-replicating----arbi
 --------Self-replicating----arbi
-
+--------Self-replicating----arbi
 ascii
 pokered
 --------Self-replicating----arbi
-
+--------Self-replicating----arbi
 EOF
 RUN
 
@@ -48,11 +48,21 @@ FILE=-
 CMDS=<<EOF
 wx 7f7f7f7f7f7f7f7f92a4aba5e3b1a4afaba8a2a0b3a8ada67f7f7f7fa0b1a1a8b3b1a0b1b87fa2aea3a47f7f7f7f7f7fa1b87f8cb182a7a4a4b9a47f9c9b7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
 e cfg.charset=pokered
+ps
 w hello-world-this-is-very-new
-wx 00 @ 12
-ps 28
+wx 00 @ 28
+b 34
+ps
+psz
+pszj
+psj
 EOF
 EXPECT=<<EOF
-hello-world-<NULL>his-is-ver
+--------Self-replicating----arbitrary-code------by-MrCheeze-:)---------------------<NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL
+hello-world-this-is-very-new<NULL>
+hello-world-this-is-very-new
+{"string":"hello-world-this-is-very-new","offset":0,"section":"unknown","length":28,"type":"ascii"}
+hello-world-this-is-very-new<NULL>
+{"string":"hello-world-this-is-very-new<NULL>","offset":0,"section":"unknown","length":34,"type":"ascii"}
 EOF
 RUN
