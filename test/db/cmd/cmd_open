@@ -477,3 +477,22 @@ block    0x100
 
 EOF
 RUN
+
+NAME=oa 
+FILE=bins/elf/ls
+ARGS=-e io.cache=true
+CMDS=<<EOF
+oa x86 64
+o bins/elf/true
+oa x86 64
+oa x86 64 bins/elf/ls
+oa x86 64 nonfile
+oa x86 
+EOF
+EXPECT=<<EOF
+More than one file is opened, specify the filename
+Cannot find file nonfile
+Missing argument
+EOF
+BROKEN=1
+RUN
