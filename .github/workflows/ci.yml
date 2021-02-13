@@ -169,7 +169,7 @@ jobs:
         name: radare2-static.xz
         path: binr/blob/radare2.xz
   linux-acr-deb:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -179,6 +179,18 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: radare2_debian_amd64.zip
+        path: dist/debian/*/*.deb
+  linux-acr-deb:
+    runs-on: ubuntu-18.04-i386
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Packaging for 32bit Debian
+      run: sys/debian.sh
+    - name: Pub
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2_debian_i386.zip
         path: dist/debian/*/*.deb
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
