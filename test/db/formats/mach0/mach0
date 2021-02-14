@@ -281,6 +281,7 @@ EOF
 EXPECT=<<EOF
 1
 @(#)PROGRAM:Alamofire  PROJECT:Pods-1
+
 EOF
 RUN
 

@@ -62,7 +62,6 @@ EXPECT=<<EOF
 hello-world-this-is-very-new<NULL>
 hello-world-this-is-very-new
 {"string":"hello-world-this-is-very-new","offset":0,"section":"unknown","length":28,"type":"ascii"}
-hello-world-this-is-very-new<NULL>
 {"string":"hello-world-this-is-very-new<NULL>","offset":0,"section":"unknown","length":34,"type":"ascii"}
 EOF
 RUN
