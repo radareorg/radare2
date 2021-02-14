@@ -10,6 +10,11 @@ int main(int argc, const char **argv) {
 	if (m) {
 		rc = r_main_run (m, argc, argv);
 		r_main_free (m);
+	} else {
+		eprintf ("Error: r2blob must be renamed or accesed from a symlink:\n"
+		" ln -fs r2blob r2       ; ./r2 -h\n"
+		" ln -fs r2blob rasm2    ; ./rasm2 -h\n"
+		" ln -fs r2blob rabin2   ; ./rabin2 -h\n");
 	}
 	return rc;
 }
