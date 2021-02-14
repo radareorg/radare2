@@ -105,26 +105,27 @@ res=$?
 set +x
 if [ $res = 0 ]; then
 	echo SUCCESS
-	rm a.out
+	rm -f a.out
 else
 	echo FAILURE
 fi
 
 echo "[*] Static building with libr.a..."
-set -x
 ${CC} .test.c \
 	${CFLAGS} \
 	-I ${PWD}/r2-static/usr/include/libr \
 	-I ${PWD}/r2-static/usr/include/libr/sdb \
 	r2-static/usr/lib/libr.a ${LDFLAGS}
 res=$?
+du -hs r2-static/usr/bin/radare2
+du -hs a.out
 set +x
 if [ $res = 0 ]; then
 	echo SUCCESS
-	rm a.out
+	rm -f a.out
 else
 	echo FAILURE
 fi
 
-rm .test.c
+rm -f .test.c
 exit $res
