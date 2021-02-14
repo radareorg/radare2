@@ -1,21 +1,18 @@
-/* radare - LGPL - Copyright 2020 - gogo, pancake */
+/* radare - LGPL - Copyright 2020-2021 - gogo, pancake */
 
 #include <r_util.h>
 
 #define USE_RUNES 0
 
 R_API RCharset *r_charset_new(void) {
-	RCharset* c = R_NEW0 (RCharset);
-	if (!c) {
-		return NULL;
-	}
-	c->db = NULL; // must be set after calling new by the caller
-	return c;
+	return R_NEW0 (RCharset);
 }
 
 R_API void r_charset_free(RCharset *c) {
-	sdb_free (c->db);
-	free (c);
+	if (c) {
+		sdb_free (c->db);
+		free (c);
+	}
 }
 
 R_API bool r_charset_open(RCharset *c, const char *cs) {
@@ -146,12 +143,10 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 				const char *ret = r_str_get_fail (str_hx, "?");
 
 				// concatenate
-				strcpy (o, ret);
-				size_t increment = strlen (o);
-				if (increment > 0) {
-					o += increment;
-				} else {
-					o ++;
+				const size_t ll = R_MIN (left, strlen (ret) + 1);
+				if (ll > 0) {
+					r_str_ncpy (o, ret, ll);
+					o += ll - 1;
 				}
 				found = true;
 				free (str_hx);
