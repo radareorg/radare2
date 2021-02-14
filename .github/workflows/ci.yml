@@ -154,12 +154,12 @@ jobs:
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
         NOLTO=1 sys/static.sh
         make -C binr/blob
-        xz binr/blob/r2blob
+        tar cJvf r2-static.tar.xz r2-static
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: r2blob-static.xz
-        path: binr/blob/r2blob.xz
+        name: r2-static.tar.xz
+        path: r2-static.tar.xz
     - name: Static static r2 with meson 
       run: |
         sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
