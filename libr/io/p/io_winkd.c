@@ -28,9 +28,13 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
 	}
+	if (r_str_startswith (file, "winkd://?")) {
+		eprintf ("Usage: winkd://(host:port:key) | (/tmp/windbg.pipe)\n");
+		eprintf (" winkd://192.168.1.33:1234:key)  # UDP to host:port:key\n");
+		eprintf (" winkd:///tmp # pipe - \\\\.\\pipe\\com_1 /tmp/windbg.pipe\n");
+		return NULL;
+	}
 
-	// net  - host:ip:key
-	// pipe - \\.\pipe\com_1 /tmp/windbg.pipe
 	io_backend_t *iob = NULL;
 	if (strchr (file + 8, ':')) {
 		iob = &iob_net;
@@ -106,7 +110,7 @@ static int __close(RIODesc *fd) {
 
 RIOPlugin r_io_plugin_winkd = {
 	.name = "winkd",
-	.desc = "Attach to a KD debugger",
+	.desc = "Attach to a KD debugger via UDP or socket file",
 	.uris = "winkd://",
 	.license = "LGPL3",
 	.open = __open,
