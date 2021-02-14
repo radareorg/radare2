@@ -1,27 +1,16 @@
 PREFIX?=/usr
 DESTDIR?=/
 
-BINS=rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2
-BINS2=radare2 ${BINS}
+R2BINS=radare2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2
+BINS=r2blob
 
-SOURCES= main.c rabin2.c radare2.c radiff2.c rafind2.c
-SOURCES+=rahash2.c rarun2.c rasm2.c rax2.c ragg2.c
+SOURCES= r2blob.c
 
 include ../../config-user.mk
+include ../rules.mk
 
 SHLR=../../shlr
 
-ifeq (${ANDROID},1)
-LDFLAGS+=-lm
-else
-ifneq (${OSTYPE},linux)
-LDFLAGS+=-lpthread
-LDFLAGS+=-ldl
-endif
-endif
-ifeq ($(USE_LTO),1)
-LDFLAGS+=-flto
-endif
 
 CFLAGS+=-I../../libr/include/
 CFLAGS+=-I$(SHLR)/spp
@@ -68,39 +57,30 @@ include ../../shlr/capstone.mk
 include ../../shlr/radare2-shell-parser-deps.mk
 LINK+=$(SHLR)/tcc/libr_tcc.a
 
+.PHONY: all symlinks build install blobclean
 all: symlinks
 
 symlinks: build
-	for FILE in r2 ${BINS} ; do \
-		ln -fs radare2 $$FILE ; \
+	echo make
+	for FILE in r2 ${R2BINS} ; do \
+		ln -fs r2blob $$FILE ; \
 	done
 
-clean:
+EXTRA_CLEAN=blobclean
+blobclean:
 	mv main.c main.k
 	rm -f *.[ch]
 	mv main.k main.c
-	rm -f ${BINS2} r2
+	rm -f ${R2BINS} r2
 
 build:
-	mv main.c main.k
-	rm -f *.[ch]
-	mv main.k main.c
-	for FILE in ${BINS2} ; do cp ../$$FILE/*.[ch] . ; done
-	rm -f rwx.c xorhex.c rsc2.c
-	for FILE in ${BINS2} ; do \
-		mv $${FILE}.c _$${FILE}.c ;\
-		sed -e "s,^int main,int $${FILE}_main,g" _$${FILE}.c > $${FILE}.c ; \
-		rm -f _$${FILE} ; \
-	done
-	rm -f _*
-	${CC} -o radare2 ${SOURCES} ${CFLAGS} ${LDFLAGS}
-	mv main.c main.k
-	rm -f *.[ch]
-	mv main.k main.c
+	${CC} -o r2blob ${SOURCES} ${CFLAGS} ${LDFLAGS}
 
-install:
+
+INSTALL_TARGET=blobinstall
+blobinstall:
 	mkdir -p "${DESTDIR}${BINDIR}"
-	for FILE in r2 ${BINS2} ; do \
+	for FILE in ${R2BINS} ; do \
 		rm -f "${DESTDIR}${BINDIR}/$$FILE" ; \
 		cp -PRpf "$$FILE" "${DESTDIR}${BINDIR}/$$FILE" ; \
 	done

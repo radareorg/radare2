@@ -154,23 +154,18 @@ jobs:
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
         NOLTO=1 sys/static.sh
         make -C binr/blob
-        xz binr/blob/radare2
+        xz binr/blob/r2blob
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: radare2-static.xz
-        path: binr/blob/radare2.xz
+        name: r2blob-static.xz
+        path: binr/blob/r2blob.xz
     - name: Static static r2 with meson 
       run: |
         sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
         sudo pip3 install meson==0.55.3 ninja==1.10.0
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
-    - name: Pub
-      uses: actions/upload-artifact@v2
-      with:
-        name: radare2-static.xz
-        path: binr/blob/radare2.xz
   linux-acr-deb-64:
     runs-on: ubuntu-18.04
     steps:
