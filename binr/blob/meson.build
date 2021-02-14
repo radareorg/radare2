@@ -1,4 +1,4 @@
-executable('radare2', 'main.c',
+executable('r2blob', 'r2blob.c',
   include_directories: [platform_inc],
   dependencies: [
     r_main_dep,
