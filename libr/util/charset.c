@@ -123,7 +123,7 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 	size_t maxkeylen = rc->encode_maxkeylen;
 	size_t cur, j;
 	for (cur = 0; cur < in_len; cur++) {
-		size_t left = in_len - cur;
+		size_t left = in_len - cur + 1;
 		size_t toread = R_MIN (left, maxkeylen);
 		char *str = r_str_ndup ((char *)in + cur, toread + 1);
 		bool found = false;
