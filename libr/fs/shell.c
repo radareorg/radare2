@@ -222,7 +222,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					*p = '>';
 				}
 				r_fs_read (fs, file, 0, file->size);
-				if (!handlePipes (fs, str, file->data, path)) {
+				if (file->data && !handlePipes (fs, str, file->data, path)) {
 					char *s = r_str_ndup ((const char *)file->data, file->size);
 					cb_printf ("%s\n", s);
 					free (s);
