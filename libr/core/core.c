@@ -1143,7 +1143,7 @@ static void autocomplete_mount_point (RLineCompletion *completion, RCore *core, 
 static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const char *str, const char *path) {
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
 	char *p = NULL;
-	char *pwd = (core->rfs && *(core->rfs->cwd)) ? *(core->rfs->cwd): ".";
+	char *pwd = (core->rfs && core->rfs->cwd && *(core->rfs->cwd)) ? *(core->rfs->cwd): ".";
 	int n = 0;
 	RList *list;
 	RListIter *iter;
@@ -1617,7 +1617,7 @@ static void autocomplete_file(RLineCompletion *completion, const char *str) {
 static void autocomplete_ms_file(RCore* core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (str);
 	char *pipe = strchr (str, '>');
-	char *path = (core->rfs && *(core->rfs->cwd)) ? *(core->rfs->cwd): "/";
+	char *path = (core->rfs && core->rfs->cwd && *(core->rfs->cwd)) ? *(core->rfs->cwd): "/";
 	if (pipe) {
 		str = r_str_trim_head_ro (pipe + 1);
 	}
