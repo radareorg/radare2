@@ -1416,18 +1416,18 @@ static int cmd_open(void *data, const char *input) {
 				bits = r_num_math (core->num, r_str_word_get0 (ptr, 1));
 				arch = r_str_word_get0 (ptr, 0);
 				r_core_bin_set_arch_bits (core, filename, arch, bits);
-				RBinFile *file;
-				if (filename != NULL) {
+				RBinFile *file = NULL;
+				if (filename) {
 					file = r_bin_file_find_by_name (core->bin, filename);
 					if (!file) {
 						eprintf ("Cannot find file %s\n", filename);
-						free (ptr);
-						return 0;
 					}
-				} else if (core->bin->binfiles->length == 1) {
-					file = (RBinFile *)core->bin->binfiles->head->data;
+				} else if (r_list_length(core->bin->binfiles) == 1) {
+					file = (RBinFile *)r_list_first(core->bin->binfiles);
 				} else {
 					eprintf ("More than one file is opened, specify the filename\n");
+				}
+				if (!file) {
 					free (ptr);
 					return 0;
 				}
