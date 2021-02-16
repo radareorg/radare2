@@ -1422,7 +1422,7 @@ static int cmd_open(void *data, const char *input) {
 					if (!file) {
 						eprintf ("Cannot find file %s\n", filename);
 					}
-				} else if (r_list_length(core->bin->binfiles) == 1) {
+				} else if (r_list_length (core->bin->binfiles) == 1) {
 					file = (RBinFile *)r_list_first(core->bin->binfiles);
 				} else {
 					eprintf ("More than one file is opened, specify the filename\n");
