@@ -59,33 +59,19 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	for (;;) {
 		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, path);
 		if (shell) {
+			free (*shell->cwd);
 			*shell->cwd = strdup (path);
 			if (shell->set_prompt) {
 				shell->set_prompt (prompt);
 			}
 			if (shell->readline) {
-				ptr = shell->readline ();
-			} else {
-				if (!fgets (buf, sizeof (buf), stdin)) {
+				if ((ptr = shell->readline ()) == NULL) {
 					break;
 				}
-				if (feof (stdin)) {
-					break;
-				}
-				r_str_trim_tail (buf);
-				ptr = buf;
-			}
-			if (!ptr) {
-				break;
-			}
-			r_str_trim ((char *)ptr); // XXX abadidea
-			if (shell->hist_add) {
-				shell->hist_add (ptr);
-			}
-			if (ptr != buf) {
 				r_str_ncpy (buf, ptr, sizeof (buf) - 1);
 			}
-		} else {
+		}
+		if (!shell || !shell->readline) {
 			printf ("%s", prompt);
 			if (!fgets (buf, sizeof (buf), stdin)) {
 				break;
@@ -93,8 +79,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (feof (stdin)) {
 				break;
 			}
-			r_str_trim_tail (buf);
 		}
+		r_str_trim (buf);
+
+		if (shell && shell->hist_add) {
+			shell->hist_add (buf);
+		}
+
 		char *wave = strchr (buf, '~');
 		if (wave) {
 			*wave++ = 0;
