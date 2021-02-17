@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2020 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2021 - pancake, condret */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -128,6 +128,16 @@ R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb cod
 	eop->type = type;
 	eop->code = code;
 	return true;
+}
+
+R_API RAnalEsilOp *r_anal_esil_get_op(RAnalEsil *esil, const char *op) {
+	r_return_val_if_fail (esil && esil->ops && R_STR_ISNOTEMPTY (op), NULL);
+	return (RAnalEsilOp *) ht_pp_find (esil->ops, op, NULL);
+}
+
+R_API void r_anal_esil_del_op(RAnalEsil *esil, const char *op) {
+	r_return_if_fail (esil && esil->ops && R_STR_ISNOTEMPTY (op));
+	ht_pp_delete (esil->ops, op);
 }
 
 static bool r_anal_esil_fire_trap(RAnalEsil *esil, int trap_type, int trap_code) {
@@ -3409,7 +3419,7 @@ static bool esil_float_sqrt(RAnalEsil *esil) {
 }
 
 static bool iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp **op) {
-	RAnalEsilOp *eop = ht_pp_find (esil->ops, word, NULL);
+	RAnalEsilOp *eop = r_anal_esil_get_op (esil, word);
 	if (eop) {
 		*op = eop;
 		return true;
