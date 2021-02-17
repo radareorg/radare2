@@ -13,6 +13,7 @@ r_anal_sources = [
   'esil.c',
   'esil_stats.c',
   'esil_trace.c',
+  'esil_plugin.c',
   'esil_handler.c',
   'esil_cfg.c',
   'esil_dfg.c',
