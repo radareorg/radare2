@@ -178,10 +178,10 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	if (esil->anal && esil == esil->anal->esil) {
 		esil->anal->esil = NULL;
 	}
-	ht_pp_free (esil->ops);
-	esil->ops = NULL;
 	r_anal_esil_plugins_fini (esil);
 	r_anal_esil_handlers_fini (esil);
+	ht_pp_free (esil->ops);
+	esil->ops = NULL;
 	sdb_free (esil->stats);
 	esil->stats = NULL;
 	r_anal_esil_stack_free (esil);
