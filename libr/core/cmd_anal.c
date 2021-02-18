@@ -2889,8 +2889,8 @@ static void r_core_anal_fmap(RCore *core, const char *input) {
 		}
 	}
 	r_cons_printf ("\n%d / %" PFMT64u " (%.2lf%%) bytes assigned to a function\n",
-		assigned, code_size, 100.0*( (float) assigned) / code_size);
-	free(bitmap);
+		assigned, code_size, 100.0 * ( (float) assigned) / code_size);
+	free (bitmap);
 }
 
 static bool fcnNeedsPrefix(const char *name) {
@@ -8880,7 +8880,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		case 'd': // "agfd"
-			if (input[2] == 'm') {
+			if (input[2] == 'm') { // "agfdm"
 				r_core_anal_graph (core, r_num_math (core->num, input + 3),
 					R_CORE_ANAL_GRAPHLINES);
 			} else {

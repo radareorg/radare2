@@ -302,6 +302,7 @@ static const char *type_to_string(RTypeInfoType type) {
 	default:
 		r_return_val_if_reached (CLASS_TYPE_INFO_NAME);
 	}
+	return NULL;
 }
 static void rtti_itanium_print_class_type_info(class_type_info *cti, const char *prefix) {
 	r_cons_printf ("%sType Info at 0x%08" PFMT64x ":\n"
@@ -669,6 +670,7 @@ static class_type_info *rtti_itanium_type_info_new(RVTableContext *context, ut64
 	default:
 		r_return_val_if_reached (NULL);
 	}
+	return false;
 }
 
 static void rtti_itanium_type_info_free(void *info) {
@@ -733,6 +735,7 @@ R_API bool r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 add
 		rtti_itanium_class_type_info_free (cti);
 		r_return_val_if_reached (false);
 	}
+	return false;
 }
 
 R_API char *r_anal_rtti_itanium_demangle_class_name(RVTableContext *context, const char *name) {
