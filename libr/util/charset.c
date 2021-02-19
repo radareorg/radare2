@@ -149,8 +149,7 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 					o += ll - 1;
 				}
 				found = true;
-				size_t str_len = strlen (str) - 1;
-				cur += str_len > 0 ? str_len - 1: 1;
+				cur += j - 1;
 				free (str_hx);
 				break;
 			}
