@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2020 - nibble, pancake, xvilka */
+/* radare2 - LGPL - Copyright 2009-2021 - nibble, pancake, xvilka */
 
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
@@ -1165,6 +1165,8 @@ typedef struct r_anal_esil_t {
 	//this is a disgusting workaround, because we have no ht-like storage without magic keys, that you cannot use, with int-keys
 	RAnalEsilHandler *intr0;
 	RAnalEsilHandler *sysc0;
+	RList *plugins;
+	RList *active_plugins;
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	RAnalEsilTrace *trace;
@@ -1323,10 +1325,15 @@ typedef struct r_anal_esil_plugin_t {
 	char *arch;
 	char *author;
 	char *version;
-
-	bool (*init)(void *user);
-	bool (*fini)(void *user);
+	void *(*init)(RAnalEsil *esil);			// can allocate stuff and return that
+	void (*fini)(RAnalEsil *esil, void *user);	// deallocates allocated things from init
 } RAnalEsilPlugin;
+
+// Some kind of container, pointer to plugin + pointer to user
+typedef struct r_anal_esil_active_plugin_t {
+	RAnalEsilPlugin *plugin;
+	void *user;
+} RAnalEsilActivePlugin;
 
 /*----------------------------------------------------------------------------------------------*/
 int * (r_anal_compare) (RAnalFunction , RAnalFunction );
@@ -1519,7 +1526,6 @@ R_API RAnal *r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free (RAnalPlugin *p);
 R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo);
-R_API int r_anal_esil_add(RAnal *anal, RAnalEsilPlugin *foo);
 R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_use(RAnal *anal, const char *name);
 R_API bool r_anal_esil_use(RAnal *anal, const char *name);
@@ -1576,18 +1582,27 @@ R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num);
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str);
 R_API char *r_anal_esil_pop(RAnalEsil *esil);
 R_API bool r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOpCb code, ut32 push, ut32 pop, ut32 type);
+R_API RAnalEsilOp *r_anal_esil_get_op(RAnalEsil *esil, const char *op);
+R_API void r_anal_esil_del_op(RAnalEsil *esil, const char *op);
 R_API void r_anal_esil_stack_free(RAnalEsil *esil);
 R_API int r_anal_esil_get_parm_type(RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_get_parm(RAnalEsil *esil, const char *str, ut64 *num);
 R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str);
 
-// esil_.c
+// esil_handler.c
 R_API void r_anal_esil_handlers_init(RAnalEsil *esil);
 R_API bool r_anal_esil_set_interrupt(RAnalEsil *esil, ut32 intr_num, RAnalEsilHandlerCB cb, void *user);
 R_API bool r_anal_esil_set_syscall(RAnalEsil *esil, ut32 sysc_num, RAnalEsilHandlerCB cb, void *user);
 R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, ut32 intr_num);
 R_API int r_anal_esil_do_syscall(RAnalEsil *esil, ut32 sysc_num);
 R_API void r_anal_esil_handlers_fini(RAnalEsil *esil);
+
+// esil_plugin.c
+R_API void r_anal_esil_plugins_init(RAnalEsil *esil);
+R_API void r_anal_esil_plugins_fini(RAnalEsil *esil);
+R_API bool r_anal_esil_plugin_add(RAnalEsil *esil, RAnalEsilPlugin *plugin);
+R_API bool r_anal_esil_plugin_activate(RAnalEsil *esil, const char *name);
+R_API void r_anal_esil_plugin_deactivate(RAnalEsil *esil, const char *name);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);
