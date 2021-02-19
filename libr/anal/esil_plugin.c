@@ -82,7 +82,7 @@ R_API void r_anal_esil_plugin_deactivate(RAnalEsil *esil, const char *name) {
 			eap->plugin->fini (esil, eap->user);
 			r_list_delete (esil->active_plugins, iter);
 			free (eap);
-			return;
+			break;
 		}
 	}
 }
