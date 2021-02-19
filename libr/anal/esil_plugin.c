@@ -38,21 +38,29 @@ R_API bool r_anal_esil_plugin_add(RAnalEsil *esil, RAnalEsilPlugin *plugin) {
 	return true;
 }
 
-R_API bool r_anal_esil_plugin_activate(RAnalEsil *esil, const char *name) {
-	r_return_val_if_fail (esil && esil->plugins &&
-				esil->active_plugins && name, false);
+static RAnalEsilActivePlugin *_get_active_plugin(RAnalEsil *esil, const char *name) {
 	RListIter *iter;
 	RAnalEsilActivePlugin *eap;
 	r_list_foreach (esil->active_plugins, iter, eap) {
-		// check if plugin is already activated
 		if (!strcmp (eap->plugin->name, name)) {
-			return false;	// is this correct?
+			return eap;
 		}
 	}
+	return NULL;
+}
+
+R_API bool r_anal_esil_plugin_activate(RAnalEsil *esil, const char *name) {
+	r_return_val_if_fail (esil && esil->plugins &&
+				esil->active_plugins && name, false);
+	// check if plugin is already activated
+	if (_get_active_plugin (esil, name)) {
+		return false;
+	}
+	RListIter *iter;
 	RAnalEsilPlugin *ep;
 	r_list_foreach (esil->plugins, iter, ep) {
 		if (!strcmp(ep->name, name)) {
-			eap = R_NEW (RAnalEsilActivePlugin);
+			RAnalEsilActivePlugin *eap = R_NEW (RAnalEsilActivePlugin);
 			if (!eap) {
 				return false;
 			}
