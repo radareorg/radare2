@@ -21,6 +21,8 @@ else
 	echo "Running acr..."
 	acr -p
 fi
+V=`./configure -qV`
+meson rewrite kwargs set project / version "$V"
 if [ -n "$1" ]; then
 	echo "./configure $*"
 	./configure $*
