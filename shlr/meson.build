@@ -130,6 +130,47 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/X86/X86InstPrinterCommon.c',
   ]
 
+  user_plugins = get_option('plugins').split(',')
+  no_user_plugins = get_option('plugins') == ''
+  cs_c_args = [
+    '-DCAPSTONE_USE_SYS_DYN_MEM',
+    '-DCAPSTONE_DIET_NO',
+  ]
+  if user_plugins.contains('x86') or no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_X86',
+      '-DCAPSTONE_X86_ATT_DISABLE_NO',
+      '-DCAPSTONE_X86_REDUCE_NO',
+    ]
+  endif
+  if user_plugins.contains('arm') or no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_ARM',
+      '-DCAPSTONE_HAS_ARM64',
+    ]
+  endif
+  if user_plugins.contains('sparc') or no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_SPARC',
+    ]
+  endif
+  if user_plugins.contains('mips') or no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_MIPS',
+    ]
+  endif
+  if no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_M68K',
+      '-DCAPSTONE_HAS_M680X',
+      '-DCAPSTONE_HAS_POWERPC',
+      '-DCAPSTONE_HAS_SPARC',
+      '-DCAPSTONE_HAS_SYSZ',
+      '-DCAPSTONE_HAS_XCORE',
+      '-DCAPSTONE_HAS_TMS320C64X',
+    ]
+  endif
+
   cs_files = []
   foreach rel_cs_file : rel_cs_files
     cs_files += [join_paths(capstone_path, rel_cs_file)]
@@ -143,6 +184,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     foreach rel_cs_file : rel_cs5_files
       cs_files += [join_paths(capstone_path, rel_cs_file)]
     endforeach
+    cs_c_args += [ '-DCAPSTONE_HAS_RISCV' ]
   endif
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
@@ -151,23 +193,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   endif
 
   libr2capstone = static_library('r2capstone', cs_files,
-    c_args: [
-      '-DCAPSTONE_X86_ATT_DISABLE_NO',
-      '-DCAPSTONE_X86_REDUCE_NO',
-      '-DCAPSTONE_USE_SYS_DYN_MEM',
-      '-DCAPSTONE_DIET_NO',
-      '-DCAPSTONE_HAS_ARM',
-      '-DCAPSTONE_HAS_ARM64',
-      '-DCAPSTONE_HAS_M68K',
-      '-DCAPSTONE_HAS_M680X',
-      '-DCAPSTONE_HAS_MIPS',
-      '-DCAPSTONE_HAS_POWERPC',
-      '-DCAPSTONE_HAS_SPARC',
-      '-DCAPSTONE_HAS_SYSZ',
-      '-DCAPSTONE_HAS_X86',
-      '-DCAPSTONE_HAS_XCORE',
-      '-DCAPSTONE_HAS_TMS320C64X',
-    ],
+    c_args: cs_c_args,
     include_directories: capstone_includes,
     implicit_include_directories: false
   )
