@@ -1,7 +1,10 @@
-option('cli', type: 'feature', value: 'auto', description: 'Build CLI programs (“auto” means they will be built when not a subproject)')
+option('cli', type: 'feature', value: 'auto', description: 'Build CLI programs ("auto" means they will be built when not a subproject)')
 option('static_runtime', type: 'boolean', value: false)
 option('local', type: 'boolean', value: false, description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
 option('blob', type: 'boolean', value: false, description: 'Compile just one binary which dispatch to the right handlers based on the name used to call it')
+
+# Plugins
+option('plugins', type: 'string', value: '', description: 'Comma separated list of plugin names')
 
 # For Windows
 option('r2_libdir', type: 'string', value: '')
