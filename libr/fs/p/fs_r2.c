@@ -39,7 +39,9 @@ static Routes routes[] = {
 };
 
 static void append_file(RList *list, const char *name, int type, int time, ut64 size) {
-	r_return_val_if_fail (!list || !name || !*name, );
+	if (!list || !name || !*name) {
+		return;		
+	}
 	RFSFile *fsf = r_fs_file_new (NULL, name);
 	if (!fsf) {
 		return;
@@ -74,7 +76,7 @@ static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
 }
 
 static RFSFile* fs_r2_open(RFSRoot *root, const char *path, bool create) {
-	r_return_val_if_fail (root, -1);
+	r_return_val_if_fail (root, NULL);
 	int i;
 	for (i = 0; routes[i].path; i++) {
 		const char *cwd = routes[i].path;
