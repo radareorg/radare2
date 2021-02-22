@@ -1917,6 +1917,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				hadflag = false;
 			}
 			*echars++ = IS_PRINTABLE (ch)? ch: '.';
+			*echars = 0;
 			if (core->print->cur_enabled && max == here) {
 				if (!html && usecolor) {
 					append (ebytes, Color_RESET);
