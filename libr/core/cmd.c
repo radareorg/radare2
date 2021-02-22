@@ -370,6 +370,14 @@ static bool duplicate_flag(RFlagItem *flag, void *u) {
 	return true;
 }
 
+static bool foreach_newline(RCore *core) {
+	bool nl = r_config_get_i (core->config, "scr.loopnl");
+	if (nl) {
+		r_cons_newline ();
+	}
+	return r_cons_is_breaked ();
+}
+
 static void recursive_help_go(RCore *core, int detail, RCmdDescriptor *desc) {
 	int i;
 	if (desc->help_msg) {
@@ -4275,7 +4283,7 @@ static void foreach_pairs(RCore *core, const char *cmd, const char *each) {
 		}
 		if (arg && *arg) {
 			ut64 n = r_num_get (NULL, arg);
-			if (pair%2) {
+			if (pair % 2) {
 				r_core_block_size (core, n);
 				r_core_cmd0 (core, cmd);
 			} else {
@@ -4328,6 +4336,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			if (!glob || (meta->str && r_str_glob (meta->str, glob))) {
 				r_core_seek (core, r_interval_tree_iter_get (&it)->start, true);
 				r_core_cmd0 (core, cmd);
+				if (foreach_newline (core)) {
+					break;
+				}
 			}
 		}
 		free (glob);
@@ -4345,18 +4356,24 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					r_core_seek (core, r_io_map_begin (map), true);
 					r_core_block_size (core, r_io_map_size (map));
 					r_core_cmd0 (core, cmd);
+					if (foreach_newline (core)) {
+						break;
+					}
 				}
 				r_list_free (maps);
 			}
 		}
 		break;
-	case 'M':
+	case 'M': // @@@M
 		if (dbg && dbg->h && dbg->maps) {
 			RDebugMap *map;
 			r_list_foreach (dbg->maps, iter, map) {
 				r_core_seek (core, map->addr, true);
 				//r_core_block_size (core, map->size);
 				r_core_cmd0 (core, cmd);
+				if (foreach_newline (core)) {
+					break;
+				}
 			}
 		}
 		break;
@@ -4373,6 +4390,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				r_core_cmdf (core, "dp %d", p->pid);
 				r_cons_printf ("PID %d\n", p->pid);
 				r_core_cmd0 (core, cmd);
+				if (foreach_newline (core)) {
+					break;
+				}
 			}
 			r_core_cmdf (core, "dp %d", origpid);
 			r_list_free (list);
@@ -4404,6 +4424,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					r_core_seek (core, value, true);
 					r_cons_printf ("%s: ", item_name);
 					r_core_cmd0 (core, cmd);
+					if (foreach_newline (core)) {
+						break;
+					}
 				}
 				r_list_free (list);
 			}
@@ -4430,6 +4453,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				if (addr && addr != UT64_MAX) {
 					r_core_seek (core, addr, true);
 					r_core_cmd0 (core, cmd);
+					if (foreach_newline (core)) {
+						break;
+					}
 				}
 			}
 			r_core_seek (core, offorig, true);
@@ -4448,6 +4474,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					r_core_seek (core, sec->vaddr, true);
 					r_core_block_size (core, sec->vsize);
 					r_core_cmd0 (core, cmd);
+					if (foreach_newline (core)) {
+						break;
+					}
 				}
 				r_core_block_size (core, bszorig);
 				r_core_seek (core, offorig, true);
@@ -4468,6 +4497,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				//}
 				r_core_seek_size (core, addr, size);
 				r_core_cmd (core, cmd, 0);
+				if (foreach_newline (core)) {
+					break;
+				}
 			}
 			r_core_block_size (core, cbsz);
 		}
@@ -4489,6 +4521,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					r_core_block_size (core, s->size);
 					r_core_seek (core, s->vaddr, true);
 					r_core_cmd0 (core, cmd);
+					if (foreach_newline (core)) {
+						break;
+					}
 				}
 				r_core_block_size (core, obs);
 				r_core_seek (core, offorig, true);
@@ -4513,6 +4548,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				r_core_block_size (core, sym->size);
 				r_core_seek (core, sym->vaddr, true);
 				r_core_cmd0 (core, cmd);
+				if (foreach_newline (core)) {
+					break;
+				}
 			}
 			r_cons_break_pop ();
 			r_list_free (lost);
@@ -4534,6 +4572,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				r_core_block_size (core, f->size);
 				r_core_seek (core, f->offset, true);
 				r_core_cmd0 (core, cmd);
+				if (foreach_newline (core)) {
+					break;
+				}
 			}
 			r_core_seek (core, off, false);
 			r_core_block_size (core, obs);
@@ -4555,6 +4596,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					r_core_seek (core, fcn->addr, true);
 					r_core_block_size (core, r_anal_function_linear_size (fcn));
 					r_core_cmd0 (core, cmd);
+					if (foreach_newline (core)) {
+						break;
+					}
 				}
 			}
 			r_cons_break_pop ();
@@ -4574,6 +4618,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					r_core_seek (core, bb->addr, true);
 					r_core_block_size (core, bb->size);
 					r_core_cmd0 (core, cmd);
+					if (foreach_newline (core)) {
+						break;
+					}
 				}
 				r_core_block_size (core, obs);
 				r_core_seek (core, offorig, true);
@@ -4632,6 +4679,7 @@ static void foreachOffset(RCore *core, const char *_cmd, const char *each) {
 			}
 			r_core_seek (core, addr, true);
 			r_core_cmd (core, cmd, 0);
+			foreach_newline (core);
 			r_cons_flush ();
 		}
 		each = nextLine;
@@ -4681,7 +4729,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_core_block_size (core, bb->size);
 					r_core_seek (core, bb->addr, true);
 					r_core_cmd (core, cmd, 0);
-					if (r_cons_is_breaked ()) {
+					if (foreach_newline (core)) {
 						break;
 					}
 				}
@@ -4705,7 +4753,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				for (cur = from; cur <= to; cur += step) {
 					(void) r_core_seek (core, cur, true);
 					r_core_cmd (core, cmd, 0);
-					if (r_cons_is_breaked ()) {
+					if (foreach_newline (core)) {
 						break;
 					}
 				}
@@ -4728,7 +4776,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						ut64 addr = bb->addr + bb->op_pos[i];
 						r_core_seek (core, addr, true);
 						r_core_cmd (core, cmd, 0);
-						if (r_cons_is_breaked ()) {
+						if (foreach_newline (core)) {
 							break;
 						}
 					}
@@ -4746,7 +4794,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					if (each[2] && strstr (fcn->name, each + 2)) {
 						r_core_seek (core, fcn->addr, true);
 						r_core_cmd (core, cmd, 0);
-						if (r_cons_is_breaked ()) {
+						if (foreach_newline (core)) {
 							break;
 						}
 					}
@@ -4770,7 +4818,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_cons_pop ();
 					r_cons_strcat (buf);
 					free (buf);
-					if (r_cons_is_breaked ()) {
+					if (foreach_newline (core)) {
 						break;
 					}
 				}
@@ -4789,7 +4837,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_cons_printf ("# PID %d\n", p->pid);
 					r_debug_select (core->dbg, p->pid, p->pid);
 					r_core_cmd (core, cmd, 0);
-					r_cons_newline ();
+					if (foreach_newline (core)) {
+						break;
+					}
 				}
 				r_list_free (list);
 			}
@@ -4831,7 +4881,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					break;
 				}
 				r_core_cmd (core, cmd, 0);
-				r_cons_newline ();
+				if (foreach_newline (core)) {
+					break;
+				}
 				i++;
 			}
 			r_core_seek (core, oseek, false);
@@ -4865,6 +4917,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				each = str + 1;
 				r_core_seek (core, addr, true);
 				r_core_cmd (core, cmd, 0);
+				if (foreach_newline (core)) {
+					break;
+				}
 				r_cons_flush ();
 			} while (str != NULL);
 			free (out);
@@ -4889,6 +4944,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				eprintf ("0x%08"PFMT64x" (%s)\n", addr, cmd2);
 				r_core_seek (core, addr, true);
 				r_core_cmd (core, cmd2, 0);
+				if (foreach_newline (core)) {
+					break;
+				}
 				i++;
 			}
 		} else {
@@ -4907,6 +4965,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
 					r_core_seek (core, addr, true); // XXX
 					r_core_cmd (core, cmd2, 0);
+					if (foreach_newline (core)) {
+						break;
+					}
 					core->rcmd->macro.counter++;
 				}
 				fclose (fd);
@@ -4969,6 +5030,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					r_cons_pop ();
 					r_cons_strcat (buf);
 					free (buf);
+					if (foreach_newline (core)) {
+						break;
+					}
 					r_core_task_yield (&core->tasks);
 				}
 
