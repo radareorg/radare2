@@ -60,6 +60,7 @@ static const char *help_msg_aa[] = {
 	"aaT", " [len]", "analyze code after trap-sleds",
 	"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
 	"aav", " [sat]", "find values referencing a specific section or map",
+	"aaw", "", "analyze all meta words (Cd) and add r. named flags for referenced pointers",
 	NULL
 };
 
@@ -9443,6 +9444,28 @@ static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user
 	}
 }
 
+static void cmd_anal_aaw(RCore *core, const char *input) {
+	RIntervalTreeIter it;
+	RAnalMetaItem *item;
+	r_interval_tree_foreach (&core->anal->meta, it, item) {
+		RIntervalNode *node = r_interval_tree_iter_get (&it);
+		ut64 size = r_meta_item_size (node->start, node->end);
+		if (item->type == R_META_TYPE_DATA && size == core->anal->bits / 8) {
+			ut8 buf[8] = {0};
+			r_io_read_at (core->io, node->start, buf, 8);
+			ut64 n = r_read_ble (buf, core->print->big_endian, core->anal->bits);
+			RFlagItem *fi = r_flag_get_at (core->flags, n, false);
+			if (fi) {
+				char *fn = r_str_newf ("r.%s", fi->name);
+				r_flag_set (core->flags, fn, node->start, true);
+				free (fn);
+			} else if (core->anal->verbose) {
+				eprintf ("Unknown pointer 0x%"PFMT64x" at 0x%"PFMT64x"\n", n, (ut64)node->start);
+			}
+		}
+	}
+}
+
 static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
@@ -9705,6 +9728,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'v': // "aav"
 		cmd_anal_aav (core, input);
+		break;
+	case 'w': // "aaw"
+		cmd_anal_aaw (core, input);
 		break;
 	case 'u': // "aau" - print areas not covered by functions
 		r_core_anal_nofunclist (core, input + 1);
@@ -10042,7 +10068,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	return true;
 }
 
-static bool anal_fcn_data (RCore *core, const char *input) {
+static bool anal_fcn_data(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_ANY);
 	if (fcn) {
 		int i;
@@ -10087,7 +10113,7 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 	return false;
 }
 
-static bool anal_fcn_data_gaps (RCore *core, const char *input) {
+static bool anal_fcn_data_gaps(RCore *core, const char *input) {
 	ut64 end = UT64_MAX;
 	RAnalFunction *fcn;
 	RListIter *iter;
