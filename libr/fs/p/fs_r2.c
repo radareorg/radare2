@@ -76,11 +76,7 @@ static RList *fscmd(RFSRoot *root, const char *cmd, int type) {
 }
 
 static RFSFile* fs_r2_open(RFSRoot *root, const char *path, bool create) {
-<<<<<<< HEAD
 	r_return_val_if_fail (root, NULL);
-=======
-	r_return_val_if_fail (root, -1);
->>>>>>> 95188427dafb8eed45f693c68922cd7373793bc7
 	int i;
 	for (i = 0; routes[i].path; i++) {
 		const char *cwd = routes[i].path;
