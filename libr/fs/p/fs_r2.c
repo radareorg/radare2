@@ -272,7 +272,7 @@ static RList *__root(RFSRoot *root, const char *path) {
 
 static RList *fs_r2_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	r_return_val_if_fail (root, NULL);
-	int i;
+	size_t i;
 	for (i = 0; routes[i].path; i++) {
 		if (routes[i].dir && !strncmp (path, routes[i].path, strlen (routes[i].path))) {
 			return routes[i].dir (root, path);
