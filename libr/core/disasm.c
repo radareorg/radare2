@@ -4219,15 +4219,15 @@ static void ds_print_relocs(RDisasmState *ds) {
 	}
 }
 
-static int mymemwrite0(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	return 0;
+static bool mymemwrite0(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	return false;
 }
 
-static int mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	return 1;
+static bool mymemwrite1(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	return true;
 }
 
-static int mymemwrite2(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool mymemwrite2(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	return (addr >= emustack_min && addr < emustack_max);
 }
 
@@ -4249,7 +4249,7 @@ static void ssa_set(RAnalEsil *esil, const char *reg) {
 }
 
 #define R_DISASM_MAX_STR 512
-static int myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static bool myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	RDisasmState *ds = esil->user;
 	if (ds && ds->show_emu_ssa) {
 		if (!isdigit ((unsigned char)*name)) {
@@ -4258,20 +4258,20 @@ static int myregread(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 			free (r);
 		}
 	}
-	return 0;
+	return false;
 }
 
-static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
 	ut32 *n32 = (ut32*)str;
 	RDisasmState *ds = esil->user;
 	if (!ds) {
-		return 0;
+		return false;
 	}
 	if (!ds->show_emu_strlea && ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 		// useful for ARM64
 		// reduce false positives in emu.str=true when loading strings via adrp+add
-		return 0;
+		return false;
 	}
 	ds->esil_likely = true;
 	if (ds->show_emu_ssa) {
@@ -4279,10 +4279,10 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		char *r = ssa_get (esil, name);
 		ds_comment_esil (ds, true, false, ">%s", r);
 		free (r);
-		return 0;
+		return false;
 	}
 	if (!ds->show_slow) {
-		return 0;
+		return false;
 	}
 	memset (str, 0, sizeof (str));
 	if (*val) {
@@ -4412,7 +4412,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		}
 	}
 	free (msg);
-	return 0;
+	return false;
 }
 
 static void ds_pre_emulation(RDisasmState *ds) {
@@ -4604,7 +4604,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	RCore *core = ds->core;
 	RAnalEsil *esil = core->anal->esil;
 	const char *pc;
-	int (*hook_mem_write)(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
+	bool (*hook_mem_write)(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	int i, nargs;
 	ut64 at = r_core_pava (core, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);

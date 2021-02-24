@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -4736,9 +4736,9 @@ static void handle_var_stack_access(RAnalEsil *esil, ut64 addr, RAnalVarAccessTy
 	}
 }
 
-static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	handle_var_stack_access (esil, addr, R_ANAL_VAR_ACCESS_TYPE_WRITE, len);
-	return 1;
+	return true;
 }
 
 /* TODO: move into RCore? */
@@ -4748,7 +4748,7 @@ static ut64 esilbreak_last_data = UT64_MAX;
 static ut64 ntarget = UT64_MAX;
 
 // TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
-static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	ut8 str[128];
 	if (addr != UT64_MAX) {
 		esilbreak_last_read = addr;
@@ -4796,12 +4796,12 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 			r_anal_xrefs_set (mycore->anal, esil->address, addr, R_ANAL_REF_TYPE_DATA);
 		}
 	}
-	return 0; // fallback
+	return false; // fallback
 }
 
-static int esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool esilbreak_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	if (!esil) {
-		return 0;
+		return false;
 	}
 	RAnal *anal = esil->anal;
 	EsilBreakCtx *ctx = esil->user;

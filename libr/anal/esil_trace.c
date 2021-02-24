@@ -106,12 +106,12 @@ static void add_mem_change(RAnalEsilTrace *trace, int idx, ut64 addr, ut8 data) 
 	r_vector_push (vmem, &mem);
 }
 
-static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static bool trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	r_return_val_if_fail (esil && name && res, -1);
-	int ret = 0;
+	bool ret = false;
 	if (*name == '0') {
 		//eprintf ("Register not found in profile\n");
-		return 0;
+		return false;
 	}
 	if (ocbs.hook_reg_read) {
 		RAnalEsilCallbacks cbs = esil->cb;
@@ -131,27 +131,25 @@ static int trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int
 	return ret;
 }
 
-static int trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
-	int ret = 0;
+static bool trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+	bool ret = false;
 	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
 	RRegItem *ri = r_reg_get (esil->anal->reg, name, -1);
-	if (!ri) {
-		eprintf ("Unknown register name %s\n", name);
-		return -1;
-	}
-	sdb_array_add (DB, KEY ("reg.write"), name, 0);
-	sdb_num_set (DB, KEYREG ("reg.write", name), *val, 0);
-	add_reg_change (esil->trace, esil->trace->idx + 1, ri, *val);
-	if (ocbs.hook_reg_write) {
-		RAnalEsilCallbacks cbs = esil->cb;
-		esil->cb = ocbs;
-		ret = ocbs.hook_reg_write (esil, name, val);
-		esil->cb = cbs;
+	if (ri) {
+		sdb_array_add (DB, KEY ("reg.write"), name, 0);
+		sdb_num_set (DB, KEYREG ("reg.write", name), *val, 0);
+		add_reg_change (esil->trace, esil->trace->idx + 1, ri, *val);
+		if (ocbs.hook_reg_write) {
+			RAnalEsilCallbacks cbs = esil->cb;
+			esil->cb = ocbs;
+			ret = ocbs.hook_reg_write (esil, name, val);
+			esil->cb = cbs;
+		}
 	}
 	return ret;
 }
 
-static int trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	char *hexbuf = calloc ((1 + len), 4);
 	int ret = 0;
 	if (esil->cb.mem_read) {
@@ -172,7 +170,7 @@ static int trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
-static int trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	size_t i;
 	int ret = 0;
 	char *hexbuf = malloc ((1 + len) * 3);

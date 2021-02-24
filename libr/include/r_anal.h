@@ -1112,17 +1112,17 @@ typedef struct r_anal_esil_trace_t {
 	Sdb *db;
 } RAnalEsilTrace;
 
-typedef int (*RAnalEsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
+typedef bool (*RAnalEsilHookRegWriteCB)(ESIL *esil, const char *name, ut64 *val);
 
 typedef struct r_anal_esil_callbacks_t {
 	void *user;
 	/* callbacks */
-	int (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
-	int (*hook_command)(ESIL *esil, const char *op);
-	int (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
-	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
-	int (*hook_mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
-	int (*mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
+	bool (*hook_flag_read)(ESIL *esil, const char *flag, ut64 *num);
+	bool (*hook_command)(ESIL *esil, const char *op);
+	bool (*hook_mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
+	bool (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
+	bool (*hook_mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
+	bool (*mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
 	bool (*hook_reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
 	bool (*reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
 	RAnalEsilHookRegWriteCB hook_reg_write;
@@ -1574,8 +1574,8 @@ R_API void r_anal_esil_free(RAnalEsil *esil);
 R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word);
 R_API bool r_anal_esil_parse(RAnalEsil *esil, const char *str);
 R_API bool r_anal_esil_dumpstack(RAnalEsil *esil);
-R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len);
-R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len);
+R_API bool r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len);
+R_API bool r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len);
 R_API bool r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size);
 R_API bool r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num);
 R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num);

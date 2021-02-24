@@ -1716,16 +1716,16 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	return r_str_appendf (res, ")");
 }
 
-static int mw(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool mw(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int *ec = (int*)esil->user;
 	*ec += (len * 2);
-	return 1;
+	return true;
 }
 
-static int mr(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool mr(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	int *ec = (int*)esil->user;
 	*ec += len;
-	return 1;
+	return true;
 }
 
 static int esil_cost(RCore *core, ut64 addr, const char *expr) {
@@ -5492,12 +5492,12 @@ typedef struct {
 	int size;
 } AeaMemItem;
 
-static int mymemwrite(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	RListIter *iter;
+static bool mymemwrite(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	AeaMemItem *n;
+	RListIter *iter;
 	r_list_foreach (mymemxsw, iter, n) {
 		if (addr == n->addr) {
-			return len;
+			return true;
 		}
 	}
 	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
@@ -5509,15 +5509,15 @@ static int mymemwrite(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 		n->size = len;
 		r_list_push (mymemxsw, n);
 	}
-	return len;
+	return true;
 }
 
-static int mymemread(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool mymemread(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	RListIter *iter;
 	AeaMemItem *n;
 	r_list_foreach (mymemxsr, iter, n) {
 		if (addr == n->addr) {
-			return len;
+			return true;
 		}
 	}
 	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
@@ -5529,10 +5529,10 @@ static int mymemread(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		n->size = len;
 		r_list_push (mymemxsr, n);
 	}
-	return len;
+	return true;
 }
 
-static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	AeaStats *stats = esil->user;
 	if (oldregread && !strcmp (name, oldregread)) {
 		r_list_pop (stats->regread);
@@ -5551,10 +5551,10 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		}
 		free (v);
 	}
-	return 0;
+	return false;
 }
 
-static int myregread(RAnalEsil *esil, const char *name, ut64 *val, int *len) {
+static bool myregread(RAnalEsil *esil, const char *name, ut64 *val, int *len) {
 	AeaStats *stats = esil->user;
 	if (!IS_DIGIT (*name)) {
 		if (!contains (stats->inputregs, name)) {
@@ -5569,10 +5569,10 @@ static int myregread(RAnalEsil *esil, const char *name, ut64 *val, int *len) {
 			r_list_push (stats->regread, strdup (name));
 		}
 	}
-	return 0;
+	return false;
 }
 
-static void showregs (RList *list) {
+static void showregs(RList *list) {
 	if (!r_list_empty (list)) {
 		char *reg;
 		RListIter *iter;
@@ -5583,10 +5583,10 @@ static void showregs (RList *list) {
 			}
 		}
 	}
-	r_cons_newline();
+	r_cons_newline ();
 }
 
-static void showmem (RList *list) {
+static void showmem(RList *list) {
 	if (!r_list_empty (list)) {
 		AeaMemItem *item;
 		RListIter *iter;
@@ -5598,7 +5598,7 @@ static void showmem (RList *list) {
 	r_cons_newline ();
 }
 
-static void showregs_json (RList *list, PJ *pj) {
+static void showregs_json(RList *list, PJ *pj) {
 	pj_a (pj);
 	if (!r_list_empty (list)) {
 		char *reg;
@@ -5611,7 +5611,7 @@ static void showregs_json (RList *list, PJ *pj) {
 	pj_end (pj);
 }
 
-static void showmem_json (RList *list, PJ *pj) {
+static void showmem_json(RList *list, PJ *pj) {
 	pj_a (pj);
 	if (!r_list_empty (list)) {
 		RListIter *iter;

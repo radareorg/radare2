@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake, Roc Valles, condret, killabyte */
+/* radare - LGPL - Copyright 2011-2021 - pancake, Roc Valles, condret, killabyte */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -50,11 +50,11 @@ typedef struct _opcodes_tag_ {
 
 static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu);
 
-#define CPU_MODEL_DECL(model, pc, consts)				\
-	{								\
-		model,							\
-		pc,							\
-		consts							\
+#define CPU_MODEL_DECL(model, pc, consts)\
+	{				 \
+		model,			 \
+		pc,			 \
+		consts			 \
 	}
 #define MASK(bits)			((bits) == 32 ? 0xffffffff : (~((~((ut32) 0)) << (bits))))
 #define CPU_PC_MASK(cpu)		MASK((cpu)->pc)
@@ -153,9 +153,10 @@ CPU_MODEL cpu_models[] = {
 	},
 };
 
-static CPU_MODEL *get_cpu_model(char *model);
+/// XXX this code is awful
+static CPU_MODEL *get_cpu_model(const char *model);
 
-static CPU_MODEL *__get_cpu_model_recursive(char *model) {
+static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
 	CPU_MODEL *cpu = NULL;
 
 	for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
@@ -175,21 +176,18 @@ static CPU_MODEL *__get_cpu_model_recursive(char *model) {
 	return cpu;
 }
 
-static CPU_MODEL *get_cpu_model(char *model) {
+static CPU_MODEL *get_cpu_model(const char *model) {
 	static CPU_MODEL *cpu = NULL;
-	// cached value?
+	// cache
 	if (cpu && !r_str_casecmp (model, cpu->model)) {
 		return cpu;
 	}
-	// do the real search
-	cpu = __get_cpu_model_recursive (model);
-	return cpu;
+	return cpu = __get_cpu_model_recursive (model);
 }
 
 static ut32 const_get_value(CPU_CONST *c) {
 	return c ? MASK (c->size * 8) & c->value : 0;
 }
-
 
 static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 	CPU_CONST **clist, *citem;
@@ -221,7 +219,9 @@ static int __esil_pop_argument(RAnalEsil *esil, ut64 *v) {
 
 static CPU_CONST *const_by_value(CPU_MODEL *cpu, int type, ut32 v) {
 	CPU_CONST **clist, *citem;
-
+	if (!cpu) {
+		return NULL;
+	}
 	for (clist = cpu->consts; *clist; clist++) {
 		for (citem = *clist; citem && citem->key; citem++) {
 			if (citem->value == (MASK (citem->size * 8) & v)
@@ -1778,9 +1778,7 @@ static bool avr_custom_des (RAnalEsil *esil) {
 
 // ESIL operation SPM_PAGE_ERASE
 static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
-	CPU_MODEL *cpu;
-	ut8 c;
-	ut64 addr, page_size_bits, i;
+	ut64 addr, i;
 
 	// sanity check
 	if (!esil || !esil->anal || !esil->anal->reg) {
@@ -1793,15 +1791,15 @@ static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
 	}
 
 	// get details about current MCU and fix input address
-	cpu = get_cpu_model (esil->anal->cpu);
-	page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
+	CPU_MODEL *cpu = get_cpu_model (esil->anal->cpu);
+	ut64 page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align base address to page_size_bits
 	addr &= ~(MASK (page_size_bits));
 
 	// perform erase
 	//eprintf ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
-	c = 0xff;
+	ut8 c = 0xff;
 	for (i = 0; i < (1ULL << page_size_bits); i++) {
 		r_anal_esil_mem_write (
 			esil, (addr + i) & CPU_PC_MASK (cpu), &c, 1);
@@ -1888,11 +1886,11 @@ static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 	return true;
 }
 
-static int esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	CPU_MODEL *cpu;
 
 	if (!esil || !esil->anal) {
-		return 0;
+		return false;
 	}
 
 	// select cpu info
@@ -1910,8 +1908,7 @@ static int esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val)
 			? *val & MASK (cpu->pc - 8)
 			: 0;
 	}
-
-	return 0;
+	return false;
 }
 
 static int esil_avr_init(RAnalEsil *esil) {

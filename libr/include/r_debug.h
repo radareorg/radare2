@@ -568,13 +568,13 @@ R_API int r_debug_drx_unset(RDebug *dbg, int idx);
 
 /* esil */
 R_API ut64 r_debug_num_callback(RNum *userptr, const char *str, int *ok);
-R_API int r_debug_esil_stepi(RDebug *dbg);
+R_API bool r_debug_esil_stepi(RDebug *dbg);
 R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count);
 R_API ut64 r_debug_esil_continue(RDebug *dbg);
 R_API void r_debug_esil_watch(RDebug *dbg, int rwx, int dev, const char *expr);
 R_API void r_debug_esil_watch_reset(RDebug *dbg);
 R_API void r_debug_esil_watch_list(RDebug *dbg);
-R_API int r_debug_esil_watch_empty(RDebug *dbg);
+R_API bool r_debug_esil_watch_empty(RDebug *dbg);
 R_API void r_debug_esil_prestep (RDebug *d, int p);
 
 /* record & replay */

@@ -212,7 +212,7 @@ static bool alignCheck(RAnalEsil *esil, ut64 addr) {
 	return !(dataAlign > 0 && addr % dataAlign);
 }
 
-static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io, 0);
 
 	addr &= esil->addrmask;
@@ -244,7 +244,7 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 	return len;
 }
 
-static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->iob.io, 0);
 
 	addr &= esil->addrmask;
@@ -266,9 +266,9 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 	return len;
 }
 
-R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	int i, ret = 0;
+R_API bool r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_return_val_if_fail (buf && esil, 0);
+	bool ret = false;
 	addr &= esil->addrmask;
 	if (esil->cb.hook_mem_read) {
 		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
@@ -288,6 +288,7 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		}
 	}
 	IFDBG {
+		size_t i;
 		eprintf ("0x%08" PFMT64x " R> ", addr);
 		for (i = 0; i < len; i++) {
 			eprintf ("%02x", buf[i]);
@@ -297,7 +298,7 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	return ret;
 }
 
-static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
@@ -332,13 +333,13 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	return ret;
 }
 
-static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	int ret = 0;
+static bool internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	bool ret = false;
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
-		return 0;
+		return false;
 	}
 	if (esil->nowrite) {
-		return 0;
+		return false;
 	}
 	addr &= esil->addrmask;
 	if (esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len)) {
@@ -355,11 +356,9 @@ static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8
 	return ret;
 }
 
-R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+R_API bool r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+	r_return_val_if_fail (esil && buf, false);
 	int i, ret = 0;
-	if (!buf || !esil) {
-		return 0;
-	}
 	addr &= esil->addrmask;
 	IFDBG {
 		eprintf ("0x%08" PFMT64x " <W ", addr);
@@ -377,7 +376,7 @@ R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 	return ret;
 }
 
-static int internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
+static bool internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
 	RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
 	if (reg) {
 		if (size) {
@@ -391,7 +390,7 @@ static int internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *nu
 	return false;
 }
 
-static int internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 num) {
+static bool internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 num) {
 	if (esil && esil->anal) {
 		RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
 		if (reg) {
@@ -406,7 +405,7 @@ static int internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 nu
 //Are you really trying to prevent the analyzed binary from doing anything that would cause it to segfault irl?
 //WHY?
 //	- condret
-static int internal_esil_reg_write_no_null (RAnalEsil *esil, const char *regname, ut64 num) {
+static bool internal_esil_reg_write_no_null (RAnalEsil *esil, const char *regname, ut64 num) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->reg, false);
 
 	RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
@@ -2156,7 +2155,6 @@ static bool esil_peek_some(RAnalEsil *esil) {
 		if (count) {
 			isregornum (esil, count, &regs);
 			if (regs > 0) {
-				ut32 num32;
 				ut8 a[4];
 				for (i = 0; i < regs; i++) {
 					char *foo = r_anal_esil_pop (esil);
@@ -2164,17 +2162,19 @@ static bool esil_peek_some(RAnalEsil *esil) {
 						ERR ("Cannot pop in peek");
 						free (dst);
 						free (count);
-						return 0;
+						return false;
 					}
-					const ut32 read = r_anal_esil_mem_read (esil, ptr, a, 4);
-					if (read == 4) {	//this is highly questionabla
-						num32 = r_read_ble32 (a, esil->anal->big_endian);
-						r_anal_esil_reg_write (esil, foo, num32);
-					} else {
+					bool oks = r_anal_esil_mem_read (esil, ptr, a, 4);
+					if (!oks) {
 						if (esil->verbose) {
 							eprintf ("Cannot peek from 0x%08" PFMT64x "\n", ptr);
 						}
+						free (dst);
+						free (count);
+						return false;
 					}
+					ut32 num32 = r_read_ble32 (a, esil->anal->big_endian);
+					r_anal_esil_reg_write (esil, foo, num32);
 					ptr += 4;
 					free (foo);
 				}
