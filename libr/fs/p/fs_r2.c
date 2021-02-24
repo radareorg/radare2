@@ -262,7 +262,7 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 static RList *__root(RFSRoot *root, const char *path) {
 	RList *list = r_list_newf (NULL);
 	r_return_val_if_fail (root && list, NULL);
-	int i;
+	size_t i;
 	for (i = 0; routes[i].path; i++) {
 		char type = routes[i].dir? 'd': 'f';
 		append_file (list, routes[i].path + 1, type, 0, 0);
