@@ -40,7 +40,7 @@ static Routes routes[] = {
 
 static void append_file(RList *list, const char *name, int type, int time, ut64 size) {
 	if (!list || !name || !*name) {
-		return;		
+		return;
 	}
 	RFSFile *fsf = r_fs_file_new (NULL, name);
 	if (!fsf) {
