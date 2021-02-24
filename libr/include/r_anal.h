@@ -1123,10 +1123,10 @@ typedef struct r_anal_esil_callbacks_t {
 	int (*mem_read)(ESIL *esil, ut64 addr, ut8 *buf, int len);
 	int (*hook_mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
 	int (*mem_write)(ESIL *esil, ut64 addr, const ut8 *buf, int len);
-	int (*hook_reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
-	int (*reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
+	bool (*hook_reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
+	bool (*reg_read)(ESIL *esil, const char *name, ut64 *res, int *size);
 	RAnalEsilHookRegWriteCB hook_reg_write;
-	int (*reg_write)(ESIL *esil, const char *name, ut64 val);
+	bool (*reg_write)(ESIL *esil, const char *name, ut64 val);
 } RAnalEsilCallbacks;
 
 typedef struct r_anal_esil_t {
@@ -1576,8 +1576,8 @@ R_API bool r_anal_esil_parse(RAnalEsil *esil, const char *str);
 R_API bool r_anal_esil_dumpstack(RAnalEsil *esil);
 R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len);
 R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len);
-R_API int r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size);
-R_API int r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num);
+R_API bool r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size);
+R_API bool r_anal_esil_reg_write(RAnalEsil *esil, const char *dst, ut64 num);
 R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num);
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str);
 R_API char *r_anal_esil_pop(RAnalEsil *esil);

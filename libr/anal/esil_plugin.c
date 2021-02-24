@@ -13,7 +13,7 @@ R_API void r_anal_esil_plugins_init(RAnalEsil *esil) {
 	r_return_if_fail (esil);
 	esil->plugins = r_list_new ();
 	esil->active_plugins = r_list_new ();
-	ut32 i = 0;
+	size_t i = 0;
 	while (esil_static_plugins[i]) {
 		r_anal_esil_plugin_add (esil, esil_static_plugins[i]);
 		i++;
@@ -21,7 +21,10 @@ R_API void r_anal_esil_plugins_init(RAnalEsil *esil) {
 }
 
 R_API void r_anal_esil_plugins_fini(RAnalEsil *esil) {
-	r_return_if_fail (esil && esil->plugins && esil->active_plugins);
+	r_return_if_fail (esil);
+	if (!esil->plugins || !esil->active_plugins) {
+		return;
+	}
 	while (r_list_length (esil->active_plugins)) {
 		RAnalEsilActivePlugin *eap = (RAnalEsilActivePlugin *)r_list_pop (esil->active_plugins);
 		eap->plugin->fini (esil, eap->user);
@@ -29,11 +32,12 @@ R_API void r_anal_esil_plugins_fini(RAnalEsil *esil) {
 	}
 	r_list_free (esil->active_plugins);
 	r_list_free (esil->plugins);
+	esil->active_plugins = NULL;
+	esil->plugins = NULL;
 }
 
 R_API bool r_anal_esil_plugin_add(RAnalEsil *esil, RAnalEsilPlugin *plugin) {
-	r_return_val_if_fail (esil && esil->plugins && plugin &&
-				plugin->init && plugin->fini, false);
+	r_return_val_if_fail (esil && esil->plugins && plugin, false);
 	r_list_append (esil->plugins, plugin);
 	return true;
 }
