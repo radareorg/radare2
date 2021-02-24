@@ -9,7 +9,7 @@ r2_version = meson.project_version()
 vers = r2_version.split('.')
 r2_version_major = vers[0].to_int()
 r2_version_minor = vers[1].to_int()
-r2_version_patch = vers[2].to_int()
+r2_version_patch = vers[2].split('-')[0].to_int()
 r2_version_number \
   = (r2_version_major * 10000) \
   + (r2_version_minor * 100) \
