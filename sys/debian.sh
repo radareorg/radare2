@@ -24,11 +24,12 @@ if [ -z "$CFLAGS" ]; then
   export CFLAGS="${CFLAGS} -Wno-stringop-truncation"
 fi
 # build
-./configure --prefix=/usr > /dev/null
+export
+./configure --prefix=/usr
 [ $? != 0 ] && exit 1
 make -j4 > /dev/null
 [ $? != 0 ] && exit 1
-make install DESTDIR="${PWD}/${PKGDIR}" > /dev/null
+make install DESTDIR="${PWD}/${PKGDIR}"
 [ $? != 0 ] && exit 1
 
 # dev-split
