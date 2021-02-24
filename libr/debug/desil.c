@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2021 - pancake */
 
 #include <r_debug.h>
 
@@ -34,7 +34,7 @@ RList *esil_watchpoints = NULL;
 #define EWPS esil_watchpoints
 #define ESIL dbg->anal->esil
 
-static int exprmatch (RDebug *dbg, ut64 addr, const char *expr) {
+static int exprmatch(RDebug *dbg, ut64 addr, const char *expr) {
 	char *e = strdup (expr);
 	if (!e) {
 		return 0;
@@ -67,7 +67,7 @@ static int exprmatch (RDebug *dbg, ut64 addr, const char *expr) {
 	return ret;
 }
 
-static int esilbreak_check_pc (RDebug *dbg, ut64 pc) {
+static bool esilbreak_check_pc (RDebug *dbg, ut64 pc) {
 	EsilBreak *ew;
 	RListIter *iter;
 	if (!pc) {
@@ -80,10 +80,10 @@ static int esilbreak_check_pc (RDebug *dbg, ut64 pc) {
 			}
 		}
 	}
-	return 0;
+	return false;
 }
 
-static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	EsilBreak *ew;
 	RListIter *iter;
 	eprintf (Color_GREEN"MEM READ 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -95,10 +95,10 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 			}
 		}
 	}
-	return 0; // fallback
+	return false;
 }
 
-static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	EsilBreak *ew;
 	RListIter *iter;
 	eprintf (Color_RED"MEM WRTE 0x%"PFMT64x"\n"Color_RESET, addr);
@@ -106,19 +106,19 @@ static int esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int l
 		if (ew->rwx & R_PERM_W && ew->dev == 'm') {
 			if (exprmatch (dbg, addr, ew->expr)) {
 				has_match = 1;
-				return 1;
+				return true;
 			}
 		}
 	}
-	return 1; // fallback
+	return false; // fallback
 }
 
-static int esilbreak_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
+static bool esilbreak_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
 	EsilBreak *ew;
 	RListIter *iter;
 	if (regname[0]>='0' && regname[0]<='9') {
 		//eprintf (Color_CYAN"IMM READ %s\n"Color_RESET, regname);
-		return 0;
+		return false;
 	}
 	eprintf (Color_YELLOW"REG READ %s\n"Color_RESET, regname);
 	r_list_foreach (EWPS, iter, ew) {
@@ -126,11 +126,11 @@ static int esilbreak_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, i
 			// XXX: support array of regs in expr
 			if (!strcmp (regname, ew->expr)) {
 				has_match = 1;
-				return 1;
+				return true;
 			}
 		}
 	}
-	return 0; // fallback
+	return false;
 }
 
 static int exprtoken(RDebug *dbg, char *s, const char *sep, char **o) {
@@ -145,7 +145,7 @@ static int exprtoken(RDebug *dbg, char *s, const char *sep, char **o) {
 	return 0;
 }
 
-static int exprmatchreg (RDebug *dbg, const char *regname, const char *expr) {
+static int exprmatchreg(RDebug *dbg, const char *regname, const char *expr) {
 	int ret = 0;
 	char *p;
 	char *s = strdup (expr);
@@ -188,13 +188,13 @@ static int exprmatchreg (RDebug *dbg, const char *regname, const char *expr) {
 	return ret;
 }
 
-static int esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 *num) {
+static bool esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 *num) {
 	EsilBreak *ew;
 	RListIter *iter;
 	if (regname[0] >= '0' && regname[0] <= '9') {
 		// wtf this should never happen
 		//eprintf (Color_BLUE"IMM WRTE %s\n"Color_RESET, regname);
-		return 0;
+		return false;
 	}
 	eprintf (Color_MAGENTA"REG WRTE %s 0x%"PFMT64x"\n"Color_RESET, regname, *num);
 	r_list_foreach (EWPS, iter, ew) {
@@ -202,18 +202,19 @@ static int esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 *num) 
 			// XXX: support array of regs in expr
 			if (exprmatchreg (dbg, regname, ew->expr)) {
 				has_match = 1;
-				return 1;
+				return true;
 			}
 		}
 	}
-	return 1; // fallback
+	return true;
 }
 
-R_API void r_debug_esil_prestep (RDebug *d, int p) {
+R_API void r_debug_esil_prestep(RDebug *d, int p) {
 	prestep = p;
 }
 
-R_API int r_debug_esil_stepi (RDebug *d) {
+R_API bool r_debug_esil_stepi(RDebug *d) {
+	r_return_val_if_fail (d, false);
 	RAnalOp op;
 	ut8 obuf[64];
 	int ret = 1;
@@ -308,7 +309,7 @@ static void ewps_free(EsilBreak *ew) {
 	free (ew);
 }
 
-R_API int r_debug_esil_watch_empty(RDebug *dbg) {
+R_API bool r_debug_esil_watch_empty(RDebug *dbg) {
 	return r_list_empty (EWPS);
 }
 
