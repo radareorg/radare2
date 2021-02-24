@@ -18,9 +18,11 @@ DEVDIR=dist/debian/radare2-dev/root
 # clean
 rm -rf "${PKGDIR}" "${DEVDIR}"
 
-export CFLAGS="-O2 -Werror -Wno-cpp"
-export CFLAGS="${CFLAGS} -Wno-unused-result"
-export CFLAGS="${CFLAGS} -Wno-stringop-truncation"
+if [ -z "$CFLAGS" ]; then
+  export CFLAGS="-O2 -Werror -Wno-cpp"
+  export CFLAGS="${CFLAGS} -Wno-unused-result"
+  export CFLAGS="${CFLAGS} -Wno-stringop-truncation"
+fi
 # build
 ./configure --prefix=/usr > /dev/null
 [ $? != 0 ] && exit 1
