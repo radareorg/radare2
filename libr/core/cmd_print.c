@@ -1916,8 +1916,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				}
 				hadflag = false;
 			}
-			sprintf (echars, "%c", IS_PRINTABLE (ch)? ch: '.');
-			echars++;
+			*echars++ = IS_PRINTABLE (ch)? ch: '.';
+			*echars = 0;
 			if (core->print->cur_enabled && max == here) {
 				if (!html && usecolor) {
 					append (ebytes, Color_RESET);
@@ -4646,6 +4646,200 @@ static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 	return out;
 }
 
+static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
+	char ch = input[1];
+	if (ch == '+' || ch == '-') {
+		ch = ' ';
+		l = r_num_math (core->num, input + 1);
+	}
+	switch (ch) {
+	case '?':
+		// r_cons_printf ("|Usage: pi[defj] [num]\n");
+		r_core_cmd_help (core, help_msg_pi);
+		break;
+	case 'u': // "piu" disasm until given optype
+		{
+			int optype = -1;
+			char print_type = 0;
+			const char *_input = input;
+			if (_input[2] && _input[2] != ' ') {
+				print_type = _input[2];
+				_input++;
+			}
+			if (_input[2] && _input[3]) {
+				// TODO: add limit as arg
+				const char *instruction = r_str_word_get_first (_input + 3);
+				optype = r_anal_optype_from_string (instruction);
+				if (optype == -1) {
+					optype = R_ANAL_OP_TYPE_RET;
+				}
+			} else {
+				optype = R_ANAL_OP_TYPE_RET;
+			}
+			disasm_until_optype (core, core->offset, print_type, optype, 1024);
+		} break;
+	case 'x': // "pix"
+		__cmd_pad (core, r_str_trim_head_ro (input + 2));
+		break;
+	case 'a': // "pia" is like "pda", but with "pi" output
+		if (l != 0) {
+			r_core_print_disasm_all (core, core->offset,
+					l, len, 'i');
+		}
+		break;
+	case 'j': // pij is the same as pdj
+		if (l != 0) {
+			cmd_pdj (core, input + 2, block);
+		}
+		break;
+	case 'd': // "pid" is the same as pdi
+		if (l != 0) {
+			r_core_disasm_pdi (core, l, 0, 0);
+		}
+		break;
+	case 'e': // "pie"
+		if (l != 0) {
+			r_core_disasm_pdi (core, l, 0, 'e');
+		}
+		break;
+	case 'f': // "pif"
+		if (input[2] == '?') { // "pif?"
+			r_core_cmd_help(core, help_msg_pif);
+		} else if (input[2] == 'j') {
+			r_core_cmdf (core, "pdfj%s", input + 3);
+		} else if (input[2] == 'c') { // "pifc"
+			RListIter *iter;
+			RAnalRef *refi;
+			RList *refs = NULL;
+			PJ *pj = NULL;
+
+			// check for bounds
+			if (input[3] != 0) {
+				if (input[3] == 'j') { // "pifcj"
+					pj = pj_new ();
+					pj_a (pj);
+				}
+			}
+			// get function in current offset
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+
+			// validate that a function was found in the given address
+			if (!f) {
+				// print empty json object
+				if (pj) {
+					pj_end (pj);
+					r_cons_println (pj_string(pj));
+					pj_free (pj);
+				}
+				break;
+			}
+			// get all the calls of the function
+			refs = r_core_anal_fcn_get_calls (core, f);
+
+			// sanity check
+			if (!r_list_empty (refs)) {
+
+				// store current configurations
+				RConfigHold *hc = r_config_hold_new (core->config);
+				r_config_hold (hc, "asm.offset", "asm.comments", "asm.tabs", "asm.bytes", "emu.str", NULL);
+
+
+				// temporarily replace configurations
+				r_config_set_b (core->config, "asm.offset", false);
+				r_config_set_b (core->config, "asm.comments", false);
+				r_config_set_i (core->config, "asm.tabs", 0);
+				r_config_set_b (core->config, "asm.bytes", false);
+				r_config_set_b (core->config, "emu.str", false);
+
+				// iterate over all call references
+				r_list_foreach (refs, iter, refi) {
+					if (pj) {
+						RAnalFunction *f = r_anal_get_fcn_in (core->anal, refi->addr,
+								R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+						char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
+						char *dst2 = NULL;
+						RAnalOp *op = r_core_anal_op (core, refi->addr, R_ANAL_OP_MASK_BASIC);
+						RBinReloc *rel = r_core_getreloc (core, refi->addr, op->size);
+						if (rel) {
+							if (rel && rel->import && rel->import->name) {
+								dst2 = rel->import->name;
+							} else if (rel && rel->symbol && rel->symbol->name) {
+								dst2 = rel->symbol->name;
+							}
+						} else {
+							dst2 = dst;
+						}
+						pj_o (pj);
+						pj_ks (pj, "dest", dst2);
+						pj_kn (pj, "addr", refi->addr);
+						pj_kn (pj, "at", refi->at);
+						pj_end (pj);
+						r_anal_op_free (op);
+					} else {
+						char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
+						r_cons_printf ("%s", s);
+					}
+				}
+
+				// restore saved configuration
+				r_config_hold_restore (hc);
+				r_config_hold_free (hc);
+			}
+			// print json object
+			if (pj) {
+				pj_end (pj);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
+			}
+		} else if (l != 0) {
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+			if (f) {
+				ut32 bsz = core->blocksize;
+				// int fsz = r_anal_function_realsize (f);
+				int fsz = r_anal_function_linear_size (f); // we want max-min here
+				r_core_block_size (core, fsz);
+				r_core_print_disasm_instructions (core, fsz, 0);
+				r_core_block_size (core, bsz);
+			} else {
+				r_core_print_disasm_instructions (core,
+						core->blocksize, l);
+			}
+		}
+		break;
+	case 'r': // "pir"
+		{
+			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
+			if (f) {
+				func_walk_blocks (core, f, input[2], 'I', input[2] == '.');
+			} else {
+				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
+			}
+		}
+		break;
+	case 'b': // "pib"
+		{
+			RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
+			if (b) {
+				r_core_print_disasm_instructions (core, b->size - (core->offset - b->addr), 0);
+			} else {
+				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
+			}
+		}
+		break;
+	default: // "pi"
+		if (l != 0) {
+			r_core_print_disasm_instructions (core, 0, l);
+		}
+		break;
+	}
+	return false;
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	st64 l;
@@ -5029,189 +5223,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'i': // "pi"
-		switch (input[1]) {
-		case '?':
-			// r_cons_printf ("|Usage: pi[defj] [num]\n");
-			r_core_cmd_help (core, help_msg_pi);
-			break;
-		case 'u': // "piu" disasm until given optype
-		{
-			int optype = -1;
-			char print_type = 0;
-			const char *_input = input;
-			if (_input[2] && _input[2] != ' ') {
-				print_type = _input[2];
-				_input++;
-			}
-			if (_input[2] && _input[3]) {
-				// TODO: add limit as arg
-				const char *instruction = r_str_word_get_first (_input + 3);
-				optype = r_anal_optype_from_string (instruction);
-				if (optype == -1) {
-					optype = R_ANAL_OP_TYPE_RET;
-				}
-			} else {
-				optype = R_ANAL_OP_TYPE_RET;
-			}
-			disasm_until_optype (core, core->offset, print_type, optype, 1024);
-		} break;
-		case 'x': // "pix"
-			__cmd_pad (core, r_str_trim_head_ro (input + 2));
-			break;
-		case 'a': // "pia" is like "pda", but with "pi" output
-			if (l != 0) {
-				r_core_print_disasm_all (core, core->offset,
-					l, len, 'i');
-			}
-			break;
-		case 'j': // pij is the same as pdj
-			if (l != 0) {
-				cmd_pdj (core, input + 2, block);
-			}
-			break;
-		case 'd': // "pid" is the same as pdi
-			if (l != 0) {
-				r_core_disasm_pdi (core, l, 0, 0);
-			}
-			break;
-		case 'e': // "pie"
-			if (l != 0) {
-				r_core_disasm_pdi (core, l, 0, 'e');
-			}
-			break;
-		case 'f': // "pif"
-				if (input[2] == '?') { // "pif?"
-					r_core_cmd_help(core, help_msg_pif);
-				} else if (input[2] == 'j') {
-					r_core_cmdf (core, "pdfj%s", input + 3);
-				} else if (input[2] == 'c') { // "pifc"
-					RListIter *iter;
-					RAnalRef *refi;
-					RList *refs = NULL;
-					PJ *pj = NULL;
-
-					// check for bounds
-					if (input[3] != 0) {
-						if (input[3] == 'j') { // "pifcj"
-							pj = pj_new ();
-							pj_a (pj);
-						}
-					}
-					// get function in current offset
-					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-
-					// validate that a function was found in the given address
-					if (!f) {
-						// print empty json object
-						if (pj) {
-							pj_end (pj);
-							r_cons_println (pj_string(pj));
-							pj_free (pj);
-						}
-						break;
-					}
-					// get all the calls of the function
-					refs = r_core_anal_fcn_get_calls (core, f);
-
-					// sanity check
-					if (!r_list_empty (refs)) {
-
-						// store current configurations
-						RConfigHold *hc = r_config_hold_new (core->config);
-						r_config_hold (hc, "asm.offset", "asm.comments", "asm.tabs", "asm.bytes", "emu.str", NULL);
-
-
-						// temporarily replace configurations
-						r_config_set_b (core->config, "asm.offset", false);
-						r_config_set_b (core->config, "asm.comments", false);
-						r_config_set_i (core->config, "asm.tabs", 0);
-						r_config_set_b (core->config, "asm.bytes", false);
-						r_config_set_b (core->config, "emu.str", false);
-
-						// iterate over all call references
-						r_list_foreach (refs, iter, refi) {
-							if (pj) {
-								RAnalFunction *f = r_anal_get_fcn_in (core->anal, refi->addr,
-									R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-								char *dst = r_str_newf ((f? f->name: "0x%08"PFMT64x), refi->addr);
-								char *dst2 = NULL;
-								RAnalOp *op = r_core_anal_op (core, refi->addr, R_ANAL_OP_MASK_BASIC);
-								RBinReloc *rel = r_core_getreloc (core, refi->addr, op->size);
-								if (rel) {
-									if (rel && rel->import && rel->import->name) {
-										dst2 = rel->import->name;
-									} else if (rel && rel->symbol && rel->symbol->name) {
-										dst2 = rel->symbol->name;
-									}
-								} else {
-									dst2 = dst;
-								}
-								pj_o (pj);
-								pj_ks (pj, "dest", dst2);
-								pj_kn (pj, "addr", refi->addr);
-								pj_kn (pj, "at", refi->at);
-								pj_end (pj);
-								r_anal_op_free (op);
-							} else {
-								char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
-								r_cons_printf ("%s", s);
-							}
-						}
-
-						// restore saved configuration
-						r_config_hold_restore (hc);
-						r_config_hold_free (hc);
-					}
-					// print json object
-					if (pj) {
-						pj_end (pj);
-						r_cons_println (pj_string (pj));
-						pj_free (pj);
-					}
-				} else if (l != 0) {
-					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-						R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-					if (f) {
-						ut32 bsz = core->blocksize;
-						// int fsz = r_anal_function_realsize (f);
-						int fsz = r_anal_function_linear_size (f); // we want max-min here
-						r_core_block_size (core, fsz);
-						r_core_print_disasm_instructions (core, fsz, 0);
-						r_core_block_size (core, bsz);
-					} else {
-						r_core_print_disasm_instructions (core,
-							core->blocksize, l);
-					}
-				}
-			break;
-		case 'r': // "pir"
-		{
-			RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
-				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-			if (f) {
-				func_walk_blocks (core, f, input[2], 'I', input[2] == '.');
-			} else {
-				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
-				core->num->value = 0;
-			}
-		}
-		break;
-		case 'b': // "pib"
-		{
-			RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
-			if (b) {
-					r_core_print_disasm_instructions (core, b->size - (core->offset - b->addr), 0);
-			} else {
-				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
-				core->num->value = 0;
-			}
-		}
-		break;
-		default: // "pi"
-			if (l != 0) {
-				r_core_print_disasm_instructions (core, 0, l);
-			}
+		if (cmd_pi (core, input, len, l, block)) {
 			break;
 		}
 		goto beach;
@@ -5255,12 +5267,12 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		const char *sp = NULL;
-		if (input[1] == '.') {
+		if (input[1] == '.' || input[1] == '+') {
 			sp = input + 2;
 		} else {
 			sp = strchr (input + 1, ' ');
 		}
-		if (!sp && (input[1] == '-' || IS_DIGIT (input[1]))) {
+		if (!sp && input[1] == '-') {
 			sp = input + 1;
 		}
 		if (sp) {

@@ -9,3 +9,24 @@ tbnz x0, 0x20, 0x100004008
 tbnz x0, 0x20, 0xffff800c
 EOF
 RUN
+
+NAME=pi+-2
+FILE=bins/elf/ls
+CMDS=<<EOF
+so 4
+pi 2
+pi+2
+pi-2
+pi -2
+EOF
+EXPECT=<<EOF
+mov rdx, rsp
+and rsp, 0xfffffffffffffff0
+mov rdx, rsp
+and rsp, 0xfffffffffffffff0
+mov ecx, edx
+pop rsi
+mov ecx, edx
+pop rsi
+EOF
+RUN
