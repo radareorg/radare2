@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2020 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include <r_io.h>
 #include <r_skyline.h>
@@ -173,6 +173,11 @@ R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 		io->cachemode = false;
 		r_io_read_at (io, addr, ch->odata, len);
 		io->cachemode = cm;
+		if (io->nodup && !memcmp (ch->odata, buf, len)) {
+			free (ch->odata);
+			free (ch);
+			return false;
+		}
 	}
 	memcpy (ch->data, buf, len);
 	r_pvector_push (&io->cache, ch);
