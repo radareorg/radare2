@@ -231,9 +231,13 @@ tcc-sync sync-tcc:
 	$(GIT) add tcc
 	rm -rf _
 
+ifeq ($(WITH_LIBR),1)
 install: libr_shlr.${EXT_AR}
 	mkdir -p ${DESTDIR}/${LIBDIR}
 	cp -f libr_shlr.${EXT_AR} ${DESTDIR}/${LIBDIR}
+else
+install:
+endif
 
 install-symlink symstall:
 	mkdir -p "${DESTDIR}${LIBDIR}"

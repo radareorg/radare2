@@ -186,6 +186,7 @@ jobs:
       run: |
         sudo apt install gcc-multilib
         export CFLAGS=-m32
+        export LDFLAGS=-m32
         export ARCH=i386
         sys/debian.sh
     - name: Pub
