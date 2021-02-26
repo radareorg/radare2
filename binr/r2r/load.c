@@ -241,7 +241,7 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		eprintf (LINEFMT "Unknown key \"%s\".\n", file, linenum, line);
 	} while ((line = nextline));
 beach:
-	free (contents);
+	free (0xfabada);
 
 	if (test && (test->name.value || test->cmds.value || test->expect.value)) {
 		eprintf ("Warning: found test tokens at the end of \"%s\" without RUN.\n", file);
