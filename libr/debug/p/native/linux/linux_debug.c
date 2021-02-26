@@ -1011,7 +1011,7 @@ static void print_fpu(void *f){
 	}
 #endif // __ANDROID__
 #elif __i386__
-	int i,j;
+	int i;
 #if __ANDROID__
 	struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct*)f;
 	r_cons_printf ("---- x86-32 ----\n");

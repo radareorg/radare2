@@ -177,6 +177,7 @@ static bool vtable_is_addr_vtable_start(RVTableContext *context, RBinSection *se
 		return vtable_is_addr_vtable_start_itanium (context, section, curAddress);
 	}
 	r_return_val_if_reached (false);
+	return false;
 }
 
 R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {

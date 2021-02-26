@@ -61,14 +61,15 @@ static void cmd_desc_unset_parent(RCmdDesc *cd) {
 	cd->parent = NULL;
 }
 
-static void cmd_desc_remove_from_ht_cmds(RCmd *cmd, RCmdDesc *cd) {
+static bool cmd_desc_remove_from_ht_cmds(RCmd *cmd, RCmdDesc *cd) {
 	void **it_cd;
 	bool res = ht_pp_delete (cmd->ht_cmds, cd->name);
-	r_return_if_fail (res);
+	r_return_val_if_fail (res, false);
 	r_cmd_desc_children_foreach (cd, it_cd) {
 		RCmdDesc *child_cd = *it_cd;
 		cmd_desc_remove_from_ht_cmds (cmd, child_cd);
 	}
+	return res;
 }
 
 static void cmd_desc_free(RCmdDesc *cd) {
