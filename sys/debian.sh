@@ -21,13 +21,13 @@ rm -rf "${PKGDIR}" "${DEVDIR}"
 if [ -z "$CFLAGS" ]; then
   export CFLAGS="-O2 -Werror -Wno-cpp"
   export CFLAGS="${CFLAGS} -Wno-unused-result"
-  export CFLAGS="${CFLAGS} -Wno-stringop-truncation"
+## export CFLAGS="${CFLAGS} -Wno-stringop-truncation"
 fi
 # build
 export
-./configure --prefix=/usr
+./configure --prefix=/usr --with-checks-level=0
 [ $? != 0 ] && exit 1
-make -j4 > /dev/null
+make -j4
 [ $? != 0 ] && exit 1
 make install DESTDIR="${PWD}/${PKGDIR}"
 [ $? != 0 ] && exit 1
