@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2020 - condret, MaskRay */
+/* radare2 - LGPL - Copyright 2017-2021 - condret, MaskRay */
 
 #include <r_io.h>
 #include <stdlib.h>
@@ -346,6 +346,9 @@ R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_alig
 		// memory mapping with multiple files. infinite loop ahead?
 		if ((r_io_map_begin (map) <= next_addr && next_addr < to) || r_io_map_contain (map, end_addr)) {
 			next_addr = to + (load_align - (to % load_align)) % load_align;
+			if (next_addr == addr) {
+				return UT64_MAX;
+			}
 			return r_io_map_next_available (io, next_addr, size, load_align);
 		}
 		break;
