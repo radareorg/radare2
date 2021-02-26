@@ -1220,8 +1220,8 @@ static void __fix_layout_w(RCore *core) {
 	int i = 0;
 	for (; i < panels->n_panels - 1; i++) {
 		RPanel *p = __get_panel (panels, i);
-		int64_t t = p->view->pos.x + p->view->pos.w;
-		r_list_append (list, (void *)(t));
+		int32_t t = p->view->pos.x + p->view->pos.w;
+		r_list_append (list, (void *)(size_t)(t));
 	}
 	RListIter *iter;
 	for (i = 0; i < panels->n_panels; i++) {
@@ -1233,16 +1233,17 @@ static void __fix_layout_w(RCore *core) {
 		int min = INT8_MAX;
 		int target_num = INT8_MAX;
 		bool found = false;
-		void *num = NULL;
-		r_list_foreach (list, iter, num) {
-			if ((int64_t)num - 1 == tx) {
+		void *numptr = NULL;
+		r_list_foreach (list, iter, numptr) {
+			st32 num = (st32)(size_t)(numptr);
+			if (num - 1 == tx) {
 				found = true;
 				break;
 			}
-			int sub = (int64_t)num - tx;
+			int sub = num - tx;
 			if (min > R_ABS (sub)) {
 				min = R_ABS (sub);
-				target_num = (int64_t)num;
+				target_num = num;
 			}
 		}
 		if (!found) {
@@ -1261,8 +1262,8 @@ static void __fix_layout_h(RCore *core) {
 	int i = 0;
 	for (; i < panels->n_panels - 1; i++) {
 		RPanel *p = __get_panel (panels, i);
-		int64_t t = p->view->pos.y + p->view->pos.h;
-		r_list_append (list, (void *)(t));
+		st32 t = p->view->pos.y + p->view->pos.h;
+		r_list_append (list, (void *)(size_t)(t));
 	}
 	RListIter *iter;
 	for (i = 0; i < panels->n_panels; i++) {
@@ -1275,16 +1276,17 @@ static void __fix_layout_h(RCore *core) {
 		int min = INT8_MAX;
 		int target_num = INT8_MAX;
 		bool found = false;
-		void *num = NULL;
-		r_list_foreach (list, iter, num) {
-			if ((int64_t)num - 1 == ty) {
+		void *numptr = NULL;
+		r_list_foreach (list, iter, numptr) {
+			st32 num = (st32)(size_t)(numptr);
+			if (num - 1 == ty) {
 				found = true;
 				break;
 			}
-			int sub = (int64_t)num - ty;
+			int sub = num - ty;
 			if (min > R_ABS (sub)) {
 				min = R_ABS (sub);
-				target_num = (int64_t)num;
+				target_num = num;
 			}
 		}
 		if (!found) {
