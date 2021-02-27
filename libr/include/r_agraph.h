@@ -101,7 +101,7 @@ R_API RANode *r_agraph_get_first_node(const RAGraph *g);
 R_API RANode *r_agraph_get_node(const RAGraph *g, const char *title);
 R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body, const char *color);
 R_API bool r_agraph_del_node(const RAGraph *g, const char *title);
-R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b);
+R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b, bool highlight);
 R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth);
 R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b);
 R_API void r_agraph_print(RAGraph *g);
