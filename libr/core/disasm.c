@@ -1451,13 +1451,13 @@ static void ds_atabs_option(RDisasmState *ds) {
 		return;
 	}
 	b = malloc (size + 1);
+	if (!b) {
+		return;
+	}
 	if (ds->opstr) {
 		strcpy (b, ds->opstr);
 	} else {
 		strcpy (b, r_asm_op_get_asm (&ds->asmop));
-	}
-	if (!b) {
-		return;
 	}
 	free (ds->opstr);
 	ds->opstr = b;
@@ -2841,7 +2841,7 @@ static void ds_adistrick_comments(RDisasmState *ds) {
 }
 
 // TODO move into RAnal.meta
-static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int size) {
+static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int size) {
 	RCore *core = ds->core;
 	const char *type = NULL;
 	char msg[64];
@@ -2854,6 +2854,8 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 	case 8: type = isSigned? ".int64": ".qword"; break;
 	default: return false;
 	}
+	ut8 buf[sizeof(ut64)] = {0};
+	memcpy (buf, obuf, R_MIN (sizeof (ut64), size));
 	// adjust alignment
 	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8);
 	if (r_config_get_i (core->config, "asm.marks")) {
@@ -3036,25 +3038,30 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			ds->oplen = mi_size - delta;
 			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 			int size = mi_size;
-			if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, size)) {
-				if (size > delta) {
-					r_cons_printf ("hex size=%d delta=%d\n", size , delta);
-					int remaining = size - delta;
-					remaining = R_MAX (remaining, 0);
-					if (remaining > (len - delta)) {
-						ut8 *b = calloc (1, size - delta);
-						memcpy (b, buf, len);
-						r_print_hexdump (core->print, ds->at,
-								b + idx, remaining, 16, 1, 1);
-						free (b);
+			ut8 *b = malloc (mi_size);
+			if (b) {
+				r_io_read_at (core->io, ds->at, b, mi_size);
+				if (size > 0 && !ds_print_data_type (ds, b, ds->hint? ds->hint->immbase: 0, mi_size)) {
+					if (size > delta) {
+						r_cons_printf ("hex size=%d delta=%d\n", size , delta);
+						int remaining = size - delta;
+						remaining = R_MAX (remaining, 0);
+						if (remaining > (len - delta)) {
+							ut8 *b = calloc (1, size - delta);
+							memcpy (b, buf, len);
+							r_print_hexdump (core->print, ds->at,
+									b + idx, remaining, 16, 1, 1);
+							free (b);
+						} else {
+							r_print_hexdump (core->print, ds->at,
+									buf + idx, remaining, 16, 1, 1);
+						}
 					} else {
-						r_print_hexdump (core->print, ds->at,
-							buf + idx, remaining, 16, 1, 1);
+						r_cons_printf ("hex size=%d hexlen=%d delta=%d",
+								size, hexlen, delta);
 					}
-				} else {
-					r_cons_printf ("hex size=%d hexlen=%d delta=%d",
-						size, hexlen, delta);
 				}
+				free (b);
 			}
 			core->print->flags |= R_PRINT_FLAGS_HEADER;
 			ds->asmop.size = (int)size - (node->start - ds->at);
@@ -6401,33 +6408,33 @@ toro:
 			r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
 		}
 		ut64 meta_start = at;
-		ut64 meta_size;
+		ut64 meta_size = 0;
 		meta = r_meta_get_at (core->anal, meta_start, R_META_TYPE_ANY, &meta_size);
 		if (meta) {
 			switch (meta->type) {
 			case R_META_TYPE_DATA:
-				//r_cons_printf (".data: %s\n", meta->str);
 				i += meta_size;
 				{
-					int idx = i;
 					ut64 at = core->offset + i;
-					int hexlen = nb_bytes - idx;
+					int hexlen = nb_bytes - i;
 					int delta = at - meta_start;
 					if (meta_size < hexlen) {
 						hexlen = meta_size;
 					}
-					// int oplen = meta->size - delta;
 					core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-					// TODO do not pass a copy in parameter buf that is possibly to small for this
-					// print operation
-					int size = R_MIN (meta_size, nb_bytes - idx);
+					int size = R_MIN (meta_size, nb_bytes - i);
 					RDisasmState ds = {0};
 					ds.core = core;
-					if (!ds_print_data_type (&ds, buf + i, 0, size)) {
-						r_cons_printf ("hex length=%d delta=%d\n", size, delta);
-						r_print_hexdump (core->print, at, buf + idx, hexlen - delta, 16, 1, 1);
-					} else {
-						r_cons_newline ();
+					ut8 *b = malloc (meta_size);
+					if (b) {
+						r_io_read_at (core->io, at, b, meta_size);
+						if (size > 0 && !ds_print_data_type (&ds, b, 0, meta_size)) {
+							r_cons_printf ("hex length=%d delta=%d\n", size, delta);
+							r_print_hexdump (core->print, at, buf + i, hexlen - delta, 16, 1, 1);
+						} else {
+							r_cons_newline ();
+						}
+						free (b);
 					}
 					ret = true;
 				}
