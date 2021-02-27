@@ -2472,16 +2472,6 @@ entry0 0x40488d [DATA] mov rdi, main
 EOF
 RUN
 
-NAME=unique function names
-FILE=bins/elf/bash
-CMDS=<<EOF
-aaa
-f~strlen~390
-EOF
-EXPECT=<<EOF
-EOF
-RUN
-
 NAME=no function split without overlapping blocks
 FILE=bins/elf/libc.so.6
 CMDS=<<EOF

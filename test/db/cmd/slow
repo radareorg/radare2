@@ -26,3 +26,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=unique function names
+FILE=bins/elf/bash
+CMDS=<<EOF
+aaa
+f~strlen~390
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
