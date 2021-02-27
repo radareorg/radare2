@@ -4137,17 +4137,6 @@ Cannot seek to unknown address 'section..preinit_array'
 EOF
 RUN
 
-NAME=iX
-FILE=bins/elf/analysis/dwarf_load
-CMDS=iX
-EXPECT=<<EOF
-[Source file]
-/home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/ieee754-df.S
-/home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/lib1funcs.asm
-/home/landley/work/ab7/build/temp-armv6l/build-gcc/gcc
-EOF
-RUN
-
 NAME=iM main sym
 FILE=bins/elf/before-after-main
 CMDS=iM
