@@ -8559,7 +8559,7 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 			break;
 		}
 		if (*input == ' ') {
-			r_agraph_add_edge (core->graph, u, v);
+			r_agraph_add_edge (core->graph, u, v, false);
 		} else {
 			r_agraph_del_edge (core->graph, u, v);
 		}

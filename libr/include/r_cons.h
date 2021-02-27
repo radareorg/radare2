@@ -698,6 +698,7 @@ typedef struct r_cons_canvas_line_style_t {
 	int color;
 	int symbol;
 	int dot_style;
+	const char *ansicolor;
 } RCanvasLineStyle;
 
 // UTF-8 symbols indexes
