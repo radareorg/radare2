@@ -1700,12 +1700,16 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 
 	va = VA_TRUE; // XXX relocs always vaddr?
 	//this has been created for reloc object files
-	const bool bin_cache = r_config_get_i (r->config, "bin.cache");
+	bool bin_cache = r_config_get_i (r->config, "bin.cache");
 	if (bin_cache) {
 		r_config_set (r->config, "io.cache", "true");
 	}
 	RBNode *relocs = r_bin_patch_relocs (r->bin);
 	if (!relocs) {
+		if (bin_cache) {
+			r_config_set (r->config, "io.cache", "false");
+			bin_cache = false;
+		}
 		relocs = r_bin_get_relocs (r->bin);
 	}
 	if (bin_cache) {
