@@ -10,6 +10,10 @@ dB "jmp 0xfec50" e95bec f000:fff2
 d "jmp 0x1fec50" e95bec 0x001ffff2
 a "mov al, [0xbeef]" a0efbe
 a "mov ax, [0xbeef]" a1efbe
+aB "mov bx, ax" 89c3
+aB "mov ebx, eax" 6689c3
+aB "sub sp, 2" 83ec02
+aB "sub esp, 4" 6683ec04
 a "test bl, 0x12" f6c312
 a "test bx, 0x1234" f7c33412
 aB "test byte [bx], 0x12" f60712
