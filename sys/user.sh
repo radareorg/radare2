@@ -16,6 +16,15 @@ cd "$(dirname "$0")" ; cd ..
 export WITHOUT_PULL=0
 ROOT=
 
+abspath() {
+	echo "$1" | grep -q ^/
+	if [ $? = 0 ]; then
+		echo "$1"
+	else
+		echo "`pwd`/$1"
+	fi
+}
+
 while [ $# -gt 0 ]
 do
 	case "$1" in
@@ -25,8 +34,8 @@ do
 		"--install-path")
 			shift
 			if [ -n "$1" ]; then
-				ROOT="$1"
-				BINDIR="$1/bin"
+				ROOT="`abspath $1`"
+				BINDIR="$ROOT/bin"
 			else
 				echo "ERROR: install-path must not be empty"
 				exit 1
