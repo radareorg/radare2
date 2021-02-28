@@ -120,6 +120,42 @@ if [ -f "d/baleful" ]; then
 	R2PM_DBDIR="$(pwd)/d/"
 fi
 
+help() {
+	cat <<HELP
+Usage: r2pm [init|update|cmd] [...]
+Commands:
+ -I,info                     information about repository and installed packages
+ -i,install <pkgname>        install or update package in your home (pkgname=all)
+ -gi,global-install <pkg>    install or update package system-wide
+ -gu,global-uninstall <pkg>  uninstall pkg from systemdir
+ -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)
+ -l,list                     list installed pkgs
+ -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH
+ -s,search [<keyword>]       search in database
+ -t,test FX,XX,BR BID        check in Travis regressions
+ -v,version                  show version
+ -h,help                     show this message
+ -H variable                 show value of given variable
+ -c,clean ([git/dir])        clear source cache (GITDIR)
+ -ci (pkgname)               clean install of given package
+ -cp                         clean the user's home plugin directory
+ -d,doc [pkgname]            show documentation for given package
+ -w <pkgname>                what/where is installed
+ init | update ..            initialize/update database
+ cd [git/dir]                cd into given git (see 'r2pm ls')
+ ls                          ls all cloned git repos in GITDIR
+ suicide                     self remove all (home + system) installations of r2
+ cache                       cache contents of r2 -H to make r2pm r2-independent
+Environment:
+ SUDO=sudo                    use this tool as sudo
+ R2PM_PLUGDIR=${R2PM_PLUGDIR}
+ R2PM_BINDIR=${R2PM_BINDIR}
+ R2PM_DBDIR=${R2PM_DBDIR}
+ R2PM_GITDIR=${R2PM_GITDIR}
+ R2PM_GITSKIP=${R2PM_GITSKIP}
+HELP
+}
+
 confirm() {
 	printf "$@ (y/N)? "
 	read A
@@ -215,8 +251,26 @@ init|up|update)
 	exit 0
 	;;
 esac
+
+# commandline flags that work without initialized database
+case "$1" in
+-v|version)
+	echo "r2pm ${R2_VERSION}"
+	;;
+help|-h)
+	help
+	;;
+-H)
+	if [ -z "$2" ]; then
+		echo "Usage: r2pm -H [VARNAME]"
+		echo "Variables: R2PM_PLUGDIR R2PM_BINDIR R2PM_DBDIR R2PM_GITDIR"
+		exit 1
+	fi
+	eval echo "\$$2"
+	;;
+esac
+
 if [ ! -d "${R2PM_DBDIR}" ]; then
-	echo '$R2PM_DBDIR: No such file or directory.'
 	echo "Run 'r2pm init' to initialize the package repository"
 	exit 1
 fi
@@ -713,38 +767,6 @@ suicide)
 	r2pm_doc "$2"
 	;;
 *|help|-h)
-	cat <<HELP
-Usage: r2pm [init|update|cmd] [...]
-Commands:
- -I,info                     information about repository and installed packages
- -i,install <pkgname>        install or update package in your home (pkgname=all)
- -gi,global-install <pkg>    install or update package system-wide
- -gu,global-uninstall <pkg>  uninstall pkg from systemdir
- -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)
- -l,list                     list installed pkgs
- -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH
- -s,search [<keyword>]       search in database
- -t,test FX,XX,BR BID        check in Travis regressions
- -v,version                  show version
- -h,help                     show this message
- -H variable                 show value of given variable
- -c,clean ([git/dir])        clear source cache (GITDIR)
- -ci (pkgname)               clean install of given package
- -cp                         clean the user's home plugin directory
- -d,doc [pkgname]            show documentation for given package
- -w <pkgname>                what/where is installed
- init | update ..            initialize/update database
- cd [git/dir]                cd into given git (see 'r2pm ls')
- ls                          ls all cloned git repos in GITDIR
- suicide                     self remove all (home + system) installations of r2
- cache                       cache contents of r2 -H to make r2pm r2-independent
-Environment:
- SUDO=sudo                    use this tool as sudo
- R2PM_PLUGDIR=${R2PM_PLUGDIR}
- R2PM_BINDIR=${R2PM_BINDIR}
- R2PM_DBDIR=${R2PM_DBDIR}
- R2PM_GITDIR=${R2PM_GITDIR}
- R2PM_GITSKIP=${R2PM_GITSKIP}
-HELP
+	help
 	;;
 esac
