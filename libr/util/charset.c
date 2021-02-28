@@ -101,7 +101,7 @@ R_API RCharsetRune *search_from_hex(RCharsetRune *r, const ut8 *hx) {
 R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
 	char k[32];
 	char *o = (char*)out;
-	int i;
+	size_t i;
 	for (i = 0; i < in_len; i++) {
 		ut8 ch_in = in[i];
 

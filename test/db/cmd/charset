@@ -1,3 +1,15 @@
+NAME=rival charset
+FILE=-
+CMDS=<<EOF
+e cfg.charset=pokered
+"w <RIVAL>"
+p8 4
+EOF
+EXPECT=<<EOF
+53000000
+EOF
+RUN
+
 NAME=e cfg.charset
 FILE=-
 CMDS=<<EOF
