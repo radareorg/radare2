@@ -650,13 +650,13 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 		snprintf (chunk, sizeof (chunk) - 1, "fd: 0x%"PFMT64x"\nbk: 0x%"PFMT64x"\n",
 			(ut64)cnk->fd, (ut64)cnk->bk);
 		next_node = r_agraph_add_node (g, title, chunk, NULL);
-		r_agraph_add_edge (g, prev_node, next_node);
-		r_agraph_add_edge (g, next_node, prev_node);
+		r_agraph_add_edge (g, prev_node, next_node, false);
+		r_agraph_add_edge (g, next_node, prev_node, false);
 		prev_node = next_node;
 	}
 
-	r_agraph_add_edge (g, prev_node, bin_node);
-	r_agraph_add_edge (g, bin_node, prev_node);
+	r_agraph_add_edge (g, prev_node, bin_node, false);
+	r_agraph_add_edge (g, bin_node, prev_node, false);
 	r_agraph_print (g);
 
 	free (cnk);
@@ -1333,7 +1333,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 			if (first_node) {
 				first_node = false;
 			} else {
-				r_agraph_add_edge (g, prev_node, chunk_node);
+				r_agraph_add_edge (g, prev_node, chunk_node, false);
 			}
 			prev_node = chunk_node;
 			break;
@@ -1343,7 +1343,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	switch (format_out) {
 	case 'c':
 		PRINT_YA ("\n  Top chunk @ ");
-		PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(top));
+		PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH (top));
 		PRINT_GA (" - [brk_start: ");
 		PRINTF_BA ("0x%"PFMT64x, (ut64)brk_start);
 		PRINT_GA (", brk_end: ");
@@ -1361,14 +1361,14 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		break;
 	case '*':
 		r_cons_printf ("fs-\n");
-		r_cons_printf ("f heap.top = 0x%08"PFMT64x"\n", (ut64)main_arena->GH(top));
+		r_cons_printf ("f heap.top = 0x%08"PFMT64x"\n", (ut64)main_arena->GH (top));
 		r_cons_printf ("f heap.brk = 0x%08"PFMT64x"\n", (ut64)brk_start);
 		r_cons_printf ("f heap.end = 0x%08"PFMT64x"\n", (ut64)brk_end);
 		break;
 	case 'g':
 		top = r_agraph_add_node (g, top_title, top_data, NULL);
 		if (!first_node) {
-			r_agraph_add_edge (g, prev_node, top);
+			r_agraph_add_edge (g, prev_node, top, false);
 			free (node_data);
 			free (node_title);
 		}
@@ -1379,7 +1379,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		break;
 	}
 
-	r_cons_printf ("\n");
+	r_cons_newline ();
 	free (g);
 	free (top_data);
 	free (top_title);

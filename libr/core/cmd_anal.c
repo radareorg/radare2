@@ -570,6 +570,9 @@ static const char *help_msg_age[] = {
 	"age", " title1 title2", "Add an edge from the node with \"title1\" as title to the one with title \"title2\"",
 	"age", " \"title1 with spaces\" title2", "Add an edge from node \"title1 with spaces\" to node \"title2\"",
 	"age-", " title1 title2", "Remove an edge from the node with \"title1\" as title to the one with title \"title2\"",
+	"ageh", "", "List all the highlighted edges",
+	"ageh", " nodeA nodeB", "Highlight edge between nodeA and nodeB",
+	"ageh-", " nodeA nodeB", "Highlight edge between nodeA and nodeB",
 	"age?", "", "Show this help",
 	NULL
 };
@@ -8535,6 +8538,30 @@ static void cmd_agraph_node(RCore *core, const char *input) {
 	}
 }
 
+static bool cmd_ageh(RCore *core, const char *input) {
+	if (!*input) {
+		r_core_cmd0 (core, "k~agraph.edge");
+		return false;
+	}
+	bool add = true;
+	if (*input == '-') {
+		add = false;
+		input++;
+	}
+	char *arg = r_str_trim_dup (input + 1);
+	char *sp = strchr (arg, ' ');
+	if (!sp) {
+		return false;
+	}
+	*sp++ = 0;
+	ut64 a = r_num_math (core->num, arg);
+	ut64 b = r_num_math (core->num, sp);
+
+	const char *k = sdb_fmt ("agraph.edge.0x%08"PFMT64x"_0x%08"PFMT64x".highlight", a, b);
+	sdb_set (core->sdb, k, add? "true": "", 0);
+	return true;
+}
+
 static void cmd_agraph_edge(RCore *core, const char *input) {
 	switch (*input) {
 	case ' ': // "age"
@@ -8566,6 +8593,9 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 		r_str_argv_free (args);
 		break;
 	}
+	case 'h':
+		cmd_ageh (core, input + 1);
+		break;
 	case '?':
 	default:
 		r_core_cmd_help (core, help_msg_age);
