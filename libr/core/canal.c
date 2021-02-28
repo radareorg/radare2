@@ -1488,12 +1488,15 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 					char *from = get_title (bbi->addr);
 					char *to = get_title (bbi->jump);
 					r_cons_printf ("age %s %s\n", from, to);
-					free(from);
-					free(to);
+					free (from);
+					free (to);
 				} else {
+					const char* edge_color = bbi->fail != -1 ? pal_jump : pal_trfa;
+					if (sdb_const_get (core->sdb, sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", bbi->addr, bbi->jump), 0)) {
+						edge_color = "cyan";
+					}
 					r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-							"[color=\"%s\"];\n", bbi->addr, bbi->jump,
-							bbi->fail != -1 ? pal_jump : pal_trfa);
+							"[color=\"%s\"];\n", bbi->addr, bbi->jump, edge_color);
 					core_anal_color_curr_node (core, bbi);
 				}
 			}

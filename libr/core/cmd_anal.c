@@ -8467,7 +8467,7 @@ static void agraph_print_edge_dot(RANode *from, RANode *to, void *user) {
 	RCore *core = (RCore *)user;
 	ut64 a = r_num_math (NULL, from->title);
 	ut64 b = r_num_math (NULL, to->title);
-	const char *k = sdb_fmt ("agraph.edge.0x%08"PFMT64x"_0x%08"PFMT64x".highlight", a, b);
+	const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	if (sdb_exists (core->sdb, k)) {
 		r_cons_printf ("\"%s\" -> \"%s\" [color=cyan]\n", from->title, to->title);
 	} else {
@@ -8564,7 +8564,7 @@ static bool cmd_ageh(RCore *core, const char *input) {
 	ut64 a = r_num_math (core->num, arg);
 	ut64 b = r_num_math (core->num, sp);
 
-	const char *k = sdb_fmt ("agraph.edge.0x%08"PFMT64x"_0x%08"PFMT64x".highlight", a, b);
+	const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	sdb_set (core->sdb, k, add? "true": "", 0);
 	return true;
 }
