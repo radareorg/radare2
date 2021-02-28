@@ -193,7 +193,7 @@ static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSy
 	return sym;
 }
 
-static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, int bits) {
+static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, int bits, char * file_name) {
 	D eprintf ("Dragons at 0x%x\n", off);
 	ut64 size = r_buf_size (buf);
 	if (off >= size) {
@@ -261,7 +261,7 @@ static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, i
 		eprintf ("0x%08x  eoss   0x%x\n", off + 12, e0ss);
 	}
 	free (b);
-	return r_coresym_cache_element_new (bf, buf, off + 16, bits);
+	return r_coresym_cache_element_new (bf, buf, off + 16, bits, file_name);
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
@@ -289,13 +289,24 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		eprintf ("Invalid headers\n");
 		return false;
 	}
-	printSymbolsHeader (sh);
+	//printSymbolsHeader (sh);
 	SymbolsMetadata sm = parseMetadata (buf, 0x40);
-	RCoreSymCacheElement *element = parseDragons (bf, buf, sm.addr + sm.size, sm.bits);
+	char * file_name = NULL;
+	if (sm.namelen) {
+		file_name = malloc (sm.namelen);
+		if (!file_name) {
+			return false;
+		}
+		if (r_buf_read_at (buf, 0x50, (ut8*)file_name, sm.namelen) != sm.namelen) {
+			return false;
+		}
+	}
+	RCoreSymCacheElement *element = parseDragons (bf, buf, sm.addr + sm.size, sm.bits, file_name);
 	if (element) {
 		*bin_obj = element;
 		return true;
 	}
+	free (file_name);
 	return false;
 }
 
