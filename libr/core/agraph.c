@@ -2319,6 +2319,17 @@ static bool isbbfew(RAnalBlock *curbb, RAnalBlock *bb) {
 	return false;
 }
 
+static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
+	if (jump == UT64_MAX) {
+		return;
+	}
+	char *title = get_title (jump);
+	RANode *v = r_agraph_get_node (g, title);
+	free (title);
+	bool hl = sdb_const_get (core->sdb, sdb_fmt ("agraph.edge.%s_%s.highlight", u->title, title), 0) != NULL;
+	r_agraph_add_edge (g, u, v, hl);
+}
+
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
@@ -2393,28 +2404,14 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 		char *title = get_title (bb->addr);
 		RANode *u = r_agraph_get_node (g, title);
-		RANode *v;
 		free (title);
-		if (bb->jump != UT64_MAX) {
-			title = get_title (bb->jump);
-			v = r_agraph_get_node (g, title);
-			free (title);
-			r_agraph_add_edge (g, u, v, false);
-		}
-		if (bb->fail != UT64_MAX) {
-			title = get_title (bb->fail);
-			v = r_agraph_get_node (g, title);
-			free (title);
-			r_agraph_add_edge (g, u, v, false);
-		}
+		add_child (core, g, u, bb->jump);
+		add_child (core, g, u, bb->fail);
 		if (bb->switch_op) {
 			RListIter *it;
 			RAnalCaseOp *cop;
 			r_list_foreach (bb->switch_op->cases, it, cop) {
-				title = get_title (cop->addr);
-				v = r_agraph_get_node (g, title);
-				free (title);
-				r_agraph_add_edge (g, u, v, false);
+				add_child (core, g, u, cop->addr);
 			}
 		}
 	}
