@@ -118,7 +118,7 @@ static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
 	return sm;
 }
 
-static void printSymbolsHeader(SymbolsHeader sh) {
+/*static void printSymbolsHeader(SymbolsHeader sh) {
 	// eprintf ("0x%08x  version  0x%x\n", 4, sh.version);
 	eprintf ("0x%08x  uuid     ", 24);
 	int i;
@@ -130,7 +130,7 @@ static void printSymbolsHeader(SymbolsHeader sh) {
 	// eprintf ("0x%08x  unknown  0x%x\n", 0x28, sh.unk0); //r_read_le32 (b+ 0x28));
 	// eprintf ("0x%08x  unknown  0x%x\n", 0x2c, sh.unk1); //r_read_le16 (b+ 0x2c));
 	// eprintf ("0x%08x  slotsize %d\n", 0x2e, sh.slotsize); // r_read_le16 (b+ 0x2e));
-}
+}*/
 
 static RBinSection *bin_section_from_section(RCoreSymCacheElementSection *sect) {
 	if (!sect->name) {
