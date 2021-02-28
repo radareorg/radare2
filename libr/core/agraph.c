@@ -333,8 +333,8 @@ static char *get_node_color(int color, int cur) {
                 return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
         }
         return color ? (\
-                color==R_ANAL_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match:
-                color==R_ANAL_DIFF_TYPE_UNMATCH? cons->context->pal.graph_diff_unmatch : cons->context->pal.graph_diff_new): cons->context->pal.graph_diff_unknown;
+                color == R_ANAL_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match:
+                color == R_ANAL_DIFF_TYPE_UNMATCH? cons->context->pal.graph_diff_unmatch : cons->context->pal.graph_diff_new): cons->context->pal.graph_diff_unknown;
 }
 
 static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
@@ -2326,7 +2326,10 @@ static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
 	char *title = get_title (jump);
 	RANode *v = r_agraph_get_node (g, title);
 	free (title);
-	bool hl = sdb_const_get (core->sdb, sdb_fmt ("agraph.edge.%s_%s.highlight", u->title, title), 0) != NULL;
+	ut64 a = r_num_get (NULL, u->title);
+	ut64 b = r_num_get (NULL, title);
+	const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
+	bool hl = sdb_exists (core->sdb, k);
 	r_agraph_add_edge (g, u, v, hl);
 }
 
@@ -2950,10 +2953,19 @@ static void agraph_print_edges(RAGraph *g) {
 					break;
 				}
 			}
-			if (sdb_const_get (g->db, sdb_fmt ("agraph.edge.%s_%s.highlight", a->title, b->title), 0)) {
-				style.ansicolor = Color_BYELLOW; // it's CYAN for graphviz
-			} else {
-				style.ansicolor = NULL;
+			if (!*b->title) {
+				/// XXX non-colorized edges happen because of those ghost nodes
+				// eprintf ("%s|%s%c", a->title, b->title, 10);
+			}
+			if (!R_STR_ISEMPTY (a->title) && !R_STR_ISEMPTY (b->title)) {
+				ut64 aa = r_num_get (NULL, a->title);
+				ut64 bb = r_num_get (NULL, b->title);
+				const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", aa, bb);
+				if (sdb_exists (g->db, k)) {
+					style.ansicolor = Color_BYELLOW; // it's CYAN for graphviz
+				} else {
+					style.ansicolor = NULL;
+				}
 			}
 			switch (g->layout) {
 			case 0:
@@ -3855,7 +3867,9 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b, bool highli
 	r_return_if_fail (g && a && b);
 	r_graph_add_edge (g->graph, a->gnode, b->gnode);
 	if (highlight) {
-		const char *k = sdb_fmt ("agraph.edge.%s_%s.highlight", a->title, b->title);
+		ut64 aa = r_num_get (NULL, a->title);
+		ut64 bb = r_num_get (NULL, b->title);
+		const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", aa, bb);
 		sdb_set (g->db, k, "true", 0);
 	}
 	if (a->title && b->title) {
@@ -4848,13 +4862,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			{
 			RIOUndos *undo = r_io_sundo (core->io, core->offset);
 			r_io_sundo_redo (core->io);
-
-			char *a = r_str_newf ("0x%08"PFMT64x, undo->off);
-			char *b = r_str_newf ("0x%08"PFMT64x, core->offset);
-			char *c = r_str_newf ("agraph.edge.%s_%s.highlight", a, b);
+			char *c = r_str_newf ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", undo->off, core->offset);
 			sdb_set (g->db, c, "true", 0);
-			free (a);
-			free (b);
 			free (c);
 			}
 			break;
