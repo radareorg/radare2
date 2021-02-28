@@ -354,3 +354,53 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=highlight edge
+FILE=-
+CMDS=<<EOF
+agn "0x123" body1
+agn "0x456" body2
+age 0x123 0x456
+ageh 0x123 0x456
+aggd
+EOF
+EXPECT=<<EOF
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2];
+node [fillcolor=white, style=filled shape=box fontname="Courier" fontsize="8"];
+"0x123" [URL="0x123", color="lightgray", label="0x123\nbody1
+"]
+"0x456" [URL="0x456", color="lightgray", label="0x456\nbody2
+"]
+"0x123" -> "0x456" [color=cyan]
+}
+EOF
+RUN
+
+NAME=highlight edge management
+FILE=-
+CMDS=<<EOF
+ageh 0x123 0x456
+ageh
+ageh-0x123 0x456
+?e --
+ageh
+ageh 0x456 0x123
+ageh 0x123 0x456
+ageh 0x123 0x123
+?e --
+ageh
+EOF
+EXPECT=<<EOF
+agraph.edge.0x00000123_0x00000456.highlight=true
+--
+agraph.edge.0x00000123_0x00000456.highlight=true
+--
+agraph.edge.0x00000456_0x00000123.highlight=true
+agraph.edge.0x00000123_0x00000123.highlight=true
+agraph.edge.0x00000123_0x00000456.highlight=true
+EOF
+RUN

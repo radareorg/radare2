@@ -2951,8 +2951,7 @@ static void agraph_print_edges(RAGraph *g) {
 				}
 			}
 			if (sdb_const_get (g->db, sdb_fmt ("agraph.edge.%s_%s.highlight", a->title, b->title), 0)) {
-
-				style.ansicolor = Color_BYELLOW;
+				style.ansicolor = Color_BYELLOW; // it's CYAN for graphviz
 			} else {
 				style.ansicolor = NULL;
 			}
