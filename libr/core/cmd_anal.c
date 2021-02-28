@@ -8348,27 +8348,26 @@ static void agraph_print_edge_gml(RANode *from, RANode *to, void *user) {
 }
 
 static void agraph_print_node_dot(RANode *n, void *user) {
-	char *label = strdup (n->body);
-	//label = r_str_replace (label, "\n", "\\l", 1);
-	if (!label || !*label) {
+	if (R_STR_ISEMPTY (n->body)) {
 		r_cons_printf ("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\"]\n",
 				n->title, n->title, n->title);
 	} else {
+		char *label = strdup (n->body);
+		//label = r_str_replace (label, "\n", "\\l", 1);
 		r_cons_printf ("\"%s\" [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
 				n->title, n->title, n->title, label);
+		free (label);
 	}
-	free (label);
 }
 
 static void agraph_print_node(RANode *n, void *user) {
-	char *encbody, *cmd;
-	int len = strlen (n->body);
+	size_t len = strlen (n->body);
 
 	if (len > 0 && n->body[len - 1] == '\n') {
 		len--;
 	}
-	encbody = r_base64_encode_dyn (n->body, len);
-	cmd = r_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
+	char *encbody = r_base64_encode_dyn (n->body, len);
+	char *cmd = r_str_newf ("agn \"%s\" base64:%s\n", n->title, encbody);
 	r_cons_print (cmd);
 	free (cmd);
 	free (encbody);
@@ -8465,7 +8464,15 @@ static bool convert_dot_str_to_image(RCore *core, char *str, const char *save_pa
 }
 
 static void agraph_print_edge_dot(RANode *from, RANode *to, void *user) {
-	r_cons_printf ("\"%s\" -> \"%s\"\n", from->title, to->title);
+	RCore *core = (RCore *)user;
+	ut64 a = r_num_math (NULL, from->title);
+	ut64 b = r_num_math (NULL, to->title);
+	const char *k = sdb_fmt ("agraph.edge.0x%08"PFMT64x"_0x%08"PFMT64x".highlight", a, b);
+	if (sdb_exists (core->sdb, k)) {
+		r_cons_printf ("\"%s\" -> \"%s\" [color=cyan]\n", from->title, to->title);
+	} else {
+		r_cons_printf ("\"%s\" -> \"%s\"\n", from->title, to->title);
+	}
 }
 
 static void agraph_print_edge(RANode *from, RANode *to, void *user) {
@@ -8667,14 +8674,14 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 			"node [fillcolor=white, style=filled shape=box "
 			"fontname=\"%s\" fontsize=\"8\"];\n",
 			font);
-		r_agraph_foreach (core->graph, agraph_print_node_dot, NULL);
-		r_agraph_foreach_edge (core->graph, agraph_print_edge_dot, NULL);
+		r_agraph_foreach (core->graph, agraph_print_node_dot, core);
+		r_agraph_foreach_edge (core->graph, agraph_print_edge_dot, core);
 		r_cons_printf ("}\n");
 		break;
 	}
 	case '*': // "agg*" -
-		r_agraph_foreach (core->graph, agraph_print_node, NULL);
-		r_agraph_foreach_edge (core->graph, agraph_print_edge, NULL);
+		r_agraph_foreach (core->graph, agraph_print_node, core);
+		r_agraph_foreach_edge (core->graph, agraph_print_edge, core);
 		break;
 	case 'J':
 	case 'j': {
