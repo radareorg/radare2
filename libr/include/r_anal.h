@@ -1592,7 +1592,11 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str);
 // esil_handler.c
 R_API void r_anal_esil_handlers_init(RAnalEsil *esil);
 R_API bool r_anal_esil_set_interrupt(RAnalEsil *esil, ut32 intr_num, RAnalEsilHandlerCB cb, void *user);
+R_API RAnalEsilHandlerCB r_anal_esil_get_interrupt(RAnalEsil *esil, ut32 intr_num);
+R_API void r_anal_esil_del_interrupt(RAnalEsil *esil, ut32 intr_num);
 R_API bool r_anal_esil_set_syscall(RAnalEsil *esil, ut32 sysc_num, RAnalEsilHandlerCB cb, void *user);
+R_API RAnalEsilHandlerCB r_anal_esil_get_syscall(RAnalEsil *esil, ut32 sysc_num);
+R_API void r_anal_esil_del_syscall(RAnalEsil *esil, ut32 sysc_num);
 R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, ut32 intr_num);
 R_API int r_anal_esil_do_syscall(RAnalEsil *esil, ut32 sysc_num);
 R_API void r_anal_esil_handlers_fini(RAnalEsil *esil);
