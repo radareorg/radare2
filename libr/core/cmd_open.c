@@ -102,6 +102,7 @@ static const char *help_msg_om[] = {
 	"oma"," [fd]", "create a map covering all VA for given fd",
 	"omb", " mapid addr", "relocate map with corresponding id",
 	"omb.", " addr", "relocate current map",
+	"omd", " from to @ paddr", "simplied om, takes current seek, fd and perms",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
 	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
 	"omj", "", "list all maps in json format",
@@ -118,6 +119,12 @@ static const char *help_msg_om[] = {
 	"omqq", "", "list all maps addresses (See $MM to get the size)",
 	"omr", " mapid newsize", "resize map with corresponding id",
 	"omt", " [query]", "list maps using table api",
+	NULL
+};
+
+static const char *help_msg_omd[] = {
+	"Usage:", "omd v_begin v_end @ paddr", " # simplified om",
+	"omd", "0x100000 0x200000 @ 0x100", " # map B-A bytes from PA 0x100- in A",
 	NULL
 };
 
@@ -626,6 +633,44 @@ static bool cmd_om(RCore *core, const char *input) {
 	return true;
 }
 
+static void cmd_omd(RCore *core, const char* input) {
+	if (*input == '?') {
+		r_core_cmd_help (core, help_msg_omd);
+		return;
+	}
+	int fd = r_io_fd_get_current (core->io);
+	RIODesc *desc = r_io_desc_get (core->io, fd);
+	if (desc) {
+		char *inp = r_str_trim_dup (input);
+		RList *args = r_str_split_list (inp, " ", 0);
+		if (args)
+		switch (r_list_length (args)) {
+		case 2:
+			{
+				ut64 pa = core->offset;
+				ut64 va = r_num_math (core->num, r_list_get_n (args, 0));
+				ut64 vb = r_num_math (core->num, r_list_get_n (args, 1));
+				ut64 sz = vb - va;
+				RIOMap *map = NULL;
+				if (va < vb) {
+					map = r_io_map_add (core->io, fd, desc->perm, pa, va, sz);
+				}
+				if (!map) {
+					eprintf ("Cannot create map\n");
+				}
+			}
+			break;
+		default:
+			r_core_cmd_help (core, help_msg_omd);
+			break;
+		}
+		r_list_free (args);
+		r_free (inp);
+	} else {
+		eprintf ("Cannot get any fd\n");
+	}
+}
+
 static void cmd_open_map(RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
@@ -842,6 +887,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		} else {
 			r_io_map_del (core->io, r_num_math (core->num, input + 2));
 		}
+		break;
+	case 'd': // "omd"
+		cmd_omd (core, input + 2);
 		break;
 	case 'f': // "omf"
 		switch (input[2]) {
