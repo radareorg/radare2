@@ -36,6 +36,8 @@ option('use_sys_openssl', type: 'boolean', value: false)
 option('static_sys_openssl', type: 'boolean', value: false)
 option('use_sys_tree_sitter', type: 'boolean', value: false)
 option('use_libuv', type: 'boolean', value: true)
+option('use_fork', type: 'boolean', value: true)
+option('use_dylink', type: 'boolean', value: true)
 option('debugger', type: 'boolean', value: true)
 
 option('use_webui', type: 'boolean', value: false, description: 'install different WebUIs for radare2')

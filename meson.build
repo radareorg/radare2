@@ -266,6 +266,9 @@ else
   use_sys_openssl = false
 endif
 
+use_fork = get_option('use_fork')
+use_dylink = get_option('use_dylink')
+
 # handle libuv library
 if get_option('use_libuv')
   libuv_dep = dependency('libuv', version: '>=1.0.0', required: false)
@@ -336,8 +339,8 @@ userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
 userconf.set10('HAVE_OPENSSL', use_sys_openssl)
 userconf.set10('HAVE_LIBUV', use_libuv)
-userconf.set10('HAVE_FORK', true)
-userconf.set10('WANT_DYLINK', true)
+userconf.set10('HAVE_FORK', use_fork)
+userconf.set10('WANT_DYLINK', use_dylink)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
