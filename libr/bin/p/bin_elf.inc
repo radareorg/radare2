@@ -982,7 +982,7 @@ static RList* patch_relocs(RBin *b) {
 			continue;
 		}
 
-		if (sym_addr != UT64_MAX) {
+		if (sym_addr && sym_addr != UT64_MAX) {
 			ptr->vaddr = sym_addr;
 		} else {
 			ptr->vaddr = vaddr;
