@@ -1,12 +1,11 @@
 #!/bin/sh
 
-if [ "$(id -u)" = 0 ]; then
+if [ "$UID" = 0 ]; then
 	echo "[XX] Do not run this script as root!"
 	if [ -n "${SUDO_USER}" ]; then
 		echo "[--] Downgrading credentials to ${SUDO_USER}"
 		exec sudo -u "${SUDO_USER}" sys/install.sh $*
 	fi
-	exit 1
 fi
 
 # if owner of sys/install.sh != uid && uid == 0 { exec sudo -u id -A $SUDO_UID sys/install.sh $* }
