@@ -486,7 +486,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 			if (tmp_aop.dst && tmp_aop.dst->reg) {
 				cmp_reg = tmp_aop.dst->reg;
 			} else if (tmp_aop.reg) {
-				cmp_reg = r_reg_get(anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
+				cmp_reg = r_reg_get (anal->reg, tmp_aop.reg, R_REG_TYPE_ALL);
 			} else if (tmp_aop.src[0] && tmp_aop.src[0]->reg) {
 				cmp_reg = tmp_aop.src[0]->reg;
 			}
