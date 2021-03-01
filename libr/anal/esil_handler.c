@@ -57,6 +57,21 @@ R_API bool r_anal_esil_set_interrupt(RAnalEsil *esil, ut32 intr_num, RAnalEsilHa
 	return _set_interrupt (esil, intr, intr_num);
 }
 
+R_API RAnalEsilHandlerCB r_anal_esil_get_interrupt(RAnalEsil *esil, ut32 intr_num) {
+	r_return_val_if_fail (esil && esil->interrupts, NULL);
+	RAnalEsilHandler *handler = _get_interrupt (esil, intr_num);
+	return handler ? handler->cb : NULL;
+}
+
+R_API void r_anal_esil_del_interrupt(RAnalEsil *esil, ut32 intr_num) {
+	r_return_if_fail (esil && esil->interrupts);
+	if (intr_num == 0) {
+		R_FREE (esil->intr0)
+	} else {
+		dict_del (esil->interrupts, intr_num);
+	}
+}
+
 R_API bool r_anal_esil_set_syscall(RAnalEsil *esil, ut32 sysc_num, RAnalEsilHandlerCB cb, void *user) {
 	r_return_val_if_fail (esil && esil->syscalls && cb, false);
 	RAnalEsilHandler *sysc = r_anal_esil_handler_new (cb, user);
@@ -67,6 +82,21 @@ R_API bool r_anal_esil_set_syscall(RAnalEsil *esil, ut32 sysc_num, RAnalEsilHand
 	free (_get_syscall (esil, sysc_num));
 	// set the new interrupt
 	return _set_syscall (esil, sysc, sysc_num);
+}
+
+R_API RAnalEsilHandlerCB r_anal_esil_get_syscall(RAnalEsil *esil, ut32 sysc_num) {
+	r_return_val_if_fail (esil && esil->syscalls, NULL);
+	RAnalEsilHandler *handler = _get_syscall (esil, sysc_num);
+	return handler ? handler->cb : NULL;
+}
+
+R_API void r_anal_esil_del_syscall(RAnalEsil *esil, ut32 sysc_num) {
+	r_return_if_fail (esil && esil->syscalls);
+	if (sysc_num == 0) {
+		R_FREE (esil->sysc0)
+	} else {
+		dict_del (esil->syscalls, sysc_num);
+	}
 }
 
 R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, ut32 intr_num) {
