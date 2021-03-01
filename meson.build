@@ -266,6 +266,9 @@ else
   use_sys_openssl = false
 endif
 
+use_fork = get_option('use_fork')
+use_dylink = get_option('use_dylink')
+
 # handle libuv library
 if get_option('use_libuv')
   libuv_dep = dependency('libuv', version: '>=1.0.0', required: false)
