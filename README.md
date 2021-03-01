@@ -27,20 +27,30 @@ command-line hexadecimal editor able to open disk files,
 but later added support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers...
 
-## Learn More
+## Scripting
 
-To learn more you may read the [official radare2 book](https://book.rada.re),
-the source code, or browse the web for blog posts or presentations from
-[r2con](https://www.youtube.com/c/r2con).
+It is possible to script and extend r2 using native plugins written
+in C. Dynamic programming languages can be also used via the
+[r2pipe](https://github.com/radareorg/radare2-r2pipe) interface or
+using the rlang r2pm packages which make the pythonvm run inside radare2.
 
-You may also want to meet other people in r2land. use the following chats:
+Some of the languages supported by r2 are: Python, Ruby, JavaScript,
+Lua, Perl, PHP, Go, Rust, Swift, C#, Java, Shell, OCaml, Haskell,
+Scheme (Guile), Common Lisp, Clojure, Erlang, D, Vala/Genie, Prolog,
+Nim, Newlisp...
+
+## Documentation
+
+To learn more about r2 we encourage you to watch youtube talks from
+[r2con](https://www.youtube.com/c/r2con). As well as reading blogposts,
+slides or read the [official radare2 book](https://book.rada.re), You can reach us in the following chats:
 
 * irc.freenode.net `#radare` `#radare_side`
-* [Telegram](https://t.me/radare)
+* [Matrix](https://matrix.org/) `#radare:matrix.org`
+* [Telegram](https://t.me/radare) and the [Side Channel](https://t.me/radare_side)
 * [Discord](https://discord.gg/MgEdxrMnqx)
 * Twitter: [@radareorg](https://twitter.com/radareorg)
-
-Website: [https://www.radare.org/](https://www.radare.org/)
+* Website: [https://www.radare.org/](https://www.radare.org/)
 
 ## Operating Systems
 
@@ -64,15 +74,6 @@ Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
 ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
 WASM (WebAssembly binary), Commodore VICE emulator, QNX,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
-
-## Scripting
-
-Native bindings are supported but the recommended way to interact with r2
-from other languages is by using [r2pipe](https://github.com/radareorg/radare2-r2pipe)
-
-Python, Ruby, JavaScript, Lua, Perl, PHP, Go, Rust, Swift, C#, Java,
-Shell, OCaml, Haskell, Scheme (Guile), Common Lisp, Clojure, Erlang, D,
-Vala/Genie, Prolog, Nim, Newlisp...
 
 # Install / Update
 
