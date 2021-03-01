@@ -641,7 +641,6 @@ static void cmd_omd(RCore *core, const char* input) {
 	int fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	if (desc) {
-		const char *perm = r_str_rwx_i (desc->perm);
 		char *inp = r_str_trim_dup (input);
 		RList *args = r_str_split_list (inp, " ", 0);
 		if (args)
