@@ -481,7 +481,7 @@ EXPECT=<<EOF
 |           ;-- switch
 |           0x00003ec4      jmp rax                                    ; switch table (275 cases) at 0x172d8
 |           ; CODE XREF from main @ 0x3ec4
-|           ;-- case 241:                                              ; from 0x3ec4
+|           ;-- case 110:                                              ; from 0x3ec4
 |           0x00003ec6      mov byte [0x00021260], 1                   ; [0x21260:1]=0
 EOF
 RUN
@@ -1160,7 +1160,7 @@ EXPECT=<<EOF
 |      ||   0x00003cb4      sub eax, 1
 |     ,===< 0x00003cb7      je 0x3cbe
 |     |||   ; CODE XREFS from main @ 0x58bc, 0x58d2
-|     |||   ;-- case 4:                                                ; from 0x58d2
+|     |||   ;-- default:                                               ; from 0x58d2
 |     |||   0x00003cb9      call sym.imp.abort                         ; void abort(void)
 |     |||   ; CODE XREF from main @ 0x3cb7
 |     `---> 0x00003cbe      mov edi, 1                                 ; int fd
@@ -1203,7 +1203,7 @@ EXPECT=<<EOF
 |    | |    0x00003cb4      sub eax, 1
 |  ,======< 0x00003cb7      je 0x3cbe
 |  | | |    ; CODE XREFS from main @ 0x58bc, 0x58d2
-|  | | |    ;-- case 4:                                                ; from 0x58d2
+|  | | |    ;-- default:                                               ; from 0x58d2
 |  | | |    0x00003cb9      call sym.imp.abort                         ; void abort(void)
 |  | | |    ; CODE XREF from main @ 0x3cb7
 |  `------> 0x00003cbe      mov edi, 1                                 ; int fd
@@ -1245,7 +1245,7 @@ EXPECT=<<EOF
 |    | |    0x00003cb4      sub eax, 1
 |  ,======< 0x00003cb7      je 0x3cbe
 |  | | |    ; CODE XREFS from main @ 0x58bc, 0x58d2
-|  | | |    ;-- case 4:                                                ; from 0x58d2
+|  | | |    ;-- default:                                               ; from 0x58d2
 |  | | |    0x00003cb9      call sym.imp.abort                         ; void abort(void)
 |  | | |    ; CODE XREF from main @ 0x3cb7
 |  `------> 0x00003cbe      mov edi, 1                                 ; int fd
@@ -3281,20 +3281,20 @@ f~case.
 EOF
 EXPECT=<<EOF
 0x004004d8 1 switch.0x004004d8
-0x004004df 1 case.0x4004d8.1
 0x004004df 1 case.0x4004d8.2
 0x004004df 1 case.0x4004d8.3
-0x004004e6 1 case.0x4004d8.0
-0x004004ed 1 case.0x4004d8.4
-0x004004f4 1 case.0x4004d8.5
-0x004004fb 1 case.0x4004d8.6
-0x00400502 1 case.0x4004d8.7
-0x00400502 1 case.0x4004d8.9
+0x004004df 1 case.0x4004d8.4
+0x004004e6 1 case.0x4004d8.1
+0x004004ed 1 case.0x4004d8.5
+0x004004f4 1 case.0x4004d8.6
+0x004004fb 1 case.0x4004d8.7
+0x00400502 1 case.0x4004d8.8
+0x00400502 1 case.0x4004d8.10
 0x00400502 1 case.default.0x4004d8
-0x00400509 1 case.0x4004d8.8
-0x00400510 1 case.0x4004d8.10
-0x00400517 1 case.0x4004d8.11
-0x0040051e 1 case.0x4004d8.12
+0x00400509 1 case.0x4004d8.9
+0x00400510 1 case.0x4004d8.11
+0x00400517 1 case.0x4004d8.12
+0x0040051e 1 case.0x4004d8.13
 EOF
 RUN
 
@@ -3307,20 +3307,20 @@ f~case.
 EOF
 EXPECT=<<EOF
 0x004004c8 1 switch.0x004004c8
-0x004004cf 1 case.0x4004c8.1
 0x004004cf 1 case.0x4004c8.2
 0x004004cf 1 case.0x4004c8.3
-0x004004d6 1 case.0x4004c8.0
-0x004004dd 1 case.0x4004c8.4
-0x004004e4 1 case.0x4004c8.5
-0x004004eb 1 case.0x4004c8.6
-0x004004f2 1 case.0x4004c8.7
-0x004004f2 1 case.0x4004c8.9
+0x004004cf 1 case.0x4004c8.4
+0x004004d6 1 case.0x4004c8.1
+0x004004dd 1 case.0x4004c8.5
+0x004004e4 1 case.0x4004c8.6
+0x004004eb 1 case.0x4004c8.7
+0x004004f2 1 case.0x4004c8.8
+0x004004f2 1 case.0x4004c8.10
 0x004004f2 1 case.default.0x4004c8
-0x004004f9 1 case.0x4004c8.8
-0x00400500 1 case.0x4004c8.10
-0x00400507 1 case.0x4004c8.11
-0x0040050e 1 case.0x4004c8.12
+0x004004f9 1 case.0x4004c8.9
+0x00400500 1 case.0x4004c8.11
+0x00400507 1 case.0x4004c8.12
+0x0040050e 1 case.0x4004c8.13
 EOF
 RUN
 
@@ -3334,19 +3334,19 @@ EOF
 EXPECT=<<EOF
 0x140001023 1 switch.0x140001023
 0x140004b01 1 switch.0x140004b01
-0x140001025 1 case.0x140001023.0
-0x140001038 1 case.0x140001023.1
+0x140001025 1 case.0x140001023.1
 0x140001038 1 case.0x140001023.2
 0x140001038 1 case.0x140001023.3
-0x14000104b 1 case.0x140001023.4
-0x14000105e 1 case.0x140001023.5
-0x140001071 1 case.0x140001023.6
-0x140001084 1 case.0x140001023.8
-0x140001097 1 case.0x140001023.10
-0x1400010aa 1 case.0x140001023.11
-0x1400010bd 1 case.0x140001023.12
-0x1400010d0 1 case.0x140001023.7
-0x1400010d0 1 case.0x140001023.9
+0x140001038 1 case.0x140001023.4
+0x14000104b 1 case.0x140001023.5
+0x14000105e 1 case.0x140001023.6
+0x140001071 1 case.0x140001023.7
+0x140001084 1 case.0x140001023.9
+0x140001097 1 case.0x140001023.11
+0x1400010aa 1 case.0x140001023.12
+0x1400010bd 1 case.0x140001023.13
+0x1400010d0 1 case.0x140001023.8
+0x1400010d0 1 case.0x140001023.10
 0x1400010d0 1 case.default.0x140001023
 0x140004a40 1 case.default.0x140004b01
 0x140004b47 1 case.0x140004b01.0
@@ -3378,42 +3378,42 @@ e asm.lines = false
 pdf~case
 EOF
 EXPECT=<<EOF
-0x140001012      0f871a010000   ja case.0x140001034.2
+0x140001012      0f871a010000   ja case.0x140001034.3
 0x140001034      ffe1           jmp rcx                                ; switch table (99 cases) at 0x140001148
-;-- case 0:                                                            ; from 0x140001034
-0x140001036      488d0dd31100.  lea rcx, str.case_1                    ; 0x140002210 ; "case 1"
 ;-- case 1:                                                            ; from 0x140001034
+0x140001036      488d0dd31100.  lea rcx, str.case_1                    ; 0x140002210 ; "case 1"
+;-- case 2:                                                            ; from 0x140001034
 0x14000104b      488d0dc61100.  lea rcx, str.case_2                    ; 0x140002218 ; "case 2"
-;-- case 10:                                                           ; from 0x140001034
-0x140001060      488d0db91100.  lea rcx, str.case_11                   ; 0x140002220 ; "case 11"
-;-- case 12:                                                           ; from 0x140001034
-0x140001075      488d0dac1100.  lea rcx, str.case_13                   ; 0x140002228 ; "case 13"
-;-- case 14...15:                                                      ; from 0x140001034
-0x14000108a      488d0d9f1100.  lea rcx, str.case_15_and_16            ; 0x140002230 ; "case 15 and 16"
-;-- case 18:                                                           ; from 0x140001034
-0x14000109f      488d0d9a1100.  lea rcx, str.case_19                   ; 0x140002240 ; "case 19"
-;-- case 49:                                                           ; from 0x140001034
-0x1400010b4      488d0d8d1100.  lea rcx, str.case_50                   ; 0x140002248 ; "case 50"
-;-- case 29:                                                           ; from 0x140001034
-0x1400010c9      488d0d801100.  lea rcx, str.case_30                   ; 0x140002250 ; "case 30"
-;-- case 19:                                                           ; from 0x140001034
-0x1400010de      488d0d731100.  lea rcx, str.case_20                   ; 0x140002258 ; "case 20"
-;-- case 9:                                                            ; from 0x140001034
-0x1400010f3      488d0d661100.  lea rcx, str.case_10                   ; 0x140002260 ; "case 10"
-;-- case 98:                                                           ; from 0x140001034
-0x140001108      488d0d591100.  lea rcx, str.case_99                   ; 0x140002268 ; "case 99"
-;-- case 96:                                                           ; from 0x140001034
-0x14000111d      488d0d4c1100.  lea rcx, str.case_97                   ; 0x140002270 ; "case 97"
-;-- case 2...8:                                                        ; from 0x140001034
 ;-- case 11:                                                           ; from 0x140001034
+0x140001060      488d0db91100.  lea rcx, str.case_11                   ; 0x140002220 ; "case 11"
 ;-- case 13:                                                           ; from 0x140001034
-;-- case 17:                                                           ; from 0x140001034
-;-- case 21...28:                                                      ; from 0x140001034
-;-- case 30:                                                           ; from 0x140001034
-;-- case 31...48:                                                      ; from 0x140001034
+0x140001075      488d0dac1100.  lea rcx, str.case_13                   ; 0x140002228 ; "case 13"
+;-- case 15...16:                                                      ; from 0x140001034
+0x14000108a      488d0d9f1100.  lea rcx, str.case_15_and_16            ; 0x140002230 ; "case 15 and 16"
+;-- case 19:                                                           ; from 0x140001034
+0x14000109f      488d0d9a1100.  lea rcx, str.case_19                   ; 0x140002240 ; "case 19"
 ;-- case 50:                                                           ; from 0x140001034
-;-- case 51...95:                                                      ; from 0x140001034
+0x1400010b4      488d0d8d1100.  lea rcx, str.case_50                   ; 0x140002248 ; "case 50"
+;-- case 30:                                                           ; from 0x140001034
+0x1400010c9      488d0d801100.  lea rcx, str.case_30                   ; 0x140002250 ; "case 30"
+;-- case 20:                                                           ; from 0x140001034
+0x1400010de      488d0d731100.  lea rcx, str.case_20                   ; 0x140002258 ; "case 20"
+;-- case 10:                                                           ; from 0x140001034
+0x1400010f3      488d0d661100.  lea rcx, str.case_10                   ; 0x140002260 ; "case 10"
+;-- case 99:                                                           ; from 0x140001034
+0x140001108      488d0d591100.  lea rcx, str.case_99                   ; 0x140002268 ; "case 99"
 ;-- case 97:                                                           ; from 0x140001034
+0x14000111d      488d0d4c1100.  lea rcx, str.case_97                   ; 0x140002270 ; "case 97"
+;-- case 3...9:                                                        ; from 0x140001034
+;-- case 12:                                                           ; from 0x140001034
+;-- case 14:                                                           ; from 0x140001034
+;-- case 18:                                                           ; from 0x140001034
+;-- case 22...29:                                                      ; from 0x140001034
+;-- case 31:                                                           ; from 0x140001034
+;-- case 32...49:                                                      ; from 0x140001034
+;-- case 51:                                                           ; from 0x140001034
+;-- case 52...96:                                                      ; from 0x140001034
+;-- case 98:                                                           ; from 0x140001034
 EOF
 RUN
 
@@ -3426,38 +3426,109 @@ f~case.
 EOF
 EXPECT=<<EOF
 0x140001023 1 switch.0x140001023
+0x140001f5b 1 switch.0x140001f5b
 0x1400095b4 1 switch.0x1400095b4
+0x140009670 1 switch.0x140009670
+0x1400097b8 1 switch.0x1400097b8
 0x14000c185 1 switch.0x14000c185
-0x140001025 1 case.0x140001023.0
-0x140001038 1 case.0x140001023.1
+0x140001025 1 case.0x140001023.1
 0x140001038 1 case.0x140001023.2
 0x140001038 1 case.0x140001023.3
-0x14000104b 1 case.0x140001023.4
-0x14000105e 1 case.0x140001023.5
-0x140001071 1 case.0x140001023.6
-0x140001084 1 case.0x140001023.8
-0x140001097 1 case.0x140001023.10
-0x1400010aa 1 case.0x140001023.11
-0x1400010bd 1 case.0x140001023.12
-0x1400010d0 1 case.0x140001023.7
-0x1400010d0 1 case.0x140001023.9
+0x140001038 1 case.0x140001023.4
+0x14000104b 1 case.0x140001023.5
+0x14000105e 1 case.0x140001023.6
+0x140001071 1 case.0x140001023.7
+0x140001084 1 case.0x140001023.9
+0x140001097 1 case.0x140001023.11
+0x1400010aa 1 case.0x140001023.12
+0x1400010bd 1 case.0x140001023.13
+0x1400010d0 1 case.0x140001023.8
+0x1400010d0 1 case.0x140001023.10
 0x1400010d0 1 case.default.0x140001023
-0x1400095b6 1 case.0x1400095b4.0
-0x1400095bd 1 case.0x1400095b4.1
-0x1400095c4 1 case.0x1400095b4.2
-0x1400095cb 1 case.0x1400095b4.3
-0x1400095d2 1 case.0x1400095b4.4
-0x1400095d9 1 case.0x1400095b4.5
-0x1400095e0 1 case.0x1400095b4.6
-0x1400095e7 1 case.0x1400095b4.7
-0x1400095ee 1 case.0x1400095b4.8
-0x1400095f5 1 case.0x1400095b4.9
-0x1400095fc 1 case.0x1400095b4.10
-0x140009603 1 case.0x1400095b4.11
-0x14000960a 1 case.0x1400095b4.12
-0x140009611 1 case.0x1400095b4.13
-0x140009618 1 case.0x1400095b4.14
+0x140001e3e 1 case.default.0x140001f5b
+0x140001f60 1 case.0x140001f5b.15
+0x140001f64 1 case.0x140001f5b.7
+0x140001f67 1 case.0x140001f5b.3
+0x140001f6b 1 case.0x140001f5b.1
+0x140001f6e 1 case.0x140001f5b.0
+0x140001f70 1 case.0x140001f5b.12
+0x140001f74 1 case.0x140001f5b.4
+0x140001f78 1 case.0x140001f5b.9
+0x140001f80 1 case.0x140001f5b.13
+0x140001f84 1 case.0x140001f5b.5
+0x140001f90 1 case.0x140001f5b.14
+0x140001f94 1 case.0x140001f5b.6
+0x140001f97 1 case.0x140001f5b.2
+0x140001f9c 1 case.0x140001f5b.8
+0x140001fa0 1 case.0x140001f5b.11
+0x140001fb0 1 case.0x140001f5b.10
+0x140001fb8 1 case.0x140001f5b.16
+0x1400095b6 1 case.0x1400095b4.1
+0x1400095bd 1 case.0x1400095b4.2
+0x1400095c4 1 case.0x1400095b4.3
+0x1400095cb 1 case.0x1400095b4.4
+0x1400095d2 1 case.0x1400095b4.5
+0x1400095d9 1 case.0x1400095b4.6
+0x1400095e0 1 case.0x1400095b4.7
+0x1400095e7 1 case.0x1400095b4.8
+0x1400095ee 1 case.0x1400095b4.9
+0x1400095f5 1 case.0x1400095b4.10
+0x1400095fc 1 case.0x1400095b4.11
+0x140009603 1 case.0x1400095b4.12
+0x14000960a 1 case.0x1400095b4.13
+0x140009611 1 case.0x1400095b4.14
+0x140009618 1 case.0x1400095b4.15
 0x14000961d 1 case.default.0x1400095b4
+0x140009672 1 case.0x140009670.0
+0x140009681 1 case.0x140009670.1
+0x140009690 1 case.0x140009670.2
+0x14000969f 1 case.0x140009670.3
+0x1400096ae 1 case.0x140009670.4
+0x1400096ba 1 case.0x140009670.5
+0x1400096c6 1 case.0x140009670.6
+0x1400096d2 1 case.0x140009670.7
+0x1400096de 1 case.0x140009670.8
+0x1400096ea 1 case.0x140009670.9
+0x1400096f6 1 case.0x140009670.10
+0x140009702 1 case.0x140009670.11
+0x14000970e 1 case.0x140009670.12
+0x14000971a 1 case.0x140009670.13
+0x140009726 1 case.0x140009670.14
+0x140009732 1 case.0x140009670.15
+0x140009735 1 case.default.0x140009670
+0x1400097ba 1 case.0x1400097b8.0
+0x1400097ba 1 case.0x140009670.16
+0x1400097c1 1 case.0x1400097b8.1
+0x1400097c1 1 case.0x140009670.17
+0x1400097c8 1 case.0x1400097b8.2
+0x1400097c8 1 case.0x140009670.18
+0x1400097cf 1 case.0x1400097b8.3
+0x1400097cf 1 case.0x140009670.19
+0x1400097d6 1 case.0x1400097b8.4
+0x1400097d6 1 case.0x140009670.20
+0x1400097dd 1 case.0x1400097b8.5
+0x1400097dd 1 case.0x140009670.21
+0x1400097e4 1 case.0x1400097b8.6
+0x1400097e4 1 case.0x140009670.22
+0x1400097eb 1 case.0x1400097b8.7
+0x1400097eb 1 case.0x140009670.23
+0x1400097f2 1 case.0x1400097b8.8
+0x1400097f2 1 case.0x140009670.24
+0x1400097f9 1 case.0x1400097b8.9
+0x1400097f9 1 case.0x140009670.25
+0x140009800 1 case.0x1400097b8.10
+0x140009800 1 case.0x140009670.26
+0x140009807 1 case.0x1400097b8.11
+0x140009807 1 case.0x140009670.27
+0x14000980e 1 case.0x1400097b8.12
+0x14000980e 1 case.0x140009670.28
+0x140009815 1 case.0x1400097b8.13
+0x140009815 1 case.0x140009670.29
+0x14000981c 1 case.0x1400097b8.14
+0x14000981c 1 case.0x140009670.30
+0x140009823 1 case.0x1400097b8.15
+0x140009823 1 case.0x140009670.31
+0x140009826 1 case.default.0x1400097b8
 0x14000c100 1 case.default.0x14000c185
 0x14000c1d0 1 case.0x14000c185.0
 0x14000c1d1 1 case.0x14000c185.2
@@ -3677,5 +3748,30 @@ EXPECT=<<EOF
 |           0x00000041      488d442404     rax = var_4h
 |           0x00000046      488d4508       rax = arg_8h
 |           0x0000004a      488d45f8       rax = var_8h
+EOF
+RUN
+
+NAME=gcc_9.2.0_64 switch/case flags
+FILE=bins/elf/dectest64
+CMDS=<<EOF
+aaa
+f~switch
+f~case.
+EOF
+EXPECT=<<EOF
+0x004011fd 1 switch.0x004011fd
+0x0040138d 1 switch.0x0040138d
+0x0040120a 1 case.0x4011fd.0
+0x0040121b 1 case.0x4011fd.1
+0x0040122c 1 case.0x4011fd.2
+0x0040123d 1 case.0x4011fd.3
+0x0040124e 1 case.0x4011fd.4
+0x00401270 1 case.default.0x4011fd
+0x00401398 1 case.0x40138d.0
+0x004013a9 1 case.0x40138d.1
+0x004013ba 1 case.0x40138d.2
+0x004013cb 1 case.0x40138d.3
+0x004013dc 1 case.0x40138d.4
+0x004013fe 1 case.default.0x40138d
 EOF
 RUN

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2020 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2019-2021 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 #include <r_hash.h>
@@ -272,11 +272,13 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	bb->jump = bbi->jump;
 	bb->fail = bbi->fail;
 	bb->parent_stackptr = bbi->stackptr;
+	bb->switch_op = bbi->switch_op;
 
 	// resize the first block
 	r_anal_block_set_size (bbi, addr - bbi->addr);
 	bbi->jump = addr;
 	bbi->fail = UT64_MAX;
+	bbi->switch_op = NULL;
 	r_anal_block_update_hash (bbi);
 
 	// insert the second block into the tree
@@ -345,6 +347,14 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	a->size += b->size;
 	a->jump = b->jump;
 	a->fail = b->fail;
+	if (a->switch_op) {
+		r_anal_switch_op_free (a->switch_op);
+		if (a->anal->verbose) {
+			eprintf ("Dropping switch table at 0x%" PFMT64x " of block at 0x%" PFMT64x "\n", a->switch_op->addr, a->addr);
+		}
+	}
+	a->switch_op = b->switch_op;
+	b->switch_op = NULL;
 	r_anal_block_update_hash (a);
 
 	// kill b completely
