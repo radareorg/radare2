@@ -247,6 +247,7 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		}
 	}
 	bool relative_to_strings = false;
+	ut8* string_origin;
 	if (hdr->n_sections > 0) {
 		result->sections = R_NEWS0 (RCoreSymCacheElementSection, hdr->n_sections);
 		if (!result->sections) {
@@ -278,11 +279,8 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			if (bits == 32) {
 				cursor += word_size;
 			}
-			if (relative_to_strings) {
-				sect->name = str_dup_safe (b, b + start_of_strings + (size_t)sect_name_off, end);
-			} else {
-				sect->name = str_dup_safe (b, sect_start + (size_t)sect_name_off, end);
-			}
+			string_origin = relative_to_strings? b + start_of_strings : sect_start;
+			sect->name = str_dup_safe (b, string_origin + (size_t)sect_name_off, end);
 		}
 	}
 	if (hdr->n_symbols) {
@@ -300,20 +298,14 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			size_t name_off = r_read_le32 (cursor + 0xc);
 			size_t mangled_name_off = r_read_le32 (cursor + 0x10);
 			sym->unk2 = (st32)r_read_le32 (cursor + 0x14);
-			if (relative_to_strings) {
-				sym->name = str_dup_safe (b, b + start_of_strings + name_off, end);
-			} else {
-				sym->name = str_dup_safe (b, cursor + name_off, end);
-			}
+			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			sym->name = str_dup_safe (b, string_origin + name_off, end);
 			if (!sym->name) {
 				cursor += R_CS_EL_SIZE_SYM;
 				continue;
 			}
-			if (relative_to_strings) {
-				sym->mangled_name = str_dup_safe (b, b + start_of_strings + mangled_name_off, end);
-			} else {
-				sym->mangled_name = str_dup_safe (b, cursor + mangled_name_off, end);
-			}
+			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			sym->mangled_name = str_dup_safe (b, string_origin + mangled_name_off, end);
 			if (!sym->mangled_name) {
 				cursor += R_CS_EL_SIZE_SYM;
 				continue;
@@ -339,29 +331,20 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			size_t file_name_off = r_read_le32 (cursor + 0x18);
 			lsym->flc.line = r_read_le32 (cursor + 0x1c);
 			lsym->flc.col = r_read_le32 (cursor + 0x20);
-			if (relative_to_strings) {
-				lsym->sym.name = str_dup_safe (b, b + start_of_strings + name_off, end);
-			} else {
-				lsym->sym.name = str_dup_safe (b, cursor + name_off, end);
-			}
+			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			lsym->sym.name = str_dup_safe (b, string_origin + name_off, end);
 			if (!lsym->sym.name) {
 				cursor += R_CS_EL_SIZE_LSYM;
 				continue;
 			}
-			if (relative_to_strings) {
-				lsym->sym.mangled_name = str_dup_safe (b, b + start_of_strings + mangled_name_off, end);
-			} else {
-				lsym->sym.mangled_name = str_dup_safe (b, cursor + mangled_name_off, end);
-			}
+			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			lsym->sym.mangled_name = str_dup_safe (b, string_origin + mangled_name_off, end);
 			if (!lsym->sym.mangled_name) {
 				cursor += R_CS_EL_SIZE_LSYM;
 				continue;
 			}
-			if (relative_to_strings) {
-				lsym->flc.file = str_dup_safe (b, b + start_of_strings + file_name_off, end);
-			} else {
-				lsym->flc.file = str_dup_safe (b, cursor + file_name_off, end);
-			}
+			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			lsym->flc.file = str_dup_safe (b, string_origin + file_name_off, end);
 			if (!lsym->flc.file) {
 				cursor += R_CS_EL_SIZE_LSYM;
 				continue;
@@ -384,11 +367,8 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 			size_t file_name_off = r_read_le32 (cursor + 8);
 			info->flc.line = r_read_le32 (cursor + 0xc);
 			info->flc.col = r_read_le32 (cursor + 0x10);
-			if (relative_to_strings) {
-				info->flc.file = str_dup_safe (b, b + start_of_strings + file_name_off, end);
-			} else {
-				info->flc.file = str_dup_safe (b, cursor + file_name_off, end);
-			}
+			string_origin = relative_to_strings? b + start_of_strings : cursor;
+			info->flc.file = str_dup_safe (b, string_origin + file_name_off, end);
 			if (!info->flc.file) {
 				break;
 			}
