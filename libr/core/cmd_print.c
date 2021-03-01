@@ -1383,13 +1383,10 @@ static void cmd_pfo_help(RCore *core) {
 		NULL
 	};
 
-	char buf[PATH_MAX];
-	snprintf (buf, sizeof (buf), R_JOIN_3_PATHS ("%s", R2_SDB_FORMAT, ""),
-		r_sys_prefix (NULL));
-
+	char *buf = r_str_newf ("%s"R_SYS_DIR"%s", R2_SDB_FORMAT, r_sys_prefix (NULL));
 	help[6] = buf;
-
 	r_core_cmd_help (core, help);
+	free (buf);
 }
 
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
