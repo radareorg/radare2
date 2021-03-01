@@ -36,6 +36,12 @@ static void r_esil_dummy_fini(RAnalEsil *esil, void *user) {
 	if (op && op->code == esil_dummy_operation) {
 		r_anal_esil_del_op (esil, "dummy_op");
 	}
+	if (r_anal_esil_get_interrupt (esil, 1337) == esil_dummy_interrupt_handler) {
+		r_anal_esil_del_interrupt (esil, 1337);
+	}
+	if (r_anal_esil_get_syscall (esil, 1337) == esil_dummy_syscall_handler) {
+		r_anal_esil_del_syscall (esil, 1337);
+	}
 	eprintf ("Dummy: Deactivated\n");
 }
 
