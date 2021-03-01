@@ -78,7 +78,7 @@ typedef struct r_coresym_cache_element_t {
 	RCoreSymCacheElementLineInfo *line_info;
 } RCoreSymCacheElement;
 
-R_API RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut64 off, int bits);
+R_API RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut64 off, int bits, R_OWN char * file_name);
 R_API void r_coresym_cache_element_free(RCoreSymCacheElement *element);
 R_API ut64 r_coresym_cache_element_pa2va(RCoreSymCacheElement *element, ut64 pa);
 
