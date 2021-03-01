@@ -179,7 +179,7 @@ static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSy
 	return sym;
 }
 
-static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, int bits, char *file_name) {
+static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, int bits, R_OWN char *file_name) {
 	D eprintf ("Dragons at 0x%x\n", off);
 	ut64 size = r_buf_size (buf);
 	if (off >= size) {
