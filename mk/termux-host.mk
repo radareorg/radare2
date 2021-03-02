@@ -3,6 +3,7 @@
 #RANLIB=ndk-ranlib
 USERCC=gcc -fPIC -fPIE
 CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=${LD} -r --whole-archive
 
 ONELIB=0
 OSTYPE=android
