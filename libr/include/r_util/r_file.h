@@ -24,6 +24,7 @@ R_API void r_file_mmap_free(RMmap *m);
 R_API bool r_file_chmod(const char *file, const char *mod, int recursive);
 R_API char *r_file_temp(const char *prefix);
 R_API char *r_file_path(const char *bin);
+R_API char *r_file_binsh(void);
 R_API const char *r_file_basename(const char *path);
 R_API char *r_file_dirname(const char *path);
 R_API char *r_file_abspath_rel(const char *cwd, const char *file);
