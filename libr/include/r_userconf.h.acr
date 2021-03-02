@@ -14,6 +14,7 @@
 
 #ifdef R_MESON_VERSION
 #define R2_PREFIX "@PREFIX@"
+#define R2_ETCDIR "@ETCDIR@"
 #define R2_LIBDIR "@LIBDIR@"
 #define R2_INCDIR "@INCLUDEDIR@"
 #define R2_DATDIR "@DATADIR@"
@@ -31,6 +32,7 @@
 #else
 #if __WINDOWS__ || _MSC_VER
 #define R2_PREFIX "."
+#define R2_ETCDIR "etc"
 #define R2_LIBDIR "lib"
 #define R2_INCDIR "include\\libr"
 #define R2_DATDIR "share"
@@ -40,6 +42,7 @@
 #define R2_BINDINGS "lib\\bindings"
 #else
 #define R2_PREFIX "@PREFIX@"
+#define R2_ETCDIR "@ETCDIR@"
 #define R2_LIBDIR "@LIBDIR@"
 #define R2_INCDIR "@INCLUDEDIR@/libr"
 #define R2_DATDIR "@DATADIR@"

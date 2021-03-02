@@ -11,10 +11,6 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_magic);
 
-#ifndef MAGICFILE
-#define MAGICFILE "/etc/magic"
-#endif
-
 #ifdef R_API
 
 #ifdef __EMX__
