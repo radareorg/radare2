@@ -234,7 +234,9 @@ R_API int r_sandbox_system(const char *x, int n) {
 #endif
 	}
 	char *bin_sh = r_file_binsh ();
-	return execl (bin_sh, "sh", "-c", x, (const char*)NULL);
+	int rc = execl (bin_sh, "sh", "-c", x, (const char*)NULL);
+	free (bin_sh);
+	return rc;
 #else
 	#include <spawn.h>
 	if (n && !strchr (x, '|')) {
