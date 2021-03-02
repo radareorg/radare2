@@ -274,6 +274,19 @@ R_API char *r_file_abspath(const char *file) {
 	return NULL;
 }
 
+R_API char *r_file_binsh(void) {
+	char *bin_sh = r_sys_getenv ("SHELL");
+	if (R_STR_ISEMPTY (bin_sh)) {
+		free (bin_sh);
+		bin_sh = r_file_path("sh");
+		if (R_STR_ISEMPTY (bin_sh)) {
+			free (bin_sh);
+			bin_sh = strdup ("/bin/sh");
+		}
+	}
+	return bin_sh;
+}
+
 R_API char *r_file_path(const char *bin) {
 	r_return_val_if_fail (bin, NULL);
 	char *file = NULL;
