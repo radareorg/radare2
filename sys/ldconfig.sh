@@ -1,4 +1,10 @@
 #!/bin/sh
+if [ "$(uname)" != Linux ]; then
+	exit 0
+fi
+if [ "$(uname -o)" = Android ]; then
+	exit 0
+fi
 LD=/etc/ld.so.conf.d
 if test -w $LD ; then
 	if type ldconfig > /dev/null 2>&1 ; then
