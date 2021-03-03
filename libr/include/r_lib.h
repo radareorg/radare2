@@ -94,6 +94,7 @@ typedef struct r_lib_t {
 	char *symnamefunc;
 	RList /*RLibPlugin*/ *plugins;
 	RList /*RLibHandler*/ *handlers;
+	bool ignore_version;
 } RLib;
 
 #ifdef R_API
