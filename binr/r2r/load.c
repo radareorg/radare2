@@ -600,9 +600,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		const char *subname;
 		RStrBuf subpath;
 		r_strbuf_init (&subpath);
-		char *sa = r_sys_getenv ("R2R_SKIP_ARCHOS");
-		bool skip_archos = (sa && !strcmp (sa, "1"));
-		free (sa);
+		const bool skip_archos = r_sys_getenv_asbool ("R2R_SKIP_ARCHOS");
 		bool ret = true;
 		r_list_foreach (dir, it, subname) {
 			if (*subname == '.') {
