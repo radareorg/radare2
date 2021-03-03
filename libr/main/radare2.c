@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #define USE_THREADS 1
 #define ALLOW_THREADED 0
@@ -153,8 +153,9 @@ static int main_help(int line) {
 		" R2_USER_ZIGNS " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
 		" R2_CFG_NEWSHELL sets cfg.newshell=true\n"
-		" R2_DEBUG      if defined, show error messages and crash signal\n"
-		" R2_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
+		" R2_DEBUG      if defined, show error messages and crash signal.\n"
+		" R2_DEBUG_ASSERT=1 set a breakpoint when hitting an assert.\n"
+		" R2_IGNVER=1   load plugins ignoring the specified version. (be careful)\n"
 		" R2_MAGICPATH " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		" R2_RCFILE    ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC

@@ -141,7 +141,7 @@ err:
 		if (next) {
 			*next = 0;
 		}
-		char *libpath = r_str_newf ("%s/%s." R_LIB_EXT, path0, libname);
+		char *libpath = r_str_newf ("%s"R_SYS_DIR"%s." R_LIB_EXT, path0, libname);
 		if (r_file_exists (libpath)) {
 			free (env);
 			return libpath;
@@ -158,6 +158,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	RLib *lib = R_NEW (RLib);
 	if (lib) {
 		__has_debug = r_sys_getenv_asbool ("R2_DEBUG");
+		lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
 		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
@@ -264,7 +265,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	}
 
 	if (__already_loaded (lib, file)) {
-		eprintf("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
+		eprintf ("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
 		return -1;
 	}
 
@@ -290,9 +291,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	}
 
 	int res = r_lib_open_ptr (lib, file, handler, stru);
-	if (strf) {
-		free (stru);
-	}
+	free (stru);
 	return res;
 }
 
@@ -310,7 +309,7 @@ static char *major_minor(const char *s) {
 
 R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
 	r_return_val_if_fail (lib && file && stru, -1);
-	if (stru->version) {
+	if (stru->version && !lib->ignore_version) {
 		char *mm0 = major_minor (stru->version);
 		char *mm1 = major_minor (R2_VERSION);
 		bool mismatch = strcmp (mm0, mm1);
