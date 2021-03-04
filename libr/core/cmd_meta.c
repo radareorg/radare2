@@ -740,21 +740,23 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '2':
 	case '4':
 	case '8':
-		if (type != 'z' && !input[1] && !core->tmpseek) {
-			r_meta_print_list_all (core->anal, type, 0, NULL);
-			break;
-		}
-		if (input[1] == '1') {
-			input--;
-		} else if (input[1] == '2') {
-			input--;
-		} else if (input[1] == '4') {
-			input--;
-		} else if (input[1] == '8') {
-			input--;
+		if (type == 'd') {  // "Cd4"
+			switch (input[1]) {
+			case '1':
+			case '2':
+			case '4':
+			case '8':
+				input--;
+				break;
+			}
 		}
 		if (type == 'z') {
 			type = 's';
+		} else {
+			if (!input[1] && !core->tmpseek) {
+				r_meta_print_list_all (core->anal, type, 0, NULL);
+				break;
+			}
 		}
 		int len = (!input[1] || input[1] == ' ') ? 2 : 3;
 		if (strlen (input) > len) {
