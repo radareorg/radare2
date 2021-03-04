@@ -112,6 +112,7 @@ typedef struct r_io_t {
 	RSkyline cache_skyline;
 	ut8 *write_mask;
 	int write_mask_len;
+	ut64 mask;
 	RIOUndo undo;
 	SdbList *plugins;
 	char *runprofile;

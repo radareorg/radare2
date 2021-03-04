@@ -287,6 +287,9 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (len == 0) {
 		return false;
 	}
+	if (io->mask) {
+		addr &= io->mask;
+	}
 	bool ret = (io->va)
 		? r_io_vread_at_mapped (io, addr, buf, len)
 		: r_io_pread_at (io, addr, buf, len) > 0;
