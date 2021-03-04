@@ -704,3 +704,21 @@ EXPECT=<<EOF
 0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
 EOF
 RUN
+
+NAME=Cd4
+FILE=-
+CMDS=<<EOF
+s+4
+pd+1
+Cd4
+pd+1
+e asm.meta=0
+pd+1
+EOF
+EXPECT=<<EOF
+            0x00000004      0000           add byte [rax], al
+            0x00000004      .dword 0x00000000
+.data: 4
+            0x00000004      00000000       .hex 00000000
+EOF
+RUN
