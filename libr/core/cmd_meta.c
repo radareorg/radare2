@@ -736,6 +736,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '\0':
 	case 'g':
 	case 'a':
+	case '1':
 	case '2':
 	case '4':
 	case '8':
@@ -743,7 +744,9 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			r_meta_print_list_all (core->anal, type, 0, NULL);
 			break;
 		}
-		if (input[1] == '2') {
+		if (input[1] == '1') {
+			input--;
+		} else if (input[1] == '2') {
 			input--;
 		} else if (input[1] == '4') {
 			input--;
