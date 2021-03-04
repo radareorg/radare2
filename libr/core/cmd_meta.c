@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2020 - pancake */
+/* radare2 - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_anal.h"
 #include "r_bin.h"
@@ -736,13 +736,27 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case '\0':
 	case 'g':
 	case 'a':
+	case '1':
+	case '2':
+	case '4':
 	case '8':
-		if (type != 'z' && !input[1] && !core->tmpseek) {
-			r_meta_print_list_all (core->anal, type, 0, NULL);
-			break;
+		if (type == 'd') {  // "Cd4"
+			switch (input[1]) {
+			case '1':
+			case '2':
+			case '4':
+			case '8':
+				input--;
+				break;
+			}
 		}
 		if (type == 'z') {
 			type = 's';
+		} else {
+			if (!input[1] && !core->tmpseek) {
+				r_meta_print_list_all (core->anal, type, 0, NULL);
+				break;
+			}
 		}
 		int len = (!input[1] || input[1] == ' ') ? 2 : 3;
 		if (strlen (input) > len) {
