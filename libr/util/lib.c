@@ -291,7 +291,9 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	}
 
 	int res = r_lib_open_ptr (lib, file, handler, stru);
-	free (stru);
+	if (strf) {
+		free (stru);
+	}
 	return res;
 }
 
