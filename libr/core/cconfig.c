@@ -2111,9 +2111,7 @@ static bool cb_io_cache(void *user, void *data) {
 static bool cb_ioaslr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (node->i_value != core->io->aslr) {
-		core->io->aslr = node->i_value;
-	}
+	core->io->aslr = (bool)node->i_value;
 	return true;
 }
 
@@ -2122,7 +2120,7 @@ static bool cb_io_pava(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
-		eprintf ("WARNING: You may probably want to disable io.va too\n");
+		eprintf ("WARNING: You may probably want to disable io.va too.\n");
 	}
 	return true;
 }
@@ -2149,21 +2147,21 @@ static bool cb_iova(void *user, void *data) {
 static bool cb_ioff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->io->ff = node->i_value;
+	core->io->ff = (bool)node->i_value;
 	return true;
 }
 
 static bool cb_io_oxff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->io->Oxff = node->i_value;
+	core->io->Oxff = (ut8)node->i_value;
 	return true;
 }
 
 static bool cb_ioautofd(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->io->autofd = node->i_value;
+	core->io->autofd = (bool)node->i_value;
 	return true;
 }
 

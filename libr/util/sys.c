@@ -514,8 +514,9 @@ err_r_sys_get_env:
 }
 
 R_API bool r_sys_getenv_asbool(const char *key) {
+	r_return_val_if_fail (key, false);
 	char *env = r_sys_getenv (key);
-	const bool res = (env && *env == '1');
+	const bool res = env && r_str_is_true (env);
 	free (env);
 	return res;
 }

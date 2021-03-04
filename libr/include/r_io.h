@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2020 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2021 - condret, pancake */
 
 #ifndef R2_IO_H
 #define R2_IO_H
@@ -83,26 +83,26 @@ typedef struct r_io_undo_t {
 } RIOUndo;
 
 typedef struct r_io_undo_w_t {
-	int set;
+	bool set;
 	ut64 off;
 	ut8 *o;   /* old data */
 	ut8 *n;   /* new data */
-	int len;  /* length */
+	size_t len;  /* length */
 } RIOUndoWrite;
 
 typedef struct r_io_t {
 	struct r_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
 	int bits;
-	int va;		//all of this config stuff must be in 1 int
-	int ff;
-	int Oxff;
+	int va;	// keep it as int, value can be 0, 1 or 2
+	bool ff;
+	ut8 Oxff; // which printable char to use instead of 0xff for unallocated bytes
 	size_t addrbytes;
-	int aslr;
-	int autofd;
-	int cached;
+	bool aslr;
+	bool autofd;
+	ut32 cached; // uses R_PERM_RWX
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
-	int p_cache;
+	ut32 p_cache; // uses 1, 2, 4.. probably R_PERM_RWX :D
 	RIDPool *map_ids;
 	RPVector maps; //from tail backwards maps with higher priority are found
 	RSkyline map_skyline; // map parts that are not covered by others
