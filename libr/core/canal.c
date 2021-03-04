@@ -1738,7 +1738,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 							r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
 							"color=\"black\", fontname=\"%s\","
 							" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-							bbi->addr, difftype, diffstr, font, fcn->name,
+							bbi->addr, difftype, font, diffstr, fcn->name,
 							bbi->addr);
 						}
 						free (diffstr);
@@ -1762,7 +1762,7 @@ static int core_anal_graph_construct_nodes(RCore *core, RAnalFunction *fcn, int 
 							r_cons_printf(" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
 									"color=\"black\", fontname=\"%s\","
 									" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-									bbi->addr, difftype, str, font, fcn->name, bbi->addr);
+									bbi->addr, difftype, font, str, fcn->name, bbi->addr);
 						}
 					}
 					r_diff_free (d);
