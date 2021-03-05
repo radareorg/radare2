@@ -59,6 +59,7 @@ extern "C" {
 #define R_CONS_GREP_WORDS 10
 #define R_CONS_GREP_WORD_SIZE 64
 #define R_CONS_GREP_TOKENS 64
+#define R_CONS_GREP_COUNT 10
 
 R_LIB_VERSION_HEADER(r_cons);
 
