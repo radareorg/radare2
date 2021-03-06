@@ -2309,7 +2309,7 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 				if (!*++glob) {
 					return true;
 				}
-				while(*str) {
+				while (*str) {
 					if (*glob == *str) {
 						break;
 					}
@@ -2318,7 +2318,6 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 				break;
 			case '$':
 				return (*++glob == '\x00');
-				break;
 			case '?':
 				str++;
 				glob++;
@@ -2331,6 +2330,9 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 				glob++;
 		}
 	}
+	while (*glob == '*') {
+    	++glob;
+    }
 	return ((*glob == '$' && *glob++ == '\x00')  || (*glob == '\x00'));
 }
 
