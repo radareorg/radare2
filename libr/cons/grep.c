@@ -72,9 +72,10 @@ R_API void r_cons_grep_help(void) {
 
 static void parse_grep_expression(const char *str) {
 	static char buf[R_CONS_GREP_BUFSIZE], *ptrs[R_CONS_GREP_COUNT];
-	int wlen, len, ptrs_length, is_range, num_is_parsed, fail = 0;
+	int wlen, len, is_range, num_is_parsed, fail = false;
 	char *ptr, *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
 	ut64 range_begin, range_end;
+	size_t ptrs_length;
 
 	if (!str || !*str) {
 		return;
@@ -115,7 +116,8 @@ static void parse_grep_expression(const char *str) {
 	grep->str = NULL;
 	bool first = true;
 	sorted_column = 0;
-	for (int i = 0; i < ptrs_length; i++) {
+	size_t i;
+	for (i = 0; i < ptrs_length; i++) {
 		ptr = ptrs[i];
 		end_ptr = ptr2 = ptr3 = NULL;
 		while (*ptr) {
@@ -226,7 +228,7 @@ static void parse_grep_expression(const char *str) {
 		ptr3 = strchr (ptr, ']');
 		is_range = 0;
 		num_is_parsed = 0;
-		fail = 0;
+		fail = false;
 		range_begin = range_end = -1;
 
 		if (ptr2 && ptr3) {
@@ -250,7 +252,7 @@ static void parse_grep_expression(const char *str) {
 				case ',':
 					for (; range_begin <= range_end; range_begin++) {
 						if (range_begin >= R_CONS_GREP_TOKENS) {
-							fail = 1;
+							fail = true;
 							break;
 						}
 						grep->tokens[range_begin] = 1;
@@ -258,7 +260,7 @@ static void parse_grep_expression(const char *str) {
 					}
 					// case of [n-]
 					if (*ptr2 == ']' && is_range && !num_is_parsed) {
-						num_is_parsed = 1;
+						num_is_parsed = true;
 						range_end = -1;
 					} else {
 						is_range = 0;
@@ -276,7 +278,7 @@ static void parse_grep_expression(const char *str) {
 						} else {
 							range_begin = range_end = r_num_get (cons->num, ptr2);
 						}
-						num_is_parsed = 1;
+						num_is_parsed = true;
 					}
 				}
 			}
