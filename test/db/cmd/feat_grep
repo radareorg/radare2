@@ -188,6 +188,8 @@ i~or~true
 i~&or,true
 i~or~ny[0]
 i~&or,ny[0]
+i~or[1]~any
+i~or[1]~:1
 EOF
 EXPECT=<<EOF
 1
@@ -198,6 +200,8 @@ iorw     true
 iorw     true
 format
 format
+any
+true
 EOF
 RUN
 
