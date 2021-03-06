@@ -373,7 +373,7 @@ static char *find_next_intgrep(char *cmd, const char *quotes) {
 			return (char *)p;
 		}
 		//twiddle unescape
-		memmove (p - 1, p, strlen (p) + 1);
+		r_str_cpy (p - 1, p);
 		cmd = p + 1;
 	} while (*cmd);
 	return NULL;
