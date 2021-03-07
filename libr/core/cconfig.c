@@ -2147,10 +2147,11 @@ static bool cb_ioff(void *user, void *data) {
 	return true;
 }
 
-static bool cb_io_mask(void *user, void *data) {
+static bool cb_iomask(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->mask = node->i_value;
+	core->flags->mask = node->i_value;
 	return true;
 }
 
@@ -3902,7 +3903,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("io.pcache.write", "false", &cb_iopcachewrite, "Enable write-cache");
 	SETCB ("io.pcache.read", "false", &cb_iopcacheread, "Enable read-cache");
 	SETCB ("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
-	SETICB ("io.mask", 0, &cb_io_mask, "Mask addresses before resolving as maps");
+	SETICB ("io.mask", 0, &cb_iomask, "Mask addresses before resolving as maps");
 	SETBPREF ("io.exec", "true", "See !!r2 -h~-x");
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB ("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");

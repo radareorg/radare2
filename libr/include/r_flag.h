@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-// TODO: rename to r_flag_XXX api
 R_LIB_VERSION_HEADER(r_flag);
 
 #define R_FLAG_NAME_SIZE 512
@@ -58,6 +57,7 @@ typedef struct r_flag_t {
 	HtPP *ht_name; /* hashmap key=item name, value=RFlagItem * */
 	PrintfCallback cb_printf;
 	RList *zones;
+	ut64 mask;
 } RFlag;
 
 /* compile time dependency */
