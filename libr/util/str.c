@@ -2297,7 +2297,7 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 		return true;
 	}
 	char* begin = strchr (glob, '^');
-	if (begin != NULL) {
+	if (begin) {
 		glob = ++begin;
 	}
 	while (*str) {
@@ -2305,35 +2305,33 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 			return true;
 		}
 		switch (*glob) {
-			case '*':
-				if (!*++glob) {
-					return true;
-				}
-				while (*str) {
-					if (*glob == *str) {
-						break;
-					}
-					str++;
-				}
-				break;
-			case '$':
-				return (*++glob == '\x00');
-			case '?':
-				str++;
-				glob++;
-				break;
-			default:
-				if (*glob != *str) {
-					return false;
+		case '*':
+			if (!*++glob) {
+				return true;
+			}
+			while (*str) {
+				if (*glob == *str) {
+					break;
 				}
 				str++;
-				glob++;
+			}
+			break;
+		case '$':
+			return (*++glob == '\x00');
+		case '?':
+			str++;
+			glob++;
+			break;
+		default:
+			if (*glob != *str) {
+				return false;
+			}
+			str++;
+			glob++;
 		}
 	}
-	while (*glob == '*') {
-    	++glob;
-    }
-	return ((*glob == '$' && *glob++ == '\x00')  || (*glob == '\x00'));
+	while (*glob == '*') { ++glob; }
+	return ((*glob == '$' && !*glob++)  || !*glob);
 }
 
 // Escape the string arg so that it is parsed as a single argument by r_str_argv
