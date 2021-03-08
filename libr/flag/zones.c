@@ -1,11 +1,9 @@
-/* radare - LGPL - Copyright 2016-2020 - pancake */
+/* radare - LGPL - Copyright 2016-2021 - pancake */
 
 #include <r_flag.h>
 #include <r_util.h>
 
 #define DB f->zones
-
-#if !R_FLAG_ZONE_USE_SDB
 
 static RFlagZoneItem *r_flag_zone_get (RFlag *f, const char *name) {
 	RListIter *iter;
@@ -17,7 +15,6 @@ static RFlagZoneItem *r_flag_zone_get (RFlag *f, const char *name) {
 	}
 	return NULL;
 }
-#endif
 
 static RFlagZoneItem *r_flag_zone_get_inrange (RFlag *f, ut64 from, ut64 to) {
 	RListIter *iter;
@@ -32,27 +29,6 @@ static RFlagZoneItem *r_flag_zone_get_inrange (RFlag *f, ut64 from, ut64 to) {
 
 R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
 	r_return_val_if_fail (f && name && *name, false);
-#if R_FLAG_ZONE_USE_SDB
-	RFlagZoneItem zi = { 0, 0, (const char *)name };
-	if (!DB) {
-		return false;
-	}
-	const char *bound = sdb_const_get (DB, name, NULL);
-	if (bound) {
-		sdb_fmt_tobin (bound, "qq", &zi);
-		if (addr < zi.from) {
-			zi.from = addr;
-		}
-		if (addr > zi.to) {
-			zi.to = addr;
-		}
-		char *newBounds = sdb_fmt_tostr (&zi, "qq");
-		sdb_set (DB, name, newBounds, 0);
-		free (newBounds);
-	} else {
-		sdb_set (DB, name, sdb_fmt ("%"PFMT64d",%"PFMT64d, addr, addr), 0);
-	}
-#else
 	RFlagZoneItem *zi = r_flag_zone_get (f, name);
 	if (zi) {
 		if (addr < zi->from) {
@@ -70,24 +46,16 @@ R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
 		zi->from = zi->to = addr;
 		r_list_append (DB, zi);
 	}
-#endif
 	return true;
 }
 
 R_API bool r_flag_zone_reset(RFlag *f) {
-#if R_FLAG_ZONE_USE_SDB
-	return sdb_reset (DB);
-#else
 	r_list_free (f->zones);
 	f->zones = r_list_newf (r_flag_zone_item_free);
 	return true;
-#endif
 }
 
 R_API bool r_flag_zone_del(RFlag *f, const char *name) {
-#if R_FLAG_ZONE_USE_SDB
-	return sdb_unset (DB, name, 0);
-#else
 	RListIter *iter;
 	RFlagZoneItem *zi;
 	r_list_foreach (DB, iter, zi) {
@@ -97,88 +65,8 @@ R_API bool r_flag_zone_del(RFlag *f, const char *name) {
 		}
 	}
 	return false;
-#endif
 }
 
-#if R_FLAG_ZONE_USE_SDB
-
-typedef struct r_flag_zone_context_t {
-	RFlag *f;
-	ut64 addr;
-	ut64 l, h; // lower, higher closest offsets
-	const char **prev;
-	const char **next;
-} RFlagZoneContext;
-
-static bool cb(void *user, const char *name, const char *from_to) {
-	RFlagZoneContext *zc = (RFlagZoneContext*)user;
-	RFlagZoneItem zi = { 0, 0, name };
-	sdb_fmt_tobin (from_to, "qq", &zi);
-	if (zi.from > zc->addr) {
-		if (zc->h == UT64_MAX) {
-			zc->h = zi.from;
-			*zc->next = name;
-		} else {
-			if (zi.from < zc->h) {
-				zc->h = zi.from;
-				*zc->next = name;
-			}
-		}
-	}
-	if (zi.from < zc->addr) {
-		if (zc->l == UT64_MAX) {
-			zc->l = zi.from;
-			*zc->prev = name;
-		} else {
-			if (zi.from >= zc->l) {
-				zc->l = zi.from;
-				*zc->prev = name;
-			}
-		}
-	}
-	if (zi.to <= zc->addr) {
-		if (zc->l == UT64_MAX) {
-			zc->l = zi.to;
-			*zc->prev = name;
-		} else {
-			if (zi.to >= zc->l) {
-				zc->l = zi.to;
-				*zc->prev = name;
-			}
-		}
-	}
-	if (zi.to > zc->addr) {
-		if (zc->h == UT64_MAX) {
-			zc->h = zi.to;
-			*zc->next = name;
-		} else {
-			if (zi.to < zc->h) {
-				zc->h = zi.to;
-				*zc->next = name;
-			}
-		}
-	}
-	return true;
-}
-
-R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char **next) {
-	RFlagZoneContext ctx = { f, addr, 0, UT64_MAX, prev, next };
-	*prev = *next = NULL;
-	sdb_foreach (DB, cb, &ctx);
-	return true;
-}
-
-static bool cb_list(void *user, const char *name, const char *from_to) {
-	eprintf ("%s%s  %s\n", name, r_str_pad (' ', 10 - strlen (name)), from_to);
-	return true;
-}
-
-R_API bool r_flag_zone_list(RFlag *f, int mode) {
-	sdb_foreach (DB, cb_list, NULL);
-	return true;
-}
-
-#else
 
 R_API void r_flag_zone_item_free(void *a) {
 	RFlagZoneItem *zi = a;
@@ -271,34 +159,3 @@ R_API bool r_flag_zone_list(RFlag *f, int mode) {
 	}
 	return true;
 }
-#endif
-
-// #define __MAIN__ 1
-#if __MAIN__
-#define FZ(x) r_flag_zone_##x
-
-int main() {
-	const char *a, *b;
-	RFlagZone *fz = r_flag_zone_new ();
-
-	FZ(add)(fz, "main", 0x80000);
-	FZ(add)(fz, "network", 0x85000);
-	FZ(add)(fz, "libc", 0x90000);
-
-	FZ(add)(fz, "network", 0x000);
-
-	FZ(around)(fz, 0x83000, &a, &b);
-	printf ("%s %s\n", a, b);
-
-	FZ(around)(fz, 0x50000, &a, &b);
-	printf ("%s %s\n", a, b);
-
-	FZ(around)(fz, 0x500000, &a, &b);
-	printf ("%s %s\n", a, b);
-
-	FZ(list)(fz);
-
-	r_flag_zone_free (fz);
-	return 0;
-}
-#endif

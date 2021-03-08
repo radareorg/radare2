@@ -57,11 +57,7 @@ typedef struct r_flag_t {
 	RSkipList *by_off; /* flags sorted by offset, value=RFlagsAtOffset */
 	HtPP *ht_name; /* hashmap key=item name, value=RFlagItem * */
 	PrintfCallback cb_printf;
-#if R_FLAG_ZONE_USE_SDB
-	Sdb *zones;
-#else
 	RList *zones;
-#endif
 } RFlag;
 
 /* compile time dependency */
