@@ -89,9 +89,8 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	return fcn;
 }
 
-R_API void r_anal_function_free(void *_fcn) {
-	RAnalFunction *fcn = _fcn;
-	if (!_fcn) {
+R_API void r_anal_function_free(RAnalFunction *fcn) {
+	if (!fcn) {
 		return;
 	}
 
@@ -104,10 +103,10 @@ R_API void r_anal_function_free(void *_fcn) {
 	r_list_free (fcn->bbs);
 
 	RAnal *anal = fcn->anal;
-	if (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL) == _fcn) {
+	if (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL) == fcn) {
 		ht_up_delete (anal->ht_addr_fun, fcn->addr);
 	}
-	if (ht_pp_find (anal->ht_name_fun, fcn->name, NULL) == _fcn) {
+	if (ht_pp_find (anal->ht_name_fun, fcn->name, NULL) == fcn) {
 		ht_pp_delete (anal->ht_name_fun, fcn->name);
 	}
 

@@ -1467,7 +1467,7 @@ R_API bool r_anal_block_was_modified(RAnalBlock *block);
 /* function.c */
 
 R_API RAnalFunction *r_anal_function_new(RAnal *anal);
-R_API void r_anal_function_free(void *fcn);
+R_API void r_anal_function_free(RAnalFunction *fcn);
 
 // Add a function created with r_anal_function_new() to anal
 R_API bool r_anal_add_function(RAnal *anal, RAnalFunction *fcn);
