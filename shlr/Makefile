@@ -1,6 +1,5 @@
 include ../config-user.mk
 include ../global.mk
-# for EXT_EXE
 include ../libr/config.mk
 include ../mk/platform.mk
 _INCLUDE_MK_GCC_=
@@ -44,7 +43,7 @@ CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20201203
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 ifeq ($(CS_NEXT),1)
-CS_TIP=3f46b83045049901585688f6a53501e5e032449e
+CS_TIP=4afdd97051945fe0091823478399e814c27c2a3c
 CS_BRA=next
 else
 CS_TIP=aa74f5d1ba5348c0441fbff0c0c151d95d2fa459
