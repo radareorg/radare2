@@ -2293,55 +2293,45 @@ R_API void r_str_filter(char *str, int len) {
 }
 
 R_API bool r_str_glob(const char* str, const char *glob) {
-        const char* cp = NULL, *mp = NULL;
-        if (!glob || !strcmp (glob, "*")) {
-                return true;
-        }
-        if (!strchr (glob, '*')) {
-                if (*glob == '^') {
-                        glob++;
-                        while (*str) {
-                                if (*glob != *str) {
-                                        return false;
-                                }
-                                if (!*++glob) {
-                                        return true;
-                                }
-                                str++;
-                        }
-                } else {
-                        return strstr (str, glob) != NULL;
-                }
-        }
-        if (*glob == '^') {
-                glob++;
-        }
-        while (*str && (*glob != '*')) {
-                if (*glob != *str) {
-                        return false;
-                }
-                glob++;
-                str++;
-        }
-        while (*str) {
-                if (*glob == '*') {
-                        if (!*++glob) {
-                                return true;
-                        }
-                        mp = glob;
-                        cp = str + 1;
-                } else if (*glob == *str) {
-                        glob++;
-                        str++;
-                } else {
-                        glob = mp;
-                        str = cp++;
-                }
-        }
-        while (*glob == '*') {
-                ++glob;
-        }
-        return (*glob == '\x00');
+	if (!glob) {
+		return true;
+	}
+	char* begin = strchr (glob, '^');
+	if (begin) {
+		glob = ++begin;
+	}
+	while (*str) {
+		if (!*glob) {
+			return true;
+		}
+		switch (*glob) {
+		case '*':
+			if (!*++glob) {
+				return true;
+			}
+			while (*str) {
+				if (*glob == *str) {
+					break;
+				}
+				str++;
+			}
+			break;
+		case '$':
+			return (*++glob == '\x00');
+		case '?':
+			str++;
+			glob++;
+			break;
+		default:
+			if (*glob != *str) {
+				return false;
+			}
+			str++;
+			glob++;
+		}
+	}
+	while (*glob == '*') { ++glob; }
+	return ((*glob == '$' && !*glob++)  || !*glob);
 }
 
 // Escape the string arg so that it is parsed as a single argument by r_str_argv
