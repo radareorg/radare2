@@ -323,10 +323,8 @@ static void parse_grep_expression(const char *str) {
 			if (!grep->str) {
 				grep->str = (char *)strdup (ptr);
 			} else {
-				char *temp = (char *)malloc (sizeof (char) * len + 1);
-				strcpy (temp, ",");
-				strcat (temp, ptr);
-				grep->str = r_str_append (grep->str, temp);
+				grep->str = r_str_append (grep->str, ",");
+				grep->str = r_str_append (grep->str, ptr);
 			}
 
 			do {
