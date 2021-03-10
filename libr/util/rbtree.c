@@ -507,6 +507,33 @@ R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, vo
 	return result_node ? result_node->data : NULL;
 }
 
+R_API RContRBNode *r_rbtree_cont_node_next(RContRBNode *node) {
+	r_return_val_if_fail (node, NULL);
+	RBNode *_node = &node->node;
+	if (_node->child[1]) {
+		_node = _node->child[1];
+// next node is the most left child-node of the right subtree
+// leftsided walk down that subtree until there is no more left child
+		while (_node->child[0]) {
+			_node = _node->child[0];
+		}
+		return (container_of (_node, RContRBNode, node));
+	}
+	RBNode *parent = _node->parent;
+	if (!parent) {
+		return NULL;
+	}
+// walk up the tree, until _node is no longer right child of it's parent
+	while (parent->child[1] == _node) {
+		_node = parent;
+		parent = _node->parent;
+		if (!parent) {
+			return NULL;
+		}
+	}
+	return (container_of (parent, RContRBNode, node));
+}
+
 // not a direct pendant to r_rbtree_first, but similar
 // returns first element in the tree, not an iter or a node
 R_API void *r_rbtree_cont_first(RContRBTree *tree) {
