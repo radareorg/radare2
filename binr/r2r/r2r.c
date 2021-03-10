@@ -77,15 +77,15 @@ static bool r2r_chdir(const char *argv0) {
 	if (r_file_is_directory ("db")) {
 		return true;
 	}
-	char src_path[PATH_MAX];
+	char *src_path = malloc (PATH_MAX);
 	char *r2r_path = r_file_path (argv0);
 	bool found = false;
-	if (readlink (r2r_path, src_path, sizeof (src_path)) != -1) {
-		src_path[sizeof (src_path) - 1] = 0;
-		char *p = strstr (src_path, R_SYS_DIR "binr"R_SYS_DIR"r2r"R_SYS_DIR"r2r");
+	if (readlink (r2r_path, src_path, PATH_MAX) != -1) {
+		src_path[PATH_MAX - 1] = 0;
+		char *p = strstr (src_path, "/binr/r2r/r2r");
 		if (p) {
 			*p = 0;
-			strcat (src_path, R_SYS_DIR"test"R_SYS_DIR);
+			src_path = r_str_append (src_path, "/test/");
 			if (r_file_is_directory (src_path)) {
 				if (chdir (src_path) != -1) {
 					eprintf ("Running from %s\n", src_path);
@@ -96,6 +96,7 @@ static bool r2r_chdir(const char *argv0) {
 			}
 		}
 	}
+	free (src_path);
 	free (r2r_path);
 	return found;
 #else
