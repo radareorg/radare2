@@ -128,6 +128,8 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		char *str = r_str_ndup ((char *)in + cur, toread + 1);
 		bool found = false;
 		for (j = toread; cur < in_len && j > 0; j--) {
+			left = in_len - cur + 1;
+			toread = R_MIN (left, maxkeylen);
 			//zero terminate the string
 			str[j] = '\0';
 
