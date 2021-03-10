@@ -12,7 +12,9 @@ static inline bool red(RBNode *x) {
 static inline RBNode *zag(RBNode *x, int dir, RBNodeSum sum) {
 	RBNode *y = x->child[dir];
 	x->child[dir] = y->child[!dir];
+	x->child[dir]->parent = x;
 	y->child[!dir] = x;
+	x->parent = y;
 	x->red = true;
 	y->red = false;
 	if (sum) {
@@ -24,9 +26,13 @@ static inline RBNode *zag(RBNode *x, int dir, RBNodeSum sum) {
 static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
 	RBNode *y = x->child[dir], *z = y->child[!dir];
 	y->child[!dir] = z->child[dir];
+	y->child[!dir]->parent = y;
 	z->child[dir] = y;
+	y->parent = z;
 	x->child[dir] = z->child[!dir];
+	x->child[dir]->parent = x;
 	z->child[!dir] = x;
+	x->parent = x;
 	x->red = y->red = true;
 	z->red = false;
 	if (sum) {
@@ -89,7 +95,7 @@ static void _check(RBNode *x) {
 R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
 	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[R_RBTREE_MAX_HEIGHT];
 	int d = 1, d2, dep = 0;
-	head.child[0] = NULL;
+	head.parent = head.child[0] = NULL;
 	head.child[1] = *root;
 	while (q->child[d]) {
 		d2 = d;
@@ -123,7 +129,8 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 				del_link = &q->child[!d]->child[d];
 			}
 			p->child[d2] = zag (q, !d, sum);
-			p = p->child[d2];
+			p->child[d2]->parent = p->parent;
+			p = p->child[d2];	//memleak here?
 			if (dep >= R_RBTREE_MAX_HEIGHT) {
 				eprintf ("Too deep tree\n");
 				break;
@@ -154,6 +161,7 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 				t->red = q->red = true;
 				t->child[0]->red = t->child[1]->red = false;
 				g->child[d3] = t;
+				t->parent = g;
 				path[dep - 1] = t;
 				path[dep++] = p;
 			}
@@ -161,6 +169,9 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 	}
 	if (del_link) {
 		del = *del_link;
+		if (q->child[q->child == NULL]) {
+			q->child[q->child[0] == NULL]->parent = p;
+		}
 		p->child[q != p->child[0]] = q->child[q->child[0] == NULL];
 		if (del != q) {
 			*q = *del;
@@ -177,13 +188,14 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 	}
 	if ((*root = head.child[1])) {
 		(*root)->red = false;
+		(*root)->parent = NULL;
 	}
 	return del;
 }
 
 // Returns true if stuff got inserted, else false
 R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
-	node->child[0] = node->child[1] = NULL;
+	node->parent = node->child[0] = node->child[1] = NULL;
 	if (!*root) {
 		*root = node;
 		node->red = false;
@@ -201,6 +213,7 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 			q = node;
 			q->red = true;
 			p->child[d] = q;
+			q->parent = p;
 			done = true;
 		} else if (red (q->child[0]) && red (q->child[1])) {
 			q->child[0]->red = q->child[1]->red = false;
@@ -209,7 +222,8 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 			}
 		}
 		if (q->red && p && p->red) {
-			int d3 = t ? t->child[0] != g : -1, d2 = g->child[0] != p;
+			int d3 = t ? t->child[0] != g : -1;
+			int d2 = g->child[0] != p;
 			if (p->child[d2] == q) {
 				g = zag (g, d2, sum);
 				dep--;
@@ -220,8 +234,10 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 			}
 			if (t) {
 				t->child[d3] = g;
+				g->parent = t;
 			} else {
 				*root = g;
+				g->parent = NULL;
 			}
 		}
 		if (done) {
@@ -465,7 +481,7 @@ R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, v
 		return false;
 	}
 	RCRBCmpWrap cmp_wrap = { cmp, tree->free, user };
-	RContRBNode data_wrap = { { { NULL, NULL }, false }, data };
+	RContRBNode data_wrap = { { NULL, { NULL, NULL }, false }, data };
 	RBNode *root_node = &tree->root->node;
 	const bool ret = r_rbtree_aug_delete (&root_node, &data_wrap, cont_rbtree_free_cmp_wrapper, &cmp_wrap, cont_node_free, NULL, NULL);
 	if (root_node != (&tree->root->node)) {	//can this crash?

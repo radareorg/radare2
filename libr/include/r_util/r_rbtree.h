@@ -17,6 +17,7 @@ extern "C" {
 
 // Singleton can be zero initialized
 typedef struct r_rb_node_t {
+	struct r_rb_node_t *parent;
 	struct r_rb_node_t *child[2];
 	bool red;
 } RBNode;
