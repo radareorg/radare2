@@ -193,10 +193,28 @@ typedef struct r_io_map_t {
 	int fd;
 	int perm;
 	ut32 id;
+	ut64 ts;
 	RInterval itv;
 	ut64 delta; // paddr = vaddr - itv.addr + delta
 	char *name;
 } RIOMap;
+
+typedef struct r_io_map_ref_t {
+	ut32 id;
+	ut64 ts;
+} RIOMapRef;
+
+typedef struct r_io_submap_t {
+	RIOMapRef mapref;
+	RInterval itv;
+} RIOSubMap;
+
+typedef struct r_io_bank_t {
+	RContRBTree *submaps;
+	RList *maprefs;	// references to maps, avoid double-free and dups
+	RQueue *todo;	// needed for operating on submap tree
+	ut32 id;	// for fast selection with RIDStorage
+} RIOBank;
 
 typedef struct r_io_cache_t {
 	RInterval itv;
@@ -298,6 +316,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 // same as r_io_map_add but used when many maps need to be added. Call r_io_update when all maps have been added.
 R_API RIOMap *r_io_map_add_batch(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_get_at(RIO *io, ut64 addr);		//returns the map at vaddr with the highest priority
+R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref);
 // update the internal state of RIO after a series of _batch operations
 R_API void r_io_update(RIO *io);
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
