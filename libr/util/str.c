@@ -3545,14 +3545,14 @@ err_r_str_mb_to_wc:
 }
 
 R_API char* r_str_wc_to_mb_l(const wchar_t *buf, int len) {
+	r_return_val_if_fail (buf, NULL);
 	char *res_buf = NULL;
 	bool fail = true;
-	size_t sz;
 
-	if (!buf || len <= 0) {
+	if (len <= 0) {
 		return NULL;
 	}
-	sz = wcstombs (NULL, buf, len);
+	size_t sz = wcstombs (NULL, buf, 0);
 	if (sz == (size_t)-1) {
 		goto err_r_str_wc_to_mb;
 	}
