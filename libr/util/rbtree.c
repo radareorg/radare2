@@ -38,7 +38,7 @@ static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
 		x->child[dir]->parent = x;
 	}
 	z->child[!dir] = x;
-	x->parent = x;
+	x->parent = z;
 	x->red = y->red = true;
 	z->red = false;
 	if (sum) {
