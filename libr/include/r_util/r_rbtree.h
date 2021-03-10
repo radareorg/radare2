@@ -109,6 +109,7 @@ R_API RContRBTree *r_rbtree_cont_new(void);
 R_API RContRBTree *r_rbtree_cont_newf(RContRBFree f);
 R_API bool r_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
+R_API RContRBNode * r_rbtree_cont_find_node(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 R_API void *r_rbtree_cont_first(RContRBTree *tree);
 

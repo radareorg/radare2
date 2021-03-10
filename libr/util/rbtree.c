@@ -474,7 +474,7 @@ R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, v
 	return ret;
 }
 
-R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
+R_API RContRBNode *r_rbtree_cont_find_node(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
 	r_return_val_if_fail (tree && cmp, NULL);
 	if (!tree->root) {
 		return NULL;
@@ -482,10 +482,13 @@ R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, vo
 	RCRBCmpWrap cmp_wrap = { cmp, NULL, user };
 	// RBNode search_node = tree->root->node;
 	RBNode *result_node = r_rbtree_find (&tree->root->node, data, cont_rbtree_search_cmp_wrapper, &cmp_wrap);
-	if (result_node) {
-		return (container_of (result_node, RContRBNode, node))->data;
-	}
-	return NULL;
+	return result_node ? (container_of (result_node, RContRBNode, node)) : NULL;
+}
+
+R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user) {
+	r_return_val_if_fail (tree && cmp, NULL);
+	RContRBNode *result_node = r_rbtree_cont_find_node (tree, data, cmp, user);
+	return result_node ? result_node->data : NULL;
 }
 
 // not a direct pendant to r_rbtree_first, but similar
