@@ -9,7 +9,7 @@ r_fs_sources = [
 
 r_fs_deps = [ r_util_dep ]
 
-if !user_plugins.contains('nogrub')
+if not user_plugins.contains('nogrub')
   user_plugins += [ 'grub' ]
 endif
 
