@@ -5322,6 +5322,12 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 			processed_cmd = true;
 			break;
+		case 'd': // "pdd" // r2dec
+			eprintf ("Error: r2pm -ci r2dec\n");
+			break;
+		case 'g': // "pdg" // r2ghidra
+			eprintf ("Error: r2pm -ci r2ghidra\n");
+			break;
 		case 'c': // "pdc" // "pDc"
 			r_core_pseudo_code (core, input + 2);
 			pd_result = 0;
