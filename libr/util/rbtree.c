@@ -12,7 +12,9 @@ static inline bool red(RBNode *x) {
 static inline RBNode *zag(RBNode *x, int dir, RBNodeSum sum) {
 	RBNode *y = x->child[dir];
 	x->child[dir] = y->child[!dir];
-	x->child[dir]->parent = x;
+	if (x->child[dir]) {
+		x->child[dir]->parent = x;
+	}
 	y->child[!dir] = x;
 	x->parent = y;
 	x->red = true;
@@ -26,11 +28,15 @@ static inline RBNode *zag(RBNode *x, int dir, RBNodeSum sum) {
 static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
 	RBNode *y = x->child[dir], *z = y->child[!dir];
 	y->child[!dir] = z->child[dir];
-	y->child[!dir]->parent = y;
+	if (y->child[!dir]) {
+		y->child[!dir]->parent = y;
+	}
 	z->child[dir] = y;
 	y->parent = z;
 	x->child[dir] = z->child[!dir];
-	x->child[dir]->parent = x;
+	if (x->child[dir]) {
+		x->child[dir]->parent = x;
+	}
 	z->child[!dir] = x;
 	x->parent = x;
 	x->red = y->red = true;
