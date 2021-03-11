@@ -18,8 +18,8 @@ e asm.bits=64
 ?e @@@r~xmm0
 EOF
 EXPECT=<<EOF
-xmm0h: 
 xmm0l: 
+xmm0h: 
 EOF
 RUN
 
