@@ -2527,6 +2527,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	if (mode == 'j') {
 		pj = r_core_pj_new (core);
 		if (!pj) {
+			r_cons_println ("[]");
 			return false;
 		}
 		pj_a (pj);
@@ -2537,6 +2538,9 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			pj_end (pj);
 			r_cons_println (pj_string (pj));
 			pj_free (pj);
+		}
+		if (mode == 'i' && input && *input == 'j') {
+			r_cons_println ("{}");
 		}
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", addr);
 		return false;
