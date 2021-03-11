@@ -464,14 +464,14 @@ RUN
 NAME=Types not reloaded when arch is the same
 FILE=-
 CMDS=<<EOF
-e asm.archx86
+e asm.arch=x86
 e anal.arch=x86
-e anal.bits=32
+e asm.bits=32
 t-*
 tk a=b
 e asm.arch=x68
+e asm.bits=32
 e anal.arch=x86
-e anal.bits=32
 tk a
 EOF
 EXPECT=<<EOF
