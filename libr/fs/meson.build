@@ -10,12 +10,8 @@ r_fs_sources = [
 r_fs_deps = [ r_util_dep ]
 
 if not user_plugins.contains('nogrub')
-  user_plugins += [ 'grub' ]
-endif
-
-if user_plugins.contains('grub')
   r_fs_deps += [ grub_dep ]
-  r_fs_sources = [
+  r_fs_sources += [
     'p/fs_cpio.c',
     'p/fs_ext2.c',
     'p/fs_fat.c',
