@@ -1308,6 +1308,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_eval (r->config, cmdn, false);
 			r_cons_flush ();
 		}
+		if (asmbits) {
+			r_config_set (r->config, "asm.bits", asmbits);
+		}
 
 		// no flagspace selected by default the beginning
 		r_flag_space_set (r->flags, NULL);
