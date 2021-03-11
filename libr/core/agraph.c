@@ -2325,9 +2325,9 @@ static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
 	}
 	char *title = get_title (jump);
 	RANode *v = r_agraph_get_node (g, title);
-	free (title);
 	ut64 a = r_num_get (NULL, u->title);
 	ut64 b = r_num_get (NULL, title);
+	free (title);
 	const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	bool hl = sdb_exists (core->sdb, k);
 	r_agraph_add_edge (g, u, v, hl);
