@@ -2990,6 +2990,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 	RAnalFunction *fcn;
 	PJ *pj = r_core_pj_new (core);
 	if (!pj) {
+		r_cons_println ("[]");
 		return -1;
 	}
 	pj_a (pj);
@@ -3252,6 +3253,9 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	char temp[64];
 	r_return_val_if_fail (core && core->anal, 0);
 	if (r_list_empty (core->anal->fcns)) {
+		if (*rad == 'j') {
+			r_cons_println ("[]");
+		}
 		return 0;
 	}
 	if (*rad == '.') {
