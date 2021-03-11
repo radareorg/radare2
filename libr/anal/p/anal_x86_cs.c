@@ -708,9 +708,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	// has the same pneumonic for two different opcodes!). We can decide which
 	// of the two it is based on the operands.
 	// For more information, see:
-	// http://x86.renejeschke.de/html/file_module_x86_id_203.html
+	// https://mudongliang.github.io/x86/html/file_module_x86_id_203.html
 	//               (vs)
-	// http://x86.renejeschke.de/html/file_module_x86_id_204.html
+	// https://mudongliang.github.io/x86/html/file_module_x86_id_204.html
 	case X86_INS_MOVSD:
 		// Handle "Move Scalar Double-Precision Floating-Point Value"
 		if (is_xmm_reg (INSOP(0)) || is_xmm_reg (INSOP(1))) {
@@ -760,7 +760,6 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_MOVBE:
 	case X86_INS_MOVSX:
 	case X86_INS_MOVSXD:
-	case X86_INS_MOVD:
 	case X86_INS_MOVQ:
 	case X86_INS_MOVDQU:
 	case X86_INS_MOVDQA:
@@ -825,6 +824,22 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			}
 			break;
 		}
+		}
+		break;
+	case X86_INS_MOVD:
+		if (is_xmm_reg (INSOP(0))) {
+			if (!is_xmm_reg (INSOP(1))) {
+				src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
+				dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
+				esilprintf (op, "%s,%sl,=", src, dst);
+			}
+		}
+		if (is_xmm_reg (INSOP(1))) {
+			if (!is_xmm_reg (INSOP(0))) {
+				src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
+				dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
+				esilprintf (op, "%sl,%s", src, dst);
+			}
 		}
 		break;
 	case X86_INS_ROL:
@@ -3492,8 +3507,40 @@ static char *get_reg_profile(RAnal *anal) {
 		//"drx	dr4	.32	16	0\n"
 		//"drx	dr5	.32	20	0\n"
 		"drx	dr6	.32	24	0\n"
-		"drx	dr7	.32	28	0\n";
-		 break;
+		"drx	dr7	.32	28	0\n"
+		"xmm@fpu    xmm0  .128 160  4\n"
+		"fpu    xmm0l .64 160  0\n"
+		"fpu    xmm0h .64 168  0\n"
+
+		"xmm@fpu    xmm1  .128 176  4\n"
+		"fpu    xmm1l .64 176  0\n"
+		"fpu    xmm1h .64 184  0\n"
+
+		"xmm@fpu    xmm2  .128 192  4\n"
+		"fpu    xmm2l .64 192  0\n"
+		"fpu    xmm2h .64 200  0\n"
+
+		"xmm@fpu    xmm3  .128 208  4\n"
+		"fpu    xmm3l .64 208  0\n"
+		"fpu    xmm3h .64 216  0\n"
+
+		"xmm@fpu    xmm4  .128 224  4\n"
+		"fpu    xmm4l .64 224  0\n"
+		"fpu    xmm4h .64 232  0\n"
+
+		"xmm@fpu    xmm5  .128 240  4\n"
+		"fpu    xmm5l .64 240  0\n"
+		"fpu    xmm5h .64 248  0\n"
+
+		"xmm@fpu    xmm6  .128 256  4\n"
+		"fpu    xmm6l .64 256  0\n"
+		"fpu    xmm6h .64 264  0\n"
+
+		"xmm@fpu    xmm7  .128 272  4\n"
+		"fpu    xmm7l .64 272  0\n"
+		"fpu    xmm7h .64 280  0\n";
+
+		break;
 	case 64:
 	{
 		const char *cc = r_anal_cc_default (anal);
@@ -3665,36 +3712,36 @@ static char *get_reg_profile(RAnal *anal) {
 		 "fpu    st7 .64 144  0\n"
 
 		 "xmm@fpu    xmm0  .128 160  4\n"
-		 "fpu    xmm0h .64 160  0\n"
-		 "fpu    xmm0l .64 168  0\n"
+		 "fpu    xmm0l .64 160  0\n"
+		 "fpu    xmm0h .64 168  0\n"
 
 		 "xmm@fpu    xmm1  .128 176  4\n"
-		 "fpu    xmm1h .64 176  0\n"
-		 "fpu    xmm1l .64 184  0\n"
+		 "fpu    xmm1l .64 176  0\n"
+		 "fpu    xmm1h .64 184  0\n"
 
 		 "xmm@fpu    xmm2  .128 192  4\n"
-		 "fpu    xmm2h .64 192  0\n"
-		 "fpu    xmm2l .64 200  0\n"
+		 "fpu    xmm2l .64 192  0\n"
+		 "fpu    xmm2h .64 200  0\n"
 
 		 "xmm@fpu    xmm3  .128 208  4\n"
-		 "fpu    xmm3h .64 208  0\n"
-		 "fpu    xmm3l .64 216  0\n"
+		 "fpu    xmm3l .64 208  0\n"
+		 "fpu    xmm3h .64 216  0\n"
 
 		 "xmm@fpu    xmm4  .128 224  4\n"
-		 "fpu    xmm4h .64 224  0\n"
-		 "fpu    xmm4l .64 232  0\n"
+		 "fpu    xmm4l .64 224  0\n"
+		 "fpu    xmm4h .64 232  0\n"
 
 		 "xmm@fpu    xmm5  .128 240  4\n"
-		 "fpu    xmm5h .64 240  0\n"
-		 "fpu    xmm5l .64 248  0\n"
+		 "fpu    xmm5l .64 240  0\n"
+		 "fpu    xmm5h .64 248  0\n"
 
 		 "xmm@fpu    xmm6  .128 256  4\n"
-		 "fpu    xmm6h .64 256  0\n"
-		 "fpu    xmm6l .64 264  0\n"
+		 "fpu    xmm6l .64 256  0\n"
+		 "fpu    xmm6h .64 264  0\n"
 
 		 "xmm@fpu    xmm7  .128 272  4\n"
-		 "fpu    xmm7h .64 272  0\n"
-		 "fpu    xmm7l .64 280  0\n"
+		 "fpu    xmm7l .64 272  0\n"
+		 "fpu    xmm7h .64 280  0\n"
 		 "fpu    x64   .64 288  0\n");
 		return prof;
 	}

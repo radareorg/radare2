@@ -3519,3 +3519,20 @@ EXPECT=<<EOF
 0x004010f8 1 case.default.0x401020
 EOF
 RUN
+
+NAME=movd in SSE register
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 660F6Ec0 # movd xmm0, eax
+aei
+aeim
+ar eax = 0xa0a1a2a3
+aes
+ar xmm0
+EOF
+EXPECT=<<EOF
+0x000000000000000000000000a0a1a2a3
+EOF
+RUN
