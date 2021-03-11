@@ -483,6 +483,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			break;
 		case 'b':
 			asmbits = opt.arg;
+			r_config_set (r->config, "asm.bits", opt.arg);
 			break;
 		case 'B':
 			baddr = r_num_math (r->num, opt.arg);
@@ -510,7 +511,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				r_cons_flush ();
 				LISTS_FREE ();
 				free (envprofile);
-                free (debugbackend);
+				free (debugbackend);
 				return 0;
 			}
 			break;
@@ -1250,11 +1251,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			r_config_eval (r->config, cmdn, false);
 			r_cons_flush ();
 		}
-		if (asmarch) {
-			r_config_set (r->config, "asm.arch", asmarch);
-		}
 		if (asmbits) {
 			r_config_set (r->config, "asm.bits", asmbits);
+		}
+		if (asmarch) {
+			r_config_set (r->config, "asm.arch", asmarch);
 		}
 		if (asmos) {
 			r_config_set (r->config, "asm.os", asmos);
@@ -1307,9 +1308,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_list_foreach (evals, iter, cmdn) {
 			r_config_eval (r->config, cmdn, false);
 			r_cons_flush ();
-		}
-		if (asmbits) {
-			r_config_set (r->config, "asm.bits", asmbits);
 		}
 
 		// no flagspace selected by default the beginning
