@@ -99,7 +99,7 @@ if not no_user_plugins
   if user_plugins.contains('pe')
     bin_plugins += [ 'pe', 'pe64', 'coff', 'mz', 'ne' ]
   endif
-  if user_plugins.contains('grub')
+  if not user_plugins.contains('nogrub')
     fs_plugins += [ 'cpio', 'ext2', 'fat', 'fb', 'hfs',
       'hfsplus', 'iso9660', 'jfs', 'minix', 'ntfs', 'reiserfs',
       'sfs', 'tar', 'udf', 'ufs', 'ufs2', 'xfs' ]
