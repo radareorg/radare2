@@ -69,7 +69,7 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 R_API bool r_io_map_remap_fd(RIO *io, int fd, ut64 addr) {
 	RIOMap *map;
 	bool retval = false;
-	RList *maps = r_io_map_get_for_fd (io, fd);
+	RList *maps = r_io_map_get_by_fd (io, fd);
 	if (maps) {
 		map = r_list_get_n (maps, 0);
 		if (map) {
@@ -374,7 +374,7 @@ R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
 	return lowest;
 }
 
-R_API RList* r_io_map_get_for_fd(RIO* io, int fd) {
+R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
 	RList* map_list = r_list_newf (NULL);
 	if (!map_list) {
 		return NULL;

@@ -402,7 +402,7 @@ R_API char *r_io_system(RIO* io, const char* cmd) {
 
 R_API bool r_io_resize(RIO* io, ut64 newsize) {
 	if (io) {
-		RList *maps = r_io_map_get_for_fd (io, io->desc->fd);
+		RList *maps = r_io_map_get_by_fd (io, io->desc->fd);
 		RIOMap *current_map;
 		RListIter *iter;
 		ut64 fd_size = r_io_fd_size (io, io->desc->fd);
@@ -528,7 +528,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_write_at = r_io_fd_write_at;
 	bnd->fd_is_dbg = r_io_fd_is_dbg;
 	bnd->fd_get_name = r_io_fd_get_name;
-	bnd->fd_get_map = r_io_map_get_for_fd;
+	bnd->fd_get_map = r_io_map_get_by_fd;
 	bnd->fd_remap = r_io_map_remap_fd;
 	bnd->is_valid_offset = r_io_is_valid_offset;
 	bnd->map_get_at = r_io_map_get_at;

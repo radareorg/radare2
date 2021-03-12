@@ -310,7 +310,7 @@ R_API void r_io_map_fini(RIO *io);
 R_API bool r_io_map_is_in_range(RIOMap *map, ut64 from, ut64 to);
 R_API void r_io_map_set_name(RIOMap *map, const char *name);
 R_API void r_io_map_del_name(RIOMap *map);
-R_API RList* r_io_map_get_for_fd(RIO *io, int fd);
+R_API RList* r_io_map_get_by_fd(RIO *io, int fd);
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
 
 // next free address to place a map.. maybe just unify

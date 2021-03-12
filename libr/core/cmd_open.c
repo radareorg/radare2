@@ -1306,7 +1306,7 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	}
 
 	RList *list = r_bin_get_sections (core->bin);
-	RList *maps = r_io_map_get_for_fd (core->io, desc->fd);
+	RList *maps = r_io_map_get_by_fd (core->io, desc->fd);
 	RListIter *iter, *iter2;
 	RBinSection *sec;
 	RIOMap *map;
@@ -1405,7 +1405,7 @@ static bool cmd_onn(RCore *core, const char* input) {
 		free (ptr);
 		return false;
 	}
-	RList *maps = r_io_map_get_for_fd (core->io, desc->fd);
+	RList *maps = r_io_map_get_by_fd (core->io, desc->fd);
 	if (maps) {
 		RIOMap *map;
 		RListIter *iter;

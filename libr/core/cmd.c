@@ -4348,7 +4348,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		{
 			int fd = r_io_fd_get_current (core->io);
 			// only iterate maps of current fd
-			RList *maps = r_io_map_get_for_fd (core->io, fd);
+			RList *maps = r_io_map_get_by_fd (core->io, fd);
 			RIOMap *map;
 			if (maps) {
 				RListIter *iter;
@@ -6793,7 +6793,7 @@ DEFINE_HANDLE_TS_FCN_AND_SYMBOL(foreach_iomap_command) {
 	TSNode command = ts_node_named_child (node, 0);
 	int fd = r_io_fd_get_current (core->io);
 	// only iterate maps of current fd
-	RList *maps = r_io_map_get_for_fd (core->io, fd);
+	RList *maps = r_io_map_get_by_fd (core->io, fd);
 	RIOMap *map;
 	RCmdStatus res = R_CMD_STATUS_OK;
 	if (maps) {

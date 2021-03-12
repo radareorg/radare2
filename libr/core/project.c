@@ -491,7 +491,7 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 		// reload bin info
 		r_cons_printf ("\"obf %s\"\n", desc->uri);
 		r_cons_printf ("\"ofs \\\"%s\\\" %s\"\n", desc->uri, r_str_rwx_i (desc->perm));
-		if ((maps = r_io_map_get_for_fd (core->io, id))) {
+		if ((maps = r_io_map_get_by_fd (core->io, id))) {	//wtf
 			r_list_foreach (maps, iter, map) {
 				r_cons_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", fdc,
 					r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
