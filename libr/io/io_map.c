@@ -163,14 +163,14 @@ R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 }
 
 // gets first map where addr fits in
-R_API RIOMap *r_io_map_get(RIO* io, ut64 addr) {
+R_API RIOMap *r_io_map_get_at(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, NULL);
 	return r_skyline_get (&io->map_skyline, addr);
 }
 
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, false);
-	return (bool)r_io_map_get (io, addr);
+	return (bool)r_io_map_get_at (io, addr);
 }
 
 R_API void r_io_map_reset(RIO* io) {
@@ -409,7 +409,7 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 // XXX this function is buggy and doesnt works as expected, but i need it for a PoC for now
 R_API ut64 r_io_map_location(RIO *io, ut64 size) {
 	ut64 base = (io->bits == 64)? 0x60000000000LL: 0x60000000;
-	while (r_io_map_get (io, base)) {
+	while (r_io_map_get_at (io, base)) {
 		base += 0x200000;
 	}
 	return base;

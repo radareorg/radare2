@@ -2637,7 +2637,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 		char *str = NULL;
 		if (ds->show_section_perm) {
 			// iosections must die, this should be rbin_section_get
-			RIOMap *map = r_io_map_get (core->io, ds->at);
+			RIOMap *map = r_io_map_get_at (core->io, ds->at);
 			str = strdup (map? r_str_rwx_i (map->perm): "---");
 		}
 		if (ds->show_section_name) {

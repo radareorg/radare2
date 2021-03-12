@@ -233,7 +233,7 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 	switch (ch) {
 	case 'g':
 		if (core->io->va) {
-			RIOMap *map = r_io_map_get (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (!map && !r_pvector_empty (&core->io->maps)) {
 				map = r_pvector_at (&core->io->maps, r_pvector_len (&core->io->maps) - 1);
 			}
@@ -246,7 +246,7 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		return true;
 	case 'G':
-		map = r_io_map_get (core->io, core->offset);
+		map = r_io_map_get_at (core->io, core->offset);
 		if (!map && !r_pvector_empty (&core->io->maps)) {
 			map = r_pvector_at (&core->io->maps, 0);
 		}
@@ -2309,7 +2309,7 @@ static bool canWrite(RCore *core, ut64 addr) {
 	if (r_config_get_i (core->config, "io.cache")) {
 		return true;
 	}
-	RIOMap *map = r_io_map_get (core->io, addr);
+	RIOMap *map = r_io_map_get_at (core->io, addr);
 	return (map && (map->perm & R_PERM_W));
 }
 
@@ -3712,7 +3712,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			oldpc = curpc;
 		}
 	}
-	RIOMap *map = r_io_map_get (core->io, core->offset);
+	RIOMap *map = r_io_map_get_at (core->io, core->offset);
 	RIODesc *desc = map ? r_io_desc_get (core->io, map->fd) : core->io->desc;
 	filename = desc? desc->name: "";
 
@@ -3777,7 +3777,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		ut64 sz = r_io_size (core->io);
 		ut64 pa = core->offset;
 		{
-			RIOMap *map = r_io_map_get (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				pa = map->delta;
 			}

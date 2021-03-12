@@ -4466,7 +4466,7 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 				pc = r_debug_reg_get (core->dbg, "PC");
 				eprintf (" %d %"PFMT64x"\r", n++, pc);
-				s = r_io_map_get (core->io, pc);
+				s = r_io_map_get_at (core->io, pc);
 				if (r_cons_is_breaked ()) {
 					break;
 				}

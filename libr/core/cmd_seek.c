@@ -726,7 +726,7 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	case 'g': // "sg"
 	{
-		RIOMap *map  = r_io_map_get (core->io, core->offset);
+		RIOMap *map  = r_io_map_get_at (core->io, core->offset);
 		if (map) {
 			r_core_seek (core, r_io_map_begin (map), true);
 		} else {
@@ -739,7 +739,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (!core->io->desc) {
 			break;
 		}
-		RIOMap *map = r_io_map_get (core->io, core->offset);
+		RIOMap *map = r_io_map_get_at (core->io, core->offset);
 		// XXX: this +2 is a hack. must fix gap between sections
 		if (map) {
 			r_core_seek (core, r_io_map_end (map) + 2, true);

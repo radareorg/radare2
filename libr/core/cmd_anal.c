@@ -5321,7 +5321,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	addr = r_config_get_i (core->config, "esil.stack.addr");
 
 	{
-		RIOMap *map = r_io_map_get (core->io, addr);
+		RIOMap *map = r_io_map_get_at (core->io, addr);
 		if (map) {
 			addr = UT64_MAX;
 		}
@@ -6962,7 +6962,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	addr = core->offset;
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
-		RIOMap *map = r_io_map_get (core->io, addr);
+		RIOMap *map = r_io_map_get_at (core->io, addr);
 		if (map && (map->perm & R_PERM_X)) {
 			// search in current section
 			if (r_io_map_size (map) > bf->size) {
