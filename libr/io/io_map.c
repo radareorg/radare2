@@ -52,7 +52,7 @@ R_API RIOMap *r_io_map_new(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 }
 
 R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
-	RIOMap *map = r_io_map_resolve (io, id);
+	RIOMap *map = r_io_map_get (io, id);
 	if (map) {
 		ut64 size = r_io_map_size (map);
 		r_io_map_set_begin (map, addr);
@@ -112,10 +112,10 @@ R_API bool r_io_map_exists(RIO *io, RIOMap *map) {
 
 // check if a map with specified id exists
 R_API bool r_io_map_exists_for_id(RIO* io, ut32 id) {
-	return r_io_map_resolve (io, id) != NULL;
+	return r_io_map_get (io, id) != NULL;
 }
 
-R_API RIOMap* r_io_map_resolve(RIO *io, ut32 id) {
+R_API RIOMap* r_io_map_get(RIO *io, ut32 id) {
 	r_return_val_if_fail (io && id, false);
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
@@ -391,7 +391,7 @@ R_API RList* r_io_map_get_for_fd(RIO* io, int fd) {
 
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	RIOMap *map;
-	if (!newsize || !(map = r_io_map_resolve (io, id))) {
+	if (!newsize || !(map = r_io_map_get (io, id))) {
 		return false;
 	}
 	ut64 addr = r_io_map_begin (map);

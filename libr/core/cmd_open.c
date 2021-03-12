@@ -822,7 +822,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			if (!(q = strchr (s, ' '))) {
 				if (use_id) {
 					id = (ut32)r_num_math (core->num, s);
-					map = r_io_map_resolve (core->io, id);
+					map = r_io_map_get (core->io, id);
 				} else {
 					addr = r_num_math (core->num, s);
 					map = r_io_map_get_at (core->io, addr);
@@ -835,7 +835,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			q++;
 			if (use_id) {
 				id = (ut32)r_num_math (core->num, s);
-				map = r_io_map_resolve (core->io, id);
+				map = r_io_map_get (core->io, id);
 			} else {
 				addr = r_num_math (core->num, s);
 				map = r_io_map_get_at (core->io, addr);
