@@ -501,7 +501,7 @@ static RList *patch_relocs(RBin *b) {
 			return NULL;
 		}
 
-		RIOMap *map = b->iob.map_get (io, m_vaddr);
+		RIOMap *map = b->iob.map_get_at (io, m_vaddr);
 		if (!map) {
 			return NULL;
 		}

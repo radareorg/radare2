@@ -1522,7 +1522,7 @@ static int wt_handler_old(void *data, const char *input) {
 					r_core_cmd_help (core, help_msg_wt);
 					return 0;
 				}
-				RIOMap *map = r_io_map_get (core->io, poff);
+				RIOMap *map = r_io_map_get_at (core->io, poff);
 				toend = true;
 				//use physical address
 				poff = map ? poff - r_io_map_begin (map) + map->delta : poff;

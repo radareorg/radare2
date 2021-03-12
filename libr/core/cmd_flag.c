@@ -375,7 +375,7 @@ struct flagbar_t {
 static bool flagbar_foreach(RFlagItem *fi, void *user) {
 	struct flagbar_t *u = (struct flagbar_t *)user;
 	ut64 min = 0, max = r_io_size (u->core->io);
-	RIOMap *m = r_io_map_get (u->core->io, fi->offset);
+	RIOMap *m = r_io_map_get_at (u->core->io, fi->offset);
 	if (m) {
 		min = m->itv.addr;
 		max = m->itv.addr + m->itv.size;

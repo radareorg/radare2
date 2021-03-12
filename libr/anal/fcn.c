@@ -1047,7 +1047,7 @@ repeat:
 			}
 			{
 				bool must_eob = true;
-				RIOMap *map = anal->iob.map_get (anal->iob.io, addr);
+				RIOMap *map = anal->iob.map_get_at (anal->iob.io, addr);
 				if (map) {
 					must_eob = ( ! r_io_map_contain (map, op->jump) );
 				}

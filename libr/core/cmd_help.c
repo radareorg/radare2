@@ -1144,7 +1144,7 @@ static int cmd_help(void *data, const char *input) {
 			// physical address
 			ut64 o, n = (input[0] && input[1])?
 				r_num_math (core->num, input + 2): core->offset;
-			RIOMap *map = r_io_map_get (core->io, n);
+			RIOMap *map = r_io_map_get_at (core->io, n);
 			if (map) {
 				o = n - r_io_map_begin (map) + map->delta;
 				r_cons_printf ("0x%08"PFMT64x"\n", o);

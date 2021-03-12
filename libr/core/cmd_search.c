@@ -699,7 +699,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 	} else if (!strcmp (mode, "block")) {
 		append_bound (list, core->io, search_itv, core->offset, core->blocksize, 7);
 	} else if (!strcmp (mode, "io.map")) {
-		RIOMap *m = r_io_map_get (core->io, core->offset);
+		RIOMap *m = r_io_map_get_at (core->io, core->offset);
 		if (m) {
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size, m->perm);
 		}
@@ -716,7 +716,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			ut64 from = r_itv_begin (part->itv);
 			ut64 to = r_itv_end (part->itv);
 			// XXX skyline's fake map perms are wrong
-			RIOMap *m = r_io_map_get (core->io, from);
+			RIOMap *m = r_io_map_get_at (core->io, from);
 			int rwx = m? m->perm: part->map->perm;
 #else
 		void **it;

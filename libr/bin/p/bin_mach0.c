@@ -638,7 +638,7 @@ static RList* patch_relocs(RBin *b) {
 		goto beach;
 	}
 
-	RIOMap *gotr2map = b->iob.map_get (io, n_vaddr);
+	RIOMap *gotr2map = b->iob.map_get_at (io, n_vaddr);
 	if (!gotr2map) {
 		goto beach;
 	}

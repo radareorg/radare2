@@ -683,7 +683,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 
 	switch (input[1]) {
 	case '.': // "om."
-		map = r_io_map_get (core->io, core->offset);
+		map = r_io_map_get_at (core->io, core->offset);
 		if (map) {
 			if (input[2] == 'j') { // "om.j"
 				pj = pj_new ();
@@ -724,7 +724,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'b': // "omb"
 		if (input[2] == '.') {
-			RIOMap *map = r_io_map_get (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				ut64 dst = r_num_math (core->num, input + 3);
 				r_io_map_remap (core->io, map->id, dst);
@@ -790,7 +790,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'n': // "omn"
 		if (input[2] == '.') { // "omn."
-			RIOMap *map = r_io_map_get (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				switch (input[3]) {
 				case '-':
@@ -825,7 +825,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					map = r_io_map_resolve (core->io, id);
 				} else {
 					addr = r_num_math (core->num, s);
-					map = r_io_map_get (core->io, addr);
+					map = r_io_map_get_at (core->io, addr);
 				}
 				r_io_map_del_name (map);
 				s = p;
@@ -838,7 +838,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				map = r_io_map_resolve (core->io, id);
 			} else {
 				addr = r_num_math (core->num, s);
-				map = r_io_map_get (core->io, addr);
+				map = r_io_map_get_at (core->io, addr);
 			}
 			if (map) {
 				if (*q) {
@@ -909,7 +909,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case '*': // "om*"
 	case 'q': // "omq"
 		if (input[1] && input[2] == '.') {
-			map = r_io_map_get (core->io, core->offset);
+			map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				core->print->cb_printf ("%i\n", map->id);
 			}
@@ -1760,12 +1760,12 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '.': // "o."
 		if (input[1] == 'q') { // "o.q" // same as oq
-			RIOMap *map = r_io_map_get (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				r_cons_printf ("%d\n", map->fd);
 			}
 		} else {
-			RIOMap *map = r_io_map_get (core->io, core->offset);
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				RIODesc *desc = r_io_desc_get (core->io, map->fd);
 				if (desc) {

@@ -1648,7 +1648,7 @@ static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 		return;
 	}
 
-	RIOMap *map = r_io_map_get (r->io, addr);
+	RIOMap *map = r_io_map_get_at (r->io, addr);
 	if (!map || map ->perm & R_PERM_X) {
 		return;
 	}
@@ -2604,7 +2604,7 @@ static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at) {
 	char *uri = r_str_newf ("null://%"PFMT64u, gap);
 	RIODesc *desc = findReusableFile (io, uri, sec->perm);
 	if (desc) {
-		RIOMap *map = r_io_map_get (io, at);
+		RIOMap *map = r_io_map_get_at (io, at);
 		if (!map) {
 			r_io_map_add_batch (io, desc->fd, desc->perm, 0LL, at, gap);
 		}
@@ -2618,7 +2618,7 @@ static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at) {
 		return false;
 	}
 	// this works, because new maps are always born on the top
-	RIOMap *map = r_io_map_get (io, at);
+	RIOMap *map = r_io_map_get_at (io, at);
 	// check if the mapping failed
 	if (!map) {
 		if (!reused) {

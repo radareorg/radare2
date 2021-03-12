@@ -1227,7 +1227,7 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		RIOMap *map;
 		while (total_map_left < len
 		       && (map = p->iob.io->va
-		           ? p->iob.map_get (p->iob.io, addr)
+		           ? p->iob.map_get_at (p->iob.io, addr)
 		           : p->iob.map_get_paddr (p->iob.io, addr))
 		       && map->perm & R_PERM_R) {
 			if (!r_io_map_size(map)) {

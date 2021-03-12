@@ -493,7 +493,7 @@ R_API ut64 r_io_p2v(RIO *io, ut64 pa) {
 }
 
 R_API ut64 r_io_v2p(RIO *io, ut64 va) {
-	RIOMap *map = r_io_map_get (io, va);
+	RIOMap *map = r_io_map_get_at (io, va);
 	if (map) {
 		st64 delta = va - r_io_map_begin (map);
 		return r_io_map_begin (map) + map->delta + delta;
@@ -531,7 +531,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_get_map = r_io_map_get_for_fd;
 	bnd->fd_remap = r_io_map_remap_fd;
 	bnd->is_valid_offset = r_io_is_valid_offset;
-	bnd->map_get = r_io_map_get;
+	bnd->map_get_at = r_io_map_get_at;
 	bnd->map_get_paddr = r_io_map_get_paddr;
 	bnd->addr_is_mapped = r_io_addr_is_mapped;
 	bnd->map_add = r_io_map_add;

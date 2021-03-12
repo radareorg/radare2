@@ -746,7 +746,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'M': { // $M map address
 				ut64 lower = UT64_MAX;
 				ut64 size = 0LL;
-				RIOMap *map = r_io_map_get (core->io, core->offset);
+				RIOMap *map = r_io_map_get_at (core->io, core->offset);
 				if (map) {
 					lower = r_io_map_begin (map);
 					size = r_io_map_size (map);

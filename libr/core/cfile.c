@@ -794,7 +794,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
 					if (reg) {
 						sp_addr = r_reg_get_value (r->anal->reg, reg);
-						stack_map = r_io_map_get (r->io, sp_addr);
+						stack_map = r_io_map_get_at (r->io, sp_addr);
 					}
 				}
 				regname = r_reg_get_name (r->anal->reg, R_REG_NAME_PC);
@@ -816,7 +816,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			RBinMap *mapcore;
 
 			r_list_foreach (maps, iter, mapcore) {
-				RIOMap *iomap = r_io_map_get (r->io, mapcore->addr);
+				RIOMap *iomap = r_io_map_get_at (r->io, mapcore->addr);
 				if (iomap && (mapcore->file || stack_map == iomap)) {
 					r_io_map_set_name (iomap, r_str_get_fail (mapcore->file, "[stack]"));
 				}

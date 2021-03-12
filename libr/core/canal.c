@@ -588,7 +588,7 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 	if (!refdepth) {
 		return false;
 	}
-	RIOMap *map = r_io_map_get (core->io, ref->addr);
+	RIOMap *map = r_io_map_get_at (core->io, ref->addr);
 	if (!map) {
 		return false;
 	}
@@ -853,7 +853,7 @@ static int __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			r_anal_add_function (core->anal, fcn);
 			if (has_next) {
 				ut64 addr = r_anal_function_max_addr (fcn);
-				RIOMap *map = r_io_map_get (core->io, addr);
+				RIOMap *map = r_io_map_get_at (core->io, addr);
 				// only get next if found on an executable section
 				if (!map || (map && map->perm & R_PERM_X)) {
 					for (i = 0; i < nexti; i++) {
@@ -929,7 +929,7 @@ error:
 		}
 		if (fcn && has_next) {
 			ut64 newaddr = r_anal_function_max_addr (fcn);
-			RIOMap *map = r_io_map_get (core->io, newaddr);
+			RIOMap *map = r_io_map_get_at (core->io, newaddr);
 			if (!map || (map && (map->perm & R_PERM_X))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
@@ -4323,7 +4323,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	}
 	memset (as->block, 0, as_size);
 	for (at = from; at < to; at += step) {
-		RIOMap *map = r_io_map_get (core->io, at);
+		RIOMap *map = r_io_map_get_at (core->io, at);
 		piece = (at - from) / step;
 		as->block[piece].perm = map ? map->perm: (core->io->desc ? core->io->desc->perm: 0);
 	}
@@ -5092,7 +5092,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (str[0] == ' ') {
 			end = addr + r_num_math (core->num, str + 1);
 		} else {
-			RIOMap *map = r_io_map_get (core->io, addr);
+			RIOMap *map = r_io_map_get_at (core->io, addr);
 			if (map) {
 				end = r_io_map_end (map);
 			} else {
@@ -5453,7 +5453,7 @@ repeat:;
 
 static bool isValidAddress (RCore *core, ut64 addr) {
 	// check if address is mapped
-	RIOMap* map = r_io_map_get (core->io, addr);
+	RIOMap* map = r_io_map_get_at (core->io, addr);
 	if (!map) {
 		return false;
 	}
