@@ -2964,7 +2964,6 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
 			if (hashtypes) {
-				char *hashstr = NULL;
 				int datalen = section->size;
 				int limit = filesize? R_MIN (filesize, bin_hashlimit): bin_hashlimit;
 				if (datalen > 0 && datalen < limit) {
