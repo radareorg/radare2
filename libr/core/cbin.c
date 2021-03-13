@@ -2967,9 +2967,11 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 				if (!data) {
 					goto out;
 				}
-				ut32 datalen = section->size;
-				r_io_pread_at (r->io, section->paddr, data, datalen);
-				hashstr = build_hash_string (pj, mode, hashtypes, data, datalen);
+				int datalen = section->size;
+				if (datalen > 0) {
+					r_io_pread_at (r->io, section->paddr, data, datalen);
+					hashstr = build_hash_string (pj, mode, hashtypes, data, datalen);
+				}
 				free (data);
 			}
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s%s%s\n",
