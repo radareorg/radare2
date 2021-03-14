@@ -47,8 +47,8 @@ static char* de_bruijn(const char* charset, int order, int maxlen) {
 	if (!charset) {
 		return NULL;
 	}
-	int size = strlen (charset);
-	int* prenecklace_a = calloc (size * order, sizeof (int));
+	size_t size = strlen (charset);
+	int* prenecklace_a = calloc (size * (size_t)order, sizeof (int));
 	if (!prenecklace_a) {
 		return NULL;
 	}

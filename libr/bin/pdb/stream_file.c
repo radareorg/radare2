@@ -45,7 +45,7 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx, i
 // size by default = -1
 ///////////////////////////////////////////////////////////////////////////////
 void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res) {
-	int pn_start, off_start, pn_end, off_end;
+	size_t pn_start, off_start, pn_end, off_end;
 	if (size == -1) {
 		char *pdata = (char *) malloc(stream_file->pages_amount * stream_file->page_size);
 		if (pdata) {
