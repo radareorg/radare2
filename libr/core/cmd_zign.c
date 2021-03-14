@@ -688,7 +688,6 @@ static const char *getprefix(RSignType t) {
 	default:
 		r_return_val_if_reached ("unknown_type");
 	}
-	return "unk";
 }
 
 static int searchHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user) {
