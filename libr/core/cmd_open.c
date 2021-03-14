@@ -443,7 +443,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 			pj_ki (pj, "fd", map->fd);
 			pj_kn (pj, "delta", map->delta);
 			pj_kn (pj, "from", r_io_map_begin (map));
-			pj_kn (pj, "to", r_io_map_end (map));
+			pj_kn (pj, "to", r_io_map_to (map));
 			pj_ks (pj, "perm", r_str_rwx_i (map->perm));
 			pj_ks (pj, "name", r_str_get (map->name));
 			pj_end (pj);
@@ -695,7 +695,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				pj_ki (pj, "fd", map->fd);
 				pj_kn (pj, "delta", map->delta);
 				pj_kn (pj, "from", r_io_map_begin (map));
-				pj_kn (pj, "to", r_io_map_end (map));
+				pj_kn (pj, "to", r_io_map_to (map));
 				pj_ks (pj, "perm", r_str_rwx_i (map->perm));
 				pj_ks (pj, "name", r_str_get (map->name));
 				pj_end (pj);
