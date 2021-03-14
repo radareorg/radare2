@@ -557,6 +557,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	};
 	bool arch_destroys_dst = does_arch_destroys_dst (anal->cur->arch);
 	const bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
+	const bool is_v850 = is_arm ? false: (anal->cur->arch && !strncmp (anal->cur->arch, "v850", 4)) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4);
 	const bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
 	const bool is_dalvik = is_x86? false: anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
@@ -1202,6 +1203,12 @@ repeat:
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RJMP:
 			if (is_arm && last_is_mov_lr_pc) {
+				break;
+			} else if (is_v850 && anal->opt.jmptbl) {
+				int ptsz = cmpval? cmpval + 1: 4;
+				ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr,
+					0, op->addr + 2, op->addr + 2, 2, ptsz, 0, ret);
+				gotoBeach (R_ANAL_RET_END);
 				break;
 			}
 			/* fall through */

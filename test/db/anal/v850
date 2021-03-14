@@ -135,6 +135,7 @@ EXPECT=<<EOF
 0x0010449a   16 314          fcn.0010449a
 0x00104654    2 102          fcn.00104654
 0x00104b72    1 154          fcn.00104b72
+0x00104d56    6 114          case.0x104c0a.0
 0x00104ec0    1 4            fcn.00104ec0
 0x00104ec4   38 668  -> 648  sym.___udivdi3
 0x001052d8    5 74           sym.___main
@@ -200,7 +201,7 @@ EXPECT=<<EOF
 0x00107cd4    1 12           fcn.00107cd4
 0x00107cea    1 12           fcn.00107cea
 0x0010907e    1 10           fcn.0010907e
-0x00109fce    4 146          fcn.00109fce
+0x00109fce    5 822  -> 152  fcn.00109fce
 0x0010ade6    1 12           fcn.0010ade6
 0x0010adf2    1 24           sym._lseek
 0x0010ae0a    1 22           sym._open
@@ -268,7 +269,7 @@ EXPECT=<<EOF
 0x00111822    1 20           sym._strtoul
 0x00111e46   13 440  -> 258  fcn.00111e46
 0x00112758   11 182  -> 178  sym.__sungetc_r
-0x0011280e   18 534          sym.___ssrefill_r
+0x0011280e   25 1478 -> 680  sym.___ssrefill_r
 0x001138fa    2 32           sym.___submore
 0x00113980   21 270  -> 248  sym.__ungetc_r
 0x00113ab2    1 18           sym._ungetc
@@ -329,6 +330,7 @@ EXPECT=<<EOF
 0x001018bc    6 408          sym._expr
 0x00101a54    6 514  -> 330  sym._term
 0x00101c56    3 114          sym._prim
+0x00101f76    1 36           case.0x101cc6.0
 0x00102182    1 50           sym._cin_putback
 0x001021b4    6 120          sym._r_num_calc_index
 0x0010222c    9 172          sym._cin_get

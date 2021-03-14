@@ -170,6 +170,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 		return false;
 	}
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
+	const bool is_v850 = !is_arm && ((anal->cur->arch && !strncmp (anal->cur->arch, "v850", 4)) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4));
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz);
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
@@ -197,7 +198,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 		if (jmpptr == 0 || jmpptr == UT32_MAX || jmpptr == UT64_MAX) {
 			break;
 		}
-		if (sz == 2 && is_arm) {
+		if (sz == 2 && (is_arm || is_v850)) {
 			jmpptr = ip +  4 + (jmpptr * 2); // tbh [pc, r2, lsl 1]  // assume lsl 1
 		} else if (sz == 1 && is_arm) {
 			jmpptr = ip +  4 + (jmpptr * 2); // lbb [pc, r2]  // assume lsl 1
