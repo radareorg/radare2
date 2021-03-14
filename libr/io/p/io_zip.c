@@ -136,11 +136,15 @@ static int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 
 	if (zipArch && zfo && zfo->entry != -1) {
 		zFile = zip_fopen_index (zipArch, zfo->entry, 0);
+		if (!zFile) {
+			zip_close (zipArch);
+			return false;
+		}
 		if (!zfo->b) {
 			zfo->b = r_buf_new ();
 		}
 		zip_stat_init (&sb);
-		if (zFile && zfo->b && !zip_stat_index (zipArch, zfo->entry, 0, &sb)) {
+		if (zfo->b && !zip_stat_index (zipArch, zfo->entry, 0, &sb)) {
 			ut8 *buf = calloc (1, sb.size);
 			if (buf) {
 				zip_fread (zFile, buf, sb.size);
