@@ -441,6 +441,12 @@ R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 	if (oaddr == addr) {
 		return section;
 	}
+	if (r_config_get_b (core->config, "cfg.debug")) {
+		char *rv = r_core_cmd_strf (core, "dmi.@0x%08"PFMT64x, addr);
+		r_str_replace_char (rv, '\n', ' ');
+		r_str_ncpy (section, rv, sizeof (section) - 1);
+		return section;
+	}
 	RBinObject *bo = r_bin_cur_object (core->bin);
 	RBinSection *s = bo? r_bin_get_section_at (bo, addr, core->io->va): NULL;
 	if (s && s->name && *s->name) {
