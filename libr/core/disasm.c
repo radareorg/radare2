@@ -1517,10 +1517,13 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			return cur - from;
 		}
 	}
+	if (r_anal_get_block_at (core->anal, ds->at)) {
+		ds->midflags = ds->midflags ? R_MIDFLAGS_SHOW : R_MIDFLAGS_HIDE;
+	}
 	for (i = 1; i < ds->oplen; i++) {
 		RFlagItem *fi = r_flag_get_i (core->flags, ds->at + i);
 		if (fi && fi->name) {
-			if (ds->midflags == 2 && ((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
+			if (ds->midflags == R_MIDFLAGS_REALIGN && ((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
 				i = 0;
 			} else if (!strncmp (fi->name, "hit.", 4)) { // use search.prefix ?
 				i = 0;
