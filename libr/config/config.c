@@ -543,6 +543,7 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 		}
 		ov = node->value;
 		r_config_node_value_format_i (buf, sizeof (buf), i, NULL);
+		free (node->value);
 		node->value = strdup (buf);
 		if (!node->value) {
 			node = NULL;

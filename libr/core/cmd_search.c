@@ -669,7 +669,8 @@ static bool maskMatches(int perm, int mask, bool only) {
 }
 
 // TODO(maskray) returns RList<RInterval>
-R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode, const char *prefix) {
+// XXX perm parameter is unused
+R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const char *mode, const char *prefix) {
 	r_return_val_if_fail (core, NULL);
 
 	RList *list = r_list_newf (free); // XXX r_io_map_free);

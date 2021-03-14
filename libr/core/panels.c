@@ -5448,7 +5448,6 @@ static bool __init_panels_menu(RCore *core) {
 
 	{
 		parent = "View";
-		i = 0;
 		RList *list = __sorted_list (core, menus_View, COUNT (menus_View));
 		char *pos;
 		RListIter* iter;
@@ -5506,7 +5505,6 @@ static bool __init_panels_menu(RCore *core) {
 
 	{
 		parent = "Debug";
-		i = 0;
 		RList *list = __sorted_list (core, menus_Debug, COUNT (menus_Debug));
 		char *pos;
 		RListIter* iter;

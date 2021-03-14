@@ -167,7 +167,7 @@ static int op_cond(const ut8 *data) {
 
 static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const ut8 *b = (ut8 *) data;
-	ut8 ndata[4];
+	ut8 ndata[4] = {0};
 	ut32 branch_dst_addr, i = 0;
 	ut32 *code = (ut32 *) data;
 	struct winedbg_arm_insn *arminsn;
@@ -184,10 +184,11 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	if (anal->big_endian) {
 		b = data = ndata;
+		ut8 tmp = data[3];
 		ndata[0] = data[3];
 		ndata[1] = data[2];
 		ndata[2] = data[1];
-		ndata[3] = data[0];
+		ndata[3] = tmp;
 	}
 	if (anal->bits == 16) {
 		arm_free (arminsn);
