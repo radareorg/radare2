@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2019 - pancake */
+/* radare2 - LGPL - Copyright 2013-2021 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
