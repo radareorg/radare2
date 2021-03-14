@@ -2479,6 +2479,7 @@ static struct autocomplete_flag_map_t {
 	{ "$flsp", "shows known flag-spaces hints", R_CORE_AUTOCMPLT_FLSP },
 	{ "$seek", "shows the seek hints", R_CORE_AUTOCMPLT_SEEK },
 	{ "$fcn", "shows the functions hints", R_CORE_AUTOCMPLT_FCN },
+	{ "$vars", "autocomplete function varnames", R_CORE_AUTOCMPLT_VARS },
 	{ "$zign", "shows known zignatures hints", R_CORE_AUTOCMPLT_ZIGN },
 	{ "$eval", "shows known evals hints", R_CORE_AUTOCMPLT_EVAL },
 	{ "$prjt", "shows known projects hints", R_CORE_AUTOCMPLT_PRJT },
