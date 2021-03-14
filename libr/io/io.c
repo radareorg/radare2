@@ -107,6 +107,7 @@ R_API RIO* r_io_init(RIO* io) {
 	r_return_val_if_fail (io, NULL);
 	io->addrbytes = 1;
 	r_io_desc_init (io);
+	r_io_bank_init (io);
 	r_skyline_init (&io->map_skyline);
 	r_io_map_init (io);
 	r_io_cache_init (io);
@@ -694,6 +695,7 @@ R_API int r_io_fini(RIO* io) {
 	}
 	r_io_desc_cache_fini_all (io);
 	r_io_desc_fini (io);
+	r_io_bank_fini (io);
 	r_io_map_fini (io);
 	ls_free (io->plugins);
 	r_io_cache_fini (io);
