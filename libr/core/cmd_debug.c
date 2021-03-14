@@ -1702,7 +1702,18 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			}
 			break;
 		case '.': // "dmi."
-			{
+			if (r_config_get_b (core->config, "cfg.debug")) {
+				ut64 addr = core->offset;
+				r_list_foreach (core->dbg->maps, iter, map) {
+					if (!map->shared) {
+						continue;
+					}
+					if (addr >= map->addr && addr < map->addr_end) {
+						r_cons_printf ("%s\n", map->name);
+				//		break;
+					}
+				}
+			} else {
 				map = get_closest_map (core, addr);
 				if (map) {
 					ut64 closest_addr = UT64_MAX;
