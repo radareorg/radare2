@@ -261,8 +261,7 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 			eq++;
 			continue;
 		}
-		switch (mode)
-		{
+		switch (mode) {
 		case 0:
 			r_cons_printf ("0x%08"PFMT64x " (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n",
 				core->offset + i, i + 1,
@@ -282,7 +281,9 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 			pj_ki (pj, "cmp_value", (int)d[i]);
 			pj_end (pj);
 			break;
-
+		default:
+			eprintf ("Unknown mode\n");
+			break;
 		}
 	}
 	if (mode == 0) {
@@ -654,18 +655,17 @@ static int cmd_cmp(void *data, const char *input) {
 		free (buf);
 		free (filled);
 		break;
-	case 'X':
+	case 'X': // "cX"
 		buf = malloc (core->blocksize);
 		if (buf) {
 			if (!r_io_read_at (core->io, r_num_math (core->num,
 					    input + 1), buf, core->blocksize)) {
 				eprintf ("Cannot read hexdump\n");
 			} else {
-				val = radare_compare (core, block, buf, ret, mode);
+				val = radare_compare (core, block, buf, core->blocksize, mode);
 			}
 			free (buf);
 		}
-		return false;
 		break;
 	case 'f':
 		if (input[1] != ' ') {
@@ -983,6 +983,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_c);
+		break;
 	}
 	if (val != UT64_MAX) {
 		core->num->value = val;
