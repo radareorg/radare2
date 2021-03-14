@@ -100,6 +100,7 @@ typedef struct r_io_undo_w_t {
 typedef struct r_io_t {
 	struct r_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
+	ut32 bank;	// current bank
 	int bits;
 	int va;	// keep it as int, value can be 0, 1 or 2
 	bool ff;
@@ -114,6 +115,7 @@ typedef struct r_io_t {
 	RPVector maps; //from tail backwards maps with higher priority are found
 	RSkyline map_skyline; // map parts that are not covered by others
 	RIDStorage *files;
+	RIDStorage *banks;
 	RCache *buffer;
 	RPVector cache;
 	RSkyline cache_skyline;
@@ -343,6 +345,15 @@ R_API ut64 r_io_map_next_address(RIO* io, ut64 addr);
 
 R_API ut64 r_io_p2v(RIO *io, ut64 pa);
 R_API ut64 r_io_v2p(RIO *io, ut64 va);
+
+//io_submap.c
+R_API RIOSubMap *r_io_submap_new(RIO *io, RIOMapRef *mapref);
+
+//io_bank.c
+R_API RIOBank *r_io_bank_new(void);
+R_API void r_io_bank_free(RIOBank *bank);
+R_API void r_io_bank_init(RIO *io);
+R_API void r_io_bank_fini(RIO *io);
 
 //io.c
 R_API RIO *r_io_new(void);
