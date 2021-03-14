@@ -420,7 +420,7 @@ R_API ut64 r_io_map_location(RIO *io, ut64 size) {
 
 R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref) {
 	r_return_val_if_fail (io && ref, NULL);
-	RIOMap *map = r_io_map_resolve (io, ref->id);
+	RIOMap *map = r_io_map_get (io, ref->id);
 	if (!map) {
 		return NULL;
 	}
