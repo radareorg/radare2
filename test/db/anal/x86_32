@@ -3536,3 +3536,25 @@ EXPECT=<<EOF
 0x000000000000000000000000a0a1a2a3
 EOF
 RUN
+
+NAME=tiny1 aaef
+FILE=bins/elf/analysis/tiny1
+ARGS=-N
+CMDS=<<EOF
+e asm.bytes=false
+e asm.comments=false
+aF
+aaef  # TODO Fix if aae here
+pdf
+# TODO eip flag?
+EOF
+EXPECT=<<EOF
+            ;-- eip:
+/ 7: entry0 ();
+|           0x08048054      mov bl, 0x2a
+|           0x08048056      xor eax, eax
+|           0x08048058      inc eax
+|           ;-- syscall.exit:
+\           0x08048059      int 0x80
+EOF
+RUN
