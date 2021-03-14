@@ -5125,11 +5125,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		r_core_cmd0 (core, "aeim");
 	}
+	const char *spname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	EsilBreakCtx ctx = {
 		&op,
 		fcn,
-		r_reg_get_name (core->anal->reg, R_REG_NAME_SP),
-		r_reg_getv (core->anal->reg, ctx.spname)
+		spname,
+		r_reg_getv (core->anal->reg, spname)
 	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop

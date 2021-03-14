@@ -2578,8 +2578,9 @@ static void init_putz(CType *t, unsigned long c, int size) {
    size only evaluation is wanted (only for arrays). */
 static void decl_initializer(CType *type, unsigned long c, int first, int size_only) {
 	long long index;
-	int array_length, n, no_oblock, nb, parlevel, parlevel1, i;
-	int size1, align1, expr_type;
+	int n, no_oblock, nb, parlevel, parlevel1;
+	size_t array_length, size1, i;
+	int align1, expr_type;
 	Sym *s, *f;
 	CType *t1;
 

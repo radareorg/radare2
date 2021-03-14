@@ -678,7 +678,7 @@ static size_t get_namespace_and_name(const char *buf, STypeCodeStr *type_code_st
 				tmp += state.amount_of_read_chars + 1;
 				read_len += state.amount_of_read_chars + 1;
 			}
-			char *demangled;
+			char *demangled = NULL;
 			if (parse_microsoft_mangled_name (tmp + 2, &demangled, &len) != eDemanglerErrOK) {
 				break;
 			}
