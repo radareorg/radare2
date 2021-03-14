@@ -14,7 +14,6 @@ typedef void *(*ParseEntryFcn) (RBuffer *b, ut64 max);
 static ut32 consume_r(RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fcn) {
 	r_return_val_if_fail (b && n_out && consume_fcn, 0);
 
-	size_t n;
 	ut32 tmp;
 	ut64 cur = r_buf_tell (b);
 	if (max >= r_buf_size (b) || cur > max) {
@@ -26,7 +25,8 @@ static ut32 consume_r(RBuffer *b, ut64 max, size_t *n_out, ConsumeFcn consume_fc
 		return 0;
 	}
 	r_buf_read (b, buf, 16);
-	if (!(n = consume_fcn (buf, buf + max + 1, &tmp))) {
+	size_t n = consume_fcn (buf, buf + max + 1, &tmp);
+	if (!n) {
 		free (buf);
 		return 0;
 	}
@@ -46,7 +46,7 @@ static size_t consume_u32_r(RBuffer *b, ut64 max, ut32 *out) {
 }
 
 static size_t consume_u7_r(RBuffer *b, ut64 max, ut8 *out) {
-	size_t n;
+	size_t n = 0;
 	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
 	if (out) {
 		*out = (ut8) (tmp & 0x7f);
@@ -64,7 +64,7 @@ static size_t consume_s7_r(RBuffer *b, ut64 max, st8 *out) {
 }
 
 static size_t consume_u1_r(RBuffer *b, ut64 max, ut8 *out) {
-	size_t n;
+	size_t n = 0;
 	ut32 tmp = consume_r (b, max, &n, read_u32_leb128);
 	if (out) {
 		*out = (ut8) (tmp & 0x1);

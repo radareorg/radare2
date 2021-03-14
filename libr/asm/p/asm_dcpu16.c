@@ -12,7 +12,7 @@
 #include "../arch/dcpu16/asm.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	char buf_asm[32];
+	char buf_asm[96];
 	if (len < 2) {
 		return -1; // at least 2 bytes!
 	}
