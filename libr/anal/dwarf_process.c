@@ -384,6 +384,7 @@ static RAnalStructMember *parse_struct_member (Context *ctx, ut64 idx, RAnalStru
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
+			free (name);
 			name = get_die_name (die);
 			if (!name) {
 				goto cleanup;
@@ -391,6 +392,7 @@ static RAnalStructMember *parse_struct_member (Context *ctx, ut64 idx, RAnalStru
 			break;
 		case DW_AT_type:
 			parse_type (ctx, value->reference, &strbuf, &size);
+			free (type);
 			type = r_strbuf_drain_nofree (&strbuf);
 			if (!type || !*type) {
 				goto cleanup;
@@ -646,6 +648,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
+			free (name);
 			name = get_die_name (die);
 			if (!name) {
 				goto cleanup;
@@ -653,6 +656,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 			break;
 		case DW_AT_type:
 			parse_type (ctx, value->reference, &strbuf, &size);
+			free (type);
 			type = r_strbuf_drain_nofree (&strbuf);
 			if (!type) {
 				goto cleanup;
@@ -692,6 +696,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 		RBinDwarfAttrValue *value = &die->attr_values[i];
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
+			free (name);
 			if (!value->string.content) {
 				name = create_type_name_from_offset (die->offset);
 			} else {
@@ -717,6 +722,7 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	}
 	RAnalBaseType *base_type = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
 	if (!base_type) {
+		free (name);
 		return;
 	}
 	base_type->name = name;
