@@ -2452,12 +2452,12 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	// handle meta here //
 	if (!ds->asm_meta) {
-		int i = 0;
+		size_t i = 0;
 		if (meta && meta_size > 0 && meta->type != R_META_TYPE_HIDE) {
 			// XXX this is just noise. should be rewritten
 			switch (meta->type) {
 			case R_META_TYPE_DATA:
-				if (meta->str) {
+				if (!R_STR_ISEMPTY (meta->str)) {
 					r_cons_printf (".data: %s\n", meta->str);
 				}
 				i += meta_size;
@@ -2491,6 +2491,18 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				char *op_hex = r_asm_op_get_hex (&ds->asmop);
 				r_asm_op_set_asm (&ds->asmop, sdb_fmt (".hex %s%s", op_hex, tail));
 				free (op_hex);
+				bool be = ds->core->print->big_endian;
+				switch (meta_size) {
+				case 2:
+					ds->analop.val = r_read_ble16 (buf, be);
+					break;
+				case 4:
+					ds->analop.val = r_read_ble32 (buf, be);
+					break;
+				case 8:
+					ds->analop.val = r_read_ble64 (buf, be);
+					break;
+				}
 				break;
 			}
 			}
