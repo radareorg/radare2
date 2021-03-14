@@ -624,10 +624,10 @@ static bool cb_asmarch(void *user, void *data) {
 	//free the old value
 	char *asm_cpu = strdup (r_config_get (core->config, "asm.cpu"));
 	if (core->rasm->cur) {
-		const char *newAsmCPU = core->rasm->cur->cpus;
-		if (newAsmCPU) {
-			if (*newAsmCPU) {
-				char *nac = strdup (newAsmCPU);
+		const char *new_asm_cpu = core->rasm->cur->cpus;
+		if (new_asm_cpu) {
+			if (*new_asm_cpu) {
+				char *nac = strdup (new_asm_cpu);
 				char *comma = strchr (nac, ',');
 				if (comma) {
 					if (!*asm_cpu || (*asm_cpu && !strstr(nac, asm_cpu))) {
@@ -706,11 +706,7 @@ static bool cb_asmarch(void *user, void *data) {
 	}
 	{
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v != -1) {
-			r_config_set_i (core->config, "asm.pcalign", v);
-		} else {
-			r_config_set_i (core->config, "asm.pcalign", 0);
-		}
+		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	}
 	/* reload types and cc info */
 	// changing asm.arch changes anal.arch
@@ -2148,6 +2144,14 @@ static bool cb_ioff(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->io->ff = (bool)node->i_value;
+	return true;
+}
+
+static bool cb_iomask(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->io->mask = node->i_value;
+	core->flags->mask = node->i_value;
 	return true;
 }
 
@@ -3899,6 +3903,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("io.pcache.write", "false", &cb_iopcachewrite, "Enable write-cache");
 	SETCB ("io.pcache.read", "false", &cb_iopcacheread, "Enable read-cache");
 	SETCB ("io.ff", "true", &cb_ioff, "Fill invalid buffers with 0xff instead of returning error");
+	SETICB ("io.mask", 0, &cb_iomask, "Mask addresses before resolving as maps");
 	SETBPREF ("io.exec", "true", "See !!r2 -h~-x");
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB ("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");

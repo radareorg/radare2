@@ -98,6 +98,9 @@ static void remove_offsetmap(RFlag *f, RFlagItem *item) {
 }
 
 static RFlagsAtOffset *flags_at_offset(RFlag *f, ut64 off) {
+	if (f->mask) {
+		off &= f->mask;
+	}
 	RFlagsAtOffset *res = r_flag_get_nearest_list (f, off, 0);
 	if (res) {
 		return res;
@@ -477,6 +480,9 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 	r_return_val_if_fail (f && flag_prefix, NULL);
 	RListIter *iter = NULL;
 	RFlagItem *item = NULL;
+	if (f->mask) {
+		off &= f->mask;
+	}
 	const RList *list = r_flag_get_list (f, off);
 	if (list) {
 		r_list_foreach (list, iter, item) {
@@ -499,6 +505,9 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 /* return the first flag item that can be found at offset "off", or NULL otherwise */
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	r_return_val_if_fail (f, NULL);
+	if (f->mask) {
+		off &= f->mask;
+	}
 	const RList *list = r_flag_get_list (f, off);
 	return list? evalFlag (f, r_list_get_top (list)): NULL;
 }
@@ -508,6 +517,9 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
  * Pass in the name of each space, in order, followed by a NULL */
 R_API RFlagItem *r_flag_get_by_spaces(RFlag *f, ut64 off, ...) {
 	r_return_val_if_fail (f, NULL);
+	if (f->mask) {
+		off &= f->mask;
+	}
 
 	const RList *list = r_flag_get_list (f, off);
 	RFlagItem *ret = NULL;
@@ -590,6 +602,9 @@ static bool isFunctionFlag(const char *n) {
  * NULL is returned if such a item is not found. */
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 	r_return_val_if_fail (f, NULL);
+	if (f->mask) {
+		off &= f->mask;
+	}
 
 	RFlagItem *nice = NULL;
 	RListIter *iter;
@@ -660,6 +675,9 @@ R_API RList *r_flag_all_list(RFlag *f, bool by_space) {
 
 /* return the list of flag items that are associated with a given offset */
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off) {
+	if (f->mask) {
+		off &= f->mask;
+	}
 	const RFlagsAtOffset *item = r_flag_get_nearest_list (f, off, 0);
 	return item ? item->flags : NULL;
 }
@@ -667,6 +685,9 @@ R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off) {
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
 	RFlagItem *fi;
 	RListIter *iter;
+	if (f->mask) {
+		off &= f->mask;
+	}
 	const RList *list = r_flag_get_list (f, off);
 	char *p = NULL;
 	r_list_foreach (list, iter, fi) {
@@ -680,6 +701,9 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 off) {
 // the same name, slightly change the name by appending ".%d" as suffix
 R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size) {
 	r_return_val_if_fail (f && name, NULL);
+	if (f->mask) {
+		off &= f->mask;
+	}
 	if (!r_flag_get (f, name)) {
 		return r_flag_set (f, name, off, size);
 	}
@@ -707,6 +731,9 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
  * NULL is returned in case of any errors during the process. */
 R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	r_return_val_if_fail (f && name && *name, NULL);
+	if (f->mask) {
+		off &= f->mask;
+	}
 
 	bool is_new = false;
 	char *itemname = filter_item_name (name);
