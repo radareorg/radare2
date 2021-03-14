@@ -348,10 +348,10 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	a->jump = b->jump;
 	a->fail = b->fail;
 	if (a->switch_op) {
-		r_anal_switch_op_free (a->switch_op);
 		if (a->anal->verbose) {
 			eprintf ("Dropping switch table at 0x%" PFMT64x " of block at 0x%" PFMT64x "\n", a->switch_op->addr, a->addr);
 		}
+		r_anal_switch_op_free (a->switch_op);
 	}
 	a->switch_op = b->switch_op;
 	b->switch_op = NULL;
