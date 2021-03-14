@@ -8565,6 +8565,7 @@ static bool cmd_ageh(RCore *core, const char *input) {
 	char *arg = r_str_trim_dup (input + 1);
 	char *sp = strchr (arg, ' ');
 	if (!sp) {
+		free(arg);
 		return false;
 	}
 	*sp++ = 0;
@@ -8573,6 +8574,7 @@ static bool cmd_ageh(RCore *core, const char *input) {
 
 	const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	sdb_set (core->sdb, k, add? "true": "", 0);
+	free(arg);
 	return true;
 }
 
