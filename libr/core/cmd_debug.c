@@ -4265,10 +4265,10 @@ static bool cmd_dcu(RCore *core, const char *input) {
 	}
 	to = UT64_MAX;
 	if (input[2] == '.') {
-		ptr = strchr (input + 3, ' ');
+		ptr = (input[3])? strchr (input + 3, ' '): NULL;
 		if (ptr) { // TODO: put '\0' in *ptr to avoid
 			from = r_num_tail (core->num, core->offset, input + 2);
-			if (ptr[1]=='.') {
+			if (ptr[1] == '.') {
 				to = r_num_tail (core->num, core->offset, ptr+2);
 			} else {
 				to = r_num_math (core->num, ptr+1);
@@ -4278,7 +4278,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 			from = r_num_tail (core->num, core->offset, input + 2);
 		}
 	} else {
-		ptr = strchr (input + 3, ' ');
+		ptr = (input[2] && input[3])? strchr (input + 3, ' ')? NULL;
 		if (ptr) { // TODO: put '\0' in *ptr to avoid
 			from = r_num_math (core->num, input + 3);
 			if (ptr[1]=='.') {
