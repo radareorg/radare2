@@ -1508,6 +1508,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	int i;
 
+	ds->midflags = r_config_get_i (core->config, "asm.flags.middle");
 	ds->hasMidflag = false;
 	if (ds->midcursor && core->print->cur != -1) {
 		ut64 cur = core->offset + core->print->cur;
@@ -1517,12 +1518,16 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			return cur - from;
 		}
 	}
-	if (r_anal_get_block_at (core->anal, ds->at)) {
-		ds->midflags = ds->midflags ? R_MIDFLAGS_SHOW : R_MIDFLAGS_HIDE;
+	if (ds->midflags == R_MIDFLAGS_HIDE) {
+		return 0;
 	}
+
 	for (i = 1; i < ds->oplen; i++) {
 		RFlagItem *fi = r_flag_get_i (core->flags, ds->at + i);
 		if (fi && fi->name) {
+			if (r_anal_get_block_at (core->anal, ds->at)) {
+				ds->midflags = R_MIDFLAGS_HIDE;
+			}
 			if (ds->midflags == R_MIDFLAGS_REALIGN && ((fi->name[0] == '$') || (fi->realname && fi->realname[0] == '$'))) {
 				i = 0;
 			} else if (!strncmp (fi->name, "hit.", 4)) { // use search.prefix ?
@@ -1593,9 +1598,7 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 		ds->cursor >= ds->index &&
 		ds->cursor < (ds->index + ds->asmop.size);
 	RBreakpointItem *p = r_bp_get_at (core->dbg->bp, ds->at);
-	if (ds->midflags) {
-		(void)handleMidFlags (core, ds, false);
-	}
+	(void)handleMidFlags (core, ds, false);
 	if (ds->midbb) {
 		(void)handleMidBB (core, ds);
 	}
@@ -5404,11 +5407,9 @@ toro:
 		if (ds->at >= addr) {
 			r_print_set_rowoff (core->print, ds->lines, ds->at - addr, calc_row_offsets);
 		}
-		if (ds->midflags) {
-			skip_bytes_flag = handleMidFlags (core, ds, true);
-			if (skip_bytes_flag && ds->midflags == R_MIDFLAGS_SHOW) {
-				ds->at += skip_bytes_flag;
-			}
+		skip_bytes_flag = handleMidFlags (core, ds, true);
+		if (skip_bytes_flag && ds->midflags == R_MIDFLAGS_SHOW) {
+			ds->at += skip_bytes_flag;
 		}
 		ds_show_xrefs (ds);
 		ds_show_flags (ds);
@@ -5728,9 +5729,7 @@ toro:
 		ret = r_asm_disassemble (core->rasm, &ds->asmop,
 			buf + addrbytes * i, nb_bytes - addrbytes * i);
 		ds->oplen = ret;
-		if (ds->midflags) {
-			skip_bytes_flag = handleMidFlags (core, ds, true);
-		}
+		skip_bytes_flag = handleMidFlags (core, ds, true);
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB (core, ds);
 		}
@@ -6069,9 +6068,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		ds->oplen = r_asm_op_get_size (&asmop);
 		ds->at = at;
-		if (ds->midflags) {
-			skip_bytes_flag = handleMidFlags (core, ds, false);
-		}
+		skip_bytes_flag = handleMidFlags (core, ds, false);
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB (core, ds);
 		}
