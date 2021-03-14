@@ -139,6 +139,18 @@ static int prev_mode(int mode) {
 	return (mode + R_AGRAPH_MODE_MAX - 1) % R_AGRAPH_MODE_MAX;
 }
 
+static void agraph_node_free(RANode *n) {
+        free (n->title);
+        free (n->body);
+        free (n);
+}
+
+static void agraph_edge_free(AEdge *e) {
+       r_list_free (e->x);
+       r_list_free (e->y);
+       free (e);
+}
+
 static RGraphNode *agraph_get_title(const RAGraph *g, RANode *n, bool in) {
 	if (!n) {
 		return NULL;
@@ -638,7 +650,7 @@ static void remove_cycles(RAGraph *g) {
 	const RGraphEdge *e;
 	const RListIter *it;
 
-	g->back_edges = r_list_new ();
+	g->back_edges = r_list_newf (free);
 	cyclic_vis.back_edge = (RGraphEdgeCallback) view_cyclic_edge;
 	cyclic_vis.data = g;
 	r_graph_dfs (g->graph, &cyclic_vis);
@@ -737,7 +749,7 @@ static void create_dummy_nodes(RAGraph *g) {
 			dummy->is_reversed = is_reversed (g, e);
 			dummy->w = 1;
 			r_agraph_add_edge_at (g, prev, dummy, nth);
-
+			r_list_append (g->dummy_nodes, dummy);
 			prev = dummy;
 			nth = -1;
 		}
@@ -1614,24 +1626,6 @@ static void place_original(RAGraph *g) {
 	sdb_free (D);
 }
 
-#if 0
-static void free_anode(RANode *n);
-static void remove_dummy_nodes(const RAGraph *g) {
-	const RList *nodes = r_graph_get_nodes (g->graph);
-	RGraphNode *gn;
-	RListIter *it;
-	RANode *n;
-
-	graph_foreach_anode (nodes, it, gn, n) {
-		if (n->is_dummy) {
-			r_graph_del_node (g->graph, gn);
-			n->gnode = NULL;
-			free_anode (n);
-		}
-	}
-}
-#endif
-
 static void set_layer_gap(RAGraph *g) {
 	int gap = 0;
 	int i = 0, j = 0;
@@ -1934,7 +1928,6 @@ static void backedge_info(RAGraph *g) {
 		free (arr[i]);
 	}
 	free (arr);
-	return;
 }
 
 /* 1) trasform the graph into a DAG
@@ -1947,7 +1940,7 @@ static void set_layout(RAGraph *g) {
 	int i, j, k;
 
 	r_list_free (g->edges);
-	g->edges = r_list_new ();
+	g->edges = r_list_newf ((RListFree)agraph_edge_free);
 
 	remove_cycles (g);
 	assign_layers (g);
@@ -3617,18 +3610,13 @@ static void agraph_init(RAGraph *g) {
 	g->force_update_seek = true;
 	g->graph = r_graph_new ();
 	g->nodes = sdb_new0 ();
+	g->dummy_nodes = r_list_newf ((RListFree)agraph_node_free);
 	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
 	g->hints = 1;
 	g->movspeed = DEFAULT_SPEED;
 	g->db = sdb_new0 ();
 	r_vector_init (&g->ghits.word_list, sizeof (struct r_agraph_location), NULL, NULL);
-}
-
-static void free_anode(RANode *n) {
-	free (n->title);
-	free (n->body);
-	free (n);
 }
 
 static void graphNodeMove(RAGraph *g, int dir, int speed) {
@@ -3663,10 +3651,13 @@ static void agraph_free_nodes(const RAGraph *g) {
 	RANode *a;
 
 	graph_foreach_anode (r_graph_get_nodes (g->graph), it, n, a) {
-		free_anode (a);
+		if (!a->is_dummy) {
+			agraph_node_free (a);
+		}
 	}
 
 	sdb_free (g->nodes);
+	r_list_free (g->dummy_nodes);
 }
 
 static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
@@ -3752,10 +3743,10 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	res->color = color? strdup (color): NULL;
 	res->difftype = -1;
 	res->gnode = r_graph_add_node (g->graph, res);
-	sdb_num_set (g->nodes, res->title, (ut64) (size_t) res, 0);
-	if (res->title) {
+	if (!R_STR_ISEMPTY (res->title)) {
 		char *s, *estr, *b;
 		size_t len;
+		sdb_num_set (g->nodes, res->title, (ut64) (size_t) res, 0);
 		sdb_array_add (g->db, "agraph.nodes", res->title, 0);
 		b = strdup (res->body);
 		len = strlen (b);
@@ -3801,7 +3792,7 @@ R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
 	r_graph_del_node (g->graph, res->gnode);
 	res->gnode = NULL;
 
-	free_anode (res);
+	agraph_node_free (res);
 	return true;
 }
 
@@ -3906,6 +3897,10 @@ R_API void r_agraph_reset(RAGraph *g) {
 		r_list_purge (g->edges);
 	}
 	g->nodes = sdb_new0 ();
+	r_list_free (g->dummy_nodes);
+	g->dummy_nodes = r_list_newf ((RListFree)agraph_node_free);
+	r_list_free (g->back_edges);
+	g->back_edges = r_list_newf (free);
 	g->update_seek_on = NULL;
 	g->need_reload_nodes = false;
 	g->need_set_layout = true;
@@ -4987,6 +4982,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	if (graph_allocated) {
 		r_agraph_free (g);
 	} else {
+		r_cons_canvas_free (g->can);
 		g->can = o_can;
 	}
 	r_config_hold_restore (hc);
