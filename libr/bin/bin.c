@@ -770,6 +770,9 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 		bf->o->strings = NULL;
 	}
 
+	ht_up_free (bf->o->strings_db);
+	bf->o->strings_db = ht_up_new0 ();
+
 	bf->rawstr = bin->rawstr;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 

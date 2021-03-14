@@ -3009,6 +3009,67 @@ nth paddr      vaddr      len size section type  string
 EOF
 RUN
 
+NAME=iz (file x86) 2
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+?e -- default --
+iz
+?e -- geq 12 --
+e bin.minstr=12
+iz
+?e -- geq 13 --
+e bin.minstr=13
+iz
+?e -- geq 0 --
+e bin.minstr=0
+iz
+?e -- leq 12 --
+e bin.maxstr=12
+iz
+?e -- leq 11 --
+e bin.maxstr=11
+iz
+?e -- no limit --
+e bin.maxstr=0
+iz
+EOF
+EXPECT=<<EOF
+-- default --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- geq 12 --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- geq 13 --
+[Strings]
+nth paddr vaddr len size section type string
+--------------------------------------------
+-- geq 0 --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- leq 12 --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- leq 11 --
+[Strings]
+nth paddr vaddr len size section type string
+--------------------------------------------
+-- no limit --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+EOF
+RUN
+
 NAME=i (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=i~!hello-linux
