@@ -233,6 +233,7 @@ static const char *help_msg_dm[] = {
 	"dmi", " [addr|libname] [symname]", "List symbols of target lib",
 	"dmi*", " [addr|libname] [symname]", "List symbols of target lib in radare commands",
 	"dmi.", "", "List closest symbol to the current address",
+	"dmis", " [libname]", "Same as .dmi* - import all symbols from given lib as flags",
 	"dmiv", "", "Show address of given symbol for given lib",
 	"dmj", "", "List memmaps in JSON format",
 	"dml", " <file>", "Load contents of file into the current map region",
@@ -1589,6 +1590,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		case '\0': // "dmi" alias of "dmm"
 			r_core_cmd (core, "dmm", 0);
 			break;
+		case 's': // "dmis"
+			r_core_cmdf (core, ".dmi* %s", input + 2);
+			break;
 		case ' ': // "dmi "
 		case '*': // "dmi*"
 		case 'v': // "dmiv"
@@ -1628,7 +1632,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					mode = R_MODE_PRINT;
 					break;
 				}
-				ptr = strdup (r_str_trim_head_ro (input + 2));
+				ptr = r_str_trim_dup (input + 2);
 				if (!ptr || !*ptr) {
 					r_core_cmd (core, "dmm", 0);
 					free (ptr);
