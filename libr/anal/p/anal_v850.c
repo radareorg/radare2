@@ -542,15 +542,16 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	lp	.32	124 0\n"
 		"gpr	pc	.32	128 0\n"
 
-		"gpr	psw .32 132 0\n"
-		"gpr	np  .1 132.16 0\n"
-		"gpr	ep  .1 132.17 0\n"
-		"gpr	ae  .1 132.18 0\n"
-		"gpr	id  .1 132.19 0\n"
-		"flg	cy  .1 132.28 0\n"
-		"flg	ov  .1 132.29 0\n"
-		"flg	s   .1 132.30 0\n"
-		"flg	z   .1 132.31 0\n";
+		// 32bit [   RFU   ][NP EP ID SAT CY OV S Z]
+		"gpr	psw .32 132 0\n" // program status word
+		"gpr	npi  .1 132.16 0\n" // non maskerable interrupt (NMI)
+		"gpr	epi  .1 132.17 0\n" // exception processing interrupt
+		"gpr	id   .1 132.18 0\n" // :? should be id
+		"gpr	sat  .1 132.19 0\n" // saturation detection
+		"flg	cy  .1 132.28 0\n" // carry or borrow
+		"flg	ov  .1 132.29 0\n" // overflow
+		"flg	s   .1 132.30 0\n" // signed result
+		"flg	z   .1 132.31 0\n"; // zero result
 	return strdup (p);
 }
 
