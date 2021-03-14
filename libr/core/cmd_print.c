@@ -4689,6 +4689,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				// TODO: add limit as arg
 				const char *instruction = r_str_word_get_first (_input + 3);
 				optype = r_anal_optype_from_string (instruction);
+				free(instruction);
 				if (optype == -1) {
 					optype = R_ANAL_OP_TYPE_RET;
 				}
