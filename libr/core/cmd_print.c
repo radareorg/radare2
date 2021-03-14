@@ -3549,7 +3549,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		skipblocks = 0;
 	}
 	if (totalsize == UT64_MAX) {
-		if (r_config_get_i (core->config, "cfg.debug")) {
+		if (r_config_get_b (core->config, "cfg.debug")) {
 			RDebugMap *map = r_debug_map_get (core->dbg, core->offset);
 			if (map) {
 				totalsize = map->addr_end - map->addr;
@@ -3573,7 +3573,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		eprintf ("Invalid block size: %d\n", (int)blocksize);
 		goto beach;
 	}
-	if (!r_config_get_i (core->config, "cfg.debug")) {
+	if (!r_config_get_b (core->config, "cfg.debug")) {
 		RIOMap* map1 = r_list_first (list);
 		if (map1) {
 			from = map1->itv.addr;

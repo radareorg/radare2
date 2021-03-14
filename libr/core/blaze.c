@@ -261,8 +261,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	RList *block_list;
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
-	bool debug = r_config_get_i (core->config, "cfg.debug");
-	bool nopskip = r_config_get_i (core->config, "anal.nopskip");
+	const bool debug = r_config_get_b (core->config, "cfg.debug");
+	const bool nopskip = r_config_get_b (core->config, "anal.nopskip");
 
 	block_list = r_list_new ();
 	if (!block_list) {
@@ -545,7 +545,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 	RList *block_list;
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
-	bool debug = r_config_get_i (core->config, "cfg.debug");
+	const bool debug = r_config_get_b (core->config, "cfg.debug");
 	ut64 lista[1024] = { 0 };
 	int idx = 0;
 	int x;

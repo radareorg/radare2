@@ -6641,7 +6641,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	}
 	if (!core->anal->esil) {
 		r_core_cmd0 (core, "aei");
-		if (!r_config_get_i (core->config, "cfg.debug")) {
+		if (!r_config_get_b (core->config, "cfg.debug")) {
 			r_core_cmd0 (core, "aeim");
 		}
 	}

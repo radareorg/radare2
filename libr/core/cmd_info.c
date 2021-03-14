@@ -204,7 +204,6 @@ static void cmd_info_here(RCore *core, PJ *pj, int mode) {
 
 static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 	const char *fn = NULL;
-	int dbg = r_config_get_i (core->config, "cfg.debug");
 	bool io_cache = r_config_get_i (core->config, "io.cache");
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinFile *binfile = r_bin_cur (core->bin);
@@ -238,9 +237,6 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 			}
 		}
 		pj_ks (pj, "file", uri);
-		if (dbg) {
-			dbg = R_PERM_WX;
-		}
 		if (desc) {
 			ut64 fsz = r_io_desc_size (desc);
 			pj_ki (pj, "fd", desc->fd);
@@ -267,10 +263,6 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 		}
 		pj_end (pj);
 	} else if (desc && mode != R_MODE_SIMPLE) {
-		//r_cons_printf ("# Core file info\n");
-		if (dbg) {
-			dbg = R_PERM_WX;
-		}
 		if (desc) {
 			pair ("fd", sdb_fmt ("%d", desc->fd));
 		}
@@ -436,7 +428,8 @@ static int cmd_info(void *data, const char *input) {
 	bool newline = r_cons_is_interactive ();
 	int fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
-	int i, va = core->io->va || r_config_get_i (core->config, "cfg.debug");
+	int i;
+	const bool va = core->io->va || r_config_get_b (core->config, "cfg.debug");
 	int mode = 0; //R_MODE_SIMPLE;
 	bool rdump = false;
 	int is_array = 0;

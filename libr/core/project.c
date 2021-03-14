@@ -629,7 +629,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	SdbNs *ns;
 	r_return_val_if_fail (prj_name && *prj_name, false);
 	char *script_path = get_project_script_path (core, prj_name);
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		eprintf ("radare2 does not support projects on debugged bins.\n");
 		return false;
 	}

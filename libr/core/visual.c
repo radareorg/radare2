@@ -798,7 +798,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 		r_cons_echo (NULL);
 		r_cons_flush ();
 		ret = true;
-		if (r_config_get_i (core->config, "cfg.debug")) {
+		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_core_cmd (core, ".dr*", 0);
 		}
 	} else {
@@ -811,7 +811,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 }
 
 static void visual_single_step_in(RCore *core) {
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
 			// dcu 0xaddr
 			r_core_cmdf (core, "dcu 0x%08"PFMT64x, core->offset + core->print->cur);
@@ -829,7 +829,7 @@ static void visual_single_step_in(RCore *core) {
 static void __core_visual_step_over(RCore *core) {
 	bool io_cache = r_config_get_i (core->config, "io.cache");
 	r_config_set_i (core->config, "io.cache", false);
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
 			r_core_cmd (core, "dcr", 0);
 			core->print->cur_enabled = 0;
@@ -849,7 +849,7 @@ static void visual_breakpoint(RCore *core) {
 }
 
 static void visual_continue(RCore *core) {
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_core_cmd (core, "dc", 0);
 	} else {
 		r_core_cmd (core, "aec;.ar*", 0);
@@ -3697,7 +3697,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	if (r_config_get_i (core->config, "scr.scrollbar") == 2) {
 		r_core_cmd (core, "fz:", 0);
 	}
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		ut64 curpc = r_debug_reg_get (core->dbg, "PC");
 		if (curpc && curpc != UT64_MAX && curpc != oldpc) {
 			// check dbg.follow here
@@ -3917,7 +3917,7 @@ R_API void r_core_print_scrollbar(RCore *core) {
 	}
 	ut64 from = 0;
 	ut64 to = UT64_MAX;
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		from = r_num_math (core->num, "$D");
 		to = r_num_math (core->num, "$D+$DD");
 	} else if (r_config_get_i (core->config, "io.va")) {
@@ -3974,7 +3974,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 	}
 	ut64 from = 0;
 	ut64 to = UT64_MAX;
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		from = r_num_math (core->num, "$D");
 		to = r_num_math (core->num, "$D+$DD");
 	} else if (r_config_get_i (core->config, "io.va")) {
@@ -4341,7 +4341,7 @@ dodo:
 		if (color) {
 			flags |= R_PRINT_FLAGS_COLOR;
 		}
-		debug = r_config_get_i (core->config, "cfg.debug");
+		debug = r_config_get_b (core->config, "cfg.debug");
 		flags |= R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
 		r_print_set_flags (core->print, flags);
 		scrseek = r_num_math (core->num,

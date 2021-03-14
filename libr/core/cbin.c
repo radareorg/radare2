@@ -2743,7 +2743,7 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 	bool printHere = false;
 	sections = r_bin_get_sections (r->bin);
 #if LOAD_BSS_MALLOC
-	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
+	const bool inDebugger = r_config_get_b (r->config, "cfg.debug");
 #endif
 	HtPP *dup_chk_ht = ht_pp_new0 ();
 	bool ret = false;

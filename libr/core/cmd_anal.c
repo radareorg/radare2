@@ -912,7 +912,7 @@ static bool cmd_anal_aaft(RCore *core) {
 	ut64 seek;
 	const char *io_cache_key = "io.pcache.write";
 	bool io_cache = r_config_get_b (core->config, io_cache_key);
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		eprintf ("TOFIX: aaft can't run in debugger mode.\n");
 		return false;
 	}
@@ -9229,7 +9229,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 }
 
 R_API int r_core_anal_refs(RCore *core, const char *input) {
-	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
+	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	ut64 from, to;
 	int rad;
 	PJ *pj = NULL;
@@ -9518,7 +9518,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	const char *analin = r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');
-	bool is_debug = r_config_get_i (core->config, "cfg.debug");
+	const bool is_debug = r_config_get_i (core->config, "cfg.debug");
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps.x");

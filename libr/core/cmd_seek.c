@@ -201,9 +201,8 @@ beach:
 }
 
 static void seek_to_register(RCore *core, const char *input, bool is_silent) {
-	ut64 off;
-	if (r_config_get_i (core->config, "cfg.debug")) {
-		off = r_debug_reg_get (core->dbg, input);
+	if (r_config_get_b (core->config, "cfg.debug")) {
+		ut64 off = r_debug_reg_get (core->dbg, input);
 		if (!is_silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		}
@@ -211,7 +210,7 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 	} else {
 		RReg *orig = core->dbg->reg;
 		core->dbg->reg = core->anal->reg;
-		off = r_debug_reg_get (core->dbg, input);
+		ut64 off = r_debug_reg_get (core->dbg, input);
 		core->dbg->reg = orig;
 		if (!is_silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));

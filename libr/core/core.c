@@ -279,7 +279,7 @@ static ut64 numget(RCore *core, const char *k) {
 }
 
 static bool __isMapped(RCore *core, ut64 addr, int perm) {
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		// RList *maps = core->dbg->maps;
 		RDebugMap *map = NULL;
 		RListIter *iter = NULL;
@@ -302,7 +302,7 @@ static bool __isMapped(RCore *core, ut64 addr, int perm) {
 }
 
 static bool __syncDebugMaps(RCore *core) {
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		return r_debug_map_sync (core->dbg);
 	}
 	return false;
@@ -687,7 +687,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 					break;
 				}
 				*ptr = 0;
-				if (r_config_get_i (core->config, "cfg.debug")) {
+				if (r_config_get_b (core->config, "cfg.debug")) {
 					if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
 						RRegItem *r = r_reg_get (core->dbg->reg, bptr, -1);
 						if (r) {

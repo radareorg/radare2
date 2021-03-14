@@ -46,7 +46,7 @@ static void loadGP(RCore *core) {
 }
 
 R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadbin) {
-	int isdebug = r_config_get_i (core->config, "cfg.debug");
+	const bool isdebug = r_config_get_b (core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
 	RIODesc *file = NULL;
@@ -647,7 +647,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (is_io_load) {
 		// TODO? necessary to restore the desc back?
 		// Fix to select pid before trying to load the binary
-		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_i (r->config, "cfg.debug")) {
+		if ((desc->plugin && desc->plugin->isdbg) || r_config_get_b (r->config, "cfg.debug")) {
 			r_core_file_do_load_for_debug (r, baddr, filenameuri);
 		} else {
 			r_core_file_do_load_for_io_plugin (r, baddr, 0LL);
@@ -726,7 +726,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ;"
 			" wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
-	if (!r_config_get_i (r->config, "cfg.debug")) {
+	if (!r_config_get_b (r->config, "cfg.debug")) {
 		loadGP (r);
 	}
 	if (r_config_get_i (r->config, "bin.libs")) {
@@ -911,7 +911,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 
 	r_io_use_fd (r->io, fd->fd);
 
-	if (r_config_get_i (r->config, "cfg.debug")) {
+	if (r_config_get_b (r->config, "cfg.debug")) {
 		bool swstep = true;
 		if (r->dbg->h && r->dbg->h->canstep) {
 			swstep = false;
