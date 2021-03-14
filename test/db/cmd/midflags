@@ -391,3 +391,26 @@ EXPECT=<<EOF
   0x00000009      90             nop
 EOF
 RUN
+
+NAME=asm.flags.middle reset
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bytes=true
+e asm.comments=false
+e asm.bits=64
+e asm.bb.middle=false
+e asm.flags.middle=2
+wx b821c10010ebf9b8210011c1
+af @ 3
+f sym.dummy @ 9
+pd 4 @ 0
+EOF
+EXPECT=<<EOF
+|           0x00000000  ~   b821c10010     mov eax, 0x1000c121
+/ 9: fcn.00000003 ();
+|           0x00000003      0010           add byte [rax], dl
+|           0x00000005      ebf9           jmp 0
+            0x00000007  ~   b8210011c1     mov eax, 0xc1110021
+EOF
+RUN
