@@ -514,13 +514,13 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				break;
 			case 80:
 				if (p && p->analb.anal && p->analb.anal->syscall) {
-					RSyscallItem *si;
-					si = r_syscall_get (p->analb.anal->syscall, off, -1);
+					RSyscallItem *si = r_syscall_get (p->analb.anal->syscall, off, -1);
 					if (si) {
 						snprintf (num, sizeof (num), "%s()", si->name);
 					} else {
 						snprintf (num, sizeof (num), "unknown()");
 					}
+					r_syscall_item_free (si);
 				}
 				break;
 			case 16:

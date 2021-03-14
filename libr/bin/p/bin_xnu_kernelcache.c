@@ -1380,6 +1380,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 		if (item && item->name) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			if (!sym) {
+				r_syscall_item_free (item);
 				goto beach;
 			}
 
@@ -1391,10 +1392,8 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr) {
 			sym->bind = "GLOBAL";
 			sym->type = "FUNC";
 			r_list_append (syscalls, sym);
-
-			r_syscall_item_free (item);
 		}
-
+		r_syscall_item_free (item);
 		cursor += 24;
 		i++;
 	}

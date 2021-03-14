@@ -205,6 +205,7 @@ R_API void r_egg_syscall(REgg *egg, const char *arg, ...) {
 		return;
 	}
 	egg->remit->syscall (egg, item->num);
+	r_syscall_item_free (item);
 }
 
 R_API void r_egg_alloc(REgg *egg, int n) {
