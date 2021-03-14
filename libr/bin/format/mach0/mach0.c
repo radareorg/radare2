@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2021 - nibble, mrmacete, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -3149,6 +3149,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs,
 
 		struct reloc_t *reloc = R_NEW0 (struct reloc_t);
 		if (!reloc) {
+			free (info);
 			free (sym_name);
 			return;
 		}
