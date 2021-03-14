@@ -1962,6 +1962,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 					r_flag_set (core->flags, flag, at, ret);
 					free (flag);
 				}
+				r_syscall_item_free (item);
 				if (*param->cmd_hit) {
 					ut64 here = core->offset;
 					r_core_seek (core, at, true);
