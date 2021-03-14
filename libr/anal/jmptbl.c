@@ -259,7 +259,7 @@ static bool detect_casenum_shift(RAnalOp *op, RRegItem **cmp_reg, st64 *start_ca
 R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift) {
 	bool isValid = false;
 	bool foundCmp = false;
-	int i;
+	ut64 i;
 
 	RAnalOp tmp_aop = {0};
 	if (lea_addr > jmp_addr) {
