@@ -2053,7 +2053,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count) {
-	if (obj->rebasing_buffer) {
+	if (obj->rebasing_buffer || !buf) {
 		return;
 	}
 	obj->rebasing_buffer = true;
