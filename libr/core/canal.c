@@ -5176,6 +5176,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 
 	IterCtx ictx = { start, end, fcn, NULL};
 	size_t i = addr - start;
+	size_t i_old = 0;
 	do {
 		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
@@ -5213,6 +5214,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 
 		r_anal_op_fini (&op);
 		r_asm_set_pc (core->rasm, cur);
+		i_old = i;
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) {
 			i += minopsize - 1; //   XXX dupe in op.size below
 		}
@@ -5220,21 +5222,21 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK) {
 			// i += 2
 			r_anal_op_fini (&op);
-			continue;
+			goto repeat;
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i+= minopsize - 1
 		if (i > iend) {
-			break;
+			goto repeat;
 		}
 		if (op.size < 1) {
 			i += minopsize - 1;
-			continue;
+			goto repeat;
 		}
 		if (emu_lazy) {
 			if (op.type & R_ANAL_OP_TYPE_REP) {
 				i += op.size - 1;
-				continue;
+				goto repeat;
 			}
 			switch (op.type & R_ANAL_OP_TYPE_MASK) {
 			case R_ANAL_OP_TYPE_JMP:
@@ -5256,12 +5258,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			case R_ANAL_OP_TYPE_CSWI:
 			case R_ANAL_OP_TYPE_TRAP:
 				i += op.size - 1;
-				continue;
+				goto repeat;
 			//  those require write support
 			case R_ANAL_OP_TYPE_PUSH:
 			case R_ANAL_OP_TYPE_POP:
 				i += op.size - 1;
-				continue;
+				goto repeat;
 			}
 		}
 		if (sn && op.type == R_ANAL_OP_TYPE_SWI) {
@@ -5281,8 +5283,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 		i += op.size - 1;
-		if (!esilstr || !*esilstr) {
-			continue;
+		if (R_STR_ISEMPTY (esilstr)) {
+			goto repeat;
 		}
 		r_anal_esil_set_pc (ESIL, cur);
 		r_reg_setv (core->anal->reg, pcname, cur + op.size);
@@ -5439,7 +5441,19 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			break;
 		}
 		r_anal_esil_stack_free (ESIL);
-repeat:;
+repeat:
+		if (!r_anal_get_block_at (core->anal, cur)) {
+			size_t fcn_i;
+			for (fcn_i = i_old + 1; fcn_i <= i; fcn_i++) {
+				if (r_anal_get_function_at (core->anal, start + fcn_i)) {
+					i = fcn_i - 1;
+					break;
+				}
+			}
+		}
+		if (i > iend) {
+			break;
+		}
 	} while (get_next_i (&ictx, &i));
 	free (buf);
 	ESIL->cb.hook_mem_read = NULL;
