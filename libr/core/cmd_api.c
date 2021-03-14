@@ -345,7 +345,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			}
 		}
 		r_list_foreach (cmd->plist, iter, cp) {
-			if (cp->call (cmd->data, input)) {
+			if (cp->call && cp->call (cmd->data, input)) {
 				free (nstr);
 				return true;
 			}
