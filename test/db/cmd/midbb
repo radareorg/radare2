@@ -607,6 +607,10 @@ pd 2 @ 0x560e95
 ?e
 fm 0x560e97 @ sym.dummy
 pd 3 @ 0x560e95
+?e
+# TODO: probably need to change behavior here
+e asm.bb.middle=false
+pd 3 @ 0x560e95
 EOF
 EXPECT=<<EOF
             0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
@@ -623,8 +627,13 @@ EXPECT=<<EOF
 |           0x00560e96      0f31           rdtsc
 
             0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
-|           0x00560e96  ~   0f31           rdtsc
 |           ;-- sym.dummy:
-|           0x00560e97      31e9           xor ecx, ebp
+|           0x00560e96  ~   0f31           rdtsc
+|           0x00560e98      e914000000     jmp 0x560eb1
+
+            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+|           ;-- sym.dummy:
+|           0x00560e96  ~   0f31           rdtsc
+|           0x00560e98      e914000000     jmp 0x560eb1
 EOF
 RUN

@@ -620,6 +620,7 @@ R_API RList *r_core_anal_fcn_get_calls (RCore *core, RAnalFunction *fcn); // get
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
 
 /* asm.c */
+#define R_MIDFLAGS_HIDE 0
 #define R_MIDFLAGS_SHOW 1
 #define R_MIDFLAGS_REALIGN 2
 #define R_MIDFLAGS_SYMALIGN 3
