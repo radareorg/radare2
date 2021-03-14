@@ -104,7 +104,7 @@ static GHT GH(get_main_arena_with_symbol)(RCore *core, RDebugMap *map) {
 static bool GH(is_tcache)(RCore *core) {
 	char *fp = NULL;
 	double v = 0;
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		RDebugMap *map;
 		RListIter *iter;
 		r_debug_map_sync (core->dbg);
@@ -207,7 +207,7 @@ static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_ar
 }
 
 static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		RListIter *iter;
 		RDebugMap *map;
 		r_debug_map_sync (core->dbg);
@@ -397,7 +397,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
 	GHT main_arena_sym = GHT_MAX;
-	bool is_debugged = r_config_get_i (core->config, "cfg.debug");
+	const bool is_debugged = r_config_get_b (core->config, "cfg.debug");
 	bool first_libc = true;
 
 	if (is_debugged) {
@@ -429,7 +429,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 
 	if (libc_addr_sta == GHT_MAX || libc_addr_end == GHT_MAX) {
-		if (r_config_get_i (core->config, "cfg.debug")) {
+		if (r_config_get_b (core->config, "cfg.debug")) {
 			eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
 		} else {
 			eprintf ("Warning: Can't find arena mapped in memory (see om)\n");
@@ -1052,7 +1052,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		GH(get_brks) (core, &brk_start, &brk_end);
 		if (tcache) {
 			initial_brk = ((brk_start >> 12) << 12) + GH(HDR_SZ);
-			if (r_config_get_i (core->config, "cfg.debug")) {
+			if (r_config_get_b (core->config, "cfg.debug")) {
 				tcache_initial_brk = initial_brk;
 			}
 			initial_brk += (glibc_version < 230)

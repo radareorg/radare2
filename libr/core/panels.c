@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2020 - Author: pancake, vane11ope */
+/* Copyright radare2 2014-2021 - Author: pancake, vane11ope */
 
 #include <r_core.h>
 
@@ -2007,7 +2007,7 @@ static void __continue_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED con
 }
 
 static void __panel_single_step_in(RCore *core) {
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_core_cmd (core, "ds", 0);
 		r_core_cmd (core, ".dr*", 0);
 	} else {
@@ -2026,7 +2026,7 @@ static int __step_cb(void *user) {
 static void __panel_single_step_over(RCore *core) {
 	bool io_cache = r_config_get_i (core->config, "io.cache");
 	r_config_set_b (core->config, "io.cache", false);
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_core_cmd (core, "dso", 0);
 		r_core_cmd (core, ".dr*", 0);
 	} else {
@@ -2131,7 +2131,7 @@ static void __init_modal_db(RCore *core) {
 	sdb_ptr_set (db, "Create New", &__create_panel_input, 0);
 	sdb_ptr_set (db, "Change Command of Current Panel", &__replace_current_panel_input, 0);
 	sdb_ptr_set (db, PANEL_TITLE_ALL_DECOMPILER, &__delegate_show_all_decompiler_cb, 0);
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		sdb_ptr_set (db, "Put Breakpoints", &__put_breakpoints_cb, 0);
 		sdb_ptr_set (db, "Continue", &__continue_modal_cb, 0);
 		sdb_ptr_set (db, "Step", &__step_modal_cb, 0);
@@ -2313,7 +2313,7 @@ static bool __init(RCore *core, RPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
 	panels->columnWidth = 80;
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		panels->layout = PANEL_LAYOUT_DEFAULT_DYNAMIC;
 	} else {
 		panels->layout = PANEL_LAYOUT_DEFAULT_STATIC;
@@ -3428,7 +3428,7 @@ static void __jmp_to_cursor_addr(RCore *core, RPanel *panel) {
 }
 
 static void __set_breakpoints_on_cursor(RCore *core, RPanel *panel) {
-	if (!r_config_get_i (core->config, "cfg.debug")) {
+	if (!r_config_get_b (core->config, "cfg.debug")) {
 		return;
 	}
 	if (__check_panel_type (panel, PANEL_CMD_DISASSEMBLY)) {
@@ -4438,7 +4438,7 @@ static void __print_disassembly_cb(void *user, void *p) {
 	ut64 o_offset = core->offset;
 	core->offset = panel->model->addr;
 	r_core_seek (core, panel->model->addr, true);
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_core_cmd (core, ".dr*", 0);
 	}
 	cmdstr = __handle_cmd_str_cache (core, panel, false);

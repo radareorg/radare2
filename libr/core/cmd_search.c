@@ -692,7 +692,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 	if (perm == -1) {
 		perm = R_PERM_RWX;
 	}
-	if (!r_config_get_i (core->config, "cfg.debug") && !core->io->va) {
+	if (!r_config_get_b (core->config, "cfg.debug") && !core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "file")) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
@@ -932,7 +932,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int perm, const char *mode,
 			append_bound (list, core->io, search_itv, core->offset, 1, 5);
 		}
 	} else if (!strncmp (mode, "dbg.", 4)) {
-		if (r_config_get_i (core->config, "cfg.debug")) {
+		if (r_config_get_b (core->config, "cfg.debug")) {
 			int mask = 0;
 			int add = 0;
 			bool heap = false;
@@ -1669,7 +1669,7 @@ static bool esil_addrinfo(RAnalEsil *esil) {
 
 static void do_esil_search(RCore *core, struct search_parameters *param, const char *input) {
 	const int hit_combo_limit = r_config_get_i (core->config, "search.esilcombo");
-	const bool cfgDebug = r_config_get_i (core->config, "cfg.debug");
+	const bool cfgDebug = r_config_get_b (core->config, "cfg.debug");
 	RSearch *search = core->search;
 	RSearchKeyword kw = R_EMPTY;
 	if (input[0] != 'E') {
@@ -3754,7 +3754,7 @@ reread:
 		}
 		break;
 	case 'E': // "/E"
-		if (core->bin && r_config_get_i (core->config, "cfg.debug")) {
+		if (core->bin && r_config_get_b (core->config, "cfg.debug")) {
 			r_debug_map_sync (core->dbg);
 		}
 		do_esil_search (core, &param, input);

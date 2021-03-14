@@ -236,7 +236,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 		types |= R_ANAL_ADDR_TYPE_FUNC;
 	}
 	// check registers
-	if (core->bin && core->dbg && r_config_get_i (core->config, "cfg.debug")) {
+	if (core->bin && core->dbg && r_config_get_b (core->config, "cfg.debug")) {
 		RDebugMap *map;
 		RListIter *iter;
 		// use 'dm'
@@ -2310,7 +2310,7 @@ R_API RGraph *r_core_anal_importxrefs(RCore *core) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	bool lit = info? info->has_lit: false;
-	bool va = core->io->va || r_config_get_i (core->config, "cfg.debug");
+	bool va = core->io->va || r_config_get_b (core->config, "cfg.debug");
 
 	RListIter *iter;
 	RBinImport *imp;
@@ -3923,7 +3923,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
-static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ *pj, int rad, int cfg_debug, bool cfg_anal_strings) {
+static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ *pj, int rad, bool cfg_debug, bool cfg_anal_strings) {
 	// Validate the reference. If virtual addressing is enabled, we
 	// allow only references to virtual addresses in order to reduce
 	// the number of false positives. In debugger mode, the reference
@@ -3992,7 +3992,7 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ
 }
 
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int rad) {
-	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
+	const bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	ut64 at;
 	int count = 0;

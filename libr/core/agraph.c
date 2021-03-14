@@ -3544,7 +3544,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	}
 
 	// allow to change the current function during debugging
-	if (g->is_instep && r_config_get_i (core->config, "cfg.debug")) {
+	if (g->is_instep && r_config_get_b (core->config, "cfg.debug")) {
 		// seek only when the graph node changes
 		const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 		RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
@@ -4014,7 +4014,7 @@ static void seek_to_node(RANode *n, RCore *core) {
 }
 
 static void graph_single_step_in(RCore *core, RAGraph *g) {
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
 			// dcu 0xaddr
 			r_core_cmdf (core, "dcu 0x%08"PFMT64x, core->offset + core->print->cur);
@@ -4032,7 +4032,7 @@ static void graph_single_step_in(RCore *core, RAGraph *g) {
 }
 
 static void graph_single_step_over(RCore *core, RAGraph *g) {
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
 			r_core_cmd (core, "dcr", 0);
 			core->print->cur_enabled = 0;

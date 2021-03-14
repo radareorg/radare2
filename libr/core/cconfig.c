@@ -777,7 +777,7 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 	if (core->dbg && core->anal && core->anal->cur) {
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, bits);
-		bool load_from_debug = r_config_get_i (core->config, "cfg.debug");
+		const bool load_from_debug = r_config_get_b (core->config, "cfg.debug");
 		if (load_from_debug) {
 			if (core->dbg->h && core->dbg->h->reg_profile) {
 // XXX. that should depend on the plugin, not the host os
@@ -1540,7 +1540,7 @@ static bool cb_dbg_forks(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_forks = node->i_value;
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1579,7 +1579,7 @@ static bool cb_dbg_execs(void *user, void *data) {
 #if __linux__
 	RCore *core = (RCore*) user;
 	core->dbg->trace_execs = node->i_value;
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 #else
@@ -1594,7 +1594,7 @@ static bool cb_dbg_clone(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_clone = node->i_value;
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1618,7 +1618,7 @@ static bool cb_dbg_aftersc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->dbg->trace_aftersyscall = node->i_value;
-	if (r_config_get_i (core->config, "cfg.debug")) {
+	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
 	return true;
@@ -1650,7 +1650,7 @@ static bool cb_dbg_args(void *user, void *data) {
 static bool cb_dbgstatus(void *user, void *data) {
 	RCore *r = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (r_config_get_i (r->config, "cfg.debug")) {
+	if (r_config_get_b (r->config, "cfg.debug")) {
 		if (node->i_value) {
 			r_config_set (r->config, "cmd.prompt",
 				".dr*; drd; sr PC;pi 1;s-");
