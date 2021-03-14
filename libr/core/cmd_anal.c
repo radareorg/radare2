@@ -3120,8 +3120,7 @@ static void __updateStats(RCore *core, Sdb *db, ut64 addr, int statsMode) {
 	// r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x"\n", addr);
 }
 
-
-static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
+static Sdb *__core_cmd_anal_fcn_stats(RCore *core, const char *input) {
 	bool silentMode = false;
 	int statsMode = 0;
 	if (*input == '*') {
@@ -3175,7 +3174,7 @@ static Sdb *__core_cmd_anal_fcn_stats (RCore *core, const char *input) {
 			r_table_add_column (t, typeNumber, key, 0);
 		}
 		RList *items = r_list_newf (free);
-		r_list_append (items, fcn->name);
+		r_list_append (items, strdup (fcn->name));
 		ls_foreach (ls, it, kv) {
 			const char *value = sdbkv_value (kv);
 			int nv = (int)r_num_get (NULL, value);

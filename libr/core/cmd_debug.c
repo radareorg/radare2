@@ -4125,8 +4125,8 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 	}
 }
 
-static void r_core_debug_kill (RCore *core, const char *input) {
-	if (!input || *input=='?') {
+static void r_core_debug_kill(RCore *core, const char *input) {
+	if (!input || *input == '?') {
 		if (input && input[1]) {
 			const char *signame, *arg = input + 1;
 			int signum = atoi (arg);
@@ -4254,7 +4254,7 @@ static bool is_x86_ret(RDebug *dbg, ut64 addr) {
 	/* Possibly incomplete with regard to instruction prefixes */
 }
 
-static bool cmd_dcu (RCore *core, const char *input) {
+static bool cmd_dcu(RCore *core, const char *input) {
 	const char *ptr = NULL;
 	ut64 from, to, pc;
 	bool dcu_range = false;

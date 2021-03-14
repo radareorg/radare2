@@ -642,7 +642,7 @@ static int getreg(const char *str) {
 
 static st32 getlistmask(char *input) {
 	st32 tempres, res = 0;
-	int i, j, start, end;
+	int i, j, start = 0, end = 0;
 	char *temp = NULL;
 	char *otemp = NULL;
 	char *temp2 = malloc (strlen (input) + 1);
@@ -960,17 +960,17 @@ static st32 getshiftmemend(const char *input) {
 }
 
 void collect_list(char *input[]) {
-	if (input[0] == NULL) {
+	if (!input || !input[0]) {
 		return;
 	}
-	char *temp  = malloc (500);
+	char *temp = malloc (500);
 	if (!temp) {
 		return;
 	}
 	temp[0] = 0;
 	int i;
 	int conc = 0;
-	int start, end = 0;
+	int start = 0, end = 0;
 	int arrsz;
 	for (arrsz = 1; input[arrsz] != NULL; arrsz++) {
 		;
