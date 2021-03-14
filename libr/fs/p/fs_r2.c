@@ -260,8 +260,9 @@ static RList *__cfg(RFSRoot *root, const char *path) {
 }
 
 static RList *__root(RFSRoot *root, const char *path) {
+	r_return_val_if_fail (root, NULL);
 	RList *list = r_list_newf (NULL);
-	r_return_val_if_fail (root && list, NULL);
+	r_return_val_if_fail (list, NULL);
 	size_t i;
 	for (i = 0; routes[i].path; i++) {
 		char type = routes[i].dir? 'd': 'f';
