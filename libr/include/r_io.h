@@ -192,7 +192,7 @@ typedef struct r_io_map_t {
 	int perm;
 	ut32 id;
 	RInterval itv;
-	ut64 delta; // paddr = itv.addr + delta
+	ut64 delta; // paddr = vaddr - itv.addr + delta
 	char *name;
 } RIOMap;
 
