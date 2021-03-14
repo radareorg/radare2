@@ -68,7 +68,7 @@ nth paddr        size vaddr        vsize perm md5                              n
 0   0x00000400  0xa00 0x00401000  0x1000 -r-x 3d6a5b8dc5e41b09659638ad5735e5b5 .text
 1   0x00000e00  0x200 0x00402000  0x1000 -rw- b3c542ba67f2d1a949fa1a25ce22f7e3 .data
 2   0x00001000  0x200 0x00403000  0x1000 -r-- c9a877a4e945b087b8323830442c88d6 .rdata
-3   0x00000000    0x0 0x00404000  0x1000 -rw- d41d8cd98f00b204e9800998ecf8427e .bss
+3   0x00000000    0x0 0x00404000  0x1000 -rw-                                  .bss
 4   0x00001200  0x400 0x00405000  0x1000 -rw- 963212dc58a74f32e0f6ffce84dcf7ea .idata
 
 EOF
