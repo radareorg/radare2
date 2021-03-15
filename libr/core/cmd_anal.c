@@ -3355,11 +3355,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_core_anal_undefine (core, core->offset);
 		} else if (!strcmp (input + 2, "*")) {
 			RAnalFunction *f;
-			RListIter *iter;
-			r_list_foreach (core->anal->fcns, iter, f) {
+			RListIter *iter, *iter2;
+			r_list_foreach_safe (core->anal->fcns, iter, iter2, f) {
 				r_anal_del_jmprefs (core->anal, f);
+				r_core_anal_undefine (core, f->addr);
 			}
-			r_list_purge (core->anal->fcns);
 		} else {
 			ut64 addr = input[2]
 				? r_num_math (core->num, input + 2)
