@@ -653,7 +653,7 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 		}
 	}
 	if (op == 'p') {
-		sscanf (un, "%d/%d", &page, &page_items);
+		sscanf (un, "%zd/%zd", &page, &page_items);
 		if (page < 1) {
 			page = 1;
 		}
