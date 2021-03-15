@@ -290,7 +290,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, u
 	RBinReloc *reloc;
 	struct coff_reloc *rel;
 	int j, i = 0;
-	RList *list_rel = r_list_new ();
+	RList *list_rel = r_list_newf (free);
 	if (!list_rel) {
 		return NULL;
 	}
