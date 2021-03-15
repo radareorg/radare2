@@ -374,17 +374,16 @@ static RList *mem(RBinFile *bf) {
 }
 
 static RList* relocs(RBinFile *bf) {
-	struct r_bin_mdmp_obj *obj;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
 	RListIter *it;
 	RList* ret;
 
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
+	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		if (pe32_bin->bin && pe32_bin->bin->relocs) {
