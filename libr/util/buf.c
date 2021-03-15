@@ -518,9 +518,7 @@ static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 				}
 				res += r;
 			}
-
 			m = 1;
-			bigendian = true;
 		}
 	}
 	return res;

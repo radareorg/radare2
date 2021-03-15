@@ -43,7 +43,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	res = r2pipe_read (R2P (fd));
 	/* TODO: parse json back */
 	r = strstr (res, "result");
-	if (r) {
+	if (r && r[6]) {
 		count = atoi (r + 6 + 1);
 	}
 	free (res);

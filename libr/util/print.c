@@ -1741,8 +1741,8 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 	}
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	if (show_colors) {
-		int idx = (int) ((k * 4) / cols);
-		const char *str = kol[idx];
+		int idx = (int) ((k * 5) / cols);
+		const char *str = kol[idx % 5];
 		if (p->histblock) {
 			p->cb_printf ("%s%s%s", str, block, Color_RESET);
 		} else {

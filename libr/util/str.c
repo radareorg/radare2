@@ -542,27 +542,27 @@ R_API int r_str_char_count(const char *string, char ch) {
 			count++;
 		}
 	}
-	return count;
+	return R_MAX (0, count);
 }
 
 // Counts the number of words (separated by separator characters: newlines, tabs,
 // return, space). See r_util.h for more details of the IS_SEPARATOR macro.
 R_API int r_str_word_count(const char *string) {
-	const char *text, *tmp;
+	const char *text;
 	int word;
 
-	for (text = tmp = string; *text && IS_SEPARATOR (*text); text++) {
+	for (text = string; *text && IS_SEPARATOR (*text); text++) {
 		;
 	}
 	for (word = 0; *text; word++) {
 		for (; *text && !IS_SEPARATOR (*text); text++) {
 			;
 		}
-		for (tmp = text; *text && IS_SEPARATOR (*text); text++) {
+		for (; *text && IS_SEPARATOR (*text); text++) {
 			;
 		}
 	}
-	return word;
+	return R_MAX (0, word);
 }
 
 // Returns a pointer to the first instance of a character that isn't chr in a

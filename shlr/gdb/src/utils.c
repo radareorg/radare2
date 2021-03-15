@@ -94,10 +94,10 @@ char hex2char(char *hex) {
 int unpack_hex(const char *src, ut64 len, char *dst) {
 	int i = 0;
 	while (i < (len / 2)) {
-		int val = hex2int (src[(i * 2)]);
+		ut32 val = hex2int (src[(i * 2)]);
 		val <<= 4;
 		val |= hex2int (src[(i * 2) + 1]);
-		dst[i++] = val;
+		dst[i++] = (char)(val & 0xff);
 	}
 	dst[i] = '\0';
 	return len;

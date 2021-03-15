@@ -1204,7 +1204,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		}
 		break;
 	default: {
-		size_t fsz;
+		size_t fsz = 0;
 		bufa = slurp (&ro, &c, ro.file, &fsz);
 		sza = fsz;
 		if (!bufa) {
