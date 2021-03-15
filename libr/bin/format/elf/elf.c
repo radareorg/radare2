@@ -2592,13 +2592,7 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 		return NULL;
 	}
 
-	if (!(ret = calloc (1, ELF_STRING_LENGTH))) {
-		return NULL;
-	}
-
-	r_str_ncpy (ret, bin->strtab + val, ELF_STRING_LENGTH);
-
-	return ret;
+	return r_str_ndup (bin->strtab + val, ELF_STRING_LENGTH);
 }
 
 static bool has_valid_section_header(ELFOBJ *bin, size_t pos) {
@@ -2892,8 +2886,7 @@ static void create_section_from_phdr(ELFOBJ *bin, RBinElfSection *ret, size_t *i
 	ret[*i].offset = Elf_(r_bin_elf_v2p_new) (bin, addr);
 	ret[*i].rva = addr;
 	ret[*i].size = sz;
-	strncpy (ret[*i].name, name, R_ARRAY_SIZE (ret[*i].name) - 1);
-	ret[*i].name[R_ARRAY_SIZE (ret[*i].name) - 1] = '\0';
+	r_str_ncpy (ret[*i].name, name, R_ARRAY_SIZE (ret[*i].name) - 1);
 	ret[*i].last = 0;
 	*i = *i + 1;
 }
@@ -3650,11 +3643,11 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					int maxsize = R_MIN (r_buf_size (bin->b), strtab_section->sh_size);
 					if (is_section_local_sym (bin, &sym[k])) {
 						const char *shname = &bin->shstrtab[bin->shdr[sym[k].st_shndx].sh_name];
-						r_str_ncpy (ret[ret_ctr].name, shname, ELF_STRING_LENGTH);
+						r_str_ncpy (ret[ret_ctr].name, shname, ELF_STRING_LENGTH - 1);
 					} else if (st_name <= 0 || st_name >= maxsize) {
 						ret[ret_ctr].name[0] = 0;
 					} else {
-						r_str_ncpy(ret[ret_ctr].name, &strtab[st_name], ELF_STRING_LENGTH);
+						r_str_ncpy(ret[ret_ctr].name, &strtab[st_name], ELF_STRING_LENGTH - 1);
 						ret[ret_ctr].type = type2str (bin, &ret[ret_ctr], &sym[k]);
 
 						if (ht_pp_find (symbol_map, &ret[ret_ctr], NULL)) {
@@ -3664,7 +3657,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					}
 				}
 				ret[ret_ctr].ordinal = k;
-				ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
+				ret[ret_ctr].name[ELF_STRING_LENGTH - 1] = '\0';
 				fill_symbol_bind_and_type (bin, &ret[ret_ctr], &sym[k]);
 				ret[ret_ctr].is_sht_null = is_sht_null;
 				ret[ret_ctr].is_vaddr = is_vaddr;

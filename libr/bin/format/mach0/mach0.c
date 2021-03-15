@@ -1219,7 +1219,7 @@ static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 
 	memset (bin->libs[lib], 0, R_BIN_MACH0_STRING_LENGTH);
 	len = r_buf_read_at (bin->b, off + dl.dylib.name,
-		(ut8*)bin->libs[lib], R_BIN_MACH0_STRING_LENGTH);
+		(ut8*)bin->libs[lib], R_BIN_MACH0_STRING_LENGTH - 1);
 	bin->libs[lib][R_BIN_MACH0_STRING_LENGTH - 1] = 0;
 	if (len < 1) {
 		bprintf ("Error: read (dylib str)");
@@ -3089,7 +3089,7 @@ struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin) {
 		stridx = bin->symtab[idx].n_strx;
 		char *imp_name = get_name (bin, stridx, false);
 		if (imp_name) {
-			r_str_ncpy (imports[j].name, imp_name, R_BIN_MACH0_STRING_LENGTH);
+			r_str_ncpy (imports[j].name, imp_name, R_BIN_MACH0_STRING_LENGTH - 1);
 			free (imp_name);
 		} else {
 			//imports[j].name[0] = 0;
@@ -3606,8 +3606,7 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin) {
 	}
 	for (i = 0; i < bin->nlibs; i++) {
 		sdb_set (bin->kv, sdb_fmt ("libs.%d.name", i), bin->libs[i], 0);
-		strncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH);
-		libs[i].name[R_BIN_MACH0_STRING_LENGTH - 1] = '\0';
+		r_str_ncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH - 1);
 		libs[i].last = 0;
 	}
 	libs[i].last = 1;
