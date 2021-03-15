@@ -91,12 +91,14 @@ static int _find_lowest_intersection_sm_cb(void *incoming, void *in, void *user)
 	if (r_io_submap_contain (sm, bd->itv.addr)) {
 		return 0;
 	}
-	if (!(*bdsm) && r_io_submap_contain (bd, sm->itv.addr)) {
-		*bdsm = sm;
-		return -1;
-	} else if ((sm->itv.addr < (*bdsm)->itv.addr)) {
-		// sm is closer to bd's itv.addr than *bdsm
-		*bdsm = sm;
+	if (r_io_submap_contain (bd, r_io_submap_from (sm))) {
+		if (!(*bdsm)) {
+			*bdsm = sm;
+			return -1;
+		} else if ((sm->itv.addr < (*bdsm)->itv.addr)) {
+			// sm is closer to bd's itv.addr than *bdsm
+			*bdsm = sm;
+		}
 	}
 	if (bd->itv.addr > sm->itv.addr) {
 		return -1;
