@@ -833,7 +833,7 @@ R_API const char *r_str_getf(const char *str) {
 }
 
 R_API char *r_str_ndup(const char *ptr, int len) {
-	if (len < 0) {
+	if (!ptr || len < 0) {
 		return NULL;
 	}
 	size_t plen = strlen (ptr);
