@@ -39,6 +39,13 @@ static int __get_pid (RIODesc *desc);
 
 #define R_MACH_MAGIC r_str_hash ("mach")
 
+typedef struct r_io_mach_data_t {
+	ut32 magic;
+	int pid;
+	int tid;
+	void *data;
+} RIOMachData;
+
 typedef struct {
 	task_t task;
 } RIOMach;
@@ -47,7 +54,7 @@ typedef struct {
 #define RIOMACH_TASK(x) (x ? ((RIOMach*)(x))->task : -1)
 */
 
-int RIOMACH_TASK(RIODescData *x) {
+int RIOMACH_TASK(RIOMachData *x) {
 	// TODO
 	return -1;
 }
@@ -110,7 +117,7 @@ static task_t pid_to_task(RIODesc *fd, int pid) {
 	static int old_pid = -1;
 	kern_return_t kr;
 
-	RIODescData *iodd = fd? (RIODescData *)fd->data: NULL;
+	RIOMachData *iodd = fd? (RIOMachData *)fd->data: NULL;
 	RIOMach *riom = NULL;
 	if (iodd) {
 		riom = iodd->data;
@@ -213,7 +220,7 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	vm_size_t size = 0;
 	int blen, err, copied = 0;
 	int blocksize = 32;
-	RIODescData *dd = (RIODescData *)desc->data;
+	RIOMachData *dd = (RIOMachData *)desc->data;
 	if (!io || !desc || !buf || !dd) {
 		return -1;
 	}
@@ -414,7 +421,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		}
 		return NULL;
 	}
-	RIODescData *iodd = R_NEW0 (RIODescData);
+	RIOMachData *iodd = R_NEW0 (RIOMachData);
 	if (iodd) {
 		iodd->pid = pid;
 		iodd->tid = pid;
@@ -461,7 +468,7 @@ static int __close(RIODesc *fd) {
 	if (!fd) {
 		return false;
 	}
-	RIODescData *iodd = fd->data;
+	RIOMachData *iodd = fd->data;
 	kern_return_t kr;
 	if (!iodd) {
 		return false;
@@ -482,7 +489,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!io || !fd || !cmd || !fd->data) {
 		return NULL;
 	}
-	RIODescData *iodd = fd->data;
+	RIOMachData *iodd = fd->data;
 	if (iodd->magic != R_MACH_MAGIC) {
 		return NULL;
 	}
@@ -503,7 +510,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (!strncmp (cmd, "pid", 3)) {
-		RIODescData *iodd = fd->data;
+		RIOMachData *iodd = fd->data;
 		RIOMach *riom = iodd->data;
 		const char *pidstr = cmd + 3;
 		int pid = -1;
@@ -543,7 +550,7 @@ static int __get_pid (RIODesc *desc) {
 	if (!desc || !desc->data) {
 		return -1;
 	}
-	RIODescData *iodd = desc->data;
+	RIOMachData *iodd = desc->data;
 	if (iodd) {
 		if (iodd->magic != R_MACH_MAGIC) {
 			return -1;

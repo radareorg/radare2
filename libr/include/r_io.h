@@ -141,13 +141,6 @@ typedef struct r_io_desc_t {
 	RIO *io;
 } RIODesc;
 
-typedef struct {
-	ut32 magic;
-	int pid;
-	int tid;
-	void *data;
-} RIODescData;
-
 // Move somewhere else?
 typedef struct {
 	RSocket *fd;
