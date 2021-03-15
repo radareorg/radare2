@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2015-2018 - pancake */
+/* radare - LGPL3 - 2015-2021 - pancake */
 
 #include <r_bin.h>
 
@@ -139,7 +139,7 @@ static void addsym(RList *ret, const char *name, ut64 addr) {
 	r_list_append (ret, ptr);
 }
 
-static void showstr(const char *str, const ut8 *s, int len) {
+static void showstr(const char *str, const ut8 *s, size_t len) {
 	char *msg = r_str_ndup ((const char *) s, len);
 	eprintf ("%s: %s\n", str, msg);
 	free (msg);
@@ -153,7 +153,7 @@ static RList *symbols(RBinFile *bf) {
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	SMD_Header hdr;
+	SMD_Header hdr = {0};
 	int left = r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
 	if (left < sizeof (SMD_Header)) {
 		return NULL;
@@ -163,15 +163,15 @@ static RList *symbols(RBinFile *bf) {
 	addsym (ret, "rom_end", r_read_be32 (&hdr.RomEnd));
 	addsym (ret, "ram_start", r_read_be32 (&hdr.RamStart));
 	addsym (ret, "ram_end", r_read_be32 (&hdr.RamEnd));
-	showstr ("Copyright", hdr.CopyRights, 32);
-	showstr ("DomesticName", hdr.DomesticName, 48);
-	showstr ("OverseasName", hdr.OverseasName, 48);
-	showstr ("ProductCode", hdr.ProductCode, 14);
+	showstr ("Copyright", hdr.CopyRights, sizeof (hdr.CopyRights));
+	showstr ("DomesticName", hdr.DomesticName, sizeof (hdr.DomesticName));
+	showstr ("OverseasName", hdr.OverseasName, sizeof (hdr.OverseasName));
+	showstr ("ProductCode", hdr.ProductCode, sizeof (hdr.ProductCode));
 	eprintf ("Checksum: 0x%04x\n", (ut32) hdr.CheckSum);
-	showstr ("Peripherials", hdr.Peripherials, 16);
-	showstr ("SramCode", hdr.SramCode, 12);
-	showstr ("ModemCode", hdr.ModemCode, 12);
-	showstr ("CountryCode", hdr.CountryCode, 16);
+	showstr ("Peripherials", hdr.Peripherials, sizeof (hdr.Peripherials));
+	showstr ("SramCode", hdr.SramCode, sizeof (hdr.SramCode));
+	showstr ("ModemCode", hdr.ModemCode, sizeof (hdr.ModemCode));
+	showstr ("CountryCode", hdr.CountryCode, sizeof (hdr.CountryCode));
 	ut32 vtable[64];
 	r_buf_read_at (bf->buf, 0, (ut8*)&vtable, sizeof (ut32) * 64);
 	/* parse vtable */
