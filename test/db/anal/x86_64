@@ -4038,3 +4038,62 @@ EXPECT=<<EOF
 0x004013fe 1 case.default.0x40138d
 EOF
 RUN
+
+NAME=af-* removes function flags
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bytes=true
+e asm.bits=64
+e io.cache=true
+wx b821c10010ebf9
+s 0
+af; af-*
+s 3
+af
+pdr
+?e
+agf
+?e
+afll
+EOF
+EXPECT=<<EOF
+| ; CODE XREF from fcn.00000003 @ 0x5
+| 0x00000000  ~   b821c10010     mov eax, 0x1000c121
+/ 9: fcn.00000003 ();
+| 0x00000003      0010           add byte [rax], dl
+| ----------- true: 0x00000005
+/ 9: fcn.00000003 ();
+| 0x00000003      0010           add byte [rax], dl
+| ----------- true: 0x00000005
+| 0x00000005      ebf9           jmp 0
+| ----------- true: 0x00000000
+
+[0x00000003]>  # fcn.00000003 ();
+ ----.
+|    |
+|.-------------------------------------.   .-----------------------.
+||  0x0                                |   |  0x3                  |
+|| ; CODE XREF from fcn.00000003 @ 0x5 |   | 9: fcn.00000003 ();   |
+|| mov eax, 0x1000c121                 |   | add byte [rax], dl    |
+|| 9: fcn.00000003 ();                 |   `-----------------------'
+|| add byte [rax], dl                  |       v
+|`-------------------------------------'       |
+|    v                                         |
+|    |                                         |
+|    '----------------------------.            |
+|                               .--------------'
+|                               | |
+|                         .--------------------.
+|                         |  0x5               |
+|                         | jmp 0              |
+|                         `--------------------'
+|                             v
+|                             |
+`-----------------------------'
+
+address            size  nbbs edges    cc cost          min bound range max bound          calls locals args xref frame name
+================== ==== ===== ===== ===== ==== ================== ===== ================== ===== ====== ==== ==== ===== ====
+0x0000000000000003    9     3     3     0    4 0x0000000000000000     7 0x0000000000000007     0    0      0    0     0 fcn.00000003
+EOF
+RUN
