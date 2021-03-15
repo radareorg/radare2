@@ -155,7 +155,7 @@ static RGraphNode *agraph_get_title(const RAGraph *g, RANode *n, bool in) {
 	if (!n) {
 		return NULL;
 	}
-	if (n->title && *n->title) {
+	if (!R_STR_ISEMPTY (n->title)) {
 		return n->gnode;
 	}
 	const RList *outnodes = in? n->gnode->in_nodes : n->gnode->out_nodes;
@@ -3645,7 +3645,7 @@ static void graphNodeMove(RAGraph *g, int dir, int speed) {
 	}
 }
 
-static void agraph_free_nodes(const RAGraph *g) {
+static void agraph_free_nodes(RAGraph *g) {
 	RListIter *it;
 	RGraphNode *n;
 	RANode *a;
@@ -3657,7 +3657,9 @@ static void agraph_free_nodes(const RAGraph *g) {
 	}
 
 	sdb_free (g->nodes);
+	g->nodes = NULL;
 	r_list_free (g->dummy_nodes);
+	g->dummy_nodes = NULL;
 }
 
 static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
@@ -3897,7 +3899,6 @@ R_API void r_agraph_reset(RAGraph *g) {
 		r_list_purge (g->edges);
 	}
 	g->nodes = sdb_new0 ();
-	r_list_free (g->dummy_nodes);
 	g->dummy_nodes = r_list_newf ((RListFree)agraph_node_free);
 	r_list_free (g->back_edges);
 	g->back_edges = r_list_newf (free);
