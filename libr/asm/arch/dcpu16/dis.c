@@ -57,20 +57,20 @@ static inline int needWord(ut8 type) {
 		|| (type == 0x1e) || (type == 0x1f);
 }
 
-static int valPrint(char *out, ut8 type, ut16 value) {
-	if (type <= 0x07) return sprintf(out, "%s", regs[type]);
-	if (type <= 0x0f) return sprintf(out, "[%s]", regs[type - 0x08]);
-	if (type <= 0x17) return sprintf(out, "[%s + %#hx]", regs[type - 0x10], value);
-	if (type <= 0x1d) return sprintf(out, "%s", regs[type - 0x18 + 0x08]);
-	if (type == 0x1e) return sprintf(out, "[%#hx]", value);
-	if (type == 0x1f) return sprintf(out, "%#hx", value);
-	return sprintf(out, "%#hx", (short)(type - 0x20));
+static int valPrint(char *out, size_t len, ut8 type, ut16 value) {
+	if (type <= 0x07) return snprintf (out, len, "%s", regs[type]);
+	if (type <= 0x0f) return snprintf (out, len, "[%s]", regs[type - 0x08]);
+	if (type <= 0x17) return snprintf (out, len, "[%s + %#hx]", regs[type - 0x10], value);
+	if (type <= 0x1d) return snprintf (out, len, "%s", regs[type - 0x18 + 0x08]);
+	if (type == 0x1e) return snprintf (out, len, "[%#hx]", value);
+	if (type == 0x1f) return snprintf (out, len, "%#hx", value);
+	return snprintf (out, len, "%#hx", (short)(type - 0x20));
 }
 
 static int instrPrint(char *out, const op* o) {
 	char arg[32], arg2[32];
 	if (o->code.opcode == 0) {
-		valPrint (arg, o->n.a_type, o->n.a);
+		valPrint (arg, sizeof (arg), o->n.a_type, o->n.a);
 		if (o->n.opcode > 1) {
 			strcpy (out, "invalid");
 			return strlen (out);
@@ -78,8 +78,8 @@ static int instrPrint(char *out, const op* o) {
 		return sprintf(out, "%s %s",
 			opNameB[o->n.opcode], arg);
 	}
-	valPrint (arg, o->b.a_type, o->b.a);
-	valPrint (arg2, o->b.b_type, o->b.b);
+	valPrint (arg, sizeof (arg), o->b.a_type, o->b.a);
+	valPrint (arg2, sizeof (arg2), o->b.b_type, o->b.b);
 	return sprintf(out, "%s %s, %s", opName[o->b.opcode], arg, arg2);
 }
 
@@ -114,17 +114,20 @@ static int instrGet(ut16 in, op* o, ut16 a, ut16 b) {
 }
 
 static int instrGetCycles(const op* o) {
-	if (o->code.opcode == 0)
+	if (o->code.opcode == 0) {
 		return opCycleB[o->n.opcode] + needWord(o->n.a_type);
+	}
 	return opCycle[o->b.opcode] + needWord(o->b.a_type)
 		+ needWord(o->b.b_type);
 }
 
-int dcpu16_disasm(char *out, const ut16* inp, int len, int *cost) {
+int dcpu16_disasm(char *out, size_t size_out, const ut16* inp, int len, int *cost) {
 	op o = {{0}};
 	int delta = instrGet (inp[0], &o, inp[1], inp[2]);
-	if (cost) *cost = instrGetCycles(&o) + ((o.b.opcode >= 0xc)?1:0);
+	if (cost) {
+		*cost = instrGetCycles(&o) + ((o.b.opcode >= 0xc)?1:0);
+	}
 	instrPrint (out, &o);
 	//ind = (o.b.opcode >= 0xC);
-	return delta<<1;
+	return delta << 1;
 }

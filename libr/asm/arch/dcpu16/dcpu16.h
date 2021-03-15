@@ -6,7 +6,7 @@
 #define ut16 unsigned short
 #endif
 
-int dcpu16_disasm (char *out, const ut16* inp, int len, int *cost);
-int dcpu16_assemble (ut8* out, const char* unoline);
+int dcpu16_disasm(char *out, size_t size_out, const ut16 *inp, int len, int *cost);
+int dcpu16_assemble(ut8* out, const char* unoline);
 
 #endif
