@@ -87,7 +87,7 @@ inline static int cmp(struct line *a, struct line *b) {
 }
 
 static int equatelines(struct line *a, int an, struct line *b, int bn) {
-	size_t i, j, t;
+	int i, j, t;
 	size_t scale, buckets = 1;
 	struct pos *h = NULL;
 
