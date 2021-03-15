@@ -1451,8 +1451,8 @@ static void ds_atabs_option(RDisasmState *ds) {
 	if (!ds || !ds->atabs) {
 		return;
 	}
-	int bufasm_len = r_strbuf_length (&ds->asmop.buf_asm);
-	int size = bufasm_len * (ds->atabs + 1) * 4;
+	size_t bufasm_len = r_strbuf_length (&ds->asmop.buf_asm);
+	size_t size = (bufasm_len * (ds->atabs + 1)) + 8;
 	if (size < 1 || size < bufasm_len) {
 		return;
 	}
