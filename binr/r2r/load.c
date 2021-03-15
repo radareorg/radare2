@@ -601,6 +601,7 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		RStrBuf subpath;
 		r_strbuf_init (&subpath);
 		const bool skip_archos = r_sys_getenv_asbool ("R2R_SKIP_ARCHOS");
+		const bool skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
 		bool ret = true;
 		r_list_foreach (dir, it, subname) {
 			if (*subname == '.') {
@@ -609,6 +610,10 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 			if (!strcmp (subname, "extras")) {
 				// Only load "extras" dirs if explicitly specified
 				eprintf ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies.\n", path, subname);
+				continue;
+			}
+			if (skip_asm && strstr (path, R_SYS_DIR"asm"R_SYS_DIR)) {
+				eprintf ("R2R_SKIP_ASM: Skipping %s.\n", path);
 				continue;
 			}
 			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos");

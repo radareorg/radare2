@@ -62,6 +62,7 @@ static int help(bool verbose) {
 		" -o [file]    output test run information in JSON format to file"
 		"\n"
 		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
+		"R2R_SKIP_ASM=1     # do not run the rasm2 tests\n"
 		"Supported test types: @json @unit @fuzz @arch @cmds\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
