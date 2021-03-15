@@ -125,6 +125,8 @@ R_API void *r_vector_reserve(RVector *vec, size_t capacity);
 // shrink capacity to len.
 R_API void *r_vector_shrink(RVector *vec);
 
+R_API void *r_vector_flush(RVector *vec);
+
 /*
  * example:
  *
@@ -271,6 +273,10 @@ static inline void **r_pvector_reserve(RPVector *vec, size_t capacity) {
 
 static inline void **r_pvector_shrink(RPVector *vec) {
 	return (void **)r_vector_shrink (&vec->v);
+}
+
+static inline void **r_pvector_flush(RPVector *vec) {
+	return (void **)r_vector_flush (&vec->v);
 }
 
 /*

@@ -212,6 +212,15 @@ R_API void *r_vector_shrink(RVector *vec) {
 	return vec->a;
 }
 
+R_API void *r_vector_flush(RVector *vec) {
+       r_return_val_if_fail (vec, NULL);
+       r_vector_shrink (vec);
+       void *r = vec->a;
+       vec->a = NULL;
+       vec->capacity = vec->len = 0;
+       return r;
+}
+
 // pvector
 
 static void pvector_free_elem(void *e, void *user) {
