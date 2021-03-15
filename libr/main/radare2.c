@@ -1115,6 +1115,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							 eprintf ("r_io_create: Permission denied.\n");
 						}
 					}
+					if (baddr == UT64_MAX) {
+						const ut64 io_plug_baddr = r_config_get_i (r->config, "bin.baddr");
+						if (io_plug_baddr != UT64_MAX) {
+							baddr = io_plug_baddr;
+						}
+					}
 					if (fh) {
 						iod = r->io ? r_io_desc_get (r->io, fh->fd) : NULL;
 						if (iod && perms & R_PERM_X) {
