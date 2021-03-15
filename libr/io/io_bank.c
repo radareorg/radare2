@@ -144,7 +144,8 @@ R_API bool r_io_bank_map_add_top(RIO *io, ut32 bankid, ut32 mapid) {
 		free (sm);
 		return true;
 	}
-	if (r_io_submap_from (bd) < r_io_submap_from (sm) && r_io_submap_to (sm) < r_io_submap_to (bd)) {
+	if (r_io_submap_from (bd) < r_io_submap_from (sm) &&
+		r_io_submap_to (sm) < r_io_submap_to (bd)) {
 		// split bd into 2 maps => bd and bdsm
 		RIOSubMap *bdsm = R_NEW (RIOSubMap);
 		if (!bdsm) {
@@ -156,7 +157,8 @@ R_API bool r_io_bank_map_add_top(RIO *io, ut32 bankid, ut32 mapid) {
 		bdsm->itv.size = r_io_submap_to (bd) - bdsm->itv.addr + 1;
 		bd->itv.size = sm->itv.addr - bd->itv.addr;
 		// TODO: insert and check return value, before adjusting sm size
-		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL) & r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL) &
+			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
 	}
 
 	bd->itv.size = sm->itv.addr - bd->itv.addr;
