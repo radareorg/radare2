@@ -1475,11 +1475,7 @@ static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, PJ *pj, i
 	}
 	int action = R_CORE_BIN_ACC_ALL & ~R_CORE_BIN_ACC_INFO;
 	if (symbols_only || filter->name) {
-		action |= R_CORE_BIN_ACC_EXPORTS;
-		action |= R_CORE_BIN_ACC_INFO;
-		action |= R_CORE_BIN_ACC_SYMBOLS;
-		action |= R_CORE_BIN_ACC_ENTRIES;
-		action |= R_CORE_BIN_ACC_MAIN;
+		action = R_CORE_BIN_ACC_SYMBOLS;
 	} else if (mode == R_MODE_SET || mode == R_MODE_RADARE) {
 		action &= ~R_CORE_BIN_ACC_ENTRIES & ~R_CORE_BIN_ACC_MAIN;
 	}
@@ -1690,7 +1686,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						}
 					} else {
 						r_bin_set_baddr (core->bin, map->addr);
-						r_core_bin_info (core, R_CORE_BIN_ACC_EXPORTS | R_CORE_BIN_ACC_SYMBOLS, pj, input[1] == '*', true, &filter, NULL);
+						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, pj, input[1] == '*', true, &filter, NULL);
 						r_bin_set_baddr (core->bin, baddr);
 					}
 				}
@@ -1739,7 +1735,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						filter.name = (char *) closest_symbol->name;
 
 						r_bin_set_baddr (core->bin, map->addr);
-						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS | R_CORE_BIN_ACC_EXPORTS, NULL, false, true, &filter, NULL);
+						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, NULL, false, true, &filter, NULL);
 					}
 				}
 			}
