@@ -881,7 +881,25 @@ R_API RVector/*<RAnalVTable>*/ *r_anal_class_vtable_get_all(RAnal *anal, const c
 	return vec;
 }
 
+static bool vtable_exists_at(RAnal *anal, const char *class_name, ut64 addr) {
+	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
+	if (vtables) {
+		RAnalVTable *existing_vtable;
+		r_vector_foreach (vtables, existing_vtable) {
+			if (addr == existing_vtable->addr) {
+				r_vector_free (vtables);
+				return true;
+			}
+		}
+	}
+	r_vector_free (vtables);
+	return false;
+}
+
 R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name, RAnalVTable *vtable) {
+	if (vtable_exists_at (anal, class_name, vtable->addr)) {
+		return R_ANAL_CLASS_ERR_OTHER;
+	}
 	char *content = sdb_fmt ("0x%"PFMT64x SDB_SS "%"PFMT64u SDB_SS "%"PFMT64u, vtable->addr, vtable->offset, vtable->size);
 	if (vtable->id) {
 		return r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
