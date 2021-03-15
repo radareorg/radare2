@@ -359,6 +359,7 @@ R_API void r_io_bank_init(RIO *io);
 R_API void r_io_bank_fini(RIO *io);
 R_API RIOBank *r_io_bank_get(RIO *io, ut32 bankid);
 R_API bool r_io_bank_map_add_top(RIO *io, ut32 bankid, ut32 mapid);
+R_API bool r_io_bank_locate(RIO *io, ut32 bankid, const ut64 size, ut64 *addr);
 
 //io.c
 R_API RIO *r_io_new(void);

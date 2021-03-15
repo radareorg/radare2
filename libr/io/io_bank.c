@@ -173,3 +173,33 @@ R_API bool r_io_bank_map_add_top(RIO *io, ut32 bankid, ut32 mapid) {
 	}
 	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
 }
+
+R_API bool r_io_bank_locate(RIO *io, ut32 bankid, const ut64 size, ut64 *addr) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	r_return_val_if_fail (io && bank && bank->submaps && addr && size, false);
+	RContRBNode *entry = r_rbtree_cont_first (bank->submaps);
+	if (!entry) {
+		// no submaps in this bank
+		*addr = 0LL;
+		return true;
+	}
+	ut64 next_location = 0LL;
+	while (entry) {
+		RIOSubMap *sm = (RIOSubMap *)entry->data;
+		if (size <= r_io_submap_from (sm) - next_location) {
+			*addr = next_location;
+			return true;
+		}
+		next_location = r_io_submap_to (sm) + 1;
+		entry = r_rbtree_cont_node_next (entry);
+	}
+	if (next_location == 0LL) {
+		// overflow from last submap in the tree => no location
+		return false;
+	}
+	if (UT64_MAX - size + 1 < next_location) {
+		return false;
+	}
+	*addr = next_location;
+	return true;
+}
