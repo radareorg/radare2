@@ -213,7 +213,7 @@ R_API void *r_vector_shrink(RVector *vec) {
 }
 
 R_API void *r_vector_flush(RVector *vec) {
-       r_return_val_if_fail(vec, NULL);
+       r_return_val_if_fail (vec, NULL);
        r_vector_shrink(vec);
        void *r = vec->a;
        vec->a = NULL;
