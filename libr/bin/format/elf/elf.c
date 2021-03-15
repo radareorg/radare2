@@ -2573,7 +2573,6 @@ int Elf_(r_bin_elf_is_big_endian)(ELFOBJ *bin) {
 /* XXX Init dt_strtab? */
 char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 	r_return_val_if_fail (bin, NULL);
-	char *ret;
 	Elf_(Xword) val;
 
 	if (!bin->phdr || !bin->strtab) {
