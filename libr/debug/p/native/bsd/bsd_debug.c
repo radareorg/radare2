@@ -253,7 +253,7 @@ RDebugInfo *bsd_info(RDebug *dbg, const char *arg) {
 #endif
 }
 
-RList *bsd_pid_list(RDebug *dbg, RList *list) {
+RList *bsd_pid_list(RDebug *dbg, int pid, RList *list) {
 #if __KFBSD__
 #ifdef __NetBSD__
 # define KVM_OPEN_FLAG KVM_NO_FILES
@@ -292,42 +292,35 @@ RList *bsd_pid_list(RDebug *dbg, RList *list) {
 # define KP_UID(x) (x)->ki_uid
 # define KINFO_PROC kinfo_proc
 #endif
-	int pid = dbg->pid;
 	char errbuf[_POSIX2_LINE_MAX];
-	struct KINFO_PROC* kp;
+	struct KINFO_PROC *kp, *entry;
 	int cnt = 0;
-	kvm_t* kd = kvm_openfiles (NULL, NULL, NULL, KVM_OPEN_FLAG, errbuf);
+	int i;
+
+#if __FreeBSD__
+	kvm_t *kd = kvm_openfiles (NULL, "/dev/null", NULL, KVM_OPEN_FLAG, errbuf);
+#else
+	kvm_t *kd = kvm_openfiles (NULL, NULL, NULL, KVM_OPEN_FLAG, errbuf);
+#endif
 	if (!kd) {
-		eprintf ("kvm_openfiles says %s\n", errbuf);
+		eprintf ("kvm_openfiles failed: %s\n", errbuf);
 		return NULL;
 	}
-	if (pid) {
-		kp = KVM_GETPROCS (kd, KERN_PROC_PID, pid, &cnt);
-		if (cnt == 1) {
-			RDebugPid *p = r_debug_pid_new (KP_COMM (kp), pid, KP_UID (kp), 's', 0);
-			if (p) r_list_append (list, p);
-			/* we got our process, now fetch the parent process */
-			kp = KVM_GETPROCS (kd, KERN_PROC_PID, KP_PPID(kp), &cnt);
-                        if (cnt == 1) {
-				RDebugPid *p = r_debug_pid_new (KP_COMM (kp), KP_PID (kp), KP_UID (kp), 's', 0);
-				if (p) {
-					p->ppid = KP_PPID (kp);
-					r_list_append (list, p);
-				}
-			}
-		}
-	} else {
-		kp = KVM_GETPROCS (kd, KERN_PROC_UID, geteuid(), &cnt);
-		int i;
-		for (i = 0; i < cnt; i++) {
-			RDebugPid *p = r_debug_pid_new (KP_COMM (kp + i), KP_PID (kp + i), KP_UID (kp), 's', 0);
+
+	kp = KVM_GETPROCS (kd, KERN_PROC_PROC, 0, &cnt);
+	for (i = 0; i < cnt; i++) {
+		entry = kp + i;
+		// Unless pid 0 is requested, only add the requested pid and it's child processes
+		if (0 == pid || KP_PID (entry) == pid || KP_PPID (entry) == pid) {
+			RDebugPid *p = r_debug_pid_new (KP_COMM (entry), KP_PID (entry), KP_UID (entry), 's', 0);
 			if (p) {
-				p->ppid = KP_PPID (kp);
+				p->ppid = KP_PPID (entry);
 				r_list_append (list, p);
 			}
 		}
 	}
-	kvm_close(kd);
+
+	kvm_close (kd);
 #endif
 	return list;
 }

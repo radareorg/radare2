@@ -86,12 +86,13 @@ static void random_entries(TestEntry entries[N]) {
 	}
 }
 
-static void probe_cb(RIntervalNode *node, void *user) {
+static bool probe_cb(RIntervalNode *node, void *user) {
 	TestEntry *entry = node->data;
 	entry->counter++;
 	if (entry->start != node->start || entry->end != node->end) {
 		entry->counter = -99999; // something went terribly wrong
 	}
+	return true;
 }
 
 static void free_cb(void *data) {
@@ -153,7 +154,7 @@ bool test_r_interval_tree_in(bool end_inclusive, bool intervals) {
 	return true;
 }
 
-#define TEST_IN(name, args...) bool name() { if(!test_r_interval_tree_in (args)) return false; mu_end; }
+#define TEST_IN(name, end_inclusive, intervals) bool name() { if(!test_r_interval_tree_in (end_inclusive, intervals)) return false; mu_end; }
 TEST_IN (test_r_interval_tree_in_end_exclusive_point, false, false)
 TEST_IN (test_r_interval_tree_in_end_inclusive_point, true, false)
 TEST_IN (test_r_interval_tree_in_end_exclusive_interval, false, true)
@@ -243,7 +244,7 @@ bool test_r_interval_tree_delete() {
 		mu_assert ("delete success", s);
 		mu_assert_eq (entry->freed, 1, "entry not freed after delete");
 
-		RBIter it;
+		RIntervalTreeIter it;
 		r_interval_tree_foreach (&tree, it, entry) {
 			entry->counter++;
 		}

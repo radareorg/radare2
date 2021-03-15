@@ -687,7 +687,7 @@ static cpu_type_t xnu_get_cpu_type (pid_t pid) {
 	return -1;
 }
 
-static cpu_subtype_t xnu_get_cpu_subtype () {
+static cpu_subtype_t xnu_get_cpu_subtype (void) {
 	size_t size;
 	cpu_subtype_t subtype;
 

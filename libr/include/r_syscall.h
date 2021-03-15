@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #ifndef R2_SYSCALL_H
 #define R2_SYSCALL_H

@@ -1,11 +1,25 @@
 BINR_PROGRAM=1
 include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
+include ../../shlr/sdb.mk
 
 ifeq (,$(findstring tcc,${CC}))
 CFLAGS+=-pie
 endif
 CFLAGS+=-I$(LTOP)/include
+
+ifeq (${ANDROID},1)
+LDFLAGS+=-lm
+else
+ifneq (${OSTYPE},linux)
+LDFLAGS+=-lpthread
+LDFLAGS+=-ldl
+LDFLAGS+=-lm
+endif
+endif
+ifeq ($(USE_LTO),1)
+LDFLAGS+=-flto
+endif
 
 ifeq (${COMPILER},emscripten)
 LINK+=$(SHLR)/libr_shlr.a
@@ -95,7 +109,9 @@ clean:: myclean
 mrproper: clean
 	-rm -f *.d
 
+ifeq ($(INSTALL_TARGET),)
 install:
 	cd ../.. && ${MAKE} install
+endif
 
 .PHONY: all clean myclean mrproper install

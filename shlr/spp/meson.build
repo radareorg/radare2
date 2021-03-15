@@ -1,5 +1,5 @@
 project('spp', 'c')
-spp_version = '1.0.0'
+spp_version = '1.2.0'
 
 configure_file(input: 'config.def.h',
   output: 'config.h',
@@ -7,7 +7,6 @@ configure_file(input: 'config.def.h',
 
 spp_files = [
   'spp.c',
-  's_api.c'
 ]
 
 libspp_static = static_library('spp', spp_files,
@@ -38,9 +37,5 @@ pkgconfig_mod.generate(libspp,
 
 if not meson.is_subproject()
   install_headers('spp.h')
-
-  spp_exe = executable('spp', ['main.c'],
-    dependencies: spp_dep,
-    install: true
-  )
+  subdir('bin')
 endif

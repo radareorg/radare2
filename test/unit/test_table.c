@@ -5,7 +5,7 @@
 //TODO test r_str_chop_path
 
 bool test_r_table(void) {
-	RTable *t = r_table_new ();
+	RTable *t = r_table_new ("test1");
 
 	// r_table_fromcsv (t, csv);
 	RTableColumnType *typeString = r_table_type ("string");
@@ -32,7 +32,7 @@ bool test_r_table(void) {
 }
 
 RTable *__table_test_data1() {
-	RTable *t = r_table_new ();
+	RTable *t = r_table_new ("test2");
 
 	r_table_add_column (t, r_table_type ("string"), "ascii", 0);
 	r_table_add_column (t, r_table_type ("number"), "code", 0);
@@ -157,8 +157,6 @@ static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
 	RListIter *iter_rhs;
 
 	char *item_lhs;
-	char *item_rhs;
-	int tmp;
 
 	int i = 0;
 
@@ -167,7 +165,6 @@ static void simple_merge(RTableRow *acc, RTableRow *new_row, int nth) {
 		iter_lhs = iter_lhs->n, iter_rhs = iter_rhs->n) {
 
 		item_lhs = iter_lhs->data;
-		item_rhs = iter_rhs->data;
 
 		if (i != nth) {
 			if (!strcmp (item_lhs, "a")) {
@@ -253,7 +250,7 @@ bool test_r_table_columns () {
 	RTable *t = NULL;
 #define CREATE_TABLE                                                   \
 	r_table_free (t);                                              \
-	t = r_table_new ();                                            \
+	t = r_table_new ("test");                                      \
 	r_table_add_column (t, r_table_type ("number"), "name", 0);    \
 	r_table_add_column (t, r_table_type ("number"), "address", 0); \
 	r_table_add_row (t, "hello", "100", NULL);                     \

@@ -49,21 +49,24 @@ static int __isdata(RCore *core, ut64 addr) {
 		return 1;
 	}
 
-	RList *list = r_meta_find_list_in (core->anal, addr, -1, 4);
-	RListIter *iter;
-	RAnalMetaItem *meta;
+	RPVector *list = r_meta_get_all_in (core->anal, addr, R_META_TYPE_ANY);
+	void **it;
 	int result = 0;
-	r_list_foreach (list, iter, meta) {
+	r_pvector_foreach (list, it) {
+		RIntervalNode *node = *it;
+		RAnalMetaItem *meta = node->data;
 		switch (meta->type) {
 		case R_META_TYPE_DATA:
 		case R_META_TYPE_STRING:
 		case R_META_TYPE_FORMAT:
-			result = meta->size - (addr - meta->from);
+			result = node->end - addr + 1;
 			goto exit;
+		default:
+			break;
 		}
 	}
 exit:
-	r_list_free (list);
+	r_pvector_free (list);
 	return result;
 }
 
@@ -258,8 +261,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	RList *block_list;
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
-	bool debug = r_config_get_i (core->config, "cfg.debug");
-	bool nopskip = r_config_get_i (core->config, "anal.nopskip");
+	const bool debug = r_config_get_b (core->config, "cfg.debug");
+	const bool nopskip = r_config_get_b (core->config, "anal.nopskip");
 
 	block_list = r_list_new ();
 	if (!block_list) {
@@ -542,7 +545,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 	RList *block_list;
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
-	bool debug = r_config_get_i (core->config, "cfg.debug");
+	const bool debug = r_config_get_b (core->config, "cfg.debug");
 	ut64 lista[1024] = { 0 };
 	int idx = 0;
 	int x;

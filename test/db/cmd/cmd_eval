@@ -26,6 +26,14 @@ zoom.to = 0
 EOF
 RUN
 
+NAME=e anal.gp(mips)
+FILE=bins/elf/analysis/mips64r2-cc1
+CMDS=e anal.gp
+EXPECT=<<EOF
+0x1213a5940
+EOF
+RUN
+
 NAME=e asm.os
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=e asm.os=?

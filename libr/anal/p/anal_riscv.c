@@ -41,7 +41,7 @@ static bool _is_any(const char *str, ...) {
 }
 
 static void arg_p2(char *buf, unsigned long val, const char* const* array, size_t size) {
-	const char *s = val >= size || array[val] ? array[val] : "unknown";
+	const char *s = (val >= size || array[val]) ? array[val] : "unknown";
 	snprintf (buf, RISCVARGSIZE, "%s", s);
 }
 
@@ -52,7 +52,7 @@ static struct riscv_opcode *get_opcode(insn_t word) {
 #define OP_HASH_IDX(i) ((i) & (riscv_insn_length (i) == 2 ? 3 : OP_MASK_OP))
 
 	if (!init) {
-		int i;
+		size_t i;
 		for (i=0;i<OP_MASK_OP+1; i++) {
 			riscv_hash[i] = 0;
 		}
@@ -105,7 +105,7 @@ static void get_insn_args(riscv_args_t *args, const char *d, insn_t l, uint64_t 
 				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
 				  riscv_gpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
 				break;
-			case 'U': /* RS1, constrained to equal RD */
+			case 'U': /* RS1, constrained to equal RD in CI format*/
 				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
 				break;
 			case 'c': /* RS1, constrained to equal sp */
@@ -297,7 +297,6 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	riscv_args_t args = {0};
 	ut64 word = 0;
 	int xlen = anal->bits;
-
 	op->size = 4;
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -341,9 +340,11 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 
 	if (o->args) {
-		const char* name = o->name;
-		if (o->name[0] == 'c' && o->name[1] == '.') {
+		const char *name = o->name;
+		// Test for compressed instruction
+		if (!strncmp ("c.", o->name, 2)) {
 			name += 2;
+			op->size = 2;
 		}
 #define ARG(x) (arg_n (&args, (x)))
 		get_insn_args (&args, o->args, word, addr);
@@ -357,11 +358,20 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = r_num_math (NULL, ARG (1));
 			}
+		} else if (!strncmp (name, "addiw", 5)) {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffff,%s,&,", ARG (2), ARG (1));
+			r_strbuf_appendf (&op->esil, "+,%s,=,", ARG (0));
+			r_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
+			if (!strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
+				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = r_num_math (NULL, ARG (2));
+			}
 		} else if (!strncmp (name, "addw", 4)) {
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			r_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
 			r_strbuf_appendf (&op->esil, "+,%s,=,", ARG (0));
-			r_strbuf_appendf (&op->esil, "31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			r_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
 		} else if (!strncmp (name, "add", 3)) {
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
@@ -373,7 +383,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			r_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
 			r_strbuf_appendf (&op->esil, "-,%s,=,", ARG (0));
-			r_strbuf_appendf (&op->esil, "31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			r_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
 		} else if (!strncmp (name, "sub", 3)) {
 			esilprintf (op, "%s,%s,-,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
@@ -385,7 +395,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			esilprintf (op, "0xffffffff,%s,&,", ARG (2));
 			r_strbuf_appendf (&op->esil, "0xffffffff,%s,&,", ARG (1));
 			r_strbuf_appendf (&op->esil, "*,%s,=,", ARG (0));
-			r_strbuf_appendf (&op->esil, "31,%s,>>,?{,0xffffffff00000000,%s,|=,}", ARG (0), ARG (0));
+			r_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
 		} else if (!strncmp (name, "mul", 3)) {
 			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "div", 3)) {
@@ -399,13 +409,21 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "and", 3)) {
 			esilprintf (op, "%s,%s,&,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "auipc")) {
-			esilprintf (op, "%s,pc,+,%s,=", ARG (1), ARG (0));
+			esilprintf (op, "%s000,$$,+,%s,=", ARG (1), ARG (0));
 		} else if (!strncmp (name, "sll", 3)) {
 			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
+			if (name[3] == 'w' || !strncmp (name, "slliw", 5)) {
+				r_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
+			}
+		} else if (!strcmp (name, "srlw") || !strcmp (name, "srliw")) {
+			esilprintf (op, "%s,0xffffffff,%s,&,>>,%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strncmp (name, "srl", 3)) {
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
+		} else if (!strcmp (name, "sraiw")) {
+			esilprintf (op, "%s,%s,>>>>,%s,=,", ARG (2), ARG (1), ARG (0));
+			r_strbuf_appendf (&op->esil, "%s,64,-,%s,~=", ARG (2), ARG(0));
 		} else if (!strncmp (name, "sra", 3)) {
-			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
+			esilprintf (op, "%s,%s,>>>>,%s,=", ARG (2), ARG (1), ARG (0));
 		}
 		// assigns
 		else if (!strcmp (name, "mv")) {
@@ -413,7 +431,10 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strcmp (name, "li")) {
 			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
 		} else if (!strcmp (name, "lui")) {
-			esilprintf (op, "%s0000,%s,=", ARG (1), ARG (0));
+			esilprintf (op, "%s000,%s,=", ARG (1), ARG (0));
+			if (anal->bits == 64) {
+				r_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
+			}
 		}
 		// csr instrs
 		// <csr op> rd, rs1, CSR
@@ -426,7 +447,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "csrrc", 5)) {
 			// Ands the inverse of rs1 with CSR, places old value in rd
 			esilprintf (op, "%s,0,+,%s,1,+,0,-,%s,&=,%s,=", ARG (1), ARG (1), ARG (2), ARG (0));
-		}
+		} 
 		// stores
 		else if (!strcmp (name, "sd") || !strcmp (name, "sdsp")) {
 			esilprintf (op, "%s,%s,%s,+,=[8]", ARG (0), ARG (2), ARG (1));
@@ -452,10 +473,19 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			esilprintf (op, "%s,%s,+,[8],%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "lw") || !strcmp (name, "lwu") || !strcmp (name, "lwsp")) {
 			esilprintf (op, "%s,%s,+,[4],%s,=", ARG (2), ARG (1), ARG (0));
+			if ((anal->bits == 64) && strcmp (name, "lwu")) {
+				r_strbuf_appendf (&op->esil, ",32,%s,~=", ARG (0));
+			}
 		} else if (!strcmp (name, "lh") || !strcmp (name, "lhu") || !strcmp (name, "lhsp")) {
 			esilprintf (op, "%s,%s,+,[2],%s,=", ARG (2), ARG (1), ARG (0));
+			if (strcmp (name, "lwu")) {
+				r_strbuf_appendf (&op->esil, ",16,%s,~=", ARG (0));
+			}
 		} else if (!strcmp (name, "lb") || !strcmp (name, "lbu") || !strcmp (name, "lbsp")) {
 			esilprintf (op, "%s,%s,+,[1],%s,=", ARG (2), ARG (1), ARG (0));
+			if (strcmp (name, "lbu")) {
+				r_strbuf_appendf (&op->esil, ",8,%s,~=", ARG (0));
+			}
 		} else if (!strcmp (name, "flq") || !strcmp (name, "flqsp")) {
 			esilprintf (op, "%s,%s,+,[16],%s,=", ARG (2), ARG (1), ARG (0));
 		} else if (!strcmp (name, "fld") || !strcmp (name, "fldsp")) {
@@ -469,19 +499,31 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 		// jumps
 		else if (!strcmp (name, "jalr")) {
-			esilprintf (op, "%d,pc,+,%s,=,%s,%s,+,pc,=", op->size, ARG (0), ARG (2), ARG (1));
+			if (strcmp (ARG (0), "0")) {
+				esilprintf (op, "%s,%s,+,pc,=,%d,$$,+,%s,=", ARG (2), ARG (1), op->size, ARG (0));
+			} else {
+				esilprintf (op, "%s,%s,+,pc,=", ARG (2), ARG (1));
+			}
 		} else if (!strcmp (name, "jal")) {
-			esilprintf (op, "%d,pc,+,%s,=,%s,pc,+,pc,=", op->size, ARG (0), ARG (1));
+			if (strcmp (ARG (0), "0")) {
+				if (args.num == 1) {
+					esilprintf (op, "%d,$$,+,ra,=,%s,pc,=", op->size, ARG (0));
+				} else {
+					esilprintf (op, "%d,$$,+,%s,=,%s,pc,=", op->size, ARG (0), ARG (1));
+				}
+			} else {
+				esilprintf (op, "%s,pc,=", ARG (1));
+			}
 		} else if (!strcmp (name, "jr") || !strcmp (name, "j")) {
 			esilprintf (op, "%s,pc,=", ARG (0));
 		} else if (!strcmp (name, "ecall") || !strcmp (name, "ebreak")) {
-			esilprintf (op, "TRAP", ARG (0));
+			esilprintf (op, "TRAP");
 		}
 		// Branches & cmps
 		else if (!strcmp (name, "beq")) {
-			esilprintf (op, "%s,%s,==,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,==,$z,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "bne")) {
-			esilprintf (op, "%s,%s,!=,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
+			esilprintf (op, "%s,%s,==,$z,!,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "ble") || !strcmp (name, "bleu")) {
 			esilprintf (op, "%s,%s,<=,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "blt") || !strcmp (name, "bltu")) {
@@ -491,9 +533,9 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strcmp (name, "bgt") || !strcmp (name, "bgtu")) {
 			esilprintf (op, "%s,%s,>,?{,%s,pc,=,},", ARG (1), ARG (0), ARG (2));
 		} else if (!strcmp (name, "beqz")) {
-			esilprintf (op, "%s,0,==,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,==,$z,?{,%s,pc,=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "bnez")) {
-			esilprintf (op, "%s,0,!=,?{,%s,pc,=,},", ARG (0), ARG (1));
+			esilprintf (op, "%s,0,==,$z,!,?{,%s,pc,=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "blez")) {
 			esilprintf (op, "%s,0,<=,?{,%s,pc,=,},", ARG (0), ARG (1));
 		} else if (!strcmp (name, "bltz")) {
@@ -529,48 +571,105 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 // branch/jumps/calls/rets
 	if (is_any ("jal")) {
-		// decide whether it's ret or call
+		// decide whether it's jump or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
-		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_CALL;
+		op->type = (rd == 0) ? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
 		op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
-		op->fail = addr + 4;
+		op->fail = addr + op->size;
+	} else if (is_any ("c.jal")) {
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = EXTRACT_RVC_IMM (word) + addr;
+		op->fail = addr + op->size;
 	} else if (is_any ("jr")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-	} else if (is_any ("j", "jump")) {
+	} else if (is_any ("c.j", "jump")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-	} else if (is_any ("jalr", "ret")) { // ?
+		op->jump = EXTRACT_RVC_J_IMM (word) + addr;
+	} else if (is_any ("jalr")) {
+		// decide whether it's ret or call
+		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
+		op->type = (rd == 0) ? R_ANAL_OP_TYPE_RET: R_ANAL_OP_TYPE_UCALL;
+	} else if (is_any ("c.ret")) {
+		op->type = R_ANAL_OP_TYPE_RET;
+	} else if (is_any ("c.jalr")) {
 		op->type = R_ANAL_OP_TYPE_UCALL;
-	} else if (is_any ("ret")) {
+	} else if (is_any ("c.jr")) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("beqz", "beq", "blez", "bgez", "ble",
-			"bleu", "bge", "bgeu", "bltz", "bgtz", "blt", "bltu",
-			"bgt", "bgtu", "bnez", "bne")) {
+			   "bleu", "bge", "bgeu", "bltz", "bgtz", "blt", "bltu",
+			   "bgt", "bgtu", "bnez", "bne")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
-		op->fail = addr + 4;
+		op->fail = addr + op->size;
+	} else if (is_any ("c.beqz", "c.bnez")) {
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = EXTRACT_RVC_B_IMM (word) + addr;
+		op->fail = addr + op->size;
 // math
-	} else if (is_any ("addi", "addw", "addiw", "add", "auipc")) {
+	} else if (is_any ("addi", "addw", "addiw", "add", "auipc", "c.addi",
+			   "c.addw", "c.add", "c.addiw", "c.addi4spn", "c.addi16sp")) {
 		op->type = R_ANAL_OP_TYPE_ADD;
-	} else if (is_any ("subi", "subw", "sub")) {
+	} else if (is_any ("c.mv", "csrrw", "csrrc", "csrrs")) {
+		op->type = R_ANAL_OP_TYPE_MOV;
+	} else if (is_any ("subi", "subw", "sub", "c.sub", "c.subw")) {
 		op->type = R_ANAL_OP_TYPE_SUB;
-	} else if (is_any ("xori", "xor")) {
+	} else if (is_any ("xori", "xor", "c.xor")) {
 		op->type = R_ANAL_OP_TYPE_XOR;
-	} else if (is_any ("andi", "and")) {
+	} else if (is_any ("andi", "and", "c.andi", "c.and")) {
 		op->type = R_ANAL_OP_TYPE_AND;
-	} else if (is_any ("ori", "or")) {
+	} else if (is_any ("ori", "or", "c.or")) {
 		op->type = R_ANAL_OP_TYPE_OR;
 	} else if (is_any ("not")) {
 		op->type = R_ANAL_OP_TYPE_NOT;
+	} else if (is_any ("c.nop")) {
+		op->type = R_ANAL_OP_TYPE_NOP;
 	} else if (is_any ("mul", "mulh", "mulhu", "mulhsu", "mulw")) {
 		op->type = R_ANAL_OP_TYPE_MUL;
 	} else if (is_any ("div", "divu", "divw", "divuw")) {
 		op->type = R_ANAL_OP_TYPE_DIV;
+	} else if (is_any ("sll", "slli", "sllw", "slliw", "c.slli")) {
+		op->type = R_ANAL_OP_TYPE_SHL;
+	} else if (is_any ("srl", "srlw", "srliw", "c.srli")) {
+		op->type = R_ANAL_OP_TYPE_SHR;
+	} else if (is_any ("sra", "sra", "srai", "sraiw", "c.srai")) {
+		op->type = R_ANAL_OP_TYPE_SAR;
 // memory
-	} else if (is_any ("sd", "sb", "sh", "sw")) {
+	} else if (is_any ("sd", "sb", "sh", "sw", "c.sd", "c.sw",
+			   "c.swsp", "c.sdsp")) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 	} else if (is_any ("ld", "lw", "lwu", "lui", "li",
-			"lb", "lbu", "lh", "lhu", "la", "lla")) {
+			   "lb", "lbu", "lh", "lhu", "la", "lla", "c.ld",
+			   "c.lw", "c.lwsp", "c.li", "c.lui")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
+	}
+	if (mask & R_ANAL_OP_MASK_VAL && args.num) {
+		int i, j = 1;
+		op->dst = R_NEW0 (RAnalValue);
+		char *argf = strdup (o->args);
+		char *comma = strtok (argf, ",");
+		if (comma && strchr (comma, '(')) {
+			op->dst->delta = (st64)r_num_get (NULL, args.arg[0]);
+			op->dst->reg = r_reg_get (anal->reg, args.arg[1], -1);
+			j = 2;
+		} else if (isdigit ((unsigned char)args.arg[j][0])) {
+			op->dst->imm = r_num_get (NULL, args.arg[0]);
+		} else {
+			op->dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
+		}
+		for (i = 0; j < args.num; i++, j++) {
+			op->src[i] = R_NEW0 (RAnalValue);
+			comma = strtok (NULL, ",");
+			if (comma && strchr (comma, '(')) {
+				op->src[i]->delta = (st64)r_num_get (NULL, args.arg[j]);
+				op->src[i]->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
+				j++;
+			} else if (isalpha ((unsigned char)args.arg[j][0])) {
+				op->src[i]->reg = r_reg_get (anal->reg, args.arg[j], -1);
+			} else {
+				op->src[i]->imm = r_num_get (NULL, args.arg[j]);
+			}
+		}
+		free (argf);
 	}
 	return op->size;
 }
@@ -580,10 +679,20 @@ static char *get_reg_profile(RAnal *anal) {
 	switch (anal->bits) {
 	case 32: p =
 		"=PC	pc\n"
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"=A4	a4\n"
+		"=A5	a5\n"
+		"=A6	a6\n"
+		"=A7	a7\n"
+		"=R0	a0\n"
+		"=R1	a1\n"
 		"=SP	sp\n" // ABI: stack pointer
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
-
+		"=SN	a7\n" // ABI: syscall numer
 		"gpr	pc	.32	0	0\n"
 		// RV32I regs (ABI names)
 		// From user-Level ISA Specification, section 2.1
@@ -621,39 +730,39 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	t6	.32	124	0\n" // =x31
 		// RV32F/D regs (ABI names)
 		// From user-Level ISA Specification, section 8.1 and 9.1
-		"gpr	ft0	.64	128	0\n" // =f0
-		"gpr	ft1	.64	136	0\n" // =f1
-		"gpr	ft2	.64	144	0\n" // =f2
-		"gpr	ft3	.64	152	0\n" // =f3
-		"gpr	ft4	.64	160	0\n" // =f4
-		"gpr	ft5	.64	168	0\n" // =f5
-		"gpr	ft6	.64	176	0\n" // =f6
-		"gpr	ft7	.64	184	0\n" // =f7
-		"gpr	fs0	.64	192	0\n" // =f8
-		"gpr	fs1	.64	200	0\n" // =f9
-		"gpr	fa0	.64	208	0\n" // =f10
-		"gpr	fa1	.64	216	0\n" // =f11
-		"gpr	fa2	.64	224	0\n" // =f12
-		"gpr	fa3	.64	232	0\n" // =f13
-		"gpr	fa4	.64	240	0\n" // =f14
-		"gpr	fa5	.64	248	0\n" // =f15
-		"gpr	fa6	.64	256	0\n" // =f16
-		"gpr	fa7	.64	264	0\n" // =f17
-		"gpr	fs2	.64	272	0\n" // =f18
-		"gpr	fs3	.64	280	0\n" // =f19
-		"gpr	fs4	.64	288	0\n" // =f20
-		"gpr	fs5	.64	296	0\n" // =f21
-		"gpr	fs6	.64	304	0\n" // =f22
-		"gpr	fs7	.64	312	0\n" // =f23
-		"gpr	fs8	.64	320	0\n" // =f24
-		"gpr	fs9	.64	328	0\n" // =f25
-		"gpr	fs10	.64	336	0\n" // =f26
-		"gpr	fs11	.64	344	0\n" // =f27
-		"gpr	ft8	.64	352	0\n" // =f28
-		"gpr	ft9	.64	360	0\n" // =f29
-		"gpr	ft10	.64	368	0\n" // =f30
-		"gpr	ft11	.64	376	0\n" // =f31
-		"gpr	fcsr	.32	384	0\n"
+		"fpu	ft0	.64	128	0\n" // =f0
+		"fpu	ft1	.64	136	0\n" // =f1
+		"fpu	ft2	.64	144	0\n" // =f2
+		"fpu	ft3	.64	152	0\n" // =f3
+		"fpu	ft4	.64	160	0\n" // =f4
+		"fpu	ft5	.64	168	0\n" // =f5
+		"fpu	ft6	.64	176	0\n" // =f6
+		"fpu	ft7	.64	184	0\n" // =f7
+		"fpu	fs0	.64	192	0\n" // =f8
+		"fpu	fs1	.64	200	0\n" // =f9
+		"fpu	fa0	.64	208	0\n" // =f10
+		"fpu	fa1	.64	216	0\n" // =f11
+		"fpu	fa2	.64	224	0\n" // =f12
+		"fpu	fa3	.64	232	0\n" // =f13
+		"fpu	fa4	.64	240	0\n" // =f14
+		"fpu	fa5	.64	248	0\n" // =f15
+		"fpu	fa6	.64	256	0\n" // =f16
+		"fpu	fa7	.64	264	0\n" // =f17
+		"fpu	fs2	.64	272	0\n" // =f18
+		"fpu	fs3	.64	280	0\n" // =f19
+		"fpu	fs4	.64	288	0\n" // =f20
+		"fpu	fs5	.64	296	0\n" // =f21
+		"fpu	fs6	.64	304	0\n" // =f22
+		"fpu	fs7	.64	312	0\n" // =f23
+		"fpu	fs8	.64	320	0\n" // =f24
+		"fpu	fs9	.64	328	0\n" // =f25
+		"fpu	fs10	.64	336	0\n" // =f26
+		"fpu	fs11	.64	344	0\n" // =f27
+		"fpu	ft8	.64	352	0\n" // =f28
+		"fpu	ft9	.64	360	0\n" // =f29
+		"fpu	ft10	.64	368	0\n" // =f30
+		"fpu	ft11	.64	376	0\n" // =f31
+		"fpu	fcsr	.32	384	0\n"
 		"flg	nx	.1	3072	0\n"
 		"flg	uf	.1	3073	0\n"
 		"flg	of	.1	3074	0\n"
@@ -668,7 +777,17 @@ static char *get_reg_profile(RAnal *anal) {
 		"=SP	sp\n" // ABI: stack pointer
 		"=LR	ra\n" // ABI: return address
 		"=BP	s0\n" // ABI: frame pointer
-
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"=A4	a4\n"
+		"=A5	a5\n"
+		"=A6	a6\n"
+		"=A7	a7\n"
+		"=R0	a0\n"
+		"=R1	a1\n"
+		"=SN	a7\n" // ABI: syscall numer
 		"gpr	pc	.64	0	0\n"
 		// RV64I regs (ABI names)
 		// From user-Level ISA Specification, section 2.1 and 4.1
@@ -705,39 +824,39 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	t5	.64	240	0\n" // =x30
 		"gpr	t6	.64	248	0\n" // =x31
 		// RV64F/D regs (ABI names)
-		"gpr	ft0	.64	256	0\n" // =f0
-		"gpr	ft1	.64	264	0\n" // =f1
-		"gpr	ft2	.64	272	0\n" // =f2
-		"gpr	ft3	.64	280	0\n" // =f3
-		"gpr	ft4	.64	288	0\n" // =f4
-		"gpr	ft5	.64	296	0\n" // =f5
-		"gpr	ft6	.64	304	0\n" // =f6
-		"gpr	ft7	.64	312	0\n" // =f7
-		"gpr	fs0	.64	320	0\n" // =f8
-		"gpr	fs1	.64	328	0\n" // =f9
-		"gpr	fa0	.64	336	0\n" // =f10
-		"gpr	fa1	.64	344	0\n" // =f11
-		"gpr	fa2	.64	352	0\n" // =f12
-		"gpr	fa3	.64	360	0\n" // =f13
-		"gpr	fa4	.64	368	0\n" // =f14
-		"gpr	fa5	.64	376	0\n" // =f15
-		"gpr	fa6	.64	384	0\n" // =f16
-		"gpr	fa7	.64	392	0\n" // =f17
-		"gpr	fs2	.64	400	0\n" // =f18
-		"gpr	fs3	.64	408	0\n" // =f19
-		"gpr	fs4	.64	416	0\n" // =f20
-		"gpr	fs5	.64	424	0\n" // =f21
-		"gpr	fs6	.64	432	0\n" // =f22
-		"gpr	fs7	.64	440	0\n" // =f23
-		"gpr	fs8	.64	448	0\n" // =f24
-		"gpr	fs9	.64	456	0\n" // =f25
-		"gpr	fs10	.64	464	0\n" // =f26
-		"gpr	fs11	.64	472	0\n" // =f27
-		"gpr	ft8	.64	480	0\n" // =f28
-		"gpr	ft9	.64	488	0\n" // =f29
-		"gpr	ft10	.64	496	0\n" // =f30
-		"gpr	ft11	.64	504	0\n" // =f31
-		"gpr	fcsr	.32	512	0\n"
+		"fpu	ft0	.64	256	0\n" // =f0
+		"fpu	ft1	.64	264	0\n" // =f1
+		"fpu	ft2	.64	272	0\n" // =f2
+		"fpu	ft3	.64	280	0\n" // =f3
+		"fpu	ft4	.64	288	0\n" // =f4
+		"fpu	ft5	.64	296	0\n" // =f5
+		"fpu	ft6	.64	304	0\n" // =f6
+		"fpu	ft7	.64	312	0\n" // =f7
+		"fpu	fs0	.64	320	0\n" // =f8
+		"fpu	fs1	.64	328	0\n" // =f9
+		"fpu	fa0	.64	336	0\n" // =f10
+		"fpu	fa1	.64	344	0\n" // =f11
+		"fpu	fa2	.64	352	0\n" // =f12
+		"fpu	fa3	.64	360	0\n" // =f13
+		"fpu	fa4	.64	368	0\n" // =f14
+		"fpu	fa5	.64	376	0\n" // =f15
+		"fpu	fa6	.64	384	0\n" // =f16
+		"fpu	fa7	.64	392	0\n" // =f17
+		"fpu	fs2	.64	400	0\n" // =f18
+		"fpu	fs3	.64	408	0\n" // =f19
+		"fpu	fs4	.64	416	0\n" // =f20
+		"fpu	fs5	.64	424	0\n" // =f21
+		"fpu	fs6	.64	432	0\n" // =f22
+		"fpu	fs7	.64	440	0\n" // =f23
+		"fpu	fs8	.64	448	0\n" // =f24
+		"fpu	fs9	.64	456	0\n" // =f25
+		"fpu	fs10	.64	464	0\n" // =f26
+		"fpu	fs11	.64	472	0\n" // =f27
+		"fpu	ft8	.64	480	0\n" // =f28
+		"fpu	ft9	.64	488	0\n" // =f29
+		"fpu	ft10	.64	496	0\n" // =f30
+		"fpu	ft11	.64	504	0\n" // =f31
+		"fpu	fcsr	.32	512	0\n"
 		"flg	nx	.1	4096	0\n"
 		"flg	uf	.1	4097	0\n"
 		"flg	of	.1	4098	0\n"

@@ -22,7 +22,7 @@ enum {
 typedef struct{
 	char* name;
 	int type;
-	void *op_moar;
+	const void *op_moar;
 } z80_opcode;
 
 static ut8 z80_fddd_branch_index_res (ut8 hex) {
@@ -840,7 +840,7 @@ static const char *fdcb[]={
 };
 
 
-static z80_opcode dd[] = {					//dd
+static const z80_opcode dd[] = {					//dd
 	{"add ix, bc",		Z80_OP16		,NULL},
 	{"add ix, de",		Z80_OP16		,NULL},
 	{"ld ix, 0x%04x",	Z80_OP16^Z80_ARG16	,NULL},
@@ -930,7 +930,7 @@ static z80_opcode dd[] = {					//dd
 	{"invalid",		Z80_OP16		,NULL}
 };
 
-static z80_opcode ed[]={				//ed
+static const z80_opcode ed[]={				//ed
 	{"in b, [c]",		Z80_OP16		,NULL},
 	{"out [c], b",		Z80_OP16		,NULL},
 	{"sbc hl, bc",		Z80_OP16		,NULL},
@@ -993,7 +993,7 @@ static z80_opcode ed[]={				//ed
 	{"invalid",		Z80_OP16		,NULL}
 };
 
-static z80_opcode fd[]={				//fd
+static const z80_opcode fd[]={				//fd
 	{"add iy, bc",		Z80_OP16		,NULL},
 	{"add iy, de",		Z80_OP16		,NULL},
 	{"ld iy, 0x%04x",	Z80_OP16^Z80_ARG16	,NULL},
@@ -1083,7 +1083,7 @@ static z80_opcode fd[]={				//fd
 	{"invalid",		Z80_OP16		,NULL}
 };
 
-static z80_opcode z80_op[] = {
+static const z80_opcode z80_op[] = {
 	{"nop",			Z80_OP8			,NULL},
 	{"ld bc, 0x%04x",	Z80_OP8^Z80_ARG16	,NULL},
 	{"ld [bc], a",		Z80_OP8			,NULL},

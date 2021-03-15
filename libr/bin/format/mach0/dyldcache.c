@@ -55,7 +55,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		return NULL;
 	}
 	if (bin->size < 1) {
-		eprintf ("Empty file? (%s)\n", bin->file? bin->file: "(null)");
+		eprintf ("Empty file? (%s)\n", r_str_getf (bin->file));
 		return NULL;
 	}
 	if (bin->nlibs < 0 || idx < 0 || idx >= bin->nlibs) {

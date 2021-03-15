@@ -312,6 +312,7 @@ e asm.arch=x86
 e asm.bits=32
 e asm.flags.middle=0
 e asm.lines.bb=false
+e asm.lines.jmp=false
 f mid.flag = 4
 wx 31ed4989d15e4889e2
 pd 4
@@ -330,6 +331,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.midflags=2
 f mid.flag = 5
 wx 31ed4989d15e4889e2
@@ -350,6 +352,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.flags.middle=2
 f mid.flag = 4
 wx 31ed4989d15e4889e2
@@ -371,6 +374,7 @@ e asm.arch=x86
 e asm.bits=32
 wx 66b8eb0531c074f9e89090909090
 e asm.lines.bb=false
+e asm.lines.jmp=false
 e asm.flags.middle=2
 f mid.flag = 2
 f mid.flag2 = 9
@@ -385,5 +389,28 @@ EXPECT=<<EOF
   0x00000008  ~   e890909090     call 0x9090909d
   ;-- mid.flag2:
   0x00000009      90             nop
+EOF
+RUN
+
+NAME=asm.flags.middle reset
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bytes=true
+e asm.comments=false
+e asm.bits=64
+e asm.bb.middle=false
+e asm.flags.middle=2
+wx b821c10010ebf9b8210011c1
+af @ 3
+f sym.dummy @ 9
+pd 4 @ 0
+EOF
+EXPECT=<<EOF
+|           0x00000000  ~   b821c10010     mov eax, 0x1000c121
+/ 9: fcn.00000003 ();
+|           0x00000003      0010           add byte [rax], dl
+|           0x00000005      ebf9           jmp 0
+            0x00000007  ~   b8210011c1     mov eax, 0xc1110021
 EOF
 RUN

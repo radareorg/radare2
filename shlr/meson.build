@@ -6,7 +6,15 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
-    capstone_path = join_paths(meson.current_source_dir(), 'capstone')
+    capstone_path = 'capstone'
+  endif
+
+  capstone_version = get_option('use_capstone_version')
+
+  use_capstone5 = get_option('use_capstone5')
+  if use_capstone5
+    warning('use_capstone5 is deprecated. Use -Duse_capstone_version=v5 instead.')
+    capstone_version = 'v5'
   endif
 
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
@@ -16,13 +24,17 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    use_capstone5 = get_option('use_capstone5')
-    if use_capstone5
-      CS_TIP = '0de88ed3fdc0ab1f1e2a6eada3cdd93e18057a0f'
+    if capstone_version == 'v5'
+      CS_TIP = 'baa1f94cfdacd921744769bf7d93f00892ef53fa'
       CS_BRA = 'next'
-    else
-      CS_TIP = 'c80b6aaf973c822d82565f25e9b2e2c0102626fa'
+    elif capstone_version == 'v3'
+      CS_TIP = '61bf71c771680033651f16cff832446e421847b1'
+      CS_BRA = 'v3'
+    elif capstone_version == 'v4'
+      CS_TIP = '2edae851d9fee511a57d4da32d5acecedd95d7ed'
       CS_BRA = 'v4'
+    else
+      error('Wrong capstone version selected. Please use one of the supported versions.')
     endif
 
     capstone_git_user = 'aquynh'
@@ -68,12 +80,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/ARM/ARMInstPrinter.c',
     'arch/ARM/ARMMapping.c',
     'arch/ARM/ARMModule.c',
-    'arch/M680X/M680XDisassembler.c',
-    'arch/M680X/M680XInstPrinter.c',
-    'arch/M680X/M680XModule.c',
-    'arch/M68K/M68KDisassembler.c',
-    'arch/M68K/M68KInstPrinter.c',
-    'arch/M68K/M68KModule.c',
     'arch/Mips/MipsDisassembler.c',
     'arch/Mips/MipsInstPrinter.c',
     'arch/Mips/MipsMapping.c',
@@ -91,10 +97,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'arch/SystemZ/SystemZMapping.c',
     'arch/SystemZ/SystemZMCTargetDesc.c',
     'arch/SystemZ/SystemZModule.c',
-    'arch/TMS320C64x/TMS320C64xDisassembler.c',
-    'arch/TMS320C64x/TMS320C64xInstPrinter.c',
-    'arch/TMS320C64x/TMS320C64xMapping.c',
-    'arch/TMS320C64x/TMS320C64xModule.c',
     'arch/X86/X86ATTInstPrinter.c',
     'arch/X86/X86Disassembler.c',
     'arch/X86/X86DisassemblerDecoder.c',
@@ -112,35 +114,86 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'SStream.c',
     'utils.c',
   ]
+  rel_cs4_files = [
+    'arch/M680X/M680XDisassembler.c',
+    'arch/M680X/M680XInstPrinter.c',
+    'arch/M680X/M680XModule.c',
+    'arch/M68K/M68KDisassembler.c',
+    'arch/M68K/M68KInstPrinter.c',
+    'arch/M68K/M68KModule.c',
+    'arch/TMS320C64x/TMS320C64xDisassembler.c',
+    'arch/TMS320C64x/TMS320C64xInstPrinter.c',
+    'arch/TMS320C64x/TMS320C64xMapping.c',
+    'arch/TMS320C64x/TMS320C64xModule.c',
+  ]
+  rel_cs5_files = [
+    'arch/X86/X86InstPrinterCommon.c',
+  ]
+
+  user_plugins = get_option('plugins').split(',')
+  no_user_plugins = get_option('plugins') == ''
+  cs_c_args = [
+    '-DCAPSTONE_USE_SYS_DYN_MEM',
+    '-DCAPSTONE_DIET_NO',
+  ]
+  if user_plugins.contains('x86') or no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_X86',
+      '-DCAPSTONE_X86_ATT_DISABLE_NO',
+      '-DCAPSTONE_X86_REDUCE_NO',
+    ]
+  endif
+  if user_plugins.contains('arm') or no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_ARM',
+      '-DCAPSTONE_HAS_ARM64',
+    ]
+  endif
+  if user_plugins.contains('sparc') or no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_SPARC',
+    ]
+  endif
+  if user_plugins.contains('mips') or no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_MIPS',
+    ]
+  endif
+  if no_user_plugins
+    cs_c_args += [
+      '-DCAPSTONE_HAS_M68K',
+      '-DCAPSTONE_HAS_M680X',
+      '-DCAPSTONE_HAS_POWERPC',
+      '-DCAPSTONE_HAS_SPARC',
+      '-DCAPSTONE_HAS_SYSZ',
+      '-DCAPSTONE_HAS_XCORE',
+      '-DCAPSTONE_HAS_TMS320C64X',
+    ]
+  endif
 
   cs_files = []
   foreach rel_cs_file : rel_cs_files
     cs_files += [join_paths(capstone_path, rel_cs_file)]
   endforeach
-  if get_option('use_capstone5')
-    cs_files += [join_paths(capstone_path, 'arch/X86/X86InstPrinterCommon.c')]
+  if capstone_version == 'v4' or capstone_version == 'v5'
+    foreach rel_cs_file : rel_cs4_files
+      cs_files += [join_paths(capstone_path, rel_cs_file)]
+    endforeach
+  endif
+  if capstone_version == 'v5'
+    foreach rel_cs_file : rel_cs5_files
+      cs_files += [join_paths(capstone_path, rel_cs_file)]
+    endforeach
+    cs_c_args += [ '-DCAPSTONE_HAS_RISCV' ]
   endif
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
+  if capstone_version == 'v4' or capstone_version == 'v5'
+    capstone_includes += [include_directories('capstone/include/capstone')]
+  endif
 
   libr2capstone = static_library('r2capstone', cs_files,
-    c_args: [
-      '-DCAPSTONE_X86_ATT_DISABLE_NO',
-      '-DCAPSTONE_X86_REDUCE_NO',
-      '-DCAPSTONE_USE_SYS_DYN_MEM',
-      '-DCAPSTONE_DIET_NO',
-      '-DCAPSTONE_HAS_ARM',
-      '-DCAPSTONE_HAS_ARM64',
-      '-DCAPSTONE_HAS_M68K',
-      '-DCAPSTONE_HAS_M680X',
-      '-DCAPSTONE_HAS_MIPS',
-      '-DCAPSTONE_HAS_POWERPC',
-      '-DCAPSTONE_HAS_SPARC',
-      '-DCAPSTONE_HAS_SYSZ',
-      '-DCAPSTONE_HAS_X86',
-      '-DCAPSTONE_HAS_XCORE',
-      '-DCAPSTONE_HAS_TMS320C64X',
-    ],
+    c_args: cs_c_args,
     include_directories: capstone_includes,
     implicit_include_directories: false
   )
@@ -154,97 +207,26 @@ else
 endif
 
 
-# handle sdb dependency
-# NOTE: copying most of the stuff from sdb to here for the moment, since we
-# should use subpackages to handle this well
-sdb_files = [
-  'sdb/src/array.c',
-  'sdb/src/base64.c',
-  'sdb/src/buffer.c',
-  'sdb/src/set.c',
-  'sdb/src/cdb.c',
-  'sdb/src/cdb_make.c',
-  'sdb/src/dict.c',
-  'sdb/src/diff.c',
-  'sdb/src/disk.c',
-  'sdb/src/fmt.c',
-  'sdb/src/ht_uu.c',
-  'sdb/src/ht_up.c',
-  'sdb/src/ht_pp.c',
-  'sdb/src/journal.c',
-  'sdb/src/json.c',
-  'sdb/src/lock.c',
-  'sdb/src/ls.c',
-  # 'sdb/src/main.c',
-  'sdb/src/match.c',
-  'sdb/src/ns.c',
-  'sdb/src/num.c',
-  'sdb/src/query.c',
-  'sdb/src/sdb.c',
-  'sdb/src/sdbht.c',
-  'sdb/src/util.c'
-]
-
-sdb_inc = [platform_inc, include_directories('sdb/src')]
-
-libr2sdb = static_library('r2sdb', sdb_files,
-  include_directories: sdb_inc,
-  implicit_include_directories: false,
-  c_args: host_machine.system() == 'windows' ? '-DSDB_API=__declspec(dllexport)' : [],
-)
-
-sdb_dep = declare_dependency(
-  link_whole: libr2sdb,
-  include_directories: sdb_inc
-)
-
-# Create sdb_version.h
-sdb_version = '1.2.0'
-run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
-
-sdb_exe = executable('sdb', 'sdb/src/main.c',
-  include_directories: [
-    include_directories(['sdb/src'])
-  ],
-  link_with: [libr2sdb],
-  implicit_include_directories: false
-)
-
-sdb_gen_cmd_script = '''#script
-import os
-import sys
-sdb_exe = r'@0@'
-outfile = sys.argv[1]
-infiles = sys.argv[2:]
-if os.name == 'nt':
-    infiles = ','.join(infiles)
-    os.system('powershell -c "Get-Content {} | {} {} ="'.format(infiles, sdb_exe, outfile))
-else:
-    infiles = ' '.join(infiles)
-    os.system('cat {} | {} {} ='.format(infiles, sdb_exe, outfile))
-'''.format(sdb_exe.full_path())
-
-sdb_gen_cmd = [
-  py3_exe,
-  '-c',
-  sdb_gen_cmd_script,
-  '@OUTPUT@',
-  '@INPUT@'
-]
-
 # handle tree-sitter
+tree_sitter_cflags = ''
+if cc.has_argument('-std=gnu99')
+  tree_sitter_cflags = '-std=gnu99'
+elif cc.has_argument('-std=c99')
+  tree_sitter_cflags = '-std=c99'
+endif
+
 tree_sitter_dep = dependency('tree-sitter', required: false)
 if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
   message('Use bundled tree-sitter')
-  tree_sitter_path = join_paths(meson.current_source_dir(), 'tree-sitter')
-  tree_sitter_vc_path = join_paths(meson.current_source_dir(), 'tree-sitter.vc')
+  tree_sitter_path = 'tree-sitter'
+  tree_sitter_vc_path = 'tree-sitter.vc'
   if get_option('tree-sitter-sync')
     if not git_exe.found()
       error('Cannot sync tree-sitter library. Either provide tree-sitter in ./shlr/tree-sitter or install git, so it can be downloaded')
     endif
 
     # NOTE: when you update TS_TIP or TS_BRA, also update them in shlr/Makefile
-    TS_TIP = 'f049ba350f3f6019ce9a1cbb0975ebd154ef7ad3'
+    TS_TIP = '86a5dabbcbdac650c53a889183bf56d7e721e09e'
     TS_BRA = 'master'
 
     message('Deleting existing directories @0@ and @1@'.format(tree_sitter_vc_path, tree_sitter_path))
@@ -279,10 +261,11 @@ if not tree_sitter_dep.found() or not get_option('use_sys_tree_sitter')
   libtree_sitter = static_library('tree_sitter', tree_sitter_files,
     include_directories: tree_sitter_inc,
     implicit_include_directories: false,
-    c_args: ['-std=c99']
+    c_args: tree_sitter_cflags,
   )
 
   tree_sitter_dep = declare_dependency(
+    compile_args: tree_sitter_cflags,
     link_with: libtree_sitter,
     include_directories: tree_sitter_inc
   )
@@ -292,7 +275,7 @@ endif
 
 
 # new radare2 shell parser
-shell_parser_path = join_paths(meson.current_source_dir(), 'radare2-shell-parser')
+shell_parser_path = 'radare2-shell-parser'
 shell_parser_files = [
   join_paths(shell_parser_path, 'src/parser.c'),
   join_paths(shell_parser_path, 'src/scanner.c'),
@@ -321,6 +304,7 @@ bochs_files = [
 bochs_inc = [platform_inc, include_directories('bochs/include')]
 
 libr2bochs = static_library('r2bochs', bochs_files,
+  dependencies: [r_util_dep],
   include_directories: bochs_inc,
   implicit_include_directories: false
 )
@@ -343,6 +327,7 @@ java_files = [
 java_inc = [platform_inc, include_directories('java')]
 
 libr2java = static_library('r2java', java_files,
+  dependencies: [r_util_dep],
   include_directories: java_inc,
   implicit_include_directories: false
 )
@@ -365,6 +350,7 @@ qnx_files = [
 qnx_inc = [platform_inc, include_directories('qnx/include')]
 
 libr2qnx = static_library('r2qnx', qnx_files,
+  dependencies: [r_socket_dep],
   include_directories: qnx_inc,
   implicit_include_directories: false
 )
@@ -385,6 +371,7 @@ tcc_files = [
 tcc_inc = [platform_inc, include_directories('tcc')]
 
 libr2tcc = static_library('r2tcc', tcc_files,
+  dependencies: [r_util_dep],
   include_directories: tcc_inc,
   implicit_include_directories: false
 )
@@ -392,25 +379,6 @@ libr2tcc = static_library('r2tcc', tcc_files,
 tcc_dep = declare_dependency(
   link_with: libr2tcc,
   include_directories: tcc_inc
-)
-
-
-# handle spp dependency
-spp_files = [
-  'spp/spp.c'
-]
-
-spp_inc = [platform_inc, include_directories('spp')]
-
-libr2spp = static_library('r2spp', spp_files,
-  include_directories: spp_inc,
-  c_args: ['-DHAVE_R_UTIL'],
-  implicit_include_directories: false
-)
-
-spp_dep = declare_dependency(
-  link_with: libr2spp,
-  include_directories: spp_inc
 )
 
 
@@ -435,45 +403,6 @@ if not lz4_dep.found() or not get_option('use_sys_lz4')
   )
 else
   message('Use system-provided lz4 library')
-endif
-
-
-# handle zlib dependency
-zlib_dep = dependency('zlib', required: false)
-if not zlib_dep.found() or not get_option('use_sys_zlib')
-  message('Use bundled zlib')
-
-  zlib_files = [
-    'zip/zlib/adler32.c',
-    'zip/zlib/compress.c',
-    'zip/zlib/crc32.c',
-    'zip/zlib/deflate.c',
-    'zip/zlib/gzclose.c',
-    'zip/zlib/gzlib.c',
-    'zip/zlib/gzread.c',
-    'zip/zlib/gzwrite.c',
-    'zip/zlib/infback.c',
-    'zip/zlib/inffast.c',
-    'zip/zlib/inflate.c',
-    'zip/zlib/inftrees.c',
-    'zip/zlib/trees.c',
-    'zip/zlib/uncompr.c',
-    'zip/zlib/zutil.c'
-  ]
-
-  zlib_inc = [platform_inc, include_directories('zip/zlib')]
-
-  libr2zlib = static_library('r2zlib', zlib_files,
-    include_directories: zlib_inc,
-    implicit_include_directories: false
-  )
-
-  zlib_dep = declare_dependency(
-    link_with: libr2zlib,
-    include_directories: zlib_inc
-  )
-else
-  message('Use system-provided zlib library')
 endif
 
 
@@ -640,6 +569,7 @@ grub_files = [
 grub_inc = [platform_inc, include_directories('grub', 'grub/include')]
 
 libr2grub = static_library('r2grub', grub_files,
+  dependencies: [r_util_dep],
   include_directories: grub_inc,
   implicit_include_directories: false
 )
@@ -649,25 +579,26 @@ grub_dep = declare_dependency(
   include_directories: grub_inc
 )
 
-
-# handle windbg dependency
-windbg_files = [
-  'windbg/iob_pipe.c',
-  'windbg/kd.c',
-  'windbg/transport.c',
-  'windbg/windbg.c',
+# handle winkd dependency
+winkd_files = [
+  'winkd/iob_pipe.c',
+  'winkd/iob_net.c',
+  'winkd/kd.c',
+  'winkd/transport.c',
+  'winkd/winkd.c',
 ]
 
-windbg_inc = [platform_inc, include_directories('windbg')]
+winkd_inc = [platform_inc, include_directories('winkd')]
 
-libr2windbg = static_library('r2windbg', windbg_files,
-  include_directories: windbg_inc,
+libr2winkd = static_library('r2winkd', winkd_files,
+  dependencies: [r_hash_dep, r_crypto_dep, r_socket_dep, r_util_dep],
+  include_directories: winkd_inc,
   implicit_include_directories: false
 )
 
-windbg_dep = declare_dependency(
-  link_with: libr2windbg,
-  include_directories: windbg_inc
+winkd_dep = declare_dependency(
+  link_with: libr2winkd,
+  include_directories: winkd_inc
 )
 
 
@@ -679,6 +610,7 @@ ar_files = [
 ar_inc = [platform_inc, include_directories(['ar'])]
 
 libr2ar = static_library('r2ar', ar_files,
+  dependencies: [r_util_dep],
   include_directories: ar_inc,
   implicit_include_directories: false
 )
@@ -713,4 +645,21 @@ libmpc = static_library('r2mpc', mpc_files,
 mpc_dep = declare_dependency(
   link_with: libmpc,
   include_directories: mpc_inc
+)
+
+# handle yxml dependency
+yxml_files = [
+  'yxml/yxml.c'
+]
+
+yxml_inc = [platform_inc, include_directories(['yxml'])]
+
+libyxml = static_library('r2yxml', yxml_files,
+  include_directories: yxml_inc,
+  implicit_include_directories: false
+)
+
+yxml_dep = declare_dependency(
+  link_with: libyxml,
+  include_directories: yxml_inc
 )

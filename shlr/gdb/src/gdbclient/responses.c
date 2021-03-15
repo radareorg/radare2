@@ -131,7 +131,7 @@ int handle_attach(libgdbr_t *g) {
 
 int handle_vFile_open(libgdbr_t *g) {
 	if (g->data_len < 2 || g->data[0] != 'F' || g->data[1] == '-'
-	    || !isxdigit (g->data[1])) {
+	    || !isxdigit ((unsigned char)g->data[1])) {
 		send_ack (g);
 		return -1;
 	}
@@ -155,7 +155,7 @@ int handle_vFile_pread(libgdbr_t *g, ut8 *buf) {
 	if (g->data[1] == '-') {
 		return 0;
 	}
-	if (!isxdigit (g->data[1])) {
+	if (!isxdigit ((unsigned char)g->data[1])) {
 		return -1;
 	}
 	if (sscanf (g->data, "F%x;", &len) != 1) {
@@ -177,7 +177,7 @@ int handle_vFile_pread(libgdbr_t *g, ut8 *buf) {
 
 int handle_vFile_close(libgdbr_t *g) {
 	if (g->data_len < 2 || g->data[0] != 'F' || g->data[1] == '-'
-	    || !isxdigit (g->data[1])) {
+	    || !isxdigit ((unsigned char)g->data[1])) {
 		send_ack (g);
 		return -1;
 	}
@@ -201,7 +201,7 @@ static int stop_reason_exit(libgdbr_t *g) {
 		g->stop_reason.is_valid = true;
 		return 0;
 	}
-	if (!isxdigit (g->data[1])) {
+	if (!isxdigit ((unsigned char)g->data[1])) {
 		eprintf ("Message from remote: %s\n", g->data);
 		return -1;
 	}
@@ -229,7 +229,7 @@ static int stop_reason_terminated(libgdbr_t *g) {
 		g->stop_reason.is_valid = true;
 		return 0;
 	}
-	if (!isxdigit (g->data[1])) {
+	if (!isxdigit ((unsigned char)g->data[1])) {
 		eprintf ("Message from remote: %s\n", g->data);
 		return -1;
 	}
@@ -297,7 +297,7 @@ int handle_stop_reason(libgdbr_t *g) {
 				continue;
 			}
 			ptr2++;
-			if (!isxdigit (*ptr2)) {
+			if (!isxdigit ((unsigned char)*ptr2)) {
 				continue;
 			}
 			g->stop_reason.core = (int) strtol (ptr2, NULL, 16);
@@ -311,7 +311,7 @@ int handle_stop_reason(libgdbr_t *g) {
 					continue;
 				}
 				ptr2++;
-				if (!isxdigit (*ptr2)) {
+				if (!isxdigit ((unsigned char)*ptr2)) {
 					continue;
 				}
 				g->stop_reason.watchpoint.addr = strtoll (ptr2, NULL, 16);
@@ -411,7 +411,7 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 		return -1;
 	}
 	while (ptr) {
-		if (!isxdigit (*ptr)) {
+		if (!isxdigit ((unsigned char)*ptr)) {
 			// This is not a reg value. Skip
 			ptr = strtok (NULL, ";");
 			continue;

@@ -103,9 +103,9 @@ static RList *sections(RBinFile *bf) {
 
 		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = page->file_offset;
-		ptr->size = PAGE_SIZE;
+		ptr->size = DMP_PAGE_SIZE;
 		ptr->vaddr = page->start;
-		ptr->vsize = PAGE_SIZE;
+		ptr->vsize = DMP_PAGE_SIZE;
 		ptr->add = true;
 		ptr->perm = R_PERM_R;
 

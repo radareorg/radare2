@@ -54,9 +54,6 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	struct v810_cmd cmd;
 
 	memset (&cmd, 0, sizeof(cmd));
-	memset (op, 0, sizeof(RAnalOp));
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
 
 	ret = op->size = v810_decode_command (buf, len, &cmd);
 	if (ret <= 0) {
@@ -70,8 +67,6 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 
 	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 
 	opcode = OPCODE(word1);
 	if (opcode >> 3 == 0x4) {
@@ -115,7 +110,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case V810_DIV:
 	case V810_DIVU:
 		op->type = R_ANAL_OP_TYPE_DIV;
-		r_strbuf_appendf (&op->esil, "r%u,r%u,/=,r%u,r%u,%,r30,=",
+		r_strbuf_appendf (&op->esil, "r%u,r%u,/=,r%u,r%u,%%,r30,=",
 						 REG1(word1), REG2(word1),
 						 REG1(word1), REG2(word1));
 		update_flags (op, V810_FLAG_OV | V810_FLAG_S | V810_FLAG_Z);
@@ -318,7 +313,7 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 
 		if (opcode == V810_JAL) {
 			op->type = R_ANAL_OP_TYPE_CALL;
-			r_strbuf_appendf (&op->esil, "$$,4,+,r31,=,", jumpdisp);
+			r_strbuf_appendf (&op->esil, "$$,4,+,r31,=,");
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
 		}
@@ -395,6 +390,7 @@ static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
+		"=A0	r0\n"
 		"=ZF	z\n"
 		"=SF	s\n"
 		"=OF	ov\n"

@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2018 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2020 - pancake, unlogic, emvivre */
 
 #include <r_flag.h>
 #include <r_core.h>
@@ -644,6 +644,16 @@ static int opneg(RAsm *a, ut8 * data, const Opcode *op) {
         return l;
     }
     return -1;
+}
+
+static int endbr64(RAsm *a, ut8 * data, const Opcode *op) {
+	memcpy (data, "\xf3\x0f\x1e\xfa", 4);
+	return 4;
+}
+
+static int endbr32(RAsm *a, ut8 * data, const Opcode *op) {
+	memcpy (data, "\xf3\x0f\x1e\xfb", 4);
+	return 4;
 }
 
 static int opnot(RAsm *a, ut8 * data, const Opcode *op) {
@@ -4268,6 +4278,8 @@ LookupTable oplookup[] = {
 	{"dec", 0, &opdec, 0},
 	{"div", 0, &opdiv, 0},
 	{"emms", 0, NULL, 0x0f77, 2},
+	{"endbr32", 0, endbr32, 0},
+	{"endbr64", 0, endbr64, 0},
 	{"f2xm1", 0, NULL, 0xd9f0, 2},
 	{"fabs", 0, NULL, 0xd9e1, 2},
 	{"fadd", 0, &opfadd, 0},
@@ -4586,6 +4598,57 @@ static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	}
 }
 
+static bool is_xmm_register(const char *token) {
+	// check xmm0..xmm15
+	if (!r_str_ncasecmp ("xmm", token, 3)) {
+		int n = atoi (token + 3);
+		return (n >= 0 && n <= 15);
+	}
+	return false;
+}
+
+static bool is_mm_register(const char *token) {
+	if (!r_str_ncasecmp ("mm", token, 2)) {
+		const bool parn = token[2] == '(';
+		if (parn) {
+			token++;
+		}
+		if (isdigit ((unsigned char)token[2]) && !isdigit((unsigned char)token[3])) {
+			int n = token[2];
+			if (n >= '0' && n <= '7') {
+				if (parn) {
+					if (token[3] != ')') {
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+static bool is_st_register(const char *token) {
+	if (!r_str_ncasecmp ("st", token, 2)) {
+		const bool parn = token[2] == '(';
+		if (parn) {
+			token++;
+		}
+		if (isdigit ((unsigned char)token[2]) && !isdigit((unsigned char)token[3])) {
+			int n = token[2];
+			if (n >= '0' && n <= '7') {
+				if (parn) {
+					if (token[3] != ')') {
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 /**
  * Get the register at position pos in str. Increase pos afterwards.
  */
@@ -4686,15 +4749,15 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		}
 	}
 	// Extended registers
-	if (!r_str_ncasecmp ("st", token, 2)) {
+	if (is_st_register (token)) {
 		*type = (OT_FPUREG & ~OT_REGALL);
 		*pos = 2;
 	}
-	if (!r_str_ncasecmp ("mm", token, 2)) {
+	if (is_mm_register (token)) {
 		*type = (OT_MMXREG & ~OT_REGALL);
 		*pos = 2;
 	}
-	if (!r_str_ncasecmp ("xmm", token, 3)) {
+	if (is_xmm_register (token)) {
 		*type = (OT_XMMREG & ~OT_REGALL);
 		*pos = 3;
 	}
@@ -5050,10 +5113,11 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 					free (instr.mnemonic);
 					return -1;
 				}
-				ut8 *ptr = (ut8 *)&lt_ptr->opcode;
-				int i = 0;
-				for (; i < lt_ptr->size; i++) {
-					data[i + l] = ptr[lt_ptr->size - (i + 1)];
+				ut64 opcode = lt_ptr->opcode;
+				int i = lt_ptr->size - 1;
+				for (; i >= 0; i--) {
+					data[i + l] = opcode & 0xff;
+					opcode >>= 8;
 				}
 				free (instr.mnemonic);
 				return l + lt_ptr->size;
@@ -5095,10 +5159,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		if (!r_str_casecmp (instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {
 				if (!lt_ptr->only_x32 || a->bits != 64) {
-					ut8 *ptr = (ut8 *)&lt_ptr->opcode;
-					int i = 0;
-					for (; i < lt_ptr->size; i++) {
-						data[i] = ptr[lt_ptr->size - (i + 1)];
+					ut64 opcode = lt_ptr->opcode;
+					int i = lt_ptr->size - 1;
+					for (; i >= 0; i--) {
+						data[i] = opcode & 0xff;
+						opcode >>= 8;
 					}
 					retval = lt_ptr->size;
 				}

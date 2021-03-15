@@ -77,31 +77,35 @@ if [ ! -x /work ]; then
 			if [ "`uname`" = "Darwin" ]; then
 				NDK="${HOME}/Library/Android/sdk/ndk-bundle/"
 			else
-				NDK="${HOME}/Downloads/android-ndk-r7b"
+				NDK="${HOME}/Downloads/android-ndk-r21d"
 			fi
 		fi
-		[ -z "${NDK}" ] && NDK="${HOME}/Downloads/android-ndk-r7b"
+		[ -z "${NDK}" ] && NDK="${HOME}/Downloads/android-ndk-r21d"
 	fi
 fi
 
 echo ROOT=$ROOT
-echo NDK=$NDK
+echo NDK="$NDK"
 echo NDK_ARCH=$NDK_ARCH
 
-echo "Building the standalone NDK toolchain..."
-${NDK}/build/tools/make_standalone_toolchain.py --arch=${ARCH} --install-dir=/tmp/ndk/ --api=28 --force
-(
-cd /tmp/ndk/bin/ && \
-ln -fs clang ndk-gcc && \
-ln -fs clang++ ndk-g++
-)
+if [ -x /tmp/ndk/bin/ndk-gcc ]; then
+	echo "NDK toolchain already initialized."
+else
+	echo "Building the standalone NDK toolchain..."
+	${NDK}/build/tools/make_standalone_toolchain.py --arch=${ARCH} --install-dir=/tmp/ndk/ --api=28 --force
+	(
+	cd /tmp/ndk/bin/ && \
+	ln -fs clang ndk-gcc && \
+	ln -fs clang++ ndk-g++
+	)
+fi
 if [ "${BUILD}" != 0 ]; then
 	if [ ! -d "${NDK}" ]; then
 		echo "Cannot find Android NDK ${NDK}" >&2
 		echo "echo NDK=/path/to/ndk  > ~/.r2androidrc" >&2
 		exit 1
 	fi
-	PATH=/tmp/ndk/bin:$PATH
+	PATH="/tmp/ndk/bin:$PATH"
 	export PATH
 	export CFLAGS
 	export NDK

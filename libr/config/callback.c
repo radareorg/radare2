@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2019 - pancake */
+/* radare - LGPL - Copyright 2006-2020 - pancake */
 
 #include "r_config.h"
 
@@ -50,6 +50,25 @@ R_API bool r_config_set_setter_s(RConfig *cfg, const char *name, char * *ptr) {
 	if (node) {
 		node->cb_ptr_s = ptr;
 		node->setter = (void *) &r_config_setter_s;
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_config_set_getter(RConfig *cfg, const char *key, RConfigCallback cb) {
+	r_return_val_if_fail (cfg && key, false);
+	RConfigNode *node = r_config_node_get (cfg, key);
+	if (node) {
+		node->getter = cb;
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb) {
+	RConfigNode *node = r_config_node_get (cfg, key);
+	if (node) {
+		node->setter = cb;
 		return true;
 	}
 	return false;

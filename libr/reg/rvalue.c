@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -69,7 +69,7 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 	r_return_val_if_fail (reg && item, 0);
-	if (!reg || !item || item->offset == -1) {
+	if (item->offset == -1) {
 		return 0LL;
 	}
 	int off = BITS2BYTES (item->offset);
@@ -125,7 +125,8 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		// FIXME: It is a precision loss, please implement me properly!
 		return (ut64)r_reg_get_longdouble (reg, item);
 	case 128:
-		// XXX 128 bit
+	case 256:
+		// XXX 128 & 256 bit
 		return (ut64)r_reg_get_longdouble (reg, item);
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
@@ -202,7 +203,8 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		}
 		return true;
 	case 128:
-		// XXX 128 bit
+	case 256:
+		// XXX 128 & 256 bit
 		return false; // (ut64)r_reg_get_longdouble (reg, item);
 	default:
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
@@ -283,7 +285,10 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 	int off = BITS2BYTES (item->offset);
 	off += (packidx * packbytes);
 	if (regset->arena->size - off - 1 >= 0) {
-		memcpy (&ret, regset->arena->bytes + off, packbytes);
+		int i;
+		for (i = packbytes - 1; i >= 0; i--) {
+			ret = (ret << 8) | regset->arena->bytes[off + i];
+		}
 	}
 	return ret;
 }
@@ -309,7 +314,10 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	off += (packidx * packbytes);
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
 		ut8 *dst = reg->regset[item->arena].arena->bytes + off;
-		memcpy (dst, (ut8*)&val, packbytes);
+		int i;
+		for (i = 0; i < packbytes; i++, val >>= 8) {
+			dst[i] = val & 0xff;
+		}
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, val);

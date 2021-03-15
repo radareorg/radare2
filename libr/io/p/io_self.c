@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - pancake */
+/* radare - LGPL - Copyright 2014-2020 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -33,6 +33,14 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 #endif
 #include <errno.h>
 bool bsd_proc_vmmaps(RIO *io, int pid);
+#endif
+#ifdef __HAIKU__
+#include <kernel/image.h>
+#endif
+#if defined __sun && defined _LP64
+#define _STRUCTURED_PROC 1 // to access newer proc data with additional fields
+#include <sys/procfs.h>
+#include <libproc.h>
 #endif
 #ifdef _MSC_VER
 #include <process.h>  // to compile getpid for msvc windows
@@ -98,8 +106,8 @@ static int update_self_regions(RIO *io, int pid) {
 			break;
 		}
 		path[0]='\0';
-		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region+2, perms, path);
-		memcpy (region, "0x", 2);
+		strcpy (region, "0x");
+		sscanf (line, "%s %s %*s %*s %*s %[^\n]", region + 2, perms, path);
 		pos_c = strchr (region + 2, '-');
 		if (pos_c) {
 			*pos_c++ = 0;
@@ -130,6 +138,85 @@ static int update_self_regions(RIO *io, int pid) {
 	return true;
 #elif __BSD__
 	return bsd_proc_vmmaps(io, pid);
+#elif __HAIKU__
+	image_info ii;
+	int32_t cookie = 0;
+
+	while (get_next_image_info (0, &cookie, &ii) == B_OK) {
+		self_sections[self_sections_count].from = (ut64)ii.text;
+		self_sections[self_sections_count].to = (ut64)((char*)ii.text + ii.text_size);
+		self_sections[self_sections_count].name = strdup (ii.name);
+		self_sections[self_sections_count].perm = 0;
+		self_sections_count++;
+	}
+	return true;
+#elif __sun && defined _LP64
+	char path[PATH_MAX];
+	int err;
+	pid_t self = getpid ();
+	struct ps_prochandle *Pself = Pgrab(self, PGRAB_RDONLY, &err);
+
+	if (!Pself) {
+		return false;
+	}
+
+	snprintf (path, sizeof (path), "/proc/%d/map",  self);
+	size_t hint = (1 << 20);
+	int fd = open (path, O_RDONLY);
+
+	if (fd == -1) {
+		return false;
+	}
+
+	ssize_t rd;
+	prmap_t *c, *map = malloc (hint);
+
+	if (!map) {
+		return false;
+	}
+
+	while (hint > 0 && (rd = pread (fd, map, hint, 0)) == hint) {
+		hint <<= 1;
+		prmap_t *tmp = realloc (map, hint);
+		if (!tmp) {
+			free (map);
+			return false;
+		}
+
+		map = tmp;
+	}
+
+	for (c = map; rd > 0; c ++, rd -= sizeof (prmap_t)) {
+		char name[PATH_MAX];
+		Pobjname (Pself, c->pr_vaddr, name, sizeof (name));
+
+		if (name[0] == '\0') {
+			// If no name, it is an anonymous map
+			strcpy (name, "[anon]");
+		}
+
+		int perm = 0;
+
+		if ((c->pr_mflags & MA_READ)) {
+			perm |= R_PERM_R;
+		}
+		if ((c->pr_mflags & MA_WRITE)) {
+			perm |= R_PERM_W;
+		}
+		if ((c->pr_mflags & MA_EXEC)) {
+			perm |= R_PERM_X;
+		}
+
+		self_sections[self_sections_count].from = (ut64)c->pr_vaddr;
+		self_sections[self_sections_count].to = (ut64)(c->pr_vaddr + c->pr_size);
+		self_sections[self_sections_count].name = strdup (name);
+		self_sections[self_sections_count].perm = perm;
+		self_sections_count++;
+	}
+
+	free (map);
+	close (fd);
+	return true;
 #else
 #ifdef _MSC_VER
 	int perm;
@@ -724,11 +811,10 @@ exit:
 	kvm_read (k, (uintptr_t)p.p_vmspace, (ut8 *)&vs, sizeof (vs));
 
 	map = &vs.vm_map;
-	ep = map->header.next;
+	ep = kvm_vm_map_entry_first (k, map, &entry);
 
-	while (ep != &p.p_vmspace->vm_map.header) {
+	while (ep) {
 		int perm = 0;
-		kvm_read (k, (uintptr_t)ep, (ut8 *)&entry, sizeof (entry));
 		if (entry.protection & VM_PROT_READ) {
 			perm |= R_PERM_R;
 		}
@@ -741,16 +827,16 @@ exit:
 		}
 
 		io->cb_printf (" %p - %p %s [off. %zu]\n",
-				(void *)entry.start,
-				(void *)entry.end,
-				r_tr_rwx_i (perm),
-				entry.offset);
+				(void *)entry.ba.start,
+				(void *)entry.ba.end,
+				r_str_rwx_i (perm),
+				entry.ba.offset);
 
-		self_sections[self_sections_count].from = entry.start;
-		self_sections[self_sections_count].to = entry.end;
+		self_sections[self_sections_count].from = entry.ba.start;
+		self_sections[self_sections_count].to = entry.ba.end;
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
-		ep = entry.next;
+		ep = kvm_vm_map_entry_next (k, ep, &entry);
 	}
 
 	kvm_close (k);

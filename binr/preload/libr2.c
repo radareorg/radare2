@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - pancake */
+/* radare - LGPL - Copyright 2014-2020 - pancake */
 
 #include <r_core.h>
 
@@ -30,12 +30,12 @@ static void sigusr1(int s) {
 }
 
 static void sigusr2(int s) {
-	(void)openself();
+	(void)openself ();
 	r_core_cmd0 (core, "=H&");
 }
 
 static void _libwrap_init() __attribute__ ((constructor));
-static void _libwrap_init() {
+static void _libwrap_init(void) {
 	char *web;
 	r_sys_signal (SIGUSR1, sigusr1);
 	r_sys_signal (SIGUSR2, sigusr2);
@@ -54,7 +54,7 @@ static void _libwrap_init() {
 	// TODO: open io_self
 }
 #elif __WINDOWS__
-void alloc_console() {
+void alloc_console(void) {
 	CONSOLE_SCREEN_BUFFER_INFO coninfo;
 	HANDLE hStdin = GetStdHandle (STD_INPUT_HANDLE);
 	DWORD lpMode;
@@ -71,7 +71,7 @@ void alloc_console() {
 	freopen ("conout$", "w", stderr);
 }
 
-static void start_r2() {
+static void start_r2(void) {
 	core = r_core_new ();
 	r_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
 	RCoreFile *fd = r_core_file_open (core, "self://", R_PERM_RW, 0);

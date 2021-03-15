@@ -4,6 +4,8 @@ CMDS=?v main
 EXPECT=<<EOF
 0x401126
 EOF
+EXPECT_ERR=<<EOF
+EOF
 RUN
 
 NAME=ELF: main

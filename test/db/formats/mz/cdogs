@@ -1,8 +1,14 @@
+
 NAME=MZ: corkami cdogs.exe - open
 FILE=bins/le/cdogs.exe
-ARGS=-A
-CMDS=q!
+TIMEOUT=1320
+CMDS=<<EOF
+aac
+# aaef
+aflc
+EOF
 EXPECT=<<EOF
+794
 EOF
 RUN
 

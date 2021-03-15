@@ -38,7 +38,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <time.h>
+#include "r_util/r_time.h"
 
 static int match(RMagic *, struct r_magic *, ut32,
     const ut8 *, size_t, int);
@@ -283,11 +283,11 @@ static int check_fmt(RMagic *ms, struct r_magic *m) {
 		return 0;
 	}
 
-	rc = r_regex_comp (&rx, "%[-0-9\\.]*s", R_REGEX_EXTENDED|R_REGEX_NOSUB);
+	rc = r_regex_init (&rx, "%[-0-9\\.]*s", R_REGEX_EXTENDED|R_REGEX_NOSUB);
 	if (rc) {
-		char errmsg[512];
-		r_regex_error (rc, &rx, errmsg, sizeof (errmsg) - 1);
+		char *errmsg = r_regex_error (&rx, rc);
 		file_magerror (ms, "regex error %d, (%s)", rc, errmsg);
+		free (errmsg);
 		return -1;
 	} else {
 		rc = r_regex_exec (&rx, R_MAGIC_DESC, 0, 0, 0);
@@ -316,6 +316,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	ut64 t = 0;
  	char *buf = NULL;
 	union VALUETYPE *p = &ms->ms_value;
+	char pp[ASCTIME_BUF_MINLEN];
 
   	switch (m->type) {
   	case FILE_BYTE:
@@ -432,7 +433,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_BEDATE:
 	case FILE_LEDATE:
 	case FILE_MEDATE:
-		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 1)) == -1) {
+		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 1, pp)) == -1) {
 			return -1;
 		}
 		t = ms->offset + sizeof(time_t);
@@ -441,7 +442,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_BELDATE:
 	case FILE_LELDATE:
 	case FILE_MELDATE:
-		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 0)) == -1) {
+		if (file_printf (ms, R_MAGIC_DESC, file_fmttime (p->l, 0, pp)) == -1) {
 			return -1;
 		}
 		t = ms->offset + sizeof(time_t);
@@ -449,7 +450,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_QDATE:
 	case FILE_BEQDATE:
 	case FILE_LEQDATE:
-		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 1)) == -1) {
+		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 1, pp)) == -1) {
 			return -1;
 		}
 		t = ms->offset + sizeof(ut64);
@@ -457,7 +458,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	case FILE_QLDATE:
 	case FILE_BEQLDATE:
 	case FILE_LEQLDATE:
-		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 0)) == -1) {
+		if (file_printf (ms, R_MAGIC_DESC, file_fmttime ((ut32)p->q, 0, pp)) == -1) {
 			return -1;
 		}
 		t = ms->offset + sizeof(ut64);
@@ -1420,20 +1421,21 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	case FILE_REGEX: {
 		int rc;
 		RRegex rx;
-		char errmsg[512];
+		char *errmsg;
 
 		if (!ms->search.s) {
 			return 0;
 		}
 
 		l = 0;
-		rc = r_regex_comp (&rx, m->value.s,
+		rc = r_regex_init (&rx, m->value.s,
 		    R_REGEX_EXTENDED|R_REGEX_NEWLINE|
 		    ((m->str_flags & STRING_IGNORE_CASE) ? R_REGEX_ICASE : 0));
 		if (rc) {
-			(void)r_regex_error(rc, &rx, errmsg, sizeof(errmsg) - 1);
+			errmsg = r_regex_error(&rx, rc);
 			file_magerror(ms, "regex error %d, (%s)",
 			    rc, errmsg);
+			free (errmsg);
 			v = (ut64) - 1;
 		} else {
 			RRegexMatch pmatch[1];
@@ -1461,8 +1463,9 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 				v = 1;
 				break;
 			default:
-				(void)r_regex_error (rc, &rx, errmsg, sizeof (errmsg) - 1);
+				errmsg = r_regex_error (&rx, rc);
 				file_magerror (ms, "regexec error %d, (%s)", rc, errmsg);
+				free (errmsg);
 				v = UT64_MAX;
 				break;
 			}

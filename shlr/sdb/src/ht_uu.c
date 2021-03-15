@@ -1,7 +1,8 @@
+#include "sdb.h"
 #include "ht_uu.h"
-
 #include "ht_inc.c"
 
+// creates a default HtUU that has strings as keys
 SDB_API HtName_(Ht)* Ht_(new0)(void) {
 	HT_(Options) opt = {
 		.cmp = NULL,

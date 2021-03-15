@@ -47,11 +47,11 @@
 4086	string		SWAPSPACE2	Linux/i386 swap file (new style)
 >0x400	long		x		%d (4K pages)
 >0x404	long		x		size %d pages
->>4086	string		SWAPSPACE2	
+>>4086	string		SWAPSPACE2
 >>>1052	string		>\0		Label %s
 # Linux kernel boot images, from Albert Cahalan <acahalan@cs.uml.edu>
 # and others such as Axel Kohlmeyer <akohlmey@rincewind.chemie.uni-ulm.de>
-# and Nicolás Lichtmaier <nick@debian.org>
+# and Nicolï¿½s Lichtmaier <nick@debian.org>
 # All known start with: b8 c0 07 8e d8 b8 00 90 8e c0 b9 00 01 29 f6 29
 # Linux kernel boot images (i386 arch) (Wolfram Kleff)
 514	string		HdrS		Linux kernel
@@ -74,10 +74,10 @@
 >0x1e3		string	Loading		version 1.3.79 or older
 >0x1e9		string	Loading		from prehistoric times
 
-# System.map files - Nicolás Lichtmaier <nick@debian.org>
+# System.map files - Nicolï¿½s Lichtmaier <nick@debian.org>
 8	search/1	\ A\ _text	Linux kernel symbol map text
 
-# LSM entries - Nicolás Lichtmaier <nick@debian.org>
+# LSM entries - Nicolï¿½s Lichtmaier <nick@debian.org>
 0	search/1	Begin3	Linux Software Map entry text
 0	search/1	Begin4	Linux Software Map entry text (new format)
 
@@ -137,7 +137,7 @@
 # >2	byte&0x40	!0		\b, A_PURE
 # >2	byte&0x80	!0		\b, A_TOVLY
 # >28     long            !0              \b, not stripped
-# >37	string		.		
+# >37	string		.
 # >>36	string		>\0		\b, libc version %s
 
 # 0	lelong&0xFF00FFFF 0x10000301	ld86 I80386 executable
@@ -163,7 +163,7 @@
 >24	lelong	x			%d symbols
 >28	lelong	x			%d ocons
 
-# Linux Logical Volume Manager (LVM) 
+# Linux Logical Volume Manager (LVM)
 # Emmanuel VARAGNAT <emmanuel.varagnat@guzu.net>
 #
 # System ID, UUID and volume group name are 128 bytes long
@@ -215,3 +215,13 @@
 >168	string	x		UUID: %s
 
 0	string	#!/bin/sh			Shellscript
+
+
+############################################################################
+# Android
+
+# Android bootimg:
+# https://android.googlesource.com/platform/system/tools/mkbootimg/+/refs/heads/master/include/bootimg/bootimg.h
+0	string	ANDROID!    Android boot image
+0	string	VNDRBOOT    Android vendor boot image
+

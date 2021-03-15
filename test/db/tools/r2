@@ -10,33 +10,19 @@ EXPECT_ERR=<<EOF
 EOF
 RUN
 
-NAME=r2 -
+NAME=use void on functions without parameters
+# Bad: static void foo() {
+# Good: static void foo(void) {
 FILE=-
-CMDS=e file.path
+CMDS="!git grep -e ^R_API -e ^static ../libr | grep -e '[a-z]() {' -e '[a-z]();'"
 EXPECT=<<EOF
-
 EOF
-RUN
-
-NAME=r2 -
-FILE=-
-CMDS=e file.lastpath
-EXPECT=<<EOF
-
-EOF
-RUN
-
-NAME=r2 --
-FILE=--
-CMDS=e file.path
-EXPECT=<<EOF
-
+EXPECT_ERR=<<EOF
 EOF
 RUN
 
 NAME=r2 --
 FILE=bins/elf/bomb
-BROKEN=1
 CMDS=r2 -s main -qcs bins/elf/bomb
 EXPECT=<<EOF
 0x400da0
@@ -65,37 +51,45 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=r2 -V
-BROKEN=1 # Only on Windows
+NAME=radare2 -V
 FILE=-
-CMDS=!!r2 -V~r_anal?
+CMDS=!!radare2 -V~r_anal?
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=r2 -h
-BROKEN=1 # Only on Windows
+NAME=radare2 -h
 FILE=-
-CMDS=!!r2 -h~Usage?
+CMDS=!!radare2 -h~Usage?
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=r2 -hh
-BROKEN=1 # Only on Windows
+NAME=radare2 -hh
 FILE=-
-CMDS=!!r2 -hh~R2_USER_PLUGINS?
+CMDS=!!radare2 -hh~R2_USER_PLUGINS?
 EXPECT=<<EOF
 1
 EOF
 RUN
 
-NAME=r2 -L
-BROKEN=1 # Only on Windows
+NAME=radare2 -L
 FILE=-
-CMDS=!!r2 -L~default?
+CMDS=!!radare2 -L~default?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=r2 shortcut
+FILE=-
+CMDS=<<EOF
+?q `!!r2 -h~Usage?`
+?+ ?vi $?
+?! ?e `!!r2.bat -h~Usage?`
+EOF
 EXPECT=<<EOF
 1
 EOF
@@ -121,5 +115,37 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=<<EOF
 Script 'script/missing.r2' not found.
+EOF
+RUN
+
+NAME=radare2 empty -i
+FILE=-
+CMDS=!radare2 -i "" -
+EXPECT_ERR=<<EOF
+Cannot open empty script path
+EOF
+RUN
+
+NAME=radare2 empty -I
+FILE=-
+CMDS=!radare2 -I "" -
+EXPECT_ERR=<<EOF
+Cannot open empty script path
+EOF
+RUN
+
+NAME=radare2 empty -R
+FILE=-
+CMDS=!radare2 -R ""
+EXPECT_ERR=<<EOF
+Missing file to open
+EOF
+RUN
+
+NAME=radare2 empty -P
+FILE=-
+CMDS=!radare2 -P ""
+EXPECT_ERR=<<EOF
+Cannot open empty rapatch path
 EOF
 RUN

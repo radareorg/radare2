@@ -2,8 +2,8 @@
 
 #include <r_anal.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
-#include <capstone/ppc.h>
+#include <capstone.h>
+#include <ppc.h>
 #include "../../asm/arch/ppc/libvle/vle.h"
 
 #define SPR_HID0 0x3f0 /* Hardware Implementation Register 0 */
@@ -162,41 +162,44 @@ static const char* getspr(struct Getarg *gop, int n) {
 
 static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	int i;
-	r_strbuf_init (buf);
-	r_strbuf_append (buf, "{");
-	cs_sysz *x = &insn->detail->sysz;
-	r_strbuf_append (buf, "\"operands\":[");
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+	pj_o (pj);
+	pj_ka (pj, "operands");
+	cs_ppc *x = &insn->detail->ppc;
 	for (i = 0; i < x->op_count; i++) {
-		cs_sysz_op *op = &x->operands[i];
-		if (i > 0) {
-			r_strbuf_append (buf, ",");
-		}
-		r_strbuf_append (buf, "{");
+		cs_ppc_op *op = x->operands + i;
+		pj_o (pj);
 		switch (op->type) {
-		case SYSZ_OP_REG:
-			r_strbuf_append (buf, "\"type\":\"reg\"");
-			r_strbuf_appendf (buf, ",\"value\":\"%s\"", cs_reg_name (handle, op->reg));
+		case PPC_OP_REG:
+			pj_ks (pj, "type", "reg");
+			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
 			break;
-		case SYSZ_OP_IMM:
-			r_strbuf_append (buf, "\"type\":\"imm\"");
-			r_strbuf_appendf (buf, ",\"value\":%"PFMT64d, op->imm);
+		case PPC_OP_IMM:
+			pj_ks (pj, "type", "imm");
+			pj_kN (pj, "value", op->imm);
 			break;
-		case SYSZ_OP_MEM:
-			r_strbuf_append (buf, "\"type\":\"mem\"");
-			if (op->mem.base != SYSZ_REG_INVALID) {
-				r_strbuf_appendf (buf, ",\"base\":\"%s\"", cs_reg_name (handle, op->mem.base));
+		case PPC_OP_MEM:
+			pj_ks (pj, "type", "mem");
+			if (op->mem.base != PPC_REG_INVALID) {
+				pj_ks (pj, "base", cs_reg_name (handle, op->mem.base));
 			}
-			r_strbuf_appendf (buf, ",\"index\":%"PFMT64d"", (st64) op->mem.index);
-			r_strbuf_appendf (buf, ",\"length\":%"PFMT64d"", (st64) op->mem.length);
-			r_strbuf_appendf (buf, ",\"disp\":%"PFMT64d"", (st64) op->mem.disp);
+			pj_ki (pj, "disp", op->mem.disp);
 			break;
 		default:
-			r_strbuf_append (buf, "\"type\":\"invalid\"");
+			pj_ks (pj, "type", "invalid");
 			break;
 		}
-		r_strbuf_append (buf, "}");
+		pj_end (pj); /* o operand */
 	}
-	r_strbuf_append (buf, "]}");
+	pj_end (pj); /* a operands */
+	pj_end (pj);
+
+	r_strbuf_init (buf);
+	r_strbuf_append (buf, pj_string (pj));
+	pj_free (pj);
 }
 
 #define PPCSPR(n) getspr(&gop, n)
@@ -311,6 +314,7 @@ static bool set_reg_profile(RAnal *anal) {
 			"=PC	pc\n"
 			"=SP	r1\n"
 			"=SR	srr1\n" // status register ??
+			"=SN	r0\n" // also for ret
 			"=A0	r3\n" // also for ret
 			"=A1	r4\n"
 			"=A2	r5\n"
@@ -512,28 +516,82 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 	return 0;
 }
 
-static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
-	static RRegItem reg;
-	switch (op->type & R_ANAL_OP_TYPE_MASK) {
-	case R_ANAL_OP_TYPE_LOAD:
-		if (INSOP(1).type == PPC_OP_MEM) {
-			ZERO_FILL (reg);
-			op->src[0] = r_anal_value_new ();
-			op->src[0]->reg = &reg;
-			parse_reg_name (op->src[0]->reg, handle, insn, 1);
-			op->src[0]->delta = INSOP(1).mem.disp;
-		}
+static RRegItem base_regs[4];
+
+static void create_src_dst(RAnalOp *op) {
+	op->src[0] = r_anal_value_new ();
+	op->src[1] = r_anal_value_new ();
+	op->src[2] = r_anal_value_new ();
+	op->dst = r_anal_value_new ();
+	ZERO_FILL (base_regs[0]);
+	ZERO_FILL (base_regs[1]);
+	ZERO_FILL (base_regs[2]);
+	ZERO_FILL (base_regs[3]);
+}
+
+static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x) {
+	cs_ppc_op ppcop = INSOP (x);
+	parse_reg_name (&base_regs[x], *handle, insn, x);
+	switch (ppcop.type) {
+	case PPC_OP_REG:
 		break;
-	case R_ANAL_OP_TYPE_STORE:
-		if (INSOP(1).type == PPC_OP_MEM) {
-			ZERO_FILL (reg);
-			op->dst = r_anal_value_new ();
-			op->dst->reg = &reg;
-			parse_reg_name (op->dst->reg, handle, insn, 1);
-			op->dst->delta = INSOP(1).mem.disp;
-		}
+	case PPC_OP_MEM:
+		val->delta = ppcop.mem.disp;
+		break;
+	case PPC_OP_IMM:
+		val->imm = ppcop.imm;
+		break;
+	default:
 		break;
 	}
+	val->reg = &base_regs[x];
+}
+
+static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+	create_src_dst (op);
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_CMP:
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_MUL:
+	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SAL:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_NOR:
+	case R_ANAL_OP_TYPE_NOT:
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_ROR:
+	case R_ANAL_OP_TYPE_ROL:
+	case R_ANAL_OP_TYPE_CAST:
+		set_src_dst (op->src[2], &handle, insn, 3);
+		set_src_dst (op->src[1], &handle, insn, 2);
+		set_src_dst (op->src[0], &handle, insn, 1);
+		set_src_dst (op->dst, &handle, insn, 0);
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		set_src_dst (op->dst, &handle, insn, 1);
+		set_src_dst (op->src[0], &handle, insn, 0);
+		break;
+	}
+}
+
+static char *shrink(char *op) {
+	if (!op) {
+		return NULL;
+	}
+	size_t len = strlen(op);
+	if (!len) {
+		return NULL;
+	}
+	op[len - 1] = 0;
+	return op;
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
@@ -545,11 +603,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	int mode = (a->bits == 64) ? CS_MODE_64 : (a->bits == 32) ? CS_MODE_32 : 0;
 	mode |= a->big_endian ? CS_MODE_BIG_ENDIAN : CS_MODE_LITTLE_ENDIAN;
 
-	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
 	if (a->cpu && strncmp (a->cpu, "vle", 3) == 0) {
 		// vle is big-endian only
 		if (!a->big_endian) {
@@ -575,9 +628,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	op->size = 4;
-
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
 
 	// capstone-next
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
@@ -692,9 +742,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_STWU:
 			op->type = R_ANAL_OP_TYPE_STORE;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,%s,=[4],%s=", ARG (0), op1, op1);
+			if (strstr (op1, "r1")) {
+				op->stackop = R_ANAL_STACK_INC;
+				op->stackptr = -atoi (op1);
+			}
 			break;
 		case PPC_INS_STWBRX:
 			op->type = R_ANAL_OP_TYPE_STORE;
@@ -705,8 +761,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_STBU:
 			op->type = R_ANAL_OP_TYPE_STORE;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,%s,=[1],%s=", ARG (0), op1, op1);
 			break;
 		case PPC_INS_STH:
@@ -715,8 +773,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_STHU:
 			op->type = R_ANAL_OP_TYPE_STORE;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,%s,=[2],%s=", ARG (0), op1, op1);
 			break;
 		case PPC_INS_STD:
@@ -725,8 +785,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_STDU:
 			op->type = R_ANAL_OP_TYPE_STORE;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,%s,=[8],%s=", ARG (0), op1, op1);
 			break;
 		case PPC_INS_LBZ:
@@ -736,8 +798,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_LBZU:
 		case PPC_INS_LBZUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,[1],%s,=,%s=", op1, ARG (0), op1);
 			break;
 		case PPC_INS_LBZX:
@@ -752,8 +816,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_LDU:
 		case PPC_INS_LDUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,[8],%s,=,%s=", op1, ARG (0), op1);
 			break;
 		case PPC_INS_LDX:
@@ -783,8 +849,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_LHZ:
 		case PPC_INS_LHZU:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,[2],%s,=,%s=", op1, ARG (0), op1);
 			break;
 		case PPC_INS_LHBRX:
@@ -805,8 +873,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_LWZU:
 		case PPC_INS_LWZUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			op1 = ARG (1);
-			op1[strlen(op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,[4],%s,=,%s=", op1, ARG (0), op1);
 			break;
 		case PPC_INS_LWBRX:

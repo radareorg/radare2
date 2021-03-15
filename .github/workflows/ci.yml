@@ -1,0 +1,390 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+#  schedule:
+#    - cron: '0 0 * * 1'
+
+
+jobs:
+  build-resymlink:
+    name: linux-acr-resymlink
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Installing with symlinks
+      run: |
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
+        sys/install.sh
+    - name: Uninstalling
+      run: sudo make uninstall
+    - name: Reinstalling without symlinks
+      run: sudo make install
+  build-spaces:
+    name: linux-meson-spaces
+    continue-on-error: true
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    #- name: XXX this is not possible with make Install from a directory with spaces
+    #  run: |
+    #    git config pull.rebase false
+    #    git clone --depth 1 https://github.com/radareorg/radare2 "spa ces" ; cd "spa ces" ; ./sys/install.sh > /dev/null ; cd ..
+    #    r2 -v
+    # - name: Install to a directory with spaces using ACR/MAKE
+    #  run: |
+    #    git config --global pull.rebase false
+    #    git clone --depth 1 https://github.com/radareorg/radare2
+    #    cd radare2
+    #    ./configure --prefix=/usr/local; make uninstall
+    #    ./configure --prefix=/usr; make uninstall
+    #    ./sys/install.sh "/usr/spa ces" > /dev/null
+    #    LD_LIBRARY_PATH="/usr/spa ces/lib" PATH="/usr/spa ces/bin:$PATH" r2 -v
+    #    cd ..
+    - name: Build on a directory with spaces (meson only)
+      run: |
+        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
+        sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
+        sudo pip3 install meson==0.55.3 ninja==1.10.0
+        git config --global pull.rebase false
+        git clone --depth 1 . "spa ces"
+        cd "spa ces"
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
+        meson --prefix="/tmp/r 2" build
+        ninja -C build
+        ninja -C build install
+        cd ..
+        find "/tmp/r 2"
+        LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
+  w32-meson:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja r2pipe wget
+    - name: Build with meson + ninja
+      shell: pwsh
+      run: |
+        .github\vsdevenv.ps1
+        meson --buildtype=release --prefix=$PWD\radare2-install build
+        ninja -C build
+        ninja -C build install
+    - name: Create zip artifact
+      run: 7z a radare2-git.zip $PWD\radare2-install
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-w32-git.zip
+        path: .\radare2-git.zip
+    - uses: actions/checkout@v2
+      with:
+        repository: radareorg/radare2-win-installer
+        path: ./radare2-win-installer
+    - name: Extract r2 version for the installer
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
+    - name: Create installer
+      shell: pwsh
+      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-w32-installer-git.exe
+        path: radare2-win-installer\Output\radare2.exe
+  w64-meson:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Preparing nmake
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja r2pipe wget
+    - name: Build with meson + ninja
+      shell: pwsh
+      run: |
+        # cmd '/c call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"'
+        bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "x86_64"
+        # meson_options: --default-library=shared|static -Dstatic_runtime=true --backend vs2019
+        meson --buildtype=release --prefix=$PWD\radare2-install build
+        ninja -C build
+        ninja -C build install
+    - name: Create zip artifact
+      run: 7z a radare2-git.zip $PWD\radare2-install
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-w64-git.zip
+        path: .\radare2-git.zip
+    - uses: actions/checkout@v2
+      with:
+        repository: radareorg/radare2-win-installer
+        path: ./radare2-win-installer
+    - name: Extract r2 version for the installer
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: extract_version
+    - name: Create installer
+      shell: pwsh
+      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-w64-installer-git.zip
+        path: radare2-win-installer\Output\radare2.exe
+  # LINUX
+  linux-static:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Building static r2 with acr
+      run: |
+        cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
+        NOLTO=1 sys/static.sh
+        make -C binr/blob
+        tar cJvf r2-static.tar.xz r2-static
+    - name: Pub
+      uses: actions/upload-artifact@v2
+      with:
+        name: r2-static.tar.xz
+        path: r2-static.tar.xz
+    - name: Static static r2 with meson 
+      run: |
+        sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
+        sudo pip3 install meson==0.55.3 ninja==1.10.0
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        ninja -C build && ninja -C build install
+  linux-acr-deb-64:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Packaging for Debian
+      run: sys/debian.sh
+    - name: Pub
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2_debian_amd64.zip
+        path: dist/debian/*/*.deb
+  linux-acr-deb-32:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Packaging for 32bit Debian
+      run: |
+        sudo apt install gcc-multilib
+        export CFLAGS=-m32
+        export LDFLAGS=-m32
+        export ARCH=i386
+        sys/debian.sh
+    - name: Pub
+      uses: actions/upload-artifact@v2
+      with:
+        name: radare2_debian_i386.zip
+        path: dist/debian/*/*.deb
+## RPM PACKAGES DISABLED
+#  linux-meson-rpm:
+#    runs-on: ubuntu-18.04
+#    container: centos:8
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - name: Prepare Skeleton
+#      run: |
+#        mkdir -p SOURCES SPECS
+#        cp -f dist/rpm/*spec SPECS
+#        wget -O https://github.com/radareorg/radare2/archive/master/radare2-5.1.0-git.tar.gz
+#    - name: rpmbuild
+#      uses: robertdebock/rpmbuild-action@1.1.1
+#    - name: Pub
+#      uses: actions/upload-artifact@v2
+#      with:
+#        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
+#  centos-meson-rpm:
+#    runs-on: ubuntu-18.04
+#    container: centos:8
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - name: Install tools for CentOS:8
+#      run: |
+#        yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
+#        pip3.8 install meson ninja r2pipe
+#    - name: Building with Meson
+#      run: |
+#        meson build
+#        ninja -C build
+#        ninja -C build install
+#    - name: RPM Packaging
+#      run: |
+#        cp -f dist/rpm/radare2.spec .
+#        rpmdev-setuptree
+#        mkdir -p rpmbuild/SOURCES
+#        cd rpmbuild/SOURCES
+#        wget https://github.com/radareorg/radare2/archive/5860c3efc12d4b75e72bdce4b1d3834599620913/radare2-5.1.0-git.tar.gz
+#        cd -
+#        rpmbuild -ba radare2.spec
+#    - name: Pub
+#      uses: actions/upload-artifact@v2
+#      with:
+#        path: rpmbuild/RPMS/*/*.rpm
+  linux-asan-fuzz:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Building Radare2
+      run: |
+        pip install r2pipe
+        sys/sanitize.sh
+    - name: Installing tools for the testsuite
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract
+    - name: Running tests
+      run: |
+        export ASAN_OPTIONS=detect_leaks=0
+        export LD_LIBRARY_PATH=/usr/local/lib
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        make tests
+    - name: Run fuzz tests
+      run: |
+        export ASAN_OPTIONS=detect_leaks=0
+        export R2R_SKIP_ARCHOS=1
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        make -C test fuzz-tests
+  linux-test:
+    runs-on: ubuntu-latest
+#    if: contains(github.ref, 'ci-')
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Building Radare2
+      run: |
+        pip install r2pipe wheel
+        export CFLAGS="-O2 -Wno-unused-result"
+        sys/install.sh
+    - name: Running tests
+      run: |
+        export LD_LIBRARY_PATH=/usr/local/lib
+        make tests
+
+  # Apple
+  macos-acr:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Packaging
+      run: dist/macos/build-pkg.sh
+    - name: Building Radare2
+      run: |
+        # treesitter doesnt build with this because of treesitter
+        export CFLAGS="-O2 -Werror -Wno-unused-result -std=gnu89 -Wno-unicode"
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-unicode -Wno-unneeded-internal-declaration"
+        export CFLAGS="-O2"
+        sys/install.sh && make -C dist/macos
+    - name: Pub
+      uses: actions/upload-artifact@v2
+      with:
+        path: dist/macos/*.pkg
+  macos-test:
+    runs-on: macos-latest
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install r2pipe
+    - name: Building Radare2
+      run: export CFLAGS="-O2"; sys/install.sh
+    - name: Running tests
+      run: pip3 install r2pipe; make tests
+
+  # Mobile
+  ios-cydia:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install pkg-config/ldid2 with Homebrew
+      run: brew install pkg-config ldid
+#     - name: Create cydia32 package
+#       run: ./sys/ios-cydia32.sh
+#     - name: List sys/cydia
+#       run: ls -lahR ./sys/cydia
+#     - uses: actions/upload-artifact@v2
+#       with:
+#         name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
+#         path: ./dist/cydia/radare2/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+    - name: Create cydia package
+      run: ./sys/ios-cydia.sh
+    - name: Create iOS SDK
+      run: |
+        ./sys/ios-sdk.sh
+        cd /tmp/r2ios
+        zip -r /tmp/r2ios-sdk.zip *
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2_iphoneos-arm64.zip
+        path: ./dist/cydia/radare2*/*.deb
+
+  android-acr-aarch64:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Compile with acr
+      run: |
+        sys/android-ndk-install.sh
+        sys/android-build.sh arm64
+        ls -l
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-android-aarch64.tar.gz
+        path: radare2*android*aarch64.tar.gz
+
+  android-meson:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+      #  name: [x86_64, arm, aarch64]
+        name: [x86_64, aarch64]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Compile with meson
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        ninja -C build && ninja -C build install
+    - name: Create radare2-android-${{ matrix.name }}.tar.gz
+      run: |
+        cd /tmp
+        rm -rf android-dir/include android-dir/lib
+        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -cvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-android-${{ matrix.name }}.tar.gz
+        path: /tmp/radare2-android-${{ matrix.name }}.tar.gz

@@ -373,12 +373,9 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	int sz = 4;
 	ut32 insn;
 
-	memset (op, 0, sizeof (RAnalOp));
 	op->family = R_ANAL_OP_FAMILY_CPU;
 	op->addr = addr;
 	op->size = sz;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 
 	if(!anal->big_endian) {
 		((char*)&insn)[0] = data[3];
@@ -479,6 +476,8 @@ static bool set_reg_profile(RAnal *anal) {
 	"=PC	pc\n"
 	"=SP	o6\n"
 	"=BP	i6\n"
+	"=A0	g0\n"
+	"=A1	g1\n"
 	/* prgregset_t for _LP64 */
 	"gpr	g0	.64	0	0\n"
 	"gpr	g1	.64	8	0\n"

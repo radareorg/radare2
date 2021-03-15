@@ -115,7 +115,8 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 }
 
 static void ds_print_stackptr(RDisasmState *ds) {
-	int ostackptr, stackptr = ds_ostackptr_at (ds, &ostackptr);
+	int ostackptr = 0;
+	int stackptr = ds_ostackptr_at (ds, &ostackptr);
 	if (ds->show_stackptr) {
 		r_cons_printf ("%5d%s", stackptr,
 			ds->analop.type == R_ANAL_OP_TYPE_CALL?">":

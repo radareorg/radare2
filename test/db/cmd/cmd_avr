@@ -161,3 +161,14 @@ type_info
   virtual_0 @ 0x401136 (vtable + 0x0)
 EOF
 RUN
+
+NAME=avraj msvc x86
+FILE=bins/pe/cpp-msvc-x86.exe
+CMDS=<<EOF
+aar
+avraj
+EOF
+EXPECT=<<EOF
+[{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298928,"class_desc_addr":4290676,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290692},"base_classes":[{"desc":{"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298948,"class_desc_addr":4290748,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":2,"base_class_array_addr":4290764},"base_classes":[{"desc":{"type_desc_addr":4298948,"num_contained_bases":1,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVInAbsentia@@"}},{"desc":{"type_desc_addr":4298928,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVAlbum@@"}}]},{"complete_object_locator":{"signature":0,"vftable_offset":0,"cd_offset":0,"type_desc_addr":4298976,"class_desc_addr":4290824,"object_base":0},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"},"class_hierarchy_desc":{"signature":0,"attributes":0,"num_base_classes":1,"base_class_array_addr":4290840},"base_classes":[{"desc":{"type_desc_addr":4298976,"num_contained_bases":0,"where":{"mdisp":0,"pdisp":-1,"vdisp":0},"attributes":64},"type_desc":{"vtable_addr":4268540,"spare":0,"name":".?AVtype_info@@"}}]}]
+EOF
+RUN

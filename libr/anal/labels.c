@@ -1,98 +1,52 @@
-/* radare - LGPL - Copyright 2014-2018 - pancake */
+/* radare - LGPL - Copyright 2014-2020 - pancake, thestr4ng3r */
 
 #include <r_anal.h>
 
-#define DB anal->sdb_fcns
+HEAPTYPE (ut64);
 
-// list of all the labels for a specific function
-#define LABELS sdb_fmt ("fcn.%"PFMT64x".labels", fcn->addr)
-// value of each element in the labels list
-#define ADDRLABEL(x,y) sdb_fmt ("0x%"PFMT64x"/%s", x,y)
-// resolve by name
-#define LABEL(x) sdb_fmt ("fcn.%"PFMT64x".label.%s", fcn->addr, x)
-// resolve by addr
-#define ADDR(x) sdb_fmt ("fcn.%"PFMT64x".label.0x%"PFMT64x, fcn->addr,x)
-// SDB looks like fcn.0x80480408.labels=0x8048480/patata,0x0405850/potro
-
-R_API ut64 r_anal_fcn_label_get (RAnal *anal, RAnalFunction *fcn, const char *name) {
-	return (anal && fcn)? sdb_num_get (DB, LABEL (name), NULL): UT64_MAX;
+R_API ut64 r_anal_function_get_label(RAnalFunction *fcn, const char *name) {
+	r_return_val_if_fail (fcn, UT64_MAX);
+	ut64 *addr = ht_pp_find (fcn->label_addrs, name, NULL);
+	return addr? *addr: UT64_MAX;
 }
 
-R_API const char *r_anal_fcn_label_at (RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	return (anal && fcn)? sdb_const_get (DB, ADDR (addr), NULL): NULL;
+R_API const char *r_anal_function_get_label_at(RAnalFunction *fcn, ut64 addr) {
+	r_return_val_if_fail (fcn, NULL);
+	return ht_up_find (fcn->labels, addr, NULL);
 }
 
-R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr) {
-	if (!anal || !fcn) {
+R_API bool r_anal_function_set_label(RAnalFunction *fcn, const char *name, ut64 addr) {
+	r_return_val_if_fail (fcn && name, false);
+	if (ht_pp_find (fcn->label_addrs, name, NULL)) {
 		return false;
 	}
-	if (sdb_add (DB, ADDR (addr), name, 0)) {
-		if (sdb_num_add (DB, LABEL (name), addr, 0)) {
-			sdb_array_add (DB, LABELS, ADDRLABEL (addr, name), 0);
-			return true;
-		} else {
-			sdb_unset (DB, ADDR (addr), 0);
-		}
-	} else {
-		eprintf ("Cannot add\n");
-	}
-	return false;
-}
-
-R_API int r_anal_fcn_label_del (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr) {
-	if (!anal || !fcn || !name) {
+	char *n = strdup (name);
+	if (!ht_up_insert (fcn->labels, addr, n)) {
+		free (n);
 		return false;
 	}
-	sdb_array_remove (DB, LABELS, ADDRLABEL (addr, name), 0);
-	sdb_unset (DB, LABEL (name), 0);
-	sdb_unset (DB, ADDR (addr), 0);
+	ht_pp_insert (fcn->label_addrs, name, ut64_new (addr));
 	return true;
 }
 
-R_API int r_anal_fcn_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
-	if (!anal) {
-		return 0;
+R_API bool r_anal_function_delete_label(RAnalFunction *fcn, const char *name) {
+	r_return_val_if_fail (fcn && name, false);
+	ut64 *addr = ht_pp_find (fcn->label_addrs, name, NULL);
+	if (!addr) {
+		return false;
 	}
-	if (fcn) {
-		char *cur, *token;
-		char *str = sdb_get (DB, LABELS, 0);
-		sdb_aforeach (cur, str) {
-			struct {
-				ut64 addr;
-				char *name;
-			} loc;
-			token = strchr (cur, '/');
-			if (!token) {
-				break;
-			}
-			*token = ',';
-			sdb_fmt_tobin (cur, "qz", &loc);
-			switch (rad) {
-			case '*':
-			case 1:
-				anal->cb_printf ("f.%s@0x%08"PFMT64x"\n",
-					loc.name, loc.addr);
-				break;
-			case 'j':
-				eprintf ("TODO\n");
-				break;
-			default:
-				anal->cb_printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",
-					loc.addr,
-					loc.name, fcn->name,
-					loc.addr - fcn->addr, loc.addr);
-			}
-			*token = '/';
-			sdb_fmt_free (&loc, "qz");
-			sdb_aforeach_next (cur);
-		}
-		free (str);
-	} else {
-		RAnalFunction *f;
-		RListIter *iter;
-		r_list_foreach (anal->fcns, iter, f) {
-			r_anal_fcn_labels (anal, f, rad);
-		}
+	ht_up_delete (fcn->labels, *addr);
+	ht_pp_delete (fcn->label_addrs, name);
+	return true;
+}
+
+R_API bool r_anal_function_delete_label_at(RAnalFunction *fcn, ut64 addr) {
+	r_return_val_if_fail (fcn, false);
+	char *name = ht_up_find (fcn->labels, addr, NULL);
+	if (!name) {
+		return false;
 	}
+	ht_pp_delete (fcn->label_addrs, name);
+	ht_up_delete (fcn->labels, addr);
 	return true;
 }

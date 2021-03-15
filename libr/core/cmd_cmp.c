@@ -15,10 +15,12 @@ static const char *help_msg_c[] = {
 	"ccc", " [at]", "Same as above, but only showing different lines",
 	"ccd", " [at]", "Compares in two disasm columns of block size",
 	"ccdd", " [at]", "Compares decompiler output (e cmd.pdc=pdg|pdd)",
+	"cd", " [dir]", "chdir",
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "Compare contents of file at current seek",
 	"cg", "[?] [o] [file]", "Graphdiff current file and [file]",
+	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 	"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
 	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte (silent return in $?)",
@@ -27,13 +29,10 @@ static const char *help_msg_c[] = {
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
-	"", "", "",
-	"cd", " [dir]", "chdir",
-	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 	NULL
 };
 
-static void cmd_cmp_init(RCore *core) {
+static void cmd_cmp_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, c);
 }
 
@@ -108,6 +107,7 @@ R_API int r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 			if (is_diff) {
 				r_cons_printf ("0x%08"PFMT64x " has changed\n", w->addr);
 			}
+			break;
 		case 'o': // old contents
 		// use tmpblocksize
 		default:
@@ -261,8 +261,7 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 			eq++;
 			continue;
 		}
-		switch (mode)
-		{
+		switch (mode) {
 		case 0:
 			r_cons_printf ("0x%08"PFMT64x " (byte=%.2d)   %02x '%c'  ->  %02x '%c'\n",
 				core->offset + i, i + 1,
@@ -282,7 +281,9 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 			pj_ki (pj, "cmp_value", (int)d[i]);
 			pj_end (pj);
 			break;
-
+		default:
+			eprintf ("Unknown mode\n");
+			break;
 		}
 	}
 	if (mode == 0) {
@@ -389,13 +390,13 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	case 'c': // columns
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
 			// dis A
-			r_asm_set_pc (core->assembler, core->offset + i);
-			(void) r_asm_disassemble (core->assembler, &op,
+			r_asm_set_pc (core->rasm, core->offset + i);
+			(void) r_asm_disassemble (core->rasm, &op,
 				core->block + i, core->blocksize - i);
 
 			// dis B
-			r_asm_set_pc (core->assembler, off + i);
-			(void) r_asm_disassemble (core->assembler, &op2,
+			r_asm_set_pc (core->rasm, off + i);
+			(void) r_asm_disassemble (core->rasm, &op2,
 				buf + j, core->blocksize - j);
 
 			// show output
@@ -407,14 +408,14 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				colpad[pos] = 0;
 			}
 			if (hascolor) {
-				r_cons_printf (iseq? pal->graph_true: pal->graph_false);
+				r_cons_print (iseq? pal->graph_true: pal->graph_false);
 			}
 			r_cons_printf (" 0x%08"PFMT64x "  %s %s",
 				core->offset + i, r_strbuf_get (&op.buf_asm), colpad);
 			r_cons_printf ("%c 0x%08"PFMT64x "  %s\n",
 				iseq? '=': '!', off + j, r_strbuf_get (&op2.buf_asm));
 			if (hascolor) {
-				r_cons_printf (Color_RESET);
+				r_cons_print (Color_RESET);
 			}
 			if (op.size < 1) {
 				op.size = 1;
@@ -429,13 +430,13 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	case 'u': // unified
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
 			// dis A
-			r_asm_set_pc (core->assembler, core->offset + i);
-			(void) r_asm_disassemble (core->assembler, &op,
+			r_asm_set_pc (core->rasm, core->offset + i);
+			(void) r_asm_disassemble (core->rasm, &op,
 				core->block + i, core->blocksize - i);
 
 			// dis B
-			r_asm_set_pc (core->assembler, off + i);
-			(void) r_asm_disassemble (core->assembler, &op2,
+			r_asm_set_pc (core->rasm, off + i);
+			(void) r_asm_disassemble (core->rasm, &op2,
 				buf + j, core->blocksize - j);
 
 			// show output
@@ -445,17 +446,17 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 					core->offset + i, r_strbuf_get (&op.buf_asm));
 			} else {
 				if (hascolor) {
-					r_cons_printf (pal->graph_false);
+					r_cons_print (pal->graph_false);
 				}
 				r_cons_printf ("-0x%08"PFMT64x "  %s\n",
 					core->offset + i, r_strbuf_get (&op.buf_asm));
 				if (hascolor) {
-					r_cons_printf (pal->graph_true);
+					r_cons_print (pal->graph_true);
 				}
 				r_cons_printf ("+0x%08"PFMT64x "  %s\n",
 					off + j, r_strbuf_get (&op2.buf_asm));
 				if (hascolor) {
-					r_cons_printf (Color_RESET);
+					r_cons_print (Color_RESET);
 				}
 			}
 			if (op.size < 1) {
@@ -654,18 +655,17 @@ static int cmd_cmp(void *data, const char *input) {
 		free (buf);
 		free (filled);
 		break;
-	case 'X':
+	case 'X': // "cX"
 		buf = malloc (core->blocksize);
 		if (buf) {
 			if (!r_io_read_at (core->io, r_num_math (core->num,
 					    input + 1), buf, core->blocksize)) {
 				eprintf ("Cannot read hexdump\n");
 			} else {
-				val = radare_compare (core, block, buf, ret, mode);
+				val = radare_compare (core, block, buf, core->blocksize, mode);
 			}
 			free (buf);
 		}
-		return false;
 		break;
 	case 'f':
 		if (input[1] != ' ') {
@@ -983,6 +983,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_c);
+		break;
 	}
 	if (val != UT64_MAX) {
 		core->num->value = val;

@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+/* radare - LGPL - Copyright 2019-2020 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_alloc.h>
 
-R_API void r_alloc_init () {
+R_API void r_alloc_init (void) {
 #if R_MALLOC_WRAPPER
 	r_alloc_hooks (malloc, calloc, realloc, free);
 #endif

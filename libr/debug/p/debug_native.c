@@ -91,12 +91,13 @@ R_API RList *r_w32_dbg_maps(RDebug *);
 /* begin of debugger code */
 #if DEBUGGER
 
-#if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN))
+#if !__WINDOWS__ && !(__linux__ && !defined(WAIT_ON_ALL_CHILDREN)) && !__APPLE__
 static int r_debug_handle_signals(RDebug *dbg) {
 #if __KFBSD__
 	return bsd_handle_signals (dbg);
 #else
-	return -1;
+	eprintf ("Warning: signal handling is not supported on this platform\n");
+	return 0;
 #endif
 }
 #endif
@@ -172,6 +173,7 @@ static int r_debug_native_detach (RDebug *dbg, int pid) {
 #endif
 }
 
+#if __WINDOWS__ || __linux__
 static int r_debug_native_select(RDebug *dbg, int pid, int tid) {
 #if __WINDOWS__
 	return w32_select (dbg, pid, tid);
@@ -181,6 +183,7 @@ static int r_debug_native_select(RDebug *dbg, int pid, int tid) {
 	return -1;
 #endif
 }
+#endif
 
 static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 // XXX: num is ignored
@@ -207,6 +210,7 @@ static void interrupt_process(RDebug *dbg) {
 
 static int r_debug_native_stop(RDebug *dbg) {
 #if __linux__
+	// Stop all running threads except the thread reported by waitpid
 	return linux_stop_threads (dbg, dbg->reason.tid);
 #else
 	return 0;
@@ -240,26 +244,19 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_cons_break_push ((RConsBreak)interrupt_process, dbg);
 	}
 
-	if (dbg->continue_all_threads && dbg->n_threads) {
-		RList *list = dbg->threads;
+	if (dbg->continue_all_threads && dbg->n_threads && dbg->threads) {
 		RDebugPid *th;
 		RListIter *it;
-
-		if (list) {
-			r_list_foreach (list, it, th) {
-				if (th->pid) {
-					ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, NULL, (r_ptrace_data_t)(size_t)contsig);
-					if (ret) {
-						perror ("PTRACE_CONT");
-					}
-				}
+		r_list_foreach (dbg->threads, it, th) {
+			ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
+			if (ret) {
+				eprintf ("Error: (%d) is running or dead.\n", th->pid);
 			}
 		}
-	}
-	else {
+	} else {
 		ret = r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
 		if (ret) {
-			perror ("PTRACE_CONT");
+			r_sys_perror ("PTRACE_CONT");
 		}
 	}
 	//return ret >= 0 ? tid : false;
@@ -291,9 +288,7 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 		case 'u': needle = dbg->glob_unlibs; break;
 		}
 	}
-	//eprintf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
-		//item->BaseOfDll, item->Path, item->Name);
-	r_cons_printf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
+	r_cons_printf ("(%d) %sing library at 0x%p (%s) %s\n", item->pid, mode,
 		item->BaseOfDll, item->Path, item->Name);
 	r_cons_flush ();
 	if (needle && strlen (needle)) {
@@ -372,7 +367,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			r_cons_printf ("(%d) Created thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			r_cons_printf ("(%d) Created thread %d (start @ %p) (teb @ %p)\n", item->pid, item->tid, item->lpStartAddress, item->lpThreadLocalBase);
 			r_cons_flush ();
 
 			r_debug_info_free (r);
@@ -382,7 +377,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			r_cons_printf ("(%d) Finished thread %d Exit code %d\n", (ut32)item->pid, (ut32)item->tid, (ut32)item->dwExitCode);
+			r_cons_printf ("(%d) Finished thread %d Exit code %lu\n", (ut32)item->pid, (ut32)item->tid, item->dwExitCode);
 			r_cons_flush ();
 
 			r_debug_info_free (r);
@@ -394,7 +389,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			r_cons_printf ("(%d) Finished process with exit code %d\n", dbg->main_pid, item->dwExitCode);
+			r_cons_printf ("(%d) Finished process with exit code %lu\n", dbg->main_pid, item->dwExitCode);
 			r_cons_flush ();
 			r_debug_info_free (r);
 		}
@@ -448,14 +443,6 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	}
 
 	reason = linux_dbg_wait (dbg, dbg->tid);
-	if (reason == R_DEBUG_REASON_EXIT_TID) {
-		RDebugInfo *r = r_debug_native_info (dbg, "");
-		if (r) {
-			eprintf ("(%d) Finished thread %d Exit code\n", r->pid, r->tid);
-			r_debug_info_free (r);
-		}
-	}
-
 	dbg->reason.type = reason;
 	return reason;
 }
@@ -515,7 +502,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	// TODO: switch status and handle reasons here
 	// FIXME: Remove linux handling from this function?
 #if __linux__ && defined(PT_GETEVENTMSG)
-	reason = linux_ptrace_event (dbg, pid, status);
+	reason = linux_ptrace_event (dbg, pid, status, true);
 #endif // __linux__
 
 	/* propagate errors */
@@ -549,7 +536,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 #if __OpenBSD__ || __NetBSD__
 			reason = R_DEBUG_REASON_BREAKPOINT;
 #else
-			if (!r_debug_handle_signals (dbg)) {
+			if (r_debug_handle_signals (dbg) != 0) {
 				return R_DEBUG_REASON_ERROR;
 			}
 			reason = dbg->reason.type;
@@ -623,7 +610,7 @@ static RList *r_debug_native_pids(RDebug *dbg, int pid) {
 #elif __linux__
 	return linux_pid_list (pid, list);
 #else /* rest is BSD */
-	return bsd_pid_list (dbg, list);
+	return bsd_pid_list (dbg, pid, list);
 #endif
 	return list;
 }
@@ -1233,8 +1220,8 @@ static int r_debug_native_init (RDebug *dbg) {
 #endif
 }
 
-static void sync_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
 #if __i386__ || __x86_64__
+static void sync_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
 		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
@@ -1254,13 +1241,11 @@ static void sync_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
 */
 	regs[6] = r_reg_getv (R, "dr6");
 	regs[7] = r_reg_getv (R, "dr7");
-#else
-	eprintf ("drx sync_drx_regs: Unsupported platform\n");
-#endif
 }
+#endif
 
-static void set_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
 #if __i386__ || __x86_64__
+static void set_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS){
 		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
@@ -1274,10 +1259,8 @@ static void set_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
 	r_reg_setv (R, "dr3", regs[3]);
 	r_reg_setv (R, "dr6", regs[6]);
 	r_reg_setv (R, "dr7", regs[7]);
-#else
-	eprintf ("drx set_drx_regs: Unsupported platform\n");
-#endif
 }
+#endif
 
 static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
 #if __i386__ || __x86_64__
@@ -1355,18 +1338,6 @@ static bool arm32_hwbp_add (RDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
 
 static bool arm32_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	return false; // TODO: hwbp.del not yetimplemented
-}
-#else
-static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) {
-	return false;
-}
-
-static bool arm32_hwbp_add (RDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
-	return false;
-}
-
-static bool arm32_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
-	return false;
 }
 #endif // PTRACE_GETHWBPREGS
 #endif // __arm
@@ -1455,13 +1426,11 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		return set
 			? drx_add (dbg, bp, b)
 			: drx_del (dbg, bp, b);
-#elif __arm64__ || __aarch64__
-#if __linux__
+#elif (__arm64__ || __aarch64__) && __linux__
 		return set
 			? arm64_hwbp_add (dbg, bp, b)
 			: arm64_hwbp_del (dbg, bp, b);
-#endif
-#elif __arm__
+#elif __arm__ && __linux__
 		return set
 			? arm32_hwbp_add (dbg, bp, b)
 			: arm32_hwbp_del (dbg, bp, b);
@@ -1472,7 +1441,7 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 
 #if __APPLE__
 
-static int getMaxFiles() {
+static int getMaxFiles(void) {
 	struct rlimit limit;
 	if (getrlimit (RLIMIT_NOFILE, &limit) != 0) {
 		return 1024;
@@ -1543,7 +1512,7 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 		"sc@syscall(%d);\n"
 		"main@global(0) { sc(%p,%d,%d);\n"
 		":int3\n"
-		"}\n", num, (void*)addr, size, io_perms_to_prot (perms));
+		"}\n", num, (void*)(size_t)addr, size, io_perms_to_prot (perms));
 
 	r_egg_reset (dbg->egg);
 	r_egg_setup(dbg->egg, dbg->arch, 8 * dbg->bits, 0, 0);

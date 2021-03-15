@@ -1,0 +1,55 @@
+name: TCC
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    name: ubuntu-tcc-test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout TinyCC repository
+      run: |
+          git clone https://repo.or.cz/tinycc.git
+          cd tinycc
+          git checkout mob
+
+    - name: Compiling and installing TinyCC
+      working-directory: tinycc
+      run: |
+          sh ./configure --prefix=/usr
+          make
+          sudo make install
+
+    - uses: actions/checkout@v2
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get --assume-yes install wheel setuptools || true
+        sudo python -m pip install --upgrade pip
+        pip install r2pipe
+    - name: Configure, build and install
+      env:
+          CC: tcc
+      run: |
+          ./configure --prefix=/usr --with-compiler=tcc
+          make
+          sudo make install
+
+    - name: Run tests
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+      run: |
+        r2 -v
+        r2r -v
+        export R2R_SKIP_ASM=1
+        export R2R_SKIP_ARCHOS=1
+        make -C test

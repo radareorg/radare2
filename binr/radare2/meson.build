@@ -1,4 +1,4 @@
-executable('radare2', 'radare2.c',
+radare2_exe = executable('radare2', 'radare2.c',
   include_directories: [platform_inc],
   dependencies: [
     r_util_dep,
@@ -25,6 +25,6 @@ executable('radare2', 'radare2.c',
     r_magic_dep
   ],
   install: true,
-  install_rpath: rpath,
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )

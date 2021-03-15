@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2007-2020 - pancake */
 
-#include <r_core.h>
+#include <r_util/r_print.h>
+#include <r_anal.h>
 
 #define DFLT_ROWS 16
 
@@ -65,13 +66,15 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 }
 
 R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
-	int i, j, cols = 78;
+#define cb_print(x) p->cb_printf("%s", x)
+	size_t i, j;
+	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
 	int rows = height > 0 ? height : 10;
 	// int realrows = rows * 2;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *vline = p->cons->use_utf8 ? RUNE_LINE_VERT : "|";
-	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
+	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->call;
 	kol[1] = pal->jmp;
@@ -80,42 +83,42 @@ R_API void r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	kol[4] = pal->nop;
 	if (colors) {
 		for (i = 0; i < rows; i++) {
-			int threshold = i * (0xff / rows);
+			size_t threshold = i * (0xff / rows);
+			size_t koli = i * 5 / rows;
 			for (j = 0; j < cols; j++) {
 				int realJ = j * len / cols;
 	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					int koli = i * 5 / rows;
 					if (p->histblock) {
 						p->cb_printf ("%s%s%s", kol[koli], block, Color_RESET);
 					} else {
 						p->cb_printf ("%s%s%s", kol[koli], vline, Color_RESET);
 					}
 				} else {
-					p->cb_printf (" ");
+					cb_print (" ");
 				}
 			}
-			p->cb_printf ("\n");
+			cb_print ("\n");
 		}
 		return;
 	}
 
 	for (i = 0; i < rows; i++) {
-		int threshold = i * (0xff / rows);
+		size_t threshold = i * (0xff / rows);
 		for (j = 0; j < cols; j++) {
-			int realJ = j * len / cols;
+			size_t realJ = j * len / cols;
 			if (255 - buf[realJ] < threshold) {
 				if (p->histblock) {
 					p->cb_printf ("%s%s%s", Color_BGGRAY, block, Color_RESET);
 				} else {
-					p->cb_printf (vline);
+					cb_print (vline);
 				}
 			} else if (i + 1 == rows) {
-				p->cb_printf ("_");
+				cb_print ("_");
 			} else {
-				p->cb_printf (" ");
+				cb_print (" ");
 			}
 		}
-		p->cb_printf ("\n");
+		cb_print ("\n");
 	}
 }
 
@@ -138,7 +141,7 @@ R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) 
 	return imin;
 }
 
-R_API bool r_print_is_interrupted() {
+R_API bool r_print_is_interrupted(void) {
 	if (is_interrupted_cb) {
 		return is_interrupted_cb ();
 	}
@@ -295,7 +298,7 @@ R_API void r_print_stereogram_print(RPrint *p, const char *ret) {
 	}
 }
 
-R_API RPrint* r_print_new() {
+R_API RPrint* r_print_new(void) {
 	RPrint *p = R_NEW0 (RPrint);
 	if (!p) {
 		return NULL;
@@ -310,7 +313,6 @@ R_API RPrint* r_print_new() {
 	p->bits = 32;
 	p->stride = 0;
 	p->bytespace = 0;
-	p->interrupt = 0;
 	p->big_endian = false;
 	p->datezone = 0;
 	p->col = 0;
@@ -340,6 +342,8 @@ R_API RPrint* r_print_new() {
 	p->strconv_mode = NULL;
 	memset (&p->consbind, 0, sizeof (p->consbind));
 	p->io_unalloc_ch = '.';
+	p->enable_progressbar = true;
+	p->charset = r_charset_new ();
 	return p;
 }
 
@@ -357,6 +361,7 @@ R_API RPrint* r_print_free(RPrint *p) {
 	}
 	R_FREE (p->lines_cache);
 	R_FREE (p->row_offsets);
+	r_charset_free (p->charset);
 	free (p);
 	return NULL;
 }
@@ -428,6 +433,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 	const char *white = "";
 #define PREOFF(x) (p && p->cons && p->cons->context && p->cons->context->pal.x)? p->cons->context->pal.x
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
+#define print(x) printfmt("%s", x)
 	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
 	bool use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	bool dec = p? (p->flags & R_PRINT_FLAGS_ADDRDEC): false;
@@ -620,6 +626,7 @@ R_API const char *r_print_byte_color(RPrint *p, int ch) {
 
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	PrintfCallback printfmt = (PrintfCallback) (p? p->cb_printf: libc_printf);
+	#define print(x) printfmt("%s", x)
 	ut8 rch = ch;
 	if (!IS_PRINTABLE (ch) && fmt[0] == '%' && fmt[1] == 'c') {
 		rch = '.';
@@ -628,11 +635,11 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	if (p && p->flags & R_PRINT_FLAGS_COLOR) {
 		const char *bytecolor = r_print_byte_color (p, ch);
 		if (bytecolor) {
-			printfmt (bytecolor);
+			print ( bytecolor);
 		}
 		printfmt (fmt, rch);
 		if (bytecolor) {
-			printfmt (Color_RESET);
+			print (Color_RESET);
 		}
 	} else {
 		printfmt (fmt, rch);
@@ -648,10 +655,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
-	p->interrupt = 0;
 	int col = 0;
 	i = 0;
-	for (; !p->interrupt && i < len; i++) {
+	for (; !r_print_is_interrupted () && i < len; i++) {
 		if (wide32) {
 			int j = i;
 			while (buf[j] == '\0' && j < (i + 3)) {
@@ -749,7 +755,7 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 			continue;
 		}
 		if (show_offset) {
-			p ("%8X:", addr + i);
+			p ("%8"PFMT64x":", addr + i);
 		}
 		for (j = 0; j < inc; j++) {
 			ut8 ch = buf[i + j];
@@ -765,7 +771,7 @@ R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int ste
 		}
 		p ("\n");
 	}
-	p ("%8X ]\n", addr + i);
+	p ("%8"PFMT64x" ]\n", addr + i);
 }
 
 /* set screen_bounds to addr if the cursor is not visible on the screen anymore.
@@ -810,6 +816,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
 	PrintfCallback printfmt = (PrintfCallback)printf;
+#define print(x) printfmt("%s", x)
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	const char *color_title = c? (Pal (p, offset): Color_MAGENTA): "";
 	int inc = p? p->cols : 16;
@@ -823,8 +830,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	bool use_pair = true;
 	bool use_offset = true;
 	bool compact = false;
-	int use_segoff = 0;
-	int pairs = 0;
+	bool use_segoff = false;
+	bool pairs = false;
 	const char *bytefmt = "%02x";
 	const char *pre = "";
 	int last_sparse = 0;
@@ -834,9 +841,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	const char *a, *b;
 	int K = 0;
 	bool hex_style = false;
-	int rowbytes = p->cols;
-
-	len = len - (len % step);
+	if (step < len) {
+		len = len - (len % step);
+	}
 	if (p) {
 		pairs = p->pairs;
 		use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
@@ -889,6 +896,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		bytefmt = "%3d";
 		pre = " ";
 		break;
+	case 16:
+		if (inc < 2) {
+			inc = 2;
+			use_header = false;
+		}
+		break;
 	case 32:
 		bytefmt = "0x%08x ";
 		pre = " ";
@@ -911,19 +924,18 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	if (use_header) {
 		if (c) {
-			printfmt (color_title);
+			print (color_title);
 		}
 		if (base < 32) {
-			ut32 opad = (ut32) (addr >> 32);
 			{ // XXX: use r_print_addr_header
 				int i, delta;
 				char soff[32];
 				if (hex_style) {
-					printfmt ("..offset..");
+					print ("..offset..");
 				} else {
-					printfmt ("- offset -");
+					print ("- offset -");
 					if (p->wide_offsets) {
-						printfmt ("       ");
+						print ("       ");
 					}
 				}
 				if (use_segoff) {
@@ -940,12 +952,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					delta--;
 				}
 				for (i = 0; i < delta; i++) {
-					printfmt (space);
+					print (space);
 				}
 			}
 			/* column after number, before hex data */
-			printfmt ((col == 1)? "|": space);
-			opad >>= 4;
+			print ((col == 1)? "|": space);
 			if (use_hdroff)  {
 				k = addr & 0xf;
 				K = (addr >> 4) & 0xf;
@@ -955,10 +966,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			if (use_hexa) {
 				/* extra padding for offsets > 8 digits */
 				for (i = 0; i < inc; i++) {
-					printfmt (pre);
+					print (pre);
 					if (base < 0) {
 						if (i & 1) {
-							printfmt (space);
+							print (space);
 						}
 					}
 					if  (use_hdroff) {
@@ -974,16 +985,16 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					if (i & 1 || !pairs) {
 						if (!compact) {
-							printfmt (col != 1? space: ((i + 1) < inc)? space: "|");
+							print (col != 1? space: ((i + 1) < inc)? space: "|");
 						}
 					}
 				}
 			}
 			/* ascii column */
 			if (compact) {
-				printfmt (col > 0? "|": space);
+				print (col > 0? "|": space);
 			} else {
-				printfmt (col == 2? "|": space);
+				print (col == 2? "|": space);
 			}
 			if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
 				for (i = 0; i < inc; i++) {
@@ -996,25 +1007,23 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			/* print comment header*/
 			if (p && p->use_comments && !compact) {
 				if (col != 2) {
-					printfmt (" ");
+					print (" ");
 				}
 				if (!hex_style) {
-					printfmt (" comment");
+					print (" comment");
 				}
 			}
-			printfmt ("\n");
+			print ("\n");
 		}
 
 		if (c) {
-			printfmt (Color_RESET);
+			print (Color_RESET);
 		}
 	}
 
-	if (p) {
-		p->interrupt = 0;
-	}
 	// is this necessary?
 	r_print_set_screenbounds (p, addr);
+	int rowbytes;
 	int rows = 0;
 	int bytes = 0;
 	bool printValue = true;
@@ -1041,7 +1050,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						sparse_char = buf[j];
 						last_sparse++;
 						if (last_sparse == 2) {
-							printfmt (" ...\n");
+							print (" ...\n");
 							continue;
 						}
 						if (last_sparse > 2) {
@@ -1054,7 +1063,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 		}
 		ut64 at = addr + (j * zoomsz);
-		if (use_offset && !isPxr) {
+		if (use_offset && (!isPxr || inc < 4)) {
 			r_print_section (p, at);
 			r_print_addr (p, at);
 		}
@@ -1062,7 +1071,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		ut64 row_have_addr = UT64_MAX;
 		if (use_hexa) {
 			if (!compact && !isPxr) {
-				printfmt ((col == 1)? "|": " ");
+				print ((col == 1)? "|": " ");
 			}
 			for (j = i; j < i + inc; j++) {
 				if (j!=i && use_align && rowbytes == inc) {
@@ -1080,24 +1089,24 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				if (!compact && ((j >= len) || bytes >= rowbytes)) {
 					if (col == 1) {
 						if (j + 1 >= inc + i) {
-							printfmt (j % 2? "  |": "| ");
+							print (j % 2? "  |": "| ");
 						} else {
-							printfmt (j % 2? "   ": "  ");
+							print (j % 2? "   ": "  ");
 						}
 					} else {
 						if (base == 32) {
-							printfmt ((j%4)? "   ": "  ");
+							print ((j % 4)? "   ": "  ");
 						} else if (base == 10) {
-							printfmt (j % 2? "     ": "  ");
+							print (j % 2? "     ": "  ");
 						} else {
-							printfmt (j % 2? "   ": "  ");
+							print (j % 2? "   ": "  ");
 						}
 					}
 					continue;
 				}
 				const char *hl = (hex_style && p && p->offname (p->user, addr + j))? Color_INVERT: NULL;
 				if (hl) {
-					printfmt (hl);
+					print (hl);
 				}
 				if (p && (base == 32 || base == 64)) {
 					int left = len - i;
@@ -1157,7 +1166,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							const char *n = p->offname (p->user, addr + j);
 							r_print_section (p, at);
 							r_print_addr (p, addr + j * zoomsz);
-							printfmt ("..[ null bytes ]..   00000000 %s\n", n? n: "");
+							printfmt ("..[ null bytes ]..   00000000 %s\n", r_str_get (n));
 						}
 					}
 					r_print_cursor (p, j, sz_n, 0);
@@ -1197,33 +1206,33 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (use_unalloc && !p->iob.is_valid_offset (p->iob.io, addr + j, false)) {
 						char ch = p->io_unalloc_ch;
 						char dbl_ch_str[] = { ch, ch, 0 };
-						p->cb_printf (dbl_ch_str);
+						p->cb_printf ("%s", dbl_ch_str);
 					} else {
 						r_print_byte (p, bytefmt, j, buf[j]);
 					}
 					if (pairs && !compact && (inc & 1)) {
 						bool mustspace = (rows % 2) ? !(j&1) : (j&1);
 						if (mustspace) {
-							printfmt (" ");
+							print (" ");
 						}
 					} else if (bytes % 2 || !pairs) {
 						if (col == 1) {
 							if (j + 1 < inc + i) {
 								if (!compact) {
-									printfmt (" ");
+									print (" ");
 								}
 							} else {
-								printfmt ("|");
+								print ("|");
 							}
 						} else {
 							if (!compact) {
-								printfmt (" ");
+								print (" ");
 							}
 						}
 					}
 				}
 				if (hl) {
-					printfmt (Color_RESET);
+					print (Color_RESET);
 				}
 				bytes++;
 			}
@@ -1231,22 +1240,23 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		if (printValue) {
 			if (compact) {
 				if (col == 0) {
-					printfmt (" ");
+					print (" ");
 				} else if (col == 1) {
-					//printfmt (" ");
+					//print (" ");
 				} else {
-					printfmt ((col == 2)? "|": "");
+					print ((col == 2)? "|": "");
 				}
 			} else {
-				printfmt ((col == 2)? "|": " ");
+				print ((col == 2)? "|": " ");
 			}
 			if (!p || !(p->flags & R_PRINT_FLAGS_NONASCII)) {
 				bytes = 0;
-				for (j = i; j < i + inc; j++) {
-					if (j!=i && use_align  && bytes >= rowbytes) {
+				size_t end = i + inc;
+				for (j = i; j < end; j++) {
+					if (j != i && use_align  && bytes >= rowbytes) {
 						int sz = (p && p->offsize)? p->offsize (p->user, addr + j): -1;
 						if (sz >= 0) {
-							printfmt (" ");
+							print (" ");
 							break;
 						}
 					}
@@ -1261,34 +1271,43 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			}
 			/* ascii column */
 			if (col == 2) {
-				printfmt ("|");
+				print ("|");
 			}
 			bool eol = false;
 			if (!eol && p && p->flags & R_PRINT_FLAGS_REFS) {
-				ut64 off = 0;
-				if (i + 8 < len) {
-					ut64 *foo = (ut64 *) (buf + i);
-					off = *foo;
+				ut64 off = UT64_MAX;
+				if (inc == 8) {
+					if (i + sizeof (ut64) - 1 < len) {
+						off = r_read_le64 (buf + i);
+					}
+				} else if (inc == 4) {
+					if (i + sizeof (ut32) - 1 < len) {
+						off = r_read_le32 (buf + i);
+					}
+				} else if (inc == 2 && base == 16) {
+					if (i + sizeof (ut16) - 1 < len) {
+						off = r_read_le16 (buf + i);
+						if (off == 0) {
+							off = UT64_MAX;
+						}
+					}
 				}
-				if (base == 32) {
-					off &= UT32_MAX;
-				}
-				if (p->hasrefs) {
+				if (p->hasrefs && off != UT64_MAX) {
 					char *rstr = p->hasrefs (p->user, addr + i, false);
 					if (rstr && *rstr) {
-						printfmt (" @%s", rstr);
+						printfmt (" @ %s", rstr);
 					}
 					free (rstr);
 					rstr = p->hasrefs (p->user, off, true);
 					if (rstr && *rstr) {
-						printfmt ("%s", rstr);
+						printfmt (" %s", rstr);
 					}
 					free (rstr);
 				}
 			}
 			if (!eol && p && p->use_comments) {
 				for (; j < i + inc; j++) {
-					printfmt (" ");
+					print (" ");
 				}
 				for (j = i; j < i + inc; j++) {
 					if (use_align && (j-i) >= rowbytes) {
@@ -1298,7 +1317,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						a = p->offname (p->user, addr + j);
 						if (p->colorfor && a && *a) {
 							const char *color = p->colorfor (p->user, addr + j, true);
-							printfmt ("%s  ; %s%s", color ? color: "", a,
+							printfmt ("%s  ; %s%s", r_str_get (color), a,
 									color ? Color_RESET : "");
 						}
 					}
@@ -1306,13 +1325,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (comment) {
 						if (p && p->colorfor) {
 							a = p->colorfor (p->user, addr + j, true);
-							if (a && *a) {
-								b = Color_RESET;
-							} else {
-								a = b = "";
+							if (R_STR_ISEMPTY (a)) {
+								a = "";
 							}
 						} else {
-							a = b = "";
+							a = "";
 						}
 						printfmt ("%s  ; %s", a, comment);
 						free (comment);
@@ -1322,25 +1339,25 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			if (use_align && rowbytes < inc && bytes >= rowbytes) {
 				i -= (inc - bytes);
 			}
-			printfmt ("\n");
+			print ("\n");
 		}
 		rows++;
 		bytes = 0;
 		if (p && p->cfmt && *p->cfmt) {
 			if (row_have_cursor != -1) {
 				int i = 0;
-				printfmt (" _________");
+				print (" _________");
 				if (!compact) {
-					printfmt ("_");
+					print ("_");
 				}
 				for (i = 0; i < row_have_cursor; i++) {
 					if (!pairs || (!compact && i % 2)) {
-						printfmt ("___");
+						print ("___");
 					} else {
-						printfmt ("__");
+						print ("__");
 					}
 				}
-				printfmt ("__|\n");
+				print ("__|\n");
 				printfmt ("| cmd.hexcursor = %s\n", p->cfmt);
 				p->coreb.cmdf (p->coreb.core,
 						"%s @ 0x%08"PFMT64x, p->cfmt, row_have_addr);
@@ -1417,7 +1434,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8
 		for (j = 0; j < min; j++) {
 			*fmt = color;
 			r_print_cursor (p, i + j, 1, 1);
-			p->cb_printf (BD (a, b));
+			p->cb_printf ("%s", BD (a, b));
 			r_print_cursor (p, i + j, 1, 0);
 		}
 		p->cb_printf (" ");
@@ -1432,7 +1449,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8
 			for (j = 0; j < min; j++) {
 				*fmt = color;
 				r_print_cursor (p, i + j, 1, 1);
-				p->cb_printf (BD (b, a));
+				p->cb_printf ("%s", BD (b, a));
 				r_print_cursor (p, i + j, 1, 0);
 			}
 			p->cb_printf (" ");
@@ -1471,7 +1488,7 @@ R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlin
 		int i, j, cols = p->cols * 4;
 		char ch;
 		for (i = 0; i < len; i += cols) {
-			p->cb_printf ("0x%08x  ", addr + i);
+			p->cb_printf ("0x%08"PFMT64x"  ", addr + i);
 			for (j = 0; j < cols; j++) {
 				if ((i + j) >= len) {
 					break;
@@ -1525,8 +1542,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 	p->cb_printf ("#define _BUFFER_SIZE %d\n"
 	"unsigned char buffer[_BUFFER_SIZE] = {\n",
 	len);
-	p->interrupt = 0;
-	for (i = 0; !p->interrupt && i < len;) {
+	for (i = 0; !r_print_is_interrupted () && i < len;) {
 		r_print_byte (p, "0x%02x", i, str[i]);
 		if (++i < len) {
 			p->cb_printf (", ");
@@ -1551,7 +1567,7 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 		p = &staticp;
 	}
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
+	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
 
 	pc = R_MAX (0, R_MIN (100, pc));
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
@@ -1560,17 +1576,65 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 	cols -= 15;
 	p->cb_printf ("[");
 	for (i = cols * pc / 100; i; i--) {
-		p->cb_printf (block);
+		p->cb_printf ("%s", block);
 	}
 	for (i = cols - (cols * pc / 100); i; i--) {
-		p->cb_printf (h_line);
+		p->cb_printf ("%s", h_line);
 	}
 	p->cb_printf ("]");
 }
 
+/* TODO: handle screen width */
+R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned int total, int _cols, bool reset_line) {
+	int i, cols = (_cols == -1)? 78: _cols;
+	if (!p) {
+		p = &staticp;
+	}
+	const bool enable_colors = p && (p->flags & R_PRINT_FLAGS_COLOR);
+	const char *h_line = p->cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
+	const char *block = p->cons->use_utf8? R_UTF8_BLOCK: "#";
+
+	total = R_MAX (1, total);
+	pc = R_MAX (0, R_MIN (total, pc));
+	if (reset_line) {
+		p->cb_printf ("\r");
+	}
+	if (p->flags & R_PRINT_FLAGS_HEADER) {
+		if (enable_colors) {
+			p->cb_printf ("%s%4d%s%% %s%6d%s/%6d%s ", Color_GREEN, pc * 100 / total, Color_RESET, Color_GREEN, pc, Color_RESET, total, Color_YELLOW);
+		} else {
+			p->cb_printf ("%4d%% %6d/%6d ", pc * 100 / total, pc, total);
+		}
+		// TODO: determine string length of the numbers
+		cols -= 20;
+	}
+	if (cols > 0) {
+		if (enable_colors) {
+			p->cb_printf ("[%s", Color_YELLOW);
+		} else {
+			p->cb_printf ("[");
+		}
+		for (i = cols * pc / total; i; i--) {
+			p->cb_printf ("%s", block);
+		}
+		if (enable_colors) {
+			p->cb_printf ("%s", Color_RESET);
+		}
+		for (i = cols - (cols * pc / total); i; i--) {
+			p->cb_printf ("%s", h_line);
+		}
+		if (enable_colors) {
+			p->cb_printf ("%s]", Color_RESET);
+		}
+		else {
+			p->cb_printf ("]");
+		}
+	}
+}
+
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
-	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
+	const char *h_line = p->cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
+	const char *block = p->cons->use_utf8? R_UTF8_BLOCK: "#";
 	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
 	int j = 0;
 	p->cb_printf ("|");
@@ -1587,12 +1651,12 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 				p->cb_printf (Color_GREEN);
 				isFirst = false;
 			}
-			p->cb_printf (block);
+			p->cb_printf ("%s", block);
 		} else {
 			if (!isFirst) {
 				p->cb_printf (Color_RESET);
 			}
-			p->cb_printf (h_line);
+			p->cb_printf ("%s", h_line);
 		}
 	}
 	p->cb_printf ("|");
@@ -1665,7 +1729,7 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 static inline void printHistBlock (RPrint *p, int k, int cols) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = p->cons->use_utf8 ? UTF_BLOCK : "#";
+	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->nop;
 	kol[1] = pal->mov;
@@ -1677,8 +1741,8 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 	}
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	if (show_colors) {
-		int idx = (int) ((k * 4) / cols);
-		const char *str = kol[idx];
+		int idx = (int) ((k * 5) / cols);
+		const char *str = kol[idx % 5];
 		if (p->histblock) {
 			p->cb_printf ("%s%s%s", str, block, Color_RESET);
 		} else {
@@ -1686,7 +1750,7 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 		}
 	} else {
 		if (p->histblock) {
-			p->cb_printf ("%s%s%s", Color_BGGRAY, block, Color_RESET);
+			p->cb_printf ("%s", block);
 		} else {
 			p->cb_printf ("%s", h_line);
 		}
@@ -1696,6 +1760,7 @@ static inline void printHistBlock (RPrint *p, int k, int cols) {
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step) {
 	r_return_if_fail (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
+	const bool show_offset = (p && (p->flags & R_PRINT_FLAGS_OFFSET));
 	bool useUtf8 = p->cons->use_utf8;
 	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
 	int i = 0, j;
@@ -1726,21 +1791,23 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		int base = 0, k = 0;
 		if (addr != UT64_MAX && step > 0) {
 			ut64 at = addr + (i * step);
-			if (p->cur_enabled) {
-				if (i == p->cur) {
-					p->cb_printf (Color_INVERT"> 0x%08" PFMT64x " "Color_RESET, at);
-					if (p->num) {
-						p->num->value = at;
+			if (show_offset) {
+				if (p->cur_enabled) {
+					if (i == p->cur) {
+						p->cb_printf (Color_INVERT"> 0x%08" PFMT64x " "Color_RESET, at);
+						if (p->num) {
+							p->num->value = at;
+						}
+					} else {
+						p->cb_printf ("  0x%08" PFMT64x " ", at);
 					}
 				} else {
-					p->cb_printf ("  0x%08" PFMT64x " ", at);
+					p->cb_printf ("0x%08" PFMT64x " ", at);
 				}
-			} else {
-				p->cb_printf ("0x%08" PFMT64x " ", at);
 			}
 			p->cb_printf ("%03x %04x %s", i, arr[i], v_line);
 		} else {
-			p->cb_printf (v_line);
+			p->cb_printf ("%s", v_line);
 		}
 		if (next < INC) {
 			base = 1;
@@ -1778,7 +1845,7 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	}
 }
 
-R_API void r_print_2bpp_row(RPrint *p, ut8 *buf) {
+R_API void r_print_2bpp_row(RPrint *p, ut8 *buf, const char **colors) {
 	const bool useColor = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
 	int i, c = 0;
 	for (i = 0; i < 8; i++) {
@@ -1788,30 +1855,17 @@ R_API void r_print_2bpp_row(RPrint *p, ut8 *buf) {
 		if (buf[0] & ((1 << 7) >> i)) {
 			c++;
 		}
+		const char *chstr = ".=*@";
+		const char ch = chstr[c % 4];
 		if (useColor) {
-			char *color = "";
-			switch (c) {
-			case 0:
-				color = Color_BGWHITE;
-				break;
-			case 1:
-				color = Color_BGRED;
-				break;
-			case 2:
-				color = Color_BGBLUE;
-				break;
-			case 3:
-				color = Color_BGBLACK;
-				break;
-			}
+			const char *color = "";
+			color = colors[c]; // c is by definition 0, 1, 2 or 3
 			if (p) {
-				p->cb_printf ("%s  ", color);
+				p->cb_printf ("%s%c%c"Color_RESET, color, ch, ch);
 			} else {
-				printf ("%s  ", color);
+				printf ("%s%c%c"Color_RESET, color, ch, ch);
 			}
 		} else {
-			const char *chstr = "#=-.";
-			const char ch = chstr[c % 4];
 			if (p) {
 				p->cb_printf ("%c%c", ch, ch);
 			} else {
@@ -1822,25 +1876,52 @@ R_API void r_print_2bpp_row(RPrint *p, ut8 *buf) {
 	}
 }
 
-R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles) {
-	int i, r;
-	const bool useColor = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
-	for (i = 0; i < 8; i++) {
-		for (r = 0; r < tiles; r++) {
-			r_print_2bpp_row (p, buf + 2 * i + r * 16);
-		}
-		if (p) {
-			if (useColor) {
-				p->cb_printf (Color_RESET "\n");
-			} else {
-				p->cb_printf ("\n");
-			}
+static void r_print_2bpp_newline(RPrint *p, bool useColor) {
+	if (p) {
+		if (useColor) {
+			p->cb_printf (Color_RESET "\n");
 		} else {
-			printf ("\n");
+			p->cb_printf ("\n");
 		}
+	} else {
+		printf ("\n");
 	}
 }
 
+R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, const char **colors) {
+	if (!colors) {
+		colors = (const char *[]){
+			Color_BGWHITE,
+			Color_BGRED,
+			Color_BGBLUE,
+			Color_BGBLACK,
+		};
+	}
+	int i, r;
+	const bool useColor = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
+	int rows = buflen / tiles;
+	int row, delta = 0;
+	// hex.cols = 64 = 256 byte stride
+	int stride = tiles * 16;
+	bool eof = false;
+	for (row = 1; row < rows; row++) {
+		for (i = 0; i < 8 && !eof; i++) {
+			for (r = 0; r < tiles; r++) {
+				//int off = delta + 2 * i + r * 16;
+				int off = delta + (2 * i) + (r * 16);
+				if (off >= buflen) {
+					eof = true;
+					break;
+				}
+				r_print_2bpp_row (p, buf + off, colors);
+			}
+			r_print_2bpp_newline (p, useColor);
+		}
+		delta += stride;
+	}
+}
+
+// probably move somewhere else. RPrint doesnt needs to know about the R_ANAL_ enums
 R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	switch (anal_type & R_ANAL_OP_TYPE_MASK) {
@@ -1929,6 +2010,8 @@ static char o[COLORIZE_BUFSIZE];
 
 static bool issymbol(char c) {
 	switch (c) {
+	case '$':
+	case ':':
 	case '+':
 	case '-':
 	/* case '/': not good for dalvik */
@@ -1950,10 +2033,10 @@ static bool issymbol(char c) {
 	}
 }
 
-static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
+static bool check_arg_name(RPrint *print, char *p, ut64 func_addr) {
 	if (func_addr && print->exists_var) {
 		int z;
-		for (z = 0; p[z] && (isalpha (p[z]) || isdigit (p[z]) || p[z] == '_'); z++) {
+		for (z = 0; p[z] && (isalpha ((unsigned char)p[z]) || isdigit ((unsigned char)p[z]) || p[z] == '_'); z++) {
 			;
 		}
 		char tmp = p[z];
@@ -2112,7 +2195,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		case '0': /* address */
 			if (p[i + 1] == 'x') {
 				if (print->flags & R_PRINT_FLAGS_SECSUB) {
-					RIOMap *map = print->iob.map_get (print->iob.io, r_num_get (NULL, p + i));
+					RIOMap *map = print->iob.map_get_at (print->iob.io, r_num_get (NULL, p + i));
 					if (map && map->name) {
 						if (strlen (map->name) + j + 1 >= COLORIZE_BUFSIZE) {
 							eprintf ("stop before overflow\n");
@@ -2239,7 +2322,7 @@ R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize) {
 	return words;
 }
 
-R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
+R_API void r_print_hex_from_bin(RPrint *p, char *bin_str) {
 	int i, j, index;
 	RPrint myp = {.cb_printf = libc_printf};
 	const int len = strlen (bin_str);

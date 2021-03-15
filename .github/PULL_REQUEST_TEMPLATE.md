@@ -1,25 +1,17 @@
- <!-- Filling this template is mandatory -->
+<!-- Please read the contributing guidelines:
+* https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md
+In short:
+* PR title must be capitalized, concise and use ##tags
+* Follow the coding style, add tests and documentation if necessary
+-->
 
-**Your checklist for this pull request**
-- [ ] I've read the [guidelines for contributing](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md) to this repository
-- [ ] I made sure to follow the project's [coding style](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md#code-style)
-- [ ] I've added tests that prove my fix is effective or that my feature works (if possible)
-- [ ] I've updated the documentation and the [radare2 book](https://github.com/radareorg/radare2book) with the relevant information (if needed)
+**Checklist**
 
-**Detailed description**
+- [ ] Closing issues: #issue
+- [ ] Mark this if you consider it ready to merge
+- [ ] I've added tests (optional)
+- [ ] I wrote some lines in the [radare2book](https://github.com/radareorg/radare2book)
 
-<!-- Explain the **details** for making this change. Is a new feature implemented? What existing problem does the pull request solve? How does the pull request solve these issues? Please provide enough information so that others can review your pull request. -->
+**Description**
 
-...
-
-**Test plan**
-
-<!-- What steps should the reviewer take to test your pull request? Demonstrate the code is solid. Example: The exact commands you ran and their output, screenshots/videos. This is your time to re-check that everything works and that you covered all the edge cases -->
-
-...
-
-**Closing issues**
-
-<!-- put "closes #XXXX" in your comment to auto-close the issue that your PR fixes (if any). -->
-
-...
+<!-- Explain the **details** to understand the purpose of this contribution, with enough information to help us understand better the changes. -->

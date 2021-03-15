@@ -159,6 +159,7 @@
 #define EM_56800EX             200        /* Freescale 56800EX Digital Signal Controller (DSC) */
 #define EM_BA1                 201        /* Beyond BA1 CPU architecture */
 #define EM_BA2                 202        /* Beyond BA2 CPU architecture */
+#define EM_BA2_NON_STANDARD 0x8472        /* Beyond BA2 CPU architecture */
 #define EM_XCORE               203        /* XMOS xCORE processor family */
 #define EM_MCHP_PIC            204        /* Microchip 8-bit PIC(r) family */
 #define EM_INTEL205            205        /* Reserved by Intel */

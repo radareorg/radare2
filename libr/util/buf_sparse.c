@@ -129,7 +129,7 @@ static bool buf_sparse_resize(RBuffer *b, ut64 newsize) {
 	ut64 max;
 	max = sparse_limits (priv->sparse, &max)? max: 0;
 	if (max < newsize) {
-		return !!sparse_write (priv->sparse, newsize - 1, (ut8 *)&b->Oxff_priv, 1);
+		return !!sparse_write (priv->sparse, newsize - 1, &b->Oxff_priv, 1);
 	}
 	return true;
 }

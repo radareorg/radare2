@@ -140,6 +140,6 @@ R_API int r_cons_more_str(const char *str, const char *exitkeys) {
 	return 0;
 }
 
-R_API void r_cons_more() {
+R_API void r_cons_more(void) {
 	(void)r_cons_more_str (r_cons_singleton ()->context->buffer, NULL);
 }

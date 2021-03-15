@@ -5,7 +5,7 @@ aaa 2> /dev/null
 agCj~{0}
 EOF
 EXPECT=<<EOF
-{"name":"entry0", "size":46,"imports":["reloc.__libc_start_main"]}
+{"name":"entry0","size":46,"imports":["reloc.__libc_start_main"]}
 EOF
 RUN
 

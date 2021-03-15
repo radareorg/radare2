@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2020 - pancake */
 
 #include <r_util.h>
 
-R_API RStrpool* r_strpool_new (int sz) {
+R_API RStrpool* r_strpool_new(int sz) {
 	RStrpool *p = R_NEW (RStrpool);
 	if (!p) {
 		eprintf ("Malloc failed!\n");
@@ -23,14 +23,14 @@ R_API RStrpool* r_strpool_new (int sz) {
 	return p;
 }
 
-R_API char *r_strpool_empty (RStrpool *p) {
+R_API char *r_strpool_empty(RStrpool *p) {
 	p->len = 0;
 	p->str[0] = 0;
 	p->str[1] = 0;
 	return p->str;
 }
 
-R_API char *r_strpool_alloc (RStrpool *p, int l) {
+R_API char *r_strpool_alloc(RStrpool *p, int l) {
 	char *ret = p->str + p->len;
 	if ((p->len + l) >= p->size) {
 		ut64 osize = p->size;
@@ -48,6 +48,7 @@ R_API char *r_strpool_alloc (RStrpool *p, int l) {
 		if (!ret) {
 			eprintf ("Realloc failed!\n");
 			free (p->str);
+			p->str = NULL;
 			return NULL;
 		}
 		p->str = ret;
@@ -78,7 +79,7 @@ R_API int r_strpool_ansi_chop(RStrpool *p, int n){
 	return i;
 }
 
-R_API void r_strpool_free (RStrpool *p) {
+R_API void r_strpool_free(RStrpool *p) {
 	free (p->str);
 	free (p);
 }
@@ -139,7 +140,7 @@ R_API char *r_strpool_next(RStrpool *p, int index) {
 	return ptr;
 }
 
-R_API char *r_strpool_slice (RStrpool *p, int index) {
+R_API char *r_strpool_slice(RStrpool *p, int index) {
 	int idx, len;
 	char *o, *x = r_strpool_get_i (p, index + 1);
 	if (!x || !*x) {

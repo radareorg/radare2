@@ -1,0 +1,47 @@
+d "bl 0x1900" 3e0600eb
+d "b 0x1900" 3e0600ea
+d "b 0xfffffffffe00d050" 123480ea
+d "mlaeq r7, r5, r7, r0" 95072700
+d "mlane r3, r1, r3, r2" 91232310
+d "mulne r3, r3, r0" 93000310
+d "smlal r4, r1, r2, r3" 9243e1e0
+d "smull r4, r1, r2, r3" 9243c1e0
+d "umlalne r4, r5, r3, r7" 9347a510
+d "umull r4, r5, r3, r7" 934785e0
+d "swp r1, r2, [r0]" 921000e1
+d "swpb r1, r2, [r0]" 921040e1
+d "beq 0x8" 0000000a
+d "bxeq lr" 1eff2f01
+d "bxne lr" 1eff2f11
+d "mrs r1, cpsr" 00100fe1
+d "msr cpsr, r1" 01f029e1
+d "msr cpsr, #13" 0df029e3
+d "movt r1, #12345" 391043e3
+d "movw r2, #54321" 31240de3
+d "moveq r0, r10" 0a00a001
+d "nopeq" 00f02003
+d "tsts r0, r1" 010010e1 # tsts deprecated
+d "movs pc, #3221225480" 23f1b0e3
+d "addeq r1, r1, r0" 00108100
+d "andeq r3, r5, #2147483648" 02310502
+d "addeq r1, r1, r2, lsl #2" 02118100
+d "orrne r0, r0, r1, lsl ip" 110c8011
+d "ldr r1, [r2, r3]" 031092e7
+d "ldr r1, [r2, r3, lsl #2]" 031192e7
+d "str sp, [pc, #-0]" 00d00fe5
+d "strb r3, [sp], #-0" 00304de4
+d "strt r2, [sp], r1" 0120ade6
+d "strbt r3, [sp], r2, lsl #2" 0231ede6
+d "ldrh r0, [sp, #-0]" b0005de1
+d "ldrh r1, [sp, r0]" b0109de1
+d "ldrht r5, [sp], #-0" b0507de0
+d "strht r4, [sp], r3" b340ade0
+d "ldmdbeq r2, {r0, r1}" 03001209
+d "stmiaeq r0, {r2, r3}" 0c008008
+d "swi #3" 030000ef
+d "mrc 5, 1, r4, cr2, cr4, {6}" d44532ee
+d "mcr 1, 2, r3, cr4, cr5, {6}" d53144ee
+d "cdp 1, 2, cr3, cr4, cr5, {6}" c53124ee
+d "ldc 0, cr1, [r3, #4]!" 0110b3ed
+d "ldc 2, cr3, [r2], #-0" 003232ec
+d "stc 1, cr2, [r4, #-4]!" 012124ed

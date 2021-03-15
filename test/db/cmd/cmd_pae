@@ -12,7 +12,7 @@ FILE=-
 ARGS=-a x86 -b 32
 CMDS=pade 40
 EXPECT=<<EOF
-eax,++=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=
+eax,++=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=,3,$c,af,:=
 EOF
 RUN
 
@@ -21,6 +21,6 @@ FILE=-
 ARGS=-a x86 -b 32
 CMDS=pade 48
 EXPECT=<<EOF
-eax,--=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=
+eax,--=,31,$o,of,:=,31,$s,sf,:=,$z,zf,:=,$p,pf,:=,3,$b,af,:=
 EOF
 RUN

@@ -21,7 +21,7 @@ r_debug_sources = [
   'p/debug_null.c',
   'p/debug_qnx.c',
   'p/debug_rap.c',
-  'p/debug_windbg.c',
+  'p/debug_winkd.c',
   #'p/native/arm.c',
   #'p/native/bt/fuzzy-all.c',
   #'p/native/bt/generic-x64.c',
@@ -45,22 +45,23 @@ r_debug_deps = [
   r_cons_dep,
   r_lang_dep,
   r_egg_dep,
-  windbg_dep,
+  winkd_dep,
   qnx_dep,
   gdb_dep,
   bochs_dep,
   r_socket_dep
 ]
 
+if host_machine.system() == 'linux' or host_machine.system() == 'android'
+  r_debug_sources += ['p/native/linux/linux_debug.c']
+endif
 if host_machine.system() == 'linux'
-  r_debug_sources += [
-    'p/native/linux/linux_debug.c',
-    'p/native/linux/linux_coredump.c'
-  ]
+  r_debug_sources += ['p/native/linux/linux_coredump.c']
 endif
 
 if host_machine.system() == 'windows'
   r_debug_sources += [
+    'p/debug_windbg.c',
     'p/native/maps/windows_maps.c',
     'p/native/windows/windows_debug.c',
     'p/native/windows/windows_message.c',
@@ -104,6 +105,7 @@ r_debug = library('r_debug', r_debug_sources,
   dependencies: r_debug_deps,
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -115,6 +117,7 @@ pkgconfig_mod.generate(r_debug,
   version: r2_version,
   name: 'r_debug',
   filebase: 'r_debug',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_hash',

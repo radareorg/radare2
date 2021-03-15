@@ -4,7 +4,7 @@
 #include "config.h"
 #include <stdio.h>
 
-static volatile RIOPlugin *DEFAULT = NULL;
+static volatile RIOPlugin *default_plugin = NULL;
 
 static RIOPlugin *io_static_plugins[] = {
 	R_IO_STATIC_PLUGINS
@@ -40,10 +40,10 @@ R_API bool r_io_plugin_init(RIO *io) {
 }
 
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many) {
-	if (!DEFAULT || !DEFAULT->check || !DEFAULT->check (io, filename, many) ) {
+	if (!default_plugin || !default_plugin->check || !default_plugin->check (io, filename, many) ) {
 		return NULL;
 	}
-	return (RIOPlugin*) DEFAULT;
+	return (RIOPlugin*) default_plugin;
 }
 
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
@@ -150,7 +150,7 @@ R_API int r_io_plugin_list_json(RIO *io) {
 	}
 	pj_end (pj);
 	pj_end (pj);
-	io->cb_printf (pj_string (pj));
+	io->cb_printf ("%s", pj_string (pj));
 	pj_free (pj);
 	return n;
 }
@@ -172,7 +172,11 @@ R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len) {
 	if (!desc->plugin->write) {
 		return -1;
 	}
-	return desc->plugin->write (desc->io, desc, buf, len);
+	const ut64 cur_addr = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
+	int ret = desc->plugin->write (desc->io, desc, buf, len);
+	REventIOWrite iow = { cur_addr, buf, len };
+	r_event_send (desc->io->event, R_EVENT_IO_WRITE, &iow);
+	return ret;
 }
 
 R_API int r_io_plugin_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len) {

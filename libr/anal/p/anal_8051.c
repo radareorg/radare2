@@ -391,9 +391,9 @@ static void exi_rn(RAnalOp *op, ut8 reg, const char *operation) {
 #define bit_r ef ("%d,", buf[1] & 7); xr (bit); e (">>,1,&,")
 #define bit_c ef ("%d,c,<<,", buf[1] & 7);
 
-#define jmp ef ("%d,pc,=", op->jump)
+#define jmp ef ("%" PFMT64d ",pc,=", op->jump)
 #define cjmp e ("?{,"); jmp; e (",}")
-#define call ef ("%d,", op->fail); xw (sp2); jmp
+#define call ef ("%" PFMT64d ",", op->fail); xw (sp2); jmp
 
 #define alu_op(val, aluop, flags) xr (val); e ("a," aluop "=," flags)
 #define alu_op_c(val, aluop, flags) e ("c,"); xr (val); e ("+,a," aluop "=," flags)
@@ -815,6 +815,8 @@ static bool set_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
+		"=A0	r0\n"
+		"=A1	r1\n"
 		"gpr	r0	.8	0	0\n"
 		"gpr	r1	.8	1	0\n"
 		"gpr	r2	.8	2	0\n"
@@ -886,13 +888,9 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		i++;
 	}
 
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
-
 	ut8 arg1 = _8051_ops[i].arg1;
 	ut8 arg2 = _8051_ops[i].arg2;
 
-	op->delay = 0;
 	op->cycles = _8051_ops[i].cycles;
 	op->failcycles = _8051_ops[i].cycles;
 	op->nopcode = 1;

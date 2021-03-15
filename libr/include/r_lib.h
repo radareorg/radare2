@@ -82,6 +82,7 @@ enum {
 	R_LIB_TYPE_CORE,    /* RCore commands */
 	R_LIB_TYPE_EGG,     /* r_egg plugin */
 	R_LIB_TYPE_FS,      /* r_fs plugin */
+	R_LIB_TYPE_ESIL,    /* r_anal.esil plugin */
 	R_LIB_TYPE_LAST
 };
 
@@ -93,6 +94,7 @@ typedef struct r_lib_t {
 	char *symnamefunc;
 	RList /*RLibPlugin*/ *plugins;
 	RList /*RLibHandler*/ *handlers;
+	bool ignore_version;
 } RLib;
 
 #ifdef R_API

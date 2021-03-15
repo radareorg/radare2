@@ -1,6 +1,8 @@
 NAME=noreturn errno
 FILE=malloc://32
 CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
 s main
 af
 afi~^size
@@ -288,7 +290,9 @@ pd 4
 EOF
 EXPECT=<<EOF
 / (fcn) fcn.00000000 16
-|           0x00000000      021081e0       add r1, r1, r2
+// void fcn.00000000 (int32_t arg2);
+|           ; arg int32_t arg2 @ r1
+|           0x00000000      021081e0       add r1, r1, r2              ; arg2
 |           0x00000004      1eff2f01       bxeq lr
 |           0x00000008      0020a0e3       mov r2, 0
 \           0x0000000c      1eff2fe1       bx lr
@@ -456,7 +460,7 @@ jump: 0x00000020
 EOF
 RUN
 
-NAME=arm relsub >256
+NAME=arm subrel >256
 FILE=malloc://800
 CMDS=<<EOF
 wx 0d039fe5
@@ -473,7 +477,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm relsub <256
+NAME=arm subrel <256
 FILE=-
 CMDS=<<EOF
 wx 0c009fe5
@@ -484,7 +488,7 @@ e asm.bytes=false
 e asm.offset=false
 f sym.callback=0x14
 pd 1
-e asm.var.submin=0
+e asm.sub.varmin=0
 pd 1
 EOF
 EXPECT=<<EOF
@@ -493,7 +497,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm relsub
+NAME=arm subrel
 FILE=bins/elf/arm1.bin
 CMDS=<<EOF
 e asm.arch=arm
@@ -514,7 +518,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm relsub
+NAME=arm subrel
 FILE=bins/elf/analysis/arm-ls
 BROKEN=1
 CMDS=<<EOF
@@ -771,7 +775,7 @@ af
 pd 1~var?
 EOF
 EXPECT=<<EOF
-16
+17
 EOF
 RUN
 
@@ -780,32 +784,34 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=16
+e anal.vars.stackname=true
 wx f0b503af2de9000d95b0002001210222032340f2040940f2050c40f2060e0724082509261490139112921193cdf80090cdf804c0cdf808e0039404950596ddf85080cdf81880ddf84ca0cdf81ca0ddf848b0cdf820b0ddf84480cdf82480cdf82890cdf82cc0cdf830e00d940e950f96fff740ff00211090084615b0bde8000df0bd
 aa
 afv~var
 EOF
 EXPECT=<<EOF
-var int16_t var_54h @ sp+0x0
-var int16_t var_50h @ sp+0x4
-var int16_t var_4ch @ sp+0x8
-var int16_t var_48h @ sp+0xc
-var int16_t var_44h @ sp+0x10
-var int16_t var_40h @ sp+0x14
-var int16_t var_3ch @ sp+0x18
-var int16_t var_38h @ sp+0x1c
-var int16_t var_34h @ sp+0x20
-var int16_t var_30h @ sp+0x24
-var int16_t var_2ch @ sp+0x28
-var int16_t var_28h @ sp+0x2c
-var int16_t var_24h @ sp+0x30
-var int16_t var_20h @ sp+0x34
-var int16_t var_1ch @ sp+0x38
-var int16_t var_18h @ sp+0x3c
-var int16_t var_14h @ sp+0x40
-var int16_t var_10h @ sp+0x44
-var int16_t var_ch @ sp+0x48
-var int16_t var_8h @ sp+0x4c
-var int16_t var_4h @ sp+0x50
+var int16_t var_74h @ sp+0x0
+var int16_t var_70h @ sp+0x4
+var int16_t var_6ch @ sp+0x8
+var int16_t var_68h @ sp+0xc
+var int16_t var_64h @ sp+0x10
+var int16_t var_60h @ sp+0x14
+var int16_t var_5ch @ sp+0x18
+var int16_t var_58h @ sp+0x1c
+var int16_t var_54h @ sp+0x20
+var int16_t var_50h @ sp+0x24
+var int16_t var_4ch @ sp+0x28
+var int16_t var_48h @ sp+0x2c
+var int16_t var_44h @ sp+0x30
+var int16_t var_40h @ sp+0x34
+var int16_t var_3ch @ sp+0x38
+var int16_t var_38h @ sp+0x3c
+var int16_t var_34h @ sp+0x40
+var int16_t var_30h @ sp+0x44
+var int16_t var_2ch @ sp+0x48
+var int16_t var_28h @ sp+0x4c
+var int16_t var_24h @ sp+0x50
+var int16_t var_8h @ sp+0x6c
 EOF
 RUN
 
@@ -887,7 +893,7 @@ af
 pds 1@0x2e~:1
 EOF
 EXPECT=<<EOF
-0x0000002e switch table (91 cases) at 0x32
+0x0000002e switch table (92 cases) at 0x32
 EOF
 RUN
 
@@ -902,6 +908,7 @@ EOF
 EXPECT=<<EOF
 address: 0x568
 opcode: push {r3, lr}
+esilcost: 16
 disasm: push {r3, lr}
 pseudo: push (r3, lr) 
 mnemonic: push
@@ -916,9 +923,12 @@ type: push
 cycles: 1
 esil: 8,sp,-=,lr,r3,2,sp,=[*]
 family: cpu
+stackop: inc
+stackptr: 8
 --
 address: 0x50e
 opcode: add r7, sp, 0
+esilcost: 0
 disasm: add r7, sp, 0
 pseudo: r7 = sp + 0
 mnemonic: add
@@ -967,15 +977,12 @@ e asm.bits=32
 ar=
 EOF
 EXPECT=<<EOF
-     sb 0x00000000            sl 0x00000000            fp 0x00000000
-     ip 0x00000000            sp 0x00000000            lr 0x00000000
-     pc 0x00000000            r0 0x00000000            r1 0x00000000
-     r2 0x00000000            r3 0x00000000            r4 0x00000000
-     r5 0x00000000            r6 0x00000000            r7 0x00000000
-     r8 0x00000000            r9 0x00000000           r10 0x00000000
-    r11 0x00000000           r12 0x00000000           r13 0x00000000
-    r14 0x00000000           r15 0x00000000          cpsr 0x00000000
-  blank 0x00000000       
+     sb 0x00000000       sl 0x00000000       fp 0x00000000       ip 0x00000000
+     sp 0x00000000       lr 0x00000000       pc 0x00000000       r0 0x00000000
+     r1 0x00000000       r2 0x00000000       r3 0x00000000       r4 0x00000000
+     r5 0x00000000       r6 0x00000000       r7 0x00000000       r8 0x00000000
+     r9 0x00000000      r10 0x00000000      r11 0x00000000      r12 0x00000000
+    r13 0x00000000      r14 0x00000000      r15 0x00000000     cpsr 0x00000000
 EOF
 RUN
 
@@ -1051,5 +1058,32 @@ EXPECT=<<EOF
 0x00064df0 CCu "switch table (13 cases) at 0x64df8"
 0x00064f94 CCu "switch table (13 cases) at 0x64f9c"
 0x0006506c CCu "switch table (13 cases) at 0x65074"
+EOF
+RUN
+
+NAME=misaligned arm string xref
+FILE=bins/mach0/misaligned_data-iOS-armv7
+CMDS=<<EOF
+aav
+aae
+af
+axt str.helloradareworld_n
+EOF
+EXPECT=<<EOF
+main 0xbf9c [DATA] add r0, pc
+EOF
+RUN
+
+NAME=thumb bx lr
+FILE=-
+CMDS=<<EOF
+wx 000090e50fe0a0e113ff2fe1000090e51eff2fe1
+e asm.arch=arm
+e asm.bits=32
+af
+afi~size
+EOF
+EXPECT=<<EOF
+size: 20
 EOF
 RUN

@@ -1,0 +1,328 @@
+NAME=afvx
+FILE=bins/elf/ls.odd
+CMDS=<<EOF
+af
+afvx
+afv=
+EOF
+EXPECT=<<EOF
+afvR
+      arg3  0x5312
+afvW
+      arg3
+* arg3
+R 0x5312  mov r9, rdx
+EOF
+RUN
+
+NAME=afvx2
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+af
+afvx
+afv=
+EOF
+EXPECT=<<EOF
+afvR
+      argv  0x10000106c
+      argc  0x10000106f
+  var_640h  0x100001072
+  var_648h  0x100001617,0x100001691
+  var_654h  0x100001784
+  var_650h  0x10000173c,0x100001807,0x10000181c
+  var_64ch  0x100001736,0x1000017dd,0x1000017f2
+  var_658h  0x1000017d4
+  var_660h  0x1000018f1
+  var_664h  0x10000190b
+  var_670h  0x100001911
+   var_34h  0x10000179e
+  var_440h  0x1000015f8
+   var_30h  0x1000010d6
+   var_2eh  0x1000010f0
+afvW
+      argv
+      argc
+  var_640h
+  var_648h  0x100001079
+  var_654h  0x100001137,0x100001315
+  var_650h  0x10000114c,0x1000014f2
+  var_64ch  0x100001156,0x1000012d8
+  var_658h  0x100001160,0x1000014ce
+  var_660h  0x100001597
+  var_664h  0x1000015a3
+  var_670h  0x1000015ad
+   var_34h
+  var_440h
+   var_30h
+   var_2eh
+* argv
+R 0x10000106c  mov rbx, rsi
+* argc
+R 0x10000106f  mov r14d, edi
+* var_640h
+R 0x100001072  lea rax, [var_640h]
+* var_648h
+R 0x100001617  lea rbx, [var_648h]
+R 0x100001691  lea rsi, [var_648h]
+W 0x100001079  mov qword [var_648h], rax
+* var_654h
+R 0x100001784  cmp dword [var_654h], 0
+W 0x100001137  mov dword [var_654h], 0
+W 0x100001315  mov dword [var_654h], 1
+* var_650h
+R 0x10000173c  or ebx, dword [var_650h]
+R 0x100001807  cmp dword [var_650h], 0
+R 0x10000181c  cmp dword [var_650h], 0
+W 0x10000114c  mov dword [var_650h], 0
+W 0x1000014f2  mov dword [var_650h], 1
+* var_64ch
+R 0x100001736  mov ebx, dword [var_64ch]
+R 0x1000017dd  cmp dword [var_64ch], 0
+R 0x1000017f2  cmp dword [var_64ch], 0
+W 0x100001156  mov dword [var_64ch], 0
+W 0x1000012d8  mov dword [var_64ch], 1
+* var_658h
+R 0x1000017d4  cmp dword [var_658h], 0
+W 0x100001160  mov dword [var_658h], 0
+W 0x1000014ce  mov dword [var_658h], 1
+* var_660h
+R 0x1000018f1  mov rax, qword [var_660h]
+W 0x100001597  mov qword [var_660h], rcx
+* var_664h
+R 0x10000190b  mov edi, dword [var_664h]
+W 0x1000015a3  mov dword [var_664h], eax
+* var_670h
+R 0x100001911  mov rsi, qword [var_670h]
+W 0x1000015ad  mov qword [var_670h], rax
+* var_34h
+R 0x10000179e  lea rdi, [var_34h]
+* var_440h
+R 0x1000015f8  lea rdi, [var_440h]
+* var_30h
+R 0x1000010d6  lea rdx, [var_30h]
+* var_2eh
+R 0x1000010f0  movzx eax, word [var_2eh]
+EOF
+RUN
+
+NAME=Detect register args used only by callee
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e anal.cc=ms
+wx 40534883ec20418bd8e80a00000003c34883c4205bc3cccc2bca8bc1c3
+aa
+pd 13
+EOF
+EXPECT=<<EOF
+/ 22: fcn.00000000 (int64_t arg1, int64_t arg2, int64_t arg3);
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           ; arg int64_t arg3 @ r8
+|           0x00000000      4053           push rbx
+|           0x00000002      4883ec20       sub rsp, 0x20
+|           0x00000006      418bd8         mov ebx, r8d                ; arg3
+|           0x00000009      e80a000000     call fcn.00000018
+|           0x0000000e      03c3           add eax, ebx
+|           0x00000010      4883c420       add rsp, 0x20
+|           0x00000014      5b             pop rbx
+\           0x00000015      c3             ret
+            0x00000016      cc             int3
+            0x00000017      cc             int3
+            ; CALL XREF from fcn.00000000 @ 0x9
+/ 5: fcn.00000018 (int64_t arg1, int64_t arg2);
+|           ; arg int64_t arg1 @ rcx
+|           ; arg int64_t arg2 @ rdx
+|           0x00000018      2bca           sub ecx, edx                ; arg2
+|           0x0000001a      8bc1           mov eax, ecx                ; arg1
+\           0x0000001c      c3             ret
+EOF
+RUN
+
+NAME=Detect register args type used only by callees
+FILE=bins/pe/rarg_detection.dll
+CMDS=<<EOF
+s sym.rarg_detection.dll_funcB
+af
+s sym.rarg_detection.dll_funcC
+af
+afv
+EOF
+EXPECT=<<EOF
+arg int64_t arg3 @ r8
+arg const char * s @ rcx
+arg int64_t arg2 @ rdx
+EOF
+RUN
+
+NAME=Variables in register save stack area
+FILE=bins/pe/testx64.exe
+CMDS=<<EOF
+s 0x14000184c
+af
+afv
+EOF
+EXPECT=<<EOF
+var int64_t var_20h @ rsp+0x48
+var int64_t var_10h @ rbp+0x10
+var int64_t var_18h @ rbp+0x18
+var int64_t var_bp_20h @ rbp+0x20
+EOF
+RUN
+
+NAME=Variable access with misc registers (x86)
+FILE=-
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+e asm.flags=false
+e anal.vars.stackname = true
+e anal.cc=ms
+wx 488bc448895808488970104889781841574881ecb00000008364242000488d48884c8d9c24b0000000498b5b10498b7318498b7b20498be3415fc3
+af
+aaef
+afvx
+pdf
+EOF
+EXPECT=<<EOF
+afvR
+   var_c0h  0x18
+   var_30h  0x21
+   var_28h
+   var_20h  0x29
+   var_18h  0x2d
+   var_10h  0x31
+   var_a0h
+afvW
+   var_c0h  0x18
+   var_30h
+   var_28h
+   var_20h  0x3
+   var_18h  0x7
+   var_10h  0xb
+   var_a0h
+/ 59: fcn.00000000 ();
+|           ; var int64_t var_c0h @ rsp+0x20
+|           ; var int64_t var_a0h @ rsp+0x40
+|           ; var int64_t var_30h @ rsp+0xb0
+|           ; var int64_t var_28h @ rsp+0xb8
+|           ; var int64_t var_20h @ rsp+0xc0
+|           ; var int64_t var_18h @ rsp+0xc8
+|           ; var int64_t var_10h @ rsp+0xd0
+|           0x00000000      488bc4         mov rax, var_28h
+|           0x00000003      48895808       mov qword [var_20h], rbx
+|           0x00000007      48897010       mov qword [var_18h], rsi
+|           0x0000000b      48897818       mov qword [var_10h], rdi
+|           0x0000000f      4157           push r15
+|           0x00000011      4881ecb00000.  sub rsp, 0xb0
+|           0x00000018      8364242000     and dword [var_c0h], 0
+|           0x0000001d      488d4888       lea rcx, [var_a0h]
+|           0x00000021      4c8d9c24b000.  lea r11, [var_30h]
+|           0x00000029      498b5b10       mov rbx, qword [var_20h]
+|           0x0000002d      498b7318       mov rsi, qword [var_18h]
+|           0x00000031      498b7b20       mov rdi, qword [var_10h]
+|           0x00000035      498be3         mov rsp, var_30h
+|           0x00000038      415f           pop r15
+\           0x0000003a      c3             ret
+EOF
+RUN
+
+
+NAME=Variable access with misc registers (ARM)
+FILE=-
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e asm.flags=false
+e asm.comments=false
+e anal.vars.stackname = true
+wx 80b483b000af78600b467b8013467b707b78002b03d07a887b689a6103e07b881a047b689a6100bf0c37bd465df8047b7047
+af
+aaef
+afvx
+pdf
+EOF
+EXPECT=<<EOF
+afvR
+      arg1  0x6
+      arg2  0x8
+      arg3  0xc
+   var_10h  0x4,0x2c
+    var_ch  0x18,0x22
+    var_eh  0x16,0x1e
+    var_fh  0x10
+    var_4h  0x2c
+afvW
+      arg1
+      arg2
+      arg3
+   var_10h
+    var_ch  0x6
+    var_eh  0xa
+    var_fh  0xe
+    var_4h
+/ 50: fcn.00000000 (int16_t arg1, int16_t arg2, int16_t arg3);
+|           ; var int16_t var_10h @ sp+0x0
+|           ; var int8_t var_fh @ sp+0x1
+|           ; var int16_t var_eh @ sp+0x2
+|           ; var int32_t var_ch @ sp+0x4
+|           ; var int16_t var_4h @ sp+0xc
+|           ; arg int16_t arg1 @ r0
+|           ; arg int16_t arg2 @ r1
+|           ; arg int16_t arg3 @ r2
+|           0x00000000      80b4           push {r7}
+|           0x00000002      83b0           sub sp, 0xc
+|           0x00000004      00af           add r7, var_10h
+|           0x00000006      7860           str r0, [var_ch]
+|           0x00000008      0b46           mov r3, r1
+|           0x0000000a      7b80           strh r3, [var_eh]
+|           0x0000000c      1346           mov r3, r2
+|           0x0000000e      7b70           strb r3, [var_fh]
+|           0x00000010      7b78           ldrb r3, [var_fh]
+|           0x00000012      002b           cmp r3, 0
+|       ,=< 0x00000014      03d0           beq 0x1e
+|       |   0x00000016      7a88           ldrh r2, [var_eh]
+|       |   0x00000018      7b68           ldr r3, [var_ch]
+|       |   0x0000001a      9a61           str r2, [r3, 0x18]
+|      ,==< 0x0000001c      03e0           b 0x26
+|      |`-> 0x0000001e      7b88           ldrh r3, [var_eh]
+|      |    0x00000020      1a04           lsls r2, r3, 0x10
+|      |    0x00000022      7b68           ldr r3, [var_ch]
+|      |    0x00000024      9a61           str r2, [r3, 0x18]
+|      `--> 0x00000026      00bf           nop
+|           0x00000028      0c37           adds r7, 0xc
+|           0x0000002a      bd46           mov sp, r7
+|           0x0000002c      5df8047b       ldr r7, [sp], 4
+\           0x00000030      7047           bx lr
+EOF
+RUN
+
+NAME=Takeover variables
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+wx e805000000e80600000039d1742577145589e583ec048b5d088b4d0c895dfc83f90174098b45fc8945fc49ebf28b45fc89ec5dc3
+aac
+afv  @ 10
+afvx @ 10
+afv  @ 16
+afvx @ 16
+EOF
+EXPECT=<<EOF
+afvR
+afvW
+var int32_t var_4h_2 @ ebp-0x4
+var int32_t var_4h @ ebp+0x0
+arg int32_t arg_8h @ ebp+0x8
+arg int32_t arg_ch @ ebp+0xc
+afvR
+    arg_8h  0x16
+    arg_ch  0x19
+  var_4h_2
+    var_4h  0x24,0x2d
+afvW
+    arg_8h
+    arg_ch
+  var_4h_2  0x1c
+    var_4h  0x27
+EOF
+RUN

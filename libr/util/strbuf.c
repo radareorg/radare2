@@ -34,6 +34,16 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
+R_API const char *r_strbuf_initf(RStrBuf *sb, const char *fmt, ...) {
+	r_return_val_if_fail (sb && fmt, NULL);
+	r_strbuf_init (sb);
+	va_list ap;
+	va_start (ap, fmt);
+	const char *r = r_strbuf_vsetf (sb, fmt, ap);
+	va_end (ap);
+	return r;
+}
+
 R_API bool r_strbuf_copy(RStrBuf *dst, RStrBuf *src) {
 	r_return_val_if_fail (dst && src, false);
 	if (src->ptr) {
@@ -132,46 +142,41 @@ R_API bool r_strbuf_setptr(RStrBuf *sb, char *s, int len) {
 	return true;
 }
 
-R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
-	r_return_val_if_fail (sb, false);
+R_API const char *r_strbuf_set(RStrBuf *sb, const char *s) {
+	r_return_val_if_fail (sb, NULL);
 	if (!s) {
 		r_strbuf_init (sb);
-		return true;
+		return r_strbuf_get (sb);
 	}
 	size_t len = strlen (s);
 	if (!r_strbuf_setbin (sb, (const ut8*)s, len)) {
-		return false;
+		return NULL;
 	}
 	sb->len = len;
-	return true;
+	return r_strbuf_get (sb);
 }
 
-R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
-	bool ret;
-	va_list ap;
-
+R_API const char *r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 	r_return_val_if_fail (sb && fmt, false);
 
+	va_list ap;
 	va_start (ap, fmt);
-	ret = r_strbuf_vsetf (sb, fmt, ap);
+	const char *ret = r_strbuf_vsetf (sb, fmt, ap);
 	va_end (ap);
 	return ret;
 }
 
-R_API bool r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
-	int rc;
-	bool ret;
-	va_list ap2;
-	char string[1024];
-
+R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 	r_return_val_if_fail (sb && fmt, false);
 
+	const char *ret = NULL;
+	va_list ap2;
 	va_copy (ap2, ap);
-	rc = vsnprintf (string, sizeof (string), fmt, ap);
+	char string[1024];
+	int rc = vsnprintf (string, sizeof (string), fmt, ap);
 	if (rc >= sizeof (string)) {
 		char *p = malloc (rc + 1);
 		if (!p) {
-			ret = false;
 			goto done;
 		}
 		vsnprintf (p, rc + 1, fmt, ap2);
@@ -179,8 +184,6 @@ R_API bool r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 		free (p);
 	} else if (rc >= 0) {
 		ret = r_strbuf_set (sb, string);
-	} else {
-		ret = false;
 	}
 done:
 	va_end (ap2);

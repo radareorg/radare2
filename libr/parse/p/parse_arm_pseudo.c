@@ -53,7 +53,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "cmn", "if (# != #)", { 1, 2 } },
 		{ 0, "cmp", "if (# == #)", { 1, 2 } },
 		{ 0, "fcmp", "if (# == #)", { 1, 2 } },
-		{ 0, "tst", "if (# == #)", { 1, 2 } },
+		{ 0, "tst", "if ((# & #) == 0)", { 1, 2 } },
 		{ 0, "dvf", "# = # / #", { 1, 2, 3 } },
 		{ 0, "eor", "# = # ^ #", { 1, 2, 3 } },
 		{ 1, "bkpt", "breakpoint #", { 1 } },
@@ -82,7 +82,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "mvn", "# = ~#", { 1, 2 } },
 		{ 0, "movz", "# = #", { 1, 2 } },
 		{ 0, "movk", "# = #", { 1, 2 } },
-		{ 0, "movn", "# = #", { 1, 2 } },
+		{ 0, "movn", "# = ~#", { 1, 2 } },
 		{ 0, "neg", "# = !#", { 1, 2 } },
 		{ 0, "sxtw", "# = #", { 1, 2 } },
 		{ 0, "stur", "# = #", { 2, 1 } },
@@ -127,7 +127,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "vdiv.f64", "# = (float) # / #", { 1, 2, 3 } },
 		{ 0, "addw", "# = # + #", { 1, 2, 3 } },
 		{ 0, "sub.w", "# = # - #", { 1, 2, 3 } },
-		{ 0, "tst.w", "if (# == #)", { 1, 2 } },
+		{ 0, "tst.w", "if ((# & #) == 0)", { 1, 2 } },
 		{ 0, "lsr.w", "# = # >> #", { 1, 2, 3 } },
 		{ 0, "lsl.w", "# = # << #", { 1, 2, 3 } },
 		{ 0, "pop.w", "pop #", { 1 } },
@@ -277,12 +277,60 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const char *oldstr, const char *reg, int delta) {
+	char *newstr = p->localvar_only
+		? r_str_newf ("%s", var->name)
+		: r_str_newf ("%s %c %s", reg, delta > 0 ? '+' : '-', var->name);
+	if (IS_UPPER (*tstr)) {
+		char *space = strrchr (newstr, ' ');
+		if (space) {
+			*space = 0;
+			r_str_case (newstr, true);
+			*space = ' ';
+		}
+	}
+	char *ret = r_str_replace (tstr, oldstr, newstr, 1);
+	free (newstr);
+	return ret;
+}
+
+static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
+	const char *tmplt;
+	char *oldstr;
+	if (delta > -10 && delta < 10) {
+		if (p->pseudo) {
+			char sign = '+';
+			if (delta < 0) {
+				sign = '-';
+			}
+			oldstr = r_str_newf ("%s %c %" PFMT64d, reg, sign, R_ABS (delta));
+		} else {
+			oldstr = r_str_newf ("%s, %" PFMT64d, reg, delta);
+		}
+	} else if (delta > 0) {
+		tmplt = p->pseudo ? "%s + 0x%x" : (ucase ? "%s, 0x%X" : "%s, 0x%x");
+		oldstr = r_str_newf (tmplt, reg, delta);
+	} else {
+		tmplt = p->pseudo ? "%s - 0x%x" : (ucase ? "%s, -0x%X" : "%s, -0x%x");
+		oldstr = r_str_newf (tmplt, reg, -delta);
+	}
+	if (ucase) {
+		char *comma = strchr (oldstr, ',');
+		if (comma) {
+			*comma = 0;
+			r_str_case (oldstr, true);
+			*comma = ',';
+		}
+	}
+	return oldstr;
+}
+
+static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	RList *spargs = NULL;
 	RList *bpargs = NULL;
 	RListIter *iter;
 	RAnal *anal = p->analb.anal;
-	char *oldstr, *newstr;
+	char *oldstr;
 	char *tstr = strdup (data);
 	if (!tstr) {
 		return false;
@@ -292,11 +340,17 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		free (tstr);
 		return false;
 	}
-	if (p->relsub) {
-		char *rip = (char *)r_str_casestr (tstr, "[pc, ");
-		if (!rip) {
-			rip = (char *)r_str_casestr (tstr, "[PC, ");
+	if (p->subrel) {
+		char *rip;
+		if (p->pseudo) {
+			rip = (char *)r_str_casestr (tstr, "[pc +");
+			if (!rip) {
+				rip = (char *)r_str_casestr (tstr, "[pc -");
+			}
+		} else {
+			rip = (char *)r_str_casestr (tstr, "[pc, ");
 		}
+
 		if (rip && !strchr (rip + 4, ',')) {
 			rip += 4;
 			char *tstr_new, *ripend = strchr (rip, ']');
@@ -324,98 +378,48 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	bool ucase = IS_UPPER (*tstr);
 	RAnalVarField *var;
 	r_list_foreach (bpargs, iter, var) {
-		char *reg = anal->reg->name[R_REG_NAME_BP];
-		char *tmplt = NULL;
-		if (var->delta > -10 && var->delta < 10) {
-			if (p->pseudo) {
-				char sign = '+';
-				int delta = var->delta;
-				if (var->delta < 0) {
-					sign = '-';
-					delta = -delta;
-				}
-				oldstr = r_str_newf ("[%s %c %d]", reg, sign, delta);
-			} else {
-				oldstr = r_str_newf ("[%s, %d]", reg, var->delta);
-			}
-		} else if (var->delta > 0) {
-			tmplt = p->pseudo ? "[%s + 0x%x]" : (ucase ? "[%s, 0x%X]" : "[%s, 0x%x]");
-			oldstr = r_str_newf (tmplt, reg, var->delta);
-		} else {
-			tmplt = p->pseudo ? "[%s - 0x%x]" : (ucase ? "[%s, -0x%X]" : "[%s, -0x%x]");
-			oldstr = r_str_newf (tmplt, reg, -var->delta);
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, var->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && var->field) {
+			delta = var->delta + f->bp_off;
+		} else if (delta == ST64_MAX) {
+			continue;
 		}
-		if (ucase) {
-			char *comma = strchr (oldstr, ',');
-			if (comma) {
-				*comma = 0;
-				r_str_case (oldstr, true);
-				*comma = ',';
-			}
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, var->delta, addr);
 		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_BP];
+		}
+		oldstr = mount_oldstr (p, reg, delta, ucase);
 		if (strstr (tstr, oldstr)) {
-			if (p->localvar_only) {
-				newstr = r_str_newf ("[%s]", var->name);
-			} else {
-				newstr = r_str_newf ("[%s %c %s]",
-					reg, var->delta > 0 ? '+' : '-', var->name);
-			}
-			if (ucase) {
-				char *comma = strchr (newstr, ' ');
-				if (comma) {
-					*comma = 0;
-					r_str_case (newstr, true);
-					*comma = ' ';
-				}
-			}
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
+			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
 			free (oldstr);
 			break;
 		}
 		free (oldstr);
 	}
 	r_list_foreach (spargs, iter, var) {
-		if (p->get_ptr_at) {
-			var->delta = p->get_ptr_at (p->user, f, var->delta, addr);
+		st64 delta = p->get_ptr_at
+			? p->get_ptr_at (f, var->delta, addr)
+			: ST64_MAX;
+		if (delta == ST64_MAX && var->field) {
+			delta = var->delta;
+		} else if (delta == ST64_MAX) {
+			continue;
 		}
-		if (var->delta > -10 && var->delta < 10) {
-			oldstr = r_str_newf ("[sp, %d]", var->delta);
-		} else if (var->delta > 0) {
-			oldstr = r_str_newf ("[sp, 0x%x]", var->delta);
-		} else {
-			oldstr = r_str_newf ("[sp, -0x%x]", -var->delta);
+		const char *reg = NULL;
+		if (p->get_reg_at) {
+			reg = p->get_reg_at (f, var->delta, addr);
 		}
+		if (!reg) {
+			reg = anal->reg->name[R_REG_NAME_SP];
+		}
+		oldstr = mount_oldstr (p, reg, delta, ucase);
 		if (strstr (tstr, oldstr)) {
-			newstr = r_str_newf ("[sp %c %s]",
-				var->delta > 0 ? '+' : '-',
-				var->name);
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
-			free (oldstr);
-			break;
-		}
-		free (oldstr);
-		if (var->delta > -10 && var->delta < 10) {
-			oldstr = r_str_newf ("[%s, %d]",
-				anal->reg->name[R_REG_NAME_SP],
-				var->delta);
-		} else if (var->delta > 0) {
-			oldstr = r_str_newf ("[%s, 0x%x]",
-				anal->reg->name[R_REG_NAME_SP],
-				var->delta);
-		} else {
-			oldstr = r_str_newf ("[%s, -0x%x]",
-				anal->reg->name[R_REG_NAME_SP],
-				-var->delta);
-		}
-		if (strstr (tstr, oldstr)) {
-			newstr = r_str_newf ("[%s %c %s]",
-				anal->reg->name[R_REG_NAME_BP],
-				var->delta > 0 ? '+' : '-',
-				var->name);
-			tstr = r_str_replace (tstr, oldstr, newstr, 1);
-			free (newstr);
+			tstr = subs_var_string (p, var, tstr, oldstr, reg, delta);
 			free (oldstr);
 			break;
 		}
@@ -438,7 +442,7 @@ RParsePlugin r_parse_plugin_arm_pseudo = {
 	.name = "arm.pseudo",
 	.desc = "ARM/ARM64 pseudo syntax",
 	.parse = parse,
-	.varsub = &varsub,
+	.subvar = &subvar,
 };
 
 #ifndef R2_PLUGIN_INCORE

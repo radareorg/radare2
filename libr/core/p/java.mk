@@ -15,7 +15,7 @@ LDFLAGS+=$(LINK)
 
 ifeq ($(WITHPIC),1)
 ALL_TARGETS+=${CORE_TARGET_JAVA}
-DEPS+=r_crypto
+R2DEPS+=r_crypto
 include $(STOP)/java/deps.mk
 
 ${CORE_TARGET_JAVA}: ${CORE_OBJ_JAVA}

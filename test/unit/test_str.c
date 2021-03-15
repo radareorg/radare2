@@ -3,6 +3,15 @@
 
 //TODO test r_str_chop_path
 
+bool test_r_str_wrap(void) {
+	char *s = r_str_wrap ("hello world\nhow are you\n", 5);
+	char *res = strdup ("hello \nworld\nhow ar\ne you\n");
+	mu_assert_streq (s, res, "error, invalid string wrapping");
+	free (s);
+	free (res);
+	mu_end;
+}
+
 bool test_r_str_replace_char_once(void) {
 	char* str = strdup ("hello world");
 	(void) r_str_replace_char_once (str, 'l', 'x');
@@ -336,6 +345,24 @@ bool test_r_str_sanitize_sdb_key(void) {
 	mu_end;
 }
 
+bool test_r_str_escape_sh(void) {
+	char *escaped = r_str_escape_sh ("Hello, \"World\"");
+	mu_assert_streq (escaped, "Hello, \\\"World\\\"", "escaped \"double quotes\"");
+	free (escaped);
+	escaped = r_str_escape_sh ("Hello, \\World\\");
+	mu_assert_streq (escaped, "Hello, \\\\World\\\\", "escaped backspace");
+	free (escaped);
+#if __UNIX__
+	escaped = r_str_escape_sh ("Hello, $(World)");
+	mu_assert_streq (escaped, "Hello, \\$(World)", "escaped $(command)");
+	free (escaped);
+	escaped = r_str_escape_sh ("Hello, `World`");
+	mu_assert_streq (escaped, "Hello, \\`World\\`", "escaped `command`");
+	free (escaped);
+#endif
+	mu_end;
+}
+
 bool test_r_str_unescape(void) {
 	char buf[] = "Hello\\x31World\\n";
 	r_str_unescape (buf);
@@ -452,7 +479,35 @@ bool test_r_str_str_xy(void) {
 	mu_end;
 }
 
+bool test_r_str_encoded_json(void) {
+	char *invalidJsonString = "This is my \xe2 sample © string\n";
+	size_t len = strlen (invalidJsonString);
+
+	const char *array = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_ARRAY);
+	mu_assert_streq (array, "084,104,105,115,032,105,115,032,109,121,032,226,032,115,097,109,112,108,101,032,194,169,032,115,116,114,105,110,103,010", "string as array of uchar");
+	free ((void *)array);
+
+	const char *hex = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_HEX);
+	mu_assert_streq (hex, "54686973206973206D7920E22073616D706C6520C2A920737472696E670A", "string as hexpairs");
+	free ((void *)hex);
+
+	const char *b64 = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_BASE64);
+	mu_assert_streq (b64, "VGhpcyBpcyBteSDiIHNhbXBsZSDCqSBzdHJpbmcK", "string as base64 encoded");
+	free ((void *)b64);
+
+	const char *stripped = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_STRIP);
+	mu_assert_streq (stripped, "This is my  sample © string\\n", "string with bad chars stripped");
+	free ((void *)stripped);
+
+	const char *none = r_str_encoded_json (invalidJsonString, len, PJ_ENCODING_STR_DEFAULT);
+	mu_assert_streq (none, "This is my \\xe2 sample © string\\n", "default encoding");
+	free ((void *)none);
+
+	mu_end;
+}
+
 bool all_tests () {
+	mu_run_test (test_r_str_wrap);
 	mu_run_test (test_r_str_newf);
 	mu_run_test (test_r_str_replace_char_once);
 	mu_run_test (test_r_str_replace_char);
@@ -477,10 +532,12 @@ bool all_tests () {
 	mu_run_test (test_r_str_utf8_charsize);
 	mu_run_test (test_r_str_utf8_charsize_prev);
 	mu_run_test (test_r_str_sanitize_sdb_key);
+	mu_run_test (test_r_str_escape_sh);
 	mu_run_test (test_r_str_unescape);
 	mu_run_test (test_r_str_constpool);
 	mu_run_test (test_r_str_format_msvc_argv);
 	mu_run_test (test_r_str_str_xy);
+	mu_run_test (test_r_str_encoded_json);
 	return tests_passed != tests_run;
 }
 

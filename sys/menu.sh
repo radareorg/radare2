@@ -75,7 +75,7 @@ SelectPluginShared () {
 }
 
 SelectPluginStatic() {
-	. ./plugins.def.cfg
+	. ./dist/plugins-cfg/plugins.def.cfg
 	PLUGINS="${STATIC} ${SHARED}"
 	ARGS=""
 	for a in ${PLUGINS} ; do

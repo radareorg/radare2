@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_core.h"
 #include "config.h"
@@ -13,6 +13,7 @@
 	}\
 	static int __lib_ ## x ## _dt (RLibPlugin * pl, void *p, void *u) { return true; }
 
+// TODO: deprecate this
 #define CB_COPY(x, y)\
 	static int __lib_ ## x ## _cb (RLibPlugin * pl, void *user, void *data) {\
 		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data;\
@@ -36,7 +37,9 @@ CB (debug, dbg)
 CB (bp, dbg->bp)
 CB (lang, lang)
 CB (anal, anal)
-CB (asm, assembler)
+#define r_anal_esil_add r_anal_esil_plugin_add
+CB (anal_esil, anal->esil)
+CB (asm, rasm)
 CB (parse, parser)
 CB (bin, bin)
 CB (egg, egg)
@@ -92,7 +95,7 @@ static void __loadSystemPlugins(RCore *core, int where, const char *path) {
 }
 
 R_API void r_core_loadlibs_init(RCore *core) {
-	ut64 prev = r_sys_now ();
+	ut64 prev = r_time_now_mono ();
 #define DF(x, y, z) r_lib_add_handler (core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
 	core->lib = r_lib_new (NULL, NULL);
 	DF (IO, "io plugins", io);
@@ -101,12 +104,13 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	DF (BP, "debugger breakpoint plugins", bp);
 	DF (LANG, "language plugins", lang);
 	DF (ANAL, "analysis plugins", anal);
+	DF (ESIL, "esil emulation plugins", anal_esil);
 	DF (ASM, "(dis)assembler plugins", asm);
 	DF (PARSE, "parsing plugins", parse);
 	DF (BIN, "bin plugins", bin);
 	DF (EGG, "egg plugins", egg);
 	DF (FS, "fs plugins", fs);
-	core->times->loadlibs_init_time = r_sys_now () - prev;
+	core->times->loadlibs_init_time = r_time_now_mono () - prev;
 }
 
 static bool __isScriptFilename(const char *name) {
@@ -115,6 +119,10 @@ static bool __isScriptFilename(const char *name) {
 		ext++;
 		if (!strcmp (ext, "py")
 		||  !strcmp (ext, "js")
+		||  !strcmp (ext, "v")
+		||  !strcmp (ext, "c")
+		||  !strcmp (ext, "vala")
+		||  !strcmp (ext, "pl")
 		||  !strcmp (ext, "lua")) {
 			return true;
 		}
@@ -122,8 +130,8 @@ static bool __isScriptFilename(const char *name) {
 	return false;
 }
 
-R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
-	ut64 prev = r_sys_now ();
+R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
+	ut64 prev = r_time_now_mono ();
 	__loadSystemPlugins (core, where, path);
 	/* TODO: all those default plugin paths should be defined in r_lib */
 	if (!r_config_get_i (core->config, "cfg.plugins")) {
@@ -137,12 +145,11 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	char *file;
 	r_list_foreach (files, iter, file) {
 		if (__isScriptFilename (file)) {
-			r_core_cmdf (core, ". %s/%s", homeplugindir, file);
+			r_core_cmdf (core, "\". %s/%s\"", homeplugindir, file);
 		}
 	}
-	
-	free (homeplugindir);
-	core->times->loadlibs_time = r_sys_now () - prev;
 	r_list_free (files);
+	free (homeplugindir);
+	core->times->loadlibs_time = r_time_now_mono () - prev;
 	return true;
 }

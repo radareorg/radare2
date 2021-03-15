@@ -21,7 +21,7 @@
     "pancake <pancake@nopcode.org>"
   ],
   "name": "radare2-git",
-  "version": "1.6.0-git",
+  "version": "5.1.0-git",
   "bugs": {
     "url": "https://github.com/radareorg/radare2/issues"
   }

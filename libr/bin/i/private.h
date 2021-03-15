@@ -10,7 +10,6 @@ R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id
 R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw);
 R_IPI RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id);
-R_IPI RBinFile *r_bin_file_find_by_name_n(RBin *bin, const char *name, int idx);
 R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj);
 R_IPI RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
 R_IPI bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);

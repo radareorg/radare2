@@ -38,7 +38,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 	// grab the current file descriptor, so we can reset core and io state
 	// after our io op is done
 	RIODesc *yankdesc = NULL;
-	ut64 fd = core->file? core->file->fd: -1, yank_file_sz = 0,
+	ut64 fd = core->io->desc ? core->io->desc->fd: -1, yank_file_sz = 0,
 	     loadaddr = 0, addr = offset;
 	int res = false;
 
@@ -51,7 +51,7 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 			yank_file_sz = r_io_size (core->io);
 			ut64 addr = r_io_map_next_available (core->io, 0, yank_file_sz, load_align);
         		map = r_io_map_new (core->io, yankdesc->fd, R_PERM_R, 0, addr, yank_file_sz);
-			loadaddr = map? map->itv.addr: -1;
+			loadaddr = map? r_io_map_begin (map): -1;
 			if (yankdesc && map && loadaddr != -1) {
 				// ***NOTE*** this is important, we need to
 				// address the file at its physical address!
@@ -248,15 +248,24 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 				}
 				r_cons_newline ();
 				break;
-			case 'j':
-				{
-					r_cons_printf ("{\"addr\":%"PFMT64u",\"bytes\":\"", core->yank_addr);
-					for (i = pos; i < r_buf_size (core->yank_buf); i++) {
-						r_cons_printf ("%02x", r_buf_read8_at (core->yank_buf, i));
-					}
-					r_cons_printf ("\"}\n");
+			case 'j': {
+				PJ *pj = r_core_pj_new (core);
+				if (!pj) {
+					break;
 				}
+				pj_o (pj);
+				pj_kn (pj, "addr", core->yank_addr);
+				RStrBuf *buf = r_strbuf_new ("");
+				for (i = pos; i < r_buf_size (core->yank_buf); i++) {
+					r_strbuf_appendf (buf, "%02x", r_buf_read8_at (core->yank_buf, i));
+				}
+				pj_ks (pj, "bytes", r_strbuf_get (buf));
+				r_strbuf_free (buf);
+				pj_end (pj);
+				r_cons_println (pj_string (pj));
+				pj_free (pj);
 				break;
+			}
 			case '*':
 				//r_cons_printf ("yfx ");
 				r_cons_printf ("wx ");
@@ -267,7 +276,7 @@ R_API bool r_core_yank_dump(RCore *core, ut64 pos, int format) {
 				r_cons_newline ();
 				break;
 			default:
-				r_cons_printf ("0x%08" PFMT64x " %d ",
+				r_cons_printf ("0x%08" PFMT64x " %" PFMT64d " ",
 						core->yank_addr + pos,
 						r_buf_size (core->yank_buf) - pos);
 				for (i = pos; i < r_buf_size (core->yank_buf); i++) {

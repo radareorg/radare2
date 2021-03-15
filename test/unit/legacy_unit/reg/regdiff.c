@@ -54,7 +54,7 @@ const char *reg_profile =
 
 static void dumpregs(RReg *reg) {
 	int sz;
-	ut8 *buf = r_reg_get_bytes (reg, 0, &sz);
+	ut8 *buf = r_reg_get_bytes (reg, R_REG_TYPE_GPR, &sz);
 	r_print_hexdump (NULL, 0, buf, sz, 16, 16);
 	free (buf);
 }

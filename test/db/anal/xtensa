@@ -16,6 +16,7 @@ FILE=malloc://512
 CMDS=<<EOF
 e asm.arch=xtensa
 e asm.bits=32
+e anal.vars.stackname=true
 wx 12c1f0d91140d382c9213d0d093101f5ebc00000cd028c820c034d0d0112e4c0000008312d0cd811c82112c1100df0
 af
 afvs

@@ -1269,7 +1269,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1290,7 +1290,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1371,7 +1371,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1455,7 +1455,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1497,7 +1497,7 @@
           },
           {
             "type": "SYMBOL",
-            "name": "arg"
+            "name": "args"
           }
         ]
       }
@@ -1586,44 +1586,6 @@
         ]
       }
     },
-    "_interpreter_command": {
-      "type": "PREC_RIGHT",
-      "value": 1,
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
-            "type": "FIELD",
-            "name": "command",
-            "content": {
-              "type": "ALIAS",
-              "content": {
-                "type": "STRING",
-                "value": "#!"
-              },
-              "named": true,
-              "value": "cmd_identifier"
-            }
-          },
-          {
-            "type": "FIELD",
-            "name": "args",
-            "content": {
-              "type": "CHOICE",
-              "members": [
-                {
-                  "type": "SYMBOL",
-                  "name": "args"
-                },
-                {
-                  "type": "BLANK"
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
     "task_command": {
       "type": "PREC_LEFT",
       "value": 1,
@@ -1659,8 +1621,16 @@
                 "type": "FIELD",
                 "name": "args",
                 "content": {
-                  "type": "SYMBOL",
-                  "name": "_simple_command"
+                  "type": "CHOICE",
+                  "members": [
+                    {
+                      "type": "SYMBOL",
+                      "name": "_simple_command"
+                    },
+                    {
+                      "type": "BLANK"
+                    }
+                  ]
                 }
               }
             ]
@@ -1747,21 +1717,8 @@
                 "content": {
                   "type": "ALIAS",
                   "content": {
-                    "type": "CHOICE",
-                    "members": [
-                      {
-                        "type": "SYMBOL",
-                        "name": "_help_command"
-                      },
-                      {
-                        "type": "STRING",
-                        "value": "#?"
-                      },
-                      {
-                        "type": "STRING",
-                        "value": "#!?"
-                      }
-                    ]
+                    "type": "SYMBOL",
+                    "name": "_help_command"
                   },
                   "named": true,
                   "value": "cmd_identifier"
@@ -1818,10 +1775,6 @@
         {
           "type": "SYMBOL",
           "name": "_env_command"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "_interpreter_command"
         },
         {
           "type": "SYMBOL",
@@ -2533,11 +2486,11 @@
       ]
     },
     "_pf_dot_arg_identifier": {
-      "type": "TOKEN",
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "TOKEN",
+          "content": {
             "type": "REPEAT1",
             "content": {
               "type": "CHOICE",
@@ -2558,10 +2511,6 @@
                   "value": "$$"
                 },
                 {
-                  "type": "STRING",
-                  "value": "$"
-                },
-                {
                   "type": "PATTERN",
                   "value": "\\$[^\\s@|#\"'>;`~\\\\({) ]"
                 },
@@ -2572,16 +2521,16 @@
                 {
                   "type": "PATTERN",
                   "value": "\\\\."
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "\\/[^\\*]"
                 }
               ]
             }
           }
-        ]
-      }
+        },
+        {
+          "type": "STRING",
+          "value": "$"
+        }
+      ]
     },
     "_pf_arg_parentheses": {
       "type": "SEQ",
@@ -2611,11 +2560,11 @@
       ]
     },
     "pf_arg_identifier": {
-      "type": "TOKEN",
-      "content": {
-        "type": "SEQ",
-        "members": [
-          {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "TOKEN",
+          "content": {
             "type": "REPEAT1",
             "content": {
               "type": "CHOICE",
@@ -2636,10 +2585,6 @@
                   "value": "$$"
                 },
                 {
-                  "type": "STRING",
-                  "value": "$"
-                },
-                {
                   "type": "PATTERN",
                   "value": "\\$[^\\s@|#\"'>;`~\\\\({) ]"
                 },
@@ -2650,16 +2595,16 @@
                 {
                   "type": "PATTERN",
                   "value": "\\\\."
-                },
-                {
-                  "type": "PATTERN",
-                  "value": "\\/[^\\*]"
                 }
               ]
             }
           }
-        ]
-      }
+        },
+        {
+          "type": "STRING",
+          "value": "$"
+        }
+      ]
     },
     "_pf_arg": {
       "type": "CHOICE",
@@ -3622,96 +3567,98 @@
       "value": "[^\\r\\n;~|]+"
     },
     "arg_identifier": {
-      "type": "TOKEN",
-      "content": {
-        "type": "REPEAT1",
-        "content": {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "REPEAT1",
-              "content": {
-                "type": "PATTERN",
-                "value": "[^\\s@|#\"'>;$`~\\\\,()]"
-              }
-            },
-            {
-              "type": "STRING",
-              "value": "$$$"
-            },
-            {
-              "type": "STRING",
-              "value": "$$"
-            },
-            {
-              "type": "STRING",
-              "value": "$"
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\$[^\\s@|#\"'>;`~\\\\({) ]"
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\${[^\\r\\n $}]+}"
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\\\."
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\/[^\\*]"
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "TOKEN",
+          "content": {
+            "type": "REPEAT1",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "REPEAT1",
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\\s@|#\"'>;$`~\\\\,()]"
+                  }
+                },
+                {
+                  "type": "STRING",
+                  "value": "$$$"
+                },
+                {
+                  "type": "STRING",
+                  "value": "$$"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\$[^\\s@|#\"'>;`~\\\\({) ]"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\${[^\\r\\n $}]+}"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\\\."
+                }
+              ]
             }
-          ]
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "$"
         }
-      }
+      ]
     },
     "arg_identifier_brace": {
-      "type": "TOKEN",
-      "content": {
-        "type": "REPEAT1",
-        "content": {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "REPEAT1",
-              "content": {
-                "type": "PATTERN",
-                "value": "[^\\s@|#\"'>;$`~\\\\,(){}]"
-              }
-            },
-            {
-              "type": "STRING",
-              "value": "$$$"
-            },
-            {
-              "type": "STRING",
-              "value": "$$"
-            },
-            {
-              "type": "STRING",
-              "value": "$"
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\$[^\\s@|#\"'>;`~\\\\({) ]"
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\${[^\\r\\n $}]+}"
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\\\."
-            },
-            {
-              "type": "PATTERN",
-              "value": "\\/[^\\*]"
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "TOKEN",
+          "content": {
+            "type": "REPEAT1",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "REPEAT1",
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\\s@|#\"'>;$`~\\\\,(){}]"
+                  }
+                },
+                {
+                  "type": "STRING",
+                  "value": "$$$"
+                },
+                {
+                  "type": "STRING",
+                  "value": "$$"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\$[^\\s@|#\"'>;`~\\\\({) ]"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\${[^\\r\\n $}]+}"
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "\\\\."
+                }
+              ]
             }
-          ]
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "$"
         }
-      }
+      ]
     },
     "double_quoted_arg": {
       "type": "SEQ",
@@ -3726,8 +3673,15 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "PATTERN",
-                "value": "[^\\\\\"\\n$`]+"
+                "type": "IMMEDIATE_TOKEN",
+                "content": {
+                  "type": "PREC",
+                  "value": 1,
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\\\\\"\\n$`]+"
+                  }
+                }
               },
               {
                 "type": "PATTERN",
@@ -3763,8 +3717,15 @@
             "type": "CHOICE",
             "members": [
               {
-                "type": "PATTERN",
-                "value": "[^\\\\'\\n]+"
+                "type": "IMMEDIATE_TOKEN",
+                "content": {
+                  "type": "PREC",
+                  "value": 1,
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\\\\'\\n]+"
+                  }
+                }
               },
               {
                 "type": "PATTERN",
@@ -3907,12 +3868,8 @@
         "type": "CHOICE",
         "members": [
           {
-            "type": "STRING",
-            "value": "#"
-          },
-          {
             "type": "PATTERN",
-            "value": "#[^!\\r\\n][^\\r\\n]*"
+            "value": "#[^\\r\\n]*"
           },
           {
             "type": "SEQ",

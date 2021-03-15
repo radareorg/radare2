@@ -58,7 +58,7 @@ static bool check_buffer(RBuffer *b) {
 	return false;
 }
 
-static RBinNXOObj *nso_new () {
+static RBinNXOObj *nso_new(void) {
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	if (bin) {
 		bin->methods_list = r_list_newf ((RListFree)free);

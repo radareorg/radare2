@@ -9,7 +9,7 @@ static void fwd(int sig) {
 	/* do nothing? send kill signal to remote process */
 }
 
-static void rarun2_tty() {
+static void rarun2_tty(void) {
 	/* TODO: Implement in native code */
 	r_sys_cmd ("tty");
 	close (1);

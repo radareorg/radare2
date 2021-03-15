@@ -46,6 +46,7 @@
 #ifndef COMPILE_ONLY
 void file_mdump(struct r_magic *m) {
 	static const char optyp[] = { FILE_OPS };
+	char pp[ASCTIME_BUF_MINLEN];
 
 	(void) eprintf ("[%u", m->lineno);
 	(void) eprintf ("%.*s %u", m->cont_level & 7, ">>>>>>>>", m->offset);
@@ -127,26 +128,26 @@ void file_mdump(struct r_magic *m) {
 		case FILE_BEDATE:
 		case FILE_MEDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime(m->value.l, 1));
+			    file_fmttime (m->value.l, 1, pp));
 			break;
 		case FILE_LDATE:
 		case FILE_LELDATE:
 		case FILE_BELDATE:
 		case FILE_MELDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime(m->value.l, 0));
+			    file_fmttime (m->value.l, 0, pp));
 			break;
 		case FILE_QDATE:
 		case FILE_LEQDATE:
 		case FILE_BEQDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime((ut32)m->value.q, 1));
+			    file_fmttime ((ut32)m->value.q, 1, pp));
 			break;
 		case FILE_QLDATE:
 		case FILE_LEQLDATE:
 		case FILE_BEQLDATE:
 			(void)eprintf ("%s,",
-			    file_fmttime((ut32)m->value.q, 0));
+			    file_fmttime ((ut32)m->value.q, 0, pp));
 			break;
 		case FILE_FLOAT:
 		case FILE_BEFLOAT:
@@ -187,14 +188,13 @@ void file_magwarn(struct r_magic_set *ms, const char *f, ...) {
 	(void) fputc('\n', stderr);
 }
 
-const char *file_fmttime(ut32 v, int local) {
-	char *pp;
+const char *file_fmttime(ut32 v, int local, char *pp) {
 	time_t t = (time_t)v;
 	struct tm *tm;
 	struct tm timestruct;
 
 	if (local) {
-		pp = ctime(&t);
+		r_ctime_r (&t, pp);
 	} else {
 #ifndef HAVE_DAYLIGHT
 		static int daylight = 0;
@@ -203,8 +203,8 @@ const char *file_fmttime(ut32 v, int local) {
 
 		if (now == (time_t)0) {
 			struct tm *tm1;
-			(void)time(&now);
-			tm1 = localtime(&now);
+			(void)time (&now);
+			tm1 = localtime (&now);
 			if (!tm1)
 				return "*Invalid time*";
 			daylight = tm1->tm_isdst;
@@ -213,10 +213,10 @@ const char *file_fmttime(ut32 v, int local) {
 #endif /* HAVE_DAYLIGHT */
 		if (daylight)
 			t += 3600;
-		tm = gmtime_r(&t, &timestruct);
+		tm = gmtime_r (&t, &timestruct);
 		if (!tm)
 			return "*Invalid time*";
-		pp = asctime (tm);
+		r_asctime_r (tm, pp);
 	}
 
 	pp[strcspn (pp, "\n")] = '\0';

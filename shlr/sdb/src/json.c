@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2012-2016 - pancake */
+/* sdb - MIT - Copyright 2012-2021 - pancake */
 
 #include <stdarg.h>
 #include "sdb.h"
@@ -51,7 +51,7 @@ SDB_API int sdb_json_num_dec(Sdb *s, const char *k, const char *p, int n, ut32 c
 	return cur - n;
 }
 
-SDB_API int sdb_json_num_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
+SDB_API int sdb_json_num_get(Sdb *s, const char *k, const char *p, ut32 *cas) {
 	char *v = sdb_get (s, k, cas);
 	if (v) {
 		Rangstr rs = json_get (v, p);
@@ -94,17 +94,17 @@ static bool isstring(const char *s) {
 }
 
 // JSON only supports base16 numbers
-SDB_API int sdb_json_num_set (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
+SDB_API int sdb_json_num_set(Sdb *s, const char *k, const char *p, int v, ut32 cas) {
 	char *_str, str[64];
 	_str = sdb_itoa (v, str, 10);
 	return sdb_json_set (s, k, p, _str, cas);
 }
 
-SDB_API int sdb_json_unset (Sdb *s, const char *k, const char *p, ut32 cas) {
+SDB_API int sdb_json_unset(Sdb *s, const char *k, const char *p, ut32 cas) {
 	return sdb_json_set (s, k, p, NULL, cas);
 }
 
-SDB_API bool sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {
+SDB_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {
 	int l, idx, len[3], jslen = 0;
 	char *b, *str = NULL;
 	const char *beg[3];

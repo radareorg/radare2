@@ -1,0 +1,38 @@
+NAME=iX
+FILE=bins/elf/analysis/dwarf_load
+# ARGS=-e bin.dbginfo=0
+CMDS=iX
+EXPECT=<<EOF
+[Source file]
+/home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/ieee754-df.S
+/home/landley/work/ab7/build/temp-armv6l/gcc-core/gcc/config/arm/lib1funcs.asm
+/home/landley/work/ab7/build/temp-armv6l/build-gcc/gcc
+EOF
+RUN
+
+NAME=af skips symbols
+FILE=bins/elf/analysis/guess-number-riscv64
+# set this to 1 to make it slow: -e bin.dwarf=1
+ARGS=-e bin.dbginfo=0
+CMDS=<<EOF
+af @ sym.fstatat
+af @ sym.__syscall_error
+afl
+EOF
+EXPECT=<<EOF
+0x0001f8b8    2 20           sym.fstatat
+0x00021484    1 8            sym.__errno
+0x0001f7cc    1 48           sym.__syscall_error
+EOF
+RUN
+
+NAME=unique function names
+FILE=bins/elf/bash
+CMDS=<<EOF
+aaa
+f~strlen~390
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+

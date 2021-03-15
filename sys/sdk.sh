@@ -14,7 +14,7 @@ fi
 export CFLAGS="-Os -fPIC"
 make mrproper
 if [ -z "${R2_PLUGINS_CFG}" ]; then
-	R2_PLUGINS_CFG=plugins.bin.cfg
+	R2_PLUGINS_CFG=dist/plugins-cfg/plugins.bin.cfg
 fi
 cp -f "${R2_PLUGINS_CFG}" plugins.cfg
 #./configure-plugins
@@ -25,6 +25,8 @@ rm -rf "${SDKDIR}"
 mkdir -p "${SDKDIR}"/lib
 rm -f libr/libr.a
 cp -rf libr/include "${SDKDIR}"
+mkdir -p "${SDKDIR}/include/sdb"
+cp -rf shlr/sdb/src/*.h "${SDKDIR}/include/sdb/"
 FILES=`find libr shlr -iname '*.a'`
 cp -f ${FILES} "${SDKDIR}"/lib
 OS=`uname`

@@ -1,29 +1,19 @@
-project('radare2', 'c', license: 'LGPL3', meson_version: '>=0.50.1')
+project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.50.1', version : '5.2.0')
 
 py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
 
 # Get r2 version
-r2_version = 'unknown-error'
-r2_version_major = 0
-r2_version_minor = 0
-r2_version_patch = 0
-r2_version_number = 0
-r = run_command(py3_exe, 'sys/version.py', '--full-version')
-if r.returncode() == 0
-  vers = r.stdout().strip().split('\n')
-  r2_version = vers[0]
-  r2_version_major = vers[1]
-  r2_version_minor = vers[2]
-  r2_version_patch = vers[3]
-  r2_version_number = vers[4]
-  if host_machine.system() == 'darwin'
-    r2_version = r2_version.split('-')[0]
-  endif
-else
-  message('Cannot find project version with sys/version.py')
-endif
+r2_version = meson.project_version()
+vers = r2_version.split('.')
+r2_version_major = vers[0].to_int()
+r2_version_minor = vers[1].to_int()
+r2_version_patch = vers[2].split('-')[0].to_int()
+r2_version_number \
+  = (r2_version_major * 10000) \
+  + (r2_version_minor * 100) \
+  + (r2_version_patch)
 
 repo = '.'
 if meson.is_subproject()
@@ -112,7 +102,7 @@ endif
 platform_deps = []
 platform_inc = ['.', 'libr/include']
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32'), cc.find_library('psapi')]
+  platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
 endif
 platform_inc = include_directories(platform_inc)
 
@@ -140,7 +130,7 @@ library_cflags = ['-DR2_PLUGIN_INCORE=1']
 if host_machine.system() == 'windows'
   r2_prefix = '.'
   r2_libdir = 'lib'
-  r2_incdir = 'include'
+  r2_incdir = join_paths('include', 'libr')
   r2_datdir = 'share'
 
   opts1 = [
@@ -218,6 +208,7 @@ subdir('libr')
 
 conf_data = configuration_data()
 conf_data.set('plugins_core', '&r_core_plugin_' + ', &r_core_plugin_'.join(core_plugins) + ', 0')
+conf_data.set('plugins_esil', '&r_esil_plugin_' + ', &r_esil_plugin_'.join(esil_plugins) + ', 0')
 conf_data.set('plugins_anal', '&r_anal_plugin_' + ', &r_anal_plugin_'.join(anal_plugins) + ', 0')
 conf_data.set('plugins_asm', '&r_asm_plugin_' + ', &r_asm_plugin_'.join(asm_plugins) + ', 0')
 conf_data.set('plugins_bp', '&r_bp_plugin_' + ', &r_bp_plugin_'.join(bp_plugins) + ', 0')
@@ -260,14 +251,23 @@ else
 endif
 
 # handle openssl library
-sys_openssl = dependency('openssl', required: false)
-use_sys_openssl = false
-if sys_openssl.found() and get_option('use_sys_openssl')
-  message('Using system openssl library')
-  use_sys_openssl = true
+if get_option('use_ssl')
+  static_sys_openssl = get_option('static_sys_openssl')
+  sys_openssl = dependency('openssl', required: false, static: static_sys_openssl)
+  use_sys_openssl = false
+  if sys_openssl.found() and get_option('use_sys_openssl')
+    message('Using system openssl library')
+    use_sys_openssl = true
+  else
+    message('Using bundled openssl code')
+  endif
 else
-  message('Using bundled openssl code')
+  sys_openssl = false
+  use_sys_openssl = false
 endif
+
+use_fork = get_option('use_fork')
+use_dylink = get_option('use_dylink')
 
 # handle libuv library
 if get_option('use_libuv')
@@ -339,22 +339,29 @@ userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
 userconf.set10('HAVE_OPENSSL', use_sys_openssl)
 userconf.set10('HAVE_LIBUV', use_libuv)
-userconf.set10('HAVE_FORK', true)
+userconf.set10('HAVE_FORK', use_fork)
+userconf.set10('WANT_DYLINK', use_dylink)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', true)
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 
+lrt = []
+if not cc.has_function('clock_gettime', prefix: '#include <time.h>') and cc.has_header_symbol('features.h', '__GLIBC__')
+  lrt = cc.find_library('rt', required: true)
+endif
+
 foreach item : [
-    ['arc4random_uniform', '#include <stdlib.h>'],
-    ['explicit_bzero', '#include <string.h>'],
-    ['explicit_memset', '#include <string.h>'],
-    ['clock_nanosleep', '#include <time.h>'],
-    ['sigaction', '#include <signal.h>']
+    ['arc4random_uniform', '#include <stdlib.h>', []],
+    ['explicit_bzero', '#include <string.h>', []],
+    ['explicit_memset', '#include <string.h>', []],
+    ['clock_nanosleep', '#include <time.h>', []],
+    ['clock_gettime', '#include <time.h>', [lrt]],
+    ['sigaction', '#include <signal.h>', []]
   ]
   func = item[0]
-  ok = cc.has_function(func, prefix: item[1])
+  ok = cc.has_function(func, prefix: item[1], dependencies: item[2])
   userconf.set10('HAVE_@0@'.format(func.to_upper()), ok)
 endforeach
 
@@ -397,12 +404,174 @@ libr_pc = configure_file(
   install_dir: join_paths(get_option('libdir'), 'pkgconfig')
 )
 
-subdir('shlr')
+# handle zlib dependency
+zlib_dep = dependency('zlib', required: false)
+if not zlib_dep.found() or not get_option('use_sys_zlib')
+  message('Use bundled zlib')
+
+  zlib_files = [
+    'shlr/zip/zlib/adler32.c',
+    'shlr/zip/zlib/compress.c',
+    'shlr/zip/zlib/crc32.c',
+    'shlr/zip/zlib/deflate.c',
+    'shlr/zip/zlib/gzclose.c',
+    'shlr/zip/zlib/gzlib.c',
+    'shlr/zip/zlib/gzread.c',
+    'shlr/zip/zlib/gzwrite.c',
+    'shlr/zip/zlib/infback.c',
+    'shlr/zip/zlib/inffast.c',
+    'shlr/zip/zlib/inflate.c',
+    'shlr/zip/zlib/inftrees.c',
+    'shlr/zip/zlib/trees.c',
+    'shlr/zip/zlib/uncompr.c',
+    'shlr/zip/zlib/zutil.c'
+  ]
+
+  zlib_inc = [platform_inc, include_directories('shlr/zip/zlib')]
+
+  libr2zlib = static_library('r2zlib', zlib_files,
+    include_directories: zlib_inc,
+    implicit_include_directories: false
+  )
+
+  zlib_dep = declare_dependency(
+    link_with: libr2zlib,
+    include_directories: zlib_inc
+  )
+else
+  message('Use system-provided zlib library')
+endif
+
+
+# handle sdb dependency
+# NOTE: copying most of the stuff from sdb to here for the moment, since we
+# should use subpackages to handle this well
+sdb_files = [
+  'shlr/sdb/src/array.c',
+  'shlr/sdb/src/base64.c',
+  'shlr/sdb/src/buffer.c',
+  'shlr/sdb/src/set.c',
+  'shlr/sdb/src/cdb.c',
+  'shlr/sdb/src/cdb_make.c',
+  'shlr/sdb/src/dict.c',
+  'shlr/sdb/src/diff.c',
+  'shlr/sdb/src/disk.c',
+  'shlr/sdb/src/fmt.c',
+  'shlr/sdb/src/ht_uu.c',
+  'shlr/sdb/src/ht_up.c',
+  'shlr/sdb/src/ht_pp.c',
+  'shlr/sdb/src/ht_pu.c',
+  'shlr/sdb/src/journal.c',
+  'shlr/sdb/src/json.c',
+  'shlr/sdb/src/lock.c',
+  'shlr/sdb/src/ls.c',
+  'shlr/sdb/src/match.c',
+  'shlr/sdb/src/ns.c',
+  'shlr/sdb/src/num.c',
+  'shlr/sdb/src/query.c',
+  'shlr/sdb/src/sdb.c',
+  'shlr/sdb/src/sdbht.c',
+  'shlr/sdb/src/util.c',
+  'shlr/sdb/src/text.c'
+]
+
+sdb_inc = [platform_inc, include_directories('shlr/sdb/src')]
+
+# Create sdb_version.h
+r = run_command(py3_exe, 'sys/sdb_version.py', 'shlr/sdb/config.mk')
+if r.returncode() == 0
+  sdb_version = r.stdout().strip().split('\n')[0]
+else
+  sdb_version = 'unknown'
+endif
+run_command(py3_exe, '-c', 'with open("shlr/sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
+
+sdb_inc_files = [
+  'shlr/sdb/src/buffer.h',
+  'shlr/sdb/src/cdb.h',
+  'shlr/sdb/src/set.h',
+  'shlr/sdb/src/cdb_make.h',
+  'shlr/sdb/src/config.h',
+  'shlr/sdb/src/dict.h',
+  'shlr/sdb/src/ht_inc.h',
+  'shlr/sdb/src/ht_pp.h',
+  'shlr/sdb/src/ht_up.h',
+  'shlr/sdb/src/ht_uu.h',
+  'shlr/sdb/src/ht_pu.h',
+  'shlr/sdb/src/ls.h',
+  'shlr/sdb/src/sdb.h',
+  'shlr/sdb/src/sdbht.h',
+  'shlr/sdb/src/sdb_version.h',
+  'shlr/sdb/src/types.h'
+]
+install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
+
+libr2sdb = static_library('r2sdb', sdb_files,
+  include_directories: sdb_inc,
+  implicit_include_directories: false,
+  c_args: host_machine.system() == 'windows' ? '-DSDB_IPI= -DSDB_API=__declspec(dllexport)' : [],
+)
+
+sdb_dep = declare_dependency(
+  link_whole: libr2sdb,
+  include_directories: sdb_inc
+)
+
+sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
+  include_directories: [
+    include_directories(['shlr/sdb/src'])
+  ],
+  implicit_include_directories: false,
+  native: true,
+)
+
+sdb_gen_cmd = [
+  sdb_exe,
+  '@OUTPUT@',
+  '==',
+  '@INPUT@'
+]
+
+# handle spp dependency
+spp_files = [
+  'shlr/spp/spp.c'
+]
+
+spp_inc = [platform_inc, include_directories('shlr/spp')]
+
+libr2spp = static_library('r2spp', spp_files,
+  dependencies: sdb_dep,
+  include_directories: spp_inc,
+  c_args: ['-DHAVE_R_UTIL', '-DUSE_R2=1'],
+  implicit_include_directories: false
+)
+
+spp_dep = declare_dependency(
+  link_with: libr2spp,
+  include_directories: spp_inc
+)
+
+pkgcfg_sanitize_libs = ''
+if get_option('b_sanitize').contains('address')
+  pkgcfg_sanitize_libs += ' -lasan'
+endif
+if get_option('b_sanitize').contains('undefined')
+  pkgcfg_sanitize_libs += ' -lubsan'
+endif
+
+rpath_exe = ''
+rpath_lib = ''
+if get_option('local') and get_option('default_library') == 'shared'
+  rpath_exe = '$ORIGIN/../' + get_option('libdir')
+  rpath_lib = '$ORIGIN'
+endif
 
 subdir('libr/util')
+subdir('libr/socket')
 subdir('libr/hash')
 subdir('libr/crypto')
-subdir('libr/socket')
+subdir('shlr')
+
 subdir('libr/cons')
 subdir('shlr/gdb')
 subdir('libr/io')
@@ -432,21 +601,33 @@ subdir('libr/magic/d')
 subdir('libr/flag/d')
 subdir('libr/main')
 
-if not meson.is_subproject()
-  rpath = get_option('local') and get_option('default_library') == 'shared' ? '$ORIGIN/../' + get_option('libdir') : ''
-  subdir('binr/rahash2')
-  subdir('binr/rarun2')
-  subdir('binr/rasm2')
-  subdir('binr/rabin2')
-  subdir('binr/radare2')
-  subdir('binr/ragg2')
-  subdir('binr/r2agent')
-  subdir('binr/radiff2')
-  subdir('binr/rafind2')
-  subdir('binr/rax2')
+cli_option = get_option('cli')
+if cli_option.auto()
+  cli_enabled = not meson.is_subproject()
+else
+  cli_enabled = cli_option.enabled()
+endif
+if cli_enabled
+  if get_option('blob')
+    subdir('binr/blob')
+  else
+    subdir('binr/rahash2')
+    subdir('binr/rarun2')
+    subdir('binr/rasm2')
+    subdir('binr/rabin2')
+    subdir('binr/radare2')
+    subdir('binr/ragg2')
+    subdir('binr/r2agent')
+    subdir('binr/radiff2')
+    subdir('binr/rafind2')
+    subdir('binr/rasign2')
+    subdir('binr/rax2')
+  endif
   subdir('binr/r2pm')
   subdir('binr/r2r')
-else
+endif
+
+if meson.is_subproject()
   libr2_dep = declare_dependency(
     dependencies: [
       r_anal_dep,
@@ -488,42 +669,44 @@ endif
 subdir('test/unit')
 
 install_data(
-  'doc/fortunes.creepy',
   'doc/fortunes.fun',
-  'doc/fortunes.nsfw',
   'doc/fortunes.tips',
   install_dir: r2_fortunes
 )
 
-install_man(
-  'man/r2agent.1',
-  'man/r2-docker.1',
-  'man/r2pm.1',
-  'man/rabin2.1',
-  'man/radare2.1',
-  'man/radiff2.1',
-  'man/rafind2.1',
-  'man/ragg2.1',
-  'man/rahash2.1',
-  'man/rarun2.1',
-  'man/rasm2.1',
-  'man/rax2.1',
-  'man/esil.7'
-)
+if cli_enabled
+  install_man(
+    'man/r2agent.1',
+    'man/r2-docker.1',
+    'man/r2pm.1',
+    'man/rabin2.1',
+    'man/radare2.1',
+    'man/radiff2.1',
+    'man/rafind2.1',
+    'man/ragg2.1',
+    'man/rahash2.1',
+    'man/rarun2.1',
+    'man/rasm2.1',
+    'man/rax2.1',
+    'man/esil.7'
+  )
 
-install_data('doc/hud',
-  install_dir: r2_hud,
-  rename: 'main'
-)
+  install_data('doc/hud',
+    install_dir: r2_hud,
+    rename: 'main'
+  )
 
-install_data(
-  'doc/zsh/_r2',
-  'doc/zsh/_rabin2',
-  'doc/zsh/_radiff2',
-  'doc/zsh/_rafind2',
-  'doc/zsh/_ragg2',
-  'doc/zsh/_rahash2',
-  'doc/zsh/_rasm2',
-  'doc/zsh/_rax2',
-  install_dir: r2_zsh_compdir
-)
+  install_data(
+    'doc/zsh/_r2',
+    'doc/zsh/_rabin2',
+    'doc/zsh/_radiff2',
+    'doc/zsh/_rafind2',
+    'doc/zsh/_ragg2',
+    'doc/zsh/_rahash2',
+    'doc/zsh/_rasm2',
+    'doc/zsh/_rax2',
+    install_dir: r2_zsh_compdir
+  )
+
+  meson.add_install_script(host_machine.system() == 'windows' ? 'sys/create_r2.bat' : 'sys/create_r2.sh')
+endif

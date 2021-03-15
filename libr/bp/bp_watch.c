@@ -34,5 +34,5 @@ R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int 
 	return b;
 }
 
-R_API void r_bp_watch_del() {
+R_API void r_bp_watch_del(void) {
 }

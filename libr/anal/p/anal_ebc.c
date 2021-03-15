@@ -66,10 +66,7 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		return 2;
 	}
 
-	memset(op, 0, sizeof (RAnalOp));
 	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 
 	ret = op->size = ebc_decode_command(buf, &cmd);
 

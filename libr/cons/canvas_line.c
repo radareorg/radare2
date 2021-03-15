@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake */
+/* radare - LGPL - Copyright 2013-2021 - pancake */
 
 #include <r_cons.h>
 #define W(y) r_cons_canvas_write(c,y)
@@ -67,6 +67,9 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 	}
 	if (!c->color) {
 		c->attr = Color_RESET;
+	}
+	if (style->ansicolor) {
+		c->attr = style->ansicolor;
 	}
 	switch (style->symbol) {
 	case LINE_UNCJMP:
@@ -258,7 +261,7 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 	}
 }
 
-static void draw_vertical_line (RConsCanvas *c, int x, int y, int height, int dot_style) {
+static void draw_vertical_line(RConsCanvas *c, int x, int y, int height, int dot_style) {
 	int i;
 	/* do not render offscreen vertical lines */
 	if (x + c->sx < 0) {
@@ -280,7 +283,7 @@ static void draw_vertical_line (RConsCanvas *c, int x, int y, int height, int do
 	r_cons_break_pop ();
 }
 
-R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
+R_API void r_cons_canvas_line_diagonal(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
 	if (x == x2 || y == y2) {
 		style->dot_style = DOT_STYLE_NORMAL;
 		r_cons_canvas_line_square (c, x, y +1, x2, y2, style);

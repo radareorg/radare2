@@ -1,0 +1,23 @@
+NAME=#!c
+FILE=-
+CMDS=<<EOF
+"?e #include <stdio.h>\nint entry(){printf(\"Hello\\n\");return 0;}" > .tmp-hashc.c
+#!c .tmp-hashc.c
+rm .tmp-hashc.c
+EOF
+EXPECT=<<EOF
+Hello
+EOF
+RUN
+
+NAME=#! with ext != name
+FILE=-
+CMDS=<<EOF
+"?e #include <stdio.h>\nint main(){printf(\"Hello\\n\");return 0;}" > .tmp-hashextname.c
+#!cpipe .tmp-hashextname.c
+rm .tmp-hashextname.c
+EOF
+EXPECT=<<EOF
+Hello
+EOF
+RUN

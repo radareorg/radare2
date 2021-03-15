@@ -1,0 +1,16 @@
+NAME=om output
+FILE=--
+CMDS=<<EOF
+on malloc://256
+on malloc://256 0x300
+omni 1 aaaaaa
+omni 2 bbbbbb
+om
+om. @ 0x300
+EOF
+EXPECT=<<EOF
+ 2 fd: 4 +0x00000000 0x00000300 - 0x000003ff rw- bbbbbb
+ 1 fd: 3 +0x00000000 0x00000000 - 0x000000ff rw- aaaaaa
+ 2 fd: 4 +0x00000000 0x00000300 - 0x000003ff rw- bbbbbb
+EOF
+RUN

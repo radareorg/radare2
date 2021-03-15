@@ -1247,9 +1247,9 @@ pd 1 @ 0x11c0
 pd 1 @ 0x1523
 EOF
 EXPECT=<<EOF
-            0x00001557      lea eax, [esi - 0x220c]                    ; "  fwhibbit{" str.fwhibbit
-            0x000011c0      lea eax, [ebx - 0x2448]                    ; "   -os--/sosdmmNNMMNy         .+// " str.os___sosdmmNNMMNy_________.
-            0x00001523      lea eax, [esi - 0x2218]                    ; "\n  Red Pill" str.Red_Pill
+            0x00001557      lea eax, [esi - 0x220c]                    ; "  fwhibbit{" str.__fwhibbit
+            0x000011c0      lea eax, [ebx - 0x2448]                    ; "   -os--/sosdmmNNMMNy         .+// " str.____os___sosdmmNNMMNy_________.___
+            0x00001523      lea eax, [esi - 0x2218]                    ; "\n  Red Pill" str._n__Red_Pill
 EOF
 RUN
 
@@ -1264,8 +1264,8 @@ pd 1 @ 0x1557
 pd 1 @ 0x1523
 EOF
 EXPECT=<<EOF
-|           0x00001557      lea eax, str.fwhibbit                      ; 0x1df4 ; "  fwhibbit{"
-|           0x00001523      lea eax, str.Red_Pill                      ; 0x1de8 ; "\n  Red Pill"
+|           0x00001557      lea eax, str.__fwhibbit                    ; 0x1df4 ; "  fwhibbit{"
+|           0x00001523      lea eax, str._n__Red_Pill                  ; 0x1de8 ; "\n  Red Pill"
 EOF
 RUN
 
@@ -2360,7 +2360,6 @@ EXPECT=<<EOF
     "type2_num": 0
   }
 ]
-
 EOF
 RUN
 
@@ -2370,7 +2369,9 @@ CMDS=<<EOF
 # Common parts
 #
 e asm.arch=x86
-e asm.assembler=x86.as
+?== x86 `e asm.arch`
+?!e asm.assembler=x86.as
+??e asm.assembler=x86.nz
 e asm.bits=32
 wa bsf eax, ebx
 #
@@ -2453,5 +2454,25 @@ EXPECT=<<EOF
 0x00000000
 0x0000001f
 0x00000000
+EOF
+RUN
+
+NAME=cmc
+FILE=-
+EXPECT=<<EOF
+0x00000000
+0x00000001
+EOF
+CMDS=<<EOF
+e io.va=true
+e esil.debug=true
+e asm.arch=x86
+e asm.bits=32
+aei
+aeim
+"wa cmc"
+aer?eflags
+aes
+aer?eflags
 EOF
 RUN

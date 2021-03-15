@@ -14,6 +14,6 @@ executable('ragg2', 'ragg2.c',
     r_crypto_dep
   ],
   install: true,
-  install_rpath: rpath,
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )

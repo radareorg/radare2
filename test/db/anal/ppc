@@ -1,3 +1,15 @@
+NAME=ppc-asserts
+FILE=bins/elf/powerpc-linux-gnu-symexec-palindrome
+CMDS=<<EOF
+%R2_DEBUG_ASSERT=1
+aaa
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+RUN
+
 NAME=ppc-aflm
 FILE=bins/elf/analysis/elf-ppc-execstack
 CMDS=<<EOF
@@ -391,7 +403,7 @@ fcn.1000b540:
     sym.imp.calloc
 
 sym._init:
-    loc.imp.__gmon_start
+    loc.imp.__gmon_start__
     fcn.100015e0
     fcn.100264c0
 
@@ -455,5 +467,114 @@ EXPECT=<<EOF
 0x10010107
 0x0000ffc1
 0x1001010a
+EOF
+RUN
+
+NAME=ppc-detect-vtables
+FILE=bins/elf/ppc_classes
+CMDS=<<EOF
+av
+EOF
+EXPECT=<<EOF
+
+Vtable Found at 0x100016d4
+0x100016d4 : No Name found
+0x100016d8 : No Name found
+0x100016dc : No Name found
+
+
+Vtable Found at 0x100016e8
+0x100016e8 : No Name found
+0x100016ec : No Name found
+0x100016f0 : No Name found
+
+
+Vtable Found at 0x100016fc
+0x100016fc : No Name found
+0x10001700 : No Name found
+0x10001704 : No Name found
+
+
+Vtable Found at 0x10001710
+0x10001710 : No Name found
+0x10001714 : No Name found
+0x10001718 : No Name found
+0x1000171c : No Name found
+0x10001720 : No Name found
+
+
+Vtable Found at 0x1000172c
+0x1000172c : No Name found
+0x10001730 : No Name found
+0x10001734 : No Name found
+0x10001738 : No Name found
+0x1000173c : No Name found
+
+
+Vtable Found at 0x10001748
+0x10001748 : No Name found
+0x1000174c : No Name found
+0x10001750 : No Name found
+0x10001754 : No Name found
+0x10001758 : No Name found
+
+
+Vtable Found at 0x10001764
+0x10001764 : No Name found
+0x10001768 : No Name found
+0x1000176c : No Name found
+
+EOF
+RUN
+
+NAME=aoj f0ff2194
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+wx f0ff2194
+aoj~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "opcode": "stwu r1, -0x10(r1)",
+    "disasm": "stwu r1, -0x10(r1)",
+    "pseudo": "word[r1 - 0x10] = r1",
+    "description": "Store Word with Update",
+    "mnemonic": "stwu",
+    "mask": "ffffffff",
+    "esil": "r1,-16,r1,+,=[4],-16,r1,+=",
+    "sign": false,
+    "prefix": 0,
+    "id": 594,
+    "opex": {
+      "operands": [
+        {
+          "type": "reg",
+          "value": "r1"
+        },
+        {
+          "type": "mem",
+          "base": "r1",
+          "disp": -16
+        }
+      ]
+    },
+    "addr": 0,
+    "bytes": "f0ff2194",
+    "size": 4,
+    "type": "store",
+    "esilcost": 12,
+    "scale": 0,
+    "refptr": 0,
+    "cycles": 0,
+    "failcycles": 0,
+    "delay": 0,
+    "stack": "inc",
+    "stackptr": 16,
+    "family": "cpu"
+  }
+]
 EOF
 RUN

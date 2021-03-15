@@ -14,13 +14,14 @@ endif
 
 vala:
 ifneq (${HAVE_VALA},)
-	cd ${VALADIR} && ${MAKE}
-	cd ${VALADIR}/types && ${MAKE}
+	$(MAKE) -C $(VALADIR)
+	$(MAKE) -C $(VALADIR)/types
 else
 	@echo Nothing to do.
 endif
 
-.PHONY: test sdb.js pkgconfig
+.PHONY: test sdb.js pkgconfig dist w32dista asan
+
 test:
 	${MAKE} -C test
 
@@ -34,20 +35,21 @@ pkgconfig:
 src/sdb_version.h:
 	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb_version.h
 
-CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c
+CFILES=cdb.c buffer.c cdb_make.c ls.c ht.c sdb.c num.c base64.c text.c
 CFILES+=json.c ns.c lock.c util.c disk.c query.c array.c fmt.c main.c
 EMCCFLAGS=-O2 -s EXPORTED_FUNCTIONS="['_sdb_querys','_sdb_new0']"
 #EMCCFLAGS+=--embed-file sdb.data
+
 sdb.js: src/sdb_version.h
 	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js ${CFILES}
 
 clean:
 	rm -f src/sdb_version.h
-	cd src && ${MAKE} clean
-	cd memcache && ${MAKE} clean
-	cd test && ${MAKE} clean
+	$(MAKE) -C src clean
+	$(MAKE) -C memcache clean
+	$(MAKE) -C test clean
 ifneq (${HAVE_VALA},)
-	cd ${VALADIR} && ${MAKE} clean
+	${MAKE} -C $(VALADIR) clean
 endif
 
 dist:
@@ -73,7 +75,7 @@ install-dirs:
 
 INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht_uu.h src/ht_up.h src/ht_pp.h src/types.h
 INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h src/sdbht.h
-INCFILES+=src/dict.h
+INCFILES+=src/dict.h src/set.h src/ht_inc.h
 
 install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${DESTDIR}${MANDIR}

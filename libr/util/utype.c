@@ -99,10 +99,11 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 	bool isFirst = true;
 	ret = r_str_appendf (ret, "0x%08"PFMT64x" : ", val);
 	for (i = 0; i < 32; i++) {
-		if (!(val & (1 << i))) {
+		ut32 n = 1ULL << i;
+		if (!(val & n)) {
 			continue;
 		}
-		q = sdb_fmt ("enum.%s.0x%x", name, (1<<i));
+		q = sdb_fmt ("enum.%s.0x%x", name, n);
 		res = sdb_const_get (TDB, q, 0);
 		if (isFirst) {
 			isFirst = false;
@@ -112,13 +113,13 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 		if (res) {
 			ret = r_str_append (ret, res);
 		} else {
-			ret = r_str_appendf (ret, "0x%x", (1<<i));
+			ret = r_str_appendf (ret, "0x%x", n);
 		}
 	}
 	return ret;
 }
 
-R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
+R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 	char *query;
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
 	const char *tmptype;
@@ -129,8 +130,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 	} else {
 		tmptype = type;
 	}
-	if ((strstr (type, "*(") || strstr (type, " *")) &&
-			strncmp (type, "char *", 7)) {
+	if ((strstr (type, "*(") || strstr (type, " *")) && strncmp (type, "char *", 7)) {
 		return 32;
 	}
 	const char *t = sdb_const_get (TDB, tmptype, 0);
@@ -143,7 +143,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 	}
 	if (!strcmp (t, "type")){
 		query = r_str_newf ("type.%s.size", tmptype);
-		int r = (int)sdb_num_get (TDB, query, 0); // returns size in bits
+		ut64 r = sdb_num_get (TDB, query, 0); // returns size in bits
 		free (query);
 		return r;
 	}
@@ -151,7 +151,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 		query = r_str_newf ("%s.%s", t, tmptype);
 		char *members = sdb_get (TDB, query, 0);
 		char *next, *ptr = members;
-		int ret = 0;
+		ut64 ret = 0;
 		if (members) {
 			do {
 				char *name = sdb_anext (ptr, &next);
@@ -179,7 +179,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 					if (!strcmp (t, "struct")) {
 						ret += r_type_get_bitsize (TDB, subtype) * elements;
 					} else {
-						int sz = r_type_get_bitsize (TDB, subtype) * elements;
+						ut64 sz = r_type_get_bitsize (TDB, subtype) * elements;
 						ret = sz > ret ? sz : ret;
 					}
 				}
@@ -195,7 +195,7 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 }
 
 R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
-	int i, prev_typesize, typesize = 0;
+	int i, cur_offset, next_offset = 0;
 	char *res = NULL;
 
 	if (offset < 0) {
@@ -223,17 +223,28 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 			free (subtype);
 			break;
 		}
-		int val = r_num_math (NULL, r_str_word_get0 (subtype, len - 1));
-		int arrsz = val ? val : 1;
-		if ((typesize / 8) == offset) {
+		cur_offset = r_num_math (NULL, r_str_word_get0 (subtype, len - 2));
+		if (cur_offset > 0 && cur_offset < next_offset) {
+			free (subtype);
+			break;
+		}
+		if (!cur_offset) {
+			cur_offset = next_offset;
+		}
+		if (cur_offset == offset) {
 			res = r_str_newf ("%s.%s", type, name);
 			free (subtype);
 			break;
 		}
-		prev_typesize = typesize;
-		typesize += r_type_get_bitsize (TDB, subtype) * arrsz;
+		int arrsz = r_num_math (NULL, r_str_word_get0 (subtype, len - 1));
+		int fsize = (r_type_get_bitsize (TDB, subtype) * (arrsz ? arrsz : 1)) / 8;
+		if (!fsize) {
+			free (subtype);
+			break;
+		}
+		next_offset = cur_offset + fsize;
 		// Handle nested structs
-		if (offset < (typesize / 8)) {
+		if (offset > cur_offset && offset < next_offset) {
 			char *nested_type = (char *)r_str_word_get0 (subtype, 0);
 			if (r_str_startswith (nested_type, "struct ") && !r_str_endswith (nested_type, " *")) {
 				len = r_str_split (nested_type, ' ');
@@ -242,7 +253,7 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 					break;
 				}
 				nested_type = (char *)r_str_word_get0 (nested_type, 1);
-				char *nested_res = r_type_get_struct_memb (TDB, nested_type, offset - (prev_typesize / 8));
+				char *nested_res = r_type_get_struct_memb (TDB, nested_type, offset - cur_offset);
 				if (nested_res) {
 					len = r_str_split(nested_res, '.');
 					res = r_str_newf ("%s.%s.%s", type, name, r_str_word_get0 (nested_res, len - 1));
@@ -363,15 +374,6 @@ R_API int r_type_unlink(Sdb *TDB, ut64 addr) {
 	return true;
 }
 
-static void filter_type(char *t) {
-	for (;*t; t++) {
-		if (*t == ' ') {
-			*t = '_';
-		}
-		// memmove (t, t+1, strlen (t));
-	}
-}
-
 static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	// assumes var list is sorted by offset.. should do more checks here
 	char *p = NULL, *vars = NULL, var2[132], *fmt = NULL;
@@ -379,7 +381,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
-		char *struct_name;
+		char *struct_name = NULL;
 		const char *tfmt = NULL;
 		bool isStruct = false;
 		bool isEnum = false;
@@ -423,13 +425,15 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				vars = r_str_append (vars, p);
 				vars = r_str_append (vars, " ");
 			} else if (tfmt) {
-				filter_type (type);
+				(void) r_str_replace_ch (type, ' ', '_', true);
 				if (elements > 0) {
 					fmt = r_str_appendf (fmt, "[%d]", elements);
 				}
 				if (isStruct) {
 					fmt = r_str_append (fmt, "?");
-					vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
+					if (struct_name) {
+						vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
+					}
 					vars = r_str_append (vars, " ");
 				} else if (isEnum) {
 					fmt = r_str_append (fmt, "E");
@@ -576,87 +580,103 @@ R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_nam
 
 #define MIN_MATCH_LEN 4
 
+static inline bool is_function(const char *name) {
+	return name && !strcmp("func", name);
+}
+
 static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
-	const char *res;
-	if (r_str_nlen (name, MIN_MATCH_LEN) < MIN_MATCH_LEN) {
+	if (strlen(name) < MIN_MATCH_LEN) {
 		return NULL;
 	}
-	if ((res = sdb_const_get (TDB, name, NULL))) {
-		bool is_func = res && !strcmp ("func", res);
-		if (is_func) {
-			return strdup (name);
-		}
+
+	const char *res = sdb_const_get(TDB, name, NULL);
+	if (is_function(res)) {
+		return strdup(name);
 	}
+
 	return NULL;
+}
+
+static inline bool is_auto_named(char *func_name, size_t slen) {
+	return slen > 4 && (r_str_startswith (func_name, "fcn.") || r_str_startswith (func_name, "loc."));
+}
+
+static inline bool has_r_prefixes(char *func_name, int offset, size_t slen) {
+	return slen > 4 && (offset + 3 < slen) && func_name[offset + 3] == '.';
+}
+
+static char *strip_r_prefixes(char *func_name, size_t slen) {
+	// strip r2 prefixes (sym, sym.imp, etc')
+	int offset = 0;
+
+	while (has_r_prefixes(func_name, offset, slen)) {
+		offset += 4;
+	}
+
+	return func_name + offset;
+}
+
+static char *strip_common_prefixes_stdlib(char *func_name) {
+	// strip common prefixes from standard lib functions
+	if (r_str_startswith (func_name, "__isoc99_")) {
+		func_name += 9;
+	} else if (r_str_startswith (func_name, "__libc_") && !strstr(func_name, "_main")) {
+		func_name += 7;
+	} else if (r_str_startswith (func_name, "__GI_")) {
+		func_name += 5;
+	}
+
+	return func_name;
+}
+
+static char *strip_dll_prefix(char *func_name) {
+	char *tmp = strstr(func_name, "dll_");
+	if (tmp) {
+		return tmp + 3;
+	}
+
+	return func_name;
+}
+
+static void clean_function_name(char *func_name) {
+	char *last = (char *)r_str_lchr (func_name, '_');
+	if (!last || !r_str_isnumber(last + 1)) {
+		return;
+	}
+
+	*last = '\0';
 }
 
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //	 to additional information added around name
 R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
-	int offset = 0;
 	char *str = func_name;
 	char *result = NULL;
-	char *first;
 	r_return_val_if_fail (TDB, false);
 	r_return_val_if_fail (func_name, false);
 
 	size_t slen = strlen (str);
-	if (slen < MIN_MATCH_LEN) {
+	if (slen < MIN_MATCH_LEN || is_auto_named(str, slen)) {
 		return NULL;
 	}
 
-	if (slen > 4) { // were name-matching so ignore autonamed
-		if (!strncmp (str, "fcn.", 4) || !strncmp (str, "loc.", 4)) {
-			return NULL;
-		}
-	}
-	// strip r2 prefixes (sym, sym.imp, etc')
-	while (slen > 4 && (offset + 3 < slen) && str[offset + 3] == '.') {
-		offset += 4;
-	}
-	slen -= offset;
-	str += offset;
-	// strip common prefixes from standard lib functions
-	if (!strncmp (str, "__isoc99_", 9)) {
-		str += 9;
-	} else if (!strncmp (str, "__libc_", 7) && !strstr(str,"_main")) {
-		str += 7;
-	} else if (!strncmp (str, "__GI_", 5)) {
-		str += 5;
-	}
+	str = strip_r_prefixes(str, slen);
+	str = strip_common_prefixes_stdlib(str);
+	str = strip_dll_prefix(str);
+
 	if ((result = type_func_try_guess (TDB, str))) {
 		return result;
 	}
 
+	str = strdup (str);
+	clean_function_name(str);
+
 	if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
+		free (str);
 		return result;
 	}
-	str = strdup (str);
-	// Remove func-number from module_func-number
-	// sym._ExitProcess_4 ==> ExitProcess
-	char *l = (char *)r_str_lchr (str, '_');
-	if (l) {
-		char *tmp = l + 1;
-		char *first = strchr (str, '_');
-		while (tmp && IS_DIGIT (*tmp)) {
-			tmp++;
-		}
-		if (tmp && first && !*tmp) {
-			*l = '\0';
-			if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
-				free (str);
-				return result;
-			}
-		}
-	}
-	// some names are in format module.dll_function_number, try to remove those
-	// also try module.dll_function and function_number
-	if ((first = strstr (str, "dll_"))) {
-		result = type_func_try_guess (TDB, first + 4);
-		goto out;
-	}
-out:
+
 	free (str);
 	return result;
 }

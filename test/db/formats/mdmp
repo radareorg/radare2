@@ -46,7 +46,7 @@ NAME=: sections
 FILE=bins/mdmp/calc.dmp
 CMDS=iS~calc
 EXPECT=<<EOF
-9   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- C:_Windows_System32_calc.exe
+9   0x00000000   0xe3000 0xfffe0000      0xe3000 ---- C:\Windows\System32\calc.exe
 EOF
 RUN
 
@@ -150,7 +150,7 @@ NAME=: 32bit - symbols resolving 1
 FILE=bins/mdmp/hello.dmp
 CMDS=is~DeleteCriticalSection:0
 EXPECT=<<EOF
-1     0x0009dcda 0x00406108 NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
+1    0x0009dcda 0x00406108 NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
 RUN
 
@@ -158,7 +158,7 @@ NAME=: 32bit - symbols resolving 2
 FILE=bins/mdmp/hello.dmp
 CMDS=is~RtlDeleteCriticalSection:0
 EXPECT=<<EOF
-358   0x001c2176 0x76fb05a4 NONE   FUNC 0    ntdll.dll                                     imp.RtlDeleteCriticalSection
+358  0x001c2176 0x76fb05a4 NONE   FUNC 0    ntdll.dll                                     imp.RtlDeleteCriticalSection
 EOF
 RUN
 
@@ -190,7 +190,7 @@ NAME=: 32bit - exports resolving
 FILE=bins/mdmp/hello.dmp
 CMDS=iE~Ordinal_1
 EXPECT=<<EOF
-1     0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll      Ordinal_1
+1    0x0041f1f2 0x77802620 GLOBAL FUNC 0    ntdll.dll      Ordinal_1
 EOF
 RUN
 
@@ -234,7 +234,7 @@ NAME=: 32bit - strings count
 FILE=bins/mdmp/hello.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-10281
+10277
 EOF
 RUN
 
@@ -283,7 +283,7 @@ NAME=: 64bit - symbols resolving 1
 FILE=bins/mdmp/hello64.dmp
 CMDS=is~imp.DeleteCriticalSection~KERNEL32.dll
 EXPECT=<<EOF
-1     0x0009ae8b 0x004081fc    NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
+1    0x0009ae8b 0x004081fc    NONE   FUNC 0    KERNEL32.dll                                  imp.DeleteCriticalSection
 EOF
 RUN
 
@@ -291,7 +291,7 @@ NAME=: 64bit - symbols resolving 2
 FILE=bins/mdmp/hello64.dmp
 CMDS=is~A_SHAFinal
 EXPECT=<<EOF
-9     0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll                                     A_SHAFinal
+9    0x001eb87f 0x77728bf0    GLOBAL FUNC 0    ntdll.dll                                     A_SHAFinal
 EOF
 RUN
 
@@ -323,7 +323,7 @@ NAME=: 64bit - exports resolving
 FILE=bins/mdmp/hello64.dmp
 CMDS=iE~CsrVerifyRegion
 EXPECT=<<EOF
-39    0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
+39   0x0029513f 0x777d24b0    GLOBAL FUNC 0    ntdll.dll      CsrVerifyRegion
 EOF
 RUN
 
@@ -364,7 +364,7 @@ NAME=: 64bit - strings count
 FILE=bins/mdmp/hello64.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-22898
+22901
 EOF
 RUN
 

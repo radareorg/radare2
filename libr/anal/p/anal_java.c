@@ -11,15 +11,10 @@
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/class.h"
 
-#ifdef IFDBG
-#define dprintf eprintf
-#endif
-
 #define DO_THE_DBG 0
 #define IFDBG  if(DO_THE_DBG)
-#define IFINT  if(0)
 
-ut64 METHOD_START = 0;
+static ut64 METHOD_START = 0;
 
 static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj);
 
@@ -36,14 +31,14 @@ static RBinJavaObj * get_java_bin_obj(RAnal *anal) {
 	return is_java ? b->cur->o->bin_obj : NULL;
 }
 
-static ut64 java_get_method_start () {
+static ut64 java_get_method_start(void) {
 	return METHOD_START;
 }
 
 static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	ut8 op_byte = data[0];
 	ut64 offset = addr - java_get_method_start ();
-	ut8 pos = (offset+1)%4 ? 1 + 4 - (offset+1)%4 : 1;
+	ut8 pos = (offset + 1)%4 ? 1 + 4 - (offset+1)%4 : 1;
 
 	if (op_byte == 0xaa) {
 		// handle a table switch condition

@@ -1,4 +1,113 @@
-anal_plugins = [
+user_plugins = get_option('plugins').split(',')
+no_user_plugins = get_option('plugins') == ''
+
+esil_plugins = [ 'dummy' ]
+asm_plugins = [ 'bf' ]
+anal_plugins = [ 'null' ]
+bin_plugins = [ 'any' ]
+bin_ldr_plugins = [ 'ldr_linux' ]
+bin_xtr_plugins = [ 'xtr_sep64' ]
+io_plugins = [ 'malloc', 'fd', 'default', 'null', 'rbuf', 'r2pipe' , 'r2pipe']
+fs_plugins = [ 'r2', 'posix', 'io' ]
+bp_plugins = [ 'bf' ]
+crypto_plugins = [ 'xor', 'punycode' ]
+core_plugins = [ 'a2f' ]
+egg_plugins = [ 'xor' ]
+debug_plugins = [ 'null', 'io' ]
+lang_plugins = [ 'lib', 'pipe' ]
+parse_plugins = [ 'att2intel' ]
+
+# This must be splitted in meson.builds for each module
+# meson split is results in 1 empty element when splitting an empty string :facepalm:
+if not no_user_plugins
+  if user_plugins.contains('apple') or user_plugins.contains('macos') or user_plugins.contains('ios')
+    io_plugins += [
+      'mach',
+    ]
+    bin_plugins += [
+      'mach0', 'mach064',
+      'dyldcache',
+      'xnu_kernelcache',
+    ]
+    bin_xtr_plugins += [
+      'xtr_dyldcache',
+      'xtr_fatmach0',
+      'xtr_sep64'
+    ]
+  endif
+  if user_plugins.contains('android')
+    bin_plugins += [
+      'elf', 'elf64',
+      'art', 'nso', 'nro'
+    ]
+    bin_ldr_plugins += [
+      'ldr_linux'
+    ]
+  endif
+  if user_plugins.contains('x86')
+    asm_plugins += [ 'x86_cs', 'x86_nz' ]
+    anal_plugins += [ 'x86_cs' ]
+    bp_plugins += [ 'x86' ]
+    parse_plugins += [ 'x86_pseudo' ]
+  endif
+  if user_plugins.contains('web')
+    io_plugins += [ 'http' ]
+    io_plugins += [ 'r2web' ]
+  endif
+  if user_plugins.contains('arm')
+    asm_plugins += [ 'arm_cs' ]
+    anal_plugins += [ 'x86_cs' ]
+    bp_plugins += [ 'arm' ]
+    parse_plugins += [ 'arm_pseudo' ]
+  endif
+  if user_plugins.contains('v850')
+    asm_plugins += [ 'v850', 'v810', 'v850_gnu' ]
+    anal_plugins += [ 'v850', 'v810' ]
+    parse_plugins += [ 'v850_pseudo' ]
+  endif
+  if user_plugins.contains('wasm')
+    asm_plugins += [ 'wasm' ]
+    anal_plugins += [ 'wasm' ]
+    parse_plugins += [ 'wasm_pseudo' ]
+  endif
+  if user_plugins.contains('sparc')
+    asm_plugins += [ 'sparc_cs', 'sparc_gnu' ]
+    anal_plugins += [ 'sparc_cs', 'sparc_gnu' ]
+    bp_plugins += [ 'sparc' ]
+    # missing parse_plugins += [ 'sparc_pseudo' ]
+  endif
+  if user_plugins.contains('mips')
+    asm_plugins += [ 'mips_cs', 'mips_gnu' ]
+    anal_plugins += [ 'mips_cs', 'mips_gnu' ]
+    bp_plugins += [ 'mips' ]
+    parse_plugins += [ 'mips_pseudo' ]
+  endif
+  if user_plugins.contains('dalvik')
+    bin_plugins += [ 'dex' ]
+    asm_plugins += [ 'dalvik' ]
+    anal_plugins += [ 'dalvik' ]
+    parse_plugins += [ 'dalvik_pseudo' ]
+  endif
+  if user_plugins.contains('riscv')
+    asm_plugins += [ 'riscv' ]
+    anal_plugins += [ 'riscv' ]
+    parse_plugins += [ 'riscv_pseudo' ]
+  endif
+  if user_plugins.contains('elf')
+    bin_plugins += [ 'elf', 'elf64' ]
+  endif
+  if user_plugins.contains('pe')
+    bin_plugins += [ 'pe', 'pe64', 'coff', 'mz', 'ne' ]
+  endif
+  if not user_plugins.contains('nogrub')
+    fs_plugins += [ 'cpio', 'ext2', 'fat', 'fb', 'hfs',
+      'hfsplus', 'iso9660', 'jfs', 'minix', 'ntfs', 'reiserfs',
+      'sfs', 'tar', 'udf', 'ufs', 'ufs2', 'xfs' ]
+  endif
+endif
+# else
+if no_user_plugins
+anal_plugins += [
   '6502',
   '8051',
   'amd29k',
@@ -26,7 +135,6 @@ anal_plugins = [
   'mips_gnu',
   'msp430',
   'nios2',
-  'null',
   'or1k',
   'pic',
   'ppc_cs',
@@ -54,7 +162,7 @@ anal_plugins = [
   'z80',
 ]
 
-asm_plugins = [
+asm_plugins += [
   '6502',
   '8051',
   'amd29k',
@@ -93,6 +201,7 @@ asm_plugins = [
   'nios2',
   'or1k',
   'pic',
+  'ppc_as',
   'ppc_cs',
   'ppc_gnu',
   'propeller',
@@ -102,13 +211,13 @@ asm_plugins = [
   'snes',
   'sparc_cs',
   'sparc_gnu',
-  'spc700',
   'sysz',
   'tms320',
   'tms320c64x',
   'tricore',
   'v810',
   'v850',
+  'v850_gnu',
   'vax',
   'wasm',
   'ws',
@@ -122,8 +231,7 @@ asm_plugins = [
   'z80',
 ]
 
-bin_plugins = [
-  'any',
+bin_plugins += [
   'art',
   'avr',
   'bf',
@@ -166,27 +274,27 @@ bin_plugins = [
   'sfc',
   'smd',
   'sms',
-  'spc700',
+  'symbols',
   'te',
   'vsf',
   'wasm',
   'xbe',
   'xnu_kernelcache',
   'z64',
-  'zimg',
+  'zimg'
 ]
 
-bin_ldr_plugins = [
-  'ldr_linux',
+bin_ldr_plugins += [
+  'ldr_linux'
 ]
 
-bin_xtr_plugins = [
+bin_xtr_plugins += [
   'xtr_dyldcache',
   'xtr_fatmach0',
   'xtr_sep64',
 ]
 
-bp_plugins = [
+bp_plugins += [
   'arm',
   'bf',
   'mips',
@@ -195,12 +303,12 @@ bp_plugins = [
   'x86'
 ]
 
-core_plugins = [
+core_plugins += [
   'a2f',
   'java'
 ]
 
-crypto_plugins = [
+crypto_plugins += [
   'aes',
   'aes_cbc',
   'base64',
@@ -208,7 +316,6 @@ crypto_plugins = [
   'blowfish',
   'cps2',
   'des',
-  'punycode',
   'rc2',
   'rc4',
   'rc6',
@@ -216,10 +323,9 @@ crypto_plugins = [
   'ror',
   'rot',
   'serpent',
-  'xor',
 ]
 
-debug_plugins = [
+debug_plugins += [
   'bf',
   'bochs',
   'esil',
@@ -229,16 +335,15 @@ debug_plugins = [
   'null',
   'qnx',
   'rap',
-  'windbg'
+  'winkd'
 ]
 
-egg_plugins = [
+egg_plugins += [
   'exec',
   #'shya',
-  'xor'
 ]
 
-fs_plugins = [
+fs_plugins += [
   'cpio',
   'ext2',
   'fat',
@@ -261,71 +366,76 @@ fs_plugins = [
   'xfs'
 ]
 
-io_plugins = [
+io_plugins += [
   'ar',
+  'fd',
   'bfdbg',
   'bochs',
   'debug',
-  'default',
   'gdb',
   'gprobe',
   'gzip',
   'http',
   'ihex',
   'mach',
-  'malloc',
   'mmap',
-  'null',
   'procpid',
   'ptrace',
   'qnx',
   'r2k',
-  'r2pipe',
-  'r2web',
   'rap',
   'rbuf',
   'self',
   'shm',
   'sparse',
   'tcp',
-  'windbg',
+  'winkd',
   'winedbg',
   'zip'
 ]
 
 if host_machine.system() == 'windows'
   io_plugins += [
+    'windbg',
     'w32dbg',
     'w32',
   ]
+  debug_plugins += 'windbg'
 endif
 
-lang_plugins = [
-  'c',
-  'cpipe',
-  'lib',
-  'pipe',
+lang_plugins += [
   'rust',
   'vala'
 ]
 
-parse_plugins = [
+if host_machine.system() != 'windows'
+  lang_plugins += [
+    'c',
+    'cpipe'
+  ]
+endif
+
+parse_plugins += [
   '6502_pseudo',
   'arm_pseudo',
-  'att2intel',
   'avr_pseudo',
   'chip8_pseudo',
+  'tms320_pseudo',
   'dalvik_pseudo',
   'm68k_pseudo',
   'mips_pseudo',
   'ppc_pseudo',
   'sh_pseudo',
+  'riscv_pseudo',
+  'v850_pseudo',
   'wasm_pseudo',
   'x86_pseudo',
   'z80_pseudo'
 ]
 
-include_files =[
+endif
+
+include_files = [
   'include/r2naked.h',
   'include/r_agraph.h',
   'include/r_anal.h',
@@ -368,14 +478,14 @@ include_files =[
   'include/r_socket.h',
   'include/r_syscall.h',
   'include/r_th.h',
+  'include/r_types_overflow.h',
   'include/r_types_base.h',
   'include/r_types.h',
   'include/r_util.h',
   'include/r_vector.h',
-  'include/sdb.h'
+  'include/r_skyline.h',
 ]
-install_headers(include_files,
-  subdir: 'libr')
+install_headers(include_files, install_dir: r2_incdir)
 
 r_util_files = [
   'include/r_util/pj.h',
@@ -389,15 +499,16 @@ r_util_files = [
   'include/r_util/r_bitmap.h',
   'include/r_util/r_buf.h',
   'include/r_util/r_cache.h',
-  'include/r_util/r_constr.h',
   'include/r_util/r_ctypes.h',
   'include/r_util/r_debruijn.h',
   'include/r_util/r_event.h',
   'include/r_util/r_file.h',
   'include/r_util/r_graph.h',
+  'include/r_util/r_graph_drawable.h',
   'include/r_util/r_hex.h',
   'include/r_util/r_idpool.h',
   'include/r_util/r_itv.h',
+  'include/r_util/r_json.h',
   'include/r_util/r_log.h',
   'include/r_util/r_mem.h',
   'include/r_util/r_name.h',
@@ -423,40 +534,21 @@ r_util_files = [
   'include/r_util/r_str_util.h',
   'include/r_util/r_sys.h',
   'include/r_util/r_alloc.h',
-  'include/r_util/r_date.h',
   'include/r_util/r_time.h',
   'include/r_util/r_tree.h',
   'include/r_util/r_uleb128.h',
   'include/r_util/r_utf16.h',
   'include/r_util/r_utf32.h',
   'include/r_util/r_utf8.h',
-  'include/r_util/r_x509.h'
+  'include/r_util/r_x509.h',
+  'include/r_util/r_annotated_code.h'
 ]
-install_headers(r_util_files, subdir: 'libr/r_util')
+install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
 r_crypto_files = [
   'include/r_crypto/r_des.h'
 ]
-install_headers(r_crypto_files, subdir: 'libr/r_crypto')
-
-sdb_files = [
-  'include/sdb/buffer.h',
-  'include/sdb/cdb.h',
-  'include/sdb/set.h',
-  'include/sdb/cdb_make.h',
-  'include/sdb/config.h',
-  'include/sdb/dict.h',
-  'include/sdb/ht_inc.h',
-  'include/sdb/ht_pp.h',
-  'include/sdb/ht_up.h',
-  'include/sdb/ht_uu.h',
-  'include/sdb/ls.h',
-  'include/sdb/sdb.h',
-  'include/sdb/sdbht.h',
-  'include/sdb/sdb_version.h',
-  'include/sdb/types.h'
-]
-install_headers(sdb_files, subdir: 'libr/sdb')
+install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
 
 sflib_common_files = [
   'include/sflib/common/sftypes.h',
@@ -479,10 +571,10 @@ sflib_arch_files = [
   'sfsysnr.h'
 ]
 
-install_headers(sflib_common_files, subdir: 'libr/sflib/common')
+install_headers(sflib_common_files, install_dir: join_paths(r2_incdir, 'sflib/common'))
 foreach arch : sflib_arch
   foreach file : sflib_arch_files
-    install_headers(join_paths('include/sflib', arch, file), subdir: join_paths('libr/sflib', arch))
+    install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(r2_incdir, 'sflib', arch))
   endforeach
 endforeach
 

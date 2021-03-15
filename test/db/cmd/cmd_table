@@ -1,0 +1,107 @@
+NAME=comma table
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+afr
+e scr.utf8=true
+aflt :fancy > .tt
+cat .tt~?
+,. .tt
+rm .tt
+,~?
+EOF
+EXPECT=<<EOF
+37
+37
+EOF
+RUN
+
+NAME=comma table2
+FILE=bins/mach0/mac-ls
+BROKEN=1
+CMDS=<<EOF
+afr
+e scr.utf8=false
+aflt :fancy > .tt2
+cat .tt2~?
+,. .tt2
+rm .tt2
+,~?
+EOF
+EXPECT=<<EOF
+37
+37
+EOF
+RUN
+
+NAME=comma table3
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+afr
+afl,:csv>$a
+cat $a~?
+,. $a
+,~?
+EOF
+EXPECT=<<EOF
+34
+37
+EOF
+RUN
+
+NAME=comma table r2 include
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+afr
+.aflt :r2
+,~?
+EOF
+EXPECT=<<EOF
+37
+EOF
+RUN
+
+NAME=comma table r2 include twice
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+afr
+aflt :r2 > $a
+.$a
+,~?
+. $a
+,~?
+EOF
+EXPECT=<<EOF
+37
+70
+EOF
+RUN
+
+NAME=example table
+FILE=--
+CMDS=<<EOF
+,h xxd foo bar cow
+,
+,,
+,j
+,r 123 456 789
+,
+
+EOF
+EXPECT=<<EOF
+.--------------------.
+| foo  | bar  | cow  |
+)--------------------(
+`--------------------'
+
+foo,bar,cow
+
+[]
+.--------------------.
+| foo  | bar  | cow  |
+)--------------------(
+| 123  | 456  | 789  |
+`--------------------'
+
+EOF
+RUN
+

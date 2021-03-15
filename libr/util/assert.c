@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2018-2020 - ret2libc */
+
 #include <r_util.h>
 
 #ifdef R2_ASSERT_STDOUT
@@ -25,7 +27,7 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...) {
 	va_start (args, fmt);
 	print_message (level, fmt, args);
 	va_end (args);
-	char *env = r_sys_getenv ("R_DEBUG_ASSERT");
+	char *env = r_sys_getenv ("R2_DEBUG_ASSERT");
 	if (env) {
 		r_sys_backtrace ();
 		if (*env && atoi (env)) {

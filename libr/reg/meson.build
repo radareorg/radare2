@@ -13,6 +13,7 @@ r_reg = library('r_reg', r_reg_sources,
   dependencies: [r_util_dep],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -24,6 +25,7 @@ pkgconfig_mod.generate(r_reg,
   version: r2_version,
   name: 'r_reg',
   filebase: 'r_reg',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util'
   ],

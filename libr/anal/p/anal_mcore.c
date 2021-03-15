@@ -14,11 +14,6 @@ static int mcore_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		return -1;
 	}
 
-	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
 	op->size = 2;
 	if ((instr = mcore_next (&handle))) {
 		op->type = instr->type;

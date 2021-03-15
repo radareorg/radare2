@@ -74,6 +74,6 @@ static const char *ascii_table =
 "077   63    3F    ?                           177   127   7F    DEL\n"
 ;
 
-R_API const char *ret_ascii_table() {
+R_API const char *ret_ascii_table(void) {
         return ascii_table;
 }

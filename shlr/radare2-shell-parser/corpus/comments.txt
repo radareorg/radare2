@@ -83,3 +83,19 @@ p8 4 # something
 (commands
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier)))))
+
+
+============================================
+#! identified as comment if not command name
+============================================
+
+?e #!this is a comment
+?e #this is also a comment
+?e # and this too
+
+---
+
+(commands
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier))
+  (arged_command (cmd_identifier)))

@@ -277,7 +277,7 @@ static window *__window_from_handle(HANDLE hwnd) {
 }
 
 static RTable *__create_window_table(void) {
-	RTable *tbl = r_table_new ();
+	RTable *tbl = r_table_new ("windows");
 	if (!tbl) {
 		return NULL;
 	}
@@ -290,7 +290,7 @@ static RTable *__create_window_table(void) {
 
 static void __add_window_to_table(RTable *tbl, window *win) {
 	r_return_if_fail (tbl && win);
-	char *handle = r_str_newf ("0x%08"PFMT64x"", win->h);
+	char *handle = r_str_newf ("0x%08"PFMT64x"", (ut64)win->h);
 	char *pid = r_str_newf ("%lu", win->pid);
 	char *tid = r_str_newf ("%lu", win->tid);
 	r_table_add_row (tbl, handle, pid, tid, win->name, NULL);
@@ -491,7 +491,7 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
 	r_debug_bp_add (dbg, offset, 0, 0, 0, NULL, 0);
 	char *cond;
 	if (window_id) {
-		cond = r_str_newf ("?= `ae %d,edx,-`", type);
+		cond = r_str_newf ("?= `ae %lu,edx,-`", type);
 	} else {
 		char *reg;
 		if (dbg->bits == R_SYS_BITS_64) {
@@ -499,7 +499,7 @@ R_API bool r_w32_add_winmsg_breakpoint(RDebug *dbg, const char *input) {
 		} else {
 			reg = "ecx";
 		}
-		cond = r_str_newf ("?= `ae %d,%s,%d,+,[4],-`", type, reg, dbg->bits);
+		cond = r_str_newf ("?= `ae %lu,%s,%d,+,[4],-`", type, reg, dbg->bits);
 	}
 	dbg->corebind.cmdf (dbg->corebind.core, "\"dbC 0x%"PFMT64x" %s\"", offset, cond);
 	free (name);

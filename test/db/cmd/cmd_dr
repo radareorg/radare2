@@ -7,6 +7,6 @@ dr ebx=0x10
 drrj~{2}
 EOF
 EXPECT=<<EOF
-{"role":"A1","reg":"ebx","value":"10","ref":" 16"}
+{"role":"A1","reg":"ebx","value":"10","refstr":"16 ebx"}
 EOF
 RUN

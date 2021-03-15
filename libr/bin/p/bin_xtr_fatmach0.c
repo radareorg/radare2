@@ -132,7 +132,9 @@ static RList * oneshotall_buffer(RBin *bin, RBuffer *b) {
 		int i = 0;
 		for (i = 1; data && i < narch; i++) {
 			data = oneshot_buffer (bin, b, i);
-			r_list_append (res, data);
+			if (data) {
+				r_list_append (res, data);
+			}
 		}
 		return res;
 	}

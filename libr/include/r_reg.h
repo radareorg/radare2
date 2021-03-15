@@ -142,10 +142,12 @@ typedef struct r_reg_flags_t {
 R_API void r_reg_free(RReg *reg);
 R_API void r_reg_free_internal(RReg *reg, bool init);
 R_API RReg *r_reg_new(void);
+R_API RReg *r_reg_init(RReg *reg);
 R_API bool r_reg_set_name(RReg *reg, int role, const char *name);
 R_API bool r_reg_set_profile_string(RReg *reg, const char *profile);
+R_API char* r_reg_profile_to_cc(RReg *reg);
 R_API bool r_reg_set_profile(RReg *reg, const char *profile);
-R_API bool r_reg_parse_gdb_profile(const char *profile);
+R_API char *r_reg_parse_gdb_profile(const char *profile);
 R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item);
 
 R_API RRegSet *r_reg_regset_get(RReg *r, int type);
@@ -153,6 +155,7 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name);
 R_API ut64 r_reg_setv(RReg *reg, const char *name, ut64 val);
 R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32);
 R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64);
+R_API const char *r_reg_get_name_by_type(RReg *reg, const char *name);
 R_API const char *r_reg_get_type(int idx);
 R_API const char *r_reg_get_name(RReg *reg, int kind);
 R_API const char *r_reg_get_role(int role);

@@ -62,7 +62,7 @@ R_API int r_debug_pid_list(RDebug *dbg, int pid, char fmt) {
 		}
 		pj_end (j);
 		if (fmt == 'j') {
-			dbg->cb_printf (pj_string (j));
+			dbg->cb_printf ("%s", pj_string (j));
 		}
 		pj_free (j);
 		r_list_free (list);
@@ -121,7 +121,7 @@ R_API int r_debug_thread_list(RDebug *dbg, int pid, char fmt) {
 		}
 		pj_end (j);
 		if (fmt == 'j') {
-			dbg->cb_printf (pj_string (j));
+			dbg->cb_printf ("%s", pj_string (j));
 		}
 		pj_free (j);
 		r_list_free (list);

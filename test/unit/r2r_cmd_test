@@ -1,0 +1,38 @@
+NAME=multiline0
+FILE=-
+CMDS=<<EOF
+rm -rf /
+EOF
+EXPECT=<<EOF
+expected
+output
+EOF
+RUN
+
+NAME=singleline0
+FILE=-
+CMDS=<<EOF
+rm -rf
+EOF
+EXPECT=
+RUN
+
+NAME=multiline1
+FILE=-
+CMDS=<<EOF
+rm -rf
+EOF
+EXPECT=<<EOF
+more
+expected
+output
+EOF
+RUN
+
+NAME=singleline1
+FILE=-
+CMDS=<<EOF
+rm -rf
+EOF
+EXPECT=
+RUN

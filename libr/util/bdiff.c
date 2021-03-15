@@ -87,7 +87,8 @@ inline static int cmp(struct line *a, struct line *b) {
 }
 
 static int equatelines(struct line *a, int an, struct line *b, int bn) {
-	int i, j, buckets = 1, t, scale;
+	int i, j, t;
+	size_t scale, buckets = 1;
 	struct pos *h = NULL;
 
 	/* build a hash table of the next highest power of 2 */

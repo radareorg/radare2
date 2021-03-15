@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include "../types.h"
 
-#define RangstrType unsigned short
+#define RangstrType unsigned int
 
 typedef struct {
 	int type;

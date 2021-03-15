@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -31,7 +31,7 @@ static ut64 parse_size(char *s, char **end) {
 	return strtoul (s, end, 0) << 3;
 }
 
-//TODO: implement R_API bool r_reg_set_def_string()
+//TODO: implement bool r_reg_set_def_string()
 static const char *parse_def(RReg *reg, char **tok, const int n) {
 	char *end;
 	int type, type2;
@@ -136,6 +136,8 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
+	//	r_reg_free_internal (reg, false);
+	//	r_reg_init (reg);
 		return true;
 	}
 
@@ -150,6 +152,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	// Line number
 	l = 0;
+	bool have_a0 = false;
 	// For every line
 	do {
 		// Increment line number
@@ -206,6 +209,9 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			const char *r = (*first == '=')
 				? parse_alias (reg, tok, j)
 				: parse_def (reg, tok, j);
+			if (!strncmp (first, "=A0", 3)) {
+				have_a0 = true;
+			}
 			// Clean up
 			for (i = 0; i < j; i++) {
 				free (tok[i]);
@@ -217,10 +223,16 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 				//eprintf ("(%s)\n", str);
 				// Clean up
 				r_reg_free_internal (reg, false);
+				r_reg_init (reg);
 				return false;
 			}
 		}
 	} while (*p++);
+	if (!have_a0) {
+		eprintf ("Warning: =A0 not defined\n");
+		//r_reg_free_internal (reg, false);
+		///return false;
+	}
 	reg->size = 0;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegSet *rs = &reg->regset[i];
@@ -243,12 +255,12 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 }
 
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
-	char *base, *file;
+	r_return_val_if_fail (reg && profile, NULL);
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
-		base = r_sys_getenv (R_LIB_ENV);
+		char *base = r_sys_getenv (R_LIB_ENV);
 		if (base) {
-			file = r_str_append (base, profile);
+			char *file = r_str_append (base, profile);
 			str = r_file_slurp (file, NULL);
 			free (file);
 		}
@@ -262,23 +274,25 @@ R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 	return ret;
 }
 
-static bool gdb_to_r2_profile(char *gdb) {
-	char *ptr = gdb, *ptr1, *gptr, *gptr1;
+static char *gdb_to_r2_profile(const char *gdb) {
+	r_return_val_if_fail (gdb, NULL);
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return NULL;
+	}
+	char *ptr1, *gptr, *gptr1;
 	char name[16], groups[128], type[16];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
 		  sse = 32, vector = 64, system = 128, mmx = 256;
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
+	const char *ptr = r_str_trim_head_ro (gdb);
 
-	// Skip whitespace at beginning of line and empty lines
-	while (isspace ((ut8)*ptr)) {
-		ptr++;
-	}
 	// It's possible someone includes the heading line too. Skip it
 	if (r_str_startswith (ptr, "Name")) {
 		if (!(ptr = strchr (ptr, '\n'))) {
-			return false;
+			return NULL;
 		}
 		ptr++;
 	}
@@ -292,14 +306,19 @@ static bool gdb_to_r2_profile(char *gdb) {
 		}
 		if ((ptr1 = strchr (ptr, '\n'))) {
 			*ptr1 = '\0';
+		} else {
+			eprintf ("Could not parse line: %s (missing \\n)\n", ptr);
+			r_strbuf_free (sb);
+			return false;
 		}
 		ret = sscanf (ptr, " %s %d %d %d %d %s %s", name, &number, &rel,
 			&offset, &size, type, groups);
 		// Groups is optional, others not
 		if (ret < 6) {
-			eprintf ("Could not parse line: %s\n", ptr);
-			if (!ptr1) {
-				return true;
+			if (*ptr != '*') {
+				eprintf ("Could not parse line: %s\n", ptr);
+				r_strbuf_free (sb);
+				return false;
 			}
 			ptr = ptr1 + 1;
 			continue;
@@ -307,7 +326,7 @@ static bool gdb_to_r2_profile(char *gdb) {
 		// If name is '', then skip
 		if (r_str_startswith (name, "''")) {
 			if (!ptr1) {
-				return true;
+				break;
 			}
 			ptr = ptr1 + 1;
 			continue;
@@ -315,7 +334,7 @@ static bool gdb_to_r2_profile(char *gdb) {
 		// If size is 0, skip
 		if (size == 0) {
 			if (!ptr1) {
-				return true;
+				break;
 			}
 			ptr = ptr1 + 1;
 			continue;
@@ -354,7 +373,7 @@ static bool gdb_to_r2_profile(char *gdb) {
 		// If type is not defined, skip
 		if (!*type) {
 			if (!ptr1) {
-				return true;
+				break;
 			}
 			ptr = ptr1 + 1;
 			continue;
@@ -364,36 +383,63 @@ static bool gdb_to_r2_profile(char *gdb) {
 			type_bits |= gpr;
 		}
 		// Print line
-		eprintf ("%s\t%s\t.%d\t%d\t0\n",
+		r_strbuf_appendf (sb, "%s\t%s\t.%d\t%d\t0\n",
 			// Ref: Comment above about more register type mappings
 			((type_bits & mmx) || (type_bits & float_) || (type_bits & sse)) ? "fpu" : "gpr",
 			name, size * 8, offset);
 		// Go to next line
 		if (!ptr1) {
-			return true;
+			break;
 		}
 		ptr = ptr1 + 1;
 		continue;
 	}
-	return true;
+	return r_strbuf_drain (sb);
 }
 
-R_API bool r_reg_parse_gdb_profile(const char *profile_file) {
-	char *base, *str = NULL;
+R_API char *r_reg_parse_gdb_profile(const char *profile_file) {
+	char *str = NULL;
 	if (!(str = r_file_slurp (profile_file, NULL))) {
-		if ((base = r_sys_getenv (R_LIB_ENV))) {
-			char *file = r_str_append (base, profile_file);
+		char *base = r_sys_getenv (R_LIB_ENV);
+		if (base) {
+			char *file = r_str_appendf (base, R_SYS_DIR "%s", profile_file);
 			if (file) {
 				str = r_file_slurp (file, NULL);
 				free (file);
 			}
 		}
 	}
-	if (!str) {
-		eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
-		return false;
+	if (str) {
+		char *ret = gdb_to_r2_profile (str);
+		free (str);
+		return ret;
 	}
-	bool ret = gdb_to_r2_profile (str);
-	free (str);
-	return ret;
+	eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
+	return NULL;
 }
+
+R_API char *r_reg_profile_to_cc(RReg *reg) {
+	const char *r0 = r_reg_get_name_by_type (reg, "R0");
+	const char *a0 = r_reg_get_name_by_type (reg, "A0");
+	const char *a1 = r_reg_get_name_by_type (reg, "A1");
+	const char *a2 = r_reg_get_name_by_type (reg, "A2");
+	const char *a3 = r_reg_get_name_by_type (reg, "A3");
+
+	// it is mandatory to have at least =A0 defined in the reg profile
+	// this will be enforced in reg/profile at parsing time
+	r_return_val_if_fail (a0, NULL);
+	if (!r0) {
+		r0 = a0;
+	}
+	if (a3 && a2 && a1) {
+		return r_str_newf ("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);
+	}
+	if (a2 && a1) {
+		return r_str_newf ("%s reg(%s, %s, %s)", r0, a0, a1, a2);
+	}
+	if (a1) {
+		return r_str_newf ("%s reg(%s, %s)", r0, a0, a1);
+	}
+	return r_str_newf ("%s reg(%s)", r0, a0);
+}
+

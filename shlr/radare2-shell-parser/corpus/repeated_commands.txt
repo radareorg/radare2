@@ -60,4 +60,4 @@ Repeat with tmp seek
       (number)
       (arged_command (cmd_identifier)
         (args (arg (arg_identifier)))))
-    (arg (arg_identifier))))
+    (args (arg (arg_identifier)))))

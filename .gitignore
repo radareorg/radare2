@@ -18,6 +18,7 @@ supported.*
 config.mk
 plugins.cfg
 langs.cfg
+.test.c
 .*.swp
 .*.swo
 *.un~
@@ -123,3 +124,5 @@ __pycache__
 # Dynamic docker building folder to minimize docker context
 .docker_alpine
 .ccls-cache/
+vgcore.*
+libr/include/sdb

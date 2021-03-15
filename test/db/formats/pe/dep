@@ -26,7 +26,7 @@ RUN
 NAME=PE: corkami dep.exe - pi 1
 FILE=bins/pe/dep.exe
 CMDS=<<EOF
-e asm.filter=false
+e asm.sub.names=false
 pi 1
 EOF
 EXPECT=<<EOF

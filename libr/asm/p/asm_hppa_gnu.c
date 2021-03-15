@@ -27,7 +27,14 @@ static int hppa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 leng
 		return 0;
 	}
 #endif
-	memcpy (myaddr, bytes, length);
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (myaddr, bytes + delta, length);
 	return 0;
 }
 

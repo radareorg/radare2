@@ -22,7 +22,7 @@ LDFLAGS+=-L$(LTOP)/reg -lr_reg
 LDFLAGS+=-L$(LTOP)/bp -lr_bp
 LDFLAGS+=-L$(LTOP)/io -lr_io
 
-OBJ_BOCHS=debug_bochs.o 
+OBJ_BOCHS=debug_bochs.o
 
 STATIC_OBJ+=${OBJ_BOCHS}
 TARGET_BOCHS=debug_bochs.${EXT_SO}

@@ -1,0 +1,35 @@
+NAME=aii
+FILE=-
+CMDS=<<EOF
+aii pigs
+aii pigs
+aii dogs
+aii pigs
+aii sheep
+aii dogs
+aii
+EOF
+EXPECT=<<EOF
+pigs
+dogs
+sheep
+EOF
+RUN
+
+NAME=aii-
+FILE=-
+CMDS=<<EOF
+aii pigs
+aii dogs
+aii sheep
+aii
+?e -
+aii-
+EOF
+EXPECT=<<EOF
+pigs
+dogs
+sheep
+-
+EOF
+RUN

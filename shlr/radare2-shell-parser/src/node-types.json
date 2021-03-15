@@ -35,6 +35,11 @@
     }
   },
   {
+    "type": "arg_identifier",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "arged_command",
     "named": true,
     "fields": {
@@ -354,7 +359,7 @@
     "fields": {},
     "children": {
       "multiple": true,
-      "required": true,
+      "required": false,
       "types": [
         {
           "type": "arged_command",
@@ -8544,13 +8549,7 @@
   {
     "type": "legacy_quoted_command",
     "named": true,
-    "fields": {
-      "string": {
-        "multiple": false,
-        "required": false,
-        "types": []
-      }
-    }
+    "fields": {}
   },
   {
     "type": "macro_args",
@@ -8891,6 +8890,11 @@
         }
       ]
     }
+  },
+  {
+    "type": "pf_arg_identifier",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "pf_args",
@@ -10460,11 +10464,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -10699,11 +10703,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -11197,11 +11201,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -13109,11 +13113,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -13348,11 +13352,11 @@
       "required": true,
       "types": [
         {
-          "type": "arg",
+          "type": "arged_command",
           "named": true
         },
         {
-          "type": "arged_command",
+          "type": "args",
           "named": true
         },
         {
@@ -13830,6 +13834,10 @@
     "named": false
   },
   {
+    "type": "$",
+    "named": false
+  },
+  {
     "type": "$(",
     "named": false
   },
@@ -14074,10 +14082,6 @@
     "named": false
   },
   {
-    "type": "arg_identifier",
-    "named": true
-  },
-  {
     "type": "env",
     "named": false
   },
@@ -14095,10 +14099,6 @@
   },
   {
     "type": "html_redirect_operator",
-    "named": true
-  },
-  {
-    "type": "pf_arg_identifier",
     "named": true
   },
   {

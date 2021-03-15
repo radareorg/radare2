@@ -1,3 +1,38 @@
+NAME=Cd999
+FILE=-
+CMDS=<<EOF
+Cd 4096
+pd 2~?
+s 2048
+pd 1~?
+s+2048
+pd 1~?
+EOF
+EXPECT=<<EOF
+258
+129
+1
+EOF
+RUN
+
+NAME=Cd999nometa
+FILE=-
+CMDS=<<EOF
+e asm.meta=false
+Cd 4096
+pd 2~?
+so
+pd 1~?
+so -1
+pd 1~?
+EOF
+EXPECT=<<EOF
+3
+1
+2
+EOF
+RUN
+
 NAME=Cd4+pdi2
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
@@ -35,7 +70,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=arm indirect relsub fix (#11780)
+NAME=arm indirect subrel fix (#11780)
 FILE=bins/elf/analysis/arm_32_flags0
 CMDS=<<EOF
 e asm.bytes=false
@@ -61,6 +96,7 @@ RUN
 NAME=realign after sparse (#11810)
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
+e anal.vars.stackname=true
 e asm.bytes=false
 e asm.comments=false
 s 0x560e67
@@ -267,29 +303,35 @@ pdf
 agf
 EOF
 EXPECT=<<EOF
-/ 8: fcn.00008174 ();
+/ 8: fcn.00008174 (func main, int argc);
+|           ; arg func main @ r0
+|           ; arg int argc @ r1
 |           0x00008174      b80000eb       bl sym.__libc_start_main    ; lr=0x8178 -> 0xeb0002a4 ; pc=0x845c -> 0xe92d41f0
-|                                                                      ; int __libc_start_main(?, -1, ?, ?, ?, ?, -1)
+|                                                                      ; int __libc_start_main(?, ?, ?, ?, ?, ?, -1)
 \           0x00008178      a40200eb       bl sym.abort                ; lr=0x817c -> 0xe92d4030 ; pc=0x8c10 -> 0xe59f62a0
 \                                                                      ; void abort(void)
 
-/ 8: fcn.00008174 ();
+/ 8: fcn.00008174 (func main, int argc);
+|           ; arg func main @ r0
+|           ; arg int argc @ r1
 |              ; lr=0x8178 -> 0xeb0002a4
 |              ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main
-|              ; int __libc_start_main(?, -1, ?, ?, ?, ?, -1)
+|              ; int __libc_start_main(?, ?, ?, ?, ?, ?, -1)
 |           0x00008174      b80000eb       bl sym.__libc_start_main
 |              ; lr=0x817c -> 0xe92d4030
 |              ; pc=0x8c10 -> 0xe59f62a0 sym.abort
 |              ; void abort(void)
 \           0x00008178      a40200eb       bl sym.abort
 
-[0x00008174]>  # fcn.00008174 ();
+[0x00008174]>  # fcn.00008174 (func main, int argc);
  ----------------------------------------------------.
 |  0x8174                                            |
-| 8: fcn.00008174 ();                                |
+| 8: fcn.00008174 (func main, int argc);             |
+| ; arg func main @ r0                               |
+| ; arg int argc @ r1                                |
 |    ; lr=0x8178 -> 0xeb0002a4                       |
 |    ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main |
-|    ; int __libc_start_main(?, -1, ?, ?, ?, ?, -1)  |
+|    ; int __libc_start_main(?, ?, ?, ?, ?, ?, -1)   |
 | bl sym.__libc_start_main;[oa]                      |
 |    ; lr=0x817c -> 0xe92d4030                       |
 |    ; pc=0x8c10 -> 0xe59f62a0 sym.abort             |
@@ -337,10 +379,10 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.line fcnline glitches fix, bblines btw bb & non-bb
+NAME=asm.lines.bb fcnline glitches fix, bblines btw bb & non-bb
 FILE=bins/elf/before-after-main
 CMDS=<<EOF
-e asm.bb.line=true
+e asm.lines.bb=true
 e asm.bytes=false
 e asm.comments=false
 e asm.fcnsig=false
@@ -380,13 +422,13 @@ EXPECT=<<EOF
 EOF
 RUN
 
-# asm.bb.line with no analysis is not supported, since backward jump targets
+# asm.lines.bb with no analysis is not supported, since backward jump targets
 # can't be determined completely without analysis of the whole function
 # (assuming no jumps from outside the function into the middle)
-NAME=asm.bb.line no-anal
+NAME=asm.lines.bb no-anal
 FILE=bins/elf/lab2
 CMDS=<<EOF
-e asm.bb.line=true
+e asm.lines.bb=true
 e asm.bytes=false
 e asm.comments=false
 e io.cache=true
@@ -399,7 +441,7 @@ EXPECT=<<EOF
         ,=< 0x08048598      jg 0x804859e
         |   0x0804859a      cmp al, byte [esp + 0x27]
        ,`-> 0x0804859e      je 0x80485b3
-       |    0x080485a0      mov dword [esp], str.Wrong
+       |    0x080485a0      mov dword [esp], str.Wrong_
        |    0x080485a7      call sym.imp.puts
        |    0x080485ac      mov eax, 1
       ,=.-> 0x080485b1      jmp 0x80485f9
@@ -410,10 +452,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.line glitch fix (#12516)
+NAME=asm.lines.bb glitch fix (#12516)
 FILE=bins/elf/ls
 CMDS=<<EOF
-e asm.bb.line=true
+e anal.vars.stackname=true
+e asm.lines.bb=true
 e asm.bytes=false
 e asm.comments=false
 e io.cache=true
@@ -519,8 +562,8 @@ FILE=bins/elf/abcde-qt32
 CMDS=<<EOF
 e asm.demangle=true
 e asm.bytes=false
-e asm.filter=false
-e asm.jmpsub=false
+e asm.sub.names=false
+e asm.sub.jmp=false
 aa
 e asm.cmt.right=true
 pd 1 @ 0x080493b4
@@ -532,13 +575,13 @@ pd 1 @ 0x080493ca
 EOF
 EXPECT=<<EOF
 |           0x080493b4      call 0x80490b0                             ; sym.imp.strlen ; size_t strlen(const char *s)
-|           0x080493ca      call 0x80490e0                             ; sym.imp.QString::fromAscii_helper_char_const___int
+|           0x080493ca      call 0x80490e0                             ; sym.imp.QString::fromAscii_helper_char_const__int_
 |                                                                      ; QString::fromAscii_helper(char const*, int)
 
 |           ; sym.imp.strlen
 |           ; size_t strlen(const char *s)
 |           0x080493b4      call 0x80490b0
-|           ; sym.imp.QString::fromAscii_helper_char_const___int
+|           ; sym.imp.QString::fromAscii_helper_char_const__int_
 |           ; QString::fromAscii_helper(char const*, int)
 |           0x080493ca      call 0x80490e0
 EOF
@@ -548,8 +591,8 @@ NAME=newlined-comment-refline fix (#14627), wayward rip-relative flag fixes
 FILE=bins/elf/ls
 CMDS=<<EOF
 e asm.bytes=false
-e asm.filter=true
-(pd_tests; e asm.relsub=true; pd 15; ?e; e asm.relsub=false; pd 1 @ 0x000041ee; pd 1 @ 0x00004225)
+e asm.sub.names=true
+(pd_tests; e asm.sub.rel=true; pd 15; ?e; e asm.sub.rel=false; pd 1 @ 0x000041ee; pd 1 @ 0x00004225)
 (insn_tests; e scr.color=0; .(pd_tests); ?e; e scr.color=1; .(pd_tests))
 s 0x000041e0
 .(insn_tests)
@@ -832,5 +875,16 @@ EXPECT=<<EOF
    entry0 + 0                   mov bl, 0x2a
    entry0 + 2                   xor eax, eax
    entry0 + 4                   inc eax
+EOF
+RUN
+
+NAME=seek with spaces
+FILE=-
+CMDS=<<EOF
+wx 010203040506
+p8 1 @ 1 + 3
+EOF
+EXPECT=<<EOF
+05
 EOF
 RUN

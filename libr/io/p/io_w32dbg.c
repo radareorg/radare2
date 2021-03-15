@@ -31,7 +31,6 @@ static ut64 __find_next_valid_addr(HANDLE h, ut64 from, ut64 to) {
 
 static int debug_os_read_at(W32DbgWInst *dbg, ut8 *buf, int len, ut64 addr) {
 	SIZE_T ret = 0;
-	const int page_size = 0x1000;
 	if (!ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret)
 		&& GetLastError () == ERROR_PARTIAL_COPY) {
 		int skipped = 0;
@@ -140,16 +139,17 @@ err_first_th:
 static int __open_proc(RIO *io, int pid, bool attach) {
 	DEBUG_EVENT de;
 	int ret = -1;
+	if (!io->w32dbg_wrap) {
+		io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new ();
+	}
+
 	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
 
 	if (!h_proc) {
 		r_sys_perror ("__open_proc/OpenProcess");
 		goto att_exit;
 	}
-	if (!io->w32dbg_wrap) {
-		io->w32dbg_wrap = w32dbg_wrap_new ();
-	}
-	W32DbgWInst *wrap = io->w32dbg_wrap;
+	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
 	wrap->pi.dwProcessId = pid;
 	if (attach) {
 		/* Attach to the process */	
@@ -193,16 +193,16 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (__open_proc (io, atoi (file + 9), !strncmp (file, "attach://", 9)) == -1) {
 			return NULL;
 		}
-		W32DbgWInst *dbg = io->w32dbg_wrap;
-		if (!dbg->pi.dwThreadId) {
-			dbg->pi.dwThreadId = __w32_first_thread (dbg->pi.dwProcessId);
+		W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
+		if (!wrap->pi.dwThreadId) {
+			wrap->pi.dwThreadId = __w32_first_thread (wrap->pi.dwProcessId);
 		}
-		if (!dbg->pi.hThread) {
-			dbg->pi.hThread = OpenThread (THREAD_ALL_ACCESS, FALSE, dbg->pi.dwThreadId);
+		if (!wrap->pi.hThread) {
+			wrap->pi.hThread = OpenThread (THREAD_ALL_ACCESS, FALSE, wrap->pi.dwThreadId);
 		}
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
-				file, rw | R_PERM_X, mode, dbg);
-		ret->name = r_sys_pid_to_path (dbg->pi.dwProcessId);
+				file, rw | R_PERM_X, mode, wrap);
+		ret->name = r_sys_pid_to_path (wrap->pi.dwProcessId);
 		return ret;
 	}
 	return NULL;
@@ -224,9 +224,11 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __close(RIODesc *fd) {
-	W32DbgWInst *wrap = fd->data;
-	wrap->params.type = W32_DETTACH;
-	w32dbg_wrap_wait_ret (wrap);
+	if (r_str_startswith (fd->uri, "attach://")) {
+		W32DbgWInst *wrap = fd->data;
+		wrap->params.type = W32_DETACH;
+		w32dbg_wrap_wait_ret (wrap);
+	}
 	return false;
 }
 
@@ -246,7 +248,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				}
 			}
 		}
-		return r_str_newf ("%d", wrap->pi.dwProcessId);
+		return r_str_newf ("%lu", wrap->pi.dwProcessId);
 	} else {
 		eprintf ("Try: '=!pid'\n");
 	}

@@ -19,6 +19,10 @@ R_API char *r_cons_hud_file(const char *f) {
 // Display a buffer in the hud (splitting it line-by-line and ignoring
 // the lines starting with # )
 R_API char *r_cons_hud_string(const char *s) {
+	if (!r_cons_is_interactive ()) {
+		eprintf ("Hud mode requires scr.interactive=true.\n");
+		return NULL;
+	}
 	char *os, *track, *ret, *o = strdup (s);
 	if (!o) {
 		return NULL;
@@ -197,7 +201,7 @@ static void mht_free_kv(HtPPKv *kv) {
 
 #define HUD_CACHE 0
 R_API char *r_cons_hud(RList *list, const char *prompt) {
-	char user_input[HUD_BUF_SIZE], hud_prompt[HUD_BUF_SIZE + 1];
+	char user_input[HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RListIter *iter;
 
@@ -207,8 +211,8 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	hud->vi = 0;
 	I(line)->echo = false;
 	I(line)->hud = hud;
-	hud_prompt [0] = 0;
 	user_input [0] = 0;
+	user_input[HUD_BUF_SIZE] = 0;
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
 	r_cons_enable_mouse (false);
@@ -226,7 +230,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		if (prompt && *prompt) {
 			r_cons_printf (">> %s\n", prompt);
 		}
-		r_cons_printf ("%d> %s\n", hud->top_entry_n, hud_prompt);
+		r_cons_printf ("%d> %s|\n", hud->top_entry_n, user_input);
 		char *row;
 		RList *filtered_list = NULL;
 
@@ -250,15 +254,8 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 #endif
 		r_cons_visual_flush ();
 		(void) r_line_readline ();
-		memset (user_input, 0, HUD_BUF_SIZE);
-		memset (hud_prompt, 0, HUD_BUF_SIZE + 1);
-		strncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE - 1); 				// to search
-		strcpy (hud_prompt, user_input); 					// to display
-		int i;
-		for (i = I(line)->buffer.length; i > I(line)->buffer.index; i--) {
-			hud_prompt[i] = hud_prompt[i - 1];
-		}
-		memcpy (hud_prompt + I(line)->buffer.index, "|", 1);
+		r_str_ncpy (user_input, I(line)->buffer.data, HUD_BUF_SIZE);
+
 		if (!hud->activate) {
 			hud->top_entry_n = 0;
 			if (hud->current_entry_n >= 1 ) {
@@ -291,7 +288,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 	RList *files;
 	if (path) {
 		path = r_str_trim_head_ro (path);
-		tmp = strdup (*path? path: "./");
+		tmp = strdup (*path ? path : "./");
 	} else {
 		tmp = strdup ("./");
 	}

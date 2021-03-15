@@ -217,62 +217,76 @@ R_API RIntervalNode *r_interval_tree_node_at_data(RIntervalTree *tree, ut64 star
 	return NULL;
 }
 
-R_API void r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIterCb cb, void *user) {
+R_API bool r_interval_tree_all_at(RIntervalTree *tree, ut64 start, RIntervalIterCb cb, void *user) {
 	RBIter it = r_interval_tree_first_at (tree, start);
+	bool ret = true;
 	while (r_rbtree_iter_has (&it)) {
 		RIntervalNode *intervalnode = r_rbtree_iter_get (&it, RIntervalNode, node);
 		if (intervalnode->start != start) {
 			break;
 		}
-		cb (intervalnode, user);
+		ret = cb (intervalnode, user);
+		if (!ret) {
+			break;
+		}
 		r_rbtree_iter_next (&it);
 	}
+	return ret;
 }
 
-R_API void r_interval_node_all_in(RIntervalNode *node, ut64 value, bool end_inclusive, RIntervalIterCb cb, void *user) {
+R_API bool r_interval_node_all_in(RIntervalNode *node, ut64 value, bool end_inclusive, RIntervalIterCb cb, void *user) {
 	while (node && value < node->start) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->node.child[0]);
 	}
 	if (!node) {
-		return;
+		return true;
 	}
 	if (end_inclusive ? value > node->max_end : value >= node->max_end) {
-		return;
+		return true;
 	}
 	if (end_inclusive ? value <= node->end : value < node->end) {
-		cb (node, user);
+		if (!cb (node, user)) {
+			return false;
+		}
 	}
 	// This can be done more efficiently by building the stack manually
-	r_interval_node_all_in (unwrap (node->node.child[0]), value, end_inclusive, cb, user);
-	r_interval_node_all_in (unwrap (node->node.child[1]), value, end_inclusive, cb, user);
+	bool ret = r_interval_node_all_in (unwrap (node->node.child[0]), value, end_inclusive, cb, user);
+	if (!ret) {
+		return false;
+	}
+	return r_interval_node_all_in (unwrap (node->node.child[1]), value, end_inclusive, cb, user);
 }
 
-R_API void r_interval_tree_all_in(RIntervalTree *tree, ut64 value, bool end_inclusive, RIntervalIterCb cb, void *user) {
+R_API bool r_interval_tree_all_in(RIntervalTree *tree, ut64 value, bool end_inclusive, RIntervalIterCb cb, void *user) {
 	// all in! 🂡
-	r_interval_node_all_in (tree->root, value, end_inclusive, cb, user);
+	return r_interval_node_all_in (tree->root, value, end_inclusive, cb, user);
 }
 
-static void r_interval_node_all_intersect(RIntervalNode *node, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user) {
-	r_return_if_fail (end >= start);
+static bool r_interval_node_all_intersect(RIntervalNode *node, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user) {
+	r_return_val_if_fail (end >= start, true);
 	while (node && (end_inclusive ? end < node->start : end <= node->start)) {
 		// less than the current node, but might still be contained further down
 		node = unwrap (node->node.child[0]);
 	}
 	if (!node) {
-		return;
+		return true;
 	}
 	if (end_inclusive ? start > node->max_end : start >= node->max_end) {
-		return;
+		return true;
 	}
 	if (end_inclusive ? start <= node->end : start < node->end) {
-		cb (node, user);
+		if (!cb (node, user)) {
+			return false;
+		}
 	}
 	// This can be done more efficiently by building the stack manually
-	r_interval_node_all_intersect (unwrap (node->node.child[0]), start, end, end_inclusive, cb, user);
-	r_interval_node_all_intersect (unwrap (node->node.child[1]), start, end, end_inclusive, cb, user);
+	if (!r_interval_node_all_intersect (unwrap (node->node.child[0]), start, end, end_inclusive, cb, user)) {
+		return false;
+	}
+	return r_interval_node_all_intersect (unwrap (node->node.child[1]), start, end, end_inclusive, cb, user);
 }
 
-R_API void r_interval_tree_all_intersect(RIntervalTree *tree, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user) {
-	r_interval_node_all_intersect (tree->root, start, end, end_inclusive, cb, user);
+R_API bool r_interval_tree_all_intersect(RIntervalTree *tree, ut64 start, ut64 end, bool end_inclusive, RIntervalIterCb cb, void *user) {
+	return r_interval_node_all_intersect (tree->root, start, end, end_inclusive, cb, user);
 }

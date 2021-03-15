@@ -137,3 +137,43 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=ragg2 empty file
+FILE=-
+CMDS=!ragg2 ""
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN
+
+NAME=ragg2 empty include
+FILE=bins/other/ragg2/hi.c
+CMDS=!ragg2 -I "" bins/other/ragg2/hi.c
+EXPECT_ERR=<<EOF
+Cannot open empty include path
+EOF
+RUN
+
+NAME=ragg2 empty contents
+FILE=bins/other/ragg2/hi.c
+CMDS=!ragg2 -C "" bins/other/ragg2/hi.c
+EXPECT_ERR=<<EOF
+Cannot open empty contents path
+EOF
+RUN
+
+NAME=ragg2 debruijn sequence 1
+FILE=-
+CMDS=!ragg2 -r -P 2; ?e
+EXPECT=<<EOF
+AA
+EOF
+RUN
+
+NAME=ragg2 debruijn sequence 2
+FILE=-
+CMDS=!ragg2 -P 2 -r; ?e
+EXPECT=<<EOF
+AA
+EOF
+RUN

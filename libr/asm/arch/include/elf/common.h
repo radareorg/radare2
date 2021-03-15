@@ -228,6 +228,9 @@
 /* OpenRISC magic number.  Written in the absense of an ABI.  */
 #define EM_OPENRISC_OLD		0x3426
 
+/* Beyond Architecture 2 */
+#define EM_BA2_NON_STANDARD	0x8472
+
 /* DLX magic number.  Written in the absense of an ABI.  */
 #define EM_DLX			0x5aa5
 

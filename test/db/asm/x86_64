@@ -960,6 +960,7 @@ a "bswap rax" 480fc8
 a "bswap r15" 490fcf
 a "bswap eax" 0fc8
 a "bswap r15d" 410fcf
+ad "endbr64" f30f1efa
 ad "xchg eax, r8d" 4190
 a "xchg r8d, eax" 4190
 ad "xchg rax, rdx" 4892

@@ -5,6 +5,8 @@ CMDS=ie~addr
 EXPECT=<<EOF
 vaddr=0x00000000 paddr=0x00000040 baddr=0x00000000 laddr=0x00000000 haddr=0x00000018 type=program
 EOF
+EXPECT_ERR=<<EOF
+EOF
 RUN
 
 NAME=obj entry

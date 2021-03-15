@@ -1,5 +1,5 @@
 NAME=r_crypto
-DEPS=r_hash r_util
+R2DEPS=r_hash r_util
 CFLAGS+=-DR2_PLUGIN_INCORE
 
 include ../config.mk

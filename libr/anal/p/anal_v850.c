@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake
+/* radare - LGPL - Copyright 2012-2020 - pancake
 	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
 #include <string.h>
@@ -175,20 +175,19 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	ut16 word1 = 0, word2 = 0;
 	struct v850_cmd cmd;
 
+	if (len < 1 || (len > 0 && !memcmp (buf, "\xff\xff\xff\xff\xff\xff", R_MIN (len, 6)))) {
+		return -1;
+	}
+
 	memset (&cmd, 0, sizeof (cmd));
-	memset (op, 0, sizeof (RAnalOp));
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
 
 	ret = op->size = v850_decode_command (buf, len, &cmd);
 
-	if (ret <= 0) {
+	if (ret < 1) {
 		return ret;
 	}
 
 	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
 
 	word1 = r_read_le16 (buf);
 	if (ret == 4) {
@@ -259,7 +258,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addr + F5_DISP(((ut32)word2 << 16) | word1);
 		op->fail = addr + 4;
-		r_strbuf_appendf (&op->esil, "pc,%s,=,pc,%hu,+=", F5_RN2(word1), F5_DISP(((ut32)word2 << 16) | word1));
+		r_strbuf_appendf (&op->esil, "pc,%s,=,pc,%u,+=", F5_RN2(word1), F5_DISP(((ut32)word2 << 16) | word1));
 		break;
 #if 0 // WTF - same opcode as JARL?
 	case V850_JR:
@@ -494,6 +493,11 @@ static char *get_reg_profile(RAnal *anal) {
 		"=PC	pc\n"
 		"=SP	r3\n"
 		"=ZF	z\n"
+		"=A0	r1\n"
+		"=A1	r5\n"
+		"=A2	r6\n"
+		"=A3	r7\n"
+		"=A4	r8\n"
 		"=SF	s\n"
 		"=OF	ov\n"
 		"=CF	cy\n"
@@ -503,8 +507,11 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r1	.32	4   0\n"
 		"gpr	r2	.32	8   0\n"
 		"gpr	r3	.32	12  0\n"
+		"gpr	sp	.32	12  0\n"
 		"gpr	r4	.32	16  0\n"
+		"gpr	gp	.32	16  0\n"
 		"gpr	r5	.32	20  0\n"
+		"gpr	tp	.32	20  0\n"
 		"gpr	r6	.32	24  0\n"
 		"gpr	r7	.32	28  0\n"
 		"gpr	r8	.32	32  0\n"
@@ -530,29 +537,54 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	r28	.32	112 0\n"
 		"gpr	r29	.32	116 0\n"
 		"gpr	r30	.32	120 0\n"
+		"gpr	ep	.32	120 0\n"
 		"gpr	r31	.32	124 0\n"
+		"gpr	lp	.32	124 0\n"
 		"gpr	pc	.32	128 0\n"
 
-		"gpr	psw .32 132 0\n"
-		"gpr	np  .1 132.16 0\n"
-		"gpr	ep  .1 132.17 0\n"
-		"gpr	ae  .1 132.18 0\n"
-		"gpr	id  .1 132.19 0\n"
-		"flg	cy  .1 132.28 0\n"
-		"flg	ov  .1 132.29 0\n"
-		"flg	s   .1 132.30 0\n"
-		"flg	z   .1 132.31 0\n";
+		// 32bit [   RFU   ][NP EP ID SAT CY OV S Z]
+		"gpr	psw .32 132 0\n" // program status word
+		"gpr	npi  .1 132.16 0\n" // non maskerable interrupt (NMI)
+		"gpr	epi  .1 132.17 0\n" // exception processing interrupt
+		"gpr	id   .1 132.18 0\n" // :? should be id
+		"gpr	sat  .1 132.19 0\n" // saturation detection
+		"flg	cy  .1 132.28 0\n" // carry or borrow
+		"flg	ov  .1 132.29 0\n" // overflow
+		"flg	s   .1 132.30 0\n" // signed result
+		"flg	z   .1 132.31 0\n"; // zero result
 	return strdup (p);
+}
+
+static RList *anal_preludes(RAnal *anal) {
+#define KW(d,ds,m,ms) r_list_append (l, r_search_keyword_new((const ut8*)d,ds,(const ut8*)m, ms, NULL))
+	RList *l = r_list_newf ((RListFree)r_search_keyword_free);
+	KW ("\x80\x07", 2, "\xf0\xff", 2);
+	KW ("\x50\x1a\x63\x0f", 4, "\xf0\xff\xff\x0f", 4);
+	return l;
+}
+
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 8;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 0;
 }
 
 RAnalPlugin r_anal_plugin_v850 = {
 	.name = "v850",
 	.desc = "V850 code analysis plugin",
 	.license = "LGPL3",
+	.preludes = anal_preludes,
 	.arch = "v850",
 	.bits = 32,
 	.op = v850_op,
 	.esil = true,
+	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
 };
 

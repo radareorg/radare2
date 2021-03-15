@@ -77,6 +77,7 @@ R_API long double r_reg_get_longdouble(RReg *reg, RRegItem *item) {
 	case 80:
 	case 96:
 	case 128:
+	case 256:
 		if (regset->arena->size - off - 1 >= 0) {
 			memcpy (&vld, regset->arena->bytes + off, sizeof (long double));
 			ret = vld;

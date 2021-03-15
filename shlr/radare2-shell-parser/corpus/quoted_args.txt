@@ -51,3 +51,24 @@ Double quoted arg with cmd substitution
 	         (arged_command command: (cmd_identifier)
 		   args: (args
 		            (arg (double_quoted_arg))))))))))
+
+==================
+Quoted hash
+==================
+
+?e "#"
+?e " #$(pdf)"
+?e '#'
+
+---
+
+(commands
+  (arged_command command: (cmd_identifier)
+    args: (args (arg (double_quoted_arg))))
+  (arged_command command: (cmd_identifier)
+    args: (args
+            (arg (double_quoted_arg
+	           (cmd_substitution_arg
+		     (arged_command command: (cmd_identifier)))))))
+  (arged_command command: (cmd_identifier)
+    args: (args (arg (single_quoted_arg)))))

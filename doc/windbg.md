@@ -34,24 +34,24 @@ Configure the VirtualBox Machine like this:
     Port Number: [_COM1_______[v]]
     Port Mode:   [_Host_Pipe__[v]]
                  [v] Create Pipe
-    Port/File Path: [_/tmp/windbg.pipe____]
+    Port/File Path: [_/tmp/winkd.pipe____]
 
 Or just spawn the VM with qemu like this:
 
     $ qemu-system-x86_64 -chardev socket,id=serial0,\
-           path=/tmp/windbg.pipe,nowait,server \
+           path=/tmp/winkd.pipe,nowait,server \
            -serial chardev:serial0 -hda Windows7-VM.vdi
 
 
-Radare2 will use the 'windbg' io plugin to connect to a socket file
-created by virtualbox or qemu. Also, the 'windbg' debugger plugin and
+Radare2 will use the 'winkd' io plugin to connect to a socket file
+created by virtualbox or qemu. Also, the 'winkd' debugger plugin and
 we should specify the x86-32 too. (32 and 64 bit debugging is supported)
 
-    $ r2 -a x86 -b 32 -D windbg windbg:///tmp/windbg.pipe
+    $ r2 -a x86 -b 32 -D winkd winkd:///tmp/winkd.pipe
 
 On Windows you should run the following line:
 
-    $ radare2 -D windbg windbg://\\.\pipe\com_1
+    $ radare2 -D winkd winkd://\\.\pipe\com_1
 
 At this point, we will get stuck here:
 

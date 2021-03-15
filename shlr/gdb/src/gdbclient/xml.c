@@ -226,14 +226,16 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 			_write_flag_bits (flag_bits, tmpflag);
 		}
 		packed_size = 0;
-		if (tmpreg->size >= 8 && (strstr (tmpreg->type, "fpu") ||
-			  strstr (tmpreg->type, "mmx") || strstr (tmpreg->type, "xmm") ||
-			  strstr (tmpreg->type, "ymm"))) {
-			packed_size = tmpreg->size;
+		if (tmpreg->size >= 64 &&
+			(strstr (tmpreg->type, "fpu") ||
+				strstr (tmpreg->type, "mmx") ||
+				strstr (tmpreg->type, "xmm") ||
+				strstr (tmpreg->type, "ymm"))) {
+			packed_size = tmpreg->size / 8;
 		}
 		profile_len += snprintf (profile + profile_len, 128,
-			"%s\t%s\t.%u\t%" PFMT64d "\t%d\t%s\n", tmpreg->type,
-			tmpreg->name, tmpreg->size * 8, regoff,
+			"%s\t%s\t.%u\t.%" PFMT64d "\t%d\t%s\n", tmpreg->type,
+			tmpreg->name, tmpreg->size, regoff,
 			packed_size,
 			flag_bits);
 		// TODO write flag subregisters
@@ -249,7 +251,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 				}
 				profile_len += snprintf (profile + profile_len, 128, "gpr\t%s\t"
 							".%u\t.%"PFMT64d"\t0\n", tmpflag->fields[i].name,
-							tmpflag->fields[i].sz, tmpflag->fields[i].bit_num + (regoff * 8));
+							tmpflag->fields[i].sz, tmpflag->fields[i].bit_num + regoff);
 			}
 		}
 		regnum++;
@@ -332,7 +334,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	}
 	r_list_free (flags);
 	r_list_free (regs);
-	free (g->target.regprofile);
+	R_FREE (g->target.regprofile);
 	if (profile) {
 		g->target.regprofile = strdup (profile);
 		free (profile);
@@ -511,7 +513,7 @@ static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags) {
 		// To avoid duplicates. This skips flags if first char is same. i.e.
 		// for x86_64, it will skip VIF because VM already occurred. This is
 		// same as default reg-profiles in r2
-		c = tolower (flags->fields[i].name[0]) - 'a';
+		c = tolower ((unsigned char)flags->fields[i].name[0]) - 'a';
 		if (fc[c]) {
 			continue;
 		}
@@ -552,6 +554,10 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 		if (strstr (xml_data, "com.apple.debugserver.arm64")) {
 			g->target.arch = R_SYS_ARCH_ARM;
 			g->target.bits = 64;
+		} else if (strstr (xml_data, "org.gnu.gdb.riscv")) {
+			// openocd mips?
+			g->target.arch = R_SYS_ARCH_RISCV;
+			g->target.bits = 64;
 		} else if (strstr (xml_data, "org.gnu.gdb.mips")) {
 			// openocd mips?
 			g->target.arch = R_SYS_ARCH_MIPS;
@@ -560,7 +566,7 @@ static int _resolve_arch(libgdbr_t *g, char *xml_data) {
 			g->target.arch = R_SYS_ARCH_X86;
 			g->target.bits = 64;
 		} else {
-			eprintf ("Unknown architecture parsing XML (%s)\n", xml_data);
+			eprintf ("Warning: Unknown architecture parsing XML (%s)\n", xml_data);
 		}
 	}
 	return 0;
@@ -641,7 +647,7 @@ static RList *_extract_flags(char *flagstr) {
 				goto exit_err;
 			}
 			tmp1 += 7;
-			if (!isdigit (*tmp1)) {
+			if (!isdigit ((unsigned char)*tmp1)) {
 				goto exit_err;
 			}
 			tmpflag->fields[num_fields].bit_num = (ut32) strtoul (tmp1, NULL, 10);
@@ -650,7 +656,7 @@ static RList *_extract_flags(char *flagstr) {
 				goto exit_err;
 			}
 			tmp1 += 5;
-			if (!isdigit (*tmp1)) {
+			if (!isdigit ((unsigned char)*tmp1)) {
 				goto exit_err;
 			}
 			tmpflag->fields[num_fields].sz = (ut32) strtoul (tmp1, NULL, 10) + 1;
@@ -793,7 +799,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			goto exit_err;
 		}
 		tmp1 += 9;
-		if (!isdigit (*tmp1)) {
+		if (!isdigit ((unsigned char)*tmp1)) {
 			goto exit_err;
 		}
 		regsize = strtoul (tmp1, NULL, 10);
@@ -801,7 +807,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		regnum = UINT32_MAX;
 		if ((tmp1 = strstr (regstr, "regnum="))) {
 			tmp1 += 8;
-			if (!isdigit (*tmp1)) {
+			if (!isdigit ((unsigned char)*tmp1)) {
 				goto exit_err;
 			}
 			regnum = strtoul (tmp1, NULL, 10);
@@ -821,7 +827,8 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 				regtype = "seg";
 			}
 			// We need type information in r2 register profiles
-		} else if ((tmp1 = strstr (regstr, "type="))) {
+		}
+		if ((tmp1 = strstr (regstr, "type="))) {
 			tmp1 += 6;
 			if (r_str_startswith (tmp1, "vec")
 			    || r_str_startswith (tmp1, "i387_ext")
@@ -869,7 +876,7 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 		regname[regname_len] = '"';
 		strncpy (tmpreg->type, regtype, sizeof (tmpreg->type) - 1);
 		tmpreg->type[sizeof (tmpreg->type) - 1] = '\0';
-		tmpreg->size = regsize / 8;
+		tmpreg->size = regsize;
 		tmpreg->flagnum = flagnum;
 		if (regnum == UINT32_MAX) {
 			r_list_push (regs, tmpreg);

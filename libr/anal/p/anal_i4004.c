@@ -104,7 +104,6 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	if (!op) {
 		return 2;
 	}
-	r_strbuf_init (&op->esil);
 	ut8 high = (*buf & 0xf0)>>4;
 	ut8 low = (*buf & 0xf);
 	basm[0] = 0;
@@ -154,7 +153,7 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case 6: //snprintf (basm, basz, "inc r%d", low); break;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
-	case 7: //snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]); 
+	case 7: //snprintf (basm, basz, "isz r%d, 0x%02x", low, buf[1]);
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->fail = (addr & (~0xFF)) + buf[1];
 		op->jump = addr + rlen;

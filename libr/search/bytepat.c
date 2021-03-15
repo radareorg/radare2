@@ -13,7 +13,7 @@ typedef struct _fnditem {
 	void* next;
 } fnditem;
 
-static fnditem* init_fi() {
+static fnditem* init_fi(void) {
 	fnditem* n;
 	n = (fnditem*) malloc (sizeof (fnditem));
 	if (!n) {
@@ -99,7 +99,6 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 			nr += (patlen - (nr % patlen)); // tamany de bloc llegit multiple superior de tamany busqueda
 			rb = s->iob.read_at (s->iob.io, bproc, block, nr);
 			if (rb < 1) {
-				bproc += nr;
 				break;
 			}
 			nr = rb;

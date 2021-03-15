@@ -1,7 +1,7 @@
 #include <r_util/r_itv.h>
 #include "minunit.h"
 
-#define I(begin, end) ((RInterval){begin, end-begin})
+#define I(begin, end) ((RInterval){(begin), (end)-(begin)})
 
 int test_r_itv_contain(void) {
 	mu_assert ("contain", r_itv_contain (I (0, 3), 0));

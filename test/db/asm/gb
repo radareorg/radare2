@@ -610,3 +610,12 @@ d "xor d" aa
 d "xor e" ab
 d "xor h" ac
 d "xor l" ad
+a "ld hl, 0xc3a0" 21a0c3
+a "ld bc, 0x188" 018801
+a "ld sp, 0xc3a0" 31a0c3
+a "ld de, 0x188" 118801
+a "call 0x36e0" cde036
+a "ld b, [hl]" 46
+a "ld [hl], a" 77
+a "ld a, 0x63" 3e63
+a "rlc [hl]" cb06

@@ -377,7 +377,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=subs triggers zf
+NAME=subs triggers zf and cf
 FILE=-
 CMDS=<<EOF
 e esil.debug=true
@@ -390,11 +390,11 @@ aes
 aer?cpsr
 EOF
 EXPECT=<<EOF
-0x40000000
+0x60000000
 EOF
 RUN
 
-NAME=subs triggers zf off
+NAME=subs triggers cf and zf off
 FILE=-
 CMDS=<<EOF
 e esil.debug=true
@@ -407,7 +407,7 @@ aes
 aer?cpsr
 EOF
 EXPECT=<<EOF
-0x00000000
+0x20000000
 EOF
 RUN
 
@@ -525,6 +525,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=tst nz
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 050010e3 0100a003
+pd 2
+ao 2~esil
+aei
+ar r0=4
+2aes
+ar?r0
+EOF
+EXPECT=<<EOF
+            0x00000000      050010e3       tst r0, 5
+            0x00000004      0100a003       moveq r0, 1
+esilcost: 0
+esil: 0,5,r0,&,==,$z,zf,:=,31,$s,nf,:=
+esilcost: 0
+esil: zf,?{,1,r0,=,}
+0x00000004
+EOF
+RUN
+
 NAME=ldr r0, [r1, 7]
 FILE=malloc://0x200
 CMDS=<<EOF
@@ -591,6 +615,23 @@ ar r2
 EOF
 EXPECT=<<EOF
 0xffeeddcc
+EOF
+RUN
+
+NAME=ldrb r1, [r3, r2, lsl 2]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r3=4
+ar r2=1
+wx 0211d3e7
+wx aabbccdd @ 8
+aes
+ar r1
+EOF
+EXPECT=<<EOF
+0x000000aa
 EOF
 RUN
 
@@ -1568,7 +1609,7 @@ ar r5
 ar r6
 EOF
 EXPECT=<<EOF
-efbeadde
+ccddeeff
 0xdeadbeef
 0x00000001
 EOF
@@ -1590,7 +1631,7 @@ ar r5
 ar r6
 EOF
 EXPECT=<<EOF
-ccddeeff
+efbeadde
 0xdeadbeef
 0x00000001
 EOF
@@ -2296,6 +2337,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=lsl reg same destination and source
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+aer r3=0xffffffaa
+wx 0331a0e1
+aes
+ar r3
+ar cpsr
+EOF
+EXPECT=<<EOF
+0xfffffea8
+0x00000000
+EOF
+RUN
+
 NAME=add pc op1
 FILE=malloc://0x200
 CMDS=<<EOF
@@ -2384,5 +2442,282 @@ EOF
 EXPECT=<<EOF
 0x00000000
 0x00000004
+EOF
+RUN
+
+NAME=stmib no writeback
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0a0080e9 # stmib r0, {r1, r3}
+aer r0=8
+aer r1=9
+aer r3=10
+aes
+aer r0
+p8 12 @8
+EOF
+EXPECT=<<EOF
+0x00000008
+00000000090000000a000000
+EOF
+RUN
+
+NAME=stmda writeback
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0a0020e8 # stmda r0!, {r1, r3}
+aer r0=16
+aer r1=9
+aer r3=10
+aes
+aer r0
+p8 12 @8
+EOF
+EXPECT=<<EOF
+0x00000008
+00000000090000000a000000
+EOF
+RUN
+
+NAME=stmdb no writeback
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0a0000e9 # stmdb r0, {r1, r3}
+aer r0=16
+aer r1=9
+aer r3=10
+aes
+aer r0
+p8 12 @8
+EOF
+EXPECT=<<EOF
+0x00000010
+090000000a00000000000000
+EOF
+RUN
+
+NAME=r0 and mem correct after vstmia
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 041b80ec # vstmia r0, {d1, d2}
+ar r0=0x100
+ar d1=0x01c00df0fecadec0
+ar d2=0xaaaaaaaaaaaaaaaa
+aes
+aer r0
+aer pc
+p8 16 @0x100
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000004
+c0decafef00dc001aaaaaaaaaaaaaaaa
+EOF
+RUN
+
+NAME=r0 and mem correct after vstmia writeback
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 041ba0ec # vstmia r0!, {d1, d2}
+ar r0=0x100
+ar d1=0x01c00df0fecadec0
+ar d2=0xaaaaaaaaaaaaaaaa
+aes
+aer r0
+aer pc
+p8 16 @0x100
+EOF
+EXPECT=<<EOF
+0x00000110
+0x00000004
+c0decafef00dc001aaaaaaaaaaaaaaaa
+EOF
+RUN
+
+
+NAME=r0 and mem correct after vstmdb
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 041b20ed # vstmdb r0!, {d1, d2}
+ar r0=0x110
+ar d1=0x01c00df0fecadec0
+ar d2=0xaaaaaaaaaaaaaaaa
+aes
+aer r0
+aer pc
+p8 16 @0x100
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000004
+c0decafef00dc001aaaaaaaaaaaaaaaa
+EOF
+RUN
+
+NAME=ldmda no writeback
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0a0010e8 # ldmda r0, {r1, r3}
+wx 01234567 @8
+wx 890abcde @12
+aer r0=12
+aes
+aer r0
+aer r1
+aer r3
+EOF
+EXPECT=<<EOF
+0x0000000c
+0x67452301
+0xdebc0a89
+EOF
+RUN
+
+NAME=ldmdb writeback
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0a0030e9 # ldmdb r0!, {r1, r3}
+wx 01234567 @8
+wx 890abcde @12
+aer r0=16
+aes
+aer r0
+aer r1
+aer r3
+EOF
+EXPECT=<<EOF
+0x00000008
+0x67452301
+0xdebc0a89
+EOF
+RUN
+
+NAME=ldm no writeback
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0a0090e8 # ldm r0, {r1, r3}
+wx 01234567 @8
+wx 890abcde @12
+aer r0=8
+aes
+aer r0
+aer r1
+aer r3
+EOF
+EXPECT=<<EOF
+0x00000008
+0x67452301
+0xdebc0a89
+EOF
+RUN
+
+NAME=ldmib writeback
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+wx 0a00b0e9 # ldmib r0!, {r1, r3}
+wx 01234567 @8
+wx 890abcde @12
+aer r0=4
+aes
+aer r0
+aer r1
+aer r3
+EOF
+EXPECT=<<EOF
+0x0000000c
+0x67452301
+0xdebc0a89
+EOF
+RUN
+
+NAME=regs correct after vldmia
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 080b93ec # vldmia r3, {d0-d3}
+wx c0decafef00dc001aaaaaaaaaaaaaaaa @0x100
+ar r3=0x100
+aes
+aer r3
+aer pc
+aer d0
+aer d1
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000004
+0x1c00df0fecadec0
+0xaaaaaaaaaaaaaaaa
+EOF
+RUN
+
+NAME=regs correct after vldmia writeback
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 080bb4ec # vldmia r4!, {d0-d3}
+wx c0decafef00dc001aaaaaaaaaaaaaaaa @0x100
+ar r4=0x100
+aes
+aer r4
+aer pc
+aer d0
+aer d1
+EOF
+EXPECT=<<EOF
+0x00000120
+0x00000004
+0x1c00df0fecadec0
+0xaaaaaaaaaaaaaaaa
+EOF
+RUN
+
+NAME=regs correct after vldmdb
+FILE=malloc://0x200
+CMDS=<<EOF
+e esil.verbose=2
+e asm.arch=arm
+e asm.bits=32
+wx 080b35ed # vldmdb r5!, {d0-d3}
+wx c0decafef00dc001aaaaaaaaaaaaaaaa @0x100
+ar r5=0x120
+aes
+aer r5
+aer pc
+aer d0
+aer d1
+EOF
+EXPECT=<<EOF
+0x00000100
+0x00000004
+0x1c00df0fecadec0
+0xaaaaaaaaaaaaaaaa
 EOF
 RUN

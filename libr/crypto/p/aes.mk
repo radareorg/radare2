@@ -1,6 +1,6 @@
 OBJ_AES=crypto_aes.o crypto_aes_algo.o
 
-DEPS+=r_util
+R2DEPS+=r_util
 DEPFLAGS=-L../../util -lr_util -L.. -lr_crypto
 
 STATIC_OBJ+=${OBJ_AES}

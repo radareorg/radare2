@@ -11,11 +11,6 @@
 #define CM ","
 #define XTENSA_MAX_LENGTH 8
 
-#if defined(_MSC_VER)
-__declspec(dllimport)
-#endif
-extern xtensa_isa xtensa_default_isa;
-
 static int xtensa_length(const ut8 *insn) {
 	static int length_table[16] = { 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 8, 8 };
 	return length_table[*insn & 0xf];
@@ -634,6 +629,12 @@ static inline void sign_extend(st32 *value, ut8 bit) {
 	}
 }
 
+static inline void sign_extend2(st32 *value, ut8 bit1, ut8 bit2, ut8 shift) {
+	if (((*value >> bit1) & 1) && ((*value >> bit2) & 1)) {
+		*value |= UT32_MAX << (32 - shift);
+	}
+}
+
 static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
 		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
 	st32 imm;
@@ -911,7 +912,7 @@ static void esil_move_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format fo
 
 	// 33: movi.n
 	if (opcode == 33) {
-		sign_extend (&imm, 6);
+		sign_extend2 (&imm, 6, 5, 25);
 	}
 
 	esil_push_signed_imm (&op->esil, imm);
@@ -1785,7 +1786,7 @@ static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 		break;
 	case 0:  /* excw */
 	case 34: /* nop.n */
-		r_strbuf_setf (&op->esil, "");
+		r_strbuf_setf (&op->esil, "%s", "");
 		break;
 	// TODO: s32cli (s32c1i) is conditional (CAS)
 	// should it be handled here?
@@ -1867,7 +1868,7 @@ static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 		esil_extract_unsigned (isa, opcode, format, i, slot_buffer, op);
 		break;
 	case 79: /* ill */
-		r_strbuf_setf (&op->esil, "");
+		r_strbuf_setf (&op->esil, "%s", "");
 		break;
 	// TODO: windowed calls?
 	case 7: /* call4 */
@@ -1912,8 +1913,6 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 	if (!op) {
 		return 1;
 	}
-	memset (op, 0, sizeof (RAnalOp));
-	r_strbuf_init (&op->esil);
 
 	op->size = xtensa_length (buf_original);
 	if (op->size > len_original) {
@@ -1938,9 +1937,6 @@ static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_origin
 
 	static xtensa_insnbuf insn_buffer = NULL;
 	static xtensa_insnbuf slot_buffer = NULL;
-
-	r_strbuf_init (&op->esil);
-	r_strbuf_set (&op->esil, "");
 
 	if (!insn_buffer) {
 		insn_buffer = xtensa_insnbuf_alloc (isa);

@@ -1,0 +1,17 @@
+NAME=r2 http://example.org
+FILE=http://example.org
+CMDS=<<EOF
+r
+b 64
+ps
+EOF
+EXPECT=<<EOF
+1256
+<!doctype html>
+<html>
+<head>
+    <title>Example Domain</title>
+
+EOF
+RUN
+

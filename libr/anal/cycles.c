@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2014 - 2015 - condret */
+/* radare - LGPL - Copyright 2014-2020 - condret */
 
 #include <r_anal.h>
 #include <r_list.h>
 #include <r_types.h>
 
-R_API RAnalCycleFrame *r_anal_cycle_frame_new() {
+R_API RAnalCycleFrame *r_anal_cycle_frame_new(void) {
 	RAnalCycleFrame *cf = R_NEW0 (RAnalCycleFrame);
 	if (cf) {
 		if (!(cf->hooks = r_list_new ())) {

@@ -8,7 +8,7 @@ ContinuationIndentWidth: 8
 IndentCaseLabels: false
 IndentFunctionDeclarationAfterType: false
 IndentWidth: 8
-UseTab: Always
+UseTab: ForContinuationAndIndentation
 ColumnLimit: 0
 BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
@@ -17,8 +17,10 @@ AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortLoopsOnASingleLine: false
 AlignAfterOpenBracket: DontAlign
+AlignEscapedNewlines: DontAlign
+AlignConsecutiveMacros: true
 AlignTrailingComments: false
 AlignOperands: false
 Cpp11BracedListStyle: false
-ForEachMacros: ['r_list_foreach', 'ls_foreach', 'fcn_tree_foreach_intersect', 'r_skiplist_foreach', 'graph_foreach_anode']
+ForEachMacros: ['r_list_foreach', 'ls_foreach', 'fcn_tree_foreach_intersect', 'r_skiplist_foreach', 'graph_foreach_anode', 'r_list_foreach_safe', 'r_pvector_foreach', 'r_rbtree_foreach', 'r_interval_    tree_foreach']
 SortIncludes: false

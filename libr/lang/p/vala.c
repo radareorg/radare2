@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_lang.h"
 
-static int lang_vala_file(RLang *lang, const char *file, bool silent) {
+static bool lang_vala_file(RLang *lang, const char *file, bool silent) {
 	void *lib;
 	char *p, name[512], buf[512];
 	char *vapidir, *srcdir, *libname;
@@ -121,16 +121,16 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 	return 0;
 }
 
-static int vala_run_file(RLang *lang, const char *file) {
+static bool vala_run_file(RLang *lang, const char *file) {
 	return lang_vala_file(lang, file, false);
 }
 
-static int lang_vala_init(void *user) {
+static bool lang_vala_init(void *user) {
 	// TODO: check if "valac" is found in path
 	return true;
 }
 
-static int lang_vala_run(RLang *lang, const char *code, int len) {
+static bool lang_vala_run(RLang *lang, const char *code, int len) {
 	bool silent = !strncmp (code, "-s", 2);
 	FILE *fd = r_sandbox_fopen (".tmp.vala", "w");
 	if (fd) {

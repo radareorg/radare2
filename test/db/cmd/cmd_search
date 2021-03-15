@@ -1,9 +1,41 @@
+NAME=trailing comment
+FILE=-
+ARGS=-n
+CMDS=<<EOF
+/ #
+EOF
+EXPECT=
+RUN
+
+NAME=search esil
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/E $$,[1],0xe1,-,!
+s@hit0_0
+EOF
+EXPECT=<<EOF
+hit0_0
+0x8048364
+EOF
+RUN
+
+NAME=search esil json
+FILE=bins/elf/ioli/crackme0x00
+CMDS=<<EOF
+/Ej $$,[1],0xe1,-,!
+s@hit0_0
+EOF
+EXPECT=<<EOF
+[{"addr":134513508,"value":1}]
+EOF
+RUN
+
 NAME=pm olf
 FILE=bins/elf/ioli/crackme0x00
 ARGS=-n
 CMDS=pm bins/src/olf.magic
 EXPECT=<<EOF
-0x00000000 1 OLF 32-bit
+0x00000000 1 OLF 32-bit LSB
 EOF
 RUN
 
@@ -200,7 +232,6 @@ RUN
 
 NAME=/a search from/to (seek 0)
 FILE=bins/elf/ioli/crackme0x00
-ARGS=-n
 CMDS=<<EOF
 e io.va = false
 s 0
@@ -216,14 +247,12 @@ RUN
 
 NAME=/a search from/to (seek 0)
 FILE=bins/elf/ioli/crackme0x00
-ARGS=-n
 CMDS=<<EOF
 e io.va = false
 s 0
 e search.from = 0
 e search.to = 0x50
-# /a xor al, 0x80
-/x 3480
+/a xor al, 0x80
 EOF
 EXPECT=<<EOF
 0x0000003c hit0_0 3480
@@ -255,7 +284,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 0x08048515   # 3: mov ebx, dword [esp]
-0x08048527   # 5: mov ebx, obj.__CTOR_LIST
+0x08048527   # 5: mov ebx, obj.__CTOR_LIST__
 --
 --
 [{"offset":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"offset":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
@@ -277,10 +306,10 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 0x08048515   # 3: mov ebx, dword [esp]
-0x08048527   # 5: mov ebx, obj.__CTOR_LIST
+0x08048527   # 5: mov ebx, obj.__CTOR_LIST__
 --
 0x08048515   # 3: mov ebx, dword [esp]
-0x08048527   # 5: mov ebx, obj.__CTOR_LIST
+0x08048527   # 5: mov ebx, obj.__CTOR_LIST__
 --
 [{"offset":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"offset":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
 --

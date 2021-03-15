@@ -3,7 +3,7 @@
 #include <r_egg.h>
 #include <getopt.h>
 
-static int usage () {
+static int usage (void) {
 	eprintf ("./test [-a x86|arm] [-b 32|64] hi.r\n");
 	return 1;
 }

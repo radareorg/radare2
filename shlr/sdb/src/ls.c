@@ -11,7 +11,7 @@ SDB_API SdbList *ls_newf(SdbListFree freefn) {
 	return list;
 }
 
-SDB_API SdbList *ls_new() {
+SDB_API SdbList *ls_new(void) {
 	SdbList *list = R_NEW0 (SdbList);
 	if (!list) {
 		return NULL;
@@ -45,7 +45,7 @@ static SdbListIter *_merge(SdbListIter *first, SdbListIter *second, SdbListCompa
 		} else if (!first) {
 			next = second;
 			second = second->n;
-		} else if (cmp (first->data, second->data) < 0) {
+		} else if (cmp (first->data, second->data) <= 0) {
 			next = first;
 			first = first->n;
 		} else {
@@ -260,6 +260,21 @@ SDB_API void *ls_pop(SdbList *list) {
 	return NULL;
 }
 
+SDB_API SdbList *ls_clone(SdbList *list) {
+	if (!list) {
+		return NULL;
+	}
+	SdbList *r = ls_new (); // ownership of elements stays in original list
+	if (!r) {
+		return NULL;
+	}
+	void *v;
+	SdbListIter *iter;
+	ls_foreach (list, iter, v) {
+		ls_append (r, v);
+	}
+	return r;
+}
 
 SDB_API int ls_join(SdbList *list1, SdbList *list2) {
 	if (!list1 || !list2) {

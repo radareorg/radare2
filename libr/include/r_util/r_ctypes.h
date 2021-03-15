@@ -24,7 +24,7 @@ R_API int r_type_kind(Sdb *TDB, const char *name);
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val);
 R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val);
 R_API RList* r_type_get_enum (Sdb *TDB, const char *name);
-R_API int r_type_get_bitsize (Sdb *TDB, const char *type);
+R_API ut64 r_type_get_bitsize (Sdb *TDB, const char *type);
 R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset);
 R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset);
 R_API char *r_type_link_at (Sdb *TDB, ut64 addr);

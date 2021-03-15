@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2018 - pancake */
+/* sdb - MIT - Copyright 2011-2020 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -14,7 +14,7 @@ typedef struct {
 	int size;
 } StrBuf;
 
-static StrBuf* strbuf_new() {
+static StrBuf* strbuf_new(void) {
 	return calloc (sizeof (StrBuf), 1);
 }
 
@@ -68,7 +68,7 @@ SDB_API int sdb_queryf (Sdb *s, const char *fmt, ...) {
         return ret;
 }
 
-SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ...) {
+SDB_API char *sdb_querysf(Sdb *s, char *buf, size_t buflen, const char *fmt, ...) {
         char string[4096];
         char *ret;
         va_list ap;
@@ -90,13 +90,13 @@ typedef struct {
 	char *root;
 } ForeachListUser;
 
-static int foreach_list_cb(void *user, const char *k, const char *v) {
+static bool foreach_list_cb(void *user, const char *k, const char *v) {
 	ForeachListUser *rlu = user;
 	char *line, *root;
 	int rlen, klen, vlen;
 	ut8 *v2 = NULL;
 	if (!rlu) {
-		return 0;
+		return false;
 	}
 	root = rlu->root;
 	klen = strlen (k);
@@ -112,7 +112,7 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 		line = malloc (klen + vlen + rlen + 3);
 		if (!line) {
 			free (v2);
-			return 0;
+			return false;
 		}
 		memcpy (line, root, rlen);
 		line[rlen]='/'; /*append the '/' at the end of the namespace */
@@ -123,7 +123,7 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 		line = malloc (klen + vlen + 2);
 		if (!line) {
 			free (v2);
-			return 0;
+			return false;
 		}
 		memcpy (line, k, klen);
 		line[klen] = '=';
@@ -132,7 +132,7 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	strbuf_append (rlu->out, line, 1);
 	free (v2);
 	free (line);
-	return 1;
+	return true;
 }
 
 static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns, int encode) {
@@ -259,13 +259,10 @@ repeat:
 next_quote:
 		quot = strchr (quot, '"');
 		if (quot) {
-			quot--;
-			if (*quot=='\\') {
-				memmove (quot, quot + 1, strlen (quot));
-				quot += 2;
+			if (*(quot - 1) == '\\') {
+				memmove (quot - 1, quot, strlen (quot) + 1);
 				goto next_quote;
 			}
-			quot++;
 			*quot++ = 0; // crash on read only mem!!
 		} else {
 			eprintf ("Missing quote\n");

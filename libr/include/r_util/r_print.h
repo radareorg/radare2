@@ -40,7 +40,7 @@ typedef int (*RPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RPrintSectionGet)(void *user, ut64 addr);
 typedef const char *(*RPrintColorFor)(void *user, ut64 addr, bool verbose);
-typedef char *(*RPrintHasRefs)(void *user, ut64 addr, bool verbose);
+typedef char *(*RPrintHasRefs)(void *user, ut64 addr, int mode);
 
 typedef struct r_print_zoom_t {
 	ut8 *buf;
@@ -65,7 +65,6 @@ typedef struct r_print_t {
 	bool scr_prompt;
 	int (*disasm)(void *p, ut64 addr);
 	PrintfCallback oprintf;
-	int interrupt;
 	int big_endian;
 	int width;
 	int limit;
@@ -126,6 +125,10 @@ typedef struct r_print_t {
 	// represents the first not-visible offset on the screen
 	// (only when in visual disasm mode)
 	ut64 screen_bounds;
+	// HACK: Used to temporarily disable the progress bar when it doesn't make sense to have it,
+	// eg. when setting the default flag tags on startup. Does not override scr.progressbar.
+	bool enable_progressbar;
+	RCharset *charset;
 } RPrint;
 
 #ifdef R_API
@@ -183,7 +186,6 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 R_API int r_print_format_struct_size(RPrint *p, const char *format, int mode, int n);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, const int len, const char *fmt, int elem, const char *setval, char *field);
 R_API const char *r_print_format_byname(RPrint *p, const char *name);
-R_API int r_print_format_length(const char *fmt);
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt, int dec, int delta, const char *label);
 R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
 #define R_PRINT_STRING_WIDE 1
@@ -201,11 +203,12 @@ R_API int r_print_date_get_now(RPrint *p, char *str);
 R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen);
 R_API void r_print_progressbar(RPrint *pr, int pc, int _cols);
+R_API void r_print_progressbar_with_count(RPrint *pr, unsigned int pc, unsigned int total, int _cols, bool reset_line);
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions);
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols);
 R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
-R_API void r_print_2bpp_row(RPrint *p, ut8 *buf);
-R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
+R_API void r_print_2bpp_row(RPrint *p, ut8 *buf, const char **colors);
+R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, size_t buflen, ut32 tiles, const char **colors);
 R_API char * r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
 R_API const char * r_print_color_op_type(RPrint *p, ut32 anal_type);
 R_API void r_print_set_interrupted(int i);

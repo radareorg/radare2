@@ -18,7 +18,7 @@ mv core_test.so ~/.config/radare2/plugins
 #undef R_IPI
 #define R_IPI static
 
-static int r_cmd_test_call() {
+static int r_cmd_test_call(void) {
 	eprintf ("Dummy!\n");
 	return false;
 }

@@ -1,3 +1,34 @@
+NAME=f_123
+FILE=-
+CMDS=<<EOF
+f _foo=123
+f _123=_foo
+f :123=321
+f 123=456
+f $123=456
+f $foo=456
+?v _foo
+?v _123
+?v :123
+?v 123
+?v $foo
+?v $foo
+EOF
+EXPECT=<<EOF
+0x7b
+0x7b
+0x141
+0x7b
+0xffffffffffffffff
+0xffffffffffffffff
+EOF
+EXPECT_ERR=<<EOF
+Invalid flag name '123'.
+Invalid flag name '$123'.
+Invalid flag name '$foo'.
+EOF
+RUN
+
 NAME=f?flag
 FILE=-
 CMDS=<<EOF
@@ -378,11 +409,59 @@ CMDS=<<EOF
 aaa
 f.blah
 f.
-f.-blah@entry0
+s 0
+?e outside
 f.
 EOF
 EXPECT=<<EOF
 0x00400410 blah   [entry0 + 0]
+outside
+EOF
+RUN
+
+NAME=f.*
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+af
+f.patata
+f.*
+s 0
+?e outside
+f.*
+?e all
+f.**
+EOF
+EXPECT=<<EOF
+f.patata@0x00400410
+outside
+all
+f.patata@0x00400410
+EOF
+EXPECT_ERR=<<EOF
+Cannot find function at 0x00000000
+EOF
+RUN
+
+NAME=f.j
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+af
+f.patata
+f.j
+s 0
+?e outside
+f.*
+?e all
+f.j*
+EOF
+EXPECT=<<EOF
+{"patata":4195344}
+outside
+all
+{"entry0":{"patata":4195344}}
+EOF
+EXPECT_ERR=<<EOF
+Cannot find function at 0x00000000
 EOF
 RUN
 
@@ -398,6 +477,7 @@ EOF
 EXPECT=<<EOF
 0x00400410 patata   [entry0 + 0]
 EOF
+EXPECT_ERR=
 RUN
 
 NAME=f-.
@@ -431,7 +511,7 @@ pd 1
 EOF
 EXPECT=<<EOF
            .blah:
-               31ed           xor ebp, ebp           ; /builddir/glibc-2.19/csu/../sysdeps/x86_64//start.S:67
+               31ed           xor ebp, ebp           ; start.S:67
 EOF
 RUN
 

@@ -27,23 +27,8 @@
 #define AVR_DISASM_H
 
 #include <stdint.h>
-static int avrdis (char *out, unsigned long long addr, const unsigned char *buf, int len);
+#include "avr_instructionset.h"
 
-/* Total number of assembly instructions, Maximum number of operands */
-#define AVR_TOTAL_INSTRUCTIONS	145
-#define AVR_MAX_NUM_OPERANDS	2
-
-/* Enumeration for all types of AVR Operands */
-enum AVR_Operand_Types {
-	OPERAND_NONE, OPERAND_REGISTER_GHOST,
-	OPERAND_REGISTER, OPERAND_REGISTER_STARTR16,
-	OPERAND_REGISTER_EVEN_PAIR, OPERAND_REGISTER_EVEN_PAIR_STARTR24,
-	OPERAND_BRANCH_ADDRESS, OPERAND_RELATIVE_ADDRESS, OPERAND_LONG_ABSOLUTE_ADDRESS,
-	OPERAND_IO_REGISTER, OPERAND_DATA, OPERAND_DES_ROUND, OPERAND_COMPLEMENTED_DATA, OPERAND_BIT, OPERAND_WORD_DATA,
-	OPERAND_X, OPERAND_XP, OPERAND_MX,
-	OPERAND_Y, OPERAND_YP, OPERAND_MY, OPERAND_YPQ,
-	OPERAND_Z, OPERAND_ZP, OPERAND_MZ, OPERAND_ZPQ,
-};
 /* OPERAND_REGISTER_GHOST:
  * Some instructions, like clr, only have one instruction when written in assembly,
  * such as clr R16. However, when encoded, the instruction becomes eor R16, R16. So although
@@ -56,17 +41,6 @@ enum AVR_Operand_Types {
 #define AVR_LONG_INSTRUCTION_FOUND	1
 #define AVR_LONG_INSTRUCTION_PRINT	2
 
-/* Structure for each instruction in the instruction set */
-struct _instructionInfo {
-	char mnemonic[7];
-	/* Bitwise AND mask for just the instruction bits */
-	uint16_t opcodeMask;
-	int numOperands;
-	/* Bitwise AND mask for each operand in the opcode */
-	uint16_t operandMasks[AVR_MAX_NUM_OPERANDS];
-	int operandTypes[AVR_MAX_NUM_OPERANDS];
-};
-typedef struct _instructionInfo instructionInfo;
 
 /* The raw assembed instruction as extracted from the program file. */
 struct _assembledInstruction {
@@ -91,8 +65,20 @@ struct _disassembledInstruction {
 };
 typedef struct _disassembledInstruction disassembledInstruction;
 
+/* The disassembler/decoder instruction context */
+struct _avrDisassembleContext {
+	/* Variable to keep track of long instructions that have been found and are to be printed. */
+	int status;
+	/* Variable to hold the address of the long instructions */
+	uint32_t longAddress;
+	/* A copy of the AVR long instruction, we need to keep this so we know information about the
+	 * instruction (mnemonic, operands) after we've read the next 16-bits from the program file. */
+	disassembledInstruction longInstruction;
+};
+typedef struct _avrDisassembleContext avrDisassembleContext;
+
 /* Disassembles an assembled instruction, including its operands. */
-static int disassembleInstruction(disassembledInstruction *dInstruction, const assembledInstruction aInstruction);
+int disassembleInstruction(avrDisassembleContext *context, disassembledInstruction *dInstruction, const assembledInstruction aInstruction);
 
 #endif
 

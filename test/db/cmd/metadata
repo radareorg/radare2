@@ -79,7 +79,7 @@ Cd 3
 pd 2
 EOF
 EXPECT=<<EOF
-            0x00000000      hex length=3 delta=0
+            0x00000000      hex size=3 delta=0
 0x00000000  3930 39                                  909
 
             0x00000003      3039           xor byte [ecx], bh
@@ -373,12 +373,12 @@ EXPECT=<<EOF
 ----
 0x00000380 magic 8 wwww
 ----
+0x00000000 ascii[12] "hello world"
 0x00000000 CCu "Hello!"
 0x00000100 data Cd 3
-0x00000300 format 4 x
 0x00000200 hidden Ch 2
+0x00000300 format 4 x
 0x00000380 magic 8 wwww
-0x00000000 ascii[12] "hello world"
 ----
 Cs 12 @ 0x00000000 # hello world
 ----
@@ -392,18 +392,18 @@ CCu base64:SGVsbG8h @ 0x00000000
 ----
 Cm 8 wwww @ 0x00000380
 ----
+Cs 12 @ 0x00000000 # hello world
 CCu base64:SGVsbG8h @ 0x00000000
 Cd 3 @ 0x00000100
-Cf 4 x @ 0x00000300
 Ch 2 @ 0x00000200
+Cf 4 x @ 0x00000300
 Cm 8 wwww @ 0x00000380
-Cs 12 @ 0x00000000 # hello world
 ----
 [{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true}]
 ----
-[{"offset":256,"type":"Cd","name":"3","size":3}]
+[{"offset":256,"type":"Cd","name":"","size":3}]
 ----
-[{"offset":512,"type":"Ch","name":"2"}]
+[{"offset":512,"type":"Ch","name":""}]
 ----
 [{"offset":768,"type":"Cf","name":"x"}]
 ----
@@ -411,7 +411,7 @@ Cs 12 @ 0x00000000 # hello world
 ----
 [{"offset":896,"type":"Cm","name":"wwww"}]
 ----
-[{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"3","size":3},{"offset":768,"type":"Cf","name":"x"},{"offset":512,"type":"Ch","name":"2"},{"offset":896,"type":"Cm","name":"wwww"},{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true}]
+[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true},{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"","size":3},{"offset":512,"type":"Ch","name":""},{"offset":768,"type":"Cf","name":"x"},{"offset":896,"type":"Cm","name":"wwww"}]
 EOF
 RUN
 
@@ -468,12 +468,12 @@ EXPECT=<<EOF
 Csa 2 @ 0x140016018 # \t
 "\t"
 ascii[2] "\t"
-            ;-- str.wide__esc:__e_0m:
+            ;-- str._twideesc:_e_0m:
             0x140016018     .string "\t" ; len=2
 Cs 19 @ 0x140016018 # \twide\\esc: \x1b[0m\xa1\r\n
 "\twide\\esc: \x1b[0m\xa1\r\n"
 latin1[19] "\twide\\esc: \x1b[0m\xa1\r\n"
-            ;-- str.wide__esc:__e_0m:
+            ;-- str._twideesc:_e_0m:
             0x140016018     .string "\twide\\esc: \x1b[0m\xa1\r\n" ; len=19
 ascii[4] "\t"
 ascii[4] "\twid"
@@ -517,12 +517,12 @@ EXPECT=<<EOF
 Cs 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n
 "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
 latin1[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
-            ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
+            ;-- str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n:
             0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n" ; len=61
 Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n
 "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
 utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
-            ;-- str.utf8____u00a2__u20ac__U00010348_in_yellow:_e_33m____________e_0m:
+            ;-- str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n:
             0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n" ; len=61
 EOF
 RUN
@@ -559,12 +559,12 @@ EOF
 EXPECT=<<EOF
 "\tANSI\\esc: \x1b[33m\r\n"
 ascii[19] "\tANSI\\esc: \x1b[33m\r\n"
-            ;-- str.ANSI__esc:__e_33m:
+            ;-- str._tANSIesc:_e_33m_r_n:
             ;-- section..data:
             0x140016000     .string "\tANSI\\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
 "\tANSI\esc: \x1b[33m\r\n"
 ascii[19] "\tANSI\esc: \x1b[33m\r\n"
-            ;-- str.ANSI__esc:__e_33m:
+            ;-- str._tANSIesc:_e_33m_r_n:
             ;-- section..data:
             0x140016000     .string "\tANSI\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
 EOF
@@ -615,8 +615,8 @@ Cf-
 C
 EOF
 EXPECT=<<EOF
-0x00000100 format 8 xx
 0x00000100 ascii[4] "abcd"
+0x00000100 format 8 xx
 ----
 0x00000100 format 8 xx
 ----
@@ -637,9 +637,9 @@ C-
 C
 EOF
 EXPECT=<<EOF
-0x00000100 CCu "a string"
-0x00000100 format 8 xx
 0x00000100 ascii[4] "abcd"
+0x00000100 format 8 xx
+0x00000100 CCu "a string"
 ----
 EOF
 RUN
@@ -700,7 +700,25 @@ C.
 EOF
 EXPECT=<<EOF
 0x0007a23c ascii[13] "match_symbol"
-0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
 0x00083fc4 data Cd 4
+0x00083fc4 CCu "[14] -rw- section size 4 named .init_array"
+EOF
+RUN
+
+NAME=Cd4
+FILE=-
+CMDS=<<EOF
+s+4
+pd+1
+Cd4
+pd+1
+e asm.meta=0
+pd+1
+EOF
+EXPECT=<<EOF
+            0x00000004      0000           add byte [rax], al
+            0x00000004      .dword 0x00000000
+.data: 4
+            0x00000004      00000000       .hex 00000000
 EOF
 RUN

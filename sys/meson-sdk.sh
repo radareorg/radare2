@@ -9,12 +9,12 @@ sys/meson.py --options use_libuv=false use_sys_magic=false || exit 1
 		echo $a
 		b=`basename $a`
 		mkdir a/$b
-		(cd a/$b ; ar xv ../../$a) > /dev/null
+		(cd a/$b ; ${AR} xv ../../$a) > /dev/null
 	done
 	(
 		rm -f libr.a
 		cd a
-		ar crs ../libr.a */*.o
+		${AR} rs ../libr.a */*.o
 	)
 )
 D=r2sdk

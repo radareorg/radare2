@@ -2,6 +2,7 @@ NAME=aek-
 FILE=-
 CMDS=<<EOF
 e asm.arch = x86
+e asm.bits = 64
 e anal.arch = x86
 e esil.stats = true
 wx 41574156415541544989f4555389fd4881eca8030000488b3e64488b042528

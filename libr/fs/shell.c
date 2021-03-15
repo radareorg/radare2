@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2019 - pancake */
+/* radare2 - LGPL - Copyright 2018-2020 - pancake */
 
 #include <r_fs.h>
 
@@ -59,33 +59,19 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	for (;;) {
 		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, path);
 		if (shell) {
+			free (*shell->cwd);
 			*shell->cwd = strdup (path);
 			if (shell->set_prompt) {
 				shell->set_prompt (prompt);
 			}
 			if (shell->readline) {
-				ptr = shell->readline ();
-			} else {
-				if (!fgets (buf, sizeof (buf), stdin)) {
+				if ((ptr = shell->readline ()) == NULL) {
 					break;
 				}
-				if (feof (stdin)) {
-					break;
-				}
-				r_str_trim_tail (buf);
-				ptr = buf;
-			}
-			if (!ptr) {
-				break;
-			}
-			r_str_trim ((char *)ptr); // XXX abadidea
-			if (shell->hist_add) {
-				shell->hist_add (ptr);
-			}
-			if (ptr != buf) {
 				r_str_ncpy (buf, ptr, sizeof (buf) - 1);
 			}
-		} else {
+		}
+		if (!shell || !shell->readline) {
 			printf ("%s", prompt);
 			if (!fgets (buf, sizeof (buf), stdin)) {
 				break;
@@ -93,8 +79,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			if (feof (stdin)) {
 				break;
 			}
-			r_str_trim_tail (buf);
 		}
+		r_str_trim (buf);
+
+		if (shell && shell->hist_add) {
+			shell->hist_add (buf);
+		}
+
 		char *wave = strchr (buf, '~');
 		if (wave) {
 			*wave++ = 0;
@@ -124,9 +115,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			r_list_free (list);
 			if (buf[2] == ' ') {
 				if (buf[3] != '/') {
-					strncpy (str, path, sizeof (str) - 1);
-					strcat (str, "/");
-					strncat (str, buf + 3, sizeof (buf) - 1);
+					snprintf (str, sizeof (str), "%s/%s", path, buf + 3);
 					list = r_fs_dir (fs, str);
 				} else {
 					list = r_fs_dir (fs, buf + 3);
@@ -212,8 +201,8 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			} else {
 				strncpy (str, path, sizeof (str) - 1);
 			}
-			strncat (str, "/",   sizeof (str) - strlen (str) - 1);
-			strncat (str, input, sizeof (str) - strlen (str) - 1);
+			size_t n = strlen (str);
+			snprintf (str + n, sizeof (str) - n, "/%s", input);
 			char *p = strchr (str, '>');
 			if (p) {
 				*p = 0;
@@ -224,12 +213,12 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					*p = '>';
 				}
 				r_fs_read (fs, file, 0, file->size);
-				if (!handlePipes (fs, str, file->data, path)) {
+				if (file->data && !handlePipes (fs, str, file->data, path)) {
 					char *s = r_str_ndup ((const char *)file->data, file->size);
 					cb_printf ("%s\n", s);
 					free (s);
 				}
-				write (1, "\n", 1);
+				cb_printf ("\n");
 				r_fs_close (fs, file);
 			} else {
 				eprintf ("Cannot open file\n");
@@ -274,11 +263,11 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				r_file_dump (input, file->data, file->size, 0);
 				r_fs_close (fs, file);
 			} else {
-				input -= 2; //OMFG!!!! O_O
-				memcpy (input, "./", 2);
-				if (!r_fs_dir_dump (fs, s, input)) {
+				char *f = r_str_newf ("./%s", input);
+				if (!r_fs_dir_dump (fs, s, f)) {
 					eprintf ("Cannot open file\n");
 				}
+				free (f);
 			}
 			free (s);
 		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {

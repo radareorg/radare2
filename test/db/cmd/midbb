@@ -1,15 +1,16 @@
-NAME=asm.bb.middle disasm
+NAME=asm.bbmiddle disasm
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
+e anal.vars.stackname=true
 e asm.bytes=false
 e asm.comments=false
 e asm.var=false
 s 0x560e67
 af
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pD 0x560eb3-$$
 ?e
-e asm.bb.middle=false
+e asm.bbmiddle=false
 pD 0x560eb3-$$
 EOF
 EXPECT=<<EOF
@@ -81,7 +82,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.middle json
+NAME=asm.bbmiddle json
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -94,17 +95,17 @@ af
 ?e
 ?e ----1----
 ?e
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pDj 19~{}
 ?e
 ?e ----2----
 ?e
-e asm.bb.middle=false
+e asm.bbmiddle=false
 pDj 19~{}
 ?e
 ?e ----3----
 ?e
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pdfj~{}
 EOF
 EXPECT=<<EOF
@@ -133,7 +134,7 @@ EXPECT=<<EOF
   },
   {
     "offset": 3,
-    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=",
+    "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
     "refptr": true,
     "fcn_addr": 0,
     "fcn_last": 17,
@@ -383,7 +384,7 @@ EXPECT=<<EOF
     },
     {
       "offset": 3,
-      "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=",
+      "esil": "al,rax,+=[1],7,$o,of,:=,7,$s,sf,:=,$z,zf,:=,7,$c,cf,:=,$p,pf,:=,3,$c,af,:=",
       "refptr": true,
       "fcn_addr": 0,
       "fcn_last": 17,
@@ -519,7 +520,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.middle and pdi
+NAME=asm.bbmiddle and pdi
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -529,10 +530,10 @@ e anal.jmp.mid=true
 e io.cache=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pdi 6
 ?e
-e asm.bb.middle=false
+e asm.bbmiddle=false
 pdi 6
 EOF
 EXPECT=<<EOF
@@ -554,7 +555,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=asm.bb.middle and pif
+NAME=asm.bbmiddle and pif
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -564,10 +565,10 @@ e anal.jmp.mid=true
 e io.cache=true
 wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
 af
-e asm.bb.middle=true
+e asm.bbmiddle=true
 pif
 ?e
-e asm.bb.middle=false
+e asm.bbmiddle=false
 pif
 EOF
 EXPECT=<<EOF
@@ -586,14 +587,14 @@ jmp 3
 EOF
 RUN
 
-NAME=asm.bb.middle and asm.flags.middle
+NAME=asm.bbmiddle and asm.flags.middle
 FILE=bins/pe/cmd_adf_sample0.exe
 CMDS=<<EOF
 e asm.bytes=true
 e asm.xrefs=false
 s 0x560e67
 af
-e asm.bb.middle=true
+e asm.bbmiddle=true
 e asm.flags.middle=2
 f sym.dummy @ 0x560e7d
 pd 2 @ 0x560e7a
@@ -606,6 +607,13 @@ pd 2 @ 0x560e95
 ?e
 fm 0x560e97 @ sym.dummy
 pd 3 @ 0x560e95
+?e
+# TODO: probably need to change behavior here
+e asm.bbmiddle=false
+f sym.real = 0x00560e95
+pd 3 @ 0x560e95
+?e
+pd 3 @ 0x560e95 @e:scr.color=1
 EOF
 EXPECT=<<EOF
             0x00560e7a  ~   0085965e5052   add byte [ebp + 0x52505e96], al
@@ -622,8 +630,20 @@ EXPECT=<<EOF
 |           0x00560e96      0f31           rdtsc
 
             0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
+|           ;-- (0x00560e97) sym.dummy:
 |           0x00560e96  ~   0f31           rdtsc
+|           0x00560e98      e914000000     jmp 0x560eb1
+
+            ;-- sym.real:
+            0x00560e95  ~   ba0f31e914     mov edx, 0x14e9310f
 |           ;-- sym.dummy:
 |           0x00560e97      31e9           xor ecx, ebp
+|           0x00560e99      1400           adc al, 0
+
+            [36m;-- sym.real:[0m
+            [32m0x00560e95[0m  ~   [37mba[37m0f[33m31[37me9[37m14[0m     [37mmov[36m edx[0m,[36m[36m [33m0x14e9310f[0m[0m[0m
+[36m|[0m           [36m;-- sym.dummy:[0m
+[36m|[0m           [32m0x00560e97[0m      [33m31[37me9[0m           [36mxor[36m ecx[0m,[36m[36m ebp[0m[0m[0m
+[36m|[0m           [32m0x00560e99[0m      [37m14[32m00[0m           [33madc[36m al[0m,[36m[36m [33m0[0m[0m[0m
 EOF
 RUN

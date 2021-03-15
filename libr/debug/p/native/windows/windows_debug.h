@@ -113,9 +113,9 @@ typedef struct {
 typedef struct{
 	int pid;
 	HANDLE hFile;
-	void* BaseOfDll;
-	char Path[MAX_PATH];
-	char Name[MAX_PATH];
+	void *BaseOfDll;
+	char *Path;
+	char *Name;
 } LIB_ITEM, *PLIB_ITEM;
 
 DWORD (WINAPI *w32_GetModuleBaseName)(HANDLE, HMODULE, LPTSTR, DWORD);

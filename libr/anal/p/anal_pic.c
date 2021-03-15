@@ -102,7 +102,7 @@ INST_HANDLER (CALL) {
 	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e ("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e ("0x01,stkptr,+=,");
-	ef ("0x%x,_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
+	ef ("0x%" PFMT64x ",_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
 }
 
 INST_HANDLER (GOTO) {
@@ -132,7 +132,7 @@ INST_HANDLER (BTFSC) {
 	op->type = R_ANAL_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,!,?{,0x%x,pc,=,},",
+	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,!,?{,0x%" PFMT64x ",pc,=,},",
 	    args->f, mask, op->jump);
 }
 
@@ -141,7 +141,7 @@ INST_HANDLER (BTFSS) {
 	op->type = R_ANAL_OP_TYPE_CJMP;
 	op->jump = addr + 4;
 	op->fail = addr + 2;
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,?{,0x%x,pc,=,},", args->f,
+	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],0x%x,&,?{,0x%" PFMT64x ",pc,=,},", args->f,
 	    mask, op->jump);
 }
 
@@ -191,7 +191,7 @@ INST_HANDLER (DECFSZ) {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],-,wreg,=,",
 		    args->f);
 	}
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%x,pc,=,},", args->f,
+	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
 	    op->jump);
 }
 
@@ -205,7 +205,7 @@ INST_HANDLER (INCFSZ) {
 		ef ("0x01," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],+,wreg,=,",
 		    args->f);
 	}
-	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%x,pc,=,},", args->f,
+	ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],!,?{,0x%" PFMT64x ",pc,=,},", args->f,
 	    op->jump);
 }
 
@@ -322,7 +322,7 @@ INST_HANDLER (CALLW) {
 	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e ("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e ("0x01,stkptr,+=,");
-	ef ("0x%x,_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
+	ef ("0x%" PFMT64x ",_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
 }
 
 INST_HANDLER (MOVWF) {
@@ -337,7 +337,7 @@ INST_HANDLER (MOVF) {
 		    ",[1]," PIC_MIDRANGE_ESIL_BSR_ADDR ",=[1],",
 		    args->f, args->f);
 	} else {
-		ef (PIC_MIDRANGE_ESIL_BSR_ADDR, ",[1],wreg,=,", args->f);
+		ef (PIC_MIDRANGE_ESIL_BSR_ADDR ",[1],wreg,=,", args->f);
 	}
 	e ("$z,z,:=,");
 }
@@ -520,8 +520,7 @@ INST_HANDLER (MOVWI_1) {
 	} else {
 		if (!(args->m & 2)) {
 			ef ("1,fsr1l,%s=,", (args->m & 1) ? "-" : "+");
-			ef ("$c7,fsr1h,%s,", (args->m & 1) ? ",!" : "",
-			    (args->m & 1) ? "-" : "+");
+			ef ("$c7,fsr1h,%s,", (args->m & 1) ? ",!" : "");
 		}
 		e ("wreg,indf1=,");
 		e ("$z,z,:=,");
@@ -723,7 +722,7 @@ static void pic18_cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf, char *fla
 	op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0xff);
 	op->fail = addr + op->size;
 	op->cycles = 2;
-	r_strbuf_setf (&op->esil, "%s,?,{,0x%x,pc,=,}", flag, op->jump);
+	r_strbuf_setf (&op->esil, "%s,?,{,0x%" PFMT64x ",pc,=,}", flag, op->jump);
 }
 
 static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -757,7 +756,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->cycles = 2;
 		op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0x7ff);
-		r_strbuf_setf (&op->esil, "0x%x,pc,=", op->jump);
+		r_strbuf_setf (&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
 		return op->size;
 	}
 	switch (b >> 12) { //NOP,movff,BAF_T
@@ -822,7 +821,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		op->size = 4;
 		op->cycles = 2;
 		op->jump = ((dword_instr & 0xff) | ((dword_instr & 0xfff0000) >> 8)) * 2;
-		r_strbuf_setf (&op->esil, "0x%x,pc,=", op->jump);
+		r_strbuf_setf (&op->esil, "0x%" PFMT64x ",pc,=", op->jump);
 		op->type = R_ANAL_OP_TYPE_JMP;
 		return op->size;
 	case 0xf: //addlw
@@ -834,7 +833,7 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	case 0xe: //movlw
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->cycles = 1;
-		r_strbuf_setf (&op->esil, "0x%x,wreg,=,");
+		r_strbuf_setf (&op->esil, "0x%x,wreg,=,", *(ut16* )buf & 0xff);
 		return op->size;
 	case 0xd: //mullw
 		op->type = R_ANAL_OP_TYPE_MUL;
@@ -1009,6 +1008,8 @@ static bool anal_pic_midrange_set_reg_profile (RAnal *esil) {
 	const char *p = \
 		"=PC	pc\n"
 		"=SP	stkptr\n"
+		"=A0	porta\n"
+		"=A1	portb\n"
 		"gpr	indf0	.8	0	0\n"
 		"gpr	indf1	.8	1	0\n"
 		"gpr	pcl		.8	2	0\n"
@@ -1038,6 +1039,8 @@ static bool anal_pic_pic18_set_reg_profile(RAnal *esil) {
 		"#pc lives in nowhere actually"
 		"=PC	pc\n"
 		"=SP	tos\n"
+		"=A0	porta\n"
+		"=A1	portb\n"
 		"gpr	pc	.32	0	0\n"
 		"gpr	pcl	.8	0	0\n"
 		"gpr	pclath	.8	1	0\n"

@@ -124,10 +124,10 @@ SDB_API bool sdb_disk_create(Sdb* s) {
 	return true;
 }
 
-SDB_API int sdb_disk_insert(Sdb* s, const char *key, const char *val) {
+SDB_API bool sdb_disk_insert(Sdb* s, const char *key, const char *val) {
 	struct cdb_make *c = &s->m;
 	if (!key || !val) {
-		return 0;
+		return false;
 	}
 	//if (!*val) return 0; //undefine variable if no value
 	return cdb_make_add (c, key, strlen (key), val, strlen (val));

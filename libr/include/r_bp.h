@@ -46,7 +46,6 @@ typedef struct r_bp_item_t {
 	ut64 addr;
 	ut64 delta;
 	int size; /* size of breakpoint area */
-	int recoil; /* recoil */
 	bool swstep; 	/* is this breakpoint from a swstep? */
 	int perm;
 	int hw;

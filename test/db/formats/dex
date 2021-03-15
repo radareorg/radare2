@@ -5,6 +5,7 @@ om
 s
 EOF
 EXPECT=<<EOF
+ 2 fd: 3 +0x0000035d 0x0000035d - 0x00000368 r-x fmap.code
  1 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
 0x35d
 EOF
@@ -158,11 +159,11 @@ EXPECT=<<EOF
 0x00000178 0 sym.LWorld.ifield_worldVar2:I
 0x000001b0 0 sym.imp.Ljava_io_PrintStream.method.println_Ljava_lang_String__V
 0x000001b8 0 sym.imp.Ljava_lang_Integer.method._init__I_V
-0x000001c0 0 sym.imp.Ljava_lang_Integer.method.toString__Ljava_lang_String
+0x000001c0 0 sym.imp.Ljava_lang_Integer.method.toString__Ljava_lang_String_
 0x000001c8 0 sym.imp.Ljava_lang_Object.method._init___V
 0x000001d0 0 sym.imp.Ljava_lang_StringBuilder.method._init___V
-0x000001d8 0 sym.imp.Ljava_lang_StringBuilder.method.append_Ljava_lang_String__Ljava_lang_StringBuilder
-0x000001e0 0 sym.imp.Ljava_lang_StringBuilder.method.toString__Ljava_lang_String
+0x000001d8 0 sym.imp.Ljava_lang_StringBuilder.method.append_Ljava_lang_String__Ljava_lang_StringBuilder_
+0x000001e0 0 sym.imp.Ljava_lang_StringBuilder.method.toString__Ljava_lang_String_
 0x000001e8 1 class.LHello
 0x00000208 1 class.LWorld
 0x00000228 308 section.code
@@ -178,22 +179,22 @@ EXPECT=<<EOF
 0x000002f4 1 method.public.constructor.LWorld.LWorld.method._init___V
 0x00000318 68 sym.LWorld.method.foo_I_V
 0x00000318 1 method.public.LWorld.LWorld.method.foo_I_V
-0x00000372 6 str.init
+0x0000035c 600 section.data
+0x00000372 6 str._init_
 0x0000037a 6 str.Findus
 0x00000382 10 str.Hello.java
-0x00000394 7 str.LHello
-0x000003a1 7 str.LWorld
+0x00000394 7 str.LHello_
+0x000003a1 7 str.LWorld_
 0x00000438 10 str.World.java
 0x00000459 6 str.append
-0x00000466 6 str.foo
+0x00000466 6 str.foo_
 0x0000046e 8 str.localVar
 0x00000478 9 str.localVar2
 0x0000048e 7 str.println
 0x00000497 8 str.toString
-0x000004a1 8 str.world
+0x000004a1 8 str.world_
 0x000004ab 8 str.worldVar
 0x000004b5 9 str.worldVar2
-0x000004bc 248 section.data
 EOF
 RUN
 
@@ -221,13 +222,13 @@ CMDS=iE
 EXPECT=<<EOF
 [Exports]
 
-nth paddr       vaddr      bind   type size lib name
-----------------------------------------------------
-2    0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
-3    0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
-4    0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V
-7    0x000002f4 0x000002f4 GLOBAL FUNC 20       LWorld.method.<init>()V
-8    0x00000318 0x00000318 GLOBAL FUNC 68       LWorld.method.foo(I)V
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+2   0x00000238 0x00000238 GLOBAL FUNC 20       LHello.method.<init>()V
+3   0x0000025c 0x0000025c GLOBAL FUNC 34       LHello.method.main([Ljava/lang/String;)V
+4   0x00000290 0x00000290 GLOBAL FUNC 84       LHello.method.foo(I)V
+7   0x000002f4 0x000002f4 GLOBAL FUNC 20       LWorld.method.<init>()V
+8   0x00000318 0x00000318 GLOBAL FUNC 68       LWorld.method.foo(I)V
 EOF
 RUN
 
@@ -302,14 +303,14 @@ data_off            : 552 (0x000228)
 
 Class #0            -
   Class descriptor  : 'LHello;'
-  Access flags      : 0x0001 (PUBLIC)
+  Access flags      : 0x0001 (public)
   Superclass        : 'Ljava/lang/Object;'
   Interfaces        -
   Static fields     -
     #0              : (in LHello;)
       name          : 'localVar2'
       type          : 'I'
-      access        : 0x0008 (STATIC)
+      access        : 0x0008 (static)
   Instance fields   -
     #0              : (in LHello;)
       name          : 'localVar'
@@ -319,7 +320,7 @@ Class #0            -
     #0              : (in LHello;)
       name          : '<init>'
       type          : '()V'
-      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      access        : 0x10001 (public constructor)
       code          -
       registers     : 2
       ins           : 1
@@ -336,7 +337,7 @@ Class #0            -
     #1              : (in LHello;)
       name          : 'main'
       type          : '([Ljava/lang/String;)V'
-      access        : 0x0009 (PUBLIC STATIC)
+      access        : 0x0009 (public static)
       code          -
       registers     : 3
       ins           : 1
@@ -353,7 +354,7 @@ Class #0            -
     #0              : (in LHello;)
       name          : 'foo'
       type          : '(I)V'
-      access        : 0x0001 (PUBLIC)
+      access        : 0x0001 (public)
       code          -
       registers     : 5
       ins           : 2
@@ -370,7 +371,7 @@ Class #0            -
 
 Class #1            -
   Class descriptor  : 'LWorld;'
-  Access flags      : 0x0001 (PUBLIC)
+  Access flags      : 0x0001 (public)
   Superclass        : 'Ljava/lang/Object;'
   Interfaces        -
   Static fields     -
@@ -387,7 +388,7 @@ Class #1            -
     #0              : (in LWorld;)
       name          : '<init>'
       type          : '()V'
-      access        : 0x10001 (PUBLIC CONSTRUCTOR)
+      access        : 0x10001 (public constructor)
       code          -
       registers     : 2
       ins           : 1
@@ -405,7 +406,7 @@ Class #1            -
     #0              : (in LWorld;)
       name          : 'foo'
       type          : '(I)V'
-      access        : 0x0001 (PUBLIC)
+      access        : 0x0001 (public)
       code          -
       registers     : 5
       ins           : 2
@@ -419,6 +420,15 @@ Class #1            -
         0x0000 - 0x0022 reg=3 this LWorld;
   source_file_idx   : 17 (World.java)
 
+EOF
+RUN
+
+NAME=DEX radare2installer.dex classes (is getProper)
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=is~getProper
+EXPECT=<<EOF
+1649 0x00006a20 0x00006a20 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;)Ljava/lang/String;
+1650 0x00006a28 0x00006a28 NONE   FUNC   0        imp.Ljava/lang/System.method.getProperty(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 EOF
 RUN
 

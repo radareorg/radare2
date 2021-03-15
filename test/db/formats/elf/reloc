@@ -65,3 +65,38 @@ EXPECT=<<EOF
 0x0800005e      e878840300     call r_spaces_set
 EOF
 RUN
+
+NAME=ELF: R_X86_64_PLT32 patch reloc 2
+FILE=bins/elf/test.ko
+ARGS=-e io.cache=true
+CMDS=<<EOF
+e asm.comments=false
+e asm.lines=false
+e asm.flags=false
+pd 1 @ 0x0800007c
+pd 1 @ 0x0800008c
+pd 1 @ 0x0800009f
+EOF
+EXPECT=<<EOF
+0x0800007c      e88e0a0000     call __fentry__
+0x0800008c      e8860a0000     call printk
+0x0800009f      e8730a0000     call printk
+EOF
+RUN
+
+NAME=ELF: R_X86_64_PLT32 patch reloc 2 (no io.cache)
+FILE=bins/elf/test.ko
+CMDS=<<EOF
+e asm.comments=false
+e asm.lines=false
+e asm.flags=false
+pd 1 @ 0x0800007c
+pd 1 @ 0x0800008c
+pd 1 @ 0x0800009f
+EOF
+EXPECT=<<EOF
+0x0800007c      e800000000     call __fentry__
+0x0800008c      e800000000     call printk
+0x0800009f      e800000000     call printk
+EOF
+RUN

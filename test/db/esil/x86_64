@@ -1,3 +1,19 @@
+NAME=linux syscall
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+asl $$ @@= 1 2 3 4
+EOF
+EXPECT=<<EOF
+write
+open
+close
+stat
+EOF
+RUN
+
 NAME=imul 1 arg
 FILE=-
 CMDS=<<EOF
@@ -8,7 +24,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul r9
-0x00000000 64,r9,rax,*,>>,rdx,=,r9,rax,*=
+0x00000000 64,64,r9,~,64,rax,~,*,>>,rdx,=,r9,rax,*=,64,64,rax,~,>>,rdx,-,?{,1,1,}{,0,0,},cf,:=,of,:=
 EOF
 RUN
 
@@ -22,7 +38,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul eax, ecx
-0x00000000 ecx,eax,*=
+0x00000000 32,eax,~,32,ecx,~,*,DUP,eax,=,eax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
 EOF
 RUN
 
@@ -36,7 +52,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul rax, r11, 0x33666667
-0x00000000 862348903,r11,*,rax,=
+0x00000000 64,862348903,~,64,r11,~,*,DUP,rax,=,rax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
 EOF
 RUN
 
@@ -111,7 +127,8 @@ ao~opcode,esil
 EOF
 EXPECT=<<EOF
 opcode: imul eax, ebx, 0x89
-esil: 137,ebx,*,eax,=
+esilcost: 0
+esil: 32,137,~,32,ebx,~,*,DUP,eax,=,eax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
 EOF
 RUN
 
@@ -204,6 +221,7 @@ EOF
 EXPECT=<<EOF
 
 opcode: lea rsi, [rdi + 0x68]
+esilcost: 0
 esil: 0x68,rdi,+,rsi,=
 EOF
 RUN
@@ -220,6 +238,7 @@ EOF
 EXPECT=<<EOF
 
 opcode: lea rdi, [rbp - 0x440]
+esilcost: 0
 esil: 0x440,rbp,-,rdi,=
 EOF
 RUN
@@ -236,6 +255,7 @@ EOF
 EXPECT=<<EOF
 
 opcode: mov dword [rip + 0x40dd], 1
+esilcost: 12
 esil: 1,0x40dd,rip,+,=[4]
 EOF
 RUN
@@ -310,7 +330,8 @@ e asm.bits=64
 ao~esil
 EOF
 EXPECT=<<EOF
-esil: rax,4,*,rdx,+,[4],rax,=
+esilcost: 4
+esil: 32,rax,4,*,rdx,+,[4],~,rax,=
 EOF
 RUN
 
@@ -324,6 +345,7 @@ ao~esil,opcode
 EOF
 EXPECT=<<EOF
 opcode: lea rax, [rdi + r13*8]
+esilcost: 0
 esil: r13,8,*,rdi,+,rax,=
 EOF
 RUN
@@ -338,6 +360,7 @@ ao~opcode,esil
 EOF
 EXPECT=<<EOF
 opcode: lea rbx, [rax + rdx]
+esilcost: 0
 esil: rdx,rax,+,rbx,=
 EOF
 RUN
@@ -361,7 +384,7 @@ NAME=x86-64 linux syscall
 FILE=bins/elf/syscall_x86
 CMDS=<<EOF
 e asm.bytes=0
-e asm.lines.bb=0
+e asm.lines.jmp=0
 e emu.str=1
 e asm.cmt.col=30
 pd 5~write

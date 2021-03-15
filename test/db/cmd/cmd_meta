@@ -1,3 +1,11 @@
+NAME=Cf. crash
+FILE=-
+CMDS=<<EOF
+Cf.
+EOF
+EXPECT=<<EOF
+EOF
+RUN
 
 NAME=vars commenting
 FILE=malloc://1024

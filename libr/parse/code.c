@@ -3,7 +3,9 @@
 #include "r_util.h"
 #include "r_types.h"
 #include "r_parse.h"
-#include "libr_tcc.h"
+#include "tcc.h"
+
+extern int tcc_sym_push(char *typename, int typesize, int meta);
 
 /* parse C code and return it in key-value form */
 
@@ -23,9 +25,9 @@ static void __appendString(const char *msg, char **s) {
 	}
 }
 
-static int __typeLoad(void *p, const char *k, const char *v) {
+static bool __typeLoad(void *p, const char *k, const char *v) {
 	if (!p) {
-		return -1;
+		return false;
 	}
 	int btype = 0;
 	RAnal *anal = (RAnal*)p;
@@ -71,7 +73,7 @@ static int __typeLoad(void *p, const char *k, const char *v) {
 		}
 		tcc_sym_push ((char *)typename, typesize, btype);
 	}
-	return 0;
+	return true;
 }
 
 static void __errorFunc(void *opaque, const char *msg) {

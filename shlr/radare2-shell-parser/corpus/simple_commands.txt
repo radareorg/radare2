@@ -70,7 +70,7 @@ Question mark commands
 (commands
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier))))
-  (help_command (cmd_identifier))
+  (arged_command (cmd_identifier))
   (help_command (cmd_identifier))
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier))))
@@ -213,6 +213,7 @@ Tasks command
 & ?e Hello
 && 1
 &=
+&
 
 ---
 
@@ -225,6 +226,7 @@ Tasks command
       (args (arg (arg_identifier)))))
   (task_command (cmd_identifier)
     (args (arg (arg_identifier))))
+  (task_command (cmd_identifier))
   (task_command (cmd_identifier)))
 
 
@@ -256,6 +258,7 @@ s $
 ?v $*
 ?v $$$ test
 ?v $alias
+?e hello$alias
 ?e test
 
 ---
@@ -271,6 +274,27 @@ s $
     (args
       (arg (arg_identifier))
       (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier)))))
+
+
+==========
+Arg with /
+==========
+
+md /
+md /root
+md /root/
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (arg_identifier))))
   (arged_command (cmd_identifier)
     (args (arg (arg_identifier))))
   (arged_command (cmd_identifier)

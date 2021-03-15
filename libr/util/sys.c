@@ -1,14 +1,11 @@
 /* radare - LGPL - Copyright 2009-2020 - pancake */
 
-#if __linux__
-#include <time.h>
-#endif
-
 #include <r_userconf.h>
 #include <stdlib.h>
 #include <string.h>
 #if defined(__NetBSD__)
 # include <sys/param.h>
+# include <sys/sysctl.h>
 # if __NetBSD_Prereq__(7,0,0)
 #  define NETBSD_WITH_BACKTRACE
 # endif
@@ -20,6 +17,14 @@
 #  define FREEBSD_WITH_BACKTRACE
 # endif
 #endif
+#if defined(__DragonFly__)
+# include <sys/param.h>
+# include <sys/sysctl.h>
+#endif
+#if defined(__HAIKU__)
+# include <kernel/image.h>
+# include <sys/param.h>
+#endif
 #include <sys/types.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -28,7 +33,7 @@
 static char** env = NULL;
 
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
-  defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__
+  defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun || __HAIKU__
 # include <execinfo.h>
 #endif
 #if __APPLE__
@@ -131,7 +136,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {NULL, 0}
 };
 
-R_API int r_sys_fork() {
+R_API int r_sys_fork(void) {
 #if HAVE_FORK
 #if __WINDOWS__
 	return -1;
@@ -143,7 +148,11 @@ R_API int r_sys_fork() {
 #endif
 }
 
-#if HAVE_SIGACTION
+#if __WINDOWS__
+R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
+	return -1;
+}
+#elif HAVE_SIGACTION
 R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
 	struct sigaction sigact = { };
 	int ret, i;
@@ -166,19 +175,16 @@ R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
 			return ret;
 		}
 	}
-
 	return 0;
 }
 #else
-R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
-	int ret, i;
-
+R_API int r_sys_sigaction(int *sig, void (*handler)(int)) {
 	if (!sig) {
 		return -EINVAL;
 	}
-
+	size_t i;
 	for (i = 0; sig[i] != 0; i++) {
-		ret = signal (sig[i], handler);
+		void (*ret)(int) = signal (sig[i], handler);
 		if (ret == SIG_ERR) {
 			eprintf ("Failed to set signal handler for signal '%d': %s\n", sig[i], strerror(errno));
 			return -1;
@@ -199,19 +205,6 @@ R_API void r_sys_exit(int status, bool nocleanup) {
 	} else {
 		exit (status);
 	}
-}
-
-/* TODO: import stuff from bininfo/p/bininfo_addr2line */
-/* TODO: check endianness issues here */
-R_API ut64 r_sys_now(void) {
-	ut64 ret;
-	struct timeval now;
-	gettimeofday (&now, NULL);
-	ret = now.tv_sec;
-	ret <<= 20;
-	ret |= now.tv_usec;
-	//(sizeof (now.tv_sec) == 4
-	return ret;
 }
 
 R_API int r_sys_truncate(const char *file, int sz) {
@@ -296,7 +289,7 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 
 #if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || \
   defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE) || \
-  __DragonFly__
+  __DragonFly__ || __sun || __HAIKU__
 #define HAVE_BACKTRACE 1
 #endif
 
@@ -353,7 +346,13 @@ R_API int r_sys_usleep(int usecs) {
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
 	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
 #elif __UNIX__
+#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
+	// Old versions of GNU libc return void for usleep
+	usleep (usecs);
+	return 0;
+#else
 	return usleep (usecs);
+#endif
 #else
 	// w32 api uses milliseconds
 	usecs /= 1000;
@@ -367,14 +366,12 @@ R_API int r_sys_clearenv(void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	/* do nothing */
 	if (!env) {
-		env = r_sys_get_environ ();
+		r_sys_env_init ();
 		return 0;
 	}
-	if (env) {
-		char **e = env;
-		while (*e) {
-			*e++ = NULL;
-		}
+	char **e = env;
+	while (*e) {
+		*e++ = NULL;
 	}
 #else
 	if (!environ) {
@@ -517,8 +514,9 @@ err_r_sys_get_env:
 }
 
 R_API bool r_sys_getenv_asbool(const char *key) {
+	r_return_val_if_fail (key, false);
 	char *env = r_sys_getenv (key);
-	const bool res = (env && *env == '1');
+	const bool res = env && r_str_is_true (env);
 	free (env);
 	return res;
 }
@@ -562,6 +560,19 @@ R_API bool r_sys_aslr(int val) {
 		ret = false;
 	}
 #endif
+#elif __NetBSD__
+	size_t vlen = sizeof (val);
+	if (sysctlbyname ("security.pax.aslr.enabled", NULL, 0, &val, vlen) == -1) {
+		eprintf ("Failed to set RVA\n");
+		ret = false;
+	}
+#elif __DragonFly__
+	size_t vlen = sizeof (val);
+	if (sysctlbyname ("vm.randomize_mmap", NULL, 0, &val, vlen) == -1) {
+		eprintf ("Failed to set RVA\n");
+		ret = false;
+	}
+#elif __DragonFly__
 #endif
 	return ret;
 }
@@ -660,6 +671,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		}
 		// we should handle broken pipes somehow better
 		r_sys_signal (SIGPIPE, SIG_IGN);
+		size_t err_len = 0, out_len = 0;
 		for (;;) {
 			fd_set rfds, wfds;
 			int nfd;
@@ -680,20 +692,29 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				break;
 			}
 			if (output && FD_ISSET (sh_out[0], &rfds)) {
-				if (!(bytes = read (sh_out[0], buffer, sizeof (buffer)-1))) {
+				if ((bytes = read (sh_out[0], buffer, sizeof (buffer))) < 1) {
 					break;
 				}
-				buffer[sizeof (buffer) - 1] = '\0';
-				if (len) {
-					*len += bytes;
+				char *tmp = realloc (outputptr, out_len + bytes + 1);
+				if (!tmp) {
+					R_FREE (outputptr);
+					break;
 				}
-				outputptr = r_str_append (outputptr, buffer);
+				outputptr = tmp;
+				memcpy (outputptr + out_len, buffer, bytes);
+				out_len += bytes;
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
-				if (!read (sh_err[0], buffer, sizeof (buffer)-1)) {
+				if ((bytes = read (sh_err[0], buffer, sizeof (buffer))) < 1) {
 					break;
 				}
-				buffer[sizeof (buffer) - 1] = '\0';
-				*sterr = r_str_append (*sterr, buffer);
+				char *tmp = realloc (*sterr, err_len + bytes + 1);
+				if (!tmp) {
+					R_FREE (*sterr);
+					break;
+				}
+				*sterr = tmp;
+				memcpy (*sterr + err_len, buffer, bytes);
+				err_len += bytes;
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
 				int inputptr_len = strlen (inputptr);
 				bytes = write (sh_in[1], inputptr, inputptr_len);
@@ -727,11 +748,21 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			ret = false;
 		}
 
+		if (len) {
+			*len = out_len;
+		}
+		if (*sterr) {
+			(*sterr)[err_len] = 0;
+		}
+		if (outputptr) {
+			outputptr[out_len] = 0;
+		}
 		if (output) {
 			*output = outputptr;
 		} else {
 			free (outputptr);
 		}
+		free (mysterr);
 		return ret;
 	}
 	return false;
@@ -747,7 +778,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 }
 #endif
 
-R_API int r_sys_cmdf (const char *fmt, ...) {
+R_API int r_sys_cmdf(const char *fmt, ...) {
 	int ret;
 	char cmd[4096];
 	va_list ap;
@@ -829,7 +860,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	{
 		char *p = strstr (ptr, ":\\");
 		if (p) {
-			ptr = p + 2;
+			ptr = p + 3;
 		}
 	}
 #endif
@@ -880,7 +911,8 @@ R_API void r_sys_perror_str(const char *fun) {
 			0, NULL )) {
 		char *err = r_sys_conv_win_to_utf8 (lpMsgBuf);
 		if (err) {
-			eprintf ("%s: %s\n", fun, err);
+			eprintf ("%s: (%#lx) %s%s", fun, dw, err,
+			         r_str_endswith (err, "\n") ? "" : "\n");
 			free (err);
 		}
 		LocalFree (lpMsgBuf);
@@ -1033,18 +1065,6 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	return 0;
 }
 
-R_API bool r_is_heap (void *p) {
-	void *q = malloc (8);
-	ut64 mask = UT64_MAX;
-	ut64 addr = (ut64)(size_t)q;
-	addr >>= 16;
-	addr <<= 16;
-	mask >>= 16;
-	mask <<= 16;
-	free (q);
-	return (((ut64)(size_t)p) == mask);
-}
-
 R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
 	// TODO: add maximum path length support
@@ -1148,13 +1168,29 @@ R_API char *r_sys_pid_to_path(int pid) {
 #endif
 #else
 	int ret;
-#if __FreeBSD__
+#if __FreeBSD__ || __DragonFly__
 	char pathbuf[PATH_MAX];
 	size_t pathbufl = sizeof (pathbuf);
 	int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, pid};
 	ret = sysctl (mib, 4, pathbuf, &pathbufl, NULL, 0);
 	if (ret != 0) {
 		return NULL;
+	}
+#elif __HAIKU__
+	char pathbuf[MAXPATHLEN];
+	int32_t group = 0;
+	image_info ii;
+
+	while (get_next_image_info ((team_id)pid, &group, &ii) == B_OK) {
+		if (ii.type == B_APP_IMAGE) {
+			break;
+		}
+	}
+
+	if (ii.type == B_APP_IMAGE) {
+		r_str_ncpy (pathbuf, ii.name, MAXPATHLEN);
+	} else {
+		pathbuf[0] = '\0';
 	}
 #else
 	char buf[128], pathbuf[1024];
@@ -1169,8 +1205,14 @@ R_API char *r_sys_pid_to_path(int pid) {
 #endif
 }
 
-// TODO: rename to r_sys_env_init()
-R_API char **r_sys_get_environ () {
+R_API void r_sys_env_init(void) {
+	char **envp = r_sys_get_environ ();
+	if (envp) {
+		r_sys_set_environ (envp);
+	}
+}
+
+R_API char **r_sys_get_environ(void) {
 #if __APPLE__ && !HAVE_ENVIRON
 	env = *_NSGetEnviron();
 #else
@@ -1183,22 +1225,25 @@ R_API char **r_sys_get_environ () {
 	return env;
 }
 
-R_API void r_sys_set_environ (char **e) {
+R_API void r_sys_set_environ(char **e) {
 	env = e;
 }
 
-R_API char *r_sys_whoami (char *buf) {
-	char _buf[32];
-	int pid = getpid ();
-	int hasbuf = (buf)? 1: 0;
-	if (!hasbuf) {
-		buf = _buf;
+R_API char *r_sys_whoami(void) {
+	char buf[32];
+#if __WINDOWS__
+	DWORD buf_sz = sizeof (buf);
+	if (!GetUserName(buf, (LPDWORD)&buf_sz) ) {
+		return strdup ("?");
 	}
-	sprintf (buf, "pid%d", pid);
-	return hasbuf? buf: strdup (buf);
+#else
+	int uid = getuid ();
+	snprintf (buf, sizeof (buf), "uid%d", uid);
+#endif
+	return strdup (buf);
 }
 
-R_API int r_sys_getpid() {
+R_API int r_sys_getpid(void) {
 #if __UNIX__
 	return getpid ();
 #elif __WINDOWS__
@@ -1272,7 +1317,7 @@ R_API RSysInfo *r_sys_info(void) {
 	if (!si) {
 		return NULL;
 	}
-	
+
 	if (RegOpenKeyExA (HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0,
 		KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
 		r_sys_perror ("r_sys_info/RegOpenKeyExA");
@@ -1307,7 +1352,7 @@ R_API RSysInfo *r_sys_info(void) {
 		|| type != REG_SZ) {
 		goto beach;
 	}
-	si->version = r_str_newf ("%d.%d.%s", major, minor, tmp);
+	si->version = r_str_newf ("%lu.%lu.%s", major, minor, tmp);
 
 	size = sizeof (tmp);
 	if (RegQueryValueExA (key, "ReleaseId", NULL, &type,

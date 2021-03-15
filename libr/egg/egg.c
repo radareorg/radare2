@@ -25,7 +25,7 @@ void egg_patch_free (void *p) {
 	free (ep);
 }
 
-R_API REgg *r_egg_new() {
+R_API REgg *r_egg_new(void) {
 	int i;
 	REgg *egg = R_NEW0 (REgg);
 	if (!egg) {
@@ -147,6 +147,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 		switch (bits) {
 		case 16:
 		case 32:
+		case 64:
 			r_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
 			egg->remit = &emit_arm;
 			egg->bits = bits;
@@ -204,6 +205,7 @@ R_API void r_egg_syscall(REgg *egg, const char *arg, ...) {
 		return;
 	}
 	egg->remit->syscall (egg, item->num);
+	r_syscall_item_free (item);
 }
 
 R_API void r_egg_alloc(REgg *egg, int n) {

@@ -14,12 +14,10 @@
 extern "C" {
 #endif
 
-enum {
-	R_SYS_BITS_8 = 1,
-	R_SYS_BITS_16 = 2,
-	R_SYS_BITS_32 = 4,
-	R_SYS_BITS_64 = 8,
-};
+#define R_SYS_BITS_8 1
+#define R_SYS_BITS_16 2
+#define R_SYS_BITS_32 4
+#define R_SYS_BITS_64 8
 
 typedef struct {
 	char *sysname;
@@ -34,14 +32,13 @@ R_API void r_sys_info_free(RSysInfo *si);
 
 R_API int r_sys_sigaction(int *sig, void (*handler) (int));
 R_API int r_sys_signal(int sig, void (*handler) (int));
+R_API void r_sys_env_init(void);
 R_API char **r_sys_get_environ(void);
 R_API void r_sys_set_environ(char **e);
-R_API ut64 r_sys_now(void);
-R_API const char *r_time_to_string (ut64 ts);
+
 R_API int r_sys_fork(void);
 // nocleanup = false => exit(); true => _exit()
 R_API void r_sys_exit(int status, bool nocleanup);
-R_API bool r_is_heap (void *p);
 R_API bool r_sys_stop(void);
 R_API char *r_sys_pid_to_path(int pid);
 R_API int r_sys_run(const ut8 *buf, int len);
@@ -67,7 +64,7 @@ R_API char *r_sys_getenv(const char *key);
 R_API bool r_sys_getenv_asbool(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
 R_API int r_sys_clearenv(void);
-R_API char *r_sys_whoami(char *buf);
+R_API char *r_sys_whoami(void);
 R_API char *r_sys_getdir(void);
 R_API int r_sys_chdir(const char *s);
 R_API bool r_sys_aslr(int val);
@@ -96,9 +93,9 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 R_API int r_sys_truncate(const char *file, int sz);
 R_API int r_sys_cmd(const char *cmd);
 R_API int r_sys_cmdbg(const char *cmd);
-R_API int r_sys_cmdf(const char *fmt, ...);
+R_API int r_sys_cmdf(const char *fmt, ...) R_PRINTF_CHECK(1, 2);
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
-R_API char *r_sys_cmd_strf(const char *cmd, ...);
+R_API char *r_sys_cmd_strf(const char *cmd, ...) R_PRINTF_CHECK(1, 2);
 //#define r_sys_cmd_str(cmd, input, len) r_sys_cmd_str_full(cmd, input, len, 0)
 R_API void r_sys_backtrace(void);
 R_API bool r_sys_tts(const char *txt, bool bg);

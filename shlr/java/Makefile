@@ -32,6 +32,8 @@ CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o dsojson.o
 
+include ../../shlr/sdb.mk
+
 all: libr_java.$(EXT_AR)
 
 RANLIB?=ranlib

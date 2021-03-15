@@ -18,7 +18,7 @@ a "blx 0xa" 000000fb
 a "blx 0xc" 010000fa
 aB "bxeq Lr" 1eff2f01
 aB "bxne Lr" 1eff2f11
-aB "clzne r5, sl" 1a5f6f11
+a "clzne r5, sl" 1a5f6f11
 aB "cmpeq sl, r4" 40005a01
 a "cmpne r7, r6" 06005711
 a "eoreq r2, r2, 1" 01202202
@@ -192,7 +192,6 @@ d "uxtbeq r1, r0" 7010ef06
 d "uxtheq r0, r0" 7000ff06
 d "vstreq d0, [r0]" 000b800d
 d "blne 0x1900" 8374211b 0xff7a46ec
-a "addeq r1, r1, r0" 00108100
 aB "addeq r1, r1, r2, lsl 2" 02118100
 a "addne r1, r1, ip" 0c108110
 aB "addne r1, r1, r0, lsl 2" 00118110
@@ -202,14 +201,13 @@ a "andne r3, r3, r2" 02300310
 a "andne ip, ip, r7" 07c00c10
 aB "asreq r0, ip, 0x1f" cc0fa001
 aB "asrne r0, r4, 0x1f" c40fa011
-a "beq 8" 0000000a
 aB "biceq r3, r3, 7" 0730c303
-aB "blne 0x1900" 3E06001B
+a "blne 0x1900" 3E06001B
 a "bl 0x1900" 3e0600eb
 a "b 0x1900" 3e0600ea
 aB "bxeq lr" 1eff2f01
 aB "bxne lr" 1eff2f11
-aB "clzne r5, sl" 1a5f6f11
+a "clzne r5, sl" 1a5f6f11
 aB "cmpeq sl, r0, asr 32" 40005a01
 a "cmpne r7, r6" 06005711
 a "eoreq r2, r2, 1" 01202202
@@ -228,7 +226,6 @@ aB "lsreq r0, r0, 0x10" 2008a001
 aB "lsrne r0, r0, 9" a004a011
 aB "mlaeq r7, r5, r7, r0" 95072700
 aB "mlane r3, r1, r3, r2" 91232310
-a "moveq r0, sl" 0a00a001
 aB "movne r0, sb" 0900a011
 aB "mulne r3, r3, r0" 93000310
 a "mvneq r0, 0x15" 1500e003
@@ -246,7 +243,7 @@ a "popeq {r4, r5, r6, r7, pc}" f080bd08
 a "popeq {r3, r4, r5, r6, r7, pc}" f880bd08
 a "popeq {r3, r4, r5, r6, r7, r8, sl, pc}" f885bd08
 aB "popeq {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}" f88fbd08
-aB "reveq r3, r3" 333fbf06
+a "reveq r3, r3" 333fbf06
 a "rsbeq ip, r1, r7" 07c06100
 a "rsbne r6, r0, r6" 06606010
 aB "stmeq r0, {r2, r3}" 0c008008

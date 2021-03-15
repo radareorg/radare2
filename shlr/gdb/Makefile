@@ -32,6 +32,7 @@ endif
 
 #OSTYPE=windows
 include ../../libr/socket/deps.mk
+include ../../shlr/sdb.mk
 
 # Test variables
 TEST_D= $(PWD)/test

@@ -504,7 +504,7 @@ char * dso_json_dict_to_str (DsoJsonDict *dict) {
 	return strdup ("{}");
 }
 
-int dso_json_dict_insert_str_key_obj (DsoJsonObj *dict, char *key, DsoJsonObj *val_obj) {
+int dso_json_dict_insert_str_key_obj(DsoJsonObj *dict, char *key, DsoJsonObj *val_obj) {
 	DsoJsonObj *key_obj = dso_json_str_new_from_str (key);
 	int res = dso_json_dict_insert_key_obj (dict, key_obj, val_obj);
 	if (!res) {
@@ -513,7 +513,7 @@ int dso_json_dict_insert_str_key_obj (DsoJsonObj *dict, char *key, DsoJsonObj *v
 	return res;
 }
 
-int dso_json_dict_insert_str_key_num (DsoJsonObj *dict, char *key, int val) {
+int dso_json_dict_insert_str_key_num(DsoJsonObj *dict, char *key, int val) {
 	DsoJsonObj *key_obj = dso_json_str_new_from_str (key);
 	DsoJsonObj *val_obj = dso_json_num_new_from_num (val);
 	int res = dso_json_dict_insert_key_obj (dict, key_obj, val_obj);

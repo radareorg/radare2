@@ -1,6 +1,6 @@
 OBJ_SERPENT=crypto_serpent.o crypto_serpent_algo.o
 
-DEPS+=r_util
+R2DEPS+=r_util
 DEPFLAGS=-L../../util -lr_util -L.. -lr_crypto
 
 STATIC_OBJ+=${OBJ_SERPENT}

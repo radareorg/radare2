@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2019 - pancake */
+/* sdb - MIT - Copyright 2011-2021 - pancake */
 
 #include <signal.h>
 #include <stdio.h>
@@ -8,6 +8,7 @@
 
 #define MODE_ZERO '0'
 #define MODE_JSON 'j'
+#define MODE_CGEN 'c'
 #define MODE_DFLT 0
 
 static int save = 0;
@@ -27,19 +28,19 @@ static void terminate(int sig UNUSED) {
 	exit (sig<2?sig:0);
 }
 
-static void write_null() {
+static void write_null(void) {
 	(void)write (1, "", 1);
 }
 
 #define BS 128
 #define USE_SLURPIN 1
 
-static char *stdin_slurp(int *sz) {
+static char *slurp(FILE *f, size_t *sz) {
 	int blocksize = BS;
 	static int bufsize = BS;
 	static char *next = NULL;
-	static int nextlen = 0;
-	int len, rr, rr2;
+	static size_t nextlen = 0;
+	size_t len, rr, rr2;
 	char *tmp, *buf = NULL;
 	if (sz) {
 		*sz = 0;
@@ -55,11 +56,11 @@ static char *stdin_slurp(int *sz) {
 			return NULL;
 		}
 
-		if (!fgets (buf, buf_size, stdin)) {
+		if (!fgets (buf, buf_size, f)) {
 			free (buf);
 			return NULL;
 		}
-		if (feof (stdin)) {
+		if (feof (f)) {
 			free (buf);
 			return NULL;
 		}
@@ -90,7 +91,7 @@ static char *stdin_slurp(int *sz) {
 			bufsize = nextlen + blocksize;
 			//len = nextlen;
 			rr = nextlen;
-			rr2 = read (0, buf + nextlen, blocksize);
+			rr2 = fread (buf + nextlen, 1, blocksize, f);
 			if (rr2 > 0) {
 				rr += rr2;
 				bufsize += rr2;
@@ -98,7 +99,7 @@ static char *stdin_slurp(int *sz) {
 			next = NULL;
 			nextlen = 0;
 		} else {
-			rr = read (0, buf + len, blocksize);
+			rr = fread (buf + len, 1, blocksize, f);
 		}
 		if (rr < 1) { // EOF
 			buf[len] = 0;
@@ -169,17 +170,39 @@ static void synchronize(int sig UNUSED) {
 
 static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
                          const char *expgrep) {
+	char cname[SDB_MAX_KEY];
 	char *v, k[SDB_MAX_KEY] = { 0 };
+	char *d = cname;
 	const char *comma = "";
 	// local db beacuse is readonly and we dont need to finalize in case of ^C
+	for (v=(char*)dbname;*v;v++) {
+		if (*v == '.') {
+			break;
+		}
+		*d++ = *v;
+	}
+	*d++ = 0;
 	Sdb *db = sdb_new (NULL, dbname, 0);
 	if (!db) {
 		return 1;
 	}
 	sdb_config (db, options);
 	sdb_dump_begin (db);
-	if (fmt == MODE_JSON) {
+	switch (fmt) {
+	case MODE_JSON:
 		printf ("{");
+		break;
+	case MODE_CGEN:
+		printf ("%%{\n");
+		printf ("// gperf -aclEDCIG --null-strings -H sdb_hash_c_%s -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, cname, cname);
+		printf ("// gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", cname, cname);
+		printf ("#include <stdio.h>\n");
+		printf ("#include <ctype.h>\n");
+		printf ("%%}\n");
+		printf ("\n");
+		printf ("struct kv { const char *name; const char *value; };\n");
+		printf ("%%%%\n");
+		break;
 	}
 	while (sdb_dump_dupnext (db, k, &v, NULL)) {
 		if (grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
@@ -199,6 +222,9 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 			}
 			comma = ",";
 			break;
+		case MODE_CGEN:
+			printf ("%s,\"%s\"\n", k, v);
+			break;
 		case MODE_ZERO:
 			printf ("%s=%s", k, v);
 			break;
@@ -212,6 +238,49 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 	case MODE_ZERO:
 		fflush (stdout);
 		write_null ();
+		break;
+	case MODE_CGEN:
+		printf ("%%%%\n");
+		printf ("// SDB-CGEN V"SDB_VERSION"\n");
+		printf ("const char* %s_get(const char *s) {\n", cname);
+		printf ("\tconst struct kv *o = sdb_get_c_%s (s, strlen(s));\n", cname);
+		printf ("\treturn o? o->value: NULL;\n");
+		printf ("}\n");
+		printf ("const unsigned int %s_hash(const char *s) {\n", cname);
+		printf ("\treturn sdb_hash_c_%s(s, strlen (s));\n", cname);
+		printf ("}\n");
+printf (
+"#if MAIN\n"
+"int main () {\n"
+"	char line[1024];\n"
+"	FILE *fd = fopen (\"%s.gperf\", \"r\");\n"
+"	int mode = 0;\n"
+"	printf (\"#ifndef INCLUDE_%s_H\\n\");\n"
+"	printf (\"#define INCLUDE_%s_H 1\\n\");\n"
+"	while (!feof (fd)) {\n"
+"		*line = 0;\n"
+"		fgets(line,sizeof(line),fd);\n"
+"		if (mode == 1) {\n"
+"			char *comma = strchr (line, ',');\n"
+"			if(comma) {\n"
+"				*comma = 0;\n"
+"				char *up = strdup(line);\n"
+"				char *p = up;while(*p){*p=toupper(*p);p++;}\n"
+"				printf (\"#define %s_%%s %%d\\n\",\n"
+"					line, sdb_hash_c_%s (line, comma-line));\n"
+"			}\n"
+"		}\n"
+"		if (*line == '%%' && line[1] == '%%')\n"
+"			mode++;\n"
+"	}\n"
+"	printf (\"#endif\\n\");\n"
+"}\n"
+"#endif\n",
+cname, cname,
+cname, cname,
+cname
+);
+		printf ("\n");
 		break;
 	case MODE_JSON:
 		printf ("}\n");
@@ -256,31 +325,43 @@ static int insertkeys(Sdb *s, const char **args, int nargs, int mode) {
 }
 
 static int createdb(const char *f, const char **args, int nargs) {
-	char *line, *eq;
 	s = sdb_new (NULL, f, 0);
-	if (!s || !sdb_disk_create (s)) {
+	if (!s) {
 		eprintf ("Cannot create database\n");
 		return 1;
 	}
-	insertkeys (s, args, nargs, '=');
 	sdb_config (s, options);
-	for (; (line = stdin_slurp (NULL));) {
-		if ((eq = strchr (line, '='))) {
-			*eq++ = 0;
-			sdb_disk_insert (s, line, eq);
+	int ret = 0;
+	if (args) {
+		int i;
+		for (i = 0; i < nargs; i++) {
+			if (!sdb_text_load (s, args[i])) {
+				eprintf ("Failed to load text sdb from %s\n", args[i]);
+			}
 		}
-		free (line);
+	} else {
+		size_t len;
+		char *in = slurp (stdin, &len);
+		if (!in) {
+			return 0;
+		}
+		if (!sdb_text_load_buf (s, in, len)) {
+			eprintf ("Failed to read text sdb from stdin\n");
+		}
+		free (in);
 	}
-	sdb_disk_finish (s);
-	return 0;
+	sdb_sync (s);
+	return ret;
 }
 
 static int showusage(int o) {
-	printf ("usage: sdb [-0cdehjJv|-D A B] [-|db] "
-		"[.file]|[-=]|[-+][(idx)key[:json|=value] ..]\n");
+	printf ("usage: sdb [-0cCdDehjJv|-D A B] [-|db] "
+		"[.file]|[-=]|==||[-+][(idx)key[:json|=value] ..]\n");
 	if (o == 2) {
 		printf ("  -0      terminate results with \\x00\n"
 			"  -c      count the number of keys database\n"
+			"  -C      create foo.c and foo.h for sdb embedding\n"
+			"  -G      output database for gperf processing\n"
 			"  -d      decode base64 from stdin\n"
 			"  -D      diff two databases\n"
 			"  -e      encode stdin as base64\n"
@@ -299,10 +380,10 @@ static int showversion(void) {
 	return 0;
 }
 
-static int jsonIndent() {
-	int len;
+static int jsonIndent(void) {
+	size_t len;
 	char *out;
-	char *in = stdin_slurp (&len);
+	char *in = slurp (stdin, &len);
 	if (!in) {
 		return 0;
 	}
@@ -317,14 +398,14 @@ static int jsonIndent() {
 	return 0;
 }
 
-static int base64encode() {
+static int base64encode(void) {
 	char *out;
-	int len = 0;
-	ut8 *in = (ut8 *) stdin_slurp (&len);
+	size_t len = 0;
+	ut8 *in = (ut8 *) slurp (stdin, &len);
 	if (!in) {
 		return 0;
 	}
-	out = sdb_encode (in, len);
+	out = sdb_encode (in, (int)len);
 	if (!out) {
 		free (in);
 		return 1;
@@ -335,19 +416,18 @@ static int base64encode() {
 	return 0;
 }
 
-static int base64decode() {
+static int base64decode(void) {
 	ut8 *out;
-	int len, ret = 1;
-	char *in = (char *) stdin_slurp (&len);
+	size_t len, ret = 1;
+	char *in = slurp (stdin, &len);
 	if (in) {
-		out = sdb_decode (in, &len);
-		if (out) {
-			if (len >= 0) {
-				(void)write (1, out, len);
-				ret = 0;
-			}
-			free (out);
+		int declen;
+		out = sdb_decode (in, &declen);
+		if (out && declen >= 0) {
+			(void)write (1, out, declen);
+			ret = 0;
 		}
+		free (out);
 		free (in);
 	}
 	return ret;
@@ -385,7 +465,7 @@ static bool dbdiff(const char *a, const char *b) {
 	return equal;
 }
 
-int showcount(const char *db) {
+static int showcount(const char *db) {
 	ut32 d;
 	s = sdb_new (NULL, db, 0);
 	if (sdb_stats (s, &d, NULL)) {
@@ -394,6 +474,47 @@ int showcount(const char *db) {
 	// TODO: show version, timestamp information
 	sdb_free (s);
 	return 0;
+}
+
+static int gen_gperf(const char *file, const char *name) {
+	const size_t bufsz = 4096;
+	char *buf = malloc (bufsz);
+	
+	char *out = malloc (strlen (file) +32);
+	snprintf(out, strlen (file) + 32, "%s.gperf", name);
+	int wd = open (out, O_RDWR);
+	ftruncate (wd, 0);
+	int rc = 0;
+	if (wd != -1) {
+		dup2 (1, 999);
+		dup2 (wd, 1);
+		rc = sdb_dump (file, MODE_CGEN);
+		fflush (stdout);
+		close (wd);
+		dup2 (999, 1);
+	} else {
+		snprintf (buf, bufsz, "sdb -G %s > %s.gperf\n", file, name);
+		rc = system (buf);
+	}
+	if (rc == 0) {
+		snprintf (buf, bufsz, "gperf -aclEDCIG --null-strings -H sdb_hash_c_%s"
+				" -N sdb_get_c_%s -t %s.gperf > %s.c\n", name, name, name, name);
+		rc = system (buf);
+		if (rc == 0) {
+			snprintf (buf, bufsz, "gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", name, name);
+			rc = system (buf);
+			if (rc == 0) {
+				eprintf ("Generated %s.c and %s.h\n", name, name);
+			}
+		} else {
+			eprintf ("%s\n", buf);
+			eprintf ("Cannot run gperf\n");
+		}
+	} else {
+		eprintf ("Outdated sdb binary in PATH?\n");
+	}
+	free (buf);
+	return rc;
 }
 
 int main(int argc, const char **argv) {
@@ -438,7 +559,24 @@ int main(int argc, const char **argv) {
 				return showusage (1);
 			}
 			break;
-		case 'c': return (argc < 3)? showusage (1): showcount (argv[2]);
+		case 'G':
+			if (argc > 2) {
+				return sdb_dump (argv[db0 + 1], MODE_CGEN);
+			}
+			return showusage (1);
+		case 'c':
+			return (argc < 3)? showusage (1): showcount (argv[2]);
+		case 'C':
+			if (argc > 2) {
+				const char *file = argv[db0 + 1];
+				char *name = strdup (file);
+				char *p = strchr (name, '.');
+				if (p) *p = 0;
+				int rc = gen_gperf (file, name);
+				free (name);
+				return rc;
+			}
+			return showusage (1);
 		case 'v': return showversion ();
 		case 'h': return showusage (2);
 		case 'e': return base64encode ();
@@ -490,7 +628,7 @@ int main(int argc, const char **argv) {
 			if (kvs < argc) {
 				save |= insertkeys (s, argv + argi + 2, argc - kvs, '-');
 			}
-			for (; (line = stdin_slurp (NULL));) {
+			for (; (line = slurp (stdin, NULL));) {
 				save |= sdb_query (s, line);
 				if (fmt) {
 					fflush (stdout);
@@ -501,6 +639,8 @@ int main(int argc, const char **argv) {
 		}
 	} else if (!strcmp (argv[db0 + 1], "=")) {
 		ret = createdb (argv[db0], NULL, 0);
+	} else if (!strcmp (argv[db0 + 1], "==")) {
+		ret = createdb (argv[db0], argv + db0 + 2, argc - (db0 + 2));
 	} else {
 		s = sdb_new (NULL, argv[db0], 0);
 		if (!s) {

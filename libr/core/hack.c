@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake */
+/* radare - LGPL - Copyright 2011-2020 - pancake */
 
 #include <r_core.h>
 
@@ -78,7 +78,7 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 	return true;
 }
 R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
-	const int bits = core->assembler->bits;
+	const int bits = core->rasm->bits;
 	const ut8 *b = core->block;
 
 	if (!strcmp (op, "nop")) {
@@ -112,13 +112,13 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 		if (bits == 16) {
 			switch (b[1]) {
 			case 0xb9: // CBNZ
-				r_core_cmd0 (core, "wx b1 @@ $$+1\n"); //CBZ
+				r_core_cmd0 (core, "wx b1 @ $$+1\n"); //CBZ
 				break;
 			case 0xbb: // CBNZ
-				r_core_cmd0 (core, "wx b3 @@ $$+1\n"); //CBZ
+				r_core_cmd0 (core, "wx b3 @ $$+1\n"); //CBZ
 				break;
 			case 0xd1: // BNE
-				r_core_cmd0 (core, "wx d0 @@ $$+1\n"); //BEQ
+				r_core_cmd0 (core, "wx d0 @ $$+1\n"); //BEQ
 				break;
 			default:
 				eprintf ("Current opcode is not conditional\n");
@@ -132,13 +132,13 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 		if (bits == 16) {
 			switch (b[1]) {
 			case 0xb1: // CBZ
-				r_core_cmd0 (core, "wx b9 @@ $$+1\n"); //CBNZ
+				r_core_cmd0 (core, "wx b9 @ $$+1\n"); //CBNZ
 				break;
 			case 0xb3: // CBZ
-				r_core_cmd0 (core, "wx bb @@ $$+1\n"); //CBNZ
+				r_core_cmd0 (core, "wx bb @ $$+1\n"); //CBNZ
 				break;
 			case 0xd0: // BEQ
-				r_core_cmd0 (core, "wx d1 @@ $$+1\n"); //BNE
+				r_core_cmd0 (core, "wx d1 @ $$+1\n"); //BNE
 				break;
 			default:
 				eprintf ("Current opcode is not conditional\n");
@@ -158,7 +158,7 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 			case 0xb9: // CBNZ
 			case 0xbb: // CBNZ
 			case 0xd1: // BNE
-				r_core_cmd0 (core, "wx e0 @@ $$+1\n"); //BEQ
+				r_core_cmd0 (core, "wx e0 @ $$+1\n"); //BEQ
 				break;
 			default:
 				eprintf ("Current opcode is not conditional\n");
@@ -173,21 +173,21 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 		return false;
 	} else if (!strcmp (op, "ret1")) {
 		if (bits == 16) {
-			r_core_cmd0 (core, "wx 01207047 @@ $$+1\n"); // mov r0, 1; bx lr
+			r_core_cmd0 (core, "wx 01207047\n"); // mov r0, 1; bx lr
 		} else {
-			r_core_cmd0 (core, "wx 0100b0e31eff2fe1 @@ $$+1\n"); // movs r0, 1; bx lr
+			r_core_cmd0 (core, "wx 0100b0e31eff2fe1\n"); // movs r0, 1; bx lr
 		}
 	} else if (!strcmp (op, "ret0")) {
 		if (bits == 16) {
-			r_core_cmd0 (core, "wx 00207047 @@ $$+1\n"); // mov r0, 0; bx lr
+			r_core_cmd0 (core, "wx 00207047\n"); // mov r0, 0; bx lr
 		} else {
-			r_core_cmd0 (core, "wx 0000a0e31eff2fe1 @@ $$+1\n"); // movs r0, 0; bx lr
+			r_core_cmd0 (core, "wx 0000a0e31eff2fe1\n"); // movs r0, 0; bx lr
 		}
 	} else if (!strcmp (op, "retn")) {
 		if (bits == 16) {
-			r_core_cmd0 (core, "wx ff207047 @@ $$+1\n"); // mov r0, -1; bx lr
+			r_core_cmd0 (core, "wx ff207047\n"); // mov r0, -1; bx lr
 		} else {
-			r_core_cmd0 (core, "wx ff00a0e31eff2fe1 @@ $$+1\n"); // movs r0, -1; bx lr
+			r_core_cmd0 (core, "wx ff00a0e31eff2fe1\n"); // movs r0, -1; bx lr
 		}
 	} else {
 		eprintf ("Invalid operation\n");
@@ -266,7 +266,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 R_API int r_core_hack(RCore *core, const char *op) {
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
-	const int asmbits = core->assembler->bits;
+	const int asmbits = core->rasm->bits;
 
 	if (!asmarch) {
 		return false;

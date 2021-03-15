@@ -19,8 +19,8 @@ w hello @ 10
 psz @@/j hello
 EOF
 EXPECT=<<EOF
-[{"offset":10,"type":"string","data":"hello"}hello
-]
+hello
+[{"offset":10,"type":"string","data":"hello"}]
 EOF
 RUN
 
@@ -149,6 +149,14 @@ FILE=bins/other/aes.dump
 CMDS=/ca
 EXPECT=<<EOF
 0x0000001e hit0_0 0000000000000000000000000000000000000000000000000000000000000000
+EOF
+RUN
+
+NAME=cmd.hit for /ca
+FILE=bins/other/aes_192.dump
+CMDS=/ca
+EXPECT=<<EOF
+0x000000fa hit0_0 000102030405060708090a0b0c0d0e0f1011121314151617
 EOF
 RUN
 

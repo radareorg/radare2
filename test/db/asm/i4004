@@ -1,49 +1,50 @@
-d "nop" 00
-d "jcn 4 0xab" 14ab
-d "fim r4, 0xab" 24ab
-d "src r14" 2f
-d "fin r6" 36
-d "jin r6" 37
-d "jun 0xa2b" 4a2b
-d "jms 0x1f5" 51f5
-d "inc r0" 60
-d "inc r1" 61
-d "isz r9, 0xd3" 79d3
-d "add r2" 82
-d "sub r3" 93
-d "ld r15" af
-d "xch r12" bc
-d "bbl 5" c5
-d "ldm 14" de
+d "invalid" 01
+ad "nop" 00
+ad "jcn 4 0xab" 14ab
+ad "fim r4, 0xab" 24ab
+ad "src r14" 2f
+ad "fin r6" 36
+ad "jin r6" 37
+ad "jun 0xa2b" 4a2b
+ad "jms 0x1f5" 51f5
+ad "inc r0" 60
+ad "inc r1" 61
+ad "isz r9, 0xd3" 79d3
+ad "add r2" 82
+ad "sub r3" 93
+ad "ld r15" af
+ad "xch r12" bc
+ad "bbl 5" c5
+ad "ldm 14" de
 
-d "wrm" e0
-d "wmp" e1
-d "wrr" e2
-d "wpm" e3
-d "wr0" e4
-d "wr1" e5
-d "wr2" e6
-d "wr3" e7
-d "sbm" e8
-d "rdm" e9
-d "rdr" ea
-d "adm" eb
-d "rd0" ec
-d "rd1" ed
-d "rd2" ee
-d "rd3" ef
+ad "wrm" e0
+ad "wmp" e1
+ad "wrr" e2
+ad "wpm" e3
+ad "wr0" e4
+ad "wr1" e5
+ad "wr2" e6
+ad "wr3" e7
+ad "sbm" e8
+ad "rdm" e9
+ad "rdr" ea
+ad "adm" eb
+ad "rd0" ec
+ad "rd1" ed
+ad "rd2" ee
+ad "rd3" ef
 
-d "clb" f0
-d "clc" f1
-d "iac" f2
-d "cmc" f3
-d "cma" f4
-d "ral" f5
-d "rar" f6
-d "tcc" f7
-d "dac" f8
-d "tcs" f9
-d "stc" fa
-d "daa" fb
-d "kbp" fc
-d "dcl" fd
+ad "clb" f0
+ad "clc" f1
+ad "iac" f2
+ad "cmc" f3
+ad "cma" f4
+ad "ral" f5
+ad "rar" f6
+ad "tcc" f7
+ad "dac" f8
+ad "tcs" f9
+ad "stc" fa
+ad "daa" fb
+ad "kbp" fc
+ad "dcl" fd

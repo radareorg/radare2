@@ -18,6 +18,7 @@
 #define R_BP_STATIC_PLUGINS @plugins_bp@
 #define R_ASM_STATIC_PLUGINS @plugins_asm@
 #define R_ANAL_STATIC_PLUGINS @plugins_anal@
+#define R_ESIL_STATIC_PLUGINS @plugins_esil@
 #define R_CORE_STATIC_PLUGINS @plugins_core@
 #define R_LANG_STATIC_PLUGINS @plugins_lang@
 #define R_PARSE_STATIC_PLUGINS @plugins_parse@

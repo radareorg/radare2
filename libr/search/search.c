@@ -80,6 +80,7 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 	case R_SEARCH_KEYWORD: s->update = r_search_mybinparse_update; break;
 	case R_SEARCH_REGEXP: s->update = r_search_regexp_update; break;
 	case R_SEARCH_AES: s->update = r_search_aes_update; break;
+	case R_SEARCH_PRIV_KEY: s->update = r_search_privkey_update; break;
 	case R_SEARCH_STRING: s->update = r_search_strings_update; break;
 	case R_SEARCH_DELTAKEY: s->update = r_search_deltakey_update; break;
 	case R_SEARCH_MAGIC: s->update = r_search_magic_update; break;
@@ -110,13 +111,14 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
-			kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
+			kw->last = s->bckwrds? addr: addr + kw->keyword_length;
 			eprintf ("0x%08"PFMT64x" Sequential hit ignored.\n", addr);
 			return 1;
 		}
 	}
-	// kw->last is used by string search, the right endpoint of last matcch (forward search), to honor search.overlap
+	// kw->last is used by string search, the right endpoint of last match (forward search), to honor search.overlap
 	kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
+
 	if (s->callback) {
 		int ret = s->callback (kw, s->user, addr);
 		kw->count++;
@@ -474,9 +476,6 @@ R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 			return 0;
 		}
 		ret = s->update (s, from, buf, len);
-		if (s->mode == R_SEARCH_AES) {
-			ret = R_MIN (R_SEARCH_AES_BOX_SIZE, len);
-		}
 	} else {
 		eprintf ("r_search_update: No search method defined\n");
 	}

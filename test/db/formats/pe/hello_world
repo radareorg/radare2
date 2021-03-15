@@ -1,0 +1,125 @@
+NAME=Find main hello_world_mdd32bit.exe
+FILE=bins/pe/hello_world/hello_world_mdd32bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- section..text:
+            0x00401000      55             push ebp                    ; [00] -r-x section size 8192 named .text
+EOF
+RUN
+
+NAME=Find main hello_world_mdd64bit.exe
+FILE=bins/pe/hello_world/hello_world_mdd64bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- section..text:
+            0x140001000      4883ec28       sub rsp, 0x28              ; [00] -r-x section size 8192 named .text
+EOF
+RUN
+
+NAME=Find main hello_world_o232bit.exe
+FILE=bins/pe/hello_world/hello_world_o232bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- section..text:
+            0x00401000      68f0204000     push str.Hello__World_      ; 0x4020f0 ; "Hello, World!" ; [00] -r-x section size 4096 named .text
+EOF
+RUN
+
+NAME=Find main hello_world_o264bit.exe
+FILE=bins/pe/hello_world/hello_world_o264bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- section..text:
+            0x140001000      4883ec28       sub rsp, 0x28              ; [00] -r-x section size 4096 named .text
+EOF
+RUN
+
+NAME=Find main hello_world_o2zi32bit.exe
+FILE=bins/pe/hello_world/hello_world_o2zi32bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            0x00401380      68304b4000     push str.Hello__World_      ; 0x404b30 ; "Hello, World!"
+EOF
+RUN
+
+NAME=Find main hello_world_o2zi64bit.exe
+FILE=bins/pe/hello_world/hello_world_o2zi64bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            0x140001410      4883ec28       sub rsp, 0x28
+EOF
+RUN
+
+NAME=Find main hello_world_od32bit.exe
+FILE=bins/pe/hello_world/hello_world_od32bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- section..text:
+            0x00401000      55             push ebp                    ; [00] -r-x section size 4096 named .text
+EOF
+RUN
+
+NAME=Find main hello_world_od64bit.exe
+FILE=bins/pe/hello_world/hello_world_od64bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            ;-- section..text:
+            0x140001000      4883ec28       sub rsp, 0x28              ; [00] -r-x section size 4096 named .text
+EOF
+RUN
+
+NAME=Find main hello_world_odzi32bit.exe
+FILE=bins/pe/hello_world/hello_world_odzi32bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            0x00401380      55             push ebp
+EOF
+RUN
+
+NAME=Find main hello_world_odzi64bit.exe
+FILE=bins/pe/hello_world/hello_world_odzi64bit.exe
+CMDS=<<EOF
+s main
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- main:
+            0x140001330      4883ec28       sub rsp, 0x28
+EOF
+RUN

@@ -5,7 +5,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 1
 #define CAPSTONE_HAS_MOS65XX 1
@@ -14,7 +14,7 @@
 #endif
 
 #if CAPSTONE_HAS_MOS65XX
-#include <capstone/mos65xx.h>
+#include <mos65xx.h>
 
 static csh handle = 0;
 
@@ -39,18 +39,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			return 0;
 		}
 	}
-	memset (op, '\0', sizeof (RAnalOp));
 	op->cycles = 1; // aprox
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->jump = UT64_MAX;
-	op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
-	op->src[0] = NULL;
-	op->src[1] = NULL;
-	op->dst = NULL;
-	op->size = 0;
-	op->delay = 0;
-	r_strbuf_init (&op->esil);
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	// capstone-next
 #if USE_ITER_API
@@ -183,6 +172,8 @@ static bool set_reg_profile(RAnal *anal) {
 	char *p =
 		"=PC	pc\n"
 		"=SP	sp\n"
+		"=A0	y\n"
+		"=A1	x\n"
 		"gpr	a	.8	0	0\n"
 		"gpr	x	.8	1	0\n"
 		"gpr	y	.8	2	0\n"

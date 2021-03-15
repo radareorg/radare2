@@ -1,4 +1,4 @@
-/* radare - Apache - Copyright 2014-2019 - dso, pancake */
+/* radare - Apache - Copyright 2014-2020 - dso, pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -212,11 +212,6 @@ typedef struct r_cmd_java_cms_t {
 #define SUMMARY_INFO_DESC "print summary information for the current java class file"
 #define SUMMARY_INFO_LEN 7
 
-#define LIST_CODE_REFS "lcr"
-#define LIST_CODE_REFS_ARGS " [addr]"
-#define LIST_CODE_REFS_DESC "list all references to fields and methods in code sections"
-#define LIST_CODE_REFS_LEN 3
-
 #define PRINT_EXC "exc"
 #define PRINT_EXC_ARGS " [<addr>]"
 #define PRINT_EXC_DESC "list all exceptions to fields and methods in code sections"
@@ -253,6 +248,7 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{ INSERT_MREF, INSERT_MREF_ARGS, INSERT_MREF_DESC, INSERT_MREF_LEN, r_cmd_java_handle_insert_method_ref },
 	{ CALC_SZ, CALC_SZ_ARGS, CALC_SZ_DESC, CALC_SZ_LEN, r_cmd_java_handle_calc_class_sz },
 	{ ISVALID, ISVALID_ARGS, ISVALID_DESC, ISVALID_LEN, r_cmd_java_handle_isvalid },
+	{ NULL, NULL, NULL, 0, NULL }
 };
 
 enum {
@@ -271,13 +267,12 @@ enum {
 	REPLACE_CLASS_NAME_IDX = 12,
 	RELOAD_BIN_IDX = 13,
 	SUMMARY_INFO_IDX = 14,
-	LIST_CODE_REFS_IDX = 15,
-	PRINT_EXC_IDX = 16,
-	YARA_CODE_REFS_IDX = 17,
-	INSERT_MREF_IDX = 18,
-	CALC_SZ_IDX = 19,
-	ISVALID_IDX = 20,
-	END_CMDS = 21,
+	PRINT_EXC_IDX = 15,
+	YARA_CODE_REFS_IDX = 16,
+	INSERT_MREF_IDX = 17,
+	CALC_SZ_IDX = 18,
+	ISVALID_IDX = 19,
+	END_CMDS = 20,
 };
 
 static ut8 _(r_cmd_java_obj_ref)(const char *name, const char *class_name, ut32 len) {
@@ -357,17 +352,17 @@ static const char *r_cmd_java_strtok(const char *str1, const char b, size_t len)
 	if (len == (size_t)-1) {
 		len = strlen (str1);
 	}
-	IFDBG r_cons_printf ("Looking for char (%c) in (%s) up to %d\n", b, p, len);
+	IFDBG r_cons_printf ("Looking for char (%c) in (%s) up to %zu\n", b, p, len);
 	for (; i < len; i++, p++) {
 		if (*p == b) {
-			IFDBG r_cons_printf ("Found? for char (%c) @ %d: (%s)\n", b, i, p);
+			IFDBG r_cons_printf ("Found? for char (%c) @ %zu: (%s)\n", b, i, p);
 			break;
 		}
 	}
 	if (i == len) {
 		p = NULL;
 	}
-	IFDBG r_cons_printf ("Found? for char (%c) @ %d: (%s)\n", b, len, p);
+	IFDBG r_cons_printf ("Found? for char (%c) @ %zu: (%s)\n", b, len, p);
 	return p;
 }
 
@@ -385,7 +380,7 @@ static int r_cmd_java_handle_help(RCore *core, const char *input) {
 	help_msg[0] = "Usage:";
 	help_msg[1] = "java [cmd] [arg..] ";
 	help_msg[2] = r_core_plugin_java.desc;
-	for (i = 0; i < END_CMDS; i++) {
+	for (i = 0; JAVA_CMDS[i].name; i++) {
 		RCmdJavaCmd *cmd = &JAVA_CMDS[i];
 		help_msg[3 + (i * 3) + 0] = cmd->name;
 		help_msg[3 + (i * 3) + 1] = cmd->args;
@@ -429,12 +424,12 @@ static int r_cmd_java_handle_summary_info(RCore *core, const char *cmd) {
 	}
 
 	r_cons_printf ("Summary for %s:\n", obj->file);
-	r_cons_printf ("  Size 0x%" PFMT64x ":\n", obj->size);
-	r_cons_printf ("  Constants  size: 0x%" PFMT64x " count: %d:\n", obj->cp_size, obj->cp_count);
-	r_cons_printf ("  Methods    size: 0x%" PFMT64x " count: %d:\n", obj->methods_size, obj->methods_count);
-	r_cons_printf ("  Fields     size: 0x%" PFMT64x " count: %d:\n", obj->fields_size, obj->fields_count);
-	r_cons_printf ("  Attributes size: 0x%" PFMT64x " count: %d:\n", obj->attrs_size, obj->attrs_count);
-	r_cons_printf ("  Interfaces size: 0x%" PFMT64x " count: %d:\n", obj->interfaces_size, obj->interfaces_count);
+	r_cons_printf ("  Size 0x%x:\n", obj->size);
+	r_cons_printf ("  Constants  size: 0x%x count: %d:\n", obj->cp_size, obj->cp_count);
+	r_cons_printf ("  Methods    size: 0x%x count: %d:\n", obj->methods_size, obj->methods_count);
+	r_cons_printf ("  Fields     size: 0x%x count: %d:\n", obj->fields_size, obj->fields_count);
+	r_cons_printf ("  Attributes size: 0x%x count: %d:\n", obj->attrs_size, obj->attrs_count);
+	r_cons_printf ("  Interfaces size: 0x%x count: %d:\n", obj->interfaces_size, obj->interfaces_count);
 
 	return true;
 }
@@ -480,7 +475,7 @@ static RList *cpfind_str(RBinJavaObj *obj, const char *cmd) {
 	if (!cmd) {
 		return r_list_new ();
 	}
-	IFDBG r_cons_printf ("Looking for str: %s (%d)\n", cmd, strlen (cmd));
+	IFDBG r_cons_printf ("Looking for str: %s (%zu)\n", cmd, strlen (cmd));
 	return r_bin_java_find_cp_const_by_val (obj, (const ut8 *)cmd, strlen (cmd), R_BIN_JAVA_CP_UTF8);
 }
 
@@ -583,7 +578,6 @@ static int r_cmd_java_get_cp_bytes_and_write(RCore *core, RBinJavaObj *obj, ut16
 	if (res == true) {
 		ut64 n_file_sz = 0;
 		ut8 *bin_buffer = NULL;
-		res = r_io_use_fd (core->io, core->file->fd);
 		n_file_sz = r_io_size (core->io);
 		bin_buffer = n_file_sz > 0? malloc (n_file_sz): NULL;
 		if (bin_buffer) {
@@ -742,7 +736,7 @@ static char *r_cmd_replace_name(const char *s_new, ut32 replace_len, const char 
 		p_result = result;
 		while (next && consumed < buf_len) {
 			// replace up to next
-			IFDBG r_cons_printf ("next: \"%s\", len to: %d\n", next, next - buffer);
+			IFDBG r_cons_printf ("next: \"%s\", len to: %" PFMTDPTR "\n", next, (ptrdiff_t)(next - buffer));
 			for (; buffer + consumed < next && consumed < buf_len; consumed++, p_result++) {
 				*p_result = *(buffer + consumed);
 				(*res_len)++;
@@ -921,7 +915,7 @@ static int r_cmd_java_handle_reload_bin(RCore *core, const char *cmd) {
 	// XXX this may cause problems cause the file we are looking at may not be the bin we want.
 	// lets pretend it is for now
 	if (buf_size == 0) {
-		res = r_io_use_fd (core->io, core->file->fd);
+		res = true;
 		buf_size = r_io_size (core->io);
 		buf = malloc (buf_size);
 		memset (buf, 0, buf_size);
@@ -1075,7 +1069,7 @@ static int r_cmd_java_handle_calc_class_sz(RCore *core, const char *cmd) {
 	ut64 sz = UT64_MAX;
 	ut64 addr = UT64_MAX;
 	ut64 res_size = UT64_MAX,
-	     cur_fsz = r_io_fd_size (core->io, r_core_file_cur (core)->fd);
+	     cur_fsz = r_io_fd_size (core->io, core->io->desc->fd);
 	ut8 *tbuf, *buf = NULL;
 	ut32 init_size = (1 << 16);
 	const char *p = cmd? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
@@ -1133,7 +1127,7 @@ static int r_cmd_java_handle_isvalid(RCore *core, const char *cmd) {
 	int res = false;
 	ut64 res_size = UT64_MAX;
 	ut8 *tbuf, *buf = NULL;
-	ut32 cur_fsz = r_io_fd_size (core->io, r_core_file_cur (core)->fd);
+	ut32 cur_fsz = r_io_fd_size (core->io, core->io->desc->fd);
 	ut64 sz = UT64_MAX;
 	const char *p = cmd? r_cmd_java_consumetok (cmd, ' ', -1): NULL;
 	ut64 addr = UT64_MAX;
@@ -1440,7 +1434,7 @@ static int r_cmd_java_handle_set_flags(RCore *core, const char *input) {
 		default: flag_value = -1;
 		}
 	}
-	IFDBG r_cons_printf ("Current args: (flag_value: 0x%04x addr: 0x%" PFMT64x ")\n.", flag_value, addr, res);
+	IFDBG r_cons_printf ("Current args: (flag_value: 0x%04x addr: 0x%" PFMT64x ")\n.", flag_value, addr);
 	if (flag_value != -1) {
 		res = r_cmd_java_set_acc_flags (core, addr, ((ut16)flag_value) & 0xffff);
 		IFDBG r_cons_printf ("Writing 0x%04x to 0x%" PFMT64x ": %d.", flag_value, addr, res);
@@ -1462,7 +1456,7 @@ static int r_cmd_java_call(void *user, const char *input) {
 	if (input[4] != ' ') {
 		return r_cmd_java_handle_help (core, input);
 	}
-	for (; i < END_CMDS - 1; i++) {
+	for (; JAVA_CMDS[i].name; i++) {
 		//IFDBG r_cons_printf ("Checking cmd: %s %d %s\n", JAVA_CMDS[i].name, JAVA_CMDS[i].name_len, p);
 		IFDBG r_cons_printf ("Checking cmd: %s %d\n", JAVA_CMDS[i].name,
 			strncmp (input + 5, JAVA_CMDS[i].name, JAVA_CMDS[i].name_len));
@@ -1833,15 +1827,10 @@ static int r_cmd_java_handle_yara_code_extraction_refs(RCore *core, const char *
 
 	if (name && count != (ut64)-1 && addr != (ut64)-1) {
 		// find function at addr
-
 		// find the start basic block
-
 		// read the bytes
-
 		// hexlify the bytes
-
 		// set the name = bytes
-
 		// print t
 	}
 	free (name);
@@ -1854,24 +1843,23 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	const char *p = input? r_cmd_java_consumetok (input, ' ', -1): NULL, *n = NULL;
 	char *classname = NULL, *name = NULL, *descriptor = NULL;
 	ut32 cn_sz = 0, n_sz = 0, d_sz = 0;
-	int res = false;
 
 	if (!bin) {
-		return res;
+		return false;
 	}
 	if (!anal || !anal->fcns || r_list_length (anal->fcns) == 0) {
 		eprintf ("Unable to access the current analysis, perform 'af' for function analysis.\n");
 		return true;
 	}
 	if (!p) {
-		return res;
+		return false;
 	}
 
 	n = p && *p? r_cmd_java_strtok (p, ' ', -1): NULL;
 	classname = n && p && p != n? malloc (n - p + 1): NULL;
 	cn_sz = n && p? n - p + 1: 0;
 	if (!classname) {
-		return res;
+		return false;
 	}
 
 	snprintf (classname, cn_sz, "%s", p);
@@ -1881,7 +1869,7 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	n_sz = n && p? n - p + 1: 0;
 	if (!name) {
 		free (classname);
-		return res;
+		return false;
 	}
 	snprintf (name, n_sz, "%s", p);
 
@@ -1898,7 +1886,7 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	if (!descriptor) {
 		free (classname);
 		free (name);
-		return res;
+		return false;
 	}
 	snprintf (descriptor, d_sz, "%s", p);
 
@@ -1906,14 +1894,13 @@ static int r_cmd_java_handle_insert_method_ref(RCore *core, const char *input) {
 	free (classname);
 	free (name);
 	free (descriptor);
-	res = true;
-	return res;
+	return true;
 }
 
 static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 	RAnal *anal = get_anal (core);
 	RBinJavaObj *bin = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
-	RListIter *exc_iter = NULL, *methods_iter=NULL;
+	RListIter *exc_iter = NULL, *methods_iter = NULL;
 	RBinJavaField *method;
 	ut64 func_addr = -1;
 	RBinJavaExceptionEntry *exc_entry;
@@ -1926,8 +1913,8 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 	}
 
 	r_list_foreach (bin->methods_list, methods_iter, method) {
-		ut64 start = r_bin_java_get_method_start (bin, method),
-		     end = r_bin_java_get_method_end (bin, method);
+		ut64 start = r_bin_java_get_method_start (bin, method);
+		ut64 end = r_bin_java_get_method_end (bin, method);
 		ut8 do_this_one = start <= func_addr && func_addr <= end;
 		RList *exc_table = NULL;
 		do_this_one = func_addr == (ut64)-1? 1: do_this_one;
@@ -1936,7 +1923,7 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 		}
 		exc_table = r_bin_java_get_method_exception_table_with_addr (bin, start);
 
-		if (r_list_length (exc_table) == 0){
+		if (r_list_length (exc_table) == 0) {
 			r_cons_printf (" Exception table for %s @ 0x%"PFMT64x":\n", method->name, start);
 			r_cons_printf (" [ NONE ]\n");
 		} else {
@@ -1947,11 +1934,11 @@ static int r_cmd_java_handle_print_exceptions(RCore *core, const char *input) {
 			char *class_info = r_bin_java_resolve_without_space (bin, exc_entry->catch_type);
 			r_cons_printf ("  Catch Type: %d, %s @ 0x%"PFMT64x"\n", exc_entry->catch_type,
 				class_info, exc_entry->file_offset+6);
-			r_cons_printf ("  Start PC: (0x%"PFMT64x") 0x%"PFMT64x" @ 0x%"PFMT64x"\n",
+			r_cons_printf ("  Start PC: (0x%x) 0x%"PFMT64x" @ 0x%"PFMT64x"\n",
 				exc_entry->start_pc, exc_entry->start_pc+start, exc_entry->file_offset);
-			r_cons_printf ("  End PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n",
+			r_cons_printf ("  End PC: (0x%x) 0x%"PFMT64x" 0x%"PFMT64x"\n",
 				exc_entry->end_pc, exc_entry->end_pc+start, exc_entry->file_offset + 2);
-			r_cons_printf ("  Handler PC: (0x%"PFMT64x") 0x%"PFMT64x" 0x%"PFMT64x"\n",
+			r_cons_printf ("  Handler PC: (0x%x) 0x%"PFMT64x" 0x%"PFMT64x"\n",
 				exc_entry->handler_pc, exc_entry->handler_pc+start, exc_entry->file_offset+4);
 			free (class_info);
 		}

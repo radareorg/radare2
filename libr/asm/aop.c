@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2018-2019 - pancake */
+/* radare - LGPL - Copyright 2018-2020 - pancake */
 
 #include <r_asm.h>
 
-R_API RAsmOp *r_asm_op_new() {
+R_API RAsmOp *r_asm_op_new(void) {
 	return R_NEW0 (RAsmOp);
 }
 

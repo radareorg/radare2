@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
 
 static void *th_run(ptrace_wrap_instance *inst);
 

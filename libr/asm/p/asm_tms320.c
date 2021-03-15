@@ -10,9 +10,7 @@
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
-#include <capstone/capstone.h>
-
-static csh cd = 0;
+#include <capstone.h>
 
 #ifdef CAPSTONE_TMS320C64X_H
 #define CAPSTONE_HAS_TMS320C64X 1
@@ -23,6 +21,8 @@ static csh cd = 0;
 #endif
 
 #if CAPSTONE_HAS_TMS320C64X
+
+static csh cd = 0;
 
 static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn* insn;

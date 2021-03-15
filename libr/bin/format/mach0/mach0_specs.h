@@ -1,4 +1,3 @@
-
 #ifndef _INCLUDE_R_BIN_MACH0_SPECS_H_
 #define _INCLUDE_R_BIN_MACH0_SPECS_H_
 
@@ -321,6 +320,17 @@ typedef struct {
 	uint32_t nlistStartIndex;
 	uint32_t nlistCount;
 } cache_locsym_entry_t;
+
+typedef struct {
+	uint64_t address;
+	uint64_t size;
+	uint64_t fileOffset;
+	uint64_t slideInfoOffset;
+	uint64_t slideInfoSize;
+	uint64_t unknown;
+	uint32_t maxProt;
+	uint32_t initProt;
+} cache_mapping_slide;
 
 #define DYLD_CACHE_SLIDE_PAGE_ATTRS 0xC000
 #define DYLD_CACHE_SLIDE_PAGE_ATTR_EXTRA 0x8000

@@ -35,6 +35,7 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define NPAD -6
 #define TCACHE_MAX_BINS 64
 #define TCACHE_FILL_COUNT 7
+#define TCACHE_NEW_VERSION 230
 
 #define MMAP_ALIGN_32 0x14
 #define MMAP_ALIGN_64 0x18
@@ -45,6 +46,10 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define TC_HDR_SZ 0x10
 #define TC_SZ_32 0x0
 #define TC_SZ_64 0x10
+
+// Introduced with glibc 2.32
+#define PROTECT_PTR(pos, ptr) \
+	((__typeof (ptr)) ((((size_t) pos) >> 12) ^ ((size_t) ptr)))
 
 #define largebin_index_32(size)				       \
 (((((ut32)(size)) >>  6) <= 38)?  56 + (((ut32)(size)) >>  6): \
@@ -149,6 +154,34 @@ typedef struct r_tcache_perthread_struct_64 {
 	ut16 counts[TCACHE_MAX_BINS];
 	ut64 entries[TCACHE_MAX_BINS];
 } RHeapTcache_64;
+
+typedef struct r_tcache_perthread_struct_pre_230_32 {
+	ut8 counts[TCACHE_MAX_BINS];
+	ut32 entries[TCACHE_MAX_BINS];
+} RHeapTcachePre230_32;
+
+typedef struct r_tcache_perthread_struct_pre_230_64 {
+	ut8 counts[TCACHE_MAX_BINS];
+	ut64 entries[TCACHE_MAX_BINS];
+} RHeapTcachePre230_64;
+
+typedef enum {NEW, OLD} tcache_type;
+
+typedef struct {
+	tcache_type type;
+	union {
+		RHeapTcache_64 *heap_tcache;
+		RHeapTcachePre230_64 *heap_tcache_pre_230;
+	} RHeapTcache;
+} RTcache_64;
+
+typedef struct {
+	tcache_type type;
+	union {
+		RHeapTcache_32 *heap_tcache;
+		RHeapTcachePre230_32 *heap_tcache_pre_230;
+	} RHeapTcache;
+} RTcache_32;
 
 typedef struct r_malloc_state_tcache_32 {
 	int mutex;                              /* serialized access */

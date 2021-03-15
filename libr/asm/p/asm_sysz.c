@@ -4,7 +4,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 static csh cd = 0;
 
@@ -58,7 +58,7 @@ RAsmPlugin r_asm_plugin_sysz = {
 	.desc = "SystemZ CPU disassembler",
 	.license = "BSD",
 	.arch = "sysz",
-	.bits = 32,
+	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_BIG,
 	.fini = the_end,
 	.disassemble = &disassemble,

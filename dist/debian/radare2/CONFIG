@@ -1,0 +1,4 @@
+PACKAGE=radare2
+DEPENDS=libuv1 libssl-dev
+
+include ../CONFIG

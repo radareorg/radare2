@@ -51,11 +51,12 @@ r_bin_sources = [
   'p/bin_pebble.c',
   'p/bin_prg.c',
   'p/bin_psxexe.c',
+  'p/bin_pyc.c',
   'p/bin_qnx.c',
   'p/bin_sfc.c',
   'p/bin_smd.c',
   'p/bin_sms.c',
-  'p/bin_spc700.c',
+  'p/bin_symbols.c',
   'p/bin_te.c',
   'p/bin_vsf.c',
   'p/bin_wasm.c',
@@ -83,12 +84,12 @@ r_bin_sources = [
   'format/elf/elf64.c',
   'format/elf/elf64_write.c',
   'format/elf/elf_write.c',
+  'format/mach0/coresymbolication.c',
   'format/mach0/dyldcache.c',
   'format/mach0/fatmach0.c',
   'format/mach0/mach0.c',
   'format/mach0/mach064.c',
   'format/xnu/r_cf_dict.c',
-  'format/xnu/yxml.c',
   'format/mdmp/mdmp.c',
   'format/mdmp/mdmp_pe.c',
   'format/mdmp/mdmp_pe64.c',
@@ -105,6 +106,9 @@ r_bin_sources = [
   'format/pe/pe64_write.c',
   'format/pe/pe_write.c',
   'format/pe/pemixed.c',
+  'format/pyc/marshal.c',
+  'format/pyc/pyc.c',
+  'format/pyc/pyc_magic.c',
   'format/te/te.c',
   'format/wasm/wasm.c',
   'format/zimg/zimg.c',
@@ -131,23 +135,26 @@ r_bin_sources = [
   'pdb/tpi.c'
 ]
 
-r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
+r_bin_inc = [platform_inc, yxml_inc, include_directories('mangling', 'format')]
 
 r_bin = library('r_bin', r_bin_sources,
   include_directories: r_bin_inc,
   c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
   dependencies: [
     r_util_dep,
+    r_cons_dep,
     r_io_dep,
     r_hash_dep,
     r_magic_dep,
     r_socket_dep,
     r_syscall_dep,
     java_dep,
-    lz4_dep
+    lz4_dep,
+    yxml_dep
   ],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -159,6 +166,7 @@ pkgconfig_mod.generate(r_bin,
   version: r2_version,
   name: 'r_bin',
   filebase: 'r_bin',
+  libraries: pkgcfg_sanitize_libs,
   requires: pkgconfig_magic_requires + [
     'r_util',
     'r_io',

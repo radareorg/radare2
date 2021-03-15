@@ -9,18 +9,10 @@
                              --pancake
 ```
 
-| Service | Badge |
-|----------|---------------------------------------------------------------------|
-| **GithubCI**  | [![Tests Status](https://github.com/radareorg/radare2/workflows/Radare2%20CI/badge.svg)](https://github.com/radareorg/radare2/actions?query=workflow%3A%22Radare2+CI%22)|
-| **TravisCI** 	| [![Build Status](https://travis-ci.com/radareorg/radare2.svg?branch=master)](https://travis-ci.com/radareorg/radare2)|
-| **AppVeyor**  | [![Build status](https://ci.appveyor.com/api/projects/status/9cgkgxkc3203fm1o/branch/master?svg=true)](https://ci.appveyor.com/project/radareorg/radare2/branch/master)|
-| **FreeBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/freebsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/freebsd.yml?)|
-| **OpenBSD (sr.ht)**  | [![builds.sr.ht status](https://builds.sr.ht/~xvilka/radare2/openbsd.yml.svg)](https://builds.sr.ht/~xvilka/radare2/openbsd.yml?)|
-| **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
-| **LGTM** | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/)
-| **Infrastructure** |  [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) |
-| **Codecov** | [![codecov](https://codecov.io/gh/radareorg/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radareorg/radare2)
-| **Fuzzit** | [![fuzzit](https://app.fuzzit.dev/badge?org_id=2zv5qI33roZkRm0oO2Mi&target_id=YVkkS6RPVpKhSixyFWcT&branch=master)](https://app.fuzzit.dev/admin/2zv5qI33roZkRm0oO2Mi/target)
+| **Build&Test** | [![Tests Status](https://github.com/radareorg/radare2/workflows/CI/badge.svg)](https://github.com/radareorg/radare2/actions?query=workflow%3A%22CI%22) | [![Build Status](https://travis-ci.com/radareorg/radare2.svg?branch=master)](https://travis-ci.com/radareorg/radare2)|
+|----------|------|--------|
+| **CodeQuality** | [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) |
+| **Coverage** | [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) | [![codecov](https://codecov.io/gh/radareorg/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radareorg/radare2) |
 <a href="https://repology.org/metapackage/radare2">
 <img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
 </a>
@@ -35,16 +27,35 @@ command-line hexadecimal editor able to open disk files,
 but later added support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers...
 
-radare2 is portable.
+## Scripting
 
-To learn more on radare2 you may want to read the [official radare2 book](https://radare.gitbooks.io/radare2book/content/).
+It is possible to script and extend r2 using native plugins written
+in C. Dynamic programming languages can be also used via the
+[r2pipe](https://github.com/radareorg/radare2-r2pipe) interface or
+using the rlang r2pm packages which make the pythonvm run inside radare2.
 
-You can also use [r2lrn](https://github.com/0ki/r2lrn) or r2golf for a hands-on learning experience.
+Some of the languages supported by r2 are: Python, Ruby, JavaScript,
+Lua, Perl, PHP, Go, Rust, Swift, C#, Java, Shell, OCaml, Haskell,
+Scheme (Guile), Common Lisp, Clojure, Erlang, D, Vala/Genie, Prolog,
+Nim, Newlisp...
+
+## Documentation
+
+To learn more about r2 we encourage you to watch youtube talks from
+[r2con](https://www.youtube.com/c/r2con). As well as reading blogposts,
+slides or read the [official radare2 book](https://book.rada.re), You can reach us in the following chats:
+
+* irc.freenode.net `#radare` `#radare_side`
+* [Matrix](https://matrix.org/) `#radare:matrix.org`
+* [Telegram](https://t.me/radare) and the [Side Channel](https://t.me/radare_side)
+* [Discord](https://discord.gg/MgEdxrMnqx)
+* Twitter: [@radareorg](https://twitter.com/radareorg)
+* Website: [https://www.radare.org/](https://www.radare.org/)
 
 ## Operating Systems
 
-Windows (since XP), GNU/Linux, OS X, [Net|Free|Open]BSD,
-Android, iOS, OSX, QNX, Solaris, Haiku, Firefox OS.
+Windows (since XP), GNU/Linux, GNU/Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS,
+[Dragonfly|Net|Free|Open]BSD, Android, QNX, Solaris, Haiku, FirefoxOS.
 
 ## Architectures
 
@@ -54,7 +65,7 @@ V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
 NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
 c55+, c66), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
-MCORE, mcs96, RSP, SuperH-4, VAX.
+MCORE, mcs96, RSP, SuperH-4, VAX, AMD Am29000.
 
 ## File Formats
 
@@ -63,15 +74,6 @@ Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
 ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
 WASM (WebAssembly binary), Commodore VICE emulator, QNX,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
-
-## Scripting
-
-Native bindings are supported but the recommended way to interact with r2
-from other languages is by using [r2pipe](https://github.com/radareorg/radare2-r2pipe)
-
-Python, Ruby, JavaScript, Lua, Perl, PHP, Go, Rust, Swift, C#, Java,
-Shell, OCaml, Haskell, Scheme (Guile), Common Lisp, Clojure, Erlang, D,
-Vala/Genie, Prolog, Nim, Newlisp...
 
 # Install / Update
 
@@ -91,7 +93,11 @@ don't need to reinstall every time you change something in the builddir.
 
 Alternatively you can also build with meson + ninja:
 
-	$ ./sys/meson.py --prefix=/usr --shared --install
+	$ sys/meson.py --prefix=/usr --shared --install
+
+Or install in your home with meson + ninja:
+
+	$ sys/meson.py --prefix=$HOME/r2meson --local --shared --install
 
 ## Uninstall
 
@@ -134,14 +140,3 @@ repository and run all the tests in order to verify that no changes break any fu
 
 We run those tests on every commit, and they are also executed with ASAN
 and valgrind on different platforms to catch other unwanted 'features'.
-
-
-# Community
-
-Website: [https://www.radare.org/](https://www.radare.org/)
-
-Telegram: [https://t.me/radare](https://t.me/radare)
-
-Twitter: [@radareorg](https://twitter.com/radareorg)
-
-IRC: irc.freenode.net #radare

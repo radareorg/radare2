@@ -224,12 +224,12 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.widget_sel         = (RColor) RColor_BGRED;
 
 	ctx->cpal.graph_box          = (RColor) RColor_NULL;
-	ctx->cpal.graph_box2         = (RColor) RColor_BLUE;
+	ctx->cpal.graph_box2         = (RColor) RColor_YELLOW;
 	ctx->cpal.graph_box3         = (RColor) RColor_MAGENTA;
 	ctx->cpal.graph_box4         = (RColor) RColor_GRAY;
 	ctx->cpal.graph_true         = (RColor) RColor_GREEN;
 	ctx->cpal.graph_false        = (RColor) RColor_RED;
-	ctx->cpal.graph_trufae       = (RColor) RColor_BLUE; // single jump
+	ctx->cpal.graph_trufae       = (RColor) RColor_CYAN; // single jump
 	ctx->cpal.graph_traced       = (RColor) RColor_YELLOW;
 	ctx->cpal.graph_current      = (RColor) RColor_BLUE;
 	ctx->cpal.graph_diff_unknown = (RColor) RColor_MAGENTA;
@@ -266,7 +266,7 @@ R_API void r_cons_pal_copy(RConsContext *dst, RConsContext *src) {
 	__cons_pal_update_event (dst);
 }
 
-R_API void r_cons_pal_random() {
+R_API void r_cons_pal_random(void) {
 	int i;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
@@ -367,8 +367,8 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			rcolor.b = colors[i].rcolor.b;
 			rcolor.id16 = colors[i].rcolor.id16;
 			if (!outcol) {
-				strncat (out, colors[i].code,
-					sizeof (out) - strlen (out) - 1);
+				size_t n = strlen (out);
+				snprintf (out + n, sizeof (out) - n, "%s", colors[i].code);
 			}
 		}
 		if (bgcolor && !strcmp (bgcolor, colors[i].name)) {
@@ -378,8 +378,8 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			rcolor.b2 = colors[i].rcolor.b;
 			rcolor.id16 = colors[i].rcolor.id16;
 			if (!outcol) {
-				strncat (out, colors[i].bgcode,
-					sizeof (out) - strlen (out) - 1);
+				size_t n = strlen (out);
+				snprintf (out + n, sizeof (out) - n, "%s", colors[i].bgcode);
 			}
 		}
 	}
@@ -417,7 +417,7 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 	return (*out && !outcol) ? strdup (out) : NULL;
 }
 
-static void r_cons_pal_show_gs() {
+static void r_cons_pal_show_gs(void) {
 	int i, n;
 	r_cons_print ("\nGreyscale:\n");
 	RColor rcolor = RColor_BLACK;
@@ -442,7 +442,7 @@ static void r_cons_pal_show_gs() {
 	}
 }
 
-static void r_cons_pal_show_256() {
+static void r_cons_pal_show_256(void) {
 	RColor rc = RColor_BLACK;
 	r_cons_print ("\n\nXTerm colors:\n");
 	int r = 0;
@@ -474,7 +474,7 @@ static void r_cons_pal_show_256() {
 	}
 }
 
-static void r_cons_pal_show_rgb() {
+static void r_cons_pal_show_rgb(void) {
 	const int inc = 3;
 	int i, j, k, n = 0;
 	RColor rc = RColor_BLACK;
@@ -500,7 +500,7 @@ static void r_cons_pal_show_rgb() {
 	}
 }
 
-R_API void r_cons_pal_show() {
+R_API void r_cons_pal_show(void) {
 	int i;
 	for (i = 0; colors[i].name; i++) {
 		r_cons_printf ("%s%s__"Color_RESET" %s\n",
@@ -617,7 +617,8 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
 			rcolor = RCOLOR_AT (i);
-			r_cons_pal_parse (val, rcolor);
+			char *r = r_cons_pal_parse (val, rcolor);
+			free (r);
 			return true;
 		}
 	}
@@ -648,11 +649,11 @@ R_API const char *r_cons_pal_get_name(int index) {
 	return (index >= 0 && index < keys_len) ? keys[index].name : NULL;
 }
 
-R_API int r_cons_pal_len() {
+R_API int r_cons_pal_len(void) {
 	return keys_len;
 }
 
-R_API void r_cons_pal_update_event() {
+R_API void r_cons_pal_update_event(void) {
 	__cons_pal_update_event (r_cons_singleton ()->context);
 }
 

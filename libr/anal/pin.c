@@ -36,7 +36,9 @@ R_API void r_anal_pin_init(RAnal *a) {
 }
 
 R_API void r_anal_pin_fini(RAnal *a) {
-	sdb_free (DB);
+	if (sdb_free (DB)) {
+		DB = NULL;
+	}
 }
 
 R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name) {
@@ -71,7 +73,7 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 	return NULL;
 }
 
-static int cb_list(void *user, const char *k, const char *v) {
+static bool cb_list(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal*)user;
 	if (*k == '0') {
 		// bind

@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
 #define CAPSTONE_HAS_M680X 1
@@ -19,7 +19,7 @@
 #endif
 
 #if CAPSTONE_HAS_M680X
-#include <capstone/m680x.h>
+#include <m680x.h>
 
 static int m680xmode(const char *str) {
 	if (!str) {
@@ -74,7 +74,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		omode = mode;
 		obits = a->bits;
 	}
-	op->delay = 0;
 	op->size = 4;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_M680X, mode, &handle);
@@ -96,8 +95,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		opsize = -1;
 		goto beach;
 	}
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->delay = 0;
 	op->id = insn->id;
 	opsize = op->size = insn->size;
 	switch (insn->id) {
@@ -517,7 +514,7 @@ fin:
 	return opsize;
 }
 
-// XXX 
+// XXX
 static bool set_reg_profile(RAnal *anal) {
 	const char *p = \
 		"=PC    pc\n"

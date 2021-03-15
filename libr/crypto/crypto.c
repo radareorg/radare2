@@ -72,7 +72,7 @@ R_API RCrypto *r_crypto_init(RCrypto *cry, int hard) {
 			// first call initializes the output_* variables
 			r_crypto_get_output (cry, NULL);
 			cry->plugins = r_list_newf (NULL);
-			for (i=0; crypto_static_plugins[i]; i++) {
+			for (i = 0; crypto_static_plugins[i]; i++) {
 				RCryptoPlugin *p = R_NEW0 (RCryptoPlugin);
 				if (!p) {
 					free (cry);
@@ -97,7 +97,7 @@ R_API int r_crypto_del(RCrypto *cry, RCryptoPlugin *h) {
 	return true;
 }
 
-R_API struct r_crypto_t *r_crypto_new() {
+R_API struct r_crypto_t *r_crypto_new(void) {
 	RCrypto *cry = R_NEW0 (RCrypto);
 	return r_crypto_init (cry, true);
 }

@@ -44,7 +44,7 @@ static int down(void *n) {
 	return -1;
 }
 
-static void filesave() {
+static void filesave(void) {
 	char buf[128];
 	int i;
 	if (!path) {

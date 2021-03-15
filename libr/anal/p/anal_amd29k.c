@@ -283,10 +283,6 @@ static int archinfo(RAnal *a, int q) {
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	op->delay = 0;
-	op->type = R_ANAL_OP_TYPE_NULL;
-	op->jump = op->fail = UT64_MAX;
-	op->ptr = op->val = UT64_MAX;
 	op->size = 4;
 	op->eob = false;
 

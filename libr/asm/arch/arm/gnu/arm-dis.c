@@ -6448,7 +6448,7 @@ select_arm_features (unsigned long mach,
 		     arm_feature_set * features)
 {
 #undef ARM_SET_FEATURES2
- //ARM_FEATURE (0, 0, FPU_ARCH_VFP_V4D16) ;	
+ //ARM_FEATURE (0, 0, FPU_ARCH_VFP_V4D16) ;
 #define ARM_SET_FEATURES2(FSET) \
   {							\
     const arm_feature_set fset = FSET;			\

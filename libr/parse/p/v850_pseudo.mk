@@ -1,0 +1,15 @@
+OBJ_V850PSEUDO+=parse_v850_pseudo.o
+
+TARGET_V850PSEUDO=parse_v850_pseudo.${EXT_SO}
+ALL_TARGETS+=${TARGET_V850PSEUDO}
+STATIC_OBJ+=${OBJ_V850PSEUDO}
+
+ifeq ($(CC),cccl)
+V850_CFLAGS:=${CFLAGS}
+else
+V850_CFLAGS:=${CFLAGS} ${LINK}
+endif
+
+${TARGET_V850PSEUDO}: ${OBJ_V850PSEUDO}
+	${CC} $(call libname,parse_v850_pseudo) -L../../util -llibr_util \
+		$(LDFLAGS_SHARED) ${V850_CFLAGS} -o ${TARGET_V850PSEUDO} ${OBJ_V850PSEUDO}

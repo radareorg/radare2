@@ -100,7 +100,7 @@ R_IPI int pager_prev_match(int from, RList **mla) {
 
 R_IPI bool pager_all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int lcount) {
 	bool res = false;
-	RRegexMatch m;
+	RRegexMatch m = {0};
 	int l, slen;
 	for (l = 0; l < lcount; l++) {
 		m.rm_so = 0;

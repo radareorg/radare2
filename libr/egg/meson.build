@@ -25,6 +25,7 @@ r_egg = library('r_egg', r_egg_sources,
   ],
   install: true,
   implicit_include_directories: false,
+  install_rpath: rpath_lib,
   soversion: r2_libversion
 )
 
@@ -36,6 +37,7 @@ pkgconfig_mod.generate(r_egg,
   version: r2_version,
   name: 'r_egg',
   filebase: 'r_egg',
+  libraries: pkgcfg_sanitize_libs,
   requires: [
     'r_util',
     'r_asm',

@@ -52,7 +52,7 @@ iosBuild() {
 	# Build and sign
 	( cd binr/radare2 ; make ios_sdk_sign )
 	make install DESTDIR="$INSTALL_DST"
-	rm -rf "$INSTALL_DST/$PREFIX"/share/radare2/*/www/enyo/node_modules
+	rm -rf "$INSTALL_DST/$PREFIX"/share/radare2/*/www/*/node_modules
 	return $?
 }
 

@@ -42,32 +42,32 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_XXHASH) {
 		ut32 res = r_hash_xxhash (buf, len);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_XXHASH);
+		r_write_le32 (ctx->digest, res);
 		return R_HASH_SIZE_XXHASH;
 	}
 	if (algobit & R_HASH_FLETCHER8) {
 		ut8 res = r_hash_fletcher8 (buf, len);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_FLETCHER8);
+		r_write_le8 (ctx->digest, res);
 		return R_HASH_SIZE_FLETCHER8;
 	}
 	if (algobit & R_HASH_FLETCHER16) {
 		ut16 res = r_hash_fletcher16 (buf, len);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_FLETCHER16);
+		r_write_le16 (ctx->digest, res);
 		return R_HASH_SIZE_FLETCHER16;
 	}
 	if (algobit & R_HASH_FLETCHER32) {
 		ut32 res = r_hash_fletcher32 (buf, len);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_FLETCHER32);
+		r_write_le32 (ctx->digest, res);
 		return R_HASH_SIZE_FLETCHER32;
 	}
 	if (algobit & R_HASH_FLETCHER64) {
 		ut64 res = r_hash_fletcher64 (buf, len);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_FLETCHER64);
+		r_write_le64 (ctx->digest, res);
 		return R_HASH_SIZE_FLETCHER64;
 	}
 	if (algobit & R_HASH_ADLER32) {
 		ut32 res = r_hash_adler32 (buf, len);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_ADLER32);
+		r_write_le32 (ctx->digest, res);
 		return R_HASH_SIZE_ADLER32;
 	}
 	if (algobit & R_HASH_HAMDIST) {
@@ -93,7 +93,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 	}
 	if (algobit & R_HASH_XORPAIR) {
 		ut16 res = r_hash_xorpair (buf, len);
-		memcpy (ctx->digest, &res, 2);
+		r_write_le16 (ctx->digest, res);
 		return R_HASH_SIZE_XORPAIR;
 	}
 	if (algobit & R_HASH_MOD255) {
@@ -107,7 +107,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 
 	if (algobit & R_HASH_CRC8_SMBUS) {
 		ut8 res = r_hash_crc_preset (buf, len, CRC_PRESET_8_SMBUS);
-		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC8_SMBUS);
+		r_write_le8 (ctx->digest, res);
 		return R_HASH_SIZE_CRC8_SMBUS;
 	}
 #if R_HAVE_CRC8_EXTRA

@@ -73,7 +73,6 @@ static void ts_lexer__get_chunk(Lexer *self) {
 // code that spans the current position.
 static void ts_lexer__get_lookahead(Lexer *self) {
   uint32_t position_in_chunk = self->current_position.bytes - self->chunk_start;
-  const uint8_t *chunk = (const uint8_t *)self->chunk + position_in_chunk;
   uint32_t size = self->chunk_size - position_in_chunk;
 
   if (size == 0) {
@@ -82,6 +81,7 @@ static void ts_lexer__get_lookahead(Lexer *self) {
     return;
   }
 
+  const uint8_t *chunk = (const uint8_t *)self->chunk + position_in_chunk;
   UnicodeDecodeFunction decode = self->input.encoding == TSInputEncodingUTF8
     ? ts_decode_utf8
     : ts_decode_utf16;
@@ -203,7 +203,7 @@ static uint32_t ts_lexer__get_column(TSLexer *_self) {
 
 // Is the lexer at a boundary between two disjoint included ranges of
 // source code? This is exposed as an API because some languages' external
-// scanners need to perform custom actions at these bounaries.
+// scanners need to perform custom actions at these boundaries.
 static bool ts_lexer__is_at_included_range_start(const TSLexer *_self) {
   const Lexer *self = (const Lexer *)_self;
   if (self->current_included_range_index < self->included_range_count) {

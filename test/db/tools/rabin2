@@ -68,7 +68,7 @@ nth paddr        size vaddr        vsize perm md5                              n
 0   0x00000400  0xa00 0x00401000  0x1000 -r-x 3d6a5b8dc5e41b09659638ad5735e5b5 .text
 1   0x00000e00  0x200 0x00402000  0x1000 -rw- b3c542ba67f2d1a949fa1a25ce22f7e3 .data
 2   0x00001000  0x200 0x00403000  0x1000 -r-- c9a877a4e945b087b8323830442c88d6 .rdata
-3   0x00000000    0x0 0x00404000  0x1000 -rw- d41d8cd98f00b204e9800998ecf8427e .bss
+3   0x00000000    0x0 0x00404000  0x1000 -rw-                                  .bss
 4   0x00001200  0x400 0x00405000  0x1000 -rw- 963212dc58a74f32e0f6ffce84dcf7ea .idata
 
 EOF
@@ -107,8 +107,8 @@ nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- prixfixe.
 1   0x00000134   0x13 0x08048134   0x13 -r-- prixfixe..interp
-2   0x00000148   0x20 0x08048148   0x20 -r-- prixfixe..note.ABI_tag
-3   0x00000168   0x24 0x08048168   0x24 -r-- prixfixe..note.gnu.build_id
+2   0x00000148   0x20 0x08048148   0x20 -r-- prixfixe..note.ABI-tag
+3   0x00000168   0x24 0x08048168   0x24 -r-- prixfixe..note.gnu.build-id
 4   0x0000018c   0x20 0x0804818c   0x20 -r-- prixfixe..gnu.hash
 5   0x000001ac   0x50 0x080481ac   0x50 -r-- prixfixe..dynsym
 6   0x000001fc   0x4a 0x080481fc   0x4a -r-- prixfixe..dynstr
@@ -481,8 +481,8 @@ nth paddr        size vaddr       vsize perm name
 -------------------------------------------------
 0   0x00000000    0x0 0x00000000    0x0 ---- 
 1   0x00000134   0x13 0x08048134   0x13 -r-- .interp
-2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI_tag
-3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build_id
+2   0x00000148   0x20 0x08048148   0x20 -r-- .note.ABI-tag
+3   0x00000168   0x24 0x08048168   0x24 -r-- .note.gnu.build-id
 4   0x0000018c   0x20 0x0804818c   0x20 -r-- .gnu.hash
 5   0x000001ac   0x50 0x080481ac   0x50 -r-- .dynsym
 6   0x000001fc   0x4a 0x080481fc   0x4a -r-- .dynstr
@@ -544,73 +544,73 @@ nth vaddr      bind   type   lib name
 
 [Symbols]
 
-nth paddr       vaddr      bind   type   size lib name
-------------------------------------------------------
-4    0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
-1    0x00000134 0x08048134 LOCAL  SECT   0        .interp
-2    0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
-3    0x00000168 0x08048168 LOCAL  SECT   0        .note.gnu.build-id
-4    0x0000018c 0x0804818c LOCAL  SECT   0        .gnu.hash
-5    0x000001ac 0x080481ac LOCAL  SECT   0        .dynsym
-6    0x000001fc 0x080481fc LOCAL  SECT   0        .dynstr
-7    0x00000246 0x08048246 LOCAL  SECT   0        .gnu.version
-8    0x00000250 0x08048250 LOCAL  SECT   0        .gnu.version_r
-9    0x00000270 0x08048270 LOCAL  SECT   0        .rel.dyn
-10   0x00000278 0x08048278 LOCAL  SECT   0        .rel.plt
-11   0x00000290 0x08048290 LOCAL  SECT   0        .init
-12   0x000002c0 0x080482c0 LOCAL  SECT   0        .plt
-13   0x00000300 0x08048300 LOCAL  SECT   0        .text
-14   0x00000494 0x08048494 LOCAL  SECT   0        .fini
-15   0x000004a8 0x080484a8 LOCAL  SECT   0        .rodata
-16   0x000004c0 0x080484c0 LOCAL  SECT   0        .eh_frame_hdr
-17   0x000004ec 0x080484ec LOCAL  SECT   0        .eh_frame
-18   0x0000059c 0x0804959c LOCAL  SECT   0        .init_array
-19   0x000005a0 0x080495a0 LOCAL  SECT   0        .fini_array
-20   0x000005a4 0x080495a4 LOCAL  SECT   0        .jcr
-21   0x000005a8 0x080495a8 LOCAL  SECT   0        .dynamic
-22   0x00000690 0x08049690 LOCAL  SECT   0        .got
-23   0x00000694 0x08049694 LOCAL  SECT   0        .got.plt
-24   0x000006ac 0x080496ac LOCAL  SECT   0        .data
-25   ---------- 0x080496b4 LOCAL  SECT   0        .bss
-26   ---------- 0x00000000 LOCAL  SECT   0        .comment
-27   ---------- 0x00000000 LOCAL  FILE   0        init.c
-28   ---------- 0x00000000 LOCAL  FILE   0        
-29   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
-30   0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_LIST__
-31   0x00000340 0x08048340 LOCAL  FUNC   0        deregister_tm_clones
-32   0x00000370 0x08048370 LOCAL  FUNC   0        register_tm_clones
-33   0x000003b0 0x080483b0 LOCAL  FUNC   0        __do_global_dtors_aux
-34   ---------- 0x080496b4 LOCAL  OBJ    1        completed.5979
-35   0x000005a0 0x080495a0 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
-36   0x000003d0 0x080483d0 LOCAL  FUNC   0        frame_dummy
-37   0x0000059c 0x0804959c LOCAL  OBJ    0        __frame_dummy_init_array_entry
-38   ---------- 0x00000000 LOCAL  FILE   0        hello.c
-39   ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
-40   0x00000598 0x08048598 LOCAL  OBJ    0        __FRAME_END__
-41   0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_END__
-42   ---------- 0x00000000 LOCAL  FILE   0        
-43   0x000005a0 0x080495a0 LOCAL  NOTYPE 0        __init_array_end
-44   0x000005a8 0x080495a8 LOCAL  OBJ    0        _DYNAMIC
-45   0x0000059c 0x0804959c LOCAL  NOTYPE 0        __init_array_start
-46   0x00000694 0x08049694 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
-47   0x00000490 0x08048490 GLOBAL FUNC   2        __libc_csu_fini
-49   0x00000330 0x08048330 GLOBAL FUNC   4        __x86.get_pc_thunk.bx
-50   0x000006ac 0x080496ac WEAK   NOTYPE 0        data_start
-51   ---------- 0x080496b4 GLOBAL NOTYPE 0        _edata
-52   0x00000494 0x08048494 GLOBAL FUNC   0        _fini
-53   0x000006ac 0x080496ac GLOBAL NOTYPE 0        __data_start
-56   0x000006b0 0x080496b0 GLOBAL OBJ    0        __dso_handle
-59   0x00000420 0x08048420 GLOBAL FUNC   97       __libc_csu_init
-60   ---------- 0x080496b8 GLOBAL NOTYPE 0        _end
-61   0x00000300 0x08048300 GLOBAL FUNC   0        _start
-62   0x000004a8 0x080484a8 GLOBAL OBJ    4        _fp_hw
-63   ---------- 0x080496b4 GLOBAL NOTYPE 0        __bss_start
-64   0x00000400 0x08048400 GLOBAL FUNC   28       main
-66   ---------- 0x080496b4 GLOBAL OBJ    0        __TMC_END__
-68   0x00000290 0x08048290 GLOBAL FUNC   0        _init
-1    0x000002d0 0x080482d0 GLOBAL FUNC   16       imp.puts
-2    0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
-3    0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
+nth paddr      vaddr      bind   type   size lib name
+-----------------------------------------------------
+4   0x000004ac 0x080484ac GLOBAL OBJ    4        _IO_stdin_used
+1   0x00000134 0x08048134 LOCAL  SECT   0        .interp
+2   0x00000148 0x08048148 LOCAL  SECT   0        .note.ABI-tag
+3   0x00000168 0x08048168 LOCAL  SECT   0        .note.gnu.build-id
+4   0x0000018c 0x0804818c LOCAL  SECT   0        .gnu.hash
+5   0x000001ac 0x080481ac LOCAL  SECT   0        .dynsym
+6   0x000001fc 0x080481fc LOCAL  SECT   0        .dynstr
+7   0x00000246 0x08048246 LOCAL  SECT   0        .gnu.version
+8   0x00000250 0x08048250 LOCAL  SECT   0        .gnu.version_r
+9   0x00000270 0x08048270 LOCAL  SECT   0        .rel.dyn
+10  0x00000278 0x08048278 LOCAL  SECT   0        .rel.plt
+11  0x00000290 0x08048290 LOCAL  SECT   0        .init
+12  0x000002c0 0x080482c0 LOCAL  SECT   0        .plt
+13  0x00000300 0x08048300 LOCAL  SECT   0        .text
+14  0x00000494 0x08048494 LOCAL  SECT   0        .fini
+15  0x000004a8 0x080484a8 LOCAL  SECT   0        .rodata
+16  0x000004c0 0x080484c0 LOCAL  SECT   0        .eh_frame_hdr
+17  0x000004ec 0x080484ec LOCAL  SECT   0        .eh_frame
+18  0x0000059c 0x0804959c LOCAL  SECT   0        .init_array
+19  0x000005a0 0x080495a0 LOCAL  SECT   0        .fini_array
+20  0x000005a4 0x080495a4 LOCAL  SECT   0        .jcr
+21  0x000005a8 0x080495a8 LOCAL  SECT   0        .dynamic
+22  0x00000690 0x08049690 LOCAL  SECT   0        .got
+23  0x00000694 0x08049694 LOCAL  SECT   0        .got.plt
+24  0x000006ac 0x080496ac LOCAL  SECT   0        .data
+25  ---------- 0x080496b4 LOCAL  SECT   0        .bss
+26  ---------- 0x00000000 LOCAL  SECT   0        .comment
+27  ---------- 0x00000000 LOCAL  FILE   0        init.c
+28  ---------- 0x00000000 LOCAL  FILE   0        
+29  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+30  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_LIST__
+31  0x00000340 0x08048340 LOCAL  FUNC   0        deregister_tm_clones
+32  0x00000370 0x08048370 LOCAL  FUNC   0        register_tm_clones
+33  0x000003b0 0x080483b0 LOCAL  FUNC   0        __do_global_dtors_aux
+34  ---------- 0x080496b4 LOCAL  OBJ    1        completed.5979
+35  0x000005a0 0x080495a0 LOCAL  OBJ    0        __do_global_dtors_aux_fini_array_entry
+36  0x000003d0 0x080483d0 LOCAL  FUNC   0        frame_dummy
+37  0x0000059c 0x0804959c LOCAL  OBJ    0        __frame_dummy_init_array_entry
+38  ---------- 0x00000000 LOCAL  FILE   0        hello.c
+39  ---------- 0x00000000 LOCAL  FILE   0        crtstuff.c
+40  0x00000598 0x08048598 LOCAL  OBJ    0        __FRAME_END__
+41  0x000005a4 0x080495a4 LOCAL  OBJ    0        __JCR_END__
+42  ---------- 0x00000000 LOCAL  FILE   0        
+43  0x000005a0 0x080495a0 LOCAL  NOTYPE 0        __init_array_end
+44  0x000005a8 0x080495a8 LOCAL  OBJ    0        _DYNAMIC
+45  0x0000059c 0x0804959c LOCAL  NOTYPE 0        __init_array_start
+46  0x00000694 0x08049694 LOCAL  OBJ    0        _GLOBAL_OFFSET_TABLE_
+47  0x00000490 0x08048490 GLOBAL FUNC   2        __libc_csu_fini
+49  0x00000330 0x08048330 GLOBAL FUNC   4        __x86.get_pc_thunk.bx
+50  0x000006ac 0x080496ac WEAK   NOTYPE 0        data_start
+51  ---------- 0x080496b4 GLOBAL NOTYPE 0        _edata
+52  0x00000494 0x08048494 GLOBAL FUNC   0        _fini
+53  0x000006ac 0x080496ac GLOBAL NOTYPE 0        __data_start
+56  0x000006b0 0x080496b0 GLOBAL OBJ    0        __dso_handle
+59  0x00000420 0x08048420 GLOBAL FUNC   97       __libc_csu_init
+60  ---------- 0x080496b8 GLOBAL NOTYPE 0        _end
+61  0x00000300 0x08048300 GLOBAL FUNC   0        _start
+62  0x000004a8 0x080484a8 GLOBAL OBJ    4        _fp_hw
+63  ---------- 0x080496b4 GLOBAL NOTYPE 0        __bss_start
+64  0x00000400 0x08048400 GLOBAL FUNC   28       main
+66  ---------- 0x080496b4 GLOBAL OBJ    0        __TMC_END__
+68  0x00000290 0x08048290 GLOBAL FUNC   0        _init
+1   0x000002d0 0x080482d0 GLOBAL FUNC   16       imp.puts
+2   0x000002e0 0x080482e0 WEAK   NOTYPE 16       imp.__gmon_start__
+3   0x000002f0 0x080482f0 GLOBAL FUNC   16       imp.__libc_start_main
 [Strings]
 nth paddr      vaddr      len size section type  string
 -------------------------------------------------------
@@ -653,6 +653,13 @@ va       true
 0x00000018  Entrypoint  0x08048300
 0x0000001c  PhOff       0x00000034
 0x00000020  ShOff       0x000007cc
+0x00000024  Flags       0x00000000
+0x00000028  EhSize      52
+0x0000002a  PhentSize   32
+0x0000002c  PhNum       8
+0x0000002e  ShentSize   40
+0x00000030  ShNum       30
+0x00000032  ShrStrndx   27
 [Linked libraries]
 libc.so.6
 
@@ -687,10 +694,10 @@ Segment      Section
 --------------------
 PHDR         
 INTERP       .interp 
-LOAD0        .interp .note.ABI_tag .note.gnu.build_id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
+LOAD0        .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .eh_frame_hdr .eh_frame 
 LOAD1        .init_array .fini_array .jcr .dynamic .got .got.plt .data .bss 
 DYNAMIC      .dynamic 
-NOTE         .note.ABI_tag .note.gnu.build_id 
+NOTE         .note.ABI-tag .note.gnu.build-id 
 GNU_EH_FRAME .eh_frame_hdr 
 GNU_STACK    
 ehdr         
@@ -827,9 +834,9 @@ NAME=rabin2 -s right symbols
 FILE=bins/elf/libc.so.0
 CMDS=!rabin2 -s ${R2_FILE} | grep 0002edb0
 EXPECT=<<EOF
-149   0x0002edb0 0x0002edb0 GLOBAL FUNC   356      getc_unlocked
-402   0x0002edb0 0x0002edb0 GLOBAL FUNC   356      __fgetc_unlocked
-980   0x0002edb0 0x0002edb0 GLOBAL FUNC   356      fgetc_unlocked
+149  0x0002edb0 0x0002edb0 GLOBAL FUNC   356      getc_unlocked
+402  0x0002edb0 0x0002edb0 GLOBAL FUNC   356      __fgetc_unlocked
+980  0x0002edb0 0x0002edb0 GLOBAL FUNC   356      fgetc_unlocked
 EOF
 RUN
 
@@ -881,8 +888,8 @@ EOF
 RUN
 
 NAME=rabin2 -D swift
-BROKEN=1
 FILE=bins/elf/libc.so.0
+BROKEN=1
 CMDS=!rabin2 -D swift  _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
 EXPECT=<<EOF
 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
@@ -890,7 +897,7 @@ EOF
 RUN
 
 NAME=rabin2 -D Unsupported
-FILE=bins/elf/libc.so.0
+FILE=--
 CMDS=!rabin2 -D XXX LOLILOL
 EXPECT_ERR=<<EOF
 Unsupported demangler
@@ -991,9 +998,9 @@ CMDS=!rabin2 -E ${R2_FILE}
 EXPECT=<<EOF
 [Exports]
 
-nth paddr       vaddr      bind   type size lib     name
---------------------------------------------------------
-0    0x00000224 0x01001024 GLOBAL FUNC 0    dll.dll export
+nth paddr      vaddr      bind   type size lib     name
+-------------------------------------------------------
+0   0x00000224 0x01001024 GLOBAL FUNC 0    dll.dll export
 EOF
 RUN
 
@@ -1021,6 +1028,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -Zj
+FILE=bins/pe/base.exe
+CMDS=!rabin2 -Zj ${R2_FILE}
+EXPECT=<<EOF
+{"size":216569}
+EOF
+RUN
+
 NAME=rabin2 -H
 FILE=bins/pe/base.exe
 CMDS=!rabin2 -H ${R2_FILE} | grep -c "Machine : 0x14c"
@@ -1037,10 +1052,171 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rabin2 -dj
+FILE=bins/elf/analysis/dwarftest
+CMDS=!rabin2 -dj ${R2_FILE}
+EXPECT=<<EOF
+{"dwarf":[[{"name":"CC","file":"dwarftest.c","line_num":7,"addr":4195637},{"name":"CL","file":"dwarftest.c","line_num":7,"line":"","addr":4195637}],[{"name":"CC","file":"dwarftest.c","line_num":4,"addr":4195629},{"name":"CL","file":"dwarftest.c","line_num":4,"line":"","addr":4195629}],[{"name":"CC","file":"dwarftest.c","line_num":12,"addr":4195673},{"name":"CL","file":"dwarftest.c","line_num":12,"line":"","addr":4195673}],[{"name":"CC","file":"dwarftest.c","line_num":8,"addr":4195646},{"name":"CL","file":"dwarftest.c","line_num":8,"line":"","addr":4195646}],[{"name":"CC","file":"dwarftest.c","line_num":7,"addr":4195660},{"name":"CL","file":"dwarftest.c","line_num":7,"line":"","addr":4195660}],[{"name":"CC","file":"dwarftest.c","line_num":7,"addr":4195656},{"name":"CL","file":"dwarftest.c","line_num":7,"line":"","addr":4195656}],[{"name":"CC","file":"dwarftest.c","line_num":11,"addr":4195666},{"name":"CL","file":"dwarftest.c","line_num":11,"line":"","addr":4195666}],[{"name":"CC","file":"dwarftest.c","line_num":12,"addr":4195671},{"name":"CL","file":"dwarftest.c","line_num":12,"line":"","addr":4195671}]]}
+EOF
+RUN
+
 NAME=rabin2 -P
 FILE=bins/pdb/Project1.pdb
 CMDS=!rabin2 -P ${R2_FILE} | grep -c R2_TEST_UNION
 EXPECT=<<EOF
 1
+EOF
+RUN
+
+NAME=rabin2 -Pj
+FILE=bins/pdb/minimal.pdb
+CMDS=!!rabin2 -Pj ${R2_FILE}~{}
+EXPECT=<<EOF
+{
+  "pdb": {
+    "types": [
+      {
+        "type": "structure",
+        "name": "struct_typedef",
+        "size": 7,
+        "members": [
+          {
+            "member_type": "char",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "uint16_t",
+            "member_name": "b",
+            "offset": 1
+          },
+          {
+            "member_type": "int32_t",
+            "member_name": "c",
+            "offset": 3
+          }
+        ]
+      },
+      {
+        "type": "structure",
+        "name": "<unnamed-tag>",
+        "size": 4,
+        "members": [
+          {
+            "member_type": "char[4]",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "int32_t",
+            "member_name": "b",
+            "offset": 0
+          }
+        ]
+      },
+      {
+        "type": "structure",
+        "name": "unnamed_member_types_typedef",
+        "size": 8,
+        "members": [
+          {
+            "member_type": "union <unnamed-tag>",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "int32_t",
+            "member_name": "b",
+            "offset": 4
+          }
+        ]
+      },
+      {
+        "type": "structure",
+        "name": "bitfield_typedef",
+        "size": 1,
+        "members": [
+          {
+            "member_type": "bitfield uint8_t : 1",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "bitfield uint8_t : 2",
+            "member_name": "b",
+            "offset": 0
+          },
+          {
+            "member_type": "bitfield uint8_t : 3",
+            "member_name": "c",
+            "offset": 0
+          }
+        ]
+      },
+      {
+        "type": "structure",
+        "name": "union_typedef",
+        "size": 4,
+        "members": [
+          {
+            "member_type": "char",
+            "member_name": "a",
+            "offset": 0
+          },
+          {
+            "member_type": "uint16_t",
+            "member_name": "b",
+            "offset": 0
+          },
+          {
+            "member_type": "int32_t",
+            "member_name": "c",
+            "offset": 0
+          }
+        ]
+      }
+    ],
+    "gvars": [
+      {
+        "address": 12292,
+        "symtype": 0,
+        "section_name": ".data",
+        "gdata_name": "_uninitialized_global"
+      },
+      {
+        "address": 12288,
+        "symtype": 0,
+        "section_name": ".data",
+        "gdata_name": "_initialized_global"
+      },
+      {
+        "address": 4096,
+        "symtype": 2,
+        "section_name": ".text",
+        "gdata_name": "_function"
+      },
+      {
+        "address": 4182,
+        "symtype": 2,
+        "section_name": ".text",
+        "gdata_name": "_mainCRTStartup"
+      },
+      {
+        "address": 4120,
+        "symtype": 2,
+        "section_name": ".text",
+        "gdata_name": "_main"
+      }
+    ]
+  }
+}
+EOF
+RUN
+
+NAME=rabin2 -S ""
+FILE=-
+CMDS=!rabin2 -S ""
+EXPECT_ERR=<<EOF
+Cannot open empty path
 EOF
 RUN

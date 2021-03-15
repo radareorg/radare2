@@ -135,7 +135,7 @@ static RBinInfo *info(RBinFile *bf) {
 		info->cpu = strdup (bin->cpu);
 		info->os = strdup (bin->os);
 		info->arch = strdup (bin->arch);
-		info->file = strdup (bin->filename ? bin->filename : "");
+		info->file = strdup (r_str_get (bin->filename));
 		info->big_endian = h->worder;
 		info->has_va = true;
 		info->baddr = 0;

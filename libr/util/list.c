@@ -6,7 +6,7 @@
 #define _R_LIST_C_
 #include "r_util.h"
 
-inline RListIter *r_list_iter_new() {
+inline RListIter *r_list_iter_new(void) {
 	return calloc (1, sizeof (RListIter));
 }
 
@@ -64,8 +64,9 @@ R_API int r_list_length(const RList *list) {
 
 /* remove all elements of a list */
 R_API void r_list_purge(RList *list) {
-	r_return_if_fail (list);
-
+	if (!list) {
+		return;
+	}
 	RListIter *it = list->head;
 	while (it) {
 		RListIter *next = it->n;
@@ -165,7 +166,7 @@ R_API int r_list_join(RList *list1, RList *list2) {
 	return 1;
 }
 
-R_API RList *r_list_new() {
+R_API RList *r_list_new(void) {
 	RList *list = R_NEW0 (RList);
 	if (!list) {
 		return NULL;
@@ -193,7 +194,7 @@ R_API RListIter *r_list_item_new(void *data) {
 R_API RListIter *r_list_append(RList *list, void *data) {
 	RListIter *item = NULL;
 
-	r_return_val_if_fail (list && data, NULL);
+	r_return_val_if_fail (list, NULL);
 
 	item = R_NEW (RListIter);
 	if (!item) {
@@ -282,8 +283,8 @@ R_API void *r_list_pop(RList *list) {
 		}
 		data = iter->data;
 		free (iter);
+		list->length--;
 	}
-	list->length--;
 	return data;
 }
 
@@ -302,8 +303,8 @@ R_API void *r_list_pop_head(RList *list) {
 		}
 		data = iter->data;
 		free (iter);
+		list->length--;
 	}
-	list->length--;
 	return data;
 }
 
@@ -363,13 +364,12 @@ R_API void r_list_reverse(RList *list) {
 }
 
 R_API RList *r_list_clone(const RList *list) {
-	RList *l = NULL;
 	RListIter *iter;
 	void *data;
 
 	r_return_val_if_fail (list, NULL);
 
-	l = r_list_new ();
+	RList *l = r_list_new ();
 	if (!l) {
 		return NULL;
 	}
@@ -480,7 +480,7 @@ static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cm
 		} else if (!first) {
 			next = second;
 			second = second->n;
-		} else if (cmp (first->data, second->data) < 0) {
+		} else if (cmp (first->data, second->data) <= 0) {
 			next = first;
 			first = first->n;
 		} else {

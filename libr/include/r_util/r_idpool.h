@@ -37,11 +37,15 @@ R_API RIDStorage *r_id_storage_new(ut32 start_id, ut32 last_id);
 R_API bool r_id_storage_set(RIDStorage *storage, void *data, ut32 id);
 R_API bool r_id_storage_add(RIDStorage *storage, void *data, ut32 *id);
 R_API void *r_id_storage_get(RIDStorage *storage, ut32 id);
+R_API bool r_id_storage_get_next(RIDStorage *storage, ut32 *id);
+R_API bool r_id_storage_get_prev(RIDStorage *storage, ut32 *id);
 R_API void r_id_storage_delete(RIDStorage *storage, ut32 id);
 R_API void *r_id_storage_take(RIDStorage *storage, ut32 id);
 R_API bool r_id_storage_foreach(RIDStorage *storage, RIDStorageForeachCb cb, void *user);
 R_API void r_id_storage_free(RIDStorage *storage);
 R_API RList *r_id_storage_list(RIDStorage *s);
+R_API bool r_id_storage_get_lowest(RIDStorage *storage, ut32 *id);
+R_API bool r_id_storage_get_highest(RIDStorage *storage, ut32 *id);
 
 typedef struct r_ordered_id_storage_t {
 	ut32 *permutation;

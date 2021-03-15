@@ -2,7 +2,7 @@
 
 #include <r_anal.h>
 
-static RAnalSwitchOp *__switch_op_new() {
+static RAnalSwitchOp *__switch_op_new(void) {
 	RAnalSwitchOp * swop = R_NEW0 (RAnalSwitchOp);
 	if (swop) {
 		swop->cases = r_list_new ();

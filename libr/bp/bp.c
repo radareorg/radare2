@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2018 - pancake */
+/* radare2 - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_bp.h>
 #include <config.h>
@@ -18,7 +18,7 @@ static void r_bp_item_free (RBreakpointItem *b) {
 	free (b);
 }
 
-R_API RBreakpoint *r_bp_new() {
+R_API RBreakpoint *r_bp_new(void) {
 	int i;
 	RBreakpointPlugin *static_plugin;
 	RBreakpoint *bp = R_NEW0 (RBreakpoint);
@@ -173,6 +173,10 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	if (bp->baddr > addr) {
 		eprintf ("base addr should not be larger than the breakpoint address.\n");
 	}
+	if (bp->bpinmaps && !r_bp_is_valid (bp, b)) {
+		eprintf ("WARNING: Breakpoint won't be placed since it's not in a valid map.\n"
+			 "You can bypass this check by setting dbg.bpinmaps to false.\n");
+	}
 	b->delta = addr - bp->baddr;
 	b->size = size;
 	b->enabled = true;
@@ -194,14 +198,10 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		} else {
 			b->obytes = NULL;
 		}
-		/* XXX: endian .. use bp->endian */
 		ret = r_bp_get_bytes (bp, b->bbytes, size, bp->endian, 0);
 		if (ret != size) {
 			eprintf ("Cannot get breakpoint bytes. No architecture selected?\n");
-			unlinkBreakpoint (bp, b);
-			return NULL;
 		}
-		b->recoil = ret;
 	}
 	bp->nbps++;
 	r_list_append (bp->bps, b);
@@ -284,13 +284,35 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	int n = 0;
 	RBreakpointItem *b;
 	RListIter *iter;
+	PJ *pj = NULL;
 	if (rad == 'j') {
-		bp->cb_printf ("[");
+		pj = pj_new ();
+		if (!pj) {
+			return 0;
+		}
+		pj_a (pj);
 	}
 	//eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
-		switch (rad) {
-		case 0:
+		if (pj) {
+			pj_o (pj);
+			pj_kN (pj, "addr", b->addr);
+			pj_ki (pj, "size", b->size);
+			pj_ks (pj, "perm", r_str_rwx_i (b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
+			pj_kb (pj, "hw", b->hw);
+			pj_kb (pj, "trace", b->trace);
+			pj_kb (pj, "enabled", b->enabled);
+			pj_kb (pj, "valid", r_bp_is_valid (bp, b));
+			pj_ks (pj, "data", r_str_get (b->data));
+			pj_ks (pj, "cond", r_str_get (b->cond));
+			pj_end (pj);
+		} else if (rad) {
+			if (b->module_name) {
+				bp->cb_printf ("dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
+			} else {
+				bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
+			}
+		} else {
 			bp->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x \
 				" %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
@@ -302,48 +324,17 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
 				r_bp_is_valid (bp, b) ? "valid" : "invalid",
-				r_str_get2 (b->data),
-				r_str_get2 (b->cond),
-				r_str_get2 (b->name),
-				r_str_get2 (b->module_name));
-			break;
-		case 1:
-		case 'r':
-		case '*':
-			// TODO: add command, tracing, enable, ..
-			if (b->module_name) {
-			    	bp->cb_printf ("dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
-			} else {
-				bp->cb_printf ("db 0x%08"PFMT64x"\n", b->addr);
-			}
-			//b->trace? "trace": "break",
-			//b->enabled? "enabled": "disabled",
-			// b->data? b->data: "");
-			break;
-		case 'j':
-			bp->cb_printf ("%s{\"addr\":%"PFMT64d",\"size\":%d,"
-				"\"prot\":\"%c%c%c\",\"hw\":%s,"
-				"\"trace\":%s,\"enabled\":%s,"
-				"\"valid\":%s,\"data\":\"%s\","
-				"\"cond\":\"%s\"}",
-				iter->p ? "," : "",
-				b->addr, b->size,
-				(b->perm & R_BP_PROT_READ) ? 'r' : '-',
-				(b->perm & R_BP_PROT_WRITE) ? 'w' : '-',
-				(b->perm & R_BP_PROT_EXEC) ? 'x' : '-',
-				b->hw ? "true" : "false",
-				b->trace ? "true" : "false",
-				b->enabled ? "true" : "false",
-				r_bp_is_valid (bp, b) ? "true" : "false",
-				r_str_get2 (b->data),
-				r_str_get2 (b->cond));
-			break;
+				r_str_get (b->data),
+				r_str_get (b->cond),
+				r_str_get (b->name),
+				r_str_get (b->module_name));
 		}
-		/* TODO: Show list of pids and trace points, conditionals */
 		n++;
 	}
-	if (rad == 'j') {
-		bp->cb_printf ("]\n");
+	if (pj) {
+		pj_end (pj);
+		bp->cb_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
 	}
 	return n;
 }

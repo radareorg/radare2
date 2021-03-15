@@ -1,0 +1,8 @@
+d "stz 0x4200" 9c0042
+d "rep #0x38" c238
+d "tas" 1b
+d "pha" 48
+d "lda #0x8d8d" a98d8d
+d "brk 0x80" 0080
+d "bne 0x000010" d00e
+d "php" 08

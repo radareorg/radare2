@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2021 - nibble, mrmacete, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -9,10 +9,6 @@
 // TODO: deprecate bprintf and use Eprintf (bin->self)
 #define bprintf if (bin->verbose) eprintf
 #define Eprintf if (mo->verbose) eprintf
-
-typedef struct _ulebr {
-	ut8 *p;
-} ulebr;
 
 typedef struct {
 	struct symbol_t *symbols;
@@ -34,53 +30,16 @@ typedef struct {
 // USE THIS: int ws = bf->o->info->big_endian;
 #define mach0_endian 1
 
-static ut64 read_uleb128(ulebr *r, ut8 *end) {
-	ut64 result = 0;
-	int bit = 0;
-	ut64 slice = 0;
-	ut8 *p = r->p;
-	do {
-		if (p == end) {
-			eprintf ("malformed uleb128\n");
-			return UT64_MAX;
-		}
-		slice = *p & 0x7f;
-		if (bit > 63) {
-			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x"\n", bit, result);
-			return UT64_MAX;
-		} else {
-			result |= (slice << bit);
-			bit += 7;
-		}
-	} while (*p++ & 0x80);
-	r->p = p;
-	return result;
-}
-
-static st64 read_sleb128(ulebr *r, ut8 *end) {
-	st64 result = 0;
-	int bit = 0;
-	ut8 byte = 0;
-	ut8 *p = r->p;
-	do {
-		if (p == end) {
-			eprintf ("malformed sleb128\n");
-			break;
-		}
-		byte = *p++;
-		result |= (((st64)(byte & 0x7f)) << bit);
-		bit += 7;
-		if (bit > 63) {
-			eprintf ("too large sleb128 shift\n");
-			return result;
-		}
-	} while (byte & 0x80);
-	// sign extend negative numbers
-	if ((byte & 0x40)) {
-		result |= (-1LL) << bit;
+static ut64 read_uleb128(ut8 **p, ut8 *end) {
+	const char *error = NULL;
+	ut64 v;
+	*p = (ut8 *)r_uleb128 (*p, end - *p, &v, &error);
+	if (error) {
+		eprintf ("%s", error);
+		R_FREE (error);
+		return UT64_MAX;
 	}
-	r->p = p;
-	return result;
+	return v;
 }
 
 static ut64 entry_to_vaddr(struct MACH0_(obj_t) *bin) {
@@ -96,52 +55,41 @@ static ut64 entry_to_vaddr(struct MACH0_(obj_t) *bin) {
 }
 
 static ut64 addr_to_offset(struct MACH0_(obj_t) *bin, ut64 addr) {
-	ut64 segment_base, segment_size;
-	int i;
-
-	if (!bin->segs) {
-		return 0;
-	}
-	for (i = 0; i < bin->nsegs; i++) {
-		segment_base = (ut64)bin->segs[i].vmaddr;
-		segment_size = (ut64)bin->segs[i].vmsize;
-		if (addr >= segment_base && addr < segment_base + segment_size) {
-			return bin->segs[i].fileoff + (addr - segment_base);
+	if (bin->segs) {
+		size_t i;
+		for (i = 0; i < bin->nsegs; i++) {
+			const ut64 segment_base = (ut64)bin->segs[i].vmaddr;
+			const ut64 segment_size = (ut64)bin->segs[i].vmsize;
+			if (addr >= segment_base && addr < segment_base + segment_size) {
+				return bin->segs[i].fileoff + (addr - segment_base);
+			}
 		}
 	}
 	return 0;
 }
 
 static ut64 offset_to_vaddr(struct MACH0_(obj_t) *bin, ut64 offset) {
-	ut64 segment_base, segment_size;
-	int i;
-
-	if (!bin->segs) {
-		return 0;
-	}
-	for (i = 0; i < bin->nsegs; i++) {
-		segment_base = (ut64)bin->segs[i].fileoff;
-		segment_size = (ut64)bin->segs[i].filesize;
-		if (offset >= segment_base && offset < segment_base + segment_size) {
-			return bin->segs[i].vmaddr + (offset - segment_base);
+	if (bin->segs) {
+		size_t i;
+		for (i = 0; i < bin->nsegs; i++) {
+			ut64 segment_base = (ut64)bin->segs[i].fileoff;
+			ut64 segment_size = (ut64)bin->segs[i].filesize;
+			if (offset >= segment_base && offset < segment_base + segment_size) {
+				return bin->segs[i].vmaddr + (offset - segment_base);
+			}
 		}
 	}
 	return 0;
 }
 
 static ut64 pa2va(RBinFile *bf, ut64 offset) {
-	if (!bf || !bf->rbin) {
-		return offset;
-	}
+	r_return_val_if_fail (bf && bf->rbin, offset);
 	RIO *io = bf->rbin->iob.io;
-	if (!io->va) {
+	if (!io || !io->va) {
 		return offset;
 	}
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-	if (!bin) {
-		return offset;
-	}
-	return offset_to_vaddr (bin, offset);
+	return bin? offset_to_vaddr (bin, offset): offset;
 }
 
 static void init_sdb_formats(struct MACH0_(obj_t) *bin) {
@@ -323,7 +271,7 @@ static bool init_hdr(struct MACH0_(obj_t) *bin) {
 }
 
 static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
-	int i, j, k, sect, len;
+	size_t i, j, k, sect, len;
 	ut32 size_sects;
 	ut8 segcom[sizeof (struct MACH0_(segment_command))] = {0};
 	ut8 sec[sizeof (struct MACH0_(section))] = {0};
@@ -382,9 +330,9 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	bin->segs[j].flags = r_read_ble32 (&segcom[i], bin->big_endian);
 
 #if R_BIN_MACH064
-	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment64_%d.offset", j), off, 0);
+	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment64_%zu.offset", j), off, 0);
 #else
-	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment_%d.offset", j), off, 0);
+	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment_%zu.offset", j), off, 0);
 #endif
 
 	sdb_num_set (bin->kv, "mach0_segments.count", 0, 0);
@@ -445,11 +393,14 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 			memcpy (&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
 
-			sdb_num_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.offset", &bin->sects[k].segname, &bin->sects[k].sectname), offset, 0);
+			sdb_num_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.offset",
+						bin->sects[k].segname, bin->sects[k].sectname), offset, 0);
 #if R_BIN_MACH064
-			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format", &bin->sects[k].segname, &bin->sects[k].sectname), "mach0_section64", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format",
+						bin->sects[k].segname, bin->sects[k].sectname), "mach0_section64", 0);
 #else
-			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format", &bin->sects[k].segname, &bin->sects[k].sectname), "mach0_section", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_section_%.16s_%.16s.format",
+						bin->sects[k].segname, bin->sects[k].sectname), "mach0_section", 0);
 #endif
 
 #if R_BIN_MACH064
@@ -485,12 +436,12 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 	return true;
 }
 
-#define Error(x) errorMessage = x; goto error;
+#define Error(x) error_message = x; goto error;
 static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 	struct symtab_command st;
 	ut32 size_sym;
-	int i;
-	const char *errorMessage = "";
+	size_t i;
+	const char *error_message = "";
 	ut8 symt[sizeof (struct symtab_command)] = {0};
 	ut8 nlst[sizeof (struct MACH0_(nlist))] = {0};
 	const bool be = mo->big_endian;
@@ -559,12 +510,12 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 error:
 	R_FREE (mo->symstr);
 	R_FREE (mo->symtab);
-	Eprintf ("%s\n", errorMessage);
+	Eprintf ("%s\n", error_message);
 	return false;
 }
 
-static int parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
-	int len, i;
+static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
+	size_t len, i;
 	ut32 size_tab;
 	ut8 dysym[sizeof (struct dysymtab_command)] = {0};
 	ut8 dytoc[sizeof (struct dylib_table_of_contents)] = {0};
@@ -1067,8 +1018,8 @@ static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64
 			if (ptr_thread + sizeof (struct x86_thread_state32) > bin->size) {
 				return false;
 			}
-			if ((len = r_buf_fread_at (bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.x86_32, "16i", 1)) == -1) {
+			if (r_buf_fread_at (bin->b, ptr_thread,
+				(ut8*)&bin->thread_state.x86_32, "16i", 1) == -1) {
 				bprintf ("Error: read (thread state x86_32)\n");
 				return false;
 			}
@@ -1081,8 +1032,8 @@ static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64
 			if (ptr_thread + sizeof (struct x86_thread_state64) > bin->size) {
 				return false;
 			}
-			if ((len = r_buf_fread_at (bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.x86_64, "32l", 1)) == -1) {
+			if (r_buf_fread_at (bin->b, ptr_thread,
+				(ut8*)&bin->thread_state.x86_64, "32l", 1) == -1) {
 				bprintf ("Error: read (thread state x86_64)\n");
 				return false;
 			}
@@ -1100,8 +1051,8 @@ static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64
 			if (ptr_thread + sizeof (struct ppc_thread_state32) > bin->size) {
 				return false;
 			}
-			if ((len = r_buf_fread_at (bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.ppc_32, bin->big_endian?"40I":"40i", 1)) == -1) {
+			if (r_buf_fread_at (bin->b, ptr_thread,
+				(ut8*)&bin->thread_state.ppc_32, bin->big_endian ? "40I" : "40i", 1) == -1) {
 				bprintf ("Error: read (thread state ppc_32)\n");
 				return false;
 			}
@@ -1113,8 +1064,8 @@ static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64
 			if (ptr_thread + sizeof (struct ppc_thread_state64) > bin->size) {
 				return false;
 			}
-			if ((len = r_buf_fread_at (bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.ppc_64, bin->big_endian?"34LI3LI":"34li3li", 1)) == -1) {
+			if (r_buf_fread_at (bin->b, ptr_thread,
+				(ut8*)&bin->thread_state.ppc_64, bin->big_endian ? "34LI3LI" : "34li3li", 1) == -1) {
 				bprintf ("Error: read (thread state ppc_64)\n");
 				return false;
 			}
@@ -1128,8 +1079,8 @@ static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64
 		if (ptr_thread + sizeof (struct arm_thread_state32) > bin->size) {
 			return false;
 		}
-		if ((len = r_buf_fread_at (bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.arm_32, bin->big_endian?"17I":"17i", 1)) == -1) {
+		if (r_buf_fread_at (bin->b, ptr_thread,
+			(ut8*)&bin->thread_state.arm_32, bin->big_endian ? "17I" : "17i", 1) == -1) {
 			bprintf ("Error: read (thread state arm)\n");
 			return false;
 		}
@@ -1142,8 +1093,8 @@ static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64
 		if (ptr_thread + sizeof (struct arm_thread_state64) > bin->size) {
 			return false;
 		}
-		if ((len = r_buf_fread_at(bin->b, ptr_thread,
-				(ut8*)&bin->thread_state.arm_64, bin->big_endian?"34LI1I":"34Li1i", 1)) == -1) {
+		if (r_buf_fread_at (bin->b, ptr_thread,
+			(ut8*)&bin->thread_state.arm_64, bin->big_endian ? "34LI1I" : "34Li1i", 1) == -1) {
 			bprintf ("Error: read (thread state arm)\n");
 			return false;
 		}
@@ -1268,7 +1219,7 @@ static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 
 	memset (bin->libs[lib], 0, R_BIN_MACH0_STRING_LENGTH);
 	len = r_buf_read_at (bin->b, off + dl.dylib.name,
-		(ut8*)bin->libs[lib], R_BIN_MACH0_STRING_LENGTH);
+		(ut8*)bin->libs[lib], R_BIN_MACH0_STRING_LENGTH - 1);
 	bin->libs[lib][R_BIN_MACH0_STRING_LENGTH - 1] = 0;
 	if (len < 1) {
 		bprintf ("Error: read (dylib str)");
@@ -1519,6 +1470,215 @@ static const char *build_version_tool_to_string(ut32 tool) {
 	default:
 		return "unknown";
 	}
+}
+
+static size_t get_word_size(struct MACH0_(obj_t) *bin) {
+	const size_t word_size = MACH0_(get_bits)(bin) / 8;
+	return R_MAX (word_size, 4);
+}
+
+static bool parse_chained_fixups(struct MACH0_(obj_t) *bin, ut32 offset, ut32 size) {
+	struct dyld_chained_fixups_header header;
+	if (size < sizeof (header)) {
+		return false;
+	}
+	if (r_buf_fread_at (bin->b, offset, (ut8 *)&header, "7i", 1) != sizeof (header)) {
+		return false;
+	}
+	if (header.fixups_version > 0) {
+		eprintf ("Unsupported fixups version: %u\n", header.fixups_version);
+		return false;
+	}
+	ut64 starts_at = offset + header.starts_offset;
+	if (header.starts_offset > size) {
+		return false;
+	}
+	ut32 segs_count;
+	if ((segs_count = r_buf_read_le32_at (bin->b, starts_at)) == UT32_MAX) {
+		return false;
+	}
+	bin->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, segs_count);
+	if (!bin->chained_starts) {
+		return false;
+	}
+	size_t i;
+	ut64 cursor = starts_at + sizeof (ut32);
+	for (i = 0; i < segs_count; i++) {
+		ut32 seg_off;
+		if ((seg_off = r_buf_read_le32_at (bin->b, cursor)) == UT32_MAX || !seg_off) {
+			cursor += sizeof (ut32);
+			continue;
+		}
+		if (i >= bin->nsegs) {
+			break;
+		}
+		struct r_dyld_chained_starts_in_segment *cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
+		if (!cur_seg) {
+			return false;
+		}
+		bin->chained_starts[i] = cur_seg;
+		if (r_buf_fread_at (bin->b, starts_at + seg_off, (ut8 *)cur_seg, "isslis", 1) != 22) {
+			return false;
+		}
+		if (cur_seg->page_count > 0) {
+			ut16 *page_start = malloc (sizeof (ut16) * cur_seg->page_count);
+			if (!page_start) {
+				return false;
+			}
+			if (r_buf_fread_at (bin->b, starts_at + seg_off + 22, (ut8 *)page_start, "s", cur_seg->page_count)
+					!= cur_seg->page_count * 2) {
+				return false;
+			}
+			cur_seg->page_start = page_start;
+		}
+		cursor += sizeof (ut32);
+	}
+	/* TODO: handle also imports, symbols and multiple starts (32-bit only) */
+	return true;
+}
+
+static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
+	if (!bin->dyld_info) {
+		return false;
+	}
+	if (!bin->nsegs) {
+		return false;
+	}
+	bin->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, bin->nsegs);
+	if (!bin->chained_starts) {
+		return false;
+	}
+	size_t wordsize = get_word_size (bin);
+	ut8 *p = NULL;
+	size_t j, count, skip, bind_size;
+	int seg_idx = 0;
+	ut64 seg_off = 0;
+	bind_size = bin->dyld_info->bind_size;
+	if (!bind_size || bind_size < 1) {
+		return false;
+	}
+	if (bin->dyld_info->bind_off > bin->size) {
+		return false;
+	}
+	if (bin->dyld_info->bind_off + bind_size > bin->size) {
+		return false;
+	}
+	ut8 *opcodes = calloc (1, bind_size + 1);
+	if (!opcodes) {
+		return false;
+	}
+	if (r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size) != bind_size) {
+		bprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", (ut64)(size_t)bin->dyld_info->bind_off);
+		R_FREE (opcodes);
+		return false;
+	}
+	struct r_dyld_chained_starts_in_segment *cur_seg = NULL;
+	size_t cur_seg_idx = 0;
+	ut8 *end;
+	bool done = false;
+	for (p = opcodes, end = opcodes + bind_size; !done && p < end;) {
+		ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
+		p++;
+		switch (op) {
+		case BIND_OPCODE_DONE:
+			done = true;
+			break;
+		case BIND_OPCODE_THREADED: {
+			switch (imm) {
+			case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
+				read_uleb128 (&p, end);
+				break;
+			}
+			case BIND_SUBOPCODE_THREADED_APPLY: {
+				const size_t ps = 0x1000;
+				if (!cur_seg || cur_seg_idx != seg_idx) {
+					cur_seg_idx = seg_idx;
+					cur_seg = bin->chained_starts[seg_idx];
+					if (!cur_seg) {
+						cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
+						if (!cur_seg) {
+							break;
+						}
+						bin->chained_starts[seg_idx] = cur_seg;
+						cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
+						cur_seg->page_size = ps;
+						cur_seg->page_count = ((bin->segs[seg_idx].vmsize + (ps - 1)) & ~(ps - 1)) / ps;
+						if (cur_seg->page_count > 0) {
+							cur_seg->page_start = malloc (sizeof (ut16) * cur_seg->page_count);
+							if (!cur_seg->page_start) {
+								break;
+							}
+							memset (cur_seg->page_start, 0xff, sizeof (ut16) * cur_seg->page_count);
+						}
+					}
+				}
+				if (cur_seg) {
+					ut32 page_index = (ut32)(seg_off / ps);
+					size_t maxsize = cur_seg->page_count * sizeof (ut16);
+					if (page_index < maxsize) {
+						cur_seg->page_start[page_index] = seg_off & 0xfff;
+					}
+				}
+				break;
+			}
+			default:
+				bprintf ("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
+			}
+			break;
+		}
+		case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+		case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+		case BIND_OPCODE_SET_TYPE_IMM:
+			break;
+		case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+			read_uleb128 (&p, end);
+			break;
+		case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
+			while (*p++ && p < end) {
+				/* empty loop */
+			}
+			break;
+		case BIND_OPCODE_SET_ADDEND_SLEB:
+			r_sleb128 ((const ut8 **)&p, end);
+			break;
+		case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+			seg_idx = imm;
+			if (seg_idx >= bin->nsegs) {
+				bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
+					" has unexistent segment %d\n", seg_idx);
+				R_FREE (opcodes);
+				return false;
+			} else {
+				seg_off = read_uleb128 (&p, end);
+			}
+			break;
+		case BIND_OPCODE_ADD_ADDR_ULEB:
+			seg_off += read_uleb128 (&p, end);
+			break;
+		case BIND_OPCODE_DO_BIND:
+			break;
+		case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+			seg_off += read_uleb128 (&p, end) + wordsize;
+			break;
+		case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+			seg_off += (ut64)imm * (ut64)wordsize + wordsize;
+			break;
+		case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+			count = read_uleb128 (&p, end);
+			skip = read_uleb128 (&p, end);
+			for (j = 0; j < count; j++) {
+				seg_off += skip + wordsize;
+			}
+			break;
+		default:
+			bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
+			R_FREE (opcodes);
+			return false;
+		}
+	}
+	R_FREE (opcodes);
+
+	return true;
 }
 
 static int init_items(struct MACH0_(obj_t) *bin) {
@@ -1812,6 +1972,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			break;
 		}
 	}
+	bool has_chained_fixups = false;
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		len = r_buf_read_at (bin->b, off, loadc, sizeof (struct load_command));
@@ -1849,10 +2010,11 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				if (db) {
 					r_buf_read_at (bin->b, dataoff, db, datasize);
 					// TODO table of non-instructions regions in __text
-					for (i = 0; i < datasize; i += 8) {
-						ut32 dw = r_read_ble32 (db + i, bin->big_endian);
+					int j;
+					for (j = 0; j < datasize; j += 8) {
+						ut32 dw = r_read_ble32 (db + j, bin->big_endian);
 						// int kind = r_read_ble16 (db + i + 4 + 2, bin->big_endian);
-						int len = r_read_ble16 (db + i + 4, bin->big_endian);
+						int len = r_read_ble16 (db + j + 4, bin->big_endian);
 						ut64 va = offset_to_vaddr(bin, dw);
 					//	eprintf ("# 0x%d -> 0x%x\n", dw, va);
 					//	eprintf ("0x%x kind %d len %d\n", dw, kind, len);
@@ -1861,14 +2023,42 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				}
 			}
 			break;
+		case LC_DYLD_EXPORTS_TRIE:
+			if (bin->verbose) {
+				ut8 buf[8];
+				r_buf_read_at (bin->b, off + 8, buf, sizeof (buf));
+				ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
+				ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+				eprintf ("exports trie at 0x%x size %d\n", dataoff, datasize);
+			}
+			break;
+		case LC_DYLD_CHAINED_FIXUPS: {
+				ut8 buf[8];
+				if (r_buf_read_at (bin->b, off + 8, buf, sizeof (buf)) == sizeof (buf)) {
+					ut32 dataoff = r_read_ble32 (buf, bin->big_endian);
+					ut32 datasize= r_read_ble32 (buf + 4, bin->big_endian);
+					if (bin->verbose) {
+						eprintf ("chained fixups at 0x%x size %d\n", dataoff, datasize);
+					}
+					has_chained_fixups = parse_chained_fixups (bin, dataoff, datasize);
+				}
+			}
+			break;
 		}
+	}
+
+	if (!has_chained_fixups && bin->hdr.cputype == CPU_TYPE_ARM64 &&
+		(bin->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
+		if (bin->verbose) {
+			eprintf ("reconstructing chained fixups\n");
+		}
+		reconstruct_chained_fixup (bin);
 	}
 	return true;
 }
 
 static bool init(struct MACH0_(obj_t) *mo) {
 	if (!init_hdr (mo)) {
-		Eprintf ("Warning: File is not MACH0\n");
 		return false;
 	}
 	if (!init_items (mo)) {
@@ -1882,7 +2072,14 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	if (!mo) {
 		return NULL;
 	}
-	free (mo->symbols);
+
+	size_t i;
+	if (mo->symbols) {
+		for (i = 0; !mo->symbols[i].last; i++) {
+			free (mo->symbols[i].name);
+		}
+		free (mo->symbols);
+	}
 	free (mo->segs);
 	free (mo->sects);
 	free (mo->symtab);
@@ -1900,22 +2097,24 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->signature);
 	free (mo->intrp);
 	free (mo->compiler);
+	if (mo->chained_starts) {
+		for (i = 0; i < mo->nsegs; i++) {
+			if (mo->chained_starts[i]) {
+				free (mo->chained_starts[i]->page_start);
+				free (mo->chained_starts[i]);
+			}
+		}
+		free (mo->chained_starts);
+	}
 	r_buf_free (mo->b);
 	free (mo);
 	return NULL;
 }
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
-	if (!options) {
-		return;
-	}
-
+	r_return_if_fail (options && bf && bf->rbin);
 	options->header_at = 0;
-	if (bf && bf->rbin) {
-		options->verbose = bf->rbin->verbose;
-	} else {
-		options->verbose = false;
-	}
+	options->verbose = bf->rbin->verbose;
 }
 
 static void *duplicate_ptr(void *p) {
@@ -1927,6 +2126,7 @@ static void free_only_key(HtPPKv *kv) {
 }
 
 static size_t ptr_size(void *c) {
+	// :D
 	return 8;
 }
 
@@ -2016,10 +2216,8 @@ static bool __isDataSection(RBinSection *sect) {
 
 RList *MACH0_(get_segments)(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
-
 	RList *list = r_list_newf ((RListFree)r_bin_section_free);
-
-	int i, j;
+	size_t i, j;
 
 	/* for core files */
 	if (bin->nsegs > 0) {
@@ -2071,7 +2269,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 				}
 			}
 			char *section_name = r_str_ndup (bin->sects[i].sectname, 16);
-			char *segment_name = r_str_newf ("%d.%s", i, bin->segs[segment_index].segname);
+			char *segment_name = r_str_newf ("%zu.%s", i, bin->segs[segment_index].segname);
 			s->name = r_str_newf ("%s.%s", segment_name, section_name);
 			s->is_data = __isDataSection (s);
 			if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
@@ -2092,13 +2290,11 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 
 // XXX this function is called so many times
 struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
+	r_return_val_if_fail (bin, NULL);
 	struct section_t *sections;
-	char segname[32], sectname[32], raw_segname[17];
-	int i, j, to;
+	char sectname[64], raw_segname[17];
+	size_t i, j, to;
 
-	if (!bin) {
-		return NULL;
-	}
 	/* for core files */
 	if (bin->nsects < 1 && bin->nsegs > 0) {
 		struct MACH0_(segment_command) *seg;
@@ -2143,11 +2339,7 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 		sections[i].flags = bin->sects[i].flags;
 		r_str_ncpy (sectname, bin->sects[i].sectname, 17);
 		r_str_filter (sectname, -1);
-		// hack to support multiple sections with same name
-		// snprintf (segname, sizeof (segname), "%d", i); // wtf
-		memcpy (raw_segname, bin->sects[i].segname, 16);
-		raw_segname[16] = 0;
-		snprintf (segname, sizeof (segname), "%d.%s", i, raw_segname);
+		r_str_ncpy (raw_segname, bin->sects[i].segname, 16);
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
@@ -2155,11 +2347,8 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 				break;
 			}
 		}
-		// XXX: if two sections have the same name are merged :O
-		// XXX: append section index in flag name maybe?
-		// XXX: do not load out of bound sections?
-		// XXX: load segments instead of sections? what about PAGEZERO and ...
-		snprintf (sections[i].name, sizeof (sections[i].name), "%s.%s", segname, sectname);
+		snprintf (sections[i].name, sizeof (sections[i].name),
+			"%d.%s.%s", (int)i, raw_segname, sectname);
 		sections[i].last = 0;
 	}
 	sections[i].last = 1;
@@ -2167,14 +2356,14 @@ struct section_t *MACH0_(get_sections)(struct MACH0_(obj_t) *bin) {
 }
 
 static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol, int idx) {
-	int i, j, nsyms, stridx;
+	size_t i, j, nsyms, stridx;
 	const char *symstr;
 	if (idx < 0) {
 		return false;
 	}
 	symbol->offset = 0LL;
 	symbol->addr = 0LL;
-	symbol->name[0] = '\0';
+	symbol->name = NULL;
 	symbol->is_imported = true;
 
 	if (!bin || !bin->sects) {
@@ -2217,7 +2406,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 				symbol->addr = bin->sects[i].addr + delta;
 				symbol->size = 0;
 				stridx = bin->symtab[idx].n_strx;
-				if (stridx >= 0 && stridx < bin->symstrlen) {
+				if (stridx < bin->symstrlen) {
 					symstr = (char *)bin->symstr + stridx;
 				} else {
 					symstr = "???";
@@ -2226,7 +2415,7 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 				if (*symstr == '_') {
 					symstr++;
 				}
-				snprintf (symbol->name, R_BIN_MACH0_STRING_LENGTH, "%s", symstr);
+				symbol->name = strdup (symstr);
 				return true;
 			}
 		}
@@ -2235,19 +2424,21 @@ static bool parse_import_stub(struct MACH0_(obj_t) *bin, struct symbol_t *symbol
 }
 
 static int inSymtab(HtPP *hash, const char *name, ut64 addr) {
-	bool found;
-	const char *key = sdb_fmt ("%s.%"PFMT64x, name, addr);
+	bool found = false;
+	char *key = r_str_newf ("%"PFMT64x".%s", addr, name);
 	ht_pp_find (hash, key, &found);
 	if (found) {
+		free (key);
 		return true;
 	}
 	ht_pp_insert (hash, key, "1");
+	free (key);
 	return false;
 }
 
 static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
-	int i = 0;
-	if (stridx >= mo->symstrlen) {
+	size_t i = 0;
+	if (!mo->symstr || stridx >= mo->symstrlen) {
 		return NULL;
 	}
 	int len = mo->symstrlen - stridx;
@@ -2269,14 +2460,13 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 }
 
 static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void * ctx) {
-#define ULEB(at) read_uleb128 (&ur, end)
 	r_return_val_if_fail (bin, 0);
 	if (!bin->dyld_info) {
 		return 0;
 	}
 
-	int count = 0;
-	ulebr ur = {NULL};
+	size_t count = 0;
+	ut8 *p = NULL;
 	ut8 * trie = NULL;
 	RList * states = NULL;
 	ut64 size = bin->dyld_info->export_size;
@@ -2309,31 +2499,31 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 
 	do {
 		RTrieState * state = r_list_get_top (states);
-		ur.p = state->node;
-		ut64 len = ULEB();
+		p = state->node;
+		ut64 len = read_uleb128 (&p, end);
 		if (len == UT64_MAX) {
 			break;
 		}
 		if (len) {
-			ut64 flags = ULEB();
-		if (flags == UT64_MAX) {
-			break;
-		}
-			ut64 offset = ULEB();
-		if (offset == UT64_MAX) {
-			break;
-		}
+			ut64 flags = read_uleb128 (&p, end);
+			if (flags == UT64_MAX) {
+				break;
+			}
+			ut64 offset = read_uleb128 (&p, end);
+			if (offset == UT64_MAX) {
+				break;
+			}
 			ut64 resolver = 0;
 			bool isReexport = flags & EXPORT_SYMBOL_FLAGS_REEXPORT;
 			bool hasResolver = flags & EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER;
 			if (hasResolver) {
-				ut64 res = ULEB();
+				ut64 res = read_uleb128 (&p, end);
 				if (res == UT64_MAX) {
 					break;
 				}
 				resolver = res + bin->header_at;
 			} else if (isReexport) {
-				ur.p += strlen ((char*) ur.p) + 1;
+				p += strlen ((char*) p) + 1;
 				// TODO: handle this
 			}
 			if (!isReexport) {
@@ -2370,31 +2560,31 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 				count++;
 			}
 		}
-		ut64 child_count = ULEB();
+		ut64 child_count = read_uleb128 (&p, end);
 		if (child_count == UT64_MAX) {
 			goto beach;
 		}
 		if (state->i == child_count) {
-			r_list_pop (states);
+			free (r_list_pop (states));
 			continue;
 		}
 		if (!state->next_child) {
-			state->next_child = ur.p;
+			state->next_child = p;
 		} else {
-			ur.p = state->next_child;
+			p = state->next_child;
 		}
 		RTrieState * next = R_NEW0 (RTrieState);
 		if (!next) {
 			goto beach;
 		}
-		next->label = (char *) ur.p;
-		ur.p += strlen (next->label) + 1;
-		if (ur.p >= end) {
+		next->label = (char *) p;
+		p += strlen (next->label) + 1;
+		if (p >= end) {
 			eprintf ("malformed export trie\n");
 			R_FREE (next);
 			goto beach;
 		}
-		ut64 tr = ULEB();
+		ut64 tr = read_uleb128 (&p, end);
 		if (tr == UT64_MAX) {
 			goto beach;
 		}
@@ -2418,10 +2608,9 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		}
 		next->i = 0;
 		state->i++;
-		state->next_child = ur.p;
+		state->next_child = p;
 		r_list_push (states, next);
 	} while (r_list_length (states));
-#undef ULEB
 
 beach:
 	r_list_free (states);
@@ -2447,8 +2636,9 @@ static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 
 const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	static RList * cache = NULL; // XXX DONT COMMIT WITH THIS
 	struct symbol_t *symbols;
-	int j, s, stridx, symbols_size, symbols_count;
-	ut32 to, from, i;
+	size_t j, s, symbols_size, symbols_count;
+	ut32 to, from;
+	size_t i;
 
 	r_return_val_if_fail (bin, NULL);
 	if (cache) {
@@ -2489,6 +2679,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	}
 	j = 0; // symbol_idx
 	bin->main_addr = 0;
+	int bits = MACH0_(get_bits_from_hdr) (&bin->hdr);
 	for (s = 0; s < 2; s++) {
 		switch (s) {
 		case 0:
@@ -2523,6 +2714,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			sym->vaddr = bin->symtab[i].n_value;
 			sym->paddr = addr_to_offset (bin, sym->vaddr);
 			symbols[j].size = 0; /* TODO: Is it anywhere? */
+			sym->bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
 
 			if (bin->symtab[i].n_type & N_EXT) {
 				sym->type = "EXT";
@@ -2546,7 +2738,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 					}
 				}
 			} else {
-				sym->name = r_str_newf ("unk%d", i);
+				sym->name = r_str_newf ("unk%zu", i);
 			}
 			if (!inSymtab (hash, sym->name, sym->vaddr)) {
 				r_list_append (list, sym);
@@ -2565,9 +2757,9 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			sym->vaddr = symbol.addr;
 			sym->paddr = symbol.offset;
-			sym->name = strdup (symbol.name);
+			sym->name = symbol.name;
 			if (!sym->name) {
-				sym->name = r_str_newf ("unk%d", i);
+				sym->name = r_str_newf ("unk%zu", i);
 			}
 			sym->is_imported = symbol.is_imported;
 			r_list_append (list, sym);
@@ -2576,7 +2768,6 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 
 	for (i = 0; i < bin->nsymtab; i++) {
 		struct MACH0_(nlist) *st = &bin->symtab[i];
-		stridx = st->n_strx;
 		// 0 is for imports
 		// 1 is for symbols
 		// 2 is for func.eh (exception handlers?)
@@ -2592,7 +2783,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			} else {
 				sym->type = "LOCAL";
 			}
-			char *sym_name = get_name (bin, stridx, false);
+			char *sym_name = get_name (bin, st->n_strx, false);
 			if (sym_name) {
 				sym->name = sym_name;
 				if (inSymtab (hash, sym->name, sym->vaddr)) {
@@ -2610,7 +2801,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 					}
 				}
 			} else {
-				sym->name = r_str_newf ("unk%d", i);
+				sym->name = r_str_newf ("unk%zu", i);
 			}
 			r_list_append (list, sym);
 			j++;
@@ -2618,6 +2809,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	}
 	ht_pp_free (hash);
 	// bin->symbols = symbols;
+    free (symbols);
 	return list;
 }
 
@@ -2632,7 +2824,7 @@ static void assign_export_symbol_t(struct MACH0_(obj_t) *bin, const char *name, 
 		}
 		sym_ctx->symbols[j].size = 0;
 		sym_ctx->symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-		r_str_ncpy (sym_ctx->symbols[j].name, name, R_BIN_MACH0_STRING_LENGTH);
+		sym_ctx->symbols[j].name = strdup (name);
 		sym_ctx->j++;
 	}
 }
@@ -2657,6 +2849,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 	symbols_count = n_exports;
 	j = 0; // symbol_idx
 
+	int bits = MACH0_(get_bits_from_hdr) (&bin->hdr);
 	if (bin->symtab && bin->symstr) {
 		/* parse dynamic symbol table */
 		symbols_count = (bin->dysymtab.nextdefsym + \
@@ -2712,23 +2905,17 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				symbols[j].offset = addr_to_offset (bin, bin->symtab[i].n_value);
 				symbols[j].addr = bin->symtab[i].n_value;
 				symbols[j].size = 0; /* TODO: Is it anywhere? */
+				symbols[j].bits = bin->symtab[i].n_desc & N_ARM_THUMB_DEF ? 16 : bits;
 				symbols[j].is_imported = false;
-				if (bin->symtab[i].n_type & N_EXT) {
-					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-				} else {
-					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-				}
-
+				symbols[j].type = (bin->symtab[i].n_type & N_EXT)
+					? R_BIN_MACH0_SYMBOL_TYPE_EXT
+					: R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 				stridx = bin->symtab[i].n_strx;
-				char *sym_name = get_name (bin, stridx, false);
-				if (sym_name) {
-					r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
-					free (sym_name);
-				}
-				symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
-				symbols[j].last = 0;
-				if (bin->main_addr == 0) {
-					const char *name = symbols[j].name;
+				symbols[j].name = get_name (bin, stridx, false);
+				symbols[j].last = false;
+
+				const char *name = symbols[j].name;
+				if (bin->main_addr == 0 && name) {
 					if (!strcmp (name, "__Dmain")) {
 						bin->main_addr = symbols[j].addr;
 					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
@@ -2740,7 +2927,8 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 					}
 				}
 				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-					symbols[j].name[0] = 0;
+					free (symbols[j].name);
+					symbols[j].name = NULL;
 					j--;
 				}
 			}
@@ -2752,50 +2940,48 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				break;
 			}
 			if (parse_import_stub (bin, &symbols[j], i)) {
-				symbols[j++].last = 0;
+				symbols[j++].last = false;
 			}
 		}
 
 		for (i = 0; i < bin->nsymtab; i++) {
 			struct MACH0_(nlist) *st = &bin->symtab[i];
-			stridx = st->n_strx;
+			if (st->n_type & N_STAB) {
+				continue;
+			}
 			// 0 is for imports
 			// 1 is for symbols
 			// 2 is for func.eh (exception handlers?)
 			int section = st->n_sect;
-			if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
-			//if (j < symbols_count) { // text ??st->n_type == 1)
+			if (section == 1 && j < symbols_count) {
+				// check if symbol exists already
 				/* is symbol */
 				symbols[j].addr = st->n_value;
 				symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
 				symbols[j].size = 0; /* find next symbol and crop */
-				if (st->n_type & N_EXT) {
-					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_EXT;
-				} else {
-					symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-				}
-				char *sym_name = get_name (bin, stridx, false);
+				symbols[j].type = (st->n_type & N_EXT)
+					? R_BIN_MACH0_SYMBOL_TYPE_EXT
+					: R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
+				char *sym_name = get_name (bin, st->n_strx, false);
 				if (sym_name) {
-					r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
-					free (sym_name);
+					symbols[j].name = sym_name;
 				} else {
-					sprintf (symbols[j].name, "entry%d\n", i);
-					//symbols[j].name[0] = 0;
+					symbols[j].name = r_str_newf ("entry%d", i);
 				}
-				symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
 				symbols[j].last = 0;
 				if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
-					symbols[j].name[0] = 0;
+					R_FREE (symbols[j].name);
 				} else {
 					j++;
 				}
-				if (bin->main_addr == 0) {
-					const char *name = symbols[j-1].name;
-					if (!strcmp (name, "__Dmain")) {
+
+				const char *name = symbols[i].name;
+				if (bin->main_addr == 0 && name) {
+					if (name && !strcmp (name, "__Dmain")) {
 						bin->main_addr = symbols[i].addr;
-					} else if (strstr (name, "4main") && !strstr (name, "STATIC")) {
+					} else if (name && strstr (name, "4main") && !strstr (name, "STATIC")) {
 						bin->main_addr = symbols[i].addr;
-					} else if (!strcmp (symbols[i].name, "_main")) {
+					} else if (symbols[i].name && !strcmp (symbols[i].name, "_main")) {
 						bin->main_addr = symbols[i].addr;
 					}
 				}
@@ -2825,17 +3011,9 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 		j = sym_ctx.j;
 	}
 	ht_pp_free (hash);
-	symbols[j].last = 1;
+	symbols[j].last = true;
 	bin->symbols = symbols;
 	return symbols;
-}
-
-static size_t get_word_size(struct MACH0_(obj_t) *bin) {
-	size_t word_size = MACH0_(get_bits)(bin) / 8;
-	if (word_size < 4) {
-		return 4;
-	}
-	return word_size;
 }
 
 static int parse_import_ptr(struct MACH0_(obj_t) *bin, struct reloc_t *reloc, int idx) {
@@ -2911,7 +3089,7 @@ struct import_t *MACH0_(get_imports)(struct MACH0_(obj_t) *bin) {
 		stridx = bin->symtab[idx].n_strx;
 		char *imp_name = get_name (bin, stridx, false);
 		if (imp_name) {
-			r_str_ncpy (imports[j].name, imp_name, R_BIN_MACH0_STRING_LENGTH);
+			r_str_ncpy (imports[j].name, imp_name, R_BIN_MACH0_STRING_LENGTH - 1);
 			free (imp_name);
 		} else {
 			//imports[j].name[0] = 0;
@@ -2971,6 +3149,8 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs,
 
 		struct reloc_t *reloc = R_NEW0 (struct reloc_t);
 		if (!reloc) {
+			free (info);
+			free (sym_name);
 			return;
 		}
 
@@ -2983,21 +3163,22 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs,
 		reloc->size = a_info.r_length;
 		r_str_ncpy (reloc->name, sym_name, sizeof (reloc->name) - 1);
 		r_skiplist_insert (relocs, reloc);
+		free (sym_name);
 	}
+	free (info);
+}
+
+static bool is_valid_ordinal_table_size(ut64 size) {
+	return size > 0 && size <= UT16_MAX;
 }
 
 RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 	RSkipList *relocs = NULL;
-	ulebr ur = {NULL};
+	RPVector *threaded_binds = NULL;
 	size_t wordsize = get_word_size (bin);
 	if (bin->dyld_info) {
-		ut8 *opcodes,*end, type = 0, rel_type = 0;
-		int lib_ord, seg_idx = -1, sym_ord = -1;
-		char *sym_name = NULL;
-		size_t j, count, skip, bind_size, lazy_size, weak_size;
-		st64 addend = 0;
-		ut64 segmentAddress = 0LL;
-		ut64 addr = 0LL;
+		ut8 *opcodes, rel_type = 0;
+		size_t bind_size, lazy_size, weak_size;
 
 #define CASE(T) case ((T) / 8): rel_type = R_BIN_RELOC_ ## T; break
 		switch (wordsize) {
@@ -3012,7 +3193,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		lazy_size = bin->dyld_info->lazy_bind_size;
 		weak_size = bin->dyld_info->weak_bind_size;
 
-		if (!bind_size || !lazy_size) {
+		if (!bind_size && !lazy_size) {
 			return NULL;
 		}
 
@@ -3036,6 +3217,9 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		if (amount == 0 || amount > UT32_MAX) {
 			return NULL;
 		}
+		if (!bin->segs) {
+			return NULL;
+		}
 		relocs = r_skiplist_new ((RListFree) &free, (RListComparator) &reloc_comparator);
 		if (!relocs) {
 			return NULL;
@@ -3056,141 +3240,272 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			return NULL;
 		}
 
-		for (ur.p = opcodes, end = opcodes + amount ; ur.p < end; ) {
-			ut8 imm = *ur.p & BIND_IMMEDIATE_MASK, op = *ur.p & BIND_OPCODE_MASK;
-			++ur.p;
-			if (ur.p >= end) {
-				break;
-			}
-			switch (op) {
-#define ULEB() read_uleb128 (&ur,end)
-#define SLEB() read_sleb128 (&ur,end)
-			case BIND_OPCODE_DONE:
-				break;
-			case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
-				lib_ord = imm;
-				break;
-			case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
-				lib_ord = ULEB();
-				break;
-			case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
-				lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
-				break;
-			case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
-				sym_name = (char*)ur.p;
-				while (*ur.p++ && ur.p<end) {
-					/* empty loop */
+		size_t partition_sizes[] = {bind_size, lazy_size, weak_size};
+		size_t pidx;
+		int opcodes_offset = 0;
+		for (pidx = 0; pidx < R_ARRAY_SIZE (partition_sizes); pidx++) {
+			size_t partition_size = partition_sizes[pidx];
+
+			ut8 type = 0;
+			int lib_ord = 0, seg_idx = -1, sym_ord = -1;
+			char *sym_name = NULL;
+			size_t j, count, skip;
+			st64 addend = 0;
+			ut64 addr = bin->segs[0].vmaddr;
+			ut64 segment_end_addr = addr + bin->segs[0].vmsize;
+
+			ut8 *p = opcodes + opcodes_offset;
+			ut8 *end = p + partition_size;
+			bool done = false;
+			while (!done && p < end) {
+				ut8 imm = *p & BIND_IMMEDIATE_MASK;
+				ut8 op = *p & BIND_OPCODE_MASK;
+				p++;
+				switch (op) {
+				case BIND_OPCODE_DONE: {
+					bool in_lazy_binds = pidx == 1;
+					if (!in_lazy_binds) {
+						done = true;
+					}
+					break;
 				}
-				sym_ord = -1;
-				if (bin->symtab && bin->dysymtab.nundefsym < 0xffff) {
-					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
-						int stridx = 0;
-						int iundefsym = bin->dysymtab.iundefsym;
-						if (iundefsym >= 0 && iundefsym < bin->nsymtab) {
-							int sidx = iundefsym + j;
-							if (sidx < 0 || sidx >= bin->nsymtab) {
-								continue;
-							}
-							stridx = bin->symtab[sidx].n_strx;
-							if (stridx < 0 || stridx >= bin->symstrlen) {
-								continue;
-							}
-						}
-						if (!strcmp ((char *)bin->symstr + stridx, sym_name)) {
-							sym_ord = j;
+				case BIND_OPCODE_THREADED: {
+					switch (imm) {
+					case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
+						ut64 table_size = read_uleb128 (&p, end);
+						if (!is_valid_ordinal_table_size (table_size)) {
+							bprintf ("Error: BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB size is wrong\n");
 							break;
 						}
+						if (threaded_binds) {
+							r_pvector_free (threaded_binds);
+						}
+						threaded_binds = r_pvector_new_with_len ((RPVectorFree) &free, table_size);
+						if (threaded_binds) {
+							sym_ord = 0;
+						}
+						break;
 					}
+					case BIND_SUBOPCODE_THREADED_APPLY:
+						if (threaded_binds) {
+							int cur_seg_idx = (seg_idx != -1)? seg_idx: 0;
+							size_t n_threaded_binds = r_pvector_len (threaded_binds);
+							while (addr < segment_end_addr) {
+								ut8 tmp[8];
+								ut64 paddr = addr - bin->segs[cur_seg_idx].vmaddr + bin->segs[cur_seg_idx].fileoff;
+								bin->rebasing_buffer = true;
+								if (r_buf_read_at (bin->b, paddr, tmp, 8) != 8) {
+									break;
+								}
+								bin->rebasing_buffer = false;
+								ut64 raw_ptr = r_read_le64 (tmp);
+								bool is_auth = (raw_ptr & (1ULL << 63)) != 0;
+								bool is_bind = (raw_ptr & (1ULL << 62)) != 0;
+								int ordinal = -1;
+								int addend = -1;
+								ut64 delta;
+								if (is_auth && is_bind) {
+									struct dyld_chained_ptr_arm64e_auth_bind *p =
+											(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
+									delta = p->next;
+									ordinal = p->ordinal;
+								} else if (!is_auth && is_bind) {
+									struct dyld_chained_ptr_arm64e_bind *p =
+											(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
+									delta = p->next;
+									ordinal = p->ordinal;
+									addend = p->addend;
+								} else if (is_auth && !is_bind) {
+									struct dyld_chained_ptr_arm64e_auth_rebase *p =
+											(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
+									delta = p->next;
+								} else {
+									struct dyld_chained_ptr_arm64e_rebase *p =
+											(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
+									delta = p->next;
+								}
+								if (ordinal != -1) {
+									if (ordinal >= n_threaded_binds) {
+										bprintf ("Error: Malformed bind chain\n");
+										break;
+									}
+									struct reloc_t *ref = r_pvector_at (threaded_binds, ordinal);
+									if (!ref) {
+										bprintf ("Error: Inconsistent bind opcodes\n");
+										break;
+									}
+									struct reloc_t *reloc = R_NEW0 (struct reloc_t);
+									if (!reloc) {
+										break;
+									}
+									*reloc = *ref;
+									reloc->addr = addr;
+									reloc->offset = paddr;
+									if (addend != -1) {
+										reloc->addend = addend;
+									}
+									r_skiplist_insert (relocs, reloc);
+								}
+								addr += delta * wordsize;
+								if (!delta) {
+									break;
+								}
+							}
+						}
+						break;
+					default:
+						bprintf ("Error: Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x\n", imm);
+					}
+					break;
 				}
-				break;
-			}
-			case BIND_OPCODE_SET_TYPE_IMM:
-				type = imm;
-				break;
-			case BIND_OPCODE_SET_ADDEND_SLEB:
-				addend = SLEB();
-				break;
-			case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
-				seg_idx = imm;
-				if (seg_idx < 0 || seg_idx >= bin->nsegs) {
-					bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
-						" has unexistent segment %d\n", seg_idx);
-					R_FREE (opcodes);
-					r_skiplist_free (relocs);
-					return NULL; // early exit to avoid future mayhem
-				} else {
-					addr = bin->segs[seg_idx].vmaddr + ULEB();
-					segmentAddress = bin->segs[seg_idx].vmaddr \
+				case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+					lib_ord = imm;
+					break;
+				case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+					lib_ord = read_uleb128 (&p, end);
+					break;
+				case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+					lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
+					break;
+				case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
+					sym_name = (char*)p;
+					while (*p++ && p < end) {
+						/* empty loop */
+					}
+					if (threaded_binds) {
+						break;
+					}
+					sym_ord = -1;
+					if (bin->symtab && bin->dysymtab.nundefsym < UT16_MAX) {
+						for (j = 0; j < bin->dysymtab.nundefsym; j++) {
+							size_t stridx = 0;
+							bool found = false;
+							int iundefsym = bin->dysymtab.iundefsym;
+							if (iundefsym >= 0 && iundefsym < bin->nsymtab) {
+								int sidx = iundefsym + j;
+								if (sidx < 0 || sidx >= bin->nsymtab) {
+									continue;
+								}
+								stridx = bin->symtab[sidx].n_strx;
+								if (stridx >= bin->symstrlen) {
+									continue;
+								}
+								found = true;
+							}
+							if (found && !strcmp ((const char *)bin->symstr + stridx, sym_name)) {
+								sym_ord = j;
+								break;
+							}
+						}
+					}
+					break;
+				}
+				case BIND_OPCODE_SET_TYPE_IMM:
+					type = imm;
+					break;
+				case BIND_OPCODE_SET_ADDEND_SLEB:
+					addend = r_sleb128 ((const ut8 **)&p, end);
+					break;
+				case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+					seg_idx = imm;
+					if (seg_idx >= bin->nsegs) {
+						bprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB"
+							" has unexistent segment %d\n", seg_idx);
+						free (opcodes);
+						r_skiplist_free (relocs);
+						r_pvector_free (threaded_binds);
+						return NULL; // early exit to avoid future mayhem
+					}
+					addr = bin->segs[seg_idx].vmaddr + read_uleb128 (&p, end);
+					segment_end_addr = bin->segs[seg_idx].vmaddr \
 							+ bin->segs[seg_idx].vmsize;
-				}
-				break;
-			case BIND_OPCODE_ADD_ADDR_ULEB:
-				addr += ULEB();
-				break;
+					break;
+				case BIND_OPCODE_ADD_ADDR_ULEB:
+					addr += read_uleb128 (&p, end);
+					break;
 #define DO_BIND() do {\
-	if ((sym_ord < 0 && !sym_name) || seg_idx < 0 ) break;\
-	if (!addr) break;\
+	if (sym_ord < 0 && !sym_name) break;\
+	if (!threaded_binds) {\
+		if (seg_idx < 0 ) break;\
+		if (!addr) break;\
+	}\
 	struct reloc_t *reloc = R_NEW0 (struct reloc_t);\
 	reloc->addr = addr;\
-	reloc->offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
-	if (type == BIND_TYPE_TEXT_PCREL32)\
-		reloc->addend = addend - (bin->baddr + addr);\
-	else\
+	if (seg_idx >= 0) {\
+		reloc->offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
+		if (type == BIND_TYPE_TEXT_PCREL32)\
+			reloc->addend = addend - (bin->baddr + addr);\
+		else\
+			reloc->addend = addend;\
+	} else {\
 		reloc->addend = addend;\
+	}\
 	/* library ordinal ??? */ \
 	reloc->ord = lib_ord;\
 	reloc->ord = sym_ord;\
 	reloc->type = rel_type;\
 	if (sym_name)\
 		r_str_ncpy (reloc->name, sym_name, 256);\
-	r_skiplist_insert (relocs, reloc);\
+	if (threaded_binds)\
+		r_pvector_set (threaded_binds, sym_ord, reloc);\
+	else\
+		r_skiplist_insert (relocs, reloc);\
 } while (0)
-			case BIND_OPCODE_DO_BIND:
-				if (addr >= segmentAddress) {
-					bprintf ("Error: Malformed DO bind opcode\n");
-					goto beach;
-				}
-				DO_BIND ();
-				addr += wordsize;
-				break;
-			case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
-				if (addr >= segmentAddress) {
-					bprintf ("Error: Malformed ADDR ULEB bind opcode\n");
-					goto beach;
-				}
-				DO_BIND ();
-				addr += ULEB () + wordsize;
-				break;
-			case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
-				if (addr >= segmentAddress) {
-					bprintf ("Error: Malformed IMM SCALED bind opcode\n");
-					goto beach;
-				}
-				DO_BIND();
-				addr += (ut64)imm * (ut64)wordsize + wordsize;
-				break;
-			case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
-				count = ULEB();
-				skip = ULEB();
-				for (j = 0; j < count; j++) {
-					if (addr >= segmentAddress) {
-						bprintf ("Error: Malformed ULEB TIMES bind opcode\n");
+				case BIND_OPCODE_DO_BIND:
+					if (!threaded_binds && addr >= segment_end_addr) {
+						bprintf ("Error: Malformed DO bind opcode 0x%"PFMT64x"\n", addr);
 						goto beach;
 					}
 					DO_BIND ();
-					addr += skip + wordsize;
-				}
-				break;
+					if (!threaded_binds) {
+						addr += wordsize;
+					} else {
+						sym_ord++;
+					}
+					break;
+				case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+					if (addr >= segment_end_addr) {
+						bprintf ("Error: Malformed ADDR ULEB bind opcode\n");
+						goto beach;
+					}
+					DO_BIND ();
+					addr += read_uleb128 (&p, end) + wordsize;
+					break;
+				case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+					if (addr >= segment_end_addr) {
+						bprintf ("Error: Malformed IMM SCALED bind opcode\n");
+						goto beach;
+					}
+					DO_BIND ();
+					addr += (ut64)imm * (ut64)wordsize + wordsize;
+					break;
+				case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+					count = read_uleb128 (&p, end);
+					skip = read_uleb128 (&p, end);
+					for (j = 0; j < count; j++) {
+						if (addr >= segment_end_addr) {
+							bprintf ("Error: Malformed ULEB TIMES bind opcode\n");
+							goto beach;
+						}
+						DO_BIND ();
+						addr += skip + wordsize;
+					}
+					break;
 #undef DO_BIND
-#undef ULEB
-#undef SLEB
-			default:
-				bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *ur.p);
-				R_FREE (opcodes);
-				return relocs;
+				default:
+					bprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
+					R_FREE (opcodes);
+					r_pvector_free (threaded_binds);
+					return relocs;
+				}
 			}
+
+			opcodes_offset += partition_size;
 		}
+
 		R_FREE (opcodes);
+		r_pvector_free (threaded_binds);
+		threaded_binds = NULL;
 	}
 
 	if (bin->symtab && bin->symstr && bin->sects && bin->indirectsyms) {
@@ -3212,7 +3527,7 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			}
 			if (parse_import_ptr (bin, reloc, bin->dysymtab.iundefsym + j)) {
 				reloc->ord = j;
-				r_skiplist_insert (relocs, reloc);
+				r_skiplist_insert_autofree (relocs, reloc);
 			} else {
 				R_FREE (reloc);
 			}
@@ -3229,17 +3544,22 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 		parse_relocation_info (bin, relocs, bin->dysymtab.extreloff, bin->dysymtab.nextrel);
 	}
 beach:
+	r_pvector_free (threaded_binds);
 	return relocs;
 }
 
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 	r_return_val_if_fail (bin, NULL);
 
+	ut64 ea = entry_to_vaddr (bin);
+	if (ea == 0 || ea == UT64_MAX) {
+		return NULL;
+	}
 	struct addr_t *entry = R_NEW0 (struct addr_t);
 	if (!entry) {
 		return NULL;
 	}
-	entry->addr = entry_to_vaddr (bin);
+	entry->addr = ea;
 	entry->offset = addr_to_offset (bin, entry->addr);
 	entry->haddr = sdb_num_get (bin->kv, "mach0.entry.offset", 0);
 	sdb_num_set (bin->kv, "mach0.entry.vaddr", entry->addr, 0);
@@ -3286,8 +3606,7 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin) {
 	}
 	for (i = 0; i < bin->nlibs; i++) {
 		sdb_set (bin->kv, sdb_fmt ("libs.%d.name", i), bin->libs[i], 0);
-		strncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH);
-		libs[i].name[R_BIN_MACH0_STRING_LENGTH - 1] = '\0';
+		r_str_ncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH - 1);
 		libs[i].last = 0;
 	}
 	libs[i].last = 1;
@@ -3297,7 +3616,8 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin) {
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin) {
 	int i;
 
-	if (bin->hdr.filetype != MH_EXECUTE && bin->hdr.filetype != MH_DYLINKER) {
+	if (bin->hdr.filetype != MH_EXECUTE && bin->hdr.filetype != MH_DYLINKER &&
+			bin->hdr.filetype != MH_FILESET) {
 		return 0;
 	}
 	for (i = 0; i < bin->nsegs; i++) {
@@ -3604,6 +3924,8 @@ char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	case MH_BUNDLE:     mhtype = "Dynamically bound bundle file"; break;
 	case MH_DYLIB_STUB: mhtype = "Shared library stub for static linking (no sections)"; break;
 	case MH_DSYM:       mhtype = "Companion file with only debug sections"; break;
+	case MH_KEXT_BUNDLE: mhtype = "Kernel extension bundle file"; break;
+	case MH_FILESET:    mhtype = "Kernel cache file"; break;
 	}
 	return strdup (mhtype);
 }
@@ -3717,7 +4039,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 	}
 	for (n = 0; n < mh->ncmds; n++) {
 		READWORD ();
-		int lcType = word;
+		ut32 lcType = word;
 		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
 			cb_printf ("pf.%s @ 0x%08"PFMT64x"\n", pf_definition, pvaddr - 4);
@@ -3766,7 +4088,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 		}
 		case LC_MAIN:
 			{
-				ut8 data[64];
+				ut8 data[64] = {0};
 				r_buf_read_at (buf, addr, data, sizeof (data));
 #if R_BIN_MACH064
 				ut64 ep = r_read_ble64 (&data, false); //  bin->big_endian);
@@ -3785,11 +4107,11 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 #if 0
 			{
 			char *id = r_buf_get_string (buf, addr + 20);
-			cb_printf ("0x%08"PFMT64x"  id         0x%x\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  symooff    0x%x\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  nsyms      %d\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  stroff     0x%x\n", addr + 20, id? id: "");
-			cb_printf ("0x%08"PFMT64x"  strsize    0x%x\n", addr + 20, id? id: "");
+			cb_printf ("0x%08"PFMT64x"  id         0x%x\n", addr + 20, r_str_get (id));
+			cb_printf ("0x%08"PFMT64x"  symooff    0x%x\n", addr + 20, r_str_get (id));
+			cb_printf ("0x%08"PFMT64x"  nsyms      %d\n", addr + 20, r_str_get (id));
+			cb_printf ("0x%08"PFMT64x"  stroff     0x%x\n", addr + 20, r_str_get (id));
+			cb_printf ("0x%08"PFMT64x"  strsize    0x%x\n", addr + 20, r_str_get (id));
 			free (id);
 			}
 #endif
@@ -3804,8 +4126,10 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 				pvaddr + 12, r_buf_read_le16_at (buf, addr + 14), r_buf_read8_at (buf, addr + 13),
 				r_buf_read8_at (buf, addr + 12));
 			cb_printf ("0x%08"PFMT64x"  id          %s\n",
-				pvaddr + str_off - 8, id? id: "");
-			free (id);
+				pvaddr + str_off - 8, r_str_get (id));
+			if (id) {
+				free (id);
+			}
 			break;
 		}
 		case LC_UUID:
@@ -3849,15 +4173,19 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 				pvaddr + 12, r_buf_read_le16_at (buf, addr + 14), r_buf_read8_at (buf, addr + 13),
 				r_buf_read8_at (buf, addr + 12));
 			cb_printf ("0x%08"PFMT64x"  load_dylib  %s\n",
-				pvaddr + str_off - 8, load_dylib? load_dylib: "");
-			free (load_dylib);
+				pvaddr + str_off - 8, r_str_get (load_dylib));
+			if (load_dylib) {
+				free (load_dylib);
+			}
 			break;
 		}
 		case LC_RPATH: {
 			char *rpath = r_buf_get_string (buf, addr + 4);
 			cb_printf ("0x%08" PFMT64x "  rpath       %s\n",
-				pvaddr + 4, rpath ? rpath : "");
-			free (rpath);
+				pvaddr + 4, r_str_get (rpath));
+			if (rpath) {
+				free (rpath);
+			}
 			break;
 		}
 		case LC_ENCRYPTION_INFO:
@@ -3953,15 +4281,13 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 		case LC_SEGMENT_64: {
 			ut32 nsects = r_buf_read_le32_at (buf, addr + (is64 ? 64 : 48));
 			ut64 off = is64 ? 72 : 56;
-			int j = 0;
-			while (off < lcSize && nsects--) {
-				if (is64) {
-					r_list_append (ret, r_bin_field_new (addr + off, addr + off, 1, sdb_fmt ("section_%d", j++), "mach0_section64", "mach0_section64", true));
-					off += 80;
-				} else {
-					r_list_append (ret, r_bin_field_new (addr + off, addr + off, 1, sdb_fmt ("section_%d", j++), "mach0_section", "mach0_section", true));
-					off += 68;
-				}
+			size_t i, j = 0;
+			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
+				const char *sname = is64? "mach0_section64": "mach0_section";
+				RBinField *f = r_bin_field_new (addr + off, addr + off, 1,
+					sdb_fmt ("section_%zu", j++), sname, sname, true);
+				r_list_append (ret, f);
+				off += is64? 80: 68;
 			}
 			break;
 		default:

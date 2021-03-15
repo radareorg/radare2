@@ -38,3 +38,29 @@ EXPECT=<<EOF
 C 0x44 add byte [rax], al
 EOF
 RUN
+
+NAME=axjstrencoding
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+aa
+e cfg.json.str = base64
+s sym.imp.wprintf
+axj~{[1].name}
+EOF
+EXPECT=<<EOF
+c2VjdGlvbi4uaW5pdCsxNg==
+EOF
+RUN
+
+NAME=axjnumencoding
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+aa
+e cfg.json.num = hex
+s sym.imp.wprintf
+axj~{[0].addr}
+EOF
+EXPECT=<<EOF
+0x600ff8
+EOF
+RUN

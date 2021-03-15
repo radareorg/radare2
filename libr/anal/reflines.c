@@ -16,11 +16,11 @@ typedef struct refline_end {
 } ReflineEnd;
 
 static int cmp_asc(const struct refline_end *a, const struct refline_end *b) {
-	return a->val > b->val;
+	return (a->val > b->val) - (a->val < b->val);
 }
 
 static int cmp_by_ref_lvl(const RAnalRefline *a, const RAnalRefline *b) {
-	return a->level < b->level;
+	return (a->level < b->level) - (a->level > b->level);
 }
 
 static ReflineEnd *refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
@@ -85,7 +85,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
 	ut8 *free_levels;
-	int res, sz = 0, count = 0;
+	int sz = 0, count = 0;
 	ut64 opc = addr;
 
 	memset (&op, 0, sizeof (op));
@@ -122,12 +122,32 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		}
 		addr += sz;
 		{
-			RAnalMetaItem *mi = r_meta_find_any_except (anal, addr, R_META_TYPE_COMMENT, 0);
-			if (mi) {
-				ptr += mi->size;
-				addr += mi->size;
-				r_meta_item_free (mi);
-				goto __next;
+			RPVector *metas = r_meta_get_all_at (anal, addr);
+			if (metas) {
+				void **it;
+				ut64 skip = 0;
+				r_pvector_foreach (metas, it) {
+					RIntervalNode *node = *it;
+					RAnalMetaItem *meta = node->data;
+					switch (meta->type) {
+					case R_META_TYPE_DATA:
+					case R_META_TYPE_STRING:
+					case R_META_TYPE_HIDE:
+					case R_META_TYPE_FORMAT:
+					case R_META_TYPE_MAGIC:
+						skip = r_meta_node_size (node);
+						goto do_skip;
+					default:
+						break;
+					}
+				}
+do_skip:
+				r_pvector_free (metas);
+				if (skip) {
+					ptr += skip;
+					addr += skip;
+					goto __next;
+				}
 			}
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {
@@ -139,7 +159,11 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 
 		// This can segfault if opcode length and buffer check fails
 		r_anal_op_fini (&op);
-		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		int rc = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		if (rc <= 0) {
+			sz = 1;
+			goto __next;
+		}
 		sz = op.size;
 		if (sz <= 0) {
 			sz = 1;
@@ -157,13 +181,13 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
-			if (!(res = add_refline (list, sten, addr, op.jump, &count))) {
+			if (!add_refline (list, sten, addr, op.jump, &count)) {
 				r_anal_op_fini (&op);
 				goto sten_err;
 			}
 			// add false branch in case its set and its not a call, useful for bf, maybe others
 			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
-				if (!(res = add_refline (list, sten, addr, op.fail, &count))) {
+				if (!add_refline (list, sten, addr, op.fail, &count)) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
@@ -182,7 +206,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 					goto __next;
 				}
-				if (!(res = add_refline (list, sten, op.switch_op->addr, caseop->jump, &count))) {
+				if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count)) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
@@ -342,7 +366,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		return NULL;
 	}
 	r_list_foreach (anal->reflines, iter, ref) {
-		if (core->cons && core->cons->context->breaked) {
+		if (cons->context && cons->context->breaked) {
 			r_list_free (lvls);
 			return NULL;
 		}
@@ -355,7 +379,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	r_buf_append_string (c, " ");
 	r_buf_append_string (b, " ");
 	r_list_foreach (lvls, iter, ref) {
-		if (core->cons && core->cons->context->breaked) {
+		if (cons->context && cons->context->breaked) {
 			r_list_free (lvls);
 			r_buf_free (b);
 			r_buf_free (c);

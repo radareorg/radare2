@@ -489,7 +489,7 @@ R_PACKED (
 struct windows_exception_record64 {
 	ut32 exception_code;
 	ut32 exception_flags;
-	struct windows_exception_record64 *exception_record;
+	ut64 exception_record;
 	ut64 exception_address;
 	ut32 number_parameters;
 	ut32 __unusedAlignment;

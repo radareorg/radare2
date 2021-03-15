@@ -152,13 +152,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=dbg.dbd+dbe
+NAME=dbg.dbd+dbe+dbj
 FILE=bins/elf/analysis/x64-loop
 ARGS=-d
 CMDS=<<EOF
 e scr.color=0
 db 0x400523
 db 0x40051a
+dbj
 dc
 dr PC
 dc
@@ -171,6 +172,7 @@ dc
 dr PC
 EOF
 EXPECT=<<EOF
+[{"addr":4195619,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":""},{"addr":4195610,"size":1,"perm":"--x","hw":false,"trace":false,"enabled":true,"valid":true,"data":"","cond":""}]
 0x00400523
 0x0040051a
 0x0040051a

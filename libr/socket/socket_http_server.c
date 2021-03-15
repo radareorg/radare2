@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2016 - pancake */
+/* radare - LGPL - Copyright 2012-2021 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
@@ -27,7 +27,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 		return NULL;
 	}
 	if (so->timeout > 0) {
-		r_socket_block_time (hr->s, 1, so->timeout, 0);
+		r_socket_block_time (hr->s, true, so->timeout, 0);
 	}
 	hr->auth = !so->httpauth;
 	for (;;) {
@@ -105,6 +105,11 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 	}
 	if (content_length>0) {
 		r_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte wtf
+		if (ST32_ADD_OVFCHK (content_length, 1)) {
+			r_socket_http_close (hr);
+			eprintf ("Could not allocate hr data\n");
+			return NULL;
+		}
 		hr->data = malloc (content_length+1);
 		hr->data_length = content_length;
 		r_socket_read_block (hr->s, hr->data, hr->data_length);
@@ -113,7 +118,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 	return hr;
 }
 
-R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
+R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
 	const char *strcode = \
 		code==200?"ok":
 		code==301?"Moved permanently":
@@ -182,8 +187,12 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 	return NULL;
 }
 
+R_API void r_socket_http_close(RSocketHTTPRequest *rs) {
+	r_socket_close (rs->s);
+}
+
 /* close client socket and free struct */
-R_API void r_socket_http_close (RSocketHTTPRequest *rs) {
+R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
 	r_socket_free (rs->s);
 	free (rs->path);
 	free (rs->host);
@@ -222,6 +231,7 @@ int main() {
 			r_socket_http_response (rs, 404, "Invalid protocol");
 		}
 		r_socket_http_close (rs);
+		r_socket_http_free (rs);
 	}
 }
 #endif

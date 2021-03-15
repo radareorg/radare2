@@ -105,7 +105,7 @@ EOF
 EXPECT=<<EOF
 0x00f003ec    3 35           sym._init
 0x00f00420    1 6            sym.imp.__cxa_finalize
-0x00f00430    1 6            loc.imp.__gmon_start
+0x00f00430    1 6            loc.imp.__gmon_start__
 0x00f00440    1 6            sym.imp.__libc_start_main
 0x00f00450    1 49           entry0
 0x00f00482    1 4            fcn.00f00482

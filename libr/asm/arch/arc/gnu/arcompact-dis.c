@@ -3580,7 +3580,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
     my_sprintf(state, state->operandBuffer, formatString, fieldB);
 
     break;
-    
+
   /* START ARC LOCAL */
   case 44:
       /* rtsc instruction */
@@ -3771,7 +3771,7 @@ _instName
 static void
 parse_disassembler_options (char *options)
 {
-  const char *p; 
+  const char *p;
   for (p = options; p != NULL; )
     {
 	  if (CONST_STRNEQ (p, "simd"))
@@ -3782,14 +3782,14 @@ parse_disassembler_options (char *options)
 	    {
 		  enable_insn_stream = 1;
 	    }
-	  
+
 	  p = strchr (p, ',');
 
 	  if (p != NULL) {
 		  p++;
 	  }
     }
-	
+
 }
 
 /* ARCompact_decodeInstr - Decode an ARCompact instruction returning the
@@ -3912,7 +3912,8 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
         {
           /* Branch instruction with 3 operands, Translation is required
              only for the third operand. Print the first 2 operands */
-          strncpy(buf, operand, sizeof (buf) - 1);
+          strncpy(buf, operand, sizeof (buf));
+          buf[sizeof (buf) - 1] = '\0';
           tmpBuffer = strtok(buf,"@");
           (*func) (stream, "%s", tmpBuffer);
           i = strlen(tmpBuffer) + 1;
@@ -3928,7 +3929,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
 
   /* We print max bytes for instruction */
   info->bytes_per_line = 8;
-  
+
   return bytes; //s.instructionLen;
 }
 
@@ -4027,6 +4028,6 @@ arc_print_disassembler_options (FILE *stream)
   fprintf (stream, "  insn-stream    Show the instruction byte stream from most\n");
   fprintf (stream, "                 significant byte to least significant byte (excluding LIMM).\n");
   fprintf (stream, "                 This option is useful for viewing the actual encoding of instructions.\n");
-  
+
   fprintf (stream, "  simd           Enable SIMD instructions disassembly.\n\n");
 }

@@ -176,7 +176,6 @@ ESIL specifies that the parsing control-flow commands are in uppercase. Bear in
 mind that some archs have uppercase register names. The register profile should
 take care to not reuse any of the following:
 
-	3,SKIP   - skip N instructions. used to make relative forward GOTOs
 	3,GOTO   - goto instruction 3
 	LOOP     - alias for 0,GOTO
 	BREAK    - stop evaluating the expression
@@ -189,7 +188,7 @@ Usage example:
 rep cmpsb
 ---------
 
-	cx,!,?{,BREAK,},esi,[1],edi,[1],^,!,?{,BREAK,},esi,++,edi,++,cx,--,LOOP
+	ecx,!,?{,BREAK,},edi,[1],esi,[1],==,$z,zf,:=,8,$b,cf,:=,$p,pf,:=,7,$s,sf,:=,edi,[1],0x80,-,!,7,$o,^,of,:=,3,$b,af,:=,df,?{,1,edi,-=,1,esi,-=,}{,1,edi,+=,1,esi,+=,},ecx,--=,zf,!,?{,BREAK,},0,GOTO
 
 
 Unimplemented/unhandled instructions

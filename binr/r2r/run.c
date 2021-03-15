@@ -2,12 +2,6 @@
 
 #include "r2r.h"
 
-#define NSEC_PER_SEC  1000000000
-#define NSEC_PER_MSEC 1000000
-#define USEC_PER_SEC  1000000
-#define NSEC_PER_USEC 1000
-#define USEC_PER_MSEC 1000
-
 #if __WINDOWS__
 struct r2r_subprocess_t {
 	HANDLE stdin_write;
@@ -187,7 +181,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 
 	PROCESS_INFORMATION proc_info = { 0 };
-	STARTUPINFO start_info = { 0 };
+	STARTUPINFOA start_info = { 0 };
 	start_info.cb = sizeof (start_info);
 	start_info.hStdError = stderr_write;
 	start_info.hStdOutput = stdout_write;
@@ -236,20 +230,6 @@ error:
 	goto beach;
 }
 
-static ut64 now_us() {
-	LARGE_INTEGER f;
-	if (!QueryPerformanceFrequency (&f)) {
-		return 0;
-	}
-	LARGE_INTEGER v;
-	if (!QueryPerformanceCounter (&v)) {
-		return 0;
-	}
-	v.QuadPart *= 1000000;
-	v.QuadPart /= f.QuadPart;
-	return v.QuadPart;
-}
-
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 	OVERLAPPED stdout_overlapped = { 0 };
 	stdout_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
@@ -265,7 +245,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 
 	ut64 timeout_us_abs = UT64_MAX;
 	if (timeout_ms != UT64_MAX) {
-		timeout_us_abs = now_us () + timeout_ms * USEC_PER_MSEC;
+		timeout_us_abs = r_time_now_mono () + timeout_ms * R_USEC_PER_MSEC;
 	}
 
 	ut8 stdout_buf[0x500];
@@ -307,11 +287,11 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		
 		DWORD timeout = INFINITE;
 		if (timeout_us_abs != UT64_MAX) {
-			ut64 now = now_us ();
+			ut64 now = r_time_now_mono ();
 			if (now >= timeout_us_abs) {
 				return false;
 			}
-			timeout = (DWORD)((timeout_us_abs - now) / USEC_PER_MSEC);
+			timeout = (DWORD)((timeout_us_abs - now) / R_USEC_PER_MSEC);
 		}
 		DWORD signaled = WaitForMultipleObjects (handles.len, handles.a, FALSE, timeout);
 		if (!stdout_eof && signaled == stdout_index) {
@@ -516,6 +496,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		memcpy (argv + 1, args, sizeof (char *) * args_size);
 	}
 	// done by calloc: argv[args_size + 1] = NULL;
+	r_th_lock_enter (subprocs_mutex);
 	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
 	if (!proc) {
 		goto error;
@@ -563,7 +544,6 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 	proc->stderr_fd = stderr_pipe[0];
 
-	r_th_lock_enter (subprocs_mutex);
 	proc->pid = r_sys_fork ();
 	if (proc->pid == -1) {
 		// fail
@@ -631,16 +611,14 @@ error:
 	if (stdin_pipe[1] == -1) {
 		close (stdin_pipe[1]);
 	}
+	r_th_lock_leave (subprocs_mutex);
 	return NULL;
 }
 
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
-	struct timespec timeout_abs;
+	ut64 timeout_abs;
 	if (timeout_ms != UT64_MAX) {
-		clock_gettime (CLOCK_MONOTONIC, &timeout_abs);
-		timeout_abs.tv_nsec += timeout_ms * NSEC_PER_MSEC;
-		timeout_abs.tv_sec += timeout_abs.tv_nsec / NSEC_PER_SEC;
-		timeout_abs.tv_nsec = timeout_abs.tv_nsec % NSEC_PER_SEC;
+		timeout_abs = r_time_now_mono () + timeout_ms * R_USEC_PER_MSEC;
 	}
 
 	int r = 0;
@@ -674,15 +652,13 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		struct timeval timeout_s;
 		struct timeval *timeout = NULL;
 		if (timeout_ms != UT64_MAX) {
-			struct timespec now;
-			clock_gettime (CLOCK_MONOTONIC, &now);
-			st64 usec_diff = ((st64)timeout_abs.tv_sec - now.tv_sec) * USEC_PER_SEC
-					+ ((st64)timeout_abs.tv_nsec - now.tv_nsec) / NSEC_PER_USEC;
-			if (usec_diff <= 0) {
+			ut64 now = r_time_now_mono ();
+			if (now >= timeout_abs) {
 				break;
 			}
-			timeout_s.tv_sec = usec_diff / USEC_PER_SEC;
-			timeout_s.tv_usec = usec_diff % USEC_PER_SEC;
+			ut64 usec_diff = timeout_abs - r_time_now_mono ();
+			timeout_s.tv_sec = usec_diff / R_USEC_PER_SEC;
+			timeout_s.tv_usec = usec_diff % R_USEC_PER_SEC;
 			timeout = &timeout_s;
 		}
 		r = select (nfds, &rfds, NULL, NULL, timeout);
@@ -786,13 +762,12 @@ R_API void r2r_process_output_free(R2RProcessOutput *out) {
 }
 
 static R2RProcessOutput *subprocess_runner(const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size, void *user) {
-	R2RRunConfig *config = user;
+	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
 	R2RSubprocess *proc = r2r_subprocess_start (file, args, args_size, envvars, envvals, env_size);
 	if (!proc) {
 		return NULL;
 	}
-	bool timeout = !r2r_subprocess_wait (proc, config->timeout_ms);
+	bool timeout = !r2r_subprocess_wait (proc, timeout_ms);
 	if (timeout) {
 		r2r_subprocess_kill (proc);
 	}
@@ -870,7 +845,7 @@ static char *convert_win_cmds(const char *cmds) {
 }
 #endif
 
-static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RList *files, RList *extra_args, bool load_plugins, R2RCmdRunner runner, void *user) {
+static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, const char *cmds, RList *files, RList *extra_args, bool load_plugins, R2RCmdRunner runner, void *user) {
 	RPVector args;
 	r_pvector_init (&args, NULL);
 	r_pvector_push (&args, "-escr.utf8=0");
@@ -910,7 +885,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 #else
 	size_t env_size = load_plugins ? 0 : 1;
 #endif
-	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size, user);
+	R2RProcessOutput *out = runner (config->r2_cmd, args.v.a, r_pvector_len (&args), envvars, envvals, env_size, timeout_ms, user);
 	r_pvector_clear (&args);
 #if __WINDOWS__
 	free (wcmds);
@@ -919,8 +894,8 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, const char *cmds, RLi
 }
 
 R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner, void *user) {
-	RList *extra_args = test->args.value ? r_str_split_duplist (test->args.value, " ") : NULL;
-	RList *files = r_str_split_duplist (test->file.value, "\n");
+	RList *extra_args = test->args.value ? r_str_split_duplist (test->args.value, " ", true) : NULL;
+	RList *files = r_str_split_duplist (test->file.value, "\n", true);
 	RListIter *it;
 	RListIter *tmpit;
 	char *token;
@@ -942,7 +917,8 @@ R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test,
 		}
 		r_list_push (files, "-");
 	}
-	R2RProcessOutput *out = run_r2_test (config, test->cmds.value, files, extra_args, test->load_plugins, runner, user);
+	ut64 timeout_ms = test->timeout.set? test->timeout.value * 1000: config->timeout_ms;
+	R2RProcessOutput *out = run_r2_test (config, timeout_ms, test->cmds.value, files, extra_args, test->load_plugins, runner, user);
 	r_list_free (extra_args);
 	r_list_free (files);
 	return out;
@@ -960,14 +936,23 @@ R_API bool r2r_check_cmd_test(R2RProcessOutput *out, R2RCmdTest *test) {
 	if (expect_err && strcmp (out->err, expect_err) != 0) {
 		return false;
 	}
+	const char *regexp_out = test->regexp_out.value;
+	if (regexp_out && !r_regex_match (regexp_out, "e", out->out)) {
+		return false;
+	}
+	const char *regexp_err = test->regexp_err.value;
+	if (regexp_err && !r_regex_match (regexp_err, "e", out->err)) {
+		return false;
+	}
 	return true;
 }
 
 #define JQ_CMD "jq"
 
 R_API bool r2r_check_jq_available(void) {
+	const char *args[] = {"."};
 	const char *invalid_json = "this is not json lol";
-	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, NULL, 0, NULL, NULL, 0);
+	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	if (proc) {
 		r2r_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));
 		r2r_subprocess_wait (proc, UT64_MAX);
@@ -976,7 +961,7 @@ R_API bool r2r_check_jq_available(void) {
 	r2r_subprocess_free (proc);
 
 	const char *valid_json = "{\"this is\":\"valid json\",\"lol\":true}";
-	proc = r2r_subprocess_start (JQ_CMD, NULL, 0, NULL, NULL, 0);
+	proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	if (proc) {
 		r2r_subprocess_stdin_write (proc, (const ut8 *)valid_json, strlen (valid_json));
 		r2r_subprocess_wait (proc, UT64_MAX);
@@ -990,7 +975,7 @@ R_API bool r2r_check_jq_available(void) {
 R_API R2RProcessOutput *r2r_run_json_test(R2RRunConfig *config, R2RJsonTest *test, R2RCmdRunner runner, void *user) {
 	RList *files = r_list_new ();
 	r_list_push (files, (void *)config->json_test_file);
-	R2RProcessOutput *ret = run_r2_test (config, test->cmd, files, NULL, test->load_plugins, runner, user);
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, test->cmd, files, NULL, test->load_plugins, runner, user);
 	r_list_free (files);
 	return ret;
 }
@@ -999,7 +984,8 @@ R_API bool r2r_check_json_test(R2RProcessOutput *out, R2RJsonTest *test) {
 	if (!out || out->ret != 0 || !out->out || !out->err || out->timeout) {
 		return false;
 	}
-	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, NULL, 0, NULL, NULL, 0);
+	const char *args[] = {"."};
+	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
 	r2r_subprocess_stdin_write (proc, (const ut8 *)out->out, strlen (out->out));
 	r2r_subprocess_wait (proc, UT64_MAX);
 	bool ret = proc->ret == 0;
@@ -1090,11 +1076,11 @@ rip:
 		if (proc->ret != 0) {
 			goto ship;
 		}
-		free (hex);
 		char *disasm = r_strbuf_drain_nofree (&proc->out);
 		r_str_trim (disasm);
 		out->disasm = disasm;
 ship:
+		free (hex);
 		r_pvector_pop (&args);
 		r_pvector_pop (&args);
 		r2r_subprocess_free (proc);
@@ -1139,9 +1125,15 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
 }
 
 R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, R2RFuzzTest *test, R2RCmdRunner runner, void *user) {
+	const char *cmd = "aaa";
 	RList *files = r_list_new ();
 	r_list_push (files, test->file);
-	R2RProcessOutput *ret = run_r2_test (config, "aaa", files, NULL, false, runner, user);
+#if ASAN
+	if (r_str_endswith (test->file, "/swift_read")) {
+		cmd = "?F";
+	}
+#endif
+	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, cmd, files, NULL, false, runner, user);
 	r_list_free (files);
 	return ret;
 }
@@ -1158,9 +1150,9 @@ R_API char *r2r_test_name(R2RTest *test) {
 		}
 		return strdup ("<unnamed>");
 	case R2R_TEST_TYPE_ASM:
-		return r_str_newf ("<asm> %s", test->asm_test->disasm ? test->asm_test->disasm : "");
+		return r_str_newf ("<asm> %s", r_str_get (test->asm_test->disasm));
 	case R2R_TEST_TYPE_JSON:
-		return r_str_newf ("<json> %s", test->json_test->cmd ? test->json_test->cmd: "");
+		return r_str_newf ("<json> %s", r_str_get (test->json_test->cmd));
 	case R2R_TEST_TYPE_FUZZ:
 		return r_str_newf ("<fuzz> %s", test->fuzz_test->file);
 	}
@@ -1188,10 +1180,11 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	ret->test = test;
 	bool success = false;
+	ut64 start_time = r_time_now_mono ();
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD: {
 		R2RCmdTest *cmd_test = test->cmd_test;
-		R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, config);
+		R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
 		success = r2r_check_cmd_test (out, cmd_test);
 		ret->proc_out = out;
 		ret->timeout = out && out->timeout;
@@ -1209,7 +1202,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	case R2R_TEST_TYPE_JSON: {
 		R2RJsonTest *json_test = test->json_test;
-		R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, config);
+		R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, NULL);
 		success = r2r_check_json_test (out, json_test);
 		ret->proc_out = out;
 		ret->timeout = out->timeout;
@@ -1218,14 +1211,28 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	}
 	case R2R_TEST_TYPE_FUZZ: {
 		R2RFuzzTest *fuzz_test = test->fuzz_test;
-		R2RProcessOutput *out = r2r_run_fuzz_test (config, fuzz_test, subprocess_runner, config);
+		R2RProcessOutput *out = r2r_run_fuzz_test (config, fuzz_test, subprocess_runner, NULL);
 		success = r2r_check_fuzz_test (out);
 		ret->proc_out = out;
 		ret->timeout = out->timeout;
 		ret->run_failed = !out;
 	}
 	}
+	ret->time_elapsed = r_time_now_mono () - start_time;
 	bool broken = r2r_test_broken (test);
+#if ASAN
+# if !R2_ASSERT_STDOUT
+# error R2_ASSERT_STDOUT undefined or 0
+# endif
+	R2RProcessOutput *out = ret->proc_out;
+	if (!success && test->type == R2R_TEST_TYPE_CMD && strstr (test->path, "/dbg")
+	    && (!out->out ||
+	        (!strstr (out->out, "WARNING:") && !strstr (out->out, "ERROR:") && !strstr (out->out, "FATAL:")))
+	    && (!out->err ||
+	        (!strstr (out->err, "Sanitizer") && !strstr (out->err, "runtime error:")))) {
+		broken = true;
+	}
+#endif
 	if (!success) {
 		ret->result = broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
 	} else {

@@ -24,7 +24,7 @@ R_API const char *r_anal_cond_tostring(int cc) {
 	return "??";
 }
 
-R_API RAnalCond *r_anal_cond_new() {
+R_API RAnalCond *r_anal_cond_new(void) {
 	return R_NEW0 (RAnalCond);
 }
 

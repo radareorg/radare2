@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2017 - pancake */
+/* radare - LGPL - Copyright 2014-2020 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
@@ -9,6 +9,7 @@
 #include <r_socket.h>
 #include <r_util.h>
 #include <r_lib.h>
+#include <r_cons.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -33,7 +34,6 @@
 #if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/resource.h>
-#include <termios.h>
 #include <grp.h>
 #include <errno.h>
 #if defined(__sun)
@@ -54,9 +54,16 @@
 #ifdef _MSC_VER
 #include <direct.h>   // to compile chdir in msvc windows
 #include <process.h>  // to compile execv in msvc windows
+#define pid_t int
 #endif
 
+#if EMSCRIPTEN
+#undef HAVE_PTY
+#define HAVE_PTY 0
+#else
 #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
+#endif
+
 
 #if HAVE_PTY
 static int (*dyn_openpty)(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp) = NULL;
@@ -76,56 +83,58 @@ static void dyn_init(void) {
 
 #endif
 
-#if EMSCRIPTEN
-#undef HAVE_PTY
-#define HAVE_PTY 0
-#endif
-
 R_API RRunProfile *r_run_new(const char *str) {
 	RRunProfile *p = R_NEW0 (RRunProfile);
 	if (p) {
 		r_run_reset (p);
-		r_run_parsefile (p, str);
+		if (str) {
+			r_run_parsefile (p, str);
+		}
 	}
 	return p;
 }
 
 R_API void r_run_reset(RRunProfile *p) {
+	r_return_if_fail (p);
 	memset (p, 0, sizeof (RRunProfile));
 	p->_aslr = -1;
 }
 
 R_API bool r_run_parse(RRunProfile *pf, const char *profile) {
-	if (!pf || !profile) {
-		return false;
-	}
+	r_return_val_if_fail (pf && profile, false);
 	char *p, *o, *str = strdup (profile);
 	if (!str) {
 		return false;
 	}
 	r_str_replace_char (str, '\r',0);
-	for (p = str; (o = strchr (p, '\n')); p = o) {
-		*o++ = 0;
+	p = str;
+	while (p) {
+		if ((o = strchr (p, '\n'))) {
+			*o++ = 0;
+		}
 		r_run_parseline (pf, p);
+		p = o;
 	}
 	free (str);
 	return true;
 }
 
-R_API void r_run_free (RRunProfile *r) {
-	free (r->_system);
-	free (r->_program);
-	free (r->_runlib);
-	free (r->_runlib_fcn);
-	free (r->_stdio);
-	free (r->_stdin);
-	free (r->_stdout);
-	free (r->_stderr);
-	free (r->_chgdir);
-	free (r->_chroot);
-	free (r->_libpath);
-	free (r->_preload);
-	free (r);
+R_API void r_run_free(RRunProfile *r) {
+	if (r) {
+		free (r->_system);
+		free (r->_program);
+		free (r->_runlib);
+		free (r->_runlib_fcn);
+		free (r->_stdio);
+		free (r->_stdin);
+		free (r->_stdout);
+		free (r->_stderr);
+		free (r->_chgdir);
+		free (r->_chroot);
+		free (r->_libpath);
+		free (r->_preload);
+		free (r);
+	}
 }
 
 #if __UNIX__
@@ -233,11 +242,6 @@ static char *getstr(const char *src) {
 		eprintf ("Invalid hexpair string\n");
 		free (ret);
 		return NULL;
-#if 0
-	// what is this for??
-	case '%':
-		return (char *) strtoul (src + 1, NULL, 0);
-#endif
 	}
 	r_str_unescape ((ret = strdup (src)));
 	return ret;
@@ -275,13 +279,15 @@ static void setASLR(RRunProfile *r, int enabled) {
 	// for osxver>=10.7
 	// "unset the MH_PIE bit in an already linked executable" with --no-pie flag of the script
 	// the right way is to disable the aslr bit in the spawn call
-#elif __FreeBSD__
+#elif __FreeBSD__ || __NetBSD__ || __DragonFly__
 	r_sys_aslr (enabled);
 #else
 	// not supported for this platform
 #endif
 }
 
+#if __APPLE__ && !__POWERPC__
+#else
 #if HAVE_PTY
 static void restore_saved_fd(int saved, bool restore, int fd) {
 	if (saved == -1) {
@@ -378,17 +384,17 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 	return -1;
 #endif
 }
+#endif
 
 static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
-	if (!cmd || !*cmd) {
-		return 0;
-	}
-
 #if __APPLE__ && !__POWERPC__
 	//XXX handle this in other layer since things changes a little bit
 	//this seems like a really good place to refactor stuff
 	return 0;
-#endif
+#else
+	if (!cmd || !*cmd) {
+		return 0;
+	}
 	if (cmd[0] == '"') {
 #if __UNIX__
 		if (in) {
@@ -418,7 +424,6 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #warning quoted string redirection handle not yet done
 #endif
 #endif
-		return 0;
 	} else if (cmd[0] == '!') {
 		// redirection to a process
 		return handle_redirection_proc (cmd + 1, in, out, err);
@@ -449,14 +454,16 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			DUP(2);
 		}
 		close (f);
-		return 0;
 	}
+	return 0;
+#endif
 }
 
-R_API int r_run_parsefile(RRunProfile *p, const char *b) {
+R_API bool r_run_parsefile(RRunProfile *p, const char *b) {
+	r_return_val_if_fail (p && b, false);
 	char *s = r_file_slurp (b, NULL);
 	if (s) {
-		int ret = r_run_parse (p, s);
+		bool ret = r_run_parse (p, s);
 		free (s);
 		return ret;
 	}
@@ -470,7 +477,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		return 0;
 	}
 	*e++ = 0;
-	if (*e=='$') {
+	if (*e == '$') {
 		must_free = true;
 		e = r_sys_getenv (e);
 	}
@@ -479,6 +486,8 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 	}
 	if (!strcmp (b, "program")) {
 		p->_args[0] = p->_program = strdup (e);
+	} else if (!strcmp (b, "daemon")) {
+		p->_daemon = true;
 	} else if (!strcmp (b, "system")) {
 		p->_system = strdup (e);
 	} else if (!strcmp (b, "runlib")) {
@@ -612,7 +621,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 	return true;
 }
 
-R_API const char *r_run_help() {
+R_API const char *r_run_help(void) {
 	return
 	"program=/bin/ls\n"
 	"arg1=/bin\n"
@@ -623,6 +632,7 @@ R_API const char *r_run_help() {
 	"# arg6=@arg.txt\n"
 	"# arg7=@300@ABCD # 300 chars filled with ABCD pattern\n"
 	"# system=r2 -\n"
+	"# daemon=false\n"
 	"# aslr=no\n"
 	"setenv=FOO=BAR\n"
 	"# unsetenv=FOO\n"
@@ -703,11 +713,18 @@ static int redirect_socket_to_stdio(RSocket *sock) {
 	return 0;
 }
 
+#if __WINDOWS__
+static RThreadFunctionRet exit_process(RThread *th) {
+	// eprintf ("\nrarun2: Interrupted by timeout\n");
+	exit (0);
+}
+#endif
+
 static int redirect_socket_to_pty(RSocket *sock) {
 #if HAVE_PTY
 	// directly duplicating the fds using dup2() creates problems
 	// in case of interactive applications
-	int fdm, fds;
+	int fdm = -1, fds = -1;
 
 	if (dyn_openpty && dyn_openpty (&fdm, &fds, NULL, NULL, NULL) == -1) {
 		perror ("opening pty");
@@ -718,8 +735,12 @@ static int redirect_socket_to_pty(RSocket *sock) {
 
 	if (child_pid == -1) {
 		eprintf ("cannot fork\n");
-		close(fdm);
-		close(fds);
+		if (fdm != -1) {
+			close (fdm);
+		}
+		if (fds != -1) {
+			close (fds);
+		}
 		return -1;
 	}
 
@@ -756,7 +777,10 @@ static int redirect_socket_to_pty(RSocket *sock) {
 		}
 
 		free (buff);
-		close (fdm);
+		if (fdm != -1) {
+			close (fdm);
+			fdm = -1;
+		}
 		r_socket_free (sock);
 		exit (0);
 	}
@@ -766,7 +790,9 @@ static int redirect_socket_to_pty(RSocket *sock) {
 	if (dyn_login_tty) {
 		dyn_login_tty (fds);
 	}
-	close (fdm);
+	if (fdm != -1) {
+		close (fdm);
+	}
 
 	// disable the echo on slave stdin
 	struct termios t;
@@ -789,7 +815,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 #endif
 
 	if (!p->_program && !p->_system && !p->_runlib) {
-		printf ("No program, system or runlib rule defined\n");
+		eprintf ("No program, system or runlib rule defined\n");
 		return 1;
 	}
 	// when IO is redirected to a process, handle them together
@@ -862,11 +888,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 				is_child = true;
 
 				if (p->_dofork && !p->_dodebug) {
-#ifdef _MSC_VER
-					int child_pid = r_sys_fork ();
-#else
 					pid_t child_pid = r_sys_fork ();
-#endif
 					if (child_pid == -1) {
 						eprintf("rarun2: cannot fork\n");
 						r_socket_free (child);
@@ -1038,18 +1060,23 @@ R_API int r_run_config_env(RRunProfile *p) {
 			}
 			sleep (p->_timeout);
 			if (!kill (mypid, 0)) {
-				eprintf ("\nrarun2: Interrupted by timeout\n");
+				// eprintf ("\nrarun2: Interrupted by timeout\n");
 			}
 			kill (mypid, use_signal);
 			exit (0);
 		}
 #else
-		eprintf ("timeout not supported for this platform\n");
+		if (p->_timeout_sig < 1 || p->_timeout_sig == 9) {
+			r_th_new (exit_process, NULL, p->_timeout);
+		} else {
+			eprintf ("timeout with signal not supported for this platform\n");
+		}
 #endif
 	}
 	return 0;
 }
 
+// NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 R_API int r_run_start(RRunProfile *p) {
 #if LIBC_HAVE_FORK
 	if (p->_execve) {
@@ -1107,7 +1134,59 @@ R_API int r_run_start(RRunProfile *p) {
 		if (p->_pid) {
 			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
 		}
-		exit (r_sys_cmd (p->_system));
+		if (p->_daemon) {
+#if __WINDOWS__
+	//		eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+#else
+			pid_t child = r_sys_fork ();
+			if (child == -1) {
+				perror ("fork");
+				exit (1);
+			}
+			if (child) {
+				if (p->_pidfile) {
+					char pidstr[32];
+					snprintf (pidstr, sizeof (pidstr), "%d\n", child);
+					r_file_dump (p->_pidfile,
+							(const ut8*)pidstr,
+							strlen (pidstr), 0);
+				}
+				exit (0);
+			}
+			setsid ();
+			if (p->_timeout) {
+#if __UNIX__
+				int mypid = getpid ();
+				if (!r_sys_fork ()) {
+					int use_signal = p->_timeout_sig;
+					if (use_signal < 1) {
+						use_signal = SIGKILL;
+					}
+					sleep (p->_timeout);
+					if (!kill (mypid, 0)) {
+						// eprintf ("\nrarun2: Interrupted by timeout\n");
+					}
+					kill (mypid, use_signal);
+					exit (0);
+				}
+#else
+				eprintf ("timeout not supported for this platform\n");
+#endif
+			}
+#endif
+#if __UNIX__
+			close(0);
+			close(1);
+			exit (execl ("/bin/sh","/bin/sh", "-c", p->_system, NULL));
+#else
+			exit (r_sys_cmd (p->_system));
+#endif
+		} else {
+			if (p->_pidfile) {
+				eprintf ("Warning: pidfile doesnt work with 'system'.\n");
+			}
+			exit (r_sys_cmd (p->_system));
+		}
 	}
 	if (p->_program) {
 		if (!r_file_exists (p->_program)) {
@@ -1124,7 +1203,7 @@ R_API int r_run_start(RRunProfile *p) {
 #if __UNIX__
 		// XXX HACK close all non-tty fds
 		{ int i;
-			for (i = 3; i < 10; i++) {
+			for (i = 3; i < 1024; i++) {
 				close (i);
 			}
 		}
@@ -1154,6 +1233,31 @@ R_API int r_run_start(RRunProfile *p) {
 			}
 #else
 			eprintf ("nice not supported for this platform\n");
+#endif
+		}
+		if (p->_daemon) {
+#if __WINDOWS__
+			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+#else
+			pid_t child = r_sys_fork ();
+			if (child == -1) {
+				perror ("fork");
+				exit (1);
+			}
+			if (child) {
+				if (p->_pidfile) {
+					char pidstr[32];
+					snprintf (pidstr, sizeof (pidstr), "%d\n", child);
+					r_file_dump (p->_pidfile,
+							(const ut8*)pidstr,
+							strlen (pidstr), 0);
+					exit (0);
+				}
+			}
+			setsid ();
+#if !LIBC_HAVE_FORK
+		exit (execv (p->_program, (char* const*)p->_args));
+#endif
 #endif
 		}
 // TODO: must be HAVE_EXECVE
@@ -1223,4 +1327,26 @@ R_API int r_run_start(RRunProfile *p) {
 		r_lib_dl_close (addr);
 	}
 	return 0;
+}
+
+R_API char *r_run_get_environ_profile(char **env) {
+	if (!env) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new (NULL);
+	while (*env) {
+		char *k = strdup (*env);
+		char *v = strchr (k, '=');
+		if (v) {
+			*v++ = 0;
+			v = r_str_escape_latin1 (v, false, true, true);
+			if (v) {
+				r_strbuf_appendf (sb, "setenv=%s=\"%s\"\n", k, v);
+				free (v);
+			}
+		}
+		free (k);
+		env++;
+	}
+	return r_strbuf_drain (sb);
 }

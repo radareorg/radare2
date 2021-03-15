@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2010-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2020 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_diff.h>
 
-R_API RAnalDiff *r_anal_diff_new() {
+R_API RAnalDiff *r_anal_diff_new(void) {
 	RAnalDiff *diff = R_NEW0 (RAnalDiff);
 	if (diff) {
 		diff->type = R_ANAL_DIFF_TYPE_NULL;
@@ -186,7 +186,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	if (fcns) {
 		r_list_foreach (fcns, iter, fcn) {
 			r_list_foreach (fcns2, iter2, fcn2) {
-				if (fcn->name && fcn2->name && strcmp (fcn->name, fcn2->name)) {
+				if (!fcn->name || !fcn2->name || strcmp (fcn->name, fcn2->name)) {
 					continue;
 				}
 				r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->fingerprint_size,

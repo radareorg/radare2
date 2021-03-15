@@ -28,7 +28,7 @@ NAME=PE: corkami cm01.exe - section seek 1
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00401000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap.CODE
@@ -39,7 +39,7 @@ NAME=PE: corkami cm01.exe - section seek 2
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00402000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap.DATA
@@ -50,7 +50,7 @@ NAME=PE: corkami cm01.exe - section seek 3
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00403000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap..idata
@@ -61,7 +61,7 @@ NAME=PE: corkami cm01.exe - section seek 4
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00404000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap..edata
@@ -72,7 +72,7 @@ NAME=PE: corkami cm01.exe - section seek 5
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00405000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap..reloc
@@ -83,7 +83,7 @@ NAME=PE: corkami cm01.exe - section seek 6
 FILE=bins/pe/cm01.exe
 CMDS=<<EOF
 s 0x00406000
-om.~[10]
+om.~[8]
 EOF
 EXPECT=<<EOF
 fmap..rsrc
@@ -99,7 +99,7 @@ pi 2 @ 0x004010b7
 EOF
 EXPECT=<<EOF
 push str.CrackMe_v1.0
-push str.No_need_to_disasm_the_code
+push str.No_need_to_disasm_the_code_
 EOF
 RUN
 
@@ -111,8 +111,8 @@ aaa
 pi 2 @ 0x0040136b
 EOF
 EXPECT=<<EOF
-push str.No_luck
-push str.No_luck_there__mate
+push str.No_luck_
+push str.No_luck_there__mate_
 EOF
 RUN
 
@@ -124,8 +124,8 @@ aaa
 pi 2 @ 0x004013af
 EOF
 EXPECT=<<EOF
-push str.No_luck
-push str.No_luck_there__mate
+push str.No_luck_
+push str.No_luck_there__mate_
 EOF
 RUN
 
@@ -137,7 +137,7 @@ aaa
 pi 2 @ 0x0040134f
 EOF
 EXPECT=<<EOF
-push str.Good_work
-push str.Great_work__mate__Now_try_the_next_CrackMe
+push str.Good_work_
+push str.Great_work__mate_Now_try_the_next_CrackMe_
 EOF
 RUN

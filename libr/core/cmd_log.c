@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <string.h>
 #include "r_config.h"
@@ -14,6 +14,7 @@ static const char *help_msg_L[] = {
 	"Ll", "", "list lang plugins (same as #!)",
 	"LL", "", "lock screen",
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
+	"Le", "", "list esil plugins",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
 	"LD", "", "list supported decompilers (e cmd.pdc=?)",
@@ -21,6 +22,7 @@ static const char *help_msg_L[] = {
 	"Lh", "", "list hash plugins (same as ph)",
 	"Li", "", "list bin plugins (same as iL)",
 	"Lo", "", "list io plugins (same as oL)",
+	"Lp", "", "list parser plugins (e asm.parser=?)",
 	NULL
 };
 
@@ -44,7 +46,7 @@ static const char *help_msg_T[] = {
 };
 
 // TODO #7967 help refactor: move L to another place
-static void cmd_log_init(RCore *core) {
+static void cmd_log_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, L);
 	DEFINE_CMD_DESCRIPTOR (core, T);
 }
@@ -68,9 +70,9 @@ static void screenlock(RCore *core) {
 	}
 	bool running = true;
 	r_cons_clear_buffer ();
-	ut64 begin = r_sys_now ();
+	ut64 begin = r_time_now ();
 	ut64 last = UT64_MAX;
-	ut64 tries = 0;
+	int tries = 0;
 	do {
 		r_cons_clear00 ();
 		r_cons_printf ("Retries: %d\n", tries);
@@ -85,7 +87,7 @@ static void screenlock(RCore *core) {
 			running = false;
 		} else {
 			eprintf ("\nInvalid password.\n");
-			last = r_sys_now ();
+			last = r_time_now ();
 			tries++;
 		}
 		free (msg);
@@ -335,6 +337,9 @@ static int cmd_plugins(void *data, const char *input) {
 	case 'm': // "Lm"
 		r_core_cmdf (core, "mL%s", input + 1);
 		break;
+	case 'e': // "Le"
+		r_core_cmdf (core, "aeL%s", input + 1);
+		break;
 	case 'd': // "Ld"
 		r_core_cmdf (core, "dL%s", input + 1);
 		break;
@@ -343,6 +348,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'a': // "La"
 		r_core_cmd0 (core, "e asm.arch=??");
+		break;
+	case 'p': // "Lp"
+		r_core_cmd0 (core, "e asm.parser=?");
 		break;
 	case 'D': // "LD"
 		if (input[1] == ' ') {
@@ -366,14 +374,20 @@ static int cmd_plugins(void *data, const char *input) {
 		RCorePlugin *cp;
 		switch (input[1]) {
 		case 'j': {
-			r_cons_printf ("[");
-			bool is_first_element = true;
-			r_list_foreach (core->rcmd->plist, iter, cp) {
-				r_cons_printf ("%s{\"Name\":\"%s\",\"Description\":\"%s\"}",
-					is_first_element? "" : ",", cp->name, cp->desc);
-				is_first_element = false;
+			PJ *pj = r_core_pj_new (core);
+			if (!pj) {
+				return 1;
 			}
-			r_cons_printf ("]\n");
+			pj_a (pj);
+			r_list_foreach (core->rcmd->plist, iter, cp) {
+				pj_o (pj);
+				pj_ks (pj, "Name", cp->name);
+				pj_ks (pj, "Description", cp->desc);
+				pj_end (pj);
+			}
+			pj_end (pj);
+			r_cons_println (pj_string (pj));
+			pj_free (pj);
 			break;
 			}
 		case 0:

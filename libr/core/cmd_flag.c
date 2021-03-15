@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -102,7 +102,7 @@ static const char *help_msg_fz[] = {
 	NULL
 };
 
-static void cmd_flag_init(RCore *core) {
+static void cmd_flag_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, f);
 	DEFINE_CMD_DESCRIPTOR (core, fc);
 	DEFINE_CMD_DESCRIPTOR (core, fd);
@@ -253,7 +253,7 @@ static void __printRecursive (RCore *core, RList *flags, const char *prefix, int
 		}
 		if (mode == '*') {
 			r_cons_printf ("agn %s %s\n", fn, fn + prefix_len);
-			r_cons_printf ("age %s %s\n", *prefix? prefix: "root", fn);
+			r_cons_printf ("age %s %s\n", *prefix ? prefix : "root", fn);
 		} else {
 			r_cons_printf ("%s %s\n", r_str_pad (' ', prefix_len), fn + prefix_len);
 		}
@@ -315,7 +315,7 @@ static void cmd_fz(RCore *core, const char *input) {
 		{
 			const char *a = NULL, *b = NULL;
 			r_flag_zone_around (core->flags, core->offset, &a, &b);
-			r_cons_printf ("%s %s\n", a?a:"~", b?b:"~");
+			r_cons_printf ("%s %s\n", r_str_get_fail (a, "~"), r_str_get_fail (b, "~"));
 		}
 		break;
 	case ':': // "fz:"
@@ -375,7 +375,7 @@ struct flagbar_t {
 static bool flagbar_foreach(RFlagItem *fi, void *user) {
 	struct flagbar_t *u = (struct flagbar_t *)user;
 	ut64 min = 0, max = r_io_size (u->core->io);
-	RIOMap *m = r_io_map_get (u->core->io, fi->offset);
+	RIOMap *m = r_io_map_get_at (u->core->io, fi->offset);
 	if (m) {
 		min = m->itv.addr;
 		max = m->itv.addr + m->itv.size;
@@ -431,7 +431,7 @@ static bool __tableItemCallback(RFlagItem *flag, void *user) {
 		RTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
 		const char *addr = sdb_fmt ("0x%08"PFMT64x, flag->offset);
-		r_table_add_row (t, addr, sdb_fmt ("%d", flag->size), spaceName, flag->name, NULL);
+		r_table_add_row (t, addr, sdb_fmt ("%"PFMT64d, flag->size), spaceName, flag->name, NULL);
 	}
 	return true;
 }
@@ -440,7 +440,7 @@ static void cmd_flag_table(RCore *core, const char *input) {
 	const char fmt = *input++;
 	const char *q = input;
 	FlagTableData ftd = {0};
-	RTable *t = r_core_table (core);
+	RTable *t = r_core_table (core, "flags");
 	ftd.t = t;
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
@@ -454,8 +454,7 @@ static void cmd_flag_table(RCore *core, const char *input) {
 	if (r_table_query (t, q)) {
 		char *s = (fmt == 'j')
 			? r_table_tojson (t)
-			: r_table_tofancystring (t);
-		// char *s = r_table_tostring (t);
+			: r_table_tostring (t);
 		r_cons_printf ("%s\n", s);
 		free (s);
 	}
@@ -682,6 +681,80 @@ static int flag_space_stack_list(RFlag *f, int mode) {
 	return i;
 }
 
+typedef struct {
+	int rad;
+	PJ *pj;
+	RAnalFunction *fcn;
+} PrintFcnLabelsCtx;
+
+static bool print_function_labels_cb(void *user, const ut64 addr, const void *v) {
+	const PrintFcnLabelsCtx *ctx = user;
+	const char *name = v;
+	switch (ctx->rad) {
+	case '*':
+	case 1:
+		r_cons_printf ("f.%s@0x%08"PFMT64x"\n", name, addr);
+		break;
+	case 'j':
+		pj_kn (ctx->pj, name, addr);
+		break;
+	default:
+		r_cons_printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",
+			addr,
+			name, ctx->fcn->name,
+			addr - ctx->fcn->addr);
+	}
+	return true;
+}
+
+
+static void print_function_labels_for(RAnalFunction *fcn, int rad, PJ *pj) {
+	r_return_if_fail (fcn && (rad != 'j' || pj));
+	bool json = rad == 'j';
+	if (json) {
+		pj_o (pj);
+	}
+	PrintFcnLabelsCtx ctx = { rad, pj, fcn };
+	ht_up_foreach (fcn->labels, print_function_labels_cb, &ctx);
+	if (json) {
+		pj_end (pj);
+	}
+}
+
+static void print_function_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
+	r_return_if_fail (anal || fcn);
+	PJ *pj = NULL;
+	bool json = rad == 'j';
+	if (json) {
+		pj = pj_new ();
+	}
+	if (fcn) {
+		print_function_labels_for (fcn, rad, pj);
+	} else {
+		if (json) {
+			pj_o (pj);
+		}
+		RAnalFunction *f;
+		RListIter *iter;
+		r_list_foreach (anal->fcns, iter, f) {
+			if (!f->labels->count) {
+				continue;
+			}
+			if (json) {
+				pj_k (pj, f->name);
+			}
+			print_function_labels_for (f, rad, pj);
+		}
+		if (json) {
+			pj_end (pj);
+		}
+	}
+	if (json) {
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
+	}
+}
+
 static int cmd_flag(void *data, const char *input) {
 	static int flagenum = 0;
 	RCore *core = (RCore *)data;
@@ -738,20 +811,24 @@ rep:
 		}
 		break;
 	case 'a':
-		if (input[1] == ' '){
+		if (input[1] == ' ') {
 			RFlagItem *fi;
 			R_FREE (str);
 			str = strdup (input+2);
 			ptr = strchr (str, '=');
-			if (!ptr)
+			if (!ptr) {
 				ptr = strchr (str, ' ');
-			if (ptr) *ptr++ = 0;
+			}
+			if (ptr) {
+				*ptr++ = 0;
+			}
 			name = (char *)r_str_trim_head_ro (str);
 			ptr = (char *)r_str_trim_head_ro (ptr);
 			fi = r_flag_get (core->flags, name);
-			if (!fi)
+			if (!fi) {
 				fi = r_flag_set (core->flags, name,
 					core->offset, 1);
+			}
 			if (fi) {
 				r_flag_item_set_alias (fi, ptr);
 			} else {
@@ -762,17 +839,17 @@ rep:
 		}
 		break;
 	case 'V': // visual marks
-		switch(input[1]) {
+		switch (input[1]) {
 		case '-':
 			r_core_visual_mark_reset (core);
 			break;
 		case ' ':
 			{
-				const int ASCII_MAX = 127;
-				if (atoi (input+1) + ASCII_MAX + 1 < UT8_MAX) {
-					const char *arg = strchr (input+2, ' ');
+				int n = atoi (input + 1);
+				if (n + ASCII_MAX + 1 < UT8_MAX) {
+					const char *arg = strchr (input + 2, ' ');
 					ut64 addr = arg? r_num_math (core->num, arg): core->offset;
-					r_core_visual_mark_set (core, atoi (input+1) + ASCII_MAX + 1, addr);
+					r_core_visual_mark_set (core, n + ASCII_MAX + 1, addr);
 				}
 			}
 			break;
@@ -806,7 +883,7 @@ rep:
 				ut64 from, to, mask = 0xffff;
 				int ret;
 				if (p) {
-					char *q = strchr (p+1, ' ');
+					char *q = strchr (p + 1, ' ');
 					*p = 0;
 					if (q) {
 						*q = 0;
@@ -919,6 +996,10 @@ rep:
 			}
 		}
 		if (addFlag) {
+			if (!r_name_check (cstr)) {
+				eprintf ("Invalid flag name '%s'.\n", cstr);
+				return false;
+			}
 			item = r_flag_set (core->flags, cstr, off, bsze);
 		}
 		if (item && comment) {
@@ -940,7 +1021,7 @@ rep:
 			if (*flagname == '.') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
-					r_anal_fcn_label_del (core->anal, fcn, flagname  +  1, off);
+					r_anal_function_delete_label_at (fcn, off);
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 				}
@@ -955,16 +1036,16 @@ rep:
 			r_flag_unset_off (core->flags, off);
 		}
 		break;
-	case '.':
+	case '.': // "f."
 		input = r_str_trim_head_ro (input + 1) - 1;
 		if (input[1]) {
-			if (input[1] == '*') {
+			if (input[1] == '*' || input[1] == 'j') {
 				if (input[2] == '*') {
-					r_anal_fcn_labels (core->anal, NULL, 1);
+					print_function_labels (core->anal, NULL, input[1]);
 				} else {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 					if (fcn) {
-						r_anal_fcn_labels (core->anal, fcn, 1);
+						print_function_labels (core->anal, fcn, input[1]);
 					} else {
 						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 					}
@@ -981,9 +1062,9 @@ rep:
 					r_str_trim (name);
 					if (fcn) {
 						if (*name=='-') {
-							r_anal_fcn_label_del (core->anal, fcn, name + 1, off);
+							r_anal_function_delete_label (fcn, name + 1);
 						} else {
-							r_anal_fcn_label_set (core->anal, fcn, name, off);
+							r_anal_function_set_label (fcn, name, off);
 						}
 					} else {
 						eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
@@ -994,7 +1075,7 @@ rep:
 		} else {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
-				r_anal_fcn_labels (core->anal, fcn, 0);
+				print_function_labels (core->anal, fcn, 0);
 			} else {
 				eprintf ("Local flags require a function to work.");
 			}
@@ -1084,12 +1165,12 @@ rep:
 		case '?':
 			r_core_cmd_help (core, help_msg_fs);
 			break;
-		case '+':
-			r_flag_space_push (core->flags, input+2);
+		case '+': // "fs+"
+			r_flag_space_push (core->flags, r_str_trim_head_ro (input + 2));
 			break;
 		case 'r':
-			if (input[2] ==' ') {
-				char *newname = strdup (input + 3);
+			if (input[2] == ' ') {
+				char *newname = r_str_trim_dup (input + 3);
 				r_str_trim (newname);
 				r_flag_space_rename (core->flags, NULL, newname);
 				free (newname);
@@ -1116,13 +1197,13 @@ rep:
 				r_flag_space_pop (core->flags);
 				break;
 			default:
-				r_flag_space_unset (core->flags, input+2);
+				r_flag_space_unset (core->flags, r_str_trim_head_ro (input + 2));
 				break;
 			}
 			break;
 		case ' ':
 		{
-			char *name = strdup (input + 2);
+			char *name = r_str_trim_dup (input + 2);
 			r_str_trim (name);
 			r_flag_space_set (core->flags, name);
 			free (name);
@@ -1545,7 +1626,9 @@ rep:
 	case '?':
 	default:
 		if (input[1]) {
-			core->num->value = r_flag_get (core->flags, input + 1)? 1: 0;
+			const char *arg = r_str_trim_head_ro (input + 1);
+			RFlagItem *fi = r_flag_get (core->flags, arg);
+			core->num->value = fi? 1: 0;
 		} else {
 			r_core_cmd_help (core, help_msg_f);
 			break;

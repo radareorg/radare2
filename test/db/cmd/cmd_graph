@@ -354,3 +354,82 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=highlight edge
+FILE=-
+CMDS=<<EOF
+agn "0x123" body1
+agn "0x456" body2
+age 0x123 0x456
+ageh 0x123 0x456
+aggd
+EOF
+EXPECT=<<EOF
+digraph code {
+rankdir=LR;
+outputorder=edgesfirst
+graph [bgcolor=azure];
+edge [arrowhead=normal, color="#3030c0" style=bold weight=2];
+node [fillcolor=white, style=filled shape=box fontname="Courier" fontsize="8"];
+"0x123" [URL="0x123", color="lightgray", label="0x123\nbody1
+"]
+"0x456" [URL="0x456", color="lightgray", label="0x456\nbody2
+"]
+"0x123" -> "0x456" [color=cyan]
+}
+EOF
+RUN
+
+NAME=highlight edge management
+FILE=-
+CMDS=<<EOF
+ageh 0x123 0x456
+ageh
+ageh-0x123 0x456
+?e --
+ageh
+ageh 0x456 0x123
+ageh 0x123 0x456
+ageh 0x123 0x123
+?e --
+ageh
+EOF
+EXPECT=<<EOF
+agraph.edge.0x123_0x456.highlight=true
+--
+agraph.edge.0x123_0x456.highlight=true
+--
+agraph.edge.0x123_0x123.highlight=true
+agraph.edge.0x123_0x456.highlight=true
+agraph.edge.0x456_0x123.highlight=true
+EOF
+RUN
+
+NAME=lowaddr lights
+FILE=bins/elf/elf_one_symbol_shdr
+ARGS=-n
+CMDS=<<EOF
+s 0x44b
+af
+ageh 0x452 0x458
+ageh
+agfd
+EOF
+EXPECT=<<EOF
+agraph.edge.0x452_0x458.highlight=true
+digraph code {
+	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
+	node [fillcolor=gray style=filled shape=box];
+	edge [arrowhead="normal"];
+	"0x0000044b" [URL="fcn.0000044b/0x0000044b", fillcolor="white",color="#767676", fontname="Courier",label="54: fcn.0000044b (int64_t arg1, int64_t arg2, int64_t arg_4h, int64_t arg_8h, int64_t arg_34h, int64_t arg_38h);\l; arg int64_t arg_4h @ rsp+0x4\l; arg int64_t arg_8h @ rsp+0x8\l; arg int64_t arg_34h @ rsp+0x34\l; arg int64_t arg_38h @ rsp+0x38\l; arg int64_t arg1 @ rdi\l; arg int64_t arg2 @ rsi\l0x0000044b      sar esi, 2                                             ; arg2\l0x0000044e      test esi, esi                                          ; arg2\l0x00000450      je 0x479\l"]
+	"0x00000479" [URL="fcn.0000044b/0x00000479", fillcolor="white",color="#767676", fontname="Courier",label="0x00000479      add esp, 0x1c\l0x0000047c      pop rbx\l0x0000047d      pop rsi\l0x0000047e      pop rdi\l0x0000047f      pop rbp\l0x00000480      ret\l"]
+	"0x00000452" [URL="fcn.0000044b/0x00000452", fillcolor="white",color="#767676", fontname="Courier",label="0x00000452      lea esi, [rsi]                                         ; arg2\l"]
+	"0x00000458" [URL="fcn.0000044b/0x00000458", fillcolor="white",color="#767676", fontname="Courier",label="0x00000458      mov eax, dword [arg_38h]\l0x0000045c      mov dword [rsp], ebp\l0x0000045f      mov dword [arg_8h], eax\l0x00000463      mov eax, dword [arg_34h]\l0x00000467      mov dword [arg_4h], eax\l0x0000046b      call qword [rbx + rdi*4 - 0xf8]\l0x00000472      add edi, 1                                             ; arg1\l0x00000475      cmp edi, esi                                           ; arg2\l0x00000477      jne 0x458\l"]
+        "0x0000044b" -> "0x00000479" [color="#13a10e"];
+        "0x0000044b" -> "0x00000452" [color="#c50f1f"];
+        "0x00000452" -> "0x00000458" [color="cyan"];
+        "0x00000458" -> "0x00000458" [color="#13a10e"];
+        "0x00000458" -> "0x00000479" [color="#c50f1f"];
+}
+EOF
+RUN

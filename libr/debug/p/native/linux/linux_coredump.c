@@ -9,6 +9,7 @@
 #include <sys/ptrace.h>
 #include <asm/ptrace.h>
 #include "linux_coredump.h"
+#include "linux_ptrace.h"
 
 /* For compatibility */
 #if __x86_64__ || __arm64__
@@ -68,7 +69,7 @@ static char *prpsinfo_get_psargs(char *buffer, int len) {
 		paux[i] = buffer[i];
 	}
 	paux[i] = '\0';
-	strncat (p, paux, len - bytes_left - 1);
+	snprintf (p + bytes_left, len - bytes_left, "%s", paux);
 	return p;
 }
 
@@ -100,15 +101,13 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 		goto error;
 	}
 	basename = r_file_basename (pfname);
-	strncpy (p->pr_fname, basename, sizeof (p->pr_fname));
-	p->pr_fname[sizeof (p->pr_fname) - 1] = 0;
+	r_str_ncpy (p->pr_fname, basename, sizeof (p->pr_fname) - 1);
 	ppsargs = prpsinfo_get_psargs (buffer, (int)len);
 	if (!ppsargs) {
 		goto error;
 	}
 
-	strncpy (p->pr_psargs, ppsargs, sizeof (p->pr_psargs));
-	p->pr_psargs[sizeof (p->pr_psargs)-1] = 0;
+	r_str_ncpy (p->pr_psargs, ppsargs, sizeof (p->pr_psargs) - 1);
 	free (buffer);
 	free (ppsargs);
 	free (pfname);
@@ -299,21 +298,19 @@ static char *isAnonymousKeyword(const char *pp) {
 }
 
 static bool has_map_anonymous_content(char *buff_smaps, unsigned long start_addr, unsigned long end_addr) {
-	char *p, *pp, *extern_tok, *keyw = NULL;
+	char *pp, *extern_tok = NULL, *keyw = NULL;
 	char *identity = r_str_newf (fmt_addr, start_addr, end_addr);
 	char *str = strdup (buff_smaps);
-	bool is_anonymous;
-
-	p = strtok_r (str, "\n", &extern_tok);
+	char *p = strtok_r (str, "\n", &extern_tok);
 	for (; p; p = strtok_r (NULL, "\n", &extern_tok)) {
 		if (strstr (p, identity)) {
 			pp = strtok_r (NULL, "\n", &extern_tok);
 			for (; pp ; pp = strtok_r (NULL, "\n", &extern_tok)) {
 				if ((keyw = isAnonymousKeyword (pp))) {
-					is_anonymous = getAnonymousValue (keyw);
+					bool r = getAnonymousValue (keyw);
 					free (identity);
 					free (str);
-					return is_anonymous;
+					return r;
 				}
 			}
 		}
@@ -1334,7 +1331,7 @@ fail:
 	return NULL;
 }
 
-#if __i386__ || __x86_64
+#if __i386__ || __x86_64__
 static int get_xsave_size(RDebug *dbg, int pid) {
 #ifdef PTRACE_GETREGSET
 	struct iovec local;

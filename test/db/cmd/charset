@@ -1,0 +1,79 @@
+NAME=rival charset
+FILE=-
+CMDS=<<EOF
+e cfg.charset=pokered
+"w <RIVAL>"
+p8 4
+EOF
+EXPECT=<<EOF
+53000000
+EOF
+RUN
+
+NAME=e cfg.charset
+FILE=-
+CMDS=<<EOF
+e cfg.charset=?
+b 32
+wx a6b1aeb4ada37fb3ae7fafb1aeb3a4a2b349a8b3b2a4aba57fa5b1aeac7fa8b3
+ps
+e cfg.charset=pokered
+ps
+EOF
+EXPECT=<<EOF
+ascii
+pokered
+\xa6\xb1\xae\xb4\xad\xa3\x7f\xb3\xae\x7f\xaf\xb1\xae\xb3\xa4\xa2\xb3I\xa8\xb3\xb2\xa4\xab\xa5\x7f\xa5\xb1\xae\xac\x7f\xa8\xb3
+ground-to-protect<PAGE>itself-fr
+EOF
+RUN
+
+NAME=ps and psz
+FILE=-
+CMDS=<<EOF
+e cfg.charset=?
+b 32
+wx 7f7f7f7f7f7f7f7f92a4aba5e3b1a4afaba8a2a0b3a8ada67f7f7f7fa0b1a1a8b3b1a0b1b87fa2aea3a47f7f7f7f7f7fa1b87f8cb182a7a4a4b9a47f9c9b7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
+e cfg.charset=pokered
+ps $b
+ps  # should be the same as ps $b but its not
+psz
+e cfg.charset=?
+ps $b
+psz
+EOF
+EXPECT=<<EOF
+ascii
+pokered
+--------Self-replicating----arbi
+--------Self-replicating----arbi
+--------Self-replicating----arbi
+ascii
+pokered
+--------Self-replicating----arbi
+--------Self-replicating----arbi
+EOF
+RUN
+
+NAME=ps and psz with write
+FILE=-
+CMDS=<<EOF
+wx 7f7f7f7f7f7f7f7f92a4aba5e3b1a4afaba8a2a0b3a8ada67f7f7f7fa0b1a1a8b3b1a0b1b87fa2aea3a47f7f7f7f7f7fa1b87f8cb182a7a4a4b9a47f9c9b7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f
+e cfg.charset=pokered
+ps
+w hello-world-this-is-very-new
+wx 00 @ 28
+b 34
+ps
+psz
+pszj
+psj
+EOF
+EXPECT=<<EOF
+--------Self-replicating----arbitrary-code------by-MrCheeze-:)---------------------<NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL><NULL
+hello-world-this-is-very-new<NULL>
+hello-world-this-is-very-new
+{"string":"hello-world-this-is-very-new","offset":0,"section":"unknown","length":28,"type":"ascii"}
+{"string":"hello-world-this-is-very-new<NULL>","offset":0,"section":"unknown","length":34,"type":"ascii"}
+EOF
+RUN

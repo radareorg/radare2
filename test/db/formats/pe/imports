@@ -14,10 +14,10 @@ nth vaddr      bind type lib          name
 
 [Symbols]
 
-nth paddr       vaddr      bind type size lib          name
------------------------------------------------------------
-1    0x000002c0 0x004010c0 NONE FUNC 0    kernel32.dll imp.ExitProcess
-1    0x000002c8 0x004010c8 NONE FUNC 0    msvcrt.dll   imp.printf
+nth paddr      vaddr      bind type size lib          name
+----------------------------------------------------------
+1   0x000002c0 0x004010c0 NONE FUNC 0    kernel32.dll imp.ExitProcess
+1   0x000002c8 0x004010c8 NONE FUNC 0    msvcrt.dll   imp.printf
 0x4010c8
 EOF
 RUN

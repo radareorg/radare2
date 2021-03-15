@@ -5,6 +5,51 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=WASM: Wasm - dotnet open
+FILE=bins/wasm/dotnet.wasm
+CMDS=<<EOF
+i
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/wasm/dotnet.wasm
+size     0x2ae89a
+humansz  2.7M
+mode     r-x
+format   wasm
+iorw     false
+block    0x100
+type     EXEC
+arch     wasm
+baddr    0x0
+binsz    2812058
+bintype  wasm
+bits     32
+canary   false
+retguard false
+class    module
+crypto   false
+endian   little
+havecode true
+laddr    0x0
+linenum  false
+lsyms    false
+machine  wasm
+maxopsz  1
+minopsz  1
+nx       false
+os       WebAssembly
+pcalign  1
+pic      false
+relocs   false
+sanitiz  false
+static   true
+stripped false
+subsys   wasm
+va       false
+EOF
+RUN
+
 NAME=WASM: Wasm - detection
 FILE=bins/wasm/basic.wasm
 CMDS=iI~os

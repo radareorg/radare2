@@ -38,7 +38,7 @@ static void r_anal_ref_free(void *ref) {
 	free (ref);
 }
 
-R_API RList *r_anal_ref_list_new() {
+R_API RList *r_anal_ref_list_new(void) {
 	return r_list_newf (r_anal_ref_free);
 }
 
@@ -210,7 +210,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	listxrefs (anal->dict_refs, UT64_MAX, list);
 	sortxrefs (list);
 	if (rad == 'j') {
-		pj = pj_new ();
+		pj = anal->coreb.pjWithEncoding (anal->coreb.core);
 		if (!pj) {
 			return;
 		}

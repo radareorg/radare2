@@ -1,11 +1,10 @@
-/* radare2 - LGPL - Copyright 2017-2019 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2020 - condret, pancake, alvaro */
 
 #include <r_io.h>
 #include <sdb.h>
 #include <string.h>
 
-//shall be used by plugins for creating descs
-//XXX kill mode
+// shall be used by plugins for creating descs
 R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int perm, int mode, void* data) {
 	ut32 fd32 = 0;
 	// this is required for emscripten builds to work, but should assert
@@ -71,6 +70,40 @@ R_API bool r_io_desc_del(RIO* io, int fd) {		//can we pass this a riodesc and ch
 R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 	r_return_val_if_fail (io && io->files, NULL);
 	return (RIODesc*) r_id_storage_get (io->files, fd);
+}
+
+R_API RIODesc *r_io_desc_get_next(RIO *io, RIODesc *desc) {
+	r_return_val_if_fail (desc && io && io->files, NULL);
+	const int next_fd = r_io_fd_get_next (io, desc->fd);
+	if (next_fd == -1) {
+		return NULL;
+	}
+	return (RIODesc*) r_id_storage_get (io->files, next_fd);
+}
+
+R_API RIODesc *r_io_desc_get_prev(RIO *io, RIODesc *desc) {
+	r_return_val_if_fail (desc && io && io->files, NULL);
+	const int prev_fd = r_io_fd_get_prev (io, desc->fd);
+	if (prev_fd == -1) {
+		return NULL;
+	}
+	return (RIODesc*) r_id_storage_get (io->files, prev_fd);
+}
+
+R_API RIODesc *r_io_desc_get_highest(RIO *io) {
+	int fd = r_io_fd_get_highest (io);
+	if (fd == -1) {
+		return NULL;
+	}
+	return r_io_desc_get (io, fd);
+}
+
+R_API RIODesc *r_io_desc_get_lowest(RIO *io) {
+	int fd = r_io_fd_get_lowest (io);
+	if (fd == -1) {
+		return NULL;
+	}
+	return r_io_desc_get (io, fd);
 }
 
 R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
@@ -231,7 +264,7 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	r_id_storage_set (io->files, desc,  fdx);
 	r_id_storage_set (io->files, descx, fd);
 	if (io->p_cache) {
-		Sdb* cache = desc->cache;
+		HtUP* cache = desc->cache;
 		desc->cache = descx->cache;
 		descx->cache = cache;
 		r_io_desc_cache_cleanup (desc);

@@ -50,15 +50,20 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	return (dbg && dbg->h);
 }
 
-R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
+R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 	char spaces[16];
 	int count = 0;
 	memset (spaces, ' ', 15);
 	spaces[15] = 0;
 	RDebugPlugin *h;
 	RListIter *iter;
+	PJ *pj = NULL;
 	if (mode == 'j') {
-		dbg->cb_printf ("[");
+		pj = dbg->pj;
+		if (!pj) {
+			return false;
+		}
+		pj_a (pj);
 	}
 	r_list_foreach (dbg->plugins, iter, h) {
 		int sp = 8-strlen (h->name);
@@ -66,10 +71,10 @@ R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 		if (mode == 'q') {
 			dbg->cb_printf ("%s\n", h->name);
 		} else if (mode == 'j') {
-			dbg->cb_printf ("%s{\"name\":\"%s\",\"license\":\"%s\"}",
-							(count ? "," : ""),
-							h->name,
-							h->license);
+			pj_o (pj);
+			pj_ks (pj, "name", h->name);
+			pj_ks (pj, "license", h->license);
+			pj_end (pj);
 		} else {
 			dbg->cb_printf ("%d  %s  %s %s%s\n",
 					count, (h == dbg->h)? "dbg": "---",
@@ -79,9 +84,10 @@ R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 		count++;
 	}
 	if (mode == 'j') {
-		dbg->cb_printf ("]");
+		pj_end (pj);
+		dbg->cb_printf ("%s\n", pj_string (pj));
 	}
-	return false;
+	return true;
 }
 
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {

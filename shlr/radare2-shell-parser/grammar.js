@@ -25,41 +25,33 @@ const ARG_IDENTIFIER_BASE = choice(
     repeat1(noneOf(...SPECIAL_CHARACTERS)),
     '$$$',
     '$$',
-    '$',
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
-    /\/[^\*]/,
 );
 const ARG_IDENTIFIER_BRACE = choice(
     repeat1(noneOf(...SPECIAL_CHARACTERS_BRACE)),
     '$$$',
     '$$',
-    '$',
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
-    /\/[^\*]/,
 );
 const PF_DOT_ARG_IDENTIFIER_BASE = choice(
     repeat1(noneOf(...PF_DOT_SPECIAL_CHARACTERS)),
     '$$$',
     '$$',
-    '$',
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
-    /\/[^\*]/,
 );
 const PF_ARG_IDENTIFIER_BASE = choice(
     repeat1(noneOf(...PF_SPECIAL_CHARACTERS)),
     '$$$',
     '$$',
-    '$',
     /\$[^\s@|#"'>;`~\\({) ]/,
     /\${[^\r\n $}]+}/,
     /\\./,
-    /\/[^\*]/,
 );
 
 module.exports = grammar({
@@ -278,8 +270,8 @@ module.exports = grammar({
 	)),
 
 	// tmp changes commands
-	tmp_seek_command: $ => prec.right(1, seq($._simple_command, '@', $.arg)),
-	tmp_blksz_command: $ => prec.right(1, seq($._simple_command, '@!', $.arg)),
+	tmp_seek_command: $ => prec.right(1, seq($._simple_command, '@', $.args)),
+	tmp_blksz_command: $ => prec.right(1, seq($._simple_command, '@!', $.args)),
 	// NOTE: need to use special arg_brace here because of https://github.com/radareorg/radare2/commit/c3dee9332c19f874ac2cc9294a9ffe17575d8141
 	tmp_fromto_command: $ => prec.right(1, seq(
 	    $._simple_command,
@@ -289,28 +281,23 @@ module.exports = grammar({
 	    '}'
 	)),
 	tmp_arch_command: $ => prec.right(1, seq($._simple_command, '@a:', $.arg)),
-	tmp_bits_command: $ => prec.right(1, seq($._simple_command, '@b:', $.arg)),
+	tmp_bits_command: $ => prec.right(1, seq($._simple_command, '@b:', $.args)),
 	tmp_nthi_command: $ => prec.right(1, seq($._simple_command, '@B:', $.arg)),
 	tmp_eval_command: $ => prec.right(1, seq($._simple_command, '@e:', $.tmp_eval_args)),
 	tmp_fs_command: $ => prec.right(1, seq($._simple_command, '@F:', $.arg)),
-	tmp_reli_command: $ => prec.right(1, seq($._simple_command, '@i:', $.arg)),
+	tmp_reli_command: $ => prec.right(1, seq($._simple_command, '@i:', $.args)),
 	tmp_kuery_command: $ => prec.right(1, seq($._simple_command, '@k:', $.arg)),
-	tmp_fd_command: $ => prec.right(1, seq($._simple_command, '@o:', $.arg)),
+	tmp_fd_command: $ => prec.right(1, seq($._simple_command, '@o:', $.args)),
 	tmp_reg_command: $ => prec.right(1, seq($._simple_command, '@r:', $.arg)),
 	tmp_file_command: $ => prec.right(1, seq($._simple_command, '@f:', $.arg)),
 	tmp_string_command: $ => prec.right(1, seq($._simple_command, '@s:', $.arg)),
 	tmp_hex_command: $ => prec.right(1, seq($._simple_command, '@x:', $.arg)),
 
-	_interpreter_command: $ => prec.right(1, seq(
-	    field('command', alias('#!', $.cmd_identifier)),
-	    field('args', optional($.args)),
-	)),
-
 	// basic commands
 	task_command: $ => prec.left(1, choice(
 	    seq(
 		field('command', alias(choice('&', '&t'), $.cmd_identifier)),
-		field('args', $._simple_command),
+		field('args', optional($._simple_command)),
 	    ),
 	    seq(
 		field('command', alias(/&[A-Za-z=\-+*&0-9]*/, $.cmd_identifier)),
@@ -325,7 +312,7 @@ module.exports = grammar({
 	help_command: $ => prec.left(1, choice(
 	    field('command', alias($.question_mark_identifier, $.cmd_identifier)),
 	    seq(
-		field('command', alias(choice($._help_command, '#?', '#!?'), $.cmd_identifier)),
+		field('command', alias($._help_command, $.cmd_identifier)),
 		field('args', optional($.args)),
 	    ),
 	)),
@@ -337,7 +324,6 @@ module.exports = grammar({
 	    $._system_command,
 	    $._interpret_command,
 	    $._env_command,
-	    $._interpreter_command,
 	    $._pf_arged_command,
 	),
 
@@ -447,17 +433,13 @@ module.exports = grammar({
 		$.pf_args,
 	    )),
 	),
-	_pf_dot_arg_identifier: $ => token(seq(
-	    repeat1(PF_DOT_ARG_IDENTIFIER_BASE),
-	)),
+	_pf_dot_arg_identifier: $ => argIdentifier(PF_DOT_ARG_IDENTIFIER_BASE),
 	_pf_arg_parentheses: $ => seq(
 	    alias('(', $.pf_arg_identifier),
 	    $.pf_args,
 	    alias(')', $.pf_arg_identifier),
 	),
-	pf_arg_identifier: $ => token(seq(
-	    repeat1(PF_ARG_IDENTIFIER_BASE),
-	)),
+	pf_arg_identifier: $ => argIdentifier(PF_ARG_IDENTIFIER_BASE),
 	_pf_arg: $ => choice(
 	    $.pf_arg_identifier,
 	    $._pf_arg_parentheses,
@@ -638,12 +620,12 @@ module.exports = grammar({
 	)),
 	_any_command: $ => /[^\r\n;~|]+/,
 
-	arg_identifier: $ => token(repeat1(ARG_IDENTIFIER_BASE)),
-	arg_identifier_brace: $ => token(repeat1(ARG_IDENTIFIER_BRACE)),
+	arg_identifier: $ => argIdentifier(ARG_IDENTIFIER_BASE),
+	arg_identifier_brace: $ => argIdentifier(ARG_IDENTIFIER_BRACE),
 	double_quoted_arg: $ => seq(
 	    '"',
 	    repeat(choice(
-		/[^\\"\n$`]+/,
+		token.immediate(prec(1, /[^\\"\n$`]+/)),
 		/\$[^("]?/,
 		/\\[\\"\n$`]?/,
 		$.cmd_substitution_arg,
@@ -653,7 +635,7 @@ module.exports = grammar({
 	single_quoted_arg: $ => seq(
 	    '\'',
 	    repeat(choice(
-		/[^\\'\n]+/,
+		token.immediate(prec(1, /[^\\'\n]+/)),
 		/\\[\\'\n]?/,
 	    )),
 	    '\'',
@@ -679,8 +661,7 @@ module.exports = grammar({
 
 	_dec_number: $ => choice(/[1-9][0-9]*/, /[0-9][0-9]+/),
 	_comment: $ => token(choice(
-	    '#',
-	    /#[^!\r\n][^\r\n]*/,
+	    /#[^\r\n]*/,
 	    seq('/*', /[^*]*\*+([^/*][^*]*\*+)*/, '/')
 	)),
 
@@ -696,4 +677,11 @@ module.exports = grammar({
 function noneOf(...characters) {
     const negatedString = characters.map(c => c == '\\' ? '\\\\' : c).join('')
     return new RegExp('[^' + negatedString + ']')
+}
+
+function argIdentifier(baseCharacters) {
+    return choice(
+	token(repeat1(baseCharacters)),
+	'$'
+    )
 }

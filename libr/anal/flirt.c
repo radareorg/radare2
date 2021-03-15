@@ -99,7 +99,6 @@
 
 #include <r_types.h>
 #include <r_lib.h>
-#include <r_cmd.h>
 #include <r_sign.h>
 #include <signal.h>
 

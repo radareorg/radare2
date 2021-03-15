@@ -1,9 +1,10 @@
 ifeq (${_INCLUDE_MK_CLANG_},)
 _INCLUDE_MK_CLANG_=1
 CC?=clang
-RANLIB=ranlib
+RANLIB?=ranlib
 ONELIB=0
-CC_AR=ar q ${LIBAR}
+AR?=ar
+CC_AR=${AR} q ${LIBAR}
 CFLAGS+=-MD
 CFLAGS_INCLUDE=-I
 LDFLAGS_LINK=-l

@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_bp
-DEPS+=r_util
+R2DEPS+=r_util
 
 CFLAGS+=-DR2_PLUGIN_INCORE
 

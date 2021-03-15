@@ -12,14 +12,9 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	struct msp430_cmd cmd;
 
 	memset (&cmd, 0, sizeof (cmd));
-	memset (op, 0, sizeof (RAnalOp));
 	//op->id = ???;
 	op->size = -1;
 	op->nopcode = 1;
-	op->jump = -1;
-	op->fail = -1;
-	op->ptr = -1;
-	op->val = -1;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->family = R_ANAL_OP_FAMILY_CPU;
 
@@ -50,10 +45,10 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		break;
 	case MSP430_TWOOP:
 		switch (cmd.opcode) {
-		case MSP430_BIT: 
+		case MSP430_BIT:
 		case MSP430_BIC:
 		case MSP430_BIS:
-		case MSP430_MOV: 
+		case MSP430_MOV:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			if ((cmd.instr)[0] == 'b' && (cmd.instr)[1] == 'r') {
 				// Emulated branch instruction, moves source operand to PC register.

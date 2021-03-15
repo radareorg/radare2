@@ -66,7 +66,7 @@ ST_DATA CType func_vt;	/* current function return type (used by return instructi
 ST_DATA int func_vc;
 ST_DATA int last_line_num, last_ind, func_ind;	/* debug last line number and pc */
 ST_DATA char *funcname;
-ST_DATA char *dirname;
+ST_DATA char *dir_name;
 
 ST_DATA CType char_pointer_type, func_old_type;
 ST_DATA CType int8_type, int16_type, int32_type, int64_type, size_type;
@@ -308,7 +308,6 @@ ST_FUNC Sym *sym_push(int v, CType *type, int r, long long c) {
 	if (!(v & SYM_FIELD) && (v & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
 		int i = (v & ~SYM_STRUCT);
 		if (i < TOK_IDENT) {
-			eprintf ("Not found\n");
 			return NULL;
 		}
 		// ts = table_ident[i - TOK_IDENT];
@@ -1514,7 +1513,7 @@ static void post_type(CType *type, AttributeDef *ad) {
 	int n, l, t1, arg_size, align;
 	Sym **plast, *s, *first;
 	AttributeDef ad1;
-	CType pt;
+	CType pt = {0};
 	char *symname = NULL;
 	int narg = 0;
 
@@ -2579,8 +2578,9 @@ static void init_putz(CType *t, unsigned long c, int size) {
    size only evaluation is wanted (only for arrays). */
 static void decl_initializer(CType *type, unsigned long c, int first, int size_only) {
 	long long index;
-	int array_length, n, no_oblock, nb, parlevel, parlevel1, i;
-	int size1, align1, expr_type;
+	int n, no_oblock, nb, parlevel, parlevel1;
+	size_t array_length, size1, i;
+	int align1, expr_type;
 	Sym *s, *f;
 	CType *t1;
 

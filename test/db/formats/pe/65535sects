@@ -1,5 +1,6 @@
 NAME=PE: corkami 65535sects.exe - section list, entrypoint, open and analyze
 FILE=bins/pe/65535sects.exe
+TIMEOUT=1320
 CMDS=<<EOF
 aa
 om~?

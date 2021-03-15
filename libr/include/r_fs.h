@@ -63,8 +63,8 @@ typedef struct r_fs_plugin_t {
 	RFSFile* (*slurp)(RFSRoot *root, const char *path);
 	RFSFile* (*open)(RFSRoot *root, const char *path, bool create);
 	bool (*unlink)(RFSRoot *root, const char *path);
-	bool (*write)(RFSFile *fs, ut64 addr, const ut8 *data, int len);
-	bool (*read)(RFSFile *fs, ut64 addr, int len);
+	int (*write)(RFSFile *fs, ut64 addr, const ut8 *data, int len);
+	int (*read)(RFSFile *fs, ut64 addr, int len);
 	void (*close)(RFSFile *fs);
 	RList *(*dir)(RFSRoot *root, const char *path, int view);
 	void (*init)(void);

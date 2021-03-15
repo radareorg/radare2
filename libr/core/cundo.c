@@ -15,7 +15,7 @@ R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *re
 	if (cu) {
 		cu->action = strdup (action);
 		cu->revert = strdup (revert);
-		cu->tstamp = r_sys_now ();
+		cu->tstamp = r_time_now ();
 		cu->offset = offset;
 	}
 	return cu;

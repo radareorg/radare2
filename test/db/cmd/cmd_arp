@@ -1,0 +1,302 @@
+NAME=arpg
+FILE=-
+CMDS=<<EOF
+arpg bins/src/gdb-reg-profile.txt > $a
+?v $?
+$a~?
+arpg bins/src/gdb-reg-profile-invalid.txt > $b
+?v $?
+$b~?
+EOF
+EXPECT=<<EOF
+0x0
+98
+0x1
+0
+EOF
+RUN
+
+NAME=arp reg profile
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arps
+arp~?
+e asm.arch=x86
+e asm.bits=32
+arps
+arp~?
+e asm.arch=arm
+e asm.bits=32
+arps
+arp~?
+e asm.arch=arm
+e asm.bits=64
+arps
+arp~?
+EOF
+EXPECT=<<EOF
+160
+147
+64
+86
+68
+127
+808
+311
+EOF
+RUN
+
+NAME=arpi reg profile
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arpi
+EOF
+EXPECT=<<EOF
+Aliases (Reg->name)
+0 PC rip
+1 SP rsp
+2 SR (null)
+3 BP rbp
+4 LR (null)
+5 A0 rdi
+6 A1 rsi
+7 A2 rdx
+8 A3 rcx
+9 A4 r8
+10 A5 r9
+11 A6 r10
+12 A7 r11
+13 A8 (null)
+14 A9 (null)
+15 R0 (null)
+16 R1 (null)
+17 R2 (null)
+18 R3 (null)
+19 ZF (null)
+20 SF (null)
+21 CF (null)
+22 OF (null)
+23 SN rax
+regset 0 (gpr)
+* arena gpr size 160
+   rax gpr @ gpr (offset: 80  size: 8)
+   eax gpr @ gpr (offset: 80  size: 4)
+   ax gpr @ gpr (offset: 80  size: 2)
+   al gpr @ gpr (offset: 80  size: 1)
+   ah gpr @ gpr (offset: 81  size: 1)
+   rbx gpr @ gpr (offset: 40  size: 8)
+   ebx gpr @ gpr (offset: 40  size: 4)
+   bx gpr @ gpr (offset: 40  size: 2)
+   bl gpr @ gpr (offset: 40  size: 1)
+   bh gpr @ gpr (offset: 41  size: 1)
+   rcx gpr @ gpr (offset: 88  size: 8)
+   ecx gpr @ gpr (offset: 88  size: 4)
+   cx gpr @ gpr (offset: 88  size: 2)
+   cl gpr @ gpr (offset: 88  size: 1)
+   ch gpr @ gpr (offset: 89  size: 1)
+   rdx gpr @ gpr (offset: 96  size: 8)
+   edx gpr @ gpr (offset: 96  size: 4)
+   dx gpr @ gpr (offset: 96  size: 2)
+   dl gpr @ gpr (offset: 96  size: 1)
+   dh gpr @ gpr (offset: 97  size: 1)
+   rsi gpr @ gpr (offset: 104  size: 8)
+   esi gpr @ gpr (offset: 104  size: 4)
+   si gpr @ gpr (offset: 104  size: 2)
+   sil gpr @ gpr (offset: 104  size: 1)
+   rdi gpr @ gpr (offset: 112  size: 8)
+   edi gpr @ gpr (offset: 112  size: 4)
+   di gpr @ gpr (offset: 112  size: 2)
+   dil gpr @ gpr (offset: 112  size: 1)
+   r8 gpr @ gpr (offset: 72  size: 8)
+   r8d gpr @ gpr (offset: 72  size: 4)
+   r8w gpr @ gpr (offset: 72  size: 2)
+   r8b gpr @ gpr (offset: 72  size: 1)
+   r9 gpr @ gpr (offset: 64  size: 8)
+   r9d gpr @ gpr (offset: 64  size: 4)
+   r9w gpr @ gpr (offset: 64  size: 2)
+   r9b gpr @ gpr (offset: 64  size: 1)
+   r10 gpr @ gpr (offset: 56  size: 8)
+   r10d gpr @ gpr (offset: 56  size: 4)
+   r10w gpr @ gpr (offset: 56  size: 2)
+   r10b gpr @ gpr (offset: 56  size: 1)
+   r11 gpr @ gpr (offset: 48  size: 8)
+   r11d gpr @ gpr (offset: 48  size: 4)
+   r11w gpr @ gpr (offset: 48  size: 2)
+   r11b gpr @ gpr (offset: 48  size: 1)
+   r12 gpr @ gpr (offset: 24  size: 8)
+   r12d gpr @ gpr (offset: 24  size: 4)
+   r12w gpr @ gpr (offset: 24  size: 2)
+   r12b gpr @ gpr (offset: 24  size: 1)
+   r13 gpr @ gpr (offset: 16  size: 8)
+   r13d gpr @ gpr (offset: 16  size: 4)
+   r13w gpr @ gpr (offset: 16  size: 2)
+   r13b gpr @ gpr (offset: 16  size: 1)
+   r14 gpr @ gpr (offset: 8  size: 8)
+   r14d gpr @ gpr (offset: 8  size: 4)
+   r14w gpr @ gpr (offset: 8  size: 2)
+   r14b gpr @ gpr (offset: 8  size: 1)
+   r15 gpr @ gpr (offset: 0  size: 8)
+   r15d gpr @ gpr (offset: 0  size: 4)
+   r15w gpr @ gpr (offset: 0  size: 2)
+   r15b gpr @ gpr (offset: 0  size: 1)
+   rip gpr @ gpr (offset: 128  size: 8)
+   rbp gpr @ gpr (offset: 32  size: 8)
+   ebp gpr @ gpr (offset: 32  size: 4)
+   bp gpr @ gpr (offset: 32  size: 2)
+   bpl gpr @ gpr (offset: 32  size: 1)
+   rflags flg @ gpr (offset: 144  size: 8)
+   eflags flg @ gpr (offset: 144  size: 4)
+   cf flg @ gpr (offset: 144  size: 0)
+   pf flg @ gpr (offset: 144  size: 0)
+   af flg @ gpr (offset: 144  size: 0)
+   zf flg @ gpr (offset: 144  size: 0)
+   sf flg @ gpr (offset: 144  size: 0)
+   tf flg @ gpr (offset: 145  size: 0)
+   if flg @ gpr (offset: 145  size: 0)
+   df flg @ gpr (offset: 145  size: 0)
+   of flg @ gpr (offset: 145  size: 0)
+   rsp gpr @ gpr (offset: 152  size: 8)
+   esp gpr @ gpr (offset: 152  size: 4)
+   sp gpr @ gpr (offset: 152  size: 2)
+   spl gpr @ gpr (offset: 152  size: 1)
+regset 1 (drx)
+* arena drx size 64
+   dr0 drx @ drx (offset: 0  size: 8)
+   dr1 drx @ drx (offset: 8  size: 8)
+   dr2 drx @ drx (offset: 16  size: 8)
+   dr3 drx @ drx (offset: 24  size: 8)
+   dr6 drx @ drx (offset: 48  size: 8)
+   dr7 drx @ drx (offset: 56  size: 8)
+regset 2 (fpu)
+* arena fpu size 296
+   cwd fpu @ fpu (offset: 0  size: 2)
+   swd fpu @ fpu (offset: 2  size: 2)
+   ftw fpu @ fpu (offset: 4  size: 2)
+   fop fpu @ fpu (offset: 6  size: 2)
+   frip fpu @ fpu (offset: 8  size: 8)
+   frdp fpu @ fpu (offset: 16  size: 8)
+   mxcsr fpu @ fpu (offset: 24  size: 4)
+   mxcr_mask fpu @ fpu (offset: 28  size: 4)
+   st0 fpu @ fpu (offset: 32  size: 8)
+   st1 fpu @ fpu (offset: 48  size: 8)
+   st2 fpu @ fpu (offset: 64  size: 8)
+   st3 fpu @ fpu (offset: 80  size: 8)
+   st4 fpu @ fpu (offset: 96  size: 8)
+   st5 fpu @ fpu (offset: 112  size: 8)
+   st6 fpu @ fpu (offset: 128  size: 8)
+   st7 fpu @ fpu (offset: 144  size: 8)
+   xmm0 xmm @ fpu (offset: 160  size: 16)
+   xmm0l fpu @ fpu (offset: 160  size: 8)
+   xmm0h fpu @ fpu (offset: 168  size: 8)
+   xmm1 xmm @ fpu (offset: 176  size: 16)
+   xmm1l fpu @ fpu (offset: 176  size: 8)
+   xmm1h fpu @ fpu (offset: 184  size: 8)
+   xmm2 xmm @ fpu (offset: 192  size: 16)
+   xmm2l fpu @ fpu (offset: 192  size: 8)
+   xmm2h fpu @ fpu (offset: 200  size: 8)
+   xmm3 xmm @ fpu (offset: 208  size: 16)
+   xmm3l fpu @ fpu (offset: 208  size: 8)
+   xmm3h fpu @ fpu (offset: 216  size: 8)
+   xmm4 xmm @ fpu (offset: 224  size: 16)
+   xmm4l fpu @ fpu (offset: 224  size: 8)
+   xmm4h fpu @ fpu (offset: 232  size: 8)
+   xmm5 xmm @ fpu (offset: 240  size: 16)
+   xmm5l fpu @ fpu (offset: 240  size: 8)
+   xmm5h fpu @ fpu (offset: 248  size: 8)
+   xmm6 xmm @ fpu (offset: 256  size: 16)
+   xmm6l fpu @ fpu (offset: 256  size: 8)
+   xmm6h fpu @ fpu (offset: 264  size: 8)
+   xmm7 xmm @ fpu (offset: 272  size: 16)
+   xmm7l fpu @ fpu (offset: 272  size: 8)
+   xmm7h fpu @ fpu (offset: 280  size: 8)
+   x64 fpu @ fpu (offset: 288  size: 8)
+regset 3 (mmx)
+* arena mmx size 1
+regset 4 (xmm)
+* arena xmm size 1
+regset 5 (ymm)
+* arena ymm size 1
+regset 6 (flg)
+* arena flg size 1
+regset 7 (seg)
+* arena seg size 216
+   cs seg @ seg (offset: 136  size: 8)
+   ss seg @ seg (offset: 160  size: 8)
+   fs_base seg @ seg (offset: 168  size: 8)
+   gs_base seg @ seg (offset: 176  size: 8)
+   ds seg @ seg (offset: 184  size: 8)
+   es seg @ seg (offset: 192  size: 8)
+   fs seg @ seg (offset: 200  size: 8)
+   gs seg @ seg (offset: 208  size: 8)
+EOF
+RUN
+
+
+NAME=bad regprofile
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arps
+arp scripts/badrp.r2
+arps
+ar=
+ar rax
+EOF
+EXPECT=<<EOF
+160
+88
+    rax 0x00000000       
+0x00000000
+EOF
+EXPECT_ERR=<<EOF
+Warning: =A0 not defined
+EOF
+RUN
+
+NAME=bad regprofile 2
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arps
+arp scripts/badrp2.r2
+arps
+ar=
+ar rax
+EOF
+EXPECT=<<EOF
+160
+1
+EOF
+EXPECT_ERR=<<EOF
+r_reg_set_profile_string: Parse error @ line 3 (Invalid syntax: Wrong number of columns)
+EOF
+RUN
+
+NAME=bad regprofile 2
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+arps
+arp scripts/badrp2.r2
+arps
+e asm.arch=x86
+e asm.bits=32
+e asm.bits=64
+arps
+EOF
+EXPECT=<<EOF
+160
+1
+160
+EOF
+EXPECT_ERR=<<EOF
+r_reg_set_profile_string: Parse error @ line 3 (Invalid syntax: Wrong number of columns)
+EOF
+RUN

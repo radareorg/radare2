@@ -10,6 +10,7 @@
 #include <r_list.h> // radare linked list
 #include <r_skiplist.h> // skiplist
 #include <r_flist.h> // radare fixed pointer array iterators
+#include <r_binheap.h>
 #include <r_th.h>
 #if !__WINDOWS__
 #include <dirent.h>
@@ -37,8 +38,7 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_base91.h"
 #include "r_util/r_buf.h"
 #include "r_util/r_bitmap.h"
-#include "r_util/r_constr.h"
-#include "r_util/r_date.h"
+#include "r_util/r_time.h"
 #include "r_util/r_debruijn.h"
 #include "r_util/r_cache.h"
 #include "r_util/r_ctypes.h"
@@ -76,6 +76,7 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_x509.h"
 #include "r_util/r_pkcs7.h"
 #include "r_util/r_protobuf.h"
+#include "r_util/r_big.h"
 // requires io, core, ... #include "r_util/r_print.h"
 
 #ifdef __cplusplus

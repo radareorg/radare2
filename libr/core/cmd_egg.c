@@ -22,7 +22,7 @@ static const char *help_msg_g[] = {
 	NULL
 };
 
-static void cmd_egg_init(RCore *core) {
+static void cmd_egg_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, g);
 }
 
@@ -136,7 +136,7 @@ static int cmd_egg(void *data, const char *input) {
 	char *oa, *p;
 	r_egg_setup (egg,
 		r_config_get (core->config, "asm.arch"),
-		core->assembler->bits, 0,
+		core->rasm->bits, 0,
 		r_config_get (core->config, "asm.os")); // XXX
 	switch (*input) {
 	case 's': // "gs"
@@ -183,7 +183,7 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "egg.padding", input + 2);
 			}
 		} else {
-			eprintf ("Usage: gp [padding]\n");	
+			eprintf ("Usage: gp [padding]\n");
 		}
 		break;
 	case 'e': // "ge"
@@ -201,14 +201,14 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "key", p + 1);
 				r_egg_option_set (egg, "egg.encoder", oa);
 			} else {
-				eprintf ("Usage: ge [encoder] [key]\n");	
+				eprintf ("Usage: ge [encoder] [key]\n");
 			}
 			free (oa);
 		} else {
 			eprintf ("Usage: ge [encoder] [key]\n");
 		}
 		break;
-	case 'i': // "gi" 
+	case 'i': // "gi"
 		if (input[1] == ' ') {
 			if (input[0] && input[2]) {
 				r_egg_option_set (egg, "egg.shellcode", input + 2);
@@ -274,7 +274,7 @@ static int cmd_egg(void *data, const char *input) {
 			} else {
 				char *o = r_egg_option_get (egg, oa);
 				if (o) {
-					r_cons_printf (o);
+					r_cons_print (o);
 					free (o);
 				}
 			}

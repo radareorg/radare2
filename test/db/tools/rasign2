@@ -1,0 +1,123 @@
+NAME=rasign2 version
+FILE=-
+CMDS=!!rasign2 -v~?
+EXPECT=<<EOF
+2
+EOF
+RUN
+
+NAME=rasign2 help
+FILE=-
+CMDS=!!rasign2 -h~Usage
+EXPECT=<<EOF
+Usage: rasign2 [options] [file]
+EOF
+RUN
+
+NAME=rasign2 -r
+FILE=-
+CMDS=!!rasign2 -r bins/elf/hello_world~main?
+EXPECT=<<EOF
+7
+EOF
+RUN
+
+NAME=rasign2 -rj
+FILE=-
+CMDS=!!rasign2 -rj bins/elf/hello_world~main?
+EXPECT=<<EOF
+8
+EOF
+RUN
+
+NAME=rasign2 -raa 
+FILE=-
+CMDS=!!rasign2 -raa bins/elf/hello_world~main?
+EXPECT=<<EOF
+7
+EOF
+RUN
+
+NAME=rasign2 -aarj
+FILE=-
+CMDS=!!rasign2 -aarj bins/elf/hello_world~main?
+EXPECT=<<EOF
+8
+EOF
+RUN
+
+NAME=rasign2 bytes
+FILE=-
+CMDS=!!rasign2 -r bins/elf/libverifyPass.so~za sym.imp.memcpy b
+EXPECT=<<EOF
+za sym.imp.memcpy b 00c68fe202ca8ce2f4fbbce5
+EOF
+RUN
+
+
+NAME=rasign2 graph metrics
+FILE=-
+CMDS=!!rasign2 -aarj bins/elf/hello_world~za main g
+EXPECT=<<EOF
+za main g cc=2 nbbs=3 edges=3 ebbs=1 bbsum=157
+EOF
+RUN
+
+NAME=rasign2 original offset
+FILE=-
+CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main o
+EXPECT=<<EOF
+za main o 0x000007aa
+EOF
+RUN
+
+NAME=rasign2 references
+FILE=-
+CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main r
+EXPECT=<<EOF
+za main r sym.imp.strlen sym.imp.strlen sym.imp.malloc sym.imp.strcpy sym.imp.strcat sym.imp.puts sym.imp.free
+EOF
+RUN
+
+NAME=rasign2 bbhash
+FILE=-
+CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main h
+EXPECT=<<EOF
+za main h 44004dffff87483150d4f315ea8426b4d0c471ce4c56176c874513b24d0266b4
+EOF
+RUN
+
+NAME=rasign2 vars/args
+FILE=-
+CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main v
+EXPECT=<<EOF
+za main v b-32 b-24 b-40 b-36 b-16
+EOF
+RUN
+
+
+NAME=rasign2 spaces check
+FILE=-
+CMDS=!!rasign2 -s spacename -ar bins/elf/hello_world~spacename:sym.imp.puts n sym.imp.puts
+EXPECT=<<EOF
+za spacename:sym.imp.puts n sym.imp.puts
+EOF
+RUN
+
+NAME=rasign2 -f libc-v7.sig
+FILE=
+CMDS=!rasign2 -f bins/other/sigs/libc-v7.sig
+EXPECT=<<EOF
+41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
+ 0. 16 D2A2 0298 0000:__libc_start_main
+EOF
+RUN
+
+NAME=rasign2 -f libc-v10.sig
+FILE=
+CMDS=!rasign2 -f bins/other/sigs/libc-v10.sig
+EXPECT=<<EOF
+41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
+ 0. 16 D2A2 0298 0000:__libc_start_main
+EOF
+RUN

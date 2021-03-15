@@ -66,7 +66,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		isdev = true;
 	}
 
-	rw |= R_PERM_W;
 	if (isdev) {
 		port = strchr (host, '@');
 		if (port) {
@@ -203,7 +202,7 @@ static int __gettid(RIODesc *fd) {
 }
 
 extern int send_msg(libgdbr_t *g, const char *command);
-extern int read_packet(libgdbr_t *instance);
+extern int read_packet(libgdbr_t *instance, bool vcont);
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!desc) {
@@ -263,7 +262,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (r_str_startswith (cmd, "pkt ")) {
 		gdbr_lock_enter (desc);
 		if (send_msg (desc, cmd + 4) >= 0) {
-			(void)read_packet (desc);
+			(void)read_packet (desc, false);
 			desc->data[desc->data_len] = '\0';
 			io->cb_printf ("reply:\n%s\n", desc->data);
 			if (!desc->no_ack) {
@@ -290,7 +289,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		gdbr_lock_enter (desc);
 		if (send_msg (desc, "bs") >= 0) {
-			(void)read_packet (desc);
+			(void)read_packet (desc, false);
 			desc->data[desc->data_len] = '\0';
 			if (!desc->no_ack) {
 				eprintf ("[waiting for ack]\n");
@@ -313,7 +312,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		gdbr_lock_enter (desc);
 		if (send_msg (desc, "bc") >= 0) {
-			(void)read_packet (desc);
+			(void)read_packet (desc, false);
 			desc->data[desc->data_len] = '\0';
 			if (!desc->no_ack) {
 				eprintf ("[waiting for ack]\n");

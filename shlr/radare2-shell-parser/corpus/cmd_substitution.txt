@@ -30,7 +30,7 @@ Command substitution with multiple commands
 	      (tmp_seek_command
 	        (arged_command command: (cmd_identifier)
 	          args: (args (arg (arg_identifier))))
-		(arg (arg_identifier))))))))
+		(args (arg (arg_identifier)))))))))
 
 
 
@@ -65,3 +65,24 @@ Nested command substitution
 	           args: (args (arg (cmd_substitution_arg
 		           (arged_command command: (cmd_identifier)
 			     args: (args (arg (arg_identifier)))))))))))))
+
+
+=======================================
+Nested command substitution 2
+=======================================
+
+?e Hello$(?e Wor$(?e ld))
+
+---
+
+(commands
+  (arged_command (cmd_identifier)
+    (args (arg (concatenation
+                 (arg_identifier)
+                 (cmd_substitution_arg
+                   (arged_command (cmd_identifier)
+                     (args (arg (concatenation
+		                  (arg_identifier)
+				  (cmd_substitution_arg
+				    (arged_command (cmd_identifier)
+				      (args (arg (arg_identifier)))))))))))))))

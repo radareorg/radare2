@@ -1,0 +1,12 @@
+NAME=snes
+FILE=bins/snes/speed_test_v51.sfc
+CMDS=<<EOF
+e anal.hasnext=true
+e asm.arch=snes
+afr
+aflc
+EOF
+EXPECT=<<EOF
+102
+EOF
+RUN

@@ -233,8 +233,9 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 		}
 	}
 	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
-		ret = gdbr_connect_lldb (g);
-		goto end;
+		if ((ret = gdbr_connect_lldb (g)) < 0) {
+			goto end;
+		}
 	}
 	// Query the thread / process id
 	g->stub_features.qC = true;
@@ -249,7 +250,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	// Check if vCont is supported
 	gdbr_check_vcont (g);
 	// Set pid/thread for operations other than "step" and "continue"
-	if (gdbr_select (g, g->pid, 0) < 0) {
+	if (gdbr_select (g, g->pid, g->tid) < 0) {
 		// return -1;
 	}
 	// Set thread for "step" and "continue" operations
@@ -1606,7 +1607,7 @@ int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
 			goto end;
 		}
 		if (g->data_len == 3 && g->data[0] == 'E'
-			    && isxdigit (g->data[1]) && isxdigit (g->data[2])) {
+			    && isxdigit ((unsigned char)g->data[1]) && isxdigit ((unsigned char)g->data[2])) {
 			ret = -1;
 			goto end;
 		}
@@ -1955,7 +1956,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 	}
 	if (r_str_startswith (g->data, "TextSeg=")) {
 		ptr = g->data + strlen ("TextSeg=");
-		if (!isxdigit (*ptr)) {
+		if (!isxdigit ((unsigned char)*ptr)) {
 			goto end;
 		}
 		off = strtoull (ptr, NULL, 16);
@@ -1968,7 +1969,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 		ptr++;
 		if (*ptr && r_str_startswith (ptr, "DataSeg=")) {
 			ptr += strlen ("DataSeg=");
-			if (!isxdigit (*ptr)) {
+			if (!isxdigit ((unsigned char)*ptr)) {
 				goto end;
 			}
 			off = strtoull (ptr, NULL, 16);
@@ -1982,7 +1983,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 		goto end;
 	}
 	ptr = g->data + strlen ("Text=");
-	if (!isxdigit (*ptr)) {
+	if (!isxdigit ((unsigned char)*ptr)) {
 		goto end;
 	}
 	off = strtoull (ptr, NULL, 16);
@@ -1994,7 +1995,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 		goto end;
 	}
 	ptr += strlen (";Data=");
-	if (!isxdigit (*ptr)) {
+	if (!isxdigit ((unsigned char)*ptr)) {
 		min = UINT64_MAX;
 		goto end;
 	}
@@ -2008,7 +2009,7 @@ ut64 gdbr_get_baddr(libgdbr_t *g) {
 	ptr++;
 	if (r_str_startswith (ptr, "Bss=")) {
 		ptr += strlen ("Bss=");
-		if (!isxdigit (*ptr)) {
+		if (!isxdigit ((unsigned char)*ptr)) {
 			goto end;
 		}
 		off = strtoull (ptr, NULL, 16);

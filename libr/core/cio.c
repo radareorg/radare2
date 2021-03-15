@@ -1,15 +1,15 @@
-/* radare2 - LGPL - Copyright 2009-2019 - pancake */
+/* radare2 - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_core.h"
 
 R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
 	bool is_gdb = !strcmp (debugbackend, "gdb");
-	RIODesc * fd = r->file ? r_io_desc_get (r->io, r->file->fd) : NULL;
+	RIODesc * fd = r->io->desc;
 	const char *prompt = NULL;
 
 	p = fd ? fd->data : NULL;
-	r_config_set_i (r->config, "cfg.debug", 1);
+	r_config_set_b (r->config, "cfg.debug", true);
 	if (!p) {
 		eprintf ("Invalid debug io\n");
 		return false;
@@ -422,14 +422,14 @@ R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 }
 
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
-	if (!core->io || !core->file || size < 1) {
+	if (!core->io || !core->io->desc || size < 1) {
 		return false;
 	}
 	int io_va = r_config_get_i (core->config, "io.va");
 	if (io_va) {
-		RIOMap *map = r_io_map_get (core->io, core->offset);
+		RIOMap *map = r_io_map_get_at (core->io, core->offset);
 		if (map) {
-			addr = addr - map->itv.addr + map->delta;
+			addr = addr - r_io_map_begin (map) + map->delta;
 		}
 		r_config_set_i (core->config, "io.va", false);
 	}
@@ -447,12 +447,12 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	ut8 * shift_buf = NULL;
 	int res = false;
 
-	if (!core->io || !core->file) {
+	if (!core->io || !core->io->desc) {
 		return false;
 	}
 
 	if (b_size == 0 || b_size == (ut64) -1) {
-		r_io_use_fd (core->io, core->file->fd);
+		r_io_use_fd (core->io, core->io->desc->fd);
 		file_sz = r_io_size (core->io);
 		if (file_sz == UT64_MAX) {
 			file_sz = 0;
@@ -496,7 +496,6 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	} else if ( (addr) + dist > fend) {
 		res = false;
 	} else {
-		r_io_use_fd (core->io, core->file->fd);
 		r_io_read_at (core->io, addr, shift_buf, b_size);
 		r_io_write_at (core->io, addr + dist, shift_buf, b_size);
 		res = true;
@@ -511,13 +510,4 @@ R_API int r_core_block_read(RCore *core) {
 		return r_io_read_at (core->io, core->offset, core->block, core->blocksize);
 	}
 	return -1;
-}
-
-R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {
-	if (!core) {
-		eprintf ("r_core_is_valid_offset: core is NULL\n");
-		r_sys_backtrace ();
-		return -1;
-	}
-	return r_io_is_valid_offset (core->io, offset, 0);
 }

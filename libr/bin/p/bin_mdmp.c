@@ -66,7 +66,7 @@ static RBinInfo *info(RBinFile *bf) {
 	// FIXME: Needed to fix issue with PLT resolving. Can we get away with setting this for all children bins?
 	ret->has_lit = true;
 
-	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt ("0x%08x", obj->hdr->flags), 0);
+	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt ("0x%08"PFMT64x, obj->hdr->flags), 0);
 	sdb_num_set (bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 
 	if (obj->streams.system_info) {
@@ -148,7 +148,7 @@ static RList* libs(RBinFile *bf) {
 			return ret;
 		}
 		for (i = 0; !libs[i].last; i++) {
-			ptr = r_str_newf ("[0x%.08x] - %s", pe32_bin->vaddr, libs[i].name);
+			ptr = r_str_newf ("[0x%.08" PFMT64x "] - %s", pe32_bin->vaddr, libs[i].name);
 			r_list_append (ret, ptr);
 		}
 		free (libs);
@@ -338,7 +338,7 @@ static RList *mem(RBinFile *bf) {
 			a_protect = mem_info->allocation_protect;
 		}
 		location = &(module->memory);
-		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT64x" state=0x%08"PFMT64x
+		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT32x" state=0x%08"PFMT64x
 					" type=0x%08"PFMT64x" allocation_protect=0x%08"PFMT64x" Memory_Section",
 					location->rva, state, type, a_protect));
 
@@ -374,17 +374,16 @@ static RList *mem(RBinFile *bf) {
 }
 
 static RList* relocs(RBinFile *bf) {
-	struct r_bin_mdmp_obj *obj;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
 	RListIter *it;
 	RList* ret;
 
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
 
-	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
+	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	r_list_foreach (obj->pe32_bins, it, pe32_bin) {
 		if (pe32_bin->bin && pe32_bin->bin->relocs) {

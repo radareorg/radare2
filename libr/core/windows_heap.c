@@ -74,7 +74,7 @@ static size_t RtlpLFHKeyOffset = 0;
 	}\
 	hb->dwFlags |= ((flags) >> SHIFT) << SHIFT;
 
-static bool __is_windows_ten() {
+static bool __is_windows_ten(void) {
 	int major = 0;
 	RSysInfo *info = r_sys_info ();
 	if (info && info->version) {
@@ -120,7 +120,7 @@ static char *get_type(WPARAM flags) {
 	return r_str_newf ("%s %s%s", state, heaptype, type);
 }
 
-static bool init_func() {
+static bool init_func(void) {
 	HANDLE ntdll = LoadLibrary (TEXT ("ntdll.dll"));
 	if (!ntdll) {
 		return false;
@@ -1166,8 +1166,8 @@ err:
 	return NULL;
 }
 
-static RTable *__new_heapblock_tbl() {
-	RTable *tbl = r_table_new ();
+static RTable *__new_heapblock_tbl(void) {
+	RTable *tbl = r_table_new ("heap");
 	r_table_add_column (tbl, r_table_type ("number"), "HeaderAddress", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "UserAddress", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Size", -1);
@@ -1192,7 +1192,7 @@ static void w32_list_heaps(RCore *core, const char format) {
 	PHeapInformation heapInfo = db->HeapInformation;
 	CHECK_INFO (heapInfo);
 	int i;
-	RTable *tbl = r_table_new ();
+	RTable *tbl = r_table_new ("heaps");
 	r_table_add_column (tbl, r_table_type ("number"), "Address", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Blocks", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Allocated", -1);
@@ -1254,7 +1254,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 		switch (format) {
 		case 'f':
 			if (heapInfo->heaps[i].BlockCount > 50000) {
-				go = r_cons_yesno ('n', "Are you sure you want to add %"PFMT64u" flags? (y/N)", heapInfo->heaps[i].BlockCount);
+				go = r_cons_yesno ('n', "Are you sure you want to add %lu flags? (y/N)", heapInfo->heaps[i].BlockCount);
 			}
 			break;
 		case 'j':

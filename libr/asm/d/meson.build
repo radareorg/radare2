@@ -22,6 +22,7 @@ sdb_files = [
   'sparc',
   'sysz',
   'tms320',
+  'tricore',
   'v810',
   'v850',
   'x86',

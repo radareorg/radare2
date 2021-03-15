@@ -18,11 +18,24 @@ e asm.bits=64
 ?e @@@r~xmm0
 EOF
 EXPECT=<<EOF
-xmm0h: 
 xmm0l: 
+xmm0h: 
 EOF
 RUN
 
+NAME=repeat comments
+FILE=-
+CMDS=<<EOF
+CC aero@0x42
+CC pause@0x43
+CC plus@0x1337
+s@@@C:p*
+EOF
+EXPECT=<<EOF
+0x43
+0x1337
+EOF
+RUN
 
 NAME=3p8
 FILE=-

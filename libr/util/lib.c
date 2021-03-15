@@ -1,18 +1,17 @@
-/* radare - LGPL - Copyright 2008-2019 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include <r_util.h>
 #include <r_lib.h>
 
-// TODO: boolify
-#define IFDBG if(__has_debug)
-
 R_LIB_VERSION(r_lib);
 
+/* TODO: avoid globals */
+#define IFDBG if(__has_debug)
 static bool __has_debug = false;
 
 /* XXX : this must be registered in runtime */
 static const char *r_lib_types[] = {
-	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr",
+	"io", "dbg", "lang", "asm", "anal", "parse", "bin", "bin_xtr", "bin_ldr",
 	"bp", "syscall", "fastcall", "crypto", "core", "egg", "fs", NULL
 };
 
@@ -35,6 +34,7 @@ R_API int r_lib_types_get_i(const char *str) {
 
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret = NULL;
+#if WANT_DYLINK
 #if __UNIX__
 	if (libname) {
 		ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
@@ -64,14 +64,19 @@ R_API void *r_lib_dl_open(const char *libname) {
 		eprintf ("r_lib_dl_open: error: %s\n", libname);
 	}
 #endif
+#endif
 	return ret;
 }
 
 R_API void *r_lib_dl_sym(void *handler, const char *name) {
+#if WANT_DYLINK
 #if __UNIX__
 	return dlsym (handler, name);
 #elif __WINDOWS__
 	return GetProcAddress (handler, name);
+#else
+	return NULL;
+#endif
 #else
 	return NULL;
 #endif
@@ -136,7 +141,7 @@ err:
 		if (next) {
 			*next = 0;
 		}
-		char *libpath = r_str_newf ("%s/%s." R_LIB_EXT, path0, libname);
+		char *libpath = r_str_newf ("%s"R_SYS_DIR"%s." R_LIB_EXT, path0, libname);
 		if (r_file_exists (libpath)) {
 			free (env);
 			return libpath;
@@ -152,13 +157,8 @@ err:
 R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	RLib *lib = R_NEW (RLib);
 	if (lib) {
-		char *e = r_sys_getenv ("R_DEBUG");
-		if (e) {
-			__has_debug = *e;
-			free (e);
-		} else {
-			__has_debug = false;
-		}
+		__has_debug = r_sys_getenv_asbool ("R2_DEBUG");
+		lib->ignore_version = r_sys_getenv_asbool ("R2_IGNVER");
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
 		lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
@@ -265,7 +265,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	}
 
 	if (__already_loaded (lib, file)) {
-		eprintf("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
+		eprintf ("Not loading library because it has already been loaded from somewhere else: '%s'\n", file);
 		return -1;
 	}
 
@@ -311,7 +311,7 @@ static char *major_minor(const char *s) {
 
 R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru) {
 	r_return_val_if_fail (lib && file && stru, -1);
-	if (stru->version) {
+	if (stru->version && !lib->ignore_version) {
 		char *mm0 = major_minor (stru->version);
 		char *mm1 = major_minor (R2_VERSION);
 		bool mismatch = strcmp (mm0, mm1);
@@ -354,6 +354,7 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 }
 
 R_API bool r_lib_opendir(RLib *lib, const char *path) {
+#if WANT_DYLINK
 	r_return_val_if_fail (lib && path, false);
 #if __WINDOWS__
 	wchar_t file[1024];
@@ -421,6 +422,7 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 		}
 	}
 	closedir (dh);
+#endif
 #endif
 	return true;
 }

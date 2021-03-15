@@ -10,12 +10,9 @@ It is distributed as a standalone binary and a library.
 There's also the sdbtypes: a vala library that implements
 several data structures on top of an sdb or a memcache instance.
 
+[![GHA](https://github.com/radareorg/sdb/workflows/ci/badge.svg)](https://github.com/radareorg/sdb/actions?query=workflow%3Aci)
+[![GHA](https://api.travis-ci.org/radareorg/sdb.svg)](https://travis-ci.org/radareorg/sdb)
 [![Travis](https://api.travis-ci.org/radareorg/sdb.svg)](https://travis-ci.org/radareorg/sdb)
-
-[![Appveyor](https://ci.appveyor.com/api/projects/status/github/radare/sdb?branch=master&svg=true)](https://ci.appveyor.com/project/radare/sdb)
-
-[![Build Status](http://ci.rada.re/buildStatus/icon?job=sdb)](http://ci.rada.re/job/sdb/)
-
 [![Build Status](https://scan.coverity.com/projects/1651/badge.svg)](https://scan.coverity.com/projects/1651)
 
 Author
@@ -44,6 +41,18 @@ For native builds just type `make`. Everything will be compiled twice to get the
 To compile with Emscripten for Javascript:
 
 	make CC=emcc EXT_EXE=.js
+
+To crosscompile with meson:
+
+```
+$ cat > cross-file.txt <<EOF
+[properties]
+exe_wrapper = 'wine'
+and then run meson build --cross-file cross-file.txt ; ninja -C build. It should work and it should create another binary called sdb_native.
+EOF
+$ meson build --cross-file cross-file.txt
+$ ninja -C build
+```
 
 Changes
 -------

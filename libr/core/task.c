@@ -56,33 +56,31 @@ typedef struct oneshot_t {
 	void *user;
 } OneShot;
 
-R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
+R_API void r_core_task_print (RCore *core, RCoreTask *task, PJ *pj, int mode) {
 	switch (mode) {
-	case 'j':
-		{
-		r_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
+	case 'j': {
+		pj_o (pj);
+		pj_ki (pj, "id", task->id);
+		pj_k (pj, "state");
 		switch (task->state) {
 		case R_CORE_TASK_STATE_BEFORE_START:
-			r_cons_print ("before_start");
+			pj_s (pj, "before_start");
 			break;
 		case R_CORE_TASK_STATE_RUNNING:
-			r_cons_print ("running");
+			pj_s (pj, "running");
 			break;
 		case R_CORE_TASK_STATE_SLEEPING:
-			r_cons_print ("sleeping");
+			pj_s (pj, "sleeping");
 			break;
 		case R_CORE_TASK_STATE_DONE:
-			r_cons_print ("done");
+			pj_s (pj, "done");
 			break;
 		}
-		r_cons_printf ("\",\"transient\":%s,\"cmd\":", task->transient ? "true" : "false");
-		if (task->cmd) {
-			r_cons_printf ("\"%s\"}", task->cmd);
-		} else {
-			r_cons_printf ("null}");
-		}
-		}
+		pj_kb (pj, "transient", task->transient);
+		pj_ks (pj, "cmd", r_str_get_fail (task->cmd, "null"));
+		pj_end (pj);
 		break;
+	}
 	default: {
 		const char *info = task->cmd;
 		if (task == core->tasks.main_task) {
@@ -92,7 +90,7 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 					   task->id,
 					   task->transient ? "(t)" : "",
 					   r_core_task_status (task),
-					   info ? info : "");
+					   r_str_get (info));
 		}
 		break;
 	}
@@ -101,19 +99,23 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 R_API void r_core_task_list(RCore *core, int mode) {
 	RListIter *iter;
 	RCoreTask *task;
+	PJ *pj = NULL;
 	if (mode == 'j') {
-		r_cons_printf ("[");
+		pj = r_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
+		pj_a (pj);
 	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (&core->tasks, &old_sigset);
 	r_list_foreach (core->tasks.tasks, iter, task) {
-		r_core_task_print (core, task, mode);
-		if (mode == 'j' && iter->n) {
-			r_cons_printf (",");
-		}
+		r_core_task_print (core, task, pj, mode);
 	}
 	if (mode == 'j') {
-		r_cons_printf ("]\n");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
 	} else {
 		r_cons_printf ("--\ntotal running: %d\n", core->tasks.tasks_running);
 	}

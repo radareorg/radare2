@@ -49,6 +49,7 @@ R_API RGraphNode *r_graph_get_node(const RGraph *g, unsigned int idx);
 R_API RListIter *r_graph_node_iter(const RGraph *g, unsigned int idx);
 R_API void r_graph_reset(RGraph *g);
 R_API RGraphNode *r_graph_add_node(RGraph *g, void *data);
+R_API RGraphNode *r_graph_add_nodef(RGraph *g, void *data, RListFree user_free);
 // XXX 'n' is destroyed after calling this function.
 R_API void r_graph_del_node(RGraph *g, RGraphNode *n);
 R_API void r_graph_add_edge(RGraph *g, RGraphNode *from, RGraphNode *to);

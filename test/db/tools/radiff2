@@ -88,3 +88,19 @@ EXPECT=<<EOF
 d1ffd1ff04019000
 EOF
 RUN
+
+NAME=radiff2 empty first file
+FILE=-
+CMDS=!radiff2 "" bins/other/radiff2/radiff2_c_2
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN
+
+NAME=radiff2 empty second file
+FILE=-
+CMDS=!radiff2 bins/other/radiff2/radiff2_c_1 ""
+EXPECT_ERR=<<EOF
+Cannot open empty path
+EOF
+RUN

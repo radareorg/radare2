@@ -1,0 +1,277 @@
+NAME=Xcode symbols cache (just open)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
+CMDS=q
+EXPECT=
+RUN
+
+NAME=Xcode symbols cache new (just open)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
+CMDS=q
+EXPECT=
+RUN
+
+NAME=Xcode symbols cache (header)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
+CMDS=<<EOF
+ih~{:
+EOF
+EXPECT=<<EOF
+cs_version: 1
+size: 7406
+name: /Users/ftamagni/Library/Developer/Xcode/Archives/2020-05-12/TestRTTI 12-05-2020, 12.15.xcarchive/dSYMs/TestRTTI.app.dSYM/Contents/Resources/DWARF/TestRTTI
+uuid: d9a37b67f10a35aaa852abfbbecc03ae
+segments: 6
+sections: 35
+symbols: 67
+lined_symbols: 0
+line_info: 32
+EOF
+RUN
+
+NAME=Xcode symbols cache new (header)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
+CMDS=<<EOF
+ih~{:
+EOF
+EXPECT=<<EOF
+cs_version: 1
+size: 7231
+name: /Users/ftamagni/Library/Developer/Xcode/Archives/2020-05-12/TestRTTI 12-05-2020, 12.15.xcarchive/dSYMs/TestRTTI.app.dSYM/Contents/Resources/DWARF/TestRTTI
+uuid: d9a37b67f10a35aaa852abfbbecc03ae
+segments: 6
+sections: 35
+symbols: 67
+lined_symbols: 0
+line_info: 32
+EOF
+RUN
+
+NAME=Xcode symbols cache (segment and sections)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
+CMDS=<<EOF
+f~segment
+f~section
+EOF
+EXPECT=<<EOF
+0x00000000 0 segment.__PAGEZERO
+0x100000000 32768 segment.__TEXT
+0x100008000 16384 segment.__DATA
+0x10000c000 81920 segment.__LLVM
+0x100020000 4096 segment.__LINKEDIT
+0x100021000 942080 segment.__DWARF
+0x100000000 25544 section.MACH_HEADER
+0x1000063c8 412 section.__TEXT___text
+0x100006564 144 section.__TEXT___stubs
+0x1000065f4 168 section.__TEXT___stub_helper
+0x10000669c 3366 section.__TEXT___objc_methname
+0x1000073c2 112 section.__TEXT___objc_classname
+0x100007432 2778 section.__TEXT___objc_methtype
+0x100007f0c 144 section.__TEXT___cstring
+0x100007f9c 100 section.__TEXT___unwind_info
+0x100008000 8 section.__DATA___got
+0x100008008 96 section.__DATA___la_symbol_ptr
+0x100008068 32 section.__DATA___cfstring
+0x100008088 24 section.__DATA___objc_classlist
+0x1000080a0 32 section.__DATA___objc_protolist
+0x1000080c0 8 section.__DATA___objc_imageinfo
+0x1000080c8 4872 section.__DATA___objc_const
+0x1000093d0 32 section.__DATA___objc_selrefs
+0x1000093f0 16 section.__DATA___objc_classrefs
+0x100009400 8 section.__DATA___objc_superrefs
+0x100009408 4 section.__DATA___objc_ivar
+0x100009410 240 section.__DATA___objc_data
+0x100009500 392 section.__DATA___data
+0x10000c000 77261 section.__LLVM___bundle
+0x100021000 42034 section.__DWARF___debug_line
+0x10002b432 125245 section.__DWARF___debug_pubtypes
+0x100049d6f 288036 section.__DWARF___debug_info
+0x100090293 685 section.__DWARF___debug_pubnames
+0x100090540 729 section.__DWARF___debug_loc
+0x100090819 192 section.__DWARF___debug_aranges
+0x1000908d9 1925 section.__DWARF___debug_abbrev
+0x10009105e 342172 section.__DWARF___debug_str
+0x1000e48fa 732 section.__DWARF___apple_names
+0x1000e4bd6 36 section.__DWARF___apple_namespac
+0x1000e4bfa 139417 section.__DWARF___apple_types
+0x100106c93 156 section.__DWARF___apple_objc
+EOF
+RUN
+
+NAME=Xcode symbols cache new (segment and sections)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
+CMDS=<<EOF
+f~segment
+f~section
+EOF
+EXPECT=<<EOF
+0x00000000 0 segment.__PAGEZERO
+0x100000000 32768 segment.__TEXT
+0x100008000 16384 segment.__DATA
+0x10000c000 81920 segment.__LLVM
+0x100020000 4096 segment.__LINKEDIT
+0x100021000 942080 segment.__DWARF
+0x100000000 25544 section.MACH_HEADER
+0x1000063c8 412 section.__TEXT___text
+0x100006564 144 section.__TEXT___stubs
+0x1000065f4 168 section.__TEXT___stub_helper
+0x10000669c 3366 section.__TEXT___objc_methname
+0x1000073c2 112 section.__TEXT___objc_classname
+0x100007432 2778 section.__TEXT___objc_methtype
+0x100007f0c 144 section.__TEXT___cstring
+0x100007f9c 100 section.__TEXT___unwind_info
+0x100008000 8 section.__DATA___got
+0x100008008 96 section.__DATA___la_symbol_ptr
+0x100008068 32 section.__DATA___cfstring
+0x100008088 24 section.__DATA___objc_classlist
+0x1000080a0 32 section.__DATA___objc_protolist
+0x1000080c0 8 section.__DATA___objc_imageinfo
+0x1000080c8 4872 section.__DATA___objc_const
+0x1000093d0 32 section.__DATA___objc_selrefs
+0x1000093f0 16 section.__DATA___objc_classrefs
+0x100009400 8 section.__DATA___objc_superrefs
+0x100009408 4 section.__DATA___objc_ivar
+0x100009410 240 section.__DATA___objc_data
+0x100009500 392 section.__DATA___data
+0x10000c000 77261 section.__LLVM___bundle
+0x100021000 42034 section.__DWARF___debug_line
+0x10002b432 125245 section.__DWARF___debug_pubtypes
+0x100049d6f 288036 section.__DWARF___debug_info
+0x100090293 685 section.__DWARF___debug_pubnames
+0x100090540 729 section.__DWARF___debug_loc
+0x100090819 192 section.__DWARF___debug_aranges
+0x1000908d9 1925 section.__DWARF___debug_abbrev
+0x10009105e 342172 section.__DWARF___debug_str
+0x1000e48fa 732 section.__DWARF___apple_names
+0x1000e4bd6 36 section.__DWARF___apple_namespac
+0x1000e4bfa 139417 section.__DWARF___apple_types
+0x100106c93 156 section.__DWARF___apple_objc
+EOF
+RUN
+
+NAME=Xcode symbols cache (symbols)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
+CMDS=<<EOF
+is*~SceneDelegate
+EOF
+EXPECT=<<EOF
+"f sym.__SceneDelegate_scene:willConnectToSession:options:_ 4 0x100006514"
+"f sym.__SceneDelegate_sceneDidDisconnect:_ 4 0x100006518"
+"f sym.__SceneDelegate_sceneDidBecomeActive:_ 4 0x10000651c"
+"f sym.__SceneDelegate_sceneWillResignActive:_ 4 0x100006520"
+"f sym.__SceneDelegate_sceneWillEnterForeground:_ 4 0x100006524"
+"f sym.__SceneDelegate_sceneDidEnterBackground:_ 4 0x100006528"
+"f sym.__SceneDelegate_window_ 16 0x10000652c"
+"f sym.__SceneDelegate_setWindow:_ 20 0x10000653c"
+"f sym.__SceneDelegate_.cxx_destruct_ 20 0x100006550"
+"f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x1000080b0"
+"f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x1000080b8"
+"f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x100008f50"
+"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 296 0x100008f68"
+"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 96 0x100009090"
+"f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x1000090f0"
+"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x100009108"
+"f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x100009188"
+"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x1000091a0"
+"f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x1000091c8"
+"f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x1000091e0"
+"f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 224 0x100009228"
+"f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x100009308"
+"f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x100009330"
+"f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x100009388"
+"f sym._OBJC_IVAR___SceneDelegate._window 4 0x100009408"
+"f sym._OBJC_METACLASS___SceneDelegate 40 0x1000094b0"
+"f sym._OBJC_CLASS___SceneDelegate 40 0x1000094d8"
+"f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x1000095c8"
+"f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x100009628"
+EOF
+RUN
+
+NAME=Xcode symbols cache new (symbols)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
+CMDS=<<EOF
+is*~SceneDelegate
+EOF
+EXPECT=<<EOF
+"f sym.__SceneDelegate_scene:willConnectToSession:options:_ 4 0x100006514"
+"f sym.__SceneDelegate_sceneDidDisconnect:_ 4 0x100006518"
+"f sym.__SceneDelegate_sceneDidBecomeActive:_ 4 0x10000651c"
+"f sym.__SceneDelegate_sceneWillResignActive:_ 4 0x100006520"
+"f sym.__SceneDelegate_sceneWillEnterForeground:_ 4 0x100006524"
+"f sym.__SceneDelegate_sceneDidEnterBackground:_ 4 0x100006528"
+"f sym.__SceneDelegate_window_ 16 0x10000652c"
+"f sym.__SceneDelegate_setWindow:_ 20 0x10000653c"
+"f sym.__SceneDelegate_.cxx_destruct_ 20 0x100006550"
+"f sym.__OBJC_LABEL_PROTOCOL___UISceneDelegate 8 0x1000080b0"
+"f sym.__OBJC_LABEL_PROTOCOL___UIWindowSceneDelegate 8 0x1000080b8"
+"f sym.__OBJC___PROTOCOL_REFS_UISceneDelegate 24 0x100008f50"
+"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UISceneDelegate 296 0x100008f68"
+"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UISceneDelegate 96 0x100009090"
+"f sym.__OBJC___PROTOCOL_REFS_UIWindowSceneDelegate 24 0x1000090f0"
+"f sym.__OBJC___PROTOCOL_INSTANCE_METHODS_OPT_UIWindowSceneDelegate 128 0x100009108"
+"f sym.__OBJC___PROP_LIST_UIWindowSceneDelegate 24 0x100009188"
+"f sym.__OBJC___PROTOCOL_METHOD_TYPES_UIWindowSceneDelegate 40 0x1000091a0"
+"f sym.__OBJC_CLASS_PROTOCOLS___SceneDelegate 24 0x1000091c8"
+"f sym.__OBJC_METACLASS_RO___SceneDelegate 72 0x1000091e0"
+"f sym.__OBJC___INSTANCE_METHODS_SceneDelegate 224 0x100009228"
+"f sym.__OBJC___INSTANCE_VARIABLES_SceneDelegate 40 0x100009308"
+"f sym.__OBJC___PROP_LIST_SceneDelegate 88 0x100009330"
+"f sym.__OBJC_CLASS_RO___SceneDelegate 72 0x100009388"
+"f sym._OBJC_IVAR___SceneDelegate._window 4 0x100009408"
+"f sym._OBJC_METACLASS___SceneDelegate 40 0x1000094b0"
+"f sym._OBJC_CLASS___SceneDelegate 40 0x1000094d8"
+"f sym.__OBJC_PROTOCOL___UISceneDelegate 96 0x1000095c8"
+"f sym.__OBJC_PROTOCOL___UIWindowSceneDelegate 96 0x100009628"
+EOF
+RUN
+
+NAME=Xcode symbols cache (line numbers)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
+CMDS=<<EOF
+CL `is~viewDidLoad[2]`
+CL 0x100006430
+EOF
+EXPECT=<<EOF
+file: /Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m
+line: 17
+file: /Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m
+line: 30
+EOF
+RUN
+
+NAME=Xcode symbols cache new (line numbers)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
+CMDS=<<EOF
+CL `is~viewDidLoad[2]`
+CL 0x100006430
+EOF
+EXPECT=<<EOF
+file: /Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m
+line: 17
+file: /Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m
+line: 30
+EOF
+RUN
+
+NAME=Xcode symbols cache (flags)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE.symbols
+CMDS=<<EOF
+fdj@0x100006430~{:
+EOF
+EXPECT=<<EOF
+offset: 4294992900
+name: sym.__AppDelegate_application:configurationForConnectingSceneSession:options:_
+realname: -[AppDelegate application:configurationForConnectingSceneSession:options:]
+EOF
+RUN
+
+NAME=Xcode symbols cache new (flags)
+FILE=bins/mach0/D9A37B67-F10A-35AA-A852-ABFBBECC03AE-new.symbols
+CMDS=<<EOF
+fdj@0x100006430~{:
+EOF
+EXPECT=<<EOF
+offset: 4294992900
+name: sym.__AppDelegate_application:configurationForConnectingSceneSession:options:_
+realname: -[AppDelegate application:configurationForConnectingSceneSession:options:]
+EOF
+RUN

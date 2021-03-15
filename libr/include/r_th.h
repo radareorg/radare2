@@ -1,6 +1,9 @@
 #ifndef R2_TH_H
 #define R2_TH_H
 
+#ifdef _GNU_SOURCE
+#undef _GNU_SOURCE
+#endif
 #define _GNU_SOURCE
 #include "r_types.h"
 

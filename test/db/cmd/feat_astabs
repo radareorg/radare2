@@ -5,7 +5,7 @@ e asm.tabs=8
 e asm.arch=x86
 e asm.bits=64
 e asm.comments=false
-e asm.lines.bb=0
+e asm.lines.jmp=false
 wx 410fb744245883f80c
 pd 2
 EOF

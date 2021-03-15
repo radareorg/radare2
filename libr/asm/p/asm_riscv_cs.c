@@ -2,9 +2,9 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone/capstone.h>
+#include <capstone.h>
 
-#if CSNEXT
+#if CS_API_MAJOR >= 5
 
 static csh cd = 0;
 #include "cs_mnemonics.c"

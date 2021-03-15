@@ -194,8 +194,9 @@ R_API void r_core_print_func_args(RCore *core) {
 			int nargs = 4; // TODO: use a correct value here when available
 			//if (nargs > 0) {
 				int i;
+				const char *cc = r_anal_cc_default (core->anal); // or use "reg" ?
 				for (i = 0; i < nargs; i++) {
-					ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+					ut64 v = r_debug_arg_get (core->dbg, cc, i);
 					print_arg_str (i, "", color);
 					r_cons_printf ("0x%08" PFMT64x, v);
 					r_cons_newline ();
@@ -222,7 +223,6 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		return NULL;
 	}
 	Sdb *TDB = core->anal->sdb_types;
-	RList *list = r_list_newf ((RListFree)r_anal_fcn_arg_free);
 	char *key = resolve_fcn_name (core->anal, fcn_name);
 	if (!key) {
 		return NULL;
@@ -239,6 +239,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		free (key);
 		return NULL;
 	}
+	RList *list = r_list_newf ((RListFree)r_anal_fcn_arg_free);
 	int i;
 	ut64 spv = r_reg_getv (core->anal->reg, sp);
 	ut64 s_width = (core->anal->bits == 64)? 8: 4;
@@ -254,6 +255,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		for (i = 0; i < nargs; i++) {
 			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
 			if (!arg) {
+				r_list_free (list);
 				return NULL;
 			}
 			set_fcn_args_info (arg, core->anal, key, cc, i);

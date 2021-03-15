@@ -13,13 +13,10 @@ static const char *help_msg_lparen[] = {
 	"", "Argument support:", "",
 	"(foo x y; $0 @ $1)", "", "define fun with args (x - $0; y - $1)",
 	".(foo 128 0x804800)", "", "call it with args",
-	"", "Iterations:", "",
-	".(foo;() $@)", "", "define iterator returning iter index",
-	"x @@ .(foo)", "", "iterate over them",
 	NULL
 };
 
-static void cmd_macro_init(RCore *core) {
+static void cmd_macro_init(RCore *core, RCmdDesc *parent) {
 	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
 	if (d) {
 		d->cmd = "(";

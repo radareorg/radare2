@@ -115,7 +115,7 @@
 # include <alloca.h>
 #else
 # ifndef alloca
-#  ifdef __GNUC__
+#  if defined(__GNUC__) || defined(__TINYC__)
 #   define alloca __builtin_alloca
 #  else
 extern char *alloca ();

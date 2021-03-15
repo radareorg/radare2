@@ -9,7 +9,7 @@
 #define _XNU_DEBUG_H
 
 #define MACH_ERROR_STRING(ret) \
-	(mach_error_string (ret) ? r_str_get (mach_error_string (ret)) : "(unknown)")
+	(mach_error_string (ret) ? r_str_getf (mach_error_string (ret)) : "(unknown)")
 
 #if TARGET_OS_IPHONE
 // no ptrace

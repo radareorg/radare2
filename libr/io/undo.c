@@ -47,11 +47,11 @@ R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
 	io->undo.redos++;
 
 	undo = &io->undo.seek[io->undo.idx];
-	RIOMap *map = r_io_map_get (io, undo->off);
-	if (!map || (map->delta == map->itv.addr)) {
+	RIOMap *map = r_io_map_get_at (io, undo->off);
+	if (!map || (map->delta == r_io_map_begin (map))) {
 		io->off = undo->off;
 	} else {
-		io->off = undo->off - (map->itv.addr + map->delta);
+		io->off = undo->off - (r_io_map_begin (map) + map->delta);
 	}
 	return undo;
 }
@@ -69,11 +69,11 @@ R_API RIOUndos *r_io_sundo_redo(RIO *io) {
 	io->undo.redos--;
 
 	undo = &io->undo.seek[io->undo.idx];
-	map = r_io_map_get (io, undo->off);
-	if (!map || (map->delta == map->itv.addr)) {
+	map = r_io_map_get_at (io, undo->off);
+	if (!map || (map->delta == r_io_map_begin (map))) {
 		io->off = undo->off;
 	} else {
-		io->off = undo->off - map->itv.addr + map->delta;
+		io->off = undo->off - r_io_map_begin (map) + map->delta;
 	}
 	return undo;
 }
@@ -237,7 +237,7 @@ R_API void r_io_wundo_list(RIO *io) {
 
 	if (io->undo.w_init) {
 		r_list_foreach (io->undo.w_list, iter, u) {
-			io->cb_printf ("%02d %c %d %08" PFMT64x ": ", i, u->set ? '+' : '-', u->len, u->off);
+			io->cb_printf ("%02d %c %zu %08" PFMT64x ": ", i, u->set ? '+' : '-', u->len, u->off);
 			len = (u->len > BW) ? BW : u->len;
 			for (j = 0; j < len; j++) {
 				io->cb_printf ("%02x ", u->o[j]);

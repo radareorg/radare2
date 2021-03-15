@@ -19,6 +19,8 @@ ALL?=
 CFLAGS+=-I$(LIBR)
 CFLAGS+=-I$(LIBR)/include
 
+-include $(SHLR)/sdb.mk
+
 CFLAGS+=-fvisibility=hidden
 LDFLAGS+=-fvisibility=hidden
 LINK+=-fvisibility=hidden
@@ -57,6 +59,10 @@ ifeq (${OSTYPE},haiku)
 LINK+=-lnetwork
 endif
 
+ifeq (${OSTYPE},solaris)
+LINK+=-lproc
+endif
+
 ifneq ($(EXTRA_PRE),)
 all: $(EXTRA_PRE)
 	$(MAKE) all2
@@ -74,14 +80,14 @@ endif
 ifeq ($(WITH_LIBS),1)
 $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
-	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
-	  test $$a -nt ${LIBSO} && do=1 ; \
+	  do=0 ; [ ! -e "${LIBSO}" ] && do=1 ; \
+	  test "$$a" -nt "${LIBSO}" && do=1 ; \
 	  if [ $$do = 1 ]; then \
 	    [ -n "${SILENT}" ] && \
 	    echo "LD $(LIBSO)" || \
 	    echo "\"${CC_LIB} ${LIBNAME} ${OBJS} ${SHARED_OBJ} ${LINK} ${LDFLAGS}\"" ; \
 	    ${CC_LIB} ${LIBNAME} ${CFLAGS} ${OBJS} ${SHARED_OBJ} ${LINK} ${LDFLAGS} || exit 1; \
-	    [ -f "$(LIBR)/stripsyms.sh" ] && sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; \
+	    [ -f "$(LIBR)/stripsyms.sh" ] && sh "$(LIBR)/stripsyms.sh" "${LIBSO}" ${NAME} ; \
 	  break ; \
 	fi ; done
 else
@@ -108,9 +114,9 @@ pkgcfg:
 	@echo 'Name: ${NAME}' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Description: radare foundation libraries' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Version: @VERSION@' >> ../../pkgcfg/${NAME}.pc.acr
-	@echo 'Requires: $(filter r_%,${DEPS})' >> ../../pkgcfg/${NAME}.pc.acr
+	@echo 'Requires: $(filter r_%,${R2DEPS})' >> ../../pkgcfg/${NAME}.pc.acr
 	@if [ "${NAME}" = "libr" ]; then NAME=''; else NAME=${NAME}; fi ;\
-	echo 'Libs: -L$${libdir} -l${NAME} $(filter-out r_%,${DEPS}) ${PCLIBS}' >> ../../pkgcfg/${NAME}.pc.acr
+	echo 'Libs: -L$${libdir} -l${NAME} $(filter-out r_%,${R2DEPS}) ${PCLIBS}' >> ../../pkgcfg/${NAME}.pc.acr
 	@echo 'Cflags: -I$${includedir}/libr ${PCCFLAGS}' >> ../../pkgcfg/${NAME}.pc.acr
 
 clean:: ${EXTRA_CLEAN}

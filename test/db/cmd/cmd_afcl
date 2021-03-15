@@ -8,7 +8,9 @@ afcl
 EOF
 EXPECT=<<EOF
 amd64
+amd64syscall
 ms
+reg
 swift
 EOF
 RUN
@@ -71,6 +73,7 @@ afcl
 EOF
 EXPECT=<<EOF
 arm64
+reg
 swift
 EOF
 RUN
@@ -144,6 +147,7 @@ EOF
 EXPECT=<<EOF
 n32
 o32
+reg
 EOF
 RUN
 
@@ -154,5 +158,6 @@ CMDS=afcl
 EXPECT=<<EOF
 n32
 o32
+reg
 EOF
 RUN

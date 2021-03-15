@@ -1,8 +1,35 @@
-/* sdb - MIT - Copyright 2019 - pancake */
+/* sdb - MIT - Copyright 2019-2020 - pancake */
 
 #include "set.h"
 
-// p
+//// set foreach spaguetti
+typedef struct {
+	void *cbptr;
+	void *userdata;
+} SetData;
+
+static bool u_foreach_cb(void *user, const ut64 k, const void *nada) {
+	SetData *sd = (SetData*)user;
+	set_u_foreach_cb cb = (set_u_foreach_cb)sd->cbptr;
+	return cb (sd->userdata, k);
+}
+
+SDB_API void set_u_foreach(SetU *s, set_u_foreach_cb cb, void *userdata) {
+	SetData sd = {cb, userdata};
+	ht_up_foreach (s, u_foreach_cb, &sd);
+}
+
+static bool p_foreach_cb(void *user, const void *k, const void *nada) {
+	SetData *sd = (SetData*)user;
+	set_p_foreach_cb cb = (set_p_foreach_cb)sd->cbptr;
+	return cb (sd->userdata, k);
+}
+
+SDB_API void set_p_foreach(SetP *s, set_p_foreach_cb cb, void *userdata) {
+	SetData sd = {cb, userdata};
+	ht_pp_foreach (s, p_foreach_cb, &sd);
+}
+////
 
 SDB_API SetP *set_p_new(void) {
 	return ht_pp_new0 ();

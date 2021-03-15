@@ -125,7 +125,7 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 // in         - The plaintext
 // result     - The ciphertext generated from a plaintext using the key
 void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__TINYC__)
 	ut32 expkey[2][Nr_AES256 + 1][Nb];
 #else
 	ut32 expkey[2][st->rounds + 1][Nb];
@@ -207,12 +207,12 @@ void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 // in         - The ciphertext.
 // result     - The plaintext generated from a ciphertext using the session key.
 void aes_decrypt (struct aes_state *st, ut8 *in, ut8 *result) {
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__TINYC__)
 	ut32 expkey[2][Nr_AES256 + 1][Nb];
 #else
 	ut32 expkey[2][st->rounds + 1][Nb];
 #endif
-	
+
 	aes_expkey(st, expkey);
 
 	ut32 t0, t1, t2, t3, tt;

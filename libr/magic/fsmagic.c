@@ -3,7 +3,7 @@
  * Copyright (c) Ian F. Darwin 1986-1995.
  * Software written by Ian F. Darwin and others;
  * maintained 1995-present by Christos Zoulas and others.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -13,7 +13,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *  
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -51,7 +51,7 @@
 #ifdef major			/* Might be defined in sys/types.h.  */
 # define HAVE_MAJOR
 #endif
-  
+
 #ifndef HAVE_MAJOR
 # define major(dev)  (((dev) >> 8) & 0xff)
 # define minor(dev)  ((dev) & 0xff)
@@ -69,7 +69,7 @@ static int bad_link(RMagic *ms, int err, char *buf) {
 	if (ms->flags & R_MAGIC_ERROR) {
 		file_error (ms, err, errfmt, buf);
 		return -1;
-	} 
+	}
 	if (file_printf (ms, errfmt, buf) == -1)
 		return -1;
 	return 1;
@@ -117,22 +117,22 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 		}
 	} else {
 #ifdef S_ISUID
-		if (sb->st_mode & S_ISUID) 
+		if (sb->st_mode & S_ISUID)
 			if (file_printf(ms, "setuid ") == -1)
 				return -1;
 #endif
 #ifdef S_ISGID
-		if (sb->st_mode & S_ISGID) 
+		if (sb->st_mode & S_ISGID)
 			if (file_printf(ms, "setgid ") == -1)
 				return -1;
 #endif
 #ifdef S_ISVTX
-		if (sb->st_mode & S_ISVTX) 
+		if (sb->st_mode & S_ISVTX)
 			if (file_printf(ms, "sticky ") == -1)
 				return -1;
 #endif
 	}
-	
+
 	switch (sb->st_mode & S_IFMT) {
 	case S_IFDIR:
 		if (file_printf (ms, "directory") == -1)
@@ -140,7 +140,7 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 		return 1;
 #ifdef S_IFCHR
 	case S_IFCHR:
-		/* 
+		/*
 		 * If -s has been specified, treat character special files
 		 * like ordinary files.  Otherwise, just report that they
 		 * are block special files and go on to the next file.
@@ -166,7 +166,7 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 #endif
 #ifdef S_IFBLK
 	case S_IFBLK:
-		/* 
+		/*
 		 * If -s has been specified, treat block special files
 		 * like ordinary files.  Otherwise, just report that they
 		 * are block special files and go on to the next file.
@@ -275,7 +275,7 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 	 * regular file, check next possibility
 	 *
 	 * If stat() tells us the file has zero length, report here that
-	 * the file is empty, so we can skip all the work of opening and 
+	 * the file is empty, so we can skip all the work of opening and
 	 * reading the file.
 	 * But if the -s option has been given, we skip this optimization,
 	 * since on some systems, stat() reports zero size for raw disk

@@ -15,6 +15,13 @@ static RStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int sparc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
+	int delta = (memaddr - Offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
 	memcpy (myaddr, bytes, length);
 	return 0;
 }

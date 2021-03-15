@@ -1,0 +1,39 @@
+FROM ubuntu:bionic
+
+MAINTAINER tbd
+
+WORKDIR /src
+
+RUN apt-get update
+RUN apt-get install -y \
+    build-essential \
+    gcc-multilib \
+    llvm \
+    clang \
+    bison \
+    git \
+    curl \
+    cabextract \
+    libasan5 \
+    jq \
+    libncurses5 \
+    libcapstone3 \
+    libcapstone-dev \
+    libmagic-dev \
+    libzip4 \
+    libzip-dev \
+    liblz4-1 \
+    liblz4-dev \
+    gnupg2 \
+    python-pip \
+    python3-pip \
+    pkg-config \
+    liblzma5 \
+    npm \
+    zlib1g-dev
+
+RUN pip3 install meson
+RUN pip3 install ninja
+RUN pip3 install 'git+https://github.com/radareorg/radare2-r2pipe#egg=r2pipe&subdirectory=python'
+
+CMD []

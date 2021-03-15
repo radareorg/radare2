@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2020 pancake<nopcode.org> */
 
 #include <r_util.h>
 
@@ -8,7 +8,7 @@
 
 //void (*ranges_new_callback)(struct range_t *r) = NULL;
 
-R_API RRange *r_range_new() {
+R_API RRange *r_range_new(void) {
 	RRange *r = R_NEW0 (RRange);
 	if (r) {
 		r->count = r->changed = 0;
@@ -248,7 +248,7 @@ R_API int r_range_contains(RRange *rgs, ut64 addr) {
 static int cmp_ranges(void *a, void *b) {
 	RRangeItem *first = (RRangeItem *)a;
 	RRangeItem *second = (RRangeItem *)b;
-	return first->fr > second->fr;
+	return (first->fr > second->fr) - (first->fr < second->fr);
 }
 
 R_API int r_range_sort(RRange *rgs) {
@@ -351,7 +351,7 @@ int r_range_get_n(RRange *rgs, int n, ut64 *fr, ut64 *to) {
             |__|    |__|       |_|
 #endif
 RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
-	ut64 total = 0;
+	// ut64 total = 0;
 	RListIter *iter;
 	RRangeItem *r = NULL;
 	RRange *newrgs = r_range_new();
@@ -362,14 +362,14 @@ RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 		if (r->fr > fr && r->fr < to) {
 			r_range_add (newrgs, fr, r->fr, 1);
 			//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, r->fr);
-			total += (r->fr - fr);
+	//		total += (r->fr - fr);
 			fr = r->to;
 		}
 	}
 	if (fr < to) {
 		//eprintf("0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", fr, to);
 		r_range_add (newrgs, fr, to, 1);
-		total += (to - fr);
+//		total += (to - fr);
 	}
 	// eprintf("Total bytes: %"PFMT64d"\n", total);
 	return newrgs;

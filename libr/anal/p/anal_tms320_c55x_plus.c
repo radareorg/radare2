@@ -21,12 +21,8 @@ int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int
 		return 0;
 	}
 
-	memset (op, 0, sizeof (RAnalOp));
-	op->type = R_ANAL_OP_TYPE_UNK;
 	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
-        op->size = ins_len;
+	op->size = ins_len;
 
 	if (ins_len == 1) {
 		if (*ins == 0x20) {

@@ -10,17 +10,11 @@
 #include <r_parse.h>
 
 static char* get_fcn_name(RAnal *anal, ut32 fcn_id) {
-	r_cons_push ();
-	char *s = anal->coreb.cmdstrf (anal->coreb.core, "is~FUNC[6:%u]", fcn_id);
-	r_cons_pop ();
-	if (s) {
-		size_t namelen = strlen (s);
-		s[namelen - 1] = 0;
-	}
-	return s;
+	const char *s = anal->binb.get_name (anal->binb.bin, 'f', fcn_id, false);
+	return s? strdup (s): NULL;
 }
 
-static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
 	char *fcn_name = NULL;
 	str[0] = 0;
 	if (!strncmp (data, "call ", 5)) {
@@ -38,7 +32,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 RParsePlugin r_parse_plugin_wasm_pseudo = {
 	.name = "wasm.pseudo",
 	.desc = "WASM pseudo syntax",
-	.varsub = &varsub,
+	.subvar = &subvar,
 };
 
 #ifndef R2_PLUGIN_INCORE

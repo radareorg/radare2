@@ -1,45 +1,59 @@
 NAME=ar file sections
-BROKEN=1
 FILE=ar://bins/ar/libgdbr.a//responses.o
-CMDS=iS~:2
+CMDS=iS~:5
 EXPECT=<<EOF
-01 0x00000040  5246 0x08000040  5246 -r-x .text
+1   0x00000040  0x147e 0x08000040  0x147e -r-x .text
 EOF
 RUN
 
 NAME=ar file symbols
 FILE=ar://bins/ar/libgdbr.a//xml.o
-BROKEN=1
 CMDS=is~xml
 EXPECT=<<EOF
-001 0x00000000 0x08000000  LOCAL   FILE    0 xml.c
-007 0x000009b3 0x080009b3  LOCAL   FUNC 5373 gdbr_parse_target_xml
-017 0x00000040 0x08000040 GLOBAL   FUNC  152 gdbr_read_target_xml
+1   0x00000000 0x08000000 LOCAL  FILE   0        xml.c
+7   0x000009b3 0x080009b3 LOCAL  FUNC   5373     gdbr_parse_target_xml
+17  0x00000040 0x08000040 GLOBAL FUNC   152      gdbr_read_target_xml
 EOF
 RUN
 
 NAME=ar file content
-BROKEN=1
 FILE=ar://bins/ar/libgdbr.a//xml.o
 CMDS=px 64
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x08000040  7f45 4c46 0201 0100 0000 0000 0000 0000  .ELF............
-0x08000050  0100 3e00 0100 0000 0000 0000 0000 0000  ..>.............
-0x08000060  0000 0000 0000 0000 f068 0000 0000 0000  .........h......
-0x08000070  0000 0000 4000 0000 0000 4000 1500 1400  ....@.....@.....
+0x08000040  5548 89e5 4883 ec30 4889 7dd8 6448 8b04  UH..H..0H.}.dH..
+0x08000050  2528 0000 0048 8945 f831 c048 8b45 d80f  %(...H.E.1.H.E..
+0x08000060  b640 7e83 f001 84c0 7407 b8ff ffff ffeb  .@~.....t.......
+0x08000070  5148 8d55 e848 8b45 d848 8d35 0000 0000  QH.U.H.E.H.5....
 EOF
 RUN
 
 NAME=ar file content
-BROKEN=1
 FILE=ar://bins/ar/libgdbr.a//core.o
 CMDS=px 64
 EXPECT=<<EOF
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x08000040  7f45 4c46 0201 0100 0000 0000 0000 0000  .ELF............
-0x08000050  0100 3e00 0100 0000 0000 0000 0000 0000  ..>.............
-0x08000060  0000 0000 0000 0000 d085 0000 0000 0000  ................
-0x08000070  0000 0000 4000 0000 0000 4000 1500 1400  ....@.....@.....
+0x08000040  5548 89e5 4883 ec20 4889 7de8 bf80 0000  UH..H.. H.}.....
+0x08000050  00e8 0000 0000 4889 45f8 4883 7df8 0075  ......H.E.H.}..u
+0x08000060  07b8 ffff ffff eb77 488b 45e8 488b 4020  .......wH.E.H.@ 
+0x08000070  8d50 ff48 8b45 f889 d148 8d15 0000 0000  .P.H.E...H......
+EOF
+RUN
+
+NAME=ar short with space
+FILE=ar://bins/ar/filetable_spaces.a// s_spaces
+CMDS=x 16
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  7368 6f72 7473 7061 6365 0aff ffff ffff  shortspace......
+EOF
+RUN
+
+NAME=ar long with space
+FILE=ar://bins/ar/filetable_spaces.a// longgggggggggggggggggspaces
+CMDS=x 16
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  6c6f 6e67 7370 6163 650a ffff ffff ffff  longspace.......
 EOF
 RUN

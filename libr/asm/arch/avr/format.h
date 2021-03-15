@@ -80,9 +80,5 @@ typedef struct _formattingOptions formattingOptions;
 
 
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-static int printDisassembledInstruction(char *out, const disassembledInstruction dInstruction, formattingOptions fOptions);
-#ifdef _MSC_VER
-extern uint32_t AVR_Long_Address;
-extern int AVR_Long_Instruction;
-#endif
+int printDisassembledInstruction(avrDisassembleContext *context, char *out, const disassembledInstruction dInstruction, formattingOptions fOptions);
 #endif

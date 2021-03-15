@@ -39,8 +39,8 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 				free (runs);
 				return false;
 			}
-			page->start = (run->BasePage + j) * PAGE_SIZE ;
-			page->file_offset = base + num_page * PAGE_SIZE;
+			page->start = (run->BasePage + j) * DMP_PAGE_SIZE ;
+			page->file_offset = base + num_page * DMP_PAGE_SIZE;
 			r_list_append (obj->pages, page);
 			num_page++;
 		}
@@ -78,7 +78,7 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 	}
 	ut64 paddr_base = obj->bmp_header->FirstPage;
 	ut64 num_pages = obj->bmp_header->Pages;
-	RBitmap *bitmap = r_bitmap_new(num_pages);
+	RBitmap *bitmap = r_bitmap_new (num_pages);
 	r_bitmap_set_bytes (bitmap, obj->bitmap, num_pages / 8);
 
 	ut64 num_bitset = 0;
@@ -90,8 +90,8 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 		if (!page) {
 			return false;
 		}
-		page->start = i * PAGE_SIZE;
-		page->file_offset = paddr_base + num_bitset * PAGE_SIZE;
+		page->start = i * DMP_PAGE_SIZE;
+		page->file_offset = paddr_base + num_bitset * DMP_PAGE_SIZE;
 		r_list_append (obj->pages, page);
 		num_bitset++;
 	}
@@ -109,7 +109,7 @@ static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
 		r_sys_perror ("R_NEW0 (dmp_bmp_header)");
 		return false;
 	}
-	if (r_buf_read_at (obj->b, sizeof (dmp64_header), (ut8*)obj->bmp_header, sizeof (dmp_bmp_header) - sizeof (ut8*)) < 0) {
+	if (r_buf_read_at (obj->b, sizeof (dmp64_header), (ut8*)obj->bmp_header, offsetof (dmp_bmp_header, Bitmap)) < 0) {
 		eprintf ("Warning: read bmp_header\n");
 		return false;
 	}
@@ -119,10 +119,10 @@ static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
 	}
 	ut64 bitmapsize = obj->bmp_header->Pages / 8;
 	obj->bitmap = calloc (1, bitmapsize);
-	if (r_buf_read_at (obj->b, sizeof (dmp64_header) + sizeof (dmp_bmp_header) - sizeof (ut8*), obj->bitmap, bitmapsize) < 0) {
+	if (r_buf_read_at (obj->b, sizeof (dmp64_header) + offsetof (dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
 		eprintf ("Warning: read bitmap\n");
 		return false;
-	};
+	}
 
 	return true;
 }

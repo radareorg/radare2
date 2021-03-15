@@ -37,3 +37,12 @@ cc.swift.arg10=xmm4
 cc.swift.self=r13
 cc.swift.error=r12
 cc.swift.ret=rax
+
+amd64syscall=cc
+cc.amd64syscall.arg0=rdi
+cc.amd64syscall.arg1=rsi
+cc.amd64syscall.arg2=rdx
+cc.amd64syscall.arg3=r10
+cc.amd64syscall.arg4=r8
+cc.amd64syscall.arg5=r9
+cc.amd64syscall.ret=rax

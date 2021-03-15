@@ -41,7 +41,7 @@ extern xtensa_isa xtensa_default_isa;
 #endif
 
 #if 1
-static void nothing() {
+static void nothing(void) {
 	return;
 }
 

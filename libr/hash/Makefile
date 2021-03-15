@@ -10,7 +10,7 @@ LINK=-lm
 endif
 endif
 
-DEPS=r_util
+R2DEPS=r_util
 OBJS=state.o hash.o hamdist.o crca.o fletcher.o
 OBJS+=entropy.o hcalc.o adler32.o luhn.o
 

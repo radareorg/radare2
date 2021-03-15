@@ -23,10 +23,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 
 	if (!r_file_is_directory (root)) {
 		if (!r_file_is_directory (homeroot)) {
-			eprintf ("Cannot find http.root (%s) or http.homeroot (%s)\n", root, homeroot);
-			return false;
+			eprintf ("Cannot find http.root or http.homeroot\n");
 		}
-		return false;
 	}
 	if (!path) {
 		return false;
@@ -40,7 +38,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		r_config_set (core->config, "http.port", port);
 		path = NULL;
 	} else {
-		if (core->file && (!path || !*path)) {
+		if (core->io->desc && (!path || !*path)) {
 			if (!strcmp (httpui, "p")
 			|| !strcmp (httpui, "m")
 			|| !strcmp (httpui, "enyo")
@@ -90,7 +88,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	if (browse == 'H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
-			browser, host, atoi (port), path? path:"");
+			browser, host, atoi (port), r_str_get (path));
 	}
 
 	so.httpauth = r_config_get_i (core->config, "http.auth");
@@ -376,7 +374,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				const char *homeroot = r_config_get (core->config, "http.homeroot");
-				char *path;
+				char *path = NULL;
 				if (!strcmp (rs->path, "/")) {
 					free (rs->path);
 					if (*index == '/') {

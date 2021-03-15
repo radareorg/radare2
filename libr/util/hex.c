@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake */
+/* radare - LGPL - Copyright 2007-2020 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -6,7 +6,7 @@
 #include <ctype.h>
 
 /* int c; ret = hex_to_byte(&c, 'c'); */
-R_API int r_hex_to_byte(ut8 *val, ut8 c) {
+R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
 	if (IS_DIGIT (c)) {
 		*val = (ut8)(*val) * 16 + (c - '0');
 	} else if (c >= 'A' && c <= 'F') {
@@ -14,9 +14,9 @@ R_API int r_hex_to_byte(ut8 *val, ut8 c) {
 	} else if (c >= 'a' && c <= 'f') {
 		*val = (ut8)(*val) * 16 + (c - 'a' + 10);
 	} else {
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 R_API char *r_hex_from_py_str(char *out, const char *code) {

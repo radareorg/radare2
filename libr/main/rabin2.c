@@ -527,13 +527,13 @@ static char *__demangleAs(RBin *bin, int type, const char *file) {
 	return res;
 }
 
-static void __listPlugins(RBin *bin, const char* plugin_name, int rad) {
+static void __listPlugins(RBin *bin, const char* plugin_name, PJ *pj, int rad) {
 	int format = (rad == R_MODE_JSON) ? 'j': rad? 'q': 0;
 	bin->cb_printf = (PrintfCallback)printf;
 	if (plugin_name) {
-		r_bin_list_plugin (bin, plugin_name, format);
+		r_bin_list_plugin (bin, plugin_name, pj, format);
 	} else {
-		r_bin_list (bin, format);
+		r_bin_list (bin, pj, format);
 	}
 }
 
@@ -547,7 +547,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	ut64 baddr = UT64_MAX;
 	const char *do_demangle = NULL;
 	const char *query = NULL;
-	int c, bits = 0, actions_done = 0, actions = 0;
+	int c, bits = 0, actions = 0;
 	char* create = NULL;
 	bool va = true;
 	ut64 action = R_BIN_REQ_UNK;
@@ -556,13 +556,11 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
 	const char *op = NULL;
-	RCoreFile *fh = NULL;
 	RCoreBinFilter filter;
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int rawstr = 0;
 	int fd = -1;
 	RCore core = {0};
-	RLib *l = NULL;
 	ut64 at = UT64_MAX;
 
 	r_core_init (&core);
@@ -573,7 +571,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
 		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
 		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
-		l = r_lib_new (NULL, NULL);
+		RLib *l = r_lib_new (NULL, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
@@ -594,6 +592,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (extrasdir);
 		free (bindingsdir);
 		free (path);
+		r_lib_free (l);
 	}
 	free (tmp);
 
@@ -608,7 +607,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_DMNGLRCMD"))) {
-		r_config_set (core.config, "bin.demanglecmd", tmp);
+		r_config_set (core.config, "cmd.demangle", tmp);
 		free (tmp);
 	}
 	if ((tmp = r_sys_getenv ("RABIN2_LANG"))) {
@@ -836,12 +835,25 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		}
 	}
 
+	PJ *pj = NULL;
+	if (rad == R_MODE_JSON) {
+		pj = r_core_pj_new (&core);
+		if (!pj) {
+			return 1;
+		}
+	}
+
 	if (is_active (R_BIN_REQ_LISTPLUGINS)) {
 		const char* plugin_name = NULL;
 		if (opt.ind < argc) {
 			plugin_name = argv[opt.ind];
 		}
-		__listPlugins (bin, plugin_name, rad);
+		__listPlugins (bin, plugin_name, pj, rad);
+		if (rad == R_MODE_JSON) {
+			r_cons_println (pj_string (pj));
+			r_cons_flush ();
+			pj_free (pj);
+		}
 		r_core_fini (&core);
 		return 0;
 	}
@@ -875,7 +887,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				R_FREE (res);
 				R_FREE (file);
 			}
-			stdin_gets (true);
+			char *r = stdin_gets (true);
+			free (r);
 		} else {
 			res = __demangleAs (bin, type, file);
 			if (res && *res) {
@@ -893,6 +906,13 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		return 1;
 	}
 	file = argv[opt.ind];
+
+	if (file && !*file) {
+		eprintf ("Cannot open empty path\n");
+		r_core_fini (&core);
+		return 1;
+	}
+
 	if (!query) {
 		if (action & R_BIN_REQ_HELP || action == R_BIN_REQ_UNK || !file) {
 			r_core_fini (&core);
@@ -1001,6 +1021,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			r_core_fini (&core);
 			return 1;
 		}
+
 		eprintf ("FMT %s\n", format);
 		eprintf ("PKG %s\n", file);
 		for (i = opt.ind + 2; i < argc; i++) {
@@ -1022,11 +1043,10 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 
 	if (file && *file) {
-		if ((fh = r_core_file_open (&core, file, R_PERM_R, 0))) {
+		if (r_core_file_open (&core, file, R_PERM_R, 0)) {
 			fd = r_io_fd_get_current (core.io);
 			if (fd == -1) {
 				eprintf ("r_core: Cannot open file '%s'\n", file);
-				r_core_file_free (fh);
 				r_core_fini (&core);
 				return 1;
 			}
@@ -1051,7 +1071,6 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");
-			r_core_file_free (fh);
 			r_core_fini (&core);
 			return 1;
 		}
@@ -1071,7 +1090,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 	if (query) {
 		if (rad) {
-			r_core_bin_export_info_rad (&core);
+			r_core_bin_export_info (&core, R_MODE_RADARE);
 			r_cons_flush ();
 		} else {
 			if (!strcmp (query, "-")) {
@@ -1080,18 +1099,16 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				sdb_query (bin->cur->sdb, query);
 			}
 		}
-		r_core_file_free (fh);
 		r_core_fini (&core);
 		return 0;
 	}
 #define isradjson (rad==R_MODE_JSON&&actions>0)
 #define run_action(n,x,y) {\
 	if (action&(x)) {\
-		if (isradjson) r_cons_printf ("%s\"%s\":",actions_done?",":"",n);\
-		if (!r_core_bin_info (&core, y, rad, va, &filter, chksum)) {\
-			if (isradjson) r_cons_print ("false");\
+		if (isradjson) pj_k (pj, n);\
+		if (!r_core_bin_info (&core, y, pj, rad, va, &filter, chksum)) {\
+			if (isradjson) pj_b (pj, false);\
 		};\
-		actions_done++;\
 	}\
 }
 	core.bin = bin;
@@ -1101,17 +1118,16 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	r_cons_new ()->context->is_interactive = false;
 
 	if (isradjson) {
-		r_cons_print ("{");
+		pj_o (pj);
 	}
 	// List fatmach0 sub-binaries, etc
 	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
 		!r_bin_select (bin, arch, bits, arch_name))) {
 		if (rad == R_MODE_SIMPLEST || rad == R_MODE_SIMPLE) {
-			r_bin_list_archs (bin, 'q');
+			r_bin_list_archs (bin, pj, 'q');
 		} else {
-			r_bin_list_archs (bin, (rad == R_MODE_JSON)? 'j': 1);
+			r_bin_list_archs (bin, pj, (rad == R_MODE_JSON)? 'j': 1);
 		}
-		actions_done++;
 		free (arch_name);
 	}
 	if (action & R_BIN_REQ_PDB_DWNLD) {
@@ -1125,10 +1141,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			R_FREE (tmp);
 		}
 		pdbopts.symbol_store_path = (char *)r_config_get (core.config, "pdb.symstore");
-		int r = r_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
-		r_core_file_free (fh);
-		r_core_fini (&core);
-		return r;
+		r_bin_pdb_download (&core, pj, isradjson, &pdbopts);
 	}
 
 	if ((tmp = r_sys_getenv ("RABIN2_PREFIX"))) {
@@ -1176,12 +1189,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		rabin_do_operation (bin, op, rad, output, file);
 	}
 	if (isradjson) {
-		r_cons_print ("}\n");
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
 	}
+	pj_free (pj);
 	r_cons_flush ();
-	r_core_file_free (fh);
 	r_core_fini (&core);
-	r_lib_free (l);
 
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2020 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -67,6 +67,11 @@ R_API const char *r_reg_get_type(int idx) {
 	return (idx >= 0 && idx < R_REG_TYPE_LAST) ? types[idx] : NULL;
 }
 
+R_API const char *r_reg_get_name_by_type(RReg *reg, const char *alias_name) {
+	const int n = r_reg_get_name_idx (alias_name);
+	return (n != -1)? r_reg_get_name (reg, n): NULL;
+}
+
 R_API int r_reg_type_by_name(const char *str) {
 	r_return_val_if_fail (str, -1);
 	int i;
@@ -88,7 +93,8 @@ R_API void r_reg_item_free(RRegItem *item) {
 }
 
 R_API int r_reg_get_name_idx(const char *type) {
-	if (type)
+	r_return_val_if_fail (type, -1);
+	if (type[0] && type[1] && !type[2])
 	switch (*type | (type[1] << 8)) {
 	/* flags */
 	case 'Z' + ('F' << 8): return R_REG_NAME_ZF;
@@ -199,7 +205,7 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 static int regcmp(RRegItem *a, RRegItem *b) {
 	int offa = (a->offset * 16) + a->size;
 	int offb = (b->offset * 16) + b->size;
-	return offa > offb;
+	return (offa > offb) - (offa < offb);
 }
 
 R_API void r_reg_reindex(RReg *reg) {
@@ -245,13 +251,10 @@ R_API void r_reg_free(RReg *reg) {
 	}
 }
 
-R_API RReg *r_reg_new(void) {
+R_API RReg *r_reg_init(RReg *reg) {
+	r_return_val_if_fail (reg, NULL);
 	RRegArena *arena;
-	RReg *reg = R_NEW0 (RReg);
-	int i;
-	if (!reg) {
-		return NULL;
-	}
+	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		arena = r_reg_arena_new (0);
 		if (!arena) {
@@ -268,6 +271,10 @@ R_API RReg *r_reg_new(void) {
 		reg->regset[i].cur = r_list_tail (reg->regset[i].pool);
 	}
 	return reg;
+}
+
+R_API RReg *r_reg_new(void) {
+	return r_reg_init (R_NEW0 (RReg));
 }
 
 R_API bool r_reg_is_readonly(RReg *reg, RRegItem *item) {
@@ -332,15 +339,18 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 }
 
 R_API RList *r_reg_get_list(RReg *reg, int type) {
+	if (type == R_REG_TYPE_ALL) {
+		return reg->allregs;
+	}
+
 	RList *regs;
 	int i, mask;
-
 	if (type < 0 || type > (R_REG_TYPE_LAST - 1)) {
 		return NULL;
 	}
 
 	regs = reg->regset[type].regs;
-	if (r_list_length (regs) == 0) {
+	if (regs && r_list_length (regs) == 0) {
 		mask = ((int)1 << type);
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			if (reg->regset[i].maskregstype & mask) {

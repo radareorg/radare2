@@ -96,7 +96,7 @@ static snes_op_t snes_op[]={
 {"and 0x%06x,x",	SNES_OP_32BIT},
 {"rti",			SNES_OP_8BIT},
 {"eor (0x%02x,x)",	SNES_OP_16BIT},
-{"wdm",			SNES_OP_8BIT},
+{"wdm 0x%02X",		SNES_OP_16BIT},
 {"eor 0x%02x,s",	SNES_OP_16BIT},
 {"mvp 0x%02x,0x%02x",	SNES_OP_24BIT},
 {"eor 0x%02x",		SNES_OP_16BIT},

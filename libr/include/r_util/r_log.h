@@ -33,7 +33,7 @@ typedef enum r_log_level {
 #endif
 
 typedef void (*RLogCallback) (const char *output, const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...);
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(7, 8);
 
 #define R_VLOG(lvl, tag, fmtstr, args) r_vlog (MACRO_LOG_FUNC, __FILE__, \
 	__LINE__, lvl, tag, fmtstr, args);
@@ -76,7 +76,7 @@ R_API void r_log_del_callback(RLogCallback cbfunc);
    This allows another method of output redirection on POSIX (Windows?)
    You can override this function to handle all logging logic / output yourself */
 R_API MACRO_WEAK_SYM void r_log(const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...);
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) R_PRINTF_CHECK(6, 7);
 
 R_API MACRO_WEAK_SYM void r_vlog(const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args);

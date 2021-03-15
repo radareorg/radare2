@@ -6,9 +6,9 @@ extern "C" {
 #endif
 
 typedef enum {
-	VERTICAL,
-	HORIZONTAL,
-	NONE
+	PANEL_LAYOUT_VERTICAL,
+	PANEL_LAYOUT_HORIZONTAL,
+	PANEL_LAYOUT_NONE
 } RPanelLayout;
 
 typedef enum {

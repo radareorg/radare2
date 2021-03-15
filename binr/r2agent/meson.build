@@ -7,6 +7,6 @@ executable('r2agent', 'r2agent.c',
     r_cons_dep
   ],
   install: true,
-  install_rpath: rpath,
+  install_rpath: rpath_exe,
   implicit_include_directories: false
 )

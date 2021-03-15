@@ -8,4 +8,4 @@ Description: radare foundation libraries
 Version: @VERSION@
 Requires: 
 Libs: -L${libdir} -lr_util  @LIBZIP@ @DL_LIBS@
-Cflags: -I${includedir}/libr 
+Cflags: -I${includedir}/libr -I${includedir}/libr/sdb

@@ -6,6 +6,7 @@
 .Sh SYNOPSIS
 .Nm r2r
 .Op Fl h
+.Op Fl i
 .Op Fl n
 .Op Fl q
 .Op Fl v
@@ -19,13 +20,13 @@
 .Sh DESCRIPTION
 Run all the radare2-regressions tests matching a specific word in the name.
 .Pp
-TODO: this manpage is work-in-progress
-.Pp
 You need radare2 to be available in $PATH.
 .Sh OPTIONS
 .Bl -tag -width Fl
 .It Fl h
 Show the help/usage message
+.It Fl i
+Interactive mode
 .It Fl n
 Do not run any test, just load/parse them
 .It Fl q

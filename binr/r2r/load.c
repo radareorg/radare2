@@ -15,7 +15,7 @@ R_API void r2r_cmd_test_free(R2RCmdTest *test) {
 		return;
 	}
 #define DO_KEY_STR(key, field) free (test->field.value);
-	R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, R2R_CMD_TEST_FOREACH_RECORD_NOP)
+	R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, R2R_CMD_TEST_FOREACH_RECORD_NOP, R2R_CMD_TEST_FOREACH_RECORD_NOP)
 #undef DO_KEY_STR
 	free (test);
 }
@@ -142,6 +142,17 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 		// RUN is the only cmd without value
 		if (strcmp (line, "RUN") == 0) {
 			test->run_line = linenum;
+			if (!test->cmds.value) {
+				eprintf (LINEFMT "Error: Test without CMDS key\n", file, linenum);
+				goto fail;
+			}
+			if (!(test->expect.value || test->expect_err.value)) {
+				if (!(test->regexp_out.value || test->regexp_err.value)) {
+					eprintf (LINEFMT "Error: Test without EXPECT or EXPECT_ERR key"
+						 " (did you forget an EOF?)\n", file, linenum);
+					goto fail;
+				}
+			}
 			r_pvector_push (ret, test);
 			test = r2r_cmd_test_new ();
 			if (!test) {
@@ -189,17 +200,43 @@ R_API RPVector *r2r_load_cmd_test_file(const char *file) {
 			if (!strcmp (val, "1")) { \
 				test->field.value = true; \
 			} else if (!strcmp (val, "0")) { \
-                test->field.value = false; \
+				test->field.value = false; \
 			} else { \
 				eprintf (LINEFMT "Error: Invalid value \"%s\" for boolean key \"%s\", only \"1\" or \"0\" allowed.\n", file, linenum, val, key); \
 				goto fail; \
-            } \
+			} \
 			continue; \
 		}
 
-		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL)
+#define DO_KEY_NUM(key, field) \
+		if (strcmp (line, key) == 0) { \
+			if (test->field.value) { \
+				eprintf (LINEFMT "Warning: Duplicate key \"%s\"\n", file, linenum, key); \
+			} \
+			test->field.set = true; \
+			/* Strip comment */ \
+			char *cmt = strchr (val, '#'); \
+			if (cmt) { \
+				*cmt = '\0'; \
+				cmt--; \
+				while (cmt > val && *cmt == ' ') { \
+					*cmt = '\0'; \
+					cmt--; \
+				} \
+			} \
+			char *endval; \
+			test->field.value = strtol (val, &endval, 0); \
+			if (!endval || *endval) { \
+				eprintf (LINEFMT "Error: Invalid value \"%s\" for numeric key \"%s\", only numbers allowed.\n", file, linenum, val, key); \
+				goto fail; \
+			} \
+			continue; \
+		}
+
+		R2R_CMD_TEST_FOREACH_RECORD(DO_KEY_STR, DO_KEY_BOOL, DO_KEY_NUM)
 #undef DO_KEY_STR
 #undef DO_KEY_BOOL
+#undef DO_KEY_NUM
 
 		eprintf (LINEFMT "Unknown key \"%s\".\n", file, linenum, line);
 	} while ((line = nextline));
@@ -212,6 +249,8 @@ beach:
 	r2r_cmd_test_free (test);
 	return ret;
 fail:
+	r2r_cmd_test_free (test);
+	test = NULL;
 	r_pvector_free (ret);
 	ret = NULL;
 	goto beach;
@@ -231,8 +270,8 @@ R_API void r2r_asm_test_free(R2RAsmTest *test) {
 }
 
 static bool parse_asm_path(const char *path, RStrConstPool *strpool, const char **arch_out, const char **cpuout, int *bitsout) {
-	RList *file_tokens = r_str_split_duplist (path, R_SYS_DIR);
-	if (!file_tokens || r_list_empty (file_tokens)) {
+	RList *file_tokens = r_str_split_duplist (path, R_SYS_DIR, true);
+	if (r_list_empty (file_tokens)) {
 		r_list_free (file_tokens);
 		return false;
 	}
@@ -561,6 +600,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 		const char *subname;
 		RStrBuf subpath;
 		r_strbuf_init (&subpath);
+		const bool skip_archos = r_sys_getenv_asbool ("R2R_SKIP_ARCHOS");
+		const bool skip_asm = r_sys_getenv_asbool ("R2R_SKIP_ASM");
 		bool ret = true;
 		r_list_foreach (dir, it, subname) {
 			if (*subname == '.') {
@@ -571,8 +612,12 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth) {
 				eprintf ("Skipping %s"R_SYS_DIR"%s because it requires additional dependencies.\n", path, subname);
 				continue;
 			}
-			if ((!strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos"))
-				&& strcmp (subname, R2R_ARCH_OS)) {
+			if (skip_asm && strstr (path, R_SYS_DIR"asm"R_SYS_DIR)) {
+				eprintf ("R2R_SKIP_ASM: Skipping %s.\n", path);
+				continue;
+			}
+			bool is_archos_folder = !strcmp (path, "archos") || r_str_endswith (path, R_SYS_DIR"archos");
+			if (is_archos_folder && (skip_archos || strcmp (subname, R2R_ARCH_OS))) {
 				eprintf ("Skipping %s"R_SYS_DIR"%s because it does not match the current platform.\n", path, subname);
 				continue;
 			}

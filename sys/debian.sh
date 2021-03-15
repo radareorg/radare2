@@ -12,16 +12,25 @@ if [ "${ARCH}" = "x86_64" ]; then
 fi
 
 echo "[debian] preparing radare2 package..."
-PKGDIR=sys/debian/radare2/root
-DEVDIR=sys/debian/radare2-dev/root
+PKGDIR=dist/debian/radare2/root
+DEVDIR=dist/debian/radare2-dev/root
 
 # clean
 rm -rf "${PKGDIR}" "${DEVDIR}"
 
+if [ -z "$CFLAGS" ]; then
+  export CFLAGS="-O2 -Werror -Wno-cpp"
+  export CFLAGS="${CFLAGS} -Wno-unused-result"
+## export CFLAGS="${CFLAGS} -Wno-stringop-truncation"
+fi
 # build
-./configure --prefix=/usr > /dev/null
-make -j4 > /dev/null
-make install DESTDIR="${PWD}/${PKGDIR}" > /dev/null
+export
+./configure --prefix=/usr --with-checks-level=0
+[ $? != 0 ] && exit 1
+make -j4
+[ $? != 0 ] && exit 1
+make install DESTDIR="${PWD}/${PKGDIR}"
+[ $? != 0 ] && exit 1
 
 # dev-split
 mkdir -p "${DEVDIR}/usr/include"
@@ -42,9 +51,9 @@ done
 
 # packages
 echo "[debian] building radare2 package..."
-make -C sys/debian/radare2 ARCH=${ARCH}
-cp -f sys/debian/radare2/*.deb .
+make -C dist/debian/radare2 ARCH=${ARCH}
+cp -f dist/debian/radare2/*.deb .
 
 echo "[debian] building radare2-dev package..."
-make -C sys/debian/radare2-dev ARCH=${ARCH}
-cp -f sys/debian/radare2-dev/*.deb .
+make -C dist/debian/radare2-dev ARCH=${ARCH}
+cp -f dist/debian/radare2-dev/*.deb .

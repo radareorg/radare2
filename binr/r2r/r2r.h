@@ -11,6 +11,8 @@
 #define R2R_OS "linux"
 #elif defined(__APPLE__)
 #define R2R_OS "darwin"
+#elif __WINDOWS__
+#define R2R_OS "windows"
 #else
 #define R2R_OS "unknown"
 #endif
@@ -37,6 +39,12 @@ typedef struct r2r_cmd_test_bool_record {
 	bool set;
 } R2RCmdTestBoolRecord;
 
+typedef struct r2r_cmd_test_num_record {
+	ut64 value;
+	ut64 line; // nums are always oneliners (e.g. TIMEOUT=10)
+	bool set;
+} R2RCmdTestNumRecord;
+
 typedef struct r2r_cmd_test_t {
 	R2RCmdTestStringRecord name;
 	R2RCmdTestStringRecord file;
@@ -45,20 +53,26 @@ typedef struct r2r_cmd_test_t {
 	R2RCmdTestStringRecord cmds;
 	R2RCmdTestStringRecord expect;
 	R2RCmdTestStringRecord expect_err;
+	R2RCmdTestStringRecord regexp_out;
+	R2RCmdTestStringRecord regexp_err;
 	R2RCmdTestBoolRecord broken;
+	R2RCmdTestNumRecord timeout;
 	ut64 run_line;
 	bool load_plugins;
 } R2RCmdTest;
 
 #define R2R_CMD_TEST_FOREACH_RECORD_NOP(name, field)
-#define R2R_CMD_TEST_FOREACH_RECORD(macro_str, macro_bool) \
+#define R2R_CMD_TEST_FOREACH_RECORD(macro_str, macro_bool, macro_int) \
 	macro_str ("NAME", name) \
 	macro_str ("FILE", file) \
 	macro_str ("ARGS", args) \
+	macro_int ("TIMEOUT", timeout) \
 	macro_str ("SOURCE", source) \
 	macro_str ("CMDS", cmds) \
 	macro_str ("EXPECT", expect) \
 	macro_str ("EXPECT_ERR", expect_err) \
+	macro_str ("REGEXP_OUT", regexp_out) \
+	macro_str ("REGEXP_ERR", regexp_err) \
 	macro_bool ("BROKEN", broken)
 
 typedef enum r2r_asm_test_mode_t {
@@ -148,6 +162,7 @@ typedef struct r2r_test_result_info_t {
 	R2RTestResult result;
 	bool timeout;
 	bool run_failed; // something went seriously wrong (e.g. r2 not found)
+	ut64 time_elapsed;
 	union {
 		R2RProcessOutput *proc_out; // for test->type == R2R_TEST_TYPE_CMD, R2R_TEST_TYPE_JSON or R2R_TEST_TYPE_FUZZ
 		R2RAsmTestOutput *asm_out;  // for test->type == R2R_TEST_TYPE_ASM
@@ -182,7 +197,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms);
 R_API void r2r_subprocess_free(R2RSubprocess *proc);
 
 typedef R2RProcessOutput *(*R2RCmdRunner)(const char *file, const char *args[], size_t args_size,
-		const char *envvars[], const char *envvals[], size_t env_size, void *user);
+	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user);
 
 R_API void r2r_process_output_free(R2RProcessOutput *out);
 R_API R2RProcessOutput *r2r_run_cmd_test(R2RRunConfig *config, R2RCmdTest *test, R2RCmdRunner runner, void *user);

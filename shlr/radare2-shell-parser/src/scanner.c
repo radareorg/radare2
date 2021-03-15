@@ -30,7 +30,7 @@ void tree_sitter_r2cmd_external_scanner_deserialize(void *payload, const char *b
 }
 
 static bool is_pf_cmd(const char *s) {
-	return !strncmp (s, "pf", 2) || !strcmp (s, "Cf");
+	return (strcmp (s, "pfo") && !strncmp (s, "pf", 2)) || !strcmp (s, "Cf");
 }
 
 static bool is_env_cmd(const char *s) {
@@ -42,22 +42,28 @@ static bool is_at_cmd(const char *s) {
 }
 
 static bool is_comment(const char *s) {
-	return !strncmp (s, "/*", 2);
+	return !strncmp (s, "/*", 2) || !strcmp (s, "#");
 }
 
 static bool is_special_start(const int32_t ch) {
-	return ch == '*' || ch == '(' || ch == '*' || ch == '@' || ch == '|' ||
-		ch == '.' || ch == '|' || ch == '%' || ch == '~' || ch == '&' ||
-		ch == '>';
+	return ch == '*' || ch == '(' || ch == '@' || ch == '|' || ch == '>' ||
+		ch == '.' || ch == '|' || ch == '%' || ch == '~' || ch == '&';
 }
 
 static bool is_start_of_command(const int32_t ch) {
-	return isalpha (ch) || ch == '$' || ch == '?' || ch == ':' || ch == '+' ||
-		ch == '=' || ch == '/' || ch == '_' || is_special_start (ch);
+	return isalpha (ch) || ch == '$' || ch == '?' || ch == ':' || ch == '+' || ch == '-'
+		|| ch == '#' || ch == ',' || ch == '=' || ch == '/' || ch == '_' || ch == '\\'
+		|| is_special_start (ch);
 }
 
-static bool is_mid_command(const char *res, const int32_t ch) {
-	return isalnum(ch) ||  ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
+static bool is_mid_command(const char *res, int len, const int32_t ch) {
+	if (res[0] == '#') {
+		if (len == 1) {
+			return ch == '!' || ch == '?';
+		}
+		return ch == '?';
+	}
+	return isalnum (ch) || ch == '$' || ch == '?' || ch == '.' || ch == '!' ||
 		ch == ':' || ch == '+' || ch == '=' || ch == '/' || ch == '*' ||
 		ch == '-' || ch == ',' || ch == '&' || (is_at_cmd (res) && ch == '@');
 }
@@ -73,6 +79,10 @@ static bool is_concat_brace(const int32_t ch) {
 }
 
 static bool is_concat_pf_dot(const int32_t ch) {
+	return is_concat(ch) && ch != '=';
+}
+
+static bool is_concat_eq_sep(const int32_t ch) {
 	return is_concat(ch) && ch != '=';
 }
 
@@ -112,10 +122,6 @@ static bool scan_number(TSLexer *lexer, const bool *valid_symbols) {
 
 bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, const bool *valid_symbols) {
 	// FIXME: /* in the shell should become a multiline comment
-	if (valid_symbols[EQ_SEP_CONCAT] && !isspace(lexer->lookahead) && lexer->lookahead != '=' && lexer->lookahead != '\0') {
-		lexer->result_symbol = EQ_SEP_CONCAT;
-		return true;
-	}
 	if (valid_symbols[CONCAT] && is_concat (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT;
 		return true;
@@ -125,8 +131,11 @@ bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 	} else if (valid_symbols[CONCAT_PF_DOT] && is_concat_pf_dot (lexer->lookahead)) {
 		lexer->result_symbol = CONCAT_PF_DOT;
 		return true;
+	} else if (valid_symbols[EQ_SEP_CONCAT] && is_concat_eq_sep (lexer->lookahead)) {
+		lexer->result_symbol = EQ_SEP_CONCAT;
+		return true;
 	}
-        if (valid_symbols[CMD_IDENTIFIER] || valid_symbols[HELP_COMMAND]) {
+	if (valid_symbols[CMD_IDENTIFIER] || valid_symbols[HELP_COMMAND]) {
 		char res[CMD_IDENTIFIER_MAX_LENGTH + 1];
 		int i_res = 0;
 
@@ -138,11 +147,8 @@ bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 			return false;
 		}
 		res[i_res++] = lexer->lookahead;
-		if (res[0] == '#') {
-			return false;
-		}
 		lexer->advance (lexer, false);
-		while (i_res < CMD_IDENTIFIER_MAX_LENGTH && is_mid_command (res, lexer->lookahead)) {
+		while (i_res < CMD_IDENTIFIER_MAX_LENGTH && is_mid_command (res, i_res, lexer->lookahead)) {
 			res[i_res++] = lexer->lookahead;
 			lexer->advance (lexer, false);
                 }
@@ -150,7 +156,8 @@ bool tree_sitter_r2cmd_external_scanner_scan(void *payload, TSLexer *lexer, cons
 		if (is_comment (res)) {
 			return false;
 		}
-		if (res[i_res - 1] == '?' || (i_res >= 2 && is_recursive_help(i_res, res[i_res - 2], res[i_res - 1]))) {
+		// ?? is not considered an help command, just a regular one
+		if ((res[i_res - 1] == '?' && strcmp (res, "??")) || (i_res >= 2 && is_recursive_help (i_res, res[i_res - 2], res[i_res - 1]))) {
 			if (i_res == 1) {
 				return false;
 			}

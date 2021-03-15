@@ -1,41 +1,41 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2021 - pancake */
 
 #include <r_anal.h>
 
-static int hook_flag_read(RAnalEsil *esil, const char *flag, ut64 *num) {
+static bool hook_flag_read(RAnalEsil *esil, const char *flag, ut64 *num) {
 	sdb_array_add (esil->stats, "flg.read", flag, 0);
-	return 0;
+	return false;
 }
 
-static int hook_command(RAnalEsil *esil, const char *op) {
+static bool hook_command(RAnalEsil *esil, const char *op) {
 	sdb_array_add (esil->stats, "ops.list", op, 0);
-	return 0;
+	return false;
 }
 
-static int hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	sdb_array_add_num (esil->stats, "mem.read", addr, 0);
-	return 0;
+	return false;
 }
 
-static int hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	sdb_array_add_num (esil->stats, "mem.write", addr, 0);
-	return 0;
+	return false;
 }
 
-static int hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
+static bool hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	const char *key = (*name>='0' && *name<='9')? "num.load": "reg.read";
 	sdb_array_add (esil->stats, key, name, 0);
-	return 0;
+	return false;
 }
 
-static int hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+static bool hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	sdb_array_add (esil->stats, "reg.write", name, 0);
-	return 0;
+	return false;
 }
 
-static int hook_NOP_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool hook_NOP_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	eprintf ("NOP WRITE AT 0x%08"PFMT64x"\n", addr);
-	return 1; // override
+	return true;
 }
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly) {
