@@ -836,7 +836,7 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 	if (!ptr || len < 0) {
 		return NULL;
 	}
-	size_t plen = strlen (ptr);
+	size_t plen = r_str_nlen (ptr, len);
 	size_t olen = R_MIN (len, plen);
 	char *out = malloc (olen + 1);
 	if (!out) {
@@ -1921,7 +1921,7 @@ R_API size_t r_str_ansi_len(const char *str) {
 R_API size_t r_str_nlen(const char *str, int n) {
 	size_t len = 0;
 	if (str) {
-		while (*str && n > 0) {
+		while (n > 0 && *str) {
 			len++;
 			str++;
 			n--;
