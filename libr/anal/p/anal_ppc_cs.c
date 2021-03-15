@@ -582,6 +582,18 @@ static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	}
 }
 
+static char *shrink(char *op) {
+	if (!op) {
+		return NULL;
+	}
+	size_t len = strlen(op);
+	if (!len) {
+		return NULL;
+	}
+	op[len - 1] = 0;
+	return op;
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static csh handle = 0;
 	static int omode = -1, obits = -1;
@@ -730,8 +742,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_STWU:
 			op->type = R_ANAL_OP_TYPE_STORE;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,%s,=[4],%s=", ARG (0), op1, op1);
 			if (strstr (op1, "r1")) {
 				op->stackop = R_ANAL_STACK_INC;
@@ -747,8 +761,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_STBU:
 			op->type = R_ANAL_OP_TYPE_STORE;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,%s,=[1],%s=", ARG (0), op1, op1);
 			break;
 		case PPC_INS_STH:
@@ -757,8 +773,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_STHU:
 			op->type = R_ANAL_OP_TYPE_STORE;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,%s,=[2],%s=", ARG (0), op1, op1);
 			break;
 		case PPC_INS_STD:
@@ -767,8 +785,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case PPC_INS_STDU:
 			op->type = R_ANAL_OP_TYPE_STORE;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,%s,=[8],%s=", ARG (0), op1, op1);
 			break;
 		case PPC_INS_LBZ:
@@ -778,8 +798,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_LBZU:
 		case PPC_INS_LBZUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,[1],%s,=,%s=", op1, ARG (0), op1);
 			break;
 		case PPC_INS_LBZX:
@@ -794,8 +816,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_LDU:
 		case PPC_INS_LDUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,[8],%s,=,%s=", op1, ARG (0), op1);
 			break;
 		case PPC_INS_LDX:
@@ -825,8 +849,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_LHZ:
 		case PPC_INS_LHZU:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			op1 = ARG (1);
-			op1[strlen (op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,[2],%s,=,%s=", op1, ARG (0), op1);
 			break;
 		case PPC_INS_LHBRX:
@@ -847,8 +873,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case PPC_INS_LWZU:
 		case PPC_INS_LWZUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			op1 = ARG (1);
-			op1[strlen(op1) - 1] = 0;
+			op1 = shrink(ARG(1));
+			if (!op1) {
+				break;
+			}
 			esilprintf (op, "%s,[4],%s,=,%s=", op1, ARG (0), op1);
 			break;
 		case PPC_INS_LWBRX:
