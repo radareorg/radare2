@@ -51,7 +51,9 @@ R_API RAnalEsilTrace *r_anal_esil_trace_new(RAnalEsil *esil) {
 		if (!b) {
 			goto error;
 		}
-		memcpy (b->bytes, a->bytes, b->size);
+		if (b->bytes && a->bytes && b->size > 0) {
+			memcpy (b->bytes, a->bytes, b->size);
+		}
 		trace->arena[i] = b;
 	}
 	return trace;

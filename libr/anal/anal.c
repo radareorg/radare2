@@ -321,7 +321,9 @@ R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
 R_API void r_anal_set_big_endian(RAnal *anal, int bigend) {
 	r_return_if_fail (anal);
 	anal->big_endian = bigend;
-	anal->reg->big_endian = bigend;
+	if (anal->reg) {
+		anal->reg->big_endian = bigend;
+	}
 }
 
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
