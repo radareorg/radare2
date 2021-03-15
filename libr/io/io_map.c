@@ -31,7 +31,7 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) 
 	}
 	map->fd = fd;
 	map->delta = delta;
-	map->ts = r_time_now();
+	map->ts = r_time_now ();
 	if ((UT64_MAX - size + 1) < addr) {
 		/// XXX: this is leaking a map!!!
 		io_map_new (io, fd, perm, delta - addr, 0LL, size + addr);
