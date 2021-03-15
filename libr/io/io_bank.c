@@ -58,3 +58,118 @@ R_API void r_io_bank_fini(RIO *io) {
 		io->banks = NULL;
 	}
 }
+
+R_API RIOBank *r_io_bank_get(RIO *io, ut32 bankid) {
+	r_return_val_if_fail (io && io->banks, NULL);
+	return (RIOBank *)r_id_storage_get (io->banks, bankid);
+}
+
+static RIOMapRef *_mapref_from_map(RIOMap *map) {
+	RIOMapRef *mapref = R_NEW (RIOMapRef);
+	if (!mapref) {
+		return NULL;
+	}
+	mapref->id = map->id;
+	mapref->ts = map->ts;
+	return mapref;
+}
+
+static int _find_sm_by_vaddr_cb(void *incoming, void *in, void *user) {
+	RIOSubMap *bd = (RIOSubMap *)incoming, *sm = (RIOSubMap *)in;
+	if (bd->itv.addr > sm->itv.addr) {
+		return -1;
+	}
+	if (bd->itv.addr < sm->itv.addr) {
+		return 1;
+	}
+	return 0;
+}
+
+static int _find_lowest_intersection_sm_cb(void *incoming, void *in, void *user) {
+	RIOSubMap *bd = (RIOSubMap *)incoming, *sm = (RIOSubMap *)in;
+	RIOSubMap **bdsm = (RIOSubMap **)user;
+	if (r_io_submap_contain (sm, bd->itv.addr)) {
+		return 0;
+	}
+	if (!(*bdsm) && r_io_submap_contain (bd, sm->itv.addr)) {
+		*bdsm = sm;
+		return -1;
+	} else if ((sm->itv.addr < (*bdsm)->itv.addr)) {
+		// sm is closer to bd's itv.addr than *bdsm
+		*bdsm = sm;
+	}
+	if (bd->itv.addr > sm->itv.addr) {
+		return -1;
+	}
+	return 1;
+}
+
+// returns the node containing the submap with lowest itv.addr, that intersects with sm
+// at worst this is 2log(n), but could be done in log(n), which requires some changes in r_rbtree
+static RContRBNode *_find_entry_submap_node(RIOBank *bank, RIOSubMap *sm) {
+	RIOSubMap *bdsm = NULL;
+	RContRBNode *node = r_rbtree_cont_find_node (bank->submaps, sm, _find_lowest_intersection_sm_cb, &bdsm);
+	if (node || !bdsm) {
+		return node;
+	}
+	return r_rbtree_cont_find_node (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+}
+
+R_API bool r_io_bank_map_add_top(RIO *io, ut32 bankid, ut32 mapid) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	RIOMap *map = r_io_map_get (io, mapid);
+	r_return_val_if_fail (io && bank && map, false);
+	RIOMapRef *mapref = _mapref_from_map (map);
+	if (!mapref) {
+		return false;
+	}
+	RIOSubMap *sm = r_io_submap_new (io, mapref);
+	if (!sm) {
+		free (mapref);
+		return false;
+	}
+	r_list_append (bank->maprefs, mapref);
+	RContRBNode *entry = _find_entry_submap_node (bank, sm);
+	if (!entry) {
+		// no intersection with any submap, so just insert
+		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+	}
+	RIOSubMap *bd = (RIOSubMap *)entry->data;
+	if (r_itv_eq (bd->itv, sm->itv)) {
+		// this makes gb bankswitches way faster than skyline
+		// instead of deleting and inserting, just replace the mapref
+		sm->mapref = bd->mapref;
+		free (sm);
+		return true;
+	}
+	if (r_io_submap_from (bd) < r_io_submap_from (sm) && r_io_submap_to (sm) < r_io_submap_to (bd)) {
+		// split bd into 2 maps => bd and bdsm
+		RIOSubMap *bdsm = R_NEW (RIOSubMap);
+		if (!bdsm) {
+			free (sm);
+			return false;
+		}
+		bdsm->mapref = bd->mapref;
+		bdsm->itv.addr = r_io_submap_to (sm) + 1;
+		bdsm->itv.size = r_io_submap_to (bd) - bdsm->itv.addr + 1;
+		bd->itv.size = sm->itv.addr - bd->itv.addr;
+		// TODO: insert and check return value, before adjusting sm size
+		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL) & r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+	}
+
+	bd->itv.size = sm->itv.addr - bd->itv.addr;
+	entry = r_rbtree_cont_node_next (entry);
+	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
+		//delete all submaps that are completly included in sm
+		RContRBNode *next = r_rbtree_cont_node_next (entry);
+		// this can be optimized, there is no need to do search here
+		r_rbtree_cont_delete (bank->submaps, entry->data, _find_sm_by_vaddr_cb, NULL);
+		entry = next;
+	}
+	if (entry) {
+		bd = (RIOSubMap *)entry->data;
+		bd->itv.size = r_io_submap_to (bd) - r_io_submap_to (sm);
+		bd->itv.addr = r_io_submap_to (sm) + 1;
+	}
+	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+}
