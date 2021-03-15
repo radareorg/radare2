@@ -256,9 +256,11 @@ esac
 case "$1" in
 -v|version)
 	echo "r2pm ${R2_VERSION}"
+	exit 0
 	;;
 help|-h)
 	help
+	exit 0
 	;;
 -H)
 	if [ -z "$2" ]; then
@@ -267,6 +269,7 @@ help|-h)
 		exit 1
 	fi
 	eval echo "\$$2"
+	exit 0
 	;;
 esac
 
