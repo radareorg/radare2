@@ -276,7 +276,7 @@ static inline void **r_pvector_shrink(RPVector *vec) {
 }
 
 static inline void **r_pvector_flush(RPVector *vec) {
-	return (void **)r_vector_flush(&vec->v);
+	return (void **)r_vector_flush (&vec->v);
 }
 
 /*
