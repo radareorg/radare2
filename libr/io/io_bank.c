@@ -59,7 +59,7 @@ R_API void r_io_bank_fini(RIO *io) {
 	}
 }
 
-R_API RIOBank *r_io_bank_get(RIO *io, ut32 bankid) {
+R_API RIOBank *r_io_bank_get(RIO *io, const ut32 bankid) {
 	r_return_val_if_fail (io && io->banks, NULL);
 	return (RIOBank *)r_id_storage_get (io->banks, bankid);
 }
@@ -110,7 +110,7 @@ static RContRBNode *_find_entry_submap_node(RIOBank *bank, RIOSubMap *sm) {
 	return node;
 }
 
-R_API bool r_io_bank_map_add_top(RIO *io, ut32 bankid, ut32 mapid) {
+R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	RIOMap *map = r_io_map_get (io, mapid);
 	r_return_val_if_fail (io && bank && map, false);
@@ -237,7 +237,7 @@ found:
 	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
 }
 
-R_API bool r_io_bank_locate(RIO *io, ut32 bankid, const ut64 size, ut64 *addr) {
+R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank && bank->submaps && addr && size, false);
 	RContRBNode *entry = r_rbtree_cont_first (bank->submaps);
