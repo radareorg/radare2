@@ -23,6 +23,7 @@
 #define r_io_map_size(map) r_itv_size (map->itv)
 #define r_io_map_contain(map, addr) r_itv_contain (map->itv, addr)
 #define r_io_submap_contain(sm, addr) r_io_map_contain (sm, addr)
+#define	r_io_submap_overlap(bd, sm) r_itv_overlap(bd->itv, sm->itv)
 
 #define r_io_map_set_begin(map, new_addr)	\
 	do {					\
