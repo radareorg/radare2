@@ -94,11 +94,35 @@ bool test_r_rbtree_cont_node_next() {
 	}
 	mu_assert ("rbtree_cont_node_next", ret);
 	mu_end;
-}	
+}
+
+bool test_r_rbtree_cont_node_prev() {
+	RContRBTree *tree = r_rbtree_cont_new ();
+	ut32 i;
+	for (i = 0; i < 100; i++) {
+		ut32 v = (ut32)r_num_rand (UT32_MAX >> 1);
+		r_rbtree_cont_insert (tree, (void *)(size_t)v, simple_cmp, NULL);
+	}
+	bool ret = true;
+	void *v = r_rbtree_cont_last (tree);
+	RContRBNode *node = r_rbtree_cont_find_node (tree, v, simple_cmp, NULL);
+	i = (ut32)(size_t)v;
+	node = r_rbtree_cont_node_prev (node);
+	mu_assert ("rbtree_cont_node_prev no node befor last", !!node);
+	while (node) {
+		const ut32 prev = (ut32)(size_t)node->data;
+		ret &= (i >= prev);
+		i = prev;
+		node = r_rbtree_cont_node_prev (node);
+	}
+	mu_assert ("rbtree_cont_node_prev", ret);
+	mu_end;
+}
 
 int main(int argc, char *argv[]) {
 	mu_run_test (test_r_rbtree_cont_insert);
 	mu_run_test (test_r_rbtree_cont_delete);
 	mu_run_test (test_r_rbtree_cont_node_next);
+	mu_run_test (test_r_rbtree_cont_node_prev);
 	return tests_run != tests_passed;
 }
