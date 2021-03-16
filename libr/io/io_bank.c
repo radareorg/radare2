@@ -148,13 +148,13 @@ R_API bool r_io_bank_map_add_top(RIO *io, ut32 bankid, ut32 mapid) {
 		bdsm->mapref = bd->mapref;
 		bdsm->itv.addr = r_io_submap_to (sm) + 1;
 		bdsm->itv.size = r_io_submap_to (bd) - bdsm->itv.addr + 1;
-		bd->itv.size = sm->itv.addr - bd->itv.addr;
+		bd->itv.size = r_io_submap_from (sm) - r_io_submap_from (bd);
 		// TODO: insert and check return value, before adjusting sm size
 		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL) &
 			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
 	}
 
-	bd->itv.size = sm->itv.addr - bd->itv.addr;
+	bd->itv.size = r_io_submap_from (sm) - r_io_submap_from (bd);
 	entry = r_rbtree_cont_node_next (entry);
 	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		//delete all submaps that are completly included in sm
@@ -163,7 +163,73 @@ R_API bool r_io_bank_map_add_top(RIO *io, ut32 bankid, ut32 mapid) {
 		r_rbtree_cont_delete (bank->submaps, entry->data, _find_sm_by_vaddr_cb, NULL);
 		entry = next;
 	}
-	if (entry) {
+	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
+		bd = (RIOSubMap *)entry->data;
+		bd->itv.size = r_io_submap_to (bd) - r_io_submap_to (sm);
+		bd->itv.addr = r_io_submap_to (sm) + 1;
+	}
+	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+}
+
+
+R_API bool r_io_bank_map_priorize (RIO *io, const ut32 bankid, const ut32 mapid) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	r_return_val_if_fail (io && bank, false);
+	RListIter *iter;
+	RIOMapRef *mapref;
+	r_list_foreach (bank->maprefs, iter, mapref) {
+		if (mapref->id == mapid) {
+			goto found;
+		}
+	}
+	return false;
+found:
+	if (iter == bank->maprefs->head) {
+		return r_io_map_get_by_ref (io, mapref) ? true : false;
+	}
+	RIOSubMap *sm = r_io_submap_new (io, mapref);
+	if (!sm) {
+		return false;
+	}
+	RContRBNode *entry = _find_entry_submap_node (bank, sm);
+	if (!entry) {
+		// if this happens, something is really fucked up
+		free (sm);
+		return false;
+	}
+	RIOSubMap *bd = (RIOSubMap *)entry->data;
+	if (r_itv_eq (bd->itv, sm->itv)) {
+		bd->mapref = *mapref;
+		free (sm);
+		return true;
+	}
+	if (r_io_submap_from (bd) < r_io_submap_from (sm) &&
+		r_io_submap_to (sm) < r_io_submap_to (bd)) {
+		// split bd into 2 maps => bd and bdsm
+		RIOSubMap *bdsm = R_NEW (RIOSubMap);
+		if (!bdsm) {
+			free (sm);
+			return false;
+		}
+		bdsm->mapref = bd->mapref;
+		bdsm->itv.addr = r_io_submap_to (sm) + 1;
+		bdsm->itv.size = r_io_submap_to (bd) - bdsm->itv.addr + 1;
+		bd->itv.size = sm->itv.addr - bd->itv.addr;
+		// TODO: insert and check return value, before adjusting sm size
+		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL) &
+			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+	}
+
+	bd->itv.size = r_io_submap_from (sm) - r_io_submap_from (bd);
+	entry = r_rbtree_cont_node_next (entry);
+	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
+		//delete all submaps that are completly included in sm
+		RContRBNode *next = r_rbtree_cont_node_next (entry);
+		// this can be optimized, there is no need to do search here
+		r_rbtree_cont_delete (bank->submaps, entry->data, _find_sm_by_vaddr_cb, NULL);
+		entry = next;
+	}
+	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		bd = (RIOSubMap *)entry->data;
 		bd->itv.size = r_io_submap_to (bd) - r_io_submap_to (sm);
 		bd->itv.addr = r_io_submap_to (sm) + 1;
