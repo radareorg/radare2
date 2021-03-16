@@ -160,7 +160,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		eprintf ("aao: Cannot read the whole selrefs section\n");
 		return false;
 	}
-	for (off = 0; off + word_size < ss_selrefs && off + word_size< maxsize; off += word_size) {
+	for (off = 0; off + word_size < ss_selrefs && off + word_size < maxsize; off += word_size) {
 		ut64 va = va_selrefs + off;
 		ut64 xrefs_to = r_read_le64 (buf + off);
 		if (isValid (xrefs_to)) {
