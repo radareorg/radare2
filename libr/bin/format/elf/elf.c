@@ -2716,7 +2716,11 @@ static size_t get_num_relocs_sections(ELFOBJ *bin) {
 }
 
 static size_t get_num_relocs_approx(ELFOBJ *bin) {
-	return get_num_relocs_dynamic (bin) + get_num_relocs_sections (bin);
+	size_t total = get_num_relocs_dynamic (bin) + get_num_relocs_sections (bin);
+	if (total > bin->size) {
+		return bin->size / 2;
+	}
+	return total;
 }
 
 static size_t populate_relocs_record_from_dynamic(ELFOBJ *bin, RBinElfReloc *relocs, size_t pos, size_t num_relocs) {
