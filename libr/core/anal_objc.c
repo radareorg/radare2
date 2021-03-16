@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019-2020 - pancake */
+/* radare2 - LGPL - Copyright 2019-2021 - pancake */
 
 /* This code has been written by pancake which has been based on Alvaro's
  * r2pipe-python script which was based on FireEye script for IDA Pro.
@@ -13,6 +13,7 @@ typedef struct {
 	RCore *core;
 	HtUP *up;
 	size_t word_size;
+	size_t file_size;
 	RBinSection *_selrefs;
 	RBinSection *_msgrefs;
 	RBinSection *_const;
@@ -64,13 +65,13 @@ static inline bool inBetween(RBinSection *s, ut64 addr) {
 	return R_BETWEEN (from, addr, to);
 }
 
-static ut32 readDword(RCoreObjc *objc, ut64 addr, bool *success) {
+static inline ut32 readDword(RCoreObjc *objc, ut64 addr, bool *success) {
 	ut8 buf[4];
 	*success = r_io_read_at (objc->core->io, addr, buf, sizeof (buf));
 	return r_read_le32 (buf);
 }
 
-static ut64 readQword(RCoreObjc *objc, ut64 addr, bool *success) {
+static inline ut64 readQword(RCoreObjc *objc, ut64 addr, bool *success) {
 	ut8 buf[8] = {0};
 	*success = r_io_read_at (objc->core->io, addr, buf, sizeof (buf));
 	return r_read_le64 (buf);
@@ -137,6 +138,8 @@ static bool objc_build_refs(RCoreObjc *objc) {
 
 	// TODO: check if ss_const or ss_selrefs are too big before going further
 	size_t maxsize = R_MAX (ss_const, ss_selrefs);
+	maxsize = R_MIN (maxsize, objc->file_size);
+
 	ut8 *buf = calloc (1, maxsize);
 	if (!buf) {
 		return false;
@@ -146,7 +149,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		eprintf ("aao: Cannot read the whole const section %zu\n", ss_const);
 		return false;
 	}
-	for (off = 0; off + word_size < ss_const; off += word_size) {
+	for (off = 0; off + word_size < ss_const && off + word_size < maxsize; off += word_size) {
 		ut64 va = va_const + off;
 		ut64 xrefs_to = r_read_le64 (buf + off);
 		if (isValid (xrefs_to)) {
@@ -157,7 +160,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		eprintf ("aao: Cannot read the whole selrefs section\n");
 		return false;
 	}
-	for (off = 0; off + word_size < ss_selrefs; off += word_size) {
+	for (off = 0; off + word_size < ss_selrefs && off + word_size < maxsize; off += word_size) {
 		ut64 va = va_selrefs + off;
 		ut64 xrefs_to = r_read_le64 (buf + off);
 		if (isValid (xrefs_to)) {
@@ -175,6 +178,10 @@ static RCoreObjc *core_objc_new(RCore *core) {
 	}
 	RCoreObjc *o = R_NEW0 (RCoreObjc);
 	o->core = core;
+	o->file_size = r_bin_get_size (core->bin);
+	if (!o->file_size) {
+		o->file_size = 512*1024*1024;
+	}
 	o->word_size = (core->rasm->bits == 64)? 8: 4;
 	if (o->word_size != 8) {
 		eprintf ("Warning: aao experimental on 32bit binaries\n");
@@ -283,6 +290,7 @@ static bool objc_find_refs(RCore *core) {
 		}
 	}
 
+	const ut64 pa_selrefs = objc->_selrefs->paddr;
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
 
@@ -292,7 +300,8 @@ static bool objc_find_refs(RCore *core) {
 	size_t total_words = 0;
 	ut64 a;
 	const size_t word_size = objc->word_size;
-	for (a = va_selrefs; a < ss_selrefs; a += word_size) {
+	const size_t maxsize = objc->file_size - pa_selrefs;
+	for (a = va_selrefs; a < ss_selrefs && a < maxsize; a += word_size) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}
