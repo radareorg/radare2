@@ -114,6 +114,7 @@ R_API RContRBNode *r_rbtree_cont_find_node(RContRBTree *tree, void *data, RContR
 R_API RContRBNode *r_rbtree_cont_node_next(RContRBNode *node);
 R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
 R_API void *r_rbtree_cont_first(RContRBTree *tree);
+R_API void *r_rbtree_cont_last(RContRBTree *tree);
 
 #define r_rbtree_cont_foreach(tree, it, dat) \
 	for ((it) = r_rbtree_first ((tree)->root ? &(tree)->root->node : NULL); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RContRBNode, node)->data); r_rbtree_iter_next (&(it)))
