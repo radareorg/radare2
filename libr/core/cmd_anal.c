@@ -8565,7 +8565,7 @@ static bool cmd_ageh(RCore *core, const char *input) {
 	char *arg = r_str_trim_dup (input + 1);
 	char *sp = strchr (arg, ' ');
 	if (!sp) {
-		free(arg);
+		free (arg);
 		return false;
 	}
 	*sp++ = 0;

@@ -686,8 +686,9 @@ static const char *getprefix(RSignType t) {
 	case R_SIGN_BBHASH:
 		return "bbhash";
 	default:
-		r_return_val_if_reached ("unknown_type");
+		break;
 	}
+	return "unknown";
 }
 
 static int searchHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user) {
