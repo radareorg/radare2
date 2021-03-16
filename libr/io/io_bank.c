@@ -87,18 +87,8 @@ static int _find_sm_by_vaddr_cb(void *incoming, void *in, void *user) {
 
 static int _find_lowest_intersection_sm_cb(void *incoming, void *in, void *user) {
 	RIOSubMap *bd = (RIOSubMap *)incoming, *sm = (RIOSubMap *)in;
-	RIOSubMap **bdsm = (RIOSubMap **)user;
-	if (r_io_submap_contain (sm, bd->itv.addr)) {
+	if (r_io_submap_overlap (bd, sm)) {
 		return 0;
-	}
-	if (r_io_submap_contain (bd, r_io_submap_from (sm))) {
-		if (!(*bdsm)) {
-			*bdsm = sm;
-			return -1;
-		} else if ((sm->itv.addr < (*bdsm)->itv.addr)) {
-			// sm is closer to bd's itv.addr than *bdsm
-			*bdsm = sm;
-		}
 	}
 	if (bd->itv.addr > sm->itv.addr) {
 		return -1;
@@ -107,14 +97,17 @@ static int _find_lowest_intersection_sm_cb(void *incoming, void *in, void *user)
 }
 
 // returns the node containing the submap with lowest itv.addr, that intersects with sm
-// at worst this is 2log(n), but could be done in log(n), which requires some changes in r_rbtree
 static RContRBNode *_find_entry_submap_node(RIOBank *bank, RIOSubMap *sm) {
-	RIOSubMap *bdsm = NULL;
-	RContRBNode *node = r_rbtree_cont_find_node (bank->submaps, sm, _find_lowest_intersection_sm_cb, &bdsm);
-	if (node || !bdsm) {
-		return node;
+	RContRBNode *node = r_rbtree_cont_find_node (bank->submaps, sm, _find_lowest_intersection_sm_cb, NULL);
+	if (!node) {
+		return NULL;
 	}
-	return r_rbtree_cont_find_node (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+	RContRBNode *prev = r_rbtree_cont_node_prev (node);
+	while (prev && r_io_submap_overlap (((RIOSubMap *)prev->data), sm)) {
+		node = prev;
+		prev = r_rbtree_cont_node_prev (node);
+	}
+	return node;
 }
 
 R_API bool r_io_bank_map_add_top(RIO *io, ut32 bankid, ut32 mapid) {
