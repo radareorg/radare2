@@ -137,7 +137,7 @@ static void r_pkcs7_free_contentinfo(RPKCS7ContentInfo *ci) {
 }
 
 static bool r_pkcs7_parse_issuerandserialnumber(RPKCS7IssuerAndSerialNumber *iasu, RASN1Object *object) {
-	if (!iasu || !object || object->list.length != 2) {
+	if (!iasu || !object || object->list.length < 2) {
 		return false;
 	}
 	r_x509_parse_name (&iasu->issuer, object->list.objects[0]);

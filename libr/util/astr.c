@@ -50,8 +50,8 @@ R_API RASN1String *r_asn1_concatenate_strings (RASN1String *s0, RASN1String *s1,
 	return res;
 }
 
-R_API RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length) {
-	if (!buffer || !length) {
+R_API RASN1String *r_asn1_stringify_string(const ut8 *buffer, ut32 length) {
+	if (!buffer || length < 1) {
 		return NULL;
 	}
 	char *str = r_str_ndup ((const char *)buffer, length);
@@ -308,7 +308,7 @@ R_API RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length) {
 	return asn1str;
 }
 
-R_API void r_asn1_free_string (RASN1String* str) {
+R_API void r_asn1_free_string(RASN1String* str) {
 	if (str) {
 		if (str->allocated) {
 			free ((char*) str->string);
@@ -317,7 +317,7 @@ R_API void r_asn1_free_string (RASN1String* str) {
 	}
 }
 
-R_API RASN1String *asn1_stringify_tag (RASN1Object *object) {
+R_API RASN1String *asn1_stringify_tag(RASN1Object *object) {
 	if (!object) {
 		return NULL;
 	}
@@ -355,7 +355,7 @@ R_API RASN1String *asn1_stringify_tag (RASN1Object *object) {
 	return newstr (s);
 }
 
-R_API RASN1String *asn1_stringify_sector (RASN1Object *object) {
+R_API RASN1String *asn1_stringify_sector(RASN1Object *object) {
 	if (!object) {
 		return NULL;
 	}
