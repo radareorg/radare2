@@ -6,9 +6,9 @@ static const char *input_0 = "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLM
 static const char *input_1 = "abcdefghijklmnopqrstuvwxyz01234567890ABCDEFGHIJKLMNOPQRSTUVWXY_";
 static const char *input_2 = "abcdefghijklmnopqrstuvwxyz01234567890______GHIJKLMNOPQRSTUVWXY_";
 
-static const char *hash_0 = "1:RUTONQPUTWVQPSRcbedYXaZkjmRQTSNMPZkjSx0zutw50z21wvyx87+94365EDGn:nHDbfP7jXXzrPgY";
-static const char *hash_1 = "1:RUTONQKUTWVQPSRcbedYXaZkjmRQTSNMPZkjSx0zutw50z21wvyx87+94365EDGn:nHDoNt5JFlxB9QOD";
-static const char *hash_2 = "1:RUTONQKUTWVQPSRcbedYXaZkjmRQTSNMPZkjSx0zutw50z21wvyx87+94365EDGn:nHDoNt5JFlxB9QOD";
+static const char *hash_0 = "1:EHGBADCNMPOJILKVUXWRQTSdcfVUXWRQTSdcVknmhgjitsvuporq1032xwzy98/n:EHGBADCNMPOJILKVUXWRQTSdcf+XXTSP";
+static const char *hash_1 = "1:EHGBADCNMPOJILKVUXWRQTSdcfVUXWRQTSdcVknmhgjitsvuporq1032xwzy986n:uWmCNMPOJILKVUXWRQTSdcf+XXTSdcVT";
+static const char *hash_2 = "hash2";
 
 int test_ssdeep(void) {
 	char *h0 = r_hash_ssdeep ((const ut8*)input_0, strlen (input_0));
@@ -17,13 +17,13 @@ int test_ssdeep(void) {
 	mu_assert_streq (h0, hash_0, "hash0 is fine");
 	mu_assert_streq (h1, hash_1, "hash1 is fine");
 	int distance = r_str_distance (h0, h1);
-	mu_assert_eq (83, distance, "distance"); // 83% equal
+	mu_assert_eq (88, distance, "distance"); // 80% equal
 	int distance2 = r_str_distance (h0, h0);
 	mu_assert_eq (100, distance2, "distance2");
 	int distance3 = r_str_distance (h0, "123");
-	mu_assert_eq (3, distance3, "distance3");
+	mu_assert_eq (2, distance3, "distance3");
 	int distance4 = r_str_distance (h0, h2);
-	mu_assert_eq (68, distance4, "distance4");
+	mu_assert_eq (82, distance4, "distance4");
 	free (h0);
 	free (h1);
 	free (h2);
