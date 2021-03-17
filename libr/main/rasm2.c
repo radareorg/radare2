@@ -187,7 +187,7 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 		return;
 	}
 	if (as->json) {
-		pj_o (pj);
+		pj_a (pj);
 	}
 	r_list_foreach (as->a->plugins, iter, h) {
 		if (arch) {
@@ -237,8 +237,8 @@ static void rasm2_list(RAsmState *as, const char *arch) {
 			if (as->quiet) {
 				printf ("%s\n", h->name);
 			} else if (as->json) {
-				pj_k (pj, h->name);
 				pj_o (pj);
+				pj_ks (pj, "name", h->name);
 				pj_k (pj, "bits");
 				pj_a (pj);
 				pj_i (pj, 32);
