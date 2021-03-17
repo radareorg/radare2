@@ -2007,7 +2007,13 @@ static int cmd_write(void *data, const char *input) {
 		wc_handler_old (core, input + 1);
 		break;
 	case 'h': // "wh"
-		wh_handler_old (core, input + 1);
+		if (!strcmp (input, "hoami")) {
+			char *ui = r_sys_whoami ();
+			r_cons_printf ("%s\n", ui);
+			free (ui);
+		} else {
+			wh_handler_old (core, input + 1);
+		}
 		break;
 	case 'e': // "we"
 		we_handler_old (core, input + 1);

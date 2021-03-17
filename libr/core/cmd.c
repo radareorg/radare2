@@ -13,6 +13,7 @@
 #include "cmd_helps.h"
 #if __UNIX__
 #include <sys/utsname.h>
+#include <pwd.h>
 #endif
 
 #include <tree_sitter/api.h>
@@ -274,6 +275,7 @@ static const char *help_msg_u[] = {
 	"uw", "", "alias for wc (requires: e io.cache=true)",
 	"us", "", "alias for s- (seek history)",
 	"uc", "[?]", "undo core commands (uc?, ucl, uc*, ..)",
+	"uid", "", "display numeric user id",
 	"uniq", "", "filter rows to avoid duplicates",
 	"uname", "", "uname - show system information",
 	NULL
@@ -551,9 +553,6 @@ static int cmd_head (void *data, const char *_input) { // "head"
 static int cmd_undo(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
-	case '?': // "u?"
-		r_core_cmd_help (data, help_msg_u);
-		return 1;
 	case 'c': // "uc"
 		switch (input[1]) {
 		case ' ': {
@@ -592,6 +591,9 @@ static int cmd_undo(void *data, const char *input) {
 			break;
 		}
 		return 1;
+	case 'i': // "ui"
+		r_cons_printf ("%d\n", r_sys_uid ());
+		return 1;
 	case 's': // "us"
 		r_core_cmdf (data, "s-%s", input + 1);
 		return 1;
@@ -604,6 +606,10 @@ static int cmd_undo(void *data, const char *input) {
 		} else if (input[1] == 'i' && input[2] == 'q') {
 			(void)cmd_uniq (core, input);
 		}
+		return 1;
+	default:
+	case '?': // "u?"
+		r_core_cmd_help (data, help_msg_u);
 		return 1;
 	}
 #if __UNIX__
