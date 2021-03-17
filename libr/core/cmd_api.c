@@ -1,11 +1,6 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
-#include <r_cmd.h>
-#include <r_util.h>
-#include <stdio.h>
-#include <r_cons.h>
-#include <r_cmd.h>
-#include <r_util.h>
+#include <r_core.h>
 
 /*!
  * Number of sub-commands to show as options when displaying the help of a

@@ -194,18 +194,6 @@ typedef struct r_cmd_descriptor_t {
 	struct r_cmd_descriptor_t *sub[127];
 } RCmdDescriptor;
 
-// TODO: move into r_core.h
-typedef struct r_core_plugin_t {
-	const char *name;
-	const char *desc;
-	const char *license;
-	const char *author;
-	const char *version;
-	RCmdCb call; // returns true if command was handled, false otherwise.
-	RCmdCb init;
-	RCmdCb fini;
-} RCorePlugin;
-
 #define DEFINE_CMD_ARGV_DESC_DETAIL(core, name, c_name, parent, handler, help) \
 	RCmdDesc *c_name##_cd = r_cmd_desc_argv_new (core->rcmd, parent, #name, handler, help); \
 	r_warn_if_fail (c_name##_cd)
@@ -224,11 +212,6 @@ typedef struct r_core_plugin_t {
 	r_warn_if_fail (name##_cd)
 
 #ifdef R_API
-R_API bool r_core_plugin_init(RCmd *cmd);
-R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
-R_API bool r_core_plugin_check(RCmd *cmd, const char *a0);
-R_API bool r_core_plugin_fini(RCmd *cmd);
-
 R_API RCmd *r_cmd_new(void);
 R_API RCmd *r_cmd_free(RCmd *cmd);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);

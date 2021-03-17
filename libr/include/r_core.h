@@ -104,6 +104,17 @@ typedef enum {
 #define R_CORE_VISUAL_MODE_PXR   9
 */
 
+typedef struct r_core_plugin_t {
+	const char *name;
+	const char *desc;
+	const char *license;
+	const char *author;
+	const char *version;
+	RCmdCb call; // returns true if command was handled, false otherwise.
+	RCmdCb init;
+	RCmdCb fini;
+} RCorePlugin;
+
 typedef struct r_core_rtr_host_t {
 	int proto;
 	char host[512];
@@ -933,6 +944,11 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr);
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_a2f;
+R_API bool r_core_plugin_init(RCmd *cmd);
+R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
+R_API bool r_core_plugin_check(RCmd *cmd, const char *a0);
+R_API bool r_core_plugin_fini(RCmd *cmd);
+
 
 /* DECOMPILER PRINTING FUNCTIONS */
 /**
