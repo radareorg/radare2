@@ -575,13 +575,11 @@ R_API void *r_rbtree_cont_first(RContRBTree *tree) {
 		// empty tree
 		return NULL;
 	}
-	RBIter iter = r_rbtree_first (&tree->root->node);
-	if (iter.len == 0) {
-		// also empty tree
-		return NULL;
+	RBNode *node = &tree->root->node;
+	while (node->child[0]) {
+		node = node->child[0];
 	}
-	RBNode *first_rbnode = iter.path[iter.len-1];
-	return (container_of (first_rbnode, RContRBNode, node))->data;
+	return (container_of (node, RContRBNode, node))->data;
 }
 
 R_API void *r_rbtree_cont_last(RContRBTree *tree) {
@@ -590,13 +588,11 @@ R_API void *r_rbtree_cont_last(RContRBTree *tree) {
 		// empty tree
 		return NULL;
 	}
-	RBIter iter = r_rbtree_last (&tree->root->node);
-	if (iter.len == 0) {
-		// also empty tree
-		return NULL;
+	RBNode *node = &tree->root->node;
+	while (node->child[1]) {
+		node = node->child[1];
 	}
-	RBNode *last_rbnode = iter.path[iter.len-1];
-	return (container_of (last_rbnode, RContRBNode, node))->data;
+	return (container_of (node, RContRBNode, node))->data;
 }
 
 R_API void r_rbtree_cont_free(RContRBTree *tree) {
