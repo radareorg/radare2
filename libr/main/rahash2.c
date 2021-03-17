@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -104,7 +104,9 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, PJ *pj, int rad, int 
 			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %s: ",
 				from, to > 0? to - 1: 0, hname);
 		}
-		if (dlen == R_HASH_SIZE_ENTROPY) {
+		if (hash & R_HASH_SSDEEP) {
+			printf ("%s\n", ctx->digest);
+		} else if (dlen == R_HASH_SIZE_ENTROPY) {
 			printf("%.8f\n", ctx->entropy);
 		} else {
 			do_hash_hexprint (c, dlen, ule, pj, rad);
@@ -115,7 +117,11 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, PJ *pj, int rad, int 
 		do_hash_hexprint (c, dlen, ule, pj, rad);
 		break;
 	case 'n':
-		do_hash_hexprint (c, dlen, ule, pj, rad);
+		if (hash & R_HASH_SSDEEP) {
+			printf ("%s", ctx->digest);
+		} else {
+			do_hash_hexprint (c, dlen, ule, pj, rad);
+		}
 		break;
 	case 'j':
 		pj_o (pj);

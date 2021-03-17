@@ -12,7 +12,7 @@ endif
 
 R2DEPS=r_util
 OBJS=state.o hash.o hamdist.o crca.o fletcher.o
-OBJS+=entropy.o hcalc.o adler32.o luhn.o
+OBJS+=entropy.o hcalc.o adler32.o luhn.o ssdeep.o
 
 ifeq ($(HAVE_LIB_SSL),1)
 CFLAGS+=${SSL_CFLAGS}
