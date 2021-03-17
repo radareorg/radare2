@@ -51,7 +51,7 @@ R_API ut8 *r_hash_do_ssdeep(RHash *ctx, const ut8 *input, int len) {
 		return NULL;
 	}
 	char *res = r_hash_ssdeep (input, len);
-	strncpy (ctx->digest, res, R_HASH_SIZE_SSDEEP);
+	strncpy ((char *)ctx->digest, res, R_HASH_SIZE_SSDEEP);
 	free (res);
 	return ctx->digest;
 }

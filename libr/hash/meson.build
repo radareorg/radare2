@@ -6,6 +6,7 @@ r_hash_sources = [
   'fletcher.c',
   'hamdist.c',
   'hash.c',
+  'ssdeep.c',
   'luhn.c',
   'state.c'
 ]
