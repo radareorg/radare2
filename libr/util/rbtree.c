@@ -100,23 +100,23 @@ static void _check(RBNode *x) {
 // Returns true if a node with an equal key is deleted
 R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
 	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[R_RBTREE_MAX_HEIGHT];
-	int d = 1, d2, dep = 0;
+	int direction = 1, direction2, dep = 0;
 	head.parent = head.child[0] = NULL;
 	head.child[1] = *root;
-	while (q->child[d]) {
-		d2 = d;
+	while (q->child[direction]) {
+		direction2 = direction;
 		g = p;
 		p = q;
 		if (del_link) {
-			d = 1;
+			direction = 1;
 		} else {
-			d = cmp (data, q->child[d2], cmp_user);
-			if (d < 0) {
-				d = 0;
-			} else if (d > 0) {
-				d = 1;
+			direction = cmp (data, q->child[direction2], cmp_user);
+			if (direction < 0) {
+				direction = 0;
+			} else if (direction > 0) {
+				direction = 1;
 			} else {
-				del_link = &q->child[d2];
+				del_link = &q->child[direction2];
 			}
 		}
 		if (q != &head) {
@@ -126,24 +126,24 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 			}
 			path[dep++] = q;
 		}
-		q = q->child[d2];
-		if (q->red || red (q->child[d])) {
+		q = q->child[direction2];
+		if (q->red || red (q->child[direction])) {
 			continue;
 		}
-		if (red (q->child[!d])) {
+		if (red (q->child[!direction])) {
 			if (del_link && *del_link == q) {
-				del_link = &q->child[!d]->child[d];
+				del_link = &q->child[!direction]->child[direction];
 			}
-			p->child[d2] = zag (q, !d, sum);
-			p->child[d2]->parent = p->parent;
-			p = p->child[d2];	//memleak here?
+			p->child[direction2] = zag (q, !direction, sum);
+			p->child[direction2]->parent = p->parent;
+			p = p->child[direction2];	//memleak here?
 			if (dep >= R_RBTREE_MAX_HEIGHT) {
 				eprintf ("Too deep tree\n");
 				break;
 			}
 			path[dep++] = p;
 		} else {
-			RBNode *s = p->child[!d2];
+			RBNode *s = p->child[!direction2];
 			if (!s) {
 				continue;
 			}
@@ -151,22 +151,22 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 				p->red = false;
 				q->red = s->red = true;
 			} else {
-				int d3 = g->child[0] != p;
+				int direction3 = g->child[0] != p;
 				RBNode *t;
-				if (red (s->child[d2])) {
+				if (red (s->child[direction2])) {
 					if (del_link && *del_link == p) {
-						del_link = &s->child[d2]->child[d2];
+						del_link = &s->child[direction2]->child[direction2];
 					}
-					t = zig_zag (p, !d2, sum);
+					t = zig_zag (p, !direction2, sum);
 				} else {
 					if (del_link && *del_link == p) {
-						del_link = &s->child[d2];
+						del_link = &s->child[direction2];
 					}
-					t = zag (p, !d2, sum);
+					t = zag (p, !direction2, sum);
 				}
 				t->red = q->red = true;
 				t->child[0]->red = t->child[1]->red = false;
-				g->child[d3] = t;
+				g->child[direction3] = t;
 				t->parent = g;
 				path[dep - 1] = t;
 				path[dep++] = p;
@@ -211,14 +211,14 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 		return true;
 	}
 	RBNode *t = NULL, *g = NULL, *p = NULL, *q = *root;
-	int d = 0, dep = 0;
+	int direction = 0, dep = 0;
 	bool done = false;
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 	for (;;) {
 		if (!q) {
 			q = node;
 			q->red = true;
-			p->child[d] = q;
+			p->child[direction] = q;
 			q->parent = p;
 			done = true;
 		} else if (red (q->child[0]) && red (q->child[1])) {
@@ -228,18 +228,18 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 			}
 		}
 		if (q->red && p && p->red) {
-			int d3 = t ? t->child[0] != g : -1;
-			int d2 = g->child[0] != p;
-			if (p->child[d2] == q) {
-				g = zag (g, d2, sum);
+			int direction3 = t ? t->child[0] != g : -1;
+			int direction2 = g->child[0] != p;
+			if (p->child[direction2] == q) {
+				g = zag (g, direction2, sum);
 				dep--;
 				path[dep - 1] = g;
 			} else {
-				g = zig_zag (g, d2, sum);
+				g = zig_zag (g, direction2, sum);
 				dep -= 2;
 			}
 			if (t) {
-				t->child[d3] = g;
+				t->child[direction3] = g;
 				g->parent = t;
 			} else {
 				*root = g;
@@ -249,7 +249,7 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 		if (done) {
 			break;
 		}
-		d = cmp (data, q, cmp_user);
+		direction = cmp (data, q, cmp_user);
 		t = g;
 		g = p;
 		p = q;
@@ -258,11 +258,11 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 			break;
 		}
 		path[dep++] = q;
-		if (d < 0) {
-			d = 0;
+		if (direction < 0) {
+			direction = 0;
 			q = q->child[0];
 		} else {
-			d = 1;
+			direction = 1;
 			q = q->child[1];
 		}
 	}
@@ -293,8 +293,8 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 		if (cur == node) {
 			break;
 		}
-		int d = cmp (data, cur, cmp_user);
-		cur = cur->child[(d < 0)? 0: 1];
+		int direction = cmp (data, cur, cmp_user);
+		cur = cur->child[(direction < 0)? 0: 1];
 	}
 
 	for (; dep > 0; dep--) {
@@ -309,10 +309,10 @@ R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, void *cm
 
 R_API RBNode *r_rbtree_find(RBNode *x, void *data, RBComparator cmp, void *user) {
 	while (x) {
-		int d = cmp (data, x, user);
-		if (d < 0) {
+		int direction = cmp (data, x, user);
+		if (direction < 0) {
 			x = x->child[0];
-		} else if (d > 0) {
+		} else if (direction > 0) {
 			x = x->child[1];
 		} else {
 			return x;
@@ -336,8 +336,8 @@ R_API void r_rbtree_insert(RBNode **root, void *data, RBNode *node, RBComparator
 R_API RBNode *r_rbtree_lower_bound(RBNode *x, void *data, RBComparator cmp, void *user) {
 	RBNode *ret = NULL;
 	while (x) {
-		int d = cmp (data, x, user);
-		if (d <= 0) {
+		int direction = cmp (data, x, user);
+		if (direction <= 0) {
 			ret = x;
 			x = x->child[0];
 		} else {
@@ -354,8 +354,8 @@ R_API RBIter r_rbtree_lower_bound_forward(RBNode *root, void *data, RBComparator
 R_API RBNode *r_rbtree_upper_bound(RBNode *x, void *data, RBComparator cmp, void *user) {
 	void *ret = NULL;
 	while (x) {
-		int d = cmp (data, x, user);
-		if (d < 0) {
+		int direction = cmp (data, x, user);
+		if (direction < 0) {
 			x = x->child[0];
 		} else {
 			ret = x;
