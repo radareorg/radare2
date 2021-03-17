@@ -100,11 +100,12 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, PJ *pj, int rad, int 
 	const char *hname = r_hash_name (hash);
 	switch (rad) {
 	case 0:
-		if (hash & R_HASH_SSDEEP) {
-			printf ("%s\n", ctx->digest);
-		} else if (!quiet) {
+		if (!quiet) {
 			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %s: ",
 				from, to > 0? to - 1: 0, hname);
+		}
+		if (hash & R_HASH_SSDEEP) {
+			printf ("%s\n", ctx->digest);
 		} else if (dlen == R_HASH_SIZE_ENTROPY) {
 			printf("%.8f\n", ctx->entropy);
 		} else {

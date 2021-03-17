@@ -6,6 +6,14 @@ bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 entropy: 3.27819072
 EOF
 RUN
 
+NAME=rahash2 -a ssdeep
+FILE=-
+CMDS=!rahash2 -a ssdeep bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+bins/elf/analysis/hello-linux-x86_64: 0x00000000-0x00001a35 ssdeep: 96:aPsZ7JSRX4hHmfSz/XWwZpxI9LGr5lar87cZGbbgb:aPeJiam6zWQpxKLElZE
+EOF
+RUN
+
 NAME=rahash2 -a md5
 FILE=-
 CMDS=!rahash2 -a md5 bins/elf/analysis/hello-linux-x86_64
@@ -171,6 +179,7 @@ h  mod255
 h  xxhash
 h  adler32
 h  luhn
+h  ssdeep
 h  crc8smbus
 h  crc15can
 h  crc16
