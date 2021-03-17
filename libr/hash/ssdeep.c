@@ -7,8 +7,8 @@
 
 #define BLOCK_MIN 3
 #define ROLLING_WINDOW 7
-#define HASH_PRIME (ut32)0x01000193
-#define HASH_INIT (ut32)0x28021967
+#define HASH_PRIME 0x01000193
+#define HASH_INIT 0x28021967
 #define SPAM_SUM_LENGTH 64
 
 typedef struct {
@@ -29,8 +29,7 @@ typedef struct {
 static const char *b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 static inline ut32 sum_hash(ut8 c, ut32 h) {
-	ut32 c32 = (c & 0xff);
-	return (h * HASH_PRIME) ^ c32;
+	return (h * HASH_PRIME) ^ c;
 }
 
 static inline ut32 roll_sum(State *s) {
@@ -38,18 +37,17 @@ static inline ut32 roll_sum(State *s) {
 }
 
 static inline void roll_hash(State *s, ut8 c) {
-	ut32 c32 = (ut32)(c & 0xff);
 	s->h2 -= s->h1;
-	s->h2 += ROLLING_WINDOW * c32;
-	s->h1 += c32;
-	s->h1 -= (ut32) (s->window[s->n] & 0xff);
-	s->window[s->n] = c32;
+	s->h2 += ROLLING_WINDOW * c;
+	s->h1 += c;
+	s->h1 -= s->window[s->n];
+	s->window[s->n] = c;
 	s->n++;
 	if (s->n == ROLLING_WINDOW) {
 		s->n = 0;
 	}
 	s->h3 <<= 5;
-	s->h3 ^= c32;
+	s->h3 ^= c;
 }
 
 static inline void process_byte(State *s, ut8 b) {
@@ -64,7 +62,7 @@ static inline void process_byte(State *s, ut8 b) {
 			s->hs1[s->hs1_len++] = ch;
 			s->bh1 = HASH_INIT;
 		}
-		int bs2 = s->bs * 2;
+		ut32 bs2 = s->bs * 2;
 		if (rh % bs2 == bs2 - 1) {
 			if (s->hs2_len < (SPAM_SUM_LENGTH / 2) - 1) {
 				char ch = b64[s->bh2 % 64];
@@ -95,7 +93,7 @@ R_API char *r_hash_ssdeep(const ut8 *buf, size_t len) {
 		}
 		if (s.hs1_len < (SPAM_SUM_LENGTH / 2)) {
 			s.bs /= 2;
-			if (s.bs == 0) {
+			if (!s.bs) {
 				// buffer too small, cant hash
 				return NULL;
 			}
@@ -105,8 +103,7 @@ R_API char *r_hash_ssdeep(const ut8 *buf, size_t len) {
 			s.hs2_len = 0;
 			s.n = 0;
 		} else {
-			int rh = roll_sum (&s);
-			if (rh != 0) {
+			if (roll_sum (&s)) {
 				// Finalize the hash string with the remaining data
 				s.hs1[s.hs1_len++] = b64[s.bh1 % 64];
 				s.hs2[s.hs2_len++] = b64[s.bh2 % 64];
