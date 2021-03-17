@@ -150,7 +150,7 @@ static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
 
 RIOPlugin r_io_plugin_qnx = {
 	.name = "qnx",
-	.license = "LGPL3",
+	.license = "GPL3",
 	.desc = "Attach to QNX pdebug instance",
 	.uris = "qnx://",
 	.open = __open,

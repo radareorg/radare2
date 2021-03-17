@@ -110,8 +110,6 @@ R_API int r_io_plugin_list_json(RIO *io) {
 	
 	char str[4];
 	int n = 0;
-	pj_o (pj);
-	pj_k (pj, "io_plugins");
 	pj_a (pj);
 	ls_foreach (io->plugins, iter, plugin) {
 		str[0] = 'r';
@@ -148,7 +146,6 @@ R_API int r_io_plugin_list_json(RIO *io) {
 		pj_end (pj);
 		n++;
 	}
-	pj_end (pj);
 	pj_end (pj);
 	io->cb_printf ("%s", pj_string (pj));
 	pj_free (pj);
