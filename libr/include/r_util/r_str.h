@@ -110,6 +110,7 @@ R_API bool r_str_is_printable_limited(const char *str, int size);
 R_API bool r_str_is_printable_incl_newlines(const char *str);
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen);
 R_API char *r_str_newf(const char *fmt, ...) R_PRINTF_CHECK(1, 2);
+R_API int r_str_distance(const char *a, const char *b);
 R_API char *r_str_newlen(const char *str, int len);
 R_API const char *r_str_sysbits(const int v);
 R_API char *r_str_trunc_ellipsis(const char *str, int len);

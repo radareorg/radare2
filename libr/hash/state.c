@@ -46,6 +46,16 @@ R_API void r_hash_free(RHash *ctx) {
 	free (ctx);
 }
 
+R_API ut8 *r_hash_do_ssdeep(RHash *ctx, const ut8 *input, int len) {
+	if (len < 0) {
+		return NULL;
+	}
+	char *res = r_hash_ssdeep (input, len);
+	strncpy (ctx->digest, res, R_HASH_SIZE_SSDEEP);
+	free (res);
+	return ctx->digest;
+}
+
 R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
 		return NULL;

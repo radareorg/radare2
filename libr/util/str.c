@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2021 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -3763,6 +3763,14 @@ R_API char *r_str_scale(const char *s, int w, int h) {
 	}
 	free (str);
 	return r_str_list_join (out, "\n");
+}
+
+// returns value between 0 and 100 about how much different the strings are
+R_API int r_str_distance(const char *a, const char *b) {
+	ut32 distance = 0;
+	double similarity = 0;
+	r_diff_buffers_distance_levenshtein (NULL, (const ut8*)a, strlen (a), (const ut8*)b, strlen (b), &distance, &similarity);
+	return (int)(similarity * 100);;
 }
 
 R_API const char *r_str_str_xy(const char *s, const char *word, const char *prev, int *x, int *y) {
