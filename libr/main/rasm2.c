@@ -579,6 +579,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	const char *kernel = NULL;
 	const char *filters = NULL;
 	const char *file = NULL;
+	bool list_plugins = false;
 	bool isbig = false;
 	bool rad = false;
 	bool use_spp = false;
@@ -662,9 +663,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			len = r_num_math (NULL, opt.arg);
 			break;
 		case 'L':
-			rasm2_list (as, opt.argv[opt.ind]);
-			ret = 1;
-			goto beach;
+			list_plugins = true;
+			break;
 		case '@':
 		case 'o':
 			offset = r_num_math (NULL, opt.arg);
@@ -719,6 +719,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 
 	if (help > 0) {
 		ret = rasm_show_help (help > 1? 2: 0);
+		goto beach;
+	}
+	if (list_plugins) {
+		rasm2_list (as, opt.argv[opt.ind]);
+		ret = 1;
 		goto beach;
 	}
 
