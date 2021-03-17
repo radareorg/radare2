@@ -31,12 +31,6 @@
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
 #define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
 
-typedef struct fcn_tree_iter_t {
-	int len;
-	RBNode *cur;
-	RBNode *path[R_RBTREE_MAX_HEIGHT];
-} FcnTreeIter;
-
 R_API const char *r_anal_fcntype_tostring(int type) {
 	switch (type) {
 	case R_ANAL_FCN_TYPE_NULL: return "null";
