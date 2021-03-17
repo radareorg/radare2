@@ -16,7 +16,9 @@ typedef struct {
 	ut32 h1;
 	ut32 h2;
 	ut32 h3;
-	ut32 n;
+	ut32 bh1;
+	ut32 bh2;
+	size_t n;
 	int bs; // block_size
 	char hs1[64 + 1];
 	int hs1_len;
@@ -27,7 +29,8 @@ typedef struct {
 static const char *b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 static inline ut32 sum_hash(ut8 c, ut32 h) {
-	return (h * HASH_PRIME) ^ (ut32)c;
+	ut32 c32 = (c & 0xff);
+	return (h * HASH_PRIME) ^ c32;
 }
 
 static inline ut32 roll_sum(State *s) {
@@ -35,36 +38,38 @@ static inline ut32 roll_sum(State *s) {
 }
 
 static inline void roll_hash(State *s, ut8 c) {
+	ut32 c32 = (ut32)(c & 0xff);
 	s->h2 -= s->h1;
-	s->h2 += ROLLING_WINDOW * (ut32)c;
-	s->h1 += (ut32)c;
-	s->h1 -= (ut32)s->window[s->n];
-	s->window[s->n] = c;
+	s->h2 += ROLLING_WINDOW * c32;
+	s->h1 += c32;
+	s->h1 -= (ut32) (s->window[s->n] & 0xff);
+	s->window[s->n] = c32;
 	s->n++;
 	if (s->n == ROLLING_WINDOW) {
 		s->n = 0;
 	}
 	s->h3 <<= 5;
-	s->h3 ^= (ut32)c;
+	s->h3 ^= c32;
 }
 
 static inline void process_byte(State *s, ut8 b) {
-	s->h1 = sum_hash (b, s->h1);
-	s->h2 = sum_hash (b, s->h2);
+	s->bh1 = sum_hash (b, s->bh1);
+	s->bh2 = sum_hash (b, s->bh2);
 	roll_hash (s, b);
 
 	ut32 rh = roll_sum (s);
-	if (rh % s->bs == (s->bs - 1)) {
+	if (rh % s->bs == s->bs - 1) {
 		if (s->hs1_len < SPAM_SUM_LENGTH - 1) {
-			char ch = b64[s->h1 % 64];
+			char ch = b64[s->bh1 % 64];
 			s->hs1[s->hs1_len++] = ch;
-			s->h1 = HASH_INIT;
+			s->bh1 = HASH_INIT;
 		}
-		if (rh % (s->bs * 2) == (s->bs * 2) - 1) {
-			if (s->hs1_len < (SPAM_SUM_LENGTH / 2) - 1) {
-				char ch = b64[s->h2 % 64];
+		int bs2 = s->bs * 2;
+		if (rh % bs2 == bs2 - 1) {
+			if (s->hs2_len < (SPAM_SUM_LENGTH / 2) - 1) {
+				char ch = b64[s->bh2 % 64];
 				s->hs2[s->hs2_len++] = ch;
-				s->h2 = HASH_INIT;
+				s->bh2 = HASH_INIT;
 			}
 		}
 	}
@@ -80,11 +85,11 @@ static inline int get_blocksize(int n) {
 
 R_API char *r_hash_ssdeep(const ut8 *buf, size_t len) {
 	State s = {0};
-	s.h1 = HASH_INIT;
-	s.h2 = HASH_INIT;
+	s.bh1 = HASH_INIT;
+	s.bh2 = HASH_INIT;
 	s.bs = get_blocksize (len);
-	size_t i;
 	for (;;) {
+		size_t i;
 		for (i = 0; i < len; i++) {
 			process_byte (&s, buf[i]);
 		}
@@ -94,19 +99,20 @@ R_API char *r_hash_ssdeep(const ut8 *buf, size_t len) {
 				// buffer too small, cant hash
 				return NULL;
 			}
-			s.h1 = HASH_INIT;
-			s.h2 = HASH_INIT;
+			s.bh1 = HASH_INIT;
+			s.bh2 = HASH_INIT;
 			s.hs1_len = 0;
 			s.hs2_len = 0;
+			s.n = 0;
 		} else {
 			int rh = roll_sum (&s);
 			if (rh != 0) {
 				// Finalize the hash string with the remaining data
-				s.hs1[s.hs1_len++] = b64[s.h1 % 64];
-				s.hs2[s.hs2_len++] = b64[s.h2 % 64];
+				s.hs1[s.hs1_len++] = b64[s.bh1 % 64];
+				s.hs2[s.hs2_len++] = b64[s.bh2 % 64];
 			}
 			break;
 		}
 	}
-	return r_str_newf ("%d:%s:%s", s.bs, s.hs1, s.hs2);
+	return r_str_newf ("%d:%.*s:%.*s", s.bs, s.hs1_len, s.hs1, s.hs2_len, s.hs2);
 }
