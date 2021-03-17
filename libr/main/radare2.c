@@ -110,6 +110,7 @@ static int main_help(int line) {
 		" -H ([var])   display variable\n"
 		" -i [file]    run script file\n"
 		" -I [file]    run script file before the file is opened\n"
+		" -j           use json for -v, -L and maybe others\n"
 		" -k [OS/kern] set asm.os (linux, macos, w32, netbsd, ...)\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
@@ -446,14 +447,19 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 
 	set_color_default (r);
+	bool show_version = false;
+	bool json = false;
 	bool load_l = true;
 	char *debugbackend = strdup ("native");
 	const char *project_name = NULL;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
+	r_getopt_init (&opt, argc, argv, "=02AjMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSTzuXt");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
+		case 'j':
+			json = true;
+			break;
 		case '=':
 			R_FREE (r->cmdremote);
 			r->cmdremote = strdup ("");
@@ -649,19 +655,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			compute_hashes = false;
 			break;
 		case 'v':
-			if (quiet) {
-				printf ("%s\n", R2_VERSION);
-				LISTS_FREE ();
-				free (debugbackend);
-				free (customRarunProfile);
-				return 0;
-			} else {
-				r_main_version_verify (0);
-				LISTS_FREE ();
-				free (customRarunProfile);
-				free (debugbackend);
-				return r_main_version_print ("radare2");
-			}
+			show_version = true;
+			break;
 		case 'V':
 			return r_main_version_verify (1);
 		case 'w':
@@ -674,6 +669,40 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		default:
 			help++;
 		}
+	}
+	if (show_version) {
+		if (json) {
+			PJ *pj = pj_new ();
+			pj_o (pj);
+			pj_ks (pj, "name", "radare2");
+			pj_ks (pj, "version", R2_VERSION);
+			pj_ks (pj, "birth", R2_BIRTH);
+			pj_ks (pj, "commit", R2_GITTIP);
+			pj_ki (pj, "commits", R2_VERSION_COMMIT);
+			pj_ks (pj, "license", "LGPLv3");
+			pj_ks (pj, "tap", R2_GITTAP);
+			pj_ko (pj, "semver");
+			pj_ki (pj, "major", R2_VERSION_MAJOR);
+			pj_ki (pj, "minor", R2_VERSION_MINOR);
+			pj_ki (pj, "patch", R2_VERSION_MINOR);
+			pj_end (pj);
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			printf ("%s\n", s);
+			free (s);
+		} else if (quiet) {
+			printf ("%s\n", R2_VERSION);
+			LISTS_FREE ();
+			free (debugbackend);
+			free (customRarunProfile);
+		} else {
+			r_main_version_verify (0);
+			LISTS_FREE ();
+			free (customRarunProfile);
+			free (debugbackend);
+			return r_main_version_print ("radare2");
+		}
+		return 0;
 	}
 	if (noStderr) {
 		if (-1 == close (2)) {
@@ -750,7 +779,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (quietLeak) {
 			exit (0);
 		}
-		r_io_plugin_list (r->io);
+		if (json) {
+			r_io_plugin_list_json (r->io);
+		} else {
+			r_io_plugin_list (r->io);
+		}
 		r_cons_flush ();
 		LISTS_FREE ();
 		free (pfile);
