@@ -43,6 +43,19 @@ typedef struct r_diff_t {
 	int (*callback)(struct r_diff_t *diff, void *user, RDiffOp *op);
 } RDiff;
 
+typedef enum {
+	LEVEND, // array terminator
+	LEVNOP, // no change
+	LEVSUB, // substitution
+	LEVADD, // add byte in bufb to bufa
+	LEVDEL // delete byte from bufa
+} RLevOp;
+
+typedef struct r_lev_buf {
+	ut8 *buf, *mask;
+	ut32 len;
+} RLevBuf;
+
 typedef int (*RDiffCallback)(RDiff *diff, void *user, RDiffOp *op);
 
 typedef struct r_diffchar_t {
@@ -77,6 +90,7 @@ R_API int r_diff_gdiff(const char *file1, const char *file2, int rad, int va);
 R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b);
 R_API void r_diffchar_print(RDiffChar *diffchar);
 R_API void r_diffchar_free(RDiffChar *diffchar);
+R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevOp **chgs);
 #endif
 
 #ifdef __cplusplus
