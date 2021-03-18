@@ -360,9 +360,16 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	}
 
 	/* types */
-	size_t types_size = dexhdr->types_size * sizeof (struct dex_type_t);
-	if (types_size > dex->size) {
-		types_size = dex->size;
+	int types_size = dexhdr->types_size * sizeof (struct dex_type_t);
+	if (types_size < 0) {
+		free (dex->strings);
+		free (dex->classes);
+		free (dex->methods);
+		free (dex->types);
+		goto fail;
+	}
+	if (dexhdr->types_offset + types_size > dex->size) {
+		types_size = dex->size - dexhdr->types_offset;
 	}
 	if (dexhdr->types_offset + types_size >= dex->size) {
 		types_size = dex->size - dexhdr->types_offset;
