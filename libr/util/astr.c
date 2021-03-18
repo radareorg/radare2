@@ -58,8 +58,9 @@ R_API RASN1String *r_asn1_stringify_string(const ut8 *buffer, ut32 length) {
 	if (!str) {
 		return NULL;
 	}
-	r_str_filter (str, length);
-	return r_asn1_create_string (str, true, length);
+	int str_len = strlen (str);
+	r_str_filter (str, str_len);
+	return r_asn1_create_string (str, true, str_len);
 }
 
 R_API RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
@@ -103,7 +104,7 @@ R_API RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
 	return asn1str;
 }
 
-R_API RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length) {
+R_API RASN1String *r_asn1_stringify_time(const ut8 *buffer, ut32 length) {
 	if (!buffer || length != 15 || buffer[14] != 'Z') {
 		return NULL;
 	}
@@ -208,7 +209,7 @@ R_API RASN1String *r_asn1_stringify_integer (const ut8 *buffer, ut32 length) {
 	return asn1str;
 }
 
-R_API RASN1String* r_asn1_stringify_bytes (const ut8 *buffer, ut32 length) {
+R_API RASN1String* r_asn1_stringify_bytes(const ut8 *buffer, ut32 length) {
 	ut32 i, j, k;
 	ut64 size;
 	ut8 c;
