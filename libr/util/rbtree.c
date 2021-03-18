@@ -76,15 +76,15 @@ static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool up
 }
 
 /*
-static void _check1(RBNode *x, int dep, int black, bool leftmost) {
+static void _check1(RBNode *x, int depth, int black, bool leftmost) {
 	static int black_;
 	if (x) {
 		black += !x->red;
 		if (x->red && ((x->child[0] && x->child[0]->red) || (x->child[1] && x->child[1]->red))) {
 			printf ("error: red violation\n");
 		}
-		_check1 (x->child[0], dep + 1, black, leftmost);
-		_check1 (x->child[1], dep + 1, black, false);
+		_check1 (x->child[0], depth + 1, black, leftmost);
+		_check1 (x->child[1], depth + 1, black, false);
 	} else if (leftmost) {
 		black_ = black;
 	} else if (black_ != black) {
@@ -100,7 +100,7 @@ static void _check(RBNode *x) {
 // Returns true if a node with an equal key is deleted
 R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum) {
 	RBNode head, *del = NULL, **del_link = NULL, *g = NULL, *p = NULL, *q = &head, *path[R_RBTREE_MAX_HEIGHT];
-	int direction = 1, direction2, dep = 0;
+	int direction = 1, direction2, depth = 0;
 	head.parent = head.child[0] = NULL;
 	head.child[1] = *root;
 	while (q->child[direction]) {
@@ -120,11 +120,11 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 			}
 		}
 		if (q != &head) {
-			if (dep >= R_RBTREE_MAX_HEIGHT) {
+			if (depth >= R_RBTREE_MAX_HEIGHT) {
 				eprintf ("Too deep tree\n");
 				break;
 			}
-			path[dep++] = q;
+			path[depth++] = q;
 		}
 		q = q->child[direction2];
 		if (q->red || red (q->child[direction])) {
@@ -137,11 +137,11 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 			p->child[direction2] = zag (q, !direction, sum);
 			p->child[direction2]->parent = p->parent;
 			p = p->child[direction2];	//memleak here?
-			if (dep >= R_RBTREE_MAX_HEIGHT) {
+			if (depth >= R_RBTREE_MAX_HEIGHT) {
 				eprintf ("Too deep tree\n");
 				break;
 			}
-			path[dep++] = p;
+			path[depth++] = p;
 		} else {
 			RBNode *s = p->child[!direction2];
 			if (!s) {
@@ -168,8 +168,8 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 				t->child[0]->red = t->child[1]->red = false;
 				g->child[direction3] = t;
 				t->parent = g;
-				path[dep - 1] = t;
-				path[dep++] = p;
+				path[depth - 1] = t;
+				path[depth++] = p;
 			}
 		}
 	}
@@ -188,8 +188,8 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 		}
 	}
 	if (sum) {
-		while (dep--) {
-			sum (path[dep] == del ? q : path[dep]);
+		while (depth--) {
+			sum (path[depth] == del ? q : path[depth]);
 		}
 	}
 	if ((*root = head.child[1])) {
@@ -211,7 +211,7 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 		return true;
 	}
 	RBNode *t = NULL, *g = NULL, *p = NULL, *q = *root;
-	int direction = 0, dep = 0;
+	int direction = 0, depth = 0;
 	bool done = false;
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 	for (;;) {
@@ -232,11 +232,11 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 			int direction2 = g->child[0] != p;
 			if (p->child[direction2] == q) {
 				g = zag (g, direction2, sum);
-				dep--;
-				path[dep - 1] = g;
+				depth--;
+				path[depth - 1] = g;
 			} else {
 				g = zig_zag (g, direction2, sum);
-				dep -= 2;
+				depth -= 2;
 			}
 			if (t) {
 				t->child[direction3] = g;
@@ -253,11 +253,11 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 		t = g;
 		g = p;
 		p = q;
-		if (dep >= R_RBTREE_MAX_HEIGHT) {
+		if (depth >= R_RBTREE_MAX_HEIGHT) {
 			eprintf ("Too deep tree\n");
 			break;
 		}
-		path[dep++] = q;
+		path[depth++] = q;
 		if (direction < 0) {
 			direction = 0;
 			q = q->child[0];
@@ -268,8 +268,8 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 	}
 	if (sum) {
 		sum (q);
-		while (dep) {
-			sum (path[--dep]);
+		while (depth) {
+			sum (path[--depth]);
 		}
 	}
 	return done;
@@ -277,19 +277,19 @@ R_API bool r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 
 // returns true if the sum has been updated, false if node has not been found
 R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, void *cmp_user, RBNodeSum sum) {
-	size_t dep = 0;
+	size_t depth = 0;
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 	RBNode *cur = root;
 	for (;;) {
 		if (!cur) {
 			return false;
 		}
-		if (dep >= R_RBTREE_MAX_HEIGHT) {
+		if (depth >= R_RBTREE_MAX_HEIGHT) {
 			eprintf ("Too deep tree\n");
 			return false;
 		}
-		path[dep] = cur;
-		dep++;
+		path[depth] = cur;
+		depth++;
 		if (cur == node) {
 			break;
 		}
@@ -297,8 +297,8 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 		cur = cur->child[(direction < 0)? 0: 1];
 	}
 
-	for (; dep > 0; dep--) {
-		sum (path[dep - 1]);
+	for (; depth > 0; depth--) {
+		sum (path[depth - 1]);
 	}
 	return true;
 }
