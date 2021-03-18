@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare2 - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_lang.h>
 #include <r_util.h>
@@ -9,8 +9,9 @@ R_LIB_VERSION(r_lang);
 #include "p/vala.c"  // hardcoded
 #include "p/rust.c"  // hardcoded
 #include "p/zig.c"   // hardcoded
-#include "p/spp.c"  // hardcoded
+#include "p/spp.c"   // hardcoded
 #include "p/c.c"     // hardcoded
+#include "p/v.c"     // hardcoded
 #include "p/lib.c"
 #if __UNIX__
 #include "p/cpipe.c" // hardcoded
