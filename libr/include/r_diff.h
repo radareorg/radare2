@@ -56,7 +56,7 @@ typedef struct r_lev_buf {
 	ut32 len;
 } RLevBuf;
 
-typedef int (*RDiffCallback)(RDiff *diff, void *user, RDiffOp *op);
+typedef int (*RDiffCallback) (RDiff *diff, void *user, RDiffOp *op);
 
 typedef struct r_diffchar_t {
 	const ut8 *align_a;
