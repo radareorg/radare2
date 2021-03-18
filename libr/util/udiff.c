@@ -346,7 +346,7 @@ out:
 }
 
 R_API bool r_diff_buffers_distance_levenshtein(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	r_return_if_fail (a && b, false);
+	r_return_val_if_fail (a && b, false);
 	const bool verbose = diff ? diff->verbose : false;
 	const ut32 length = R_MAX (la, lb);
 	const ut8 *ea = a + la, *eb = b + lb, *t;
