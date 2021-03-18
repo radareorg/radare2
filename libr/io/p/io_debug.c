@@ -543,7 +543,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			ret = _plugin->open (io, uri, rw, mode);
 #endif
 		} else {
-			sprintf (uri, "attach://%d", pid);
+			snprintf (uri, sizeof (uri), "attach://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
 			if (!_plugin || !_plugin->open) {
 				return NULL;
