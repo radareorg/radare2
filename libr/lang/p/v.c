@@ -150,21 +150,9 @@ static bool lang_v_file(RLang *lang, const char *file) {
 		eprintf ("file not found (%s)\n", file);
 		return false;
 	}
-	char *name = strdup (file);
-	char *a = (char*)r_str_lchr (name, '/');
-	const char *libpath, *libname;
-	if (a) {
-		*a = 0;
-		libpath = name;
-		libname = a + 1;
-	} else {
-		libpath = ".";
-		libname = name;
-	}
 	r_sys_setenv ("PKG_CONFIG_PATH", R2_LIBDIR"/pkgconfig");
 	char *lib = r_str_replace (strdup (file), ".v", "."R_LIB_EXT, 1);
 	char *buf = r_str_newf ("v -shared %s", file);
-	free (name);
 	if (r_sandbox_system (buf, 1) != 0) {
 		free (buf);
 		free (lib);
