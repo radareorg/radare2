@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - wargio */
+/* radare2 - LGPL - Copyright 2017-2021 - wargio */
 
 #include <r_util.h>
 #include <r_cons.h>
@@ -75,7 +75,7 @@ bool r_x509_parse_subjectpublickeyinfo (RX509SubjectPublicKeyInfo *spki, RASN1Ob
 	return true;
 }
 
-bool r_x509_parse_name (RX509Name *name, RASN1Object *object) {
+R_API bool r_x509_parse_name(RX509Name *name, RASN1Object *object) {
 	ut32 i;
 	if (!name || !object || !object->list.length) {
 		return false;
@@ -118,9 +118,9 @@ bool r_x509_parse_name (RX509Name *name, RASN1Object *object) {
 	return true;
 }
 
-bool r_x509_parse_extension (RX509Extension *ext, RASN1Object *object) {
+R_API bool r_x509_parse_extension(RX509Extension *ext, RASN1Object *object) {
 	RASN1Object *o;
-	if (!ext || !object || object->list.length < 2) {
+	if (!ext || !object || object->list.length != 2) {
 		return false;
 	}
 	o = object->list.objects[0];
@@ -139,7 +139,7 @@ bool r_x509_parse_extension (RX509Extension *ext, RASN1Object *object) {
 	return true;
 }
 
-bool r_x509_parse_extensions (RX509Extensions *ext, RASN1Object *object) {
+R_API bool r_x509_parse_extensions(RX509Extensions *ext, RASN1Object *object) {
 	ut32 i;
 	if (!ext || !object || object->list.length != 1 || !object->list.objects[0]->length) {
 		return false;
@@ -160,7 +160,7 @@ bool r_x509_parse_extensions (RX509Extensions *ext, RASN1Object *object) {
 	return true;
 }
 
-bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object *object) {
+R_API bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object *object) {
 	RASN1Object **elems;
 	ut32 i;
 	ut32 shift = 0;
@@ -213,7 +213,7 @@ bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object *object
 	return true;
 }
 
-RX509Certificate *r_x509_parse_certificate (RASN1Object *object) {
+R_API RX509Certificate *r_x509_parse_certificate(RASN1Object *object) {
 	if (!object) {
 		return NULL;
 	}
@@ -245,7 +245,7 @@ fail:
 	return cert;
 }
 
-RX509Certificate *r_x509_parse_certificate2 (const ut8 *buffer, ut32 length) {
+R_API RX509Certificate *r_x509_parse_certificate2(const ut8 *buffer, ut32 length) {
 	RX509Certificate *certificate;
 	RASN1Object *object;
 	if (!buffer || !length) {
@@ -257,7 +257,7 @@ RX509Certificate *r_x509_parse_certificate2 (const ut8 *buffer, ut32 length) {
 	return certificate;
 }
 
-RX509CRLEntry *r_x509_parse_crlentry (RASN1Object *object) {
+R_API RX509CRLEntry *r_x509_parse_crlentry(RASN1Object *object) {
 	RX509CRLEntry *entry;
 	if (!object || object->list.length != 2) {
 		return NULL;
@@ -272,17 +272,14 @@ RX509CRLEntry *r_x509_parse_crlentry (RASN1Object *object) {
 }
 
 R_API RX509CertificateRevocationList *r_x509_parse_crl(RASN1Object *object) {
-	RX509CertificateRevocationList *crl;
-	RASN1Object **elems;
 	if (!object || object->list.length < 4) {
 		return NULL;
 	}
-	crl = (RX509CertificateRevocationList *)malloc (sizeof (RX509CertificateRevocationList));
+	RX509CertificateRevocationList *crl = R_NEW0 (RX509CertificateRevocationList);
 	if (!crl) {
 		return NULL;
 	}
-	memset (crl, 0, sizeof (RX509CertificateRevocationList));
-	elems = object->list.objects;
+	RASN1Object **elems = object->list.objects;
 	r_x509_parse_algorithmidentifier (&crl->signature, elems[0]);
 	r_x509_parse_name (&crl->issuer, elems[1]);
 	crl->lastUpdate = r_asn1_stringify_utctime (elems[2]->sector, elems[2]->length);
@@ -302,7 +299,7 @@ R_API RX509CertificateRevocationList *r_x509_parse_crl(RASN1Object *object) {
 	return crl;
 }
 
-void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier *ai) {
+R_API void r_x509_free_algorithmidentifier(RX509AlgorithmIdentifier *ai) {
 	if (ai) {
 		// no need to free ai, since this functions is used internally
 		r_asn1_free_string (ai->algorithm);
@@ -318,7 +315,7 @@ static void r_x509_free_validity(RX509Validity *validity) {
 	}
 }
 
-void r_x509_free_name (RX509Name *name) {
+R_API void r_x509_free_name(RX509Name *name) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -334,7 +331,7 @@ void r_x509_free_name (RX509Name *name) {
 	// not freeing name since it's not allocated dinamically
 }
 
-void r_x509_free_extension (RX509Extension *ex) {
+void r_x509_free_extension(RX509Extension *ex) {
 	if (ex) {
 		r_asn1_free_string (ex->extnID);
 		r_asn1_free_binary (ex->extnValue);
