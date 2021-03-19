@@ -17,6 +17,7 @@
 
 #define r_io_map_begin(map) r_itv_begin (map->itv)
 #define r_io_map_to(map) ( r_itv_end (map->itv) - 1 )
+#define r_io_map_from r_io_map_begin
 #define r_io_submap_from(sm) (r_io_map_begin (sm))
 #define r_io_submap_to(sm) (r_io_map_to (sm))
 #define r_io_map_end(map) r_itv_end (map->itv)
@@ -362,6 +363,7 @@ R_API RIOBank *r_io_bank_get(RIO *io, const ut32 bankid);
 R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_map_priorize (RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr);
+R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
 
 //io.c
 R_API RIO *r_io_new(void);
