@@ -44,13 +44,9 @@ typedef struct levrow {
 } Levrow;
 
 static void lev_matrix_free(Levrow *matrix, ut32 len) {
-	ut32 i;
+	size_t i;
 	for (i = 0; i < len; i++) {
-		if (matrix[i].changes) {
-			free (matrix[i].changes);
-		} else {
-			break;
-		}
+		free (matrix[i].changes);
 	}
 	free (matrix);
 }
@@ -90,54 +86,59 @@ static inline ut32 lev_get_val(Levrow *row, ut32 i) {
 	return UT32_MAX - 1; // -1 so a +1 with sub weight does not overflow
 }
 
-#define lev_set_next_op(arr, i, sz, op) \
-	if (i >= sz) { \
-		sz = sz * 2; \
-		if ((arr = reallocarray (arr, sizeof (RLevOp), sz)) == NULL) { \
-			return -1; \
-		} \
-	} \
-	arr[i++] = op;
-
 // obtains array of operations, in reverse order, to get from column to row of
 // matrix
 static st32 lev_parse_matrix(Levrow *matrix, ut32 len, bool invert, RLevOp **chgs) {
-	r_return_val_if_fail (len >= 2 && chgs && !*chgs, -1);
-
-	size_t size = len;
-	RLevOp *changes = R_NEWS (RLevOp, size);
-	if (!changes) {
-		return -1;
-	}
-
+	r_return_val_if_fail (len >= 2 && matrix && chgs && !*chgs, -1);
 	Levrow *row = matrix + len - 1;
 	Levrow *prev_row = row - 1;
 	RLevOp a = LEVADD;
 	RLevOp d = LEVDEL;
-
 	if (invert) {
 		a = LEVDEL;
 		d = LEVADD;
 	}
 
+	const size_t overflow = (size_t)-1 / (2 * sizeof (RLevOp));
 	int j = row->end;
-	st32 insert = 0;
+	size_t size = j;
+	RLevOp *changes = R_NEWS (RLevOp, size);
+	if (!changes) {
+		return -1;
+	}
+
+	size_t insert = 0;
 	while (row != matrix) { // matrix[0] is not processed
 		ut32 sub = lev_get_val (prev_row, j - 1);
 		ut32 del = lev_get_val (prev_row, j);
 		ut32 add = lev_get_val (row, j - 1);
 
+		if (insert >= size) {
+			if (size >= overflow) {
+				// overflow paranoia
+				free (changes);
+				return -1;
+			}
+			size *= 2;
+			RLevOp *tmp = realloc (changes, size * sizeof (RLevOp));
+			if (!tmp) {
+				free (changes);
+				return -1;
+			}
+			changes = tmp;
+		}
+
 		if (sub <= del && sub <= add) {
 			if (sub == lev_get_val (row, j)) {
-				lev_set_next_op (changes, insert, size, LEVNOP);
+				changes[insert++] = LEVNOP;
 			} else {
-				lev_set_next_op (changes, insert, size, LEVSUB);
+				changes[insert++] = LEVSUB;
 			}
 			j--;
 		} else if (del <= add && del <= sub) {
-			lev_set_next_op (changes, insert, size, d);
+			changes[insert++] = d;
 		} else {
-			lev_set_next_op (changes, insert, size, a);
+			changes[insert++] = a;
 			j--;
 			continue; // continue with same rows
 		}
@@ -145,10 +146,27 @@ static st32 lev_parse_matrix(Levrow *matrix, ut32 len, bool invert, RLevOp **chg
 		row->changes = NULL;
 		row = prev_row--;
 	}
-	while (j > 0) {
-		lev_set_next_op (changes, insert, size, a);
-		j--;
+	if (j > 0) {
+		if (j >= size) {
+			if (size >= overflow) {
+				// overflow paranoia
+				free (changes);
+				return -1;
+			}
+			size = 2 * size - j;
+			RLevOp *tmp = realloc (changes, size * sizeof (RLevOp));
+			if (!tmp) {
+				free (changes);
+				return -1;
+			}
+			changes = tmp;
+		}
+		while (j > 0) {
+			changes[insert++] = a;
+			j--;
+		}
 	}
+
 	*chgs = changes;
 	return insert;
 }
@@ -870,7 +888,6 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 
 			lev_fill_changes (c, LEVNOP, tail);
 			c += tail;
-
 			*c = LEVEND;
 		}
 	}
