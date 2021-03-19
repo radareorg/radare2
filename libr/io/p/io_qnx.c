@@ -1,7 +1,9 @@
-/* radare - LGPL - Copyright 2010-2016 pancake */
+/* radare - GPL - Copyright 2010-2016 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
+
+#if WITH_GPL
 #include <r_socket.h>
 #include <r_util.h>
 #define IRAPI static inline
@@ -170,3 +172,13 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
+
+#else
+
+RIOPlugin r_io_plugin_qnx = {
+	.name = "qnx",
+	.license = "GPL3",
+	.desc = "Attach to QNX pdebug instance (compiled without GPL)",
+};
+#endif
+
