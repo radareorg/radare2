@@ -146,31 +146,28 @@ static st32 lev_parse_matrix(Levrow *matrix, ut32 len, bool invert, RLevOp **chg
 		row->changes = NULL;
 		row = prev_row--;
 	}
-	if (j > 0) {
-		if (j >= size) {
-			if (size >= overflow) {
-				// overflow paranoia
-				free (changes);
-				return -1;
-			}
-			size = 2 * size - j;
-			RLevOp *tmp = realloc (changes, size * sizeof (RLevOp));
-			if (!tmp) {
-				free (changes);
-				return -1;
-			}
-			changes = tmp;
+	if (size - insert < j) {
+		if (size > overflow) {
+			// overly paranoid
+			free (changes);
+			return -1;
 		}
-		while (j > 0) {
-			changes[insert++] = a;
-			j--;
+		size += j - (size - insert);
+		RLevOp *tmp = realloc (changes, size * sizeof (RLevOp));
+		if (!tmp) {
+			free (changes);
+			return -1;
 		}
+		changes = tmp;
+	}
+	while (j > 0) {
+		changes[insert++] = a;
+		j--;
 	}
 
 	*chgs = changes;
 	return insert;
 }
-#undef lev_set_op
 
 static inline void lev_fill_changes(RLevOp *chgs, RLevOp op, ut32 count) {
 	while (count > 0) {
