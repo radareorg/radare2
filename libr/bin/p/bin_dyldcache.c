@@ -960,7 +960,7 @@ static void carve_deps_at_address(RBuffer *cache_buf, cache_img_t *img, cache_hd
 			const char *key = (const char *) cursor + 24;
 			size_t dep_index = (size_t)ht_pu_find (path_to_idx, key, &found);
 			if (!found || dep_index >= hdr->imagesCount) {
-				eprintf ("WARNING: alien dep '%s'\n", key);
+				eprintf ("Warning: alien dep '%s'\n", key);
 				continue;
 			}
 			deps[dep_index]++;

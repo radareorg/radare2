@@ -520,7 +520,7 @@ static RThreadFunctionRet r_core_rtr_http_thread (RThread *th) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	eprintf ("WARNING: Background webserver requires http.sandbox=false to run properly\n");
+	eprintf ("Warning: Background webserver requires http.sandbox=false to run properly\n");
 	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
 	R_FREE (ht->path);
 	if (ret) {

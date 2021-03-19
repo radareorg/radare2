@@ -167,7 +167,7 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 
 	if (num_base_classes > BASE_CLASSES_MAX) {
 		if (context->anal->verbose) {
-			eprintf ("WARNING: Length of base class array at 0x%08"PFMT64x" exceeds %d.\n", addr, BASE_CLASSES_MAX);
+			eprintf ("Warning: Length of base class array at 0x%08"PFMT64x" exceeds %d.\n", addr, BASE_CLASSES_MAX);
 		}
 		num_base_classes = BASE_CLASSES_MAX;
 	}

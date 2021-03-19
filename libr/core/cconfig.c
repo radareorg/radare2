@@ -2116,7 +2116,7 @@ static bool cb_io_pava(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->print->pava = node->i_value;
 	if (node->i_value && core->io->va) {
-		eprintf ("WARNING: You may probably want to disable io.va too.\n");
+		eprintf ("Warning: You may probably want to disable io.va too.\n");
 	}
 	return true;
 }

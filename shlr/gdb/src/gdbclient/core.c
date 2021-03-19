@@ -1760,7 +1760,7 @@ RList* gdbr_pids_list(libgdbr_t *g, int pid) {
 	// Child processes will only show up in ThreadInfo if gdbr is currently processing a
 	// fork/vfork/exec event or if the children weren't detached yet. This is intended
 	// gdb `info inferiors` behavior that can only be avoided using xml.
-	eprintf ("WARNING: Showing possibly incomplete pid list due to xml protocol failure\n");
+	eprintf ("Warning: Showing possibly incomplete pid list due to xml protocol failure\n");
 
 	if (!g->stub_features.qXfer_exec_file_read
 		    || !(exec_file = gdbr_exec_file_read (g, pid))) {

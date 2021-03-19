@@ -146,7 +146,7 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 			strncpy (lastargs[num - 1], str, sizeof(lastargs[0]) - 1);
 		} else {
 			if (!atoi (str)) {
-				eprintf ("WARNING: probably a bug?\n");
+				eprintf ("Warning: probably a bug?\n");
 			}
 			r_egg_printf (egg, "  mov r0, %s\n", str);
 			snprintf (lastargs[num - 1], sizeof (lastargs[0]), "sp, %d", 8 + (num * 4));

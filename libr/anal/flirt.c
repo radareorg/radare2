@@ -927,7 +927,7 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 		}
 #if DEBUG
 		if (crc_length == 0x00 && crc16 != 0x0000) {
-			eprintf ("WARNING non zero crc of zero length @ %04X\n",
+			eprintf ("Warning: non zero crc of zero length @ %04X\n",
 				r_buf_tell (b) + header_size);
 		}
 		eprintf ("crc_len: %02X crc16: %04X\n", crc_length, crc16);

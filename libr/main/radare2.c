@@ -74,9 +74,9 @@ static int r_main_version_verify(int show) {
 	}
 	if (ret) {
 		if (show) {
-			eprintf ("WARNING: r2 library versions mismatch!\n");
+			eprintf ("Warning: r2 library versions mismatch!\n");
 		} else {
-			eprintf ("WARNING: r2 library versions mismatch! See r2 -V\n");
+			eprintf ("Warning: r2 library versions mismatch! See r2 -V\n");
 		}
 	}
 	return ret;
@@ -647,7 +647,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 #if ALLOW_THREADED
 			threaded = true;
 #else
-			eprintf ("WARNING: -t is temporarily disabled!\n");
+			eprintf ("Warning: -t is temporarily disabled!\n");
 #endif
 			break;
 #endif

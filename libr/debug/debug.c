@@ -300,13 +300,13 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
 				if (!(perm & R_BP_PROT_EXEC)) {
-					eprintf ("WARNING: setting bp within mapped memory without exec perm\n");
+					eprintf ("Warning: setting bp within mapped memory without exec perm\n");
 				}
 				break;
 			}
 		}
 		if (!valid) {
-			eprintf ("WARNING: module's base addr + delta is not a valid address\n");
+			eprintf ("Warning: module's base addr + delta is not a valid address\n");
 			return NULL;
 		}
 	}

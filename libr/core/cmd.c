@@ -1097,7 +1097,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 
 	r_list_foreach (core->scriptstack, iter, name) {
 		if (!strcmp (file, name)) {
-			eprintf ("WARNING: ignored nested source: %s\n", file);
+			eprintf ("Warning: ignored nested source: %s\n", file);
 			return false;
 		}
 	}

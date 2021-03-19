@@ -408,7 +408,7 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 		// in case of dump ignore here
 		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
 			if (bf->rbin->verbose) {
-				eprintf ("WARNING: bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)\n",
+				eprintf ("Warning: bin_strings buffer is too big (0x%08" PFMT64x "). Use -zzz or set bin.maxstrbuf (RABIN2_MAXSTRBUF) in r2 (rabin2)\n",
 					size);
 			}
 			return;

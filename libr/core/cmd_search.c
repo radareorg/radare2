@@ -928,7 +928,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			}
 			append_bound (list, core->io, search_itv, from, size, 5);
 		} else {
-			eprintf ("WARNING: search.in = ( anal.bb | anal.fcn )"\
+			eprintf ("Warning: search.in = ( anal.bb | anal.fcn )"\
 				"requires to seek into a valid function\n");
 			append_bound (list, core->io, search_itv, core->offset, 1, 5);
 		}
@@ -3027,7 +3027,7 @@ static int cmd_search(void *data, const char *input) {
 	RInterval search_itv = {search_from, search_to - search_from};
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
 	if (empty_search_itv) {
-		eprintf ("WARNING from == to?\n");
+		eprintf ("Warning: from == to?\n");
 		ret = false;
 		goto beach;
 	}

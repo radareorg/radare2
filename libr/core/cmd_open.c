@@ -1012,7 +1012,7 @@ static RList *__save_old_sections(RCore *core) {
 
 	// Return an empty list
 	if (!sections) {
-		eprintf ("WARNING: No sections found, functions and flags won't be rebased");
+		eprintf ("Warning: No sections found, functions and flags won't be rebased");
 		return old_sections;
 	}
 
