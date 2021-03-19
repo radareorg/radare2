@@ -1,0 +1,9 @@
+default.cc=stdc
+
+stdc=cc
+cc.stdc.arg0=r6
+cc.stdc.arg1=r7
+cc.stdc.arg2=r8
+cc.stdc.arg3=r9
+cc.stdc.argn=stack
+cc.stdc.ret=r10
