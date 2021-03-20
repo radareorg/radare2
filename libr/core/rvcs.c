@@ -40,6 +40,7 @@ static inline bool copy_commits(const char *dpath, const char *sname, const stru
 		}
 		free (path);
 	}
+	return true;
 }
 static inline char *branch_mkdir(struct rvc *repo, struct branch *b) {
 	char *path;
@@ -72,7 +73,6 @@ R_API bool rvc_branch(const char *name, const struct branch *parent, struct rvc 
 		repo->branch_num--;
 		free (nb->name);
 		free (nb);
-		free (bpath);
 		return false;
 	}
 	repo->branches = tmp;
