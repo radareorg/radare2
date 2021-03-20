@@ -7,8 +7,8 @@ struct commit {
 	struct commit *prev;
 	struct blob **blobs;
 	char *author;
-
 	int64_t *timestamp;
+	char *hash;
 	uint next_num;
 	struct commit **next; //next is an array so we can permit rvc revert
 };
