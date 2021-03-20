@@ -1200,7 +1200,7 @@ repeat:
 				break;
 			} else if (is_v850 && anal->opt.jmptbl) {
 				int ptsz = cmpval? cmpval + 1: 4;
-				if (cmpval!= -1){
+				if (cmpval > 0) {
 					ret = try_walkthrough_jmptbl (anal, fcn, bb, depth, op->addr,
 						0, op->addr + 2, op->addr + 2, 2, ptsz, 0, ret);
 				}
