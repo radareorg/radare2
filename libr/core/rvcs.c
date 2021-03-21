@@ -11,7 +11,7 @@ typedef struct commit {
 	int64_t *timestamp;
 	char *hash;
 	size_t next_num;
-	RList **next; //next is an array so we can permit RVc revert
+	RList *next; //next is an array so we can permit RVc revert
 } COMMIT;
 
 typedef struct branch {
