@@ -1,39 +1,46 @@
 #include <r_core.h>
-struct blob {
+typedef struct blob {
 	char *fname;
 	char *hash;
-};
-struct commit {
+} BLOB;
+
+typedef struct commit {
 	struct commit *prev;
 	struct blob **blobs;
 	char *author;
 	int64_t *timestamp;
 	char *hash;
-	uint next_num;
-	struct commit **next; //next is an array so we can permit rvc revert
-};
-struct branch {
+	size_t next_num;
+	RList **next; //next is an array so we can permit RVc revert
+} COMMIT;
+
+typedef struct branch {
 	char *name;
-	struct commit *head;
-};
-struct rvc {
+	COMMIT *head;
+} BRANCH;
+
+typedef struct RVc {
 	char *path;
-	uint branch_num;
-	struct branch **branches;
-};
-static inline bool copy_commits(const char *dpath, const char *sname, const struct rvc *repo) {
-	char *spath = malloc (r_str_len_utf8 (repo->path) + r_str_len_utf8("branches/commits") + r_str_len_utf8(sname) + 1);
-	sprintf (spath, "%s/branches/commits/%s/commits", repo->path, sname);
-	RList *files = r_sys_dir (spath);
-	if (!files)
+	RList *branches;
+} RVC;
+
+static inline bool copy_commits(const char *dpath, const char *sname, const RVC *repo) {
+	char *path;
+	char *name;
+	char *spath = r_str_newf("%s" R_SYS_DIR "branches" R_SYS_DIR "%s" R_SYS_DIR "commits", repo->path, sname);
+	if (!spath) {
 		return false;
+	}
+	RList *files = r_sys_dir (spath);
+	if (!files) {
+		return false;
+	}
 	RListIter *iter;
-	char *path;
-	char *name;
 	ls_foreach (files, iter, name) {
 		path = malloc (r_str_len_utf8 (spath) + r_str_len_utf8 (name) + 1);
-		if (!path)
+		if (!path) {
 			return false;
+		}
 		if (!r_file_copy (dpath, path)) {
 			free (path);
 			return false;
@@ -42,9 +49,9 @@ static inline bool copy_commits(const char *dpath, const char *sname, const stru
 	}
 	return true;
 }
-static inline char *branch_mkdir(struct rvc *repo, struct branch *b) {
-	char *path;
-	path = malloc (r_str_len_utf8(repo->path) + r_str_len_utf8("/branches/") + r_str_len_utf8(b->name) + 1);
+
+static inline char *branch_mkdir(RVC *repo, BRANCH *b) {
+	char *path = r_str_newf("%s" R_SYS_DIR "branches" R_SYS_DIR"%s" R_SYS_DIR "commits" R_SYS_DIR,repo->path, b->name);
 	if (!path) {
 		return NULL;
 	}
@@ -54,56 +61,62 @@ static inline char *branch_mkdir(struct rvc *repo, struct branch *b) {
 	}
 	return path;
 }
-R_API bool rvc_branch(const char *name, const struct branch *parent, struct rvc *repo) {
-	struct branch *nb;
-	struct branch **tmp;
+
+R_API bool RVc_branch(const char *name, const BRANCH *parent, RVC *repo) {
 	char *bpath;
-	nb = malloc (sizeof (struct branch));
-	if (!nb)
+	BRANCH *nb = malloc (sizeof (BRANCH));
+	if (!nb) {
 		return false;
+	}
 	nb->head = NULL;
 	nb->name = r_str_new (name);
 	if (!nb->name) {
 		free (nb);
 		return false;
 	}
-	repo->branch_num++;
-	tmp = realloc (repo->branches, repo->branch_num * sizeof (struct branch *));
-	if (!tmp) {
-		repo->branch_num--;
+	if (!r_list_append(repo->branches, nb)) {
 		free (nb->name);
 		free (nb);
 		return false;
 	}
-	repo->branches = tmp;
-	repo->branches[repo->branch_num - 1] = nb;
 	bpath = branch_mkdir (repo, nb);
-	if (!bpath)
+	if (!bpath) {
+		free (nb->name);
+		free (nb);
+		r_list_pop(repo->branches);
 		return false;
+	}
 	if (parent) {
 		nb->head = parent->head;
 		if (!copy_commits (bpath, parent->name, repo)) {
 			free (nb->name);
 			free (nb);
-			repo->branch_num--;
-			repo->branches = realloc (repo->branches, repo->branch_num * sizeof (struct branch *));
-			free (bpath);
 		}
 	}
 	return true;
 }
-R_API struct rvc *rvc_init(const char *path) {
-	struct rvc *repo;
-	repo = malloc (sizeof (struct rvc));
-	if (!repo)
+
+R_API RVC *RVc_init(const char *path) {
+	RVC *repo;
+	repo = malloc (sizeof (RVC));
+	if (!repo) {
 		return NULL;
-	repo->branch_num = 0;
-	repo->path = malloc (r_str_len_utf8 (path) + r_str_len_utf8 ("/.rvcs/") + 1);
+	}
+	repo->path = r_str_newf ("%s" R_SYS_DIR ".RVcs" R_SYS_DIR, path);
 	if (!repo->path) {
 		free (repo->path);
 		free (repo);
 	}
-	sprintf (repo->path, "%s/.rvcs/", path);
-	r_sys_mkdir (repo->path);
+	if (!r_sys_mkdir (repo->path)) {
+		free (repo->path);
+		free (repo);
+	}
+	repo->branches = r_list_new();
+	if (!repo->branches) {
+		free (repo);
+		free (repo->path);
+		return NULL;
+	}
+	RVc_branch("master", NULL, repo);
 	return repo;
 }
