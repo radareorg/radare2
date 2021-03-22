@@ -36,7 +36,7 @@ static bool copy_commits(const RVC *repo, const char *dpath, const char *sname) 
 	}
 	RListIter *iter;
 	ls_foreach (files, iter, name) {
-		path = malloc (r_str_len_utf8 (spath) + r_str_len_utf8 (name) + 1);
+		path = r_str_newf("%s%s", spath, sname);
 		if (!path) {
 			return false;
 		}
@@ -63,7 +63,7 @@ static char *branch_mkdir(RVC *repo, BRANCH *b) {
 
 R_API bool rvc_branch(RVC *repo, const char *name, const BRANCH *parent) {
 	char *bpath;
-	BRANCH *nb = malloc (sizeof (BRANCH));
+	BRANCH *nb = R_NEW0 (BRANCH);
 	if (!nb) {
 		return false;
 	}
@@ -97,7 +97,7 @@ R_API bool rvc_branch(RVC *repo, const char *name, const BRANCH *parent) {
 
 R_API RVC *rvc_new(const char *path) {
 	RVC *repo;
-	repo = malloc (sizeof (RVC));
+	repo = R_NEW (RVC);
 	if (!repo) {
 		return NULL;
 	}
