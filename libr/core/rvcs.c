@@ -24,7 +24,7 @@ typedef struct RVc {
 	RList *branches;
 } RVC;
 
-static inline bool copy_commits(const char *dpath, const char *sname, const RVC *repo) {
+static bool copy_commits(const char *dpath, const char *sname, const RVC *repo) {
 	char *path;
 	char *name;
 	char *spath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s" R_SYS_DIR "commits", repo->path, sname);
@@ -50,7 +50,7 @@ static inline bool copy_commits(const char *dpath, const char *sname, const RVC 
 	return true;
 }
 
-static inline char *branch_mkdir(RVC *repo, BRANCH *b) {
+static char *branch_mkdir(RVC *repo, BRANCH *b) {
 	char *path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR"%s" R_SYS_DIR "commits" R_SYS_DIR,repo->path, b->name);
 	if (!path) {
 		return NULL;
