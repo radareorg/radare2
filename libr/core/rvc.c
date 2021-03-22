@@ -36,6 +36,7 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 		free (path);
 		return NULL;
 	}
+	free (path);
 	return path;
 }
 
@@ -68,6 +69,7 @@ R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 			free (nb);
 		}
 	}
+	free (bpath);
 	return true;
 }
 
