@@ -1,4 +1,3 @@
-#include <r_core.h>
 #include <rvc.h>
 static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) {
 	char *path, *name, *spath;
@@ -78,7 +77,6 @@ R_API Rvc *rvc_new(const char *path) {
 	r_return_val_if_fail (repo, NULL);
 	repo->path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR, path);
 	if (!repo->path) {
-		free (repo->path);
 		free (repo);
 	}
 	if (!r_sys_mkdir (repo->path)) {
