@@ -76,7 +76,7 @@ R_API Rvc *rvc_new(const char *path) {
 	Rvc *repo;
 	repo = R_NEW (Rvc);
 	r_return_val_if_fail (repo, NULL);
-	repo->path = r_str_newf ("%s" R_SYS_DIR ".RVcs" R_SYS_DIR, path);
+	repo->path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR, path);
 	if (!repo->path) {
 		free (repo->path);
 		free (repo);
