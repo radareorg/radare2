@@ -3,9 +3,7 @@
 static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) {
 	char *path, *name, *spath;
 	spath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s" R_SYS_DIR "commits", repo->path, sname);
-	if (!spath) {
-		return false;
-	}
+	r_return_val_if_fail (spath, NULL);
 	RList *files = r_sys_dir (spath);
 	if (!files) {
 		free (spath);
@@ -34,9 +32,7 @@ static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) 
 
 static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 	char *path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR"%s" R_SYS_DIR "commits" R_SYS_DIR,repo->path, b->name);
-	if (!path) {
-		return NULL;
-	}
+	r_return_val_if_fail (path, NULL);
 	if (!r_sys_mkdirp (path)) {
 		free (path);
 		return NULL;
@@ -47,9 +43,7 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 	char *bpath;
 	RvcBranch *nb = R_NEW0 (RvcBranch);
-	if (!nb) {
-		return false;
-	}
+	r_return_val_if_fail (nb, NULL);
 	nb->head = NULL;
 	nb->name = r_str_new (name);
 	if (!nb->name) {
@@ -81,9 +75,7 @@ R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 R_API Rvc *rvc_new(const char *path) {
 	Rvc *repo;
 	repo = R_NEW (Rvc);
-	if (!repo) {
-		return NULL;
-	}
+	r_return_val_if_fail (repo, NULL);
 	repo->path = r_str_newf ("%s" R_SYS_DIR ".RVcs" R_SYS_DIR, path);
 	if (!repo->path) {
 		free (repo->path);
