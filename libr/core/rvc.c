@@ -8,20 +8,27 @@ static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) 
 	}
 	RList *files = r_sys_dir (spath);
 	if (!files) {
+		free (spath);
 		return false;
 	}
 	RListIter *iter;
 	ls_foreach (files, iter, name) {
-		path = r_str_newf("%s%s", spath, sname);
+		path = r_str_newf ("%s%s", spath, sname);
 		if (!path) {
+			free (spath);
+			r_list_free (files);
 			return false;
 		}
 		if (!r_file_copy (dpath, path)) {
+			free (spath);
 			free (path);
+			r_list_free (files);
 			return false;
 		}
 		free (path);
 	}
+	free (spath);
+	r_list_free (files);
 	return true;
 }
 
