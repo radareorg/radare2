@@ -36,7 +36,6 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 		free (path);
 		return NULL;
 	}
-	free (path);
 	return path;
 }
 
