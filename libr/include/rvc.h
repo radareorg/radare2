@@ -24,9 +24,6 @@ typedef struct RVc {
 	RList *branches;
 } Rvc;
 
-static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname);
-
-static char *branch_mkdir(Rvc *repo, RvcBranch *b);
 
 R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent);
 
