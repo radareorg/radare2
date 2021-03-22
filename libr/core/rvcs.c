@@ -24,10 +24,9 @@ typedef struct RVc {
 	RList *branches;
 } RVC;
 
-static bool copy_commits(const char *dpath, const char *sname, const RVC *repo) {
-	char *path;
-	char *name;
-	char *spath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s" R_SYS_DIR "commits", repo->path, sname);
+static bool copy_commits(const RVC *repo, const char *dpath, const char *sname) {
+	char *path, *name, *spath;
+	spath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s" R_SYS_DIR "commits", repo->path, sname);
 	if (!spath) {
 		return false;
 	}
@@ -62,7 +61,7 @@ static char *branch_mkdir(RVC *repo, BRANCH *b) {
 	return path;
 }
 
-R_API bool RVc_branch(const char *name, const BRANCH *parent, RVC *repo) {
+R_API bool RVc_branch(RVC *repo, const char *name, const BRANCH *parent) {
 	char *bpath;
 	BRANCH *nb = malloc (sizeof (BRANCH));
 	if (!nb) {
@@ -88,7 +87,7 @@ R_API bool RVc_branch(const char *name, const BRANCH *parent, RVC *repo) {
 	}
 	if (parent) {
 		nb->head = parent->head;
-		if (!copy_commits (bpath, parent->name, repo)) {
+		if (!copy_commits (repo, parent->name, bpath)) {
 			free (nb->name);
 			free (nb);
 		}
@@ -117,6 +116,6 @@ R_API RVC *RVc_init(const char *path) {
 		free (repo->path);
 		return NULL;
 	}
-	RVc_branch ("master", NULL, repo);
+	RVc_branch (repo, "master", NULL);
 	return repo;
 }
