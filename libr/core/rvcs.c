@@ -61,7 +61,7 @@ static char *branch_mkdir(RVC *repo, BRANCH *b) {
 	return path;
 }
 
-R_API bool RVc_branch(RVC *repo, const char *name, const BRANCH *parent) {
+R_API bool rvc_branch(RVC *repo, const char *name, const BRANCH *parent) {
 	char *bpath;
 	BRANCH *nb = malloc (sizeof (BRANCH));
 	if (!nb) {
@@ -95,7 +95,7 @@ R_API bool RVc_branch(RVC *repo, const char *name, const BRANCH *parent) {
 	return true;
 }
 
-R_API RVC *RVc_init(const char *path) {
+R_API RVC *rvc_new(const char *path) {
 	RVC *repo;
 	repo = malloc (sizeof (RVC));
 	if (!repo) {
@@ -116,6 +116,6 @@ R_API RVC *RVc_init(const char *path) {
 		free (repo->path);
 		return NULL;
 	}
-	RVc_branch (repo, "master", NULL);
+	rvc_branch (repo, "master", NULL);
 	return repo;
 }
