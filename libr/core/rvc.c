@@ -37,6 +37,91 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 	return path;
 }
 
+static inline char *hashtohex(const ut8 *data, size_t len) {
+	char *ret = "";
+	int i = 0;
+	for (i = 0; i < len; i++) {
+		r_str_appendf (ret, "%02x", data[i]);
+	}
+	return ret;
+}
+
+static char *find_sha256(const ut8 *block, int len) {
+	char *ret;
+	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
+	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
+	ret = hashtohex (c, R_HASH_SIZE_SHA256);
+	r_hash_free (ctx);
+	return ret;
+}
+
+static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *c) {
+	char *tmp, *commit = r_str_newf ("author:%s\ntimestamp:%ld\nprev:%s",
+			c->author, c->timestamp, c->prev->hash);
+	r_return_val_if_fail (commit, false);
+	char *ppath, *cpath;
+	FILE *pfile, *cfile;
+	RListIter *iter;
+	RvcBlob *blob;
+	ls_foreach (c->blobs, iter, blob) {
+		tmp = r_str_appendf (commit, "\n%s:%s",
+				blob->fname, blob->hash);
+		if (!tmp) {
+			free (commit);
+			return false;
+		}
+		commit = tmp;
+	}
+	if (b->head != NULL) {
+		ppath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
+				R_SYS_DIR "%s", repo->path, b->name, c->hash);
+		pfile = fopen (ppath, "r+");
+		free (ppath);
+		if (!pfile) {
+			free (commit);
+		}
+	}
+	cpath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
+			R_SYS_DIR"%s", repo->path, b->name, c->prev->hash);
+	cfile = fopen (ppath, "w");
+	free (cpath);
+	if (!cfile) {
+		fclose (pfile);
+		free (commit);
+	}
+	fseek (pfile, 0, SEEK_END);
+	fprintf (pfile, "\nnext:%s", c->hash);
+	fclose (pfile);
+	fprintf (cfile, "%s", commit);
+	fclose (cfile);
+	free (commit);
+	return true;
+}
+R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, char *auth) {
+	RvcCommit *nc = R_NEW (RvcCommit);
+	if (!nc) {
+		eprintf ("Failed To Allocate New Commit\n");
+		return false;
+	}
+	nc->author = r_str_new (auth);
+	if (!nc->author) {
+		free (nc);
+		eprintf ("Failed To Allocate New Commit\n");
+		return false;
+	}
+	nc->timestamp = time (NULL);
+	nc->prev = b->head;
+	nc->blobs = blobs;
+	if (!write_commit (repo, b, nc)) {
+		free (nc->author);
+		free (nc);
+		eprintf ("Failed To Create Commit File\n");
+		return false;
+	}
+	free (nc->author);
+	free (nc);
+	return true;
+}
 R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 	char *bpath;
 	RvcBranch *nb = R_NEW0 (RvcBranch);

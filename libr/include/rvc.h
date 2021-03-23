@@ -6,9 +6,9 @@ typedef struct blob {
 
 typedef struct commit {
 	struct commit *prev;
-	struct blob **blobs;
+	RList *blobs;
 	char *author;
-	int64_t *timestamp;
+	int64_t timestamp;
 	char *hash;
 	size_t next_num;
 	RList *next; //next is an array so we can permit RVc revert
@@ -24,6 +24,9 @@ typedef struct RVc {
 	RList *branches;
 } Rvc;
 
+
+
+R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, char *auth);
 
 R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent);
 
