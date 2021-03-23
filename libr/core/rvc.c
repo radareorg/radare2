@@ -1,6 +1,7 @@
 #include <rvc.h>
 static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) {
-	char *spath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s" R_SYS_DIR "commits", repo->path, sname);
+	char *spath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
+			R_SYS_DIR "commits", repo->path, sname);
 	r_return_val_if_fail (spath, false);
 	char *path, *name;
 	bool ret = true;
@@ -28,7 +29,8 @@ static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) 
 }
 
 static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
-	char *path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR"%s" R_SYS_DIR "commits" R_SYS_DIR,repo->path, b->name);
+	char *path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
+			R_SYS_DIR "commits" R_SYS_DIR,repo->path, b->name);
 	r_return_val_if_fail (path, NULL);
 	if (!r_sys_mkdirp (path)) {
 		free (path);
@@ -38,10 +40,16 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 }
 
 static inline char *hashtohex(const ut8 *data, size_t len) {
-	char *ret = "";
+	char *tmp, *ret = r_str_new("");
 	int i = 0;
 	for (i = 0; i < len; i++) {
-		r_str_appendf (ret, "%02x", data[i]);
+		tmp = r_str_appendf (ret, "%02x", data[i]);
+		if (!tmp) {
+			if (!R_STR_ISEMPTY(ret)) {
+				free (ret);
+			}
+			return NULL;
+		}
 	}
 	return ret;
 }
@@ -74,7 +82,11 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *c) {
 	}
 	c->hash = find_sha256 ((unsigned char *)commit,
 			r_str_len_utf8 (commit) * sizeof (char));
-	if (b->head != NULL) {
+	if (!c->hash) {
+		free (commit);
+		return false;
+	}
+	if (b->head) {
 		ppath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
 				R_SYS_DIR "%s", repo->path, b->name, c->hash);
 		pfile = fopen (ppath, "r+");
