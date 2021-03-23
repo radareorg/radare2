@@ -40,7 +40,7 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 }
 
 static inline char *hashtohex(const ut8 *data, size_t len) {
-	char *tmp, *ret = r_str_new("");
+	char *tmp, *ret = r_str_new ("");
 	int i = 0;
 	for (i = 0; i < len; i++) {
 		tmp = r_str_appendf (ret, "%02x", data[i]);
@@ -86,7 +86,17 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *c) {
 		free (commit);
 		return false;
 	}
-	if (b->head) {
+	cpath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
+			R_SYS_DIR"%s", repo->path, b->name, c->prev->hash);
+	cfile = fopen (ppath, "w");
+	free (cpath);
+	if (!cfile) {
+		free (commit);
+		return false;
+	}
+	fprintf (cfile, "%s", commit);
+	fclose (cfile);
+	if (c->prev) {
 		ppath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
 				R_SYS_DIR "%s", repo->path, b->name, c->hash);
 		pfile = fopen (ppath, "r+");
@@ -99,16 +109,6 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *c) {
 		fprintf (pfile, "\nnext:%s", c->hash);
 		fclose (pfile);
 	}
-	cpath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
-			R_SYS_DIR"%s", repo->path, b->name, c->prev->hash);
-	cfile = fopen (ppath, "w");
-	free (cpath);
-	if (!cfile) {
-		fclose (pfile);
-		free (commit);
-	}
-	fprintf (cfile, "%s", commit);
-	fclose (cfile);
 	free (commit);
 	return true;
 }
