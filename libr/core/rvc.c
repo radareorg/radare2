@@ -72,6 +72,8 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *c) {
 		}
 		commit = tmp;
 	}
+	c->hash = find_sha256 ((unsigned char *)commit,
+			r_str_len_utf8 (commit) * sizeof (char));
 	if (b->head != NULL) {
 		ppath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
 				R_SYS_DIR "%s", repo->path, b->name, c->hash);
@@ -79,7 +81,11 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *c) {
 		free (ppath);
 		if (!pfile) {
 			free (commit);
+			return false;
 		}
+		fseek (pfile, 0, SEEK_END);
+		fprintf (pfile, "\nnext:%s", c->hash);
+		fclose (pfile);
 	}
 	cpath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
 			R_SYS_DIR"%s", repo->path, b->name, c->prev->hash);
@@ -89,9 +95,6 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *c) {
 		fclose (pfile);
 		free (commit);
 	}
-	fseek (pfile, 0, SEEK_END);
-	fprintf (pfile, "\nnext:%s", c->hash);
-	fclose (pfile);
 	fprintf (cfile, "%s", commit);
 	fclose (cfile);
 	free (commit);
