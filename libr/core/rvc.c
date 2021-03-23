@@ -1,8 +1,9 @@
 #include <rvc.h>
 static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) {
-	char *path, *name, *spath;
-	spath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s" R_SYS_DIR "commits", repo->path, sname);
+	char *spath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s" R_SYS_DIR "commits", repo->path, sname);
 	r_return_val_if_fail (spath, false);
+	char *path, *name;
+	bool ret = true;
 	RList *files = r_sys_dir (spath);
 	if (!files) {
 		free (spath);
@@ -10,23 +11,20 @@ static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) 
 	}
 	RListIter *iter;
 	ls_foreach (files, iter, name) {
-		path = r_str_newf ("%s%s", spath, sname);
+		path = r_str_newf ("%s" R_SYS_DIR "%s", spath, sname);
 		if (!path) {
-			free (spath);
-			r_list_free (files);
-			return false;
+			ret = false;
+			break;
 		}
-		if (!r_file_copy (dpath, path)) {
-			free (spath);
-			free (path);
-			r_list_free (files);
-			return false;
-		}
+		ret = r_file_copy (dpath, path);
 		free (path);
+		if (!ret) {
+			break;
+		}
 	}
 	free (spath);
 	r_list_free (files);
-	return true;
+	return ret;
 }
 
 static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
