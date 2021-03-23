@@ -75,8 +75,7 @@ R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 }
 
 R_API Rvc *rvc_new(const char *path) {
-	Rvc *repo;
-	repo = R_NEW (Rvc);
+	Rvc *repo = R_NEW (Rvc);
 	if (!repo) {
 		eprintf ("Failed To Allocate Repoistory Path\n");
 	}
