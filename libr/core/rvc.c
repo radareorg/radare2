@@ -205,3 +205,32 @@ R_API Rvc *rvc_new(const char *path) {
 	}
 	return repo;
 }
+inline static bool branch_load(Rvc *repo) {
+	char *bpath = r_str_newf ("%s" R_SYS_DIR "branches", repo->path);
+	r_return_val_if_fail (bpath, false);
+	repo->branches = r_sys_dir (bpath);
+	free (bpath);
+	r_return_val_if_fail (repo->branches, false);
+	return true;
+}
+R_API Rvc *rvc_load(const char *path) {
+	Rvc *repo = R_NEW (Rvc);
+	if (!repo) {
+		eprintf ("Failed To Allocate Repository\n");
+		return false;
+	}
+	repo->path = r_str_new (path);
+	if (!repo->path) {
+		eprintf ("Failed To Allocate Repository\n");
+		free (repo);
+		return NULL;
+	}
+	branch_load (repo);
+	if (!repo->branches) {
+		free (repo->path);
+		free (repo);
+		eprintf ("Failed To Allocate Branch List\n");
+		return NULL;
+	}
+	return repo;
+}
