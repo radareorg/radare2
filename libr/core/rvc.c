@@ -51,12 +51,7 @@ R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 		free (nb);
 		return false;
 	}
-	if (!r_list_append (repo->branches, nb)) {
-		eprintf ("Failed To Allocate Branch Struct\n");
-		free (nb->name);
-		free (nb);
-		return false;
-	}
+	r_list_append (repo->branches, nb);
 	bpath = branch_mkdir (repo, nb);
 	if (!bpath) {
 		eprintf ("Failed To Create Branch Directory\n");
