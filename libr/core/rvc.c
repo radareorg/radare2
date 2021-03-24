@@ -12,7 +12,7 @@ static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) 
 	}
 	RListIter *iter;
 	ls_foreach (files, iter, name) {
-		path = r_str_newf ("%s" R_SYS_DIR "%s", spath, sname);
+		path = r_str_newf ("%s" R_SYS_DIR "%s", spath, name);
 		if (!path) {
 			ret = false;
 			break;
