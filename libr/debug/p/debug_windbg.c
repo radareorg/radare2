@@ -232,9 +232,10 @@ static int windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 		if (b->perm & R_BP_PROT_EXEC) {
 			access_type |= DEBUG_BREAK_EXECUTE;
 		}
-		if (b->perm & R_BP_PROT_READ) {
+		//readonly hardware breakpoints don't work
+		/*if (b->perm & R_BP_PROT_READ) {
 			access_type |= DEBUG_BREAK_READ;
-		}
+		}*/
 		if (b->perm & R_BP_PROT_WRITE) {
 			access_type |= DEBUG_BREAK_WRITE;
 		}

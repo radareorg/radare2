@@ -445,7 +445,7 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 		break;
 	}
 	// TODO handle size (area of watch in upper layer and then bpsize. For the moment watches are set on exact on byte
-	case R_PERM_W: {
+	case R_BP_PROT_WRITE: {
 		if (set) {
 			gdbr_set_hww (desc, b->addr, "", 1);
 		} else {
@@ -453,15 +453,16 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 		}
 		break;
 	}
-	case R_PERM_R: {
+	//readonly hardware breakpoints don't work
+	/*case R_BP_PROT_READ: {
 		if (set) {
 			gdbr_set_hwr (desc, b->addr, "", 1);
 		} else {
 			gdbr_remove_hwr (desc, b->addr, 1);
 		}
 		break;
-	}
-	case R_PERM_ACCESS: {
+	}*/
+	case R_BP_PROT_ACCESS: {
 		if (set) {
 			gdbr_set_hwa (desc, b->addr, "", 1);
 		} else {

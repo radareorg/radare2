@@ -298,7 +298,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 			pj_o (pj);
 			pj_kN (pj, "addr", b->addr);
 			pj_ki (pj, "size", b->size);
-			pj_ks (pj, "perm", r_str_rwx_i (b->perm & 7)); /* filter out R_BP_PROT_ACCESS */
+			pj_ks (pj, "perm", r_str_rwx_i (b->perm & 7));
 			pj_kb (pj, "hw", b->hw);
 			pj_kb (pj, "trace", b->trace);
 			pj_kb (pj, "enabled", b->enabled);
@@ -317,7 +317,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				" %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
-				((b->perm & R_BP_PROT_READ) | (b->perm & R_BP_PROT_ACCESS)) ? 'r' : '-',
+				(b->perm & R_BP_PROT_ACCESS) ? 'r' : '-', /*| (b->perm & R_BP_PROT_READ) - readonly hardware breakpoints don't work*/
 				((b->perm & R_BP_PROT_WRITE)| (b->perm & R_BP_PROT_ACCESS)) ? 'w' : '-',
 				(b->perm & R_BP_PROT_EXEC) ? 'x' : '-',
 				b->hw ? "hw": "sw",

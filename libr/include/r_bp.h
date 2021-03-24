@@ -92,8 +92,8 @@ typedef struct r_bp_t {
 enum {
 	R_BP_PROT_EXEC = 1,
 	R_BP_PROT_WRITE = 2,
-	R_BP_PROT_READ = 4,
-	R_BP_PROT_ACCESS = 8,
+	//R_BP_PROT_READ = 4, - readonly hardware breakpoints don't work
+	R_BP_PROT_ACCESS = 4,
 };
 
 typedef struct r_bp_trace_t {

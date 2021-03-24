@@ -89,7 +89,7 @@ static const char *help_msg_db[] = {
 	"dbh-", " <name>", "Remove breakpoint plugin handler",
 	"dbt", "[?]", "Show backtrace. See dbt? for more details",
 	"dbx", " [expr]", "Set expression for bp in current offset",
-	"dbw", " <addr> <r/w/rw>", "Add watchpoint",
+	"dbw", " <addr> <w/rw>", "Add watchpoint", /*readonly hardware breakpoints don't work, so without r*/
 #if __WINDOWS__
 	"dbW", " <WM_DEFINE> [?|handle|name]", "Set cond. breakpoint on a window message handler",
 #endif
@@ -113,7 +113,7 @@ static const char *help_msg_dbt[] = {
 };
 
 static const char *help_msg_dbw[] = {
-	"Usage: dbw", "<addr> <r/w/rw>"," # Add watchpoint",
+	"Usage: dbw", "<addr> <w/rw>"," # Add watchpoint", /*readonly hardware breakpoints don't work, so without r*/
 	NULL
 };
 
@@ -3359,9 +3359,11 @@ static void add_breakpoint(RCore *core, const char *input, bool hwbp, bool watch
 			int rw = 0;
 			if (watch) {
 				if (sl % 2 == 0) {
-					if (!strcmp (DB_ARG (i + 1), "r")) {
+					//readonly hardware breakpoints don't work
+					/*if (!strcmp (DB_ARG (i + 1), "r")) {
 						rw = R_BP_PROT_READ;
-					} else if (!strcmp (DB_ARG (i + 1), "w")) {
+					} else */
+					if (!strcmp (DB_ARG (i + 1), "w")) {
 						rw = R_BP_PROT_WRITE;
 					} else if (!strcmp (DB_ARG (i + 1), "rw")) {
 						rw = R_BP_PROT_ACCESS;
