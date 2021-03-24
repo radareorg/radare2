@@ -72,7 +72,7 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *c) {
 	RListIter *iter;
 	RvcBlob *blob;
 	ls_foreach (c->blobs, iter, blob) {
-		tmp = r_str_appendf (commit, "\n%s:%s",
+		tmp = r_str_appendf (commit, "\nblob:%s:%s",
 				blob->fname, blob->hash);
 		if (!tmp) {
 			free (commit);
