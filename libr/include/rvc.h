@@ -11,6 +11,7 @@ typedef struct commit {
 	int64_t timestamp;
 	char *hash;
 	size_t next_num;
+	bool ishead;
 	RList *next; //next is an array so we can permit RVc revert
 } RvcCommit;
 
