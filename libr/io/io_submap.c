@@ -12,3 +12,17 @@ R_API RIOSubMap *r_io_submap_new(RIO *io, RIOMapRef *mapref) {
 	}
 	return sm;
 }
+
+R_API bool r_io_submap_set_from(RIOSubMap *sm, const ut64 from) {
+	if (sm) {
+		return sm->itv.addr + sm->itv.size < from;
+	}
+	return false;
+}
+
+R_API bool r_io_submap_set_to(RIOSubMap *sm, const ut64 to) {
+	if (sm) {
+		return sm->itv.addr <= to;
+	}
+	return false;
+}
