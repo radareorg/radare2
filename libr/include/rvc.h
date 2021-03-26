@@ -12,6 +12,7 @@ typedef struct commit {
 	char *hash;
 	size_t next_num;
 	bool ishead;
+	char *message;
 	RList *next; //next is an array so we can permit RVc revert
 } RvcCommit;
 
@@ -27,8 +28,12 @@ typedef struct RVc {
 
 
 
-R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, char *auth);
+R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, const char *auth, const char *message);
 
 R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent);
 
 R_API Rvc *rvc_new(const char *path);
+R_API bool git_init (const char *path);
+R_API bool git_branch (const char *path, const char *name);
+R_API bool git_add (const char *path, const char *fname);
+R_API bool git_commit (const char *path, const char *message);

@@ -70,8 +70,8 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	FILE *prev_file, *commit_file;
 	RListIter *iter;
 	RvcBlob *blob;
-	commit_string = r_str_newf ("author:%s\ntimestamp:%ld\n----",
-			commit->author, commit->timestamp);
+	commit_string = r_str_newf ("author:%s\nmessage%s\nntimestamp:%ld\n----",
+			commit->author, commit->message, commit->timestamp);
 	r_return_val_if_fail (commit_string, false);
 	r_list_foreach (commit->blobs, iter, blob) {
 		tmp = r_str_appendf (commit_string, "\nblob:%s:%s",
@@ -127,7 +127,7 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	fclose (prev_file);
 	return true;
 }
-R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, char *auth) {
+R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, const char *auth, const char *message) {
 	RvcCommit *nc = R_NEW (RvcCommit);
 	if (!nc) {
 		eprintf ("Failed To Allocate New Commit\n");
@@ -139,11 +139,18 @@ R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, char *auth) {
 		eprintf ("Failed To Allocate New Commit\n");
 		return false;
 	}
+	nc->message = r_str_new (message);
+	if (!nc->message) {
+		free (nc->author);
+		free (nc);
+		return false;
+	}
 	nc->timestamp = time (NULL);
-	nc->prev = b->head;
+	nc->prev = b->head; //just wanted an excuse to say behead
 	nc->blobs = blobs;
 	if (!write_commit (repo, b, nc)) {
 		free (nc->author);
+		free (nc->message);
 		free (nc);
 		eprintf ("Failed To Create Commit File\n");
 		return false;
@@ -229,4 +236,16 @@ R_API Rvc *rvc_new(const char *path) {
 		return NULL;
 	}
 	return repo;
+}
+R_API bool git_init (const char *path) {
+	return r_sys_cmdf ("git init %s", path);
+}
+R_API bool git_branch (const char *path, const char *name) {
+	return r_sys_cmdf ("git -C %s checkout -b %s", path, name);
+}
+R_API bool git_add (const char *path, const char *fname) {
+	return r_sys_cmdf ("git -C %s branch %s", path, fname);
+}
+R_API bool git_commit (const char *path, const char *message) {
+	return r_sys_cmdf ("git -C %s commit -m %s", path, message);
 }

@@ -3434,12 +3434,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* prj */
 	SETCB ("prj.name", "", &cb_prjname, "Name of current project");
 	SETBPREF ("prj.files", "false", "Save the target binary inside the project directory");
-	{
-		char *p = r_file_path ("git");
-		bool found = (p && *p == '/');
-		SETBPREF ("prj.git", r_str_bool (found), "Use git to share your project and version changes");
-		free (p);
-	}
+	SETBPREF ("prj.vc", "true", "Use your version control system of choice (rvc, git) to manage projects");
 	SETBPREF ("prj.zip", "false", "Use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
 
@@ -3977,7 +3972,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("lines.from", 0, "Start address for line seek");
 	SETCB ("lines.to", "$s", &cb_linesto, "End address for line seek");
 	SETCB ("lines.abs", "false", &cb_linesabs, "Enable absolute line numbers");
-
+	/* RVC */
+	{
+		char *p = r_file_path ("git");
+		bool found = (p && *p == '/');
+		SETBPREF ("vc.rvc", r_str_bool (!found), "Use RVC instead of git (not recommended)");
+		free (p);
+	}
 	r_config_lock (cfg, true);
 	return true;
 }
