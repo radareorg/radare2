@@ -1,29 +1,30 @@
 #include <rvc.h>
-static bool copy_commits(const Rvc *repo, const char *dpath, const char *sname) {
-	char *spath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
-			R_SYS_DIR "commits", repo->path, sname);
-	r_return_val_if_fail (spath, false);
-	char *path, *name;
+static bool copy_commits(const Rvc *repo, const char *dpath, const char *spath) {
+	char *name, *commit_path;
+	RListIter *iter;
+	RList *files;
+	files = r_sys_dir (spath);
 	bool ret = true;
-	RList *files = r_sys_dir (spath);
 	if (!files) {
-		free (spath);
+		eprintf ("Can't Open Files\n");
 		return false;
 	}
-	RListIter *iter;
-	ls_foreach (files, iter, name) {
-		path = r_str_newf ("%s" R_SYS_DIR "%s", spath, name);
-		if (!path) {
+	r_list_foreach (files, iter, name) {
+		if (r_str_cmp (name, "..", 2) == 0 || r_str_cmp (name, ".", 1) == 0) {
+			printf ("%s", name);
+			continue;
+		}
+		commit_path = r_str_newf ("%s" R_SYS_DIR "%s", spath, name);
+		if (!commit_path) {
 			ret = false;
 			break;
 		}
-		ret = r_file_copy (dpath, path);
-		free (path);
+		ret = r_file_copy (commit_path, dpath);
+		free (commit_path);
 		if (!ret) {
 			break;
 		}
 	}
-	free (spath);
 	r_list_free (files);
 	return ret;
 }
@@ -40,16 +41,15 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 }
 
 static inline char *hashtohex(const ut8 *data, size_t len) {
-	char *tmp, *ret = r_str_new ("");
+	char *tmp, *ret = NULL;
 	int i = 0;
 	for (i = 0; i < len; i++) {
 		tmp = r_str_appendf (ret, "%02x", data[i]);
 		if (!tmp) {
-			if (!R_STR_ISEMPTY(ret)) {
-				free (ret);
-			}
-			return NULL;
+			ret= NULL;
+			break;
 		}
+		ret = tmp;
 	}
 	return ret;
 }
@@ -63,53 +63,67 @@ static char *find_sha256(const ut8 *block, int len) {
 	return ret;
 }
 
-static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *c) {
-	char *tmp, *commit = r_str_newf ("author:%s\ntimestamp:%ld\nprev:%s",
-			c->author, c->timestamp, c->prev->hash);
-	r_return_val_if_fail (commit, false);
-	char *ppath, *cpath;
-	FILE *pfile, *cfile;
+static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
+	char *commit_path, *commit_string, *tmp;
+	char *prev_path;
+	FILE *prev_file, *commit_file;
 	RListIter *iter;
 	RvcBlob *blob;
-	ls_foreach (c->blobs, iter, blob) {
-		tmp = r_str_appendf (commit, "\nblob:%s:%s",
+	commit_string = r_str_newf ("author:%s\ntimestamp:%ld\n----",
+			commit->author, commit->timestamp);
+	r_return_val_if_fail (commit_string, false);
+	r_list_foreach (commit->blobs, iter, blob) {
+		tmp = r_str_appendf (commit_string, "\nblob:%s:%s",
 				blob->fname, blob->hash);
 		if (!tmp) {
-			free (commit);
+			free (commit_string);
 			return false;
 		}
-		commit = tmp;
+		commit_string = tmp;
 	}
-	c->hash = find_sha256 ((unsigned char *)commit,
-			r_str_len_utf8 (commit) * sizeof (char));
-	if (!c->hash) {
+	commit->hash = find_sha256 ((ut8 *) commit,
+			r_str_len_utf8 (commit_string) * sizeof (char));
+	if (!commit->hash) {
 		free (commit);
 		return false;
 	}
-	cpath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
-			R_SYS_DIR"%s", repo->path, b->name, c->prev->hash);
-	cfile = fopen (ppath, "w");
-	free (cpath);
-	if (!cfile) {
+	commit_path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR
+			"%s" R_SYS_DIR "commits" R_SYS_DIR "%s",
+			repo->path, b->name, commit->hash);
+	if (!commit_path) {
 		free (commit);
 		return false;
 	}
-	fprintf (cfile, "%s", commit);
-	fclose (cfile);
-	if (c->prev) {
-		ppath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
-				R_SYS_DIR "%s", repo->path, b->name, c->hash);
-		pfile = fopen (ppath, "r+");
-		free (ppath);
-		if (!pfile) {
-			free (commit);
-			return false;
-		}
-		fseek (pfile, 0, SEEK_END);
-		fprintf (pfile, "\nnext:%s", c->hash);
-		fclose (pfile);
+	commit_file = fopen (commit_path, "w+");
+	free (commit_path);
+	if (!commit_file) {
+		free (commit_string);
+		return false;
 	}
-	free (commit);
+	fprintf (commit_file, "%s", commit_string);
+	free (commit_string);
+	if (!commit->prev) {
+		fclose (commit_file);
+		return true;
+	}
+	prev_path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR
+			"%s" R_SYS_DIR "commits" R_SYS_DIR "%s",
+			repo->path, b->name, commit->prev->hash);
+	if (!prev_path) {
+		fclose (commit_file);
+		return false;
+	}
+	prev_file = fopen (prev_path, "r+");
+	free (prev_path);
+	if (!prev_file) {
+		fclose (commit_file);
+		return false;
+	}
+	fprintf (commit_file, "\nprev:%s", commit->prev->hash);
+	fclose (commit_file);
+	fseek (prev_file, 0, SEEK_END);
+	fprintf (prev_file, "\nnext:%s", commit->hash);
+	fclose (prev_file);
 	return true;
 }
 R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, char *auth) {
@@ -133,12 +147,11 @@ R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, char *auth) {
 		eprintf ("Failed To Create Commit File\n");
 		return false;
 	}
-	free (nc->author);
-	free (nc);
+	b->head = nc;
 	return true;
 }
 R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
-	char *bpath;
+	char *bpath, *ppath;
 	RvcBranch *nb = R_NEW0 (RvcBranch);
 	if (!nb) {
 		eprintf ("Failed To Allocate Branch Struct\n");
@@ -162,7 +175,10 @@ R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 	}
 	if (parent) {
 		nb->head = parent->head;
-		if (!copy_commits (repo, parent->name, bpath)) {
+		ppath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
+				R_SYS_DIR "commits" R_SYS_DIR,
+				repo->path, parent->name);
+		if (!copy_commits (repo, bpath, ppath)) {
 			eprintf ("Failed To Copy Commits From Parent\n");
 			free (nb->name);
 			free (nb);
@@ -186,13 +202,14 @@ R_API Rvc *rvc_new(const char *path) {
 		return NULL;
 	}
 	if (!r_sys_mkdir (repo->path)) {
-		eprintf ("Failed To Create Repo Directory\n");
+		//eprintf ("Failed To Create Repo Directory\n");
 		free (repo->path);
 		free (repo);
+		return NULL;
 	}
 	repo->branches = r_list_new ();
 	if (!repo->branches) {
-		eprintf ("Failed To Allocate Branches List\n");
+		//eprintf ("Failed To Allocate Branches List\n");
 		free (repo);
 		free (repo->path);
 		return NULL;
