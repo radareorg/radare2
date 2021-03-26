@@ -64,6 +64,12 @@ static char *find_sha256(const ut8 *block, int len) {
 	return ret;
 }
 
+static inline char *sha256_file(const char *fname) {
+	char *content = r_file_slurp (fname, NULL);
+	r_return_val_if_fail (content, NULL);
+	return find_sha256 ((ut8 *)content, r_str_len_utf8 (content) * sizeof (char));
+}
+
 static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	char *commit_path, *commit_string, *tmp;
 	char *prev_path;
@@ -200,6 +206,7 @@ R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 
 R_API Rvc *rvc_new(const char *path) {
 	Rvc *repo = R_NEW (Rvc);
+	char *blob_path;
 	if (!repo) {
 		eprintf ("Failed To Allocate Repoistory Path\n");
 		return false;
@@ -230,12 +237,66 @@ R_API Rvc *rvc_new(const char *path) {
 		return NULL;
 	}
 	if (!rvc_branch (repo, "master", NULL)) {
+		eprintf ("Failed To Create The master Branch\n");
 		free (repo->path);
 		r_list_free (repo->branches);
 		free (repo);
 		return NULL;
 	}
+	blob_path = r_str_newf ("%s" R_SYS_DIR "blobs", repo->path);
+	if (!blob_path) {
+		r_list_free  (repo->branches);
+		free (repo->path);
+		return NULL;
+	}
+	if (!r_sys_mkdir (blob_path)) {
+		r_list_free (repo->branches);
+		free (blob_path);
+		free (repo->path);
+		free (repo);
+		return NULL;
+	};
+	free (blob_path);
 	return repo;
+}
+R_API RList *rvc_add(Rvc *repo, RList *files) {
+	RListIter *iter;
+	RList *blobs = r_list_new ();
+	if (!blobs) {
+		eprintf ("Failed To Allocate Blobs");
+		return NULL;
+	}
+	char *fname;
+	char *blob_path = r_str_newf ("%s" R_SYS_DIR "blobs", repo->path);
+	r_list_foreach (files, iter, fname) {
+		RvcBlob *b = R_NEW (RvcBlob);
+		if (!b) {
+			r_list_free (blobs);
+		}
+		b->fname = r_str_new (fname);
+		if (!b->fname) {
+			free (b);
+			r_list_free (blobs);
+			return NULL;
+		}
+		b->hash = sha256_file (fname);
+		if (!b->hash) {
+			free (b->fname);
+			free (b);
+			r_list_free (blobs);
+			return NULL;
+		}
+		if (!r_file_copy (fname, blob_path)) {
+			free (b->fname);
+			free (b->hash);
+			free (b);
+			r_list_free (blobs);
+			return NULL;
+		}
+		r_list_append (blobs, b);
+		b = NULL;
+	}
+	return blobs;
 }
 R_API bool git_init (const char *path) {
 	return r_sys_cmdf ("git init %s", path);

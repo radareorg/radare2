@@ -29,9 +29,8 @@ typedef struct RVc {
 
 
 R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, const char *auth, const char *message);
-
 R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent);
-
+R_API RList *rvc_add(Rvc *repo, RList *files);
 R_API Rvc *rvc_new(const char *path);
 R_API bool git_init (const char *path);
 R_API bool git_branch (const char *path, const char *name);
