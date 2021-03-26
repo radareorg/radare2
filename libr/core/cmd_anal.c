@@ -10883,8 +10883,9 @@ static int cmd_anal(void *data, const char *input) {
 				name = NULL;
 			}
 		}
-
-		cmd_an (core, use_json, name);
+		if (!R_STR_ISEMPTY (name)) {
+			cmd_an (core, use_json, name);
+		}
 		}
 		break;
 	case 'g': // "ag"
