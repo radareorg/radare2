@@ -10,7 +10,8 @@ static bool copy_commits(const Rvc *repo, const char *dpath, const char *spath) 
 		return false;
 	}
 	r_list_foreach (files, iter, name) {
-		if (r_str_cmp (name, "..", 2) == 0 || r_str_cmp (name, ".", 1) == 0) {
+		if (r_str_cmp (name, "..", 2) == 0 ||
+				r_str_cmp (name, ".", 1) == 0) {
 			printf ("%s", name);
 			continue;
 		}
@@ -202,14 +203,14 @@ R_API Rvc *rvc_new(const char *path) {
 		return NULL;
 	}
 	if (!r_sys_mkdir (repo->path)) {
-		//eprintf ("Failed To Create Repo Directory\n");
+		eprintf ("Failed To Create Repo Directory\n");
 		free (repo->path);
 		free (repo);
 		return NULL;
 	}
 	repo->branches = r_list_new ();
 	if (!repo->branches) {
-		//eprintf ("Failed To Allocate Branches List\n");
+		eprintf ("Failed To Allocate Branches List\n");
 		free (repo);
 		free (repo->path);
 		return NULL;
