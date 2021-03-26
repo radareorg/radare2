@@ -4,6 +4,7 @@
 #include <r_list.h>
 #include <r_flag.h>
 #include <r_core.h>
+#include <rvc.h>
 #define USE_R2 1
 #include <spp/spp.h>
 
@@ -673,24 +674,15 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		free (prj_bin_dir);
 		free (bin_file);
 	}
-	if (r_config_get_i (core->config, "prj.git")) {
-		char *cwd = r_sys_getdir ();
+	if (r_config_get_i (core->config, "prj.vc")) {
 		char *git_dir = r_str_newf ("%s" R_SYS_DIR ".git", prj_dir);
-		if (r_sys_chdir (prj_dir)) {
+		if (!r_config_get_i (core->config, "vc.rvc")) {
 			if (!r_file_is_directory (git_dir)) {
-				r_sys_cmd ("git init");
+				git_init (prj_dir);
 			}
-			if (r_cons_is_interactive ()) {
-				r_sys_cmd ("git add * ; git commit -a");
-			} else {
-				r_sys_cmd ("git add * ; git commit -a -m commit");
-			}
-		} else {
-			eprintf ("Cannot chdir %s\n", prj_dir);
+			git_commit (prj_dir, "commit");
 		}
-		r_sys_chdir (cwd);
 		free (git_dir);
-		free (cwd);
 	}
 	if (r_config_get_i (core->config, "prj.zip")) {
 		char *cwd = r_sys_getdir ();

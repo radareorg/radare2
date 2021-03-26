@@ -1,4 +1,5 @@
 r_core_sources = [
+  'rvc.c'
   'anal_tp.c',
   'anal_objc.c',
   'casm.c',
