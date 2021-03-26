@@ -195,8 +195,15 @@ R_API Rvc *rvc_new(const char *path) {
 	Rvc *repo = R_NEW (Rvc);
 	if (!repo) {
 		eprintf ("Failed To Allocate Repoistory Path\n");
+		return false;
 	}
 	repo->path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR, path);
+	if (r_file_exists (repo->path)) {
+		eprintf ("RVC Repoistory Already exists in %s\n", repo->path);
+		free (repo->path);
+		free (repo);
+		return false;
+	}
 	if (!repo->path) {
 		eprintf ("Failed To Allocate Repository Path\n");
 		free (repo);
