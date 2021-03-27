@@ -74,11 +74,27 @@ static void dyn_init(void) {
 		dyn_openpty = r_lib_dl_sym (NULL, "openpty");
 	}
 	if (!dyn_login_tty) {
-		dyn_openpty = r_lib_dl_sym (NULL, "login_tty");
+		dyn_login_tty = r_lib_dl_sym (NULL, "login_tty");
 	}
 	if (!dyn_forkpty) {
-		dyn_openpty = r_lib_dl_sym (NULL, "forkpty");
+		dyn_forkpty = r_lib_dl_sym (NULL, "forkpty");
 	}
+
+#ifdef __linux__
+	// for linux distros which use it, attempt to fall back on libutil.so if something failed
+	if (!(dyn_openpty && dyn_login_tty && dyn_forkpty)) {
+		r_lib_dl_open("libutil.so");
+		if (!dyn_openpty) {
+			dyn_openpty = r_lib_dl_sym (NULL, "openpty");
+		}
+		if (!dyn_login_tty) {
+			dyn_login_tty = r_lib_dl_sym (NULL, "login_tty");
+		}
+		if (!dyn_forkpty) {
+			dyn_forkpty = r_lib_dl_sym (NULL, "forkpty");
+		}
+	}
+#endif
 }
 
 #endif
