@@ -24,12 +24,13 @@ typedef struct branch {
 typedef struct RVc {
 	char *path;
 	RList *branches;
+	RvcBranch *current_branch;
 } Rvc;
 
 
 
-R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, const char *auth, const char *message);
-R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent);
+R_API bool rvc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message);
+R_API bool rvc_branch(Rvc *repo, const char *name);
 R_API RList *rvc_add(Rvc *repo, RList *files);
 R_API Rvc *rvc_new(const char *path);
 R_API bool git_init (const char *path);

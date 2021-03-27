@@ -76,7 +76,7 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	FILE *prev_file, *commit_file;
 	RListIter *iter;
 	RvcBlob *blob;
-	commit_string = r_str_newf ("author:%s\nmessage%s\nntimestamp:%ld\n----",
+	commit_string = r_str_newf ("author:%s\nmessage:%s\nntimestamp:%ld\n----",
 			commit->author, commit->message, commit->timestamp);
 	r_return_val_if_fail (commit_string, false);
 	r_list_foreach (commit->blobs, iter, blob) {
@@ -133,7 +133,7 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	fclose (prev_file);
 	return true;
 }
-R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, const char *auth, const char *message) {
+R_API bool rvc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message) {
 	RvcCommit *nc = R_NEW (RvcCommit);
 	if (!nc) {
 		eprintf ("Failed To Allocate New Commit\n");
@@ -152,19 +152,19 @@ R_API bool rvc_commit(Rvc *repo, RvcBranch *b, RList *blobs, const char *auth, c
 		return false;
 	}
 	nc->timestamp = time (NULL);
-	nc->prev = b->head; //just wanted an excuse to say behead
+	nc->prev = repo->current_branch->head;
 	nc->blobs = blobs;
-	if (!write_commit (repo, b, nc)) {
+	if (!write_commit (repo, repo->current_branch, nc)) {
 		free (nc->author);
 		free (nc->message);
 		free (nc);
 		eprintf ("Failed To Create Commit File\n");
 		return false;
 	}
-	b->head = nc;
+	repo->current_branch->head = nc;
 	return true;
 }
-R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
+R_API bool rvc_branch(Rvc *repo, const char *name) {
 	char *bpath, *ppath;
 	RvcBranch *nb = R_NEW0 (RvcBranch);
 	if (!nb) {
@@ -187,11 +187,11 @@ R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 		r_list_pop (repo->branches);
 		return false;
 	}
-	if (parent) {
-		nb->head = parent->head;
+	if (repo->current_branch) {
+		nb->head = repo->current_branch->head;
 		ppath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
 				R_SYS_DIR "commits" R_SYS_DIR,
-				repo->path, parent->name);
+				repo->path, repo->current_branch->name);
 		if (!copy_commits (repo, bpath, ppath)) {
 			eprintf ("Failed To Copy Commits From Parent\n");
 			free (nb->name);
@@ -200,6 +200,7 @@ R_API bool rvc_branch(Rvc *repo, const char *name, const RvcBranch *parent) {
 			return false;
 		}
 	}
+	repo->current_branch = nb;
 	free (bpath);
 	return true;
 }
@@ -236,7 +237,7 @@ R_API Rvc *rvc_new(const char *path) {
 		free (repo->path);
 		return NULL;
 	}
-	if (!rvc_branch (repo, "master", NULL)) {
+	if (!rvc_branch (repo, "master")) {
 		eprintf ("Failed To Create The master Branch\n");
 		free (repo->path);
 		r_list_free (repo->branches);
