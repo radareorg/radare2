@@ -237,6 +237,7 @@ R_API Rvc *rvc_new(const char *path) {
 		free (repo->path);
 		return NULL;
 	}
+	repo->current_branch = NULL;
 	if (!rvc_branch (repo, "master")) {
 		eprintf ("Failed To Create The master Branch\n");
 		free (repo->path);
@@ -263,12 +264,13 @@ R_API Rvc *rvc_new(const char *path) {
 R_API RList *rvc_add(Rvc *repo, RList *files) {
 	RListIter *iter;
 	RList *blobs = r_list_new ();
+	char *blob_path;
 	if (!blobs) {
 		eprintf ("Failed To Allocate Blobs");
 		return NULL;
 	}
 	char *fname;
-	char *blob_path = r_str_newf ("%s" R_SYS_DIR "blobs", repo->path);
+	const char *blobs_path = r_str_newf ("%s" R_SYS_DIR "blobs", repo->path);
 	r_list_foreach (files, iter, fname) {
 		RvcBlob *b = R_NEW (RvcBlob);
 		if (!b) {
@@ -287,13 +289,23 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 			r_list_free (blobs);
 			return NULL;
 		}
-		if (!r_file_copy (fname, blob_path)) {
+		blob_path = r_str_newf ("%s" R_SYS_DIR "%s", blobs_path, b->hash);
+		if (!blob_path) {
 			free (b->fname);
 			free (b->hash);
 			free (b);
 			r_list_free (blobs);
 			return NULL;
 		}
+		if (!r_file_copy (fname, blob_path)) {
+			free (blob_path);
+			free (b->fname);
+			free (b->hash);
+			free (b);
+			r_list_free (blobs);
+			return NULL;
+		}
+		free (blob_path);
 		r_list_append (blobs, b);
 		b = NULL;
 	}
