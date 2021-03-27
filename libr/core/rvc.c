@@ -1,4 +1,10 @@
 #include <rvc.h>
+static inline bool is_branch_name(char *name) {
+	for (; *name; name++) {
+		r_return_val_if_fail (IS_DIGIT (*name) || isalpha (*name), false);
+	}
+	return true;
+}
 static bool copy_commits(const Rvc *repo, const char *dpath, const char *spath) {
 	char *name, *commit_path;
 	RListIter *iter;
@@ -167,6 +173,10 @@ R_API bool rvc_commit(Rvc *repo, RList *blobs, const char *auth, const char *mes
 R_API bool rvc_branch(Rvc *repo, const char *name) {
 	char *bpath, *ppath;
 	RvcBranch *nb = R_NEW0 (RvcBranch);
+	if (!is_branch_name (name)) {
+		eprintf ("%s Is Not A Vaild Branch Name", name);
+		return false;
+	}
 	if (!nb) {
 		eprintf ("Failed To Allocate Branch Struct\n");
 		return false;
@@ -212,6 +222,7 @@ R_API Rvc *rvc_new(const char *path) {
 		eprintf ("Failed To Allocate Repoistory Path\n");
 		return false;
 	}
+	repo->current_branch = NULL;
 	repo->path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR, path);
 	if (r_file_exists (repo->path)) {
 		eprintf ("RVC Repoistory Already exists in %s\n", repo->path);
@@ -237,7 +248,6 @@ R_API Rvc *rvc_new(const char *path) {
 		free (repo->path);
 		return NULL;
 	}
-	repo->current_branch = NULL;
 	if (!rvc_branch (repo, "master")) {
 		eprintf ("Failed To Create The master Branch\n");
 		free (repo->path);
@@ -311,15 +321,28 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 	}
 	return blobs;
 }
+
+static RvcBranch *branch_by_name(Rvc *repo, char *name) {
+	RListIter *iter;
+	RvcBranch *b;
+	r_list_foreach (repo->branches, iter, b) {
+		r_return_val_if_fail (r_str_cmp (name, b->name, r_str_len_utf8 (b->name) * sizeof (char)), b);
+	}
+	return NULL;
+}
+
 R_API bool git_init (const char *path) {
 	return r_sys_cmdf ("git init %s", path);
 }
+
 R_API bool git_branch (const char *path, const char *name) {
 	return r_sys_cmdf ("git -C %s checkout -b %s", path, name);
 }
+
 R_API bool git_add (const char *path, const char *fname) {
 	return r_sys_cmdf ("git -C %s branch %s", path, fname);
 }
+
 R_API bool git_commit (const char *path, const char *message) {
 	return r_sys_cmdf ("git -C %s commit -m %s", path, message);
 }
