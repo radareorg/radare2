@@ -3449,7 +3449,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 			w - title_len, 1, ' ');
 	}
 
+
 	r_cons_canvas_print_region (g->can);
+
 
 	if (is_interactive) {
 		r_cons_newline ();
@@ -3468,7 +3470,29 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		if (mustFlush) {
 			r_cons_flush ();
 		}
+		if (r_config_get_b (core->config, "graph.mini")) { // minigraph
+			int h, w = r_cons_get_size (&h);
+			r_cons_push ();
+			g->can->h *= 4;
+			RConsCanvas *_can = g->can;
+			g->can = r_cons_canvas_new (w * 2, h * 4);
+			g->can->sx = _can->sx;
+			g->can->sy = _can->sy;
+			g->can->color = 0;
+			g->can->linemode = _can->linemode;
+			agraph_print_edges (g);
+			agraph_print_nodes (g);
+			r_cons_canvas_print_region (g->can);
+			g->can = _can;
+			char *s = strdup (r_cons_singleton()->context->buffer);
+			r_cons_pop ();
+			cmd_agfb3 (core, s, w-40, 2);
+			free (s);
+			g->can->h /= 4;
+			r_cons_flush ();
+		}
 	}
+
 	return true;
 }
 
@@ -4225,6 +4249,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	}
 	g->can = can;
 	g->movspeed = r_config_get_i (core->config, "graph.scroll");
+	const int graph_zoom = r_config_get_i (core->config, "graph.zoom");
+	if (graph_zoom) {
+		agraph_set_zoom (g, graph_zoom);
+	}
 	g->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	g->show_node_body = r_config_get_i (core->config, "graph.body");
 	g->show_node_bubble = r_config_get_i (core->config, "graph.bubble");

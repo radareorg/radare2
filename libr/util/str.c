@@ -2203,7 +2203,7 @@ R_API size_t r_str_utf8_codepoint(const char* s, size_t left) {
 	return 0;
 }
 
-R_API bool r_str_char_fullwidth (const char* s, size_t left) {
+R_API bool r_str_char_fullwidth(const char* s, size_t left) {
 	size_t codepoint = r_str_utf8_codepoint (s, left);
 	return (codepoint >= 0x1100 &&
 		 (codepoint <= 0x115f ||                  /* Hangul Jamo init. consonants */
@@ -3822,4 +3822,33 @@ R_API char *r_str_version(const char *program) {
 		s = r_str_appendf (s, "commit: "R2_GITTIP" build: "R2_BIRTH);
 	}
 	return s;
+}
+
+R_API int r_str_size(const char *s, int *rows) {
+	RRune ch;
+	int cols = 0;
+	int h = 0;
+	char *e = s + strlen (s);
+	int ll = 0;
+	while (*s) {
+		if (*s == '\n') {
+			h++;
+			s++;
+			if (ll > cols) {
+				cols = ll;
+			}
+			ll = 0;
+			continue;
+		}
+		int chsz = r_utf8_decode (s, e - s, &ch);
+		if (chsz < 1) {
+			chsz = 1;
+		}
+		s += chsz;
+		ll++;
+	}
+	if (rows) {
+		*rows = h;
+	}
+	return cols;
 }

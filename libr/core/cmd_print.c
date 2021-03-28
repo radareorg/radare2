@@ -3242,14 +3242,16 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 
 	switch (mode) {
 	case '-': // "p--"
-{
-RConsPixel *p = r_cons_pixel_new (80, 80);
-r_cons_pixel_set (p, 5, 5, 1);
-r_cons_pixel_fill (p, 10, 10, 30, 30, 1);
-char *s = r_cons_pixel_drain (p);
-r_cons_printf ("%s%c", s, 10);
-free (s);
-}
+#if 0
+		{
+			RConsPixel *p = r_cons_pixel_new (80, 80);
+			r_cons_pixel_set (p, 5, 5, 1);
+			r_cons_pixel_fill (p, 10, 10, 30, 30, 1);
+			char *s = r_cons_pixel_drain (p);
+			r_cons_printf ("%s%c", s, 10);
+			free (s);
+		}
+#endif
 		r_print_graphline (core->print, core->block, core->blocksize);
 		goto cleanup;
 	case 'j': // "p-j"
