@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare2 - LGPL - Copyright 2007-2021 - pancake */
 
 #include <r_util/r_print.h>
 #include <r_anal.h>
@@ -2386,40 +2386,10 @@ R_API void r_print_rowlog_done(RPrint *print, const char *str) {
 	}
 }
 
-/*
-
- 1 2    x  xx  xx  x   xx   x  xx  xx  xx
- 3 4    x   x   x  xx  x   x    x  xx  xx
- 5 6    x  x    x   x   x  xx  x   xx   x
- 7 8    x  xx  xx   x  x   xx  x   xx  x
-
-*/
-
-#define A0 1
-#define A1 8
-#define B0 2
-#define B1 16
-#define C0 4
-#define C1 32
-#define D0 (1 << 8)
-#define D1 (2 << 8)
-#define CH0(x) (x >> 8)
-#define CH1(x) (x & 0xff)
-#define BRAILE_ONE A1+B1+C1+D1
-#define BRAILE_TWO A0+A1+B1+C0+D0+D1
-#define BRAILE_TRI A0+A1+B1+C1+D0+D1
-#define BRAILE_FUR A0+B0+B1+C1+D1
-#define BRAILE_FIV A0+A1+B0+C1+D0
-#define BRAILE_SIX A1+B0+C0+C1+D0+D1
-#define BRAILE_SEV A0+A1+B1+C0+D0
-#define BRAILE_EIG A0+A1+B0+B1+C0+C1+D0+D1
-#define BRAILE_NIN A0+A1+B0+B1+C1+D0
-
-typedef struct {
-	char str[4];
-} RBraile;
 
 R_API RBraile r_print_braile(int u) {
+#define CH0(x) ((x) >> 8)
+#define CH1(x) ((x) & 0xff)
 	RBraile b = {0};
 	b.str[0] = 0xe2;
 	b.str[1] = 0xa0 | CH0(u);
@@ -2437,16 +2407,16 @@ R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len) {
 			ut8 ch = buf[i];
 			switch (0|(ch / 64)) {
 			case 0:
-				brailechar = D0 + D1;
+				brailechar = $30 + $31;
 				break;
 			case 1:
-				brailechar = C0 + C1;
+				brailechar = $20 + $21;
 				break;
 			case 2:
-				brailechar = B0 + B1;
+				brailechar = $10 + $11;
 				break;
 			case 3:
-				brailechar = A0 + A1;
+				brailechar = $00 + $01;
 				break;
 			}
 			if (brailechar) {
