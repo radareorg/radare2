@@ -3828,7 +3828,7 @@ R_API int r_str_size(const char *s, int *rows) {
 	RRune ch;
 	int cols = 0;
 	int h = 0;
-	char *e = s + strlen (s);
+	const char *e = s + strlen (s);
 	int ll = 0;
 	while (*s) {
 		if (*s == '\n') {
@@ -3840,7 +3840,7 @@ R_API int r_str_size(const char *s, int *rows) {
 			ll = 0;
 			continue;
 		}
-		int chsz = r_utf8_decode (s, e - s, &ch);
+		int chsz = r_utf8_decode ((const ut8*)s, e - s, &ch);
 		if (chsz < 1) {
 			chsz = 1;
 		}
