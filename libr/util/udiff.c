@@ -51,19 +51,6 @@ static void lev_matrix_free(Levrow *matrix, ut32 len) {
 	free (matrix);
 }
 
-static inline int lev_byte_diff(RLevBuf *a, RLevBuf *b, ut32 ia, ut32 ib) {
-	if (a->mask) {
-		if ((a->buf[ia] & a->mask[ia]) == (b->buf[ib] & b->mask[ib])) {
-			return 0;
-		}
-	} else {
-		if (a->buf[ia] == b->buf[ib]) {
-			return 0;
-		}
-	}
-	return 1;
-}
-
 static inline Levrow *lev_row_init(Levrow *matrix, ut32 maxdst, ut32 rownum, ut32 buflen, ut32 delta) {
 	r_return_val_if_fail (matrix && !matrix[rownum].changes, false);
 	Levrow *row = matrix + rownum;
@@ -702,6 +689,7 @@ R_API void r_diffchar_free(RDiffChar *diffchar) {
  * \param bufa Structure to represent starting buffer
  * \param bufb Structure to represent the buffer to reach
  * \param maxdst Max Levenshtein distance need, send UT32_MAX if unkown.
+ * \param levdiff Function pointer returning true when there is a difference.
  * \param chgs Returned array of changes to get from bufa to bufb
  *
  * Perform a Levenshtein diff on two buffers and obtain a RLevOp array of
@@ -711,9 +699,8 @@ R_API void r_diffchar_free(RDiffChar *diffchar) {
  * chgs will be left NULL. The chgs value must point to a NULL pointer. The
  * caller must free *chgs.
  */
-R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevOp **chgs) {
+R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff, RLevOp **chgs) {
 	r_return_val_if_fail (bufa && bufb && bufa->buf && bufb->buf && chgs && !*chgs, -1);
-	r_return_val_if_fail ((bufa->mask && bufb->mask) || (!bufa->mask && !bufb->mask), -1);
 
 	// force buffer b to be longer, this will invert add/del resulsts
 	bool invert = false;
@@ -729,25 +716,20 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 		return ST32_MAX;
 	}
 
-	RLevBuf a, b;
-	memcpy (&a, bufa, sizeof (a));
-	memcpy (&b, bufb, sizeof (b));
-
 	// Strip start as long as bytes don't diff
-	ut32 skip;
-	for (skip=0; skip < a.len && !lev_byte_diff (&a, &b, skip, skip); skip++) {}
-
-	a.buf += skip;
-	b.buf += skip;
-	a.len -= skip;
-	b.len -= skip;
+	size_t skip;
+	ut32 alen = bufa->len;
+	ut32 blen = bufb->len;
+	for (skip=0; skip < alen && !levdiff (bufa, bufb, skip, skip); skip++) {}
 
 	// strip suffix as long as bytes don't diff
-	ut32 i;
-	for (i = 0; a.len > 0 && !lev_byte_diff (&a, &b, a.len - 1, b.len - 1); a.len--, b.len--, i++) {}
+	size_t i;
+	for (i = 0; alen > skip && !levdiff (bufa, bufb, alen - 1, blen - 1); alen--, blen--, i++) {}
+	alen -= skip;
+	blen -= skip;
 
-	if (a.len == 0) {
-		RLevOp *c = R_NEWS (RLevOp, skip + i + b.len + 1);
+	if (alen == 0) {
+		RLevOp *c = R_NEWS (RLevOp, skip + i + blen + 1);
 		if (!c) {
 			return -1;
 		}
@@ -755,28 +737,28 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 
 		lev_fill_changes (c, LEVNOP, skip);
 		c += skip;
-		lev_fill_changes (c, invert? LEVDEL: LEVADD, b.len);
-		c += b.len;
+		lev_fill_changes (c, invert? LEVDEL: LEVADD, blen);
+		c += blen;
 		lev_fill_changes (c, LEVNOP, i);
 		c += i;
 
 		*c = LEVEND;
-		return b.len;
+		return blen;
 	}
 
 	// max distance is at most length of longer input, or provided by user
-	ut32 origdst = maxdst = R_MIN (maxdst, b.len);
+	ut32 origdst = maxdst = R_MIN (maxdst, blen);
 
 	// alloc array of rows
-	Levrow *matrix = R_NEWS0 (Levrow, a.len + 1);
+	Levrow *matrix = R_NEWS0 (Levrow, alen + 1);
 	if (!matrix) {
 		return -1;
 	}
 
 	// init row 0
-	Levrow *row = lev_row_init (matrix, maxdst, 0, b.len, ldelta);
+	Levrow *row = lev_row_init (matrix, maxdst, 0, blen, ldelta);
 	if (!row) {
-		lev_matrix_free (matrix, a.len + 1);
+		lev_matrix_free (matrix, alen + 1);
 		return -1;
 	}
 	for (i = row->start; i <= row->end; i++) {
@@ -786,11 +768,10 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	// do the rest of the rows
 	ut32 oldmin = 0; // minimum from row 0
 	Levrow *prev_row;
-	for (i = 1; i <= a.len; i++) { // loop through all rows
+	for (i = 1; i <= alen; i++) { // loop through all rows
 		prev_row = row;
-		// TODO: one large allocation that is reallocd smaller as needed
-		if ((row = lev_row_init (matrix, maxdst, i, b.len, ldelta)) == NULL) {
-			lev_matrix_free (matrix, a.len + 1);
+		if ((row = lev_row_init (matrix, maxdst, i, blen, ldelta)) == NULL) {
+			lev_matrix_free (matrix, alen + 1);
 			return -1;
 		}
 
@@ -805,7 +786,13 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 		ut32 j;
 		for (j = start; j <= row->end; j++) {
 			ut32 add = lev_get_val (prev_row, j);
-			ut32 ans = R_MIN (R_MIN (udel, add) + 1, sub + lev_byte_diff (&a, &b, i - 1, j - 1));
+			ut32 ans = R_MIN (udel, add) + 1;
+			if (ans >= sub) {
+				// on rare occassions, when add/del is obviously better then
+				// sub, we can skip levdiff call
+				int d = levdiff (bufa, bufb, i + skip - 1, j + skip - 1)? 1: 0;
+				ans = R_MIN (ans, sub + d);
+			}
 			sub = add;
 			udel = ans;
 			row->changes[j - row->start] = ans;
@@ -815,7 +802,7 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 		}
 		if (newmin > oldmin) {
 			if (maxdst == 0) { // provided bad maxdst
-				lev_matrix_free (matrix, a.len + 1);
+				lev_matrix_free (matrix, alen + 1);
 				return ST32_MAX;
 			}
 			// if smallest element of this row is larger then the smallest
@@ -827,10 +814,9 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	}
 
 	st32 ret = lev_get_val (row, row->end);
-
-	if (ret > origdst || ret >= ST32_MAX - 1) {
+	if (ret > origdst) {
 		// can happen when off by one
-		lev_matrix_free (matrix, a.len + 1);
+		lev_matrix_free (matrix, alen + 1);
 		return ST32_MAX;
 	}
 
@@ -838,20 +824,11 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	{
 		// for debugging matrix
 		size_t total = 0;
-		printf ("      ");
-		for (i = 0; i < b.len; i++) {
-			printf (" %02x", b.buf[i]);
-		}
-		printf ("\n");
-		for (i = 0; i <= a.len; i++) {
+		for (i=0; i <= alen; i++) {
 			Levrow *bow = matrix + i;
 			ut32 j;
-			if (i > 0) {
-				printf ("%02x ", a.buf[i - 1]);
-			} else {
-				printf ("   ");
-			}
-			for (j = 0; j <= b.len; j++) {
+			printf ("   ");
+			for (j=0; j <= blen; j++) {
 				ut32 val = lev_get_val (bow, j);
 				if (val >= UT32_MAX - 1) {
 					printf (" ..");
@@ -867,10 +844,10 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 #endif
 
 	RLevOp *mtxpath = NULL;
-	st32 chg_size = lev_parse_matrix (matrix, a.len + 1, invert, &mtxpath);
-	lev_matrix_free (matrix, a.len + 1);
+	st32 chg_size = lev_parse_matrix (matrix, alen + 1, invert, &mtxpath);
+	lev_matrix_free (matrix, alen + 1);
 	if (chg_size > 0 && mtxpath) {
-		ut32 tail = bufb->len - skip - b.len;
+		ut32 tail = bufb->len - skip - blen;
 		RLevOp *c = R_NEWS (RLevOp, skip + chg_size + tail + 1);
 		*chgs = c;
 		if (c) {
@@ -882,7 +859,6 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 				*c = mtxpath[chg_size];
 				c++;
 			}
-
 			lev_fill_changes (c, LEVNOP, tail);
 			c += tail;
 			*c = LEVEND;
