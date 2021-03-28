@@ -2386,12 +2386,81 @@ R_API void r_print_rowlog_done(RPrint *print, const char *str) {
 	}
 }
 
+/*
+
+ 1 2    x  xx  xx  x   xx   x  xx  xx  xx
+ 3 4    x   x   x  xx  x   x    x  xx  xx
+ 5 6    x  x    x   x   x  xx  x   xx   x
+ 7 8    x  xx  xx   x  x   xx  x   xx  x
+
+*/
+
+#define A0 1
+#define A1 8
+#define B0 2
+#define B1 16
+#define C0 4
+#define C1 32
+#define D0 (1 << 8)
+#define D1 (2 << 8)
+#define CH0(x) (x >> 8)
+#define CH1(x) (x & 0xff)
+#define BRAILE_ONE A1+B1+C1+D1
+#define BRAILE_TWO A0+A1+B1+C0+D0+D1
+#define BRAILE_TRI A0+A1+B1+C1+D0+D1
+#define BRAILE_FUR A0+B0+B1+C1+D1
+#define BRAILE_FIV A0+A1+B0+C1+D0
+#define BRAILE_SIX A1+B0+C0+C1+D0+D1
+#define BRAILE_SEV A0+A1+B1+C0+D0
+#define BRAILE_EIG A0+A1+B0+B1+C0+C1+D0+D1
+#define BRAILE_NIN A0+A1+B0+B1+C1+D0
+
+typedef struct {
+	char str[4];
+} RBraile;
+
+R_API RBraile r_print_braile(int u) {
+	RBraile b = {0};
+	b.str[0] = 0xe2;
+	b.str[1] = 0xa0 | CH0(u);
+	b.str[2] = 0x80 | CH1(u);
+	b.str[3] = 0;
+	return b;
+}
+
 R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len) {
-	const char *chars = "_.-'\"`";
-	// const char *chars = "_.,-^'";
-	size_t i;
-	for (i = 0; i < len; i++) {
-		print->cb_printf ("%c", chars[buf[i]/50]);
+	const bool utf8 = print->cons->use_utf8;
+	if (utf8) {
+		size_t i;
+		for (i = 0; i < len; i++) {
+			int brailechar = 0;
+			ut8 ch = buf[i];
+			switch (0|(ch / 64)) {
+			case 0:
+				brailechar = D0 + D1;
+				break;
+			case 1:
+				brailechar = C0 + C1;
+				break;
+			case 2:
+				brailechar = B0 + B1;
+				break;
+			case 3:
+				brailechar = A0 + A1;
+				break;
+			}
+			if (brailechar) {
+				RBraile b = r_print_braile (brailechar);
+				print->cb_printf ("%s", b.str, 10);
+			}
+		}
+	} else {
+		const char *chars = "_.-'\"`";
+		// const char *chars = "_.,-^'";
+		size_t i;
+		for (i = 0; i < len; i++) {
+			print->cb_printf ("%c", chars[buf[i]/50]);
+		}
 	}
 	print->cb_printf ("\n");
 }
