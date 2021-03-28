@@ -3241,6 +3241,9 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	}
 
 	switch (mode) {
+	case '-': // "p--"
+		r_print_graphline (core->print, core->block, core->blocksize);
+		goto cleanup;
 	case 'j': // "p-j"
 		pj = pj_new ();
 		if (!pj) {

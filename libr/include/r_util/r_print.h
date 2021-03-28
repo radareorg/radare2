@@ -220,6 +220,7 @@ R_API int r_print_pie(RPrint *p, ut64 *values, int nvalues, int size);
 
 R_API const char* r_print_rowlog(RPrint *print, const char *str);
 R_API void r_print_rowlog_done(RPrint *print, const char *str);
+R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len);
 
 // WIP
 R_API int r_print_unpack7bit(const char *src, char *dest);

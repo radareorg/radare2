@@ -2385,3 +2385,13 @@ R_API void r_print_rowlog_done(RPrint *print, const char *str) {
 		}
 	}
 }
+
+R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len) {
+	const char *chars = "_.-'\"`";
+	// const char *chars = "_.,-^'";
+	size_t i;
+	for (i = 0; i < len; i++) {
+		print->cb_printf ("%c", chars[buf[i]/50]);
+	}
+	print->cb_printf ("\n");
+}
