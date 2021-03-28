@@ -952,6 +952,21 @@ R_API void r_cons_bind(RConsBind *bind);
 R_API const char* r_cons_get_rune(const ut8 ch);
 #endif
 
+/* pixel.c */
+typedef struct {
+	int w;
+	int h;
+	ut8 *buf;
+	size_t buf_size;
+} RConsPixel;
+
+R_API RConsPixel *r_cons_pixel_new(int w, int h);
+R_API void r_cons_pixel_free(RConsPixel *p);
+R_API char *r_cons_pixel_drain(RConsPixel *p);
+R_API void r_cons_pixel_set(RConsPixel *p, int x, int y, int v);
+R_API void r_cons_pixel_fill(RConsPixel *p, int _x, int _y, int w, int h, int v);
+R_API char *r_cons_pixel_tostring(RConsPixel *p);
+
 /* r_line */
 #define R_LINE_BUFSIZE 4096
 #define R_LINE_HISTSIZE 256

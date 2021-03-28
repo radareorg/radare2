@@ -9,6 +9,7 @@ r_cons_sources = [
   'grep.c',
   'hud.c',
   'input.c',
+  'pixel.c',
   'less.c',
   'stiv.c',
   'line.c',

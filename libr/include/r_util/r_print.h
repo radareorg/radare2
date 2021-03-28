@@ -34,6 +34,39 @@ extern "C" {
 #define R_PRINT_FLAGS_BGFILL   0x00100000
 #define R_PRINT_FLAGS_SECTION  0x00200000
 
+/*
+
+ 1 2   1  8   x  xx  xx  x   xx   x  xx  xx  xx
+ 3 4   2 16   x   x   x  xx  x   x    x  xx  xx
+ 5 6   4 32   x  x    x   x   x  xx  x   xx   x
+ 7 8  1< 2<   x  xx  xx   x  x   xx  x   xx  x
+
+*/
+
+#define $00 1
+#define $01 8
+#define $10 2
+#define $11 16
+#define $20 4
+#define $21 32
+#define $30 (1 << 8)
+#define $31 (2 << 8)
+#define BRAILE_ONE $00+$01+$11+$21+$31
+#define BRAILE_TWO $00+$01+$11+$20+$30+$31
+#define BRAILE_TRI $00+$01+$11+$21+$30+$31
+#define BRAILE_FUR $00+$10+$11+$21+$31
+#define BRAILE_FIV $00+$01+$10+$21+$30
+#define BRAILE_SIX $01+$10+$20+$21+$30+$31
+#define BRAILE_SEV $00+$01+$11+$20+$30
+#define BRAILE_EIG $00+$01+$10+$11+$20+$21+$30+$31
+#define BRAILE_NIN $00+$01+$10+$11+$21+$30
+
+typedef struct {
+	char str[4];
+} RBraile;
+
+R_API RBraile r_print_braile(int u);
+
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
 typedef int (*RPrintSizeCallback)(void *user, ut64 addr);
