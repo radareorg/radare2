@@ -331,18 +331,18 @@ static RvcBranch *branch_by_name(Rvc *repo, char *name) {
 	return NULL;
 }
 
-R_API bool git_init (const char *path) {
+R_API int git_init (const char *path) {
 	return r_sys_cmdf ("git init %s", path);
 }
 
-R_API bool git_branch (const char *path, const char *name) {
+R_API int git_branch (const char *path, const char *name) {
 	return r_sys_cmdf ("git -C %s checkout -b %s", path, name);
 }
 
-R_API bool git_add (const char *path, const char *fname) {
+R_API int git_add (const char *path, const char *fname) {
 	return r_sys_cmdf ("git -C %s branch %s", path, fname);
 }
 
-R_API bool git_commit (const char *path, const char *message) {
+R_API int git_commit (const char *path, const char *message) {
 	return r_sys_cmdf ("git -C %s commit -m %s", path, message);
 }
