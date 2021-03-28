@@ -10862,7 +10862,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'n': // 'an'
 		{
-		const char *name = NULL;
+		const char *name = "";
 		bool use_json = false;
 
 		if (input[1] == 'j') {
@@ -10879,13 +10879,11 @@ static int cmd_anal(void *data, const char *input) {
 			if (end) {
 				*end = '\0';
 			}
-			if (*name == '\0') {
-				name = NULL;
-			}
 		}
-		if (!R_STR_ISEMPTY (name)) {
-			cmd_an (core, use_json, name);
+		if (R_STR_ISEMPTY (name)) {
+			name = NULL;
 		}
+		cmd_an (core, use_json, name);
 		}
 		break;
 	case 'g': // "ag"
