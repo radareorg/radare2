@@ -2421,7 +2421,7 @@ R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len) {
 			}
 			if (brailechar) {
 				RBraile b = r_print_braile (brailechar);
-				print->cb_printf ("%s", b.str, 10);
+				print->cb_printf ("%s\n", b.str);
 			}
 		}
 	} else {
