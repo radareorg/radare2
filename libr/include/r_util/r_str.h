@@ -62,6 +62,7 @@ R_API int r_str_bounds(const char *str, int *h);
 R_API char *r_str_crop(const char *str, unsigned int x, unsigned int y, unsigned int x2, unsigned int y2);
 R_API char *r_str_scale(const char *r, int w, int h);
 R_API bool r_str_range_in(const char *r, ut64 addr);
+R_API int r_str_size(const char *s, int *rows);
 R_API size_t r_str_len_utf8(const char *s);
 R_API size_t r_str_len_utf8_ansi(const char *str);
 R_API size_t r_str_len_utf8char(const char *s, int left);
