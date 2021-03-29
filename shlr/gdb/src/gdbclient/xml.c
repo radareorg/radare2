@@ -197,12 +197,12 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		r_list_free (flags);
 		return -1;
 	}
-	if (!(arch_regs = malloc (sizeof (gdb_reg_t) * (r_list_length (regs) + 1)))) {
+	if (!(arch_regs = calloc (sizeof (gdb_reg_t), (r_list_length (regs) + 1)))) {
 		goto exit_err;
 	}
 	// approximate per-reg size estimates
 	profile_max_len = r_list_length (regs) * 128 + r_list_length (flags) * 128;
-	if (!(profile = malloc (profile_max_len))) {
+	if (!(profile = calloc (1, profile_max_len))) {
 		goto exit_err;
 	}
 	r_list_foreach (regs, iter, tmpreg) {
