@@ -5,6 +5,7 @@ static inline bool is_branch_name(char *name) {
 	}
 	return true;
 }
+
 static bool copy_commits(const Rvc *repo, const char *dpath, const char *spath) {
 	char *name, *commit_path;
 	RListIter *iter;
@@ -41,8 +42,7 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 			R_SYS_DIR "commits" R_SYS_DIR, repo->path, b->name);
 	r_return_val_if_fail (path, NULL);
 	if (!r_sys_mkdirp (path)) {
-		free (path);
-		return NULL;
+		R_FREE (path);
 	}
 	return path;
 }
