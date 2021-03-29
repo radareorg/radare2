@@ -40,11 +40,14 @@ static bool lang_spp_file(RLang *lang, const char *file) {
 	return 0;
 }
 
+#define r_lang_spp_example "Hello {{{r2 ?E Hello world}}}"
+
 static RLangPlugin r_lang_plugin_spp = {
 	.name = "spp",
 	.ext = "spp",
 	.license = "MIT",
 	.desc = "SPP template programs",
+	.example = r_lang_spp_example,
 	.run = lang_spp_run,
 	.init = (void*)lang_spp_init,
 	.run_file = (void*)lang_spp_file,
