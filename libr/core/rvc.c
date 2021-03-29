@@ -49,7 +49,7 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 
 static inline char *hashtohex(const ut8 *data, size_t len) {
 	char *tmp, *ret = NULL;
-	int i = 0;
+	size_t i = 0;
 	for (i = 0; i < len; i++) {
 		tmp = r_str_appendf (ret, "%02x", data[i]);
 		if (!tmp) {
