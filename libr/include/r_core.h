@@ -961,7 +961,7 @@ R_API bool r_core_plugin_fini(RCmd *cmd);
  * 
  * @param code Pointer to a RAnnotatedCode.
  */
-R_API void r_core_annotated_code_print_json(RCodeMeta *code);
+R_API void r_codemeta_print_json(RCodeMeta *code);
 /**
  * @brief Prints the decompiled code from the specified RAnnotatedCode.
  * 
@@ -974,7 +974,7 @@ R_API void r_core_annotated_code_print_json(RCodeMeta *code);
  * @param code Pointer to a RAnnotatedCode.
  * @param line_offsets Pointer to a @ref RVector that contains offsets for the decompiled code.
  */
-R_API void r_core_annotated_code_print(RCodeMeta *code, RVector *line_offsets);
+R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets);
 /**
  * @brief  Prints the decompiled code as comments
  * 
@@ -983,7 +983,7 @@ R_API void r_core_annotated_code_print(RCodeMeta *code, RVector *line_offsets);
  * 
  * @param code Pointer to a RAnnotatedCode.
  */
-R_API void r_core_annotated_code_print_comment_cmds(RCodeMeta *code);
+R_API void r_codemeta_print_comment_cmds(RCodeMeta *code);
 
 #endif
 
