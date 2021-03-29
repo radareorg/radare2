@@ -1,4 +1,5 @@
 #include <rvc.h>
+#include <r_util.h>
 static inline bool is_branch_name(char *name) {
 	for (; *name; name++) {
 		r_return_val_if_fail (IS_DIGIT (*name) || isalpha (*name), false);
@@ -47,25 +48,10 @@ static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
 	return path;
 }
 
-static inline char *hashtohex(const ut8 *data, size_t len) {
-	char *tmp, *ret = NULL;
-	size_t i = 0;
-	for (i = 0; i < len; i++) {
-		tmp = r_str_appendf (ret, "%02x", data[i]);
-		if (!tmp) {
-			ret= NULL;
-			break;
-		}
-		ret = tmp;
-	}
-	return ret;
-}
-
 static char *find_sha256(const ut8 *block, int len) {
-	char *ret;
 	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
 	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
-	ret = hashtohex (c, R_HASH_SIZE_SHA256);
+	char *ret = r_hex_bin2strdup (c, R_HASH_SIZE_SHA256);
 	r_hash_free (ctx);
 	return ret;
 }
@@ -231,7 +217,7 @@ R_API Rvc *rvc_new(const char *path) {
 		return false;
 	}
 	if (!repo->path) {
-		eprintf ("Failed To Allocate Repository Path\n");
+		eprintf ("Failed To Allocate Repoistory Path\n");
 		free (repo);
 		return NULL;
 	}
