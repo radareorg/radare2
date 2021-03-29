@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h> // just to get the RPrint instance
 #include <r_debug.h>
@@ -95,6 +95,10 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	ut64 diff;
 	char strvalue[256];
 	bool isJson = (rad == 'j' || rad == 'J');
+	if (isJson && !pj) {
+		eprintf ("rad=='j' requires pj != NULL\n");
+		return false;
+	}
 	if (!dbg || !dbg->reg) {
 		return false;
 	}

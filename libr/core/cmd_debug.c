@@ -2868,7 +2868,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				}
 				type = r_reg_type_by_name (str + 2);
 				r_debug_reg_sync (core->dbg, type, false);
-				r_debug_reg_list (core->dbg, type, size, NULL, rad, use_color);
+				PJ *pj = (tolower (rad) == 'j')? r_core_pj_new (core): NULL;
+				r_debug_reg_list (core->dbg, type, size, pj, rad, use_color);
+				if (pj) {
+					char *s = pj_drain (pj);
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
 			} else {
 				if (type != R_REG_TYPE_LAST) {
 					r_debug_reg_sync (core->dbg, type, false);
