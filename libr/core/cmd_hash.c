@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
 
 #include <r_core.h>
 
@@ -305,9 +305,27 @@ static void handle_crc64_iso (const ut8 * block, int len) {
 }
 #endif /* #if R_HAVE_CRC64_EXTRA */
 
-static int cmd_hash_bang (RCore *core, const char *input) {
+static int cmd_hash_bang(RCore *core, const char *input) {
 	if (r_sandbox_enable (0)) {
 		eprintf ("hashbang disabled in sandbox mode\n");
+		return false;
+	}
+	if (r_str_endswith (input, "?")) {
+		char *ex = strchr (input, '!');
+		if (ex) {
+			char *foo = r_str_ndup (ex + 1, strlen (ex) - 2);
+			RLangPlugin *lp = r_lang_get_by_name (core->lang, foo);
+			if (lp) {
+				if (lp->example) {
+					r_cons_println (lp->example);
+				} else {
+					eprintf ("This language plugin doesnt provide any example.\n");
+				}
+			} else {
+				eprintf ("Unknown rlang plugin '%s'.\n", foo);
+			}
+			free (foo);
+		}
 		return false;
 	}
 	int ac;
@@ -358,6 +376,8 @@ static int cmd_hash(void *data, const char *input) {
 		"Usage #!interpreter [<args>] [<file] [<<eof]","","",
 		" #", "", "comment - do nothing",
 		" #!","","list all available interpreters",
+		" #!v?","","show vlang script example",
+		" #!python?","","show python script example",
 		" #!python","","run python commandline",
 		" #!python"," foo.py","run foo.py python script (same as '. foo.py')",
 		//" #!python <<EOF        get python code until 'EOF' mark\n"
@@ -457,6 +477,5 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-64/XZ          */ "crc64xz", handle_crc64_xz },
 	{ /* CRC-64/ISO         */ "crc64iso", handle_crc64_iso },
 #endif /* #if R_HAVE_CRC64_EXTRA */
-
 	{NULL, NULL},
 };

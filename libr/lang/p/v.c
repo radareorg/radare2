@@ -169,9 +169,15 @@ static bool lang_v_run(RLang *lang, const char *code, int len) {
 	return __run (lang, code, len);
 }
 
+static const char * const r_lang_v_example = \
+	"pub fn entry(r2 &R2) {\n" \
+	"  println(r2.cmd('?E Hello World'))\n" \
+	"}\n";
+
 static RLangPlugin r_lang_plugin_v = {
 	.name = "v",
 	.ext = "v",
+	.example = r_lang_v_example,
 	.desc = "V language extension",
 	.license = "MIT",
 	.run = lang_v_run,

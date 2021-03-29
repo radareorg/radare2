@@ -107,11 +107,22 @@ static bool lang_c_run(RLang *lang, const char *code, int len) {
 	return true;
 }
 
+static const char * const r_lang_c_example = \
+	"" \
+	"#include <r_core.h>\n"\
+	"\nvoid entry(RCore *core, int argc, const char **argv) {\n"\
+	"    char *s = r_core_cmd_str (core, \"?E hello world\");\n"\
+	"    printf(\"%s\", s);\n"\
+	"    free (s);\n"\
+	"}\n"\
+	"";
+
 static RLangPlugin r_lang_plugin_c = {
 	.name = "c",
 	.ext = "c",
 	.desc = "C language extension",
 	.license = "LGPL",
+	.example = r_lang_c_example,
 	.run = lang_c_run,
 	.init = (void*)lang_c_init,
 	.run_file = (void*)lang_c_file,
