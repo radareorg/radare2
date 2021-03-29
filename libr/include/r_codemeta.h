@@ -36,9 +36,9 @@ typedef enum r_code_annotation_type_t {
 /**
  * \brief Annotations for the decompiled code are represented using this structure.
  */
-typedef struct r_code_annotation_t {
-	ut64 start;
-	ut64 end;
+typedef struct r_codemeta_item_t {
+	size_t start;
+	size_t end;
 	RCodeMetaItemType type;
 	union {
 		struct {
@@ -59,19 +59,20 @@ typedef struct r_code_annotation_t {
 	};
 } RCodeMetaItem;
 
-typedef struct r_codemeta_code_t {
+typedef struct r_codemeta_t {
 	char *code; /**< Decompiled code. RCodeMeta owns this string and it must free it. */
 	RVector annotations; /**< @ref RVector <RCodeMetaItem> contains the list of annotations for the decompiled code. */
 } RCodeMeta;
 
 R_API RCodeMeta *r_codemeta_new(const char *code);
 R_API void r_codemeta_free(RCodeMeta *code);
+R_API RCodeMetaItem *r_codemeta_item_new(void);
 R_API void r_codemeta_item_free(RCodeMetaItem *e, void *user);
 R_API bool r_codemeta_item_is_reference(RCodeMetaItem *annotation);
 R_API bool r_codemeta_item_is_variable(RCodeMetaItem *annotation);
 R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *annotation);
-R_API RPVector *r_codemeta_at(RCodeMeta *code, ut64 offset);
-R_API RPVector *r_codemeta_in(RCodeMeta *code, ut64 start, ut64 end);
+R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset);
+R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end);
 R_API RVector *r_codemeta_line_offsets(RCodeMeta *code);
 
 #ifdef __cplusplus

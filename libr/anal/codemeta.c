@@ -14,6 +14,10 @@ R_API RCodeMeta *r_codemeta_new(const char *code) {
 	return r;
 }
 
+R_API RCodeMetaItem *r_codemeta_item_new(void) {
+	return R_NEW0 (RCodeMetaItem);
+}
+
 R_API void r_codemeta_item_free(RCodeMetaItem *mi, void *user) {
 	(void)user;
 	if (mi->type == R_CODEMETA_TYPE_FUNCTION_NAME) {
@@ -47,7 +51,7 @@ R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *mi) {
 	r_vector_push (&code->annotations, mi);
 }
 
-R_API RPVector *r_codemeta_at(RCodeMeta *code, ut64 offset) {
+R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset) {
 	r_return_val_if_fail (code, NULL);
 	RPVector *r = r_pvector_new (NULL);
 	if (!r) {
@@ -62,7 +66,7 @@ R_API RPVector *r_codemeta_at(RCodeMeta *code, ut64 offset) {
 	return r;
 }
 
-R_API RPVector *r_codemeta_in(RCodeMeta *code, ut64 start, ut64 end) {
+R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	r_return_val_if_fail (code, NULL);
 	RPVector *r = r_pvector_new (NULL);
 	if (!r) {
@@ -84,11 +88,11 @@ R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {
 	if (!r) {
 		return NULL;
 	}
-	ut64 cur = 0;
+	size_t cur = 0;
 	size_t len = strlen (code->code);
 	do {
 		char *next = strchr (code->code + cur, '\n');
-		ut64 next_i = next? (next - code->code) + 1: len;
+		size_t next_i = next? (next - code->code) + 1: len;
 		RPVector *annotations = r_codemeta_in (code, cur, next_i);
 		ut64 offset = UT64_MAX;
 		void **it;
