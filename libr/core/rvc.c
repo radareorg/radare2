@@ -77,7 +77,7 @@ static inline char *sha256_file(const char *fname) {
 }
 
 static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
-	char *commit_path, *commit_string, *tmp;
+	char *commit_path, *commit_string;
 	char *prev_path;
 	FILE *prev_file, *commit_file;
 	RListIter *iter;
@@ -86,7 +86,7 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 			commit->author, commit->message, commit->timestamp);
 	r_return_val_if_fail (commit_string, false);
 	r_list_foreach (commit->blobs, iter, blob) {
-		tmp = r_str_appendf (commit_string, "\nblob:%s:%s",
+		char *tmp = r_str_appendf (commit_string, "\nblob:%s:%s",
 				blob->fname, blob->hash);
 		if (!tmp) {
 			free (commit_string);
