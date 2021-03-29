@@ -79,7 +79,7 @@ static void dyn_init(void) {
 	if (!dyn_forkpty) {
 		dyn_forkpty = r_lib_dl_sym (NULL, "forkpty");
 	}
-#ifdef R_LIB_EXT
+#if __UNIX__
 	// attempt to fall back on libutil if we failed to load anything
 	if (!(dyn_openpty && dyn_login_tty && dyn_forkpty)) {
 		void *libutil;
