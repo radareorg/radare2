@@ -118,7 +118,6 @@ static bool __connect_unix(RSocket *s, const char *file) {
 	struct sockaddr_un addr;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
-		free (s);
 		return false;
 	}
 	// TODO: set socket options
