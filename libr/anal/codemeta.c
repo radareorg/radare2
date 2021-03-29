@@ -9,7 +9,7 @@ R_API RCodeMeta *r_codemeta_new(const char *code) {
 	if (!r) {
 		return NULL;
 	}
-	r->code = strdup (code);
+	r->code = code? strdup (code): NULL;
 	r_vector_init (&r->annotations, sizeof (RCodeMetaItem), (RVectorFree)r_codemeta_item_free, NULL);
 	return r;
 }
