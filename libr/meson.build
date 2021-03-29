@@ -465,6 +465,7 @@ include_files = [
   'include/r2naked.h',
   'include/r_agraph.h',
   'include/r_anal.h',
+  'include/r_codemeta.h',
   'include/r_asm.h',
   'include/r_bind.h',
   'include/r_getopt.h',
@@ -566,8 +567,7 @@ r_util_files = [
   'include/r_util/r_utf16.h',
   'include/r_util/r_utf32.h',
   'include/r_util/r_utf8.h',
-  'include/r_util/r_x509.h',
-  'include/r_util/r_annotated_code.h'
+  'include/r_util/r_x509.h'
 ]
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 

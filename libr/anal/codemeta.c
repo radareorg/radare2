@@ -1,11 +1,114 @@
-#include <r_util/r_annotated_code.h>
+/* radare2 - LGPL - Copyright 2020-2021 - nimmumanoj, pancake */
 
-#include <r_util.h>
 #include <r_core.h>
-#include <r_types.h>
-#include <r_vector.h>
+#include <r_codemeta.h>
+#include <r_util.h>
 
-R_API void r_core_annotated_code_print_json(RAnnotatedCode *code) {
+R_API RCodeMeta *r_codemeta_new(const char *code) {
+	RCodeMeta *r = R_NEW0 (RCodeMeta);
+	if (!r) {
+		return NULL;
+	}
+	r->code = strdup (code);
+	r_vector_init (&r->annotations, sizeof (RCodeMetaItem), (RVectorFree)r_codemeta_item_free, NULL);
+	return r;
+}
+
+R_API void r_codemeta_item_free(RCodeMetaItem *mi, void *user) {
+	(void)user;
+	if (mi->type == R_CODEMETA_TYPE_FUNCTION_NAME) {
+		free (mi->reference.name);
+	} else if (mi->type == R_CODEMETA_TYPE_LOCAL_VARIABLE || mi->type == R_CODEMETA_TYPE_FUNCTION_PARAMETER) {
+		free (mi->variable.name);
+	}
+}
+
+R_API bool r_codemeta_item_is_reference(RCodeMetaItem *mi) {
+	r_return_val_if_fail (mi, false);
+	return (mi->type == R_CODEMETA_TYPE_GLOBAL_VARIABLE || mi->type == R_CODEMETA_TYPE_CONSTANT_VARIABLE || mi->type == R_CODEMETA_TYPE_FUNCTION_NAME);
+}
+
+R_API bool r_codemeta_item_is_variable(RCodeMetaItem *mi) {
+	r_return_val_if_fail (mi, false);
+	return (mi->type == R_CODEMETA_TYPE_LOCAL_VARIABLE || mi->type == R_CODEMETA_TYPE_FUNCTION_PARAMETER);
+}
+
+R_API void r_codemeta_free(RCodeMeta *code) {
+	if (!code) {
+		return;
+	}
+	r_vector_clear (&code->annotations);
+	r_free (code->code);
+	r_free (code);
+}
+
+R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *mi) {
+	r_return_if_fail (code && mi);
+	r_vector_push (&code->annotations, mi);
+}
+
+R_API RPVector *r_codemeta_at(RCodeMeta *code, ut64 offset) {
+	r_return_val_if_fail (code, NULL);
+	RPVector *r = r_pvector_new (NULL);
+	if (!r) {
+		return NULL;
+	}
+	RCodeMetaItem *mi;
+	r_vector_foreach (&code->annotations, mi) {
+		if (offset >= mi->start && offset < mi->end) {
+			r_pvector_push (r, mi);
+		}
+	}
+	return r;
+}
+
+R_API RPVector *r_codemeta_in(RCodeMeta *code, ut64 start, ut64 end) {
+	r_return_val_if_fail (code, NULL);
+	RPVector *r = r_pvector_new (NULL);
+	if (!r) {
+		return NULL;
+	}
+	RCodeMetaItem *mi;
+	r_vector_foreach (&code->annotations, mi) {
+		if (start >= mi->end || end < mi->start) {
+			continue;
+		}
+		r_pvector_push (r, mi);
+	}
+	return r;
+}
+
+R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {
+	r_return_val_if_fail (code, NULL);
+	RVector *r = r_vector_new (sizeof (ut64), NULL, NULL);
+	if (!r) {
+		return NULL;
+	}
+	ut64 cur = 0;
+	size_t len = strlen (code->code);
+	do {
+		char *next = strchr (code->code + cur, '\n');
+		ut64 next_i = next? (next - code->code) + 1: len;
+		RPVector *annotations = r_codemeta_in (code, cur, next_i);
+		ut64 offset = UT64_MAX;
+		void **it;
+		r_pvector_foreach (annotations, it) {
+			RCodeMetaItem *mi = *it;
+			if (mi->type != R_CODEMETA_TYPE_OFFSET) {
+				continue;
+			}
+			offset = mi->offset.offset;
+			break;
+		}
+		r_vector_push (r, &offset);
+		cur = next_i;
+		r_pvector_free (annotations);
+	} while (cur < len);
+	return r;
+}
+
+// print methods
+R_API void r_codemeta_print_json(RCodeMeta *code) {
 	PJ *pj = pj_new ();
 	if (!pj) {
 		return;
@@ -18,38 +121,38 @@ R_API void r_core_annotated_code_print_json(RAnnotatedCode *code) {
 	pj_a (pj);
 
 	char *type_str;
-	RCodeAnnotation *annotation;
+	RCodeMetaItem *annotation;
 	r_vector_foreach (&code->annotations, annotation) {
 		pj_o (pj);
 		pj_kn (pj, "start", (ut64)annotation->start);
 		pj_kn (pj, "end", (ut64)annotation->end);
 		switch (annotation->type) {
-		case R_CODE_ANNOTATION_TYPE_OFFSET:
+		case R_CODEMETA_TYPE_OFFSET:
 			pj_ks (pj, "type", "offset");
 			pj_kn (pj, "offset", annotation->offset.offset);
 			break;
-		case R_CODE_ANNOTATION_TYPE_FUNCTION_NAME:
+		case R_CODEMETA_TYPE_FUNCTION_NAME:
 			pj_ks (pj, "type", "function_name");
 			pj_ks (pj, "name", annotation->reference.name);
 			pj_kn (pj, "offset", annotation->reference.offset);
 			break;
-		case R_CODE_ANNOTATION_TYPE_GLOBAL_VARIABLE:
+		case R_CODEMETA_TYPE_GLOBAL_VARIABLE:
 			pj_ks (pj, "type", "global_variable");
 			pj_kn (pj, "offset", annotation->reference.offset);
 			break;
-		case R_CODE_ANNOTATION_TYPE_CONSTANT_VARIABLE:
+		case R_CODEMETA_TYPE_CONSTANT_VARIABLE:
 			pj_ks (pj, "type", "constant_variable");
 			pj_kn (pj, "offset", annotation->reference.offset);
 			break;
-		case R_CODE_ANNOTATION_TYPE_LOCAL_VARIABLE:
+		case R_CODEMETA_TYPE_LOCAL_VARIABLE:
 			pj_ks (pj, "type", "local_variable");
 			pj_ks (pj, "name", annotation->variable.name);
 			break;
-		case R_CODE_ANNOTATION_TYPE_FUNCTION_PARAMETER:
+		case R_CODEMETA_TYPE_FUNCTION_PARAMETER:
 			pj_ks (pj, "type", "function_parameter");
 			pj_ks (pj, "name", annotation->variable.name);
 			break;
-		case R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT:
+		case R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT:
 			pj_ks (pj, "type", "syntax_highlight");
 			type_str = NULL;
 			switch (annotation->syntax_highlight.type) {
@@ -103,7 +206,7 @@ R_API void r_core_annotated_code_print_json(RAnnotatedCode *code) {
 /**
  * @param width maximum nibbles per address
  */
-static void print_offset_in_binary_line_bar(RAnnotatedCode *code, ut64 offset, size_t width) {
+static void print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t width) {
 	static const char *fmt[9] = {
 		"0x%08" PFMT64x,
 		"0x%09" PFMT64x,
@@ -140,7 +243,7 @@ static void print_offset_in_binary_line_bar(RAnnotatedCode *code, ut64 offset, s
 	r_cons_printf ("    |");
 }
 
-R_API void r_core_annotated_code_print(RAnnotatedCode *code, RVector *line_offsets) {
+R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
 	if (code->annotations.len == 0) {
 		r_cons_printf ("%s\n", code->code);
 		return;
@@ -169,9 +272,9 @@ R_API void r_core_annotated_code_print(RAnnotatedCode *code, RVector *line_offse
 	}
 
 	RCons *cons = r_cons_singleton ();
-	RCodeAnnotation *annotation;
+	RCodeMetaItem *annotation;
 	r_vector_foreach (&code->annotations, annotation) {
-		if (annotation->type != R_CODE_ANNOTATION_TYPE_SYNTAX_HIGHLIGHT) {
+		if (annotation->type != R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT) {
 			continue;
 		}
 
@@ -257,23 +360,23 @@ R_API void r_core_annotated_code_print(RAnnotatedCode *code, RVector *line_offse
 }
 
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
-	RAnnotatedCode *code = user;
-	const RCodeAnnotation *annotation = val;
+	RCodeMeta *code = user;
+	const RCodeMetaItem *annotation = val;
 	char *b64statement = r_base64_encode_dyn (code->code + annotation->start, annotation->end - annotation->start);
 	r_cons_printf ("CCu base64:%s @ 0x%" PFMT64x "\n", b64statement, annotation->offset.offset);
 	free (b64statement);
 	return true;
 }
 
-R_API void r_core_annotated_code_print_comment_cmds(RAnnotatedCode *code) {
-	RCodeAnnotation *annotation;
+R_API void r_codemeta_print_comment_cmds(RCodeMeta *code) {
+	RCodeMetaItem *annotation;
 	HtUP *ht = ht_up_new0 ();
 	r_vector_foreach (&code->annotations, annotation) {
-		if (annotation->type != R_CODE_ANNOTATION_TYPE_OFFSET) {
+		if (annotation->type != R_CODEMETA_TYPE_OFFSET) {
 			continue;
 		}
 		// choose the "best" annotation at a single offset
-		RCodeAnnotation *prev_annot = ht_up_find (ht, annotation->offset.offset, NULL);
+		RCodeMetaItem *prev_annot = ht_up_find (ht, annotation->offset.offset, NULL);
 		if (prev_annot) {
 			if (annotation->end - annotation->start < prev_annot->end - prev_annot->start) {
 				continue;

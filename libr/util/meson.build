@@ -84,8 +84,7 @@ r_util_sources = [
   'protobuf.c',
   'regex/regcomp.c',
   'regex/regexec.c',
-  'regex/regerror.c',
-  'annotated_code.c'
+  'regex/regerror.c'
 ]
 
 r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]

@@ -7,6 +7,7 @@ r_anal_sources = [
   'cc.c',
   'class.c',
   'cond.c',
+  'codemeta.c',
   'cycles.c',
   'data.c',
   'diff.c',

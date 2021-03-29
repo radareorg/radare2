@@ -66,8 +66,7 @@ r_core_sources = [
   'vmenus_zigns.c',
   'yank.c',
   'p/core_a2f.c',
-  'p/core_java.c',
-  'cannotated_code.c'
+  'p/core_java.c'
 ]
 
 r_core_inc = []

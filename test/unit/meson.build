@@ -12,7 +12,7 @@ if get_option('enable_tests')
     'anal_types',
     'anal_var',
     'anal_xrefs',
-    'annotated_code',
+    'codemeta',
     'base64',
     'big',
     'bin',
