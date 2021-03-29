@@ -3727,7 +3727,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("graph.zoom", 0, "Default zoom value when rendering the graph");
 	SETBPREF ("graph.trace", "false", "Fold all non-traced basic blocks");
 	SETBPREF ("graph.dummy", "true", "Create dummy nodes in the graph for better layout (20% slower)");
-	SETBPREF ("graph.mini", "true", "Render a minigraph next to the graph in braile art");
+	SETBPREF ("graph.mini", "false", "Render a minigraph next to the graph in braile art");
 	SETBPREF ("graph.few", "false", "Show few basic blocks in the graph");
 	SETBPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETBPREF ("graph.cmtright", "false", "Show comments at right");
