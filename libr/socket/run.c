@@ -79,19 +79,22 @@ static void dyn_init(void) {
 	if (!dyn_forkpty) {
 		dyn_forkpty = r_lib_dl_sym (NULL, "forkpty");
 	}
-
-#ifdef __linux__
-	// for linux distros which use it, attempt to fall back on libutil.so if something failed
+#ifdef R_LIB_EXT
+	// attempt to fall back on libutil if we failed to load anything
 	if (!(dyn_openpty && dyn_login_tty && dyn_forkpty)) {
-		r_lib_dl_open("libutil.so");
+		void *libutil;
+		if (!(libutil = r_lib_dl_open ("libutil." R_LIB_EXT))) {
+			eprintf ("[ERROR] rarun2: Could not find PTY utils, failed to load %s\n", "libutil." R_LIB_EXT);
+			return;
+		}
 		if (!dyn_openpty) {
-			dyn_openpty = r_lib_dl_sym (NULL, "openpty");
+			dyn_openpty = r_lib_dl_sym (libutil, "openpty");
 		}
 		if (!dyn_login_tty) {
-			dyn_login_tty = r_lib_dl_sym (NULL, "login_tty");
+			dyn_login_tty = r_lib_dl_sym (libutil, "login_tty");
 		}
 		if (!dyn_forkpty) {
-			dyn_forkpty = r_lib_dl_sym (NULL, "forkpty");
+			dyn_forkpty = r_lib_dl_sym (libutil, "forkpty");
 		}
 	}
 #endif
