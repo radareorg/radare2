@@ -3643,17 +3643,21 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		break;
 	case 'm': // "dbm"
 		if (input[2] && input[3]) {
-			char *string = strdup (input + 3);
-			char *module = NULL;
+			char *module = r_str_trim_dup (input + 3);
 			st64 delta = 0;
-
-			module = strtok (string, " ");
-			delta = (ut64)r_num_math (core->num, strtok (NULL, ""));
+			char *sdelta = (char *)r_str_lchr (module, ' ');
+			if (!sdelta) {
+				eprintf ("Usage: dbm [modulename] [delta]\n");
+				free (module);
+				break;
+			}
+			*sdelta++ = 0;
+			delta = (ut64)r_num_math (core->num, sdelta);
 			bpi = r_debug_bp_add (core->dbg, 0, hwbp, false, 0, module, delta);
 			if (!bpi) {
 				eprintf ("Cannot set breakpoint.\n");
 			}
-			free (string);
+			free (module);
 		}
 		break;
 	case 'j': r_bp_list (core->dbg->bp, 'j'); break;
