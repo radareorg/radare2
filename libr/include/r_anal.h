@@ -18,6 +18,7 @@
 #include <set.h>
 #include <r_flag.h>
 #include <r_bin.h>
+#include <r_codemeta.h>
 
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 
