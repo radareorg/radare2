@@ -96,6 +96,7 @@ static void dyn_init(void) {
 		if (!dyn_forkpty) {
 			dyn_forkpty = r_lib_dl_sym (libutil, "forkpty");
 		}
+		R_FREE (libutil);
 	}
 #endif
 }
