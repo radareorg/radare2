@@ -270,6 +270,14 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 	char *fname;
 	const char *blobs_path = r_str_newf ("%s" R_SYS_DIR "blobs", repo->path);
 	r_list_foreach (files, iter, fname) {
+		if (!r_file_exists (fname)) {
+			r_list_free (blobs);
+			return NULL;
+		}
+		if (r_file_is_directory (fname)) {
+			r_list_free (blobs);
+			return NULL;
+		}
 		RvcBlob *b = R_NEW (RvcBlob);
 		if (!b) {
 			r_list_free (blobs);
