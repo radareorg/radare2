@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2017 pancake */
 
 #include <r_hash.h>
+#include <r_util.h>
 
 #if HAVE_LIB_SSL
 #include <openssl/md4.h>
@@ -52,7 +53,7 @@ R_API ut8 *r_hash_do_ssdeep(RHash *ctx, const ut8 *input, int len) {
 	}
 	char *res = r_hash_ssdeep (input, len);
 	if (res) {
-		strncpy ((char *)ctx->digest, res, R_HASH_SIZE_SSDEEP);
+		r_str_ncpy ((char *)ctx->digest, res, R_HASH_SIZE_SSDEEP);
 		free (res);
 	}
 	return ctx->digest;
