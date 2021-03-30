@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2020 - RHL120, xarkes */
+/* radare - LGPL - Copyright 2013-2020 - RHL120, pancake */
 #include <r_core.h>
 typedef struct blob {
 	char *fname;
