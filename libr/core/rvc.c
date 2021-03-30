@@ -268,24 +268,32 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 		return NULL;
 	}
 	char *fname;
-	const char *blobs_path = r_str_newf ("%s" R_SYS_DIR "blobs", repo->path);
+	char *blobs_path = r_str_newf ("%s" R_SYS_DIR "blobs", repo->path);
+	if (!blobs_path) {
+		r_list_free (blobs);
+		return NULL;
+	}
 	r_list_foreach (files, iter, fname) {
 		if (!r_file_exists (fname)) {
+			free (blobs_path);
 			r_list_free (blobs);
 			return NULL;
 		}
 		if (r_file_is_directory (fname)) {
+			free (blobs_path);
 			r_list_free (blobs);
 			return NULL;
 		}
 		RvcBlob *b = R_NEW (RvcBlob);
 		if (!b) {
+			free (blobs_path);
 			r_list_free (blobs);
 			return NULL;
 		}
 		b->fname = r_str_new (fname);
 		if (!b->fname) {
 			free (b);
+			free (blobs_path);
 			r_list_free (blobs);
 			return NULL;
 		}
@@ -293,11 +301,13 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 		if (!b->hash) {
 			free (b->fname);
 			free (b);
+			free (blobs_path);
 			r_list_free (blobs);
 			return NULL;
 		}
 		blob_path = r_str_newf ("%s" R_SYS_DIR "%s", blobs_path, b->hash);
 		if (!blob_path) {
+			free (blobs_path);
 			free (b->fname);
 			free (b->hash);
 			free (b);
@@ -316,6 +326,7 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 		r_list_append (blobs, b);
 		b = NULL;
 	}
+	free (blobs_path);
 	return blobs;
 }
 
