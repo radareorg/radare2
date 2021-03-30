@@ -207,7 +207,7 @@ R_API Rvc *rvc_new(const char *path) {
 	char *blob_path;
 	if (!repo) {
 		eprintf ("Failed To Allocate Repoistory Path\n");
-		return false;
+		return NULL;
 	}
 	repo->current_branch = NULL;
 	repo->path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR, path);
@@ -220,7 +220,7 @@ R_API Rvc *rvc_new(const char *path) {
 		eprintf ("RVC Repoistory Already exists in %s\n", repo->path);
 		free (repo->path);
 		free (repo);
-		return false;
+		return NULL;
 	}
 	if (!r_sys_mkdir (repo->path)) {
 		eprintf ("Failed To Create Repo Directory\n");
