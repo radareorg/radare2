@@ -82,17 +82,17 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 		}
 		commit_string = tmp;
 	}
-	commit->hash = find_sha256 ((ut8 *) commit,
+	commit->hash = find_sha256 ((ut8 *) commit_string,
 			r_str_len_utf8 (commit_string) * sizeof (char));
 	if (!commit->hash) {
-		free (commit);
+		free (commit_string);
 		return false;
 	}
 	commit_path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR
 			"%s" R_SYS_DIR "commits" R_SYS_DIR "%s",
 			repo->path, b->name, commit->hash);
 	if (!commit_path) {
-		free (commit);
+		free (commit_string);
 		return false;
 	}
 	commit_file = fopen (commit_path, "w+");
