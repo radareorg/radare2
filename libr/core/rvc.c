@@ -61,7 +61,7 @@ static char *find_sha256(const ut8 *block, int len) {
 static inline char *sha256_file(const char *fname) {
 	char *content = r_file_slurp (fname, NULL);
 	r_return_val_if_fail (content, NULL);
-	return find_sha256 ((ut8 *)content, r_str_len_utf8 (content) * sizeof (char));
+	return find_sha256 ((ut8 *)content, r_str_len_utf8 (content) * sizeof (ut8));
 }
 
 static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
@@ -83,7 +83,7 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 		commit_string = tmp;
 	}
 	commit->hash = find_sha256 ((ut8 *) commit_string,
-			r_str_len_utf8 (commit_string) * sizeof (char));
+			r_str_len_utf8 (commit_string) * sizeof (ut8));
 	if (!commit->hash) {
 		free (commit_string);
 		return false;
@@ -334,7 +334,7 @@ static RvcBranch *branch_by_name(Rvc *repo, char *name) {
 	RListIter *iter;
 	RvcBranch *b;
 	r_list_foreach (repo->branches, iter, b) {
-		r_return_val_if_fail (r_str_cmp (name, b->name, r_str_len_utf8 (b->name) * sizeof (char)), b);
+		r_return_val_if_fail (r_str_cmp (name, b->name, r_str_len_utf8 (b->name) * sizeof (ut8)), b);
 	}
 	return NULL;
 }
