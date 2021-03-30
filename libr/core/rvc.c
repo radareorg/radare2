@@ -69,7 +69,7 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	FILE *prev_file, *commit_file;
 	RListIter *iter;
 	RvcBlob *blob;
-	commit_string = r_str_newf ("author:%s\nmessage:%s\nntimestamp:%ld\n----",
+	commit_string = r_str_newf ("author:%s\nmessage:%s\nntimestamp:%li\n----",
 			commit->author, commit->message, commit->timestamp);
 	r_return_val_if_fail (commit_string, false);
 	r_list_foreach (commit->blobs, iter, blob) {
