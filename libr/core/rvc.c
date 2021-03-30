@@ -1,3 +1,4 @@
+/* radare - LGPL - Copyright 2021-2023 - RHL120, pancake */
 #include <rvc.h>
 #include <r_util.h>
 static inline bool is_branch_name(char *name) {
