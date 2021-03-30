@@ -8912,7 +8912,7 @@ R_API void cmd_agfb3(RCore *core, const char *s, int x, int y) {
 	RConsPixel *p = r_cons_pixel_new (w, h);
 	r_cons_pixel_sets (p, 0, 0, s);
 	r_cons_pixel_flush (p, x, y);
-	R_FREE(p);
+	R_FREE (p);
 }
 
 R_API void cmd_agfb2(RCore *core, const char *s) {
