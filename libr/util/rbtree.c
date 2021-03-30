@@ -51,6 +51,7 @@ static inline RBNode *zig_zag(RBNode *x, int dir, RBNodeSum sum) {
 static inline RBIter bound_iter(RBNode *x, void *data, RBComparator cmp, bool upper, void *user) {
 	RBIter it;
 	it.len = 0;
+	memset (it.path, 0, sizeof (RBNode *) * R_RBTREE_MAX_HEIGHT);
 	while (x) {
 		int d = cmp (data, x, user);
 
