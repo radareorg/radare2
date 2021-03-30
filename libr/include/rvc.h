@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2013-2020 - RHL120, pancake */
+
 #include <r_core.h>
+#include <r_util.h>
+
 typedef struct blob {
 	char *fname;
 	char *hash;

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2021-2023 - RHL120, pancake */
+
 #include <rvc.h>
-#include <r_util.h>
+
 static inline bool is_branch_name(char *name) {
 	for (; *name; name++) {
 		r_return_val_if_fail (IS_DIGIT (*name) || isalpha (*name), false);
@@ -216,7 +217,7 @@ R_API Rvc *rvc_new(const char *path) {
 		free (repo);
 		return NULL;
 	}
-	if (r_file_exists (repo->path)) {
+	if (r_file_exists (repo->path) || r_file_is_directory (repo->path)) {
 		eprintf ("RVC Repoistory Already exists in %s\n", repo->path);
 		free (repo->path);
 		free (repo);
