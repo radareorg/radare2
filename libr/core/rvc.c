@@ -272,6 +272,7 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 		RvcBlob *b = R_NEW (RvcBlob);
 		if (!b) {
 			r_list_free (blobs);
+			return NULL;
 		}
 		b->fname = r_str_new (fname);
 		if (!b->fname) {
