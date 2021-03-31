@@ -797,6 +797,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			char *str = r_socket_http_get (uri, NULL, &len);
 			if (!str) {
 				eprintf ("Cannot find peer\n");
+				r_socket_free (fd);
 				return;
 			}
 			core->num->value = 0;
