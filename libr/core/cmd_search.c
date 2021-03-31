@@ -1636,6 +1636,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			}
 		}
 		free (buf);
+		ht_uu_free (badstart);
 	}
 	if (r_cons_is_breaked ()) {
 		eprintf ("\n");
