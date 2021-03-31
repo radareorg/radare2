@@ -230,12 +230,7 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 
 	char *rc_path = get_project_script_path (core, prjfile);
 	char *prj_dir = r_file_dirname (rc_path);
-<<<<<<< HEAD
-	r_return_val_if_fail (prj_dir, false);
 	R_FREE (rc_path);
-=======
-
->>>>>>> parent of d4cdb2d1d... In load_project_rop() rc_path is not freed when not in use
 	if (r_str_endswith (prjfile, R_SYS_DIR "rc.r2")) {
 		// XXX
 		eprintf ("ENDS WITH\n");
@@ -467,10 +462,10 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 	if (R_STR_ISEMPTY (file)) {
 		free (file);
 		file = strdup (prjfile);
-		char *slash = (char *)r_str_lchr (file, R_SYS_DIR[0]); 
+		char *slash = (char *)r_str_lchr (file, R_SYS_DIR[0]);
 		if (slash) {
 			*slash = 0;
-			slash = (char *)r_str_lchr (file, R_SYS_DIR[0]); 
+			slash = (char *)r_str_lchr (file, R_SYS_DIR[0]);
 			if (slash) {
 				char *res = strdup (slash + 1);
 				free (file);
