@@ -2817,8 +2817,8 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 			if (REGBASE(1) == ARM_REG_PC) {
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
-				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,>>,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
-					(ut64)MEMDISP(1), pc, mask, REG(0));
+				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,%d,+,>>,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
+					(ut64)MEMDISP(1), pc, pcdelta, mask, REG(0));
 			} else {
 				int disp = MEMDISP(1);
 				// not refptr, because we can't grab the reg value statically op->refptr = 4;
