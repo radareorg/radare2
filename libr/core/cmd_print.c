@@ -2904,10 +2904,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		line += strlen (line) + 1;
 	}
 	// r_cons_printf ("%s", s);
-	free (string2);
-	free (string);
-	free (s);
-	free (switchcmp);
+	R_FREE (string2);
+	R_FREE (string);
+	R_FREE (s);
+	R_FREE (switchcmp);
 restore_conf:
 	r_config_set_b (core->config, "asm.offset", show_offset);
 	r_config_set_b (core->config, "asm.dwarf", asm_dwarf);
