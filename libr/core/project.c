@@ -230,7 +230,7 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 
 	char *rc_path = get_project_script_path (core, prjfile);
 	char *prj_dir = r_file_dirname (rc_path);
-
+	R_FREE (rc_path);
 	if (r_str_endswith (prjfile, R_SYS_DIR "rc.r2")) {
 		// XXX
 		eprintf ("ENDS WITH\n");
@@ -243,7 +243,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 			db = r_str_newf ("%s.d", prjfile);
 			if (!db) {
 				free (prj_dir);
-				free (rc_path);
 				return false;
 			}
 			path = strdup (db);
@@ -251,7 +250,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 			db = r_str_newf ("%s" R_SYS_DIR "%s.d", prj_dir, prjfile);
 			if (!db) {
 				free (prj_dir);
-				free (rc_path);
 				return false;
 			}
 			path = r_file_abspath (db);
@@ -260,7 +258,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	if (!path) {
 		free (db);
 		free (prj_dir);
-		free (rc_path);
 		return false;
 	}
 	if (rop_db) {
@@ -280,7 +277,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 		free (db);
 		free (path);
 		free (prj_dir);
-		free (rc_path);
 		return false;
 	}
 	sdb_ns_set (core->sdb, "rop", rop_db);
@@ -308,7 +304,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	free (path_ns);
 	free (db);
 	free (prj_dir);
-	free (rc_path);
 	return true;
 }
 
@@ -462,10 +457,10 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 	if (R_STR_ISEMPTY (file)) {
 		free (file);
 		file = strdup (prjfile);
-		char *slash = (char *)r_str_lchr (file, R_SYS_DIR[0]); 
+		char *slash = (char *)r_str_lchr (file, R_SYS_DIR[0]);
 		if (slash) {
 			*slash = 0;
-			slash = (char *)r_str_lchr (file, R_SYS_DIR[0]); 
+			slash = (char *)r_str_lchr (file, R_SYS_DIR[0]);
 			if (slash) {
 				char *res = strdup (slash + 1);
 				free (file);
