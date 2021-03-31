@@ -76,6 +76,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int tokcount, matchcount, count = 0;
 	int matches = 0;
 	const int addrbytes = core->io->addrbytes;
+	 ut64 first_match_addr = 0;
 
 	if (!input || !*input) {
 		return NULL;
@@ -221,6 +222,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			}
 			if (matches) {
 				code = r_str_appendf (code, "%s; ", opst);
+				if (matchcount == 0) {
+					first_match_addr = addr;
+				}
 				if (matchcount == tokcount - 1) {
 					if (tokcount == 1) {
 						tidx = idx;
@@ -230,7 +234,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						R_FREE (hits);
 						goto beach;
 					}
-					hit->addr = addr;
+					hit->addr = first_match_addr;
 					hit->len = idx + len - tidx;
 					if (hit->len == -1) {
 						r_core_asm_hit_free (hit);

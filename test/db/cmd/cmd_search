@@ -477,6 +477,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/c/ search multiple instructions
+FILE=bins/pe/standard.exe
+CMDS=<<EOF
+e asm.arch = x86
+e anal.arch = x86
+e asm.bits=32
+"/ad/ ror bh, 1; shr ebp, cl; clc"
+q
+EOF
+EXPECT=<<EOF
+0x004019d5   # 5: ror bh, 1; shr ebp, cl; clc
+EOF
+RUN
+
 NAME=/m search from/to (seek 0)
 FILE=bins/pe/standard.exe
 CMDS=<<EOF
