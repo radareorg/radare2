@@ -90,10 +90,6 @@ static void find_and_change(char* in, int len) {
 			ctx.comment = in - 1;
 			ctx.comment[1] = '/';
 			ctx.comment[2] = '/';
-			while (!IS_WHITESPACE (*(ctx.comment - ctx.commentcolor))) {
-				ctx.commentcolor++;
-			}
-			ctx.commentcolor--;
 		} else if (!ctx.comment && ctx.type == TYPE_NONE) {
 			if (IS_STRING (in, ctx)) {
 				ctx.type = TYPE_STR;
@@ -185,7 +181,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		return false;
 	}
 #define NEWLINE(a,i) {\
-	memset (indentstr, ' ', sizeof(indentstr)); indentstr [((i) * 2)] = 0;\
+	size_t eos = R_MIN ((i)*2, sizeof (indentstr)-2);\
+	if (eos < 1) eos = 0;\
+	memset (indentstr, ' ', sizeof(indentstr)); indentstr [(eos * 2)] = 0;\
 	if (pj) {\
 		if (show_addr) r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s", a, indentstr);\
 		else r_strbuf_appendf (codestr, "\n%s", indentstr);\
@@ -357,7 +355,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				int i;
 				nindent = 1;
 				if (!pj) {
-					for (i = indent; i != nindent; i--) {
+					for (i = indent; i != nindent && i > 0; i--) {
 						NEWLINE (bb->addr, i);
 						r_cons_printf ("}");
 					}
