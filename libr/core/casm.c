@@ -76,7 +76,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int tokcount, matchcount, count = 0;
 	int matches = 0;
 	const int addrbytes = core->io->addrbytes;
-    ut64 first_match_addr = 0;
+	 ut64 first_match_addr = 0;
 
 	if (!input || !*input) {
 		return NULL;
