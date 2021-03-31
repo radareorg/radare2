@@ -257,6 +257,7 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	}
 	if (!path) {
 		free (db);
+		free (prj_dir);
 		return false;
 	}
 	if (rop_db) {
