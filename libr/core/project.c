@@ -310,10 +310,8 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	char *str = r_core_project_notes_file (core, prjfile);
 	char *data = r_file_slurp (str, NULL);
-	if (!data) {
-		free (str);
-		return;
-	}
+	free (str);
+	r_return_if_fail (data);
 	Output out;
 	out.fout = NULL;
 	out.cout = r_strbuf_new (NULL);
@@ -331,7 +329,6 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 		bol = strtok (NULL, "\n");
 	}
 	free (data);
-	free (str);
 }
 
 typedef struct {
