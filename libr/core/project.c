@@ -243,7 +243,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 			db = r_str_newf ("%s.d", prjfile);
 			if (!db) {
 				free (prj_dir);
-				free (rc_path);
 				return false;
 			}
 			path = strdup (db);
@@ -251,7 +250,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 			db = r_str_newf ("%s" R_SYS_DIR "%s.d", prj_dir, prjfile);
 			if (!db) {
 				free (prj_dir);
-				free (rc_path);
 				return false;
 			}
 			path = r_file_abspath (db);
@@ -259,8 +257,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	}
 	if (!path) {
 		free (db);
-		free (prj_dir);
-		free (rc_path);
 		return false;
 	}
 	if (rop_db) {
@@ -280,7 +276,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 		free (db);
 		free (path);
 		free (prj_dir);
-		free (rc_path);
 		return false;
 	}
 	sdb_ns_set (core->sdb, "rop", rop_db);
@@ -308,7 +303,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	free (path_ns);
 	free (db);
 	free (prj_dir);
-	free (rc_path);
 	return true;
 }
 
