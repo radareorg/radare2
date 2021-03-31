@@ -1004,7 +1004,8 @@ static int cmd_help(void *data, const char *input) {
 				portions[i] = r_num_math (core->num, r_str_word_get0 (arg, i));
 			}
 			r_print_portionbar (core->print, portions, n);
-			free (arg);
+			R_FREE (arg);
+			R_FREE (portions);
 			break;
 		}
 		case 's': { // "?es"
