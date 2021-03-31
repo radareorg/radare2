@@ -679,7 +679,7 @@ static const char *help_msg_ar[] = {
 	"ar=", "([size])(:[regs])", "Show register values in columns",
 	"ar?", " <reg>", "Show register value",
 	"arb", " <type>", "Display hexdump of the given arena",
-	"arc", " <name>", "Conditional flag registers",
+	"arc", "[cq=] <name>", "Conditional flag registers",
 	"arcc", "", "Show calling convention defined from the register profile",
 	"ard", " <name>", "Show only different registers",
 	"arn", " <regalias>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
@@ -4591,6 +4591,15 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		} break;
 	case 'c': // "arc"
 		// TODO: set flag values with drc zf=1
+		if (str[1] == 'q') { // "arcq"
+			RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
+			if (rf) {
+				r_cons_printf ("s:%d z:%d c:%d o:%d p:%d\n",
+						rf->s, rf->z, rf->c, rf->o, rf->p);
+				free (rf);
+			}
+			break;
+		}
 		if (str[1] == 'c') { // "arcc"
 			char *s = r_reg_profile_to_cc (core->anal->reg);
 			if (s) {
