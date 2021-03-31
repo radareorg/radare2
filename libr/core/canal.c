@@ -1831,6 +1831,12 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 	char *pal_box4 = palColorFor ("graph.box4");
 	if (!fcn || !fcn->bbs) {
 		eprintf ("No fcn\n");
+		R_FREE (pal_jump);
+		R_FREE (pal_fail);
+		R_FREE (pal_trfa);
+		R_FREE (pal_curr);
+		R_FREE (pal_traced);
+		R_FREE (pal_box4);
 		return -1;
 	}
 
@@ -1880,12 +1886,12 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		pj_end (pj);
 		pj_end (pj);
 	}
-	free (pal_jump);
-	free (pal_fail);
-	free (pal_trfa);
-	free (pal_curr);
-	free (pal_traced);
-	free (pal_box4);
+	R_FREE (pal_jump);
+	R_FREE (pal_fail);
+	R_FREE (pal_trfa);
+	R_FREE (pal_curr);
+	R_FREE (pal_traced);
+	R_FREE (pal_box4);
 	return nodes;
 }
 
