@@ -2915,7 +2915,6 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 			child = r_sys_fork ();
 			if (child == -1) {
 				eprintf ("Cannot fork\n");
-				close (stdout_fd);
 			} else if (child) {
 				dup2 (fds[1], 1);
 				close (fds[1]);
@@ -2925,17 +2924,16 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 				close (1);
 				wait (&ret);
 				dup2 (stdout_fd, 1);
-				close (stdout_fd);
 			} else {
 				close (fds[1]);
 				dup2 (fds[0], 0);
 				//dup2 (1, 2); // stderr goes to stdout
 				r_sandbox_system (shell_cmd, 0);
-				close (stdout_fd);
 			}
 		} else {
 			eprintf ("r_core_cmd_pipe: Could not pipe\n");
 		}
+		close (stdout_fd);
 	}
 #elif __WINDOWS__
 	r_w32_cmd_pipe (core, radare_cmd, shell_cmd);
