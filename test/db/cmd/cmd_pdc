@@ -6,8 +6,8 @@ pdc @ main~str.250382
 pdc @ main~strcmp
 EOF
 EXPECT=<<EOF
-       dword [s2] = "250382"  //[0x804858f:4]=0x33303532 ; str.250382 ; const char *s2
-       int strcmp("", "250382")
+    dword [s2] = "250382" //[0x804858f:4]=0x33303532 ; str.250382 ; const char *s2
+    int strcmp("", "250382")
 EOF
 RUN
 
@@ -53,60 +53,54 @@ EXPECT=<<EOF
 |           0x0040206e      ff15b8304000   call dword [MessageBoxA]    ; 0x4030b8 ; int MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 |           0x00402074      6a00           push 0
 \           0x00402076      ff1584304000   call dword [ExitProcess]    ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
+
+// This function contains 3 basic blocks and its 109 long.
 function entry0 () {
-    //  3 basic blocks
-
     loc_0x40200f:
-
-       si = 3
-       fcn.00402000 ()
-   do
-   {
+    si = 3
+    fcn.00402000 ()
+    do {
         loc_0x402018:
-
-           push 0
-           push "LABEL"             //0x40100e ; (pstr 0x0040100e) "LABEL"
-           push "Hello, World!"     //section..data
-                                    //0x401000 ; (pstr 0x00401000) "Hello, World!"
-           push 0
-           dword [MessageBoxA] ()   //0x4030b8 ; reloc.user32.dll_MessageBoxA
-                                    //int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
-           push "LABEL"             //0x40100e ; (pstr 0x0040100e) "LABEL"
-           dword [puts] ()          //0x4030dc ; reloc.crtdll.dll_puts
-                                    //int puts("LABEL")
-           esp += 4
-           si--
-           var = si - 0
-           if (var > 0) goto 0x402018 //unlikely
-       } while (?);
-  return;
-
-    loc_0x402042:
-
-       eax = dword [puts]       //[0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts ; reloc.crtdll.dll_puts
-       push "Hello, World!"     //section..data
-                                //0x401000 ; (pstr 0x00401000) "Hello, World!"
-       eax ()                   //(pstr 0x0040100e) "LABEL" ; reloc.crtdll.dll_puts
-                                //int puts("Hello, World!")
-       dword [GetProcessHeap] () //0x403088 ; reloc.kernel32.dll_GetProcessHeap
-                                //HANDLE GetProcessHeap(void)
-       push eax
-       push ">%p\\n"            //0x401014 ; (pstr 0x00401014) ">%p\n"
-       dword [printf] ()        //0x4030e0 ; (pstr 0x0040100e) "LABEL" ; reloc.crtdll.dll_printf
-                                //int printf(">%p\n")
-       push 0
-       push "Hello, World!"     //section..data
-                                //0x401000 ; (pstr 0x00401000) "Hello, World!"
-       push "Hello, World!"     //section..data
-                                //0x401000 ; (pstr 0x00401000) "Hello, World!"
-       push 0
-       dword [MessageBoxA] ()   //0x4030b8 ; reloc.user32.dll_MessageBoxA
-                                //int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
-       push 0
-       dword [ExitProcess] ()   //0x403084 ; reloc.kernel32.dll_ExitProcess
-                                //VOID ExitProcess(NULL)
+        push 0
+        push "LABEL"  //0x40100e ; (pstr 0x0040100e) "LABEL"
+        push "Hello, World!" //section..data
+        //0x401000 ; (pstr 0x00401000) "Hello, World!"
+        push 0
+        dword [MessageBoxA] () //0x4030b8 ; reloc.user32.dll_MessageBoxA
+        //int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
+        push "LABEL"  //0x40100e ; (pstr 0x0040100e) "LABEL"
+        dword [puts] () //0x4030dc ; reloc.crtdll.dll_puts
+        //int puts("LABEL")
+        esp += 4
+        si--
+        var = si - 0
+        if (var > 0) goto 0x402018 //unlikely
+        } while (?);
+return;
+loc_0x402042:
+eax = dword [puts] //[0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts ; reloc.crtdll.dll_puts
+push "Hello, World!" //section..data
+//0x401000 ; (pstr 0x00401000) "Hello, World!"
+eax ()        //(pstr 0x0040100e) "LABEL" ; reloc.crtdll.dll_puts
+//int puts("Hello, World!")
+dword [GetProcessHeap] () //0x403088 ; reloc.kernel32.dll_GetProcessHeap
+//HANDLE GetProcessHeap(void)
+push eax
+push ">%p\\n" //0x401014 ; (pstr 0x00401014) ">%p\n"
+dword [printf] () //0x4030e0 ; (pstr 0x0040100e) "LABEL" ; reloc.crtdll.dll_printf
+//int printf(">%p\n")
+push 0
+push "Hello, World!" //section..data
+//0x401000 ; (pstr 0x00401000) "Hello, World!"
+push "Hello, World!" //section..data
+//0x401000 ; (pstr 0x00401000) "Hello, World!"
+push 0
+dword [MessageBoxA] () //0x4030b8 ; reloc.user32.dll_MessageBoxA
+//int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
+push 0
+dword [ExitProcess] () //0x403084 ; reloc.kernel32.dll_ExitProcess
+//VOID ExitProcess(NULL)
 (break)
-
 }
 EOF
 RUN
