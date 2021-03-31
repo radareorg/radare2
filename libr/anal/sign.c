@@ -872,7 +872,7 @@ static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 			size_t rsize = bb->size;
 
 			// bounds check
-			if (delta > size) {
+			if (delta >= size) {
 				break;
 			}
 			if (size - delta < rsize) {
