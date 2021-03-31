@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2019 - pancake */
+/* radare - LGPL - Copyright 2014-2020 - pancake */
 
 #include <r_reg.h>
 
@@ -27,8 +27,9 @@ R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name) {
 	return NULL;
 }
 
-R_API int r_reg_cond_get_value(RReg *r, const char *name) {
-	return (int)r_reg_get_value (r, r_reg_cond_get (r, name)) ? 1 : 0;
+R_API bool r_reg_cond_get_value(RReg *r, const char *name) {
+	RRegItem *ri = r_reg_cond_get (r, name);
+	return ri && r_reg_get_value (r, ri) != 0;
 }
 
 R_API bool r_reg_cond_set(RReg *r, const char *name, bool val) {
