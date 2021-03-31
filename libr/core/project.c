@@ -230,6 +230,7 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 
 	char *rc_path = get_project_script_path (core, prjfile);
 	char *prj_dir = r_file_dirname (rc_path);
+	r_return_val_if_fail (prj_dir, false);
 	R_FREE (rc_path);
 	if (r_str_endswith (prjfile, R_SYS_DIR "rc.r2")) {
 		// XXX
