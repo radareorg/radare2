@@ -435,7 +435,7 @@ R_IPI int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	int i = 0, len = 0;
 	char tmp[256];
 	WasmOpDef *opdef = NULL;
-	while (i < sizeof (tmp) && str[i] && str[i] != ' ') {
+	while (i < (sizeof (tmp) - 1) && str[i] && str[i] != ' ') {
 		tmp[i] = str[i];
 		i++;
 	}
