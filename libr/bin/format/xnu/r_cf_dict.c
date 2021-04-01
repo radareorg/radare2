@@ -288,6 +288,7 @@ beach:
 	if (stack) {
 		r_list_free (stack);
 	}
+    free (content);
 
 	return result;
 }
