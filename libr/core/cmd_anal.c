@@ -1209,7 +1209,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name) {
 				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
 			} else {
 				pj_o (pj);
-				pj_ks (pj, "name", name? name: "");
+				pj_ks (pj, "name", r_str_get (name));
 				pj_ks (pj, "type", "address");
 				pj_kn (pj, "offset", tgt_addr);
 				pj_end (pj);

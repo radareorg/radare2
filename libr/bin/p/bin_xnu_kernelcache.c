@@ -2049,6 +2049,9 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		internal_buf_size = count;
 	}
 
+	if (!cache->original_io_read) {
+		return -1
+	}
 	ut64 io_off = io->off;
 	int result = cache->original_io_read (io, fd, internal_buffer, count);
 
