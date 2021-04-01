@@ -1293,7 +1293,7 @@ R_API bool r_file_find (RList *dst, char *dir) {
 		}
 		r_list_append (dst, r_file_abspath (name));
 		if (r_file_is_directory (name)) {
-			ret = lsrf (dst, name);
+			ret = r_file_find (dst, name);
 		}
 	}
 	r_sys_chdir (cwd);
