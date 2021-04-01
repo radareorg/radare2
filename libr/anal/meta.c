@@ -586,6 +586,10 @@ R_API void r_meta_space_unset_for(RAnal *a, const RSpace *space) {
 }
 
 R_API ut64 r_meta_get_size(RAnal *a, RAnalMetaType type) {
+	r_return_val_if_fail (a, 0);
+	if (!a->meta.root) {
+		return 0;
+	}
 	ut64 sum = 0;
 	RIntervalTreeIter it;
 	RAnalMetaItem *item;
