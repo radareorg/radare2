@@ -1275,7 +1275,7 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 #endif
 }
 
-R_API bool r_file_find (RList *dst, char *dir) {
+R_API bool r_file_find(RList *dst, char *dir) {
 	char *cwd = r_sys_getdir ();
 	r_return_val_if_fail (cwd, NULL);
 	if (r_sys_chdir (dir) == false) {
@@ -1288,10 +1288,14 @@ R_API bool r_file_find (RList *dst, char *dir) {
 	char *name;
 	r_return_val_if_fail (files, false);
 	r_list_foreach (files, iter, name) {
+		char buff[3];
 		if (strcmp (name, ".") == 0 || strcmp (name, "..") == 0) {
 			continue;
 		}
 		r_list_append (dst, r_file_abspath (name));
+		if (readlink (name, buff, 3) != -1) {
+			continue;
+		}
 		if (r_file_is_directory (name)) {
 			ret = r_file_find (dst, name);
 		}
