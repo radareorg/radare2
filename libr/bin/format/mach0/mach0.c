@@ -485,7 +485,8 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 		if (len != st.strsize) {
 			Error ("Error: read (symstr)");
 		}
-		if (!(mo->symtab = calloc (mo->nsymtab, sizeof (struct MACH0_(nlist))))) {
+		ut64 max_nsymtab = (r_buf_size (mo->b) - st.symoff) / sizeof (struct MACH0_(nlist));
+		if (mo->nsymtab > max_nsymtab || !(mo->symtab = calloc (mo->nsymtab, sizeof (struct MACH0_(nlist))))) {
 			goto error;
 		}
 		for (i = 0; i < mo->nsymtab; i++) {
@@ -585,7 +586,8 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 		}
 	}
 	bin->nmodtab = bin->dysymtab.nmodtab;
-	if (bin->nmodtab > 0) {
+	ut64 max_nmodtab = (bin->size - bin->dysymtab.modtaboff) / sizeof (struct MACH0_(dylib_module));
+	if (bin->nmodtab > 0 && bin->nmodtab <= max_nmodtab) {
 		if (!(bin->modtab = calloc (bin->nmodtab, sizeof (struct MACH0_(dylib_module))))) {
 			perror ("calloc (modtab)");
 			return false;
@@ -756,26 +758,28 @@ static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 	// computed cdhash
 	RHash *ctx = r_hash_new (true, algoType);
 	int fofsz = cscd.length;
-	ut8 *fofbuf = calloc (fofsz, 1);
-	if (fofbuf) {
-		int i;
-		if (r_buf_read_at (b, off, fofbuf, fofsz) != fofsz) {
-			eprintf ("Invalid cdhash offset/length values\n");
+	if (fofsz > 0 && fofsz < (r_buf_size (b) - off)) {
+		ut8 *fofbuf = calloc (fofsz, 1);
+		if (fofbuf) {
+			int i;
+			if (r_buf_read_at (b, off, fofbuf, fofsz) != fofsz) {
+				eprintf ("Invalid cdhash offset/length values\n");
+			}
+			r_hash_do_begin (ctx, algoType);
+			if (algoType == R_HASH_SHA1) {
+				r_hash_do_sha1 (ctx, fofbuf, fofsz);
+			} else {
+				r_hash_do_sha256 (ctx, fofbuf, fofsz);
+			}
+			r_hash_do_end (ctx, algoType);
+			eprintf ("ph %s @ 0x%"PFMT64x"!%d\n", hashName, off, fofsz);
+			eprintf ("ComputedCDHash: ");
+			for (i = 0; i < hashSize;i++) {
+				eprintf ("%02x", ctx->digest[i]);
+			}
+			eprintf ("\n");
+			free (fofbuf);
 		}
-		r_hash_do_begin (ctx, algoType);
-		if (algoType == R_HASH_SHA1) {
-			r_hash_do_sha1 (ctx, fofbuf, fofsz);
-		} else {
-			r_hash_do_sha256 (ctx, fofbuf, fofsz);
-		}
-		r_hash_do_end (ctx, algoType);
-		eprintf ("ph %s @ 0x%"PFMT64x"!%d\n", hashName, off, fofsz);
-		eprintf ("ComputedCDHash: ");
-		for (i = 0; i < hashSize;i++) {
-			eprintf ("%02x", ctx->digest[i]);
-		}
-		eprintf ("\n");
-		free (fofbuf);
 	}
 	// show and check the rest of hashes
 	ut8 *hash = p + cscd.hashOffset;
@@ -932,9 +936,12 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				ut8 p[256];
 				r_buf_read_at (bin->b, data + idx.offset + 16, p, sizeof (p));
 				p[sizeof (p) - 1] = 0;
-				ut32 slot_size = r_read_ble32 (p  + 8, 1);
+				ut32 slot_size = r_read_ble32 (p + 8, 1);
 				if (slot_size < sizeof (p)) {
-					ut32 ident_size = r_read_ble32 (p  + 8, 1);
+					ut32 ident_size = r_read_ble32 (p + 8, 1);
+					if (!ident_size || ident_size > sizeof (p) - 28) {
+						break;
+					}
 					char *ident = r_str_ndup ((const char *)p + 28, ident_size);
 					if (ident) {
 						sdb_set (bin->kv, "mach0.ident", ident, 0);
@@ -990,9 +997,6 @@ static int parse_thread(struct MACH0_(obj_t) *bin, struct load_command *lc, ut64
 		goto wrong_read;
 	}
 	flavor = r_read_ble32 (tmp, bin->big_endian);
-	if (len == -1) {
-		goto wrong_read;
-	}
 
 	if (off + sizeof (struct thread_command) + sizeof (flavor) > bin->size ||
 		off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (ut32) > bin->size) {
@@ -1615,7 +1619,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 				if (cur_seg) {
 					ut32 page_index = (ut32)(seg_off / ps);
 					size_t maxsize = cur_seg->page_count * sizeof (ut16);
-					if (page_index < maxsize) {
+					if (page_index < maxsize && cur_seg->page_start) {
 						cur_seg->page_start[page_index] = seg_off & 0xfff;
 					}
 				}
@@ -2586,6 +2590,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		}
 		ut64 tr = read_uleb128 (&p, end);
 		if (tr == UT64_MAX) {
+			R_FREE (next);
 			goto beach;
 		}
 		next->node = tr + trie;
@@ -2671,10 +2676,8 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	symbols_count += bin->nsymtab;
 	symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
 
-	if (symbols_size < 1) {
-		return NULL;
-	}
-	if (!(symbols = calloc (1, symbols_size))) {
+	if (symbols_size < 1 || !(symbols = calloc (1, symbols_size))) {
+		ht_pp_free (hash);
 		return NULL;
 	}
 	j = 0; // symbol_idx
@@ -2701,7 +2704,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			continue;
 		}
 
-		from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
+		from = R_MIN (from, symbols_size / sizeof (struct symbol_t));
 		to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
 
 		ut32 maxsymbols = symbols_size / sizeof (struct symbol_t);
@@ -2742,6 +2745,8 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			}
 			if (!inSymtab (hash, sym->name, sym->vaddr)) {
 				r_list_append (list, sym);
+			} else {
+				r_bin_symbol_free (sym);
 			}
 		}
 	}
@@ -2893,7 +2898,7 @@ const struct symbol_t *MACH0_(get_symbols)(struct MACH0_(obj_t) *bin) {
 				continue;
 			}
 
-			from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
+			from = R_MIN (from, symbols_size / sizeof (struct symbol_t));
 			to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
 
 			ut32 maxsymbols = symbols_size / sizeof (struct symbol_t);
@@ -3819,7 +3824,6 @@ static const char *cpusubtype_tostring (ut32 cputype, ut32 cpusubtype) {
 		case CPU_SUBTYPE_ARM64E:	return "arm64e";
 		default:			return "Unknown arm64 subtype";
 		}
-		return "v8";
 	case CPU_TYPE_ARM:
 		switch (cpusubtype & 0xff) {
 		case CPU_SUBTYPE_ARM_ALL:
@@ -4037,7 +4041,7 @@ void MACH0_(mach_headerfields)(RBinFile *bf) {
 		addr += 4;
 		pvaddr += 4;
 	}
-	for (n = 0; n < mh->ncmds; n++) {
+	for (n = 0; n < mh->ncmds && addr < length; n++) {
 		READWORD ();
 		ut32 lcType = word;
 		const char *pf_definition = cmd_to_pf_definition (lcType);
@@ -4247,7 +4251,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 	}
 
 	int n;
-	for (n = 0; n < mh->ncmds; n++) {
+	for (n = 0; n < mh->ncmds && paddr < length; n++) {
 		ut32 lcType = r_buf_read_ble32_at (buf, paddr, isBe);
 		ut32 word = r_buf_read_ble32_at (buf, paddr + 4, isBe);
 		if (paddr + 8 > length) {

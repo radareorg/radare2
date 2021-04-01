@@ -1268,6 +1268,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 
 	struct section_t *sections = NULL;
 	if (!(sections = MACH0_(get_sections) (bf->o->bin_obj))) {
+		r_skiplist_free (relocs);
 		return ret;
 	}
 

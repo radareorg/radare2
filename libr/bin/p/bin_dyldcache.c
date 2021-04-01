@@ -767,6 +767,9 @@ static RDyldRebaseInfos *get_rebase_infos(RBinFile *bf, RDyldCache *cache) {
 		if ((n_slide_infos = r_buf_read_le32_at (cache_buf, 0x13c)) == UT32_MAX) {
 			goto beach;
 		}
+		if (!n_slide_infos) {
+			goto beach;
+		}
 
 		RDyldRebaseInfosEntry * infos = R_NEWS0 (RDyldRebaseInfosEntry, n_slide_infos);
 		if (!infos) {
@@ -818,7 +821,7 @@ static RDyldRebaseInfos *get_rebase_infos(RBinFile *bf, RDyldCache *cache) {
 	if (cache->hdr->mappingCount > 1) {
 		RDyldRebaseInfosEntry * infos = R_NEWS0 (RDyldRebaseInfosEntry, 1);
 		if (!infos) {
-			return NULL;
+			goto beach;
 		}
 
 		infos[0].start = cache->maps[1].fileOffset;
@@ -1697,6 +1700,7 @@ static RList *sections(RBinFile *bf) {
 	int i;
 	for (i = 0; i < cache->hdr->mappingCount; i++) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
+			r_list_free (ret);
 			return NULL;
 		}
 		ptr->name = r_str_newf ("cache_map.%d", i);
