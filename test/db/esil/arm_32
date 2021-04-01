@@ -2721,3 +2721,23 @@ EXPECT=<<EOF
 0xaaaaaaaaaaaaaaaa
 EOF
 RUN
+
+NAME=esil pcdelta ldr
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+e asm.emu=true
+wx 01000000
+wx 04301fe5 @0x4 # ldr r3, [pc, #-0x4]
+wx 02000000 @0x8
+wx 03000000 @0xc
+aer pc=0x4
+aes
+aes
+aer r3
+EOF
+EXPECT=<<EOF
+0x00000002
+EOF
+RUN
