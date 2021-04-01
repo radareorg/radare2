@@ -1275,7 +1275,7 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 #endif
 }
 
-R_API bool r_file_find(RList *dst, char *dir) {
+R_API bool r_file_dir_recursive(RList *dst, char *dir) {
 	char *cwd = r_sys_getdir ();
 	r_return_val_if_fail (cwd, NULL);
 	if (r_sys_chdir (dir) == false) {
@@ -1297,7 +1297,7 @@ R_API bool r_file_find(RList *dst, char *dir) {
 			continue;
 		}
 		if (r_file_is_directory (name)) {
-			ret = r_file_find (dst, name);
+			ret = r_file_dir_recursive (dst, name);
 		}
 	}
 	r_sys_chdir (cwd);
