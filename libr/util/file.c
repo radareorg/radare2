@@ -1275,6 +1275,24 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 #endif
 }
 
+R_API bool r_file_copy_recursive(char *dst, char *src) {
+	char *path;
+	RListIter *iter;
+	RList *files = r_list_new ();
+	r_return_val_if_fail (files, false);
+	char *newp = r_file_dirname (src);
+	if (!newp) {
+		r_list_free (files);
+		return false;
+	}
+	dst = r_str_newf ("%s" R_SYS_DIR "%s", newp);
+	free (newp);
+	if (!dst) {
+		r_list_free (files);
+		return false;
+	}
+}
+
 R_API bool r_file_dir_recursive(RList *dst, char *dir) {
 	char *cwd = r_sys_getdir ();
 	r_return_val_if_fail (cwd, NULL);
@@ -1288,14 +1306,10 @@ R_API bool r_file_dir_recursive(RList *dst, char *dir) {
 	char *name;
 	r_return_val_if_fail (files, false);
 	r_list_foreach (files, iter, name) {
-		char buff[3];
 		if (strcmp (name, ".") == 0 || strcmp (name, "..") == 0) {
 			continue;
 		}
 		r_list_append (dst, r_file_abspath (name));
-		if (readlink (name, buff, 3) != -1) {
-			continue;
-		}
 		if (r_file_is_directory (name)) {
 			ret = r_file_dir_recursive (dst, name);
 		}
