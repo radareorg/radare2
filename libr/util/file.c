@@ -1275,10 +1275,12 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 #endif
 }
 
-R_API bool r_file_dir_recursive(RList *dst, char *dir) {
+R_API bool r_file_dir_recursive(RList *dst, const char *dir) {
 	bool ret = false;
 	char *cwd = r_sys_getdir ();
-	r_return_val_if_fail (cwd, NULL);
+	if (!cwd) {
+		return false;
+	}
 	if (r_sys_chdir (dir) == false) {
 		free (cwd);
 		return ret;
