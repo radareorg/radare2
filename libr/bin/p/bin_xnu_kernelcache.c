@@ -2022,16 +2022,16 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 
 	if (!cache || !cache->original_io_read || cache->rebasing_buffer) {
-		if (!cache) {
-			return fd->plugin->read (io, fd, buf, count);
+		if (cache) {
+			if ((!cache->rebasing_buffer && fd->plugin->read == &kernelcache_io_read) ||
+					(cache->rebasing_buffer && !cache->original_io_read)) {
+				return -1;
+			}
+			if (cache->rebasing_buffer) {
+				return cache->original_io_read (io, fd, buf, count);
+			}
 		}
-		if ((!cache->rebasing_buffer && fd->plugin->read == &kernelcache_io_read) ||
-				(cache->rebasing_buffer && !cache->original_io_read)) {
-			return -1;
-		}
-		if (cache->rebasing_buffer) {
-			return cache->original_io_read (io, fd, buf, count);
-		}
+		return fd->plugin->read (io, fd, buf, count);
 	}
 
 	if (cache->rebase_info) {
