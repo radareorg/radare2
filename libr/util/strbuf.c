@@ -169,18 +169,19 @@ R_API const char *r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 	r_return_val_if_fail (sb && fmt, false);
 
-	size_t smol[1024];
+	size_t smol[1];
 	char *p;
 	const char *ret = NULL;
 	int rc;
 	va_list ap2;
 	va_copy (ap2, ap);
-	rc = vsnprintf ((void*)&smol, sizeof(smol), fmt, ap);
+	rc = vsnprintf ((void*)&smol, sizeof (smol), fmt, ap);
 	if (rc > 0) {
 		p = malloc (rc + 1);
 		if (!p) {
 			goto done;
 		}
+		*p = 0;
 		vsnprintf (p, rc + 1, fmt, ap2);
 		ret = r_strbuf_set (sb, p);
 		free (p);
