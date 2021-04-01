@@ -170,11 +170,10 @@ R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 	r_return_val_if_fail (sb && fmt, false);
 
 	const char *ret = NULL;
-	va_list ap2;
+	va_list ap2, ap3;
 	va_copy (ap2, ap);
-	char string[1024];
-	int rc = vsnprintf (string, sizeof (string), fmt, ap);
-	if (rc >= sizeof (string)) {
+	int rc = vprintf (fmt, ap);
+	if (rc > 0) {
 		char *p = malloc (rc + 1);
 		if (!p) {
 			goto done;
@@ -182,8 +181,6 @@ R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 		vsnprintf (p, rc + 1, fmt, ap2);
 		ret = r_strbuf_set (sb, p);
 		free (p);
-	} else if (rc >= 0) {
-		ret = r_strbuf_set (sb, string);
 	}
 done:
 	va_end (ap2);
