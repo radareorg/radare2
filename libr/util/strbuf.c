@@ -167,28 +167,30 @@ R_API const char *r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 }
 
 R_API const char *r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
-	r_return_val_if_fail (sb && fmt, false);
+	r_return_val_if_fail (sb && fmt, NULL);
 
-	size_t smol[1];
-	char *p;
-	const char *ret = NULL;
-	int rc;
+	ut32 size = 1024, next_inc = 0;
+	char *smol = NULL;
 	va_list ap2;
 	va_copy (ap2, ap);
-	rc = vsnprintf ((void*)&smol, sizeof (smol), fmt, ap);
-	if (rc > 0) {
-		p = malloc (rc + 1);
-		if (!p) {
-			goto done;
+	do {
+		R_FREE (smol);
+		smol = R_NEWS0 (char, size + next_inc);
+		while (!smol) {
+			if (next_inc < 8) {
+				va_end (ap2);
+				return NULL;
+			}
+			next_inc = next_inc / 2;
+			smol = R_NEWS0 (char, size + next_inc);
 		}
-		*p = 0;
-		vsnprintf (p, rc + 1, fmt, ap2);
-		ret = r_strbuf_set (sb, p);
-		free (p);
-	}
-done:
+		size = size + next_inc;
+		next_inc = size;
+	} while (vsnprintf (smol, size, fmt, ap2) < 0);
 	va_end (ap2);
-	return ret;
+	r_strbuf_set (sb, smol);
+	free (smol);
+	return r_strbuf_get (sb);
 }
 
 R_API bool r_strbuf_prepend(RStrBuf *sb, const char *s) {
