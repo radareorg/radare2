@@ -717,7 +717,13 @@ static ut32 cps2key[2] = {0};
 
 static bool set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	cry->dir = direction;
-	if (keylen == 20) {
+	if (keylen == 8) { // old hardcoded MAME keys
+		/* fix key endianness */
+		const ut32* key32 = (const ut32*)key;
+		cps2key[0] = r_read_be32(key32);
+		cps2key[1] = r_read_be32(key32 + 1);
+		return true;
+	} else if (keylen == 20) {
 		const ut8* key8 = (const ut8*)key;
 		unsigned short decoded[10] = {0};
 		for (int b = 0; b < 10 * 16; b++) {
