@@ -227,7 +227,7 @@ typedef struct {
 	char *cmd;
 } RCoreGadget;
 
-R_API void r_core_gadget_free (RCoreGadget *g);
+R_API void r_core_gadget_free(RCoreGadget *g);
 
 typedef struct r_core_tasks_t {
 	int task_id_next;

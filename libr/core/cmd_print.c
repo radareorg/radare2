@@ -5338,9 +5338,15 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'd': // "pdd" // r2dec
 			eprintf ("Error: r2pm -ci r2dec\n");
+			processed_cmd = true;
+			break;
+		case 'z': // "pdz" // retdec
+			eprintf ("Error: r2pm -ci retdec-r2plugin\n");
+			processed_cmd = true;
 			break;
 		case 'g': // "pdg" // r2ghidra
 			eprintf ("Error: r2pm -ci r2ghidra\n");
+			processed_cmd = true;
 			break;
 		case 'c': // "pdc" // "pDc"
 			r_core_pseudo_code (core, input + 2);

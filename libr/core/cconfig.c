@@ -1386,7 +1386,9 @@ static bool cb_cmdpdc(void *user, void *data) {
 		RListIter *iter;
 		RCorePlugin *cp;
 		r_list_foreach (core->rcmd->plist, iter, cp) {
-			if (!strcmp (cp->name, "r2ghidra")) {
+			if (!strcmp (cp->name, "r2retdec")) {
+				r_cons_printf ("pdz\n");
+			} else if (!strcmp (cp->name, "r2ghidra")) {
 				r_cons_printf ("pdg\n");
 			}
 		}
