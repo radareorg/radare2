@@ -91,7 +91,6 @@ R_API int r_diff_gdiff(const char *file1, const char *file2, int rad, int va);
 R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b);
 R_API void r_diffchar_print(RDiffChar *diffchar);
 R_API void r_diffchar_free(RDiffChar *diffchar);
-R_API st32 r_diff_levenshtein_dist(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff);
 R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff, RLevOp **chgs);
 #endif
 

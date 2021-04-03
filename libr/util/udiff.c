@@ -685,20 +685,7 @@ R_API void r_diffchar_free(RDiffChar *diffchar) {
 	}
 }
 
-/**
- * \brief Return Levenshtein distance between to RLevBuf *
- * \param bufa Structure to represent starting buffer
- * \param bufb Structure to represent the buffer to reach
- * \param maxdst Max Levenshtein distance need, send UT32_MAX if unkown.
- * \param levdiff Function pointer returning true when there is a difference.
- *
- * Find Levenshtein distance between two buffers. This algorythm does not
- * return the path through the matrix, so it is dramaticly more memmory
- * effecent then r_diff_levenshtein_path. A good maxdst can help speed the
- * algorythm by reducing the number of cells iterated over. If maxdst is
- * exceeded, ST32_MAX is retured.
- */
-R_API st32 r_diff_levenshtein_dist_abs(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff) {
+static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff) {
 	r_return_val_if_fail (bufa && bufb && bufa->buf && bufb->buf, -1);
 
 	// force buffer b to be longer, this will invert add/del resulsts
@@ -831,7 +818,11 @@ R_API st32 r_diff_levenshtein_dist_abs(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst
  * caller must free *chgs.
  */
 R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff, RLevOp **chgs) {
-	r_return_val_if_fail (bufa && bufb && bufa->buf && bufb->buf && chgs && !*chgs, -1);
+	r_return_val_if_fail (bufa && bufb && bufa->buf && bufb->buf, -1);
+	if (chgs == NULL) {
+		return r_diff_levenshtein_nopath (bufa, bufb, maxdst, levdiff);
+	}
+	r_return_val_if_fail (!*chgs, -1);
 
 	// force buffer b to be longer, this will invert add/del resulsts
 	bool invert = false;
