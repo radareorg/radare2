@@ -518,7 +518,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (!r_list_contains (visited, bb)) {
 			orphan ++;
 			char *s = r_core_cmd_strf (core, "pdb@0x%08"PFMT64x"@e:asm.offset=0", bb->addr);
-			s = r_str_prefix_all (s, indentstr);
+			char *os = r_str_prefix_all (s, indentstr);
+			free (s);
+			s = os;
 			if (pj) {
 				pj_o (pj);
 				pj_kn (pj, "start", r_strbuf_length (codestr));

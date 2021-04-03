@@ -96,7 +96,7 @@ static void dyn_init(void) {
 		if (!dyn_forkpty) {
 			dyn_forkpty = r_lib_dl_sym (libutil, "forkpty");
 		}
-		R_FREE (libutil);
+		r_lib_dl_close (libutil);
 	}
 #endif
 }
@@ -878,6 +878,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 			*q = 0;
 			if (!r_socket_connect_tcp (fd, p->_connect, q+1, 30)) {
 				eprintf ("Cannot connect\n");
+				r_socket_free (fd);
 				return 1;
 			}
 			if (p->_pty) {

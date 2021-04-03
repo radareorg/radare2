@@ -336,10 +336,11 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 		if (module_name) {
 			bpi->module_name = strdup (module_name);
 			bpi->name = r_str_newf ("%s+0x%" PFMT64x, module_name, m_delta);
-			free (module_name);
+			R_FREE (module_name);
 		}
 		bpi->module_delta = m_delta;
 	}
+	free (module_name);
 	return bpi;
 }
 

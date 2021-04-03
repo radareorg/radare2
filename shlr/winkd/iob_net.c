@@ -134,6 +134,7 @@ static void *iob_net_open(const char *path) {
 	if (!r_socket_connect_udp (sock, host, port, 1)) {
 		free (host);
 		free (obj);
+		r_socket_free (sock);
 		return NULL;
 	}
 	obj->sock = sock;

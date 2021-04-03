@@ -322,6 +322,7 @@ R_API char *r_socket_http_post(const char *url, const char *data, int *code, int
 	if (!r_socket_connect_tcp (s, host, port, 0)) {
 		eprintf ("Cannot connect to %s:%s\n", host, port);
 		free (uri);
+		r_socket_free (s);
 		return NULL;
 	}
 	/* Send */
