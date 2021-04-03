@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2020 - houndthe */
+/* radare - LGPL - Copyright 2012-2021 - houndthe */
 
 #include "base_types.h"
 #include <sdb.h>
@@ -254,12 +254,25 @@ static st32 parse_array_type(Context *ctx, ut64 idx, RStrBuf *strbuf) {
  * TODO make cache for type entries, one type is usually referenced
  * multiple times which means it's parsed multiple times instead of once
  */
-static st32 parse_type (Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size) {
+static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *size, HtUP **visited) {
 	r_return_val_if_fail (strbuf, -1);
 	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
 	if (!die) {
 		return -1;
 	}
+	bool root = false;
+
+	if (!visited) {
+		root = true;
+		SetU *su = set_u_new ();
+		visited = malloc (sizeof (void*));
+		*visited = su;
+	}
+	if (visited && set_u_contains (*visited, offset)) {
+		eprintf ("anal.dwarf.parse_type: infinite recursion detected.\n");
+		return -1;
+	}
+	set_u_add (*visited, offset);
 
 	st32 type_idx;
 	st32 tag;
@@ -276,7 +289,7 @@ static st32 parse_type (Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *
 			r_strbuf_append (strbuf, "void");
 			r_strbuf_append (strbuf, " *");
 		} else {
-			tag = parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			tag = parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 			if (tag == DW_TAG_subroutine_type) {
 				strbuf_rev_prepend_char (strbuf, "(*)", '(');
 			} else if (tag == DW_TAG_pointer_type) {
@@ -305,7 +318,7 @@ static st32 parse_type (Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *
 		if (type_idx == -1) {
 			r_strbuf_append (strbuf, "void");
 		} else {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		r_strbuf_append (strbuf, " (");
 		if (die->has_children) { // has parameters
@@ -315,47 +328,50 @@ static st32 parse_type (Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *
 	case DW_TAG_array_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		parse_array_type (ctx, die - ctx->all_dies, strbuf);
 		break;
 	case DW_TAG_const_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		r_strbuf_append (strbuf, " const");
 		break;
 	case DW_TAG_volatile_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		r_strbuf_append (strbuf, " volatile");
 		break;
 	case DW_TAG_restrict_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		r_strbuf_append (strbuf, " restrict");
 		break;
 	case DW_TAG_rvalue_reference_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		r_strbuf_append (strbuf, " &&");
 		break;
 	case DW_TAG_reference_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
 		if (type_idx != -1) {
-			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size);
+			parse_type (ctx, die->attr_values[type_idx].reference, strbuf, size, visited);
 		}
 		r_strbuf_append (strbuf, " &");
 		break;
 	default:
 		break;
+	}
+	if (root) {
+		set_u_free (*visited);
 	}
 	return (st32)die->tag;
 }
@@ -391,7 +407,7 @@ static RAnalStructMember *parse_struct_member (Context *ctx, ut64 idx, RAnalStru
 			}
 			break;
 		case DW_AT_type:
-			parse_type (ctx, value->reference, &strbuf, &size);
+			parse_type (ctx, value->reference, &strbuf, &size, NULL);
 			free (type);
 			type = r_strbuf_drain_nofree (&strbuf);
 			if (!type || !*type) {
@@ -587,7 +603,7 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 	if (type_attr_idx != -1) {
 		RStrBuf strbuf;
 		r_strbuf_init (&strbuf);
-		parse_type (ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size);
+		parse_type (ctx, die->attr_values[type_attr_idx].reference, &strbuf, &base_type->size, NULL);
 		base_type->type = r_strbuf_drain_nofree (&strbuf);
 	}
 
@@ -655,7 +671,7 @@ static void parse_typedef(Context *ctx, ut64 idx) {
 			}
 			break;
 		case DW_AT_type:
-			parse_type (ctx, value->reference, &strbuf, &size);
+			parse_type (ctx, value->reference, &strbuf, &size, NULL);
 			free (type);
 			type = r_strbuf_drain_nofree (&strbuf);
 			if (!type) {
@@ -747,7 +763,7 @@ static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RStrBuf *ret_type
 	st32 attr_idx = find_attr_idx (die, DW_AT_type);
 	if (attr_idx != -1) {
 		ut64 size = 0;
-		parse_type (ctx, die->attr_values[attr_idx].reference, ret_type, &size);
+		parse_type (ctx, die->attr_values[attr_idx].reference, ret_type, &size, NULL);
 	}
 }
 
@@ -785,7 +801,7 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, cons
 				has_linkage_name = true;
 				break;
 			case DW_AT_type:
-				parse_type (ctx, val->reference, type, &size);
+				parse_type (ctx, val->reference, type, &size, NULL);
 				break;
 			default:
 				break;
@@ -1187,7 +1203,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						has_linkage_name = true;
 						break;
 					case DW_AT_type:
-						parse_type (ctx, val->reference, &type, NULL);
+						parse_type (ctx, val->reference, &type, NULL, NULL);
 						break;
 					// abstract origin is supposed to have omitted information
 					case DW_AT_abstract_origin:
@@ -1379,7 +1395,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 			break;
 		}
 		case DW_AT_type:
-			parse_type (ctx, val->reference, &ret_type, NULL);
+			parse_type (ctx, val->reference, &ret_type, NULL, NULL);
 			break;
 		case DW_AT_virtuality:
 			fcn.is_method = true; /* method specific attr */
