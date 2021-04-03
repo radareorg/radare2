@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019 - mrmacete */
+/* radare2 - LGPL - Copyright 2019-2021 - mrmacete */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -2050,7 +2050,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 
 	if (!cache->original_io_read) {
-		return -1
+		return -1;
 	}
 	ut64 io_off = io->off;
 	int result = cache->original_io_read (io, fd, internal_buffer, count);
