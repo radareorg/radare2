@@ -165,9 +165,9 @@ static inline char *create_type_name_from_offset(ut64 offset) {
 static char *get_die_name(const RBinDwarfDie *die) {
 	char *name = NULL;
 	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
-
-	if (name_attr_idx != -1 && die->attr_values[name_attr_idx].string.content) {
-		name = strdup (die->attr_values[name_attr_idx].string.content);
+	RBinDwarfAttrValue *av = &die->attr_values[name_attr_idx];
+	if (av->kind == DW_AT_KIND_STRING && name_attr_idx != -1 && av->string.content) {
+		name = strdup (av->string.content);
 	} else {
 		name = create_type_name_from_offset (die->offset);
 	}
