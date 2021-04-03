@@ -713,10 +713,12 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 		switch (die->attr_values[i].attr_name) {
 		case DW_AT_name:
 			free (name);
-			if (!value->string.content) {
-				name = create_type_name_from_offset (die->offset);
-			} else {
-				name = strdup (value->string.content);
+			if (value->kind == DW_AT_KIND_STRING) {
+				if (!value->string.content) {
+					name = create_type_name_from_offset (die->offset);
+				} else {
+					name = strdup (value->string.content);
+				}
 			}
 			if (!name) {
 				return;
