@@ -266,11 +266,14 @@ EOF
 EXPECT=<<EOF
 file: Hello.java
 line: 9
+addr: 0x00000290
 file: World.java
 line: 5
+addr: 0x000002f4
 file: World.java
 line: 11
-34
+addr: 0x00000318
+51
 EOF
 RUN
 
