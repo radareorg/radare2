@@ -20,13 +20,13 @@ EXTRA_CLEAN=doclean
 all: plugins
 
 doclean:
-	@cd d && ${MAKE} clean
-	@cd p && ${MAKE} clean
+	$(MAKE) -C d clean
+	$(MAKE) -C p clean
 	rm -f `find arch/| grep '\.o$$'`
 
 plugins: ${LIBSO} ${LIBAR}
-	${MAKE} -C d all
-	${MAKE} -C p all
+	$(MAKE) -C d all
+	$(MAKE) -C p all
 
 include ${STATIC_ASM_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))

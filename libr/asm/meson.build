@@ -61,6 +61,7 @@ r_asm_sources = [
   'p/asm_v810.c',
   'p/asm_v850.c',
   'p/asm_v850_gnu.c',
+  'p/asm_m68k_gnu.c',
   'p/asm_vax.c',
   'p/asm_wasm.c',
   'p/asm_ws.c',
