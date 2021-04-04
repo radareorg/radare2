@@ -155,13 +155,28 @@ static int remove_meta_offset(RCore *core, ut64 offset) {
 	return sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
 }
 
-static bool print_meta_offset(RCore *core, ut64 addr) {
+static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 	int line, line_old, i;
 	char file[1024];
 
 	int ret = r_bin_addr2line (core->bin, addr, file, sizeof (file) - 1, &line);
 	if (ret) {
-		r_cons_printf ("file: %s\nline: %d\n", file, line);
+		if (pj) {
+			pj_o (pj);
+			pj_ks (pj, "file", file);
+			pj_kn (pj, "line", line);
+			pj_kn (pj, "addr", addr);
+			if (r_file_exists (file)) {
+				char *row = r_file_slurp_line (file, line, 0);
+				pj_ks (pj, "text", file);
+				free (row);
+			} else {
+				// eprintf ("Cannot open '%s'\n", file);
+			}
+			pj_end (pj);
+			return ret;
+		}
+		r_cons_printf ("file: %s\nline: %d\naddr: 0x%08"PFMT64x"\n", file, line, addr);
 		line_old = line;
 		if (line >= 2) {
 			line -= 2;
@@ -201,7 +216,50 @@ static ut64 filter_offset = UT64_MAX;
 static int filter_format = 0;
 static size_t filter_count = 0;
 
-static bool print_addrinfo (void *user, const char *k, const char *v) {
+static bool print_addrinfo_json(void *user, const char *k, const char *v) {
+	ut64 offset = sdb_atoi (k);
+	if (!offset || offset == UT64_MAX) {
+		return true;
+	}
+	char *subst = strdup (v);
+	char *colonpos = strchr (subst, '|'); // XXX keep only : for simplicity?
+	if (!colonpos) {
+		colonpos = strchr (subst, ':');
+	}
+	if (!colonpos) {
+		r_cons_printf ("%s\n", subst);
+	}
+	if (colonpos && (filter_offset == UT64_MAX || filter_offset == offset)) {
+		if (filter_format) {
+			*colonpos = ':';
+	//		r_cons_printf ("CL %s %s\n", k, subst);
+		} else {
+			*colonpos = 0;
+	//		r_cons_printf ("file: %s\nline: %s\naddr: 0x%08"PFMT64x"\n", subst, colonpos + 1, offset);
+		}
+		filter_count++;
+	}
+	const char *file = subst;
+	int line = atoi (colonpos + 1);
+	ut64 addr = offset;
+	PJ *pj = (PJ*)user;
+	pj_o (pj);
+	pj_ks (pj, "file", file);
+	pj_kn (pj, "line", line);
+	pj_kn (pj, "addr", addr);
+	if (r_file_exists (file)) {
+		char *row = r_file_slurp_line (file, line, 0);
+		pj_ks (pj, "text", file);
+		free (row);
+	} else {
+		// eprintf ("Cannot open '%s'\n", file);
+	}
+	pj_end (pj);
+	free (subst);
+	return true;
+}
+
+static bool print_addrinfo(void *user, const char *k, const char *v) {
 	ut64 offset = sdb_atoi (k);
 	if (!offset || offset == UT64_MAX) {
 		return true;
@@ -220,7 +278,7 @@ static bool print_addrinfo (void *user, const char *k, const char *v) {
 			r_cons_printf ("CL %s %s\n", k, subst);
 		} else {
 			*colonpos = 0;
-			r_cons_printf ("file: %s\nline: %s\n", subst, colonpos + 1);
+			r_cons_printf ("file: %s\nline: %s\naddr: 0x%08"PFMT64x"\n", subst, colonpos + 1, offset);
 		}
 		filter_count++;
 	}
@@ -249,6 +307,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int ret;
 	ut64 offset = UT64_MAX; // use this as error value
 	bool remove = false;
+	bool use_json = false;
 	int all = false;
 	const char *p = input;
 	char *file_line = NULL;
@@ -263,6 +322,10 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	if (*p == '-') {
 		p++;
 		remove = true;
+	}
+	if (*p == 'j') {
+		p++;
+		use_json = true;
 	}
 	if (*p == '.') {
 		p++;
@@ -331,9 +394,22 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		// taken from r2 // TODO: we should move this addrinfo sdb logic into RBin.. use HT
 		filter_offset = offset;
 		filter_count = 0;
-		sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
-		if (filter_count == 0) {
-			print_meta_offset (core, offset);
+		if (use_json) {
+			PJ *pj = r_core_pj_new (core);
+			pj_a (pj);
+			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo_json, pj);
+			if (filter_count == 0) {
+				print_meta_offset (core, offset, pj);
+			}
+			pj_end (pj);
+			char *s = pj_drain (pj);
+			r_cons_printf ("%s\n", s);
+			free (s);
+		} else {
+			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
+			if (filter_count == 0) {
+				print_meta_offset (core, offset, NULL);
+			}
 		}
 	}
 	free (pheap);
