@@ -164,6 +164,44 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdj1
+FILE=bins/elf/hello.ppc
+CMDS=<<EOF
+pdj1~{}
+EOF
+EXPECT=<<EOF
+[
+  {
+    "offset": 268436232,
+    "esil": "r1,r9,=",
+    "refptr": false,
+    "fcn_addr": 0,
+    "fcn_last": 0,
+    "size": 4,
+    "opcode": "mr r9, r1",
+    "disasm": "mr r9, r1",
+    "bytes": "7c290b78",
+    "family": "cpu",
+    "type": "mov",
+    "reloc": false,
+    "type_num": 9,
+    "type2_num": 0,
+    "addrline": {
+      "file": "/home/hawk/crosstool-ng-git/.build/src/glibc-2.27/csu/../sysdeps/powerpc/powerpc32//start.S",
+      "line": 62
+    },
+    "flags": [
+      "entry0",
+      "section..text",
+      "sym..text",
+      "sym._start"
+    ],
+    "comment": "WzEyXSAtci14IHNlY3Rpb24gc2l6ZSA3NTYgbmFtZWQgLnRleHQ="
+  }
+]
+EOF
+RUN
+
 NAME=CL add ok
 FILE=bins/elf/hello.ppc
 CMDS=<<EOF

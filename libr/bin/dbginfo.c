@@ -20,6 +20,25 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line)
 	return false;
 }
 
+R_API bool r_bin_addr2line2(RBin *bin, ut64 addr, char *file, int len, int *line) {
+	char *key = r_str_newf ("0x%"PFMT64x, addr);
+	char *file_line = sdb_get (bin->cur->sdb_addrinfo, key, 0);
+	if (file_line) {
+		char *token = strchr (file_line, '|');
+		if (token) {
+			*token++ = 0;
+			if (line) {
+				*line = atoi (token);
+			}
+			r_str_ncpy (file, file_line, len);
+			free (key);
+			free (file_line);
+			return true;
+		}
+	}
+	return false;
+}
+
 R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 	r_return_val_if_fail (bin, NULL);
 	char file[4096];
