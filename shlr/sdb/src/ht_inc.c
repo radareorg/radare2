@@ -302,7 +302,9 @@ SDB_API HT_(Kv)* Ht_(find_kv)(HtName_(Ht)* ht, const KEY_TYPE key, bool* found) 
 		*found = false;
 	}
 	if (!ht) {
-		*found = false;
+		if (found) {
+			*found = false;
+		}
 		return NULL;
 	}
 

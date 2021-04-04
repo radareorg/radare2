@@ -81,6 +81,11 @@ extern char *strdup (const char *);
 #define SDB_KSZ 0xff
 #define SDB_VSZ 0xffffff
 
+typedef struct sdb_gperf_t {
+	const char *name;
+	const char *(*get)(const char *k);
+	unsigned int *(*hash)(const char *k);
+} SdbGperf;
 
 typedef struct sdb_t {
 	char *dir; // path+name
@@ -95,6 +100,7 @@ typedef struct sdb_t {
 	HtPP *ht;
 	ut32 eod;
 	ut32 pos;
+	SdbGperf *gp;
 	int fdump;
 	char *ndump;
 	ut64 expire;
@@ -119,6 +125,7 @@ SDB_API Sdb* sdb_new0(void);
 SDB_API Sdb* sdb_new(const char *path, const char *file, int lock);
 
 SDB_API int sdb_open(Sdb *s, const char *file);
+SDB_API int sdb_open_gperf(Sdb *s, SdbGperf *g);
 SDB_API void sdb_close(Sdb *s);
 
 SDB_API void sdb_config(Sdb *s, int options);

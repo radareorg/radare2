@@ -245,27 +245,33 @@ SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *
 	size_t keylen = strlen (key);
 
 	/* search in memory */
-	SdbKv *kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
-	if (found) {
-		if (!sdbkv_value (kv) || !*sdbkv_value (kv)) {
-			return NULL;
-		}
-		if (s->timestamped && kv->expire) {
-			if (!now) {
-				now = sdb_now ();
-			}
-			if (now > kv->expire) {
-				sdb_unset (s, key, 0);
+	if (s->ht) {
+		SdbKv *kv = (SdbKv*) sdb_ht_find_kvp (s->ht, key, &found);
+		if (found) {
+			if (!sdbkv_value (kv) || !*sdbkv_value (kv)) {
 				return NULL;
 			}
+			if (s->timestamped && kv->expire) {
+				if (!now) {
+					now = sdb_now ();
+				}
+				if (now > kv->expire) {
+					sdb_unset (s, key, 0);
+					return NULL;
+				}
+			}
+			if (cas) {
+				*cas = kv->cas;
+			}
+			if (vlen) {
+				*vlen = sdbkv_value_len (kv);
+			}
+			return sdbkv_value (kv);
 		}
-		if (cas) {
-			*cas = kv->cas;
-		}
-		if (vlen) {
-			*vlen = sdbkv_value_len (kv);
-		}
-		return sdbkv_value (kv);
+	}
+	/* search in gperf */
+	if (s->gp && s->gp->get) {
+		return s->gp->get (key);
 	}
 	/* search in disk */
 	if (s->fd == -1) {
@@ -390,6 +396,14 @@ SDB_API bool sdb_exists(Sdb* s, const char *key) {
 	return false;
 }
 
+SDB_API int sdb_open_gperf(Sdb *s, SdbGperf *gp) {
+	if (!s || !gp) {
+		return -1;
+	}
+	s->gp = gp;
+	return 0;
+}
+
 SDB_API int sdb_open(Sdb *s, const char *file) {
         struct stat st;
 	if (!s) {
@@ -440,6 +454,7 @@ SDB_API void sdb_close(Sdb *s) {
 			free (s->dir);
 			s->dir = NULL;
 		}
+		s->gp = NULL;
 	}
 }
 
@@ -626,7 +641,7 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, bool owned, ut3
 		sdb_hook_call (s, key, val);
 		return cas;
 	}
-// kv set failed, no need to callback	sdb_hook_call (s, key, val);
+	// kv set failed, no need to callback	sdb_hook_call (s, key, val);
 	return 0;
 }
 
