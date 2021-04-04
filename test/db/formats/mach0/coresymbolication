@@ -233,8 +233,10 @@ EOF
 EXPECT=<<EOF
 file: /Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m
 line: 17
+addr: 0x1000063c8
 file: /Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m
 line: 30
+addr: 0x100006430
 EOF
 RUN
 
@@ -247,8 +249,10 @@ EOF
 EXPECT=<<EOF
 file: /Users/ftamagni/src/TestRTTI/TestRTTI/ViewController.m
 line: 17
+addr: 0x1000063c8
 file: /Users/ftamagni/src/TestRTTI/TestRTTI/AppDelegate.m
 line: 30
+addr: 0x100006430
 EOF
 RUN
 

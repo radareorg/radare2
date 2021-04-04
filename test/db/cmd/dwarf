@@ -22,6 +22,7 @@ EOF
 EXPECT=<<EOF
 file: /Users/ftamagni/src/TestRTTI/TestRTTI//TestRTTI.cpp
 line: 18
+addr: 0x0000a24e
 EOF
 RUN
 
