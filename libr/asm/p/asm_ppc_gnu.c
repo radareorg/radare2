@@ -40,8 +40,9 @@ DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
 DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	char options[64];
 	struct disassemble_info disasm_obj;
-	if (len<4) {
+	if (len < 4) {
 		return -1;
 	}
 	buf_global = &op->buf_asm;
@@ -50,7 +51,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options = (a->bits==64)?"64":"";
+	*options = 0;
+	if (!R_STR_ISEMPTY (a->cpu)) {
+		snprintf (options, sizeof (options), "%s,%s",
+			(a->bits == 64)? "64": "", a->cpu);
+	} else if (a->bits == 64){
+		r_str_ncpy (options, "64", sizeof (options));
+	}
+	disasm_obj.disassembler_options = options;
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &ppc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
