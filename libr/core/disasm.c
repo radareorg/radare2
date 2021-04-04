@@ -6140,6 +6140,23 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		// wanted the numerical values of the type information
 		pj_kn (pj, "type_num", (ut64)(ds->analop.type & UT64_MAX));
 		pj_kn (pj, "type2_num", (ut64)(ds->analop.type2 & UT64_MAX));
+		// addr addrline info here
+		{
+			int line;
+			char file[1024];
+			bool ret = r_bin_addr2line (core->bin, at, file, sizeof (file) - 1, &line);
+			if (!ret) {
+				ret = r_bin_addr2line2 (core->bin, at, file, sizeof (file) - 1, &line);
+			}
+			if (ret) {
+				pj_ko (pj, "addrline");
+				pj_ks (pj, "file", file);
+				pj_kn (pj, "line", line);
+				pj_end (pj);
+			} else {
+				eprintf ("PENE 0x%llx%c", at, 10);
+			}
+		}
 		// handle switch statements
 		if (ds->analop.switch_op && r_list_length (ds->analop.switch_op->cases) > 0) {
 			// XXX - the java caseop will still be reported in the assembly,
