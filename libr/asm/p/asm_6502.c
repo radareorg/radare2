@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2018 - pancake, condret */
+/* radare - LGPL - Copyright 2012-2021 - pancake, condret */
 
 // copypasta from asm_gb.c
 #include <r_types.h>
@@ -8,7 +8,10 @@
 #include "../arch/6502/6502dis.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int dlen = _6502Disass (a->pc, op, buf, len);
+	ut8 data[8];
+	size_t min = R_MIN (len, sizeof (data));
+	memcpy (data, buf, min);
+	int dlen = _6502Disass (a->pc, op, data, min);
 	return op->size = R_MAX (dlen, 0);
 }
 
