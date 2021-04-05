@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 #define _ELF_MIPS_H
 
 #include "reloc-macros.h"
+#include <stdint.h>
 
 /* Relocation types.  */
 START_RELOC_NUMBERS (elf_mips_reloc_type)
@@ -88,7 +89,14 @@ START_RELOC_NUMBERS (elf_mips_reloc_type)
   RELOC_NUMBER (R_MIPS_TLS_TPREL_HI16, 49)
   RELOC_NUMBER (R_MIPS_TLS_TPREL_LO16, 50)
   RELOC_NUMBER (R_MIPS_GLOB_DAT, 51)
-  FAKE_RELOC (R_MIPS_max, 52)
+  /* Space to grow */
+  RELOC_NUMBER (R_MIPS_PC21_S2, 60)
+  RELOC_NUMBER (R_MIPS_PC26_S2, 61)
+  RELOC_NUMBER (R_MIPS_PC18_S3, 62)
+  RELOC_NUMBER (R_MIPS_PC19_S2, 63)
+  RELOC_NUMBER (R_MIPS_PCHI16, 64)
+  RELOC_NUMBER (R_MIPS_PCLO16, 65)
+  FAKE_RELOC (R_MIPS_max, 66)
   /* These relocs are used for the mips16.  */
   FAKE_RELOC (R_MIPS16_min, 100)
   RELOC_NUMBER (R_MIPS16_26, 100)
@@ -97,15 +105,65 @@ START_RELOC_NUMBERS (elf_mips_reloc_type)
   RELOC_NUMBER (R_MIPS16_CALL16, 103)
   RELOC_NUMBER (R_MIPS16_HI16, 104)
   RELOC_NUMBER (R_MIPS16_LO16, 105)
-  FAKE_RELOC (R_MIPS16_max, 106)
+  RELOC_NUMBER (R_MIPS16_TLS_GD, 106)
+  RELOC_NUMBER (R_MIPS16_TLS_LDM, 107)
+  RELOC_NUMBER (R_MIPS16_TLS_DTPREL_HI16, 108)
+  RELOC_NUMBER (R_MIPS16_TLS_DTPREL_LO16, 109)
+  RELOC_NUMBER (R_MIPS16_TLS_GOTTPREL, 110)
+  RELOC_NUMBER (R_MIPS16_TLS_TPREL_HI16, 111)
+  RELOC_NUMBER (R_MIPS16_TLS_TPREL_LO16, 112)
+  RELOC_NUMBER (R_MIPS16_PC16_S1, 113)
+  FAKE_RELOC (R_MIPS16_max, 114)
   /* These relocations are specific to VxWorks.  */
   RELOC_NUMBER (R_MIPS_COPY, 126)
   RELOC_NUMBER (R_MIPS_JUMP_SLOT, 127)
+
+  /* These relocations are specific to microMIPS.  */
+  FAKE_RELOC (R_MICROMIPS_min, 130)
+  RELOC_NUMBER (R_MICROMIPS_26_S1, 133)
+  RELOC_NUMBER (R_MICROMIPS_HI16, 134)
+  RELOC_NUMBER (R_MICROMIPS_LO16, 135)
+  RELOC_NUMBER (R_MICROMIPS_GPREL16, 136)	/* In Elf 64:
+						   alias R_MICROMIPS_GPREL */
+  RELOC_NUMBER (R_MICROMIPS_LITERAL, 137)
+  RELOC_NUMBER (R_MICROMIPS_GOT16, 138)		/* In Elf 64:
+						   alias R_MICROMIPS_GOT */
+  RELOC_NUMBER (R_MICROMIPS_PC7_S1, 139)
+  RELOC_NUMBER (R_MICROMIPS_PC10_S1, 140)
+  RELOC_NUMBER (R_MICROMIPS_PC16_S1, 141)
+  RELOC_NUMBER (R_MICROMIPS_CALL16, 142)	/* In Elf 64:
+						   alias R_MICROMIPS_CALL */
+  RELOC_NUMBER (R_MICROMIPS_GOT_DISP, 145)
+  RELOC_NUMBER (R_MICROMIPS_GOT_PAGE, 146)
+  RELOC_NUMBER (R_MICROMIPS_GOT_OFST, 147)
+  RELOC_NUMBER (R_MICROMIPS_GOT_HI16, 148)
+  RELOC_NUMBER (R_MICROMIPS_GOT_LO16, 149)
+  RELOC_NUMBER (R_MICROMIPS_SUB, 150)
+  RELOC_NUMBER (R_MICROMIPS_HIGHER, 151)
+  RELOC_NUMBER (R_MICROMIPS_HIGHEST, 152)
+  RELOC_NUMBER (R_MICROMIPS_CALL_HI16, 153)
+  RELOC_NUMBER (R_MICROMIPS_CALL_LO16, 154)
+  RELOC_NUMBER (R_MICROMIPS_SCN_DISP, 155)
+  RELOC_NUMBER (R_MICROMIPS_JALR, 156)
+  RELOC_NUMBER (R_MICROMIPS_HI0_LO16, 157)
+  /* TLS relocations.  */
+  RELOC_NUMBER (R_MICROMIPS_TLS_GD, 162)
+  RELOC_NUMBER (R_MICROMIPS_TLS_LDM, 163)
+  RELOC_NUMBER (R_MICROMIPS_TLS_DTPREL_HI16, 164)
+  RELOC_NUMBER (R_MICROMIPS_TLS_DTPREL_LO16, 165)
+  RELOC_NUMBER (R_MICROMIPS_TLS_GOTTPREL, 166)
+  RELOC_NUMBER (R_MICROMIPS_TLS_TPREL_HI16, 169)
+  RELOC_NUMBER (R_MICROMIPS_TLS_TPREL_LO16, 170)
+  /* microMIPS GP- and PC-relative relocations. */
+  RELOC_NUMBER (R_MICROMIPS_GPREL7_S2, 172)
+  RELOC_NUMBER (R_MICROMIPS_PC23_S2, 173)
+  FAKE_RELOC (R_MICROMIPS_max, 174)
+
   /* This was a GNU extension used by embedded-PIC.  It was co-opted by
-     mips-linux for exception-handling data.  It is no longer used, but
-     should continue to be supported by the linker for backward
-     compatibility.  (GCC stopped using it in May, 2004.)  */
+     mips-linux for exception-handling data.  GCC stopped using it in
+     May, 2004, then started using it again for compact unwind tables.  */
   RELOC_NUMBER (R_MIPS_PC32, 248)
+  RELOC_NUMBER (R_MIPS_EH, 249)
   /* FIXME: this relocation is used internally by gas.  */
   RELOC_NUMBER (R_MIPS_GNU_REL16_S2, 250)
   /* These are GNU extensions to enable C++ vtable garbage collection.  */
@@ -137,6 +195,16 @@ END_RELOC_NUMBERS (R_MIPS_maxext)
 /* Process the .MIPS.options section first by ld */
 #define EF_MIPS_OPTIONS_FIRST	0x00000080
 
+/* Indicates code compiled for a 64-bit machine in 32-bit mode
+   (regs are 32-bits wide).  */
+#define EF_MIPS_32BITMODE	0x00000100
+
+/* 32-bit machine but FP registers are 64 bit (-mfp64).  */
+#define EF_MIPS_FP64		0x00000200
+
+/* Code in file uses the IEEE 754-2008 NaN encoding convention.  */
+#define EF_MIPS_NAN2008		0x00000400
+
 /* Architectural Extensions used by this file */
 #define EF_MIPS_ARCH_ASE	0x0f000000
 
@@ -146,9 +214,8 @@ END_RELOC_NUMBERS (R_MIPS_maxext)
 /* Use MIPS-16 ISA extensions */
 #define EF_MIPS_ARCH_ASE_M16	0x04000000
 
-/* Indicates code compiled for a 64-bit machine in 32-bit mode.
-   (regs are 32-bits wide.) */
-#define EF_MIPS_32BITMODE       0x00000100
+/* Use MICROMIPS ISA extensions.  */
+#define EF_MIPS_ARCH_ASE_MICROMIPS	0x02000000
 
 /* Four bit MIPS architecture field.  */
 #define EF_MIPS_ARCH		0xf0000000
@@ -179,6 +246,12 @@ END_RELOC_NUMBERS (R_MIPS_maxext)
 
 /* -mips64r2 code.  */
 #define E_MIPS_ARCH_64R2        0x80000000
+
+/* -mips32r6 code.  */
+#define E_MIPS_ARCH_32R6        0x90000000
+
+/* -mips64r6 code.  */
+#define E_MIPS_ARCH_64R6        0xa0000000
 
 /* The ABI of the file.  Also see EF_MIPS_ABI2 above. */
 #define EF_MIPS_ABI		0x0000F000
@@ -213,9 +286,20 @@ END_RELOC_NUMBERS (R_MIPS_maxext)
 #define E_MIPS_MACH_4120	0x00870000
 #define E_MIPS_MACH_4111	0x00880000
 #define E_MIPS_MACH_SB1         0x008a0000
+#define E_MIPS_MACH_OCTEON	0x008b0000
+#define E_MIPS_MACH_XLR     	0x008c0000
+#define E_MIPS_MACH_OCTEON2	0x008d0000
+#define E_MIPS_MACH_OCTEON3	0x008e0000
 #define E_MIPS_MACH_5400	0x00910000
+#define E_MIPS_MACH_5900	0x00920000
+#define E_MIPS_MACH_IAMR2	0x00930000
 #define E_MIPS_MACH_5500	0x00980000
 #define E_MIPS_MACH_9000	0x00990000
+#define E_MIPS_MACH_LS2E        0x00A00000
+#define E_MIPS_MACH_LS2F        0x00A10000
+#define E_MIPS_MACH_GS464       0x00A20000
+#define E_MIPS_MACH_GS464E	0x00A30000
+#define E_MIPS_MACH_GS264E	0x00A40000
 
 /* Processor specific section indices.  These sections do not actually
    exist.  Symbols with a st_shndx field corresponding to one of these
@@ -223,21 +307,21 @@ END_RELOC_NUMBERS (R_MIPS_maxext)
 
 /* Defined and allocated common symbol.  Value is virtual address.  If
    relocated, alignment must be preserved.  */
-#define SHN_MIPS_ACOMMON	0xff00
+#define SHN_MIPS_ACOMMON	SHN_LORESERVE
 
 /* Defined and allocated text symbol.  Value is virtual address.
    Occur in the dynamic symbol table of Alpha OSF/1 and Irix 5 executables.  */
-#define SHN_MIPS_TEXT		0xff01
+#define SHN_MIPS_TEXT		(SHN_LORESERVE + 1)
 
 /* Defined and allocated data symbol.  Value is virtual address.
    Occur in the dynamic symbol table of Alpha OSF/1 and Irix 5 executables.  */
-#define SHN_MIPS_DATA		0xff02
+#define SHN_MIPS_DATA		(SHN_LORESERVE + 2)
 
 /* Small common symbol.  */
-#define SHN_MIPS_SCOMMON	0xff03
+#define SHN_MIPS_SCOMMON	(SHN_LORESERVE + 3)
 
 /* Small undefined symbol.  */
-#define SHN_MIPS_SUNDEFINED	0xff04
+#define SHN_MIPS_SUNDEFINED	(SHN_LORESERVE + 4)
 
 /* Processor specific section types.  */
 
@@ -363,6 +447,11 @@ END_RELOC_NUMBERS (R_MIPS_maxext)
 /* Runtime procedure descriptor table exception information (ucode) ??? */
 #define SHT_MIPS_PDR_EXCEPTION	0x70000029
 
+/* ABI related flags section.  */
+#define SHT_MIPS_ABIFLAGS	0x7000002a
+
+/* GNU style symbol hash table with xlat.  */
+#define SHT_MIPS_XHASH		0x7000002b
 
 /* A section of type SHT_MIPS_LIBLIST contains an array of the
    following structure.  The sh_link field is the section index of the
@@ -469,11 +558,11 @@ typedef union
 typedef struct
 {
   /* Mask of general purpose registers used.  */
-  unsigned long ri_gprmask;
+  uint32_t ri_gprmask;
   /* Mask of co-processor registers used.  */
-  unsigned long ri_cprmask[4];
+  uint32_t ri_cprmask[4];
   /* GP register value for this object file.  */
-  long ri_gp_value;
+  uint32_t ri_gp_value;
 } Elf32_RegInfo;
 
 /* The external version of the Elf_RegInfo structure.  */
@@ -528,6 +617,9 @@ extern void bfd_mips_elf32_swap_reginfo_out
 
 /* .MIPS.options section.  */
 #define PT_MIPS_OPTIONS		0x70000002
+
+/* Records ABI related flags.  */
+#define PT_MIPS_ABIFLAGS	0x70000003
 
 /* Processor specific dynamic array tags.  */
 
@@ -659,6 +751,18 @@ extern void bfd_mips_elf32_swap_reginfo_out
 
 /* Address of auxiliary .dynamic.  */
 #define DT_MIPS_AUX_DYNAMIC	0x70000031
+
+/* Address of the base of the PLTGOT.  */
+#define DT_MIPS_PLTGOT         0x70000032
+
+/* Points to the base of a writable PLT.  */
+#define DT_MIPS_RWPLT          0x70000034
+
+/* Relative offset of run time loader map, used for debugging.  */
+#define DT_MIPS_RLD_MAP_REL    0x70000035
+
+/* Address of .MIPS.xhash section.  */
+#define DT_MIPS_XHASH	       0x70000036
 
 /* Flags which may appear in a DT_MIPS_FLAGS entry.  */
 
@@ -720,8 +824,58 @@ extern void bfd_mips_elf32_swap_reginfo_out
 #define STO_HIDDEN		STV_HIDDEN
 #define STO_PROTECTED		STV_PROTECTED
 
+/* Two topmost bits denote the MIPS ISA for .text symbols:
+   + 00 -- standard MIPS code,
+   + 10 -- microMIPS code,
+   + 11 -- MIPS16 code; requires the following two bits to be set too.
+   Note that one of the MIPS16 bits overlaps with STO_MIPS_PIC.  See below
+   for details.  */
+#define STO_MIPS_ISA		(3 << 6)
+
+/* The mask spanning the rest of MIPS psABI flags.  At most one is expected
+   to be set except for STO_MIPS16.  */
+#define STO_MIPS_FLAGS		(~(STO_MIPS_ISA | ELF_ST_VISIBILITY (-1)))
+
+/* The MIPS psABI was updated in 2008 with support for PLTs and copy
+   relocs.  There are therefore two types of nonzero SHN_UNDEF functions:
+   PLT entries and traditional MIPS lazy binding stubs.  We mark the former
+   with STO_MIPS_PLT to distinguish them from the latter.  */
+#define STO_MIPS_PLT		0x8
+#define ELF_ST_IS_MIPS_PLT(other)					\
+  ((ELF_ST_IS_MIPS16 (other)						\
+    ? ((other) & (~STO_MIPS16 & STO_MIPS_FLAGS))			\
+    : ((other) & STO_MIPS_FLAGS)) == STO_MIPS_PLT)
+#define ELF_ST_SET_MIPS_PLT(other)					\
+  ((ELF_ST_IS_MIPS16 (other)						\
+    ? ((other) & (STO_MIPS16 | ~STO_MIPS_FLAGS))			\
+    : ((other) & ~STO_MIPS_FLAGS)) | STO_MIPS_PLT)
+
+/* This value is used to mark PIC functions in an object that mixes
+   PIC and non-PIC.  Note that this bit overlaps with STO_MIPS16,
+   although MIPS16 symbols are never considered to be MIPS_PIC.  */
+#define STO_MIPS_PIC		0x20
+#define ELF_ST_IS_MIPS_PIC(other) (((other) & STO_MIPS_FLAGS) == STO_MIPS_PIC)
+#define ELF_ST_SET_MIPS_PIC(other)					\
+  ((ELF_ST_IS_MIPS16 (other)						\
+    ? ((other) & ~(STO_MIPS16 | STO_MIPS_FLAGS))			\
+    : ((other) & ~STO_MIPS_FLAGS)) | STO_MIPS_PIC)
+
 /* This value is used for a mips16 .text symbol.  */
 #define STO_MIPS16		0xf0
+#define ELF_ST_IS_MIPS16(other) (((other) & STO_MIPS16) == STO_MIPS16)
+#define ELF_ST_SET_MIPS16(other) ((other) | STO_MIPS16)
+
+/* This value is used for a microMIPS .text symbol.  To distinguish from
+   STO_MIPS16, we set top two bits to be 10 to denote STO_MICROMIPS.  The
+   mask is STO_MIPS_ISA.  */
+#define STO_MICROMIPS		(2 << 6)
+#define ELF_ST_IS_MICROMIPS(other) (((other) & STO_MIPS_ISA) == STO_MICROMIPS)
+#define ELF_ST_SET_MICROMIPS(other) (((other) & ~STO_MIPS_ISA) | STO_MICROMIPS)
+
+/* Whether code compression (either of the MIPS16 or the microMIPS ASEs)
+   has been indicated for a .text symbol.  */
+#define ELF_ST_IS_COMPRESSED(other) \
+  (ELF_ST_IS_MIPS16 (other) || ELF_ST_IS_MICROMIPS (other))
 
 /* This bit is used on Irix to indicate a symbol whose definition
    is optional - if, at final link time, it cannot be found, no
@@ -852,9 +1006,9 @@ typedef struct
   /* Size of option descriptor, including header.  */
   unsigned char size;
   /* Section index of affected section, or 0 for global option.  */
-  unsigned short section;
+  uint16_t section;
   /* Information specific to this kind of option.  */
-  unsigned long info;
+  uint32_t info;
 } Elf_Internal_Options;
 
 /* MIPS ELF option header swapping routines.  */
@@ -918,14 +1072,66 @@ typedef struct
 typedef struct
 {
   /* Mask of general purpose registers used.  */
-  unsigned long ri_gprmask;
+  uint32_t ri_gprmask;
   /* Padding.  */
-  unsigned long ri_pad;
+  uint32_t ri_pad;
   /* Mask of co-processor registers used.  */
-  unsigned long ri_cprmask[4];
+  uint32_t ri_cprmask[4];
   /* GP register value for this object file.  */
-  bfd_vma ri_gp_value;
+  uint64_t ri_gp_value;
 } Elf64_Internal_RegInfo;
+
+/* ABI Flags structure version 0.  */
+
+typedef struct
+{
+  /* Version of flags structure.  */
+  unsigned char version[2];
+  /* The level of the ISA: 1-5, 32, 64.  */
+  unsigned char isa_level[1];
+  /* The revision of ISA: 0 for MIPS V and below, 1-n otherwise.  */
+  unsigned char isa_rev[1];
+  /* The size of general purpose registers.  */
+  unsigned char gpr_size[1];
+  /* The size of co-processor 1 registers.  */
+  unsigned char cpr1_size[1];
+  /* The size of co-processor 2 registers.  */
+  unsigned char cpr2_size[1];
+  /* The floating-point ABI.  */
+  unsigned char fp_abi[1];
+  /* Processor-specific extension.  */
+  unsigned char isa_ext[4];
+  /* Mask of ASEs used.  */
+  unsigned char ases[4];
+  /* Mask of general flags.  */
+  unsigned char flags1[4];
+  unsigned char flags2[4];
+} Elf_External_ABIFlags_v0;
+
+typedef struct elf_internal_abiflags_v0
+{
+  /* Version of flags structure.  */
+  unsigned short version;
+  /* The level of the ISA: 1-5, 32, 64.  */
+  unsigned char isa_level;
+  /* The revision of ISA: 0 for MIPS V and below, 1-n otherwise.  */
+  unsigned char isa_rev;
+  /* The size of general purpose registers.  */
+  unsigned char gpr_size;
+  /* The size of co-processor 1 registers.  */
+  unsigned char cpr1_size;
+  /* The size of co-processor 2 registers.  */
+  unsigned char cpr2_size;
+  /* The floating-point ABI.  */
+  unsigned char fp_abi;
+  /* Processor-specific extension.  */
+  unsigned long isa_ext;
+  /* Mask of ASEs used.  */
+  unsigned long ases;
+  /* Mask of general flags.  */
+  unsigned long flags1;
+  unsigned long flags2;
+} Elf_Internal_ABIFlags_v0;
 
 typedef struct
 {
@@ -967,6 +1173,12 @@ extern void bfd_mips_elf64_swap_reginfo_in
 extern void bfd_mips_elf64_swap_reginfo_out
   (bfd *, const Elf64_Internal_RegInfo *, Elf64_External_RegInfo *);
 
+/* MIPS ELF flags swapping routines.  */
+extern void bfd_mips_elf_swap_abiflags_v0_in
+  (bfd *, const Elf_External_ABIFlags_v0 *, Elf_Internal_ABIFlags_v0 *);
+extern void bfd_mips_elf_swap_abiflags_v0_out
+  (bfd *, const Elf_Internal_ABIFlags_v0 *, Elf_External_ABIFlags_v0 *);
+
 /* Masks for the info work of an ODK_EXCEPTIONS descriptor.  */
 #define OEX_FPU_MIN	0x1f	/* FPEs which must be enabled.  */
 #define OEX_FPU_MAX	0x1f00	/* FPEs which may be enabled.  */
@@ -1004,17 +1216,120 @@ extern void bfd_mips_elf64_swap_reginfo_out
 /* Masks for the info word of an ODK_HWAND/ODK_HWOR descriptor.  */
 #define OHWA0_R4KEOP_CHECKED	0x00000001
 #define OHWA0_R4KEOP_CLEAN	0x00000002
+
+/* Values for the xxx_size bytes of an ABI flags structure.  */
+
+#define AFL_REG_NONE	     0x00	/* No registers.  */
+#define AFL_REG_32	     0x01	/* 32-bit registers.  */
+#define AFL_REG_64	     0x02	/* 64-bit registers.  */
+#define AFL_REG_128	     0x03	/* 128-bit registers.  */
+
+/* Masks for the ases word of an ABI flags structure.  */
+
+#define AFL_ASE_DSP          0x00000001 /* DSP ASE.  */
+#define AFL_ASE_DSPR2        0x00000002 /* DSP R2 ASE.  */
+#define AFL_ASE_EVA          0x00000004 /* Enhanced VA Scheme.  */
+#define AFL_ASE_MCU          0x00000008 /* MCU (MicroController) ASE.  */
+#define AFL_ASE_MDMX         0x00000010 /* MDMX ASE.  */
+#define AFL_ASE_MIPS3D       0x00000020 /* MIPS-3D ASE.  */
+#define AFL_ASE_MT           0x00000040 /* MT ASE.  */
+#define AFL_ASE_SMARTMIPS    0x00000080 /* SmartMIPS ASE.  */
+#define AFL_ASE_VIRT         0x00000100 /* VZ ASE.  */
+#define AFL_ASE_MSA          0x00000200 /* MSA ASE.  */
+#define AFL_ASE_MIPS16       0x00000400 /* MIPS16 ASE.  */
+#define AFL_ASE_MICROMIPS    0x00000800 /* MICROMIPS ASE.  */
+#define AFL_ASE_XPA          0x00001000 /* XPA ASE.  */
+#define AFL_ASE_DSPR3        0x00002000 /* DSP R3 ASE.  */
+#define AFL_ASE_MIPS16E2     0x00004000 /* MIPS16e2 ASE.  */
+#define AFL_ASE_CRC          0x00008000 /* CRC ASE.  */
+#define AFL_ASE_RESERVED1    0x00010000 /* Reserved by MIPS Tech for WIP.  */
+#define AFL_ASE_GINV         0x00020000 /* GINV ASE.  */
+#define AFL_ASE_LOONGSON_MMI 0x00040000 /* Loongson MMI ASE.  */
+#define AFL_ASE_LOONGSON_CAM 0x00080000 /* Loongson CAM ASE.  */
+#define AFL_ASE_LOONGSON_EXT 0x00100000 /* Loongson EXT instructions.  */
+#define AFL_ASE_LOONGSON_EXT2 0x00200000 /* Loongson EXT2 instructions.  */
+#define AFL_ASE_MASK         0x003effff /* All ASEs.  */
+
+/* Values for the isa_ext word of an ABI flags structure.  */
+
+#define AFL_EXT_XLR           1  /* RMI Xlr instruction.  */
+#define AFL_EXT_OCTEON2       2  /* Cavium Networks Octeon2.  */
+#define AFL_EXT_OCTEONP       3  /* Cavium Networks OcteonP.  */
+#define AFL_EXT_OCTEON        5  /* Cavium Networks Octeon.  */
+#define AFL_EXT_5900          6  /* MIPS R5900 instruction.  */
+#define AFL_EXT_4650          7  /* MIPS R4650 instruction.  */
+#define AFL_EXT_4010          8  /* LSI R4010 instruction.  */
+#define AFL_EXT_4100          9  /* NEC VR4100 instruction.  */
+#define AFL_EXT_3900         10  /* Toshiba R3900 instruction.  */
+#define AFL_EXT_10000        11  /* MIPS R10000 instruction.  */
+#define AFL_EXT_SB1          12  /* Broadcom SB-1 instruction.  */
+#define AFL_EXT_4111         13  /* NEC VR4111/VR4181 instruction.  */
+#define AFL_EXT_4120         14  /* NEC VR4120 instruction.  */
+#define AFL_EXT_5400         15  /* NEC VR5400 instruction.  */
+#define AFL_EXT_5500         16  /* NEC VR5500 instruction.  */
+#define AFL_EXT_LOONGSON_2E  17  /* ST Microelectronics Loongson 2E.  */
+#define AFL_EXT_LOONGSON_2F  18  /* ST Microelectronics Loongson 2F.  */
+#define AFL_EXT_OCTEON3      19  /* Cavium Networks Octeon3.  */
+#define AFL_EXT_INTERAPTIV_MR2 20  /* Imagination interAptiv MR2.  */
+
+/* Masks for the flags1 word of an ABI flags structure.  */
+#define AFL_FLAGS1_ODDSPREG   1	 /* Uses odd single-precision registers.  */
+
+extern unsigned int bfd_mips_isa_ext (bfd *);
 
 
 /* Object attribute tags.  */
 enum
 {
   /* 0-3 are generic.  */
-  Tag_GNU_MIPS_ABI_FP = 4, /* Value 1 for hard-float -mdouble-float, 2
-			      for hard-float -msingle-float, 3 for
-			      soft-float; 0 for not tagged or not
-			      using any ABIs affected by the
-			      differences.  */
+
+  /* Floating-point ABI used by this object file.  */
+  Tag_GNU_MIPS_ABI_FP = 4,
+
+  /* MSA ABI used by this object file.  */
+  Tag_GNU_MIPS_ABI_MSA = 8,
+};
+
+/* Object attribute values.  */
+enum
+{
+  /* Values defined for Tag_GNU_MIPS_ABI_FP.  */
+
+  /* Not tagged or not using any ABIs affected by the differences.  */
+  Val_GNU_MIPS_ABI_FP_ANY = 0,
+
+  /* Using hard-float -mdouble-float.  */
+  Val_GNU_MIPS_ABI_FP_DOUBLE = 1,
+
+  /* Using hard-float -msingle-float.  */
+  Val_GNU_MIPS_ABI_FP_SINGLE = 2,
+
+  /* Using soft-float.  */
+  Val_GNU_MIPS_ABI_FP_SOFT = 3,
+
+  /* Using -mips32r2 -mfp64.  */
+  Val_GNU_MIPS_ABI_FP_OLD_64 = 4,
+
+  /* Using -mfpxx */
+  Val_GNU_MIPS_ABI_FP_XX = 5,
+
+  /* Using -mips32r2 -mfp64.  */
+  Val_GNU_MIPS_ABI_FP_64 = 6,
+
+  /* Using -mips32r2 -mfp64 -mno-odd-spreg.  */
+  Val_GNU_MIPS_ABI_FP_64A = 7,
+
+  /* This is reserved for backward-compatibility with an earlier
+     implementation of the MIPS NaN2008 functionality.  */
+  Val_GNU_MIPS_ABI_FP_NAN2008 = 8,
+
+  /* Values defined for Tag_GNU_MIPS_ABI_MSA.  */
+
+  /* Not tagged or not using any ABIs affected by the differences.  */
+  Val_GNU_MIPS_ABI_MSA_ANY = 0,
+
+  /* Using 128-bit MSA.  */
+  Val_GNU_MIPS_ABI_MSA_128 = 1,
 };
 
 #endif /* _ELF_MIPS_H */

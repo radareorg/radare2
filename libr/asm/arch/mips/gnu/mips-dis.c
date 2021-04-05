@@ -859,11 +859,12 @@ set_default_mips_dis_options (struct disassemble_info *info)
   /* Defaults: mipsIII/r3000 (?!), no microMIPS ASE (any compressed code
      is MIPS16 ASE) (o)32-style ("oldabi") GPR names, and numeric FPR,
      CP0 register, and HWR names.  */  // Changed
-  mips_isa = ISA_MIPS3;
+  mips_isa = INSN_ISA64R2;
   //mips_processor = CPU_R3000; //TODO: Change it?
-  mips_processor = CPU_LOONGSON_2F; //Match value in asm_mips_gnu.c
+  mips_processor = CPU_GS264E; //Match value in asm_mips_gnu.c
   micromips_ase = 0;
   mips_ase = 0;
+  //mips_ase = ASE_LOONGSON_MMI | ASE_LOONGSON_CAM | ASE_LOONGSON_EXT;
   mips_gpr_names = mips_gpr_names_oldabi;
   mips_fpr_names = mips_fpr_names_numeric;
   mips_cp0_names = mips_cp0_names_numeric;
@@ -871,7 +872,7 @@ set_default_mips_dis_options (struct disassemble_info *info)
   mips_cp0sel_names_len = 0;
   mips_cp1_names = mips_cp1_names_numeric;
   mips_hwr_names = mips_hwr_names_numeric;
-  no_aliases = 0;
+  no_aliases = 1;
 
   /* Set ISA, architecture, and cp0 register names as best we can.  */
 #if ! SYMTAB_AVAILABLE
@@ -1987,7 +1988,9 @@ print_insn_mips (bfd_vma memaddr,
 
 	      if (op->args[0])
 		{
-		  infprintf (is, "\t");
+		  //infprintf (is, "\t");
+      //comaptible with radare2's visual mode
+      infprintf (is, " ");
 		  print_insn_args (info, op, decode_mips_operand, word,
 				   memaddr, 4);
 		}
@@ -2296,7 +2299,8 @@ print_insn_mips16 (bfd_vma memaddr, struct disassemble_info *info)
 
 	  infprintf (is, "%s", op->name);
 	  if (op->args[0] != '\0')
-	    infprintf (is, "\t");
+	    // infprintf (is, "\t");
+      infprintf (is, " ");
 
 	  init_print_arg_state (&state);
 	  for (s = op->args; *s != '\0'; s++)
@@ -2465,7 +2469,8 @@ print_insn_micromips (bfd_vma memaddr, struct disassemble_info *info)
 
 	  if (op->args[0])
 	    {
-	      infprintf (is, "\t");
+	      //infprintf (is, "\t");
+        infprintf (is, " ");
 	      print_insn_args (info, op, decode_micromips_operand, insn,
 			       memaddr + 1, length);
 	    }
@@ -2613,68 +2618,11 @@ print_insn_little_mips (bfd_vma memaddr, struct disassemble_info *info)
 
 /* Indices into option argument vector for options accepting an argument.
    Use MIPS_OPTION_ARG_NONE for options accepting no argument.  */
-typedef enum
-{
-  MIPS_OPTION_ARG_NONE = -1,
-  MIPS_OPTION_ARG_ABI,
-  MIPS_OPTION_ARG_ARCH,
-  MIPS_OPTION_ARG_SIZE
-} mips_option_arg_t;
-
-/* Valid MIPS disassembler options.  */
-static struct
-{
-  const char *name;
-  const char *description;
-  mips_option_arg_t arg;
-} mips_options[] =
-{
-  { "no-aliases", N_("Use canonical instruction forms.\n"),
-		  MIPS_OPTION_ARG_NONE },
-  { "msa",        N_("Recognize MSA instructions.\n"),
-		  MIPS_OPTION_ARG_NONE },
-  { "virt",       N_("Recognize the virtualization ASE instructions.\n"),
-		  MIPS_OPTION_ARG_NONE },
-  { "xpa",        N_("Recognize the eXtended Physical Address (XPA) ASE\n\
-                  instructions.\n"),
-		  MIPS_OPTION_ARG_NONE },
-  { "ginv",       N_("Recognize the Global INValidate (GINV) ASE "
-		     "instructions.\n"),
-		  MIPS_OPTION_ARG_NONE },
-  { "loongson-mmi",
-		  N_("Recognize the Loongson MultiMedia extensions "
-		     "Instructions (MMI) ASE instructions.\n"),
-		  MIPS_OPTION_ARG_NONE },
-  { "loongson-cam",
-		  N_("Recognize the Loongson Content Address Memory (CAM) "
-		     " instructions.\n"),
-		  MIPS_OPTION_ARG_NONE },
-  { "loongson-ext",
-		  N_("Recognize the Loongson EXTensions (EXT) "
-		     " instructions.\n"),
-		  MIPS_OPTION_ARG_NONE },
-  { "loongson-ext2",
-		  N_("Recognize the Loongson EXTensions R2 (EXT2) "
-		     " instructions.\n"),
-		  MIPS_OPTION_ARG_NONE },
-  { "gpr-names=", N_("Print GPR names according to specified ABI.\n\
-                  Default: based on binary being disassembled.\n"),
-		  MIPS_OPTION_ARG_ABI },
-  { "fpr-names=", N_("Print FPR names according to specified ABI.\n\
-                  Default: numeric.\n"),
-		  MIPS_OPTION_ARG_ABI },
-  { "cp0-names=", N_("Print CP0 register names according to specified "
-		     "architecture.\n\
-                  Default: based on binary being disassembled.\n"),
-		  MIPS_OPTION_ARG_ARCH },
-  { "hwr-names=", N_("Print HWR names according to specified architecture.\n\
-                  Default: based on binary being disassembled.\n"),
-		  MIPS_OPTION_ARG_ARCH },
-  { "reg-names=", N_("Print GPR and FPR names according to specified ABI.\n"),
-		  MIPS_OPTION_ARG_ABI },
-  { "reg-names=", N_("Print CP0 register and HWR names according to "
-		     "specified\n\
-                  architecture."),
-		  MIPS_OPTION_ARG_ARCH }
-};
+// typedef enum
+// {
+//   MIPS_OPTION_ARG_NONE = -1,
+//   MIPS_OPTION_ARG_ABI,
+//   MIPS_OPTION_ARG_ARCH,
+//   MIPS_OPTION_ARG_SIZE
+// } mips_option_arg_t;
 
