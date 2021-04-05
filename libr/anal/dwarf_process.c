@@ -165,6 +165,9 @@ static inline char *create_type_name_from_offset(ut64 offset) {
 static char *get_die_name(const RBinDwarfDie *die) {
 	char *name = NULL;
 	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
+	if (name_attr_idx < 0 || name_attr_idx >= die->count) {
+		return NULL;
+	}
 	RBinDwarfAttrValue *av = &die->attr_values[name_attr_idx];
 	if (av->kind == DW_AT_KIND_STRING && name_attr_idx != -1 && av->string.content) {
 		name = strdup (av->string.content);
@@ -310,8 +313,10 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	case DW_TAG_union_type:
 	case DW_TAG_class_type:
 		name = get_die_name (die);
-		r_strbuf_append (strbuf, name);
-		free (name);
+		if (name) {
+			r_strbuf_append (strbuf, name);
+			free (name);
+		}
 		break;
 	case DW_TAG_subroutine_type:
 		type_idx = find_attr_idx (die, DW_AT_type);
