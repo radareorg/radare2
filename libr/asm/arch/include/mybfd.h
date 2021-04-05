@@ -1,15 +1,8 @@
-/* DO NOT EDIT!  -*- buffer-read-only: t -*-  This file is automatically 
-   generated from "bfd-in.h", "init.c", "opncls.c", "libbfd.c", 
-   "bfdio.c", "bfdwin.c", "section.c", "archures.c", "reloc.c", 
-   "syms.c", "bfd.c", "archive.c", "corefile.c", "targets.c", "format.c", 
-   "linker.c" and "simple.c".
-   Run "make headers" in your build bfd/ to regenerate.  */
+/*This file contains some manual modifications as additon of original generated file. */
 
 /* Main header file for the bfd library -- portable access to object files.
 
-   Copyright 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
+   Copyright (C) 1990-2021 Free Software Foundation, Inc.
 
    Contributed by Cygnus Support.
 
@@ -17,7 +10,7 @@
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
