@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - nibble */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -82,6 +82,7 @@ RAsmPlugin r_asm_plugin_ppc_gnu = {
 	.name = "ppc.gnu",
 	.arch = "ppc",
 	.license = "GPL3",
+	.cpus = "booke,e300,e500,e500x2,e500mc,e440,e464,efs,ppcps,power4,power5,power6,power7,vsx",
 	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.desc = "PowerPC",
