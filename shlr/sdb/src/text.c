@@ -389,7 +389,7 @@ SDB_API bool sdb_text_load_buf(Sdb *s, char *buf, size_t sz) {
 		load_process_single_char (&ctx);
 	}
 	if (ctx.line_begin < ctx.bufsz && ctx.state != STATE_NEWLINE) {
-		load_process_final_line(&ctx);
+		load_process_final_line (&ctx);
 	}
 	load_ctx_fini (&ctx);
 	return ret;

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include <stdio.h>
 
 #undef eprintf
@@ -38,22 +39,20 @@
 
 #if __WIN32__ || __MINGW__ || __WINDOWS__ || _MSC_VER
 #define __SDB_WINDOWS__ 1
+#undef DIRSEP
 #define DIRSEP '\\'
+#undef lseek
 #define lseek _lseek
 #include <windows.h>
 #include <io.h>
+#define ULLFMT "I64"
+#define HAVE_MMAN 0
 #else
 // CYGWIN AND UNIX
 #define __SDB_WINDOWS__ 0
+#undef DIRSEP
 #define DIRSEP '/'
 #include <unistd.h>
-#endif
-
-#include <inttypes.h>
-#if __SDB_WINDOWS__ && !__CYGWIN__
-#define HAVE_MMAN 0
-#define ULLFMT "I64"
-#else
 #define HAVE_MMAN 1
 #define ULLFMT "ll"
 #endif

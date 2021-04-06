@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2018 - pancake */
+/* sdb - MIT - Copyright 2011-2021 - pancake */
 
 #include "sdb.h"
 
@@ -14,11 +14,11 @@
 #include <time.h>
 
 struct timezone {
-	int  tz_minuteswest; /* minutes W of Greenwich */
-	int  tz_dsttime;     /* type of dst correction */
+	int tz_minuteswest; /* minutes W of Greenwich */
+	int tz_dsttime;     /* type of dst correction */
 };
 
-SDB_API int gettimeofday (struct timeval* p, struct timezone * tz) {
+SDB_API int gettimeofday(struct timeval* p, struct timezone * tz) {
 	//ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
 	static int tzflag = 0;
