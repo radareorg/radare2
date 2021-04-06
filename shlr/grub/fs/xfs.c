@@ -403,7 +403,7 @@ struct grub_xfs_iterate_dir_closure
 };
 
 static int
-call_hook (grub_uint64_t ino, char *filename,
+call_hook (grub_uint64_t ino, const char *filename,
 	   struct grub_xfs_iterate_dir_closure *c)
 {
   struct grub_fshelp_node *fdiro;

@@ -92,7 +92,7 @@ static void freeset(struct parse *, cset *);
 static int freezeset(struct parse *, cset *);
 static int firstch(struct parse *, cset *);
 static int nch(struct parse *, cset *);
-static void mcadd(struct parse *, cset *, char *);
+static void mcadd(struct parse *, cset *, const char *);
 static void mcinvert(struct parse *, cset *);
 static void mccase(struct parse *, cset *);
 static int isinsets(struct re_guts *, int);
@@ -907,7 +907,7 @@ static void p_b_cclass(struct parse *p, cset *cs) {
 	char *sp = p->next;
 	struct cclass *cp;
 	size_t len;
-	char *u;
+	const char *u;
 	char c;
 
 	while (MORE () && isalpha ((unsigned char)PEEK ())) {
@@ -1377,7 +1377,7 @@ static int nch(struct parse *p, cset *cs) {
 /*
  - mcadd - add a collating element to a cset
  */
-static void mcadd( struct parse *p, cset *cs, char *cp) {
+static void mcadd( struct parse *p, cset *cs, const char *cp) {
 	size_t oldend = cs->smultis;
 	void *np;
 

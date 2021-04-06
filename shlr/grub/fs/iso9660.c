@@ -515,9 +515,9 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry, void *closure)
 	 filename type is stored.  */
       grub_uint8_t *data = ENTRY_DATA(entry);
       if (data[0] & GRUB_ISO9660_RR_DOT)
-	filename = ".";
+	filename = strdup (".");
       else if (data[0] & GRUB_ISO9660_RR_DOTDOT)
-	filename = "..";
+	filename = strdup ("..");
       else
 	{
 	  int size = 1;

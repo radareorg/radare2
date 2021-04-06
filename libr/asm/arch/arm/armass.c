@@ -258,7 +258,7 @@ static ut64 cqcheck(char **input) {
 	return 0;
 }
 
-static ut64 opmask(char *input, char *opcode, ut64 allowed_mask) {
+static ut64 opmask(char *input, const char *opcode, ut64 allowed_mask) {
 	ut64 res = 0;
 	
 	r_str_case (input, false);

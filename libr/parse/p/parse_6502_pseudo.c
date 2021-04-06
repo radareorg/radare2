@@ -20,8 +20,8 @@ static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
 	int i, j, k;
 	struct {
 		int narg;
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 	} ops[] = {
 		{1, "lda", "a = 1"},
 		{2, "lda", "a = (1+2)"},

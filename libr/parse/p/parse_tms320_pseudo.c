@@ -11,8 +11,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	int i, j, k;
 	struct {
 		int narg;
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 	} ops[] = {
 		{3, "add", "3 = 1 + 2"},    // add b12, b1, b9 -> b9 = b12 + b1
 		{3, "addu", "3 = 1 + 2"},

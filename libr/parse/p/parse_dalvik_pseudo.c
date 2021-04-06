@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2012-2017 - pancake */
+/* radare - LGPL - Copyright 2012-2021 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_flag.h>
@@ -11,10 +10,10 @@
 #include <r_parse.h>
 
 static int replace(int argc, const char *argv[], char *newstr) {
-	int i,j,k;
+	int i, j, k;
 	struct {
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 	} ops[] = {
 		{ "rsub-int",   "1 = 2 - 3"},
 		{ "float-to-double", "1 = (double)(float) 2"},

@@ -25,7 +25,7 @@ enum {
 	NRM_NRM
 };
 
-static char* utf8_line_vert (int dot_style) {
+static const char* utf8_line_vert (int dot_style) {
 	if (r_cons_singleton ()->dotted_lines) {
 		switch (dot_style) {
 		case DOT_STYLE_NORMAL:      return RUNECODESTR_LINE_VERT;
@@ -36,7 +36,7 @@ static char* utf8_line_vert (int dot_style) {
 	return RUNECODESTR_LINE_VERT;
 }
 
-static char* utf8_line_horiz (int dot_style) {
+static const char* utf8_line_horiz (int dot_style) {
 	if (r_cons_singleton ()->dotted_lines) {
 		switch (dot_style) {
 		case DOT_STYLE_NORMAL:      return RUNECODESTR_LINE_HORIZ;

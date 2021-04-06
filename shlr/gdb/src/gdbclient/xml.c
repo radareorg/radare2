@@ -728,7 +728,8 @@ static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid)
 }
 
 static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
-	char *regstr_end, *regname, *regtype, *tmp1, *tmpregstr, *feature_end, *typegroup;
+	char *regstr_end, *regname, *tmp1, *tmpregstr, *feature_end;
+	const char *typegroup, *regtype;
 	ut32 flagnum, regname_len, regsize, regnum;
 	RList *regs;
 	RListIter *iter;

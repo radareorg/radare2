@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2018 - pancake */
+/* radare - LGPL - Copyright 2015-2021 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,8 +15,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	char ch;
 	struct {
 		int narg;
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 		int args[MAXPSEUDOOPS];
 	} ops[] = {
 		{ 0, "abs", "# = abs(#)", { 1, 1 } },

@@ -293,8 +293,8 @@ static const char* getspr(const char *reg) {
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
 	struct {
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 		int max_operands;
 	} ops[] = {
 		{ "cmpb", "A = ((byte) B == (byte) C)", 3}, //0

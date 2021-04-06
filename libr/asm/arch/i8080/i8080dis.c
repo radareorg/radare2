@@ -45,7 +45,7 @@ struct arg_t {
 static struct opcode_t {
   unsigned char cmd;
   int size;
-  char *name;
+  const char *name;
   struct arg_t arg1, arg2;
 } opcodes[] = {
   { 0x76, 1, "hlt" },

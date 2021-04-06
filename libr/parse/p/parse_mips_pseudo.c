@@ -26,8 +26,8 @@ static int can_replace(const char *str, int idx, int max_operands) {
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
 	struct {
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 		int max_operands;
 	} ops[] = {
 		{ "add", "1 = 2 + 3", 3},

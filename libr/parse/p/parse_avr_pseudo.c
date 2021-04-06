@@ -13,8 +13,8 @@
 static bool replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
 	struct {
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 	} ops[] = {
 		{ "add",     "A += B"},
 		{ "adc",     "A += B + carry"},

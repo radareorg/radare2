@@ -37,7 +37,7 @@
 
 /* character-name table */
 static struct cname {
-	char *name;
+	const char *name;
 	char code;
 } cnames[] = {
 	{ "NUL",			'\0' },

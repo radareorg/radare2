@@ -17,8 +17,8 @@ static int replace (int argc, char *argv[], char *newstr) {
 	int i, j, k, d;
 	char ch;
 	struct {
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 		int args[MAXPSEUDOOPS];  // XXX can't use flex arrays, all unused will be 0
 	} ops[] = {
 		{ "adc",  "# += #", {1, 2}},
