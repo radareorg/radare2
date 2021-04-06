@@ -94,6 +94,16 @@ generate_configh () {
   done
 }
 
+generate_asmdinc() {
+  plugins=""
+  oldlib=""
+  for a in ${STATIC} ; do
+    lib=$(echo $a | cut -d . -f 1) # library
+    plg=$(echo $a | cut -d . -f 2) # plugin name
+    echo "(SdbGperf*)&gperf_${plg},"
+  done
+}
+
 generate_configmk () {
   plugins=""
   oldlib=""
@@ -132,13 +142,17 @@ generate_configmk () {
 }
 
 generate () {
-  echo "configure-plugins: Generating libr/config.h .."
+  echo "configure-plugins: Generating libr/config.h"
   cat libr/config.h.head > libr/config.h
+
   echo "#define R2_LOADLIBS ${LOADLIBS}" >> libr/config.h
   generate_configh >> libr/config.h
   cat libr/config.h.tail >> libr/config.h
 
-  echo "configure-plugins: Generating libr/config.mk .."
+  echo "configure-plugins: Generating libr/asm/d/config.inc"
+  generate_asmdinc >> libr/asm/d/config.inc
+
+  echo "configure-plugins: Generating libr/config.mk"
   cat libr/config.mk.head > libr/config.mk
   generate_configmk >> libr/config.mk
   cat libr/config.mk.tail >> libr/config.mk

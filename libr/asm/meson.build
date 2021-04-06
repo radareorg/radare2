@@ -2,6 +2,7 @@ r_asm_sources = [
   'asm.c',
   'aop.c',
   'acode.c',
+  'aplugs.c',
   'binutils_as.c',
   'p/asm_6502.c',
   'p/asm_6502_cs.c',
