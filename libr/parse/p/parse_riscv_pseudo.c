@@ -11,8 +11,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	char ch;
 	struct {
 		int narg;
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 		int args[MAXPSEUDOOPS];
 	} ops[] = {
 		{ 0, "add", "# = # + #", { 1, 2, 3 } },

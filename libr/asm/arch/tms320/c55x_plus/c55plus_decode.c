@@ -16,7 +16,7 @@
 extern char *ins_str[];
 extern ut32 ins_buff_len;
 
-static ut32 get_q_bits(ut32 val, char *ins, ut32 ins_len, int *err_code) {
+static ut32 get_q_bits(ut32 val, const char *ins, ut32 ins_len, int *err_code) {
 	ut32 res = 0;
 
 	if (!r_str_ncasecmp (ins, "q_MMAP", 6)) {
@@ -53,7 +53,7 @@ static ut32 get_q_bits(ut32 val, char *ins, ut32 ins_len, int *err_code) {
 	a2 = 0x223;
 	0x800 = valor que se crea en sub_40BAE0<) con and 0xfffff800
 */
-static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, char *ins,
+static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, const char *ins,
 	ut32 ins_len, ut32 magic_value, int *err_code)
 {
 	ut32 res = 0;
@@ -486,7 +486,7 @@ static bool is_linear_circular(ut32 ins_bits) {
 	return (op == 26 || op == 30 || (op3 > 7 && op3 != 15));
 }
 
-static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_len,
+static char* get_token_decoded(st32 hash_code, const char *ins_token, ut32 ins_token_len,
 	char *reg_arg, ut32 *ret_ins_bits, ut32 *ret_reg_len, ut32 magic_value,
 	ut32 ins_pos, ut32 ins_len, ut8 two_ins, int *err_code) {
 	ut32 tok_op, ins_bits;

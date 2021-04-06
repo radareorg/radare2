@@ -37,9 +37,9 @@
 
 /* character-class table */
 static struct cclass {
-	char *name;
-	char *chars;
-	char *multis;
+	const char *name;
+	const char *chars;
+	const char *multis;
 } cclasses[] = {
 	{ "alnum", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", ""},
 	{ "alpha", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", ""},

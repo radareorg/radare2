@@ -9,8 +9,8 @@
 #define MAXARGS 4
 #define BUFSIZE 64
 
-static void concat(char *buf, size_t len, char** args) {
-	char *arg;
+static void concat(char *buf, size_t len, const char** args) {
+	const char *arg;
 	char *dest = buf;
 	int arg_len;
 
@@ -27,32 +27,32 @@ static void concat(char *buf, size_t len, char** args) {
 static int replace(int argc, char *argv[], char *newstr, size_t len) {
 	int i;
 	struct {
-		char *op;
-		char **res;
+		const char *op;
+		const char **res;
 	} ops[] = {
-		{ "add",  (char*[]){ argv[1], " += ", argv[2], NULL } },
-		{ "and",  (char*[]){ argv[1], " &= ", argv[2], NULL } },
-		{ "cls",  (char*[]){ "clear_screen()", NULL } },
-		{ "drw",  (char*[]){ "draw(", argv[1], ", ", argv[2], ", ", argv[3], ")", NULL } },
-		{ "exit", (char*[]){ "exit()", NULL } },
-		{ "high", (char*[]){ "high_res()", NULL } },
-		{ "jp",   (char*[]){ "goto ", argv[1], NULL } },
-		{ "ld",   (char*[]){ argv[1], " = ", argv[2], NULL } },
-		{ "low",  (char*[]){ "low_res()", NULL } },
-		{ "or",   (char*[]){ argv[1], " |= ", argv[2], NULL } },
-		{ "rnd",  (char*[]){ argv[1], " = random(256) & ", argv[2], NULL } },
-		{ "scd",  (char*[]){ "scroll_down(", argv[1], ")", NULL } },
-		{ "scl",  (char*[]){ "scroll_left()", NULL } },
-		{ "scr",  (char*[]){ "scroll_right()", NULL } },
-		{ "se",   (char*[]){ "skip_next_instr if ", argv[1], " == ", argv[2], NULL } },
-		{ "shl",  (char*[]){ argv[1], " <<= 1", NULL } },
-		{ "shr",  (char*[]){ argv[1], " >>= 1", NULL } },
-		{ "sknp", (char*[]){ "skip_next_instr if !key_pressed(", argv[1], ")", NULL } },
-		{ "skp",  (char*[]){ "skip_next_instr if key_pressed(", argv[1], ")", NULL } },
-		{ "sne",  (char*[]){ "skip_next_instr if ", argv[1], " != ", argv[2], NULL } },
-		{ "sub",  (char*[]){ argv[1], " -= ", argv[2], NULL } },
-		{ "subn", (char*[]){ argv[1], " = ", argv[2], " - ", argv[1], NULL } },
-		{ "xor",  (char*[]){ argv[1], " ^= ", argv[2], NULL } },
+		{ "add",  (const char*[]){ argv[1], " += ", argv[2], NULL } },
+		{ "and",  (const char*[]){ argv[1], " &= ", argv[2], NULL } },
+		{ "cls",  (const char*[]){ "clear_screen()", NULL } },
+		{ "drw",  (const char*[]){ "draw(", argv[1], ", ", argv[2], ", ", argv[3], ")", NULL } },
+		{ "exit", (const char*[]){ "exit()", NULL } },
+		{ "high", (const char*[]){ "high_res()", NULL } },
+		{ "jp",   (const char*[]){ "goto ", argv[1], NULL } },
+		{ "ld",   (const char*[]){ argv[1], " = ", argv[2], NULL } },
+		{ "low",  (const char*[]){ "low_res()", NULL } },
+		{ "or",   (const char*[]){ argv[1], " |= ", argv[2], NULL } },
+		{ "rnd",  (const char*[]){ argv[1], " = random(256) & ", argv[2], NULL } },
+		{ "scd",  (const char*[]){ "scroll_down(", argv[1], ")", NULL } },
+		{ "scl",  (const char*[]){ "scroll_left()", NULL } },
+		{ "scr",  (const char*[]){ "scroll_right()", NULL } },
+		{ "se",   (const char*[]){ "skip_next_instr if ", argv[1], " == ", argv[2], NULL } },
+		{ "shl",  (const char*[]){ argv[1], " <<= 1", NULL } },
+		{ "shr",  (const char*[]){ argv[1], " >>= 1", NULL } },
+		{ "sknp", (const char*[]){ "skip_next_instr if !key_pressed(", argv[1], ")", NULL } },
+		{ "skp",  (const char*[]){ "skip_next_instr if key_pressed(", argv[1], ")", NULL } },
+		{ "sne",  (const char*[]){ "skip_next_instr if ", argv[1], " != ", argv[2], NULL } },
+		{ "sub",  (const char*[]){ argv[1], " -= ", argv[2], NULL } },
+		{ "subn", (const char*[]){ argv[1], " = ", argv[2], " - ", argv[1], NULL } },
+		{ "xor",  (const char*[]){ argv[1], " ^= ", argv[2], NULL } },
 		{ NULL }
 	};
 

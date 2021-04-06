@@ -62,7 +62,7 @@
 typedef unsigned int arc_insn;
 
 struct arc_opcode {
-  char *syntax;			/* syntax of insn */
+  const char *syntax;			/* syntax of insn */
   unsigned long mask, value;	/* recognize insn if (op&mask)==value */
   int flags;			/* various flag bits */
 

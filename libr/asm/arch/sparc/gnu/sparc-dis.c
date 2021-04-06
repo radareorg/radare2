@@ -75,7 +75,7 @@ static sparc_opcode_hash *opcode_hash_table[HASH_SIZE];
 	((((int)(value)) << ((8 * sizeof (int)) - (bits)))	\
 			 >> ((8 * sizeof (int)) - (bits)) )
 
-static  char *reg_names[] =
+static const char *reg_names[] =
 { "g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
   "o0", "o1", "o2", "o3", "o4", "o5", "sp", "o7",
   "l0", "l1", "l2", "l3", "l4", "l5", "l6", "l7",
@@ -96,7 +96,7 @@ static  char *reg_names[] =
 
 /* These are ordered according to there register number in
    rdpr and wrpr insns.  */
-static char *v9_priv_reg_names[] =
+static const char *v9_priv_reg_names[] =
 {
   "tpc", "tnpc", "tstate", "tt", "tick", "tba", "pstate", "tl",
   "pil", "cwp", "cansave", "canrestore", "cleanwin", "otherwin",
@@ -106,7 +106,7 @@ static char *v9_priv_reg_names[] =
 
 /* These are ordered according to there register number in
    rdhpr and wrhpr insns.  */
-static char *v9_hpriv_reg_names[] =
+static const char *v9_hpriv_reg_names[] =
 {
   "hpstate", "htstate", "resv2", "hintp", "resv4", "htba", "hver",
   "resv7", "resv8", "resv9", "resv10", "resv11", "resv12", "resv13", 
@@ -117,7 +117,7 @@ static char *v9_hpriv_reg_names[] =
 
 /* These are ordered according to there register number in
    rd and wr insns (-16).  */
-static char *v9a_asr_reg_names[] =
+static const char *v9a_asr_reg_names[] =
 {
   "pcr", "pic", "dcr", "gsr", "set_softint", "clear_softint",
   "softint", "tick_cmpr", "stick", "stick_cmpr"

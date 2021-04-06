@@ -42,7 +42,7 @@ struct pa_opcode
     const char *name;
     unsigned long int match;	/* Bits that must be set...  */
     unsigned long int mask;	/* ... in these bits. */
-    char *args;
+    const char *args;
     enum pa_arch arch;
     char flags;
 };

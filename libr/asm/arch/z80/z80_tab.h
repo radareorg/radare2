@@ -19,8 +19,8 @@ enum {
 	Z80_ENC1 = 128
 };
 
-typedef struct{
-	char* name;
+typedef struct {
+	const char* name;
 	int type;
 	const void *op_moar;
 } z80_opcode;

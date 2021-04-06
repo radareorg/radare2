@@ -13,8 +13,8 @@
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
 	struct {
-		char *op;
-		char *str;
+		const char *op;
+		const char *str;
 	} ops[] = {
 		{ "cmpl",  "cmp 2, 1"},
 		{ "testl", "test 2, 1"},
