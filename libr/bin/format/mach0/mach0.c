@@ -2667,6 +2667,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 	}
 
 	if (!bin->symtab || !bin->symstr) {
+		ht_pp_free (hash);
 		return list;
 	}
 	/* parse dynamic symbol table */
