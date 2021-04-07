@@ -6153,8 +6153,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				pj_ks (pj, "file", file);
 				pj_kn (pj, "line", line);
 				pj_end (pj);
-			} else {
-				eprintf ("PENE 0x%llx%c", at, 10);
 			}
 		}
 		// handle switch statements
