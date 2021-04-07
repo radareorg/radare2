@@ -44,6 +44,7 @@ r_util_sources = [
   'queue.c',
   'asn1.c',
   'astr.c',
+  'axml.c',
   'pkcs7.c',
   'x509.c',
   'utype.c',
