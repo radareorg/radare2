@@ -1980,6 +1980,14 @@ bool Elf_(r_bin_elf_get_stripped)(ELFOBJ *bin) {
 	if (!bin->shdr) {
 		return false;
 	}
+	if (bin->g_sections) {
+		size_t i;
+		for (i = 0; !bin->g_sections[i].last; i++) {
+			if (!strcmp (bin->g_sections[i].name, ".gnu_debugdata")) {
+				return false;
+			}
+		}
+	}
 	size_t i;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if (bin->shdr[i].sh_type == SHT_SYMTAB) {
