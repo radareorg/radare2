@@ -273,9 +273,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			R_FREE (opst);
 		}
 	}
-	r_cons_break_pop ();
-	r_asm_set_pc (core->rasm, toff);
 beach:
+	r_asm_set_pc (core->rasm, toff);
 	free (buf);
 	free (ptr);
 	free (code);
