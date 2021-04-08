@@ -75,7 +75,7 @@ static const char *help_msg_p6[] = {
 };
 
 static const char *help_msg_pF[] = {
-	"Usage: pF[apdb]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf",
+	"Usage: pF[apdbA]", "[len]", "parse ASN1, PKCS, X509, DER, protobuf, axml",
 	"pFa", "[len]", "decode ASN1 from current block",
 	"pFaq", "[len]", "decode ASN1 from current block (quiet output)",
 	"pFb", "[len]", "decode raw proto buffers.",
@@ -83,6 +83,7 @@ static const char *help_msg_pF[] = {
 	"pFo", "[len]", "decode ASN1 OID",
 	"pFp", "[len]", "decode PKCS7",
 	"pFx", "[len]", "Same with X509",
+	"pFA", "[len]", "decode Android Binary XML from current block",
 	NULL
 };
 
@@ -1267,6 +1268,17 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			if (s) {
 				r_cons_printf ("%s", s);
 				free (s);
+			}
+		}
+		break;
+	case 'A': // "pFA"
+		{
+			char *s = r_axml_decode (data, size);
+			if (s) {
+				r_cons_printf ("%s", s);
+				free (s);
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 			}
 		}
 		break;
