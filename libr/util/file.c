@@ -1276,29 +1276,41 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 }
 
 R_API bool r_file_dir_recursive(RList *dst, const char *dir) {
-	bool ret = false;
+	bool ret = true;
 	char *cwd = r_sys_getdir ();
 	if (!cwd) {
 		return false;
 	}
 	if (r_sys_chdir (dir) == false) {
 		free (cwd);
-		return ret;
+		return false;
 	}
 	RList *files = r_sys_dir (".");
 	RListIter *iter;
 	char *name;
 	r_return_val_if_fail (files, false);
 	r_list_foreach (files, iter, name) {
+		char *absp;
 		if (strcmp (name, ".") == 0 || strcmp (name, "..") == 0) {
 			continue;
 		}
-		r_list_append (dst, r_file_abspath (name));
+		absp = r_file_abspath (name);
+		if (!absp) {
+			ret = false;
+			break;
+		}
+		r_list_append (dst, absp);
 		if (r_file_is_directory (name)) {
 			ret = r_file_dir_recursive (dst, name);
+			if (!ret) {
+				ret = false;
+				break;
+			}
 		}
 	}
+	r_list_free (files);
 	r_sys_chdir (cwd);
+	free (cwd);
 	return ret;
 }
 
