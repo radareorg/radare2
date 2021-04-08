@@ -154,3 +154,13 @@ EXPECT=<<EOF
 b821000000
 EOF
 RUN
+
+NAME=hash comment and double quote
+FILE=malloc://1024
+CMDS=<<EOF
+?? # ;o"
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
