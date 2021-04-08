@@ -1257,6 +1257,11 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 
 static int cmd_ls(void *data, const char *input) { // "ls"
 	RCore *core = (RCore *)data;
+	RListIter *iter;
+	char *file;
+	RList *files;
+	char *dir;
+	int ret;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = r_str_trim_head_ro (arg + 1);
@@ -1272,6 +1277,22 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 			eprintf ("Usage: less [file]\n");
 		}
 		break;
+	case 'r':
+		files = r_list_new ();
+		dir = arg;
+		if (!arg) {
+			dir = ".";
+		}
+		ret = r_file_dir_recursive (files, dir);
+		if (!ret) {
+			break;
+		}
+		r_list_foreach (files, iter, file) {
+			printf ("%s\n", file);
+		}
+		r_list_free (files);
+		break;
+
 	default: // "ls"
 		if (!arg) {
 			arg = "";
@@ -3750,7 +3771,7 @@ escape_backtick:
 	}
 
 	/* temporary seek commands */
-	// if (*cmd != '(' && *cmd != '"') 
+	// if (*cmd != '(' && *cmd != '"')
 	if (*cmd != '"') {
 		ptr = strchr (cmd, '@');
 		if (ptr == cmd + 1 && *cmd == '?') {
