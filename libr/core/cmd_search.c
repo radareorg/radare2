@@ -2343,7 +2343,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		if (hits) {
 			r_cons_break_pop ();
 			r_cons_break_push (NULL, NULL);
-			r_cons_singleton() ->context->breaked = false;
+			r_cons_singleton ()->context->breaked = false;
 			const char *cmdhit = r_config_get (core->config, "cmd.hit");
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_is_breaked ()) {
