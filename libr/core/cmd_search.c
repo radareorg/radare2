@@ -2341,6 +2341,9 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		hits = r_core_asm_strsearch (core, end_cmd,
 				from, to, maxhits, regexp, everyByte, mode);
 		if (hits) {
+			r_cons_break_pop ();
+			r_cons_break_push (NULL, NULL);
+			r_cons_singleton ()->context->breaked = false;
 			const char *cmdhit = r_config_get (core->config, "cmd.hit");
 			r_list_foreach (hits, iter, hit) {
 				if (r_cons_is_breaked ()) {
@@ -2388,6 +2391,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 			}
 			r_list_purge (hits);
 			free (hits);
+			r_cons_break_pop ();
 		}
 	}
 	if (param->outmode == R_MODE_JSON) {
