@@ -1260,7 +1260,7 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	RListIter *iter;
 	char *file;
 	RList *files;
-	char *dir;
+	const char *dir;
 	int ret;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
@@ -1279,9 +1279,10 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 		break;
 	case 'r':
 		files = r_list_new ();
-		dir = arg;
 		if (!arg) {
 			dir = ".";
+		} else {
+			dir = arg;
 		}
 		ret = r_file_dir_recursive (files, dir);
 		if (!ret) {
