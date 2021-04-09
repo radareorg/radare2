@@ -1,11 +1,11 @@
 # handle tcc dependency (heavily modified version)
 tcc_files = [
-  '../../shlr/tcc/libtcc.c',
-  '../../shlr/tcc/tccgen.c',
-  '../../shlr/tcc/tccpp.c'
+  'c/libtcc.c',
+  'c/tccgen.c',
+  'c/tccpp.c'
 ]
 
-tcc_inc = [platform_inc, include_directories('../../shlr/tcc')]
+tcc_inc = [platform_inc, include_directories('c')]
 
 #libr2tcc = static_library('r2tcc', tcc_files,
 #  dependencies: [r_util_dep],
@@ -17,7 +17,6 @@ tcc_dep = declare_dependency(
  #  link_whole: libr2tcc,
   include_directories: tcc_inc
 )
-
 
 r_parse_sources = [
   'code.c',

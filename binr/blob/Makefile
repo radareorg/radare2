@@ -55,7 +55,6 @@ include ../../shlr/ar/deps.mk
 include ../../shlr/sdb.mk
 include ../../shlr/capstone.mk
 include ../../shlr/radare2-shell-parser-deps.mk
-LINK+=$(SHLR)/tcc/libr_tcc.a
 
 .PHONY: all symlinks build install blobclean
 all: symlinks
