@@ -148,6 +148,7 @@ R_API bool rvc_commit(Rvc *repo, RList *blobs, const char *auth, const char *mes
 	nc->timestamp = time (NULL);
 	nc->prev = repo->current_branch->head;
 	nc->blobs = blobs;
+	nc->prev->next = nc;
 	if (!write_commit (repo, repo->current_branch, nc)) {
 		free (nc->author);
 		free (nc->message);

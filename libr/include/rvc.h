@@ -17,7 +17,7 @@ typedef struct commit {
 	size_t next_num;
 	bool ishead;
 	char *message;
-	RList *next; //next is an array so we can permit RVc revert
+	struct commit *next;
 } RvcCommit;
 
 typedef struct branch {
