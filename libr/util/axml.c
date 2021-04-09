@@ -117,6 +117,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 		if (n & 0x80) {
 			n = ((n & 0x7f) << 8) | *start++;
 		}
+		(void)n;
 
 		if ((ut64)start > (ut64)data + data_size - sizeof(ut16)) {
 			return NULL;
@@ -126,6 +127,10 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 		n = *start++;
 		if (n & 0x80) {
 			n = ((n & 0x7f) << 8) | *start++;
+		}
+
+		if (n > data_size) {
+			return NULL;
 		}
 
 		name = calloc (n + 1, 1);
@@ -163,6 +168,10 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 
 		// Size of UTF-16LE without NULL
 		n *= 2;
+
+		if (n * 2 > data_size) {
+			return NULL;
+		}
 
 		name = calloc (n * 2 + 1, 1);
 
@@ -211,7 +220,7 @@ static char *resource_value(string_pool_t *pool, const ut8 *data, ut64 data_size
 }
 
 static bool dump_element(RStrBuf *sb, string_pool_t *pool, namespace_t *namespace,
-		const ut8 *data, ut64 data_size, start_element_t *element, 
+		const ut8 *data, ut64 data_size, start_element_t *element, size_t element_size,
 		const ut32 *resource_map, ut32 resource_map_length, st32 *depth, bool start) {
 	ut32 i;
 
@@ -231,6 +240,12 @@ static bool dump_element(RStrBuf *sb, string_pool_t *pool, namespace_t *namespac
 			free (value);
 		}
 
+		if (count * sizeof(attribute_t) > element_size) {
+			r_strbuf_appendf (sb, " />");
+			eprintf ("Invalid element count\n");
+			return false;
+		}
+
 		if (count != 0) {
 			r_strbuf_appendf (sb, " ");
 		}
@@ -243,6 +258,7 @@ static bool dump_element(RStrBuf *sb, string_pool_t *pool, namespace_t *namespac
 			// If the key is empty, it is a cached resource name
 			if (key && *key == '\0') {
 				free ((char *)key);
+				key = "null";
 				resource_key = true;
 				if (resource_map && key_index < resource_map_length) {
 					ut32 resource = r_read_le32 (&resource_map[key_index]);
@@ -251,11 +267,7 @@ static bool dump_element(RStrBuf *sb, string_pool_t *pool, namespace_t *namespac
 						if (resource < ANDROID_ATTRIBUTE_NAMES_SIZE) {
 							key = ANDROID_ATTRIBUTE_NAMES[resource];
 						}
-					} else {
-						key = "null";
 					}
-				} else {
-					key = "null";
 				}
 			}
 			char *value = resource_value (pool, data, data_size, &a.value);
@@ -369,7 +381,7 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 				goto bad;
 			}
 
-			if (!dump_element (sb, pool, namespace, data, data_size, element,
+			if (!dump_element (sb, pool, namespace, data, data_size, element, header_size,
 					resource_map, resource_map_length, &depth, true)) {
 				free (element);
 				goto bad;
@@ -392,7 +404,7 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 
 			// The beginning of the start and end element structs
 			// are the same, so we can use this interchangably
-			if (!dump_element (sb, pool, namespace, data, data_size, (start_element_t *)&end,
+			if (!dump_element (sb, pool, namespace, data, data_size, (start_element_t *)&end, 0,
 					resource_map, resource_map_length, &depth, false)) {
 				goto bad;
 			}
