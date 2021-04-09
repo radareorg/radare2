@@ -67,7 +67,7 @@ endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip java tcc mpc yxml
+MODS=sdb zip java mpc yxml
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -207,28 +207,6 @@ ptrace-wrap:
 ptrace-wrap-clean clean-ptrace-wrap:
 	$(MAKE) -C ptrace-wrap clean
 
-$(TCCLIB) libr_tcc/libr_tcc.${EXT_AR}:
-	cd libr_tcc ; $(MAKE)
-
-tcc-clean tccclean:
-	cd libr_tcc ; $(MAKE) clean
-
-CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
-HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
-HFILES+=elf.h config.h i386-tok.h
-
-# TODO: use mob branch?
-
-.PHONY: sdb-sync sync-sdb sdbclean
-tcc-sync sync-tcc:
-	rm -rf _
-	$(GIT) clone --depth 1 git://repo.or.cz/tinycc.git _
-	cd _ ; ./configure --prefix=${PREFIX}
-	mkdir -p tcc
-	for FILE in ${CFILES} ${HFILES} ; do cp -f _/$$FILE tcc ; done
-	cp -f _/VERSION _/COPYING _/stab.def tcc
-	$(GIT) add tcc
-	rm -rf _
 
 ifeq ($(WITH_LIBR),1)
 install: libr_shlr.${EXT_AR}
@@ -378,7 +356,6 @@ spp-sync sync-spp:
 spp: spp-sync
 	CFLAGS="-DUSE_R2=1 -I../../libr/include -DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp r2lib
 
-SHLRS+=tcc/libr_tcc.a
 SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a
 SHLRS+=capstone/libcapstone.a
