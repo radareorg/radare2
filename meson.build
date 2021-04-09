@@ -343,7 +343,7 @@ userconf.set10('HAVE_FORK', use_fork)
 userconf.set10('WANT_DYLINK', use_dylink)
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
-userconf.set10('WITH_GPL', true)
+userconf.set10('WITH_GPL', not get_option('nogpl'))
 ok = cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 userconf.set10('HAVE_DECL_ADDR_NO_RANDOMIZE', ok)
 

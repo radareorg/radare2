@@ -1,15 +1,19 @@
-/* radare2 - LGPL - Copyright 2011-2019 - pancake */
+/* radare2 - LGPL - Copyright 2011-2021 - pancake */
 
 #include <r_fs.h>
 #include "config.h"
 #include "types.h"
 #include <errno.h>
-#include "../../shlr/grub/include/grub/msdos_partition.h"
 
 #if WITH_GPL
 # ifndef USE_GRUB
 #  define USE_GRUB 1
 # endif
+#endif
+
+#if WITH_GPL && USE_GRUB
+#include "../../shlr/grub/include/grubfs.h"
+#include "../../shlr/grub/include/grub/msdos_partition.h"
 #endif
 
 R_LIB_VERSION (r_fs);
@@ -519,10 +523,7 @@ R_API RFSFile* r_fs_slurp(RFS* fs, const char* path) {
 	return file;
 }
 
-// TODO: move into grubfs
-#include "../../shlr/grub/include/grubfs.h"
-
-#if USE_GRUB
+#if USE_GRUB && WITH_GPL
 static int grub_parhook(void* disk, void* ptr, void* closure) {
 	struct grub_partition* par = ptr;
 	RList* list = (RList*) closure;
@@ -625,6 +626,7 @@ R_API int r_fs_partition_type_str(const char* type) {
 }
 
 R_API const char* r_fs_partition_type(const char* part, int type) {
+#if USE_GRUB && WITH_GPL
 	// XXX: part is ignored O_o
 	switch (type) {
 	case GRUB_PC_PARTITION_TYPE_FAT12:
@@ -664,6 +666,8 @@ R_API const char* r_fs_partition_type(const char* part, int type) {
 	default:
 		return NULL;
 	}
+#endif
+	return NULL;
 }
 
 R_API char* r_fs_name(RFS* fs, ut64 offset) {
