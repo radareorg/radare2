@@ -361,28 +361,7 @@ qnx_dep = declare_dependency(
 )
 
 
-# handle tcc dependency (heavily modified version)
-tcc_files = [
-  'tcc/libtcc.c',
-  'tcc/tccgen.c',
-  'tcc/tccpp.c'
-]
-
-tcc_inc = [platform_inc, include_directories('tcc')]
-
-libr2tcc = static_library('r2tcc', tcc_files,
-  dependencies: [r_util_dep],
-  include_directories: tcc_inc,
-  implicit_include_directories: false
-)
-
-tcc_dep = declare_dependency(
-  link_with: libr2tcc,
-  include_directories: tcc_inc
-)
-
-
-# handle lz4 dependency
+# handle lz4 dependency (unused?)
 lz4_dep = dependency('liblz4', required: false)
 if not lz4_dep.found() or not get_option('use_sys_lz4')
   message('Use bundled lz4')
