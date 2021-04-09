@@ -3062,24 +3062,28 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (!icmd || (cmd[0] == '#' && cmd[1] != '!' && cmd[1] != '?')) {
 		goto beach;
 	}
-	if (*icmd && !strchr (icmd, '"')) {
+	if (*cmd) {
+		int inside_quote = 0;
 		char *hash;
-		for (hash = icmd + 1; *hash; hash++) {
+		for (hash = cmd; *hash; hash++) {
 			if (*hash == '\\') {
 				hash++;
-				if (*hash == '#') {
+				if (*hash == '#' || *hash == '"') {
 					continue;
 				} else if (!*hash) {
 					break;
 				}
 			}
-			if (*hash == '#') {
+			if (*hash == '"') {
+				inside_quote ^= 1;
+			}
+			if (*hash == '#' && hash != cmd && !inside_quote) {
 				break;
 			}
 		}
-		if (hash && *hash) {
+		if (hash && *hash && !inside_quote) {
 			*hash = 0;
-			r_str_trim_tail (icmd);
+			r_str_trim_tail (cmd);
 		}
 	}
 	if (*cmd != '"') {
