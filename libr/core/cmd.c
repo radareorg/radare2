@@ -3199,6 +3199,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			free (cr);
 			break;
 		}
+		if (colon) {
+			r_cons_flush ();
+		}
 		if (cr && *cr && orep > 1) {
 			// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
 			r_cons_flush ();
