@@ -358,7 +358,7 @@ static void parse_grep_expression(const char *str) {
 	}
 }
 
-// Finds and returns next intgerp expression,
+// Finds and returns next intgrep expression,
 // unescapes escaped twiddles
 static char *find_next_intgrep(char *cmd, const char *quotes) {
 	char *p;
