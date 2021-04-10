@@ -207,7 +207,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			char *first = tok[0];
 			// Check whether it's defining an alias or a register
 			if (!strncmp (first, "=RS", 3)) {
-				reg->bits_default = atoi (first + 3);
+				reg->bits_default = atoi (tok[1]);
 				// Clean up
 				for (i = 0; i < j; i++) {
 					free (tok[i]);

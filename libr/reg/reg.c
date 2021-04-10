@@ -72,6 +72,10 @@ R_API const char *r_reg_get_name_by_type(RReg *reg, const char *alias_name) {
 	return (n != -1)? r_reg_get_name (reg, n): NULL;
 }
 
+R_API int r_reg_default_bits(RReg *reg) {
+	return reg->bits_default;
+}
+
 R_API int r_reg_type_by_name(const char *str) {
 	r_return_val_if_fail (str, -1);
 	int i;

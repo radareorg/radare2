@@ -1218,7 +1218,13 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 		*pcbits2 = 0;
 	}
 	if (pcbits < 1) {
-		if (!strcmp (r_config_get (core->config, "asm.arch"), "avr")) {
+		int rpbits = r_reg_default_bits (core->anal->reg);
+		if (rpbits) {
+			pcbits = rpbits;
+			if (pcbits2) {
+				*pcbits2 = 32;
+			}
+		} else if (!strcmp (r_config_get (core->config, "asm.arch"), "avr")) {
 			pcbits = 8;
 			if (pcbits2) {
 				*pcbits2 = 32;
@@ -2943,8 +2949,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			} else {
 				RReg *orig = core->dbg->reg;
 				core->dbg->reg = core->anal->reg;
-				if (pcbits && pcbits != bits)
+				if (pcbits && pcbits != bits) {
 					r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, '=', use_color); // xxx detect which one is current usage
+				}
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, NULL, '=', use_color); // xxx detect which one is current usage
 				core->dbg->reg = orig;
 			}

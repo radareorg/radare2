@@ -4378,6 +4378,10 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			if (!strcmp (core->anal->cur->arch, "arm") && bits == 16) {
 				bits = 32;
 			}
+			int defsz = r_reg_default_bits (core->anal->reg);
+			if (defsz) {
+				bits = defsz;
+			}
 			/* workaround for 6502 and avr*/
 			if ((!strcmp (core->anal->cur->arch, "6502") && bits == 8)
 				|| (!strcmp (core->anal->cur->arch, "avr") && bits == 8)) {
