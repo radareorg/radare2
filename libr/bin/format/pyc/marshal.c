@@ -718,6 +718,9 @@ static void free_object(pyc_object *object) {
 	if (!object) {
 		return;
 	}
+	if ((int)object->type == 0) {
+		return;
+	}
 	switch (object->type) {
 	case TYPE_SMALL_TUPLE:
 	case TYPE_TUPLE:
@@ -771,9 +774,6 @@ static void free_object(pyc_object *object) {
 	case TYPE_UNKNOWN:
 		eprintf ("Free not implemented for type %x\n", object->type);
 		break;
-	case 0:
-		// nop
-		break;
 	default:
 		eprintf ("Undefined type in free_object (%x)\n", object->type);
 		break;
@@ -788,6 +788,9 @@ static pyc_object *copy_object(pyc_object *object) {
 		return NULL;
 	}
 	copy->type = object->type;
+	if ((int)object->type == 0) {
+		// do nothing
+	} else 
 	switch (object->type) {
 	case TYPE_NULL:
 		break;
@@ -846,9 +849,6 @@ static pyc_object *copy_object(pyc_object *object) {
 	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
 		eprintf ("Copy not implemented for type %x\n", object->type);
-		break;
-	case 0:
-		// nop
 		break;
 	default:
 		eprintf ("Undefined type in copy_object (%x)\n", object->type);
