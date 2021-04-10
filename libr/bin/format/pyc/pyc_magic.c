@@ -222,7 +222,6 @@ struct pyc_version get_pyc_version(ut32 magic) {
 			return versions[i];
 		}
 	}
-	eprintf ("invalid version%c", 10);
 	return fail;
 }
 
