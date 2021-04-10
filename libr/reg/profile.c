@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -206,25 +206,33 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			// Do the actual parsing
 			char *first = tok[0];
 			// Check whether it's defining an alias or a register
-			const char *r = (*first == '=')
-				? parse_alias (reg, tok, j)
-				: parse_def (reg, tok, j);
-			if (!strncmp (first, "=A0", 3)) {
-				have_a0 = true;
-			}
-			// Clean up
-			for (i = 0; i < j; i++) {
-				free (tok[i]);
-			}
-			// Warn the user if something went wrong
-			if (r) {
-				eprintf ("%s: Parse error @ line %d (%s)\n",
-					__FUNCTION__, l, r);
-				//eprintf ("(%s)\n", str);
+			if (!strncmp (first, "=RS", 3)) {
+				reg->bits_default = atoi (first + 3);
 				// Clean up
-				r_reg_free_internal (reg, false);
-				r_reg_init (reg);
-				return false;
+				for (i = 0; i < j; i++) {
+					free (tok[i]);
+				}
+			} else {
+				const char *r = (*first == '=')
+					? parse_alias (reg, tok, j)
+					: parse_def (reg, tok, j);
+				if (!strncmp (first, "=A0", 3)) {
+					have_a0 = true;
+				}
+				// Clean up
+				for (i = 0; i < j; i++) {
+					free (tok[i]);
+				}
+				// Warn the user if something went wrong
+				if (r) {
+					eprintf ("%s: Parse error @ line %d (%s)\n",
+							__FUNCTION__, l, r);
+					//eprintf ("(%s)\n", str);
+					// Clean up
+					r_reg_free_internal (reg, false);
+					r_reg_init (reg);
+					return false;
+				}
 			}
 		}
 	} while (*p++);

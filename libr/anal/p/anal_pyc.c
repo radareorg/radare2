@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2020 - FXTi */
+/* radare - LGPL3 - Copyright 2016-2021 - FXTi */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -30,6 +30,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=BP    bp\n"
 		"=SP    sp\n"
 		"=A0    sp\n"
+		"=RS    32\n"
 		"gpr    sp  .32 0   0\n" // stack pointer
 		"gpr    pc  .32 4   0\n" // program counter
 		"gpr    bp  .32 8   0\n" // base pointer // unused

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -145,7 +145,7 @@ R_API const char *r_reg_get_name(RReg *reg, int role) {
 }
 
 static const char *roles[R_REG_NAME_LAST + 1] = {
-	"PC", "SP", "SR", "BP", "LR",
+	"PC", "SP", "SR", "BP", "LR", "RS",
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
 	"R0", "R1", "R2", "R3",
 	"ZF", "SF", "CF", "OF",
