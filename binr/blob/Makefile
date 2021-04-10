@@ -54,7 +54,6 @@ include ../../shlr/qnx/deps.mk
 include ../../shlr/ar/deps.mk
 include ../../shlr/sdb.mk
 include ../../shlr/capstone.mk
-include ../../shlr/radare2-shell-parser-deps.mk
 
 .PHONY: all symlinks build install blobclean
 all: symlinks
