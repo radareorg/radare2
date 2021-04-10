@@ -39,6 +39,7 @@ typedef enum {
 	R_REG_NAME_SR, // status register
 	R_REG_NAME_BP, // base pointer
 	R_REG_NAME_LR, // link register
+	R_REG_NAME_RS, // default register size
 	/* args */
 	R_REG_NAME_A0, // arguments
 	R_REG_NAME_A1,
@@ -125,6 +126,7 @@ typedef struct r_reg_t {
 	int arch;
 	int bits;
 	int size;
+	int bits_default;
 	bool is_thumb;
 	bool big_endian;
 } RReg;
