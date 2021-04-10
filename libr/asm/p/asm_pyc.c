@@ -26,7 +26,9 @@ static int disassemble(RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
 	RList *interned_table = r_list_get_n (shared, 1);
 	if (!opcodes_cache || !pyc_opcodes_equal (opcodes_cache, a->cpu)) {
 		opcodes_cache = get_opcode_by_version (a->cpu);
-		opcodes_cache->bits = a->bits;
+		if (opcodes_cache) {
+			opcodes_cache->bits = a->bits;
+		}
 	}
 	int r = r_pyc_disasm (opstruct, buf, cobjs, interned_table, pc, opcodes_cache);
 	opstruct->size = r;

@@ -31,11 +31,13 @@ int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interne
 
 		ut8 op = code[i];
 		i++;
-		char *name = ops->opcodes[op].op_name;
+		char *name = strdup (ops->opcodes[op].op_name);
+		r_str_case (name, 0);
 		r_strbuf_set (&opstruct->buf_asm, name);
 		if (!name) {
 			return 0;
 		}
+		free (name);
 		if (op >= ops->have_argument) {
 			if (ops->bits == 16) {
 				oparg = code[i] + code[i + 1] * 256 + extended_arg;
@@ -54,7 +56,7 @@ int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interne
 			}
 			const char *arg = parse_arg (&ops->opcodes[op], oparg, names, consts, varnames, interned_table, freevars, cellvars, ops->opcode_arg_fmt);
 			if (arg != NULL) {
-				r_strbuf_appendf (&opstruct->buf_asm, "%20s", arg);
+				r_strbuf_appendf (&opstruct->buf_asm, " %s", arg);
 				free ((char *)arg);
 			}
 		} else if (ops->bits == 8) {
