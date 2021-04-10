@@ -340,6 +340,32 @@ static RvcBranch *branch_by_name(Rvc *repo, char *name) {
 	return NULL;
 }
 
+RList *rvc_staged(Rvc *repo) {
+	RListIter *iter, *tmp;
+	char *filen;
+	RList *blobs, *files = r_list_new ();
+	char *blobs_path = r_str_newf ("%s" R_SYS_DIR "blobs", repo->path);
+	r_return_val_if_fail (files, false);
+	if (!r_file_dir_recursive (files, repo->path)) {
+		R_FREE (files);
+		return files;
+	}
+	r_list_foreach_safe (files, iter, tmp, filen) {
+		char *fhash;
+		if (r_str_cmp (repo->path, filen, r_str_len_utf8 (repo->path))) {
+			r_list_delete (files, iter);
+		}
+		fhash = sha256_file (filen);
+	}
+}
+
+bool rvc_chekout(Rvc *repo, char *name) {
+	RvcBranch *branch = branch_by_name (repo, name);
+	r_return_val_if_fail (branch, false);
+	repo->current_branch = branch;
+
+}
+
 R_API int git_init (const char *path) {
 	return r_sys_cmdf ("git init %s", path);
 }
