@@ -2047,7 +2047,8 @@ static void show_drpi(RCore *core) {
 	RRegItem *ri;
 	r_cons_printf ("Aliases (Reg->name)\n");
 	for (i = 0; i < R_REG_NAME_LAST; i++) {
-		r_cons_printf ("%d %s %s\n", i, r_reg_get_role (i), core->anal->reg->name[i]);
+		const char *v = r_str_get_fail (core->anal->reg->name[i], "?");
+		r_cons_printf ("%d %s %s\n", i, r_reg_get_role (i), v);
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		const char *nmi = r_reg_get_type (i);
