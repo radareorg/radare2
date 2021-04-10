@@ -702,6 +702,7 @@ static int cmd_alias(void *data, const char *input) {
 			def[len - 1] = 0x00;
 			def++;
 		}
+		r_str_arg_unescape (def);
 		if (!q || (q && q > def)) {
 			if (*def) {
 				if (!strcmp (def, "-")) {
