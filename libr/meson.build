@@ -589,7 +589,8 @@ sflib_arch = [
   'linux-arm-32',
   'darwin-x86-64',
   'darwin-x86-32',
-  'darwin-arm-64'
+  'darwin-arm-64',
+  'freebsd-x86-32'
 ]
 
 sflib_arch_files = [
