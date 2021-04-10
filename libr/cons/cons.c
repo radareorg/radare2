@@ -949,7 +949,7 @@ R_API void r_cons_flush(void) {
 				free (str);
 				return;
 			} else {
-				r_sys_cmd_str_full (I.pager, CTX (buffer), NULL, NULL, NULL);
+				r_sys_cmd_str_full (I.pager, CTX (buffer), -1, NULL, NULL, NULL);
 				r_cons_reset ();
 			}
 		} else if (I.context->buffer_len > CONS_MAX_USER) {

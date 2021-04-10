@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_userconf.h>
 #include <stdlib.h>
@@ -282,8 +282,21 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 }
 
 R_API ut8 *r_sys_unxz(const ut8 *buf, size_t len, size_t *olen) {
-	char *cmd = "xz -d"
-	int rc = r_sys_cmd_str_full ("xz -d", buconst char *input, char **output, int *len, char **sterr) {
+	char *err = NULL;
+	ut8 *out = NULL;
+	int _olen = 0;
+	int rc = r_sys_cmd_str_full ("xz -d", (const char *)buf, (int)len, (char **)&out, &_olen, &err);
+	if (rc == 0) {
+		if (olen) {
+			*olen = (size_t)_olen;
+		}
+		free (err);
+		return out;
+	}
+	eprintf ("%s\n", err);
+	free (out);
+	free (err);
+	return NULL;
 }
 
 #ifdef __MAC_10_7
@@ -596,10 +609,9 @@ R_API int r_sys_thp_mode(void) {
 		}
 		free (val);
 	}
-
 	return ret;
 #else
-  return 0;
+	return 0;
 #endif
 }
 
@@ -774,11 +786,11 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 	return false;
 }
 #elif __WINDOWS__
-R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	return r_sys_cmd_str_full_w32 (cmd, input, output, len, sterr);
+R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
+	return r_sys_cmd_str_full_w32 (cmd, input, ilen, output, len, sterr);
 }
 #else
-R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
+R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
 	eprintf ("r_sys_cmd_str: not yet implemented for this platform\n");
 	return false;
 }
@@ -827,7 +839,7 @@ R_API int r_sys_cmd(const char *str) {
 
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
 	char *output = NULL;
-	if (r_sys_cmd_str_full (cmd, input, &output, len, NULL)) {
+	if (r_sys_cmd_str_full (cmd, input, -1, &output, len, NULL)) {
 		return output;
 	}
 	free (output);

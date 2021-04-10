@@ -2679,7 +2679,7 @@ static int cmd_system(void *data, const char *input) {
 				char *cmd = r_core_sysenv_begin (core, input);
 				if (cmd) {
 					void *bed = r_cons_sleep_begin ();
-					ret = r_sys_cmd_str_full (cmd + 1, NULL, &out, &olen, NULL);
+					ret = r_sys_cmd_str_full (cmd + 1, NULL, 0, &out, &olen, NULL);
 					r_cons_sleep_end (bed);
 					r_core_sysenv_end (core, input);
 					r_cons_write (out, olen);
@@ -2898,7 +2898,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		out = NULL;
 		// TODO: implement foo
 		str = r_core_cmd_str (core, radare_cmd);
-		r_sys_cmd_str_full (shell_cmd + 1, str, &out, &olen, NULL);
+		r_sys_cmd_str_full (shell_cmd + 1, str, -1, &out, &olen, NULL);
 		free (str);
 		r_cons_write (out, olen);
 		free (out);

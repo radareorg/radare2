@@ -83,6 +83,7 @@ static const char *help_msg_pF[] = {
 	"pFo", "[len]", "decode ASN1 OID",
 	"pFp", "[len]", "decode PKCS7",
 	"pFx", "[len]", "Same with X509",
+	"pFX", "[len]", "print decompressed xz block",
 	"pFA", "[len]", "decode Android Binary XML from current block",
 	NULL
 };
@@ -1227,6 +1228,16 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 				}
 			} else {
 				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			}
+		}
+		break;
+	case 'X': // "pFx" x509
+		{
+			size_t out_len = 0;
+			ut8 *out = r_sys_unxz (data, size, &out_len);
+			if (out) {
+				r_cons_write ((const char *)out, out_len);
+				free (out);
 			}
 		}
 		break;
