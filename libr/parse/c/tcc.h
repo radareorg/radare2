@@ -756,6 +756,7 @@ static inline int toup(int c)
 #define ST_INLN
 #define ST_FUNC
 #define ST_DATA extern
+extern char **tcc_cb_ptr;
 #endif
 
 /* ------------ libtcc.c ------------ */
@@ -820,22 +821,14 @@ ST_FUNC Sym *global_identifier_push(int v, int t, long long c);
 ST_FUNC void tcc_open_bf(TCCState *s1, const char *filename, int initlen);
 ST_FUNC int tcc_open(TCCState *s1, const char *filename);
 ST_FUNC void tcc_close(void);
-
 ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags);
-
-PUB_FUNC void tcc_print_stats(TCCState *s, int64_t total_time);
 PUB_FUNC int tcc_parse_args(TCCState *s, int argc, char **argv);
-
-PUB_FUNC void tcc_set_environment(TCCState *s);
 
 /* ------------ tccpp.c ------------ */
 
-ST_DATA struct BufferedFile *file;
 ST_DATA int ch, tok;
 ST_DATA CValue tokc;
 ST_DATA const int *macro_ptr;
-ST_DATA int parse_flags;
-ST_DATA int tok_flags;
 ST_DATA CString tokcstr; /* current parsed string, if any */
 
 /* display benchmark infos */
@@ -891,29 +884,10 @@ ST_FUNC void expect(const char *msg);
 #define REG_FRET 3
 
 #define SYM_POOL_NB (8192 / sizeof(Sym))
-ST_DATA Sym *sym_free_first;
-ST_DATA void **sym_pools;
-ST_DATA int nb_sym_pools;
-
-ST_DATA Sym *global_stack;
-ST_DATA Sym *local_stack;
-ST_DATA Sym *local_label_stack;
-ST_DATA Sym *global_label_stack;
-ST_DATA Sym *define_stack;
 ST_DATA CType char_pointer_type, func_old_type;
 ST_DATA CType int8_type, int16_type, int32_type, int64_type, size_type;
 ST_DATA SValue __vstack[1+/*to make bcheck happy*/ VSTACK_SIZE], *vtop;
 #define vstack  (__vstack + 1)
-ST_DATA int rsym, anon_sym, ind, loc;
-
-ST_DATA int const_wanted; /* true if constant wanted */
-ST_DATA int nocode_wanted; /* true if no code generation wanted for an expression */
-ST_DATA int global_expr;  /* true if compound literals must be allocated globally (used during initializers parsing */
-ST_DATA CType func_vt; /* current function return type (used by return instruction) */
-ST_DATA int func_vc;
-ST_DATA int last_line_num, last_ind, func_ind; /* debug last line number and pc */
-ST_DATA char *funcname;
-ST_DATA char *dir_name;
 
 ST_INLN bool is_structured(CType *t);
 ST_INLN bool is_struct(CType *t);
