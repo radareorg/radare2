@@ -45,7 +45,7 @@ static void processNode (mpc_ast_t *node) {
 	if (isStatement(node)) {
 		int i, narg = 0;
 		const char *args[32];
-		for (i=0 ; i<node->children_num; i++) {
+		for (i = 0; i < node->children_num; i++) {
 			const char *tag = node->children[i]->tag;
 			const char *val = node->children[i]->contents;
 			if (strcmp (tag, "char")) {
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
 	if (err != NULL) {
 		mpc_err_print (err);
 		mpc_err_delete (err);
-		exit(1);
+		return 1;
 	}
 
 #if 1
@@ -230,6 +230,5 @@ int main(int argc, char **argv) {
 			Sigdef, Includes, Smallc);
 
 	return 0;
-
 }
 
