@@ -288,9 +288,9 @@ static int cmd_mount(void *data, const char *_input) {
 		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			r_fs_read (core->fs, file, 0, file->size);
-			r_cons_memcat ((const char *)file->data, file->size);
+			r_cons_write ((const char *)file->data, file->size);
 			r_fs_close (core->fs, file);
-			r_cons_memcat ("\n", 1);
+			r_cons_write ("\n", 1);
 		} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
 			eprintf ("Cannot open file\n");
 		}

@@ -608,14 +608,14 @@ static void selection_widget_draw(void) {
 		r_cons_printf ("%s", sel_widget->selection == y + scroll ? selected_color : background_color);
 		r_cons_printf ("%-*.*s", sel_widget->w, sel_widget->w, option);
 		if (scrollbar && R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l)) {
-			r_cons_memcat (Color_INVERT" "Color_INVERT_RESET, 10);
+			r_cons_write (Color_INVERT" "Color_INVERT_RESET, 10);
 		} else {
-			r_cons_memcat (" ", 1);
+			r_cons_write (" ", 1);
 		}
 	}
 
 	r_cons_gotoxy (pos_x + I.buffer.length, pos_y);
-	r_cons_memcat (Color_RESET_BG, 5);
+	r_cons_write (Color_RESET_BG, 5);
 	r_cons_flush ();
 }
 

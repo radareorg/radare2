@@ -3350,7 +3350,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 			break;
 		default:{ // p--
 			if (off >= at && off < ate) {
-				r_cons_memcat ("^", 1);
+				r_cons_write ("^", 1);
 			} else {
 				RIOMap *s = r_io_map_get_at (core->io, at);
 				if (use_color) {
@@ -3365,19 +3365,19 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 					}
 				}
 				if (as->block[p].strings > 0) {
-					r_cons_memcat ("z", 1);
+					r_cons_write ("z", 1);
 				} else if (as->block[p].symbols > 0) {
-					r_cons_memcat ("s", 1);
+					r_cons_write ("s", 1);
 				} else if (as->block[p].functions > 0) {
-					r_cons_memcat ("F", 1);
+					r_cons_write ("F", 1);
 				} else if (as->block[p].comments > 0) {
-					r_cons_memcat ("c", 1);
+					r_cons_write ("c", 1);
 				} else if (as->block[p].flags > 0) {
-					r_cons_memcat (".", 1);
+					r_cons_write (".", 1);
 				} else if (as->block[p].in_functions > 0) {
-					r_cons_memcat ("f", 1);
+					r_cons_write ("f", 1);
 				} else {
-					r_cons_memcat ("_", 1);
+					r_cons_write ("_", 1);
 				}
 			}
 		}
@@ -6112,7 +6112,7 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *out;
 				out = r_inflate (block, core->blocksize, NULL, &outlen);
 				if (out) {
-					r_cons_memcat ((const char *) out, outlen);
+					r_cons_write ((const char *) out, outlen);
 				}
 				free (out);
 			}

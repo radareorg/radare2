@@ -330,7 +330,7 @@ R_API int r_core_yank_cat(RCore *core, ut64 pos) {
 				return false;
 			}
 			r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
-			r_cons_memcat (buf, sz);
+			r_cons_write (buf, sz);
 			r_cons_newline ();
 			return true;
 		}
@@ -352,7 +352,7 @@ R_API int r_core_yank_cat_string(RCore *core, ut64 pos) {
 			}
 			r_buf_read_at (core->yank_buf, pos, (ut8 *)buf, sz);
 			int len = r_str_nlen (buf, sz);
-			r_cons_memcat (buf, len);
+			r_cons_write (buf, len);
 			r_cons_newline ();
 			return true;
 		}
