@@ -44,7 +44,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 	if (bin) {
 		ut64 ba = baddr (bf);
 		bin->methods_list = r_list_newf ((RListFree)free);
-		bin->imports_list = r_list_newf ((RListFree)free);
+		bin->imports_list = r_list_newf ((RListFree)r_bin_import_free);
 		bin->classes_list = r_list_newf ((RListFree)free);
 		ut32 mod0 = r_buf_read_le32_at (b, NRO_OFFSET_MODMEMOFF);
 		parseMod (b, bin, mod0, ba);

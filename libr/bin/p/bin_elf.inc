@@ -543,7 +543,7 @@ static RList* imports(RBinFile *bf) {
 
 	r_return_val_if_fail (bf && bf->o, NULL);
 	struct Elf_(r_bin_elf_obj_t) *elf = bf->o->bin_obj;
-	if (!(ret = r_list_newf (r_bin_import_free))) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
 		return NULL;
 	}
 	if (!(import = Elf_(r_bin_elf_get_imports) (elf))) {

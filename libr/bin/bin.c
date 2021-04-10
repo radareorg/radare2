@@ -165,8 +165,7 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o) {
 	return res;
 }
 
-R_API void r_bin_import_free(void *_imp) {
-	RBinImport *imp = (RBinImport *)_imp;
+R_API void r_bin_import_free(RBinImport *imp) {
 	if (imp) {
 		R_FREE (imp->name);
 		R_FREE (imp->libname);

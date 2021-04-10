@@ -311,7 +311,7 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 }
 
 RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
-	RList *imports = r_list_newf (free);
+	RList *imports = r_list_newf ((RListFree)r_bin_import_free);
 	if (!imports) {
 		return NULL;
 	}

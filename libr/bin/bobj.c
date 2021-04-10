@@ -320,7 +320,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 		r_list_free (o->imports);
 		o->imports = p->imports (bf);
 		if (o->imports) {
-			o->imports->free = r_bin_import_free;
+			o->imports->free = (RListFree)r_bin_import_free;
 		}
 	}
 	if (p->symbols) {

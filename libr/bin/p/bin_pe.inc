@@ -266,7 +266,7 @@ static RList* imports(RBinFile *bf) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	if (!(ret = r_list_newf (r_bin_import_free))) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
 		return NULL;
 	}
 
