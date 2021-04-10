@@ -3103,25 +3103,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		goto beach;
 	}
 	if (*cmd) {
-		int inside_quote = 0;
-		char *hash;
-		for (hash = cmd; *hash; hash++) {
-			if (*hash == '\\') {
-				hash++;
-				if (*hash == '#' || *hash == '"') {
-					continue;
-				} else if (!*hash) {
-					break;
-				}
-			}
-			if (*hash == '"') {
-				inside_quote ^= 1;
-			}
-			if (*hash == '#' && hash != cmd && !inside_quote) {
-				break;
-			}
-		}
-		if (hash && *hash && !inside_quote) {
+		char *hash = (char *) r_str_firstbut_escape (cmd, '#', "'\"");
+		if (hash && hash != cmd) {
 			*hash = 0;
 			r_str_trim_tail (cmd);
 		}
@@ -3441,15 +3424,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			r_core_cmd_help (core, help_msg_greater_sign);
 			r_list_free (tmpenvs);
 			return true;
-		}
-	}
-
-// TODO must honor `
-	/* comments */
-	if (*cmd != '#') {
-		ptr = (char *)r_str_firstbut (cmd, '#', "`\""); // TODO: use quotestr here
-		if (ptr && (ptr[1] == ' ' || ptr[1] == '\t')) {
-			*ptr = '\0';
 		}
 	}
 
