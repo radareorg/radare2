@@ -11,6 +11,23 @@ RUN
 NAME=pyc load version38
 FILE=bins/pyc/py38.pyc
 CMDS=<<EOF
+dr
+dr=
+EOF
+EXPECT=<<EOF
+sp = 0x00000000
+pc = 0x00000000
+bp = 0x00000000
+     sp 0x00000000            pc 0x00000000            bp 0x00000000
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc load version38
+FILE=bins/pyc/py38.pyc
+CMDS=<<EOF
 iI~machine
 EOF
 EXPECT=<<EOF
