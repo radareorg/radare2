@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2021 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -1470,9 +1470,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				__delete_next_char ();
 			}
 			break;
-		case 10:// ^J -- ignore
-			r_cons_break_pop ();
-			return I.buffer.data;
 		case 11:// ^K
 			I.buffer.data[I.buffer.index] = '\0';
 			I.buffer.length = I.buffer.index;
@@ -1889,6 +1886,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				r_line_autocomplete ();
 			}
 			break;
+		case 10: // ^J
 		case 13: // enter
 			if (I.hud) {
 				I.hud->activate = false;
