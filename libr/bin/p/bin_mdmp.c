@@ -406,7 +406,7 @@ static RList* imports(RBinFile *bf) {
 	RList *ret = NULL, *list;
 	RListIter *it;
 
-	if (!(ret = r_list_newf (r_bin_import_free))) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
 		return NULL;
 	}
 
@@ -436,7 +436,7 @@ static RList* symbols(RBinFile *bf) {
 	RList *ret, *list;
 	RListIter *it;
 
-	if (!(ret = r_list_newf (r_bin_import_free))) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
 		return NULL;
 	}
 
