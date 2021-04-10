@@ -390,6 +390,7 @@ static const char *help_detail_pf[] = {
 	" ", "E", "resolve enum name (see t?)",
 	" ", "f", "float value (4 bytes)",
 	" ", "F", "double value (8 bytes)",
+	" ", "G", "long double value (16 bytes (10 with padding))",
 	" ", "i", "signed integer value (4 bytes) (see 'd' and 'x')",
 	" ", "n", "next char specifies size of signed value (1, 2, 4 or 8 byte(s))",
 	" ", "N", "next char specifies size of unsigned value (1, 2, 4 or 8 byte(s))",
@@ -4986,7 +4987,6 @@ static int cmd_print(void *data, const char *input) {
 		r_core_seek (core, off, SEEK_SET);
 		r_core_block_read (core);
 	}
-	// TODO After core->block is removed, this should be changed to a block read.
 	block = core->block;
 	switch (*input) {
 	case 'w': // "pw"

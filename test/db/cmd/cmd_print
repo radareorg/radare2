@@ -924,3 +924,25 @@ EXPECT=<<EOF
 ++++++    _|  10
 EOF
 RUN
+
+NAME=float long double
+FILE=-
+CMDS=<<EOF
+wvf 123
+p8 16
+pf f
+wvF 123
+p8 16
+pf F
+wvG 123
+# p8 16 ## binary representation not stable
+pf G
+EOF
+EXPECT=<<EOF
+0000f642000000000000000000000000
+0x00000000 = 123
+0000000000c05e400000000000000000
+0x00000000 = 123
+0x00000000 = 123
+EOF
+RUN

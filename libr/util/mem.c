@@ -150,11 +150,21 @@ R_API int r_mem_set_num(ut8 *dest, int dest_size, ut64 num) {
 // This function either swaps or copies len bytes depending on bool big_endian
 // TODO: Remove completely
 R_API void r_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian) {
+#if R_SYS_ENDIAN
+	// on big endian machine
+	if (big_endian) {
+		memcpy (dest, src, len);
+	} else {
+		r_mem_swapendian (dest, src, len);
+	}
+#else
+	// on little endian machine
 	if (big_endian) {
 		r_mem_swapendian (dest, src, len);
 	} else {
 		memcpy (dest, src, len);
 	}
+#endif
 }
 
 // This function unconditionally swaps endian of size bytes of orig -> dest

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake & Skia */
+/* radare - LGPL - Copyright 2007-2021 - pancake & Skia */
 
 #include "r_cons.h"
 #include "r_util.h"
@@ -24,8 +24,6 @@
 //this define is used as a way to acknowledge when updateAddr should take len
 //as real len of the buffer
 #define THRESHOLD (-4444)
-
-//TODO REWRITE THIS IS BECOMING A NIGHTMARE
 
 static float updateAddr(const ut8 *buf, int len, int endian, ut64 *addr, ut64 *addr64) {
 	float f = 0.0;
@@ -999,15 +997,14 @@ static int r_print_format_hexpairs(const RPrint* p, int endian, int mode,
 }
 
 static void r_print_format_float(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
-	float val_f = 0.0f;
+		const char *setval, ut64 seeki, const ut8* buf, int i, int size) {
 	ut64 addr = 0;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
-		elem = size/ARRAYINDEX_COEF - 1;
+		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	val_f = updateAddr (buf + i, 999, endian, &addr, NULL);
+	float val_f = updateAddr (buf + i, 999, endian, &addr, NULL);
 	if (MUSTSET) {
 		p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval,
 			seeki + ((elem >= 0) ? elem * 4 : 0));
@@ -1052,6 +1049,62 @@ static void r_print_format_float(const RPrint* p, int endian, int mode,
 	}
 }
 
+static void r_print_format_long_double(const RPrint* p, int endian, int mode,
+		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+	long double val_f = 0.0;
+	ut64 addr = 0;
+	int elem = -1;
+	if (size >= ARRAYINDEX_COEF) {
+		elem = size/ARRAYINDEX_COEF - 1;
+		size %= ARRAYINDEX_COEF;
+	}
+	updateAddr (buf + i, 999, endian, &addr, NULL);
+	r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (long double), endian);
+	if (MUSTSET) {
+		p->cb_printf ("wv8 %s @ 0x%08"PFMT64x"\n", setval,
+			seeki + ((elem >= 0) ? elem * 8 : 0));
+	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
+		p->cb_printf ("%.17Lg", val_f);
+	} else {
+		if (MUSTSEE) {
+			if (!SEEVALUE && !ISQUIET) {
+				p->cb_printf ("0x%08"PFMT64x" = ",
+					seeki + ((elem >= 0) ? elem * 8 : 0));
+			}
+		}
+		if (size == -1) {
+			p->cb_printf ("%.17Lg", val_f);
+		} else {
+			if (!SEEVALUE) {
+				p->cb_printf ("[ ");
+			}
+			while (size--) {
+				// XXX this 999 is scary
+				updateAddr (buf + i, 9999, endian, &addr, NULL);
+				r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (double), endian);
+				if (elem == -1 || elem == 0) {
+					p->cb_printf ("%.17Lg", val_f);
+					if (elem == 0) {
+						elem = -2;
+					}
+				}
+				if (size != 0 && elem == -1) {
+					p->cb_printf (", ");
+				}
+				if (elem > -1) {
+					elem--;
+				}
+				i += 8;
+			}
+			if (!SEEVALUE) {
+				p->cb_printf (" ]");
+			}
+		}
+		if (MUSTSEEJSON) {
+			p->cb_printf ("}");
+		}
+	}
+}
 
 static void r_print_format_double(const RPrint* p, int endian, int mode,
 		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
@@ -1068,7 +1121,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 		p->cb_printf ("wv8 %s @ 0x%08"PFMT64x"\n", setval,
 			seeki + ((elem >= 0) ? elem * 8 : 0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
-		p->cb_printf ("%.17g", val_f);
+		p->cb_printf ("%.17lg", val_f);
 	} else {
 		if (MUSTSEE) {
 			if (!SEEVALUE && !ISQUIET) {
@@ -1077,7 +1130,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 			}
 		}
 		if (size == -1) {
-			p->cb_printf ("%.17g", val_f);
+			p->cb_printf ("%.17lg", val_f);
 		} else {
 			if (!SEEVALUE) {
 				p->cb_printf ("[ ");
@@ -1087,7 +1140,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 				updateAddr (buf + i, 9999, endian, &addr, NULL);
 				r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (double), endian);
 				if (elem == -1 || elem == 0) {
-					p->cb_printf ("%.17g", val_f);
+					p->cb_printf ("%.17lg", val_f);
 					if (elem == 0) {
 						elem = -2;
 					}
@@ -1637,6 +1690,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 		case 'F':
 			size += tabsize * 8;
 			break;
+		case 'G': // long double (10 byte aligned to 16)
 		case 'Q': // uint128
 			size += tabsize * 16;
 			break;
@@ -1868,6 +1922,9 @@ static char *get_format_type(const char fmt, const char arg) {
 		break;
 	case 'F':
 		type = strdup ("double");
+		break;
+	case 'G':
+		type = strdup ("long_double");
 		break;
 	case 'q':
 		type = strdup ("uint64_t");
@@ -2415,7 +2472,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				case 'F':
 					r_print_format_double (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1)? 8: 8 * size;
+					i += (size == -1)? sizeof (double): sizeof (double) * size;
+					break;
+				case 'G':
+					r_print_format_long_double (p, endian, mode, setval, seeki, buf, i, size);
+					i += (size == -1)? sizeof (long double): sizeof (long double) * size;
 					break;
 				case 'i':
 					r_print_format_int (p, endian, mode, setval, seeki, buf, i, size);
@@ -2609,7 +2670,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 							} else {
 								mode &= ~R_PRINT_MUSTSEE;
 							}
-							s = r_print_format_struct (p, seek+i,
+							s = r_print_format_struct (p, seek + i,
 									buf+i, len-i, fmtname, slide, mode, setval, nxtfield, anon);
 							if ((MUSTSEE || MUSTSEEJSON || MUSTSEESTRUCT) && size != 0 && elem == -1) {
 								if (MUSTSEEJSON) {

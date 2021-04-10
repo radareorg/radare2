@@ -159,6 +159,12 @@ static const char *help_msg_wv[] = {
 	"Usage:", "wv[size] [value]", " Write value of given size",
 	"wv", " 0x834002", "write dword with this value",
 	"wv1", " 234", "write one byte with this value",
+	"wv2", " 234", "write unsigned short (2 bytes) with this number",
+	"wv4", " 234", "write dword (4 bytes) with this number",
+	"wv8", " 234", "write qword (8 bytes) with this number",
+	"wvf", " 3.14", "write float value (4 bytes)",
+	"wvF", " 3.14", "write double value (8 bytes)",
+	"wvG", " 3.14", "write long double value (10/16 bytes)",
 	"Supported sizes are:", "1, 2, 4, 8", "",
 	NULL
 };
@@ -452,6 +458,24 @@ static int wo_handler_old(void *data, const char *input) {
 }
 
 #define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
+static void cmd_write_value_float(RCore *core, const char *input) {
+	float v = 0.0;
+	sscanf (input, "%f", &v);
+	r_io_write_at (core->io, core->offset, (const ut8*)&v, sizeof (float));
+}
+
+static void cmd_write_value_long_double(RCore *core, const char *input) {
+	long double v = 0.0;
+	sscanf (input, "%Lf", &v);
+	r_io_write_at (core->io, core->offset, (const ut8*)&v, sizeof (long double));
+}
+
+static void cmd_write_value_double(RCore *core, const char *input) {
+	double v = 0.0;
+	sscanf (input, "%lf", &v);
+	r_io_write_at (core->io, core->offset, (const ut8*)&v, sizeof (double));
+}
+
 static void cmd_write_value(RCore *core, const char *input) {
 	int type = 0;
 	ut64 off = 0LL;
@@ -462,8 +486,17 @@ static void cmd_write_value(RCore *core, const char *input) {
 	core->num->value = 0;
 
 	switch (input[0]) {
-	case '?':
+	case '?': // "wv?"
 		r_core_cmd_help (core, help_msg_wv);
+		return;
+	case 'f': // "wvf"
+		cmd_write_value_float (core, r_str_trim_head_ro (input + 1));
+		return;
+	case 'F': // "wvF"
+		cmd_write_value_double (core, r_str_trim_head_ro (input + 1));
+		return;
+	case 'G': // "wvG"
+		cmd_write_value_long_double (core, r_str_trim_head_ro (input + 1));
 		return;
 	case '1': type = 1; break;
 	case '2': type = 2; break;
@@ -478,8 +511,9 @@ static void cmd_write_value(RCore *core, const char *input) {
 	}
 	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
 	if (res == UT64_MAX) return;
-	if (type == 0)
+	if (type == 0) {
 		type = (off&UT64_32U)? 8: 4;
+	}
 	switch (type) {
 	case 1:
 		r_write_ble8 (buf, (ut8)(off & UT8_MAX));
@@ -2085,6 +2119,7 @@ static int cmd_write(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_w);
 		break;
 	}
+	r_core_block_read (core);
 	return 0;
 }
 
