@@ -41,13 +41,13 @@ static char *normalize_slashes(char *path)
 {
 	char *p;
 	if (path[1] == ':') {
-		for (p = path + 2; *p; ++p) {
+		for (p = path + 2; *p; p++) {
 			if (*p == '/') {
 				*p = '\\';
 			}
 		}
 	} else {
-		for (p = path; *p; ++p) {
+		for (p = path; *p; p++) {
 			if (*p == '\\') {
 				*p = '/';
 			}
@@ -164,7 +164,7 @@ ST_FUNC void dynarray_add(void ***ptab, int *nb_ptr, void *data)
 ST_FUNC void dynarray_reset(void *pp, int *n)
 {
 	void **p;
-	for (p = *(void ***) pp; *n; ++p, --*n) {
+	for (p = *(void ***) pp; *n; p++, --*n) {
 		if (*p) {
 			free (*p);
 		}
@@ -181,7 +181,7 @@ static void tcc_split_path(TCCState *s, void ***p_ary, int *p_nb_ary, const char
 		CString str;
 
 		cstr_new (&str);
-		for (p = in; c = *p, c != '\0' && c != PATHSEP; ++p) {
+		for (p = in; c = *p, c != '\0' && c != PATHSEP; p++) {
 			if (c == '{' && p[1] && p[2] == '}') {
 				c = p[1], p += 2;
 				if (c == 'B') {
@@ -327,7 +327,7 @@ ST_FUNC void tcc_close(void)
 ST_FUNC int tcc_open(TCCState *s1, const char *filename)
 {
 	int fd;
-	if (strcmp (filename, "-") == 0) {
+	if (!strcmp (filename, "-")) {
 		fd = 0, filename = "stdin";
 	} else {
 		fd = open (filename, O_RDONLY | O_BINARY);
@@ -350,9 +350,6 @@ static int tcc_compile(TCCState *s1)
 {
 	Sym *define_start;
 
-#ifdef INC_DEBUG
-	printf ("%s: **** new file\n", file->filename);
-#endif
 	preprocess_init (s1);
 
 	funcname = "";
@@ -399,7 +396,7 @@ static int tcc_compile(TCCState *s1)
 
 	if (setjmp (s1->error_jmp_buf) == 0) {
 		s1->nb_errors = 0;
-		s1->error_set_jmp_enabled = 1;
+		s1->error_set_jmp_enabled = true;
 
 		ch = file->buf_ptr[0];
 		tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
@@ -418,7 +415,7 @@ static int tcc_compile(TCCState *s1)
 #endif
 	}
 
-	s1->error_set_jmp_enabled = 0;
+	s1->error_set_jmp_enabled = false;
 
 	/* reset define stack, but leave -Dsymbols (may be incorrect if
 	   they are undefined) */
@@ -626,22 +623,9 @@ LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os)
 		tcc_define_symbol (s, "__REDIRECT_NTH(name, proto, alias)", "name proto __asm__(#alias) __THROW");
 	}
 
-	s->alacarte_link = 1;
-	s->nocommon = 1;
-
 #ifdef CHAR_IS_UNSIGNED
-	s->char_is_unsigned = 1;
+	s->char_is_unsigned = true;
 #endif
-	/* enable this if you want symbols with leading underscore on windows: */
-#if 0	/* def TCC_TARGET_PE */
-	s->leading_underscore = 1;
-#endif
-	if (!strncmp (arch, "x86", 3)) {
-		// TODO: Set it to 16 for 16bit x86
-		if (bits == 32 || bits == 16) {
-			s->seg_size = 32;
-		}
-	}
 	return s;
 }
 
@@ -649,37 +633,18 @@ LIBTCCAPI void tcc_delete(TCCState *s1)
 {
 	tcc_cleanup ();
 
-	/* free library paths */
-	dynarray_reset (&s1->library_paths, &s1->nb_library_paths);
-	dynarray_reset (&s1->crt_paths, &s1->nb_crt_paths);
-
 	/* free include paths */
 	dynarray_reset (&s1->cached_includes, &s1->nb_cached_includes);
 	dynarray_reset (&s1->include_paths, &s1->nb_include_paths);
 	dynarray_reset (&s1->sysinclude_paths, &s1->nb_sysinclude_paths);
 
 	free (s1->tcc_lib_path);
-	free (s1->soname);
-	free (s1->rpath);
-	free (s1->init_symbol);
-	free (s1->fini_symbol);
-	free (s1->outfile);
 	free (s1->deps_outfile);
-	dynarray_reset (&s1->files, &s1->nb_files);
 	dynarray_reset (&s1->target_deps, &s1->nb_target_deps);
 
 	/* target config */
 	free (s1->arch);
 	free (s1->os);
-
-#ifdef TCC_IS_NATIVE
-#ifdef HAVE_SELINUX
-	munmap (s1->write_mem, s1->mem_size);
-	munmap (s1->runtime_mem, s1->mem_size);
-#else
-	free (s1->runtime_mem);
-#endif
-#endif
 
 	free (s1);
 }
@@ -760,32 +725,6 @@ typedef struct FlagDef {
 	uint16_t flags;
 	const char *name;
 } FlagDef;
-
-ST_FUNC int set_flag(TCCState *s, const FlagDef *flags, int nb_flags,
-		     const char *name, int value)
-{
-	int i;
-	const FlagDef *p;
-	const char *r;
-
-	r = name;
-	if (r[0] == 'n' && r[1] == 'o' && r[2] == '-') {
-		r += 3;
-		value = !value;
-	}
-	for (i = 0, p = flags; i < nb_flags; i++, p++) {
-		if (!strcmp (r, p->name)) {
-			goto found;
-		}
-	}
-	return -1;
-found:
-	if (p->flags & FD_INVERT) {
-		value = !value;
-	}
-	*(int *) ((uint8_t *) s + p->offset) = value;
-	return 0;
-}
 
 void (*tcc_cb)(const char *, char **);
 

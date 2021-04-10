@@ -109,7 +109,7 @@ struct r_parse_ctype_type_t {
 		} pointer;
 		struct {
 			RParseCTypeType *type;
-			ut64 count;
+			size_t count;
 		} array;
 	};
 };

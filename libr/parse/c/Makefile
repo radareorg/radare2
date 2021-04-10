@@ -1,14 +1,14 @@
-include ../../libr/config.mk
-include ../../config-user.mk
-include ../../mk/platform.mk
-include ../../mk/${COMPILER}.mk
+include ../../../libr/config.mk
+include ../../../config-user.mk
+include ../../../mk/platform.mk
+include ../../../mk/${COMPILER}.mk
 OFILES=libtcc.o tccgen.o tccpp.o
 
 CFLAGS+=${PIC_CFLAGS}
 
-LDFLAGS+=-L../../libr/util
+LDFLAGS+=-L../../../util
 LIBS+=-lr_util
-CFLAGS+=-I../../libr/include
+CFLAGS+=-I../../include
 
 CFLAGS+=-fstrict-aliasing
 CFLAGS+=-I../../libr/include
@@ -27,7 +27,7 @@ endif
 endif
 LIBNAME=libr_tcc.${SOEXT}
 
-include ../../shlr/sdb.mk
+include ../../../shlr/sdb.mk
 
 all: ${LIBNAME} libr_tcc.$(EXT_AR)
 

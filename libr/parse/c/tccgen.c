@@ -40,7 +40,7 @@ ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
 
-static int arraysize = 0;
+static size_t arraysize = 0;
 
 static const char *global_symname = NULL;
 static const char *global_type = NULL;
@@ -113,6 +113,7 @@ ST_INLN bool not_structured(CType *t) {
 }
 
 /* ------------------------------------------------------------------------- */
+#if 0
 /* we use our own 'finite' function to avoid potential problems with
    non standard math libs */
 /* XXX: endianness dependent */
@@ -120,6 +121,7 @@ ST_FUNC int ieee_finite(double d) {
 	int *p = (int *) &d;
 	return ((unsigned) ((p[1] | 0x800fffff) + 1)) >> 31;
 }
+#endif
 
 ST_FUNC void test_lvalue(void) {
 	if (!(vtop->r & VT_LVAL)) {
@@ -388,12 +390,6 @@ static void weaken_symbol(Sym *sym) {
 
 /* ------------------------------------------------------------------------- */
 
-ST_FUNC void swap(int *p, int *q) {
-	int t;
-	t = *p;
-	*p = *q;
-	*q = t;
-}
 
 static void vsetc(CType *type, int r, CValue *vc) {
 	if (vtop >= vstack + (VSTACK_SIZE - 1)) {
@@ -1646,13 +1642,13 @@ old_proto:
 		/* we push an anonymous symbol which will contain the array
 		   element type */
 		arraysize = n;
-#if 0
 		if (n < 0) {
-			printf ("array with no size []\n");
+			eprintf ("array with no size []\n");
+#if 0
 		} else {
 			printf ("PUSH SIZE %d\n", n);
-		}
 #endif
+		}
 		s = sym_push (SYM_FIELD, type, 0, n);
 		if (!s) {
 			return;

@@ -3,7 +3,11 @@
 #include "r_util.h"
 #include "r_types.h"
 #include "r_parse.h"
+#define ONE_SOURCE 1
 #include "tcc.h"
+#include "c/tccgen.c"
+#include "c/tccpp.c"
+#include "c/libtcc.c"
 
 extern int tcc_sym_push(char *typename, int typesize, int meta);
 

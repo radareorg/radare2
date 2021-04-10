@@ -824,7 +824,7 @@ ST_FUNC void save_parse_state(ParseState *s)
 	s->tokc = tokc;
 }
 
-/* restore parse state from 's' */
+/* restore parse state from 's' 
 ST_FUNC void restore_parse_state(ParseState *s)
 {
 	file->line_num = s->line_num;
@@ -832,6 +832,7 @@ ST_FUNC void restore_parse_state(ParseState *s)
 	tok = s->tok;
 	tokc = s->tokc;
 }
+*/
 
 /* return the number of additional 'ints' necessary to store the
    token */
@@ -1123,55 +1124,6 @@ ST_FUNC void free_defines(Sym *b)
 	define_stack = b;
 }
 
-/* label lookup */
-ST_FUNC Sym *label_find(int v)
-{
-	v -= TOK_IDENT;
-	if ((unsigned) v >= (unsigned) (tok_ident - TOK_IDENT)) {
-		return NULL;
-	}
-	return table_ident[v]->sym_label;
-}
-
-ST_FUNC Sym *label_push(Sym **ptop, int v, int flags)
-{
-	Sym *s, **ps;
-	s = sym_push2 (ptop, v, 0, 0);
-	if (!s) {
-		return s;
-	}
-	s->r = flags;
-	ps = &table_ident[v - TOK_IDENT]->sym_label;
-	if (ptop == &global_label_stack) {
-		/* modify the top most local identifier, so that
-		   sym_identifier will point to 's' when popped */
-		while (*ps != NULL)
-			ps = &(*ps)->prev_tok;
-	}
-	s->prev_tok = *ps;
-	*ps = s;
-	return s;
-}
-
-/* pop labels until element last is reached. Look if any labels are
-   undefined. Define symbols if '&&label' was used. */
-ST_FUNC void label_pop(Sym **ptop, Sym *slast)
-{
-	Sym *s, *s1;
-	for (s = *ptop; s != slast; s = s1) {
-		s1 = s->prev;
-		if (s->r == LABEL_DECLARED) {
-			tcc_warning ("label '%s' declared but not used", get_tok_str (s->v, NULL));
-		} else if (s->r == LABEL_FORWARD) {
-			tcc_error ("label '%s' used but not defined",
-				get_tok_str (s->v, NULL));
-		}
-		/* remove label */
-		table_ident[s->v - TOK_IDENT]->sym_label = s->prev_tok;
-		sym_free (s);
-	}
-	*ptop = slast;
-}
 
 /* eval an expression for #if/#elif */
 static int expr_preprocess(void)
@@ -1547,7 +1499,7 @@ include_syntax:
 			pstrcat (buf1, sizeof(buf1), buf);
 
 			if (tok == TOK_INCLUDE_NEXT) {
-				for (f = s1->include_stack_ptr; f >= s1->include_stack; --f) {
+				for (f = s1->include_stack_ptr; f >= s1->include_stack; f--) {
 					if (0 == PATHCMP ((*f)->filename, buf1)) {
 #ifdef INC_DEBUG
 						printf ("%s: #include_next skipping %s\n", file->filename, buf1);

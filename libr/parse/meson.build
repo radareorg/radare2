@@ -40,7 +40,7 @@ r_parse_sources = [
   'p/parse_riscv_pseudo.c',
   'p/parse_z80_pseudo.c'
 ]
-r_parse_sources += tcc_files
+# r_parse_sources += tcc_files
 
 r_parse = library('r_parse', r_parse_sources,
   include_directories: platform_inc,
