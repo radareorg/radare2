@@ -35,36 +35,22 @@ ST_DATA char **tcc_cb_ptr;
    rsym: return symbol
    anon_sym: anonymous symbol index
 */
-ST_DATA int rsym, anon_sym = SYM_FIRST_ANOM, ind, loc;
+ST_DATA int anon_sym = SYM_FIRST_ANOM, loc;
 ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
 
 static size_t arraysize = 0;
-
 static const char *global_symname = NULL;
 static const char *global_type = NULL;
 
 ST_DATA Sym *global_stack;
 ST_DATA Sym *local_stack;
-ST_DATA Sym *scope_stack_bottom;
 ST_DATA Sym *define_stack;
-ST_DATA Sym *global_label_stack;
-ST_DATA Sym *local_label_stack;
 
-ST_DATA int vla_sp_loc_tmp;	/* vla_sp_loc is set to this when the value won't be needed later */
-ST_DATA int vla_sp_root_loc;	/* vla_sp_loc for SP before any VLAs were pushed */
-ST_DATA int *vla_sp_loc;/* Pointer to variable holding location to store stack pointer on the stack when modifying stack pointer */
-ST_DATA int vla_flags;	/* VLA_* flags */
-
-ST_DATA SValue __vstack[1 + VSTACK_SIZE], *vtop;
-
-ST_DATA int const_wanted;	/* true if constant wanted */
-ST_DATA int nocode_wanted;	/* true if no code generation wanted for an expression */
+ST_DATA bool const_wanted = 0;	/* true if constant wanted */
+ST_DATA bool nocode_wanted;	/* true if no code generation wanted for an expression */
 ST_DATA int global_expr;	/* true if compound literals must be allocated globally (used during initializers parsing */
-ST_DATA CType func_vt;	/* current function return type (used by return instruction) */
-ST_DATA int func_vc;
-ST_DATA int last_line_num, last_ind, func_ind;	/* debug last line number and pc */
 ST_DATA char *funcname;
 ST_DATA char *dir_name;
 
@@ -169,6 +155,7 @@ ST_INLN void sym_free(Sym *sym) {
 /* push, without hashing */
 ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long long c) {
 	Sym *s;
+#if 0
 	if (ps == &local_stack) {
 		for (s = *ps; s && s != scope_stack_bottom; s = s->prev) {
 			if (!(v & SYM_FIELD) && (v & ~SYM_STRUCT) < SYM_FIRST_ANOM && s->v == v) {
@@ -178,6 +165,7 @@ ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long long c) {
 			}
 		}
 	}
+#endif
 	// printf (" %d %ld set symbol '%s'\n", t, c, get_tok_str(v, NULL));
 	// s = *ps;
 	s = sym_malloc ();
@@ -185,9 +173,6 @@ ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long long c) {
 	s->v = v;
 	s->type.t = t;
 	s->type.ref = NULL;
-#ifdef _WIN64
-	s->d = NULL;
-#endif
 	s->c = c;
 	s->next = NULL;
 	/* add in stack */
@@ -2349,10 +2334,8 @@ ST_FUNC void gexpr(void) {
 
 /* parse an expression and return its type without any side effect. */
 static void expr_type(CType *type) {
-	int saved_nocode_wanted;
-
-	saved_nocode_wanted = nocode_wanted;
-	nocode_wanted = 1;
+	bool saved_nocode_wanted = nocode_wanted;
+	nocode_wanted = true;
 	gexpr ();
 	*type = vtop->type;
 	nocode_wanted = saved_nocode_wanted;
@@ -2361,8 +2344,8 @@ static void expr_type(CType *type) {
 /* parse a unary expression and return its type without any side
    effect. */
 static void unary_type(CType *type) {
-	int a = nocode_wanted;
-	nocode_wanted = 1;
+	bool a = nocode_wanted;
+	nocode_wanted = true;
 	unary ();
 	*type = vtop->type;
 	nocode_wanted = a;
@@ -2372,7 +2355,7 @@ static void unary_type(CType *type) {
 static void expr_const1(void) {
 	int a;
 	a = const_wanted;
-	const_wanted = 1;
+	const_wanted = true;
 	expr_cond ();
 	const_wanted = a;
 }
