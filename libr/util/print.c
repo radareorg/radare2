@@ -815,6 +815,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 }
 
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
+	r_return_if_fail (p && buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
 #define print(x) printfmt("%s", x)
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
