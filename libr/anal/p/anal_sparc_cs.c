@@ -9,7 +9,6 @@
 #error Old Capstone not supported
 #endif
 
-#define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 #define INSOP(n) insn->detail->sparc.operands[n]
 #define INSCC insn->detail->sparc.cc
 
