@@ -30,7 +30,7 @@ R_API char *r_sys_get_src_dir_w32(void) {
 	return dir;
 }
 
-R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **output, int *outlen, char **sterr) {
+R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, int ilen, char **output, int *outlen, char **sterr) {
 	HANDLE in = NULL;
 	HANDLE out = NULL;
 	HANDLE err = NULL;
@@ -67,7 +67,7 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, char **out
 			ErrorExit ("StdInRd CreatePipe");
 		}
 		DWORD nBytesWritten;
-		WriteFile (in, input, strlen (input) + 1, &nBytesWritten, NULL);
+		WriteFile (in, input, ilen >= 0 ? ilen: strlen (input) + 1, &nBytesWritten, NULL);
 		if (!SetHandleInformation (in, HANDLE_FLAG_INHERIT, 0)) {
 			ErrorExit ("StdIn SetHandleInformation");
 		}

@@ -80,7 +80,7 @@ r_util_sources = [
   'utf32.c',
   'vector.c',
   'skyline.c',
-  'w32-sys.c',
+  'sys_w32.c',
   'zip.c',
   'protobuf.c',
   'regex/regcomp.c',

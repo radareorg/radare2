@@ -281,6 +281,11 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 	return ret;
 }
 
+R_API ut8 *r_sys_unxz(const ut8 *buf, size_t len, size_t *olen) {
+	char *cmd = "xz -d"
+	int rc = r_sys_cmd_str_full ("xz -d", buconst char *input, char **output, int *len, char **sterr) {
+}
+
 #ifdef __MAC_10_7
 #define APPLE_WITH_BACKTRACE 1
 #endif
@@ -599,7 +604,7 @@ R_API int r_sys_thp_mode(void) {
 }
 
 #if __UNIX__
-R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
+R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
 	char *mysterr = NULL;
 	if (!sterr) {
 		sterr = &mysterr;
@@ -717,7 +722,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				memcpy (*sterr + err_len, buffer, bytes);
 				err_len += bytes;
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
-				int inputptr_len = strlen (inputptr);
+				int inputptr_len = ilen >= 0? ilen: strlen (inputptr);
 				bytes = write (sh_in[1], inputptr, inputptr_len);
 				if (bytes != inputptr_len) {
 					break;
