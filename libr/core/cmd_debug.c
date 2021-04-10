@@ -2411,6 +2411,10 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, false); //R_REG_TYPE_GPR, false);
 			int count = r_list_length (args);
 			r_list_foreach (args, iter, arg) {
+				r = r_reg_get (core->dbg->reg, arg, -1);
+				if (!r) {
+					continue;
+				}
 				ut64 off = r_debug_reg_get (core->dbg, arg);
 				if (count == 1) {
 					r_cons_printf ("0x%08"PFMT64x"\n", off);
