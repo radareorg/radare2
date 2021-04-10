@@ -3127,15 +3127,13 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	}
 	if (*cmd != '"') {
-		if (!strchr (cmd, '\'')) { // allow | awk '{foo;bar}' // ignore ; if there's a single quote
-			if (is_macro_command (cmd)) {
-				colon = find_ch_after_macro (cmd, ';');
-			} else {
-				colon = strchr (cmd, ';');
-			}
-			if (colon) {
-				*colon = 0;
-			}
+		if (is_macro_command (cmd)) {
+			colon = find_ch_after_macro (cmd, ';');
+		} else {
+			colon = (char *) r_str_firstbut_escape (cmd, ';', "'\"");
+		}
+		if (colon) {
+			*colon = 0;
 		}
 	} else {
 		colon = NULL;
