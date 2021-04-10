@@ -163,9 +163,8 @@ static const char *help_msg_wv[] = {
 	"wv4", " 234", "write dword (4 bytes) with this number",
 	"wv8", " 234", "write qword (8 bytes) with this number",
 	"wvf", " 3.14", "write float value (4 bytes)",
-	"wvd", " 3.14", "write double value (4 bytes)",
-	"wvD", " 3.14", "write long float value (8 bytes)",
-	"wvF", " 3.14", "write long double value (16 bytes)",
+	"wvF", " 3.14", "write double value (8 bytes)",
+	"wvG", " 3.14", "write long double value (10/16 bytes)",
 	"Supported sizes are:", "1, 2, 4, 8", "",
 	NULL
 };
@@ -493,10 +492,10 @@ static void cmd_write_value(RCore *core, const char *input) {
 	case 'f': // "wvf"
 		cmd_write_value_float (core, r_str_trim_head_ro (input + 1));
 		return;
-	case 'd': // "wvd"
+	case 'F': // "wvF"
 		cmd_write_value_double (core, r_str_trim_head_ro (input + 1));
 		return;
-	case 'D': // "wvF"
+	case 'G': // "wvG"
 		cmd_write_value_long_double (core, r_str_trim_head_ro (input + 1));
 		return;
 	case '1': type = 1; break;

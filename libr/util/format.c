@@ -1690,6 +1690,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 		case 'F':
 			size += tabsize * 8;
 			break;
+		case 'G': // long double (10 byte aligned to 16)
 		case 'Q': // uint128
 			size += tabsize * 16;
 			break;
@@ -1921,6 +1922,9 @@ static char *get_format_type(const char fmt, const char arg) {
 		break;
 	case 'F':
 		type = strdup ("double");
+		break;
+	case 'G':
+		type = strdup ("long_double");
 		break;
 	case 'q':
 		type = strdup ("uint64_t");
@@ -2468,7 +2472,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					break;
 				case 'F':
 					r_print_format_double (p, endian, mode, setval, seeki, buf, i, size);
-					i += (size == -1)? 8: 8 * size;
+					i += (size == -1)? sizeof (double): sizeof (double) * size;
+					break;
+				case 'G':
+					r_print_format_long_double (p, endian, mode, setval, seeki, buf, i, size);
+					i += (size == -1)? sizeof (long double): sizeof (long double) * size;
 					break;
 				case 'i':
 					r_print_format_int (p, endian, mode, setval, seeki, buf, i, size);
