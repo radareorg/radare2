@@ -1604,7 +1604,7 @@ static bool dex_loadcode(RBinFile *bf) {
 	if (!dex->methods_list) {
 		return false;
 	}
-	dex->imports_list = r_list_newf ((RListFree)free);
+	dex->imports_list = r_list_newf ((RListFree)r_bin_import_free);
 	if (!dex->imports_list) {
 		r_list_free (dex->methods_list);
 		return false;

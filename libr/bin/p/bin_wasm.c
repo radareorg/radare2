@@ -234,7 +234,7 @@ static RList *imports (RBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	if (!(ret = r_list_newf (r_bin_import_free))) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
 		return NULL;
 	}
 	if (!(imports = r_bin_wasm_get_imports (bin))) {
