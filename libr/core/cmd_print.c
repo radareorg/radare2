@@ -4975,7 +4975,6 @@ static int cmd_print(void *data, const char *input) {
 		r_core_seek (core, off, SEEK_SET);
 		r_core_block_read (core);
 	}
-	// TODO After core->block is removed, this should be changed to a block read.
 	block = core->block;
 	switch (*input) {
 	case 'w': // "pw"
