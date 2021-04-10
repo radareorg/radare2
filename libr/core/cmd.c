@@ -16,10 +16,6 @@
 #include <pwd.h>
 #endif
 
-// NOTE: this should be in sync with SPECIAL_CHARACTERS in
-//       radare2-shell-parser grammar, except for ", ' and
-//       whitespaces, because we let cmd_substitution_arg create
-//       new arguments
 static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
 #if 0
 static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
