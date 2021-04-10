@@ -223,7 +223,7 @@ R_API void r_cons_printat(const char *str, int x, char y) {
 		if (str[i] == '\n') {
 			r_cons_gotoxy (x, y + lines);
 			int wlen = R_MIN (len, w);
-			r_cons_memcat (str + o, wlen);
+			r_cons_write (str + o, wlen);
 			o = i + 1;
 			len = 0;
 			lines++;
@@ -231,7 +231,7 @@ R_API void r_cons_printat(const char *str, int x, char y) {
 	}
 	if (len > 0) {
 		r_cons_gotoxy (x, y + lines);
-		r_cons_memcat (str + o, len);
+		r_cons_write (str + o, len);
 	}
 }
 
@@ -244,7 +244,7 @@ R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 				r_cons_memset (c, 1);
 				r_cons_memset (' ', 1);
 			}
-			r_cons_memcat (str + o, len);
+			r_cons_write (str + o, len);
 			if (str[o + len] == '\n') {
 				r_cons_newline ();
 			}
@@ -253,7 +253,7 @@ R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 		}
 	}
 	if (len > 1) {
-		r_cons_memcat (str + o, len);
+		r_cons_write (str + o, len);
 	}
 }
 
@@ -282,7 +282,7 @@ R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 			cols = R_MIN (w, ansilen);
 			const char *end = r_str_ansi_chrn (str + o, cols);
 			cols = end - str + o;
-			r_cons_memcat (str + o, R_MIN (len, cols));
+			r_cons_write (str + o, R_MIN (len, cols));
 			o = i + 1;
 			len = 0;
 			rows++;
@@ -290,7 +290,7 @@ R_API void r_cons_strcat_at(const char *_str, int x, char y, int w, int h) {
 	}
 	if (len > 1) {
 		r_cons_gotoxy (x, y + rows);
-		r_cons_memcat (str + o, len);
+		r_cons_write (str + o, len);
 	}
 	r_cons_strcat (Color_RESET);
 	r_cons_strcat (R_CONS_CURSOR_RESTORE);
@@ -875,7 +875,7 @@ R_API void r_cons_last(void) {
 		return;
 	}
 	CTX (lastMode) = true;
-	r_cons_memcat (CTX (lastOutput), CTX (lastLength));
+	r_cons_write (CTX (lastOutput), CTX (lastLength));
 }
 
 static bool lastMatters(void) {
@@ -1267,7 +1267,7 @@ R_API int r_cons_get_column(void) {
 }
 
 /* final entrypoint for adding stuff in the buffer screen */
-R_API int r_cons_memcat(const char *str, int len) {
+R_API int r_cons_write(const char *str, int len) {
 	if (R_STR_ISEMPTY (str) || len < 0) {
 		return -1;
 	}
@@ -1313,7 +1313,7 @@ R_API void r_cons_strcat(const char *str) {
 	}
 	len = strlen (str);
 	if (len > 0) {
-		r_cons_memcat (str, len);
+		r_cons_write (str, len);
 	}
 }
 
