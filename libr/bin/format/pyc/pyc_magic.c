@@ -211,15 +211,17 @@ static struct pyc_version versions[] = {
 	{ 0x0a0d0d5c, "v3.9.0a1", "fd757083df79c21eee862e8d89aeefefe45f64a0" },
 	{ 0x0a0d0d5e, "v3.9.0a2", "bf0a31c8fb782e03e9530c2488ab2d0e29fc0495" },
 	{ 0x0a0d0d60, "v3.9.0a3", "a36ea266c6470f6c65416f24de4497637e59af23" },
+	{ 0x0a0d0d61, "v3.9.0", "123" },
 };
 
 struct pyc_version get_pyc_version(ut32 magic) {
 	struct pyc_version fail = { -1, 0, 0 };
-	ut32 i;
-	for (i = 0; i < sizeof (versions) / sizeof (*versions); i++)
+	size_t i;
+	for (i = 0; i < sizeof (versions) / sizeof (*versions); i++) {
 		if (versions[i].magic == magic) {
 			return versions[i];
 		}
+	}
 	return fail;
 }
 
@@ -230,6 +232,7 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	ut64 ti = 0, li = 0, ui = 0;
 	ut64 size = sizeof (versions) / sizeof (struct pyc_version);
 	for (; ti < size && versions[ti].magic != target_magic; ti++) {
+		// just loop
 	}
 	if (ti == size) {
 		*error = true;
@@ -238,6 +241,7 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	}
 
 	for (; li < size && (versions[li].magic & 0xffff) != lower; li++) {
+		// just loop
 	}
 	if (li == size) {
 		*error = true;
@@ -246,6 +250,7 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 	}
 
 	for (; ui < size && (versions[ui].magic & 0xffff) != upper; ui++) {
+		// just loop
 	}
 	if (ui == size) {
 		*error = true;
@@ -259,15 +264,18 @@ bool magic_int_within(ut32 target_magic, ut32 lower, ut32 upper, bool *error) {
 double version2double(const char *version) {
 	unsigned idx = 0, buf_idx = 0;
 	char buf[20];
-	double result;
+	double result = 0;
 
-	while (!('0' <= version[idx] && version[idx] <= '9'))
+	while (!('0' <= version[idx] && version[idx] <= '9')) {
 		idx++;
-	for (; version[idx] != '.'; idx++)
+	}
+	for (; version[idx] != '.'; idx++) {
 		buf[buf_idx++] = version[idx];
+	}
 	buf[buf_idx++] = version[idx++];
-	for (; '0' <= version[idx] && version[idx] <= '9'; idx++)
+	for (; '0' <= version[idx] && version[idx] <= '9'; idx++) {
 		buf[buf_idx++] = version[idx];
+	}
 	buf[buf_idx] = '\x00';
 	sscanf (buf, "%lf", &result);
 	return result;

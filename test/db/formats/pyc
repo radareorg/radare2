@@ -1,0 +1,199 @@
+NAME=pyc load version39
+FILE=bins/pyc/py39.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.9.0 VM (rev 123)
+EOF
+RUN
+
+NAME=pyc load version38
+FILE=bins/pyc/py38.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc load version37
+FILE=bins/pyc/py37.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc load version36
+FILE=bins/pyc/py36.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc load version27
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+iI~machine
+EOF
+EXPECT=<<EOF
+machine  Python 2.7a2+ VM (rev edfed0e32cedf3b84c6e999052486a750a3f5bee)
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc symbols
+FILE=bins/pyc/py37.pyc
+CMDS=<<EOF
+is~?Human
+EOF
+EXPECT=<<EOF
+9
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc sections
+FILE=bins/pyc/py37.pyc
+CMDS=<<EOF
+iS~Bat
+EOF
+EXPECT=<<EOF
+30  0x00001f0d   0x2a 0x00001f0d   0x2a ---- <module>.Bat
+31  0x00001f5f    0xa 0x00001f5f    0xa ---- <module>.Bat.__init__
+32  0x00001fca    0x8 0x00001fca    0x8 ---- <module>.Bat.say
+33  0x00002037    0x4 0x00002037    0x4 ---- <module>.Bat.sonar
+34  0x00002103   0x1c 0x00002103   0x1c ---- <module>.Batman
+35  0x00002143   0x44 0x00002143   0x44 ---- <module>.Batman.__init__
+36  0x00002235    0x4 0x00002235    0x4 ---- <module>.Batman.sing
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc entry
+FILE=bins/pyc/py37.pyc
+CMDS=<<EOF
+ie~program
+EOF
+EXPECT=<<EOF
+vaddr=0x0000002a paddr=0x0000002a haddr=-1 type=program
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc disasm
+FILE=bins/pyc/py37.pyc
+CMDS=<<EOF
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section._module_:
+            ;-- <module>:
+            0x0000002a      6400           load_const  Multiline strings can be written
+    using three "s, and are often used
+    as documentation. ; [00] ---- section size 3218 named <module>
+            0x0000002c      5a00           store_name __doc__
+            0x0000002e      6401           load_const True
+        ,=< 0x00000030      6f0a           jump_if_false_or_pop 10
+        |   0x00000032      6402           load_const False
+        `-> 0x00000034      0100           pop_top
+            0x00000036      6402           load_const False
+        ,=< 0x00000038      7012           jump_if_true_or_pop 18
+        |   0x0000003a      6401           load_const True
+        `-> 0x0000003c      0100           pop_top
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc symbols for pyc2.7
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+is~hello_world
+EOF
+EXPECT=<<EOF
+1   0x00000052 0x00000052 NONE FUNC 9        <module>.hello_world
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc disasm for 2.7
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section._module_:
+            ;-- <module>:
+            0x0000001e      640000         load_const CodeObject(hello_world) from hello.py ; [00] ---- section size 25 named <module>
+            0x00000021      840000         make_function
+            0x00000024      5a0000         store_name hello_world
+            0x00000027      640100         load_const 'world'
+            0x0000002a      47             print_item
+            0x0000002b      48             print_newline
+            0x0000002c      650000         load_name hello_world
+            0x0000002f      830000         call_function 0 positional, 0 named
+            0x00000032      01             pop_top
+            0x00000033      640200         load_const None
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+EOF
+RUN
+
+NAME=pyc function
+FILE=bins/pyc/py27.pyc
+CMDS=<<EOF
+af
+pdf
+EOF
+EXPECT=<<EOF
+            ;-- section._module_:
+            ;-- <module>:
+/ 25: entry0 ();
+|           0x0000001e      640000         load_const CodeObject(hello_world) from hello.py ; [00] ---- section size 25 named <module>
+|           0x00000021      840000         make_function
+|           0x00000024      5a0000         store_name hello_world
+|           0x00000027      640100         load_const 'world'
+|           0x0000002a      47             print_item
+|           0x0000002b      48             print_newline
+|           0x0000002c      650000         load_name hello_world
+|           0x0000002f      830000         call_function 0 positional, 0 named
+|           0x00000032      01             pop_top
+|           0x00000033      640200         load_const None
+\           0x00000036      53             return_value
+EOF
+EXPECT_ERR=<<EOF
+WARNING: No calling convention defined for this file, analysis may be inaccurate.
+Warning: set your favourite calling convention in `e anal.cc=?`
+EOF
+RUN

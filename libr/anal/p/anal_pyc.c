@@ -37,6 +37,13 @@ static char *get_reg_profile(RAnal *anal) {
 	);
 }
 
+static bool set_reg_profile(RAnal *anal) {
+	char *rp = get_reg_profile (anal);
+	bool b = r_reg_set_profile_string (anal->reg, rp);
+	free (rp);
+	return b;
+}
+
 static RList *get_pyc_code_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->o? b->cur->o->plugin: NULL;
@@ -139,6 +146,7 @@ RAnalPlugin r_anal_plugin_pyc = {
 	.bits = 16 | 8, // Partially agree with this
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
+	.set_reg_profile = &set_reg_profile,
 	.op = &pyc_op,
 	.esil = false,
 	.fini = &finish,

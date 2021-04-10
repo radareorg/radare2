@@ -120,6 +120,7 @@ static version_opcode version_op[] = {
 	{ "v3.9.0a1", opcode_39 },
 	{ "v3.9.0a2", opcode_39 },
 	{ "v3.9.0a3", opcode_39 },
+	{ "v3.9.0", opcode_39 },
 	{ NULL, NULL },
 };
 

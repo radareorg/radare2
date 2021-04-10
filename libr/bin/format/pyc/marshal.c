@@ -603,9 +603,9 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 			break;
 		}
 		if (!r_list_append (ret->data, val)) {
+			free_object (val);
 			r_list_free (ret->data);
 			R_FREE (ret);
-			free_object (val);
 			return NULL;
 		}
 	}
@@ -718,6 +718,9 @@ static void free_object(pyc_object *object) {
 	if (!object) {
 		return;
 	}
+	if ((int)object->type == 0) {
+		return;
+	}
 	switch (object->type) {
 	case TYPE_SMALL_TUPLE:
 	case TYPE_TUPLE:
@@ -785,6 +788,9 @@ static pyc_object *copy_object(pyc_object *object) {
 		return NULL;
 	}
 	copy->type = object->type;
+	if ((int)object->type == 0) {
+		// do nothing
+	} else 
 	switch (object->type) {
 	case TYPE_NULL:
 		break;
@@ -1121,6 +1127,9 @@ static pyc_object *get_object(RBuffer *buffer) {
 		eprintf ("Get not implemented for type 0x%x\n", type);
 		free_object (ret);
 		return NULL;
+	case 0:
+		// nop
+		break;
 	default:
 		eprintf ("Undefined type in get_object (0x%x)\n", type);
 		free_object (ret);
@@ -1186,8 +1195,9 @@ static bool extract_sections_symbols(pyc_object *obj, RList *sections, RList *sy
 	if (!r_list_append (symbols, symbol)) {
 		goto fail;
 	}
-	r_list_foreach (((RList *)(cobj->consts->data)), i, obj)
+	r_list_foreach (((RList *)(cobj->consts->data)), i, obj) {
 		extract_sections_symbols (obj, sections, symbols, cobjs, prefix);
+	}
 	free (prefix);
 	return true;
 fail:
@@ -1201,11 +1211,12 @@ fail:
 bool get_sections_symbols_from_code_objects(RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs, ut32 magic) {
 	bool ret;
 	magic_int = magic;
-	refs = r_list_newf ((RListFree)free_object);
+	refs = r_list_newf (NULL); // (RListFree)free_object);
 	if (!refs) {
 		return false;
 	}
 	ret = extract_sections_symbols (get_object (buffer), sections, symbols, cobjs, NULL);
 	r_list_free (refs);
+	refs = NULL;
 	return ret;
 }
