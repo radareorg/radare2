@@ -35,7 +35,7 @@ ST_DATA char **tcc_cb_ptr;
    rsym: return symbol
    anon_sym: anonymous symbol index
 */
-ST_DATA int rsym, anon_sym = SYM_FIRST_ANOM, ind, loc;
+ST_DATA int anon_sym = SYM_FIRST_ANOM, loc;
 ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
@@ -51,9 +51,6 @@ ST_DATA Sym *define_stack;
 ST_DATA bool const_wanted = 0;	/* true if constant wanted */
 ST_DATA bool nocode_wanted;	/* true if no code generation wanted for an expression */
 ST_DATA int global_expr;	/* true if compound literals must be allocated globally (used during initializers parsing */
-ST_DATA CType func_vt;	/* current function return type (used by return instruction) */
-ST_DATA int func_vc;
-ST_DATA int last_line_num, last_ind, func_ind;	/* debug last line number and pc */
 ST_DATA char *funcname;
 ST_DATA char *dir_name;
 
