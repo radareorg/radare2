@@ -32,6 +32,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		eprintf ("Usage: winkd://(host:port:key) | (/tmp/windbg.pipe)\n");
 		eprintf (" winkd://192.168.1.33:1234:key)  # UDP to host:port:key\n");
 		eprintf (" winkd:///tmp # pipe - \\\\.\\pipe\\com_1 /tmp/windbg.pipe\n");
+		eprintf (" # key is base36(aes256) in x.x.x.x format\n");
 		return NULL;
 	}
 
