@@ -29,6 +29,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 static int assemble(RAsm *a, RAsmOp *op, const char *input) {
 	// TODO: get class info from bin if possible
 	// XXX wrong usage of strbuf_get here
+	ut8 output[512];
+	st32 w;
+	if (r_java_assemblerz (input, strlen (input), output, sizeof (output), a->pc, &w)) {
+		op->size = w;
+		return op->size;
+	}
 	return op->size = r_java_assemble (a->pc, (ut8*)r_strbuf_get (&op->buf), input);
 }
 

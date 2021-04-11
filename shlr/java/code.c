@@ -71,7 +71,7 @@ static int enter_switch_op (ut64 addr, const ut8* bytes, int len) {
 	return sz;
 }
 
-static bool isRelative (ut32 type) {
+static bool isRelative(ut32 type) {
 	if (type & R_ANAL_JAVA_CODEOP_CJMP) {
 		return true;
 	}
@@ -81,16 +81,16 @@ static bool isRelative (ut32 type) {
 	return false;
 }
 
-static int update_bytes_consumed (int sz) {
+static int update_bytes_consumed(int sz) {
 	BYTES_CONSUMED += sz;
 	return sz;
 }
 
-static int update_switch_op (ut64 addr, const ut8 * bytes) {
+static int update_switch_op(ut64 addr, const ut8 * bytes) {
 	int sz = 4;
 	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
 	SWITCH_OP.cur_val++;
-	if (ccase+1 > SWITCH_OP.max_val) {
+	if (ccase + 1 > SWITCH_OP.max_val) {
 		IN_SWITCH_OP = 0;
 	}
 	IFDBG {
