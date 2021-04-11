@@ -9,9 +9,6 @@
 #include <r_util/r_assert.h>
 #include "./anal_arm_hacks.inc"
 
-
-#define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
-
 /* arm64 */
 #define IMM64(x) (ut64)(insn->detail->arm64.operands[x].imm)
 #define INSOP64(x) insn->detail->arm64.operands[x]
