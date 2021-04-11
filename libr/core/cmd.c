@@ -1260,7 +1260,7 @@ static int cmd_lsr(RCore *core, const char *input) {
 	char *path;
 	RList *files;
 	RListIter *iter;
-	if (!arg) {
+	if (!input) {
 		arg = ".";
 	} else {
 		arg = input;
