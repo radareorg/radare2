@@ -64,7 +64,7 @@ FILE=bins/mach0/TestRTTI-arm64
 CMDS=<<EOF
 avrr
 acl
-acll~\@
+acll
 avra~0x100008378:0
 avra~vmi:0
 ?e `avraj~{[0]}`~{:
@@ -74,15 +74,31 @@ A
 B: A
 C: A
 D: B, C
+A
+  (vtable at 0x100008078)
   virtual_0 @ 0x100005f1c (vtable + 0x0)
   virtual_8 @ 0x100005f44 (vtable + 0x8)
   virtual_16 @ 0x100005f6c (vtable + 0x10)
+B: A
+  (vtable at 0x1000080b8)
+  (vtable at 0x1000080f0)
+  (vtable at 0x1000082c0)
+  (vtable at 0x1000082f8)
   virtual_0 @ 0x100005fbc (vtable + 0x0)
   virtual_8 @ 0x100005f44 (vtable + 0x8)
   virtual_16 @ 0x100006008 (vtable + 0x10)
+C: A
+  (vtable at 0x100008158)
+  (vtable at 0x100008190)
+  (vtable at 0x100008328)
+  (vtable at 0x100008360)
   virtual_0 @ 0x100005f1c (vtable + 0x0)
   virtual_8 @ 0x100006054 (vtable + 0x8)
   virtual_16 @ 0x1000060a0 (vtable + 0x10)
+D: B, C
+  (vtable at 0x1000081f8)
+  (vtable at 0x100008220)
+  (vtable at 0x100008258)
   virtual_0 @ 0x100005fbc (vtable + 0x0)
   virtual_8 @ 0x100006054 (vtable + 0x8)
   virtual_16 @ 0x100006108 (vtable + 0x10)
