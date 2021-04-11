@@ -1049,7 +1049,8 @@ static void rcc_next(REgg *egg) {
 		if (!strcmp (str, "while")) {
 			char var[128];
 			if (egg->lang.lastctxdelta >= 0) {
-				exit (eprintf ("ERROR: Unsupported while syntax\n"));
+				eprintf ("ERROR: Unsupported while syntax\n");
+				return;
 			}
 			sprintf (var, "__begin_%d_%d_%d\n", egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX - 1]);
 			e->while_end (egg, var);// get_frame_label (1));
@@ -1292,9 +1293,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	}
 	if (egg->lang.slurp) {
 		if (egg->lang.slurp != '"' && c == egg->lang.slurpin) {	// only happend when (...(...)...)
-			exit (eprintf (
-					"%s:%d Nesting of expressions not yet supported\n",
-					egg->lang.file, egg->lang.line));
+			eprintf ("%s:%d Nesting of expressions not yet supported\n",
+					egg->lang.file, egg->lang.line);
+			return -1;
 		}
 		if (c == egg->lang.slurp && egg->lang.oc != '\\') {	// close egg->lang.slurp
 			egg->lang.elem[egg->lang.elem_n] = '\0';
