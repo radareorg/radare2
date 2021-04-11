@@ -1,5 +1,5 @@
 
-/* radare - LGPL - Copyright 2021 - pancake */
+/* radare - LGPL - Copyright 2021 - Siguza, pancake */
 
 // Context: https://raw.githubusercontent.com/Siguza/misc/master/xref.c
 
@@ -272,6 +272,12 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 static int r_cmdsixref_call(void *user, const char *input) {
 	if (r_str_startswith (input, "sixref")) {
 		RCore *core = (RCore *)user;
+		const char *arch = r_config_get (core->config, "asm.arch");
+		const int bits = r_config_get_i (core->config, "asm.bits");
+		if (!strstr (arch, "arm") || bits != 64) {
+			eprintf ("This command only works on arm64. Please check your asm.{arch,bits}\n");
+			return true;
+		}
 		ut64 search = r_num_math (core->num, input + 6);
 		// TODO: honor search.in and such
 		eprintf ("Finding xrefs to 0x%08"PFMT64x" in 0x%08"PFMT64x"-0x%08"PFMT64x"\n", search, core->offset, core->offset + core->blocksize);
