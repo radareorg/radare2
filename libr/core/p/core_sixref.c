@@ -148,11 +148,12 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 											}
 											if(aoff) // Have add
 											{
-												r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %s%#"PFMT64x"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, soff);
+												r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %s%"PFMT64d"]\n",
+													addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, soff);
 											}
 											else // Have no add
 											{
-												r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u, %s%#"PFMT64x"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, soff);
+												r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u, %s%"PFMT64d"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, soff);
 											}
 										}
 										else // pre/post-index
@@ -161,22 +162,22 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 											{
 												if(aoff) // Have add
 												{
-													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %s%#"PFMT64x"]!\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, soff);
+													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %s%"PFMT64d"]!\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, soff);
 												}
 												else // Have no add
 												{
-													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u, %s%#"PFMT64x"]!\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, soff);
+													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u, %s%"PFMT64d"]!\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, soff);
 												}
 											}
 											else // post
 											{
 												if(aoff) // Have add
 												{
-													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u], %s%#"PFMT64x"\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, soff);
+													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u], %s%"PFMT64d"\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, soff);
 												}
 												else // Have no add
 												{
-													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u], %s%#"PFMT64x"\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, soff);
+													r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; %s %s%u, [x%u], %s%"PFMT64d"\n", addr, is_adrp ? "adrp" : "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, soff);
 												}
 											}
 										}
