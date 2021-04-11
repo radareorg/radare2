@@ -11,7 +11,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 	ut64 addr = core->offset;
 	ut32 *p = (ut32*)((uint8_t*)mem);
 	ut32 *e = (ut32*)(p + (fs / 4));
-	for (; p < e; ++p, addr += 4) {
+	for (; p < e; p++, addr += 4) {
 		ut32 v = *p;
 		if((v & 0x1f000000) == 0x10000000) // adr and adrp
 		{
