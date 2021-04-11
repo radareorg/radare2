@@ -1279,7 +1279,6 @@ static int cmd_lsr(RCore *core, const char *input) {
 
 static int cmd_ls(void *data, const char *input) { // "ls"
 	RCore *core = (RCore *)data;
-	int ret;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = r_str_trim_head_ro (arg + 1);

@@ -1275,7 +1275,7 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 #endif
 }
 
-static bool dir_recursive(RList *dst, char *dir) {
+static bool dir_recursive(RList *dst, const char *dir) {
 	char *name;
 	RListIter *iter;
 	bool ret = true;
@@ -1308,7 +1308,7 @@ static bool dir_recursive(RList *dst, char *dir) {
 	return ret;
 }
 
-R_API RList *r_file_lsrf(char *dir) {
+R_API RList *r_file_lsrf(const char *dir) {
 	RList *ret = r_list_new ();
 	if (!ret) {
 		return NULL;
