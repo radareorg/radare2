@@ -1255,6 +1255,28 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 	return ret;
 }
 
+static int cmd_lsr(RCore *core, const char *input) {
+	const char *arg;
+	char *path;
+	RList *files;
+	RListIter *iter;
+	if (R_STR_ISEMPTY (input)) {
+		arg = ".";
+	} else {
+		arg = input;
+	}
+	files = r_file_lsrf (arg);
+	if (!files) {
+		eprintf ("Failed to read directories\n");
+		return 0;
+	}
+	r_list_foreach (files, iter, path) {
+		r_cons_println (path);
+	}
+	r_list_free (files);
+	return 0;
+}
+
 static int cmd_ls(void *data, const char *input) { // "ls"
 	RCore *core = (RCore *)data;
 	const char *arg = strchr (input, ' ');
@@ -1262,6 +1284,9 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 		arg = r_str_trim_head_ro (arg + 1);
 	}
 	switch (*input) {
+	case 'r':
+		cmd_lsr (core, input);
+		break;
 	case '?': // "l?"
 		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
 		break;
@@ -3754,7 +3779,7 @@ escape_backtick:
 	}
 
 	/* temporary seek commands */
-	// if (*cmd != '(' && *cmd != '"') 
+	// if (*cmd != '(' && *cmd != '"')
 	if (*cmd != '"') {
 		ptr = strchr (cmd, '@');
 		if (ptr == cmd + 1 && *cmd == '?') {

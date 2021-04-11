@@ -1275,32 +1275,51 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 #endif
 }
 
-R_API bool r_file_dir_recursive(RList *dst, const char *dir) {
-	bool ret = false;
-	char *cwd = r_sys_getdir ();
-	if (!cwd) {
+static bool dir_recursive(RList *dst, const char *dir) {
+	char *name;
+	RListIter *iter;
+	bool ret = true;
+	RList *files = r_sys_dir (dir);
+	if (!files) {
 		return false;
 	}
-	if (r_sys_chdir (dir) == false) {
-		free (cwd);
-		return ret;
-	}
-	RList *files = r_sys_dir (".");
-	RListIter *iter;
-	char *name;
-	r_return_val_if_fail (files, false);
 	r_list_foreach (files, iter, name) {
-		if (strcmp (name, ".") == 0 || strcmp (name, "..") == 0) {
+		char *path;
+		if (!strcmp (name, "..") || !strcmp (name, ".")) {
 			continue;
 		}
-		r_list_append (dst, r_file_abspath (name));
-		if (r_file_is_directory (name)) {
-			ret = r_file_dir_recursive (dst, name);
+		path = r_str_newf ("%s" R_SYS_DIR "%s", dir, name);
+		if (!path) {
+			ret = false;
+			break;
+		}
+		if (!r_list_append (dst, path)) {
+			ret = false;
+			free (path);
+			break;
+		}
+		if (r_file_is_directory (path)) {
+			if (!dir_recursive (dst, path)) {
+				ret = false;
+				break;
+			}
 		}
 	}
-	r_sys_chdir (cwd);
 	return ret;
 }
+
+R_API RList *r_file_lsrf(const char *dir) {
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	if (!dir_recursive (ret, dir)) {
+		r_list_free (ret);
+		return NULL;
+	}
+	return ret;
+}
+
 
 static void recursive_search_glob(const char *path, const char *glob, RList* list, int depth) {
 	if (depth < 1) {
