@@ -261,7 +261,7 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 			break;
 		case 'I': // interfaces
 			/* TODO */
-			break;
+			return NULL; // Fix __TIFF demangling
 		}
 	}
 	if (tail) {

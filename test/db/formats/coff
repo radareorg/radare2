@@ -26,10 +26,10 @@ nth vaddr      bind type lib name
 15  ---------- NONE FUNC     __TIFFSetupFields
 16  ---------- NONE FUNC     __TIFFFillStriles
 17  ---------- NONE FUNC     __TIFFNoPostDecode
-18  ---------- NONE FUNC     sym.imp.BitData
-19  ---------- NONE FUNC     sym.imp.BitData
-20  ---------- NONE FUNC     sym.imp.BitData
-21  ---------- NONE FUNC     sym.imp.BitData
+18  ---------- NONE FUNC     __TIFFSwab16BitData
+19  ---------- NONE FUNC     __TIFFSwab24BitData
+20  ---------- NONE FUNC     __TIFFSwab32BitData
+21  ---------- NONE FUNC     __TIFFSwab64BitData
 22  ---------- NONE FUNC     _TIFFSetCompressionScheme
 23  ---------- NONE FUNC     __TIFFDataSize
 24  ---------- NONE FUNC     __TIFFCheckMalloc
