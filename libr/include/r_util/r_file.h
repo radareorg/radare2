@@ -52,9 +52,9 @@ R_API char *r_file_tmpdir(void);
 R_API char *r_file_readlink(const char *path);
 R_API bool r_file_copy(const char *src, const char *dst);
 R_API bool r_file_move(const char *src, const char *dst);
-R_API RList* r_file_globsearch (const char *globbed_path, int maxdepth);
-R_API RMmap *r_file_mmap_arch (RMmap *map, const char *filename, int fd);
-R_API bool r_file_dir_recursive(RList *dst, const char *dir);
+R_API RList* r_file_globsearch(const char *globbed_path, int maxdepth);
+R_API RMmap *r_file_mmap_arch(RMmap *map, const char *filename, int fd);
+R_API RList *r_file_lsrf(char *dir);
 #ifdef __cplusplus
 }
 #endif
