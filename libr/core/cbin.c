@@ -4087,6 +4087,9 @@ static int bin_resources(RCore *r, PJ *pj, int mode) {
 static int bin_versioninfo(RCore *r, PJ *pj, int mode) {
 	const RBinInfo *info = r_bin_get_info (r->bin);
 	if (!info || !info->rclass) {
+		if (IS_MODE_JSON (mode)) {
+			r_cons_print ("[]");
+		}
 		return false;
 	}
 	if (!strncmp ("pe", info->rclass, 2)) {
@@ -4094,9 +4097,14 @@ static int bin_versioninfo(RCore *r, PJ *pj, int mode) {
 	} else if (!strncmp ("elf", info->rclass, 3)) {
 		bin_elf_versioninfo (r, pj, mode);
 	} else if (!strncmp ("mach0", info->rclass, 5)) {
-		bin_mach0_versioninfo (r);
+		bin_mach0_versioninfo (r); // TODO
+		if (IS_MODE_JSON (mode)) {
+			r_cons_print ("[]");
+		}
 	} else {
-		r_cons_println ("Unknown format");
+		if (IS_MODE_JSON (mode)) {
+			r_cons_print ("[]");
+		}
 		return false;
 	}
 	return true;
