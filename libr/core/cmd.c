@@ -1255,18 +1255,39 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 	return ret;
 }
 
+static int cmd_lsr(RCore *core, const char *input) {
+	const char *arg;
+	char *path;
+	RList *files;
+	RListIter *iter;
+	if (!arg) {
+		arg = ".";
+	} else {
+		arg = input;
+	}
+	files = r_file_lsrf (arg);
+	if (!files) {
+		eprintf ("Failed to read directories");
+		return 0;
+	}
+	r_list_foreach (files, iter, path) {
+		printf ("%s\n", path);
+	}
+	r_list_free (files);
+	return 0;
+}
+
 static int cmd_ls(void *data, const char *input) { // "ls"
 	RCore *core = (RCore *)data;
-	RListIter *iter;
-	char *file;
-	RList *files;
-	const char *dir;
 	int ret;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = r_str_trim_head_ro (arg + 1);
 	}
 	switch (*input) {
+	case 'r':
+		cmd_lsr(core, input);
+		break;
 	case '?': // "l?"
 		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
 		break;
@@ -1277,23 +1298,6 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 			eprintf ("Usage: less [file]\n");
 		}
 		break;
-	case 'r':
-		files = r_list_new ();
-		if (!arg) {
-			dir = ".";
-		} else {
-			dir = arg;
-		}
-		ret = r_file_dir_recursive (files, dir);
-		if (!ret) {
-			break;
-		}
-		r_list_foreach (files, iter, file) {
-			printf ("%s\n", file);
-		}
-		r_list_free (files);
-		break;
-
 	default: // "ls"
 		if (!arg) {
 			arg = "";
