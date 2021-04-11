@@ -141,6 +141,7 @@ R_API void r_str_trim_head(char *str);
 R_API const char *r_str_trim_head_ro(const char *str);
 R_API const char *r_str_trim_head_wp(const char *str);
 R_API void r_str_trim_tail(char *str);
+R_API void r_str_trim_args(char *str);
 R_API ut32 r_str_hash(const char *str);
 R_API ut64 r_str_hash64(const char *str);
 R_API char *r_str_trim_nc(char *str);

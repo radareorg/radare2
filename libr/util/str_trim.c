@@ -108,6 +108,65 @@ R_API void r_str_trim_head(char *str) {
 	}
 }
 
+/* remove spaces between args of the string except if args are surrounding
+ * by quotes.
+ * the string is changed in place */
+R_API void r_str_trim_args(char *str) {
+	const char *quotes = "\"'";
+	const char *isquote;
+	int idx, _b = 0, q = 0;
+	ut8 *b = (ut8*)&_b;
+	char *ws, *ch = str;
+	size_t len;
+
+	ws = (char *)r_str_trim_head_wp (ch);
+	len = strlen (ws);
+	while (*ws) {
+		ch = (char *)r_str_trim_head_ro (ws);
+		if (!*ch) {
+			break;
+		}
+		isquote = strchr (quotes, *ch);
+		if (isquote) {
+			idx = (int)(size_t)(isquote - quotes);
+			_b = R_BIT_TOGGLE (b, idx);
+			q = 1;
+		}
+		len -= ch - ws;
+		memmove (ws + 1, ch + q, len - q + 1);
+		if (q == 1) {
+			q = 0;
+			int i = 0;
+			for (; *ch; ch++) {
+				if (*ch == '\\') {
+					ch++;
+					continue;
+				}
+				isquote = strchr (quotes, *ch);
+				if (isquote) {
+					idx = (int)(size_t)(isquote - quotes);
+					_b = R_BIT_TOGGLE (b, idx);
+					if (!_b) {
+						break;
+					} else {
+						_b = R_BIT_TOGGLE (b, idx);
+					}
+				}
+				i++;
+			}
+			if (!*ch) {
+				break;
+			}
+			len -= i;
+			memmove (ch, ch + 1, len);
+			ws = ch + 1;
+		} else {
+			ws = (char *)r_str_trim_head_wp (ch);
+			len -= ws - ch;
+		}
+	}
+}
+
 // Remove whitespace chars from the tail of the string, replacing them with
 // null bytes. The string is changed in-place.
 R_API void r_str_trim_tail(char *str) {

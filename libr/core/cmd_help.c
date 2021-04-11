@@ -986,6 +986,8 @@ static int cmd_help(void *data, const char *input) {
 		r_core_clippy (core, r_str_trim_head_ro (input + 1));
 		break;
 	case 'e': // "?e" echo
+		r_str_trim_args ((char *)input);
+
 		switch (input[1]) {
 		case 't': // "?e=t newtitle"
 			r_cons_set_title (r_str_trim_head_ro (input + 2));
