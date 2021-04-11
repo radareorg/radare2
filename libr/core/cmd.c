@@ -1267,11 +1267,11 @@ static int cmd_lsr(RCore *core, const char *input) {
 	}
 	files = r_file_lsrf (arg);
 	if (!files) {
-		eprintf ("Failed to read directories");
+		eprintf ("Failed to read directories\n");
 		return 0;
 	}
 	r_list_foreach (files, iter, path) {
-		printf ("%s\n", path);
+		r_cons_println (path);
 	}
 	r_list_free (files);
 	return 0;
@@ -1286,7 +1286,7 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	}
 	switch (*input) {
 	case 'r':
-		cmd_lsr(core, input);
+		cmd_lsr (core, input);
 		break;
 	case '?': // "l?"
 		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
