@@ -241,10 +241,10 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		/* TODO: implement using api */
 		char *tostr = (to && to != UT64_MAX)?  r_str_newf ("-e search.to=%"PFMT64d, to): strdup ("");
 		r_sys_cmdf ("r2"
-			" -e search.in=range"
-			" -e search.align=%d"
-			" -e search.from=%"PFMT64d
-			" %s -qnc/m%s \"%s\"",
+			    " -e search.in=range"
+			    " -e search.align=%d"
+			    " -e search.from=%" PFMT64d
+			    " %s -qnc/m%s \"%s\"",
 			ro->align, ro->from, tostr, ro->json? "j": "", efile);
 		free (tostr);
 		goto done;
