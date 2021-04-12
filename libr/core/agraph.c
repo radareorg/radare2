@@ -431,6 +431,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		char *f = r_str_newf ("%s%s%s", n->color, pad, Color_RESET);
 		G (n->x, n->y);
 		W (f);
+		free (f);
 	}
 }
 
