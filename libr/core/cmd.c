@@ -3768,7 +3768,7 @@ escape_backtick:
 	/* temporary seek commands */
 	// if (*cmd != '(' && *cmd != '"')
 	if (*cmd != '"') {
-		ptr = strchr (cmd, '@');
+		ptr = (char *)r_str_firstbut_escape (cmd, '@', "\"'");
 		if (ptr == cmd + 1 && *cmd == '?') {
 			ptr = NULL;
 		}
