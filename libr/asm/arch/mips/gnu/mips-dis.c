@@ -1796,6 +1796,8 @@ print_insn_args (struct disassemble_info *info,
       switch (*s)
 	{
 	case ',':
+    infprintf(is, "%c ", *s);
+    break;
 	case '(':
 	case ')':
 	  infprintf (is, "%c", *s);
