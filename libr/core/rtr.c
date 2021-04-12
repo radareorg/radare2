@@ -564,7 +564,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		return -1;
 	}
 	if (!(p = atoi (path)) || p < 0 || p > 65535) {
-		eprintf ("gdbserver: Invalid port: %s\n", port);
+		eprintf ("gdbserver: Invalid port: %s\n", p);
 		return -1;
 	}
 	snprintf (port, sizeof (port) - 1, "%d", p);
