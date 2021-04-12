@@ -4842,6 +4842,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				// restore saved configuration
 				r_config_hold_restore (hc);
 				r_config_hold_free (hc);
+				R_FREE (refs);
 			}
 			// print json object
 			if (pj) {
