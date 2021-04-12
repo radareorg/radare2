@@ -50,6 +50,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 			first = 1;
 			if (strlen (buf)<3) {
 				r_socket_http_close (hr);
+				free (hr);
 				return NULL;
 			}
 			p = strchr (buf, ' ');
