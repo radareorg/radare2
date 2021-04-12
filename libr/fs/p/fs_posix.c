@@ -53,6 +53,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 		RFSFile *fsf = r_fs_file_new (NULL, file);
 		if (!fsf) {
 			r_list_free (list);
+			r_list_free (files);
 			return NULL;
 		}
 		char *fp = r_str_newf ("%s/%s", path, file);
