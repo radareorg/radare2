@@ -309,6 +309,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 		}
 		if (!valid) {
 			eprintf ("Warning: module's base addr + delta is not a valid address\n");
+			free (module_name);
 			return NULL;
 		}
 	}
