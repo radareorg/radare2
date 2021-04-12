@@ -537,7 +537,6 @@ static int gen_gperf(const char *file, const char *name) {
 	char *out = malloc (strlen (file) + 32);
 	snprintf (out, strlen (file) + 32, "%s.gperf", name);
 	int wd = open (out, O_RDWR);
-	ftruncate (wd, 0);
 	int rc = 0;
 #if USE_DLSYSTEM
 	_system = dlsym (NULL, "system");
@@ -549,6 +548,7 @@ static int gen_gperf(const char *file, const char *name) {
 	_system = system;
 #endif
 	if (wd != -1) {
+		ftruncate (wd, 0);
 		dup2 (1, 999);
 		dup2 (wd, 1);
 		rc = sdb_dump (file, MODE_CGEN);
