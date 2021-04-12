@@ -2057,6 +2057,7 @@ static void ds_print_pre(RDisasmState *ds, bool fcnline) {
 	RListIter *iter;
 	r_list_foreach (list, iter, bb) {
 		if (bb->color.r || bb->color.g || bb->color.b) {
+			free (kolor);
 			kolor = r_cons_rgb_str (NULL, -1, &bb->color);
 			break;
 		}
