@@ -1305,6 +1305,8 @@ static bool dir_recursive(RList *dst, const char *dir) {
 			}
 		}
 	}
+	r_sys_chdir (cwd);
+	r_list_free (files);
 	return ret;
 }
 
