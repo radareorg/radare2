@@ -7,6 +7,24 @@
 #include <openssl/md4.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
+
+#  define r_SHA256_BLOCK_LENGTH SHA256_BLOCK_LENGTH
+
+#  define r_SHA1_Init           SHA1_Init
+#  define r_SHA1_Update         SHA1_Update
+#  define r_SHA1_Final          SHA1_Final
+
+#  define r_SHA256_Init         SHA256_Init
+#  define r_SHA256_Update       SHA256_Update
+#  define r_SHA256_Final        SHA256_Final
+
+#  define r_SHA384_Init         SHA384_Init
+#  define r_SHA384_Update       SHA384_Update
+#  define r_SHA384_Final        SHA384_Final
+
+#  define r_SHA512_Init         SHA512_Init
+#  define r_SHA512_Update       SHA512_Update
+#  define r_SHA512_Final        SHA512_Final
 #else
 #include "md4.h"
 #include "md5.h"
