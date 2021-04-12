@@ -38,7 +38,6 @@ typedef struct {
 
 static void rafind_options_fini(RafindOptions *ro) {
 	free (ro->buf);
-	r_list_free (ro->keywords);
 }
 
 static void rafind_options_init(RafindOptions *ro) {
@@ -476,6 +475,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		}
 		rafind_open (&ro, file);
 	}
+	r_list_free (ro.keywords);
 	if (ro.json) {
 		printf ("]\n");
 	}
