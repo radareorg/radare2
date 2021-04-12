@@ -38,6 +38,7 @@ typedef struct {
 
 static void rafind_options_fini(RafindOptions *ro) {
 	free (ro->buf);
+	ro->cur = 0;
 }
 
 static void rafind_options_init(RafindOptions *ro) {
@@ -221,8 +222,9 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	}
 	rs->align = ro->align;
 	r_search_set_callback (rs, &hit, ro);
-	if (ro->to == -1) {
-		ro->to = r_io_size (io);
+	ut64 to = ro->to;
+	if (to == -1) {
+		to = r_io_size (io);
 	}
 
 	if (!r_cons_new ()) {
@@ -237,8 +239,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	}
 	if (ro->mode == R_SEARCH_MAGIC) {
 		/* TODO: implement using api */
-		char *tostr = (ro->to && ro->to != UT64_MAX)?
-			r_str_newf ("-e search.to=%"PFMT64d, ro->to): strdup ("");
+		char *tostr = (to && to != UT64_MAX)?  r_str_newf ("-e search.to=%"PFMT64d, to): strdup ("");
 		r_sys_cmdf ("r2"
 			" -e search.in=range"
 			" -e search.align=%d"
@@ -277,12 +278,13 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	r_search_begin (rs);
 	(void)r_io_seek (io, ro->from, R_IO_SEEK_SET);
 	result = 0;
-	for (ro->cur = ro->from; !last && ro->cur < ro->to; ro->cur += ro->bsize) {
-		if ((ro->cur + ro->bsize) > ro->to) {
-			ro->bsize = ro->to - ro->cur;
+	ut64 bsize = ro->bsize;
+	for (ro->cur = ro->from; !last && ro->cur < to; ro->cur += bsize) {
+		if ((ro->cur + bsize) > to) {
+			bsize = to - ro->cur;
 			last = true;
 		}
-		ret = r_io_pread_at (io, ro->cur, ro->buf, ro->bsize);
+		ret = r_io_pread_at (io, ro->cur, ro->buf, bsize);
 		if (ret == 0) {
 			if (ro->nonstop) {
 				continue;
@@ -290,8 +292,8 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 			result = 1;
 			break;
 		}
-		if (ret != ro->bsize && ret > 0) {
-			ro->bsize = ret;
+		if (ret != bsize && ret > 0) {
+			bsize = ret;
 		}
 		if (r_search_update (rs, ro->cur, ro->buf, ret) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", ro->cur);
