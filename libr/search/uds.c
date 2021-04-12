@@ -56,6 +56,7 @@ R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size
 	RList *list = r_list_newf (free);
 	if (size < (CANDB_SIZE * 2)) {
 		eprintf ("requires at least 1024 bytes. %zd\n", size);
+		r_list_free (list);
 		return NULL;
 	}
 	unsigned int i, j, k, max_score, stride;
