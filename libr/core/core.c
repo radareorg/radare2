@@ -1597,6 +1597,7 @@ static void autocomplete_vars(RCore *core, RLineCompletion *completion, const ch
 			r_line_completion_push (completion, var->name);
 		}
 	}
+	r_list_free (vars);
 }
 
 static void autocomplete_macro(RCore *core, RLineCompletion *completion, const char *str) {
