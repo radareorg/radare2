@@ -195,6 +195,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rafind2 multiple files
+FILE=-
+CMDS=!rafind2 -s README bins/arm/README bins/arm/README
+EXPECT=<<EOF
+File: bins/arm/README
+0x0
+File: bins/arm/README
+0x0
+EOF
+RUN
+
+NAME=rafind2 recursive
+FILE=-
+CMDS=!rafind2 -q -s README bins/arm
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
 NAME=rafind2 ""
 FILE=-
 CMDS=!rafind2 ""
