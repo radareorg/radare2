@@ -1166,7 +1166,7 @@ do_decl:
 							if (is_typedef && autonamed) {
 								tcc_typedef_appendf ("[+]typedef.%%s.fields=%s\n", varstr);
 								tcc_typedef_appendf ("typedef.%%s.%s.meta=%d\n", varstr, type_bt);
-								tcc_typedef_appendf ("typedef.%%s.%s=%s,%d,%d\n", varstr, b, offset, arraysize);
+								tcc_typedef_appendf ("typedef.%%s.%s=%s,%d,%d\n", varstr, b, offset, (int)arraysize);
 							} else {
 								tcc_appendf ("[+]%s.%s=%s\n",
 									ctype, name, varstr);
@@ -1174,7 +1174,7 @@ do_decl:
 									ctype, name, varstr, type_bt);
 								/* compact form */
 								tcc_appendf ("%s.%s.%s=%s,%d,%d\n",
-									ctype, name, varstr, b, offset, arraysize);
+									ctype, name, varstr, b, offset, (int)arraysize);
 							}
 #if 0
 							eprintf ("%s.%s.%s.type=%s\n", ctype, name, varstr, b);
