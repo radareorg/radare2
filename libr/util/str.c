@@ -1169,6 +1169,9 @@ R_API int r_str_unescape(char *buf) {
 		case '\'':
 			buf[i] = '\'';
 			break;
+		case '`':
+			buf[i] = '`';
+			break;
 		case 'x':
 			err = ch2 = ch = 0;
 			if (!buf[i + 2] || !buf[i + 3]) {
