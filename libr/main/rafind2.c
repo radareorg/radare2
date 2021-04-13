@@ -126,6 +126,9 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	} else if (ro->rad) {
 		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, ro->curfile);
 	} else {
+		if (!ro->quiet) {
+			printf ("%s: ", ro->curfile);
+		}
 		if (ro->showstr) {
 			printf ("0x%"PFMT64x" %s\n", addr, str);
 		} else {
@@ -178,10 +181,6 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	int ret, result = 0;
 
 	ro->buf = NULL;
-	if (!ro->quiet) {
-		printf ("File: %s\n", file);
-	}
-
 	char *efile = r_str_escape_sh (file);
 
 	if (ro->identify) {
