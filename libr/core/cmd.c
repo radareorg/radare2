@@ -3671,7 +3671,7 @@ escape_pipe:
 escape_redir:
 next2:
 	/* sub commands */
-	ptr = strchr (cmd, '`');
+	ptr = (char *)r_str_firstbut_escape (cmd, '`', "'");
 	if (ptr) {
 		if (ptr > cmd) {
 			char *ch = ptr - 1;
@@ -3687,7 +3687,7 @@ next2:
 			oneline = 0;
 			empty = true;
 		}
-		ptr2 = strchr (ptr + 1, '`');
+		ptr2 = (char *)r_str_firstbut_escape (ptr + 1, '`', "'");
 		if (empty) {
 			/* do nothing */
 		} else if (!ptr2) {
