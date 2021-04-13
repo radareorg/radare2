@@ -429,12 +429,15 @@ struct mips_abi_choice
   const char * const *fpr_names;
 };
 
+//Modified for matching asm_mips_gnu.c
 struct mips_abi_choice mips_abi_choices[] =
 {
   { "numeric", mips_gpr_names_numeric, mips_fpr_names_numeric },
-  { "32", mips_gpr_names_oldabi, mips_fpr_names_32 },
+  //{ "32", mips_gpr_names_oldabi, mips_fpr_names_32 },
+  { "o32", mips_gpr_names_oldabi, mips_fpr_names_32 },
   { "n32", mips_gpr_names_newabi, mips_fpr_names_n32 },
-  { "64", mips_gpr_names_newabi, mips_fpr_names_64 },
+  //{ "64", mips_gpr_names_newabi, mips_fpr_names_64 },
+  { "n64", mips_gpr_names_newabi, mips_fpr_names_64 },
 };
 
 struct mips_arch_choice
@@ -859,12 +862,12 @@ set_default_mips_dis_options (struct disassemble_info *info)
   /* Defaults: mipsIII/r3000 (?!), no microMIPS ASE (any compressed code
      is MIPS16 ASE) (o)32-style ("oldabi") GPR names, and numeric FPR,
      CP0 register, and HWR names.  */  // Changed
-  mips_isa = INSN_ISA64R2;
-  //mips_processor = CPU_R3000; //TODO: Change it?
-  mips_processor = CPU_GS264E; //Match value in asm_mips_gnu.c
+
+  //Set to loongson 2F to match current radare2 default setting
+  mips_isa = INSN_ISA3;
+  mips_processor = CPU_LOONGSON_2F;
   micromips_ase = 0;
   mips_ase = 0;
-  //mips_ase = ASE_LOONGSON_MMI | ASE_LOONGSON_CAM | ASE_LOONGSON_EXT;
   mips_gpr_names = mips_gpr_names_oldabi;
   mips_fpr_names = mips_fpr_names_numeric;
   mips_cp0_names = mips_cp0_names_numeric;
@@ -872,7 +875,7 @@ set_default_mips_dis_options (struct disassemble_info *info)
   mips_cp0sel_names_len = 0;
   mips_cp1_names = mips_cp1_names_numeric;
   mips_hwr_names = mips_hwr_names_numeric;
-  no_aliases = 1;
+  no_aliases = 0;
 
   /* Set ISA, architecture, and cp0 register names as best we can.  */
 #if ! SYMTAB_AVAILABLE
@@ -1029,6 +1032,16 @@ parse_mips_dis_option (const char *option, unsigned int len)
   optionlen = i;
   val = option + (optionlen + 1);
   vallen = len - (optionlen + 1);
+
+  // Appended option for matching options in asm_mips_gnu.c.
+  if (strlen ("abi") == optionlen && !strncmp ("abi", option, optionlen)) {
+	  chosen_abi = choose_abi_by_name (val, vallen);
+	  if (chosen_abi) {
+	  	mips_gpr_names = chosen_abi->gpr_names;
+	  	mips_fpr_names = chosen_abi->fpr_names;
+	  }
+	  return;
+  }
 
   if (strncmp ("gpr-names", option, optionlen) == 0
       && strlen ("gpr-names") == optionlen)

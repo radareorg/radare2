@@ -1366,7 +1366,9 @@ const struct mips_opcode mips_builtin_opcodes[] =
    assembler, but will never match user input (because the line above
    will match first).  */
 {"jal",			"a",		0x0c000000, 0xfc000000,	WR_31|UBD,		0,		I1,		0,	0 },
-{"jalx",		"+i",		0x74000000, 0xfc000000, WR_31|UBD,		0,		I1,		0,	I37 },
+// I don't know why the args definition causes wrong decoding, so I modifiy it.
+//{"jalx",		"+i",		0x74000000, 0xfc000000, WR_31|UBD,		0,		I1,		0,	I37 },
+{"jalx",		"a",		0x74000000, 0xfc000000, WR_31|UBD,		0,		I1,		0,	I37 },
 {"laa",			"d,(b),t",	0x7000049f, 0xfc0007ff, WR_1|RD_2|RD_3|LM|SM,	0,		IOCT2,		0,	0 },
 {"laad",		"d,(b),t",	0x700004df, 0xfc0007ff, WR_1|RD_2|RD_3|LM|SM,	0,		IOCT2,		0,	0 },
 {"lac",			"d,(b)",	0x7000039f, 0xfc1f07ff, WR_1|RD_2|LM|SM,	0,		IOCT2,		0,	0 },

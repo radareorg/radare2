@@ -81,9 +81,12 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 			disasm_obj.mach = bfd_mach_mips_loongson_2f;
 		} else if (!r_str_casecmp (a->cpu, "mips32/64")) {
 			//Fallback for default config
-			disasm_obj.mach = bfd_mach_mips_gs264e;
+			disasm_obj.mach = bfd_mach_mips_loongson_2f;
 		}
 		pre_cpu = r_str_dup (pre_cpu, a->cpu);
+	}
+	else {
+		disasm_obj.mach = bfd_mach_mips_loongson_2f;
 	}
 
 	if (a->features && (!pre_features || !strcmp (a->features, pre_features))) {
