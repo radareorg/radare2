@@ -1270,6 +1270,8 @@ static bool cb_cfgdebug(void *user, void *data) {
 	}
 	if (core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
+		r_config_set (core->config, "anal.in", "dbg.map");
+		r_config_set (core->config, "search.in", "dbg.map");
 		r_debug_use (core->dbg, dbgbackend);
 		if (!strcmp (r_config_get (core->config, "cmd.prompt"), "")) {
 			r_config_set (core->config, "cmd.prompt", ".dr*");

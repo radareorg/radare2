@@ -433,6 +433,7 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 	r_list_foreach (list, iter, p) {
 		if ((r_itv_end (p->itv) - p->itv.addr) >= ST32_MAX) {
 			// skip searching in large regions
+			eprintf ("aap: skipping large range, please check 'anal.in' variable.\n");
 			continue;
 		}
 		if (log) {
