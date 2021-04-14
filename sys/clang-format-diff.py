@@ -117,10 +117,10 @@ def main():
 
         if input[lineidx + i].startswith('+'):
           if range_start is None:
-            range_start = start_line + range_line
+            range_start = start_line + range_line - 1
             debug('set range_start: ' + str(start_line + range_line))
         elif range_start is not None and range_end is None:
-            range_end = start_line + range_line
+            range_end = start_line + range_line - 1
             debug('set range_end: ' + str(start_line + range_line))
             lines_by_file.setdefault(filename, []).append([range_start, range_end - 1])
             range_start, range_end = None, None
