@@ -126,7 +126,7 @@ def main():
 
         debug('lineidx : ' + input[lineidx + i])
 
-        if input[lineidx + i].startswith('diff'):
+        if input[lineidx + i].startswith('diff') or (i != 0 and input[lineidx + i].startswith('@@')):
             break
         i += 1
 
