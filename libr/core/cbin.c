@@ -1318,6 +1318,10 @@ static int bin_main(RCore *r, PJ *pj, int mode, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
 	ut64 addr;
 	if (!binmain) {
+		if (IS_MODE_JSON (mode)) {
+			pj_o (pj);
+			pj_end (pj);
+		}
 		return false;
 	}
 	addr = va ? r_bin_a2b (r->bin, binmain->vaddr) : binmain->paddr;
