@@ -110,7 +110,6 @@ def main():
         if lineidx + i >= len(input):
           break
 
-        debug('lineidx : ' + input[lineidx + i])
         # do not count lines that are removed
         if not input[lineidx + i].startswith('-'):
           range_line += 1
@@ -124,6 +123,9 @@ def main():
             debug('set range_end: ' + str(start_line + range_line))
             lines_by_file.setdefault(filename, []).append([range_start, range_end - 1])
             range_start, range_end = None, None
+
+        debug('lineidx : ' + input[lineidx + i])
+
         if input[lineidx + i].startswith('diff'):
             break
         i += 1
