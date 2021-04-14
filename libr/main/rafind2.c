@@ -33,7 +33,7 @@ typedef struct {
 	RList *keywords;
 	const char *mask;
 	const char *curfile;
-	const char *comma;
+	PJ *pj;
 } RafindOptions;
 
 static void rafind_options_fini(RafindOptions *ro) {
@@ -47,6 +47,7 @@ static void rafind_options_init(RafindOptions *ro) {
 	ro->bsize = 4096;
 	ro->to = UT64_MAX;
 	ro->keywords = r_list_newf (NULL);
+	ro->pj = NULL;
 }
 
 static int rafind_open(RafindOptions *ro, const char *file);
@@ -118,11 +119,12 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		str[i] = 0;
 	}
 	if (ro->json) {
-		//TODO PJ
-		const char *type = "string";
-		printf ("%s{\"offset\":%"PFMT64d",\"type\":\"%s\",\"data\":\"%s\"}",
-			ro->comma, addr, type, str);
-		ro->comma = ",";
+		pj_o (ro->pj);
+		pj_ks (ro->pj, "file", ro->curfile);
+		pj_kn (ro->pj, "offset", addr);
+		pj_ks (ro->pj, "type", "string");
+		pj_ks (ro->pj, "data", str);
+		pj_end (ro->pj);
 	} else if (ro->rad) {
 		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, ro->curfile);
 	} else {
@@ -464,8 +466,10 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	if (opt.ind + 1 == argc && !r_file_is_directory (argv[opt.ind])) {
 		ro.quiet = true;
 	}
-	if (ro.json) {
-		printf ("[");
+	if (ro.json && ro.mode == R_SEARCH_KEYWORD) {
+		// TODO: remove mode check when all modes use api
+		ro.pj = pj_new ();
+		pj_a (ro.pj);
 	}
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];
@@ -477,8 +481,10 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		rafind_open (&ro, file);
 	}
 	r_list_free (ro.keywords);
-	if (ro.json) {
-		printf ("]\n");
+	if (ro.pj) {
+		pj_end (ro.pj);
+		printf ("%s\n", pj_string (ro.pj));
+		pj_free (ro.pj);
 	}
 	return 0;
 }
