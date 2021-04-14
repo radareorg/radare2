@@ -199,10 +199,8 @@ NAME=rafind2 multiple files
 FILE=-
 CMDS=!rafind2 -s README bins/arm/README bins/arm/README
 EXPECT=<<EOF
-File: bins/arm/README
-0x0
-File: bins/arm/README
-0x0
+bins/arm/README: 0x0
+bins/arm/README: 0x0
 EOF
 RUN
 
