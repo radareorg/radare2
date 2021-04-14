@@ -3258,6 +3258,36 @@ static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *cmd_ignbith
 	return true;
 }
 
+static char *r_core_cmd_find_subcmd_begin(char *cmd) {
+	int quote = 0;
+	char *p;
+	for (p = cmd; *p; p++) {
+		if (*p == '\\') {
+			p++;
+			if (*p == '\'') {
+				continue;
+			} else if (!*p) {
+				break;
+			}
+		}
+		if (*p == '\'') {
+			quote ^= 1;
+			continue;
+		}
+		if (*p == '`' && !quote) {
+			return p;
+		}
+		if (*p == '$' && *(p + 1) == '(' && !quote) {
+			return p;
+		}
+	}
+	return NULL;
+}
+
+static char *r_core_cmd_find_subcmd_end(char *cmd, bool backquote) {
+	return (char *)r_str_firstbut_escape (cmd, backquote ? '`' : ')', "'");
+}
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek) {
 	RList *tmpenvs = r_list_newf (tmpenvs_free);
 	const char *quotestr = "`";
@@ -3284,18 +3314,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 		return 0;
 	}
 	r_str_trim (cmd);
-
-	char *$0 = strstr (cmd, "$(");
-	if ($0) {
-		char *$1 = strchr ($0 + 2, ')');
-		if ($1) {
-			*$0 = '`';
-			*$1 = '`';
-			memmove ($0 + 1, $0 + 2, strlen ($0 + 2) + 1);
-		} else {
-			eprintf ("Unterminated $() block\n");
-		}
-	}
 
 	/* quoted / raw command */
 	switch (*cmd) {
@@ -3671,8 +3689,12 @@ escape_pipe:
 escape_redir:
 next2:
 	/* sub commands */
-	ptr = (char *)r_str_firstbut_escape (cmd, '`', "'");
+	ptr = r_core_cmd_find_subcmd_begin (cmd);
 	if (ptr) {
+		bool backquote = false;
+		if (*ptr == '`') {
+			backquote = true;
+		}
 		if (ptr > cmd) {
 			char *ch = ptr - 1;
 			if (*ch == '\\') {
@@ -3680,18 +3702,17 @@ next2:
 				goto escape_backtick;
 			}
 		}
-		bool empty = false;
-		int oneline = 1;
-		if (ptr[1] == '`') {
-			memmove (ptr, ptr + 1, strlen (ptr));
-			oneline = 0;
-			empty = true;
+		if (!backquote) {
+			memmove (ptr + 1, ptr + 2, strlen (ptr) - 1);
 		}
-		ptr2 = (char *)r_str_firstbut_escape (ptr + 1, '`', "'");
-		if (empty) {
-			/* do nothing */
-		} else if (!ptr2) {
-			eprintf ("parse: Missing backtick in expression.\n");
+		if ((ptr[1] == '`' && backquote) ||
+				(ptr[1] == ')' && !backquote)) {
+			memmove (ptr, ptr + 2, strlen (ptr) - 1);
+			goto escape_backtick;
+		}
+		ptr2 = r_core_cmd_find_subcmd_end (ptr + 1, backquote);
+		if (!ptr2) {
+			eprintf ("parse: Missing sub-command closing in expression.\n");
 			goto fail;
 		} else {
 			int value = core->num->value;
@@ -3713,11 +3734,11 @@ next2:
 			}
 			// ignore contents if first char is pipe or comment
 			if (*str == '|' || *str == '*') {
-				eprintf ("r_core_cmd_subst_i: invalid backticked command\n");
+				eprintf ("r_core_cmd_subst_i: invalid sub-command\n");
 				free (str);
 				goto fail;
 			}
-			if (oneline && str) {
+			if (str) {
 				for (i = 0; str[i]; i++) {
 					if (str[i] == '\n') {
 						str[i] = ' ';

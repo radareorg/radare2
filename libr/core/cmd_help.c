@@ -318,6 +318,10 @@ static char *filterFlags(RCore *core, const char *msg) {
 				buf = r_str_append (buf, "$");
 				continue;
 			}
+		} else if (dollar[1] == '(') {
+			msg = dollar + 1;
+			buf = r_str_append (buf, "$");
+			continue;
 		} else {
 			end = findBreakChar (dollar+1);
 			if (!end) {
