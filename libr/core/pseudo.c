@@ -166,7 +166,7 @@ static const char *help_msg_pdc[] = {
 	"Usage: pdc[oj]", "", "experimental, unreliable and hacky pseudo-decompiler",
 	"pdc", "", "pseudeo decompile function in current offset",
 	"pdco", "", "show associated offset next to pseudecompiled output",
-	"pdcj", "", "in json format for r2cutter codemeta annotations",
+	"pdcj", "", "in json format for codemeta annotations (used by frontends like iaito)",
 	NULL
 };
 
