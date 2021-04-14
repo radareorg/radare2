@@ -431,6 +431,10 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 
 	size_t fc0 = r_list_length (core->anal->fcns);
 	r_list_foreach (list, iter, p) {
+		if ((r_itv_end (p->itv) - p->itv.addr) >= ST32_MAX) {
+			// skip searching in large regions
+			continue;
+		}
 		if (log) {
 			eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ",
 				r_str_rwx_i (p->perm), p->itv.addr, r_itv_end (p->itv));
