@@ -271,8 +271,6 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 				r_search_kw_add (rs, r_search_keyword_new_str (kw, ro->mask, NULL, 0));
 			}
 		}
-	} else if (ro->mode == R_SEARCH_STRING) {
-		r_search_kw_add (rs, r_search_keyword_new_hexmask ("00", NULL)); //XXX
 	}
 
 	ro->curfile = file;
