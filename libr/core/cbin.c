@@ -1283,7 +1283,10 @@ static int bin_source(RCore *r, PJ *pj, int mode) {
 	RBinFile * binfile = r->bin->cur;
 
 	if (!binfile) {
-		bprintf ("[Error bin file]\n");
+		if (IS_MODE_JSON (mode)) {
+			pj_o (pj);
+			pj_end (pj);
+		}
 		r_list_free (final_list);
 		return false;
 	}
@@ -3111,6 +3114,10 @@ static int bin_fields(RCore *r, PJ *pj, int mode, int va) {
 	RBin *bin = r->bin;
 
 	if (!(fields = r_bin_get_fields (bin))) {
+		if (IS_MODE_JSON (mode)) {
+			pj_o (pj);
+			pj_end (pj);
+		}
 		return false;
 	}
 	if (IS_MODE_JSON (mode)) {
@@ -4078,6 +4085,10 @@ static void bin_no_resources(RCore *r, PJ *pj, int mode) {
 static int bin_resources(RCore *r, PJ *pj, int mode) {
 	const RBinInfo *info = r_bin_get_info (r->bin);
 	if (!info || !info->rclass) {
+		if (IS_MODE_JSON (mode)) {
+			pj_o (pj);
+			pj_end (pj);
+		}
 		return false;
 	}
 	if (!strncmp ("pe", info->rclass, 2)) {
