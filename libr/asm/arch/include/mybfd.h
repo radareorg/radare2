@@ -1,4 +1,7 @@
-/*This file contains some manual modifications as additon of original generated file. */
+/*
+  Based on commits 250d07de5cf6efc81ed934c25292beb63c7e3129from master branch 
+  of binutils-gdb.
+  This file contains some manual modifications as additon of original generated file.  */
 
 /* Main header file for the bfd library -- portable access to object files.
 

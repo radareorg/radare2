@@ -1,3 +1,7 @@
+/*
+  Based on commits 250d07de5cf6efc81ed934c25292beb63c7e3129from master branch 
+  of binutils-gdb.
+*/
 /* mips.h.  Mips opcode list for GDB, the GNU debugger.
    Copyright (C) 1993-2021 Free Software Foundation, Inc.
    Contributed by Ralph Campbell and OSF

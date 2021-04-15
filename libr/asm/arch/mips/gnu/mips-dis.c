@@ -1,4 +1,8 @@
-/* Default disassembler options are modified to match current code structure  */
+/*
+  Based on commits 250d07de5cf6efc81ed934c25292beb63c7e3129from master branch 
+  of binutils-gdb.
+*/
+/* Default disassembler options are modified to match radare2 config.  */
 
 /* Print mips instructions for GDB, the GNU debugger, or for objdump.
    Copyright (C) 1989-2021 Free Software Foundation, Inc.
