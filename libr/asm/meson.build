@@ -121,6 +121,7 @@ r_asm_sources = [
   'arch/mips/gnu/mips-dis.c',
   'arch/mips/gnu/mips-opc.c',
   'arch/mips/gnu/mips16-opc.c',
+  'arch/mips/gnu/micromips-opc.c',
   'arch/mips/mipsasm.c',
   'arch/msp430/msp430_disas.c',
   'arch/nios/gnu/nios2-dis.c',
