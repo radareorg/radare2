@@ -1,8 +1,6 @@
 NAME=seekinstr
 FILE=bins//mach0/ired-arm64
-ARGS=-e cfg.newshell=false
 CMDS=<<EOF
-# TODO: this test doesnt work on newshell
 afr
 ?v $Fe
 s $I1@$Fe
