@@ -4141,6 +4141,11 @@ static int bin_signature(RCore *r, PJ *pj, int mode) {
 		free ((char*) signature);
 		return true;
 	}
+	if (IS_MODE_JSON (mode)) {
+		pj_o (pj);
+		pj_end (pj);
+		return true;
+	}
 	return false;
 }
 
