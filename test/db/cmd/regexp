@@ -31,6 +31,7 @@ RUN
 
 NAME="/e /t\wst\d\d\d\s\w\w/i" - oldshell
 ARGS=-ecfg.newshell=false
+BROKEN=1
 FILE=malloc://1024
 CMDS=<<EOF
 w "test123 ab"
