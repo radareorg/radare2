@@ -75,13 +75,9 @@ ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
 endif
-ifeq (1,$(USE_PTRACE_WRAP))
-MODS+=ptrace-wrap
-endif
 SDB_URL=git://github.com/radareorg/sdb
 #SDB_URL=/Users/pancake/prg/sdb
 SPP_URL=git://github.com/radare/spp
-PTRACE_WRAP_URL=git://github.com/thestr4ng3r/ptrace-wrap
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
@@ -186,27 +182,6 @@ sdb-sync sync-sdb:
 	mv .t sdb/config.mk
 	echo all clean mrproper: | tee sdb/test/Makefile > sdb/memcache/Makefile
 	git add sdb
-
-.PHONY: ptrace-wrap ptrace-wrap-sync sync-ptrace-wrap ptrace-wrap-clean clean-ptrace-wrap
-PTRACE_WRAP_F=include src README.md COPYING
-PTRACE_WRAP_SYNCFILES=$(addprefix ptrace-wrap.vc/,${PTRACE_WRAP_F})
-
-ptrace-wrap-sync sync-ptrace-wrap:
-	rm -rf ptrace-wrap ptrace-wrap.vc
-	git clone --depth 1 ${PTRACE_WRAP_URL} ptrace-wrap.vc
-	mkdir -p ptrace-wrap
-	cp -rf ${PTRACE_WRAP_SYNCFILES} ptrace-wrap
-	sed -e "s, library(, static_library(," -e "s,project(,# project(," -e "s,subdir(,# subdir(," ptrace-wrap.vc/meson.build > ptrace-wrap/meson.build
-	printf "include ../../libr/config.mk\ninclude ../../mk/platform.mk\ninclude ../../mk/${COMPILER}.mk\n\n" | cat - ptrace-wrap.vc/Makefile > ptrace-wrap/Makefile
-	rm -rf ptrace-wrap.vc
-	printf "CFLAGS+=-I\$$(STOP)/ptrace-wrap/include\nLINK+=\$$(STOP)/ptrace-wrap/libptrace_wrap.\$$(EXT_AR)\nPTRACEWRAP_OBJS=\$$(STOP)/ptrace-wrap/src/ptrace_wrap.o\n" > ptrace-wrap/deps.mk
-
-ptrace-wrap:
-	$(MAKE) -C ptrace-wrap all
-
-ptrace-wrap-clean clean-ptrace-wrap:
-	$(MAKE) -C ptrace-wrap clean
-
 
 ifeq ($(WITH_LIBR),1)
 install: libr_shlr.${EXT_AR}
