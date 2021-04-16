@@ -257,7 +257,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		}
 		goto done;
 	}
-	if (ro->mode == R_SEARCH_KEYWORD || ro->mode == R_SEARCH_REGEXP) {
+	if (ro->mode == R_SEARCH_KEYWORD) {
 		r_list_foreach (ro->keywords, iter, kw) {
 			if (ro->hexstr) {
 				if (ro->mask) {
@@ -270,6 +270,11 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 			} else {
 				r_search_kw_add (rs, r_search_keyword_new_str (kw, ro->mask, NULL, 0));
 			}
+		}
+	}
+	if (ro->mode == R_SEARCH_REGEXP) {
+		r_list_foreach (ro->keywords, iter, kw) {
+			r_search_kw_add (rs, r_search_keyword_new_regexp (kw, NULL));
 		}
 	}
 
