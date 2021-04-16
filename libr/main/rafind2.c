@@ -257,7 +257,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		}
 		goto done;
 	}
-	if (ro->mode == R_SEARCH_KEYWORD) {
+	if (ro->mode == R_SEARCH_KEYWORD || ro->mode == R_SEARCH_REGEXP) {
 		r_list_foreach (ro->keywords, iter, kw) {
 			if (ro->hexstr) {
 				if (ro->mask) {
