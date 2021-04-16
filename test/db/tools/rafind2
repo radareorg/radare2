@@ -212,6 +212,64 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rafind2 json
+FILE=-
+CMDS=!rafind2 -j -s README bins/arm/README
+EXPECT=<<EOF
+[{"file":"bins/arm/README","offset":0,"type":"string","data":"README"}]
+EOF
+RUN
+
+NAME=rafind2 regexp
+FILE=-
+CMDS=!rafind2 -e /R.A..E/ bins/arm/README
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
+NAME=rafind2 regexp json
+FILE=-
+CMDS=!rafind2 -j -e /R.A..E/ bins/arm/README
+EXPECT=<<EOF
+[{"file":"bins/arm/README","offset":0,"type":"string","data":"README"}]
+EOF
+RUN
+
+NAME=rafind2 multiple strings
+FILE=-
+CMDS=!rafind2 -s README -s This bins/arm/README
+EXPECT=<<EOF
+0x0
+0xf
+EOF
+RUN
+
+NAME=rafind2 multiple strings json
+FILE=-
+CMDS=!rafind2 -j -s README -s This bins/arm/README
+EXPECT=<<EOF
+[{"file":"bins/arm/README","offset":0,"type":"string","data":"README"},{"file":"bins/arm/README","offset":15,"type":"string","data":"This directory contains binaries for tests on the arm architecture. So far the"}]
+EOF
+RUN
+
+NAME=rafind2 multiple regexps
+FILE=-
+CMDS=!rafind2 -e /R....E/ -e /Th.s/ bins/arm/README
+EXPECT=<<EOF
+0x0
+0xf
+EOF
+RUN
+
+NAME=rafind2 multiple regexps json
+FILE=-
+CMDS=!rafind2 -j -e /R....E/ -e /Th.s/ bins/arm/README
+EXPECT=<<EOF
+[{"file":"bins/arm/README","offset":0,"type":"string","data":"README"},{"file":"bins/arm/README","offset":15,"type":"string","data":"This directory contains binaries for tests on the arm architecture. So far the"}]
+EOF
+RUN
+
 NAME=rafind2 ""
 FILE=-
 CMDS=!rafind2 ""
