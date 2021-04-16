@@ -600,11 +600,6 @@ ar_dep = declare_dependency(
 )
 
 
-# handle ptrace-wrap dependency
-if use_ptrace_wrap
-  subdir('ptrace-wrap')
-endif
-
 if host_machine.system() == 'windows'
   subdir('w32dbg_wrap')
 endif

@@ -76,7 +76,7 @@ if host_machine.system() == 'linux' or host_machine.system() == 'android'
 endif
 
 if use_ptrace_wrap
-  r_io_deps += ptrace_wrap_dep
+  r_io_sources += 'ptrace_wrap.c'
 endif
 
 r_io = library('r_io', r_io_sources,

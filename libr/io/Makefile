@@ -19,8 +19,7 @@ include $(SHLR)/gdb/deps.mk
 include $(SHLR)/qnx/deps.mk
 
 ifeq ($(USE_PTRACE_WRAP),1)
-PTRACE_WRAP_URL=git://github.com/thestr4ng3r/ptrace-wrap
-include ptrace-wrap/deps.mk
+OBJS+=ptrace_wrap.o
 endif
 
 ## only for shm_open
