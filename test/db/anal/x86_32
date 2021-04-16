@@ -305,7 +305,7 @@ e anal.jmp.cref=false
 e anal.jmp.above=true
 e anal.jmp.ref=true
 e anal.split=true
-# HACK to avoid ASAN taking too long on travis.. this is broken anyway
+# HACK to avoid ASAN taking too long on the CI.. this is broken anyway
 e anal.bb.maxsize=1K
 adf @ sym.testObf27.exe_VirtMe
 .adf @ sym.testObf27.exe_VirtMe
