@@ -144,6 +144,7 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	// add sig types info to item
 	it->name = zigname; // will be free'd when item is free'd
 	it->space = r_spaces_current (&core->anal->zign_spaces);
+	// TODO: sort fcn bbs
 	r_sign_addto_item (core->anal, it, fcn, R_SIGN_GRAPH);
 	r_sign_addto_item (core->anal, it, fcn, R_SIGN_BYTES);
 	r_sign_addto_item (core->anal, it, fcn, R_SIGN_XREFS);

@@ -1,10 +1,19 @@
-/* radare - LGPL - Copyright 2007-2019 - pancake, alvarofe */
+/* radare - LGPL - Copyright 2007-2021 - pancake, alvarofe */
 // TODO: RRef - reference counting
 
 #include <stdio.h>
 
 #define _R_LIST_C_
 #include "r_util.h"
+
+R_API size_t r_list_iter_length(RListIter *iter) {
+	size_t count = 0;
+	while (iter->n) {
+		count++;
+		iter = iter->n;
+	}
+	return count;
+}
 
 inline RListIter *r_list_iter_new(void) {
 	return calloc (1, sizeof (RListIter));
