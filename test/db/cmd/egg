@@ -1,4 +1,4 @@
-# XXX its green on mac, but it's os-specific test and will fail on travis
+# XXX its green on mac, but it's os-specific test and will fail on the CI
 NAME=ragg2 eggtest.c
 BROKEN=1
 FILE=-

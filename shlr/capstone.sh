@@ -82,8 +82,8 @@ update_capstone_git() {
 	git reset --hard "${CS_TIP}"
 	if [ -n "${CS_REV}" ]; then
 		if ! git config user.name ; then
-			git config user.name "radare-travis"
-			git config user.email "radare-travis@foo.com"
+			git config user.name "radare"
+			git config user.email "radare@radare.org"
 		fi
 		env EDITOR=cat git revert --no-edit "${CS_REV}"
 	fi
