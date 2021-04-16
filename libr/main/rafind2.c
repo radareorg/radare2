@@ -464,7 +464,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	if (opt.ind + 1 == argc && !r_file_is_directory (argv[opt.ind])) {
 		ro.quiet = true;
 	}
-	if (ro.json && ro.mode == R_SEARCH_KEYWORD) {
+	if (ro.json && (ro.mode == R_SEARCH_KEYWORD || ro.mode == R_SEARCH_REGEXP)) {
 		// TODO: remove mode check when all modes use api
 		ro.pj = pj_new ();
 		pj_a (ro.pj);
