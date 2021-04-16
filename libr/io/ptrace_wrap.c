@@ -1,5 +1,5 @@
 /*
- * This file is part of ptrace-wrap.
+ * This file is part of ptrace-wrap. (github.com/thestr4ng3r/ptrace-wrap)
  *
  * ptrace-wrap is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by

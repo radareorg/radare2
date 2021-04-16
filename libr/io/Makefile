@@ -19,8 +19,7 @@ include $(SHLR)/gdb/deps.mk
 include $(SHLR)/qnx/deps.mk
 
 ifeq ($(USE_PTRACE_WRAP),1)
-include $(SHLR)/ptrace-wrap/deps.mk
-OBJS+=$(PTRACEWRAP_OBJS)
+OBJS+=ptrace_wrap.o
 endif
 
 ## only for shm_open
@@ -38,3 +37,4 @@ pre: libr_io.${EXT_SO} libr_io.${EXT_AR}
 
 include ${STATIC_IO_PLUGINS}
 include $(LTOP)/rules.mk
+
