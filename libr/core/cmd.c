@@ -1285,7 +1285,7 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	}
 	switch (*input) {
 	case 'r':
-		cmd_lsr (core, input);
+		cmd_lsr (core, arg);
 		break;
 	case '?': // "l?"
 		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
