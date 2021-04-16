@@ -33,6 +33,9 @@ typedef struct RVc {
 
 
 
+R_API RvcBlob *rvc_path_to_commit(Rvc *repo, const char *path);
+R_API RList *rvc_uncomitted(Rvc *repo);
+R_API bool rvc_checkout(Rvc *repo, const char *name);
 R_API bool rvc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message);
 R_API bool rvc_branch(Rvc *repo, const char *name);
 R_API RList *rvc_add(Rvc *repo, RList *files);
