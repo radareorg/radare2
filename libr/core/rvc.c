@@ -420,6 +420,21 @@ R_API RvcBlob *rvc_path_to_commit(Rvc *repo, const char *path) {
 	return NULL;
 }
 
+R_API RvcBlob *rvc_last_blob(Rvc *repo, const char *path) {
+	RvcCommit *i;
+	i = repo->current_branch->head;
+	do {
+		RListIter *iter;
+		RvcBlob *blob;
+		r_list_foreach(i->blobs, iter, blob) {
+			if (!strcmp (blob->fname, path)) {
+				return blob;
+			}
+		}
+	} while (i->prev);
+	return NULL;
+}
+
 R_API RList *rvc_uncomitted(Rvc *repo) {
 	RListIter *iter, *tmp;
 	char *path;
@@ -482,14 +497,10 @@ R_API bool rvc_checkout(Rvc *repo, const char *name) {
 	r_list_foreach (uncomitted, iter, fpath) {
 		RvcBlob *blob;
 		char *bpath;
-		blob = rvc_path_to_commit (repo, fpath);
+		blob = rvc_last_blob (repo, fpath);
 		bpath = r_str_newf ("%s" R_SYS_DIR "blobs" R_SYS_DIR "%s",
 				repo->path, blob->hash);
 		if (!bpath) {
-			repo->current_branch = tmpb;
-			return false;
-		}
-		if (!rvc_path_to_commit (repo, fpath)) {
 			r_file_rm (fpath);
 			continue;
 		}
