@@ -439,7 +439,7 @@ static ut32 dumb_ctzll(ut64 x) {
 	return result;
 }
 
-static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
+static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask, ut64 value_add) {
 	ut64 slide = 0;
 	ut64 *classlist = malloc (64);
 	if (!classlist) {
@@ -500,10 +500,11 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
 		ut64 data_tail = data_addr & 0xfff;
 		ut64 data_tail_end = (data_addr + sections[data_idx].size) & 0xfff;
 		for (i = 0; i < n_classes; i++) {
-			ut64 cl_tail = classlist[i] & 0xfff;
+			ut64 cl_addr = (classlist[i] & value_mask) + value_add;
+			ut64 cl_tail = cl_addr & 0xfff;
 			if (cl_tail >= data_tail && cl_tail < data_tail_end) {
 				ut64 off = cl_tail - data_tail;
-				slide = ((classlist[i] - off) & value_mask) - (data_addr & value_mask);
+				slide = ((cl_addr - off) & value_mask) - (data_addr & value_mask);
 				found_sample = true;
 				break;
 			}
@@ -581,7 +582,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache, ut64 sl
 		rebase_info->page_size = slide_info.page_size;
 		rebase_info->one_page_buf = one_page_buf;
 		if (slide == UT64_MAX) {
-			rebase_info->slide = estimate_slide (bf, cache, 0x7ffffffffffffULL);
+			rebase_info->slide = estimate_slide (bf, cache, 0x7ffffffffffffULL, 0);
 			if (rebase_info->slide) {
 				eprintf ("dyldcache is slid: 0x%"PFMT64x"\n", rebase_info->slide);
 			}
@@ -658,7 +659,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache, ut64 sl
 		rebase_info->page_size = slide_info.page_size;
 		rebase_info->one_page_buf = one_page_buf;
 		if (slide == UT64_MAX) {
-			rebase_info->slide = estimate_slide (bf, cache, rebase_info->value_mask);
+			rebase_info->slide = estimate_slide (bf, cache, rebase_info->value_mask, rebase_info->value_add);
 			if (rebase_info->slide) {
 				eprintf ("dyldcache is slid: 0x%"PFMT64x"\n", rebase_info->slide);
 			}
@@ -729,7 +730,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache, ut64 sl
 		rebase_info->entries = tmp_buf_2;
 		rebase_info->entries_size = slide_info.entries_size;
 		if (slide == UT64_MAX) {
-			rebase_info->slide = estimate_slide (bf, cache, UT64_MAX);
+			rebase_info->slide = estimate_slide (bf, cache, UT64_MAX, 0);
 			if (rebase_info->slide) {
 				eprintf ("dyldcache is slid: 0x%"PFMT64x"\n", rebase_info->slide);
 			}
@@ -1969,6 +1970,7 @@ static void header(RBinFile *bf) {
 					pj_kn (pj, "page_extras_count", info2->page_extras_count);
 					pj_kn (pj, "delta_mask", info2->delta_mask);
 					pj_kn (pj, "value_mask", info2->value_mask);
+					pj_kn (pj, "value_add", info2->value_add);
 					pj_kn (pj, "delta_shift", info2->delta_shift);
 					pj_kn (pj, "page_size", info2->page_size);
 				} else if (version == 1) {
