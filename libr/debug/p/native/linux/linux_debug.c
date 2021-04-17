@@ -1206,11 +1206,14 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 #if HAVE_YMM && __x86_64__ && defined(PTRACE_GETREGSET)
 		ut32 ymm_space[128];	// full ymm registers
 		struct _xstate xstate;
-		struct iovec iov;
+		struct iovec iov = {};
 		iov.iov_base = &xstate;
 		iov.iov_len = sizeof(struct _xstate);
 		ret = r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void*)NT_X86_XSTATE, &iov);
-		if (ret != 0) {
+		if (errno == ENODEV) {
+			// ignore ENODEV, it just means this CPU or kernel doesn't support XSTATE
+			ret = 0;
+		} else if (ret != 0) {
 			r_sys_perror ("PTRACE_GETREGSET");
 			return false;
 		}
