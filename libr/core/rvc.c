@@ -521,7 +521,23 @@ R_API int git_branch (const char *path, const char *name) {
 }
 
 R_API int git_add (const char *path, const char *fname) {
-	return r_sys_cmdf ("git -C %s add %s", path, fname);
+	int ret;
+	char *cwd = r_sys_getdir();
+	if (!cwd) {
+		return -1;
+	}
+	ret = r_sys_chdir (path);
+	if (!ret) {
+		free (cwd);
+		return -2;
+	}
+	ret = r_sys_cmdf ("pwd; git add %s", fname);
+	if (!r_sys_chdir (cwd)) {
+		free (cwd);
+		return -3;
+	}
+	free (cwd);
+	return ret;
 }
 
 R_API int git_commit (const char *path, const char *message) {

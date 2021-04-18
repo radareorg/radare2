@@ -680,15 +680,15 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			if (!r_file_is_directory (git_dir)) {
 				git_init (prj_dir);
 			}
-			git_add (".", "*");
+			free (git_dir);
+			git_add (prj_dir, ".");
 			if (r_cons_is_interactive ()) {
-				git_commit_interactive (".");
+				git_commit_interactive (prj_dir);
 			} else {
 				git_commit (prj_dir, "commit");
 			}
 
 		}
-		free (git_dir);
 	}
 	if (r_config_get_i (core->config, "prj.zip")) {
 		char *cwd = r_sys_getdir ();
