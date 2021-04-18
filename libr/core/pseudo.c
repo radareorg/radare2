@@ -194,6 +194,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (show_addr) r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s", a, indentstr);\
 		else r_strbuf_appendf (codestr, "\n%s", indentstr);\
 	} else {\
+		r_cons_newline();\
 		if (show_addr) r_cons_printf (" 0x%08"PFMT64x" | %s", a, indentstr);\
 		else r_cons_printf ("%s", indentstr); }\
 	}
