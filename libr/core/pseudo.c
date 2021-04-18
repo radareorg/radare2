@@ -501,7 +501,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				pj_ks (pj, "type", "offset");
 				pj_end (pj);
 			}
-			NEWLINE (bb->addr, indent);
+			NEWLINE (bb->addr, 1);
 			PRINTF ("orphan_0x%08"PFMT64x":\n%s", bb->addr, s);
 			free (s);
 		}
