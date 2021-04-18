@@ -44,3 +44,4 @@ R_API int git_init (const char *path);
 R_API int git_branch (const char *path, const char *name);
 R_API int git_add (const char *path, const char *fname);
 R_API int git_commit (const char *path, const char *message);
+R_API int git_commit_interactive (const char *path);
