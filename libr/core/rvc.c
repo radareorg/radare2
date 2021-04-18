@@ -521,7 +521,7 @@ R_API int git_branch (const char *path, const char *name) {
 }
 
 R_API int git_add (const char *path, const char *fname) {
-	return r_sys_cmdf ("git -C %s branch %s", path, fname);
+	return r_sys_cmdf ("git -C %s add %s", path, fname);
 }
 
 R_API int git_commit (const char *path, const char *message) {
