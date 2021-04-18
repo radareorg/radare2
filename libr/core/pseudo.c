@@ -187,9 +187,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_cons_printf (a, ##__VA_ARGS__);\
 	}}
 #define NEWLINE(a,i) {\
-	size_t eos = R_MIN ((i)*2, sizeof (indentstr)-2);\
+	size_t eos = R_MIN ((i) * 2, sizeof (indentstr) - 2);\
 	if (eos < 1) eos = 0;\
-	memset (indentstr, ' ', sizeof(indentstr)); indentstr [(eos * 2)] = 0;\
+	memset (indentstr, ' ', sizeof (indentstr)); indentstr [(eos * 2)] = 0;\
 	if (pj) {\
 		if (show_addr) r_strbuf_appendf (codestr, "\n0x%08"PFMT64x" | %s", a, indentstr);\
 		else r_strbuf_appendf (codestr, "\n%s", indentstr);\
@@ -332,15 +332,15 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					if (pj) {
 						pj_o (pj);
 						pj_kn (pj, "start", r_strbuf_length (codestr));
-						r_strbuf_append (codestr, line);
 						pj_kn (pj, "end", r_strbuf_length (codestr));
 						pj_kn (pj, "offset", addr);
 						pj_ks (pj, "type", "offset");
 						pj_end (pj);
 					}
 					NEWLINE (addr, indent);
-					PRINTF ("%s\n", line);
+					PRINTF ("%s", line);
 				}
+				r_list_free (lines);
 				free (code);
 				sdb_num_set (db, K_MARK (bb->addr), 1, 0);
 			}
@@ -508,6 +508,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	r_list_free (visited);
 	indent = 0;
+	NEWLINE (addr, indent);
+	PRINTF ("}\n");
 	if (pj) {
 		pj_end (pj);
 		char *kode = r_strbuf_drain (codestr);
@@ -518,8 +520,6 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		free (kode);
 		free (j);
 	}
-	NEWLINE (addr, indent);
-	PRINTF ("}\n");
 	r_config_hold_restore (hc);
 	r_config_hold_free (hc);
 	sdb_free (db);
