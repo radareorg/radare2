@@ -527,3 +527,6 @@ R_API int git_add (const char *path, const char *fname) {
 R_API int git_commit (const char *path, const char *message) {
 	return r_sys_cmdf ("git -C %s commit -m %s", path, message);
 }
+R_API int git_commit_interactive (const char *path) {
+	return r_sys_cmdf ("git -C %s commit", path);
+}
