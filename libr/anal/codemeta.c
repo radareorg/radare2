@@ -60,7 +60,7 @@ static int cm_cmp(void *incoming, void *in, void *user) {
 	ut64 at = ((RCodeMetaItem *)user)->start;
 	if (at >= mi2->start && at <= mi2->end) {
 		RVector *r = (RVector*)user;
-		r_pvector_push (r, mi);
+		r_vector_push (r, mi);
 		return 0;
 	}
 	if (at > mi2->end) {
