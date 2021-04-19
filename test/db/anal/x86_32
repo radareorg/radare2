@@ -3537,6 +3537,25 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=SSE bitwise instructions
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 660fdffb660f73ff09660fefdf660f73fb02
+aei
+aeim
+ar xmm3l = 0xa5a6a7a8
+ar xmm3h = 0xa9aaabac
+ar xmm7l = 0x0f0e0d0c
+4aes
+ar xmm3
+EOF
+EXPECT=<<EOF
+0x00a009080bac00000000a5a6a7a80000
+EOF
+RUN
+
 NAME=tiny1 aaef
 FILE=bins/elf/analysis/tiny1
 ARGS=-N
