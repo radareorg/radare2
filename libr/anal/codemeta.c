@@ -101,7 +101,7 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	if (!r) {
 		return NULL;
 	}
-#if 0
+#if 1
 	RCodeMetaItem *mi;
 	r_vector_foreach (&code->annotations, mi) {
 		if (start >= mi->end || end < mi->start) {
