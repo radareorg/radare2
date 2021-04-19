@@ -685,36 +685,9 @@ R_API void r_diffchar_free(RDiffChar *diffchar) {
 	}
 }
 
-static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff) {
+static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff, size_t skip, ut32 alen, ut32 blen) {
 	r_return_val_if_fail (bufa && bufb && bufa->buf && bufb->buf, -1);
-
-	// force buffer b to be longer, this will invert add/del resulsts
-	if (bufb->len < bufa->len) {
-		RLevBuf *x = bufa;
-		bufa = bufb;
-		bufb = x;
-	}
-	r_return_val_if_fail (bufb->len < UT32_MAX, -1);
-	ut32 ldelta = bufb->len - bufa->len;
-	if (ldelta > maxdst) {
-		return ST32_MAX;
-	}
-
-	// Strip start as long as bytes don't diff
-	size_t skip;
-	ut32 alen = bufa->len;
-	ut32 blen = bufb->len;
-	for (skip=0; skip < alen && !levdiff (bufa, bufb, skip, skip); skip++) {}
-
-	// strip suffix as long as bytes don't diff
-	size_t i;
-	for (i = 0; alen > skip && !levdiff (bufa, bufb, alen - 1, blen - 1); alen--, blen--, i++) {}
-	alen -= skip;
-	blen -= skip;
-
-	if (alen == 0) {
-		return blen;
-	}
+	r_return_val_if_fail (blen >= alen && alen > 0, -1);
 
 	// max distance is at most length of longer input, or provided by user
 	ut32 origdst = maxdst = R_MIN (maxdst, blen);
@@ -736,7 +709,13 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 		return -1;
 	}
 
+	ut32 ldelta = blen - alen;
+	if (ldelta > maxdst) {
+		return ST32_MAX;
+	}
+
 	lev_row_adjust (row, maxdst, 0, blen, ldelta);
+	size_t i;
 	for (i = row->start; i <= row->end; i++) {
 		row->changes[i] = i;
 	}
@@ -819,10 +798,7 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
  */
 R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RLevMatches levdiff, RLevOp **chgs) {
 	r_return_val_if_fail (bufa && bufb && bufa->buf && bufb->buf, -1);
-	if (chgs == NULL) {
-		return r_diff_levenshtein_nopath (bufa, bufb, maxdst, levdiff);
-	}
-	r_return_val_if_fail (!*chgs, -1);
+	r_return_val_if_fail (!chgs || !*chgs, -1); // if chgs then it must point at NULL
 
 	// force buffer b to be longer, this will invert add/del resulsts
 	bool invert = false;
@@ -851,21 +827,26 @@ R_API st32 r_diff_levenshtein_path(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst, RL
 	blen -= skip;
 
 	if (alen == 0) {
-		RLevOp *c = R_NEWS (RLevOp, skip + i + blen + 1);
-		if (!c) {
-			return -1;
+		if (chgs) {
+			RLevOp *c = R_NEWS (RLevOp, skip + i + blen + 1);
+			if (!c) {
+				return -1;
+			}
+			*chgs = c;
+
+			lev_fill_changes (c, LEVNOP, skip);
+			c += skip;
+			lev_fill_changes (c, invert? LEVDEL: LEVADD, blen);
+			c += blen;
+			lev_fill_changes (c, LEVNOP, i);
+			c += i;
+
+			*c = LEVEND;
 		}
-		*chgs = c;
-
-		lev_fill_changes (c, LEVNOP, skip);
-		c += skip;
-		lev_fill_changes (c, invert? LEVDEL: LEVADD, blen);
-		c += blen;
-		lev_fill_changes (c, LEVNOP, i);
-		c += i;
-
-		*c = LEVEND;
 		return blen;
+	}
+	if (!chgs) {
+		return r_diff_levenshtein_nopath (bufa, bufb, maxdst, levdiff, skip, alen, blen);
 	}
 
 	// max distance is at most length of longer input, or provided by user
