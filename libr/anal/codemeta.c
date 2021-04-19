@@ -64,6 +64,27 @@ R_API void r_codemeta_free(RCodeMeta *code) {
 	r_free (code);
 }
 
+static int cmp_ins(void *incoming, void *in, void *user) {
+	RCodeMetaItem *mi = in;
+	RCodeMetaItem *mi2 = incoming;
+	const size_t mid = mi->start + (mi->end - mi->start) / 2;	// this is buggy since 2/2 = 1/2 in C
+	const size_t mid2 = mi2->start + (mi2->end - mi2->start) / 2;
+	if (mid > mid2) {
+		return -1;
+	} else if (mid < mid2) {
+		return 1;
+	} else {
+		const ut32 mod = (mi->end - mi->start) & 0x1;	// this fixes the buggy
+		const ut32 mod2 = (mi2->end - mi2->start) & 0x1;
+		if (mod > mod2) {
+			return -1;
+		} else if (mod < mod2) {
+			return 1;
+		}
+	}
+	return ((int)mi2->type) - ((int)mi->type);	// avoid weird things
+}
+
 static int cm_add(void *incoming, void *in, void *user) {
 	RCodeMetaItem *mi = in;
 	RCodeMetaItem *mi2 = incoming;
