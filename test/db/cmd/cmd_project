@@ -229,13 +229,13 @@ e prj.git=false
 tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
-Ps custom_types > /dev/null
-Pc custom_types~?char **
+Ps ctypes > /dev/null
+Pc ctypes~?char **
 "td struct Foo { int bar; int x; int y; };"
-Ps custom_types > /dev/null
-Pc custom_types~?char **
-Pc custom_types~?Foo
-Pd custom_types > /dev/null
+Ps ctypes > /dev/null
+Pc ctypes~?char **
+Pc ctypes~?Foo
+Pd ctypes > /dev/null
 EOF
 EXPECT=<<EOF
 9
@@ -385,7 +385,7 @@ om*~[2]
 EOF
 EXPECT=<<EOF
  3 * r-x 0x000021da bins/elf/analysis/main
- 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x 
+ 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x
 om 3 0x00001337 0x000021da 0x00000000 r-x
 --
 om 3 0x00001337 0x000021da 0x00000000 r-x
@@ -480,14 +480,14 @@ FILE=malloc://512
 CMDS=<<EOF
 e prj.git=false
 e dir.projects = .tmp/
-Ps named_prj > /dev/null
+Ps namedprj > /dev/null
 e prj.name=
-Po named_prj > /dev/null
+Po namedprj > /dev/null
 e prj.name
-rm .tmp/named_prj
+rm .tmp/namedprj
 EOF
 EXPECT=<<EOF
-named_prj
+namedprj
 EOF
 RUN
 
