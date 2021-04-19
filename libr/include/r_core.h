@@ -300,7 +300,6 @@ struct r_core_t {
 	char *lastcmd;
 	char *cmdlog;
 	bool cfglog; // cfg.corelog
-	bool use_newshell; // cfg.corelog
 	int cmdrepeat; // cmd.repeat
 	const char *cmdtimes; // cmd.times
 	R_DEPRECATE bool cmd_in_backticks; // whether currently executing a cmd out of backticks

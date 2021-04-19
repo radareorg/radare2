@@ -5202,9 +5202,6 @@ beach:
 }
 
 R_API int r_core_cmd_lines(RCore *core, const char *lines) {
-	if (core->use_newshell) {
-		// handle newshell
-	}
 	int r, ret = true;
 	char *nl, *data, *odata;
 
@@ -5382,11 +5379,7 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 			return r_core_cmd_str (core, cmd);
 		}
 		char *_cmd = strdup (cmd);
-		if (core->use_newshell) {
-			r_core_cmd (core, _cmd, 0);
-		} else {
-			r_core_cmd_subst (core, _cmd);
-		}
+		r_core_cmd (core, _cmd, 0);
 		r_cons_flush ();
 		r_cons_pipe_close (pipefd);
 		if (r_file_exists (tmp)) {
