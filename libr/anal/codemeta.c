@@ -70,6 +70,9 @@ static int cm_add(void *incoming, void *in, void *user) {
 	return mi2->start - mi->start;
 }
 
+#define USE_TRI 0
+
+#if USE_TRI
 static int cm_cmp(void *incoming, void *in, void *user) {
 	RCodeMetaItem *mi = in;
 	RCodeMetaItem *mi2 = incoming;
@@ -84,6 +87,7 @@ static int cm_cmp(void *incoming, void *in, void *user) {
 	}
 	return 1;
 }
+#endif
 
 R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *mi) {
 	r_return_if_fail (code && mi);
@@ -101,7 +105,11 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	if (!r) {
 		return NULL;
 	}
-#if 1
+#if USE_TRI
+	RCodeMetaItem my = { .start = start, .end = end };
+	r_rbtree_cont_find (code->tree, &my, cm_cmp, r);
+	return r;
+#else
 	RCodeMetaItem *mi;
 	r_vector_foreach (&code->annotations, mi) {
 		if (start >= mi->end || end < mi->start) {
@@ -109,10 +117,6 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 		}
 		r_pvector_push (r, mi);
 	}
-	return r;
-#else
-	RCodeMetaItem my = { .start = start, .end = end };
-	r_rbtree_cont_find (code->tree, &my, cm_cmp, r);
 	return r;
 #endif
 }
