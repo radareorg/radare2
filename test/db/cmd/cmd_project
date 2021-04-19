@@ -480,14 +480,14 @@ FILE=malloc://512
 CMDS=<<EOF
 e prj.git=false
 e dir.projects = .tmp/
-Ps named_prj > /dev/null
+Ps namedprj > /dev/null
 e prj.name=
-Po named_prj > /dev/null
+Po namedprj > /dev/null
 e prj.name
-rm .tmp/named_prj
+rm .tmp/namedprj
 EOF
 EXPECT=<<EOF
-named_prj
+namedprj
 EOF
 RUN
 

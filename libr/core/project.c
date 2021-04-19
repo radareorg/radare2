@@ -12,23 +12,13 @@
 // project apis to be used from cmd_project.c
 
 static bool is_valid_project_name(const char *name) {
-	int i;
-	if (r_str_endswith (name, ".zip")) {
+	if (r_str_len_utf8 (name) >= 16) {
 		return false;
 	}
-	for (i = 0; name[i]; i++) {
-		switch (name[i]) {
-		case '\\': // for w32
-		case '.':
-		case '_':
-		case ':':
-		case '-':
-			continue;
-		}
-		if (isalpha ((unsigned char)name[i])) {
-			continue;
-		}
-		if (IS_DIGIT (name[i])) {
+	const char  *extention = r_str_endswith (name, ".zip") ?
+		r_str_last (name, ".zip") : NULL;
+	for (; *name && name != extention; name++) {
+		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
 			continue;
 		}
 		return false;
