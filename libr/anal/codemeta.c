@@ -9,8 +9,9 @@ R_API RCodeMeta *r_codemeta_new(const char *code) {
 	if (!r) {
 		return NULL;
 	}
+	r->tree = r_rbtree_cont_new ();
 	r->code = code? strdup (code): NULL;
-	r_vector_init (&r->annotations, sizeof (RCodeMetaItem), (RVectorFree)r_codemeta_item_free, NULL);
+	r_vector_init (&r->annotations, sizeof (RCodeMetaItem), (RVectorFree)r_codemeta_item_fini, NULL);
 	return r;
 }
 
@@ -18,12 +19,28 @@ R_API RCodeMetaItem *r_codemeta_item_new(void) {
 	return R_NEW0 (RCodeMetaItem);
 }
 
-R_API void r_codemeta_item_free(RCodeMetaItem *mi, void *user) {
-	(void)user;
-	if (mi->type == R_CODEMETA_TYPE_FUNCTION_NAME) {
+R_API void r_codemeta_item_free(RCodeMetaItem *mi) {
+	if (mi) {
+		r_codemeta_item_fini (mi);
+		free (mi);
+	}
+}
+
+R_API void r_codemeta_item_fini(RCodeMetaItem *mi) {
+	r_return_if_fail (mi);
+	switch (mi->type) {
+	case R_CODEMETA_TYPE_FUNCTION_NAME:
 		free (mi->reference.name);
-	} else if (mi->type == R_CODEMETA_TYPE_LOCAL_VARIABLE || mi->type == R_CODEMETA_TYPE_FUNCTION_PARAMETER) {
+		break;
+	case R_CODEMETA_TYPE_LOCAL_VARIABLE:
+	case R_CODEMETA_TYPE_FUNCTION_PARAMETER:
 		free (mi->variable.name);
+		break;
+	case R_CODEMETA_TYPE_CONSTANT_VARIABLE:
+	case R_CODEMETA_TYPE_OFFSET:
+	case R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT:
+	case R_CODEMETA_TYPE_GLOBAL_VARIABLE:
+		break;
 	}
 }
 
@@ -42,28 +59,40 @@ R_API void r_codemeta_free(RCodeMeta *code) {
 		return;
 	}
 	r_vector_clear (&code->annotations);
+	r_rbtree_cont_free (code->tree);
 	r_free (code->code);
 	r_free (code);
+}
+
+static int cm_add(void *incoming, void *in, void *user) {
+	RCodeMetaItem *mi = in;
+	RCodeMetaItem *mi2 = incoming;
+	return mi2->start - mi->start;
+}
+
+static int cm_cmp(void *incoming, void *in, void *user) {
+	RCodeMetaItem *mi = in;
+	RCodeMetaItem *mi2 = incoming;
+	ut64 at = mi2->start;
+	if (at >= mi->start && at <= mi->end) {
+		RPVector *r = (RPVector*)user;
+		r_pvector_push (r, mi);
+		return 0;
+	}
+	if (at > mi2->end) {
+		return -1;
+	}
+	return 1;
 }
 
 R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *mi) {
 	r_return_if_fail (code && mi);
 	r_vector_push (&code->annotations, mi);
+	r_rbtree_cont_insert (code->tree, mi, cm_add, NULL);
 }
 
 R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset) {
-	r_return_val_if_fail (code, NULL);
-	RPVector *r = r_pvector_new (NULL);
-	if (!r) {
-		return NULL;
-	}
-	RCodeMetaItem *mi;
-	r_vector_foreach (&code->annotations, mi) {
-		if (offset >= mi->start && offset < mi->end) {
-			r_pvector_push (r, mi);
-		}
-	}
-	return r;
+	return r_codemeta_in (code, offset, offset + 1);
 }
 
 R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
@@ -72,6 +101,7 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	if (!r) {
 		return NULL;
 	}
+#if 1
 	RCodeMetaItem *mi;
 	r_vector_foreach (&code->annotations, mi) {
 		if (start >= mi->end || end < mi->start) {
@@ -80,6 +110,11 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 		r_pvector_push (r, mi);
 	}
 	return r;
+#else
+	RCodeMetaItem my = { .start = start, .end = end };
+	r_rbtree_cont_find (code->tree, &my, cm_cmp, r);
+	return r;
+#endif
 }
 
 R_API RVector *r_codemeta_line_offsets(RCodeMeta *code) {

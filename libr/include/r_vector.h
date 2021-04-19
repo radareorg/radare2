@@ -198,6 +198,7 @@ R_API void r_pvector_clear(RPVector *vec);
 // free the vector and call vec->v.free on every element.
 R_API void r_pvector_free(RPVector *vec);
 
+// TODO: rename to r_pvector_length () for consistency
 static inline size_t r_pvector_len(const RPVector *vec) {
 	r_return_val_if_fail (vec, 0);
 	return vec->v.len;
