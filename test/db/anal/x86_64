@@ -1325,7 +1325,7 @@ RUN
 NAME=delete memory format with Cf-
 FILE=bins/dmg/src/Hello
 CMDS=<<EOF
-e prj.vc=false
+e prj.git=false
 e asm.arch=x86
 e asm.bits=64
 pd 1
@@ -2287,7 +2287,7 @@ axd 0x260 @ str.hello
 pd 1 @ 0x260
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from str.hello @
+            ; DATA XREF from str.hello @ 
             0x00000260      80e0           ldi r24, 0x00
 EOF
 RUN
@@ -2703,7 +2703,7 @@ aar
 pd 1 @_idata+0x2e
 EOF
 EXPECT=<<EOF
-; DATA XREF from unk @
+; DATA XREF from unk @ 
 0x1000002e      00             nop
 EOF
 RUN
@@ -2720,7 +2720,7 @@ afr
 pd 1 @_idata+0x2e
 EOF
 EXPECT=<<EOF
-; DATA XREF from fcn.00000000 @
+; DATA XREF from fcn.00000000 @ 
 0x1000002e      00             nop
 EOF
 RUN
