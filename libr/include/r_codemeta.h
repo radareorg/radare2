@@ -68,7 +68,8 @@ typedef struct r_codemeta_t {
 R_API RCodeMeta *r_codemeta_new(const char *code);
 R_API void r_codemeta_free(RCodeMeta *code);
 R_API RCodeMetaItem *r_codemeta_item_new(void);
-R_API void r_codemeta_item_free(RCodeMetaItem *e, void *user);
+R_API void r_codemeta_item_free(RCodeMetaItem *e);
+R_API void r_codemeta_item_fini(RCodeMetaItem *e);
 R_API bool r_codemeta_item_is_reference(RCodeMetaItem *annotation);
 R_API bool r_codemeta_item_is_variable(RCodeMetaItem *annotation);
 R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *annotation);

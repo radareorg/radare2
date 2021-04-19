@@ -414,11 +414,11 @@ static bool test_r_codemeta_itemfree_and_is_annotation_type_functions(void) {
 	mu_assert_false (r_codemeta_item_is_reference (&syntax_highlight), error_message);
 	// Free dynamically allocated memory for annotations.
 	// This is also supposed to be a test of r_codemeta_itemfree() for run errors.
-	r_codemeta_item_free (&local_variable, NULL);
-	r_codemeta_item_free (&function_parameter, NULL);
-	r_codemeta_item_free (&function_name, NULL);
-	r_codemeta_item_free (&global_variable, NULL);
-	r_codemeta_item_free (&constant_variable, NULL);
+	r_codemeta_item_fini (&local_variable);
+	r_codemeta_item_fini (&function_parameter);
+	r_codemeta_item_fini (&function_name);
+	r_codemeta_item_fini (&global_variable);
+	r_codemeta_item_fini (&constant_variable);
 	mu_end;
 }
 
