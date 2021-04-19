@@ -229,13 +229,13 @@ e prj.git=false
 tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
-Ps ctypes > /dev/null
-Pc ctypes~?char **
+Ps custom_types > /dev/null
+Pc custom_types~?char **
 "td struct Foo { int bar; int x; int y; };"
-Ps ctypes > /dev/null
-Pc ctypes~?char **
-Pc ctypes~?Foo
-Pd ctypes > /dev/null
+Ps custom_types > /dev/null
+Pc custom_types~?char **
+Pc custom_types~?Foo
+Pd custom_types > /dev/null
 EOF
 EXPECT=<<EOF
 9
