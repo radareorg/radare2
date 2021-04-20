@@ -117,16 +117,16 @@ typedef struct r_io_t {
 	SdbList *plugins;
 	char *runprofile;
 	char *envprofile;
-#if USE_PTRACE_WRAP
-	struct ptrace_wrap_instance_t *ptrace_wrap;
-#endif
-#if __WINDOWS__
-	struct w32dbg_wrap_instance_t *w32dbg_wrap;
-#endif
 	char *args;
 	REvent *event;
 	PrintfCallback cb_printf;
 	RCoreBind corebind;
+#if __WINDOWS__
+	struct w32dbg_wrap_instance_t *w32dbg_wrap;
+#endif
+#if USE_PTRACE_WRAP
+	struct ptrace_wrap_instance_t *ptrace_wrap;
+#endif
 } RIO;
 
 typedef struct r_io_desc_t {

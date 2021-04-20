@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -667,7 +667,7 @@ static int bsd_reg_read (RDebug *dbg, int type, ut8* buf, int size) {
 	case R_REG_TYPE_GPR:
 		{
 		R_DEBUG_REG_T regs;
-		memset (&regs, 0, sizeof(regs));
+		memset (&regs, 0, sizeof (regs));
 		memset (buf, 0, size);
 		#if __NetBSD__ || __OpenBSD__
 			ret = ptrace (PTRACE_GETREGS, pid, (caddr_t)&regs, sizeof (regs));
@@ -681,8 +681,12 @@ static int bsd_reg_read (RDebug *dbg, int type, ut8* buf, int size) {
 		// process exists still.. is because there's a
 		// missing call to 'wait'. and the process is not
 		// yet available to accept more ptrace queries.
-		if (ret != 0) return false;
-		if (sizeof(regs) < size) size = sizeof(regs);
+		if (ret != 0) {
+			return false;
+		}
+		if (sizeof (regs) < size) {
+			size = sizeof (regs);
+		}
 		memcpy (buf, &regs, size);
 		return sizeof(regs);
 		}

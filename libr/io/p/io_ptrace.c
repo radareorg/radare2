@@ -292,6 +292,14 @@ static int __close(RIODesc *desc) {
 	return ret;
 }
 
+static void show_help(void) {
+	eprintf ("Usage: =!cmd args\n"
+		" =!ptrace   - use ptrace io\n"
+		" =!mem      - use /proc/pid/mem io if possible\n"
+		" =!pid      - show targeted pid\n"
+		" =!pid <#>  - select new pid\n");
+}
+
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOPtrace *iop = (RIOPtrace*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
@@ -300,11 +308,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (!strcmp (cmd, "help")) {
-		eprintf ("Usage: =!cmd args\n"
-			" =!ptrace   - use ptrace io\n"
-			" =!mem      - use /proc/pid/mem io if possible\n"
-			" =!pid      - show targeted pid\n"
-			" =!pid <#>  - select new pid\n");
+		show_help ();
 	} else
 	if (!strcmp (cmd, "ptrace")) {
 		close_pidmem (iop);
@@ -327,7 +331,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			return r_str_newf ("%d", iop->pid);
 		}
 	} else {
-		eprintf ("Try: '=!pid'\n");
+		show_help ();
 	}
 	return NULL;
 }

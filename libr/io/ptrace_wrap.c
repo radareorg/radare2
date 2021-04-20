@@ -81,6 +81,7 @@ static void wrap_func(ptrace_wrap_instance *inst) {
 static void *th_run(ptrace_wrap_instance *inst) {
 	while (1) {
 		sem_wait (&inst->request_sem);
+
 		switch (inst->request.type) {
 		case PTRACE_WRAP_REQUEST_TYPE_STOP:
 			goto stop;
@@ -94,6 +95,7 @@ static void *th_run(ptrace_wrap_instance *inst) {
 			wrap_func (inst);
 			break;
 		}
+
 		sem_post (&inst->result_sem);
 	}
 stop:
