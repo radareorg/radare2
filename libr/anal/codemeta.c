@@ -153,10 +153,13 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 			prev = r_rbtree_cont_node_prev (node);
 		}
 		while (node) {
-			r_pvector_push (r, node->data);
+			RCodeMetaItem *mi = (RCodeMetaItem *)node->data;
+			if (!(start >= mi->end || end < mi->start)) {
+				r_pvector_push (r, mi);
+			}
 			node = r_rbtree_cont_node_next (node);
 			if (node) {
-				RCodeMetaItem *mi = (RCodeMetaItem *)node->data;
+				mi = (RCodeMetaItem *)node->data;
 				if (end < mi->start) {
 					break;
 				}
