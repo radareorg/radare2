@@ -2,7 +2,38 @@
 
 #include <r_core.h>
 #include <r_codemeta.h>
-#include <r_util.h>
+
+#define USE_TRI 1
+
+R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code) {
+	r_return_val_if_fail (code, NULL);
+	RCodeMetaItem *mi = r_codemeta_item_new ();
+	memcpy (mi, code, sizeof (RCodeMetaItem));
+	switch (mi->type) {
+	case R_CODEMETA_TYPE_FUNCTION_NAME:
+		mi->reference.name = strdup (mi->reference.name);
+		break;
+	case R_CODEMETA_TYPE_LOCAL_VARIABLE:
+	case R_CODEMETA_TYPE_FUNCTION_PARAMETER:
+		mi->variable.name = strdup (mi->variable.name);
+		break;
+	case R_CODEMETA_TYPE_CONSTANT_VARIABLE:
+	case R_CODEMETA_TYPE_OFFSET:
+	case R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT:
+	case R_CODEMETA_TYPE_GLOBAL_VARIABLE:
+		break;
+	}
+	return mi;
+}
+
+R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code) {
+	RCodeMeta *r = r_codemeta_new (code->code);
+	RCodeMetaItem *mi;
+	r_vector_foreach (&code->annotations, mi) {
+		r_codemeta_add_item (r, r_codemeta_item_clone (mi));
+	}
+	return r;
+}
 
 R_API RCodeMeta *r_codemeta_new(const char *code) {
 	RCodeMeta *r = R_NEW0 (RCodeMeta);
@@ -64,8 +95,6 @@ R_API void r_codemeta_free(RCodeMeta *code) {
 	r_free (code);
 }
 
-#define USE_TRI 1
-
 #if USE_TRI
 
 static int cmp_ins(void *incoming, void *in, void *user) {
@@ -121,7 +150,7 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 
 #endif
 
-R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *mi) {
+R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *mi) {
 	r_return_if_fail (code && mi);
 	r_vector_push (&code->annotations, mi);
 	r_rbtree_cont_insert (code->tree, mi, cmp_ins, NULL);

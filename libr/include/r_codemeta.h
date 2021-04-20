@@ -72,11 +72,12 @@ R_API void r_codemeta_item_free(RCodeMetaItem *e);
 R_API void r_codemeta_item_fini(RCodeMetaItem *e);
 R_API bool r_codemeta_item_is_reference(RCodeMetaItem *annotation);
 R_API bool r_codemeta_item_is_variable(RCodeMetaItem *annotation);
-R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *annotation);
+R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *annotation);
 R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset);
 R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end);
 R_API RVector *r_codemeta_line_offsets(RCodeMeta *code);
-
+R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code);
+R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code);
 #ifdef __cplusplus
 }
 #endif
