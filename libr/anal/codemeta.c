@@ -64,35 +64,67 @@ R_API void r_codemeta_free(RCodeMeta *code) {
 	r_free (code);
 }
 
-static int cm_add(void *incoming, void *in, void *user) {
-	RCodeMetaItem *mi = in;
-	RCodeMetaItem *mi2 = incoming;
-	return mi2->start - mi->start;
-}
-
-#define USE_TRI 0
+#define USE_TRI 1
 
 #if USE_TRI
-static int cm_cmp(void *incoming, void *in, void *user) {
+
+static int cmp_ins(void *incoming, void *in, void *user) {
 	RCodeMetaItem *mi = in;
 	RCodeMetaItem *mi2 = incoming;
-	ut64 at = mi2->start;
-	if (at >= mi->start && at <= mi->end) {
-		RPVector *r = (RPVector*)user;
-		r_pvector_push (r, mi);
-		return 0;
-	}
-	if (at > mi2->end) {
+	const size_t mid = mi->start + (mi->end - mi->start) / 2;	// this is buggy since 2/2 = 1/2 in C
+	const size_t mid2 = mi2->start + (mi2->end - mi2->start) / 2;
+	if (mid > mid2) {
 		return -1;
+	} else if (mid < mid2) {
+		return 1;
+	} else {
+		const ut32 mod = (mi->end - mi->start) & 0x1;	// this fixes the buggy
+		const ut32 mod2 = (mi2->end - mi2->start) & 0x1;
+		if (mod > mod2) {
+			return -1;
+		} else if (mod < mod2) {
+			return 1;
+		}
+	}
+	return ((int)mi2->type) - ((int)mi->type);	// avoid weird things
+}
+
+// cmp to find the lowest mid, that is bigger than or equal to search_mid
+// consider adding mod-bit to search_mid
+static int cmp_find_min_mid(void *incoming, void *in, void *user) {
+	RCodeMetaItem **min = (RCodeMetaItem **)user;
+	RCodeMetaItem *mi = (RCodeMetaItem *)in;
+	size_t *search_mid = (size_t *)incoming;
+	const size_t mid = mi->start + (mi->end - mi->start) / 2;
+	if (mid > search_mid[0]) {
+		if (!min[0]) {
+			min[0] = mi;
+			return -1;
+		}
+		const size_t min_mid = min[0]->start + (min[0]->end - min[0]->start) / 2;
+		if (mid < min_mid) {
+			min[0] = mi;
+		} else if (mid == min_mid) {
+			const ut32 mod = (mi->end - mi->start) & 0x1;
+			const ut32 min_mod = (min[0]->end - min[0]->start) & 0x1;
+			if (mod < min_mod) {
+				min[0] = mi;
+			}
+		}
+		return -1;
+	} else if (mid == search_mid[0]) {
+		min[0] = mi;
+		return 0;
 	}
 	return 1;
 }
+
 #endif
 
 R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *mi) {
 	r_return_if_fail (code && mi);
 	r_vector_push (&code->annotations, mi);
-	r_rbtree_cont_insert (code->tree, mi, cm_add, NULL);
+	r_rbtree_cont_insert (code->tree, mi, cmp_ins, NULL);
 }
 
 R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset) {
@@ -106,8 +138,34 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 		return NULL;
 	}
 #if USE_TRI
-	RCodeMetaItem my = { .start = start, .end = end };
-	r_rbtree_cont_find (code->tree, &my, cm_cmp, r);
+	size_t search_start = start / 2;
+	RCodeMetaItem *min = NULL;
+	r_rbtree_cont_find (code->tree, &search_start, cmp_find_min_mid, &min);
+	if (min) {
+		RContRBNode *node = r_rbtree_cont_find_node (code->tree, min, cmp_ins, NULL);	//get node for min
+		RContRBNode *prev = r_rbtree_cont_node_prev (node);
+		while (prev) {
+			RCodeMetaItem *mi = (RCodeMetaItem *)prev->data;
+			if (mi->end <= start) {
+				break;
+			}
+			node = prev;
+			prev = r_rbtree_cont_node_prev (node);
+		}
+		while (node) {
+			RCodeMetaItem *mi = (RCodeMetaItem *)node->data;
+			if (!(start >= mi->end || end < mi->start)) {
+				r_pvector_push (r, mi);
+			}
+			node = r_rbtree_cont_node_next (node);
+			if (node) {
+				mi = (RCodeMetaItem *)node->data;
+				if (end < mi->start) {
+					break;
+				}
+			}
+		}
+	}
 	return r;
 #else
 	RCodeMetaItem *mi;
