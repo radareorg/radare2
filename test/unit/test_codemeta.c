@@ -114,7 +114,7 @@ static RCodeMeta *get_hello_world(void) {
 	test_annotations = get_annotations_for_hello_world ();
 	RCodeMetaItem *annotation;
 	r_vector_foreach (test_annotations, annotation) {
-		r_codemeta_add_annotation (code, annotation);
+		r_codemeta_add_item (code, annotation);
 	}
 
 	r_vector_free (test_annotations);
@@ -129,11 +129,11 @@ static RCodeMeta *get_all_context_annotated_code(void) {
 	RCodeMetaItem global_variable = make_reference_annotation (23, 33, R_CODEMETA_TYPE_GLOBAL_VARIABLE, 123456, NULL);
 	RCodeMetaItem local_variable = make_variable_annotation (42, 51, R_CODEMETA_TYPE_LOCAL_VARIABLE, "local-var");
 	RCodeMetaItem function_parameter = make_variable_annotation (59, 73, R_CODEMETA_TYPE_FUNCTION_PARAMETER, "function-param");
-	r_codemeta_add_annotation (code, &function_name);
-	r_codemeta_add_annotation (code, &constant_variable);
-	r_codemeta_add_annotation (code, &global_variable);
-	r_codemeta_add_annotation (code, &local_variable);
-	r_codemeta_add_annotation (code, &function_parameter);
+	r_codemeta_add_item (code, &function_name);
+	r_codemeta_add_item (code, &constant_variable);
+	r_codemeta_add_item (code, &global_variable);
+	r_codemeta_add_item (code, &local_variable);
+	r_codemeta_add_item (code, &function_parameter);
 	return code;
 }
 
@@ -181,14 +181,14 @@ static bool test_equal(RCodeMetaItem *first, RCodeMetaItem *second) { // First -
 	return false;
 }
 
-static bool test_r_codemeta_add_annotation(void) {
+static bool test_r_codemeta_add_item(void) {
 	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 	RCodeMeta *code = r_codemeta_new (test_string);
 	RVector /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_code_annotation_for_add ();
 	RCodeMetaItem *annotation;
 	r_vector_foreach (test_annotations, annotation) {
-		r_codemeta_add_annotation (code, annotation);
+		r_codemeta_add_item (code, annotation);
 	}
 
 	//Comparing
@@ -212,7 +212,7 @@ static bool test_r_codemeta_at(void) {
 
 	RCodeMetaItem *annotation;
 	r_vector_foreach (test_annotations, annotation) {
-		r_codemeta_add_annotation (code, annotation);
+		r_codemeta_add_item (code, annotation);
 	}
 
 	RPVector *out = r_codemeta_at (code, 11);
@@ -241,7 +241,7 @@ static bool test_r_codemeta_in(void) {
 	test_annotations = get_some_annotations_for_in ();
 	RCodeMetaItem *annotation;
 	r_vector_foreach (test_annotations, annotation) {
-		r_codemeta_add_annotation (code, annotation);
+		r_codemeta_add_item (code, annotation);
 	}
 
 	RPVector *out = r_codemeta_in (code, 7, 16);
@@ -425,7 +425,7 @@ static bool test_r_codemeta_itemfree_and_is_annotation_type_functions(void) {
 static int all_tests(void) {
 	mu_run_test (test_r_codemeta_new);
 	mu_run_test (test_r_codemeta_free);
-	mu_run_test (test_r_codemeta_add_annotation);
+	mu_run_test (test_r_codemeta_add_item);
 	mu_run_test (test_r_codemeta_at);
 	mu_run_test (test_r_codemeta_in);
 	mu_run_test (test_r_codemeta_line_offsets);
