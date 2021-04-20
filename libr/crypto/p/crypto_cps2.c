@@ -726,7 +726,8 @@ static bool set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int dire
 	} else if (keylen == 20) {
 		const ut8* key8 = (const ut8*)key;
 		unsigned short decoded[10] = {0};
-		for (int b = 0; b < 10 * 16; b++) {
+		int b;
+		for (b = 0; b < 10 * 16; b++) {
 			int bit = (317 - b) % 160;
 			if ((key8[bit / 8] >> ((bit ^ 7) % 8)) & 1)	{
 				decoded[b / 16] |= (0x8000 >> (b % 16));
