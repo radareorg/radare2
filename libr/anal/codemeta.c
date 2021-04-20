@@ -64,6 +64,10 @@ R_API void r_codemeta_free(RCodeMeta *code) {
 	r_free (code);
 }
 
+#define USE_TRI 1
+
+#if USE_TRI
+
 static int cmp_ins(void *incoming, void *in, void *user) {
 	RCodeMetaItem *mi = in;
 	RCodeMetaItem *mi2 = incoming;
@@ -115,29 +119,6 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 	return 1;
 }
 
-static int cm_add(void *incoming, void *in, void *user) {
-	RCodeMetaItem *mi = in;
-	RCodeMetaItem *mi2 = incoming;
-	return mi2->start - mi->start;
-}
-
-#define USE_TRI 0
-
-#if USE_TRI
-static int cm_cmp(void *incoming, void *in, void *user) {
-	RCodeMetaItem *mi = in;
-	RCodeMetaItem *mi2 = incoming;
-	ut64 at = mi2->start;
-	if (at >= mi->start && at <= mi->end) {
-		RPVector *r = (RPVector*)user;
-		r_pvector_push (r, mi);
-		return 0;
-	}
-	if (at > mi2->end) {
-		return -1;
-	}
-	return 1;
-}
 #endif
 
 R_API void r_codemeta_add_annotation(RCodeMeta *code, RCodeMetaItem *mi) {
@@ -161,9 +142,9 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	RCodeMetaItem *min = NULL;
 	r_rbtree_cont_find (code->tree, &search_start, cmp_find_min_mid, &min);
 	if (min) {
-		RContRBNode *node = r_rbtree_cont_find (code->tree, min, cmp_ins, NULL);	//get node for min
+		RContRBNode *node = r_rbtree_cont_find_node (code->tree, min, cmp_ins, NULL);	//get node for min
 		RContRBNode *prev = r_rbtree_cont_node_prev (node);
-		while (prev)
+		while (prev) {
 			RCodeMetaItem *mi = (RCodeMetaItem *)prev->data;
 			if (mi->end <= start) {
 				break;
