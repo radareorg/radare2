@@ -4851,12 +4851,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			cmd = r_config_get (core->config, "key.f1");
 			if (cmd && *cmd) {
 				(void) r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F2:
 			cmd = r_config_get (core->config, "key.f2");
 			if (cmd && *cmd) {
 				(void) r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			} else {
 				graph_breakpoint (core);
 			}
@@ -4865,30 +4867,35 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			cmd = r_config_get (core->config, "key.f3");
 			if (cmd && *cmd) {
 				(void) r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F4:
 			cmd = r_config_get (core->config, "key.f4");
 			if (cmd && *cmd) {
 				(void) r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F5:
 			cmd = r_config_get (core->config, "key.f5");
 			if (cmd && *cmd) {
 				(void)r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F6:
 			cmd = r_config_get (core->config, "key.f6");
 			if (cmd && *cmd) {
 				(void)r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F7:
 			cmd = r_config_get (core->config, "key.f7");
 			if (cmd && *cmd) {
 				(void)r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			} else {
 				graph_single_step_in (core, g);
 			}
@@ -4897,6 +4904,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			cmd = r_config_get (core->config, "key.f8");
 			if (cmd && *cmd) {
 				(void)r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			} else {
 				graph_single_step_over (core, g);
 			}
@@ -4905,6 +4913,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			cmd = r_config_get (core->config, "key.f9");
 			if (cmd && *cmd) {
 				(void)r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			} else {
 				graph_continue (core);
 			}
@@ -4913,18 +4922,21 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			cmd = r_config_get (core->config, "key.f10");
 			if (cmd && *cmd) {
 				(void)r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F11:
 			cmd = r_config_get (core->config, "key.f11");
 			if (cmd && *cmd) {
 				(void)r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			}
 			break;
 		case R_CONS_KEY_F12:
 			cmd = r_config_get (core->config, "key.f12");
 			if (cmd && *cmd) {
 				(void)r_core_cmd0 (core, cmd);
+				g->need_reload_nodes = true;
 			}
 			break;
 		case -1: // EOF
