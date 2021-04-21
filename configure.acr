@@ -30,7 +30,7 @@ ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
 ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
-ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap disable ptrace-wrap build ;
+ARG_WITH WANT_PTRACE_WRAP ptrace-wrap enable ptrace-wrap needed to use the debugger in iaito ;
 
 ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
 
