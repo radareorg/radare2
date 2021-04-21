@@ -7,6 +7,7 @@ export ANDROID=1
 # make clean > /dev/null 2>&1
 rm -f libr/include/r_version.h
 bash ./configure --with-compiler=termux --prefix=${PREFIX}
+make libr/include/r_version.h
 touch -t 19700101 libr/include/r_version.h
 rm -f "${PREFIX}/lib/"libr_*
 make -j2
