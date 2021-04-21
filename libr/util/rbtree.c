@@ -1,4 +1,4 @@
-/* radare - BSD 3 Clause License - Copyright 2017 - MaskRay */
+/* radare - BSD 3 Clause License - Copyright 2017-2021 - MaskRay, condret */
 
 #include <stdio.h>
 
@@ -189,6 +189,10 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 		}
 	}
 	if (sum) {
+		if (depth >= R_RBTREE_MAX_HEIGHT) {
+			eprintf ("Too deep tree\n");
+			depth--;
+		}
 		while (depth--) {
 			sum (path[depth] == del ? q : path[depth]);
 		}

@@ -387,7 +387,7 @@ static mcore_t *find_instruction(const ut8* buffer) {
 
 	if (!strncmp (op_ptr->name, "lrw", 3) && (data & 0xf00) == 0xf00) {
 		// is jump
-		if (i > 0 && i< MCORE_INSTRS) {
+		if (i > 0 && (i + 1) < MCORE_INSTRS) {
 			op_ptr = &mcore_instructions[i + 1];
 		}
 	}
