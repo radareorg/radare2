@@ -63,7 +63,8 @@
 static HtUU *ht_itblock = NULL;
 static HtUU *ht_it = NULL;
 
-static const ut64 bitmask_by_width[] = {
+#define BITMASK_BY_WIDTH_COUNT 64
+static const ut64 bitmask_by_width[BITMASK_BY_WIDTH_COUNT] = {
 	0x1, 0x3, 0x7, 0xf, 0x1f, 0x3f, 0x7f, 0xff, 0x1ff, 0x3ff, 0x7ff,
 	0xfff, 0x1fff, 0x3fff, 0x7fff, 0xffff, 0x1ffff, 0x3ffff, 0x7ffff,
 	0xfffff, 0x1fffff, 0x3fffff, 0x7fffff, 0xffffff, 0x1ffffffLL, 0x3ffffffLL,
@@ -1060,14 +1061,17 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 		int shift = i * size;
 		char *regc = "l";
 		size_t s = sizeof (bitmask_by_width) / sizeof (*bitmask_by_width);
-		int width = size > 0? (size - 1) % s: 0;
-		ut64 mask = bitmask_by_width[width];
+		size_t index = size > 0? (size - 1) % s: 0;
+		if (index >= BITMASK_BY_WIDTH_COUNT) {
+			index = 0;
+		}
+		ut64 mask = bitmask_by_width[index];
 		if (shift >= 64) {
 			shift -= 64;
 			regc = "h";
 		}
 
-		if (shift > 0) {
+		if (shift > 0 && shift < 64) {
 			r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s", 
 				shift, mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
 		} else {
@@ -2191,7 +2195,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_BFXIL:
 	{
 		if (OPCOUNT64 () >= 3 && ISIMM64 (3) && IMM64 (3) > 0) {
-			ut64 mask = bitmask_by_width[IMM64 (3) - 1];
+			size_t index = IMM64 (3) - 1;
+			if (index >= BITMASK_BY_WIDTH_COUNT) {
+				index = 0;
+			}
+			ut64 mask = bitmask_by_width[index];
 			ut64 shift = IMM64 (2);
 			ut64 notmask = ~(mask << shift);
 			// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
@@ -2202,26 +2210,42 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	}
 	case ARM64_INS_SBFIZ:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
+			size_t index = IMM64 (3) - 1;
+			if (index >= BITMASK_BY_WIDTH_COUNT) {
+				index = 0;
+			}
 			r_strbuf_appendf (&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%"PFMT64u",&,~,<<,%s,=",
-					IMM64 (2), IMM64 (3), REG64 (1), (ut64)bitmask_by_width[IMM64 (3) - 1], REG64 (0));
+					IMM64 (2), IMM64 (3), REG64 (1), (ut64)bitmask_by_width[index], REG64 (0));
 		}
 		break;
 	case ARM64_INS_UBFIZ:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
+			size_t index = IMM64 (3) - 1;
+			if (index >= BITMASK_BY_WIDTH_COUNT) {
+				index = 0;
+			}
 			r_strbuf_appendf (&op->esil, "%" PFMT64d ",%s,%"PFMT64u",&,<<,%s,=",
-					IMM64 (2), REG64 (1), (ut64)bitmask_by_width[IMM64 (3) - 1], REG64 (0));
+					IMM64 (2), REG64 (1), (ut64)bitmask_by_width[index], REG64 (0));
 		}
 		break;
 	case ARM64_INS_SBFX:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
+			size_t index = IMM64 (3) - 1;
+			if (index >= BITMASK_BY_WIDTH_COUNT) {
+				index = 0;
+			}
 			r_strbuf_appendf (&op->esil, "%" PFMT64d ",%" PFMT64d ",%s,%" PFMT64d ",%"PFMT64u",<<,&,>>,~,%s,=",
-				IMM64 (3), IMM64 (2), REG64 (1), IMM64 (2) , (ut64)bitmask_by_width[IMM64 (3) - 1], REG64 (0));
+				IMM64 (3), IMM64 (2), REG64 (1), IMM64 (2) , (ut64)bitmask_by_width[index], REG64 (0));
 		}
 		break;
 	case ARM64_INS_UBFX:
 		if (IMM64 (3) > 0 && IMM64 (3) <= 64 - IMM64 (2)) {
+			size_t index = IMM64 (3) - 1;
+			if (index >= BITMASK_BY_WIDTH_COUNT) {
+				index = 0;
+			}
 			r_strbuf_appendf (&op->esil, "%" PFMT64d ",%s,%" PFMT64d ",%"PFMT64u",<<,&,>>,%s,=",
-				IMM64 (2), REG64 (1), IMM64 (2) , (ut64)bitmask_by_width[IMM64 (3) - 1], REG64 (0));
+				IMM64 (2), REG64 (1), IMM64 (2) , (ut64)bitmask_by_width[index], REG64 (0));
 		}
 		break;
 	case ARM64_INS_NEG:
@@ -2888,9 +2912,13 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "DUP,!,SWAP,&,%s,SWAP,cpsr,&,|,cpsr,=", REG(1));
 		break;
 	case ARM_INS_UBFX:
-		if (IMM(3)>0 && IMM(3)<=32-IMM(2)) {
+		if (IMM (3) > 0 && IMM (3) <= 32 - IMM (2)) {
+			size_t index = IMM (3) - 1;
+			if (index >= BITMASK_BY_WIDTH_COUNT) {
+				index = 0;
+			}
 			r_strbuf_appendf (&op->esil, "%d,%s,%d,%"PFMT64u",<<,&,>>,%s,=",
-				IMM(2), REG(1), IMM(2),(ut64)bitmask_by_width[IMM(3)-1], REG(0));
+				IMM(2), REG(1), IMM(2), bitmask_by_width[index], REG(0));
 		}
 		break;
 	case ARM_INS_UXTB:
@@ -2937,7 +2965,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_BFI:
 	{
 		if (OPCOUNT() >= 3 && ISIMM(3) && IMM(3) > 0 && IMM(3) < 64) {
-			ut64 mask = bitmask_by_width[IMM(3) - 1];
+			size_t index = IMM (3) - 1;
+			if (index >= BITMASK_BY_WIDTH_COUNT) {
+				index = 0;
+			}
+			ut64 mask = bitmask_by_width[index];
 			ut64 shift = IMM(2);
 			ut64 notmask = ~(mask << shift);
 			// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
@@ -2949,6 +2981,10 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_BFC:
 	{
 		if (OPCOUNT() >= 2 && ISIMM(2) && IMM(2) > 0 && IMM(2) < 64) {
+			size_t index = IMM (2) - 1;
+			if (index >= BITMASK_BY_WIDTH_COUNT) {
+				index = 0;
+			}
 			ut64 mask = bitmask_by_width[IMM(2) - 1];
 			ut64 shift = IMM(1);
 			ut64 notmask = ~(mask << shift);
