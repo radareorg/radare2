@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - pancake */
+/* radare - LGPL - Copyright 2014-2021 - pancake */
 
 #include "r_util/r_str.h"
 #include <r_util.h>
@@ -124,6 +124,10 @@ R_API const ut8 *r_leb128(const ut8 *data, int datalen, st64 *v) {
 		}
 		while (data < data_end) {
 			c = *(data++) & 0x0ff;
+			if (s > 56) {
+				// (127 << 56) max for st64
+				break;
+			}
 			sum |= ((st64) (c & 0x7f) << s);
 			s += 7;
 			if (!(c & 0x80)) {
