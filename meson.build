@@ -288,10 +288,10 @@ endif
 
 has_debugger = get_option('debugger')
 have_ptrace = not ['windows', 'cygwin', 'sunos'].contains(host_machine.system())
-use_ptrace_wrap = ['linux'].contains(host_machine.system())
+can_ptrace_wrap = ['linux'].contains(host_machine.system())
 
 have_ptrace = have_ptrace and has_debugger
-use_ptrace_wrap = use_ptrace_wrap and has_debugger
+use_ptrace_wrap = can_ptrace_wrap and has_debugger
 
 message('HAVE_PTRACE: @0@'.format(have_ptrace))
 message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))

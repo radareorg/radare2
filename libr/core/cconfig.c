@@ -1517,6 +1517,13 @@ static bool cb_dbg_maxsnapsize(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dbg_wrap(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->io->want_ptrace_wrap = node->i_value;
+	return true;
+}
+
 static bool cb_dbg_libs(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -3547,6 +3554,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("stack.delta", 0,  "Delta for the stack dump");
 
 	SETCB ("dbg.maxsnapsize", "32M", &cb_dbg_maxsnapsize, "Dont make snapshots of maps bigger than a specific size");
+	SETCB ("dbg.wrap", "false", &cb_dbg_wrap, "Enable the ptrace-wrap abstraction layer (needed for debugging from iaito)");
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
 	SETBPREF ("dbg.skipover", "false", "Make dso perform a dss (same goes for esil and visual/graph");
 	SETI ("dbg.hwbp", 0, "Set HW or SW breakpoints");

@@ -184,7 +184,7 @@ Optional Features:
   --disable-loadlibs     disable loading plugins
   --without-dylink       disable support for dynamic loading of plugins
   --without-fork         disable fork
-  --without-ptrace-wrap  disable ptrace-wrap build
+  --without-ptrace-wrap  build ptrace-wrap support needed for the iaito debugger on Linux
   --with-libr            build libr.a and libr.dylib
   --with-syscapstone     force to use system-wide capstone
   --with-syszip          force to use system's libzip and zlib
