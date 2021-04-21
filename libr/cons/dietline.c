@@ -963,7 +963,9 @@ static void __print_prompt(void) {
 	if (len > 0 && (i + len) <= I.buffer.length) {
 		if (i < I.buffer.length) {
 			size_t slen = R_MIN (len, (I.buffer.length - i));
-			fwrite (I.buffer.data + i, 1, slen, stdout);
+			if (slen > 0 && i < sizeof (I.buffer.data)) {
+				fwrite (I.buffer.data + i, 1, slen, stdout);
+			}
 		}
 	}
 	fflush (stdout);
