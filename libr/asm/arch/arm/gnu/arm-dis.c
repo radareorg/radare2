@@ -5101,7 +5101,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 							  }
 							  U_reg = value;
 						  }
-						  func (stream, "%s", arm_regnames[value]);
+						  func (stream, "%s", value < 16? arm_regnames[value]: "?");
 						  break;
 					  case 'd':
 						  func (stream, "%ld", value);
