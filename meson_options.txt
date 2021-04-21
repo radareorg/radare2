@@ -39,7 +39,7 @@ option('use_libuv', type: 'boolean', value: true)
 option('use_fork', type: 'boolean', value: true)
 option('use_dylink', type: 'boolean', value: true)
 option('debugger', type: 'boolean', value: true)
-option('want_ptrace_wrap', type: 'boolean', value: false)
+option('want_ptrace_wrap', type: 'boolean', value: true)
 option('nogpl', type: 'boolean', value: false)
 
 option('use_webui', type: 'boolean', value: false, description: 'install different WebUIs for radare2')

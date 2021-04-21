@@ -49,6 +49,9 @@ typedef void * r_ptrace_data_t;
 typedef int r_ptrace_request_t;
 typedef void * r_ptrace_data_t;
 #define R_PTRACE_NODATA NULL
+#elif __APPLE__
+typedef int r_ptrace_request_t;
+typedef int r_ptrace_data_t;
 #else
 typedef int r_ptrace_request_t;
 typedef void *r_ptrace_data_t;
@@ -121,6 +124,7 @@ typedef struct r_io_t {
 	REvent *event;
 	PrintfCallback cb_printf;
 	RCoreBind corebind;
+	bool want_ptrace_wrap;
 #if __WINDOWS__
 	struct w32dbg_wrap_instance_t *w32dbg_wrap;
 #endif
