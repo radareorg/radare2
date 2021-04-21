@@ -43,6 +43,7 @@ static char *runcmd(const char *cmd) {
 		if (rc == -1) {
 			break;
 		}
+		buf[sizeof (buf) - 1] = 0;
 		char *promptFound = strstr (buf, "Wine-dbg>");
 		if (promptFound) {
 			*promptFound = 0;
