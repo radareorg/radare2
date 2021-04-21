@@ -5787,8 +5787,9 @@ toro:
 			} else if (ds->immtrim) {
 				free (ds->opstr);
 				ds->opstr = strdup (r_asm_op_get_asm (&ds->asmop));
-				char *res = r_parse_immtrim (ds->opstr);
+				char *res = r_parse_immtrim (strdup (ds->opstr));
 				if (res) {
+					free (ds->opstr);
 					ds->opstr = res;
 				}
 			} else if (ds->use_esil) {
