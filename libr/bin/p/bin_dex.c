@@ -1592,6 +1592,7 @@ static bool dex_loadcode(RBinFile *bf) {
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	size_t i;
 	int *methods = NULL;
+	size_t methods_size = 0;
 	int sym_count = 0;
 	// doublecheck??
 	if (dex->methods_list) {
@@ -1643,7 +1644,8 @@ static bool dex_loadcode(RBinFile *bf) {
 		if (amount > UT32_MAX || amount < dex->header.method_size) {
 			return false;
 		}
-		methods = calloc (1, amount + 1);
+		methods_size = amount + 1;
+		methods = calloc (1, methods_size);
 		for (i = 0; i < dex->header.class_size; i++) {
 			struct dex_class_t *c = &dex->classes[i];
 			if (dexdump) {
@@ -1656,7 +1658,7 @@ static bool dex_loadcode(RBinFile *bf) {
 		int import_count = 0;
 		int sym_count = dex->methods_list->length;
 
-		for (i = 0; i < dex->header.method_size; i++) {
+		for (i = 0; i < dex->header.method_size && i < methods_size; i++) {
 			int len = 0;
 			if (methods[i]) {
 				continue;
