@@ -235,6 +235,12 @@ void r_bin_dex_free(RBinDexObj *dex) {
 		}
 	}
 	free (dex->cal_strings);
+	free (dex->strings);
+	free (dex->classes);
+	free (dex->methods);
+	free (dex->types);
+	free (dex->fields);
+	free (dex->protos);
 }
 
 RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {

@@ -1096,7 +1096,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		sym->ordinal = (*sym_count)++;
 
 		if (dexdump) {
-			const char *accessStr = createAccessFlagStr (
+			char *accessStr = createAccessFlagStr (
 				accessFlags, kAccessForField);
 			bin->cb_printf ("    #%zu              : (in %s;)\n", i,
 					 cls->name);
@@ -1104,6 +1104,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			bin->cb_printf ("      type          : '%s'\n", type_str);
 			bin->cb_printf ("      access        : 0x%04x (%s)\n",
 					 (ut32)accessFlags, r_str_get (accessStr));
+			free (accessStr);
 		}
 		r_list_append (dex->methods_list, sym);
 
@@ -1224,11 +1225,12 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			t = 16 + 2 * insns_size + padd;
 		}
 		if (dexdump) {
-			const char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
+			char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
 			cb_printf ("    #%d              : (in %s;)\n", i, cls->name);
 			cb_printf ("      name          : '%s'\n", method_name);
 			cb_printf ("      type          : '%s'\n", signature);
 			cb_printf ("      access        : 0x%04x (%s)\n", (ut32)MA, accessStr);
+			free (accessStr);
 		}
 
 		if (MC > 0) {
@@ -1475,13 +1477,12 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		free (cls);
 		goto beach;
 	}
-	const char *str = createAccessFlagStr (c->access_flags, kAccessForClass);
-	cls->visibility_str = strdup (r_str_get (str));
+	cls->visibility_str = createAccessFlagStr (c->access_flags, kAccessForClass);
 	r_list_append (dex->classes_list, cls);
 	if (dexdump) {
 		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls->name);
 		rbin->cb_printf ("  Access flags      : 0x%04x (%s)\n", c->access_flags,
-			createAccessFlagStr (c->access_flags, kAccessForClass));
+				r_str_get (cls->visibility_str));
 		rbin->cb_printf ("  Superclass        : '%s'\n", cls->super);
 		rbin->cb_printf ("  Interfaces        -\n");
 	}
@@ -1979,7 +1980,7 @@ static RList *sections(RBinFile *bf) {
 	if (!bin->code_from || !bin->code_to) {
 		fast_code_size (bf);
 	}
-	if (!(ret = r_list_newf (free))) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_section_free))) {
 		return NULL;
 	}
 

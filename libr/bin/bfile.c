@@ -974,9 +974,10 @@ R_IPI RBinClass *r_bin_class_new(const char *name, const char *super, int view) 
 }
 
 R_IPI void r_bin_class_free(RBinClass *k) {
-	if (k && k->name) {
+	if (k) {
 		free (k->name);
 		free (k->super);
+		free (k->visibility_str);
 		r_list_free (k->methods);
 		r_list_free (k->fields);
 		free (k);
