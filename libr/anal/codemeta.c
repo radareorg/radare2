@@ -171,7 +171,7 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	RCodeMetaItem *min = NULL;
 	r_rbtree_cont_find (code->tree, &search_start, cmp_find_min_mid, &min);
 	if (min) {
-		const size_t end_mid = (end - 1) + ((UT64_MAX - end - 1) / 2);
+		const size_t end_mid = (end - 1) + ((SIZE_MAX - end - 1) / 2);
 		RContRBNode *node = r_rbtree_cont_find_node (code->tree, min, cmp_ins, NULL);	//get node for min
 		RContRBNode *prev = r_rbtree_cont_node_prev (node);
 		while (prev) {
