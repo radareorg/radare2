@@ -3475,7 +3475,7 @@ static int cmp_RBinElfSymbol(const RBinElfSymbol *a, const RBinElfSymbol *b) {
 	return strcmp (a->type, b->type);
 }
 
-static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin) {
+static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 	if (bin->g_sections) {
 		size_t i;
 		for (i = 0; !bin->g_sections[i].last; i++) {
@@ -3494,11 +3494,12 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin) {
 				if (odata) {
 					RBuffer *newelf = r_buf_new_with_pointers (odata, osize, false);
 					ELFOBJ* newobj = Elf_(r_bin_elf_new_buf)(newelf, false);
-					struct r_bin_elf_symbol_t *symbol = Elf_(r_bin_elf_get_symbols) (newobj);
+					RBinElfSymbol *symbol = Elf_(r_bin_elf_get_symbols) (newobj);
 					newobj->g_symbols = NULL;
 					Elf_(r_bin_elf_free)(newobj);
 					r_buf_free (newelf);
 					free (odata);
+					*ret_size = i;
 					return symbol;
 				}
 				free (data);
@@ -3542,9 +3543,10 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	if (shdr_size + 8 > bin->size) {
 		return NULL;
 	}
-	RBinElfSymbol *dbgsyms = parse_gnu_debugdata (bin);
+	RBinElfSymbol *dbgsyms = parse_gnu_debugdata (bin, &ret_size);
 	if (dbgsyms) {
 		ret = dbgsyms;
+		ret_ctr = ret_size;
 	}
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if (((type & R_BIN_ELF_SYMTAB_SYMBOLS) && bin->shdr[i].sh_type == SHT_SYMTAB) ||
