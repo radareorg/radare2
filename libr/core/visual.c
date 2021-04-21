@@ -3546,6 +3546,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					buf[j] = 0;
 					free (duped);
 				}
+				buf[sizeof (buf) - 1] = 0;
 				r_core_cmd (core, buf, 1);
 				if (core->print->cur_enabled) {
 					r_core_seek (core, orig, true);
