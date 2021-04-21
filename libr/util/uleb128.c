@@ -122,9 +122,9 @@ R_API const ut8 *r_leb128(const ut8 *data, int datalen, st64 *v) {
 			data++;
 			goto beach;
 		}
-		while (data < data_end) {
+		while (data < data_end && s <= 56) {
 			c = *(data++) & 0x0ff;
-			sum |= ((st64) (c & 0x7f) << s);
+			sum |= ((st64) (c & 0x7f) << s); // (127 << 56) max for st64
 			s += 7;
 			if (!(c & 0x80)) {
 				break;
