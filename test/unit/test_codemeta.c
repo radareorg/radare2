@@ -110,11 +110,10 @@ static RCodeMeta *get_hello_world(void) {
 	char *test_string = strdup ("\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n");
 	RCodeMeta *code = r_codemeta_new (test_string);
 
-	RVector /*<RCodeMetaItem>*/ *test_annotations;
-	test_annotations = get_annotations_for_hello_world ();
+	RVector /*<RCodeMetaItem>*/ *test_annotations = get_annotations_for_hello_world ();
 	RCodeMetaItem *annotation;
 	r_vector_foreach (test_annotations, annotation) {
-		r_codemeta_add_item (code, annotation);
+		r_codemeta_add_item (code, r_codemeta_item_clone (annotation));
 	}
 
 	r_vector_free (test_annotations);
