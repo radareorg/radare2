@@ -31,8 +31,6 @@ typedef struct RVc {
 	RvcBranch *current_branch;
 } Rvc;
 
-
-
 R_API RvcBlob *rvc_path_to_commit(Rvc *repo, const char *path);
 R_API RList *rvc_uncomitted(Rvc *repo);
 R_API bool rvc_checkout(Rvc *repo, const char *name);
