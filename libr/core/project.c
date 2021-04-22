@@ -683,7 +683,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			free (git_dir);
 			git_add (prj_dir, ".");
 			if (r_cons_is_interactive ()) {
-				git_commit_interactive (prj_dir);
+				git_commit (prj_dir, NULL);
 			} else {
 				git_commit (prj_dir, "commit");
 			}
