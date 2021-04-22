@@ -516,8 +516,12 @@ R_API int git_init (const char *path) {
 	return r_sys_cmdf ("git init %s", path);
 }
 
-R_API int git_branch (const char *path, const char *name) {
-	return r_sys_cmdf ("git -C %s checkout -b %s", path, name);
+R_API bool git_branch (const char *path, const char *name) {
+	return !r_sys_cmdf ("git -C %s branch %s", path, name);
+}
+
+R_API bool git_checkout (const char *path, const char *name) {
+	return !r_sys_cmdf ("git -C %s checkout %s", path, name);
 }
 
 R_API int git_add (const char *path, const char *fname) {
