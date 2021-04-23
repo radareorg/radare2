@@ -82,6 +82,12 @@
 #define __POWERPC__ 1
 #endif
 
+#if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
+#define TARGET_OS_IPHONE 1
+#else
+#define TARGET_OS_IPHONE 0
+#endif
+
 #if __IPHONE_8_0 && TARGET_OS_IPHONE
 #define LIBC_HAVE_SYSTEM 0
 #else
@@ -174,12 +180,6 @@
 #if __WINDOWS__ || _WIN32
   #define __addr_t_defined
   #include <windows.h>
-#endif
-
-#if defined(__APPLE__) && (__arm__ || __arm64__ || __aarch64__)
-#define TARGET_OS_IPHONE 1
-#else
-#define TARGET_OS_IPHONE 0
 #endif
 
 #ifdef __GNUC__
