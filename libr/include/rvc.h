@@ -31,15 +31,15 @@ typedef struct RVc {
 	RvcBranch *current_branch;
 } Rvc;
 
-R_API RvcBlob *rvc_path_to_commit(Rvc *repo, const char *path);
-R_API RList *rvc_uncomitted(Rvc *repo);
-R_API bool rvc_checkout(Rvc *repo, const char *name);
-R_API bool rvc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message);
-R_API bool rvc_branch(Rvc *repo, const char *name);
-R_API RList *rvc_add(Rvc *repo, RList *files);
-R_API Rvc *rvc_new(const char *path);
-R_API int git_init(const char *path);
-R_API bool git_branch(const char *path, const char *name);
-R_API bool git_checkout(const char *path, const char *name);
-R_API int git_add(const char *path, const char *fname);
-R_API int git_commit(const char *path, const char *message);
+R_API RvcBlob *r_vc_path_to_commit(Rvc *repo, const char *path);
+R_API RList *r_vc_uncomitted(Rvc *repo);
+R_API bool r_vc_checkout(Rvc *repo, const char *name);
+R_API bool r_vc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message);
+R_API bool r_vc_branch(Rvc *repo, const char *name);
+R_API RList *r_vc_add(Rvc *repo, RList *files);
+R_API Rvc *r_vc_new(const char *path);
+R_API int r_vc_git_init(const char *path);
+R_API bool r_vc_git_branch(const char *path, const char *name);
+R_API bool r_vc_git_checkout(const char *path, const char *name);
+R_API int r_vc_git_add(const char *path, const char *fname);
+R_API int r_vc_git_commit(const char *path, const char *message);

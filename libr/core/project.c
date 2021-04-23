@@ -678,14 +678,14 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		char *git_dir = r_str_newf ("%s" R_SYS_DIR ".git", prj_dir);
 		if (!r_config_get_i (core->config, "vc.rvc")) {
 			if (!r_file_is_directory (git_dir)) {
-				git_init (prj_dir);
+				r_vc_git_init (prj_dir);
 			}
 			free (git_dir);
-			git_add (prj_dir, ".");
+			r_vc_git_add (prj_dir, ".");
 			if (r_cons_is_interactive ()) {
-				git_commit (prj_dir, NULL);
+				r_vc_git_commit (prj_dir, NULL);
 			} else {
-				git_commit (prj_dir, "commit");
+				r_vc_git_commit (prj_dir, "commit");
 			}
 
 		}

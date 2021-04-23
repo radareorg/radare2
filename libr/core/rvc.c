@@ -177,7 +177,7 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	fclose (prev_file);
 	return true;
 }
-R_API bool rvc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message) {
+R_API bool r_vc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message) {
 	RvcCommit *nc = R_NEW (RvcCommit);
 	if (!nc) {
 		eprintf ("Failed To Allocate New Commit\n");
@@ -211,7 +211,7 @@ R_API bool rvc_commit(Rvc *repo, RList *blobs, const char *auth, const char *mes
 	repo->current_branch->head = nc;
 	return true;
 }
-R_API bool rvc_branch(Rvc *repo, const char *name) {
+R_API bool r_vc_branch(Rvc *repo, const char *name) {
 	char *bpath, *ppath;
 	RvcBranch *nb;
 	nb = R_NEW0 (RvcBranch);
@@ -257,7 +257,7 @@ R_API bool rvc_branch(Rvc *repo, const char *name) {
 	return true;
 }
 
-R_API Rvc *rvc_new(const char *path) {
+R_API Rvc *r_vc_new(const char *path) {
 	Rvc *repo = R_NEW (Rvc);
 	char *blob_path;
 	char *rabsp;
@@ -297,7 +297,7 @@ R_API Rvc *rvc_new(const char *path) {
 		free (repo->path);
 		return NULL;
 	}
-	if (!rvc_branch (repo, "master")) {
+	if (!r_vc_branch (repo, "master")) {
 		eprintf ("Failed To Create The master Branch\n");
 		free (repo->path);
 		r_list_free (repo->branches);
@@ -320,30 +320,30 @@ R_API Rvc *rvc_new(const char *path) {
 	free (blob_path);
 	return repo;
 }
-R_API RList *rvc_add(Rvc *repo, RList *files) {
+R_API RList *r_vc_add(Rvc *repo, RList *files) {
 	RListIter *iter;
 	char *fname;
 	RList *blobs = r_list_new ();
 	if (!blobs) {
-		eprintf ("rvc_add: memory failieur\n");
+		eprintf ("r_vc_add: memory failieur\n");
 		return NULL;
 	}
 	r_list_foreach (files, iter, fname) {
 		char *bpath;
 		if (!r_file_exists (fname)) {
 			r_list_free (blobs);
-			eprintf ("rvc_add: file: %s doesn't exist", fname);
+			eprintf ("r_vc_add: file: %s doesn't exist", fname);
 			return NULL;
 		}
 		RvcBlob *blob = R_NEW (RvcBlob);
 		if (!blob) {
-			eprintf ("rvc_add: Memory Faileur\n");
+			eprintf ("r_vc_add: Memory Faileur\n");
 			r_list_free (blobs);
 			return NULL;
 		}
 		blob->fname = p2rvcp (repo, fname);
 		if (!blob->fname) {
-			eprintf ("rvc_add: Memory Faileur\n");
+			eprintf ("r_vc_add: Memory Faileur\n");
 			r_list_free (blobs);
 			free (blob);
 			return NULL;
@@ -352,12 +352,12 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 			r_list_free (blobs);
 			free (blob);
 			free (blob->fname);
-			eprintf ("rvc_add: Can't Add Directories (Yet)");
+			eprintf ("r_vc_add: Can't Add Directories (Yet)");
 			return NULL;
 		}
 		blob->hash = sha256_file (fname);
 		if (!blob->hash) {
-			eprintf ("rvc_add: Memory Faileur\n");
+			eprintf ("r_vc_add: Memory Faileur\n");
 			r_list_free (blobs);
 			free (blob->fname);
 			free (blob);
@@ -366,7 +366,7 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 		bpath = r_str_newf ("%s" R_SYS_DIR "blobs" R_SYS_DIR "%s",
 				repo->path, blob->hash);
 		if (!bpath) {
-			eprintf ("rvc_add Memory Faileur\n");
+			eprintf ("r_vc_add Memory Faileur\n");
 			r_list_free (blobs);
 			free (blob->fname);
 			free (blob->hash);
@@ -374,7 +374,7 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 			return NULL;
 		}
 		if (r_sys_cmdf ("cp -f '%s' '%s'", fname, bpath)) {
-			eprintf ("rvc_add: can't copy blob\n");
+			eprintf ("r_vc_add: can't copy blob\n");
 			r_list_free (blobs);
 			free (blob->fname);
 			free (blob->hash);
@@ -383,7 +383,7 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 		}
 		free (bpath);
 		if (!r_list_append (blobs, blob)) {
-			eprintf ("rvc_add: can't copy blob\n");
+			eprintf ("r_vc_add: can't copy blob\n");
 			r_list_free (blobs);
 			free (blob->fname);
 			free (blob->hash);
@@ -394,7 +394,7 @@ R_API RList *rvc_add(Rvc *repo, RList *files) {
 	return blobs;
 }
 
-R_API RvcBlob *rvc_path_to_commit(Rvc *repo, const char *path) {
+R_API RvcBlob *r_vc_path_to_commit(Rvc *repo, const char *path) {
 	RvcCommit *i;
 	i = repo->current_branch->head;
 	do {
@@ -420,7 +420,7 @@ R_API RvcBlob *rvc_path_to_commit(Rvc *repo, const char *path) {
 	return NULL;
 }
 
-R_API RvcBlob *rvc_last_blob(Rvc *repo, const char *path) {
+R_API RvcBlob *r_vc_last_blob(Rvc *repo, const char *path) {
 	RvcCommit *i;
 	i = repo->current_branch->head;
 	do {
@@ -435,7 +435,7 @@ R_API RvcBlob *rvc_last_blob(Rvc *repo, const char *path) {
 	return NULL;
 }
 
-R_API RList *rvc_uncomitted(Rvc *repo) {
+R_API RList *r_vc_uncomitted(Rvc *repo) {
 	RListIter *iter, *tmp;
 	char *path;
 	char *rp = read_until (repo->path, R_SYS_DIR ".rvc/");
@@ -461,7 +461,7 @@ R_API RList *rvc_uncomitted(Rvc *repo) {
 			r_list_delete (files, iter);
 			continue;
 		}
-		if (rvc_path_to_commit (repo, path)) {
+		if (r_vc_path_to_commit (repo, path)) {
 			r_list_delete (files, iter);
 		}
 	}
@@ -469,7 +469,7 @@ R_API RList *rvc_uncomitted(Rvc *repo) {
 	return files;
 }
 
-R_API bool rvc_checkout(Rvc *repo, const char *name) {
+R_API bool r_vc_checkout(Rvc *repo, const char *name) {
 	RListIter *iter;
 	char *fpath;
 	RvcBranch *branch = branch_by_name (repo, name);
@@ -477,7 +477,7 @@ R_API bool rvc_checkout(Rvc *repo, const char *name) {
 		return false;
 	}
 	RvcBranch *tmpb;
-	RList *uncomitted = rvc_uncomitted (repo);
+	RList *uncomitted = r_vc_uncomitted (repo);
 	if (!uncomitted) {
 		eprintf ("Memory failieur\n");
 		return false;
@@ -493,11 +493,11 @@ R_API bool rvc_checkout(Rvc *repo, const char *name) {
 	r_list_free (uncomitted);
 	tmpb = repo->current_branch;
 	repo->current_branch = branch;
-	uncomitted = rvc_uncomitted (repo);
+	uncomitted = r_vc_uncomitted (repo);
 	r_list_foreach (uncomitted, iter, fpath) {
 		RvcBlob *blob;
 		char *bpath;
-		blob = rvc_last_blob (repo, fpath);
+		blob = r_vc_last_blob (repo, fpath);
 		bpath = r_str_newf ("%s" R_SYS_DIR "blobs" R_SYS_DIR "%s",
 				repo->path, blob->hash);
 		if (!bpath) {
@@ -512,19 +512,19 @@ R_API bool rvc_checkout(Rvc *repo, const char *name) {
 	return true;
 }
 
-R_API int git_init (const char *path) {
+R_API int r_vc_git_init (const char *path) {
 	return r_sys_cmdf ("git init %s", path);
 }
 
-R_API bool git_branch (const char *path, const char *name) {
+R_API bool r_vc_git_branch (const char *path, const char *name) {
 	return !r_sys_cmdf ("git -C %s branch %s", path, name);
 }
 
-R_API bool git_checkout (const char *path, const char *name) {
+R_API bool r_vc_git_checkout (const char *path, const char *name) {
 	return !r_sys_cmdf ("git -C %s checkout %s", path, name);
 }
 
-R_API int git_add (const char *path, const char *fname) {
+R_API int r_vc_git_add (const char *path, const char *fname) {
 	int ret;
 	char *cwd = r_sys_getdir();
 	if (!cwd) {
@@ -544,7 +544,7 @@ R_API int git_add (const char *path, const char *fname) {
 	return ret;
 }
 
-R_API int git_commit (const char *path, const char *message) {
+R_API int r_vc_git_commit (const char *path, const char *message) {
 	return message ? r_sys_cmdf ("git -C %s commit -m %s", path, message) :
 		r_sys_cmdf ("git -C %s commit", path);
 }
