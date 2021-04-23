@@ -1109,9 +1109,9 @@ static bool _sig_bytediff_cb(RLevBuf *va, RLevBuf *vb, ut32 ia, ut32 ib) {
 
 #define lines_addbytesmask(l, sig, index, add, col) \
 	if (col) { \
-		l.bytes = r_str_appendf (l.bytes, " %s%s%02x\e[0m", col, add, sig->bytes[index]); \
-		l.mask = r_str_appendf (l.mask, " %s%s%02x\e[0m", col, add, sig->mask[index]); \
-		l.land = r_str_appendf (l.land, " %s%s%02x\e[0m", col, add, sig->bytes[index] & sig->mask[index]); \
+		l.bytes = r_str_appendf (l.bytes, " %s%s%02x\x1b[0m", col, add, sig->bytes[index]); \
+		l.mask = r_str_appendf (l.mask, " %s%s%02x\x1b[0m", col, add, sig->mask[index]); \
+		l.land = r_str_appendf (l.land, " %s%s%02x\x1b[0m", col, add, sig->bytes[index] & sig->mask[index]); \
 	} else { \
 		l.bytes = r_str_appendf (l.bytes, " %s%02x", add, sig->bytes[index]); \
 		l.mask = r_str_appendf (l.mask, " %s%02x", add, sig->mask[index]); \
@@ -1140,9 +1140,9 @@ static void print_zig_diff(RCore *c, RSignBytes *ab, RSignBytes *bb, RLevOp *ops
 	char *colsub, *coladd, *coldel;
 	colsub = coladd = coldel = NULL;
 	if (r_config_get_b (c->config, "scr.color")) {
-		coldel = "\e[1;31m";
-		coladd = "\e[1;32m";
-		colsub = "\e[1;33m";
+		coldel = "\x1b[1;31m";
+		coladd = "\x1b[1;32m";
+		colsub = "\x1b[1;33m";
 	}
 
 	int i, ia, ib, iastart, ibstart;
