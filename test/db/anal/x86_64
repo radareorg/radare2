@@ -1677,7 +1677,7 @@ w hello @ 0x18
 pd 2
 EOF
 EXPECT=<<EOF
-            0x00000000      15008052       movz w21, 0
+            0x00000000      15008052       mov w21, 0
         ,=< 0x00000004      b5000034       cbz w21, 0x18               ; likely
 EOF
 RUN
@@ -2467,7 +2467,7 @@ EXPECT=<<EOF
     "esil": "8,rsp,-=,eflags,rsp,=[8]",
     "sign": false,
     "prefix": 0,
-    "id": 591,
+    "id": 612,
     "opex": {
       "operands": [
         {
@@ -3239,7 +3239,7 @@ mnemonic: push
 description: push word, doubleword or quadword onto the stack
 mask: ff
 prefix: 0
-id: 588
+id: 609
 bytes: 55
 refptr: 0
 size: 1

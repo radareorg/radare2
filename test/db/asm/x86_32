@@ -108,8 +108,8 @@ d "jo 6" 0f8000000000
 d "jp 6" 0f8a00000000
 d "js 6" 0f8800000000
 d "lar eax, word [eax]" 0f0200
-d "lcall [0]" ff1c2500000000
-d "lcall [eax]" ff18
+d "call [0]" ff1c2500000000
+d "call [eax]" ff18
 d "lddqu xmm0, xmmword [eax]" f20ff000
 d "ldmxcsr dword [eax]" 0fae10
 d "lds eax, [eax]" c500
@@ -126,7 +126,7 @@ d "lock and word fs:[bx + si], si" 646766f02130
 d "lodsb al, byte [esi]" ac
 d "lodsd eax, dword [esi]" ad
 d "loop 3" 66e200
-d "lsl eax, dword [eax]" 0f0300
+d "lsl eax, word [eax]" 0f0300
 d "ltr ax" 0f00d8
 d "ltr word [eax]" 0f0018
 d "lzcnt eax, dword [eax]" f30fbd00
@@ -395,13 +395,13 @@ d "xadd byte [eax], al" 0fc000
 d "xadd dword [eax], eax" 0fc100
 d "xchg byte [eax], al" 8600
 d "xchg dword [eax], eax" 8700
-d "xchg eax, ebp" 95
-d "xchg eax, ebx" 93
-d "xchg eax, ecx" 91
-d "xchg eax, edi" 97
-d "xchg eax, edx" 92
-d "xchg eax, esi" 96
-d "xchg eax, esp" 94
+d "xchg ebp, eax" 95
+d "xchg ebx, eax" 93
+d "xchg ecx, eax" 91
+d "xchg edi, eax" 97
+d "xchg edx, eax" 92
+d "xchg esi, eax" 96
+d "xchg esp, eax" 94
 d "xgetbv" 0f01d0
 d "xlatb" D7
 d "xor al, 0" 3400
@@ -423,7 +423,7 @@ dB "cmpxchg8b dword [eax]" 0fc7c0
 dB "extrq xmm0, 0, 0" 660f78000000
 dB "extrq xmm0, xmm0" 660f7900
 dB "invlpga" 0f01df
-dB "lcall 0, 0" 9a
+# dB "lcall 0, 0" 9a
 dB "lfs eax, dword [eax]" 0fb400
 dB "lgs eax, dword [eax]" 0fb500
 dB "lock mov dword [eax], eax" f08900
@@ -492,9 +492,9 @@ d "pmaddubsw xmm0, xmmword [eax]" 660f380400
 d "phsubw xmm0, xmmword [eax]" 660f380500
 d "phsubd xmm0, xmmword [eax]" 660f380600
 d "phsubsw xmm0, xmmword [eax]" 660f380700
-d "pblendvb xmm0, xmm0" 660f3810c0
-d "blendvps xmm0, xmm0" 660f3814c0
-d "blendvpd xmm0, xmm0" 660f3815c0
+d "pblendvb xmm0, xmm0, xmm0" 660f3810c0
+d "blendvps xmm0, xmm0, xmm0" 660f3814c0
+d "blendvpd xmm0, xmm0, xmm0" 660f3815c0
 d "ptest xmm0, xmm0" 660f3817c0
 d "pcmpgtq xmm0, xmm0" 660f3837c0
 d "pmulld xmm0, xmm0" 660f3840c0
@@ -565,11 +565,11 @@ d "minsd xmm0, qword [eax]" f20f5d00
 d "maxsd xmm0, qword [eax]" f20f5f00
 d "minss xmm0, dword [eax]" f30f5d00
 d "maxss xmm0, dword [eax]" f30f5f00
-d "punpcklbw mm0, qword [eax]" 0f6000
-d "punpcklwd mm0, qword [eax]" 0f6100
-d "punpckldq mm0, qword [eax]" 0f6200
+d "punpcklbw mm0, dword [eax]" 0f6000
 d "punpcklbw xmm0, xmmword [eax]" 660f6000
+d "punpcklwd mm0, dword [eax]" 0f6100
 d "punpcklwd xmm0, xmmword [eax]" 660f6100
+d "punpckldq mm0, dword [eax]" 0f6200
 d "punpckldq xmm0, xmmword [eax]" 660f6200
 d "packsswb mm0, qword [eax]" 0f6300
 d "packuswb mm0, qword [eax]" 0f6700
@@ -709,7 +709,7 @@ d "movaps xmmword [eax], xmm0" 0f2900
 d "movntps xmmword [eax], xmm0" 0f2b00
 d "movntpd xmmword [eax], xmm0" 660f2b00
 d "ucomiss xmm0, dword [eax]" 0f2e00
-d "comiss xmm0, xmmword [eax]" 0f2f00
+d "comiss xmm0, dword [eax]" 0f2f00
 d "ucomisd xmm0, qword [eax]" 660f2e00
 d "comisd xmm0, xmmword [eax]" 660f2f00
 d "psubb mm0, qword [eax]" 0ff800
@@ -841,8 +841,8 @@ d "vphadduwd xmm0, xmm0" 8fe978d6c0
 d "vphadduwq xmm0, xmm0" 8fe978d7c0
 d "vpmadcsswd xmm0, xmm0, xmm0, xmm0" 8fe878a6c000
 ad "aaa" 37
-ad "aad" d50a
-ad "aam" d40a
+ad "aad 0xa" d50a
+ad "aam 0xa" d40a
 a "aam 12" d40c
 ad "aas" 3f
 ad "adc al, 0" 1400
@@ -904,8 +904,8 @@ aB "andps xmm0, xmmword [eax]" 0f5400
 aB "arpl word [eax], ax" 6300
 aB "blendpd xmm0, xmm0, 0" 660f3a0dc000
 aB "blendps xmm0, xmm0, 0" 660f3a0cc000
-aB "blendvpd xmm0, xmm0" 660f3815c0
-aB "blendvps xmm0, xmm0" 660f3814c0
+aB "blendvpd xmm0, xmm0, xmm0" 660f3815c0
+aB "blendvps xmm0, xmm0, xmm0" 660f3814c0
 aB "bound eax, qword [eax]" 6200
 ad "bsf eax, dword [eax]" 0fbc00
 ad "bsr eax, dword [eax]" 0fbd00
@@ -1028,7 +1028,7 @@ aB "cmpxchg8b dword [eax]" 0fc7c0
 aB "cmpxchg byte [eax], al" 0fb000
 aB "cmpxchg dword [eax], eax" 0fb100
 aB "comisd xmm0, xmmword [eax]" 660f2f00
-aB "comiss xmm0, xmmword [eax]" 0f2f00
+aB "comiss xmm0, dword [eax]" 0f2f00
 ad "cpuid" 0fa2
 aB "crc32 eax, byte [eax]" f20f38f0
 aB "crc32 eax, dword [eax]" f20f38f1
@@ -1231,7 +1231,7 @@ a "jnp short 64" 7b3e
 a "jpo short 88" 7b56
 ad "lahf" 9f
 aB "lar eax, word [eax]" 0f02
-aB "lcall 0, 0" 9a
+# aB "lcall 0, 0" 9a
 aB "lcall [0]" ff1c2500000000
 aB "lcall [eax]" ff18
 aB "lddqu xmm0, xmmword [eax]" f20ff000
@@ -1273,8 +1273,8 @@ aB "lock mov eax, eax" f089c0
 a "lodsb al, byte [esi]" ac
 a "lodsd eax, dword [esi]" ad
 aB "loop 3" 66e200
-aB "lsl eax, dword [eax]" 0f03
-aB "lss eax, dword [eax]" 0fb200
+aB "lsl eax, word [eax]" 0f0300
+aB "lss eax, [eax]" 0fb200
 aB "ltr ax" 0f00d8
 aB "ltr word [eax]" 0f0018
 aB "lzcnt eax, dword [eax]" f30fbd00
@@ -1721,12 +1721,12 @@ aB "punpckhdq xmm0, xmmword [eax]" 660f6a00
 aB "punpckhqdq xmm0, xmmword [eax]" 660f6d00
 aB "punpckhwd mm0, qword [eax]" 0f6900
 aB "punpckhwd xmm0, xmmword [eax]" 660f6900
-aB "punpcklbw mm0, qword [eax]" 0f6000
+aB "punpcklbw mm0, dword [eax]" 0f6000
 aB "punpcklbw xmm0, xmmword [eax]" 660f6000
 aB "punpckldq mm0, qword [eax]" 0f6200
 aB "punpckldq xmm0, xmmword [eax]" 660f6200
 aB "punpcklqdq xmm0, xmmword [eax]" 660f6c00
-aB "punpcklwd mm0, qword [eax]" 0f6100
+aB "punpcklwd mm0, dword [eax]" 0f6100
 aB "punpcklwd xmm0, xmmword [eax]" 660f6100
 a "push 0" 6a00
 a "pushal" 60
@@ -2029,19 +2029,19 @@ aB "xchg byte [eax], al" 8600
 a "xchg dword [eax], eax" 8700
 ad "xchg al, dl" 86d0
 ad "xchg dl, al" 86c2
-ad "xchg ax, dx" 6692
+ad "xchg dx, ax" 6692
 a "xchg dx, ax" 6692
 ad "xchg ah, dh" 86f4
 ad "xchg dh, ah" 86e6
 a "xchg eax, eax" 90
-ad "xchg eax, ebp" 95
-ad "xchg eax, ebx" 93
-ad "xchg eax, ebx" 93
-ad "xchg eax, ecx" 91
-ad "xchg eax, edi" 97
-ad "xchg eax, edx" 92
-ad "xchg eax, esi" 96
-ad "xchg eax, esp" 94
+ad "xchg ebp, eax" 95
+ad "xchg ebx, eax" 93
+ad "xchg ebx, eax" 93
+ad "xchg ecx, eax" 91
+ad "xchg edi, eax" 97
+ad "xchg edx, eax" 92
+ad "xchg esi, eax" 96
+ad "xchg esp, eax" 94
 ad "xchg ebx, ecx" 87cb
 ad "xchg ecx, ebp" 87e9
 ad "xchg ecx, ebx" 87d9

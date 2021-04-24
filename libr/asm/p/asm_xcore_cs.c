@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2014-2018 - pancake */
+/* radare2 - LGPL - Copyright 2014-2021 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include "cs_version.h"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	csh handle;
@@ -41,7 +41,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_xcore_cs = {
 	.name = "xcore",
-	.desc = "Capstone XCore disassembler",
+	.desc = "Capstone "CAPSTONE_VERSION_STRING" XCore disassembler",
 	.license = "BSD",
 	.author = "pancake",
 	.arch = "xcore",

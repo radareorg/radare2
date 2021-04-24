@@ -25,7 +25,12 @@ fatal_msg() {
 
 patch_capstone() {
 	echo "[capstone] Applying patches..."
-	for patchfile in ../capstone-patches/*.patch ; do
+	if [ "$CS_BRA" = next ]; then
+		CV=v5
+	else
+		CV=v4
+	fi
+	for patchfile in ../capstone-patches/$CV/*.patch ; do
 		yes n | patch -p 1 -i "${patchfile}"
 	done
 }

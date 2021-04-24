@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2018-2019 - pancake */
+/* radare2 - LGPL - Copyright 2018-2021 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include "cs_version.h"
 
 #if CS_API_MAJOR >= 4 && CS_API_MINOR >= 0
 #define CAPSTONE_HAS_M680X 1
@@ -94,7 +94,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_m680x_cs = {
 	.name = "m680x",
 	.cpus = "6800,6801,6805,6808,6809,6811,cpu12,6301,6309,hcs08",
-	.desc = "Capstone M680X Disassembler",
+	.desc = "Capstone "CAPSTONE_VERSION_STRING" M680X Disassembler",
 	.license = "BSD",
 	.arch = "m680x",
 	.bits = 8|32,

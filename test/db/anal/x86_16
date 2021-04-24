@@ -57,7 +57,7 @@ EXPECT=<<EOF
     "esil": "2,sp,-=,eflags,sp,=[2]",
     "sign": false,
     "prefix": 0,
-    "id": 591,
+    "id": 612,
     "opex": {
       "operands": [
         {
@@ -85,3 +85,37 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
+
+NAME=16bit segment bounds - capstone
+FILE=malloc://1024k
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=16
+e anal.hasnext=0
+wx e9c300 @ f000:ffaa
+s f000:ffaa
+pi 1
+EOF
+EXPECT=<<EOF
+jmp 0xf0070
+EOF
+BROKEN=1
+RUN
+
+NAME=16bit segment bounds 2
+FILE=malloc://1024k
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+e io.va=1
+wx e97ae7 @ f000:1911
+s f000:1911
+ao 1~jump
+EOF
+EXPECT=<<EOF
+description: jump
+jump: 0x000f008e
+EOF
+RUN
+

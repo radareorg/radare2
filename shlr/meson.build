@@ -11,12 +11,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
   capstone_version = get_option('use_capstone_version')
 
-  use_capstone5 = get_option('use_capstone5')
-  if use_capstone5
-    warning('use_capstone5 is deprecated. Use -Duse_capstone_version=v5 instead.')
-    capstone_version = 'v5'
-  endif
-
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
   if res.returncode() == 0
     if not git_exe.found()
@@ -61,7 +55,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
     message('Patching capstone with radare\'s patches')
     foreach file : patches_files
-      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
+      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', capstone_version, file)
       patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
       patch_cmd = run_command(git_exe, patch_cmd_str.split())
       if patch_cmd.returncode() != 0
@@ -128,6 +122,11 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   ]
   rel_cs5_files = [
     'arch/X86/X86InstPrinterCommon.c',
+    # Add riscv files
+    'arch/RISCV/RISCVMapping.c',
+    'arch/RISCV/RISCVModule.c',
+    'arch/RISCV/RISCVInstPrinter.c',
+    'arch/RISCV/RISCVDisassembler.c'
   ]
 
   user_plugins = get_option('plugins').split(',')

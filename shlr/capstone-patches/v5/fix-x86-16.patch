@@ -1,27 +1,27 @@
 diff --git a/arch/X86/X86ATTInstPrinter.c b/arch/X86/X86ATTInstPrinter.c
-index 01bb3e2..f850d07 100644
+index 216efb25..37cab473 100644
 --- a/arch/X86/X86ATTInstPrinter.c
 +++ b/arch/X86/X86ATTInstPrinter.c
-@@ -640,6 +640,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
- 		if (MI->Opcode == X86_CALLpcrel16 || MI->Opcode == X86_JMP_2)
- 			imm = imm & 0xffff;
+@@ -536,6 +536,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
+ 			imm = imm & 0xffffffff;
+ 		}
  
 +		if (MI->csh->mode == CS_MODE_16)
-+			imm |= (MI->address >> 16) << 16;
++			imm = (imm & 0xf0000) + (imm&0xffff);
 +
  		if (imm < 0) {
  			SStream_concat(O, "0x%"PRIx64, imm);
  		} else {
 diff --git a/arch/X86/X86IntelInstPrinter.c b/arch/X86/X86IntelInstPrinter.c
-index b7ac142..a1b3739 100644
+index 5361172d..45625ab1 100644
 --- a/arch/X86/X86IntelInstPrinter.c
 +++ b/arch/X86/X86IntelInstPrinter.c
-@@ -857,6 +857,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
- 		if (MI->Opcode == X86_CALLpcrel16 || MI->Opcode == X86_JMP_2)
- 			imm = imm & 0xffff;
+@@ -767,6 +767,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
+ 			imm = imm & 0xffffffff;
+ 		}
  
 +		if (MI->csh->mode == CS_MODE_16)
-+			imm |= (MI->address >> 16) << 16;
++			imm = (imm & 0xf0000) + (imm&0xffff);
 +
  		printImm(MI, O, imm, true);
  

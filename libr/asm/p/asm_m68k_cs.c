@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include "cs_version.h"
 
 #ifdef CAPSTONE_M68K_H
 #define CAPSTONE_HAS_M68K 1
@@ -126,7 +126,7 @@ beach:
 
 RAsmPlugin r_asm_plugin_m68k_cs = {
 	.name = "m68k",
-	.desc = "Capstone M68K disassembler",
+	.desc = "Capstone "CAPSTONE_VERSION_STRING" M68K disassembler",
 	.cpus = "68000,68010,68020,68030,68040,68060",
 	.license = "BSD",
 	.arch = "m68k",

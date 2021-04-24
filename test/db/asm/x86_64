@@ -961,11 +961,11 @@ a "bswap r15" 490fcf
 a "bswap eax" 0fc8
 a "bswap r15d" 410fcf
 ad "endbr64" f30f1efa
-ad "xchg eax, r8d" 4190
+ad "xchg r8d, eax" 4190
 a "xchg r8d, eax" 4190
-ad "xchg rax, rdx" 4892
+ad "xchg rdx, rax" 4892
 a "xchg rdx, rax" 4892
-ad "xchg rax, r8" 4990
+ad "xchg r8, rax" 4990
 a "xchg r8, rax" 4990
 ad "xchg rdx, rbx" 4887da
 ad "xchg rbx, rdx" 4887d3

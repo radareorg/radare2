@@ -290,11 +290,10 @@ jobs:
       uses: actions/checkout@v2
     - name: Packaging
       run: dist/macos/build-pkg.sh
-    - name: Building Radare2
-      run: |
-        # treesitter doesnt build with this because of treesitter
-        export CFLAGS="-O2" # -Werror -Wno-unused-result -Wno-unicode -Wno-unneeded-internal-declaration"
-        sys/install.sh && make -C dist/macos
+#    - name: Building Radare2
+#      run: |
+#        export CFLAGS="-O2" # -Werror -Wno-unused-result -Wno-unicode -Wno-unneeded-internal-declaration"
+#        sys/install.sh && make -C dist/macos
     - name: Pub
       uses: actions/upload-artifact@v2
       with:

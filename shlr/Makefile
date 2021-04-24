@@ -13,8 +13,6 @@ else
 CS_RELEASE=1
 endif
 
-CS_NEXT=${CSNEXT}
-
 CAPSTONE_CFLAGS?=-g
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
 
@@ -37,12 +35,12 @@ CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
 CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20201203
 # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
-ifeq ($(CS_NEXT),1)
-CS_TIP=baa1f94cfdacd921744769bf7d93f00892ef53fa
-CS_BRA=next
-else
+ifeq ($(USE_CS4),1)
 CS_TIP=aa74f5d1ba5348c0441fbff0c0c151d95d2fa459
 CS_BRA=v4
+else
+CS_TIP=702dbe78ca116de8ec65f122d9202c2c1f4a2b4c
+CS_BRA=next
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)
 CS_ARCHIVE_URL=$(CS_ARCHIVE)/$(CS_TIP).zip
@@ -216,7 +214,11 @@ capstone: capstone-$(CS_VER).tar.gz
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
 	if [ -d capstone/.git ]; then \
-		cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done ; \
+ifeq ($(USE_CS4),1)
+		cd capstone ; for PATCH in ../capstone-patches/v4/* ; do patch -p1 < $$PATCH ; done ; \
+else
+		cd capstone ; for PATCH in ../capstone-patches/v5/* ; do patch -p1 < $$PATCH ; done ; \
+endif
 	fi
 endif
 	mkdir -p capstone/include/capstone

@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2013-2018 - pancake */
+/* radare2 - LGPL - Copyright 2013-2021 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
 #include <ht_uu.h>
-#include <capstone.h>
+#include "cs_version.h"
 #include "../arch/arm/asm-arm.h"
 #include "./asm_arm_hacks.inc"
 
@@ -291,7 +291,7 @@ static bool fini(void* user) {
 
 RAsmPlugin r_asm_plugin_arm_cs = {
 	.name = "arm",
-	.desc = "Capstone ARM disassembler",
+	.desc = "Capstone "CAPSTONE_VERSION_STRING" ARM disassembler",
 	.cpus = ",v8,cortex",
 	.features = "v8",
 	.license = "BSD",

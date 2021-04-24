@@ -304,7 +304,7 @@ EXPECT=<<EOF
 |           0x100012c0      38e30168       addi r7, r3, 0x168          ; arg1
 |           0x100012c4      39400000       li r10, 0
 |           ; CODE XREF from Grid::init() @ 0x100012e8
-|       .-> 0x100012c8      3928febc       addi r9, r8, 0xfebc
+|       .-> 0x100012c8      3928febc       addi r9, r8, -0x144
 |       :   0x100012cc      38c00009       li r6, 9
 |       :   0x100012d0      7cc903a6       mtctr r6
 |       :   ; CODE XREF from Grid::init() @ 0x100012dc

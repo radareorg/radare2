@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2013-2018 - pancake */
+/* radare2 - LGPL - Copyright 2013-2021 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include "cs_version.h"
 
 R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
@@ -86,7 +86,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 
 RAsmPlugin r_asm_plugin_mips_cs = {
 	.name = "mips",
-	.desc = "Capstone MIPS disassembler",
+	.desc = "Capstone "CAPSTONE_VERSION_STRING" MIPS disassembler",
 	.license = "BSD",
 	.arch = "mips",
 	.cpus = "mips32/64,micro,r6,v3,v2",
