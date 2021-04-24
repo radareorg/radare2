@@ -3975,7 +3975,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* RVC */
 	{
 		char *p = r_file_path ("git");
-		bool found = (p && *p == '/');
+		bool found = (p && (*p == '/' || *p == 'g'));
 		SETBPREF ("vc.rvc", r_str_bool (!found), "Use RVC instead of git (not recommended)");
 		free (p);
 	}
