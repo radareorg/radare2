@@ -1,0 +1,13 @@
+diff --git a/functions.mk b/functions.mk
+index d734ce5..ee851ab 100644
+--- a/functions.mk
++++ b/functions.mk
+@@ -2,7 +2,7 @@
+ # Common functions used by Makefile & tests/Makefile
+ 
+ define compile
+-        @$(CC) -MM -MP -MT $@ -MT $(@:.o=.d) $(CFLAGS) $< > $(@:.o=.d)
++        @$(CC) $@ $(@:.o=.d) $(CFLAGS) $< > $(@:.o=.d)
+ 	${CC} ${CFLAGS} -c $< -o $@
+ endef
+ 
