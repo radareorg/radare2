@@ -12,6 +12,7 @@ static const char *help_msg_z[] = {
 	"z", "", "show zignatures",
 	"z.", "", "find matching zignatures in current offset",
 	"zb", "[?][n=5]", "search for best match",
+	"zd", "zignature", "diff current function and signature",
 	"z*", "", "show zignatures in radare format",
 	"zq", "", "show zignatures in quiet mode",
 	"zj", "", "show zignatures in json format",
@@ -1096,9 +1097,198 @@ static bool bestmatch(void *data, const char *input) {
 	}
 }
 
+static bool _sig_bytediff_cb(RLevBuf *va, RLevBuf *vb, ut32 ia, ut32 ib) {
+	RSignBytes *a = (RSignBytes *)va->buf;
+	RSignBytes *b = (RSignBytes *)vb->buf;
+
+	if ((a->bytes[ia] & a->mask[ia]) == (b->bytes[ib] & b->mask[ib])) {
+		return false;
+	}
+	return true;
+}
+
+#define lines_addbytesmask(l, sig, index, add, col) \
+	if (col) { \
+		l.bytes = r_str_appendf (l.bytes, " %s%s%02x\x1b[0m", col, add, sig->bytes[index]); \
+		l.mask = r_str_appendf (l.mask, " %s%s%02x\x1b[0m", col, add, sig->mask[index]); \
+		l.land = r_str_appendf (l.land, " %s%s%02x\x1b[0m", col, add, sig->bytes[index] & sig->mask[index]); \
+	} else { \
+		l.bytes = r_str_appendf (l.bytes, " %s%02x", add, sig->bytes[index]); \
+		l.mask = r_str_appendf (l.mask, " %s%02x", add, sig->mask[index]); \
+		l.land = r_str_appendf (l.land, " %s%02x", add, sig->bytes[index] & sig->mask[index]); \
+	} \
+	index++;
+
+#define lines_addblnk(l) \
+	l.bytes = r_str_append (l.bytes, "    "); \
+	l.mask = r_str_append (l.mask, "    "); \
+	l.land = r_str_append (l.land, "    ");
+
+#define freelines(x) \
+	free (x.bytes); \
+	free (x.mask); \
+	free (x.land); \
+	memset (&x, 0, sizeof (x));
+
+static void print_zig_diff(RCore *c, RSignBytes *ab, RSignBytes *bb, RLevOp *ops) {
+	struct lines {
+		char *mask, *bytes, *land;
+	} al, bl;
+	memset (&al, 0, sizeof (al));
+	memset (&bl, 0, sizeof (bl));
+
+	char *colsub, *coladd, *coldel;
+	colsub = coladd = coldel = NULL;
+	if (r_config_get_b (c->config, "scr.color")) {
+		coldel = "\x1b[1;31m";
+		coladd = "\x1b[1;32m";
+		colsub = "\x1b[1;33m";
+	}
+
+	int i, ia, ib, iastart, ibstart;
+	ia = ib = iastart = ibstart = 0;
+	bool printb = false;
+	for (i = 0; ops[i] != LEVEND; i++) {
+		switch (ops[i]) {
+		case LEVNOP:
+			// lines_addbytesmask macro does ia++ so test must before
+			if (!printb && (ab->bytes[ia] != bb->bytes[ib] || ab->mask[ia] != bb->mask[ib])) {
+				printb = true;
+			}
+			lines_addbytesmask (al, ab, ia, " ", (char *)NULL);
+			lines_addbytesmask (bl, bb, ib, " ", (char *)NULL);
+			break;
+		case LEVSUB:
+			lines_addbytesmask (al, ab, ia, " ", colsub);
+			lines_addbytesmask (bl, bb, ib, "^", colsub);
+			printb = true;
+			break;
+		case LEVADD:
+			lines_addblnk (al);
+			lines_addbytesmask (bl, bb, ib, "+", coladd);
+			printb = true;
+			break;
+		case LEVDEL:
+			lines_addbytesmask (al, ab, ia, "-", coldel);
+			lines_addblnk (bl);
+			printb = true;
+			break;
+		default:
+			r_warn_if_reached ();
+			freelines (al);
+			freelines (bl);
+			return;
+		}
+		// when alloc fails
+		if (!(al.bytes && al.mask && al.land && bl.bytes && bl.mask && bl.land)) {
+			freelines (al);
+			freelines (bl);
+			return;
+		}
+
+		if (i % 16 == 15 || ops[i + 1] == LEVEND) {
+			if (i > 16) {
+				r_cons_printf ("\n");
+			}
+			r_cons_printf ("Fnc cmp   0x%04x %s\n", iastart, al.land);
+			if (printb) {
+				r_cons_printf ("Sig cmp   0x%04x %s\n", ibstart, bl.land);
+			}
+			r_cons_printf ("Fnc Mask  0x%04x %s\n", iastart, al.mask);
+			if (printb) {
+				r_cons_printf ("Sig Mask  0x%04x %s\n", ibstart, bl.mask);
+			}
+			r_cons_printf ("Fnc Bytes 0x%04x %s\n", iastart, al.bytes);
+			if (printb) {
+				r_cons_printf ("Sig Bytes 0x%04x %s\n", ibstart, bl.bytes);
+			} else {
+				r_cons_printf ("== Signature was same ==\n");
+			}
+			freelines (al);
+			freelines (bl);
+			iastart = ia;
+			ibstart = ib;
+			printb = false;
+		}
+	}
+}
+#undef lines_addbytesmask
+#undef lines_addblnk
+#undef freelines
+
+static bool diff_zig(void *data, const char *input) {
+	r_return_val_if_fail (data && input, false);
+	RCore *core = (RCore *)data;
+
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	if (!fcn) {
+		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
+		return false;
+	}
+
+	char *argv = r_str_new (input);
+	if (!argv) {
+		return false;
+	}
+
+	char *zigname = strtok (argv, " ");
+	if (!zigname) {
+		eprintf ("Need a signature\n");
+		free (argv);
+		return false;
+	}
+
+	if (strtok (NULL, " ")) {
+		eprintf ("too many arguments");
+		free (argv);
+		return false;
+	}
+
+	RSignItem *it = item_frm_signame (core->anal, zigname);
+	if (!it) {
+		eprintf ("Couldn't get signature for %s\n", zigname);
+		free (argv);
+		return false;
+	}
+	free (argv);
+
+	if (!it->bytes) {
+		eprintf ("Signature %s missing bytes\n", it->name);
+		return false;
+	}
+
+	RLevBuf b;
+	b.buf = it->bytes;
+	b.len = it->bytes->size;
+
+	RSignItem *fit = r_sign_item_new ();
+	if (!fit) {
+		r_sign_item_free (it);
+		return false;
+	}
+	r_sign_addto_item (core->anal, fit, fcn, R_SIGN_BYTES);
+
+	RLevBuf a;
+	a.buf = fit->bytes;
+	a.len = fit->bytes->size;
+
+	RLevOp *ops = NULL;
+
+	if (r_diff_levenshtein_path (&a, &b, UT32_MAX, _sig_bytediff_cb, &ops) < 0) {
+		eprintf ("Diff failed\n");
+	} else {
+		print_zig_diff (core, fit->bytes, it->bytes, ops);
+	}
+
+	free (ops);
+	r_sign_item_free (fit);
+	r_sign_item_free (it);
+	return false;
+}
+
 static int cmdCompare(void *data, const char *input) {
 	int result = true;
-	RCore *core = (RCore *) data;
+	RCore *core = (RCore *)data;
 	const char *raw_bytes_thresh = r_config_get (core->config, "zign.diff.bthresh");
 	const char *raw_graph_thresh = r_config_get (core->config, "zign.diff.gthresh");
 	RSignOptions *options = r_sign_options_new (raw_bytes_thresh, raw_graph_thresh);
@@ -1279,6 +1469,8 @@ static int cmd_zign(void *data, const char *input) {
 		return cmdCheck (data, arg);
 	case 'b': // "zb"
 		return bestmatch (data, arg);
+	case 'd': // "zb"
+		return diff_zig (data, arg);
 	case 'o': // "zo"
 		return cmdOpen (data, arg);
 	case 'g': // "zg"

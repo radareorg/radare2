@@ -1784,3 +1784,34 @@ int sym.new_function_name (int NEWARGC, char **NEWARGV);
 sym.new_function_name
 EOF
 RUN
+
+NAME=zd basic
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+e zign.maxsz = 32
+af
+za sym.test b ff41554154498afc555383ec08e89e02ffff488b2d77952a004889c38b450045:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zd sym.test
+EOF
+EXPECT=<<EOF
+Fnc cmp   0x0000       41  55  41  54  49  89  fc  55  53 -48  83  ec  08  e8  00
+Sig cmp   0x0000  +ff  41  55  41  54  49 ^8a  fc  55  53      83  ec  08  e8  00
+Fnc Mask  0x0000       ff  ff  ff  ff  ff  ff  ff  ff  ff -ff  ff  ff  ff  ff  00
+Sig Mask  0x0000  +ff  ff  ff  ff  ff  ff ^ff  ff  ff  ff      ff  ff  ff  ff  00
+Fnc Bytes 0x0000       41  55  41  54  49  89  fc  55  53 -48  83  ec  08  e8  9e
+Sig Bytes 0x0000  +ff  41  55  41  54  49 ^8a  fc  55  53      83  ec  08  e8  9e
+
+Fnc cmp   0x000f   00  00  00  48  00  00  00  00  00  00  48  89  c3  8b  45  00
+Fnc Mask  0x000f   00  00  00  ff  00  00  00  00  00  00  ff  ff  ff  ff  ff  ff
+Fnc Bytes 0x000f   02  ff  ff  48  8b  2d  77  95  2a  00  48  89  c3  8b  45  00
+== Signature was same ==
+
+Fnc cmp   0x001f   48
+Sig cmp   0x001f  ^45
+Fnc Mask  0x001f   ff
+Sig Mask  0x001f  ^ff
+Fnc Bytes 0x001f   48
+Sig Bytes 0x001f  ^45
+EOF
+RUN
