@@ -8,7 +8,7 @@ pd 1 @main
 EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x40045d
-/ 44: int main ();
+/ 44: int main (int argc, char **argv, char **envp);
 |           ; var int64_t var_4h @ rbp-0x4
 |           0x0040052d      55             push rbp                    ; dwarftest.c:4
 EOF
@@ -36,7 +36,7 @@ EOF
 EXPECT=<<EOF
             ; DATA XREF from entry0 @ 0x10c1
             ;-- main:
-/ 139: int dbg.main ();
+/ 139: int dbg.main (int argc, char **argv, char **envp);
 |           ; var int output @ rbp-0x24
 |           ; var Bird *b @ rbp-0x20
 |           ; var Mammal *m @ rbp-0x18

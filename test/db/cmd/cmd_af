@@ -259,9 +259,9 @@ afcf @ main
 afcfj @ main
 EOF
 EXPECT=<<EOF
-int main ();
-int main ();
-[{"name":"main","return":"int","args":[],"count":0}]
+int main (int argc, char **argv, char **envp);
+int main (int argc, char **argv, char **envp);
+[{"name":"main","return":"int","args":[{"name":"argc","type":"int"},{"name":"argv","type":"char **"},{"name":"envp","type":"char **"}],"count":3}]
 EOF
 RUN
 
