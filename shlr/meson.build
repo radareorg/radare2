@@ -122,6 +122,11 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   ]
   rel_cs5_files = [
     'arch/X86/X86InstPrinterCommon.c',
+    # Add riscv files
+    'arch/RISCV/RISCVMapping.c',
+    'arch/RISCV/RISCVModule.c',
+    'arch/RISCV/RISCVInstPrinter.c',
+    'arch/RISCV/RISCVDisassembler.c'
   ]
 
   user_plugins = get_option('plugins').split(',')
