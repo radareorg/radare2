@@ -423,7 +423,7 @@ dB "cmpxchg8b dword [eax]" 0fc7c0
 dB "extrq xmm0, 0, 0" 660f78000000
 dB "extrq xmm0, xmm0" 660f7900
 dB "invlpga" 0f01df
-dB "lcall 0, 0" 9a
+# dB "lcall 0, 0" 9a
 dB "lfs eax, dword [eax]" 0fb400
 dB "lgs eax, dword [eax]" 0fb500
 dB "lock mov dword [eax], eax" f08900
@@ -567,8 +567,8 @@ d "minss xmm0, dword [eax]" f30f5d00
 d "maxss xmm0, dword [eax]" f30f5f00
 d "punpcklbw mm0, qword [eax]" 0f6000
 d "punpcklwd mm0, qword [eax]" 0f6100
-d "punpckldq mm0, qword [eax]" 0f6200
-d "punpcklbw xmm0, xmmword [eax]" 660f6000
+d "punpckldq mm0, dword [eax]" 0f6200
+d "punpcklbw xmm0, dword [eax]" 660f6000
 d "punpcklwd xmm0, xmmword [eax]" 660f6100
 d "punpckldq xmm0, xmmword [eax]" 660f6200
 d "packsswb mm0, qword [eax]" 0f6300
@@ -841,8 +841,8 @@ d "vphadduwd xmm0, xmm0" 8fe978d6c0
 d "vphadduwq xmm0, xmm0" 8fe978d7c0
 d "vpmadcsswd xmm0, xmm0, xmm0, xmm0" 8fe878a6c000
 ad "aaa" 37
-ad "aad" d50a
-ad "aam" d40a
+ad "aad 0xa" d50a
+ad "aam 0xa" d40a
 a "aam 12" d40c
 ad "aas" 3f
 ad "adc al, 0" 1400
@@ -1028,7 +1028,7 @@ aB "cmpxchg8b dword [eax]" 0fc7c0
 aB "cmpxchg byte [eax], al" 0fb000
 aB "cmpxchg dword [eax], eax" 0fb100
 aB "comisd xmm0, xmmword [eax]" 660f2f00
-aB "comiss xmm0, xmmword [eax]" 0f2f00
+aB "comiss xmm0, dword [eax]" 0f2f00
 ad "cpuid" 0fa2
 aB "crc32 eax, byte [eax]" f20f38f0
 aB "crc32 eax, dword [eax]" f20f38f1
@@ -1231,7 +1231,7 @@ a "jnp short 64" 7b3e
 a "jpo short 88" 7b56
 ad "lahf" 9f
 aB "lar eax, word [eax]" 0f02
-aB "lcall 0, 0" 9a
+# aB "lcall 0, 0" 9a
 aB "lcall [0]" ff1c2500000000
 aB "lcall [eax]" ff18
 aB "lddqu xmm0, xmmword [eax]" f20ff000
@@ -1273,8 +1273,8 @@ aB "lock mov eax, eax" f089c0
 a "lodsb al, byte [esi]" ac
 a "lodsd eax, dword [esi]" ad
 aB "loop 3" 66e200
-aB "lsl eax, dword [eax]" 0f03
-aB "lss eax, dword [eax]" 0fb200
+aB "lsl eax, word [eax]" 0f0300
+aB "lss eax, [eax]" 0fb200
 aB "ltr ax" 0f00d8
 aB "ltr word [eax]" 0f0018
 aB "lzcnt eax, dword [eax]" f30fbd00
@@ -1726,7 +1726,7 @@ aB "punpcklbw xmm0, xmmword [eax]" 660f6000
 aB "punpckldq mm0, qword [eax]" 0f6200
 aB "punpckldq xmm0, xmmword [eax]" 660f6200
 aB "punpcklqdq xmm0, xmmword [eax]" 660f6c00
-aB "punpcklwd mm0, qword [eax]" 0f6100
+aB "punpcklwd mm0, dword [eax]" 0f6100
 aB "punpcklwd xmm0, xmmword [eax]" 660f6100
 a "push 0" 6a00
 a "pushal" 60
