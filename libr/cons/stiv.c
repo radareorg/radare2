@@ -100,8 +100,8 @@ static void dorender (PrintfCallback cb_printf, const ut8 *buf, int len, int w, 
 	for (y=0; y<h; y+=2) {
 		for (x=0; x<w; x++) {
 			c = XY (buf, x, y);
-			d = XY (buf, x, y+1);
-			if (d> (buf+len)) break;
+			d = XY (buf, x, y + 1);
+			if (d + 3 > (buf+len)) break;
 			renderer (cb_printf, c, d);
 			if (renderer != render_ascii) {
 				render_ascii (cb_printf, c, d);
