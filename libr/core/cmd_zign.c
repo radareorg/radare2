@@ -1128,14 +1128,14 @@ static bool _sig_bytediff_cb(RLevBuf *va, RLevBuf *vb, ut32 ia, ut32 ib) {
 	free (x.bytes); \
 	free (x.mask); \
 	free (x.land); \
-	bzero (&x, sizeof (x));
+	memset (&x, 0, sizeof (x));
 
 static void print_zig_diff(RCore *c, RSignBytes *ab, RSignBytes *bb, RLevOp *ops) {
 	struct lines {
 		char *mask, *bytes, *land;
 	} al, bl;
-	bzero (&al, sizeof (al));
-	bzero (&bl, sizeof (bl));
+	memset (&al, 0, sizeof (al));
+	memset (&bl, 0, sizeof (bl));
 
 	char *colsub, *coladd, *coldel;
 	colsub = coladd = coldel = NULL;
