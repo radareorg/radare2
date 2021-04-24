@@ -946,6 +946,48 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->type = R_ANAL_OP_TYPE_CALL;
 			esilprintf (op, "pc,lr,=,ctr,pc,=");
 			break;
+#if CS_VERSION_MAJOR >= 5
+		case PPC_INS_BNE:
+		case PPC_INS_BNEA:
+		case PPC_INS_BNECTR:
+		case PPC_INS_BNECTRL:
+		case PPC_INS_BNEL:
+		case PPC_INS_BNELA:
+		case PPC_INS_BNELR:
+		case PPC_INS_BNELRL:
+		case PPC_INS_BNG:
+		case PPC_INS_BNGA:
+		case PPC_INS_BNGCTR:
+		case PPC_INS_BNGCTRL:
+		case PPC_INS_BNGL:
+		case PPC_INS_BNGLA:
+		case PPC_INS_BNGLR:
+		case PPC_INS_BNGLRL:
+		case PPC_INS_BNL:
+		case PPC_INS_BNLA:
+		case PPC_INS_BNLCTR:
+		case PPC_INS_BNLCTRL:
+		case PPC_INS_BNLL:
+		case PPC_INS_BNLLA:
+		case PPC_INS_BNLLR:
+		case PPC_INS_BNLLRL:
+		case PPC_INS_BNS:
+		case PPC_INS_BNSA:
+		case PPC_INS_BNSCTR:
+		case PPC_INS_BNSCTRL:
+		case PPC_INS_BNSL:
+		case PPC_INS_BNSLA:
+		case PPC_INS_BNSLR:
+		case PPC_INS_BNSLRL:
+		case PPC_INS_BNU:
+		case PPC_INS_BNUA:
+		case PPC_INS_BNUCTR:
+		case PPC_INS_BNUCTRL:
+		case PPC_INS_BNUL:
+		case PPC_INS_BNULA:
+		case PPC_INS_BNULR:
+		case PPC_INS_BNULRL:
+#endif
 		case PPC_INS_B:
 		case PPC_INS_BC:
 		case PPC_INS_BA:

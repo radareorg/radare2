@@ -3130,7 +3130,7 @@ EXPECT=<<EOF
     "esil": "eax,eax,^=,$z,zf,:=,$p,pf,:=,31,$s,sf,:=,0,cf,:=,0,of,:=",
     "sign": false,
     "prefix": 0,
-    "id": 334,
+    "id": 1503,
     "opex": {
       "operands": [
         {
@@ -3185,7 +3185,7 @@ EXPECT=<<EOF
     "esil": "4,esp,-=,eflags,esp,=[4]",
     "sign": false,
     "prefix": 0,
-    "id": 591,
+    "id": 612,
     "opex": {
       "operands": [
         {
@@ -3438,7 +3438,7 @@ mnemonic: nop
 description: no operation
 mask: ff
 prefix: 0
-id: 494
+id: 510
 bytes: 90
 refptr: 0
 size: 1
