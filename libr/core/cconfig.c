@@ -3975,7 +3975,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* RVC */
 	{
 		char *p = r_file_path ("git");
-		bool found = (p && (*p == '/' || *p == 'g'));
+		bool found = (p && *p != 'g');
 		if (found) {
 			SETBPREF ("prj.vc.type", "git", "What should projects use as a vc");
 		} else {
