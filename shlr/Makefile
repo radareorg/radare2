@@ -39,7 +39,7 @@ ifeq ($(USE_CS4),1)
 CS_TIP=aa74f5d1ba5348c0441fbff0c0c151d95d2fa459
 CS_BRA=v4
 else
-CS_TIP=baa1f94cfdacd921744769bf7d93f00892ef53fa
+CS_TIP=702dbe78ca116de8ec65f122d9202c2c1f4a2b4c
 CS_BRA=next
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)
@@ -214,7 +214,11 @@ capstone: capstone-$(CS_VER).tar.gz
 	mv capstone-$(CS_VER) capstone
 ifeq ($(CS_PATCHES),1)
 	if [ -d capstone/.git ]; then \
-		cd capstone ; for PATCH in ../capstone-patches/* ; do patch -p1 < $$PATCH ; done ; \
+ifeq ($(USE_CS4),1)
+		cd capstone ; for PATCH in ../capstone-patches/v4/* ; do patch -p1 < $$PATCH ; done ; \
+else
+		cd capstone ; for PATCH in ../capstone-patches/v5/* ; do patch -p1 < $$PATCH ; done ; \
+endif
 	fi
 endif
 	mkdir -p capstone/include/capstone
