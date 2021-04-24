@@ -824,7 +824,7 @@ static int cmpbbs (const void *_a, const void *_b) {
 
 static int cmpaddr (const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
-	return (a->addr > b->addr)? 1: (a->addr <b->addr)? -1: 0;
+	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
 }
 
 static bool listOpDescriptions(void *_core, const char *k, const char *v) {

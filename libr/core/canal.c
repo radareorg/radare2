@@ -27,12 +27,6 @@ static void loganal(ut64 from, ut64 to, int depth) {
 	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x" %d\r", from, to, depth);
 }
 
-static int cmpfcn(const void *a, const void *b) {
-	ut64 as = ((RAnalFunction *) a)->addr;
-	ut64 bs = ((RAnalFunction *) b)->addr;
-	return (as> bs)? 1: (as< bs)? -1: 0;
-}
-
 static int cmpsize(const void *a, const void *b) {
 	ut64 as = r_anal_function_linear_size ((RAnalFunction *) a);
 	ut64 bs = r_anal_function_linear_size ((RAnalFunction *) b);
