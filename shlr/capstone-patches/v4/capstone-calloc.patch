@@ -1,9 +1,9 @@
 diff --git a/MCInst.c b/MCInst.c
-index 7041022..d173d98 100644
+index 4c39f999..e1bce3a6 100644
 --- a/MCInst.c
 +++ b/MCInst.c
-@@ -23,6 +23,7 @@ void MCInst_Init(MCInst *inst)
- 		inst->Operands[i].Kind = kInvalid;
+@@ -24,6 +24,7 @@ void MCInst_Init(MCInst *inst)
+ 		inst->Operands[i].ImmVal = 0;
  	}
  
 +	memset (inst, 0, sizeof (MCInst));
@@ -11,10 +11,10 @@ index 7041022..d173d98 100644
  	inst->OpcodePub = 0;
  	inst->size = 0;
 diff --git a/cs.c b/cs.c
-index d2ffecc..f12051a 100644
+index 98f30f76..11092880 100644
 --- a/cs.c
 +++ b/cs.c
-@@ -840,7 +840,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -838,7 +838,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  	size_org = size;
  
  	total_size = sizeof(cs_insn) * cache_size;
@@ -23,7 +23,7 @@ index d2ffecc..f12051a 100644
  	if (total == NULL) {
  		// insufficient memory
  		handle->errnum = CS_ERR_MEM;
-@@ -858,7 +858,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -856,7 +856,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  
  		if (handle->detail) {
  			// allocate memory for @detail pointer
@@ -32,7 +32,7 @@ index d2ffecc..f12051a 100644
  		} else {
  			insn_cache->detail = NULL;
  		}
-@@ -946,6 +946,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -945,6 +945,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  		if (f == cache_size) {
  			// full cache, so expand the cache to contain incoming insns
  			cache_size = cache_size * 8 / 5; // * 1.6 ~ golden ratio
@@ -40,7 +40,7 @@ index d2ffecc..f12051a 100644
  			total_size += (sizeof(cs_insn) * cache_size);
  			tmp = cs_mem_realloc(total, total_size);
  			if (tmp == NULL) {	// insufficient memory
-@@ -960,7 +961,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -959,7 +960,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  				handle->errnum = CS_ERR_MEM;
  				return 0;
  			}
