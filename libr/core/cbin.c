@@ -1129,6 +1129,7 @@ static int bin_dwarf(RCore *core, PJ *pj, int mode) {
 		pj_a (pj);
 	}
 
+	SetP *set = set_p_new ();
 	//TODO we should need to store all this in sdb, or do a filecontentscache in libr/util
 	//XXX this whole thing has leaks
 	r_list_foreach (list, iter, row) {
@@ -1140,10 +1141,13 @@ static int bin_dwarf(RCore *core, PJ *pj, int mode) {
 			const char *path = row->file;
 			FileLines *current_lines = ht_pp_find (file_lines, path, NULL);
 			if (!current_lines) {
-				current_lines = read_file_lines (path);
-				if (!ht_pp_insert (file_lines, path, current_lines)) {
-					file_lines_free (current_lines);
-					current_lines = NULL;
+				if (!set_p_contains (set, path)) {
+					set_p_add (set, path);
+					current_lines = read_file_lines (path);
+					if (!ht_pp_insert (file_lines, path, current_lines)) {
+						file_lines_free (current_lines);
+						current_lines = NULL;
+					}
 				}
 			}
 			char *line = NULL;
@@ -1214,6 +1218,7 @@ static int bin_dwarf(RCore *core, PJ *pj, int mode) {
 	if (IS_MODE_JSON(mode)) {
 		pj_end (pj);
 	}
+	set_p_free (set);
 	r_cons_break_pop ();
 	ht_pp_free (file_lines);
 	r_list_free (ownlist);
