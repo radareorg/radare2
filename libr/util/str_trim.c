@@ -158,7 +158,7 @@ R_API void r_str_trim_args(char *str) {
 				break;
 			}
 			len -= i;
-			memmove (ch, ch + 1, len);
+			r_str_ncpy (ch, ch + 1, len);
 			ws = ch + 1;
 		} else {
 			ws = (char *)r_str_trim_head_wp (ch);

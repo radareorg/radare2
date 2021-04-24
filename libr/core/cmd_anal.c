@@ -895,9 +895,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 				char *type = db_type && strstr (var->type, "arg_")? db_type: var->type;
 				char *v = r_str_newf ("%s,%s", type, var->name);
 				sdb_set (core->anal->sdb_types, k, v, 0);
-				free (k);
 				free (v);
-				arg_count++;
 			} else {
 				char *name = db_name ? db_name: var->name;
 				char *type = db_type? db_type: strdup (var->type);
@@ -916,28 +914,26 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 				char *v = comma? strdup (o): r_str_newf ("%s,%s", type, name);
 				/// eprintf("arg (%s) %s -- %s%c", k, v, var->name, 10);
 				char *s = strdup (name);
-				free (var->name);
 				if (o) {
-					char *ov = v;
 					char *v2 = r_str_newf ("%s,%s", var->type, name);
 					if (!strstr (var->name, ",arg_")) {
-						v = v2;
+						free (var->name);
 						var->name = s;
-					}
+					} else free (s);
 					// sdb_set (core->anal->sdb_types, k, v, 0);
 					free (v2);
-					v = ov;
 				} else {
+					free (var->name);
 					var->name = s;
 					sdb_set (core->anal->sdb_types, k, v, 0);
 				}
-				free (k);
 				free (v);
-				arg_count++;
 				// #endif
 			}
 			free (db_name);
 			free (db_type);
+			free (k);
+			arg_count++;
 		}
 	}
 	//	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
