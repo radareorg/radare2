@@ -108,8 +108,8 @@ d "jo 6" 0f8000000000
 d "jp 6" 0f8a00000000
 d "js 6" 0f8800000000
 d "lar eax, word [eax]" 0f0200
-dB "lcall [0]" ff1c2500000000
-dB "lcall [eax]" ff18
+d "call [0]" ff1c2500000000
+d "call [eax]" ff18
 d "lddqu xmm0, xmmword [eax]" f20ff000
 d "ldmxcsr dword [eax]" 0fae10
 d "lds eax, [eax]" c500
