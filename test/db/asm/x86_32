@@ -395,13 +395,13 @@ d "xadd byte [eax], al" 0fc000
 d "xadd dword [eax], eax" 0fc100
 d "xchg byte [eax], al" 8600
 d "xchg dword [eax], eax" 8700
-d "xchg eax, ebp" 95
-d "xchg eax, ebx" 93
-d "xchg eax, ecx" 91
-d "xchg eax, edi" 97
-d "xchg eax, edx" 92
-d "xchg eax, esi" 96
-d "xchg eax, esp" 94
+d "xchg ebp, eax" 95
+d "xchg ebx, eax" 93
+d "xchg ecx, eax" 91
+d "xchg edi, eax" 97
+d "xchg edx, eax" 92
+d "xchg esi, eax" 96
+d "xchg esp, eax" 94
 d "xgetbv" 0f01d0
 d "xlatb" D7
 d "xor al, 0" 3400
@@ -2029,19 +2029,19 @@ aB "xchg byte [eax], al" 8600
 a "xchg dword [eax], eax" 8700
 ad "xchg al, dl" 86d0
 ad "xchg dl, al" 86c2
-ad "xchg ax, dx" 6692
+ad "xchg dx, ax" 6692
 a "xchg dx, ax" 6692
 ad "xchg ah, dh" 86f4
 ad "xchg dh, ah" 86e6
 a "xchg eax, eax" 90
-ad "xchg eax, ebp" 95
-ad "xchg eax, ebx" 93
-ad "xchg eax, ebx" 93
-ad "xchg eax, ecx" 91
-ad "xchg eax, edi" 97
-ad "xchg eax, edx" 92
-ad "xchg eax, esi" 96
-ad "xchg eax, esp" 94
+ad "xchg ebp, eax" 95
+ad "xchg ebx, eax" 93
+ad "xchg ebx, eax" 93
+ad "xchg ecx, eax" 91
+ad "xchg edi, eax" 97
+ad "xchg edx, eax" 92
+ad "xchg esi, eax" 96
+ad "xchg esp, eax" 94
 ad "xchg ebx, ecx" 87cb
 ad "xchg ecx, ebp" 87e9
 ad "xchg ecx, ebx" 87d9
