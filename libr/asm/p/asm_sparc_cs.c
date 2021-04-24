@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2014-2017 - pancake */
+/* radare2 - LGPL - Copyright 2014-2021 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include "cs_version.h"
 static csh cd = 0;
 #include "cs_mnemonics.c"
 
@@ -60,7 +60,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_sparc_cs = {
 	.name = "sparc",
-	.desc = "Capstone SPARC disassembler",
+	.desc = "Capstone "CAPSTONE_VERSION_STRING" SPARC disassembler",
 	.license = "BSD",
 	.arch = "sparc",
 	.cpus = "v9",

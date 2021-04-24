@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2019 - pancake */
+/* radare2 - LGPL - Copyright 2019-2021 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include "cs_version.h"
 
 #if CS_API_MAJOR >= 5
 
@@ -54,7 +54,7 @@ fin:
 
 RAsmPlugin r_asm_plugin_riscv_cs = {
 	.name = "riscv.cs",
-	.desc = "Capstone RISCV disassembler",
+	.desc = "Capstone "CAPSTONE_VERSION_STRING" RISCV disassembler",
 	.license = "BSD",
 	.arch = "riscv",
 	.cpus = "",

@@ -2,7 +2,7 @@
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include "cs_version.h"
 
 #define USE_ITER_API 0
 
@@ -158,7 +158,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_x86_cs = {
 	.name = "x86",
-	.desc = "Capstone X86 disassembler",
+	.desc = "Capstone "CAPSTONE_VERSION_STRING" X86 disassembler",
 	.license = "BSD",
 	.arch = "x86",
 	.bits = 16|32|64,

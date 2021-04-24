@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2014-2018 - pancake */
+/* radare2 - LGPL - Copyright 2014-2021 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
-#include <capstone.h>
+#include "cs_version.h"
 #include "../arch/ppc/libvle/vle.h"
 #include "../arch/ppc/libps/libps.h"
 
@@ -111,7 +111,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_ppc_cs = {
 	.name = "ppc",
-	.desc = "Capstone PowerPC disassembler",
+	.desc = "Capstone "CAPSTONE_VERSION_STRING" PowerPC disassembler",
 	.license = "BSD",
 	.author = "pancake",
 	.arch = "ppc",
