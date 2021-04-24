@@ -882,24 +882,72 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	r_list_join (all_vars, cache.svars);
 	r_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
-			char *name = var->name;
-			char *k = r_str_newf ("func.%s.arg.%zu", fcn->name, arg_count++);
+			char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
 			const char *o = sdb_const_get (core->anal->sdb_types, k, 0);
-			char *vname = o?strchr (o, ','):NULL;
-			if (vname) name = vname+1;
-			char *v = o?strdup(o): r_str_newf ("%s,%s", var->type, name);
-			 /// eprintf("arg (%s) %s -- %s%c", k, v, var->name, 10);
-			char *s = strdup (name);
-			free (var->name);
-			var->name=s;
-			if (!o) {
+			char *comma = o? strchr (o, ','): NULL;
+			char *db_type = comma? r_str_ndup (o, comma - o): NULL;
+			char *db_name = comma? strdup (comma + 1): NULL;
+			if (!strstr (var->name, "arg_") || (o && strstr (o, ",arg_"))) {
+				// #if 0
+				char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
+				// eprintf ("VARNAME %s %s %c", var->name, db_name, 10);
+				// eprintf ("VARTYPE %s %s %c", var->type,db_type, 10);
+				char *type = db_type && strstr (var->type, "arg_")? db_type: var->type;
+				char *v = r_str_newf ("%s,%s", type, var->name);
 				sdb_set (core->anal->sdb_types, k, v, 0);
+				free (k);
+				free (v);
+				arg_count++;
+			} else {
+				char *name = db_name ? db_name: var->name;
+				char *type = db_type? db_type: strdup (var->type);
+				// eprintf ("VARTYPE1 %s %s %c", var->type,db_type, 10);
+				if (var->name && !strstr (var->name, "arg_")) {
+					o = NULL;
+				}
+				type = strdup (var->type);
+#if 0
+				if (name != var->name) {
+					o = NULL;
+				} else {
+					type = strdup (var->type);
+				}
+#endif
+				char *v = comma? strdup (o): r_str_newf ("%s,%s", type, name);
+				/// eprintf("arg (%s) %s -- %s%c", k, v, var->name, 10);
+				char *s = strdup (name);
+				free (var->name);
+				if (o) {
+					char *ov = v;
+					char *v2 = r_str_newf ("%s,%s", var->type, name);
+					if (!strstr (var->name, ",arg_")) {
+						v = v2;
+						var->name = s;
+					}
+					// sdb_set (core->anal->sdb_types, k, v, 0);
+					free (v2);
+					v = ov;
+				} else {
+					var->name = s;
+					sdb_set (core->anal->sdb_types, k, v, 0);
+				}
+				free (k);
+				free (v);
+				arg_count++;
+				// #endif
 			}
-			free (k);
-			free (v);
+			free (db_name);
+			free (db_type);
 		}
 	}
-	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
+	//	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
+	if (arg_count > 0) {
+		char *k = r_str_newf ("func.%s.args", fcn->name);
+		char *v = r_str_newf ("%d", (int)arg_count);
+		sdb_set (core->anal->sdb_types, k, v, 0);
+		free (k);
+		free (v);
+ 	}
 	free (args);
 	r_anal_fcn_vars_cache_fini (&cache);
 }
