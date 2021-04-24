@@ -547,7 +547,7 @@ EXPECT=<<EOF
     "esil": "r1,-16,r1,+,=[4],-16,r1,+=",
     "sign": false,
     "prefix": 0,
-    "id": 594,
+    "id": 1072,
     "opex": {
       "operands": [
         {
