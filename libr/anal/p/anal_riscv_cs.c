@@ -167,8 +167,8 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, int n) {
 				cs_reg_name (*handle,
 					insn->detail->riscv.operands[n].mem.base));
 		} else {
-			sprintf (buf, "0x%"PFMT64x",%s,+",
-				insn->detail->riscv.operands[n].mem.disp,
+			sprintf (buf, "%"PFMT64d",%s,+",
+				(st64)insn->detail->riscv.operands[n].mem.disp,
 				cs_reg_name (*handle,
 					insn->detail->riscv.operands[n].mem.base));
 		}
