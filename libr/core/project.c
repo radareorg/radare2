@@ -676,7 +676,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	if (r_config_get_i (core->config, "prj.vc")) {
 		char *git_dir = r_str_newf ("%s" R_SYS_DIR ".git", prj_dir);
-		if (!r_config_get_i (core->config, "vc.rvc")) {
+		if (!strcmp ("git", r_config_get (core->config, "prj.vc.type"))
+				&& r_config_get_b (core->config, "prj.vc")) {
 			if (!r_file_is_directory (git_dir)) {
 				r_vc_git_init (prj_dir);
 			}

@@ -3976,7 +3976,11 @@ R_API int r_core_config_init(RCore *core) {
 	{
 		char *p = r_file_path ("git");
 		bool found = (p && (*p == '/' || *p == 'g'));
-		SETBPREF ("vc.rvc", r_str_bool (!found), "Use RVC instead of git (not recommended)");
+		if (found) {
+			SETBPREF ("prj.vc.type", "git", "What should projects use as a vc");
+		} else {
+			SETBPREF ("prj.vc.type", "rvc", "What should projects use as a vc");
+		}
 		free (p);
 	}
 	r_config_lock (cfg, true);
