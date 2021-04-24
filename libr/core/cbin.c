@@ -1141,8 +1141,8 @@ static int bin_dwarf(RCore *core, PJ *pj, int mode) {
 			const char *path = row->file;
 			FileLines *current_lines = ht_pp_find (file_lines, path, NULL);
 			if (!current_lines) {
-				if (!set_p_contains (set, path)) {
-					set_p_add (set, path);
+				if (!set_p_contains (set, (void*)path)) {
+					set_p_add (set, (void*)path);
 					current_lines = read_file_lines (path);
 					if (!ht_pp_insert (file_lines, path, current_lines)) {
 						file_lines_free (current_lines);
