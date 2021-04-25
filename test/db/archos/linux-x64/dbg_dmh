@@ -9,7 +9,7 @@ aa > /dev/null
 pdf @sym.main~:1
 EOF
 EXPECT=<<EOF
-/ 91: int main (int argc, char **argv, char **envp);
+/ 91: int main (int argc, char **argv);
 p=3
 EOF
 RUN
