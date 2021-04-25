@@ -2850,7 +2850,6 @@ NAME=af x86-32..
 FILE=malloc://1024
 CMDS=<<EOF
 e anal.hasnext=0
-e anal.eobjmp=false
 e asm.arch=x86
 e asm.bits=32
 wx 6a00 4889e5 c3
@@ -2862,12 +2861,11 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af x86-32 ujmp eobjmp=true
+NAME=af x86-32 ujmp 
 FILE=malloc://1024
 CMDS=<<EOF
 e anal.hasnext=0
 e asm.arch=x86
-e anal.eobjmp=true
 e asm.bits=32
 wx 6a00 4889e5 ff25f8120000 ff25f8120000ffe0c3
 af
@@ -2878,28 +2876,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=af x86-32 ujmp eobjmp=false
-FILE=malloc://1024
-CMDS=<<EOF
-e anal.hasnext=0
-e asm.arch=x86
-e anal.eobjmp=false
-e asm.bits=32
-wx 6a00 4889e5 ff25f8120000 ff25f8120000ffe0c3
-af
-afl~[2]
-EOF
-EXPECT=<<EOF
-11
-EOF
-RUN
 
 NAME=af bug
 FILE=malloc://1024
 CMDS=<<EOF
 e anal.hasnext=0
 e asm.arch=x86
-e anal.eobjmp=false
 e asm.bits=32
 wx 6a004889e54883e4f0488b7d08488d751089fa83c201c1e2034801f24889d1eb044883c1084883390075f64883c108e8580f000089c7e81b390000c3554889e5
 s +0x40
@@ -2945,7 +2927,6 @@ NAME=disasm bug
 FILE=malloc://1024
 CMDS=<<EOF
 e anal.hasnext=0
-e anal.eobjmp=false
 e asm.arch=x86
 e asm.bits=32
 wx 6a004889e54883e4f0488b7d08488d751089fa83c201c1e2034801f24889d1eb044883c1084883390075f64883c108e8580f000089c7e81b390000c3554889e5
@@ -2992,7 +2973,6 @@ NAME=af afF
 FILE=malloc://1024
 CMDS=<<EOF
 e anal.hasnext=0
-e anal.eobjmp=false
 e asm.arch=x86
 e asm.bits=32
 wx 6a004889e5c3
@@ -3010,7 +2990,6 @@ NAME=af afF graph
 FILE=malloc://1024
 CMDS=<<EOF
 e anal.hasnext=0
-e anal.eobjmp=false
 e asm.arch=x86
 e asm.bits=32
 wx 6a004889e5c3

@@ -475,7 +475,6 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e anal.eobjmp=true
 wx ff2572962100
 af
 pdf~jmp[0]
@@ -492,7 +491,6 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e anal.eobjmp=false
 wx ff2572962100
 af
 afi~size[1]
