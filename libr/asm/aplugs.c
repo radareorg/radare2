@@ -5,6 +5,7 @@
 #include <r_util.h>
 #include <r_asm.h>
 
+#if HAVE_GPERF
 extern SdbGperf gperf_z80;
 extern SdbGperf gperf_6502;
 extern SdbGperf gperf_i4004;
@@ -71,3 +72,8 @@ R_API SdbGperf *r_asm_get_gperf(const char *k) {
 	}
 	return NULL;
 }
+#else
+R_API SdbGperf *r_asm_get_gperf(const char *k) {
+	return NULL;
+}
+#endif
