@@ -4775,6 +4775,9 @@ static int __load_layout_default_cb(void *user) {
 	__panels_layout (core->panels);
 	core->panels->panels_menu->depth = 1;
 	__set_mode (core, PANEL_MODE_DEFAULT);
+	__del_menu (core);
+	__del_menu (core);
+	__set_refresh_all (core, true, false);
 	return 0;
 }
 
@@ -5877,6 +5880,17 @@ static void __handle_menu(RCore *core, const int key) {
 	RPanels *panels = core->panels;
 	RPanelsMenu *menu = panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	if (!parent || !parent->sub) {
+		__del_menu (core);
+		__del_menu (core);
+		__del_menu (core);
+		__del_menu (core);
+		menu->n_refresh = 0;
+		__set_mode (core, PANEL_MODE_DEFAULT);
+		__get_cur_panel (panels)->view->refresh = true;
+		__set_refresh_all (core, true, false);
+		return;
+	}
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	r_cons_switchbuf (false);
 	switch (key) {
