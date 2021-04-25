@@ -149,6 +149,7 @@ typedef struct {
 	bool asm_hint_call;
 	bool asm_hint_call_indirect;
 	bool asm_hint_lea;
+	bool asm_hint_imm;
 	bool asm_hint_emu;
 	int  asm_hint_pos;
 	ut64 emuptr;
@@ -728,6 +729,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_hint_call = r_config_get_i (core->config, "asm.hint.call");
 	ds->asm_hint_call_indirect = r_config_get_i (core->config, "asm.hint.call.indirect");
 	ds->asm_hint_lea = r_config_get_i (core->config, "asm.hint.lea");
+	ds->asm_hint_imm = r_config_get_i (core->config, "asm.hint.imm");
 	ds->asm_hint_emu = r_config_get_i (core->config, "asm.hint.emu");
 	ds->asm_hint_cdiv = r_config_get_i (core->config, "asm.hint.cdiv");
 	ds->asm_hint_pos = r_config_get_i (core->config, "asm.hint.pos");
@@ -3587,6 +3589,12 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_LEA:
 	case R_ANAL_OP_TYPE_LOAD:
+		if (ds->asm_hint_imm) {
+			if (ds->analop.val != UT64_MAX && ds->analop.val != UT32_MAX && ds->analop.val > 256) {
+				slen = ds_print_shortcut (ds, ds->analop.val, pos);
+				gotShortcut = true;
+			}
+		} else
 		if (ds->asm_hint_lea) {
 			if (ds->analop.ptr != UT64_MAX && ds->analop.ptr != UT32_MAX && ds->analop.ptr > 256) {
 				slen = ds_print_shortcut (ds, ds->analop.ptr, pos);
