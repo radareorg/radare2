@@ -3063,6 +3063,32 @@ static bool cb_dbg_verbose(void *user, void *data) {
 	return true;
 }
 
+static bool cb_prjvctype(void *user, void *data) {
+	RConfigNode *node = data;
+	char *p = r_file_path ("git");
+	bool found = (p && (*p == 'g' ||*p == '/'));
+	free (p);
+	if (*node->value == '?') {
+		if (found) {
+			r_cons_println ("git");
+		}
+		r_cons_println ("rvc");
+		return true;
+	}
+	if (!strcmp (node->value, "git")) {
+		if (found) {
+			return true;
+		}
+		eprintf ("Git is not installed\n");
+		return false;
+	}
+	if (!strcmp (node->value, "rvc")) {
+		return true;
+	}
+	eprintf ("Unknown vc %s\n", node->value);
+	return true;
+}
+
 R_API int r_core_config_init(RCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
@@ -3975,11 +4001,11 @@ R_API int r_core_config_init(RCore *core) {
 	/* RVC */
 	{
 		char *p = r_file_path ("git");
-		bool found = (p && *p != 'g');
-		if (found) {
-			SETBPREF ("prj.vc.type", "git", "What should projects use as a vc");
+		bool found = (p && *p == 'g');
+		if (!found) {
+			SETCB ("prj.vc.type", "git", &cb_prjvctype, "What should projects use as a vc");
 		} else {
-			SETBPREF ("prj.vc.type", "rvc", "What should projects use as a vc");
+			SETCB ("prj.vc.type", "git", &cb_prjvctype, "What should projects use as a vc");
 		}
 		free (p);
 	}
