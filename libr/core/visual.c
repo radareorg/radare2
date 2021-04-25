@@ -2871,6 +2871,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_core_cmd0 (core, "e asm.hint.jmp=true");
 			} else if (r_config_get_i (core->config, "asm.hint.jmp")) {
 				r_core_cmd0 (core, "e!asm.hint.jmp");
+				r_core_cmd0 (core, "e asm.hint.imm=true");
+			} else if (r_config_get_i (core->config, "asm.hint.imm")) {
+				r_core_cmd0 (core, "e!asm.hint.imm");
 				r_core_cmd0 (core, "e asm.hint.emu=true");
 			} else if (r_config_get_i (core->config, "asm.hint.emu")) {
 				r_core_cmd0 (core, "e!asm.hint.emu");

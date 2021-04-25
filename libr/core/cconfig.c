@@ -3254,6 +3254,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.hint.call", "true", "Show call hints [numbers] in disasm");
 	SETBPREF ("asm.hint.call.indirect", "true", "Hints for indirect call intructions go to the call destination");
 	SETBPREF ("asm.hint.lea", "false", "Show LEA hints [numbers] in disasm");
+	SETBPREF ("asm.hint.imm", "false", "Show immediate hints [numbers] in disasm");
 	SETBPREF ("asm.hint.emu", "false", "Show asm.emu hints [numbers] in disasm");
 	SETBPREF ("asm.hint.cdiv", "false", "Show CDIV hints optimization hint");
 	SETI ("asm.hint.pos", 1, "Shortcut hint position (-1, 0, 1)");
