@@ -175,6 +175,7 @@ R_API int r_asm_sub_names_output(RAsm *a, const char *f);
 R_API char *r_asm_describe(RAsm *a, const char* str);
 R_API RList* r_asm_get_plugins(RAsm *a);
 R_API void r_asm_list_directives(void);
+R_API SdbGperf *r_asm_get_gperf(const char *k);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new(void);

@@ -278,7 +278,7 @@ SDB_API const char *sdb_const_get_len(Sdb* s, const char *key, int *vlen, ut32 *
 		return NULL;
 	}
 	(void) cdb_findstart (&s->db);
-	if (cdb_findnext (&s->db, s->ht->opt.hashfn (key), key, keylen) < 1) {
+	if (!s->ht || cdb_findnext (&s->db, s->ht->opt.hashfn (key), key, keylen) < 1) {
 		return NULL;
 	}
 	len = cdb_datalen (&s->db);
@@ -404,6 +404,13 @@ SDB_API int sdb_open_gperf(Sdb *s, SdbGperf *gp) {
 	return 0;
 }
 
+static int sdb_open_text(Sdb *s, const char *file) {
+	if (!sdb_text_load (s, file)) {
+		return -1;
+	}
+	return s->fd;
+}
+
 SDB_API int sdb_open(Sdb *s, const char *file) {
         struct stat st;
 	if (!s) {
@@ -411,7 +418,7 @@ SDB_API int sdb_open(Sdb *s, const char *file) {
 	}
 	if (file) {
 		if (sdb_text_check (s, file)) {
-			return sdb_text_load (s, file);
+			return sdb_open_text (s, file);
 		}
 		if (s->fd != -1) {
 			close (s->fd);
@@ -970,7 +977,7 @@ SDB_API bool sdb_dump_dupnext(Sdb* s, char *key, char **value, int *_vlen) {
 	return true;
 }
 
-static inline ut64 parse_expire (ut64 e) {
+static inline ut64 parse_expire(ut64 e) {
 	const ut64 month = 30 * 24 * 60 * 60;
 	if (e > 0 && e < month) {
 		e += sdb_now ();

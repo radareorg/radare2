@@ -13,9 +13,10 @@ all: ${F_SDB}
 %.sdb:%.sdb.txt
 	${SDB} $@ = < $<
 	test -f $@
+	${SDB} -C $@
 
 clean:
-	rm -f *.sdb
+	rm -f *.sdb *.c *.h *.gperf a.out
 
 .PHONY: all clean install install-symlink symstall uninstall
 

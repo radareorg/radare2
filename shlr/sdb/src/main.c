@@ -203,8 +203,49 @@ static char* get_cname(const char*name) {
 	return n;
 }
 
-static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
-                         const char *expgrep) {
+static void sdb_grep_dump_cb(int fmt, const char *k, const char *v, const char *comma) {
+	switch (fmt) {
+	case MODE_JSON:
+		if (!strcmp (v, "true") || !strcmp (v, "false")) {
+			printf ("%s\"%s\":%s", comma, k, v);
+		} else if (sdb_isnum (v)) {
+			printf ("%s\"%s\":%"ULLFMT"u", comma, k, sdb_atoi (v));
+		} else if (*v == '{' || *v == '[') {
+			printf ("%s\"%s\":%s", comma, k, v);
+		} else {
+			printf ("%s\"%s\":\"%s\"", comma, k, v);
+		}
+		break;
+	case MODE_CGEN:
+		{
+		char *a = strdup (k);
+		char *b = strdup (v);
+		char *p = b;
+		while (*p) {
+			*p = (*p == '"')? '\'': *p;
+			p++;
+		}
+		for (p = a; *p; p++) {
+			if (*p == ',') {
+				eprintf ("Warning: Keys cant contain a comma in gperf.\n");
+				*p = '.';
+			}
+		}
+		printf ("%s,\"%s\"\n", a, b);
+		free (a);
+		free (b);
+		}
+		break;
+	case MODE_ZERO:
+		printf ("%s=%s", k, v);
+		break;
+	default:
+		printf ("%s=%s\n", k, v);
+		break;
+	}
+}
+
+static int sdb_grep_dump(const char *dbname, int fmt, bool grep, const char *expgrep) {
 	char *v, k[SDB_MAX_KEY] = { 0 };
 	const char *comma = "";
 	Sdb *db = sdb_new (NULL, dbname, 0);
@@ -216,9 +257,6 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 	sdb_config (db, options);
 	sdb_dump_begin (db);
 	switch (fmt) {
-	case MODE_JSON:
-		printf ("{");
-		break;
 	case MODE_CGEN:
 		printf ("%%{\n");
 		printf ("// gperf -aclEDCIG --null-strings -H sdb_hash_c_%s -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, cname, cname);
@@ -230,49 +268,33 @@ static int sdb_grep_dump(const char *dbname, int fmt, bool grep,
 		printf ("struct kv { const char *name; const char *value; };\n");
 		printf ("%%%%\n");
 		break;
+	case MODE_JSON:
+		printf ("{");
+		break;
 	}
-	while (sdb_dump_dupnext (db, k, &v, NULL)) {
-		if (grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
-			free (v);
-			continue;
-		}
-		switch (fmt) {
-		case MODE_JSON:
-			if (!strcmp (v, "true") || !strcmp (v, "false")) {
-				printf ("%s\"%s\":%s", comma, k, v);
-			} else if (sdb_isnum (v)) {
-				printf ("%s\"%s\":%llu", comma, k, sdb_atoi (v));
-			} else if (*v == '{' || *v == '[') {
-				printf ("%s\"%s\":%s", comma, k, v);
-			} else {
-				printf ("%s\"%s\":\"%s\"", comma, k, v);
+
+	if (db->fd == -1) {
+		SdbList *l = sdb_foreach_list (db, true);
+		SdbKv *kv;
+		SdbListIter *it;
+		ls_foreach (l, it, kv) {
+			if (grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
+				continue;
 			}
+			sdb_grep_dump_cb (fmt, sdbkv_key (kv), sdbkv_value (kv), comma);
 			comma = ",";
-			break;
-		case MODE_CGEN:
-			{
-			char *p = v;
-			while (*p) {
-				*p = (*p == '"')? '\'': *p;
-				p++;
-			}
-			for (p = k; *p; p++) {
-				if (*p == ',') {
-					eprintf ("Keys cant contain a comma in gperf.\n");
-					*p = '.';
-				}
-			}
-			printf ("%s,\"%s\"\n", k, v);
-			}
-			break;
-		case MODE_ZERO:
-			printf ("%s=%s", k, v);
-			break;
-		default:
-			printf ("%s=%s\n", k, v);
-			break;
 		}
-		free (v);
+		ls_free (l);
+	} else {
+		while (sdb_dump_dupnext (db, k, &v, NULL)) {
+			if (grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
+				free (v);
+				continue;
+			}
+			sdb_grep_dump_cb (fmt, k, v, comma);
+			comma = ",";
+			free (v);
+		}
 	}
 	switch (fmt) {
 	case MODE_ZERO:
@@ -414,8 +436,8 @@ static int showusage(int o) {
 	if (o == 2) {
 		printf ("  -0      terminate results with \\x00\n"
 			"  -c      count the number of keys database\n"
-			"  -C      create foo.c and foo.h for sdb embedding\n"
-			"  -G      output database for gperf processing\n"
+			"  -C      create foo.{c,h} for embedding (uses gperf)\n"
+			"  -G      print database in gperf format\n"
 			"  -d      decode base64 from stdin\n"
 			"  -D      diff two databases\n"
 			"  -e      encode stdin as base64\n"
@@ -532,12 +554,18 @@ static int showcount(const char *db) {
 
 static int gen_gperf(const char *file, const char *name) {
 	int (*_system)(const char *cmd);
-	const size_t bufsz = 4096;
-	char *buf = malloc (bufsz);
-	char *out = malloc (strlen (file) + 32);
-	snprintf (out, strlen (file) + 32, "%s.gperf", name);
-	int wd = open (out, O_RDWR);
-	int rc = 0;
+	const size_t buf_size = 4096;
+	char *buf = malloc (buf_size);
+	size_t out_size = strlen (file) + 32;
+	char *out = malloc (out_size);
+	snprintf (out, out_size, "%s.gperf", name);
+	int wd = open (out, O_RDWR, 0644);
+	if (wd == -1) {
+		wd = open (out, O_RDWR | O_CREAT, 0644);
+	} else {
+		ftruncate (wd, 0);
+	}
+	int rc = -1;
 #if USE_DLSYSTEM
 	_system = dlsym (NULL, "system");
 	if (!_system) {
@@ -548,25 +576,28 @@ static int gen_gperf(const char *file, const char *name) {
 	_system = system;
 #endif
 	if (wd != -1) {
-		ftruncate (wd, 0);
 		dup2 (1, 999);
 		dup2 (wd, 1);
 		rc = sdb_dump (file, MODE_CGEN);
 		fflush (stdout);
 		close (wd);
 		dup2 (999, 1);
+#if 0
 	} else {
 		snprintf (buf, bufsz, "sdb -G %s > %s.gperf\n", file, name);
 		rc = _system (buf);
+#endif
+	} else {
+		eprintf ("Cannot create .gperf%c", 10);
 	}
 	if (rc == 0) {
 		char *cname = get_cname (name);
-		snprintf (buf, bufsz, "gperf -aclEDCIG --null-strings -H sdb_hash_c_%s"
+		snprintf (buf, buf_size, "gperf -aclEDCIG --null-strings -H sdb_hash_c_%s"
 				" -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, name, name);
 		free (cname);
 		rc = _system (buf);
 		if (rc == 0) {
-			snprintf (buf, bufsz, "gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", name, name);
+			snprintf (buf, buf_size, "gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", name, name);
 			rc = _system (buf);
 			if (rc == 0) {
 				eprintf ("Generated %s.c and %s.h\n", name, name);
@@ -578,7 +609,6 @@ static int gen_gperf(const char *file, const char *name) {
 	} else {
 		eprintf ("Outdated sdb binary in PATH?\n");
 	}
-	free (out);
 	free (buf);
 	return rc;
 }

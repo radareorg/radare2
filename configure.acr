@@ -13,6 +13,7 @@ USE_PKGCONFIG
 
 CHKPRG! PATCH patch
 CHKPRG GIT git
+CHKPRG GPERF gperf
 CHKLIB magic
 ARG_WITH USE_MAGIC sysmagic force to use system's magic ;
 IFAND HAVE_LIB_MAGIC USE_MAGIC {
