@@ -534,7 +534,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	// TODO Store all this stuff in the heap so we save memory in the stack
 	RAnalOp *op = NULL;
 	char *movbasereg = NULL;
-	const bool continue_after_jump = anal->opt.afterjmp;
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
 	char *last_reg_mov_lea_name = NULL;
 	RAnalBlock *bb = NULL;
@@ -1144,24 +1143,10 @@ repeat:
 			}
 			int saved_stack = fcn->stack;
 			// TODO: depth -1 in here
-			if (continue_after_jump) {
-				r_anal_fcn_bb (anal, fcn, op->jump, depth);
-				fcn->stack = saved_stack;
-				ret = r_anal_fcn_bb (anal, fcn, op->fail, depth);
-				fcn->stack = saved_stack;
-			} else {
-				ret = r_anal_fcn_bb (anal, fcn, op->jump, depth);
-				fcn->stack = saved_stack;
-				ret = r_anal_fcn_bb (anal, fcn, op->fail, depth);
-				fcn->stack = saved_stack;
-				if (op->jump < fcn->addr) {
-					if (!overlapped) {
-						bb->jump = op->jump;
-						bb->fail = UT64_MAX;
-					}
-					gotoBeach (R_ANAL_RET_END);
-				}
-			}
+			r_anal_fcn_bb (anal, fcn, op->jump, depth);
+			fcn->stack = saved_stack;
+			ret = r_anal_fcn_bb (anal, fcn, op->fail, depth);
+			fcn->stack = saved_stack;
 
 			// XXX breaks mips analysis too !op->delay
 			// this will be all x86, arm (at least)
@@ -1323,12 +1308,10 @@ repeat:
 				lea_jmptbl_ip = UT64_MAX;
 			}
 			if (anal->opt.ijmp) {
-				if (continue_after_jump) {
-					r_anal_fcn_bb (anal, fcn, op->jump, depth - 1);
-					ret = r_anal_fcn_bb (anal, fcn, op->fail, depth - 1);
-					if (overlapped) {
-						goto analopfinish;
-					}
+				r_anal_fcn_bb (anal, fcn, op->jump, depth - 1);
+				ret = r_anal_fcn_bb (anal, fcn, op->fail, depth - 1);
+				if (overlapped) {
+					goto analopfinish;
 				}
 				if (r_anal_noreturn_at (anal, op->jump) || op->eob) {
 					goto analopfinish;

@@ -299,7 +299,6 @@ e asm.functions=false
 e asm.fcncalls=false
 e asm.lines.fcn=false
 e scr.utf8=false
-e anal.jmp.after=false
 e anal.calls=false
 e anal.jmp.cref=false
 e anal.jmp.above=true
