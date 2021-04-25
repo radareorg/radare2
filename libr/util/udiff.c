@@ -711,6 +711,7 @@ static st32 r_diff_levenshtein_nopath(RLevBuf *bufa, RLevBuf *bufb, ut32 maxdst,
 
 	ut32 ldelta = blen - alen;
 	if (ldelta > maxdst) {
+		lev_matrix_free (matrix, alen + 1);
 		return ST32_MAX;
 	}
 
