@@ -171,11 +171,11 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
 };
 
-static int check_features(RAsm *a, cs_insn *insn) {
+static bool check_features(RAsm *a, cs_insn *insn) {
 	const char *name;
 	int i;
 	if (!insn || !insn->detail) {
-		return 1;
+		return true;
 	}
 	for (i = 0; i < insn->detail->groups_count; i++) {
 		int id = insn->detail->groups[i];
@@ -190,13 +190,13 @@ static int check_features(RAsm *a, cs_insn *insn) {
 		}
 		name = cs_group_name (cd, id);
 		if (!name) {
-			return 1;
+			return true;
 		}
 		if (!strstr (a->features, name)) {
-			return 0;
+			return false;
 		}
 	}
-	return 1;
+	return true;
 }
 
 #ifndef R2_PLUGIN_INCORE
