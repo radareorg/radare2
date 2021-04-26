@@ -32,11 +32,11 @@ int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interne
 		ut8 op = code[i];
 		i++;
 		char *name = strdup (ops->opcodes[op].op_name);
-		r_str_case (name, 0);
-		r_strbuf_set (&opstruct->buf_asm, name);
 		if (!name) {
 			return 0;
 		}
+		r_str_case (name, 0);
+		r_strbuf_set (&opstruct->buf_asm, name);
 		free (name);
 		if (op >= ops->have_argument) {
 			if (ops->bits == 16) {
