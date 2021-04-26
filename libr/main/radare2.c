@@ -1252,7 +1252,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			}
 			r_core_cmd0 (r, ".dm*");
-			if (r_str_startswith (asmarch, "arm")) {
+			if (r_str_startswith (asmarch, "arm") && r_config_get_i (r->config, "asm.bits") < 64) {
 				// Set Thumb Mode if necessary
 				r_core_cmd0 (r, "dr? thumb;?? e asm.bits=16");
 			}
