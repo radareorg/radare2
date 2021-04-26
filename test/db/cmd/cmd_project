@@ -1,7 +1,7 @@
 NAME=Import project
 FILE=malloc://512
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e scr.interactive=false
 e dir.projects = bins/other/projects
 CC hello world
@@ -18,7 +18,7 @@ RUN
 NAME=Import project with overwriting
 FILE=malloc://512
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e asm.bits=64
 e asm.arch = x86
 e anal.arch = x86
@@ -36,7 +36,7 @@ RUN
 NAME=Import project with overwriting
 FILE=malloc://512
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 t-*
 e asm.arch = x86
 e anal.arch = x86
@@ -60,7 +60,7 @@ RUN
 NAME=Export project
 FILE=malloc://512
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 CC "Some other test" @ 0x00404890
 Ps testexp > /dev/null
@@ -76,7 +76,7 @@ RUN
 NAME=Set, export, unset and import
 FILE=malloc://512
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 t-*
 CC "First comment" @ 0x00404890
@@ -97,7 +97,7 @@ RUN
 NAME=xrefs
 FILE=malloc://512
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 ax 1
 e dir.projects = .tmp/
 axq
@@ -113,7 +113,7 @@ RUN
 NAME=Import mapped project
 FILE=malloc://0xf000
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = bins/other/projects/
 e io.cache=true
 wx 4ce2fc@0xc000
@@ -137,7 +137,7 @@ RUN
 NAME=asm.emu in project
 FILE=bins/elf/analysis/simpleARM.elf
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e asm.flags = false
 e asm.emu = true
 e dir.projects = .tmp/
@@ -156,7 +156,7 @@ RUN
 NAME=Variables in project file
 FILE=bins/efi/bootia32.efi
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 af
 afvr edi blahblah typeR @ 0x10002d8d
@@ -176,7 +176,7 @@ RUN
 NAME=Types and link in project file
 FILE=-
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 tk zoby  =  type
 tl char @ 0x0
@@ -194,7 +194,7 @@ NAME=Breakpoints in project file
 FILE=bins/elf/analysis/main
 BROKEN=1
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dbg.bpinmaps = false
 e dir.projects = .tmp/
 db 0x1234567
@@ -209,7 +209,7 @@ RUN
 NAME=Visual Marks in project file
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 fV 49 0x400410
 fV 50 0x400412
 Ps vmarks > /dev/null
@@ -225,17 +225,17 @@ RUN
 NAME=Custom types in project file
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
-Ps custom_types > /dev/null
-Pc custom_types~?char **
+Ps ctypes > /dev/null
+Pc ctypes~?char **
 "td struct Foo { int bar; int x; int y; };"
-Ps custom_types > /dev/null
-Pc custom_types~?char **
-Pc custom_types~?Foo
-Pd custom_types > /dev/null
+Ps ctypes > /dev/null
+Pc ctypes~?char **
+Pc ctypes~?Foo
+Pd ctypes > /dev/null
 EOF
 EXPECT=<<EOF
 9
@@ -248,7 +248,7 @@ NAME=Export custom types and import again
 FILE=bins/elf/analysis/main
 BROKEN=1
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 tk char **=type
 tk type.char **=**z
 tk type.char **.size=64
@@ -275,7 +275,7 @@ NAME=Save project for a binary and checking opened files
 FILE=bins/elf/analysis/main
 BROKEN=1
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 Ps ulumulu > /dev/null
 Po ulumulu > /dev/null
@@ -291,7 +291,7 @@ BROKEN=1
 FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 # Ps blub > /dev/null
 Po blub > /dev/null
@@ -305,7 +305,7 @@ RUN
 NAME=Save project for a binary after analysis
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 e scr.interactive=false
 aa
@@ -326,7 +326,7 @@ NAME=Save project with baddr
 FILE=bins/elf/analysis/main
 ARGS=-B 0x1337
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 o
 om
@@ -369,7 +369,7 @@ NAME=Save project with maddr
 FILE=bins/elf/analysis/main
 ARGS=-n -m 0x1337
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 o
 om
@@ -399,7 +399,7 @@ NAME=Delete a saved project (with Pd)
 FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 Ps cannot > /dev/null
 Pd cannot > /dev/null
@@ -414,7 +414,7 @@ NAME=Delete a saved project (with P-)
 FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 Ps erase > /dev/null
 P- erase > /dev/null
@@ -428,7 +428,7 @@ NAME=Delete a saved project and used directory (with Pd)
 FILE=bins/elf/analysis/main
 ARGS=-n
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 Ps anesthetize > /dev/null
 Pd anesthetize > /dev/null
@@ -444,7 +444,7 @@ FILE=bins/elf/analysis/main
 ARGS=-n
 BROKEN=1
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 Ps lightbulb > /dev/null
 P- lightbulb > /dev/null
@@ -460,7 +460,7 @@ NAME=Save project for a file with x86_16 and check the value after loading again
 FILE=bins/src/hello.c
 ARGS=
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 e asm.arch=x86
 e asm.bits=16
@@ -478,7 +478,7 @@ RUN
 NAME=prj.name saved in project
 FILE=malloc://512
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 Ps namedprj > /dev/null
 e prj.name=
@@ -494,7 +494,7 @@ RUN
 NAME=Checking e prj.name after saving again
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 Ps stupid > /dev/null
 Po stupid > /dev/null
@@ -510,7 +510,7 @@ RUN
 NAME=Restoring xrefs
 FILE=malloc://512
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e asm.arch = x86
 e anal.arch = x86
 e asm.bits=32
@@ -530,7 +530,7 @@ NAME=Reopening projects bin info loading
 FILE=bins/elf/analysis/main
 BROKEN=1
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 e dir.projects = .tmp/
 Ps bininfo > /dev/null
 Po bininfo
@@ -548,7 +548,7 @@ RUN
 NAME=Reopening project with changes loading
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
-e prj.git=false
+e prj.vc=false
 aaa > /dev/null
 e dir.projects = .tmp/
 s main > /dev/null

@@ -3056,6 +3056,32 @@ static bool cb_dbg_verbose(void *user, void *data) {
 	return true;
 }
 
+static bool cb_prjvctype(void *user, void *data) {
+	RConfigNode *node = data;
+	char *p = r_file_path ("git");
+	bool found = (p && (*p == 'g' ||*p == '/'));
+	free (p);
+	if (*node->value == '?') {
+		if (found) {
+			r_cons_println ("git");
+		}
+		r_cons_println ("rvc");
+		return true;
+	}
+	if (!strcmp (node->value, "git")) {
+		if (found) {
+			return true;
+		}
+		eprintf ("Git is not installed\n");
+		return false;
+	}
+	if (!strcmp (node->value, "rvc")) {
+		return true;
+	}
+	eprintf ("Unknown vc %s\n", node->value);
+	return true;
+}
+
 R_API int r_core_config_init(RCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
@@ -3427,12 +3453,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* prj */
 	SETCB ("prj.name", "", &cb_prjname, "Name of current project");
 	SETBPREF ("prj.files", "false", "Save the target binary inside the project directory");
-	{
-		char *p = r_file_path ("git");
-		bool found = (p && *p == '/');
-		SETBPREF ("prj.git", r_str_bool (found), "Use git to share your project and version changes");
-		free (p);
-	}
+	SETBPREF ("prj.vc", "true", "Use your version control system of choice (rvc, git) to manage projects");
 	SETBPREF ("prj.zip", "false", "Use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
 
@@ -3970,7 +3991,17 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("lines.from", 0, "Start address for line seek");
 	SETCB ("lines.to", "$s", &cb_linesto, "End address for line seek");
 	SETCB ("lines.abs", "false", &cb_linesabs, "Enable absolute line numbers");
-
+	/* RVC */
+	{
+		char *p = r_file_path ("git");
+		bool found = (p && *p == 'g');
+		if (!found) {
+			SETCB ("prj.vc.type", "git", &cb_prjvctype, "What should projects use as a vc");
+		} else {
+			SETCB ("prj.vc.type", "git", &cb_prjvctype, "What should projects use as a vc");
+		}
+		free (p);
+	}
 	r_config_lock (cfg, true);
 	return true;
 }
