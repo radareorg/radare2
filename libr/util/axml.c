@@ -243,6 +243,7 @@ static bool dump_element(RStrBuf *sb, string_pool_t *pool, namespace_t *namespac
 		if (count * sizeof(attribute_t) > element_size) {
 			r_strbuf_appendf (sb, " />");
 			eprintf ("Invalid element count\n");
+			free (name);
 			return false;
 		}
 
