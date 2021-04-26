@@ -1252,8 +1252,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 			}
 			r_core_cmd0 (r, ".dm*");
-			// Set Thumb Mode if necessary
-			r_core_cmd0 (r, "dr? thumb;?? e asm.bits=16");
+			if (r_str_startswith (asmarch, "arm")) {
+				// Set Thumb Mode if necessary
+				r_core_cmd0 (r, "dr? thumb;?? e asm.bits=16");
+			}
 			r_cons_reset ();
 		}
 		if (!pfile) {
