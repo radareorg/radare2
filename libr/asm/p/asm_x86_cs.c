@@ -25,7 +25,7 @@ static bool the_end(void *p) {
 	return true;
 }
 
-static int check_features(RAsm *a, cs_insn *insn);
+static bool check_features(RAsm *a, cs_insn *insn);
 
 #include "cs_mnemonics.c"
 
