@@ -214,11 +214,11 @@ R_API bool r_vc_commit(Rvc *repo, RList *blobs, const char *auth, const char *me
 R_API bool r_vc_branch(Rvc *repo, const char *name) {
 	char *bpath, *ppath;
 	RvcBranch *nb;
-	nb = R_NEW0 (RvcBranch);
 	if (!is_branch_name (name)) {
 		eprintf ("%s Is Not A Vaild Branch Name\n", name);
 		return false;
 	}
+	nb = R_NEW0 (RvcBranch);
 	if (!nb) {
 		eprintf ("Failed To Allocate Branch Struct\n");
 		return false;
@@ -249,8 +249,10 @@ R_API bool r_vc_branch(Rvc *repo, const char *name) {
 			free (nb->name);
 			free (nb);
 			free (bpath);
+			free (ppath);
 			return false;
 		}
+		free (ppath);
 	}
 	repo->current_branch = nb;
 	free (bpath);
