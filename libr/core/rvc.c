@@ -93,6 +93,7 @@ static char *p2rvcp(const Rvc *repo, const char *path) {
 		p = r_str_new (path);
 	}
 	if (!p) {
+		free (rp);
 		return NULL;
 	}
 	ret = r_str_new (p + r_str_len_utf8 (rp) + 1);
@@ -127,7 +128,6 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 		char *tmp = r_str_appendf (commit_string, "\nblob:%s:%s",
 				blob->fname, blob->hash);
 		if (!tmp) {
-			free (commit_string);
 			return false;
 		}
 		commit_string = tmp;
@@ -273,11 +273,10 @@ R_API Rvc *r_vc_new(const char *path) {
 		r_str_ncpy (rabsp, rabsp, r_str_len_utf8 (rabsp) - 1);
 	}
 	repo->path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR, rabsp);
-	printf ("Allocated path\n");
-	printf ("%s\n", repo->path);
 	if (!repo->path) {
 		eprintf ("Failed To Allocate Repoistory Path\n");
 		free (repo);
+		free (rabsp);
 		return NULL;
 	}
 	if (r_file_exists (repo->path) || r_file_is_directory (repo->path)) {
@@ -507,6 +506,7 @@ R_API bool r_vc_checkout(Rvc *repo, const char *name) {
 			continue;
 		}
 		if (!r_file_copy (bpath, fpath)) {
+			free (bpath);
 			repo->current_branch = tmpb;
 			return false;
 		}
