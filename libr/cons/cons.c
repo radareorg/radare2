@@ -1268,8 +1268,9 @@ R_API int r_cons_get_column(void) {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_write(const char *str, int len) {
-	if (len < 0) {
-		return -1;
+	r_return_val_if_fail (str && len >= 0, -1);
+	if (len == 0) {
+		return 0;
 	}
 	if (I.echo) {
 		// Here to silent pedantic meson flags ...
