@@ -621,9 +621,8 @@ static RCmdStatus wv8_handler(RCore *core, int argc, const char **argv) {
 }
 
 static bool cmd_wff(RCore *core, const char *input) {
-	ut8 *buf;
-	size_t size;
-	// XXX: file names cannot contain spaces
+	ut8 *buf = NULL;
+	size_t size = 0;
 	const char *arg = input + ((input[0] == ' ') ? 1 : 0);
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *p, *a = r_str_trim_dup (arg);
@@ -646,7 +645,19 @@ static bool cmd_wff(RCore *core, const char *input) {
 			free (out);
 		}
 	}
-	if ((buf = (ut8*) r_file_slurp (a, &size))) {
+	
+	if (*a == '$') {
+		const char *res = r_cmd_alias_get (core->rcmd, a, 1);
+		if (res) {
+			buf = (ut8*)strdup (res);
+			size = strlen (res);
+		}
+	} else {
+		buf = (ut8*) r_file_slurp (a, &size);
+	}
+	if (size < 1) {
+		// nothing to write
+	} else if (buf) {
 		int u_offset = 0;
 		ut64 u_size = r_num_math (core->num, p);
 		if (u_size < 1) u_size = (ut64)size;
@@ -1639,8 +1650,14 @@ static int wt_handler_old(void *data, const char *input) {
 				}
 			} else {
 				sz = core->blocksize;
-				if (!r_file_dump (filename, core->block, sz, append)) {
-					sz = -1;
+				if (*filename == '$') {
+					char *data = r_str_ndup ((const char *)core->block, sz);
+					r_cmd_alias_set (core->rcmd, filename, data, 1);
+					free (data);
+				} else {
+					if (!r_file_dump (filename, core->block, sz, append)) {
+						sz = -1;
+					}
 				}
 			}
 		}
