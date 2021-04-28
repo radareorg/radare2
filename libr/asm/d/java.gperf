@@ -1,0 +1,261 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_java -N sdb_get_c_java -t java.gperf > java.c
+// gcc -DMAIN=1 java.c ; ./a.out > java.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+lload_3,"load a long value from a local variable 3"
+anewarray,"create a new array of references of length "
+dstore_1,"store a double into local variable 1"
+dstore_0,"store a double into local variable 0"
+dreturn,"return a double from a method"
+l2f,"convert a long to a float"
+dstore_3,"store a double into local variable 3"
+dstore_2,"store a double into local variable 2"
+l2d,"convert a long to a double"
+fconst_1,"push "
+fconst_0,"push "
+fconst_2,"push "
+dup,"duplicate the value on top of the stack"
+lor,"bitwise or of two longs"
+ifnonnull,"if "
+ishl,"int shift left"
+dastore,"store a double into an array"
+invokespecial,"invoke instance method on object "
+ldiv,"divide two longs"
+jsr_w,"jump to subroutine at "
+castore,"store a char into an array"
+f2d,"convert a float to a double"
+dload,"load a double "
+bastore,"store a byte or Boolean value into an array"
+multianewarray,"create a new array of "
+f2i,"convert a float to an int"
+invokedynamic,"invokes a dynamic method and puts the result on the stack (might be void); the method is identified by method reference "
+f2l,"convert a float to a long"
+jsr,"jump to subroutine at "
+ifnull,"if "
+fadd,"add two floats"
+frem,"get the remainder from a division between two floats"
+dload_0,"load a double from local variable 0"
+dload_1,"load a double from local variable 1"
+dload_2,"load a double from local variable 2"
+dload_3,"load a double from local variable 3"
+new,"create new object of type identified by class reference in constant pool "
+pop2,"discard the top two values on the stack (or one value, if it is a double or long)"
+lshr,"bitwise shift right of a long "
+ldc,"push a constant "
+ior,"bitwise int or"
+bipush,"push a "
+iaload,"load an int from an array"
+fstore,"store a float "
+nop,"perform no operation"
+land,"bitwise and of two longs"
+lload,"load a long value from a local variable "
+if_icmpeq,"if ints are equal, branch to instruction at "
+checkcast,"checks whether an "
+iconst_4,"load the int value 4 onto the stack"
+iconst_5,"load the int value 5 onto the stack"
+iconst_2,"load the int value 2 onto the stack"
+arraylength,"get the length of an array"
+aastore,"store into a reference in an array"
+iconst_3,"load the int value 3 onto the stack"
+iconst_0,"load the int value 0 onto the stack"
+iconst_1,"load the int value 1 onto the stack"
+ldc2_w,"push a constant "
+lshl,"bitwise shift left of a long "
+fcmpl,"compare two floats"
+sastore,"store short to array"
+ixor,"int xor"
+iinc,"increment local variable "
+iushr,"int logical shift right"
+faload,"load a float from an array"
+monitorenter,"enter monitor for object ('grab the lock' – start of synchronized() section)"
+ddiv,"divide two doubles"
+idiv,"divide two integers"
+irem,"logical int remainder"
+lstore_1,"store a long "
+fcmpg,"compare two floats"
+lstore_0,"store a long "
+ifle,"if "
+lstore_3,"store a long "
+dmul,"multiply two doubles"
+daload,"load a double from an array"
+lstore_2,"store a long "
+wide,"execute"
+dup2,"duplicate top two stack words (two values, if value1 is not double nor long; a single value, if value1 is double or long)"
+fastore,"store a float in an array"
+if_icmpge,"if "
+breakpoint,"reserved for breakpoints in Java debuggers; should not appear in any class file"
+swap,"swaps two top words on the stack (note that value1 and value2 must not be double or long)"
+i2s,"convert an int into a short"
+athrow,"throws an error or exception (notice that the rest of the stack is cleared, leaving only a reference to the Throwable)"
+ifeq,"if "
+lconst_1,"push the long 1 onto the stack"
+lconst_0,"push the long 0 onto the stack"
+areturn,"return a reference from a method"
+i2l,"convert an int into a long"
+iflt,"if "
+if_icmple,"if "
+lmul,"multiply two longs"
+goto,"goes to another instruction at "
+i2f,"convert an int into a float"
+fstore_3,"store a float "
+fstore_2,"store a float "
+astore,"store a reference into a local variable "
+if_icmpgt,"if "
+i2d,"convert an int into a double"
+fstore_1,"store a float "
+fstore_0,"store a float "
+i2b,"convert an int into a byte"
+saload,"load short from array"
+aload,"load a reference onto the stack from a local variable "
+i2c,"convert an int into a character"
+ldc_w,"push a constant "
+iload_1,"load an int "
+isub,"int subtract"
+iload_0,"load an int "
+getstatic,"get a static field "
+iload_3,"load an int "
+if_icmplt,"if "
+iload_2,"load an int "
+aconst_null,"push a "
+iconst_m1,"load the int value −1 onto the stack"
+dstore,"store a double "
+monitorexit,"exit monitor for object ('release the lock' – end of synchronized() section)"
+baload,"load a byte or Boolean value from an array"
+putfield,"set field to "
+d2f,"convert a double to a float"
+newarray,"create new array with "
+dneg,"negate a double"
+tableswitch,"continue execution from an address in the table at offset "
+d2i,"convert a double to an int"
+lneg,"negate a long"
+lookupswitch,"a target address is looked up from a table using a key and execution continues from the instruction at that address"
+ladd,"add two longs"
+freturn,"return a float"
+d2l,"convert a double to a long"
+goto_w,"goes to another instruction at "
+lastore,"store a long to an array"
+ifge,"if "
+iand,"perform a bitwise and on two integers"
+if_icmpne,"if ints are not equal, branch to instruction at "
+ifne,"if "
+istore_0,"store int "
+istore_1,"store int "
+ret,"continue execution from address taken from a local variable "
+lsub,"subtract two longs"
+istore_2,"store int "
+dadd,"add two doubles"
+istore_3,"store int "
+iload,"load an int "
+ifgt,"if "
+imul,"multiply two integers"
+dconst_1,"push the constant "
+dconst_0,"push the constant "
+pop,"discard the top value on the stack"
+dup_x2,"insert a copy of the top value into the stack two (if value2 is double or long it takes up the entry of value3, too) or three values (if value2 is neither double nor long) from the top"
+aload_1,"load a reference onto the stack from local variable 1"
+dup_x1,"insert a copy of the top value into the stack two values from the top. value1 and value2 must not be of the type double or long."
+aload_0,"load a reference onto the stack from local variable 0"
+aload_3,"load a reference onto the stack from local variable 3"
+aload_2,"load a reference onto the stack from local variable 2"
+astore_0,"store a reference into local variable 0"
+invokestatic,"invoke a static method and puts the result on the stack (might be void); the method is identified by method reference "
+astore_1,"store a reference into local variable 1"
+lxor,"bitwise exclusive or of two longs"
+astore_2,"store a reference into local variable 2"
+astore_3,"store a reference into local variable 3"
+lrem,"remainder of division of two longs"
+dsub,"subtract a double from another"
+dup2_x1,"duplicate two words and insert beneath third word (see explanation above)"
+putstatic,"set static field to "
+dup2_x2,"duplicate two words and insert beneath fourth word"
+laload,"load a long from an array"
+if_acmpeq,"if references are equal, branch to instruction at "
+ireturn,"return an integer from a method"
+fmul,"multiply two floats"
+instanceof,"determines if an object "
+fload,"load a float "
+fload_2,"load a float "
+fload_3,"load a float "
+fload_0,"load a float "
+fneg,"negate a float"
+fdiv,"divide two floats"
+fload_1,"load a float "
+iastore,"store an int into an array"
+dcmpl,"compare two doubles"
+caload,"load a char from an array"
+impdep1,"reserved for implementation-dependent operations within debuggers; should not appear in any class file"
+impdep2,"reserved for implementation-dependent operations within debuggers; should not appear in any class file"
+invokeinterface,"invokes an interface method on object "
+dcmpg,"compare two doubles"
+getfield,"get a field "
+istore,"store int "
+aaload,"load onto the stack a reference from an array"
+ineg,"negate int"
+drem,"get the remainder from a division between two doubles"
+return,"return void from method"
+lreturn,"return a long value"
+iadd,"add two ints"
+lushr,"bitwise shift right of a long "
+invokevirtual,"invoke virtual method on object "
+lstore,"store a long "
+lcmp,"push 0 if the two longs are the same, 1 if value1 is greater than value2, -1 otherwise"
+if_acmpne,"if references are not equal, branch to instruction at "
+l2i,"convert a long to a int"
+sipush,"push a short onto the stack"
+fsub,"subtract two floats"
+ishr,"int arithmetic shift right"
+lload_0,"load a long value from a local variable 0"
+lload_1,"load a long value from a local variable 1"
+lload_2,"load a long value from a local variable 2"
+%%
+// SDB-CGEN V1.7.0
+// 0x55b9be61f160
+const char* gperf_java_get(const char *s) {
+	const struct kv *o = sdb_get_c_java (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_java_hash(const char *s) {
+	return sdb_hash_c_java(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_java = {
+	.name = "java",
+	.get = &gperf_java_get,
+	.hash = &gperf_java_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("java.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open java.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_java_H\n");
+	printf ("#define INCLUDE_java_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_java_%s %d\n",
+					line, sdb_hash_c_java (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

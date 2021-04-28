@@ -1,0 +1,113 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_i8080 -N sdb_get_c_i8080 -t i8080.gperf > i8080.c
+// gcc -DMAIN=1 i8080.c ; ./a.out > i8080.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+hlt,"halt processor"
+cccc,"conditional subroutine call"
+xthl,"swap h:l with top word on stack"
+rst,"restart (call n*8)"
+call,"unconditional subroutine call"
+ora,"or  register with a"
+ani,"and immediate with a"
+rccc,"conditional return from subroutine"
+lxi,"load register pair immediate"
+ral,"rotate a left through carry"
+sub,"subtract register from a"
+inr,"increment register"
+ei,"enable interrupts"
+cmc,"compliment carry flag"
+cma,"compliment a"
+ana,"and register with a"
+sui,"subtract immediate from a"
+jccc,"conditional jump"
+rrc,"rotate a right"
+nop,"no operation"
+inx,"increment register pair"
+lhld,"load h:l from memory"
+daa,"decimal adjust accumulator"
+pop,"pop  register pair from the stack"
+dad,"add register pair to hl (16 bit add)"
+cmp,"compare register with a"
+xchg,"de and hl content"
+xri,"exclusiveor immediate with a"
+pchl,"jump to address in h:l"
+mov,"move register to register"
+stax,"store indirect through bc or de"
+in,"read input port into a"
+dcr,"decrement register"
+ret,"unconditional return from subroutine"
+sbb,"subtract register from a with borrow"
+di,"disable interrupts"
+cpi,"compare immediate with a"
+push,"push register pair on the stack"
+stc,"set carry flag"
+xra,"exclusive or register with a"
+out,"write a to output port"
+sta,"store a to memory"
+rlc,"rotate a left"
+sbi,"subtract immediate from a with borrow"
+dcx,"decrement register pair"
+rar,"rotate a right through carry"
+lda,"load a from memory"
+sphl,"set sp to content of h:l"
+shld,"store h:l to memory"
+adc,"add register to a with carry"
+add,"add register to a"
+ldax,"load indirect through bc or de"
+mvi,"move immediate to register"
+aci,"add immediate to a with carry"
+ori,"or  immediate with a"
+jmp,"unconditional jump"
+adi,"add immediate to a"
+%%
+// SDB-CGEN V1.7.0
+// 0x562f460fd170
+const char* gperf_i8080_get(const char *s) {
+	const struct kv *o = sdb_get_c_i8080 (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_i8080_hash(const char *s) {
+	return sdb_hash_c_i8080(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_i8080 = {
+	.name = "i8080",
+	.get = &gperf_i8080_get,
+	.hash = &gperf_i8080_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("i8080.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open i8080.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_i8080_H\n");
+	printf ("#define INCLUDE_i8080_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_i8080_%s %d\n",
+					line, sdb_hash_c_i8080 (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

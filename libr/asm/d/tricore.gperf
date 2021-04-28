@@ -1,0 +1,147 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_tricore -N sdb_get_c_tricore -t tricore.gperf > tricore.c
+// gcc -DMAIN=1 tricore.c ; ./a.out > tricore.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+jnz,"jump if not equal to zero"
+st.d,"store double word"
+mov.aa,"move address from address register"
+cmov,"conditional move"
+jeq.a,"jump if equal address"
+st.a,"store word from address register"
+ld.b,"load byte"
+mul,"multiply signed"
+st.b,"store byte"
+ld.a,"load word to address register"
+jnz.t,"jump if not equal to zero bit"
+add.h,"add packed half word"
+ld.d,"load double world"
+xor,"bitwise xor"
+call,"call indirect"
+ld.h,"load half word"
+st.t,"store bit"
+add.b,"add packed byte"
+ld.hu,"load half word unsigned"
+muls.u,"multiply unsigned with saturation"
+st.w,"store word"
+mtcr,"move to core register"
+jlt.u,"jump if less than unsigned"
+add.a,"add address"
+st.q,"store half word signed fraction"
+jge.u,"jump if greater than or equal unsigned"
+movh,"move high"
+ld.q,"load half word signed fraction"
+jltz,"jump if less than zero"
+ld.w,"load word"
+addih.a,"add immediate high to address"
+jgtz,"jump if greater than zero"
+lea,"load effective address"
+jnz.a,"jump if not equal to zero address"
+and,"bitwise and"
+ld.bu,"load byte unsigned"
+jgez,"jump if greater than equal to zero"
+adds.u,"add unsigned with saturation"
+jz.t,"jump if zero bit"
+subc,"subtract with carry"
+mfcr,"move from core register"
+isync,"synchronize instructions"
+add,"add"
+st.da,"store double world from address registers"
+addc,"add with carry"
+jz.a,"jump if zero address"
+sub.h,"subtract packed half word"
+muls,"multiply signed with saturation"
+jal,"jump and link absolute"
+addi,"add immediate"
+jeq,"jump if equal"
+subs,"subtract signed with saturation"
+sub.b,"subtract packed byte"
+sub.a,"subtract address"
+adds,"add values with signed saturation"
+subx,"subtract extended"
+jge,"jump if greater than or equal"
+mov.u,"move unsigned"
+sh,"shift"
+addx,"add extended"
+ret,"return from call"
+jli,"jump and link indirect"
+jl,"jump and link"
+jne.a,"jump if not equal address"
+ji,"jump indirect"
+mov,"move"
+ldlcx,"load lower context"
+addih,"add immediate high"
+mov.d,"move address to data register"
+sha,"arithmetic shift"
+addsc.at,"add bit scaled index to address"
+ja,"jump unsigned absolute"
+mov.a,"move value to address register"
+jlt,"jump if less than"
+ld.da,"load double word to address register"
+subs.u,"subtract unsigned with saturation"
+subs.hu,"subtract packed half word unsigned with saturation"
+sub,"subtract"
+jne,"jump if not equal"
+jned,"jump if not equal and decrement"
+jz,"jump if zero"
+adds.hu,"add unsigned packed half word with saturation"
+movh.a,"move high to address"
+subs.h,"subtract packed half word with saturation"
+jlez,"jump if less than or equal to zero"
+jnei,"jump if not equal and increment"
+or,"bitwise or"
+addsc.a,"add scaled index to address"
+j,"jump unconditional"
+nop,"nop operation"
+st.h,"store half word"
+%%
+// SDB-CGEN V1.7.0
+// 0x55bc33ab3170
+const char* gperf_tricore_get(const char *s) {
+	const struct kv *o = sdb_get_c_tricore (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_tricore_hash(const char *s) {
+	return sdb_hash_c_tricore(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_tricore = {
+	.name = "tricore",
+	.get = &gperf_tricore_get,
+	.hash = &gperf_tricore_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("tricore.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open tricore.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_tricore_H\n");
+	printf ("#define INCLUDE_tricore_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_tricore_%s %d\n",
+					line, sdb_hash_c_tricore (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

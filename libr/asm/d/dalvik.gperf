@@ -1,0 +1,274 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_dalvik -N sdb_get_c_dalvik -t dalvik.gperf > dalvik.c
+// gcc -DMAIN=1 dalvik.c ; ./a.out > dalvik.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+mul-int/2addr,"multiplication"
+sget-wide,"perform get object static field operation with the static field"
+and-int,"adding, result stored in third register"
+if-gtz,"Branch to the given destination if greater with 0"
+sub-double/2addr,"subtraction"
+mul-long,"multiplication, result stored in third register"
+iput-char,"perform put object instance with the identified field"
+sub-double,"subtraction, result stored in third register"
+ushr-int/lit8,"bitwise unsigned shift right"
+new-instance,"construct a new instance of the indicated type, storing reference to it in the destination"
+rem-double/2addr,"remainder"
+iput-byte,"perform put object instance with the identified field"
+const-wide,"move literal into the specified register-pair"
+array-length,"store in the given destination register the length of the indicated array, in entrie"
+shl-long/2addr,"bitwise signed shift right"
+div-int/lit8,"division "
+rem-long,"remainder, result stored in third register"
+or-int,"logical OR, result stored in third register"
+sput-char,"perform put object static field operation with the static field"
+not-long,"perform not operation"
+sput-boolean,"perform put object static field operation with the static field"
+if-eqz,"Branch to the given destination if equal with 0"
+long-to-float,"cast types"
+rem-float,"remainder, result stored in third register"
+int-to-long,"cast types"
+filled-new-array,"construct an array of the given type and size, filling it with the supplied contents"
+invoke-direct,"call method"
+int-to-byte,"cast types"
+int-to-char,"cast types"
+float-to-int,"cast types"
+shr-long/2addr,"bitwise signed shift right"
+or-int/lit8,"logical OR"
+if-le,"branch to the given destination if lesser or equal"
+cmpl-double,"compare long based on l"
+rem-long/2addr,"remainder"
+if-nez,"Branch to the given destination if not equal with 0"
+move-result,"move the single-word non-object result of the most recent invoke-kind into the indicated registe"
+rem-int,"remainder, result stored in third register"
+invoke-virtual,"call method"
+neg-float,"perform invertion"
+const-string,"move a reference to the string specified by the given index into the specified register"
+double-to-int,"cast types"
+sub-long/2addr,"subtraction"
+div-float,"division, result stored in third register"
+const-wide/16,"move literal into the specified register-pair"
+mul-float/2addr,"multiplication"
+const/16,"move literal into the specified register"
+shr-int/2addr,"bitwise signed shift right"
+div-double,"division, result stored in third register"
+if-lt,"branch to the given destination if lesser"
+sput-short,"perform put object static field operation with the static field"
+return-void,"return from a void method"
+if-eq,"branch to the given destination if equal"
+cmpl-float,"compare float based on l"
+shr-long,"bitwise signed shift right, result stored in third register"
+mul-int/lit16,"multiplication"
+move-object/16,"move the contents of one object-bearing register to anothe"
+iput-short,"perform put object instance with the identified field"
+move-wide,"move the contents of one register-pair to another"
+neg-long,"perform invertion"
+shl-int/2addr,"bitwise signed shift right"
+xor-int/lit16,"logical XOR"
+const/high16,"move literal into the specified register"
+const-class,"move a reference to the class specified by the given index into the specified register"
+move/16,"move the contents of one non-object register to another"
+and-int/2addr,"adding "
+move-exception,"save a just-caught exception into the given register"
+aget-boolean,"perform get array at the identified index of array"
+nop,"no operation"
+div-int/lit16,"division "
+throw,"throw the indicated exception"
+sput-byte,"perform put object static field operation with the static field"
+const/4,"move literal into the specified register"
+if-ne,"branch to the given destination if not equal"
+goto/16,"unconditionally jump"
+move-result-object,"move the object result of the most recent invoke-kind into the indicated registe"
+ushr-long,"bitwise unsigned shift right, result stored in third register"
+packed-switch,"jump to a new instruction based on register or fall"
+or-int/lit16,"logical OR"
+neg-double,"perform not operation"
+if-ge,"branch to the given destination if greater or equal"
+check-cast,"throw a classcastexception if the reference in the given register cannot be cast"
+float-to-long,"cast types"
+sget-char,"perform get object static field operation with the static field"
+sub-int,"subtraction, result stored in third register"
+shr-int/lit8,"bitwise signed shift right"
+or-long,"logical OR, result stored in third register"
+iput-boolean,"perform put object instance with the identified field"
+sub-long,"subtraction, result stored in third register"
+cmpg-float,"compare float based on g"
+if-gt,"branch to the given destination if greater"
+filled-new-array/range,"construct an array of the given type and size, filling it with the supplied contents"
+monitor-exit,"release the monitor for the indicated object"
+add-float/2addr,"adding"
+cmpg-double,"compare long based on g"
+aget-byte,"perform get array at the identified index of array"
+add-int/2addr,"adding"
+const-wide/32,"move literal into the specified register-pair"
+sub-float/2addr,"subtraction"
+div-long,"division, result stored in third register"
+goto,"unconditionally jump"
+and-long,"adding, result stored in third register"
+aget-short,"perform get array at the identified index of array"
+const-string/jumbo,"move a reference to the string specified by the given index into the specified register"
+add-int/lit8,"adding"
+div-float/2addr,"division "
+move,"move the contents of one non-object register to another"
+cmp-long,"compare long"
+mul-double,"multiplication, result stored in third register"
+add-double/2addr,"adding"
+rem-float/2addr,"remainder"
+invoke-interface/range,"call method"
+invoke-interface,"call method"
+iget-object,"perform get object instance with the identified field"
+not-int,"perform not operation"
+rsub-int,"reverse subtraction"
+new-array,"construct a new array of the indicated type and size"
+move-wide/from16,"move the contents of one register-pair to another"
+rsub-int/lit8,"reverse subtraction"
+sget-boolean,"perform get object static field operation with the static field"
+invoke-super,"call method"
+shl-int/lit8,"bitwise signed shift right"
+const-wide/high16,"move literal into the specified register-pair"
+goto/32,"unconditionally jump"
+const,"move the given literal value into the specified register"
+add-int/lit16,"adding"
+mul-int,"multiplication, result stored in third register"
+xor-int/lit8,"logical XOR"
+iget-byte,"perform get object instance with the identified field"
+double-to-long,"cast types"
+mul-int/lit8,"multiplication"
+aget-char,"perform get array at the identified index of array"
+aput-object,"perform put array at the identified index of array"
+and-int/lit16,"adding "
+long-to-int,"cast types"
+int-to-double,"cast types"
+move-object/from16,"move the contents of one object-bearing register to anothe"
+mul-long/2addr,"multiplication"
+move-object,"move the contents of one object-bearing register to anothe"
+int-to-float,"cast types"
+invoke-virtual/range,"call method"
+return-wide,"return from a double-width  value-returning method"
+xor-int/2addr,"logical XOR"
+int-to-short,"cast types"
+sput-object,"perform put object static field operation with the static field"
+div-long/2addr,"division "
+sget-short,"perform get object static field operation with the static field"
+shr-int,"bitwise signed shift right, result stored in third register"
+aget-wide,"perform get array at the identified index of array"
+add-long/2addr,"adding"
+ushr-int/2addr,"bitwise unsigned shift right"
+sput,"perform put object static field operation with the static field"
+aget-object,"perform get array at the identified index of array"
+sget,"perform get object static field operation with the static field"
+div-double/2addr,"division "
+shl-int,"bitwise signed shift right, result stored in third register"
+add-long,"adding, result stored in third register"
+double-to-float,"cast types"
+iget,"perform get object instance with the identified field"
+div-int/2addr,"division "
+and-int/lit8,"adding "
+rem-int/lit16,"remainder"
+fill-array-data,"fill the given array with the indicated data"
+iget-char,"perform get object instance with the identified field"
+return-object,"return from an object-returning method"
+aput-short,"perform put array at the identified index of array"
+if-gez,"Branch to the given destination if greater or equal with 0"
+move-result-wide,"move the double-word result of the most recent invoke-kind into the indicated register pai"
+or-int/2addr,"logical OR"
+iget-boolean,"perform get object instance with the identified field"
+xor-int,"logical XOR, result stored in third register"
+rem-int/2addr,"remainder"
+xor-long/2addr,"logical XOR"
+sget-byte,"perform get object static field operation with the static field"
+add-int,"adding, result stored in third register"
+aput-wide,"perform put array at the identified index of array"
+add-float,"adding, result stored in third register"
+iput,"perform put object instance with the identified field"
+long-to-double,"cast types"
+aget,"perform get array at the identified index of array"
+ushr-int,"bitwise unsigned shift right, result stored in third register"
+rem-int/lit8,"remainder"
+iget-wide,"perform get object instance with the identified field"
+rem-double,"remainder, result stored in third register"
+aput-char,"perform put array at the identified index of array"
+instance-of,"store in the given destination register if the indicated reference is an instance of the given type or 0 if not"
+mul-double/2addr,"multiplication"
+sput-wide,"perform put object static field operation with the static field"
+if-ltz,"Branch to the given destination if lesser with 0"
+aput-boolean,"perform put array at the identified index of array"
+invoke-super/range,"call method"
+aput-byte,"perform put array at the identified index of array"
+move/from16,"move the contents of one non-object register to another"
+invoke-static/range,"call method"
+mul-float,"multiplication, result stored in third register"
+return,"return from a single-width  non-object value-returning method"
+or-long/2addr,"logical OR"
+neg-int,"perform invertion"
+if-lez,"Branch to the given destination if lesser or equal with 0"
+iget-short,"perform get object instance with the identified field"
+aput,"perform put array at the identified index of array"
+sub-float,"subtraction, result stored in third register"
+ushr-long/2addr,"bitwise unsigned shift right"
+xor-long,"logical XOR, result stored in third register"
+monitor-enter,"acquire the monitor for the indicated object"
+move-wide/16,"move the contents of one register-pair to another"
+sget-object,"perform get object static field operation with the static field"
+float-to-double,"cast types"
+add-double,"adding, result stored in third register"
+sub-int/2addr,"subtraction"
+invoke-static,"call method"
+iput-object,"perform put object instance with the identified field"
+div-int,"division, result stored in third register"
+shl-long,"bitwise signed shift right, result stored in third register"
+invoke-direct/range,"call method"
+sparse-switch,"jump to a new instruction based on register or fall"
+and-long/2addr,"adding "
+iput-wide,"perform put object instance with the identified field"
+%%
+// SDB-CGEN V1.7.0
+// 0x56413be99170
+const char* gperf_dalvik_get(const char *s) {
+	const struct kv *o = sdb_get_c_dalvik (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_dalvik_hash(const char *s) {
+	return sdb_hash_c_dalvik(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_dalvik = {
+	.name = "dalvik",
+	.get = &gperf_dalvik_get,
+	.hash = &gperf_dalvik_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("dalvik.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open dalvik.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_dalvik_H\n");
+	printf ("#define INCLUDE_dalvik_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_dalvik_%s %d\n",
+					line, sdb_hash_c_dalvik (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

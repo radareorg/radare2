@@ -1,3 +1,55 @@
+NAME=null raw
+FILE=-
+CMDS=<<EOF
+b 6
+wx 440044004400
+p8 6
+pr 6 > .null.bin
+wx 121212121212
+wff .null.bin
+p8 6
+EOF
+EXPECT=<<EOF
+440044004400
+440044004400
+EOF
+RUN
+
+NAME=null raw wff
+BROKEN=1
+FILE=-
+CMDS=<<EOF
+b 6
+wx 440044004400
+p8 6
+pr 6 > $xx
+wx 121212121212
+wff $xx
+p8 6
+EOF
+EXPECT=<<EOF
+440044004400
+440044004400
+EOF
+RUN
+
+NAME=ascii alias wff/wtf
+FILE=-
+CMDS=<<EOF
+b 6
+w hello world
+ps
+wtf $jej
+w xxxxx_xxxxx
+wff $jeje
+ps
+EOF
+EXPECT=<<EOF
+hello 
+hello 
+EOF
+RUN
+
 NAME=pri cows
 FILE=../doc/cows128.data
 CMDS=pri
@@ -7,6 +59,7 @@ EXPECT=<<EOF
 **%%%
 EOF
 RUN
+
 NAME=p2 hello-linux-x86_64
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=p2 32@e:hex.cols=8

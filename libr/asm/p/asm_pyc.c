@@ -28,6 +28,8 @@ static int disassemble(RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
 		opcodes_cache = get_opcode_by_version (a->cpu);
 		if (opcodes_cache) {
 			opcodes_cache->bits = a->bits;
+		} else {
+			return 0;
 		}
 	}
 	int r = r_pyc_disasm (opstruct, buf, cobjs, interned_table, pc, opcodes_cache);

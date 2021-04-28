@@ -275,10 +275,9 @@ R_API int r_cmd_alias_set(RCmd *cmd, const char *k, const char *v, int remote) {
 }
 
 R_API const char *r_cmd_alias_get(RCmd *cmd, const char *k, int remote) {
+	r_return_val_if_fail (cmd && k, NULL);
 	int matches, i;
-	if (!cmd || !k) {
-		return NULL;
-	}
+	// TODO: use a hashtable
 	for (i = 0; i < cmd->aliases.count; i++) {
 		matches = 0;
 		if (remote) {

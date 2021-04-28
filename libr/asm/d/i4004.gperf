@@ -1,0 +1,102 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_i4004 -N sdb_get_c_i4004 -t i4004.gperf > i4004.c
+// gcc -DMAIN=1 i4004.c ; ./a.out > i4004.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+cma,"complement accumulator"
+jms,"jump to subroutine"
+bbl,"branch back and load"
+ldm,"load immediate"
+rar,"rotate right"
+adm,"add main memory"
+xch,"exchange register with accumulator"
+isz,"increment and skip"
+ld,"load content of register to accumulator"
+rdm,"read main memory"
+inc,"increment register"
+rd3,"read accumulator status char 3"
+tcc,"transfer carry and clear"
+wr0,"write accumulator to status char 0"
+rd2,"read accumulator status char 2"
+wr1,"write accumulator to status char 1"
+src,"send register control"
+rd1,"read accumulator status char 1"
+wr2,"write accumulator to status char 2"
+rd0,"read accumulator status char 0"
+wr3,"write accumulator to status char 3"
+wmp,"write accumulator to ram port"
+iac,"increment accumulator"
+jun,"jump uncoditional"
+kbp,"keybord process"
+stc,"set carry"
+jin,"jump indirect"
+ral,"rotate left"
+fin,"fetch indirect"
+sbm,"subtract main memory"
+rdr,"read rom port"
+clb,"clear both(accumulator and carry)"
+fim,"fetch immediate"
+clc,"clear carry"
+jcn,"jump conditional"
+dcl,"designate command line"
+wrm,"write accumulator to main memory"
+sub,"subtract content of register to accumulator with borrow"
+nop,"no operation"
+daa,"decimal adjust accumulator"
+tcs,"transfer carry subtract"
+add,"add content of register to accumulator with carry"
+dac,"decrement accumulator"
+wrr,"write accumulator to rom port"
+cmc,"complement carry"
+wpm,"write accumulator to ram port"
+%%
+// SDB-CGEN V1.7.0
+// 0x55b094578170
+const char* gperf_i4004_get(const char *s) {
+	const struct kv *o = sdb_get_c_i4004 (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_i4004_hash(const char *s) {
+	return sdb_hash_c_i4004(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_i4004 = {
+	.name = "i4004",
+	.get = &gperf_i4004_get,
+	.hash = &gperf_i4004_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("i4004.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open i4004.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_i4004_H\n");
+	printf ("#define INCLUDE_i4004_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_i4004_%s %d\n",
+					line, sdb_hash_c_i4004 (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

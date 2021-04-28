@@ -1,0 +1,221 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_sparc -N sdb_get_c_sparc -t sparc.gperf > sparc.c
+// gcc -DMAIN=1 sparc.c ; ./a.out > sparc.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+stx,"store extended word"
+movle,"move if less or equal"
+movre,"move if register zero"
+movrgez,"move if register greater than or equal to zero"
+movu,"move if unordered or equal"
+fabsq,"absolute value quad"
+fble,"branch on less or equal"
+bge,"branch on greater or equal"
+fblg,"branch on less or greater"
+subx,"substract with carry"
+mova,"move always"
+prefetcha,"prefetch data from alternate space"
+retl,"return from leaf procedure"
+move,"move if equal"
+fitoq,"convert 32-bit integer to floating"
+movg,"move if greater"
+fbule,"branch on unordered or less"
+lduh,"load unsigned half word (16bit)"
+fitos,"convert 32-bit integer to floating"
+signx,"sign-extend 32-bit value to 64 bits"
+bne.pn,"branch if not equal"
+rett,"return from trap instruction"
+movrgz,"move if register greater than zero"
+movneg,"move if negative"
+bgu,"branch on greater unsigned"
+movl,"move if less or greater"
+fabsd,"absolute value double"
+stxa,"store extended word into alternate space"
+movn,"move never"
+fmovcs,"move if carry set"
+ldub,"load unsigned byte from addr"
+sethi,"sets upper 22 bits of rd with const"
+popc,"population"
+save,"provide new register window"
+casxl,"cas little-endian, extended"
+addcc,"adds to numbers and updates Z, N, V flags"
+movrlz,"move if register less than zero"
+fmovrlez,"move if register less than or equal zero"
+brz,"branch on register zero"
+fstoi,"convert floating point to 32-bit integer"
+fitod,"convert 32-bit integer to floating"
+ble,"branch on less or equal"
+movrnz,"move if register not zero"
+nop,"no operation"
+ld,"load from memory into register"
+bne,"branch on not equal"
+fmovcc,"move if carry clear"
+casxa,"compare and swap extended from alternate space"
+fmovu,"move if unordered"
+bleu,"branch on less or equal unsigned"
+st,"stores word to addr"
+fnegd,"negate double"
+fmovq,"move quad"
+iprefetch,"instruction prefetch"
+fstox,"convert floating point to 64-bit integer"
+fqtoi,"convert floating point to 32-bit integer"
+ldda,"load double floating-point register from alternate space"
+ldxa,"load extended word from alternate space"
+cmp,"sets appropriate condition codes"
+brgz,"branch on register greater than zero"
+fmovg,"move if greater"
+fmovrgz,"move if register greater than zero"
+fmove,"move if equal"
+fmovd,"move double"
+fmova,"move always"
+fnegq,"negate quad"
+fmovn,"move never"
+fmovl,"move if less"
+movgu,"move if greater unsigned"
+fqtox,"convert floating point to 64-bit integer"
+smul,"signed multiplication"
+call,"call a subroutine, saving return address in o7"
+ldswa,"load signed word from alternate space"
+ret,"return from subroutine"
+be.pn,"branch if equal"
+bcs.a.pn,"branch if carry bit is set"
+or,"binary or"
+brnz,"branch on register not zero"
+fmovneg,"move if negative"
+movleu,"move less or equal unsigned"
+fbe,"branch on equal"
+fbg,"branch on greater"
+movge,"move if greater or equal"
+movpos,"move if positive"
+brgez,"branch on register greater than or equal to zero"
+bpos,"branch on positive"
+bvs,"branch on overflow set"
+fmovpos,"move if positive"
+bg,"branch on greater"
+fmovgu,"move if greater unsigned"
+fbl,"branch on less"
+be,"branch on equal"
+fbo,"branch on ordered"
+fbn,"branch always"
+sra,"arithmetic right-shift of rs1, shift by op2 and stores result"
+ba,"branch always"
+orn,"binary nor"
+fmovrgez,"move if register greater than or equal to zero"
+srl,"shift right logic"
+fbu,"branch on unordered"
+bn,"branch never"
+bl,"branch on less"
+mov,"moves data from src to dst"
+addx,"add with carry"
+bvc,"branch on overflow clear"
+fbue,"branch on unordered or equal"
+casx,"cas extended"
+fbge,"branch on greater or equal"
+fbug,"branch on unordered or greater"
+fmovge,"move if greater or equal"
+add,"addition"
+fbuge,"branch on unordered or greater"
+fbul,"branch on unordered or less"
+and,"binary and"
+casa,"compare and swap word from alternate space"
+casl,"cas little-endian"
+movvc,"move if overflow clear"
+clrx,"clear extended word"
+cas,"compare & swap"
+movne,"move if not equal"
+stqa,"store quad floating-point register to alternate space"
+membar,"memory barrier"
+movule,"move if unordered or less or equal"
+sub,"substract"
+clruw,"copy and clear upper word"
+stxfsr,"store floating-point register (all 64-bits)"
+restore,"restore previous register window"
+fxtod,"convert 64-bit integer to floating"
+bneg,"branch on negative"
+ldsw,"load a signed word"
+bcc.a.pn,"branch if carry bit is clear"
+movvs,"move if overflow set"
+fmovrne,"move if register not zero"
+flushw,"flush register windows"
+bcc,"branch on carry clear"
+fmovvc,"move if overflow clear"
+movcs,"move if carry set (less than, unsigned)"
+fmovle,"move if less or equal"
+fbne,"branch on not equal"
+ba.a,"branch always"
+fmovne,"move if not equal"
+movrlez,"move if register less than or equal to zero"
+fxtoq,"convert 64-bit integer to floating"
+brlz,"branch on register less than zero"
+fxtos,"convert 64-bit integer to floating"
+fmovrlz,"move if register less than zero"
+prefetch,"prefetch data"
+unimp,"unimplemented instruction"
+fmovvs,"move if overflow set"
+stda,"store double floating-point register to alternate space"
+bcs,"branch on carry set"
+fdtox,"convert floating point to 64-bit integer"
+movcc,"move if carry clear (greater or equal, unsigned)"
+lda,"load floating-point register from alternate space"
+movug,"move if unordered or greater or equal"
+stb,"store byte"
+sll,"shift left logical"
+ldqa,"load quad floating-point register from alternate space"
+sta,"store floating-point register to alternate space"
+fmovleu,"move if less or equal unsigned"
+brlez,"branch on register less than or equal to zero"
+ldx,"load extended word"
+udivx,"unsigned divide (64-bit)"
+mulx,"multiply"
+fdtoi,"convert floating point to 32-bit integer"
+%%
+// SDB-CGEN V1.7.0
+// 0x55a7fa230170
+const char* gperf_sparc_get(const char *s) {
+	const struct kv *o = sdb_get_c_sparc (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_sparc_hash(const char *s) {
+	return sdb_hash_c_sparc(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_sparc = {
+	.name = "sparc",
+	.get = &gperf_sparc_get,
+	.hash = &gperf_sparc_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("sparc.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open sparc.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_sparc_H\n");
+	printf ("#define INCLUDE_sparc_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_sparc_%s %d\n",
+					line, sdb_hash_c_sparc (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+
