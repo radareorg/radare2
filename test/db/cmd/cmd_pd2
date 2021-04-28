@@ -307,7 +307,7 @@ EXPECT=<<EOF
 |           ; arg func main @ r0
 |           ; arg int argc @ r1
 |           0x00008174      b80000eb       bl sym.__libc_start_main    ; lr=0x8178 -> 0xeb0002a4 ; pc=0x845c -> 0xe92d41f0
-|                                                                      ; int __libc_start_main(?, ?, ?, ?, ?, ?, -1)
+|                                                                      ; int __libc_start_main(?, ?, -1, ?, ?, ?, -1)
 \           0x00008178      a40200eb       bl sym.abort                ; lr=0x817c -> 0xe92d4030 ; pc=0x8c10 -> 0xe59f62a0
 \                                                                      ; void abort(void)
 
@@ -316,7 +316,7 @@ EXPECT=<<EOF
 |           ; arg int argc @ r1
 |              ; lr=0x8178 -> 0xeb0002a4
 |              ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main
-|              ; int __libc_start_main(?, ?, ?, ?, ?, ?, -1)
+|              ; int __libc_start_main(?, ?, -1, ?, ?, ?, -1)
 |           0x00008174      b80000eb       bl sym.__libc_start_main
 |              ; lr=0x817c -> 0xe92d4030
 |              ; pc=0x8c10 -> 0xe59f62a0 sym.abort
@@ -331,7 +331,7 @@ EXPECT=<<EOF
 | ; arg int argc @ r1                                |
 |    ; lr=0x8178 -> 0xeb0002a4                       |
 |    ; pc=0x845c -> 0xe92d41f0 sym.__libc_start_main |
-|    ; int __libc_start_main(?, ?, ?, ?, ?, ?, -1)   |
+|    ; int __libc_start_main(?, ?, -1, ?, ?, ?, -1)  |
 | bl sym.__libc_start_main;[oa]                      |
 |    ; lr=0x817c -> 0xe92d4030                       |
 |    ; pc=0x8c10 -> 0xe59f62a0 sym.abort             |
@@ -355,7 +355,7 @@ EXPECT=<<EOF
        ,==< 0x00005b04      7f08           jg 0x5b0e                   ; rip=0x5b0e -> 0x8d4890f4 ; likely
       ,===< 0x00005b06      eb00           jmp 0x5b08                  ; rip=0x5b08 -> 0xc30a15ff
       `---> 0x00005b08      ff150ac30100   call qword [reloc.__libc_start_main] ; [0x21e18:8]=0 ; rsp=0xfffffffffffffff8 ; rip=0x0
-       ||                                                              ; int __libc_start_main(func: unk_size_format, -1, char **: unk_size_format, func: unk_size_format, func: unk_size_format, func: unk_size_format, -1)
+       ||                                                              ; int __libc_start_main(func: unk_size_format, -1, char **: unk_size-1, func: unk_size_format, func: unk_size_format, func: unk_size_format, -1)
 EOF
 RUN
 
