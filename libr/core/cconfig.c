@@ -3073,7 +3073,7 @@ static bool cb_prjvctype(void *user, void *data) {
 		if (found) {
 			return true;
 		}
-		eprintf ("Git is not installed\n");
+		eprintf ("Warnning: Git is not installed\n");
 		return false;
 	}
 	if (!strcmp (node->value, "rvc")) {
