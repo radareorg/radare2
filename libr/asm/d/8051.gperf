@@ -1,0 +1,100 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_8051 -N sdb_get_c_8051 -t 8051.gperf > 8051.c
+// gcc -DMAIN=1 8051.c ; ./a.out > 8051.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+clr,"clear"
+jc,"jump if carry is set"
+jb,"jump if bit set"
+jmp,"jump indirect"
+addc,"add with carry"
+anl,"logical and"
+cjne,"compare and jump if not equal"
+xch,"exchange"
+xrl,"logical exclusive-or"
+jz,"jump if accumulator zero"
+cpl,"complement"
+mov,"move "
+sjmp,"short jump (relative addr)"
+ljmp,"long jump"
+subb,"subtract with borrow"
+inc,"increment"
+rr,"rotate accumulator right"
+push,"push onto stack"
+jbc,"jump if bit is set and clear bit"
+swap,"swap nibbles within the accumulator"
+ret,"return from subroutine"
+pop,"pop from stack"
+acall,"absolute call"
+mul,"multiply accumulator and b register"
+jnz,"jump if accumulator not zero"
+da,"decimal-adjust accumulator after addition"
+rrc,"rotate accumulator right through carry"
+orl,"logical or"
+rlc,"rotate accumulator left through carry"
+setb,"set bit"
+xchd,"exchange low-order nibbles between accumulator and RAM location"
+djnz,"decrement and jump if not zero"
+movx,"move between external memory and accumulator"
+reti,"return from interrupt"
+dec,"decrement"
+rl,"rotate accumulator left"
+lcall,"long call"
+nop,"no operation"
+movc,"move from code or program memory to accumulator"
+add,"add"
+jnc,"jump if carry not set"
+jnb,"jump if bit not set"
+div,"divide accumulator by b register"
+ajmp,"absolute jump"
+%%
+// SDB-CGEN V1.7.0
+// 0x5648fcb8d160
+const char* gperf_8051_get(const char *s) {
+	const struct kv *o = sdb_get_c_8051 (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_8051_hash(const char *s) {
+	return sdb_hash_c_8051(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_8051 = {
+	.name = "8051",
+	.get = &gperf_8051_get,
+	.hash = &gperf_8051_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("8051.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open 8051.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_8051_H\n");
+	printf ("#define INCLUDE_8051_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_8051_%s %d\n",
+					line, sdb_hash_c_8051 (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

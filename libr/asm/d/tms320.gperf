@@ -1,0 +1,93 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_tms320 -N sdb_get_c_tms320 -t tms320.gperf > tms320.c
+// gcc -DMAIN=1 tms320.c ; ./a.out > tms320.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+SQA,"square and add"
+MAC,"multiply and accumulate"
+OR,"bitwise or"
+CALL,"function call"
+SFT,"shift (left or right depending on sign of shift count)"
+RET,"return"
+XTR,"extract"
+EXP,"exponent"
+MAX,"maximum"
+SUB,"subtraction"
+ROL,"rotate left"
+SET,"assign the value to 1"
+POP,"pop from top of the stack"
+SQS,"square and subtract"
+TST,"test bit"
+SQR,"square"
+ABS,"absolute value"
+MAS,"multiply and subtract"
+XOR,"bitwise exclusive-or (xor)"
+MAR,"modify auxiliary register content"
+XPA,"expand"
+MOV,"move data"
+B,"branch"
+ADD,"addition"
+CNT,"count"
+CLR,"assign the value to 0"
+MIN,"minimum"
+CMP,"compare"
+PSH,"push to top of the stack"
+MPY,"multiply"
+NEG,"negate (2s complement)"
+SAT,"saturate"
+RPT,"repeat"
+NOT,"bitwise complement (1s complement)"
+AND,"bitwise and"
+SWAP,"swap register contents"
+ROR,"rotate right"
+%%
+// SDB-CGEN V1.7.0
+// 0x55e1c051d170
+const char* gperf_tms320_get(const char *s) {
+	const struct kv *o = sdb_get_c_tms320 (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_tms320_hash(const char *s) {
+	return sdb_hash_c_tms320(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_tms320 = {
+	.name = "tms320",
+	.get = &gperf_tms320_get,
+	.hash = &gperf_tms320_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("tms320.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open tms320.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_tms320_H\n");
+	printf ("#define INCLUDE_tms320_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_tms320_%s %d\n",
+					line, sdb_hash_c_tms320 (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

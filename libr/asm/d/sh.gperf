@@ -1,0 +1,181 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_sh -N sdb_get_c_sh -t sh.gperf > sh.c
+// gcc -DMAIN=1 sh.c ; ./a.out > sh.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+stc,"store control register"
+tst,"test logical"
+mova,"move effective address"
+bt,"branch if true"
+movca.l,"move with cache block allocation"
+jmp,"jump"
+fabs,"floating-point absolute value"
+pref,"prefetch data to cache"
+and.b,"bitise and (byte)"
+muls.w,"multiply as signed word"
+sts,"store system/fpu register"
+div1,"divide 1 step"
+fldi0,"floating-point load immediate 0.0"
+fldi1,"floating-point loa immediate 1.0"
+fdiv,"floating-point divide"
+addc,"add with carry"
+add,"add binary"
+bt/s,"branch if true with delay slot"
+trapa,"trap always"
+rte,"return from exception"
+cmp/eq,"compare rm,rn : set t if rn == rm"
+rotl,"rotate left"
+fcmp/gt,"compare (float) frm, frn: set t if frn > frm"
+cmp/str,"compare rm,rn : set t if any bytes are equal"
+addv,"add with (v flag) overflow check"
+braf,"branch far"
+mac.l,"multiply and accumulate long"
+or,"bitwise or (byte)"
+fsub,"floating-point subtract"
+rts,"return from subroutine"
+bsrf,"branch to subroutine far"
+not,"not-logical complement"
+ftrc,"floating-point truncate and convert to integer"
+nop,"no operation"
+mac.w,"multiply and accumulate word"
+sett,"set t bit"
+sets,"set s bit"
+fadd,"floating-point add"
+frchg,"fr-bit change"
+shll16,"shift logical left 16"
+sleep,"sleep"
+jsr,"jump to subroutine"
+ldtlb,"load pteh/ptel/ptea to tlb"
+mov.w,"move word"
+fschg,"sz-bit change"
+flds,"floating-point load to system register"
+rotcl,"rotate with carry left"
+ftrv,"floating-point transform vector"
+tst.b,"test logical, byte"
+rotr,"rotate right"
+fcnvds,"floating-point convert double to single precision"
+exts.w,"extend word as signed"
+xor,"bitwise exclusive-or"
+shar,"shift arithmetic right"
+clrmac,"clear mac register"
+mov.l,"move longword"
+cmp/hs,"compare rm,rn : set t if  rn >= rm (unsigned)"
+negc,"negate with carry"
+shal,"shift arithmetic left"
+extu.w,"extend word as unsigned"
+shlr2,"shift logical right 2"
+bf.s,"branch if false with delay slot"
+dmuls.l,"double-length multiply as signed"
+fmov,"floating-point move"
+cmp/hi,"compare rm,rn : set t if  rn > rm (unsigned)"
+shlr8,"shift logical right 8"
+exts.b,"extend byte as signed"
+shad,"shift arithmetic dynamically"
+mov.b,"move byte"
+div0u,"divide (step 0) as unsigned"
+dt,"decrement and test"
+cmp/pl,"set t if rn > 0"
+div0s,"divide (step 0) as signed"
+dmulu.l,"double-length multiply as unsigned"
+ldc,"load to control register"
+float,"floating-point convert from integer"
+rotcr,"rotate with carry right"
+fsts,"floating-point store system register"
+ocbi,"operand cache block invalidate"
+neg,"negate"
+extu.b,"extend byte as unsigned"
+shlr,"shift logical right"
+and,"bitwise and"
+mov,"move data"
+lds,"load to fpu/system register"
+fcmp/eq,"compare (float) frm, frn: set t if frm == frn"
+cmp/gt,"compare rm,rn : set t if rn > rm (signed)"
+swap.w,"swap register words"
+sub,"subtract binary"
+shll8,"shift logical left 8"
+mulu.w,"multiply as unsigned word"
+fneg,"floating-point negate value"
+cmp/pz,"set t if rn >= 0"
+ldc.l,"load to control register"
+bra,"branch"
+lds.l,"load to fpu/system register"
+bf/s,"branch if false with delay slot"
+fcnvsd,"floating-point convert single to double precision"
+clrs,"clear s bit"
+fipr,"floating-point inner product"
+clrt,"clear t bit"
+shll2,"shift logical left 2"
+mul.l,"multiply long"
+subc,"subtract with carry"
+xor.b,"bitwise exclusive-or (byte)"
+stc.l,"store control register"
+shld,"shift logical dynamically"
+cmp/ge,"compare rm,rn : set t if rn >= rm (signed)"
+sts.l,"store system/fpu register"
+ocbp,"operand cache block purge"
+bf,"branch if false"
+swap.b,"swap register lower bytes"
+tas.b,"test and set byte"
+fmac,"floating-point multiply and accumulate"
+bsr,"branch to subroutine"
+fmul,"floating-point multiply"
+shlr16,"shift logical right 16"
+shll,"shift logical left"
+movt,"move t bit to rn"
+fmov.s,"floating-point move"
+ocbwb,"operand cache block write back"
+bt.s,"branch if true with delay slot"
+fsqrt,"floating-point square root"
+xtrct,"middle extraction from linked register"
+subv,"subtract with (v flag) underflow check"
+%%
+// SDB-CGEN V1.7.0
+// 0x558f747b7160
+const char* gperf_sh_get(const char *s) {
+	const struct kv *o = sdb_get_c_sh (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_sh_hash(const char *s) {
+	return sdb_hash_c_sh(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_sh = {
+	.name = "sh",
+	.get = &gperf_sh_get,
+	.hash = &gperf_sh_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("sh.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open sh.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_sh_H\n");
+	printf ("#define INCLUDE_sh_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_sh_%s %d\n",
+					line, sdb_hash_c_sh (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

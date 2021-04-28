@@ -1,0 +1,140 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_v810 -N sdb_get_c_v810 -t v810.gperf > v810.c
+// gcc -DMAIN=1 v810.c ; ./a.out > v810.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+sei,"set interrupt disable flag"
+ble,"branch if less/equal (signed)"
+bnv,"branch if not overflow"
+andbsu,"and bit string upward"
+in.w,"input word"
+st.b,"store byte"
+mulf.s,"multiply floating short"
+sch1bsd,"search bit 1 downward"
+trap,"trap"
+cvt.ws,"convert word to floating short"
+div,"divide signed"
+blt,"branch if less than (signed)"
+sar,"shift arithmetic right"
+st.w,"store word"
+xor,"exclusive or register"
+bge,"branch if greater/equal (signed)"
+not,"not"
+trnc.sw,"truncate floating short to word"
+xh,"swap halfwords"
+cmpf.s,"compare floating short"
+ldsr,"load into system register"
+cmp,"compare"
+stsr,"store from system register"
+mpyhw,"multiply halfword signed"
+andi,"and immediate"
+andnbsu,"and not bit string upward"
+xori,"exclusive or immediate"
+xb,"swap low bytes"
+cli,"clear interrupt disable flag"
+bgt,"branch if greater than (signed)"
+movhi,"add high halfword"
+jmp,"jump register"
+mov,"move"
+caxi,"compare and exchange interlocked"
+halt,"halt cpu"
+shr,"shift right"
+movea,"add immediate"
+xornbsu,"exclusive or not bit string upward"
+divu,"divide unsigned"
+be,"branch if zero/equal"
+ld.b,"load byte"
+jal,"jump and link"
+shl,"shift left"
+notbsu,"not bit string upward"
+ori,"or immediate"
+add,"add"
+addi,"add immediate"
+or,"or"
+subf.s,"subtract floating short"
+bn,"branch if negative"
+bl,"branch if carry/less than"
+ld.h,"load halfword"
+bnh,"branch if not higher (unsigned)"
+bh,"branch if higher (unsigned)"
+cvt.sw,"convert floating short to word"
+bv,"branch if overflow"
+bnl,"branch if not carry/less than"
+xorbsu,"exclusive or bit string upward"
+jr,"jump relative"
+mulu,"multiply unsigned"
+sch0bsu,"search bit 0 upward"
+orbsu,"or bit string upward"
+ld.w,"load word"
+br,"branch always"
+in.h,"input halfword"
+out.b,"output byte"
+ornbsu,"or not bit string immediate"
+bp,"branch if positive"
+setf,"set flag condition"
+bne,"branch if not zero/equal"
+addf.s,"add floating short"
+out.h,"output halfword"
+and,"and"
+in.b,"input byte"
+divf.s,"divide floating short"
+sch0bsd,"search bit 0 downward"
+out.w,"output word"
+mul,"multiply signed"
+sch1bsu,"search bit 1 upward"
+reti,"return from trap/irq"
+st.h,"store halfword"
+movbsu,"move bit string upward"
+rev,"reverse bits"
+sub,"subtract"
+%%
+// SDB-CGEN V1.7.0
+// 0x55693de2a160
+const char* gperf_v810_get(const char *s) {
+	const struct kv *o = sdb_get_c_v810 (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_v810_hash(const char *s) {
+	return sdb_hash_c_v810(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_v810 = {
+	.name = "v810",
+	.get = &gperf_v810_get,
+	.hash = &gperf_v810_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("v810.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open v810.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_v810_H\n");
+	printf ("#define INCLUDE_v810_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_v810_%s %d\n",
+					line, sdb_hash_c_v810 (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

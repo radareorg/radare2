@@ -1,0 +1,81 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_chip8 -N sdb_get_c_chip8 -t chip8.gperf > chip8.c
+// gcc -DMAIN=1 chip8.c ; ./a.out > chip8.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+subn,"subtract dest from src, store result in dest"
+shr,"shift right by one"
+drw,"draw sprite using given coordinates"
+jp,"jump"
+scr,"scroll right"
+high,"enter high-resolution mode"
+skp,"skip next instruction if specified key is pressed"
+call,"call subroutine"
+shl,"shift left by one"
+rnd,"set dest to (random number & src)"
+ret,"return from subroutine"
+exit,"stop interpreter"
+ld,"copy data from src to dest"
+scd,"scroll down"
+and,"logical and"
+add,"add src and dest, store result in dest"
+sne,"skip next instruction if not equal"
+or,"logical inclusive or"
+xor,"logical exclusive or"
+se,"skip next instruction if equal"
+low,"enter low-resolution mode"
+sub,"subtract src from dest, store result in dest"
+sknp,"skip next instruction if specified key is not pressed"
+scl,"scroll left"
+cls,"clear display"
+%%
+// SDB-CGEN V1.7.0
+// 0x55886c929170
+const char* gperf_chip8_get(const char *s) {
+	const struct kv *o = sdb_get_c_chip8 (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_chip8_hash(const char *s) {
+	return sdb_hash_c_chip8(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_chip8 = {
+	.name = "chip8",
+	.get = &gperf_chip8_get,
+	.hash = &gperf_chip8_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("chip8.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open chip8.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_chip8_H\n");
+	printf ("#define INCLUDE_chip8_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_chip8_%s %d\n",
+					line, sdb_hash_c_chip8 (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

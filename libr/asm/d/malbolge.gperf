@@ -1,0 +1,64 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_malbolge -N sdb_get_c_malbolge -t malbolge.gperf > malbolge.c
+// gcc -DMAIN=1 malbolge.c ; ./a.out > malbolge.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+in,"inputs a character, as an ascii code"
+jmp,"jump"
+rotr,"rotates the value by one ternary digit"
+out,"prints the value, as an ascii character, to the screen"
+nop,"do nothing"
+mov,"moves data from src to dst"
+crz,"crazy operation"
+end,"end"
+%%
+// SDB-CGEN V1.7.0
+// 0x55bdba606170
+const char* gperf_malbolge_get(const char *s) {
+	const struct kv *o = sdb_get_c_malbolge (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_malbolge_hash(const char *s) {
+	return sdb_hash_c_malbolge(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_malbolge = {
+	.name = "malbolge",
+	.get = &gperf_malbolge_get,
+	.hash = &gperf_malbolge_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("malbolge.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open malbolge.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_malbolge_H\n");
+	printf ("#define INCLUDE_malbolge_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_malbolge_%s %d\n",
+					line, sdb_hash_c_malbolge (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+

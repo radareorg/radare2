@@ -1,0 +1,218 @@
+%{
+// gperf -aclEDCIG --null-strings -H sdb_hash_c_arm -N sdb_get_c_arm -t arm.gperf > arm.c
+// gcc -DMAIN=1 arm.c ; ./a.out > arm.h
+#include <stdio.h>
+#include <ctype.h>
+%}
+
+struct kv { const char *name; const char *value; };
+%%
+ldf,"armfpu: load float value pointed by reg+(offset): ldf f0, [r0,#off]"
+bvc,"branch if V clear"
+cbz,"compare and branch on zero"
+ldmda,"decrement after"
+ldmdb,"decrement before"
+bpl,"branch if N clear"
+ldc,"load from memory to coprocessor"
+andne,"logical AND if Z clear (not equal)"
+sxtw,"signed extend word"
+adcs,"add with carry and update flags"
+ldm.w,"load multiple words from memory into registers"
+ic,"instruction cache operation (alias of sys)"
+retab,"return with authenticated pointer using B key"
+mvn,"move bitwise NOT"
+bgt,"branch if Z, N and V clear"
+sxth,"extracts bits[15:0] and sign extends to 32 bits."
+retaa,"return with authenticated pointer using A key"
+addlo,"add if C is clear (no carry)"
+bics,"Bitwise bit clear (shifted register), setting the condition flags."
+mcrr,"move to coprocessor from two ARM register"
+sxtb,"extracts bits[7:0] and sign extends to 32 bits."
+blraa,"brank and link with pointer authentication"
+streq,"store register into memory if Z set (equal)"
+blrab,"variants of blraa"
+it,"if then"
+ldr,"load from memory to register"
+orrne,"logical inclusive OR if Z clear (not equal)"
+lsr,"logical shift right"
+subs,"substract two values and update flags"
+cps,"change processor state"
+ldrh,"load half word (16bit) from memory to register"
+uxtab,"zero extend Byte and Add. Extends an 8-bit value to a 32-bit value."
+ldrb,"load byte from memory to register"
+and,"logical AND"
+autibsp,"authenticate return pointer before returning from function using B key"
+pacibsp,"function prelude for pointer authentication using B key"
+lsl,"logical shift left"
+ldrb.w,"load from memory to register"
+beq,"branches if equal (see 'b') Z is set"
+staddl,"atomic add dword (arm v8.1)"
+yield,"alias for hint instructrion"
+rsbs.w,"substract the negative value"
+mul,"multiply"
+autiasp,"authenticate return pointer before returning from function using A key"
+subeq,"substract two values if Z set (equal)"
+eoreq,"logical exclusive OR (XOR) if Z set (equal)"
+cdp,"coprocessor data operations"
+bhi,"branch if C set and Z clear"
+tst,"test"
+addeq,"add two values if Z set (equal)"
+strh.w,"store byte value in register into memory"
+udiv,"unsigned division"
+bne,"branch if Z clear (not equal)"
+ldr.w,"load from memory to register"
+rsb,"reverse substract"
+dc,"data cache operation (alias of sys)"
+isb,"instruction synchronization barrier."
+rsc,"reverse substract with carry"
+ldrab,"load from memory to register authenticanting the pointer using B key"
+rsbs,"subtracts the value from zero, producing the arithmetic negative of the value, and updates flags"
+bl,"branches and link, similar to call in i386, set lr(r14) = pc, changes pc (r15) )"
+ldraa,"load from memory to register authenticanting the pointer using A key"
+bhs,"variant of bcs"
+brabz,"variant of brabz"
+stadd,"atomic add word (arm v8.1)"
+eors,"logical exclusive OR (XOR) and update flags"
+mvns,"move bitwise NOT and update flags"
+blo,"variant of bcc"
+flt,"armfpu: convert int to float: flt "
+eor,"logical exclusive OR (XOR)"
+ldreq,"load from memory to register if Z set (equal)"
+bxj,"branches and exchanges cpu mode to Jazzele (jumps to a bytecode vector)"
+orrs,"logical inclusive OR and update flags"
+teq,"test equivalence"
+bic,"logical bit clear"
+mcr,"move to coprocessor from ARM register"
+movs,"move immediate into register and update flags"
+bx,"branches and exchanges cpu mode to 16 bits (thumb mode)"
+strb,"store byte value in register into memory"
+ble,"branch if (Z || (N && V)) or !N && V) or !N && V"
+movt,"write 16 bit value on top of halfword"
+pop.w,"load N words from stack into registers"
+strd,"store floating point value in memory"
+movw,"write 16 bit value on lower bits"
+b,"branches the program counter to dst (pc aka r15)"
+blx,"branch link and optionally exchange to Thumb"
+ldmia,"incrememnt after"
+srs,"store return state"
+strh,"store byte value in register into memory"
+cmn,"compare negated"
+sbfx,"signed bit field extract"
+movz,"move shifted 16-bit immediate to register."
+hlt,"external debug breakpoint."
+strne,"store register into memory if Z clear (not equal)"
+ldmib,"increment before"
+eret,"return from exception"
+xpaci,"strip pac from instruction pointer"
+bls,"branch if C clear or Z set"
+ldrne,"load from memory to register if Z clear (not equal)"
+blrabz,"variants of blraa"
+rfe,"return from exception (loads pc+cpsr)"
+xpacd,"strip pac from data pointer"
+mla,"multiply and accumulate"
+sub,"substract two values"
+braaz,"variant of braa"
+blt,"branch if N clear and V set"
+svc,"supervisor call"
+andeq,"logical AND if Z set (equal)"
+bmi,"branch if N set"
+vldmia,"vector load memory into paired registers"
+orr,"logical inclusive OR"
+mov,"move value between registers"
+addne,"add two values if Z clear (not equal)"
+wfs,"armfpu: write fp status register. wfs r0"
+strb.w,"store byte value in register into memory"
+cmp,"compares two registers"
+ands,"logical AND that updates flags"
+sbc,"substract with carry"
+sdiv,"signed division"
+vsri,"vector shift right and insert"
+mov.w,"move 3byte immediate into register"
+cbnz,"compare and branch on non-zero"
+bcc,"branch if C clear (no carry)"
+uxtab16,"zero extend bytes to halfwords add halfwords"
+tst.w,"logical AND register value with 12-bit immediate value"
+lsls,"logical shift left and update flags"
+subne,"substract two values if Z clear (not equal)"
+mls,"multiply and substract"
+dsb,"data synchronization barrier."
+wfe,"wait for event"
+eorne,"logical exclusive OR (XOR) if Z clear (not equal)"
+vadd,"vector add"
+asrs,"arithmetic shift right and update flags"
+uxtb.w,"zero textend word and add, extend to 32bit value"
+orreq,"logical inclusive OR if Z set (equal)"
+stc,"store from coprocessor to memory"
+bcs,"branch if C set (carry)"
+blraaz,"variants of blraa"
+wfi,"wait for interrupt"
+adds,"add two values and update flags"
+asr,"arithmetic shift right"
+stf,"armfpu: store float value pointed by reg+(offset): ldf [r0,#off]"
+braa,"branch with pointer authentication using A key"
+cpsid,"like msr, but only disable interrupts (i or f)"
+pop,"load N elements from stack into given registers"
+brab,"branch with pointer authentication using B key"
+cpsie,"like msr, but only enable interrupts (i or f)"
+bvs,"branch if V set"
+uxth,"extracts bits[15:0] and zero extends to 32 bits."
+bics.w,"word bitwise bit clear and update flags"
+ldm,"load to multiple registers from memory"
+ubfx,"unsigned bit field extract"
+lsrs,"logical shift right and update flags"
+xpaclri,"system strip pointer authentication"
+hvc,"hypervisor call"
+paciasp,"function prelude for pointer authentication using A key"
+stm,"store multiple registers to memory"
+str,"store register into memory"
+adc,"add with carry"
+uxtb,"extracts bits[7:0] and zero extends to 32 bits."
+add,"add two values"
+bge,"branch if N clear and V clear"
+%%
+// SDB-CGEN V1.7.0
+// 0x563df6836160
+const char* gperf_arm_get(const char *s) {
+	const struct kv *o = sdb_get_c_arm (s, strlen(s));
+	return o? o->value: NULL;
+}
+const unsigned int gperf_arm_hash(const char *s) {
+	return sdb_hash_c_arm(s, strlen (s));
+}
+struct {const char*name;void*get;void*hash;} gperf_arm = {
+	.name = "arm",
+	.get = &gperf_arm_get,
+	.hash = &gperf_arm_hash
+};
+
+#if MAIN
+int main () {
+	char line[1024];
+	FILE *fd = fopen ("arm.gperf", "r");
+	if (!fd) {
+		fprintf (stderr, "Cannot open arm.gperf\n");
+		return 1;
+	}
+	int mode = 0;
+	printf ("#ifndef INCLUDE_arm_H\n");
+	printf ("#define INCLUDE_arm_H 1\n");
+	while (!feof (fd)) {
+		*line = 0;
+		fgets (line, sizeof (line), fd);
+		if (mode == 1) {
+			char *comma = strchr (line, ',');
+			if (comma) {
+				*comma = 0;
+				char *up = strdup (line);
+				char *p = up; while (*p) { *p = toupper (*p); p++; }
+				printf ("#define GPERF_arm_%s %d\n",
+					line, sdb_hash_c_arm (line, comma - line));
+			}
+		}
+		if (*line == '%' && line[1] == '%')
+			mode++;
+	}
+	printf ("#endif\n");
+}
+#endif
+
