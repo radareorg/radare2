@@ -259,9 +259,9 @@ static bool objc_find_refs(RCore *core) {
 
 		classMethodsVA += 8; // advance to start of class methods array
 		ut64 to = classMethodsVA + (objc2ClassMethSize * count);
-		if (classMethodsVA > to || classMethodsVA + 0xfffff < to) {
-			eprintf ("Warning: Fuzzed binary or bug in here, checking next\n");
-			continue;
+		if (classMethodsVA > to) {
+			eprintf ("Warning: Fuzzed binary or bug in here, checking next %llx !< %llx\n", classMethodsVA, to);
+			break;
 		}
 		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {
 			if (r_cons_is_breaked ()) {
