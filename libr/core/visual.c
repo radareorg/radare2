@@ -3476,10 +3476,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							RIOMap *map = r_pvector_pop (&core->io->maps);
 							if (map) {
 								entry = r_io_map_begin (map);
+								r_pvector_push_front (&core->io->maps, map);
 							} else {
 								entry = r_config_get_i (core->config, "bin.baddr");
 							}
-							r_pvector_push_front (&core->io->maps, map);
 						}
 					}
 					if (entry != UT64_MAX) {
