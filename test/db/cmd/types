@@ -145,6 +145,7 @@ CMDS=t~char,double,float,int,long,short,size,uid,void # basic universal types
 EXPECT=<<EOF
 char
 char *
+char **
 double
 float
 int
@@ -347,6 +348,7 @@ EOF
 EXPECT=<<EOF
 char
 char *
+char **
 double
 float
 int
@@ -390,6 +392,7 @@ EOF
 EXPECT=<<EOF
 char
 char *
+char **
 double
 float
 int
