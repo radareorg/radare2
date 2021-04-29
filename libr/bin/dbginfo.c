@@ -21,6 +21,10 @@ R_API bool r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line)
 }
 
 R_API bool r_bin_addr2line2(RBin *bin, ut64 addr, char *file, int len, int *line) {
+	r_return_val_if_fail (bin, false);
+	if (!bin->cur || !bin->cur->sdb_addrinfo) {
+		return false;
+	}
 	char *key = r_str_newf ("0x%"PFMT64x, addr);
 	char *file_line = sdb_get (bin->cur->sdb_addrinfo, key, 0);
 	if (file_line) {
