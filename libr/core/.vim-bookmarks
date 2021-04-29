@@ -1,3 +1,0 @@
-let l:bm_file_version = 1
-let l:bm_sessions = {'default': {'/home/shadow/dev/C/DSA/ropes.c': [{'sign_idx': 9501, 'line_nr': 66, 'content': ' '},],}}
-let l:bm_current_session = 'default'
