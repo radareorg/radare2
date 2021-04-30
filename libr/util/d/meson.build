@@ -1,5 +1,6 @@
 sdb_files = [
   'pokered',
+  'ebcdic37',
   'ascii'
 ]
 

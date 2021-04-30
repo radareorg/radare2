@@ -1,3 +1,16 @@
+NAME=ebcdic37
+FILE=-
+CMDS=<<EOF
+b 10
+wx c89693814094a495849615
+e cfg.charset=ebcdic37
+ps
+EOF
+EXPECT=<<EOF
+Hola_mundo
+EOF
+RUN
+
 NAME=rival charset
 FILE=-
 CMDS=<<EOF
@@ -22,6 +35,7 @@ ps
 EOF
 EXPECT=<<EOF
 ascii
+ebcdic37
 pokered
 \xa6\xb1\xae\xb4\xad\xa3\x7f\xb3\xae\x7f\xaf\xb1\xae\xb3\xa4\xa2\xb3I\xa8\xb3\xb2\xa4\xab\xa5\x7f\xa5\xb1\xae\xac\x7f\xa8\xb3
 ground-to-protect<PAGE>itself-fr
@@ -44,11 +58,13 @@ psz
 EOF
 EXPECT=<<EOF
 ascii
+ebcdic37
 pokered
 --------Self-replicating----arbi
 --------Self-replicating----arbi
 --------Self-replicating----arbi
 ascii
+ebcdic37
 pokered
 --------Self-replicating----arbi
 --------Self-replicating----arbi
