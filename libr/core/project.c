@@ -488,7 +488,7 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 }
 #endif
 
-static bool project_save_script(RCore *core, const char *file, int opts) {
+R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	char *filename, *hl, *ohl = NULL;
 	int fdold;
 
@@ -601,32 +601,26 @@ static bool project_save_script(RCore *core, const char *file, int opts) {
 	return true;
 }
 
-R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
-	return project_save_script (core, file, opts);
-}
-
 R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	bool scr_null = false;
 	bool ret = true;
 	SdbListIter *it;
 	SdbNs *ns;
 	r_return_val_if_fail (prj_name && *prj_name, false);
-	char *script_path = get_project_script_path (core, prj_name);
+
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		eprintf ("radare2 does not support projects on debugged bins.\n");
 		return false;
 	}
+
+	char *script_path = get_project_script_path (core, prj_name);
 	if (!script_path) {
 		eprintf ("Invalid project name '%s'\n", prj_name);
 		return false;
 	}
-	char *prj_dir = NULL;
-	if (r_str_endswith (script_path, R_SYS_DIR "rc.r2")) {
-		/* new project format */
-		prj_dir = r_file_dirname (script_path);
-	} else {
-		prj_dir = r_str_newf ("%s.d", script_path);
-	}
+	char *prj_dir = r_str_endswith (script_path, R_SYS_DIR "rc.r2")
+		? r_file_dirname (script_path)
+		: r_str_newf ("%s.d", script_path);
 	if (r_file_exists (script_path)) {
 		if (r_file_is_directory (script_path)) {
 			eprintf ("Structural error: rc.r2 shouldnt be a directory.\n");
@@ -655,7 +649,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		}
 	}
 
-	if (!project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
+	if (!r_core_project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
 		eprintf ("Cannot open '%s' for writing\n", prj_name);
 		ret = false;
 	}
