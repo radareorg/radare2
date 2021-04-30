@@ -5,7 +5,7 @@ on:
 
 jobs:
   latest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - name: Determine current repository
         id: "determine-repo"
@@ -14,7 +14,6 @@ jobs:
       - uses: actions/checkout@v2
       - name: Download Coverity Build Tool
         run: |
-          sysctl vsyscall=emulate
           wget -q https://scan.coverity.com/download/cxx/linux64 --post-data "token=$TOKEN&project=radare2" -O cov-analysis-linux64.tar.gz
           mkdir cov-analysis-linux64
           tar xzf cov-analysis-linux64.tar.gz --strip 1 -C cov-analysis-linux64
