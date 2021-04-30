@@ -79,7 +79,10 @@ static void gorunlib(void *user, const char *lib) {
 		} else {
 			eprintf ("Cannot find '%s' symbol in library.\n", r2go_sym);
 		}
-		r_lib_dl_close (vl);
+		// dlclosing causes a crash, this is a know issue by Golang
+		// https://github.com/golang/go/issues/32497
+		// https://github.com/golang/go/issues/11100
+	// 	r_lib_dl_close (vl);
 	} else {
 		eprintf ("Cannot open '%s' library.\n", lib);
 	}
