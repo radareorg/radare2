@@ -4765,6 +4765,9 @@ static int __load_layout_saved_cb(void *user) {
 	__set_curnode (core, 0);
 	core->panels->panels_menu->depth = 1;
 	__set_mode (core, PANEL_MODE_DEFAULT);
+	__del_menu (core);
+	__del_menu (core);
+	__set_refresh_all (core, true, false);
 	return 0;
 }
 
@@ -4775,6 +4778,7 @@ static int __load_layout_default_cb(void *user) {
 	__panels_layout (core->panels);
 	core->panels->panels_menu->depth = 1;
 	__set_mode (core, PANEL_MODE_DEFAULT);
+	__del_menu (core);
 	__del_menu (core);
 	__del_menu (core);
 	__set_refresh_all (core, true, false);
