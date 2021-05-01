@@ -258,7 +258,15 @@ static bool objc_find_refs(RCore *core) {
 		}
 
 		classMethodsVA += 8; // advance to start of class methods array
-		ut64 to = classMethodsVA + (objc2ClassMethSize * count);
+		ut64 delta = (objc2ClassMethSize * count);
+		ut64 to = classMethodsVA + delta - 8;
+		if (delta > objc->file_size) {
+			eprintf ("Workaround: Corrupted objc data? checking next %llx !< %llx\n", classMethodsVA, to);
+			count = (objc->_data->vsize / objc2ClassMethSize) - 1;
+			delta = objc2ClassMethSize * count;
+			to = classMethodsVA + delta;
+
+		}
 		if (classMethodsVA > to) {
 			eprintf ("Warning: Fuzzed binary or bug in here, checking next %llx !< %llx\n", classMethodsVA, to);
 			break;
