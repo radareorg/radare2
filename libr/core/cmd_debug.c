@@ -5231,7 +5231,7 @@ static int cmd_debug(void *data, const char *input) {
 					}
 				}
 				if (stop != -1) {
-					P ("stopreason=%d\n", stop);
+					P ("stopreason=%s\n", r_debug_stop_reason_to_string (stop));
 				}
 				break;
 			case 'f': // "dif" "diff"
