@@ -106,6 +106,9 @@ R_API RCharsetRune *search_from_hex(RCharsetRune *r, const ut8 *hx) {
 
 // assumes out is as big as in_len
 R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
+	if (!rc->loaded) {
+		return in_len;
+	}
 	char k[32];
 	char *o = (char*)out;
 	size_t i;
@@ -127,6 +130,9 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 
 // assumes out is as big as in_len
 R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
+	if (!rc->loaded) {
+		return in_len;
+	}
 	char *o = (char*)out;
 
 	size_t maxkeylen = rc->encode_maxkeylen;
