@@ -11,8 +11,13 @@ R_API RCharset *r_charset_new(void) {
 R_API void r_charset_free(RCharset *c) {
 	if (c) {
 		sdb_free (c->db);
+		sdb_free (c->db_char_to_hex);
 		free (c);
 	}
+}
+
+R_API void r_charset_close(RCharset *c) {
+	c->loaded = false;
 }
 
 R_API bool r_charset_open(RCharset *c, const char *cs) {
@@ -28,6 +33,7 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 	SdbKv *kv;
 	SdbList *sdbls = sdb_foreach_list (c->db, true);
 
+	c->loaded = false;
 	ls_foreach (sdbls, iter, kv) {
 		const char *new_key = kv->base.value;
 		const char *new_value = kv->base.key;
@@ -40,6 +46,7 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 			c->decode_maxkeylen = val_len;
 		}
 		sdb_add (c->db_char_to_hex, new_key, new_value, 0);
+		c->loaded = true;
 	}
 	ls_free (sdbls);
 
@@ -99,6 +106,9 @@ R_API RCharsetRune *search_from_hex(RCharsetRune *r, const ut8 *hx) {
 
 // assumes out is as big as in_len
 R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
+	if (!rc->loaded) {
+		return in_len;
+	}
 	char k[32];
 	char *o = (char*)out;
 	size_t i;
@@ -108,8 +118,10 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
 		const char *v = sdb_const_get (rc->db, k, 0);
 		const char *ret = r_str_get_fail (v, "?");
-
-		strcpy (o, ret);
+		char *res = strdup (ret);
+		r_str_unescape (res);
+		strcpy (o, res);
+		free (res);
 		o += strlen (o);
 	}
 
@@ -118,6 +130,9 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 
 // assumes out is as big as in_len
 R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
+	if (!rc->loaded) {
+		return in_len;
+	}
 	char *o = (char*)out;
 
 	size_t maxkeylen = rc->encode_maxkeylen;
