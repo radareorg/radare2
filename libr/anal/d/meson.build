@@ -11,7 +11,7 @@ sdb_files = [
   'cc-riscv-64',
   'cc-sparc-32',
   'cc-v850-32',
-  'cc-sysz-64',
+  'cc-s390-64',
   'cc-x86-16',
   'cc-x86-32',
   'cc-x86-64',
