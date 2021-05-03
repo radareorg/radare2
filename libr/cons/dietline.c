@@ -936,7 +936,6 @@ static inline void delete_till_end(void) {
 static void __print_prompt(void) {
         RCons *cons = r_cons_singleton ();
 	int columns = r_cons_get_size (NULL) - 2;
-	int chars = R_MAX (1, strlen (I.buffer.data));
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
                 r_cons_gotoxy (0,  cons->rows);
@@ -948,7 +947,9 @@ static void __print_prompt(void) {
 	} else {
 		printf ("\r%s", I.prompt);
 	}
-	fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
+	if (I.buffer.length > 0) {
+		fwrite (I.buffer.data, I.buffer.length, 1, stdout);
+	}
 	printf ("\r%s", I.prompt);
 	if (I.buffer.index > cols) {
 		printf ("< ");
