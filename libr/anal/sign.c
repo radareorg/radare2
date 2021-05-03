@@ -2312,198 +2312,130 @@ static int matchCount(int a, int b) {
 	return R_ABS (c) < m;
 }
 
-static bool fcnMetricsCmp(RSignItem *it, RAnalFunction *fcn) {
-	RSignGraph *graph = it->graph;
-	int ebbs = -1;
-
-	if (graph->cc != -1 && graph->cc != r_anal_function_complexity (fcn)) {
+static bool graph_match(RSignGraph *a, RSignGraph *b) {
+	if (!a || !b) {
 		return false;
 	}
-	if (graph->nbbs != -1 && graph->nbbs != r_list_length (fcn->bbs)) {
+	if (a->cc != -1 && a->cc != b->cc) {
 		return false;
 	}
-	if (graph->edges != -1 && graph->edges != r_anal_function_count_edges (fcn, &ebbs)) {
+	if (a->nbbs != -1 && a->nbbs != b->nbbs) {
 		return false;
 	}
-	if (graph->ebbs != -1 && graph->ebbs != ebbs) {
+	if (a->edges != -1 && a->edges != b->edges) {
 		return false;
 	}
-	if (graph->bbsum > 0 && matchCount (graph->bbsum, r_anal_function_linear_size (fcn))) {
+	if (a->ebbs != -1 && a->ebbs != b->ebbs) {
 		return false;
 	}
-	return true;
-}
-
-static bool graph_match(RSignItem *it, RSignSearchMetrics *sm) {
-	RSignGraph *graph = it->graph;
-
-	if (!graph) {
-		return false;
-	}
-
-	if (graph->cc < sm->mincc) {
-		return false;
-	}
-
-	if (!fcnMetricsCmp (it, sm->fcn)) {
-		return false;
-	}
-
-	return true;
-}
-
-static bool addr_match(RSignItem *it, RSignSearchMetrics *sm) {
-	if (it->addr != sm->fcn->addr || it->addr == UT64_MAX) {
+	if (a->bbsum > 0 && matchCount (a->bbsum, b->bbsum)) {
 		return false;
 	}
 	return true;
 }
 
-static bool hash_match(RSignItem *it, char **digest_hex, RSignSearchMetrics *sm) {
-	RSignHash *hash = it->hash;
-	if (!hash || !hash->bbhash || hash->bbhash[0] == 0) {
-		return false;
+static int sig_addr_cmp(ut64 a, ut64 b) {
+	if (a < b) {
+		return 1;
 	}
-
-	if (!*digest_hex) {
-		*digest_hex = r_sign_calc_bbhash (sm->anal, sm->fcn);
-	}
-	if (strcmp (hash->bbhash, *digest_hex)) {
-		return false;
-	}
-	return true;
+	return a > b? -1: 0;
 }
 
-static bool str_list_equals(RList *la, RList *lb) {
-	r_return_val_if_fail (la && lb, false);
-	size_t len = r_list_length (la);
-	if (len != r_list_length (lb)) {
-		return false;
+static int sig_hash_cmp(RSignHash *a, RSignHash *b) {
+	if (!a) {
+		return b? -1: 0;
 	}
+	if (!b) {
+		return 1;
+	}
+	return strcmp (a->bbhash, b->bbhash);
+}
+
+static int str_list_cmp(RList *la, RList *lb) {
+	if (!la) {
+		return lb? -1: 0;
+	}
+	if (!lb) {
+		return 1;
+	}
+
+	int len = r_list_length (la);
+	int dif = len - r_list_length (lb);
+	if (dif) {
+		return dif;
+	}
+
 	size_t i;
 	for (i = 0; i < len; i++) {
 		const char *a = r_list_get_n (la, i);
 		const char *b = r_list_get_n (lb, i);
-		if (strcmp (a, b)) {
-			return false;
+		if ((dif = strcmp (a, b))) {
+			return dif;
 		}
 	}
-	return true;
-}
-
-static bool vars_match(RSignItem *it, RList **vars, RSignSearchMetrics *sm) {
-	r_return_val_if_fail (vars && sm, false);
-	if (!it->vars) {
-		return false;
-	}
-
-	if (!*vars) {
-		*vars = r_sign_fcn_vars (sm->anal, sm->fcn);
-		if (!*vars) {
-			return false;
-		}
-	}
-
-	if (str_list_equals (*vars, it->vars)) {
-		return true;
-	}
-	return false;
-}
-
-static bool refs_match(RSignItem *it, RList **refs, RSignSearchMetrics *sm) {
-	r_return_val_if_fail (refs && sm, false);
-	if (!it->refs) {
-		return false;
-	}
-
-	if (!*refs) {
-		*refs = r_sign_fcn_refs (sm->anal, sm->fcn);
-		if (!*refs) {
-			return false;
-		}
-	}
-
-	if (str_list_equals (*refs, it->refs)) {
-		return true;
-	}
-	return false;
-}
-
-static bool types_match(RSignItem *it, RList **types, RSignSearchMetrics *sm) {
-	r_return_val_if_fail (types && sm, false);
-	if (!it->types) {
-		return false;
-	}
-
-	if (!*types) {
-		*types = r_sign_fcn_types (sm->anal, sm->fcn);
-		if (!*types) {
-			return false;
-		}
-	}
-
-	if (str_list_equals (*types, it->types)) {
-		return true;
-	}
-	return false;
+	return 0;
 }
 
 struct metric_ctx {
 	int matched;
+	RSignItem *it;
 	RSignSearchMetrics *sm;
-	RList *refs;
-	RList *types;
-	RList *vars;
-	char *digest_hex;
 };
 
 static int match_metrics(RSignItem *it, void *user) {
 	struct metric_ctx *ctx = (struct metric_ctx *)user;
 	RSignSearchMetrics *sm = ctx->sm;
-	RSignType type;
+	RSignItem *fit = ctx->it;
+	RSignType types[7];
 	int count = 0;
-	int i = 0;
-	while ((type = sm->types[i++])) {
-		bool found = false;
-		switch (type) {
-		case R_SIGN_GRAPH:
-			found = graph_match (it, sm);
-			break;
-		case R_SIGN_OFFSET:
-			found = addr_match (it, sm);
-			break;
-		case R_SIGN_BBHASH:
-			found = hash_match (it, &ctx->digest_hex, sm);
-			break;
-		case R_SIGN_REFS:
-			found = refs_match (it, &ctx->refs, sm);
-			break;
-		case R_SIGN_TYPES:
-			found = vars_match (it, &ctx->vars, sm);
-			break;
-		case R_SIGN_VARS:
-			found = types_match (it, &ctx->types, sm);
-			break;
-		default:
-			eprintf ("Invalid type: %c\n", type);
-		}
-		if (found) {
-			sm->cb (it, sm->fcn, type, (count > 1), sm->user);
-			count++;
-		}
+
+	// only matching alg that is not a cmp, but true/false
+	if (graph_match (it->graph, fit->graph)) {
+		types[count++] = R_SIGN_GRAPH;
 	}
-	ctx->matched += count;
-	return count? 0: 1;
+	if (fit->addr != UT64_MAX && !sig_addr_cmp (it->addr, fit->addr)) {
+		types[count++] = R_SIGN_OFFSET;
+	}
+	if (fit->hash && !sig_hash_cmp (it->hash, fit->hash)) {
+		types[count++] = R_SIGN_BBHASH;
+	}
+	if (fit->refs && !str_list_cmp (it->refs, fit->refs)) {
+		types[count++] = R_SIGN_REFS;
+	}
+	if (fit->vars && !str_list_cmp (it->vars, fit->vars)) {
+		types[count++] = R_SIGN_VARS;
+	}
+	if (fit->types && !str_list_cmp (it->types, fit->types)) {
+		types[count++] = R_SIGN_TYPES;
+	}
+	if (count) {
+		ctx->matched += count;
+		types[count] = R_SIGN_END;
+		sm->cb (it, sm->fcn, types, sm->user);
+		return 1;
+	}
+	return 0;
 }
 
 R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm) {
-	r_return_val_if_fail (sm && sm->mincc >= 0 && sm->anal && sm->fcn, false);
-	struct metric_ctx ctx = { 0, sm, NULL, NULL, NULL, NULL };
+	r_return_val_if_fail (sm && sm->mincc >= 0 && sm->anal && sm->fcn, -1);
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return -1;
+	}
+
+	int i = 0;
+	RSignType t;
+	while ((t = sm->types[i++]) != R_SIGN_END) {
+		r_sign_addto_item (sm->anal, it, sm->fcn, t);
+	}
+	if (it->graph && it->graph->cc < sm->mincc) {
+		r_sign_graph_free (it->graph);
+		it->graph = NULL;
+	}
+	struct metric_ctx ctx = { 0, it, sm };
 	r_sign_foreach (sm->anal, match_metrics, (void *)&ctx);
-	r_list_free (ctx.refs);
-	r_list_free (ctx.types);
-	r_list_free (ctx.vars);
-	free (ctx.digest_hex);
+	r_sign_item_free (it);
 	return ctx.matched;
 }
 

@@ -19,19 +19,20 @@ R_LIB_VERSION_HEADER(r_sign);
 #define R_ZIGN_HASH R_HASH_SHA256
 
 typedef enum {
-	R_SIGN_BYTES     = 'b', // bytes pattern
-	R_SIGN_BYTES_MASK= 'm', // bytes pattern
-	R_SIGN_BYTES_SIZE= 's', // bytes pattern
-	R_SIGN_ANAL      = 'a', // bytes pattern (anal mask) // wtf ?
-	R_SIGN_COMMENT   = 'c', // comment
-	R_SIGN_GRAPH     = 'g', // graph metrics
-	R_SIGN_OFFSET    = 'o', // addr
-	R_SIGN_NAME      = 'n', // real name
-	R_SIGN_REFS      = 'r', // references
-	R_SIGN_XREFS     = 'x', // xrefs
-	R_SIGN_VARS      = 'v', // variables
-	R_SIGN_TYPES     = 't', // types
-	R_SIGN_BBHASH    = 'h', // basic block hash
+	R_SIGN_BYTES = 'b', // bytes pattern
+	R_SIGN_BYTES_MASK = 'm', // bytes pattern
+	R_SIGN_BYTES_SIZE = 's', // bytes pattern
+	R_SIGN_ANAL = 'a', // bytes pattern (anal mask) // wtf ?
+	R_SIGN_COMMENT = 'c', // comment
+	R_SIGN_GRAPH = 'g', // graph metrics
+	R_SIGN_OFFSET = 'o', // addr
+	R_SIGN_NAME = 'n', // real name
+	R_SIGN_REFS = 'r', // references
+	R_SIGN_XREFS = 'x', // xrefs
+	R_SIGN_VARS = 'v', // variables
+	R_SIGN_TYPES = 't', // types
+	R_SIGN_BBHASH = 'h', // basic block hash
+	R_SIGN_END = '\x00', // used for sentenal value
 } RSignType;
 
 typedef struct r_sign_graph_t {
@@ -68,9 +69,9 @@ typedef struct r_sign_item_t {
 	RSignHash *hash;
 } RSignItem;
 
-typedef int (*RSignForeachCallback)(RSignItem *it, void *user);
-typedef int (*RSignSearchCallback)(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user);
-typedef int (*RSignMatchCallback)(RSignItem *it, RAnalFunction *fcn, RSignType type, bool seen, void *user);
+typedef int (*RSignForeachCallback) (RSignItem *it, void *user);
+typedef int (*RSignSearchCallback) (RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user);
+typedef int (*RSignMatchCallback) (RSignItem *it, RAnalFunction *fcn, RSignType *types, void *user);
 
 typedef struct r_sign_search_met {
 	/* types is an 0 terminated array of RSignTypes that are going to be

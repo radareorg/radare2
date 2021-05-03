@@ -622,7 +622,7 @@ e zign.minsz = 0
 e zign.mincc = 0
 z/
 ?v sign.bytes.sym.print_0
-?v sign.graph.sym.print_4
+?v sign.graph.sym.print_5
 EOF
 EXPECT=<<EOF
 0x400536
