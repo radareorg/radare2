@@ -1211,6 +1211,7 @@ static bool cb_cfgcharset(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	const char *cf = r_str_trim_head_ro (node->value);
 	if (!*cf) {
+		r_charset_close (core->print->charset);
 		return true;
 	}
 

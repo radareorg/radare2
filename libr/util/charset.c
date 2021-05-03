@@ -16,6 +16,10 @@ R_API void r_charset_free(RCharset *c) {
 	}
 }
 
+R_API void r_charset_close(RCharset *c) {
+	c->loaded = false;
+}
+
 R_API bool r_charset_open(RCharset *c, const char *cs) {
 	r_return_val_if_fail (c && cs, false);
 	sdb_reset (c->db);
@@ -29,6 +33,7 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 	SdbKv *kv;
 	SdbList *sdbls = sdb_foreach_list (c->db, true);
 
+	c->loaded = false;
 	ls_foreach (sdbls, iter, kv) {
 		const char *new_key = kv->base.value;
 		const char *new_value = kv->base.key;
@@ -41,6 +46,7 @@ R_API bool r_charset_open(RCharset *c, const char *cs) {
 			c->decode_maxkeylen = val_len;
 		}
 		sdb_add (c->db_char_to_hex, new_key, new_value, 0);
+		c->loaded = true;
 	}
 	ls_free (sdbls);
 

@@ -29,6 +29,7 @@ typedef struct r_charset_rune_t {
 } RCharsetRune;
 
 typedef struct r_charset_t {
+	bool loaded;
 	Sdb *db;
 	Sdb *db_char_to_hex;
 	RCharsetRune *custom_charset;
@@ -47,6 +48,7 @@ R_API void r_charset_rune_free(RCharsetRune *rcr);
 R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len);
 R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len);
 R_API bool r_charset_open(RCharset *c, const char *cs);
+R_API void r_charset_close(RCharset *c);
 R_API RCharsetRune * add_rune(RCharsetRune *rcsr, const ut8 *ch, const ut8 *hx);
 R_API RCharsetRune *search_from_hex(RCharsetRune *rcsr, const ut8 *hx);
 R_API RCharsetRune *search_from_char(RCharsetRune *rcsr, const ut8 *ch);
