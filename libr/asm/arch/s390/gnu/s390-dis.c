@@ -287,7 +287,7 @@ print_insn_s390 (bfd_vma memaddr, struct disassemble_info *info)
 {
   bfd_byte buffer[6];
   const struct s390_opcode *opcode = NULL;
-  int status, opsize, bufsize, bytes_to_dump;
+  int status, opsize, bufsize; // , bytes_to_dump;
 
   /* The output looks better if we put 6 bytes on a line.  */
   info->bytes_per_line = 6;
