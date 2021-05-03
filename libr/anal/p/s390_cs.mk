@@ -1,0 +1,13 @@
+OBJ_ANAL_S390CS_CS=anal_s390_cs.o
+
+include p/capstone.mk
+
+STATIC_OBJ+=${OBJ_ANAL_S390CS_CS}
+
+TARGET_ANAL_S390CS_CS=anal_s390_cs.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_ANAL_S390CS_CS}
+
+${TARGET_ANAL_S390CS_CS}: ${OBJ_SYSTEMZ_CS}
+	${CC} ${CFLAGS} $(call libname,anal_s390_cs) $(CS_LDFLAGS) \
+		-o anal_s390_cs.${EXT_SO} ${OBJ_ANAL_S390CS_CS}

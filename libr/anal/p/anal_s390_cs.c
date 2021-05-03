@@ -196,12 +196,12 @@ static int archinfo(RAnal *anal, int q) {
 	return 2;
 }
 
-RAnalPlugin r_anal_plugin_sysz = {
-	.name = "sysz",
+RAnalPlugin r_anal_plugin_s390_cs = {
+	.name = "s390",
 	.desc = "Capstone SystemZ microanalysis",
 	.esil = false,
 	.license = "BSD",
-	.arch = "sysz",
+	.arch = "s390",
 	.bits = 32|64,
 	.op = &analop,
 	.archinfo = archinfo,

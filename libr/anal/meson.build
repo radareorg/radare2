@@ -80,7 +80,7 @@ r_anal_sources = [
   'p/anal_snes.c',
   'p/anal_sparc_cs.c',
   'p/anal_sparc_gnu.c',
-  'p/anal_sysz.c',
+  'p/anal_s390_cs.c',
   'p/anal_tms320.c',
   'p/anal_tms320_c55x_plus.c',
   #'p/anal_tms320c64x.c',
