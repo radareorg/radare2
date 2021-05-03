@@ -11,6 +11,28 @@ Hola_mundo
 EOF
 RUN
 
+NAME=ebcdic37
+FILE=bins/s390/zos/prueba/prueba
+ARGS=-n
+CMDS=<<EOF
+s 0x19a8
+px 16
+ps
+e cfg.charset=ebcdic37
+px 16
+ps
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x000019a8  c896 9381 4094 a495 8496 1500 0000 0000  ????????????????
+\xc8\x96\x93\x81@\x94\xa4\x95\x84\x96\x15
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x000019a8  c896 9381 4094 a495 8496 1500 0000 0000  Hola_mundo......
+Hola_mundo
+????}??_?&???????_???main?"????y???y???h?O003U??y?}?8??????\xc3\xa7?????q?\x0d{??Y_
+EOF
+RUN
+
 NAME=rival charset
 FILE=-
 CMDS=<<EOF

@@ -1266,6 +1266,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
 						? ' ' : buf[j];
+					if (p->charset) {
+						ut8 input[2] = {ch, 0};
+						ut8 output[32];
+						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, 1);
+						if (len > 0) {
+							ch = *output;
+						}
+					}
 					r_print_byte (p, "%c", j, ch);
 					bytes++;
 				}

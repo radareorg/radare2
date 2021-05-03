@@ -11,6 +11,7 @@ R_API RCharset *r_charset_new(void) {
 R_API void r_charset_free(RCharset *c) {
 	if (c) {
 		sdb_free (c->db);
+		sdb_free (c->db_char_to_hex);
 		free (c);
 	}
 }
@@ -108,8 +109,10 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
 		const char *v = sdb_const_get (rc->db, k, 0);
 		const char *ret = r_str_get_fail (v, "?");
-
-		strcpy (o, ret);
+		char *res = strdup (ret);
+		r_str_unescape (res);
+		strcpy (o, res);
+		free (res);
 		o += strlen (o);
 	}
 
