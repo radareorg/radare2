@@ -1,4 +1,4 @@
-.Dd Sep 30, 2014
+.Dd May 4, 2021
 .Dt RAGG2 1
 .Sh NAME
 .Nm ragg2
@@ -12,7 +12,8 @@
 .Op Fl o Ar file
 .Op Fl i Ar shellcode
 .Op Fl I Ar path
-.Op Fl e Ar encoder
+.Op Fl e Ar eggstr
+.Op Fl E Ar encoder
 .Op Fl B Ar hexpairs
 .Op Fl c Ar k=v
 .Op Fl C Ar file
@@ -50,6 +51,8 @@ output file to write result of compilation
 .It Fl i Ar shellcode
 specify shellcode name to be used (see \-L)
 .It Fl e Ar encoder
+pass egg program as argument instead of in a file
+.It Fl E Ar encoder
 specify encoder name to be used (see \-L)
 .It Fl B Ar hexpair
 specify shellcode as hexpairs

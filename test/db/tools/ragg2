@@ -1,3 +1,11 @@
+NAME=ragg2 -a x86 -b 64 -e 'main@global{main(123)}'
+FILE=-
+CMDS=!ragg2 -a x86 -b 64 -e 'main@global{main(123)}'
+EXPECT=<<EOF
+48c7c07b00000050c3
+EOF
+RUN
+
 NAME=ragg2 -a x86 -b 64 -p A200 -d 50:0xccccccb
 FILE=-
 CMDS=!ragg2 -a x86 -b 64 -p A200 -d 50:0xccccccb

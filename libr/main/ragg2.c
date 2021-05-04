@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2020 - pancake */
+/* radare - LGPL - Copyright 2011-2021 - pancake */
 
 #include <r_egg.h>
 #include <r_bin.h>
@@ -8,8 +8,8 @@
 
 static int usage(int v) {
 	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
-		"             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
-		"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] file|f.asm|-\n");
+		"             [-i sc] [-E enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
+		"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] [-e expr] file|f.asm|-\n");
 	if (v) {
 		printf (
 			" -a [arch]       select architecture (x86, mips, arm)\n"
@@ -19,7 +19,8 @@ static int usage(int v) {
 			" -C [file]       append contents of file\n"
 			" -d [off:dword]  patch dword (4 bytes) at given offset\n"
 			" -D [off:qword]  patch qword (8 bytes) at given offset\n"
-			" -e [encoder]    use specific encoder. see -L\n"
+			" -e [egg-expr]   take egg program from string instead of file\n"
+			" -E [encoder]    use specific encoder. see -L\n"
 			" -f [format]     output format (raw, c, pe, elf, mach0, python, javascript)\n"
 			" -F              output native format (osx=mach0, linux=elf, ..)\n"
 			" -h              show this help\n"
@@ -125,14 +126,15 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	const char *format = "raw";
 	bool show_execute = false;
 	bool show_execute_rop = false;
-	int show_hex = 1;
-	int show_asm = 0;
-	int show_raw = 0;
+	bool show_hex = true;
+	bool show_asm = false;
+	bool show_raw = false;
 	int append = 0;
 	int show_str = 0;
 	ut64 get_offset  = 0;
 	const char *shellcode = NULL;
 	const char *encoder = NULL;
+	const char *eggprg = NULL;
 	char *sequence = NULL;
 	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 	int fmt = 0;
@@ -149,11 +151,14 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		case 'a':
 			arch = opt.arg;
 			if (!strcmp (arch, "trace")) {
-				show_asm = 1;
-				show_hex = 0;
+				show_asm = true;
+				show_hex = false;
 			}
 			break;
 		case 'e':
+			eggprg = opt.arg;
+			break;
+		case 'E':
 			encoder = opt.arg;
 			break;
 		case 'b':
@@ -283,21 +288,21 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 #else
 			format = "elf";
 #endif
-			show_asm = 0;
+			show_asm = false;
 			break;
 		case 'f':
 			format = opt.arg;
-			show_asm = 0;
+			show_asm = false;
 			break;
 		case 's':
-			show_asm = 1;
-			show_hex = 0;
+			show_asm = true;
+			show_hex = false;
 			break;
 		case 'k':
 			os = opt.arg;
 			break;
 		case 'r':
-			show_raw = 1;
+			show_raw = true;
 			break;
 		case 'x':
 			// execute
@@ -335,11 +340,12 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		}
 	}
 
-	if (opt.ind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
+	if (opt.ind == argc && !eggprg && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset && !str) {
 		free (sequence);
 		r_egg_free (egg);
 		return usage (0);
-	} else {
+	}
+	if (opt.ind != argc) {
 		file = argv[opt.ind];
 	}
 
@@ -411,6 +417,8 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		} else {
 			if (strstr (file, ".s") || strstr (file, ".asm")) {
 				fmt = 'a';
+			} else if (strstr (file, ".bin") || strstr (file, ".raw")) {
+				fmt = 'r';
 			} else {
 				fmt = 0;
 			}
@@ -418,6 +426,11 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				eprintf ("Cannot open '%s'\n", file);
 				goto fail;
 			}
+		}
+	} else {
+		if (eggprg && !r_egg_include_str (egg, eggprg)) {
+			eprintf ("Cannot parse egg program.\n");
+			goto fail;
 		}
 	}
 
@@ -509,9 +522,11 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	}
 
 	// assemble to binary
-	if (!r_egg_assemble (egg)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
-		goto fail;
+	if (!show_asm) {
+		if (!r_egg_assemble (egg)) {
+			eprintf ("r_egg_assemble: invalid assembly\n");
+			goto fail;
+		}
 	}
 	if (encoder) {
 		if (!r_egg_encode (egg, encoder)) {
@@ -594,7 +609,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				} // else show_raw is_above()
 				break;
 			case 'p': // PE
-				if (strlen(format) >= 2 && format[1] == 'y') { // Python
+				if (strlen (format) >= 2 && format[1] == 'y') { // Python
 					r_print_code (p, 0, tmp, tmpsz, 'p');
 				}
 				break;
