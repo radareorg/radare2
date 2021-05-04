@@ -20,7 +20,7 @@ sdb_files = [
   'riscv',
   'sh',
   'sparc',
-  'sysz',
+  's390',
   'tms320',
   'tricore',
   'v810',

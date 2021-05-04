@@ -1,7 +1,7 @@
 NAME=aoj 4140f008
 FILE=-
 CMDS=<<EOF
-e asm.arch=sysz
+e asm.arch=s390
 e asm.bits=64
 wx 4140f008
 aoj~{}

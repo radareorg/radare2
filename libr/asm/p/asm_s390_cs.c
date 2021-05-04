@@ -53,11 +53,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size;
 }
 
-RAsmPlugin r_asm_plugin_sysz = {
-	.name = "sysz",
-	.desc = "SystemZ CPU disassembler",
+RAsmPlugin r_asm_plugin_s390_cs = {
+	.name = "s390",
+	.desc = "s390/SystemZ CPU disassembler",
 	.license = "BSD",
-	.arch = "sysz",
+	.arch = "s390",
 	.bits = 32 | 64,
 	.endian = R_SYS_ENDIAN_BIG,
 	.fini = the_end,
@@ -67,7 +67,7 @@ RAsmPlugin r_asm_plugin_sysz = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_sysz,
+	.data = &r_asm_plugin_s390_cs,
 	.version = R2_VERSION
 };
 #endif

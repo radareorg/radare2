@@ -2117,7 +2117,7 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 	case EM_IA_64:
 		return strdup ("ia64");
 	case EM_S390:
-		return strdup ("sysz");
+		return strdup ("s390");
 	default: return strdup ("x86");
 	}
 }
