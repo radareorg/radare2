@@ -2211,12 +2211,13 @@ struct ctxForeachCB {
 
 static bool foreachCB(void *user, const char *k, const char *v) {
 	struct ctxForeachCB *ctx = (struct ctxForeachCB *) user;
+	r_return_val_if_fail (ctx && ctx->cb, false);
 	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
 
 	if (r_sign_deserialize (a, it, k, v)) {
 		RSpace *cur = r_spaces_current (&a->zign_spaces);
-		if (ctx->cb && cur == it->space) {
+		if (!cur || cur == it->space) {
 			ctx->cb (it, ctx->user);
 		}
 	} else {
