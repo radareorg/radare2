@@ -1100,9 +1100,7 @@ static bool bestmatch_sig(RCore *core, const char *input) {
 		RSignBytes *b = item->bytes;
 		int minsz = r_config_get_i (core->config, "zign.minsz");
 		if (b && b->size < minsz) {
-			eprintf ("Warning: Function signature is too small (%d < %d) See e zign.minsz", b->size, minsz);
-			r_sign_item_free (item);
-			return false;
+			eprintf ("Warning: Function signature is too small (%d < %d) See e zign.minsz \n", b->size, minsz);
 		}
 	}
 	if (r_config_get_i (core->config, "zign.graph")) {
