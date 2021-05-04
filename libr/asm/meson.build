@@ -133,6 +133,8 @@ r_asm_sources = [
   'arch/pic/pic_midrange.c',
   'arch/pic/pic_pic18.c',
   'arch/mcore/mcore.c',
+  'arch/s390/gnu/s390-dis.c',
+  'arch/s390/gnu/s390-opc.c',
   'arch/ppc/gnu/ppc-dis.c',
   'arch/ppc/gnu/ppc-opc.c',
   'arch/ppc/libvle/vle.c',
