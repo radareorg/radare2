@@ -334,7 +334,8 @@ R_API bool r_egg_assemble(REgg *egg) {
 	return r_egg_assemble_asm (egg, NULL);
 }
 
-R_API int r_egg_compile(REgg *egg) {
+R_API bool r_egg_compile(REgg *egg) {
+	r_return_var_if_fail (egg, false);
 	r_buf_seek (egg->src, 0, R_BUF_SET);
 	char b;
 	int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
@@ -349,13 +350,13 @@ R_API int r_egg_compile(REgg *egg) {
 			eprintf ("ERROR: elem too large.\n");
 			break;
 		}
-		int r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
+		size_t r = r_buf_read (egg->src, (ut8 *)&b, sizeof (b));
 		if (r != sizeof (b)) {
 			break;
 		}
 		// XXX: some parse fail errors are false positives :(
 	}
-	if (egg->context>0) {
+	if (egg->context > 0) {
 		eprintf ("ERROR: expected '}' at the end of the file. %d left\n", egg->context);
 		return false;
 	}
@@ -412,7 +413,7 @@ static inline char *eon(char *n) {
 /* padding looks like:
   ([snatSNAT][0-9]+)*
 */
-R_API int r_egg_padding(REgg *egg, const char *pad) {
+R_API bool r_egg_padding(REgg *egg, const char *pad) {
 	int number;
 	ut8 *buf, padding_byte;
 	char *p, *o = strdup (pad);
