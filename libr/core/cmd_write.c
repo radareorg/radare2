@@ -178,7 +178,7 @@ static const char *help_msg_wx[] = {
 };
 
 static void cmd_write_fail(RCore *core) {
-	eprintf ("Failed to write\n");
+	eprintf ("ERROR: Cannot write in here, check map permissions or reopen the file with oo+\n");
 	core->num->value = 1;
 }
 
@@ -789,7 +789,7 @@ static bool cmd_wfs(RCore *core, const char *input) {
 		if (r_io_write_at (core->io, core->offset, buf, done)) {
 			eprintf ("Written %d bytes\n", done);
 		} else {
-			eprintf ("Cannot write\n");
+			cmd_write_fail (core);
 		}
 	}
 	r_socket_free (s);
