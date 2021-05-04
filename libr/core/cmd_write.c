@@ -633,8 +633,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 
 	if (*arg =='?' || !*arg) {
 		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
-	}
-	if (!strcmp (arg, "-")) {
+	} else if (!strcmp (arg, "-")) {
 		char *out = r_core_editor (core, NULL, NULL);
 		if (out) {
 			if (!r_io_write_at (core->io, core->offset,
@@ -666,6 +665,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 			u_offset = r_num_math (core->num, p);
 			if (u_offset > size) {
 				eprintf ("Invalid offset\n");
+				free (a);
 				free (buf);
 				return false;
 			}
@@ -675,11 +675,12 @@ static bool cmd_wff(RCore *core, const char *input) {
 			eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", core->offset);
 		}
 		WSEEK (core, size);
-		free (buf);
 		r_core_block_read (core);
 	} else {
 		eprintf ("Cannot open file '%s'\n", arg);
 	}
+	free (a);
+	free (buf);
 	return true;
 }
 

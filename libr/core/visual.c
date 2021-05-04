@@ -3516,41 +3516,23 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_core_seek (core, addr, false);
 					r_core_cmdf (core, "s 0x%"PFMT64x, addr);
 				}
-				if (!strcmp (buf + i, "-")) {
-					strcpy (buf, "CC-");
-				} else {
-					switch (buf[i]) {
-					case '-':
-						memcpy (buf, "\"CC-\x00", 5);
-						break;
-					case '!':
-						memcpy (buf, "\"CC!\x00", 5);
-						break;
-					default:
-						memcpy (buf, "\"CC ", 4);
-						break;
-					}
-					strcat (buf, "\"");
+				const char *command = "CC ";
+				const char *argument = NULL;
+				switch (buf[i]) {
+				case '-':
+					command = "CC-";
+					argument = r_str_trim_head_ro (buf + i + 1);
+					break;
+				case '!':
+					command = "CC!";
+					argument = r_str_trim_head_ro (buf + i + 1);
+					break;
+				default:
+					command = "CC ";
+					argument = r_str_trim_head_ro (buf + i);
+					break;
 				}
-				if (buf[3] == ' ') {
-					// have to escape any quotes.
-					int j, len = strlen (buf);
-					char *duped = strdup (buf);
-					for (i = 4, j = 4; i < len; i++, j++) {
-						char c = duped[i];
-						if (c == '"' && i != (len - 1)) {
-							buf[j] = '\\';
-							j++;
-							buf[j] = '"';
-						} else {
-							buf[j] = c;
-						}
-					}
-					buf[j] = 0;
-					free (duped);
-				}
-				buf[sizeof (buf) - 1] = 0;
-				r_core_cmd (core, buf, 1);
+				r_core_cmdf (core, "\"%s%s\"", command, argument);
 				if (core->print->cur_enabled) {
 					r_core_seek (core, orig, true);
 				}
