@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2020 - pancake */
+/* radare - LGPL - Copyright 2011-2021 - pancake */
 
 #include <r_core.h>
 
@@ -12,8 +12,8 @@ void r_core_hack_help(const RCore *core) {
 		"wao", " [op]", "performs a modification on current opcode",
 		"wao", " nop", "nop current opcode",
 		"wao", " jinf", "assemble an infinite loop",
-		"wao", " jz", "make current opcode conditional (zero)",
-		"wao", " jnz", "make current opcode conditional (not zero)",
+		"wao", " jz", "make current opcode conditional (same as je) (zero)",
+		"wao", " jnz", "make current opcode conditional (same as jne) (not zero)",
 		"wao", " ret1", "make the current opcode return 1",
 		"wao", " ret0", "make the current opcode return 0",
 		"wao", " retn", "make the current opcode return -1",
@@ -51,12 +51,12 @@ R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop)
 		r_core_cmdf (core, "wx c0035fd6t");
 	} else if (!strcmp (op, "trap")) {
 		r_core_cmdf (core, "wx 000020d4");
-	} else if (!strcmp (op, "jz")) {
+	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
 		eprintf ("ARM jz hack not supported\n");
 		return false;
 	} else if (!strcmp (op, "jinf")) {
 		r_core_cmdf (core, "wx 00000014");
-	} else if (!strcmp (op, "jnz")) {
+	} else if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
 		eprintf ("ARM jnz hack not supported\n");
 		return false;
 	} else if (!strcmp (op, "nocj")) {
@@ -108,7 +108,7 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 	} else if (!strcmp (op, "trap")) {
 		const char* trapcode = (bits==16)? "bebe": "fedeffe7";
 		r_core_cmdf (core, "wx %s\n", trapcode);
-	} else if (!strcmp (op, "jz")) {
+	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
 		if (bits == 16) {
 			switch (b[1]) {
 			case 0xb9: // CBNZ
@@ -128,7 +128,7 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 			eprintf ("ARM jz hack not supported\n");
 			return false;
 		}
-	} else if (!strcmp (op, "jnz")) {
+	} else if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
 		if (bits == 16) {
 			switch (b[1]) {
 			case 0xb1: // CBZ
@@ -215,7 +215,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 		free (str);
 	} else if (!strcmp (op, "trap")) {
 		r_core_cmd0 (core, "wx cc\n");
-	} else if (!strcmp (op, "jz")) {
+	} else if (!strcmp (op, "jz") || !strcmp (op, "je")) {
 		if (b[0] == 0x75) {
 			r_core_cmd0 (core, "wx 74\n");
 		} else {
@@ -224,7 +224,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 		}
 	} else if (!strcmp (op, "jinf")) {
 		r_core_cmd0 (core, "wx ebfe\n");
-	} else if (!strcmp (op, "jnz")) {
+	} else if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
 		if (b[0] == 0x74) {
 			r_core_cmd0 (core, "wx 75\n");
 		} else {
