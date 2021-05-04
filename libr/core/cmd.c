@@ -48,6 +48,14 @@ static RCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 	return d;
 }
 
+static bool isAnExport(RBinSymbol *s) {
+	/* workaround for some bin plugs */
+	if (s->is_imported) {
+		return false;
+	}
+	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
+}
+
 #define DEFINE_CMD_DESCRIPTOR(core, cmd_) \
 	{ \
 		RCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg_##cmd_); \
@@ -4498,6 +4506,47 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 					if (foreach_newline (core)) {
 						break;
 					}
+				}
+			}
+			r_core_seek (core, offorig, true);
+			r_list_free (lost);
+		}
+		break;
+	case 'e': // @@@e @@@entries
+		{
+			RBinAddr *entry;
+			ut64 offorig = core->offset;
+			list = r_bin_get_entries(core->bin);
+			RList *lost = r_list_newf (free);
+			bool va = r_config_get_b (core->config, "io.va");
+			r_list_foreach (list, iter, entry) {
+				ut64 addr = va? entry->vaddr: entry->paddr;
+				r_core_seek (core, addr, true);
+				r_core_cmd0 (core, cmd);
+				if (foreach_newline (core)) {
+					break;
+				}
+			}
+			r_core_seek (core, offorig, true);
+			r_list_free (lost);
+		}
+		break;
+	case 'E': // @@@E @@@exports
+		{
+			RBinSymbol *sym;
+			ut64 offorig = core->offset;
+			list = r_bin_get_symbols (core->bin);
+			RList *lost = r_list_newf (free);
+			bool va = r_config_get_b (core->config, "io.va");
+			r_list_foreach (list, iter, sym) {
+				if (!isAnExport (sym)) {
+					continue;
+				}
+				ut64 addr = va? sym->vaddr: sym->paddr;
+				r_core_seek (core, addr, true);
+				r_core_cmd0 (core, cmd);
+				if (foreach_newline (core)) {
+					break;
 				}
 			}
 			r_core_seek (core, offorig, true);

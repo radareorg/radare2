@@ -204,6 +204,8 @@ static const char *help_msg_at_at_at[] = {
 	"x", " @@@c:cmd", "Same as @@@=`cmd`, without the backticks",
 	"x", " @@@C:cmd", "comments matching",
 	"x", " @@@i", "imports",
+	"x", " @@@e", "entries",
+	"x", " @@@E", "exports",
 	"x", " @@@r", "registers",
 	"x", " @@@s", "symbols",
 	"x", " @@@st", "strings",
