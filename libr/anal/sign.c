@@ -1674,59 +1674,39 @@ static void listOffset(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listVars(RAnal *a, RSignItem *it, PJ *pj, int format) {
-	RListIter *iter = NULL;
-	char *var = NULL;
-	int i = 0;
-
-	if (format == '*') {
-		a->cb_printf ("za %s v ", it->name);
-	} else if (format == 'q') {
-		a->cb_printf (" vars(%d)", r_list_length (it->vars));
-		return;
-	} else if (format == 'j') {
-		pj_ka (pj, "vars");
-	} else {
-		a->cb_printf ("  vars: ");
-	}
-
-	r_list_foreach (it->vars, iter, var) {
-		if (i > 0) {
-			if (format == '*') {
-				a->cb_printf (" ");
-			} else if (format != 'j') {
-				a->cb_printf (", ");
-			}
-		}
-		if (format == 'j') {
-			pj_s (pj, var);
-		} else {
-			a->cb_printf ("%s", var);
-		}
-		i++;
-	}
-
-	if (format == 'j') {
-		pj_end (pj);
-	} else {
-		a->cb_printf ("\n");
+static inline const char *sign_type_to_name(int type) {
+	switch (type) {
+	case R_SIGN_BYTES:
+		return "bytes";
+	case R_SIGN_BYTES_MASK:
+		return "mask";
+	case R_SIGN_BYTES_SIZE:
+		return "size";
+	case R_SIGN_COMMENT:
+		return "comment";
+	case R_SIGN_GRAPH:
+		return "graph";
+	case R_SIGN_OFFSET:
+		return "addr";
+	case R_SIGN_NAME:
+		return "name";
+	case R_SIGN_REFS:
+		return "refs";
+	case R_SIGN_XREFS:
+		return "xrefs";
+	case R_SIGN_VARS:
+		return "vars";
+	case R_SIGN_TYPES:
+		return "types";
+	case R_SIGN_BBHASH:
+		return "bbhash";
+	default:
+		r_warn_if_reached ();
+		return "UnkownType";
 	}
 }
 
-static void print_list_type_header(RAnal *a, RSignItem *it, PJ *pj, int format) {
-	if (format == '*') {
-		a->cb_printf ("za %s t ", it->name);
-	} else if (format == 'q') {
-		a->cb_printf (" types(%d)", r_list_length (it->types));
-		return;
-	} else if (format == 'j') {
-		pj_ka (pj, "types");
-	} else {
-		a->cb_printf ("  types: ");
-	}
-}
-
-static void print_function_args_json(RAnal *a, PJ *pj, char *arg_type) {
+static void print_function_args_json(PJ *pj, char *arg_type) {
 	char *arg_name = strchr (arg_type, ',');
 
 	if (arg_name == NULL) {
@@ -1745,91 +1725,56 @@ static void print_function_args_json(RAnal *a, PJ *pj, char *arg_type) {
 	pj_end (pj);
 }
 
-static void print_type_json(RAnal *a, char *type, PJ *pj, size_t pos) {
-	if (pos == 0) {
-		return;
-	}
+static void list_types_json(RSignItem *it, PJ *pj) {
+	pj_ka (pj, "types");
 
-	char *str_type = strchr (type, '=');
-
-	if (str_type == NULL) {
-		return;
-	}
-
-	*str_type = '\0';
-	++str_type;
-
-	print_function_args_json (a, pj, str_type);
-}
-
-static void print_list_separator(RAnal *a, RSignItem *it, PJ *pj, int format, int pos) {
-	if (pos == 0 || format == 'j') {
-		return;
-	}
-	if (format == '*') {
-		a->cb_printf (" ");
-	} else {
-		a->cb_printf (", ");
-	}
-}
-
-static void print_list_type_body(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	int i = 0;
-	char *type = NULL;
+	char *element = NULL;
 	RListIter *iter = NULL;
-
-	r_list_foreach (it->types, iter, type) {
-		print_list_separator (a, it, pj, format, i);
-
-		if (format == 'j') {
-			char *t = strdup (type);
-			print_type_json (a, t, pj, i);
-			free (t);
-		} else {
-			a->cb_printf ("%s", type);
+	r_list_foreach (it->types, iter, element) {
+		char *t = strdup (element);
+		char *sep = NULL;
+		if (i > 0 && (sep = strchr (t, '='))) {
+			*sep = '\0';
+			++sep;
+			print_function_args_json (pj, sep);
 		}
+		free (t);
 		i++;
 	}
+	pj_end (pj);
 }
 
-static void listTypes(RAnal *a, RSignItem *it, PJ *pj, int format) {
-	print_list_type_header (a, it, pj, format);
-	print_list_type_body (a, it, pj, format);
-
-	if (format == 'j') {
-		pj_end (pj);
-	} else {
-		a->cb_printf ("\n");
-	}
-}
-
-static void listXRefs(RAnal *a, RSignItem *it, PJ *pj, int format) {
-	RListIter *iter = NULL;
-	char *ref = NULL;
-	int i = 0;
-
-	if (format == '*') {
-		a->cb_printf ("za %s x ", it->name);
-	} else if (format == 'q') {
-		a->cb_printf (" xrefs(%d)", r_list_length (it->xrefs));
+static void list_sign_list(RAnal *a, RList *l, PJ *pj, int fmt, int type, const char *name) {
+	const char *tname = sign_type_to_name (type);
+	switch (fmt) {
+	case '*':
+		a->cb_printf ("za %s %c ", name, type);
+		break;
+	case 'q':
+		a->cb_printf (" %s(%d)", tname, r_list_length (l));
 		return;
-	} else if (format == 'j') {
-		pj_ka (pj, "xrefs");
-	} else {
-		if (it->xrefs && !r_list_empty (it->xrefs)) {
-			a->cb_printf ("  xrefs: ");
+	case 'j':
+		pj_ka (pj, tname);
+		break;
+	default:
+		if (l && !r_list_empty (l)) {
+			a->cb_printf ("  %s: ", tname);
 		}
 	}
 
-	r_list_foreach (it->xrefs, iter, ref) {
+	int i = 0;
+	char *ref = NULL;
+	RListIter *iter = NULL;
+	r_list_foreach (l, iter, ref) {
 		if (i > 0) {
-			if (format == '*') {
+			if (fmt == '*') {
 				a->cb_printf (" ");
-			} else if (format != 'j') {
+			} else if (fmt != 'j') {
 				a->cb_printf (", ");
 			}
 		}
-		if (format == 'j') {
+		if (fmt == 'j') {
 			pj_s (pj, ref);
 		} else {
 			a->cb_printf ("%s", ref);
@@ -1837,48 +1782,7 @@ static void listXRefs(RAnal *a, RSignItem *it, PJ *pj, int format) {
 		i++;
 	}
 
-	if (format == 'j') {
-		pj_end (pj);
-	} else {
-		a->cb_printf ("\n");
-	}
-}
-
-static void listRefs(RAnal *a, RSignItem *it, PJ *pj, int format) {
-	RListIter *iter = NULL;
-	char *ref = NULL;
-	int i = 0;
-
-	if (format == '*') {
-		a->cb_printf ("za %s r ", it->name);
-	} else if (format == 'q') {
-		a->cb_printf (" refs(%d)", r_list_length (it->refs));
-		return;
-	} else if (format == 'j') {
-		pj_ka (pj, "refs");
-	} else {
-		if (it->refs && !r_list_empty (it->refs)) {
-			a->cb_printf ("  refs: ");
-		}
-	}
-
-	r_list_foreach (it->refs, iter, ref) {
-		if (i > 0) {
-			if (format == '*') {
-				a->cb_printf (" ");
-			} else if (format != 'j') {
-				a->cb_printf (", ");
-			}
-		}
-		if (format == 'j') {
-			pj_s (pj, ref);
-		} else {
-			a->cb_printf ("%s", ref);
-		}
-		i++;
-	}
-
-	if (format == 'j') {
+	if (fmt == 'j') {
 		pj_end (pj);
 	} else {
 		a->cb_printf ("\n");
@@ -1915,20 +1819,9 @@ static void listHash(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static bool listCB(void *user, const char *k, const char *v) {
+static int listCB(RSignItem *it, void *user) {
 	struct ctxListCB *ctx = (struct ctxListCB *)user;
-	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
-
-	if (!r_sign_deserialize (a, it, k, v)) {
-		eprintf ("error: cannot deserialize zign\n");
-		goto out;
-	}
-
-	RSpace *cur = r_spaces_current (&a->zign_spaces);
-	if (cur != it->space && cur) {
-		goto out;
-	}
 
 	// Start item
 	if (ctx->format == 'j') {
@@ -1964,7 +1857,6 @@ static bool listCB(void *user, const char *k, const char *v) {
 	} else if (ctx->format == 'j') {
 		pj_ks (ctx->pj, "bytes", "");
 	}
-
 	// Graph metrics
 	if (it->graph) {
 		listGraph (a, it, ctx->pj, ctx->format);
@@ -1972,7 +1864,6 @@ static bool listCB(void *user, const char *k, const char *v) {
 		pj_ko (ctx->pj, "graph");
 		pj_end (ctx->pj);
 	}
-
 	// Offset
 	if (it->addr != UT64_MAX) {
 		listOffset (a, it, ctx->pj, ctx->format);
@@ -1983,32 +1874,38 @@ static bool listCB(void *user, const char *k, const char *v) {
 	if (it->realname) {
 		listRealname (a, it, ctx->pj, ctx->format);
 	}
+	// Comments
 	if (it->comment) {
 		listComment (a, it, ctx->pj, ctx->format);
 	}
 	// References
 	if (it->refs) {
-		listRefs (a, it, ctx->pj, ctx->format);
+		list_sign_list (a, it->refs, ctx->pj, ctx->format, R_SIGN_REFS, it->name);
 	} else if (ctx->format == 'j') {
 		pj_ka (ctx->pj, "refs");
 		pj_end (ctx->pj);
 	}
 	// XReferences
 	if (it->xrefs) {
-		listXRefs (a, it, ctx->pj, ctx->format);
+		list_sign_list (a, it->xrefs, ctx->pj, ctx->format, R_SIGN_XREFS, it->name);
 	} else if (ctx->format == 'j') {
 		pj_ka (ctx->pj, "xrefs");
 		pj_end (ctx->pj);
 	}
 	// Vars
 	if (it->vars) {
-		listVars (a, it, ctx->pj, ctx->format);
+		list_sign_list (a, it->vars, ctx->pj, ctx->format, R_SIGN_VARS, it->name);
 	} else if (ctx->format == 'j') {
 		pj_ka (ctx->pj, "vars");
 		pj_end (ctx->pj);
 	}
+	// Types
 	if (it->types) {
-		listTypes (a, it, ctx->pj, ctx->format);
+		if (ctx->format == 'j') {
+			list_types_json (it, ctx->pj);
+		} else {
+			list_sign_list (a, it->types, ctx->pj, ctx->format, R_SIGN_TYPES, it->name);
+		}
 	} else if (ctx->format == 'j') {
 		pj_ka (ctx->pj, "types");
 		pj_end (ctx->pj);
@@ -2030,10 +1927,6 @@ static bool listCB(void *user, const char *k, const char *v) {
 	}
 
 	ctx->idx++;
-
-out:
-	r_sign_item_free (it);
-
 	return true;
 }
 
@@ -2047,7 +1940,7 @@ R_API void r_sign_list(RAnal *a, int format) {
 	}
 
 	struct ctxListCB ctx = { a, 0, format, pj };
-	sdb_foreach (a->sdb_zigns, listCB, &ctx);
+	r_sign_foreach (a, listCB, &ctx);
 
 	if (format == 'j') {
 		pj_end (pj);
