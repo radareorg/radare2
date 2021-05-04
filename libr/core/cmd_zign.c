@@ -1160,13 +1160,13 @@ static bool _sig_bytediff_cb(RLevBuf *va, RLevBuf *vb, ut32 ia, ut32 ib) {
 
 #define lines_addbytesmask(l, sig, index, add, col) \
 	if (col) { \
-		l.bytes = r_str_appendf (l.bytes, " %s%s%02x\x1b[0m", col, add, sig->bytes[index]); \
-		l.mask = r_str_appendf (l.mask, " %s%s%02x\x1b[0m", col, add, sig->mask[index]); \
-		l.land = r_str_appendf (l.land, " %s%s%02x\x1b[0m", col, add, sig->bytes[index] & sig->mask[index]); \
+		l.bytes = r_str_appendf (l.bytes, " %s%s%02x\x1b[0m", col, r_str_get (add), sig->bytes[index]); \
+		l.mask = r_str_appendf (l.mask, " %s%s%02x\x1b[0m", col, r_str_get (add), sig->mask[index]); \
+		l.land = r_str_appendf (l.land, " %s%s%02x\x1b[0m", col, r_str_get (add), sig->bytes[index] & sig->mask[index]); \
 	} else { \
-		l.bytes = r_str_appendf (l.bytes, " %s%02x", add, sig->bytes[index]); \
-		l.mask = r_str_appendf (l.mask, " %s%02x", add, sig->mask[index]); \
-		l.land = r_str_appendf (l.land, " %s%02x", add, sig->bytes[index] & sig->mask[index]); \
+		l.bytes = r_str_appendf (l.bytes, " %s%02x", r_str_get (add), sig->bytes[index]); \
+		l.mask = r_str_appendf (l.mask, " %s%02x", r_str_get (add), sig->mask[index]); \
+		l.land = r_str_appendf (l.land, " %s%02x", r_str_get (add), sig->bytes[index] & sig->mask[index]); \
 	} \
 	index++;
 
