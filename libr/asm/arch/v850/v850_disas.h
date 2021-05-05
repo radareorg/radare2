@@ -179,7 +179,7 @@ static inline ut8 get_opcode(const ut16 instr) {
 
 // FIXME: XXX: Invalid for extended instruction format 4 (Format XII)!
 static inline ut8 get_subopcode(const ut16  instr) {
-	return (instr & 0x7e00000 >> 21);
+	return instr & 0x3F;
 }
 
 static inline ut8 get_reg1(const ut16 instr) {
