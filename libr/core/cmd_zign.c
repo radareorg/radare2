@@ -1503,8 +1503,8 @@ static int cmd_zign(void *data, const char *input) {
 
 	switch (*input) {
 	case '\0':
-	case '*':
-	case 'q':
+	case '*': // "z*"
+	case 'q': // "zq"
 	case 'j': // "zj"
 		r_sign_list (core->anal, *input);
 		break;
