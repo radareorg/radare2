@@ -5163,18 +5163,20 @@ static int cmd_print(void *data, const char *input) {
 		} else if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_pa);
 		} else {
-			int i;
-			int bytes;
 			r_asm_set_pc (core->rasm, core->offset);
 			RAsmCode *acode = r_asm_massemble (core->rasm, input + 1);
 			if (acode) {
-				bytes = acode->len;
-				for (i = 0; i < bytes; i++) {
-					ut8 b = acode->bytes[i]; // core->print->big_endian? (bytes - 1 - i): i ];
-					r_cons_printf ("%02x", b);
+				if (!acode->len) {
+					eprintf ("Usage: pa [instruction-to-assemble] ; use pd to disassemble\n");
+				} else {
+					size_t i;
+					for (i = 0; i < acode->len; i++) {
+						ut8 b = acode->bytes[i];
+						r_cons_printf ("%02x", b);
+					}
+					r_cons_newline ();
+					r_asm_code_free (acode);
 				}
-				r_cons_newline ();
-				r_asm_code_free (acode);
 			}
 		}
 	}
