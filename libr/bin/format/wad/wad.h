@@ -10,23 +10,20 @@
 #define IWAD_MAGIC                          "\x49\x57\x41\x44"
 #define PWAD_MAGIC                          "\x50\x57\x41\x44"
 
-#define WAD_HDR_SIZE                       sizeof (wad_hdr)
-
-
 R_PACKED (
-struct wad_hdr
+typedef struct
 {
 	ut32 magic;  // "IWAD" or "PWAD", not NULL-terminated
 	ut32 numlumps;  // number of lumps in the WAD.
 	ut32 diroffset;  //  Offset  to the location of the directory
-});
+}) WAD_Hdr;
 
 R_PACKED (
-struct directory_entry
+typedef struct
 {
 	ut32 filepos;  // Start of the lump's data in the file
 	ut32 size;  // Size of the lump in bytes
-	ut32 name;  // Name of lump
-});
+	char  name[8];  // Name of lump
+}) WAD_DIR_Entry;
 
 #endif // _WAD_H

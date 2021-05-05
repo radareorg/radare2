@@ -4,26 +4,22 @@
 #include <r_lib.h>
 #include "wad/wad.h"
 
-static struct wad_hdr loaded_header;
+static WAD_Hdr loaded_header;
 
 static bool check_buffer(RBuffer *b) {
 	r_return_val_if_fail (b, false);
-	ut32 sig[4];
-	if (r_buf_read_at (b, 0, sig, 4) != 4) {
+	ut8 sig[4];
+	if (r_buf_read_at (b, 0, sig, sizeof (sig)) != 4) {
 		return false;
 	}
 	if (memcmp (sig, "IWAD", 4) && memcmp (sig, "PWAD", 4)) {
-        eprintf ("Not a valid WAD file");
 		return false;
 	}
     return true;
 }
 
-static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	if (!check_buffer (buf)) {
-		return false;
-	}
-    if (r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header)) == WAD_HDR_SIZE) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+    if (r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header)) == sizeof (loaded_header)) {
 		*bin_obj = &loaded_header;
 		return true;
 	}
@@ -32,19 +28,16 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret || !bf) {
 		return NULL;
 	}
-	ret->file = strdup (bf->file);*
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("WAD");
-	ret->machine = strdup ("DOOM WAD");
+	ret->machine = strdup ("DOOM Engine");
 	ret->os = strdup ("DOOM Engine");
 	ret->arch = strdup ("any");
 	ret->bits = 32;
-    ret->entries = loaded_header.numlumps;
-    ret->big_endian = 0;
-	ret->dbg_info = 0;
     ret->has_va = 0;
 	return ret;
 }
@@ -53,24 +46,52 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-RBinPlugin r_bin_plugin_nes = {
+static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
+	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+	if (!ptr) {
+		return;
+	}
+	ptr->name = strdup (r_str_get (name));
+	ptr->paddr = ptr->vaddr = addr;
+	ptr->size = size;
+	ptr->ordinal = 0;
+	r_list_append (ret, ptr);
+}
+
+static RList *symbols(RBinFile *bf) {
+	RList *ret = NULL;
+	if (!(ret = r_list_new ())) {
+		return NULL;
+	}
+	WAD_DIR_Entry dir;
+	size_t i = 0;
+	while (i<loaded_header.numlumps) {
+		memset (&dir, 0, sizeof (dir));
+		r_buf_read_at (bf->buf, loaded_header.diroffset + (i * 16), (ut8*)&dir, sizeof (dir));
+		addsym (ret, strndup(dir.name, 8), dir.filepos, dir.size);
+		i++;
+	}
+	return ret;
+}
+
+RBinPlugin r_bin_plugin_wad = {
 	.name = "wad",
 	.desc = "DOOM WAD format r_bin plugin",
 	.license = "LGPL3",
 	.get_sdb = NULL,
-	.baddr = NULL,
     .entries = NULL,
+	.sections = NULL,
+    .symbols = &symbols,
 	.check_buffer = &check_buffer,
 	.load_buffer = &load_buffer,
 	.baddr = &baddr,
-    .sections = NULL,
 	.info = &info,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
-	.data = &r_bin_plugin_nes,
+	.data = &r_bin_plugin_wad,
 	.version = R2_VERSION
 };
 #endif
