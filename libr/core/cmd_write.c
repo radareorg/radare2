@@ -20,8 +20,7 @@ static const char *help_msg_w[] = {
 	"wA","[?] r 0","alter/modify opcode at current seek (see wA?)",
 	"wb"," 010203","fill current block with cyclic hexpairs",
 	"wB","[-]0xVALUE","set or unset bits with given value",
-	"wc","","list all write changes",
-	"wc","[?][jir+-*?]","write cache undo/commit/reset/list (io.cache)",
+	"wc","[?][jir+-*?]","write cache list/undo/commit/reset (io.cache)",
 	"wd"," [off] [n]","duplicate N bytes from offset at current seek (memcpy) (see y?)",
 	"we","[?] [nNsxX] [arg]","extend write operations (insert instead of replace)",
 	"wf","[fs] -|file","write contents of file at current offset",
@@ -74,6 +73,7 @@ static const char *help_msg_wc[] = {
 	"wc*","","\"\" in radare commands",
 	"wcr","","reset all write changes in cache",
 	"wci","","commit write cache",
+	"wcf"," [file]","commit write cache into given file",
 	"wcp"," [fd]", "list all cached write-operations on p-layer for specified fd or current fd",
 	"wcp*"," [fd]","list all cached write-operations on p-layer in radare commands",
 	"wcpi"," [fd]", "commit and invalidate pcache for specified fd or current fd",
@@ -1355,6 +1355,53 @@ static int wA_handler_old(void *data, const char *input) {
 	return 0;
 }
 
+static char *__current_filename(RCore *core) {
+	RIOMap *map = r_io_map_get_at (core->io, core->offset);
+	if (map) {
+		RIODesc *desc = r_io_desc_get (core->io, map->fd);
+		if (desc) {
+			return strdup (desc->uri);
+		}
+	}
+	return NULL;
+}
+
+static ut64 __va2pa(RCore *core, ut64 va) {
+	RIOMap *map = r_io_map_get_at (core->io, va);
+	if (map) {
+		return va - map->itv.addr + map->delta;
+	}
+	return va;
+}
+
+static void cmd_wcf(RCore *core, const char *dfn) {
+	char *sfn = __current_filename (core);
+	if (!sfn) {
+		eprintf ("Cannot determine source file.\n");
+		return;
+	}
+	size_t sfs;
+	ut8 *sfb = (ut8*)r_file_slurp (sfn, &sfs);
+	if (sfb) {
+		void **iter;
+		r_pvector_foreach (&core->io->cache, iter) {
+			RIOCache *c = *iter;
+			const ut64 ps = r_itv_size (c->itv);
+			const ut64 va = r_itv_begin (c->itv);
+			const ut64 pa = __va2pa (core, va);
+			if (pa + ps < sfs) {
+				memcpy (sfb + pa, c->data, ps);
+			} else {
+				eprintf ("Out of bounds patch at 0x%08"PFMT64x"\n", pa);
+			}
+		}
+		// patch buffer
+		r_file_dump (dfn, sfb, sfs, false);
+		free (sfb);
+	}
+	free (sfn);
+}
+
 static int wc_handler_old(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
@@ -1366,6 +1413,13 @@ static int wc_handler_old(void *data, const char *input) {
 	case '?': // "wc?"
 		r_core_cmd_help (core, help_msg_wc);
 		break;
+	case 'f': // "wcf"
+		if (input[1] == ' ') {
+			cmd_wcf (core, r_str_trim_head_ro (input + 1));
+		} else {
+			eprintf ("Usage: wcf [file]\n");
+		}
+		break;
 	case '*': // "wc*"
 		r_io_cache_list (core->io, 1);
 		break;
@@ -1374,13 +1428,13 @@ static int wc_handler_old(void *data, const char *input) {
 			//r_io_cache_reset (core->io, core->io->cached);
 			eprintf ("TODO\n");
 		} else if (input[1]==' ') { // "wc+ "
-			char *p = strchr (input+2, ' ');
+			char *p = strchr (input + 2, ' ');
 			ut64 to, from;
 			from = r_num_math (core->num, input+2);
 			if (p) {
 				*p = 0;
 				to = r_num_math (core->num, input+2);
-				if (to<from) {
+				if (to < from) {
 					eprintf ("Invalid range (from>to)\n");
 					return 0;
 				}
