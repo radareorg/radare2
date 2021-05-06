@@ -3391,6 +3391,7 @@ reread:
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hex ("308200003082", "ffff0000ffff", NULL);
+				r_search_reset (core->search, R_SEARCH_KEYWORD);
 				if (kw) {
 					r_search_kw_add (core->search, kw);
 					// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
