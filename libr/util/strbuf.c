@@ -295,10 +295,10 @@ R_API bool r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 		}
 		*p = 0;
 		vsnprintf (p, ret + 1, fmt, ap2);
-		ret = r_strbuf_append (sb, p);
+		ret = r_strbuf_append_n (sb, p, ret);
 		free (p);
 	} else if (ret >= 0) {
-		ret = r_strbuf_append (sb, string);
+		ret = r_strbuf_append_n (sb, string, ret);
 	} else {
 		ret = false;
 	}
