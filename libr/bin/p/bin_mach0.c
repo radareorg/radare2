@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -771,7 +771,10 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 		if (!obj->chained_starts[i]) {
 			continue;
 		}
-		ut64 page_size = obj->chained_starts[i]->page_size;
+		int page_size = obj->chained_starts[i]->page_size;
+		if (page_size < 1) {
+			page_size = 4096;
+		}
 		ut64 start = obj->segs[i].fileoff;
 		ut64 end = start + obj->segs[i].filesize;
 		if (end >= off && start <= eob) {
