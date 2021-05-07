@@ -198,7 +198,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 			} else if(addr + off == search) {
 				ut32 reg  = v & 0x1f;
 				bool is_ldrsw = (v & 0xff000000) == 0x98000000;
-				bool is_64bit = (v & 0x40000000) != 0 && is_ldrsw;
+				bool is_64bit = (v & 0x40000000) != 0 && !is_ldrsw;
 				r_cons_printf("%#"PFMT64x": %s %s%u, %#"PFMT64x"\n", addr, is_ldrsw ? "ldrsw" : "ldr", is_64bit ? "x" : "w", reg, search);
 			}
 		}
