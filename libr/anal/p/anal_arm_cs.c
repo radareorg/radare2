@@ -632,8 +632,13 @@ static void opex64(RStrBuf *buf, csh handle, cs_insn *insn) {
 		pj_o (pj);
 		switch (op->type) {
 		case ARM64_OP_REG:
+			{
 			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+			const char *rn = cs_reg_name (handle, op->reg);
+			if (rn) {
+				pj_ks (pj, "value", rn);
+			}
+			}
 			break;
 		case ARM64_OP_REG_MRS:
 			pj_ks (pj, "type", "reg_mrs");

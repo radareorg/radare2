@@ -347,7 +347,7 @@ R_API char *r_hex_from_code(const char *code) {
 	return r_hex_from_py (code);
 }
 
-/* int byte = hexpair2bin("A0"); */
+/* int byte = r_hex_pair2bin("A0"); */
 // (0A) => 10 || -1 (on error)
 R_API int r_hex_pair2bin(const char *arg) {
 	ut8 *ptr, c = 0, d = 0;
