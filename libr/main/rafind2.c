@@ -59,8 +59,11 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		// This case occurs when there is hit in search left over
 		delta = ro->cur - addr;
 	}
-	if (delta < 0 || delta >= ro->bsize) {
-		eprintf ("Invalid delta\n");
+	if (delta < 0) {
+		delta = 0;
+	}
+	if (delta >= ro->bsize) {
+		eprintf ("Invalid delta %d from 0x%08"PFMT64x"\n", delta, addr);
 		return 0;
 	}
 	char _str[128];
@@ -406,7 +409,14 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			r_list_append (ro.keywords, (void*)opt.arg);
 			break;
 		case 'b':
-			ro.bsize = r_num_math (NULL, opt.arg);
+			{
+			int bs = (int)r_num_math (NULL, opt.arg);
+			if (bs < 2) {
+				eprintf ("Invalid blocksize <= 1\n");
+				return 1;
+			}
+			ro.bsize = bs;
+			}
 			break;
 		case 'M':
 			// XXX should be from hexbin
