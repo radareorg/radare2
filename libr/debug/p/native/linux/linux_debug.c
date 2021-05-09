@@ -76,7 +76,9 @@ static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid);
 
 int linux_handle_signals(RDebug *dbg, int tid) {
 	siginfo_t siginfo = { 0 };
-	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)(size_t)&siginfo);
+	//eprintf("ID1 = %d\n", siginfo.si_pid); SHOWS RIGHT PID
+	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)&siginfo);//int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)(size_t)&siginfo);
+	//eprintf("ID2 = %d\n", siginfo.si_pid); SHOWS WRONG PID
 	if (ret == -1) {
 		/* ESRCH means the process already went away :-/ */
 		if (errno == ESRCH) {

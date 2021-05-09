@@ -656,7 +656,9 @@ R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *add
 		return ptrace_wrap (wrap, request, pid, addr, data);
 	}
 #endif
-	return ptrace (request, pid, addr, data);
+	//eprintf("ID2 = %d\n", (r_ptrace_data_t)data->si_code->si_pid);
+	//eprintf("ID2 = %d\n", (siginfo_t)data->si_code->si_pid);
+	return ptrace (request, pid, addr, data);;
 }
 
 R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *child_callback_user) {

@@ -608,6 +608,7 @@ R_API bool r_debug_continue_back(RDebug *dbg);
 /* ptrace */
 #if HAVE_PTRACE
 static inline long r_debug_ptrace(RDebug *dbg, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data) {
+	//eprintf("test %d\n", ((siginfo_t*)data)->si_pid); I AM TRYING TO debug here
 	return dbg->iob.ptrace (dbg->iob.io, request, pid, addr, data);
 }
 
