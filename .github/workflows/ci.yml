@@ -39,6 +39,7 @@ jobs:
         make -j
         make install
         /tmp/bin/r2 -v
+        /tmp/bin/rabin2 -l /tmp/bin/r2
   build-rpath-macos:
     name: macos-rpath
     continue-on-error: true
@@ -54,6 +55,7 @@ jobs:
         make -j
         make install
         /tmp/bin/r2 -v
+        /tmp/bin/rabin2 -l /tmp/bin/r2
   build-spaces:
     name: linux-meson-spaces
     continue-on-error: true
