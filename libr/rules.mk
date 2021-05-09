@@ -34,7 +34,7 @@ SRC=$(subst .o,.c,$(OBJ))
 BEXE=$(BIN)$(EXT_EXE)
 
 ifeq ($(USE_RPATH),1)
-LINK+=-Wl,-rpath "${LIBDIR}"
+LINK+=-Wl,-rpath,"${LIBDIR}"
 endif
 
 ifeq (${OSTYPE},gnulinux)

@@ -19,6 +19,10 @@ HAVE_FORK=@HAVE_FORK@
 WANT_DYLINK=@WANT_DYLINK@
 WITH_LIBR=@WITH_LIBR@
 
+ifeq ($(USE_RPATH),1)
+LDFLAGS_LIB+=-Wl,-rpath,"${LIBDIR}"
+endif
+
 MKPLUGINS=mk/stat.mk mk/sloc.mk
 
 COMPILER=@USERCC@
