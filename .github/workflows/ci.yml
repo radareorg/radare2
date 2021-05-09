@@ -38,6 +38,7 @@ jobs:
         ./configure --prefix=/tmp --with-rpath
         make -j
         make install
+        ldd /tmp/bin/r2
         /tmp/bin/r2 -v
         /tmp/bin/rabin2 -l /tmp/bin/r2
   build-rpath-macos:
