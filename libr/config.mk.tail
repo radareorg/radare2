@@ -193,3 +193,7 @@ libpath-to-name-version = $(call libname-version,$(call libpath-to-name,$(1)),$(
 
 # -- singleton
 endif
+
+ifeq ($(USE_RPATH),1)
+LINK+=-Wl,-rpath,"${LIBDIR}"
+endif
