@@ -24,6 +24,34 @@ jobs:
       run: sudo make uninstall
     - name: Reinstalling without symlinks
       run: sudo make install
+  build-rpath-linux:
+    name: linux-rpath
+    continue-on-error: true
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: build and run
+      run: |
+        # test and build rpath installation
+        export CFLAGS=-O0
+        ./configure --prefix=/tmp --with-rpath
+        make -j
+        /tmp/bin/r2 -v
+  build-rpath-macos:
+    name: macos-rpath
+    continue-on-error: true
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: build and run
+      run: |
+        # test and build rpath installation
+        export CFLAGS=-O0
+        ./configure --prefix=/tmp --with-rpath
+        make -j
+        /tmp/bin/r2 -v
   build-spaces:
     name: linux-meson-spaces
     continue-on-error: true
