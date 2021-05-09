@@ -353,6 +353,8 @@ R_API ut64 r_io_v2p(RIO *io, ut64 va);
 
 //io_submap.c
 R_API RIOSubMap *r_io_submap_new(RIO *io, RIOMapRef *mapref);
+R_API bool r_io_submap_set_from(RIOSubMap *sm, const ut64 from);
+R_API bool r_io_submap_set_to(RIOSubMap *sm, const ut64 to);
 
 //io_bank.c
 R_API RIOBank *r_io_bank_new(void);

@@ -3,6 +3,8 @@
 #include <r_io.h>
 #include <r_util.h>
 
+#define	OLD_SM	0
+
 R_API RIOBank *r_io_bank_new(void) {
 	RIOBank *bank = R_NEW0 (RIOBank);
 	if (!bank) {
@@ -140,21 +142,29 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 	if (r_io_submap_from (bd) < r_io_submap_from (sm) &&
 		r_io_submap_to (sm) < r_io_submap_to (bd)) {
 		// split bd into 2 maps => bd and bdsm
-		RIOSubMap *bdsm = R_NEW (RIOSubMap);
+		RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, bd);
 		if (!bdsm) {
 			free (sm);
 			return false;
 		}
-		bdsm->mapref = bd->mapref;
+#if OLD_SM
 		bdsm->itv.addr = r_io_submap_to (sm) + 1;
-		bdsm->itv.size = r_io_submap_to (bd) - bdsm->itv.addr + 1;
+		bdsm->itv.size = r_io_submap_to (bd) - r_io_submap_from (bdsm) + 1;
 		bd->itv.size = r_io_submap_from (sm) - r_io_submap_from (bd);
+#else
+		r_io_submap_set_from (bdsm, r_io_submap_to (sm) + 1);
+		r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
+#endif
 		// TODO: insert and check return value, before adjusting sm size
 		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL) &
 			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
 	}
 
+#if OLD_SM
 	bd->itv.size = r_io_submap_from (sm) - r_io_submap_from (bd);
+#else
+	r_io_submap_set_to (bd, r_io_submap_from (sm) -1);
+#endif
 	entry = r_rbtree_cont_node_next (entry);
 	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		//delete all submaps that are completly included in sm
@@ -165,8 +175,12 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 	}
 	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		bd = (RIOSubMap *)entry->data;
+#if OLD_SM
 		bd->itv.size = r_io_submap_to (bd) - r_io_submap_to (sm);
 		bd->itv.addr = r_io_submap_to (sm) + 1;
+#else
+		r_io_submap_set_from (bd, r_io_submap_to (sm) + 1);
+#endif
 	}
 	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
 }
@@ -198,28 +212,42 @@ found:
 	}
 	RIOSubMap *bd = (RIOSubMap *)entry->data;
 	if (r_itv_eq (bd->itv, sm->itv)) {
+		// no need to insert new sm, if boundaries match perfectly
+		// instead override mapref of existing node/submap
 		bd->mapref = *mapref;
 		free (sm);
 		return true;
 	}
 	if (r_io_submap_from (bd) < r_io_submap_from (sm) &&
 		r_io_submap_to (sm) < r_io_submap_to (bd)) {
-		// split bd into 2 maps => bd and bdsm
-		RIOSubMap *bdsm = R_NEW (RIOSubMap);
+		// bd completly overlaps sm on both ends,
+		// therefor split bd into 2 maps => bd and bdsm
+		// |---bd---||--sm--|-bdsm-|
+		RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, bd);
 		if (!bdsm) {
 			free (sm);
 			return false;
 		}
-		bdsm->mapref = bd->mapref;
+#if OLD_SM
 		bdsm->itv.addr = r_io_submap_to (sm) + 1;
-		bdsm->itv.size = r_io_submap_to (bd) - bdsm->itv.addr + 1;
-		bd->itv.size = sm->itv.addr - bd->itv.addr;
+		bdsm->itv.size = r_io_submap_to (bd) - r_io_submap_from (bdsm) + 1;
+		bd->itv.size = r_io_submap_from (sm) - r_io_submap_from (bd);
+#else
+		r_io_submap_set_from (bdsm, r_io_submap_to (sm) + 1);
+		r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
+#endif
 		// TODO: insert and check return value, before adjusting sm size
 		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL) &
 			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
 	}
 
+	// bd overlaps by it's upper boundary with sm, due to how _find_entry_submap_node works
+	// therefor no check is needed here, and the upper boundary can be adjusted safely
+#if OLD_SM
 	bd->itv.size = r_io_submap_from (sm) - r_io_submap_from (bd);
+#else
+	r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
+#endif
 	entry = r_rbtree_cont_node_next (entry);
 	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		//delete all submaps that are completly included in sm
@@ -230,8 +258,12 @@ found:
 	}
 	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		bd = (RIOSubMap *)entry->data;
+#if OLD_SM
 		bd->itv.size = r_io_submap_to (bd) - r_io_submap_to (sm);
 		bd->itv.addr = r_io_submap_to (sm) + 1;
+#else
+		r_io_submap_set_from (bd, r_io_submap_to (sm) + 1);
+#endif
 	}
 	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
 }
