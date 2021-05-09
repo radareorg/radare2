@@ -25,6 +25,7 @@ jobs:
     - name: Reinstalling without symlinks
       run: sudo make install
   build-rpath-linux:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: linux-rpath
     continue-on-error: true
     runs-on: ubuntu-20.04
@@ -42,6 +43,7 @@ jobs:
         /tmp/bin/r2 -v
         /tmp/bin/rabin2 -l /tmp/bin/r2
   build-rpath-macos:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: macos-rpath
     continue-on-error: true
     runs-on: macos-latest
