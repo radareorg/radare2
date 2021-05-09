@@ -34,7 +34,7 @@ EXT_EXE=.bc
 endif
 
 ifeq ($(USE_RPATH),1)
-LDFLAGS+=-Wl,-rpath "${LIBDIR}"
+LDFLAGS+=-Wl,-rpath,"${LIBDIR}"
 endif
 
 OBJ+=${BIN}.o
