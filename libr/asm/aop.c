@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2020 - pancake */
+/* radare - LGPL - Copyright 2018-2021 - pancake */
 
 #include <r_asm.h>
 
@@ -7,8 +7,10 @@ R_API RAsmOp *r_asm_op_new(void) {
 }
 
 R_API void r_asm_op_free(RAsmOp *op) {
-	r_asm_op_fini (op);
-	free (op);
+	if (op) {
+		r_asm_op_fini (op);
+		free (op);
+	}
 }
 
 R_API void r_asm_op_init(RAsmOp *op) {
@@ -18,6 +20,7 @@ R_API void r_asm_op_init(RAsmOp *op) {
 }
 
 R_API void r_asm_op_fini(RAsmOp *op) {
+	r_return_if_fail (op);
 	r_strbuf_fini (&op->buf);
 	r_strbuf_fini (&op->buf_asm);
 	r_buf_fini (op->buf_inc);
@@ -55,6 +58,7 @@ R_API void r_asm_op_set_asm(RAsmOp *op, const char *str) {
 }
 
 R_API int r_asm_op_set_hex(RAsmOp *op, const char *str) {
+	r_return_val_if_fail (op && str, 0);
 	ut8 *bin = (ut8*)strdup (str);
 	if (bin) {
 		int len = r_hex_str2bin (str, bin);

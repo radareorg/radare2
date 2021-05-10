@@ -387,11 +387,8 @@ static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
 					r_cons_printf (" ");
 					continue;
 				}
-				if (line_col[i] == 'd') {
-					r_cons_printf ("%s%s%s", COLOR (ds, color_flow), get_utf8_char (line[i], ds), COLOR_RESET (ds));
-				} else	{
-					r_cons_printf ("%s%s%s", COLOR (ds, color_flow2), get_utf8_char (line[i], ds), COLOR_RESET (ds));
-				}
+				const char *flow_tint = (line_col[i] == 'd')? COLOR (ds, color_flow): COLOR (ds, color_flow2);
+				r_cons_printf ("%s%s%s", flow_tint, get_utf8_char (line[i], ds), COLOR_RESET (ds));
 			}
 		} else {
 			len = strlen (line);
@@ -406,11 +403,8 @@ static void ds_print_ref_lines(char *line, char *line_col, RDisasmState *ds) {
 					r_cons_printf (" ");
 					continue;
 				}
-				if (line_col[i] == 'd') {
-					r_cons_printf ("%s%c%s", COLOR (ds, color_flow), line[i], COLOR_RESET (ds));
-				} else	{
-					r_cons_printf ("%s%c%s", COLOR (ds, color_flow2), line[i], COLOR_RESET (ds));
-				}
+				const char *flow_tint = (line_col[i] == 'd')? COLOR (ds, color_flow): COLOR (ds, color_flow2);
+				r_cons_printf ("%s%c%s", flow_tint, line[i], COLOR_RESET (ds));
 			}
 		} else {
 			r_cons_printf ("%s", line);
@@ -445,9 +439,12 @@ R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 	}
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		char *rv = r_core_cmd_strf (core, "dmi.@0x%08"PFMT64x, addr);
-		r_str_replace_char (rv, '\n', ' ');
-		r_str_ncpy (section, rv, sizeof (section) - 1);
-		return section;
+		if (rv) {
+			r_str_replace_char (rv, '\n', ' ');
+			r_str_ncpy (section, rv, sizeof (section) - 1);
+			return section;
+		}
+		return NULL;
 	}
 	RBinObject *bo = r_bin_cur_object (core->bin);
 	RBinSection *s = bo? r_bin_get_section_at (bo, addr, core->io->va): NULL;
