@@ -11,10 +11,6 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_sign);
 
-// XXX those limits should go away
-#define R_SIGN_KEY_MAXSZ 1024
-#define R_SIGN_VAL_MAXSZ 10240
-
 #define ZIGN_HASH "sha256"
 #define R_ZIGN_HASH R_HASH_SHA256
 
