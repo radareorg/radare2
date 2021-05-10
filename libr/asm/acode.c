@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <stdio.h>
 #include <r_asm.h>
@@ -26,6 +26,7 @@ R_API void r_asm_equ_item_free(RAsmEqu *equ) {
 }
 
 static RAsmEqu *__asm_equ_new(const char *key, const char *value) {
+	r_return_val_if_fail (key && value, NULL);
 	RAsmEqu *equ = R_NEW0 (RAsmEqu);
 	if (equ) {
 		equ->key = strdup (key);

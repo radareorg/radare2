@@ -211,6 +211,7 @@ R_API void r_cons_color(int fg, int r, int g, int b) {
 }
 
 R_API void r_cons_println(const char* str) {
+	// this is not thread safe!
 	r_cons_print (str);
 	r_cons_newline ();
 }
@@ -854,6 +855,7 @@ R_API void r_cons_context_load(RConsContext *context) {
 
 R_API void r_cons_context_reset(void) {
 	I.context = &r_cons_context_default;
+	I.context->sorted_column = -1;
 }
 
 R_API bool r_cons_context_is_main(void) {

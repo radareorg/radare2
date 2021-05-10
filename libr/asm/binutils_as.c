@@ -60,7 +60,7 @@ int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, cons
 			eprintf ("Cannot find water marks\n");
 			len = 0;
 		} else {
-			len = (int)(size_t)(end - begin - 9);
+			len = (int)(ssize_t)(end - begin - 9);
 			if (len > 0) {
 				r_strbuf_setbin (&op->buf, begin + 9, len);
 			} else {

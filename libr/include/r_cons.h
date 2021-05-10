@@ -405,6 +405,10 @@ typedef struct r_cons_context_t {
 	int color_mode;
 	RConsPalette cpal;
 	RConsPrintablePalette pal;
+
+	RList *sorted_lines;
+	RList *unsorted_lines;
+	int sorted_column; // -1
 } RConsContext;
 
 #define HUD_BUF_SIZE 512

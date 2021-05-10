@@ -71,6 +71,7 @@ const ut64 cleanup_masks[] = {
 };
 
 static void pcache_kv_free(HtUPKv *kv) {
+	r_return_if_fail (kv);
 	free (kv->value);
 }
 
@@ -283,7 +284,7 @@ static bool __desc_cache_commit_cb(void *user, const ut64 k, const void *v) {
 	const RIODescCache *dcache = v;
 	ut64 blockaddr = R_IO_DESC_CACHE_SIZE * k;
 	for (i = byteaddr = 0; byteaddr < R_IO_DESC_CACHE_SIZE; byteaddr++) {
-		if (dcache->cached & (0x1LL << byteaddr)) {
+		if (dcache->cached & (1LL << byteaddr)) {
 			buf[i] = dcache->cdata[byteaddr];
 			i++;
 		} else if (i > 0) {
