@@ -56,11 +56,11 @@ int binutils_assemble(RAsm *a, RAsmOp *op, const char *buf, const char *as, cons
 		len = read (ofd, obuf, sizeof (obuf));
 		begin = r_mem_mem (obuf, len, (const ut8*)"BEGINMARK", 9);
 		end = r_mem_mem (obuf, len, (const ut8*)"ENDMARK", 7);
-		if (!begin || !end) {
+		if (!begin || !end || end > begin) {
 			eprintf ("Cannot find water marks\n");
 			len = 0;
 		} else {
-			len = (int)(ssize_t)(end - begin - 9);
+			len = (int)(size_t)(end - begin - 9);
 			if (len > 0) {
 				r_strbuf_setbin (&op->buf, begin + 9, len);
 			} else {
