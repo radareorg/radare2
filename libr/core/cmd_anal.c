@@ -355,7 +355,7 @@ static const char *help_msg_af[] = {
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " addr", "resize and analyze function from current address until addr",
 	"afv[absrx]", "?", "manipulate args, registers and variables in function",
-	"afx", "", "list function references",
+	"afx", "[m]", "list function references",
 	NULL
 };
 
@@ -3385,6 +3385,60 @@ static void cmd_afbc(RCore *core, const char *input) {
 	free (ptr);
 }
 
+// Fcn Xrefs Map
+static void xrefs_map(RCore *core, const char *input) {
+	RListIter *iter, *iter2, *iter3;
+	RAnalRef *r;
+	RAnalFunction *f, *f2;
+	int col = 0;
+	int count = 0;
+	do {
+		r_cons_print ("             ");
+		count = 0;
+		r_list_foreach (core->anal->fcns, iter, f) {
+			int nlen = strlen (f->name);
+			if (col >= nlen) {
+				r_cons_printf ("|");
+				continue;
+			}
+			count++;
+			r_cons_printf ("%c", f->name[col]);
+		}
+		r_cons_newline ();
+		col++;
+	} while (count);
+
+	int total = 0;
+	r_list_foreach (core->anal->fcns, iter, f) {
+		RList *refs = r_anal_function_get_refs (f);
+		r_cons_printf ("0x%08"PFMT64x"  ", f->addr);
+		total = 0;
+		r_list_foreach (core->anal->fcns, iter2, f2) {
+			int count = 0;
+			r_list_foreach (refs, iter3, r) {
+				if (r->addr == f2->addr) {
+					count ++;
+				}
+			}
+			if (count > 0) {
+				total++;
+				if (count < 10) {
+					r_cons_printf ("%d", count);
+				} else {
+					r_cons_printf ("+");
+				}
+			} else {
+				r_cons_printf (".");
+			}
+		}
+		if (total > 0) {
+			r_cons_printf ("  %s\n", f->name);
+		} else {
+			r_cons_printf ("\r");
+		}
+	}
+}
+
 R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) {
 	int depth = r_config_get_i (core->config, "anal.depth");
 	RAnalFunction *fcn = NULL;
@@ -4270,6 +4324,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 #endif
 	case 'x': // "afx"
 		switch (input[2]) {
+		case 'm': // "afxm"
+			xrefs_map (core, input + 1);
+			break;
 		case '\0': // "afx"
 		case 'j': // "afxj"
 		case ' ': // "afx "

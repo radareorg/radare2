@@ -8,6 +8,7 @@
 
 static void visual_refresh(RCore *core);
 
+// remove globals pls
 static int obs = 0;
 static int blocksize = 0;
 static bool autoblocksize = true;
