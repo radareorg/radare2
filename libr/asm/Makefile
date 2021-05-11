@@ -25,7 +25,6 @@ SDB=$(SDB_PATH)/sdb
 gperfs:
 	PATH=$(SDB_PATH):$$PATH $(MAKE) -C d all
 	PATH=$(SDB_PATH):$$PATH cd d && for a in *.sdb ; do test $$a -nt `echo $$a.c|sed -e 's,.sdb,,'`; if [ $$? = 0 ]; then $(SDB) -C $$a ; fi ; done
-	
 
 plugins: ${LIBSO} ${LIBAR}
 	$(MAKE) -C d all

@@ -4,6 +4,35 @@
 
 #define USE_RUNES 0
 
+#if HAVE_GPERF
+extern SdbGperf gperf_ascii;
+extern SdbGperf gperf_pokered;
+extern SdbGperf gperf_ebcdic37;
+
+static const SdbGperf *gperfs[] = {
+	&gperf_ascii,
+	&gperf_pokered,
+	&gperf_ebcdic37,
+	NULL
+};
+
+R_API SdbGperf *r_charset_get_gperf(const char *k) {
+	SdbGperf **gp = (SdbGperf**)gperfs;
+	while (*gp) {
+		SdbGperf *g = *gp;
+		if (!strcmp (k, g->name)) {
+			return *gp;
+		}
+		gp++;
+	}
+	return NULL;
+}
+#else
+R_API SdbGperf *r_charset_get_gperf(const char *k) {
+	return NULL;
+}
+#endif
+
 R_API RCharset *r_charset_new(void) {
 	return R_NEW0 (RCharset);
 }
@@ -23,10 +52,17 @@ R_API void r_charset_close(RCharset *c) {
 R_API bool r_charset_open(RCharset *c, const char *cs) {
 	r_return_val_if_fail (c && cs, false);
 	sdb_reset (c->db);
-	sdb_open (c->db, cs);
-	sdb_reset (c->db_char_to_hex);
-	sdb_open (c->db_char_to_hex, cs);
 
+	SdbGperf *gp = r_charset_get_gperf (cs);
+	if (gp) {
+		sdb_free (c->db);
+		c->db = sdb_new0 ();
+		sdb_open_gperf (c->db, gp);
+	} else {
+		sdb_open (c->db, cs);
+	}
+
+	sdb_free (c->db_char_to_hex);
 	c->db_char_to_hex = sdb_new0 ();
 
 	SdbListIter *iter;

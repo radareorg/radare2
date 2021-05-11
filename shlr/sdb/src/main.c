@@ -203,6 +203,37 @@ static char* get_cname(const char*name) {
 	return n;
 }
 
+static char *escape(const char *b) {
+	char *a = calloc ((1 + strlen (b)), 4);
+	char *c = a;
+	while (*b) {
+		switch (*b) {
+		case '"':
+			*c++ = '\\';
+			*c++ = '"';
+			break;
+		case '\\':
+			*c++ = '\\';
+			*c++ = '\\';
+			break;
+		case '\r':
+			*c++ = '\\';
+			*c++ = 'r';
+			break;
+		case '\n':
+			*c++ = '\\';
+			*c++ = 'n';
+			break;
+		default:
+			*c = *b;
+			break;
+		}
+		b++;
+		c++;
+	}
+	return a;
+}
+
 static void sdb_grep_dump_cb(int fmt, const char *k, const char *v, const char *comma) {
 	switch (fmt) {
 	case MODE_JSON:
@@ -231,7 +262,9 @@ static void sdb_grep_dump_cb(int fmt, const char *k, const char *v, const char *
 				*p = '.';
 			}
 		}
-		printf ("%s,\"%s\"\n", a, b);
+		char *e = escape (b);
+		printf ("%s,\"%s\"\n", a, e);
+		free (e);
 		free (a);
 		free (b);
 		}
