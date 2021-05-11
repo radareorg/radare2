@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2020 - c0riolis, x0urc3 */
+/* radare - LGPL3 - Copyright 2016-2021 - c0riolis, x0urc3 */
 
 #include <r_bin.h>
 #include "../format/pyc/pyc.h"
@@ -106,7 +106,7 @@ static RList *symbols(RBinFile *arch) {
 	r_list_append (shared, cobjs);
 	r_list_append (shared, interned_table);
 	arch->o->bin_obj = shared;
-	RList *sections = r_list_newf ((RListFree)free);
+	RList *sections = r_list_newf (NULL); // (RListFree)free);
 	if (!sections) {
 		r_list_free (shared);
 		arch->o->bin_obj = NULL;
