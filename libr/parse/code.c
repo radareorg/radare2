@@ -110,11 +110,15 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 	RList *dirs = r_str_split_list (d, ":", 0);
 	RListIter *iter;
 	char *di;
+	bool found = false;
 	r_list_foreach (dirs, iter, di) {
-		if (tcc_add_file (T, path, di) == -1) {
-			free (str);
-			str = NULL;
+		if (tcc_add_file (T, path, di) != -1) {
+			found = true;
+			break;
 		}
+	}
+	if (!found) {
+		R_FREE (str);
 	}
 	r_list_free (dirs);
 	free (d);
