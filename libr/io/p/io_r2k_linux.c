@@ -615,7 +615,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				io->cb_printf ("n_pages: %d (%ld Kbytes)\n", in->n_pages, (in->n_pages * page_size) / 1024);
 				io->cb_printf ("n_phys_addr: %d\n", in->n_phys_addr);
 				for (j = 0; j < in->n_phys_addr; j++) {
-					io->cb_printf ("\tphys_addr: 0x%"PFMT64x"\n", (ut64) in->phys_addr[j]);
+					io->cb_printf ("  phys_addr: 0x%"PFMT64x"\n", (ut64) in->phys_addr[j]);
 				}
 				io->cb_printf ("\n");
 			}
@@ -757,7 +757,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 							proc_data.vmareastruct[i + 2] & VM_MAYSHARE ? 's' : 'p',
 							(ut64) proc_data.vmareastruct[i + 3], proc_data.vmareastruct[i + 4],
 							proc_data.vmareastruct[i + 5], (ut64) proc_data.vmareastruct[i + 6]);
-					io->cb_printf ("\t%s\n", (char*)&(proc_data.vmareastruct[i + 7]));
+					io->cb_printf ("  %s\n", (char*)&(proc_data.vmareastruct[i + 7]));
 					i = nextstart;
 				}
 				io->cb_printf ("STACK BASE ADDRESS = 0x%zx\n", proc_data.stack);

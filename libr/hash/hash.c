@@ -1,7 +1,7 @@
-/* radare2 - LGPL - Copyright 2007-2019 pancake */
+/* radare2 - LGPL - Copyright 2007-2021 pancake */
 
 #include <r_hash.h>
-#include "r_util.h"
+#include <r_util.h>
 #if USE_LIB_XXHASH
 #include <xxhash.h>
 #else
@@ -328,8 +328,10 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 }
 
 R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
-	ut8 buf[1024];
+	r_return_if_fail (ctx && seed);
 	int i, len, hlen = r_hash_size (algo);
+	size_t buf_len = hlen + seed->len;
+	ut8 *buf = malloc (buf_len);
 	for (i = 0; i < loops; i++) {
 		if (seed) {
 			if (seed->prefix) {
@@ -346,14 +348,16 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
 		}
 		(void)r_hash_calculate (ctx, algo, buf, len);
 	}
+	free (buf);
 }
 
 R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len) {
+	r_return_val_if_fail (ctx && name && data && len >= 0, NULL);
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;
 	RHash *myctx = NULL;
 	int i, digest_size;
-	if (!algo || !data) {
+	if (!algo) {
 		return NULL;
 	}
 	if (!ctx) {

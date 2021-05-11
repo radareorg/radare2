@@ -169,6 +169,10 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 				t->child[0]->red = t->child[1]->red = false;
 				g->child[direction3] = t;
 				t->parent = g;
+				if (depth >= R_RBTREE_MAX_HEIGHT) {
+					eprintf ("Too deep tree\n");
+					break;
+				}
 				path[depth - 1] = t;
 				path[depth++] = p;
 			}

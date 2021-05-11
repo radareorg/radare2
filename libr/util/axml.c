@@ -173,7 +173,7 @@ static char *string_lookup(string_pool_t *pool, const ut8 *data, ut64 data_size,
 			return NULL;
 		}
 
-		name = calloc (n * 2 + 1, 1);
+		name = calloc (n + 1, 2);
 
 		if ((ut64)start16 > (ut64)data + data_size - sizeof(ut32) - n - 1) {
 			free (name);
