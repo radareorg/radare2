@@ -12,6 +12,7 @@ alle: $(F_SDB)
 
 %.sdb: %.sdb.txt
 	$(SDB) $@ = < $<
+	$(SDB) -C $@
 	test -f $@
 
 install:
