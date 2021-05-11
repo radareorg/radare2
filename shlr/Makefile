@@ -327,9 +327,4 @@ endif
 
 .PHONY: spp
 
-.PHONY: mpc mpc-clean clean-mpc
-mpc:
-	$(MAKE) -C mpc all
-
-mpc-clean clean-mpc:
-	$(MAKE) -C mpc clean
+include mpc/deps.mk
