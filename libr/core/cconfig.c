@@ -3073,7 +3073,6 @@ static bool cb_prjvctype(void *user, void *data) {
 		if (found) {
 			return true;
 		}
-		eprintf ("Warnning: Git is not installed\n");
 		return false;
 	}
 	if (!strcmp (node->value, "rvc")) {
@@ -3999,7 +3998,7 @@ R_API int r_core_config_init(RCore *core) {
 		if (!found) {
 			SETCB ("prj.vc.type", "git", &cb_prjvctype, "What should projects use as a vc");
 		} else {
-			SETCB ("prj.vc.type", "rvc", &cb_prjvctype, "What should projects use as a vc");
+			//SETCB ("prj.vc.type", "rvc", &cb_prjvctype, "What should projects use as a vc"); //l8er
 		}
 		free (p);
 	}
