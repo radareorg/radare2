@@ -197,6 +197,22 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=cmd.hit for /d multiple
+FILE=malloc://1024
+CMDS=<<EOF
+s 0x117
+wx 999a9b9d
+s 0x201
+wx a3a4a5a7
+s 0
+/d 010102
+EOF
+EXPECT=<<EOF
+0x00000117 hit0_0 999a9b9d
+0x00000201 hit0_1 a3a4a5a7
+EOF
+RUN
+
 NAME=cmd.hit for /a
 FILE=malloc://1024
 CMDS=<<EOF
