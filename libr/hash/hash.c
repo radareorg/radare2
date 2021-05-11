@@ -1,7 +1,7 @@
-/* radare2 - LGPL - Copyright 2007-2019 pancake */
+/* radare2 - LGPL - Copyright 2007-2021 pancake */
 
 #include <r_hash.h>
-#include "r_util.h"
+#include <r_util.h>
 #if USE_LIB_XXHASH
 #include <xxhash.h>
 #else
@@ -327,9 +327,14 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	return ret;
 }
 
-R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
-	ut8 buf[1024];
+R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSeed *seed) {
+	r_return_if_fail (ctx);
 	int i, len, hlen = r_hash_size (algo);
+	size_t buf_len = hlen + (seed? seed->len: 0);
+	ut8 *buf = calloc (1, buf_len);
+	if (!buf) {
+		return;
+	}
 	for (i = 0; i < loops; i++) {
 		if (seed) {
 			if (seed->prefix) {
@@ -346,9 +351,11 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
 		}
 		(void)r_hash_calculate (ctx, algo, buf, len);
 	}
+	free (buf);
 }
 
-R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len) {
+R_API char *r_hash_to_string(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
+	r_return_val_if_fail (name && len >= 0, NULL);
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;
 	RHash *myctx = NULL;
