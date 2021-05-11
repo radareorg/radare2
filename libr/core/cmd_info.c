@@ -732,7 +732,6 @@ static int cmd_info(void *data, const char *input) {
 				break;
 			}
 		case 'h': // "ih"
-			r_core_bin_export_info (core, R_MODE_SET);
 			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
 			break;
 		case 'l': { // "il"

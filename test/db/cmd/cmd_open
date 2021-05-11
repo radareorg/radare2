@@ -11,6 +11,7 @@ RUN
 
 NAME=oonn
 FILE=bins/mach0/mac-ls2
+ARGS=-n
 CMDS=<<EOF
 pf.~?
 oonn
@@ -19,6 +20,21 @@ o~?
 EOF
 EXPECT=<<EOF
 0
+58
+1
+EOF
+RUN
+
+NAME=oonn
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+pf.~?
+oonn
+pf.~?
+o~?
+EOF
+EXPECT=<<EOF
+58
 58
 1
 EOF

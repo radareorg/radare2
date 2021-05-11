@@ -6,7 +6,7 @@ EOF
 EXPECT=<<EOF
 size
 ----
-16.8K
+17.7K
 
 EOF
 RUN
@@ -83,16 +83,16 @@ f, /page/2/10,sort/cols/space/size/name,size/sort/inc,:fancy
 EOF
 EXPECT=<<EOF
 addr,size,space,name
+0x00000040,56,format,elf_phdr
+0x00000448,497,format,elf_strtab
+0x0000213f,268,format,elf_shstrtab
+0x00002250,64,format,elf_shdr
 0x00400000,4132,segments,segment.LOAD0
 0x00400000,64,segments,segment.ehdr
 0x00400040,448,segments,segment.PHDR
 0x00400200,28,sections,section..interp
 0x00400200,28,segments,segment.INTERP
 0x0040021c,32,sections,section..note.ABI_tag
-0x0040021c,68,segments,segment.NOTE
-0x0040023c,36,sections,section..note.gnu.build_id
-0x00400260,56,sections,section..gnu.hash
-0x00400298,432,sections,section..dynsym
 
 [
   {
@@ -117,21 +117,21 @@ imports          loc.imp.__gmon_start__
 imports          loc.imp._Jv_RegisterClasses
 imports          loc.imp._ITM_deregisterTMCloneTable
 
-.---------------------------------------------------------------------------------------------------.
-| space     | size  | name                                                                          |
-)---------------------------------------------------------------------------------------------------(
-| classes   | 1     | class.std::ostream                                                            |
-| classes   | 1     | class.std::ios_base::Init                                                     |
-| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char____std::operator____std  |
-| classes   | 1     | class.std::basic_ostream_char__std::char_traits_char____std::endl_char__std   |
-| classes   | 1     | class.B                                                                       |
-| classes   | 1     | class.A                                                                       |
-| classes   | 1     | class.C                                                                       |
-| imports   | 16    | loc.imp._ITM_registerTMCloneTable                                             |
-| imports   | 16    | loc.imp._ITM_deregisterTMCloneTable                                           |
-| segments  | 64    | segment.ehdr                                                                  |
-| segments  | 4132  | segment.LOAD0                                                                 |
-`---------------------------------------------------------------------------------------------------'
+.--------------------------------------------------------------------------------------------------.
+| space    | size  | name                                                                          |
+)--------------------------------------------------------------------------------------------------(
+| classes  | 1     | class.std::ostream                                                            |
+| classes  | 1     | class.std::ios_base::Init                                                     |
+| classes  | 1     | class.std::basic_ostream_char__std::char_traits_char____std::operator____std  |
+| classes  | 1     | class.std::basic_ostream_char__std::char_traits_char____std::endl_char__std   |
+| classes  | 1     | class.B                                                                       |
+| classes  | 1     | class.A                                                                       |
+| classes  | 1     | class.C                                                                       |
+| imports  | 16    | loc.imp._ITM_registerTMCloneTable                                             |
+| imports  | 16    | loc.imp._ITM_deregisterTMCloneTable                                           |
+| format   | 56    | elf_phdr                                                                      |
+| format   | 64    | elf_header                                                                    |
+`--------------------------------------------------------------------------------------------------'
 
 EOF
 RUN

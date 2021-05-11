@@ -670,6 +670,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (plugin && plugin->name) {
 		load_scripts_for (r, plugin->name);
 	}
+	r_core_bin_export_info (r, R_MODE_SET);
 	cmd_load = r_config_get (r->config, "cmd.load");
 	if (cmd_load && *cmd_load) {
 		r_core_cmd (r, cmd_load, 0);
