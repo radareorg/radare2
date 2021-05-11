@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2021 - thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2021 - pancake, thestr4ng3r */
 
 #include "r2r.h"
 #include <assert.h>
@@ -32,6 +32,24 @@ typedef struct r2r_state_t {
 	RPVector results;
 } R2RState;
 
+static void parse_skip(const char *arg) {
+	if (strstr (arg, "arch")) {
+		r_sys_setenv ("R2R_SKIP_ARCHOS", "1");
+	} else if (strstr (arg, "unit")) {
+		r_sys_setenv ("R2R_SKIP_UNIT", "1");
+	} else if (strstr (arg, "cmd")) {
+		r_sys_setenv ("R2R_SKIP_CMD", "1");
+	} else if (strstr (arg, "fuzz")) {
+		r_sys_setenv ("R2R_SKIP_FUZZ", "1");
+	} else if (strstr (arg, "json")) {
+		r_sys_setenv ("R2R_SKIP_JSON", "1");
+	} else if (strstr (arg, "asm")) {
+		r_sys_setenv ("R2R_SKIP_ASM", "1");
+	} else {
+		eprintf ("Invalid -s argument: @arch @unit @cmd @fuzz @json @asm\n");
+	}
+}
+
 static RThreadFunctionRet worker_th(RThread *th);
 static void print_state(R2RState *state, ut64 prev_completed);
 static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_completed);
@@ -59,11 +77,17 @@ static int help(bool verbose) {
 		" -f [file]    file to use for json tests (default is "JSON_TEST_FILE_DEFAULT")\n"
 		" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
 		" -t [seconds] timeout per test (default is "TIMEOUT_DEFAULT_STR")\n"
-		" -o [file]    output test run information in JSON format to file"
+		" -o [file]    output test run information in JSON format to file\n"
+		" -s [ignore]  Set R2R_SKIP_(xxx)=1 to skip running those tests\n"
 		"\n"
 		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
+		"R2R_SKIP_JSON=1    # do not run the JSON tests\n"
+		"R2R_SKIP_FUZZ=1     # do not run the rasm2 tests\n"
+		"R2R_SKIP_UNIT=1     # do not run the rasm2 tests\n"
+		"R2R_SKIP_CMD=1     # do not run the rasm2 tests\n"
 		"R2R_SKIP_ASM=1     # do not run the rasm2 tests\n"
-		"Supported test types: @json @unit @fuzz @arch @cmds\n"
+		"\n"
+		"Supported test types: @asm @json @unit @fuzz @arch @cmds\n"
 		"OS/Arch for archos tests: "R2R_ARCH_OS"\n");
 	}
 	return 1;
@@ -188,9 +212,8 @@ int main(int argc, char **argv) {
 		}
 	}
 #endif
-
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:");
+	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -218,6 +241,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'L':
 			log_mode = true;
+			break;
+		case 's':
+			parse_skip (opt.arg);
 			break;
 		case 'F':
 			free (fuzz_dir);

@@ -347,7 +347,6 @@ R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_
 	WriteFile (proc->stdin_write, buf, buf_size, &read, NULL);
 }
 
-
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
 	if (!out) {
@@ -1182,41 +1181,58 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	bool success = false;
 	ut64 start_time = r_time_now_mono ();
 	switch (test->type) {
-	case R2R_TEST_TYPE_CMD: {
-		R2RCmdTest *cmd_test = test->cmd_test;
-		R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
-		success = r2r_check_cmd_test (out, cmd_test);
-		ret->proc_out = out;
-		ret->timeout = out && out->timeout;
-		ret->run_failed = !out;
+	case R2R_TEST_TYPE_CMD:
+		if (r_sys_getenv_asbool ("R2R_SKIP_CMD")) {
+			success = true;
+			ret->run_failed = false;
+		} else {
+			R2RCmdTest *cmd_test = test->cmd_test;
+			R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
+			success = r2r_check_cmd_test (out, cmd_test);
+			ret->proc_out = out;
+			ret->timeout = out && out->timeout;
+			ret->run_failed = !out;
+		}
 		break;
-	}
-	case R2R_TEST_TYPE_ASM: {
-		R2RAsmTest *asm_test = test->asm_test;
-		R2RAsmTestOutput *out = r2r_run_asm_test (config, asm_test);
-		success = r2r_check_asm_test (out, asm_test);
-		ret->asm_out = out;
-		ret->timeout = out->as_timeout || out->disas_timeout;
-		ret->run_failed = !out;
+	case R2R_TEST_TYPE_ASM:
+		if (r_sys_getenv_asbool ("R2R_SKIP_ASM")) {
+			success = true;
+			ret->run_failed = false;
+		} else {
+			R2RAsmTest *asm_test = test->asm_test;
+			R2RAsmTestOutput *out = r2r_run_asm_test (config, asm_test);
+			success = r2r_check_asm_test (out, asm_test);
+			ret->asm_out = out;
+			ret->timeout = out->as_timeout || out->disas_timeout;
+			ret->run_failed = !out;
+		}
 		break;
-	}
-	case R2R_TEST_TYPE_JSON: {
-		R2RJsonTest *json_test = test->json_test;
-		R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, NULL);
-		success = r2r_check_json_test (out, json_test);
-		ret->proc_out = out;
-		ret->timeout = out->timeout;
-		ret->run_failed = !out;
+	case R2R_TEST_TYPE_JSON:
+		if (r_sys_getenv_asbool ("R2R_SKIP_JSON")) {
+			success = true;
+			ret->run_failed = false;
+		} else {
+			R2RJsonTest *json_test = test->json_test;
+			R2RProcessOutput *out = r2r_run_json_test (config, json_test, subprocess_runner, NULL);
+			success = r2r_check_json_test (out, json_test);
+			ret->proc_out = out;
+			ret->timeout = out->timeout;
+			ret->run_failed = !out;
+		}
 		break;
-	}
-	case R2R_TEST_TYPE_FUZZ: {
-		R2RFuzzTest *fuzz_test = test->fuzz_test;
-		R2RProcessOutput *out = r2r_run_fuzz_test (config, fuzz_test, subprocess_runner, NULL);
-		success = r2r_check_fuzz_test (out);
-		ret->proc_out = out;
-		ret->timeout = out->timeout;
-		ret->run_failed = !out;
-	}
+	case R2R_TEST_TYPE_FUZZ:
+		if (r_sys_getenv_asbool ("R2R_SKIP_FUZZ")) {
+			success = true;
+			ret->run_failed = false;
+		} else {
+			R2RFuzzTest *fuzz_test = test->fuzz_test;
+			R2RProcessOutput *out = r2r_run_fuzz_test (config, fuzz_test, subprocess_runner, NULL);
+			success = r2r_check_fuzz_test (out);
+			ret->proc_out = out;
+			ret->timeout = out->timeout;
+			ret->run_failed = !out;
+		}
+		break;
 	}
 	ret->time_elapsed = r_time_now_mono () - start_time;
 	bool broken = r2r_test_broken (test);
@@ -1233,10 +1249,10 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 		broken = true;
 	}
 #endif
-	if (!success) {
-		ret->result = broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
-	} else {
+	if (success) {
 		ret->result = broken ? R2R_TEST_RESULT_FIXED : R2R_TEST_RESULT_OK;
+	} else {
+		ret->result = broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
 	}
 	return ret;
 }
