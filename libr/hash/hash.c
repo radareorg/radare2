@@ -332,6 +332,9 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
 	int i, len, hlen = r_hash_size (algo);
 	size_t buf_len = hlen + seed->len;
 	ut8 *buf = malloc (buf_len);
+	if (!buf) {
+		return;
+	}
 	for (i = 0; i < loops; i++) {
 		if (seed) {
 			if (seed->prefix) {
@@ -352,12 +355,12 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
 }
 
 R_API char *r_hash_to_string(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
-	r_return_val_if_fail (name && data && len >= 0, NULL);
+	r_return_val_if_fail (name && len >= 0, NULL);
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;
 	RHash *myctx = NULL;
 	int i, digest_size;
-	if (!algo) {
+	if (!algo || !data) {
 		return NULL;
 	}
 	if (!ctx) {
