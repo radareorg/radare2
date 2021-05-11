@@ -1,3 +1,33 @@
+NAME=fatmach0 string location dylib
+FILE=bins/mach0/libexpat.1.dylib
+ARGS=-b32
+CMDS=<<EOF
+s str.parsing_finished
+x 16
+ps
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0002520c  7061 7273 696e 6720 6669 6e69 7368 6564  parsing finished
+parsing finished
+EOF
+RUN
+
+NAME=fatmach0 string location dylib 64
+FILE=bins/mach0/libexpat.1.dylib
+ARGS=-b64
+CMDS=<<EOF
+s str.parsing_finished
+x 16
+ps
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0002be18  7061 7273 696e 6720 6669 6e69 7368 6564  parsing finished
+parsing finished
+EOF
+RUN
+
 NAME=fatmach0 string location
 FILE=bins/mach0/BatteryLife
 CMDS=<<EOF
