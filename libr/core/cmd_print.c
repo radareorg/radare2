@@ -2115,6 +2115,9 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 		cmd[n] = 0;
 		r_core_cmd0 (core, cmd);
 		break;
+	case 'w':
+		size = 4;
+		// fallthru
 	case 'x':
 		switch (size) {
 		default:
