@@ -1623,7 +1623,7 @@ static bool dex_loadcode(RBinFile *bf) {
 		return false;
 	}
 
-	if (dex->header.method_size>dex->size) {
+	if (dex->header.method_size > dex->size) {
 		dex->header.method_size = 0;
 		return false;
 	}
@@ -1658,8 +1658,8 @@ static bool dex_loadcode(RBinFile *bf) {
 	if (methods) {
 		int import_count = 0;
 		int sym_count = dex->methods_list->length;
-
-		for (i = 0; i < methods_size; i++) {
+		int last = (methods_size / sizeof(int)); // sym_count
+		for (i = 0; i < last; i++) {
 			int len = 0;
 			if (methods[i]) {
 				continue;

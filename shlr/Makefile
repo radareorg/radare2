@@ -212,6 +212,10 @@ capstone: capstone-$(CS_VER).tar.gz
 	tar xzvf capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
+	$(MAKE) patch-capstone
+
+# already implemented in capstone.sh
+patch-capstone:
 ifeq ($(CS_PATCHES),1)
 	if [ -d capstone/.git ]; then \
 ifeq ($(USE_CS4),1)
@@ -236,6 +240,7 @@ ifeq ($(WITHOUT_PULL),1)
 else
 	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}"
 endif
+
 
 .PHONY: capstone capstone-sync
 endif
