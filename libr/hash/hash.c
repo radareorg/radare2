@@ -351,8 +351,8 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
 	free (buf);
 }
 
-R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len) {
-	r_return_val_if_fail (ctx && name && data && len >= 0, NULL);
+R_API char *r_hash_to_string(R_NULLABLE RHash *ctx, const char *name, const ut8 *data, int len) {
+	r_return_val_if_fail (name && data && len >= 0, NULL);
 	ut64 algo = r_hash_name_to_bits (name);
 	char *digest_hex = NULL;
 	RHash *myctx = NULL;
