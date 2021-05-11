@@ -327,11 +327,11 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	return ret;
 }
 
-R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *seed) {
-	r_return_if_fail (ctx && seed);
+R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, R_NULLABLE RHashSeed *seed) {
+	r_return_if_fail (ctx);
 	int i, len, hlen = r_hash_size (algo);
-	size_t buf_len = hlen + seed->len;
-	ut8 *buf = malloc (buf_len);
+	size_t buf_len = hlen + (seed? seed->len: 0);
+	ut8 *buf = calloc (1, buf_len);
 	if (!buf) {
 		return;
 	}
