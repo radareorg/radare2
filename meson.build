@@ -1,4 +1,4 @@
-project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.50.1', version : '5.3.0')
+project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.3.0')
 
 py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
@@ -10,10 +10,7 @@ vers = r2_version.split('.')
 r2_version_major = vers[0].to_int()
 r2_version_minor = vers[1].to_int()
 r2_version_patch = vers[2].split('-')[0].to_int()
-r2_version_number \
-  = (r2_version_major * 10000) \
-  + (r2_version_minor * 100) \
-  + (r2_version_patch)
+r2_version_number = (r2_version_major * 10000) + (r2_version_minor * 100) + (r2_version_patch)
 
 repo = '.'
 if meson.is_subproject()
@@ -709,5 +706,9 @@ if cli_enabled
     install_dir: r2_zsh_compdir
   )
 
-  meson.add_install_script(host_machine.system() == 'windows' ? 'sys/create_r2.bat' : 'sys/create_r2.sh')
+  if host_machine.system() == 'windows'
+    meson.add_install_script('sys/create_r2.bat')
+  else
+    meson.add_install_script('sys/create_r2.sh')
+  endif
 endif
