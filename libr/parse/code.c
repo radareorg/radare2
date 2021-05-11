@@ -106,10 +106,18 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 	tcc_set_callback (T, &__appendString, &str);
 	tcc_set_error_func (T, (void *)error_msg, __errorFunc);
 	sdb_foreach (anal->sdb_types, __typeLoad, anal);
-	if (tcc_add_file (T, path, dir) == -1) {
-		free (str);
-		str = NULL;
+	char *d = strdup (dir);
+	RList *dirs = r_str_split_list (d, ":", 0);
+	RListIter *iter;
+	char *di;
+	r_list_foreach (dirs, iter, di) {
+		if (tcc_add_file (T, path, di) == -1) {
+			free (str);
+			str = NULL;
+		}
 	}
+	r_list_free (dirs);
+	free (d);
 	tcc_delete (T);
 	return str;
 }
