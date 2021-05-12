@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - ret2libc, pancake */
+/* radare - LGPL - Copyright 2009-2021 - ret2libc, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -349,6 +349,11 @@ restore_pos:
 	return r;
 }
 
+R_API bool r_buf_append_ut8(RBuffer *b, ut8 n) {
+	r_return_val_if_fail (b && !b->readonly, false);
+	return r_buf_append_bytes (b, (const ut8 *)&n, sizeof (n));
+}
+
 R_API bool r_buf_append_ut16(RBuffer *b, ut16 n) {
 	r_return_val_if_fail (b && !b->readonly, false);
 	return r_buf_append_bytes (b, (const ut8 *)&n, sizeof (n));
@@ -420,6 +425,21 @@ R_API char *r_buf_get_string(RBuffer *b, ut64 addr) {
 		return NULL;
 	}
 	return (char *)res;
+}
+
+R_API ut8 *r_buf_read_all(RBuffer *b, int *blen) {
+	r_return_val_if_fail (b, NULL);
+	int buflen = r_buf_size (b);
+	if (buflen < 0) {
+		return NULL;
+	}
+	ut8 *buf = malloc (buflen + 1);
+	buf_seek (b, 0, R_BUF_SET);
+	buf_read (b, buf, buflen);
+	if (blen) {
+		*blen = buflen;
+	}
+	return buf;
 }
 
 R_API st64 r_buf_read(RBuffer *b, ut8 *buf, ut64 len) {

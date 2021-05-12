@@ -77,6 +77,7 @@ R_API st64 r_buf_append_string(RBuffer *b, const char *str);
 R_API bool r_buf_append_buf(RBuffer *b, RBuffer *a);
 R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length);
 R_API bool r_buf_append_nbytes(RBuffer *b, ut64 length);
+R_API bool r_buf_append_ut8(RBuffer *b, ut8 n);
 R_API bool r_buf_append_ut16(RBuffer *b, ut16 n);
 R_API bool r_buf_append_buf_slice(RBuffer *b, RBuffer *a, ut64 offset, ut64 size);
 R_API bool r_buf_append_ut32(RBuffer *b, ut32 n);
@@ -86,6 +87,7 @@ R_API st64 r_buf_insert_bytes(RBuffer *b, ut64 addr, const ut8 *buf, ut64 length
 R_API char *r_buf_to_string(RBuffer *b);
 R_API char *r_buf_get_string(RBuffer *b, ut64 addr);
 R_API st64 r_buf_read(RBuffer *b, ut8 *buf, ut64 len);
+R_API ut8 *r_buf_read_all(RBuffer *b, int *blen);
 R_API ut8 r_buf_read8(RBuffer *b);
 R_API st64 r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n);
 R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len);

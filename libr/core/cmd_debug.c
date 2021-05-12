@@ -561,7 +561,7 @@ static void setRarunProfileString(RCore *core, const char *str) {
 	free (file);
 }
 
-static void cmd_debug_cont_syscall (RCore *core, const char *_str) {
+static void cmd_debug_cont_syscall(RCore *core, const char *_str) {
 	// TODO : handle more than one stopping syscall
 	int i, *syscalls = NULL;
 	int count = 0;
