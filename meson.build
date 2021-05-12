@@ -234,8 +234,11 @@ if sys_magic.found() and get_option('use_sys_magic')
 endif
 
 # handle xxhash library
-sys_xxhash = dependency('xxhash', required: false)
+sys_xxhash = dependency('libxxhash', required: false)
 use_sys_xxhash = false
+if not sys_xxhash.found()
+  sys_xxhash = dependency('xxhash', required: false)
+endif
 if not sys_xxhash.found()
   sys_xxhash = cc.find_library('xxhash', required: false)
 endif
