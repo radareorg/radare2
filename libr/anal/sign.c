@@ -2062,9 +2062,9 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static inline bool local_foreach_item(RAnal *a, RSignForeachCallback cb, const RSpace *sp, bool free, void *user) {
+static inline bool local_foreach_item(RAnal *a, RSignForeachCallback cb, const RSpace *sp, bool freeit, void *user) {
 	r_return_val_if_fail (a && cb, false);
-	struct ctxForeachCB ctx = { a, cb, sp, false, user };
+	struct ctxForeachCB ctx = { a, cb, sp, freeit, user };
 	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
 }
 
