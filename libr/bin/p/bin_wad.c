@@ -15,21 +15,21 @@ static bool check_buffer(RBuffer *b) {
 	if (memcmp (sig, "IWAD", 4) && memcmp (sig, "PWAD", 4)) {
 		return false;
 	}
-    return true;
+	return true;
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
-    if (r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header)) == sizeof (loaded_header)) {
+	if (r_buf_read_at (b, 0, (ut8*)&loaded_header, sizeof (loaded_header)) == sizeof (loaded_header)) {
 		*bin_obj = &loaded_header;
 		return true;
 	}
-    eprintf ("Truncated Header\n");
 	return false;
 }
 
 static RBinInfo *info(RBinFile *bf) {
+	r_return_val_if_fail(bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret || !bf) {
+	if (!ret) {
 		return NULL;
 	}
 	ret->file = strdup (bf->file);
@@ -38,7 +38,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->os = strdup ("DOOM Engine");
 	ret->arch = strdup ("any");
 	ret->bits = 32;
-    ret->has_va = 0;
+	ret->has_va = false;
 	return ret;
 }
 
@@ -65,7 +65,7 @@ static RList *symbols(RBinFile *bf) {
 	}
 	WAD_DIR_Entry dir;
 	size_t i = 0;
-	while (i<loaded_header.numlumps) {
+	while (i < loaded_header.numlumps) {
 		memset (&dir, 0, sizeof (dir));
 		r_buf_read_at (bf->buf, loaded_header.diroffset + (i * 16), (ut8*)&dir, sizeof (dir));
 		addsym (ret, strndup(dir.name, 8), dir.filepos, dir.size);
@@ -79,9 +79,9 @@ RBinPlugin r_bin_plugin_wad = {
 	.desc = "DOOM WAD format r_bin plugin",
 	.license = "LGPL3",
 	.get_sdb = NULL,
-    .entries = NULL,
+	.entries = NULL,
 	.sections = NULL,
-    .symbols = &symbols,
+	.symbols = &symbols,
 	.check_buffer = &check_buffer,
 	.load_buffer = &load_buffer,
 	.baddr = &baddr,
