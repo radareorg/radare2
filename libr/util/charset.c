@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2020-2021 - gogo, pancake */
 
 #include <r_util.h>
+#include <config.h>
 
 #define USE_RUNES 0
 

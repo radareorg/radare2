@@ -1,7 +1,17 @@
-/* sdb - MIT - Copyright 2007-2017 - pancake, alvaro */
+/* sdb - MIT - Copyright 2007-2021 - pancake, alvaro */
 
 #include <string.h>
 #include "ls.h"
+
+#if 0
+  1 128= 7s / 32
+  2 64 = 7s / 30s
+  3 32 = 6s / 30s
+  4 24 = 6s / 30s
+  5 4  = 7s / 30s
+#endif
+
+#define MERGELIMIT 24
 
 SDB_API SdbList *ls_newf(SdbListFree freefn) {
 	SdbList *list = ls_new ();
@@ -68,7 +78,6 @@ static SdbListIter *_merge(SdbListIter *first, SdbListIter *second, SdbListCompa
 }
 
 static SdbListIter * _sdb_list_split(SdbListIter *head) {
-	SdbListIter *tmp;
 	SdbListIter *fast;
 	SdbListIter *slow;
 	if (!head || !head->n) {
@@ -76,24 +85,32 @@ static SdbListIter * _sdb_list_split(SdbListIter *head) {
 	} 
 	slow = head;
 	fast = head;
+	int count = 0;
 	while (fast && fast->n && fast->n->n) {
 		fast = fast->n->n;
 		slow = slow->n;
+		count++;
 	}
-	tmp = slow->n;
+	if (count < MERGELIMIT) {
+		return NULL;
+	}
+	SdbListIter *tmp = slow->n;
 	slow->n = NULL;
 	return tmp;
 }
 
 static SdbListIter * _merge_sort(SdbListIter *head, SdbListComparator cmp) {
-	SdbListIter *second;
 	if (!head || !head->n) {
 		return head;
 	}
-	second = _sdb_list_split (head);
-	head = _merge_sort (head, cmp);
-	second = _merge_sort (second, cmp);
-	return _merge (head, second, cmp);
+	SdbListIter *second = _sdb_list_split (head);
+	if (second) {
+		head = _merge_sort (head, cmp);
+		second = _merge_sort (second, cmp);
+		return _merge (head, second, cmp);
+	}
+	ls_insertion_sort_iter (head, cmp);
+	return head;
 }
 
 SDB_API bool ls_merge_sort(SdbList *list, SdbListComparator cmp) {
@@ -118,7 +135,7 @@ SDB_API bool ls_sort(SdbList *list, SdbListComparator cmp) {
 	if (!cmp || list->cmp == cmp) {
 		return false;
 	}
-	if (list->length > 43) {
+	if (list->length > MERGELIMIT) {
 		ls_merge_sort (list, cmp);
 	} else {
 		ls_insertion_sort (list, cmp);

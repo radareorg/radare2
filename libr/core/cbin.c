@@ -683,9 +683,32 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 	sdb_free (db);
 }
 
+static void load_types_from(RCore *core, const char *fmt, ...) {
+	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
+	va_list ap;
+	va_start (ap, fmt);
+	char *s = r_str_newvf (fmt, ap);
+	SdbGperf *gp = r_anal_get_gperf_types (s);
+	if (gp) {
+		Sdb *gd = sdb_new0 ();
+		sdb_open_gperf (gd, gp);
+		sdb_reset (core->anal->sdb_types);
+		sdb_merge (core->anal->sdb_types, gd);
+		sdb_close (gd);
+		sdb_free (gd);
+	} else {
+		char *dbpath = r_str_newf ("%s/%s/%s.sdb", dir_prefix, R2_SDB_FCNSIGN, s);
+		if (r_file_exists (dbpath)) {
+			sdb_concat_by_path (core->anal->sdb_types, dbpath);
+		}
+		free (dbpath);
+	}
+	free (s);
+	va_end (ap);
+}
+
 R_API void r_core_anal_type_init(RCore *core) {
 	r_return_if_fail (core && core->anal);
-	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	int bits = core->rasm->bits;
 	Sdb *types = core->anal->sdb_types;
 	// make sure they are empty this is initializing
@@ -694,45 +717,14 @@ R_API void r_core_anal_type_init(RCore *core) {
 	const char *os = r_config_get (core->config, "asm.os");
 	// spaguetti ahead
 
-	const char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types.sdb"), dir_prefix);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (types, dbpath);
-	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
-		dir_prefix, anal_arch);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (types, dbpath);
-	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
-		dir_prefix, os);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (types, dbpath);
-	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%d.sdb"),
-		dir_prefix, bits);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (types, dbpath);
-	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
-		dir_prefix, os, bits);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (types, dbpath);
-	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
-		dir_prefix, anal_arch, bits);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (types, dbpath);
-	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%s.sdb"),
-		dir_prefix, anal_arch, os);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (types, dbpath);
-	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
-		dir_prefix, anal_arch, os, bits);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (types, dbpath);
-	}
+	load_types_from (core, "types");
+	load_types_from (core, "types-%s", anal_arch);
+	load_types_from (core, "types-%s", os);
+	load_types_from (core, "types-%d", bits);
+	load_types_from (core, "types-%s-%d", os, bits);
+	load_types_from (core, "types-%s-%d", anal_arch, bits);
+	load_types_from (core, "types-%s-%s", anal_arch, os);
+	load_types_from (core, "types-%s-%s-%d", anal_arch, os, bits);
 }
 
 R_API void r_core_anal_cc_init(RCore *core) {
@@ -743,6 +735,20 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	if (!anal_arch) {
 		return;
 	}
+#if HAVE_GPERF
+	char *k = r_str_newf ("cc_%s_%d", anal_arch, bits);
+	SdbGperf *gp = r_anal_get_gperf_cc (k);
+	free (k);
+	if (gp) {
+		Sdb *gd = sdb_new0 ();
+		sdb_open_gperf (gd, gp);
+		sdb_reset (core->anal->sdb_cc);
+		sdb_merge (core->anal->sdb_cc, gd);
+		sdb_close (gd);
+		sdb_free (gd);
+		return;
+	}
+#endif
 	char *dbpath = r_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "cc-%s-%d.sdb"),
 		dir_prefix, anal_arch, bits);
 	char *dbhomepath = r_str_newf (R_JOIN_3_PATHS ("~", R2_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),

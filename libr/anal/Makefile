@@ -20,7 +20,11 @@ LDFLAGS+=$(LINK)
 
 .PHONY: all plugins libs ${EXTRA_CLEAN}
 
-all: plugins
+# all: plugins
+main:
+	$(MAKE) -C d
+	$(MAKE) all
+
 
 plugins: ${LIBSO} ${LIBAR}
 	@${MAKE} -C p all
@@ -34,13 +38,49 @@ OBJLIBS+=cond.o value.o cc.o class.o diff.o type.o type_pdb.o dwarf_process.o
 OBJLIBS+=hint.o anal.o data.o xrefs.o esil.o sign.o esil_plugin.o
 OBJLIBS+=esil_handler.o switch.o cycles.o esil_dfg.o esil_cfg.o
 OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
-OBJLIBS+=pin.o vtable.o rtti.o codemeta.o
+OBJLIBS+=pin.o vtable.o rtti.o codemeta.o anplugs.o
 OBJLIBS+=rtti_msvc.o rtti_itanium.o jmptbl.o function.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-modules.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-isa.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/elf32-xtensa.o
 
 OBJS=${STATIC_OBJS} ${OBJLIBS} ${ASMOBJS}
+ifeq ($(HAVE_GPERF),1)
+
+OBJS+=d/cc-arm-16.o
+OBJS+=d/cc-arm-32.o
+OBJS+=d/cc-arm-64.o
+OBJS+=d/cc-avr-8.o
+OBJS+=d/cc-hexagon-32.o
+OBJS+=d/cc-m68k-32.o
+OBJS+=d/cc-mips-32.o
+OBJS+=d/cc-mips-64.o
+OBJS+=d/cc-ppc-32.o
+OBJS+=d/cc-ppc-64.o
+OBJS+=d/cc-riscv-64.o
+OBJS+=d/cc-s390-64.o
+OBJS+=d/cc-sparc-32.o
+OBJS+=d/cc-v850-32.o
+OBJS+=d/cc-x86-16.o
+OBJS+=d/cc-x86-32.o
+OBJS+=d/cc-x86-64.o
+OBJS+=d/cc-xtensa-32.o
+OBJS+=d/spec.o
+OBJS+=d/types-16.o
+OBJS+=d/types-32.o
+OBJS+=d/types-64.o
+OBJS+=d/types-android.o
+OBJS+=d/types-arm-ios-16.o
+OBJS+=d/types-arm-ios-32.o
+OBJS+=d/types-arm-ios-64.o
+OBJS+=d/types-darwin.o
+OBJS+=d/types-linux.o
+OBJS+=d/types-x86-macos-64.o
+#OBJS+=d/types-windows.o
+#OBJS+=d/types-x86-windows-32.o
+#OBJS+=d/types-x86-windows-64.o
+OBJS+=d/types.o
+endif
 
 test tests: tests-esil
 

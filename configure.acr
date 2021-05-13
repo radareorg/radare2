@@ -31,6 +31,11 @@ ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap build ptrace-wrap support needed for the iaito debugger on Linux ;
+ARG_WITHOUT WANT_GPERF gperf do not statically link the sdb databases even if gperf is found ;
+
+IFNOT WANT_GPERF {
+	HAVE_GPERF = 0 ;
+}
 
 ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
 
@@ -239,7 +244,7 @@ ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different
 REPORT R_CHECKS_LEVEL PREFIX HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIBUV
 	USE_CAPSTONE HAVE_PTRACE USE_PTRACE_WRAP HAVE_FORK
 	VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER
-	CC USERCC HAVE_ARC4RANDOM_UNIFORM PKGCONFIG
+	CC USERCC HAVE_ARC4RANDOM_UNIFORM PKGCONFIG HAVE_GPERF
 	HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET WANT_DYLINK USEROSTYPE
 	LIBVERSION BUILD HOST TARGET CFLAGS LDFLAGS ;
 

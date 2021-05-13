@@ -1,5 +1,6 @@
 r_anal_sources = [
   'anal.c',
+  'anplugs.c',
   'bb.c',
   'block.c',
   'function.c',

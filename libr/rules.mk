@@ -72,9 +72,11 @@ else
 all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 endif
 ifneq ($(SILENT),)
-	@-if [ -f p/Makefile ]; then (cd p && ${MAKE}) ; fi
+	@-if [ -f p/Makefile ]; then ${MAKE} -C p ; fi
+	@-if [ -f d/Makefile ]; then ${MAKE} -C d ; fi
 else
-	@-if [ -f p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE}) ; fi
+	@-if [ -f p/Makefile ] ; then (echo "DIR ${NAME}/p"; ${MAKE} -C p) ; fi
+	@-if [ -f d/Makefile ] ; then (echo "DIR ${NAME}/d"; ${MAKE} -C d) ; fi
 endif
 
 ifeq ($(WITH_LIBS),1)

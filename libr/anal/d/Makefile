@@ -6,9 +6,6 @@ F+= types-32
 F+= types-64
 F+= types-android
 F+= types-darwin
-F+= types-windows
-F+= types-x86-windows-32
-F+= types-x86-windows-64
 F+= types-linux
 F+= types-x86-macos-64
 F+= types-arm-ios-16
@@ -33,6 +30,11 @@ F+= cc-riscv-64
 F+= cc-hexagon-32
 F+= cc-v850-32
 F+= cc-s390-64
+
+# those are extremely large and make GNU/gperf take forever
+F+= types-windows
+F+= types-x86-windows-32
+F+= types-x86-windows-64
 
 WIN_TYPES=
 WIN_TYPES+= bcrypt
@@ -99,16 +101,18 @@ ifneq ($(SILENT),)
 	@rm -f $@
 	@cat $< $(EXTRA_FILES) | ${SDB} $@ =
 	@test -f $@
+	-if [ -z "`echo $@| grep windows`" ]; then $(SDB) -C $@ ; fi
 else
 	rm -f $@
 	cat $< $(EXTRA_FILES) | ${SDB} $@ =
 	test -f $@
+	-if [ -z "`echo $@| grep windows`" ]; then $(SDB) -C $@ ; fi
 endif
 
 clean:
-	rm -f *.sdb
+	rm -f *.sdb *.c
 
-${SDB}:
+$(SDB):
 	@echo "Cannot find ${SDB}"
 	@false
 

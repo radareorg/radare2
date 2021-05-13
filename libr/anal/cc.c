@@ -185,7 +185,7 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 		return;
 	}
 	RStrBuf sb;
-	sdb_set (anal->sdb_cc, r_strbuf_initf (&sb, "cc.%s.self", convention), self, 0);
+	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.self", convention), self, 0);
 	r_strbuf_fini (&sb);
 }
 
@@ -202,7 +202,7 @@ R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *
 		return;
 	}
 	RStrBuf sb;
-	sdb_set (anal->sdb_cc, r_strbuf_initf (&sb, "cc.%s.error", convention), error, 0);
+	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.error", convention), error, 0);
 	r_strbuf_fini (&sb);
 }
 
