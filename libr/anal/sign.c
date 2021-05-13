@@ -1358,39 +1358,6 @@ static int _closest_match_cb(RSignItem *it, void *user) {
 	return closest_match_update (it, (ClosestMatchData *)user)? 1: 0;
 }
 
-R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double score_threshold) {
-	r_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
-
-	// need at least one acceptable signature type
-	r_return_val_if_fail (it->bytes || it->graph, NULL);
-
-	ClosestMatchData data;
-	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
-	if (!output) {
-		return NULL;
-	}
-
-	data.output = output;
-	data.count = count;
-	data.score_threshold = score_threshold;
-	data.infimum = 0.0;
-	data.test = it;
-	if (it->bytes) {
-		data.bytes_combined = build_combined_bytes (it->bytes);
-	} else {
-		data.bytes_combined = NULL;
-	}
-
-	;
-	if (!r_sign_foreach (a, _closest_match_cb, &data)) {
-		r_list_free (output);
-		output = NULL;
-	}
-
-	free (data.bytes_combined);
-	return output;
-}
-
 R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double score_threshold) {
 	r_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
 	r_return_val_if_fail (it->bytes || it->graph, NULL);
@@ -2049,7 +2016,7 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
 
-	if (r_sign_deserialize (a, it, k, v)) {
+	if (it && r_sign_deserialize (a, it, k, v)) {
 		if (!ctx->space || ctx->space == it->space) {
 			ctx->cb (it, ctx->user);
 		}
@@ -2111,6 +2078,38 @@ R_API void r_sign_search_free(RSignSearch *ss) {
 	r_search_free (ss->search);
 	r_list_free (ss->items);
 	free (ss);
+}
+
+R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double score_threshold) {
+	r_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
+
+	// need at least one acceptable signature type
+	r_return_val_if_fail (it->bytes || it->graph, NULL);
+
+	ClosestMatchData data;
+	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
+	if (!output) {
+		return NULL;
+	}
+
+	data.output = output;
+	data.count = count;
+	data.score_threshold = score_threshold;
+	data.infimum = 0.0;
+	data.test = it;
+	if (it->bytes) {
+		data.bytes_combined = build_combined_bytes (it->bytes);
+	} else {
+		data.bytes_combined = NULL;
+	}
+
+	if (!r_sign_foreach_nofree (a, _closest_match_cb, &data)) {
+		r_list_free (output);
+		output = NULL;
+	}
+
+	free (data.bytes_combined);
+	return output;
 }
 
 static int searchHitCB(RSearchKeyword *kw, void *user, ut64 addr) {
