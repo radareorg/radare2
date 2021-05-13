@@ -68,6 +68,7 @@ static int help(bool verbose) {
 		" -q           quiet\n"
 		" -V           verbose\n"
 		" -i           interactive mode\n"
+		" -u           do not git pull/clone test/bins\n"
 		" -n           do nothing (don't run any test, just load/parse them)\n"
 		" -L           log mode (better printing for CI, logfiles, etc.)\n"
 		" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
@@ -197,6 +198,7 @@ int main(int argc, char **argv) {
 	char *fuzz_dir = NULL;
 	const char *r2r_dir = NULL;
 	ut64 timeout_sec = TIMEOUT_DEFAULT;
+	bool get_bins = true;
 	int ret = 0;
 
 #if __WINDOWS__
@@ -213,7 +215,7 @@ int main(int argc, char **argv) {
 	}
 #endif
 	RGetopt opt;
-	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:");
+	r_getopt_init (&opt, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:u");
 
 	int c;
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -275,6 +277,9 @@ int main(int argc, char **argv) {
 			free (json_test_file);
 			json_test_file = strdup (opt.arg);
 			break;
+		case 'u':
+			get_bins = false;
+			break;
 		case 't':
 			timeout_sec = strtoull (opt.arg, NULL, 0);
 			if (!timeout_sec) {
@@ -311,6 +316,14 @@ int main(int argc, char **argv) {
 		char *tmp = fuzz_dir;
 		fuzz_dir = r_file_abspath_rel (cwd, fuzz_dir);
 		free (tmp);
+	}
+
+	if (get_bins) {
+		if (r_file_is_directory ("bins")) {
+			r_sys_cmd ("cd bins ; git pull");
+		} else {
+			r_sys_cmd ("git clone --depth 1 https://github.com/radareorg/radare2-testbins bins");
+		}
 	}
 
 	if (!r2r_subprocess_init ()) {
