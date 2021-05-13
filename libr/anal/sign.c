@@ -103,8 +103,12 @@ R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 		r_list_append (ret, r_str_newf ("func.%s.args=%d", fcn->name, argc));
 		int i;
 		for (i = 0; i < argc; i++) {
-			const char *arg = sdb_const_get (a->sdb_types, r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
-			r_list_append (ret, r_str_newf ("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
+			char *k = r_str_newf ("func.%s.arg.%d", fcn->name, i);
+			if (k) {
+				const char *arg = sdb_const_get (a->sdb_types, k, 0);
+				r_list_append (ret, r_str_newf ("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
+				free (k);
+			}
 		}
 	}
 
@@ -2129,10 +2133,12 @@ static int addSearchKwCB(RSignItem *it, void *user) {
 
 	if (!bytes) {
 		eprintf ("Cannot find bytes for this signature: %s\n", it->name);
+		r_sign_item_free (it);
 		return 1;
 	}
 
 	if (ctx->minsz && bytes->size < ctx->minsz) {
+		r_sign_item_free (it);
 		return 1;
 	}
 	r_list_append (ss->items, it);
