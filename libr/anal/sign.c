@@ -103,8 +103,12 @@ R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
 		r_list_append (ret, r_str_newf ("func.%s.args=%d", fcn->name, argc));
 		int i;
 		for (i = 0; i < argc; i++) {
-			const char *arg = sdb_const_get (a->sdb_types, r_str_newf ("func.%s.arg.%d", fcn->name, i), 0);
-			r_list_append (ret, r_str_newf ("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
+			char *k = r_str_newf ("func.%s.arg.%d", fcn->name, i);
+			if (k) {
+				const char *arg = sdb_const_get (a->sdb_types, k, 0);
+				r_list_append (ret, r_str_newf ("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
+				free (k);
+			}
 		}
 	}
 
@@ -1358,39 +1362,6 @@ static int _closest_match_cb(RSignItem *it, void *user) {
 	return closest_match_update (it, (ClosestMatchData *)user)? 1: 0;
 }
 
-R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double score_threshold) {
-	r_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
-
-	// need at least one acceptable signature type
-	r_return_val_if_fail (it->bytes || it->graph, NULL);
-
-	ClosestMatchData data;
-	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
-	if (!output) {
-		return NULL;
-	}
-
-	data.output = output;
-	data.count = count;
-	data.score_threshold = score_threshold;
-	data.infimum = 0.0;
-	data.test = it;
-	if (it->bytes) {
-		data.bytes_combined = build_combined_bytes (it->bytes);
-	} else {
-		data.bytes_combined = NULL;
-	}
-
-	;
-	if (!r_sign_foreach (a, _closest_match_cb, &data)) {
-		r_list_free (output);
-		output = NULL;
-	}
-
-	free (data.bytes_combined);
-	return output;
-}
-
 R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double score_threshold) {
 	r_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
 	r_return_val_if_fail (it->bytes || it->graph, NULL);
@@ -2049,7 +2020,7 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
 
-	if (r_sign_deserialize (a, it, k, v)) {
+	if (it && r_sign_deserialize (a, it, k, v)) {
 		if (!ctx->space || ctx->space == it->space) {
 			ctx->cb (it, ctx->user);
 		}
@@ -2062,9 +2033,9 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static inline bool local_foreach_item(RAnal *a, RSignForeachCallback cb, const RSpace *sp, bool free, void *user) {
+static inline bool local_foreach_item(RAnal *a, RSignForeachCallback cb, const RSpace *sp, bool freeit, void *user) {
 	r_return_val_if_fail (a && cb, false);
-	struct ctxForeachCB ctx = { a, cb, sp, false, user };
+	struct ctxForeachCB ctx = { a, cb, sp, freeit, user };
 	return sdb_foreach (a->sdb_zigns, foreachCB, &ctx);
 }
 
@@ -2113,6 +2084,38 @@ R_API void r_sign_search_free(RSignSearch *ss) {
 	free (ss);
 }
 
+R_API RList *r_sign_find_closest_sig(RAnal *a, RSignItem *it, int count, double score_threshold) {
+	r_return_val_if_fail (a && it && count > 0 && score_threshold >= 0 && score_threshold <= 1, NULL);
+
+	// need at least one acceptable signature type
+	r_return_val_if_fail (it->bytes || it->graph, NULL);
+
+	ClosestMatchData data;
+	RList *output = r_list_newf ((RListFree)r_sign_close_match_free);
+	if (!output) {
+		return NULL;
+	}
+
+	data.output = output;
+	data.count = count;
+	data.score_threshold = score_threshold;
+	data.infimum = 0.0;
+	data.test = it;
+	if (it->bytes) {
+		data.bytes_combined = build_combined_bytes (it->bytes);
+	} else {
+		data.bytes_combined = NULL;
+	}
+
+	if (!r_sign_foreach_nofree (a, _closest_match_cb, &data)) {
+		r_list_free (output);
+		output = NULL;
+	}
+
+	free (data.bytes_combined);
+	return output;
+}
+
 static int searchHitCB(RSearchKeyword *kw, void *user, ut64 addr) {
 	RSignSearch *ss = (RSignSearch *) user;
 	return ss->cb? ss->cb ((RSignItem *) kw->data, kw, addr, ss->user): 1;
@@ -2130,10 +2133,12 @@ static int addSearchKwCB(RSignItem *it, void *user) {
 
 	if (!bytes) {
 		eprintf ("Cannot find bytes for this signature: %s\n", it->name);
+		r_sign_item_free (it);
 		return 1;
 	}
 
 	if (ctx->minsz && bytes->size < ctx->minsz) {
+		r_sign_item_free (it);
 		return 1;
 	}
 	r_list_append (ss->items, it);
