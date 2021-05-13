@@ -284,7 +284,7 @@ RUN
 NAME=za r + z/
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
-aaa
+aa
 za main r sym.print
 z/
 ?v sign.refs.main_0
@@ -416,7 +416,7 @@ RUN
 NAME=zaf
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
-aaa
+aa
 e zign.mincc = 0
 zs zigs
 zaf main
@@ -439,7 +439,7 @@ RUN
 NAME=zaf at offset
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
-aaa
+aa
 e zign.mincc = 0
 zs zigs
 zaf @ main
@@ -462,7 +462,7 @@ RUN
 NAME=zaf (root zignspace)
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
-aaa
+aa
 e zign.mincc = 0
 zaf main
 z
@@ -483,7 +483,7 @@ RUN
 NAME=zaf zigname
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
-aaa
+aa
 e zign.mincc = 0
 zs zigs
 zaf main foobar
@@ -506,7 +506,7 @@ RUN
 NAME=zaf zigname (root zignspace)
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
-aaa
+aa
 e zign.mincc = 0
 zaf main foobar
 z
@@ -528,7 +528,7 @@ RUN
 NAME=zs + zaf + z/
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
-aaa
+aa
 zs zigs
 zaf main
 z/
@@ -542,7 +542,7 @@ RUN
 NAME=zs + zaf zigname + z/
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
-aaa
+aa
 zaf main foobar
 z/
 ?v sign.bytes.foobar_0
@@ -555,7 +555,7 @@ RUN
 NAME=zs * searches all zignspaces
 FILE=bins/elf/analysis/zigs
 CMDS=<<EOF
-aaa
+aa
 zs test
 zaf main foobar
 zs *
@@ -1209,7 +1209,7 @@ RUN
 NAME=zj producing valid types
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
-aaa
+af @0x00484d40
 zaf fcn.00484d40 fcn.00484d40
 zj
 EOF
