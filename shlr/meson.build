@@ -17,16 +17,27 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded')
     endif
 
+    patches_files = []
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     if capstone_version == 'v5'
-      CS_TIP = 'baa1f94cfdacd921744769bf7d93f00892ef53fa'
+      CS_TIP = 'f278de39c1e8a9fca977b8dfeed99d6d1f8b82bf'
       CS_BRA = 'next'
+      patches_files = [
+        'fix-x86-16.patch',
+        'mmm.patch'
+      ]
     elif capstone_version == 'v3'
       CS_TIP = '61bf71c771680033651f16cff832446e421847b1'
       CS_BRA = 'v3'
     elif capstone_version == 'v4'
-      CS_TIP = '2edae851d9fee511a57d4da32d5acecedd95d7ed'
+      CS_TIP = '8635f65661824f7e677e7c0d1b1f620d869ed847'
       CS_BRA = 'v4'
+      patches_files = [
+        'capstone-calloc.patch',
+        'fix-x86-16.patch',
+        'sparc-crash.patch',
+        'sstream-null.patch'
+      ]
     else
       error('Wrong capstone version selected. Please use one of the supported versions.')
     endif
@@ -45,13 +56,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     if reset_cmd.returncode() != 0
       error('Cannot execute git reset command')
     endif
-
-    patches_files = [
-      'capstone-calloc.patch',
-      'fix-x86-16.patch',
-      'sparc-crash.patch',
-      'sstream-null.patch'
-    ]
 
     message('Patching capstone with radare\'s patches')
     foreach file : patches_files
