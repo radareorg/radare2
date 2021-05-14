@@ -40,6 +40,14 @@ LDFLAGS+=-L../../libr/search -lr_search
 LDFLAGS+=-L../../libr/config -lr_config
 LDFLAGS+=${LINK}
 
+ifeq ($(WITH_LIBR),1)
+## Only needed by static builds
+LDFLAGS+=$(SHLR)/winkd/libr_winkd.a
+LDFLAGS+=$(SHLR)/yxml/libyxml.a
+LDFLAGS+=-ldl
+LDFLAGS+=-static
+endif
+
 include ../../libr/config.mk
 include ../../libr/socket/deps.mk
 include ../../libr/magic/deps.mk

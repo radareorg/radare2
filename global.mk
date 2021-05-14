@@ -29,9 +29,6 @@ else
 GIT_PREFIX=git://
 endif
 
-# verbose error messages everywhere
-STATIC_DEBUG=0
-
 rmdblslash=$(subst //,/,$(subst //,/,$(subst /$$,,$1)))
 
 .c:
