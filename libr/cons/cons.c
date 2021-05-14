@@ -915,6 +915,31 @@ R_API void r_cons_eflush(void) {
 	}
 }
 
+static void optimize(void) {
+	char *buf = CTX (buffer);
+	int len = CTX (buffer_len);
+	int i, codes = 0;
+	int escape_n = 0;
+	char escape[32];
+	bool onescape = false;
+	for (i = 0; i < len; i++) {
+		if (onescape) {
+			if (buf[i] == ';') {
+				eprintf ("ERN %s%c", escape, 10);
+				onescape = false;
+			} else {
+				escape[escape_n++] = buf[i];
+				escape[escape_n] = 0;
+			}
+		}
+		if (buf[i] == 0x1b) {
+			onescape = true;
+			codes++;
+		}
+	}
+	eprintf ("%d%c", codes, 10);
+}
+
 R_API void r_cons_flush(void) {
 	const char *tee = I.teefile;
 	if (I.noflush) {
@@ -938,6 +963,7 @@ R_API void r_cons_flush(void) {
 	} else {
 		CTX (lastMode) = false;
 	}
+optimize ();
 	r_cons_filter ();
 	if (r_cons_is_interactive () && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
