@@ -179,10 +179,12 @@ jobs:
         path: radare2-win-installer\Output\radare2.exe
   # LINUX
   linux-static:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Installing the musl runtime
+      run: apt install musl-tools
     - name: Building static r2 with acr
       run: |
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
