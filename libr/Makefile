@@ -130,16 +130,16 @@ E+=../shlr/capstone/libcapstone.${EXT_AR}
 endif
 
 ifeq ($(OSTYPE),darwin)
-libr_LDFLAGS=-dynamiclib -shared
+LIBR_LDFLAGS=-dynamiclib -shared
 else
-libr_LDFLAGS=-shared
+LIBR_LDFLAGS=-shared
 endif
 
 libr.${EXT_SO}: .libr2
 ifeq (${COMPILER},emscripten)
 	echo nothing to do here
 else
-	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(libr_LDFLAGS) -o libr.${EXT_SO}  \
+	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} $(LIBR_LDFLAGS) -o libr.${EXT_SO}  \
 		.libr2/*/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/libr_shlr.${EXT_AR} ../shlr/mpc/libmpc.${EXT_AR} $(E) \
