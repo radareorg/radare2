@@ -184,11 +184,15 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Installing the musl runtime
-      run: apt install musl-tools
+      run: |
+        sudo apt update
+        sudo apt upgrade
+        sudo apt install musl-tools
     - name: Building static r2 with acr
       run: |
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
         NOLTO=1 sys/static.sh
+        # NOLTO=1 sys/static.sh
         make -C binr/blob
         tar cJvf r2-static.tar.xz r2-static
     - name: Pub
