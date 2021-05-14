@@ -313,6 +313,10 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			DBL_VAL_FAIL (it->types, R_SIGN_TYPES);
 			it->types = zign_types_to_list (a, token);
 			break;
+		case R_SIGN_COLLISIONS:
+			DBL_VAL_FAIL (it->collisions, R_SIGN_COLLISIONS);
+			it->collisions = zign_types_to_list (a, token);
+			break;
 		case R_SIGN_BBHASH:
 			DBL_VAL_FAIL (it->hash, R_SIGN_BBHASH);
 			if (token[0] != 0) {
@@ -499,6 +503,7 @@ static char *serialize_value(RSignItem *it) {
 	FreeRet_on_fail (serialize_str_list (it->xrefs, sb, R_SIGN_XREFS), sb);
 	FreeRet_on_fail (serialize_str_list (it->vars, sb, R_SIGN_VARS), sb);
 	FreeRet_on_fail (serialize_str_list (it->types, sb, R_SIGN_TYPES), sb);
+	FreeRet_on_fail (serialize_str_list (it->collisions, sb, R_SIGN_COLLISIONS), sb);
 
 	if (it->comment) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_COMMENT, it->comment), sb);
@@ -599,6 +604,8 @@ static bool mergeItem(RSignItem *dst, RSignItem *src) {
 		if (!(dst->comment = strdup (src->comment))) {
 			return false;
 		}
+		dst->comment = src->comment;
+		src->comment = NULL;
 	}
 
 	if (src->realname) {
@@ -622,6 +629,9 @@ static bool mergeItem(RSignItem *dst, RSignItem *src) {
 		return false;
 	}
 	if (!merge_list (&dst->types, src->types)) {
+		return false;
+	}
+	if (!merge_list (&dst->collisions, src->collisions)) {
 		return false;
 	}
 
@@ -1642,38 +1652,6 @@ static void listOffset(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static inline const char *sign_type_to_name(int type) {
-	switch (type) {
-	case R_SIGN_BYTES:
-		return "bytes";
-	case R_SIGN_BYTES_MASK:
-		return "mask";
-	case R_SIGN_BYTES_SIZE:
-		return "size";
-	case R_SIGN_COMMENT:
-		return "comment";
-	case R_SIGN_GRAPH:
-		return "graph";
-	case R_SIGN_OFFSET:
-		return "addr";
-	case R_SIGN_NAME:
-		return "name";
-	case R_SIGN_REFS:
-		return "refs";
-	case R_SIGN_XREFS:
-		return "xrefs";
-	case R_SIGN_VARS:
-		return "vars";
-	case R_SIGN_TYPES:
-		return "types";
-	case R_SIGN_BBHASH:
-		return "bbhash";
-	default:
-		r_warn_if_reached ();
-		return "UnkownType";
-	}
-}
-
 static void print_function_args_json(PJ *pj, char *arg_type) {
 	char *arg_name = strchr (arg_type, ',');
 
@@ -1714,7 +1692,7 @@ static void list_types_json(RSignItem *it, PJ *pj) {
 }
 
 static void list_sign_list(RAnal *a, RList *l, PJ *pj, int fmt, int type, const char *name) {
-	const char *tname = sign_type_to_name (type);
+	const char *tname = r_sign_type_to_name (type);
 	switch (fmt) {
 	case '*':
 		a->cb_printf ("za %s %c ", name, type);
@@ -1819,6 +1797,9 @@ static int listCB(RSignItem *it, void *user) {
 		a->cb_printf ("%s:\n", it->name);
 	}
 
+	// TODO: listCollisions, listXRefs, listRefs... all just dump RList's of
+	// strings, replace them with something more abstract
+
 	// Bytes pattern
 	if (it->bytes) {
 		listBytes (a, it, ctx->pj, ctx->format);
@@ -1878,6 +1859,15 @@ static int listCB(RSignItem *it, void *user) {
 		pj_ka (ctx->pj, "types");
 		pj_end (ctx->pj);
 	}
+
+	// Collisions
+	if (it->collisions) {
+		list_sign_list (a, it->collisions, ctx->pj, ctx->format, R_SIGN_COLLISIONS, it->name);
+	} else if (ctx->format == 'j') {
+		pj_ka (ctx->pj, "collisions");
+		pj_end (ctx->pj);
+	}
+
 	// Hash
 	if (it->hash) {
 		listHash (a, it, ctx->pj, ctx->format);
@@ -1920,6 +1910,40 @@ R_API void r_sign_list(RAnal *a, int format) {
 static int listGetCB(RSignItem *it, void *user) {
 	r_list_append ((RList *)user, it);
 	return 1;
+}
+
+R_API const char *r_sign_type_to_name(int type) {
+	switch (type) {
+	case R_SIGN_BYTES:
+		return "bytes";
+	case R_SIGN_BYTES_MASK:
+		return "mask";
+	case R_SIGN_BYTES_SIZE:
+		return "size";
+	case R_SIGN_COMMENT:
+		return "comment";
+	case R_SIGN_GRAPH:
+		return "graph";
+	case R_SIGN_OFFSET:
+		return "addr";
+	case R_SIGN_NAME:
+		return "name";
+	case R_SIGN_REFS:
+		return "refs";
+	case R_SIGN_XREFS:
+		return "xrefs";
+	case R_SIGN_VARS:
+		return "vars";
+	case R_SIGN_TYPES:
+		return "types";
+	case R_SIGN_COLLISIONS:
+		return "collisions";
+	case R_SIGN_BBHASH:
+		return "bbhash";
+	default:
+		r_warn_if_reached ();
+		return "UnkownType";
+	}
 }
 
 static int cmpaddr(const void *_a, const void *_b) {
@@ -2176,26 +2200,87 @@ static int matchCount(int a, int b) {
 	return R_ABS (c) < m;
 }
 
-static bool graph_match(RSignGraph *a, RSignGraph *b) {
+static int sig_graph_match(RSignItem *ia, RSignItem *ib) {
+	RSignGraph *a = ia->graph;
+	RSignGraph *b = ib->graph;
 	if (!a || !b) {
-		return false;
+		return 1;
 	}
 	if (a->cc != -1 && a->cc != b->cc) {
-		return false;
+		return 1;
 	}
 	if (a->nbbs != -1 && a->nbbs != b->nbbs) {
-		return false;
+		return 1;
 	}
 	if (a->edges != -1 && a->edges != b->edges) {
-		return false;
+		return 1;
 	}
 	if (a->ebbs != -1 && a->ebbs != b->ebbs) {
-		return false;
+		return 1;
 	}
 	if (a->bbsum > 0 && matchCount (a->bbsum, b->bbsum)) {
-		return false;
+		return 1;
 	}
-	return true;
+	return 0;
+}
+
+#define SORT_EMPY_LAST(x, y) \
+	if (!x) { \
+		return !y? 1: 0; \
+	} \
+	if (!y) { \
+		return -1; \
+	}
+
+static int sig_graph_cmp(RSignItem *ia, RSignItem *ib) {
+	RSignGraph *a = ia->graph;
+	RSignGraph *b = ib->graph;
+
+	SORT_EMPY_LAST (a, b);
+
+	int diff = a->bbsum - b->bbsum;
+	if (diff) {
+		return diff;
+	}
+
+	diff = a->cc - b->cc;
+	if (diff) {
+		return diff;
+	}
+
+	diff = a->nbbs - b->nbbs;
+	if (diff) {
+		return diff;
+	}
+
+	diff = a->edges - b->edges;
+	if (diff) {
+		return diff;
+	}
+
+	diff = a->ebbs - b->ebbs;
+	if (diff) {
+		return diff;
+	}
+	return 0;
+}
+
+static int sig_bytes_cmp(RSignItem *ia, RSignItem *ib) {
+	RSignBytes *a = ia->bytes;
+	RSignBytes *b = ib->bytes;
+	SORT_EMPY_LAST (a, b);
+	int i = a->size - b->size;
+	if (i) {
+		return i;
+	}
+	for (i = 0; i < a->size; i++) {
+		int cmp = a->bytes[i] & a->mask[i];
+		cmp -= b->bytes[i] & b->mask[i];
+		if (cmp) {
+			return cmp;
+		}
+	}
+	return 0;
 }
 
 static int sig_addr_cmp(ut64 a, ut64 b) {
@@ -2254,7 +2339,7 @@ static int match_metrics(RSignItem *it, void *user) {
 	int count = 0;
 
 	// only matching alg that is not a cmp, but true/false
-	if (graph_match (it->graph, fit->graph)) {
+	if (!sig_graph_match (it, fit)) {
 		types[count++] = R_SIGN_GRAPH;
 	}
 	if (fit->addr != UT64_MAX && !sig_addr_cmp (it->addr, fit->addr)) {
@@ -2279,6 +2364,181 @@ static int match_metrics(RSignItem *it, void *user) {
 		return 1;
 	}
 	return 0;
+}
+
+static int _sig_to_vec_cb(RSignItem *it, void *user) {
+	if (it->collisions) {
+		r_list_free (it->collisions);
+		it->collisions = NULL;
+	}
+	return r_pvector_push ((RPVector *)user, it)? 1: 0;
+}
+
+static bool item_addto_collisions(RSignItem *it, const char *add) {
+	r_return_val_if_fail (it, false);
+	if (!it->collisions) {
+		it->collisions = r_list_newf (free);
+		if (!it->collisions) {
+			return false;
+		}
+	}
+	RList *l = it->collisions;
+	if (r_list_find (l, (void *)add, (RListComparator)strcmp)) {
+		return true;
+	}
+	char *dup = strdup (add);
+	if (!dup) {
+		return false;
+	}
+	return r_list_append (l, dup)? true: false;
+}
+
+static bool update_collide(RPVector *sigs, int start, int end, int type) {
+	r_return_val_if_fail (start >= 0 && end > 0 && sigs, false);
+	int i, ii;
+	for (i = start; i <= end; i++) {
+		RSignItem *it = (RSignItem *)r_pvector_at (sigs, i);
+		if (!it) {
+			return false;
+		}
+		char *fmt = r_str_newf ("%s:%s", r_sign_type_to_name (type), it->name);
+		if (!fmt) {
+			return false;
+		}
+		for (ii = start; ii <= end; ii++) {
+			if (i != ii) {
+				RSignItem *itt = (RSignItem *)r_pvector_at (sigs, ii);
+				if (!item_addto_collisions (itt, fmt)) {
+					free (fmt);
+					return false;
+				}
+			}
+		}
+		free (fmt);
+	}
+	return true;
+}
+
+static bool item_has_type(RSignItem *it, RSignType t) {
+	switch (t) {
+	case R_SIGN_BYTES:
+	case R_SIGN_BYTES_MASK:
+	case R_SIGN_BYTES_SIZE:
+		return it->bytes? true: false;
+	case R_SIGN_COMMENT:
+		return it->comment? true: false;
+	case R_SIGN_GRAPH:
+		return it->graph? true: false;
+	case R_SIGN_OFFSET:
+		return it->addr != UT64_MAX? true: false;
+	case R_SIGN_NAME:
+		return it->realname? true: false;
+	case R_SIGN_REFS:
+		return it->refs? true: false;
+	case R_SIGN_XREFS:
+		return it->xrefs? true: false;
+	case R_SIGN_VARS:
+		return it->vars? true: false;
+	case R_SIGN_TYPES:
+		return it->types? true: false;
+	case R_SIGN_COLLISIONS:
+		return it->collisions? true: false;
+	case R_SIGN_BBHASH:
+		return (it->hash && it->hash->bbhash)? true: false;
+	default:
+		return false;
+	}
+}
+
+typedef int (*RSignSorter) (RSignItem *, RSignItem *);
+RSignSorter type_to_cmp(int type, bool exact) {
+	switch (type) {
+	case R_SIGN_GRAPH:
+		if (exact) {
+			return sig_graph_match;
+		}
+		return sig_graph_cmp;
+	case R_SIGN_BYTES:
+		return sig_bytes_cmp;
+	default:
+		return NULL;
+	}
+}
+
+static inline bool sign_collide_by(RPVector *sigs, RSignType type) {
+	RSignSorter cmp = type_to_cmp (type, false);
+	if (!cmp) {
+		return false;
+	}
+	r_pvector_sort (sigs, (RPVectorComparator)cmp);
+	// sorting and matching can be slightly different
+	cmp = type_to_cmp (type, true);
+
+	void **p;
+	int i, start, end;
+	RSignItem *old = NULL;
+	i = 0;
+	start = end = -1;
+	r_pvector_foreach (sigs, p) {
+		RSignItem *it = *p;
+		if (!item_has_type (it, type)) {
+			// sort algs should put NULL at bottom
+			break;
+		}
+		if (old) {
+			if (!cmp (old, it)) {
+				// signature collisions
+				if (start < 0) {
+					start = i - 1;
+					end = i;
+				} else {
+					end++;
+				}
+			} else if (start >= 0) {
+				// not a collision, but had a collision before
+				if (!update_collide (sigs, start, end, type)) {
+					return false;
+				}
+				start = end = -1;
+			}
+		}
+		old = it;
+		i++;
+	}
+	if (start >= 0 && !update_collide (sigs, start, end, type)) {
+		return false;
+	}
+	return true;
+}
+
+R_API bool r_sign_resolve_collisions(RAnal *a) {
+	r_return_val_if_fail (a, false);
+	RPVector *sigs = r_pvector_new ((RPVectorFree)r_sign_item_free);
+	if (!sigs) {
+		return NULL;
+	}
+
+	if (!r_sign_foreach_nofree (a, _sig_to_vec_cb, (void *)sigs)) {
+		r_pvector_free (sigs);
+		return false;
+	}
+	int i = 0;
+	RSignType types[] = { R_SIGN_BYTES, R_SIGN_GRAPH, R_SIGN_END };
+	for (i = 0; types[i] != R_SIGN_END; i++) {
+		sign_collide_by (sigs, types[i]);
+	}
+
+	// save updated signatures
+	void **p;
+	r_pvector_foreach (sigs, p) {
+		RSignItem *it = *p;
+		if (it->collisions) {
+			r_sign_add_item (a, it);
+		}
+	}
+
+	r_pvector_free (sigs);
+	return true;
 }
 
 R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm) {
@@ -2313,23 +2573,20 @@ R_API RSignItem *r_sign_item_new(void) {
 }
 
 R_API void r_sign_item_free(RSignItem *item) {
-	if (!item) {
-		return;
+	if (item) {
+		free (item->name);
+		r_sign_bytes_free (item->bytes);
+		r_sign_hash_free (item->hash);
+		r_sign_graph_free (item->graph);
+		free (item->comment);
+		free (item->realname);
+		r_list_free (item->refs);
+		r_list_free (item->vars);
+		r_list_free (item->xrefs);
+		r_list_free (item->types);
+		r_list_free (item->collisions);
+		free (item);
 	}
-	free (item->name);
-	r_sign_bytes_free (item->bytes);
-	if (item->hash) {
-		free (item->hash->bbhash);
-		free (item->hash);
-	}
-	r_sign_graph_free (item->graph);
-	free (item->comment);
-	free (item->realname);
-	r_list_free (item->refs);
-	r_list_free (item->vars);
-	r_list_free (item->xrefs);
-	r_list_free (item->types);
-	free (item);
 }
 
 R_API void r_sign_graph_free(RSignGraph *graph) {
@@ -2341,6 +2598,13 @@ R_API void r_sign_bytes_free(RSignBytes *bytes) {
 		free (bytes->bytes);
 		free (bytes->mask);
 		free (bytes);
+	}
+}
+
+R_API void r_sign_hash_free(RSignHash *hash) {
+	if (hash) {
+		free (hash->bbhash);
+		free (hash);
 	}
 }
 

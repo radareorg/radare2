@@ -412,6 +412,11 @@ out_case_fcn:
 			return retval;
 		}
 		break;
+	case 'c': // "zac"
+		r_cons_break_push (NULL, NULL);
+		r_sign_resolve_collisions (core->anal);
+		r_cons_break_pop ();
+		break;
 	case 'F':
 		{
 			RAnalFunction *fcni = NULL;
@@ -735,9 +740,9 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void 
 		}
 	}
 
+	// TODO: check collisions signature before upating
 	apply_name (ctx->core, fcn, it, ctx->rad);
 	apply_types (ctx->core, fcn, it);
-	// TODO(nibble): use one counter per metric zign instead of ctx->count
 	return 1;
 }
 
