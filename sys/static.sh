@@ -28,6 +28,12 @@ gmake --help >/dev/null 2>&1
 # find root
 cd "$(dirname "$PWD/$0")" ; cd ..
 
+musl-gcc --help > /dev/null 2>&1
+if [ $? = 0 ]; then
+	CFGARGS=--with-compiler=musl-gcc
+	export CC="musl-gcc"
+fi
+
 ccache --help > /dev/null 2>&1
 if [ $? = 0 ]; then
 	[ -z "${CC}" ] && CC=gcc
@@ -39,6 +45,8 @@ if [ -n "$1" ]; then
 else
 	PREFIX=/usr
 fi
+# CFGARGS=--disable-loadlibs
+CFGARGS=--without-openssl
 DOCFG=1
 if [ 1 = "${DOCFG}" ]; then
 	# build
@@ -48,12 +56,12 @@ if [ 1 = "${DOCFG}" ]; then
 	export CFLAGS="${CFLAGS} -fPIC"
 	cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
 	./configure-plugins || exit 1
-	#./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv --disable-loadlibs || exit 1
-	./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv || exit 1
+	./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv $CFGARGS || exit 1
 fi
 ${MAKE} -j 8 || exit 1
 BINS="rarun2 rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2 r2r"
 # shellcheck disable=SC2086
+export CFLAGS="-static ${CFLAGS}"
 for a in ${BINS} ; do
 (
 	cd binr/$a
