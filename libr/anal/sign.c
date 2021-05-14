@@ -2367,11 +2367,7 @@ static int match_metrics(RSignItem *it, void *user) {
 }
 
 static int _sig_to_vec_cb(RSignItem *it, void *user) {
-	if (r_pvector_push ((RPVector *)user, it)) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return r_pvector_push ((RPVector *)user, it)? 1: 0;
 }
 
 static bool item_addto_collisions(RSignItem *it, const char *add) {
@@ -2517,9 +2513,6 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 	if (!sigs) {
 		return NULL;
 	}
-
-	/* int count = r_sign_space_count_for (a, r_spaces_current (&a->zign_spaces)); */
-	/* r_pvector_reserve (sigs, count); */
 
 	if (!r_sign_foreach_nofree (a, _sig_to_vec_cb, (void *)sigs)) {
 		r_pvector_free (sigs);
