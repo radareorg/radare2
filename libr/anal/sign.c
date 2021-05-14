@@ -2367,6 +2367,11 @@ static int match_metrics(RSignItem *it, void *user) {
 }
 
 static int _sig_to_vec_cb(RSignItem *it, void *user) {
+	RSignItem *it = (RSignItem *)user;
+	if (it->collisions) {
+		r_list_free (it->collisions);
+		it->collisions = NULL;
+	}
 	return r_pvector_push ((RPVector *)user, it)? 1: 0;
 }
 
