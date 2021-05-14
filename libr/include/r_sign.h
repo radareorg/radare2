@@ -27,6 +27,7 @@ typedef enum {
 	R_SIGN_XREFS = 'x', // xrefs
 	R_SIGN_VARS = 'v', // variables
 	R_SIGN_TYPES = 't', // types
+	R_SIGN_COLLISIONS = 'C', // collisions
 	R_SIGN_BBHASH = 'h', // basic block hash
 	R_SIGN_END = '\x00', // used for sentenal value
 } RSignType;
@@ -62,6 +63,7 @@ typedef struct r_sign_item_t {
 	RList *xrefs;
 	RList *vars;
 	RList *types;
+	RList *collisions;
 	RSignHash *hash;
 } RSignItem;
 
@@ -70,10 +72,10 @@ typedef int (*RSignSearchCallback) (RSignItem *it, RSearchKeyword *kw, ut64 addr
 typedef int (*RSignMatchCallback) (RSignItem *it, RAnalFunction *fcn, RSignType *types, void *user);
 
 typedef struct r_sign_search_met {
-	/* types is an 0 terminated array of RSignTypes that are going to be
+	/* types is an R_SIGN_END terminated array of RSignTypes that are going to be
 	 * searched for. Valid types are: graph, offset, refs, bbhash, types, vars
 	 */
-	RSignType types[7];
+	RSignType types[8];
 	int mincc; // min complexity for graph search
 	RAnal *anal;
 	void *user; // user data for callback function
@@ -123,11 +125,13 @@ R_API RSignItem *r_sign_get_item(RAnal *a, const char *name);
 R_API bool r_sign_add_item(RAnal *a, RSignItem *it);
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);
+R_API const char *r_sign_type_to_name(int type);
 
 R_API RSignSearch *r_sign_search_new(void);
 R_API void r_sign_search_free(RSignSearch *ss);
 R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, int minsz, RSignSearchCallback cb, void *user);
 R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *buf, int len);
+R_API bool r_sign_resolve_collisions(RAnal *a);
 R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm);
 
 R_API bool r_sign_load(RAnal *a, const char *file);
@@ -139,6 +143,7 @@ R_API RSignItem *r_sign_item_new(void);
 R_API void r_sign_item_free(RSignItem *item);
 R_API void r_sign_graph_free(RSignGraph *graph);
 R_API void r_sign_bytes_free(RSignBytes *bytes);
+R_API void r_sign_hash_free(RSignHash *hash);
 
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn);
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn);
