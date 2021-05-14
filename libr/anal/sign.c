@@ -545,91 +545,94 @@ static RList *deserialize_sign_space(RAnal *a, RSpace *space) {
 	return ret;
 }
 
-static void mergeItem(RSignItem *dst, RSignItem *src) {
-	RListIter *iter = NULL;
-	char *ref, *var, *type;
+static inline bool merge_list (RList **dst, RList *src) {
+	if (!src) {
+		return true;
+	}
+	r_list_free (*dst);
+	if (!(*dst = r_list_newf (free))) {
+		return false;
+	}
+	RListIter *iter;
+	char *s, *dup;
+	r_list_foreach (src, iter, s) {
+		if (!(dup = strdup (s))) {
+			return false;
+		}
+		r_list_append (*dst, dup);
+	}
+	return true;
+}
 
+static bool mergeItem(RSignItem *dst, RSignItem *src) {
+	dst->space = src->space;
 	if (src->bytes) {
-		r_sign_bytes_free (dst->bytes);
-		dst->bytes = R_NEW0 (RSignBytes);
-		if (!dst->bytes) {
-			return;
+		// ensure we have a dst->bytes
+		if (!dst->bytes && !(dst->bytes = R_NEW0 (RSignBytes))) {
+			return false;
 		}
-		dst->space = src->space;
+		// ensure we have space in dst->bytes->[bytes|mask]
+		if (src->bytes->size > dst->bytes->size) {
+			free (dst->bytes->bytes);
+			free (dst->bytes->mask);
+			dst->bytes->bytes = R_NEWS (ut8, src->bytes->size);
+			dst->bytes->mask = R_NEWS (ut8, src->bytes->size);
+			if (!dst->bytes->bytes || !dst->bytes->mask) {
+				return false;
+			}
+		}
+		// do copy
 		dst->bytes->size = src->bytes->size;
-		dst->bytes->bytes = malloc (src->bytes->size);
-		if (!dst->bytes->bytes) {
-			r_sign_bytes_free (dst->bytes);
-			return;
-		}
 		memcpy (dst->bytes->bytes, src->bytes->bytes, src->bytes->size);
-		dst->bytes->mask = malloc (src->bytes->size);
-		if (!dst->bytes->mask) {
-			r_sign_bytes_free (dst->bytes);
-			return;
-		}
 		memcpy (dst->bytes->mask, src->bytes->mask, src->bytes->size);
 	}
 
 	if (src->graph) {
-		free (dst->graph);
-		dst->graph = R_NEW0 (RSignGraph);
-		if (!dst->graph) {
-			return;
+		if (!dst->graph && !(dst->graph = R_NEW0 (RSignGraph))) {
+			return false;
 		}
 		*dst->graph = *src->graph;
 	}
 
 	if (src->comment) {
-		dst->comment = strdup (src->comment);
+		free (dst->comment);
+		if (!(dst->comment = strdup (src->comment))) {
+			return false;
+		}
 	}
 
 	if (src->realname) {
-		dst->realname = strdup (src->realname);
+		free (dst->realname);
+		if (!(dst->realname = strdup (src->realname))) {
+			return false;
+		}
 	}
 
 	if (src->addr != UT64_MAX) {
 		dst->addr = src->addr;
 	}
 
-	if (src->refs) {
-		r_list_free (dst->refs);
-
-		dst->refs = r_list_newf ((RListFree)free);
-		r_list_foreach (src->refs, iter, ref) {
-			r_list_append (dst->refs, r_str_new (ref));
-		}
+	if (!merge_list (&dst->refs, src->refs)) {
+		return false;
+	}
+	if (!merge_list (&dst->xrefs, src->xrefs)) {
+		return false;
+	}
+	if (!merge_list (&dst->vars, src->vars)) {
+		return false;
+	}
+	if (!merge_list (&dst->types, src->types)) {
+		return false;
 	}
 
-	if (src->vars) {
-		r_list_free (dst->vars);
-
-		dst->vars = r_list_newf ((RListFree)free);
-		r_list_foreach (src->vars, iter, var) {
-			r_list_append (dst->vars, r_str_new (var));
+	if (src->hash && src->hash->bbhash) {
+		if (!dst->hash && !(dst->hash = R_NEW0 (RSignHash))) {
+			return false;
 		}
+		free (dst->hash->bbhash);
+		dst->hash->bbhash = strdup (src->hash->bbhash);
 	}
-
-	if (src->types) {
-		r_list_free (dst->types);
-
-		dst->types = r_list_newf ((RListFree)free);
-		r_list_foreach (src->types, iter, type) {
-			r_list_append (dst->types, r_str_new (type));
-		}
-	}
-
-	if (src->hash) {
-		if (!dst->hash) {
-			dst->hash = R_NEW0 (RSignHash);
-			if (!dst->hash) {
-				return;
-			}
-		}
-		if (src->hash->bbhash) {
-			dst->hash->bbhash = strdup (src->hash->bbhash);
-		}
-	}
+	return true;
 }
 
 static RSignItem *sign_get_sdb_item(RAnal *a, const char *key) {
@@ -676,9 +679,10 @@ R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
 
 	bool retval = false;
 	if (current) {
-		mergeItem (current, it);
-		retval = r_sign_set_item (a->sdb_zigns, current, key);
-		r_sign_item_free (current);
+		if (mergeItem (current, it)) {
+			retval = r_sign_set_item (a->sdb_zigns, current, key);
+			r_sign_item_free (current);
+		}
 	} else {
 		retval = r_sign_set_item (a->sdb_zigns, it, key);
 	}

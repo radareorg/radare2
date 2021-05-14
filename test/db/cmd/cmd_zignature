@@ -1830,3 +1830,38 @@ Fnc Bytes 0x001f   48
 Sig Bytes 0x001f  ^45
 EOF
 RUN
+
+NAME=verify za overwrites old
+FILE=-
+CMDS=<<EOF
+za main b 11111111111111111111111111111111
+za main n sym.name1
+za main g cc=1 nbbs=1 edges=1 ebbs=1 bbsum=1
+za main o 0x11111111
+za main r ref1
+za main x xref1
+za main h 1111111111111111111111111111111111111111111111111111111111111111
+za main v var1
+za main b 22222222222222222222222222222222
+za main n sym.name2
+za main g cc=2 nbbs=2 edges=2 ebbs=2 bbsum=2
+za main o 0x22222222
+za main r ref2
+za main x xref2
+za main h 2222222222222222222222222222222222222222222222222222222222222222
+za main v var2
+z
+EOF
+EXPECT=<<EOF
+main:
+  bytes: 22222222222222222222222222222222
+  mask: ffffffffffffffffffffffffffffffff
+  graph: cc=2 nbbs=2 edges=2 ebbs=2 bbsum=2
+  addr: 0x22222222
+  realname: sym.name2
+  refs: ref2
+  xrefs: xref2
+  vars: var2
+  bbhash: 2222222222222222222222222222222222222222222222222222222222222222
+EOF
+RUN
