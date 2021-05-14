@@ -2393,9 +2393,9 @@ static bool item_addto_collisions(RSignItem *it, const char *add) {
 	return r_list_append (l, dup)? true: false;
 }
 
-static bool update_collide(RPVector *sigs, ssize_t start, ssize_t end, int type) {
+static bool update_collide(RPVector *sigs, int start, int end, int type) {
 	r_return_val_if_fail (start >= 0 && end > 0 && sigs, false);
-	ssize_t i, ii;
+	int i, ii;
 	for (i = start; i <= end; i++) {
 		RSignItem *it = (RSignItem *)r_pvector_at (sigs, i);
 		if (!it) {
@@ -2475,7 +2475,7 @@ static inline bool sign_collide_by(RPVector *sigs, RSignType type) {
 	cmp = type_to_cmp (type, true);
 
 	void **p;
-	ssize_t i, start, end;
+	int i, start, end;
 	RSignItem *old = NULL;
 	i = 0;
 	start = end = -1;
