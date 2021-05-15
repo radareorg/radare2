@@ -1884,7 +1884,7 @@ z*~sym.collide1 C
 z*~sym.collide2 C
 EOF
 EXPECT=<<EOF
-za sym.collide1 C bytes:sym.collide2 graph:sym.collide5 graph:sym.collide3 graph:sym.collide4 graph:sym.collide2
-za sym.collide2 C bytes:sym.collide1 graph:sym.collide5 graph:sym.collide3 graph:sym.collide1 graph:sym.collide4
+za sym.collide1 C bytes:sym.collide2 graph:sym.collide2 graph:sym.collide3 graph:sym.collide4 graph:sym.collide5
+za sym.collide2 C bytes:sym.collide1 graph:sym.collide1 graph:sym.collide3 graph:sym.collide4 graph:sym.collide5
 EOF
 RUN
