@@ -2533,6 +2533,7 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 	r_pvector_foreach (sigs, p) {
 		RSignItem *it = *p;
 		if (it->collisions) {
+			r_list_sort (it->collisions, (RListComparator)strcmp);
 			r_sign_add_item (a, it);
 		}
 	}
