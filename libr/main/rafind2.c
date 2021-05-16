@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,8 +14,10 @@
 
 
 typedef struct {
+	RIO *io;
 	bool showstr;
 	bool rad;
+	bool color;
 	bool identify;
 	bool quiet;
 	bool hexstr;
@@ -54,17 +56,21 @@ static int rafind_open(RafindOptions *ro, const char *file);
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RafindOptions *ro = (RafindOptions*)user;
+	ut8 *buf = ro->buf;
 	int delta = addr - ro->cur;
 	if (ro->cur > addr && (ro->cur - addr == kw->keyword_length - 1)) {
 		// This case occurs when there is hit in search left over
 		delta = ro->cur - addr;
 	}
-	if (delta < 0) {
-		delta = 0;
-	}
-	if (delta >= ro->bsize) {
+	if (delta > 0 && delta >= ro->bsize) {
 		eprintf ("Invalid delta %d from 0x%08"PFMT64x"\n", delta, addr);
 		return 0;
+	}
+	if (delta < 0) {
+		// rollback the buffer and reset the delta
+		buf = calloc (1, ro->bsize * 2);
+		r_io_pread_at (ro->io, addr, buf, ro->bsize * 2);
+		delta = 0;
 	}
 	char _str[128];
 	char *str = _str;
@@ -73,8 +79,8 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		if (ro->widestr) {
 			str = _str;
 			int i, j = 0;
-			for (i = delta; ro->buf[i] && i < sizeof (_str) - 1; i++) {
-				char ch = ro->buf[i];
+			for (i = delta; buf[i] && i < sizeof (_str) - 1; i++) {
+				char ch = buf[i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
 				}
@@ -88,7 +94,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 					j += 3;
 					break;
 				}
-				if (ro->buf[i]) {
+				if (buf[i]) {
 					break;
 				}
 			}
@@ -96,7 +102,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		} else {
 			size_t i;
 			for (i = 0; i < sizeof (_str) - 1; i++) {
-				char ch = ro->buf[delta + i];
+				char ch = buf[delta + i];
 				if (ch == '"' || ch == '\\') {
 					ch = '\'';
 				}
@@ -110,7 +116,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	} else {
 		size_t i;
 		for (i = 0; i < sizeof (_str) - 1; i++) {
-			char ch = ro->buf[delta + i];
+			char ch = buf[delta + i];
 			if (ch == '"' || ch == '\\') {
 				ch = '\'';
 			}
@@ -139,10 +145,13 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		} else {
 			printf ("0x%"PFMT64x"\n", addr);
 			if (ro->pr) {
-				r_print_hexdump (ro->pr, addr, (ut8*)ro->buf + delta, 78, 16, 1, 1);
+				r_print_hexdump (ro->pr, addr, (ut8*)buf + delta, 78, 16, 1, 1);
 				r_cons_flush ();
 			}
 		}
+	}
+	if (buf != ro->buf) {
+		free (buf);
 	}
 	return 1;
 }
@@ -201,6 +210,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		free (efile);
 		return 1;
 	}
+	ro->io = io;
 
 	if (!r_io_open_nomap (io, file, R_PERM_R, 0)) {
 		eprintf ("Cannot open file '%s'\n", file);
@@ -357,7 +367,6 @@ static int rafind_open(RafindOptions *ro, const char *file) {
 		: rafind_open_file (ro, file, NULL, -1);
 }
 
-
 R_API int r_main_rafind2(int argc, const char **argv) {
 	RafindOptions ro;
 	rafind_options_init (&ro);
@@ -486,7 +495,6 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	}
 	for (; opt.ind < argc; opt.ind++) {
 		file = argv[opt.ind];
-
 		if (file && !*file) {
 			eprintf ("Cannot open empty path\n");
 			return 1;
