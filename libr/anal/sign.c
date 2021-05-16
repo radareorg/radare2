@@ -2401,7 +2401,7 @@ static bool update_collide(RPVector *sigs, int start, int end, int type) {
 		if (!it) {
 			return false;
 		}
-		char *fmt = r_str_newf ("%s:%s", r_sign_type_to_name (type), it->name);
+		char *fmt = r_str_newf ("%c:%s", type, it->name);
 		if (!fmt) {
 			return false;
 		}
