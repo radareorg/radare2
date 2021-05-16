@@ -438,7 +438,8 @@ static const char *help_msg_ds[] = {
 static const char *help_msg_dsu[] = {
 	"Usage: dsu", "", "Step until commands",
 	"dsu", " <address>", "Step until <address>",
-	"dsui", "[r] <instr>", "Step until an instruction that matches <instr>, use dsuir for regex match",
+	"dsui", " <instr>", "Step until an instruction disasm matches",
+	"dsuir", " <regex>", "like dsui, but using a regexp",
 	"dsuo", " <optype> [<optype> ...]", "Step until an instr matches one of the <optype>s.",
 	"dsue", " <esil>", "Step until <esil> expression matches",
 	"dsuf", " <flag>", "Step until pc == <flag> matching name",
@@ -4641,8 +4642,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 		case 'i': // dsui
 			if (input[3] == 'r') {
 				step_until_inst (core, input + 4, true);
-			}
-			else {
+			} else {
 				step_until_inst (core, input + 3, false);
 			}
 			break;
