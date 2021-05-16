@@ -57,7 +57,7 @@ NAME=rafind2 -r -X -s
 FILE=-
 CMDS=!rafind2 -r -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-f hit0_0 0x0000058f ; bins/elf/ioli/crackme0x00
+f hit0_0 = 0x0000058f # bins/elf/ioli/crackme0x00
 EOF
 RUN
 
@@ -65,7 +65,7 @@ NAME=rafind2 -f 0x00000000 -t 0x00000590 -r -X -s
 FILE=-
 CMDS=!rafind2 -f 0x00000000 -t 0x00001000 -r -X -s 250382 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-f hit0_0 0x0000058f ; bins/elf/ioli/crackme0x00
+f hit0_0 = 0x0000058f # bins/elf/ioli/crackme0x00
 EOF
 RUN
 
@@ -80,7 +80,7 @@ NAME=rafind2 -r -X -x
 FILE=-
 CMDS=!rafind2 -r -X -x 323530333832 bins/elf/ioli/crackme0x00
 EXPECT=<<EOF
-f hit0_0 0x0000058f ; bins/elf/ioli/crackme0x00
+f hit0_0 = 0x0000058f # bins/elf/ioli/crackme0x00
 EOF
 RUN
 
@@ -88,7 +88,7 @@ NAME=rafind2 -r -X -x with nibbles masked
 FILE=-
 CMDS=!rafind2 -r -X -x caf.bab. bins/java/Hello.class
 EXPECT=<<EOF
-f hit0_0 0x00000000 ; bins/java/Hello.class
+f hit0_0 = 0x00000000 # bins/java/Hello.class
 EOF
 RUN
 
@@ -96,7 +96,7 @@ NAME=rafind2 -r -X -x with bin mask
 FILE=-
 CMDS=!rafind2 -r -X -x caf3bab3 -M fff0fff0 bins/java/Hello.class
 EXPECT=<<EOF
-f hit0_0 0x00000000 ; bins/java/Hello.class
+f hit0_0 = 0x00000000 # bins/java/Hello.class
 EOF
 RUN
 
