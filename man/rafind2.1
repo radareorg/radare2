@@ -1,11 +1,11 @@
-.Dd Jun 24, 2020
+.Dd Jun 24, 2021
 .Dt RAFIND2 1
 .Sh NAME
 .Nm rafind2
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
 .Nm rafind2
-.Op Fl ijzZXnrhqv
+.Op Fl cijzZXnrhqv
 .Op Fl b Ar size
 .Op Fl f Ar from
 .Op Fl F Ar file
@@ -18,6 +18,8 @@ rafind2 is a program to find byte patterns into files
 .Pp
 The options are:
 .Bl -tag -width Fl
+.It Fl c
+Disable colorful output (for -X and such)
 .It Fl z
 Search for zero-terminated strings
 .It Fl j

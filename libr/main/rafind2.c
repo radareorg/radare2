@@ -135,7 +135,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		pj_ks (ro->pj, "data", str);
 		pj_end (ro->pj);
 	} else if (ro->rad) {
-		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, ro->curfile);
+		printf ("f hit%d_%d = 0x%08"PFMT64x" # %s\n", 0, kw->count, addr, ro->curfile);
 	} else {
 		if (!ro->quiet) {
 			printf ("%s: ", ro->curfile);
@@ -164,6 +164,7 @@ static int show_help(const char *argv0, int line) {
 	printf (
 	" -a [align] only accept aligned hits\n"
 	" -b [size]  set block size\n"
+	" -c         enable colourful output (mainly for for -X)\n"
 	" -e [regex] search for regex matches (can be used multiple times)\n"
 	" -f [from]  start searching from address 'from'\n"
 	" -F [file]  read the contents of the file and use it as keyword\n"
@@ -174,10 +175,10 @@ static int show_help(const char *argv0, int line) {
 	" -M [str]   set a binary mask to be applied on keywords\n"
 	" -n         do not stop on read errors\n"
 	" -r         print using radare commands\n"
-	" -s [str]   search for a specific string (can be used multiple times)\n"
-	" -S [str]   search for a specific wide string (can be used multiple times). Assumes str is UTF-8.\n"
+	" -s [str]   search for a string (more than one string can be passed)\n"
+	" -S [str]   search for a wide string (more than one string can be passed).\n"
 	" -t [to]    stop search at address 'to'\n"
-	" -q         quiet - do not show headings (filenames) above matching contents (default for searching a single file)\n"
+	" -q         quiet: fewer output do not show headings or filenames.\n"
 	" -v         print version and exit\n"
 	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
 	" -X         show hexdump of search results\n"
@@ -255,11 +256,13 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		/* TODO: implement using api */
 		char *tostr = (to && to != UT64_MAX)?  r_str_newf ("-e search.to=%"PFMT64d, to): strdup ("");
 		r_sys_cmdf ("r2"
+			    " -e scr.color=%s"
 			    " -e search.in=range"
 			    " -e search.align=%d"
 			    " -e search.from=%" PFMT64d
 			    " %s -qnc/m%s \"%s\"",
-			ro->align, ro->from, tostr, ro->json? "j": "", efile);
+			    r_str_bool (ro->color),
+			    ro->align, ro->from, tostr, ro->json? "j": "", efile);
 		free (tostr);
 		goto done;
 	}
@@ -375,11 +378,14 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	const char *file = NULL;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:ie:b:jmM:s:S:x:Xzf:F:t:E:rqnhvZ");
+	r_getopt_init (&opt, argc, argv, "a:ie:b:cjmM:s:S:x:Xzf:F:t:E:rqnhvZ");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
 			ro.align = r_num_math (NULL, opt.arg);
+			break;
+		case 'c':
+			ro.color = true;
 			break;
 		case 'r':
 			ro.rad = true;
@@ -479,6 +485,13 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			break;
 		default:
 			return show_help (argv[0], 1);
+		}
+	}
+	if (ro.pr) {
+		if (ro.color) {
+			ro.pr->flags |= R_PRINT_FLAGS_COLOR;
+		} else {
+			ro.pr->flags &= ~R_PRINT_FLAGS_COLOR;
 		}
 	}
 	if (opt.ind == argc) {
