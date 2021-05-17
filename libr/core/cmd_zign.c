@@ -608,6 +608,7 @@ struct ctxSearchCB {
 	RCore *core;
 	bool bytes_only;
 	bool rad;
+	int newfuncs;
 	int count;
 	int bytes_count;
 	int graph_count;
@@ -689,10 +690,17 @@ static int searchBytesHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	apply_flag (ctx->core, it, addr, kw->keyword_length, kw->count, "bytes", ctx->rad);
 	RAnalFunction *fcn = r_anal_get_fcn_in (ctx->core->anal, addr, 0);
-	// TODO: create fcn if it does not exist
-	if (ctx->bytes_only && fcn) {
-		apply_name (ctx->core, fcn, it, ctx->rad);
-		apply_types (ctx->core, fcn, it);
+	if (!fcn) {
+		RCore *c = ctx->core;
+		r_core_af (c, c->offset, NULL, false);
+		fcn = r_anal_get_fcn_in (ctx->core->anal, addr, 0);
+		ctx->newfuncs++;
+	}
+	if (ctx->bytes_only) {
+		if (fcn) {
+			apply_name (ctx->core, fcn, it, ctx->rad);
+			apply_types (ctx->core, fcn, it);
+		}
 		ctx->bytes_count++;
 		ctx->count++;
 	}
@@ -821,6 +829,9 @@ static bool fill_search_metrics(RSignSearchMetrics *sm, RCore *c, void *user) {
 
 static void print_ctx_hits(struct ctxSearchCB *ctx) {
 	int prints = 0;
+	if (ctx->newfuncs) {
+		eprintf ("New functions:  %d\n", ctx->newfuncs);
+	}
 	if (ctx->bytes_count) {
 		eprintf ("bytes:  %d\n", ctx->bytes_count);
 		prints++;

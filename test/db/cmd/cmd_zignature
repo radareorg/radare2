@@ -337,7 +337,7 @@ z/
 f~?
 e search.align=1
 z/
-f~?
+f~sign?
 EOF
 EXPECT=<<EOF
 0
@@ -387,7 +387,7 @@ za foo b 11223344
 e zign.minsz = 0
 fs *
 z/
-f~?
+f~sign?
 f-*
 e zign.minsz = 5
 z/
