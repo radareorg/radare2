@@ -38,8 +38,9 @@ static const char *help_msg_zb[] = {
 };
 
 static const char *help_msg_z_slash[] = {
-	"Usage:", "z/[*] ", "# Search signatures (see 'e?search' for options)",
+	"Usage:", "z/[f*] ", "# Search signatures (see 'e?search' for options)",
 	"z/ ", "", "search zignatures on range and flag matches",
+	"z/f ", "", "zignature search on known functions",
 	"z/* ", "", "search zignatures on range and output radare commands",
 	NULL
 };
@@ -605,6 +606,7 @@ static int cmdFlirt(void *data, const char *input) {
 
 struct ctxSearchCB {
 	RCore *core;
+	bool bytes_only;
 	bool rad;
 	int count;
 	int bytes_count;
@@ -688,12 +690,12 @@ static int searchBytesHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *
 	apply_flag (ctx->core, it, addr, kw->keyword_length, kw->count, "bytes", ctx->rad);
 	RAnalFunction *fcn = r_anal_get_fcn_in (ctx->core->anal, addr, 0);
 	// TODO: create fcn if it does not exist
-	if (fcn) {
+	if (ctx->bytes_only && fcn) {
 		apply_name (ctx->core, fcn, it, ctx->rad);
 		apply_types (ctx->core, fcn, it);
+		ctx->bytes_count++;
+		ctx->count++;
 	}
-	ctx->bytes_count++;
-	ctx->count++;
 	return 1;
 }
 
@@ -785,39 +787,6 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 	return retval;
 }
 
-static bool searchRange2(RCore *core, RSignSearch *ss, ut64 from, ut64 to, bool rad, struct ctxSearchCB *ctx) {
-	ut8 *buf = malloc (core->blocksize);
-	ut64 at;
-	int rlen;
-	bool retval = true;
-
-	if (!buf) {
-		return false;
-	}
-	r_cons_break_push (NULL, NULL);
-	for (at = from; at < to; at += core->blocksize) {
-		if (r_cons_is_breaked ()) {
-			retval = false;
-			break;
-		}
-		rlen = R_MIN (core->blocksize, to - at);
-		if (!r_io_is_valid_offset (core->io, at, 0)) {
-			retval = false;
-			break;
-		}
-		(void)r_io_read_at (core->io, at, buf, rlen);
-		if (r_sign_search_update (core->anal, ss, &at, buf, rlen) == -1) {
-			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
-			retval = false;
-			break;
-		}
-	}
-	r_cons_break_pop ();
-	free (buf);
-
-	return retval;
-}
-
 static void search_add_to_types(RCore *c, RSignSearchMetrics *sm, RSignType t, const char *str, unsigned int *i) {
 	unsigned int count = *i;
 	r_return_if_fail (count < sizeof (sm->types) / sizeof (RSignType) - 1);
@@ -830,6 +799,8 @@ static void search_add_to_types(RCore *c, RSignSearchMetrics *sm, RSignType t, c
 
 static bool fill_search_metrics(RSignSearchMetrics *sm, RCore *c, void *user) {
 	unsigned int i = 0;
+	sm->types[0] = R_SIGN_END;
+	search_add_to_types (c, sm, R_SIGN_BYTES, "zign.bytes", &i);
 	search_add_to_types (c, sm, R_SIGN_GRAPH, "zign.graph", &i);
 	search_add_to_types (c, sm, R_SIGN_OFFSET, "zign.offset", &i);
 	search_add_to_types (c, sm, R_SIGN_REFS, "zign.refs", &i);
@@ -840,6 +811,7 @@ static bool fill_search_metrics(RSignSearchMetrics *sm, RCore *c, void *user) {
 	search_add_to_types(c, sm, R_SIGN_VARS, "zign.vars", &i);
 #endif
 	sm->mincc = r_config_get_i (c->config, "zign.mincc");
+	sm->minsz = r_config_get_i (c->config, "zign.minsz");
 	sm->anal = c->anal;
 	sm->cb = fcnMatchCB;
 	sm->user = user;
@@ -879,24 +851,7 @@ static void print_ctx_hits(struct ctxSearchCB *ctx) {
 }
 
 static bool search(RCore *core, bool rad, bool only_func) {
-	RList *list;
-	RListIter *iter;
-	RAnalFunction *fcni = NULL;
-	RIOMap *map;
-	bool retval = true;
-
-	struct ctxSearchCB ctx;
-	memset (&ctx, 0, sizeof (struct ctxSearchCB));
-	ctx.rad = rad;
-	ctx.core = core;
-	const char *mode = r_config_get (core->config, "search.in");
-	bool useBytes = r_config_get_i (core->config, "zign.bytes");
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
-	int maxsz = r_config_get_i (core->config, "zign.maxsz");
-
-	RSignSearchMetrics sm;
-	bool metsearch = fill_search_metrics (&sm, core, (void *)&ctx);
-
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
 	} else {
@@ -906,52 +861,50 @@ static bool search(RCore *core, bool rad, bool only_func) {
 		}
 	}
 
+	struct ctxSearchCB ctx;
+	memset (&ctx, 0, sizeof (struct ctxSearchCB));
+	ctx.rad = rad;
+	ctx.core = core;
+
+	RSignSearchMetrics sm;
+	bool metsearch = fill_search_metrics (&sm, core, (void *)&ctx);
+	if (!metsearch) {
+		eprintf ("No zign types enabled\n");
+		return false;
+	}
+	if (sm.types[0] == R_SIGN_BYTES && sm.types[1] == R_SIGN_END) {
+		ctx.bytes_only = true;
+	}
+
 	// Bytes search
-	if (useBytes && !only_func) {
-		list = r_core_get_boundaries_prot (core, -1, mode, "search");
+	RListIter *iter;
+	if (r_config_get_i (core->config, "zign.bytes") && !only_func) {
+		const char *mode = r_config_get (core->config, "search.in");
+		RList *list = r_core_get_boundaries_prot (core, -1, mode, "search");
 		if (!list) {
 			return false;
 		}
+		RIOMap *map;
 		r_list_foreach (list, iter, map) {
 			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
-			retval &= searchRange (core, r_io_map_begin (map), r_io_map_end (map), rad, &ctx);
+			searchRange (core, r_io_map_begin (map), r_io_map_end (map), rad, &ctx);
 		}
 		r_list_free (list);
 	}
 
 	// Function search
-	if (metsearch) {
+	if (!ctx.bytes_only) {
 		eprintf ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
-		int count = 0;
-
-		RSignSearch *ss = NULL;
-
-		if (useBytes && only_func) {
-			ss = r_sign_search_new ();
-			ss->search->align = r_config_get_i (core->config, "search.align");
-			int minsz = r_config_get_i (core->config, "zign.minsz");
-			r_sign_search_init (core->anal, ss, minsz, searchBytesHitCB, &ctx);
-		}
-
+		RAnalFunction *fcni = NULL;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			if (useBytes && only_func) {
-				eprintf ("Matching func %d / %d (hits %d)\n", count, r_list_length (core->anal->fcns), ctx.count);
-				int fcnlen = r_anal_function_realsize (fcni);
-				int len = R_MIN (core->io->addrbytes * fcnlen, maxsz);
-				retval &= searchRange2 (core, ss, fcni->addr, fcni->addr + len, rad, &ctx);
-			}
 			sm.fcn = fcni;
 			r_sign_fcn_match_metrics (&sm);
-			sm.fcn = NULL;
-			count ++;
-			// TODO: add useXRefs, useName
 		}
 		r_cons_break_pop ();
-		r_sign_search_free (ss);
 	}
 
 	if (rad) {
@@ -964,7 +917,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	}
 
 	print_ctx_hits (&ctx);
-	return retval;
+	return ctx.count > 0? true: false;
 }
 
 static void print_possible_matches(RList *list) {
@@ -1394,26 +1347,19 @@ static int cmdCompare(void *data, const char *input) {
 
 static int cmdCheck(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	RSignSearch *ss;
-	RListIter *iter;
-	RAnalFunction *fcni = NULL;
-	ut64 at = core->offset;
-	bool retval = true;
-	bool rad = input[0] == '*';
-
 	struct ctxSearchCB ctx;
 	memset (&ctx, 0, sizeof (struct ctxSearchCB));
-	ctx.rad = rad;
+	ctx.rad = input[0] == '*';
 	ctx.core = core;
 
-	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
-	int minsz = r_config_get_i (core->config, "zign.minsz");
-	bool useBytes = r_config_get_i (core->config, "zign.bytes");
-
 	RSignSearchMetrics sm;
-	bool metsearch = fill_search_metrics (&sm, core, (void *)&ctx);
+	if (!fill_search_metrics (&sm, core, (void *)&ctx)) {
+		eprintf ("Nothing to search for\n");
+		return 0;
+	}
 
-	if (rad) {
+	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
+	if (ctx.rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
 	} else {
 		if (!r_flag_space_push (core->flags, zign_prefix)) {
@@ -1422,37 +1368,17 @@ static int cmdCheck(void *data, const char *input) {
 		}
 	}
 
-	// Bytes search
-	if (useBytes) {
-		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", at, at + core->blocksize);
-		ss = r_sign_search_new ();
-		r_sign_search_init (core->anal, ss, minsz, searchBytesHitCB, &ctx);
-		if (r_sign_search_update (core->anal, ss, &at, core->block, core->blocksize) == -1) {
-			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
-			retval = false;
-		}
-		r_sign_search_free (ss);
-	}
-
-	// Function search
-	int hits = 0;
-	if (metsearch) {
-		eprintf ("[+] searching function metrics\n");
+	eprintf ("[+] searching function metrics\n");
+	sm.fcn = r_anal_get_function_at (core->anal, core->offset);
+	if (sm.fcn) {
 		r_cons_break_push (NULL, NULL);
-		r_list_foreach (core->anal->fcns, iter, fcni) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			if (fcni->addr == core->offset) {
-				sm.fcn = fcni;
-				hits += r_sign_fcn_match_metrics (&sm);
-				break;
-			}
-		}
+		r_sign_fcn_match_metrics (&sm);
 		r_cons_break_pop ();
+	} else {
+		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
 	}
 
-	if (rad) {
+	if (ctx.rad) {
 		r_cons_printf ("fs-\n");
 	} else {
 		if (!r_flag_space_pop (core->flags)) {
@@ -1462,7 +1388,7 @@ static int cmdCheck(void *data, const char *input) {
 	}
 
 	print_ctx_hits (&ctx);
-	return retval;
+	return ctx.count;
 }
 
 static int cmdSearch(void *data, const char *input) {
@@ -1470,9 +1396,9 @@ static int cmdSearch(void *data, const char *input) {
 
 	switch (*input) {
 	case 0:
-	case '*':
+	case '*': // "z/*"
 		return search (core, input[0] == '*', false);
-	case 'f':
+	case 'f': // "z/f"
 		switch (input[1]) {
 		case 0:
 		case '*':
@@ -1485,7 +1411,7 @@ static int cmdSearch(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_z_slash);
 		break;
 	default:
-		eprintf ("Usage: z/[*]\n");
+		eprintf ("Usage: z/[f*]\n");
 		return false;
 	}
 	return true;

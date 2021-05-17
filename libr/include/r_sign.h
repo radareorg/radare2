@@ -77,6 +77,7 @@ typedef struct r_sign_search_met {
 	 */
 	RSignType types[8];
 	int mincc; // min complexity for graph search
+	int minsz;
 	RAnal *anal;
 	void *user; // user data for callback function
 	RSignMatchCallback cb;
