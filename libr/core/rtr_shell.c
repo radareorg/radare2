@@ -1,3 +1,5 @@
+/* radare - Copyright 2009-2021 - pancake */
+
 static bool rtr_visual(RCore *core, TextLog T, const char *cmd) {
 	bool autorefresh = false;
 	if (cmd) {
@@ -187,6 +189,11 @@ static void __rtr_shell(RCore *core, int nth) {
 	int len;
 	const char* res;
 	RSocket *s = NULL;
+
+	if (!r_config_get_b (core->config, "scr.interactive")) {
+		eprintf ("Set scr.interfactive to use the remote r2 shell.\n");
+		return;
+	}
 
 	TextLog T = { host, port, file };
 	snprintf (prompt, sizeof (prompt), "[%s://%s:%s/%s]> ",

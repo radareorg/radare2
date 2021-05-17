@@ -234,6 +234,21 @@ static const char *help_msg_equalh[] = {
 	NULL
 };
 
+static const char *help_msg_equal_equal[] = {
+	"Usage:", " ==[=] ", "# add connection to remote r2",
+	"==", "[fd]", "shell to send to the nth remote (see '=1 x' / '==1'",
+	"===", "event", "returns socket file or udp port to read events from",
+	NULL
+};
+
+static const char *help_msg_equal_more[] = {
+	"Usage:", " =+ [proto://][host]:[port](/[path])", " # add connection to remote r2",
+	"=+", "tcp://localhost:9090", "communicates with another instance running '& .:9090'",
+	"=+", "http://localhost:9090/cmd", "talks to remote r2 webserver '& =h'",
+	"=+", "rap://localhost:9090/cmd", "talks to remote r2 webserver 'r2 rap://:9090'",
+	NULL
+};
+
 static const char *help_msg_equalg[] = {
 	"Usage:", " =[g] [...]", " # gdb server",
 	"gdbserver:", "", "",
@@ -910,7 +925,11 @@ static int cmd_rap(void *data, const char *input) {
 		aliascmd (core, input + 1);
 		break;
 	case '+': // "=+"
-		r_core_rtr_add (core, input + 1);
+		if (input[1] && input[1] != '?') {
+			r_core_rtr_add (core, input + 1);
+		} else {
+			r_core_cmd_help (core, help_msg_equal_more);
+		}
 		break;
 	case '-': // "=-"
 		r_core_rtr_remove (core, input + 1);
@@ -920,7 +939,13 @@ static int cmd_rap(void *data, const char *input) {
 		r_core_rtr_pushout (core, input + 1);
 		break;
 	case '=': // "=="
-		r_core_rtr_session (core, input + 1);
+		if (input[1] == '=') { // ===
+			r_core_rtr_event (core, input + 2);
+		} else if (input[1] != '?') {
+			r_core_rtr_session (core, input + 1);
+		} else {
+			r_core_cmd_help (core, help_msg_equal_equal);
+		}
 		break;
 	case 'g': // "=g"
 		if (input[1] == '?') {
