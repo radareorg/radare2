@@ -855,7 +855,7 @@ static int bb_sort_by_addr(const void *x, const void *y) {
 	return 0;
 }
 
-static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
+static RSignBytes *r_sign_func_empty_mask(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn && fcn->bbs && fcn->bbs->head, false);
 
 	// get size
@@ -868,25 +868,26 @@ static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 
 	// alloc space for signature
 	RSignBytes *sig = R_NEW0 (RSignBytes);
-	if (!sig) {
-		goto bytes_failed;
+	if (sig) {
+		sig->bytes = malloc (size);
+		sig->mask = R_NEWS0 (ut8, size);
+		sig->size = size;
+		if (sig->bytes && sig->mask && a->iob.read_at (a->iob.io, ea, sig->bytes, size)) {
+			return sig;
+		}
 	}
-	if (!(sig->bytes = malloc (size))) {
-		goto bytes_failed;
-	}
-	if (!(sig->mask = malloc (size))) {
-		goto bytes_failed;
-	}
-	memset (sig->mask, 0, size);
-	sig->size = size;
+	r_sign_bytes_free (sig);
+	return NULL;
+}
 
-	// fill in bytes
-	if (!a->iob.read_at (a->iob.io, ea, sig->bytes, size)) {
-		eprintf ("error: failed to read at 0x%08" PFMT64x "\n", ea);
-		goto bytes_failed;
-	}
+static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
+	r_return_val_if_fail (a && fcn && fcn->bbs && fcn->bbs->head, false);
+	RSignBytes *sig = r_sign_func_empty_mask (a, fcn);
 
+	ut64 ea = fcn->addr;
+	int size = sig->size;
 	ut8 *tmpmask = NULL;
+	RAnalBlock *bb;
 	RListIter *iter;
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr >= ea) {
@@ -903,7 +904,8 @@ static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 
 			// get mask for block
 			if (!(tmpmask = r_anal_mask (a, rsize, sig->bytes + delta, ea))) {
-				goto bytes_failed;
+				r_sign_bytes_free (sig);
+				return NULL;
 			}
 			if (rsize > 0) {
 				memcpy (sig->mask + delta, tmpmask, rsize);
@@ -911,11 +913,7 @@ static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 			free (tmpmask);
 		}
 	}
-
 	return sig;
-bytes_failed:
-	r_sign_bytes_free (sig);
-	return NULL;
 }
 
 static RSignHash *r_sign_fcn_bbhash(RAnal *a, RAnalFunction *fcn) {
@@ -2200,7 +2198,7 @@ static int matchCount(int a, int b) {
 	return R_ABS (c) < m;
 }
 
-static int sig_graph_match(RSignItem *ia, RSignItem *ib) {
+static int sig_graph_diff(RSignItem *ia, RSignItem *ib) {
 	RSignGraph *a = ia->graph;
 	RSignGraph *b = ib->graph;
 	if (!a || !b) {
@@ -2261,6 +2259,26 @@ static int sig_graph_cmp(RSignItem *ia, RSignItem *ib) {
 	diff = a->ebbs - b->ebbs;
 	if (diff) {
 		return diff;
+	}
+	return 0;
+}
+
+// this is to compare a byte signature to a function, that math is slightly
+// different
+static int sig_bytes_diff(RSignItem *isig, RSignItem *ifunc) {
+	RSignBytes *sig = isig->bytes;
+	RSignBytes *func = ifunc->bytes;
+	r_return_val_if_fail (sig && func, 1);
+
+	if (sig->size != func->size) {
+		return 1;
+	}
+	int i;
+	for (i = 0; i < sig->size; i++) {
+		char m = sig->mask[i];
+		if (m && (sig->bytes[i] & m) != (func->bytes[i] & m)) {
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -2338,8 +2356,10 @@ static int match_metrics(RSignItem *it, void *user) {
 	RSignType types[7];
 	int count = 0;
 
-	// only matching alg that is not a cmp, but true/false
-	if (!sig_graph_match (it, fit)) {
+	if (it->bytes && it->bytes->size >= sm->minsz && !sig_bytes_diff (it, fit)) {
+		types[count++] = R_SIGN_BYTES;
+	}
+	if (it->graph && it->graph->cc >= sm->mincc && !sig_graph_diff (it, fit)) {
 		types[count++] = R_SIGN_GRAPH;
 	}
 	if (fit->addr != UT64_MAX && !sig_addr_cmp (it->addr, fit->addr)) {
@@ -2455,7 +2475,7 @@ RSignSorter type_to_cmp(int type, bool exact) {
 	switch (type) {
 	case R_SIGN_GRAPH:
 		if (exact) {
-			return sig_graph_match;
+			return sig_graph_diff;
 		}
 		return sig_graph_cmp;
 	case R_SIGN_BYTES:
@@ -2549,11 +2569,17 @@ R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm) {
 		return -1;
 	}
 
-	int i = 0;
-	RSignType t;
-	while ((t = sm->types[i++]) != R_SIGN_END) {
-		r_sign_addto_item (sm->anal, it, sm->fcn, t);
+	RSignType *t = sm->types;
+	while (*t != R_SIGN_END) {
+		if (*t == R_SIGN_BYTES) {
+			// no need for mask
+			it->bytes = r_sign_func_empty_mask (sm->anal, sm->fcn);
+		} else {
+			r_sign_addto_item (sm->anal, it, sm->fcn, *t);
+		}
+		t++;
 	}
+
 	if (it->graph && it->graph->cc < sm->mincc) {
 		r_sign_graph_free (it->graph);
 		it->graph = NULL;
