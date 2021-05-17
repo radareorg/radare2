@@ -900,6 +900,7 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 	}
 	if (!strcmp (input, "errmsg")) {
 		// TODO: support udp, tcp, rap, ...
+#if __UNIX__
 		char *f = r_file_temp ("errmsg");
 		r_cons_printf ("%s\n", f);
 		r_file_rm (f);
@@ -915,6 +916,9 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 		free (s);
 		free (f);
 		// TODO: those files are leaked when closing r_core_free() should be deleted
+#else
+		eprintf ("Not supported for your platform.\n");
+#endif
 	} else {
 		eprintf ("(%s)\n", input);
 		eprintf ("Event types: errmsg, stdin, stdout, stderr, #fdn\n");
