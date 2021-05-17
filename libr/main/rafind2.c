@@ -48,6 +48,7 @@ static void rafind_options_init(RafindOptions *ro) {
 	ro->mode = R_SEARCH_STRING;
 	ro->bsize = 4096;
 	ro->to = UT64_MAX;
+	ro->color = true;
 	ro->keywords = r_list_newf (NULL);
 	ro->pj = NULL;
 }
@@ -66,7 +67,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		eprintf ("Invalid delta %d from 0x%08"PFMT64x"\n", delta, addr);
 		return 0;
 	}
-	if (delta < 0) {
+	if (delta != 0) {
 		// rollback the buffer and reset the delta
 		buf = calloc (1, ro->bsize * 2);
 		r_io_pread_at (ro->io, addr, buf, ro->bsize * 2);
@@ -145,7 +146,8 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		} else {
 			printf ("0x%"PFMT64x"\n", addr);
 			if (ro->pr) {
-				r_print_hexdump (ro->pr, addr, (ut8*)buf + delta, 78, 16, 1, 1);
+				int bs = R_MIN (ro->bsize, 64);
+				r_print_hexdump (ro->pr, addr, (ut8*)buf + delta, bs, 16, 1, 1);
 				r_cons_flush ();
 			}
 		}
@@ -164,7 +166,7 @@ static int show_help(const char *argv0, int line) {
 	printf (
 	" -a [align] only accept aligned hits\n"
 	" -b [size]  set block size\n"
-	" -c         enable colourful output (mainly for for -X)\n"
+	" -c         disable colourful output (mainly for for -X)\n"
 	" -e [regex] search for regex matches (can be used multiple times)\n"
 	" -f [from]  start searching from address 'from'\n"
 	" -F [file]  read the contents of the file and use it as keyword\n"
@@ -385,7 +387,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			ro.align = r_num_math (NULL, opt.arg);
 			break;
 		case 'c':
-			ro.color = true;
+			ro.color = false;
 			break;
 		case 'r':
 			ro.rad = true;
