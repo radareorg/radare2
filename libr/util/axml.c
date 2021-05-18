@@ -306,7 +306,11 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size) {
 	RStrBuf *sb = NULL;
 	st32 depth = 0;
 
-	r_return_val_if_fail (data && data_size, NULL);
+	if (!data_size) {
+		return NULL;
+	}
+
+	r_return_val_if_fail(data, NULL);
 
 	RBuffer *buffer = r_buf_new_with_pointers (data, data_size, false);
 	if (!buffer) {
