@@ -59,6 +59,7 @@ r_bin_sources = [
   'p/bin_symbols.c',
   'p/bin_te.c',
   'p/bin_vsf.c',
+  'p/bin_wad.c',
   'p/bin_wasm.c',
   'p/bin_write_elf.c',
   'p/bin_write_elf64.c',
