@@ -60,7 +60,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_return_val_if_fail(bf, NULL);
+	r_return_val_if_fail (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
