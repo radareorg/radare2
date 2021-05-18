@@ -3126,15 +3126,15 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 	for (i = 1, ret_ctr = 0; i < nsym; i++) {
 		if (i >= capacity1) { // maybe grow
 			// You take what you want, but you eat what you take.
-			Elf_(Sym)* temp_sym = (Elf_(Sym)*) realloc (sym, (capacity1 * GROWTH_FACTOR) * sym_size);
+			Elf_(Sym)* temp_sym = (Elf_(Sym)*) realloc (sym, (size_t)(capacity1 * GROWTH_FACTOR) * sym_size);
 			if (!temp_sym) {
 				goto beach;
 			}
 			sym = temp_sym;
-			capacity1 *= GROWTH_FACTOR;
+			capacity1 = (size_t)(capacity1 * GROWTH_FACTOR);
 		}
 		if (ret_ctr >= capacity2) { // maybe grow
-			RBinElfSymbol *temp_ret = realloc (ret, capacity2 * GROWTH_FACTOR * sizeof (struct r_bin_elf_symbol_t));
+			RBinElfSymbol *temp_ret = realloc (ret, (size_t)(capacity2 * GROWTH_FACTOR) * sizeof (struct r_bin_elf_symbol_t));
 			if (!temp_ret) {
 				goto beach;
 			}
@@ -3223,7 +3223,7 @@ done:
 	// Size everything down to only what is used
 	{
 		nsym = i > 0? i: 1;
-		Elf_(Sym) *temp_sym = (Elf_(Sym) *)realloc (sym, (nsym * GROWTH_FACTOR) * sym_size);
+		Elf_(Sym) *temp_sym = (Elf_(Sym) *)realloc (sym, (size_t)(nsym * GROWTH_FACTOR) * sym_size);
 		if (!temp_sym) {
 			goto beach;
 		}

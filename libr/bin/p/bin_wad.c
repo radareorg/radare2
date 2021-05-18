@@ -18,7 +18,7 @@ static int wad_header_load(WadObj *wo, Sdb *kv) {
 	(void) r_buf_fread_at (wo->buf, 0, (ut8 *) hdr, "uuu", 1);
 	sdb_set (kv, "header.num_lumps", sdb_fmt ("%u", hdr->numlumps), 0);
 	sdb_set (kv, "header.diroffset", sdb_fmt ("0x%x", hdr->diroffset), 0);
-	ut32 numlumps = sdb_get (kv, "header.diroffset", 0);
+	ut32 numlumps = sdb_num_get (kv, "header.diroffset", 0);
 	eprintf("NumLumps: %x", numlumps);
 	return true;
 }
@@ -102,7 +102,7 @@ static RList *symbols(RBinFile *bf) {
 	while (i < wo->hdr.numlumps) {
 		memset (&dir, 0, sizeof (dir));
 		r_buf_read_at (bf->buf, wo->hdr.diroffset + (i * 16), (ut8*)&dir, sizeof (dir));
-		addsym (ret, strndup(dir.name, 8), dir.filepos, dir.size);
+		addsym (ret, r_str_ndup (dir.name, 8), dir.filepos, dir.size);
 		i++;
 	}
 	return ret;
@@ -118,7 +118,6 @@ static void wad_header_fields(RBinFile *bf) {
 }
 
 static RList *wad_fields(RBinFile *bf) {
-	RBuffer *buf = bf->buf;
 	RList *ret = r_list_new ();
 	if (!ret) {
 		return NULL;

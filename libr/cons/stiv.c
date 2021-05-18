@@ -87,9 +87,9 @@ static void render_greyscale(PrintfCallback cb_printf, const ut8 *c, const ut8 *
 static void render_ascii(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 	const char *pal = " `.,-:+*%$#";
 	int idx, pal_len = strlen (pal);
-	float p = (c[0]+c[1]+c[2])/3;
-	float q = (d[0]+d[1]+d[2])/3;
-	idx = ((p+q)/2) / (255/pal_len);
+	float p = ((double)(c[0]+c[1]+c[2])/3);
+	float q = ((double)(d[0]+d[1]+d[2])/3);
+	idx = (int)(((p+q)/2) / (255/pal_len));
 	if (idx >= pal_len) idx = pal_len-1;
 	cb_printf ("%c", pal[idx]);
 }
