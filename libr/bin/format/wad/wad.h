@@ -16,7 +16,7 @@ typedef struct
 	ut32 magic;  // "IWAD" or "PWAD", not NULL-terminated
 	ut32 numlumps;  // number of lumps in the WAD.
 	ut32 diroffset;  //  Offset  to the location of the directory
-}) WAD_Hdr;
+}) WADHeader;
 
 R_PACKED (
 typedef struct
