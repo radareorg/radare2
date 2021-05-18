@@ -16,8 +16,8 @@ static int wad_header_load(WadObj *wo, Sdb *kv) {
 	}
 	WADHeader *hdr = &wo->hdr;
 	(void) r_buf_fread_at (wo->buf, 0, (ut8 *) hdr, "uuu", 1);
-	sdb_set (kv, "header.num_lumps", sdb_fmt ("%u", hdr->numlumps), 0);
-	sdb_set (kv, "header.diroffset", sdb_fmt ("0x%x", hdr->diroffset), 0);
+	sdb_num_set (kv, "header.num_lumps", (ut64)0, 0);
+	sdb_num_set (kv, "header.diroffset", (ut64)(hdr->diroffset), 0);
 	ut32 numlumps = sdb_num_get (kv, "header.diroffset", 0);
 	eprintf("NumLumps: %x", numlumps);
 	return true;
@@ -111,20 +111,19 @@ static RList *symbols(RBinFile *bf) {
 // Prints header info using iH
 static void wad_header_fields(RBinFile *bf) {
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
-	cb_printf ("pf.wad_header @ 0x%08"PFMT64x"\n", 0);
+	cb_printf ("pf.wad_header @ 0x%08"PFMT64x"\n", (ut64)0);
 	cb_printf ("0x00000000  Magic           0x%x\n", r_buf_read_le32_at (bf->buf, 0));
 	cb_printf ("0x00000004  Numlumps        %d\n", r_buf_read_le32_at (bf->buf, 0x04));
 	cb_printf ("0x00000008  TableOffset     0x%x\n", r_buf_read_le32_at (bf->buf, 0x08));
 }
 
 static RList *wad_fields(RBinFile *bf) {
-	RList *ret = r_list_new ();
+	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 	ut64 addr = 0;
-	#define ROW(nam,siz,val,fmt) \
+#define ROW(nam,siz,val,fmt) \
 	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%04"PFMT32x, (ut32)val), fmt, false)); \
 	addr += siz;
 	ut32 magic = r_buf_read_le32 (bf->buf);

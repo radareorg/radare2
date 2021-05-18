@@ -3446,6 +3446,7 @@ static void xrefs_map(RCore *core, const char *input) {
 		} else {
 			r_cons_printf ("\r");
 		}
+		r_list_free (refs);
 	}
 }
 
