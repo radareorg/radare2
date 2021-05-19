@@ -895,6 +895,12 @@ int main(int argc, const char **argv) {
 	if (!mo->db && !mo->create) {
 		return showusage (1);
 	}
+	if (!mo->create && mo->db) {
+		if (!strcmp (mo->db, "-")) {
+			mo->create = dash;
+			mo->db = NULL;
+		}
+	}
 #if USE_MMAN
 	signal (SIGINT, terminate);
 	signal (SIGHUP, synchronize);
