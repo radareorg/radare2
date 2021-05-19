@@ -15,7 +15,9 @@ static int wad_header_load(WadObj *wo, Sdb *kv) {
 		return false;
 	}
 	WADHeader *hdr = &wo->hdr;
-	(void) r_buf_fread_at (wo->buf, 0, (ut8 *) hdr, "iii", 1);
+	if (r_buf_fread_at (wo->buf, 0, (ut8 *) hdr, "iii", 1) != sizeof(WADHeader)) {
+		return false;
+	}
 	sdb_num_set (kv, "header.num_lumps", (ut64)(hdr->numlumps), 0);
 	sdb_num_set (kv, "header.diroffset", (ut64)(hdr->diroffset), 0);
 	return true;
