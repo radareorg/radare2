@@ -18,8 +18,6 @@ static int wad_header_load(WadObj *wo, Sdb *kv) {
 	(void) r_buf_fread_at (wo->buf, 0, (ut8 *) hdr, "uuu", 1);
 	sdb_num_set (kv, "header.num_lumps", (ut64)0, 0);
 	sdb_num_set (kv, "header.diroffset", (ut64)(hdr->diroffset), 0);
-	ut32 numlumps = sdb_num_get (kv, "header.diroffset", 0);
-	eprintf("NumLumps: %x", numlumps);
 	return true;
 }
 
