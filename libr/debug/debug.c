@@ -636,6 +636,8 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		core->offset = pc;
 	}
 
+	dbg->main_arena_resolved = false;
+
 	return true;
 }
 
