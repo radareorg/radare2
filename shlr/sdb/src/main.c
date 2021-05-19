@@ -236,10 +236,13 @@ static char* get_cname(const char*name) {
 	return n;
 }
 
-static char *escape(const char *b) {
+static char *escape(const char *b, int ch) {
 	char *a = calloc ((1 + strlen (b)), 4);
 	char *c = a;
 	while (*b) {
+		if (*b == ch) {
+			*c = '_';
+		} else
 		switch (*b) {
 		case '"':
 			*c++ = '\\';
@@ -283,14 +286,11 @@ static void sdb_dump_cb(MainOptions *mo, const char *k, const char *v, const cha
 	case perf:
 	case cgen:
 		{
-			char *a = escape (k);
-			char *b = escape (v);
+			char *a = escape (k, ',');
+			char *b = escape (v, 0);
 			if (textmode) {
 				printf ("  \"%s=%s\"\n", a, b);
 			} else {
-				if (strchr (k, ',')) {
-					eprintf ("Error: Keys cant contain a comma in gperf.\n");
-				}
 				printf ("%s,\"%s\"\n", a, b);
 			}
 			free (a);
