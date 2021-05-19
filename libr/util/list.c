@@ -6,6 +6,8 @@
 #define _R_LIST_C_
 #include "r_util.h"
 
+#define MERGE_LIMIT 24
+
 R_API size_t r_list_iter_length(RListIter *iter) {
 	size_t count = 0;
 	while (iter->n) {
@@ -520,13 +522,31 @@ static RListIter * _r_list_half_split(RListIter *head) {
 	}
 	slow = head;
 	fast = head;
+	int count = 0;
 	while (fast && fast->n && fast->n->n) {
 		fast = fast->n->n;
 		slow = slow->n;
+		count++;
+	}
+	if (count < MERGE_LIMIT) {
+		return NULL;
 	}
 	tmp = slow->n;
 	slow->n = NULL;
 	return tmp;
+}
+
+static void list_insertion_sort_iter(RListIter *iter, RListComparator cmp) {
+	RListIter *it, *it2;
+	for (it = iter; it && it->data; it = it->n) {
+		for (it2 = it->n; it2 && it2->data; it2 = it2->n) {
+			if (cmp (it->data, it2->data) > 0) {
+				void *t = it->data;
+				it->data = it2->data;
+				it2->data = t;
+			}
+		}
+	}
 }
 
 static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
@@ -535,9 +555,13 @@ static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
 		return head;
 	}
 	second = _r_list_half_split (head);
-	head = _merge_sort (head, cmp);
-	second = _merge_sort (second, cmp);
-	return _merge (head, second, cmp);
+	if (second) {
+		head = _merge_sort (head, cmp);
+		second = _merge_sort (second, cmp);
+		return _merge (head, second, cmp);
+	}
+	list_insertion_sort_iter (head, cmp);
+	return head;
 }
 
 R_API void r_list_merge_sort(RList *list, RListComparator cmp) {
@@ -580,7 +604,7 @@ R_API void r_list_insertion_sort(RList *list, RListComparator cmp) {
 //chose wisely based on length
 R_API void r_list_sort(RList *list, RListComparator cmp) {
 	r_return_if_fail (list);
-	if (list->length > 43) {
+	if (list->length > MERGE_LIMIT) {
 		r_list_merge_sort (list, cmp);
 	} else {
 		r_list_insertion_sort (list, cmp);
