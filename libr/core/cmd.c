@@ -125,7 +125,6 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_search.c" // defines incDigitBuffer... used by cmd_print
 #include "cmd_print.c"
 #include "cmd_help.c"
-#include "cmd_colon.c"
 
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
@@ -180,7 +179,7 @@ static const char *help_msg_dot[] = {
 	".", "r2cmd", "interpret the output of the command as r2 commands",
 	"..", " [file]", "run the output of the execution of a script as r2 commands",
 	"...", "", "repeat last command forward (same as \\n)",
-	".:", "8080", "listen for commands on given tcp port",
+	// ".:", "8080", "listen for commands on given tcp port",
 	".--", "", "terminate tcp server for remote commands",
 	".", " foo.r2", "interpret script",
 	".-", "", "open cfg.editor and interpret tmp file",
@@ -204,8 +203,9 @@ static const char *help_msg_equal[] = {
 	"=!=", "", "disable remote cmd mode",
 	"!=!", "", "enable remote cmd mode",
 	"\nservers:","","",
-	".:", "9000", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
-	"=:", "port", "start the rap server (o rap://9999)",
+	// ".:", "9000", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
+	"=t", "port", "start the tcp server (echo x|nc ::1 9090 or curl ::1:9090/cmd/x)",
+	"=r", "port", "start the rap server (o rap://9999)",
 	"=g", "[?]", "start the gdbserver",
 	"=h", "[?]", "start the http webserver",
 	"=H", "[?]", "start the http webserver (and launch the web browser)",
@@ -891,11 +891,41 @@ repeat:
 	free (host);
 }
 
+static void cmd_tcp_server(RCore *core, const char *input) {
+	char *ptr;
+	if ((ptr = strchr (input, ' '))) {
+		/* .:port cmd */
+		/* .:host:port cmd */
+		const char *host, *port;
+		char *cmd = ptr + 1;
+		*ptr = 0;
+		char *eol = strchr (input, ':');
+		if (eol) {
+			*eol = 0;
+			host = input;
+			port = eol + 1;
+		} else {
+			host = "localhost";
+			port = input + ((input[0] == ':')? 1: 0);
+		}
+		char *rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
+		if (rbuf) {
+			r_cons_print (rbuf);
+			free (rbuf);
+		}
+	} else {
+		r_core_rtr_cmds (core, input);
+	}
+}
+
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '\0': // "="
 		r_core_rtr_list (core);
+		break;
+	case 't': // "=t" // tcp
+		cmd_tcp_server (core, r_str_trim_head_ro (input + 1));
 		break;
 	case 'r': // "=r"
 		cmd_remote (core, r_str_trim_head_ro (input + 1), false);
@@ -985,6 +1015,7 @@ static int cmd_rap_run(void *data, const char *input) {
 	if (res) {
 		int ret = atoi (res);
 		free (res);
+		core->num->value = ret;
 		return ret;
 	}
 	return false;
@@ -1729,8 +1760,7 @@ static int cmd_table(void *data, const char *input) {
 }
 
 static int cmd_interpret(void *data, const char *input) {
-	char *str, *ptr, *eol, *rbuf, *filter, *inp;
-	const char *host, *port, *cmd;
+	char *str, *ptr, *eol, *filter, *inp;
 	RCore *core = (RCore *)data;
 
 	if (!strcmp (input, "?")) {
@@ -1741,6 +1771,7 @@ static int cmd_interpret(void *data, const char *input) {
 	case '\0': // "."
 		lastcmd_repeat (core, 0);
 		break;
+#if 0
 	case ':': // ".:"
 		if ((ptr = strchr (input + 1, ' '))) {
 			/* .:port cmd */
@@ -1765,6 +1796,7 @@ static int cmd_interpret(void *data, const char *input) {
 			r_core_rtr_cmds (core, input + 1);
 		}
 		break;
+#endif
 	case '.': // ".." same as \n
 		if (input[1] == '.') { // "..." run the last command repeated
 			// same as \n with e cmd.repeat=true
@@ -5580,8 +5612,9 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"/", "search kw, pattern aes", cmd_search, cmd_search_init, &search_help},
 		{"=", "io pipe", cmd_rap, NULL, &rap_help},
 		{"?", "help message", cmd_help, cmd_help_init, &help_help},
-		{"\\","alias for =!", cmd_rap_run, NULL, &rap_run_help},
-		{"'", "alias for =!", cmd_rap_run, NULL, &rap_run_help},
+		// {"\\","alias for =!", cmd_rap_run, NULL, &rap_run_help},
+		// {"'", "alias for =!", cmd_rap_run, NULL, &rap_run_help},
+		{":", "alias for =!", cmd_rap_run, NULL, &rap_run_help},
 		{"0", "alias for s 0x", cmd_ox, NULL, &zero_help},
 		{"a", "analysis", cmd_anal, cmd_anal_init, &anal_help},
 		{"b", "change block size", cmd_bsize, NULL, &b_help},
@@ -5603,7 +5636,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"P", "project", cmd_project, cmd_project_init, &P_help},
 		{"q", "exit program session", cmd_quit, cmd_quit_init, &q_help},
 		{"Q", "alias for q!", cmd_Quit, NULL, &Q_help},
-		{":", "long commands starting with :", cmd_colon, NULL, &colon_help},
 		{"r", "change file size", cmd_resize, NULL, &r_help},
 		{"s", "seek to an offset", cmd_seek, cmd_seek_init, &s_help},
 		{"t", "type information (cparse)", cmd_type, cmd_type_init, &t_help},
