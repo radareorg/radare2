@@ -15,11 +15,11 @@ static int wad_header_load(WadObj *wo, Sdb *kv) {
 		return false;
 	}
 	WADHeader *hdr = &wo->hdr;
-	(void) r_buf_fread_at (wo->buf, 0, (ut8 *) hdr, "uuu", 1);
-	sdb_num_set (kv, "header.num_lumps", (ut64)0, 0);
+	if (r_buf_fread_at (wo->buf, 0, (ut8 *) hdr, "iii", 1) != sizeof(WADHeader)) {
+		return false;
+	}
+	sdb_num_set (kv, "header.num_lumps", (ut64)(hdr->numlumps), 0);
 	sdb_num_set (kv, "header.diroffset", (ut64)(hdr->diroffset), 0);
-	ut32 numlumps = sdb_num_get (kv, "header.diroffset", 0);
-	eprintf("NumLumps: %x", numlumps);
 	return true;
 }
 
@@ -130,7 +130,7 @@ static RList *wad_fields(RBinFile *bf) {
 	ut32 numlumps = r_buf_read_le32 (bf->buf);
 	ut32 table_offset = r_buf_read_le32 (bf->buf);
 	ROW ("wad_magic", 4, magic, "[4]c");
-	ROW ("numlumps", 4, numlumps, "d");
+	ROW ("numlumps", 4, numlumps, "i");
 	ROW ("table_offset", 4, table_offset, "x");
 	return ret;
 }
