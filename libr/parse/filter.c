@@ -13,6 +13,11 @@
 
 static bool isvalidflag(RFlagItem *flag) {
 	if (flag) {
+		if (flag->space) {
+			if (!strcmp (flag->space->name, "format")) {
+				return false;
+			}
+		}
 		if (strstr (flag->name, "main") || strstr (flag->name, "entry")) {
 			return true;
 		}

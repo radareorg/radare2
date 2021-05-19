@@ -222,19 +222,19 @@ EXPECT=<<EOF
 0x00600af0 0x000000000040057e   ~.@..... @ reloc.__libc_start_main 4195710 .plt R X 'push 2'
 0x00600af8 0x000000000040058e   ..@..... @ reloc.fgets 4195726 .plt R X 'push 3'
 0x00600ae0 5e05  ^. @ reloc.printf 1374 .symtab
-0x00600ae2 4000  @. 64 .shstrtab ascii ('@')
+0x00600ae2 4000  @. 64 .shstrtab elf_phdr ascii ('@')
 0x00600ae4 0000  ..
 0x00600ae6 0000  ..
 0x00600ae8 6e05  n. @ reloc.puts 1390 .symtab
-0x00600aea 4000  @. 64 .shstrtab ascii ('@')
+0x00600aea 4000  @. 64 .shstrtab elf_phdr ascii ('@')
 0x00600aec 0000  ..
 0x00600aee 0000  ..
 0x00600af0 7e05  ~. @ reloc.__libc_start_main 1406 .symtab
-0x00600af2 4000  @. 64 .shstrtab ascii ('@')
+0x00600af2 4000  @. 64 .shstrtab elf_phdr ascii ('@')
 0x00600af4 0000  ..
 0x00600af6 0000  ..
 0x00600af8 8e05  .. @ reloc.fgets 1422 .symtab
-0x00600afa 4000  @. 64 .shstrtab ascii ('@')
+0x00600afa 4000  @. 64 .shstrtab elf_phdr ascii ('@')
 0x00600afc 0000  ..
 0x00600afe 0000  ..
 0x00600ae0 0x0040055e  ^.@. @ reloc.printf .plt R X 'push 0'
@@ -259,11 +259,14 @@ EXPECT=<<EOF
   {
     "addr": 6294242,
     "value": 64,
-    "refstr": "64 .shstrtab ascii ('@')",
+    "refstr": "64 .shstrtab elf_phdr ascii ('@')",
     "ref": {
       "addr": 64,
       "value": "64",
       "section": ".shstrtab",
+      "flags": [
+        "elf_phdr"
+      ],
       "attr": [
         "ascii"
       ]
@@ -306,11 +309,14 @@ EXPECT=<<EOF
   {
     "addr": 6294250,
     "value": 64,
-    "refstr": "64 .shstrtab ascii ('@')",
+    "refstr": "64 .shstrtab elf_phdr ascii ('@')",
     "ref": {
       "addr": 64,
       "value": "64",
       "section": ".shstrtab",
+      "flags": [
+        "elf_phdr"
+      ],
       "attr": [
         "ascii"
       ]

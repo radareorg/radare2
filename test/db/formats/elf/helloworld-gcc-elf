@@ -253,6 +253,7 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=fs
 EXPECT=<<EOF
     0 * classes
+    5 * format
     3 * imports
     3 * relocs
    30 * sections
@@ -271,6 +272,7 @@ afl~?
 EOF
 EXPECT=<<EOF
     0 * classes
+    5 * format
     0 * functions
     3 * imports
     3 * relocs
@@ -288,6 +290,7 @@ FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=s entry0+4; af;fs *;fs
 EXPECT=<<EOF
     0 * classes
+    5 * format
     1 * functions
     3 * imports
     3 * relocs
@@ -415,7 +418,7 @@ NAME=flags (total)
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=f~?
 EXPECT=<<EOF
-106
+111
 EOF
 RUN
 
@@ -430,6 +433,11 @@ EXPECT=<<EOF
 0x00000000 599 section..strtab
 0x00000000 0 segment.GNU_STACK
 0x00000000 0 sym..comment
+0x00000000 52 elf_header
+0x00000034 32 elf_phdr
+0x000001fc 74 elf_strtab
+0x000006c5 262 elf_shstrtab
+0x000007cc 40 elf_shdr
 0x08048000 1436 segment.LOAD0
 0x08048000 52 segment.ehdr
 0x08048034 256 segment.PHDR
