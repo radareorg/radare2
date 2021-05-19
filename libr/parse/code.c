@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2019 - pancake */
+/* radare - LGPL - Copyright 2013-2021 - pancake */
 
 #include "r_util.h"
 #include "r_types.h"
@@ -105,7 +105,7 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 	}
 	tcc_set_callback (T, &__appendString, &str);
 	tcc_set_error_func (T, (void *)error_msg, __errorFunc);
-	sdb_foreach (anal->sdb_types, __typeLoad, anal);
+	sdb_foreach (anal->sdb_types, __typeLoad, anal); // why is this needed??
 	char *d = strdup (dir);
 	RList *dirs = r_str_split_list (d, ":", 0);
 	RListIter *iter;
@@ -136,8 +136,7 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	tcc_set_error_func (T, (void *)error_msg, __errorFunc);
 	sdb_foreach (anal->sdb_types, __typeLoad, NULL);
 	if (tcc_compile_string (T, code) != 0) {
-		free (str);
-		str = NULL;
+		R_FREE (str);
 	}
 	tcc_delete (T);
 	return str;

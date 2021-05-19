@@ -434,7 +434,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	}
 	binfile = r_bin_cur (r->bin);
 	if (r_core_bin_set_env (r, binfile)) {
-		if (!r->anal->sdb_cc->path) {
+		if (!sdb_const_get (r->anal->sdb_cc, "default.cc", 0)) {
 			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate.\n");
 		}
 	}

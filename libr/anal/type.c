@@ -53,6 +53,7 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
 	}
 }
 
+// RENAME TO r_anal_types_save(); // parses the string and imports the types
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 	r_return_if_fail (anal && parsed);
 

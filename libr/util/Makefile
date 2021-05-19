@@ -24,6 +24,12 @@ OBJS+=punycode.o pkcs7.o x509.o asn1.o astr.o json_parser.o json_indent.o skipli
 OBJS+=pj.o rbtree.o intervaltree.o qrcode.o vector.o skyline.o str_constpool.o str_trim.o
 OBJS+=ascii_table.o protobuf.o graph_drawable.o axml.o
 
+ifeq (${HAVE_GPERF},1)
+OBJS+=d/ascii.o
+OBJS+=d/pokered.o
+OBJS+=d/ebcdic37.o
+endif
+
 ifeq (${HAVE_LIB_GMP},1)
   OBJS+=big-gmp.o
 else

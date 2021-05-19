@@ -1331,7 +1331,7 @@ static int cmd_type(void *data, const char *input) {
 						char *error_msg = NULL;
 						char *out = r_parse_c_string (core->anal, tmp, &error_msg);
 						if (out) {
-							//		r_cons_strcat (out);
+							// r_cons_strcat (out);
 							r_anal_save_parsed_type (core->anal, out);
 							free (out);
 						}
@@ -1822,7 +1822,7 @@ static int cmd_type(void *data, const char *input) {
 				r_cons_println (res);
 			}
 		} else {
-			eprintf ("This is not an typedef\n");
+			eprintf ("This is not a typedef\n");
 		}
 		free (s);
 		break;

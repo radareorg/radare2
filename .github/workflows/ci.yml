@@ -10,6 +10,23 @@ on:
 
 
 jobs:
+  build-acr-gperf:
+    name: linux-acr-gperf
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja r2pipe wget
+        sudo apt install gperf
+    - name: Installing with symlinks
+      run: |
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
+        sys/install.sh
+    - name: Running tests
+      run: r2r test/db/cmd
   build-resymlink:
     name: linux-acr-resymlink
     runs-on: ubuntu-20.04
@@ -280,7 +297,7 @@ jobs:
 #      with:
 #        path: rpmbuild/RPMS/*/*.rpm
   linux-asan-fuzz:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     continue-on-error: true
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     steps:
@@ -306,7 +323,7 @@ jobs:
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests
   linux-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 #    if: contains(github.ref, 'ci-')
     steps:
     - name: Checkout

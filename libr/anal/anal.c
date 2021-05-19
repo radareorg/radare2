@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -285,8 +285,19 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	Sdb *types = anal->sdb_types;
 	const char *dir_prefix = r_sys_prefix (NULL);
-	const char *dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
-		dir_prefix, os);
+	SdbGperf *gp = r_anal_get_gperf_types (os);
+	if (gp) {
+		Sdb *gd = sdb_new0 ();
+		sdb_open_gperf (gd, gp);
+		sdb_reset (anal->sdb_types);
+		sdb_merge (anal->sdb_types, gd);
+		sdb_close (gd);
+		sdb_free (gd);
+		return r_anal_set_triplet (anal, os, NULL, -1);
+	}
+
+	char *ff = r_str_newf ("types-%s.sdb", os);
+	char *dbpath = r_file_new (dir_prefix, R2_SDB_FCNSIGN, ff);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
