@@ -7067,7 +7067,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 	}
 	if (fromVisual) {
-		r_core_cmdf (core, "V");
+		r_core_visual(core, "");
 	} else {
 		r_cons_enable_mouse (false);
 	}

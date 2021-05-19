@@ -2576,7 +2576,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case '!':
 			r_core_panels_root (core, core->panels_root);
-			break;
+			setcursor (core, false);
+			return false;
 		case 'g':
 			r_core_visual_showcursor (core, true);
 			r_core_visual_offset (core);
