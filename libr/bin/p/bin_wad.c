@@ -128,7 +128,7 @@ static RList *wad_fields(RBinFile *bf) {
 	ut32 numlumps = r_buf_read_le32 (bf->buf);
 	ut32 table_offset = r_buf_read_le32 (bf->buf);
 	ROW ("wad_magic", 4, magic, "[4]c");
-	ROW ("numlumps", 4, numlumps, "d");
+	ROW ("numlumps", 4, numlumps, "i");
 	ROW ("table_offset", 4, table_offset, "x");
 	return ret;
 }
