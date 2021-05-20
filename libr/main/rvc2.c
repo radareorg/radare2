@@ -40,7 +40,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 		eprintf ("TODO: r_vc_git APIs should be called from r_vc\n");
 		eprintf ("TODO: r_vc_new should accept options argument\n");
 	}
-	char *action = (opt.ind < argc)? opt.arg: NULL;
+	const char *action = (opt.ind < argc)? opt.arg: NULL;
 	if (action) {
 		if (!strcmp (action, "init")) {
 			char *path = r_sys_getdir ();
