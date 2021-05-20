@@ -38,6 +38,7 @@ R_API bool r_vc_commit(Rvc *repo, RList *blobs, const char *auth, const char *me
 R_API bool r_vc_branch(Rvc *repo, const char *name);
 R_API RList *r_vc_add(Rvc *repo, RList *files);
 R_API Rvc *r_vc_new(const char *path);
+R_API void r_vc_free(Rvc *vc);
 R_API int r_vc_git_init(const char *path);
 R_API bool r_vc_git_branch(const char *path, const char *name);
 R_API bool r_vc_git_checkout(const char *path, const char *name);
