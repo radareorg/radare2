@@ -2238,6 +2238,13 @@ static bool cb_scrbreakword(void* user, void* data) {
 	return true;
 }
 
+static bool cb_scroptimize(void* user, void* data) {
+	RConfigNode *node = (RConfigNode*) data;
+	RCore *core = (RCore*) user;
+	core->cons->optimize = node->i_value;
+	return true;
+}
+
 static bool cb_scrcolumns(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	RCore *core = (RCore*) user;
@@ -3846,6 +3853,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.gadgets", "true", &cb_scr_gadgets, "Run pg in prompt, visual and panels");
 	SETBPREF ("scr.panelborder", "false", "Specify panels border active area (0 by default)");
 	SETICB ("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
+	SETICB ("scr.optimize", 0, &cb_scroptimize, "Optimize the amount of ansi escapes and spaces (0, 1, 2 passes)");
 	SETBPREF ("scr.dumpcols", "false", "Prefer pC commands before p ones");
 	SETCB ("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
 	SETICB ("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
