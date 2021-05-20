@@ -40,7 +40,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 		eprintf ("TODO: r_vc_git APIs should be called from r_vc\n");
 		eprintf ("TODO: r_vc_new should accept options argument\n");
 	}
-	char *action = (optind < argc)? optarg: NULL;
+	char *action = (opt.ind < argc)? opt.arg: NULL;
 	if (action) {
 		if (!strcmp (action, "init")) {
 			char *path = r_sys_getdir ();
@@ -54,8 +54,8 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 			char *path = r_sys_getdir ();
 			Rvc *vc = r_vc_new (path);
 			if (vc) {
-				if (optind + 1 < argc) {
-					const char *name = argv[optind + 1];
+				if (opt.ind + 1 < argc) {
+					const char *name = argv[opt.ind + 1];
 					r_vc_branch (vc, name);
 				} else {
 					RListIter *iter;
@@ -74,7 +74,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 			if (vc) {
 				int i;
 				RList *files = r_list_newf (free);
-				for (i = optind; i < argc; i++) {
+				for (i = opt.ind ; i < argc; i++) {
 					r_list_append (files, strdup (argv[i]));
 				}
 				RList *blobs = r_vc_add (vc, files); // print the blobs?
