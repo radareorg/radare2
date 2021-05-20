@@ -1726,7 +1726,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
 			break;
 		}
-		snprintf (cmd_flagname, sizeof(cmd_flagname), "mach0_cmd_%d.offset", i);
+		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);
 		sdb_num_set (bin->kv, cmd_flagname, off, 0);
 		const char *format_name = cmd_to_pf_definition (lc.cmd);
 		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.format", i);
