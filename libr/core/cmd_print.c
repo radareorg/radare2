@@ -531,6 +531,7 @@ static const char *help_msg_pv[] = {
 static const char *help_msg_px[] = {
 	"Usage:", "px[0afoswqWqQ][f]", " # Print heXadecimal",
 	"px", "", "show hexdump",
+	"px--", "[n]", "context hexdump (the hexdump version of pd--3)",
 	"px/", "", "same as x/ in gdb (help x)",
 	"px0", "", "8bit hexpair list of bytes until zero byte",
 	"pxa", "", "show annotated hexdump",
@@ -6193,22 +6194,32 @@ static int cmd_print(void *data, const char *input) {
 		cmd_print_op(core, input);
 		break;
 	case 'x': // "px"
-	{
-		bool show_offset = r_config_get_i (core->config, "hex.offset");
-		if (show_offset) {
-			core->print->flags |= R_PRINT_FLAGS_OFFSET;
+		if (input[1] == '-' && input[2] == '-') {
+			int rowsize = r_config_get_i (core->config, "hex.cols");
+			int ctxlines = r_num_math (core->num, input + 3);
+			if (ctxlines < 0) {
+				ctxlines = 0;
+			}
+			int size = rowsize + (rowsize * ctxlines * 2);
+			ut64 addr = core->offset - (rowsize * ctxlines);
+			r_core_cmdf (core, "px %d@0x%08"PFMT64x, size, addr);
+			break;
 		} else {
-			core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
+			bool show_offset = r_config_get_i (core->config, "hex.offset");
+			if (show_offset) {
+				core->print->flags |= R_PRINT_FLAGS_OFFSET;
+			} else {
+				core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
+			}
+			int show_header = r_config_get_i (core->config, "hex.header");
+			if (show_header) {
+				core->print->flags |= R_PRINT_FLAGS_HEADER;
+			} else {
+				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+			}
+			/* Don't show comments in default case */
+			core->print->use_comments = false;
 		}
-		int show_header = r_config_get_i (core->config, "hex.header");
-		if (show_header) {
-			core->print->flags |= R_PRINT_FLAGS_HEADER;
-		} else {
-			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-		}
-		/* Don't show comments in default case */
-		core->print->use_comments = false;
-	}
 		r_cons_break_push (NULL, NULL);
 		switch (input[1]) {
 		case 'j': // "pxj"
