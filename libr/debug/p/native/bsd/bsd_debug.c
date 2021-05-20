@@ -488,7 +488,9 @@ RList *bsd_desc_list(int pid) {
 		case KF_TYPE_PIPE: type = 'p'; break;
 		case KF_TYPE_FIFO: type = 'f'; break;
 		case KF_TYPE_KQUEUE: type = 'k'; break;
+#if __FreeBSD_version < 1300000
 		case KF_TYPE_CRYPTO: type = 'c'; break;
+#endif
 		case KF_TYPE_MQUEUE: type = 'm'; break;
 		case KF_TYPE_SHM: type = 'h'; break;
 		case KF_TYPE_PTS: type = 't'; break;
