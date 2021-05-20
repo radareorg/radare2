@@ -522,7 +522,7 @@ static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut
                                  int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
 	if (rad) {
 		printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
-		printf ("e asm.bits=%d\n", bits);
+		printf ("e asm.bits=%d\n", bits? bits: R_SYS_BITS);
 		if (offset) {
 			printf ("s 0x%"PFMT64x"\n", offset);
 		}
@@ -574,7 +574,7 @@ static void __load_plugins(RAsmState *as) {
 R_API int r_main_rasm2(int argc, const char *argv[]) {
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
-	const char *arch = NULL;
+	const char *arch = R_SYS_ARCH;
 	const char *cpu = NULL;
 	const char *kernel = NULL;
 	const char *filters = NULL;
@@ -740,7 +740,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			ret = 0;
 			goto beach;
 		}
-	} else if (!r_asm_use (as->a, "x86")) {
+	} else if (!r_asm_use (as->a, R_SYS_ARCH)) {
 		eprintf ("rasm2: Cannot find asm.x86 plugin\n");
 		ret = 0;
 		goto beach;
