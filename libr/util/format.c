@@ -1439,7 +1439,11 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char *fmtname,
 static void r_print_format_enum(const RPrint* p, ut64 seeki, char *fmtname,
 		char *fieldname, ut64 addr, int mode, int size) {
 	char *enumvalue = NULL;
-	addr &= (1ULL << (size * 8)) - 1;
+	if (size >= 8) {
+		// avoid shift overflow
+	} else {
+		addr &= (1ULL << (size * 8)) - 1;
+	}
 	if (MUSTSEE && !SEEVALUE) {
 		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 	}
