@@ -114,7 +114,6 @@ static RvcBranch *branch_by_name(Rvc *repo, const char *name) {
 	return NULL;
 }
 
-
 static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	char *commit_path, *commit_string;
 	char *prev_path;

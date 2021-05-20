@@ -2,18 +2,16 @@
 #include <rvc.h>
 
 static void rvc2_show_help(void) {
-	printf ("Usage: rvc2 [options] [file]\n"
-		" -a [-a]          add extra 'a' to analysis command\n"
-		" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
-		" -h               help menu\n"
-		" -j               show signatures in json\n"
-		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
-		" -q               quiet mode\n"
-		" -r               show output in radare commands\n"
-		" -s signspace     save all signatures under this signspace\n"
-		" -v               show version information\n"
+	printf ("Usage: rvc2 [action] [file ...]\n"
+		" init            initialize repository in current directory\n"
+		" add [file ..]   add files to the current repository\n"
+		" checkout [name] checkout given branch name\n"
+		" log             list commits in current branch\n"
+		" branch          list all available branches\n"
+		" branch [name]   change to another branch\n"
 		"Examples:\n"
-		"  rasign2 -o libc.sdb libc.so.6\n");
+		"  rvc2 init\n"
+		"  man rvc2\n");
 }
 
 R_API int r_main_rvc2(int argc, const char **argv) {
@@ -21,7 +19,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 	int c;
 	bool git = false;
 
-	r_getopt_init (&opt, argc, argv, "afhjo:qrs:v");
+	r_getopt_init (&opt, argc, argv, "gvh");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'g':
@@ -38,6 +36,10 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 		}
 	}
 
+	if (git) {
+		eprintf ("TODO: r_vc_git APIs should be called from r_vc\n");
+		eprintf ("TODO: r_vc_new should accept options argument\n");
+	}
 	char *action = (optind < argc)? optarg: NULL;
 	if (action) {
 		if (!strcmp (action, "init")) {
@@ -55,6 +57,12 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 				if (optind + 1 < argc) {
 					const char *name = argv[optind + 1];
 					r_vc_branch (vc, name);
+				} else {
+					RListIter *iter;
+					RvcBranch *b;
+					r_list_foreach (vc->branches, iter, b) {
+						printf ("%s  %s\n", b->head->hash, b->name);
+					}
 				}
 				r_vc_free (vc);
 				return 0;
