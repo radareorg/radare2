@@ -698,8 +698,8 @@ EOF
 EXPECT=<<EOF
             0x00010328      .dword 0x000104e0 ; sym.__libc_csu_fini
             0x0001032c      .dword 0x00010450 ; main ; sym.main
-            ; UNKNOWN XREF from section..plt @ +0x10
             ;-- aav.0x00010330:
+            ; UNKNOWN XREF from section..plt @ +0x10
             0x00010330      .dword 0x0001047c ; sym.__libc_csu_init
 EOF
 RUN
