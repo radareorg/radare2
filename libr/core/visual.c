@@ -2755,6 +2755,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			ut64 oaddr = core->offset;
 			int delta = (core->print->ocur != -1)? R_MIN (core->print->cur, core->print->ocur): core->print->cur;
 			ut64 addr = core->offset + delta;
+			if (!canWrite (core, addr)) {
+				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+				r_cons_any_key (NULL);
+				return true;
+			}
 			if (PIDX == 0) {
 				if (strstr (printfmtSingle[0], "pxb")) {
 					r_core_visual_define (core, "1", 1);
@@ -2779,11 +2784,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 					return true;
 				}
-			}
-			if (!canWrite (core, addr)) {
-				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
-				r_cons_any_key (NULL);
-				return true;
 			}
 			r_core_visual_showcursor (core, true);
 			r_cons_flush ();
