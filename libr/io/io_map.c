@@ -116,7 +116,7 @@ R_API bool r_io_map_exists_for_id(RIO* io, ut32 id) {
 }
 
 R_API RIOMap* r_io_map_get(RIO *io, ut32 id) {
-	r_return_val_if_fail (io && id, false);
+	r_return_val_if_fail (io, false);
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
 		RIOMap *map = *it;
