@@ -46,19 +46,33 @@ R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 }
 
 static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, ut64 jmpptr, int depth) {
-       const ut64 block_size = block->size;
-       (void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
-       if (block->size != block_size) {
-               // block was be split during anal and does not contain the
-               // jmp instruction anymore, so we need to search for it and get it again
-               RAnalSwitchOp *sop = block->switch_op;
-	       block = r_anal_get_block_at (anal, ip);
-               if (!block) {
-                       r_warn_if_reached ();
-                       return;
-               }
-               block->switch_op = sop;
-       }
+	const ut64 block_size = block->size;
+	(void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
+	if (block->size != block_size) {
+		// block was be split during anal and does not contain the
+		// jmp instruction anymore, so we need to search for it and get it again
+		RAnalSwitchOp *sop = block->switch_op;
+		block = r_anal_get_block_at (anal, ip);
+		if (!block) {
+			block = r_anal_bb_from_offset (anal, ip);
+			if (block) {
+				if (block->addr != ip) {
+					st64 d = block->addr - ip;
+					eprintf ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d\n", ip, (int)R_ABS (d));
+					block = NULL;
+					return;
+				} else {
+					eprintf ("Inconsistent basicblock storage issue at 0x%08"PFMT64x"\n", ip);
+				}
+			} else {
+				eprintf ("Major disaster at 0x%08"PFMT64x"\n", ip);
+				return;
+			}
+			// analyze at given address
+			// block = r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
+		}
+		block->switch_op = sop;
+	}
 }
 
 R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, ut64 ip, st64 start_casenum_shift, ut64 jmptbl_loc, ut64 casetbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, bool ret0) {
