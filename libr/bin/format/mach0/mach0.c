@@ -2003,7 +2003,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);
 		sdb_num_set (bin->kv, cmd_flagname, off, 0);
 		const char *format_name = cmd_to_pf_definition (lc.cmd);
-		snprintf(cmd_flagname, sizeof(cmd_flagname), "mach0_cmd_%d.format", i);
+		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.format", i);
 		if (format_name) {
 			sdb_set (bin->kv, cmd_flagname, format_name, 0);
 		} else {
