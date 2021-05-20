@@ -10,6 +10,7 @@ r_main_sources = [
   'rarun2.c',
   'rasign2.c',
   'rasm2.c',
+  'rvc2.c',
   'rax2.c'
 ]
 

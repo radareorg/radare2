@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2023 - RHL120, pancake */
+/* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
 #include <rvc.h>
 
@@ -114,7 +114,6 @@ static RvcBranch *branch_by_name(Rvc *repo, const char *name) {
 	return NULL;
 }
 
-
 static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	char *commit_path, *commit_string;
 	char *prev_path;
@@ -177,6 +176,7 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	fclose (prev_file);
 	return true;
 }
+
 R_API bool r_vc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message) {
 	RvcCommit *nc = R_NEW (RvcCommit);
 	if (!nc) {
@@ -211,6 +211,7 @@ R_API bool r_vc_commit(Rvc *repo, RList *blobs, const char *auth, const char *me
 	repo->current_branch->head = nc;
 	return true;
 }
+
 R_API bool r_vc_branch(Rvc *repo, const char *name) {
 	char *bpath, *ppath;
 	RvcBranch *nb;
@@ -257,6 +258,12 @@ R_API bool r_vc_branch(Rvc *repo, const char *name) {
 	repo->current_branch = nb;
 	free (bpath);
 	return true;
+}
+
+R_API void r_vc_free(Rvc *vc) {
+	free (vc->path);
+	r_list_free (vc->branches);
+	free (vc);
 }
 
 R_API Rvc *r_vc_new(const char *path) {
@@ -321,6 +328,7 @@ R_API Rvc *r_vc_new(const char *path) {
 	free (blob_path);
 	return repo;
 }
+
 R_API RList *r_vc_add(Rvc *repo, RList *files) {
 	RListIter *iter;
 	char *fname;
@@ -514,21 +522,23 @@ R_API bool r_vc_checkout(Rvc *repo, const char *name) {
 	return true;
 }
 
-R_API int r_vc_git_init (const char *path) {
+// GIT commands as APIs
+
+R_API int r_vc_git_init(const char *path) {
 	return r_sys_cmdf ("git init %s", path);
 }
 
-R_API bool r_vc_git_branch (const char *path, const char *name) {
+R_API bool r_vc_git_branch(const char *path, const char *name) {
 	return !r_sys_cmdf ("git -C %s branch %s", path, name);
 }
 
-R_API bool r_vc_git_checkout (const char *path, const char *name) {
+R_API bool r_vc_git_checkout(const char *path, const char *name) {
 	return !r_sys_cmdf ("git -C %s checkout %s", path, name);
 }
 
-R_API int r_vc_git_add (const char *path, const char *fname) {
+R_API int r_vc_git_add(const char *path, const char *fname) {
 	int ret;
-	char *cwd = r_sys_getdir();
+	char *cwd = r_sys_getdir ();
 	if (!cwd) {
 		return -1;
 	}
@@ -546,7 +556,7 @@ R_API int r_vc_git_add (const char *path, const char *fname) {
 	return ret;
 }
 
-R_API int r_vc_git_commit (const char *path, const char *message) {
+R_API int r_vc_git_commit(const char *path, const char *message) {
 	return message ? r_sys_cmdf ("git -C %s commit -m %s", path, message) :
 		r_sys_cmdf ("git -C %s commit", path);
 }
