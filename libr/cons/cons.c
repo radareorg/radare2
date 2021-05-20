@@ -984,9 +984,13 @@ R_API void r_cons_flush(void) {
 	} else {
 		CTX (lastMode) = false;
 	}
-	// compress output (45 / 250 KB)
-	optimize ();
-	optimize ();
+	if (I.optimize) {
+		// compress output (45 / 250 KB)
+		optimize ();
+		if (I.optimize > 1) {
+			optimize ();
+		}
+	}
 	r_cons_filter ();
 	if (r_cons_is_interactive () && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
