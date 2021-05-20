@@ -1736,7 +1736,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 			sdb_set (bin->kv, cmd_flagname, "[4]Ed (mach_load_command_type)cmd size", 0);
 		}
 
-		snprintf(cmd_flagname, sizeof(cmd_flagname), "mach0_cmd_%d.cmd", i);
+		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.cmd", i);
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
 			sdb_set (bin->kv, cmd_flagname, "data_in_code", 0);
