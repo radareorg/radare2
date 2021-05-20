@@ -568,6 +568,10 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				r = r_egg_run (egg);
 			}
 			r_egg_free (egg);
+			if (fd != -1) {
+				close (fd);
+			}
+			free (sequence);
 			return r;
 		}
 		b = r_egg_get_bin (egg);
