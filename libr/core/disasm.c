@@ -5427,13 +5427,13 @@ toro:
 		if (ds->midbb) {
 			skip_bytes_bb = handleMidBB(core, ds);
 		}
-		ds_show_xrefs (ds);
 		ds_show_flags (ds, false);
+		ds_show_xrefs (ds);
 		if (skip_bytes_flag && ds->midflags == R_MIDFLAGS_SHOW &&
 				(!ds->midbb || !skip_bytes_bb || skip_bytes_bb > skip_bytes_flag)) {
 			ds->at += skip_bytes_flag;
-			ds_show_xrefs(ds);
 			ds_show_flags(ds, true);
+			ds_show_xrefs(ds);
 			ds->at -= skip_bytes_flag;
 		}
 		if (ds->pdf) {

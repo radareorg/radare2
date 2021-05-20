@@ -34,8 +34,8 @@ aaa
 pd 13 @ main
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from entry0 @ 0x10c1
             ;-- main:
+            ; DATA XREF from entry0 @ 0x10c1
 / 139: int dbg.main (int argc, char **argv, char **envp);
 |           ; var int output @ rbp-0x24
 |           ; var Bird *b @ rbp-0x20
@@ -65,8 +65,8 @@ aaa
 pd 75 @ dbg.main
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from main @ 0x5b0d
             ;-- rust::main::h523dcf5432fcfd88:
+            ; DATA XREF from main @ 0x5b0d
 / 940: int dbg.main (int argc, char **argv);
 |           ; var int64_t var_8h @ rsp+0x8
 |           ; var int64_t var_10h @ rsp+0x10
@@ -210,9 +210,9 @@ aaa
 pd 40 @  dbg.bubble_sort_i32_
 EOF
 EXPECT=<<EOF
-            ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875 ; dbg.main
             ;-- rust::bubble_sort::h0777bc845caabc60:
             ;-- dbg.bubble_sort_i32_:
+            ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875 ; dbg.main
 / 614: dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2);
 |           ; var int64_t var_fh @ rsp+0xf
 |           ; var int64_t var_10h @ rsp+0x10
@@ -295,9 +295,9 @@ aaa
 pdf @  dbg.init
 EOF
 EXPECT=<<EOF
-            ; CALL XREF from dbg.main @ 0x10001ae8
             ;-- Grid::init():
             ;-- method.Grid.init__:
+            ; CALL XREF from dbg.main @ 0x10001ae8
 / 64: dbg.init (Grid * const this);
 |           ; arg Grid * const this @ r3
 |           0x100012bc      39030144       addi r8, r3, 0x144          ; arg1 [0m; void init(Grid * const this);
@@ -329,8 +329,8 @@ aaa
 pdf @  dbg.main
 EOF
 EXPECT=<<EOF
-            ; DATA XREF from entry0 @ 0x2271
             ;-- main:
+            ; DATA XREF from entry0 @ 0x2271
 / 101: int dbg.main (int argc, char **argv, char **envp);
 |           ; var char **var_28h @ rbp-0x28
 |           ; var char **var_20h @ rbp-0x20
@@ -375,8 +375,8 @@ aaa
 pd 20 @  dbg.palya
 EOF
 EXPECT=<<EOF
-            ; CALL XREFS from sym.main @ +0x1a87, +0x1c7d, +0x23f3, +0x3679
             ;-- P$MOZGKIGYO_$$_PALYA$SMALLINT$SMALLINT:
+            ; CALL XREFS from sym.main @ +0x1a87, +0x1c7d, +0x23f3, +0x3679
 / 439: dbg.palya ();
 |           ; var int64_t var_28h @ rbp-0x28
 |           ; var int64_t var_20h @ rbp-0x20

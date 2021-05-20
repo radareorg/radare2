@@ -480,8 +480,8 @@ EXPECT=<<EOF
 |           0x00003ec1      add rax, rbx
 |           ;-- switch
 |           0x00003ec4      jmp rax                                    ; switch table (275 cases) at 0x172d8
-|           ; CODE XREF from main @ 0x3ec4
 |           ;-- case 110:                                              ; from 0x3ec4
+|           ; CODE XREF from main @ 0x3ec4
 |           0x00003ec6      mov byte [0x00021260], 1                   ; [0x21260:1]=0
 EOF
 RUN
@@ -1422,8 +1422,8 @@ EXPECT=<<EOF
 |      ,==< 0x00003cb2      je 0x3ce3
 |      ||   0x00003cb4      sub eax, 1
 |     ,===< 0x00003cb7      je 0x3cbe
-|     |||   ; CODE XREFS from main @ 0x58bc, 0x58d2
 |     |||   ;-- default:                                               ; from 0x58d2
+|     |||   ; CODE XREFS from main @ 0x58bc, 0x58d2
 |     |||   0x00003cb9      call sym.imp.abort                         ; void abort(void)
 |     |||   ; CODE XREF from main @ 0x3cb7
 |     `---> 0x00003cbe      mov edi, 1                                 ; int fd
@@ -1465,8 +1465,8 @@ EXPECT=<<EOF
 |    ,====< 0x00003cb2      je 0x3ce3
 |    | |    0x00003cb4      sub eax, 1
 |  ,======< 0x00003cb7      je 0x3cbe
-|  | | |    ; CODE XREFS from main @ 0x58bc, 0x58d2
 |  | | |    ;-- default:                                               ; from 0x58d2
+|  | | |    ; CODE XREFS from main @ 0x58bc, 0x58d2
 |  | | |    0x00003cb9      call sym.imp.abort                         ; void abort(void)
 |  | | |    ; CODE XREF from main @ 0x3cb7
 |  `------> 0x00003cbe      mov edi, 1                                 ; int fd
@@ -1507,8 +1507,8 @@ EXPECT=<<EOF
 |    ,====< 0x00003cb2      je 0x3ce3
 |    | |    0x00003cb4      sub eax, 1
 |  ,======< 0x00003cb7      je 0x3cbe
-|  | | |    ; CODE XREFS from main @ 0x58bc, 0x58d2
 |  | | |    ;-- default:                                               ; from 0x58d2
+|  | | |    ; CODE XREFS from main @ 0x58bc, 0x58d2
 |  | | |    0x00003cb9      call sym.imp.abort                         ; void abort(void)
 |  | | |    ; CODE XREF from main @ 0x3cb7
 |  `------> 0x00003cbe      mov edi, 1                                 ; int fd
@@ -2657,13 +2657,13 @@ pd 1 @0x4007f0
 pd 1 @0x400610
 EOF
 EXPECT=<<EOF
-; DATA XREF from entry0 @ +0xf
 ;-- __libc_csu_fini:
+; DATA XREF from entry0 @ +0xf
 0x00400730      f3c3           ret
 ; CODE XREF from sym.__do_global_ctors_aux @ +0x2d
 0x004007f0      4883eb08       sub rbx, 8
-; CALL XREF from section..fini @ +0x4
 ;-- __do_global_dtors_aux:
+; CALL XREF from section..fini @ +0x4
 0x00400610      55             push rbp
 EOF
 RUN
