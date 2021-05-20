@@ -1900,7 +1900,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 		case LC_UNIXTHREAD:
 			sdb_set (bin->kv, cmd_flagname, "unixthread", 0);
 			if (!is_first_thread) {
-				bprintf("Error: LC_UNIXTHREAD with other threads\n");
+				bprintf ("Error: LC_UNIXTHREAD with other threads\n");
 				return false;
 			}
 		case LC_THREAD:
