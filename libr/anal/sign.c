@@ -2193,9 +2193,11 @@ R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *b
 
 // allow ~10% of margin error
 static int matchCount(int a, int b) {
-	int c = a - b;
-	int m = a / 10;
-	return R_ABS (c) < m;
+	int m = R_MAX (a, b);
+	if (m > 100) {
+		return R_ABS (a - b) < m / 10;
+	}
+	return a == b;
 }
 
 static int sig_graph_diff(RSignItem *ia, RSignItem *ib) {
@@ -2216,7 +2218,7 @@ static int sig_graph_diff(RSignItem *ia, RSignItem *ib) {
 	if (a->ebbs != -1 && a->ebbs != b->ebbs) {
 		return 1;
 	}
-	if (a->bbsum > 0 && matchCount (a->bbsum, b->bbsum)) {
+	if (a->bbsum > 0 && !matchCount (a->bbsum, b->bbsum)) {
 		return 1;
 	}
 	return 0;
