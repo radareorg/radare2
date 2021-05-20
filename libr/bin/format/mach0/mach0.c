@@ -395,7 +395,7 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 			i += 16;
 			memcpy (&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
-			snprintf(section_flagname, sizeof(section_flagname), "mach0_section_%.16s_%.16s.offset", 
+			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.offset", 
 						bin->sects[k].segname, bin->sects[k].sectname);			
 			sdb_num_set (bin->kv, section_flagname, offset, 0);
 #if R_BIN_MACH064
