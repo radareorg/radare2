@@ -90,10 +90,6 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 	int newpid = odesc->fd;
 
 	if (isdebug) {
-		if (core->dbg->pid < 0) {
-			eprintf ("Cannot debug target\n");
-			return false;
-		}
 		r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, 9); // SIGKILL
 		do {
 			r_debug_continue (core->dbg);
