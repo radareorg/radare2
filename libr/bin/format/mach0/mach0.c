@@ -399,7 +399,7 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 						bin->sects[k].segname, bin->sects[k].sectname);			
 			sdb_num_set (bin->kv, section_flagname, offset, 0);
 #if R_BIN_MACH064
-			snprintf(section_flagname, sizeof(section_flagname), "mach0_section_%.16s_%.16s.format", 
+			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", 
 						bin->sects[k].segname, bin->sects[k].sectname);		
 			sdb_set (bin->kv, section_flagname, "mach0_section64", 0);
 #else
