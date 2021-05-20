@@ -1024,7 +1024,7 @@ static int cmd_rap_run(void *data, const char *input) {
 static int cmd_rap_run_deprecated(void *data, const char *input) {
 	static bool warned = false;
 	if (!warned) {
-		eprinff ("Warning: \\ command is deprecated. Use =! or : instead.\n");
+		eprintf ("Warning: \\ command is deprecated. Use =! or : instead.\n");
 		warned = true;
 	}
 	return cmd_rap_run (data, input);
