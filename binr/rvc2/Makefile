@@ -1,5 +1,5 @@
 BIN=rvc2
-BINDEPS=r_util r_main
+BINDEPS=r_core r_main
 
 include ../rules.mk
 include ../../libr/main/deps.mk
