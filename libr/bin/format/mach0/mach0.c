@@ -403,7 +403,7 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 						bin->sects[k].segname, bin->sects[k].sectname);		
 			sdb_set (bin->kv, section_flagname, "mach0_section64", 0);
 #else
-			snprintf(section_flagname, sizeof(section_flagname), "mach0_section_%.16s_%.16s.format", 
+			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", 
 						bin->sects[k].segname, bin->sects[k].sectname);		
 			sdb_set (bin->kv, section_flagname, "mach0_section", 0);
 #endif
@@ -2000,7 +2000,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
 			break;
 		}
-		snprintf (cmd_flagname, sizeof(cmd_flagname), "mach0_cmd_%d.offset", i);
+		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);
 		sdb_num_set (bin->kv, cmd_flagname, off, 0);
 		const char *format_name = cmd_to_pf_definition (lc.cmd);
 		snprintf(cmd_flagname, sizeof(cmd_flagname), "mach0_cmd_%d.format", i);
@@ -2012,7 +2012,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
-			snprintf(cmd_flagname, sizeof(cmd_flagname), "mach0_cmd_%d.cmd", i);
+			snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.cmd", i);
 			sdb_set (bin->kv, cmd_flagname, "data_in_code", 0);
 			if (bin->verbose) {
 				ut8 buf[8];
@@ -3607,7 +3607,7 @@ void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) *bin) {
 	int i;
 	char lib_flagname[128];	
 	for (i = 0; i < bin->nlibs; i++) {
-		snprintf(lib_flagname, sizeof(lib_flagname), "libs.%d.name", i);
+		snprintf (lib_flagname, sizeof (lib_flagname), "libs.%d.name", i);
 		sdb_set (bin->kv, lib_flagname, bin->libs[i], 0);
 	}
 }
@@ -3624,7 +3624,7 @@ struct lib_t *MACH0_(get_libs)(struct MACH0_(obj_t) *bin) {
 		return NULL;
 	}
 	for (i = 0; i < bin->nlibs; i++) {
-		snprintf(lib_flagname, sizeof(lib_flagname), "libs.%d.name", i);
+		snprintf (lib_flagname, sizeof (lib_flagname), "libs.%d.name", i);
 		sdb_set (bin->kv, lib_flagname, bin->libs[i], 0);
 		r_str_ncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH - 1);
 		libs[i].last = 0;
@@ -4284,7 +4284,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 		}
 		const char *pf_definition = cmd_to_pf_definition (lcType);
 		if (pf_definition) {
-			snprintf(load_command_flagname, sizeof(load_command_flagname), "load_command_%d_%s", n, cmd_to_string (lcType));
+			snprintf (load_command_flagname, sizeof (load_command_flagname), "load_command_%d_%s", n, cmd_to_string (lcType));
 			r_list_append (ret, r_bin_field_new (addr, addr, 1, load_command_flagname, pf_definition, pf_definition, true));
 		}
 		switch (lcType) {
@@ -4294,7 +4294,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			int j = 0;
 			char tool_flagname[32];
 			while (off < lcSize && ntools--) {
-				snprintf(tool_flagname, sizeof(tool_flagname), "tool_%d", j++);
+				snprintf (tool_flagname, sizeof (tool_flagname), "tool_%d", j++);
 				r_list_append (ret, r_bin_field_new (addr + off, addr + off, 1, tool_flagname, "mach0_build_version_tool", "mach0_build_version_tool", true));
 				off += 8;
 			}
@@ -4308,7 +4308,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			char section_flagname[128];
 			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
 				const char *sname = is64? "mach0_section64": "mach0_section";
-				snprintf(section_flagname, sizeof(section_flagname), "section_%zu", j++);
+				snprintf (section_flagname, sizeof (section_flagname), "section_%zu", j++);
 				RBinField *f = r_bin_field_new (addr + off, addr + off, 1, section_flagname, sname, sname, true);
 				r_list_append (ret, f);
 				off += is64? 80: 68;
