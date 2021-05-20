@@ -456,6 +456,9 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	}
 
 #if __APPLE__
+	if (pid < 0) {
+		return R_DEBUG_REASON_ERROR;
+	}
 	r_cons_break_push (NULL, NULL);
 	do {
 		reason = xnu_wait (dbg, pid);

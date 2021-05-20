@@ -1322,6 +1322,9 @@ repeat:
 }
 
 R_API int r_debug_continue(RDebug *dbg) {
+	if (dbg->pid < 0) {
+		return -1;
+	}
 	return r_debug_continue_kill (dbg, 0); //dbg->reason.signum);
 }
 

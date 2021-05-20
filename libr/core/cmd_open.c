@@ -1220,6 +1220,9 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	ut64 old_base = core->bin->cur->o->baddr_shift;
 	int bits = core->rasm->bits;
 	char *bin_abspath = r_file_abspath (binpath);
+	if (strstr (bin_abspath, "://")) {
+		return;
+	}
 	char *escaped_path = r_str_arg_escape (bin_abspath);
 	char *newfile = r_str_newf ("dbg://%s %s", escaped_path, args);
 	desc->uri = newfile;
@@ -1830,7 +1833,7 @@ static int cmd_open(void *data, const char *input) {
 			} else if ('?' == input[2]) {
 				r_core_cmd_help (core, help_msg_ood);
 			} else {
-				r_core_file_reopen_debug (core, input + 2);
+				r_core_file_reopen_debug (core, r_str_trim_head_ro (input + 2));
 			}
 			break;
 		case 'c': // "oob" : reopen with bin info
