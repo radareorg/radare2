@@ -61,6 +61,10 @@ static void handle_xor (const ut8 *block, int len) {
 	r_cons_printf ("%02x\n", r_hash_xor (block, len));
 }
 
+static void handle_xorpair (const ut8 *block, int len) {
+	r_cons_printf ("%04x\n", r_hash_xorpair (block, len));
+}
+
 static void handle_entropy (const ut8 *block, int len) {
 	r_cons_printf ("%f\n", r_hash_entropy (block, len));
 }
@@ -83,8 +87,16 @@ static void handle_mod255 (const ut8 *block, int len) {
 	//r_cons_printf ("%02x\n", r_hash_pcprint (block, len));
 }
 
+static void handle_xxhash (const ut8 *block, int len) {
+	r_cons_printf ("%" PFMT32x "\n", r_hash_xxhash (block, len));
+}
+
 static void handle_luhn (const ut8 *block, int len) {
 	r_cons_printf ("%" PFMT64u "\n", r_hash_luhn (block, len));
+}
+
+static void handle_ssdeep (const ut8 *block, int len) {
+	r_cons_printf ("%s\n", r_hash_ssdeep (block, len));
 }
 
 static void handle_crc8_smbus (const ut8 *block, int len) {
@@ -303,7 +315,24 @@ static void handle_crc64_xz (const ut8 * block, int len) {
 static void handle_crc64_iso (const ut8 * block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_ISO));
 }
+
 #endif /* #if R_HAVE_CRC64_EXTRA */
+
+static void handle_fletcher8 (const ut8 *block, int len) {
+	r_cons_printf ("%x\n", r_hash_fletcher8 (block, len));
+}
+
+static void handle_fletcher16 (const ut8 *block, int len) {
+	r_cons_printf ("%02x\n", r_hash_fletcher16 (block, len));
+}
+
+static void handle_fletcher32 (const ut8 *block, int len) {
+	r_cons_printf ("%" PFMT32x "\n", r_hash_fletcher32 (block, len));
+}
+
+static void handle_fletcher64 (const ut8 *block, int len) {
+	r_cons_printf ("%" PFMT64x "\n", r_hash_fletcher64 (block, len));
+}
 
 static int cmd_hash_bang(RCore *core, const char *input) {
 	if (r_sandbox_enable (0)) {
@@ -399,12 +428,15 @@ static RHashHashHandlers hash_handlers[] = {
 	{"sha512", handle_sha512},
 	{"adler32", handle_adler32},
 	{"xor", handle_xor},
+	{"xorpair", handle_xorpair},
 	{"entropy", handle_entropy},
 	{"parity", handle_parity},
 	{"hamdist", handle_hamdist},
 	{"pcprint", handle_pcprint},
 	{"mod255", handle_mod255},
+	{"xxhash", handle_xxhash},
 	{"luhn", handle_luhn},
+	{"ssdeep", handle_ssdeep},
 
 	{"crc8smbus", handle_crc8_smbus},
 #if R_HAVE_CRC8_EXTRA
@@ -477,5 +509,9 @@ static RHashHashHandlers hash_handlers[] = {
 	{ /* CRC-64/XZ          */ "crc64xz", handle_crc64_xz },
 	{ /* CRC-64/ISO         */ "crc64iso", handle_crc64_iso },
 #endif /* #if R_HAVE_CRC64_EXTRA */
+	{"fletcher8", handle_fletcher8},
+	{"fletcher16", handle_fletcher16},
+	{"fletcher32", handle_fletcher32},
+	{"fletcher64", handle_fletcher64},
 	{NULL, NULL},
 };
