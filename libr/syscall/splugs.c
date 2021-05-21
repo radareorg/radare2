@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <r_types.h>
 #include <r_util.h>
-#include <r_asm.h>
+#include <r_syscall.h>
 
 #if HAVE_GPERF
 extern GdbGperf gperf_darwin_arm_32;
@@ -53,7 +53,7 @@ static const SdbGperf *gperfs[] = {
 	NULL
 };
 
-R_API SdbGperf *r_syscal_get_gperf(const char *k) {
+R_API SdbGperf *r_syscall_get_gperf(const char *k) {
 	SdbGperf **gp = (SdbGperf**)gperfs;
 	while (*gp) {
 		SdbGperf *g = *gp;
@@ -65,7 +65,7 @@ R_API SdbGperf *r_syscal_get_gperf(const char *k) {
 	return NULL;
 }
 #else
-R_API SdbGperf *r_asm_get_gperf(const char *k) {
+R_API SdbGperf *r_syscall_get_gperf(const char *k) {
 	return NULL;
 }
 #endif
