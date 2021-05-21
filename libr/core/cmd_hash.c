@@ -91,7 +91,7 @@ static void handle_xxhash(const ut8 *block, int len) {
 	r_cons_printf ("%" PFMT32x "\n", r_hash_xxhash (block, len));
 }
 
-static void handle_luhn (const ut8 *block, int len) {
+static void handle_luhn(const ut8 *block, int len) {
 	r_cons_printf ("%" PFMT64u "\n", r_hash_luhn (block, len));
 }
 
