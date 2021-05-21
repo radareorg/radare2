@@ -322,7 +322,7 @@ static void handle_fletcher8 (const ut8 *block, int len) {
 	r_cons_printf ("%x\n", r_hash_fletcher8 (block, len));
 }
 
-static void handle_fletcher16 (const ut8 *block, int len) {
+static void handle_fletcher16(const ut8 *block, int len) {
 	r_cons_printf ("%02x\n", r_hash_fletcher16 (block, len));
 }
 
