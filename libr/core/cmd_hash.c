@@ -312,7 +312,7 @@ static void handle_crc64_xz (const ut8 * block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_XZ));
 }
 
-static void handle_crc64_iso (const ut8 * block, int len) {
+static void handle_crc64_iso(const ut8 * block, int len) {
 	r_cons_printf ("%016" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_CRC64_ISO));
 }
 
