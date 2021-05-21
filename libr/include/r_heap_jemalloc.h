@@ -1,12 +1,15 @@
 #ifndef R2_HEAP_JEMALLOC_H
 #define R2_HEAP_JEMALLOC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "r_jemalloc/internal/jemalloc_internal.h"
 
 #define INC_HEAP32 1
 #include "r_heap_jemalloc.h"
 #undef INC_HEAP32
-#endif
 
 #undef GH
 #undef GHT
@@ -33,3 +36,9 @@
 #define PRINT_GA(msg) r_cons_printf ("%s" msg Color_RESET, pal->args)
 #define PRINT_BA(msg) r_cons_printf ("%s" msg Color_RESET, pal->num)
 #define PRINT_RA(msg) r_cons_printf ("%s" msg Color_RESET, pal->invalid)
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

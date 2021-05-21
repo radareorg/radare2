@@ -1,6 +1,10 @@
 #ifndef R2_TIME_H
 #define R2_TIME_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <r_types.h>
 #include <time.h>
 
@@ -35,6 +39,10 @@ R_API char *r_ctime_r(const time_t *timer, char *buf);
 #else
 #define R_TIME_PROFILE_BEGIN do{}while(0)
 #define R_TIME_PROFILE_END do{}while(0)
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

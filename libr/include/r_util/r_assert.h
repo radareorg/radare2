@@ -1,6 +1,10 @@
 #ifndef R_ASSERT_H
 #define R_ASSERT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "r_log.h"
 
 #define R_STATIC_ASSERT(x)\
@@ -119,5 +123,9 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...) R_PRINTF_CHECK(2,
 #define r_return_val_if_reached(val) do { assert (false); } while(0)
 
 #endif // R_CHECKS_LEVEL
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

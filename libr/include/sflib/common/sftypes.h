@@ -21,6 +21,10 @@
 #ifndef SFTYPES_H
 #define SFTYPES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define NULL ((void*)0)
 
@@ -1003,7 +1007,7 @@ struct termios {
 
 
 
-#endif /* SFTYPES_H */
+#if 0
 
 /****************** Elf headers ***************/
 /*  From /usr/include/elf.h */
@@ -3571,3 +3575,10 @@ struct sembuf {
 	short       sem_op;     /* semaphore operation */
 	short       sem_flg;    /* operation flags */
 };
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* SFTYPES_H */

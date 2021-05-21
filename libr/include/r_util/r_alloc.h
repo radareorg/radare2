@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define R_MALLOC_WRAPPER 0
 #define R_MALLOC_GLOBAL 0
 
@@ -48,6 +52,10 @@ R_API void r_free(void *p);
 #define _r_free r_free
 #define _r_realloc r_realloc
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

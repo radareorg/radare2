@@ -1,6 +1,10 @@
 #ifndef R2_TYPES_BASE_H
 #define R2_TYPES_BASE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <ctype.h>
 #include <sys/types.h>
 #include <limits.h>
@@ -220,5 +224,9 @@ typedef struct _utX {
 		x *m = malloc(sizeof (x));\
 		return m? *m = n, m: m; \
 	}
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // R2_TYPES_BASE_H

@@ -15,6 +15,10 @@
  * Lesser General Public License for more details.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* $Id$ */
 
 #ifndef SFSOCKETCALL_H
@@ -125,6 +129,8 @@ inline static __sys_socketcall3(ssize_t,recvmsg, int,s, struct msghdr *,msg, int
 inline static __sys_socketcall6(ssize_t,sendto, int,s,  const void *,buf, size_t,len, int,flags, const struct sockaddr *,to, socklen_t,tolen)
 inline static __sys_socketcall3(ssize_t,sendmsg, int,s, const struct msghdr *,msg, int,flags)
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SFSOCKETCALL_H */

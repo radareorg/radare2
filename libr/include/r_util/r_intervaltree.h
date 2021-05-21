@@ -3,6 +3,10 @@
 #ifndef R_INTERVALTREE_H
 #define R_INTERVALTREE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "r_rbtree.h"
 #include "../r_types.h"
 
@@ -93,5 +97,8 @@ static inline RIntervalNode *r_interval_tree_iter_get(RIntervalTreeIter *it) {
 #define r_interval_tree_foreach_prev(tree, it, dat) \
 	for ((it) = r_rbtree_last (&(tree)->root->node); r_rbtree_iter_has (&it) && (dat = r_rbtree_iter_get (&it, RIntervalNode, node)->data); r_rbtree_iter_prev (&(it)))
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //R_INTERVALTREE_H

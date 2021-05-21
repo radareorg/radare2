@@ -18,6 +18,10 @@
 #ifndef PTRACE_WRAP_H
 #define PTRACE_WRAP_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/ptrace.h>
@@ -76,5 +80,9 @@ void ptrace_wrap_instance_stop(ptrace_wrap_instance *inst);
 long ptrace_wrap(ptrace_wrap_instance *inst, ptrace_wrap_ptrace_request request, pid_t pid, void *addr, void *data);
 pid_t ptrace_wrap_fork(ptrace_wrap_instance *inst, void (*child_callback)(void *), void *child_callback_user);
 void *ptrace_wrap_func(ptrace_wrap_instance *inst, ptrace_wrap_func_func func, void *user);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //PTRACE_WRAP_H

@@ -6,6 +6,11 @@
 #include <r_types.h>
 #include <r_getopt.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 R_LIB_VERSION_HEADER(r_main);
 
 typedef struct r_main_t {
@@ -33,5 +38,9 @@ R_API int r_main_rafind2(int argc, const char **argv);
 R_API int r_main_radiff2(int argc, const char **argv);
 R_API int r_main_ragg2(int argc, const char **argv);
 R_API int r_main_rasign2(int argc, const char **argv);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
