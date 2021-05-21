@@ -330,7 +330,7 @@ static void handle_fletcher32 (const ut8 *block, int len) {
 	r_cons_printf ("%" PFMT32x "\n", r_hash_fletcher32 (block, len));
 }
 
-static void handle_fletcher64 (const ut8 *block, int len) {
+static void handle_fletcher64(const ut8 *block, int len) {
 	r_cons_printf ("%" PFMT64x "\n", r_hash_fletcher64 (block, len));
 }
 
