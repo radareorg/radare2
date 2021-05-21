@@ -9,12 +9,6 @@
 #endif
 #include "sdb.h"
 
-#define MODE_ZERO '0'
-#define MODE_JSON 'j'
-#define MODE_CGEN 'c'
-#define MODE_TEXT 0 // default in plaintext
-#define MODE_DFLT 0
-
 typedef enum {
 	text,
 	zero,
@@ -398,8 +392,8 @@ static void cgen_footer(const char *name, const char *cname) {
 
 static int sdb_dump(MainOptions *mo) {
 	const char *dbname = mo->db;
-	bool grep = mo->grep;
 	const char *expgrep = mo->grep;
+	const bool grep = mo->grep;
 
 	char *v, k[SDB_MAX_KEY] = { 0 };
 	const char *comma = "";
@@ -428,6 +422,8 @@ static int sdb_dump(MainOptions *mo) {
 		if (mo->format == cgen && ls_length (l) > SDB_MAX_GPERF_KEYS) {
 			ls_free (l);
 			eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
+			free (name);
+			free (cname);
 			return -1;
 		}
 		SdbKv *kv;
@@ -452,6 +448,8 @@ static int sdb_dump(MainOptions *mo) {
 			free (v);
 			if (mo->format == cgen && count++ > SDB_MAX_GPERF_KEYS) {
 				eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
+				free (name);
+				free (cname);
 				return -1;
 			}
 		}
@@ -849,7 +847,7 @@ static MainOptions *main_argparse(int argc, const char **argv) {
 
 int main(int argc, const char **argv) {
 	char *line;
-	int i, fmt = MODE_DFLT;
+	int i;
 
 	/* terminate flags */
 	if (argc < 2) {
@@ -899,6 +897,8 @@ int main(int argc, const char **argv) {
 		if (!strcmp (mo->db, "-")) {
 			mo->create = dash;
 			mo->db = NULL;
+			mo->argi--;
+			mo->db0 = mo->argi;
 		}
 	}
 #if USE_MMAN
@@ -911,16 +911,26 @@ int main(int argc, const char **argv) {
 		if ((s = sdb_new (NULL, mo->db, 0))) {
 			sdb_config (s, options);
 			int kvs = mo->db0 + 2;
-			if (kvs < argc) {
-				save |= insertkeys (s, argv + mo->argi + 2, argc - kvs, '-');
-			}
-			for (; (line = slurp (stdin, NULL));) {
-				save |= sdb_query (s, line);
-				if (fmt) {
-					fflush (stdout);
-					write_null ();
+			if (mo->argi + 2 < mo->argc) {
+				for (i = mo->argi + 2; i < argc; i++) {
+					save |= sdb_query (s, mo->argv[i]);
+					if (mo->format) {
+						fflush (stdout);
+						write_null ();
+					}
 				}
-				free (line);
+			} else {
+				if (kvs < argc) {
+					save |= insertkeys (s, argv + mo->argi + 2, argc - kvs, '-');
+				}
+				for (; (line = slurp (stdin, NULL));) {
+					save |= sdb_query (s, line);
+					if (mo->format) {
+						fflush (stdout);
+						write_null ();
+					}
+					free (line);
+				}
 			}
 		}
 		break;
@@ -943,7 +953,7 @@ int main(int argc, const char **argv) {
 		if (mo->argi + 1 < mo->argc) {
 			for (i = mo->db0 + 1; i < argc; i++) {
 				save |= sdb_query (s, mo->argv[i]);
-				if (fmt) {
+				if (mo->format) {
 					fflush (stdout);
 					write_null ();
 				}
