@@ -95,7 +95,7 @@ static void handle_luhn (const ut8 *block, int len) {
 	r_cons_printf ("%" PFMT64u "\n", r_hash_luhn (block, len));
 }
 
-static void handle_ssdeep (const ut8 *block, int len) {
+static void handle_ssdeep(const ut8 *block, int len) {
 	r_cons_printf ("%s\n", r_hash_ssdeep (block, len));
 }
 
