@@ -1221,6 +1221,8 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	int bits = core->rasm->bits;
 	char *bin_abspath = r_file_abspath (binpath);
 	if (strstr (bin_abspath, "://")) {
+		free (bin_abspath);
+		free (binpath);
 		return;
 	}
 	char *escaped_path = r_str_arg_escape (bin_abspath);
