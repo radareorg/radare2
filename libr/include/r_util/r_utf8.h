@@ -4,6 +4,10 @@
 /* For RStrEnc definition */
 #include "r_str.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct { ut32 from, to; const char *name; } RUtfBlock;
 // extern const RUtfBlock r_utf_blocks[];
 
@@ -28,5 +32,9 @@ R_API char *r_utf8_to_acp_l(const char *str, int len);
 #define r_acp_to_utf8(str) r_acp_to_utf8_l ((char *)str, -1)
 #define r_utf8_to_acp(cstring) r_utf8_to_acp_l ((char *)cstring, -1)
 #endif // __WINDOWS__
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //  R_UTF8_H

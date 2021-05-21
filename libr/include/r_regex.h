@@ -5,6 +5,10 @@
 #include <r_list.h>
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct r_regex_t {
 	int re_magic;
 	size_t re_nsub;	/* number of parenthesized subexpressions */
@@ -74,5 +78,9 @@ R_API int r_regex_exec(const RRegex *preg, const char *string, size_t nmatch, RR
 R_API RList *r_regex_match_list(RRegex *rx, const char *text);
 R_API char *r_regex_error(RRegex *rx, int errcode);
 // R_API size_t r_regex_error(int, const RRegex*, char *, size_t);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* !_REGEX_H_ */

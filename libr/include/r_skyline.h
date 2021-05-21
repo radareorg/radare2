@@ -4,6 +4,10 @@
 #include "r_vector.h"
 #include "r_util/r_itv.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct r_skyline_item_t {
 	RInterval itv;
 	void *user;
@@ -52,5 +56,9 @@ static inline bool r_skyline_contains(RSkyline *skyline, ut64 addr) {
 	r_return_val_if_fail (skyline, false);
 	return (bool)r_skyline_get_item (skyline, addr);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

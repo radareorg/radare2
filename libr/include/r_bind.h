@@ -1,10 +1,14 @@
-/* radare2 - LGPL - Copyright 2015-2020 - pancake */
+/* radare2 - LGPL - Copyright 2015-2021 - pancake */
 
 #ifndef R2_BIND_H
 #define R2_BIND_H
 
 // TODO: move riobind here too?
 // TODO: move rprint here too
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef int (*RCoreCmd)(void *core, const char *cmd);
 typedef int (*RCoreCmdF)(void *user, const char *fmt, ...);
@@ -44,5 +48,9 @@ typedef struct r_core_bind_t {
 	RCoreDebugMapsSync syncDebugMaps;
 	RCorePJWithEncoding pjWithEncoding;
 } RCoreBind;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

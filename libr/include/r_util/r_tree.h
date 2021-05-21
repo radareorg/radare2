@@ -1,7 +1,12 @@
 #ifndef R_TREE_H
 #define R_TREE_H
+
 #include <r_list.h>
 #include <r_util/r_queue.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct r_tree_t;
 
@@ -33,4 +38,9 @@ R_API void r_tree_reset(RTree *t);
 R_API void r_tree_free(RTree *t);
 R_API void r_tree_dfs(RTree *t, RTreeVisitor *vis);
 R_API void r_tree_bfs(RTree *t, RTreeVisitor *vis);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_TREE_H

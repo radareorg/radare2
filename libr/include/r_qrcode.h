@@ -21,7 +21,11 @@
  *   Software.
  */
 
-#pragma once
+#ifndef R_QRCODE_H
+#define R_QRCODE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -121,5 +125,9 @@ R_API bool r_qrcode_text(const char *text, uint8_t tempBuffer[], uint8_t qrcode[
 R_API bool r_qrcode_bin(uint8_t dataAndTemp[], int dataLen, uint8_t qrcode[],
 	enum qrcodegen_Ecc ecl, int minVersion, int maxVersion, enum qrcodegen_Mask mask, bool boostEcl);
 
-
 R_API char *r_qrcode_print(const ut8* qrcode);
+
+#ifdef __cplusplus
+}
+#endif
+#endif

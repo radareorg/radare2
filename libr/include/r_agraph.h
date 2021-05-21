@@ -1,6 +1,10 @@
 #ifndef R2_AGRAPH_H
 #define R2_AGRAPH_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <r_types.h>
 #include <r_cons.h>
 #include <r_util/r_graph.h>
@@ -111,6 +115,10 @@ R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
 R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 R_API RAGraph *create_agraph_from_graph(const RGraph/*<RGraphNodeInfo>*/ *graph);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

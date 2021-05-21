@@ -1,6 +1,10 @@
 #ifndef R_TYPES_OVERFLOW_H
 #define R_TYPES_OVERFLOW_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // TODO: Use CLANG/GCC builtins if available: __builtin_mul_overflow
 
 // ADD
@@ -76,5 +80,9 @@ UNSIGNED_MUL_OVERFLOW_CHECK(UT8_MUL_OVFCHK, ut8, UT8_MIN, UT8_MAX)
 UNSIGNED_MUL_OVERFLOW_CHECK(UT16_MUL_OVFCHK, ut16, UT16_MIN, UT16_MAX)
 UNSIGNED_MUL_OVERFLOW_CHECK(UT32_MUL_OVFCHK, ut32, UT32_MIN, UT32_MAX)
 UNSIGNED_MUL_OVERFLOW_CHECK(UT64_MUL_OVFCHK, ut64, UT64_MIN, UT64_MAX)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
