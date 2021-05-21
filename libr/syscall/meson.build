@@ -1,5 +1,6 @@
 r_syscall_sources = [
   'syscall.c',
+  'splugs.c',
   'ioports.c'
 ]
 

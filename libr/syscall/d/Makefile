@@ -45,11 +45,13 @@ ifneq ($(SILENT),)
 	@echo "SDB $<"
 	@rm -f $@
 	@"${SHELL}" gen.sh < $< | ${SDB} $@ =
-	@test -f $@
 else
 	rm -f $@
 	"${SHELL}" gen.sh < $< | ${SDB} $@ =
+endif
 	test -f $@
+ifeq ($(HAVE_GPERF),1)
+	${SDB} -C $@
 endif
 
 clean:
