@@ -65,7 +65,7 @@ static void handle_xorpair(const ut8 *block, int len) {
 	r_cons_printf ("%04x\n", r_hash_xorpair (block, len));
 }
 
-static void handle_entropy (const ut8 *block, int len) {
+static void handle_entropy(const ut8 *block, int len) {
 	r_cons_printf ("%f\n", r_hash_entropy (block, len));
 }
 
