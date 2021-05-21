@@ -318,7 +318,7 @@ static void handle_crc64_iso(const ut8 * block, int len) {
 
 #endif /* #if R_HAVE_CRC64_EXTRA */
 
-static void handle_fletcher8 (const ut8 *block, int len) {
+static void handle_fletcher8(const ut8 *block, int len) {
 	r_cons_printf ("%x\n", r_hash_fletcher8 (block, len));
 }
 
