@@ -99,7 +99,7 @@ static void handle_ssdeep(const ut8 *block, int len) {
 	r_cons_printf ("%s\n", r_hash_ssdeep (block, len));
 }
 
-static void handle_crc8_smbus (const ut8 *block, int len) {
+static void handle_crc8_smbus(const ut8 *block, int len) {
 	r_cons_printf ("%02" PFMTCRCx "\n", r_hash_crc_preset (block, len, CRC_PRESET_8_SMBUS));
 }
 
