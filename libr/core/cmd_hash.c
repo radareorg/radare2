@@ -87,7 +87,7 @@ static void handle_mod255 (const ut8 *block, int len) {
 	//r_cons_printf ("%02x\n", r_hash_pcprint (block, len));
 }
 
-static void handle_xxhash (const ut8 *block, int len) {
+static void handle_xxhash(const ut8 *block, int len) {
 	r_cons_printf ("%" PFMT32x "\n", r_hash_xxhash (block, len));
 }
 
