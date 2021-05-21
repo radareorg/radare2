@@ -61,7 +61,7 @@ static void handle_xor (const ut8 *block, int len) {
 	r_cons_printf ("%02x\n", r_hash_xor (block, len));
 }
 
-static void handle_xorpair (const ut8 *block, int len) {
+static void handle_xorpair(const ut8 *block, int len) {
 	r_cons_printf ("%04x\n", r_hash_xorpair (block, len));
 }
 
