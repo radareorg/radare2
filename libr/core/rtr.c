@@ -889,12 +889,19 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 }
 
 static char *errmsg_tmpfile = NULL;
+static int errmsg_fd = -1;
 
 R_API void r_core_rtr_event(RCore *core, const char *input) {
 	if (*input == '-') {
-		if (errmsg_tmpfile) {
-			r_file_rm (errmsg_tmpfile);
-			errmsg_tmpfile = NULL;
+		input++;
+		if (!strcmp (input, "errmsg")) {
+			if (errmsg_tmpfile) {
+				r_file_rm (errmsg_tmpfile);
+				errmsg_tmpfile = NULL;
+				if (errmsg_fd != -1) {
+					close (errmsg_fd);
+				}
+			}
 		}
 		return;
 	}
@@ -910,7 +917,12 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 			perror ("mkfifo");
 		} else {
 			int ff = open (f, O_RDWR);
-			dup2 (ff, 2);
+			if (ff != -1) {
+				dup2 (ff, 2);
+				errmsg_fd = ff;
+			} else {
+				eprintf ("Cannot open fifo: %s\n", f);
+			}
 		}
 		// r_core_event (core, );
 		free (s);

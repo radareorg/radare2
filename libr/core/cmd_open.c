@@ -1223,6 +1223,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	if (strstr (bin_abspath, "://")) {
 		free (bin_abspath);
 		free (binpath);
+		r_list_free (old_sections);
 		return;
 	}
 	char *escaped_path = r_str_arg_escape (bin_abspath);

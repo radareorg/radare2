@@ -959,6 +959,7 @@ static void optimize(void) {
 	}
 	// eprintf ("FROM %d TO %d (%d)%c", I.context->buffer_len, len, codes, 10);
 	I.context->buffer_len = len;
+	free (oldstr);
 }
 
 R_API void r_cons_flush(void) {
