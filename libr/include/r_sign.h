@@ -13,6 +13,7 @@ R_LIB_VERSION_HEADER(r_sign);
 
 #define ZIGN_HASH "sha256"
 #define R_ZIGN_HASH R_HASH_SHA256
+#define R_SIGN_COL_DELEM ':'
 
 typedef enum {
 	R_SIGN_BYTES = 'b', // bytes pattern
@@ -69,7 +70,7 @@ typedef struct r_sign_item_t {
 
 typedef int (*RSignForeachCallback) (RSignItem *it, void *user);
 typedef int (*RSignSearchCallback) (RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user);
-typedef int (*RSignMatchCallback) (RSignItem *it, RAnalFunction *fcn, RSignType *types, void *user);
+typedef int (*RSignMatchCallback) (RSignItem *it, RAnalFunction *fcn, RSignType *types, void *user, RList *col);
 
 typedef struct r_sign_search_met {
 	/* types is an R_SIGN_END terminated array of RSignTypes that are going to be

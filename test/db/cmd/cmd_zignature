@@ -1888,3 +1888,60 @@ za sym.collide1 C b:sym.collide2 g:sym.collide2 g:sym.collide3 g:sym.collide4 g:
 za sym.collide2 C b:sym.collide1 g:sym.collide1 g:sym.collide3 g:sym.collide4 g:sym.collide5
 EOF
 RUN
+
+NAME=collisions detected and prevents renaming function
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afn badname
+zaf
+afn badname2
+f-badname
+zaf
+afn main
+f-badname2
+af- $$
+zac
+z/
+afl~main?
+zi~sign.bytes_collision.badname_1?
+zi~sign.graph_collision.badname_1?
+zi~sign.bytes_collision.badname2_1?
+zi~sign.graph_collision.badname2_1?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+1
+EOF
+RUN
+
+NAME=Rename when collision intersection unique
+FILE=bins/elf/ls
+CMDS=<<EOF
+s main
+af
+afn newname
+zaf
+f- newname
+afn badbytes
+zaf
+za badbytes b 444444
+f- badbytes
+afn badgraph
+zaf
+za badgraph g cc=100 nbbs=2 edges=3 ebbs=8 bbsum=100
+afn main
+f- badgraph
+af- main
+zac
+z/
+afl~newname?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN

@@ -608,6 +608,7 @@ struct ctxSearchCB {
 	RCore *core;
 	bool bytes_only;
 	bool rad;
+	int collisions;
 	int newfuncs;
 	int count;
 	int bytes_count;
@@ -688,30 +689,35 @@ static void apply_flag(RCore *core, RSignItem *it, ut64 addr, int size, int coun
 
 static int searchBytesHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user) {
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
-	apply_flag (ctx->core, it, addr, kw->keyword_length, kw->count, "bytes", ctx->rad);
 	RAnalFunction *fcn = r_anal_get_fcn_in (ctx->core->anal, addr, 0);
 	if (!fcn) {
 		RCore *c = ctx->core;
 		r_core_af (c, c->offset, NULL, false);
 		fcn = r_anal_get_fcn_in (ctx->core->anal, addr, 0);
 		ctx->newfuncs++;
+		ctx->count++;
 	}
+	apply_flag (ctx->core, it, addr, kw->keyword_length, kw->count, "bytes", ctx->rad);
 	if (ctx->bytes_only) {
 		if (fcn) {
 			apply_name (ctx->core, fcn, it, ctx->rad);
 			apply_types (ctx->core, fcn, it);
 		}
 		ctx->bytes_count++;
-		ctx->count++;
 	}
 	return 1;
 }
 
-static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void *user) {
+static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void *user, RList *col) {
 	r_return_val_if_fail (types && *types != R_SIGN_END, 1);
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	ut64 sz = r_anal_function_realsize (fcn);
 	RSignType t;
+	bool collides = false;
+	if (!col || !r_list_empty (col)) {
+		collides = true;
+		ctx->collisions++;
+	}
 	int i = 0;
 	while ((t = types[i++]) != R_SIGN_END) {
 		const char *prefix = NULL;
@@ -745,14 +751,21 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void 
 			break;
 		}
 		if (prefix) {
-			apply_flag (ctx->core, it, fcn->addr, sz, ctx->count, prefix, ctx->rad);
+			char *tmp = NULL;
+			if (collides && (tmp = r_str_newf ("%s_collision", prefix))) {
+				apply_flag (ctx->core, it, fcn->addr, sz, ctx->count, tmp, ctx->rad);
+				free (tmp);
+			} else {
+				apply_flag (ctx->core, it, fcn->addr, sz, ctx->count, prefix, ctx->rad);
+			}
 			ctx->count++;
 		}
 	}
 
-	// TODO: check collisions signature before upating
-	apply_name (ctx->core, fcn, it, ctx->rad);
-	apply_types (ctx->core, fcn, it);
+	if (!collides) {
+		apply_name (ctx->core, fcn, it, ctx->rad);
+		apply_types (ctx->core, fcn, it);
+	}
 	return 1;
 }
 
@@ -832,6 +845,9 @@ static void print_ctx_hits(struct ctxSearchCB *ctx) {
 	if (ctx->newfuncs) {
 		eprintf ("New functions:  %d\n", ctx->newfuncs);
 	}
+	if (ctx->collisions) {
+		eprintf ("collisions:  %d\n", ctx->collisions);
+	}
 	if (ctx->bytes_count) {
 		eprintf ("bytes:  %d\n", ctx->bytes_count);
 		prints++;
@@ -895,6 +911,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 		if (!list) {
 			return false;
 		}
+		RListIter *iter;
 		RIOMap *map;
 		r_list_foreach (list, iter, map) {
 			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
@@ -926,7 +943,6 @@ static bool search(RCore *core, bool rad, bool only_func) {
 			return false;
 		}
 	}
-
 	print_ctx_hits (&ctx);
 	return ctx.count > 0? true: false;
 }
