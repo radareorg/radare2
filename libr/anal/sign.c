@@ -32,6 +32,11 @@ const char *getRealRef(RCore *core, ut64 off) {
 	return NULL;
 }
 
+int list_str_cmp (const void *a, const void *b) {
+	// prevent silent failure if RListComparator changes
+	return strcmp ((const char *)a, (const char *)b);
+}
+
 R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, NULL);
 
@@ -883,6 +888,9 @@ static RSignBytes *r_sign_func_empty_mask(RAnal *a, RAnalFunction *fcn) {
 static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn && fcn->bbs && fcn->bbs->head, false);
 	RSignBytes *sig = r_sign_func_empty_mask (a, fcn);
+	if (!sig) {
+		return NULL;
+	}
 
 	ut64 ea = fcn->addr;
 	int size = sig->size;
@@ -2345,6 +2353,127 @@ static int str_list_cmp(RList *la, RList *lb) {
 	return 0;
 }
 
+static bool type_in_array(RSignType *arr, RSignType needle) {
+	while (*arr != R_SIGN_END) {
+		if (*arr == needle) {
+			return true;
+		}
+		arr++;
+	}
+	return false;
+}
+
+static RListIter *collision_skip_unused(RListIter *iter, RSignType *used) {
+	char *n = (char *)r_list_iter_get_data (iter);
+	if (!n) {
+		return r_list_iter_get_next (iter);
+	}
+	RSignType skip = n[0];
+	if (type_in_array (used, skip)) {
+		return iter;
+	}
+	RListIter *next;
+	while ((next = r_list_iter_get_next (iter))) {
+		n = r_list_iter_get_data (next);
+		RSignType t = n[0];
+		if (!n || skip != t) {
+			if (type_in_array (used, t)) {
+				return iter;
+			}
+		}
+		iter = next;
+	}
+	return iter;
+}
+
+// return NULL one error, otherwise return a, possibly empty, list of
+// collisions. Relies on sets being ordered in groups of types
+static RList *check_collisions(RList *collisions, RSignType *types) {
+	if (!collisions || types[0] == R_SIGN_END) {
+		return r_list_new ();
+	}
+
+	RListIter *iter = r_list_iterator (collisions);
+	if (!iter) {
+		return NULL;
+	}
+
+	// skip over types that were not matched against
+	if (!(iter = collision_skip_unused (iter, types))) {
+		return r_list_new ();
+	}
+
+	char *col = (char *)r_list_iter_get_data (iter);
+	if (!col || col[1] != ':') {
+		return NULL;
+	}
+
+	RList *set = r_list_new ();
+	if (!set) {
+		return NULL;
+	}
+	RList *holder = NULL;
+
+	// add the names from first matched type to return set
+	RSignType thistype = col[0];
+	while (iter) {
+		r_list_append (set, col + 2);
+		if ((iter = r_list_iter_get_next (iter))) {
+			col = (char *)r_list_iter_get_data (iter);
+			if (!col || col[1] != ':') {
+				goto collerr;
+			}
+			RSignType t = col[1];
+			if (t != thistype) {
+				break;
+			}
+		}
+	}
+
+	holder = r_list_new ();
+	if (!holder) {
+		goto collerr;
+	}
+
+	// now we interset return set with next relevent type and repeat
+	while (iter && (iter = collision_skip_unused (iter, types))) { // loop over new type group
+		col = (char *)r_list_iter_get_data (iter);
+		if (!col || col[1] != ':') {
+			goto collerr;
+		}
+
+		// interset current type
+		RSignType t = col[0];
+		RSignType nexttype = t;
+		while (t == nexttype) {
+			char *name = col + 2;
+			if (r_list_find (set, name, list_str_cmp)) {
+				r_list_append (holder, col + 2);
+			}
+			nexttype = R_SIGN_END;
+			if ((iter = r_list_iter_get_next (iter))) {
+				col = (char *)r_list_iter_get_data (iter);
+				if (!col || col[1] != ':') {
+					goto collerr;
+				}
+				nexttype = col[1];
+			}
+		}
+		r_list_purge (set);
+		RList *tmplist = set;
+		set = holder;
+		holder = tmplist;
+	}
+
+	r_list_free (holder);
+	return set;
+
+collerr:
+	r_list_free (set);
+	r_list_free (holder);
+	return NULL;
+}
+
 struct metric_ctx {
 	int matched;
 	RSignItem *it;
@@ -2379,10 +2508,13 @@ static int match_metrics(RSignItem *it, void *user) {
 	if (fit->types && !str_list_cmp (it->types, fit->types)) {
 		types[count++] = R_SIGN_TYPES;
 	}
+
 	if (count) {
+		RList *col = check_collisions (it->collisions, types);
 		ctx->matched += count;
 		types[count] = R_SIGN_END;
-		sm->cb (it, sm->fcn, types, sm->user);
+		sm->cb (it, sm->fcn, types, sm->user, col);
+		r_list_free (col);
 		return 1;
 	}
 	return 0;
@@ -2405,7 +2537,7 @@ static bool item_addto_collisions(RSignItem *it, const char *add) {
 		}
 	}
 	RList *l = it->collisions;
-	if (r_list_find (l, (void *)add, (RListComparator)strcmp)) {
+	if (r_list_find (l, (void *)add, list_str_cmp)) {
 		return true;
 	}
 	char *dup = strdup (add);
@@ -2555,7 +2687,7 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 	r_pvector_foreach (sigs, p) {
 		RSignItem *it = *p;
 		if (it->collisions) {
-			r_list_sort (it->collisions, (RListComparator)strcmp);
+			r_list_sort (it->collisions, list_str_cmp);
 			r_sign_add_item (a, it);
 		}
 	}
