@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2008-2018 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
-#include "r_io.h"
+#include <r_io.h>
 #include "config.h"
-#include <stdio.h>
 
 static volatile RIOPlugin *default_plugin = NULL;
 
@@ -11,7 +10,8 @@ static RIOPlugin *io_static_plugins[] = {
 };
 
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
-	if (!io || !io->plugins || !plugin || !plugin->name) {
+	r_return_val_if_fail (io && plugin && io->plugins, false);
+	if (!plugin->name) {
 		return false;
 	}
 	ls_append (io->plugins, plugin);
@@ -82,17 +82,10 @@ R_API int r_io_plugin_list(RIO *io) {
 		str[1] = plugin->write ? 'w' : '_';
 		str[2] = plugin->isdbg ? 'd' : '_';
 		str[3] = 0;
-		io->cb_printf ("%s  %-8s %s (%s)",
-				str, plugin->name,
-			plugin->desc, plugin->license);
+		io->cb_printf ("%s  %-8s %-6s %s.", str,
+			plugin->name, plugin->license, plugin->desc);
 		if (plugin->uris) {
 			io->cb_printf (" %s", plugin->uris);
-		}
-		if (plugin->version) {
-			io->cb_printf (" v%s", plugin->version);
-		}
-		if (plugin->author) {
-			io->cb_printf (" %s", plugin->author);
 		}
 		io->cb_printf ("\n");
 		n++;
