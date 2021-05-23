@@ -415,7 +415,7 @@ io_plugins += [
   'self',
   'shm',
   'sparse',
-  'tcp',
+  'tcpslurp',
   'winkd',
   'winedbg',
   'zip'
