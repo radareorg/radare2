@@ -3299,15 +3299,19 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							r_config_get_i (core->config, "stack.size") - w);
 					}
 				} else {
+					if (!canWrite (core, core->offset)) {
+						r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+						r_cons_any_key (NULL);
+						return true;
+					}
 					if (core->print->ocur == -1) {
-						sprintf (buf, "wos 01 @ $$+%i!1",core->print->cur);
+						r_core_cmdf (core, "wos 01 @ $$+%i!1", core->print->cur);
 					} else {
-						sprintf (buf, "wos 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+						r_core_cmdf (core, "wos 01 @ $$+%i!%i", core->print->cur < core->print->ocur
 							? core->print->cur
 							: core->print->ocur,
 							R_ABS (core->print->ocur - core->print->cur) + 1);
 					}
-					r_core_cmd (core, buf, 0);
 				}
 			} else {
 				if (!autoblocksize) {
@@ -3329,15 +3333,19 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							r_config_get_i (core->config, "stack.size") + w);
 					}
 				} else {
+					if (!canWrite (core, core->offset)) {
+						r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+						r_cons_any_key (NULL);
+						return true;
+					}
 					if (core->print->ocur == -1) {
-						sprintf (buf, "woa 01 @ $$+%i!1", core->print->cur);
+						r_core_cmdf (core, "woa 01 @ $$+%i!1", core->print->cur);
 					} else {
-						sprintf (buf, "woa 01 @ $$+%i!%i", core->print->cur < core->print->ocur
+						r_core_cmdf (core, "woa 01 @ $$+%i!%i", core->print->cur < core->print->ocur
 							? core->print->cur
 							: core->print->ocur,
 							R_ABS (core->print->ocur - core->print->cur) + 1);
 					}
-					r_core_cmd (core, buf, 0);
 				}
 			} else {
 				if (!autoblocksize) {
