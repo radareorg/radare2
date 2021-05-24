@@ -16,10 +16,6 @@ local hard drives, kernel memory, programs, remote gdb connections,
 and be able to analyze, emulate, debug, modify and disassemble any
 kind of binary.
 
-<a href="https://repology.org/metapackage/radare2">
-<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
-</a>
-
 <center>
 <img src="doc/images/shot.png" alt="screenshot" align="center" width="600px">
 </center>
@@ -27,10 +23,15 @@ kind of binary.
 * [Download Release Binaries](https://github.com/radareorg/radare2/releases)
 * Build and install r2 from Git (Clone the repo and run `sys/install.sh`)
 * [CONTRIBUTING.md](CONTRIBUTING.md)
+* [INSTALL.md](INSTALL.md)
 * [DEVELOPERS.md](DEVELOPERS.md)
 * [USAGE.md](USAGE.md)
 
 ## Supported Operating Systems
+
+<a href="https://repology.org/metapackage/radare2">
+<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
+</a>
 
 Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS,
 [Dragonfly|Net|Free|Open]BSD, Android, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
@@ -53,49 +54,7 @@ ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
 WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
 
-## Installation
-
-The [GHA CI](https://github.com/radareorg/radare2/actions) builds the packages for every commit and those are also
-available in the [release](https://github.com/radareorg/radare2/releases) page. But it is always recommended to
-install r2 from git.
-
-The most used and recommended way is by running this script which will build
-and install r2 from sources and install it **system wide** with **symlinks**.
-
-```
-git clone https://github.com/radareorg/radare2
-radare2/sys/install.sh
-```
-
-If you need to install it in your user's home or switch between multiple r2
-builds you may checkout the `meson` build and the [r2env](https://github.com/radareorg/r2env) Python tool.
-
-The focus on portability enables r2 to be built in many different ways for multiple
-operating systems easily by using the `./configure;make` or `meson` build systems.
-
-r2env allows to build and install different versions of r2 in your home
-or system and it is available via Python's PIP tool.
-
-```
-pip install r2env
-r2env init
-r2env add radare2
-```
-
-## Uninstall
-
-In case of a polluted filesystem, you can uninstall the current version
-or remove all previous installations with one or more of those commands:
-
-```
-make uninstall
-make system-purge
-make purge
-git clean -xdf
-rm -rf shlr/capstone
-```
-
-## Package Manager
+## Plugins
 
 Radare2 has its own package manager - r2pm. Its packages
 repository is on [GitHub too](https://github.com/radareorg/radare2-pm).
