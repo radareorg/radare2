@@ -121,11 +121,9 @@ rules to make the git history more readable and consistent:
 
 # Additional resources
 
- * [README.md][]
- * [DEVELOPERS.md][]
-
  * [README.md](https://github.com/radareorg/radare2/blob/master/README.md)
  * [DEVELOPERS.md](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md)
+ * [USAGE.md](https://github.com/radareorg/radare2/blob/master/USAGE.md)
 
 If you need more confidence in your git skills, check out this quick guide:
 <https://learnxinyminutes.com/docs/git/>
