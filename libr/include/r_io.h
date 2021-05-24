@@ -520,6 +520,7 @@ extern RIOPlugin r_io_plugin_rbuf;
 extern RIOPlugin r_io_plugin_winedbg;
 extern RIOPlugin r_io_plugin_gprobe;
 extern RIOPlugin r_io_plugin_fd;
+extern RIOPlugin r_io_plugin_socket;
 
 #if __cplusplus
 }

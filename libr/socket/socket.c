@@ -716,8 +716,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 }
 
 /* Read/Write functions */
-R_API int r_socket_write(RSocket *s, void *buf, int len) {
-	D { eprintf ("WRITE "); int i; ut8 *b = buf; for (i = 0; i<len; i++) { eprintf ("%02x ", b[i]); } eprintf ("\n"); }
+R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 	int ret, delta = 0;
 #if __UNIX__
 	r_sys_signal (SIGPIPE, SIG_IGN);

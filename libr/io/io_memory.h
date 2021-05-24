@@ -7,6 +7,7 @@ typedef struct {
 	ut8 *buf;
 	ut32 size;
 	ut64 offset;
+	void *data;
 } RIOMalloc;
 
 int io_memory_close(RIODesc *fd);
