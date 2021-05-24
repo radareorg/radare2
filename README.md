@@ -64,7 +64,7 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems
 # Plugins
 
 Most of the plugins you need may be available in the stock r2 installation,
-but you can find more in the `[r2pm](https://github.com/radareorg/radare2-pm)` package manager.
+but you can find more in the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
 
 ```
 r2pm update          # initialize and update the package database
