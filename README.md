@@ -22,10 +22,10 @@ kind of binary.
 
 * Install r2 from **Git** (Clone the repo and run `sys/install.sh`) or use `pip install r2env`
 * Read the [Official radare2 book](https://book.rada.re)
-* [CONTRIBUTING.md](CONTRIBUTING.md)
-* [DEVELOPERS.md](DEVELOPERS.md)
-* [USAGE.md](USAGE.md)
-* [INSTALL.md](INSTALL.md)
+* [CONTRIBUTING.md](CONTRIBUTING.md) general rules
+* [DEVELOPERS.md](DEVELOPERS.md) to improve r2 for your needs
+* [USAGE.md](USAGE.md) for an introductory session
+* [INSTALL.md](INSTALL.md) instructions
 
 ```
 git clone https://github.com/radareorg/radare2
@@ -52,7 +52,7 @@ Some of the most installed packages are:
 ## Operating Systems
 
 Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android
-[Dragonfly|Net|Free|Open]BSD, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
+[Dragonfly, Net, Free, Open] BSD, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
 
 ## Architectures
 
