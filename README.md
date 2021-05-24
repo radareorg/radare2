@@ -4,7 +4,7 @@
 |----------|------|--------|
 | **CodeQuality** | [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) |
 
-## Radare2: The Unix-Like Reverse Engineering Framework
+## Radare2: Unix-Like Reverse Engineering Framework
 
 r2 is a rewrite from scratch of radare. It provies a set of
 libraries, tools and plugins to ease reverse engineering tasks.
