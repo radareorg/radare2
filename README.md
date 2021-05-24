@@ -73,10 +73,10 @@ r2pm install [pkg]   # installs the package
 
 Some of the most installed packages are:
 
-* **r2ghidra** the native ghidra decompiler plugin: `pdg` command
-* **r2dec** decompiler based on r2 written in js `pdd`
-* **r2frida** the frida io plugin `r2 frida://0`
-* **iaito** - official graphical interface (Qt)
+* [r2ghidra](https://github.com/radareorg/r2ghidra) the native ghidra decompiler plugin: `pdg` command
+* [r2dec](https://github.com/wargio/r2dec-js) decompiler based on r2 written in js `pdd`
+* [r2frida](https://github.com/nowsecure/r2frida) the frida io plugin `r2 frida://0`
+* [iaito](https://github.com/radareorg/iaito) - official graphical interface (Qt)
 
 # Contributing
 
@@ -92,8 +92,8 @@ For more details read the [CONTRIBUTING.md](CONTRIBUTING.md) file.
 ## Community and Documentation
 
 To learn more about r2 we encourage you to watch youtube talks from
-[r2con](https://www.youtube.com/c/r2con). As well as reading blogposts,
-slides or read the [official radare2 book](https://book.rada.re), You can reach us in the following chats:
+[r2con](https://www.youtube.com/c/r2con) [conference](https://rada.re/con). As well as reading blogposts,
+slides or read the [Official radare2 book](https://book.rada.re), You can reach us in the following chats:
 
 * irc.libera.chat `#radare` `#radare_side`
 * [Matrix](https://matrix.org/) `#radare:matrix.org`
