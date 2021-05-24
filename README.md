@@ -1,61 +1,88 @@
-```
- ___  __  ___  __ ___  ___   ____
-| _ \/  \|   \/  \ _ \/ _ \ (__  \
-|   (  - | |  ) - |  (   _/ /  __/
-|_\__|_|_|___/__|_|_\_|___| |____|
-
-      https://www.radare.org
-
-                        --pancake
-```
+<img src="doc/images/r2emoji.png" alt="screenshot" align="left" width="128px">
 
 | **Build&Test** | [![Tests Status](https://github.com/radareorg/radare2/workflows/CI/badge.svg)](https://github.com/radareorg/radare2/actions?query=workflow%3A%22CI%22) | [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) |
 |----------|------|--------|
 | **CodeQuality** | [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) |
-<a href="https://repology.org/metapackage/radare2">
-<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
-</a>
 
-# Libre Reverse Engineering Framework
+# Radare2 Reverse Engineering Framework
 
 r2 is a rewrite from scratch of radare. It provies a set of
 libraries, tools and plugins to ease reverse engineering tasks.
 
-The radare project started as a forensics tool, a scriptable
-command-line hexadecimal editor able to open disk files,
-but later added support for analyzing binaries, disassembling
-code, debugging programs, attaching to remote gdb servers...
+The radare project started as a simple commandline hexadecimal
+editor focused on forensics, over time more features were added
+to support a scriptable command-line low level tool to edit from
+local hard drives, kernel memory, programs, remote gdb connections,
+and be able to analyze, emulate, debug, modify and disassemble any
+kind of binary.
 
 <img src="doc/images/shot.png" alt="screenshot" align="center" width="600px">
 
+## Usage
+
+All r2 tools and commands support printing the output in different formats
+by appending a char at the end or using the `-r`(\*r2) and `-j`(json) flags.
+
+### radare2
+
+```
+r2 -          # same as r2 malloc://4096 the playground
+r2 /bin/ls    # standard way to run r2
+r2 -w ls      # open in read-write
+r2 -d ls      # start debugging the ls in PATH
+```
+
+### rasm2
+
+```
+rasm2 -L       # list all supported assembler/disassembler/emulator plugins
+rasm2 -L       # list all supported assembler/disassembler/emulator plugins
+rasm2 -a arm -b 64 'nop'
+rasm2 -d 90    # disassembles a nop asuming local x86
+```
+
+### rabin2
+
+```
+rabin2 -s /bin/ls  # list symbols of binary
+rabin2 -z /bin/ls  # find strings
+```
+
+### rax2
+```
+rax2 '10+0x20'     # compute the result
+rax2 -k 10+32      # keep the same base as input (10)
+rax2 -h            # convert between (hex, octal, decimal.. bases)
+```
+
+### other
+
+Checkout the [manpages](https://github.com/radareorg/radare2/blob/master/man) and help messages for more details
+
+
 ## Installation
+
+<a href="https://repology.org/metapackage/radare2">
+<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
+</a>
 
 The [GHA CI](https://github.com/radareorg/radare2/actions) builds the packages for every commit and those are also
 available in the [release](https://github.com/radareorg/radare2/releases) page. But it is always recommended to
 install r2 from git.
 
-The most used and recommend way is by running this script which will build
-and install r2 from sources and install it system wide with symlinks.
+The most used and recommended way is by running this script which will build
+and install r2 from sources and install it **system wide** with **symlinks**.
 
 ```
 git clone https://github.com/radareorg/radare2
 radare2/sys/install.sh
 ```
 
-If you need to install it in your user's home or switch between multiple
-r2 builds you may checkout the `meson` build and [r2env]().
+If you need to install it in your user's home or switch between multiple r2
+builds you may checkout the `meson` build and the [r2env](https://github.com/radareorg/r2env) Python tool.
 
-	* If you don't like symlinks use `sys/install.sh --install`
-	* To use capstone5 use the `--with-capstone5` flag.
-
-	Alternatively you can also build with meson + ninja:
-
-		$ sys/meson.py --prefix=/usr --shared --install
-
-	Or install in your home with meson + ninja:
-
-		$ sys/meson.py --prefix=$HOME/r2meson --local --shared --install
-
+The focus on portability enables r2 to be built in many different ways for multiple
+operating systems easily by using the `./configure;make` or `meson` build systems.
 
 r2env allows to build and install different versions of r2 in your home
 or system and it is available via Python's PIP tool.
@@ -125,13 +152,22 @@ r2pm update          # initialize and update the package database
 r2pm install [pkg]   # installs the package
 ```
 
+Some of the most used plugins are:
+
+```
+r2pm install r2ghidra    # the native ghidra decompiler
+r2pm install r2dec       # decompiler based on r2 written in js
+r2pm install r2frida     # the frida io plugin
+r2pm install iaito       # official graphical interface (Qt)
+```
+
+
 # Contributing
 
-There are many ways to contribute to the project, join the c
+There are many ways to contribute to the project, join the IRC/Matrix/Telegram
+channels, check out the github issues or grep for the TODO comments in the source.
 
-## Coding Style
-
-Look at [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTRIBUTING.md).
+For more details read the [CONTRIBUTING.md](CONTRIBUTING.md) file.
 
 ## Testsuite
 
@@ -152,5 +188,16 @@ slides or read the [official radare2 book](https://book.rada.re), You can reach 
 
 ## Additional resources
 
- * [CONTRIBUTING.md][]
- * [DEVELOPERS.md][]
+```
+ ___  __  ___  __ ___  ___   ____
+| _ \/  \|   \/  \ _ \/ _ \ (__  \
+|   (  - | |  ) - |  (   _/ /  __/
+|_\__|_|_|___/__|_|_\_|___| |____|
+
+      https://www.radare.org
+
+                        --pancake
+```
+
+ * [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTRIBUTING.md)
+ * [DEVELOPERS.md](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md)
