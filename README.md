@@ -29,7 +29,7 @@ kind of binary.
 * [USAGE.md](USAGE.md)
 
 ```
-git clone https://github.com/radareorg/radare2
+$ git clone https://github.com/radareorg/radare2
 radare2/sys/install.sh
 ```
 
