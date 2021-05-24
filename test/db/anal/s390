@@ -1,3 +1,46 @@
+NAME=offs390 bininfo
+FILE=bins/s390/zos/prueba/prueba
+CMDS=<<EOF
+i
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/s390/zos/prueba/prueba
+size     0x11000
+humansz  68K
+mode     r-x
+format   off
+iorw     false
+block    0x100
+type     OFF
+arch     s390
+cpu      zarch
+baddr    0x0
+binsz    69632
+bits     64
+canary   false
+retguard false
+crypto   false
+endian   big
+havecode true
+laddr    0x0
+linenum  false
+lsyms    false
+machine  s360
+maxopsz  6
+minopsz  2
+nx       false
+os       Z/OS
+pcalign  2
+pic      false
+relocs   false
+sanitiz  false
+static   true
+stripped false
+va       false
+EOF
+RUN
+
 NAME=pd 10 align
 FILE=bins/s390/zos/prueba/prueba
 CMDS=<<EOF
@@ -10,6 +53,7 @@ pd 10
 EOF
 EXPECT=<<EOF
 0x00001928 hit0_0 47f0f024
+            ;-- entry0:
             ;-- hit0_0:
             0x00001928      47f0f024       b 0x24(%r15)
             0x0000192c      01c3c5c5       invalid
@@ -21,6 +65,7 @@ EXPECT=<<EOF
             0x00001942      05ef           balr %r14, %r15
             0x00001944      00000000       invalid
             0x00001948      a7f4000c       j 0x1960
+            ;-- entry0:
             ;-- hit0_0:
             0x00001928      47f0f024       b 36(%r15)
             0x0000192c      01c3c5c5       invalid

@@ -17,6 +17,7 @@ r_bin_sources = [
   'p/bin_bootimg.c',
   'p/bin_cgc.c',
   'p/bin_coff.c',
+  'p/bin_off.c', # goff ibm
   'p/bin_dbginfo_dex.c',
   'p/bin_dbginfo_elf.c',
   'p/bin_dbginfo_elf64.c',
