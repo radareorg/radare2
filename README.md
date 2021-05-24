@@ -21,7 +21,8 @@ kind of binary.
 </center>
 
 * [Download Release Binaries](https://github.com/radareorg/radare2/releases)
-* **Build and install r2 from Git** (Clone the repo and run `sys/install.sh`)
+* Install r2 from **Git** (Clone the repo and run `sys/install.sh`)
+* Multiple **versions** in your Home (`pip install r2env`)
 * [CONTRIBUTING.md](CONTRIBUTING.md)
 * [INSTALL.md](INSTALL.md)
 * [DEVELOPERS.md](DEVELOPERS.md)
