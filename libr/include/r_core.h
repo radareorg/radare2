@@ -176,6 +176,7 @@ typedef enum r_core_autocomplete_types_t {
 	R_CORE_AUTOCMPLT_OPTN,
 	R_CORE_AUTOCMPLT_MS,
 	R_CORE_AUTOCMPLT_SDB,
+	R_CORE_AUTOCMPLT_CHRS,
 // --- left as last always
 	R_CORE_AUTOCMPLT_END,
 } RCoreAutocompleteType;

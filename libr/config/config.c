@@ -488,18 +488,18 @@ beach:
 /* r_config_desc takes a RConfig and a name,
  * r_config_node_desc takes a RConfigNode
  * Both set and return node->desc */
-R_API const char* r_config_desc(RConfig *cfg, const char *name, const char *desc) {
+R_API RConfigNode * r_config_desc(RConfig *cfg, const char *name, const char *desc) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	return r_config_node_desc (node, desc);
 }
 
-R_API const char* r_config_node_desc(RConfigNode *node, const char *desc) {
+R_API RConfigNode* r_config_node_desc(RConfigNode *node, const char *desc) {
 	r_return_val_if_fail (node, NULL);
 	if (desc) {
 		free (node->desc);
 		node->desc = strdup (desc);
 	}
-	return node->desc;
+	return node;
 }
 
 R_API bool r_config_rm(RConfig *cfg, const char *name) {
