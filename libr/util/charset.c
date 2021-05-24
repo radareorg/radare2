@@ -34,6 +34,32 @@ R_API SdbGperf *r_charset_get_gperf(const char *k) {
 }
 #endif
 
+R_API RList *r_charset_list(RCharset *ch) {
+	RList *list = r_list_newf (free);
+#if HAVE_GPERF
+	SdbGperf **gp = (SdbGperf**)gperfs;
+	while (*gp) {
+		SdbGperf *g = *gp;
+		r_list_append (list, strdup (g->name));
+		gp++;
+	}
+#endif
+	// iterate in disk
+	const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
+	RList *files = r_sys_dir (cs);
+	RListIter *iter;
+	char *file;
+	r_list_foreach (files, iter, file) {
+		char *dot = strstr (file, ".sdb");
+		if (dot) {
+			*dot = 0;
+			r_list_append (list, strdup (file));
+		}
+	}
+	r_list_free (files);
+	return list;
+}
+
 R_API RCharset *r_charset_new(void) {
 	RCharset *ch = R_NEW0 (RCharset);
 	ch->db = sdb_new0 ();

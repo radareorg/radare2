@@ -50,6 +50,7 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len);
 R_API bool r_charset_open(RCharset *c, const char *cs);
 R_API bool r_charset_use(RCharset *c, const char *cf);
+R_API RList *r_charset_list(RCharset *c);
 R_API void r_charset_close(RCharset *c);
 R_API RCharsetRune * add_rune(RCharsetRune *rcsr, const ut8 *ch, const ut8 *hx);
 R_API RCharsetRune *search_from_hex(RCharsetRune *rcsr, const ut8 *hx);

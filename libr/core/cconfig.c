@@ -970,6 +970,18 @@ static bool cb_asmos(void *user, void *data) {
 	return true;
 }
 
+static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
+	// static void autocomplete_charsets(RCore *core, RLineCompletion *completion, const char *str) {
+	char *name;
+	RListIter *iter;
+	RList *chs = r_charset_list (core->print->charset);
+	r_config_node_purge_options (node);
+	r_list_foreach (chs, iter, name) {
+		SETOPTIONS (node, name, NULL);
+	}
+	r_list_free (chs);
+}
+
 static void update_asmparser_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
 	RParsePlugin *parser;
@@ -989,7 +1001,6 @@ static bool cb_asmparser(void *user, void *data) {
 		print_node_options (node);
 		return false;
 	}
-
 	return r_parse_use (core->parser, node->value);
 }
 
@@ -3465,7 +3476,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
 
 	/* cfg */
-	SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use when printing strings");
+	n = SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use when printing strings");
+	update_cfgcharsets_options (core, n);
 	SETBPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
 	SETBPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
