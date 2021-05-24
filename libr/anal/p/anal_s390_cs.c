@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2019 - pancake */
+/* radare2 - LGPL - Copyright 2014-2021 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -59,12 +59,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_insn *insn;
 	int mode = CS_MODE_BIG_ENDIAN;
 	int ret = cs_open (CS_ARCH_SYSZ, mode, &handle);
+	op->size = 4;
 	if (ret == CS_ERR_OK) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 		// capstone-next
 		int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 		if (n < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
+			return -1;
 		} else {
 			if (mask & R_ANAL_OP_MASK_OPEX) {
 				opex (&op->opex, handle, insn);
@@ -186,6 +188,7 @@ static bool set_reg_profile(RAnal *anal) {
 
 static int archinfo(RAnal *anal, int q) {
 	switch (q) {
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 2;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
@@ -202,7 +205,7 @@ RAnalPlugin r_anal_plugin_s390_cs = {
 	.esil = false,
 	.license = "BSD",
 	.arch = "s390",
-	.bits = 32|64,
+	.bits = 32 | 64, // it's actually 31
 	.op = &analop,
 	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
