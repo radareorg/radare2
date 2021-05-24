@@ -5445,7 +5445,6 @@ static int cmd_print(void *data, const char *input) {
 				break;
 			};
 			int mode = R_MODE_PRINT;
-			r_core_cmd_help (core, help_msg_pde);
 			if (input[2] == 'j') {
 				mode = R_MODE_JSON;
 			} else if (input[2] == 'q') {
