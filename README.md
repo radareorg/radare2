@@ -4,7 +4,7 @@
 |----------|------|--------|
 | **CodeQuality** | [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) |
 
-# Radare2 Reverse Engineering Framework
+# Radare2: The Unix Friendly Reverse Engineering Framework
 
 r2 is a rewrite from scratch of radare. It provies a set of
 libraries, tools and plugins to ease reverse engineering tasks.
@@ -59,7 +59,6 @@ rax2 -h            # convert between (hex, octal, decimal.. bases)
 
 Checkout the [manpages](https://github.com/radareorg/radare2/blob/master/man) and help messages for more details
 
-
 ## Installation
 
 <a href="https://repology.org/metapackage/radare2">
@@ -104,6 +103,13 @@ Some of the languages supported by r2 are: Python, Ruby, JavaScript,
 Lua, Perl, PHP, V, Go, Rust, Swift, C#, Java, Shell, OCaml, Haskell,
 Scheme (Guile), Common Lisp, Clojure, Erlang, D, Vala/Genie, Prolog,
 Nim, Newlisp...
+
+```python
+import r2pipe
+r2 = r2pipe.open("/bin/ls")
+print(r2.cmd("pd 10"))
+r2.quit()
+```
 
 ## Supported Operating Systems
 
