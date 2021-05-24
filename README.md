@@ -73,10 +73,10 @@ r2pm install [pkg]   # installs the package
 
 Some of the most installed packages are:
 
-* r2ghidra    # the native ghidra decompiler
-* r2dec       # decompiler based on r2 written in js
-* r2frida     # the frida io plugin
-* iaito       # official graphical interface (Qt)
+* **r2ghidra** the native ghidra decompiler plugin: `pdg` command
+* **r2dec** decompiler based on r2 written in js `pdd`
+* **r2frida** the frida io plugin `r2 frida://0`
+* **iaito** - official graphical interface (Qt)
 
 # Contributing
 
