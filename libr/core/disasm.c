@@ -908,7 +908,9 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 	const char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
 	bool partial_reset = line_highlighted (ds) ? true : ((hlstr && *hlstr) ? true : false);
 	RAnalFunction *f = ds->show_color_args ? fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL) : NULL;
-
+	if (!ds->asm_meta && *source == '.') {
+		return strdup (source);
+	}
 	if (!ds->show_color || !ds->colorop) {
 		return strdup (source);
 	}
@@ -2479,9 +2481,11 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			// XXX this is just noise. should be rewritten
 			switch (meta->type) {
 			case R_META_TYPE_DATA:
+#if 0
 				if (!R_STR_ISEMPTY (meta->str)) {
 					r_cons_printf (".data: %s\n", meta->str);
 				}
+#endif
 				i += meta_size;
 				break;
 			case R_META_TYPE_STRING:
