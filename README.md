@@ -26,7 +26,7 @@ kind of binary.
 
 * [Download Release Binaries](https://github.com/radareorg/radare2/releases)
 * Build and install r2 from Git (Clone the repo and run `sys/install.sh`)
-* [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTRIBUTING.md)
+* [CONTRIBUTING.md](CONTRIBUTING.md)
 * [DEVELOPERS.md](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md)
 * [USAGE.md](https://github.com/radareorg/radare2/blob/master/USAGE.md)
 
