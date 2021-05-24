@@ -4,7 +4,7 @@
 
 [![Tests Status](https://github.com/radareorg/radare2/workflows/CI/badge.svg)](https://github.com/radareorg/radare2/actions?query=workflow%3A%22CI%22) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/)
 
-Git version is 5.3.0-git and the [![latest packaged version(s)](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions)
+Git version is 5.3.0-git and the [![latest packaged version(s)](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions). See the [Release](https://github.com/radareorg/radare2/releases) page.
 
 r2 is a rewrite from scratch of radare. It provies a set of
 libraries, tools and plugins to ease reverse engineering tasks.
@@ -20,9 +20,7 @@ kind of binary.
 <a href="https://www.radare.org/"><img src="doc/images/shot.png" alt="screenshot" align="center" border=0 width="600px"></a>
 </p>
 
-* [Download Release Binaries](https://github.com/radareorg/radare2/releases)
-* Install r2 from **Git** (Clone the repo and run `sys/install.sh`)
-* Multiple **versions** in your Home (`pip install r2env`)
+* Install r2 from **Git** (Clone the repo and run `sys/install.sh`) or use `pip install r2env`
 * Read the [Official radare2 book](https://book.rada.re)
 * [CONTRIBUTING.md](CONTRIBUTING.md)
 * [DEVELOPERS.md](DEVELOPERS.md)
