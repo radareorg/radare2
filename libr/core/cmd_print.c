@@ -5473,7 +5473,6 @@ static int cmd_print(void *data, const char *input) {
 				r_core_cmd_help (core, help_msg_pdr);
 				pd_result = true;
 			};
-			break;
 			{
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
