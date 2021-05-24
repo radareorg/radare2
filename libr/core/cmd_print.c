@@ -346,6 +346,26 @@ static const char *help_msg_pda[] = {
 	NULL
 };
 
+static const char *help_msg_pde[] = {
+	"Usage:", "pde[q|qq|j] [N]", "Disassemble N instructions following execution flow from current PC",
+	"pde", "", "disassemble N instructions following execution flow from current PC",
+	"pdej", "", "disassemble N instructions following execution flow from current PC in JSON",
+	NULL
+};
+
+static const char *help_msg_pdp[] = {
+	"Usage:", "pdp", "Disassemble by following pointers to read ropchains",
+	"pdp", "", "disassemble by following pointers to read ropchains",
+	NULL
+};
+
+static const char *help_msg_pdr[] = {
+	"Usage:", "pdr", "Disassemble N instructions following execution flow from current PC",
+	"pdr", "", "recursive disassemble across the function graph",
+	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
+	NULL
+};
+
 static const char *help_msg_pds[] = {
 	"Usage:", "pds[bf]", "Summarize N bytes or function",
 	"pdsf", "", "Summarize the current function",
@@ -5420,6 +5440,10 @@ static int cmd_print(void *data, const char *input) {
 			if (!core->fixedblock && !sp) {
 				l /= 4;
 			}
+			if (input[2] == '?') { // "pde?"
+				r_core_cmd_help (core, help_msg_pde);
+				break;
+			};
 			int mode = R_MODE_PRINT;
 			if (input[2] == 'j') {
 				mode = R_MODE_JSON;
@@ -5444,6 +5468,11 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'r': // "pdr"
 			processed_cmd = true;
+			if (input[2] == '?') { // "pdr?"
+				r_core_cmd_help (core, help_msg_pdr);
+				pd_result = true;
+				break;
+			};
 			{
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
@@ -5587,6 +5616,11 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'p': // "pdp"
 			processed_cmd = true;
+			if (input[2] == '?') {
+				r_core_cmd_help (core, help_msg_pdp);
+				pd_result = true;
+				break;
+			};
 			disasm_ropchain (core, core->offset, 'D');
 			pd_result = true;
 			break;
