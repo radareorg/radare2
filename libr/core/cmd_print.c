@@ -5635,6 +5635,24 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			r_core_cmd_help (core, help_msg_pd);
 			pd_result = 0;
+		case '.':
+		case '-':
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '$':
+		case '9':
+		case ' ':
+			break;
+		default:
+			eprintf ("Invalid pd subcommand.\n");
+			return 0;
 		}
 		if (formatted_json) {
 			if (r_cons_singleton ()->is_html) {
