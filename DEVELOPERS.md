@@ -4,6 +4,7 @@ This file aims to describe an introduction for developers to work
 on the code base of radare2 project.
 
 ## Documentation
+
 There is support for Doxygen document generation in this repo.
 By running `doxygen` in the root of this repository, it will autodetect the
 Doxyfile and generate HTML documentation into
@@ -525,4 +526,8 @@ to contribute.
 
   - Update the [paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
 
---pancake
+## Additional resources
+
+ * [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTRIBUTING.md)
+ * [README.md](https://github.com/radareorg/radare2/blob/master/README.md)
+ * [USAGE.md](https://github.com/radareorg/radare2/blob/master/USAGE.md)
