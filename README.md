@@ -27,8 +27,8 @@ kind of binary.
 * [Download Release Binaries](https://github.com/radareorg/radare2/releases)
 * Build and install r2 from Git (Clone the repo and run `sys/install.sh`)
 * [CONTRIBUTING.md](CONTRIBUTING.md)
-* [DEVELOPERS.md](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md)
-* [USAGE.md](https://github.com/radareorg/radare2/blob/master/USAGE.md)
+* [DEVELOPERS.md](DEVELOPERS.md)
+* [USAGE.md](USAGE.md)
 
 ## Supported Operating Systems
 
@@ -138,20 +138,3 @@ slides or read the [official radare2 book](https://book.rada.re), You can reach 
 * [Discord](https://discord.gg/MgEdxrMnqx)
 * Twitter: [@radareorg](https://twitter.com/radareorg)
 * Website: [https://www.radare.org/](https://www.radare.org/)
-
-## Additional resources
-
-```
- ___  __  ___  __ ___  ___   ____
-| _ \/  \|   \/  \ _ \/ _ \ (__  \
-|   (  - | |  ) - |  (   _/ /  __/
-|_\__|_|_|___/__|_|_\_|___| |____|
-
-      https://www.radare.org
-
-                        --pancake
-```
-
- * [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTRIBUTING.md)
- * [DEVELOPERS.md](https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md)
- * [USAGE.md](https://github.com/radareorg/radare2/blob/master/USAGE.md)

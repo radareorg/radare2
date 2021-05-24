@@ -3,6 +3,17 @@
 All r2 tools and commands support printing the output in different formats
 by appending a char at the end or using the `-r`(\*r2) and `-j`(json) flags.
 
+```
+ ___  __  ___  __ ___  ___   ____
+| _ \/  \|   \/  \ _ \/ _ \ (__  \
+|   (  - | |  ) - |  (   _/ /  __/
+|_\__|_|_|___/__|_|_\_|___| |____|
+
+      https://www.radare.org
+
+                        --pancake
+```
+
 ### radare2
 
 ```
