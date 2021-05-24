@@ -112,7 +112,7 @@ R_API bool r_socket_block_time(RSocket *s, bool block, int sec, int usec);
 R_API int r_socket_flush(RSocket *s);
 R_API int r_socket_ready(RSocket *s, int secs, int usecs);
 R_API char *r_socket_to_string(RSocket *s);
-R_API int r_socket_write(RSocket *s, void *buf, int len);
+R_API int r_socket_write(RSocket *s, const void *buf, int len);
 R_API int r_socket_puts(RSocket *s, char *buf);
 R_API void r_socket_printf(RSocket *s, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_socket_read(RSocket *s, ut8 *read, int len);

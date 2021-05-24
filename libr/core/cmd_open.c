@@ -604,7 +604,7 @@ static bool cmd_om(RCore *core, const char *input) {
 			break;
 		}
 		if (fd < 3) {
-			eprintf ("wrong fd, it must be greater than 3\n");
+			eprintf ("Wrong fd, it must be greater than 3.\n");
 			return false;
 		}
 		desc = r_io_desc_get (core->io, fd);

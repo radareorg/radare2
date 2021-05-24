@@ -10,16 +10,6 @@ static inline ut32 _io_malloc_sz(RIODesc *desc) {
 	return mal? mal->size: 0;
 }
 
-static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
-	if (!desc) {
-		return;
-	}
-	RIOMalloc *mal = (RIOMalloc*)desc->data;
-	if (mal) {
-		mal->size = sz;
-	}
-}
-
 static inline ut8* _io_malloc_buf(RIODesc *desc) {
 	if (!desc) {
 		return NULL;
@@ -72,7 +62,6 @@ int io_memory_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 bool io_memory_resize(RIO *io, RIODesc *fd, ut64 count) {
-	ut8 * new_buf = NULL;
 	if (!fd || !fd->data || count == 0) {
 		return false;
 	}
@@ -80,17 +69,16 @@ bool io_memory_resize(RIO *io, RIODesc *fd, ut64 count) {
 	if (_io_malloc_off (fd) > mallocsz) {
 		return false;
 	}
-	new_buf = malloc (count);
+	RIOMalloc *mal = (RIOMalloc*)fd->data;
+	ut8 *new_buf = realloc (mal->buf, count);
 	if (!new_buf) {
 		return false;
 	}
-	memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, mallocsz));
-	if (count > mallocsz) {
-		memset (new_buf + mallocsz, 0, count - mallocsz);
+	mal->buf = new_buf;
+	if (count > mal->size) {
+		memset (mal->buf + mal->size, 0, count - mal->size);
 	}
-	free (_io_malloc_buf (fd));
-	_io_malloc_set_buf (fd, new_buf);
-	_io_malloc_set_sz (fd, count);
+	mal->size = count;
 	return true;
 }
 
