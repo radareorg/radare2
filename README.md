@@ -28,6 +28,11 @@ kind of binary.
 * [DEVELOPERS.md](DEVELOPERS.md)
 * [USAGE.md](USAGE.md)
 
+```
+git clone https://github.com/radareorg/radare2
+radare2/sys/install.sh
+```
+
 ## Supported Operating Systems
 
 <a href="https://repology.org/metapackage/radare2">
