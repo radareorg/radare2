@@ -5637,6 +5637,7 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 		case '.':
 		case '-':
+		case '+':
 		case '0':
 		case '1':
 		case '2':
