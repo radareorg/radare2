@@ -1,3 +1,16 @@
+NAME=ebcdic37 rabin env
+FILE=-
+CMDS=<<EOF
+e cfg.charset=ebcdic37
+%RABIN2_CHARSET
+# %RABIN2_CHARSET=ebcdic37
+!!rabin2 -N 8 -qzz bins/s390/zos/prueba/prueba~ola
+EOF
+EXPECT=<<EOF
+0x970 12 11 Hola_mundo\n
+EOF
+RUN
+
 NAME=ebcdic37
 FILE=-
 CMDS=<<EOF
@@ -11,7 +24,7 @@ Hola_mundo
 EOF
 RUN
 
-NAME=ebcdic37
+NAME=ebcdic37 hexstr
 FILE=bins/s390/zos/prueba/prueba
 ARGS=-n
 CMDS=<<EOF

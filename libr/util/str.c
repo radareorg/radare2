@@ -1216,9 +1216,6 @@ R_API int r_str_unescape(char *buf) {
 					}
 				}
 				esc_seq_len = 1 + num_digits;
-			} else {
-				eprintf ("Error: Unknown escape sequence.\n");
-				return 0; // -1?
 			}
 		}
 		memmove (buf + i + 1, buf + i + esc_seq_len, strlen (buf + i + esc_seq_len) + 1);

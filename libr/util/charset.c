@@ -35,7 +35,10 @@ R_API SdbGperf *r_charset_get_gperf(const char *k) {
 #endif
 
 R_API RCharset *r_charset_new(void) {
-	return R_NEW0 (RCharset);
+	RCharset *ch = R_NEW0 (RCharset);
+	ch->db = sdb_new0 ();
+	ch->db_char_to_hex = sdb_new0 ();
+	return ch;
 }
 
 R_API void r_charset_free(RCharset *c) {
@@ -50,18 +53,32 @@ R_API void r_charset_close(RCharset *c) {
 	c->loaded = false;
 }
 
-R_API bool r_charset_open(RCharset *c, const char *cs) {
-	r_return_val_if_fail (c && cs, false);
-	sdb_reset (c->db);
-
-	SdbGperf *gp = r_charset_get_gperf (cs);
+R_API bool r_charset_use(RCharset *c, const char *cf) {
+	bool rc = false;
+	SdbGperf *gp = r_charset_get_gperf (cf);
 	if (gp) {
 		sdb_free (c->db);
 		c->db = sdb_new0 ();
-		sdb_open_gperf (c->db, gp);
+		if (sdb_open_gperf (c->db, gp) != -1) {
+			r_sys_setenv ("RABIN2_CHARSET", cf);
+			rc = true;
+		}
 	} else {
-		sdb_open (c->db, cs);
+		const char *cs = R2_PREFIX R_SYS_DIR R2_SDB R_SYS_DIR "charsets" R_SYS_DIR;
+		char *syscs = r_str_newf ("%s%s.sdb", cs, cf);
+		if (r_file_exists (syscs)) {
+			rc = r_charset_open (c, syscs);
+			r_sys_setenv ("RABIN2_CHARSET", cf);
+		}
+		free (syscs);
 	}
+	return rc;
+}
+
+R_API bool r_charset_open(RCharset *c, const char *cs) {
+	r_return_val_if_fail (c && cs, false);
+	sdb_reset (c->db);
+	sdb_open (c->db, cs);
 
 	sdb_free (c->db_char_to_hex);
 	c->db_char_to_hex = sdb_new0 ();
@@ -141,7 +158,6 @@ R_API RCharsetRune *search_from_hex(RCharsetRune *r, const ut8 *hx) {
 	return left? left: search_from_hex (r->right, hx);
 }
 
-// assumes out is as big as in_len
 R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
 	if (!rc->loaded) {
 		return in_len;
@@ -151,7 +167,6 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 	size_t i;
 	for (i = 0; i < in_len; i++) {
 		ut8 ch_in = in[i];
-
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
 		const char *v = sdb_const_get (rc->db, k, 0);
 		const char *ret = r_str_get_fail (v, "?");
