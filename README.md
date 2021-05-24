@@ -33,14 +33,14 @@ git clone https://github.com/radareorg/radare2
 radare2/sys/install.sh
 ```
 
-## Supported Operating Systems
+## Operating Systems
 
 <a href="https://repology.org/metapackage/radare2">
 <img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
 </a>
 
-Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS,
-[Dragonfly|Net|Free|Open]BSD, Android, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
+Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android
+[Dragonfly|Net|Free|Open]BSD, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
 
 ## Architectures
 
