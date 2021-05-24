@@ -1,4 +1,45 @@
 NAME=aoj 4140f008
+FILE=bins/s390/linux/prueba
+CMDS=<<EOF
+e asm.arch=s390
+pd 10
+e asm.arch=s390.gnu
+e anal.arch=s390
+pd 10
+EOF
+EXPECT=<<EOF
+            ;-- entry0:
+            ;-- section..text:
+            ;-- .text:
+            ;-- _start:
+            0x000005f0      4140f008       la %r4, 8(%r15)             ; [13] -r-x section size 640 named .text
+            0x000005f4      e330f0000004   lg %r3, 0(%r15)
+            0x000005fa      a709fff0       lghi %r0, -0x10
+            0x000005fe      b98000f0       ngr %r15, %r0
+            0x00000602      a7fbff50       aghi %r15, -0xb0
+            0x00000606      d707f000f000   xc 0(8, %r15), 0(%r15)
+            0x0000060c      ebeff0a00024   stmg %r14, %r15, 0xa0(%r15)
+            0x00000612      4170f0a0       la %r7, 0xa0(%r15)
+            0x00000616      c060000000fd   larl %r6, sym.__libc_csu_fini
+            0x0000061c      c050000000c6   larl %r5, sym.__libc_csu_init
+            ;-- entry0:
+            ;-- section..text:
+            ;-- .text:
+            ;-- _start:
+            0x000005f0      4140f008       la %r4,8(%r15)              ; [13] -r-x section size 640 named .text
+            0x000005f4      e330f0000004   lg %r3,0(%r15)
+            0x000005fa      a709fff0       lghi %r0,-16
+            0x000005fe      b98000f0       ngr %r15,%r0
+            0x00000602      a7fbff50       aghi %r15,-176
+            0x00000606      d707f000f000   xc 0(8,%r15),0(%r15)
+            0x0000060c      ebeff0a00024   stmg %r14,%r15,160(%r15)
+            0x00000612      4170f0a0       la %r7,160(%r15)
+            0x00000616      c060000000fd   larl %r6,sym.__libc_csu_fini
+            0x0000061c      c050000000c6   larl %r5,sym.__libc_csu_init
+EOF
+RUN
+
+NAME=aoj 4140f008
 FILE=-
 CMDS=<<EOF
 e asm.arch=s390

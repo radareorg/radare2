@@ -189,7 +189,7 @@ static int archinfo(RAnal *anal, int q) {
 	case R_ANAL_ARCHINFO_ALIGN:
 		return 2;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-		return 4;
+		return 6;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 2;
 	}
