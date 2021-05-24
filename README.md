@@ -4,7 +4,7 @@
 |----------|------|--------|
 | **CodeQuality** | [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) |
 
-## Radare2: The Unix Friendly Reverse Engineering Framework
+## Radare2: The Unix-Like Reverse Engineering Framework
 
 r2 is a rewrite from scratch of radare. It provies a set of
 libraries, tools and plugins to ease reverse engineering tasks.
@@ -21,7 +21,7 @@ kind of binary.
 </center>
 
 * [Download Release Binaries](https://github.com/radareorg/radare2/releases)
-* Build and install r2 from Git (Clone the repo and run `sys/install.sh`)
+* **Build and install r2 from Git** (Clone the repo and run `sys/install.sh`)
 * [CONTRIBUTING.md](CONTRIBUTING.md)
 * [INSTALL.md](INSTALL.md)
 * [DEVELOPERS.md](DEVELOPERS.md)
@@ -54,25 +54,22 @@ ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
 WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
 
-## Plugins
+# Plugins
 
-Radare2 has its own package manager - r2pm. Its packages
-repository is on [GitHub too](https://github.com/radareorg/radare2-pm).
-To start to using it for the first time, you need to initialize packages:
+Most of the plugins you need may be available in the stock r2 installation,
+but you can find more in the `[r2pm](https://github.com/radareorg/radare2-pm)` package manager.
 
 ```
 r2pm update          # initialize and update the package database
 r2pm install [pkg]   # installs the package
 ```
 
-Some of the most used plugins are:
+Some of the most installed packages are:
 
-```
-r2pm install r2ghidra    # the native ghidra decompiler
-r2pm install r2dec       # decompiler based on r2 written in js
-r2pm install r2frida     # the frida io plugin
-r2pm install iaito       # official graphical interface (Qt)
-```
+* r2ghidra    # the native ghidra decompiler
+* r2dec       # decompiler based on r2 written in js
+* r2frida     # the frida io plugin
+* iaito       # official graphical interface (Qt)
 
 # Contributing
 
