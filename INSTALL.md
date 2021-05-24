@@ -39,3 +39,10 @@ make purge
 git clean -xdf
 rm -rf shlr/capstone
 ```
+
+# Packaging status
+
+<a href="https://repology.org/metapackage/radare2">
+<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
+</a>
+

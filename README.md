@@ -4,6 +4,19 @@
 |----------|------|--------|
 | **CodeQuality** | [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) | [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) |
 
+[![latest packaged version(s)](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions)
+
+[![Termux package](https://repology.org/badge/version-for-repo/termux/radare2.svg)](https://repology.org/project/radare2/versions)
+[![Alpine Linux Edge package](https://repology.org/badge/version-for-repo/alpine_edge/radare2.svg)](https://repology.org/project/radare2/versions) [![Alpine Linux 3.13 package](https://repology.org/badge/version-for-repo/alpine_3_13/radare2.svg)](https://repology.org/project/radare2/versions) [![Alpine Linux 3.12 package](https://repology.org/badge/version-for-repo/alpine_3_12/radare2.svg)](https://repology.org/project/radare2/versions)
+[![Arch package](https://repology.org/badge/version-for-repo/arch/radare2.svg)](https://repology.org/project/radare2/versions) [![AUR package](https://repology.org/badge/version-for-repo/aur/radare2.svg)](https://repology.org/project/radare2/versions)
+[![Fedora 34 package](https://repology.org/badge/version-for-repo/fedora_34/radare2.svg)](https://repology.org/project/radare2/versions) [![Fedora 32 package](https://repology.org/badge/version-for-repo/fedora_32/radare2.svg)](https://repology.org/project/radare2/versions)
+[![FreeBSD port](https://repology.org/badge/version-for-repo/freebsd/radare2.svg)](https://repology.org/project/radare2/versions) [![OpenBSD port](https://repology.org/badge/version-for-repo/openbsd/radare2.svg)](https://repology.org/project/radare2/versions) [![pkgsrc current package](https://repology.org/badge/version-for-repo/pkgsrc_current/radare2.svg)](https://repology.org/project/radare2/versions)
+[![Homebrew package](https://repology.org/badge/version-for-repo/homebrew/radare2.svg)](https://repology.org/project/radare2/versions) [![MacPorts package](https://repology.org/badge/version-for-repo/macports/radare2.svg)](https://repology.org/project/radare2/versions)
+[![HaikuPorts master package](https://repology.org/badge/version-for-repo/haikuports_master/radare2.svg)](https://repology.org/project/radare2/versions)
+[![Ubuntu 20.10 package](https://repology.org/badge/version-for-repo/ubuntu_20_10/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 20.04 package](https://repology.org/badge/version-for-repo/ubuntu_20_04/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 18.04 package](https://repology.org/badge/version-for-repo/ubuntu_18_04/radare2.svg)](https://repology.org/project/radare2/versions)
+[![Raspbian Stable package](https://repology.org/badge/version-for-repo/raspbian_stable/radare2.svg)](https://repology.org/project/radare2/versions)
+
+
 ## Radare2: Unix-Like Reverse Engineering Framework
 
 r2 is a rewrite from scratch of radare. It provies a set of
@@ -34,11 +47,24 @@ git clone https://github.com/radareorg/radare2
 radare2/sys/install.sh
 ```
 
-## Operating Systems
+# Plugins
 
-<a href="https://repology.org/metapackage/radare2">
-<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
-</a>
+Most of the plugins you need may be available in the stock r2 installation,
+but you can find more in the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
+
+```
+r2pm update          # initialize and update the package database
+r2pm install [pkg]   # installs the package
+```
+
+Some of the most installed packages are:
+
+* [r2ghidra](https://github.com/radareorg/r2ghidra) the native ghidra decompiler plugin: `pdg` command
+* [r2dec](https://github.com/wargio/r2dec-js) decompiler based on r2 written in js `pdd`
+* [r2frida](https://github.com/nowsecure/r2frida) the frida io plugin `r2 frida://0`
+* [iaito](https://github.com/radareorg/iaito) - official graphical interface (Qt)
+
+## Operating Systems
 
 Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android
 [Dragonfly|Net|Free|Open]BSD, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
@@ -60,23 +86,6 @@ Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
 ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
 WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF,
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
-
-# Plugins
-
-Most of the plugins you need may be available in the stock r2 installation,
-but you can find more in the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
-
-```
-r2pm update          # initialize and update the package database
-r2pm install [pkg]   # installs the package
-```
-
-Some of the most installed packages are:
-
-* [r2ghidra](https://github.com/radareorg/r2ghidra) the native ghidra decompiler plugin: `pdg` command
-* [r2dec](https://github.com/wargio/r2dec-js) decompiler based on r2 written in js `pdd`
-* [r2frida](https://github.com/nowsecure/r2frida) the frida io plugin `r2 frida://0`
-* [iaito](https://github.com/radareorg/iaito) - official graphical interface (Qt)
 
 # Contributing
 
