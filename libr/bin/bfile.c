@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2019 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2021 - pancake, nibble, dso */
 
 #include <r_bin.h>
 #include <r_hash.h>
@@ -146,6 +146,29 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		}
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
+	char *charset = r_sys_getenv ("RABIN2_CHARSET");
+	if (!R_STR_ISEMPTY (charset)) {
+		RCharset *ch = r_charset_new ();
+		if (r_charset_use (ch, charset)) {
+			int outlen = len * 2;
+			ut8 *out = malloc (outlen);
+			int res = r_charset_encode_str (ch, out, outlen, buf, len);
+			int i;
+			// TODO unknown chars should be translated to null bytes
+			for (i = 0; i < res; i++) {
+				if (out[i] == '?') {
+					out[i] = 0;
+				}
+			}
+			len = res;
+			free (buf);
+			buf = out;
+		} else {
+			eprintf ("Invalid value for RABIN2_CHARSET.\n");
+		}
+		r_charset_free (ch);
+	}
+	free (charset);
 	// may oobread
 	while (needle < to) {
 		if (bin && bin->consb.is_breaked) {

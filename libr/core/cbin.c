@@ -690,12 +690,14 @@ static void load_types_from(RCore *core, const char *fmt, ...) {
 	char *s = r_str_newvf (fmt, ap);
 	SdbGperf *gp = r_anal_get_gperf_types (s);
 	if (gp) {
+#if HAVE_GPERF
 		Sdb *gd = sdb_new0 ();
 		sdb_open_gperf (gd, gp);
 		sdb_reset (core->anal->sdb_types);
 		sdb_merge (core->anal->sdb_types, gd);
 		sdb_close (gd);
 		sdb_free (gd);
+#endif
 	} else {
 		char *dbpath = r_str_newf ("%s/%s/%s.sdb", dir_prefix, R2_SDB_FCNSIGN, s);
 		if (r_file_exists (dbpath)) {
