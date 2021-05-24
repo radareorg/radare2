@@ -76,7 +76,6 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems
 
 There are many ways to contribute to the project, join the IRC/Matrix/Telegram
 channels, check out the github issues or grep for the TODO comments in the source.
-
 To contribute with code, create a branch in your forked repository and push
 a pull request, follow the coding style and ensure it passes the tests with
 the `r2r` tool to run the tests that are under the `tests/` subdirectory.
