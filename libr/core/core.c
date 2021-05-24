@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2020 - pancake */
+/* radare2 - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -3722,19 +3722,19 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 }
 
 /* weak getters */
-R_API RCons *r_core_get_cons (RCore *core) {
+R_API RCons *r_core_get_cons(RCore *core) {
 	return core->cons;
 }
 
-R_API RConfig *r_core_get_config (RCore *core) {
+R_API RConfig *r_core_get_config(RCore *core) {
 	return core->config;
 }
 
-R_API RBin *r_core_get_bin (RCore *core) {
+R_API RBin *r_core_get_bin(RCore *core) {
 	return core->bin;
 }
 
-R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, ...) {
+R_API RBuffer *r_core_syscallf(RCore *core, const char *name, const char *fmt, ...) {
 	char str[1024];
 	RBuffer *buf;
 	va_list ap;
@@ -3747,10 +3747,9 @@ R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, 
 	return buf;
 }
 
-R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) {
+R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 	RBuffer *b = NULL;
 	char code[1024];
-	int num;
 
 	//arch check
 	if (strcmp (core->anal->cur->arch, "x86")) {
@@ -3758,7 +3757,7 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 		return 0;
 	}
 
-	num = r_syscall_get_num (core->anal->syscall, name);
+	int num = r_syscall_get_num (core->anal->syscall, name);
 
 	//bits check
 	switch (core->rasm->bits) {
@@ -3920,6 +3919,5 @@ R_API PJ *r_core_pj_new(RCore *core) {
 	} else if (!strcmp ("strip", config_string_encoding)) {
 		string_encoding = PJ_ENCODING_STR_STRIP;
 	}
-
 	return pj_new_with_encoding (string_encoding, number_encoding);
 }
