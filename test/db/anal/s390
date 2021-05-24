@@ -1,3 +1,40 @@
+NAME=pd 10 align
+FILE=bins/s390/zos/prueba/prueba
+CMDS=<<EOF
+/x 47F0F024
+s hit0_0
+e asm.arch=s390
+pd 10
+e asm.arch=s390.gnu
+pd 10
+EOF
+EXPECT=<<EOF
+0x00001928 hit0_0 47f0f024
+            ;-- hit0_0:
+            0x00001928      47f0f024       b 0x24(%r15)
+            0x0000192c      01c3c5c5       invalid
+            0x00001930      000000a0       invalid
+            0x00001934      00000090       invalid
+            0x00001938      47f0f001       b 1(%r15)
+            0x0000193c      58f0c31c       l %r15, 0x31c(%r12)
+            0x00001940      184e           lr %r4, %r14
+            0x00001942      05ef           balr %r14, %r15
+            0x00001944      00000000       invalid
+            0x00001948      a7f4000c       j 0x1960
+            ;-- hit0_0:
+            0x00001928      47f0f024       b 36(%r15)
+            0x0000192c      01c3c5c5       invalid
+            0x00001930      000000a0       invalid
+            0x00001934      00000090       invalid
+            0x00001938      47f0f001       b 1(%r15)
+            0x0000193c      58f0c31c       l %r15,796(%r12)
+            0x00001940      184e           lr %r4,%r14
+            0x00001942      05ef           balr %r14,%r15
+            0x00001944      00000000       invalid
+            0x00001948      a7f4000c       j 0x00001960
+EOF
+RUN
+
 NAME=aoj 4140f008
 FILE=bins/s390/linux/prueba
 CMDS=<<EOF

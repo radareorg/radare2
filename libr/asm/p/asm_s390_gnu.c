@@ -43,7 +43,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char options[64];
 	struct disassemble_info disasm_obj;
 	if (len < 6) {
-		return -1;
+		r_asm_op_set_asm (op, "truncated");
+		return 4;
 	}
 	buf_global = &op->buf_asm;
 	Offset = a->pc;
@@ -56,6 +57,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		*options = 0;
 	}
+	r_asm_op_set_asm (op, "");
 	disasm_obj.disassembler_options = options;
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &s390_buffer_read_memory;
@@ -67,8 +69,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 	disassemble_init_s390 (&disasm_obj);
 	op->size = print_insn_s390 ((bfd_vma)Offset, &disasm_obj);
-	if (op->size == -1) {
-		r_asm_op_set_asm (op, "(data)");
+	if (op->size < 1) {
+		r_asm_op_set_asm (op, "invalid");
+		op->size = 4;
 	}
 	return op->size;
 }

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2015 - pancake */
+/* radare2 - LGPL - Copyright 2013-2021 - pancake */
 
 // instruction set : http://www.tachyonsoft.com/inst390m.htm
 
@@ -26,18 +26,19 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		cs_close (&cd);
 		cd = 0;
 	}
-	op->size = 0;
+	op->size = 4;
 	omode = mode;
 	if (cd == 0) {
 		ret = cs_open (CS_ARCH_SYSZ, mode, &cd);
 		if (ret) {
-			return 0;
+			return -1;
 		}
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
+	r_asm_op_set_asm (op, "invalid");
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
-	if (n>0) {
-		if (insn->size>0) {
+	if (n > 0) {
+		if (insn->size > 0) {
 			op->size = insn->size;
 			char *buf_asm = sdb_fmt ("%s%s%s",
 					insn->mnemonic, insn->op_str[0]?" ": "",
