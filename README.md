@@ -16,14 +16,14 @@ local hard drives, kernel memory, programs, remote gdb connections,
 and be able to analyze, emulate, debug, modify and disassemble any
 kind of binary.
 
-<center>
+<p align="center">
 <img src="doc/images/shot.png" alt="screenshot" align="center" width="600px">
-</center>
+</p>
 
 * [Download Release Binaries](https://github.com/radareorg/radare2/releases)
 * Install r2 from **Git** (Clone the repo and run `sys/install.sh`)
 * Multiple **versions** in your Home (`pip install r2env`)
-* Read the [official radare2 book](https://book.rada.re)
+* Read the [Official radare2 book](https://book.rada.re)
 * [CONTRIBUTING.md](CONTRIBUTING.md)
 * [INSTALL.md](INSTALL.md)
 * [DEVELOPERS.md](DEVELOPERS.md)
@@ -98,6 +98,6 @@ slides or read the [official radare2 book](https://book.rada.re), You can reach 
 * irc.libera.chat `#radare` `#radare_side`
 * [Matrix](https://matrix.org/) `#radare:matrix.org`
 * [Telegram](https://t.me/radare) and the [Side Channel](https://t.me/radare_side)
-* [Discord](https://discord.gg/MgEdxrMnqx)
+* [Discord](https://discord.gg/MgEdxrMnqx) server
 * Twitter: [@radareorg](https://twitter.com/radareorg)
 * Website: [https://www.radare.org/](https://www.radare.org/)
