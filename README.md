@@ -17,7 +17,7 @@ and be able to analyze, emulate, debug, modify and disassemble any
 kind of binary.
 
 <p align="center">
-<img src="doc/images/shot.png" alt="screenshot" align="center" width="600px">
+<a href="https://www.radare.org/"><img src="doc/images/shot.png" alt="screenshot" align="center" border=0 width="600px"></a>
 </p>
 
 * [Download Release Binaries](https://github.com/radareorg/radare2/releases)
