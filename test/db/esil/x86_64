@@ -1,3 +1,18 @@
+NAME=linux syscall empty
+ARGS=-a x86 -b 64 -k linux
+FILE=-
+CMDS=<<EOF
+asl~?
+e asm.bits=32
+asl~?
+EOF
+
+EXPECT=<<EOF
+335
+365
+EOF
+RUN
+
 NAME=linux syscall
 FILE=-
 CMDS=<<EOF
