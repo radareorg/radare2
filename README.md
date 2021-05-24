@@ -22,6 +22,7 @@ kind of binary.
 
 * Install r2 from **Git** (Clone the repo and run `sys/install.sh`) or use `pip install r2env`
 * Read the [Official radare2 book](https://book.rada.re)
+* [COMMUNITY.md](COMMUNITY.md) engagement
 * [CONTRIBUTING.md](CONTRIBUTING.md) general rules
 * [DEVELOPERS.md](DEVELOPERS.md) to improve r2 for your needs
 * [USAGE.md](USAGE.md) for an introductory session
