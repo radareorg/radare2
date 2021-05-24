@@ -25,12 +25,12 @@ kind of binary.
 * Multiple **versions** in your Home (`pip install r2env`)
 * Read the [Official radare2 book](https://book.rada.re)
 * [CONTRIBUTING.md](CONTRIBUTING.md)
-* [INSTALL.md](INSTALL.md)
 * [DEVELOPERS.md](DEVELOPERS.md)
 * [USAGE.md](USAGE.md)
+* [INSTALL.md](INSTALL.md)
 
 ```
-$ git clone https://github.com/radareorg/radare2
+git clone https://github.com/radareorg/radare2
 radare2/sys/install.sh
 ```
 
