@@ -745,6 +745,9 @@ static bool cb_asmbits(void *user, void *data) {
 	}
 
 	int bits = node->i_value;
+	if (!bits) {
+		bits = (R_SYS_BITS & 8)? 64: 32;
+	}
 #if 0
 // TODO: pretty good optimization, but breaks many tests when arch is different i think
 	if (bits == core->rasm->bits && bits == core->anal->bits && bits == core->dbg->bits) {

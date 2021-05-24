@@ -641,7 +641,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		eprintf ("r_core_bin_load: no file specified\n");
 		return false;
 	}
-
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 	if (is_io_load) {
