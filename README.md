@@ -16,15 +16,19 @@ local hard drives, kernel memory, programs, remote gdb connections,
 and be able to analyze, emulate, debug, modify and disassemble any
 kind of binary.
 
+<a href="https://repology.org/metapackage/radare2">
+<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
+</a>
+
 <center>
 <img src="doc/images/shot.png" alt="screenshot" align="center" width="600px">
 </center>
 
-## Supported Operating Systems
+* [Download Release Binaries](https://github.com/radareorg/radare2/releases)
+* Building from Git (Clone the repo and run `sys/install.sh`)
+* [Documentation]() 
 
-<a href="https://repology.org/metapackage/radare2">
-<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
-</a>
+## Supported Operating Systems
 
 Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS,
 [Dragonfly|Net|Free|Open]BSD, Android, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
