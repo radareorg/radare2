@@ -15,6 +15,44 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ipmetacolor
+FILE=-
+CMDS=<<EOF
+wx 01020304 05060708 090a0b0c
+e asm.meta=false
+Cd 4
+Cd 4 @ 4
+Cd 4 @ 8
+ahi i
+ahi 10 @ 4
+pd 3
+EOF
+EXPECT=<<EOF
+            0x00000000      01020304       .ipaddr 1.2.3.4
+            0x00000004      05060708       .int32 134678021            ; 0x9080706
+            0x00000008      090a0b0c       .dword 0x0c0b0a09
+EOF
+RUN
+
+NAME=ipmetacolor with metatrue
+FILE=-
+CMDS=<<EOF
+wx 01020304 05060708 090a0b0c
+e asm.meta=true
+Cd 4
+Cd 4 @ 4
+Cd 4 @ 8
+ahi i
+ahi 10 @ 4
+pd 3
+EOF
+EXPECT=<<EOF
+            0x00000000      .dword 0x04030201
+            0x00000004      .int32 134678021
+            0x00000008      .dword 0x0c0b0a09
+EOF
+RUN
+
 NAME=Cd999nometa
 FILE=-
 CMDS=<<EOF
@@ -27,9 +65,9 @@ so -1
 pd 1~?
 EOF
 EXPECT=<<EOF
-3
-1
 2
+1
+1
 EOF
 RUN
 
