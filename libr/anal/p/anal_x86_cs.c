@@ -1454,9 +1454,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			 */
 			esilprintf (op, "%s,!,?{,1,zf,=,0,%s,=,BREAK,},0,zf,=,1,"
 					"DUP,1,<<,%s,&,?{,1,+,%s,=,BREAK,},"
-					"DUP,0,<,?{,1,-,15,GOTO,}",
+					"DUP,0,<,?{,1,+,DUP,%d,>,${,15,GOTO,},}",
 					src, dst,
-					dst, dst);
+					dst, dst, bits);
 		}
 		break;
 	case X86_INS_BSR:
@@ -1472,9 +1472,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			 */
 			esilprintf (op, "%s,!,?{,1,zf,=,0,%s,=,BREAK,},0,zf,=,1,"
 					"DUP,1,<<,%s,&,?{,1,+,%s,=,BREAK,},"
-					"DUP,0,<,?{,1,-,15,GOTO,}",
+					"DUP,0,<,?{,1,+,DUP,%d,>,${,15,GOTO,},}",
 					src, dst,
-					dst, dst);
+					dst, dst, bits);
 		}
 		break;
 	case X86_INS_BSWAP:
