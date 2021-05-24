@@ -16,7 +16,36 @@ local hard drives, kernel memory, programs, remote gdb connections,
 and be able to analyze, emulate, debug, modify and disassemble any
 kind of binary.
 
+<center>
 <img src="doc/images/shot.png" alt="screenshot" align="center" width="600px">
+</center>
+
+## Supported Operating Systems
+
+<a href="https://repology.org/metapackage/radare2">
+<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
+</a>
+
+Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS,
+[Dragonfly|Net|Free|Open]BSD, Android, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
+
+## Architectures
+
+i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x, AVR,
+XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
+V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
+Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
+NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
+c55+, c66), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
+MCORE, mcs96, RSP, SuperH-4, VAX, AMD Am29000.
+
+## File Formats
+
+ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
+Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
+ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
+WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF,
+Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
 
 ## Usage
 
@@ -55,15 +84,30 @@ rax2 -k 10+32      # keep the same base as input (10)
 rax2 -h            # convert between (hex, octal, decimal.. bases)
 ```
 
-### other
+### Other tools...
 
 Checkout the [manpages](https://github.com/radareorg/radare2/blob/master/man) and help messages for more details
 
-## Installation
+## Scripting
 
-<a href="https://repology.org/metapackage/radare2">
-<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
-</a>
+There are native API bindings available for many programming languages,
+but it is recommended to use [r2pipe](https://github.com/radareorg/radare2-r2pipe) which is a simple interface to
+execute r2 commands and get the output in result. Appending a `j` in the
+commands the output will be in JSON, so it can be parsed with `.cmdj()`
+
+Some of the languages supported by r2 are: Python, Ruby, JavaScript,
+Lua, Perl, PHP, V, Go, Rust, Swift, C#, Java, Shell, OCaml, Haskell,
+Scheme (Guile), Common Lisp, Clojure, Erlang, D, Vala/Genie, Prolog,
+Nim, Newlisp...
+
+```python
+import r2pipe
+r2 = r2pipe.open("/bin/ls")
+print(r2.cmd("pd 10"))
+r2.quit()
+```
+
+## Installation
 
 The [GHA CI](https://github.com/radareorg/radare2/actions) builds the packages for every commit and those are also
 available in the [release](https://github.com/radareorg/radare2/releases) page. But it is always recommended to
@@ -91,48 +135,6 @@ pip install r2env
 r2env init
 r2env add radare2
 ```
-
-## Scripting
-
-There are native API bindings available for many programming languages,
-but it is recommended to use [r2pipe](https://github.com/radareorg/radare2-r2pipe) which is a simple interface to
-execute r2 commands and get the output in result. Appending a `j` in the
-commands the output will be in JSON, so it can be parsed with `.cmdj()`
-
-Some of the languages supported by r2 are: Python, Ruby, JavaScript,
-Lua, Perl, PHP, V, Go, Rust, Swift, C#, Java, Shell, OCaml, Haskell,
-Scheme (Guile), Common Lisp, Clojure, Erlang, D, Vala/Genie, Prolog,
-Nim, Newlisp...
-
-```python
-import r2pipe
-r2 = r2pipe.open("/bin/ls")
-print(r2.cmd("pd 10"))
-r2.quit()
-```
-
-## Supported Operating Systems
-
-Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS,
-[Dragonfly|Net|Free|Open]BSD, Android, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
-
-## Architectures
-
-i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, m680x, AVR,
-XAP, S390, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810,
-V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
-Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
-NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
-c55+, c66), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
-MCORE, mcs96, RSP, SuperH-4, VAX, AMD Am29000.
-
-## File Formats
-
-ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
-Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
-ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
-WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF,
-Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
 
 ## Uninstall
 
