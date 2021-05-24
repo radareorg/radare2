@@ -6,15 +6,13 @@
 
 Git version is 5.3.0-git and the [![latest packaged version(s)](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions). See the [Release](https://github.com/radareorg/radare2/releases) downloads page.
 
-r2 is a rewrite from scratch of radare. It provies a set of
-libraries, tools and plugins to ease reverse engineering tasks.
+r2 is a rewrite from scratch of radare. It provies a set of libraries, tools and
+plugins to ease reverse engineering tasks.
 
-The radare project started as a simple commandline hexadecimal
-editor focused on forensics, over time more features were added
-to support a scriptable command-line low level tool to edit from
-local hard drives, kernel memory, programs, remote gdb connections,
-and be able to analyze, emulate, debug, modify and disassemble any
-kind of binary.
+The radare project started as a simple commandline hexadecimal editor focused on
+forensics, over time more features were added to support a scriptable command-line
+low level tool to edit from local hard drives, kernel memory, programs, remote gdb
+servers and be able to analyze, emulate, debug, modify and disassemble any binary.
 
 <p align="center">
 <a href="https://www.radare.org/"><img src="doc/images/shot.png" alt="screenshot" align="center" border=0 width="600px"></a>
