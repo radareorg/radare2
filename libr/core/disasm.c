@@ -1094,8 +1094,12 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 		}
 		char *asm_str = colorize_asm_string (core, ds, print_color);
-		r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, asm_str,
-				ds->str, sizeof (ds->str), core->print->big_endian);
+		if (ds->subjmp) {
+			r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, asm_str,
+					ds->str, sizeof (ds->str), core->print->big_endian);
+		} else {
+			r_str_ncpy (ds->str, ds->opstr, sizeof (ds->str));
+		}
 		free (asm_str);
 		// subvar depends on filter
 		if (ds->subvar) {
