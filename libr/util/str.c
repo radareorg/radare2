@@ -1216,6 +1216,8 @@ R_API int r_str_unescape(char *buf) {
 					}
 				}
 				esc_seq_len = 1 + num_digits;
+			} else {
+				esc_seq_len = 1;
 			}
 		}
 		memmove (buf + i + 1, buf + i + esc_seq_len, strlen (buf + i + esc_seq_len) + 1);

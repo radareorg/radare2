@@ -150,19 +150,27 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	if (!R_STR_ISEMPTY (charset)) {
 		RCharset *ch = r_charset_new ();
 		if (r_charset_use (ch, charset)) {
-			int outlen = len * 2;
-			ut8 *out = malloc (outlen);
-			int res = r_charset_encode_str (ch, out, outlen, buf, len);
-			int i;
-			// TODO unknown chars should be translated to null bytes
-			for (i = 0; i < res; i++) {
-				if (out[i] == '?') {
-					out[i] = 0;
+			int outlen = len * 4;
+			ut8 *out = calloc (len, 4);
+			if (out) {
+				int res = r_charset_encode_str (ch, out, outlen, buf, len);
+				int i;
+				// TODO unknown chars should be translated to null bytes
+				for (i = 0; i < res; i++) {
+					if (out[i] == '?') {
+						out[i] = 0;
+					}
 				}
+				len = res;
+				free (buf);
+#if 1
+				buf = out;
+#else
+				// buf = realloc (out, len + 1);
+#endif
+			} else {
+				eprintf ("Cannot allocate\n");
 			}
-			len = res;
-			free (buf);
-			buf = out;
 		} else {
 			eprintf ("Invalid value for RABIN2_CHARSET.\n");
 		}

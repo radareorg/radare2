@@ -5,7 +5,6 @@
 #include <r_lib.h>
 
 typedef struct {
-	Sdb *kv;
 	RBuffer *buf;
 } OffObj;
 
@@ -24,13 +23,6 @@ static bool check_buffer(RBuffer *b) {
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	OffObj *wo = R_NEW0 (OffObj);
 	r_return_val_if_fail (wo, false);
-	wo->kv = sdb_new0 ();
-	if (!wo->kv) {
-		free (wo);
-		return false;
-	}
-	wo->buf = r_buf_ref (buf);
-	sdb_ns_set (sdb, "info", wo->kv);
 	*bin_obj = wo;
 	return true;
 }

@@ -191,15 +191,22 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 	char k[32];
 	char *o = (char*)out;
 	size_t i;
-	for (i = 0; i < in_len; i++) {
+	char *o_end = o + out_len;
+	for (i = 0; i < in_len && o < o_end; i++) {
 		ut8 ch_in = in[i];
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
 		const char *v = sdb_const_get (rc->db, k, 0);
 		const char *ret = r_str_get_fail (v, "?");
 		char *res = strdup (ret);
-		r_str_unescape (res);
-		strcpy (o, res);
-		free (res);
+		if (res) {
+			int reslen = strlen (res);
+			if (reslen >= o_end - o) {
+				break;
+			}
+			r_str_unescape (res);
+			r_str_ncpy (o, res, out_len - i);
+			free (res);
+		}
 		o += strlen (o);
 	}
 
