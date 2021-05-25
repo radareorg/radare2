@@ -51,7 +51,9 @@ else
 endif
 	test -f $@
 ifeq ($(HAVE_GPERF),1)
-	${SDB} -C $@
+	${SDB} -t -C $@
+else
+	${SDB} -t -C $@
 endif
 
 clean:
