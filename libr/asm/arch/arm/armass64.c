@@ -912,6 +912,25 @@ static ut32 arithmetic(ArmOp *op, int k) {
 		data += (op->operands[2].reg & 0x3f) << 18;
 		data += (op->operands[2].reg >> 6) << 8;
 	}
+
+	if (op->operands[2].type & ARM_GPR  && op->operands[3].type & ARM_SHIFT) {
+		if (op->operands[3].shift == ARM_LSL) {
+			data |= (0x00040000 * op->operands[3].shift_amount);
+		} 
+		if (op->operands[3].shift == ARM_LSR) {
+			data |= (0x00040000 * op->operands[3].shift_amount) | (0x4000);
+		}
+
+		if (op->operands[3].shift == ARM_ASR) {
+			data |= (0x00040000 * op->operands[3].shift_amount) | (0x8000);
+		}
+	}
+	if (op->operands[2].type & ARM_CONSTANT  && op->operands[3].type & ARM_SHIFT) {
+		if ((op->operands[3].shift == ARM_LSL) && (op->operands[3].shift_amount == 12)) {
+			data |= (0x4000);
+		}
+	}
+
 	return data;
 }
 
