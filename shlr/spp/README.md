@@ -72,7 +72,7 @@ Hello Darwin
 Commandline
 -----------
 
-SPP is also a commandline tool that takes N files as arguments and
+SPP is also a command-line tool that takes N files as arguments and
 evaluates them using the selected preprocessor:
 
 ```

@@ -86,7 +86,7 @@ struct label
   char name[1];			/* space with name in it */
 };
 
-/* files that were given on the commandline */
+/* files that were given on the command-line */
 struct infile
 {
   const char *name;

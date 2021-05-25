@@ -112,7 +112,7 @@ rules to make the git history more readable and consistent:
 * ##refactor - improve code quality
 * ##remote   - r2 over tcp, http, rap, serial .. including collaboration
 * ##search   - rafind2, / command, ..
-* ##shell    - commandline, newshell, ..
+* ##shell    - command-line, argument parsing, new commands, ..
 * ##signatures-searching/generating them
 * ##test     - testing infrastructure fixes/changes
 * ##tools    - r2pm, rarun2, rax2 ... that don't fit in other categories

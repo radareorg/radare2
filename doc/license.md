@@ -32,7 +32,7 @@ RAsmPlugin r_asm_plugin_dummy = {
 };
 ```
 
-This information is accessible at runtime by using the `L` command or commandline flag in any of the r2 programs:
+This information is accessible at runtime by using the `L` command or command-line flag in any of the r2 programs:
 
 ```
 $ r2 -Lj | jq -r '.[].license' | sort -u

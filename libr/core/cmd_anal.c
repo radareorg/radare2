@@ -565,6 +565,7 @@ static const char *help_msg_ag[] = {
 	"Output formats:", "", "",
 	"<blank>", "", "Ascii art",
 	"*", "", "r2 commands",
+	"b", "", "Braile art rendering (agfb)",
 	"d", "", "Graphviz dot",
 	"g", "", "Graph Modelling Language (gml)",
 	"j", "", "json ('J' for formatted disassembly)",

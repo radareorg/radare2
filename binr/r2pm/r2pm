@@ -252,7 +252,7 @@ init|up|update)
 	;;
 esac
 
-# commandline flags that work without initialized database
+# command-line flags that work without initialized database
 case "$1" in
 -v|version)
 	echo "r2pm ${R2_VERSION}"

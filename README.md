@@ -9,7 +9,7 @@ Git version is 5.3.0-git and the [![latest packaged version(s)](https://repology
 r2 is a rewrite from scratch of radare. It provies a set of libraries, tools and
 plugins to ease reverse engineering tasks.
 
-The radare project started as a simple commandline hexadecimal editor focused on
+The radare project started as a simple command-line hexadecimal editor focused on
 forensics, over time more features were added to support a scriptable command-line
 low level tool to edit from local hard drives, kernel memory, programs, remote gdb
 servers and be able to analyze, emulate, debug, modify and disassemble any binary.
