@@ -15,9 +15,11 @@ typedef struct {
 
 
 static void free_socketdata(RIOSocketData *sd) {
-	r_socket_free (sd->sc);
-	r_socket_free (sd->sl);
-	free (sd);
+	if (sd) {
+		r_socket_free (sd->sc);
+		r_socket_free (sd->sl);
+		free (sd);
+	}
 }
 
 static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int count) {
@@ -119,12 +121,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		} else {
 			eprintf ("Missing port.\n");
 			free_socketdata (data);
+			free (host);
 			return NULL;
 		}
 		/* listen and wait for connection */
 		data->sc = r_socket_new (false);
 		if (!r_socket_connect (data->sc, host, port, R_SOCKET_PROTO_TCP, 0)) {
 			eprintf ("Cannot connect\n");
+			free (host);
 			free_socketdata (data);
 			return NULL;
 		}

@@ -2375,10 +2375,12 @@ static RListIter *collision_skip_unused(RListIter *iter, RSignType *used) {
 	RListIter *next;
 	while ((next = r_list_iter_get_next (iter))) {
 		n = r_list_iter_get_data (next);
-		RSignType t = n[0];
-		if (!n || skip != t) {
-			if (type_in_array (used, t)) {
-				return iter;
+		if (n) {
+			RSignType t = n[0];
+			if (skip != t) {
+				if (type_in_array (used, t)) {
+					return iter;
+				}
 			}
 		}
 		iter = next;

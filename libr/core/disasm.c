@@ -2521,7 +2521,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				char *op_hex = r_asm_op_get_hex (&ds->asmop);
 				r_asm_op_set_asm (&ds->asmop, sdb_fmt (".hex %s%s", op_hex, tail));
 				bool be = ds->core->print->big_endian;
-				int immbase = (ds && ds->hint && ds->hint->immbase)? ds->hint->immbase: 0;
+				int immbase = (ds->hint && ds->hint->immbase)? ds->hint->immbase: 0;
 				switch (meta_size) {
 				case 2:
 					ds->analop.val = r_read_ble16 (buf, be);
