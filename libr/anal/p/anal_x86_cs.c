@@ -1452,9 +1452,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			 * by creating a mask on the stack and applying it, returning
 			 * result if bit is set.
 			 */
-			esilprintf (op, "%s,!,?{,1,zf,=,BREAK,},0,zf,=,"
-					"%d,DUP,%d,-,1,<<,%s,&,?{,%d,-,%s,=,BREAK,},12,REPEAT",
-					src, bits, bits, src, bits, dst);
+			esilprintf (op, "%s,!,?{,1,zf,=,0,%s,=,BREAK,},0,zf,=,1,"
+					"DUP,1,<<,%s,&,?{,1,+,%s,=,BREAK,},"
+					"DUP,0,<,?{,1,+,DUP,%d,>,${,15,GOTO,},}",
+					src, dst,
+					dst, dst, bits);
 		}
 		break;
 	case X86_INS_BSR:
@@ -1468,9 +1470,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			 * need to subtract anything to create
 			 * a mask and return the result.
 			 */
-			esilprintf (op, "%s,!,?{,1,zf,=,BREAK,},0,zf,=,"
-					"%d,DUP,1,<<,%s,&,?{,%s,=,BREAK,},12,REPEAT",
-					src, bits, src, dst);
+			esilprintf (op, "%s,!,?{,1,zf,=,0,%s,=,BREAK,},0,zf,=,1,"
+					"DUP,1,<<,%s,&,?{,1,+,%s,=,BREAK,},"
+					"DUP,0,<,?{,1,+,DUP,%d,>,${,15,GOTO,},}",
+					src, dst,
+					dst, dst, bits);
 		}
 		break;
 	case X86_INS_BSWAP:

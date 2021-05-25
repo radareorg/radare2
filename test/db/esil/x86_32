@@ -2380,33 +2380,46 @@ wa bsf eax, ebx
 aer eax=0x00000000
 aer ebx=0x00000000
 aer zf=0
+sr PC=0
 aes
 aer eax,zf
 #
 # BSF: test lowest bit
 #
 aeim
-aer eax=0x00000000
-aer ebx=0xffffffff
+aer eax=42
+aer ebx=4
 aer zf=0
+sr PC=0
 aes
 aer eax,zf
+#
+# BSF: fffff
+#
+aer eax=42
+aer ebx=0xfffff
+sr PC=0
+pd 1@e:asm.flags=false
+aes
+
 #
 # BSF: test highest bit
 #
 aeim
-aer eax=0x00000000
-aer ebx=0x80000000
+aer eax=42
+aer ebx=4
 aer zf=0
+sr PC=0
 aes
 aer eax,zf
 EOF
 EXPECT=<<EOF
 0x00000000
 0x00000001
+0x00000002
 0x00000000
-0x00000000
-0x0000001f
+            0x00000000      0fbcc3         bsf eax, ebx
+0x00000002
 0x00000000
 EOF
 RUN
@@ -2452,7 +2465,7 @@ EXPECT=<<EOF
 0x00000001
 0x00000000
 0x00000000
-0x0000001f
+0x00000000
 0x00000000
 EOF
 RUN

@@ -1140,7 +1140,6 @@ typedef struct r_anal_esil_t {
 	int nowrite;
 	int iotrap;
 	int exectrap;
-	int repeat;
 	int parse_stop;
 	int parse_goto;
 	int parse_goto_count;
