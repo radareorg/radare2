@@ -514,7 +514,7 @@ static int sdb_dump(MainOptions *mo) {
 			sdb_dump_cb (mo, k, v, comma);
 			comma = ",";
 			free (v);
-			if (mo->format == cgen && count++ > SDB_MAX_GPERF_KEYS) {
+			if (!mo->textmode && mo->format == cgen && count++ > SDB_MAX_GPERF_KEYS) {
 				eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
 				free (name);
 				free (cname);
