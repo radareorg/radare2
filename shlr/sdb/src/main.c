@@ -487,7 +487,7 @@ static int sdb_dump(MainOptions *mo) {
 
 	if (db->fd == -1) {
 		SdbList *l = sdb_foreach_list (db, true);
-		if (mo->format == cgen && ls_length (l) > SDB_MAX_GPERF_KEYS) {
+		if (!mo->textmode && mo->format == cgen && ls_length (l) > SDB_MAX_GPERF_KEYS) {
 			ls_free (l);
 			eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
 			free (name);
