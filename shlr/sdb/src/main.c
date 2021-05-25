@@ -35,13 +35,12 @@ typedef struct {
 	const char *db2;
 	const char *grep;
 	ut32 options;
-	int textmode;
+	bool textmode;
 	MainCreate create;
 	MainFormat format;
 } MainOptions;
 
 static bool save = false;
-static bool textmode = false;
 static Sdb *s = NULL;
 static ut32 options = SDB_OPTION_FS | SDB_OPTION_NOSTAMP;
 
@@ -282,8 +281,8 @@ static void sdb_dump_cb(MainOptions *mo, const char *k, const char *v, const cha
 		{
 			char *a = escape (k, ',');
 			char *b = escape (v, 0);
-			if (textmode) {
-				printf ("  \"%s=%s\"\n", a, b);
+			if (mo->textmode) {
+				printf ("  {\"%s\",\"%s\"}, \n", a, b);
 			} else {
 				printf ("%s,\"%s\"\n", a, b);
 			}
@@ -300,13 +299,16 @@ static void sdb_dump_cb(MainOptions *mo, const char *k, const char *v, const cha
 	}
 }
 
-static void cgen_header(const char *cname) {
-	if (textmode) {
+static void cgen_header(MainOptions *mo, const char *cname) {
+	if (mo->textmode) {
+		printf ("// SDB-CGEN V"SDB_VERSION"\n");
 		printf ("// gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", cname, cname);
+		printf ("#include <ctype.h>\n");
 		printf ("#include <stdio.h>\n");
 		printf ("#include <string.h>\n");
 		printf ("\n");
-		printf ("static const char *textdb = \"\"\\\n");
+		printf ("struct kv { const char *name; const char *value; };\n");
+		printf ("static struct kv kvs[] = {\n");
 		return;
 	}
 	printf ("%%{\n");
@@ -322,10 +324,76 @@ static void cgen_header(const char *cname) {
 }
 
 // TODO rename gperf with cgen
-static void cgen_footer(const char *name, const char *cname) {
-	if (textmode) {
+static void cgen_footer(MainOptions *mo, const char *name, const char *cname) {
+	if (mo->textmode) {
+		printf ("  {NULL, NULL}\n");
 		printf ("};\n");
-		printf ("TODO\n");
+		printf ("// %p\n", cname);
+		printf ("// TODO\n");
+		printf ("typedef int (*GperfForeachCallback)(void *user, const char *k, const char *v);\n");
+		printf ("int gperf_%s_foreach(GperfForeachCallback cb, void *user) {\n", cname);
+		printf ("  int i; while (kvs[i].name) {\n");
+		printf ("  cb (user, kvs[i].name, kvs[i].value);\n");
+		printf ("  i++;}\n");
+		printf ("  return 0;\n");
+		printf ("}\n");
+		printf ("const char *gperf_%s_get(const char *s) {\n", cname);
+		printf ("  int i; while (kvs[i].name) {\n");
+		printf ("  if (!strcmp (s, kvs[i].name)) return kvs[i].value;\n");
+		printf ("  i++;}\n");
+		printf ("  return NULL;\n");
+		printf ("}\n");
+		printf ("#define sdb_hash_c_%s(x,y) gperf_%s_hash(x)\n", cname, cname);
+		printf ("const unsigned int gperf_%s_hash(const char *s) {\n", cname);
+		printf ("  int sum = strlen (s);\n");
+		printf ("  while (*s) { sum += *s; s++; }\n");
+		printf ("  return sum;\n");
+		printf ("}\n");
+		printf (
+			"struct {const char *name;void *get;void *hash;void *foreach;} gperf_%s = {\n"
+			"  .name = \"%s\",\n"
+			"  .get = &gperf_%s_get,\n"
+			"  .hash = &gperf_%s_hash,\n"
+			"  .foreach = &gperf_%s_foreach\n"
+			"};\n", name, cname, cname, cname, cname);
+#if 1
+printf (
+"\n"
+"#if MAIN\n"
+"int main () {\n"
+"	char line[1024];\n"
+"	FILE *fd = fopen (\"%s.gperf\", \"r\");\n"
+"	if (!fd) {\n"
+"		fprintf (stderr, \"Cannot open %s.gperf\\n\");\n"
+"		return 1;\n"
+"	}\n"
+"	int mode = 0;\n"
+"	printf (\"#ifndef INCLUDE_%s_H\\n\");\n"
+"	printf (\"#define INCLUDE_%s_H 1\\n\");\n"
+"	while (!feof (fd)) {\n"
+"		*line = 0;\n"
+"		fgets (line, sizeof (line), fd);\n"
+"		if (mode == 1) {\n"
+"			char *comma = strchr (line, ',');\n"
+"			if (comma) {\n"
+"				*comma = 0;\n"
+"				char *up = strdup (line);\n"
+"				char *p = up; while (*p) { *p = toupper (*p); p++; }\n"
+"				printf (\"#define GPERF_%s_%%s %%d\\n\",\n"
+"					line, sdb_hash_c_%s (line, comma - line));\n"
+"			}\n"
+"		}\n"
+"		if (*line == '%%' && line[1] == '%%')\n"
+"			mode++;\n"
+"	}\n"
+"	printf (\"#endif\\n\");\n"
+"}\n"
+"#endif\n",
+		name, name,
+		cname, cname,
+		cname, cname
+	);
+#endif
 		return;
 	}
 	printf ("%%%%\n");
@@ -408,7 +476,7 @@ static int sdb_dump(MainOptions *mo) {
 	switch (mo->format) {
 	case cgen:
 	case perf:
-		cgen_header (cname);
+		cgen_header (mo, cname);
 		break;
 	case json:
 		printf ("{");
@@ -419,7 +487,7 @@ static int sdb_dump(MainOptions *mo) {
 
 	if (db->fd == -1) {
 		SdbList *l = sdb_foreach_list (db, true);
-		if (mo->format == cgen && ls_length (l) > SDB_MAX_GPERF_KEYS) {
+		if (!mo->textmode && mo->format == cgen && ls_length (l) > SDB_MAX_GPERF_KEYS) {
 			ls_free (l);
 			eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
 			free (name);
@@ -446,7 +514,7 @@ static int sdb_dump(MainOptions *mo) {
 			sdb_dump_cb (mo, k, v, comma);
 			comma = ",";
 			free (v);
-			if (mo->format == cgen && count++ > SDB_MAX_GPERF_KEYS) {
+			if (!mo->textmode && mo->format == cgen && count++ > SDB_MAX_GPERF_KEYS) {
 				eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
 				free (name);
 				free (cname);
@@ -461,7 +529,7 @@ static int sdb_dump(MainOptions *mo) {
 		break;
 	case perf:
 	case cgen:
-		cgen_footer (name, cname);
+		cgen_footer (mo, name, cname);
 		break;
 	case json:
 		printf ("}\n");
