@@ -13,9 +13,7 @@ all: ${F_SDB}
 %.sdb:%.sdb.txt
 	${SDB} $@ = < $<
 	test -f $@
-ifeq ($(HAVE_GPERF),1)
-	${SDB} -C $@
-endif
+	${SDB} -t -C $@
 
 clean:
 	rm -f *.sdb *.c *.h *.gperf a.out

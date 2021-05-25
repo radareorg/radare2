@@ -50,11 +50,7 @@ else
 	"${SHELL}" gen.sh < $< | ${SDB} $@ =
 endif
 	test -f $@
-ifeq ($(HAVE_GPERF),1)
 	${SDB} -t -C $@
-else
-	${SDB} -t -C $@
-endif
 
 clean:
 	rm -f *.sdb

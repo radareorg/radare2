@@ -101,16 +101,12 @@ ifneq ($(SILENT),)
 	@rm -f $@
 	@cat $< $(EXTRA_FILES) | ${SDB} $@ =
 	@test -f $@
-ifeq ($(HAVE_GPERF),1)
-	-if [ -z "`echo $@| grep windows`" ]; then $(SDB) -C $@ ; fi
-endif
+	@$(SDB) -t -C $@
 else
 	rm -f $@
 	cat $< $(EXTRA_FILES) | ${SDB} $@ =
 	test -f $@
-ifeq ($(HAVE_GPERF),1)
-	-if [ -z "`echo $@| grep windows`" ]; then $(SDB) -C $@ ; fi
-endif
+	$(SDB) -t -C $@
 endif
 
 clean:

@@ -12,9 +12,7 @@ alle: $(F_SDB)
 
 %.sdb: %.sdb.txt
 	$(SDB) $@ = < $<
-ifeq ($(HAVE_GPERF),1)
-	$(SDB) -C $@
-endif
+	$(SDB) -t -C $@
 	test -f $@
 
 install:
