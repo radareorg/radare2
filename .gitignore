@@ -128,3 +128,8 @@ __pycache__
 .ccls-cache/
 vgcore.*
 libr/include/sdb
+**/d/*.c
+**/d/*.h
+**/d/*.gperf
+**/d/*.out
+**/d/*.inc
