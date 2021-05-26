@@ -612,7 +612,6 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		eprintf ("radare2 does not support projects on debugged bins.\n");
 		return false;
 	}
-
 	char *script_path = get_project_script_path (core, prj_name);
 	if (!script_path) {
 		eprintf ("Invalid project name '%s'\n", prj_name);
@@ -628,6 +627,15 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	if (!prj_dir) {
 		prj_dir = strdup (prj_name);
+	}
+	if (!r_file_exists (prj_dir)) {
+		if (strcmp (prj_name, r_config_get (core->config,
+						"prj.name"))) {
+			eprintf ("A project with this name already exists\n");
+			free (script_path);
+			free (prj_dir);
+			return false;
+		}
 	}
 	if (!r_file_exists (prj_dir)) {
 		r_sys_mkdirp (prj_dir);
