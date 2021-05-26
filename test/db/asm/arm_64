@@ -363,3 +363,15 @@ ad "sbfx w12, w13, 0xf, 0x10" ac790f13
 ad "sbfx x14, x15, 0x21, 0x1b" eeed6193
 ad "ubfx w16, w17, 0x1d, 2" 307a1d53
 ad "ubfx x18, x19, 2, 0x39" 72ea42d3
+a "add x0, x0, 1" 00040091
+a "add x0, x0, 1, lsl 12" 00044091
+a "add x0, x0, 2, lsl 12" 00084091
+a "add x0, x0, x1, lsl 1" 0004018b
+a "add x0, x0, x1, lsl 2" 0008018b
+a "add x0, x0, x1, lsl 12" 0030018b
+a "add x0, x0, x1, lsr 1" 0004418b
+a "add x0, x0, x1, lsr 2" 0008418b
+a "add x0, x0, x1, lsr 12" 0030418b
+a "add x0, x0, x1, asr 1" 0004818b
+a "add x0, x0, x1, asr 2" 0008818b
+a "add x0, x0, x1, asr 12" 0030818b
