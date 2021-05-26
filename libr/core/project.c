@@ -628,16 +628,15 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (!prj_dir) {
 		prj_dir = strdup (prj_name);
 	}
-	if (!r_file_exists (prj_dir)) {
-		if (strcmp (prj_name, r_config_get (core->config,
-						"prj.name"))) {
-			eprintf ("A project with this name already exists\n");
-			free (script_path);
-			free (prj_dir);
-			return false;
-		}
+	if (r_core_is_project (core, prj_name)
+			&& strcmp (prj_name,
+				r_config_get (core->config, "prj.name"))) {
+		eprintf ("A project with this name already exists\n");
+		free (script_path);
+		free (prj_dir);
+		return false;
 	}
-	if (!r_file_exists (prj_dir)) {
+	if (!r_file_is_directory (prj_dir)) {
 		r_sys_mkdirp (prj_dir);
 	}
 	if (r_config_get_i (core->config, "scr.null")) {
