@@ -161,7 +161,7 @@ static int main_help(int line) {
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		" R2_RCFILE    ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
-		" R2_VERSION   contains the current version of r2\n" 
+		" R2_VERSION   contains the current version of r2\n"
 		"Paths:\n"
 		" R2_PREFIX    "R2_PREFIX"\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
@@ -1503,6 +1503,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 
 				const char *prj = r_config_get (r->config, "prj.name");
+				if (r_core_project_is_saved (r)) {
+					break;
+				}
 				if (no_question_save) {
 					if (prj && *prj && y_save_project){
 						r_core_project_save (r, prj);

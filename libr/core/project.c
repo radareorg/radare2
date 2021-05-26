@@ -656,9 +656,11 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		}
 	}
 
+	r_config_set (core->config, "prj.name", prj_name);
 	if (!r_core_project_save_script (core, script_path, R_CORE_PRJ_ALL)) {
 		eprintf ("Cannot open '%s' for writing\n", prj_name);
 		ret = false;
+		r_config_set (core->config, "prj.name", "");
 	}
 
 	if (r_config_get_i (core->config, "prj.files")) {
@@ -725,4 +727,45 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 	char *notes_txt = r_file_new (prjpath, prj_name, "notes.txt", NULL);
 	free (prjpath);
 	return notes_txt;
+}
+R_API bool r_core_project_is_saved(RCore *core) {
+	bool ret;
+	char *saved_dat, *tmp_dat;
+	char *tsp, *sp;
+	char *pd = r_str_newf ("%s" R_SYS_DIR "%s",
+			r_config_get (core->config, "dir.projects"),
+			r_config_get (core->config, "prj.name"));
+	if (!pd) {
+		return false;
+	}
+	sp = r_str_newf ("%s" R_SYS_DIR "%s", pd, "rc.r2");
+	if (!sp) {
+		free (pd);
+		return false;
+	}
+	tsp = r_str_newf ("%s" R_SYS_DIR "tmp", pd);
+	//horrible code follows:
+	free (pd);
+	if (!tsp) {
+		free (sp);
+		return false;
+	}
+	r_core_project_save_script (core, tsp, R_CORE_PRJ_ALL);
+	saved_dat = r_file_slurp (sp, 0);
+	free (sp);
+	if (!saved_dat) {
+		free (tsp);
+		return false;
+	}
+ 	//Would be better if I knew how to map files in mem in windows
+	tmp_dat = r_file_slurp (tsp, 0);
+	r_file_rm (tsp);
+	free (tsp);
+	if (!tmp_dat) {
+		return false;
+	}
+	ret = !strcmp (tmp_dat, saved_dat);
+	free (tmp_dat);
+	free (saved_dat);
+	return ret;
 }
