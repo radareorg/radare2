@@ -921,6 +921,8 @@ static ut32 arithmetic(ArmOp *op, int k) {
 				data |= (0x00040000 * op->operands[3].shift_amount) | (0x4000);
 			case ARM_ASR:
 				data |= (0x00040000 * op->operands[3].shift_amount) | (0x8000);
+			default: 
+				return data;
 		}
 	}
 	if (op->operands[2].type & ARM_CONSTANT  && op->operands[3].type & ARM_SHIFT) {
