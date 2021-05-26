@@ -901,7 +901,6 @@ static ut32 arithmetic(ArmOp *op, int k) {
 	if (op->operands[2].type & ARM_GPR) {
 		k -= 6;
 	}
-
 	data = k;
 	data += encode1reg (op);
 	data += (op->operands[1].reg & 7) << (24 + 5);
@@ -913,24 +912,27 @@ static ut32 arithmetic(ArmOp *op, int k) {
 		data += (op->operands[2].reg >> 6) << 8;
 	}
 
-	if (op->operands[2].type & ARM_GPR  && op->operands[3].type & ARM_SHIFT) {
-		switch (op->operands[3].shift) {
-			case ARM_LSL:
-				data |= (0x00040000 * op->operands[3].shift_amount);
-			case ARM_LSR:
-				data |= (0x00040000 * op->operands[3].shift_amount) | (0x4000);
-			case ARM_ASR:
-				data |= (0x00040000 * op->operands[3].shift_amount) | (0x8000);
-			default: 
-				return data;
-		}
-	}
 	if (op->operands[2].type & ARM_CONSTANT  && op->operands[3].type & ARM_SHIFT) {
 		if ((op->operands[3].shift == ARM_LSL) && (op->operands[3].shift_amount == 12)) {
 			data |= (0x4000);
 		}
 	}
 
+	if (op->operands[2].type & ARM_GPR  && op->operands[3].type & ARM_SHIFT) {
+		switch (op->operands[3].shift) {
+			case ARM_LSL:
+				data |= (0x00040000 * op->operands[3].shift_amount);
+				break;
+			case ARM_LSR:
+				data |= (0x00040000 * op->operands[3].shift_amount) | (0x4000);
+				break;
+			case ARM_ASR:
+				data |= (0x00040000 * op->operands[3].shift_amount) | (0x8000);
+				break;
+			default:
+				return data;
+		}
+	}
 	return data;
 }
 
