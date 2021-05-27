@@ -537,6 +537,8 @@ sdb_gen_cmd_cgen = [
   sdb_exe,
   '-t',
   '-C',
+  '-o',
+  '@OUTPUT@',
   '@INPUT@'
 ]
 

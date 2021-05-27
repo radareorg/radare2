@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2020 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include "io_memory.h"
 
@@ -18,7 +18,7 @@ static inline ut8* _io_malloc_buf(RIODesc *desc) {
 	return mal->buf;
 }
 
-#if UNUSED
+#if 0
 static inline ut8* _io_malloc_set_buf(RIODesc *desc, ut8* buf) {
 	if (!desc) {
 		return NULL;
