@@ -1,3 +1,4 @@
+subdir('d')
 r_syscall_sources = [
   'syscall.c',
   'splugs.c',
@@ -5,29 +6,7 @@ r_syscall_sources = [
 ]
 
 if get_option('sdb_cgen')
-  r_syscall_sources += [
-    'd/darwin-arm-32.c',
-    'd/darwin-arm-64.c',
-    'd/darwin-x86-32.c',
-    'd/darwin-x86-64.c',
-    'd/dos-x86-16.c',
-    'd/freebsd-x86-32.c',
-    'd/ios-arm-32.c',
-    'd/ios-arm-64.c',
-    'd/ios-x86-32.c',
-    'd/linux-arm-32.c',
-    'd/linux-arm-64.c',
-    'd/linux-mips-32.c',
-    'd/linux-sparc-32.c',
-    'd/linux-x86-32.c',
-    'd/linux-x86-64.c',
-    'd/netbsd-x86-32.c',
-    'd/openbsd-x86-32.c',
-    'd/openbsd-x86-64.c',
-    'd/s110-arm-16.c',
-    'd/windows-x86-32.c',
-    'd/windows-x86-64.c',
-  ]
+  r_syscall_sources += r_syscall_d_sources
 endif
 
 r_syscall = library('r_syscall', r_syscall_sources,

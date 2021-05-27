@@ -22,6 +22,36 @@ sdb_files = [
   'windows-x86-64',
 ]
 
+r_syscall_d_sources = []
+
+if get_option('sdb_cgen')
+foreach file : sdb_files
+  infile = '@0@.sdb.txt'.format(file)
+  if host_machine.system() == 'windows'
+    infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), infile)]).stdout().strip()
+  endif
+  tmp_outfile = '@0@.sdb.txt.tmp'.format(file)
+  if get_option('sdb_cgen')
+    outfile = '@0@.c'.format(file)
+    gen_cmd = sdb_gen_cmd_cgen
+  else
+    outfile = '@0@.sdb'.format(file)
+    gen_cmd = sdb_gen_cmd
+  endif
+
+  r_syscall_d_sources += custom_target(outfile,
+    input: infile,
+    output: outfile,
+    command: gen_cmd,
+    depends: sdb_exe,
+    build_by_default: true,
+    install: true,
+    install_dir: join_paths(r2_sdb, 'syscall')
+  )
+endforeach
+    
+else
+
 sdb_pre_script = '''#script
 import re
 import sys
@@ -75,3 +105,4 @@ foreach file : sdb_files
     install_dir: join_paths(r2_sdb, 'syscall')
   )
 endforeach
+endif

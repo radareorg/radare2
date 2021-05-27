@@ -69,6 +69,8 @@ win_types_extra = [
   'ws2spi',
 ]
 
+r_anal_d_sources = []
+
 foreach file : sdb_files
   if get_option('sdb_cgen')
     outfile = '@0@.c'.format(file)
@@ -83,7 +85,7 @@ foreach file : sdb_files
       infiles += 'types-windows_@0@.sdb.txt'.format(f)
     endforeach
   endif
-  custom_target(outfile,
+  r_anal_d_sources += custom_target(outfile,
     input: infiles,
     output: outfile,
     command: gen_cmd,

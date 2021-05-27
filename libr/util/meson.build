@@ -90,9 +90,9 @@ r_util_sources = [
 
 if get_option('sdb_cgen')
   r_util_sources += [
-    'd/pokered.c',
-    'd/ebcdic37.c',
-    'd/ascii.c'
+    d_pokered_c,
+    d_ebcdic37_c,
+    d_ascii_c,
   ]
 endif
 

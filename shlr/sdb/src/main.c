@@ -32,6 +32,7 @@ typedef struct {
 	int db0;
 	bool failed;
 	const char *db;
+	const char *outfile;
 	const char *db2;
 	const char *grep;
 	ut32 options;
@@ -613,6 +614,7 @@ static int showusage(int o) {
 			"  -G      print database in gperf format\n"
 			"  -h      show this help\n"
 			"  -j      output in json\n"
+			"  -o [f]  output file name for -C -t\n"
 			"  -J      enable journaling\n"
 			"  -t      use textmode (for -C)\n"
 			"  -v      show version information\n");
@@ -812,6 +814,9 @@ static bool main_argparse_flag(MainOptions *mo, char flag) {
 		break;
 	case 'h':
 		return showusage (2);
+	case 'o':
+		mo->outfile = main_argparse_getarg (mo);
+		break;
 	case 'v':
 		return showversion ();
 	case 'e':
@@ -929,7 +934,9 @@ int main(int argc, const char **argv) {
 	if (!mo) {
 		return 1;
 	}
-
+	if (mo->outfile) {
+		eprintf ("OUTPUT %s%c", mo->outfile, 10);
+	}
 	// -j json return sdb_dump (argv[db0 + 1], MODE_JSON);
 	// -G sdb_dump (argv[db0 + 1], MODE_CGEN); // gperf
 	// -C print C/H files
