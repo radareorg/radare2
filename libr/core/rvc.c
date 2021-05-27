@@ -194,6 +194,7 @@ static void free_commits(RvcCommit *head) {
 	free (head->author);
 	free (head->hash);
 	free (head->message);
+	free_blobs (head->blobs);
 	free_commits (head->prev);
 	free (head);
 }
