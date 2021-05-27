@@ -310,18 +310,18 @@ static void cgen_header(MainOptions *mo, const char *cname) {
 		printf ("\n");
 		printf ("struct kv { const char *name; const char *value; };\n");
 		printf ("static struct kv kvs[] = {\n");
-		return;
+	} else {
+		printf ("%%{\n");
+		printf ("// gperf -aclEDCIG --null-strings -H sdb_hash_c_%s -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, cname, cname);
+		printf ("// gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", cname, cname);
+		printf ("#include <stdio.h>\n");
+		printf ("#include <string.h>\n");
+		printf ("#include <ctype.h>\n");
+		printf ("%%}\n");
+		printf ("\n");
+		printf ("struct kv { const char *name; const char *value; };\n");
+		printf ("%%%%\n");
 	}
-	printf ("%%{\n");
-	printf ("// gperf -aclEDCIG --null-strings -H sdb_hash_c_%s -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, cname, cname);
-	printf ("// gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", cname, cname);
-	printf ("#include <stdio.h>\n");
-	printf ("#include <string.h>\n");
-	printf ("#include <ctype.h>\n");
-	printf ("%%}\n");
-	printf ("\n");
-	printf ("struct kv { const char *name; const char *value; };\n");
-	printf ("%%%%\n");
 }
 
 // TODO rename gperf with cgen
@@ -357,44 +357,14 @@ static void cgen_footer(MainOptions *mo, const char *name, const char *cname) {
 			"  .hash = &gperf_%s_hash,\n"
 			"  .foreach = &gperf_%s_foreach\n"
 			"};\n", cname, name, cname, cname, cname);
-#if 1
-printf (
-"\n"
-"#if MAIN\n"
-"int main () {\n"
-"	char line[1024];\n"
-"	FILE *fd = fopen (\"%s.gperf\", \"r\");\n"
-"	if (!fd) {\n"
-"		fprintf (stderr, \"Cannot open %s.gperf\\n\");\n"
-"		return 1;\n"
-"	}\n"
-"	int mode = 0;\n"
-"	printf (\"#ifndef INCLUDE_%s_H\\n\");\n"
-"	printf (\"#define INCLUDE_%s_H 1\\n\");\n"
-"	while (!feof (fd)) {\n"
-"		*line = 0;\n"
-"		fgets (line, sizeof (line), fd);\n"
-"		if (mode == 1) {\n"
-"			char *comma = strchr (line, ',');\n"
-"			if (comma) {\n"
-"				*comma = 0;\n"
-"				char *up = strdup (line);\n"
-"				char *p = up; while (*p) { *p = toupper (*p); p++; }\n"
-"				printf (\"#define GPERF_%s_%%s %%d\\n\",\n"
-"					line, sdb_hash_c_%s (line, comma - line));\n"
-"			}\n"
-"		}\n"
-"		if (*line == '%%' && line[1] == '%%')\n"
-"			mode++;\n"
-"	}\n"
-"	printf (\"#endif\\n\");\n"
-"}\n"
-"#endif\n",
-		name, name,
-		cname, cname,
-		cname, cname
-	);
-#endif
+		printf (
+			"\n"
+			"#if MAIN\n"
+			"int main () {\n"
+			"	const char *s = ((char*(*)(char*))gperf_%s.get)(\"foo\");\n"
+			"	printf (\"%%s\\n\", s);\n"
+			"}\n"
+			"#endif\n", cname);
 		return;
 	}
 	printf ("%%%%\n");
@@ -753,7 +723,11 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 		free (buf);
 		return -1;
 	}
-	snprintf (out, out_size, "%s.%s", name, (mo->textmode)? "c": "gperf");
+	if (mo->outfile) {
+		snprintf (out, out_size, "%s", mo->outfile);
+	} else {
+		snprintf (out, out_size, "%s.%s", name, (mo->textmode)? "c": "gperf");
+	}
 	int wd = open (out, O_RDWR, 0644);
 	if (wd == -1) {
 		wd = open (out, O_RDWR | O_CREAT, 0644);
@@ -769,7 +743,7 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 		close (wd);
 		dup2 (999, 1);
 	} else {
-		eprintf ("Cannot create .gperf\n");
+		eprintf ("Cannot create .%s\n", out);
 	}
 	if (mo->textmode) {
 		// dont do much
@@ -884,6 +858,7 @@ static MainOptions *main_argparse(int argc, const char **argv) {
 	int i;
 	for (i = 1; i < argc; i++) {
 		mo->argi = i;
+		mo->db0++;
 		if (argv[i][0] == '-' && argv[i][1]) {
 			int j = 1;
 			while (argv[i][j]) {
@@ -894,10 +869,9 @@ static MainOptions *main_argparse(int argc, const char **argv) {
 				j++;
 			}
 		} else {
-			mo->db0 = i;
-			mo->db = argv[i];
+			mo->db = argv[mo->db0];
 			if (i + 1 < argc) {
-				switch (argv[i+1][0]) {
+				switch (argv[i + 1][0]) {
 				case '-':
 					if (!argv[i + 1][1]) {
 						mo->create = dash;
@@ -918,6 +892,7 @@ static MainOptions *main_argparse(int argc, const char **argv) {
 			break;
 		}
 	}
+	mo->db = argv[mo->db0];
 	return mo;
 }
 
