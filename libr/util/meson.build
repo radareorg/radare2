@@ -89,11 +89,7 @@ r_util_sources = [
 ]
 
 if get_option('sdb_cgen')
-  r_util_sources += [
-    d_pokered_c,
-    d_ebcdic37_c,
-    d_ascii_c,
-  ]
+  r_util_sources += r_util_d_sources
 endif
 
 r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]
