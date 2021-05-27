@@ -67,6 +67,20 @@ size     0x400
 EOF
 RUN
 
+NAME=grep neg begin
+FILE=malloc://1024
+CMDS=i~!^size
+EXPECT=<<EOF
+fd       3
+file     malloc://1024
+humansz  1K
+mode     rwx
+format   any
+iorw     true
+block    0x100
+EOF
+RUN
+
 NAME=grep end
 FILE=malloc://1024
 CMDS=i~0x400$
