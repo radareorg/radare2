@@ -268,7 +268,7 @@ void file_delmagic(struct r_magic *p, int type, size_t entries) {
 }
 
 /* const char *fn: list of magic files and directories */
-struct mlist * file_apprentice(RMagic *ms, const char *fn, int action) {
+struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action) {
 	char *p, *mfn;
 	int file_err, errs = -1;
 	struct mlist *mlist;
@@ -278,8 +278,8 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, int action) {
 		return NULL;
 	}
 
-	if (!(mfn = strdup (fn))) {
-		file_oomem (ms, strlen (fn));
+	if (!(mfn = strndup (fn, fn_size))) {
+		file_oomem (ms, fn_size);
 		return NULL;
 	}
 	fn = mfn;

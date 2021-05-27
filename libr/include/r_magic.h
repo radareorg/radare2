@@ -284,7 +284,7 @@ R_API const char *r_magic_error(RMagic*);
 R_API void r_magic_setflags(RMagic*, int);
 
 R_API bool r_magic_load(RMagic*, const char *);
-R_API bool r_magic_load_buffer(RMagic*, const char *);
+R_API bool r_magic_load_buffer(RMagic*, const ut8 *, size_t);
 R_API bool r_magic_compile(RMagic*, const char *);
 R_API bool r_magic_check(RMagic*, const char *);
 R_API int r_magic_errno(RMagic*);
