@@ -230,7 +230,7 @@ R_API void r_magic_free(RMagic *ms) {
 
 R_API bool r_magic_load_buffer(RMagic* ms, const ut8 *magicdata, size_t magicdata_size) {
 	if (magicdata_size > 0 && *magicdata == '#') {
-		struct mlist *ml = file_apprentice (ms, magicdata, magicdata_size, FILE_LOAD);
+		struct mlist *ml = file_apprentice (ms, (const char *)magicdata, magicdata_size, FILE_LOAD);
 		if (ml) {
 			free_mlist (ms->mlist);
 			ms->mlist = ml;
