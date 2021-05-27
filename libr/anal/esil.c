@@ -3669,16 +3669,11 @@ repeat:
 
 R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word) {
 	const char *str = NULL;
-	(void)runword (esil, word);
-	if (*word) {
-		if (!runword (esil, word)) {
-			return false;
-		}
-		int ew = evalWord (esil, word, &str);
-		eprintf ("ew %d\n", ew);
-		eprintf ("--> %s\n", r_str_getf (str));
+	if (runword (esil, word)) {
+		(void)evalWord (esil, word, &str);
+		return true;
 	}
-	return true;
+	return false;
 }
 
 //frees all elements from the stack, not the stack itself

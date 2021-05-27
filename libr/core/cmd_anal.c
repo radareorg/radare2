@@ -202,6 +202,7 @@ static const char *help_msg_ae[] = {
 	"aesuo", " [optype]", "step until given opcode type",
 	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
 	"aets", "[?]", "ESIL Trace session",
+	"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
 	"aex", " [hex]", "evaluate opcode expression",
 	NULL
 };
@@ -6366,6 +6367,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalOp *op = NULL;
 
 	switch (input[0]) {
+	case 'v': // "aev"
+		r_core_visual_esil (core, r_str_trim_head_ro (input + 1));
+		break;
 	case 'p': // "aep"
 		switch (input[1]) {
 		case 'c': // "aepc"
