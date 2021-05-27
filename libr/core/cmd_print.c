@@ -1624,6 +1624,16 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			char *space = strchr (name, ' ');
 			char *eq = strchr (name, '=');
 			char *dot = strchr (name, '.');
+			if (dot) {
+				*dot = 0;
+			}
+			if (!sdb_const_get (core->print->formats, name, NULL)) {
+				eprintf ("Unknown format name '%s'.\n", name);
+				goto err_name;
+			}
+			if (dot) {
+				*dot = '.';
+			}
 			if (space) {
 				const char *afterspace = r_str_trim_head_ro (space + 1);
 				if (*afterspace == '=' && eq) {
