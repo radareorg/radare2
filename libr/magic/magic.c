@@ -228,9 +228,9 @@ R_API void r_magic_free(RMagic *ms) {
 	}
 }
 
-R_API bool r_magic_load_buffer(RMagic* ms, const char *magicdata) {
-	if (*magicdata == '#') {
-		struct mlist *ml = file_apprentice (ms, magicdata, FILE_LOAD);
+R_API bool r_magic_load_buffer(RMagic* ms, const ut8 *magicdata, size_t magicdata_size) {
+	if (magicdata_size > 0 && *magicdata == '#') {
+		struct mlist *ml = file_apprentice (ms, (const char *)magicdata, magicdata_size, FILE_LOAD);
 		if (ml) {
 			free_mlist (ms->mlist);
 			ms->mlist = ml;
@@ -243,7 +243,7 @@ R_API bool r_magic_load_buffer(RMagic* ms, const char *magicdata) {
 }
 
 R_API bool r_magic_load(RMagic* ms, const char *magicfile) {
-	struct mlist *ml = file_apprentice (ms, magicfile, FILE_LOAD);
+	struct mlist *ml = file_apprentice (ms, magicfile, strlen (magicfile), FILE_LOAD);
 	if (ml) {
 		free_mlist (ms->mlist);
 		ms->mlist = ml;
@@ -253,13 +253,13 @@ R_API bool r_magic_load(RMagic* ms, const char *magicfile) {
 }
 
 R_API bool r_magic_compile(RMagic *ms, const char *magicfile) {
-	struct mlist *ml = file_apprentice (ms, magicfile, FILE_COMPILE);
+	struct mlist *ml = file_apprentice (ms, magicfile, strlen (magicfile), FILE_COMPILE);
 	free_mlist (ml);
 	return ml != NULL;
 }
 
 R_API bool r_magic_check(RMagic *ms, const char *magicfile) {
-	struct mlist *ml = file_apprentice (ms, magicfile, FILE_CHECK);
+	struct mlist *ml = file_apprentice (ms, magicfile, strlen (magicfile), FILE_CHECK);
 	free_mlist (ml);
 	return ml != NULL;
 }

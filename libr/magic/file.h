@@ -65,7 +65,7 @@ int file_zmagic(struct r_magic_set *, int, const char *, const ut8*, size_t);
 int file_ascmagic(struct r_magic_set *, const unsigned char *, size_t);
 int file_is_tar(struct r_magic_set *, const unsigned char *, size_t);
 int file_softmagic(struct r_magic_set *, const unsigned char *, size_t, int);
-struct mlist *file_apprentice(struct r_magic_set *, const char *, int);
+struct mlist *file_apprentice(struct r_magic_set *, const char *, size_t, int);
 ut64 file_signextend(RMagic *, struct r_magic *, ut64);
 void file_delmagic(struct r_magic *, int type, size_t entries);
 void file_badread(struct r_magic_set *);
