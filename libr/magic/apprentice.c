@@ -278,7 +278,7 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int a
 		return NULL;
 	}
 
-	if (!(mfn = strndup (fn, fn_size))) {
+	if (!(mfn = r_str_ndup (fn, fn_size))) {
 		file_oomem (ms, fn_size);
 		return NULL;
 	}
