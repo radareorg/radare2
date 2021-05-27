@@ -6,7 +6,7 @@ include ../../shlr/sdb.mk
 ifeq (,$(findstring tcc,${CC}))
 CFLAGS+=-pie
 endif
-CFLAGS+=-I$(LTOP)/include
+CFLAGS:=-I$(LTOP)/include $(CFLAGS)
 
 ifeq (${ANDROID},1)
 LDFLAGS+=-lm
