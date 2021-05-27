@@ -16,8 +16,8 @@ LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 # /libr
 
 ALL?=
-CFLAGS+=-I$(LIBR)
-CFLAGS+=-I$(LIBR)/include
+CFLAGS=-I$(LIBR) $(CFLAGS)
+CFLAGS=-I$(LIBR)/include $(CFLAGS)
 
 -include $(SHLR)/sdb.mk
 
