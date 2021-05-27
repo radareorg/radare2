@@ -1624,6 +1624,13 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			char *space = strchr (name, ' ');
 			char *eq = strchr (name, '=');
 			char *dot = strchr (name, '.');
+			if (space) {
+				const char *afterspace = r_str_trim_head_ro (space + 1);
+				if (*afterspace == '=' && eq) {
+					r_str_cpy (space, afterspace);
+					space = NULL;
+				}
+			}
 
 			if (eq && !dot) {
 				*eq = ' ';
@@ -1674,6 +1681,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				eq = strchr (dot, '=');
 				if (eq) { // Write mode (pf.field=value)
 					*eq++ = 0;
+					r_str_trim_tail (name);
 					mode = R_PRINT_MUSTSET;
 					r_print_format (core->print, core->offset,
 						core->block, core->blocksize, name, mode, eq, dot);
