@@ -480,7 +480,7 @@ EXPECT=<<EOF
 |           0x00003ec1      add rax, rbx
 |           ;-- switch
 |           0x00003ec4      jmp rax                                    ; switch table (275 cases) at 0x172d8
-|           ;-- case 110:                                              ; from 0x3ec4
+|           ;-- case 110:                                              ; from 0x00003ec4
 |           ; CODE XREF from main @ 0x3ec4
 |           0x00003ec6      mov byte [0x00021260], 1                   ; [0x21260:1]=0
 EOF
