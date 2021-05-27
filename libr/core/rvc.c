@@ -177,6 +177,38 @@ static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
 	return true;
 }
 
+static void free_blobs(RList *blobs) {
+	RvcBlob *blob;
+	RListIter *iter;
+	r_list_foreach (blobs, iter, blob) {
+		free (blob->fname);
+		free (blob->hash);
+	}
+	r_list_free (blobs);
+}
+
+static void free_commits(RvcCommit *head) {
+	if (!head) {
+		return;
+	}
+	free (head->author);
+	free (head->hash);
+	free (head->message);
+	free_commits (head->prev);
+	free (head);
+}
+
+static void free_branches(RList *branches) {
+	RvcBranch *branch;
+	RListIter *iter;
+	r_list_foreach (branches, iter, branch) {
+		free (branch->name);
+		free_commits (branch->head);
+	}
+	free (branches);
+	return;
+}
+
 R_API bool r_vc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message) {
 	RvcCommit *nc = R_NEW (RvcCommit);
 	if (!nc) {
@@ -262,8 +294,7 @@ R_API bool r_vc_branch(Rvc *repo, const char *name) {
 
 R_API void r_vc_free(Rvc *vc) {
 	free (vc->path);
-	r_list_free (vc->branches);
-	free (vc);
+	free_branches (vc->branches);
 }
 
 R_API Rvc *r_vc_new(const char *path) {
