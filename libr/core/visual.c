@@ -2205,7 +2205,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			r_core_visual_config (core);
 			break;
 		case 'E': // "vbe"
-			r_core_visual_esil (core);
+			r_core_visual_esil (core, NULL);
 			break;
 		case 'c': // "vbc"
 			r_core_visual_classes (core);

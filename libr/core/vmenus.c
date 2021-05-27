@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h>
 #include <r_util.h>
@@ -127,46 +127,63 @@ static void showreg(RAnalEsil *esil, const char *rn, const char *desc) {
 	r_cons_printf ("%s 0x%08"PFMT64x" (%d) ; %s\n", rn, nm, sz, desc);
 }
 
-R_API bool r_core_visual_esil(RCore *core) {
+R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	const int nbits = sizeof (ut64) * 8;
 	int analopType;
 	char *word = NULL;
 	int x = 0;
+	char *ginput = NULL;
 	RAsmOp asmop;
 	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	if (input && !*input) {
+		input = NULL;
+	}
+	if (input && *input == '?') {
+		eprintf ("Usage: aev [esil-expression]    # same as VbE\n");
+		return false;
+	}
+	if (!r_config_get_b (core->config, "scr.interactive")) {
+		return false;
+	}
 
 	if (core->blocksize < sizeof (ut64)) {
 		return false;
 	}
-	memcpy (buf, core->block, sizeof (ut64));
+	r_reg_arena_push (core->anal->reg);
 	RAnalEsil *esil = r_anal_esil_new (20, 0, addrsize);
-	esil->anal = core->anal;
+	r_anal_esil_setup (esil, core->anal, false, false, false);
+	// esil->anal = core->anal;
 	r_anal_esil_set_pc (esil, core->offset);
 	for (;;) {
 		r_cons_clear00 ();
-		// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-		(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
-		analop.type = -1;
-		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
-		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
-		r_cons_printf ("r2's esil debugger:\n\n");
-		r_cons_printf ("pos: %d\n", x);
-		{
-			char *op_hex = r_asm_op_get_hex (&asmop);
-			char *res = r_print_hexpair (core->print, op_hex, -1);
-			r_cons_printf ("hex: %s\n"Color_RESET, res);
-			free (res);
-			free (op_hex);
-		}
-		{
+		const char *expr = NULL;
+		if (input) {
+			expr = strdup (input);
+		} else {
+			memcpy (buf, core->block, sizeof (ut64));
+			// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+			(void) r_asm_disassemble (core->rasm, &asmop, buf, sizeof (ut64));
+			analop.type = -1;
+			(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
+			analopType = analop.type & R_ANAL_OP_TYPE_MASK;
+			r_cons_printf ("r2's esil debugger:\n\n");
+			r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset);
+			r_cons_printf ("pos: %d\n", x);
+			{
+				char *op_hex = r_asm_op_get_hex (&asmop);
+				char *res = r_print_hexpair (core->print, op_hex, -1);
+				r_cons_printf ("hex: %s\n"Color_RESET, res);
+				free (res);
+				free (op_hex);
+			}
 			char *op = colorize_asm_string (core, r_asm_op_get_asm (&asmop), analopType, core->offset);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
+			expr = r_strbuf_get (&analop.esil);
 		}
-		{
-			const char *expr = r_strbuf_get (&analop.esil);
+	{
 			r_cons_printf (Color_RESET"esil: %s\n"Color_RESET, expr);
 			int wp = wordpos (expr, x);
 			char *pas = strdup (r_str_pad (' ', wp ? wp + 1: 0));
@@ -174,18 +191,13 @@ R_API bool r_core_visual_esil(RCore *core) {
 			free (word);
 			word = r_str_ndup (expr + (wp?(wp+1):0), (wp2 - wp) - (wp?1:0));
 			if (wp == wp2) {
-				// x --;
-				eprintf ("Done\n");
 				x = 0;
-				r_sys_sleep (1);
-				free (pas);
-				continue;
 			}
 			const char *pad = r_str_pad ('-', wp2 - ((wp > 0)? wp + 1: 0));
 			r_cons_printf (Color_RESET"      %s%s\n"Color_RESET, pas, pad);
 			free (pas);
 			// free (pad);
-		}
+	}
 		r_cons_printf ("esil regs:\n");
 		showreg (esil, "$$", "address");
 		showreg (esil, "$z", "zero");
@@ -206,7 +218,9 @@ R_API bool r_core_visual_esil(RCore *core) {
 		}
 		r_cons_printf ("esil stack:\n");
 		r_anal_esil_dumpstack (esil);
-		r_anal_op_fini (&analop);
+		if (!input) {
+			r_anal_op_fini (&analop);
+		}
 		r_cons_newline ();
 		r_cons_visual_flush ();
 
@@ -219,14 +233,53 @@ R_API bool r_core_visual_esil(RCore *core) {
 		case 'Q':
 		case 'q':
 			goto beach;
+		case 'n':
+		case 'P':
+			x = 0;
+			r_anal_esil_free (esil);
+			esil = r_anal_esil_new (20, 0, addrsize);
+			esil->anal = core->anal;
+			r_core_cmd0 (core, "so+1");
+			r_anal_esil_set_pc (esil, core->offset);
+			break;
+		case 'N':
+		case 'p':
+			x = 0;
+			r_anal_esil_free (esil);
+			esil = r_anal_esil_new (20, 0, addrsize);
+			esil->anal = core->anal;
+			r_core_cmd0 (core, "so-1");
+			r_anal_esil_set_pc (esil, core->offset);
+			break;
+		case 'e':
+			{
+				char *s = r_cons_input ("esil: ");
+				free (ginput);
+				if (*s) {
+					input = s;
+					ginput = s;
+				} else {
+					ginput = NULL;
+					input = NULL;
+					free (s);
+				}
+			}
+			break;
+		case 'o':
+			{
+				char *s = r_cons_input ("offset: ");
+				r_core_cmdf (core, "s %s", s);
+				free (s);
+			}
+			break;
 		case 's':
-			eprintf ("step ((%s))\n", word);
-			r_sys_usleep (500);
+			// eprintf ("step ((%s))\n", word);
+			// r_sys_usleep (500);
 			x = R_MIN (x + 1, nbits - 1);
 			r_anal_esil_runword (esil, word);
 			break;
 		case 'S':
-			eprintf ("esil step over :D\n");
+			eprintf ("esil step back :D\n");
 			r_sys_usleep (500);
 			break;
 		case 'r':
@@ -240,35 +293,41 @@ R_API bool r_core_visual_esil(RCore *core) {
 			" q     - quit the bit editor\n"
 			" h/r   - reset / go back (reinitialize esil state)\n"
 			" s     - esil step in\n"
+			" o     - specify offset to seek\n"
+			" e     - type a new esil expression to debug\n"
 			" j/k   - toggle bit value (same as space key)\n"
+			" n/p   - go next/prev instruction\n"
 			" :     - enter command\n");
 			r_cons_flush ();
 			r_cons_any_key (NULL);
 			break;
 		case ':': // TODO: move this into a separate helper function
-			{
-			char cmd[1024];
 			r_cons_show_cursor (true);
 			r_cons_set_raw (0);
-			*cmd = 0;
-			r_line_set_prompt (":> ");
-			if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
-				cmd[0] = '\0';
+			while (1) {
+				char cmd[1024];
+				*cmd = 0;
+				r_line_set_prompt (":> ");
+				if (r_cons_fgets (cmd, sizeof (cmd), 0, NULL) < 0) {
+					cmd[0] = '\0';
+				}
+				r_core_cmd0 (core, cmd);
+				if (!cmd[0]) {
+					break;
+				}
+				r_cons_flush ();
 			}
-			r_core_cmd_task_sync (core, cmd, 1);
-			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
-			if (cmd[0]) {
-				r_cons_any_key (NULL);
-			}
+			r_cons_set_raw (1);
 			r_cons_clear ();
-			}
 			break;
 		}
 	}
 beach:
+	r_reg_arena_pop (core->anal->reg);
 	r_anal_esil_free (esil);
 	free (word);
+	free (ginput);
 	return true;
 }
 
@@ -3529,7 +3588,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				default:
 					option++;
 					if (option >= nfcns) {
-						--option;
+						option--;
 					}
 					break;
 				}
