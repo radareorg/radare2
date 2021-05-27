@@ -199,9 +199,19 @@ static void synchronize(int sig UNUSED) {
 #endif
 
 static char* get_name(const char*name) {
+	if (!name || !*name) {
+		return NULL;
+	}
+	const char *l = name + strlen (name) - 1;
+	while (*l && l > name) {
+		if (*l == '/') {
+			name = l + 1;
+			break;
+		}
+		l--;
+	}
 	char *n = strdup (name);
 	char *v, *d = n;
-	// local db beacuse is readonly and we dont need to finalize in case of ^C
 	for (v = (char*)n; *v; v++) {
 		if (*v == '.') {
 			break;
@@ -213,9 +223,19 @@ static char* get_name(const char*name) {
 }
 
 static char* get_cname(const char*name) {
+	if (!name || !*name) {
+		return NULL;
+	}
+	const char *l = name + strlen (name) - 1;
+	while (*l && l > name) {
+		if (*l == '/') {
+			name = l + 1;
+			break;
+		}
+		l--;
+	}
 	char *n = strdup (name);
 	char *v, *d = n;
-	// local db beacuse is readonly and we dont need to finalize in case of ^C
 	for (v=(char*)n; *v; v++) {
 		if (*v == '/' || *v == '-') {
 			*d++ = '_';
@@ -773,15 +793,17 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 }
 
 static const char *main_argparse_getarg(MainOptions *mo) {
-	mo->argi++;
-	mo->db0++;
-	if (mo->argi >= mo->argc) {
+	int cur = mo->argi;
+	if (mo->argi + 1>= mo->argc) {
 		return NULL;
 	}
-	return mo->argv[mo->argi];
+	mo->argi++;
+	mo->db0++;
+	return mo->argv[cur];
 }
 
 static bool main_argparse_flag(MainOptions *mo, char flag) {
+	mo->argi++;
 	switch (flag) {
 	case '0':
 		mo->format = zero;
@@ -856,15 +878,21 @@ static MainOptions *main_argparse(int argc, const char **argv) {
 	mo->options = SDB_OPTION_FS | SDB_OPTION_NOSTAMP;
 	mo->failed = true;
 	int i;
+	mo->argi = 1;
 	for (i = 1; i < argc; i++) {
-		mo->argi = i;
 		mo->db0++;
+		i = mo->argi;
 		if (argv[i][0] == '-' && argv[i][1]) {
 			int j = 1;
 			while (argv[i][j]) {
 				if (!main_argparse_flag (mo, argv[i][j])) {
+					mo->db = argv[mo->argi];
+					mo->db0 = i + 1;
 					// invalid flag
-					return NULL;
+					break; // return NULL;
+				}
+				if (i != mo->argi) {
+					break;
 				}
 				j++;
 			}
@@ -892,6 +920,7 @@ static MainOptions *main_argparse(int argc, const char **argv) {
 			break;
 		}
 	}
+	// mo->db = mo->argv[mo->db0 + 1];
 	mo->db = argv[mo->db0];
 	return mo;
 }

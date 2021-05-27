@@ -163,7 +163,7 @@ static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns
 	}
 }
 
-SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
+SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
 	const char *p, *q, *val = NULL;
 	char *eq, *tmp, *json, *next, *quot, *slash, *res,
