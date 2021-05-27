@@ -533,6 +533,15 @@ sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
   native: true,
 )
 
+sdb_gen_cmd_cgen = [
+  sdb_exe,
+  '-t',
+  '-C',
+  '-o',
+  '@OUTPUT@',
+  '@INPUT@'
+]
+
 sdb_gen_cmd = [
   sdb_exe,
   '@OUTPUT@',
@@ -600,10 +609,10 @@ subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
 
-subdir('libr/anal/d')
-subdir('libr/asm/d')
+# subdir('libr/anal/d')
+# subdir('libr/asm/d')
 subdir('libr/bin/d')
-subdir('libr/syscall/d')
+# subdir('libr/syscall/d')
 subdir('libr/cons/d')
 subdir('libr/magic/d')
 subdir('libr/flag/d')

@@ -30,15 +30,37 @@ sdb_files = [
   'z80',
 ]
 
-foreach file : sdb_files
-  outfile = '@0@.sdb'.format(file)
-  custom_target(outfile,
-    input: '@0@.sdb.txt'.format(file),
-    output: outfile,
-    command: sdb_gen_cmd,
-    depends: sdb_exe,
-    build_by_default: true,
-    install: true,
-    install_dir: join_paths(r2_sdb, 'opcodes')
-  )
-endforeach
+r_asm_d_sources = []
+if get_option('sdb_cgen')
+  foreach file : sdb_files
+    outfile = '@0@.c'.format(file)
+    r_asm_d_sources += custom_target(outfile,
+      input: '@0@.sdb.txt'.format(file),
+      output: outfile,
+      command: sdb_gen_cmd_cgen,
+      depends: sdb_exe,
+      build_by_default: true,
+      install: true,
+      install_dir: join_paths(r2_sdb, 'opcodes')
+    )
+  endforeach
+else
+  foreach file : sdb_files
+    if get_option('sdb_cgen')
+      outfile = '@0@.c'.format(file)
+      gen_cmd = sdb_gen_cmd_cgen
+    else
+      outfile = '@0@.sdb'.format(file)
+      gen_cmd = sdb_gen_cmd
+    endif
+    custom_target(outfile,
+      input: '@0@.sdb.txt'.format(file),
+      output: outfile,
+      command: gen_cmd,
+      depends: sdb_exe,
+      build_by_default: true,
+      install: true,
+      install_dir: join_paths(r2_sdb, 'opcodes')
+    )
+  endforeach
+endif

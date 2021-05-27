@@ -1,3 +1,5 @@
+subdir('d')
+
 r_anal_sources = [
   'anal.c',
   'anplugs.c',
@@ -135,6 +137,10 @@ r_anal_sources = [
   '../asm/arch/pyc/opcode.c',
   '../asm/arch/pyc/pyc_dis.c'
 ]
+
+if get_option('sdb_cgen')
+  r_anal_sources += r_anal_d_sources
+endif
 
 r_anal_inc = [
   platform_inc,

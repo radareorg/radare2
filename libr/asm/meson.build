@@ -1,3 +1,5 @@
+subdir('d')
+
 r_asm_sources = [
   'asm.c',
   'aop.c',
@@ -198,6 +200,10 @@ r_asm_inc = [
     'arch/or1k'
   )
 ]
+
+if get_option('sdb_cgen')
+  r_asm_sources += r_asm_d_sources
+endif
 
 r_asm = library('r_asm', r_asm_sources,
   include_directories: r_asm_inc,

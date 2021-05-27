@@ -1,8 +1,13 @@
+subdir('d')
 r_syscall_sources = [
   'syscall.c',
   'splugs.c',
   'ioports.c'
 ]
+
+if get_option('sdb_cgen')
+  r_syscall_sources += r_syscall_d_sources
+endif
 
 r_syscall = library('r_syscall', r_syscall_sources,
   include_directories: [platform_inc],

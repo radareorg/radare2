@@ -32,6 +32,7 @@ typedef struct {
 	int db0;
 	bool failed;
 	const char *db;
+	const char *outfile;
 	const char *db2;
 	const char *grep;
 	ut32 options;
@@ -198,9 +199,19 @@ static void synchronize(int sig UNUSED) {
 #endif
 
 static char* get_name(const char*name) {
+	if (!name || !*name) {
+		return NULL;
+	}
+	const char *l = name + strlen (name) - 1;
+	while (*l && l > name) {
+		if (*l == '/') {
+			name = l + 1;
+			break;
+		}
+		l--;
+	}
 	char *n = strdup (name);
 	char *v, *d = n;
-	// local db beacuse is readonly and we dont need to finalize in case of ^C
 	for (v = (char*)n; *v; v++) {
 		if (*v == '.') {
 			break;
@@ -212,9 +223,19 @@ static char* get_name(const char*name) {
 }
 
 static char* get_cname(const char*name) {
+	if (!name || !*name) {
+		return NULL;
+	}
+	const char *l = name + strlen (name) - 1;
+	while (*l && l > name) {
+		if (*l == '/') {
+			name = l + 1;
+			break;
+		}
+		l--;
+	}
 	char *n = strdup (name);
 	char *v, *d = n;
-	// local db beacuse is readonly and we dont need to finalize in case of ^C
 	for (v=(char*)n; *v; v++) {
 		if (*v == '/' || *v == '-') {
 			*d++ = '_';
@@ -309,18 +330,18 @@ static void cgen_header(MainOptions *mo, const char *cname) {
 		printf ("\n");
 		printf ("struct kv { const char *name; const char *value; };\n");
 		printf ("static struct kv kvs[] = {\n");
-		return;
+	} else {
+		printf ("%%{\n");
+		printf ("// gperf -aclEDCIG --null-strings -H sdb_hash_c_%s -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, cname, cname);
+		printf ("// gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", cname, cname);
+		printf ("#include <stdio.h>\n");
+		printf ("#include <string.h>\n");
+		printf ("#include <ctype.h>\n");
+		printf ("%%}\n");
+		printf ("\n");
+		printf ("struct kv { const char *name; const char *value; };\n");
+		printf ("%%%%\n");
 	}
-	printf ("%%{\n");
-	printf ("// gperf -aclEDCIG --null-strings -H sdb_hash_c_%s -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, cname, cname);
-	printf ("// gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", cname, cname);
-	printf ("#include <stdio.h>\n");
-	printf ("#include <string.h>\n");
-	printf ("#include <ctype.h>\n");
-	printf ("%%}\n");
-	printf ("\n");
-	printf ("struct kv { const char *name; const char *value; };\n");
-	printf ("%%%%\n");
 }
 
 // TODO rename gperf with cgen
@@ -356,44 +377,14 @@ static void cgen_footer(MainOptions *mo, const char *name, const char *cname) {
 			"  .hash = &gperf_%s_hash,\n"
 			"  .foreach = &gperf_%s_foreach\n"
 			"};\n", cname, name, cname, cname, cname);
-#if 1
-printf (
-"\n"
-"#if MAIN\n"
-"int main () {\n"
-"	char line[1024];\n"
-"	FILE *fd = fopen (\"%s.gperf\", \"r\");\n"
-"	if (!fd) {\n"
-"		fprintf (stderr, \"Cannot open %s.gperf\\n\");\n"
-"		return 1;\n"
-"	}\n"
-"	int mode = 0;\n"
-"	printf (\"#ifndef INCLUDE_%s_H\\n\");\n"
-"	printf (\"#define INCLUDE_%s_H 1\\n\");\n"
-"	while (!feof (fd)) {\n"
-"		*line = 0;\n"
-"		fgets (line, sizeof (line), fd);\n"
-"		if (mode == 1) {\n"
-"			char *comma = strchr (line, ',');\n"
-"			if (comma) {\n"
-"				*comma = 0;\n"
-"				char *up = strdup (line);\n"
-"				char *p = up; while (*p) { *p = toupper (*p); p++; }\n"
-"				printf (\"#define GPERF_%s_%%s %%d\\n\",\n"
-"					line, sdb_hash_c_%s (line, comma - line));\n"
-"			}\n"
-"		}\n"
-"		if (*line == '%%' && line[1] == '%%')\n"
-"			mode++;\n"
-"	}\n"
-"	printf (\"#endif\\n\");\n"
-"}\n"
-"#endif\n",
-		name, name,
-		cname, cname,
-		cname, cname
-	);
-#endif
+		printf (
+			"\n"
+			"#if MAIN\n"
+			"int main () {\n"
+			"	const char *s = ((char*(*)(char*))gperf_%s.get)(\"foo\");\n"
+			"	printf (\"%%s\\n\", s);\n"
+			"}\n"
+			"#endif\n", cname);
 		return;
 	}
 	printf ("%%%%\n");
@@ -414,43 +405,43 @@ printf (
 	printf ("\treturn sdb_hash_c_%s(s, strlen (s));\n", cname);
 	printf ("}\n");
 	printf (
-"struct {const char*name;void*get;void*hash;void *foreach;} gperf_%s = {\n"
-"\t.name = \"%s\",\n"
-"\t.get = &gperf_%s_get,\n"
-"\t.hash = &gperf_%s_hash,\n"
-"\t.foreach = &gperf_%s_foreach\n"
-"};\n"
-"\n"
-"#if MAIN\n"
-"int main () {\n"
-"	char line[1024];\n"
-"	FILE *fd = fopen (\"%s.gperf\", \"r\");\n"
-"	if (!fd) {\n"
-"		fprintf (stderr, \"Cannot open %s.gperf\\n\");\n"
-"		return 1;\n"
-"	}\n"
-"	int mode = 0;\n"
-"	printf (\"#ifndef INCLUDE_%s_H\\n\");\n"
-"	printf (\"#define INCLUDE_%s_H 1\\n\");\n"
-"	while (!feof (fd)) {\n"
-"		*line = 0;\n"
-"		fgets (line, sizeof (line), fd);\n"
-"		if (mode == 1) {\n"
-"			char *comma = strchr (line, ',');\n"
-"			if (comma) {\n"
-"				*comma = 0;\n"
-"				char *up = strdup (line);\n"
-"				char *p = up; while (*p) { *p = toupper (*p); p++; }\n"
-"				printf (\"#define GPERF_%s_%%s %%d\\n\",\n"
-"					line, sdb_hash_c_%s (line, comma - line));\n"
-"			}\n"
-"		}\n"
-"		if (*line == '%%' && line[1] == '%%')\n"
-"			mode++;\n"
-"	}\n"
-"	printf (\"#endif\\n\");\n"
-"}\n"
-"#endif\n",
+		"struct {const char*name;void*get;void*hash;void *foreach;} gperf_%s = {\n"
+		"\t.name = \"%s\",\n"
+		"\t.get = &gperf_%s_get,\n"
+		"\t.hash = &gperf_%s_hash,\n"
+		"\t.foreach = &gperf_%s_foreach\n"
+		"};\n"
+		"\n"
+		"#if MAIN\n"
+		"int main () {\n"
+		"	char line[1024];\n"
+		"	FILE *fd = fopen (\"%s.gperf\", \"r\");\n"
+		"	if (!fd) {\n"
+		"		fprintf (stderr, \"Cannot open %s.gperf\\n\");\n"
+		"		return 1;\n"
+		"	}\n"
+		"	int mode = 0;\n"
+		"	printf (\"#ifndef INCLUDE_%s_H\\n\");\n"
+		"	printf (\"#define INCLUDE_%s_H 1\\n\");\n"
+		"	while (!feof (fd)) {\n"
+		"		*line = 0;\n"
+		"		fgets (line, sizeof (line), fd);\n"
+		"		if (mode == 1) {\n"
+		"			char *comma = strchr (line, ',');\n"
+		"			if (comma) {\n"
+		"				*comma = 0;\n"
+		"				char *up = strdup (line);\n"
+		"				char *p = up; while (*p) { *p = toupper (*p); p++; }\n"
+		"				printf (\"#define GPERF_%s_%%s %%d\\n\",\n"
+		"					line, sdb_hash_c_%s (line, comma - line));\n"
+		"			}\n"
+		"		}\n"
+		"		if (*line == '%%' && line[1] == '%%')\n"
+		"			mode++;\n"
+		"	}\n"
+		"	printf (\"#endif\\n\");\n"
+		"}\n"
+		"#endif\n",
 		cname, cname, cname, cname, cname,
 		name, name,
 		cname, cname, cname, cname
@@ -613,6 +604,7 @@ static int showusage(int o) {
 			"  -G      print database in gperf format\n"
 			"  -h      show this help\n"
 			"  -j      output in json\n"
+			"  -o [f]  output file name for -C -t\n"
 			"  -J      enable journaling\n"
 			"  -t      use textmode (for -C)\n"
 			"  -v      show version information\n");
@@ -751,7 +743,11 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 		free (buf);
 		return -1;
 	}
-	snprintf (out, out_size, "%s.%s", name, (mo->textmode)? "c": "gperf");
+	if (mo->outfile) {
+		snprintf (out, out_size, "%s", mo->outfile);
+	} else {
+		snprintf (out, out_size, "%s.%s", name, (mo->textmode)? "c": "gperf");
+	}
 	int wd = open (out, O_RDWR, 0644);
 	if (wd == -1) {
 		wd = open (out, O_RDWR | O_CREAT, 0644);
@@ -767,7 +763,7 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 		close (wd);
 		dup2 (999, 1);
 	} else {
-		eprintf ("Cannot create .gperf\n");
+		eprintf ("Cannot create .%s\n", out);
 	}
 	if (mo->textmode) {
 		// dont do much
@@ -797,21 +793,26 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 }
 
 static const char *main_argparse_getarg(MainOptions *mo) {
-	mo->argi++;
-	mo->db0++;
-	if (mo->argi >= mo->argc) {
+	int cur = mo->argi;
+	if (mo->argi + 1>= mo->argc) {
 		return NULL;
 	}
-	return mo->argv[mo->argi];
+	mo->argi++;
+	mo->db0++;
+	return mo->argv[cur];
 }
 
 static bool main_argparse_flag(MainOptions *mo, char flag) {
+	mo->argi++;
 	switch (flag) {
 	case '0':
 		mo->format = zero;
 		break;
 	case 'h':
 		return showusage (2);
+	case 'o':
+		mo->outfile = main_argparse_getarg (mo);
+		break;
 	case 'v':
 		return showversion ();
 	case 'e':
@@ -820,12 +821,12 @@ static bool main_argparse_flag(MainOptions *mo, char flag) {
 		return base64decode ();
 	case 'j':
 		mo->format = json;
-		if (mo->argi + 1 >= mo->argc) {
+		if (mo->argi >= mo->argc) {
 			return jsonIndent ();
 		}
 		break;
 	case 'c':
-		if (mo->argc < 3) {
+		if (mo->argc <= 3) {
 			return showusage (1);
 		} else {
 			const char *db = main_argparse_getarg (mo);
@@ -843,7 +844,7 @@ static bool main_argparse_flag(MainOptions *mo, char flag) {
 		}
 		break;
 	case 'D':
-		if (mo->argi + 2 >=  mo->argc) {
+		if (mo->argi + 1 >=  mo->argc) {
 			return showusage (0);
 		}
 		mo->format = diff;
@@ -877,22 +878,28 @@ static MainOptions *main_argparse(int argc, const char **argv) {
 	mo->options = SDB_OPTION_FS | SDB_OPTION_NOSTAMP;
 	mo->failed = true;
 	int i;
+	mo->argi = 1;
 	for (i = 1; i < argc; i++) {
-		mo->argi = i;
+		mo->db0++;
+		i = mo->argi;
 		if (argv[i][0] == '-' && argv[i][1]) {
 			int j = 1;
 			while (argv[i][j]) {
 				if (!main_argparse_flag (mo, argv[i][j])) {
+					mo->db = argv[mo->argi];
+					mo->db0 = i + 1;
 					// invalid flag
-					return NULL;
+					break; // return NULL;
+				}
+				if (i != mo->argi) {
+					break;
 				}
 				j++;
 			}
 		} else {
-			mo->db0 = i;
-			mo->db = argv[i];
+			mo->db = argv[mo->db0];
 			if (i + 1 < argc) {
-				switch (argv[i+1][0]) {
+				switch (argv[i + 1][0]) {
 				case '-':
 					if (!argv[i + 1][1]) {
 						mo->create = dash;
@@ -913,6 +920,8 @@ static MainOptions *main_argparse(int argc, const char **argv) {
 			break;
 		}
 	}
+	// mo->db = mo->argv[mo->db0 + 1];
+	mo->db = argv[mo->db0];
 	return mo;
 }
 
@@ -929,7 +938,9 @@ int main(int argc, const char **argv) {
 	if (!mo) {
 		return 1;
 	}
-
+	if (mo->outfile) {
+		eprintf ("OUTPUT %s%c", mo->outfile, 10);
+	}
 	// -j json return sdb_dump (argv[db0 + 1], MODE_JSON);
 	// -G sdb_dump (argv[db0 + 1], MODE_CGEN); // gperf
 	// -C print C/H files
