@@ -355,7 +355,7 @@ static void cgen_footer(MainOptions *mo, const char *name, const char *cname) {
 			"  .get = &gperf_%s_get,\n"
 			"  .hash = &gperf_%s_hash,\n"
 			"  .foreach = &gperf_%s_foreach\n"
-			"};\n", name, cname, cname, cname, cname);
+			"};\n", cname, name, cname, cname, cname);
 #if 1
 printf (
 "\n"
