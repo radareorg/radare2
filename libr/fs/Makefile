@@ -1,11 +1,11 @@
 NAME=r_fs
 R2DEPS=r_util r_io r_socket r_hash r_cons r_crypto
-CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch
+CFLAGS:=-DR2_PLUGIN_INCORE -Iarch/include -Iarch $(CFLAGS)
 
 SHLR=../../shlr/
 
 include ../config.mk
-CFLAGS+=-I$(SHLR)/grub/include
+CFLAGS:=-I$(SHLR)/grub/include $(CFLAGS)
 ifeq ($(WITH_GPL),1)
 LDFLAGS+=$(SHLR)/grub/libgrubfs.a
 endif
