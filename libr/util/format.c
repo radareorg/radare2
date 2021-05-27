@@ -837,7 +837,7 @@ static void r_print_format_hexflag(const RPrint* p, int endian, int mode,
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08" PFMT64x " = ", seeki + ((elem >= 0) ? elem * 4 : 0));
 		}
-		if (size==-1) {
+		if (size == -1) {
 			if (ISQUIET && (addr32 == UT32_MAX)) {
 				p->cb_printf ("-1");
 			} else {
@@ -2571,14 +2571,16 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						size %= ARRAYINDEX_COEF;
 					}
 					if (MUSTSET) {
-						eprintf ("Set val not implemented yet for bitfields!\n");
+						p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
+						// eprintf ("Set val not implemented yet for bitfields!\n");
 					}
 					r_print_format_bitfield (p, seeki, fmtname, fieldname, addr, mode, size);
 					i+=(size == -1)? 1: size;
 					break;
 				case 'E': // resolve enum
 					if (MUSTSET) {
-						eprintf ("Set val not implemented yet for enums!\n");
+						// eprintf ("Set val not implemented yet for enums!\n");
+						p->cb_printf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*4:0));
 					}
 					if (size >= ARRAYINDEX_COEF) {
 						size %= ARRAYINDEX_COEF;
