@@ -1635,7 +1635,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (space && (!eq || space < eq)) {
 				*space++ = 0;
 				if (strchr (name, '.')) {
-					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
+					eprintf ("Struct or fields name can not contain a dot (%s)\n", name);
 				} else {
 					// pf.foo=xxx
 					sdb_set (core->print->formats, name, space, 0);
