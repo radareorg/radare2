@@ -774,10 +774,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			if (grep->icase) {
 				r_str_case (str, false);
 			}
-			eprintf("DEBUG in: %s\n", in);
-			eprintf("DEBUG grep strings: %s\n", grep->strings[i]);
 			const char *p = r_strstr_ansi (in, grep->strings[i]);
-			eprintf("DEBUG p: %s\n", p);
 			if (!p) {
 				ampfail = 0;
 				continue;
