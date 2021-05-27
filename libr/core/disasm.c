@@ -477,7 +477,7 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	}
 	const char *sn = ds->show_section ? r_core_get_section_name (ds->core, ds->at) : "";
 	ds_align_comment (ds);
-	ds_align_comment (ds);
+	// ds_align_comment (ds);
 	r_cons_print (COLOR_RESET (ds));
 	ds_print_pre (ds, true);
 	r_cons_printf ("%s%s", nl? "\n": "", sn);
@@ -501,7 +501,7 @@ static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *forma
 			*nl = 0;
 		}
 		if (ds->show_comments) {
-			if (ds->show_comment_right ) { // && align) {
+			if (ds->show_comment_right && align) {
 				ds_align_comment (ds);
 			}
 		}

@@ -1261,7 +1261,7 @@ EOF
 EXPECT=<<EOF
 [{"offset":0,"text":"  0x00000000      90             nop                                   ; test"}]
 [{"offset":0,"text":"  0x00000000      90             nop                                   ; test \"with quotes\""}]
-[{"offset":0,"text":"  ; test \"with quotes\"\n"},{"offset":0,"text":"  0x00000000      90             nop"}]
+[{"offset":0,"text":{"offset":0,"text":"  ; test \"with quotes\"\n  ; "},{"offset":0,"text":"  0x00000000      90             nop"}}
 EOF
 RUN
 
@@ -1733,8 +1733,8 @@ e emu.str.inv=false
 pd 1 @ 0x161d
 EOF
 EXPECT=<<EOF
-            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m                 ; 0x21f7[31m ; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str._n__Blue_Pill[0m
-            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m                 ; 0x21f7[31m ; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str._n__Blue_Pill[0m
+            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m                 [31m; 0x21f7[31m [31m; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str._n__Blue_Pill[0m
+            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m                 [31m; 0x21f7[31m [31m; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str._n__Blue_Pill[0m
 
             [31m; 0x21f7
             [31m; "abcdefghi"

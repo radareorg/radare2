@@ -1314,6 +1314,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					free (rstr);
 				}
 			}
+			bool first = true; 
 			if (!eol && p && p->use_comments) {
 				for (; j < i + inc; j++) {
 					print (" ");
@@ -1340,7 +1341,33 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						} else {
 							a = "";
 						}
-						printfmt ("%s  ; %s", a, comment);
+						if (strchr (comment, '\n')) {
+							char *s = strdup (comment);
+							char *q = s;
+							while (true) {
+								char *nl = strchr (q, '\n');
+								if (nl) {
+									*nl = 0;
+								}
+								if (first) {
+									printfmt ("%s 2; %s", a, q);
+									first = false;
+								} else {
+									const char *a = r_str_pad (' ', 8 + (p->cols * 4));
+									printfmt ("%s; %s", a, q);
+								}
+								p->cb_printf ("\n");
+
+								if (!nl) {
+									break;
+								}
+								q = nl + 1;
+							}
+							free (s);
+						} else {
+							printfmt ("%s ; %s", a, comment);
+							p->cb_printf ("\n");
+						}
 						free (comment);
 					}
 				}
