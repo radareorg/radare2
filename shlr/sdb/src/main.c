@@ -332,13 +332,13 @@ static void cgen_footer(MainOptions *mo, const char *name, const char *cname) {
 		printf ("// TODO\n");
 		printf ("typedef int (*GperfForeachCallback)(void *user, const char *k, const char *v);\n");
 		printf ("int gperf_%s_foreach(GperfForeachCallback cb, void *user) {\n", cname);
-		printf ("  int i; while (kvs[i].name) {\n");
+		printf ("  int i = 0; while (kvs[i].name) {\n");
 		printf ("  cb (user, kvs[i].name, kvs[i].value);\n");
 		printf ("  i++;}\n");
 		printf ("  return 0;\n");
 		printf ("}\n");
 		printf ("const char *gperf_%s_get(const char *s) {\n", cname);
-		printf ("  int i; while (kvs[i].name) {\n");
+		printf ("  int i = 0; while (kvs[i].name) {\n");
 		printf ("  if (!strcmp (s, kvs[i].name)) return kvs[i].value;\n");
 		printf ("  i++;}\n");
 		printf ("  return NULL;\n");
