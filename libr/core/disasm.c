@@ -491,15 +491,40 @@ static void ds_comment_lineup(RDisasmState *ds) {
 }
 
 static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *format, va_list ap) {
-	if (ds->show_comments) {
-		if (ds->show_comment_right && align) {
-			ds_align_comment (ds);
-		} else {
-			r_cons_printf ("%s", COLOR (ds, color_comment));
+	char *s = r_str_newvf (format, ap);
+	char *p = s;
+	bool multiline = strchr (p, '\n');
+	bool first = true;
+	while (true) {
+		char *nl = strchr (p, '\n');
+		if (nl) {
+			*nl = 0;
 		}
+		if (ds->show_comments) {
+			if (ds->show_comment_right ) { // && align) {
+				ds_align_comment (ds);
+			}
+		}
+		r_cons_printf ("%s", COLOR (ds, color_comment));
+		if (multiline) {
+			if (!first) {
+				ds_begin_line (ds);
+				//ds_print_labels (ds, f);
+				ds_setup_print_pre (ds, false, false);
+				ds_print_lines_left (ds);
+				//core->print->resetbg = (ds->asm_highlight == UT64_MAX);
+				r_cons_print ("; ");
+			}
+		}
+		r_cons_print (p);
+		if (!nl) {
+			break;
+		}
+		r_cons_newline ();
+		first = false;
+		p = nl + 1;
 	}
-
-	r_cons_printf_list (format, ap);
+	free (s);
 	if (!ds->show_comment_right && nl) {
 		ds_newline (ds);
 	}
@@ -2172,11 +2197,11 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		/* flag one */
 		if (item && item->comment && ds->ocomment != item->comment) {
 			ds_begin_line (ds);
+			ds_newline (ds);
+			ds_begin_line (ds);
 			if (ds->show_color) {
 				r_cons_strcat (ds->pal_comment);
 			}
-			ds_newline (ds);
-			ds_begin_line (ds);
 			r_cons_strcat ("  ;  ");
 			r_cons_strcat_justify (item->comment, mycols, ';');
 			ds_newline (ds);
@@ -5010,6 +5035,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 							for (i = 0; i < lines_count; i++) {
 								char *c = comment + line_indexes[i];
 								ds_print_pre (ds, true);
+								ds_align_comment (ds);
 								if (ds->show_color) {
 									r_cons_strcat (ds->color_usrcmt);
 								}
