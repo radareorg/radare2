@@ -821,12 +821,12 @@ static bool main_argparse_flag(MainOptions *mo, char flag) {
 		return base64decode ();
 	case 'j':
 		mo->format = json;
-		if (mo->argi + 1 >= mo->argc) {
+		if (mo->argi >= mo->argc) {
 			return jsonIndent ();
 		}
 		break;
 	case 'c':
-		if (mo->argc < 3) {
+		if (mo->argc <= 3) {
 			return showusage (1);
 		} else {
 			const char *db = main_argparse_getarg (mo);
@@ -844,7 +844,7 @@ static bool main_argparse_flag(MainOptions *mo, char flag) {
 		}
 		break;
 	case 'D':
-		if (mo->argi + 2 >=  mo->argc) {
+		if (mo->argi + 1 >=  mo->argc) {
 			return showusage (0);
 		}
 		mo->format = diff;
