@@ -5,12 +5,18 @@ sdb_files = [
 ]
 
 foreach file : sdb_files
-  outfile = '@0@.sdb'.format(file)
+  if get_option('sdb_cgen')
+    outfile = '@0@.c'.format(file)
+    gen_cmd = sdb_gen_cmd_cgen
+  else
+    outfile = '@0@.sdb'.format(file)
+    gen_cmd = sdb_gen_cmd
+  endif
   infiles = ['@0@.sdb.txt'.format(file)]
   custom_target(outfile,
     input: infiles,
     output: outfile,
-    command: sdb_gen_cmd,
+    command: gen_cmd,
     depends: sdb_exe,
     build_by_default: true,
     install: true,

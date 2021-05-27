@@ -88,6 +88,14 @@ r_util_sources = [
   'regex/regerror.c'
 ]
 
+if get_option('sdb_cgen')
+  r_util_sources += [
+    'd/pokered.c',
+    'd/ebcdic37.c',
+    'd/ascii.c'
+  ]
+endif
+
 r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd') or host_machine.system().startswith('haiku')
   # backtrace_symbols_fd requires -lexecinfo

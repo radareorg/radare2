@@ -199,6 +199,41 @@ r_asm_inc = [
   )
 ]
 
+if get_option('sdb_cgen')
+  r_asm_sources += [
+    'd/6502.c',
+    'd/8051.c',
+    'd/LH5801.c',
+    'd/arc.c',
+    'd/arm.c',
+    'd/avr.c',
+    'd/chip8.c',
+    'd/dalvik.c',
+    'd/i4004.c',
+    'd/i8080.c',
+    'd/java.c',
+    'd/lm32.c',
+    'd/m68k.c',
+    'd/malbolge.c',
+    'd/mips.c',
+    'd/msp430.c',
+    'd/pic18c.c',
+    'd/ppc.c',
+    'd/propeller.c',
+    'd/riscv.c',
+    'd/s390.c',
+    'd/sh.c',
+    'd/sparc.c',
+    'd/tms320.c',
+    'd/tricore.c',
+    'd/v810.c',
+    'd/v850.c',
+    'd/x86.c',
+    'd/xtensa.c',
+    'd/z80.c'
+  ]
+endif
+
 r_asm = library('r_asm', r_asm_sources,
   include_directories: r_asm_inc,
   c_args: library_cflags,

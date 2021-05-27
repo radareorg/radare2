@@ -136,6 +136,43 @@ r_anal_sources = [
   '../asm/arch/pyc/pyc_dis.c'
 ]
 
+if get_option('sdb_cgen')
+  r_anal_sources += [
+    'd/cc-arm-16.c',
+    'd/cc-arm-32.c',
+    'd/cc-arm-64.c',
+    'd/cc-avr-8.c',
+    'd/cc-m68k-32.c',
+    'd/cc-mips-32.c',
+    'd/cc-mips-64.c',
+    'd/cc-ppc-32.c',
+    'd/cc-ppc-64.c',
+    'd/cc-riscv-64.c',
+    'd/cc-sparc-32.c',
+    'd/cc-v850-32.c',
+    'd/cc-s390-64.c',
+    'd/cc-x86-16.c',
+    'd/cc-x86-32.c',
+    'd/cc-x86-64.c',
+    'd/cc-xtensa-32.c',
+    'd/spec.c',
+    'd/types-16.c',
+    'd/types-32.c',
+    'd/types-64.c',
+    'd/types-arm-ios-16.c',
+    'd/types-arm-ios-32.c',
+    'd/types-arm-ios-64.c',
+    'd/types-android.c',
+    'd/types-darwin.c',
+    'd/types-linux.c',
+    'd/types.c',
+    'd/types-windows.c',
+    'd/types-x86-macos-64.c',
+    'd/types-x86-windows-32.c',
+    'd/types-x86-windows-64.c'
+  ]
+endif
+
 r_anal_inc = [
   platform_inc,
   include_directories(

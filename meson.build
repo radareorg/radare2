@@ -533,6 +533,13 @@ sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
   native: true,
 )
 
+sdb_gen_cmd_cgen = [
+  sdb_exe,
+  '-t',
+  '-C',
+  '@INPUT@'
+]
+
 sdb_gen_cmd = [
   sdb_exe,
   '@OUTPUT@',

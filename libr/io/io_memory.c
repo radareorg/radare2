@@ -18,7 +18,7 @@ static inline ut8* _io_malloc_buf(RIODesc *desc) {
 	return mal->buf;
 }
 
-
+#if UNUSED
 static inline ut8* _io_malloc_set_buf(RIODesc *desc, ut8* buf) {
 	if (!desc) {
 		return NULL;
@@ -26,6 +26,7 @@ static inline ut8* _io_malloc_set_buf(RIODesc *desc, ut8* buf) {
 	RIOMalloc *mal = (RIOMalloc*)desc->data;
 	return mal->buf = buf;
 }
+#endif
 
 static inline ut64 _io_malloc_off(RIODesc *desc) {
 	if (!desc) {

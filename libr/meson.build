@@ -415,6 +415,7 @@ io_plugins += [
   'self',
   'shm',
   'sparse',
+  'socket',
   'tcpslurp',
   'winkd',
   'winedbg',
@@ -431,13 +432,19 @@ if host_machine.system() == 'windows'
 endif
 
 lang_plugins += [
+  'v',
+  'lib',
+  'spp',
   'rust',
+  'go',
+  'zig',
+  'c',
   'vala'
 ]
 
 if host_machine.system() != 'windows'
   lang_plugins += [
-    'c',
+    'pipe',
     'cpipe'
   ]
 endif
