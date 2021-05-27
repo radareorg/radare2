@@ -2231,7 +2231,7 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 		return;
 	}
 	RCore *core = ds->core;
-	char addr[64];
+	char addr[64] = {0};
 	ut64 switch_addr = UT64_MAX;
 	int case_start = -1, case_prev = 0, case_current = 0;
 	f = r_anal_get_function_at (ds->core->anal, ds->at);
@@ -2259,20 +2259,32 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 		}
 		count++;
 		if (!strncmp (flag->name, "case.", 5)) {
-			sscanf (flag->name + 5, "%63[^.].%d", addr, &case_current);
-			ut64 saddr = r_num_math (core->num, addr);
-			if (case_start == -1) {
-				switch_addr = saddr;
-				case_prev = case_current;
-				case_start = case_current;
-				if (iter != uniqlist->tail) {
-					continue;
+			char *chop = strdup (flag->name + 5);
+			char *dot = strchr (chop, '.');
+			if (dot) {
+				int mul = 1;
+				*dot++ = 0;
+				if (*dot == '_') {
+					mul = -1;
+					dot++;
 				}
-			}
-			if (case_current == case_prev + 1 && switch_addr == saddr) {
-				case_prev = case_current;
-				if (iter != uniqlist->tail) {
-					continue;	
+				ut64 saddr = r_num_get (core->num, chop);
+				case_current = mul * atoi (dot);
+				snprintf (addr, sizeof (addr), "0x%08"PFMT64x, saddr);
+				free (chop);
+				if (case_start == -1) {
+					switch_addr = saddr;
+					case_prev = case_current;
+					case_start = case_current;
+					if (iter != uniqlist->tail) {
+						continue;
+					}
+				}
+				if (case_current == case_prev + 1 && switch_addr == saddr) {
+					case_prev = case_current;
+					if (iter != uniqlist->tail) {
+						continue;
+					}
 				}
 			}
 		}
