@@ -751,7 +751,7 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 		free (buf);
 		return -1;
 	}
-	snprintf (out, out_size, "%s.gperf", name);
+	snprintf (out, out_size, "%s.%s", name, (mo->textmode)? "c": "gperf");
 	int wd = open (out, O_RDWR, 0644);
 	if (wd == -1) {
 		wd = open (out, O_RDWR | O_CREAT, 0644);
@@ -762,7 +762,6 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 	if (wd != -1) {
 		dup2 (1, 999);
 		dup2 (wd, 1);
-		// mo->format = cgen;
 		rc = sdb_dump (mo); // file, MODE_CGEN, false, NULL);
 		fflush (stdout);
 		close (wd);
@@ -770,24 +769,28 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 	} else {
 		eprintf ("Cannot create .gperf\n");
 	}
-	if (rc == 0) {
-		char *cname = get_cname (name);
-		snprintf (buf, buf_size, "gperf -aclEDCIG --null-strings -H sdb_hash_c_%s"
-				" -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, name, name);
-		free (cname);
-		rc = sdb_system (buf);
+	if (mo->textmode) {
+		// dont do much
+	} else {
 		if (rc == 0) {
-			snprintf (buf, buf_size, "gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", name, name);
+			char *cname = get_cname (name);
+			snprintf (buf, buf_size, "gperf -aclEDCIG --null-strings -H sdb_hash_c_%s"
+					" -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, name, name);
+			free (cname);
 			rc = sdb_system (buf);
 			if (rc == 0) {
-				eprintf ("Generated %s.c and %s.h\n", name, name);
+				snprintf (buf, buf_size, "gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", name, name);
+				rc = sdb_system (buf);
+				if (rc == 0) {
+					eprintf ("Generated %s.c and %s.h\n", name, name);
+				}
+			} else {
+				eprintf ("Cannot run gperf\n");
+				eprintf ("%s\n", buf);
 			}
 		} else {
-			eprintf ("Cannot run gperf\n");
-			eprintf ("%s\n", buf);
+			eprintf ("Outdated sdb binary in PATH?\n");
 		}
-	} else {
-		eprintf ("Outdated sdb binary in PATH?\n");
 	}
 	free (buf);
 	return rc;

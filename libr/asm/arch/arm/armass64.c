@@ -920,17 +920,17 @@ static ut32 arithmetic(ArmOp *op, int k) {
 
 	if (op->operands[2].type & ARM_GPR  && op->operands[3].type & ARM_SHIFT) {
 		switch (op->operands[3].shift) {
-			case ARM_LSL:
-				data |= (0x00040000 * op->operands[3].shift_amount);
-				break;
-			case ARM_LSR:
-				data |= (0x00040000 * op->operands[3].shift_amount) | (0x4000);
-				break;
-			case ARM_ASR:
-				data |= (0x00040000 * op->operands[3].shift_amount) | (0x8000);
-				break;
-			default:
-				return data;
+		case ARM_LSL:
+			data |= (0x00040000 * op->operands[3].shift_amount);
+			break;
+		case ARM_LSR:
+			data |= (0x00040000 * op->operands[3].shift_amount) | (0x4000);
+			break;
+		case ARM_ASR:
+			data |= (0x00040000 * op->operands[3].shift_amount) | (0x8000);
+			break;
+		default:
+			return data;
 		}
 	}
 	return data;
