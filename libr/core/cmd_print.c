@@ -1627,7 +1627,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (dot) {
 				*dot = 0;
 			}
-			if (!sdb_const_get (core->print->formats, name, NULL)) {
+			if (!space && !sdb_const_get (core->print->formats, name, NULL)) {
 				eprintf ("Unknown format name '%s'.\n", name);
 				goto err_name;
 			}
