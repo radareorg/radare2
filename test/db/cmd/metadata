@@ -559,13 +559,13 @@ EOF
 EXPECT=<<EOF
 "\tANSI\\esc: \x1b[33m\r\n"
 ascii[19] "\tANSI\\esc: \x1b[33m\r\n"
-            ;-- str._tANSIesc:_e_33m_r_n:
             ;-- section..data:
+            ;-- str._tANSIesc:_e_33m_r_n:
             0x140016000     .string "\tANSI\\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
 "\tANSI\esc: \x1b[33m\r\n"
 ascii[19] "\tANSI\esc: \x1b[33m\r\n"
-            ;-- str._tANSIesc:_e_33m_r_n:
             ;-- section..data:
+            ;-- str._tANSIesc:_e_33m_r_n:
             0x140016000     .string "\tANSI\esc: \x1b[33m\r\n" ; len=19 ; [02] -rw- section size 8192 named .data
 EOF
 RUN

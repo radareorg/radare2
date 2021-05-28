@@ -2246,6 +2246,23 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
 	}
 }
 
+static bool is_first (const char *fs) {
+	if (fs) {
+		if (strstr (fs, "segment")) {
+			return true;
+		}
+		if (strstr (fs, "section")) {
+			return true;
+		}
+		if (strstr (fs, "format")) {
+			return true;
+		}
+		if (strstr (fs, "class")) {
+			return true;
+		}
+	}
+	return false;
+}
 static RList *custom_sorted_flags(const RList *flaglist) {
 	RListIter *iter;
 	RFlagItem *flag;
@@ -2258,7 +2275,7 @@ static RList *custom_sorted_flags(const RList *flaglist) {
 	RList *tail = r_list_newf (NULL);
 	r_list_foreach (list, iter, flag) {
 		const char *fs = flag->space? flag->space->name: NULL;
-		if (fs && (strstr (fs, "section") || strstr (fs, "format"))) {
+		if (is_first (fs)) {
 			r_list_append (res, flag);
 		} else {
 			r_list_append (rest, flag);

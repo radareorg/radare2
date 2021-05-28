@@ -295,8 +295,8 @@ aaa
 pdf @  dbg.init
 EOF
 EXPECT=<<EOF
-            ;-- Grid::init():
             ;-- method.Grid.init__:
+            ;-- Grid::init():
             ; CALL XREF from dbg.main @ 0x10001ae8
 / 64: dbg.init (Grid * const this);
 |           ; arg Grid * const this @ r3
