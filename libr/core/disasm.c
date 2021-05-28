@@ -2246,6 +2246,42 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
 	}
 }
 
+static RList *custom_sorted_flags(const RList *flaglist) {
+	RListIter *iter;
+	RFlagItem *flag;
+	if (!flaglist) {
+		return NULL;
+	}
+	RList *list = r_list_uniq (flaglist, flagCmp);
+	RList *res = r_list_newf (NULL);
+	RList *rest = r_list_newf (NULL);
+	RList *tail = r_list_newf (NULL);
+	r_list_foreach (list, iter, flag) {
+		const char *fs = flag->space? flag->space->name: NULL;
+		if (fs && (strstr (fs, "section") || strstr (fs, "format"))) {
+			r_list_append (res, flag);
+		} else {
+			r_list_append (rest, flag);
+		}
+	}
+	r_list_foreach (rest, iter, flag) {
+		const char *fs = flag->space? flag->space->name: NULL;
+		if (fs && !strcmp (fs, "registers")) {
+			r_list_append (tail, flag);
+		} else {
+			r_list_append (res, flag);
+		}
+	}
+	r_list_foreach (tail, iter, flag) {
+		r_list_append (res, flag);
+	}
+	r_list_free (tail);
+	r_list_free (rest);
+	list->free = NULL;
+	r_list_free (list);
+	return res;
+}
+
 #define printPre (outline || !*comma)
 static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 	//const char *beginch;
@@ -2261,13 +2297,18 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 	int case_start = -1, case_prev = 0, case_current = 0;
 	f = r_anal_get_function_at (ds->core->anal, ds->at);
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
-	RList *uniqlist = flaglist? r_list_uniq (flaglist, flagCmp): NULL;
+	RList *uniqlist = custom_sorted_flags (flaglist);
 	int count = 0;
 	bool outline = !ds->flags_inline;
 	const char *comma = "";
 	bool keep_lib = r_config_get_i (core->config, "bin.demangle.libs");
 	bool docolon = true;
 	int nth = 0;
+#if 0
+	r_list_foreach (uniqlist, iter, flag) {
+		r_cons_printf ("(%s)(at:%s),", flag->name, flag->space->name);
+	}
+#endif
 	r_list_foreach (uniqlist, iter, flag) {
 		if (!overlapped && f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show non-overlapped flags that have the same name as the function
