@@ -23,6 +23,7 @@ typedef struct {
 	bool hexstr;
 	bool widestr;
 	bool nonstop;
+	bool pluglist;
 	bool json;
 	int mode;
 	int align;
@@ -39,8 +40,12 @@ typedef struct {
 } RafindOptions;
 
 static void rafind_options_fini(RafindOptions *ro) {
-	free (ro->buf);
-	ro->cur = 0;
+	if (ro) {
+		r_io_free (ro->io);
+		free (ro->buf);
+		ro->cur = 0;
+		ro->io = NULL;
+	}
 }
 
 static void rafind_options_init(RafindOptions *ro) {
@@ -51,6 +56,11 @@ static void rafind_options_init(RafindOptions *ro) {
 	ro->color = true;
 	ro->keywords = r_list_newf (NULL);
 	ro->pj = NULL;
+	r_cons_new ();
+	RIO *io = r_io_new ();
+	if (io) {
+		ro->io = io;
+	}
 }
 
 static int rafind_open(RafindOptions *ro, const char *file);
@@ -173,6 +183,7 @@ static int show_help(const char *argv0, int line) {
 	" -h         show this help\n"
 	" -i         identify filetype (r2 -nqcpm file)\n"
 	" -j         output in JSON\n"
+	" -L         List all io plugins (same as r2 for now)\n"
 	" -m         magic search, file-type carver\n"
 	" -M [str]   set a binary mask to be applied on keywords\n"
 	" -n         do not stop on read errors\n"
@@ -208,21 +219,14 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		return 0;
 	}
 
-	RIO *io = r_io_new ();
-	if (!io) {
-		free (efile);
-		return 1;
-	}
-	ro->io = io;
-
-	if (!r_io_open_nomap (io, file, R_PERM_R, 0)) {
+	if (!r_io_open_nomap (ro->io, file, R_PERM_R, 0)) {
 		eprintf ("Cannot open file '%s'\n", file);
 		result = 1;
 		goto err;
 	}
 
 	if (data) {
-		r_io_write_at (io, 0, data, datalen);
+		r_io_write_at (ro->io, 0, data, datalen);
 	}
 
 	rs = r_search_new (ro->mode);
@@ -241,7 +245,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	r_search_set_callback (rs, &hit, ro);
 	ut64 to = ro->to;
 	if (to == -1) {
-		to = r_io_size (io);
+		to = r_io_size (ro->io);
 	}
 
 	if (!r_cons_new ()) {
@@ -298,7 +302,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 
 	ro->curfile = file;
 	r_search_begin (rs);
-	(void)r_io_seek (io, ro->from, R_IO_SEEK_SET);
+	(void)r_io_seek (ro->io, ro->from, R_IO_SEEK_SET);
 	result = 0;
 	ut64 bsize = ro->bsize;
 	for (ro->cur = ro->from; !last && ro->cur < to; ro->cur += bsize) {
@@ -306,7 +310,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 			bsize = to - ro->cur;
 			last = true;
 		}
-		ret = r_io_pread_at (io, ro->cur, ro->buf, bsize);
+		ret = r_io_pread_at (ro->io, ro->cur, ro->buf, bsize);
 		if (ret == 0) {
 			if (ro->nonstop) {
 				continue;
@@ -327,8 +331,6 @@ done:
 err:
 	free (efile);
 	r_search_free (rs);
-	r_io_free (io);
-	ro->io = NULL;
 	rafind_options_fini (ro);
 	return result;
 }
@@ -381,7 +383,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	const char *file = NULL;
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:ie:b:cjmM:s:S:x:Xzf:F:t:E:rqnhvZ");
+	r_getopt_init (&opt, argc, argv, "a:ie:b:cjmM:s:S:x:Xzf:F:t:E:rqnhvZL");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -395,6 +397,9 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			break;
 		case 'i':
 			ro.identify = true;
+			break;
+		case 'L':
+			ro.pluglist = true;
 			break;
 		case 'j':
 			ro.json = true;
@@ -496,6 +501,15 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		} else {
 			ro.pr->flags &= ~R_PRINT_FLAGS_COLOR;
 		}
+	}
+	if (ro.pluglist) {
+		if (ro.json) {
+			r_io_plugin_list_json (ro.io);
+		} else {
+			r_io_plugin_list (ro.io);
+		}
+		r_cons_flush ();
+		return 0;
 	}
 	if (opt.ind == argc) {
 		return show_help (argv[0], 1);
