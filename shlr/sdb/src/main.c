@@ -788,6 +788,7 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 			eprintf ("Outdated sdb binary in PATH?\n");
 		}
 	}
+	free (out);
 	free (buf);
 	return rc;
 }
