@@ -41,10 +41,10 @@ typedef struct {
 
 static void rafind_options_fini(RafindOptions *ro) {
 	if (ro) {
-		r_io_free (ro->io);
+	// 	r_io_free (ro->io);
+		ro->io = NULL;
 		free (ro->buf);
 		ro->cur = 0;
-		ro->io = NULL;
 	}
 }
 
@@ -57,10 +57,6 @@ static void rafind_options_init(RafindOptions *ro) {
 	ro->keywords = r_list_newf (NULL);
 	ro->pj = NULL;
 	r_cons_new ();
-	RIO *io = r_io_new ();
-	if (io) {
-		ro->io = io;
-	}
 }
 
 static int rafind_open(RafindOptions *ro, const char *file);
@@ -219,14 +215,16 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 		return 0;
 	}
 
-	if (!r_io_open_nomap (ro->io, file, R_PERM_R, 0)) {
+	RIO *io = r_io_new ();
+	ro->io = io;
+	if (!r_io_open_nomap (io, file, R_PERM_R, 0)) {
 		eprintf ("Cannot open file '%s'\n", file);
 		result = 1;
 		goto err;
 	}
 
 	if (data) {
-		r_io_write_at (ro->io, 0, data, datalen);
+		r_io_write_at (io, 0, data, datalen);
 	}
 
 	rs = r_search_new (ro->mode);
@@ -245,7 +243,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	r_search_set_callback (rs, &hit, ro);
 	ut64 to = ro->to;
 	if (to == -1) {
-		to = r_io_size (ro->io);
+		to = r_io_size (io);
 	}
 
 	if (!r_cons_new ()) {
@@ -302,7 +300,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 
 	ro->curfile = file;
 	r_search_begin (rs);
-	(void)r_io_seek (ro->io, ro->from, R_IO_SEEK_SET);
+	(void)r_io_seek (io, ro->from, R_IO_SEEK_SET);
 	result = 0;
 	ut64 bsize = ro->bsize;
 	for (ro->cur = ro->from; !last && ro->cur < to; ro->cur += bsize) {
@@ -310,7 +308,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 			bsize = to - ro->cur;
 			last = true;
 		}
-		ret = r_io_pread_at (ro->io, ro->cur, ro->buf, bsize);
+		ret = r_io_pread_at (io, ro->cur, ro->buf, bsize);
 		if (ret == 0) {
 			if (ro->nonstop) {
 				continue;
@@ -330,6 +328,7 @@ done:
 	r_cons_free ();
 err:
 	free (efile);
+	r_io_free (io);
 	r_search_free (rs);
 	rafind_options_fini (ro);
 	return result;
