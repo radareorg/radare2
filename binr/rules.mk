@@ -13,7 +13,9 @@ LDFLAGS+=-lm
 else
 ifneq (${OSTYPE},linux)
 LDFLAGS+=-lpthread
+ifeq (${OSTYPE},freebsd)
 LDFLAGS+=-ldl
+endif
 LDFLAGS+=-lm
 endif
 endif
