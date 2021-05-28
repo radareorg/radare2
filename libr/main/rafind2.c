@@ -328,6 +328,7 @@ err:
 	free (efile);
 	r_search_free (rs);
 	r_io_free (io);
+	ro->io = NULL;
 	rafind_options_fini (ro);
 	return result;
 }
