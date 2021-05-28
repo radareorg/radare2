@@ -1691,14 +1691,18 @@ static bool find_e_opts(RCore *core, RLineCompletion *completion, RLineBuffer *b
 	if (!node) {
 		return false;
 	}
+	const char *p = r_str_trim_head_ro (eq + 1);
+	int n = strlen (p);
 	if (node->flags & 1) {
-		r_line_completion_push (completion, strdup ("true"));
-		r_line_completion_push (completion, strdup ("false"));
+		if (!strncmp ("true", p, n)) {
+			r_line_completion_push (completion, "true");
+		}
+		if (!strncmp ("false", p, n)) {
+			r_line_completion_push (completion, "false");
+		}
 	} else {
 		RListIter *iter;
 		char *option;
-		const char *p = r_str_trim_head_ro (eq + 1);
-		int n = strlen (p);
 		r_list_foreach (node->options, iter, option) {
 			if (!strncmp (option, p, n)) {
 				r_line_completion_push (completion, option);

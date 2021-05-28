@@ -1123,7 +1123,9 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, asm_str,
 					ds->str, sizeof (ds->str), core->print->big_endian);
 		} else {
-			r_str_ncpy (ds->str, ds->opstr, sizeof (ds->str));
+			if (ds->opstr) {
+				r_str_ncpy (ds->str, ds->opstr, sizeof (ds->str));
+			}
 		}
 		free (asm_str);
 		// subvar depends on filter
@@ -2354,7 +2356,7 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 				ut64 saddr = r_num_get (core->num, chop);
 				case_current = mul * atoi (dot);
 				snprintf (addr, sizeof (addr), "0x%08"PFMT64x, saddr);
-				free (chop);
+				R_FREE (chop);
 				if (case_start == -1) {
 					switch_addr = saddr;
 					case_prev = case_current;
@@ -2370,6 +2372,7 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 					}
 				}
 			}
+			R_FREE (chop);
 		}
 		if (printPre) {
 			ds_begin_line (ds);
@@ -2395,7 +2398,7 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 				color = r_cons_pal_parse (flag->color, NULL);
 				if (color) {
 					r_cons_strcat (color);
-					free (color);
+					R_FREE (color);
 					ds->lastflag = flag;
 					hasColor = true;
 				}
