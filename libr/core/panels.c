@@ -2551,7 +2551,7 @@ static void __handleComment(RCore *core) {
 				cmd = r_str_newf ("\"CC-%s\"", arg);
 				break;
 			case '!':
-				strcpy (buf, "\"CC!");
+				cmd = strdup ("CC!");
 				break;
 			default:
 				cmd = r_str_newf ("\"CC %s\"", arg);
@@ -2560,7 +2560,7 @@ static void __handleComment(RCore *core) {
 			free (arg);
 		}
 		if (cmd) {
-			r_core_cmd (core, cmd, 1);
+			r_core_cmd0 (core, cmd);
 		}
 		if (core->print->cur_enabled) {
 			r_core_seek (core, orig, true);
