@@ -386,8 +386,8 @@ pd 10
 EOF
 EXPECT=<<EOF
                  ; [14] -r-x section size 2466 named .text
-                 ;-- entry0:
                  ;-- section..text:
+                 ;-- entry0:
                  xor ebp, ebp
                  mov r9, rdx
                  pop rsi

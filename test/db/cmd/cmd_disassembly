@@ -1,3 +1,18 @@
+NAME=flags order by space
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+e asm.flags.inline=false
+pd 1
+EOF
+EXPECT=<<EOF
+            ;-- section..text:
+            ;-- .text:
+            ;-- entry0:
+            ;-- _start:
+            0x000006a0      31ed           xor ebp, ebp                ; [14] -r-x section size 546 named .text
+EOF
+RUN
+
 NAME=pD@x:90
 FILE=-
 CMDS=<<EOF

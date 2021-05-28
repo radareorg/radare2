@@ -104,9 +104,9 @@ e asm.bytes = false
 pde
 EOF
 EXPECT=<<EOF
-;-- entry0:
 ;-- section..text:
 ;-- .text:
+;-- entry0:
 ;-- _start:
 ;-- pc:
 0x10000308      mr r9, r1                                              ; start.S:62
