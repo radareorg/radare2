@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
 #include <rvc.h>
+#include <string.h>
 
 static inline bool is_branch_name(const char *name) {
 	for (; *name; name++) {
@@ -208,6 +209,217 @@ static void free_branches(RList *branches) {
 	}
 	free (branches);
 	return;
+}
+
+static char *find_current_branch(Rvc *repo) {
+	RList *branches;
+	RListIter *iter;
+	char *bname;
+	char *ret = NULL;
+	char *branches_dir = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR,
+			repo->path);
+	if (!branches_dir) {
+		return NULL;
+	}
+	branches = r_sys_dir (branches_dir);
+	if (!branches) {
+		free (branches_dir);
+		return NULL;
+	}
+	r_list_foreach (branches, iter, bname) {
+		char *lp = r_str_newf ("%s%s" R_SYS_DIR "current",
+				branches_dir, bname);
+		if (!lp) {
+			ret = NULL;
+			break;
+		}
+		if (r_file_exists (lp)) {
+			free (lp);
+			ret = r_str_new (bname);
+			break;
+		}
+		free (lp);
+	}
+	free (branches);
+	r_list_free (branches);
+	return ret;
+
+}
+
+
+
+static RvcCommit *commit_find_head(const char *bpath) {
+	RList *hashes;
+	RListIter *iter;
+	char *hash;
+	RvcCommit *ret;
+	r_list_foreach (hashes, iter, hash) {
+		char *dat, *path;
+		if (!strcmp (hash, "current")) {
+			continue;
+		}
+		path = r_str_newf ("%s" R_SYS_DIR "%s", bpath, hash);
+		if (!path) {
+			break;
+		}
+		dat = r_file_slurp (path, 0);
+		if (!dat) {
+			free (path);
+			break;
+		}
+		if (!r_str_endswith (dat, "\nprev:")) {
+			continue;
+		}
+		RvcCommit *commit = R_NEW (RvcCommit);
+		commit->hash = r_str_new (hash);
+		commit->ishead = true;
+		free (path);
+		free (dat);
+		break;
+	}
+	r_list_free (hashes);
+	return ret;
+}
+
+static RList *load_blobs(const RList *list, const RListIter *iter) {
+	char *line;
+	RList *blobs;
+	r_list_foreach (list, iter, line) {
+		RvcBlob *blob;
+		char *kv, *v;
+		if (r_str_cmp ("blob:", line, r_str_len_utf8 ("blob:"))) {
+			continue;
+		}
+		blob = R_NEW (RvcBlob);
+		if (!blob) {
+			free_blobs (blobs);
+		}
+		kv = strchr (line, ':') + 1;
+		v = strchr (kv, ':') + 1;
+		blob->hash = r_str_new (v);
+		if (!blob->hash) {
+			free_blobs (blobs);
+			free (blob);
+		}
+		blob->fname = malloc (v - kv);
+		if (!blob->fname) {
+			free (blob->hash);
+			free (blob);
+			free_blobs (blobs);
+		}
+		r_str_ncpy (blob->fname, kv, v -  kv);
+	}
+}
+
+static bool parse_commits(const char *bpath, RvcCommit *head) {
+	bool ret;
+	char *dat, *dl;
+	RList *dlines;
+	RListIter *iter;
+	char *path = r_str_newf ("%s" R_SYS_DIR "%s", bpath, head->hash);
+	if (!path) {
+		return false;
+	}
+	dat = r_file_slurp (path, 0);
+	if (!dat) {
+		free (path);
+		return false;
+	}
+	dlines = r_str_split_duplist (dat, "\n", false);
+	if (!dlines) {
+		free (path);
+		free (dat);
+		r_list_free (dlines);
+		return false;
+	}
+	r_list_foreach (dlines, iter, dl) {
+		char *value = strchr (dl, ':');
+		if (!r_str_cmp (dl, "author", r_str_len_utf8 ("author"))) {
+			head->author = r_str_new (value);
+			continue;
+		}
+		if (!r_str_cmp (dl, "message", r_str_len_utf8 ("message"))) {
+			head->message = r_str_new (value);
+			continue;
+		}
+		if (!r_str_cmp (dl, "timestamp", r_str_len_utf8 ("timestamp"))) {
+			head->timestamp = strtol (dl, NULL, 10);
+			continue;
+		}
+		if (!r_str_cmp (dl, "----", r_str_len_utf8 ("----"))) {
+			head->blobs = load_blobs (dlines, iter->n);
+			if (!head->blobs) {
+				break;
+			}
+		}
+		if (!r_str_cmp (dl, "prev", r_str_len_utf8 ("prev"))) {
+			head->prev = R_NEW (RvcCommit);
+			if (!head->prev) {
+				break;
+			}
+			head->hash = r_str_new (value);
+			ret = parse_commits (bpath, head->prev);
+		}
+	}
+}
+
+static void load_commits(RvcBranch *branch, const char *bpath) {
+	 branch->head = commit_find_head (bpath);
+	 if (!branch->head) {
+		 return;
+	 }
+	 if (!parse_commits (bpath, branch->head)) {
+		free_commits (branch->head);
+		branch->head = NULL;
+	 }
+}
+
+static void load_branches(Rvc *repo) {
+	RList *branch_names;
+	RListIter *iter;
+	char *bname, *branches_dir;
+	branches_dir = r_str_newf ("%s" R_SYS_DIR "branches", repo->path);
+	repo->branches = NULL;
+	repo->current_branch = NULL;
+	if (!branches_dir) {
+		return;
+	}
+	branch_names = r_sys_dir (branches_dir);
+	free (branches_dir);
+	if (!branch_names) {
+		return;
+	}
+	repo->branches = r_list_new ();
+	if (!repo->branches) {
+		r_list_free (branch_names);
+		return;
+	}
+	r_list_foreach (branch_names, iter, bname) {
+		char *bdir;
+		RvcBranch *branch = R_NEW (RvcBranch);
+		if (!branch) {
+			r_list_free (repo->branches);
+			repo->branches = NULL;
+			break;
+		}
+		branch->name = r_str_new (bname);
+		if (!branch->name) {
+			free (branch);
+			r_list_free (repo->branches);
+			repo->branches = NULL;
+			break;
+		}
+		bdir = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s",
+				repo->path, bname);
+		if (!bdir) {
+			free (branch->name);
+			free (branch);
+			r_list_free (repo->branches);
+			repo->branches = NULL;
+			break;
+		}
+
+	}
 }
 
 R_API bool r_vc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message) {
@@ -552,6 +764,17 @@ R_API bool r_vc_checkout(Rvc *repo, const char *name) {
 		}
 	}
 	return true;
+}
+
+R_API Rvc *r_vc_load(const char *path) {
+	Rvc *repo = R_NEW (Rvc);
+	if (!repo) {
+		return NULL;
+	}
+	repo->path = r_str_new (path);
+	if (!repo->path) {
+		free (repo);
+	}
 }
 
 // GIT commands as APIs
