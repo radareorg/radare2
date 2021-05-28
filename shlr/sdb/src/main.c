@@ -939,9 +939,6 @@ int main(int argc, const char **argv) {
 	if (!mo) {
 		return 1;
 	}
-	if (mo->outfile) {
-		eprintf ("OUTPUT %s%c", mo->outfile, 10);
-	}
 	// -j json return sdb_dump (argv[db0 + 1], MODE_JSON);
 	// -G sdb_dump (argv[db0 + 1], MODE_CGEN); // gperf
 	// -C print C/H files
@@ -1047,5 +1044,6 @@ int main(int argc, const char **argv) {
 		break;
 	}
 	terminate (ret);
+	free (mo);
 	return ret;
 }
