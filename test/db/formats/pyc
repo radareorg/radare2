@@ -128,8 +128,8 @@ CMDS=<<EOF
 pd 10
 EOF
 EXPECT=<<EOF
-            ;-- entry0:
             ;-- section._module_:
+            ;-- entry0:
             ;-- <module>:
             0x0000002a      6400           load_const  Multiline strings can be written
     using three "s, and are often used
@@ -168,8 +168,8 @@ CMDS=<<EOF
 pd 10
 EOF
 EXPECT=<<EOF
-            ;-- entry0:
             ;-- section._module_:
+            ;-- entry0:
             ;-- <module>:
             0x0000001e      640000         load_const CodeObject(hello_world) from hello.py ; [00] ---- section size 25 named <module>
             0x00000021      840000         make_function
