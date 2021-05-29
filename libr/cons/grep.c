@@ -779,11 +779,9 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				ampfail = 0;
 				continue;
 			}
+			
 			if (grep->begin) {
-				hit = (p == in);	
-				if (grep->neg) {
- 					hit = !hit;
- 				}		
+				hit = grep->neg? p != in: p == in;	
 			} else {
 				hit = !grep->neg;
 			}
