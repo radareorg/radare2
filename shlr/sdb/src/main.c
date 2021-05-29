@@ -869,8 +869,7 @@ static bool main_argparse_flag(MainOptions *mo, char flag) {
 	return true;
 }
 
-static MainOptions *main_argparse(int argc, const char **argv) {
-	MainOptions *mo = (MainOptions*)calloc (sizeof (MainOptions), 1);
+static MainOptions *main_argparse(MainOptions *mo, int argc, const char **argv) {
 	if (!mo) {
 		return NULL;
 	}
@@ -935,7 +934,9 @@ int main(int argc, const char **argv) {
 		return showusage (1);
 	}
 
-	MainOptions *mo = main_argparse (argc, argv);
+	MainOptions _mo = {0};
+	MainOptions *mo = &_mo;
+	main_argparse (mo, argc, argv);
 	if (!mo) {
 		return 1;
 	}
