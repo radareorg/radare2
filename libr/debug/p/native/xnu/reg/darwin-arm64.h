@@ -89,12 +89,10 @@ return strdup (
 "gpr	sp	.64	240	0\n" // SP
 "gpr	pc	.64	248	0\n" // PC
 "gpr	pstate	.64	256	0\n" // FLAGS
-// TODO flags
-"gpr	nf	.1	.2176	0	sign\n" // XXX wrong offset
 "flg	pstate	.64	256	0   _____tfiae_____________j__qvczn\n" // x0
 "flg	vf	.1	256.28	0	overflow\n" // set if overflows
 "flg	cf	.1	256.29	0	carry\n" // set if last op carries
 "flg	zf	.1	256.30	0	zero\n" // set if last op is 0
-"flg	nf	.1	256.31	0	sign\n"; // msb bit of last op
+"flg	nf	.1	256.31	0	sign\n" // msb bit of last op
 );
 
