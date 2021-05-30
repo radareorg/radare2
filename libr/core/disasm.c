@@ -2398,7 +2398,6 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 				color = r_cons_pal_parse (flag->color, NULL);
 				if (color) {
 					r_cons_strcat (color);
-					R_FREE (color);
 					ds->lastflag = flag;
 					hasColor = true;
 				}
@@ -2476,8 +2475,8 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 		} else {
 			comma = ", ";
 		}
-		R_FREE (color);
 		nth++;
+		free (color);
 	}
 	if (!outline && *comma) {
 		if (nth > 0 && docolon) {
