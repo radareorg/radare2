@@ -360,3 +360,25 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, i
 	}
 	return true;
 }
+
+// merges nearby submaps, that have a map ref to the same map, and free unneeded tree nodes
+R_API void r_io_bank_drain (RIO *io, const ut32 bankid) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	r_return_if_fail (bank);
+	RContRBNode *node = r_rbtree_cont_node_first (bank->submaps);
+	RContRBNode *next = NULL;
+	while (node) {
+		next = r_rbtree_cont_node_next (node);
+		if (next) {
+			RIOSubMap *bd, *sm;
+			bd = (RIOSubMap *)node->data;
+			sm = (RIOSubMap *)next->data;
+			if (!memcmp (&bd->mapref, &sm->mapref, sizeof(RIOMapRef))) {
+				r_io_submap_set_to (bd, r_io_submap_to (sm));
+				r_rbtree_cont_delete (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+				continue;
+			}
+		}
+		node = next;
+	}
+}
