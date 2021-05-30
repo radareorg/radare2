@@ -740,7 +740,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			} else {
 				io->cb_printf ("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
 				io->cb_printf ("task_struct = 0x%08zu\n", proc_data.task);
-				for (i = 0; i < buffsize;) {
+				for (i = 0; i < buffsize && i  + 8 < sizeof (proc_data.vmareastruct) ;) {
 					nextstart = 0;
 					if (i + 7 < buffsize) {
 						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i + 7])) - 1 + sizeof (size_t)) / sizeof (size_t);
