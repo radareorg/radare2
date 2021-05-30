@@ -39,9 +39,11 @@ endif
 
 .c.o:
 ifneq ($(SILENT),)
-	@echo "CC $(shell basename $<)"
-endif
+	@echo "CC $(shell $(LIBR)/count.sh) $(shell basename $<)"
+	@$(CC) -c $(CFLAGS) -o $@ $<
+else
 	$(CC) -c $(CFLAGS) -o $@ $<
+endif
 
 -include $(TOP)/config-user.mk
 -include $(TOP)/mk/platform.mk
