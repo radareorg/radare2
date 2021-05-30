@@ -2769,6 +2769,67 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "0,%s,%s,&,==", ARG(1), ARG(0));
 		break;
 	case ARM_INS_LDRD:
+		addr &= ~3LL;
+		if (MEMDISP(2) < 0) {
+			const char *pc = "$$";
+			if (REGBASE(2) == ARM_REG_PC) {
+				op->refptr = 4;
+				op->ptr = addr + pcdelta + MEMDISP(2);
+				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,%d,+,>>,<<,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+					(ut64)MEMDISP(2), pc, pcdelta, REG(0), REG(1));
+			} else {
+				int disp = MEMDISP(2);
+				// not refptr, because we can't grab the reg value statically op->refptr = 4;
+				if (disp < 0) {
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,-,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+							(ut64)-disp, MEMBASE(2), REG(0), REG(1));
+				} else {
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+							(ut64)disp, MEMBASE(2), REG(0), REG(1));
+				}
+			}
+		} else {
+			if (REGBASE(2) == ARM_REG_PC) {
+				const char *pc = "$$";
+				op->refptr = 4;
+				op->ptr = addr + pcdelta + MEMDISP(2);
+				if (HASMEMINDEX(2)) {
+				    r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						pcdelta, pc, MEMINDEX(2), REG(0), REG(1));
+				} else if (ISREG(2)) {
+					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						pcdelta, pc, MEMINDEX(2), REG(0), REG(1));
+				} else {
+					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						pcdelta, pc, MEMDISP(2), REG(0), REG(1));
+				}
+			} else {
+				if (HASMEMINDEX(2)) {	// e.g. `ldrd r2, r3 [r4, r1]`
+					r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						MEMINDEX (2), MEMBASE (2), REG (0), REG (1));
+				} else {
+					r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						MEMDISP (2), MEMBASE (2), REG (0), REG (1));
+				}
+				if (insn->detail->arm.writeback) {
+					if (ISIMM (3)) {
+						r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
+							MEMBASE (2), IMM (3), MEMBASE (2));
+					} else if (HASMEMINDEX(2)) {
+					    r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=",
+							MEMBASE (2), MEMINDEX (2), MEMBASE (2));
+					} else if (ISREG(3)) {
+					    r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=",
+							MEMBASE (2), REG (3), MEMBASE (2));
+					} else {
+						r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
+							MEMBASE (2), MEMDISP (2), MEMBASE (2));
+					}
+					
+				}
+			}
+		}
+		break;
 	case ARM_INS_LDRB:
 		if (ISMEM(1) && LSHIFT2(1)) {
 			r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,0xffffffff,&,[1],0x%x,&,%s,=",
