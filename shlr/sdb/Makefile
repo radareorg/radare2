@@ -4,6 +4,8 @@ VALADIR=bindings/vala
 PWD=$(shell pwd)
 PFX=${DESTDIR}${PREFIX}
 HGFILES=`find sdb-${SDBVER} -type f | grep -v hg | grep -v swp`
+ASANOPTS=address undefined signed-integer-overflow leak
+CFLAGS_ASAN=$(addprefix -fsanitize=,$(ASANOPTS))
 MKDIR=mkdir
 
 all: pkgconfig src/sdb_version.h
@@ -25,9 +27,12 @@ endif
 test:
 	${MAKE} -C test
 
+asantest:
+	CC=gcc CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C test
+
 asan:
 	${MAKE} src/sdb_version.h
-	${MAKE} -C src CC="gcc -fsanitize=address" all
+	CC=gcc CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C src all
 
 pkgconfig:
 	[ -d pkgconfig ] && ${MAKE} -C pkgconfig || true

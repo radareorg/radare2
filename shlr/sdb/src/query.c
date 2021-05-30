@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2020 - pancake */
+/* sdb - MIT - Copyright 2011-2021 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +32,7 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 		if (!b) {
 			return NULL;
 		}
+		free (sb->buf);
 		sb->buf = b;
 		sb->size = newsize;
 	}
@@ -70,17 +71,16 @@ SDB_API int sdb_queryf (Sdb *s, const char *fmt, ...) {
 
 SDB_API char *sdb_querysf(Sdb *s, char *buf, size_t buflen, const char *fmt, ...) {
         char string[4096];
-        char *ret;
         va_list ap;
         va_start (ap, fmt);
         vsnprintf (string, sizeof (string), fmt, ap);
-        ret = sdb_querys (s, buf, buflen, string);
+        char *ret = sdb_querys (s, buf, buflen, string);
         va_end (ap);
         return ret;
 }
 
 // TODO: Reimplement as a function with optimized concat
-#define out_concat(x) if (x&&*x) { \
+#define out_concat(x) if ((x) && *(x)) { \
 	strbuf_append (out, x, 1); \
 }
 
@@ -115,7 +115,7 @@ static bool foreach_list_cb(void *user, const char *k, const char *v) {
 			return false;
 		}
 		memcpy (line, root, rlen);
-		line[rlen]='/'; /*append the '/' at the end of the namespace */
+		line[rlen] = '/'; /*append the '/' at the end of the namespace */
 		memcpy (line + rlen + 1, k, klen);
 		line[rlen + klen + 1] = '=';
 		memcpy (line + rlen + klen + 2, v, vlen + 1);
@@ -830,6 +830,7 @@ fail:
 		res = out->buf;
 		free (out);
 	} else {
+		free (out->buf);
 		res = NULL;
 	}
 	free (original_cmd);

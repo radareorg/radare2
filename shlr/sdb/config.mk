@@ -33,13 +33,14 @@ endif
 
 CFLAGS_STD=-std=gnu99 -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L
 #CFLAGS+=-Wno-initializer-overrides
-CFLAGS+=${CFLAGS_STD}
+CFLAGS:=${CFLAGS_STD} $(CFLAGS)
 
 # Hack to fix clang warnings
 ifeq ($(CC),cc)
 CFLAGS+=$(shell gcc -v 2>&1 | grep -q LLVM && echo '-Wno-initializer-overrides')
 endif
 CFLAGS+=-Wall
+CFLAGS+=-fPIC
 CFLAGS+=-Wsign-compare
 # some old gcc doesnt support this
 # CFLAGS+=-Wmissing-field-initializers

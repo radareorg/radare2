@@ -1,6 +1,6 @@
 include ../config.mk
 
-CFLAGS+=-g
+CFLAGS:=-g $(CFLAGS)
 OBJ=cdb.o buffer.o cdb_make.o ls.o sdbht.o ht_uu.o sdb.o num.o base64.o match.o
 OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o text.o
 OBJ+=dict.o ht_pp.o ht_up.o ht_pu.o set.o diff.o
