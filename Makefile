@@ -57,7 +57,7 @@ all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C binr
 
 GIT_TAP=$(shell (git tag -l --sort=refname 2> /dev/null || echo $(R2_VERSION)) | grep '^[0-9]\.[0-9]' | tail -n1 )
-GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
+GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo $(R2_VERSION))
 R2_VER=$(shell ./configure -qV)
 ifdef SOURCE_DATE_EPOCH
 GIT_NOW=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u "+%Y-%m-%d")
@@ -65,8 +65,9 @@ else
 GIT_NOW=$(shell date "+%Y-%m-%d")
 endif
 
-ele:
-	echo $(GIT_TAP)
+tap tiptap tip:
+	@echo tip $(GIT_TIP)
+	@echo tap $(GIT_TAP)
 
 libr/include/r_version.h:
 	@echo Generating r_version.h file
