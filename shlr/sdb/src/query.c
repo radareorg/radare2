@@ -32,11 +32,11 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 		if (!b) {
 			return NULL;
 		}
-		// free (sb->buf);
+		free (sb->buf);
 		sb->buf = b;
 		sb->size = newsize;
 	}
-	if (sb->buf && str && len > 0) {
+	if (sb->buf && str) {
 		memcpy (sb->buf + sb->len, str, len);
 		sb->len += len;
 	}
@@ -135,10 +135,9 @@ static bool foreach_list_cb(void *user, const char *k, const char *v) {
 	return true;
 }
 
-static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns, int encode) {
+static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns, int encode) {
 	int len;
 	SdbListIter *it;
-	char *_out, *out = sb->buf;
 	SdbNs *n;
 	ForeachListUser user = { sb, encode, root };
 	char *roote = root + strlen (root);
@@ -156,10 +155,8 @@ static void walk_namespace (StrBuf *sb, char *root, int left, char *p, SdbNs *ns
 			memcpy (p + 1, n->name, len + 1);
 			left -= len + 2;
 		}
-		_out = out;
 		walk_namespace (sb, root, left,
 			roote + len + 1, n, encode);
-		out = _out;
 	}
 }
 
@@ -168,13 +165,12 @@ SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	const char *p, *q, *val = NULL;
 	char *eq, *tmp, *json, *next, *quot, *slash, *res,
 		*cmd, *newcmd = NULL, *original_cmd = NULL;
-	StrBuf *out;
 	Sdb *s = r;
 	ut64 n;
 	if (!s || (!_cmd && !buf)) {
 		return NULL;
 	}
-	out = strbuf_new ();
+	StrBuf *out = strbuf_new ();
 	if ((int)len < 1 || !buf) {
 		bufset = 1;
 		buf = malloc ((len = 64));
@@ -838,10 +834,10 @@ fail:
 	return res;
 }
 
-SDB_API int sdb_query (Sdb *s, const char *cmd) {
-	char buf[1024], *out;
-	int must_save = ((*cmd=='~') || strchr (cmd, '='));
-	out = sdb_querys (s, buf, sizeof (buf) - 1, cmd);
+SDB_API int sdb_query(Sdb *s, const char *cmd) {
+	char buf[1024];
+	int must_save = ((*cmd == '~') || strchr (cmd, '='));
+	char *out = sdb_querys (s, buf, sizeof (buf) - 1, cmd);
 	if (out) {
 		if (*out) {
 			puts (out);
@@ -853,7 +849,7 @@ SDB_API int sdb_query (Sdb *s, const char *cmd) {
 	return must_save;
 }
 
-SDB_API int sdb_query_lines (Sdb *s, const char *cmd) {
+SDB_API int sdb_query_lines(Sdb *s, const char *cmd) {
 	char *o, *p, *op;
 	if (!s || !cmd) {
 		return 0;
