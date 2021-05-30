@@ -32,11 +32,11 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 		if (!b) {
 			return NULL;
 		}
-		free (sb->buf);
+		// free (sb->buf);
 		sb->buf = b;
 		sb->size = newsize;
 	}
-	if (sb->buf && str) {
+	if (sb->buf && str && len > 0) {
 		memcpy (sb->buf + sb->len, str, len);
 		sb->len += len;
 	}
