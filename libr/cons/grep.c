@@ -779,12 +779,9 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				ampfail = 0;
 				continue;
 			}
-			
-			if (grep->begin) {
-				hit = grep->neg? p != in: p == in;	
-			} else {
-				hit = !grep->neg;
-			}
+
+			hit = grep->neg? p != in: p == in;
+
 			// TODO: optimize without strlen without breaking t/feat_grep (grep end)
 			if (grep->end && (strlen (grep->strings[i]) != strlen (p))) {
 				hit = 0;
