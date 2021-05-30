@@ -32,7 +32,6 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 		if (!b) {
 			return NULL;
 		}
-	//	free (sb->buf);
 		sb->buf = b;
 		sb->size = newsize;
 	}
@@ -874,27 +873,25 @@ SDB_API int sdb_query_lines(Sdb *s, const char *cmd) {
 }
 
 static char *slurp(const char *file) {
-	int ret, fd;
-	char *text;
-	long sz;
-	if (!file || !*file)
+	if (!file || !*file) {
 		return NULL;
-	fd = open (file, O_RDONLY);
+	}
+	int fd = open (file, O_RDONLY);
 	if (fd == -1) {
 		return NULL;
 	}
-	sz = lseek (fd, 0, SEEK_END);
-	if (sz < 0){
+	long sz = lseek (fd, 0, SEEK_END);
+	if (sz < 0) {
 		close (fd);
 		return NULL;
 	}
 	lseek (fd, 0, SEEK_SET);
-	text = malloc (sz + 1);
+	char *text = malloc (sz + 1);
 	if (!text) {
 		close (fd);
 		return NULL;
 	}
-	ret = read (fd, text, sz);
+	int ret = read (fd, text, sz);
 	if (ret != sz) {
 		free (text);
 		text = NULL;
