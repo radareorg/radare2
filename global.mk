@@ -39,7 +39,7 @@ endif
 
 .c.o:
 ifneq ($(SILENT),)
-	@echo "[$(shell $(LIBR)/count.sh)] CC $(shell basename $<)"
+	@echo "[$(shell $(LIBR)/count.sh):$(shell basename)] CC $<"
 	@$(CC) -c $(CFLAGS) -o $@ $<
 else
 	$(CC) -c $(CFLAGS) -o $@ $<
