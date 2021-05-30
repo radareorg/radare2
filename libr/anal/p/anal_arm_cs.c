@@ -1080,8 +1080,9 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 			r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s", 
 				shift, mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
 		} else {
+			int dimsize = size % 64;
 			r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s,0x%"PFMT64x",&,|,%s%s", 
-				mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
+				mask, REG64 (n), regc, VEC64_MASK (shift, dimsize), REG64 (n), regc);
 		}
 	} else {
 		r_strbuf_appendf (sb, "%s", REG64 (n));
