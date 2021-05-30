@@ -32,7 +32,7 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 		if (!b) {
 			return NULL;
 		}
-		free (sb->buf);
+	//	free (sb->buf);
 		sb->buf = b;
 		sb->size = newsize;
 	}
