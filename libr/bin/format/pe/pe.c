@@ -2727,6 +2727,9 @@ static void bin_pe_init_rich_info(struct PE_(r_bin_pe_obj_t) *bin) {
 	bin->rich_header_offset = bin->nt_header_offset;
 	ut64 off = bin->nt_header_offset - sizeof (ut32);
 	ut32 magic = 0x68636952; // Rich
+	if (off % sizeof (ut32)) {
+		return;
+	}
 	while ((r_buf_read_le32_at (bin->b, off) != magic) && off) {
 		off -= sizeof (ut32);
 	}
