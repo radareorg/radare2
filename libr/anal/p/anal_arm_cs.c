@@ -29,6 +29,7 @@
 #define HASMEMINDEX(x) (insn->detail->arm.operands[x].mem.index != ARM_REG_INVALID)
 #define MEMINDEX64(x) r_str_getf (cs_reg_name (*handle, insn->detail->arm64.operands[x].mem.index))
 #define HASMEMINDEX64(x) (insn->detail->arm64.operands[x].mem.index != ARM64_REG_INVALID)
+#define ISMEMINDEXSUB(x) insn->detail->arm.operands[x].subtracted
 #define MEMDISP(x) insn->detail->arm.operands[x].mem.disp
 #define MEMDISP64(x) (ut64)insn->detail->arm64.operands[x].mem.disp
 #define ISIMM(x) (insn->detail->arm.operands[x].type == ARM_OP_IMM)
@@ -54,9 +55,10 @@
 #define SHIFTTYPE(x) insn->detail->arm.operands[x].shift.type
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
+#define ISWRITEBACK32() insn->detail->arm.writeback
+#define ISPREINDEX32() ((OPCOUNT() == 2) && (ISMEM(1)) && (ISWRITEBACK32())) || ((OPCOUNT() == 3) && (ISMEM(2)) && (ISWRITEBACK32()))
+#define ISPOSTINDEX32() ((OPCOUNT() == 3) && (ISIMM(2) || ISREG(2)) && (ISWRITEBACK32())) || ((OPCOUNT() == 4) && (ISIMM(3) || ISREG(3)) && (ISWRITEBACK32()))
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
-#define ISPREINDEX32() ((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64()))
-#define ISPOSTINDEX32() ((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64()))
 #define ISPREINDEX64() ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64()))
 #define ISPOSTINDEX64() ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64()))
 
@@ -2793,39 +2795,43 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 				const char *pc = "$$";
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(2);
-				if (HASMEMINDEX(2)) {
-				    r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						pcdelta, pc, MEMINDEX(2), REG(0), REG(1));
-				} else if (ISREG(2)) {
-					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						pcdelta, pc, MEMINDEX(2), REG(0), REG(1));
+				if (HASMEMINDEX(2) || ISREG(2)) {
+				    const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
+				    r_strbuf_appendf (&op->esil, "%s,2,2,%d,%s,+,>>,<<,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						MEMINDEX(2), pcdelta, pc, op_index, REG(0), REG(1));
 				} else {
 					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						pcdelta, pc, MEMDISP(2), REG(0), REG(1));
 				}
 			} else {
 				if (HASMEMINDEX(2)) {	// e.g. `ldrd r2, r3 [r4, r1]`
-					r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
-						MEMINDEX (2), MEMBASE (2), REG (0), REG (1));
+				    const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
+					r_strbuf_appendf (&op->esil, "%s,%s,%c,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
+						MEMINDEX (2), MEMBASE (2), op_index, REG (0), REG (1));
 				} else {
 					r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,DUP,[4],%s,=,4,+,[4],%s,=",
 						MEMDISP (2), MEMBASE (2), REG (0), REG (1));
 				}
 				if (insn->detail->arm.writeback) {
-					if (ISIMM (3)) {
-						r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
-							MEMBASE (2), IMM (3), MEMBASE (2));
-					} else if (HASMEMINDEX(2)) {
-					    r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=",
-							MEMBASE (2), MEMINDEX (2), MEMBASE (2));
-					} else if (ISREG(3)) {
-					    r_strbuf_appendf (&op->esil, ",%s,%s,+,%s,=",
-							MEMBASE (2), REG (3), MEMBASE (2));
-					} else {
-						r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
-							MEMBASE (2), MEMDISP (2), MEMBASE (2));
-					}
-					
+				    if(ISPOSTINDEX32()) {
+				        if (ISIMM (3)) {
+						    r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
+							    MEMBASE (2), IMM (3), MEMBASE (2));
+					    } else {
+					        const char op_index = ISMEMINDEXSUB(3) ? '-' : '+';
+					        r_strbuf_appendf (&op->esil, ",%s,%s,%c,%s,=",
+							    REG (3), MEMBASE (2), op_index, MEMBASE (2));
+					    }
+				    } else if (ISPREINDEX32()) {
+				        if (HASMEMINDEX(2)) {
+					        const char op_index = ISMEMINDEXSUB(2) ? '-' : '+';
+					        r_strbuf_appendf (&op->esil, ",%s,%s,%c,%s,=",
+							    MEMINDEX (2), MEMBASE (2), op_index, MEMBASE (2));
+					    } else {
+					        r_strbuf_appendf (&op->esil, ",%s,%d,+,%s,=",
+							    MEMBASE (2), MEMDISP (2), MEMBASE (2));
+					    }
+				    }				
 				}
 			}
 		}
