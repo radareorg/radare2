@@ -156,9 +156,15 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	r_anal_esil_setup (esil, core->anal, false, false, false);
 	// esil->anal = core->anal;
 	r_anal_esil_set_pc (esil, core->offset);
+	char *expr = NULL;
+	bool refresh = false;
 	for (;;) {
+		R_FREE (expr);
 		r_cons_clear00 ();
-		const char *expr = NULL;
+		if (refresh) {
+			x = 0;
+			refresh = false;
+		}
 		if (input) {
 			expr = strdup (input);
 		} else {
@@ -181,7 +187,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			char *op = colorize_asm_string (core, r_asm_op_get_asm (&asmop), analopType, core->offset);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
-			expr = r_strbuf_get (&analop.esil);
+			expr = strdup (r_strbuf_get (&analop.esil));
 		}
 	{
 			r_cons_printf (Color_RESET"esil: %s\n"Color_RESET, expr);
@@ -191,7 +197,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			free (word);
 			word = r_str_ndup (expr + (wp?(wp+1):0), (wp2 - wp) - (wp?1:0));
 			if (wp == wp2) {
-				x = 0;
+				refresh = true;
 			}
 			const char *pad = r_str_pad ('-', wp2 - ((wp > 0)? wp + 1: 0));
 			r_cons_printf (Color_RESET"      %s%s\n"Color_RESET, pas, pad);
@@ -324,6 +330,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		}
 	}
 beach:
+	free (expr);
 	r_reg_arena_pop (core->anal->reg);
 	r_anal_esil_free (esil);
 	free (word);
