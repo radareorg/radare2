@@ -56,7 +56,7 @@
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
 #define ISWRITEBACK32() insn->detail->arm.writeback
-#define ISPREINDEX32() ((OPCOUNT () == 2) && (ISMEM (1)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 3) && (ISMEM (2)) && (ISWRITEBACK32 ()))
+#define ISPREINDEX32() (((OPCOUNT () == 2) && (ISMEM (1)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 3) && (ISMEM (2)) && (ISWRITEBACK32 ())))
 #define ISPOSTINDEX32() ((OPCOUNT () == 3) && (ISIMM (2) || ISREG (2)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 4) && (ISIMM (3) || ISREG (3)) && (ISWRITEBACK32 ()))
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
 #define ISPREINDEX64() ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64()))
