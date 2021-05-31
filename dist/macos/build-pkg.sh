@@ -23,6 +23,7 @@ export CFLAGS=-O2
 ./configure --prefix="${PREFIX}" --without-libuv || exit 1
 ${MAKE} -j4 || exit 1
 # TODO: run sys/install.sh
+${MAKE} macos-sign
 ${MAKE} install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1
 if [ -d "${SRC}" ]; then
 	(

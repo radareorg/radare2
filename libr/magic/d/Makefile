@@ -2,10 +2,11 @@ include ../../config.mk
 
 MAGICDIR=${DESTDIR}${DATADIR}/radare2/${VERSION}/magic
 
+all: $(F_SDB)
+
 install: ${F_SDB}
-	-rm -rf "$(MAGICDIR)"
 	mkdir -p "$(MAGICDIR)"
-	cp -f default/* "${MAGICDIR}"
+	for a in default/* ; do readlink "$(MAGICDIR)";  if [ $$? != 0 ]; then cp -f $$a "${MAGICDIR}" ; fi ; done
 
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}

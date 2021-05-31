@@ -8,6 +8,7 @@
 #endif
 return strdup (
 "=PC	pc\n"
+"=SN	x16\n"
 "=SP	sp\n" // XXX
 "=BP	x30\n" // XXX
 "=A0	x0\n"
@@ -87,8 +88,11 @@ return strdup (
 "gpr	lr	.64	236	0\n" // LR
 "gpr	sp	.64	240	0\n" // SP
 "gpr	pc	.64	248	0\n" // PC
-"gpr	pstate	.64	256	0\n" // FLAGS
-// TODO flags
-"gpr	nf	.1	.2176	0	sign\n" // XXX wrong offset
+// "gpr	pstate	.64	256	0\n" // FLAGS
+"gpr	pstate	.64	256	0   _____tfiae_____________j__qvczn\n" // x0
+"gpr	vf	.1	256.28	0	overflow\n" // set if overflows
+"gpr	cf	.1	256.29	0	carry\n" // set if last op carries
+"gpr	zf	.1	256.30	0	zero\n" // set if last op is 0
+"gpr	nf	.1	256.31	0	sign\n" // msb bit of last op
 );
 
