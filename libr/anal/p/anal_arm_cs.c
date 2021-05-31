@@ -59,8 +59,8 @@
 #define ISPREINDEX32() (((OPCOUNT () == 2) && (ISMEM (1)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 3) && (ISMEM (2)) && (ISWRITEBACK32 ())))
 #define ISPOSTINDEX32() (((OPCOUNT () == 3) && (ISIMM (2) || ISREG (2)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 4) && (ISIMM (3) || ISREG (3)) && (ISWRITEBACK32 ())))
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
-#define ISPREINDEX64() ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64()))
-#define ISPOSTINDEX64() ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64()))
+#define ISPREINDEX64() (((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64())))
+#define ISPOSTINDEX64() (((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64())))
 
 static HtUU *ht_itblock = NULL;
 static HtUU *ht_it = NULL;
@@ -1692,13 +1692,13 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
-				if (ISPREINDEX32()) {
+				if (ISPREINDEX64()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64 (1));
 				}
 
 				r_strbuf_appendf (&op->esil, ",[%d],%s,=", size, REG64 (0));
 
-				if (ISPOSTINDEX32()) {
+				if (ISPOSTINDEX64()) {
 					if (ISREG64 (2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64 (2), REG64 (1));
 					} else {
@@ -1785,13 +1785,13 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
-				if (ISPREINDEX32()) {
+				if (ISPREINDEX64()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64 (1));
 				}
 
 				r_strbuf_appendf (&op->esil, ",[%d],~,%s,=", size, REG64 (0));
 				
-				if (ISPOSTINDEX32()) {
+				if (ISPOSTINDEX64()) {
 					if (ISREG64 (2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64 (2), REG64 (1));
 					} else {
@@ -1913,13 +1913,13 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
-				if (ISPREINDEX32()) {
+				if (ISPREINDEX64()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64 (1));
 				}
 
 				r_strbuf_appendf (&op->esil, ",=[%d]", size);
 
-				if (ISPOSTINDEX32()) {
+				if (ISPOSTINDEX64()) {
 					if (ISREG64 (2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64 (2), REG64 (1));
 					} else {
@@ -3441,10 +3441,10 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM64 (3);
-		} else if (ISPREINDEX32 () && REGBASE64 (1) == ARM64_REG_SP) {
+		} else if (ISPREINDEX64 () && REGBASE64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -MEMDISP64 (1);
-		} else if (ISPOSTINDEX32 () && REGID64 (1) == ARM64_REG_SP) {
+		} else if (ISPOSTINDEX64 () && REGID64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM64 (2);
 		}
@@ -3467,10 +3467,10 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM64 (3);
-		} else if (ISPREINDEX32 () && REGBASE64 (1) == ARM64_REG_SP) {
+		} else if (ISPREINDEX64 () && REGBASE64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -MEMDISP64 (1);
-		} else if (ISPOSTINDEX32 () && REGID64 (1) == ARM64_REG_SP) {
+		} else if (ISPOSTINDEX64 () && REGID64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM64 (2);
 		}
