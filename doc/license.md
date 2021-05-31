@@ -77,8 +77,7 @@ should be copied to `./plugins.cfg` before calling `./configure-plugins` to take
 
 ### Less restrictive than LGPL
 
-* libr/asm/arch/gnu: GPLv2
-* libr/bin/mangling/cxx: GPLv2
+* libr/bin/mangling/cxx: GPLv2 or later, with linking exception
 * shlr/capstone: BSD + LLVM
 * shlr/zip/zip: BSD
 * shlr/zip/zlib: BSD
