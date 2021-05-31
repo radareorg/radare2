@@ -1791,7 +1791,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 				r_strbuf_appendf (&op->esil, ",[%d],~,%s,=", size, REG64 (0));
 				
-				if (ISPOSTINDEX64()) {
+				if (ISPOSTINDEX64 ()) {
 					if (ISREG64 (2)) { // not sure if register valued post indexing exists?
 						r_strbuf_appendf (&op->esil, ",tmp,%s,+,%s,=", REG64 (2), REG64 (1));
 					} else {
