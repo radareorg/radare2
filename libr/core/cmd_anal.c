@@ -10110,7 +10110,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			r_cons_clear_line (1);
-			bool cfg_debug = r_config_get_i (core->config, "cfg.debug");
+			bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa"
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
 					oldstr = r_print_rowlog (core->print, "Find function and symbol names from golang binaries (aang)");
@@ -10178,10 +10178,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				if (r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
+				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 					r_core_cmd0 (core, "aav");
 					r_core_task_yield (&core->tasks);
-					if (r_config_get_b (core->config, "cfg.debug")) {
+					if (cfg_debug) {
 						oldstr = r_print_rowlog (core->print, "Skipping function emulation in debugger mode (aaef)");
 						// nothing to do
 						r_print_rowlog_done (core->print, oldstr);
@@ -10229,7 +10229,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
 				}
-				if (r_config_get_b (core->config, "cfg.debug")) {
+				if (cfg_debug) {
 					oldstr = r_print_rowlog (core->print, "Skipping type matching analysis in debugger mode (aaft)");
 					// nothing to do
 					r_print_rowlog_done (core->print, oldstr);
