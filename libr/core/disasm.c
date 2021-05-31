@@ -520,7 +520,9 @@ static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *forma
 		if (!nl) {
 			break;
 		}
-		r_cons_newline ();
+		if (!ds->show_comment_right && nl) {
+			r_cons_newline ();
+		}
 		first = false;
 		p = nl + 1;
 	}

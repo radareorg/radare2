@@ -1356,7 +1356,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 									const char *a = r_str_pad (' ', 8 + (p->cols * 4));
 									printfmt ("%s; %s", a, q);
 								}
-								p->cb_printf ("\n");
+						// 		p->cb_printf ("\n");
 
 								if (!nl) {
 									break;
@@ -1366,7 +1366,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							free (s);
 						} else {
 							printfmt ("%s ; %s", a, comment);
-							p->cb_printf ("\n");
+							// p->cb_printf ("\n");
 						}
 						free (comment);
 					}
