@@ -97,6 +97,18 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
 		// TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
+		case SIGABRT: // 6 / SIGIOT // SIGABRT
+			dbg->reason.type = R_DEBUG_REASON_ABORT;
+			break;
+		case SIGCHLD:
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
+			break;
+		case SIGINT:
+			dbg->reason.type = R_DEBUG_REASON_USERSUSP;
+			break;
+		case SIGSEGV:
+			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
+			break;
 		case SIGTRAP:
 		{
 			if (dbg->glob_libs || dbg->glob_unlibs) {
@@ -135,18 +147,6 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 				}
 			}
 		} break;
-		case SIGINT:
-			dbg->reason.type = R_DEBUG_REASON_USERSUSP;
-			break;
-		case SIGABRT: // 6 / SIGIOT // SIGABRT
-			dbg->reason.type = R_DEBUG_REASON_ABORT;
-			break;
-		case SIGSEGV:
-			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
-			break;
-		case SIGCHLD:
-			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
-			break;
 		default:
 			break;
 		}
