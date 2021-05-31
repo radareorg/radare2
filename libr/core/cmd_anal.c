@@ -9775,7 +9775,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
 	r_config_set (core->config, "anal.in", "io.maps.x");
-	oldstr = r_print_rowlog (core->print, "Finding xrefs in noncode section with anal.in=io.maps");
+	oldstr = r_print_rowlog (core->print, "Finding xrefs in noncode section (e anal.in=io.maps.x)");
 	r_print_rowlog_done (core->print, oldstr);
 
 	int vsize = 4; // 32bit dword
@@ -9798,7 +9798,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			oldstr = r_print_rowlog (core->print, sdb_fmt ("from 0x%"PFMT64x" to 0x%"PFMT64x" (aav)", r_io_map_begin (map),
+			oldstr = r_print_rowlog (core->print, sdb_fmt ("... from 0x%"PFMT64x" to 0x%"PFMT64x"", r_io_map_begin (map),
 				r_io_map_end (map)));
 			r_print_rowlog_done (core->print, oldstr);
 			(void)r_core_search_value_in_range (core, map->itv,
@@ -10110,7 +10110,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			r_cons_clear_line (1);
-			bool cfg_debug = r_config_get_i (core->config, "cfg.debug");
+			bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
 			if (*input == 'a') { // "aaa"
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
 					oldstr = r_print_rowlog (core->print, "Find function and symbol names from golang binaries (aang)");
@@ -10164,12 +10164,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				if (is_apple_target (core)) {
-					oldstr = r_print_rowlog (core->print, "Check for objc references");
+					oldstr = r_print_rowlog (core->print, "Check for objc references (aao)");
 					r_print_rowlog_done (core->print, oldstr);
 					cmd_anal_objc (core, input + 1, true);
 				}
 				r_core_task_yield (&core->tasks);
-				oldstr = r_print_rowlog (core->print, "Check for vtables");
+				oldstr = r_print_rowlog (core->print, "Finding and parsing C++ vtables (avrr)");
 				r_core_cmd0 (core, "avrr");
 				r_print_rowlog_done (core->print, oldstr);
 				r_core_task_yield (&core->tasks);
@@ -10181,13 +10181,19 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 					r_core_cmd0 (core, "aav");
 					r_core_task_yield (&core->tasks);
-					bool ioCache = r_config_get_i (core->config, "io.pcache");
-					r_config_set_i (core->config, "io.pcache", 1);
-					oldstr = r_print_rowlog (core->print, "Emulate functions to find computed references (aaef)");
-					r_core_cmd0 (core, "aaef");
-					r_print_rowlog_done (core->print, oldstr);
-					r_core_task_yield (&core->tasks);
-					r_config_set_i (core->config, "io.pcache", ioCache);
+					if (cfg_debug) {
+						oldstr = r_print_rowlog (core->print, "Skipping function emulation in debugger mode (aaef)");
+						// nothing to do
+						r_print_rowlog_done (core->print, oldstr);
+					} else {
+						bool ioCache = r_config_get_i (core->config, "io.pcache");
+						r_config_set_i (core->config, "io.pcache", 1);
+						oldstr = r_print_rowlog (core->print, "Emulate functions to find computed references (aaef)");
+						r_core_cmd0 (core, "aaef");
+						r_print_rowlog_done (core->print, oldstr);
+						r_core_task_yield (&core->tasks);
+						r_config_set_i (core->config, "io.pcache", ioCache);
+					}
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
 					}
@@ -10223,13 +10229,18 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);
 				}
-
-				oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
-				r_core_cmd0 (core, "aaft");
-				r_print_rowlog_done (core->print, oldstr);
+				if (cfg_debug) {
+					oldstr = r_print_rowlog (core->print, "Skipping type matching analysis in debugger mode (aaft)");
+					// nothing to do
+					r_print_rowlog_done (core->print, oldstr);
+				} else {
+					oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (aaft)");
+					r_core_cmd0 (core, "aaft");
+					r_print_rowlog_done (core->print, oldstr);
+				}
 				r_core_task_yield (&core->tasks);
 
-				oldstr = r_print_rowlog (core->print, "Propagate noreturn information");
+				oldstr = r_print_rowlog (core->print, "Propagate noreturn information (aanr)");
 				r_core_anal_propagate_noreturn (core, UT64_MAX);
 				r_print_rowlog_done (core->print, oldstr);
 				r_core_task_yield (&core->tasks);
@@ -10242,9 +10253,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 				}
 
-				oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
-				r_print_rowlog_done (core->print, oldstr);
-
 				if (input[1] == 'a') { // "aaaa"
 					if (!didAap) {
 						oldstr = r_print_rowlog (core->print, "Finding function preludes");
@@ -10255,6 +10263,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
 					r_config_set (core->config, "anal.types.constraint", "true");
+					r_print_rowlog_done (core->print, oldstr);
+				} else {
+					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 					r_print_rowlog_done (core->print, oldstr);
 				}
 				r_core_cmd0 (core, "s-");
