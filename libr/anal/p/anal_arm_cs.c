@@ -1785,7 +1785,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 				// I assume the DUPs here previously were to handle preindexing
 				// but it was never finished?
-				if (ISPREINDEX64()) {
+				if (ISPREINDEX64 ()) {
 					r_strbuf_appendf (&op->esil, ",tmp,%s,=", REG64 (1));
 				}
 
