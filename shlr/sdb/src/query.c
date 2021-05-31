@@ -160,10 +160,12 @@ static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns,
 }
 
 SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
-	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
+	bool bufset = false;
+	int i, d, ok, w, alength, is_ref = 0, encode = 0;
 	const char *p, *q, *val = NULL;
-	char *eq, *tmp, *json, *next, *quot, *slash, *res,
-		*cmd, *newcmd = NULL, *original_cmd = NULL;
+	char *eq, *tmp, *json, *next, *quot, *slash, *cmd;
+	char *newcmd = NULL, *original_cmd = NULL;
+	char *res = NULL;
 	Sdb *s = r;
 	ut64 n;
 	if (!s || (!_cmd && !buf)) {
@@ -171,7 +173,7 @@ SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	}
 	StrBuf *out = strbuf_new ();
 	if ((int)len < 1 || !buf) {
-		bufset = 1;
+		bufset = true;
 		buf = malloc ((len = 64));
 		if (!buf) {
 			strbuf_free (out);
@@ -181,7 +183,7 @@ SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	if (_cmd) {
 		cmd = original_cmd = strdup (_cmd);
 		if (!cmd) {
-			free (out);
+			strbuf_free (out);
 			if (bufset) {
 				free (buf);
 			}
@@ -378,7 +380,7 @@ next_quote:
 			if (!buf) {
 				goto fail;
 			}
-			bufset = 1;
+			bufset = true;
 		}
 		*buf = 0;
 		if (cmd[1]=='[') {
@@ -472,7 +474,7 @@ next_quote:
 							goto fail;
 						}
 					}
-					bufset = 1;
+					bufset = true;
 					snprintf (buf, 0xff, "0x%"ULLFMT"x", n);
 				}
 			} else {
@@ -485,7 +487,7 @@ next_quote:
 							goto fail;
 						}
 					}
-					bufset = 1;
+					bufset = true;
 					snprintf (buf, 0xff, "%"ULLFMT"d", n);
 				}
 			}
@@ -683,8 +685,8 @@ next_quote:
 					i = atoi (cmd + 1);
 					buf = sdb_array_get (s, p, i, NULL);
 					if (buf) {
-						bufset = 1;
-						len = strlen(buf) + 1;
+						bufset = true;
+						len = strlen (buf) + 1;
 					}
 					if (encode) {
 						char *newbuf = (void*)sdb_decode (buf, NULL);
@@ -707,7 +709,7 @@ next_quote:
 							out->buf = NULL;
 							goto fail;
 						}
-						bufset = 1;
+						bufset = true;
 						len = wl + 2;
 					}
 					for (i = 0; sval[i]; i++) {
@@ -808,7 +810,7 @@ runNext:
 		if (bufset) {
 			free (buf);
 			buf = NULL;
-			bufset = 0;
+			bufset = false;
 		}
 		cmd = next + 1;
 		encode = 0;
@@ -825,7 +827,7 @@ fail:
 		res = out->buf;
 		free (out);
 	} else {
-		free (out->buf);
+		free (res);
 		res = NULL;
 	}
 	free (original_cmd);

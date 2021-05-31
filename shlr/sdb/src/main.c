@@ -937,9 +937,6 @@ int main(int argc, const char **argv) {
 	MainOptions _mo = {0};
 	MainOptions *mo = &_mo;
 	main_argparse (mo, argc, argv);
-	if (!mo) {
-		return 1;
-	}
 	// -j json return sdb_dump (argv[db0 + 1], MODE_JSON);
 	// -G sdb_dump (argv[db0 + 1], MODE_CGEN); // gperf
 	// -C print C/H files
