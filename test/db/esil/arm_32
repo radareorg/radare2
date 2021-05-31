@@ -567,6 +567,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ldr r0, [r1, 7]!
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar > /dev/null
+ar r0=0
+ar r1=1
+wx 0700b1e5
+wx aaaaaaaabbbbbbbb44332211@4
+aes
+ar r0
+ar r1
+EOF
+EXPECT=<<EOF
+0xbbbbbbbb
+0x00000008
+EOF
+RUN
+
 NAME=ldr r0, [r0, 7]
 FILE=malloc://0x200
 CMDS=<<EOF
@@ -581,6 +601,26 @@ ar r0
 EOF
 EXPECT=<<EOF
 0xbbbbbbaa
+EOF
+RUN
+
+NAME=ldr r0, [r1], 7
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar > /dev/null
+ar r0=0
+ar r1=8
+wx 070091e4
+wx aaaaaaaabbbbbbbb44332211@4
+aes
+ar r0
+ar r1
+EOF
+EXPECT=<<EOF
+0xbbbbbbbb
+0x0000000f
 EOF
 RUN
 
@@ -615,6 +655,61 @@ ar r2
 EOF
 EXPECT=<<EOF
 0xffeeddcc
+EOF
+RUN
+
+NAME=ldr r2, [r3, -r1]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r3=8
+ar r1=2
+wx 012013e7
+wx aabbccddeeff @ 4
+aes
+ar r2
+EOF
+EXPECT=<<EOF
+0xffeeddcc
+EOF
+RUN
+
+NAME=ldr r2, [r3, r1, lsl 1]!
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r3=4
+ar r1=1
+wx 8120b3e7
+wx aabbccddeeff @ 4
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xffeeddcc
+0x00000006
+EOF
+RUN
+
+NAME=ldr r2, [r3], -r1, lsl #1
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=32
+ar r3=6
+ar r1=1
+wx 812013e6
+wx aabbccddeeff @ 4
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xffeeddcc
+0x00000004
 EOF
 RUN
 
