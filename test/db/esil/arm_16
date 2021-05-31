@@ -162,6 +162,109 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ldrd r2, r3, [r1]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar r1=8
+# put value at r1 into r2 and at r1+4 into r3
+wx d1e90023 # ldrd r2,r3,[r1]
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, #4]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar r1=4
+# put value at r1+4 into r2 and at r1+4+4 into r3
+wx d1e90123 # ldrd r2,r3,[r1, 4]
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [pc, #8]
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+# put value at pc+4 into r2 and at pc+4+4 into r3
+wx dfe90223 # ldrd r2, r3, [pc, #8]
+wx ddccbbaa @ 12
+wx efbeadde @ 16
+aes
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1, #4]!
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar r1=4
+# put value at r1+4 into r2 and at r1+4+4 into r3 then put r1+4 into r1
+wx f1e90123 # ldrd r2, r3, [r1, #4]!
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x00000008
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
+NAME=ldrd r2, r3, [r1], #4
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar r1=8
+# put value at r1 into r2 and at r1+4 into r3 then put r1+4 into r1
+wx f1e80123 # ldrd r2,r3,[r1], 4
+wx ddccbbaa @ 8
+wx efbeadde @ 12
+aes
+ar r1
+ar r2
+ar r3
+EOF
+EXPECT=<<EOF
+0x0000000c
+0xaabbccdd
+0xdeadbeef
+EOF
+RUN
+
 NAME=ldm r3!, {r1, r4, r5}
 FILE=malloc://0x200
 CMDS=<<EOF
