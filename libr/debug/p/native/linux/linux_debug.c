@@ -100,6 +100,10 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		case SIGABRT: // 6 / SIGIOT // SIGABRT
 			dbg->reason.type = R_DEBUG_REASON_ABORT;
 			break;
+		case SIGALRM:
+			dbg->reason.type = R_DEBUG_REASON_SIGALRM;
+			alarm(0);
+			break;
 		case SIGCHLD:
 			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
