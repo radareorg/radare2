@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_anal.h>
@@ -1142,15 +1142,9 @@ static bool _sig_bytediff_cb(RLevBuf *va, RLevBuf *vb, ut32 ia, ut32 ib) {
 }
 
 #define lines_addbytesmask(l, sig, index, add, col) \
-	if (col) { \
-		l.bytes = r_str_appendf (l.bytes, " %s%s%02x\x1b[0m", col, r_str_get (add), sig->bytes[index]); \
-		l.mask = r_str_appendf (l.mask, " %s%s%02x\x1b[0m", col, r_str_get (add), sig->mask[index]); \
-		l.land = r_str_appendf (l.land, " %s%s%02x\x1b[0m", col, r_str_get (add), sig->bytes[index] & sig->mask[index]); \
-	} else { \
-		l.bytes = r_str_appendf (l.bytes, " %s%02x", r_str_get (add), sig->bytes[index]); \
-		l.mask = r_str_appendf (l.mask, " %s%02x", r_str_get (add), sig->mask[index]); \
-		l.land = r_str_appendf (l.land, " %s%02x", r_str_get (add), sig->bytes[index] & sig->mask[index]); \
-	} \
+	l.bytes = r_str_appendf (l.bytes, " %s%s%02x%s", r_str_get (col), r_str_get (add), sig->bytes[index], col? Color_RESET: ""); \
+	l.mask = r_str_appendf (l.mask, " %s%s%02x%s", r_str_get (col), r_str_get (add), sig->mask[index], col? Color_RESET: ""); \
+	l.land = r_str_appendf (l.land, " %s%s%02x%s", r_str_get (col), r_str_get (add), sig->bytes[index] & sig->mask[index], col?Color_RESET: ""); \
 	index++;
 
 #define lines_addblnk(l) \
@@ -1189,8 +1183,8 @@ static void print_zig_diff(RCore *c, RSignBytes *ab, RSignBytes *bb, RLevOp *ops
 			if (!printb && (ab->bytes[ia] != bb->bytes[ib] || ab->mask[ia] != bb->mask[ib])) {
 				printb = true;
 			}
-			lines_addbytesmask (al, ab, ia, " ", (char *)NULL);
-			lines_addbytesmask (bl, bb, ib, " ", (char *)NULL);
+			lines_addbytesmask (al, ab, ia, " ", (const char *)NULL);
+			lines_addbytesmask (bl, bb, ib, " ", (const char *)NULL);
 			break;
 		case LEVSUB:
 			lines_addbytesmask (al, ab, ia, " ", colsub);
