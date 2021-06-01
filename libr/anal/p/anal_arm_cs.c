@@ -2922,8 +2922,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 						pcdelta, pc, LSHIFT2(1), MEMINDEX(1), mask, REG(0));
 				} else {
 					if (ISREG(1)) {
-						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
-							pcdelta, pc, MEMINDEX(1), mask, REG(0));
+					    const char op_index = ISMEMINDEXSUB (1)? '-': '+';
+						r_strbuf_appendf (&op->esil, "%s,2,2,%d,%s,+,>>,<<,%c,0xffffffff,&,[4],0x%x,&,%s,=",
+							MEMINDEX(1), pcdelta, pc, op_index, mask, REG(0));
 					} else {
 						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,0xffffffff,&,[4],0x%x,&,%s,=",
 							pcdelta, pc, MEMDISP(1), mask, REG(0));
@@ -2934,8 +2935,9 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 					r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,0xffffffff,&,[4],0x%x,&,%s,=",
 						MEMBASE (1), LSHIFT2 (1), MEMINDEX (1), mask, REG (0));
 				} else if (HASMEMINDEX(1)) {	// e.g. `ldr r2, [r3, r1]`
-					r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
-						MEMINDEX (1), MEMBASE (1), mask, REG (0));
+				    const char op_index = ISMEMINDEXSUB (1)? '-': '+';
+					r_strbuf_appendf (&op->esil, "%s,%s,%c,0xffffffff,&,[4],0x%x,&,%s,=",
+						MEMINDEX (1), MEMBASE (1), op_index, mask, REG (0));
 				} else {
 					r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
 						MEMDISP (1), MEMBASE (1), mask, REG (0));
