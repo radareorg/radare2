@@ -4014,11 +4014,12 @@ R_API int r_core_config_init(RCore *core) {
 	/* RVC */
 	{
 		char *p = r_file_path ("git");
-		bool found = (p && *p == 'g');
-		if (!found) {
+		if (strcmp (p, "git")) {
 			SETCB ("prj.vc.type", "git", &cb_prjvctype, "What should projects use as a vc");
 		} else {
-			//SETCB ("prj.vc.type", "rvc", &cb_prjvctype, "What should projects use as a vc"); //l8er
+			SETBPREF ("prj.vc", "false", "Use your version control system of choice (rvc, git) to manage projects");
+			/*The follwing is just a place holder*/
+			SETCB ("prj.vc.type", "rvc", &cb_prjvctype, "What should projects use as a vc");
 		}
 		free (p);
 	}
