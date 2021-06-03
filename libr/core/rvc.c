@@ -1,9 +1,6 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
-#include <sdb.h>
-#include <r_core.h>
 #include <rvc.h>
-
 static bool is_valid_branch_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
 		return false;

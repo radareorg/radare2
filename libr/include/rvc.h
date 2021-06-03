@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#include <r_core.h>
+#include <sdb.h>
 typedef struct RvcBlob_t {
 	char *fname, *fhash;
 } RvcBlob;
