@@ -1,7 +1,5 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
-#include <sdb.h>
-#include <r_core.h>
 #ifndef R_RVC_H
 #define R_RVC_H 1
 
