@@ -106,6 +106,9 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		case SIGCHLD:
 			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
+		case SIGBUS:
+			dbg->reason.type = R_DEBUG_REASON_SIGBUS;
+			break;
 		case SIGINT:
 			dbg->reason.type = R_DEBUG_REASON_USERSUSP;
 			break;
