@@ -203,20 +203,16 @@ R_API RListIter *r_list_item_new(void *data) {
 }
 
 R_API RListIter *r_list_append(RList *list, void *data) {
-	RListIter *item = NULL;
-
 	r_return_val_if_fail (list, NULL);
 
-	item = R_NEW (RListIter);
+	RListIter *item = r_list_item_new (data);
 	if (!item) {
-		return item;
+		return NULL;
 	}
 	if (list->tail) {
 		list->tail->n = item;
 	}
-	item->data = data;
 	item->p = list->tail;
-	item->n = NULL;
 	list->tail = item;
 	if (!list->head) {
 		list->head = item;
@@ -229,41 +225,38 @@ R_API RListIter *r_list_append(RList *list, void *data) {
 R_API RListIter *r_list_prepend(RList *list, void *data) {
 	r_return_val_if_fail (list, NULL);
 
-	RListIter *item = R_NEW0 (RListIter);
+	RListIter *item = r_list_item_new (data);
 	if (!item) {
 		return NULL;
 	}
 	if (list->head) {
 		list->head->p = item;
 	}
-	item->data = data;
 	item->n = list->head;
-	item->p = NULL;
 	list->head = item;
 	if (!list->tail) {
 		list->tail = item;
 	}
 	list->length++;
-	list->sorted = true;
+	list->sorted = false;
 	return item;
 }
 
-R_API RListIter *r_list_insert(RList *list, int n, void *data) {
-	RListIter *it, *item;
-	int i;
-
+R_API RListIter *r_list_insert(RList *list, ut32 n, void *data) {
 	r_return_val_if_fail (list, NULL);
 
 	if (!list->head || !n) {
 		return r_list_prepend (list, data);
 	}
+
+	RListIter *it;
+	ut32 i;
 	for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
 		if (i == n) {
-			item = R_NEW (RListIter);
+			RListIter *item = r_list_item_new (data);
 			if (!item) {
 				return NULL;
 			}
-			item->data = data;
 			item->n = it;
 			item->p = it->p;
 			if (it->p) {
@@ -357,6 +350,26 @@ R_API void *r_list_get_bottom(const RList *list) {
 	r_return_val_if_fail (list, NULL);
 
 	return list->head ? list->head->data : NULL;
+}
+
+// Moves an iter to the top(tail) of the list
+// There is an underlying assumption here, that iter is an RListIter of this RList
+R_API void r_list_iter_to_top(RList *list, RListIter *iter) {
+	r_return_if_fail (list && iter);
+	if (list->tail == iter) {
+		return;
+	}
+	iter->n->p = iter->p;
+	if (list->head == iter) {
+		list->head = iter->n;
+	} else {
+		iter->p->n = iter->n;
+	}
+	iter->p = list->tail;
+	list->tail->n = iter;
+	iter->n = NULL;
+	list->tail = iter;
+	list->sorted = false;
 }
 
 R_API void r_list_reverse(RList *list) {
