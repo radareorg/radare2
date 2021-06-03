@@ -72,7 +72,7 @@ static bool bfadd(RList *dst, const char *path, const char *rp) {
 		return false;
 	}
 	blob->fhash = sha256_file (absp);
-	if (blob->fhash) {
+	if (!blob->fhash) {
 		free (absp);
 		free (blob->fname);
 		free (blob);
@@ -294,8 +294,8 @@ R_API bool r_vc_new(const char *path) {
 	if (!vcp) {
 		return false;
 	}
-	commitp = r_str_newf ("%s" R_SYS_DIR "commits", path);
-	blobsp = r_str_newf ("%s" R_SYS_DIR "blobs", path);
+	commitp = r_str_newf ("%s" R_SYS_DIR "commits", vcp);
+	blobsp = r_str_newf ("%s" R_SYS_DIR "blobs", vcp);
 	if (!commitp || !blobsp) {
 		free (commitp);
 		free (blobsp);
