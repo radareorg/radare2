@@ -264,7 +264,7 @@ R_API RListIter *r_list_insert(RList *list, ut32 n, void *data) {
 			}
 			it->p = item;
 			list->length++;
-			list->sorted = true;
+			list->sorted = false;
 			return item;
 		}
 	}
