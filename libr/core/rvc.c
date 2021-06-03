@@ -137,8 +137,7 @@ static RList *blobs_add(const RList *paths, const char *rp) {
 }
 
 /*This Function Is Probably Somehow Broken*/
-static char *write_commit(const char *rp, const char *message, const char *auth,
-		RList *blobs) {
+static char *write_commit(const char *rp, const char *message, const char *auth, RList *blobs) {
 	RvcBlob *blob;
 	RListIter *iter;
 	char *commit_path, *commit_hash;
