@@ -263,7 +263,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				b = malloc (strlen (opt.arg) + 1);
 				len = r_hex_str2bin (p, b);
 				if (len > 0) {
-					r_egg_patch (es->e, off, (const ut8*)b, len);
+					r_egg_patch (es->e, off, (const ut8 *)b, len);
 				} else {
 					eprintf ("Invalid hexstr for -w\n");
 				}
@@ -278,13 +278,13 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			{
 			ut32 n = r_num_math (NULL, opt.arg);
 			append = 1;
-			r_egg_patch (es->e, -1, (const ut8*)&n, 4);
+			r_egg_patch (es->e, -1, (const ut8 *)&n, 4);
 			}
 			break;
 		case 'N':
 			{
 			ut64 n = r_num_math (NULL, opt.arg);
-			r_egg_patch (es->e, -1, (const ut8*)&n, 8);
+			r_egg_patch (es->e, -1, (const ut8 *)&n, 8);
 			append = 1;
 			}
 			break;
@@ -298,7 +298,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				n = r_num_math (NULL, p + 1);
 				*p = ':';
 				// TODO: honor endianness here
-				r_egg_patch (es->e, off, (const ut8*)&n, 4);
+				r_egg_patch (es->e, off, (const ut8 *)&n, 4);
 			} else {
 				eprintf ("Missing colon in -d\n");
 			}
@@ -311,7 +311,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 				ut64 n, off = r_num_math (NULL, opt.arg);
 				n = r_num_math (NULL, p + 1);
 				// TODO: honor endianness here
-				r_egg_patch (es->e, off, (const ut8*)&n, 8);
+				r_egg_patch (es->e, off, (const ut8 *)&n, 8);
 			} else {
 				eprintf ("Missing colon in -d\n");
 			}
@@ -480,7 +480,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 			size_t l;
 			char *buf = r_file_slurp (textFile, &l);
 			if (buf && l > 0) {
-				r_egg_raw (es->e, (const ut8*)buf, (int)l);
+				r_egg_raw (es->e, (const ut8 *)buf, (int)l);
 			} else {
 				eprintf ("Error loading '%s'\n", textFile);
 			}
@@ -523,7 +523,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	if (str) {
 		int l = strlen (str);
 		if (l > 0) {
-			r_egg_raw (es->e, (const ut8*)str, l);
+			r_egg_raw (es->e, (const ut8 *)str, l);
 		}
 	}
 
@@ -532,7 +532,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		size_t l;
 		char *buf = r_file_slurp (contents, &l);
 		if (buf && l > 0) {
-			r_egg_raw (es->e, (const ut8*)buf, (int)l);
+			r_egg_raw (es->e, (const ut8 *)buf, (int)l);
 		} else {
 			eprintf ("Error loading '%s'\n", contents);
 		}
