@@ -3,6 +3,7 @@
 #include <sdb.h>
 #include <r_core.h>
 #include <rvc.h>
+
 static bool is_valid_branch_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
 		return false;
@@ -111,25 +112,6 @@ static bool bfadd(RList *dst, const char *path, const char *rp) {
 	return true;
 }
 
-static bool is_committed(const char *rp, const char *path) {
-	Sdb *db = sdb_new0 ();
-	if (!db) {
-		return false;
-	}
-	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
-			"branches.sdb", rp);
-	if (!dbp) {
-		sdb_free (db);
-		return false;
-	}
-	if (!sdb_open (db, dbp)) {
-		free (dbp);
-		sdb_free (db);
-		return false;
-	}
-	free (dbp);
-}
-
 static RList *blobs_add(const RList *paths, const char *rp) {
 	RList *ret;
 	RListIter *iter;
@@ -177,7 +159,7 @@ static char *write_commit(const char *rp, const char *message, const char *auth,
 		}
 	}
 	commit_hash = find_sha256 ((unsigned char *)
-			content, r_str_len_utf8 (commit_hash));
+			content, r_str_len_utf8 (content));
 	if (!commit_hash) {
 		free (content);
 		return false;

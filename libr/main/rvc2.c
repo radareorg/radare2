@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2021 - pancake */
 #include <rvc.h>
-
+/*
 static void rvc2_show_help(void) {
 	printf ("Usage: rvc2 [action] [file ...]\n"
 		" init            initialize repository in current directory\n"
@@ -92,3 +92,4 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 	}
 	return 0;
 }
+*/
