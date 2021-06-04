@@ -668,6 +668,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_SIGBUS: return "bus-error-signal";
 	case R_DEBUG_REASON_SIGCHLD: return "child-terminated-signal";
 	case R_DEBUG_REASON_SIGCONT: return "continue-signal";
+	case R_DEBUG_REASON_SIGFPE: return "arithemtic-error-signal";
 #ifdef __sparc
 	case R_DEBUG_REASON_SIGEMT: return "hardware-error-signal";
 #endif
