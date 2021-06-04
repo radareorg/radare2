@@ -672,6 +672,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 #ifdef __sparc
 	case R_DEBUG_REASON_SIGEMT: return "hardware-error-signal";
 #endif
+	case R_DEBUG_REASON_SIGILL: return "incorrectly-formed-machine-language-instruction-signal";
 	}
 	return "unhandled";
 }
