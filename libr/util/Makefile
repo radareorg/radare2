@@ -73,6 +73,7 @@ endif
 
 EXTRA_PRE+=spp_config
 EXTRA_PRE+=charsets
+EXTRA_CLEAN=doclean
 
 include ../rules.mk
 include sdb.mk
@@ -81,6 +82,10 @@ include spp.mk
 charsets:
 	$(MAKE) -C d
 .PHONY: charsets
+
+doclean:
+	$(MAKE) -C d clean
+.PHONY: doclean
 
 sync-regex regex-sync:
 	-rm -rf src/
