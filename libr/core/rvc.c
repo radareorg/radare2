@@ -111,6 +111,25 @@ static bool bfadd(RList *dst, const char *path, const char *rp) {
 	return true;
 }
 
+static bool bdadd(const char *rp, const char *dir, RList *dst) {
+	char *path;
+	RListIter *iter;
+	RList *files = r_file_lsrf (dir);
+	if (!files) {
+		return false;
+	}
+	r_list_foreach (files, iter, path) {
+		if (r_file_is_directory (path)) {
+			continue;
+		}
+		if (!bfadd (dst, path, rp)) {
+			break;
+		}
+	}
+	r_list_free (files);
+	return false;
+}
+
 static RList *blobs_add(const RList *paths, const char *rp) {
 	RList *ret;
 	RListIter *iter;
@@ -127,6 +146,11 @@ static RList *blobs_add(const RList *paths, const char *rp) {
 			break;
 		}
 		if (is_dir) {
+			if (!bdadd (rp, path, ret)) {
+				free_blobs (ret);
+				ret = NULL;
+				break;
+			}
 			continue;
 		}
 		if (!bfadd (ret, path, rp)) {
