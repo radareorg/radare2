@@ -43,16 +43,14 @@ static int __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 }
 
 static void __load_plugins(REggState *es) {
-	char *tmp = r_sys_getenv ("RAGG2_NOPLUGINS");
-	if (tmp) {
-		free (tmp);
+	if (r_sys_getenv_asbool ("RAGG2_NOPLUGINS")) {
 		return;
 	}
 
 	r_lib_add_handler (es->l, R_LIB_TYPE_EGG, "egg plugins", &__lib_egg_cb, NULL, es);
 
 	char *path = r_sys_getenv (R_LIB_ENV);
-	if (path && *path) {
+	if (!R_STR_ISEMPTY (path)) {
 		r_lib_opendir (es->l, path);
 	}
 
@@ -72,7 +70,6 @@ static void __load_plugins(REggState *es) {
 	free (extrasdir);
 	free (bindingsdir);
 
-	free (tmp);
 	free (path);
 }
 
