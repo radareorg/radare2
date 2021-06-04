@@ -20,6 +20,7 @@ if get_option('enable_tests')
     'bitmap',
     'buf',
     'cmd',
+    'cmd_str',
     'cons',
     'contrbtree',
     'debruijn',
