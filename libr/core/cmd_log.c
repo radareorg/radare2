@@ -11,16 +11,17 @@ static const char *help_msg_L[] = {
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
-	"Ll", "", "list lang plugins (same as #!)",
-	"LL", "", "lock screen",
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
-	"Le", "", "list esil plugins",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
 	"LD", "", "list supported decompilers (e cmd.pdc=?)",
-	"Lm", "", "list fs plugins (same as mL)",
+	"Le", "", "list esil plugins",
+	"Lg", "", "list egg plugins",
 	"Lh", "", "list hash plugins (same as ph)",
 	"Li", "", "list bin plugins (same as iL)",
+	"Ll", "", "list lang plugins (same as #!)",
+	"LL", "", "lock screen",
+	"Lm", "", "list fs plugins (same as mL)",
 	"Lo", "", "list io plugins (same as oL)",
 	"Lp", "", "list parser plugins (e asm.parser=?)",
 	NULL
@@ -364,6 +365,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'L': // "LL"
 		screenlock (core);
+		break;
+	case 'g': // "Lg"
+		r_core_cmd0 (core, "gL");
 		break;
 	case 'o': // "Lo"
 	case 'i': // "Li"

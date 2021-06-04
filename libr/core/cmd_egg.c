@@ -11,7 +11,7 @@ static const char *help_msg_g[] = {
 	"gw", "", "Compile and write",
 	"gc", " cmd=/bin/ls", "Set config option for shellcodes and encoders",
 	"gc", "", "List all config options",
-	"gl", "[?]", "List plugins (shellcodes, encoders)",
+	"gL", "[?]", "List plugins (shellcodes, encoders)",
 	"gs", " name args", "Compile syscall name(args)",
 	"gi", " [type]", "Define the shellcode type",
 	"gp", " padding", "Define padding for command",
@@ -219,6 +219,7 @@ static int cmd_egg(void *data, const char *input) {
 			eprintf ("Usage: gi [shellcode-type]\n");
 		}
 		break;
+	case 'L': // "gL"
 	case 'l': // "gl"
 	{
 		RListIter *iter;
