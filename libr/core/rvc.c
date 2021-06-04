@@ -42,7 +42,7 @@ static void free_blobs (RList *blobs) {
 	r_list_free (blobs);
 }
 
-static char *absp2rp(const char *absp, const char *rp) {
+static char *absp2rp(const char *rp, const char *absp) {
 	char *arp = r_file_abspath (rp);
 	if (!arp) {
 		return NULL;
@@ -54,7 +54,7 @@ static char *absp2rp(const char *absp, const char *rp) {
 	return r_str_new (absp + r_str_len_utf8 (arp));
 }
 
-static bool bfadd(RList *dst, const char *path, const char *rp) {
+static bool bfadd(const char *rp, RList *dst, const char *path) {
 	RvcBlob *blob;
 	char *absp;
 	char *blob_path;
@@ -122,7 +122,7 @@ static bool bdadd(const char *rp, const char *dir, RList *dst) {
 		if (r_file_is_directory (path)) {
 			continue;
 		}
-		if (!bfadd (dst, path, rp)) {
+		if (!bfadd (rp, dst, path)) {
 			break;
 		}
 	}
@@ -130,7 +130,7 @@ static bool bdadd(const char *rp, const char *dir, RList *dst) {
 	return false;
 }
 
-static RList *blobs_add(const RList *paths, const char *rp) {
+static RList *blobs_add(const char *rp, const RList *paths) {
 	RList *ret;
 	RListIter *iter;
 	char *path;
@@ -153,7 +153,7 @@ static RList *blobs_add(const RList *paths, const char *rp) {
 			}
 			continue;
 		}
-		if (!bfadd (ret, path, rp)) {
+		if (!bfadd (rp, ret, path)) {
 			free_blobs (ret);
 			ret = NULL;
 			break;
@@ -215,7 +215,7 @@ static char *write_commit(const char *rp, const char *message, const char *auth,
 
 R_API bool r_vc_commit(const char *rp, const char *message, const char *auth, RList *files) {
 	char *commit_hash;
-	RList *blobs = blobs_add (files, rp);
+	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
 	}
