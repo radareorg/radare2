@@ -673,6 +673,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_SIGEMT: return "hardware-error-signal";
 #endif
 	case R_DEBUG_REASON_SIGILL: return "incorrectly-formed-machine-language-instruction-signal";
+	case R_DEBUG_REASON_SIGINFO: return "get-foreground-process-group-signal";
 	}
 	return "unhandled";
 }
