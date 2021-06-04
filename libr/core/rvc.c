@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
 #include <rvc.h>
+#define FIRST_BRANCH "master"
+
 static bool is_valid_branch_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
 		return false;
@@ -117,7 +119,7 @@ static RList *blobs_add(const RList *paths, const char *rp) {
 	if (!ret) {
 		return NULL;
 	}
-	r_list_foreach (ret, iter, path) {
+	r_list_foreach (paths, iter, path) {
 		bool is_dir = r_file_is_directory (path);
 		if (!is_dir && !r_file_exists (path)) {
 			free_blobs (ret);
@@ -187,8 +189,7 @@ static char *write_commit(const char *rp, const char *message, const char *auth,
 
 }
 
-R_API bool r_vc_commit(const char *rp, const char *message, const char *auth,
-		RList *files) {
+R_API bool r_vc_commit(const char *rp, const char *message, const char *auth, RList *files) {
 	char *commit_hash;
 	RList *blobs = blobs_add (files, rp);
 	if (!blobs) {
@@ -215,7 +216,11 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *auth,
 			free (commit_hash);
 			return false;
 		}
-		sdb_open (db, dbf);
+		if (sdb_open (db, dbf) < 0) {
+			free_blobs (blobs);
+			free (commit_hash);
+			return false;
+		}
 		free (dbf);
 		current_branch = sdb_get (db, "current_branch", 0);
 		if (!current_branch) {
@@ -308,18 +313,18 @@ R_API bool r_vc_new(const char *path) {
 	}
 	free (commitp);
 	free (blobsp);
-	db = sdb_new (vcp, "branches.db", 0);
+	db = sdb_new (vcp, "branches.sdb", 0);
 	free (vcp);
 	if (!db) {
 		eprintf ("Can't create The RVC branches database");
 		return false;
 	}
-	if (!sdb_set (db, "master", ",", 0)) { //Is this how you create an empty list?
+	if (!sdb_set (db, FIRST_BRANCH, "", 0)) { //Is this how you create an empty list?
 		sdb_unlink (db);
 		sdb_free (db);
 		return false;
 	}
-	if (!sdb_set (db, "current_branch", "master", 0)) {
+	if (!sdb_set (db, "current_branch", FIRST_BRANCH, 0)) {
 		sdb_unlink (db);
 		sdb_free (db);
 		return false;
