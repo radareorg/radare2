@@ -666,6 +666,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_USERSUSP: return "suspended-by-user";
 	case R_DEBUG_REASON_SIGALRM: return "alarm-signal";
 	case R_DEBUG_REASON_SIGBUS: return "bus-error-signal";
+	case R_DEBUG_REASON_SIGCHLD: return "child-terminated-signal";
 	}
 	return "unhandled";
 }
