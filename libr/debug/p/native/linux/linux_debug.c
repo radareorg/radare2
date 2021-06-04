@@ -103,15 +103,20 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		case SIGALRM:
 			dbg->reason.type = R_DEBUG_REASON_SIGALRM;
 			break;
-		case SIGCHLD:
-			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
-			break;
 		case SIGBUS:
 			dbg->reason.type = R_DEBUG_REASON_SIGBUS;
 			break;
 		case SIGCHLD:
 			dbg->reason.type = R_DEBUG_REASON_SIGCHLD;
 			break;
+		case SIGCONT:
+			dbg->reason.type = R_DEBUG_REASON_SIGCONT;
+			break;
+#if __sparc__
+		case SIGEMT:
+			dbg->reason.type = R_DEBUG_REASON_SIGEMT;
+			break;
+#endif
 		case SIGINT:
 			dbg->reason.type = R_DEBUG_REASON_USERSUSP;
 			break;
