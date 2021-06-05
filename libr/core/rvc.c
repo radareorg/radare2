@@ -43,6 +43,7 @@ static void free_blobs (RList *blobs) {
 }
 
 static char *absp2rp(const char *rp, const char *absp) {
+	char *ret;
 	char *arp = r_file_abspath (rp);
 	if (!arp) {
 		return NULL;
@@ -67,7 +68,7 @@ static bool bfadd(const char *rp, RList *dst, const char *path) {
 		free (blob);
 		return false;
 	}
-	blob->fname = absp2rp (path, rp);
+	blob->fname = absp2rp (rp, path);
 	if (!blob->fname) {
 		free (absp);
 		free (blob);
@@ -163,12 +164,12 @@ static RList *blobs_add(const char *rp, const RList *paths) {
 }
 
 /*This Function Is Probably Somehow Broken*/
-static char *write_commit(const char *rp, const char *message, const char *auth, RList *blobs) {
+static char *write_commit(const char *rp, const char *message, const char *author, RList *blobs) {
 	RvcBlob *blob;
 	RListIter *iter;
 	char *commit_path, *commit_hash;
 	char *content = r_str_newf ("message=%s\nauthor=%s\n----", message,
-			auth);
+			author);
 	FILE *commitf;
 	if (!content) {
 		return false;
@@ -213,21 +214,21 @@ static char *write_commit(const char *rp, const char *message, const char *auth,
 
 }
 
-R_API bool r_vc_commit(const char *rp, const char *message, const char *auth, RList *files) {
+R_API bool r_vc_commit(const char *rp, const char *message, const char *author, RList *files) {
 	char *commit_hash;
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
 	}
-	commit_hash = write_commit (rp, message, auth, blobs);
+	commit_hash = write_commit (rp, message, author, blobs);
 	if (!commit_hash) {
 		free_blobs (blobs);
 		return false;
 	}
 	{
-		Sdb *db = sdb_new0 ();
 		char *dbf;
-		char *current_branch;
+		const char *current_branch;
+		Sdb *db = sdb_new0 ();
 		if (!db) {
 			free_blobs (blobs);
 			free (commit_hash);
@@ -236,32 +237,36 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *auth, RL
 		dbf = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "branches.sdb",
 				rp);
 		if (!dbf) {
+			sdb_unlink (db);
+			sdb_free (db);
 			free_blobs (blobs);
 			free (commit_hash);
 			return false;
 		}
 		if (sdb_open (db, dbf) < 0) {
+			sdb_unlink (db);
+			sdb_free (db);
 			free_blobs (blobs);
 			free (commit_hash);
+			free (dbf);
 			return false;
 		}
 		free (dbf);
-		current_branch = sdb_get (db, "current_branch", 0);
-		if (!current_branch) {
+		current_branch = sdb_const_get (db, "current_branch", 0);
+		if (sdb_set (db, commit_hash, sdb_const_get (db, current_branch, 0), 0) < 0) {
+			sdb_unlink (db);
+			sdb_free (db);
 			free_blobs (blobs);
 			free (commit_hash);
-			sdb_free (db);
 			return false;
 		}
-		if (!sdb_array_push (db, current_branch, commit_hash, 0)) {
+		if (sdb_set(db, current_branch, commit_hash, 0) < 0) {
+			sdb_unlink (db);
+			sdb_free (db);
 			free_blobs (blobs);
 			free (commit_hash);
-			sdb_close (db);
-			sdb_free (db);
-			free (current_branch);
 			return false;
 		}
-		free (current_branch);
 		sdb_sync (db);
 		sdb_unlink (db);
 		sdb_free (db);
@@ -273,8 +278,8 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *auth, RL
 
 
 R_API bool r_vc_branch(const char *rp, const char *bname) {
-	char *current_branch;
-	char *commits;
+	const char *current_branch;
+	const char *commits;
 	char *dbp;
 	Sdb *db;
 	if (!is_valid_branch_name (bname)) {
@@ -295,20 +300,17 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 		return false;
 	}
 	free (dbp);
-	current_branch = sdb_get (db, "current_branch", 0);
+	current_branch = sdb_const_get (db, "current_branch", 0);
 	if (!current_branch) {
 		sdb_free (db);
 		return false;
 	}
-	commits = sdb_get (db, current_branch, 0);
+	commits = sdb_const_get (db, current_branch, 0);
 	if (!commits) {
 		sdb_free (db);
-		free (current_branch);
 		return false;
 	}
-	free (current_branch);
 	sdb_set (db, bname, commits, 0);
-	free (commits);
 	sdb_sync (db);
 	sdb_unlink (db);
 	sdb_free (db);
