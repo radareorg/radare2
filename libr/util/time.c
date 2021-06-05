@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2007-2021 - pancake, thestr4ng3r */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -36,11 +36,13 @@ R_API ut64 r_time_now_mono(void) {
 	static mach_timebase_info_data_t tb;
 	mach_timebase_info (&tb);
 	return ((ticks * tb.numer) / tb.denom) / R_NSEC_PER_USEC;
-#else
+#elif HAS_CLOCK_MONOTONIC
 	struct timespec now;
 	clock_gettime (CLOCK_MONOTONIC, &now);
 	return now.tv_sec * R_USEC_PER_SEC
 		+ now.tv_nsec / R_NSEC_PER_USEC;
+#else
+	return r_time_now ();
 #endif
 }
 
