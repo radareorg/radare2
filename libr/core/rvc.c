@@ -43,7 +43,6 @@ static void free_blobs (RList *blobs) {
 }
 
 static char *absp2rp(const char *rp, const char *absp) {
-	char *ret;
 	char *arp = r_file_abspath (rp);
 	if (!arp) {
 		return NULL;
