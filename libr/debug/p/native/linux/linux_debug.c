@@ -144,10 +144,23 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		case SIGPROF:
 			dbg->reason.type = R_DEBUG_REASON_SIGPROF;
 			break;
-
-
+		case SIGQUIT:
+			dbg->reason.type = R_DEBUG_REASON_SIGQUIT;
+			break;
 		case SIGSEGV:
 			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
+			break;
+		case SIGSTKFLT:
+			dbg->reason.type = R_DEBUG_REASON_SIGSTKFLT;
+			break;
+		case SIGSTOP:
+			dbg->reason.type = R_DEBUG_REASON_SIGSTOP;
+			break;
+		case SIGSYS:
+			dbg->reason.type = R_DEBUG_REASON_SIGSYS;
+			break;
+		case SIGTERM:
+			dbg->reason.type = R_DEBUG_REASON_SIGTERM;
 			break;
 		case SIGTRAP:
 		{
