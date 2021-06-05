@@ -217,7 +217,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	REggState *es = __es_new ();
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "n:N:he:a:b:f:o:sxXrk:FOI:Li:c:p:P:B:C:vd:D:w:zq:S:");
+	r_getopt_init (&opt, argc, argv, "a:b:B:c:C:d:D:e:E:f:Fhi:I:k:Ln:N:o:Op:P:q:rsS:vw:xX:z");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
