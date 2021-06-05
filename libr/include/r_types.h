@@ -580,10 +580,22 @@ typedef enum {
 	R_SYS_ARCH_RISCV
 } RSysArch;
 
-#if HAVE_CLOCK_NANOSLEEP && CLOCK_MONOTONIC && (__linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000))
-#define HAS_CLOCK_NANOSLEEP 1
-#else
+#define MONOTONIC_LINUX (__linux__ && _POSIX_C_SOURCE >= 199309L)
+#define MONOTONIC_FREEBSD (__FreeBSD__ && __FreeBSD_version >= 1101000)
+#define MONOTONIC_NETBSD (__NetBSD__ && __NetBSD_Version__ >= 700000000)
+#define MONOTONIC_APPLE (__APPLE__ && CLOCK_MONOTONIC_RAW)
+#define MONOTONIC_UNIX (MONOTONIC_APPLE || MONOTONIC_LINUX || MONOTONIC_FREEBSD || MONOTONIC_NETBSD)
+
+
 #define HAS_CLOCK_NANOSLEEP 0
+#if CLOCK_MONOTONIC && MONOTONIC_UNIX
+# define HAS_CLOCK_MONOTONIC 1
+# if HAVE_CLOCK_NANOSLEEP
+#  undef HAS_CLOCK_NANOSLEEP
+#  define HAS_CLOCK_NANOSLEEP 1
+# endif
+#else
+# define HAS_CLOCK_MONOTONIC 0
 #endif
 
 /* os */

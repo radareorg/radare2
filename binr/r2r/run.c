@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2021 - thestr4ng3r */
 
 #include "r2r.h"
 
@@ -34,8 +34,13 @@ static bool create_pipe_overlap(HANDLE *pipe_read, HANDLE *pipe_write, LPSECURIT
 	return true;
 }
 
-R_API bool r2r_subprocess_init(void) { return true; }
-R_API void r2r_subprocess_fini(void) {}
+R_API bool r2r_subprocess_init(void) {
+	return true;
+}
+
+R_API void r2r_subprocess_fini(void) {
+	// nothing to do
+}
 
 // Create an env block that inherits the current vars but overrides the given ones
 static LPWCH override_env(const char *envvars[], const char *envvals[], size_t env_size) {
@@ -391,7 +396,7 @@ static RThread *sigchld_thread;
 
 static void handle_sigchld(int sig) {
 	ut8 b = 1;
-	write (sigchld_pipe[1], &b, 1);
+	(void)write (sigchld_pipe[1], &b, 1);
 }
 
 static RThreadFunctionRet sigchld_th(RThread *th) {
@@ -423,6 +428,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				R2RSubprocess *p = *it;
 				if (p->pid == pid) {
 					proc = p;
+					r_th_lock_leave (subprocs_mutex);
 					break;
 				}
 			}
@@ -437,7 +443,10 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				proc->ret = -1;
 			}
 			ut8 r = 0;
-			write (proc->killpipe[1], &r, 1);
+			if (write (proc->killpipe[1], &r, 1) != 1) {
+				r_th_lock_leave (subprocs_mutex);
+				break;
+			}
 			r_th_lock_leave (subprocs_mutex);
 		}
 	}
@@ -474,7 +483,7 @@ R_API bool r2r_subprocess_init(void) {
 R_API void r2r_subprocess_fini(void) {
 	r_sys_signal (SIGCHLD, SIG_IGN);
 	ut8 b = 0;
-	write (sigchld_pipe[1], &b, 1);
+	(void)write (sigchld_pipe[1], &b, 1);
 	close (sigchld_pipe [1]);
 	r_th_wait (sigchld_thread);
 	close (sigchld_pipe [0]);
@@ -713,7 +722,7 @@ R_API void r2r_subprocess_kill(R2RSubprocess *proc) {
 }
 
 R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_t buf_size) {
-	write (proc->stdin_fd, buf, buf_size);
+	(void)write (proc->stdin_fd, buf, buf_size);
 	close (proc->stdin_fd);
 	proc->stdin_fd = -1;
 }
