@@ -11,7 +11,8 @@ extern "C" {
 #include <r_core.h>
 #include <sdb.h>
 typedef struct RvcBlob_t {
-	char *fname, *fhash;
+	char *fname;
+	char *fhash;
 } RvcBlob;
 R_API int r_vc_git_init(const char *path);
 R_API bool r_vc_git_branch(const char *path, const char *name);
