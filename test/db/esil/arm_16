@@ -162,6 +162,44 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ldr r0, [r1, 6]!
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r1=2
+wx 51f8060f
+wx aaaaaaaabbbbbbbb44332211@4
+aes
+ar r0
+ar r1
+EOF
+EXPECT=<<EOF
+0xbbbbbbbb
+0x00000008
+EOF
+RUN
+
+NAME=ldr r0, [r1], -4
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+ar > /dev/null
+ar r1=8
+wx 51f80409
+wx aaaaaaaabbbbbbbb44332211@4
+aes
+ar r0
+ar r1
+EOF
+EXPECT=<<EOF
+0xbbbbbbbb
+0x00000004
+EOF
+RUN
+
 NAME=ldrd r2, r3, [r1]
 FILE=malloc://0x200
 CMDS=<<EOF
