@@ -640,8 +640,8 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 R_API const char *r_debug_reason_to_string(int type) {
 	switch (type) {
 	case R_DEBUG_REASON_DEAD: return "dead";
-	case R_DEBUG_REASON_ABORT: return "Aborted";
-	case R_DEBUG_REASON_SEGFAULT: return "Segmentation fault";
+	case R_DEBUG_REASON_ABORT: return "abort";
+	case R_DEBUG_REASON_SEGFAULT: return "segfault";
 	case R_DEBUG_REASON_NONE: return "none";
 	case R_DEBUG_REASON_SIGNAL: return "signal";
 	case R_DEBUG_REASON_BREAKPOINT: return "breakpoint";
