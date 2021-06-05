@@ -18,7 +18,6 @@ static int printMode = 0;
 static bool snowMode = false;
 static RList *snows = NULL;
 static int color = 1;
-static int debug = 1;
 static int zoom = 0;
 
 typedef struct {
@@ -3675,7 +3674,6 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		case R_CORE_VISUAL_MODE_DB: // pd+dbg
 		{
 			int bsize = core->cons->rows * 5;
-
 			if (core->print->screen_bounds > 1) {
 				// estimate new blocksize with the size of the last
 				// printed instructions
@@ -4141,8 +4139,11 @@ static void visual_refresh(RCore *core) {
 			char *cmd_result = r_core_cmd_str (core, cmd_str);
 			cmd_result = r_str_ansi_crop (cmd_result, 0, 0, split_w, -1);
 			r_cons_strcat (cmd_result);
+			free (cmd_result);
 		} else {
-			r_core_cmd0 (core, cmd_str);
+			char *res = r_core_cmd_str (core, cmd_str);
+			r_cons_strcat (res);
+			free (res);
 		}
 	}
 	core->print->cur_enabled = ce;
@@ -4338,7 +4339,6 @@ dodo:
 		if (color) {
 			flags |= R_PRINT_FLAGS_COLOR;
 		}
-		debug = r_config_get_b (core->config, "cfg.debug");
 		flags |= R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
 		r_print_set_flags (core->print, flags);
 		scrseek = r_num_math (core->num,
@@ -4346,7 +4346,7 @@ dodo:
 		if (scrseek != 0LL) {
 			r_core_seek (core, scrseek, true);
 		}
-		if (debug) {
+		if (r_config_get_b (core->config, "cfg.debug")) {
 			r_core_cmd (core, ".dr*", 0);
 		}
 #if 0
@@ -4356,6 +4356,7 @@ dodo:
 		}
 #endif
 		core->print->vflush = !skip;
+
 		visual_refresh (core);
 		if (insert_mode_enabled (core)) {
 			goto dodo;
