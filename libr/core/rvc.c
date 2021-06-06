@@ -162,7 +162,6 @@ static RList *blobs_add(const char *rp, const RList *paths) {
 	return ret;
 }
 
-/*This Function Is Probably Somehow Broken*/
 static char *write_commit(const char *rp, const char *message, const char *author, RList *blobs) {
 	RvcBlob *blob;
 	RListIter *iter;
@@ -344,7 +343,7 @@ R_API bool r_vc_new(const char *path) {
 		eprintf ("Can't create The RVC branches database");
 		return false;
 	}
-	if (!sdb_set (db, FIRST_BRANCH, "", 0)) { //Is this how you create an empty list?
+	if (!sdb_set (db, FIRST_BRANCH, "", 0)) {
 		sdb_unlink (db);
 		sdb_free (db);
 		return false;
