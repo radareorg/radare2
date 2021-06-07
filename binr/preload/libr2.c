@@ -39,8 +39,9 @@ static void _libwrap_init(void) {
 	char *web;
 	r_sys_signal (SIGUSR1, sigusr1);
 	r_sys_signal (SIGUSR2, sigusr2);
-	printf ("libr2 initialized. send SIGUSR1 to %d in order to reach the r2 prompt\n", getpid ());
-	printf ("kill -USR1 %d\n", getpid ());
+	int pid = r_sys_getpid ();
+	printf ("libr2 initialized. send SIGUSR1 to %d in order to reach the r2 prompt\n", pid);
+	printf ("kill -USR1 %d\n", pid);
 	fflush (stdout);
 	web = r_sys_getenv ("RARUN2_WEB");
 	core = r_core_new ();

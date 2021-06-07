@@ -444,7 +444,7 @@ static void signal_handler(int signum) {
 	if (!crash_handler_cmd) {
 		return;
 	}
-	snprintf (cmd, sizeof(cmd) - 1, crash_handler_cmd, getpid ());
+	snprintf (cmd, sizeof(cmd) - 1, crash_handler_cmd, r_sys_getpid ());
 	r_sys_backtrace ();
 	exit (r_sys_cmd (cmd));
 }

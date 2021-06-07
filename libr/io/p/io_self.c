@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2020 - pancake */
+/* radare - LGPL - Copyright 2014-2021 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -153,7 +153,7 @@ static int update_self_regions(RIO *io, int pid) {
 #elif __sun && defined _LP64
 	char path[PATH_MAX];
 	int err;
-	pid_t self = getpid ();
+	pid_t self = r_sys_getpid ();
 	struct ps_prochandle *Pself = Pgrab(self, PGRAB_RDONLY, &err);
 
 	if (!Pself) {
@@ -264,7 +264,7 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	int ret, pid = getpid ();
+	int ret, pid = r_sys_getpid ();
 	if (r_sandbox_enable (0)) {
 		return NULL;
 	}
@@ -321,7 +321,7 @@ static int __close(RIODesc *fd) {
 static void got_alarm(int sig) {
 #if !defined(__WINDOWS__)
 	// !!! may die if not running from r2preload !!! //
-	kill (getpid (), SIGUSR1);
+	kill (r_sys_getpid (), SIGUSR1);
 #endif
 }
 
@@ -337,7 +337,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			return NULL;
 		}
 		/* do nothing here */
-		kill (getpid (), SIGKILL);
+		kill (r_sys_getpid (), SIGKILL);
 #endif
 	} else if (!strncmp (cmd, "call ", 5)) {
 		size_t cbptr = 0;
