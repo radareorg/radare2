@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2020 - pancake */
+/* radare2 - LGPL - Copyright 2013-2021 - pancake */
 
 #include "index.h"
 #include <r_main.h>
@@ -96,7 +96,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		}
 	}
 #if USE_IOS_JETSAM
-	memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0);
+	memorystatus_control (MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, r_sys_getpid (), 256, NULL, 0);
 #endif
 	if (dodaemon) {
 #if LIBC_HAVE_FORK

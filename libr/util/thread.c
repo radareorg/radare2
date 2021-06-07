@@ -177,7 +177,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 	pset_create (&c);
 	pset_assign (c, cpuid, NULL);
 
-	if (pset_bind (c, P_PID, getpid (), NULL)) {
+	if (pset_bind (c, P_PID, r_sys_getpid (), NULL)) {
 		pset_destroy (c);
 		eprintf ("Failed to set cpu affinity\n");
 		return false;
