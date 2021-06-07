@@ -43,6 +43,7 @@ static void free_blobs (RList *blobs) {
 }
 
 static char *absp2rp(const char *rp, const char *absp) {
+	char *ret;
 	char *arp = r_file_abspath (rp);
 	if (!arp) {
 		return NULL;
@@ -51,7 +52,18 @@ static char *absp2rp(const char *rp, const char *absp) {
 		free (arp);
 		return NULL;
 	}
-	return r_str_new (absp + r_str_len_utf8 (arp));
+ 	ret = r_str_new (absp + r_str_len_utf8 (arp));
+	free (arp);
+	return ret;
+}
+
+static char *rp2absp(const char *rp, const char *path) {
+	char *ret;
+	char *arp = r_file_abspath (rp);
+	if (!arp) {
+		return NULL;
+	}
+	return r_str_appendf (arp, R_SYS_DIR "%s", path);
 }
 
 static bool bfadd(const char *rp, RList *dst, const char *path) {
