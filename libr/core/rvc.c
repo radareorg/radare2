@@ -2,6 +2,7 @@
 
 #include <rvc.h>
 #define FIRST_BRANCH "master"
+//TODO:Move most str literals into preprocesor directives
 
 static bool is_valid_branch_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
@@ -57,14 +58,15 @@ static char *absp2rp(const char *rp, const char *absp) {
 	return ret;
 }
 
-static char *rp2absp(const char *rp, const char *path) {
-	char *ret;
+char *rp2absp(const char *rp, const char *path) {
 	char *arp = r_file_abspath (rp);
 	if (!arp) {
 		return NULL;
 	}
 	return r_str_appendf (arp, R_SYS_DIR "%s", path);
 }
+
+//TODO:Make the tree related functions abit cleaner & more efficient
 
 static RList *get_commits(Sdb *db, const size_t max_num) {
 	char *i;
@@ -120,7 +122,7 @@ static bool update_blob(RList *blobs, RvcBlob *blob) {
 	return found ? true : !!(r_list_append (blobs, blob)); //!! is the only way I found that doesnt trigger a warnning;
 }
 
-static RList *get_current_tree (const char *rp) {
+RList *get_current_tree (const char *rp) {
 	Sdb *db = sdb_new0 ();
 	if (!db) {
 		return NULL;
