@@ -30,6 +30,11 @@ R_API RListIter *r_list_iter_get_next(RListIter *list) {
 	return list->n;
 }
 
+R_API RListIter *r_list_iter_get_prev(RListIter *list) {
+	r_return_val_if_fail (list, NULL);
+	return list->p;
+}
+
 R_API void *r_list_iter_get_data(RListIter *list) {
 	r_return_val_if_fail (list, NULL);
 	return list->data;
