@@ -52,7 +52,7 @@ static char *absp2rp(const char *rp, const char *absp) {
 		free (arp);
 		return NULL;
 	}
- 	ret = r_str_new (absp + r_str_len_utf8 (arp));
+	ret = r_str_new (absp + r_str_len_utf8 (arp));
 	free (arp);
 	return ret;
 }
@@ -87,6 +87,119 @@ static RList *get_commits(Sdb *db, const size_t max_num) {
 		if ((max_num && ret->length >= max_num) || !*i) {
 			ret = NULL;
 			break;
+		}
+	}
+	return ret;
+}
+
+bool delete_blob(RList *blobs, const char *hash) {
+	RListIter *iter, *tmp;
+	RvcBlob *current;
+	r_list_foreach_safe (blobs, iter, tmp, current) {
+		if (strcmp (current->fhash, hash)) {
+			continue;
+		}
+		r_list_delete (blobs, iter);
+		return true;
+	}
+	return false;
+}
+
+static bool update_blob(RList *blobs, RvcBlob *blob) {
+	RListIter *iter;
+	RvcBlob *current;
+	bool found = false;
+	r_list_foreach (blobs, iter, current) {
+		if (strcmp (current->fname, blob->fname)) {
+			continue;
+		}
+		free (iter->data);
+		iter->data = blob;
+		found = true;
+	}
+	return found ? true : !!(r_list_append (blobs, blob)); //!! is the only way I found that doesnt trigger a warnning;
+}
+
+static RList *get_current_tree (const char *rp) {
+	Sdb *db = sdb_new0 ();
+	if (!db) {
+		return NULL;
+	}
+	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" "branches.sdb", rp);
+	if (!dbp) {
+		sdb_free (db);
+		return NULL;
+	}
+	if (sdb_open (db, dbp) < 0) {
+		free (dbp);
+		sdb_free (db);
+		return NULL;
+	}
+	free (dbp);
+	RList *commits = get_commits (db, 0);
+	if (!commits) {
+		sdb_free (db);
+		return NULL;
+	}
+	sdb_unlink (db);
+	sdb_free (db);
+	char *hash;
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	RListIter *i;
+	r_list_foreach (commits, i, hash) {
+		char *cp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
+				"commits" R_SYS_DIR "%s", rp, hash);
+		if (!cp) {
+			break;
+		}
+		char *content = r_file_slurp (cp, 0);
+		if (!content) {
+			r_list_free (ret);
+			ret = NULL;
+		}
+		RList *lines = r_str_split_duplist (content, "\n", false);
+		free (content);
+		if (!lines) {
+			r_list_free (ret);
+			break;
+		}
+		RListIter *j;
+		char *ln;
+		r_list_foreach (lines, j, ln) {
+			if (r_str_cmp (ln, "blobs=", r_str_len_utf8 ("blobs="))) {
+				continue;
+			}
+			RvcBlob *blob =  R_NEW (RvcBlob);
+			if (!blob) {
+				free_blobs (ret);
+				break;
+			}
+			char *kv = strchr (ln, '=') + 1;
+			blob->fhash = strchr(kv, '=') + 1;
+			size_t klen = blob->fhash - kv;
+			blob->fname = malloc ((klen + 1) * sizeof (char));
+			blob->fhash = r_str_new (blob->fhash);
+			if (!blob->fname || !blob->fhash) {
+				free (blob->fname);
+				free (blob->fhash);
+				free (blob);
+				free_blobs (ret);
+			}
+			strncpy (blob->fname, kv, klen);
+			if (*blob->fname == '-') {
+				delete_blob (ret, blob->fhash);
+			}
+			if (!update_blob (ret, blob)) {
+				free (blob->fhash);
+				free (blob->fname);
+				free_blobs (ret);
+				ret = NULL;
+				break;
+			}
+			r_list_free (lines);
 		}
 	}
 	return ret;
