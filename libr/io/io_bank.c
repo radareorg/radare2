@@ -428,11 +428,10 @@ found:
 		// now check for each deleted submap if a lower map intersects with it
 		// and create new submaps accordingly, and fill the gaps
 		sm = r_queue_dequeue (bank->todo);
-		// TODO: implement r_list_iter_get_prev
-		RListIter *ator = iter->p;
+		RListIter *ator = r_list_iter_get_prev (iter);
 		while (ator) {
 			map = r_io_map_get_by_ref (io, (RIOMapRef *)ator->data);
-			ator = ator->p;
+			ator = r_list_iter_get_prev (ator);
 			if (!map) {
 				// if this happens, something is fucked up, and no submap should be inserted
 				continue;
