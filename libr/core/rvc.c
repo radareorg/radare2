@@ -66,6 +66,32 @@ static char *rp2absp(const char *rp, const char *path) {
 	return r_str_appendf (arp, R_SYS_DIR "%s", path);
 }
 
+static RList *get_commits(Sdb *db, const size_t max_num) {
+	char *i;
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	i = sdb_get (db, sdb_const_get (db, "current_branch", 0), 0);
+	while (true) {
+		if (!r_list_prepend (ret, i)) {
+			r_list_free (ret);
+			break;
+		}
+		i = sdb_get (db, ret->tail->data, 0);
+		if (!i || !*i) {
+			r_list_free (ret);
+			ret = NULL;
+			break;
+		}
+		if ((max_num && ret->length >= max_num) || !*i) {
+			ret = NULL;
+			break;
+		}
+	}
+	return ret;
+}
+
 static bool bfadd(const char *rp, RList *dst, const char *path) {
 	RvcBlob *blob;
 	char *absp;
@@ -173,6 +199,7 @@ static RList *blobs_add(const char *rp, const RList *paths) {
 	}
 	return ret;
 }
+
 
 static char *write_commit(const char *rp, const char *message, const char *author, RList *blobs) {
 	RvcBlob *blob;
