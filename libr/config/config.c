@@ -130,7 +130,7 @@ static void config_print_node(RConfig *cfg, RConfigNode *node, const char *pfx, 
 	} else {
 		if (verbose) {
 			cfg->cb_printf ("%s%s = %s%s %s; %s", pfx,
-				node->name, node->value, sfx, 
+				node->name, node->value, sfx,
 				r_config_node_is_ro (node) ? "(ro)" : "",
 				node->desc);
 			if (node->options && !r_list_empty (node->options)) {
@@ -411,15 +411,14 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 		if (node->value) {
 			ov = strdup (node->value);
 			if (!ov) {
-				goto beach;
+				return node;
 			}
 		} else {
-			free (node->value);
 			node->value = strdup ("");
 		}
 		if (r_config_node_is_bool (node)) {
 			bool b = r_str_is_true (value);
-			node->i_value = b? 1: 0;
+			node->i_value = b;
 			char *value = strdup (r_str_bool (b));
 			if (value) {
 				free (node->value);
