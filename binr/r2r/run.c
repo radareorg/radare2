@@ -418,9 +418,9 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 		while (true) {
 			int wstat;
 			pid_t pid = waitpid (-1, &wstat, WNOHANG);
-			if (pid <= 0)
+			if (pid <= 0) {
 				break;
-
+			}
 			r_th_lock_enter (subprocs_mutex);
 			void **it;
 			R2RSubprocess *proc = NULL;
@@ -444,10 +444,8 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			}
 			ut8 r = 0;
 			if (write (proc->killpipe[1], &r, 1) != 1) {
-				r_th_lock_leave (subprocs_mutex);
 				break;
 			}
-			r_th_lock_leave (subprocs_mutex);
 		}
 	}
 	return R_TH_STOP;
