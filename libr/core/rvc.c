@@ -2,14 +2,17 @@
 
 #include <rvc.h>
 #define FIRST_BRANCH "master"
-//TODO:Move most str literals into preprocesor directives
+#define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
+#define COMMIT_BLOB_SEP "----"
+#define DBNAME "branches.sdb"
+#define CURRENTB "current_branch"
 
 static bool is_valid_branch_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
 		return false;
 	}
 	for (; *name; name++) {
-		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
+		if (NOT_SPECIAL (*name)) {
 			continue;
 		}
 		return false;
@@ -77,7 +80,7 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 		r_list_free (ret);
 		return NULL;
 	}
-	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "branches.sdb",
+	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME,
 			rp);
 	if (!dbp) {
 		r_list_free (ret);
@@ -91,7 +94,7 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 		return NULL;
 	}
 	free (dbp);
-	i = sdb_get (db, sdb_const_get (db, "current_branch", 0), 0);
+	i = sdb_get (db, sdb_const_get (db, CURRENTB, 0), 0);
 	while (true) {
 		if (!r_list_prepend (ret, i)) {
 			r_list_free (ret);
@@ -182,7 +185,7 @@ static RList *get_blobs(const char *rp) {
 		bool found = false;
 		r_list_foreach (lines, j, ln) {
 			if (!found) {
-				found = !r_str_cmp (ln, "----", r_str_len_utf8 ("----"));
+				found = !r_str_cmp (ln, COMMIT_BLOB_SEP, r_str_len_utf8 (COMMIT_BLOB_SEP));
 				continue;
 			}
 			RvcBlob *blob = R_NEW (RvcBlob);
@@ -450,7 +453,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 			free (commit_hash);
 			return false;
 		}
-		dbf = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "branches.sdb",
+		dbf = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME,
 				rp);
 		if (!dbf) {
 			sdb_unlink (db);
@@ -468,7 +471,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 			return false;
 		}
 		free (dbf);
-		current_branch = sdb_const_get (db, "current_branch", 0);
+		current_branch = sdb_const_get (db, CURRENTB, 0);
 		if (sdb_set (db, commit_hash, sdb_const_get (db, current_branch, 0), 0) < 0) {
 			sdb_unlink (db);
 			sdb_free (db);
@@ -492,7 +495,6 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	return true;
 }
 
-
 R_API bool r_vc_branch(const char *rp, const char *bname) {
 	const char *current_branch;
 	const char *commits;
@@ -501,7 +503,7 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 	if (!is_valid_branch_name (bname)) {
 		return false;
 	}
-	dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "branches.sdb", rp);
+	dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
 	if (!dbp) {
 		return false;
 	}
@@ -516,7 +518,7 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 		return false;
 	}
 	free (dbp);
-	current_branch = sdb_const_get (db, "current_branch", 0);
+	current_branch = sdb_const_get (db, CURRENTB, 0);
 	if (!current_branch) {
 		sdb_free (db);
 		return false;
@@ -555,7 +557,7 @@ R_API bool r_vc_new(const char *path) {
 	}
 	free (commitp);
 	free (blobsp);
-	db = sdb_new (vcp, "branches.sdb", 0);
+	db = sdb_new (vcp, DBNAME, 0);
 	free (vcp);
 	if (!db) {
 		eprintf ("Can't create The RVC branches database");
@@ -566,7 +568,7 @@ R_API bool r_vc_new(const char *path) {
 		sdb_free (db);
 		return false;
 	}
-	if (!sdb_set (db, "current_branch", FIRST_BRANCH, 0)) {
+	if (!sdb_set (db, CURRENTB, FIRST_BRANCH, 0)) {
 		sdb_unlink (db);
 		sdb_free (db);
 		return false;
