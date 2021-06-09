@@ -55,6 +55,7 @@ in.h=input halfword
 in.w=input word
 jal=jump and link
 jarl=jump and register link
+callt=call interrupt table entry at given address
 jmp=jump register
 jr=jump relative
 ld.b=load signed byte
