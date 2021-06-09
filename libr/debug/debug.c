@@ -684,6 +684,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_SIGSTOP: return "[X]+  Stopped";
 	case R_DEBUG_REASON_SIGSYS: return "Bad system call";
 	case R_DEBUG_REASON_SIGTERM: return "Terminated";
+	case R_DEBUG_REASON_SIGTSTP: return "Stopped";
 	}
 	return "unhandled";
 }

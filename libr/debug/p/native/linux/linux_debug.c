@@ -200,6 +200,9 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 				}
 			}
 		} break;
+		case SIGTSTP:
+			dbg->reason.type = R_DEBUG_REASON_SIGSTP;
+			break;
 		default:
 			break;
 		}
