@@ -27,7 +27,7 @@ static const char *r2v_body = \
 	"  unsafe {\n"
 	"    o := C.r_core_cmd_str (core, s.str)\n"
 	"    if o != 0 {\n"
-	"      strs := o.vstring()\n"
+	"      strs := o.vstring().clone()\n"
 	"      free(o)\n"
 	"      return strs\n"
 	"    }\n"
