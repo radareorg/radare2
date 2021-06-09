@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2021 - pancake */
 #include <rvc.h>
-/*
+
 static void rvc2_show_help(void) {
 	printf ("Usage: rvc2 [action] [file ...]\n"
 		" init            initialize repository in current directory\n"
@@ -41,55 +41,85 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 		eprintf ("TODO: r_vc_new should accept options argument\n");
 	}
 	const char *action = (opt.ind < argc)? opt.arg: NULL;
-	if (action) {
-		if (!strcmp (action, "init")) {
-			char *path = r_sys_getdir ();
-			Rvc *vc = r_vc_new (path);
-			if (vc) {
-				r_vc_free (vc);
-				return 0;
-			}
-			return 1;
-		} else if (!strcmp (action, "branch")) {
-			char *path = r_sys_getdir ();
-			Rvc *vc = r_vc_new (path);
-			if (vc) {
-				if (opt.ind + 1 < argc) {
-					const char *name = argv[opt.ind + 1];
-					r_vc_branch (vc, name);
-				} else {
-					RListIter *iter;
-					RvcBranch *b;
-					r_list_foreach (vc->branches, iter, b) {
-						printf ("%s  %s\n", b->head->hash, b->name);
-					}
-				}
-				r_vc_free (vc);
-				return 0;
-			}
-			return 1;
-		} else if (!strcmp (action, "add")) {
-			char *path = r_sys_getdir ();
-			Rvc *vc = r_vc_new (path);
-			if (vc) {
-				int i;
-				RList *files = r_list_newf (free);
-				for (i = opt.ind ; i < argc; i++) {
-					r_list_append (files, strdup (argv[i]));
-				}
-				RList *blobs = r_vc_add (vc, files); // print the blobs?
-				RListIter *iter;
-				RvcBlob *b;
-				r_list_foreach (blobs, iter, b) {
-					printf ("%s  %s\n", b->hash, b->fname);
-				}
-				r_list_free (files);
-				r_vc_free (vc);
-				return 0;
-			}
-			return 1;
-		}
+	if (!action) {
+		return -1;
 	}
-	return 0;
+	//TODO: Accept dirs that aren' PWD
+	char *rp = r_sys_getdir ();
+	if (!rp) {
+		return -2;
+	}
+	if (!strcmp (action, "init")) {
+		if (!r_vc_new (rp)) {
+			return -3;
+		}
+		return 0;
+	}
+	if (!strcmp (action, "branch")) {
+		if (opt.argc < 2) {
+			return -4;
+		}
+		if (!r_vc_branch (rp, opt.argv[opt.ind + 1])) {
+			return -5;
+		}
+		return 0;
+	}
+	if (!strcmp (action, "commit")) {
+		char *auth, *message;
+		uint i;
+		RList *files;
+		if (opt.argc < 5) {
+			free (rp);
+			return -6;
+		}
+		auth = r_str_new (opt.argv[opt.ind + 1]);
+		if (!auth) {
+			free (rp);
+			return -7;
+		}
+		message = r_str_new (opt.argv[opt.ind + 2]);
+		if (!message) {
+			free (rp);
+			free (auth);
+			return -8;
+		}
+		files = r_list_new ();
+		if (!files) {
+			free (rp);
+			free (auth);
+			free (message);
+			return -9;
+		}
+		for (i = opt.ind + 3; i < argc; ++i) {
+			if (!r_list_append (files, r_str_new (argv[opt.ind + i])) ||
+					!files->tail->data) {
+				free (auth);
+				free (message);
+				r_list_free (files);
+				free (rp);
+				return -10;
+			}
+		}
+		bool ret = r_vc_commit (rp, message, auth, files);
+		free (message);
+		free (auth);
+		r_list_free (files);
+		if (!ret) {
+			free (rp);
+			return -11;
+		}
+		return 0;
+	}
+	if (!strcmp (action, "checkout")) {
+		if (opt.argc < 2) {
+			free (rp);
+			return -12;
+		}
+		if (!r_vc_checkout (rp, opt.argv[opt.ind + 1])) {
+			free (rp);
+			return -13;
+		}
+		return 0;
+	}
+	return -14;
 }
-*/
