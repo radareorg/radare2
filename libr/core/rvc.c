@@ -68,12 +68,31 @@ char *rp2absp(const char *rp, const char *path) {
 
 //TODO:Make the tree related functions abit cleaner & more efficient
 
-static RList *get_commits(Sdb *db, const size_t max_num) {
+static RList *get_commits(const char *rp, const size_t max_num) {
 	char *i;
 	RList *ret = r_list_new ();
 	if (!ret) {
 		return NULL;
 	}
+	Sdb *db = sdb_new0 ();
+	if (!db) {
+		r_list_free (ret);
+		return NULL;
+	}
+	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "branches.sdb",
+			rp);
+	if (!dbp) {
+		r_list_free (ret);
+		sdb_free (db);
+		return NULL;
+	}
+	if (sdb_open (db, dbp) < 0) {
+		r_list_free (ret);
+		sdb_free (db);
+		free (dbp);
+		return NULL;
+	}
+	free (dbp);
 	i = sdb_get (db, sdb_const_get (db, "current_branch", 0), 0);
 	while (true) {
 		if (!r_list_prepend (ret, i)) {
@@ -91,119 +110,165 @@ static RList *get_commits(Sdb *db, const size_t max_num) {
 			break;
 		}
 	}
+	sdb_unlink (db);
+	sdb_free (db);
 	return ret;
 }
 
-bool delete_blob(RList *blobs, const char *hash) {
-	RListIter *iter, *tmp;
-	RvcBlob *current;
-	r_list_foreach_safe (blobs, iter, tmp, current) {
-		if (strcmp (current->fhash, hash)) {
-			continue;
-		}
-		r_list_delete (blobs, iter);
-		return true;
-	}
-	return false;
-}
-
-static bool update_blob(RList *blobs, RvcBlob *blob) {
+static bool update_blobs(RList *blobs, const RList *nh) {
 	RListIter *iter;
-	RvcBlob *current;
-	bool found = false;
-	r_list_foreach (blobs, iter, current) {
-		if (strcmp (current->fname, blob->fname)) {
+	RvcBlob *blob;
+	r_list_foreach (blobs, iter, blob) {
+		if (strcmp (nh->head->data, blob->fname)) {
 			continue;
 		}
-		free (iter->data);
-		iter->data = blob;
-		found = true;
+		blob->fhash = r_str_new (nh->tail->data);
+		return blob->fhash != NULL;
 	}
-	return found ? true : !!(r_list_append (blobs, blob)); //!! is the only way I found that doesnt trigger a warnning;
+	blob = R_NEW (RvcBlob);
+	if (!blob) {
+		return false;
+	}
+	blob->fhash = r_str_new (nh->tail->data);
+	blob->fname = r_str_new (nh->head->data);
+	if (!blob->fhash || !blob->fname) {
+		free (blob->fhash);
+		free (blob->fname);
+		free (blob);
+		return false;
+	}
+	if (!r_list_append (blobs, blob)) {
+		free (blob->fhash);
+		free (blob->fname);
+		free (blob);
+		return false;
+	}
+	return true;
 }
 
-RList *get_current_tree (const char *rp) {
-	Sdb *db = sdb_new0 ();
-	if (!db) {
-		return NULL;
-	}
-	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" "branches.sdb", rp);
-	if (!dbp) {
-		sdb_free (db);
-		return NULL;
-	}
-	if (sdb_open (db, dbp) < 0) {
-		free (dbp);
-		sdb_free (db);
-		return NULL;
-	}
-	free (dbp);
-	RList *commits = get_commits (db, 0);
+static RList *get_blobs(const char *rp) {
+	RList *commits = get_commits (rp, 0);
 	if (!commits) {
-		sdb_free (db);
 		return NULL;
 	}
-	sdb_unlink (db);
-	sdb_free (db);
-	char *hash;
 	RList *ret = r_list_new ();
 	if (!ret) {
-		return NULL;
+		r_list_free (commits);
 	}
 	RListIter *i;
+	char *hash;
 	r_list_foreach (commits, i, hash) {
-		char *cp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
+		char *commit_path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
 				"commits" R_SYS_DIR "%s", rp, hash);
-		if (!cp) {
+		if (!commit_path) {
+			free_blobs (ret);
+			ret = NULL;
 			break;
 		}
-		char *content = r_file_slurp (cp, 0);
+		char *content = r_file_slurp (commit_path, 0);
+		free (commit_path);
 		if (!content) {
-			r_list_free (ret);
+			free_blobs (ret);
 			ret = NULL;
+			break;
 		}
-		RList *lines = r_str_split_duplist (content, "\n", false);
+		RList *lines = r_str_split_duplist (content, "\n", true);
 		free (content);
 		if (!lines) {
-			r_list_free (ret);
+			free_blobs (ret);
+			ret = NULL;
 			break;
 		}
 		RListIter *j;
 		char *ln;
+		bool found = false;
 		r_list_foreach (lines, j, ln) {
-			if (r_str_cmp (ln, "blobs=", r_str_len_utf8 ("blobs="))) {
+			if (!found) {
+				found = !r_str_cmp (ln, "----", r_str_len_utf8 ("----"));
 				continue;
 			}
-			RvcBlob *blob =  R_NEW (RvcBlob);
+			RvcBlob *blob = R_NEW (RvcBlob);
 			if (!blob) {
-				free_blobs (ret);
-				break;
-			}
-			char *kv = strchr (ln, '=') + 1;
-			blob->fhash = strchr(kv, '=') + 1;
-			size_t klen = blob->fhash - kv;
-			blob->fname = malloc ((klen + 1) * sizeof (char));
-			blob->fhash = r_str_new (blob->fhash);
-			if (!blob->fname || !blob->fhash) {
-				free (blob->fname);
-				free (blob->fhash);
-				free (blob);
-				free_blobs (ret);
-			}
-			strncpy (blob->fname, kv, klen);
-			if (*blob->fname == '-') {
-				delete_blob (ret, blob->fhash);
-			}
-			if (!update_blob (ret, blob)) {
-				free (blob->fhash);
-				free (blob->fname);
 				free_blobs (ret);
 				ret = NULL;
 				break;
 			}
-			r_list_free (lines);
+			RList *kv = r_str_split_list (ln, "=", 2);
+			if (!kv) {
+				free_blobs (ret);
+				ret = NULL;
+				break;
+			}
+			if (!update_blobs (ret, kv)) {
+				free_blobs (ret);
+				ret = NULL;
+				free (kv);
+				break;
+			}
+		}
+		r_list_free (lines);
+	}
+	r_list_free (commits);
+	return ret;
+}
+
+static RList *get_uncommitted(const char *rp) {
+	RList *blobs = get_blobs (rp);
+	if (!blobs) {
+		return NULL;
+	}
+	RList *ret = r_list_new ();
+	RListIter *i;
+	RvcBlob *b;
+	r_list_foreach (blobs, i, b) {
+		char *absp = rp2absp (rp, b->fname);
+		if (!absp) {
+			r_list_free (ret);
+			ret = NULL;
+			break;
+		}
+		if (*b->fhash == '-') {
+			if (r_file_exists (absp)) {
+				if (!r_list_push (ret, absp)) {
+					free (absp);
+					r_list_free (ret);
+					ret = NULL;
+					break;
+				}
+			}
+			continue;
+		}
+		char *hash = sha256_file (absp);
+		if (!hash) {
+			free (absp);
+			r_list_free (ret);
+			ret = NULL;
+			break;
+		}
+		if (!strcmp (hash, b->fhash)) {
+			free (absp);
+			free (hash);
+			continue;
+		}
+		free (hash);
+		r_list_append (ret, absp);
+	}
+	free_blobs (blobs);
+	return ret;
+}
+
+static bool is_comitted(const char *rp, const char *absp) {
+	RList *paths = get_uncommitted (rp);
+	RListIter *i;
+	char *p;
+	bool ret = false;
+	r_list_foreach (paths, i, p) {
+		if (strcmp (p, absp)) {
+			ret = true;
+			break;
 		}
 	}
+	r_list_free (paths);
 	return ret;
 }
 
@@ -217,6 +282,11 @@ static bool bfadd(const char *rp, RList *dst, const char *path) {
 	}
 	absp = r_file_abspath (path);
 	if (!absp) {
+		free (blob);
+		return false;
+	}
+	if (is_comitted (rp, absp)) {
+		free (absp);
 		free (blob);
 		return false;
 	}
@@ -275,9 +345,7 @@ static bool bdadd(const char *rp, const char *dir, RList *dst) {
 		if (r_file_is_directory (path)) {
 			continue;
 		}
-		if (!bfadd (rp, dst, path)) {
-			break;
-		}
+		bfadd (rp, dst, path);
 	}
 	r_list_free (files);
 	return false;
@@ -320,9 +388,9 @@ static char *write_commit(const char *rp, const char *message, const char *autho
 	RvcBlob *blob;
 	RListIter *iter;
 	char *commit_path, *commit_hash;
-	char *content = r_str_newf ("message=%s\nauthor=%s\n----", message,
-			author);
 	FILE *commitf;
+	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%ld----",
+			message, author, time (NULL));
 	if (!content) {
 		return false;
 	}
@@ -362,8 +430,6 @@ static char *write_commit(const char *rp, const char *message, const char *autho
 	fclose (commitf);
 	free (content);
 	return commit_hash;
-
-
 }
 
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, RList *files) {
