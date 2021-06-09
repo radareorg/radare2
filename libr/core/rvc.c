@@ -212,7 +212,7 @@ static RList *get_blobs(const char *rp) {
 	r_list_free (commits);
 	return ret;
 }
-
+//shit function:
 static RList *get_uncommitted(const char *rp) {
 	RList *blobs = get_blobs (rp);
 	if (!blobs) {
@@ -226,7 +226,7 @@ static RList *get_uncommitted(const char *rp) {
 		if (!absp) {
 			r_list_free (ret);
 			ret = NULL;
-			break;
+			goto ret;
 		}
 		if (*b->fhash == '-') {
 			if (r_file_exists (absp)) {
@@ -234,7 +234,6 @@ static RList *get_uncommitted(const char *rp) {
 					free (absp);
 					r_list_free (ret);
 					ret = NULL;
-					break;
 				}
 			}
 			continue;
@@ -244,6 +243,7 @@ static RList *get_uncommitted(const char *rp) {
 			free (absp);
 			r_list_free (ret);
 			ret = NULL;
+			goto ret;
 			break;
 		}
 		if (!strcmp (hash, b->fhash)) {
@@ -254,6 +254,48 @@ static RList *get_uncommitted(const char *rp) {
 		free (hash);
 		r_list_append (ret, absp);
 	}
+	//Shit code follow:
+	RList *files = r_file_lsrf (rp);
+	if (!files) {
+		goto ret;
+	}
+	char *f;
+	r_list_foreach (files, i, f) {
+		char *relp;
+		char *absp = r_file_abspath (f);
+		if (!absp) {
+			goto ret;
+		}
+		relp = absp2rp (rp, absp);
+		if (!relp) {
+			free (absp);
+			goto ret;
+		}
+		if (r_file_is_directory (absp) || !r_str_cmp (relp, ".rvc", 4)
+				|| !r_str_cmp (relp, R_SYS_DIR".rvc", 5)) {
+			free (absp);
+			free (relp);
+			goto ret;
+		}
+		RListIter *iter;
+		char *brelp;
+		bool found = false;
+		r_list_foreach (blobs, iter, brelp) {
+			if (!strcmp (brelp, relp)) {
+				found = true;
+				break;
+			}
+		}
+		free (absp);
+		if (found) {
+			if (!r_list_append (ret, relp)) {
+				free (relp);
+				goto ret;
+			}
+		}
+	}
+	r_list_free (files);
+ret:
 	free_blobs (blobs);
 	return ret;
 }

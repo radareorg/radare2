@@ -23,6 +23,7 @@ R_API int r_vc_git_commit(const char *path, const char *message);
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, RList *files);
 R_API bool r_vc_branch(const char *rp, const char *bname);
 R_API bool r_vc_new(const char *path);
+R_API bool r_vc_checkout(const char *rp, const char *bname);
 
 #ifdef __cplusplus
 }
