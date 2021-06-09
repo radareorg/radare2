@@ -1,4 +1,6 @@
 #!/bin/sh
+[ -z "$TMPDIR" ] && TMPDIR=/tmp
+[ -w "$TMPDIR" ] || TMPDIR="$PWD"
 T=$TMPDIR/.cc.txt
 if [ -n "$1" ]; then
 	echo 0 > $T 2> /dev/null
