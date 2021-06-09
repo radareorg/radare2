@@ -126,7 +126,7 @@ static bool __run(RLang *lang, const char *code, int len) {
 		}
 		fclose (fd);
 		lang_v_file (lang, ".tmp.v");
-		r_sandbox_system ("v -shared -o .tmp.v."R_LIB_EXT" .tmp.v", 1);
+		r_sandbox_system ("v -gc boehm -shared -o .tmp.v."R_LIB_EXT" .tmp.v", 1);
 	//	runlib (lang->user, ".tmp.v."R_LIB_EXT);
 		//r_file_rm (".tmp.v");
 		vcode_fini (&vcode);
