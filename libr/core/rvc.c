@@ -8,9 +8,7 @@ static bool is_valid_branch_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
 		return false;
 	}
-	const char  *extention = r_str_endswith (name, ".zip") ?
-		r_str_last (name, ".zip") : NULL;
-	for (; *name && name != extention; name++) {
+	for (; *name; name++) {
 		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
 			continue;
 		}
