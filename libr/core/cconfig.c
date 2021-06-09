@@ -3751,6 +3751,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("http.root", R2_WWWROOT, "http root directory");
 #endif
 	SETPREF ("http.port", "9090", "HTTP server port");
+	SETPREF ("http.basepath", "/", "Define base path for http requests");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
 	SETPREF ("http.ui", "m", "Default webui (m, t, f)");
 	SETBPREF ("http.sandbox", "true", "Sandbox the HTTP server");
