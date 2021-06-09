@@ -17,6 +17,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	const char *homeroot = r_config_get (core->config, "http.homeroot");
 	const char *port = r_config_get (core->config, "http.port");
 	const char *allow = r_config_get (core->config, "http.allow");
+	const char *basepath = r_config_get (core->config, "http.basepath");
 	const char *httpui = r_config_get (core->config, "http.ui");
 	const char *httpauthfile = r_config_get (core->config, "http.authfile");
 	char *pfile = NULL;
@@ -66,7 +67,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			} else if (!strcmp (host, "local")) {
 				s->local = true;
 				r_config_set (core->config, "http.bind", "localhost");
-			} else if (host[0]=='0' || !strcmp (host, "public")) {
+			} else if (R_STR_ISEMPTY (host) || !strcmp (host, "public")) {
 				// public
 				host = "127.0.0.1";
 				r_config_set (core->config, "http.bind", "0.0.0.0");
@@ -177,6 +178,20 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		void *bed = r_cons_sleep_begin ();
 		rs = r_socket_http_accept (s, &so);
 		r_cons_sleep_end (bed);
+
+		if (*basepath && strcmp (basepath, "/")) {
+			if (R_STR_ISEMPTY (rs->path) || !strcmp (rs->path, "/")) {
+				char *res = r_str_newf ("Location: %s/\n%s", basepath, headers);
+				r_socket_http_response (rs, 302, NULL, 0, res);
+				r_socket_http_close (rs);
+				continue;
+			}
+			if (r_str_startswith (rs->path, basepath)) {
+				char *p = strdup (rs->path + strlen (basepath));
+				free (rs->path);
+				rs->path = p;
+			}
+		}
 
 		origoff = core->offset;
 		origblk = core->block;
