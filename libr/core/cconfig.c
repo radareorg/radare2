@@ -3737,7 +3737,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETI ("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF ("http.index", "index.html", "Main html file to check in directory");
-	SETPREF ("http.bind", "localhost", "Server address");
+	SETPREF ("http.bind", "localhost", "Server address (use 'public' for binding to 0.0.0.0)");
 	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
 #if __WINDOWS__
 	{
