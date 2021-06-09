@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
 #include <rvc.h>
-#define FIRST_BRANCH "master"
+#define FIRST_BRANCH "branches.master"
 #define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
 #define COMMIT_BLOB_SEP "----"
 #define DBNAME "branches.sdb"
@@ -271,6 +271,23 @@ static bool is_comitted(const char *rp, const char *absp) {
 	}
 	r_list_free (paths);
 	return ret;
+}
+
+static char *find_blob_hash(const char *rp, const char *fname) {
+	RList *blobs = get_blobs (rp);
+	if (!blobs) {
+		return NULL;
+	}
+	RListIter *i;
+	RvcBlob *b;
+	r_list_foreach_prev (blobs, i, b) {
+		if (!strcmp (b->fname, fname)) {
+			r_list_free (blobs);
+			return r_str_new (b->fhash);
+		}
+	}
+	r_list_free (blobs);
+	return NULL;
 }
 
 static bool bfadd(const char *rp, RList *dst, const char *path) {
@@ -577,6 +594,94 @@ R_API bool r_vc_new(const char *path) {
 	sdb_unlink (db);
 	sdb_free (db);
 	return true;
+}
+
+R_API bool r_vc_checkout(const char *rp, const char *bname) {
+	RList *uncommitted = get_uncommitted (rp);
+	RListIter *i;
+	char *f;
+	bool ret = false;
+	if (!uncommitted) {
+		return false;
+	}
+	if (!r_list_empty (uncommitted)) {
+		r_list_foreach (uncommitted, i, f) {
+			printf ("%s\n", f);
+		}
+		puts ("Are uncommitted\n");
+		r_list_free (uncommitted);
+		return false;
+	}
+	r_list_free (uncommitted);
+	Sdb *db = sdb_new0 ();
+	if (!db) {
+		return false;
+	}
+	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
+	if (!dbp) {
+		sdb_free (db);
+		return false;
+	}
+	if (sdb_open (db, dbp) < 0) {
+		sdb_free (db);
+		free (dbp);
+		return false;
+	}
+	free (dbp);
+	char *cb = sdb_get (db, CURRENTB, 0);
+	if (!cb) {
+		sdb_unlink (db);
+		sdb_free (db);
+		free (dbp);
+	}
+	char *fbname = r_str_newf ("branches.%s", bname);
+	//exist?
+	if (!fbname) {
+		sdb_unlink (db);
+		sdb_free (db);
+		free (dbp);
+	}
+	sdb_set (db, CURRENTB, fbname, 0);
+	sdb_sync (db);
+	uncommitted = get_uncommitted (rp);
+	if (!uncommitted) {
+		sdb_set (db, CURRENTB, fbname, 0);
+		sdb_sync (db);
+		sdb_free (db);
+		free (fbname);
+		return false;
+	}
+	r_list_foreach (uncommitted, i, f) {
+		char *hash = find_blob_hash (rp, f);
+		if (!hash) {
+			sdb_set (db, CURRENTB, cb, 0);
+			ret = false;
+		}
+		if (*hash == '-') {
+			free (hash);
+			if (!r_file_rm (f)) {
+				sdb_set (db, CURRENTB, cb, 0);
+				free (hash);
+				ret = false;
+			}
+			continue;
+		}
+		char *bp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
+				"blobs" R_SYS_DIR, hash);
+		if (!bp) {
+			free (hash);
+		}
+		if (!r_file_copy (bp, hash)) {
+			free (hash);
+			free (bp);
+			sdb_set (db, CURRENTB, cb, 0);
+			ret = false;
+		}
+	}
+	sdb_sync (db);
+	sdb_unlink (db);
+	sdb_free (db);
+	return ret;
 }
 
 // GIT commands as APIs
