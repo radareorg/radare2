@@ -1109,7 +1109,7 @@ static void __vi_mode(void) {
 		if (I.echo) {
 			__print_prompt ();
 		}
-		if (I.vi_mode != CONTROL_MODE) {	// exit if insert mode is selected
+		if (I.vi_mode != CONTROL_MODE) { // exit if insert mode is selected
 			__update_prompt_color ();
 			break;
 		}
