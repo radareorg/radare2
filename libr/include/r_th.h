@@ -6,7 +6,13 @@
 #endif
 #define _GNU_SOURCE
 #include "r_types.h"
+#include "r_userconf.h"
 
+#ifndef WANT_THREADS
+#define WANT_THREADS 1
+#endif
+
+#if WANT_THREADS
 #define HAVE_PTHREAD 1
 
 #if __WINDOWS__
@@ -48,9 +54,18 @@
 #error Threading library only supported for pthread and w32
 #endif
 
-typedef enum { R_TH_FREED = -1, R_TH_STOP = 0, R_TH_REPEAT = 1 } RThreadFunctionRet;
-#define R_TH_FUNCTION(x) RThreadFunctionRet (*x)(struct r_th_t *)
 
+#else
+
+#define R_TH_SEM_T int
+#define R_TH_LOCK_T int
+#define R_TH_COND_T int
+#define R_TH_TID int
+
+#endif
+typedef enum { R_TH_FREED = -1, R_TH_STOP = 0, R_TH_REPEAT = 1 } RThreadFunctionRet;
+
+#define R_TH_FUNCTION(x) RThreadFunctionRet (*x)(struct r_th_t *)
 #ifdef __cplusplus
 extern "C" {
 #endif

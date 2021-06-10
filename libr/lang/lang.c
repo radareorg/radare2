@@ -5,18 +5,20 @@
 
 R_LIB_VERSION(r_lang);
 
+#include "p/spp.c"   // hardcoded
+#if HAVE_SYSTEM
 #include "p/pipe.c"  // hardcoded
+#include "p/c.c"     // hardcoded
+#include "p/v.c"     // hardcoded
 #include "p/vala.c"  // hardcoded
 #include "p/rust.c"  // hardcoded
 #include "p/zig.c"   // hardcoded
-#include "p/spp.c"   // hardcoded
-#include "p/c.c"     // hardcoded
-#include "p/v.c"     // hardcoded
-#include "p/go.c"    // hardcoded
-#include "p/lib.c"
 #if __UNIX__
 #include "p/cpipe.c" // hardcoded
 #endif
+#endif
+#include "p/go.c"    // hardcoded
+#include "p/lib.c"
 
 static RLang *__lang = NULL;
 
@@ -45,17 +47,19 @@ R_API RLang *r_lang_new(void) {
 	}
 	lang->defs->free = (RListFree)r_lang_def_free;
 	lang->cb_printf = (PrintfCallback)printf;
+#if HAVE_SYSTEM
 #if __UNIX__
 	r_lang_add (lang, &r_lang_plugin_c);
 	r_lang_add (lang, &r_lang_plugin_cpipe);
 #endif
+	r_lang_add (lang, &r_lang_plugin_v);
 	r_lang_add (lang, &r_lang_plugin_vala);
 	r_lang_add (lang, &r_lang_plugin_rust);
 	r_lang_add (lang, &r_lang_plugin_zig);
-	r_lang_add (lang, &r_lang_plugin_v);
+	r_lang_add (lang, &r_lang_plugin_pipe);
+#endif
 	r_lang_add (lang, &r_lang_plugin_go);
 	r_lang_add (lang, &r_lang_plugin_spp);
-	r_lang_add (lang, &r_lang_plugin_pipe);
 	r_lang_add (lang, &r_lang_plugin_lib);
 
 	return lang;

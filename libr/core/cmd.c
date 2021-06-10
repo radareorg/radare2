@@ -3015,7 +3015,9 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		free (out);
 		ret = 0;
 	}
-#if __UNIX__
+#if !HAVE_FORK
+	// nothing
+#elif __UNIX__
 	r_str_trim_head (radare_cmd);
 	r_str_trim_head (shell_cmd);
 

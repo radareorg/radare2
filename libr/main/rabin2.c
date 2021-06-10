@@ -994,7 +994,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	}
 
 	if (file && *file && action & R_BIN_REQ_DLOPEN) {
-#if __UNIX__
+#if __UNIX__ && HAVE_FORK
 		int child = r_sys_fork ();
 		if (child == -1) {
 			r_core_fini (&core);

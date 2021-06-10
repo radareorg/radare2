@@ -481,7 +481,7 @@ R_API int r_sandbox_kill(int pid, int sig) {
 	if (enabled) {
 		return -1;
 	}
-#if __UNIX__
+#if HAVE_SYSTEM && __UNIX__
 	return kill (pid, sig);
 #endif
 	return -1;

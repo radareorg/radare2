@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
+#ifndef HAVE_SYSTEM
+#define HAVE_SYSTEM 1
+#endif
 #if USE_DLSYSTEM
 #include <dlfcn.h>
 #endif
@@ -718,6 +721,7 @@ static int showcount(const char *db) {
 static int sdb_system(const char *cmd) {
 	static int (*sys)(const char *cmd) = NULL;
 	if (!sys) {
+#if HAVE_SYSTEM
 #if USE_DLSYSTEM
 		sys = dlsym (NULL, "system");
 		if (!sys) {
@@ -726,6 +730,7 @@ static int sdb_system(const char *cmd) {
 		}
 #else
 		sys = system;
+#endif
 #endif
 	}
 	return sys (cmd);
