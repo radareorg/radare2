@@ -666,22 +666,19 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_USERSUSP: return "suspended-by-user";
 	case R_DEBUG_REASON_SIGALRM: return "alarm-signal";
 	case R_DEBUG_REASON_SIGBUS: return "bus-error-signal";
-	case R_DEBUG_REASON_SIGCHLD: return "child-terminated-signal";
+	case R_DEBUG_REASON_SIGCHLD: return "child-terminated";
 	case R_DEBUG_REASON_SIGCONT: return "continue-signal";
 	case R_DEBUG_REASON_SIGFPE: return "arithemtic-error-signal";
 #ifdef __sparc
 	case R_DEBUG_REASON_SIGEMT: return "hardware-error-signal";
 #endif
 	case R_DEBUG_REASON_SIGHUP: return "terminal-hangup-signal";
-	case R_DEBUG_REASON_SIGILL: return "incorrectly-formed-machine-language-instruction-signal";
-	case R_DEBUG_REASON_SIGINFO: return "get-foreground-process-group-signal";
-	case R_DEBUG_REASON_SIGIO: return "I/O possible";
+	case R_DEBUG_REASON_SIGILL: return "Illegal instruction";
 	case R_DEBUG_REASON_SIGKILL: return "Killed";
-	case R_DEBUG_REASON_SIGPIPE: return "pipe";
 	case R_DEBUG_REASON_SIGPROF: return "Profiling timer expired";
 	case R_DEBUG_REASON_SIGQUIT: return "Quit";
 	case R_DEBUG_REASON_SIGSTKFLT: return "Stack fault";
-	case R_DEBUG_REASON_SIGSTOP: return "[X]+  Stopped";
+	case R_DEBUG_REASON_SIGSTOP: return "Stopped";
 	case R_DEBUG_REASON_SIGSYS: return "Bad system call";
 	case R_DEBUG_REASON_SIGTERM: return "Terminated";
 	case R_DEBUG_REASON_SIGTSTP: return "Stopped";
