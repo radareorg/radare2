@@ -118,7 +118,7 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 			break;
 #endif
 		case SIGFPE:
-			dbg->reason.type = R_DEBUG_REASON_SIGFPE;
+			dbg->reason.type = R_DEBUG_REASON_FPU;
 			break;
 		case SIGHUP:
 			dbg->reason.type = R_DEBUG_REASON_SIGHUP;
