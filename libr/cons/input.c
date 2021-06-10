@@ -746,7 +746,7 @@ R_API char *r_cons_input(const char *msg) {
 		*buf = 0;
 		r_cons_fgets (buf, buf_size, 0, NULL);
 		r_line_set_prompt (oprompt);
-		free (oprompt);
 	}
+	free (oprompt);
 	return buf;
 }
