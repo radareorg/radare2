@@ -201,7 +201,35 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 			}
 		} break;
 		case SIGTSTP:
-			dbg->reason.type = R_DEBUG_REASON_SIGSTP;
+			dbg->reason.type = R_DEBUG_REASON_SIGTSTP;
+			break;
+		case SIGTTIN:
+			dbg->reason.type = R_DEBUG_REASON_SIGTTIN;
+			break;
+		case SIGTTOU:
+			dbg->reason.type = R_DEBUG_REASON_SIGTTOU;
+			break;
+		//SIGUNUSED
+		case SIGURG:
+			dbg->reason.type = R_DEBUG_REASON_SIGURG;
+			break;
+		case SIGUSR1:
+			dbg->reason.type = R_DEBUG_REASON_SIGUSR1;
+			break;
+		case SIGUSR2:
+			dbg->reason.type = R_DEBUG_REASON_SIGUSR2;
+			break;
+		case SIGVTALRM:
+			dbg->reason.type = R_DEBUG_REASON_SIGVTALRM;
+			break;
+		case SIGWINCH:
+			dbg->reason.type = R_DEBUG_REASON_SIGWINCH;
+			break;
+		case SIGXCPU:
+			dbg->reason.type = R_DEBUG_REASON_SIGXCPU;
+			break;
+		case SIGXFSZ:
+			dbg->reason.type = R_DEBUG_REASON_SIGXFSZ;
 			break;
 		default:
 			break;

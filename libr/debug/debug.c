@@ -685,6 +685,15 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_SIGSYS: return "Bad system call";
 	case R_DEBUG_REASON_SIGTERM: return "Terminated";
 	case R_DEBUG_REASON_SIGTSTP: return "Stopped";
+	case R_DEBUG_REASON_SIGTTIN: return "Stopped";
+	case R_DEBUG_REASON_SIGTTOU: return "Stopped";
+	case R_DEBUG_REASON_SIGURG: return "";
+	case R_DEBUG_REASON_SIGUSR1: return "User defined signal 1";
+	case R_DEBUG_REASON_SIGUSR2: return "User defined signal 2";
+	case R_DEBUG_REASON_SIGVTALRM: return "Virtual timer expired";
+	case R_DEBUG_REASON_SIGWINCH: return "";
+	case R_DEBUG_REASON_SIGXCPU: return "CPU time limit exceeded";
+	case R_DEBUG_REASON_SIGXFSZ: return "File size limit exceeded";
 	}
 	return "unhandled";
 }
