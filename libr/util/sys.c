@@ -614,7 +614,7 @@ R_API int r_sys_thp_mode(void) {
 #endif
 }
 
-#if __UNIX__
+#if __UNIX__ && HAVE_SYSTEM
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr) {
 	char *mysterr = NULL;
 	if (!sterr) {

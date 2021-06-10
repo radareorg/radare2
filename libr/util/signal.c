@@ -69,8 +69,10 @@ R_API const char* r_signal_to_string (int code) {
 	return NULL;
 }
 
-#if HAVE_PTHREAD
+#if __UNIX__
 R_API void r_signal_sigmask(int how, const sigset_t *newmask, sigset_t *oldmask) {
+#if HAVE_PTHREAD
 	pthread_sigmask (how, newmask, oldmask);
+#endif
 }
 #endif

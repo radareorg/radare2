@@ -40,6 +40,8 @@ R_API int r_th_lock_enter(RThreadLock *thl) {
 #elif __WINDOWS__
 	EnterCriticalSection (&thl->lock);
 	return 0;
+#else
+	return 0;
 #endif
 }
 
@@ -48,6 +50,8 @@ R_API int r_th_lock_tryenter(RThreadLock *thl) {
 	return !pthread_mutex_trylock (&thl->lock);
 #elif __WINDOWS__
 	return TryEnterCriticalSection (&thl->lock);
+#else
+	return 0;
 #endif
 }
 
@@ -56,6 +60,8 @@ R_API int r_th_lock_leave(RThreadLock *thl) {
 	return pthread_mutex_unlock (&thl->lock);
 #elif __WINDOWS__
 	LeaveCriticalSection (&thl->lock);
+	return 0;
+#else
 	return 0;
 #endif
 }

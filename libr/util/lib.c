@@ -83,7 +83,7 @@ R_API void *r_lib_dl_sym(void *handler, const char *name) {
 }
 
 R_API int r_lib_dl_close(void *handler) {
-#if __UNIX__
+#if __UNIX__ && WANT_DYLINK
 	return dlclose (handler);
 #else
 	return handler? 0: -1;
