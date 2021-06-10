@@ -853,7 +853,11 @@ static void cmd_remote(RCore *core, const char *input, bool retry) {
 	RSocket *s = r_socket_new (false);
 repeat:
 	if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 1500)) {
-		char buf[1024];
+		const size_t buf_size = 1024;
+		char *buf = calloc (buf_size, 1);
+		if (!buf) {
+			return;
+		}
 		void *bed = r_cons_sleep_begin ();
 		r_cons_break_push (NULL, NULL);
 		for (;;) {
@@ -862,9 +866,9 @@ repeat:
 			}
 			r_socket_printf (s, "[0x%08"PFMT64x"]> ", core->offset);
 			r_socket_flush (s);
-			memset (buf, 0, sizeof (buf));
+			memset (buf, 0, buf_size);
 			r_socket_block_time (s, true, 99999, 0);
-			if (r_socket_read (s, (ut8*)buf, sizeof (buf) - 1) < 1) {
+			if (r_socket_read (s, (ut8*)buf, buf_size - 1) < 1) {
 				break;
 			}
 			if (*buf == 'q') {
@@ -880,6 +884,7 @@ repeat:
 		}
 		r_cons_break_pop ();
 		r_cons_sleep_end (bed);
+		free (buf);
 	} else {
 		if (retry) {
 			r_sys_sleep (1);
@@ -1937,7 +1942,7 @@ R_API int r_line_hist_sdb_down(RLine *line) {
 }
 
 static int cmd_kuery(void *data, const char *input) {
-	char buf[1024], *out;
+	char *out;
 	RCore *core = (RCore*)data;
 	const char *sp, *p = "[sdb]> ";
 	Sdb *s = core->sdb;
@@ -2044,9 +2049,12 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		RList *sdb_hist = line->sdbshell_hist;
 		r_line_set_hist_callback (line, &r_line_hist_sdb_up, &r_line_hist_sdb_down);
-		for (;;) {
+		const size_t buf_size = 1024;
+		char *buf = malloc (1024);
+		while (buf) {
 			r_line_set_prompt (p);
-			if (r_cons_fgets (buf, sizeof (buf), 0, NULL) < 1) {
+			*buf = 0;
+			if (r_cons_fgets (buf, buf_size, 0, NULL) < 1) {
 				break;
 			}
 			if (!*buf) {
@@ -2064,6 +2072,7 @@ static int cmd_kuery(void *data, const char *input) {
 				r_cons_flush ();
 			}
 		}
+		free (buf);
 		r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 		break;
 	case 'o': // "ko"
@@ -5087,7 +5096,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	case '.': // "@@."
 		if (each[1] == '(') {
-			char cmd2[1024];
 			// XXX what's this 999 ?
 			i = 0;
 			for (core->rcmd->macro.counter = 0; i < 999; core->rcmd->macro.counter++) {
@@ -5099,36 +5107,37 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					break;
 				}
 				addr = core->rcmd->macro._brk_value;
-				sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
-				eprintf ("0x%08"PFMT64x" (%s)\n", addr, cmd2);
 				r_core_seek (core, addr, true);
-				r_core_cmd (core, cmd2, 0);
+				r_core_cmdf (core, "%s @ 0x%08"PFMT64x"", cmd, addr);
 				if (foreach_newline (core)) {
 					break;
 				}
 				i++;
 			}
 		} else {
-			char buf[1024];
-			char cmd2[1024];
 			FILE *fd = r_sandbox_fopen (each + 1, "r");
 			if (fd) {
 				core->rcmd->macro.counter = 0;
-				while (!feof (fd)) {
-					buf[0] = '\0';
-					if (!fgets (buf, sizeof (buf), fd)) {
-						break;
+				size_t buf_size = 1024;
+				char *buf = calloc (buf_size, 1);
+				if (buf) {
+					while (!feof (fd)) {
+						buf[0] = '\0';
+						if (!fgets (buf, buf_size, fd)) {
+							break;
+						}
+						if (*buf) {
+							addr = r_num_math (core->num, buf);
+							r_core_seek (core, addr, true); // XXX
+							r_core_cmdf (core, "%s @ 0x%08"PFMT64x"", cmd, addr);
+							if (foreach_newline (core)) {
+								break;
+							}
+							core->rcmd->macro.counter++;
+						}
 					}
-					addr = r_num_math (core->num, buf);
-					eprintf ("0x%08"PFMT64x": %s\n", addr, cmd);
-					sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
-					r_core_seek (core, addr, true); // XXX
-					r_core_cmd (core, cmd2, 0);
-					if (foreach_newline (core)) {
-						break;
-					}
-					core->rcmd->macro.counter++;
 				}
+				free (buf);
 				fclose (fd);
 			} else {
 				eprintf ("cannot open file '%s' to read offsets\n", each + 1);
@@ -5459,12 +5468,11 @@ R_API int r_core_cmd_buffer(RCore *core, const char *buf) {
 }
 
 R_API int r_core_cmdf(RCore *core, const char *fmt, ...) {
-	char string[4096];
-	int ret;
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, sizeof (string), fmt, ap);
-	ret = r_core_cmd (core, string, 0);
+	char *cmd = r_str_newvf (fmt, ap);
+	int ret = r_core_cmd (core, cmd, 0);
+	free (cmd);
 	va_end (ap);
 	return ret;
 }
@@ -5519,11 +5527,11 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 }
 
 R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
-	char string[4096];
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, sizeof (string), fmt, ap);
-	char *ret = r_core_cmd_str (core, string);
+	char *cmd = r_str_newvf (fmt, ap);
+	char *ret = r_core_cmd_str (core, cmd);
+	free (cmd);
 	va_end (ap);
 	return ret;
 }

@@ -278,16 +278,16 @@ R_API char *r_str_home(const char *str) {
 		}
 	}
 	length = strlen (home) + 1;
-	if (!R_STR_ISEMPTY (str)) {
+	if (R_STR_ISNOTEMPTY (str)) {
 		length += strlen (R_SYS_DIR) + strlen (str);
 	}
-	dst = (char *)malloc (length);
+	dst = (char *)calloc (1, length);
 	if (!dst) {
 		goto fail;
 	}
 	int home_len = strlen (home);
 	memcpy (dst, home, home_len + 1);
-	if (!R_STR_ISEMPTY (str)) {
+	if (R_STR_ISNOTEMPTY (str)) {
 		dst[home_len] = R_SYS_DIR[0];
 		strcpy (dst + home_len + 1, str);
 	}
