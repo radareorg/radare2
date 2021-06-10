@@ -1,10 +1,10 @@
 #!/bin/sh
-
-# based on
-# http://blog.coolaj86.com/articles/how-to-unpackage-and-repackage-pkg-osx.html
-
 # to uninstall:
 # sudo pkgutil --forget org.radare.radare2
+
+sys/osx-pkg.sh || exit 1
+cp -f sys/osx-pkg/radare2*.pkg dist/macos
+exit $?
 
 SRC=/tmp/r2osx
 PREFIX=/usr/local
@@ -12,9 +12,9 @@ DST="$(pwd)/sys/osx-pkg/radare2.unpkg"
 if [ -n "$1" ]; then
 	VERSION="$1"
 else
-	VERSION="`./configure --version| head -n 1|awk '{print $1}'|cut -d - -f 2`"
-	[ -z "${VERSION}" ] && VERSION=3.6.0
+	VERSION="`./configure -qV`"
 fi
+[ -z "${VERSION}" ] && echo "Unknown version" && exit 1
 [ -z "${MAKE}" ] && MAKE=make
 
 rm -rf "${SRC}"
@@ -27,11 +27,13 @@ ${MAKE} macos-sign
 ${MAKE} install PREFIX="${PREFIX}" DESTDIR=${SRC} || exit 1
 if [ -d "${SRC}" ]; then
 	(
-		cd ${SRC} && \
+		cd "${SRC}" && \
 		find . | cpio -o --format odc | gzip -c > "${DST}/Payload"
 	)
-	mkbom ${SRC} "${DST}/Bom"
+	echo mkbom "${SRC}" "${DST}/Bom"
+	mkbom "${SRC}" "${DST}/Bom"
 	# Repackage
+	echo pkgutil --flatten "${DST}" "${DST}/../radare2-${VERSION}.pkg"
 	pkgutil --flatten "${DST}" "${DST}/../radare2-${VERSION}.pkg"
 else
 	echo "Failed install. DESTDIR is empty"
