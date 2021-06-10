@@ -1417,6 +1417,8 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	} else if (!strncmp (str, "ubfiz ", 6) || !strncmp (str, "ubfm ", 5)
 		|| !strncmp (str, "ubfx ", 5)) {
 		*op = bitfield (&ops, 0x00000053);
+	} else {
+		*op = UT32_MAX;
 	}
 	free (ops.mnemonic);
 	return *op != UT32_MAX;
