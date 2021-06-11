@@ -598,11 +598,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (tid < 0) {
 		tid = pid;
 	}
-	if (pid != -1 && tid != -1) {
-		if ((pid != dbg->pid || tid != dbg->tid) && dbg->verbose) {
-			eprintf ("= attach %d %d\n", pid, tid);
-		}
-	} else {
+	if (pid == -1 && tid == -1) {
 		if (dbg->pid != -1) {
 			eprintf ("Child %d is dead\n", dbg->pid);
 		}
