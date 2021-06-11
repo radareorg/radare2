@@ -416,7 +416,7 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 			r_cons_sleep_end (bed);
 		} while (ret != child_pid && !r_cons_is_breaked ());
 		if (WIFSTOPPED (status)) {
-			eprintf ("Process with PID %d started...\n", (int)child_pid);
+			eprintf ("Process started...\n");
 		} else if (WEXITSTATUS (status) == MAGIC_EXIT) {
 			child_pid = -1;
 		} else if (r_cons_is_breaked ()) {
