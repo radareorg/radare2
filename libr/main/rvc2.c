@@ -40,11 +40,11 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 		eprintf ("TODO: r_vc_git APIs should be called from r_vc\n");
 		eprintf ("TODO: r_vc_new should accept options argument\n");
 	}
-	const char *action = (opt.ind < argc)? opt.arg: NULL;
+	const char *action = (argc >= 2)? opt.argv[opt.ind] : NULL;
 	if (!action) {
 		return -1;
 	}
-	//TODO: Accept dirs that aren' PWD
+	//TODO: Accept dirs that aren't PWD
 	char *rp = r_sys_getdir ();
 	if (!rp) {
 		return -2;
@@ -90,9 +90,16 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 			free (message);
 			return -9;
 		}
-		for (i = opt.ind + 3; i < argc; ++i) {
-			if (!r_list_append (files, r_str_new (argv[opt.ind + i])) ||
-					!files->tail->data) {
+		for (i = 3; i < argc - 1; ++i) {
+			char *cf = r_str_new (argv[opt.ind + i]);
+			if (!cf) {
+				free (auth);
+				free (message);
+				r_list_free (files);
+				free (rp);
+				return -10;
+			}
+			if (!r_list_append (files, cf)) {
 				free (auth);
 				free (message);
 				r_list_free (files);

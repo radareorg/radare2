@@ -6,6 +6,8 @@
 #define COMMIT_BLOB_SEP "----"
 #define DBNAME "branches.sdb"
 #define CURRENTB "current_branch"
+#define BPREFIX "branches."
+#define NULLVAL "-"
 
 static bool is_valid_branch_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
@@ -55,6 +57,7 @@ static char *absp2rp(const char *rp, const char *absp) {
 		return NULL;
 	}
 	ret = r_str_new (absp + r_str_len_utf8 (arp));
+	printf ("%s:%s\n", absp, ret);
 	free (arp);
 	return ret;
 }
@@ -95,6 +98,11 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 	}
 	free (dbp);
 	i = sdb_get (db, sdb_const_get (db, CURRENTB, 0), 0);
+	if (strcmp (i, NULLVAL)) {
+		sdb_unlink (db);
+		sdb_free (db);
+		return ret;
+	}
 	while (true) {
 		if (!r_list_prepend (ret, i)) {
 			r_list_free (ret);
@@ -228,7 +236,7 @@ static RList *get_uncommitted(const char *rp) {
 			ret = NULL;
 			goto ret;
 		}
-		if (*b->fhash == '-') {
+		if (strcmp (b->fhash, NULLVAL)) {
 			if (r_file_exists (absp)) {
 				if (!r_list_push (ret, absp)) {
 					free (absp);
@@ -254,7 +262,7 @@ static RList *get_uncommitted(const char *rp) {
 		free (hash);
 		r_list_append (ret, absp);
 	}
-	//Shit code follow:
+	//Shit code follows:
 	RList *files = r_file_lsrf (rp);
 	if (!files) {
 		goto ret;
@@ -350,13 +358,34 @@ static bool bfadd(const char *rp, RList *dst, const char *path) {
 		free (blob);
 		return false;
 	}
-	blob->fname = absp2rp (rp, path);
+	blob->fname = absp2rp (rp, absp);
+	printf ("%s\n", blob->fname);
 	if (!blob->fname) {
 		free (absp);
 		free (blob);
 		return false;
 	}
-	blob->fhash = sha256_file (absp);
+	if (!r_file_exists (absp)) {
+		RList *blobs = get_blobs (rp);
+		if (!blobs) {
+			free (absp);
+			free (blob->fname);
+			free (blob);
+			return false;
+		}
+		RListIter *iter;
+		const RvcBlob *b;
+		/*the prev part should avoid double commits because of how commits are loaded*/
+		r_list_foreach_prev (blobs, iter, b) {
+			if (!strcmp (b->fname, blob->fname) && *b->fhash != '-') {
+				blob->fhash = strdup ("-");
+				break;
+			}
+		}
+		r_list_free (blobs);
+	} else {
+		blob->fhash = sha256_file (absp);
+	}
 	if (!blob->fhash) {
 		free (absp);
 		free (blob->fname);
@@ -420,13 +449,7 @@ static RList *blobs_add(const char *rp, const RList *paths) {
 		return NULL;
 	}
 	r_list_foreach (paths, iter, path) {
-		bool is_dir = r_file_is_directory (path);
-		if (!is_dir && !r_file_exists (path)) {
-			free_blobs (ret);
-			ret = NULL;
-			break;
-		}
-		if (is_dir) {
+		if (r_file_is_directory (path)) {
 			if (!bdadd (rp, path, ret)) {
 				free_blobs (ret);
 				ret = NULL;
@@ -449,8 +472,8 @@ static char *write_commit(const char *rp, const char *message, const char *autho
 	RListIter *iter;
 	char *commit_path, *commit_hash;
 	FILE *commitf;
-	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%ld----",
-			message, author, time (NULL));
+	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%ld\n"
+			COMMIT_BLOB_SEP, message, author, time (NULL));
 	if (!content) {
 		return false;
 	}
@@ -583,11 +606,15 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 		return false;
 	}
 	commits = sdb_const_get (db, current_branch, 0);
-	if (!commits) {
+	commits = commits? commits : "";
+	char *nbn = r_str_newf (BPREFIX "%s", bname);
+	if (!nbn) {
+		sdb_unlink (db);
 		sdb_free (db);
 		return false;
 	}
-	sdb_set (db, bname, commits, 0);
+	sdb_set (db, nbn, commits, 0);
+	free (nbn);
 	sdb_sync (db);
 	sdb_unlink (db);
 	sdb_free (db);
@@ -622,7 +649,7 @@ R_API bool r_vc_new(const char *path) {
 		eprintf ("Can't create The RVC branches database");
 		return false;
 	}
-	if (!sdb_set (db, FIRST_BRANCH, "", 0)) {
+	if (!sdb_set (db, FIRST_BRANCH, NULLVAL, 0)) {
 		sdb_unlink (db);
 		sdb_free (db);
 		return false;
@@ -676,7 +703,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		sdb_free (db);
 		free (dbp);
 	}
-	char *fbname = r_str_newf ("branches.%s", bname);
+	char *fbname = r_str_newf (BPREFIX "%s", bname);
 	//exist?
 	if (!fbname) {
 		sdb_unlink (db);
@@ -699,7 +726,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 			sdb_set (db, CURRENTB, cb, 0);
 			ret = false;
 		}
-		if (*hash == '-') {
+		if (strcmp (hash, NULLVAL)) {
 			free (hash);
 			if (!r_file_rm (f)) {
 				sdb_set (db, CURRENTB, cb, 0);
