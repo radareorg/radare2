@@ -640,8 +640,8 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 R_API const char *r_debug_reason_to_string(int type) {
 	switch (type) {
 	case R_DEBUG_REASON_DEAD: return "dead";
-	case R_DEBUG_REASON_ABORT: return "abort";
-	case R_DEBUG_REASON_SEGFAULT: return "segfault";
+	case R_DEBUG_REASON_ABORT: return "Aborted";
+	case R_DEBUG_REASON_SEGFAULT: return "Segmentation fault";
 	case R_DEBUG_REASON_NONE: return "none";
 	case R_DEBUG_REASON_SIGNAL: return "signal";
 	case R_DEBUG_REASON_BREAKPOINT: return "breakpoint";
@@ -664,14 +664,14 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_FPU: return "fpu";
 	case R_DEBUG_REASON_STEP: return "step";
 	case R_DEBUG_REASON_USERSUSP: return "suspended-by-user";
-	case R_DEBUG_REASON_SIGALRM: return "alarm-signal";
-	case R_DEBUG_REASON_SIGBUS: return "bus-error-signal";
-	case R_DEBUG_REASON_SIGCHLD: return "child-terminated";
-	case R_DEBUG_REASON_SIGCONT: return "continue-signal";
+	case R_DEBUG_REASON_SIGALRM: return "Alarm clock";
+	case R_DEBUG_REASON_SIGBUS: return "Bus error";
+	case R_DEBUG_REASON_SIGCHLD: return "";
+	case R_DEBUG_REASON_SIGCONT: return "";
 #ifdef __sparc
 	case R_DEBUG_REASON_SIGEMT: return "hardware-error-signal";
 #endif
-	case R_DEBUG_REASON_SIGHUP: return "terminal-hangup-signal";
+	case R_DEBUG_REASON_SIGHUP: return "Hangup";
 	case R_DEBUG_REASON_SIGILL: return "Illegal instruction";
 	case R_DEBUG_REASON_SIGKILL: return "Killed";
 	case R_DEBUG_REASON_SIGPROF: return "Profiling timer expired";
