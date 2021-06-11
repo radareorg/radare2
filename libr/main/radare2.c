@@ -1229,9 +1229,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			baddr = r_debug_get_baddr (r->dbg, pfile);
 
 			if (load_bin == LOAD_BIN_ALL) {
-				if (baddr && baddr != UT64_MAX && r->dbg->verbose) {
-					eprintf ("Using 0x%" PFMT64x "\n", baddr);
-				}
 				if (r_core_bin_load (r, pfile, baddr)) {
 					RBinObject *obj = r_bin_cur_object (r->bin);
 					if (obj && obj->info) {
