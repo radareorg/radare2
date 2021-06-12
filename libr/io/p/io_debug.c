@@ -410,9 +410,8 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 		usleep (100000);
 		r_cons_sleep_end (bed);
 	} while (ret != child_pid && !r_cons_is_breaked ());
-	if (WIFSTOPPED (status)) {
-		eprintf ("Process with PID %d started...\n", (int)child_pid);
-		return child_pid;
+	if (!WIFSTOPPED (status)) {
+		return -1;
 	}
 	if (WEXITSTATUS (status) == MAGIC_EXIT || r_cons_is_breaked ()) {
 		eprintf ("Killing child process %d due to an error\n", (int)child_pid);
