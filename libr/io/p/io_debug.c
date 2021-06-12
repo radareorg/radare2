@@ -397,15 +397,12 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 	child_data.bits = bits;
 	child_data.cmd = cmd;
 	child_pid = r_io_ptrace_fork (io, fork_child_callback, &child_data);
-	switch (child_pid) {
-	case -1:
+	if (child_pid == -1) {
 		perror ("fork_and_ptraceme");
-		break;
-	case 0:
+	} else if (child_pid == 0) {
 		return -1;
-	default:
-		/* XXX: clean this dirty code */
-		do {
+	} else {
+		 do {
 			ret = waitpid (child_pid, &status, WNOHANG);
 			if (ret == -1) {
 				perror ("waitpid");
@@ -417,15 +414,13 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 		} while (ret != child_pid && !r_cons_is_breaked ());
 		if (WIFSTOPPED (status)) {
 			eprintf ("Process with PID %d started...\n", (int)child_pid);
-		} else if (WEXITSTATUS (status) == MAGIC_EXIT) {
-			child_pid = -1;
-		} else if (r_cons_is_breaked ()) {
-			kill (child_pid, SIGSTOP);
-		} else {
+			return child_pid;
+		}
+		if (WEXITSTATUS (status) == MAGIC_EXIT || r_cons_is_breaked ()) {
 			eprintf ("Killing child process %d due to an error\n", (int)child_pid);
 			kill (child_pid, SIGSTOP);
+			return -1;
 		}
-		break;
 	}
 	return child_pid;
 }
