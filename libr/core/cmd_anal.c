@@ -6170,16 +6170,35 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 	r_buf_free (b);
 }
 
+static bool regwrite_hook(RAnalEsil *esil, const char *name, ut64 *val) {
+	RCore *core = esil->user;
+	RFlagItem *item = r_flag_get_at (core->flags, *val, true);
+	if (item && strchr (item->name, '.')) {
+		int type = R_ANAL_REF_TYPE_DATA;
+		if (r_str_startswith (item->name, "str")) {
+			type = R_ANAL_REF_TYPE_STRING;
+		}
+		////  r_anal_xrefs_set (core->anal, *val, esil->address, type);
+		r_anal_xrefs_set (core->anal, esil->address, *val, type);
+	}
+	return false;
+}
+
 static void __anal_esil_function(RCore *core, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	if (!core->anal->esil) {
+		r_core_cmd0 (core, "aei");
 		r_core_cmd0 (core, "aeim");
-		// core->anal->esil = r_anal_esil_new (stacksize, 0, addrsize);
 	}
+	void *u = core->anal->esil->user;
+	core->anal->esil->user = core;
+	void *p = core->anal->esil->cb.hook_reg_write;
+	core->anal->esil->cb.hook_reg_write = regwrite_hook;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
 			addr, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 	if (fcn) {
+		bool anal_verbose = r_config_get_b (core->config, "anal.verbose");
 		// emulate every instruction in the function recursively across all the basic blocks
 		r_list_foreach (fcn->bbs, iter, bb) {
 			ut64 pc = bb->addr;
@@ -6195,26 +6214,36 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 			if (!buf) {
 				break;
 			}
+			// const char *pcname = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 			r_io_read_at (core->io, pc, buf, bbs);
 			int left;
-			bool opskip;
 			while (pc < end) {
 				left = R_MIN (end - pc, 32);
 				// r_asm_set_pc (core->rasm, pc);
-				ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL); // read overflow
-				opskip = false;
-				switch (op.type) {
-				case R_ANAL_OP_TYPE_CALL:
-				case R_ANAL_OP_TYPE_RET:
-					opskip = true;
-					break;
-				}
+				ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL| R_ANAL_OP_MASK_DISASM); // read overflow
 				if (ret) {
-					if (opskip) {
-						r_reg_set_value_by_role (core->anal->reg, R_REG_NAME_PC, pc);
-						r_anal_esil_parse (core->anal->esil, R_STRBUF_SAFEGET (&op.esil));
-						r_anal_esil_dumpstack (core->anal->esil);
-						r_anal_esil_stack_free (core->anal->esil);
+					bool opskip = false;
+					switch (op.type) {
+					case R_ANAL_OP_TYPE_JMP:
+					case R_ANAL_OP_TYPE_NOP:
+					case R_ANAL_OP_TYPE_CJMP:
+					case R_ANAL_OP_TYPE_UJMP:
+					case R_ANAL_OP_TYPE_CALL:
+					case R_ANAL_OP_TYPE_RET:
+						opskip = true;
+						break;
+					}
+					if (!opskip) {
+						const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
+						// eprintf ("0x%08"PFMT64x"  %s\n", pc, op.mnemonic);
+						if (R_STR_ISNOTEMPTY (esilstr)) {
+							r_anal_esil_set_pc (core->anal->esil, pc);
+							r_anal_esil_parse (core->anal->esil, esilstr);
+							if (anal_verbose) {
+								r_anal_esil_dumpstack (core->anal->esil);
+							}
+							r_anal_esil_stack_free (core->anal->esil);
+						}
 					}
 					pc += op.size;
 				} else {
@@ -6227,7 +6256,12 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 	} else {
 		eprintf ("Cannot find function at 0x%08" PFMT64x "\n", addr);
 	}
+	core->anal->esil->cb.hook_reg_write = p;
+	core->anal->esil->user = u;
+#if 0
 	r_anal_esil_free (core->anal->esil);
+	core->anal->esil = NULL;
+#endif
 }
 
 static void print_esil_dfg_as_commands(RCore *core, RAnalEsilDFG *dfg) {
@@ -10322,7 +10356,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			ut64 cur_seek = core->offset;
 			r_list_foreach (core->anal->fcns, it, fcn) {
 				r_core_seek (core, fcn->addr, true);
-				r_core_anal_esil (core, "f", NULL);
+				__anal_esil_function (core, fcn->addr);
+				//r_core_anal_esil (core, "f", NULL);
 			}
 			r_core_seek (core, cur_seek, true);
 		} else if (input[1] == ' ') {
