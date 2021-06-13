@@ -1,0 +1,16 @@
+NAME=di on SIGABRT
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=6 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Aborted
+signal=SIGABRT
+stopreason=Aborted
+Hello, World!
+EOF
+RUN
