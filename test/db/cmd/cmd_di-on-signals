@@ -16,7 +16,7 @@ EOF
 RUN
 
 
-NAME=di on SIGARLM
+NAME=di on SIGALRM
 FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=14 -d
 CMDS=<<EOF
@@ -29,6 +29,24 @@ EXPECT=<<EOF
 type=Alarm clock
 signal=SIGALRM
 stopreason=Alarm clock
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGBUS
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=7 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Bus error
+signal=SIGBUS
+stopreason=Bus error
 Hello, World!
 EOF
 RUN
