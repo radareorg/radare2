@@ -641,7 +641,6 @@ R_API const char *r_debug_reason_to_string(int type) {
 	switch (type) {
 	case R_DEBUG_REASON_DEAD: return "dead";
 	case R_DEBUG_REASON_ABORT: return "Aborted";
-	case R_DEBUG_REASON_SEGFAULT: return "Segmentation fault";
 	case R_DEBUG_REASON_NONE: return "none";
 	case R_DEBUG_REASON_SIGNAL: return "signal";
 	case R_DEBUG_REASON_BREAKPOINT: return "breakpoint";
@@ -677,6 +676,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_SIGPROF: return "Profiling timer expired";
 	case R_DEBUG_REASON_SIGPWR: return "Power failure";
 	case R_DEBUG_REASON_SIGQUIT: return "Quit";
+	case R_DEBUG_REASON_SIGSEGV: return "Segmentation fault";
 	case R_DEBUG_REASON_SIGSTKFLT: return "Stack fault";
 	case R_DEBUG_REASON_SIGSTOP: return "Stopped";
 	case R_DEBUG_REASON_SIGSYS: return "Bad system call";

@@ -821,7 +821,7 @@ static RDebugReasonType exception_to_reason (DWORD ExceptionCode) {
 	switch (ExceptionCode) {
 	case EXCEPTION_ACCESS_VIOLATION:
 	case EXCEPTION_GUARD_PAGE:
-		return R_DEBUG_REASON_SEGFAULT;
+		return R_DEBUG_REASON_SIGSEGV;
 	case EXCEPTION_BREAKPOINT:
 		return R_DEBUG_REASON_BREAKPOINT;
 	case EXCEPTION_FLT_DENORMAL_OPERAND:

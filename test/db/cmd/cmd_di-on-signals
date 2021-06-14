@@ -152,9 +152,27 @@ di~signal:0
 di~stopreason
 EOF
 EXPECT=<<EOF
-type=Power failure
+type=signal
 signal=none
-stopreason=Power failure
+stopreason=signal
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGINT
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=2 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=suspended-by-user
+signal=none
+stopreason=suspended-by-user
 Hello, World!
 EOF
 RUN

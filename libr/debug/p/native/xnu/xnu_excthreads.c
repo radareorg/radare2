@@ -323,7 +323,7 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg, int *ret_code) {
 	*ret_code = KERN_SUCCESS;
 	switch (msg->exception) {
 	case EXC_BAD_ACCESS:
-		ret = R_DEBUG_REASON_SEGFAULT;
+		ret = R_DEBUG_REASON_SIGSEGV;
 		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
