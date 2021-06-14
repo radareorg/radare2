@@ -50,3 +50,21 @@ stopreason=Bus error
 Hello, World!
 EOF
 RUN
+
+
+NAME=di on SIGCHLD
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=17 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=
+signal=SIGCHLD
+stopreason=
+Hello, World!
+EOF
+RUN
