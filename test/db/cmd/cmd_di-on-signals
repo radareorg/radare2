@@ -356,3 +356,38 @@ stopreason=Terminated
 Hello, World!
 EOF
 RUN
+
+NAME=di on SIGTRAP
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=5 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=breakpoint
+signal=SIGTRAP
+stopreason=breakpoint
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGTSTP
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=5 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Stopped
+signal=SIGTSTP
+stopreason=Stopped
+Hello, World!
+EOF
+RUN
