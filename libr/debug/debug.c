@@ -675,6 +675,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_SIGILL: return "Illegal instruction";
 	case R_DEBUG_REASON_SIGKILL: return "Killed";
 	case R_DEBUG_REASON_SIGPROF: return "Profiling timer expired";
+	case R_DEBUG_REASON_SIGPWR: return "Power failure";
 	case R_DEBUG_REASON_SIGQUIT: return "Quit";
 	case R_DEBUG_REASON_SIGSTKFLT: return "Stack fault";
 	case R_DEBUG_REASON_SIGSTOP: return "Stopped";

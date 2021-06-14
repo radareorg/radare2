@@ -68,3 +68,93 @@ stopreason=
 Hello, World!
 EOF
 RUN
+
+
+NAME=di on SIGCONT
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=18 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=
+signal=SIGCONT
+stopreason=
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGFPE
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=8 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=fpu
+signal=SIGFPE
+stopreason=fpu
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGHUP
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=1 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Hangup
+signal=SIGHUP
+stopreason=Hangup
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGILL
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=4 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Illegal instruction
+signal=SIGILL
+stopreason=Illegal instruction
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGPWR
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=30 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Power failure
+signal=none
+stopreason=Power failure
+Hello, World!
+EOF
+RUN
