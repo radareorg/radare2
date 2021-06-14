@@ -377,7 +377,7 @@ RUN
 
 NAME=di on SIGTSTP
 FILE=bins/elf/signals/signal-input
-ARGS=-e cfg.fortunes=false -e dbg.args=5 -d
+ARGS=-e cfg.fortunes=false -e dbg.args=20 -d
 CMDS=<<EOF
 dc
 di~type
@@ -391,3 +391,159 @@ stopreason=Stopped
 Hello, World!
 EOF
 RUN
+
+
+NAME=di on SIGTTIN
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=21 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Stopped
+signal=SIGTTIN
+stopreason=Stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGTTOU
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=22 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Stopped
+signal=SIGTTOU
+stopreason=Stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGURG
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=23 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=
+signal=SIGURG
+stopreason=
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGUSR1
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=10 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=User defined signal 1
+signal=SIGUSR1
+stopreason=User defined signal 1
+Hello, World!
+EOF
+
+
+NAME=di on SIGUSR2
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=12 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=User defined signal 2
+signal=SIGUSR2
+stopreason=User defined signal 2
+Hello, World!
+EOF
+
+
+NAME=di on SIGVTALRM
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=26 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Virtual timer expired
+signal=SIGVTALRM
+stopreason=Virtual timer expired
+Hello, World!
+EOF
+
+
+NAME=di on SIGWINCH
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=28 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=
+signal=SIGWINCH
+stopreason=
+Hello, World!
+EOF
+
+
+NAME=di on SIGXCPU
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=24 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=CPU time limit exceeded
+signal=SIGXCPU
+stopreason=CPU time limit exceeded
+Hello, World!
+EOF
+
+
+NAME=di on SIGXFSZ
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=25 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=File size limit exceeded
+signal=SIGXFSZ
+stopreason=File size limit exceeded
+Hello, World!
+EOF
