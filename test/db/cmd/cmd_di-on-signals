@@ -148,7 +148,7 @@ ARGS=-e cfg.fortunes=false -e dbg.args=30 -d
 CMDS=<<EOF
 dc
 di~type
-di~signal:0
+di~signal:1
 di~stopreason
 EOF
 EXPECT=<<EOF
@@ -173,6 +173,186 @@ EXPECT=<<EOF
 type=suspended-by-user
 signal=none
 stopreason=suspended-by-user
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGIO
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=29 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:1
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=signal
+signal=none
+stopreason=signal
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGKILL
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=9 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=exit-pid
+signal=none
+stopreason=exit-pid
+EOF
+RUN
+
+
+NAME=di on SIGPIPE
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=13 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:1
+di~stopreason
+EOF
+EXPECT=<<EOF
+[+] signal 13 aka SIGPIPE received 0
+type=signal
+signal=SIGPIPE
+stopreason=signal
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGPROF
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=27 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Profiling timer expired
+signal=SIGPROF
+stopreason=Profiling timer expired
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGQUIT
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=3 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Quit
+signal=SIGQUIT
+stopreason=Quit
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGSEGV
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=11 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Segmentation fault
+signal=SIGSEGV
+stopreason=Segmentation fault
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGSTKFLT
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=16 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Stack fault
+signal=none
+stopreason=Stack fault
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGSTOP
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=19 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Stopped
+signal=SIGSTOP
+stopreason=Stopped
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGSYS
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=31 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Bad system call
+signal=SIGSYS
+stopreason=Bad system call
+Hello, World!
+EOF
+RUN
+
+
+NAME=di on SIGTERM
+FILE=bins/elf/signals/signal-input
+ARGS=-e cfg.fortunes=false -e dbg.args=15 -d
+CMDS=<<EOF
+dc
+di~type
+di~signal:0
+di~stopreason
+EOF
+EXPECT=<<EOF
+type=Terminated
+signal=SIGTERM
+stopreason=Terminated
 Hello, World!
 EOF
 RUN
