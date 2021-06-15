@@ -2024,6 +2024,11 @@ static bool insert_mode_enabled(RCore *core) {
 	}
 	char arrows = r_cons_arrow_to_hjkl (ch);
 	switch (ch) {
+	case ':':
+		if (core->print->col != 2) {
+			r_core_visual_prompt_input (core);
+		}
+		break;
 	case 127:
 		core->print->cur = R_MAX (0, core->print->cur - 1);
 		return true;
