@@ -2056,6 +2056,14 @@ static bool insert_mode_enabled(RCore *core) {
 			core->print->cur++;
 		}
 		return true;
+	} else {
+		if (ch == '+') {
+			// inc byte
+			r_core_cmdf (core, "woa 01 @ $$+%i!1", core->print->cur);
+		} else if (ch == '-') {
+			// dec byte
+			r_core_cmdf (core, "wos 01 @ $$+%i!1", core->print->cur);
+		}
 	}
 	ch = arrows;
 	/* hex column */
