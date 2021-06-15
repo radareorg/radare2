@@ -319,13 +319,13 @@ R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct 
 		free (mm1);
 		if (mismatch) {
 			eprintf ("Module version mismatch %s (%s) vs (%s)\n",
-				file, stru->version, R2_VERSION);
-			if (stru->pkgname) {
-				const char *dot = strchr (stru->version, '.');
-				int major = atoi (stru->version);
-				int minor = dot ? atoi (dot + 1) : 0;
-				// The pkgname member was introduced in 4.2.0
-				if (major > 4 || (major == 4 && minor >= 2)) {
+					file, stru->version, R2_VERSION);
+			const char *dot = strchr (stru->version, '.');
+			int major = atoi (stru->version);
+			int minor = dot ? atoi (dot + 1) : 0;
+			// The pkgname member was introduced in 4.2.0
+			if (major > 4 || (major == 4 && minor >= 2)) {
+				if (stru->pkgname) {
 					printf ("r2pm -ci %s\n", stru->pkgname);
 				}
 			}

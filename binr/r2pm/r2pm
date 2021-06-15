@@ -22,7 +22,7 @@ export R2PM_JOBS=4
 export R2PMCACHE="$HOME/.r2pm.cache"
 
 # Set R2_* Vars
-eval $(r2 -H)
+eval $(r2 -H 2> /dev/null)
 export R2_VERSION
 
 R2PM=$0
@@ -72,7 +72,7 @@ export R2PM_USRPLUGIN_DIR="$R2_USER_PLUGINS"
 [ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2DATAHOME}/plugins"
 
 # www
-export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
+export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' -- 2> /dev/null`"
 export R2PM_HOMEWWWROOT="${R2DATAHOME}/www/"
 export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
 
@@ -128,6 +128,7 @@ Commands:
  -i,install <pkgname>        install or update package in your home (pkgname=all)
  -gi,global-install <pkg>    install or update package system-wide
  -gu,global-uninstall <pkg>  uninstall pkg from systemdir
+ -U,upgrade                  r2pm -U (upgrade all outdated plugins)
  -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)
  -l,list                     list installed pkgs
  -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH
@@ -144,7 +145,7 @@ Commands:
  init | update ..            initialize/update database
  cd [git/dir]                cd into given git (see 'r2pm ls')
  ls                          ls all cloned git repos in GITDIR
- suicide                     self remove all (home + system) installations of r2
+ purge                       self destroy all r2 installations
  cache                       cache contents of r2 -H to make r2pm r2-independent
 Environment:
  SUDO=sudo                    use this tool as sudo
@@ -190,7 +191,7 @@ countDown() {
 	echo 'Go!'
 }
 
-commitSuicide() {
+thePurge() {
 	confirm "Do you wanna purge r2 completely from your system and home?"
 	if [ $? != 0 ]; then
 		echo "Aborted." > /dev/stderr
@@ -210,6 +211,15 @@ commitSuicide() {
 		fi
 	done
 	unset IFS
+}
+
+upgradeOutdated() {
+	LINES=`r2 -qcq -- 2>&1 | grep r2pm | sed -e 's,$,;,g'`
+	if [ -n "${LINES}" ]; then
+		eval "${LINES}"
+	else
+		echo "Nothing to upgrade"
+	fi
 }
 
 case "$1" in
@@ -696,6 +706,9 @@ cache)
 	echo "export PREFIX=\"${PREFIX}\"" >> "${R2PMCACHE}"
 	echo "[r2pm] r2 environment cached in ${R2PMCACHE}"
 	;;
+-U|upgrade)
+	upgradeOutdated
+	;;
 -a|add)
 	if [ "$2" = "help" ]; then
 		printf '%s\n' \
@@ -750,8 +763,8 @@ cache)
 	fi
 	eval echo "\$$2"
 	;;
-suicide)
-	commitSuicide
+purge)
+	thePurge
 	;;
 -d|doc|--doc)
 	r2pm_doc "$2"
