@@ -18,7 +18,6 @@ static char *esil2c(RCore *core, RAnalEsil *esil, const char *expr) {
 
 static bool esil2c_eq(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
@@ -38,7 +37,6 @@ static bool esil2c_eq(RAnalEsil *esil) {
 
 static bool esil2c_peek8(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *src = r_anal_esil_pop (esil);
 
 	if (!src) {
@@ -52,7 +50,6 @@ static bool esil2c_peek8(RAnalEsil *esil) {
 
 static bool esil2c_poke8(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
@@ -67,7 +64,6 @@ static bool esil2c_poke8(RAnalEsil *esil) {
 
 static bool esil2c_addeq(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
@@ -82,7 +78,6 @@ static bool esil2c_addeq(RAnalEsil *esil) {
 
 static bool esil2c_add(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
@@ -97,7 +92,6 @@ static bool esil2c_add(RAnalEsil *esil) {
 
 static bool esil2c_subeq(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
@@ -112,7 +106,6 @@ static bool esil2c_subeq(RAnalEsil *esil) {
 
 static bool esil2c_xor(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
@@ -129,7 +122,6 @@ static bool esil2c_xor(RAnalEsil *esil) {
 
 static bool esil2c_sub(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
@@ -145,7 +137,6 @@ static bool esil2c_sub(RAnalEsil *esil) {
 
 static bool esil2c_dec(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *src = r_anal_esil_pop (esil);
 	if (!src) {
 		return false;
@@ -156,7 +147,6 @@ static bool esil2c_dec(RAnalEsil *esil) {
 
 static bool esil2c_inc(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *src = r_anal_esil_pop (esil);
 	if (!src) {
 		return false;
@@ -167,7 +157,6 @@ static bool esil2c_inc(RAnalEsil *esil) {
 
 static bool esil2c_neg(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *src = r_anal_esil_pop (esil);
 	if (!src) {
 		return false;
@@ -180,7 +169,6 @@ static bool esil2c_neg(RAnalEsil *esil) {
 
 static bool esil2c_goto(RAnalEsil *esil) {
 	EsilC *user = esil->user;
-	const char *op_string = esil->current_opstr;
 	char *src = r_anal_esil_pop (esil);
 	if (!src) {
 		return false;
@@ -215,6 +203,7 @@ static void esil2c_setup(RCore *core, RAnalEsil *esil) {
 	r_anal_esil_set_op (esil, "-", esil2c_sub, 1, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
 	r_anal_esil_set_op (esil, "^", esil2c_xor, 1, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
 	r_anal_esil_set_op (esil, "++", esil2c_inc, 1, 1, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
+	r_anal_esil_set_op (esil, "--", esil2c_dec, 1, 1, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
 	r_anal_esil_set_op (esil, "+", esil2c_add, 1, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
 	r_anal_esil_set_op (esil, "+=", esil2c_addeq, 0, 2, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
 	r_anal_esil_set_op (esil, "!", esil2c_neg, 1, 1, R_ANAL_ESIL_OP_TYPE_REG_WRITE);
