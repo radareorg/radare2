@@ -439,7 +439,8 @@ R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 }
 
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
-	if (!str || !esil || !*str || esil->stackptr > (esil->stacksize - 1)) {
+	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), false);
+	if (esil->stackptr > (esil->stacksize - 1)) {
 		return false;
 	}
 	esil->stack[esil->stackptr++] = strdup (str);
