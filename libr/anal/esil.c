@@ -1828,6 +1828,7 @@ static bool esil_addeq(RAnalEsil *esil) {
 
 #if ESIL_MACRO
 static bool esil_inc_macro(RAnalEsil *esil) {
+eprintf ("Handk %c", 10);
 	bool ret = false;
 	char *src = r_anal_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src)) {
@@ -3661,21 +3662,17 @@ repeat:
 		if (dorunword) {
 			if (*word) {
 				if (!runword (esil, word)) {
-					__stepOut (esil, esil->cmd_step_out);
-					return 0;
+					goto step_out;
 				}
 				word[wordi] = ',';
 				wordi = 0;
 				switch (evalWord (esil, ostr, &str)) {
 				case 0: goto loop;
-				case 1:
-					__stepOut (esil, esil->cmd_step_out);
-					return 0;
+				case 1: goto step_out;
 				case 2: continue;
 				}
 				if (dorunword == 1) {
-					__stepOut (esil, esil->cmd_step_out);
-					return 0;
+					goto step_out;
 				}
 			}
 			str++;
@@ -3689,19 +3686,39 @@ repeat:
 	}
 	word[wordi] = 0;
 	if (*word) {
+		if (esil->pending) {
+			char *expr = esil->pending;
+			esil->pending = NULL;
+			r_anal_esil_parse (esil, expr);
+			free (expr);
+			goto step_out;
+		}
 		if (!runword (esil, word)) {
-			__stepOut (esil, esil->cmd_step_out);
-			return 0;
+			goto step_out;
 		}
 		switch (evalWord (esil, ostr, &str)) {
 		case 0: goto loop;
-		case 1: __stepOut (esil, esil->cmd_step_out);
-			return 0;
+		case 1: goto step_out;
 		case 2: goto repeat;
 		}
 	}
+	if (esil->pending) {
+		char *expr = esil->pending;
+		esil->pending = NULL;
+		r_anal_esil_parse (esil, expr);
+		free (expr);
+	}
 	__stepOut (esil, esil->cmd_step_out);
 	return 1;
+step_out:
+	if (esil->pending) {
+		char *expr = esil->pending;
+		esil->pending = NULL;
+		r_anal_esil_parse (esil, expr);
+		free (expr);
+	}
+	__stepOut (esil, esil->cmd_step_out);
+	return 0;
 }
 
 R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word) {
