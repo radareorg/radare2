@@ -3129,9 +3129,9 @@ static bool esil_float_negcmp(RAnalEsil *esil) {
 
 	if (src && dst && esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
-			ret = r_anal_esil_pushnum(esil, 0);
+			ret = r_anal_esil_pushnum (esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum(esil, fabs(s - d) >= DBL_EPSILON);
+			ret = r_anal_esil_pushnum (esil, fabs(s - d) >= DBL_EPSILON);
 		}
 	} else {
 		ERR("esil_float_negcmp: invalid parameters.");
@@ -3144,14 +3144,14 @@ static bool esil_float_negcmp(RAnalEsil *esil) {
 static bool esil_float_less(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
-			ret = r_anal_esil_pushnum(esil, 0);
+			ret = r_anal_esil_pushnum (esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum(esil, d < s);
+			ret = r_anal_esil_pushnum (esil, d < s);
 		}
 	} else {
 		ERR("esil_float_less: invalid parameters.");
@@ -3164,14 +3164,14 @@ static bool esil_float_less(RAnalEsil *esil) {
 static bool esil_float_lesseq(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
-			ret = r_anal_esil_pushnum(esil, 0);
+			ret = r_anal_esil_pushnum (esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum(esil, d <= s);
+			ret = r_anal_esil_pushnum (esil, d <= s);
 		}
 	} else {
 		ERR("esil_float_lesseq: invalid parameters.");
@@ -3184,8 +3184,8 @@ static bool esil_float_lesseq(RAnalEsil *esil) {
 static bool esil_float_add(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
@@ -3894,7 +3894,6 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("FLOOR", esil_float_floor, 1, 1, OT_MATH);
 	OP ("ROUND", esil_float_round, 1, 1, OT_MATH);
 	OP ("SQRT", esil_float_sqrt, 1, 1, OT_MATH);
-
 }
 
 /* register callbacks using this anal module. */
