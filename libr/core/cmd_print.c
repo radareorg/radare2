@@ -324,6 +324,7 @@ static const char *help_msg_pd[] = {
 	"pdc", "", "pseudo disassembler output in C-like syntax",
 	"pdC", "", "show comments found in N instructions",
 	"pde", "[q|qq|j] [N]", "disassemble N instructions following execution flow from current PC",
+	"pdo", "[N]", "convert esil expressions of N instructions to C (bytes for pdO)",
 	"pdf", "", "disassemble function",
 	"pdi", "", "like 'pi', with offset and bytes",
 	"pdj", "", "disassemble to json",
@@ -4942,6 +4943,44 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 	return false;
 }
 
+#include "esil2c.c"
+
+static void core_print_decompile(RCore *core, const char *input) {
+	int i, count = r_num_get (core->num, input);
+	if (count < 1) {
+		count = 1;
+	}
+	ut64 addr = core->offset;
+	int minopsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int bits = r_config_get_i (core->config, "asm.bits");
+	int ss = 16 * 1024;
+	RAnalEsil *esil = r_anal_esil_new (ss, 0, bits);
+	// r_anal_esil_setup (esil, core->anal, true, 0, 0);
+	esil2c_setup (core, esil);
+	for (i = 0; i < count; i++) {
+		RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_ESIL);
+		if (!op) {
+			addr += minopsize;
+			continue;
+		}
+		const char *es = R_STRBUF_SAFEGET (&op->esil);
+		r_anal_esil_set_pc (esil, addr);
+		r_cons_printf ("addr_0x%08"PFMT64x"_0: // %s\n", addr, es);
+		char *cstr = esil2c (core, esil, es);
+		r_cons_printf ("%s", cstr);
+		free (cstr);
+		if (op->size > 0) {
+			addr += op->size;
+		} else {
+			addr += minopsize;
+		}
+		r_anal_op_free (op);
+	}
+	esil2c_free (esil->user);
+	esil->user = NULL;
+	r_anal_esil_free (esil);
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	st64 l;
@@ -5452,6 +5491,11 @@ static int cmd_print(void *data, const char *input) {
 			}
 			r_core_print_disasm_all (core, core->offset, l, len, input[2]);
 			pd_result = true;
+			break;
+		case 'o': // "pdo"
+			core_print_decompile (core, input + 2);
+			pd_result = true;
+			processed_cmd = true;
 			break;
 		case 'e': // "pde"
 			processed_cmd = true;
