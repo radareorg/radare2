@@ -33,10 +33,10 @@ SRC=$(subst .o,.c,$(OBJ))
 BEXE=$(BIN)$(EXT_EXE)
 
 ifeq ($(USE_RPATH),1)
-LINK+=-Wl,-rpath,"${LIBDIR}"
 ifeq ($(OSTYPE),android)
-LINK+=--enable-new-dtags
+LINK+=-Wl,--enable-new-dtags
 endif
+LINK+=-Wl,-rpath,"${LIBDIR}"
 endif
 
 ifeq (${OSTYPE},gnulinux)
