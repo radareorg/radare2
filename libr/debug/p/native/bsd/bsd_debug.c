@@ -90,7 +90,7 @@ int bsd_handle_signals(RDebug *dbg) {
 			dbg->reason.type = R_DEBUG_REASON_ABORT;
 			break;
 		case SIGSEGV:
-			dbg->reason.type = R_DEBUG_REASON_SIGSEGV;
+			dbg->reason.type = R_DEBUG_REASON_SEGFAULT;
 			break;
 	}
 

@@ -98,33 +98,33 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		// TODO: DO MORE RDEBUGREASON HERE
 		switch (dbg->reason.signum) {
 		case SIGABRT: // 6 / SIGIOT // SIGABRT
-			dbg->reason.type = R_DEBUG_REASON_ABORT;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGALRM:
-			dbg->reason.type = R_DEBUG_REASON_SIGALRM;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGBUS:
-			dbg->reason.type = R_DEBUG_REASON_SIGBUS;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGCHLD:
-			dbg->reason.type = R_DEBUG_REASON_SIGCHLD;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;;
 			break;
 		case SIGCONT:
-			dbg->reason.type = R_DEBUG_REASON_SIGCONT;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 #if __sparc__
 		case SIGEMT:
-			dbg->reason.type = R_DEBUG_REASON_SIGEMT;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 #endif
 		case SIGFPE:
-			dbg->reason.type = R_DEBUG_REASON_FPU;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGHUP:
-			dbg->reason.type = R_DEBUG_REASON_SIGHUP;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGILL:
-			dbg->reason.type = R_DEBUG_REASON_SIGILL;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGPWR:
 			break;
@@ -134,30 +134,30 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 		case SIGIO:
 			break;
 		case SIGKILL:
-			dbg->reason.type = R_DEBUG_REASON_SIGKILL;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGPIPE:
 			break;
 		case SIGPROF:
-			dbg->reason.type = R_DEBUG_REASON_SIGPROF;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGQUIT:
-			dbg->reason.type = R_DEBUG_REASON_SIGQUIT;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGSEGV:
-			dbg->reason.type = R_DEBUG_REASON_SIGSEGV;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGSTKFLT:
-			dbg->reason.type = R_DEBUG_REASON_SIGSTKFLT;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGSTOP:
-			dbg->reason.type = R_DEBUG_REASON_SIGSTOP;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGSYS:
-			dbg->reason.type = R_DEBUG_REASON_SIGSYS;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGTERM:
-			dbg->reason.type = R_DEBUG_REASON_SIGTERM;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGTRAP:
 		{
@@ -198,35 +198,35 @@ int linux_handle_signals(RDebug *dbg, int tid) {
 			}
 		} break;
 		case SIGTSTP:
-			dbg->reason.type = R_DEBUG_REASON_SIGTSTP;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGTTIN:
-			dbg->reason.type = R_DEBUG_REASON_SIGTTIN;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGTTOU:
-			dbg->reason.type = R_DEBUG_REASON_SIGTTOU;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		//SIGUNUSED
 		case SIGURG:
-			dbg->reason.type = R_DEBUG_REASON_SIGURG;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGUSR1:
-			dbg->reason.type = R_DEBUG_REASON_SIGUSR1;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGUSR2:
-			dbg->reason.type = R_DEBUG_REASON_SIGUSR2;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGVTALRM:
-			dbg->reason.type = R_DEBUG_REASON_SIGVTALRM;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGWINCH:
-			dbg->reason.type = R_DEBUG_REASON_SIGWINCH;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGXCPU:
-			dbg->reason.type = R_DEBUG_REASON_SIGXCPU;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		case SIGXFSZ:
-			dbg->reason.type = R_DEBUG_REASON_SIGXFSZ;
+			dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 			break;
 		default:
 			break;

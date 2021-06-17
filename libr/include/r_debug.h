@@ -113,36 +113,7 @@ typedef enum {
 	R_DEBUG_REASON_INT,
 	R_DEBUG_REASON_FPU,
 	R_DEBUG_REASON_USERSUSP,
-	R_DEBUG_REASON_SIGALRM,
-	R_DEBUG_REASON_SIGBUS,
-	R_DEBUG_REASON_SIGCHLD,
-	R_DEBUG_REASON_SIGCONT,
-#ifdef SIGEMT
-	R_DEBUG_REASON_SIGEMT,
-#endif
-	R_DEBUG_REASON_SIGHUP,
-	R_DEBUG_REASON_SIGILL,
-	R_DEBUG_REASON_SIGPWR,
-	R_DEBUG_REASON_SIGKILL,
-	R_DEBUG_REASON_SIGPROF,
-	R_DEBUG_REASON_SIGQUIT,
-	R_DEBUG_REASON_SIGSEGV,
-	R_DEBUG_REASON_SIGSTKFLT,
-	R_DEBUG_REASON_SIGSTOP,
-	R_DEBUG_REASON_SIGSYS,
-	R_DEBUG_REASON_SIGTERM,
-	R_DEBUG_REASON_SIGTSTP,
-	R_DEBUG_REASON_SIGTTIN,
-	R_DEBUG_REASON_SIGTTOU,
-	R_DEBUG_REASON_SIGURG,
-	R_DEBUG_REASON_SIGUSR1,
-	R_DEBUG_REASON_SIGUSR2,
-	R_DEBUG_REASON_SIGVTALRM,
-	R_DEBUG_REASON_SIGWINCH,
-	R_DEBUG_REASON_SIGXCPU,
-	R_DEBUG_REASON_SIGXFSZ,
 } RDebugReasonType;
-
 
 /* TODO: move to r_anal */
 typedef struct r_debug_frame_t {
@@ -464,6 +435,7 @@ R_API int r_debug_start(RDebug *dbg, const char *cmd);
 /* reason we stopped */
 R_API RDebugReasonType r_debug_stop_reason(RDebug *dbg);
 R_API const char *r_debug_reason_to_string(int type);
+R_API const char *r_signal_to_human(int signum);
 
 /* wait for another event */
 R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp);
