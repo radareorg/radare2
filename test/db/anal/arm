@@ -1052,7 +1052,7 @@ af
 axt str.helloradareworld_n
 EOF
 EXPECT=<<EOF
-main 0xbf9c [DATA] add r0, pc
+main 0xbf9c [STRING] add r0, pc
 EOF
 RUN
 
