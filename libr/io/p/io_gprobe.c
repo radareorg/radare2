@@ -1077,7 +1077,7 @@ static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return has_read;
 }
 
-static int __close (RIODesc *fd) {
+static int __close(RIODesc *fd) {
 	RIOGprobe *gprobe;
 
 	if (!fd || !fd->data) {
@@ -1091,7 +1091,7 @@ static int __close (RIODesc *fd) {
 	return 0;
 }
 
-static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RIOGprobe *gprobe;
 	if (!fd || !fd->data) {
 		return offset;
@@ -1114,7 +1114,7 @@ static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static bool __plugin_open (RIO *io, const char *pathname, bool many) {
+static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return pathname && r_str_startswith (pathname, "gprobe://") && strlen (pathname + strlen ("gprobe://"));
 }
 
@@ -1160,13 +1160,11 @@ static RIODesc *__open (RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
-	RIOGprobe *gprobe;
-
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!fd || !fd->data) {
 		return NULL;
 	}
-	gprobe = (RIOGprobe *)fd->data;
+	RIOGprobe *gprobe = (RIOGprobe *)fd->data;
 
 	if (!cmd[0] || cmd[0] == '?' || !strcmp (cmd, "help")) {
 		printf ("Usage: =!cmd args\n"
@@ -1236,7 +1234,7 @@ RIOPlugin r_io_plugin_gprobe = {
 	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.system = __system,
 };

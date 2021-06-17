@@ -1,4 +1,4 @@
-/* io_r2k - radare2 - LGPL - Copyright 2016-2018 - SkUaTeR + panda */
+/* io_r2k - radare2 - LGPL - Copyright 2016-2021 - SkUaTeR + panda */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -141,7 +141,7 @@ RIOPlugin r_io_plugin_r2k = {
 	.close = r2k__close,
 	.read = r2k__read,
 	.check = r2k__plugin_open,
-	.lseek = r2k__lseek,
+	.seek = r2k__lseek,
 	.system = r2k__system,
 	.write = r2k__write,
 };

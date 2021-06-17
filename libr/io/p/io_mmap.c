@@ -193,7 +193,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 	return r_io_mmap_truncate ((RIOMMapFileObj*)fd->data, size);
 }
 
-struct r_io_plugin_t r_io_plugin_mmap = {
+RIOPlugin r_io_plugin_mmap = {
 	.name = "mmap",
 	.desc = "Open files using mmap",
 	.uris = "mmap://",
@@ -202,7 +202,7 @@ struct r_io_plugin_t r_io_plugin_mmap = {
 	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.resize = __resize,
 };

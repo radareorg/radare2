@@ -115,7 +115,7 @@ RIOPlugin r_io_plugin_sparse = {
 	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.resize = NULL,
 };

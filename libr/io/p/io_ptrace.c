@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include <r_userconf.h>
 #include <r_util.h>
@@ -354,7 +354,7 @@ RIOPlugin r_io_plugin_ptrace = {
 	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.system = __system,
 	.write = __write,
 	.getpid = __getpid,

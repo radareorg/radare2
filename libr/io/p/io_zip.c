@@ -637,7 +637,7 @@ RIOPlugin r_io_plugin_zip = {
 	.write = r_io_zip_write,
 	.read = r_io_zip_read,
 	.close = r_io_zip_close,
-	.lseek = r_io_zip_lseek,
+	.seek = r_io_zip_lseek,
 	.check = r_io_zip_plugin_open,
 	.resize = r_io_zip_resize,
 };

@@ -326,7 +326,7 @@ RIOPlugin r_io_plugin_default = {
 	.close = __close,
 	.read = __read,
 	.check = __plugin_open_default,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.resize = __resize,
 #if __UNIX__

@@ -65,7 +65,7 @@ RIOPlugin r_io_plugin_malloc = {
 	.close = io_memory_close,
 	.read = io_memory_read,
 	.check = __check,
-	.lseek = io_memory_lseek,
+	.seek = io_memory_lseek,
 	.write = io_memory_write,
 	.resize = io_memory_resize,
 };
