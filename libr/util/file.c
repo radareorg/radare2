@@ -1232,9 +1232,11 @@ R_API char *r_file_tmpdir(void) {
 	}
 	if (!path) {
 #if __ANDROID__
-		path = strdup ("/data/local/tmp");
-		// path = strdup ("/data/data/com.termux/files/usr/tmp");
-		// path = strdup ("@TERMUX_PREFIX@/tmp");
+		if (r_file_is_directory (TERMUX_PREFIX "/tmp")) {
+			path = strdup (TERMUX_PREFIX "/tmp");
+		} else {
+			path = strdup ("/data/local/tmp");
+		}
 #else
 		path = strdup ("/tmp");
 #endif

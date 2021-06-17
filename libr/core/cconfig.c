@@ -3,6 +3,10 @@
 #include <r_core.h>
 #include <r_types_base.h>
 
+#ifndef TERMUX_PREFIX
+#define TERMUX_PREFIX "/data/data/com.termux/files/usr"
+#endif
+
 #define NODECB(w,x,y) r_config_set_cb (cfg,w,x,y)
 #define NODEICB(w,x,y) r_config_set_i_cb (cfg,w,x,y)
 #define SETDESC(x,y) r_config_node_desc (x,y)
@@ -3719,8 +3723,8 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	if (r_file_exists ("/usr/bin/openURL")) { // iOS ericautils
 		r_config_set (cfg, "http.browser", "/usr/bin/openURL");
-	} else if (r_file_exists ("@TERMUX_PREFIX@/bin/termux-open")) {
-		r_config_set (cfg, "http.browser", "@TERMUX_PREFIX@/bin/termux-open");
+	} else if (r_file_exists (TERMUX_PREFIX "/bin/termux-open")) {
+		r_config_set (cfg, "http.browser", TERMUX_PREFIX "/bin/termux-open");
 	} else if (r_file_exists ("/system/bin/toolbox")) {
 		r_config_set (cfg, "http.browser",
 				"LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d");
