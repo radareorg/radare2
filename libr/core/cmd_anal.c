@@ -6170,15 +6170,31 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 	r_buf_free (b);
 }
 
+R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
+	const RList *list = r_flag_get_list (core->flags, addr);
+	RListIter *iter;
+	RFlagItem *item;
+	bool has_flag = false;
+	int type = R_ANAL_REF_TYPE_DATA;
+	r_list_foreach (list, iter, item) {
+		if (item && strchr (item->name, '.')) {
+			if (r_str_startswith (item->name, "str")) {
+				type = R_ANAL_REF_TYPE_STRING;
+			}
+			////  r_anal_xrefs_set (core->anal, *val, esil->address, type);
+			has_flag = true;
+		}
+	}
+	if (!has_flag) {
+		return -1;
+	}
+	return type;
+}
+
 static bool regwrite_hook(RAnalEsil *esil, const char *name, ut64 *val) {
 	RCore *core = esil->user;
-	RFlagItem *item = r_flag_get_at (core->flags, *val, true);
-	if (item && strchr (item->name, '.')) {
-		int type = R_ANAL_REF_TYPE_DATA;
-		if (r_str_startswith (item->name, "str")) {
-			type = R_ANAL_REF_TYPE_STRING;
-		}
-		////  r_anal_xrefs_set (core->anal, *val, esil->address, type);
+	int type = core_type_by_addr (core, *val);
+	if (type != -1) {
 		r_anal_xrefs_set (core->anal, esil->address, *val, type);
 	}
 	return false;
@@ -6223,6 +6239,7 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 				ret = r_anal_op (core->anal, &op, pc, buf + pc - bb->addr, left, R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL| R_ANAL_OP_MASK_DISASM); // read overflow
 				if (ret) {
 					bool opskip = false;
+#if 0
 					switch (op.type) {
 					case R_ANAL_OP_TYPE_JMP:
 					case R_ANAL_OP_TYPE_NOP:
@@ -6233,6 +6250,7 @@ static void __anal_esil_function(RCore *core, ut64 addr) {
 						opskip = true;
 						break;
 					}
+#endif
 					if (!opskip) {
 						const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 						// eprintf ("0x%08"PFMT64x"  %s\n", pc, op.mnemonic);
@@ -10356,8 +10374,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			ut64 cur_seek = core->offset;
 			r_list_foreach (core->anal->fcns, it, fcn) {
 				r_core_seek (core, fcn->addr, true);
-				__anal_esil_function (core, fcn->addr);
-				//r_core_anal_esil (core, "f", NULL);
+				r_core_anal_esil (core, "f", NULL);
+				// __anal_esil_function (core, fcn->addr);
 			}
 			r_core_seek (core, cur_seek, true);
 		} else if (input[1] == ' ') {
