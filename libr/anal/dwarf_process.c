@@ -13,7 +13,7 @@ typedef struct dwarf_parse_context_t {
 	Sdb *sdb;
 	HtUP/*<ut64 offset, DwarfDie *die>*/ *die_map;
 	HtUP/*<offset, RBinDwarfLocList*>*/  *locations;
-	char *lang; // for demangling
+	const char *lang; // for demangling
 } Context;
 
 typedef struct dwarf_function_t {
@@ -776,7 +776,7 @@ static void get_spec_die_type(Context *ctx, RBinDwarfDie *die, RStrBuf *ret_type
 
 /* For some languages linkage name is more informative like C++,
    but for Rust it's rubbish and the normal name is fine */
-static bool prefer_linkage_name(char *lang) {
+static bool prefer_linkage_name(const char *lang) {
 	if (lang == NULL) {
 		return false;
 	} else if (!strcmp (lang, "rust")) {
@@ -1469,11 +1469,11 @@ cleanup:
  * @param die
  * @return char* string literal language represantation for demangling BinDemangle
  */
-static char *parse_comp_unit_lang(const RBinDwarfDie *die) {
+static const char *parse_comp_unit_lang(const RBinDwarfDie *die) {
 	r_return_val_if_fail (die, NULL);
 
 	int idx = find_attr_idx (die, DW_AT_language);
-	char *lang = "cxx"; // default fallback
+	const char *lang = "cxx"; // default fallback
 	if (idx == -1) {
 		/* What to do now, it should have  one?, just assume C++ */
 		return lang;
