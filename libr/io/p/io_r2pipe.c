@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2019 - pancake */
+/* radare - LGPL - Copyright 2015-2021 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -188,7 +188,7 @@ RIOPlugin r_io_plugin_r2pipe = {
 	.close = __close,
 	.read = __read,
 	.check = __check,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.system = __system
 };

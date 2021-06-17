@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -186,7 +186,7 @@ RIOPlugin r_io_plugin_gzip = {
 	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.resize = __resize,
 };

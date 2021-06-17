@@ -53,7 +53,7 @@ RIOPlugin r_io_plugin_rbuf = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.check = __check
 };

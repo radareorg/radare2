@@ -160,7 +160,7 @@ RIOPlugin r_io_plugin_r2web = {
 	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.system = __system,
 	.write = __write,
 };

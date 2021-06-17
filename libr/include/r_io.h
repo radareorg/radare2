@@ -174,7 +174,7 @@ typedef struct r_io_plugin_t {
 	RIODesc* (*open)(RIO *io, const char *, int perm, int mode);
 	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int perm, int mode);
 	int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
-	ut64 (*lseek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
+	ut64 (*seek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 	int (*close)(RIODesc *desc);
 	bool (*is_blockdevice)(RIODesc *desc);

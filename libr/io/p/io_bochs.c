@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2017 - LGPL, SkUaTeR, All rights reserved.
+// Copyright (c) 2016-2021 - LGPL, SkUaTeR, All rights reserved.
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -116,7 +116,7 @@ RIOPlugin r_io_plugin_bochs = {
 	.read = __read,
 	.write = __write,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.system = __system,
 	.isdbg = true
 };

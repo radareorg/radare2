@@ -441,7 +441,7 @@ RIOPlugin r_io_plugin_ihex = {
 	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.resize = __resize
 };

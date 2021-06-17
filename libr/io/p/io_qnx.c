@@ -160,7 +160,7 @@ RIOPlugin r_io_plugin_qnx = {
 	.read = __read,
 	.write = __write,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.system = __system,
 	.isdbg = true
 };

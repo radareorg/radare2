@@ -98,7 +98,7 @@ RIOPlugin r_io_plugin_fd = {
 	.close = __close,
 	.read = __read,
 	.check = __check,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.resize = __resize,
 };

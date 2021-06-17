@@ -212,14 +212,14 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 }
 
 R_API ut64 r_io_desc_seek(RIODesc* desc, ut64 offset, int whence) {
-	if (!desc || !desc->plugin || !desc->plugin->lseek) {
+	if (!desc || !desc->plugin || !desc->plugin->seek) {
 		return (ut64) -1;
 	}
-	return desc->plugin->lseek (desc->io, desc, offset, whence);
+	return desc->plugin->seek (desc->io, desc, offset, whence);
 }
 
 R_API ut64 r_io_desc_size(RIODesc* desc) {
-	if (!desc || !desc->plugin || !desc->plugin->lseek) {
+	if (!desc || !desc->plugin || !desc->plugin->seek) {
 		return 0LL;
 	}
 	ut64 off = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);

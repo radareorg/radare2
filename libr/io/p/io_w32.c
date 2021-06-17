@@ -81,7 +81,7 @@ RIOPlugin r_io_plugin_w32 = {
 	.close = w32__close,
 	.read = w32__read,
 	.check = w32__plugin_open,
-	.lseek = w32__lseek,
+	.seek = w32__lseek,
 	.system = w32__system,
 	.write = w32__write,
 };

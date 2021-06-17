@@ -137,7 +137,7 @@ RIOPlugin r_io_plugin_shm = {
 	.close = shm__close,
 	.read = shm__read,
 	.check = shm__plugin_open,
-	.lseek = shm__lseek,
+	.seek = shm__lseek,
 	.write = shm__write,
 };
 

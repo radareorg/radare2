@@ -146,7 +146,7 @@ RIOPlugin r_io_plugin_socket = {
 	.open = __open,
 	.close = __close,
 	.read = __read,
-	.lseek = io_memory_lseek,
+	.seek = io_memory_lseek,
 	.check = __check,
 	.write = __write,
 };

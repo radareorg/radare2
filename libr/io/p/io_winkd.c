@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017, The Lemon Man, All rights reserved. LGPLv3
+// Copyright (c) 2014-2021, The Lemon Man, All rights reserved. LGPLv3
 
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
@@ -118,7 +118,7 @@ RIOPlugin r_io_plugin_winkd = {
 	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
-	.lseek = __lseek,
+	.seek = __lseek,
 	.write = __write,
 	.isdbg = true
 };
