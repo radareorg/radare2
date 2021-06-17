@@ -39,7 +39,7 @@ ST_DATA int parse_flags;
 #define PARSE_FLAG_ASM_COMMENTS 0x0008	/* '#' can be used for line comment */
 #define PARSE_FLAG_SPACES     0x0010	/* next() returns space tokens (for -E) */
 
-ST_DATA struct BufferedFile *file;
+extern struct BufferedFile *file;
 ST_DATA int ch, tok;
 ST_DATA CValue tokc;
 ST_DATA const int *macro_ptr;

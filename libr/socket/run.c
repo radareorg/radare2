@@ -34,7 +34,9 @@
 #if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/resource.h>
+#ifndef __wasi__
 #include <grp.h>
+#endif
 #include <errno.h>
 #if defined(__sun)
 #include <sys/filio.h>
@@ -57,7 +59,7 @@
 #define pid_t int
 #endif
 
-#if EMSCRIPTEN
+#if EMSCRIPTEN || __wasi__
 #undef HAVE_PTY
 #define HAVE_PTY 0
 #else
@@ -159,6 +161,7 @@ R_API void r_run_free(RRunProfile *r) {
 
 #if __UNIX__
 static void set_limit(int n, int a, ut64 b) {
+#ifndef __wasi__
 	if (n) {
 		struct rlimit cl = {b, b};
 		setrlimit (RLIMIT_CORE, &cl);
@@ -166,6 +169,7 @@ static void set_limit(int n, int a, ut64 b) {
 		struct rlimit cl = {0, 0};
 		setrlimit (a, &cl);
 	}
+#endif
 }
 #endif
 
@@ -416,7 +420,9 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		return 0;
 	}
 	if (cmd[0] == '"') {
-#if __UNIX__
+#ifdef __wasi__
+		eprintf ("[ERROR] rarun2: Cannot create pipe\n");
+#elif __UNIX__
 		if (in) {
 			int pipes[2];
 			if (pipe (pipes) != -1) {
@@ -463,6 +469,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 			eprintf ("[ERROR] rarun2: Cannot open: %s\n", cmd);
 			return 1;
 		}
+#ifndef __wasi__
 #define DUP(x) { close(x); dup2(f,x); }
 		if (in) {
 			DUP(0);
@@ -473,6 +480,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 		if (err) {
 			DUP(2);
 		}
+#endif
 		close (f);
 	}
 	return 0;
@@ -725,11 +733,11 @@ static int redirect_socket_to_stdio(RSocket *sock) {
 	close (0);
 	close (1);
 	close (2);
-
+#ifndef __wasi__
 	dup2 (sock->fd, 0);
 	dup2 (sock->fd, 1);
 	dup2 (sock->fd, 2);
-
+#endif
 	return 0;
 }
 
@@ -854,7 +862,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (p->_aslr != -1) {
 		setASLR (p, p->_aslr);
 	}
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	set_limit (p->_docore, RLIMIT_CORE, RLIM_INFINITY);
 	if (p->_maxfd) {
 		set_limit (p->_maxfd, RLIMIT_NOFILE, p->_maxfd);
@@ -1019,7 +1027,9 @@ R_API int r_run_config_env(RRunProfile *p) {
 		int f2[2];
 		if (pipe (f2) != -1) {
 			close (0);
+#if !__wasi__
 			dup2 (f2[0], 0);
+#endif
 		} else {
 			eprintf ("[ERROR] rarun2: Cannot create pipe\n");
 			return 1;

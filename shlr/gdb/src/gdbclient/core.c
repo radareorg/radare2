@@ -16,7 +16,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#ifndef __wasi__
 #include <termios.h>
+#endif
 #endif
 
 #if __UNIX__

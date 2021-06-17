@@ -620,6 +620,17 @@ R_API int r_cons_readchar(void) {
 	r_cons_set_raw (1);
 #if __WINDOWS__
 	return __cons_readchar_w32 (0);
+#elif __wasi__
+	void *bed = r_cons_sleep_begin ();
+	int ret = read (STDIN_FILENO, buf, 1);
+	r_cons_sleep_end (bed);
+	if (ret < 1) {
+		return -1;
+	}
+	if (bufactive) {
+		r_cons_set_raw (0);
+	}
+	return r_cons_controlz (buf[0]);
 #else
 	void *bed = r_cons_sleep_begin ();
 

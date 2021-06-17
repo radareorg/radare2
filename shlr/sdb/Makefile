@@ -24,6 +24,16 @@ endif
 
 .PHONY: test sdb.js pkgconfig dist w32dista asan
 
+WASI_SDK=$(HOME)/Downloads/wasi/wasi-sdk-12.0
+WASI_SYSROOT=$(HOME)/Downloads/wasi/wasi-sysroot
+WASI_CC="$(WASI_SDK)/bin/clang --sysroot=$(WASI_SYSROOT) -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_SIGNAL -DUSE_MMAN=0 -DHAVE_SYSTEM=0"
+
+wasi wasm:
+	${MAKE} src/sdb_version.h
+	CC=$(WASI_CC) CFLAGS="$(WASI_CFLAGS)" $(MAKE) -C src all WITHPIC=0
+	mv src/sdb src/sdb.wasm
+	file src/sdb.wasm
+
 test:
 	${MAKE} -C test
 

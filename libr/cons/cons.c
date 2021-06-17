@@ -346,7 +346,7 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		break_stack_free (b);
 	} else {
 		//there is not more elements in the stack
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 		if (sig && r_cons_context_is_main ()) {
 			r_sys_signal (SIGINT, SIG_IGN);
 		}
@@ -404,7 +404,7 @@ R_API int r_cons_get_cur_line(void) {
 		curline = point.y;
 	}
 #endif
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	char buf[8];
 	struct termios save,raw;
 	// flush the Arrow keys escape keys which was messing up the output
@@ -436,7 +436,7 @@ R_API void r_cons_break_timeout(int timeout) {
 R_API void r_cons_break_end(void) {
 	I.context->breaked = false;
 	I.timeout = 0;
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	r_sys_signal (SIGINT, SIG_IGN);
 #endif
 	if (!r_stack_is_empty (I.context->break_stack)) {
@@ -588,7 +588,7 @@ R_API RCons *r_cons_new(void) {
 #else
 	I.vtmode = 2;
 #endif
-#if EMSCRIPTEN
+#if EMSCRIPTEN || __wasi__
 	/* do nothing here :? */
 #elif __UNIX__
 	tcgetattr (0, &I.term_buf);
@@ -1429,7 +1429,9 @@ R_API int r_cons_get_cursor(int *rows) {
 }
 
 R_API bool r_cons_isatty(void) {
-#if __UNIX__
+#if EMSCRIPTEN || __wasi__
+	return false;
+#elif __UNIX__
 	struct winsize win = { 0 };
 	const char *tty;
 	struct stat sb;
@@ -1451,9 +1453,10 @@ R_API bool r_cons_isatty(void) {
 		return false;
 	}
 	return true;
-#endif
+#else
 	/* non-UNIX do not have ttys */
 	return false;
+#endif
 }
 
 #if __WINDOWS__
@@ -1545,7 +1548,7 @@ R_API int r_cons_get_size(int *rows) {
 			I.rows = 23;
 		}
 	}
-#elif EMSCRIPTEN
+#elif EMSCRIPTEN || __wasi__
 	I.columns = 80;
 	I.rows = 23;
 #elif __UNIX__
@@ -1708,7 +1711,7 @@ R_API void r_cons_set_raw(bool is_raw) {
 			return;
 		}
 	}
-#if EMSCRIPTEN
+#if EMSCRIPTEN || __wasi__
 	/* do nothing here */
 #elif __UNIX__
 	// enforce echo off

@@ -280,6 +280,12 @@ typedef unsigned szind_t;
 #  ifdef __tile__
 #    define LG_QUANTUM		4
 #  endif
+#  ifdef __WASM__
+#    define LG_QUANTUM		4
+#  endif
+#  ifdef __wasi__
+#    define LG_QUANTUM		4
+#  endif
 #  ifdef __le32__
 #    define LG_QUANTUM		4
 #  endif

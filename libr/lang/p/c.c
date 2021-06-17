@@ -6,7 +6,7 @@
 #include "r_core.h"
 #include "r_lang.h"
 
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 static int ac = 0;
 static const char **av = NULL;
 

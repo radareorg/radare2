@@ -16,9 +16,11 @@ R_LIB_VERSION_HEADER (r_socket);
 #include <sys/un.h>
 #include <poll.h>
 #include <arpa/inet.h>
+#ifndef __wasi__
 #include <netdb.h>
-#include <sys/socket.h>
 #include <sys/wait.h>
+#endif
+#include <sys/socket.h>
 #endif
 
 #if HAVE_LIB_SSL

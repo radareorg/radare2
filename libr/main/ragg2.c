@@ -162,7 +162,7 @@ static int openfile(const char *f, int x) {
 			return -1;
 		}
 	}
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	if (x) {
 		fchmod (fd, 0755);
 	}
@@ -176,7 +176,9 @@ static int openfile(const char *f, int x) {
 		eprintf ("Could not resize\n");
 	}
 	close (1);
+#if !__wasi__
 	dup2 (fd, 1);
+#endif
 	return fd;
 }
 #define ISEXEC (fmt!='r')

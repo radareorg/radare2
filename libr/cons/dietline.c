@@ -13,7 +13,9 @@
 static int r_line_readchar_win(ut8 *s, int slen);
 #else
 #include <sys/ioctl.h>
+#ifndef HAVE_PTY
 #include <termios.h>
+#endif
 #include <signal.h>
 #define USE_UTF8 1
 #endif

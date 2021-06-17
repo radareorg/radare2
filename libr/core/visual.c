@@ -4258,7 +4258,9 @@ static bool is_mintty(RCons *cons) {
 }
 
 static void flush_stdin(void) {
+#ifndef __wasi__
 	tcflush (STDIN_FILENO, TCIFLUSH);
+#endif
 }
 
 #endif

@@ -13,7 +13,9 @@ static int backup_fdn = 1;
 #endif
 
 static bool __dupDescriptor(int fd, int fdn) {
-#if __WINDOWS__
+#if __wasi__
+	return false;
+#elif __WINDOWS__
 	backup_fd = 2002 - (fd - 2); // windows xp has 2048 as limit fd
 	return _dup2 (fdn, backup_fd) != -1;
 #else
@@ -26,6 +28,9 @@ static bool __dupDescriptor(int fd, int fdn) {
 }
 
 R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
+#if __wasi__
+	return -1;
+#else
 	if (fdn < 1) {
 		return -1;
 	}
@@ -52,9 +57,11 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	dup2 (fd, fdn);
 	free (targetFile);
 	return fd;
+#endif
 }
 
 R_API void r_cons_pipe_close(int fd) {
+#if !__wasi__
 	if (fd != -1) {
 		close (fd);
 		if (backup_fd != -1) {
@@ -63,4 +70,5 @@ R_API void r_cons_pipe_close(int fd) {
 			backup_fd = -1;
 		}
 	}
+#endif
 }

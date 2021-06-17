@@ -671,9 +671,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			break;
 		case 'O':
 			fd = open (opt.arg, O_TRUNC | O_RDWR | O_CREAT, 0644);
+#ifndef __wasi__
 			if (fd != -1) {
 				dup2 (fd, 1);
 			}
+#endif
 			break;
 		case 'p':
 			use_spp = true;

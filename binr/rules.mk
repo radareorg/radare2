@@ -23,7 +23,37 @@ ifeq ($(USE_LTO),1)
 LDFLAGS+=-flto
 endif
 
-ifeq (${COMPILER},emscripten)
+ifeq (${COMPILER},wasi)
+LINK+=$(SHLR)/zip/librz.a
+LINK+=$(SHLR)/gdb/lib/libgdbr.a
+LINK+=$(SHLR)/capstone/libcapstone.a
+LINK+=$(SHLR)/sdb/src/libsdb.a
+
+# instead of libr.a
+LINK+=$(LIBR)/util/libr_util.a
+LINK+=$(LIBR)/core/libr_core.a
+LINK+=$(LIBR)/magic/libr_magic.a
+LINK+=$(LIBR)/socket/libr_socket.a
+LINK+=$(LIBR)/debug/libr_debug.a
+LINK+=$(LIBR)/anal/libr_anal.a
+LINK+=$(LIBR)/reg/libr_reg.a
+LINK+=$(LIBR)/bp/libr_bp.a
+LINK+=$(LIBR)/io/libr_io.a
+LINK+=$(LIBR)/flag/libr_flag.a
+LINK+=$(LIBR)/hash/libr_hash.a
+LINK+=$(LIBR)/syscall/libr_syscall.a
+LINK+=$(LIBR)/egg/libr_egg.a
+LINK+=$(LIBR)/fs/libr_fs.a
+LINK+=$(LIBR)/parse/libr_parse.a
+LINK+=$(LIBR)/bin/libr_bin.a
+LINK+=$(LIBR)/asm/libr_asm.a
+LINK+=$(LIBR)/search/libr_search.a
+LINK+=$(LIBR)/cons/libr_cons.a
+LINK+=$(LIBR)/lang/libr_lang.a
+LINK+=$(LIBR)/config/libr_config.a
+LINK+=$(LIBR)/crypto/libr_crypto.a
+LINK+=$(LIBR)/main/libr_main.a
+else ifeq (${COMPILER},emscripten)
 LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/sdb/src/libsdb.a
 include $(SHLR)/capstone.mk
@@ -79,10 +109,14 @@ ${BINS}: ${OBJS}
 	${CC} ${CFLAGS} $@.c ${OBJS} ../../libr/libr.a -o $@ $(LDFLAGS)
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
+ifeq ($(COMPILER),wasi)
+	${CC} ${CFLAGS} $+ -L.. -o $@ $(LDFLAGS)
+else
 ifeq ($(CC),emcc)
 	emcc $(BIN).c ../../shlr/libr_shlr.a ../../shlr/capstone/libcapstone.a ../../libr/libr.a ../../shlr/gdb/lib/libgdbr.a ../../shlr/zip/librz.a -I ../../libr/include -o $(BIN).js
 else
 	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
+endif
 endif
 else
 

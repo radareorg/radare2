@@ -6,7 +6,9 @@
 #if __UNIX__
 #include <stdio.h>
 #include <fcntl.h>
+#if HAVE_PTY
 #include <termios.h>
+#endif
 #include <errno.h>
 #if R_UTF8_DETECT_LOCALE
 #include <locale.h>
@@ -50,6 +52,8 @@ static inline int rd(const int fd) {
  */
 int current_tty(void) {
 #if __WINDOWS__
+	return 0;
+#elif __wasi__ || __EMSCRIPTEN__
 	return 0;
 #elif __ANDROID__
 	return 1;

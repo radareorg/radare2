@@ -13,7 +13,7 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 static ut8 *tcpme(const char *pathname, int *code, int *len) {
 	pathname += strlen ("tcp-slurp://");
 	*code = 404;
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	r_sys_signal (SIGINT, SIG_IGN);
 #endif
 	if (*pathname == '?') {

@@ -236,6 +236,16 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 
 static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode) {
 	r_return_val_if_fail (io && file, NULL);
+#if __wasi__
+	RIOPlugin *_plugin = r_io_plugin_resolve (io, (const char *)"slurp://", false);
+	if (!_plugin || !_plugin->open) {
+		return NULL;
+	}
+	char *uri = r_str_newf ("slurp://%s", file);
+	RIODesc *d = _plugin->open (io, uri, perm, mode);
+	free (uri);
+	return d;
+#else
 	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, perm, mode);
 	if (!mmo) {
 		return NULL;
@@ -250,6 +260,7 @@ static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode
 		free (oldname);
 	}
 	return d;
+#endif
 }
 
 static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {

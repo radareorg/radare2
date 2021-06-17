@@ -7,7 +7,7 @@
 #include <r_util.h>
 #include <signal.h>
 
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 #include <sys/wait.h>
 #endif
 

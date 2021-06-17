@@ -49,10 +49,12 @@ ST_DATA Sym *local_stack;
 ST_DATA Sym *define_stack;
 
 ST_DATA bool const_wanted = 0;	/* true if constant wanted */
-ST_DATA bool nocode_wanted;	/* true if no code generation wanted for an expression */
 ST_DATA int global_expr;	/* true if compound literals must be allocated globally (used during initializers parsing */
+#if 0
+ST_DATA bool nocode_wanted;	/* true if no code generation wanted for an expression */
 ST_DATA char *funcname;
 ST_DATA char *dir_name;
+#endif
 
 ST_DATA CType char_pointer_type, func_old_type;
 ST_DATA CType int8_type, int16_type, int32_type, int64_type, size_type;
@@ -311,6 +313,7 @@ ST_FUNC Sym *sym_push(int v, CType *type, int r, long long c) {
 	return s;
 }
 
+#if 1
 /* push a global identifier */
 ST_FUNC Sym *global_identifier_push(int v, int t, long long c) {
 	Sym *s, **ps;
@@ -333,6 +336,7 @@ ST_FUNC Sym *global_identifier_push(int v, int t, long long c) {
 	}
 	return s;
 }
+#endif
 
 /* pop symbols until top reaches 'b' */
 ST_FUNC void sym_pop(Sym **ptop, Sym *b) {
@@ -2959,6 +2963,7 @@ no_alloc:
 	;
 }
 
+#if 1
 /* parse an old style function declaration list */
 /* XXX: check multiple parameter */
 static void func_decl_list(Sym *func_sym) {
@@ -3013,7 +3018,9 @@ static void func_decl_list(Sym *func_sym) {
 		skip (';');
 	}
 }
+#endif
 
+#if 1
 /* 'l' is VT_LOCAL or VT_CONST to define default storage type */
 static int decl0(int l, int is_for_loop_init) {
 	int v, has_init, r;
@@ -3205,7 +3212,4 @@ func_error1:
 	}
 	return 0;
 }
-
-ST_FUNC void decl(int l) {
-	decl0 (l, 0);
-}
+#endif

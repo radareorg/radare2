@@ -13,7 +13,9 @@
 #include "cmd_helps.h"
 #if __UNIX__
 #include <sys/utsname.h>
+#ifndef __wasi__
 #include <pwd.h>
+#endif
 #endif
 
 static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
@@ -2995,7 +2997,7 @@ err_r_w32_cmd_pipe:
 #endif
 
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	int stdout_fd, fds[2];
 	int child;
 #endif

@@ -258,11 +258,13 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 		}
 	return 1;
 #endif
+#if 0
 #ifdef	S_IFSOCK
 	case S_IFSOCK:
 		if (file_printf(ms, "socket") == -1)
 			return -1;
 		return 1;
+#endif
 #endif
 	case S_IFREG:
 		break;
