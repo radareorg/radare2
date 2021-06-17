@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2021 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -1232,14 +1232,17 @@ R_API char *r_file_tmpdir(void) {
 	}
 	if (!path) {
 #if __ANDROID__
-		path = strdup ("/data/data/org.radare.radare2installer/radare2/tmp");
+		// path = strdup ("/data/data/org.radare.radare2installer/radare2/tmp");
+		path = strdup ("/data/local/tmp");
+		// path = strdup ("/data/data/com.termux/files/usr/tmp");
+		// path = strdup ("@TERMUX_PREFIX@/tmp");
 #else
 		path = strdup ("/tmp");
 #endif
 	}
 #endif
 	if (!r_file_is_directory (path)) {
-		eprintf ("Cannot find temporary directory '%s'\n", path);
+		eprintf ("Cannot find dir.tmp '%s'\n", path);
 	}
 	return path;
 }
