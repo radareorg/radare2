@@ -1232,7 +1232,6 @@ R_API char *r_file_tmpdir(void) {
 	}
 	if (!path) {
 #if __ANDROID__
-		// path = strdup ("/data/data/org.radare.radare2installer/radare2/tmp");
 		path = strdup ("/data/local/tmp");
 		// path = strdup ("/data/data/com.termux/files/usr/tmp");
 		// path = strdup ("@TERMUX_PREFIX@/tmp");
