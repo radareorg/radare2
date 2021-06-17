@@ -7,6 +7,10 @@ extern "C" {
 
 #include <r_util/r_mem.h>
 
+#ifndef SHELL_PATH
+#define SHELL_PATH "/bin/sh"
+#endif
+
 /* is */
 R_API bool r_file_is_abspath(const char *file);
 R_API bool r_file_is_c(const char *file);
