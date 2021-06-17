@@ -3579,11 +3579,7 @@ R_API int r_core_config_init(RCore *core) {
 	p = r_sys_getenv (R_SYS_TMP);
 	SETCB ("dir.tmp", r_str_get (p), &cb_dirtmp, "Path of the tmp directory");
 	free (p);
-#if __ANDROID__
-	SETCB ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", &cb_dir_projects, "Default path for projects");
-#else
 	SETCB ("dir.projects", R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS), &cb_dir_projects, "Default path for projects");
-#endif
 	SETCB ("dir.zigns", R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
 	SETPREF ("stack.reg", "SP", "Which register to use as stack pointer in the visual debug");
 	SETBPREF ("stack.bytes", "true", "Show bytes instead of words in stack");
@@ -3723,6 +3719,8 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	if (r_file_exists ("/usr/bin/openURL")) { // iOS ericautils
 		r_config_set (cfg, "http.browser", "/usr/bin/openURL");
+	} else if (r_file_exists ("@TERMUX_PREFIX@/bin/termux-open")) {
+		r_config_set (cfg, "http.browser", "@TERMUX_PREFIX@/bin/termux-open");
 	} else if (r_file_exists ("/system/bin/toolbox")) {
 		r_config_set (cfg, "http.browser",
 				"LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d");
@@ -3745,8 +3743,6 @@ R_API int r_core_config_init(RCore *core) {
 		SETPREF ("http.root", wwwroot, "http root directory");
 		free (wwwroot);
 	}
-#elif __ANDROID__
-	SETPREF ("http.root", "/data/data/org.radare.radare2installer/www", "http root directory");
 #else
 	SETPREF ("http.root", R2_WWWROOT, "http root directory");
 #endif
