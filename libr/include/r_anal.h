@@ -1172,6 +1172,7 @@ typedef struct r_anal_esil_t {
 	RAnalEsilTrace *trace;
 	RAnalEsilCallbacks cb;
 	RAnalReil *Reil;
+	char *pending; // pending op computed as a macro
 	// this is so cursed, can we please remove external commands from esil internals.
 	// Function pointers are fine, but not commands
 	char *cmd_step; // r2 (external) command to run before a step is performed
@@ -1570,6 +1571,8 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize);
 R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr);
 R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, int nonull);
+R_API void r_anal_esil_setup_macros(RAnalEsil *esil);
+R_API void r_anal_esil_setup_ops(RAnalEsil *esil);
 R_API void r_anal_esil_free(RAnalEsil *esil);
 R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word);
 R_API bool r_anal_esil_parse(RAnalEsil *esil, const char *str);

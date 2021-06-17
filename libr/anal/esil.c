@@ -10,6 +10,7 @@
 #include <float.h>
 #include <fenv.h>
 
+#define ESIL_MACRO 1
 #define IFDBG if (esil && esil->verbose > 1)
 #define IFVBS if (esil && esil->verbose > 0)
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
@@ -183,6 +184,7 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	ht_pp_free (esil->ops);
 	esil->ops = NULL;
 	sdb_free (esil->stats);
+	free (esil->pending);
 	esil->stats = NULL;
 	r_anal_esil_stack_free (esil);
 	free (esil->stack);
@@ -1825,6 +1827,34 @@ static bool esil_addeq(RAnalEsil *esil) {
 	return ret;
 }
 
+#if ESIL_MACRO
+static bool esil_inc_macro(RAnalEsil *esil) {
+eprintf ("Handk %c", 10);
+	bool ret = false;
+	char *src = r_anal_esil_pop (esil);
+	if (R_STR_ISNOTEMPTY (src)) {
+		esil->pending = r_str_newf ("1,%s,+", src);
+		ret = true;
+	} else {
+		ERR ("esil_inc: invalid parameters");
+	}
+	free (src);
+	return ret;
+}
+
+static bool esil_inceq_macro(RAnalEsil *esil) {
+	bool ret = false;
+	char *src = r_anal_esil_pop (esil);
+	if (R_STR_ISNOTEMPTY (src)) {
+		esil->pending = r_str_newf ("1,%s,+,%s,=", src, src);
+		ret = true;
+	} else {
+		ERR ("esil_inc: invalid parameters");
+	}
+	free (src);
+	return ret;
+}
+#else
 static bool esil_inc(RAnalEsil *esil) {
 	bool ret = false;
 	ut64 s;
@@ -1856,6 +1886,7 @@ static bool esil_inceq(RAnalEsil *esil) {
 	free (src_dst);
 	return ret;
 }
+#endif
 
 static bool esil_sub(RAnalEsil *esil) {
 	bool ret = false;
@@ -2986,7 +3017,7 @@ static bool esil_is_nan(RAnalEsil *esil) {
 	char *src = r_anal_esil_pop(esil);
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
-			ret = r_anal_esil_pushnum(esil, isnan(s));
+			ret = r_anal_esil_pushnum (esil, isnan(s));
 		} else {
 			ERR("esil_is_nan: invalid parameters.");
 		}
@@ -3002,9 +3033,9 @@ static bool esil_int_to_double(RAnalEsil *esil, int sign) {
 	RNumFloat s;
 	char *src = r_anal_esil_pop(esil);
 	if (src) {
-		if (r_anal_esil_get_parm(esil, src, &s.u64)) {
+		if (r_anal_esil_get_parm (esil, src, &s.u64)) {
 			if (sign) {
-				ret = esil_pushnum_float(esil, (double)(s.s64) * 1.0);
+				ret = esil_pushnum_float (esil, (double)(s.s64) * 1.0);
 			} else {
 				ret = esil_pushnum_float(esil, (double)(s.u64) * 1.0);
 			}
@@ -3056,15 +3087,15 @@ static bool esil_double_to_float(RAnalEsil *esil) {
 
 	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d.f64)) {
 		if (isnan(d.f64) || isinf(d.f64)) {
-			ret = r_anal_esil_pushnum(esil, d.u64);
+			ret = r_anal_esil_pushnum (esil, d.u64);
 		} else if (s == 32) {
 			f.f32 = (float)d.f64;
-			ret = r_anal_esil_pushnum(esil, f.u32);
+			ret = r_anal_esil_pushnum (esil, f.u32);
 		} else if (s == 64) {
-			ret = r_anal_esil_pushnum(esil, d.u64);
+			ret = r_anal_esil_pushnum (esil, d.u64);
 		/* TODO handle 80 bit and 128 bit floats */
 		} else {
-			ret = r_anal_esil_pushnum(esil, d.u64);
+			ret = r_anal_esil_pushnum (esil, d.u64);
 		}
 	} else {
 		ERR("esil_float_to_float: invalid parameters.");
@@ -3084,14 +3115,14 @@ static bool esil_float_to_double(RAnalEsil *esil) {
 
 	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d.f64)) {
 		if (isnan(d.f64) || isinf(d.f64)) {
-			ret = esil_pushnum_float(esil, d.f64);
+			ret = esil_pushnum_float (esil, d.f64);
 		} else if (s == 32) {
-			ret = esil_pushnum_float(esil, (double)d.f32);
+			ret = esil_pushnum_float (esil, (double)d.f32);
 		} else if (s == 64) {
-			ret = esil_pushnum_float(esil, d.f64);
+			ret = esil_pushnum_float (esil, d.f64);
 		/* TODO handle 80 bit and 128 bit floats */
 		} else {
-			ret = esil_pushnum_float(esil, d.f64);
+			ret = esil_pushnum_float (esil, d.f64);
 		}
 	} else {
 		ERR("esil_float_to_float: invalid parameters.");
@@ -3109,9 +3140,9 @@ static bool esil_float_cmp(RAnalEsil *esil) {
 
 	if (src && dst && esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
-			ret = r_anal_esil_pushnum(esil, 0);
+			ret = r_anal_esil_pushnum (esil, 0);
 		} else {
-			ret = r_anal_esil_pushnum(esil, fabs(s - d) <= DBL_EPSILON);
+			ret = r_anal_esil_pushnum (esil, fabs(s - d) <= DBL_EPSILON);
 		}
 	} else {
 		ERR("esil_float_cmp: invalid parameters.");
@@ -3147,8 +3178,8 @@ static bool esil_float_less(RAnalEsil *esil) {
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
-	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
-		if (isnan(s) || isnan(d)) {
+	if (esil_get_parm_float (esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
+		if (isnan (s) || isnan (d)) {
 			ret = r_anal_esil_pushnum (esil, 0);
 		} else {
 			ret = r_anal_esil_pushnum (esil, d < s);
@@ -3156,14 +3187,19 @@ static bool esil_float_less(RAnalEsil *esil) {
 	} else {
 		ERR("esil_float_less: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
 static bool esil_float_lesseq(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
+	char *dst = r_anal_esil_pop(esil);
+	char *src = r_anal_esil_pop (esil);
+
+	if (esil_get_parm_float (esil, src, &s) && esil_get_parm_float (esil, dst, &d)) {
+		if (isnan (s) || isnan (d)) {
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
@@ -3174,10 +3210,10 @@ static bool esil_float_lesseq(RAnalEsil *esil) {
 			ret = r_anal_esil_pushnum (esil, d <= s);
 		}
 	} else {
-		ERR("esil_float_lesseq: invalid parameters.");
+		ERR ("esil_float_lesseq: invalid parameters.");
 	}
-	free(dst);
-	free(src);
+	free (dst);
+	free (src);
 	return ret;
 }
 
@@ -3189,18 +3225,18 @@ static bool esil_float_add(RAnalEsil *esil) {
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
-			ret = esil_pushnum_float(esil, s);
+			ret = esil_pushnum_float (esil, s);
 		} else if (isnan(d)) {
-			ret = esil_pushnum_float(esil, d);
+			ret = esil_pushnum_float (esil, d);
 		} else {
 			feclearexcept(FE_OVERFLOW);
 			double tmp = s + d;
 			(void)(tmp); // suppress unused warning
 			int raised = fetestexcept(FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float(esil, NAN);
+				ret = esil_pushnum_float (esil, NAN);
 			} else {
-				ret = esil_pushnum_float(esil, s + d);
+				ret = esil_pushnum_float (esil, s + d);
 			}
 		}
 	} else {
@@ -3219,18 +3255,18 @@ static bool esil_float_sub(RAnalEsil *esil) {
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
-			ret = esil_pushnum_float(esil, s);
+			ret = esil_pushnum_float (esil, s);
 		} else if (isnan(d)) {
-			ret = esil_pushnum_float(esil, d);
+			ret = esil_pushnum_float (esil, d);
 		} else {
 			feclearexcept(FE_OVERFLOW);
 			double tmp = d - s;
 			(void)(tmp);
 			int raised = fetestexcept(FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float(esil, NAN);
+				ret = esil_pushnum_float (esil, NAN);
 			} else {
-				ret = esil_pushnum_float(esil, d - s);
+				ret = esil_pushnum_float (esil, d - s);
 			}
 		}
 	} else {
@@ -3244,21 +3280,21 @@ static bool esil_float_sub(RAnalEsil *esil) {
 static bool esil_float_mul(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
-		if (isnan(s)) {
-			ret = esil_pushnum_float(esil, s);
-		} else if (isnan(d)) {
-			ret = esil_pushnum_float(esil, d);
+		if (isnan (s)) {
+			ret = esil_pushnum_float (esil, s);
+		} else if (isnan (d)) {
+			ret = esil_pushnum_float (esil, d);
 		} else {
 			feclearexcept(FE_OVERFLOW);
 			double tmp = s * d;
 			(void)(tmp);
-			int raised = fetestexcept(FE_OVERFLOW);
+			int raised = fetestexcept (FE_OVERFLOW);
 			if (raised & FE_OVERFLOW) {
-				ret = esil_pushnum_float(esil, NAN);
+				ret = esil_pushnum_float (esil, NAN);
 			} else {
 				ret = esil_pushnum_float(esil, s * d);
 			}
@@ -3274,12 +3310,12 @@ static bool esil_float_mul(RAnalEsil *esil) {
 static bool esil_float_div(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
-			ret = esil_pushnum_float(esil, s);
+			ret = esil_pushnum_float (esil, s);
 		} else if (isnan(d)) {
 			ret = esil_pushnum_float(esil, d);
 		} else {
@@ -3304,7 +3340,7 @@ static bool esil_float_div(RAnalEsil *esil) {
 static bool esil_float_neg(RAnalEsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop(esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (src)	{
 		if (esil_get_parm_float(esil, src, &s)) {
@@ -3322,7 +3358,7 @@ static bool esil_float_neg(RAnalEsil *esil) {
 static bool esil_float_ceil(RAnalEsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop(esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
@@ -3344,7 +3380,7 @@ static bool esil_float_ceil(RAnalEsil *esil) {
 static bool esil_float_floor(RAnalEsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop(esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
@@ -3602,6 +3638,13 @@ loop:
 repeat:
 	wordi = 0;
 	while (*str) {
+		if (esil->pending) {
+			char *expr = esil->pending;
+			esil->pending = NULL;
+			r_anal_esil_parse (esil, expr);
+			free (expr);
+			continue;
+		}
 		if (str == hashbang) {
 			if (esil->anal && esil->anal->coreb.setab) {
 				esil->anal->coreb.cmd (esil->anal->coreb.core, str + 2);
@@ -3625,21 +3668,17 @@ repeat:
 		if (dorunword) {
 			if (*word) {
 				if (!runword (esil, word)) {
-					__stepOut (esil, esil->cmd_step_out);
-					return 0;
+					goto step_out;
 				}
 				word[wordi] = ',';
 				wordi = 0;
 				switch (evalWord (esil, ostr, &str)) {
 				case 0: goto loop;
-				case 1:
-					__stepOut (esil, esil->cmd_step_out);
-					return 0;
+				case 1: goto step_out;
 				case 2: continue;
 				}
 				if (dorunword == 1) {
-					__stepOut (esil, esil->cmd_step_out);
-					return 0;
+					goto step_out;
 				}
 			}
 			str++;
@@ -3653,19 +3692,39 @@ repeat:
 	}
 	word[wordi] = 0;
 	if (*word) {
+		if (esil->pending) {
+			char *expr = esil->pending;
+			esil->pending = NULL;
+			r_anal_esil_parse (esil, expr);
+			free (expr);
+			goto step_out;
+		}
 		if (!runword (esil, word)) {
-			__stepOut (esil, esil->cmd_step_out);
-			return 0;
+			goto step_out;
 		}
 		switch (evalWord (esil, ostr, &str)) {
 		case 0: goto loop;
-		case 1: __stepOut (esil, esil->cmd_step_out);
-			return 0;
+		case 1: goto step_out;
 		case 2: goto repeat;
 		}
 	}
+	if (esil->pending) {
+		char *expr = esil->pending;
+		esil->pending = NULL;
+		r_anal_esil_parse (esil, expr);
+		free (expr);
+	}
 	__stepOut (esil, esil->cmd_step_out);
 	return 1;
+step_out:
+	if (esil->pending) {
+		char *expr = esil->pending;
+		esil->pending = NULL;
+		r_anal_esil_parse (esil, expr);
+		free (expr);
+	}
+	__stepOut (esil, esil->cmd_step_out);
+	return 0;
 }
 
 R_API bool r_anal_esil_runword(RAnalEsil *esil, const char *word) {
@@ -3715,7 +3774,6 @@ R_API int r_anal_esil_condition(RAnalEsil *esil, const char *str) {
 	return ret;
 }
 
-static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 #define OP(v, w, x, y, z) r_anal_esil_set_op (esil, v, w, x, y, z)
 #define	OT_UNK	R_ANAL_ESIL_OP_TYPE_UNKNOWN
 #define	OT_CTR	R_ANAL_ESIL_OP_TYPE_CONTROL_FLOW
@@ -3723,6 +3781,18 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 #define	OT_REGW	R_ANAL_ESIL_OP_TYPE_REG_WRITE
 #define	OT_MEMW	R_ANAL_ESIL_OP_TYPE_MEM_WRITE
 #define	OT_MEMR	R_ANAL_ESIL_OP_TYPE_MEM_READ
+
+R_API void r_anal_esil_setup_macros(RAnalEsil *esil) {
+#if ESIL_MACRO
+	OP ("++", esil_inc_macro, 1, 1, OT_MATH);
+	OP ("++=", esil_inceq_macro, 1, 1, OT_MATH);
+#else
+	OP ("++", esil_inc, 0, 1, OT_MATH | OT_REGW);
+	OP ("++=", esil_inceq, 0, 1, OT_MATH | OT_REGW);
+#endif
+}
+
+R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 
 	OP ("$", esil_interrupt, 0, 1, OT_UNK);		//hm, type seems a bit wrong
 	OP ("()", esil_syscall, 0, 1, OT_UNK);		//same
@@ -3770,8 +3840,6 @@ static void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("^=", esil_xoreq, 0, 2, OT_MATH | OT_REGW);
 	OP ("+", esil_add, 1, 2, OT_MATH);
 	OP ("+=", esil_addeq, 0, 2, OT_MATH | OT_REGW);
-	OP ("++", esil_inc, 1, 1, OT_MATH);
-	OP ("++=", esil_inceq, 0, 1, OT_MATH | OT_REGW);
 	OP ("-", esil_sub, 1, 2, OT_MATH);
 	OP ("-=", esil_subeq, 0, 2, OT_MATH | OT_REGW);
 	OP ("--", esil_dec, 1, 1, OT_MATH);
@@ -3923,6 +3991,7 @@ R_API bool r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats,
 	}
 	r_anal_esil_mem_ro (esil, romem);
 	r_anal_esil_stats (esil, stats);
+	r_anal_esil_setup_macros (esil);
 	r_anal_esil_setup_ops (esil);
 
 	return (anal->cur && anal->cur->esil_init)
