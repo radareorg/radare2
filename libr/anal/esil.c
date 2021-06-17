@@ -166,6 +166,7 @@ static bool r_anal_esil_fire_trap(RAnalEsil *esil, int trap_type, int trap_code)
 
 R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr) {
 	if (esil) {
+		// r_reg_set_value_by_role (esil->anal->reg, R_REG_NAME_PC, addr);
 		esil->address = addr;
 		return true;
 	}
@@ -386,6 +387,9 @@ static bool internal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *n
 		}
 		if (num) {
 			*num = r_reg_get_value (esil->anal->reg, reg);
+			if (esil->verbose) {
+				eprintf ("%s < %x\n", regname, (int)*num);
+			}
 		}
 		return true;
 	}
@@ -397,6 +401,9 @@ static bool internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 n
 		RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);
 		if (reg) {
 			r_reg_set_value (esil->anal->reg, reg, num);
+			if (esil->verbose) {
+				eprintf ("%s = %x\n", regname, (int)num);
+			}
 			return true;
 		}
 	}
@@ -774,6 +781,7 @@ static bool esil_rs(RAnalEsil *esil) {
 // YES PLS KILL IT
 static bool esil_address(RAnalEsil *esil) {
 	r_return_val_if_fail (esil, false);
+	// esil->address = r_reg_getv (esil->anal->reg, "pc");
 	return r_anal_esil_pushnum (esil, esil->address);
 }
 

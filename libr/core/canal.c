@@ -5138,6 +5138,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			return;
 		}
 		r_core_cmd0 (core, "aeim");
+		ESIL = core->anal->esil;
 	}
 	const char *spname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	EsilBreakCtx ctx = {
@@ -5336,7 +5337,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				ut64 dst = ESIL->cur;
 				if ((target && dst == ntarget) || !target) {
 					if (CHECKREF (dst)) {
-						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
+						int type = core_type_by_addr (core, dst); // R_ANAL_REF_TYPE_DATA;
+						r_anal_xrefs_set (core->anal, cur, dst, type);
 					}
 				}
 				if (cfg_anal_strings) {

@@ -1,0 +1,42 @@
+NAME=flutter string refs
+FILE=bins/elf/libflutter.so
+CMDS=<<EOF
+f s = 0x80c62
+f f = 0x00371940
+s f
+af
+aaef
+pd 2 @ s
+e emu.str=true
+EOF
+EXPECT=<<EOF
+            ;-- str..._.._third_party_boringssl_src_ssl_ssl_x509.cc:
+            ;-- s:
+            ; STRING XREF from f @ 0x37194e
+            0x00080c62     .string "../../third_party/boringssl/src/ssl/ssl_x509.cc" ; len=48
+            ;-- str..._.._third_party_boringssl_src_ssl_ssl_asn1.cc:
+            0x00080c92     .string "../../third_party/boringssl/src/ssl/ssl_asn1.cc" ; len=48
+EOF
+RUN
+
+NAME=flutter string refs
+FILE=bins/elf/libflutter.so
+CMDS=<<EOF
+f s = 0x80c62
+f f = 0x00371940
+s f
+af
+aef
+pd 2 @ s
+e emu.str=true
+EOF
+EXPECT=<<EOF
+            ;-- str..._.._third_party_boringssl_src_ssl_ssl_x509.cc:
+            ;-- s:
+            ; STRING XREF from f @ 0x37194e
+            0x00080c62     .string "../../third_party/boringssl/src/ssl/ssl_x509.cc" ; len=48
+            ;-- str..._.._third_party_boringssl_src_ssl_ssl_asn1.cc:
+            0x00080c92     .string "../../third_party/boringssl/src/ssl/ssl_asn1.cc" ; len=48
+EOF
+RUN
+
