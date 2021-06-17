@@ -24,7 +24,7 @@ or system and it is available via Python's PIP tool.
 ```
 pip install r2env
 r2env init
-r2env add radare2
+r2env install radare2@latest
 ```
 
 ## Uninstall

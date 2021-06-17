@@ -34,6 +34,9 @@ BEXE=$(BIN)$(EXT_EXE)
 
 ifeq ($(USE_RPATH),1)
 LINK+=-Wl,-rpath,"${LIBDIR}"
+ifeq ($(OSTYPE),android)
+LINK+=--enable-new-dtags
+endif
 endif
 
 ifeq (${OSTYPE},gnulinux)
