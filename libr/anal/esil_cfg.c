@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2019 - condret */
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_anal.h>
@@ -213,7 +215,7 @@ void _handle_else_enter (EsilCfgGen *gen, ut32 id, const bool has_next) {
 	gen->cur = entered_node;
 }
 
-void _handle_fi_leave (EsilCfgGen *gen, ut32 id, const bool has_next) {
+void _handle_fi_leave(EsilCfgGen *gen, ut32 id, const bool has_next) {
 	EsilCfgScopeCookie *cookie = r_stack_pop (gen->ifelse);
 	if (!cookie) {
 		// no if, no fi todo
@@ -374,7 +376,7 @@ beach:
 	}
 }
 
-bool _round_1_cb (void *user, void *data, ut32 id) {
+bool _round_1_cb(void *user, void *data, ut32 id) {
 	EsilCfgGen *gen = (EsilCfgGen *)user;
 	char *atom = (char *)data;
 	RAnalEsilOp *op = esil_get_op (gen->esil, atom);

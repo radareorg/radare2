@@ -441,7 +441,8 @@ R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 }
 
 R_API bool r_anal_esil_push(RAnalEsil *esil, const char *str) {
-	if (!str || !esil || !*str || esil->stackptr > (esil->stacksize - 1)) {
+	r_return_val_if_fail (esil && R_STR_ISNOTEMPTY (str), false);
+	if (esil->stackptr > (esil->stacksize - 1)) {
 		return false;
 	}
 	esil->stack[esil->stackptr++] = strdup (str);
@@ -3199,6 +3200,11 @@ static bool esil_float_lesseq(RAnalEsil *esil) {
 
 	if (esil_get_parm_float (esil, src, &s) && esil_get_parm_float (esil, dst, &d)) {
 		if (isnan (s) || isnan (d)) {
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+
+	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
+		if (isnan(s) || isnan(d)) {
 			ret = r_anal_esil_pushnum (esil, 0);
 		} else {
 			ret = r_anal_esil_pushnum (esil, d <= s);
@@ -3214,8 +3220,8 @@ static bool esil_float_lesseq(RAnalEsil *esil) {
 static bool esil_float_add(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
@@ -3956,7 +3962,6 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("FLOOR", esil_float_floor, 1, 1, OT_MATH);
 	OP ("ROUND", esil_float_round, 1, 1, OT_MATH);
 	OP ("SQRT", esil_float_sqrt, 1, 1, OT_MATH);
-
 }
 
 /* register callbacks using this anal module. */
