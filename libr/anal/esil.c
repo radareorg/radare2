@@ -3195,16 +3195,11 @@ static bool esil_float_less(RAnalEsil *esil) {
 static bool esil_float_lesseq(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 
 	if (esil_get_parm_float (esil, src, &s) && esil_get_parm_float (esil, dst, &d)) {
 		if (isnan (s) || isnan (d)) {
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-
-	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
-		if (isnan(s) || isnan(d)) {
 			ret = r_anal_esil_pushnum (esil, 0);
 		} else {
 			ret = r_anal_esil_pushnum (esil, d <= s);
