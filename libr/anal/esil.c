@@ -1837,7 +1837,6 @@ static bool esil_addeq(RAnalEsil *esil) {
 
 #if ESIL_MACRO
 static bool esil_inc_macro(RAnalEsil *esil) {
-eprintf ("Handk %c", 10);
 	bool ret = false;
 	char *src = r_anal_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src)) {
