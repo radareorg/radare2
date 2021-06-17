@@ -10229,22 +10229,13 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
+				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "arm")) {
+					if (r_config_get_i (core->config, "asm.bits") == 64) {
+						r_core_cmd0 (core, "sixref");
+					}
+				} else if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 					r_core_cmd0 (core, "aav");
 					r_core_task_yield (&core->tasks);
-					if (cfg_debug) {
-						oldstr = r_print_rowlog (core->print, "Skipping function emulation in debugger mode (aaef)");
-						// nothing to do
-						r_print_rowlog_done (core->print, oldstr);
-					} else {
-						bool ioCache = r_config_get_i (core->config, "io.pcache");
-						r_config_set_i (core->config, "io.pcache", 1);
-						oldstr = r_print_rowlog (core->print, "Emulate functions to find computed references (aaef)");
-						r_core_cmd0 (core, "aaef");
-						r_print_rowlog_done (core->print, oldstr);
-						r_core_task_yield (&core->tasks);
-						r_config_set_i (core->config, "io.pcache", ioCache);
-					}
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
 					}
@@ -10305,6 +10296,19 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				if (input[1] == 'a') { // "aaaa"
+					if (cfg_debug) {
+						oldstr = r_print_rowlog (core->print, "Skipping function emulation in debugger mode (aaef)");
+						// nothing to do
+						r_print_rowlog_done (core->print, oldstr);
+					} else {
+						bool ioCache = r_config_get_i (core->config, "io.pcache");
+						r_config_set_i (core->config, "io.pcache", 1);
+						oldstr = r_print_rowlog (core->print, "Emulate functions to find computed references (aaef)");
+						r_core_cmd0 (core, "aaef");
+						r_print_rowlog_done (core->print, oldstr);
+						r_core_task_yield (&core->tasks);
+						r_config_set_i (core->config, "io.pcache", ioCache);
+					}
 					if (!didAap) {
 						oldstr = r_print_rowlog (core->print, "Finding function preludes");
 						(void)r_core_search_preludes (core, false); // "aap"
