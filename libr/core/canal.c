@@ -5257,7 +5257,7 @@ loopback:
 						i--;
 					}
 #else
-					i += 5;
+					i += 3;
 					goto repeat;
 #endif
 				default:
@@ -5271,7 +5271,7 @@ loopback:
 		r_core_seek_arch_bits (core, cur);
 		int opalign = core->anal->pcalign;
 		if (opalign > 0) {
-			cur -= (cur % opalign) - 1;
+			cur -= (cur % opalign);
 		}
 
 		r_anal_op_fini (&op);
