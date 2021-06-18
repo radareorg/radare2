@@ -200,7 +200,6 @@ static const char *help_msg_ae[] = {
 	"aesu", " [addr]", "step until given address",
 	"aesue", " [esil]", "step until esil expression match",
 	"aesuo", " [optype]", "step until given opcode type",
-	"aetr", "[esil]", "Convert an ESIL Expression to REIL",
 	"aets", "[?]", "ESIL Trace session",
 	"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
 	"aex", " [hex]", "evaluate opcode expression",
