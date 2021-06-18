@@ -4977,7 +4977,7 @@ static int find_bb(ut64 *addr, RAnalBlock *bb) {
 }
 
 static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
-#if REGRESSION
+#if 1
 	size_t oi = *next_i;
 #endif
 	(*next_i)++;
@@ -5055,9 +5055,13 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 	} else if (cur_addr >= ctx->end_addr) {
 		return false;
 	}
-#if REGRESSION
-	if (*next_i <= oi) {
+	if (*next_i == 0) {
 		return false;
+	}
+#if 0
+	if (*next_i < oi) {
+		eprintf ("%d vs %d%c", *next_i, oi, 10);
+		//return false;
 	}
 #endif
 	return true;
@@ -5080,12 +5084,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	ut64 start = addr;
 	ut64 end = 0LL;
 	ut64 cur;
-#if REGRESSION
 	if (esil_anal_stop || r_cons_is_breaked ()) {
 		// faster ^C
 		return;
 	}
-#endif
 
 	mycore = core;
 	if (!strcmp (str, "?")) {
@@ -5225,6 +5227,8 @@ loopback:
 			}
 			break;
 		}
+#else
+		cur = start + i;
 #endif
 		if (!r_io_is_valid_offset (core->io, cur, 0)) {
 			break;
@@ -5239,15 +5243,21 @@ loopback:
 				case R_META_TYPE_DATA:
 				case R_META_TYPE_STRING:
 				case R_META_TYPE_FORMAT:
-#if REGRESSION
+#if 0
 					{
 						int msz = r_meta_get_size (core->anal, meta->type);
 						i += (msz > 0)? msz: minopsize;
 					}
 					r_pvector_free (list);
 					goto loopback;
+#elif 1
+					{
+						int msz = r_meta_get_size (core->anal, meta->type);
+						i += (msz > 0)? msz: minopsize;
+						i--;
+					}
 #else
-					i += 4;
+					i += 5;
 					goto repeat;
 #endif
 				default:
@@ -5261,13 +5271,13 @@ loopback:
 		r_core_seek_arch_bits (core, cur);
 		int opalign = core->anal->pcalign;
 		if (opalign > 0) {
-			cur -= (cur % opalign);
+			cur -= (cur % opalign) - 1;
 		}
 
 		r_anal_op_fini (&op);
 		r_asm_set_pc (core->rasm, cur);
 		i_old = i;
-#if REGRESSION
+#if 1
 		if (i > iend) {
 			goto repeat;
 		}
@@ -5282,7 +5292,7 @@ loopback:
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i+= minopsize - 1
-#if !REGRESSION
+#if 0
 		if (i > iend) {
 			goto repeat;
 		}
@@ -5342,9 +5352,6 @@ loopback:
 		const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 		i += op.size - 1;
 		if (R_STR_ISEMPTY (esilstr)) {
-#if REGRESSION
-			i ++; // += minopsz;
-#endif
 			goto repeat;
 		}
 		r_anal_esil_set_pc (ESIL, cur);
@@ -5513,15 +5520,9 @@ repeat:
 				}
 			}
 		}
-#if REGRESSION
 		if (i >= iend) {
 			break;
 		}
-#else
-		if (i > iend) {
-			break;
-		}
-#endif
 	} while (get_next_i (&ictx, &i));
 	free (buf);
 	ESIL->cb.hook_mem_read = NULL;
