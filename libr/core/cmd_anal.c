@@ -10301,16 +10301,18 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						// nothing to do
 						r_print_rowlog_done (core->print, oldstr);
 					} else {
-						bool ioCache = r_config_get_i (core->config, "io.pcache");
-						r_config_set_i (core->config, "io.pcache", 1);
+						bool ioCache = r_config_get_b (core->config, "io.pcache");
+						r_config_set_b (core->config, "io.pcache", true);
 						oldstr = r_print_rowlog (core->print, "Emulate functions to find computed references (aaef)");
 						r_core_cmd0 (core, "aaef");
 						r_print_rowlog_done (core->print, oldstr);
 						r_core_task_yield (&core->tasks);
-						r_config_set_i (core->config, "io.pcache", ioCache);
+						if (!ioCache) {
+							r_config_set_b (core->config, "io.pcache", false);
+						}
 					}
 					if (!didAap) {
-						oldstr = r_print_rowlog (core->print, "Finding function preludes");
+						oldstr = r_print_rowlog (core->print, "Finding function preludes (aap)");
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_print_rowlog_done (core->print, oldstr);
 						r_core_task_yield (&core->tasks);
