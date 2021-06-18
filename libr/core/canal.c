@@ -2007,7 +2007,6 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			if (reftype == R_ANAL_REF_TYPE_CALL && fcn->type == R_ANAL_FCN_TYPE_LOC) {
 				function_rename (core->flags, fcn);
 			}
-
 			return 0;  // already analyzed function
 		}
 		if (r_anal_function_contains (fcn, from)) { // inner function
@@ -4978,7 +4977,9 @@ static int find_bb(ut64 *addr, RAnalBlock *bb) {
 }
 
 static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
+#if REGRESSION
 	size_t oi = *next_i;
+#endif
 	(*next_i)++;
 	ut64 cur_addr = *next_i + ctx->start_addr;
 	if (ctx->fcn) {
@@ -5514,6 +5515,10 @@ repeat:
 		}
 #if REGRESSION
 		if (i >= iend) {
+			break;
+		}
+#else
+		if (i > iend) {
 			break;
 		}
 #endif
