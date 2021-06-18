@@ -95,6 +95,10 @@ R_API RAnal *r_anal_new(void) {
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
 	anal->gp = 0LL;
+#if 0
+	anal->esil = r_anal_esil_new (4096, 0, 1);
+	r_anal_esil_setup (anal->esil, anal, false, false, false);
+#endif
 	anal->sdb = sdb_new0 ();
 	anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
 	anal->opt.depth = 32;
