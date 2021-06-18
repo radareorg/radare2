@@ -11,6 +11,10 @@ extern "C" {
 #define SHELL_PATH "/bin/sh"
 #endif
 
+#ifndef TERMUX_PREFIX
+#define TERMUX_PREFIX "/data/data/com.termux/files/usr"
+#endif
+
 /* is */
 R_API bool r_file_is_abspath(const char *file);
 R_API bool r_file_is_c(const char *file);
