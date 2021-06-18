@@ -5220,15 +5220,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 #if REGRESSION
 loopback:
-		cur = start + i;
 		if (i > 0 && i < i_old) {
 			if (core->anal->verbose) {
 				eprintf ("Backward loop detected %d .. %d\n", (int)i, (int)i_old);
 			}
 			break;
 		}
-#else
-		cur = start + i;
 #endif
 		if (!r_io_is_valid_offset (core->io, cur, 0)) {
 			break;
