@@ -4977,7 +4977,7 @@ static int find_bb(ut64 *addr, RAnalBlock *bb) {
 }
 
 static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
-#if 1
+#if 0
 	size_t oi = *next_i;
 #endif
 	(*next_i)++;
