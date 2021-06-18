@@ -4985,6 +4985,9 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			ctx->switch_path = r_list_new ();
 			ctx->bbl = r_list_clone (ctx->fcn->bbs);
 			ctx->cur_bb = r_anal_get_block_at (ctx->fcn->anal, ctx->fcn->addr);
+			if (!ctx->cur_bb) {
+				return false;
+			}
 			r_list_push (ctx->path, ctx->cur_bb);
 		}
 		RAnalBlock *bb = ctx->cur_bb;
