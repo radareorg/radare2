@@ -5043,12 +5043,18 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			if (!bbit->data) {
 				return false;
 			}
+			if (!bbit->data) {
+				return false;
+			}
 			ctx->cur_bb = bbit->data;
 			r_list_push (ctx->path, ctx->cur_bb);
 			r_list_delete (ctx->bbl, bbit);
 			*next_i = ctx->cur_bb->addr - ctx->start_addr;
 		}
 	} else if (cur_addr >= ctx->end_addr) {
+		return false;
+	}
+	if (*next_i == 0) {
 		return false;
 	}
 	return true;
@@ -5209,6 +5215,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (!r_io_is_valid_offset (core->io, cur, 0)) {
 			break;
 		}
+#if 0
+		// disabled because it causes some tests to fail
 		{
 			RPVector *list = r_meta_get_all_in (core->anal, cur, R_META_TYPE_ANY);
 			void **it;
@@ -5219,15 +5227,30 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				case R_META_TYPE_DATA:
 				case R_META_TYPE_STRING:
 				case R_META_TYPE_FORMAT:
-					i += 4;
+#if 0
+					{
+						int msz = r_meta_get_size (core->anal, meta->type);
+						i += (msz > 0)? msz: minopsize;
+					}
 					r_pvector_free (list);
+					goto loopback;
+#elif 0
+					{
+						int msz = r_meta_get_size (core->anal, meta->type);
+						i += (msz > 0)? msz: minopsize;
+						i--;
+					}
+#else
+					i += 4;
 					goto repeat;
+#endif
 				default:
 					break;
 				}
 			}
 			r_pvector_free (list);
 		}
+#endif
 
 		/* realign address if needed */
 		r_core_seek_arch_bits (core, cur);
@@ -5239,10 +5262,14 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		r_anal_op_fini (&op);
 		r_asm_set_pc (core->rasm, cur);
 		i_old = i;
+#if 1
+		if (i > iend) {
+			goto repeat;
+		}
+#endif
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) {
 			i += minopsize - 1; //   XXX dupe in op.size below
 		}
-		// if (op.type & 0x80000000 || op.type == 0) {
 		if (op.type == R_ANAL_OP_TYPE_ILL || op.type == R_ANAL_OP_TYPE_UNK) {
 			// i += 2
 			r_anal_op_fini (&op);
@@ -5250,9 +5277,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i+= minopsize - 1
-		if (i > iend) {
-			goto repeat;
-		}
 		if (op.size < 1) {
 			i += minopsize - 1;
 			goto repeat;
@@ -5476,7 +5500,7 @@ repeat:
 				}
 			}
 		}
-		if (i > iend) {
+		if (i >= iend) {
 			break;
 		}
 	} while (get_next_i (&ictx, &i));
