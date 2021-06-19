@@ -266,8 +266,14 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 	return true;
 }
 
-static ut64 try_get_cmpval_from_parents(RAnal * anal, RAnalFunction *fcn, RAnalBlock *my_bb, const char * cmp_reg) {
-	r_return_val_if_fail (fcn && fcn->bbs && cmp_reg, UT64_MAX);
+static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBlock *my_bb, const char *cmp_reg) {
+	if (!cmp_reg) {
+		if (anal->verbose) {
+			eprintf ("try_get_cmpval_from_parents: cmp_reg not defined.\n");
+		}
+		return UT64_MAX;
+	}
+	r_return_val_if_fail (fcn && fcn->bbs, UT64_MAX);
 	RListIter *iter;
 	RAnalBlock *tmp_bb;
 	r_list_foreach (fcn->bbs, iter, tmp_bb) {

@@ -2006,7 +2006,6 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 			if (reftype == R_ANAL_REF_TYPE_CALL && fcn->type == R_ANAL_FCN_TYPE_LOC) {
 				function_rename (core->flags, fcn);
 			}
-
 			return 0;  // already analyzed function
 		}
 		if (r_anal_function_contains (fcn, from)) { // inner function
@@ -4985,6 +4984,9 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 			ctx->switch_path = r_list_new ();
 			ctx->bbl = r_list_clone (ctx->fcn->bbs);
 			ctx->cur_bb = r_anal_get_block_at (ctx->fcn->anal, ctx->fcn->addr);
+			if (!ctx->cur_bb) {
+				return false;
+			}
 			r_list_push (ctx->path, ctx->cur_bb);
 		}
 		RAnalBlock *bb = ctx->cur_bb;
@@ -5038,6 +5040,9 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				r_list_free (ctx->bbl);
 				return false;
 			}
+			if (!bbit->data) {
+				return false;
+			}
 			ctx->cur_bb = bbit->data;
 			r_list_push (ctx->path, ctx->cur_bb);
 			r_list_delete (ctx->bbl, bbit);
@@ -5066,6 +5071,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	ut64 start = addr;
 	ut64 end = 0LL;
 	ut64 cur;
+	if (esil_anal_stop || r_cons_is_breaked ()) {
+		// faster ^C
+		return;
+	}
 
 	mycore = core;
 	if (!strcmp (str, "?")) {
