@@ -5218,6 +5218,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		if (esil_anal_stop || r_cons_is_breaked ()) {
 			break;
 		}
+		cur = addr + i;
 #if REGRESSION
 loopback:
 		if (i > 0 && i < i_old) {
