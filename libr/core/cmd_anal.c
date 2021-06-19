@@ -4940,16 +4940,19 @@ static ut64 initializeEsil(RCore *core) {
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int exectrap = r_config_get_i (core->config, "esil.exectrap");
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	int noNULL = r_config_get_i (core->config, "esil.noNULL");
+	bool nonull = r_config_get_b (core->config, "esil.nonull");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-	if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+	RAnalEsil *esil = r_anal_esil_new (stacksize, iotrap, addrsize);
+	if (esil) {
+		r_anal_esil_free (core->anal->esil);
+		core->anal->esil = esil;
+	} else {
 		return UT64_MAX;
 	}
 	ut64 addr;
-	RAnalEsil *esil = core->anal->esil;
 	esil->verbose = r_config_get_i (core->config, "esil.verbose");
 	esil->cmd = r_core_esil_cmd;
-	r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
+	r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 	{
 		const char *cmd_esil_step = r_config_get (core->config, "cmd.esil.step");
 		if (cmd_esil_step && *cmd_esil_step) {
@@ -5394,13 +5397,14 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		int romem = r_config_get_i (core->config, "esil.romem");
 		int stats = r_config_get_i (core->config, "esil.stats");
-		int noNULL = r_config_get_i (core->config, "esil.noNULL");
+		bool nonull = r_config_get_b (core->config, "esil.nonull");
 		int verbose = r_config_get_i (core->config, "esil.verbose");
 		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 		if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 			return;
 		}
-		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
+		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
+		r_anal_esil_free (core->anal->esil);
 		core->anal->esil = esil;
 		esil->verbose = verbose;
 		{
@@ -5560,7 +5564,7 @@ static ut8 *regstate = NULL;
 
 static void esil_init (RCore *core) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	int noNULL = r_config_get_i (core->config, "esil.noNULL");
+	int nonull = r_config_get_i (core->config, "esil.nonull");
 	opc = r_reg_getv (core->anal->reg, pc);
 	if (!opc || opc==UT64_MAX) {
 		opc = core->offset;
@@ -5573,7 +5577,7 @@ static void esil_init (RCore *core) {
 			R_FREE (regstate);
 			return;
 		}
-		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, noNULL);
+		r_anal_esil_setup (core->anal->esil, core->anal, 0, 0, nonull);
 	}
 	free (regstate);
 	regstate = r_reg_arena_peek (core->anal->reg);
@@ -5808,11 +5812,11 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	bool iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int romem = r_config_get_i (core->config, "esil.romem");
 	int stats1 = r_config_get_i (core->config, "esil.stats");
-	int noNULL = r_config_get_i (core->config, "esil.noNULL");
+	bool nonull = r_config_get_b (core->config, "esil.nonull");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	const bool cfg_r2wars = r_config_get_i (core->config, "cfg.r2wars");
 	esil = r_anal_esil_new (stacksize, iotrap, addrsize);
-	r_anal_esil_setup (esil, core->anal, romem, stats1, noNULL); // setup io
+	r_anal_esil_setup (esil, core->anal, romem, stats1, nonull); // setup io
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
 
 	mymemxsr = r_list_new ();
@@ -6410,7 +6414,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int romem = r_config_get_i (core->config, "esil.romem");
 	int stats = r_config_get_i (core->config, "esil.stats");
-	int noNULL = r_config_get_i (core->config, "esil.noNULL");
+	bool nonull = r_config_get_b (core->config, "esil.nonull");
 	ut64 until_addr = UT64_MAX;
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
@@ -6467,7 +6471,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		if (!esil && !(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 			return;
 		}
-		r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
+		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 		r_anal_esil_set_pc (esil, core->offset);
 		r_anal_esil_parse (esil, input + 1);
 		r_anal_esil_dumpstack (esil);
@@ -6760,7 +6764,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (!(esil = core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 				return;
 			}
-			r_anal_esil_setup (esil, core->anal, romem, stats, noNULL); // setup io
+			r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 			esil->verbose = (int)r_config_get_i (core->config, "esil.verbose");
 			/* restore user settings for interrupt handling */
 			{
