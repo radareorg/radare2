@@ -1,7 +1,6 @@
-/* radare2 - LGPL - Copyright 2009-2020 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2021 - nibble, pancake, maijin */
 
 #include <stdio.h>
-
 #include <r_types.h>
 #include <r_parse.h>
 #include <config.h>
@@ -71,7 +70,7 @@ R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
 	bool ret = false;
 	char *s, *o;
 
-	data[0]='\0';
+	data[0] = '\0';
 	if (p->cur && p->cur->assemble) {
 		o = data + strlen (data);
 		do {
