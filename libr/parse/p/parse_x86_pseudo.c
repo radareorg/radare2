@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,15 +57,17 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "ja", "if (((unsigned) var) > 0) goto #", {1}},
 		{ "jb", "if (((unsigned) var) < 0) goto #", {1}},
 		{ "jbe", "if (((unsigned) var) <= 0) goto #", {1}},
-		{ "je", "if (!var) goto #", {1}},
-		{ "jg", "if (var > 0) goto #", {1}},
-		{ "jge", "if (var >= 0) goto #", {1}},
-		{ "jle", "if (var <= 0) goto #", {1}},
-		{ "jmp",  "goto #", {1}},
-		{ "jne", "if (var) goto #", {1}},
+		{ "je", "if (!var) goto loc_#", {1}},
+		{ "jg", "if (var > 0) goto loc_#", {1}},
+		{ "jge", "if (var >= 0) goto loc_#", {1}},
+		{ "jle", "if (var <= 0) goto loc_#", {1}},
+		{ "jmp",  "goto loc_#", {1}},
+		{ "jne", "if (var) goto loc_#", {1}},
 		{ "lea",  "# = #", {1, 2}},
 		{ "mov",  "# = #", {1, 2}},
 		{ "movabs", "# = #", {1, 2}},
+		{ "cmovne", "if (!zf) # = #", {1, 2}},
+		{ "cmove", "if (zf) # = #", {1, 2}},
 		{ "movq",  "# = #", {1, 2}},
 		{ "movaps",  "# = #", {1, 2}},
 		{ "movups",  "# = #", {1, 2}},
@@ -91,8 +93,8 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "not",  "# = !#", {1, 1}},
 		{ "or",   "# |= #", {1, 2}},
 		{ "out",  "io[#] = #", {1, 2}},
-		{ "pop",  "pop #", {1}},
-		{ "push", "push #", {1}},
+		{ "pop",  "# = pop()", {1}},
+		{ "push", "push(#)", {1}},
 		{ "ret",  "return", {0}},
 		{ "sal",  "# <<= #", {1, 2}},
 		{ "sar",  "# >>= #", {1, 2}},
@@ -272,10 +274,12 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 		r_snprintf (p->retleave_asm, sz, "return %s", w2);
 		replace (nw, wa, str);
+#if 0
 	} else if ((strstr (w0, "leave") && p->retleave_asm) || (strstr (w0, "pop") && strstr (w1, "bp"))) {
 		r_str_ncpy (wa[0], " ", 2);
 		r_str_ncpy (wa[1], " ", 2);
 		replace (nw, wa, str);
+#endif
 	} else if (strstr (w0, "ret") && p->retleave_asm) {
 		r_str_ncpy (str, p->retleave_asm, sz);
 		R_FREE (p->retleave_asm);
