@@ -720,6 +720,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			return 1;
 		}
 		if (2 != new_stderr) {
+#if !__wasi__
 			if (-1 == dup2 (new_stderr, 2)) {
 				eprintf ("Failed to dup2 stderr");
 				free (envprofile);
@@ -727,6 +728,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				R_FREE (debugbackend);
 				return 1;
 			}
+#endif
 			if (-1 == close (new_stderr)) {
 				eprintf ("Failed to close %s", nul);
 				LISTS_FREE ();

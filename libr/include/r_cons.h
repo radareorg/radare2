@@ -28,9 +28,11 @@ extern "C" {
 #include <sys/stat.h>
 #include <fcntl.h>
 #if __UNIX__
+#ifndef __wasi__
 #include <termios.h>
-#include <sys/ioctl.h>
 #include <sys/wait.h>
+#endif
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #endif
 #if __WINDOWS__
@@ -453,7 +455,7 @@ typedef struct r_cons_t {
 	RConsFunctionKey cb_fkey;
 
 	void *user; // Used by <RCore*>
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;

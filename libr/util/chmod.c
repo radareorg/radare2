@@ -15,7 +15,7 @@ static char oper = '=';
 static mode_t mode = 0;
 #endif
 
-R_API bool r_file_chmod (const char *file, const char *mod, int recursive) {
+R_API bool r_file_chmod(const char *file, const char *mod, int recursive) {
 #if __UNIX__
 	oper = '=';
 	mode = 0;
@@ -48,10 +48,12 @@ static bool chmodr(const char *path, int rflag) {
 		st.st_mode = mode;
 		break;
 	}
+#if !__wasi__
 	if (chmod (path, st.st_mode) == -1) {
 		eprintf ("chmod %s:", path);
 		return false;
 	}
+#endif
 	if (rflag) {
 		recurse (path, rflag, chmodr);
 	}

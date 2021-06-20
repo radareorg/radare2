@@ -225,7 +225,9 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 	if (safe_in != -1) {
 		close (safe_in);
 	}
+#ifndef __wasi__
 	waitpid (child, NULL, WNOHANG);
+#endif
 	return true;
 #else
 #if __WINDOWS__

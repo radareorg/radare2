@@ -62,8 +62,10 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 			case S_IFBLK: fch = 'b'; break;
 			case S_IFLNK: fch = 'l'; break;
 			case S_IFIFO: fch = 'p'; break;
+#ifndef __wasi__
 #ifdef S_IFSOCK
 			case S_IFSOCK: fch = 's'; break;
+#endif
 #endif
 			}
 		}
@@ -76,9 +78,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		res = r_str_appendf (res, "%s\n", nn);
 	} else if (printfmt == 'e') {
 		const char *eDIR = "📁";
-		const char *eLNK = "📎";
 		const char *eIMG = "🌅";
-		const char *eUID = "🔼";
 		const char *eHID = "👀";
 		const char *eANY = "  ";
 		// --
@@ -87,8 +87,10 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 			icon = eDIR;
 #if __UNIX__
 		} else if ((sb.st_mode & S_IFMT) == S_IFLNK) {
+			const char *eLNK = "📎";
 			icon = eLNK;
 		} else if (sb.st_mode & S_ISUID) {
+			const char *eUID = "🔼";
 			icon = eUID;
 #endif
 		} else if (r_str_casestr (nn, ".jpg") || r_str_casestr (nn, ".png") || r_str_casestr (nn, ".gif")) {

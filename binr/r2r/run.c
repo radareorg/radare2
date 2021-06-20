@@ -376,7 +376,11 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 #else
 
 #include <errno.h>
+#ifndef __wasi__
 #include <sys/wait.h>
+#else
+#define WNOHANG 0
+#endif
 
 struct r2r_subprocess_t {
 	pid_t pid;

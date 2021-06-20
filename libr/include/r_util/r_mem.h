@@ -40,7 +40,7 @@ R_API void *r_mem_alloc(int sz);
 R_API void r_mem_free(void *);
 R_API void r_mem_memzero(void *, size_t);
 R_API void r_mem_reverse(ut8 *b, int l);
-R_API int r_mem_protect(void *ptr, int size, const char *prot);
+R_API bool r_mem_protect(void *ptr, int size, const char *prot);
 R_API int r_mem_set_num(ut8 *dest, int dest_size, ut64 num);
 R_API int r_mem_eq(ut8 *a, ut8 *b, int len);
 R_API void r_mem_copybits(ut8 *dst, const ut8 *src, int bits);

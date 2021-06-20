@@ -3573,7 +3573,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF ("dir.types", "/usr/include", "Default colon-separated list of paths to find C headers to cparse types");
 	SETPREF ("dir.libs", "", "Specify path to find libraries to load when bin.libs=true");
+#if __EMSCRIPTEN__ || __wasi__
+	p = strdup ("/tmp");
+#else
 	p = r_sys_getenv (R_SYS_HOME);
+#endif
 	SETCB ("dir.home", r_str_get_fail (p, "/"), &cb_dirhome, "Path for the home directory");
 	free (p);
 	p = r_sys_getenv (R_SYS_TMP);
@@ -3826,7 +3830,7 @@ R_API int r_core_config_init(RCore *core) {
 
 
 	/* scr */
-#if __EMSCRIPTEN__
+#if __EMSCRIPTEN__ || __wasi__
 	r_config_set_cb (cfg, "scr.fgets", "true", cb_scrfgets);
 #else
 	r_config_set_cb (cfg, "scr.fgets", "false", cb_scrfgets);

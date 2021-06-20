@@ -58,10 +58,12 @@ int proc_pidpath(int pid, void * buffer, ut32 buffersize);
 #endif
 #if __UNIX__
 # include <sys/utsname.h>
-# include <sys/wait.h>
 # include <sys/stat.h>
 # include <errno.h>
+#ifndef __wasi__
 # include <pwd.h>
+# include <sys/wait.h>
+#endif
 # include <signal.h>
 extern char **environ;
 
@@ -152,6 +154,10 @@ R_API int r_sys_fork(void) {
 #if __WINDOWS__
 R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
 	return -1;
+}
+#elif __wasi__
+R_API int r_sys_sigaction(int *sig, void (*handler)(int)) {
+	return 0;
 }
 #elif HAVE_SIGACTION
 R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
@@ -1252,6 +1258,8 @@ R_API char *r_sys_whoami(void) {
 	if (!GetUserName (buf, (LPDWORD)&buf_sz) ) {
 		return strdup ("?");
 	}
+#elif __wasi__
+	strcpy (buf, "user");
 #else
 	struct passwd *pw = getpwuid (getuid ());
 	if (pw) {
@@ -1270,13 +1278,17 @@ R_API int r_sys_uid(void) {
 	if (!GetUserName (buf, (LPDWORD)&buf_sz) ) {
 		return strdup ("?");
 	}
+#elif __wasi__
+	return 0;
 #else
 	return getuid ();
 #endif
 }
 
 R_API int r_sys_getpid(void) {
-#if __UNIX__
+#if __wasi__
+	return 0;
+#elif __UNIX__
 	return getpid ();
 #elif __WINDOWS__
 	return GetCurrentProcessId();

@@ -3,6 +3,10 @@ SDBLIB=${SDBPATH}/libsdb.a
 EXTRA_TARGETS+=${SDBLIB}
 EXTRA_PRE+=$(SDBLIB)
 
+# __wasi__
+# CFLAGS+=-DUSE_MMAN=0
+# CFLAGS+=-DHAVE_MMAN=0
+
 SDB_OBJS=
 SDB_OBJS+=buffer.o
 SDB_OBJS+=cdb.o

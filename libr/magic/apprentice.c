@@ -38,12 +38,16 @@
 #include "file.h"
 #include "patchlevel.h"
 
-#if __UNIX__ && !defined(_MSC_VER)
+#if __UNIX__ && !defined(_MSC_VER) && !(defined(__wasi__))
 # define QUICK 1
 # include <sys/mman.h>
 # include <sys/param.h>
 #else
 # define QUICK 0
+#endif
+
+#ifdef __wasi__
+# define MAXPATHLEN 255
 #endif
 
 #ifdef _MSC_VER

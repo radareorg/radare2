@@ -253,7 +253,7 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 	if (!ret) {
 		ret = strdup (file);
 	}
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	char *abspath = realpath (ret, NULL);
 	if (abspath) {
 		free (ret);
@@ -325,8 +325,11 @@ R_API char *r_file_path(const char *bin) {
 	return strdup (bin);
 }
 
-R_API char *r_stdin_slurp (int *sz) {
-#if __UNIX__ || __WINDOWS__
+R_API char *r_stdin_slurp(int *sz) {
+#if __wasi__
+#warning r_stdin_slurp not available for wasi
+	return NULL;
+#elif __UNIX__ || __WINDOWS__
 	int i, ret, newfd;
 	if ((newfd = dup (0)) < 0) {
 		return NULL;
@@ -390,6 +393,13 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 		fclose (fd);
 		return NULL;
 	}
+#if __wasi__
+	fclose (fd);
+	fd = r_sandbox_fopen (str, "rb");
+	if (!fd) {
+		return NULL;
+	}
+#endif
 	if (!sz) {
 		if (r_file_is_regular (str)) {
 			char *buf = NULL;
@@ -426,14 +436,14 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 		sz = UT16_MAX;
 	}
 	rewind (fd);
-	char *ret = (char *)malloc (sz + 1);
+	char *ret = (char *)calloc (sz + 1, 1);
 	if (!ret) {
 		fclose (fd);
 		return NULL;
 	}
 	size_t rsz = fread (ret, 1, sz, fd);
 	if (rsz != sz) {
-		eprintf ("Warning: r_file_slurp: fread: truncated read\n");
+		eprintf ("Warning: r_file_slurp: fread: truncated read (%d / %d)\n", (int)rsz, (int)sz);
 		sz = rsz;
 	}
 	fclose (fd);
@@ -881,6 +891,8 @@ err_r_file_mmap_write:
 		CloseHandle (fh);
 	}
 	return ret;
+#elif __wasi__
+	return -1;
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
 	const int pagesize = getpagesize ();
@@ -942,6 +954,8 @@ err_r_file_mmap_read:
 	}
 	free (file_);
 	return ret;
+#elif __wasi__
+	return 0;
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDONLY, 0644);
 	const int pagesize = 4096;
@@ -959,12 +973,17 @@ err_r_file_mmap_read:
 	munmap (mmap_buf, mmlen*2);
 	close (fd);
 	return len;
-#endif
+#else
 	return 0;
+#endif
 }
 
-#if __UNIX__
-static RMmap *r_file_mmap_unix (RMmap *m, int fd) {
+#if __wasi__
+static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
+	return NULL;
+}
+#elif __UNIX__
+static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
 	ut8 empty = m->len == 0;
 	m->buf = mmap (NULL, (empty?BS:m->len) ,
 		m->rw?PROT_READ|PROT_WRITE:PROT_READ,
@@ -1102,7 +1121,7 @@ R_API void r_file_mmap_free(RMmap *m) {
 		return;
 	}
 	free (m->filename);
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	munmap (m->buf, m->len);
 #endif
 	close (m->fd);
@@ -1165,6 +1184,9 @@ err_r_file_mkstemp:
 	}
 
 	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
+#if __wasi__
+	// nothing to do
+#else
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
 	if (suffix && *suffix) {
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && 2 <= __GLIBC__ && 19 <= __GLIBC__MINOR__
@@ -1184,6 +1206,7 @@ err_r_file_mkstemp:
 		h = mkstemp (name);
 	}
 	umask (mask);
+#endif
 	if (oname) {
 		*oname = (h!=-1)? strdup (name): NULL;
 	}

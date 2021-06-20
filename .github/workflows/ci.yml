@@ -25,6 +25,15 @@ jobs:
         export CFLAGS=-I/tmp/fakeincs/
         export LDFLAGS=-L/tmp/fakelibs/
         sys/install.sh
+  build-wasi:
+    name: linux-wasi
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Installing with symlinks
+      run: |
+        sys/wasi.sh
   build-acr-gperf:
     name: linux-acr-gperf
     runs-on: ubuntu-20.04

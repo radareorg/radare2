@@ -6,7 +6,7 @@
 #include <r_util.h>
 #include <errno.h>
 
-#if EMSCRIPTEN
+#if EMSCRIPTEN || __wasi__
 #define NETWORK_DISABLED 1
 #else
 #define NETWORK_DISABLED 0
@@ -64,7 +64,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 R_API char *r_socket_to_string(RSocket *s) {
 	return NULL;
 }
-R_API int r_socket_write(RSocket *s, void *buf, int len) {
+R_API int r_socket_write(RSocket *s, const void *buf, int len) {
 	return -1;
 }
 R_API int r_socket_puts(RSocket *s, char *buf) {

@@ -46,6 +46,7 @@
 #include <windows.h>
 #include <io.h>
 #define ULLFMT "I64"
+#undef HAVE_MMAN
 #define HAVE_MMAN 0
 #else
 // CYGWIN AND UNIX
@@ -53,8 +54,14 @@
 #undef DIRSEP
 #define DIRSEP '/'
 #include <unistd.h>
+#undef HAVE_MMAN
 #define HAVE_MMAN 1
 #define ULLFMT "ll"
+#endif
+
+#if __wasi__
+#undef HAVE_MMAN
+#define HAVE_MMAN 0
 #endif
 
 #ifndef USE_MMAN

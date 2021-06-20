@@ -16,7 +16,9 @@
 #    endif
 #    include <sys/uio.h>
 #  endif
+#ifndef __wasi__
 #  include <pthread.h>
+#endif
 #  ifdef JEMALLOC_OS_UNFAIR_LOCK
 #    include <os/lock.h>
 #  endif

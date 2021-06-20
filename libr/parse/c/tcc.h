@@ -38,7 +38,9 @@
 #endif
 #include <signal.h>
 #include <fcntl.h>
+#ifndef __wasi__
 #include <setjmp.h>
+#endif
 #include <time.h>
 
 #ifdef CONFIG_TCCASSERT
@@ -54,9 +56,6 @@
 # ifndef __HAIKU__
 # endif
 # include <sys/mman.h>
-# ifndef CONFIG_TCC_STATIC
-#  include <dlfcn.h>
-# endif
 #else
 # include <windows.h>
 # include <sys/timeb.h>
@@ -335,6 +334,7 @@ typedef struct BufferedFile {
 	unsigned char buffer[IO_BUF_SIZE + 1]; /* extra size for CH_EOB char */
 } BufferedFile;
 
+
 #define CH_EOB   '\\'       /* end of buffer or '\0' char in file */
 #define CH_EOF   (-1)   /* end of file */
 
@@ -407,7 +407,9 @@ struct TCCState {
 	void *error_opaque;
 	void (*error_func)(void *opaque, const char *msg);
 	bool error_set_jmp_enabled;
+#ifndef __wasi__
 	jmp_buf error_jmp_buf;
+#endif
 	int nb_errors;
 
 	/* output file for preprocessing (-E) */
@@ -908,7 +910,6 @@ ST_FUNC void expr_prod(void);
 ST_FUNC void expr_sum(void);
 ST_FUNC void gexpr(void);
 ST_FUNC long long expr_const(void);
-ST_FUNC void decl(int l);
 
 /********************************************************/
 #undef ST_DATA
@@ -923,5 +924,23 @@ PUB_FUNC void tcc_typedef_appendf(const char *fmt, ...);
 PUB_FUNC void tcc_typedef_alias_fields(const char *alias);
 
 extern void (*tcc_cb)(const char *, char **);
+
+ST_DATA bool nocode_wanted;
+// XXX?
+static BufferedFile *file;
+static char *funcname;
+ST_DATA Sym *define_stack;
+ST_DATA int tok_flags;
+ST_DATA int parse_flags;
+
+ST_DATA Sym *global_stack;
+ST_DATA Sym *local_stack;
+ST_DATA Sym *define_stack;
+
+ST_DATA void **sym_pools;
+ST_DATA int nb_sym_pools;
+
+ST_DATA Sym *sym_free_first;
+ST_DATA char *dir_name;
 
 #endif /* _TCC_H */

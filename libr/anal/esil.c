@@ -5,6 +5,10 @@
 #include <r_util.h>
 #include <r_bind.h>
 
+#ifdef __wasi__
+#define FE_OVERFLOW 0
+#define feclearexcept(x) 
+#endif
 // should these be here?
 #include <math.h>
 #include <float.h>

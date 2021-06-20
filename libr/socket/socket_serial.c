@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2017 - pancake */
+/* radare - LGPL - Copyright 2017-2021 - pancake */
 
 #include <r_socket.h>
-#if __UNIX__
+
+#if __UNIX__ && !__wasi__
 
 #include <errno.h>
 #include <string.h>

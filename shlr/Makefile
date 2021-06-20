@@ -60,7 +60,8 @@ endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip java mpc yxml
+# MODS=sdb zip java mpc yxml
+MODS=zip java mpc yxml
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -113,10 +114,10 @@ $(SDB_HOST):
 	$(MAKE) sdb-host HOST_CC=$(HOST_CC) CC=$(HOST_CC)
 
 $(SDB_LIBA):
-	$(MAKE) sdb-target
+	$(MAKE) sdb-target RANLIB=$(RANLIB)
 
 sdbs: $(SDB_HOST)
-	$(MAKE) $(SDB_LIBA)
+	$(MAKE) $(SDB_LIBA) RANLIB=$(RANLIB)
 
 sdb-host:
 	@echo
@@ -137,11 +138,17 @@ sdb-target:
 	@echo "TARGET SDB"
 	@echo ">>>>>>>>>>"
 	@echo
+	rm -f src/libsdb.$(EXT_AR)
 	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
 	$(MAKE) -C sdb/src sdb_version.h
+ifeq ($(EXT_EXE),.wasm)
+	$(MAKE) -C sdb/src ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
+		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS} -DHAVE_MMAN=0' LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
+else
 	$(MAKE) -C sdb/src ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
-		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS}' LDFLAGS='${LDFLAGS}' libsdb.a
-	${RANLIB} sdb/src/libsdb.a
+		CC="${CC}" AR="${AR}" ARCH=undefined LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
+endif
+	$(RANLIB) sdb/src/libsdb.$(EXT_AR)
 
 .PHONY: sdb-sync sync-sdb sdbclean sdb-native sdb-target
 SDB_F=README.md config.mk src Makefile meson.build

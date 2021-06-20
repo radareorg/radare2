@@ -135,6 +135,10 @@
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
 #endif
 
+#ifdef __wasi__
+# define __UNIX__ 1
+#endif
+
 #ifdef __EMSCRIPTEN__
 # define __UNIX__ 1
 #endif
@@ -467,7 +471,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_SYS_ARCH "x86"
 #define R_SYS_BITS R_SYS_BITS_32
 #define R_SYS_ENDIAN 0
-#elif __EMSCRIPTEN__
+#elif __EMSCRIPTEN__ || __wasi__
 #define R_SYS_ARCH "wasm"
 #define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #define R_SYS_ENDIAN 0
@@ -608,6 +612,8 @@ typedef enum {
 #define R_SYS_OS "qnx"
 //#elif TARGET_OS_IPHONE
 //#define R_SYS_OS "ios"
+#elif defined (__wasi__)
+#define R_SYS_OS "wasi"
 #elif defined (__APPLE__)
 #define R_SYS_OS "darwin"
 #elif defined (__linux__)

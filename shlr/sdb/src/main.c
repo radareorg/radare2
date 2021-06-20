@@ -761,12 +761,17 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 	}
 	int rc = -1;
 	if (wd != -1) {
+#ifdef __wasi__
+		rc = sdb_dump (mo); // file, MODE_CGEN, false, NULL);
+		fflush (stdout);
+#else
 		dup2 (1, 999);
 		dup2 (wd, 1);
 		rc = sdb_dump (mo); // file, MODE_CGEN, false, NULL);
 		fflush (stdout);
 		close (wd);
 		dup2 (999, 1);
+#endif
 	} else {
 		eprintf ("Cannot create .%s\n", out);
 	}
