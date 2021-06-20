@@ -88,8 +88,10 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case 0xe9:
 		op->size = 3;
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + op->size + ((buf[1] << 8) + buf[2]);
-		op->fail = op->addr + op->size;
+		if (len > 2) {
+			op->jump = op->addr + op->size + ((buf[1] << 8) + buf[2]);
+			op->fail = op->addr + op->size;
+		}
 		break;
 	case 0xc6:
 	case 0xc7:
@@ -150,10 +152,10 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		op->size = 7;
 		{
 			int oa = 3;
-			int delta = buf[oa];
-			delta |= buf[oa + 1] << 8;
-			delta |= buf[oa + 2] << 16;
-			delta |= buf[oa + 3] << 24;
+			ut32 delta = buf[oa];
+			delta |= (ut32)(buf[oa + 1]) << 8;
+			delta |= (ut32)(buf[oa + 2]) << 16;
+			delta |= (ut32)(buf[oa + 3]) << 24;
 			delta += op->size;
 			op->jump = op->addr + delta;
 		}
