@@ -66,7 +66,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 	}
 	if (!strcmp (action, "commit")) {
 		char *auth, *message;
-		uint i;
+		int i;
 		RList *files;
 		if (opt.argc < 5) {
 			free (rp);
