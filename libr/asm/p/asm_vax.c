@@ -1,6 +1,6 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2021 - pancake */
 
-// TODO: add support for the assembler
+// TODO: no assembler support
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -19,13 +19,10 @@ static RStrBuf *buf_global = NULL;
 static const ut8 *bytes = NULL;
 static int bytes_size = 0;
 
-static int vax_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+static int vax_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta < 0) {
 		return -1; // disable backward reads
-	}
-	if (delta > length) {
-		return -1;
 	}
 	memcpy (myaddr, bytes + delta, R_MIN (length, bytes_size));
 	return 0;
@@ -74,7 +71,7 @@ RAsmPlugin r_asm_plugin_vax = {
 	.name = "vax",
 	.arch = "vax",
 	.license = "GPL",
-	.bits = 8 | 32,
+	.bits = 32,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "VAX",
 	.disassemble = &disassemble
