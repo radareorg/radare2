@@ -83,10 +83,10 @@ static int cmp_ns(const void *a, const void *b) {
 		case c: \
 			FLUSH; \
 			p++; \
-			write (fd, "\\"repl, replsz + 1); \
+			if (write (fd, "\\"repl, replsz + 1) != replsz + 1) { return false; }; \
 			break;
 
-static void write_path(int fd, SdbList *path) {
+static bool write_path(int fd, SdbList *path) {
 	write (fd, "/", 1); // always print a /, even if path is empty
 	SdbListIter *it;
 	const char *path_token;
@@ -95,7 +95,9 @@ static void write_path(int fd, SdbList *path) {
 		if (first) {
 			first = false;
 		} else {
-			write (fd, "/", 1);
+			if (write (fd, "/", 1) != 1) {
+				return false;
+			}
 		}
 		ESCAPE_LOOP (fd, path_token,
 			ESCAPE ('\\', "\\", 1);
@@ -104,12 +106,15 @@ static void write_path(int fd, SdbList *path) {
 			ESCAPE ('\r', "r", 1);
 		);
 	}
+	return true;
 }
 
-static void write_key(int fd, const char *k) {
+static bool write_key(int fd, const char *k) {
 	// escape leading '/'
 	if (*k == '/') {
-		write (fd, "\\", 1);
+		if (write (fd, "\\", 1) != 1) {
+			return false;
+		}
 	}
 	ESCAPE_LOOP (fd, k,
 		ESCAPE ('\\', "\\", 1);
@@ -117,14 +122,16 @@ static void write_key(int fd, const char *k) {
 		ESCAPE ('\n', "n", 1);
 		ESCAPE ('\r', "r", 1);
 	);
+	return true;
 }
 
-static void write_value(int fd, const char *v) {
+static bool write_value(int fd, const char *v) {
 	ESCAPE_LOOP (fd, v,
 		ESCAPE ('\\', "\\", 1);
 		ESCAPE ('\n', "n", 1);
 		ESCAPE ('\r', "r", 1);
 	);
+	return true;
 }
 #undef FLUSH
 #undef ESCAPE_LOOP
@@ -132,17 +139,20 @@ static void write_value(int fd, const char *v) {
 
 static bool save_kv_cb(void *user, const char *k, const char *v) {
 	int fd = *(int *)user;
-	write_key (fd, k);
-	write (fd, "=", 1);
-	write_value (fd, v);
-	write (fd, "\n", 1);
+	if (!write_key (fd, k) || write (fd, "=", 1) != 1) {
+		return false;
+	}
+	if (!write_value (fd, v) || write (fd, "\n", 1) != 1) {
+		return false;
+	}
 	return true;
 }
 
 static bool text_save(Sdb *s, int fd, bool sort, SdbList *path) {
 	// path
-	write_path (fd, path);
-	write (fd, "\n", 1);
+	if (!write_path (fd, path) || write (fd, "\n", 1) != 1) {
+		return false;
+	}
 
 	// k=v entries
 	if (sort) {

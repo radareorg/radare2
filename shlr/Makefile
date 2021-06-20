@@ -151,7 +151,7 @@ endif
 	$(RANLIB) sdb/src/libsdb.$(EXT_AR)
 
 .PHONY: sdb-sync sync-sdb sdbclean sdb-native sdb-target
-SDB_F=README.md config.mk src Makefile meson.build
+SDB_F=README.md config.mk src Makefile meson.build wasi.mk wasi.sh
 SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
 
