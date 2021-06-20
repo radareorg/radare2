@@ -28,9 +28,15 @@
 #include "vax.h"
 #include "disas-asm.h"
 
-#define OPCODES_SIGSETJMP(buf)		sigsetjmp((buf), 0)
-#define OPCODES_SIGJMP_BUF            sigjmp_buf
-#define OPCODES_SIGLONGJMP(buf,val)	siglongjmp((buf), (val))
+#if _MSC_VER || _WIN32
+#define OPCODES_SIGJMP_BUF void*
+static int OPCODES_SIGSETJMP(void *x) { return 0; }
+static void OPCODES_SIGLONGJMP(void *buf,int val)	{ /* nothing */ }
+#else
+#define OPCODES_SIGSETJMP(buf) sigsetjmp((buf), 0)
+#define OPCODES_SIGJMP_BUF sigjmp_buf
+#define OPCODES_SIGLONGJMP(buf,val) siglongjmp((buf), (val))
+#endif
 #define BSF_SYNTHETIC           (1 << 21)
 
 static char *reg_names[] =
@@ -154,17 +160,7 @@ parse_disassembler_options (const char *options)
   return TRUE;
 }
 
-#if 0 /* FIXME:  Ideally the disassembler should have target specific
-	 initialisation and termination function pointers.  Then
-	 parse_disassembler_options could be the init function and
-	 free_entry_array (below) could be the termination routine.
-	 Until then there is no way for the disassembler to tell us
-	 that it has finished and that we no longer need the entry
-	 array, so this routine is suppressed for now.  It does mean
-	 that we leak memory, but only to the extent that we do not
-	 free it just before the disassembler is about to terminate
-	 anyway.  */
-
+#if 0
 /* Free memory allocated to our entry array.  */
 
 static void
