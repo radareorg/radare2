@@ -1427,20 +1427,24 @@ static bool arm64_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
  * we let the caller handle the work.
  */
 static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
-	RDebug *dbg = bp->user;
 	if (b && b->hw) {
 #if __i386__ || __x86_64__
+		RDebug *dbg = bp->user;
 		return set
 			? drx_add (dbg, bp, b)
 			: drx_del (dbg, bp, b);
 #elif (__arm64__ || __aarch64__) && __linux__
+		RDebug *dbg = bp->user;
 		return set
 			? arm64_hwbp_add (dbg, bp, b)
 			: arm64_hwbp_del (dbg, bp, b);
 #elif __arm__ && __linux__
+		RDebug *dbg = bp->user;
 		return set
 			? arm32_hwbp_add (dbg, bp, b)
 			: arm32_hwbp_del (dbg, bp, b);
+#else
+#warning r_debug_native_bp not implemented for this platform
 #endif
 	}
 	return false;
@@ -1448,6 +1452,9 @@ static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 
 #if __APPLE__
 
+#if TARGET_OS_IPHONE || __POWERPC__
+	// nothing to do
+#else
 static int getMaxFiles(void) {
 	struct rlimit limit;
 	if (getrlimit (RLIMIT_NOFILE, &limit) != 0) {
@@ -1455,6 +1462,7 @@ static int getMaxFiles(void) {
 	}
 	return limit.rlim_cur;
 }
+#endif
 
 static RList *xnu_desc_list (int pid) {
 #if TARGET_OS_IPHONE || __POWERPC__

@@ -667,8 +667,9 @@ static void get_mach_header_sizes(size_t *mach_header_sz,
 // XXX: What about arm?
 }
 
+#if __ppc64__ || __x86_64__|| __i386__ || __ppc__ || __POWERPC__
 // XXX: This function could use less function calls, but works.
-static cpu_type_t xnu_get_cpu_type (pid_t pid) {
+static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 	int mib[CTL_MAXNAME];
 	size_t len = CTL_MAXNAME;
 	cpu_type_t cpu_type;
@@ -696,9 +697,9 @@ static cpu_subtype_t xnu_get_cpu_subtype (void) {
 
 	return subtype;
 }
+#endif
 
-static void xnu_build_corefile_header (vm_offset_t header,
-	int segment_count, int thread_count, int command_size, pid_t pid) {
+static void xnu_build_corefile_header(vm_offset_t header, int segment_count, int thread_count, int command_size, pid_t pid) {
 #if __ppc64__ || __x86_64__
 	struct mach_header_64 *mh64;
 	mh64 = (struct mach_header_64 *)header;
@@ -718,6 +719,8 @@ static void xnu_build_corefile_header (vm_offset_t header,
 	mh->filetype = MH_CORE;
 	mh->ncmds = segment_count + thread_count;
 	mh->sizeofcmds = command_size;
+#else
+#warning xnu_build_corefile_header not implemented for this platform
 #endif
 }
 

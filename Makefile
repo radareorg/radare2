@@ -47,7 +47,7 @@ endif
 endif
 
 all: plugins.cfg libr/include/r_version.h
-	libr/count.sh reset
+	@libr/count.sh reset
 	${MAKE} -C shlr sdbs
 	${MAKE} -C shlr/zip
 	${MAKE} -C libr/util

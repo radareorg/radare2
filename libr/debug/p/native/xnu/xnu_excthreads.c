@@ -112,7 +112,6 @@ static bool is_thumb_32(ut16 op) {
 #endif
 
 static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
-	int i = 0;
 	int ret = xnu_thread_get_drx (dbg, th);
 	if (!ret) {
 		eprintf ("error to get drx registers modificy_trace_bit arm\n");
@@ -135,6 +134,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		}
 	} else
 #elif __arm || __arm__ || __armv7 || __armv7__
+	int i = 0;
 	if (th->flavor == ARM_DEBUG_STATE) {
 		arm_debug_state_t *state = &th->debug.drx;
 		R_REG_T *regs;
@@ -164,10 +164,11 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 			if (regs->ts_32.__cpsr & 0x20) {
 				ut16 op;
 				// Thumb breakpoint
-				if (regs->ts_32.__pc & 2)
+				if (regs->ts_32.__pc & 2) {
 					state->__bcr[i] |= BAS_IMVA_2_3;
-				else
+				} else {
 					state->__bcr[i] |= BAS_IMVA_0_1;
+				}
 				if (bio->read_at (bio->io, regs->ts_32.__pc, (void *)&op, 2) < 1) {
 					eprintf ("Failed to read opcode modify_trace_bit\n");
 					return false;
@@ -224,8 +225,9 @@ static bool xnu_restore_exception_ports (int pid) {
 	kern_return_t kr;
 	int i;
 	task_t task = pid_to_task (pid);
-	if (!task)
+	if (!task) {
 		return false;
+	}
 	for (i = 0; i < ex.count; i++) {
 		kr = task_set_exception_ports (task, ex.masks[i], ex.ports[i],
 					       ex.behaviors[i], ex.flavors[i]);

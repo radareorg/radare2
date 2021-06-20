@@ -377,8 +377,7 @@ static void r_print_format_char(const RPrint* p, int endian, int mode,
 	}
 }
 
-static void r_print_format_decchar(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+static void r_print_format_decchar(const RPrint* p, int endian, int mode, const char *setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
 		elem = size/ARRAYINDEX_COEF-1;

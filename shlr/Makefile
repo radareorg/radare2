@@ -114,10 +114,10 @@ $(SDB_HOST):
 	$(MAKE) sdb-host HOST_CC=$(HOST_CC) CC=$(HOST_CC)
 
 $(SDB_LIBA):
-	$(MAKE) sdb-target RANLIB=$(RANLIB)
+	$(MAKE) sdb-target RANLIB="$(RANLIB)"
 
 sdbs: $(SDB_HOST)
-	$(MAKE) $(SDB_LIBA) RANLIB=$(RANLIB)
+	$(MAKE) $(SDB_LIBA) RANLIB="$(RANLIB)"
 
 sdb-host:
 	@echo
