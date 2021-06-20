@@ -1622,6 +1622,9 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 		return get_import_addr_arm (bin, rel);
 	case EM_MIPS: // MIPS32 BIG ENDIAN relocs
 		return get_import_addr_mips (bin, rel);
+	case EM_VAX:
+		// as beautiful as riscv <3
+		return get_import_addr_riscv (bin, rel);
 	case EM_RISCV:
 		return get_import_addr_riscv (bin, rel);
 	case EM_SPARC:
