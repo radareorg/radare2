@@ -12,6 +12,9 @@
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
 //    0x0001f41c      eabe76de12       jmp word 0x12de:0x76be [2]
 //    0x0001f56a      ea7ed73cd3       jmp word 0xd33c:0xd77e [6]
+
+// XXX seems like '(#)' doesnt works.. so it needs to be '( # )'
+// this is a bug somewhere else
 static int replace (int argc, char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
@@ -33,10 +36,10 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "cmpsw", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!var) break; }", {0}},
 		{ "dec",  "#--", {1}},
 		{ "div",  "# /= #", {1, 2}},
-		{ "fabs",  "abs(#)", {1}},
+		{ "fabs",  "abs( # )", {1}},
 		{ "fadd",  "# = # + #", {1, 1, 2}},
 		{ "fcomp",  "var = # - #", {1, 2}},
-		{ "fcos",  "# = cos(#)", {1, 1}},
+		{ "fcos",  "# = cos( # )", {1, 1}},
 		{ "fdiv",  "# = # / #", {1, 1, 2}},
 		{ "fiadd",  "# = # / #", {1, 1, 2}},
 		{ "ficom",  "var = # - #", {1, 2}},
@@ -52,7 +55,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "fxch",  "#,# = #,#", {1, 2, 2, 1}},
 		{ "idiv",  "# /= #", {1, 2}},
 		{ "imul",  "# = # * #", {1, 2, 3}},
-		{ "in",   "# = io[#]", {1, 2}},
+		{ "in",   "# = io[ # ]", {1, 2}},
 		{ "inc",  "#++", {1}},
 		{ "ja", "if (((unsigned) var) > 0) goto #", {1}},
 		{ "jb", "if (((unsigned) var) < 0) goto #", {1}},
@@ -82,7 +85,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 
 		{ "movdqu", "# = #", {1, 2}},
 		{ "movdqa", "# = #", {1, 2}},
-		{ "pextrb", "# = (byte) # [#]", {1, 2, 3}},
+		{ "pextrb", "# = (byte) # [ # ]", {1, 2, 3}},
 		{ "palignr", "# = # align #", {1, 2, 3}},
 		{ "pxor", "# ^= #", {1, 2}},
 		{ "xorps", "# ^= #", {1, 2}},
@@ -92,9 +95,9 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "nop",  "", {0}},
 		{ "not",  "# = !#", {1, 1}},
 		{ "or",   "# |= #", {1, 2}},
-		{ "out",  "io[#] = #", {1, 2}},
+		{ "out",  "io[ # ] = #", {1, 2}},
 		{ "pop",  "# = pop()", {1}},
-		{ "push", "push(#)", {1}},
+		{ "push", "push( # )", {1}},
 		{ "ret",  "return", {0}},
 		{ "sal",  "# <<= #", {1, 2}},
 		{ "sar",  "# >>= #", {1, 2}},
@@ -110,7 +113,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "swap", "var = #; # = #; # = var", {1, 1, 2, 2}},
 		{ "test", "var = # & #", {1, 2}},
 		{ "xchg",  "#,# = #,#", {1, 2, 2, 1}},
-		{ "xadd",  "#,# = #,#+#", {1, 2, 2, 1, 2}},
+		{ "xadd",  "#,# = #,# + #", {1, 2, 2, 1, 2}},
 		{ "xor",  "# ^= #", {1, 2}},
 		{ NULL }
 	};
@@ -293,7 +296,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return true;
 }
 
-static void parse_localvar (RParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, char *ireg, bool att) {
+static void parse_localvar(RParse *p, char *newstr, size_t newstr_len, const char *var, const char *reg, char sign, char *ireg, bool att) {
 	RStrBuf *sb = r_strbuf_new ("");
 	if (att) {
 		if (p->localvar_only) {
@@ -320,7 +323,7 @@ static void parse_localvar (RParse *p, char *newstr, size_t newstr_len, const ch
 	r_strbuf_free (sb);
 }
 
-static inline void mk_reg_str(const char *regname, int delta, bool sign, bool att, char *ireg, char *dest, int len) {
+static void mk_reg_str(const char *regname, int delta, bool sign, bool att, char *ireg, char *dest, int len) {
 	RStrBuf *sb = r_strbuf_new ("");
 	if (att) {
 		if (ireg) {
