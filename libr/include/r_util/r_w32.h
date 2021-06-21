@@ -14,6 +14,7 @@ extern "C" {
 #define NTSTATUS DWORD
 #endif
 
+R_API DWORD (*w32_GetProcessImageFileName)(HANDLE,LPSTR,DWORD);
 R_API DWORD (*w32_GetModuleBaseName)(HANDLE, HMODULE, LPTSTR, DWORD);
 R_API BOOL (*w32_GetModuleInformation)(HANDLE, HMODULE, LPMODULEINFO, DWORD);
 R_API BOOL (*w32_DebugActiveProcessStop)(DWORD);

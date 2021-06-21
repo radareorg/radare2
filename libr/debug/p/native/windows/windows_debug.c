@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - MapleLeaf-X */
+/* radare - LGPL - Copyright 2019-2021 - MapleLeaf-X */
 
 #include <ntstatus.h>
 #define WIN32_NO_STATUS
@@ -505,9 +505,11 @@ static char *__resolve_path(HANDLE ph, HANDLE mh) {
 	if (name) {
 		return name;
 	}
-	// Upon failure fallback to GetProcessImageFileName
-	length = GetProcessImageFileName (mh, filename, maxlength);
-	if (length == 0) {
+	// Upon failure fallback to w32_GetProcessImageFileName
+	if (w32_GetProcessImageFileName) {
+		length = w32_GetProcessImageFileName (mh, filename, maxlength);
+	}
+	if (length < 1) {
 		return NULL;
 	}
 	// Convert NT path to win32 path
@@ -585,7 +587,7 @@ static PLIB_ITEM lib_list_add(DWORD pid, LPVOID lpBaseOfDll, HANDLE hFile, char 
 	return lib;
 }
 
-static bool breaked = false;
+static bool interrupted = false;
 
 int w32_attach_new_process(RDebug* dbg, int pid) {
 	int tid = -1;
@@ -697,7 +699,7 @@ void w32_break_process(void *user) {
 		}
 	}
 
-	breaked = true;
+	interrupted = true;
 }
 
 static RDebugReasonType exception_to_reason (DWORD ExceptionCode) {
@@ -842,11 +844,11 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 			} else {
 				break;
 			}
-		} while (!breaked);
+		} while (!interrupted);
 
-		if (breaked) {
+		if (interrupted) {
 			ret = R_DEBUG_REASON_USERSUSP;
-			breaked = false;
+			interrupted = false;
 		}
 
 		dbg->tid = tid = de.dwThreadId;
@@ -1026,8 +1028,8 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 		return -1;
 	}
 
-	if (breaked) {
-		breaked = false;
+	if (interrupted) {
+		interrupted = false;
 		return -1;
 	}
 

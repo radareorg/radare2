@@ -1106,7 +1106,9 @@ R_API char *r_sys_pid_to_path(int pid) {
 	}
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
-		length = GetProcessImageFileName (processHandle, filename, maxlength);
+		if (w32_GetProcessImageFileName) {
+			length = w32_GetProcessImageFileName (processHandle, filename, maxlength);
+		}
 		CloseHandle (processHandle);
 		if (length == 0) {
 			eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");

@@ -6,6 +6,7 @@
 #if __WINDOWS__
 #include <windows.h>
 
+DWORD (*w32_GetProcessImageFileName)(HANDLE,LPSTR,DWORD) = NULL;
 DWORD (*w32_GetModuleBaseName)(HANDLE, HMODULE, LPTSTR, DWORD) = NULL;
 BOOL (*w32_GetModuleInformation)(HANDLE, HMODULE, LPMODULEINFO, DWORD) = NULL;
 BOOL (*w32_DebugActiveProcessStop)(DWORD) = NULL;
@@ -138,6 +139,8 @@ R_API bool r_w32_init(void) {
 		GetProcAddress (lib, W32_TCALL ("GetMappedFileName"));
 	w32_GetModuleBaseName = (DWORD (*)(HANDLE, HMODULE, LPTSTR, DWORD))
 		GetProcAddress (lib, W32_TCALL ("GetModuleBaseName"));
+	w32_GetProcessImageFileName = (DWORD (*)(HANDLE, LPSTR, DWORD))
+		GetProcAddress (lib, W32_TCALL ("GetProcessImageFileName"));
 	w32_GetModuleInformation = (BOOL (*)(HANDLE, HMODULE, LPMODULEINFO, DWORD))
 		GetProcAddress (lib, "GetModuleInformation");
 	w32_GetModuleFileNameEx = (DWORD (*)(HANDLE, HMODULE, LPTSTR, DWORD))
