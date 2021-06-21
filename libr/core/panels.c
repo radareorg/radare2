@@ -4187,8 +4187,8 @@ static void __move_panel_to_left(RCore *core, RPanel *panel, int src) {
 	int i = 1;
 	for (; i < panels->n_panels; i++) {
 		RPanel *tmp = __get_panel (panels, i);
-		int t_x = ((double)tmp->view->pos.x / (double)w) * (double)new_w + p_w;
-		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
+		int t_x = (int)(((double)tmp->view->pos.x / (double)w) * (double)new_w + p_w);
+		int t_w = (int)(((double)tmp->view->pos.w / (double)w) * (double)new_w + 1);
 		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
 	}
 	__fix_layout (core);
@@ -4208,8 +4208,8 @@ static void __move_panel_to_right(RCore *core, RPanel *panel, int src) {
 	int i = 0;
 	for (; i < panels->n_panels - 1; i++) {
 		RPanel *tmp = __get_panel (panels, i);
-		int t_x = ((double)tmp->view->pos.x / (double)w) * (double)new_w;
-		int t_w = ((double)tmp->view->pos.w / (double)w) * (double)new_w + 1;
+		int t_x = (int)(((double)tmp->view->pos.x / (double)w) * (double)new_w);
+		int t_w = (int)(((double)tmp->view->pos.w / (double)w) * (double)new_w + 1);
 		__set_geometry (&tmp->view->pos, t_x, tmp->view->pos.y, t_w, tmp->view->pos.h);
 	}
 	__fix_layout (core);
@@ -4227,8 +4227,8 @@ static void __move_panel_to_up(RCore *core, RPanel *panel, int src) {
 	int i = 1;
 	for (; i < panels->n_panels; i++) {
 		RPanel *tmp = __get_panel (panels, i);
-		int t_y = ((double)tmp->view->pos.y / (double)h) * (double)new_h + p_h;
-		int t_h = ((double)tmp->view->pos.h / (double)h) * (double)new_h + 1;
+		int t_y = (int)(((double)tmp->view->pos.y / (double)h) * (double)new_h + p_h);
+		int t_h = (int)(((double)tmp->view->pos.h / (double)h) * (double)new_h + 1);
 		__set_geometry (&tmp->view->pos, tmp->view->pos.x, t_y, tmp->view->pos.w, t_h);
 	}
 	__fix_layout (core);
