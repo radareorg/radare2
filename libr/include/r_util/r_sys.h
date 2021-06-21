@@ -142,6 +142,7 @@ R_API char *r_syscmd_join(const char *file1, const char *file2);
 R_API char *r_syscmd_sort(const char *file);
 
 R_API ut8 *r_sys_unxz (const ut8 *data, size_t len, size_t *olen);
+R_API bool r_w32_init(void);
 
 #ifdef __cplusplus
 }

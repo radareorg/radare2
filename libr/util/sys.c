@@ -1100,7 +1100,10 @@ R_API char *r_sys_pid_to_path(int pid) {
 		eprintf ("r_sys_pid_to_path: Cannot open process.\n");
 		return NULL;
 	}
-	DWORD length = GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
+	DWORD length = 0;
+	if (w32_GetModuleFileNameEx) {
+		length = w32_GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
+	}
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
 		length = GetProcessImageFileName (processHandle, filename, maxlength);

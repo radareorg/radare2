@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_sign.h>
@@ -1035,7 +1035,7 @@ R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr) {
 
 	RSignItem *it = r_sign_item_new ();
 	if (!it) {
-		return NULL;
+		return false;
 	}
 	it->name = r_str_new (name);
 	it->space = r_spaces_current (&a->zign_spaces);
@@ -2671,7 +2671,7 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 	r_return_val_if_fail (a, false);
 	RPVector *sigs = r_pvector_new ((RPVectorFree)r_sign_item_free);
 	if (!sigs) {
-		return NULL;
+		return false;
 	}
 
 	if (!r_sign_foreach_nofree (a, _sig_to_vec_cb, (void *)sigs)) {
