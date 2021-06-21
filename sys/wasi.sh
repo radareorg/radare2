@@ -33,6 +33,6 @@ D="radare2-$R2V-wasi"
 mkdir -p $D
 for a in rax2 radare2 rasm2 rabin2 rafind2 ; do
 	make -C binr/$a
-	cp -f binr/$a.wasm $D
+	cp -f binr/$a/$a.wasm $D
 done
 zip -r "$D".zip $D
