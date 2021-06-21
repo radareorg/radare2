@@ -199,6 +199,13 @@ install-symlink symstall:
 uninstall deinstall:
 	rm -f ${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}
 
+ifeq ($(WANT_CAPSTONE),0)
+capstone:
+
+capstone-sync:
+
+capstone-build:
+else
 ifeq ($(USE_CAPSTONE),1)
 # Do nothing here
 capstone:
@@ -266,6 +273,8 @@ ifneq (${EXT_AR},a)
 	-cp -f capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif
 endif
+endif
+
 ../../radare2-webui:
 	cd ../.. ; git clone --depth 1 https://github.com/radareorg/radare2-webui
 

@@ -25,6 +25,16 @@ jobs:
         export CFLAGS=-I/tmp/fakeincs/
         export LDFLAGS=-L/tmp/fakelibs/
         sys/install.sh
+  build-nocs:
+    name: linux-nocs
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Building without capstone
+      run: |
+        cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
+        ./configure --without-capstone && make -j
   build-wasi:
     name: linux-wasi
     runs-on: ubuntu-20.04
