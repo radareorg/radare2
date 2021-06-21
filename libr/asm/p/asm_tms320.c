@@ -10,7 +10,9 @@
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
+#if WANT_CAPSTONE
 #include <capstone.h>
+#endif
 
 #ifdef CAPSTONE_TMS320C64X_H
 #define CAPSTONE_HAS_TMS320C64X 1
