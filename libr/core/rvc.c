@@ -1,55 +1,25 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
 #include <rvc.h>
+#define FIRST_BRANCH "branches.master"
+#define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
+#define COMMIT_BLOB_SEP "----"
+#define DBNAME "branches.sdb"
+#define CURRENTB "current_branch"
+#define BPREFIX "branches."
+#define NULLVAL "-"
 
-static inline bool is_branch_name(const char *name) {
-	for (; *name; name++) {
-		if (!IS_DIGIT (*name) && !isalpha (*name)) {
-			return false;
-		}
-	}
-	return true;
-}
-
-static bool copy_commits(const Rvc *repo, const char *dpath, const char *spath) {
-	char *name, *commit_path;
-	RListIter *iter;
-	RList *files;
-	files = r_sys_dir (spath);
-	bool ret = true;
-	if (!files) {
-		eprintf ("Can't Open Files\n");
+static bool is_valid_branch_name(const char *name) {
+	if (r_str_len_utf8 (name) >= 16) {
 		return false;
 	}
-	r_list_foreach (files, iter, name) {
-		if (r_str_cmp (name, "..", 2) == 0 ||
-				r_str_cmp (name, ".", 1) == 0) {
-			printf ("%s", name);
+	for (; *name; name++) {
+		if (NOT_SPECIAL (*name)) {
 			continue;
 		}
-		commit_path = r_str_newf ("%s" R_SYS_DIR "%s", spath, name);
-		if (!commit_path) {
-			ret = false;
-			break;
-		}
-		ret = r_file_copy (commit_path, dpath);
-		free (commit_path);
-		if (!ret) {
-			break;
-		}
+		return false;
 	}
-	r_list_free (files);
-	return ret;
-}
-
-static char *branch_mkdir(Rvc *repo, RvcBranch *b) {
-	char *path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
-			R_SYS_DIR "commits" R_SYS_DIR, repo->path, b->name);
-	r_return_val_if_fail (path, NULL);
-	if (!r_sys_mkdirp (path)) {
-		R_FREE (path);
-	}
-	return path;
+	return true;
 }
 
 static char *find_sha256(const ut8 *block, int len) {
@@ -66,492 +36,721 @@ static inline char *sha256_file(const char *fname) {
 	return find_sha256 ((ut8 *)content, r_str_len_utf8 (content) * sizeof (ut8));
 }
 
-static char *read_until(const char *str, const char *find) {
-	char *ret;
-	char *f = strstr (str, find);
-	if (!f) {
-		return NULL;
-	}
-	ret = malloc (f - str + 1);
-	if (!ret) {
-		return NULL;
-	}
-	r_str_ncpy(ret, str, f - str + 1);
-	return ret;
-}
-
-static char *p2rvcp(const Rvc *repo, const char *path) {
-	char *ret;
-	char *p;
-	char *rp = read_until (repo->path, R_SYS_DIR ".rvc");
-	if (!rp) {
-		return NULL;
-	}
-	if (!r_file_is_abspath (path)) {
-		p = r_file_abspath (path);
-	} else {
-		p = r_str_new (path);
-	}
-	if (!p) {
-		free (rp);
-		return NULL;
-	}
-	ret = r_str_new (p + r_str_len_utf8 (rp) + 1);
-	free (p);
-	free (rp);
-	return ret;
-}
-
-static RvcBranch *branch_by_name(Rvc *repo, const char *name) {
-	RListIter *iter;
-	RvcBranch *b;
-	r_list_foreach (repo->branches, iter, b) {
-		if  (!r_str_cmp (name, b->name, r_str_len_utf8 (b->name) * sizeof (ut8))) {
-			return b;
-		}
-	}
-
-	return NULL;
-}
-
-static bool write_commit(Rvc *repo, RvcBranch *b, RvcCommit *commit) {
-	char *commit_path, *commit_string;
-	char *prev_path;
-	FILE *prev_file, *commit_file;
+static void free_blobs (RList *blobs) {
 	RListIter *iter;
 	RvcBlob *blob;
-	commit_string = r_str_newf ("author:%s\nmessage:%s\nntimestamp:%" PRId64"\n----",
-			commit->author, commit->message, commit->timestamp);
-	r_return_val_if_fail (commit_string, false);
-	r_list_foreach (commit->blobs, iter, blob) {
-		char *tmp = r_str_appendf (commit_string, "\nblob:%s:%s",
-				blob->fname, blob->hash);
-		if (!tmp) {
-			return false;
-		}
-		commit_string = tmp;
-	}
-	commit->hash = find_sha256 ((ut8 *) commit_string,
-			r_str_len_utf8 (commit_string) * sizeof (ut8));
-	if (!commit->hash) {
-		free (commit_string);
-		return false;
-	}
-	commit_path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR
-			"%s" R_SYS_DIR "commits" R_SYS_DIR "%s",
-			repo->path, b->name, commit->hash);
-	if (!commit_path) {
-		free (commit_string);
-		return false;
-	}
-	commit_file = fopen (commit_path, "w+");
-	free (commit_path);
-	if (!commit_file) {
-		free (commit_string);
-		return false;
-	}
-	fprintf (commit_file, "%s", commit_string);
-	free (commit_string);
-	if (!commit->prev) {
-		fclose (commit_file);
-		return true;
-	}
-	prev_path = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR
-			"%s" R_SYS_DIR "commits" R_SYS_DIR "%s",
-			repo->path, b->name, commit->prev->hash);
-	if (!prev_path) {
-		fclose (commit_file);
-		return false;
-	}
-	prev_file = fopen (prev_path, "r+");
-	free (prev_path);
-	if (!prev_file) {
-		fclose (commit_file);
-		return false;
-	}
-	fprintf (commit_file, "\nprev:%s", commit->prev->hash);
-	fclose (commit_file);
-	fseek (prev_file, 0, SEEK_END);
-	fprintf (prev_file, "\nnext:%s", commit->hash);
-	fclose (prev_file);
-	return true;
-}
-
-static void free_blobs(RList *blobs) {
-	RvcBlob *blob;
-	RListIter *iter;
 	r_list_foreach (blobs, iter, blob) {
+		free (blob->fhash);
 		free (blob->fname);
-		free (blob->hash);
 	}
 	r_list_free (blobs);
 }
 
-static void free_commits(RvcCommit *head) {
-	if (!head) {
-		return;
+static char *absp2rp(const char *rp, const char *absp) {
+	char *ret;
+	char *arp = r_file_abspath (rp);
+	if (!arp) {
+		return NULL;
 	}
-	free (head->author);
-	free (head->hash);
-	free (head->message);
-	free_blobs (head->blobs);
-	free_commits (head->prev);
-	free (head);
+	if (r_str_len_utf8 (arp) < r_str_len_utf8 (rp)) {
+		free (arp);
+		return NULL;
+	}
+	ret = r_str_new (absp + r_str_len_utf8 (arp));
+	printf ("%s:%s\n", absp, ret);
+	free (arp);
+	return ret;
 }
 
-static void free_branches(RList *branches) {
-	RvcBranch *branch;
-	RListIter *iter;
-	r_list_foreach (branches, iter, branch) {
-		free (branch->name);
-		free_commits (branch->head);
+char *rp2absp(const char *rp, const char *path) {
+	char *arp = r_file_abspath (rp);
+	if (!arp) {
+		return NULL;
 	}
-	free (branches);
-	return;
+	return r_str_appendf (arp, R_SYS_DIR "%s", path);
 }
 
-R_API bool r_vc_commit(Rvc *repo, RList *blobs, const char *auth, const char *message) {
-	RvcCommit *nc = R_NEW (RvcCommit);
-	if (!nc) {
-		eprintf ("Failed To Allocate New Commit\n");
-		return false;
-	}
-	nc->author = r_str_new (auth);
-	if (!nc->author) {
-		free (nc);
-		eprintf ("Failed To Allocate New Commit\n");
-		return false;
-	}
-	nc->message = r_str_new (message);
-	if (!nc->message) {
-		free (nc->author);
-		free (nc);
-		return false;
-	}
-	nc->timestamp = time (NULL);
-	nc->prev = repo->current_branch->head;
-	nc->blobs = blobs;
-	if (nc->prev) {
-		nc->prev->next = nc;
-	}
-	if (!write_commit (repo, repo->current_branch, nc)) {
-		free (nc->author);
-		free (nc->message);
-		free (nc);
-		eprintf ("Failed To Create Commit File\n");
-		return false;
-	}
-	repo->current_branch->head = nc;
-	return true;
-}
+//TODO:Make the tree related functions abit cleaner & more efficient
 
-R_API bool r_vc_branch(Rvc *repo, const char *name) {
-	char *bpath, *ppath;
-	RvcBranch *nb;
-	if (!is_branch_name (name)) {
-		eprintf ("%s Is Not A Vaild Branch Name\n", name);
-		return false;
-	}
-	nb = R_NEW0 (RvcBranch);
-	if (!nb) {
-		eprintf ("Failed To Allocate Branch Struct\n");
-		return false;
-	}
-	nb->head = NULL;
-	nb->name = r_str_new (name);
-	if (!nb->name) {
-		eprintf ("Failed To Allocate Branch Name\n");
-		free (nb);
-		return false;
-	}
-	r_list_append (repo->branches, nb);
-	bpath = branch_mkdir (repo, nb);
-	if (!bpath) {
-		eprintf ("Failed To Create Branch Directory\n");
-		free (nb->name);
-		free (nb);
-		r_list_pop (repo->branches);
-		return false;
-	}
-	if (repo->current_branch) {
-		nb->head = repo->current_branch->head;
-		ppath = r_str_newf ("%s" R_SYS_DIR "branches" R_SYS_DIR "%s"
-				R_SYS_DIR "commits" R_SYS_DIR,
-				repo->path, repo->current_branch->name);
-		if (!copy_commits (repo, bpath, ppath)) {
-			eprintf ("Failed To Copy Commits From Parent\n");
-			free (nb->name);
-			free (nb);
-			free (bpath);
-			free (ppath);
-			return false;
-		}
-		free (ppath);
-	}
-	repo->current_branch = nb;
-	free (bpath);
-	return true;
-}
-
-R_API void r_vc_free(Rvc *vc) {
-	free (vc->path);
-	free_branches (vc->branches);
-}
-
-R_API Rvc *r_vc_new(const char *path) {
-	Rvc *repo = R_NEW (Rvc);
-	char *blob_path;
-	char *rabsp;
-	if (!repo) {
-		eprintf ("Failed To Allocate Repoistory Path\n");
+static RList *get_commits(const char *rp, const size_t max_num) {
+	char *i;
+	RList *ret = r_list_new ();
+	if (!ret) {
 		return NULL;
 	}
-	repo->current_branch = NULL;
-	rabsp = r_file_abspath (path);
-	if (r_str_endswith (rabsp, "/")) {
-		r_str_ncpy (rabsp, rabsp, r_str_len_utf8 (rabsp) - 1);
-	}
-	repo->path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR, rabsp);
-	if (!repo->path) {
-		eprintf ("Failed To Allocate Repoistory Path\n");
-		free (repo);
-		free (rabsp);
+	Sdb *db = sdb_new0 ();
+	if (!db) {
+		r_list_free (ret);
 		return NULL;
 	}
-	if (r_file_exists (repo->path) || r_file_is_directory (repo->path)) {
-		eprintf ("RVC Repoistory Already exists in %s\n", repo->path);
-		free (repo->path);
-		free (repo);
+	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME,
+			rp);
+	if (!dbp) {
+		r_list_free (ret);
+		sdb_free (db);
 		return NULL;
 	}
-	if (!r_sys_mkdir (repo->path)) {
-		eprintf ("Failed To Create Repo Directory\n");
-		free (repo->path);
-		free (repo);
+	if (sdb_open (db, dbp) < 0) {
+		r_list_free (ret);
+		sdb_free (db);
+		free (dbp);
 		return NULL;
 	}
-	repo->branches = r_list_new ();
-	if (!repo->branches) {
-		eprintf ("Failed To Allocate Branches List\n");
-		free (repo);
-		free (repo->path);
-		return NULL;
+	free (dbp);
+	i = sdb_get (db, sdb_const_get (db, CURRENTB, 0), 0);
+	if (strcmp (i, NULLVAL)) {
+		sdb_unlink (db);
+		sdb_free (db);
+		return ret;
 	}
-	if (!r_vc_branch (repo, "master")) {
-		eprintf ("Failed To Create The master Branch\n");
-		free (repo->path);
-		r_list_free (repo->branches);
-		free (repo);
-		return NULL;
-	}
-	blob_path = r_str_newf ("%s" R_SYS_DIR "blobs", repo->path);
-	if (!blob_path) {
-		r_list_free  (repo->branches);
-		free (repo->path);
-		return NULL;
-	}
-	if (!r_sys_mkdir (blob_path)) {
-		r_list_free (repo->branches);
-		free (blob_path);
-		free (repo->path);
-		free (repo);
-		return NULL;
-	};
-	free (blob_path);
-	return repo;
-}
-
-R_API RList *r_vc_add(Rvc *repo, RList *files) {
-	RListIter *iter;
-	char *fname;
-	RList *blobs = r_list_new ();
-	if (!blobs) {
-		eprintf ("r_vc_add: memory failieur\n");
-		return NULL;
-	}
-	r_list_foreach (files, iter, fname) {
-		char *bpath;
-		if (!r_file_exists (fname)) {
-			r_list_free (blobs);
-			eprintf ("r_vc_add: file: %s doesn't exist", fname);
-			return NULL;
-		}
-		RvcBlob *blob = R_NEW (RvcBlob);
-		if (!blob) {
-			eprintf ("r_vc_add: Memory Faileur\n");
-			r_list_free (blobs);
-			return NULL;
-		}
-		blob->fname = p2rvcp (repo, fname);
-		if (!blob->fname) {
-			eprintf ("r_vc_add: Memory Faileur\n");
-			r_list_free (blobs);
-			free (blob);
-			return NULL;
-		}
-		if (r_file_is_directory (fname)) {
-			r_list_free (blobs);
-			free (blob);
-			free (blob->fname);
-			eprintf ("r_vc_add: Can't Add Directories (Yet)");
-			return NULL;
-		}
-		blob->hash = sha256_file (fname);
-		if (!blob->hash) {
-			eprintf ("r_vc_add: Memory Faileur\n");
-			r_list_free (blobs);
-			free (blob->fname);
-			free (blob);
-			return NULL;
-		}
-		bpath = r_str_newf ("%s" R_SYS_DIR "blobs" R_SYS_DIR "%s",
-				repo->path, blob->hash);
-		if (!bpath) {
-			eprintf ("r_vc_add Memory Faileur\n");
-			r_list_free (blobs);
-			free (blob->fname);
-			free (blob->hash);
-			free (blob);
-			return NULL;
-		}
-		if (r_sys_cmdf ("cp -f %s %s", fname, bpath)) {
-			eprintf ("r_vc_add: can't copy blob\n");
-			r_list_free (blobs);
-			free (blob->fname);
-			free (blob->hash);
-			free (blob);
-			return NULL;
-		}
-		free (bpath);
-		if (!r_list_append (blobs, blob)) {
-			eprintf ("r_vc_add: can't copy blob\n");
-			r_list_free (blobs);
-			free (blob->fname);
-			free (blob->hash);
-			free (blob);
-			return NULL;
-		}
-	}
-	return blobs;
-}
-
-R_API RvcBlob *r_vc_path_to_commit(Rvc *repo, const char *path) {
-	RvcCommit *i;
-	i = repo->current_branch->head;
-	do {
-		RListIter *iter;
-		RvcBlob *blob;
-		r_list_foreach(i->blobs, iter, blob) {
-			char *hash;
-			if (strcmp (blob->fname, path)) {
-				continue;
-			}
-			hash = sha256_file (path);
-
-			if (!hash) {
-				return NULL;
-			}
-			if (!strcmp (hash, blob->hash)) {
-				free (hash);
-				return blob;
-			}
-			free (hash);
-		}
-	} while (i->prev);
-	return NULL;
-}
-
-R_API RvcBlob *r_vc_last_blob(Rvc *repo, const char *path) {
-	RvcCommit *i;
-	i = repo->current_branch->head;
-	do {
-		RListIter *iter;
-		RvcBlob *blob;
-		r_list_foreach(i->blobs, iter, blob) {
-			if (!strcmp (blob->fname, path)) {
-				return blob;
-			}
-		}
-	} while (i->prev);
-	return NULL;
-}
-
-R_API RList *r_vc_uncomitted(Rvc *repo) {
-	RListIter *iter, *tmp;
-	char *path;
-	char *rp = read_until (repo->path, R_SYS_DIR ".rvc/");
-	printf ("%s\n", rp);
-	if (!rp) {
-		return NULL;
-	}
-	RList *files = r_file_lsrf (rp);
-	if (!files) {
-		free (rp);
-		return NULL;
-	}
-
-	r_list_foreach_safe (files, iter, tmp, path) {
-		path = p2rvcp (repo, path);
-		if (!path) {
-			r_list_free (files);
-			files = NULL;
+	while (true) {
+		if (!r_list_prepend (ret, i)) {
+			r_list_free (ret);
 			break;
 		}
-		iter->data = path;
-		if (!r_str_cmp (".rvc", path, 4)) {
-			r_list_delete (files, iter);
-			continue;
+		i = sdb_get (db, ret->tail->data, 0);
+		if (!i || !*i) {
+			r_list_free (ret);
+			ret = NULL;
+			break;
 		}
-		if (r_vc_path_to_commit (repo, path)) {
-			r_list_delete (files, iter);
+		if ((max_num && ret->length >= max_num) || !*i) {
+			ret = NULL;
+			break;
 		}
 	}
-	free (rp);
-	return files;
+	sdb_unlink (db);
+	sdb_free (db);
+	return ret;
 }
 
-R_API bool r_vc_checkout(Rvc *repo, const char *name) {
+static bool update_blobs(RList *blobs, const RList *nh) {
 	RListIter *iter;
-	char *fpath;
-	RvcBranch *branch = branch_by_name (repo, name);
-	if (!branch) {
-		return false;
-	}
-	RvcBranch *tmpb;
-	RList *uncomitted = r_vc_uncomitted (repo);
-	if (!uncomitted) {
-		eprintf ("Memory failieur\n");
-		return false;
-	}
-	if (!r_list_empty (uncomitted)) {
-		eprintf ("Can Not Checkout Before You Commit The Following:\n");
-		r_list_foreach (uncomitted, iter, fpath) {
-			eprintf ("%s\n", fpath);
-		}
-		r_list_free (uncomitted);
-		return false;
-	}
-	r_list_free (uncomitted);
-	tmpb = repo->current_branch;
-	repo->current_branch = branch;
-	uncomitted = r_vc_uncomitted (repo);
-	r_list_foreach (uncomitted, iter, fpath) {
-		RvcBlob *blob;
-		char *bpath;
-		blob = r_vc_last_blob (repo, fpath);
-		bpath = r_str_newf ("%s" R_SYS_DIR "blobs" R_SYS_DIR "%s",
-				repo->path, blob->hash);
-		if (!bpath) {
-			r_file_rm (fpath);
+	RvcBlob *blob;
+	r_list_foreach (blobs, iter, blob) {
+		if (strcmp (nh->head->data, blob->fname)) {
 			continue;
 		}
-		if (!r_file_copy (bpath, fpath)) {
-			free (bpath);
-			repo->current_branch = tmpb;
+		blob->fhash = r_str_new (nh->tail->data);
+		return blob->fhash != NULL;
+	}
+	blob = R_NEW (RvcBlob);
+	if (!blob) {
+		return false;
+	}
+	blob->fhash = r_str_new (nh->tail->data);
+	blob->fname = r_str_new (nh->head->data);
+	if (!blob->fhash || !blob->fname) {
+		free (blob->fhash);
+		free (blob->fname);
+		free (blob);
+		return false;
+	}
+	if (!r_list_append (blobs, blob)) {
+		free (blob->fhash);
+		free (blob->fname);
+		free (blob);
+		return false;
+	}
+	return true;
+}
+
+static RList *get_blobs(const char *rp) {
+	RList *commits = get_commits (rp, 0);
+	if (!commits) {
+		return NULL;
+	}
+	RList *ret = r_list_new ();
+	if (!ret) {
+		r_list_free (commits);
+	}
+	RListIter *i;
+	char *hash;
+	r_list_foreach (commits, i, hash) {
+		char *commit_path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
+				"commits" R_SYS_DIR "%s", rp, hash);
+		if (!commit_path) {
+			free_blobs (ret);
+			ret = NULL;
+			break;
+		}
+		char *content = r_file_slurp (commit_path, 0);
+		free (commit_path);
+		if (!content) {
+			free_blobs (ret);
+			ret = NULL;
+			break;
+		}
+		RList *lines = r_str_split_duplist (content, "\n", true);
+		free (content);
+		if (!lines) {
+			free_blobs (ret);
+			ret = NULL;
+			break;
+		}
+		RListIter *j;
+		char *ln;
+		bool found = false;
+		r_list_foreach (lines, j, ln) {
+			if (!found) {
+				found = !r_str_cmp (ln, COMMIT_BLOB_SEP, r_str_len_utf8 (COMMIT_BLOB_SEP));
+				continue;
+			}
+			RvcBlob *blob = R_NEW (RvcBlob);
+			if (!blob) {
+				free_blobs (ret);
+				ret = NULL;
+				break;
+			}
+			RList *kv = r_str_split_list (ln, "=", 2);
+			if (!kv) {
+				free_blobs (ret);
+				ret = NULL;
+				break;
+			}
+			if (!update_blobs (ret, kv)) {
+				free_blobs (ret);
+				ret = NULL;
+				free (kv);
+				break;
+			}
+		}
+		r_list_free (lines);
+	}
+	r_list_free (commits);
+	return ret;
+}
+//shit function:
+static RList *get_uncommitted(const char *rp) {
+	RList *blobs = get_blobs (rp);
+	if (!blobs) {
+		return NULL;
+	}
+	RList *ret = r_list_new ();
+	RListIter *i;
+	RvcBlob *b;
+	r_list_foreach (blobs, i, b) {
+		char *absp = rp2absp (rp, b->fname);
+		if (!absp) {
+			r_list_free (ret);
+			ret = NULL;
+			goto ret;
+		}
+		if (strcmp (b->fhash, NULLVAL)) {
+			if (r_file_exists (absp)) {
+				if (!r_list_push (ret, absp)) {
+					free (absp);
+					r_list_free (ret);
+					ret = NULL;
+				}
+			}
+			continue;
+		}
+		char *hash = sha256_file (absp);
+		if (!hash) {
+			free (absp);
+			r_list_free (ret);
+			ret = NULL;
+			goto ret;
+			break;
+		}
+		if (!strcmp (hash, b->fhash)) {
+			free (absp);
+			free (hash);
+			continue;
+		}
+		free (hash);
+		r_list_append (ret, absp);
+	}
+	//Shit code follows:
+	RList *files = r_file_lsrf (rp);
+	if (!files) {
+		goto ret;
+	}
+	char *f;
+	r_list_foreach (files, i, f) {
+		char *relp;
+		char *absp = r_file_abspath (f);
+		if (!absp) {
+			goto ret;
+		}
+		relp = absp2rp (rp, absp);
+		if (!relp) {
+			free (absp);
+			goto ret;
+		}
+		if (r_file_is_directory (absp) || !r_str_cmp (relp, ".rvc", 4)
+				|| !r_str_cmp (relp, R_SYS_DIR".rvc", 5)) {
+			free (absp);
+			free (relp);
+			goto ret;
+		}
+		RListIter *iter;
+		char *brelp;
+		bool found = false;
+		r_list_foreach (blobs, iter, brelp) {
+			if (!strcmp (brelp, relp)) {
+				found = true;
+				break;
+			}
+		}
+		free (absp);
+		if (found) {
+			if (!r_list_append (ret, relp)) {
+				free (relp);
+				goto ret;
+			}
+		}
+	}
+	r_list_free (files);
+ret:
+	free_blobs (blobs);
+	return ret;
+}
+
+static bool is_comitted(const char *rp, const char *absp) {
+	RList *paths = get_uncommitted (rp);
+	RListIter *i;
+	char *p;
+	bool ret = false;
+	r_list_foreach (paths, i, p) {
+		if (strcmp (p, absp)) {
+			ret = true;
+			break;
+		}
+	}
+	r_list_free (paths);
+	return ret;
+}
+
+static char *find_blob_hash(const char *rp, const char *fname) {
+	RList *blobs = get_blobs (rp);
+	if (!blobs) {
+		return NULL;
+	}
+	RListIter *i;
+	RvcBlob *b;
+	r_list_foreach_prev (blobs, i, b) {
+		if (!strcmp (b->fname, fname)) {
+			r_list_free (blobs);
+			return r_str_new (b->fhash);
+		}
+	}
+	r_list_free (blobs);
+	return NULL;
+}
+
+static bool bfadd(const char *rp, RList *dst, const char *path) {
+	RvcBlob *blob;
+	char *absp;
+	char *blob_path;
+	blob = R_NEW (RvcBlob);
+	if (!blob) {
+		return false;
+	}
+	absp = r_file_abspath (path);
+	if (!absp) {
+		free (blob);
+		return false;
+	}
+	if (is_comitted (rp, absp)) {
+		free (absp);
+		free (blob);
+		return false;
+	}
+	blob->fname = absp2rp (rp, absp);
+	printf ("%s\n", blob->fname);
+	if (!blob->fname) {
+		free (absp);
+		free (blob);
+		return false;
+	}
+	if (!r_file_exists (absp)) {
+		RList *blobs = get_blobs (rp);
+		if (!blobs) {
+			free (absp);
+			free (blob->fname);
+			free (blob);
+			return false;
+		}
+		RListIter *iter;
+		const RvcBlob *b;
+		/*the prev part should avoid double commits because of how commits are loaded*/
+		r_list_foreach_prev (blobs, iter, b) {
+			if (!strcmp (b->fname, blob->fname) && *b->fhash != '-') {
+				blob->fhash = strdup ("-");
+				break;
+			}
+		}
+		r_list_free (blobs);
+	} else {
+		blob->fhash = sha256_file (absp);
+	}
+	if (!blob->fhash) {
+		free (absp);
+		free (blob->fname);
+		free (blob);
+		return false;
+	}
+	blob_path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "blobs"
+			R_SYS_DIR "%s", rp, blob->fhash);
+	if (!blob_path) {
+		free (absp);
+		free (blob->fname);
+		free (blob->fhash);
+		free (blob);
+		return false;
+	}
+	if (!r_list_append (dst, blob)) {
+		free (absp);
+		free (blob->fname);
+		free (blob->fhash);
+		free (blob);
+		free (blob_path);
+		return false;
+	}
+	if (!r_file_copy (absp, blob_path)) {
+		free (absp);
+		free (blob->fname);
+		free (blob->fhash);
+		free (blob);
+		free (blob_path);
+		r_list_pop (dst);
+		return false;
+	}
+	free (absp);
+	free (blob_path);
+	return true;
+}
+
+static bool bdadd(const char *rp, const char *dir, RList *dst) {
+	char *path;
+	RListIter *iter;
+	RList *files = r_file_lsrf (dir);
+	if (!files) {
+		return false;
+	}
+	r_list_foreach (files, iter, path) {
+		if (r_file_is_directory (path)) {
+			continue;
+		}
+		bfadd (rp, dst, path);
+	}
+	r_list_free (files);
+	return false;
+}
+
+static RList *blobs_add(const char *rp, const RList *paths) {
+	RList *ret;
+	RListIter *iter;
+	char *path;
+	ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	r_list_foreach (paths, iter, path) {
+		if (r_file_is_directory (path)) {
+			if (!bdadd (rp, path, ret)) {
+				free_blobs (ret);
+				ret = NULL;
+				break;
+			}
+			continue;
+		}
+		if (!bfadd (rp, ret, path)) {
+			free_blobs (ret);
+			ret = NULL;
+			break;
+		}
+	}
+	return ret;
+}
+
+
+static char *write_commit(const char *rp, const char *message, const char *author, RList *blobs) {
+	RvcBlob *blob;
+	RListIter *iter;
+	char *commit_path, *commit_hash;
+	FILE *commitf;
+	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%ld\n"
+			COMMIT_BLOB_SEP, message, author, time (NULL));
+	if (!content) {
+		return false;
+	}
+	r_list_foreach (blobs, iter, blob) {
+		content = r_str_appendf (content, "\n%s=%s", blob->fname,
+				blob->fhash);
+		if (!content) {
 			return false;
 		}
 	}
+	commit_hash = find_sha256 ((unsigned char *)
+			content, r_str_len_utf8 (content));
+	if (!commit_hash) {
+		free (content);
+		return false;
+	}
+	commit_path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "commits"
+			R_SYS_DIR "%s", rp, commit_hash);
+	if (!commit_path) {
+		free (content);
+		free (commit_hash);
+		return false;
+	}
+	commitf = fopen (commit_path, "w+");
+	free (commit_path);
+	if (!commitf) {
+		free (content);
+		free (commit_hash);
+		return false;
+	}
+	if (fprintf (commitf, "%s", content) != r_str_len_utf8 (content) * sizeof (char)) {
+		free (content);
+		free (commit_hash);
+		fclose (commitf);
+		return false;
+	}
+	fclose (commitf);
+	free (content);
+	return commit_hash;
+}
+
+R_API bool r_vc_commit(const char *rp, const char *message, const char *author, RList *files) {
+	char *commit_hash;
+	RList *blobs = blobs_add (rp, files);
+	if (!blobs) {
+		return false;
+	}
+	commit_hash = write_commit (rp, message, author, blobs);
+	if (!commit_hash) {
+		free_blobs (blobs);
+		return false;
+	}
+	{
+		char *dbf;
+		const char *current_branch;
+		Sdb *db = sdb_new0 ();
+		if (!db) {
+			free_blobs (blobs);
+			free (commit_hash);
+			return false;
+		}
+		dbf = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME,
+				rp);
+		if (!dbf) {
+			sdb_unlink (db);
+			sdb_free (db);
+			free_blobs (blobs);
+			free (commit_hash);
+			return false;
+		}
+		if (sdb_open (db, dbf) < 0) {
+			sdb_unlink (db);
+			sdb_free (db);
+			free_blobs (blobs);
+			free (commit_hash);
+			free (dbf);
+			return false;
+		}
+		free (dbf);
+		current_branch = sdb_const_get (db, CURRENTB, 0);
+		if (sdb_set (db, commit_hash, sdb_const_get (db, current_branch, 0), 0) < 0) {
+			sdb_unlink (db);
+			sdb_free (db);
+			free_blobs (blobs);
+			free (commit_hash);
+			return false;
+		}
+		if (sdb_set(db, current_branch, commit_hash, 0) < 0) {
+			sdb_unlink (db);
+			sdb_free (db);
+			free_blobs (blobs);
+			free (commit_hash);
+			return false;
+		}
+		sdb_sync (db);
+		sdb_unlink (db);
+		sdb_free (db);
+	}
+	free (commit_hash);
+	free_blobs (blobs);
 	return true;
+}
+
+R_API bool r_vc_branch(const char *rp, const char *bname) {
+	const char *current_branch;
+	const char *commits;
+	char *dbp;
+	Sdb *db;
+	if (!is_valid_branch_name (bname)) {
+		return false;
+	}
+	dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
+	if (!dbp) {
+		return false;
+	}
+	db = sdb_new0 ();
+	if (!db) {
+		free (dbp);
+		return false;
+	}
+	if (!sdb_open (db, dbp)) {
+		sdb_free (db);
+		free (dbp);
+		return false;
+	}
+	free (dbp);
+	current_branch = sdb_const_get (db, CURRENTB, 0);
+	if (!current_branch) {
+		sdb_free (db);
+		return false;
+	}
+	commits = sdb_const_get (db, current_branch, 0);
+	commits = commits? commits : "";
+	char *nbn = r_str_newf (BPREFIX "%s", bname);
+	if (!nbn) {
+		sdb_unlink (db);
+		sdb_free (db);
+		return false;
+	}
+	sdb_set (db, nbn, commits, 0);
+	free (nbn);
+	sdb_sync (db);
+	sdb_unlink (db);
+	sdb_free (db);
+	return true;
+}
+
+R_API bool r_vc_new(const char *path) {
+	Sdb *db;
+	char *commitp, *blobsp;
+	char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
+	if (!vcp) {
+		return false;
+	}
+	commitp = r_str_newf ("%s" R_SYS_DIR "commits", vcp);
+	blobsp = r_str_newf ("%s" R_SYS_DIR "blobs", vcp);
+	if (!commitp || !blobsp) {
+		free (commitp);
+		free (blobsp);
+		return false;
+	}
+	if (!r_sys_mkdirp (commitp) || !r_sys_mkdir (blobsp)) {
+		eprintf ("Can't create The RVC repo directory");
+		free (commitp);
+		free (blobsp);
+		return false;
+	}
+	free (commitp);
+	free (blobsp);
+	db = sdb_new (vcp, DBNAME, 0);
+	free (vcp);
+	if (!db) {
+		eprintf ("Can't create The RVC branches database");
+		return false;
+	}
+	if (!sdb_set (db, FIRST_BRANCH, NULLVAL, 0)) {
+		sdb_unlink (db);
+		sdb_free (db);
+		return false;
+	}
+	if (!sdb_set (db, CURRENTB, FIRST_BRANCH, 0)) {
+		sdb_unlink (db);
+		sdb_free (db);
+		return false;
+	}
+	sdb_sync (db);
+	sdb_unlink (db);
+	sdb_free (db);
+	return true;
+}
+
+R_API bool r_vc_checkout(const char *rp, const char *bname) {
+	RList *uncommitted = get_uncommitted (rp);
+	RListIter *i;
+	char *f;
+	bool ret = false;
+	if (!uncommitted) {
+		return false;
+	}
+	if (!r_list_empty (uncommitted)) {
+		r_list_foreach (uncommitted, i, f) {
+			printf ("%s\n", f);
+		}
+		puts ("Are uncommitted\n");
+		r_list_free (uncommitted);
+		return false;
+	}
+	r_list_free (uncommitted);
+	Sdb *db = sdb_new0 ();
+	if (!db) {
+		return false;
+	}
+	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
+	if (!dbp) {
+		sdb_free (db);
+		return false;
+	}
+	if (sdb_open (db, dbp) < 0) {
+		sdb_free (db);
+		free (dbp);
+		return false;
+	}
+	free (dbp);
+	char *cb = sdb_get (db, CURRENTB, 0);
+	if (!cb) {
+		sdb_unlink (db);
+		sdb_free (db);
+		free (dbp);
+	}
+	char *fbname = r_str_newf (BPREFIX "%s", bname);
+	//exist?
+	if (!fbname) {
+		sdb_unlink (db);
+		sdb_free (db);
+		free (dbp);
+	}
+	sdb_set (db, CURRENTB, fbname, 0);
+	sdb_sync (db);
+	uncommitted = get_uncommitted (rp);
+	if (!uncommitted) {
+		sdb_set (db, CURRENTB, fbname, 0);
+		sdb_sync (db);
+		sdb_free (db);
+		free (fbname);
+		return false;
+	}
+	r_list_foreach (uncommitted, i, f) {
+		char *hash = find_blob_hash (rp, f);
+		if (!hash) {
+			sdb_set (db, CURRENTB, cb, 0);
+			ret = false;
+		}
+		if (strcmp (hash, NULLVAL)) {
+			free (hash);
+			if (!r_file_rm (f)) {
+				sdb_set (db, CURRENTB, cb, 0);
+				free (hash);
+				ret = false;
+			}
+			continue;
+		}
+		char *bp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
+				"blobs" R_SYS_DIR, hash);
+		if (!bp) {
+			free (hash);
+		}
+		if (!r_file_copy (bp, hash)) {
+			free (hash);
+			free (bp);
+			sdb_set (db, CURRENTB, cb, 0);
+			ret = false;
+		}
+	}
+	sdb_sync (db);
+	sdb_unlink (db);
+	sdb_free (db);
+	return ret;
 }
 
 // GIT commands as APIs
