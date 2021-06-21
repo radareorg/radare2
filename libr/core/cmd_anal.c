@@ -666,6 +666,7 @@ static const char *help_msg_ahi[] = {
 	"ahi", " p", "set base to htons(port) (3)",
 	"ahi", " S", "set base to syscall (80)",
 	"ahi", " s", "set base to string (1)",
+	"ahi1", " 10", "set base of argument 1 to base 10 (same as ahi1 d)",
 	NULL
 };
 
@@ -8395,11 +8396,17 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'i': // "ahi"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_ahi);
-		} else if (isdigit ((unsigned char)input[1])) {
+			break;
+		}
+		if (input[1] == '-') { // "ahi-"
+			ut64 addr = r_num_get (core->num, input + 2);
+			// add ahi-*
+			r_anal_hint_set_immbase (core->anal, addr? addr: core->offset, 0);
+			break;
+		}
+		if (isdigit ((unsigned char)input[1])) {
 			r_anal_hint_set_nword (core->anal, core->offset, input[1] - '0');
 			input++;
-		} else if (input[1] == '-') { // "ahi-"
-			r_anal_hint_set_immbase (core->anal, core->offset, 0);
 		}
 		if (input[1] == ' ') {
 			// You can either specify immbase with letters, or numbers

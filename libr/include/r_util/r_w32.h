@@ -29,7 +29,6 @@ R_API NTSTATUS (*w32_NtQuerySystemInformation)(ULONG, PVOID, ULONG, PULONG);
 R_API NTSTATUS (*w32_NtQueryInformationThread)(HANDLE, ULONG, PVOID, ULONG, PULONG);
 R_API NTSTATUS (*w32_NtDuplicateObject)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG);
 R_API NTSTATUS (*w32_NtQueryObject)(HANDLE, ULONG, PVOID, ULONG, PULONG);
-R_API // fpu access API
 R_API ut64 (*w32_GetEnabledXStateFeatures)(void);
 R_API BOOL (*w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD);
 R_API BOOL (*w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64);
