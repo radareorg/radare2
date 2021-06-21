@@ -1028,15 +1028,6 @@ static int cmd_rap_run(void *data, const char *input) {
 	return false;
 }
 
-static int cmd_rap_run_deprecated(void *data, const char *input) {
-	static bool warned = false;
-	if (!warned) {
-		eprintf ("Warning: \\ command is deprecated. Use =! or : instead.\n");
-		warned = true;
-	}
-	return cmd_rap_run (data, input);
-}
-
 static int cmd_yank(void *data, const char *input) {
 	ut64 n;
 	RCore *core = (RCore *)data;
@@ -5642,8 +5633,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"/", "search kw, pattern aes", cmd_search, cmd_search_init, &search_help},
 		{"=", "io pipe", cmd_rap, NULL, &rap_help},
 		{"?", "help message", cmd_help, cmd_help_init, &help_help},
-		{"\\","alias for =!", cmd_rap_run_deprecated, NULL, &rap_run_help},
-		// {"'", "alias for =!", cmd_rap_run, NULL, &rap_run_help},
 		{":", "alias for =!", cmd_rap_run, NULL, &rap_run_help},
 		{"0", "alias for s 0x", cmd_ox, NULL, &zero_help},
 		{"a", "analysis", cmd_anal, cmd_anal_init, &anal_help},
