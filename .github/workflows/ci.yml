@@ -34,6 +34,9 @@ jobs:
     - name: Installing with symlinks
       run: |
         sys/wasi.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        path: radare2-*-wasi.zip
   build-acr-gperf:
     name: linux-acr-gperf
     runs-on: ubuntu-20.04
