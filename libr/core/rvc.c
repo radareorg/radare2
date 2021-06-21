@@ -286,7 +286,7 @@ static RList *get_uncommitted(const char *rp) {
 			goto ret;
 		}
 		RListIter *iter;
-		char *brelp;
+		char *brelp = NULL;
 		bool found = false;
 		r_list_foreach (blobs, iter, brelp) {
 			if (!strcmp (brelp, relp)) {
@@ -296,9 +296,8 @@ static RList *get_uncommitted(const char *rp) {
 		}
 		free (absp);
 		if (found) {
-			if (!r_list_append (ret, relp)) {
-				free (relp);
-				goto ret;
+			if (!r_list_append (ret, strdup (relp))) {
+				break;
 			}
 		}
 	}
@@ -633,11 +632,13 @@ R_API bool r_vc_new(const char *path) {
 	if (!commitp || !blobsp) {
 		free (commitp);
 		free (blobsp);
+		free (vcp);
 		return false;
 	}
 	if (!r_sys_mkdirp (commitp) || !r_sys_mkdir (blobsp)) {
 		eprintf ("Can't create The RVC repo directory");
 		free (commitp);
+		free (vcp);
 		free (blobsp);
 		return false;
 	}
@@ -737,15 +738,14 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		}
 		char *bp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
 				"blobs" R_SYS_DIR, hash);
-		if (!bp) {
-			free (hash);
-		}
-		if (!r_file_copy (bp, hash)) {
-			free (hash);
+		if (bp) {
+			if (!r_file_copy (bp, hash)) {
+				sdb_set (db, CURRENTB, cb, 0);
+				ret = false;
+			}
 			free (bp);
-			sdb_set (db, CURRENTB, cb, 0);
-			ret = false;
 		}
+		free (hash);
 	}
 	sdb_sync (db);
 	sdb_unlink (db);

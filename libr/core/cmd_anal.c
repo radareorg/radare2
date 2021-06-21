@@ -625,7 +625,7 @@ static const char *help_msg_ah[] = {
 	"ahr", " val", "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
-	"aht", " [?] <type>", "Mark immediate as a type offset (deprecated, moved to \"aho\")",
+	"aht", "[s][?] <type>", "Mark immediate as a type offset (deprecated, moved to \"aho\")",
 	"ahv", " val", "change opcode's val field (useful to set jmptbl sizes in jmp rax)",
 	NULL
 };
@@ -648,6 +648,12 @@ static const char *help_msg_ahb[] = {
 	NULL
 };
 
+static const char *help_msg_ahr[] = {
+	"Usage:", "ahr addr", " Set instruction as return type (similar to 'aho ret'?)",
+	"ahr", " $$", "current instruction may be considered as the end of a function",
+	NULL
+};
+
 static const char *help_msg_ahi[] = {
 	"Usage:", "ahi [2|8|10|10u|16|bodhipSs] [@ offset]", " Define numeric base",
 	"ahi", " <base>", "set numeric base (2, 8, 10, 16)",
@@ -664,7 +670,7 @@ static const char *help_msg_ahi[] = {
 };
 
 static const char *help_msg_aht[] = {
-	"Usage: aht[...]", "", "",
+	"Usage:", "aht[s] [addr|type]", "Mark immediate as type offset (moved to aho)",
 	"ahts", " <offset>", "List all matching structure offsets",
 	"aht", " <struct.member>", "Change immediate to structure offset",
 	"aht?", "", "show this help",
@@ -8342,6 +8348,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			if (hint && hint->type > 0) {
 				r_cons_printf ("%s\n", r_anal_optype_to_string (hint->type));
 			}
+			r_anal_hint_free (hint);
 		}  else if (input[1] == '-') {
 			ut64 off = input[2]? r_num_math (core->num, input + 2): core->offset;
 			r_anal_hint_unset_bits (core->anal, off);
@@ -8382,6 +8389,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			if (hint && hint->bits) {
 				r_cons_printf ("%d\n", hint->bits);
 			}
+			r_anal_hint_free (hint);
 		}
 		break;
 	case 'i': // "ahi"
@@ -8410,8 +8418,14 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				       (int) r_num_math (core->num, input + 1);
 			}
 			r_anal_hint_set_immbase (core->anal, core->offset, base);
-		} else if (input[1] != '?' && input[1] != '-') {
-			eprintf ("|ERROR| Usage: ahi <base>\n");
+		} else if (!input[1]) {
+			RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
+			if (hint && hint->immbase) {
+				r_cons_printf ("%d\n", hint->immbase);
+			}
+			r_anal_hint_free (hint);
+		} else {
+			r_core_cmd_help (core, help_msg_ahi);
 		}
 		break;
 	case 'h': // "ahh"
@@ -8503,10 +8517,13 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		}
 		break;
 	case 'r': // "ahr"
+		// XXX isnt this the same as 'aho ret' ?
 		if (input[1] == ' ') {
 			r_anal_hint_set_ret (core->anal, core->offset, r_num_math (core->num, input + 1));
 		} else if (input[1] == '-') { // "ahr-"
 			r_anal_hint_unset_ret (core->anal, core->offset);
+		} else {
+			r_core_cmd_help (core, help_msg_ahr);
 		}
 		break;
 	case '*': // "ah*"
@@ -8652,7 +8669,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_op_fini (&op);
 			free (type);
 		} break;
-		case '?':
+		default:
 			r_core_cmd_help (core, help_msg_aht);
 			break;
 		}
