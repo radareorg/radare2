@@ -611,8 +611,7 @@ static const char *help_msg_ah[] = {
 	"ah*", " offset", "list hints in radare commands format",
 	"aha", " ppc @ 0x42", "force arch ppc for all addrs >= 0x42 or until the next hint",
 	"aha", " 0 @ 0x84", "disable the effect of arch hints for all addrs >= 0x84 or until the next hint",
-	"ahb", " 16 @ 0x42", "force 16bit for all addrs >= 0x42 or until the next hint",
-	"ahb", " 0 @ 0x84", "disable the effect of bits hints for all addrs >= 0x84 or until the next hint",
+	"ahb", "[-*] [8,16,32,64] @ 0x42", "get/set asm.bits for given address and beyond",
 	"ahc", " 0x804804", "override call/jump address",
 	"ahd", " foo a0,33", "replace opcode string",
 	"ahe", " 3,eax,+=", "set vm analysis string",
@@ -628,6 +627,24 @@ static const char *help_msg_ah[] = {
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
 	"aht", " [?] <type>", "Mark immediate as a type offset (deprecated, moved to \"aho\")",
 	"ahv", " val", "change opcode's val field (useful to set jmptbl sizes in jmp rax)",
+	NULL
+};
+
+static const char *help_msg_aho[] = {
+	"Usage:", "aho [optype] [@ addr]", " Define opcode type hint",
+	"aho", " nop", "change the opcode type in current address to be considered a NOP",
+	"aho", "", "show the current opcode hint if any",
+	"aho-", "$$", "delete hints in current offset",
+	"aho*", "", "same as above but in r2 commands syntax",
+	NULL
+};
+
+static const char *help_msg_ahb[] = {
+	"Usage:", "ahb [8|16|32|64] [@ addr]", " Define asm.bits hint at given address",
+	"ahb", " 16", "set asm.bits=16 in the given address",
+	"ahb", "", "get asm.bits used in given addr (current seek)",
+	"ahb", "-$$", "delete all the hints in the given address",
+	"ahb*", "", "show defined bits hints as r2 commands",
 	NULL
 };
 
@@ -8313,17 +8330,38 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		}
 		break;
 	case 'o': // "aho"
-		if (input[1] == ' ') {
+		if (input[1] == '*') {
+			// show in r2
+			RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
+			if (hint && hint->opcode) {
+				r_cons_printf ("aho %s @ 0x%08"PFMT64x"\n", hint->opcode, hint->addr);
+			}
+		} else if (input[1] == 0) {
+			// show if any
+			RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
+			if (hint && hint->type > 0) {
+				r_cons_printf ("%s\n", r_anal_optype_to_string (hint->type));
+			}
+		}  else if (input[1] == '-') {
+			ut64 off = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_anal_hint_unset_bits (core->anal, off);
+		} else if (input[1] == ' ') {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			int type = r_anal_optype_from_string (arg);
-			r_anal_hint_set_type (core->anal, core->offset, type);
+			if (type != -1) {
+				r_anal_hint_set_type (core->anal, core->offset, type);
+			} else {
+				eprintf ("Unknown opcode type. Try: io, acmp, add, sync, call, cjmp, cmp, nop, ...\n");
+			}
 		} else {
-			eprintf ("Usage: aho [type] # can be mov, jmp, call, ...\n");
+			r_core_cmd_help (core, help_msg_aho);
 		}
 		break;
 	case 'b': // "ahb" set bits
-		if (input[1] == ' ') {
-			char *ptr = strdup (input + 2);
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_ahb);
+		} else if (input[1] == ' ') {
+			char *ptr = r_str_trim_dup (input + 2);
 			int bits;
 			int i = r_str_word_set0 (ptr);
 			if (i == 2) {
@@ -8333,9 +8371,17 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_set_bits (core->anal, core->offset, bits);
 			free (ptr);
 		}  else if (input[1] == '-') {
-			r_anal_hint_unset_bits (core->anal, core->offset);
+			if (!strcmp (input + 2, "*")) {
+				eprintf ("Delete all asm.bits hints is not yet supported.\n");
+			} else {
+				ut64 off = input[2]? r_num_math (core->num, input + 2): core->offset;
+				r_anal_hint_unset_bits (core->anal, off);
+			}
 		} else {
-			eprintf ("Missing argument\n");
+			RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
+			if (hint && hint->bits) {
+				r_cons_printf ("%d\n", hint->bits);
+			}
 		}
 		break;
 	case 'i': // "ahi"
