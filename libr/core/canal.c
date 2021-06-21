@@ -1561,19 +1561,20 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 							"bb.0x%08"PFMT64x".switch", bbi->addr);
 							sdb_array_add_num (DB, key, caseop->value, 0);
 				} else if (is_html) {
-					r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
+					r_cons_printf ("<div class=\"connector _0x%08" PFMT64x " _0x%08" PFMT64x "\">\n"
 							"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
-							caseop->addr, caseop->jump);
+							bbi->addr, caseop->addr);
 				} else if (!is_json && !is_keva) {
 					if (is_star) {
-						char *from = get_title (caseop->addr);
-						char *to = get_title (caseop->jump);
+						char *from = get_title (bbi->addr);
+						char *to = get_title (caseop->addr);
 						r_cons_printf ("age %s %s\n", from ,to);
-						free(from);
-						free(to);
+						free (from);
+						free (to);
 					} else {
-						r_cons_printf ("        \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" " \
-						"[color2=\"%s\"];\n", caseop->addr, caseop->jump, pal_fail);
+						r_cons_printf ("        \"0x%08" PFMT64x "\" -> \"0x%08" PFMT64x "\" "
+								"[color=\"%s\"];\n",
+								bbi->addr, caseop->addr, pal_trfa);
 						core_anal_color_curr_node (core, bbi);
 					}
 				}
