@@ -2757,6 +2757,7 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 }
 
 R_API bool r_core_init(RCore *core) {
+	r_w32_init ();
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {

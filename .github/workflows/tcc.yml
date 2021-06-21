@@ -1,4 +1,4 @@
-name: TCC
+name: tcc
 
 on:
   push:

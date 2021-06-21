@@ -230,7 +230,10 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATION *mbi) {
 	TCHAR f_name[MAX_PATH + 1];
 
-	DWORD len = GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
+	DWORD len = 0;
+	if (w32_GetMappedFileName) {
+		w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
+	}
 	if (len > 0) {
 		char *f_name_ = r_sys_conv_win_to_utf8 (f_name);
 		add_map_reg (map_list, f_name_, mbi);

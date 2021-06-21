@@ -12,26 +12,6 @@ static PLIB_ITEM last_lib = NULL;
 
 #define w32_PROCESS_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF)
 #define w32_THREAD_ALL_ACCESS w32_PROCESS_ALL_ACCESS
-bool setup_debug_privileges(bool b) {
-	HANDLE tok;
-	if (!OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &tok)) {
-		return false;
-	}
-	bool ret = false;
-	LUID luid;
-	if (LookupPrivilegeValue (NULL, SE_DEBUG_NAME, &luid)) {
-		TOKEN_PRIVILEGES tp;
-		tp.PrivilegeCount = 1;
-		tp.Privileges[0].Luid = luid;
-		tp.Privileges[0].Attributes = b ? SE_PRIVILEGE_ENABLED : 0;
-		if (AdjustTokenPrivileges (tok, FALSE, &tp, 0, NULL, NULL)) {
-			// TODO: handle ERROR_NOT_ALL_ASSIGNED
-			ret = GetLastError () == ERROR_SUCCESS;
-		}
-	}
-	CloseHandle (tok);
-	return ret;
-}
 
 int w32_init(RDebug *dbg) {
 	W32DbgWInst *wrap = dbg->user;
@@ -42,105 +22,8 @@ int w32_init(RDebug *dbg) {
 			return 0;
 		}
 	}
-	// escalate privs (required for win7/vista)
-	setup_debug_privileges (true);
-
-	HMODULE lib = GetModuleHandle (TEXT ("kernel32")); //Always loaded
-	if (!lib) {
-		return false;
-	}
-	// lookup function pointers for portability
-	w32_DebugActiveProcessStop = (BOOL (WINAPI *) (DWORD))
-		GetProcAddress (lib, "DebugActiveProcessStop");
-
-	w32_OpenThread = (HANDLE (WINAPI *) (DWORD, BOOL, DWORD))
-		GetProcAddress (lib, "OpenThread");
-
-	w32_OpenProcess = (HANDLE (WINAPI *) (DWORD, BOOL, DWORD))
-		GetProcAddress (lib, "OpenProcess");
-
-	w32_DebugBreakProcess = (BOOL (WINAPI *) (HANDLE))
-		GetProcAddress (lib, "DebugBreakProcess");
-
-	w32_CreateToolhelp32Snapshot = (HANDLE (WINAPI *) (DWORD, DWORD))
-		GetProcAddress (lib, "CreateToolhelp32Snapshot");
-
-	// only windows vista :(
-	w32_GetThreadId = (DWORD (WINAPI *) (HANDLE))
-		GetProcAddress (lib, "GetThreadId");
-
-	// from xp1
-	w32_GetProcessId = (DWORD (WINAPI *) (HANDLE))
-		GetProcAddress (lib, "GetProcessId");
-
-	w32_QueryFullProcessImageName = (BOOL (WINAPI *) (HANDLE, DWORD, LPTSTR, PDWORD))
-		GetProcAddress (lib, W32_TCALL ("QueryFullProcessImageName"));
-
-	// api to retrieve YMM from w7 sp1
-	w32_GetEnabledXStateFeatures = (ut64 (WINAPI *) ())
-		GetProcAddress (lib, "GetEnabledXStateFeatures");
-
-	w32_InitializeContext = (BOOL (WINAPI *) (PVOID, DWORD, PCONTEXT *, PDWORD))
-		GetProcAddress (lib, "InitializeContext");
-
-	w32_GetXStateFeaturesMask = (BOOL (WINAPI *) (PCONTEXT Context, PDWORD64))
-		GetProcAddress (lib, "GetXStateFeaturesMask");
-
-	w32_LocateXStateFeature = (PVOID (WINAPI *) (PCONTEXT Context, DWORD, PDWORD))
-		GetProcAddress (lib, "LocateXStateFeature");
-
-	w32_SetXStateFeaturesMask = (BOOL (WINAPI *) (PCONTEXT Context, DWORD64))
-		GetProcAddress (lib, "SetXStateFeaturesMask");
-
-	lib = LoadLibrary (TEXT ("psapi.dll"));
-	if (!lib) {
-		eprintf ("Cannot load psapi.dll. Aborting\n");
-		return false;
-	}
-	w32_GetMappedFileName = (DWORD (WINAPI *) (HANDLE, LPVOID, LPTSTR, DWORD))
-		GetProcAddress (lib, W32_TCALL ("GetMappedFileName"));
-
-	w32_GetModuleBaseName = (DWORD (WINAPI *) (HANDLE, HMODULE, LPTSTR, DWORD))
-		GetProcAddress (lib, W32_TCALL ("GetModuleBaseName"));
-
-	w32_GetModuleInformation = (BOOL (WINAPI *) (HANDLE, HMODULE, LPMODULEINFO, DWORD))
-		GetProcAddress (lib, "GetModuleInformation");
-
-	w32_GetModuleFileNameEx = (DWORD (WINAPI *) (HANDLE, HMODULE, LPTSTR, DWORD))
-		GetProcAddress (lib, W32_TCALL ("GetModuleFileNameEx"));
-
-	lib = LoadLibrary (TEXT ("ntdll.dll"));
-	if (!lib) {
-		eprintf ("Cannot load ntdll.dll. Aborting\n");
-		return false;
-	}
-	w32_NtQuerySystemInformation = (NTSTATUS (WINAPI *) (ULONG, PVOID, ULONG, PULONG))
-		GetProcAddress (lib, "NtQuerySystemInformation");
-
-	w32_NtDuplicateObject = (NTSTATUS (WINAPI *) (HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG))
-		GetProcAddress (lib, "NtDuplicateObject");
-
-	w32_NtQueryObject = (NTSTATUS (WINAPI *) (HANDLE, ULONG, PVOID, ULONG, PULONG))
-		GetProcAddress (lib, "NtQueryObject");
-
-	w32_NtQueryInformationThread = (NTSTATUS (WINAPI *) (HANDLE, ULONG, PVOID, ULONG, PULONG))
-		GetProcAddress (lib, "NtQueryInformationThread");
-
-	if (!w32_DebugActiveProcessStop || !w32_OpenThread || !w32_DebugBreakProcess ||
-		!w32_GetModuleBaseName || !w32_GetModuleInformation) {
-		// OOPS!
-		eprintf ("debug_init_calls:\n"
-			 "DebugActiveProcessStop: 0x%p\n"
-			 "OpenThread: 0x%p\n"
-			 "DebugBreakProcess: 0x%p\n"
-			 "GetThreadId: 0x%p\n",
-			w32_DebugActiveProcessStop, w32_OpenThread, w32_DebugBreakProcess, w32_GetThreadId);
-		return false;
-	}
-
-	return true;
+	r_w32_init ();
 }
-
 
 static int __w32_findthread_cmp(int *tid, PTHREAD_ITEM th) {
 	return (int)!(*tid == th->tid);
@@ -562,7 +445,7 @@ static char *__get_file_name_from_handle(HANDLE handle_file) {
 	}
 	/* Create a file mapping to get the file name. */
 	map = MapViewOfFile (handle_file_map, FILE_MAP_READ, 0, 0, 1);
-	if (!map || !GetMappedFileName (GetCurrentProcess (), map, filename, MAX_PATH)) {
+	if (!map || !w32_GetMappedFileName || !w32_GetMappedFileName (GetCurrentProcess (), map, filename, MAX_PATH)) {
 		R_FREE (filename);
 		goto err_get_file_name_from_handle;
 	}
@@ -614,7 +497,7 @@ static char *__resolve_path(HANDLE ph, HANDLE mh) {
 	// TODO: add maximum path length support
 	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
-	DWORD length = GetModuleFileNameEx (ph, mh, filename, maxlength);
+	DWORD length = w32_GetModuleFileNameEx (ph, mh, filename, maxlength);
 	if (length > 0) {
 		return r_sys_conv_win_to_utf8 (filename);
 	}

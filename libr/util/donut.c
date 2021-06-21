@@ -56,8 +56,8 @@ R_API char *r_str_donut(int osize) {
 	if (osize != 0) {
 		Align = 40;
 	}
-	for (j = Zero; 6.28 > j; j += 0.07) {
-		for (i = Zero; 6.28 > i; i+= 0.02) {
+	for (j = Zero; 6.28f > j; j += 0.07f) {
+		for (i = Zero; 6.28f > i; i+= 0.02f) {
 			float c = sin (i);
 			float d = cos (j);
 			float e = sin (A);
@@ -69,7 +69,7 @@ R_API char *r_str_donut(int osize) {
 			int y = 12 + Height*D*(l*h*n +t*m);
 			int o = x + 80 * y;
 			int N = 8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n);
-			if (22 >y && y > 0 && x>0&&80>x&&D>z[o]) {
+			if (22 >y && y > 0 && x > 0 && 80 >x && D > z[o]) {
 				z[o] = D;
 				b[o] = " .,-:!/|S$@&"[N > 0? N: 0];
 			}
