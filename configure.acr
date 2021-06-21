@@ -33,6 +33,7 @@ ARG_WITHOUT WANT_DYLINK dylink disable support for dynamic loading of plugins ;
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 ARG_WITHOUT WANT_PTRACE_WRAP ptrace-wrap build ptrace-wrap support needed for the iaito debugger on Linux ;
 ARG_WITHOUT WANT_GPERF gperf do not statically link the sdb databases even if gperf is found ;
+ARG_WITHOUT WANT_CAPSTONE capstone dont build the capstone dependency ;
 
 IFNOT WANT_GPERF {
 	HAVE_GPERF = 0 ;
