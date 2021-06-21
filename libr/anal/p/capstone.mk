@@ -1,4 +1,5 @@
 
+ifeq ($(WANT_CAPSTONE),1)
 ifeq ($(USE_CAPSTONE),1)
 # use system capstone
 CS_CFLAGS=${CAPSTONE_CFLAGS}
@@ -14,4 +15,8 @@ endif
 ifeq ($(CS_CFLAGS_INCLUDED),)
 CFLAGS+=$(CS_CFLAGS)
 CS_CFLAGS_INCLUDED=Yes
+endif
+
+else
+# nothing happens
 endif
