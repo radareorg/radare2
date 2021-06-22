@@ -25,3 +25,39 @@ EXPECT=<<EOF
 [{"name":"fcn.00000042","offset":66,"ninstr":8,"nargs":0,"nlocals":0,"size":17,"stack":0,"type":"fcn","blocks":[{"offset":66,"size":8,"jump":80,"fail":74,"ops":[{"offset":66,"text":"17: fcn.00000042 ();"},{"offset":66,"text":"     0000           add byte [rax], al"},{"offset":68,"text":"     4883f800       cmp rax, 0"},{"offset":72,"arrow":80,"text":"     7406           je 0x50"}]},{"offset":74,"size":6,"jump":80,"ops":[{"offset":74,"text":"     0000           add byte [rax], al"},{"offset":76,"text":"     0000           add byte [rax], al"},{"offset":78,"text":"     0000           add byte [rax], al"}]},{"offset":80,"size":3,"ops":[{"offset":80,"text":"     0000           add byte [rax], al"},{"offset":82,"text":"     c3             ret"}]}]}]
 EOF
 RUN
+
+NAME=agfdm correct jump tables
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+s 0x100
+wx 42000000000000004e000000000000005a00000000000000660000000000000072000000000000007e00000000000000
+s 0x10
+wx 554889e5897dfcc745f8000000008b45fc89c14889ca4883ea0548894df00f8756000000488b45f0488b0cc500010000ffe1c745f800000000e943000000c745f801000000e937000000c745f802000000e92b000000c745f803000000e91f000000c745f804000000e913000000c745f805000000e907000000c745f8ffffffff8b45f85dc3
+af
+agfdm
+EOF
+EXPECT=<<EOF
+digraph code {
+	graph [bgcolor=azure fontsize=8 fontname="Courier" splines="ortho"];
+	node [fillcolor=gray style=filled shape=box];
+	edge [arrowhead="normal"];
+        "0x00000010" -> "0x0000008a" [color="#13a10e"];
+        "0x00000010" -> "0x00000034" [color="#c50f1f"];
+        "0x0000008a" -> "0x00000091" [color="#3a96dd"];
+        "0x00000034" -> "0x00000042" [color="#3a96dd"];
+        "0x00000034" -> "0x0000004e" [color="#3a96dd"];
+        "0x00000034" -> "0x0000005a" [color="#3a96dd"];
+        "0x00000034" -> "0x00000066" [color="#3a96dd"];
+        "0x00000034" -> "0x00000072" [color="#3a96dd"];
+        "0x00000034" -> "0x0000007e" [color="#3a96dd"];
+        "0x00000042" -> "0x00000091" [color="#3a96dd"];
+        "0x0000004e" -> "0x00000091" [color="#3a96dd"];
+        "0x0000005a" -> "0x00000091" [color="#3a96dd"];
+        "0x00000066" -> "0x00000091" [color="#3a96dd"];
+        "0x00000072" -> "0x00000091" [color="#3a96dd"];
+        "0x0000007e" -> "0x00000091" [color="#3a96dd"];
+}
+EOF
+RUN
