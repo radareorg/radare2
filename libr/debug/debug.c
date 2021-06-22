@@ -662,6 +662,7 @@ R_API const char *r_debug_reason_to_string(int type) {
 	case R_DEBUG_REASON_INT: return "interrupt";
 	case R_DEBUG_REASON_STEP: return "step";
 	case R_DEBUG_REASON_USERSUSP: return "suspended-by-user";
+	case R_DEBUG_REASON_SEGFAULT: return "segfault";
 	}
 	return "unhandled";
 }
