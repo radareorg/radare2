@@ -83,7 +83,6 @@ R_API void r_th_cond_free(RThreadCond *cond) {
 #if HAVE_PTHREAD
 	pthread_cond_destroy (&cond->cond);
 #elif __WINDOWS__
-#warning r_th_cond_free not implemented for windows
 #endif
 	free (cond);
 }
