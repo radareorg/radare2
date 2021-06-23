@@ -779,21 +779,16 @@ static void __update_panel_contents(RCore *core, RPanel *panel, const char *cmds
 }
 
 static char *__apply_filter_cmd(RCore *core, RPanel *panel) {
-	char *out = r_str_ndup (panel->model->cmd, strlen (panel->model->cmd) + 1024);
 	if (!panel->model->filter) {
-		return out;
+		return NULL;
 	}
+	RStrBuf *sb = r_strbuf_new (panel->model->cmd);
 	int i;
 	for (i = 0; i < panel->model->n_filter; i++) {
-		char *filter = panel->model->filter[i];
-		if (strlen (filter) > 1024) {
-			(void)__show_status (core, "filter is too big.");
-			return out;
-		}
-		strcat (out, "~");
-		strcat (out, filter);
+		const char *filter = panel->model->filter[i];
+		r_strbuf_appendf (sb, "~%s", filter);
 	}
-	return out;
+	return r_strbuf_drain (sb);
 }
 
 static void __update_panel_title(RCore *core, RPanel *panel) {
@@ -6235,7 +6230,7 @@ static void __set_filter(RCore *core, RPanel *panel) {
 		return;
 	}
 	char *input = __show_status_input (core, "filter word: ");
-	if (input) {
+	if (input && *input) {
 		panel->model->filter[panel->model->n_filter++] = input;
 		__set_cmd_str_cache (core, panel, NULL);
 		panel->view->refresh = true;
