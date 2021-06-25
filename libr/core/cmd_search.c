@@ -3033,6 +3033,7 @@ static void __core_cmd_search_backward(RCore *core, int delta) {
 		free (buf);
 	}
 	r_cons_break_pop ();
+	r_list_free (boundaries);
 }
 
 static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
