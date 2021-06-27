@@ -1,3 +1,26 @@
+NAME=seek preludes
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+b 4096
+s
+snp
+s
+snp
+s
+spp
+s
+spp
+s
+EOF
+EXPECT=<<EOF
+0x1000013d8
+0x100001dd8
+0x100002094
+0x100001dd8
+0x1000013d8
+EOF
+RUN
+
 NAME=seekinstr
 FILE=bins//mach0/ired-arm64
 CMDS=<<EOF

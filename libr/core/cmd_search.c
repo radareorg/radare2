@@ -3018,6 +3018,7 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 			(void)r_io_read_at (core->io, addr, bf, bs);
 			r_flag_unset_name (core->flags, "hit.prelude");
 			// swap memory to search preludes backward
+			bool fail = false;
 			r_list_foreach (preds, iter, kw) {
 				UserPrelude up = { core, forward };
 				r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -3025,9 +3026,18 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 				r_search_begin (core->search);
 				r_search_set_callback (core->search, &__backward_prelude_cb_hit, &up);
 				if (r_search_update (core->search, addr, bf, bs) == -1) {
-					eprintf ("search: update read error at 0x%08"PFMT64x "\n", addr);
+					if (forward) {
+						// do nothing
+					} else {
+						eprintf ("search: update read error at 0x%08"PFMT64x "\n", addr);
+						r_flag_unset_name (core->flags, "hit.prelude");
+						fail = true;
+					}
 					break;
 				}
+			}
+			if (fail) {
+				break;
 			}
 			RFlagItem *item = r_flag_get (core->flags, "hit.prelude");
 			if (item) {
