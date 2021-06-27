@@ -3005,7 +3005,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	}
-	if (*shell_cmd=='!') {
+	if (*shell_cmd == '!') {
 		r_cons_grep_parsecmd (shell_cmd, "\"");
 		olen = 0;
 		out = NULL;
