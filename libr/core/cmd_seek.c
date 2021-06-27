@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_types.h"
 #include "r_config.h"
@@ -7,6 +7,7 @@
 #include "r_debug.h"
 #include "r_io.h"
 
+static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward);
 static const char *help_msg_s[] = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
 	"s", "", "Print current address",
@@ -32,6 +33,8 @@ static const char *help_msg_s[] = {
 	"sg/sG", "", "Seek begin (sg) or end (sG) of section or file",
 	"sl", "[?] [+-]line", "Seek to line",
 	"sn/sp", " ([nkey])", "Seek to next/prev location, as specified by scr.nkey",
+	"snp", "", "Seek to next function prelude",
+	"spp", "", "Seek to prev function prelude",
 	"so", " [N]", "Seek to N next opcode(s)",
 	"sr", " pc", "Seek to register",
 	"ss", "", "Seek silently (without adding an entry to the seek history)",
@@ -43,6 +46,20 @@ static const char *help_msg_sC[] = {
 	"Usage:", "sC", "Comment grep",
 	"sC", "*", "List all comments",
 	"sC", " str", "Seek to the first comment matching 'str'",
+	NULL
+};
+
+static const char *help_msg_sn[] = {
+	"Usage:", "sn[p]", "",
+	"sn", " [line]", "Seek to next address",
+	"snp", "", "Seek to next prelude",
+	NULL
+};
+
+static const char *help_msg_sp[] = {
+	"Usage:", "sp[p]", "",
+	"sp", " [line]", "Seek to previous address",
+	"spp", "", "Seek to previous prelude",
 	NULL
 };
 
@@ -631,7 +648,11 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		break;
 	case 'n': // "sn"
-		{
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_sn);
+		} else if (input[1] == 'p') { // "snp" - seek next prelude
+			__core_cmd_search_backward_prelude (core, true, true);
+		} else {
 			if (!silent) {
 				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			}
@@ -642,7 +663,11 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		break;
 	case 'p': // "sp"
-		{
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_sp);
+		} else if (input[1] == 'p') { // "spp" - seek previous prelude
+			__core_cmd_search_backward_prelude (core, true, false);
+		} else {
 			if (!silent) {
 				r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 			}

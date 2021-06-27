@@ -48,6 +48,7 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize);
 R_API void r_mem_swaporcopy(ut8 *dest, const ut8 *src, int len, bool big_endian);
 R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size);
+R_API void r_mem_swap(ut8 *buf, size_t buf_len);
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len);
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen);
 R_API const ut8 *r_mem_mem_aligned(const ut8 *haystack, int hlen, const ut8 *needle, int nlen, int align);
