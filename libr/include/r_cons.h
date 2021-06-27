@@ -922,6 +922,8 @@ R_API void r_cons_rainbow_new(RConsContext *ctx, int sz);
 
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
 R_API char *r_cons_hud(RList *list, const char *prompt);
+R_API char *r_cons_hud_line(RList *list, const char *prompt);
+R_API char *r_cons_hud_line_string(const char *s);
 R_API char *r_cons_hud_path(const char *path, int dir);
 R_API char *r_cons_hud_string(const char *s);
 R_API char *r_cons_hud_file(const char *f);

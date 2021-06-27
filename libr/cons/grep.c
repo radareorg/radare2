@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
@@ -35,6 +35,7 @@ static const char *help_detail_tilde[] = {
 	" :s..e",    "", "show lines s-e",
 	" ..",       "", "internal 'less'",
 	" ...",      "", "internal 'hud' (like V_)",
+	" ....",     "", "internal 'hud' in one line",
 	" {:",       "", "human friendly indentation (yes, it's a smiley)",
 	" {:..",     "", "less the output of {:",
 	" {:...",    "", "hud the output of {:",
@@ -121,7 +122,11 @@ static void parse_grep_expression(const char *str) {
 			case '.':
 				if (ptr[1] == '.') {
 					if (ptr[2] == '.') {
-						grep->less = 2;
+						if (ptr[3] == '.') {
+							grep->less = 3;
+						} else {
+							grep->less = 2;
+						}
 					} else {
 						grep->less = 1;
 					}
@@ -492,7 +497,7 @@ R_API void r_cons_grepbuf(void) {
 		return;
 	}
 
-	if ((!len || !buf || buf[0] == '\0') && (grep->json || grep->less)) {
+	if ((!len || !buf || !*buf) && (grep->json || grep->less)) {
 		grep->json = 0;
 		grep->less = 0;
 		grep->hud = 0;
@@ -562,7 +567,13 @@ R_API void r_cons_grepbuf(void) {
 	if (grep->less) {
 		int less = grep->less;
 		grep->less = 0;
-		if (less == 2) {
+		if (less == 3) {
+			char *res = r_cons_hud_line_string (buf);
+			if (res) {
+				r_cons_println (res);
+				free (res);
+			}
+		} else if (less == 2) {
 			char *res = r_cons_hud_string (buf);
 			if (res) {
 				r_cons_println (res);

@@ -189,7 +189,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			free (op);
 			expr = strdup (r_strbuf_get (&analop.esil));
 		}
-	{
+		{
 			r_cons_printf (Color_RESET"esil: %s\n"Color_RESET, expr);
 			int wp = wordpos (expr, x);
 			char *pas = strdup (r_str_pad (' ', wp ? wp + 1: 0));
@@ -203,7 +203,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_cons_printf (Color_RESET"      %s%s\n"Color_RESET, pas, pad);
 			free (pas);
 			// free (pad);
-	}
+		}
 		r_cons_printf ("esil regs:\n");
 		showreg (esil, "$$", "address");
 		showreg (esil, "$z", "zero");
