@@ -211,6 +211,18 @@ R_API void r_mem_swapendian(ut8 *dest, const ut8 *orig, int size) {
 	}
 }
 
+R_API void r_mem_swap(ut8 *buf, size_t buf_len) {
+	size_t pos = 0;
+	buf_len--;
+	while (pos < buf_len) {
+		int x = buf[pos];
+		buf[pos] = buf[buf_len];
+		buf[buf_len] = x;
+		pos++;
+		buf_len--;
+	}
+}
+
 // R_DOC r_mem_mem: Finds the needle of nlen size into the haystack of hlen size
 // R_UNIT printf("%s\n", r_mem_mem("food is pure lame", 20, "is", 2));
 R_API const ut8 *r_mem_mem(const ut8 *haystack, int hlen, const ut8 *needle, int nlen) {

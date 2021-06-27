@@ -23,6 +23,13 @@ static const char *help_msg_search_esil[] = {
 	NULL
 };
 
+static const char *help_msg_search_backward[] = {
+	"Usage: /b[p]<command>", "[value]", "Backward search subcommands",
+	"/b", "[x] [str|414243]", "search in hexadecimal 'ABC' backwards starting in current address",
+	"/bp", "", "search previous prelude and set hit.prelude flag",
+	NULL
+};
+
 static const char *help_msg_slash_m[] = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
@@ -42,7 +49,7 @@ static const char *help_msg_slash[] = {
 	"/+", " /bin/sh", "construct the string with chunks",
 	"//", "", "repeat last search",
 	"/a", "[?][1aoditfmsltf] jmp eax", "assemble opcode and search its bytes",
-	"/b", "", "search backwards, command modifier, followed by other command",
+	"/b", "[p]", "search backwards, command modifier, followed by other command",
 	"/c", "[?][adr]", "search for crypto materials",
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
@@ -56,7 +63,7 @@ static const char *help_msg_slash[] = {
 	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",
 	"/o", " [n]", "show offset of n instructions backward",
 	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
-	"/p", " patternsize", "search for pattern of given size",
+	"/p", "[p] patternsize", "search for pattern of given size",
 	"/P", " patternsize", "search similar blocks",
 	"/s", "[*] [threshold]", "find sections by grouping blocks with similar entropy",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
@@ -294,6 +301,20 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 	}
 	r_buf_free (b);
 	r_cons_break_pop ();
+}
+
+typedef struct {
+	RCore *core;
+	bool forward;
+} UserPrelude;
+
+static int __backward_prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
+	UserPrelude *up = (UserPrelude*) user;
+	r_flag_set (up->core->flags, "hit.prelude", addr, kw->keyword_length);
+	if (up->forward) {
+		return 0;
+	}
+	return 1;
 }
 
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
@@ -2972,6 +2993,57 @@ static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
 	r_cons_break_pop ();
 }
 
+static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward) {
+	RList *preds = r_anal_preludes (core->anal);
+	int bs = core->blocksize;
+	ut8 *bf = calloc (bs, 1);
+	if (preds) {
+		RListIter *iter;
+		RSearchKeyword *kw;
+		ut64 addr = core->offset;
+		if (forward) {
+			addr -= bs;
+			addr += 4;
+		}
+		r_cons_break_push (NULL, NULL);
+		while (addr > bs) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			if (forward) {
+				addr += bs;
+			} else {
+				addr -= bs;
+			}
+			(void)r_io_read_at (core->io, addr, bf, bs);
+			r_flag_unset_name (core->flags, "hit.prelude");
+			// swap memory to search preludes backward
+			r_list_foreach (preds, iter, kw) {
+				UserPrelude up = { core, forward };
+				r_search_reset (core->search, R_SEARCH_KEYWORD);
+				r_search_kw_add (core->search, r_search_keyword_new (kw->bin_keyword, kw->keyword_length, kw->bin_binmask, kw->binmask_length, NULL));
+				r_search_begin (core->search);
+				r_search_set_callback (core->search, &__backward_prelude_cb_hit, &up);
+				if (r_search_update (core->search, addr, bf, bs) == -1) {
+					eprintf ("search: update read error at 0x%08"PFMT64x "\n", addr);
+					break;
+				}
+			}
+			RFlagItem *item = r_flag_get (core->flags, "hit.prelude");
+			if (item) {
+				if (doseek) {
+					r_core_seek (core, item->offset, true);
+					r_flag_unset (core->flags, item);
+				}
+				break;
+			}
+		}
+		r_cons_break_pop ();
+		r_search_kw_reset (core->search);
+		r_list_free (preds);
+	}
+}
+
 static void __core_cmd_search_backward(RCore *core, int delta) {
 	const char *search_in = r_config_get (core->config, "search.in");
 	RList *boundaries = r_core_get_boundaries_prot (core, -1, search_in, "search");
@@ -3157,7 +3229,11 @@ reread:
 		goto reread;
 	case 'b': // "/b" backward search TODO(maskray) add a generic reverse function
 		if (*(++input) == '?') {
-			eprintf ("Usage: /b<command> [value] backward search, see '/?'\n");
+			r_core_cmd_help (core, help_msg_search_backward);
+			goto beach;
+		}
+		if (*input == 'p') { // "/bp" backward prelude
+			__core_cmd_search_backward_prelude (core, false, false);
 			goto beach;
 		}
 		search->bckwrds = true;
@@ -3613,8 +3689,10 @@ reread:
 		r_cons_clear_line (1);
 		break;
 	case 'p': // "/p"
-	{
-		if (input[param_offset - 1]) {
+		if (input[1] == 'p') { // "/pp" -- find next prelude
+			__core_cmd_search_backward_prelude (core, false, true);
+			break;
+		} else if (input[param_offset - 1]) {
 			int ps = atoi (input + param_offset);
 			if (ps > 1) {
 				RListIter *iter;
@@ -3630,8 +3708,7 @@ reread:
 			}
 		}
 		eprintf ("Invalid pattern size (must be > 0)\n");
-	}
-	break;
+		break;
 	case 'P': // "/P"
 		search_similar_pattern (core, atoi (input + 1), &param);
 		break;
