@@ -68,7 +68,7 @@ static int cmp_ns(const void *a, const void *b) {
 // n = position we are currently looking at
 // p = position until we have already written everything
 // flush a block of text that doesn't have to be escaped
-#define FLUSH do { if (p != n) { write (fd, p, n - p); p = n; } } while (0)
+#define FLUSH do { if (p != n) { (void)write (fd, p, n - p); p = n; } } while (0)
 // write and escape a string from str to fd
 #define ESCAPE_LOOP(fd, str, escapes) do { \
 		const char *p = str; \
@@ -87,7 +87,9 @@ static int cmp_ns(const void *a, const void *b) {
 			break;
 
 static bool write_path(int fd, SdbList *path) {
-	write (fd, "/", 1); // always print a /, even if path is empty
+	if (write (fd, "/", 1) != 1) { // always print a /, even if path is empty
+		return false;
+	}
 	SdbListIter *it;
 	const char *path_token;
 	bool first = true;
@@ -177,7 +179,9 @@ static bool text_save(Sdb *s, int fd, bool sort, SdbList *path) {
 	SdbNs *ns;
 	SdbListIter *it;
 	ls_foreach (l, it, ns) {
-		write (fd, "\n", 1);
+		if (write (fd, "\n", 1) != 1) {
+			return false;
+		}
 		ls_push (path, ns->name);
 		text_save (ns->sdb, fd, sort, path);
 		ls_pop (path);
