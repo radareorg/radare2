@@ -573,6 +573,7 @@ r_util_files = [
   'include/r_util/r_time.h',
   'include/r_util/r_tree.h',
   'include/r_util/r_uleb128.h',
+  'include/r_util/r_w32.h',
   'include/r_util/r_utf16.h',
   'include/r_util/r_utf32.h',
   'include/r_util/r_utf8.h',
