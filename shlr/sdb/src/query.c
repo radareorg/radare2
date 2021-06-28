@@ -57,7 +57,7 @@ static StrBuf *strbuf_free(StrBuf *sb) {
 	return NULL;
 }
 
-SDB_API int sdb_queryf (Sdb *s, const char *fmt, ...) {
+SDB_API int sdb_queryf(Sdb *s, const char *fmt, ...) {
         char string[4096];
         int ret;
         va_list ap;
@@ -836,12 +836,12 @@ fail:
 }
 
 SDB_API int sdb_query(Sdb *s, const char *cmd) {
-	char buf[1024];
+	char buf[128];
 	int must_save = ((*cmd == '~') || strchr (cmd, '='));
 	char *out = sdb_querys (s, buf, sizeof (buf) - 1, cmd);
 	if (out) {
 		if (*out) {
-			puts (out);
+			fputs (out, stdout);
 		}
 		if (out != buf) {
 			free (out);
