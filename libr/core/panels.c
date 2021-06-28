@@ -796,20 +796,24 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 	RStrBuf *title = r_strbuf_new (NULL);
 	RStrBuf *cache_title = r_strbuf_new (NULL);
 	char *cmd_title  = __apply_filter_cmd (core, panel);
-	if (__check_if_cur_panel (core, panel)) {
-		if (!strcmp (panel->model->title, cmd_title)) {
-			r_strbuf_setf (title, "%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
-		}  else {
-			r_strbuf_setf (title, "%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, cmd_title);
-		}
-		r_strbuf_setf (cache_title, "%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
-	} else {
-		if (!strcmp (panel->model->title, cmd_title)) {
-			r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
+	if (cmd_title) {
+		if (__check_if_cur_panel (core, panel)) {
+			if (!strcmp (panel->model->title, cmd_title)) {
+				r_strbuf_setf (title, "%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
+			}  else {
+				r_strbuf_setf (title, "%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, cmd_title);
+			}
+			r_strbuf_setf (cache_title, "%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
 		} else {
-			r_strbuf_setf (title, "[X]   %s (%s)  ", panel->model->title, cmd_title);
+			if (!strcmp (panel->model->title, cmd_title)) {
+				r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
+			} else {
+				r_strbuf_setf (title, "[X]   %s (%s)  ", panel->model->title, cmd_title);
+			}
+			r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
 		}
-		r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
+	} else {
+		r_strbuf_setf (cache_title, "%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, "");
 	}
 	r_strbuf_slice (title, 0, panel->view->pos.w);
 	r_strbuf_slice (cache_title, 0, panel->view->pos.w);
@@ -867,21 +871,24 @@ static char *__find_cmd_str_cache(RCore *core, RPanel* panel) {
 static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache) {
 	char *cmd = __apply_filter_cmd (core, panel);
 	bool b = core->print->cur_enabled && __get_cur_panel (core->panels) != panel;
-	if (b) {
-		core->print->cur_enabled = false;
+	char *out = NULL;
+	if (cmd) {
+		if (b) {
+			core->print->cur_enabled = false;
+		}
+		out = (*cmd == '.')
+			? r_core_cmd_str_pipe (core, cmd)
+			: r_core_cmd_str (core, cmd);
+		if (force_cache) {
+			panel->model->cache = true;
+		}
+		if (R_STR_ISNOTEMPTY (out)) {
+			__set_cmd_str_cache (core, panel, out);
+		} else {
+			R_FREE (out);
+		}
+		free (cmd);
 	}
-	char *out = (*cmd == '.')
-		? r_core_cmd_str_pipe (core, cmd)
-		: r_core_cmd_str (core, cmd);
-	if (force_cache) {
-		panel->model->cache = true;
-	}
-	if (R_STR_ISNOTEMPTY (out)) {
-		__set_cmd_str_cache (core, panel, out);
-	} else {
-		R_FREE (out);
-	}
-	free (cmd);
 	if (b) {
 		core->print->cur_enabled = true;
 	}
@@ -954,7 +961,7 @@ static void __layout_equal_hor(RPanels *panels) {
 		if (!p) {
 			continue;
 		}
-		__set_geometry(&p->view->pos, cw, 1, pw, h - 1);
+		__set_geometry (&p->view->pos, cw, 1, pw, h - 1);
 		cw += pw - 1;
 		if (i == panels->n_panels - 2) {
 			pw = w - cw;
@@ -990,18 +997,18 @@ static void __update_help(RCore *core, RPanels *ps) {
 			const char *title;
 			const char **msg;
 			switch (ps->mode) {
-				case PANEL_MODE_WINDOW:
-					title = "Panels Window Mode";
-					msg = help_msg_panels_window;
-					break;
-				case PANEL_MODE_ZOOM:
-					title = "Panels Zoom Mode";
-					msg = help_msg_panels_zoom;
-					break;
-				default:
-					title = "Panels Mode";
-					msg = help_msg_panels;
-					break;
+			case PANEL_MODE_WINDOW:
+				title = "Panels Window Mode";
+				msg = help_msg_panels_window;
+				break;
+			case PANEL_MODE_ZOOM:
+				title = "Panels Zoom Mode";
+				msg = help_msg_panels_zoom;
+				break;
+			default:
+				title = "Panels Mode";
+				msg = help_msg_panels;
+				break;
 			}
 			// panel's title does not change, keep it short and simple
 			p->model->title = r_str_dup (p->model->title, help);
@@ -6795,6 +6802,43 @@ virtualmouse:
 			cur->view->refresh = true;
 		}
 		break;
+	case 'o':
+		{
+			const char *s = "hexdump\n" \
+				"esil\n" \
+				"comments\n" \
+				"analyze function\n" \
+				"analyze program\n" \
+				"bytes\n" \
+				"offset\n" \
+				"disasm\n" \
+				"entropy\n";
+			char *format = r_cons_hud_line_string (s);
+			if (format) {
+				if (!strcmp (format, "hexdump")) {
+					__replace_cmd (core, "px", "px");
+				} else if (!strcmp (format, "analyze function")) {
+					r_core_cmd0 (core, "af");
+					r_core_cmd0 (core, "aaef");
+				} else if (!strcmp (format, "analyze program")) {
+					r_core_cmd0 (core, "aaa");
+				} else if (!strcmp (format, "offset")) {
+					r_config_toggle (core->config, "asm.offset");
+				} else if (!strcmp (format, "esil")) {
+					r_config_toggle (core->config, "asm.esil");
+				} else if (!strcmp (format, "bytes")) {
+					r_config_toggle (core->config, "asm.bytes");
+				} else if (!strcmp (format, "comments")) {
+					r_config_toggle (core->config, "asm.comments");
+				} else if (!strcmp (format, "disasm")) {
+					__replace_cmd (core, "pd", "pd");
+				} else if (!strcmp (format, "entropy")) {
+					__replace_cmd (core, "p=e 100", "p=e 100");
+				}
+				free (format);
+			}
+		}
+		return;
 	case 't':
 		__handle_tab (core);
 		if (panels_root->root_state != DEFAULT) {
