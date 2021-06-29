@@ -2400,8 +2400,8 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 						r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp),
 								core->print->big_endian);
 						r_anal_hint_free (hint);
-						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n",
-							hit->addr, hit->len, tmp);
+						r_core_cmdf (core, "pdi 1 @e:asm.flags=0@0x%08"PFMT64x, hit->addr);
+						// r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
 					} else {
 						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n",
 							hit->addr, hit->len, hit->code);
@@ -3445,15 +3445,15 @@ reread:
 		case '?':
 			r_core_cmd_help (core, help_msg_slash_a);
 			break;
-		case 'd':
+		case 'd': // "/ad"
 			dosearch = 0;
 			do_asm_search (core, &param, input + 1, 0, search_itv);
 			break;
-		case 'e':
+		case 'e': // "/ae"
 			dosearch = 0;
 			do_asm_search (core, &param, input + 2, 'e', search_itv);
 			break;
-		case 'c':
+		case 'c': // "/ac"
 			dosearch = 0;
 			do_asm_search (core, &param, input + 2, 'c', search_itv);
 			break;
@@ -3465,7 +3465,7 @@ reread:
 			dosearch = 0;
 			do_asm_search (core, &param, input + 2, 'a', search_itv);
 			break;
-		case 'i':
+		case 'i': // "/ai"
 			do_asm_search (core, &param, input + 2, 'i', search_itv);
 			break;
 		case 'b': // "ab"
@@ -3477,7 +3477,7 @@ reread:
 		case 'I': //  "/aI" - infinite
 			__core_cmd_search_asm_infinite (core, r_str_trim_head_ro (input + 1));
 			break;
-		case ' ':
+		case ' ': // "a "
 			if (input[param_offset - 1]) {
 				char *kwd = r_core_asm_search (core, input + param_offset);
 				if (!kwd) {
