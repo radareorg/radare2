@@ -1700,7 +1700,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 		abspath = r_file_abspath (file);
 	}
 #endif
-	if (!abspath) {
+	if (!abspath && file) {
 		abspath = strdup (file);
 	}
 	if (abspath) {
