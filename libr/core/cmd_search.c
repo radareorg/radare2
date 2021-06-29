@@ -3052,6 +3052,7 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 		r_search_kw_reset (core->search);
 		r_list_free (preds);
 	}
+	free (bf);
 }
 
 static void __core_cmd_search_backward(RCore *core, int delta) {

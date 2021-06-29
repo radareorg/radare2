@@ -180,6 +180,7 @@ static bool text_save(Sdb *s, int fd, bool sort, SdbList *path) {
 	SdbListIter *it;
 	ls_foreach (l, it, ns) {
 		if (write (fd, "\n", 1) != 1) {
+			ls_free (l);
 			return false;
 		}
 		ls_push (path, ns->name);
