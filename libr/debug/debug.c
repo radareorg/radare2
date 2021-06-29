@@ -105,6 +105,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 		if (!b) { /* we don't. nothing left to do */
 			/* Some targets set pc to breakpoint */
 			b = r_bp_get_at (dbg->bp, pc);
+#if __i386__ || __x86_64__
 			if (!b) {
 				/* handle the case of hw breakpoints - notify the user */
 				int drx_reg_idx = r_debug_drx_at (dbg, pc);
@@ -115,10 +116,9 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 				/* Couldn't find the break point. Nothing more to do... */
 				return true;
 			}
-			else {
-				dbg->pc_at_bp_set = true;
-				dbg->pc_at_bp = true;
-			}
+#endif
+			dbg->pc_at_bp_set = true;
+			dbg->pc_at_bp = true;
 		} else {
 			dbg->pc_at_bp_set = true;
 			dbg->pc_at_bp = false;

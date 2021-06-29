@@ -1339,11 +1339,11 @@ static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) 
 	return ptrace (PTRACE_SETHBPREGS, pid, -2, &control) != -1;
 }
 
-static bool arm32_hwbp_add (RDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
+static bool arm32_hwbp_add(RDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
 	return ll_arm32_hwbp_set (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
 }
 
-static bool arm32_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+static bool arm32_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	return false; // TODO: hwbp.del not yetimplemented
 }
 #endif // PTRACE_GETHWBPREGS

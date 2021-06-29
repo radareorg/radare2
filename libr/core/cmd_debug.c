@@ -3438,7 +3438,8 @@ static void add_breakpoint(RCore *core, const char *input, bool hwbp, bool watch
 
 static void r_core_cmd_bp(RCore *core, const char *input) {
 	RBreakpointItem *bpi;
-	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
+	int i;
+	bool hwbp = r_config_get_b (core->config, "dbg.hwbp");
 	RDebugFrame *frame;
 	RListIter *iter;
 	const char *p;
@@ -4056,7 +4057,7 @@ static void debug_trace_calls(RCore *core, const char *input) {
 	r_cons_break_push (static_debug_stop, core->dbg);
 	r_reg_arena_swap (core->dbg->reg, true);
 	if (final_addr != UT64_MAX) {
-		int hwbp = r_config_get_i (core->config, "dbg.hwbp");
+		bool hwbp = r_config_get_b (core->config, "dbg.hwbp");
 		bp_final = r_debug_bp_add (core->dbg, final_addr, hwbp, false, 0, NULL, 0);
 		if (!bp_final) {
 			eprintf ("Cannot set breakpoint at final address (%"PFMT64x")\n", final_addr);
