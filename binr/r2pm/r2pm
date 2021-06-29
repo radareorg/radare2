@@ -12,6 +12,7 @@ if [ $? != 0 ]; then
 fi
 
 # Exported Vars
+[ -z "${R2PM_OFFLINE}" ] && R2PM_OFFLINE=0
 MAKE=make
 [ -z "${CURL}" ] && CURL=curl
 gmake --help >/dev/null 2>&1
@@ -148,9 +149,10 @@ Commands:
  purge                       self destroy all r2 installations
  cache                       cache contents of r2 -H to make r2pm r2-independent
 Environment:
- SUDO=sudo                    use this tool as sudo
+ SUDO=sudo                   use this tool as sudo
  R2PM_PLUGDIR=${R2PM_PLUGDIR}
  R2PM_BINDIR=${R2PM_BINDIR}
+ R2PM_OFFLINE=0              disabled by default, avoid init/update calls if set to !=0
  R2PM_DBDIR=${R2PM_DBDIR}
  R2PM_GITDIR=${R2PM_GITDIR}
  R2PM_GITSKIP=${R2PM_GITSKIP}
@@ -222,12 +224,11 @@ upgradeOutdated() {
 	fi
 }
 
-case "$1" in
-init|up|update)
+r2pm_update() {
 	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
 	mkdir -p "${R2PM_GITDIR}"
 	mkdir -p "${HOME}/.config"
-	cd "${R2PM_GITDIR}"
+	cd "${R2PM_GITDIR}" || return 1
 	if [ -d radare2-pm ]; then
 		cd radare2-pm
 		git reset --hard @^^
@@ -240,7 +241,7 @@ init|up|update)
 	fi
 	for a in "${R2PM_DBDIR}" "${R2PM_USRDIR}"/db2/*/db ; do
 		if [ -d "$a" ]; then
-			echo "Updating $a ..."
+			echo "[r2pm] Updating package database $a ..."
 			( cd $a ; git pull )
 		fi
 	done
@@ -255,9 +256,11 @@ init|up|update)
 	fi
 
 	ln -fs "${R2PM_GITDIR}/radare2-pm/db" "${R2PM_DBDIR}"
-	if [ "$1" = "init" ]; then
-		echo "r2pm database initialized. Use 'r2pm update' to update later today."
-	fi
+}
+
+case "$1" in
+init|up|update)
+	r2pm_update
 	exit 0
 	;;
 esac
@@ -284,8 +287,20 @@ help|-h)
 esac
 
 if [ ! -d "${R2PM_DBDIR}" ]; then
-	echo "Run 'r2pm init' to initialize the package repository"
-	exit 1
+	if [ "${R2PM_OFFLINE}" != 0 ]; then
+		echo "Run 'r2pm init' to initialize the package repository"
+		exit 1
+	else
+		r2pm init
+	fi
+else
+	# use timestamp file
+	S="${R2PM_GITDIR}"/.stamp
+	N=`date +%Y%m%d%H`
+	if [ "`cat $S 2>/dev/null`" != "$N" ]; then
+		r2pm_update > /dev/null 2>&1
+		echo $N > "$S"
+	fi
 fi
 
 mkdir -p "${R2PM_USRDIR}/pkg/"
@@ -509,6 +524,7 @@ r2pm_doc() {
 }
 
 r2pm_install() {
+	r2pm_update
 	FILE="$(pkgFilePath "$2")"
 	if [ -f "${FILE}" ]; then
 		NAME="$2"
