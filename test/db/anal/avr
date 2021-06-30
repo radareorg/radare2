@@ -386,7 +386,7 @@ FILE=bins/firmware/arduino_avr.bin
 ARGS=-a avr
 CMDS=/ad ldi~0x6d
 EXPECT=<<EOF
-0x00000276   # 2: ldi r22, 0x6d
+0x00000276                 6de6  ldi r22, 0x6d
 EOF
 RUN
 
@@ -395,8 +395,8 @@ FILE=bins/firmware/arduino_avr.bin
 ARGS=-a avr
 CMDS=/ad ldi ~ 0x18
 EXPECT=<<EOF
-0x00001672   # 2: ldi r24, 0x18
-0x000019a4   # 2: ldi r18, 0x18
+0x00001672                 88e1  ldi r24, 0x18
+0x000019a4                 28e1  ldi r18, 0x18
 EOF
 RUN
 
@@ -408,7 +408,7 @@ e search.align=2
 /ad in ~ 0x12
 EOF
 EXPECT=<<EOF
-0x00000282   # 2: in r24, 0x12
+0x00000282                 82b3  in r24, 0x12
 EOF
 RUN
 
@@ -491,11 +491,11 @@ FILE=bins/firmware/arduino_avr.bin
 ARGS=-a avr
 CMDS=<<EOF
 s 0
-/ad in ~ 0x18
+/ad in~0x18
 pd 5
 EOF
 EXPECT=<<EOF
-0x00000296   # 2: in r24, 0x18
+0x00000296                 88b3  in r24, 0x18
         ,=< 0x00000000      0c94ac00       jmp entry0
        ,==< 0x00000004      0c94db00       jmp 0x1b6
       ,===< 0x00000008      0c94db00       jmp 0x1b6
@@ -536,7 +536,7 @@ aaa
 /ad call 0x4ec
 EOF
 EXPECT=<<EOF
-0x000003e2   # 4: call fcn.000004ec
+0x000003e2             0e947602  call fcn.000004ec
 EOF
 RUN
 
@@ -548,7 +548,7 @@ aaa
 /ad call 0x4ec
 EOF
 EXPECT=<<EOF
-0x000003e2   # 4: call fcn.000004ec
+0x000003e2             0e947602  call fcn.000004ec
 EOF
 RUN
 

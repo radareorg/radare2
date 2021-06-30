@@ -30,6 +30,13 @@ static const char *help_msg_search_backward[] = {
 	NULL
 };
 
+static const char *help_msg_search_ad[] = {
+	"Usage: /ad<jq>", "[value]", "Backward search subcommands",
+	"/ad", " rax", "search in disasm plaintext for matching instructions",
+	"/adq", " rax", "quiet mode ideal for scripting",
+	NULL
+};
+
 static const char *help_msg_slash_m[] = {
 	"/m", "", "search for known magic patterns",
 	"/m", " [file]", "same as above but using the given magic file",
@@ -2334,9 +2341,15 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	case 'j':
 		param->outmode = R_MODE_JSON;
 		break;
+	case 'q':
+		param->outmode = R_MODE_SIMPLE;
+		break;
 	case '*':
 		param->outmode = R_MODE_RADARE;
 		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_search_ad);
+		return;
 	default:
 		break;
 	}
@@ -2368,8 +2381,6 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 		hits = r_core_asm_strsearch (core, end_cmd,
 				from, to, maxhits, regexp, everyByte, mode);
 		if (hits) {
-			r_cons_break_pop ();
-			r_cons_break_push (NULL, NULL);
 			r_cons_singleton ()->context->breaked = false;
 			const char *cmdhit = r_config_get (core->config, "cmd.hit");
 			r_list_foreach (hits, iter, hit) {
@@ -2400,8 +2411,16 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 						r_parse_filter (core->parser, hit->addr, core->flags, hint, hit->code, tmp, sizeof (tmp),
 								core->print->big_endian);
 						r_anal_hint_free (hint);
-						r_core_cmdf (core, "pdi 1 @e:asm.flags=0@0x%08"PFMT64x, hit->addr);
-						// r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
+						if (param->outmode == R_MODE_SIMPLE) {
+							r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n", hit->addr, hit->len, tmp);
+						} else {
+							char *s = (hit->len > 0)
+								? r_core_cmd_strf (core, "pDi %d @e:asm.flags=0@0x%08"PFMT64x, (int)hit->len, hit->addr)
+								: r_core_cmd_strf (core, "pdi 1 @e:asm.flags=0@0x%08"PFMT64x, hit->addr);
+							if (s) {
+								r_cons_printf ("%s", s);
+							}
+						}
 					} else {
 						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n",
 							hit->addr, hit->len, hit->code);
@@ -2409,16 +2428,16 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 					break;
 				}
 				if (searchflags) {
-					const char *flagname = sdb_fmt ("%s%d_%d", searchprefix, kwidx, count);
+					char *flagname = r_str_newf ("%s%d_%d", searchprefix, kwidx, count);
 					if (flagname) {
 						r_flag_set (core->flags, flagname, hit->addr, hit->len);
+						free (flagname);
 					}
 				}
 				count++;
 			}
 			r_list_purge (hits);
 			free (hits);
-			r_cons_break_pop ();
 		}
 	}
 	if (param->outmode == R_MODE_JSON) {

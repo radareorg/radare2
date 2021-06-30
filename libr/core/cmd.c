@@ -5474,12 +5474,6 @@ R_API int r_core_cmd0(RCore *core, const char *cmd) {
 	return r_core_cmd (core, cmd, 0);
 }
 
-R_API int r_core_flush(RCore *core, const char *cmd) {
-	int ret = r_core_cmd (core, cmd, 0);
-	r_cons_flush ();
-	return ret;
-}
-
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	char *tmp = NULL;
 	char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;

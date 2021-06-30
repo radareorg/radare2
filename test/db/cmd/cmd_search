@@ -74,8 +74,8 @@ NAME=/ai finding immediates
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=/ai 0x648
 EXPECT=<<EOF
-0x1000013e5   # 7: sub rsp, 0x648
-0x1000013e6   # 6: sub esp, 0x648
+0x1000013e5       4881ec48060000  sub rsp, 0x648
+0x1000013e6         81ec48060000  sub esp, 0x648
 EOF
 RUN
 
@@ -283,8 +283,8 @@ CMDS=<<EOF
 /acj MoV ebX
 EOF
 EXPECT=<<EOF
-0x08048515   # 3: mov ebx, dword [esp]
-0x08048527   # 5: mov ebx, obj.__CTOR_LIST__
+0x08048515               8b1c24  mov ebx, dword [esp]
+0x08048527           bb0c9f0408  mov ebx, obj.__CTOR_LIST__
 --
 --
 [{"offset":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"offset":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
@@ -305,11 +305,11 @@ CMDS=<<EOF
 /aaj MoV ebX
 EOF
 EXPECT=<<EOF
-0x08048515   # 3: mov ebx, dword [esp]
-0x08048527   # 5: mov ebx, obj.__CTOR_LIST__
+0x08048515               8b1c24  mov ebx, dword [esp]
+0x08048527           bb0c9f0408  mov ebx, obj.__CTOR_LIST__
 --
-0x08048515   # 3: mov ebx, dword [esp]
-0x08048527   # 5: mov ebx, obj.__CTOR_LIST__
+0x08048515               8b1c24  mov ebx, dword [esp]
+0x08048527           bb0c9f0408  mov ebx, obj.__CTOR_LIST__
 --
 [{"offset":134513941,"len":3,"code":"mov ebx, dword [esp]"},{"offset":134513959,"len":5,"code":"mov ebx, 0x8049f0c"}]
 --
@@ -471,9 +471,9 @@ e asm.bits=32
 q
 EOF
 EXPECT=<<EOF
-0x004019d2   # 2: ror esp, cl
-0x004019d5   # 2: ror bh, 1
-0x004019da   # 3: ror ebp, 0xe5
+0x004019d2                 d3cc  ror esp, cl
+0x004019d5                 d0cf  ror bh, 1
+0x004019da               c1cde5  ror ebp, 0xe5
 EOF
 RUN
 
@@ -487,7 +487,9 @@ e asm.bits=32
 q
 EOF
 EXPECT=<<EOF
-0x004019d5   # 5: ror bh, 1; shr ebp, cl; clc
+0x004019d5                 d0cf  ror bh, 1
+0x004019d7                 d3ed  shr ebp, cl
+0x004019d9                   f8  clc
 EOF
 RUN
 
@@ -941,7 +943,7 @@ e search.to = 0x00000510
 /ac add
 EOF
 EXPECT=<<EOF
-0x0000050e   # 2: add r7, sp, 0
+0x0000050e                 00af  add r7, sp, 0
 EOF
 RUN
 
@@ -955,7 +957,7 @@ e search.to = 0x00000516
 /ae r3,r0,=
 EOF
 EXPECT=<<EOF
-0x00000514   # 0: r3,r0,=
+0x00000514                 1846  mov r0, r3
 EOF
 RUN
 
