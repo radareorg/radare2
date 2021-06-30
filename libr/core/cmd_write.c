@@ -43,6 +43,7 @@ static const char *help_msg_wa[] = {
 	"Usage:", "wa[of*] [arg]", "",
 	"wa", " nop", "write nopcode using asm.arch and asm.bits",
 	"wai", " jmp 0x8080", "write inside this op (fill with nops or error if doesnt fit)",
+	"wan", " jmp 0x8080", "write instruction(s) nopping the trailing bytes",
 	"wa*", " mov eax, 33", "show 'wx' op with hexpair bytes of assembled opcode",
 	"\"wa nop;nop\"", "" , "assemble more than one instruction (note the quotes)",
 	"waf", " f.asm" , "assemble file and write bytes",
@@ -1845,13 +1846,35 @@ static int wa_handler_old(void *data, const char *input) {
 		break;
 	case ' ':
 	case 'i':
+	case 'n':
 	case '*': {
 		const char *file = r_str_trim_head_ro (input + 1);
 		RAsmCode *acode;
 		r_asm_set_pc (core->rasm, core->offset);
 		acode = r_asm_massemble (core->rasm, file);
 		if (acode) {
-			if (input[0] == 'i') { // "wai"
+			if (input[0] == 'n') { // "wan"
+				int patchsize = acode->len;
+				int delta = 0;
+				RAnalOp analop;
+				ut64 at = core->offset;
+repeat:
+				if (!r_anal_op (core->anal, &analop, at, core->block + delta, core->blocksize - delta, R_ANAL_OP_MASK_BASIC)) {
+					eprintf ("Invalid instruction?\n");
+					break;
+				}
+				if (delta < acode->len) {
+					delta += analop.size;
+					at += analop.size;
+					patchsize += analop.size;
+					r_anal_op_fini (&analop);
+					r_core_cmdf (core, "wao nop @ 0x%08"PFMT64x, at);
+					goto repeat;
+				}
+				r_anal_op_fini (&analop);
+				r_core_cmd0 (core, "wao nop");
+				input++;
+			} else if (input[0] == 'i') { // "wai"
 				RAnalOp analop;
 				if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
 					eprintf ("Invalid instruction?\n");
