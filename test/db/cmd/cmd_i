@@ -213,6 +213,8 @@ fd       3
 file     malloc://1025
 size     0x401
 humansz  1.0K
+minopsz  1
+maxopsz  16
 mode     rwx
 format   any
 iorw     true
@@ -227,13 +229,10 @@ havecode false
 laddr    0x0
 linenum  false
 lsyms    false
-maxopsz  16
-minopsz  1
 nx       false
-pcalign  0
 pic      false
 relocs   false
-sanitiz  false
+sanitize false
 static   true
 stripped false
 va       false
@@ -289,6 +288,8 @@ fd       3
 file     malloc://1024
 size     0x400
 humansz  1K
+minopsz  1
+maxopsz  16
 mode     rwx
 format   any
 iorw     true
@@ -307,13 +308,10 @@ havecode false
 laddr    0x0
 linenum  false
 lsyms    false
-maxopsz  16
-minopsz  1
 nx       false
-pcalign  0
 pic      false
 relocs   false
-sanitiz  false
+sanitize false
 static   true
 stripped false
 va       false
@@ -331,6 +329,8 @@ EXPECT=<<EOF
 fd       3
 size     0x1323
 humansz  4.8K
+minopsz  1
+maxopsz  16
 mode     r-x
 format   elf
 iorw     false
@@ -352,16 +352,13 @@ lang     c
 linenum  true
 lsyms    true
 machine  Intel 80386
-maxopsz  16
-minopsz  1
 nx       true
 os       linux
-pcalign  0
 pic      false
 relocs   true
 relro    no
 rpath    NONE
-sanitiz  false
+sanitize false
 static   false
 stripped false
 subsys   linux
@@ -446,7 +443,7 @@ nx       false
 os       any
 pic      false
 relocs   false
-sanitiz  false
+sanitize false
 static   false
 stripped false
 subsys   any
@@ -1238,9 +1235,6 @@ arch arm
 bits 16
 os linux
 endian little
-minopsz 2
-maxopsz 4
-pcalign 2
 EOF
 RUN
 
@@ -1252,9 +1246,6 @@ arch arm
 bits 16
 os linux
 endian little
-minopsz 2
-maxopsz 4
-pcalign 2
 __cxa_finalize
 __cxa_atexit
 malloc
@@ -1560,16 +1551,13 @@ lang     c
 linenum  true
 lsyms    true
 machine  Intel 80386
-maxopsz  16
-minopsz  1
 nx       true
 os       linux
-pcalign  0
 pic      false
 relocs   true
 relro    no
 rpath    NONE
-sanitiz  false
+sanitize false
 static   false
 stripped false
 subsys   linux
@@ -1602,17 +1590,14 @@ EXPECT=<<EOF
   "linenum": true,
   "lsyms": true,
   "machine": "Intel 80386",
-  "maxopsz": 16,
-  "minopsz": 1,
   "nx": true,
   "os": "linux",
   "cc": "",
-  "pcalign": 0,
   "pic": false,
   "relocs": true,
   "relro": "no",
   "rpath": "NONE",
-  "sanitiz": false,
+  "sanitize": false,
   "static": false,
   "stripped": false,
   "subsys": "linux",
@@ -3077,6 +3062,8 @@ EXPECT=<<EOF
 fd       3
 size     0x1a36
 humansz  6.6K
+minopsz  1
+maxopsz  16
 mode     r-x
 format   elf64
 iorw     false
@@ -3099,16 +3086,13 @@ lang     c
 linenum  true
 lsyms    true
 machine  AMD x86-64 architecture
-maxopsz  16
-minopsz  1
 nx       true
 os       linux
-pcalign  0
 pic      false
 relocs   true
 relro    no
 rpath    NONE
-sanitiz  false
+sanitize false
 static   false
 stripped false
 subsys   linux
@@ -3191,16 +3175,13 @@ lang     c
 linenum  true
 lsyms    true
 machine  AMD x86-64 architecture
-maxopsz  16
-minopsz  1
 nx       true
 os       linux
-pcalign  0
 pic      false
 relocs   true
 relro    no
 rpath    NONE
-sanitiz  false
+sanitize false
 static   false
 stripped false
 subsys   linux
@@ -3538,6 +3519,8 @@ EXPECT=<<EOF
 fd       3
 size     0x1a36
 humansz  6.6K
+minopsz  1
+maxopsz  16
 mode     r-x
 iorw     false
 block    0x100

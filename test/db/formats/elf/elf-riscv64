@@ -429,7 +429,7 @@ os       linux
 pic      false
 relocs   true
 rpath    NONE
-sanitiz  false
+sanitize false
 static   true
 stripped false
 subsys   linux

@@ -632,16 +632,13 @@ lang     c
 linenum  true
 lsyms    true
 machine  Intel 80386
-maxopsz  16
-minopsz  1
 nx       true
 os       linux
-pcalign  0
 pic      false
 relocs   true
 relro    no
 rpath    NONE
-sanitiz  false
+sanitize false
 static   false
 stripped false
 subsys   linux
@@ -740,16 +737,13 @@ lang     c++
 linenum  true
 lsyms    true
 machine  AMD x86-64 architecture
-maxopsz  16
-minopsz  1
 nx       true
 os       linux
-pcalign  0
 pic      true
 relocs   true
 relro    full
 rpath    NONE
-sanitiz  false
+sanitize false
 static   false
 stripped false
 subsys   linux
@@ -778,16 +772,13 @@ lang     c++
 linenum  true
 lsyms    true
 machine  AMD x86-64 architecture
-maxopsz  16
-minopsz  1
 nx       true
 os       linux
-pcalign  0
 pic      false
 relocs   true
 relro    partial
 rpath    NONE
-sanitiz  true
+sanitize true
 static   false
 stripped false
 subsys   linux
@@ -815,14 +806,11 @@ lang     c++ with blocks
 linenum  false
 lsyms    false
 machine  x86 64 all
-maxopsz  16
-minopsz  1
 nx       false
 os       darwin
-pcalign  0
 pic      true
 relocs   false
-sanitiz  false
+sanitize false
 static   false
 stripped false
 subsys   darwin

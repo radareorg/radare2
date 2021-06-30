@@ -5534,6 +5534,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 			r_cons_singleton ()->noflush = false;
 			r_cons_flush ();
 		}
+		r_cons_pop ();
 		return NULL;
 	}
 	if (--core->in_cmdstr == 0) {

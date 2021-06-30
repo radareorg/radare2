@@ -10,6 +10,9 @@ fd       3
 file     bins/v850/ired_v850
 size     0xedeb8
 humansz  951.7K
+minopsz  2
+maxopsz  8
+pcalign  2
 mode     r-x
 format   elf
 iorw     false
@@ -31,15 +34,12 @@ lang     c
 linenum  true
 lsyms    true
 machine  NEC V800 series
-maxopsz  8
-minopsz  2
 nx       false
 os       linux
-pcalign  2
 pic      false
 relocs   true
 rpath    NONE
-sanitiz  false
+sanitize false
 static   true
 stripped false
 subsys   linux

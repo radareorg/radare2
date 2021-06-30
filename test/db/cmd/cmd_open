@@ -446,6 +446,8 @@ fd       3
 file     bins/elf/true32
 size     0x560c
 humansz  21.5K
+minopsz  1
+maxopsz  16
 mode     r-x
 format   elf
 iorw     false
@@ -467,16 +469,13 @@ lang     c
 linenum  false
 lsyms    false
 machine  Intel 80386
-maxopsz  16
-minopsz  1
 nx       true
 os       linux
-pcalign  0
 pic      false
 relocs   false
 relro    partial
 rpath    NONE
-sanitiz  false
+sanitize false
 static   false
 stripped true
 subsys   linux
@@ -486,6 +485,8 @@ fd       3
 file     malloc://512
 size     0x200
 humansz  512
+minopsz  1
+maxopsz  16
 mode     rwx
 format   any
 iorw     true

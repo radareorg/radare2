@@ -803,8 +803,6 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		return false;
 	}
 	RBinObject *obj = bf->o;
-	const char *compiled = NULL;
-	bool havecode;
 
 	if (!info || !obj) {
 		if (IS_MODE_JSON (mode)) {
@@ -814,8 +812,8 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		return false;
 	}
-	havecode = is_executable (obj) | (obj->entries != NULL);
-	compiled = get_compile_time (bf->sdb);
+	bool havecode = is_executable (obj) | (obj->entries != NULL);
+	const char *compiled = get_compile_time (bf->sdb);
 
 	if (IS_MODE_SET (mode)) {
 		r_config_set (r->config, "file.type", info->rclass);
@@ -843,10 +841,6 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
 				(R_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
-			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
-			if (v != -1) {
-				r_config_set_i (r->config, "asm.pcalign", v);
-			}
 		}
 		r_core_anal_type_init (r);
 		r_core_anal_cc_init (r);
@@ -861,18 +855,6 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		r_cons_printf ("bits %d\n", info->bits);
 		r_cons_printf ("os %s\n", info->os);
 		r_cons_printf ("endian %s\n", info->big_endian? "big": "little");
-		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-		if (v != -1) {
-			r_cons_printf ("minopsz %d\n", v);
-		}
-		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-		if (v != -1) {
-			r_cons_printf ("maxopsz %d\n", v);
-		}
-		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v != -1) {
-			r_cons_printf ("pcalign %d\n", v);
-		}
 	} else if (IS_MODE_RAD (mode)) {
 		if (info->type && !strcmp (info->type, "fs")) {
 			r_cons_printf ("e file.type=fs\n");
@@ -884,6 +866,8 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 				r_str_bool (info->big_endian),
 				info->bits,
 				r_str_bool (R_BIN_DBG_STRIPPED &info->dbg_info));
+			int v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
+			r_cons_printf ("e asm.pcalign=%d\n", (v > 0)? v: 0);
 			if (info->lang && *info->lang) {
 				r_cons_printf ("e bin.lang=%s\n", info->lang);
 			}
@@ -902,10 +886,6 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			}
 			if (info->default_cc) {
 				r_cons_printf ("e anal.cc=%s", info->default_cc);
-			}
-			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
-			if (v != -1) {
-				r_cons_printf ("e asm.pcalign=%d\n", v);
 			}
 		}
 	} else {
@@ -955,24 +935,12 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		pair_bool (pj, "linenum", R_BIN_DBG_LINENUMS & info->dbg_info);
 		pair_bool (pj, "lsyms", R_BIN_DBG_SYMS & info->dbg_info);
 		pair_str (pj, "machine", info->machine);
-		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
-		if (v != -1) {
-			pair_int (pj, "maxopsz", v);
-		}
-		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-		if (v != -1) {
-			pair_int (pj, "minopsz", v);
-		}
 		pair_bool (pj, "nx", info->has_nx);
 		pair_str (pj, "os", info->os);
 		if (info->rclass && !strcmp (info->rclass, "pe")) {
 			pair_bool (pj, "overlay", info->pe_overlay);
 		}
 		pair_str (pj, "cc", info->default_cc);
-		v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v != -1) {
-			pair_int (pj, "pcalign", v);
-		}
 		pair_bool (pj, "pic", info->has_pi);
 		pair_bool (pj, "relocs", R_BIN_DBG_RELOCS & info->dbg_info);
 		Sdb *sdb_info = sdb_ns (obj->kv, "info", false);
@@ -986,7 +954,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 			//this should be moved if added to mach0 (or others)
 			pair_bool (pj, "signed", info->signature);
 		}
-		pair_bool (pj, "sanitiz", info->has_sanitizers);
+		pair_bool (pj, "sanitize", info->has_sanitizers);
 		pair_bool (pj, "static", r_bin_is_static (r->bin));
 		if (info->rclass && !strcmp (info->rclass, "mdmp")) {
 			v = sdb_num_get (bf->sdb, "mdmp.streams", 0);
