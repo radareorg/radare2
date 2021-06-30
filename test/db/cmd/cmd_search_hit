@@ -80,7 +80,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 wx 90 @ 10
-wx 33 @@/ad nop
+wx 33 @@/adq nop
 p8 1 @ 10
 EOF
 EXPECT=<<EOF

@@ -160,12 +160,13 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	}
 
 	if (rad) {
-		r_core_flush (core, "z*");
+		r_core_cmd0 (core, "z*");
 	}
 
 	if (json) {
-		r_core_flush (core, "zj");
+		r_core_cmd0 (core, "zj");
 	}
+	r_cons_flush ();
 
 	r_core_free (core);
 	return 0;
