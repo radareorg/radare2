@@ -1,3 +1,57 @@
+NAME=wan
+FILE=-
+CMDS=<<EOF
+wx 554889e54157415641554154534881ec180600004989f74189fe488d85c0fdff
+e asm.arch=x86
+e asm.bits=64
+wan mov rax,33
+pi 5
+EOF
+EXPECT=<<EOF
+mov rax, 0x21
+nop
+push r13
+push r12
+push rbx
+EOF
+RUN
+
+NAME=wai
+FILE=-
+CMDS=<<EOF
+wx 554889e54157415641554154534881ec180600004989f74189fe488d85c0fdff
+e asm.arch=x86
+e asm.bits=64
+wai mov rax,33
+pi 5
+EOF
+EXPECT=<<EOF
+push rbp
+mov rbp, rsp
+push r15
+push r14
+push r13
+EOF
+RUN
+
+NAME=wa
+FILE=-
+CMDS=<<EOF
+wx 554889e54157415641554154534881ec180600004989f74189fe488d85c0fdff
+e asm.arch=x86
+e asm.bits=64
+wa mov rax,33
+pi 5
+EOF
+EXPECT=<<EOF
+mov rax, 0x21
+push rsi
+push r13
+push r12
+push rbx
+EOF
+RUN
+
 NAME=wB
 FILE=-
 CMDS=<<EOF
