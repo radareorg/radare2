@@ -1,4 +1,4 @@
-.Dd Jun 7, 2016
+.Dd Jun 30, 2021
 .Dt R2PM 1
 .Sh NAME
 .Nm R2PM
@@ -65,6 +65,15 @@ Search a package
 List available packages
 .Pp
   $ r2pm -s
+.Sh ENVIRONMENT
+.Pp
+ SUDO=sudo
+ R2PM_PLUGDIR=~/.local/share/radare2/plugins
+ R2PM_BINDIR=~/.local/share/radare2/prefix/bin
+ R2PM_OFFLINE=0
+ R2PM_DBDIR=~/.local/share/radare2/r2pm/db
+ R2PM_GITDIR=~/.local/share/radare2/r2pm/git
+ R2PM_GITSKIP=
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
