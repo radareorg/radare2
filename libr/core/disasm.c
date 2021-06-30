@@ -4715,7 +4715,12 @@ static void print_fcn_arg(RCore *core, const char *type, const char *name,
 		char *res = r_core_cmd_strf (core, "pf%s %s%s %s @ 0x%08" PFMT64x,
 				(asm_types==2)? "": "q", (on_stack == 1) ? "*" : "", fmt, name, addr);
 		r_str_trim (res);
-		r_cons_printf ("%s", res);
+		if (r_str_startswith (res, "\"\\xff\\xff")) {
+			// r_cons_printf ("0x%08"PFMT64x, addr);
+			r_cons_printf ("\"\"");
+		} else {
+			r_cons_printf ("%s", res);
+		}
 		free (res);
 	} else {
 		r_cons_printf ("-1");
@@ -4954,7 +4959,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 							r_anal_var_count (core->anal, fcn, 'r', 1);
 				}
 				if (nargs > 0) {
-					ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
+					ds_comment_esil (ds, true, false, "%s", ds->show_color? ds->pal_comment : "");
 					if (fcn_name) {
 						ds_comment_middle (ds, "; %s(", fcn_name);
 					} else {
@@ -4963,7 +4968,11 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					const char *cc = r_anal_syscc_default (core->anal);
 					for (i = 0; i < nargs; i++) {
 						ut64 v = r_debug_arg_get (core->dbg, cc, i);
-						ds_comment_middle (ds, "%s0x%"PFMT64x, i?", ":"", v);
+						if (v == UT64_MAX || v == UT32_MAX) {
+							ds_comment_middle (ds, "%s-1", i?", ":"");
+						} else {
+							ds_comment_middle (ds, "%s0x%"PFMT64x, i?", ":"", v);
+						}
 					}
 					ds_comment_end (ds, ")");
 				}
