@@ -1457,7 +1457,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 		}
 		for (;;) {
-			r_core_prompt_loop (r);
+			if (!r_core_prompt_loop (r)) {
+				quietLeak = true;
+			}
 			ret = r->num->value;
 			debug = r_config_get_i (r->config, "cfg.debug");
 			if (ret != -1 && r_cons_is_interactive ()) {

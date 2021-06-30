@@ -11,6 +11,8 @@
 
 #define DB core->sdb
 
+extern void r_core_echo(RCore *core, const char *input);
+
 R_LIB_VERSION(r_core);
 
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
@@ -339,20 +341,17 @@ R_API RCore *r_core_cast(void *p) {
 	return (RCore*)p;
 }
 
-static ut64 getref (RCore *core, int n, char t, int type) {
+static ut64 getref(RCore *core, int n, char t, int type) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	RListIter *iter;
 	RAnalRef *r;
-	RList *list;
 	int i = 0;
 	if (!fcn) {
 		return UT64_MAX;
 	}
-	if (t == 'r') {
-		list = r_anal_function_get_refs (fcn);
-	} else {
-		list = r_anal_function_get_xrefs (fcn);
-	}
+	RList *list = (t == 'r')
+		? r_anal_function_get_refs (fcn)
+		: r_anal_function_get_xrefs (fcn);
 	r_list_foreach (list, iter, r) {
 		if (r->type == type) {
 			if (i == n) {
@@ -364,7 +363,6 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 		}
 	}
 	r_list_free (list);
-
 	return UT64_MAX;
 }
 
@@ -3075,23 +3073,24 @@ R_API void r_core_free(RCore *c) {
 	}
 }
 
-R_API void r_core_prompt_loop(RCore *r) {
+R_API bool r_core_prompt_loop(RCore *r) {
 	int ret;
 	do {
 		int err = r_core_prompt (r, false);
 		if (err < 1) {
 			// handle ^D
 			r->num->value = 0; // r.num->value will be read by r_main_radare2() after calling this fcn
-			break;
+			return false;
 		}
 		/* -1 means invalid command, -2 means quit prompt loop */
 		if ((ret = r_core_prompt_exec (r)) == -2) {
 			break;
 		}
 	} while (ret != R_CORE_CMD_EXIT);
+	return true;
 }
 
-static int prompt_flag (RCore *r, char *s, size_t maxlen) {
+static int prompt_flag(RCore *r, char *s, size_t maxlen) {
 	const char DOTS[] = "...";
 	const RFlagItem *f = r_flag_get_at (r->flags, r->offset, false);
 	if (!f) {
@@ -3118,7 +3117,7 @@ static void prompt_sec(RCore *r, char *s, size_t maxlen) {
 	strcat (s, ":");
 }
 
-static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
+static void chop_prompt(const char *filename, char *tmp, size_t max_tmp_size) {
 	size_t tmp_len, file_len;
 	unsigned int OTHRSCH = 3;
 	const char DOTS[] = "...";
@@ -3137,7 +3136,7 @@ static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
 	}
 }
 
-static void set_prompt (RCore *r) {
+static void set_prompt(RCore *r) {
 	char tmp[128];
 	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
@@ -3229,8 +3228,6 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	r->num->value = r->rc;
 	return true;
 }
-
-extern void r_core_echo(RCore *core, const char *input);
 
 R_API int r_core_prompt_exec(RCore *r) {
 	int ret = r_core_cmd (r, r->cmdqueue, true);
