@@ -26,15 +26,12 @@ laddr    0x0
 linenum  false
 lsyms    false
 machine  AMD64
-maxopsz  16
-minopsz  1
 nx       false
 os       Windows NT Workstation 6.1.7601
-pcalign  0
 pic      false
 relocs   false
 rpath    NONE
-sanitiz  false
+sanitize false
 static   true
 streams  13
 stripped false

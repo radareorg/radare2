@@ -28,7 +28,7 @@ nx       false
 os       smd
 pic      false
 relocs   false
-sanitiz  false
+sanitize false
 static   true
 stripped false
 va       true

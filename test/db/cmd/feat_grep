@@ -74,6 +74,8 @@ EXPECT=<<EOF
 fd       3
 file     malloc://1024
 humansz  1K
+minopsz  1
+maxopsz  16
 mode     rwx
 format   any
 iorw     true
@@ -88,6 +90,8 @@ EXPECT=<<EOF
 fd       3
 file     malloc://1024
 humansz  1K
+minopsz  1
+maxopsz  16
 mode     rwx
 format   any
 iorw     true
@@ -102,6 +106,8 @@ EXPECT=<<EOF
 file     malloc://1024
 size     0x400
 humansz  1K
+minopsz  1
+maxopsz  16
 mode     rwx
 format   any
 iorw     true

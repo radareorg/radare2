@@ -8,6 +8,9 @@ fd       3
 file     bins/s390/zos/prueba/prueba
 size     0x11000
 humansz  68K
+minopsz  2
+maxopsz  6
+pcalign  2
 mode     r-x
 format   off
 iorw     false
@@ -27,14 +30,11 @@ laddr    0x0
 linenum  false
 lsyms    false
 machine  s360
-maxopsz  6
-minopsz  2
 nx       false
 os       Z/OS
-pcalign  2
 pic      false
 relocs   false
-sanitiz  false
+sanitize false
 static   true
 stripped false
 va       false

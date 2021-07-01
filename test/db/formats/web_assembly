@@ -15,6 +15,9 @@ fd       3
 file     bins/wasm/dotnet.wasm
 size     0x2ae89a
 humansz  2.7M
+minopsz  1
+maxopsz  1
+pcalign  1
 mode     r-x
 format   wasm
 iorw     false
@@ -35,14 +38,11 @@ laddr    0x0
 linenum  false
 lsyms    false
 machine  wasm
-maxopsz  1
-minopsz  1
 nx       false
 os       WebAssembly
-pcalign  1
 pic      false
 relocs   false
-sanitiz  false
+sanitize false
 static   true
 stripped false
 subsys   wasm
