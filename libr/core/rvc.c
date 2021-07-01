@@ -353,7 +353,6 @@ fail_ret:
 	return NULL;
 }
 
-
 static char *find_blob_hash(const char *rp, const char *fname) {
 	RList *blobs = get_blobs (rp);
 	if (!blobs) {
@@ -362,7 +361,7 @@ static char *find_blob_hash(const char *rp, const char *fname) {
 	RListIter *i;
 	RvcBlob *b;
 	r_list_foreach_prev (blobs, i, b) {
-		if (!strcmp (b->fname, fname
+		if (!strcmp (b->fname, fname)) {
 			r_list_free (blobs);
 			return r_str_new (b->fhash);
 		}
