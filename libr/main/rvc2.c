@@ -90,7 +90,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 			free (message);
 			return -9;
 		}
-		for (i = 3; i < argc - 1; ++i) {
+		for (i = 3; i < argc - 1; i++) {
 			char *cf = r_str_new (argv[opt.ind + i]);
 			if (!cf) {
 				free (auth);
