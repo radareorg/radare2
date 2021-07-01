@@ -447,7 +447,7 @@ static bool internal_esil_reg_write_no_null (RAnalEsil *esil, const char *regnam
 
 R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 	char str[64];
-	snprintf (str, sizeof (str) - 1, "0x%" PFMT64x, num);
+	sdb_itoa (num, str, 16);
 	return r_anal_esil_push (esil, str);
 }
 
