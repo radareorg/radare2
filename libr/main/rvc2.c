@@ -66,7 +66,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 	}
 	if (!strcmp (action, "commit")) {
 		char *auth, *message;
-		int i;
+		uint i;
 		RList *files;
 		if (opt.argc < 5) {
 			free (rp);
@@ -90,7 +90,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 			free (message);
 			return -9;
 		}
-		for (i = 3; i < argc - 1; i++) {
+		for (i = 3; i < argc - 1; ++i) {
 			char *cf = r_str_new (argv[opt.ind + i]);
 			if (!cf) {
 				free (auth);
@@ -127,6 +127,9 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 			return -13;
 		}
 		return 0;
+	}
+	if (!strcmp (action, "fuck")) {
+		tree_stuff (rp);
 	}
 	return -14;
 }
