@@ -123,7 +123,11 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 		if (os) {
 			return strdup ("0");
 		}
-		strcpy (s, "0");
+		if (base != 16) {
+			strcpy (s, "0");
+			return s;
+		}
+		strcpy (s, "0x0");
 		return s;
 	}
 	s[imax + 1] = '\0';
