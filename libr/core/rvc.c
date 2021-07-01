@@ -353,20 +353,6 @@ fail_ret:
 	return NULL;
 }
 
-static bool is_comitted(const char *rp, const char *absp) {
-	RList *paths = get_uncommitted (rp);
-	RListIter *i;
-	char *p;
-	bool ret = false;
-	r_list_foreach (paths, i, p) {
-		if (strcmp (p, absp)) {
-			ret = true;
-			break;
-		}
-	}
-	r_list_free (paths);
-	return ret;
-}
 
 static char *find_blob_hash(const char *rp, const char *fname) {
 	RList *blobs = get_blobs (rp);
@@ -376,7 +362,7 @@ static char *find_blob_hash(const char *rp, const char *fname) {
 	RListIter *i;
 	RvcBlob *b;
 	r_list_foreach_prev (blobs, i, b) {
-		if (!strcmp (b->fname, fname)) {
+		if (!strcmp (b->fname, fname
 			r_list_free (blobs);
 			return r_str_new (b->fhash);
 		}
