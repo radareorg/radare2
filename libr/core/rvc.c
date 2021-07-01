@@ -460,45 +460,40 @@ static RvcBlob *bfadd(const char *rp, const char *fname) {
 	}
 	blob->fhash = sha256_file (absp);
 	if (!blob->fhash) {
-		free (absp);
-		free (blob->fname);
-		free (blob);
-		return NULL;
+		goto fail_ret;
 	}
 	{
 		char *hash = find_blob_hash (rp, blob->fname);
 		if (hash) {
 			if (!strcmp (blob->fhash, hash)) {
 				eprintf ("%s is already committed.", fname);
-				free (absp);
-				free (blob->fname);
-				free (blob);
-				return NULL;
+				free (hash);
+				goto fail_ret;
 			}
+			free (hash);
 		}
-		free (hash);
 	}
 	{
 		char *bpath = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
 				"blobs" R_SYS_DIR "%s", rp, blob->fhash);
 		if (!bpath) {
-			free (absp);
-			free (blob->fname);
-			free (blob);
-			return NULL;
+			goto fail_ret;
 		}
 		if (!r_file_copy (absp, bpath)) {
 			free (bpath);
-			free (absp);
-			free (blob->fname);
-			free (blob);
-			return NULL;
+			goto fail_ret;
 
 		}
 		free (bpath);
 		free (absp);
 	}
 	return blob;
+fail_ret:
+	free (blob->fhash);
+	free (absp);
+	free (blob->fname);
+	free (blob);
+	return NULL;
 }
 
 static RList *blobs_add (const char *rp, const RList *files) {
