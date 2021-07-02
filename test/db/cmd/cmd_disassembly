@@ -1,3 +1,37 @@
+NAME=flags subst bug
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.lines=0
+e asm.bytes=0
+wx eab70394
+f sym.imp.objc_msgSend=0xedfa8
+pd 1
+EOF
+EXPECT=<<EOF
+0x00000000      bl sym.imp.objc_msgSend
+EOF
+RUN
+
+NAME=flags subst bug 2
+FILE=-
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+e asm.lines=0
+e asm.cmt.col=30
+e asm.bytes=0
+e asm.sub.jmp = false
+wx eab70394
+f sym.imp.objc_msgSend=0xedfa8
+pd 1
+EOF
+EXPECT=<<EOF
+0x00000000      bl 0xedfa8    ; sym.imp.objc_msgSend
+EOF
+RUN
+
 NAME=flags order by space
 FILE=bins/elf/hello_world
 CMDS=<<EOF
