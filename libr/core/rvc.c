@@ -9,6 +9,41 @@
 #define BPREFIX "branches."
 #define NULLVAL "-"
 
+static int repo_exists(const char *path) {
+	char *rp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
+	if (!rp) {
+		return -1;
+	}
+	if (!r_file_is_directory (rp)) {
+		free (rp);
+		return 0;
+	}
+	int r = 1;
+	char *files[3] = {r_str_newf ("%s" R_SYS_DIR DBNAME, rp),
+		r_str_newf ("%s" R_SYS_DIR "commits", rp),
+		r_str_newf ("%s" R_SYS_DIR "blobs", rp),
+	};
+	free (rp);
+	for (size_t i = 0; i < 3; i++) {
+		if (!files[i]) {
+			r = -1;
+			goto ret;
+		}
+		if (!r_file_is_directory (files[i]) && !r_file_exists (files[i])) {
+			eprintf ("Error: Corrupt repo: %s doesn't exist\n",
+					files[i]);
+			r = -2;
+			goto ret;
+		}
+
+	}
+ret:
+	free (files[0]);
+	free (files[1]);
+	free (files[2]);
+	return r;
+}
+
 static bool is_valid_branch_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
 		return false;
@@ -547,6 +582,19 @@ static RList *blobs_add (const char *rp, const RList *files) {
 
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, RList *files) {
 	char *commit_hash;
+	switch (repo_exists (rp)) {
+	case 1:
+		break;
+	case 0:
+		eprintf ("No repo in %s\nCan't commit\n", rp);
+		return false;
+	case -1:
+		eprintf ("Can't commit\n");
+		return false;
+	case -2:
+		eprintf ("Can't commit");
+		return false;
+	}
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
@@ -612,6 +660,19 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 	const char *commits;
 	char *dbp;
 	Sdb *db;
+	switch (repo_exists (rp)) {
+	case 1:
+		break;
+	case 0:
+		eprintf ("No repo in %s\nCan't branch\n", rp);
+		return false;
+	case -1:
+		eprintf ("Can't branch\n");
+		return false;
+	case -2:
+		eprintf ("Can't branch");
+		return false;
+	}
 	if (!is_valid_branch_name (bname)) {
 		return false;
 	}
@@ -654,6 +715,19 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 R_API bool r_vc_new(const char *path) {
 	Sdb *db;
 	char *commitp, *blobsp;
+	switch (repo_exists (path)) {
+	case 0:
+		break;
+	case 1:
+		eprintf ("Repo already exists at: %s", path);
+		return false;
+	case -1:
+		eprintf ("Can't create repo\n");
+		return false;
+	case -2:
+		eprintf ("Repository exists but is corrupt\n");
+		return false;
+	}
 	char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
 	if (!vcp) {
 		return false;
@@ -699,6 +773,19 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 	RList *uncommitted = get_uncommitted (rp);
 	RListIter *i;
 	char *f;
+	switch (repo_exists (rp)) {
+	case 1:
+		break;
+	case 0:
+		eprintf ("No repo in %s\nCan't checkout\n", rp);
+		return false;
+	case -1:
+		eprintf ("Can't checkout\n");
+		return false;
+	case -2:
+		eprintf ("Can't checkout");
+		return false;
+	}
 	bool ret = false;
 	if (!uncommitted) {
 		return false;
