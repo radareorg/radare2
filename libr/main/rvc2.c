@@ -128,8 +128,5 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 		}
 		return 0;
 	}
-	if (!strcmp (action, "fuck")) {
-		tree_stuff (rp);
-	}
 	return -14;
 }

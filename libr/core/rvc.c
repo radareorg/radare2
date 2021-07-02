@@ -821,23 +821,3 @@ R_API int r_vc_git_commit(const char *path, const char *message) {
 	return message ? r_sys_cmdf ("git -C %s commit -m %s", path, message) :
 		r_sys_cmdf ("git -C %s commit", path);
 }
-R_API void tree_stuff(char *rp) {
-	RList *commits = get_commits (rp, 0);
-	RListIter *i;
-	char *c;
-	printf ("commits len: %d\n", commits->length);
-	r_list_foreach (commits, i, c) {
-		printf ("commits: %s\n", c);
-	}
-	RvcBlob *blob;
-	RList *blobs = get_blobs (rp);
-	printf ("blobs len: %d\n", blobs->length);
-	r_list_foreach (blobs, i, blob) {
-		printf ("blobs: %s:%s\n", blob->fhash, blob->fname);
-	}
-	RList *uncommitted = get_uncommitted (rp);
-	printf ("Uncommitted len: %d\n", uncommitted->length);
-	r_list_foreach (uncommitted, i, c) {
-		printf ("uncommitted: %s\n", c);
-	}
-}
