@@ -9,6 +9,41 @@
 #define BPREFIX "branches."
 #define NULLVAL "-"
 
+static int repo_exists(const char *path) {
+	char *rp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
+	if (!rp) {
+		return -1;
+	}
+	if (!r_file_is_directory (rp)) {
+		free (rp);
+		return 0;
+	}
+	int r = 1;
+	char *files[3] = {r_str_newf ("%s" R_SYS_DIR DBNAME, rp),
+		r_str_newf ("%s" R_SYS_DIR "commits", rp),
+		r_str_newf ("%s" R_SYS_DIR "blobs", rp),
+	};
+	free (rp);
+	for (size_t i = 0; i < 3; i++) {
+		if (!files[i]) {
+			r = -1;
+			goto ret;
+		}
+		if (!r_file_is_directory (files[i]) && !r_file_exists (files[i])) {
+			eprintf ("Error: Corrupt repo: %s doesn't exist\n",
+					files[i]);
+			r = -2;
+			goto ret;
+		}
+
+	}
+ret:
+	free (files[0]);
+	free (files[1]);
+	free (files[2]);
+	return r;
+}
+
 static bool is_valid_branch_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
 		return false;
@@ -545,8 +580,21 @@ static RList *blobs_add (const char *rp, const RList *files) {
 	return ret;
 }
 
-R_API bool r_vc_commit(const char *rp, const char *message, const char *author, RList *files) {
+R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
+	switch (repo_exists (rp)) {
+	case 1:
+		break;
+	case 0:
+		eprintf ("No repo in %s\nCan't commit\n", rp);
+		return false;
+	case -1:
+		eprintf ("Can't commit\n");
+		return false;
+	case -2:
+		eprintf ("Can't commit");
+		return false;
+	}
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
@@ -612,6 +660,19 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 	const char *commits;
 	char *dbp;
 	Sdb *db;
+	switch (repo_exists (rp)) {
+	case 1:
+		break;
+	case 0:
+		eprintf ("No repo in %s\nCan't branch\n", rp);
+		return false;
+	case -1:
+		eprintf ("Can't branch\n");
+		return false;
+	case -2:
+		eprintf ("Can't branch");
+		return false;
+	}
 	if (!is_valid_branch_name (bname)) {
 		return false;
 	}
@@ -654,6 +715,19 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 R_API bool r_vc_new(const char *path) {
 	Sdb *db;
 	char *commitp, *blobsp;
+	switch (repo_exists (path)) {
+	case 0:
+		break;
+	case 1:
+		eprintf ("Repo already exists at: %s", path);
+		return false;
+	case -1:
+		eprintf ("Can't create repo\n");
+		return false;
+	case -2:
+		eprintf ("Repository exists but is corrupt\n");
+		return false;
+	}
 	char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
 	if (!vcp) {
 		return false;
@@ -699,6 +773,19 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 	RList *uncommitted = get_uncommitted (rp);
 	RListIter *i;
 	char *f;
+	switch (repo_exists (rp)) {
+	case 1:
+		break;
+	case 0:
+		eprintf ("No repo in %s\nCan't checkout\n", rp);
+		return false;
+	case -1:
+		eprintf ("Can't checkout\n");
+		return false;
+	case -2:
+		eprintf ("Can't checkout");
+		return false;
+	}
 	bool ret = false;
 	if (!uncommitted) {
 		return false;
@@ -770,7 +857,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		if (!bp) {
 			free (hash);
 		}
-		if (!r_file_copy (bp, hash)) {
+		if (!r_file_copy (bp, f)) {
 			free (hash);
 			free (bp);
 			sdb_set (db, CURRENTB, cb, 0);
@@ -820,4 +907,39 @@ R_API int r_vc_git_add(const char *path, const char *fname) {
 R_API int r_vc_git_commit(const char *path, const char *message) {
 	return message ? r_sys_cmdf ("git -C %s commit -m %s", path, message) :
 		r_sys_cmdf ("git -C %s commit", path);
+}
+
+R_API int rvc_git_init(RCore *core, const char *rp) {
+	if (strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
+		return r_vc_git_init (rp);
+	}
+	return r_vc_git_init (rp);
+}
+
+R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		r_vc_commit (rp, message, author, files);
+	}
+	char *path;
+	RListIter *iter;
+	r_list_foreach (files, iter, path) {
+		if (!r_vc_git_add (rp, path)) {
+			return false;
+		}
+	}
+	return r_vc_git_commit (rp, message);
+}
+
+R_API int rvc_git_branch(RCore *core, const char *rp, const char *bname) {
+	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		return r_vc_branch (rp, bname);
+	}
+	return r_vc_git_branch (rp, bname);
+}
+
+R_API int rvc_git_checkout(RCore *core, const char *rp, const char *bname) {
+	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		return r_vc_checkout (rp, bname);
+	}
+	return r_vc_git_checkout (rp, bname);
 }
