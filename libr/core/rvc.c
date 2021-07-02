@@ -927,7 +927,7 @@ R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const
 			return false;
 		}
 	}
-	return r_vc_git_commit (path, message);
+	return r_vc_git_commit (rp, message);
 }
 
 R_API int rvc_git_branch(RCore *core, const char *rp, const char *bname) {
