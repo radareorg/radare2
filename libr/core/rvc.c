@@ -580,7 +580,7 @@ static RList *blobs_add (const char *rp, const RList *files) {
 	return ret;
 }
 
-R_API bool r_vc_commit(const char *rp, const char *message, const char *author, RList *files) {
+R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
 	switch (repo_exists (rp)) {
 	case 1:
@@ -857,7 +857,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		if (!bp) {
 			free (hash);
 		}
-		if (!r_file_copy (bp, hash)) {
+		if (!r_file_copy (bp, f)) {
 			free (hash);
 			free (bp);
 			sdb_set (db, CURRENTB, cb, 0);
@@ -907,4 +907,39 @@ R_API int r_vc_git_add(const char *path, const char *fname) {
 R_API int r_vc_git_commit(const char *path, const char *message) {
 	return message ? r_sys_cmdf ("git -C %s commit -m %s", path, message) :
 		r_sys_cmdf ("git -C %s commit", path);
+}
+
+R_API int rvc_git_init(RCore *core, const char *rp) {
+	if (strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
+		return r_vc_git_init (rp);
+	}
+	return r_vc_git_init (rp);
+}
+
+R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		r_vc_commit (rp, message, author, files);
+	}
+	char *path;
+	RListIter *iter;
+	r_list_foreach (files, iter, path) {
+		if (!r_vc_git_add (rp, path)) {
+			return false;
+		}
+	}
+	return r_vc_git_commit (path, message);
+}
+
+R_API int rvc_git_branch(RCore *core, const char *rp, const char *bname) {
+	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		return r_vc_branch (rp, bname);
+	}
+	return r_vc_git_branch (rp, bname);
+}
+
+R_API int rvc_git_checkout(RCore *core, const char *rp, const char *bname) {
+	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		return r_vc_checkout (rp, bname);
+	}
+	return r_vc_git_checkout (rp, bname);
 }
