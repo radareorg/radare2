@@ -62,3 +62,13 @@ EOF
 EXPECT_ERR=<<EOF
 EOF
 RUN
+
+NAME=@@== foo bar cow
+FILE=-
+CMDS=?e hello @@== world joe cow
+EXPECT=<<EOF
+hello world
+hello joe
+hello cow
+EOF
+RUN
