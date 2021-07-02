@@ -164,6 +164,7 @@ static const char *help_msg_at[] = {
 	"@v:", "value", "modify the current offset to a custom value",
 	"@x:", "909192", "from hex pairs string",
 	"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
+	"@@==", "foo bar", "run the previous command appending a word on each iteration",
 	"@@", " hit*", "run the command on every flag matching 'hit*'",
 	"@@?", "[ktfb..]", "show help for the iterator operator",
 	"@@@", " [type]", "run a command on every [type] (see @@@? for help)",

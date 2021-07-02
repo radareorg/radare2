@@ -4792,6 +4792,62 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	return 0;
 }
 
+static void foreachWord(RCore *core, const char *_cmd, const char *each) {
+	char *cmd = strdup (_cmd);
+	char *nextLine = NULL;
+	/* foreach list of items */
+	while (each) {
+		// skip spaces
+		while (*each == ' ') {
+			each++;
+		}
+		// stahp if empty string
+		if (!*each) {
+			break;
+		}
+		// find newline
+		char *nl = strchr (each, '\n');
+		if (nl) {
+			*nl = 0;
+			nextLine = nl + 1;
+		} else {
+			nextLine = NULL;
+		}
+		// chop comment in line
+		nl = strchr (each, '#');
+		if (nl) {
+			*nl = 0;
+		}
+		// space separated numbers
+		while (each && *each) {
+			// find spaces
+			while (*each == ' ') {
+				each++;
+			}
+			char *curword = NULL;
+			char *str = strchr (each, ' ');
+			if (str) {
+				*str = '\0';
+				curword = strdup (each);
+				*str = ' ';
+				each = str + 1;
+			} else {
+				if (!*each) {
+					break;
+				}
+				curword = strdup (each);
+				each = NULL;
+			}
+			r_core_cmdf (core, "%s %s", cmd, curword);
+			R_FREE (curword);
+			foreach_newline (core);
+			r_cons_flush ();
+		}
+		each = nextLine;
+	}
+	free (cmd);
+}
+
 static void foreachOffset(RCore *core, const char *_cmd, const char *each) {
 	char *cmd = strdup (_cmd);
 	char *nextLine = NULL;
@@ -5018,7 +5074,11 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case '=': // "@@="
-		foreachOffset (core, cmd, str + 1);
+		if (each[1] == '=') {
+			foreachWord (core, cmd, r_str_trim_head_ro (str + 2));
+		} else {
+			foreachOffset (core, cmd, r_str_trim_head_ro (str + 1));
+		}
 		break;
 	case 'd': // "@@d"
 		if (each[1] == 'b' && each[2] == 't') {
