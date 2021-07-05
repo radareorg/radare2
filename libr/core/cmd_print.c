@@ -117,6 +117,7 @@ static const char *help_msg_amper[] = {
 	"&j", "", "list all tasks (in JSON)",
 	"&=", " 3", "show output of task 3",
 	"&b", " 3", "break task 3",
+	"&w", "", "wait for queued commands and execute them (^C to end)",
 	"&-", " 1", "delete task #1 or schedule for deletion when it is finished",
 	"&", "-*", "delete all done tasks",
 	"&?", "", "show this help",
@@ -1225,11 +1226,6 @@ static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
 		}
 	}
 	free (blockptr);
-}
-
-static void helpCmdTasks(RCore *core) {
-	// TODO: integrate with =h& and bg anal/string/searches/..
-	r_core_cmd_help (core, help_msg_amper);
 }
 
 static void print_format_help_help_help_help(RCore *core) {

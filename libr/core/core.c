@@ -3204,6 +3204,25 @@ static void set_prompt(RCore *r) {
 	R_FREE (prompt);
 }
 
+R_API void r_core_cmd_queue_wait(RCore *core) {
+	const bool interactive = r_config_get_b (core->config, "scr.interactive");
+	if (!interactive) {
+		return;
+	}
+	r_cons_push ();
+	r_cons_break_push (NULL, NULL);
+	while (!r_cons_is_breaked ()) {
+		char *cmd = r_list_pop (core->cmdqueue);
+		if (cmd) {
+			r_core_cmd0 (core, cmd);
+			r_cons_flush ();
+		}
+		r_sys_usleep (100);
+	}
+	r_cons_break_pop ();
+	r_cons_pop ();
+}
+
 R_API void r_core_cmd_queue(RCore *core, const char *line) {
 	if (line) {
 		r_list_append (core->cmdqueue, strdup (line));

@@ -2477,9 +2477,11 @@ static int cmd_tasks(void *data, const char *input) {
 	case 'j': // "&j"
 		r_core_task_list (core, *input);
 		break;
-	case ':': { // "&:"
+	case ':': // "&:"
 		r_core_cmd_queue (core, input + 1);
-		}
+		break;
+	case 'w': // "&w"
+		r_core_cmd_queue_wait (core);
 		break;
 	case 'b': { // "&b"
 		if (r_sandbox_enable (0)) {
@@ -2530,7 +2532,7 @@ static int cmd_tasks(void *data, const char *input) {
 		break;
 	case '?': // "&?"
 	default:
-		helpCmdTasks (core);
+		r_core_cmd_help (core, help_msg_amper);
 		break;
 	case ' ': // "& "
 	case '_': // "&_"
@@ -5402,7 +5404,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 #else
 	const bool istty = true;
 #endif
-	const bool show_progress_bar = core->print->enable_progressbar && r_config_get_i (core->config, "scr.interactive") && r_config_get_i (core->config, "scr.progressbar") && istty;
+	const bool show_progress_bar = core->print->enable_progressbar && r_config_get_b (core->config, "scr.interactive") && r_config_get_i (core->config, "scr.progressbar") && istty;
 	size_t current_line = 0;
 	nl = strchr (odata, '\n');
 	if (nl) {

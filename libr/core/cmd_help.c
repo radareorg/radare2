@@ -854,7 +854,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case '&': // "?&"
-		helpCmdTasks (core);
+		r_core_cmd_help (core, help_msg_amper);
 		break;
 	case '%': // "?%"
 		if (input[1] == '?') {
