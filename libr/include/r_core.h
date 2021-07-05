@@ -298,7 +298,7 @@ struct r_core_t {
 	RAGraph *graph;
 	RPanelsRoot *panels_root;
 	RPanels* panels;
-	char *cmdqueue;
+	RList *cmdqueue;
 	char *lastcmd;
 	char *cmdlog;
 	bool cfglog; // cfg.corelog
@@ -427,6 +427,7 @@ R_API int r_core_fgets(char *buf, int len);
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, ut64 off);
 R_API int r_core_cmdf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API int r_core_cmd0(RCore *core, const char *cmd);
+R_API void r_core_cmd_queue(RCore *core, const char *line);
 R_API void r_core_cmd_init(RCore *core);
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
