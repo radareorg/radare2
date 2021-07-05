@@ -111,6 +111,7 @@ static const char *help_msg_prg[] = {
 static const char *help_msg_amper[] = {
 	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)",
 	"&", " <cmd>", "run <cmd> in a new background task",
+	"&:", "<cmd>", "queue <cmd> to be executed later when possible",
 	"&t", " <cmd>", "run <cmd> in a new transient background task (auto-delete when it is finished)",
 	"&", "", "list all tasks",
 	"&j", "", "list all tasks (in JSON)",

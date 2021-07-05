@@ -2817,7 +2817,7 @@ R_API bool r_core_init(RCore *core) {
 	// ideally sdb_ns_set should be used here, but it doesnt seems to work well. must fix
 	// sdb_ns_set (DB, "charset", core->print->charset->db);
 	core->stkcmd = NULL;
-	core->cmdqueue = NULL;
+	core->cmdqueue = r_list_newf (free);
 	core->cmdrepeat = true;
 	core->yank_buf = r_buf_new ();
 	core->num = r_num_new (&num_callback, &str_callback, core);
@@ -3017,7 +3017,7 @@ R_API void r_core_fini(RCore *c) {
 	free (c->cmdlog);
 	free (c->lastsearch);
 	R_FREE (c->cons->pager);
-	free (c->cmdqueue);
+	r_list_free (c->cmdqueue);
 	free (c->lastcmd);
 	free (c->stkcmd);
 	r_project_free (c->prj);
@@ -3204,6 +3204,15 @@ static void set_prompt(RCore *r) {
 	R_FREE (prompt);
 }
 
+R_API void r_core_cmd_queue(RCore *core, const char *line) {
+	if (line) {
+		r_list_append (core->cmdqueue, strdup (line));
+	} else {
+		r_list_free (core->cmdqueue);
+		core->cmdqueue = r_list_newf (free);
+	}
+}
+
 R_API int r_core_prompt(RCore *r, int sync) {
 	char line[4096];
 
@@ -3220,8 +3229,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	if (sync) {
 		return r_core_prompt_exec (r);
 	}
-	free (r->cmdqueue);
-	r->cmdqueue = strdup (line);
+	r_core_cmd_queue (r, line);
         if (r->scr_gadgets && *line && *line != 'q') {
                 r_core_cmd0 (r, "pg");
         }
@@ -3230,18 +3238,30 @@ R_API int r_core_prompt(RCore *r, int sync) {
 }
 
 R_API int r_core_prompt_exec(RCore *r) {
-	int ret = r_core_cmd (r, r->cmdqueue, true);
-	r->rc = r->num->value;
-	//int ret = r_core_cmd (r, r->cmdqueue, true);
-	if (r->cons && r->cons->use_tts) {
-		const char *buf = r_cons_get_buffer();
-		r_sys_tts (buf, true);
-		r->cons->use_tts = false;
-	}
-	r_cons_echo (NULL);
-	r_cons_flush ();
-	if (r->cons && r->cons->line && r->cons->line->zerosep) {
-		r_cons_zero ();
+	int ret = -1;
+	while (!r_list_empty (r->cmdqueue)) {
+		char *cmd = r_list_pop (r->cmdqueue);
+		if (!cmd) {
+			break;
+		}
+		ret = r_core_cmd (r, cmd, true);
+		if (ret < 0) {
+			r_core_cmd_queue (r, NULL);
+			break;
+		}
+		r->rc = r->num->value;
+		// int ret = r_core_cmd (r, cmd, true);
+		free (cmd);
+		if (r->cons && r->cons->use_tts) {
+			const char *buf = r_cons_get_buffer ();
+			r_sys_tts (buf, true);
+			r->cons->use_tts = false;
+		}
+		r_cons_echo (NULL);
+		r_cons_flush ();
+		if (r->cons && r->cons->line && r->cons->line->zerosep) {
+			r_cons_zero ();
+		}
 	}
 	return ret;
 }

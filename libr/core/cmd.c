@@ -2477,6 +2477,10 @@ static int cmd_tasks(void *data, const char *input) {
 	case 'j': // "&j"
 		r_core_task_list (core, *input);
 		break;
+	case ':': { // "&:"
+		r_core_cmd_queue (core, input + 1);
+		}
+		break;
 	case 'b': { // "&b"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
