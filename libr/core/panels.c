@@ -1863,6 +1863,7 @@ static void __init_sdb(RCore *core) {
 	sdb_set (db, "File Hashes", "it", 0);
 }
 
+#if 0
 static void __free_panel_model(RPanel *panel) {
 	if (!panel) {
 		return;
@@ -1873,14 +1874,21 @@ static void __free_panel_model(RPanel *panel) {
 	free (panel->model->readOnly);
 	free (panel->model);
 }
+#endif
 
 static void __replace_cmd(RCore *core, const char *title, const char *cmd) {
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
+#if 0
 	__free_panel_model (cur);
 	cur->model = R_NEW0 (RPanelModel);
-	cur->model->title = r_str_dup (cur->model->title, title);
-	cur->model->cmd = r_str_dup (cur->model->cmd, cmd);
+	cur->model->title = strdup (title);
+#else
+	free (cur->model->cmd);
+	free (cur->model->title);
+	cur->model->cmd = strdup (cmd);
+	cur->model->title = strdup (title);
+#endif
 	__set_cmd_str_cache (core, cur, NULL);
 	__set_panel_addr (core, cur, core->offset);
 	cur->model->type = PANEL_TYPE_DEFAULT;
