@@ -251,7 +251,7 @@ extern "C" {
 // TODO: FS or R_SYS_DIR ??
 #undef FS
 #if __WINDOWS__
-#define FS "\\"
+#define FS '\\'
 #define R_SYS_DIR "\\"
 #define R_SYS_ENVSEP ";"
 #define R_SYS_HOME "USERPROFILE"

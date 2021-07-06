@@ -9,6 +9,24 @@
 #define BPREFIX "branches."
 #define NULLVAL "-"
 
+static char *strip_sys_dir(const char *path) {
+	char *ret = r_str_new ("");
+	if (!ret)  {
+		return NULL;
+	}
+	for (; *path && !(*path == *R_SYS_DIR && !*(path + 1)); path++) {
+		if (*path == *R_SYS_DIR &&
+				*(ret + r_str_len_utf8 (ret) - 1) == *R_SYS_DIR) {
+			continue;
+		}
+		ret = r_str_appendf (ret, "%c", *path);
+		if (!ret) {
+			return NULL;
+		}
+	}
+	return ret;
+}
+
 static int repo_exists(const char *path) {
 	char *rp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
 	if (!rp) {
@@ -82,7 +100,7 @@ static void free_blobs (RList *blobs) {
 }
 
 static char *absp2rp(const char *rp, const char *absp) {
-	char *ret;
+	char *p;
 	char *arp = r_file_abspath (rp);
 	if (!arp) {
 		return NULL;
@@ -91,8 +109,13 @@ static char *absp2rp(const char *rp, const char *absp) {
 		free (arp);
 		return NULL;
 	}
-	ret = r_str_new (absp + r_str_len_utf8 (arp));
+	p = r_str_new (absp + r_str_len_utf8 (arp));
 	free (arp);
+	if (!p) {
+		return NULL;
+	}
+	char *ret = strip_sys_dir (p);
+	free (p);
 	return ret;
 }
 
@@ -106,9 +129,9 @@ char *rp2absp(const char *rp, const char *path) {
 	if (!appended) {
 		return NULL;
 	}
-	char *absp = r_file_abspath (appended);
+	char *stripped = strip_sys_dir (appended);
 	free (appended);
-	return absp;
+	return stripped;
 }
 
 //TODO:Make the tree related functions abit cleaner & more efficient
@@ -285,6 +308,10 @@ static RList *repo_files(const char *rp) {
 			ret = NULL;
 			break;
 		}
+		if (r_file_is_directory (absp)) {
+			free (absp);
+			continue;
+		}
 		if (!r_list_append (ret, absp)) {
 			r_list_free (ret);
 			ret = NULL;
@@ -453,131 +480,103 @@ static char *write_commit(const char *rp, const char *message, const char *autho
 }
 
 static RvcBlob *bfadd(const char *rp, const char *fname) {
+	RvcBlob *ret = R_NEW (RvcBlob);
+	if (!ret) {
+		return NULL;
+	}
 	char *absp = r_file_abspath (fname);
 	if (!absp) {
+		free (ret);
 		return NULL;
 	}
-	RvcBlob *blob = R_NEW (RvcBlob);
-	if (!blob) {
-		free (absp);
-		return NULL;
-	}
-	blob->fname = absp2rp (rp, absp);
-	if (!blob->fname) {
-		free (absp);
-		free (blob);
+	ret->fname = absp2rp (rp, absp);
+	if (!ret->fname) {
+		free (ret);
 		return NULL;
 	}
 	if (!r_file_exists (absp)) {
-		char *hash = find_blob_hash (rp, blob->fname);
-		if (!hash) {
-			eprintf ("file %s doesn't exist", blob->fname);
-			free (absp);
-			free (blob->fname);
-			free (blob);
-			return NULL;
+		ret->fhash = r_str_new (NULLVAL);
+		free (absp);
+		if (!ret->fhash) {
+			goto fail_ret;
 		}
-		if (!strcmp (NULLVAL, hash)) {
-			eprintf ("file %s doesn't exist", blob->fname);
-			free (absp);
-			free (blob->fname);
-			free (blob);
-			return NULL;
-		}
-		blob->fname = r_str_new (NULLVAL);
-		if (!blob->fname) {
-			free (absp);
-			free (blob->fname);
-			free (blob);
-			return NULL;
-		}
-		return blob;
+		return ret;
 	}
-	blob->fhash = sha256_file (absp);
-	if (!blob->fhash) {
+	ret->fhash = sha256_file (absp);
+	if (!ret->fhash) {
+		free (absp);
 		goto fail_ret;
 	}
-	{
-		char *hash = find_blob_hash (rp, blob->fname);
-		if (hash) {
-			if (!strcmp (blob->fhash, hash)) {
-				eprintf ("%s is already committed.", fname);
-				free (hash);
-				goto fail_ret;
-			}
-			free (hash);
-		}
+	char *bpath = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "blobs"
+			R_SYS_DIR "%s", rp, ret->fhash);
+	if (!bpath) {
+		goto fail_ret;
 	}
-	{
-		char *bpath = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
-				"blobs" R_SYS_DIR "%s", rp, blob->fhash);
-		if (!bpath) {
-			goto fail_ret;
-		}
-		if (!r_file_copy (absp, bpath)) {
-			free (bpath);
-			goto fail_ret;
-
-		}
-		free (bpath);
-		free (absp);
+	if (!r_file_copy (absp, bpath)) {
+		free (ret->fhash);
+		free (ret->fname);
+		free (ret);
+		ret = NULL;
 	}
-	return blob;
-fail_ret:
-	free (blob->fhash);
 	free (absp);
-	free (blob->fname);
-	free (blob);
+	free (bpath);
+	return ret;
+
+fail_ret:
+	free (ret->fhash);
+	free (ret->fname);
+	free (ret);
 	return NULL;
 }
 
-static RList *blobs_add (const char *rp, const RList *files) {
+static RList *blobs_add(const char *rp, const RList *files) {
 	RList *ret = r_list_new ();
 	if (!ret) {
+		return NULL;
+	}
+	RList *uncommitted = get_uncommitted (rp);
+	if (!uncommitted) {
+		free (ret);
 		return NULL;
 	}
 	RListIter *i;
 	char *path;
 	r_list_foreach (files, i, path) {
-		if (r_file_is_directory (path)) {
-			RList *subf = repo_files (path);
-			if (!subf) {
-				r_list_free (ret);
-				return NULL;
-			}
-			RListIter *j;
-			char *sf;
-			r_list_foreach (subf, j, sf) {
-				RvcBlob *b = bfadd (rp, sf);
-				if (!b) {
-					free_blobs (ret);
-					r_list_free (subf);
-					return NULL;
-
-				}
-				if (!r_list_append (ret, b)) {
-					free (b->fhash);
-					free (b->fname);
-					free_blobs (ret);
-					r_list_free (subf);
-					return NULL;
-				}
+		char *absp = r_file_abspath (path);
+		if (!absp) {
+			break;
+		}
+		RListIter *j;
+		char *ucp;
+		bool found = false;
+		//problamatic iterates even after finding the file but needed for directires.
+		r_list_foreach (uncommitted, j, ucp) {
+			if (r_str_cmp (ucp, absp, r_str_len_utf8 (absp))) {
 				continue;
 			}
+			found = true;
+			RvcBlob *b = bfadd (rp, ucp);
+			if (!b) {
+				free (absp);
+				goto fail_ret;
+			}
+			if (!r_list_append (ret, b)) {
+				free (b->fhash);
+				free (b->fname);
+				free (b);
+				goto fail_ret;
+			}
+			r_list_delete (uncommitted, j);
 		}
-		RvcBlob *b = bfadd (rp, path);
-		if (!b) {
-			free_blobs (ret);
-			return NULL;
-		}
-		if (!r_list_append (ret, b)) {
-			free (b->fhash);
-			free (b->fname);
-			free_blobs (ret);
-			return NULL;
+		if (!found) {
+			eprintf ("File %s is already committted\n", path);
 		}
 	}
 	return ret;
+fail_ret:
+	r_list_free (uncommitted);
+	free (ret);
+	return NULL;
 }
 
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
