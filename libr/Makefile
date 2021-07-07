@@ -70,6 +70,9 @@ LDFLAGS+=${SSL_LDFLAGS}
 #endif
 # from env: ALFLAGS+=$(ALFLAGS)
 
+localize_hidden:
+	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+
 # ${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB}
 .libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
@@ -78,16 +81,16 @@ LDFLAGS+=${SSL_LDFLAGS}
 		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB}.a).o $${LIB} ; \
 	done
 ifeq ($(OSTYPE),linux)
-	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+	$(MAKE) localize_hidden
 endif
 ifeq ($(OSTYPE),gnulinux)
-	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+	$(MAKE) localize_hidden
 endif
 ifeq ($(OSTYPE),android)
-	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+	$(MAKE) localize_hidden
 endif
 ifeq ($(OSTYPE),bsd)
-	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+	$(MAKE) localize_hidden
 endif
 
 _libr.${EXT_AR}: .libr

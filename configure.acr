@@ -165,7 +165,7 @@ IFEQ USEROSTYPE auto ; {
 		USEROSTYPE = gnulinux ;
 	}{
 	IFEQ HOST_OS serenityos ; {
-		USEROSTYPE = gnulinux ;
+		USEROSTYPE = serenityos ;
 		HAVE_LIB_DL = 1 ;
 		DL_LIBS = -ldl ;
 	}{
