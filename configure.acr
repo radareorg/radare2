@@ -164,6 +164,11 @@ IFEQ USEROSTYPE auto ; {
 	IFEQ HOST_OS linux ; {
 		USEROSTYPE = gnulinux ;
 	}{
+	IFEQ HOST_OS serenityos ; {
+		USEROSTYPE = gnulinux ;
+		HAVE_LIB_DL = 1 ;
+		DL_LIBS = -ldl ;
+	}{
 	IFEQ HOST_OS gnu ; {
 		(( GNU / HURD ))
 		USEROSTYPE = gnulinux ;
@@ -190,7 +195,7 @@ IFEQ USEROSTYPE auto ; {
         }{
 	IFEQ HOST_OS haiku ; {
 		USEROSTYPE = haiku ;
-	} } } } } } } } } } } }
+	} } } } } } } } } } } } }
 }
 
 (( this hack is required for openbsd ports ))
