@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <signal.h>
 #include <errno.h>
@@ -16,6 +16,9 @@
 #include <sys/wait.h>
 #include <kvm.h>
 #include <limits.h>
+#include <r_userconf.h>
+
+#if DEBUGGER
 #include "bsd_debug.h"
 #if __KFBSD__ || __DragonFly__
 #include <sys/user.h>
@@ -575,3 +578,4 @@ RList *bsd_thread_list(RDebug *dbg, int pid, RList *list) {
 	return NULL;
 #endif
 }
+#endif

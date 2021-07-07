@@ -62,17 +62,15 @@ endif
 # XXX do it in configure stage
 OSTYPE?=gnulinux
 ifeq (${OSTYPE},auto)
-_UNAME=$(shell uname)
+ _UNAME=$(shell uname)
  ifeq ($(_UNAME),Darwin)
- OSTYPE=darwin
+  OSTYPE=darwin
  else
   ifeq ($(_UNAME),SerenityOS)
    OSTYPE=bsd
   else
    ifeq ($(_UNAME),serenity)
     OSTYPE=bsd
-    else
-    OSTYPE=gnulinux
    endif
   endif
  endif
