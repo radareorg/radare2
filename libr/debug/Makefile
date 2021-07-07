@@ -5,8 +5,12 @@ R2DEPS=r_reg r_anal r_bp r_io r_parse r_cons r_syscall r_hash r_flag r_util r_eg
 R2DEPS+=r_socket
 CFLAGS+=-DR2_PLUGIN_INCORE
 
+ifeq (${BUILD_OS},serenityos)
+LDFLAGS+=
+else
 ifeq ($(OSTYPE),bsd)
 LDFLAGS+=-lkvm
+endif
 endif
 
 foo:

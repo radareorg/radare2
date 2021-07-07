@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2009-2021 - pancake */
 
+#include <r_userconf.h>
+
+#if DEBUGGER
 #include <signal.h>
 #include <errno.h>
 #include <sys/param.h>
@@ -16,9 +19,6 @@
 #include <sys/wait.h>
 #include <kvm.h>
 #include <limits.h>
-#include <r_userconf.h>
-
-#if DEBUGGER
 #include "bsd_debug.h"
 #if __KFBSD__ || __DragonFly__
 #include <sys/user.h>
