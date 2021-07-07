@@ -907,13 +907,15 @@ err_r_file_mmap_write:
 	if ((st64)addr < 0) {
 		return -1;
 	}
-	mmap_buf = mmap (NULL, mmlen*2, PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)addr - rest);
+	mmap_buf = mmap (NULL, mmlen * 2, PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)addr - rest);
 	if (((int)(size_t)mmap_buf) == -1) {
 		return -1;
 	}
-	memcpy (mmap_buf+rest, buf, len);
-	msync (mmap_buf+rest, len, MS_INVALIDATE);
-	munmap (mmap_buf, mmlen*2);
+	memcpy (mmap_buf + rest, buf, len);
+#if !defined(__serenity__)
+	msync (mmap_buf + rest, len, MS_INVALIDATE);
+#endif
+	munmap (mmap_buf, mmlen * 2);
 	close (fd);
 	return len;
 #else
