@@ -135,18 +135,6 @@
 #  define UNUSED_FUNCTION(x) UNUSED_ ## x
 #endif
 
-#ifdef __wasi__
-# define __UNIX__ 1
-#endif
-
-#ifdef __EMSCRIPTEN__
-# define __UNIX__ 1
-#endif
-
-#ifdef __HAIKU__
-# define __UNIX__ 1
-#endif
-
 #if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
 #define __KFBSD__ 1
 #else
@@ -163,7 +151,11 @@
   static inline struct tm *gmtime_r(const time_t *t, struct tm *r) { return (gmtime_s(r, t))? NULL : r; }
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__)
+#ifdef __HAIKU__
+# define __UNIX__ 1
+#endif
+
+#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif
