@@ -698,7 +698,7 @@ R_API const char *r_run_help(void) {
 	"# nice=5\n";
 }
 
-#if HAVE_PTY
+#if HAVE_PTY && !defined(__serenity__)
 static int fd_forward(int in_fd, int out_fd, char **buff) {
 	int size = 0;
 
@@ -862,7 +862,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (p->_aslr != -1) {
 		setASLR (p, p->_aslr);
 	}
-#if __UNIX__ && !__wasi__
+#if __UNIX__ && !__wasi__ && !defined(serenity)
 	set_limit (p->_docore, RLIMIT_CORE, RLIM_INFINITY);
 	if (p->_maxfd) {
 		set_limit (p->_maxfd, RLIMIT_NOFILE, p->_maxfd);

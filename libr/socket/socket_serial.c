@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2017-2021 - pancake */
 
 #include <r_socket.h>
+#include <r_util/r_sandbox.h>
 
 #if __UNIX__ && !__wasi__
 

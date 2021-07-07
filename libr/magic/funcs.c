@@ -266,7 +266,7 @@ const char *file_getbuffer(RMagic *ms) {
 	}
 	ms->o.pbuf = pbuf;
 
-#if 1
+#if !defined(__serenity__)
 //defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
 	{
 		mbstate_t state;

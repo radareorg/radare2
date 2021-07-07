@@ -6,7 +6,7 @@
 #include <r_util.h>
 #include <errno.h>
 
-#if EMSCRIPTEN || __wasi__
+#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #define NETWORK_DISABLED 1
 #else
 #define NETWORK_DISABLED 0
