@@ -4846,7 +4846,9 @@ static void foreachWord(RCore *core, const char *_cmd, const char *each) {
 			}
 			r_core_cmdf (core, "%s %s", cmd, curword);
 			R_FREE (curword);
-			foreach_newline (core);
+			if (foreach_newline (core)) {
+				break;
+			}
 			r_cons_flush ();
 		}
 		each = nextLine;
