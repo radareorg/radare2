@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 #include <r_types.h>
-#include <sys/time.h>
 
 typedef struct r_cache_t {
 	ut64 base;
