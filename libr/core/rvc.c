@@ -549,8 +549,9 @@ static RList *blobs_add(const char *rp, const RList *files) {
 		RListIter *j;
 		char *ucp;
 		bool found = false;
+		RListIter *tmp;
 		//problamatic iterates even after finding the file but needed for directires.
-		r_list_foreach (uncommitted, j, ucp) {
+		r_list_foreach_safe (uncommitted, j, tmp, ucp) {
 			if (r_str_cmp (ucp, absp, r_str_len_utf8 (absp))) {
 				continue;
 			}
