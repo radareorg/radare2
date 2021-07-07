@@ -63,16 +63,21 @@ endif
 OSTYPE?=gnulinux
 ifeq (${OSTYPE},auto)
 _UNAME=$(shell uname)
-ifeq ($(_UNAME),Darwin)
-OSTYPE=darwin
-else
-ifeq ($(_UNAME),SerenityOS)
-OSTYPE=bsd
-else
-OSTYPE=gnulinux
+ ifeq ($(_UNAME),Darwin)
+ OSTYPE=darwin
+ else
+  ifeq ($(_UNAME),SerenityOS)
+   OSTYPE=bsd
+  else
+   ifeq ($(_UNAME),serenity)
+    OSTYPE=bsd
+    else
+    OSTYPE=gnulinux
+   endif
+  endif
+ endif
 endif
-endif
-endif
+
 ifeq (${OSTYPE},openbsd)
 OSTYPE=bsd
 endif
@@ -88,6 +93,7 @@ endif
 ifeq (${OSTYPE},bitrig)
 OSTYPE=bsd
 endif
+
 # Output
 ifeq (${OSTYPE},windows)
 CFLAGS+=-D__WINDOWS__=1
@@ -96,6 +102,7 @@ EXT_SO=dll
 EXT_EXE=.exe
 TH_LIBS=
 endif
+
 ifeq (${OSTYPE},bsd)
 CFLAGS+=-D__UNIX__=1
 EXT_AR=a
