@@ -25,6 +25,7 @@ extern "C" {
 #if __WINDOWS__
 R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry);
 #else
+#include <dirent.h>
 R_API DIR* r_sandbox_opendir(const char *path);
 #endif
 R_API int r_sandbox_truncate(int fd, ut64 length);

@@ -25,6 +25,12 @@
 #include <process.h>
 #endif
 
+#if __UNIX__ && !defined(__serenity__)
+#define RDWR_FLAGS O_RDWR | O_SYNC
+#else
+#define RDWR_FLAGS O_RDWR
+#endif
+
 #define BS 1024
 
 static int file_stat(const char *file, struct stat* const pStat) {
@@ -78,11 +84,7 @@ R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	if (!r_file_exists (filename) || !r_file_is_regular (filename)) {
 		return false;
 	}
-#if __WINDOWS__
-	fd = r_sandbox_open (filename, O_RDWR, 0644);
-#else
-	fd = r_sandbox_open (filename, O_RDWR | O_SYNC, 0644);
-#endif
+	fd = r_sandbox_open (filename, RDWR_FLAGS, 0644);
 	if (fd == -1) {
 		return false;
 	}
@@ -894,7 +896,7 @@ err_r_file_mmap_write:
 #elif __wasi__
 	return -1;
 #elif __UNIX__
-	int fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
+	int fd = r_sandbox_open (file, RDWR_FLAGS, 0644);
 	const int pagesize = getpagesize ();
 	int mmlen = len + pagesize;
 	int rest = addr % pagesize;
@@ -1062,7 +1064,7 @@ R_API RMmap *r_file_mmap(const char *file, bool rw, ut64 base) {
 	if (!rw && !r_file_exists (file)) {
 		return m;
 	}
-	fd = r_sandbox_open (file, rw? O_RDWR: O_RDONLY, 0644);
+	fd = r_sandbox_open (file, rw? RDWR_FLAGS: O_RDONLY, 0644);
 	if (fd == -1 && !rw) {
 		eprintf ("r_file_mmap: file does not exis.\n");
 		//m->buf = malloc (m->len);
@@ -1155,7 +1157,7 @@ R_API int r_file_mkstemp(R_NULLABLE const char *prefix, char **oname) {
 	}
 	if (GetTempFileName (path_, prefix_, 0, name)) {
 		char *name_ = r_sys_conv_win_to_utf8 (name);
-		h = r_sandbox_open (name_, O_RDWR|O_EXCL|O_BINARY, 0644);
+		h = r_sandbox_open (name_, RDWR_FLAGS | O_EXCL | O_BINARY, 0644);
 		if (oname) {
 			if (h != -1) {
 				*oname = name_;

@@ -1,13 +1,13 @@
 #ifndef R2_SOCKET_H
 #define R2_SOCKET_H
 
-#include "r_types.h"
-#include "r_bind.h"
-#include "r_list.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "r_types.h"
+#include "r_bind.h"
+#include "r_list.h"
 
 R_LIB_VERSION_HEADER (r_socket);
 

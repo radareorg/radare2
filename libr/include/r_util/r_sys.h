@@ -6,6 +6,7 @@
 #if __WINDOWS__
 #define R_SYS_DEVNULL "nul"
 #else
+#include <errno.h>
 #define R_SYS_DEVNULL "/dev/null"
 #endif
 
