@@ -31,6 +31,11 @@
 #include <mach-o/nlist.h>
 #endif
 
+#if defined(__serenity__)
+#undef HAVE_PTY
+#define HAVE_PTY 0
+#endif
+
 #if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/resource.h>
@@ -698,7 +703,7 @@ R_API const char *r_run_help(void) {
 	"# nice=5\n";
 }
 
-#if HAVE_PTY && !defined(__serenity__)
+#if HAVE_PTY
 static int fd_forward(int in_fd, int out_fd, char **buff) {
 	int size = 0;
 
@@ -1268,7 +1273,7 @@ R_API int r_run_start(RRunProfile *p) {
 #endif
 
 		if (p->_nice) {
-#if __UNIX__ && !defined(__HAIKU__)
+#if __UNIX__ && !defined(__HAIKU__) && !defined(__serenity__)
 			if (nice (p->_nice) == -1) {
 				return 1;
 			}
