@@ -31,11 +31,6 @@
 #include <mach-o/nlist.h>
 #endif
 
-#if defined(__serenity__)
-#undef HAVE_PTY
-#define HAVE_PTY 0
-#endif
-
 #if __UNIX__
 #include <sys/ioctl.h>
 #include <sys/resource.h>
@@ -64,7 +59,7 @@
 #define pid_t int
 #endif
 
-#if EMSCRIPTEN || __wasi__
+#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #undef HAVE_PTY
 #define HAVE_PTY 0
 #else
