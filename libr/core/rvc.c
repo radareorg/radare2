@@ -737,11 +737,13 @@ R_API bool r_vc_new(const char *path) {
 	if (!commitp || !blobsp) {
 		free (commitp);
 		free (blobsp);
+		free (vcp);
 		return false;
 	}
 	if (!r_sys_mkdirp (commitp) || !r_sys_mkdir (blobsp)) {
 		eprintf ("Can't create The RVC repo directory");
 		free (commitp);
+		free (vcp);
 		free (blobsp);
 		return false;
 	}
@@ -862,6 +864,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 			free (bp);
 			sdb_set (db, CURRENTB, cb, 0);
 			ret = false;
+		free (bp);
 		}
 	}
 	sdb_sync (db);
@@ -913,7 +916,7 @@ R_API int rvc_git_init(RCore *core, const char *rp) {
 	if (strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
 		return r_vc_git_init (rp);
 	}
-	return r_vc_git_init (rp);
+	return r_vc_new (rp);
 }
 
 R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
