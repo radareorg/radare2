@@ -30,7 +30,6 @@ R_API int rvc_git_init(RCore *core, const char *rp);
 R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files);
 R_API int rvc_git_branch(RCore *core, const char *rp, const char *bname);
 R_API int rvc_git_checkout(RCore *core, const char *rp, const char *bname);
-
 #ifdef __cplusplus
 }
 #endif
