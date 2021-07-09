@@ -1353,23 +1353,20 @@ R_API RList *r_file_lsrf(const char *dir) {
 }
 
 
-static void recursive_search_glob(const char *path, const char *glob, RList* list, int depth) {
+static void recursive_glob(const char *path, const char *glob, RList* list, int depth) {
 	if (depth < 1) {
 		return;
 	}
 	char* file;
 	RListIter *iter;
-	RList *dir = r_sys_dir (path);
-	r_list_foreach (dir, iter, file) {
+	RList *files = r_sys_dir (path);
+	r_list_foreach (files, iter, file) {
 		if (!strcmp (file, ".") || !strcmp (file, "..")) {
 			continue;
 		}
-		char *filename = malloc (strlen (path) + strlen (file) + 2);
-		strcpy (filename, path);
-		strcat (filename, file);
+		char *filename = r_str_newf ("%s%s", path, file);
 		if (r_file_is_directory (filename)) {
-			strcat (filename, R_SYS_DIR);
-			recursive_search_glob (filename, glob, list, depth - 1);
+			recursive_glob (filename, glob, list, depth - 1);
 			free (filename);
 		} else if (r_str_glob (file, glob)) {
 			r_list_append (list, filename);
@@ -1377,10 +1374,10 @@ static void recursive_search_glob(const char *path, const char *glob, RList* lis
 			free (filename);
 		}
 	}
-	r_list_free (dir);
+	r_list_free (files);
 }
 
-R_API RList* r_file_globsearch(const char *_globbed_path, int maxdepth) {
+R_API RList* r_file_glob(const char *_globbed_path, int maxdepth) {
 	char *globbed_path = strdup (_globbed_path);
 	RList *files = r_list_newf (free);
 	char *glob = strchr (globbed_path, '*');
@@ -1412,9 +1409,9 @@ R_API RList* r_file_globsearch(const char *_globbed_path, int maxdepth) {
 		}
 
 		if (*(glob + 1) == '*') {  // "**"
-			recursive_search_glob (path, glob_ptr, files, maxdepth);
-		} else {                   // "*"
-			recursive_search_glob (path, glob_ptr, files, 1);
+			recursive_glob (path, glob_ptr, files, maxdepth);
+		} else {            // "*"
+			recursive_glob (path, glob_ptr, files, 1);
 		}
 		free (path);
 	}

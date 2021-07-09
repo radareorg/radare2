@@ -585,7 +585,7 @@ static int cmdFlirt(void *data, const char *input) {
 		int depth = r_config_get_i (core->config, "dir.depth");
 		char *file;
 		RListIter *iter;
-		RList *files = r_file_globsearch (input + 2, depth);
+		RList *files = r_file_glob (input + 2, depth);
 		r_list_foreach (files, iter, file) {
 			r_sign_flirt_scan (core->anal, file);
 		}
