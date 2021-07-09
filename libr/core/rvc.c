@@ -492,6 +492,7 @@ static RvcBlob *bfadd(const char *rp, const char *fname) {
 	ret->fname = absp2rp (rp, absp);
 	if (!ret->fname) {
 		free (ret);
+		free (absp);
 		return NULL;
 	}
 	if (!r_file_exists (absp)) {
@@ -571,6 +572,7 @@ static RList *blobs_add(const char *rp, const RList *files) {
 		}
 		if (!found) {
 			eprintf ("File %s is already committted\n", path);
+			free (absp);
 		}
 	}
 	return ret;

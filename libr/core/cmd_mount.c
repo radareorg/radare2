@@ -218,7 +218,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'l': // "ml"
-	case 'd': // "md" 
+	case 'd': // "md"
 		cmd_mount_ls (core, input + 1);
 		break;
 	case 'p':
@@ -320,7 +320,7 @@ static int cmd_mount(void *data, const char *_input) {
 			ptr = "./";
 		}
 		const char *filename = r_str_trim_head_ro (input);
-	
+
 		file = r_fs_open (core->fs, filename, false);
 		if (file) {
 			char *localFile = strdup (filename);
@@ -437,6 +437,7 @@ static int cmd_mount(void *data, const char *_input) {
 				*arg1++ = 0;
 			} else {
 				eprintf ("Usage: mwf [local] [dest]\n");
+				free (arg0);
 				break;
 			}
 			size_t size = 0;
