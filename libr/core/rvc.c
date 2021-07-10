@@ -643,7 +643,7 @@ static RList *blobs_add(const char *rp, const RList *files) {
 			r_list_delete (uncommitted, j);
 		}
 		if (!found) {
-			eprintf ("File %s is already committted\n", path);
+			eprintf ("File %s is already committed\n", path);
 			free (absp);
 		}
 	}
@@ -671,6 +671,11 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	}
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
+		return false;
+	}
+	if (r_list_empty (blobs)) {
+		r_list_free (blobs);
+		eprintf ("Nothing to commit\n");
 		return false;
 	}
 	commit_hash = write_commit (rp, message, author, blobs);
