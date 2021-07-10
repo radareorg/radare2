@@ -190,6 +190,12 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 	}
 	free (dbp);
 	i = sdb_get (db, sdb_const_get (db, CURRENTB, 0), 0);
+	if (!i) {
+		r_list_free (ret);
+		sdb_unlink (db);
+		sdb_free (db);
+		return NULL;
+	}
 	if (!strcmp (i, NULLVAL)) {
 		sdb_unlink (db);
 		sdb_free (db);
@@ -201,7 +207,7 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 			break;
 		}
 		i = sdb_get (db, i, 0);
-		if (!i || !*i) {
+		if (!i) {
 			r_list_free (ret);
 			ret = NULL;
 			break;
@@ -332,7 +338,6 @@ static RList *get_blobs(const char *rp) {
 }
 
 static bool rm_empty_dir(const char *rp) {
-	bool ret = true;
 	char *rvc = r_str_newf ("%s" R_SYS_DIR ".rvc", rp);
 	if (!rvc) {
 		return false;
@@ -341,14 +346,13 @@ static bool rm_empty_dir(const char *rp) {
 	RListIter *iter;
 	const char *f;
 	r_list_foreach (files, iter, f) {
-		if (!r_str_cmp (f, rvc, r_str_len_utf8 (rvc))) {
-			continue;
+		if (r_str_cmp (f, rvc, r_str_len_utf8 (rvc))) {
+			rmdir (f);
 		}
-		rmdir (rp);
 	}
 	free (rvc);
 	r_list_free (files);
-	return ret;
+	return true;
 }
 
 static RList *repo_files(const char *rp) {
@@ -828,7 +832,6 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 		return false;
 	}
 	commits = sdb_const_get (db, current_branch, 0);
-	commits = commits? commits : "";
 	char *nbn = r_str_newf (BPREFIX "%s", bname);
 	if (!nbn) {
 		sdb_unlink (db);
@@ -989,11 +992,18 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		char *fhash = find_blob_hash (rp, fname);
 		free (fname);
 		if (!fhash) {
-			goto fail_ret;
+			if (!r_file_rm (file)) {
+				printf ("Failed to remove the file %s\n",
+						file);
+				goto fail_ret;
+			}
+			continue;
 		}
 		if (!strcmp (fhash, NULLVAL)) {
 			free (fhash);
 			if (!r_file_rm (file)) {
+				printf ("Failed to remove the file %s\n",
+						file);
 				goto fail_ret;
 			}
 			continue;
@@ -1006,6 +1016,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		}
 		if (!file_copyp (blob_path, file)) {
 			free (blob_path);
+			printf ("Failed to checkout the file %s\n", file);
 			goto fail_ret;
 		}
 	}
@@ -1014,10 +1025,13 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 	if (!rm_empty_dir (rp)) {
 		goto fail_ret;
 	}
+	sdb_sync (db);
+	sdb_unlink (db);
+	sdb_free (db);
 	return true;
 fail_ret:
 	r_list_free (uncommitted);
-	sdb_set (db, BPREFIX, oldb, 0);
+	sdb_set (db, CURRENTB, oldb, 0);
 	sdb_sync (db);
 	sdb_unlink (db);
 	sdb_free (db);
