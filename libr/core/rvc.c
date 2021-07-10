@@ -246,18 +246,18 @@ static bool update_blobs(RList *blobs, const RList *nh) {
 	return true;
 }
 
-static bool branch_exists(const char *rp, const char *bname) {
+static int branch_exists(const char *rp, const char *bname) {
 	RList *branches = r_vc_get_branches (rp);
 	if (!branches) {
-		return false;
+		return -1;
 	}
 	RListIter *iter;
 	char *branch;
-	bool ret = false;
+	bool ret = 0;
 	r_list_foreach (branches, iter, branch) {
 		branch = strchr (branch, '.') + 1; //In case BPREFIX changes, r change the char
 		if (!strcmp (branch, bname)) {
-			ret = true;
+			ret = 1;
 			break;
 		}
 	}
@@ -796,9 +796,14 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 		eprintf ("The branch name %s is invalid\n", bname);
 		return false;
 	}
-	if (branch_exists (rp, bname)) {
-		eprintf ("The branch %s already exists", bname);
-		return false;
+	{
+		int ret = branch_exists (rp, bname);
+		if (ret < 0) {
+			return false;
+		} else if (!ret) {
+			eprintf ("The branch %s doesn't exist", bname);
+			return false;
+		}
 	}
 	dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
 	if (!dbp) {
@@ -911,8 +916,15 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		eprintf ("Can't checkout");
 		return false;
 	}
-	if (!branch_exists (rp, bname)) {
-		return false;
+	{
+		int ret = branch_exists (rp, bname);
+		if (ret < 0) {
+			return false;
+		}
+		else if (!ret) {
+			eprintf ("The branch %s doesn't exist.\n", bname);
+			return false;
+		}
 	}
 	RList *uncommitted = get_uncommitted (rp);
 	RListIter *i;
