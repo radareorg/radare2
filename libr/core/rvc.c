@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
-#include "sdb.h"
 #include <rvc.h>
+#include <sdb.h>
 #define FIRST_BRANCH "branches.master"
 #define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
 #define COMMIT_BLOB_SEP "----"
@@ -350,6 +350,7 @@ static bool rm_empty_dir(const char *rp) {
 	r_list_free (files);
 	return ret;
 }
+
 static RList *repo_files(const char *rp) {
 	RList *files = r_file_lsrf (rp);
 	if (!files) {
@@ -740,6 +741,7 @@ R_API RList *r_vc_get_branches(const char *rp) {
 			free (dbp);
 			return NULL;
 		}
+		free (dbp);
 	}
 	RList *ret = r_list_new ();
 	if (!ret) {
