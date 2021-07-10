@@ -800,8 +800,8 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 		int ret = branch_exists (rp, bname);
 		if (ret < 0) {
 			return false;
-		} else if (!ret) {
-			eprintf ("The branch %s doesn't exist", bname);
+		} else if (ret) {
+			eprintf ("The branch %s already exists\n", bname);
 			return false;
 		}
 	}
