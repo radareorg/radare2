@@ -654,6 +654,51 @@ fail_ret:
 	return NULL;
 }
 
+R_API char *r_vc_find_rp(const char *path) {
+	{
+		int ret = repo_exists (path);
+		switch (ret) {
+		case 0:
+			break;
+		case 1:
+			return r_str_new (path);
+		case -1:
+			printf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", path);
+		}
+	}
+	const char *p = r_str_rchr (path, path + strlen (path), *R_SYS_DIR);
+	if (!p) {
+		return NULL;
+	}
+	char *i = malloc (p - path + 1);
+	if (!i) {
+		return NULL;
+	}
+	strncpy (i, path, p - path);
+	printf ("i without %s\n", i); //dbgtrm
+	while (true) {
+		int ret = repo_exists (i);
+		switch (ret) {
+		case 0:
+			break;
+		case 1:
+			return i;
+		case -1:
+			printf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", i);
+		}
+		p = r_str_rchr (path, p, *R_SYS_DIR);
+		if (!p) {
+			return NULL;
+		}
+		i = malloc (p - path + 1);
+		if (!i) {
+			return NULL;
+		}
+		strncpy (i, path, p - path);
+		printf ("i within %s\n", i);//dbgtrm
+	}
+}
+
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
 	switch (repo_exists (rp)) {

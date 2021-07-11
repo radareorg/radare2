@@ -44,10 +44,15 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 	if (!action) {
 		return -1;
 	}
-	//TODO: Accept dirs that aren't PWD
-	char *rp = r_sys_getdir ();
-	if (!rp) {
+	char *pwd = r_sys_getdir ();
+	if (!pwd) {
 		return -2;
+	}
+	char *rp = r_vc_find_rp (pwd);
+	if (rp) {
+		free (pwd);
+	} else {
+		rp = pwd;
 	}
 	if (!strcmp (action, "init")) {
 		if (!r_vc_new (rp)) {
