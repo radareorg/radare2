@@ -783,7 +783,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		sdb_concat_by_path (cc, dbpath);
 		cc->path = strdup (dbpath);
 	}
-	if (sdb_isempty (core->anal->sdb_cc)) {
+	if (anal_arch && sdb_isempty (core->anal->sdb_cc)) {
 		eprintf ("Warning: Missing calling conventions for '%s'. Deriving it from the regprofile.\n", anal_arch);
 	}
 	free (dbpath);
