@@ -670,12 +670,10 @@ R_API char *r_vc_find_rp(const char *path) {
 	if (!p) {
 		return NULL;
 	}
-	char *i = malloc (p - path + 1);
+	char *i = r_str_ndup (path, p - path);
 	if (!i) {
 		return NULL;
 	}
-	strncpy (i, path, p - path);
-	printf ("i without %s\n", i); //dbgtrm
 	while (true) {
 		int ret = repo_exists (i);
 		switch (ret) {
@@ -684,18 +682,18 @@ R_API char *r_vc_find_rp(const char *path) {
 		case 1:
 			return i;
 		case -1:
-			printf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", i);
+			eprintf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", i);
+			break;
 		}
 		p = r_str_rchr (path, p, *R_SYS_DIR);
 		if (!p) {
 			return NULL;
 		}
-		i = malloc (p - path + 1);
+		i = r_str_ndup (path, p - path);
 		if (!i) {
 			return NULL;
 		}
 		strncpy (i, path, p - path);
-		printf ("i within %s\n", i);//dbgtrm
 	}
 }
 
