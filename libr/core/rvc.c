@@ -663,7 +663,8 @@ R_API char *r_vc_find_rp(const char *path) {
 		case 1:
 			return r_str_new (path);
 		case -1:
-			printf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", path);
+			eprintf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", path);
+			break;
 		}
 	}
 	const char *p = r_str_rchr (path, path + strlen (path), *R_SYS_DIR);
