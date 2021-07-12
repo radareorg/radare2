@@ -4,8 +4,6 @@
 #include <r_hash.h>
 #include <ht_uu.h>
 
-#include <assert.h>
-
 #define unwrap(rbnode) container_of (rbnode, RAnalBlock, _rb)
 
 static void __max_end(RBNode *node) {
@@ -37,7 +35,8 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 #define D if (anal && anal->verbose)
 
 R_API void r_anal_block_ref(RAnalBlock *bb) {
-	assert (bb->ref > 0); // 0-refd must already be freed.
+	// 0-refd must already be freed.
+	r_return_if_fail (bb->ref > 0);
 	bb->ref++;
 }
 
@@ -372,12 +371,12 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 	if (!bb) {
 		return;
 	}
-	assert (bb->ref > 0);
+	r_return_if_fail (bb->ref > 0);
 	bb->ref--;
-	assert (bb->ref >= r_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
+	r_return_if_fail (bb->ref >= r_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
 	if (bb->ref < 1) {
 		RAnal *anal = bb->anal;
-		assert (!bb->fcns || r_list_empty (bb->fcns));
+		r_return_if_fail (!bb->fcns || r_list_empty (bb->fcns));
 		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 	}
 }

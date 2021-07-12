@@ -127,9 +127,11 @@ ut32 adapt_bias(ut32 delta, unsigned n_points, int is_first) {
 }
 
 char encode_digit(int c) {
-//	assert (c >= 0 && c <= BASE - TMIN);
 	if (c > 25) {
-		return c + 22;
+		if (c <= BASE - TMIN) {
+			return c + 22;
+		}
+		return '?';
 	}
 	return c + 'a';
 }

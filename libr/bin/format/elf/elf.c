@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "elf.h"

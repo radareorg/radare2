@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2020-2021 - pancake, thestr4ng3r */
 
 #include "r2r.h"
-#include <assert.h>
 
 #define WORKERS_DEFAULT        8
 #define RADARE2_CMD_DEFAULT    "radare2"
@@ -1068,7 +1067,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 }
 
 static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
-	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	r_return_if_fail (result->test->type == R2R_TEST_TYPE_CMD);
 	R2RCmdTest *test = result->test->cmd_test;
 	R2RProcessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
@@ -1080,10 +1079,9 @@ static void interact_fix(R2RTestResultInfo *result, RPVector *fixup_results) {
 }
 
 static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
-	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	r_return_if_fail (result->test->type == R2R_TEST_TYPE_CMD);
 	R2RCmdTest *test = result->test->cmd_test;
-	ut64 line_begin;
-	ut64 line_end;
+	ut64 line_begin, line_end;
 	if (test->broken.set) {
 		line_begin = test->broken.set;
 		line_end = line_begin + 1;
@@ -1094,7 +1092,7 @@ static void interact_break(R2RTestResultInfo *result, RPVector *fixup_results) {
 }
 
 static void interact_commands(R2RTestResultInfo *result, RPVector *fixup_results) {
-	assert (result->test->type == R2R_TEST_TYPE_CMD);
+	r_return_if_fail (result->test->type == R2R_TEST_TYPE_CMD);
 	R2RCmdTest *test = result->test->cmd_test;
 	if (!test->cmds.value) {
 		return;

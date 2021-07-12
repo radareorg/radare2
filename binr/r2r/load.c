@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2020 - thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2021 - thestr4ng3r */
 
 #include "r2r.h"
-
-#include <assert.h>
 
 #define LINEFMT "%s, line %"PFMT64u": "
 
@@ -31,10 +29,9 @@ static char *readline(char *buf, size_t *linesz) {
 		}
 		*linesz = len;
 		return end + 1;
-	} else {
-		*linesz = strlen (buf);
-		return NULL;
 	}
+	*linesz = strlen (buf);
+	return NULL;
 }
 
 // read the (possibly multiline) string value of some key in the file

@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2018 - rkx1209 */
+/* radare - LGPL - Copyright 2018-2021 - rkx1209 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
