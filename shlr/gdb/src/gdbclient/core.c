@@ -25,8 +25,6 @@
 #include <signal.h>
 #endif
 
-#include <assert.h>
-
 #define QSUPPORTED_MAX_RETRIES 5
 
 extern char hex2char (char *hex);
@@ -117,7 +115,9 @@ bool gdbr_lock_enter(libgdbr_t *g) {
 
 void gdbr_lock_leave(libgdbr_t *g) {
 	r_cons_break_pop ();
-	assert (g->gdbr_lock_depth > 0);
+	if (g->gdbr_lock_depth < 1) {
+		return;
+	}
 	bool last_leave = g->gdbr_lock_depth == 1;
 	g->gdbr_lock_depth--;
 	r_th_lock_leave (g->gdbr_lock);
