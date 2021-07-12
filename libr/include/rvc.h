@@ -25,6 +25,7 @@ R_API bool r_vc_branch(const char *rp, const char *bname);
 R_API bool r_vc_new(const char *path);
 R_API bool r_vc_checkout(const char *rp, const char *bname);
 R_API RList *r_vc_get_branches(const char *rp);
+R_API char *r_vc_find_rp(const char *path);
 
 R_API int r_vc_git_commit(const char *path, const char *message);
 R_API int rvc_git_init(RCore *core, const char *rp);

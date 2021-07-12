@@ -643,7 +643,7 @@ static RList *blobs_add(const char *rp, const RList *files) {
 			r_list_delete (uncommitted, j);
 		}
 		if (!found) {
-			eprintf ("File %s is already committted\n", path);
+			eprintf ("File %s is already committed\n", path);
 			free (absp);
 		}
 	}
@@ -652,6 +652,50 @@ fail_ret:
 	r_list_free (uncommitted);
 	free (ret);
 	return NULL;
+}
+
+R_API char *r_vc_find_rp(const char *path) {
+	{
+		int ret = repo_exists (path);
+		switch (ret) {
+		case 0:
+			break;
+		case 1:
+			return r_str_new (path);
+		case -1:
+			eprintf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", path);
+			break;
+		}
+	}
+	const char *p = r_str_rchr (path, path + strlen (path), *R_SYS_DIR);
+	if (!p) {
+		return NULL;
+	}
+	char *i = r_str_ndup (path, p - path);
+	if (!i) {
+		return NULL;
+	}
+	while (true) {
+		int ret = repo_exists (i);
+		switch (ret) {
+		case 0:
+			break;
+		case 1:
+			return i;
+		case -1:
+			eprintf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", i);
+			break;
+		}
+		p = r_str_rchr (path, p, *R_SYS_DIR);
+		if (!p) {
+			return NULL;
+		}
+		i = r_str_ndup (path, p - path);
+		if (!i) {
+			return NULL;
+		}
+		strncpy (i, path, p - path);
+	}
 }
 
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
@@ -671,6 +715,11 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	}
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
+		return false;
+	}
+	if (r_list_empty (blobs)) {
+		r_list_free (blobs);
+		eprintf ("Nothing to commit\n");
 		return false;
 	}
 	commit_hash = write_commit (rp, message, author, blobs);
