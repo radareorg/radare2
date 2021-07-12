@@ -686,15 +686,15 @@ R_API char *r_vc_find_rp(const char *path) {
 			eprintf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", i);
 			break;
 		}
-		p = r_str_rchr (path, p, *R_SYS_DIR);
+		p = r_str_rchr (i, p, *R_SYS_DIR);
 		if (!p) {
 			return NULL;
 		}
-		i = r_str_ndup (path, p - path);
+		free (i);
+		i = r_str_ndup (i, p - path);
 		if (!i) {
 			return NULL;
 		}
-		strncpy (i, path, p - path);
 	}
 }
 

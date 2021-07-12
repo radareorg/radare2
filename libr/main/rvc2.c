@@ -8,6 +8,7 @@ static void rvc2_show_help(void) {
 		" checkout [name] checkout given branch name\n"
 		" log             list commits in current branch\n"
 		" branch          list all available branches\n"
+		" commit [a] [m] [f] perform a commit with the added files\n"
 		" branch [name]   change to another branch\n"
 		"Examples:\n"
 		"  rvc2 init\n"
@@ -70,25 +71,24 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 		return 0;
 	}
 	if (!strcmp (action, "commit")) {
-		char *auth, *message;
 		int i;
-		RList *files;
 		if (opt.argc < 5) {
+			eprintf ("Usage: rvc2 commit [author] [message] [files...]\n");
 			free (rp);
 			return -6;
 		}
-		auth = r_str_new (opt.argv[opt.ind + 1]);
+		char *auth = r_str_new (opt.argv[opt.ind + 1]);
 		if (!auth) {
 			free (rp);
 			return -7;
 		}
-		message = r_str_new (opt.argv[opt.ind + 2]);
+		char *message = r_str_new (opt.argv[opt.ind + 2]);
 		if (!message) {
 			free (rp);
 			free (auth);
 			return -8;
 		}
-		files = r_list_new ();
+		RList *files = r_list_new ();
 		if (!files) {
 			free (rp);
 			free (auth);
