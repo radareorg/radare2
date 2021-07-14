@@ -45,12 +45,12 @@ static bool is_mem(OperandClass op) {
 #define REG64(x) (get_register_name(insn->operands[x].reg[0]))
 #define REGSIZE64(x) (get_register_size(insn->operands[x].reg[0]))
 #define REGBITS64(x) ((int)get_register_size(insn->operands[x].reg[0])*8)
-#define GETIMM64(x) (insn->operands[x].immediate)
+#define GETIMM64(x) ((ut64)insn->operands[x].immediate)
 
 #define MEMBASE64(x) (get_register_name(insn->operands[x].reg[0]))
 #define MEMINDEX64(x) (get_register_name(insn->operands[x].reg[1]))
 #define HASMEMINDEX64(x) (insn->operands[x].reg[1]) // uhh idk
-#define MEMDISP64(x) (insn->operands[x].immediate)
+#define MEMDISP64(x) ((ut64)insn->operands[x].immediate)
 
 #define INSOP64(x) insn->operands[x]
 #define OPCOUNT64() get_op_count(insn)
@@ -1078,6 +1078,8 @@ static void anop64(RAnal *a, RAnalOp *op, Instruction *insn) {
 		case ARM64_LDRSH:
 		case ARM64_LDRSB:
 			op->sign = true;
+			break;
+		default:
 			break;
 		}
 		if (REGID64 (1) == REG_X29) {
