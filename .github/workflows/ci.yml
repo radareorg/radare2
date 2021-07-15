@@ -174,20 +174,20 @@ jobs:
       with:
         name: radare2-w32-git.zip
         path: .\radare2-git.zip
-    - uses: actions/checkout@v2
-      with:
-        repository: radareorg/radare2-win-installer
-        path: ./radare2-win-installer
-    - name: Extract r2 version for the installer
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
-      id: extract_version
-    - name: Create installer
-      shell: pwsh
-      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
-    - uses: actions/upload-artifact@v2
-      with:
-        name: radare2-w32-installer-git.exe
-        path: radare2-win-installer\Output\radare2.exe
+#    - uses: actions/checkout@v2
+#      with:
+#        repository: radareorg/radare2-win-installer
+#        path: ./radare2-win-installer
+#    - name: Extract r2 version for the installer
+#      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+#      id: extract_version
+#    - name: Create installer
+#      shell: pwsh
+#      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: radare2-w32-installer-git.exe
+#        path: radare2-win-installer\Output\radare2.exe
   w64-meson:
     runs-on: windows-latest
     steps:
@@ -223,17 +223,17 @@ jobs:
       with:
         # name: radare2-X.Y.Z-w64.zip
         path: .\radare2-*.zip
-    - uses: actions/checkout@v2
-      with:
-        repository: radareorg/radare2-win-installer
-        path: ./radare2-win-installer
-    - name: Create installer
-      shell: pwsh
-      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
-    - uses: actions/upload-artifact@v2
-      with:
-        name: radare2-w64-installer-git.zip
-        path: radare2-win-installer\Output\radare2.exe
+#    - uses: actions/checkout@v2
+#      with:
+#        repository: radareorg/radare2-win-installer
+#        path: ./radare2-win-installer
+#    - name: Create installer
+#      shell: pwsh
+#      run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
+#    - uses: actions/upload-artifact@v2
+#      with:
+#        name: radare2-w64-installer-git.zip
+#        path: radare2-win-installer\Output\radare2.exe
   # LINUX
   linux-static:
     runs-on: ubuntu-20.04
