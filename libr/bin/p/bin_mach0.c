@@ -835,6 +835,10 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 	obj->rebasing_buffer = false;
 }
 
+static RList *classes(RBinFile *bf) {
+	return MACH0_(parse_classes) (bf, NULL);
+}
+
 #if !R_BIN_MACH064
 
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
@@ -1174,7 +1178,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
 	.create = &create,
-	.classes = &MACH0_(parse_classes),
+	.classes = &classes,
 	.write = &r_bin_write_mach0,
 };
 

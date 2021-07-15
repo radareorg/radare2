@@ -461,9 +461,9 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 	}
 	st.cmd = r_read_ble32 (symt, be);
 	st.cmdsize = r_read_ble32 (symt + 4, be);
-	st.symoff = r_read_ble32 (symt + 8, be);
+	st.symoff = r_read_ble32 (symt + 8, be) + mo->symbols_off;
 	st.nsyms = r_read_ble32 (symt + 12, be);
-	st.stroff = r_read_ble32 (symt + 16, be);
+	st.stroff = r_read_ble32 (symt + 16, be) + mo->symbols_off;
 	st.strsize = r_read_ble32 (symt + 20, be);
 
 	mo->symtab = NULL;
@@ -1947,7 +1947,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 					bin->dyld_info->weak_bind_size = r_read_ble32 (&dyldi[28], bin->big_endian);
 					bin->dyld_info->lazy_bind_off = r_read_ble32 (&dyldi[32], bin->big_endian);
 					bin->dyld_info->lazy_bind_size = r_read_ble32 (&dyldi[36], bin->big_endian);
-					bin->dyld_info->export_off = r_read_ble32 (&dyldi[40], bin->big_endian);
+					bin->dyld_info->export_off = r_read_ble32 (&dyldi[40], bin->big_endian) + bin->symbols_off;
 					bin->dyld_info->export_size = r_read_ble32 (&dyldi[44], bin->big_endian);
 				}
 			}
@@ -2128,6 +2128,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 	r_return_if_fail (options && bf && bf->rbin);
 	options->header_at = 0;
+	options->symbols_off = 0;
 	options->verbose = bf->rbin->verbose;
 }
 
@@ -2153,6 +2154,7 @@ struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) 
 	if (options) {
 		bin->verbose = options->verbose;
 		bin->header_at = options->header_at;
+		bin->symbols_off = options->symbols_off;
 	}
 	bin->file = file;
 	size_t binsz;
@@ -2188,6 +2190,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 		if (options) {
 			bin->verbose = options->verbose;
 			bin->header_at = options->header_at;
+			bin->symbols_off = options->symbols_off;
 		}
 		if (!init (bin)) {
 			return MACH0_(mach0_free)(bin);
@@ -2554,7 +2557,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 					name = r_str_append (name, s->label);
 				}
 				if (name == NULL) {
-					eprintf ("malformed export trie\n");
+					eprintf ("malformed export trie 01\n");
 					goto beach;
 				}
 				if (hasResolver) {
@@ -2594,7 +2597,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		next->label = (char *) p;
 		p += strlen (next->label) + 1;
 		if (p >= end) {
-			eprintf ("malformed export trie\n");
+			eprintf ("malformed export trie 02\n");
 			R_FREE (next);
 			goto beach;
 		}
@@ -2605,7 +2608,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		}
 		next->node = tr + trie;
 		if (next->node >= end) {
-			eprintf ("malformed export trie\n");
+			eprintf ("malformed export trie 03\n");
 			R_FREE (next);
 			goto beach;
 		}
@@ -2615,7 +2618,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			RTrieState *s;
 			r_list_foreach (states, it, s) {
 				if (s->node == next->node) {
-					eprintf ("malformed export trie\n");
+					eprintf ("malformed export trie 04\n");
 					R_FREE (next);
 					goto beach;
 				}

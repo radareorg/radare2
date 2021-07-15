@@ -301,7 +301,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.patch_relocs = &patch_relocs,
 	.fields = &MACH0_(mach_fields),
 	.create = &create,
-	.classes = &MACH0_(parse_classes),
+	.classes = &classes,
 	.write = &r_bin_write_mach0,
 };
 
