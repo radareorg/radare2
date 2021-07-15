@@ -9769,7 +9769,7 @@ static void r_core_anal_info (RCore *core, const char *input) {
 	int covr = compute_coverage (core);
 	int call = compute_calls (core);
 	int xrfs = r_anal_xrefs_count (core->anal);
-	int cvpc = (code > 0)? (covr * 100.0 / code): 0;
+	int cvpc = (code > 0)? (int)((covr * 100.0) / code): 0;
 	if (*input == 'j') {
 		PJ *pj = pj_new ();
 		if (!pj) {

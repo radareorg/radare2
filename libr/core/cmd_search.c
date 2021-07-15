@@ -4007,7 +4007,8 @@ reread:
 	break;
 	case 'f': // "/f" forward search
 		if (core->offset) {
-			RInterval itv = {core->offset, -core->offset};
+			st64 coff = core->offset;
+			RInterval itv = {core->offset, -coff};
 			if (!r_itv_overlap (search_itv, itv)) {
 				ret = false;
 				goto beach;

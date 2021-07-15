@@ -731,7 +731,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
 				} else {
-					const int idx = ((float)block[j] / 255) * (strlen (chars) - 1);
+					const int idx = (int)(((double)block[j] / 255) * (strlen (chars) - 1));
 					ch = chars[idx];
 				}
 			}
@@ -857,7 +857,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 				if (show_cursor && core->print->cur == j) {
 					ch = '_';
 				} else {
-					const int idx = ((float)block[j] / 255) * (strlen (chars) - 1);
+					const int idx = (int)(((double)block[j] / 255) * (strlen (chars) - 1));
 					ch = chars[idx];
 				}
 			}
@@ -906,7 +906,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 
 static void cmd_pCd(RCore *core, const char *input) {
 	int h, w = r_cons_get_size (&h);
-	int colwidth = r_config_get_i (core->config, "hex.cols") * 2.5;
+	int colwidth = (int)((double)r_config_get_i (core->config, "hex.cols") * 2.5);
 	if (colwidth < 1) {
 		colwidth = 16;
 	}
@@ -1051,7 +1051,7 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	int h, w = r_cons_get_size (&h);
 	int hex_cols = r_config_get_i (core->config, "hex.cols");
 	int colwidth = hex_cols * 5;
-	int i, columns = w / (colwidth * 0.9);
+	int i, columns = (int)((double)w / (colwidth * 0.9));
 	int rows = h - 2;
 	int user_rows = r_num_math (core->num, input);
 	r_config_set_i (core->config, "hex.cols", colwidth / 5);
@@ -5423,11 +5423,12 @@ static int cmd_print(void *data, const char *input) {
 			use_blocksize = n;
 		}
 
-		if (core->blocksize_max < use_blocksize && (int) use_blocksize < -core->blocksize_max) {
+		int mbs = core->blocksize_max;
+		if (core->blocksize_max < use_blocksize && (int) use_blocksize < -mbs) {
 			eprintf ("This block size is too big (%"PFMT64u "<%"PFMT64u "). Did you mean 'p%c @ 0x%08"PFMT64x "' instead?\n",
 				(ut64) core->blocksize_max, (ut64) use_blocksize, input[0], (ut64) use_blocksize);
 			goto beach;
-		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -(int)core->blocksize_max) {
+		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -mbs) {
 			bw_disassemble = true;
 			l = use_blocksize; // negative
 			use_blocksize = -use_blocksize;
