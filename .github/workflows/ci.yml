@@ -211,9 +211,12 @@ jobs:
         meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
+    - name: Extract r2 version for the installer
+      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      id: r2v
     - name: Create zip artifact
       run: |
-        $env:R2V=`./configure -qV`
+        $env:R2V=${{ steps.r2v.outputs.branch }}
         mv radare2-install radare2-${env:R2V}
         7z a radare2-${env:R2V}-w64.zip $PWD\radare2-${env:R2V}
     - uses: actions/upload-artifact@v2
@@ -224,9 +227,6 @@ jobs:
       with:
         repository: radareorg/radare2-win-installer
         path: ./radare2-win-installer
-    - name: Extract r2 version for the installer
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
-      id: extract_version
     - name: Create installer
       shell: pwsh
       run: iscc radare2-win-installer\radare2.iss /DRadare2Location=..\radare2-install\* /DLicenseLocation=..\COPYING.LESSER /DIcoLocation=radare2.ico /DMyAppVersion=${{ steps.extract_version.outputs.branch }}
