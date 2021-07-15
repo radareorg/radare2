@@ -243,6 +243,9 @@ bool test_r_str_rchr(void) {
 bool test_r_str_ansi_len(void) {
 	int len;
 
+	len = r_str_ansi_len ("\x1b[0m");
+	mu_assert_eq (len, 0, "len(ansi only)");
+
 	len = r_str_ansi_len ("radare2");
 	mu_assert_eq (len, 7, "len(ascii only)");
 
