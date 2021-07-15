@@ -7,6 +7,9 @@ import sys
 full_version = False
 
 for arg in sys.argv[1:]:
+    if arg == '-h' or arg == '--help':
+        print('Only flag accepted here is --full-version')
+        sys.exit(0)
     if arg == '--full-version':
         full_version = True
     else:
