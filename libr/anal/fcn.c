@@ -1772,10 +1772,23 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	RAnal *a = function->anal;
 	PJ *pj = a->coreb.pjWithEncoding (a->coreb.core);
+	const char *realname = NULL, *import_substring = NULL;
+
+	RFlagItem *flag = a->flag_get (a->flb.f, function->addr);
+	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
+	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
+		// Get substring after last dot
+		import_substring = r_str_rchr (function->name, NULL, '.');
+		if (import_substring) {
+			realname = import_substring + 1;
+		}
+	} else {
+		realname = function->name;
+	}
 	
 	char *args = strdup ("");
-	char *sdb_ret = r_str_newf ("func.%s.ret", function->name);
-	char *sdb_args = r_str_newf ("func.%s.args", function->name);
+	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
+	char *sdb_args = r_str_newf ("func.%s.args", realname);
 	// RList *args_list = r_list_newf ((RListFree) free);
 	unsigned int i;
 	const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
@@ -1791,12 +1804,14 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	if (function->cc) {
 		pj_ks (pj, "cc", function->cc);
 	}
+	pj_kn (pj, "argc", argc);
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < argc; i++) {
-		pj_o (pj);
-		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", function->name, i);
+		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
 		char *arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		if (!arg_i) continue;
+		pj_o (pj);
 		char *comma = strchr (arg_i, ',');
 		if (comma) {
 			*comma = 0;
@@ -1865,7 +1880,6 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 			: r_str_newf ("%s%s, ", args, arg_i);
 		free (args);
 		args = new_args;
-
 		free (arg_i);
 		free (sdb_arg_i);
 	}

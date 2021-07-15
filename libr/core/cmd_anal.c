@@ -3982,14 +3982,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			RAnalFunction *f;
 			const char *arg = r_str_trim_head_ro (input + 2);
 			if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
-				if (arg && *arg) {
+				if (R_STR_ISNOTEMPTY (arg)) {
 					// parse function signature here
 					char *fcnstr = r_str_newf ("%s;", arg), *fcnstr_copy = strdup (fcnstr);
 					char *fcnname_aux = strtok (fcnstr_copy, "(");
 					r_str_trim_tail (fcnname_aux);
-					char *fcnname = NULL;
 					const char *ls = r_str_lchr (fcnname_aux, ' ');
-					fcnname = strdup (ls? ls: fcnname_aux);
+					char *fcnname = strdup (ls? ls: fcnname_aux);
 					if (fcnname) {
 						// TODO: move this into r_anal_str_to_fcn()
 						if (strcmp (f->name, fcnname)) {
