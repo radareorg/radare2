@@ -213,9 +213,9 @@ jobs:
         ninja -C build install
     - name: Create zip artifact
       run: |
-        export R2V=`./configure -qV`
-        mv radare2-install radare2-${R2V}
-        7z a radare2-${R2V}-w64.zip $PWD\radare2-${R2V}
+        $env:R2V=`./configure -qV`
+        mv radare2-install radare2-${env:R2V}
+        7z a radare2-${env:R2V}-w64.zip $PWD\radare2-${env:R2V}
     - uses: actions/upload-artifact@v2
       with:
         # name: radare2-X.Y.Z-w64.zip
