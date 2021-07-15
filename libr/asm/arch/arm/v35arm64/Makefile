@@ -1,4 +1,4 @@
-CFLAGS+=$(ARM64V35_CFLAGS)
+CFLAGS+=$(ARM64V35_CFLAGS) -fPIC
 ALIBS=$(addprefix arch-arm64/disassembler/,$(V35ARM64_OBJS))
 RANLIB?=ranlib
 
