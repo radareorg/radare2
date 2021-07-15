@@ -1932,7 +1932,7 @@ R_API size_t r_str_ansi_nlen(const char *str, size_t slen) {
 		}
 		i += chlen;
 	}
-	return len > 0 ? len: 1;
+	return len; // len > 0 ? len: 1;
 }
 
 R_API size_t r_str_ansi_len(const char *str) {

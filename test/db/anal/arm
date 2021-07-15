@@ -127,7 +127,7 @@ mov r0, r0
             0x00000000      0000           movs r0, r0
             0x00000000      0000a0e1       mov r0, r0
             0x00000000      0000           movs r0, r0
-            0x00000002                    unaligned
+            0x00000002                     unaligned
         ,=< 0x00000002      a0e1           b 0x346
 EOF
 RUN
