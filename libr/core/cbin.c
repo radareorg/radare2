@@ -4329,7 +4329,7 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 }
 
 static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
-	r_return_val_if_fail (core && bf && bf->o, NULL);
+	r_return_val_if_fail (core && bf && bf->o, false);
 	const char *name = bf ? bf->file : NULL;
 	(void)r_bin_get_info (core->bin); // XXX is this necssary for proper iniitialization
 	ut32 bin_sz = bf ? bf->size : 0;

@@ -2655,7 +2655,7 @@ static int autocomplete_type(const char* strflag) {
 static void cmd_autocomplete_help(RCore *core) {
 	r_core_cmd_help (core, help_msg_triple_exclamation);
 	// non-zero-cost survival without iterators 101
-	const char **help = calloc (R_CORE_AUTOCMPLT_END + 1, 3 * sizeof (char *));
+	char const **help = calloc (R_CORE_AUTOCMPLT_END + 1, 3 * sizeof (char *));
 	int i;
 	size_t n;
 	for (i = 0, n = 0; i < R_CORE_AUTOCMPLT_END; i++) {
