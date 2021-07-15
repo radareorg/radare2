@@ -216,8 +216,8 @@ jobs:
       id: r2v
     - name: Create zip artifact
       run: |
-        $env:R2V=${{ steps.r2v.outputs.branch }}
-        mv radare2-install radare2-${env:R2V}
+        $env:R2V="${{ steps.r2v.outputs.branch }}"
+        mv radare2-install "radare2-${env:R2V}"
         7z a radare2-${env:R2V}-w64.zip $PWD\radare2-${env:R2V}
     - uses: actions/upload-artifact@v2
       with:
