@@ -253,7 +253,7 @@ jobs:
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: r2-static.tar.xz
+        name: radare2-${env.R2V}-static.tar.xz
         path: r2-static.tar.xz
     - name: Static static r2 with meson 
       run: |
@@ -271,7 +271,7 @@ jobs:
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: radare2_debian_amd64.zip
+        name: radare2_${env.R2V}-debian_amd64.zip
         path: dist/debian/*/*.deb
   linux-acr-deb-32:
     runs-on: ubuntu-18.04
@@ -289,6 +289,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: radare2_debian_i386.zip
+        name: radare2_${env.R2V}-debian_i386.zip
         path: dist/debian/*/*.deb
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
@@ -394,6 +395,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         path: dist/macos/*.pkg
+        name: radare2-${env.R2V}_macos.pkg
   macos-test:
     runs-on: macos-latest
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
