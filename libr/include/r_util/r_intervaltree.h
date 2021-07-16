@@ -92,9 +92,11 @@ static inline RIntervalNode *r_interval_tree_iter_get(RIntervalTreeIter *it) {
 }
 
 #define r_interval_tree_foreach(tree, it, dat) \
+	if ((tree)->root) \
 	for ((it) = r_rbtree_first (&(tree)->root->node); r_rbtree_iter_has (&it) && (dat = r_interval_tree_iter_get (&it)->data); r_rbtree_iter_next (&(it)))
 
 #define r_interval_tree_foreach_prev(tree, it, dat) \
+	if ((tree)->root) \
 	for ((it) = r_rbtree_last (&(tree)->root->node); r_rbtree_iter_has (&it) && (dat = r_rbtree_iter_get (&it, RIntervalNode, node)->data); r_rbtree_iter_prev (&(it)))
 
 #ifdef __cplusplus
