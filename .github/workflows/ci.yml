@@ -44,8 +44,12 @@ jobs:
     - name: Installing with symlinks
       run: |
         sys/wasi.sh
+    - name: Extract r2 version for the installer
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
     - uses: actions/upload-artifact@v2
       with:
+        name: radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
         path: radare2-*-wasi.zip
   build-acr-gperf:
     name: linux-acr-gperf
