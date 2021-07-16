@@ -169,7 +169,7 @@ jobs:
         ninja -C build
         ninja -C build install
     - name: Extract r2 version for the installer
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
       id: r2v
     - name: Create zip artifact
       run: 7z a radare2-git.zip $PWD\radare2-install
@@ -215,7 +215,7 @@ jobs:
         ninja -C build
         ninja -C build install
     - name: Extract r2 version for the installer
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
       id: r2v
     - name: Create zip artifact
       run: |
@@ -254,7 +254,7 @@ jobs:
         make -C binr/blob
         tar cJvf r2-static.tar.xz r2-static
     - name: Extract r2 version for the installer
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
       id: r2v
     - name: Pub
       uses: actions/upload-artifact@v2
@@ -275,7 +275,7 @@ jobs:
     - name: Packaging for Debian
       run: sys/debian.sh
     - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
       id: r2v
     - name: Pub
       uses: actions/upload-artifact@v2
@@ -295,7 +295,7 @@ jobs:
         export ARCH=i386
         sys/debian.sh
     - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
       id: r2v
     - name: Pub
       uses: actions/upload-artifact@v2
@@ -399,7 +399,7 @@ jobs:
     - name: Packaging
       run: dist/macos/build-pkg.sh
     - name: Extract r2 version for the installer
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
       id: r2v
 #    - name: Building Radare2
 #      run: |
