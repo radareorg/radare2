@@ -15,8 +15,9 @@ for arg in sys.argv[1:]:
     else:
         print('Option %s not supported' % (arg,))
         sys.exit(1)
-
-with open('configure.acr', 'r') as f:
+import os
+r2root=os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+with open(os.path.join(r2root, 'configure.acr'), 'r') as f:
     f.readline()
     version = f.readline().split()[1]
     sys.stdout.write(version + '\n')
