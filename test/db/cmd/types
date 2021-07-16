@@ -578,6 +578,39 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=afsafv
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+aa
+s main
+afs
+afs*
+?e original
+afv~arg
+?e deleted
+afv-*
+afv~arg
+?e recovered from signature
+.afs*
+afv~arg
+EOF
+EXPECT=<<EOF
+int main (int argc, char **argv);
+tn main
+afc amd64
+afvr rdi argc int
+afvr rsi argv char **
+
+original
+arg char ** argv @ rsi
+arg int argc @ rdi
+deleted
+recovered from signature
+arg char ** argv @ rsi
+arg int argc @ rdi
+EOF
+RUN
+
 NAME=tp with varname
 FILE=bins/elf/struct_sample
 CMDS=<<EOF

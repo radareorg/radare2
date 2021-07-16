@@ -3367,6 +3367,74 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	r_list_free (dbs);
 }
 
+R_API char *fcnshowr(RAnalFunction *function) {
+	RAnal *a = function->anal;
+	//PJ *pj = a->coreb.pjWithEncoding (a->coreb.core);
+	const char *realname = NULL, *import_substring = NULL;
+	RStrBuf *sb = r_strbuf_new ("");
+
+	RFlagItem *flag = a->flag_get (a->flb.f, function->addr);
+	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
+	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
+		// Get substring after last dot
+		import_substring = r_str_rchr (function->name, NULL, '.');
+		if (import_substring) {
+			realname = import_substring + 1;
+		}
+	} else {
+		realname = function->name;
+	}
+	
+	char *args = strdup ("");
+	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
+	char *sdb_args = r_str_newf ("func.%s.args", realname);
+	// RList *args_list = r_list_newf ((RListFree) free);
+	unsigned int i;
+	// const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
+	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
+
+	int argc = argc_str? atoi (argc_str): 0;
+
+	const bool no_return = r_anal_noreturn_at_addr (a, function->addr);
+	if (no_return) {
+		r_strbuf_appendf (sb, "tn %s\n", function->name);
+	}
+	if (function->cc) {
+		r_strbuf_appendf (sb, "afc %s\n", function->cc);
+	}
+	for (i = 0; i < argc; i++) {
+		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
+		char *type = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		if (!type) continue;
+		char *comma = strchr (type, ',');
+		if (comma) {
+			*comma = 0;
+			const char *cc_arg = r_reg_get_name (a->reg, r_reg_get_name_idx (sdb_fmt ("A%d", i)));
+			r_strbuf_appendf (sb, "afvr %s %s %s\n", cc_arg, comma + 1, type);
+		}
+		free (type);
+		free (sdb_arg_i);
+	}
+	free (sdb_args);
+	free (sdb_ret);
+	free (args);
+	return r_strbuf_drain (sb);
+}
+
+static void cmd_afsr(RCore *core, const char *input) {
+	ut64 addr = core->offset;
+	RAnalFunction *f;
+	if ((f = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
+		char *res = fcnshowr (f);
+		if (R_STR_ISNOTEMPTY (res)) {
+			r_cons_println (res);
+		}
+		free (res);
+	} else {
+		eprintf ("No function defined at 0x%08" PFMT64x "\n", addr);
+	}
+}
+
 static void cmd_afsj(RCore *core, const char *arg) {
 	ut64 a = r_num_math (core->num, arg);
 	const ut64 addr = a? a: core->offset;
@@ -3971,7 +4039,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		}
 		case '*': // "afs*"
-			eprintf ("TODO\n");
+			cmd_afsr (core, input + 2);
 			break;
 		case 'j': // "afsj"
 			cmd_afsj (core, input + 2);
