@@ -1691,3 +1691,63 @@ EXPECT=<<EOF
 false
 EOF
 RUN
+
+NAME=types afs [before]
+FILE=bins/elf/hello_world
+CMDS=<<EOF
+aaa
+s main
+afs
+afsj~{}
+s sym.imp.strcpy
+afs
+afsj~{}
+EOF
+EXPECT=<<EOF
+int main (int argc, char **argv, char **envp);
+{
+  "name": "main",
+  "noreturn": false,
+  "ret": "int",
+  "cc": "amd64",
+  "argc": 3,
+  "args": [
+    {
+      "name": "argc",
+      "type": "int",
+      "cc": "rdi"
+    },
+    {
+      "name": "argv",
+      "type": "char **",
+      "cc": "rsi"
+    },
+    {
+      "name": "envp",
+      "type": "char **",
+      "cc": "rdx"
+    }
+  ]
+}
+char * strcpy (char *dest, const char *src);
+{
+  "name": "sym.imp.strcpy",
+  "noreturn": false,
+  "ret": "char *",
+  "cc": "amd64",
+  "argc": 2,
+  "args": [
+    {
+      "name": "dest",
+      "type": "char *",
+      "cc": "rdi"
+    },
+    {
+      "name": "src",
+      "type": "const char *",
+      "cc": "rsi"
+    }
+  ]
+}
+EOF
+RUN
