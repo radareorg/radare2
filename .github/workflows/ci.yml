@@ -44,8 +44,12 @@ jobs:
     - name: Installing with symlinks
       run: |
         sys/wasi.sh
+    - name: Extract r2 version for the installer
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
     - uses: actions/upload-artifact@v2
       with:
+        name: radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
         path: radare2-*-wasi.zip
   build-acr-gperf:
     name: linux-acr-gperf
@@ -168,11 +172,14 @@ jobs:
         meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
+    - name: Extract r2 version for the installer
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
     - name: Create zip artifact
       run: 7z a radare2-git.zip $PWD\radare2-install
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2-w32-git.zip
+        name: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
         path: .\radare2-git.zip
 #    - uses: actions/checkout@v2
 #      with:
@@ -212,7 +219,7 @@ jobs:
         ninja -C build
         ninja -C build install
     - name: Extract r2 version for the installer
-      run: echo "##[set-output name=branch;]$( python sys\\version.py )"
+      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
       id: r2v
     - name: Create zip artifact
       run: |
@@ -221,7 +228,7 @@ jobs:
         7z a radare2-${env:R2V}-w64.zip $PWD\radare2-${env:R2V}
     - uses: actions/upload-artifact@v2
       with:
-        # name: radare2-X.Y.Z-w64.zip
+        name: radare2-${{ steps.r2v.outputs.branch }}-w64.zip
         path: .\radare2-*.zip
 #    - uses: actions/checkout@v2
 #      with:
@@ -250,10 +257,13 @@ jobs:
         # NOLTO=1 sys/static.sh
         make -C binr/blob
         tar cJvf r2-static.tar.xz r2-static
+    - name: Extract r2 version for the installer
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: r2-static.tar.xz
+        name: radare2-${{ steps.r2v.outputs.branch }}-static.tar.xz
         path: r2-static.tar.xz
     - name: Static static r2 with meson 
       run: |
@@ -268,10 +278,13 @@ jobs:
       uses: actions/checkout@v2
     - name: Packaging for Debian
       run: sys/debian.sh
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
+      id: r2v
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: radare2_debian_amd64.zip
+        name: radare2_${{ steps.r2v.outputs.branch }}-debian_amd64.zip
         path: dist/debian/*/*.deb
   linux-acr-deb-32:
     runs-on: ubuntu-18.04
@@ -285,10 +298,13 @@ jobs:
         export LDFLAGS=-m32
         export ARCH=i386
         sys/debian.sh
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: radare2_debian_i386.zip
+        name: radare2_${{ steps.r2v.outputs.branch }}-debian_i386.zip
         path: dist/debian/*/*.deb
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
@@ -386,6 +402,9 @@ jobs:
       uses: actions/checkout@v2
     - name: Packaging
       run: dist/macos/build-pkg.sh
+    - name: Extract r2 version for the installer
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
 #    - name: Building Radare2
 #      run: |
 #        export CFLAGS="-O2" # -Werror -Wno-unused-result -Wno-unicode -Wno-unneeded-internal-declaration"
@@ -394,6 +413,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         path: dist/macos/*.pkg
+        name: radare2-${{ steps.r2v.outputs.branch }}_macos.pkg
   macos-test:
     runs-on: macos-latest
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
