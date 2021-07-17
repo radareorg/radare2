@@ -691,7 +691,6 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 	if (!dbg) {
 		return reason;
 	}
-
 	if (bp) {
 		*bp = NULL;
 	}
@@ -714,7 +713,6 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			//r_debug_select (dbg, -1, -1);
 			return R_DEBUG_REASON_DEAD;
 		}
-
 #if __linux__
 		// Letting other threads running will cause ptrace commands to fail
 		// when writing to the same process memory to set/unset breakpoints
@@ -723,7 +721,6 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			r_debug_stop (dbg);
 		}
 #endif
-
 		/* propagate errors from the plugin */
 		if (reason == R_DEBUG_REASON_ERROR) {
 			return R_DEBUG_REASON_ERROR;
@@ -1699,13 +1696,15 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	r_debug_select (dbg, pid, tid);
 	r_debug_map_sync (dbg);
 	char *abspath = r_sys_pid_to_path (pid);
+	if (file) {
 #if !__WINDOWS__
-	if (!abspath) {
-		abspath = r_file_abspath (file);
-	}
+		if (!abspath) {
+			abspath = r_file_abspath (file);
+		}
 #endif
-	if (!abspath && file) {
-		abspath = strdup (file);
+		if (!abspath) {
+			abspath = strdup (file);
+		}
 	}
 	if (abspath) {
 		r_list_foreach (dbg->maps, iter, map) {

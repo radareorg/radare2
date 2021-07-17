@@ -64,7 +64,6 @@ typedef enum {
 	R_DBG_PROC_RAISED = 'R' // has produced a signal, breakpoint, etc..
 } RDebugPidState;
 
-
 // signal handling must support application and debugger level options
 typedef enum {
 	R_DBG_SIGNAL_IGNORE = 0, // ignore signal handler
@@ -72,7 +71,6 @@ typedef enum {
 	R_DBG_SIGNAL_SKIP = 2, //
 	//..
 } RDebugSignalMode;
-
 
 /*
  * when a user wants to resume from a breakpoint, we need to know how they want
