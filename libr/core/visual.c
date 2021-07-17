@@ -4218,8 +4218,33 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 		*cols = core->offset - r_anal_function_max_addr (f);
 	} else {
 		r_asm_set_pc (core->rasm, core->offset);
+
+		int maxopsize = r_anal_archinfo (core->anal,
+			R_ANAL_ARCHINFO_MAX_OP_SIZE);
+		size_t bufsize = maxopsize > -1? R_MAX (maxopsize, 32): 32;
+		ut8 *buf = calloc (bufsize, sizeof (ut8));
+		if (!buf) {
+			r_cons_eprintf ("Cannot allocate %zu byte(s)\n",
+				bufsize);
+			return;
+		};
+		ut64 orig = core->offset;
+		size_t bufpos = 0;
+		size_t cpysize = 0;
+		while (bufpos < bufsize) {
+			cpysize = bufsize - bufpos;
+			if (cpysize > core->blocksize) {
+				cpysize = core->blocksize;
+			}
+			memcpy (buf + bufpos, core->block, cpysize);
+			bufpos += cpysize;
+			r_core_seek (core, orig + bufpos, true);
+		}
+		r_core_seek (core, orig, true);
 		*cols = r_asm_disassemble (core->rasm,
-				op, core->block, 32);
+			op, buf, bufsize);
+		free (buf);
+
 		if (midflags || midbb) {
 			int skip_bytes_flag = 0, skip_bytes_bb = 0;
 			if (midflags >= R_MIDFLAGS_REALIGN) {
