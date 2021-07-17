@@ -450,15 +450,17 @@ jobs:
     - name: Create iOS SDK
       run: |
         ./sys/ios-sdk.sh
-        cd /tmp/r2ios
+        pushd /tmp/r2ios
         zip -r /tmp/r2ios-sdk.zip *
+        popd
+        mv /tmp/r2ios-sdk.zip .
     - name: Extract r2 version
       run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
       id: r2v
     - uses: actions/upload-artifact@v2
       with:
-        name: r2ios-${{ steps.r2v.outputs.branch }}_sdk.zip
-        path: /tmp/r2ios-sdk.zip
+        name: r2ios_sdk-${{ steps.r2v.outputs.branch }}.zip
+        path: ./r2ios-sdk.zip
     - uses: actions/upload-artifact@v2
       with:
         name: radare2-${{ steps.r2v.outputs.branch }}_iphoneos-arm64.zip
