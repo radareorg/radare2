@@ -5203,10 +5203,17 @@ static int cmd_debug(void *data, const char *input) {
 			case '\0': // "di"
 #define P r_cons_printf
 #define PS(X, Y) {escaped_str = r_str_escape (Y);r_cons_printf(X, escaped_str);free(escaped_str);}
+				if (stop != -1) {
+					if (core->dbg->reason.type == R_DEBUG_REASON_SIGNAL) {
+						P ("signalstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
+					}
+					P ("stopreason=%s\n", r_debug_reason_to_string (stop));
+				}
 				if (rdi) {
 					const char *s = r_signal_to_string (core->dbg->reason.signum);
 					P ("type=%s\n", r_debug_reason_to_string (core->dbg->reason.type));
 					P ("signal=%s\n", r_str_get_fail (s, "none"));
+					P ("sigstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
 					P ("signum=%d\n", core->dbg->reason.signum);
 					P ("sigpid=%d\n", core->dbg->reason.tid);
 					P ("addr=0x%"PFMT64x"\n", core->dbg->reason.addr);
@@ -5237,9 +5244,6 @@ static int cmd_debug(void *data, const char *input) {
 					if (rdi->kernel_stack && *rdi->kernel_stack) {
 						P ("kernel_stack=\n%s\n", rdi->kernel_stack);
 					}
-				}
-				if (stop != -1) {
-					P ("stopreason=%s\n", r_debug_reason_to_string (stop));
 				}
 				break;
 			case 'f': // "dif" "diff"
@@ -5287,11 +5291,13 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 'j': // "dij"
 				P ("{");
+				P ("\"stopreason\":\"%s\"}\n", r_debug_reason_to_string (stop));
 				if (rdi) {
 					const char *s = r_signal_to_string (core->dbg->reason.signum);
 					P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
 					P ("\"signal\":\"%s\",", r_str_get_fail (s, "none"));
 					P ("\"signum\":%d,", core->dbg->reason.signum);
+					P ("\"sigstr\":\"%s\",", r_signal_to_human (core->dbg->reason.signum));
 					P ("\"sigpid\":%d,", core->dbg->reason.tid);
 					P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
 					P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
@@ -5314,7 +5320,6 @@ static int cmd_debug(void *data, const char *input) {
 						PS ("\"cwd\":\"%s\",", rdi->cwd);
 					}
 				}
-				P ("\"stopreason\":%d}\n", stop);
 				break;
 #undef P
 #undef PS
