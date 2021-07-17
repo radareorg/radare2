@@ -15,7 +15,7 @@ static struct {
 	{ "SIGFPE", SIGFPE },
 	{ "SIGSEGV", SIGSEGV },
 	{ "SIGTERM", SIGTERM },
-#if __LINUX__
+#if __linux__
 	{ "SIGSTKFLT", SIGSTKFLT },
 	{ "SIGWINCH", SIGWINCH },
 	{ "SIGIO", SIGIO },
@@ -76,3 +76,49 @@ R_API void r_signal_sigmask(int how, const sigset_t *newmask, sigset_t *oldmask)
 #endif
 }
 #endif
+
+R_API const char *r_signal_to_human(int signum) {
+#if __UNIX__
+	switch (signum) {
+	case SIGALRM: return "Alarm Clock";
+	case SIGBUS: return "Bus Error";
+	case SIGCHLD: return "Child";
+	case SIGCONT: return "Continue Execution";
+#ifdef SIGEMT
+	case SIGEMT: return "Hardware Error";
+#endif
+	case SIGFPE: return "Floating Point Exception";
+	case SIGHUP: return "Hangup";
+	case SIGILL: return "Illegal instruction";
+	case SIGABRT: return "Abort";
+	case SIGKILL: return "Killed";
+	case SIGPROF: return "Profiling Timer Expired";
+#if __linux__
+	case SIGPWR: return "Power Failure";
+	case SIGSTKFLT: return "Stack fault";
+	case SIGPOLL: return "Pollable Event (Same as SIGIO)";
+	// case SIGIO: return "IO ready";
+#endif
+	case SIGQUIT: return "Quit";
+	case SIGSEGV: return "Segmentation fault";
+	case SIGSTOP: return "Stopped";
+	case SIGSYS: return "Bad system call";
+	case SIGTERM: return "Terminated";
+	case SIGTSTP: return "Stopped";
+	case SIGPIPE: return "Broken pipe";
+	case SIGTTIN: return "Stopped";
+	case SIGTTOU: return "Stopped";
+	case SIGURG: return "Urgent";
+	case SIGUSR1: return "User Defined Signal 1";
+	case SIGUSR2: return "User Defined Signal 2";
+	case SIGVTALRM: return "Virtual Timer Expired";
+	case SIGWINCH: return "Window Changed Size";
+	case SIGXCPU: return "CPU time limit exceeded";
+	case SIGXFSZ: return "File size limit exceeded";
+	default: return "unhandled";
+	}
+#else
+	return "unhandled";
+#endif
+}
+
