@@ -451,6 +451,7 @@ R_API int r_debug_attach(RDebug *dbg, int pid) {
 			r_debug_select (dbg, pid, ret); //dbg->pid, dbg->tid);
 		}
 	}
+	dbg->reason.type = R_DEBUG_REASON_STOPPED;
 	return ret;
 }
 
@@ -778,9 +779,10 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			/* handle signal on continuations here */
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
 			const char *name = r_signal_to_string (dbg->reason.signum);
+			const char *humn = r_signal_to_human (dbg->reason.signum);
 			if (name && strcmp ("SIGTRAP", name)) {
-				r_cons_printf ("[+] signal %d aka %s received %d\n",
-						dbg->reason.signum, name, what);
+				r_cons_printf ("[+] signal %d aka %s received %d (%s)\n",
+						dbg->reason.signum, name, what, humn);
 			}
 		}
 	}
