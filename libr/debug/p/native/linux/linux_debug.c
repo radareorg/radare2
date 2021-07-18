@@ -1206,7 +1206,10 @@ int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 			// ignore ENODEV, it just means this CPU or kernel doesn't support XSTATE
 			ret = 0;
 		} else if (ret != 0) {
-			r_sys_perror ("PTRACE_GETREGSET");
+			if (dbg->verbose) {
+				// WSL1 doesnt support retrieving YMM registers, so this call just fails, no need to be noisy
+				r_sys_perror ("PTRACE_GETREGSET");
+			}
 			return false;
 		}
 		// stitch together xstate.fpstate._xmm and xstate.ymmh assuming LE
