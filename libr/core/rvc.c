@@ -698,7 +698,7 @@ R_API char *r_vc_find_rp(const char *path) {
 	}
 }
 
-R_API bool r_vc_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
 	switch (repo_exists (rp)) {
 	case 1:
@@ -713,7 +713,6 @@ R_API bool r_vc_commit(RCore *core, const char *rp, const char *message, const c
 		eprintf ("Can't commit");
 		return false;
 	}
-	author = author? author : r_config_get (core->config, "prj.vc.author");
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
@@ -1138,7 +1137,9 @@ R_API int rvc_git_init(RCore *core, const char *rp) {
 
 R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
-		r_vc_commit (core, rp, message, author, files);
+		author = author? author :
+			r_config_get (core->config, "prj.vc.author");
+		r_vc_commit (rp, message, author, files);
 	}
 	char *path;
 	RListIter *iter;

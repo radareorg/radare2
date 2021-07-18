@@ -104,7 +104,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 			}
 		}
 		RCore *core = r_core_new ();
-		bool ret = r_vc_commit (core, rp, message, NULL, files);
+		bool ret = r_vc_commit (rp, message, NULL, files);
 		free (message);
 		r_list_free (files);
 		if (!ret) {
