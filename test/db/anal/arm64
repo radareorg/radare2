@@ -95,6 +95,7 @@ esilcost: 0
 disasm: irg x8, sp, x8
 pseudo: irg x8,sp,x8 
 mnemonic: irg
+description: insert random tag
 mask: ffffffff
 prefix: 0
 id: 0
@@ -112,6 +113,7 @@ esilcost: 0
 disasm: addg x9, x8, 0x20, 0x0
 pseudo: addg x9,x8,0x20, 0x0 
 mnemonic: addg
+description: add with tag
 mask: ffffffff
 prefix: 0
 id: 0
@@ -143,6 +145,7 @@ esilcost: 0
 disasm: addg x12, x8, 0x0, 0x2
 pseudo: addg x12,x8,0x0, 0x2 
 mnemonic: addg
+description: add with tag
 mask: ffffffff
 prefix: 0
 id: 0
@@ -160,6 +163,7 @@ esilcost: 0
 disasm: addg x9, x8, 0x20, 0x0
 pseudo: addg x9,x8,0x20, 0x0 
 mnemonic: addg
+description: add with tag
 mask: ffffffff
 prefix: 0
 id: 0
@@ -177,6 +181,7 @@ esilcost: 0
 disasm: irg x8, sp, x8
 pseudo: irg x8,sp,x8 
 mnemonic: irg
+description: insert random tag
 mask: ffffffff
 prefix: 0
 id: 0
