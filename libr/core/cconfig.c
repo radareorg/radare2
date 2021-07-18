@@ -4024,6 +4024,8 @@ R_API int r_core_config_init(RCore *core) {
 	/* RVC */
 	{
 		char *p = r_file_path ("git");
+		SETBPREF ("prj.vc.author", r_sys_whoami(),
+				"What author name to use for rvc");
 		if (strcmp (p, "git")) {
 			SETCB ("prj.vc.type", "git", &cb_prjvctype, "What should projects use as a vc");
 		} else {
