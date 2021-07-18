@@ -2461,7 +2461,7 @@ EXPECT=<<EOF
   {
     "opcode": "pushf",
     "disasm": "pushf",
-    "pseudo": "pushf ",
+    "pseudo": "push ()",
     "description": "push flags register onto the stack",
     "mnemonic": "pushf",
     "mask": "ffff",
@@ -2631,7 +2631,7 @@ aae
 pd 1 @ 0x08048432
 EOF
 EXPECT=<<EOF
-[36m|[0m           [32m0x08048432[0m      [37mlea[36m eax[0m,[36m [0m[33mstr.Hello_PIC_[0m[36m[0m[0m
+[36m|[0m           [32m0x08048432[0m      [37mlea[36m eax[0m,[36m[36m str.Hello_PIC_[0m[0m
 EOF
 RUN
 
@@ -3235,7 +3235,7 @@ address: 0x0
 opcode: push rbp
 esilcost: 24
 disasm: push rbp
-pseudo: push( rbp )
+pseudo: push (rbp)
 mnemonic: push
 description: push word, doubleword or quadword onto the stack
 mask: ff
@@ -3993,7 +3993,7 @@ EXPECT=<<EOF
 |           ; arg int64_t arg_bh @ rbp+0xb
 |           ; var int64_t var_4h @ rsp+0x4
 |           ; arg int64_t arg_ch @ rsp+0xc
-|           0x00000000      54             push( rsp )
+|           0x00000000      54             push  (rsp)
 |           0x00000001      4889e5         rbp = rsp
 |           0x00000004      b402           ah = 2
 |           0x00000006      66b83333       ax = 0x3333

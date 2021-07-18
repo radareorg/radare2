@@ -11,7 +11,6 @@ static RParsePlugin *parse_static_plugins[] =
 	{ R_PARSE_STATIC_PLUGINS };
 
 R_API RParse *r_parse_new(void) {
-	int i;
 	RParse *p = R_NEW0 (RParse);
 	if (!p) {
 		return NULL;
@@ -28,6 +27,7 @@ R_API RParse *r_parse_new(void) {
 	p->subtail = false;
 	p->minval = 0x100;
 	p->localvar_only = false;
+	size_t i;
 	for (i = 0; parse_static_plugins[i]; i++) {
 		r_parse_add (p, parse_static_plugins[i]);
 	}
