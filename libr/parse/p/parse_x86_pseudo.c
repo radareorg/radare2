@@ -15,7 +15,7 @@
 
 // XXX seems like '(#)' doesnt works.. so it needs to be '( # )'
 // this is a bug somewhere else
-static int replace (int argc, char *argv[], char *newstr) {
+static int replace(int argc, char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
@@ -36,10 +36,10 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "cmpsw", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!var) break; }", {0}},
 		{ "dec",  "#--", {1}},
 		{ "div",  "# /= #", {1, 2}},
-		{ "fabs",  "abs( # )", {1}},
+		{ "fabs",  "abs(#)", {1}},
 		{ "fadd",  "# = # + #", {1, 1, 2}},
 		{ "fcomp",  "var = # - #", {1, 2}},
-		{ "fcos",  "# = cos( # )", {1, 1}},
+		{ "fcos",  "# = cos(#)", {1, 1}},
 		{ "fdiv",  "# = # / #", {1, 1, 2}},
 		{ "fiadd",  "# = # / #", {1, 1, 2}},
 		{ "ficom",  "var = # - #", {1, 2}},
@@ -82,7 +82,6 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "movnti", "# = #", {1, 2}},
 		{ "movntpd", "# = #", {1, 2}},
 		{ "pcmpeqb", "# == #", {1, 2}},
-
 		{ "movdqu", "# = #", {1, 2}},
 		{ "movdqa", "# = #", {1, 2}},
 		{ "pextrb", "# = (byte) # [ # ]", {1, 2, 3}},
@@ -96,8 +95,9 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "not",  "# = !#", {1, 1}},
 		{ "or",   "# |= #", {1, 2}},
 		{ "out",  "io[ # ] = #", {1, 2}},
-		{ "pop",  "# = pop()", {1}},
-		{ "push", "push( # )", {1}},
+		{ "pop",  "# = pop ()", {1}},
+		{ "pushf", "push (cpuflags)", {0}},
+		{ "push", "push (#)", {1}},
 		{ "ret",  "return", {0}},
 		{ "sal",  "# <<= #", {1, 2}},
 		{ "sar",  "# >>= #", {1, 2}},
@@ -124,9 +124,9 @@ static int replace (int argc, char *argv[], char *newstr) {
 			argv[2] = "0";
 		}
 	}
-	for (i = 0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr != NULL) {
+			if (newstr) {
 				d = 0;
 				j = 0;
 				ch = ops[i].str[j];
@@ -144,7 +144,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 							continue;
 						}
 						const char *w = argv[idx];
-						if (w != NULL) {
+						if (w) {
 							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}
@@ -185,27 +185,39 @@ static int parse(RParse *p, const char *data, char *str) {
 	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (*buf) {
 		end = buf + strlen (buf);
-		ptr = strchr (buf, ' ');
+		
+		ptr = strchr (buf, '(');
 		if (!ptr) {
-			ptr = strchr (buf, '\t');
-		}
-		if (!ptr) {
-			ptr = end;
-		}
-		*ptr = '\0';
-		if (ptr != end) {
-			for (++ptr; *ptr == ' '; ptr++) {
-				;
+			ptr = strchr (buf, ' ');
+			if (!ptr) {
+				ptr = strchr (buf, '\t');
+				if (!ptr) {
+					ptr = end;
+				}
 			}
 		}
-		r_str_ncpy (w0, buf, sizeof (w0));
-		r_str_ncpy (w1, ptr, sizeof (w1));
+		bool par = (ptr != buf && *ptr == '(');
+		for (; ptr < end; ptr++) {
+			if (*ptr != ' ') {
+				if (*ptr == ')') {
+					ptr--;
+				}
+				break;
+			}
+		}
+		if (par) ptr++;
+		r_str_ncpy (w0, buf, R_MIN (ptr - buf, sizeof (w0)));
+		if (par) ptr--;
+		r_str_ncpy (w1, ptr, R_MIN (end-ptr+1, sizeof (w1)));
 		optr = ptr;
 		ptr = strchr (ptr, ',');
 		if (ptr) {
-			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++) {
-				;
+			*ptr++ = '\0';
+			for (++ptr; ptr < end ; ptr++) {
+				if (*ptr != ')' && *ptr != ' ') {
+		//			ptr++;
+					break;
+				}
 			}
 			r_str_ncpy (w1, optr, sizeof (w1));
 			r_str_ncpy (w2, ptr, sizeof (w2));
@@ -231,8 +243,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	/* TODO: interpretation of memory location fails*/
 	//ensure imul & mul interpretations works
 	if (strstr (w0, "mul")) {
-		if (nw == 2)
-		{
+		if (nw == 2) {
 			r_str_ncpy (wa[3], wa[1], sizeof (w3));
 
 			switch (wa[3][0]) {
@@ -258,15 +269,11 @@ static int parse(RParse *p, const char *data, char *str) {
 					r_str_ncpy (wa[2], "al", sizeof (w2));
 				}
 			}
-		}
-		else if (nw == 3)
-		{
+		} else if (nw == 3) {
 			r_str_ncpy (wa[3], wa[2], sizeof (w3));
 			r_str_ncpy (wa[2], wa[1], sizeof (w2));
 		}
-
 		replace (nw, wa, str);
-
 	} else if (strstr (w0, "lea")) {
 		r_str_replace_char (w2, '[', 0);
 		r_str_replace_char (w2, ']', 0);
@@ -522,7 +529,7 @@ static bool subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		}
 		// Try with no spaces
 		snprintf (oldstr, sizeof (oldstr) - 1, "[%s%c0x%x]", reg, sign, (int)delta);
-		if (strstr (tstr, oldstr) != NULL) {
+		if (strstr (tstr, oldstr)) {
 			tstr = r_str_replace (tstr, oldstr, newstr, 1);
 			break;
 		}

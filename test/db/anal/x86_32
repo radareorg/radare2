@@ -3124,7 +3124,7 @@ EXPECT=<<EOF
   {
     "opcode": "pushf",
     "disasm": "pushf",
-    "pseudo": "pushf ",
+    "pseudo": "push ()",
     "description": "push flags register onto the stack",
     "mnemonic": "pushf",
     "mask": "ffff",
@@ -3375,11 +3375,12 @@ ao 1
 p8 1
 EOF
 EXPECT=<<EOF
-17
+18
 address: 0x0
 opcode: nop
 esilcost: 0
 disasm: nop
+pseudo: no 
 mnemonic: nop
 description: no operation
 mask: ff

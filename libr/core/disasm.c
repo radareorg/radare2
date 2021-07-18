@@ -88,8 +88,8 @@ typedef struct {
 	int atabsoff;
 	int decode;
 	bool pseudo;
-	int subnames;
-	int interactive;
+	bool subnames;
+	bool interactive;
 	bool subjmp;
 	bool subvar;
 	bool show_lines;
@@ -660,17 +660,17 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
-	core->parser->pseudo = ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
+	core->parser->pseudo = ds->pseudo = r_config_get_b (core->config, "asm.pseudo");
 	if (ds->pseudo) {
 		ds->atabs = 0;
 	}
-	ds->subnames = r_config_get_i (core->config, "asm.sub.names");
+	ds->subnames = r_config_get_b (core->config, "asm.sub.names");
 	ds->interactive = r_cons_is_interactive ();
-	ds->subjmp = r_config_get_i (core->config, "asm.sub.jmp");
-	ds->subvar = r_config_get_i (core->config, "asm.sub.var");
-	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
-	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
-	core->parser->localvar_only = r_config_get_i (core->config, "asm.sub.varonly");
+	ds->subjmp = r_config_get_b (core->config, "asm.sub.jmp");
+	ds->subvar = r_config_get_b (core->config, "asm.sub.var");
+	core->parser->subrel = r_config_get_b (core->config, "asm.sub.rel");
+	core->parser->subreg = r_config_get_b (core->config, "asm.sub.reg");
+	core->parser->localvar_only = r_config_get_b (core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
 	ds->show_fcnsig = r_config_get_i (core->config, "asm.fcnsig");
 	ds->show_vars = r_config_get_i (core->config, "asm.var");
@@ -681,8 +681,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->flags_inline = r_config_get_i (core->config, "asm.flags.inline");
 	ds->asm_types = r_config_get_i (core->config, "asm.types");
 	ds->foldxrefs = r_config_get_i (core->config, "asm.xrefs.fold");
-	ds->show_lines = r_config_get_i (core->config, "asm.lines");
-	ds->show_lines_bb = ds->show_lines ? r_config_get_i (core->config, "asm.lines.jmp") : false;
+	ds->show_lines = r_config_get_b (core->config, "asm.lines");
+	ds->show_lines_bb = ds->show_lines ? r_config_get_b (core->config, "asm.lines.jmp") : false;
 	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
@@ -694,7 +694,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_lines_call = ds->show_lines ? r_config_get_i (core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? r_config_get_i (core->config, "asm.lines.ret") : false;
 	ds->show_size = r_config_get_i (core->config, "asm.size");
-	ds->show_trace = r_config_get_i (core->config, "asm.trace");
+	ds->show_trace = r_config_get_b (core->config, "asm.trace");
 	ds->linesout = r_config_get_i (core->config, "asm.lines.out");
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
@@ -1078,13 +1078,6 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			r_list_free (list);
 		}
 	}
-
-	if (ds->pseudo) {
-		const char *opstr = ds->opstr ? ds->opstr : r_asm_op_get_asm (&ds->asmop);
-		r_parse_parse (core->parser, opstr, ds->str);
-		free (ds->opstr);
-		ds->opstr = strdup (ds->str);
-	}
 	ds->opstr = ds_sub_jumps (ds, ds->opstr);
 	if (ds->immtrim) {
 		char *res = r_parse_immtrim (ds->opstr);
@@ -1120,30 +1113,53 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				core->parser->subrel_addr = killme;
 			}
 		}
-		char *asm_str = colorize_asm_string (core, ds, print_color);
+		if (ds->pseudo) {
+			r_parse_parse (core->parser, ds->opstr, ds->str);
+			free (ds->opstr);
+			ds->opstr = strdup (ds->str);
+		}
 		if (ds->subjmp) {
-			r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, asm_str,
+			char *input = strdup (ds->opstr);
+			r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, input, // asm_str,
 					ds->str, sizeof (ds->str), core->print->big_endian);
+			//ds->opstr = strdup (ds->str);
 		} else {
 			if (ds->opstr) {
 				r_str_ncpy (ds->str, ds->opstr, sizeof (ds->str));
 			}
 		}
-		free (asm_str);
+		// use 'str' from now on
 		// subvar depends on filter
 		if (ds->subvar) {
 			// HACK to do subvar outside rparse becacuse the whole rparse api must be rewritten
 			char *ox = strstr (ds->str, "0x");
 			if (ox) {
 				char *e = strchr (ox, ']');
+				if (!e) {
+					e = strchr (ox, ',');
+					if (!e) {
+						e = strchr (ox, ')');
+					}
+				}
 				if (e) {
 					e = strdup (e);
 					ut64 addr = r_num_get (NULL, ox);
 					if (addr > ds->min_ref_addr) {
-						RFlagItem *fi = r_flag_get_i (ds->core->flags, addr);
-						if (fi) {
-							r_str_cpy (ox, fi->name);
-							r_str_cat (ox, e);
+						const RList *ls = r_flag_get_list (ds->core->flags, addr);
+						RFlagItem *fi;
+						RListIter *iter;
+						r_list_foreach (ls, iter, fi) {
+							if (fi->space && fi->space->name && (!strcmp (fi->space->name, "format") || !strcmp (fi->space->name, "segments") || !strcmp (fi->space->name, "sections"))) {
+								// ignore
+							} else {
+								if (fi->realname) {
+									r_str_cpy (ox, fi->realname);
+								} else {
+									r_str_cpy (ox, fi->name);
+								}
+								r_str_cat (ox, e);
+								break;
+							}
 						}
 					}
 					free (e);
@@ -1153,6 +1169,12 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		core->parser->flagspace = ofs;
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
+		char *asm_str = colorize_asm_string (core, ds, print_color);
+		if (asm_str) {
+			ds->opstr = asm_str;
+			r_str_ncpy (ds->str, asm_str, sizeof (ds->str));
+// strcpy (ds->str, asm_str);
+		}
 	} else {
 		r_str_trim (ds->opstr); // trim before coloring git
 		char *asm_str = colorize_asm_string (core, ds, print_color);
@@ -1940,7 +1962,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				ds_begin_line (ds);
 				int idx;
 				RAnal *anal = ds->core->anal;
-				memset (spaces, ' ', sizeof(spaces));
+				memset (spaces, ' ', sizeof (spaces));
 				idx = 12 - strlen (var->name);
 				if (idx < 0) {
 					idx = 0;
@@ -2698,12 +2720,14 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->oplen = ds->asmop.size;
 	}
 	if (ds->pseudo) {
+#if 1
 		r_parse_parse (core->parser, ds->opstr
 				? ds->opstr
 				: r_asm_op_get_asm (&ds->asmop),
 				ds->str);
 		free (ds->opstr);
 		ds->opstr = strdup (ds->str);
+#endif
 	}
 	if (ds->acase) {
 		r_str_case (r_asm_op_get_asm (&ds->asmop), 1);
@@ -5277,6 +5301,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 				if (kwname) {
 					char* numstr = r_str_ndup (ptr, nptr-ptr);
 					if (numstr) {
+						// eprintf("ithiis(%s,%s)", numstr, kwname);
 						str = r_str_replace (str, numstr, kwname, 0);
 						free (numstr);
 					}
