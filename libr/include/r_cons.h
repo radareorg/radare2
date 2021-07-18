@@ -1054,13 +1054,12 @@ struct r_line_t {
 	// RLineFunctionKeyCb cb_fkey;
 	RConsFunctionKey cb_fkey;
 	/* state , TODO: use more bool */
-	int echo;
-	int has_echo;
+	bool echo;
 	char *prompt;
 	RList/*<str>*/ *kill_ring;
 	int kill_ring_ptr;
 	char *clipboard;
-	int disable;
+	bool disable;
 	void *user;
 	bool histfilter;
 	int (*hist_up)(void *user);
