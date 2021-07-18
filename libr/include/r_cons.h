@@ -1062,6 +1062,7 @@ struct r_line_t {
 	char *clipboard;
 	int disable;
 	void *user;
+	bool histfilter;
 	int (*hist_up)(void *user);
 	int (*hist_down)(void *user);
 	char *contents;

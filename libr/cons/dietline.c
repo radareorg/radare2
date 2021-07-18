@@ -345,7 +345,12 @@ R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistor
 	return 1;
 }
 
-static inline bool match_hist_line(char *hist_line, char *cur_line) {
+static inline bool match_hist_line(RLine *line, int i) {
+	const char *hist_line = line->history.data[i];
+	char *cur_line = line->history.match;
+	if (!line->histfilter) {
+		return true;
+	}
 	// Starts with but not equal to
 	return r_str_startswith (hist_line, cur_line) && strcmp (hist_line, cur_line);
 }
@@ -372,7 +377,7 @@ R_API int r_line_hist_cmd_up(RLine *line) {
 		if (line->history.match) {
 			int i;
 			for (i= line->history.index - 1; i >= 0; i--) {
-				if (match_hist_line (line->history.data[i], line->history.match)) {
+				if (match_hist_line (line, i)) {
 					line->history.index = i;
 					break;
 				}
@@ -401,7 +406,7 @@ R_API int r_line_hist_cmd_down(RLine *line) {
 	if (line->history.match) {
 		int i;
 		for (i = line->history.index + 1; i < line->history.top; i++) {
-			if (match_hist_line (line->history.data[i], line->history.match)) {
+			if (match_hist_line (line, i)) {
 				break;
 			}
 		}

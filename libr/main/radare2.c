@@ -280,7 +280,7 @@ beach:
 }
 
 static bool mustSaveHistory(RConfig *c) {
-	if (!r_config_get_i (c, "scr.histsave")) {
+	if (!r_config_get_i (c, "scr.hist.save")) {
 		return false;
 	}
 	if (!r_cons_is_interactive ()) {

@@ -29,7 +29,7 @@ static int cmd_Quit(void *data, const char *input) {
 			}
 			return -2;
 		}
-		r_config_set (core->config, "scr.histsave", "false");
+		r_config_set (core->config, "scr.hist.save", "false");
 	}
 	if (IS_DIGIT (input[0]) || input[0] == ' ') {
 		core->num->value = r_num_math (core->num, input);
