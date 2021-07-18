@@ -340,7 +340,6 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 			}
 			r_asm_use (r->rasm, arch);
 		}
-		r_asm_use (r->rasm, arch);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, NULL, R_MODE_SET, va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return true;
