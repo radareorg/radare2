@@ -1316,6 +1316,30 @@ static void __vi_mode(void) {
 	}
 }
 
+static void dietline_print_risprompt(const char *gcomp_line) {
+	RCons *cons = r_cons_singleton ();
+	if (cons->context->color_mode && *gcomp_line && I.buffer.length > 0) {
+		printf ("\r (ri-search): ");
+		const char *line = gcomp_line;
+		while (line) {
+			char *m = strstr (line, I.buffer.data);
+			if (m) {
+				fwrite (line, m - line, 1, stdout);
+				printf (Color_INVERT);
+				fwrite (m, I.buffer.length, 1, stdout);
+				printf (Color_RESET);
+				line = m + I.buffer.length;
+			} else {
+				printf ("%s", line);
+				line = NULL;
+			}
+		}
+		printf ("\r");
+	} else {
+		printf ("\r(ri-search (%s)): %s\r", I.buffer.data, gcomp_line);
+	}
+}
+
 R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int rows;
 	const char *gcomp_line = "";
@@ -1973,8 +1997,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			if (gcomp) {
 				gcomp_line = "";
 				int counter = 0;
-				if (I.history.data != NULL) {
-					for (i = I.history.size-1; i >= 0; i--) {
+				if (I.history.data) {
+					for (i = I.history.size - 1; i >= 0; i--) {
 						if (!I.history.data[i]) {
 							continue;
 						}
@@ -1989,7 +2013,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 					}
 				}
-				printf ("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
+				dietline_print_risprompt (gcomp_line);
 			} else {
 			        __print_prompt ();
 			}
