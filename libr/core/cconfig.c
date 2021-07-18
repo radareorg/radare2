@@ -441,6 +441,13 @@ static bool cb_scrlast(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scr_histfilter(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->cons->line->histfilter = node->i_value;
+	return true;
+}
+
 static bool cb_scr_vi(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3356,8 +3363,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.offset", "true", "Show offsets in disassembly");
 	SETBPREF ("hex.offset", "true", "Show offsets in hex-dump");
 	SETBPREF ("scr.square", "true", "Use square pixels or not");
-	SETCB ("scr.prompt.vi", "false", &cb_scr_vi, "Use vi mode for input prompt");
-	SETCB ("scr.prompt.mode", "false", &cb_scr_prompt_mode,  "Set prompt color based on vi mode");
 	SETCB ("scr.wideoff", "false", &cb_scr_wideoff, "Adjust offsets to match asm.bits");
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "Shows rainbow colors depending of address");
 	SETCB ("scr.last", "true", &cb_scrlast, "Cache last output after flush to make _ command work (disable for performance)");
@@ -3844,7 +3849,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.pagesize", 1, &cb_scrpagesize, "Flush in pages when scr.linesleep is != 0");
 	SETCB ("scr.flush", "false", &cb_scrflush, "Force flush to console in realtime (breaks scripting)");
 	SETBPREF ("scr.slow", "true", "Do slow stuff on visual mode like RFlag.get_at(true)");
-	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
 #if __WINDOWS__
 	SETICB ("scr.vtmode", r_cons_singleton ()->vtmode,
 		&scr_vtmode, "Use VT sequences on Windows (0: Disable, 1: Output, 2: Input & Output)");
@@ -3886,11 +3890,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("scr.scrollbar", 0, "Show flagzone (fz) scrollbar in visual mode (0=no,1=right,2=top,3=bottom)");
 	SETBPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETCB ("scr.highlight.grep", "false", &cb_scr_color_grep_highlight, "Highlight (INVERT) the grepped words");
+	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
+	SETCB ("scr.prompt.vi", "false", &cb_scr_vi, "Use vi mode for input prompt");
+	SETCB ("scr.prompt.mode", "false", &cb_scr_prompt_mode,  "Set prompt color based on vi mode");
 	SETBPREF ("scr.prompt.file", "false", "Show user prompt file (used by r2 -q)");
 	SETBPREF ("scr.prompt.flag", "false", "Show flag name in the prompt");
 	SETBPREF ("scr.prompt.sect", "false", "Show section name in the prompt");
 	SETBPREF ("scr.tts", "false", "Use tts if available by a command (see ic)");
-	SETCB ("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
 	SETCB ("scr.prompt", "true", &cb_scrprompt, "Show user prompt (used by r2 -q)");
 	SETCB ("scr.tee", "", &cb_teefile, "Pipe output to file of this name");
 	SETPREF ("scr.seek", "", "Seek to the specified address on startup");
@@ -3906,7 +3912,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.utf8", r_str_bool (r_cons_is_utf8()), &cb_utf8, "Show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "Show curved UTF-8 corners (requires scr.utf8)");
 	SETBPREF ("scr.demo", "false", "Use demoscene effects if available");
-	SETBPREF ("scr.histsave", "true", "Always save history on exit");
+	SETCB ("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
+	SETCB ("scr.hist.filter", "true", &cb_scr_histfilter, "Filter history for matching lines when using up/down keys");
+	SETBPREF ("scr.hist.save", "true", "Always save history on exit");
 	n = NODECB ("scr.strconv", "asciiesc", &cb_scrstrconv);
 	SETDESC (n, "Convert string before display");
 	SETOPTIONS (n, "asciiesc", "asciidot", NULL);
