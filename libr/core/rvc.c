@@ -1090,15 +1090,17 @@ fail_ret:
 // GIT commands as APIs
 
 R_API int r_vc_git_init(const char *path) {
-	return r_sys_cmdf ("git init %s", path);
+	return r_sys_cmdf ("git init \"%s\"", r_str_escape (path));
 }
 
 R_API bool r_vc_git_branch(const char *path, const char *name) {
-	return !r_sys_cmdf ("git -C %s branch %s", path, name);
+	return !r_sys_cmdf ("git -C \"%s\" branch \"%s\"",
+			r_str_escape (path), r_str_escape (name));
 }
 
 R_API bool r_vc_git_checkout(const char *path, const char *name) {
-	return !r_sys_cmdf ("git -C %s checkout %s", path, name);
+	return !r_sys_cmdf ("git -C \"%s\" checkout \"%s\"", r_str_escape (path),
+			r_str_escape (name));
 }
 
 R_API int r_vc_git_add(const char *path, const char *fname) {
@@ -1112,7 +1114,7 @@ R_API int r_vc_git_add(const char *path, const char *fname) {
 		free (cwd);
 		return -2;
 	}
-	ret = r_sys_cmdf ("git add %s", fname);
+	ret = r_sys_cmdf ("git add \"%s\"", r_str_escape (fname));
 	if (!r_sys_chdir (cwd)) {
 		free (cwd);
 		return -3;
@@ -1121,12 +1123,13 @@ R_API int r_vc_git_add(const char *path, const char *fname) {
 	return ret;
 }
 
-//Access both git and rvc functionality from one set of functions
-
 R_API int r_vc_git_commit(const char *path, const char *message) {
-	return message ? r_sys_cmdf ("git -C %s commit -m %s", path, message) :
-		r_sys_cmdf ("git -C %s commit", path);
+	return message ? r_sys_cmdf ("git -C %s commit -m %s",
+			r_str_escape (path), r_str_escape (message)):
+		r_sys_cmdf ("git -C \"%s\" commit", r_str_escape (path));
 }
+
+//Access both git and rvc functionality from one set of functions
 
 R_API int rvc_git_init(RCore *core, const char *rp) {
 	if (strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
