@@ -3598,7 +3598,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("dbg.hwbp", "false", "Use hardware breakpoints instead of software ones when enabled");
 	SETCB ("dbg.", "true", &cb_dbg_verbose, "Verbose debug output");
 	SETCB ("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
-	SETCB ("dbg.verbose", "true", &cb_dbg_verbose, "Verbose debug output");
+	SETCB ("dbg.verbose", "false", &cb_dbg_verbose, "Verbose debug output");
 	SETBPREF ("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
 	SETBPREF ("dbg.funcarg", "false", "Display arguments to function call in visual mode");
 
