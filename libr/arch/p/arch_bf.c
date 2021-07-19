@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
 
 #include <r_arch.h>
 #include <r_anal.h> // just to get the R_ANAL_OP_TYPE_xx
@@ -140,7 +140,7 @@ static bool decode(RArchSession *a, RArchInstruction *ins, RArchDecodeOptions op
 		ins->size = countChar (buf, len, '>');
 		buf_asm = (ins->size > 1)? "add ptr": "inc ptr";
 		if (has (ESIL)) {
-			r_strbuf_setf (&ins->esil, "%d,ptr,+=", ins->size);
+			r_strbuf_setf (&ins->esil, "%u,ptr,+=", ins->size);
 		}
 		break;
 	case '<':
@@ -148,7 +148,7 @@ static bool decode(RArchSession *a, RArchInstruction *ins, RArchDecodeOptions op
 		ins->size = countChar (buf, len, '<');
 		buf_asm = (ins->size > 1)? "sub ptr": "dec ptr";
 		if (has (ESIL)) {
-			r_strbuf_setf (&ins->esil, "%d,ptr,-=", ins->size);
+			r_strbuf_setf (&ins->esil, "%u,ptr,-=", ins->size);
 		}
 		break;
 	case '+':
@@ -156,7 +156,7 @@ static bool decode(RArchSession *a, RArchInstruction *ins, RArchDecodeOptions op
 		ins->type = R_ANAL_OP_TYPE_ADD;
 		buf_asm = (ins->size > 1)? "add [ptr]": "inc [ptr]";
 		if (has (ESIL)) {
-			r_strbuf_setf (&ins->esil, "%d,ptr,+=[1]", ins->size);
+			r_strbuf_setf (&ins->esil, "%u,ptr,+=[1]", ins->size);
 		}
 		break;
 	case '-':
@@ -164,7 +164,7 @@ static bool decode(RArchSession *a, RArchInstruction *ins, RArchDecodeOptions op
 		ins->size = countChar (buf, len, '-');
 		buf_asm = (ins->size > 1)? "sub [ptr]": "dec [ptr]";
 		if (has (ESIL)) {
-			r_strbuf_setf (&ins->esil, "%d,ptr,-=[1]", ins->size);
+			r_strbuf_setf (&ins->esil, "%u,ptr,-=[1]", ins->size);
 		}
 		break;
 	case '.':

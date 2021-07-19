@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2020 - pancake */
+/* radare2 - LGPL - Copyright 2020-2021 - pancake */
 
 #ifndef R2_ARCH_H
 #define R2_ARCH_H
@@ -23,6 +23,15 @@ typedef enum {
 	R_ARCH_CAN_ESIL     = 1<<3,
 	R_ARCH_CAN_ALL      = 0xff
 } RArchCan;
+
+typedef enum {
+	R_ARCH_ENDIAN_LITTLE = 0,
+	R_ARCH_ENDIAN_4321 = 0,
+	R_ARCH_ENDIAN_BIG = 1,
+	R_ARCH_ENDIAN_1234 = 1,
+	R_ARCH_ENDIAN_MIDDLE = 2, // pdp-endian
+	R_ARCH_ENDIAN_2143 = 2,
+} RArchEndian;
 
 typedef enum r_arch_encode_options_t {
 	R_ARCH_ENCODE_OPTION_CODE = 0,
@@ -169,9 +178,9 @@ R_API void r_arch_instruction_set_bytes(RArchInstruction *ins, ut64 addr, const 
 R_API void r_arch_instruction_set_opstr(RArchInstruction *ins, ut64 addr, const char *opstr);
 R_API const char *r_arch_instruction_get_esil(RArchInstruction *ins);
 R_API const char *r_arch_instruction_get_string(RArchInstruction *ins);
-R_API RArchLazySession *r_arch_lazysession_new (RArchSessionPool *pool);
-R_API bool r_arch_lazysession_can_decode (RArchLazySession *ls);
-R_API bool r_arch_lazysession_can_encode (RArchLazySession *ls);
+R_API RArchLazySession *r_arch_lazysession_new(RArchSessionPool *pool);
+R_API bool r_arch_lazysession_can_decode(RArchLazySession *ls);
+R_API bool r_arch_lazysession_can_encode(RArchLazySession *ls);
 R_API bool r_arch_lazysession_can_regprofile(RArchLazySession *ls);
 R_API bool r_arch_lazysession_set_cpu(RArchLazySession *ls, const char *cpu);
 R_API bool r_arch_lazysession_set_bits(RArchLazySession *ls, RArchBits bits);
@@ -187,9 +196,9 @@ R_API bool r_arch_session_encode(RArchSession *ai, RArchInstruction *ins, RArchE
 R_API bool r_arch_session_decode(RArchSession *ai, RArchInstruction *ins, RArchDecodeOptions opt);
 R_API void r_arch_session_free(RArchSession *as);
 R_API RArchSession *r_arch_session_new(RArch *a, RArchSetup *setup);
-R_API bool r_arch_session_encode_instruction (RArchSession *as, RArchInstruction *ins, ut64 addr, const char *opstr);
-R_API bool r_arch_session_decode_bytes (RArchSession *as, RArchInstruction *ins, ut64 addr, const ut8 *buf, size_t len);
-R_API bool r_arch_session_decode_esil (RArchSession *as, RArchInstruction *ins, ut64 addr, const ut8 *buf, size_t len);
+R_API bool r_arch_session_encode_instruction(RArchSession *as, RArchInstruction *ins, ut64 addr, const char *opstr);
+R_API bool r_arch_session_decode_bytes(RArchSession *as, RArchInstruction *ins, ut64 addr, const ut8 *buf, size_t len);
+R_API bool r_arch_session_decode_esil(RArchSession *as, RArchInstruction *ins, ut64 addr, const ut8 *buf, size_t len);
 R_API RArchSessionPool *r_arch_sessionpool_new(RArch *arch);
 R_API RArchSession *r_arch_sessionpool_get_session(RArchSessionPool *asp, RArchSetup *setup);
 R_API bool r_arch_plugin_has_bits(RArchPlugin *h, RArchBits bits);
