@@ -41,7 +41,7 @@ static bool r_arch_session_set_syntax(RArchSession *ai, RArchSyntax syntax) {
 
 static bool r_arch_session_set_endian(RArchSession *ai, RArchEndian endian) {
 	r_return_val_if_fail (ai && ai->setup.plugin, false);
-	switch (endian) {
+	switch ((int)endian) { // XXX
 	case R_SYS_ENDIAN_LITTLE:
 	case R_SYS_ENDIAN_BIG:
 	case R_SYS_ENDIAN_NONE:
@@ -173,13 +173,13 @@ R_API RArchSession *r_arch_session_new(RArch *a, RArchSetup *setup) {
 
 // user frendly apis
 
-R_API bool r_arch_session_encode_instruction (RArchSession *as, RArchInstruction *ins, ut64 addr, const char *opstr) {
+R_API bool r_arch_session_encode_instruction(RArchSession *as, RArchInstruction *ins, ut64 addr, const char *opstr) {
 	r_return_val_if_fail (as && ins && opstr, false);
 	r_strbuf_set (&ins->code, opstr);
-	return r_arch_session_encode (as, ins, R_ARCH_OPTION_CODE);
+	return r_arch_session_encode (as, ins, R_ARCH_ENCODE_OPTION_CODE);
 }
 
-R_API bool r_arch_session_decode_bytes (RArchSession *as, RArchInstruction *ins, ut64 addr, const ut8 *buf, size_t len) {
+R_API bool r_arch_session_decode_bytes(RArchSession *as, RArchInstruction *ins, ut64 addr, const ut8 *buf, size_t len) {
 	r_return_val_if_fail (as && ins, false);
 	if (buf) {
 		r_strbuf_setbin (&ins->data, (const ut8*)buf, len);
@@ -187,7 +187,7 @@ R_API bool r_arch_session_decode_bytes (RArchSession *as, RArchInstruction *ins,
 	return r_arch_session_decode (as, ins, R_ARCH_OPTION_CODE);
 }
 
-R_API bool r_arch_session_decode_esil (RArchSession *as, RArchInstruction *ins, ut64 addr, const ut8 *buf, size_t len) {
+R_API bool r_arch_session_decode_esil(RArchSession *as, RArchInstruction *ins, ut64 addr, const ut8 *buf, size_t len) {
 	r_return_val_if_fail (as && ins, false);
 	if (buf) {
 		r_strbuf_setbin (&ins->data, (const ut8*)buf, len);
