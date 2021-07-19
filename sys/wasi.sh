@@ -26,13 +26,15 @@ export CFLAGS=-D_WASI_EMULATED_SIGNAL
 cp dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
 
 # export CC="${WASI_SDK}/bin/clang -D
+ERR=0
 ./configure --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-libuv --without-gpl
-make -j
+make -j || ERR=1
 R2V=`./configure -qV`
 D="radare2-$R2V-wasi"
 mkdir -p $D
 for a in rax2 radare2 rasm2 rabin2 rafind2 ; do
 	make -C binr/$a
-	cp -f binr/$a/$a.wasm $D
+	cp -f binr/$a/$a.wasm $D || ERR=1
 done
 zip -r "$D".zip $D
+exit $ERR
