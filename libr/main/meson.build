@@ -24,6 +24,7 @@ r_main_deps = [
   r_core_dep,
   r_debug_dep,
   r_hash_dep,
+  r_arch_dep,
   r_bin_dep,
   r_lang_dep,
   r_io_dep,

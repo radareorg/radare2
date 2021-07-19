@@ -260,6 +260,7 @@ R_API bool r_core_project_is_saved(RCore *core);
 
 struct r_core_t {
 	RBin *bin;
+	RArch *arch;
 	RConfig *config;
 	RProject *prj;
 	ut64 offset; // current seek
@@ -353,7 +354,7 @@ struct r_core_t {
 	int in_cmdstr;
 	bool marks_init;
 	ut64 marks[UT8_MAX + 1];
-
+	RArchSessionPool *arch_pool;
 	RMainCallback r_main_radare2;
 	// int (*r_main_radare2)(int argc, char **argv);
 	int (*r_main_rafind2)(int argc, const char **argv);

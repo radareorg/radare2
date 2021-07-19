@@ -3,7 +3,7 @@
 #include <r_core.h>
 #include <r_socket.h>
 #include <config.h>
-#include <r_config.h>
+#include <r_arch.h>
 #include <r_util.h>
 #if __UNIX__
 #include <signal.h>
@@ -2754,6 +2754,11 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	}
 }
 
+static int cb_arch_read_at(void *user, ut64 addr, R_OUT ut8 *buf, size_t len) {
+	RCore *core = (RCore *)user;
+	return r_io_read_at (core->io, addr, buf, len);
+}
+
 R_API bool r_core_init(RCore *core) {
 	r_w32_init ();
 	core->blocksize = R_CORE_BLOCKSIZE;
@@ -2859,10 +2864,26 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
+	{
+		core->arch = r_arch_new ();
+		// just move this into RCore
+		RArchCallbacks *cbs = &core->arch->cbs;
+		cbs->user = core;
+		cbs->read_at = cb_arch_read_at;
+		// .get_offset
+		// .get_name
+	}
+	core->arch_pool = r_arch_sessionpool_new (core->arch);
+
 	core->rasm = r_asm_new ();
 	core->rasm->num = core->num;
+	core->rasm->lsd = r_arch_lazysession_new (core->arch_pool);
+	core->rasm->lsa = r_arch_lazysession_new (core->arch_pool);
 	r_asm_set_user_ptr (core->rasm, core);
+	core->rasm->num = core->num;
+
 	core->anal = r_anal_new ();
+	core->anal->lsa = r_arch_lazysession_new (core->arch_pool);
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;
@@ -3054,6 +3075,7 @@ R_API void r_core_fini(RCore *c) {
 	free (c->theme);
 	r_search_free (c->search);
 	r_flag_free (c->flags);
+	r_arch_free (c->arch);
 	r_fs_free (c->fs);
 	r_egg_free (c->egg);
 	r_lib_free (c->lib);
