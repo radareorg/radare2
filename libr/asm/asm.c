@@ -34,9 +34,6 @@ static void parseHeap(RParse *p, RStrBuf *s) {
 }
 
 static bool lazy_update_arch_plugin(RAsm *a, RArchLazySession *ls) {
-	if (!a || !ls) {
-		return false;
-	}
 	ls->session = r_arch_lazysession_get_session (ls);
 	return true;
 }
@@ -638,8 +635,11 @@ R_API void r_asm_list_directives(void) {
 // returns instruction size
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	r_return_val_if_fail (a && op && buf, 0);
-	//lazy_update_arch_plugin (a, a->lsa);
+	lazy_update_arch_plugin (a, a->lsa);
 	RArchSession *session = r_arch_lazysession_get_session (a->lsa);
+	if (session) {
+		// TODO: do something here
+	}
 	int ret = 0;
 	char *b = strdup (buf);
 	if (!b) {
