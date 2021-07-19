@@ -1,6 +1,8 @@
 r_io_sources = [
   'io.c',
   'io_fd.c',
+  'io_bank.c',
+  'io_banks.c',
   'io_map.c',
   'io_memory.c',
   'io_cache.c',
