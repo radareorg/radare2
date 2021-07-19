@@ -27,7 +27,7 @@ R_API bool r_io_banks_use(RIO *io, ut32 id) {
 	if (!bank) {
 		return false;
 	}
-	r_io_map_bank (io, bank);
+	// TODO: r_io_map_bank (io, bank);
 	return true;
 }
 
