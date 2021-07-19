@@ -12,7 +12,6 @@ extern "C" {
 #endif
 
 typedef int RArchBits;
-typedef int RArchEndian;
 typedef int RArchSyntax;
 
 // capabilities style
