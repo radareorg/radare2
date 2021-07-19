@@ -14,9 +14,10 @@ typedef struct RvcBlob_t {
 	char *fname;
 	char *fhash;
 } RvcBlob;
+
 R_API int r_vc_git_init(const char *path);
-R_API bool r_vc_git_branch(const char *path, const char *name);
-R_API bool r_vc_git_checkout(const char *path, const char *name);
+R_API int r_vc_git_branch(const char *path, const char *name);
+R_API int r_vc_git_checkout(const char *path, const char *name);
 R_API int r_vc_git_add(const char *path, const char *fname);
 R_API int r_vc_git_commit(const char *path, const char *message);
 
