@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - pancake */
+/* radare - LGPL - Copyright 2020-2021 - pancake */
 
 #include <r_io.h>
 
@@ -6,6 +6,11 @@ typedef struct map_ref_t {
 	ut64 ts;
 	ut32 id;
 } MapRef;
+
+typedef struct banks_lister_t {
+	RIO *io;
+	RStrBuf *sb;
+} BanksLister;
 
 R_API RIOBank *r_io_new_bank(const char *name) {
 	RIOBank *bank = R_NEW0 (RIOBank);
@@ -26,10 +31,8 @@ R_API RIOBank *r_io_new_bank(const char *name) {
 }
 
 R_API bool r_io_bank_add_map(RIO *io, RIOBank *bank, ut32 map_id) {
-	if (!bank || !io) {
-		return false;
-	}
-	RIOMap *map = r_io_map_resolve (io, map_id);
+	r_return_val_if_fail (io && bank, false);
+	RIOMap *map = r_io_map_get (io, map_id);
 	if (!map) {
 		return false;
 	}
@@ -52,10 +55,9 @@ R_API void r_io_bank_free(RIOBank *bank) {
 }
 
 R_API void r_io_bank_rename(RIOBank *bank, const char *name) {
-	if (bank) {
-		free (bank->name);
-		bank->name = strdup (name);
-	}
+	r_return_if_fail (bank && name);
+	free (bank->name);
+	bank->name = strdup (name);
 }
 
 R_API void r_io_use_bank(RIO *io, RIOBank *bank) {
@@ -65,7 +67,7 @@ R_API void r_io_use_bank(RIO *io, RIOBank *bank) {
 	MapRef *map_ref;
 	RListIter *iter, *ator;
 	r_list_foreach_safe (bank->map_refs, iter, ator, map_ref) {
-		RIOMap *map = r_io_map_resolve (io, map_ref->id);
+		RIOMap *map = r_io_map_get (io, map_ref->id);
 		if (!map || (map_ref->ts != map->ts)) {
 			// cleaning up bank if map got deleted
 			r_list_delete (bank->map_refs, iter);
@@ -75,11 +77,6 @@ R_API void r_io_use_bank(RIO *io, RIOBank *bank) {
 	}
 }
 
-typedef struct banks_lister_t {
-	RIO *io;
-	RStrBuf *sb;
-} BanksLister;
-
 static bool banks_list_cb(void *user, void *data, ut32 id) {
 	BanksLister *bl = (BanksLister *)user;
 	RIOBank *bank = (RIOBank *)data;
@@ -88,7 +85,7 @@ static bool banks_list_cb(void *user, void *data, ut32 id) {
 	RListIter *iter, *ator;
 	MapRef *map_ref;
 	r_list_foreach_safe (bank->map_refs, iter, ator, map_ref) {
-		RIOMap *map = r_io_map_resolve (bl->io, map_ref->id);
+		RIOMap *map = r_io_map_get (bl->io, map_ref->id);
 		if (!map || (map_ref->ts != map->ts)) {
 			// cleaning up bank if map got deleted
 			r_list_delete (bank->map_refs, iter);
