@@ -4160,7 +4160,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		case 'o': { // "afco"
 			char *dbpath = r_str_trim_dup (input + 3);
-			if (r_file_exists (dbpath)) {
+			if (R_STR_ISNOTEMPTY (dbpath) && r_file_exists (dbpath)) {
 				Sdb *db = sdb_new (0, dbpath, 0);
 				sdb_merge (core->anal->sdb_cc, db);
 				sdb_close (db);
