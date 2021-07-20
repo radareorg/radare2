@@ -6,27 +6,27 @@
 #include <r_syscall.h>
 
 #if HAVE_GPERF
-extern GdbGperf gperf_darwin_arm_32;
-extern GdbGperf gperf_darwin_arm_64;
-extern GdbGperf gperf_darwin_x86_32;
-extern GdbGperf gperf_darwin_x86_64;
-extern GdbGperf gperf_dos_x86_16;
-extern GdbGperf gperf_freebsd_x86_32;
-extern GdbGperf gperf_ios_arm_32;
-extern GdbGperf gperf_ios_arm_64;
-extern GdbGperf gperf_ios_x86_32;
-extern GdbGperf gperf_linux_arm_32;
-extern GdbGperf gperf_linux_arm_64;
-extern GdbGperf gperf_linux_mips_32;
-extern GdbGperf gperf_linux_sparc_32;
-extern GdbGperf gperf_linux_x86_32;
-extern GdbGperf gperf_linux_x86_64;
-extern GdbGperf gperf_netbsd_x86_32;
-extern GdbGperf gperf_openbsd_x86_32;
-extern GdbGperf gperf_openbsd_x86_64;
-extern GdbGperf gperf_s110_arm_16;
-extern GdbGperf gperf_windows_x86_32;
-extern GdbGperf gperf_windows_x86_64;
+extern SdbGperf gperf_darwin_arm_32;
+extern SdbGperf gperf_darwin_arm_64;
+extern SdbGperf gperf_darwin_x86_32;
+extern SdbGperf gperf_darwin_x86_64;
+extern SdbGperf gperf_dos_x86_16;
+extern SdbGperf gperf_freebsd_x86_32;
+extern SdbGperf gperf_ios_arm_32;
+extern SdbGperf gperf_ios_arm_64;
+extern SdbGperf gperf_ios_x86_32;
+extern SdbGperf gperf_linux_arm_32;
+extern SdbGperf gperf_linux_arm_64;
+extern SdbGperf gperf_linux_mips_32;
+extern SdbGperf gperf_linux_sparc_32;
+extern SdbGperf gperf_linux_x86_32;
+extern SdbGperf gperf_linux_x86_64;
+extern SdbGperf gperf_netbsd_x86_32;
+extern SdbGperf gperf_openbsd_x86_32;
+extern SdbGperf gperf_openbsd_x86_64;
+extern SdbGperf gperf_s110_arm_16;
+extern SdbGperf gperf_windows_x86_32;
+extern SdbGperf gperf_windows_x86_64;
 
 static const SdbGperf *gperfs[] = {
 	&gperf_darwin_arm_32,
