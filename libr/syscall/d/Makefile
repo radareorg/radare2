@@ -51,6 +51,7 @@ else
 endif
 	test -f $@
 	${SDB} -t -C $@
+	$(CC) $(CFLAGS) -c `echo $@ | sed -e s,sdb,c,`
 
 clean:
 	rm -f *.sdb

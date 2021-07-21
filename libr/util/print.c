@@ -1272,6 +1272,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, 1);
 						if (len > 0) {
 							ch = *output;
+						} else {
+							ch = '?';
 						}
 					}
 					r_print_byte (p, "%c", j, ch);

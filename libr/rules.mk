@@ -81,8 +81,9 @@ else
 	@-if [ -f d/Makefile ] ; then (echo "DIR ${NAME}/d"; ${MAKE} -C d) ; fi
 endif
 
+$(OBJS): $(EXTRA_TARGETS)
 ifeq ($(WITH_LIBS),1)
-$(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
+$(LIBSO): ${WFD} ${OBJS} ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e "${LIBSO}" ] && do=1 ; \
 	  test "$$a" -nt "${LIBSO}" && do=1 ; \

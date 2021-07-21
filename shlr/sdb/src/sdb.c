@@ -801,10 +801,10 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 	if (!s) {
 		return false;
 	}
-	s->depth++;
 	if (s->gp) {
 		return s->gp->foreach ((GperfForeachCallback)cb, user);
 	}
+	s->depth++;
 	bool result = sdb_foreach_cdb (s, cb, NULL, user);
 	if (!result) {
 		return sdb_foreach_end (s, false);

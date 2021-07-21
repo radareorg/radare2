@@ -62,8 +62,10 @@ R_API RList *r_charset_list(RCharset *ch) {
 
 R_API RCharset *r_charset_new(void) {
 	RCharset *ch = R_NEW0 (RCharset);
-	ch->db = sdb_new0 ();
-	ch->db_char_to_hex = sdb_new0 ();
+	if (ch) {
+		ch->db = sdb_new0 ();
+		ch->db_char_to_hex = sdb_new0 ();
+	}
 	return ch;
 }
 
@@ -80,12 +82,14 @@ R_API void r_charset_close(RCharset *c) {
 }
 
 R_API bool r_charset_use(RCharset *c, const char *cf) {
+	r_return_val_if_fail (c && cf, false);
 	bool rc = false;
 	SdbGperf *gp = r_charset_get_gperf (cf);
 	if (gp) {
 		sdb_free (c->db);
 		c->db = sdb_new0 ();
 		if (sdb_open_gperf (c->db, gp) != -1) {
+			rc = r_charset_open (c, NULL);
 			r_sys_setenv ("RABIN2_CHARSET", cf);
 			rc = true;
 		}
@@ -102,12 +106,14 @@ R_API bool r_charset_use(RCharset *c, const char *cf) {
 }
 
 R_API bool r_charset_open(RCharset *c, const char *cs) {
-	r_return_val_if_fail (c && cs, false);
-	sdb_reset (c->db);
-	sdb_open (c->db, cs);
+	r_return_val_if_fail (c, false);
+	if (cs) {
+		sdb_reset (c->db);
+		sdb_open (c->db, cs);
 
-	sdb_free (c->db_char_to_hex);
-	c->db_char_to_hex = sdb_new0 ();
+		sdb_free (c->db_char_to_hex);
+		c->db_char_to_hex = sdb_new0 ();
+	}
 
 	SdbListIter *iter;
 	SdbKv *kv;
@@ -148,11 +154,14 @@ R_API RCharsetRune *r_charset_rune_new(const ut8 *ch, const ut8 *hx) {
 }
 
 R_API void r_charset_rune_free(RCharsetRune *c) {
-	free (c->ch);
-	free (c->hx);
-	free (c);
+	if (c) {
+		free (c->ch);
+		free (c->hx);
+		free (c);
+	}
 }
 
+#if 0
 R_API RCharsetRune *add_rune(RCharsetRune *r, const ut8 *ch, const ut8 *hx) {
 	if (!r) {
 		r = r_charset_rune_new (ch, hx);
@@ -183,6 +192,7 @@ R_API RCharsetRune *search_from_hex(RCharsetRune *r, const ut8 *hx) {
 	RCharsetRune *left = search_from_hex (r->left, hx);
 	return left? left: search_from_hex (r->right, hx);
 }
+#endif
 
 R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const ut8 *in, size_t in_len) {
 	if (!rc->loaded) {
@@ -192,6 +202,7 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 	char *o = (char*)out;
 	size_t i;
 	char *o_end = o + out_len;
+	bool fine = false;
 	for (i = 0; i < in_len && o < o_end; i++) {
 		ut8 ch_in = in[i];
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
@@ -199,17 +210,20 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		const char *ret = r_str_get_fail (v, "?");
 		char *res = strdup (ret);
 		if (res) {
-			int reslen = strlen (res);
+			size_t reslen = strlen (res);
 			if (reslen >= o_end - o) {
 				break;
 			}
+			fine = true;
 			r_str_unescape (res);
 			r_str_ncpy (o, res, out_len - i);
 			free (res);
 		}
 		o += strlen (o);
 	}
-
+	if (!fine) {
+		return 0;
+	}
 	return o - (char*)out;
 }
 
@@ -226,10 +240,13 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		size_t left = in_len - cur;
 		size_t toread = R_MIN (left + 1, maxkeylen);
 		char *str = calloc (toread + 128, 1);
+		if (!str) {
+			break;
+		}
 		r_str_ncpy (str, (char *)in + cur, toread);
 		bool found = false;
 		for (j = toread; cur < in_len && j > 0; j--) {
-			left = in_len - cur +1;
+			left = in_len - cur + 1;
 			toread = R_MIN (left, maxkeylen);
 			//zero terminate the string
 			str[j] = '\0';

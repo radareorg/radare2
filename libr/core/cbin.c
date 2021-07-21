@@ -730,10 +730,8 @@ R_API void r_core_anal_type_init(RCore *core) {
 }
 
 R_API void r_core_anal_cc_init(RCore *core) {
-	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
 	int bits = core->anal->bits;
-	Sdb *cc = core->anal->sdb_cc;
 	if (!anal_arch) {
 		return;
 	}
@@ -748,13 +746,26 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		sdb_merge (core->anal->sdb_cc, gd);
 		sdb_close (gd);
 		sdb_free (gd);
-		return;
 	}
-#endif
+	{
+		// same as "tcc `arcc`"
+		char *s = r_reg_profile_to_cc (core->anal->reg);
+		if (s) {
+			if (!r_anal_cc_set (core->anal, s)) {
+				eprintf ("Warning: Invalid CC from reg profile.\n");
+			}
+			free (s);
+		} else {
+			eprintf ("Warning: Cannot derive CC from reg profile.\n");
+		}
+	}
+#else
+	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	char *dbpath = r_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "cc-%s-%d.sdb"),
 		dir_prefix, anal_arch, bits);
 	char *dbhomepath = r_str_newf (R_JOIN_3_PATHS ("~", R2_HOME_SDB_FCNSIGN, "cc-%s-%d.sdb"),
 		anal_arch, bits);
+	Sdb *cc = core->anal->sdb_cc;
 	// Avoid sdb reloading
 	if (cc->path && (!strcmp (cc->path, dbpath) || !strcmp (cc->path, dbhomepath))) {
 		free (dbpath);
@@ -788,6 +799,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	}
 	free (dbpath);
 	free (dbhomepath);
+#endif
 }
 
 static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
