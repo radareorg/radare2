@@ -1553,12 +1553,24 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		/* TODO: support WZR XZR to specify 32, 64bit op */
 		OPCALL("/");
 		break;
+	// TODO actually implement some kind of fake PAC or at least clear the bits
+	// PAC B* instructions will not work without clearing PAC bits
+	// but as long as the PAC* instruction is emulated too its fine
+	// as those will be NOPS for now
+	case ARM64_BRAA:
+	case ARM64_BRAAZ:
+	case ARM64_BRAB:
+	case ARM64_BRABZ:
 	case ARM64_BR:
 		r_strbuf_setf (&op->esil, "%s,pc,=", REG64 (0));
 		break;
 	case ARM64_BL:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64u",pc,=", GETIMM64 (0));
 		break;
+	case ARM64_BLRAA:
+	case ARM64_BLRAAZ:
+	case ARM64_BLRAB:
+	case ARM64_BLRABZ:
 	case ARM64_BLR:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%s,pc,=", REG64 (0));
 		break;
@@ -2233,9 +2245,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM64_UXTH:
 		r_strbuf_setf (&op->esil, "%s,0xffff,&,%s,=", REG64 (1), REG64 (0));
 		break;
+	case ARM64_RETAA:
+	case ARM64_RETAB:
 	case ARM64_RET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
 		break;
+	case ARM64_ERETAA:
+	case ARM64_ERETAB:
 	case ARM64_ERET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
 		break;
