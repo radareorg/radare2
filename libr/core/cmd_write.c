@@ -2174,9 +2174,11 @@ static int cmd_write(void *data, const char *input) {
 			if (len > 0) {
 				size_t in_len = strlen (str + 1);
 				int max = core->print->charset->encode_maxkeylen;
+				int out_len = in_len * max;
 				ut8 *out = malloc (in_len * max); //suppose in len = out len TODO: change it
 				if (out) {
-					r_charset_decode_str (core->print->charset, out, in_len, (const unsigned char *) str + 1, in_len);
+					*out = 0;
+					r_charset_decode_str (core->print->charset, out, out_len, (const ut8*) str + 1, in_len);
 					w_handler_old (core, (const char *)out);
 					free (out);
 				}
