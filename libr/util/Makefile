@@ -73,6 +73,7 @@ endif
 
 EXTRA_PRE+=spp_config
 EXTRA_PRE+=charsets
+EXTRA_TARGETS=$(EXTRA_PRE)
 EXTRA_CLEAN=doclean
 
 include ../rules.mk

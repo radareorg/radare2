@@ -202,6 +202,7 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 	char *o = (char*)out;
 	size_t i;
 	char *o_end = o + out_len;
+	bool fine = false;
 	for (i = 0; i < in_len && o < o_end; i++) {
 		ut8 ch_in = in[i];
 		snprintf (k, sizeof (k), "0x%02x", ch_in);
@@ -209,17 +210,20 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		const char *ret = r_str_get_fail (v, "?");
 		char *res = strdup (ret);
 		if (res) {
-			int reslen = strlen (res);
+			size_t reslen = strlen (res);
 			if (reslen >= o_end - o) {
 				break;
 			}
+			fine = true;
 			r_str_unescape (res);
 			r_str_ncpy (o, res, out_len - i);
 			free (res);
 		}
 		o += strlen (o);
 	}
-
+	if (!fine) {
+		return 0;
+	}
 	return o - (char*)out;
 }
 
