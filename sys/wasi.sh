@@ -28,7 +28,7 @@ cp dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
 # export CC="${WASI_SDK}/bin/clang -D
 ERR=0
 ./configure --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-libuv --without-gpl
-make -j || ERR=1
+make -j
 R2V=`./configure -qV`
 D="radare2-$R2V-wasi"
 mkdir -p $D
