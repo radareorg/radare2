@@ -4165,6 +4165,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				sdb_merge (core->anal->sdb_cc, db);
 				sdb_close (db);
 				sdb_free (db);
+			} else {
+				eprintf ("Usage: afco [dbpath] - open calling conventions defined in local file.\n");	
 			}
 			free (dbpath);
 			break;
