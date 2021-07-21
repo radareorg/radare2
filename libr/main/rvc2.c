@@ -72,49 +72,41 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 	}
 	if (!strcmp (action, "commit")) {
 		int i;
-		if (opt.argc < 5) {
-			eprintf ("Usage: rvc2 commit [author] [message] [files...]\n");
+		if (opt.argc < 4) {
+			eprintf ("Usage: rvc2 commit [message] [files...]\n");
 			free (rp);
 			return -6;
 		}
-		char *auth = r_str_new (opt.argv[opt.ind + 1]);
-		if (!auth) {
-			free (rp);
-			return -7;
-		}
-		char *message = r_str_new (opt.argv[opt.ind + 2]);
+		char *message = r_str_new (opt.argv[opt.ind + 1]);
 		if (!message) {
 			free (rp);
-			free (auth);
 			return -8;
 		}
 		RList *files = r_list_new ();
 		if (!files) {
 			free (rp);
-			free (auth);
 			free (message);
 			return -9;
 		}
-		for (i = 3; i < argc - 1; i++) {
+		for (i = 2; i < argc - 1; i++) {
 			char *cf = r_str_new (argv[opt.ind + i]);
 			if (!cf) {
-				free (auth);
 				free (message);
 				r_list_free (files);
 				free (rp);
 				return -10;
 			}
 			if (!r_list_append (files, cf)) {
-				free (auth);
 				free (message);
 				r_list_free (files);
 				free (rp);
 				return -10;
 			}
 		}
-		bool ret = r_vc_commit (rp, message, auth, files);
+		RCore *core = r_core_new ();
+		const char *author = r_config_get (core->config, "cfg.user");
+		bool ret = r_vc_commit (rp, message, author, files);
 		free (message);
-		free (auth);
 		r_list_free (files);
 		if (!ret) {
 			free (rp);
