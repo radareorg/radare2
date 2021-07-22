@@ -55,11 +55,11 @@ static const char *getCondz(ut8 cond) {
 */
 
 typedef enum {
-	INT,
-	LONG,
-	LONG_SHFT,
-	FLOAT,
-	DOUBLE
+	OP_INT,
+	OP_LONG,
+	OP_LONG_SHFT,
+	OP_FLOAT,
+	OP_DOUBLE
 } OperandType;
 
 /* does nothing
@@ -240,7 +240,7 @@ static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 
 	ut32 vA = 0, vB = 0, vC = 0;
 	op->type = optype;
-	if (ot == FLOAT || ot == DOUBLE) {
+	if (ot == OP_FLOAT || ot == OP_DOUBLE) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
 	}
 
@@ -260,21 +260,21 @@ static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 	}
 
 	if (mask & R_ANAL_OP_MASK_ESIL) {
-		if (ot == INT) {
+		if (ot == OP_INT) {
 			if (optype == R_ANAL_OP_TYPE_DIV || optype == R_ANAL_OP_TYPE_MOD) {
 				esilprintf (op, "32,%s%d,~,32,v%u,~,%s,v%u,=", v, vC, vB, operation, vA);
 			} else {
 				esilprintf (op, "%s%d,v%u,%s,v%u,=", v, vC, vB, operation, vA);
 			}
-		} else if (ot == LONG) {
+		} else if (ot == OP_LONG) {
 			esilprintf (op, GETWIDE "," GETWIDE ",%s," SETWIDE,
 				vC+1, vC, vB+1, vB, operation, vA, vA+1);
-		} else if (ot == LONG_SHFT) {
+		} else if (ot == OP_LONG_SHFT) {
 			esilprintf (op, "v%u," GETWIDE ",%s," SETWIDE,
 				vC, vB+1, vB, operation, vA, vA+1);
-		} else if (ot == FLOAT) {
+		} else if (ot == OP_FLOAT) {
 			esilprintf (op, "32,32,v%u,F2D,32,v%u,F2D,F%s,D2F,v%u,=", vC, vB, operation, vA);
-		} else if (ot == DOUBLE) {
+		} else if (ot == OP_DOUBLE) {
 			esilprintf (op, GETWIDE "," GETWIDE ",F%s," SETWIDE, 
 				vC+1, vC, vB+1, vB, operation, vA, vA+1);
 		}
@@ -914,144 +914,144 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xb0:
 	case 0xd0:
 	case 0xd8:
-		OPCALL ("+", R_ANAL_OP_TYPE_ADD, INT);
+		OPCALL ("+", R_ANAL_OP_TYPE_ADD, OP_INT);
 		break;
 	case 0x91: // sub-int
 	case 0xb1:
 	case 0xd1:
 	case 0xd9:
-		OPCALL ("-", R_ANAL_OP_TYPE_SUB, INT);
+		OPCALL ("-", R_ANAL_OP_TYPE_SUB, OP_INT);
 		break;
 	case 0x92: // mul-int
 	case 0xb2:
 	case 0xd2:
 	case 0xda:
-		OPCALL ("*", R_ANAL_OP_TYPE_MUL, INT);
+		OPCALL ("*", R_ANAL_OP_TYPE_MUL, OP_INT);
 		break;
 	case 0x93: // div-int
 	case 0xb3:
 	case 0xd3:
 	case 0xdb:
-		OPCALL ("~/", R_ANAL_OP_TYPE_DIV, INT);
+		OPCALL ("~/", R_ANAL_OP_TYPE_DIV, OP_INT);
 		break;
 	case 0x94:  // rem-int
 	case 0xb4:
 	case 0xd4:
 	case 0xdc:
-		OPCALL ("~%", R_ANAL_OP_TYPE_MOD, INT);
+		OPCALL ("~%", R_ANAL_OP_TYPE_MOD, OP_INT);
 		break;
 	case 0x95: // and-int
 	case 0xb5:
 	case 0xd5:
 	case 0xdd:
-		OPCALL ("&", R_ANAL_OP_TYPE_AND, INT);
+		OPCALL ("&", R_ANAL_OP_TYPE_AND, OP_INT);
 		break;
 	case 0x96: // or-int
 	case 0xb6:
 	case 0xd6:
 	case 0xde:
-		OPCALL ("|", R_ANAL_OP_TYPE_OR, INT);
+		OPCALL ("|", R_ANAL_OP_TYPE_OR, OP_INT);
 		break;
 	case 0x97: // xor-int
 	case 0xb7:
 	case 0xd7:
 	case 0xdf:
-		OPCALL ("^", R_ANAL_OP_TYPE_XOR, INT);
+		OPCALL ("^", R_ANAL_OP_TYPE_XOR, OP_INT);
 		break;
 	case 0x98: // shl-int
 	case 0xb8:
 	case 0xe0:
-		OPCALL ("<<", R_ANAL_OP_TYPE_SHL, INT);
+		OPCALL ("<<", R_ANAL_OP_TYPE_SHL, OP_INT);
 		break;
 	case 0x99: // shr-int
 	case 0xb9:
 	case 0xe1:
-		OPCALL (">>>>", R_ANAL_OP_TYPE_SHR, INT);
+		OPCALL (">>>>", R_ANAL_OP_TYPE_SHR, OP_INT);
 		break;
 	case 0x9a: // ushr-int
 	case 0xba:
 	case 0xe2:
-		OPCALL (">>", R_ANAL_OP_TYPE_SHR, INT);
+		OPCALL (">>", R_ANAL_OP_TYPE_SHR, OP_INT);
 		break;
 	case 0xbb:
 	case 0x9b: // add-long
-		OPCALL ("+", R_ANAL_OP_TYPE_ADD, LONG);
+		OPCALL ("+", R_ANAL_OP_TYPE_ADD, OP_LONG);
 		break;
 	case 0x9c: // sub-long
 	case 0xbc:
-		OPCALL ("-", R_ANAL_OP_TYPE_SUB, LONG);
+		OPCALL ("-", R_ANAL_OP_TYPE_SUB, OP_LONG);
 		break;
 	case 0x9d: // mul-long
 	case 0xbd:
-		OPCALL ("*", R_ANAL_OP_TYPE_MUL, LONG);
+		OPCALL ("*", R_ANAL_OP_TYPE_MUL, OP_LONG);
 		break;
 	case 0x9e: // div-long
 	case 0xbe:
-		OPCALL ("~/", R_ANAL_OP_TYPE_DIV, LONG);
+		OPCALL ("~/", R_ANAL_OP_TYPE_DIV, OP_LONG);
 		break;
 	case 0x9f:  // rem-long
 	case 0xbf:
-		OPCALL ("~%", R_ANAL_OP_TYPE_MOD, LONG);
+		OPCALL ("~%", R_ANAL_OP_TYPE_MOD, OP_LONG);
 		break;
 	case 0xa0: // and-long
 	case 0xc0:
-		OPCALL ("&", R_ANAL_OP_TYPE_AND, LONG);
+		OPCALL ("&", R_ANAL_OP_TYPE_AND, OP_LONG);
 		break;
 	case 0xa1: // or-long
 	case 0xc1:
-		OPCALL ("|", R_ANAL_OP_TYPE_OR, LONG);
+		OPCALL ("|", R_ANAL_OP_TYPE_OR, OP_LONG);
 		break;
 	case 0xa2: // xor-long
 	case 0xc2:
-		OPCALL ("^", R_ANAL_OP_TYPE_XOR, LONG);
+		OPCALL ("^", R_ANAL_OP_TYPE_XOR, OP_LONG);
 		break;
 	case 0xa3: // shl-long
 	case 0xc3:
-		OPCALL ("<<", R_ANAL_OP_TYPE_SHL, LONG_SHFT);
+		OPCALL ("<<", R_ANAL_OP_TYPE_SHL, OP_LONG_SHFT);
 		break;
 	case 0xa4: // shr-long
 	case 0xc4:
-		OPCALL (">>>>", R_ANAL_OP_TYPE_SHR, LONG_SHFT);
+		OPCALL (">>>>", R_ANAL_OP_TYPE_SHR, OP_LONG_SHFT);
 		break;
 	case 0xa5: // ushr-long
 	case 0xc5:
-		OPCALL (">>", R_ANAL_OP_TYPE_SHR, LONG_SHFT);
+		OPCALL (">>", R_ANAL_OP_TYPE_SHR, OP_LONG_SHFT);
 		break;
 	case 0xa6: // add-float
 	case 0xc6:
-		OPCALL ("+", R_ANAL_OP_TYPE_ADD, FLOAT);
+		OPCALL ("+", R_ANAL_OP_TYPE_ADD, OP_FLOAT);
 		break;
 	case 0xa7: // sub-float
 	case 0xc7:
-		OPCALL ("-", R_ANAL_OP_TYPE_SUB, FLOAT);
+		OPCALL ("-", R_ANAL_OP_TYPE_SUB, OP_FLOAT);
 		break;
 	case 0xa8: // mul-float
 	case 0xc8:
-		OPCALL ("*", R_ANAL_OP_TYPE_MUL, FLOAT);
+		OPCALL ("*", R_ANAL_OP_TYPE_MUL, OP_FLOAT);
 		break;
 	case 0xa9: // div-float
 	case 0xaa:
 	case 0xc9:
 	case 0xca:
-		OPCALL ("/", R_ANAL_OP_TYPE_DIV, FLOAT);
+		OPCALL ("/", R_ANAL_OP_TYPE_DIV, OP_FLOAT);
 		break;
 	case 0xab: // add-double
 	case 0xcb:
-		OPCALL ("+", R_ANAL_OP_TYPE_ADD, DOUBLE);
+		OPCALL ("+", R_ANAL_OP_TYPE_ADD, OP_DOUBLE);
 		break;
 	case 0xac: // sub-double
 	case 0xcc:
-		OPCALL ("-", R_ANAL_OP_TYPE_SUB, DOUBLE);
+		OPCALL ("-", R_ANAL_OP_TYPE_SUB, OP_DOUBLE);
 		break;
 	case 0xad: // mul-double
 	case 0xcd:
-		OPCALL ("*", R_ANAL_OP_TYPE_MUL, DOUBLE);
+		OPCALL ("*", R_ANAL_OP_TYPE_MUL, OP_DOUBLE);
 		break;
 	case 0xae: // div-double
 	case 0xaf:
 	case 0xce:
 	case 0xcf:
-		OPCALL ("/", R_ANAL_OP_TYPE_DIV, DOUBLE);
+		OPCALL ("/", R_ANAL_OP_TYPE_DIV, OP_DOUBLE);
 		break;
 
 	case 0xec: // breakpoint
