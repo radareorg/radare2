@@ -352,7 +352,7 @@ static const char *help_msg_af[] = {
 	"afd", "[addr]","show function + delta for given offset",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
-	"afj", " [tableaddr] [count]", "analyze function jumptable",
+	"afj", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 	"afm", " name", "merge two functions",
 	"afM", " name", "print functions map",
@@ -3673,9 +3673,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (block && !r_list_empty (block->fcns)) {
 				char *args = strdup (input + 2);
 				RList *argv = r_str_split_list (args, " ", 0);
-				ut64 table = r_num_math (core->num, r_list_get_n (argv, 0));
-				ut64 elements = r_num_math (core->num, r_list_get_n (argv, 1));
-				r_anal_jmptbl (core->anal, r_list_first (block->fcns), block, core->offset, table, elements, UT64_MAX);
+				ut64 table = r_num_math (core->num, r_list_get_n (argv, 1));
+				ut64 sz = r_num_math (core->num, r_list_get_n (argv, 2));
+				ut64 elements = r_num_math (core->num, r_list_get_n (argv, 3));
+				ut64 seg = r_num_math (core->num, r_list_get_n (argv, 4));
+				int depth = 50;
+				try_walkthrough_jmptbl (core->anal, r_list_first (block->fcns), block, depth, core->offset, 0, table, seg, sz, elements, 0, false);
+				free (args);
 			} else {
 				eprintf ("No function defined here\n");
 			}
