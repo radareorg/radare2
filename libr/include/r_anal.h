@@ -1640,7 +1640,7 @@ R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr
 
 R_API RAnalFunction *r_anal_get_function_byname(RAnal *anal, const char *name);
 
-R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype);
+R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
 R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,

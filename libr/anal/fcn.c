@@ -1497,7 +1497,7 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 }
 
 /* Does NOT invalidate read-ahead cache. */
-R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
+R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
 	RPVector *metas = r_meta_get_all_in(anal, addr, R_META_TYPE_ANY);
 	void **it;
 	r_pvector_foreach (metas, it) {
