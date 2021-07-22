@@ -238,7 +238,7 @@ static void format51l(int len, const unsigned char* data, ut32* dst, st64* src) 
 static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len, 
 	RAnalOpMask mask, char* operation, unsigned int optype, OperandType ot) {
 
-	ut32 vA, vB, vC = 0;
+	ut32 vA = 0, vB = 0, vC = 0;
 	op->type = optype;
 	if (ot == FLOAT || ot == DOUBLE) {
 		op->family = R_ANAL_OP_FAMILY_FPU;
