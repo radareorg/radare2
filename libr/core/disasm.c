@@ -88,8 +88,8 @@ typedef struct {
 	int atabsoff;
 	int decode;
 	bool pseudo;
-	int subnames;
-	int interactive;
+	bool subnames;
+	bool interactive;
 	bool subjmp;
 	bool subvar;
 	bool show_lines;
@@ -660,17 +660,17 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
-	core->parser->pseudo = ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
+	core->parser->pseudo = ds->pseudo = r_config_get_b (core->config, "asm.pseudo");
 	if (ds->pseudo) {
 		ds->atabs = 0;
 	}
-	ds->subnames = r_config_get_i (core->config, "asm.sub.names");
+	ds->subnames = r_config_get_b (core->config, "asm.sub.names");
 	ds->interactive = r_cons_is_interactive ();
-	ds->subjmp = r_config_get_i (core->config, "asm.sub.jmp");
-	ds->subvar = r_config_get_i (core->config, "asm.sub.var");
-	core->parser->subrel = r_config_get_i (core->config, "asm.sub.rel");
-	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
-	core->parser->localvar_only = r_config_get_i (core->config, "asm.sub.varonly");
+	ds->subjmp = r_config_get_b (core->config, "asm.sub.jmp");
+	ds->subvar = r_config_get_b (core->config, "asm.sub.var");
+	core->parser->subrel = r_config_get_b (core->config, "asm.sub.rel");
+	core->parser->subreg = r_config_get_b (core->config, "asm.sub.reg");
+	core->parser->localvar_only = r_config_get_b (core->config, "asm.sub.varonly");
 	core->parser->retleave_asm = NULL;
 	ds->show_fcnsig = r_config_get_i (core->config, "asm.fcnsig");
 	ds->show_vars = r_config_get_i (core->config, "asm.var");
@@ -681,8 +681,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->flags_inline = r_config_get_i (core->config, "asm.flags.inline");
 	ds->asm_types = r_config_get_i (core->config, "asm.types");
 	ds->foldxrefs = r_config_get_i (core->config, "asm.xrefs.fold");
-	ds->show_lines = r_config_get_i (core->config, "asm.lines");
-	ds->show_lines_bb = ds->show_lines ? r_config_get_i (core->config, "asm.lines.jmp") : false;
+	ds->show_lines = r_config_get_b (core->config, "asm.lines");
+	ds->show_lines_bb = ds->show_lines ? r_config_get_b (core->config, "asm.lines.jmp") : false;
 	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
@@ -694,7 +694,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_lines_call = ds->show_lines ? r_config_get_i (core->config, "asm.lines.call") : false;
 	ds->show_lines_ret = ds->show_lines ? r_config_get_i (core->config, "asm.lines.ret") : false;
 	ds->show_size = r_config_get_i (core->config, "asm.size");
-	ds->show_trace = r_config_get_i (core->config, "asm.trace");
+	ds->show_trace = r_config_get_b (core->config, "asm.trace");
 	ds->linesout = r_config_get_i (core->config, "asm.lines.out");
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
@@ -5270,13 +5270,14 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			ptr = nptr;
 			numval = r_num_get (NULL, ptr);
 			if (numval == addr) {
-				while (*nptr && !IS_SEPARATOR (*nptr) && *nptr != 0x1b) {
-					nptr++;
-				}
+			//	while (*nptr && !IS_SEPARATOR (*nptr) && *nptr != 0x1b) {
+			//		nptr++;
+			//	}
 				char *kwname = r_str_newf ("%s%s", kw, name);
 				if (kwname) {
 					char* numstr = r_str_ndup (ptr, nptr-ptr);
 					if (numstr) {
+printf("ithi is %s - %s", numstr, kwname);
 						str = r_str_replace (str, numstr, kwname, 0);
 						free (numstr);
 					}
