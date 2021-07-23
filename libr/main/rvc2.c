@@ -105,6 +105,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 		}
 		RCore *core = r_core_new ();
 		if (!core) {
+			free (message);
 			free (rp);
 			r_list_free (files);
 			return -11;
