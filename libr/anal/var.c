@@ -1125,7 +1125,9 @@ R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 		extract_arg (anal, fcn, op, BP, "+", R_ANAL_VAR_KIND_BPV);
 		extract_arg (anal, fcn, op, BP, "-", R_ANAL_VAR_KIND_BPV);
 	}
-	extract_arg (anal, fcn, op, SP, "+", R_ANAL_VAR_KIND_SPV);
+	if (SP) {
+		extract_arg (anal, fcn, op, SP, "+", R_ANAL_VAR_KIND_SPV);
+	}
 }
 
 static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind) {

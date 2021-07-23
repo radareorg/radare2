@@ -5157,6 +5157,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		ESIL = core->anal->esil;
 	}
 	const char *spname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	if (!spname) {
+		eprintf ("Error: No =SP defined in the reg profile.\n");
+		return;
+	}
 	EsilBreakCtx ctx = {
 		&op,
 		fcn,
