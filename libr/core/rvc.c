@@ -1160,8 +1160,7 @@ R_API int rvc_git_init(RCore *core, const char *rp) {
 
 R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
-		author = author? author :
-			r_config_get (core->config, "cfg.user");
+		author = author? author : r_config_get (core->config, "cfg.user");
 		r_vc_commit (rp, message, author, files);
 	}
 	char *path;
