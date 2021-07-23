@@ -285,7 +285,10 @@ static ut16 _read_le16(RBin *rbin, ut64 addr) {
 #define BYTES_PER_IMP_RELOC		8
 
 static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, ut64 imp_map) {
-	r_return_val_if_fail (bin && bin->scn_hdrs, NULL);
+	r_return_val_if_fail (bin, NULL);
+	if (!bin->scn_hdrs) {
+		return NULL;
+	}
 
 	RBinReloc *reloc;
 	struct coff_reloc *rel;
