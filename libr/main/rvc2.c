@@ -104,6 +104,11 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 			}
 		}
 		RCore *core = r_core_new ();
+		if (!core) {
+			free (rp);
+			r_list_free (files);
+			return -11;
+		}
 		const char *author = r_config_get (core->config, "cfg.user");
 		bool ret = r_vc_commit (rp, message, author, files);
 		free (message);
