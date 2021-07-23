@@ -1146,7 +1146,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_POPF:
 	case X86_INS_POPFD:
 	case X86_INS_POPFQ:
-		esilprintf (op, "%s,[%d],eflags,=", sp, rs);
+		esilprintf (op, "%s,[%d],eflags,=,%d,%s,+=", sp, rs, rs, sp);
 		break;
 	case X86_INS_RET:
 	case X86_INS_RETF:
