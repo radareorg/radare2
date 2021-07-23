@@ -103,19 +103,19 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 				return -10;
 			}
 		}
-		RCore *core = r_core_new ();
-		if (!core) {
+		char *author = r_sys_whoami ();
+		if (!author) {
 			free (message);
-			free (rp);
 			r_list_free (files);
-			return -11;
+			free (rp);
+			return -12;
 		}
-		const char *author = r_config_get (core->config, "cfg.user");
 		bool ret = r_vc_commit (rp, message, author, files);
 		free (message);
+		free (author);
 		r_list_free (files);
+		free (rp);
 		if (!ret) {
-			free (rp);
 			return -11;
 		}
 		return 0;
