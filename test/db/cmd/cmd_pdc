@@ -11,6 +11,19 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pd pseudo @ t1
+FILE=bins/pe/t1.exe
+ARGS=-e bin.str.real=true
+CMDS=<<EOF
+e asm.flags.real=true
+af
+e asm.pseudo=true
+pdf
+EOF
+EXPECT=<<EOF
+jej
+EOF
+
 NAME=pdc @ t1
 FILE=bins/pe/t1.exe
 ARGS=-e bin.str.real=true
@@ -104,3 +117,4 @@ dword [ExitProcess] () //0x403084 ; reloc.kernel32.dll_ExitProcess
 }
 EOF
 RUN
+

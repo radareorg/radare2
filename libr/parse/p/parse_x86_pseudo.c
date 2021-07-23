@@ -15,7 +15,7 @@
 
 // XXX seems like '(#)' doesnt works.. so it needs to be '( # )'
 // this is a bug somewhere else
-static int replace (int argc, char *argv[], char *newstr) {
+static int replace(int argc, char *argv[], char *newstr) {
 #define MAXPSEUDOOPS 10
 	int i, j, k, d;
 	char ch;
@@ -36,10 +36,10 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "cmpsw", "while (CX != 0) { var = *(DS*16 + SI) - *(ES*16 + DI); SI+=4; DI+=4; CX--; if (!var) break; }", {0}},
 		{ "dec",  "#--", {1}},
 		{ "div",  "# /= #", {1, 2}},
-		{ "fabs",  "abs( # )", {1}},
+		{ "fabs",  "abs(#)", {1}},
 		{ "fadd",  "# = # + #", {1, 1, 2}},
 		{ "fcomp",  "var = # - #", {1, 2}},
-		{ "fcos",  "# = cos( # )", {1, 1}},
+		{ "fcos",  "# = cos(#)", {1, 1}},
 		{ "fdiv",  "# = # / #", {1, 1, 2}},
 		{ "fiadd",  "# = # / #", {1, 1, 2}},
 		{ "ficom",  "var = # - #", {1, 2}},
@@ -82,7 +82,6 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "movnti", "# = #", {1, 2}},
 		{ "movntpd", "# = #", {1, 2}},
 		{ "pcmpeqb", "# == #", {1, 2}},
-
 		{ "movdqu", "# = #", {1, 2}},
 		{ "movdqa", "# = #", {1, 2}},
 		{ "pextrb", "# = (byte) # [ # ]", {1, 2, 3}},
@@ -97,7 +96,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 		{ "or",   "# |= #", {1, 2}},
 		{ "out",  "io[ # ] = #", {1, 2}},
 		{ "pop",  "# = pop()", {1}},
-		{ "push", "push( # )", {1}},
+		{ "push", "push(#)", {1}},
 		{ "ret",  "return", {0}},
 		{ "sal",  "# <<= #", {1, 2}},
 		{ "sar",  "# >>= #", {1, 2}},
@@ -185,7 +184,11 @@ static int parse(RParse *p, const char *data, char *str) {
 	*w0 = *w1 = *w2 = *w3 = '\0';
 	if (*buf) {
 		end = buf + strlen (buf);
-		ptr = strchr (buf, ' ');
+		
+		ptr = strchr (buf, '(');
+		if (!ptr) {
+			ptr = strchr (buf, ' ');
+		}
 		if (!ptr) {
 			ptr = strchr (buf, '\t');
 		}
@@ -194,7 +197,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 		*ptr = '\0';
 		if (ptr != end) {
-			for (++ptr; *ptr == ' '; ptr++) {
+			for (++ptr; *ptr==')' || *ptr == ' '; ptr++) {
 				;
 			}
 		}
@@ -231,8 +234,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	/* TODO: interpretation of memory location fails*/
 	//ensure imul & mul interpretations works
 	if (strstr (w0, "mul")) {
-		if (nw == 2)
-		{
+		if (nw == 2) {
 			r_str_ncpy (wa[3], wa[1], sizeof (w3));
 
 			switch (wa[3][0]) {
@@ -258,15 +260,11 @@ static int parse(RParse *p, const char *data, char *str) {
 					r_str_ncpy (wa[2], "al", sizeof (w2));
 				}
 			}
-		}
-		else if (nw == 3)
-		{
+		} else if (nw == 3) {
 			r_str_ncpy (wa[3], wa[2], sizeof (w3));
 			r_str_ncpy (wa[2], wa[1], sizeof (w2));
 		}
-
 		replace (nw, wa, str);
-
 	} else if (strstr (w0, "lea")) {
 		r_str_replace_char (w2, '[', 0);
 		r_str_replace_char (w2, ']', 0);
