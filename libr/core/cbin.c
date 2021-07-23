@@ -739,10 +739,10 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	char *k = r_str_newf ("cc_%s_%d", anal_arch, bits);
 	SdbGperf *gp = r_anal_get_gperf_cc (k);
 	free (k);
+	sdb_reset (core->anal->sdb_cc);
 	if (gp) {
 		Sdb *gd = sdb_new0 ();
 		sdb_open_gperf (gd, gp);
-		sdb_reset (core->anal->sdb_cc);
 		sdb_merge (core->anal->sdb_cc, gd);
 		sdb_close (gd);
 		sdb_free (gd);
