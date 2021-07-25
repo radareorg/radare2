@@ -177,7 +177,6 @@ static const char *has_esil(RAsmState *as, const char *name) {
 }
 
 static void ranal2_list(RAsmState *as, const char *arch) {
-	int i;
 	char bits[32];
 	const char *feat2, *feat;
 	RAnalPlugin *h;
