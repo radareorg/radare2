@@ -521,11 +521,10 @@ R_API int r_core_visual_hud(RCore *core) {
 
 R_API void r_core_visual_jump(RCore *core, ut8 ch) {
 	char chbuf[2];
-	ut64 off;
 	chbuf[0] = ch;
 	chbuf[1] = '\0';
-	off = r_core_get_asmqjmps (core, chbuf);
-	if (off != UT64_MAX) {
+	ut64 off = r_core_get_asmqjmps (core, chbuf);
+	if (off != UT64_MAX && off != UT32_MAX) {
 		int delta = R_ABS ((st64) off - (st64) core->offset);
 		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		if (core->print->cur_enabled && delta < 100) {
@@ -2408,6 +2407,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		if (isDisasmPrint (core->printidx)) {
 			if (r_config_get_i (core->config, "asm.hints") && (r_config_get_i (core->config, "asm.hint.jmp")
 			|| r_config_get_i (core->config, "asm.hint.lea") || r_config_get_i (core->config, "asm.hint.emu")
+			|| r_config_get_i (core->config, "asm.hint.imm")
 			|| r_config_get_i (core->config, "asm.hint.call"))) {
 				r_core_visual_jump (core, ch);
 			} else {
