@@ -5,6 +5,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
+#include <r_anal.h> // for RAnalBind
 #define USE_R2 1
 #include <spp/spp.h>
 #include <config.h>
@@ -26,7 +27,8 @@ static void parseHeap(RParse *p, RStrBuf *s) {
 	if (out) {
 		*out = 0;
 		strcpy (out , op_buf_asm);
-	// XXX we shouldn't pad here because we have t orefactor the RParse API to handle boundaries and chunks properly
+		// XXX we shouldn't pad here because we have to refactor
+		// the RParse API to handle boundaries and chunks properly
 		r_parse_parse (p, op_buf_asm, out);
 		r_strbuf_set (s, out);
 		free (out);
@@ -475,6 +477,14 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		} else {
 			ret = a->cur->disassemble (a, op, buf, len);
 		}
+	} else if (a->analb.anal) {
+		// disassemble using the analysis plugin if found
+		RAnalOp aop;
+		a->analb.opinit (&aop);
+		ret = a->analb.decode (a->analb.anal, &aop, a->pc, buf, len, R_ANAL_OP_MASK_DISASM);
+		op->size = aop.size;
+		r_strbuf_set (&op->buf_asm, aop.mnemonic);
+		a->analb.opfini (&aop);
 	}
 	if (ret < 0) {
 		ret = 0;

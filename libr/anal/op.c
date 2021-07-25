@@ -31,9 +31,9 @@ R_API void r_anal_op_init(RAnalOp *op) {
 	}
 }
 
-R_API bool r_anal_op_fini(RAnalOp *op) {
+R_API void r_anal_op_fini(RAnalOp *op) {
 	if (!op) {
-		return false;
+		return;
 	}
 	r_anal_value_free (op->src[0]);
 	r_anal_value_free (op->src[1]);
@@ -50,7 +50,6 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	r_anal_switch_op_free (op->switch_op);
 	op->switch_op = NULL;
 	R_FREE (op->mnemonic);
-	return true;
 }
 
 R_API void r_anal_op_free(void *_op) {

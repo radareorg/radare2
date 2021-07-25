@@ -2863,6 +2863,7 @@ R_API bool r_core_init(RCore *core) {
 	core->rasm->num = core->num;
 	r_asm_set_user_ptr (core->rasm, core);
 	core->anal = r_anal_new ();
+	r_anal_bind (core->anal, &core->rasm->analb);
 	core->gadgets = r_list_newf ((RListFree)r_core_gadget_free);
 	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;

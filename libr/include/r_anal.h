@@ -747,15 +747,6 @@ typedef struct r_anal_hint_t {
 	ut64 stackframe;
 } RAnalHint;
 
-typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
-typedef RAnalHint *(* RAnalGetHint)(RAnal *anal, ut64 addr);
-
-typedef struct r_anal_bind_t {
-	RAnal *anal;
-	RAnalGetFcnIn get_fcn_in;
-	RAnalGetHint get_hint;
-} RAnalBind;
-
 typedef const char *(*RAnalLabelAt) (RAnalFunction *fcn, ut64);
 
 typedef enum {
@@ -895,6 +886,21 @@ typedef struct r_anal_op_t {
 	RAnalHint hint;
 	RAnalDataType datatype;
 } RAnalOp;
+
+typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
+typedef RAnalHint *(* RAnalGetHint)(RAnal *anal, ut64 addr);
+typedef int (* RAnalDecode)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
+typedef void (* RAnalOpInit)(RAnalOp *op);
+typedef void (* RAnalOpFini)(RAnalOp *op);
+
+typedef struct r_anal_bind_t {
+	RAnal *anal;
+	RAnalGetFcnIn get_fcn_in;
+	RAnalGetHint get_hint;
+	RAnalDecode decode;
+	RAnalOpInit opinit;
+	RAnalOpFini opfini;
+} RAnalBind;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
 
@@ -1560,7 +1566,7 @@ R_API const char *r_anal_stackop_tostring(int s);
 R_API RAnalOp *r_anal_op_new(void);
 R_API void r_anal_op_free(void *op);
 R_API void r_anal_op_init(RAnalOp *op);
-R_API bool r_anal_op_fini(RAnalOp *op);
+R_API void r_anal_op_fini(RAnalOp *op);
 R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
