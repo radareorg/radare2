@@ -582,7 +582,7 @@ signal=SIGUSR1
 stopreason=User defined signal 1
 Hello, World!
 EOF
-
+RUN
 
 NAME=di on SIGUSR2
 FILE=bins/elf/signals/signal-input
@@ -601,6 +601,7 @@ signal=SIGUSR2
 stopreason=User defined signal 2
 Hello, World!
 EOF
+RUN
 
 
 NAME=di on SIGVTALRM
@@ -620,6 +621,7 @@ signal=SIGVTALRM
 stopreason=Virtual timer expired
 Hello, World!
 EOF
+RUN
 
 
 NAME=di on SIGWINCH
@@ -639,6 +641,7 @@ signal=SIGWINCH
 stopreason=
 Hello, World!
 EOF
+RUN
 
 
 NAME=di on SIGXCPU
@@ -658,6 +661,7 @@ signal=SIGXCPU
 stopreason=CPU time limit exceeded
 Hello, World!
 EOF
+RUN
 
 
 NAME=di on SIGXFSZ
@@ -677,3 +681,4 @@ signal=SIGXFSZ
 stopreason=File size limit exceeded
 Hello, World!
 EOF
+RUN
