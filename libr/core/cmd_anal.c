@@ -37,6 +37,17 @@ static const char *help_msg_a[] = {
 	NULL
 };
 
+static const char *help_msg_aaf[] = {
+	"Usage:", "aaf[efrt?]", " # analyse all functionsee also 'af' and 'afna'",
+	"aaf", "", "same as afr@@c:isq",
+	"aafe", " ", "same as aef@@F",
+	"aaff", "", "set a flag for every function", 
+	"aafr", " [len]", "consecutive function analysis (e anal.hasnext=1;afr@@c:isq)",
+	"aaft", "", "recursive type matching across all functions",
+	NULL
+};
+
+
 static const char *help_msg_aa[] = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
@@ -47,7 +58,7 @@ static const char *help_msg_aa[] = {
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaef", "", "analyze references with ESIL in all functions",
-	"aaf", "[e|r|t] ", "analyze all functions (e anal.hasnext=1;afr @@c:isq) (aafe=aef@@f)",
+	"aaf", "[efrt?] ", "analyze all functions relationships with flags, type matching and consecutive",
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
 	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
@@ -1070,6 +1081,7 @@ static void find_refs(RCore *core, const char *glob) {
 static void flag_every_function(RCore *core) {
 	RListIter *iter;
 	RAnalFunction *fcn;
+	// eprintf ("flag every(%d) %c", r_list_length (core->anal->fcns, 10);
 	r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_flag_set (core->flags, fcn->name,
@@ -3392,8 +3404,7 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	unsigned int i;
 	// const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
 	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
-
-	int argc = argc_str? atoi (argc_str): 0;
+	const int argc = argc_str? atoi (argc_str): 0;
 
 	const bool no_return = r_anal_noreturn_at_addr (a, function->addr);
 	if (no_return) {
@@ -10186,17 +10197,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_seek (core, cur, true);
 		} else if (input[1] == 't') { // "aaft"
 			cmd_anal_aaft (core);
+		} else if (input[1] == 'f') { // "aaff"
+			flag_every_function (core);
 		} else if (input[1] == 0) { // "aaf"
 			const bool analHasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_config_set_i (core->config, "anal.hasnext", true);
 			r_core_cmd0 (core, "afr@@c:isq");
 			r_config_set_i (core->config, "anal.hasnext", analHasnext);
 		} else {
-			r_cons_printf ("Usage: aaf[e|r|t] - analyze all functions again\n");
-			r_cons_printf (" aafe = aef@@F\n");
-			r_cons_printf ("aafr [len] = analyze all consecutive functions in section\n");
-			r_cons_printf (" aaft = recursive type matching in all functions\n");
-			r_cons_printf (" aaf  = afr@@c:isq\n");
+			r_core_cmd_help (core, help_msg_aaf);
 		}
 		break;
 	case 'c': // "aac"
