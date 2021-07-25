@@ -25,6 +25,12 @@ static bool buf_init(RBuffer *b, const void *user) {
 	return b->methods->init? b->methods->init (b, user): true;
 }
 
+static void buf_wholefree(RBuffer *b) {
+	if (!b->methods->get_whole_buf) {
+		R_FREE (b->whole_buf);
+	}
+}
+
 static bool buf_fini(RBuffer *b) {
 	r_return_val_if_fail (b && b->methods, false);
 	return b->methods->fini? b->methods->fini (b): true;
@@ -42,7 +48,7 @@ static st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
 
 static st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	r_return_val_if_fail (b && b->methods, -1);
-	R_FREE (b->whole_buf);
+	buf_wholefree (b);
 	return b->methods->write? b->methods->write (b, buf, len): -1;
 }
 
@@ -627,7 +633,7 @@ R_API bool r_buf_fini(RBuffer *b) {
 			b->methods->free_whole_buf (b);
 		}
 	} else {
-		R_FREE (b->whole_buf);
+		buf_wholefree (b);
 	}
 	return buf_fini (b);
 }
