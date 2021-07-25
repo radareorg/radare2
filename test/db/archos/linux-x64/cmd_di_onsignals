@@ -671,7 +671,6 @@ EXPECT=<<EOF
 [+] signal 24 aka SIGXCPU received 0 (CPU time limit exceeded)
 type=signal
 signal=SIGXCPU
-stopreason=CPU time limit exceeded
 signum=24
 sigstr=CPU time limit exceeded
 stopreason=stopped
