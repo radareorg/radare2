@@ -1039,7 +1039,7 @@ EXPECT=<<EOF
 guess
 utf8
 utf16le
-            0x004016c0      mov edi, 0x40230c                          ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
+            0x004016c0      mov edi, 0x40230c                          ; str.__B_ ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
 utf32le
             0x004016ed      mov edi, 0x40258c                          ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\x1b[36m \xa2\u20ac\U00010348 \x1b[0m\n"
 
