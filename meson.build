@@ -641,7 +641,7 @@ if cli_enabled
     subdir('binr/radiff2')
     subdir('binr/rafind2')
     subdir('binr/rasign2')
-    subdir('binr/rvc2')
+    subdir('binr/ravc2')
     subdir('binr/rax2')
   endif
   subdir('binr/r2pm')
@@ -709,7 +709,7 @@ if cli_enabled
     'man/rarun2.1',
     'man/rasm2.1',
     'man/rax2.1',
-    'man/rvc2.1',
+    'man/ravc2.1',
     'man/esil.7'
   )
 

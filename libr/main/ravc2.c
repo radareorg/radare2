@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2021 - pancake */
 #include <rvc.h>
 
-static void rvc2_show_help(void) {
-	printf ("Usage: rvc2 [action] [file ...]\n"
+static void ravc2_show_help(void) {
+	printf ("Usage: ravc2 [action] [file ...]\n"
 		" init            initialize repository in current directory\n"
 		" add [file ..]   add files to the current repository\n"
 		" checkout [name] checkout given branch name\n"
@@ -11,11 +11,11 @@ static void rvc2_show_help(void) {
 		" commit [a] [m] [f] perform a commit with the added files\n"
 		" branch [name]   change to another branch\n"
 		"Examples:\n"
-		"  rvc2 init\n"
-		"  man rvc2\n");
+		"  ravc2 init\n"
+		"  man ravc2\n");
 }
 
-R_API int r_main_rvc2(int argc, const char **argv) {
+R_API int r_main_ravc2(int argc, const char **argv) {
 	RGetopt opt;
 	int c;
 	bool git = false;
@@ -27,12 +27,12 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 			git = true;
 			break;
 		case 'v':
-			return r_main_version_print ("rvc2");
+			return r_main_version_print ("ravc2");
 		case 'h':
-			rvc2_show_help ();
+			ravc2_show_help ();
 			return 0;
 		default:
-			rvc2_show_help ();
+			ravc2_show_help ();
 			return -1;
 		}
 	}
@@ -73,7 +73,7 @@ R_API int r_main_rvc2(int argc, const char **argv) {
 	if (!strcmp (action, "commit")) {
 		int i;
 		if (opt.argc < 4) {
-			eprintf ("Usage: rvc2 commit [message] [files...]\n");
+			eprintf ("Usage: ravc2 commit [message] [files...]\n");
 			free (rp);
 			return -6;
 		}
