@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -103,6 +103,7 @@ typedef struct r_asm_t {
 	_RAsmPlugin *acur;
 	RList *plugins;
 	RBinBind binb;
+	RAnalBind analb;
 	RParse *ifilter;
 	RParse *ofilter;
 	Sdb *pair;
