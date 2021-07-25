@@ -58,3 +58,21 @@ or
 HelloW
 EOF
 RUN
+
+NAME=y dblf
+FILE=malloc://1024
+CMDS=<<EOF
+y 64
+ytf $f
+y 64
+ytf $f
+y 64
+ytf $f
+y 64
+ytf $f
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+RUN
