@@ -176,6 +176,77 @@ static const char *has_esil(RAsmState *as, const char *name) {
 	return "__";
 }
 
+static void ranal2_list(RAsmState *as, const char *arch) {
+	char bits[32];
+	const char *feat2, *feat;
+	RAnalPlugin *h;
+	RListIter *iter;
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return;
+	}
+	if (as->json) {
+		pj_a (pj);
+	}
+	r_list_foreach (as->anal->plugins, iter, h) {
+			bits[0] = 0;
+			if (h->bits == 27) {
+				strcat (bits, "27");
+			} else if (h->bits == 0) {
+				strcat (bits, "any");
+			} else {
+				if (h->bits & 4) {
+					strcat (bits, "4 ");
+				}
+				if (h->bits & 8) {
+					strcat (bits, "8 ");
+				}
+				if (h->bits & 16) {
+					strcat (bits, "16 ");
+				}
+				if (h->bits & 32) {
+					strcat (bits, "32 ");
+				}
+				if (h->bits & 64) {
+					strcat (bits, "64 ");
+				}
+			}
+			feat = "__";
+			feat2 = has_esil (as, h->name);
+			if (as->quiet) {
+				printf ("%s\n", h->name);
+			} else if (as->json) {
+				pj_o (pj);
+				pj_ks (pj, "name", h->name);
+				pj_k (pj, "bits");
+				pj_a (pj);
+				pj_i (pj, 32);
+				pj_i (pj, 64);
+				pj_end (pj);
+				pj_ks (pj, "license", r_str_get_fail (h->license, "unknown"));
+				pj_ks (pj, "description", h->desc);
+				pj_ks (pj, "features", feat);
+				pj_end (pj);
+			} else {
+				printf ("%s%s  %-9s  %-11s %-7s %s",
+					feat, feat2, bits, h->name,
+					r_str_get_fail (h->license, "unknown"), h->desc);
+				if (h->author) {
+					printf (" (by %s)", h->author);
+				}
+				if (h->version) {
+					printf (" v%s", h->version);
+				}
+				printf ("\n");
+			}
+	}
+	if (as->json) {
+		pj_end (pj);
+		printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	}
+}
+
 static void rasm2_list(RAsmState *as, const char *arch) {
 	int i;
 	char bits[32];
@@ -291,7 +362,8 @@ static int rasm_show_help(int v) {
 			" -j           output in json format\n"
 			" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 			" -l [len]     Input/Output length\n"
-			" -L           List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
+			" -L           List RAsm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
+			" -LL          List RAnal plugins\n"
 			" -o,-@ [addr] Set start address for code (default 0)\n"
 			" -O [file]    Output file name (rasm2 -Bf a.asm -O a)\n"
 			" -p           Run SPP over input for assembly\n"
@@ -580,6 +652,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	const char *filters = NULL;
 	const char *file = NULL;
 	bool list_plugins = false;
+	bool list_anal_plugins = false;
 	bool isbig = false;
 	bool rad = false;
 	bool use_spp = false;
@@ -663,7 +736,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			len = r_num_math (NULL, opt.arg);
 			break;
 		case 'L':
-			list_plugins = true;
+			if (list_plugins) {
+				list_anal_plugins = true;
+			} else {
+				list_plugins = true;
+			}
 			break;
 		case '@':
 		case 'o':
@@ -721,6 +798,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 
 	if (help > 0) {
 		ret = rasm_show_help (help > 1? 2: 0);
+		goto beach;
+	}
+	if (list_anal_plugins) {
+		ranal2_list (as, opt.argv[opt.ind]);
+		ret = 1;
 		goto beach;
 	}
 	if (list_plugins) {
