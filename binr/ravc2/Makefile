@@ -1,4 +1,4 @@
-BIN=rvc2
+BIN=ravc2
 BINDEPS=r_core r_main
 
 include ../rules.mk
