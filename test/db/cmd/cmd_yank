@@ -73,7 +73,6 @@ ytf $f
 ?e done
 EOF
 EXPECT=<<EOF
-0x00000010 = "catt"
-catt
+done
 EOF
 RUN
