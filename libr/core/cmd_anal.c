@@ -3,6 +3,7 @@
 #include <r_core.h>
 #include <r_util/r_graph_drawable.h>
 
+#define SLOW_ANALYSIS 1
 #define MAX_SCAN_SIZE 0x7ffffff
 // should be 1 unless it makes the CI sad
 
@@ -3635,7 +3636,8 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 			eprintf ("af: Cannot find function at 0x%08" PFMT64x "\n", addr);
 		}
 	}
-	r_core_anal_propagate_noreturn (core, addr);
+#if SLOW_ANALYSIS
+	// r_core_anal_propagate_noreturn (core, addr);
 #if 0
 	// XXX THIS IS VERY SLOW
 	if (core->anal->opt.vars) {
@@ -3649,7 +3651,8 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		}
 	}
 #endif
-	flag_every_function (core);
+//	flag_every_function (core);
+#endif
 }
 
 static int cmd_anal_fcn(RCore *core, const char *input) {
@@ -10485,6 +10488,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		jacuzzi:
 			// XXX this shouldnt be called. flags muts be created wheen the function is registered
 			flag_every_function (core);
+			r_core_anal_propagate_noreturn (core, UT64_MAX);
 			r_cons_break_pop ();
 			R_FREE (dh_orig);
 		}
