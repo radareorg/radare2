@@ -262,6 +262,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
 	r_cons_enable_mouse (false);
+	r_cons_set_raw (true);
 	r_cons_clear ();
 
 	// Repeat until the user exits the hud
@@ -344,6 +345,7 @@ R_API char *r_cons_hud_line(RList *list, const char *prompt) {
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
 	r_cons_enable_mouse (false);
+	r_cons_set_raw (true);
 
 	r_cons_reset ();
 	// Repeat until the user exits the hud
