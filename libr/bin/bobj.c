@@ -200,7 +200,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 }
 
 static void filter_classes(RBinFile *bf, RList *list) {
-	Sdb *db = sdb_new0 ();
+	HtPU *db = ht_pu_new0 ();
 	HtPP *ht = ht_pp_new0 ();
 	RListIter *iter, *iter2;
 	RBinClass *cls;
@@ -229,7 +229,7 @@ static void filter_classes(RBinFile *bf, RList *list) {
 			eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
 		}
 	}
-	sdb_free (db);
+	ht_pu_free (db);
 	ht_pp_free (ht);
 }
 
