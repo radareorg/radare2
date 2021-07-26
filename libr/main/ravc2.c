@@ -10,6 +10,8 @@ static void ravc2_show_help(void) {
 		" branch          list all available branches\n"
 		" commit [a] [m] [f] perform a commit with the added files\n"
 		" branch [name]   change to another branch\n"
+		"Environment:\n"
+		" RAVC2_USER=[name] Override cfg.user value to author commit.\n"
 		"Examples:\n"
 		"  ravc2 init\n"
 		"  man ravc2\n");
@@ -103,7 +105,11 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 				return -10;
 			}
 		}
-		char *author = r_sys_whoami ();
+		char *author = r_sys_getenv ("RAVC2_USER");
+		if (R_STR_ISEMPTY (author)) {
+			free (author);
+			author = r_sys_whoami ();
+		}
 		if (!author) {
 			free (message);
 			r_list_free (files);
