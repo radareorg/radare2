@@ -363,7 +363,7 @@ typedef struct r_bin_xtr_extract_t {
 	ut64 baddr;
 	ut64 laddr;
 	int file_count;
-	int loaded;
+	bool loaded;
 	RBinXtrMetadata *metadata;
 } RBinXtrData;
 

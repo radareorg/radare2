@@ -201,11 +201,11 @@ static void parse_grep_expression(const char *str) {
 				break;
 			case '^':
 				ptr++;
-				grep->begin = 1;
+				grep->begin = true;
 				break;
 			case '!':
 				ptr++;
-				grep->neg = 1;
+				grep->neg = true;
 				break;
 			case '?':
 				ptr++;
@@ -592,6 +592,10 @@ R_API void r_cons_grepbuf(void) {
 	if (!cons->context->buffer) {
 		cons->context->buffer_len = len + 20;
 		cons->context->buffer = malloc (cons->context->buffer_len);
+		if (!cons->context->buffer) {
+			cons->context->buffer_len = 0;
+			return;
+		}
 		cons->context->buffer[0] = 0;
 	}
 	RStrBuf *ob = r_strbuf_new ("");
@@ -686,6 +690,7 @@ R_API void r_cons_grepbuf(void) {
 				cons->lines++;
 			} else if (ret < 0) {
 				free (tline);
+				r_strbuf_free (ob);
 				return;
 			}
 			free (tline);
