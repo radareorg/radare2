@@ -2466,6 +2466,10 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
+		if (a->bits == 32 && (op->operands[0].immediate >> 32) > 0) {
+			eprintf ("Immediate value is out of range.\n");
+			return -1;
+		}
 		immediate = op->operands[0].immediate * op->operands[0].sign;
 		if (immediate >= 128 || immediate < -128) {
 			data[l++] = 0x68;
