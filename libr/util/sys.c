@@ -33,7 +33,7 @@
 static char** env = NULL;
 
 #if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
-  defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun || __HAIKU__
+  defined(FREEBSD_WITH_BACKTRACE) || __DragonFly__ || __sun
 # include <execinfo.h>
 #endif
 #if __APPLE__
