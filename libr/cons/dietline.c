@@ -1696,19 +1696,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					I.buffer.index = I.buffer.length;
 				}
 				break;
-			case '[': // mouse click event
-				// read until M
-				for (;;) {
-					ch = r_cons_readchar ();
-					if (ch == -1) {
-						r_cons_break_pop ();
-						return NULL;
-					}
-					if (ch == 'M') {
-						break;
-					}
-				}
-				break;
 			default:
 				if (I.vtmode == 2) {
 					buf[1] = r_cons_readchar_timeout (50);
@@ -1717,16 +1704,28 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						__print_prompt ();
 						continue;
 					}
+				} else {
+					buf[1] = r_cons_readchar_timeout (50);
 				}
-				if (buf[0] == 0x5b) {	// [
+				if (buf[0] == '[') { // [
 					switch (buf[1]) {
-					case '3': // supr
+					case '3': // supr or mouse click
 						__delete_next_char ();
 						if (I.vtmode == 2) {
 							buf[1] = r_cons_readchar ();
 							if (buf[1] == -1) {
 								r_cons_break_pop ();
 								return NULL;
+							}
+						}
+						for (;;) {
+							ch = r_cons_readchar ();
+							if (ch == -1) {
+								r_cons_break_pop ();
+								return NULL;
+							}
+							if (isupper (ch)) { // read until 'M'
+								break;
 							}
 						}
 						break;
