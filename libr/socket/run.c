@@ -1061,7 +1061,11 @@ R_API int r_run_config_env(RRunProfile *p) {
 #if __WINDOWS__
 		eprintf ("rarun2: libpath unsupported for this platform\n");
 #elif __HAIKU__
-		r_sys_setenv ("LIBRARY_PATH", p->_libpath);
+		char *orig = r_sys_getenv ("LIBRARY_PATH");
+		char *newlib = r_str_newf ("%s:%s", p->_libpath, orig);
+		r_sys_setenv ("LIBRARY_PATH", newlib);
+		free (newlib);
+		free (orig);
 #elif __APPLE__
 		r_sys_setenv ("DYLD_LIBRARY_PATH", p->_libpath);
 #else
