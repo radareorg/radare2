@@ -7,7 +7,7 @@ bool test_filter_regs(void) {
 	RAnal *anal = r_anal_new ();
 	r_anal_use (anal, "x86");
 	r_anal_set_bits (anal, 32);
-	r_anal_set_reg_profile (anal);
+	r_anal_set_reg_profile (anal, NULL);
 	RAnalEsil *esil = r_anal_esil_new (4096, 0, 1);
 	esil->anal = anal;
 
@@ -54,7 +54,7 @@ bool test_lemon_const_folder(void) {
 	RAnal *anal = r_anal_new ();
 	r_anal_use (anal, "x86");
 	r_anal_set_bits (anal, 32);
-	r_anal_set_reg_profile (anal);
+	r_anal_set_reg_profile (anal, NULL);
 
 	RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (anal, NULL, "4,!,3,ebx,:=,!,1,+,eax,:=");
 	r_anal_esil_dfg_fold_const (anal, dfg);

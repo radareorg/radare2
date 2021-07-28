@@ -133,6 +133,9 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	const char *p = str;
 
 	r_return_val_if_fail (reg && str, false);
+	if (R_STR_ISEMPTY (str)) {
+		return true;
+	}
 
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
@@ -262,6 +265,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	return true;
 }
 
+// read profile from file
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
 	r_return_val_if_fail (reg && profile, NULL);
 	char *str = r_file_slurp (profile, NULL);

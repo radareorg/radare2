@@ -797,7 +797,7 @@ static bool cb_asmbits(void *user, void *data) {
 				free (rp);
 			}
 		} else {
-			(void)r_anal_set_reg_profile (core->anal);
+			(void)r_anal_set_reg_profile (core->anal, NULL);
 		}
 	}
 	r_core_anal_cc_init (core);
