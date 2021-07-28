@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - pancake */
+/* radare - LGPL - Copyright 2019-2021 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -6,12 +6,14 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
+#if 0
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int opsz = 0;
 	r_strbuf_set (&op->buf_asm, "");
 	op->size = opsz;
 	return opsz;
 }
+#endif
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return 0;
