@@ -229,7 +229,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			}
 #endif
 			anal->cur = h;
-			r_anal_set_reg_profile (anal);
+			r_anal_set_reg_profile (anal, NULL);
 			return true;
 		}
 	}
@@ -242,7 +242,10 @@ R_API char *r_anal_get_reg_profile(RAnal *anal) {
 }
 
 // deprecate.. or at least reuse get_reg_profile...
-R_API bool r_anal_set_reg_profile(RAnal *anal) {
+R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
+	if (p) {
+		return r_reg_set_profile_string (anal->reg, p);
+	}
 	bool ret = false;
 	if (anal && anal->cur && anal->cur->set_reg_profile) {
 		ret = anal->cur->set_reg_profile (anal);
@@ -315,7 +318,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	case 64:
 		if (anal->bits != bits) {
 			anal->bits = bits;
-			r_anal_set_reg_profile (anal);
+			r_anal_set_reg_profile (anal, NULL);
 		}
 		return true;
 	}
