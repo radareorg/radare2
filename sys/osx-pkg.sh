@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# based on
-# http://blog.coolaj86.com/articles/how-to-unpackage-and-repackage-pkg-osx.html
+# BasedOn: http://blog.coolaj86.com/articles/how-to-unpackage-and-repackage-pkg-osx.html
+# Also: https://gist.github.com/SchizoDuckie/2a1a1cc71284e6463b9a
 
 # to uninstall:
 # sudo pkgutil --forget org.radare.radare2
