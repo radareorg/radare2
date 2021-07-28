@@ -5,10 +5,10 @@
     <pkg-ref id="org.radare.radare2">
         <bundle-version/>
     </pkg-ref>
-    <options customize="never" require-scripts="false" hostArchitectures="i386,x86_64"/>
+    <options customize="never" require-scripts="false" hostArchitectures="x86_64"/>
     <volume-check>
         <allowed-os-versions>
-            <os-version min="10.7"/>
+            <os-version min="10.5"/>
         </allowed-os-versions>
     </volume-check>
     <choices-outline>
