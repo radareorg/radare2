@@ -125,6 +125,7 @@ static const char *help_msg_slash_c[] = {
 	"/cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
 	"/cd", "", "Search for ASN1/DER certificates",
 	"/cr", "", "Search for ASN1/DER private keys (RSA and ECC)",
+	"/cg", "", "Search for GPG/PGP private keys (Plaintext and binary form)",
 	"/cu", "[*qj]", "Search for UDS CAN database tables (binbloom)",
 	NULL
 };
@@ -3603,6 +3604,38 @@ reread:
 				}
 				(void)r_core_search_uds (core, mode);
 				dosearch = false;
+				break;
+			}
+		case 'g': // "cg"
+			{
+				RSearchKeyword *kw;
+				r_search_reset (core->search, R_SEARCH_KEYWORD);
+				// GPG
+				kw = r_search_keyword_new_str ("BEGIN PGP PRIVATE KEY", NULL, NULL, false);
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_str ("BEGIN PGP PUBLIC KEY", NULL, NULL, false);
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_str ("BEGIN PRIVATE KEY", NULL, NULL, false);
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_str ("BEGIN PUBLIC KEY", NULL, NULL, false);
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_hexmask ("8c0d04010302", NULL); // IDEA
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_hexmask ("8c0d04020302", NULL); // 3DES
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_hexmask ("8c0d04030302", NULL); // CAST5
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_hexmask ("8c0d04040302", NULL); // BFISH
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_hexmask ("8c0d04070302", NULL); // AES128
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_hexmask ("8c0d04080302", NULL); // AES192
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_hexmask ("8c0d04090302", NULL); // AES256
+				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_hexmask ("8c0d040a0302", NULL); // 2FISH
+				r_search_kw_add (search, kw);
+				r_search_begin (core->search);
 				break;
 			}
 		case 'a': // "ca"
