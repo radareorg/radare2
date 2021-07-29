@@ -83,7 +83,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		break;
 	case R_MODE_RADARE: {
 		char *f_name = strdup (string->string);
-		r_name_filter (f_name, 32);
+		r_name_filter (f_name, -1);
 		if (bin->prefix) {
 			io->cb_printf ("f %s.str.%s %u @ 0x%08"PFMT64x"\n"
 					"Cs %u @ 0x%08"PFMT64x"\n",

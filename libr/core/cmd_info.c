@@ -1006,7 +1006,8 @@ static int cmd_info(void *data, const char *input) {
 					int min = r_config_get_i (core->config, "bin.minstr");
 					if (bf) {
 						bf->strmode = mode;
-						r_bin_dump_strings (bf, min, 2);
+						RList *res = r_bin_dump_strings (bf, min, 2);
+						r_list_free (res);
 					}
 					goto done;
 				}
@@ -1026,7 +1027,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'c': // "ic"
-		// XXX this is dupe of cbin.c:bin_classes()
+			// XXX this is dupe of cbin.c:bin_classes()
 			if (input[1] == '?') {
 				eprintf ("Usage: ic[gljqc**] [class-index or name]\n");
 			} else if (input[1] == 'g') {

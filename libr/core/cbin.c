@@ -3419,7 +3419,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			continue;
 		}
 		name = strdup (c->name);
-		r_name_filter (name, 0);
+		r_name_filter (name, -1);
 		ut64 at_min = UT64_MAX;
 		ut64 at_max = 0LL;
 
@@ -3514,7 +3514,7 @@ static int bin_classes(RCore *r, PJ *pj, int mode) {
 			}
 			r_list_foreach (c->fields, iter2, f) {
 				char *fn = r_str_newf ("field.%s.%s", c->name, f->name);
-				r_name_filter (fn, 0);
+				r_name_filter (fn, -1);
 				ut64 at = f->vaddr; //  sym->vaddr + (f->vaddr &  0xffff);
 				r_cons_printf ("\"f %s = 0x%08"PFMT64x"\"\n", fn, at);
 				free (fn);
