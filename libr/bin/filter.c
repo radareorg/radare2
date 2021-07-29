@@ -33,26 +33,29 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtPU *db, ut64 vaddr, char *name) {
 	r_return_val_if_fail (db && name, NULL);
 
 	char *resname = name;
-	char *uname = r_str_newf ("%" PFMT64x ".%s", vaddr, name);
 	int count = 0;
+
 	HtPUKv *kv = ht_pu_find_kv (db, name, NULL);
 	if (kv) {
-		count = ++kv->value;
+		kv->value++;
+		count = kv->value;
 	} else {
 		count = 1;
 		ht_pu_insert (db, name, 1ULL);
 	}
 
-	bool found;
+	// check if there's another symbol with the same name and address);
+	char *uname = r_str_newf ("%" PFMT64x ".%s", vaddr, name);
+	bool found = false;
 	ht_pu_find (db, uname, &found);
 	if (found) {
 		// TODO: symbol is dupped, so symbol can be removed!
 		free (uname);
-		return resname;
+		return NULL; // r_str_newf ("%s_%d", name, count);
 	}
 	HtPUKv tmp = {
 		.key = uname,
-		.key_len = 1,
+		.key_len = strlen (uname),
 		.value = count,
 		.value_len = sizeof (ut64)
 	};
