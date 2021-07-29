@@ -68,6 +68,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			return -4;
 		}
 		if (!r_vc_branch (rp, opt.argv[opt.ind + 1])) {
+			free (rp);
 			return -5;
 		}
 		return 0;
@@ -135,7 +136,9 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (rp);
 			return -13;
 		}
+		free (rp);
 		return 0;
 	}
+	free (rp);
 	return -14;
 }

@@ -179,6 +179,7 @@ R_API bool r_name_filter(char *s, int maxlen) {
 				s--;
 			}
 		}
+		count++;
 	}
 #if FAST_FILTER
 	// that flag should be trimmed and checked already
