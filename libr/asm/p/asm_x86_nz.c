@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2020 - pancake, unlogic, emvivre */
+/* Copyright (C) 2008-2021 - pancake, unlogic, emvivre */
 
 #include <r_flag.h>
 #include <r_core.h>
@@ -4458,6 +4458,8 @@ LookupTable oplookup[] = {
 	{"pusha", 1, NULL, 0x60, 1},
 	{"pushad", 1, NULL, 0x60, 1},
 	{"pushal", 1, NULL, 0x60, 1},
+	{"pushf", 0, NULL, 0x669c, 2},
+	{"popf", 0, NULL, 0x669d, 2},
 	{"pushfd", 0, NULL, 0x9c, 1},
 	{"rcl", 0, &process_group_2, 0},
 	{"rcr", 0, &process_group_2, 0},
