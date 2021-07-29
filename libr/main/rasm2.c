@@ -178,73 +178,70 @@ static const char *has_esil(RAsmState *as, const char *name) {
 
 static void ranal2_list(RAsmState *as, const char *arch) {
 	char bits[32];
-	const char *feat2, *feat;
 	RAnalPlugin *h;
 	RListIter *iter;
-	PJ *pj = pj_new ();
-	if (!pj) {
-		return;
-	}
+	PJ *pj = NULL;
 	if (as->json) {
+		pj = pj_new ();
 		pj_a (pj);
 	}
 	r_list_foreach (as->anal->plugins, iter, h) {
-			bits[0] = 0;
-			if (h->bits == 27) {
-				strcat (bits, "27");
-			} else if (h->bits == 0) {
-				strcat (bits, "any");
-			} else {
-				if (h->bits & 4) {
-					strcat (bits, "4 ");
-				}
-				if (h->bits & 8) {
-					strcat (bits, "8 ");
-				}
-				if (h->bits & 16) {
-					strcat (bits, "16 ");
-				}
-				if (h->bits & 32) {
-					strcat (bits, "32 ");
-				}
-				if (h->bits & 64) {
-					strcat (bits, "64 ");
-				}
+		bits[0] = 0;
+		if (h->bits == 27) {
+			strcat (bits, "27");
+		} else if (h->bits == 0) {
+			strcat (bits, "any");
+		} else {
+			if (h->bits & 4) {
+				strcat (bits, "4 ");
 			}
-			feat = "__";
-			feat2 = has_esil (as, h->name);
-			if (as->quiet) {
-				printf ("%s\n", h->name);
-			} else if (as->json) {
-				pj_o (pj);
-				pj_ks (pj, "name", h->name);
-				pj_k (pj, "bits");
-				pj_a (pj);
-				pj_i (pj, 32);
-				pj_i (pj, 64);
-				pj_end (pj);
-				pj_ks (pj, "license", r_str_get_fail (h->license, "unknown"));
-				pj_ks (pj, "description", h->desc);
-				pj_ks (pj, "features", feat);
-				pj_end (pj);
-			} else {
-				printf ("%s%s  %-9s  %-11s %-7s %s",
+			if (h->bits & 8) {
+				strcat (bits, "8 ");
+			}
+			if (h->bits & 16) {
+				strcat (bits, "16 ");
+			}
+			if (h->bits & 32) {
+				strcat (bits, "32 ");
+			}
+			if (h->bits & 64) {
+				strcat (bits, "64 ");
+			}
+		}
+		const char *feat = "__";
+		const char *feat2 = has_esil (as, h->name);
+		if (as->quiet) {
+			printf ("%s\n", h->name);
+		} else if (as->json) {
+			pj_o (pj);
+			pj_ks (pj, "name", h->name);
+			pj_k (pj, "bits");
+			pj_a (pj);
+			pj_i (pj, 32);
+			pj_i (pj, 64);
+			pj_end (pj);
+			pj_ks (pj, "license", r_str_get_fail (h->license, "unknown"));
+			pj_ks (pj, "description", h->desc);
+			pj_ks (pj, "features", feat);
+			pj_end (pj);
+		} else {
+			printf ("%s%s  %-9s  %-11s %-7s %s",
 					feat, feat2, bits, h->name,
 					r_str_get_fail (h->license, "unknown"), h->desc);
-				if (h->author) {
-					printf (" (by %s)", h->author);
-				}
-				if (h->version) {
-					printf (" v%s", h->version);
-				}
-				printf ("\n");
+			if (h->author) {
+				printf (" (by %s)", h->author);
 			}
+			if (h->version) {
+				printf (" v%s", h->version);
+			}
+			printf ("\n");
+		}
 	}
 	if (as->json) {
 		pj_end (pj);
 		printf ("%s\n", pj_string (pj));
-		pj_free (pj);
 	}
+	pj_free (pj);
 }
 
 static void rasm2_list(RAsmState *as, const char *arch) {
