@@ -1018,3 +1018,13 @@ EXPECT=<<EOF
 0x00000005 hit0_0 a5a5bf
 EOF
 RUN
+
+NAME=crypto search
+FILE=bins/other/jeje.gpg
+CMDS=/cg
+EOF
+EXPECT=<<EOF
+0x00000007 hit0_0 "jkasdfBEGIN PGP PRIVATE KEYsadjfjasf"
+EOF
+je
+RUN

@@ -60,7 +60,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 	int bmlen = 0;
 
 	if (bmstr) {
-		bmbuf = malloc (strlen (bmstr)+1);
+		bmbuf = malloc (strlen (bmstr) + 1);
 		if (!bmbuf) {
 			return NULL;
 		}
