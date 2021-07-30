@@ -1817,7 +1817,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
 			return -1;
 		}
-		if(immediate_out_of_range(a->bits, op->operands[1].immediate)) {
+		if (immediate_out_of_range (a->bits, op->operands[1].immediate)) {
 			return -1;
 		}	
 		immediate = op->operands[1].immediate * op->operands[1].sign;
