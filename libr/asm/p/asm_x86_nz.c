@@ -136,6 +136,10 @@ typedef struct Opcode_t {
 	bool has_bnd;
 } Opcode;
 
+static int immediate_out_of_range(int bits, ut64 immediate) {
+	return (bits == 32 && (immediate >> 32) > 0); 
+}
+
 static inline bool is_debug_or_control(Operand op) {
 	return (op.type & OT_REGTYPE) & (OT_CONTROLREG | OT_DEBUGREG);
 }
@@ -2466,10 +2470,10 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
-		if (a->bits == 32 && (op->operands[0].immediate >> 32) > 0) {
+		if(immediate_out_of_range(a->bits, op->operands[0].immediate) {
 			eprintf ("Immediate value is out of range.\n");
 			return -1;
-		}
+		}	
 		immediate = op->operands[0].immediate * op->operands[0].sign;
 		if (immediate >= 128 || immediate < -128) {
 			data[l++] = 0x68;
