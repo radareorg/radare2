@@ -154,6 +154,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		return NULL;
 	}
 	/* TODO: Free anals here */
+	free (a->pincmd);
 	r_list_free (a->fcns);
 	ht_up_free (a->ht_addr_fun);
 	ht_pp_free (a->ht_name_fun);

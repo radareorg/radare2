@@ -36,3 +36,43 @@ EXPECT=<<EOF
 ebx = 0x00000010
 EOF
 RUN
+
+NAME=aes with pin
+FILE=-
+CMDS=<<EOF
+wx bb10000000bb10000000bb10000000 
+aeim
+e asm.arch=x86
+e asm.bits=32
+e cmd.esil.pin=?e
+aepc $$
+aep test @ 5
+aep
+aes
+aes
+EOF
+EXPECT=<<EOF
+aep test @ 0x5
+test
+EOF
+RUN
+
+NAME=aes with pin after aeim
+FILE=-
+CMDS=<<EOF
+wx bb10000000bb10000000bb10000000 
+e asm.arch=x86
+e asm.bits=32
+e cmd.esil.pin=?e
+aeim
+aepc $$
+aep test @ 5
+aep
+aes
+aes
+EOF
+EXPECT=<<EOF
+aep test @ 0x5
+test
+EOF
+RUN
