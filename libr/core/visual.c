@@ -1352,6 +1352,25 @@ static void addComment(RCore *core, ut64 addr) {
 	r_cons_set_raw (true);
 }
 
+static void add_ref(RCore *core) {
+	// read name provided by user
+	char *fn = r_cons_input ("Reference From: ");
+	if (R_STR_ISNOTEMPTY (fn)) {
+		r_core_cmdf (core, "ax $$ %s", fn);
+	}
+	free (fn);
+}
+
+static bool delete_ref(RCore *core, RList *xrefs, int choice, int xref) {
+	RAnalRef *refi = r_list_get_n (xrefs, choice);
+	if (refi) {
+		if (core->print->cur_enabled) {
+			core->print->cur = 0;
+		}
+		return r_anal_xref_del (core->anal, refi->addr, refi->at);
+	}
+	return false;
+}
 static int follow_ref(RCore *core, RList *xrefs, int choice, int xref) {
 	RAnalRef *refi = r_list_get_n (xrefs, choice);
 	if (refi) {
@@ -1562,78 +1581,94 @@ repeat:
 	r_cons_enable_mouse (r_config_get_i (core->config, "scr.wheel"));
 	ch = r_cons_readchar ();
 	ch = r_cons_arrow_to_hjkl (ch);
-	if (ch == ':') {
+	switch (ch) {
+	case ':':
 		r_core_visual_prompt_input (core);
 		goto repeat;
-	} else if (ch == '?') {
+		break;
+	case '?':
 		r_cons_clear00 ();
 		RStrBuf *rsb = r_strbuf_new ("");
 		r_core_visual_append_help (rsb, "Xrefs Visual Analysis Mode (Vv + x) Help", help_msg_visual_xref);
 		ret = r_cons_less_str (r_strbuf_get (rsb), "?");
 		r_strbuf_free (rsb);
 		goto repeat;
-	} else if (ch == 9) { // TAB
+	case 9: // TAB
 		xrefsMode = !xrefsMode;
 		r_core_visual_toggle_decompiler_disasm (core, false, true);
 		goto repeat;
-	} else if (ch == 'p') {
+	case 'p':
 		r_core_visual_toggle_decompiler_disasm (core, false, true);
 		printMode++;
 		if (printMode > lastPrintMode) {
 			printMode = 0;
 		}
 		goto repeat;
-	} else if (ch == 'P') {
+	case 'P':
 		r_core_visual_toggle_decompiler_disasm (core, false, true);
 		printMode--;
 		if (printMode < 0) {
 			printMode = lastPrintMode;
 		}
 		goto repeat;
-	} else if (ch == '/') {
+	case '/':
 		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 		goto repeat;
-	} else if (ch == 'x' || ch == '<') {
+	case '+':
+		add_ref (core);
+		goto repeat;
+	case '-':
+		r_cons_gotoxy (0, 0);
+		if (r_cons_yesno ('y', "Do you want to delete this xref? (Y/n)")) {
+			delete_ref (core, xrefs, skip, xref);
+		}
+		goto repeat;
+	case '<':
+	case 'x':
 		xref = true;
 		xrefsMode = !xrefsMode;
 		goto repeat;
-	} else if (ch == 'X' || ch == '>') {
+	case '>':
+	case 'X':
 		xref = false;
 		xrefsMode = !xrefsMode;
 		goto repeat;
-	} else if (ch == 'g') {
+	case 'g':
 		skip = 0;
 		goto repeat;
-	} else if (ch == 'G') {
+	case 'G':
 		skip = 9999;
 		goto repeat;
-	} else if (ch == ';') {
+	case ';':
 		addComment (core, cur_ref_addr);
 		goto repeat;
-	} else if (ch == '.') {
+	case '.':
 		skip = 0;
 		goto repeat;
-	} else if (ch == 'j') {
+	case 'j':
 		skip++;
 		goto repeat;
-	} else if (ch == 'J') {
+	case 'J':
 		skip += 10;
 		goto repeat;
-	} else if (ch == 'k') {
+	case 'k':
 		skip--;
 		if (skip < 0) {
 			skip = 0;
 		}
 		goto repeat;
-	} else if (ch == 'K') {
+	case 'K':
 		skip = (skip < 10) ? 0: skip - 10;
 		goto repeat;
-	} else if (ch == ' ' || ch == '\n' || ch == '\r' || ch == 'l') {
-		ret = follow_ref (core, xrefs, skip, xref);
-	} else if (IS_DIGIT (ch)) {
-		ret = follow_ref (core, xrefs, ch - 0x30, xref);
-	} else if (ch != 'q' && ch != 'Q' && ch != 'h') {
-		goto repeat;
+	default:
+		if (ch == ' ' || ch == '\n' || ch == '\r' || ch == 'l') {
+			ret = follow_ref (core, xrefs, skip, xref);
+		} else if (IS_DIGIT (ch)) {
+			ret = follow_ref (core, xrefs, ch - 0x30, xref);
+		} else if (ch != 'q' && ch != 'Q' && ch != 'h') {
+			goto repeat;
+		}
+		break;
 	}
 	r_list_free (xrefs);
 
@@ -1684,8 +1719,7 @@ static void visual_comma(RCore *core) {
 	cmtfile = r_str_between (comment, ",(", ")");
 	cwd = getcommapath (core);
 	if (!cmtfile) {
-		char *fn;
-		fn = r_cons_input ("<comment-file> ");
+		char *fn = r_cons_input ("<comment-file> ");
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
 			if (!comment || !*comment) {
