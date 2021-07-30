@@ -136,6 +136,10 @@ typedef struct Opcode_t {
 	bool has_bnd;
 } Opcode;
 
+static bool immediate_out_of_range(int bits, ut64 immediate) {
+	return bits == 32 && (immediate >> 32); 
+}
+
 static inline bool is_debug_or_control(Operand op) {
 	return (op.type & OT_REGTYPE) & (OT_CONTROLREG | OT_DEBUGREG);
 }
@@ -1813,6 +1817,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		if (op->operands[1].immediate == -1 && a->num && a->num->nc.errors > 0) {
 			return -1;
 		}
+		if (immediate_out_of_range (a->bits, op->operands[1].immediate)) {
+			return -1;
+		}	
 		immediate = op->operands[1].immediate * op->operands[1].sign;
 		if (op->operands[0].type & OT_GPREG && !(op->operands[0].type & OT_MEMORY)) {
 			if ((op->operands[0].type & OT_DWORD) &&
@@ -2466,6 +2473,9 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
+		if (immediate_out_of_range (a->bits, op->operands[0].immediate)) {
+			return -1;
+		}	
 		immediate = op->operands[0].immediate * op->operands[0].sign;
 		if (immediate >= 128 || immediate < -128) {
 			data[l++] = 0x68;
@@ -2500,6 +2510,9 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 			return l;
 		}
 	} else if (op->operands[0].type & OT_CONSTANT) {
+		if (op->operands[0].immediate > 255) {
+			return -1;
+		}
 		immediate = op->operands[0].immediate * op->operands[0].sign;
 		if (immediate > 255 || immediate < -128) {
 			return -1;
