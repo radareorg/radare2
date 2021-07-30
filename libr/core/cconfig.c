@@ -3865,12 +3865,12 @@ R_API int r_core_config_init(RCore *core) {
 		&scr_vtmode, "Use VT sequences on Windows (0: Disable, 1: Output, 2: Input & Output)");
 #endif
 #if __ANDROID__
-	SETBPREF ("scr.responsive", "true", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
+	// SETBPREF ("scr.responsive", "true", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 	SETI ("scr.wheel.speed", 1, "Mouse wheel speed");
 #else
-	SETBPREF ("scr.responsive", "false", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 	SETI ("scr.wheel.speed", 4, "Mouse wheel speed");
 #endif
+	SETBPREF ("scr.responsive", "false", "Auto-adjust Visual depending on screen (e.g. unset asm.bytes)");
 	SETBPREF ("scr.wheel.nkey", "false", "Use sn/sp and scr.nkey on wheel instead of scroll");
 	// RENAME TO scr.mouse
 	SETBPREF ("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
