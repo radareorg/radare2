@@ -375,3 +375,9 @@ a "add x0, x0, x1, lsr 12" 0030418b
 a "add x0, x0, x1, asr 1" 0004818b
 a "add x0, x0, x1, asr 2" 0008818b
 a "add x0, x0, x1, asr 12" 0030818b
+a "cmp w26,w26" 5f031a6b
+a "cmp x26,x26" 5f031aeb
+a "cmp w26,0" 5f030071
+a "cmp w26,1" 5f070071
+a "cmp x26,0" 5f0300f1
+a "cmp x26,1" 5f0700f1

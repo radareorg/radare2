@@ -346,11 +346,22 @@ static ut32 cmp(ArmOp *op) {
 			return UT32_MAX;
 		}
 		k =  0x1f00006b;
+	} else if (op->operands[0].type & ARM_GPR  && op->operands[1].type & ARM_CONSTANT) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0x1f0000f1;
+		} else { 
+			k =  0x1f000071;
+		}
+		k |= ( op->operands[1].immediate  * 4 ) << 16 ;
 	} else {
 		return UT32_MAX;
 	}
 
-	data = k | (op->operands[0].reg & 0x18) << 13 | op->operands[0].reg << 29 | op->operands[1].reg << 8;
+	data = k | (op->operands[0].reg & 0x18) << 13 | op->operands[0].reg << 29;
+
+	if (op->operands[1].type &  ARM_GPR) {
+		data |= op->operands[1].reg << 8;
+	}
 
 	if (op->operands[2].type != ARM_SHIFT) {
 		data |= op->operands[2].shift_amount << 18 | op->operands[2].shift << 14;
