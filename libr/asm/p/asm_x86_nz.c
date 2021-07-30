@@ -2473,7 +2473,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
-		if(immediate_out_of_range(a->bits, op->operands[0].immediate)) {
+		if (immediate_out_of_range (a->bits, op->operands[0].immediate)) {
 			return -1;
 		}	
 		immediate = op->operands[0].immediate * op->operands[0].sign;
