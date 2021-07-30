@@ -200,7 +200,7 @@ static const char *help_msg_ae[] = {
 	"aek", " [query]", "perform sdb query on ESIL.info",
 	"aek-", "", "resets the ESIL.info sdb instance",
 	"aeL", "", "list ESIL plugins",
-	"aep", "[?] [addr]", "manage esil pin hooks",
+	"aep", "[?] [addr]", "manage esil pin hooks (see 'e cmd.esil.pin')",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
 	"aes", "", "perform emulated debugger step",
@@ -333,9 +333,11 @@ static const char *help_msg_aeg[] = {
 };
 
 static const char *help_msg_aep[] = {
-	"Usage:", "aep[-c] ", " [...]",
+	"Usage:", "aep[-*c] ", " [...]",
 	"aepc", " [addr]", "change program counter for esil",
-	"aep", "-[addr]", "remove pin",
+	"aep*", "", "list pins in r2 commands",
+	"aep-", "*", "remove all pins",
+	"aep-", "[addr]", "remove pin",
 	"aep", " [name] @ [addr]", "set pin",
 	"aep", "", "list pins",
 	NULL
@@ -6547,14 +6549,19 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				eprintf ("Missing argument\n");
 			}
 			break;
+		case '*':
 		case 0:
 			r_anal_pin_list (core->anal);
 			break;
 		case '-':
-			if (input[2]) {
-				addr = r_num_math (core->num, input + 2);
+			if (input[2] == '*') {
+				r_anal_pin_init (core->anal);
+			} else {
+				if (input[2]) {
+					addr = r_num_math (core->num, input + 2);
+				}
+				r_anal_pin_unset (core->anal, addr);
 			}
-			r_anal_pin_unset (core->anal, addr);
 			break;
 		case ' ':
 			r_anal_pin (core->anal, addr, input + 2);
