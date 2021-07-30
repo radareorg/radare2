@@ -1697,31 +1697,26 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			arg2 = getarg (&gop, 2, 0, NULL, ARG2_AR, NULL);
 			op->sign = true;
 			int width = INSOP(0).size;
-			if (arg2) {
-				// flags and sign have been handled
-				esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=", width*8, arg2, width*8, arg1, arg0, arg0);
-			} else {
-				if (arg1) {
-					esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%s,-,?{,1,1,}{,0,0,},cf,:=,of,:=", width*8, arg0, width*8, arg1, arg0, arg0);
-				} else {
-					if (arg0) {
-						const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
-						const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
-						const char *r_nume = (width==1)?"ax": r_quot;
 
-						if ( width == 1 ) {
-							esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,*,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
-								arg0, r_nume, arg0, r_nume, r_quot, r_rema);
-						} else if ( width == 8 ) { // TODO still needs to be fixed to handle correct signed 128 bit value 
-							esilprintf (op, "%s,%s,L*,%s,=,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
-									arg0, r_nume, r_nume, r_rema);
-						} else {
-							esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%d,SWAP,>>,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
-									width*8, arg0, width*8, r_nume, r_nume, width*8, r_rema);
-						}
-					}
-					else {
-						/* should never happen */
+			if (arg1) {
+				char *multiplier = arg0;
+				if (arg2) {
+					multiplier = arg2;
+				}
+				esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%s,-,!,!,DUP,cf,:=,of,:=", 
+					width*8, multiplier, width*8, arg1, arg0, arg0);
+			} else {
+				if (arg0) {
+					const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
+					const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
+					const char *r_nume = (width==1)?"ax": r_quot;
+
+					if ( width == 8 ) { // TODO still needs to be fixed to handle correct signed 128 bit value 
+						esilprintf (op, "%s,%s,L*,%s,=,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
+								arg0, r_nume, r_nume, r_rema);
+					} else {
+						esilprintf (op, "%d,%s,~,%d,%s,~,*,DUP,%s,=,%d,SWAP,>>,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
+								width*8, arg0, width*8, r_nume, r_nume, width*8, r_rema); 
 					}
 				}
 			}
@@ -1736,18 +1731,13 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
 				const char *r_nume = (width==1)?"ax": r_quot;
 
-				if ( width == 1 ) {
-					esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,*,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
-						src, r_nume, src, r_nume, r_quot, r_rema);
-				} else if ( width == 8 ) {
+				if ( width == 8 ) {
 					esilprintf (op, "%s,%s,L*,%s,=,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
 							src, r_nume, r_nume, r_rema);
 				} else {
 					esilprintf (op, "%s,%s,*,DUP,%s,=,%d,SWAP,>>,DUP,%s,=,!,!,DUP,cf,:=,of,:=",
-							src, r_nume, r_nume, width*8, r_rema);
+							src, r_nume, r_nume, width*8, r_rema); // this should be ok for width == 1 also
 				}
-			} else {
-				/* should never happen */
 			}
 		}
 		break;
