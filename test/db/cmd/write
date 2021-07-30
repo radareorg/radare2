@@ -471,36 +471,36 @@ EXPECT=<<EOF
 / 9: fcn.00000000 ();
 | 0x00000000      0000           add byte [rax], al
 | 0x00000002      7502           jne 6
-| ----------- true: 0x00000006  false: 0x00000004
+| // true: 0x00000006  false: 0x00000004
 | 0x00000004      0000           add byte [rax], al
-| ----------- true: 0x00000006
+| // true: 0x00000006
 | 0x00000006      0000           add byte [rax], al
 \ 0x00000008      c3             ret
 
 / 9: fcn.00000000 ();
 | 0x00000000      0000           add byte [rax], al
 | 0x00000002      7502           jne 6
-| ----------- true: 0x00000006  false: 0x00000004
+| // true: 0x00000006  false: 0x00000004
 | 0x00000004      7502           jne 8
-| ----------- true: 0x00000008  false: 0x00000006
+| // true: 0x00000008  false: 0x00000006
 | 0x00000006      0000           add byte [rax], al
-| ----------- true: 0x00000008
+| // true: 0x00000008
 \ 0x00000008      c3             ret
 
 / 9: fcn.00000000 ();
 | ; var int64_t var_4h @ rbp-0x4
 | 0x00000000      488b45fc       mov rax, qword [var_4h]
 | 0x00000004      7502           jne 8
-| ----------- true: 0x00000008  false: 0x00000006
+| // true: 0x00000008  false: 0x00000006
 | 0x00000006      0000           add byte [rax], al
-| ----------- true: 0x00000008
+| // true: 0x00000008
 \ 0x00000008      c3             ret
 
 / 9: fcn.00000000 ();
 | ; var int64_t test @ rbp-0x4
 | 0x00000000      488b45fc       mov rax, qword [test]
 | 0x00000004      75fa           jne fcn.00000000
-| ----------- true: 0x00000000  false: 0x00000006
+| // true: 0x00000000  false: 0x00000006
 | 0x00000006      0000           add byte [rax], al
 \ 0x00000008      c3             ret
 
@@ -523,31 +523,31 @@ EXPECT=<<EOF
 / 10: fcn.00000000 ();
 | 0x00000000      e802000000     call 7
 | 0x00000005      7502           jne 9
-| ----------- true: 0x00000009  false: 0x00000007
+| // true: 0x00000009  false: 0x00000007
 | ; CALL XREF from fcn.00000000 @ 
 | 0x00000007      0000           add byte [rax], al
-| ----------- true: 0x00000009
+| // true: 0x00000009
 \ 0x00000009      c3             ret
 
 / 10: fcn.00000000 (int64_t arg_2h);
 | ; arg int64_t arg_2h @ rbp+0x2
 | 0x00000000      7507           jne 9
-| ----------- true: 0x00000009  false: 0x00000002
+| // true: 0x00000009  false: 0x00000002
 | 0x00000002      0000           add byte [rax], al
 | 0x00000004      007502         add byte [arg_2h], dh
 | ; CALL XREF from fcn.00000000 @ 
 | 0x00000007      0000           add byte [rax], al
-| ----------- true: 0x00000009
+| // true: 0x00000009
 \ 0x00000009      c3             ret
 
 / 10: fcn.00000000 (int64_t arg_2h);
 | ; arg int64_t arg_2h @ rbp+0x2
 | 0x00000000      e802000000     call 7
 | 0x00000005      7502           jne 9
-| ----------- true: 0x00000009  false: 0x00000007
+| // true: 0x00000009  false: 0x00000007
 | ; CALL XREF from fcn.00000000 @ 
 | 0x00000007      0000           add byte [rax], al
-| ----------- true: 0x00000009
+| // true: 0x00000009
 \ 0x00000009      c3             ret
 
 EOF
@@ -597,29 +597,29 @@ EOF
 EXPECT=<<EOF
 / 7: fcn.00000000 ();
 | 0x00000000      eb04           jmp 6
-| ----------- true: 0x00000006
+| // true: 0x00000006
 | 0x00000002      eb02           jmp 6
-| ----------- true: 0x00000006
+| // true: 0x00000006
 | ; CODE XREFS from fcn.00000000 @ , 0x2
 | 0x00000006      75fa           jne 2
-| ----------- true: 0x00000002  false: 0x00000008
+| // true: 0x00000002  false: 0x00000008
 \ 0x00000008      c3             ret
 
 / 11: fcn.00000000 ();
 | 0x00000000      eb02           jmp 4
-| ----------- true: 0x00000004
+| // true: 0x00000004
 | ; CODE XREF from fcn.00000000 @ 
 | 0x00000004      eb04           jmp 0xa
-| ----------- true: 0x0000000a
+| // true: 0x0000000a
 | ; CODE XREF from fcn.00000000 @ 
 | ; CODE XREF from fcn.00000000 @ +0x2
 | 0x00000006      0000           add byte [rax], al
 | ; CODE XREF from fcn.00000000 @ 0x4
 | 0x00000008      eb02           jmp 0xc
-| ----------- true: 0x0000000c
+| // true: 0x0000000c
 | ; CODE XREF from fcn.00000000 @ 0x4
 | 0x0000000a      75fa           jne 6
-| ----------- true: 0x00000006  false: 0x0000000c
+| // true: 0x00000006  false: 0x0000000c
 | ; CODE XREF from fcn.00000000 @ 0x8
 \ 0x0000000c      c3             ret
 
