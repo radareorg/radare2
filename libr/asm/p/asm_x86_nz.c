@@ -136,7 +136,7 @@ typedef struct Opcode_t {
 	bool has_bnd;
 } Opcode;
 
-static int immediate_out_of_range(int bits, ut64 immediate) {
+static bool immediate_out_of_range(int bits, ut64 immediate) {
 	return (bits == 32 && (immediate >> 32) > 0); 
 }
 
