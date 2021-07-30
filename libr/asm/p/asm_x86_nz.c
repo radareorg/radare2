@@ -2510,7 +2510,7 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 			return l;
 		}
 	} else if (op->operands[0].type & OT_CONSTANT) {
-		if(op->operands[0].immediate > 255) {
+		if (op->operands[0].immediate > 255) {
 			return -1;
 		}
 		immediate = op->operands[0].immediate * op->operands[0].sign;
