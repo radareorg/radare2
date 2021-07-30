@@ -2470,7 +2470,7 @@ static int oppush(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	} else {
-		if(immediate_out_of_range(a->bits, op->operands[0].immediate) {
+		if(immediate_out_of_range(a->bits, op->operands[0].immediate)) {
 			eprintf ("Immediate value is out of range.\n");
 			return -1;
 		}	
@@ -2508,6 +2508,10 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 			return l;
 		}
 	} else if (op->operands[0].type & OT_CONSTANT) {
+		if(op->operands[0].immediate > 255) {
+			eprintf ("Immediate value is out of range.\n");
+			return -1;
+		}
 		immediate = op->operands[0].immediate * op->operands[0].sign;
 		if (immediate > 255 || immediate < -128) {
 			return -1;
