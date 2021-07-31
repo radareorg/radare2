@@ -1,0 +1,9 @@
+#!/bin/sh
+printf "[*] Checking for capstone... "
+rm -rf shlr/capstone
+make -C shlr capstone > /dev/null 2>&1 || exit 1
+echo OK
+printf "[*] Checking for vector35... "
+rm -rf libr/asm/arch/arm/v35arm64/arch-arm64
+make -C libr/asm/arch/arm/v35arm64 arch-arm64 > /dev/null || exit 1
+echo OK

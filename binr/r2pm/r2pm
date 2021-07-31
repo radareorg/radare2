@@ -235,7 +235,7 @@ r2pm_update() {
 		git pull
 	else
 		echo git clone https://github.com/radareorg/radare2-pm
-		git clone --depth=3 --recursive https://github.com/radareorg/radare2-pm
+		git clone -q --depth=3 --recursive https://github.com/radareorg/radare2-pm
 		cd radare2-pm
 		pwd
 	fi
@@ -420,7 +420,7 @@ R2PM_GIT() {
 			git pull
 		fi
 	else
-		git clone --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
+		git clone -q --depth 1 --recursive "${URL}" "${DIR}" || R2PM_FAIL "Oops"
 		cd "${DIR}" || R2PM_FAIL "Oops"
 	fi
 	r2 -qv | grep -q git || { # r2 >= 4.5
@@ -758,7 +758,7 @@ cache)
 				cd "$URL"
 				git pull
 			else
-				git clone --recursive --depth=2 "$URL" "$NAME"
+				git clone -q --recursive --depth=2 "$URL" "$NAME"
 			fi
 			if [ ! -d "$NAME/db" ]; then
 				echo "This is not an r2pm repository"
