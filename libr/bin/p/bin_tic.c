@@ -66,7 +66,6 @@ static const char *chunk_name(int chunk_type) {
 
 static bool check_buffer(RBuffer *buf) {
 	r_return_val_if_fail (buf, false);
-
 	ut64 sz = r_buf_size (buf);
 	// max rom size is 10MB
 	if (sz <= 0xff || sz > (10 * 1024 * 1024)) {
