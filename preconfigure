@@ -1,9 +1,13 @@
 #!/bin/sh
-printf "[*] Checking for capstone... "
+if [ ! -f config-user.mk ]; then
+  printf "[*] Configuring the build system ... "
+  ./configure > /dev/null || exit 1
+fi
+printf "[*] Checking out capstone... "
 rm -rf shlr/capstone
 make -C shlr capstone > /dev/null 2>&1 || exit 1
 echo OK
-printf "[*] Checking for vector35... "
+printf "[*] Checking out vector35... "
 rm -rf libr/asm/arch/arm/v35arm64/arch-arm64
 make -C libr/asm/arch/arm/v35arm64 arch-arm64 > /dev/null || exit 1
 echo OK
