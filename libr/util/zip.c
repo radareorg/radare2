@@ -23,7 +23,16 @@ static const char *gzerr(int n) {
 	return errors[n];
 }
 
-R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+/**
+ * \brief inflate zlib compressed or gzipped.
+ * \param src source compressed bytes
+ * \param srcLen source bytes length
+ * \param srcConsumed comsumed source bytes length
+ * \param dstLen uncompressed uncompressed bytes length
+ * \param controls the size of the history buffer (or “window size”), and what header and trailer format is expected.
+ * \return ptr to uncompressed
+*/
+static ut8 *r_inflatew(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
 	int err = 0;
 	int out_size = 0;
 	ut8 *dst = NULL;
@@ -42,8 +51,7 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 	stream.zfree  = Z_NULL;
 	stream.opaque = Z_NULL;
 
-	// + 32 tells zlib not to care whether the stream is a zlib or gzip stream
-	if (inflateInit2 (&stream, MAX_WBITS + 32) != Z_OK) {
+	if (inflateInit2 (&stream, wbits) != Z_OK) {
 		return NULL;
 	}
 
@@ -62,7 +70,7 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 			stream.avail_out = srcLen * 2;
 		}
 		err = inflate (&stream, Z_NO_FLUSH);
-		if (err<0) {
+		if (err < 0) {
 			eprintf ("inflate error: %d %s\n",
 				err, gzerr (-err));
 			goto err_exit;
@@ -73,7 +81,7 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 		*dstLen = stream.total_out;
 	}
 	if (srcConsumed) {
-		*srcConsumed = (const ut8*)stream.next_in-(const ut8*)src;
+		*srcConsumed = (const ut8 *)stream.next_in - (const ut8 *)src;
 	}
 
 	inflateEnd (&stream);
@@ -83,4 +91,22 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 	inflateEnd (&stream);
 	free (dst);
 	return NULL;
+}
+
+/**
+ * @brief inflate zlib compressed or gzipped, automatically accepts either the
+ * zlib or gzip format, and use MAX_WBITS as the window size logarithm.
+ * @see r_inflatew()
+*/
+R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+	return r_inflatew (src, srcLen, srcConsumed, dstLen, MAX_WBITS + 32);
+}
+
+/**
+ * @brief inflate zlib compressed or gzipped. The input must be a raw stream
+ * with no header or trailer.
+ * @see r_inflatew()
+*/
+R_API ut8 *r_inflate_ignore_header(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+	return r_inflatew (src, srcLen, srcConsumed, dstLen, -MAX_WBITS);
 }
