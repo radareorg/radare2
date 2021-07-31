@@ -103,9 +103,11 @@ static bool check_buffer(RBuffer *buf) {
 		case CHUNK_CODE_ZIP:
 		case CHUNK_DEFAULT:
 		case CHUNK_SCREEN:
+#if 0
 			eprintf ("BANK %d CHUNK %2d (%s) LENGTH %d\n",
 				bank_number, chunk_type, 
 				chunk_name (chunk_type), chunk_length);
+#endif
 			break;
 		default:
 			// eprintf ("Invalid chunk at offset 0x%"PFMT64x"\n", off);
@@ -119,6 +121,9 @@ static bool check_buffer(RBuffer *buf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	if (!r_str_endswith (bf->file, ".tic")) {
+		return false;
+	}
 	if (!check_buffer (buf)) {
 		return false;
 	}
