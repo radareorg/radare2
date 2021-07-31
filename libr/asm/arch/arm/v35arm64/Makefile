@@ -17,8 +17,8 @@ clean:
 $(ALIBS): arch-arm64
 
 arch-arm64:
-	git clone https://github.com/radareorg/vector35-arch-arm64 arch-arm64
-	cd arch-arm64 && git checkout radare2
+	git clone -q https://github.com/radareorg/vector35-arch-arm64 arch-arm64
+	cd arch-arm64 && git checkout -q radare2 > /dev/null
 
 $(V35ARM64_HOME)/arm64dis.a arm64dis.a: $(ALIBS)
 	rm -f arm64dis.a

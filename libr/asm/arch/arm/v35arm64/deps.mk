@@ -29,6 +29,6 @@ $(V35ARM64_SRCDIR):
 	# $(MAKE) git-clone-arm64v35
 
 git-clone-arm64v35: # $(V35ARM64_HOME)/arm64dis.a:
-	$(MAKE) -C $(V35ARM64_HOME) all
+	$(MAKE) -C $(V35ARM64_HOME) arch-arm64
 
 .PHONY: git-clone-arm64v35
