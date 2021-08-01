@@ -1028,3 +1028,13 @@ EXPECT=<<EOF
 EOF
 je
 RUN
+
+NAME=crypto search
+FILE=bins/other/v4_secret_encrypted.gpg
+CMDS=/cg
+EOF
+EXPECT=<<EOF
+0x000007e0 hit13_0 0011010001fe030302
+EOF
+je
+RUN

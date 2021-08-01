@@ -125,7 +125,7 @@ static const char *help_msg_slash_c[] = {
 	"/cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
 	"/cd", "", "Search for ASN1/DER certificates",
 	"/cr", "", "Search for ASN1/DER private keys (RSA and ECC)",
-	"/cg", "", "Search for GPG/PGP private keys (Plaintext and binary form)",
+	"/cg", "", "Search for GPG/PGP keys and signatures (Plaintext and binary form)",
 	"/cu", "[*qj]", "Search for UDS CAN database tables (binbloom)",
 	NULL
 };
@@ -3610,7 +3610,7 @@ reread:
 			{
 				RSearchKeyword *kw;
 				r_search_reset (core->search, R_SEARCH_KEYWORD);
-				// GPG
+				// PGP ASCII Armor according to https://datatracker.ietf.org/doc/html/rfc4880
 				kw = r_search_keyword_new_str ("BEGIN PGP PRIVATE KEY", NULL, NULL, false);
 				r_search_kw_add (search, kw);
 				kw = r_search_keyword_new_str ("BEGIN PGP PUBLIC KEY", NULL, NULL, false);
@@ -3619,6 +3619,10 @@ reread:
 				r_search_kw_add (search, kw);
 				kw = r_search_keyword_new_str ("BEGIN PUBLIC KEY", NULL, NULL, false);
 				r_search_kw_add (search, kw);
+				kw = r_search_keyword_new_str ("BEGIN PGP SIGNATURE", NULL, NULL, false);
+				r_search_kw_add (search, kw);
+
+				// PGP binary format according to https://datatracker.ietf.org/doc/html/rfc4880
 				kw = r_search_keyword_new_hexmask ("8c0d04010302", NULL); // IDEA
 				r_search_kw_add (search, kw);
 				kw = r_search_keyword_new_hexmask ("8c0d04020302", NULL); // 3DES
@@ -3635,7 +3639,17 @@ reread:
 				r_search_kw_add (search, kw);
 				kw = r_search_keyword_new_hexmask ("8c0d040a0302", NULL); // 2FISH
 				r_search_kw_add (search, kw);
+
+				// PGP RSA encrypted key v4 artifacts.
+				// RSA Public exponent e = 2^16+1: 0011010001
+				// Secret-key data is encrypted: ff or fe
+				// Sym algo mask: 00 to 0a.
+				// String to key identifier: 03
+				// Hash Algorithm mask: 00 to 0b
+				kw = r_search_keyword_new_hex ("0011010001ff000300", "fffffffffffef0fff0", NULL);
+				r_search_kw_add (search, kw);
 				r_search_begin (core->search);
+
 				break;
 			}
 		case 'a': // "ca"
