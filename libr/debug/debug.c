@@ -443,11 +443,12 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 	return NULL;
 }
 
-R_API int r_debug_attach(RDebug *dbg, int pid) {
-	int ret = false;
-	if (dbg && dbg->h && dbg->h->attach) {
-		ret = dbg->h->attach (dbg, pid);
-		if (ret != -1) {
+R_API bool r_debug_attach(RDebug *dbg, int pid) {
+	r_return_val_if_fail (dbg, false);
+	bool ret = false;
+	if (dbg->h && dbg->h->attach) {
+		ret = dbg->h->attach (dbg, pid) != -1;
+		if (ret) {
 			r_debug_select (dbg, pid, ret); //dbg->pid, dbg->tid);
 		}
 	}
@@ -1681,7 +1682,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	if (pid < 0 || tid < 0) {
 		return 0LL;
 	}
-	if (r_debug_attach (dbg, pid) == -1) {
+	if (!r_debug_attach (dbg, pid)) {
 		return 0LL;
 	}
 #if __WINDOWS__
