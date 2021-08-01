@@ -24,7 +24,7 @@ typedef struct sbl_header {
 // TODO avoid globals
 static SblHeader sb = {0};
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	ut64 bufsz = r_buf_size (b);
 	if (sizeof (SblHeader) < bufsz) {
@@ -75,7 +75,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
-	return check_buffer (b);
+	return check_buffer (bf, b);
 }
 
 static ut64 baddr(RBinFile *bf) {

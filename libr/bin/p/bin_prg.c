@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include <r_lib.h>
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	// no magic
 	return false;
 }

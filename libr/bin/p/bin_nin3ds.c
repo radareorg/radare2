@@ -10,7 +10,7 @@
 
 static struct n3ds_firm_hdr loaded_header;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 magic[4];
 	r_buf_read_at (b, 0, magic, sizeof (magic));
 	return (!memcmp (magic, "FIRM", 4));

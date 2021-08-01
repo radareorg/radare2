@@ -30,12 +30,12 @@ static bool checkHeader(RBuffer *b) {
 	return false;
 }
 
-static bool check_buffer (RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	r_return_val_if_fail (buf, false);
 	return checkHeader (buf);
 }
 
-static void free_xtr (void *xtr_obj) {
+static void free_xtr(void *xtr_obj) {
 	r_bin_fatmach0_free ((struct r_bin_fatmach0_obj_t*)xtr_obj);
 }
 
