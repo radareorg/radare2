@@ -835,7 +835,7 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 
 #if !R_BIN_MACH064
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) >= 4) {
 		ut8 buf[4] = {0};
 		if (r_buf_read_at (b, 0, buf, 4)) {

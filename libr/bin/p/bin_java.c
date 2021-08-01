@@ -139,7 +139,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 32) {
 		ut8 buf[4];
 		r_buf_read_at (b, 0, buf, sizeof (buf));

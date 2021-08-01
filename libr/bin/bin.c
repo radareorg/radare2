@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2020 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2021 - pancake, nibble, dso */
 
 #include <r_bin.h>
 #include <r_types.h>
@@ -270,7 +270,7 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt) {
 				eprintf ("Missing check_buffer callback for '%s'\n", xtr->name);
 				continue;
 			}
-			if (xtr->check_buffer (buf)) {
+			if (xtr->check_buffer (bf, buf)) {
 				if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
 				    xtr->extract_from_bytes || xtr->extractall_from_bytes) {
 					bf = r_bin_file_xtr_load_buffer (bin, xtr,
@@ -362,7 +362,7 @@ R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
-R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf) {
+R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf) {
 	RBinPlugin *plugin;
 	RListIter *it;
 
@@ -370,7 +370,7 @@ R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBuffer *buf) {
 
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->check_buffer) {
-			if (plugin->check_buffer (buf)) {
+			if (plugin->check_buffer (bf, buf)) {
 				return plugin;
 			}
 		}

@@ -10,7 +10,7 @@
 #include "wasm/wasm.h"
 #include "../format/wasm/wasm.h"
 
-static bool check_buffer(RBuffer *rbuf) {
+static bool check_buffer(RBinFile *bf, RBuffer *rbuf) {
 	ut8 buf[4] = { 0 };
 	return rbuf && r_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
@@ -25,7 +25,7 @@ static bool find_export(const ut32 *p, const RBinWasmExportEntry *q) {
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, false);
 
-	if (check_buffer (buf)) {
+	if (check_buffer (bf, buf)) {
 		*bin_obj = r_bin_wasm_init (bf, buf);
 		return true;
 	}

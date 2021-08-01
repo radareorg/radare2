@@ -413,11 +413,11 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 		min = plugin? plugin->minstrlen: 4;
 	}
 	/* Some plugins return zero, fix it up */
-	if (!min) {
-		min = 4;
-	}
 	if (min < 0) {
 		return;
+	}
+	if (!min) {
+		min = 4;
 	}
 	{
 		RIO *io = bf->rbin->iob.io;
@@ -488,7 +488,7 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int ra
 	return bf;
 }
 
-static RBinPlugin *get_plugin_from_buffer(RBin *bin, const char *pluginname, RBuffer *buf) {
+static RBinPlugin *get_plugin_from_buffer(RBin *bin, RBinFile *bf, const char *pluginname, RBuffer *buf) {
 	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
 	if (plugin) {
 		return plugin;
@@ -497,7 +497,7 @@ static RBinPlugin *get_plugin_from_buffer(RBin *bin, const char *pluginname, RBu
 	if (plugin) {
 		return plugin;
 	}
-	plugin = r_bin_get_binplugin_by_buffer (bin, buf);
+	plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
 	if (plugin) {
 		return plugin;
 	}
@@ -510,7 +510,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	ut64 offset = data->offset;
 	ut64 sz = data->size;
 
-	RBinPlugin *plugin = get_plugin_from_buffer (bin, NULL, data->buf);
+	RBinPlugin *plugin = get_plugin_from_buffer (bin, bf, NULL, data->buf);
 	bf->buf = r_buf_ref (data->buf);
 
 	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
@@ -556,7 +556,7 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 	if (bf) {
 		RListIter *item = r_list_append (bin->binfiles, bf);
 		bf->buf = r_buf_ref (buf);
-		RBinPlugin *plugin = get_plugin_from_buffer (bin, pluginname, bf->buf);
+		RBinPlugin *plugin = get_plugin_from_buffer (bin, bf, pluginname, bf->buf);
 		RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 		if (!o) {
 			r_list_delete (bin->binfiles, item);

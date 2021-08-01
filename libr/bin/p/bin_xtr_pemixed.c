@@ -17,7 +17,7 @@ static void destroy(RBin *bin) {
 	free_xtr (bin->cur->xtr_obj);
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 #if 0
 	if (!bytes) {
@@ -105,9 +105,6 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 	.name = "xtr.pemixed",
 	.desc = "Extract sub-binaries in PE files",
-	.load = NULL, 		//not yet implemented
-	.extract = NULL, 	//not yet implemented
-	.extractall = NULL, //not yet implemented
 	.destroy = &destroy,
 	.extract_from_bytes = &oneshot,
 	.extractall_from_bytes = &oneshotall,

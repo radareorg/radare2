@@ -19,7 +19,7 @@ static void destroy(RBinFile *bf) {
 	bf->o->bin_obj = NULL;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	int i;
 	ut8 ch;
 	if (r_buf_read_at (b, 0, &ch, 1) != 1) {

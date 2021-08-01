@@ -8,7 +8,7 @@ typedef struct {
 	RBuffer *buf;
 } OffObj;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	ut8 sig[4];
 	if (r_buf_read_at (b, 0, sig, sizeof (sig)) != 4) {

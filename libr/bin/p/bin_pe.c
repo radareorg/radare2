@@ -2,7 +2,7 @@
 
 #include "bin_pe.inc"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= 0x3d) {
 		return false;

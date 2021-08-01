@@ -839,7 +839,7 @@ beach:
 	return NULL;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	if (r_buf_size (buf) < 32) {
 		return false;
 	}

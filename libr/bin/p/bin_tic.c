@@ -64,9 +64,11 @@ static const char *chunk_name(int chunk_type) {
 	return "";
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	r_return_val_if_fail (buf, false);
-
+	if (bf && !r_str_endswith (bf->file, ".tic")) {
+		return false;
+	}
 	ut64 sz = r_buf_size (buf);
 	// max rom size is 10MB
 	if (sz <= 0xff || sz > (10 * 1024 * 1024)) {
@@ -121,10 +123,7 @@ static bool check_buffer(RBuffer *buf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	if (!r_str_endswith (bf->file, ".tic")) {
-		return false;
-	}
-	if (!check_buffer (buf)) {
+	if (!check_buffer (bf, buf)) {
 		return false;
 	}
 	*bin_obj = r_buf_ref (buf);

@@ -6,12 +6,12 @@
 #include <r_bin.h>
 #include "../format/p9/p9bin.h"
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	return r_bin_p9_get_arch (buf, NULL, NULL);
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
-	return check_buffer (b);
+	return check_buffer (bf, b);
 }
 
 static void destroy(RBinFile *bf) {

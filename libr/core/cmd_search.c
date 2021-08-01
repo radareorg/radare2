@@ -284,7 +284,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 			break;
 		}
 		RBuffer *ref = r_buf_new_slice (b, from, to);
-		RBinPlugin *plug = r_bin_get_binplugin_by_buffer (core->bin, ref);
+		RBinPlugin *plug = r_bin_get_binplugin_by_buffer (core->bin, NULL, ref);
 		if (plug) {
 			r_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->name);
 			if (plug->size) {

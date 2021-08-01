@@ -25,7 +25,7 @@ static int lmf_header_load(lmf_header *lmfh, RBuffer *buf, Sdb *db) {
 	return true;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[6];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, QNX_MAGIC, sizeof (tmp));

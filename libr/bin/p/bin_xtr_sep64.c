@@ -89,7 +89,7 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 
 #define BTW(val, min, max) ((val) > min && (val) < max)
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 
 	const ut64 sz = r_buf_size (b);

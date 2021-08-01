@@ -13,7 +13,7 @@ typedef struct gen_hdr {
 
 static ut32 cb = 0;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut32 *off, offs[] = { 0x2000, 0x4000, 0x8000, 0x9000, 0 };
 	ut8 signature[8];
 	for (off = (ut32*)&offs; *off; off++) {
@@ -33,7 +33,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (buf);
+	return check_buffer (bf, buf);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -49,7 +49,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("z80");
 	ret->has_va = 1;
 	ret->bits = 8;
-	if (!check_buffer (bf->buf)) {
+	if (!check_buffer (bf, bf->buf)) {
 		eprintf ("Cannot find magic SEGA copyright\n");
 		free (ret);
 		return NULL;

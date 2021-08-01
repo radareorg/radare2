@@ -7,7 +7,7 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 lict[sizeof (lic)];
 	if (r_buf_read_at (b, 0x104, lict, sizeof (lict)) == sizeof (lict)) {
 		return !memcmp (lict, lic, sizeof (lict));
@@ -16,7 +16,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (buf);
+	return check_buffer (bf, buf);
 }
 
 static ut64 baddr(RBinFile *bf) {

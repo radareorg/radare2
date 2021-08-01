@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 - pancake */
+/* radare - LGPL - Copyright 2016-2021 - pancake */
 
 #include <r_bin.h>
 #include <r_lib.h>
@@ -59,7 +59,7 @@ static bool check_buffer_jmp(RBuffer *b) {
 	return true;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	if (r_buf_size (buf) < 32) {
 		return false;
 	}
@@ -70,7 +70,7 @@ static bool check_buffer(RBuffer *buf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (buf);
+	return check_buffer (bf, buf);
 }
 
 static void destroy(RBinFile *bf) {

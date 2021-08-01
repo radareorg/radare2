@@ -39,7 +39,7 @@ static char *fsname(RBuffer *b) {
 	return NULL;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	char *p = fsname (b);
 	bool hasFs = p != NULL;
@@ -48,7 +48,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	return check_buffer (buf);
+	return check_buffer (bf, buf);
 }
 
 static void destroy(RBinFile *bf) {

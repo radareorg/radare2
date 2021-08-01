@@ -6,7 +6,7 @@
 #include <r_bin.h>
 #include "../i/private.h"
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	r_return_val_if_fail (buf, false);
 
 	ut64 sz = r_buf_size (buf);
@@ -34,7 +34,7 @@ static bool check_buffer(RBuffer *buf) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	if (!check_buffer (buf)) {
+	if (!check_buffer (bf, buf)) {
 		return false;
 	}
 	*bin_obj = r_buf_ref (buf);

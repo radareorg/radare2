@@ -10,7 +10,7 @@
 
 static struct nds_hdr loaded_header;
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 ninlogohead[6];
 	if (r_buf_read_at (b, 0xc0, ninlogohead, sizeof (ninlogohead)) == 6) {
 		/* begin of nintendo logo =    \x24\xff\xae\x51\x69\x9a */
