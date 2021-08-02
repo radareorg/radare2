@@ -1379,7 +1379,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 				goto exit;
 			}
 		} else {
-			eprintf ("Sorry we do not support the signatures version %c compression.\n", version);
+			eprintf ("FLIRT signatures version %d is not supported.\n", version);
 			goto exit;
 		}
 
