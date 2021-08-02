@@ -25,7 +25,7 @@ static const char *gzerr(int n) {
 
 static ut8 *r_inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, int wbits) {
 	int err = 0;
-	int out_size = 0;
+	size_t out_size = 0;
 	ut8 *dst = NULL;
 	ut8 *tmp_ptr;
 	z_stream stream;
@@ -62,8 +62,7 @@ static ut8 *r_inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, i
 		}
 		err = inflate (&stream, Z_NO_FLUSH);
 		if (err < 0) {
-			eprintf ("inflate error: %d %s\n",
-				err, gzerr (-err));
+			eprintf ("inflate error: %d %s\n", err, gzerr (-err));
 			goto err_exit;
 		}
 	} while (err != Z_STREAM_END);
