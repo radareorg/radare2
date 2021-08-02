@@ -1369,7 +1369,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
 		if (version >= 5 && version < 7) {
-			if (!(dbuf = r_inflate_ignore_header (buf, size, NULL, &decompressed_size))) {
+			if (!(dbuf = r_inflate_raw (buf, size, NULL, &decompressed_size))) {
 				eprintf ("Decompression failed.\n");
 				goto exit;
 			}

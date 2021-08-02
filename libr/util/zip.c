@@ -87,6 +87,6 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *consumed, int *dstLen) {
 	return r_inflatew (src, srcLen, consumed, dstLen, MAX_WBITS + 32);
 }
 
-R_API ut8 *r_inflate_ignore_header(const ut8 *src, int srcLen, int *consumed, int *dstLen) {
+R_API ut8 *r_inflate_raw(const ut8 *src, int srcLen, int *consumed, int *dstLen) {
 	return r_inflatew (src, srcLen, consumed, dstLen, -MAX_WBITS);
 }
