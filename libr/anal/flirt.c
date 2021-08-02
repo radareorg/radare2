@@ -1362,7 +1362,9 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 #endif
 
 	size = r_buf_size (flirt_buf) - r_buf_tell (flirt_buf);
-	buf = malloc (size);
+	if (!(buf = malloc (size))) {
+		goto exit;
+	}
 	if (r_buf_read (flirt_buf, buf, size) != size) {
 		goto exit;
 	}
