@@ -1289,7 +1289,7 @@ static int parse_v10_header(RBuffer *buf, idasig_v10_t *header) {
 
 static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	ut8 *name = NULL;
-	ut8 *buf = NULL, *decompressed_buf = NULL;
+	ut8 *buf = NULL, *dbuf = NULL;
 	RBuffer *r_buf = NULL;
 	int size, decompressed_size;
 	RFlirtNode *node = NULL;
@@ -1369,12 +1369,12 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
 		if (version >= 5 && version < 7) {
-			if (!(decompressed_buf = r_inflate_ignore_header (buf, size, NULL, &decompressed_size))) {
+			if (!(dbuf = r_inflate_ignore_header (buf, size, NULL, &decompressed_size))) {
 				eprintf ("Decompression failed.\n");
 				goto exit;
 			}
 		} else if (version >= 7) {
-			if (!(decompressed_buf = r_inflate (buf, size, NULL, &decompressed_size))) {
+			if (!(dbuf = r_inflate (buf, size, NULL, &decompressed_size))) {
 				eprintf ("Decompression failed.\n");
 				goto exit;
 			}
@@ -1384,7 +1384,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 		}
 
 		R_FREE (buf);
-		buf = decompressed_buf;
+		buf = dbuf;
 		size = decompressed_size;
 	}
 
