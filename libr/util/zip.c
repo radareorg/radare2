@@ -23,16 +23,7 @@ static const char *gzerr(int n) {
 	return errors[n];
 }
 
-/**
- * \brief inflate zlib compressed or gzipped.
- * \param src source compressed bytes
- * \param srcLen source bytes length
- * \param srcConsumed comsumed source bytes length
- * \param dstLen uncompressed uncompressed bytes length
- * \param controls the size of the history buffer (or “window size”), and what header and trailer format is expected.
- * \return ptr to uncompressed
-*/
-static ut8 *r_inflatew(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen, int wbits) {
+static ut8 *r_inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, int wbits) {
 	int err = 0;
 	int out_size = 0;
 	ut8 *dst = NULL;
@@ -80,8 +71,8 @@ static ut8 *r_inflatew(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen
 	if (dstLen) {
 		*dstLen = stream.total_out;
 	}
-	if (srcConsumed) {
-		*srcConsumed = (const ut8 *)stream.next_in - (const ut8 *)src;
+	if (consumed) {
+		*consumed = (const ut8 *)stream.next_in - (const ut8 *)src;
 	}
 
 	inflateEnd (&stream);
@@ -93,20 +84,10 @@ static ut8 *r_inflatew(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen
 	return NULL;
 }
 
-/**
- * @brief inflate zlib compressed or gzipped, automatically accepts either the
- * zlib or gzip format, and use MAX_WBITS as the window size logarithm.
- * @see r_inflatew()
-*/
-R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
-	return r_inflatew (src, srcLen, srcConsumed, dstLen, MAX_WBITS + 32);
+R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *consumed, int *dstLen) {
+	return r_inflatew (src, srcLen, consumed, dstLen, MAX_WBITS + 32);
 }
 
-/**
- * @brief inflate zlib compressed or gzipped. The input must be a raw stream
- * with no header or trailer.
- * @see r_inflatew()
-*/
-R_API ut8 *r_inflate_ignore_header(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
-	return r_inflatew (src, srcLen, srcConsumed, dstLen, -MAX_WBITS);
+R_API ut8 *r_inflate_ignore_header(const ut8 *src, int srcLen, int *consumed, int *dstLen) {
+	return r_inflatew (src, srcLen, consumed, dstLen, -MAX_WBITS);
 }
