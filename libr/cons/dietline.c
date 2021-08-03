@@ -1713,6 +1713,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						__delete_next_char ();
 						if (I.vtmode == 2) {
 							buf[1] = r_cons_readchar ();
+							if (buf[1] == 126) {
+								// handle SUPR key
+								r_cons_break_pop ();
+								__print_prompt ();
+								continue;
+							}
 							if (buf[1] == -1) {
 								r_cons_break_pop ();
 								return NULL;
@@ -1720,7 +1726,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 						for (;;) {
 							ch = r_cons_readchar ();
-							if (ch == -1) {
+							if (ch < 20) {
 								r_cons_break_pop ();
 								return NULL;
 							}
