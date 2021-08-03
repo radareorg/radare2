@@ -2499,6 +2499,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 			r_cons_printf (" .s %" PFMT64d "\n", block->size);
 		}
 		r_list_free (calls);
+		r_list_free (xrefs);
 	}
 	if (mode == 'j') {
 		pj_end (pj);
@@ -10319,7 +10320,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			dh_orig = core->dbg->h
 				? strdup (core->dbg->h->name)
 				: strdup ("esil");
-			if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
+			if (core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
 				//use dh_origin if we are debugging
 				R_FREE (dh_orig);
 			}

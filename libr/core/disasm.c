@@ -1119,7 +1119,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			ds->opstr = strdup (ds->str);
 		}
 		if (ds->subjmp) {
-			char *input = strdup (ds->opstr);
+			char *input = strdup (ds->opstr? ds->opstr: ds->str);
 			r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, input, // asm_str,
 					ds->str, sizeof (ds->str), core->print->big_endian);
 			//ds->opstr = strdup (ds->str);

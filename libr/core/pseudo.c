@@ -309,9 +309,6 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		char *code = r_core_cmd_str (core, sdb_fmt ("pD %"PFMT64d" @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
 		r_cons_pop ();
 		r_config_set_b (core->config, "scr.html", html);
-		if (indent * I_TAB + 2 >= sizeof (indentstr)) {
-			indent = (sizeof (indentstr) / I_TAB) - 2;
-		}
 		indent = 2;
 		SET_INDENT (indent);
 		if (!code) {
