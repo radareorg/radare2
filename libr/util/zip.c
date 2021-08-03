@@ -23,9 +23,9 @@ static const char *gzerr(int n) {
 	return errors[n];
 }
 
-R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) {
+static ut8 *r_inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, int wbits) {
 	int err = 0;
-	int out_size = 0;
+	size_t out_size = 0;
 	ut8 *dst = NULL;
 	ut8 *tmp_ptr;
 	z_stream stream;
@@ -42,8 +42,7 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 	stream.zfree  = Z_NULL;
 	stream.opaque = Z_NULL;
 
-	// + 32 tells zlib not to care whether the stream is a zlib or gzip stream
-	if (inflateInit2 (&stream, MAX_WBITS + 32) != Z_OK) {
+	if (inflateInit2 (&stream, wbits) != Z_OK) {
 		return NULL;
 	}
 
@@ -62,9 +61,8 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 			stream.avail_out = srcLen * 2;
 		}
 		err = inflate (&stream, Z_NO_FLUSH);
-		if (err<0) {
-			eprintf ("inflate error: %d %s\n",
-				err, gzerr (-err));
+		if (err < 0) {
+			eprintf ("inflate error: %d %s\n", err, gzerr (-err));
 			goto err_exit;
 		}
 	} while (err != Z_STREAM_END);
@@ -72,8 +70,8 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 	if (dstLen) {
 		*dstLen = stream.total_out;
 	}
-	if (srcConsumed) {
-		*srcConsumed = (const ut8*)stream.next_in-(const ut8*)src;
+	if (consumed) {
+		*consumed = (const ut8 *)stream.next_in - (const ut8 *)src;
 	}
 
 	inflateEnd (&stream);
@@ -83,4 +81,12 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 	inflateEnd (&stream);
 	free (dst);
 	return NULL;
+}
+
+R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *consumed, int *dstLen) {
+	return r_inflatew (src, srcLen, consumed, dstLen, MAX_WBITS + 32);
+}
+
+R_API ut8 *r_inflate_raw(const ut8 *src, int srcLen, int *consumed, int *dstLen) {
+	return r_inflatew (src, srcLen, consumed, dstLen, -MAX_WBITS);
 }

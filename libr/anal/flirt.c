@@ -281,9 +281,6 @@ static int header_size = 0;
  */
 
 
-// XXX need more infos on compression of version 5 sigs
-// r_inflate doesn't work with them
-
 #define R_FLIRT_NAME_MAX 1024
 
 typedef struct RFlirtTailByte {
@@ -1292,7 +1289,7 @@ static int parse_v10_header(RBuffer *buf, idasig_v10_t *header) {
 
 static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	ut8 *name = NULL;
-	ut8 *buf = NULL, *decompressed_buf = NULL;
+	ut8 *buf = NULL, *dbuf = NULL;
 	RBuffer *r_buf = NULL;
 	int size, decompressed_size;
 	RFlirtNode *node = NULL;
@@ -1365,23 +1362,31 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 #endif
 
 	size = r_buf_size (flirt_buf) - r_buf_tell (flirt_buf);
-	buf = malloc (size);
+	if (!(buf = malloc (size))) {
+		goto exit;
+	}
 	if (r_buf_read (flirt_buf, buf, size) != size) {
 		goto exit;
 	}
 
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
-		if (version == 5) {
-			eprintf ("Sorry we do not support the signatures version 5 compression.\n");
-			goto exit;
-		}
-		if (!(decompressed_buf = r_inflate (buf, size, NULL, &decompressed_size))) {
-			eprintf ("Decompressing failed.\n");
+		if (version >= 5 && version < 7) {
+			if (!(dbuf = r_inflate_raw (buf, size, NULL, &decompressed_size))) {
+				eprintf ("Decompression failed.\n");
+				goto exit;
+			}
+		} else if (version >= 7) {
+			if (!(dbuf = r_inflate (buf, size, NULL, &decompressed_size))) {
+				eprintf ("Decompression failed.\n");
+				goto exit;
+			}
+		} else {
+			eprintf ("FLIRT signatures version %d is not supported.\n", version);
 			goto exit;
 		}
 
 		R_FREE (buf);
-		buf = decompressed_buf;
+		buf = dbuf;
 		size = decompressed_size;
 	}
 
@@ -1390,7 +1395,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	}
 	r_buf = r_buf_new_with_pointers (buf, size, false);
 #if DEBUG
-	r_file_dump ("sig_dump", r_buf->buf, r_buf_size (r_buf));
+	r_file_dump ("sig_dump", buf, size, false);
 #endif
 	if (parse_tree (anal, r_buf, node)) {
 		ret = node;
