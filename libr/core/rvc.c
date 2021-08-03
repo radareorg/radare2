@@ -355,46 +355,66 @@ static bool rm_empty_dir(const char *rp) {
 	return true;
 }
 
-static RList *repo_files(const char *rp) {
-	RList *files = r_file_lsrf (rp);
-	if (!files) {
-		return NULL;
-	}
-	char *repo_meta = r_str_newf ("%s" R_SYS_DIR ".rvc", rp);
-	if (!repo_meta) {
-		r_list_free (files);
-		return NULL;
-	}
-	size_t repo_meta_len = r_str_len_utf8 (repo_meta);
+//This is why anonymous functions are cool
+static bool dr(RList *dst, const char *dir) {
+	char *name;
 	RListIter *iter;
-	char *path;
-	RList *ret = r_list_new ();
-	r_list_foreach (files, iter, path) {
-		if (!r_str_cmp (repo_meta, path, repo_meta_len)) {
-			continue;
-		}
-		char *absp = r_file_abspath (path);
-		if (!absp) {
-			r_list_free (ret);
-			ret = NULL;
-			break;
-		}
-		if (r_file_is_directory (absp)) {
-			free (absp);
-			continue;
-		}
-		if (!r_list_append (ret, absp)) {
-			r_list_free (ret);
-			ret = NULL;
-			free (absp);
-			break;
-		}
-
+	bool ret = true;
+	RList *files = r_sys_dir (dir);
+	if (!files) {
+		return false;
 	}
-	free (repo_meta);
+	if (!r_list_empty (dst)) {
+		RListIter *iter;
+		char *path;
+		r_list_foreach (files, iter, path) {
+			if (!strcmp (path, ".rvc")) {
+				r_list_free (files);
+				return true;
+			}
+		}
+	}
+	r_list_foreach (files, iter, name) {
+		char *path;
+		if (!strcmp (name, "..") || !strcmp (name, ".")) {
+			continue;
+		}
+		if (!strcmp (name, ".rvc")) {
+			continue;
+		}
+		path = r_str_newf ("%s" R_SYS_DIR "%s", dir, name);
+		if (!path) {
+			ret = false;
+			break;
+		}
+		if (r_file_is_directory (path)) {
+			if (!dr (dst, path)) {
+				ret = false;
+				break;
+			}
+			free (path);
+			continue;
+		}
+		if (!r_list_append (dst, path)) {
+			ret = false;
+			free (path);
+			break;
+		}
+	}
 	r_list_free (files);
 	return ret;
+}
 
+static RList *repo_files(const char *dir) {
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	if (!dr (ret, dir)) {
+		r_list_free (ret);
+		return NULL;
+	}
+	return ret;
 }
 
 //shit function:
