@@ -918,20 +918,13 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 R_API bool r_vc_new(const char *path) {
 	Sdb *db;
 	char *commitp, *blobsp;
-	switch (repo_exists (path)) {
-	case 0:
-		break;
-	case 1:
-		eprintf ("Repo already exists at: %s", path);
-		return false;
-	case -1:
-		eprintf ("Can't create repo\n");
-		return false;
-	case -2:
-		eprintf ("Repository exists but is corrupt\n");
-		return false;
-	}
 	char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
+	if (r_file_is_directory (vcp)) {
+		eprintf ("A directory already exists in %s\n", path);
+		free (vcp);
+		return false;
+
+	}
 	if (!vcp) {
 		return false;
 	}
