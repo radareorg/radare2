@@ -1711,7 +1711,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
 					const char *r_nume = (width==1)?"ax": r_quot;
 
-					if ( width == 8 ) { // TODO still needs to be fixed to handle correct signed 128 bit value 
+					if (width == 8) { // TODO still needs to be fixed to handle correct signed 128 bit value 
 						esilprintf (op, "%s,%s,L*,%s,=,DUP,%s,=,!,!,DUP,cf,:=,of,:=", // flags will be sometimes wrong
 								arg0, r_nume, r_nume, r_rema);
 					} else {
