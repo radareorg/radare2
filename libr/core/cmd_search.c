@@ -126,7 +126,6 @@ static const char *help_msg_slash_c[] = {
 	"/cd", "", "Search for ASN1/DER certificates",
 	"/cr", "", "Search for ASN1/DER private keys (RSA and ECC)",
 	"/cg", "", "Search for GPG/PGP keys and signatures (Plaintext and binary form)",
-	"/cu", "[*qj]", "Search for UDS CAN database tables (binbloom)",
 	NULL
 };
 
@@ -137,6 +136,7 @@ static const char *help_msg_slash_r[] = {
 	"/rc", "", "search for call references",
 	"/re", " [addr]", "search references using esil",
 	"/rr", "", "Find read references",
+	"/ru", "[*qj]", "Search for UDS CAN database tables (binbloom)",
 	"/rw", "", "Find write references",
 	"/rx", "", "Find exec references",
 	NULL
@@ -3422,6 +3422,17 @@ reread:
 				}
 			}
 			break;
+		case 'u': // "/ru"
+			{
+				bool v = r_config_get_i (core->config, "search.verbose");
+				int mode = input[2];
+				if (!mode && !v) {
+					mode = 'q';
+				}
+				(void)r_core_search_uds (core, mode);
+				dosearch = false;
+				break;
+			}
 		case 'w': // "/rw" - write refs
 			{
 				RListIter *iter;
@@ -3580,7 +3591,7 @@ reread:
 				goto beach;
 			}
 			break;
-		case 'd': // "cd"
+		case 'd': // "/cd"
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hex ("308200003082", "ffff0000ffff", NULL);
@@ -3595,18 +3606,7 @@ reread:
 				}
 			}
 			break;
-		case 'u': // "cu"
-			{
-				bool v = r_config_get_i (core->config, "search.verbose");
-				int mode = input[2];
-				if (!mode && !v) {
-					mode = 'q';
-				}
-				(void)r_core_search_uds (core, mode);
-				dosearch = false;
-				break;
-			}
-		case 'g': // "cg"
+		case 'g': // "/cg"
 			{
 				RSearchKeyword *kw;
 				r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -3652,7 +3652,7 @@ reread:
 
 				break;
 			}
-		case 'a': // "ca"
+		case 'a': // "/ca"
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
@@ -3664,7 +3664,7 @@ reread:
 				param.aes_search = true;
 				break;
 			}
-		case 'r': // "cr"
+		case 'r': // "/cr"
 			{
 				RSearchKeyword *kw;
 				kw = r_search_keyword_new_hexmask ("00", NULL);
