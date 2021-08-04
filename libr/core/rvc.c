@@ -355,47 +355,64 @@ static bool rm_empty_dir(const char *rp) {
 	return true;
 }
 
-static RList *repo_files(const char *rp) {
-	RList *files = r_file_lsrf (rp);
-	if (!files) {
-		return NULL;
-	}
-	char *repo_meta = r_str_newf ("%s" R_SYS_DIR ".rvc", rp);
-	if (!repo_meta) {
-		r_list_free (files);
-		return NULL;
-	}
-	size_t repo_meta_len = r_str_len_utf8 (repo_meta);
+static bool traverse_files(RList *dst, const char *dir) {
+	char *name;
 	RListIter *iter;
-	char *path;
-	RList *ret = r_list_new ();
-	r_list_foreach (files, iter, path) {
-		if (!r_str_cmp (repo_meta, path, repo_meta_len)) {
-			continue;
+	bool ret = true;
+	RList *files = r_sys_dir (dir);
+	if (!r_list_empty (dst)) {
+		char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", dir);
+		if (!vcp) {
+			return false;
 		}
-		char *absp = r_file_abspath (path);
-		if (!absp) {
-			r_list_free (ret);
-			ret = NULL;
-			break;
+		if (r_file_is_directory (vcp)) {
+			return true;
 		}
-		if (r_file_is_directory (absp)) {
-			free (absp);
-			continue;
-		}
-		if (!r_list_append (ret, absp)) {
-			r_list_free (ret);
-			ret = NULL;
-			free (absp);
-			break;
-		}
-
 	}
-	free (repo_meta);
+	if (!files) {
+		return false;
+	}
+	r_list_foreach (files, iter, name) {
+		char *path;
+		if (!strcmp (name, "..") || !strcmp (name, ".")) {
+			continue;
+		}
+		if (!strcmp (name, ".rvc")) {
+			continue;
+		}
+		path = r_str_newf ("%s" R_SYS_DIR "%s", dir, name);
+		if (!path) {
+			ret = false;
+			break;
+		}
+		if (r_file_is_directory (path)) {
+			if (!traverse_files (dst, path)) {
+				ret = false;
+				break;
+			}
+			free (path);
+			continue;
+		}
+		if (!r_list_append (dst, path)) {
+			ret = false;
+			free (path);
+			break;
+		}
+	}
 	r_list_free (files);
 	return ret;
-
 }
+
+static RList *repo_files(const char *dir) {
+ 	RList *ret = r_list_newf (free);
+ 	if (ret) {
+           if (!traverse_files (ret, dir)) {
+ 		r_list_free (ret);
+ 		ret = NULL;
+           }
+ 	}
+ 	return ret;
+ }
 
 //shit function:
 static RList *get_uncommitted(const char *rp) {
@@ -898,20 +915,13 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 R_API bool r_vc_new(const char *path) {
 	Sdb *db;
 	char *commitp, *blobsp;
-	switch (repo_exists (path)) {
-	case 0:
-		break;
-	case 1:
-		eprintf ("Repo already exists at: %s", path);
-		return false;
-	case -1:
-		eprintf ("Can't create repo\n");
-		return false;
-	case -2:
-		eprintf ("Repository exists but is corrupt\n");
-		return false;
-	}
 	char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
+	if (r_file_is_directory (vcp)) {
+		eprintf ("A repository already exists in %s\n", path);
+		free (vcp);
+		return false;
+
+	}
 	if (!vcp) {
 		return false;
 	}
