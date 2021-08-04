@@ -361,18 +361,17 @@ static bool dr(RList *dst, const char *dir) {
 	RListIter *iter;
 	bool ret = true;
 	RList *files = r_sys_dir (dir);
+	if (!r_list_empty (dst)) {
+		char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", dir);
+		if (!vcp) {
+			return false;
+		}
+		if (r_file_is_directory (vcp)) {
+			return true;
+		}
+	}
 	if (!files) {
 		return false;
-	}
-	if (!r_list_empty (dst)) {
-		RListIter *iter;
-		char *path;
-		r_list_foreach (files, iter, path) {
-			if (!strcmp (path, ".rvc")) {
-				r_list_free (files);
-				return true;
-			}
-		}
 	}
 	r_list_foreach (files, iter, name) {
 		char *path;
