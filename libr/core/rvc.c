@@ -355,8 +355,7 @@ static bool rm_empty_dir(const char *rp) {
 	return true;
 }
 
-//This is why anonymous functions are cool
-static bool dr(RList *dst, const char *dir) {
+static bool traverse_files(RList *dst, const char *dir) {
 	char *name;
 	RListIter *iter;
 	bool ret = true;
@@ -387,7 +386,7 @@ static bool dr(RList *dst, const char *dir) {
 			break;
 		}
 		if (r_file_is_directory (path)) {
-			if (!dr (dst, path)) {
+			if (!traverse_files (dst, path)) {
 				ret = false;
 				break;
 			}
@@ -406,7 +405,7 @@ static bool dr(RList *dst, const char *dir) {
 
 static RList *repo_files(const char *dir) {
 	RList *ret = r_list_new ();
-	if (!ret && !dr (ret, dir)) {
+	if (!ret && !traverse_files (ret, dir)) {
 		r_list_free (ret);
 		return NULL;
 	}
