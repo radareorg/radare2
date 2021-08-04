@@ -406,10 +406,7 @@ static bool dr(RList *dst, const char *dir) {
 
 static RList *repo_files(const char *dir) {
 	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
-	if (!dr (ret, dir)) {
+	if (!ret && !dr (ret, dir)) {
 		r_list_free (ret);
 		return NULL;
 	}
