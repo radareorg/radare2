@@ -916,7 +916,7 @@ R_API bool r_vc_new(const char *path) {
 	char *commitp, *blobsp;
 	char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
 	if (r_file_is_directory (vcp)) {
-		eprintf ("A directory already exists in %s\n", path);
+		eprintf ("A repository already exists in %s\n", path);
 		free (vcp);
 		return false;
 
