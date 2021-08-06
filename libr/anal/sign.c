@@ -934,6 +934,57 @@ static RSignHash *r_sign_fcn_bbhash(RAnal *a, RAnalFunction *fcn) {
 	return hash;
 }
 
+R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name) {
+	r_return_val_if_fail (a && fcn, false);
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return false;
+	}
+
+	// TODO: why set it->name = "spacename:name" when there is a it-space?
+	char *ptr;
+	char *zignspace = NULL;
+	if (name) {
+		it->name = strdup (name);
+	} else {
+		const RSpace *curspace = r_spaces_current (&a->zign_spaces);
+		if ((ptr = strchr (fcn->name, ':')) != NULL) {
+			int len = ptr - fcn->name;
+			zignspace = r_str_newlen (fcn->name, len);
+			r_spaces_push (&a->zign_spaces, zignspace);
+		} else if (curspace) {
+			it->name = r_str_newf ("%s:", curspace->name);
+		}
+		it->name = r_str_appendf (it->name, "%s", fcn->name);
+	}
+
+	if (!it->name) {
+		r_sign_item_free (it);
+		return false;
+	}
+
+	it->space = r_spaces_current (&a->zign_spaces);
+	r_sign_addto_item (a, it, fcn, R_SIGN_GRAPH);
+	r_sign_addto_item (a, it, fcn, R_SIGN_BYTES);
+	r_sign_addto_item (a, it, fcn, R_SIGN_XREFS);
+	r_sign_addto_item (a, it, fcn, R_SIGN_REFS);
+	r_sign_addto_item (a, it, fcn, R_SIGN_VARS);
+	r_sign_addto_item (a, it, fcn, R_SIGN_TYPES);
+	r_sign_addto_item (a, it, fcn, R_SIGN_BBHASH);
+	r_sign_addto_item (a, it, fcn, R_SIGN_OFFSET);
+	r_sign_addto_item (a, it, fcn, R_SIGN_NAME);
+
+	// commit the item to anal
+	r_sign_add_item (a, it);
+
+	r_sign_item_free (it); // causes zigname to be free'd
+	if (zignspace) {
+		r_spaces_pop (&a->zign_spaces);
+		free (zignspace);
+	}
+	return true;
+}
+
 R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignType type) {
 	r_return_val_if_fail (a && it && fcn, false);
 	switch (type) {
