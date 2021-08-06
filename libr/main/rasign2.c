@@ -152,19 +152,19 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	find_functions (core, a_cnt);
 
 	// create zignatures
-	r_core_cmd0 (core, "zg");
+	r_sign_all_functions (core->anal);
 
 	// write sigs to file
-	if (ofile) {
-		r_core_cmdf (core, "\"zos %s\"", ofile);
+	if (ofile && !r_sign_save (core->anal, ofile)) {
+		eprintf ("Failed to write file\n");
 	}
 
 	if (rad) {
-		r_core_cmd0 (core, "z*");
+		r_sign_list (core->anal, '*');
 	}
 
 	if (json) {
-		r_core_cmd0 (core, "zj");
+		r_sign_list (core->anal, 'j');
 	}
 	r_cons_flush ();
 
