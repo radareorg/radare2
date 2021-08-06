@@ -40,21 +40,15 @@ int list_str_cmp (const void *a, const void *b) {
 R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, NULL);
 
-	RCore *core = a->coreb.core;
-
-	if (!core) {
-		return NULL;
-	}
-
 	RListIter *iter;
 	RAnalVar *var;
 	RList *ret = r_list_newf ((RListFree) free);
 	if (!ret) {
 		return NULL;
 	}
-	RList *reg_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_REG);
-	RList *spv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_SPV);
-	RList *bpv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
+	RList *reg_vars = r_anal_var_list (a, fcn, R_ANAL_VAR_KIND_REG);
+	RList *spv_vars = r_anal_var_list (a, fcn, R_ANAL_VAR_KIND_SPV);
+	RList *bpv_vars = r_anal_var_list (a, fcn, R_ANAL_VAR_KIND_BPV);
 	r_list_foreach (bpv_vars, iter, var) {
 		r_list_append (ret, r_str_newf ("b%d", var->delta));
 	}
