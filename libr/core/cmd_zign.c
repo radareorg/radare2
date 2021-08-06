@@ -341,22 +341,10 @@ out_case_manual:
 		r_cons_break_pop ();
 		break;
 	case 'F':
-		{
-			RAnalFunction *fcni = NULL;
-			RListIter *iter = NULL;
-			int count = 0;
-
-			r_cons_break_push (NULL, NULL);
-			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				r_sign_add_func (core->anal, fcni, NULL);
-				count++;
-			}
-			r_cons_break_pop ();
-			eprintf ("generated zignatures: %d\n", count);
-		}
+		r_cons_break_push (NULL, NULL);
+		int count = r_sign_all_functions (core->anal);
+		r_cons_break_pop ();
+		eprintf ("generated zignatures: %d\n", count);
 		break;
 	case '?':
 		if (input[1] == '?') {

@@ -934,6 +934,22 @@ static RSignHash *r_sign_fcn_bbhash(RAnal *a, RAnalFunction *fcn) {
 	return hash;
 }
 
+R_API int r_sign_all_functions(RAnal *a) {
+	RAnalFunction *fcni = NULL;
+	RListIter *iter = NULL;
+	int count = 0;
+
+	r_list_foreach (a->fcns, iter, fcni) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		if (r_sign_add_func (a, fcni, NULL)) {
+			count++;
+		}
+	}
+	return count;
+}
+
 R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name) {
 	r_return_val_if_fail (a && fcn, false);
 	RSignItem *it = r_sign_item_new ();
