@@ -115,68 +115,6 @@ static char *getFcnComments(RCore *core, RAnalFunction *fcn) {
 }
 #endif
 
-static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
-	char *ptr = NULL;
-	char *zignspace = NULL;
-	char *zigname = NULL;
-	const RSpace *curspace = r_spaces_current (&core->anal->zign_spaces);
-	int len = 0;
-
-	if (name) {
-		zigname = r_str_new (name);
-	} else {
-		// If the user has set funtion names containing a single ':' then we assume
-		// ZIGNSPACE:FUNCTION, and for now we only support the 'zg' command
-		if ((ptr = strchr (fcn->name, ':')) != NULL) {
-			len = ptr - fcn->name;
-			zignspace = r_str_newlen (fcn->name, len);
-			r_spaces_push (&core->anal->zign_spaces, zignspace);
-		} else if (curspace) {
-			zigname = r_str_newf ("%s:", curspace->name);
-		}
-		zigname = r_str_appendf (zigname, "%s", fcn->name);
-	}
-
-	// create empty item
-	RSignItem *it = r_sign_item_new ();
-	if (!it) {
-		free (zigname);
-		return;
-	}
-	// add sig types info to item
-	it->name = zigname; // will be free'd when item is free'd
-	it->space = r_spaces_current (&core->anal->zign_spaces);
-	// TODO: sort fcn bbs
-	r_sign_addto_item (core->anal, it, fcn, R_SIGN_GRAPH);
-	r_sign_addto_item (core->anal, it, fcn, R_SIGN_BYTES);
-	r_sign_addto_item (core->anal, it, fcn, R_SIGN_XREFS);
-	r_sign_addto_item (core->anal, it, fcn, R_SIGN_REFS);
-	r_sign_addto_item (core->anal, it, fcn, R_SIGN_VARS);
-	r_sign_addto_item (core->anal, it, fcn, R_SIGN_TYPES);
-	r_sign_addto_item (core->anal, it, fcn, R_SIGN_BBHASH);
-	r_sign_addto_item (core->anal, it, fcn, R_SIGN_OFFSET);
-	r_sign_addto_item (core->anal, it, fcn, R_SIGN_NAME);
-
-	/* r_sign_add_addr (core->anal, zigname, fcn->addr); */
-
-	// commit the item to anal
-	r_sign_add_item (core->anal, it);
-
-	/*
-	XXX this is very slow and poorly tested
-	char *comments = getFcnComments (core, fcn);
-	if (comments) {
-		r_sign_add_comment (core->anal, zigname, comments);
-	}
-	*/
-
-	r_sign_item_free (it); // causes zigname to be free'd
-	if (zignspace) {
-		r_spaces_pop (&core->anal->zign_spaces);
-		free (zignspace);
-	}
-}
-
 static bool addCommentZign(RCore *core, const char *name, RList *args) {
 	if (r_list_length (args) != 1) {
 		eprintf ("Invalid number of arguments\n");
@@ -372,45 +310,31 @@ out_case_manual:
 		break;
 	case 'f': // "zaf"
 		{
-			RAnalFunction *fcni = NULL;
-			RListIter *iter = NULL;
-			const char *fcnname = NULL, *zigname = NULL;
-			char *args = NULL;
-			int n = 0;
-			bool retval = true;
-
-			args = r_str_trim_dup (input + 1);
-			n = r_str_word_set0 (args);
+			char *args = r_str_trim_dup (input + 1);
+			int n = r_str_word_set0 (args);
 
 			if (n > 2) {
 				eprintf ("Usage: zaf [fcnname] [zigname]\n");
-				retval = false;
-				goto out_case_fcn;
+				free (args);
+				return false;
 			}
 
-			switch (n) {
-			case 2:
-				zigname = r_str_word_get0 (args, 1);
-			case 1:
-				fcnname = r_str_word_get0 (args, 0);
+			RAnalFunction *fcni = NULL;
+			const char *zigname = (n == 2)? r_str_word_get0 (args, 1): NULL;
+			if (n > 0) {
+				fcni = r_anal_get_function_byname (core->anal, r_str_word_get0 (args, 0));
+			} else {
+				fcni = r_anal_get_function_at (core->anal, core->offset);
+			}
+			if (fcni) {
+				r_sign_add_func (core->anal, fcni, zigname);
 			}
 
-			r_cons_break_push (NULL, NULL);
-			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				if ((!fcnname && core->offset == fcni->addr) ||
-					(fcnname && !strcmp (fcnname, fcni->name))) {
-					addFcnZign (core, fcni, zigname);
-					break;
-				}
-			}
-			r_cons_break_pop ();
-
-out_case_fcn:
 			free (args);
-			return retval;
+			if (!fcni) {
+				eprintf ("Could not find function");
+				return false;
+			}
 		}
 		break;
 	case 'c': // "zac"
@@ -419,22 +343,10 @@ out_case_fcn:
 		r_cons_break_pop ();
 		break;
 	case 'F':
-		{
-			RAnalFunction *fcni = NULL;
-			RListIter *iter = NULL;
-			int count = 0;
-
-			r_cons_break_push (NULL, NULL);
-			r_list_foreach (core->anal->fcns, iter, fcni) {
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				addFcnZign (core, fcni, NULL);
-				count++;
-			}
-			r_cons_break_pop ();
-			eprintf ("generated zignatures: %d\n", count);
-		}
+		r_cons_break_push (NULL, NULL);
+		int count = r_sign_all_functions (core->anal);
+		r_cons_break_pop ();
+		eprintf ("generated zignatures: %d\n", count);
 		break;
 	case '?':
 		if (input[1] == '?') {

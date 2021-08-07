@@ -40,21 +40,15 @@ int list_str_cmp (const void *a, const void *b) {
 R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 	r_return_val_if_fail (a && fcn, NULL);
 
-	RCore *core = a->coreb.core;
-
-	if (!core) {
-		return NULL;
-	}
-
 	RListIter *iter;
 	RAnalVar *var;
 	RList *ret = r_list_newf ((RListFree) free);
 	if (!ret) {
 		return NULL;
 	}
-	RList *reg_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_REG);
-	RList *spv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_SPV);
-	RList *bpv_vars = r_anal_var_list (core->anal, fcn, R_ANAL_VAR_KIND_BPV);
+	RList *reg_vars = r_anal_var_list (a, fcn, R_ANAL_VAR_KIND_REG);
+	RList *spv_vars = r_anal_var_list (a, fcn, R_ANAL_VAR_KIND_SPV);
+	RList *bpv_vars = r_anal_var_list (a, fcn, R_ANAL_VAR_KIND_BPV);
 	r_list_foreach (bpv_vars, iter, var) {
 		r_list_append (ret, r_str_newf ("b%d", var->delta));
 	}
@@ -938,6 +932,73 @@ static RSignHash *r_sign_fcn_bbhash(RAnal *a, RAnalFunction *fcn) {
 	}
 	hash->bbhash = digest_hex;
 	return hash;
+}
+
+R_API int r_sign_all_functions(RAnal *a) {
+	RAnalFunction *fcni = NULL;
+	RListIter *iter = NULL;
+	int count = 0;
+
+	r_list_foreach (a->fcns, iter, fcni) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		if (r_sign_add_func (a, fcni, NULL)) {
+			count++;
+		}
+	}
+	return count;
+}
+
+R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name) {
+	r_return_val_if_fail (a && fcn, false);
+	RSignItem *it = r_sign_item_new ();
+	if (!it) {
+		return false;
+	}
+
+	// TODO: why set it->name = "spacename:name" when there is a it-space?
+	char *ptr;
+	char *zignspace = NULL;
+	if (name) {
+		it->name = strdup (name);
+	} else {
+		const RSpace *curspace = r_spaces_current (&a->zign_spaces);
+		if ((ptr = strchr (fcn->name, ':')) != NULL) {
+			int len = ptr - fcn->name;
+			zignspace = r_str_newlen (fcn->name, len);
+			r_spaces_push (&a->zign_spaces, zignspace);
+		} else if (curspace) {
+			it->name = r_str_newf ("%s:", curspace->name);
+		}
+		it->name = r_str_appendf (it->name, "%s", fcn->name);
+	}
+
+	if (!it->name) {
+		r_sign_item_free (it);
+		return false;
+	}
+
+	it->space = r_spaces_current (&a->zign_spaces);
+	r_sign_addto_item (a, it, fcn, R_SIGN_GRAPH);
+	r_sign_addto_item (a, it, fcn, R_SIGN_BYTES);
+	r_sign_addto_item (a, it, fcn, R_SIGN_XREFS);
+	r_sign_addto_item (a, it, fcn, R_SIGN_REFS);
+	r_sign_addto_item (a, it, fcn, R_SIGN_VARS);
+	r_sign_addto_item (a, it, fcn, R_SIGN_TYPES);
+	r_sign_addto_item (a, it, fcn, R_SIGN_BBHASH);
+	r_sign_addto_item (a, it, fcn, R_SIGN_OFFSET);
+	r_sign_addto_item (a, it, fcn, R_SIGN_NAME);
+
+	// commit the item to anal
+	r_sign_add_item (a, it);
+
+	r_sign_item_free (it); // causes zigname to be free'd
+	if (zignspace) {
+		r_spaces_pop (&a->zign_spaces);
+		free (zignspace);
+	}
+	return true;
 }
 
 R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignType type) {
