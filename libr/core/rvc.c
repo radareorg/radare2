@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
+#include "r_config.h"
 #include <rvc.h>
 #include <sdb.h>
 #define FIRST_BRANCH "branches.master"
@@ -1168,7 +1169,19 @@ R_API int rvc_git_init(const RCore *core, const char *rp) {
 	return r_vc_new (rp);
 }
 
-R_API int rvc_git_commit(const RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+	{
+		const char *m = r_config_get (core->config, "prj.vc.message");
+		if (!*m) {
+			if (r_cons_is_interactive ()) {
+				r_config_set(core->config,
+						"prj.vc.message", "test");
+				message = m;
+			}
+		} else {
+			message = m;
+		}
+	}
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		author = author? author : r_config_get (core->config, "cfg.user");
 		r_vc_commit (rp, message, author, files);
