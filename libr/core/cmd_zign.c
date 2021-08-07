@@ -309,30 +309,32 @@ out_case_manual:
 		}
 		break;
 	case 'f': // "zaf"
-		char *args = r_str_trim_dup (input + 1);
-		int n = r_str_word_set0 (args);
+		{
+			char *args = r_str_trim_dup (input + 1);
+			int n = r_str_word_set0 (args);
 
-		if (n > 2) {
-			eprintf ("Usage: zaf [fcnname] [zigname]\n");
+			if (n > 2) {
+				eprintf ("Usage: zaf [fcnname] [zigname]\n");
+				free (args);
+				return false;
+			}
+
+			RAnalFunction *fcni = NULL;
+			const char *zigname = (n == 2)? r_str_word_get0 (args, 1): NULL;
+			if (n > 0) {
+				fcni = r_anal_get_function_byname (core->anal, r_str_word_get0 (args, 0));
+			} else {
+				fcni = r_anal_get_function_at (core->anal, core->offset);
+			}
+			if (fcni) {
+				r_sign_add_func (core->anal, fcni, zigname);
+			}
+
 			free (args);
-			return false;
-		}
-
-		RAnalFunction *fcni = NULL;
-		const char *zigname = (n == 2)? r_str_word_get0 (args, 1): NULL;
-		if (n > 0) {
-			fcni = r_anal_get_function_byname (core->anal, r_str_word_get0 (args, 0));
-		} else {
-			fcni = r_anal_get_function_at (core->anal, core->offset);
-		}
-		if (fcni) {
-			r_sign_add_func (core->anal, fcni, zigname);
-		}
-
-		free (args);
-		if (!fcni) {
-			eprintf ("Could not find function");
-			return false;
+			if (!fcni) {
+				eprintf ("Could not find function");
+				return false;
+			}
 		}
 		break;
 	case 'c': // "zac"
