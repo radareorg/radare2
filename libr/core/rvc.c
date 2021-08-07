@@ -1161,14 +1161,14 @@ R_API int r_vc_git_commit(const char *path, const char *message) {
 
 //Access both git and rvc functionality from one set of functions
 
-R_API int rvc_git_init(RCore *core, const char *rp) {
+R_API int rvc_git_init(const RCore *core, const char *rp) {
 	if (strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
 		return r_vc_git_init (rp);
 	}
 	return r_vc_new (rp);
 }
 
-R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+R_API int rvc_git_commit(const RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		author = author? author : r_config_get (core->config, "cfg.user");
 		r_vc_commit (rp, message, author, files);
@@ -1183,16 +1183,31 @@ R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const
 	return r_vc_git_commit (rp, message);
 }
 
-R_API int rvc_git_branch(RCore *core, const char *rp, const char *bname) {
+R_API int rvc_git_branch(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		return r_vc_branch (rp, bname);
 	}
 	return r_vc_git_branch (rp, bname);
 }
 
-R_API int rvc_git_checkout(RCore *core, const char *rp, const char *bname) {
+R_API int rvc_git_checkout(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		return r_vc_checkout (rp, bname);
 	}
 	return r_vc_git_checkout (rp, bname);
+}
+
+R_API bool rvc_git_repo_exists(const RCore *core, const char *rp) {
+	char *frp;
+	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		frp = r_str_newf ("%s" R_SYS_DIR ".rvc", rp);
+	} else {
+		frp = r_str_newf ("%s" R_SYS_DIR ".rvc", rp);
+	}
+	if (!frp) {
+		return false;
+	}
+	bool ret = r_file_is_directory (frp);
+	free (frp);
+	return ret;
 }
