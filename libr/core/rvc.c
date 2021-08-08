@@ -9,6 +9,7 @@
 #define DBNAME "branches.sdb"
 #define CURRENTB "current_branch"
 #define BPREFIX "branches."
+#define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
 static bool file_copyp(const char *src, const char *dst) {
@@ -730,6 +731,47 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	case -2:
 		eprintf ("Can't commit");
 		return false;
+	}
+	if (!message) {
+#if __WINDOWS__ //fuck you
+	char *whoami = r_sys_whoami ();
+	if (!whoami) {
+		return false;
+	}
+	char *path = r_str_newf ("c:\\\\users\\%s\\appdata\\local\\tmp\\rvcmessage",
+		whoami);
+	free (whoami);
+#else
+	char *path = r_str_newf ("/tmp/rvcmessage");
+#endif
+	if (!path) {
+		return false;
+	}
+	if (!r_file_touch (path)) {
+		free (path);
+		return false;
+	}
+	if (r_sys_cmdf ("$EDITOR %s", path)) {
+		free (path);
+		return false;
+	}
+	FILE *f;
+	char m[MAX_MESSAGE_LEN + 1];
+	f = fopen (path, "r");
+	if (!f) {
+		free (path);
+		return false;
+	}
+	fread (m, sizeof (char), MAX_MESSAGE_LEN, f);
+	fclose (f);
+	r_file_rm (path);
+	free (path);
+	if (!*m) {
+		return false;
+	}
+	message = m;
+	} else if (r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
+	return false;
 	}
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
