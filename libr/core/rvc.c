@@ -753,6 +753,16 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 				free (path);
 				return false;
 			}
+			FILE *f = fopen (path, "r");
+			free (path);
+			if (f) {
+				char m[MAX_MESSAGE_LEN + 1];
+				fread (m, sizeof (char), MAX_MESSAGE_LEN, f);
+				fclose (f);
+				message = m;
+			} else {
+				return false;
+			}
 		} else {
 			return false;
 		}
