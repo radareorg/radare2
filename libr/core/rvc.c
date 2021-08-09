@@ -406,15 +406,15 @@ static bool traverse_files(RList *dst, const char *dir) {
 }
 
 static RList *repo_files(const char *dir) {
- 	RList *ret = r_list_newf (free);
- 	if (ret) {
-           if (!traverse_files (ret, dir)) {
- 		r_list_free (ret);
- 		ret = NULL;
-           }
- 	}
- 	return ret;
- }
+	RList *ret = r_list_newf (free);
+	if (ret) {
+		if (!traverse_files (ret, dir)) {
+			r_list_free (ret);
+			ret = NULL;
+		}
+	}
+	return ret;
+}
 
 //shit function:
 static RList *get_uncommitted(const char *rp) {
@@ -771,7 +771,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	}
 	message = m;
 	} else if (r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
-	return false;
+		return false;
 	}
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
