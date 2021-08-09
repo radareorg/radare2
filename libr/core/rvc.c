@@ -766,7 +766,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	fclose (f);
 	r_file_rm (path);
 	free (path);
-	if (!*m) {
+	if (R_STR_ISEMPTY (m)) {
 		return false;
 	}
 	message = m;
@@ -1251,12 +1251,9 @@ R_API int rvc_git_checkout(const RCore *core, const char *rp, const char *bname)
 }
 
 R_API bool rvc_git_repo_exists(const RCore *core, const char *rp) {
-	char *frp;
-	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
-		frp = r_str_newf ("%s" R_SYS_DIR ".rvc", rp);
-	} else {
-		frp = r_str_newf ("%s" R_SYS_DIR ".rvc", rp);
-	}
+	char *frp = !strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")?
+		r_str_newf ("%s" R_SYS_DIR ".rvc", rp):
+		r_str_newf ("%s" R_SYS_DIR ".git", rp);
 	if (!frp) {
 		return false;
 	}
