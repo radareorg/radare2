@@ -297,6 +297,246 @@ found:
 	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
 }
 
+
+// deletes submaps that belong to a mapref with a specified priority from the submap tree of a bank.
+// the mapref is accessed by it's iter from the priority list in the bank,
+// so that the function can insert new submaps that fill the gaps. The iter represents the priority of the mapref.
+// this function DOES NOT delete the iter from the list. (that way it can be used for delete and relocate)
+static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *prio, RIOMap *map) {
+	RIOSubMap fake_sm;
+	fake_sm.itv = map->itv;
+	fake_sm.mapref.id = map->id;
+	RContRBNode *entry = _find_entry_submap_node (bank, &fake_sm);
+	RIOSubMap *bd = (RIOSubMap *)entry->data;
+	while (bd && r_io_submap_overlap (bd, (&fake_sm))) {
+		// this loop deletes all affected submaps from the rbtree
+		// and also enqueues them in bank->todo
+		RContRBNode *next = r_rbtree_cont_node_next (entry);
+		if (bd->mapref.id == fake_sm.mapref.id) {
+			r_queue_enqueue (bank->todo, R_NEWCOPY (RIOSubMap, bd));
+			r_rbtree_cont_delete (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+		}
+		entry = next;
+		bd = entry ? (RIOSubMap *)entry->data : NULL;
+	}
+	RListIter *iter = prio;
+	while (!r_queue_is_empty (bank->todo)) {
+		// now check for each deleted submap if a lower map intersects with it
+		// and create new submaps accordingly, and fill the gaps
+		RIOSubMap *sm = r_queue_dequeue (bank->todo);
+		RListIter *ator = r_list_iter_get_prev (iter);
+		while (ator) {
+			map = r_io_map_get_by_ref (io, (RIOMapRef *)ator->data);
+			ator = r_list_iter_get_prev (ator);
+			if (!map) {
+				// if this happens, something is fucked up, and no submap should be inserted
+				continue;
+			}
+			// if the map and sm intersect, the intersecting submap needs to be inserted in the tree
+			// there are 5 cases to consider here
+			// 1. no intersection: just continue to the next iteration
+			// 2. map overlaps sm on both ends: insert submap for map with boundaries of sm
+			// 3. map overlaps sm on the upper end: insert submap for map accordingly and adjust sm boundaries
+			// 4. map overlaps sm on the lower end: insert submap for map accordingly and adjust sm boundaries
+			// 5. sm overlaps sm on both ends: split sm into 2 submaps and enqueue new one in banks->todo; insert submap for map; adjust sm boundaries
+			if (r_io_submap_to (sm) < r_io_map_from (map) || r_io_submap_from (sm) > r_io_map_to (map)) {
+				// case 1
+				continue;
+			}
+			RIOMapRef *mapref = _mapref_from_map (map);
+			bd = r_io_submap_new (io, mapref);
+			free (mapref);
+			if (r_io_submap_from (sm) >= r_io_map_from (map)) {
+				// case 4 and 2
+				r_io_submap_set_from (bd, r_io_submap_from (sm));
+				r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+				if (r_io_submap_to (sm) <= r_io_map_to (map)) {
+					// case 2
+					r_io_submap_set_to (bd, r_io_submap_to (sm));
+					break;
+				}
+				// case 4
+				r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
+				continue;
+			}
+			if (r_io_submap_to (sm) <= r_io_map_to (map)) {
+				// case 3
+				r_io_submap_set_to (bd, r_io_submap_to (sm));
+				r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
+				r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+				continue;
+			}
+			// case 5 because all other cases are already handled
+			RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, sm);
+			r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
+			r_io_submap_set_from (bdsm, r_io_submap_to (bd) + 1);
+			r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+			r_queue_enqueue (bank->todo, bdsm);
+		}
+		free (sm);
+	}
+}
+
+// compared 2 maprefs of the same bank by their priority (position in  the mapref list)
+// returns 0, if both have the same priority
+// returns 1, if mr0 has higher priority than mr1
+// returns -1, if mr1 has higher priority tham mr0
+// returns 0, if neither mr0 nor mr1 are an element of the bank
+static int _mapref_priority_cmp (RIOBank *bank, RIOMapRef *mr0, RIOMapRef *mr1) {
+	if (mr0->id == mr1->id) {
+		// mapref have the same priority, if their mapid matches
+		return 0;
+	}
+	RListIter *iter;
+	RIOMapRef *mapref;
+	r_list_foreach_prev (bank->maprefs, iter, mapref) {
+		if (mapref->id == mr0->id) {
+			return 1;
+		}
+		if (mapref->id == mr1->id) {
+			return -1;
+		}
+	}
+	return 0;	// should never happen
+}
+
+R_API bool r_io_bank_update_map_location(RIO *io, const ut32 bankid, const ut32 mapid, ut64 oaddr) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	r_return_val_if_fail (io && bank, false);
+	RListIter *iter;
+	RIOMapRef *mapref;
+	r_list_foreach_prev (bank->maprefs, iter, mapref) {
+		if (mapref->id == mapid) {
+			goto found;
+		}
+	}
+	// map is not referenced by this map
+	return false;
+found:
+	RIOMap *map = r_io_map_get_by_ref (io, mapref);
+	if (!map) {
+		// inconsistent mapref
+		// mapref should be deleted from bank here
+		return false;
+	}
+	if (r_io_map_from (map) == oaddr) {
+		// nothing todo here
+		return true;
+	}
+	// allocate sm here to avoid deleting things without ensuring
+	// that this code could at least insert 1 submap
+	RIOSubMap *sm = r_io_submap_new (io, mapref);
+	if (!sm) {
+		return false;
+	}
+
+	// this problem can be divided in 2 steps:
+	// 1. delete corresponding submaps and insert intersecting submaps with lower priority
+	// 2. adjust addr and insert submaps at new addr respecting priority
+	RIOMap fake_map;
+	memcpy (&fake_map, map, sizeof (RIOMap));
+	fake_map.itv.addr = oaddr;
+	_delete_submaps_from_bank_tree (io, bank, iter, &fake_map);
+
+	RContRBNode *entry = _find_entry_submap_node (bank, sm);
+	if (!entry) {
+		// no intersection here, so just insert sm into the tree and we're done
+		r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+		// assumption here is that there is no need to check for return value of r_rbtree_cont_insert,
+		// since it only fails, if allocation fails and a delete was performed before, so it should just be fine
+		return true;
+	}
+
+	RIOSubMap *bd = (RIOSubMap *)entry->data;
+	// check if sm has higher priority than bd by comparing their maprefs
+	if (_mapref_priority_cmp (bank, &sm->mapref, &bd->mapref) == 1) {
+		// sm has higher priority that bd => adjust bd
+		if (r_itv_eq (bd->itv, sm->itv)) {
+			// instead of deleting and inserting, just replace the mapref,
+			// similar to r_io_bank_map_priorize
+			bd->mapref = sm->mapref;
+			free (sm);
+			return true;
+		}
+		if (r_io_submap_from (bd) < r_io_submap_from (sm) &&
+			r_io_submap_to (sm) < r_io_submap_to (bd)) {
+			RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, bd);
+			// allocating bdsm here should be just fine, because of previous performed delete
+			r_io_submap_set_from (bdsm, r_io_submap_to (sm) + 1);
+			r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
+			// What do if this fails?
+			r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+			return true;
+		}
+		r_io_submap_set_to (bd, r_io_submap_from (sm) -1);
+	} else {
+		// _mapref_priority_cmp cannot return 0 in this scenario,
+		// since all submaps with the same mapref as sm were deleted from
+		// the submap tree previously. so _mapref_priority_cmp can only return 1 or -1
+		// bd has higher priority than sm => adjust sm
+		if (r_io_submap_from (bd) <= r_io_submap_from (sm)) {
+			if (r_io_submap_to (sm) <= r_io_submap_to (bd)) {
+				// bd completly overlaps sm => nothing to do
+				free (sm);
+				return true;
+			} // else
+			// adjust sm
+			r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
+		}
+	}
+	entry = r_rbtree_cont_node_next (entry);
+	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
+		// iterate forwards starting at entry, while entry->data and sm overlap
+		bd = (RIOSubMap *)entry->data;
+		entry = r_rbtree_cont_node_next (entry);
+		// check if sm has higher priority than bd by comparing their maprefs
+		if (_mapref_priority_cmp (bank, &sm->mapref, &bd->mapref) == 1) {
+			// delete bd
+			r_rbtree_cont_delete (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+		} else {
+			// _mapref_priority_cmp cannot return 0 in this scenario,
+			// since all submaps with the same mapref as sm were deleted from
+			// the submap tree previously. so _mapref_priority_cmp can only return 1 or -1
+			// bd has higher priority than sm => adjust sm
+			if (r_io_submap_from (sm) < r_io_submap_from (bd)) {
+				RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, sm);
+				r_io_submap_set_to (bdsm, r_io_submap_from (bd) - 1);
+				r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+			}
+			if (r_io_submap_to (sm) == r_io_submap_from (bd)) {
+				// in this case the size of sm would be 0,
+				// but since empty maps are not allowed free sm and return
+				free (sm);
+				return true;
+			}
+			r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
+		}
+	}
+	if (!entry) {
+		r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+		return true;
+	}
+	bd = (RIOSubMap *)entry->data;
+	if (_mapref_priority_cmp (bank, &sm->mapref, &bd->mapref) == 1) {
+		if (r_io_submap_from (bd) <= r_io_submap_to (sm)) {
+			r_io_submap_set_from (bd, r_io_submap_to (sm) + 1);
+		}
+		r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+	} else {
+		if (r_io_submap_from (sm) < r_io_submap_from (bd)) {
+			if (r_io_submap_to (sm) >= r_io_submap_from (bd)) {
+				r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
+			}
+			r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+		} else {
+			// can this happen?
+			free (sm);
+		}
+	}
+	return true;
+}
+
 R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank && bank->submaps && addr && size, false);
@@ -397,90 +637,13 @@ R_API void r_io_bank_delete_map (RIO *io, const ut32 bankid, const ut32 mapid) {
 	r_return_if_fail (bank && map);
 	RListIter *iter;
 	RIOMapRef *mapref = NULL;
-	// first try to find the corresponding mapref in the bank
 	r_list_foreach_prev (bank->maprefs, iter, mapref) {
 		if (mapref->id == map->id) {
-			goto found;
+			_delete_submaps_from_bank_tree (io, bank, iter, map);
+			r_list_delete (bank->maprefs, iter);
 		}
 	}
 	// map is not referenced by this bank; nothing to do
-	return;
-found:
-	// TODO: make sm stack located
-	// not now -.- i am tired
-	;RIOSubMap *sm = r_io_submap_new (io, mapref);
-	RContRBNode *entry = _find_entry_submap_node (bank, sm);
-	RIOSubMap *bd = (RIOSubMap *)entry->data;
-	while (bd && r_io_submap_overlap (bd, sm)) {
-		// this loop deletes all affected submaps from the rbtree
-		// and also enqueues them in bank->todo
-		RContRBNode *next = r_rbtree_cont_node_next (entry);
-		if (bd->mapref.id == mapid) {
-			// TODO: create a different struct, that fits better to this than RIOSubMap
-			r_queue_enqueue (bank->todo, R_NEWCOPY (RIOSubMap, bd));
-			r_rbtree_cont_delete (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
-		}
-		entry = next;
-		bd = entry ? (RIOSubMap *)entry->data : NULL;
-	}
-	free (sm);
-	while (!r_queue_is_empty (bank->todo)) {
-		// now check for each deleted submap if a lower map intersects with it
-		// and create new submaps accordingly, and fill the gaps
-		sm = r_queue_dequeue (bank->todo);
-		RListIter *ator = r_list_iter_get_prev (iter);
-		while (ator) {
-			map = r_io_map_get_by_ref (io, (RIOMapRef *)ator->data);
-			ator = r_list_iter_get_prev (ator);
-			if (!map) {
-				// if this happens, something is fucked up, and no submap should be inserted
-				continue;
-			}
-			// if the map and sm intersect, the intersecting submap needs to be inserted in the tree
-			// there are 5 cases to consider here
-			// 1. no intersection: just continue to the next iteration
-			// 2. map overlaps sm on both ends: insert submap for map with boundaries of sm
-			// 3. map overlaps sm on the upper end: insert submap for map accordingly and adjust sm boundaries
-			// 4. map overlaps sm on the lower end: insert submap for map accordingly and adjust sm boundaries
-			// 5. sm overlaps sm on both ends: split sm into 2 submaps and enqueue new one in banks->todo; insert submap for map; adjust sm boundaries
-			if (r_io_submap_to (sm) < r_io_map_from (map) || r_io_submap_from (sm) > r_io_map_to (map)) {
-				// case 1
-				continue;
-			}
-			mapref = _mapref_from_map (map);
-			bd = r_io_submap_new (io, mapref);
-			free (mapref);
-			if (r_io_submap_from (sm) >= r_io_map_from (map)) {
-				// case 4 and 2
-				r_io_submap_set_from (bd, r_io_submap_from (sm));
-				r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
-				if (r_io_submap_to (sm) <= r_io_map_to (map)) {
-					// case 2
-					r_io_submap_set_to (bd, r_io_submap_to (sm));
-					break;
-				}
-				// case 4
-				r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
-				continue;
-			}
-			if (r_io_submap_to (sm) <= r_io_map_to (map)) {
-				// case 3
-				r_io_submap_set_to (bd, r_io_submap_to (sm));
-				r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
-				r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
-				continue;
-			}
-			// case 5 because all other cases are already handled
-			RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, sm);
-			r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
-			r_io_submap_set_from (bdsm, r_io_submap_to (bd) + 1);
-			r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
-			r_queue_enqueue (bank->todo, bdsm);
-		}
-		free (sm);
-	}
-	// finally remove the mapref/iter from the map
-	r_list_delete (bank->maprefs, iter);
 }
 
 // merges nearby submaps, that have a map ref to the same map, and free unneeded tree nodes
