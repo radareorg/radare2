@@ -1201,7 +1201,7 @@ R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, cons
 	const char *m = r_config_get (core->config, "prj.vc.message");
 	if (!*m) {
 		if (r_cons_is_interactive ()) {
-			r_config_set(core->config,
+			r_config_set (core->config,
 					"prj.vc.message", "test");
 			message = m;
 		}
