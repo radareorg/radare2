@@ -1142,76 +1142,76 @@ fail_ret:
 
 // GIT commands as APIs
 
-R_API int r_vc_git_init(const char *path) {
+R_API bool r_vc_git_init(const char *path) {
 	char *escpath = r_str_escape (path);
 	int ret = r_sys_cmdf ("git init \"%s\"", escpath);
 	free (escpath);
-	return ret;
+	return !ret;
 }
 
-R_API int r_vc_git_branch(const char *path, const char *name) {
+R_API bool r_vc_git_branch(const char *path, const char *name) {
 	char *escpath = r_str_escape (path);
 	if (!escpath) {
-		return -1;
+		return false;
 	}
 	char *escname = r_str_escape (name);
 	if (!escname) {
 		free (escpath);
-		return -2;
+		return false;
 	}
 	int ret = r_sys_cmdf ("git -C \"%s\" branch \"%s\"", escpath, escname);
 	free (escpath);
 	free (escname);
-	return ret;
+	return !ret;
 }
 
-R_API int r_vc_git_checkout(const char *path, const char *name) {
+R_API bool r_vc_git_checkout(const char *path, const char *name) {
 	char *escpath = r_str_escape (path);
 	char *escname = r_str_escape (name);
 	int ret = r_sys_cmdf ("git -C \"%s\" checkout \"%s\"", escpath, escname);
 	free (escname);
 	free (escpath);
-	return ret;
+	return !ret;
 }
 
-R_API int r_vc_git_add(const char *path, const char *fname) {
+R_API bool r_vc_git_add(const char *path, const char *fname) {
 	int ret;
 	char *cwd = r_sys_getdir ();
 	if (!cwd) {
-		return -1;
+		return false;
 	}
 	ret = r_sys_chdir (path);
 	if (!ret) {
 		free (cwd);
-		return -2;
+		return false;
 	}
 	char *escfname = r_str_escape (fname);
 	ret = r_sys_cmdf ("git add \"%s\"", escfname);
 	free (escfname);
 	if (!r_sys_chdir (cwd)) {
 		free (cwd);
-		return -3;
+		return false;
 	}
 	free (cwd);
-	return ret;
+	return !ret;
 }
 
-R_API int r_vc_git_commit(const char *path, const char *message) {
-	return message ? r_sys_cmdf ("git -C %s commit -m %s",
+R_API bool r_vc_git_commit(const char *path, const char *message) {
+	return message ? !r_sys_cmdf ("git -C %s commit -m %s",
 			r_str_escape (path), r_str_escape (message)):
-		r_sys_cmdf ("git -C \"%s\" commit", r_str_escape (path));
+		!r_sys_cmdf ("git -C \"%s\" commit", r_str_escape (path));
 }
 
 //Access both git and rvc functionality from one set of functions
 
-R_API int rvc_git_init(const RCore *core, const char *rp) {
+R_API bool rvc_git_init(const RCore *core, const char *rp) {
 	if (strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
 		return r_vc_git_init (rp);
 	}
 	return r_vc_new (rp);
 }
 
-R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
 	const char *m = r_config_get (core->config, "prj.vc.message");
 	if (!*m) {
 		if (r_cons_is_interactive ()) {
@@ -1236,14 +1236,14 @@ R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const
 	return r_vc_git_commit (rp, message);
 }
 
-R_API int rvc_git_branch(const RCore *core, const char *rp, const char *bname) {
+R_API bool rvc_git_branch(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		return r_vc_branch (rp, bname);
 	}
-	return r_vc_git_branch (rp, bname);
+	return !r_vc_git_branch (rp, bname);
 }
 
-R_API int rvc_git_checkout(const RCore *core, const char *rp, const char *bname) {
+R_API bool rvc_git_checkout(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		return r_vc_checkout (rp, bname);
 	}
