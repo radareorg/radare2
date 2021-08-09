@@ -1212,17 +1212,15 @@ R_API int rvc_git_init(const RCore *core, const char *rp) {
 }
 
 R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
-	{
-		const char *m = r_config_get (core->config, "prj.vc.message");
-		if (!*m) {
-			if (r_cons_is_interactive ()) {
-				r_config_set(core->config,
-						"prj.vc.message", "test");
-				message = m;
-			}
-		} else {
+	const char *m = r_config_get (core->config, "prj.vc.message");
+	if (!*m) {
+		if (r_cons_is_interactive ()) {
+			r_config_set(core->config,
+					"prj.vc.message", "test");
 			message = m;
 		}
+	} else {
+		message = m;
 	}
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		author = author? author : r_config_get (core->config, "cfg.user");
