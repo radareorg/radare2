@@ -2,6 +2,7 @@
 
 #include "r_config.h"
 #include <rvc.h>
+#include <r_util.h>
 #include <sdb.h>
 #define FIRST_BRANCH "branches.master"
 #define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
@@ -733,43 +734,28 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		return false;
 	}
 	if (!message) {
-#if __WINDOWS__ //fuck you
-	char *whoami = r_sys_whoami ();
-	if (!whoami) {
-		return false;
-	}
-	char *path = r_str_newf ("c:\\\\users\\%s\\appdata\\local\\tmp\\rvcmessage",
-		whoami);
-	free (whoami);
-#else
-	char *path = r_str_newf ("/tmp/rvcmessage");
-#endif
-	if (!path) {
-		return false;
-	}
-	if (!r_file_touch (path)) {
-		free (path);
-		return false;
-	}
-	if (r_sys_cmdf ("$EDITOR %s", path)) {
-		free (path);
-		return false;
-	}
-	FILE *f;
-	char m[MAX_MESSAGE_LEN + 1];
-	f = fopen (path, "r");
-	if (!f) {
-		free (path);
-		return false;
-	}
-	fread (m, sizeof (char), MAX_MESSAGE_LEN, f);
-	fclose (f);
-	r_file_rm (path);
-	free (path);
-	if (R_STR_ISEMPTY (m)) {
-		return false;
-	}
-	message = m;
+		char *path = NULL;
+		r_file_mkstemp ("rvc", &path);
+		if (path) {
+			char *editor = r_sys_getenv ("EDITOR");
+			if (!R_STR_ISEMPTY (editor)) {
+				if (!r_sys_cmdf ("%s %s", editor, path)) {
+					free (path);
+					free (editor);
+					return false;
+				} else {
+					free (editor);
+					free (path);
+					return false;
+				}
+			} else {
+				free (editor);
+				free (path);
+				return false;
+			}
+		} else {
+			return false;
+		}
 	} else if (r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
 		return false;
 	}
@@ -822,7 +808,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 			free (commit_hash);
 			return false;
 		}
-		if (sdb_set(db, current_branch, commit_hash, 0) < 0) {
+		if (sdb_set (db, current_branch, commit_hash, 0) < 0) {
 			sdb_unlink (db);
 			sdb_free (db);
 			free_blobs (blobs);
