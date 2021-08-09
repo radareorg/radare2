@@ -1232,17 +1232,16 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 	if (strchr (format, '%')) {
 		if (palloc (MOAR + strlen (format) * 20)) {
 club:
-			size = I.context->buffer_sz - I.context->buffer_len - 1; /* remaining space in I.context->buffer */
+			size = I.context->buffer_sz - I.context->buffer_len; /* remaining space in I.context->buffer */
 			written = vsnprintf (I.context->buffer + I.context->buffer_len, size, format, ap3);
 			if (written >= size) { /* not all bytes were written */
-				if (palloc (written)) {
+				if (palloc (written + 1)) {  /* + 1 byte for \0 termination */
 					va_end (ap3);
 					va_copy (ap3, ap2);
 					goto club;
 				}
 			}
 			I.context->buffer_len += written;
-			I.context->buffer[I.context->buffer_len] = 0;
 		}
 	} else {
 		r_cons_strcat (format);
