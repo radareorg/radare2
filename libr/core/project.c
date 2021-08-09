@@ -686,21 +686,32 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			}
 		}
 		RList *paths = r_list_new ();
-		if (!paths) {
+		if (paths) {
+			char *p = r_sys_getdir ();
+			if (p) {
+				if (r_list_append (paths, p)) {
+					if (!rvc_git_commit (core, prj_dir, NULL, NULL, paths)) {
+						r_list_free (paths);
+						free (prj_dir);
+						free (script_path);
+						return false;
+					}
+				} else {
+					r_list_free (paths);
+					free (p);
+					free (prj_dir);
+					free (script_path);
+					return false;
+				}
+			} else {
+				r_list_free (paths);
+				free (prj_dir);
+				free (script_path);
+				return false;
+			}
+		} else {
 			free (prj_dir);
 			free (script_path);
-			return false;
-		}
-		if (!r_list_append (paths, ".")) {
-			r_list_free (paths);
-			free (script_path);
-			free (prj_dir);
-			return false;
-		}
-		if (!rvc_git_commit (core, prj_dir, NULL, NULL, paths)) {
-			r_list_free (paths);
-			free (script_path);
-			free (prj_dir);
 			return false;
 		}
 	}
