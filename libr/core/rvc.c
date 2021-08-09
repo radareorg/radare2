@@ -1240,10 +1240,10 @@ R_API bool rvc_git_repo_exists(const RCore *core, const char *rp) {
 	char *frp = !strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")?
 		r_str_newf ("%s" R_SYS_DIR ".rvc", rp):
 		r_str_newf ("%s" R_SYS_DIR ".git", rp);
-	if (!frp) {
-		return false;
+	if (frp) {
+		bool ret = r_file_is_directory (frp);
+		free (frp);
+		return ret;
 	}
-	bool ret = r_file_is_directory (frp);
-	free (frp);
-	return ret;
+	return false;
 }
