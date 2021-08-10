@@ -953,30 +953,14 @@ R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name) {
 	if (!it) {
 		return false;
 	}
-
-	// TODO: why set it->name = "spacename:name" when there is a it-space?
-	char *ptr;
-	char *zignspace = NULL;
-	if (name) {
-		it->name = strdup (name);
-	} else {
-		const RSpace *curspace = r_spaces_current (&a->zign_spaces);
-		if ((ptr = strchr (fcn->name, ':')) != NULL) {
-			int len = ptr - fcn->name;
-			zignspace = r_str_newlen (fcn->name, len);
-			r_spaces_push (&a->zign_spaces, zignspace);
-		} else if (curspace) {
-			it->name = r_str_newf ("%s:", curspace->name);
-		}
-		it->name = r_str_appendf (it->name, "%s", fcn->name);
-	}
+	it->space = r_spaces_current (&a->zign_spaces);
+	it->name = strdup (name? name: fcn->name);
 
 	if (!it->name) {
 		r_sign_item_free (it);
 		return false;
 	}
 
-	it->space = r_spaces_current (&a->zign_spaces);
 	r_sign_addto_item (a, it, fcn, R_SIGN_GRAPH);
 	r_sign_addto_item (a, it, fcn, R_SIGN_BYTES);
 	r_sign_addto_item (a, it, fcn, R_SIGN_XREFS);
@@ -989,12 +973,7 @@ R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name) {
 
 	// commit the item to anal
 	r_sign_add_item (a, it);
-
-	r_sign_item_free (it); // causes zigname to be free'd
-	if (zignspace) {
-		r_spaces_pop (&a->zign_spaces);
-		free (zignspace);
-	}
+	r_sign_item_free (it);
 	return true;
 }
 

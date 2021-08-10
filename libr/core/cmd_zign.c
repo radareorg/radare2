@@ -435,7 +435,11 @@ static int cmdSpace(void *data, const char *input) {
 			eprintf ("Usage: zs+zignspace\n");
 			return false;
 		}
-		r_spaces_push (zs, input + 1);
+		char *sp = r_str_trim_dup (input + 1);
+		if (sp) {
+			r_spaces_push (zs, sp);
+			free (sp);
+		}
 		break;
 	case 'r':
 		if (input[1] != ' ' || !input[2]) {
