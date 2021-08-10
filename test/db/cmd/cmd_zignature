@@ -421,14 +421,24 @@ e zign.mincc = 0
 zs zigs
 zaf main
 z
+zs *
+z
 EOF
 EXPECT=<<EOF
-zigs:main:
+main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
   mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
-  realname: main
+  refs: sym.print
+  vars: b-12, b-24, r82, r78
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
+(zigs) main:
+  bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
+  mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
+  addr: 0x0040055b
   refs: sym.print
   vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
@@ -444,14 +454,24 @@ e zign.mincc = 0
 zs zigs
 zaf @ main
 z
+zs *
+z
 EOF
 EXPECT=<<EOF
-zigs:main:
+main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
   mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
   graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
   addr: 0x0040055b
-  realname: main
+  refs: sym.print
+  vars: b-12, b-24, r82, r78
+  types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
+  bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
+(zigs) main:
+  bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
+  mask: ffffffffffffffffffffffffffffffff00000000ff00000000ffffffffffffff
+  graph: cc=1 nbbs=1 edges=0 ebbs=1 bbsum=32
+  addr: 0x0040055b
   refs: sym.print
   vars: b-12, b-24, r82, r78
   types: func.main.ret=int, func.main.args=2, func.main.arg.0="int,argc", func.main.arg.1="char **,argv"
@@ -532,7 +552,7 @@ aa
 zs zigs
 zaf main
 z/
-?v sign.bytes.zigs:main_0
+?v sign.bytes.main_0
 EOF
 EXPECT=<<EOF
 0x40055b
