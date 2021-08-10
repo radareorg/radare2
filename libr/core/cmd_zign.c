@@ -353,7 +353,7 @@ out_case_manual:
 			// TODO #7967 help refactor: move to detail
 			r_cons_printf ("Adding Zignatures (examples and documentation)\n\n"
 				"Zignature types:\n"
-				"  a: bytes pattern (anal mask)\n"
+				"  a: bytes pattern, r2 creates mask from analysis\n"
 				"  b: bytes pattern\n"
 				"  c: base64 comment\n"
 				"  n: real function name\n"

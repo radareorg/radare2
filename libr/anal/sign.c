@@ -263,9 +263,6 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 		}
 		RSignType st = (RSignType)*word;
 		switch (st) {
-		case R_SIGN_ANAL:
-			eprintf ("Unsupported\n");
-			break;
 		case R_SIGN_NAME:
 			DBL_VAL_FAIL (it->realname, R_SIGN_NAME);
 			it->realname = strdup (token);
@@ -375,7 +372,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			}
 			break;
 		default:
-			eprintf ("Unsupported (%s)\n", word);
+			eprintf ("Unsupported (%c)\n", st);
 			break;
 		}
 	}

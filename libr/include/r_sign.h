@@ -19,7 +19,7 @@ typedef enum {
 	R_SIGN_BYTES = 'b', // bytes pattern
 	R_SIGN_BYTES_MASK = 'm', // bytes pattern
 	R_SIGN_BYTES_SIZE = 's', // bytes pattern
-	R_SIGN_ANAL = 'a', // bytes pattern (anal mask) // wtf ?
+	R_SIGN_ANAL = 'a', // bytes pattern, input only, creates mask from byte analysis
 	R_SIGN_COMMENT = 'c', // comment
 	R_SIGN_GRAPH = 'g', // graph metrics
 	R_SIGN_OFFSET = 'o', // addr
