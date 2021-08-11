@@ -271,6 +271,10 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			DBL_VAL_FAIL (it->comment, R_SIGN_COMMENT);
 			it->comment = strdup (token);
 			break;
+		case R_SIGN_NEXT:
+			DBL_VAL_FAIL (it->next, R_SIGN_NEXT);
+			it->next = strdup (token);
+			break;
 		case R_SIGN_GRAPH:
 			DBL_VAL_FAIL (it->graph, R_SIGN_GRAPH);
 			if (strlen (token) == 2 * sizeof (RSignGraph)) {
@@ -425,6 +429,12 @@ static inline size_t serial_val_reserv(RSignItem *it) {
 	if (it->graph) {
 		reserve += sizeof (RSignGraph) * 2 + 1;
 	}
+	if (it->realname) {
+		reserve += 0x10;
+	}
+	if (it->next) {
+		reserve += 0x10;
+	}
 	if (it->hash && it->hash->bbhash) {
 		reserve += 64;
 	}
@@ -509,6 +519,10 @@ static char *serialize_value(RSignItem *it) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_NAME, it->realname), sb);
 	}
 
+	if (it->next) {
+		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_NEXT, it->next), sb);
+	}
+
 	if (it->hash && it->hash->bbhash) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_BBHASH, it->hash->bbhash), sb);
 	}
@@ -546,100 +560,38 @@ static RList *deserialize_sign_space(RAnal *a, RSpace *space) {
 	return ret;
 }
 
-static inline bool merge_list (RList **dst, RList *src) {
-	if (!src) {
-		return true;
+#define quick_merge(x, freefunc) \
+	if (src->x) { \
+		freefunc (dst->x); \
+		dst->x = src->x; \
+		src->x = NULL; \
 	}
-	r_list_free (*dst);
-	if (!(*dst = r_list_newf (free))) {
-		return false;
-	}
-	RListIter *iter;
-	char *s, *dup;
-	r_list_foreach (src, iter, s) {
-		if (!(dup = strdup (s))) {
-			return false;
-		}
-		r_list_append (*dst, dup);
-	}
-	return true;
-}
 
-static bool mergeItem(RSignItem *dst, RSignItem *src) {
+// clobbers src for speed but also garentee success
+static inline void merge_item_clobber(RSignItem *dst, RSignItem *src) {
 	dst->space = src->space;
-	if (src->bytes) {
-		// ensure we have a dst->bytes
-		if (!dst->bytes && !(dst->bytes = R_NEW0 (RSignBytes))) {
-			return false;
-		}
-		// ensure we have space in dst->bytes->[bytes|mask]
-		if (src->bytes->size > dst->bytes->size) {
-			free (dst->bytes->bytes);
-			free (dst->bytes->mask);
-			dst->bytes->bytes = R_NEWS (ut8, src->bytes->size);
-			dst->bytes->mask = R_NEWS (ut8, src->bytes->size);
-			if (!dst->bytes->bytes || !dst->bytes->mask) {
-				return false;
-			}
-		}
-		// do copy
-		dst->bytes->size = src->bytes->size;
-		memcpy (dst->bytes->bytes, src->bytes->bytes, src->bytes->size);
-		memcpy (dst->bytes->mask, src->bytes->mask, src->bytes->size);
-	}
-
-	if (src->graph) {
-		if (!dst->graph && !(dst->graph = R_NEW0 (RSignGraph))) {
-			return false;
-		}
-		*dst->graph = *src->graph;
-	}
-
-	if (src->comment) {
-		free (dst->comment);
-		if (!(dst->comment = strdup (src->comment))) {
-			return false;
-		}
-		dst->comment = src->comment;
-		src->comment = NULL;
-	}
-
-	if (src->realname) {
-		free (dst->realname);
-		if (!(dst->realname = strdup (src->realname))) {
-			return false;
-		}
-	}
-
 	if (src->addr != UT64_MAX) {
 		dst->addr = src->addr;
 	}
 
-	if (!merge_list (&dst->refs, src->refs)) {
-		return false;
-	}
-	if (!merge_list (&dst->xrefs, src->xrefs)) {
-		return false;
-	}
-	if (!merge_list (&dst->vars, src->vars)) {
-		return false;
-	}
-	if (!merge_list (&dst->types, src->types)) {
-		return false;
-	}
-	if (!merge_list (&dst->collisions, src->collisions)) {
-		return false;
-	}
+	// uniquee free for each
+	quick_merge (bytes, r_sign_bytes_free);
+	quick_merge (graph, r_sign_graph_free);
+	quick_merge (hash, r_sign_hash_free);
 
-	if (src->hash && src->hash->bbhash) {
-		if (!dst->hash && !(dst->hash = R_NEW0 (RSignHash))) {
-			return false;
-		}
-		free (dst->hash->bbhash);
-		dst->hash->bbhash = strdup (src->hash->bbhash);
-	}
-	return true;
+	// strings
+	quick_merge (comment, free);
+	quick_merge (realname, free);
+	quick_merge (next, free);
+
+	// lists
+	quick_merge (refs, r_list_free);
+	quick_merge (xrefs, r_list_free);
+	quick_merge (vars, r_list_free);
+	quick_merge (types, r_list_free);
+	quick_merge (collisions, r_list_free);
 }
+#undef quick_merge
 
 static RSignItem *sign_get_sdb_item(RAnal *a, const char *key) {
 	RSignItem *it = NULL;
@@ -685,10 +637,9 @@ R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
 
 	bool retval = false;
 	if (current) {
-		if (mergeItem (current, it)) {
-			retval = r_sign_set_item (a->sdb_zigns, current, key);
-			r_sign_item_free (current);
-		}
+		merge_item_clobber (current, it);
+		retval = r_sign_set_item (a->sdb_zigns, current, key);
+		r_sign_item_free (current);
 	} else {
 		retval = r_sign_set_item (a->sdb_zigns, it, key);
 	}
@@ -931,27 +882,10 @@ static RSignHash *r_sign_fcn_bbhash(RAnal *a, RAnalFunction *fcn) {
 	return hash;
 }
 
-R_API int r_sign_all_functions(RAnal *a) {
-	RAnalFunction *fcni = NULL;
-	RListIter *iter = NULL;
-	int count = 0;
-
-	r_list_foreach (a->fcns, iter, fcni) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		if (r_sign_add_func (a, fcni, NULL)) {
-			count++;
-		}
-	}
-	return count;
-}
-
-R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name) {
-	r_return_val_if_fail (a && fcn, false);
+static RSignItem *item_from_func(RAnal *a, RAnalFunction *fcn, const char *name) {
 	RSignItem *it = r_sign_item_new ();
 	if (!it) {
-		return false;
+		return NULL;
 	}
 	it->space = r_spaces_current (&a->zign_spaces);
 	it->name = strdup (name? name: fcn->name);
@@ -970,11 +904,59 @@ R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name) {
 	r_sign_addto_item (a, it, fcn, R_SIGN_BBHASH);
 	r_sign_addto_item (a, it, fcn, R_SIGN_OFFSET);
 	r_sign_addto_item (a, it, fcn, R_SIGN_NAME);
+	return it;
+}
 
-	// commit the item to anal
-	r_sign_add_item (a, it);
-	r_sign_item_free (it);
-	return true;
+static int fcn_sort(const void *va, const void *vb) {
+	ut64 a = ((const RAnalFunction *)va)->addr;
+	ut64 b = ((const RAnalFunction *)vb)->addr;
+	if (a < b) {
+		return -1;
+	} else if (a > b) {
+		return 1;
+	}
+	return 0;
+}
+
+R_API int r_sign_all_functions(RAnal *a) {
+	RAnalFunction *fcni = NULL;
+	RListIter *iter = NULL;
+	int count = 0;
+	r_list_sort (a->fcns, fcn_sort);
+	char *prev_name = NULL;
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (a->fcns, iter, fcni) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		RSignItem *it = item_from_func (a, fcni, NULL);
+		if (it) {
+			if (prev_name) {
+				it->next = prev_name;
+			}
+			prev_name = strdup (it->name);
+			r_sign_add_item (a, it);
+			r_sign_item_free (it);
+			count++;
+		} else {
+			free (prev_name);
+			prev_name = NULL;
+		}
+	}
+	r_cons_break_pop ();
+	free (prev_name);
+	return count;
+}
+
+R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name) {
+	r_return_val_if_fail (a && fcn, false);
+	RSignItem *it = item_from_func (a, fcn, name);
+	if (it) {
+		r_sign_add_item (a, it);
+		r_sign_item_free (it);
+		return true;
+	}
+	return false;
 }
 
 R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignType type) {
@@ -1653,32 +1635,17 @@ static void listGraph(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static void listComment(RAnal *a, RSignItem *it, PJ *pj, int format) {
-	if (it->comment) {
+static void liststring(RAnal *a, RSignType t, char *value, PJ *pj, int format, char *name) {
+	if (value) {
 		if (format == 'q') {
-			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
-			a->cb_printf ("\n ; %s\n", it->comment);
+			a->cb_printf ("\n ; %s\n", value);
 		} else if (format == '*') {
-			a->cb_printf ("%s\n", it->comment); // comment injection via CCu..
+			// comment injection via CCu..
+			a->cb_printf ("za %s %c %s\n", name, t, value);
 		} else if (format == 'j') {
-			pj_ks (pj, "comments", it->comment);
+			pj_ks (pj, r_sign_type_to_name (t), value);
 		} else {
-			a->cb_printf ("  comment: 0x%08" PFMT64x "\n", it->addr);
-		}
-	}
-}
-
-static void listRealname(RAnal *a, RSignItem *it, PJ *pj, int format) {
-	if (it->realname) {
-		if (format == 'q') {
-			//	a->cb_printf (" addr(0x%08"PFMT64x")", it->addr);
-		} else if (format == '*') {
-			a->cb_printf ("za %s n %s\n", it->name, it->realname);
-			a->cb_printf ("afn %s @ 0x%08"PFMT64x"\n", it->realname, it->addr);
-		} else if (format == 'j') {
-			pj_ks (pj, "realname", it->realname);
-		} else {
-			a->cb_printf ("  realname: %s\n", it->realname);
+			a->cb_printf ("  %s: %s\n", r_sign_type_to_name (t), value);
 		}
 	}
 }
@@ -1840,9 +1807,6 @@ static bool listCB(RSignItem *it, void *user) {
 		a->cb_printf ("%s:\n", it->name);
 	}
 
-	// TODO: listCollisions, listXRefs, listRefs... all just dump RList's of
-	// strings, replace them with something more abstract
-
 	// Bytes pattern
 	if (it->bytes) {
 		listBytes (a, it, ctx->pj, ctx->format);
@@ -1862,14 +1826,11 @@ static bool listCB(RSignItem *it, void *user) {
 	} else if (ctx->format == 'j') {
 		pj_kN (ctx->pj, "addr", -1);
 	}
-	// Name
-	if (it->realname) {
-		listRealname (a, it, ctx->pj, ctx->format);
-	}
-	// Comments
-	if (it->comment) {
-		listComment (a, it, ctx->pj, ctx->format);
-	}
+
+	liststring (a, R_SIGN_NAME, it->realname, ctx->pj, ctx->format, it->name);
+	liststring (a, R_SIGN_COMMENT, it->comment, ctx->pj, ctx->format, it->name);
+	liststring (a, R_SIGN_NEXT, it->next, ctx->pj, ctx->format, it->name);
+
 	// References
 	if (it->refs) {
 		list_sign_list (a, it->refs, ctx->pj, ctx->format, R_SIGN_REFS, it->name);
@@ -1970,7 +1931,7 @@ R_API const char *r_sign_type_to_name(int type) {
 	case R_SIGN_OFFSET:
 		return "addr";
 	case R_SIGN_NAME:
-		return "name";
+		return "realname";
 	case R_SIGN_REFS:
 		return "refs";
 	case R_SIGN_XREFS:
@@ -1981,6 +1942,8 @@ R_API const char *r_sign_type_to_name(int type) {
 		return "types";
 	case R_SIGN_COLLISIONS:
 		return "collisions";
+	case R_SIGN_NEXT:
+		return "next";
 	case R_SIGN_BBHASH:
 		return "bbhash";
 	default:
@@ -2793,7 +2756,6 @@ R_API RSignItem *r_sign_item_new(void) {
 	RSignItem *ret = R_NEW0 (RSignItem);
 	if (ret) {
 		ret->addr = UT64_MAX;
-		ret->space = NULL;
 	}
 	return ret;
 }
@@ -2801,6 +2763,7 @@ R_API RSignItem *r_sign_item_new(void) {
 R_API void r_sign_item_free(RSignItem *item) {
 	if (item) {
 		free (item->name);
+		free (item->next);
 		r_sign_bytes_free (item->bytes);
 		r_sign_hash_free (item->hash);
 		r_sign_graph_free (item->graph);

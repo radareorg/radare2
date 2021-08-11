@@ -29,6 +29,7 @@ typedef enum {
 	R_SIGN_VARS = 'v', // variables
 	R_SIGN_TYPES = 't', // types
 	R_SIGN_COLLISIONS = 'C', // collisions
+	R_SIGN_NEXT = 'N', // next
 	R_SIGN_BBHASH = 'h', // basic block hash
 	R_SIGN_END = '\x00', // used for sentenal value
 } RSignType;
@@ -54,6 +55,7 @@ typedef struct r_sign_hash_t {
 typedef struct r_sign_item_t {
 	char *name;
 	char *realname;
+	char *next;
 	char *comment;
 	const RSpace *space;
 
