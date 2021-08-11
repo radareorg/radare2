@@ -98,9 +98,9 @@ RUN
 
 NAME=rasign2 spaces check
 FILE=-
-CMDS=!!rasign2 -s spacename -ar bins/elf/hello_world~spacename:sym.imp.puts n sym.imp.puts
+CMDS=!!rasign2 -s spacename -aj bins/elf/hello_world~{0[zignspace]}
 EXPECT=<<EOF
-za spacename:sym.imp.puts n sym.imp.puts
+spacename
 EOF
 RUN
 
