@@ -3114,7 +3114,7 @@ static bool cb_prjvctype(void *user, void *data) {
 		return true;
 	}
 	eprintf ("Unknown vc %s\n", node->value);
-	return true;
+	return false;
 }
 
 R_API int r_core_config_init(RCore *core) {

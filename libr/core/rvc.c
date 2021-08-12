@@ -1204,6 +1204,7 @@ R_API bool rvc_git_init(const RCore *core, const char *rp) {
 	if (strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
 		return r_vc_git_init (rp);
 	}
+	printf ("rvc is just for testing please don't use it\n");
 	return r_vc_new (rp);
 }
 
@@ -1220,6 +1221,7 @@ R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, cons
 	}
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		author = author? author : r_config_get (core->config, "cfg.user");
+		printf ("rvc is just for testing please don't use it\n");
 		r_vc_commit (rp, message, author, files);
 	}
 	char *path;
@@ -1234,6 +1236,7 @@ R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, cons
 
 R_API bool rvc_git_branch(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		printf ("rvc is just for testing please don't use it\n");
 		return r_vc_branch (rp, bname);
 	}
 	return !r_vc_git_branch (rp, bname);
@@ -1241,6 +1244,7 @@ R_API bool rvc_git_branch(const RCore *core, const char *rp, const char *bname) 
 
 R_API bool rvc_git_checkout(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		printf ("rvc is just for testing please don't use it\n");
 		return r_vc_checkout (rp, bname);
 	}
 	return r_vc_git_checkout (rp, bname);
