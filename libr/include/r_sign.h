@@ -82,7 +82,6 @@ typedef struct r_sign_search_met {
 	RAnal *anal;
 	void *user; // user data for callback function
 	RSignMatchCallback cb;
-	RAnalFunction *fcn;
 } RSignSearchMetrics;
 
 typedef struct r_sign_search_t {
@@ -136,7 +135,8 @@ R_API void r_sign_search_free(RSignSearch *ss);
 R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, int minsz, RSignSearchCallback cb, void *user);
 R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *buf, int len);
 R_API bool r_sign_resolve_collisions(RAnal *a);
-R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm);
+R_API int r_sign_metric_search(RAnal *a, RSignSearchMetrics *sm);
+R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm, RAnalFunction *fcn);
 
 R_API bool r_sign_load(RAnal *a, const char *file);
 R_API bool r_sign_load_gz(RAnal *a, const char *filename);

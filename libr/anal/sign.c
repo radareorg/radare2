@@ -2517,6 +2517,7 @@ struct metric_ctx {
 	int matched;
 	RSignItem *it;
 	RSignSearchMetrics *sm;
+	RAnalFunction *fcn;
 };
 
 static int match_metrics(RSignItem *it, void *user) {
@@ -2552,7 +2553,7 @@ static int match_metrics(RSignItem *it, void *user) {
 		RList *col = check_collisions (it->collisions, types);
 		ctx->matched += count;
 		types[count] = R_SIGN_END;
-		sm->cb (it, sm->fcn, types, sm->user, col);
+		sm->cb (it, ctx->fcn, types, sm->user, col);
 		r_list_free (col);
 		return 1;
 	}
@@ -2735,8 +2736,30 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 	return true;
 }
 
-R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm) {
-	r_return_val_if_fail (sm && sm->mincc >= 0 && sm->anal && sm->fcn, -1);
+R_API int r_sign_metric_search(RAnal *a, RSignSearchMetrics *sm) {
+	r_return_val_if_fail (a && sm, -1);
+	int count = 0;
+	RAnalFunction *fcni;
+	RListIter *iter;
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (a->fcns, iter, fcni) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		int match = r_sign_fcn_match_metrics (sm, fcni);
+		if (match < 0) {
+			count = -1;
+			break;
+		} else if (count > 0) {
+			count++;
+		}
+	}
+	r_cons_break_pop ();
+	return count;
+}
+
+R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm, RAnalFunction *fcn) {
+	r_return_val_if_fail (sm && sm->mincc >= 0 && sm->anal && fcn, -1);
 	RSignItem *it = r_sign_item_new ();
 	if (!it) {
 		return -1;
@@ -2746,9 +2769,9 @@ R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm) {
 	while (*t != R_SIGN_END) {
 		if (*t == R_SIGN_BYTES) {
 			// no need for mask
-			it->bytes = r_sign_func_empty_mask (sm->anal, sm->fcn);
+			it->bytes = r_sign_func_empty_mask (sm->anal, fcn);
 		} else {
-			r_sign_addto_item (sm->anal, it, sm->fcn, *t);
+			r_sign_addto_item (sm->anal, it, fcn, *t);
 		}
 		t++;
 	}
@@ -2757,7 +2780,7 @@ R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm) {
 		r_sign_graph_free (it->graph);
 		it->graph = NULL;
 	}
-	struct metric_ctx ctx = { 0, it, sm };
+	struct metric_ctx ctx = { 0, it, sm, fcn };
 	r_sign_foreach (sm->anal, match_metrics, (void *)&ctx);
 	r_sign_item_free (it);
 	return ctx.matched;

@@ -729,7 +729,6 @@ static bool fill_search_metrics(RSignSearchMetrics *sm, RCore *c, void *user) {
 	sm->anal = c->anal;
 	sm->cb = fcnMatchCB;
 	sm->user = user;
-	sm->fcn = NULL;
 	return (i > 0);
 }
 
@@ -797,7 +796,6 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	}
 
 	// Bytes search
-	RListIter *iter;
 	if (r_config_get_i (core->config, "zign.bytes") && !only_func) {
 		const char *mode = r_config_get (core->config, "search.in");
 		RList *list = r_core_get_boundaries_prot (core, -1, mode, "search");
@@ -816,16 +814,7 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	// Function search
 	if (!ctx.bytes_only) {
 		eprintf ("[+] searching function metrics\n");
-		r_cons_break_push (NULL, NULL);
-		RAnalFunction *fcni = NULL;
-		r_list_foreach (core->anal->fcns, iter, fcni) {
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-			sm.fcn = fcni;
-			r_sign_fcn_match_metrics (&sm);
-		}
-		r_cons_break_pop ();
+		r_sign_metric_search (core->anal, &sm);
 	}
 
 	if (rad) {
@@ -1283,10 +1272,10 @@ static int cmdCheck(void *data, const char *input) {
 	}
 
 	eprintf ("[+] searching function metrics\n");
-	sm.fcn = r_anal_get_function_at (core->anal, core->offset);
-	if (sm.fcn) {
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->offset);
+	if (fcn) {
 		r_cons_break_push (NULL, NULL);
-		r_sign_fcn_match_metrics (&sm);
+		r_sign_fcn_match_metrics (&sm, fcn);
 		r_cons_break_pop ();
 	} else {
 		eprintf ("No function at 0x%08" PFMT64x "\n", core->offset);
