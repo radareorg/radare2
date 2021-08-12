@@ -59,8 +59,8 @@
 #define ISPREINDEX32() (((OPCOUNT () == 2) && (ISMEM (1)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 3) && (ISMEM (2)) && (ISWRITEBACK32 ())))
 #define ISPOSTINDEX32() (((OPCOUNT () == 3) && (ISIMM (2) || ISREG (2)) && (ISWRITEBACK32 ())) || ((OPCOUNT () == 4) && (ISIMM (3) || ISREG (3)) && (ISWRITEBACK32 ())))
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
-#define ISPREINDEX64()  ((OPCOUNT64() == 2) && (ISMEM64(1))) || ((OPCOUNT64() == 3) && (ISMEM64(2)))
-#define ISPOSTINDEX64() ((OPCOUNT64() == 3) && (ISIMM64(2))) || ((OPCOUNT64() == 4) && (ISIMM64(3)))
+#define ISPREINDEX64()  (((OPCOUNT64() == 2) && (ISMEM64(1))) || ((OPCOUNT64() == 3) && (ISMEM64(2))))
+#define ISPOSTINDEX64() (((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64())))
 
 static HtUU *ht_itblock = NULL;
 static HtUU *ht_it = NULL;
@@ -3473,13 +3473,13 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_STLXRH:
 	case ARM64_INS_STXRB:
 		op->type = R_ANAL_OP_TYPE_STORE;
-		if (ISPREINDEX64 () && REGBASE64 (2) == ARM64_REG_SP) {
+		if (ISPREINDEX64 () && ISWRITEBACK64 () && REGBASE64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -MEMDISP64 (2);
 		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM64 (3);
-		} else if (ISPREINDEX64 () && REGBASE64 (1) == ARM64_REG_SP) {
+		} else if (ISPREINDEX64 () && ISWRITEBACK64 () && REGBASE64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -MEMDISP64 (1);
 		} else if (ISPOSTINDEX64 () && REGID64 (1) == ARM64_REG_SP) {
@@ -3499,13 +3499,13 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDPSW:
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
-		if (ISPREINDEX64 () && REGBASE64 (2) == ARM64_REG_SP) {
+		if (ISPREINDEX64 () && ISWRITEBACK64 () && REGBASE64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -MEMDISP64 (2);
 		} else if (ISPOSTINDEX64 () && REGID64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM64 (3);
-		} else if (ISPREINDEX64 () && REGBASE64 (1) == ARM64_REG_SP) {
+		} else if (ISPREINDEX64 () && ISWRITEBACK64 () && REGBASE64 (1) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -MEMDISP64 (1);
 		} else if (ISPOSTINDEX64 () && REGID64 (1) == ARM64_REG_SP) {
