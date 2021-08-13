@@ -35,9 +35,9 @@ octal   03777652
 unit    1023.9K
 segment f000:0faa
 string  "\xaa\xff\x0f"
-fvalue: 1048490.0
-float:  0.000000f
-double: 0.000000
+fvalue  1048490.0
+float   0.000000f
+double  0.000000
 binary  0b000011111111111110101010
 ternary 0t1222021020222
 EOF
