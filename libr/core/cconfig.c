@@ -3114,7 +3114,7 @@ static bool cb_prjvctype(void *user, void *data) {
 		return true;
 	}
 	eprintf ("Unknown vc %s\n", node->value);
-	return true;
+	return false;
 }
 
 R_API int r_core_config_init(RCore *core) {
@@ -4041,6 +4041,7 @@ R_API int r_core_config_init(RCore *core) {
 			SETBPREF ("prj.vc", "false", "Use your version control system of choice (rvc, git) to manage projects");
 			/*The follwing is just a place holder*/
 			SETCB ("prj.vc.type", "rvc", &cb_prjvctype, "What should projects use as a vc");
+			SETBPREF ("prj.vc.message", "", "Default commit message for rvc/git");
 		}
 		free (p);
 	}

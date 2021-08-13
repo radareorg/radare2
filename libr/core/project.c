@@ -677,21 +677,42 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		free (prj_bin_dir);
 		free (bin_file);
 	}
-	if (r_config_get_i (core->config, "prj.vc")) {
-		char *git_dir = r_str_newf ("%s" R_SYS_DIR ".git", prj_dir);
-		if (!strcmp ("git", r_config_get (core->config, "prj.vc.type"))
-				&& r_config_get_b (core->config, "prj.vc")) {
-			if (!r_file_is_directory (git_dir)) {
-				r_vc_git_init (prj_dir);
+	if (r_config_get_b (core->config, "prj.vc")) {
+		if (!rvc_git_repo_exists (core, prj_dir)) {
+			if (!rvc_git_init (core, prj_dir)) {
+				free (prj_dir);
+				free (script_path);
+				return false;
 			}
-			free (git_dir);
-			r_vc_git_add (prj_dir, ".");
-			if (r_cons_is_interactive ()) {
-				r_vc_git_commit (prj_dir, NULL);
+		}
+		RList *paths = r_list_new ();
+		if (paths) {
+			char *p = r_sys_getdir ();
+			if (p) {
+				if (r_list_append (paths, p)) {
+					if (!rvc_git_commit (core, prj_dir, NULL, NULL, paths)) {
+						r_list_free (paths);
+						free (prj_dir);
+						free (script_path);
+						return false;
+					}
+				} else {
+					r_list_free (paths);
+					free (p);
+					free (prj_dir);
+					free (script_path);
+					return false;
+				}
 			} else {
-				r_vc_git_commit (prj_dir, "commit");
+				r_list_free (paths);
+				free (prj_dir);
+				free (script_path);
+				return false;
 			}
-
+		} else {
+			free (prj_dir);
+			free (script_path);
+			return false;
 		}
 	}
 	if (r_config_get_i (core->config, "prj.zip")) {

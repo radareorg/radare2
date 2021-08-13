@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
+#include "r_config.h"
 #include <rvc.h>
+#include <r_util.h>
 #include <sdb.h>
 #define FIRST_BRANCH "branches.master"
 #define NOT_SPECIAL(c) IS_DIGIT (c) || IS_LOWER (c) || c == '_'
@@ -8,6 +10,7 @@
 #define DBNAME "branches.sdb"
 #define CURRENTB "current_branch"
 #define BPREFIX "branches."
+#define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
 static bool file_copyp(const char *src, const char *dst) {
@@ -404,15 +407,15 @@ static bool traverse_files(RList *dst, const char *dir) {
 }
 
 static RList *repo_files(const char *dir) {
- 	RList *ret = r_list_newf (free);
- 	if (ret) {
-           if (!traverse_files (ret, dir)) {
- 		r_list_free (ret);
- 		ret = NULL;
-           }
- 	}
- 	return ret;
- }
+	RList *ret = r_list_newf (free);
+	if (ret) {
+		if (!traverse_files (ret, dir)) {
+			r_list_free (ret);
+			ret = NULL;
+		}
+	}
+	return ret;
+}
 
 //shit function:
 static RList *get_uncommitted(const char *rp) {
@@ -730,6 +733,42 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		eprintf ("Can't commit");
 		return false;
 	}
+	if (!message) {
+		char *path = NULL;
+		r_file_mkstemp ("rvc", &path);
+		if (path) {
+			char *editor = r_sys_getenv ("EDITOR");
+			if (!R_STR_ISEMPTY (editor)) {
+				if (!r_sys_cmdf ("%s %s", editor, path)) {
+					free (path);
+					free (editor);
+					return false;
+				} else {
+					free (editor);
+					free (path);
+					return false;
+				}
+			} else {
+				free (editor);
+				free (path);
+				return false;
+			}
+			FILE *f = fopen (path, "r");
+			free (path);
+			if (f) {
+				char m[MAX_MESSAGE_LEN + 1];
+				fread (m, sizeof (char), MAX_MESSAGE_LEN, f);
+				fclose (f);
+				message = m;
+			} else {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	} else if (r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
+		return false;
+	}
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
@@ -779,7 +818,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 			free (commit_hash);
 			return false;
 		}
-		if (sdb_set(db, current_branch, commit_hash, 0) < 0) {
+		if (sdb_set (db, current_branch, commit_hash, 0) < 0) {
 			sdb_unlink (db);
 			sdb_free (db);
 			free_blobs (blobs);
@@ -1099,78 +1138,90 @@ fail_ret:
 
 // GIT commands as APIs
 
-R_API int r_vc_git_init(const char *path) {
+R_API bool r_vc_git_init(const char *path) {
 	char *escpath = r_str_escape (path);
 	int ret = r_sys_cmdf ("git init \"%s\"", escpath);
 	free (escpath);
-	return ret;
+	return !ret;
 }
 
-R_API int r_vc_git_branch(const char *path, const char *name) {
+R_API bool r_vc_git_branch(const char *path, const char *name) {
 	char *escpath = r_str_escape (path);
 	if (!escpath) {
-		return -1;
+		return false;
 	}
 	char *escname = r_str_escape (name);
 	if (!escname) {
 		free (escpath);
-		return -2;
+		return false;
 	}
 	int ret = r_sys_cmdf ("git -C \"%s\" branch \"%s\"", escpath, escname);
 	free (escpath);
 	free (escname);
-	return ret;
+	return !ret;
 }
 
-R_API int r_vc_git_checkout(const char *path, const char *name) {
+R_API bool r_vc_git_checkout(const char *path, const char *name) {
 	char *escpath = r_str_escape (path);
 	char *escname = r_str_escape (name);
 	int ret = r_sys_cmdf ("git -C \"%s\" checkout \"%s\"", escpath, escname);
 	free (escname);
 	free (escpath);
-	return ret;
+	return !ret;
 }
 
-R_API int r_vc_git_add(const char *path, const char *fname) {
+R_API bool r_vc_git_add(const char *path, const char *fname) {
 	int ret;
 	char *cwd = r_sys_getdir ();
 	if (!cwd) {
-		return -1;
+		return false;
 	}
 	ret = r_sys_chdir (path);
 	if (!ret) {
 		free (cwd);
-		return -2;
+		return false;
 	}
 	char *escfname = r_str_escape (fname);
 	ret = r_sys_cmdf ("git add \"%s\"", escfname);
 	free (escfname);
 	if (!r_sys_chdir (cwd)) {
 		free (cwd);
-		return -3;
+		return false;
 	}
 	free (cwd);
-	return ret;
+	return !ret;
 }
 
-R_API int r_vc_git_commit(const char *path, const char *message) {
-	return message ? r_sys_cmdf ("git -C %s commit -m %s",
+R_API bool r_vc_git_commit(const char *path, const char *message) {
+	return message ? !r_sys_cmdf ("git -C %s commit -m %s",
 			r_str_escape (path), r_str_escape (message)):
-		r_sys_cmdf ("git -C \"%s\" commit", r_str_escape (path));
+		!r_sys_cmdf ("git -C \"%s\" commit", r_str_escape (path));
 }
 
 //Access both git and rvc functionality from one set of functions
 
-R_API int rvc_git_init(RCore *core, const char *rp) {
+R_API bool rvc_git_init(const RCore *core, const char *rp) {
 	if (strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
 		return r_vc_git_init (rp);
 	}
+	printf ("rvc is just for testing please don't use it\n");
 	return r_vc_new (rp);
 }
 
-R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
+	const char *m = r_config_get (core->config, "prj.vc.message");
+	if (!*m) {
+		if (r_cons_is_interactive ()) {
+			r_config_set (core->config,
+					"prj.vc.message", "test");
+			message = m;
+		}
+	} else {
+		message = m;
+	}
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		author = author? author : r_config_get (core->config, "cfg.user");
+		printf ("rvc is just for testing please don't use it\n");
 		r_vc_commit (rp, message, author, files);
 	}
 	char *path;
@@ -1183,16 +1234,30 @@ R_API int rvc_git_commit(RCore *core, const char *rp, const char *message, const
 	return r_vc_git_commit (rp, message);
 }
 
-R_API int rvc_git_branch(RCore *core, const char *rp, const char *bname) {
+R_API bool rvc_git_branch(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		printf ("rvc is just for testing please don't use it\n");
 		return r_vc_branch (rp, bname);
 	}
-	return r_vc_git_branch (rp, bname);
+	return !r_vc_git_branch (rp, bname);
 }
 
-R_API int rvc_git_checkout(RCore *core, const char *rp, const char *bname) {
+R_API bool rvc_git_checkout(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
+		printf ("rvc is just for testing please don't use it\n");
 		return r_vc_checkout (rp, bname);
 	}
 	return r_vc_git_checkout (rp, bname);
+}
+
+R_API bool rvc_git_repo_exists(const RCore *core, const char *rp) {
+	char *frp = !strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")?
+		r_str_newf ("%s" R_SYS_DIR ".rvc", rp):
+		r_str_newf ("%s" R_SYS_DIR ".git", rp);
+	if (frp) {
+		bool ret = r_file_is_directory (frp);
+		free (frp);
+		return ret;
+	}
+	return false;
 }
