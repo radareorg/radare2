@@ -246,7 +246,8 @@ static const char *help_msg_panels[] = {
 	"u/U",      "undo / redo seek",
 	"w",        "shuffle panels around in window mode",
 	"V",        "go to the graph mode",
-	"xX",       "show xrefs/refs of current function from/to data/code",
+	"x",        "show xrefs/refs of current function from/to data/code",
+	"X",        "close current panel",
 	"z",        "swap current panel with the first one",
 	NULL
 };
@@ -286,7 +287,8 @@ static const char *help_msg_panels_zoom[] = {
 	"p/P",      "seek to next or previous scr.nkey",
 	"s/S",      "step in / step over",
 	"t/T",      "rotate related commands in a panel",
-	"xX",       "show xrefs/refs of current function from/to data/code",
+	"x",        "show xrefs/refs of current function from/to data/code",
+	"X",        "close current panel",
 	"q/Q/Enter","quit zoom mode",
 	NULL
 };
