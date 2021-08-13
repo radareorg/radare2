@@ -245,3 +245,13 @@ EXPECT=<<EOF
 helloworld
 EOF
 RUN
+
+NAME="binary shift"
+FILE=-
+CMDS=<<EOF
+"?b 1<<1"
+EOF
+EXPECT=<<EOF
+10b
+EOF
+RUN

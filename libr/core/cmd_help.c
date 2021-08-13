@@ -550,7 +550,7 @@ static int cmd_help(void *data, const char *input) {
 				eprintf ("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 			}
 		} else {
-			n = r_num_get (core->num, input+1);
+			n = r_num_math (core->num, input + 1);
 			r_num_to_bits (out, n);
 			r_cons_printf ("%sb\n", out);
 		}
