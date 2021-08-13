@@ -240,6 +240,7 @@ if no_user_plugins
       'arm_gnu',
       'cris_gnu',
       'hppa_gnu',
+      'm68k_gnu',
       'lanai_gnu',
       'mips_gnu',
       'ppc_gnu',
