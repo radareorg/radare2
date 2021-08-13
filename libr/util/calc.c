@@ -331,7 +331,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 
 #define isvalidchar(x) \
 	(isalnum(x) || (x)==':' || (x)=='$' || (x)=='.' || (x)=='_' || (x)=='?' || (x)=='\\' \
-	|| (x)==' ' || (x)=='[' || (x)==']' || (x)=='}' || (x)=='{' || ((x)>='0'&&(x)<='9'))
+	|| (x)==' ' || (x)=='[' || (x)==']' || (x)=='}' || (x)=='{' || ((x)>='0' && (x)<='9'))
 
 	default:
 		{
@@ -360,8 +360,8 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 					stringValueAppend(ch);
 				}
 			}
-			stringValueAppend(0);
-			if (ch!='\'') {
+			stringValueAppend (0);
+			if (ch != '\'') {
 				cin_putback (num, nc, ch);
 			}
 			return nc->curr_tok = RNCNAME;
