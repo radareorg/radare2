@@ -2041,10 +2041,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			r_strbuf_setf (&op->esil,
 					"%"PFMT64d",%s,%c=,"
 					"%s,[%d],%s,=,"
-					"%s,%d,+,[%d],%s,=",
+					"%d,%s,+,[%d],%s,=",
 					abs, MEMBASE64 (2), sign,
 					MEMBASE64 (2), size, REG64 (0),
-					MEMBASE64 (2), size, size, REG64 (1));
+					size, MEMBASE64 (2), size, REG64 (1));
 		// Post-index case
 		} else if (ISPOSTINDEX64 ()) {
 			int val = IMM64 (3);
@@ -2061,10 +2061,10 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 					abs, MEMBASE64 (2), sign);
 		} else {
 			r_strbuf_setf (&op->esil,
-					"%s,%"PFMT64d",%c,[%d],%s,=,"
-					"%s,%"PFMT64d",%c,%d,%c,[%d],%s,=",
-					MEMBASE64 (2), abs, sign, size, REG64 (0),
-					MEMBASE64 (2), abs, sign, size, sign, size, REG64 (1));
+					"%"PFMT64d",%s,%c,[%d],%s,=,"
+					"%d,%"PFMT64d",%s,%c,+,[%d],%s,=",
+					abs, MEMBASE64 (2), sign, size, REG64 (0),
+					size, abs, MEMBASE64 (2), sign, size, REG64 (1));
 		}
 		break;
 	}
