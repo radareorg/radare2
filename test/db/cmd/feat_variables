@@ -274,9 +274,9 @@ octal   010
 unit    8
 segment 0000:0008
 string  "\b"
-fvalue: 8.0
-float:  0.000000f
-double: 0.000000
+fvalue  8.0
+float   0.000000f
+double  0.000000
 binary  0b00001000
 ternary 0t22
 0x8
@@ -287,9 +287,9 @@ octal   00
 unit    0
 segment 0000:0000
 string  "\0"
-fvalue: 0.0
-float:  0.000000f
-double: 0.000000
+fvalue  0.0
+float   0.000000f
+double  0.000000
 binary  0b00000000
 ternary 0t0
 0x0
@@ -347,9 +347,9 @@ octal   0173
 unit    123
 segment 0000:007b
 string  "{"
-fvalue: 123.0
-float:  0.000000f
-double: 0.000000
+fvalue  123.0
+float   0.000000f
+double  0.000000
 binary  0b01111011
 ternary 0t11120
 EOF

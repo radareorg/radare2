@@ -694,9 +694,9 @@ static int cmd_help(void *data, const char *input) {
 					r_num_to_ternary (out, n);
 					pj_ks (pj, "ternary", sdb_fmt ("0t%s", out));
 				} else {
-					r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
-					r_cons_printf ("float:  %ff\n", f);
-					r_cons_printf ("double: %lf\n", d);
+					r_cons_printf ("fvalue  %.1lf\n", core->num->fvalue);
+					r_cons_printf ("float   %ff\n", f);
+					r_cons_printf ("double  %lf\n", d);
 					r_cons_printf ("binary  0b%s\n", out);
 					r_num_to_ternary (out, n);
 					r_cons_printf ("ternary 0t%s\n", out);
