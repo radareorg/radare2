@@ -250,8 +250,32 @@ NAME="binary shift"
 FILE=-
 CMDS=<<EOF
 "?b 1<<1"
+"?b 1 << 1"
+"?b 1 << 2"
 EOF
 EXPECT=<<EOF
 10b
+10b
+100b
+EOF
+RUN
+
+NAME="comparison operators"
+FILE=-
+CMDS=<<EOF
+"?v 1<1"
+"?v 1<2"
+"?v 2<1"
+"?v 1>1"
+"?v 1>2"
+"?v 2>1"
+EOF
+EXPECT=<<EOF
+0x0
+0x1
+0x0
+0x0
+0x0
+0x1
 EOF
 RUN

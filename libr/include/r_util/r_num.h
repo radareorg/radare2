@@ -26,10 +26,11 @@ typedef union {
 
 typedef enum {
 	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
+	RNCLT, RNCGT, // comparison operators
 	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
 	RNCNEG='~', RNCAND='&', RNCOR='|', RNCXOR='^',
 	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')',
-	RNCSHL='<', RNCSHR = '>', RNCROL = '#', RNCROR = '$'
+	RNCSHL='<', RNCSHR = '>', RNCROL = '#', RNCROR = '$',
 } RNumCalcToken;
 
 typedef struct r_num_calc_t {
