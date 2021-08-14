@@ -17,18 +17,32 @@ static const char *help_msg_o[] = {
 	"o:"," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o=","","list opened files (ascii-art bars)",
 	"oL","","list all IO plugins registered",
-	"oa","[-] [A] [B] [filename]","Specify arch and bits for given file",
+	"oa","[?][-] [A] [B] [filename]","Specify arch and bits for given file",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
 	"of"," [file]","open file and map it at addr 0 as read-only",
 	"oj","[?]	","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
-	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-	"onn"," [file] ([rwx])","open file without creating any map or parsing headers with rbin)",
-	"oo","[?+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
+	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
+	"oo","[?][+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
+	NULL
+};
+
+static const char *help_msg_on[] = {
+	"Usage: on","[n+*] [file] ([addr] [rwx])","Open file without parsing headers",
+	"on"," /bin/ls 0x4000","map raw file at 0x4000 (no r_bin involved)",
+	"onn"," [file] ([rwx])","open file without creating any map or parsing headers with rbin)",
+	"on+"," [file] ([rwx])","open file in rw mode without parsing headers",
+	"on*", "", "list open files as r2 commands",
+	NULL
+};
+
+static const char *help_msg_oa[] = {
+	"Usage: oa","[-][arch] [bits] ([file])", "Specify arch and bits for given file",
+	"oa"," arm 32","Force arm32 for the current open file",
 	NULL
 };
 
@@ -54,7 +68,7 @@ static const char *help_msg_o_star[] = {
 	"o*", "", "list opened files in r2 commands", NULL
 };
 
-static const char *help_msg_oa[] = {
+static const char *help_msg_oba[] = {
 	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
@@ -132,11 +146,11 @@ static const char *help_msg_oo[] = {
 	"Usage:", "oo[-] [arg]", " # map opened files",
 	"oo", "", "reopen current file",
 	"oo+", "", "reopen in read-write",
-	"oob", " [baddr]", "reopen loading rbin info (change base address?)",
+	"oob", "[?] [baddr]", "reopen loading rbin info (change base address?)",
 	"ooc", "", "reopen core with current file",
-	"ood", "", "reopen in debug mode",
-	"oom", "", "reopen in malloc://",
-	"oon", "", "reopen without loading rbin info",
+	"ood", "[?]", "reopen in debug mode",
+	"oom", "[?]", "reopen in malloc://",
+	"oon", "[?]", "reopen without loading rbin info",
 	"oon+", "", "reopen in read-write mode without loading rbin info",
 	"oonn", "", "reopen without loading rbin info, but with header flags",
 	"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
@@ -175,21 +189,6 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static void cmd_open_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, o);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, o*, o_star);
-	DEFINE_CMD_DESCRIPTOR (core, oa);
-	DEFINE_CMD_DESCRIPTOR (core, ob);
-	DEFINE_CMD_DESCRIPTOR (core, oj);
-	DEFINE_CMD_DESCRIPTOR (core, om);
-	DEFINE_CMD_DESCRIPTOR (core, oo);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, oo+, oo_plus);
-	DEFINE_CMD_DESCRIPTOR (core, oob);
-	DEFINE_CMD_DESCRIPTOR (core, ood);
-	DEFINE_CMD_DESCRIPTOR (core, oon);
-	DEFINE_CMD_DESCRIPTOR (core, oonn);
-}
-
 // HONOR bin.at
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char *value = NULL;
@@ -226,7 +225,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case 'a': // "oba"
 		if ('?' == input[2]) {
-			r_core_cmd_help (core, help_msg_oa);
+			r_core_cmd_help (core, help_msg_oba);
 			break;
 		}
 		if (input[2] && input[3]) {
@@ -1451,6 +1450,8 @@ static int cmd_open(void *data, const char *input) {
 				return 1;
 			}
 		case '?': // "oa?"
+			r_core_cmd_help (core, help_msg_oa);
+			break;
 		case ' ': // "oa "
 			{
 				int i;
@@ -1493,18 +1494,22 @@ static int cmd_open(void *data, const char *input) {
 				free (ptr);
 				return 1;
 			}
-		break;
+			break;
 		default:
-			eprintf ("Usage: oa[-][arch] [bits] [filename]\n");
+			r_core_cmd_help (core, help_msg_oa);
 			return 0;
 	}
 	case 'n': // "on"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_on);
+			return 0;
+		}
 		if (input[1] == 'n') {
 			cmd_onn (core, input);
 			return 0;
 		}
 		if (input[1] == '*') {
-			eprintf ("OTDO%c", 10); // r_core_file_list (core, 'n');
+			eprintf ("TODO%c", 10); // r_core_file_list (core, 'n');
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"

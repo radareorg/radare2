@@ -16,15 +16,6 @@ static const char *help_msg_lparen[] = {
 	NULL
 };
 
-static void cmd_macro_init(RCore *core, RCmdDesc *parent) {
-	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
-	if (d) {
-		d->cmd = "(";
-		d->help_msg = help_msg_lparen;
-		r_list_append (core->cmd_descriptors, d);
-	}
-}
-
 static int cmd_macro(void *data, const char *input) {
 	char *buf = NULL;
 	RCore *core = (RCore*)data;

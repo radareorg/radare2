@@ -16,7 +16,6 @@ static const char *help_msg_a[] = {
 	"ab", "[?]", "analyze basic block",
 	"ac", "[?]", "manage classes",
 	"aC", "[?]", "analyze function call",
-	"aCe", "[?]", "same as aC, but uses esil with abte to emulate the function",
 	"ad", "[?]", "analyze data trampoline (wip)",
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
@@ -35,6 +34,13 @@ static const char *help_msg_a[] = {
 	"as", "[?] [num]", "analyze syscall using dbg.reg",
 	"av", "[?] [.]", "show vtables",
 	"ax", "[?]", "manage refs/xrefs (see also afx?)",
+	NULL
+};
+
+static const char *help_msg_aC[] = {
+	"Usage:", "aC[fej] [addr-of-call]", "analyze call args",
+	"aCe", "", "Use ESIL emulation to find out arguments of a call (uses 'abte')",
+	"aCf", "", "Same as .aCe* $$ @@=`pdr~call`",
 	NULL
 };
 
@@ -815,64 +821,6 @@ static const char *help_msg_axt[]= {
 	"axt*", " [addr]", "same as axt, but prints as r2 commands",
 	NULL
 };
-
-static void core_add_command(RCore *core, const char *cmd, const char *help[], const char *detail[], const char *detail2[]) {
-	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
-	if (d) {
-		d->cmd = cmd;
-		d->help_msg = help;
-		if (detail) {
-			d->help_detail = detail;
-		}
-		if (detail2) {
-			// XXX looks wrong to me this shouldnt exist
-			d->help_detail2 = detail2;
-		}
-		r_list_append ((core)->cmd_descriptors, d);
-	}
-}
-
-static void cmd_anal_init(RCore *core, RCmdDesc *parent) {
-return;
-	core_add_command (core, "a", help_msg_a, NULL, NULL);
-	core_add_command (core, "aa", help_msg_aa, NULL, NULL);
-	core_add_command (core, "aar", help_msg_aar, NULL, NULL);
-	core_add_command (core, "ab", help_msg_ab, NULL, NULL);
-	// DEFINE_CMD_DESCRIPTOR (core, a);
-	// DEFINE_CMD_DESCRIPTOR (core, aa);
-	// DEFINE_CMD_DESCRIPTOR (core, aar);
-	// DEFINE_CMD_DESCRIPTOR (core, ab);
-	DEFINE_CMD_DESCRIPTOR (core, ac);
-	DEFINE_CMD_DESCRIPTOR (core, ad);
-	DEFINE_CMD_DESCRIPTOR (core, ae);
-	DEFINE_CMD_DESCRIPTOR (core, aea);
-	DEFINE_CMD_DESCRIPTOR (core, aec);
-	DEFINE_CMD_DESCRIPTOR (core, aep);
-	DEFINE_CMD_DESCRIPTOR (core, af);
-	DEFINE_CMD_DESCRIPTOR (core, afb);
-	DEFINE_CMD_DESCRIPTOR (core, afc);
-	DEFINE_CMD_DESCRIPTOR (core, afC);
-	DEFINE_CMD_DESCRIPTOR (core, afi);
-	DEFINE_CMD_DESCRIPTOR (core, afl);
-	DEFINE_CMD_DESCRIPTOR (core, afll);
-	DEFINE_CMD_DESCRIPTOR (core, afn);
-	DEFINE_CMD_DESCRIPTOR (core, aft);
-	DEFINE_CMD_DESCRIPTOR (core, afv);
-	DEFINE_CMD_DESCRIPTOR (core, afvb);
-	DEFINE_CMD_DESCRIPTOR (core, afvr);
-	DEFINE_CMD_DESCRIPTOR (core, afvs);
-	DEFINE_CMD_DESCRIPTOR (core, ag);
-	DEFINE_CMD_DESCRIPTOR (core, age);
-	DEFINE_CMD_DESCRIPTOR (core, agn);
-	DEFINE_CMD_DESCRIPTOR (core, ah);
-	DEFINE_CMD_DESCRIPTOR (core, ahi);
-	DEFINE_CMD_DESCRIPTOR (core, ao);
-	DEFINE_CMD_DESCRIPTOR (core, ar);
-	DEFINE_CMD_DESCRIPTOR (core, ara);
-	DEFINE_CMD_DESCRIPTOR (core, arw);
-	DEFINE_CMD_DESCRIPTOR (core, as);
-	DEFINE_CMD_DESCRIPTOR (core, ax);
-}
 
 static int cmpname(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
@@ -11119,7 +11067,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 		iarg++;
 	}
 	if (!iarg) {
-		eprintf ("Usage: aC[e] [addr-of-call] # analyze call args (aCe does esil emulation with abte)\n");
+		r_core_cmd_help (core, help_msg_aC);
 		return;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
@@ -11242,7 +11190,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 			free (u);
 		}
 	} else {
-		r_cons_printf ("%s\n", s);
+		r_cons_println (s);
 	}
 	free (s);
 }

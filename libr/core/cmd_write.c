@@ -30,8 +30,7 @@ static const char *help_msg_w[] = {
 	"wp","[?] -|file","apply radare patch file. See wp? fmi",
 	"wr"," 10","write 10 random bytes",
 	"ws"," pstring","write 1 byte for length and then the string",
-	"wt[f]","[?] file [sz]","write to file (from current seek, blocksize or sz bytes)",
-	"wts"," host:port [sz]", "send data to remote host:port via tcp://",
+	"wt","[?] file [sz]","write to file (from current seek, blocksize or sz bytes)",
 	"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
 	"wx","[?][fs] 9090","write two intel nops (from wxfile or wxseek)",
 	"wv","[?] eip+34","write 32-64 bit value honoring cfg.bigendian",
@@ -1718,8 +1717,8 @@ static int wt_handler_old(void *data, const char *input) {
 			}
 		}
 		if (sz >= 0) {
-			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
-					sz, poff, filename);
+			eprintf ("(%s): Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
+					str, sz, poff, filename);
 		}
 	}
 	return 0;
