@@ -550,75 +550,6 @@ static void cmd_write_value(RCore *core, const char *input) {
 	r_core_block_read (core);
 }
 
-static RCmdStatus common_wv_handler(RCore *core, int argc, const char **argv, int type) {
-	ut64 off = 0LL;
-	ut8 buf[sizeof(ut64)];
-	int wseek = r_config_get_i (core->config, "cfg.wseek");
-	bool be = r_config_get_i (core->config, "cfg.bigendian");
-
-	core->num->value = 0;
-	if (argc != 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
-	}
-
-	off = r_num_math (core->num, argv[1]);
-	if (core->io->desc) {
-		r_io_use_fd (core->io, core->io->desc->fd);
-	}
-
-	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
-	if (res == UT64_MAX) {
-		return R_CMD_STATUS_ERROR;
-	}
-	if (type == 0) {
-		type = off & UT64_32U? 8: 4;
-	}
-
-	switch (type) {
-	case 1:
-		r_write_ble8 (buf, (ut8)(off & UT8_MAX));
-		break;
-	case 2:
-		r_write_ble16 (buf, (ut16)(off & UT16_MAX), be);
-		break;
-	case 4:
-		r_write_ble32 (buf, (ut32)(off & UT32_MAX), be);
-		break;
-	case 8:
-		r_write_ble64 (buf, off, be);
-		break;
-	}
-
-	if (!r_io_write (core->io, buf, type)) {
-		cmd_write_fail (core);
-	} else if (wseek) {
-		r_core_seek_delta (core, type);
-	}
-
-	r_core_block_read (core);
-	return R_CMD_STATUS_OK;
-}
-
-static RCmdStatus wv_handler(RCore *core, int argc, const char **argv) {
-	return common_wv_handler (core, argc, argv, 0);
-}
-
-static RCmdStatus wv1_handler(RCore *core, int argc, const char **argv) {
-	return common_wv_handler (core, argc, argv, 1);
-}
-
-static RCmdStatus wv2_handler(RCore *core, int argc, const char **argv) {
-	return common_wv_handler (core, argc, argv, 2);
-}
-
-static RCmdStatus wv4_handler(RCore *core, int argc, const char **argv) {
-	return common_wv_handler (core, argc, argv, 4);
-}
-
-static RCmdStatus wv8_handler(RCore *core, int argc, const char **argv) {
-	return common_wv_handler (core, argc, argv, 8);
-}
-
 static bool cmd_wff(RCore *core, const char *input) {
 	ut8 *buf = NULL;
 	size_t size = 0;
@@ -909,22 +840,6 @@ static int wB_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static RCmdStatus wB_handler(RCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
-	}
-	cmd_write_bits (core, 1, r_num_math (core->num, argv[1]));
-	return R_CMD_STATUS_OK;
-}
-
-static RCmdStatus wB_minus_handler(RCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
-	}
-	cmd_write_bits (core, 0, r_num_math (core->num, argv[1]));
-	return R_CMD_STATUS_OK;
-}
-
 static int w0_handler_common(RCore *core, ut64 len) {
 	int res = 0;
 	if (len > 0) {
@@ -950,14 +865,6 @@ static int w0_handler_old(void *data, const char *input) {
 	return w0_handler_common (core, len);
 }
 
-static RCmdStatus w0_handler(RCore *core, int argc, const char **argv) {
-	if (argc != 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
-	}
-	ut64 len = r_num_math (core->num, argv[1]);
-	return r_cmd_int2status (w0_handler_common (core, len));
-}
-
 static int w_incdec_handler_old(void *data, const char *input, int inc) {
 	RCore *core = (RCore *)data;
 	st64 num = 1;
@@ -975,35 +882,6 @@ static int w_incdec_handler_old(void *data, const char *input, int inc) {
 		eprintf ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
 	}
 	return 0;
-}
-
-static RCmdStatus w_incdec_handler(RCore *core, int argc, const char **argv, int inc_size) {
-	if (argc > 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
-	}
-	st64 num = argc > 1? r_num_math (core->num, argv[1]): 1;
-	const char *command = argv[0];
-	if (command[strlen (command) - 1] == '-') {
-		num *= -1;
-	}
-	cmd_write_inc (core, inc_size, num);
-	return R_CMD_STATUS_OK;
-}
-
-static RCmdStatus w1_incdec_handler(RCore *core, int argc, const char **argv) {
-	return w_incdec_handler (core, argc, argv, 1);
-}
-
-static RCmdStatus w2_incdec_handler(RCore *core, int argc, const char **argv) {
-	return w_incdec_handler (core, argc, argv, 2);
-}
-
-static RCmdStatus w4_incdec_handler(RCore *core, int argc, const char **argv) {
-	return w_incdec_handler (core, argc, argv, 4);
-}
-
-static RCmdStatus w8_incdec_handler(RCore *core, int argc, const char **argv) {
-	return w_incdec_handler (core, argc, argv, 8);
 }
 
 static int w6_handler_old(void *data, const char *input) {
@@ -1515,16 +1393,6 @@ static int w_handler_old(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	w_handler_common (core, input);
 	return 0;
-}
-
-static RCmdStatus w_handler(RCore *core, int argc, const char **argv) {
-	if (argc < 2) {
-		return R_CMD_STATUS_WRONG_ARGS;
-	}
-	char *s = r_str_array_join (argv + 1, argc - 1, " ");
-	w_handler_common (core, s);
-	free (s);
-	return R_CMD_STATUS_OK;
 }
 
 static int wz_handler_old(void *data, const char *input) {

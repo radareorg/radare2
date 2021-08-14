@@ -19,15 +19,6 @@
 
 static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
 
-static RCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
-	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
-	if (d) {
-		d->cmd = cmd;
-		d->help_msg = help;
-	}
-	return d;
-}
-
 static bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
 	if (s->is_imported) {
