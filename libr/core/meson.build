@@ -14,7 +14,6 @@ r_core_sources = [
   'cmd.c',
   #'cmd_anal.c',
   'cmd_api.c',
-  'cmd_helps.c',
   #'cmd_cmp.c',
   #'cmd_debug.c',
   #'cmd_egg.c',

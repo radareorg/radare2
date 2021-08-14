@@ -2239,7 +2239,6 @@ R_API bool r_str_char_fullwidth(const char* s, size_t left) {
 		 R_BETWEEN (0xffe0, codepoint, 0xffe6) ||
 		 R_BETWEEN (0x20000, codepoint, 0x2fffd) ||
 		 R_BETWEEN (0x30000, codepoint, 0x3fffd)));
-
 }
 
 /**

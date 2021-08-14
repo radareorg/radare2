@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 // pancake */
+/* radare - LGPL - Copyright 2009-2021 // pancake */
 
 static const char *help_msg_m[] = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
@@ -25,9 +25,12 @@ static const char *help_msg_m[] = {
 	NULL
 };
 
-static void cmd_mount_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, m);
-}
+static const char *help_msg_mf[] = {
+	"Usage:", "mf[no] [...]", "search files matching name or offset",
+	"mfn", " /foo *.c","search files by name in /foo path",
+	"mfo", " /foo 0x5e91","search files by offset in /foo path",
+	NULL
+};
 
 static int cmd_mkdir(void *data, const char *input) {
 	char *res = r_syscmd_mkdir (input);
@@ -364,11 +367,7 @@ static int cmd_mount(void *data, const char *_input) {
 		input++;
 		switch (*input) {
 		case '?':
-			r_cons_printf (
-			"Usage: mf[no] [...]\n"
-			" mfn /foo *.c       ; search files by name in /foo path\n"
-			" mfo /foo 0x5e91    ; search files by offset in /foo path\n"
-			);
+			r_core_cmd_help (core, help_msg_mf);
 			break;
 		case 'n':
 			input++;

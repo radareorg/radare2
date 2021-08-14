@@ -191,16 +191,6 @@ struct endlist_pair {
 	int delay_size;
 };
 
-static void cmd_search_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /, slash);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /a, slash_a);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /c, slash_c);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /r, slash_r);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /R, slash_R);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /Rk, slash_Rk);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, /x, slash_x);
-}
-
 static int search_hash(RCore *core, const char *hashname, const char *hashstr, ut32 minlen, ut32 maxlen, struct search_parameters *param) {
 	RIOMap *map;
 	ut8 *buf;

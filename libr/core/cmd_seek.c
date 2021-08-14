@@ -8,6 +8,7 @@
 #include "r_io.h"
 
 static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward);
+
 static const char *help_msg_s[] = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
 	"s", "", "Print current address",
@@ -37,7 +38,7 @@ static const char *help_msg_s[] = {
 	"spp", "", "Seek to prev function prelude",
 	"so", " [N]", "Seek to N next opcode(s)",
 	"sr", " pc", "Seek to register",
-	"ss", "", "Seek silently (without adding an entry to the seek history)",
+	"ss", "[?]", "Seek silently (without adding an entry to the seek history)",
 	// "sp [page]  seek page N (page = block)",
 	NULL
 };
@@ -78,13 +79,6 @@ static const char *help_msg_ss[] = {
 	"s?", "", "Works with all s subcommands",
 	NULL
 };
-
-static void cmd_seek_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, s);
-	DEFINE_CMD_DESCRIPTOR (core, sC);
-	DEFINE_CMD_DESCRIPTOR (core, sl);
-	DEFINE_CMD_DESCRIPTOR (core, ss);
-}
 
 static void __init_seek_line(RCore *core) {
 	ut64 from, to;

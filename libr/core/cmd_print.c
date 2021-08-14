@@ -168,8 +168,8 @@ static const char *help_msg_at[] = {
 	"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
 	"@@==", "foo bar", "run the previous command appending a word on each iteration",
 	"@@", " hit*", "run the command on every flag matching 'hit*'",
-	"@@?", "[ktfb..]", "show help for the iterator operator",
-	"@@@", " [type]", "run a command on every [type] (see @@@? for help)",
+	"@@", "[?][ktfb..]", "show help for the iterator operator",
+	"@@@", "[?] [type]", "run a command on every [type] (see @@@? for help)",
 	">", "file", "pipe output of command to file",
 	">>", "file", "append to file",
 	"H>", "file", "pipe output of command to file in HTML",
@@ -513,6 +513,13 @@ static const char *help_msg_po[] = {
 	NULL
 };
 
+static const char *help_msg_pq[] = {
+	"Usage:", "pq[?z] [len]", "generate QR code in ascii art",
+	"pq", " 32", "print QR code with the current 32 bytes",
+	"pqz", "", "print QR code with current string in current offset",
+	NULL
+};
+
 static const char *help_msg_ps[] = {
 	"Usage:", "ps[bijqpsuwWxz+] [N]", "Print String",
 	"ps", "", "print string",
@@ -637,24 +644,6 @@ static const ut32 colormap[256] = {
 	0x4c004c, 0x560056, 0x640064, 0x750075, 0x870087, 0x9b009b, 0xb000b0, 0xc600c6, 0xdd00dd, 0xf500f5, 0xfe0fff, 0xfe28ff, 0xfe43ff, 0xfe5eff, 0xfe79ff, 0xfe95fe,
 	0x4c0032, 0x560039, 0x640042, 0x75004e, 0x87005a, 0x9b0067, 0xb00075, 0xc60084, 0xdd0093, 0xf500a3, 0xff0faf, 0xff28b7, 0xff43c0, 0xff5ec9, 0xff79d2, 0xffffff,
 };
-
-static void cmd_print_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, &, amper);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @, at);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @@, at_at);
-	DEFINE_CMD_DESCRIPTOR (core, p);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p=, p_equal);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p-, p_minus);
-	DEFINE_CMD_DESCRIPTOR (core, pc);
-	DEFINE_CMD_DESCRIPTOR (core, pd);
-	DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2 (core, pf);
-	DEFINE_CMD_DESCRIPTOR (core, pi);
-	DEFINE_CMD_DESCRIPTOR (core, ps);
-	DEFINE_CMD_DESCRIPTOR (core, pt);
-	DEFINE_CMD_DESCRIPTOR (core, pv);
-	DEFINE_CMD_DESCRIPTOR (core, px);
-	DEFINE_CMD_DESCRIPTOR (core, pz);
-}
 
 static void __cmd_pad(RCore *core, const char *arg) {
 	if (*arg == '?') {
@@ -7054,10 +7043,10 @@ static int cmd_print(void *data, const char *input) {
 	case 'q': // "pq"
 		switch (input[1]) {
 		case '?':
-			eprintf ("Usage: pq[s] [len]\n");
+			r_core_cmd_help (core, help_msg_pq);
 			len = 0;
 			break;
-		case 's': // "pqs"
+		case 's': // "pqs" // TODO pqs or pqz or pq0 :D
 		case 'z': // for backward compat
 			len = r_str_nlen ((const char *)block, core->blocksize);
 			break;

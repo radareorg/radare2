@@ -92,29 +92,6 @@ static const char *help_msg_zc[] = {
 	NULL
 };
 
-static void cmd_zign_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, z);
-	DEFINE_CMD_DESCRIPTOR (core, zb);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, z/, z_slash);
-	DEFINE_CMD_DESCRIPTOR (core, za);
-	DEFINE_CMD_DESCRIPTOR (core, zf);
-	DEFINE_CMD_DESCRIPTOR (core, zo);
-	DEFINE_CMD_DESCRIPTOR (core, zs);
-	DEFINE_CMD_DESCRIPTOR (core, zc);
-}
-
-#if 0
-static char *getFcnComments(RCore *core, RAnalFunction *fcn) {
-	// XXX this is slow as hell on big binaries
-	char *r = r_core_cmd_strf (core, "CCf* @ 0x%08"PFMT64x, fcn->addr);
-	if (r && *r) {
-		return r;
-	}
-	//
-	return NULL;
-}
-#endif
-
 static bool addCommentZign(RCore *core, const char *name, RList *args) {
 	if (r_list_length (args) != 1) {
 		eprintf ("Invalid number of arguments\n");

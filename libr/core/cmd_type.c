@@ -176,19 +176,6 @@ static const char *help_msg_tu[] = {
 	NULL
 };
 
-static void cmd_type_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, t);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, t-, t_minus);
-	DEFINE_CMD_DESCRIPTOR (core, tc);
-	DEFINE_CMD_DESCRIPTOR (core, td);
-	DEFINE_CMD_DESCRIPTOR (core, te);
-	DEFINE_CMD_DESCRIPTOR (core, tl);
-	DEFINE_CMD_DESCRIPTOR (core, tn);
-	DEFINE_CMD_DESCRIPTOR (core, ts);
-	DEFINE_CMD_DESCRIPTOR (core, tu);
-	DEFINE_CMD_DESCRIPTOR (core, tt);
-}
-
 static void show_help(RCore *core) {
 	r_core_cmd_help (core, help_msg_t);
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <stddef.h>
 #include <math.h> // required for signbit
@@ -280,12 +280,6 @@ static void cmd_help_exclamation(RCore *core) {
 static void cmd_help_percent(RCore *core) {
 	r_core_cmd_help (core, help_msg_percent);
 	r_core_cmd_help (core, help_msg_env);
-}
-
-static void cmd_help_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V);
 }
 
 static const char* findBreakChar(const char *s) {

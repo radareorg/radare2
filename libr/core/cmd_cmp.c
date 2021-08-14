@@ -32,10 +32,6 @@ static const char *help_msg_c[] = {
 	NULL
 };
 
-static void cmd_cmp_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, c);
-}
-
 R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w) {
 	free (w->ndata);
 	free (w->odata);

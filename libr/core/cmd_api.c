@@ -422,10 +422,6 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	return res;
 }
 
-static size_t strlen0(const char *s) {
-	return s? strlen (s): 0;
-}
-
 static void fill_children_chars(RStrBuf *sb, RCmdDesc *cd) {
 	if (cd->help->options) {
 		r_strbuf_append (sb, cd->help->options);
@@ -503,7 +499,7 @@ static size_t calc_padding_len(RCmdDesc *cd) {
 		r_strbuf_fini (&sb);
 	}
 	if (R_STR_ISNOTEMPTY (cd->help->args_str)) {
-		args_len = strlen0 (cd->help->args_str);
+		args_len = strlen (cd->help->args_str);
 	}
 	return name_len + args_len + children_length;
 }
@@ -654,13 +650,12 @@ R_API RCmdMacroItem *r_cmd_macro_item_new(void) {
 }
 
 R_API void r_cmd_macro_item_free(RCmdMacroItem *item) {
-	if (!item) {
-		return;
+	if (item) {
+		free (item->name);
+		free (item->args);
+		free (item->code);
+		free (item);
 	}
-	free (item->name);
-	free (item->args);
-	free (item->code);
-	free (item);
 }
 
 R_API void r_cmd_macro_init(RCmdMacro *mac) {
@@ -686,7 +681,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	char *name, *args = NULL;
 	//char buf[R_CMD_MAXLEN];
 	RCmdMacroItem *m;
-	int macro_update;
+	bool macro_update = false;
 	RListIter *iter;
 	char *pbody;
 	// char *bufp;
@@ -721,17 +716,17 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	macro = NULL;
 	ptr = strchr (name, ' ');
 	if (ptr) {
-		*ptr='\0';
+		*ptr = '\0';
 		args = ptr +1;
 	}
-	macro_update = 0;
+	macro_update = false;
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (name, m->name)) {
 			macro = m;
 			// keep macro->name
 			free (macro->code);
 			free (macro->args);
-			macro_update = 1;
+			macro_update = true;
 			break;
 		}
 	}
@@ -770,7 +765,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	}
 	strncpy (macro->code, pbody, macro->codelen);
 	macro->code[macro->codelen-1] = 0;
-	if (macro_update == 0) {
+	if (macro_update == false) {
 		r_list_append (mac->macros, macro);
 	}
 	free (name);
@@ -887,11 +882,11 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 				j++;
 			} else {
 				cmd[i] = ptr[j];
-				cmd[i+1] = '\0';
+				cmd[i + 1] = '\0';
 			}
 		} else {
 			cmd[i] = ptr[j];
-			cmd[i+1] = '\0';
+			cmd[i + 1] = '\0';
 		}
 	}
 	for (pcmd = cmd; *pcmd && (*pcmd == ' ' || *pcmd == '\t'); pcmd++) {
@@ -1118,7 +1113,7 @@ R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **
 	res->has_space_after_cmd = true;
 	res->argc = n_args + 1;
 	res->argv = R_NEWS0 (char *, res->argc);
-	res->argv[0] = strdup(cmd);
+	res->argv[0] = strdup (cmd);
 	int i;
 	for (i = 1; i < res->argc; i++) {
 		res->argv[i] = strdup (args[i - 1]);

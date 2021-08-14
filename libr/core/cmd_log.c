@@ -46,12 +46,6 @@ static const char *help_msg_T[] = {
 	NULL
 };
 
-// TODO #7967 help refactor: move L to another place
-static void cmd_log_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, L);
-	DEFINE_CMD_DESCRIPTOR (core, T);
-}
-
 static void screenlock(RCore *core) {
 	//  char *pass = r_cons_input ("Enter new password: ");
 	char *pass = r_cons_password (Color_INVERT "Enter new password:"Color_INVERT_RESET);

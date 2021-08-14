@@ -520,37 +520,6 @@ struct trace_node {
 	int refs;
 };
 
-static void cmd_debug_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, d);
-	DEFINE_CMD_DESCRIPTOR (core, db);
-	DEFINE_CMD_DESCRIPTOR (core, dbt);
-	DEFINE_CMD_DESCRIPTOR (core, dc);
-	DEFINE_CMD_DESCRIPTOR (core, dcs);
-	DEFINE_CMD_DESCRIPTOR (core, dcu);
-	DEFINE_CMD_DESCRIPTOR (core, dd);
-	DEFINE_CMD_DESCRIPTOR (core, de);
-	DEFINE_CMD_DESCRIPTOR (core, des);
-	DEFINE_CMD_DESCRIPTOR (core, di);
-	DEFINE_CMD_DESCRIPTOR (core, dk);
-	DEFINE_CMD_DESCRIPTOR (core, dko);
-	DEFINE_CMD_DESCRIPTOR (core, dm);
-	DEFINE_CMD_DESCRIPTOR (core, dmi);
-	DEFINE_CMD_DESCRIPTOR (core, dmm);
-	DEFINE_CMD_DESCRIPTOR (core, dmp);
-	DEFINE_CMD_DESCRIPTOR (core, do);
-	DEFINE_CMD_DESCRIPTOR (core, dp);
-	DEFINE_CMD_DESCRIPTOR (core, dr);
-	DEFINE_CMD_DESCRIPTOR (core, drp);
-	DEFINE_CMD_DESCRIPTOR (core, drs);
-	DEFINE_CMD_DESCRIPTOR (core, drt);
-	DEFINE_CMD_DESCRIPTOR (core, drx);
-	DEFINE_CMD_DESCRIPTOR (core, ds);
-	DEFINE_CMD_DESCRIPTOR (core, dt);
-	DEFINE_CMD_DESCRIPTOR (core, dte);
-	DEFINE_CMD_DESCRIPTOR (core, dts);
-	DEFINE_CMD_DESCRIPTOR (core, dx);
-}
-
 // XXX those tmp files are never removed and we shuoldnt use files for this
 static void setRarunProfileString(RCore *core, const char *str) {
 	char *file = r_file_temp ("rarun2");
