@@ -37,22 +37,22 @@ RUN
 
 NAME=/cg PGP search ASCII armor
 FILE=bins/other/jeje.gpg
-CMDS=/cg
+CMDS=<<EOF
+/cg
 EOF
 EXPECT=<<EOF
 0x00000007 hit0_0 "jkasdfBEGIN PGP PRIVATE KEYsadjfjasf"
 EOF
-je
 RUN
 
 NAME=/cg PGP search binary
 FILE=bins/other/v4_secret_encrypted.gpg
-CMDS=/cg
+CMDS=<<EOF
+/cg
 EOF
 EXPECT=<<EOF
 0x000007e0 hit13_0 0011010001fe030302
 EOF
-je
 RUN
 
 NAME=cmd.hit for /cr

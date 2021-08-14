@@ -1,4 +1,4 @@
- NAME=asm/callflag
+NAME=asm/callflag
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
