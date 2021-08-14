@@ -1717,8 +1717,8 @@ static int wt_handler_old(void *data, const char *input) {
 			}
 		}
 		if (sz >= 0) {
-			eprintf ("(%s): Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
-					str, sz, poff, filename);
+			eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
+					sz, poff, filename);
 		}
 	}
 	return 0;
