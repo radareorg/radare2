@@ -42,7 +42,7 @@ static const char *help_msg_ec[] = {
 	"eco", " [theme]", "load theme if provided (list available themes if not)",
 	"ecp", "", "load previous color theme",
 	"ecn", "", "load next color theme",
-	"ecH", " [?]", "highlight word or instruction",
+	"ecH", "[?]", "highlight word or instruction",
 	"ec", " prompt red", "change color of prompt",
 	"ec", " prompt red blue", "change color and background of prompt",
 	"Vars:", "", "",

@@ -10,7 +10,6 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdarg.h>
-#include "cmd_helps.h"
 #if __UNIX__
 #include <sys/utsname.h>
 #ifndef __wasi__
@@ -5603,71 +5602,70 @@ R_API void r_core_cmd_init(RCore *core) {
 		RCmdDescType type;
 		RCmdArgvCb argv_cb;
 	} cmds[] = {
-		{"!", "run system command", cmd_system, NULL, &system_help},
-		{"_", "print last output", cmd_last, NULL, &underscore_help},
-		{"#", "calculate hash", cmd_hash, NULL, &hash_help},
-		{"$", "alias", cmd_alias, NULL, &alias_help},
-		{"%", "short version of 'env' command", cmd_env, NULL, &env_help},
-		{"&", "tasks", cmd_tasks, NULL, &tasks_help},
-		{"(", "macro", cmd_macro, NULL, &macro_help},
-		{"*", "pointer read/write", cmd_pointer, NULL, &pointer_help},
-		{"-", "open cfg.editor and run script", cmd_stdin, NULL, &stdin_help},
-		{".", "interpret", cmd_interpret, NULL, &interpret_help},
-		{",", "create and manipulate tables", cmd_table, NULL, &table_help},
-		{"/", "search kw, pattern aes", cmd_search, NULL, &search_help},
-		{"=", "io pipe", cmd_rap, NULL, &rap_help},
-		{"?", "help message", cmd_help, NULL, &help_help},
-		{":", "alias for =!", cmd_rap_run, NULL, &rap_run_help},
-		{"0", "alias for s 0x", cmd_ox, NULL, &zero_help},
-		{"a", "analysis", cmd_anal, NULL, &anal_help},
-		{"b", "change block size", cmd_bsize, NULL, &b_help},
-		{"c", "compare memory", cmd_cmp, NULL, &c_help},
-		{"C", "code metadata", cmd_meta, NULL, &C_help},
-		{"d", "debugger operations", cmd_debug, NULL, &d_help},
-		{"e", "evaluate configuration variable", cmd_eval, NULL, &e_help},
-		{"f", "get/set flags", cmd_flag, NULL, &f_help},
-		{"g", "egg manipulation", cmd_egg, NULL, &g_help},
-		{"i", "get file info", cmd_info, NULL, &i_help},
-		{"k", "perform sdb query", cmd_kuery, NULL, &k_help},
-		{"l", "list files and directories", cmd_ls, NULL, &l_help},
-		{"j", "join the contents of the two files", cmd_join, NULL, &j_help},
-		{"h", "show the top n number of line in file", cmd_head, NULL, &h_help},
-		{"L", "manage dynamically loaded plugins", cmd_plugins, NULL, &L_help},
-		{"m", "mount filesystem", cmd_mount, NULL, &m_help},
-		{"o", "open or map file", cmd_open, NULL, &o_help},
-		{"p", "print current block", cmd_print, NULL, &p_help},
-		{"P", "project", cmd_project, NULL, &P_help},
-		{"q", "exit program session", cmd_quit, NULL, &q_help},
-		{"Q", "alias for q!", cmd_Quit, NULL, &Q_help},
-		{"r", "change file size", cmd_resize, NULL, &r_help},
-		{"s", "seek to an offset", cmd_seek, NULL, &s_help},
-		{"t", "type information (cparse)", cmd_type, NULL, &t_help},
-		{"T", "Text log utility", cmd_log, NULL, &T_help},
-		{"u", "uname/undo", cmd_undo, NULL, &u_help},
-		{"<", "pipe into RCons.readChar", cmd_pipein, NULL, &pipein_help},
-		{"V", "enter visual mode", cmd_visual, NULL, &V_help},
-		{"v", "enter visual panels", cmd_panels, NULL, &v_help},
-		{"w", "write bytes", cmd_write, NULL, &w_help, &w_group_help, R_CMD_DESC_TYPE_GROUP, w_handler},
-		{"x", "alias for px", cmd_hexdump, NULL, &x_help},
-		{"y", "yank bytes", cmd_yank, NULL, &y_help},
-		{"z", "zignatures", cmd_zign, NULL, &z_help},
+		{"!", "run system command", cmd_system, NULL, NULL},
+		{"_", "print last output", cmd_last, NULL, NULL},
+		{"#", "calculate hash", cmd_hash, NULL, NULL},
+		{"$", "alias", cmd_alias},
+		{"%", "short version of 'env' command", cmd_env},
+		{"&", "tasks", cmd_tasks},
+		{"(", "macro", cmd_macro},
+		{"*", "pointer read/write", cmd_pointer },
+		{"-", "open cfg.editor and run script", cmd_stdin },
+		{".", "interpret", cmd_interpret },
+		{",", "create and manipulate tables", cmd_table },
+		{"/", "search kw, pattern aes", cmd_search },
+		{"=", "io pipe", cmd_rap },
+		{"?", "help message", cmd_help },
+		{":", "alias for =!", cmd_rap_run },
+		{"0", "alias for s 0x", cmd_ox },
+		{"a", "analysis", cmd_anal },
+		{"b", "change block size", cmd_bsize },
+		{"c", "compare memory", cmd_cmp },
+		{"C", "code metadata", cmd_meta },
+		{"d", "debugger operations", cmd_debug },
+		{"e", "evaluate configuration variable", cmd_eval },
+		{"f", "get/set flags", cmd_flag },
+		{"g", "egg manipulation", cmd_egg },
+		{"i", "get file info", cmd_info },
+		{"k", "perform sdb query", cmd_kuery },
+		{"l", "list files and directories", cmd_ls },
+		{"j", "join the contents of the two files", cmd_join },
+		{"h", "show the top n number of line in file", cmd_head },
+		{"L", "manage dynamically loaded plugins", cmd_plugins },
+		{"m", "mount filesystem", cmd_mount },
+		{"o", "open or map file", cmd_open },
+		{"p", "print current block", cmd_print },
+		{"P", "project", cmd_project },
+		{"q", "exit program session", cmd_quit },
+		{"Q", "alias for q!", cmd_Quit },
+		{"r", "change file size", cmd_resize },
+		{"s", "seek to an offset", cmd_seek },
+		{"t", "type information (cparse)", cmd_type },
+		{"T", "Text log utility", cmd_log },
+		{"u", "uname/undo", cmd_undo },
+		{"<", "pipe into RCons.readChar", cmd_pipein },
+		{"V", "enter visual mode", cmd_visual },
+		{"v", "enter visual panels", cmd_panels },
+		{"w", "write bytes", cmd_write },
+		{"x", "alias for px", cmd_hexdump },
+		{"y", "yank bytes", cmd_yank },
+		{"z", "zignatures", cmd_zign },
 	};
 
 	core->rcmd = r_cmd_new ();
-	if (!core->rcmd) {
-		return;
-	}
-	core->rcmd->macro.user = core;
-	core->rcmd->macro.num = core->num;
-	core->rcmd->macro.cmd = core_cmd0_wrapper;
-	core->rcmd->nullcallback = r_core_cmd_nullcallback;
-	core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
-	r_cmd_set_data (core->rcmd, core);
-	core->cmd_descriptors = r_list_newf (free);
+	if (core->rcmd) {
+		core->rcmd->macro.user = core;
+		core->rcmd->macro.num = core->num;
+		core->rcmd->macro.cmd = core_cmd0_wrapper;
+		core->rcmd->nullcallback = r_core_cmd_nullcallback;
+		core->rcmd->macro.cb_printf = (PrintfCallback)r_cons_printf;
+		r_cmd_set_data (core->rcmd, core);
+		core->cmd_descriptors = r_list_newf (free);
 
-	// RCmdDesc *root = r_cmd_get_root (core->rcmd);
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
-		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
+		// RCmdDesc *root = r_cmd_get_root (core->rcmd);
+		size_t i;
+		for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
+			r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
+		}
 	}
 }
