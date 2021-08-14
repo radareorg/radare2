@@ -5587,19 +5587,14 @@ R_API void r_core_cmd_init(RCore *core) {
 		const char *cmd;
 		const char *description;
 		RCmdCb cb;
-		void (*descriptor_init)(RCore *core, RCmdDesc *parent); // XXX must die should bne always null
-		const RCmdDescHelp *help;
-		const RCmdDescHelp *group_help;
-		RCmdDescType type;
-		RCmdArgvCb argv_cb;
 	} cmds[] = {
-		{"!", "run system command", cmd_system, NULL, NULL},
-		{"_", "print last output", cmd_last, NULL, NULL},
-		{"#", "calculate hash", cmd_hash, NULL, NULL},
-		{"$", "alias", cmd_alias},
-		{"%", "short version of 'env' command", cmd_env},
-		{"&", "tasks", cmd_tasks},
-		{"(", "macro", cmd_macro},
+		{"!", "run system command", cmd_system },
+		{"_", "print last output", cmd_last },
+		{"#", "calculate hash", cmd_hash },
+		{"$", "alias", cmd_alias },
+		{"%", "short version of 'env' command", cmd_env },
+		{"&", "tasks", cmd_tasks },
+		{"(", "macro", cmd_macro },
 		{"*", "pointer read/write", cmd_pointer },
 		{"-", "open cfg.editor and run script", cmd_stdin },
 		{".", "interpret", cmd_interpret },

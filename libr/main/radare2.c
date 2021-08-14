@@ -1459,6 +1459,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		for (;;) {
 			if (!r_core_prompt_loop (r)) {
 				quietLeak = true;
+				r_cons_set_interactive (false);
 			}
 			ret = r->num->value;
 			debug = r_config_get_i (r->config, "cfg.debug");

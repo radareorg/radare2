@@ -1494,7 +1494,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 4:	// ^D
 			if (!I.buffer.data[0]) {/* eof */
 				if (I.echo) {
-					printf ("^D\n");
+					eprintf ("^D\n");
 				}
 				r_cons_set_raw (false);
 				r_cons_break_pop ();
