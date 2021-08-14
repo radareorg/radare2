@@ -5745,7 +5745,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
-
+#if 0
 		RCmdDesc *cd = NULL;
 		switch (cmds[i].type) {
 		case R_CMD_DESC_TYPE_OLDINPUT:
@@ -5764,7 +5764,9 @@ R_API void r_core_cmd_init(RCore *core) {
 		if (cd && cmds[i].descriptor_init) {
 			cmds[i].descriptor_init (core, cd);
 		}
+#endif
 	}
+#if 0
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, $, dollar);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, %, percent);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, *, star);
@@ -5776,5 +5778,6 @@ R_API void r_core_cmd_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, r);
 	DEFINE_CMD_DESCRIPTOR (core, u);
 	DEFINE_CMD_DESCRIPTOR (core, y);
-	cmd_descriptor_init (core);
+#endif
+	// cmd_descriptor_init (core);
 }

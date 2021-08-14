@@ -816,11 +816,32 @@ static const char *help_msg_axt[]= {
 	NULL
 };
 
+static void core_add_command(RCore *core, const char *cmd, const char *help[], const char *detail[], const char *detail2[]) {
+	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
+	if (d) {
+		d->cmd = cmd;
+		d->help_msg = help;
+		if (detail) {
+			d->help_detail = detail;
+		}
+		if (detail2) {
+			// XXX looks wrong to me this shouldnt exist
+			d->help_detail2 = detail2;
+		}
+		r_list_append ((core)->cmd_descriptors, d);
+	}
+}
+
 static void cmd_anal_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, a);
-	DEFINE_CMD_DESCRIPTOR (core, aa);
-	DEFINE_CMD_DESCRIPTOR (core, aar);
-	DEFINE_CMD_DESCRIPTOR (core, ab);
+return;
+	core_add_command (core, "a", help_msg_a, NULL, NULL);
+	core_add_command (core, "aa", help_msg_aa, NULL, NULL);
+	core_add_command (core, "aar", help_msg_aar, NULL, NULL);
+	core_add_command (core, "ab", help_msg_ab, NULL, NULL);
+	// DEFINE_CMD_DESCRIPTOR (core, a);
+	// DEFINE_CMD_DESCRIPTOR (core, aa);
+	// DEFINE_CMD_DESCRIPTOR (core, aar);
+	// DEFINE_CMD_DESCRIPTOR (core, ab);
 	DEFINE_CMD_DESCRIPTOR (core, ac);
 	DEFINE_CMD_DESCRIPTOR (core, ad);
 	DEFINE_CMD_DESCRIPTOR (core, ae);
@@ -853,25 +874,25 @@ static void cmd_anal_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, ax);
 }
 
-static int cmpname (const void *_a, const void *_b) {
+static int cmpname(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
 	return (int)strcmp (a->name, b->name);
 }
 
-static int cmpsize (const void *a, const void *b) {
+static int cmpsize(const void *a, const void *b) {
 	ut64 sa = (int) r_anal_function_linear_size ((RAnalFunction *) a);
 	ut64 sb = (int) r_anal_function_linear_size ((RAnalFunction *) b);
 	return (sa > sb)? -1: (sa < sb)? 1 : 0;
 }
 
-static int cmpbbs (const void *_a, const void *_b) {
+static int cmpbbs(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
 	int la = (int)r_list_length (a->bbs);
 	int lb = (int)r_list_length (b->bbs);
 	return (la > lb)? -1: (la < lb)? 1 : 0;
 }
 
-static int cmpaddr (const void *_a, const void *_b) {
+static int cmpaddr(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
 }

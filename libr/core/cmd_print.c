@@ -648,6 +648,8 @@ static void cmd_print_init(RCore *core, RCmdDesc *parent) {
 	DEFINE_CMD_DESCRIPTOR (core, pc);
 	DEFINE_CMD_DESCRIPTOR (core, pd);
 	DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2 (core, pf);
+	// core_add_command (core, "pf", help_msg_pf, help_detail_pf, help_detail2_pf);
+	// core_add_command (core, "pi", help_msg_pi, NULL, NULL);
 	DEFINE_CMD_DESCRIPTOR (core, pi);
 	DEFINE_CMD_DESCRIPTOR (core, ps);
 	DEFINE_CMD_DESCRIPTOR (core, pt);
