@@ -81,7 +81,7 @@ Everything up-to-date.
 Sharing your latest session to Facebook ...
 This should be documented, since it's not that obvious.
 It's working! Look at the door!
-This is an unacceptable milion year dungeon.
+This is an unacceptable million year dungeon.
 The Hard ROP Cafe
 Wait a minute! I found a bug, self-fixing ... OK
 Hold on, this should never happen!
