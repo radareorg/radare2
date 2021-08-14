@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_core.h"
 
@@ -14,10 +14,6 @@ static const char *help_msg_q[] = {
 	"Q","", "same as q!!",
 	NULL
 };
-
-static void cmd_quit_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, q);
-}
 
 static int cmd_Quit(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -60,13 +56,11 @@ static int cmd_quit(void *data, const char *input) {
 		} else {
 			core->num->value = 0LL;
 		}
-
 		if (*input == 'y') {
 			core->num->value = 5;
 		} else if (*input == 'n') {
 			core->num->value = 1;
 		}
-
 		if (input[1] == 'y') {
 			core->num->value += 10;	
 		} else if (input[1] == 'n') {

@@ -24,11 +24,7 @@ static const char *help_msg_i[] = {
 	"icq", "", "List classes, in quiet mode (just the classname)",
 	"icqq", "", "List classes, in quieter mode (only show non-system classnames)",
 	"iC", "[j]", "Show signature info (entitlements, ...)",
-	"id", "", "Show DWARF source lines information",
-	"idp", " [file.pdb]", "Load pdb file information",
-	"idpi", " [file.pdb]", "Show pdb file information",
-	"idpi*", "", "Show symbols from pdb as flags (prefix with dot to import)",
-	"idpd", "", "Download pdb file on remote server",
+	"id", "[?]", "Show DWARF source lines information",
 	"iD", " lang sym", "Demangle symbolname for given language",
 	"ie", "", "Entrypoint",
 	"iee", "", "Show Entry and Exit (preinit, init and fini)",
@@ -58,7 +54,7 @@ static const char *help_msg_i[] = {
 	"iV", "", "Display file version info",
 	"iw", "", "Show try/catch blocks",
 	"iX", "", "Display source files used (via dwarf)",
-	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
+	"iz", "[?][j]", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
 	"izzz", "", "Dump Strings from whole binary to r2 shell (for huge files)",
 	"iz-", " [addr]", "Purge string via bin.str.purge",
@@ -76,11 +72,6 @@ static const char *help_msg_id[] = {
 	"idpd", "", "Download pdb file on remote server",
 	NULL
 };
-
-static void cmd_info_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, i);
-	DEFINE_CMD_DESCRIPTOR (core, id);
-}
 
 #define PAIR_WIDTH 9
 // TODO: reuse implementation in core/bin.c

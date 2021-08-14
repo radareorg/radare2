@@ -136,14 +136,6 @@ static const char *help_msg_fz[] = {
 	NULL
 };
 
-static void cmd_flag_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, f);
-	DEFINE_CMD_DESCRIPTOR (core, fc);
-	DEFINE_CMD_DESCRIPTOR (core, fd);
-	DEFINE_CMD_DESCRIPTOR (core, fs);
-	DEFINE_CMD_DESCRIPTOR (core, fz);
-}
-
 static bool listFlag(RFlagItem *flag, void *user) {
 	r_list_append (user, flag);
 	return true;

@@ -17,7 +17,7 @@ static const char *help_msg_e[] = {
 	"e-", "", "reset config vars",
 	"e*", "", "dump config vars in r commands",
 	"e!", "a", "invert the boolean value of 'a' var",
-	"ec", " [k] [color]", "set color for given key (prompt, offset, ...)",
+	"ec", "[?] [k] [color]", "set color for given key (prompt, offset, ...)",
 	"ee", "var", "open editor to change the value of var",
 	"ed", "", "open editor to change the ~/.radare2rc",
 	"ej", "", "list config vars in JSON",
@@ -65,11 +65,6 @@ static const char *help_msg_eco[] = {
 };
 
 static bool getNext = false;
-
-static void cmd_eval_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, e);
-	DEFINE_CMD_DESCRIPTOR (core, ec);
-}
 
 static bool load_theme(RCore *core, const char *path) {
 	if (!r_file_exists (path)) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_cons.h"
 #include "r_core.h"
@@ -21,10 +21,6 @@ static const char *help_msg_g[] = {
 	"EVAL VARS:", "", "asm.arch, asm.bits, asm.os",
 	NULL
 };
-
-static void cmd_egg_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, g);
-}
 
 static void cmd_egg_option(REgg *egg, const char *key, const char *input) {
 	if (!*input) {

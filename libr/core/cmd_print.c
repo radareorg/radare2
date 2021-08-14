@@ -645,28 +645,6 @@ static const ut32 colormap[256] = {
 	0x4c0032, 0x560039, 0x640042, 0x75004e, 0x87005a, 0x9b0067, 0xb00075, 0xc60084, 0xdd0093, 0xf500a3, 0xff0faf, 0xff28b7, 0xff43c0, 0xff5ec9, 0xff79d2, 0xffffff,
 };
 
-#if 0
-static void cmd_print_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, &, amper);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @, at);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @@, at_at);
-	DEFINE_CMD_DESCRIPTOR (core, p);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p=, p_equal);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p-, p_minus);
-	DEFINE_CMD_DESCRIPTOR (core, pc);
-	DEFINE_CMD_DESCRIPTOR (core, pd);
-	DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2 (core, pf);
-	// core_add_command (core, "pf", help_msg_pf, help_detail_pf, help_detail2_pf);
-	// core_add_command (core, "pi", help_msg_pi, NULL, NULL);
-	DEFINE_CMD_DESCRIPTOR (core, pi);
-	DEFINE_CMD_DESCRIPTOR (core, ps);
-	DEFINE_CMD_DESCRIPTOR (core, pt);
-	DEFINE_CMD_DESCRIPTOR (core, pv);
-	DEFINE_CMD_DESCRIPTOR (core, px);
-	DEFINE_CMD_DESCRIPTOR (core, pz);
-}
-#endif
-
 static void __cmd_pad(RCore *core, const char *arg) {
 	if (*arg == '?') {
 		eprintf ("Usage: pad [hexpairs] # disassembly given bytes\n");

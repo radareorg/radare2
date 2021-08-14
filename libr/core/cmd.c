@@ -19,27 +19,6 @@
 #endif
 
 static const char *SPECIAL_CHARS_REGULAR = "@;~$#|`\"'()<>";
-#if 0
-static const char *SPECIAL_CHARS_PF = "@;~$#|`\"'<>";
-static const char *SPECIAL_CHARS_DOUBLE_QUOTED = "\"";
-static const char *SPECIAL_CHARS_SINGLE_QUOTED = "'";
-
-static char *escape_special_chars(char *s, const char *special_chars) {
-	size_t s_len = strlen (s);
-	char *d = R_NEWS (char, s_len * 2 + 1);
-	int i, j = 0;
-	for (i = 0; i < s_len; i++) {
-		if (strchr (special_chars, s[i])) {
-			d[j++] = '\\';
-		}
-		d[j++] = s[i];
-	}
-	d[j++] = '\0';
-	free (s);
-	return d;
-}
-#endif
-
 
 static RCmdDescriptor *cmd_descriptor(const char *cmd, const char *help[]) {
 	RCmdDescriptor *d = R_NEW0 (RCmdDescriptor);
@@ -57,43 +36,6 @@ static bool isAnExport(RBinSymbol *s) {
 	}
 	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
-
-#define DEFINE_CMD_DESCRIPTOR(core, cmd_) \
-	{ \
-		RCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg_##cmd_); \
-		if (d) { \
-			r_list_append ((core)->cmd_descriptors, d); \
-		} \
-	}
-
-#define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL(core, cmd_) \
-	{ \
-		RCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg##cmd_); \
-		if (d) { \
-			d->help_detail = help_detail_##cmd_; \
-			r_list_append ((core)->cmd_descriptors, d); \
-		} \
-	}
-
-#define DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2(core, cmd_) \
-	{ \
-		RCmdDescriptor *d = cmd_descriptor (#cmd_, help_msg_##cmd_); \
-		if (d) { \
-			d->help_detail = help_detail_##cmd_; \
-			d->help_detail2 = help_detail2_##cmd_; \
-			r_list_append ((core)->cmd_descriptors, d); \
-		} \
-	}
-
-#define DEFINE_CMD_DESCRIPTOR_SPECIAL(core, cmd_, named_cmd) \
-	{ \
-		RCmdDescriptor *d = R_NEW0 (RCmdDescriptor); \
-		if (d) { \
-			d->cmd = #cmd_; \
-			d->help_msg = help_msg_##named_cmd; \
-			r_list_append ((core)->cmd_descriptors, d); \
-		} \
-	}
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon, bool *tmpseek);
 
@@ -421,6 +363,8 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 		recursive_help (core, detail, "%");
 		recursive_help (core, detail, "(");
 		recursive_help (core, detail, "@");
+		recursive_help (core, detail, "!");
+		recursive_help (core, detail, "=");
 		recursive_help (core, detail, "??");
 		recursive_help (core, detail, "~");
 	}
@@ -5677,13 +5621,13 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"0", "alias for s 0x", cmd_ox, NULL, &zero_help},
 		{"a", "analysis", cmd_anal, NULL, &anal_help},
 		{"b", "change block size", cmd_bsize, NULL, &b_help},
-		{"c", "compare memory", cmd_cmp, cmd_cmp_init, &c_help},
-		{"C", "code metadata", cmd_meta, cmd_meta_init, &C_help},
+		{"c", "compare memory", cmd_cmp, NULL, &c_help},
+		{"C", "code metadata", cmd_meta, NULL, &C_help},
 		{"d", "debugger operations", cmd_debug, NULL, &d_help},
-		{"e", "evaluate configuration variable", cmd_eval, cmd_eval_init, &e_help},
-		{"f", "get/set flags", cmd_flag, cmd_flag_init, &f_help},
-		{"g", "egg manipulation", cmd_egg, cmd_egg_init, &g_help},
-		{"i", "get file info", cmd_info, cmd_info_init, &i_help},
+		{"e", "evaluate configuration variable", cmd_eval, NULL, &e_help},
+		{"f", "get/set flags", cmd_flag, NULL, &f_help},
+		{"g", "egg manipulation", cmd_egg, NULL, &g_help},
+		{"i", "get file info", cmd_info, NULL, &i_help},
 		{"k", "perform sdb query", cmd_kuery, NULL, &k_help},
 		{"l", "list files and directories", cmd_ls, NULL, &l_help},
 		{"j", "join the contents of the two files", cmd_join, NULL, &j_help},
@@ -5693,7 +5637,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"o", "open or map file", cmd_open, NULL, &o_help},
 		{"p", "print current block", cmd_print, NULL, &p_help},
 		{"P", "project", cmd_project, NULL, &P_help},
-		{"q", "exit program session", cmd_quit, cmd_quit_init, &q_help},
+		{"q", "exit program session", cmd_quit, NULL, &q_help},
 		{"Q", "alias for q!", cmd_Quit, NULL, &Q_help},
 		{"r", "change file size", cmd_resize, NULL, &r_help},
 		{"s", "seek to an offset", cmd_seek, NULL, &s_help},
@@ -5703,7 +5647,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"<", "pipe into RCons.readChar", cmd_pipein, NULL, &pipein_help},
 		{"V", "enter visual mode", cmd_visual, NULL, &V_help},
 		{"v", "enter visual panels", cmd_panels, NULL, &v_help},
-		{"w", "write bytes", cmd_write, cmd_write_init, &w_help, &w_group_help, R_CMD_DESC_TYPE_GROUP, w_handler},
+		{"w", "write bytes", cmd_write, NULL, &w_help, &w_group_help, R_CMD_DESC_TYPE_GROUP, w_handler},
 		{"x", "alias for px", cmd_hexdump, NULL, &x_help},
 		{"y", "yank bytes", cmd_yank, NULL, &y_help},
 		{"z", "zignatures", cmd_zign, NULL, &z_help},
@@ -5726,18 +5670,4 @@ R_API void r_core_cmd_init(RCore *core) {
 	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
 	}
-#if 0
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, $, dollar);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, %, percent);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, *, star);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ., dot);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, =, equal);
-
-	DEFINE_CMD_DESCRIPTOR (core, b);
-	DEFINE_CMD_DESCRIPTOR (core, k);
-	DEFINE_CMD_DESCRIPTOR (core, r);
-	DEFINE_CMD_DESCRIPTOR (core, u);
-	DEFINE_CMD_DESCRIPTOR (core, y);
-#endif
-	// cmd_descriptor_init (core);
 }
