@@ -5635,6 +5635,7 @@ static int cmd_ox(void *data, const char *input) {
 	return r_core_cmdf ((RCore*)data, "s 0%s", input);
 }
 
+#if 0
 static int compare_cmd_descriptor_name(const void *a, const void *b) {
 	return strcmp (((RCmdDescriptor *)a)->cmd, ((RCmdDescriptor *)b)->cmd);
 }
@@ -5666,6 +5667,7 @@ static void cmd_descriptor_init(RCore *core) {
 		}
 	}
 }
+#endif
 
 static int core_cmd0_wrapper(void *core, const char *cmd) {
 	return r_core_cmd0 ((RCore *)core, cmd);
@@ -5741,7 +5743,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_set_data (core->rcmd, core);
 	core->cmd_descriptors = r_list_newf (free);
 
-	RCmdDesc *root = r_cmd_get_root (core->rcmd);
+	// RCmdDesc *root = r_cmd_get_root (core->rcmd);
 	size_t i;
 	for (i = 0; i < R_ARRAY_SIZE (cmds); i++) {
 		r_cmd_add (core->rcmd, cmds[i].cmd, cmds[i].cb);
