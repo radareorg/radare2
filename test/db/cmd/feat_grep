@@ -5,6 +5,48 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=quote grep
+FILE=malloc://1024
+BROKEN=1
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 90cc90cc
+"pd 4"~nop
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000002      90             nop
+EOF
+RUN
+
+NAME=grep and/or
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 90cc90cc
+pd 4~nop
+?e ==
+pd 4~&90,nop
+?e ==
+pd 4~&90,404
+?e ==
+pd 4~90,404
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000002      90             nop
+==
+            0x00000000      90             nop
+            0x00000002      90             nop
+==
+==
+            0x00000000      90             nop
+            0x00000002      90             nop
+EOF
+RUN
+
 NAME=?e \~
 FILE=malloc://1024
 CMDS=?e jeje\~jojo
