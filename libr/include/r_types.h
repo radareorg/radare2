@@ -88,6 +88,8 @@
 #define TARGET_OS_IPHONE 0
 #endif
 
+#undef LIBC_HAVE_SYSTEM
+#undef HAVE_SYSTEM
 #if __IPHONE_8_0 && TARGET_OS_IPHONE && !defined(MAC_OS_VERSION_11_0)
 #define LIBC_HAVE_SYSTEM 0
 #define HAVE_SYSTEM 0
