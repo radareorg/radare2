@@ -749,22 +749,22 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 	free (prjpath);
 	return notes_txt;
 }
+
 R_API bool r_core_project_is_saved(RCore *core) {
 	bool ret;
 	char *saved_dat, *tmp_dat;
-	char *tsp, *sp;
 	char *pd = r_str_newf ("%s" R_SYS_DIR "%s",
 			r_config_get (core->config, "dir.projects"),
 			r_config_get (core->config, "prj.name"));
 	if (!pd) {
 		return false;
 	}
-	sp = r_str_newf ("%s" R_SYS_DIR "%s", pd, "rc.r2");
+	char *sp = r_str_newf ("%s" R_SYS_DIR "%s", pd, "rc.r2");
 	if (!sp) {
 		free (pd);
 		return false;
 	}
-	tsp = r_str_newf ("%s" R_SYS_DIR "tmp", pd);
+	char *tsp = r_str_newf ("%s" R_SYS_DIR "tmp", pd);
 	//horrible code follows:
 	free (pd);
 	if (!tsp) {

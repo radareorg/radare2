@@ -73,11 +73,7 @@ static int r_main_version_verify(int show) {
 		}
 	}
 	if (ret) {
-		if (show) {
-			eprintf ("Warning: r2 library versions mismatch!\n");
-		} else {
-			eprintf ("Warning: r2 library versions mismatch! See r2 -V\n");
-		}
+		eprintf ("Warning: r2 library versions mismatch! Check r2 -V");
 	}
 	return ret;
 }
@@ -1459,7 +1455,6 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		for (;;) {
 			if (!r_core_prompt_loop (r)) {
 				quietLeak = true;
-				r_cons_set_interactive (false);
 			}
 			ret = r->num->value;
 			debug = r_config_get_i (r->config, "cfg.debug");
@@ -1499,29 +1494,30 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				}
 
 				const char *prj = r_config_get (r->config, "prj.name");
-				if (r_core_project_is_saved (r)) {
-					break;
-				}
-				if (no_question_save) {
-					if (prj && *prj && y_save_project){
-						r_core_project_save (r, prj);
+				if (R_STR_ISNOTEMPTY (prj)) {
+					if (r_core_project_is_saved (r)) {
+						break;
 					}
-				} else {
-					question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
-					if (prj && *prj && r_cons_yesno ('y', "%s", question)) {
-						r_core_project_save (r, prj);
+					if (no_question_save) {
+						if (y_save_project) {
+							r_core_project_save (r, prj);
+						}
+					} else {
+						question = r_str_newf ("Do you want to save the '%s' project? (Y/n)", prj);
+						if (r_cons_yesno ('y', "%s", question)) {
+							r_core_project_save (r, prj);
+						}
+						free (question);
 					}
-					free (question);
 				}
-
-				if (r_config_get_i (r->config, "scr.confirmquit")) {
+				if (r_config_get_b (r->config, "scr.confirmquit")) {
 					if (!r_cons_yesno ('n', "Do you want to quit? (Y/n)")) {
 						continue;
 					}
 				}
 			} else {
 				// r_core_project_save (r, prj);
-				if (debug && r_config_get_i (r->config, "dbg.exitkills")) {
+				if (debug && r_config_get_b (r->config, "dbg.exitkills")) {
 					r_debug_kill (r->dbg, 0, false, 9); // KILL
 				}
 
