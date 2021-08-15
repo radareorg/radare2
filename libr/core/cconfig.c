@@ -3611,7 +3611,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.libs", "", &cb_dbg_libs, "If set stop when loading matching libname");
 	SETBPREF ("dbg.skipover", "false", "Make dso perform a dss (same goes for esil and visual/graph");
 	SETBPREF ("dbg.hwbp", "false", "Use hardware breakpoints instead of software ones when enabled");
-	SETCB ("dbg.", "true", &cb_dbg_verbose, "Verbose debug output");
 	SETCB ("dbg.unlibs", "", &cb_dbg_unlibs, "If set stop when unloading matching libname");
 	SETCB ("dbg.verbose", "false", &cb_dbg_verbose, "Verbose debug output");
 	SETBPREF ("dbg.slow", "false", "Show stack and regs in visual mode in a slow but verbose mode");
