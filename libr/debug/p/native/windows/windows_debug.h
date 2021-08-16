@@ -117,7 +117,7 @@ typedef struct{
 } LIB_ITEM, *PLIB_ITEM;
 
 // APIs
-int w32_init(RDebug *dbg);
+bool w32_init(RDebug *dbg);
 
 int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size);

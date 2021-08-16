@@ -1,4 +1,4 @@
-/* radare - LGPLv3- Copyright 2017 - xarkes */
+/* radare - LGPLv3- Copyright 2017-2021 - xarkes */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -18,7 +18,7 @@ static const char *r_io_get_individual_schema(const char *file) {
 }
 
 static bool r_io_ar_plugin_open(RIO *io, const char *file, bool many) {
-	r_return_val_if_fail (io && file, NULL);
+	r_return_val_if_fail (io && file, false);
 	if (many) {
 		return (r_io_get_individual_schema (file) != NULL);
 	}

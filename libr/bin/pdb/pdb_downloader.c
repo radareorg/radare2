@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2020 - inisider */
+/* radare - LGPL - Copyright 2014-2021 - inisider */
 
 #include <string.h>
 #include <r_util.h>
@@ -31,8 +31,8 @@ static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 		BOOL ret = CopyFileW (origin, dest, FALSE);
 		free (dir);
 		free (path);
-		free (origin);
-		free (dest);
+		free ((void*)origin);
+		free ((void*)dest);
 		return ret;
 	}
 #endif
