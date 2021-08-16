@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2020 - pancake */
+/* radare - LGPL - Copyright 2013-2021 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_assert.h>
@@ -115,7 +115,7 @@ static bool __expandLine(RConsCanvas *c, int real_len, int utf8_len) {
 
 	if (padding) {
 		if (padding > 0 && c->blen[c->y] + padding > c->bsize[c->y]) {
-			int newsize = R_MAX (c->bsize[c->y] * 1.5, c->blen[c->y] + padding);
+			int newsize = R_MAX ((int)(c->bsize[c->y] * 1.5), c->blen[c->y] + padding);
 			char * newline = realloc (c->b[c->y], sizeof (*c->b[c->y])*(newsize));
 			if (!newline) {
 				return false;
@@ -487,7 +487,7 @@ R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, cons
 	double xfactor = 1; //(double)w / (double)h;
 	double yfactor = (double)h / 24; // 0.8; // 24  10
 	double size = w;
-	float a = 0.0;
+	double a = 0.0;
 	double s = size / 2;
 	while (a < (2 * PI)) {
 		double sa = r_num_sin (a);

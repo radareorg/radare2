@@ -75,9 +75,9 @@ static ut32 __approximate_rgb(int r, int g, int b) {
 	return (ut32)((G * M * M)  + (g * M) + b) + 16;
 #else
 	const int k = (256.0 / 6);
-	r = R_DIM (r / k, 0, 6);
-	g = R_DIM (g / k, 0, 6);
-	b = R_DIM (b / k, 0, 6);
+	r = R_DIM ((int)(r / k), 0, 6);
+	g = R_DIM ((int)(g / k), 0, 6);
+	b = R_DIM ((b / k), 0, 6);
 	return 16 + (r * 36) + (g * 6) + b;
 #endif
 }

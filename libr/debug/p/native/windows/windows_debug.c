@@ -13,16 +13,17 @@ static PLIB_ITEM last_lib = NULL;
 #define w32_PROCESS_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF)
 #define w32_THREAD_ALL_ACCESS w32_PROCESS_ALL_ACCESS
 
-int w32_init(RDebug *dbg) {
+bool w32_init(RDebug *dbg) {
 	W32DbgWInst *wrap = dbg->user;
 	if (!wrap) {
 		if (dbg->iob.io->w32dbg_wrap) {
 			dbg->user = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
 		} else {
-			return 0;
+			return false;
 		}
 	}
 	r_w32_init ();
+	return true;
 }
 
 static int __w32_findthread_cmp(int *tid, PTHREAD_ITEM th) {

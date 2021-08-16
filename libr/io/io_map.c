@@ -57,7 +57,8 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 		ut64 size = r_io_map_size (map);
 		r_io_map_set_begin (map, addr);
 		if (UT64_MAX - size + 1 < addr) {
-			r_io_map_set_size (map, -addr);
+			st64 saddr = (st64)addr;
+			r_io_map_set_size (map, -saddr);
 			r_io_map_new (io, map->fd, map->perm, map->delta - addr, 0, size + addr);
 		}
 		io_map_calculate_skyline (io);
