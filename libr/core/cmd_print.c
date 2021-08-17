@@ -489,11 +489,12 @@ static const char *help_msg_pi[] = {
 };
 
 static const char *help_msg_pif[] = {
-	"Usage:", "pif[cj]", "",
-	"pif?", "", "print this help message",
-	"pifc", "", "print all calls from this function",
+	"Usage:", "pif[cj]", " # print instructions from function",
+	"pif", "", "print function instructions",
+	"pifj", "", "same as above but in JSON format",
+	"pifc", "", "print all calls from this function", // pif~call?
 	"pifcj", "", "print all calls from this function in JSON format",
-	"pifj", "", "print instructions of function in JSON format",
+	NULL
 };
 
 static const char *help_msg_po[] = {
@@ -4796,7 +4797,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 		break;
 	case 'f': // "pif"
 		if (input[2] == '?') { // "pif?"
-			r_core_cmd_help(core, help_msg_pif);
+			r_core_cmd_help (core, help_msg_pif);
 		} else if (input[2] == 'j') {
 			r_core_cmdf (core, "pdfj%s", input + 3);
 		} else if (input[2] == 'c') { // "pifc"
