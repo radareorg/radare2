@@ -1128,7 +1128,7 @@ int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 }
 
 RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
-		if (!w32_CreateToolhelp32Snapshot) {
+	if (!w32_CreateToolhelp32Snapshot) {
 		return NULL;
 	}
 	// pid is not respected for TH32CS_SNAPTHREAD flag
