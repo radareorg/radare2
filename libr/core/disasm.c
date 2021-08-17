@@ -2589,6 +2589,10 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	// find the meta item at this offset if any
 	RPVector *metas = r_meta_get_all_at (ds->core->anal, ds->at); // TODO: do in range
 	RAnalMetaItem *meta = NULL;
+	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	if (minopsz < 1) {
+		minopsz = 1;
+	}
 	ut64 meta_size = UT64_MAX;
 	if (metas) {
 		void **it;
@@ -2626,7 +2630,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	r_asm_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
 	if (ds->asmop.size < 1) {
-		ds->asmop.size = 1;
+		ds->asmop.size = 1; // minopsz;
 	}
 	// handle meta here //
 	if (!ds->asm_meta) {

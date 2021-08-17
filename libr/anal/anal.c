@@ -464,6 +464,7 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
 	case R_ANAL_ARCHINFO_ALIGN:
 		if (anal->cur && anal->cur->archinfo) {
 			return anal->cur->archinfo (anal, query);

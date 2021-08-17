@@ -71,7 +71,15 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	op->size = print_insn_v850 ((bfd_vma)Offset, &disasm_obj);
 	if (op->size == -1) {
-		r_strbuf_set (&op->buf_asm, "(data)");
+		r_strbuf_set (&op->buf_asm, "invalid");
+#if 0
+		if (Offset & 1) {
+			// unaligned
+			op->size = 1;
+		} else {
+			op->size = 2;
+		}
+#endif
 	}
 	if (!memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", op->size)) {
 		r_strbuf_set (&op->buf_asm, "breakpoint");
