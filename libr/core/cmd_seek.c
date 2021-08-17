@@ -623,9 +623,9 @@ static int cmd_seek(void *data, const char *input) {
 		case '-': // "s--"
 		default:
 			{
-				st64 delta = -off;
+				st64 delta = -(st64)off;
 				if (input[1] == '-') {
-					delta = -core->blocksize;
+					delta = -(st64)core->blocksize;
 					int mult = r_num_math (core->num, input + 2);
 					if (mult > 0) {
 						delta /= mult;

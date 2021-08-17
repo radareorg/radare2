@@ -1278,11 +1278,14 @@ R_API char *r_sys_whoami(void) {
 
 R_API int r_sys_uid(void) {
 #if __WINDOWS__
+#warning r_sys_uid not implemented for windows
 	char buf[32];
 	DWORD buf_sz = sizeof (buf);
+	// TODO
 	if (!GetUserName (buf, (LPDWORD)&buf_sz) ) {
-		return strdup ("?");
+		return 1; // 
 	}
+	return 0;
 #elif __wasi__
 	return 0;
 #else

@@ -3805,11 +3805,11 @@ R_API char *r_str_scale(const char *s, int w, int h) {
 	int curline = -1;
 	char *linetext = (char*)r_str_pad (' ', w);
 	for (i = 0; i < h; i++) {
-		int zoomedline = i * ((float)rows / h);
+		int zoomedline = (int)(i * ((double)rows / h));
 		const char *srcline = r_list_get_n (lines, zoomedline);
 		int cols = strlen (srcline);
 		for (j = 0; j < w; j++) {
-			int zoomedcol = j * ( (float)cols / w);
+			int zoomedcol = (int)(j * ( (double)cols / w));
 			linetext[j] = srcline[zoomedcol];
 		}
 		if (curline != zoomedline) {

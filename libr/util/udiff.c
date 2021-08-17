@@ -223,7 +223,7 @@ R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *
 }
 #endif
 
-#define diffHit(void) { \
+#define diffHit() { \
 	const size_t i_hit = i - hit; \
 	int ra = la - i_hit; \
 	int rb = lb - i_hit; \
