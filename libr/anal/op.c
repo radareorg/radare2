@@ -343,15 +343,15 @@ repeat:
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
-	case R_ANAL_OP_TYPE_RCALL : return "rcall"; // needs to be changed
-	case R_ANAL_OP_TYPE_ICALL : return "ucall"; // needs to be changed
-	case R_ANAL_OP_TYPE_IRCALL: return "ucall"; // needs to be changed
+	case R_ANAL_OP_TYPE_RCALL : return "rcall";
+	case R_ANAL_OP_TYPE_ICALL : return "icall";
+	case R_ANAL_OP_TYPE_IRCALL: return "ircall";
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
 	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
 	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
-	case R_ANAL_OP_TYPE_RJMP  : return "rjmp"; // needs to be changed
-	case R_ANAL_OP_TYPE_IJMP  : return "ujmp"; // needs to be changed
-	case R_ANAL_OP_TYPE_IRJMP : return "ujmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_RJMP  : return "rjmp";
+	case R_ANAL_OP_TYPE_IJMP  : return "ijmp";
+	case R_ANAL_OP_TYPE_IRJMP : return "irjmp";
 	case R_ANAL_OP_TYPE_UNK   : return "unk";
 	case R_ANAL_OP_TYPE_UPUSH : return "upush";
 	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
