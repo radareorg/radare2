@@ -494,8 +494,8 @@ R_API void r_cons_canvas_circle(RConsCanvas *c, int x, int y, int w, int h, cons
 		double ca = r_num_cos (a);
 		double cx = s * ca + (size / 2);
 		double cy = s * sa + (size / 4);
-		int X = x + (xfactor * cx) - 2;
-		int Y = y + ((yfactor/2) * cy);
+		int X = x + (int)(xfactor * cx) - 2;
+		int Y = y + (int)((yfactor/2) * cy);
 		if (G (X, Y)) {
 			W ("=");
 		}

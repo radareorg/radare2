@@ -37,13 +37,15 @@ option('use_sys_openssl', type: 'boolean', value: false)
 option('static_sys_openssl', type: 'boolean', value: false)
 option('use_libuv', type: 'boolean', value: true)
 option('use_fork', type: 'boolean', value: true)
-option('sdb_cgen', type: 'boolean', value: true)
-option('use_dylink', type: 'boolean', value: true)
+option('sdb_cgen', type: 'boolean', value: true) # fails on windows builds -Duse_cgen=false
+option('use_dylink', type: 'boolean', value: true)testing
 option('debugger', type: 'boolean', value: true)
-option('want_ptrace_wrap', type: 'boolean', value: true)
+option('want_ptrace_wrap', type: 'booleamd
+
+n', value: true)
 option('nogpl', type: 'boolean', value: false)
 
 option('use_webui', type: 'boolean', value: false, description: 'install different WebUIs for radare2')
 
 option('enable_tests', type: 'boolean', value: true, description: 'Build unit tests in test/unit')
-option('enable_r2r', type: 'boolean', value: true, description: 'Build r2r executable for regression testing')
+option('enable_r2r', type: 'boolean', value: true, description: 'Build r2r executable for regression ')

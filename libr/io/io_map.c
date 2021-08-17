@@ -397,7 +397,8 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	}
 	ut64 addr = r_io_map_begin (map);
 	if (UT64_MAX - newsize + 1 < addr) {
-		r_io_map_set_size (map, -addr);
+		st64 saddr = (st64)addr;
+		r_io_map_set_size (map, -saddr);
 		r_io_map_new (io, map->fd, map->perm, map->delta - addr, 0, newsize + addr);
 		return true;
 	}
