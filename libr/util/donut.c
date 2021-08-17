@@ -36,14 +36,14 @@ in(B),t=c*h*g-f*        e;int x=40+30*D*
 // global iterators
 R_API char *r_str_donut(int osize) {
 	int size = osize;
-	static float A= 0;
-	static float B= 0;
-	float i,j,z[1760];
+	static double A= 0;
+	static double B= 0;
+	double i,j,z[1760];
 	int k;
 	char b[1760];
 	char o[1760];
-	memset (b,32,1760);
-	memset (z,0,7040) ;
+	memset (b, 32, 1760);
+	memset (z, 0, 7040) ;
 	if (osize == 0) {
 		size = 100;
 	} else {
@@ -65,11 +65,11 @@ R_API char *r_str_donut(int osize) {
 			float g = cos (A);
 			float h = d + 2;
 			float D = 1 / (c* h*e+f*g+5),l=cos(i),m=cos(B),n=sin(B),t=c*h*g-f*e;
-			int x = Align+Width*D*(l*h*m-t*n);
-			int y = 12 + Height*D*(l*h*n +t*m);
+			int x = (int)(Align+Width*D*(l*h*m-t*n));
+			int y = (int)(12 + Height*D*(l*h*n +t*m));
 			int o = x + 80 * y;
-			int N = 8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n);
-			if (22 >y && y > 0 && x > 0 && 80 >x && D > z[o]) {
+			int N = (int)(8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n));
+			if (22 >y && y > 0 && x > 0 && 80 > x && D > z[o]) {
 				z[o] = D;
 				b[o] = " .,-:!/|S$@&"[N > 0? N: 0];
 			}

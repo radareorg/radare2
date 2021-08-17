@@ -4127,7 +4127,7 @@ Operand_simm7_decode (uint32 *valp)
 {
   ut32 imm7_0 = *valp & 0x7f;
   // warning C4146: unary minus operator applied to unsigned type
-  ut32 simm7_0 = (ut32)((((-((((imm7_0 >> 6) & 1)) & (((imm7_0 >> 5) & 1)))) & 0x1ffffff)) << 7) | imm7_0;
+  ut32 simm7_0 = (ut32)((((-(st64)((((imm7_0 >> 6) & 1)) & (((imm7_0 >> 5) & 1)))) & 0x1ffffff)) << 7) | imm7_0;
   *valp = simm7_0;
   return 0;
 }

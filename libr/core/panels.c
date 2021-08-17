@@ -5673,7 +5673,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 		r_str_ansi_filter (s, NULL, NULL, -1);
 		int i, h, w = r_cons_get_size (&h);
 		for (i = 0; i < 40; i+= (1 + (i/30))) {
-			int H = i * ((double)h / 40);
+			int H = (int)(i * ((double)h / 40));
 			char *r = r_str_scale (s, w, H);
 			r_cons_clear00 ();
 			r_cons_gotoxy (0, (h / 2) - (H / 2));
