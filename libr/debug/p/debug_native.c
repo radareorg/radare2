@@ -633,7 +633,7 @@ static RList *r_debug_native_threads (RDebug *dbg, int pid) {
 #if __sun || __NetBSD__ || __KFBSD__ || __OpenBSD__ || __DragonFly__
 
 //Function to read register from Linux, BSD, Android systems
-static int bsd_reg_read (RDebug *dbg, int type, ut8* buf, int size) {
+static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 	int showfpu = false;
 	int pid = dbg->pid;
 	int ret;
