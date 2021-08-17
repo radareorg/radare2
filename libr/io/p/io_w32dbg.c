@@ -242,9 +242,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (cmd[3] == ' ') {
 			int pid = atoi (cmd + 3);
 			if (pid > 0 && pid != wrap->pi.dwThreadId && pid != wrap->pi.dwProcessId) {
-				wrap->pi.hThread = OpenThread (PROCESS_ALL_ACCESS, FALSE, pid);
-				if (!wrap->pi.hThread) {
-					eprintf ("Cannot attach to %d\n", pid);
+				HANDLE ht = OpenThread (PROCESS_ALL_ACCESS, FALSE, pid);
+				if (ht) {
+					wrap->pi.hThread = ht;
+				} else {
+					eprintf ("Cannot attach to %d (%s)\n", pid, cmd);
 				}
 			}
 		}

@@ -252,7 +252,7 @@ static void r_debug_lstThreadAdd (DWORD pid, DWORD tid, HANDLE hThread, LPVOID  
 			lstThreadPtr->hThread = hThread;
 			lstThreadPtr->lpThreadLocalBase = lpThreadLocalBase;
 			lstThreadPtr->lpStartAddress = lpStartAddress;
-			if (w32_NtQueryInformationThread (hThread, 0x9 /*ThreadQuerySetWin32StartAddress*/, &startAddress, sizeof (PVOID), NULL) == 0) {
+			if (w32_NtQueryInformationThread && w32_NtQueryInformationThread (hThread, 0x9 /*ThreadQuerySetWin32StartAddress*/, &startAddress, sizeof (PVOID), NULL) == 0) {
 				lstThreadPtr->lpThreadEntryPoint = startAddress;
 			}
 			return;

@@ -449,7 +449,8 @@ R_API bool r_debug_attach(RDebug *dbg, int pid) {
 	if (dbg->h && dbg->h->attach) {
 		ret = dbg->h->attach (dbg, pid) != -1;
 		if (ret) {
-			r_debug_select (dbg, pid, ret); //dbg->pid, dbg->tid);
+		//	r_debug_select (dbg, pid, ret);
+			r_debug_select (dbg, dbg->pid, dbg->tid);
 		}
 	}
 	dbg->reason.type = R_DEBUG_REASON_STOPPED;
