@@ -30,19 +30,14 @@ if %ERRORLEVEL% == 0 (
   echo === Installing pyenv + meson + ninja
   python -m venv venv
   call venv\Scripts\activate.bat
-  pip install -UI pip meson ninja
-  preconfigure.bat
-  exit /b 0
-
   echo === Testing for meson and ninja...
-  call venv\Scripts\activate.bat
-
   meson --help > NUL 2> NUL
   if %ERRORLEVEL% == 0 (
     echo FOUND
   ) else (
-    echo LE FAIL
-    exit /b 1
+    pip install -UI pip meson ninja
+    preconfigure.bat
+    exit /b 0
   )
 )
 echo === Finding Visual Studio...
@@ -53,16 +48,16 @@ if %ERRORLEVEL% == 0 (
 
 if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community" (
   echo "Found community edition"
-  "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+  call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 ) else (
   if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
     echo "Found Enterprise edition"
-    "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"
+    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"
   ) else (
     echo "Not Found"
     exit /b 1
   )
 )
 )
-
+echo Now you can run 'configure'
 cmd
