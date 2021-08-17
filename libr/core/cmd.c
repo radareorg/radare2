@@ -3335,7 +3335,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	bool cmd_tmpseek = false;
 	ut64 tmpbsz = core->blocksize;
 	int cmd_ignbithints = -1;
-	
 	if (!cmd) {
 		r_list_free (tmpenvs);
 		return 0;
