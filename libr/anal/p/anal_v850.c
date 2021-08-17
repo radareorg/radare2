@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2020 - pancake
+/* radare - LGPL - Copyright 2012-2021 - pancake
 	2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
 #include <string.h>
@@ -566,6 +566,7 @@ static RList *anal_preludes(RAnal *anal) {
 static int archinfo(RAnal *anal, int q) {
 	switch (q) {
 	case R_ANAL_ARCHINFO_ALIGN:
+	case R_ANAL_ARCHINFO_DATA_ALIGN:
 		return 2;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return 8;
