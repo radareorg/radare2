@@ -477,7 +477,7 @@ static RFlagItem *evalFlag(RFlag *f, RFlagItem *item) {
 /* return true if flag.* exist at offset. Otherwise, false is returned.
  * For example (f, "sym", 3, 0x1000)*/
 R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off) {
-	r_return_val_if_fail (f && flag_prefix, NULL);
+	r_return_val_if_fail (f && flag_prefix, false);
 	RListIter *iter = NULL;
 	RFlagItem *item = NULL;
 	if (f->mask) {

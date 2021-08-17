@@ -38,7 +38,7 @@ static bool buf_bytes_init(RBuffer *b, const void *user) {
 		priv->buf = malloc (priv->length);
 		if (!priv->buf) {
 			free (priv);
-			return NULL;
+			return false;
 		}
 		if (priv->length) {
 			memmove (priv->buf, u->data, priv->length);
