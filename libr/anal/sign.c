@@ -2750,9 +2750,8 @@ R_API int r_sign_metric_search(RAnal *a, RSignSearchMetrics *sm) {
 		if (match < 0) {
 			count = -1;
 			break;
-		} else if (count > 0) {
-			count++;
 		}
+		count++;
 	}
 	r_cons_break_pop ();
 	return count;

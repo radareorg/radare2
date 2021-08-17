@@ -18,7 +18,7 @@ static bool file_copyp(const char *src, const char *dst) {
 		return r_file_copy (src, dst);
 	}
 	char *dir;
-	{	const char *d =r_str_rchr (dst, dst + r_str_len_utf8 (dst) - 1,
+	{	const char *d = r_str_rchr (dst, dst + r_str_len_utf8 (dst) - 1,
 			*R_SYS_DIR);
 		if (!d) {
 			return false;
@@ -735,7 +735,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	}
 	if (!message) {
 		char *path = NULL;
-		r_file_mkstemp ("rvc", &path);
+		(void)r_file_mkstemp ("rvc", &path);
 		if (path) {
 			char *editor = r_sys_getenv ("EDITOR");
 			if (!R_STR_ISEMPTY (editor)) {
@@ -748,10 +748,6 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 					free (path);
 					return false;
 				}
-			} else {
-				free (editor);
-				free (path);
-				return false;
 			}
 			FILE *f = fopen (path, "r");
 			free (path);

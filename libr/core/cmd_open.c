@@ -1449,6 +1449,7 @@ static int cmd_open(void *data, const char *input) {
 				}
 				return 1;
 			}
+			break;
 		case '?': // "oa?"
 			r_core_cmd_help (core, help_msg_oa);
 			break;
