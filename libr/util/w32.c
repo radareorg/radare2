@@ -87,53 +87,59 @@ static bool setup_debug_privilege_noarg(void) {
 	return ret;
 }
 
-
 R_API bool r_w32_init(void) {
 	HANDLE lib;
 	if (w32_DebugActiveProcessStop) {
-		return false;
+	//	return false;
 	}
-
 	// escalate privs (required for win7/vista)
-	setup_debug_privilege_noarg ();
-
+	setup_debug_privilege_noarg();
+	lib = GetModuleHandle (TEXT ("kernel32"));
+	
+	if (!lib) {
+		lib = LoadLibrary (TEXT("kernel32.dll"));
+		if (!lib) {
+			eprintf ("Cannot load kernel32.dll. Aborting\n");
+			return false;
+		}
+	}
 	// lookup function pointers for portability
-	w32_DebugActiveProcessStop = (BOOL (*)(DWORD))
-		GetProcAddress (GetModuleHandle (TEXT ("kernel32")),
-				"DebugActiveProcessStop");
-	w32_OpenThread = (HANDLE (*)(DWORD, BOOL, DWORD))
-		GetProcAddress (GetModuleHandle (TEXT ("kernel32")), "OpenThread");
-	w32_OpenProcess = (HANDLE (*)(DWORD, BOOL, DWORD))
-		GetProcAddress (GetModuleHandle (TEXT ("kernel32")), "OpenProcess");
+	w32_DebugActiveProcessStop = (BOOL (*)(DWORD))GetProcAddress (lib, "DebugActiveProcessStop");
+	w32_OpenThread = (HANDLE (*)(DWORD, BOOL, DWORD))GetProcAddress (lib, "OpenThread");
+	w32_OpenProcess = (HANDLE (*)(DWORD, BOOL, DWORD))GetProcAddress (lib, "OpenProcess");
+
 	w32_DebugBreakProcess = (BOOL (*)(HANDLE))
-		GetProcAddress (GetModuleHandle (TEXT ("kernel32")),
-				"DebugBreakProcess");
+		GetProcAddress (lib, "DebugBreakProcess");
 	w32_CreateToolhelp32Snapshot = (HANDLE (*)(DWORD, DWORD))
-		GetProcAddress (GetModuleHandle (TEXT ("kernel32")),
-			       "CreateToolhelp32Snapshot");
+		GetProcAddress (lib, "CreateToolhelp32Snapshot");
+	
 	// only windows vista :(
 	w32_GetThreadId = (DWORD (*)(HANDLE))
-		GetProcAddress (GetModuleHandle (TEXT ("kernel32")), "GetThreadId");
+		GetProcAddress (lib, "GetThreadId");
 	// from xp1
 	w32_GetProcessId = (DWORD (*)(HANDLE))
-		GetProcAddress (GetModuleHandle (TEXT ("kernel32")), "GetProcessId");
+		GetProcAddress (lib, "GetProcessId");
 	w32_QueryFullProcessImageName = (BOOL (*)(HANDLE, DWORD, LPTSTR, PDWORD))
-		GetProcAddress (GetModuleHandle (TEXT ("kernel32")), W32_TCALL ("QueryFullProcessImageName"));
+		GetProcAddress (lib, W32_TCALL ("QueryFullProcessImageName"));
 	// api to retrieve YMM from w7 sp1
-	w32_GetEnabledXStateFeatures = (ut64 (*) ())
-		GetProcAddress(GetModuleHandle (TEXT ("kernel32")), "GetEnabledXStateFeatures");
+	w32_GetEnabledXStateFeatures = (ut64 (*) (void))
+		GetProcAddress(lib, "GetEnabledXStateFeatures");
 	w32_InitializeContext = (BOOL (*) (PVOID, DWORD, PCONTEXT*, PDWORD))
-		GetProcAddress(GetModuleHandle (TEXT ("kernel32")), "InitializeContext");
+		GetProcAddress(lib, "InitializeContext");
 	w32_GetXStateFeaturesMask = (BOOL (*) (PCONTEXT Context, PDWORD64))
-		GetProcAddress(GetModuleHandle (TEXT ("kernel32")), "GetXStateFeaturesMask");
+		GetProcAddress(lib, "GetXStateFeaturesMask");
 	w32_LocateXStateFeature = (PVOID (*) (PCONTEXT Context, DWORD ,PDWORD))
-		GetProcAddress(GetModuleHandle (TEXT ("kernel32")), "LocateXStateFeature");
+		GetProcAddress(lib, "LocateXStateFeature");
 	w32_SetXStateFeaturesMask = (BOOL (*) (PCONTEXT Context, DWORD64))
-		GetProcAddress(GetModuleHandle (TEXT ("kernel32")), "SetXStateFeaturesMask");
+		GetProcAddress(lib, "SetXStateFeaturesMask");
+	lib = GetModuleHandle (TEXT ("psapi"));
+	
+	if (!lib) {
 	lib = LoadLibrary (TEXT("psapi.dll"));
-	if(!lib) {
+	if (!lib) {
 		eprintf ("Cannot load psapi.dll. Aborting\n");
 		return false;
+	}
 	}
 	w32_GetMappedFileName = (DWORD (*)(HANDLE, LPVOID, LPTSTR, DWORD))
 		GetProcAddress (lib, W32_TCALL ("GetMappedFileName"));
@@ -145,7 +151,10 @@ R_API bool r_w32_init(void) {
 		GetProcAddress (lib, "GetModuleInformation");
 	w32_GetModuleFileNameEx = (DWORD (*)(HANDLE, HMODULE, LPTSTR, DWORD))
 		GetProcAddress (lib, W32_TCALL ("GetModuleFileNameEx"));
-	lib = LoadLibrary (TEXT("ntdll.dll"));
+	lib = GetModuleHandle (TEXT ("ntdll"));
+	if (!lib) {
+		lib = LoadLibrary (TEXT("ntdll.dll"));
+	}
 	w32_NtQuerySystemInformation = (NTSTATUS  (*)(ULONG, PVOID, ULONG, PULONG))
 		GetProcAddress (lib, "NtQuerySystemInformation");
 	w32_NtDuplicateObject = (NTSTATUS  (*)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG))

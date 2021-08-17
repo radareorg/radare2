@@ -15,6 +15,7 @@ static PLIB_ITEM last_lib = NULL;
 
 bool w32_init(RDebug *dbg) {
 	W32DbgWInst *wrap = dbg->user;
+	r_w32_init ();
 	if (!wrap) {
 		if (dbg->iob.io->w32dbg_wrap) {
 			dbg->user = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
@@ -22,7 +23,6 @@ bool w32_init(RDebug *dbg) {
 			return false;
 		}
 	}
-	r_w32_init ();
 	return true;
 }
 
@@ -43,7 +43,7 @@ static PTHREAD_ITEM __r_debug_thread_add(RDebug *dbg, DWORD pid, DWORD tid, HAND
 	if (!dbg->threads) {
 		dbg->threads = r_list_newf (free);
 	}
-	if (!lpStartAddress) {
+	if (!lpStartAddress && w32_NtQueryInformationThread) {
 		w32_NtQueryInformationThread (hThread, 9, &lpStartAddress, sizeof (LPVOID), NULL);
 	}
 	THREAD_ITEM th = {
@@ -388,6 +388,12 @@ int w32_attach(RDebug *dbg, int pid) {
 	if (wrap->pi.hProcess) {
 		return wrap->pi.dwThreadId;
 	}
+	if (!w32_OpenProcess) {
+		r_w32_init ();
+		if (!w32_OpenProcess) {
+			return pid;
+		}
+	}
 	HANDLE ph = w32_OpenProcess (w32_PROCESS_ALL_ACCESS, FALSE, pid);
 	if (!ph) {
 		return -1;
@@ -498,7 +504,10 @@ static char *__resolve_path(HANDLE ph, HANDLE mh) {
 	// TODO: add maximum path length support
 	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
-	DWORD length = w32_GetModuleFileNameEx (ph, mh, filename, maxlength);
+	DWORD length = 0;
+	if (w32_GetModuleFileNameEx) {
+		length = w32_GetModuleFileNameEx (ph, mh, filename, maxlength);
+	}
 	if (length > 0) {
 		return r_sys_conv_win_to_utf8 (filename);
 	}
@@ -626,11 +635,21 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 	if (!dbg->threads) {
 		dbg->threads = r_list_newf (free);
 	}
-
 	PTHREAD_ITEM th = __find_thread (dbg, tid);
 
 	if (tid && dbg->threads && !th) {
-		th = __r_debug_thread_add (dbg, pid, tid, w32_OpenThread (w32_THREAD_ALL_ACCESS, FALSE, tid), 0, 0, FALSE);
+		if (!w32_OpenThread) {
+			r_w32_init ();
+			w32_OpenThread = OpenThread;
+			if (!w32_OpenThread) {
+				eprintf("w32_OpenThread is not in kernel32%c", 10);
+				return -1;
+			}
+		}
+		HANDLE handler = w32_OpenThread (w32_THREAD_ALL_ACCESS, FALSE, tid);
+		if (handler) {
+			th = __r_debug_thread_add (dbg, pid, tid, handler, 0, 0, FALSE);
+		}
 	}
 
 	int selected = 0;
@@ -1109,6 +1128,9 @@ int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 }
 
 RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
+		if (!w32_CreateToolhelp32Snapshot) {
+		return NULL;
+	}
 	// pid is not respected for TH32CS_SNAPTHREAD flag
 	HANDLE th = w32_CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, 0);
 	if (th == INVALID_HANDLE_VALUE) {
@@ -1291,6 +1313,9 @@ static RDebugPid *__build_debug_pid(int pid, int ppid, HANDLE ph, const TCHAR* n
 }
 
 RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
+	if (!w32_CreateToolhelp32Snapshot) {
+		return NULL;
+	}
 	HANDLE sh = w32_CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, pid);
 	if (sh == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("w32_pid_list/CreateToolhelp32Snapshot");

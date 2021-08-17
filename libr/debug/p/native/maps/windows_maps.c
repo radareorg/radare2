@@ -77,6 +77,9 @@ R_API RList *r_w32_dbg_modules(RDebug *dbg) {
 	MODULEENTRY32 me;
 	RList *list = r_list_newf ((RListFree)r_debug_map_free);
 	DWORD flags = TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32;
+	if (!w32_CreateToolhelp32Snapshot) {
+		return NULL;
+	}
 	HANDLE h_mod_snap = w32_CreateToolhelp32Snapshot (flags, dbg->pid);
 
 	if (h_mod_snap == INVALID_HANDLE_VALUE) {
