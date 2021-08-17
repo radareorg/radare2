@@ -33,6 +33,7 @@ typedef enum {
 	R_SIGN_BBHASH = 'h', // basic block hash
 	R_SIGN_END = '\x00', // used for sentenal value
 } RSignType;
+#define R_SIGN_TYPEMAX 16
 
 typedef struct r_sign_graph_t {
 	int cc;
@@ -78,7 +79,7 @@ typedef struct r_sign_search_met {
 	/* types is an R_SIGN_END terminated array of RSignTypes that are going to be
 	 * searched for. Valid types are: graph, offset, refs, bbhash, types, vars
 	 */
-	RSignType types[8];
+	RSignType types[R_SIGN_TYPEMAX];
 	int mincc; // min complexity for graph search
 	int minsz;
 	RAnal *anal;
