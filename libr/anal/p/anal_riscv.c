@@ -67,7 +67,8 @@ static struct riscv_opcode *get_opcode(insn_t word) {
 }
 
 /* Print insn arguments for 32/64-bit code.  */
-static void get_insn_args(riscv_args_t *args, const char *d, insn_t l, ut64 pc) {
+static void get_insn_args(riscv_args_t *args, const char *d, insn_t _l, ut64 pc) {
+	int l = _l;
 	int rs1 = (l >> OP_SH_RS1) & OP_MASK_RS1;
 	int rd = (l >> OP_SH_RD) & OP_MASK_RD;
 	ut64 target;

@@ -805,12 +805,12 @@ static char *__r_debug_get_dll(void) {
 }
 #endif
 
-int w32_dbg_wait(RDebug *dbg, int pid) {
+RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 	W32DbgWInst *wrap = dbg->user;
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
 	char *dllname = NULL;
-	int ret = R_DEBUG_REASON_UNKNOWN;
+	RDebugReasonType ret = R_DEBUG_REASON_UNKNOWN;
 	static int exited_already = 0;
 
 	r_cons_break_push (w32_break_process, dbg);
