@@ -640,9 +640,8 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 	if (tid && dbg->threads && !th) {
 		if (!w32_OpenThread) {
 			r_w32_init ();
-			w32_OpenThread = OpenThread;
 			if (!w32_OpenThread) {
-				eprintf("w32_OpenThread is not in kernel32%c", 10);
+				eprintf("w32_OpenThread is not in kernel32\n");
 				return -1;
 			}
 		}
