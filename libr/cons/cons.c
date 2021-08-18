@@ -1914,11 +1914,11 @@ R_API void r_cons_highlight(const char *word) {
 R_API char *r_cons_lastline(int *len) {
 	char *b = I.context->buffer + I.context->buffer_len;
 	while (b > I.context->buffer) {
+		b--;
 		if (*b == '\n') {
 			b++;
 			break;
 		}
-		b--;
 	}
 	if (len) {
 		int delta = b - I.context->buffer;
