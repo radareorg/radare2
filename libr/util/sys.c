@@ -341,11 +341,7 @@ R_API void r_sys_backtrace(void) {
 		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	}
 #else
-#ifdef _MSC_VER
 #pragma message ("TODO: r_sys_bt : unimplemented")
-#else
-#warning TODO: r_sys_bt : unimplemented
-#endif
 #endif
 }
 
@@ -407,11 +403,7 @@ R_API int r_sys_clearenv(void) {
 #endif
 	return 0;
 #else
-#ifdef _MSC_VER
 #pragma message ("r_sys_clearenv : unimplemented for this platform")
-#else
-#warning r_sys_clearenv : unimplemented for this platform
-#endif
 	return 0;
 #endif
 }
@@ -437,7 +429,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 	free (value_);
 	return ret ? 0 : -1;
 #else
-#warning r_sys_setenv : unimplemented for this platform
+#pragma message("r_sys_setenv : unimplemented for this platform")
 	return 0;
 #endif
 }
@@ -825,11 +817,7 @@ R_API int r_sys_cmdbg (const char *str) {
 	exit (0);
 	return -1;
 #else
-#ifdef _MSC_VER
 #pragma message ("r_sys_cmdbg is not implemented for this platform")
-#else
-#warning r_sys_cmdbg is not implemented for this platform
-#endif
 	return -1;
 #endif
 }
@@ -1182,7 +1170,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	return result;
 #elif __APPLE__
 #if __POWERPC__
-#warning TODO getpidproc
+#pragma message("TODO getpidproc")
 	return NULL;
 #else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
@@ -1278,7 +1266,7 @@ R_API char *r_sys_whoami(void) {
 
 R_API int r_sys_uid(void) {
 #if __WINDOWS__
-#warning r_sys_uid not implemented for windows
+#pragma message ("r_sys_uid not implemented for windows")
 	char buf[32];
 	DWORD buf_sz = sizeof (buf);
 	// TODO
@@ -1301,7 +1289,7 @@ R_API int r_sys_getpid(void) {
 #elif __WINDOWS__
 	return GetCurrentProcessId();
 #else
-#warning r_sys_getpid not implemented for this platform
+#pragma message ("r_sys_getpid not implemented for this platform")
 	return -1;
 #endif
 }
