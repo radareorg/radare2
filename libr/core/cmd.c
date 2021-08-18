@@ -3928,7 +3928,7 @@ repeat_arroba:
 							}
 							tmpdesc = d;
 							if (pamode) {
-								r_config_set_i (core->config, "io.va", 1);
+								r_config_set_b (core->config, "io.va", true);
 							}
 							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						}
@@ -4004,7 +4004,7 @@ repeat_arroba:
 						}
 						tmpdesc = d;
 						if (pamode) {
-							r_config_set_i (core->config, "io.va", 1);
+							r_config_set_b (core->config, "io.va", true);
 						}
 						r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						r_core_block_size (core, len);
@@ -4029,7 +4029,7 @@ repeat_arroba:
 								}
 								tmpdesc = d;
 								if (pamode) {
-									r_config_set_i (core->config, "io.va", 1);
+									r_config_set_b (core->config, "io.va", true);
 								}
 								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 								r_core_block_size (core, len);
@@ -4085,7 +4085,7 @@ repeat_arroba:
 						RBuffer *b = r_buf_new_with_bytes (buf, len);
 						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
 						if (!core->io->va) {
-							r_config_set_i (core->config, "io.va", 1);
+							r_config_set_b (core->config, "io.va", true);
 						}
 						if (d) {
 							if (tmpdesc) {
@@ -4093,7 +4093,7 @@ repeat_arroba:
 							}
 							tmpdesc = d;
 							if (pamode) {
-								r_config_set_i (core->config, "io.va", 1);
+								r_config_set_b (core->config, "io.va", true);
 							}
 							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 							r_core_block_size (core, len);
@@ -4262,7 +4262,7 @@ next_arroba:
 		}
 		if (tmpdesc) {
 			if (pamode) {
-				r_config_set_i (core->config, "io.va", 0);
+				r_config_set_b (core->config, "io.va", false);
 			}
 			r_io_desc_close (tmpdesc);
 			tmpdesc = NULL;

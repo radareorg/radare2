@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2020 - pancake, maijin */
+/* radare - LGPL - Copyright 2010-2021 - pancake, rhl */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -339,14 +339,14 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	if (!r_project_open (core->prj, prj_name, rcpath)) {
 		return false;
 	}
-	const bool cfg_fortunes = r_config_get_i (core->config, "cfg.fortunes");
+	const bool cfg_fortunes = r_config_get_b (core->config, "cfg.fortunes");
 	const bool scr_interactive = r_cons_is_interactive ();
-	const bool scr_prompt = r_config_get_i (core->config, "scr.prompt");
+	const bool scr_prompt = r_config_get_b (core->config, "scr.prompt");
 	(void) load_project_rop (core, prj_name);
 	bool ret = r_core_cmd_file (core, rcpath);
-	r_config_set_i (core->config, "cfg.fortunes", cfg_fortunes);
-	r_config_set_i (core->config, "scr.interactive", scr_interactive);
-	r_config_set_i (core->config, "scr.prompt", scr_prompt);
+	r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
+	r_config_set_b (core->config, "scr.interactive", scr_interactive);
+	r_config_set_b (core->config, "scr.prompt", scr_prompt);
 	r_config_bump (core->config, "asm.arch");
 	r_config_set (core->config, "prj.name", prj_name);
 	return ret;
