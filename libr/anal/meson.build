@@ -137,6 +137,33 @@ r_anal_sources = [
   '../asm/arch/pyc/opcode.c',
   '../asm/arch/pyc/pyc_dis.c'
 ]
+incdirs = [
+    'arch/gb',
+    'arch/hexagon'
+]
+
+if get_option('use_v35')
+r_anal_sources += [
+  'p/anal_arm_v35.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode0.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode1.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode2.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode_fields32.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/decode_scratchpad.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/encodings_dec.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/encodings_fmt.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/format.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/gofer.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/operations.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/pcode.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/regs.c',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler/sysregs.c'
+]
+incdirs += [
+    '../asm/arch/arm/v35arm64/arch-arm64/disassembler',
+]
+endif
 
 if get_option('sdb_cgen')
   r_anal_sources += r_anal_d_sources
@@ -144,10 +171,7 @@ endif
 
 r_anal_inc = [
   platform_inc,
-  include_directories(
-    'arch/gb',
-    'arch/hexagon',
-  )
+  include_directories(incdirs)
 ]
 
 r_anal = library('r_anal', r_anal_sources,
