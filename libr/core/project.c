@@ -16,8 +16,7 @@ static bool is_valid_project_name(const char *name) {
 	if (r_str_len_utf8 (name) >= 16) {
 		return false;
 	}
-	const char  *extention = r_str_endswith (name, ".zip") ?
-		r_str_last (name, ".zip") : NULL;
+	const char *extention = r_str_endswith (name, ".zip") ? r_str_last (name, ".zip") : NULL;
 	for (; *name && name != extention; name++) {
 		if (IS_DIGIT (*name) || IS_LOWER (*name) || *name == '_') {
 			continue;
@@ -137,7 +136,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
-static inline void remove_project_file(char * path) {
+static inline void remove_project_file(char *path) {
 	if (r_file_exists (path)) {
 		r_file_rm (path);
 		eprintf ("rm %s\n", path);
@@ -252,7 +251,7 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 		return false;
 	}
 	if (rop_db) {
-		ls_foreach (core->sdb->ns, it, ns){
+		ls_foreach (core->sdb->ns, it, ns) {
 			if (ns->sdb == rop_db) {
 				ls_delete (core->sdb->ns, it);
 				found = true;
@@ -369,7 +368,7 @@ R_API RThread *r_core_project_load_bg(RCore *core, const char *prj_name, const c
 	RThread *th = r_th_new (project_load_background, ps, false);
 	if (th) {
 		r_th_start (th, true);
-		char thname[32] = {0};
+		char thname[32] = { 0 };
 		size_t thlen = R_MIN (strlen (prj_name), sizeof (thname) - 1);
 		r_str_ncpy (thname, prj_name, thlen);
 		r_th_setname (th, thname);
@@ -474,9 +473,9 @@ static bool store_files_and_maps(RCore *core, RIODesc *desc, ut32 id) {
 		// reload bin info
 		r_cons_printf ("\"obf %s\"\n", desc->uri);
 		r_cons_printf ("\"ofs \\\"%s\\\" %s\"\n", desc->uri, r_str_rwx_i (desc->perm));
-		if ((maps = r_io_map_get_by_fd (core->io, id))) {	//wtf
+		if ((maps = r_io_map_get_by_fd (core->io, id))) { //wtf
 			r_list_foreach (maps, iter, map) {
-				r_cons_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", fdc,
+				r_cons_printf ("om %d 0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x " %s%s%s\n", fdc,
 					r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
 					map->name ? " " : "", r_str_get (map->name));
 			}
@@ -583,7 +582,8 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts) {
 	r_core_cmd (core, "wc*", 0);
 	if (opts & R_CORE_PRJ_ANAL_SEEK) {
 		r_cons_printf ("# seek\n"
-			"s 0x%08"PFMT64x "\n", core->offset);
+			       "s 0x%08" PFMT64x "\n",
+			core->offset);
 		r_cons_flush ();
 	}
 
@@ -628,9 +628,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	if (!prj_dir) {
 		prj_dir = strdup (prj_name);
 	}
-	if (r_core_is_project (core, prj_name)
-			&& strcmp (prj_name,
-				r_config_get (core->config, "prj.name"))) {
+	if (r_core_is_project (core, prj_name) && strcmp (prj_name, r_config_get (core->config, "prj.name"))) {
 		eprintf ("A project with this name already exists\n");
 		free (script_path);
 		free (prj_dir);
@@ -687,18 +685,9 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		}
 		RList *paths = r_list_new ();
 		if (paths) {
-			char *p = r_sys_getdir ();
-			if (p) {
-				if (r_list_append (paths, p)) {
-					if (!rvc_git_commit (core, prj_dir, NULL, NULL, paths)) {
-						r_list_free (paths);
-						free (prj_dir);
-						free (script_path);
-						return false;
-					}
-				} else {
+			if (r_list_append (paths, prj_dir)) {
+				if (!rvc_git_commit (core, prj_dir, NULL, NULL, paths)) {
 					r_list_free (paths);
-					free (p);
 					free (prj_dir);
 					free (script_path);
 					return false;
@@ -754,8 +743,8 @@ R_API bool r_core_project_is_saved(RCore *core) {
 	bool ret;
 	char *saved_dat, *tmp_dat;
 	char *pd = r_str_newf ("%s" R_SYS_DIR "%s",
-			r_config_get (core->config, "dir.projects"),
-			r_config_get (core->config, "prj.name"));
+		r_config_get (core->config, "dir.projects"),
+		r_config_get (core->config, "prj.name"));
 	if (!pd) {
 		return false;
 	}
@@ -778,7 +767,7 @@ R_API bool r_core_project_is_saved(RCore *core) {
 		free (tsp);
 		return false;
 	}
- 	//Would be better if I knew how to map files in mem in windows
+	//Would be better if I knew how to map files in mem in windows
 	tmp_dat = r_file_slurp (tsp, 0);
 	r_file_rm (tsp);
 	free (tsp);

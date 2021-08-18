@@ -1189,7 +1189,7 @@ R_API bool r_vc_git_add(const char *path, const char *fname) {
 }
 
 R_API bool r_vc_git_commit(const char *path, const char *message) {
-	return message ? !r_sys_cmdf ("git -C %s commit -m %s",
+	return !R_STR_ISEMPTY(message) ? !r_sys_cmdf ("git -C %s commit -m %s",
 			r_str_escape (path), r_str_escape (message)):
 		!r_sys_cmdf ("git -C \"%s\" commit", r_str_escape (path));
 }
@@ -1197,7 +1197,7 @@ R_API bool r_vc_git_commit(const char *path, const char *message) {
 //Access both git and rvc functionality from one set of functions
 
 R_API bool rvc_git_init(const RCore *core, const char *rp) {
-	if (strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
+	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "git")) {
 		return r_vc_git_init (rp);
 	}
 	printf ("rvc is just for testing please don't use it\n");
@@ -1207,13 +1207,16 @@ R_API bool rvc_git_init(const RCore *core, const char *rp) {
 R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files) {
 	const char *m = r_config_get (core->config, "prj.vc.message");
 	if (!*m) {
-		if (r_cons_is_interactive ()) {
+		if (!r_cons_is_interactive ()) {
 			r_config_set (core->config,
 					"prj.vc.message", "test");
-			message = m;
+			m = r_config_get (core->config, "prj.vc.message");
 		}
-	} else {
-		message = m;
+	}
+	message = message? message : m;
+	if (!message) {
+		eprintf ("Empty message and prj.vc.message is not set\n");
+		return false;
 	}
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		author = author? author : r_config_get (core->config, "cfg.user");
