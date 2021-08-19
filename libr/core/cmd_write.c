@@ -522,41 +522,43 @@ static void cmd_write_value(RCore *core, const char *input) {
 			type = (off & UT64_32U)? 8: 4;
 		}
 		switch (type) {
-			case 1:
-				r_write_ble8 (buf, (ut8)(off & UT8_MAX));
-				if (!r_io_write (core->io, buf, 1)) {
-					cmd_write_fail (core);
-				} else {
-					WSEEK (core, 1);
-				}
-				break;
-			case 2:
-				r_write_ble16 (buf, (ut16)(off & UT16_MAX), be);
-				if (!r_io_write (core->io, buf, 2)) {
-					cmd_write_fail (core);
-				} else {
-					WSEEK (core, 2);
-				}
-				break;
-			case 4:
-				r_write_ble32 (buf, (ut32)(off & UT32_MAX), be);
-				if (!r_io_write (core->io, buf, 4)) {
-					cmd_write_fail (core);
-				} else {
-					WSEEK (core, 4);
-				}
-				break;
-			case 8:
-				r_write_ble64 (buf, off, be);
-				if (!r_io_write (core->io, buf, 8)) {
-					cmd_write_fail (core);
-				} else {
-					WSEEK (core, 8);
-				}
-				break;
+		case 1:
+			r_write_ble8 (buf, (ut8)(off & UT8_MAX));
+			if (!r_io_write (core->io, buf, 1)) {
+				cmd_write_fail (core);
+			} else {
+				WSEEK (core, 1);
+			}
+			break;
+		case 2:
+			r_write_ble16 (buf, (ut16)(off & UT16_MAX), be);
+			if (!r_io_write (core->io, buf, 2)) {
+				cmd_write_fail (core);
+			} else {
+				WSEEK (core, 2);
+			}
+			break;
+		case 4:
+			r_write_ble32 (buf, (ut32)(off & UT32_MAX), be);
+			if (!r_io_write (core->io, buf, 4)) {
+				cmd_write_fail (core);
+			} else {
+				WSEEK (core, 4);
+			}
+			break;
+		case 8:
+			r_write_ble64 (buf, off, be);
+			if (!r_io_write (core->io, buf, 8)) {
+				cmd_write_fail (core);
+			} else {
+				WSEEK (core, 8);
+			}
+			break;
 		}
-		addr += 4;
+		addr += type;
 	}
+	r_list_free (list);
+	free (inp);
 	r_core_block_read (core);
 }
 
