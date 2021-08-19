@@ -2559,7 +2559,7 @@ static void __init_autocomplete_default (RCore* core) {
 		"db-", "dbc", "dbC", "dbd", "dbe", "dbs", "dbi", "dbte", "dbtd", "dbts", NULL
 	};
 	const char *files[] = {
-		".", "..", ".*", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
+		".", "..", ".*", ":. ", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
 		"idp", "idpi", "L", "obf", "o+", "oc", "r2", "rabin2", "rasm2", "rahash2", "rax2",
 		"rafind2", "cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
