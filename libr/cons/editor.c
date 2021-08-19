@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2018 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include <r_cons.h>
 #define I r_cons_singleton ()

@@ -3507,7 +3507,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "vi"));
 #endif
 	free (p);
-	r_config_desc (cfg, "cfg.editor", "Select default editor program");
+	r_config_desc (cfg, "cfg.editor", "Select default editor program, portable %EDITOR");
 	char *whoami = r_sys_whoami ();
 	SETPREF ("cfg.user", whoami, "Set current username/pid");
 	free (whoami);

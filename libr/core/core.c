@@ -3708,7 +3708,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 	char *name = NULL, *ret = NULL;
 	int fd;
 
-	if (!interactive || !editor || !*editor) {
+	if (!interactive) {
 		return NULL;
 	}
 	bool readonly = false;
