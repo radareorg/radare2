@@ -367,13 +367,18 @@ static bool traverse_files(RList *dst, const char *dir) {
 	if (!r_list_empty (dst)) {
 		char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", dir);
 		if (!vcp) {
+			r_list_free (files);
 			return false;
 		}
 		if (r_file_is_directory (vcp)) {
+			r_list_free (files);
+			free (vcp);
 			return true;
 		}
+		free (vcp);
 	}
 	if (!files) {
+		r_list_free (files);
 		return false;
 	}
 	r_list_foreach (files, iter, name) {
