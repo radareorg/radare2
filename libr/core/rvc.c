@@ -740,16 +740,16 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 			char *editor = r_sys_getenv ("EDITOR");
 			if (!R_STR_ISEMPTY (editor)) {
 				if (r_sys_cmdf ("%s %s", editor, path)) {
-					eprintf ("Please set the $EDITOR env var\n");
 					r_file_rm (path);
 					free (path);
 					free (editor);
 					return false;
 				}
 			} else {
+				eprintf ("Please set the $EDITOR env var\n");
+				r_file_rm (path);
 				free (editor);
 				free (path);
-				r_file_rm (path);
 				return false;
 			}
 			FILE *f = fopen (path, "r");
