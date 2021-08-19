@@ -123,6 +123,7 @@ static const char *help_msg_slash_c[] = {
 	"Usage: /c", "", "Search for crypto materials",
 	"/ca", "", "Search for AES keys expanded in memory",
 	"/cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
+	"/ck", "", "Find well known constant tables from different hash and crypto algorithms",
 	"/cd", "", "Search for ASN1/DER certificates",
 	"/cr", "", "Search for ASN1/DER private keys (RSA and ECC)",
 	"/cg", "", "Search for GPG/PGP keys and signatures (Plaintext and binary form)",
@@ -3530,6 +3531,51 @@ reread:
 	case 'c': { // "/c"
 		dosearch = true;
 		switch (input[1]) {
+		case 'k': // "/ck"
+			{
+				const bool le = !r_config_get_b (core->config, "cfg.bigendian");
+				RSearchKeyword *kw;
+				r_search_reset (core->search, R_SEARCH_KEYWORD);
+
+				// aes round constant table
+				kw = r_search_keyword_new_hexmask ("01020408102040801b366cc0ab4d9a2f5ebf63c697356ad4b37dfaefc591", NULL); // AES
+				r_search_kw_add (search, kw);
+
+				// base64
+				kw = r_search_keyword_new_str ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", NULL, NULL, false);
+				r_search_kw_add (search, kw);
+
+				// blowfish
+				if (le) {
+					// LE blowfish
+					kw = r_search_keyword_new_hexmask ("886a3f24d308a3852e8a191344737003223809a4d0319f2998fa2e08896c4eece62128457713d038cf6654be6c0ce934b729acc0dd507cc9b5d5843f170947b5", NULL);
+				} else {
+					// BE blowfish
+					kw = r_search_keyword_new_hexmask ("243f6a8885a308d313198a2e03707344a4093822299f31d0082efa98ec4e6c89452821e638d01377be5466cf34e90c6cc0ac29b7c97c50dd3f84d5b5b5470917", NULL);
+				}
+				r_search_kw_add (search, kw);
+
+				// crc32
+				kw = (le)
+					? r_search_keyword_new_hexmask ("00000000963007772c610eeeba51099919c46d078ff46a7035a563e9a395649e3288db0ea4b8dc791ee9d5e088d9d2972b4cb609bd7cb17e072db8e7911dbf90", NULL)
+					: r_search_keyword_new_hexmask ("0000000077073096ee0e612c990951ba076dc419706af48fe963a5359e6495a30edb883279dcb8a4e0d5e91e97d2d98809b64c2b7eb17cbde7b82d0790bf1d91", NULL);
+				r_search_kw_add (search, kw);
+
+				// sha256
+				kw = (le)
+					? r_search_keyword_new_hexmask ("67e6096a85ae67bb72f36e3c3af54fa57f520e518c68059babd9831f19cde05b", NULL)
+					: r_search_keyword_new_hexmask ("6a09e667bb67ae853c6ef372a54ff53a510e527f9b05688c1f83d9ab5be0cd19", NULL);
+				r_search_kw_add (search, kw);
+
+				// rc2
+				kw = r_search_keyword_new_hexmask ("d978f9c419ddb5ed28e9fd794aa0d89dc67e37832b76538e624c6488448bfba2", NULL);
+				r_search_kw_add (search, kw);
+
+				// serpent
+				kw = r_search_keyword_new_hexmask ("00204060012141610222426203234363042444640525456506264666072747", NULL);
+				r_search_kw_add (search, kw);
+				break;
+			}
 		case 'c': // "/cc"
 			{
 				ret = false;
