@@ -1416,7 +1416,7 @@ R_API void r_sign_close_match_free(RSignCloseMatch *match) {
 }
 
 static bool _closest_match_cb(RSignItem *it, void *user) {
-	return closest_match_update (it, (ClosestMatchData *)user)? 1: 0;
+	return closest_match_update (it, (ClosestMatchData *)user);
 }
 
 R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double score_threshold) {
