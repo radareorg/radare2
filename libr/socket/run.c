@@ -59,13 +59,6 @@
 #define pid_t int
 #endif
 
-#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
-#undef HAVE_PTY
-#define HAVE_PTY 0
-#else
-#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
-#endif
-
 
 #if HAVE_PTY
 static int (*dyn_openpty)(int *amaster, int *aslave, char *name, struct termios *termp, struct winsize *winp) = NULL;

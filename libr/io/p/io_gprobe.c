@@ -5,11 +5,6 @@
 #include <r_util.h>
 #include <r_util/r_print.h>
 
-#if __UNIX__
-#include <errno.h>
-#include <fcntl.h>
-#endif
-
 #define USE_OWNTIMER 1
 #if USE_OWNTIMER
 #include "io_gprobe.h"
@@ -26,7 +21,12 @@
 #include <windows.h>
 #else
 
-#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__ || __serenity__
+#if __UNIX__
+#include <errno.h>
+#include <fcntl.h>
+#endif
+
+#if HAVE_PTY
 #include <sys/ioctl.h>
 #include <termios.h>
 #else
