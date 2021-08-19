@@ -765,7 +765,6 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 				fread (m, sizeof (char), MAX_MESSAGE_LEN, f);
 				fclose (f);
 				message = m;
-				printf ("Going out of %s\n", m);
 			} else {
 				free (path);
 				return false;
@@ -776,20 +775,16 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	} else if (r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
 		return false;
 	}
-	printf ("Got the message %s\n", message);
 	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
 	}
-	printf ("Finished Blobs\n");
 	if (r_list_empty (blobs)) {
 		r_list_free (blobs);
 		eprintf ("Nothing to commit\n");
 		return false;
 	}
-	printf ("list is not empty\n");
 	commit_hash = write_commit (rp, message, author, blobs);
-	printf ("worte the commit and got the has %s\n", commit_hash);
 	if (!commit_hash) {
 		free_blobs (blobs);
 		return false;
@@ -1102,7 +1097,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		free (fname);
 		if (!fhash) {
 			if (!r_file_rm (file)) {
-				printf ("Failed to remove the file %s\n",
+				eprintf ("Failed to remove the file %s\n",
 						file);
 				goto fail_ret;
 			}
@@ -1111,7 +1106,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		if (!strcmp (fhash, NULLVAL)) {
 			free (fhash);
 			if (!r_file_rm (file)) {
-				printf ("Failed to remove the file %s\n",
+				eprintf ("Failed to remove the file %s\n",
 						file);
 				goto fail_ret;
 			}
@@ -1125,7 +1120,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		}
 		if (!file_copyp (blob_path, file)) {
 			free (blob_path);
-			printf ("Failed to checkout the file %s\n", file);
+			eprintf ("Failed to checkout the file %s\n", file);
 			goto fail_ret;
 		}
 	}
