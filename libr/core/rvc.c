@@ -739,29 +739,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		(void)r_file_mkstemp ("rvc", &path);
 		if (path) {
 			char m[MAX_MESSAGE_LEN + 1];
-			char *editor = r_sys_getenv ("EDITOR");
-			if (!R_STR_ISEMPTY (editor)) {
-				if (r_sys_cmdf ("%s %s", editor, path)) {
-					r_file_rm (path);
-					free (path);
-					free (editor);
-					return false;
-				}
-			} else {
-				free (editor);
-				free (path);
-				r_line_set_prompt ("Enter a commit message:");
-				r_core_visual_showcursor (NULL, true);
-				r_cons_fgets (m, MAX_MESSAGE_LEN, 0, NULL);
-				r_core_visual_showcursor (NULL, false);
-				if (r_str_len_utf8 (m) == 0) {
-					free (path);
-					return false;
-				}
-				message = m;
-				goto after_message;
-			}
-			free (editor);
+			r_cons_editor (path, NULL);
 			FILE *f = fopen (path, "r");
 			if (f) {
 				if (r_file_size (path) > 80) {
@@ -785,7 +763,6 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		return false;
 	}
 	RList *blobs;
-after_message:
 	blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
