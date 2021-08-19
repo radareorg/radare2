@@ -58,6 +58,10 @@ static void filesave(void) {
 			}
 		}
 	}
+	if (!path) {
+		eprintf ("No file given.\n");
+		return;
+	}
 	if (lines) {
 		for (i = 0; i < bytes; i++) {
 			if (lines[i] == '\0') {
