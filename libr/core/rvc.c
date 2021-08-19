@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
 #include "r_config.h"
+#include "r_core.h"
 #include <rvc.h>
 #include <r_util.h>
 #include <sdb.h>
@@ -733,30 +734,26 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		eprintf ("Can't commit");
 		return false;
 	}
-	if (!message) {
+	if (R_STR_ISEMPTY (message)) {
 		char *path = NULL;
 		(void)r_file_mkstemp ("rvc", &path);
 		if (path) {
-			char *editor = r_sys_getenv ("EDITOR");
-			if (!R_STR_ISEMPTY (editor)) {
-				if (!r_sys_cmdf ("%s %s", editor, path)) {
-					free (path);
-					free (editor);
-					return false;
-				} else {
-					free (editor);
+			char m[MAX_MESSAGE_LEN + 1];
+			r_cons_editor (path, NULL);
+			FILE *f = fopen (path, "r");
+			if (f) {
+				if (r_file_size (path) > 80) {
+					eprintf ("Commit message is too long\n");
+					r_file_rm (path);
 					free (path);
 					return false;
 				}
-			}
-			FILE *f = fopen (path, "r");
-			free (path);
-			if (f) {
-				char m[MAX_MESSAGE_LEN + 1];
+				free (path);
 				fread (m, sizeof (char), MAX_MESSAGE_LEN, f);
 				fclose (f);
 				message = m;
 			} else {
+				free (path);
 				return false;
 			}
 		} else {
@@ -765,7 +762,8 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	} else if (r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
 		return false;
 	}
-	RList *blobs = blobs_add (rp, files);
+	RList *blobs;
+	blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
 	}
@@ -1087,7 +1085,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		free (fname);
 		if (!fhash) {
 			if (!r_file_rm (file)) {
-				printf ("Failed to remove the file %s\n",
+				eprintf ("Failed to remove the file %s\n",
 						file);
 				goto fail_ret;
 			}
@@ -1096,7 +1094,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		if (!strcmp (fhash, NULLVAL)) {
 			free (fhash);
 			if (!r_file_rm (file)) {
-				printf ("Failed to remove the file %s\n",
+				eprintf ("Failed to remove the file %s\n",
 						file);
 				goto fail_ret;
 			}
@@ -1110,7 +1108,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		}
 		if (!file_copyp (blob_path, file)) {
 			free (blob_path);
-			printf ("Failed to checkout the file %s\n", file);
+			eprintf ("Failed to checkout the file %s\n", file);
 			goto fail_ret;
 		}
 	}
@@ -1213,15 +1211,11 @@ R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, cons
 			m = r_config_get (core->config, "prj.vc.message");
 		}
 	}
-	message = message? message : m;
-	if (!message) {
-		eprintf ("Empty message and prj.vc.message is not set\n");
-		return false;
-	}
+	message = R_STR_ISEMPTY (message)? m : message;
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		author = author? author : r_config_get (core->config, "cfg.user");
 		printf ("rvc is just for testing please don't use it\n");
-		r_vc_commit (rp, message, author, files);
+		return r_vc_commit (rp, message, author, files);
 	}
 	char *path;
 	RListIter *iter;
