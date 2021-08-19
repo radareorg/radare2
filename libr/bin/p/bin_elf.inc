@@ -174,8 +174,7 @@ static bool is_wordable_section(const char *name) {
 static RList* sections(RBinFile *bf) {
 	struct Elf_(r_bin_elf_obj_t)* obj = (bf && bf->o)? bf->o->bin_obj : NULL;
 	struct r_bin_elf_section_t *section = NULL;
-	int i, num, found_load = 0;
-	Elf_(Phdr)* phdr = NULL;
+	int i, found_load = 0;
 	RBinSection *ptr = NULL;
 	RList *ret = NULL;
 
@@ -221,9 +220,11 @@ static RList* sections(RBinFile *bf) {
 
 	// program headers is another section
 	ut16 mach = obj->ehdr.e_machine;
-	num = obj->ehdr.e_phnum;
-	phdr = obj->phdr;
+	Elf_(Phdr)* phdr = obj->phdr;
+
+
 	if (phdr) {
+		ut64 num = Elf_(r_bin_elf_get_phnum) (obj);
 		int n = 0;
 		for (i = 0; i < num; i++) {
 			if (!(ptr = R_NEW0 (RBinSection))) {
