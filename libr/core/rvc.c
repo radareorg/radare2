@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2021 - RHL120, pancake */
 
 #include "r_config.h"
+#include "r_core.h"
 #include <rvc.h>
 #include <r_util.h>
 #include <sdb.h>
@@ -737,6 +738,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		char *path = NULL;
 		(void)r_file_mkstemp ("rvc", &path);
 		if (path) {
+			char m[MAX_MESSAGE_LEN + 1];
 			char *editor = r_sys_getenv ("EDITOR");
 			if (!R_STR_ISEMPTY (editor)) {
 				if (r_sys_cmdf ("%s %s", editor, path)) {
@@ -746,12 +748,20 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 					return false;
 				}
 			} else {
-				eprintf ("Please set the $EDITOR env var\n");
-				r_file_rm (path);
 				free (editor);
 				free (path);
-				return false;
+				r_line_set_prompt ("Enter a commit message:");
+				r_core_visual_showcursor (NULL, true);
+				r_cons_fgets (m, MAX_MESSAGE_LEN, 0, NULL);
+				r_core_visual_showcursor (NULL, false);
+				if (r_str_len_utf8 (m) == 0) {
+					free (path);
+					return false;
+				}
+				message = m;
+				goto after_message;
 			}
+			free (editor);
 			FILE *f = fopen (path, "r");
 			if (f) {
 				if (r_file_size (path) > 80) {
@@ -761,7 +771,6 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 					return false;
 				}
 				free (path);
-				char m[MAX_MESSAGE_LEN + 1];
 				fread (m, sizeof (char), MAX_MESSAGE_LEN, f);
 				fclose (f);
 				message = m;
@@ -775,7 +784,9 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 	} else if (r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
 		return false;
 	}
-	RList *blobs = blobs_add (rp, files);
+	RList *blobs;
+after_message:
+	blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
 	}
