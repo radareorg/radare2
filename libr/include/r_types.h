@@ -157,7 +157,25 @@
 # define __UNIX__ 1
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__)
+#if 0
+// XXX any non-unix system dont have termios :? android?
+#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__ || __serenity__ || __vinix__
+#define HAVE_PTY 1
+#else
+#define HAVE_PTY 0
+#endif
+#endif
+
+#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
+#undef HAVE_PTY
+#define HAVE_PTY 0
+#else
+#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
+#endif
+
+
+
+#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif
