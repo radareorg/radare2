@@ -50,6 +50,15 @@ R_API bool r_parse_add(RParse *p, RParsePlugin *foo) {
 	return true;
 }
 
+static char *predotname(const char *name) {
+	char *sname = strdup (name);
+	char *dot = strchr (sname, '.');
+	if (dot) {
+		*dot = 0;
+	}
+	return sname;
+}
+
 R_API bool r_parse_use(RParse *p, const char *name) {
 	RListIter *iter;
 	RParsePlugin *h;
@@ -60,6 +69,18 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 			return true;
 		}
 	}
+	char *sname = predotname (name);
+	bool found = false;
+	r_list_foreach (p->parsers, iter, h) {
+		char *shname = predotname (h->name);
+		found = !strcmp (shname, sname);
+		free (shname);
+		if (found) {
+			p->cur = h;
+			break;
+		}
+	}
+	free (sname);
 	return false;
 }
 
