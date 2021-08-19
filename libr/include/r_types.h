@@ -166,11 +166,12 @@
 #endif
 #endif
 
-#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #undef HAVE_PTY
+#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #define HAVE_PTY 0
 #else
-#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
+// #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
+#define HAVE_PTY __UNIX__ && LIBC_HAVE_FORK && !__sun
 #endif
 
 
