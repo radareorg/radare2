@@ -159,7 +159,7 @@ static const char *help_msg_wv[] = {
 	"wv", " 0x834002", "write dword with this value",
 	"wv1", " 234", "write one byte with this value",
 	"wv2", " 234", "write unsigned short (2 bytes) with this number",
-	"wv4", " 234", "write dword (4 bytes) with this number",
+	"wv4", " 1 2 3", "write N space-separated dword (4 bytes)",
 	"wv8", " 234", "write qword (8 bytes) with this number",
 	"wvf", " 3.14", "write float value (4 bytes)",
 	"wvF", " 3.14", "write double value (8 bytes)",
@@ -502,51 +502,63 @@ static void cmd_write_value(RCore *core, const char *input) {
 	case '4': type = 4; break;
 	case '8': type = 8; break;
 	}
-	if (input[0] && input[1]) {
-		off = r_num_math (core->num, input+1);
-	}
-	if (core->io->desc) {
-		r_io_use_fd (core->io, core->io->desc->fd);
-	}
-	ut64 res = r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
-	if (res == UT64_MAX) return;
-	if (type == 0) {
-		type = (off&UT64_32U)? 8: 4;
-	}
-	switch (type) {
-	case 1:
-		r_write_ble8 (buf, (ut8)(off & UT8_MAX));
-		if (!r_io_write (core->io, buf, 1)) {
-			cmd_write_fail (core);
-		} else {
-			WSEEK (core, 1);
+	ut64 addr = core->offset;
+	char *inp = r_str_trim_dup (input + 1);
+	RList *list = r_str_split_list (inp, " ", 0); // or maybe comma :?
+	char *cinp;
+	RListIter *iter;
+	r_list_foreach (list, iter, cinp) {
+		if (input[0] && input[1]) {
+			off = r_num_math (core->num, cinp);
 		}
-		break;
-	case 2:
-		r_write_ble16 (buf, (ut16)(off & UT16_MAX), be);
-		if (!r_io_write (core->io, buf, 2)) {
-			cmd_write_fail (core);
-		} else {
-			WSEEK (core, 2);
+		if (core->io->desc) {
+			r_io_use_fd (core->io, core->io->desc->fd);
 		}
-		break;
-	case 4:
-		r_write_ble32 (buf, (ut32)(off & UT32_MAX), be);
-		if (!r_io_write (core->io, buf, 4)) {
-			cmd_write_fail (core);
-		} else {
-			WSEEK (core, 4);
+		ut64 res = r_io_seek (core->io, addr, R_IO_SEEK_SET);
+		if (res == UT64_MAX) {
+			return;
 		}
-		break;
-	case 8:
-		r_write_ble64 (buf, off, be);
-		if (!r_io_write (core->io, buf, 8)) {
-			cmd_write_fail (core);
-		} else {
-			WSEEK (core, 8);
+		if (type == 0) {
+			type = (off & UT64_32U)? 8: 4;
 		}
-		break;
+		switch (type) {
+		case 1:
+			r_write_ble8 (buf, (ut8)(off & UT8_MAX));
+			if (!r_io_write (core->io, buf, 1)) {
+				cmd_write_fail (core);
+			} else {
+				WSEEK (core, 1);
+			}
+			break;
+		case 2:
+			r_write_ble16 (buf, (ut16)(off & UT16_MAX), be);
+			if (!r_io_write (core->io, buf, 2)) {
+				cmd_write_fail (core);
+			} else {
+				WSEEK (core, 2);
+			}
+			break;
+		case 4:
+			r_write_ble32 (buf, (ut32)(off & UT32_MAX), be);
+			if (!r_io_write (core->io, buf, 4)) {
+				cmd_write_fail (core);
+			} else {
+				WSEEK (core, 4);
+			}
+			break;
+		case 8:
+			r_write_ble64 (buf, off, be);
+			if (!r_io_write (core->io, buf, 8)) {
+				cmd_write_fail (core);
+			} else {
+				WSEEK (core, 8);
+			}
+			break;
+		}
+		addr += type;
 	}
+	r_list_free (list);
+	free (inp);
 	r_core_block_read (core);
 }
 
