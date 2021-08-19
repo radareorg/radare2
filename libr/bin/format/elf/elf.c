@@ -225,6 +225,25 @@ static bool init_ehdr(ELFOBJ *bin) {
 	// > pf `k bin/cur/info/elf_header.format` @ `k bin/cur/info/elf_header.offset`
 }
 
+ut64 Elf_(r_bin_elf_get_phnum)(ELFOBJ *obj) {
+	r_return_val_if_fail (obj, 0);
+	ut64 num = obj->ehdr.e_phnum & UT16_MAX;
+	if (obj->ehdr.e_phnum == 0xffff) {
+		ut32 shnum = obj->ehdr.e_shnum;
+		// sh_info member of the initial entry in section header table. 
+		if (shnum > 0) {
+			ut32 shoff = obj->ehdr.e_shoff;
+			Elf_(Shdr) shdr = {0};
+			(void)r_buf_read_at (obj->b, shoff, (ut8 *)&shdr, sizeof (shdr));
+			num = shdr.sh_info;
+			if ((int)(shdr.sh_info) < 1) {
+				return UT16_MAX;
+			}
+		}
+	}
+	return num;
+}
+
 static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 	bool phdr_found = false;
 	int i;
@@ -233,7 +252,8 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 #else
 	const bool is_elf64 = false;
 #endif
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
+	ut64 phnum = Elf_(r_bin_elf_get_phnum) (bin);
+	for (i = 0; i < phnum; i++) {
 		ut8 phdr[sizeof (Elf_(Phdr))] = { 0 };
 		int j = 0;
 		const size_t rsize = bin->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
@@ -274,6 +294,7 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		bin->ehdr.e_phoff = Elf_(r_bin_elf_v2p) (bin, load_addr + bin->ehdr.e_phoff);
 		return read_phdr (bin, false);
 	}
+
 	return true;
 }
 
@@ -303,7 +324,8 @@ static int init_phdr(ELFOBJ *bin) {
 	if (bin->ehdr.e_phoff + phdr_size > bin->size) {
 		return false;
 	}
-	if (!(bin->phdr = R_NEWS0 (Elf_(Phdr), bin->ehdr.e_phnum))) {
+	ut64 phnum = Elf_(r_bin_elf_get_phnum) (bin);
+	if (!(bin->phdr = R_NEWS0 (Elf_(Phdr), phnum))) {
 		perror ("malloc (phdr)");
 		return false;
 	}
@@ -2971,10 +2993,11 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	if (!bin->shdr) {
 		return NULL;
 	}
-	if (!(ret = calloc ((bin->ehdr.e_shnum + 1), sizeof (RBinElfSection)))) {
+	ut32 count = bin->ehdr.e_shnum;
+	if (!(ret = calloc ((count + 1), sizeof (RBinElfSection)))) {
 		return NULL;
 	}
-	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+	for (i = 0; i < count; i++) {
 		ret[i].offset = bin->shdr[i].sh_offset;
 		ret[i].size = bin->shdr[i].sh_size;
 		ret[i].align = bin->shdr[i].sh_addralign;
