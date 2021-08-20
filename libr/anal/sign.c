@@ -1415,8 +1415,8 @@ R_API void r_sign_close_match_free(RSignCloseMatch *match) {
 	}
 }
 
-static int _closest_match_cb(RSignItem *it, void *user) {
-	return closest_match_update (it, (ClosestMatchData *)user)? 1: 0;
+static bool _closest_match_cb(RSignItem *it, void *user) {
+	return closest_match_update (it, (ClosestMatchData *)user);
 }
 
 R_API RList *r_sign_find_closest_fcn(RAnal *a, RSignItem *it, int count, double score_threshold) {
@@ -1808,7 +1808,7 @@ static void listHash(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	}
 }
 
-static int listCB(RSignItem *it, void *user) {
+static bool listCB(RSignItem *it, void *user) {
 	struct ctxListCB *ctx = (struct ctxListCB *)user;
 	RAnal *a = ctx->anal;
 
@@ -1950,7 +1950,7 @@ R_API void r_sign_list(RAnal *a, int format) {
 	}
 }
 
-static int listGetCB(RSignItem *it, void *user) {
+static bool listGetCB(RSignItem *it, void *user) {
 	r_list_append ((RList *)user, it);
 	return 1;
 }
@@ -2025,12 +2025,12 @@ beach:
 	return digest_hex;
 }
 
-static int countForCB(RSignItem *it, void *user) {
+static bool countForCB(RSignItem *it, void *user) {
 	(*(int *)user)++;
-	return 1;
+	return true;
 }
 
-static int unsetForCB(RSignItem *it, void *user) {
+static bool unsetForCB(RSignItem *it, void *user) {
 	Sdb *db = (Sdb *)user;
 	char *key = item_serialize_key (it);
 	if (key) {
@@ -2091,9 +2091,10 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 	RSignItem *it = r_sign_item_new ();
 	RAnal *a = ctx->anal;
 
+	bool keep_going = true;
 	if (it && r_sign_deserialize (a, it, k, v)) {
 		if (!ctx->space || ctx->space == it->space) {
-			ctx->cb (it, ctx->user);
+			keep_going = ctx->cb (it, ctx->user);
 		}
 	} else {
 		eprintf ("error: cannot deserialize zign\n");
@@ -2101,7 +2102,7 @@ static bool foreachCB(void *user, const char *k, const char *v) {
 	if (ctx->freeit) {
 		r_sign_item_free (it);
 	}
-	return true;
+	return keep_going;
 }
 
 static inline bool local_foreach_item(RAnal *a, RSignForeachCallback cb, const RSpace *sp, bool freeit, void *user) {
@@ -2197,7 +2198,7 @@ struct ctxAddSearchKwCB {
 	int minsz;
 };
 
-static int addSearchKwCB(RSignItem *it, void *user) {
+static bool addSearchKwCB(RSignItem *it, void *user) {
 	struct ctxAddSearchKwCB *ctx = (struct ctxAddSearchKwCB *) user;
 	RSignSearch *ss = ctx->ss;
 	RSignBytes *bytes = it->bytes;
@@ -2205,18 +2206,18 @@ static int addSearchKwCB(RSignItem *it, void *user) {
 	if (!bytes) {
 		eprintf ("Cannot find bytes for this signature: %s\n", it->name);
 		r_sign_item_free (it);
-		return 1;
+		return true;
 	}
 
 	if (ctx->minsz && bytes->size < ctx->minsz) {
 		r_sign_item_free (it);
-		return 1;
+		return true;
 	}
 	r_list_append (ss->items, it);
 	// TODO(nibble): change arg data in r_search_keyword_new to void*
 	RSearchKeyword *kw = r_search_keyword_new (bytes->bytes, bytes->size, bytes->mask, bytes->size, (const char *)it);
 	r_search_kw_add (ss->search, kw);
-	return 1;
+	return true;
 }
 
 R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, int minsz, RSignSearchCallback cb, void *user) {
@@ -2520,7 +2521,7 @@ struct metric_ctx {
 	RAnalFunction *fcn;
 };
 
-static int match_metrics(RSignItem *it, void *user) {
+static bool match_metrics(RSignItem *it, void *user) {
 	struct metric_ctx *ctx = (struct metric_ctx *)user;
 	RSignSearchMetrics *sm = ctx->sm;
 	RSignItem *fit = ctx->it;
@@ -2549,23 +2550,26 @@ static int match_metrics(RSignItem *it, void *user) {
 		types[count++] = R_SIGN_TYPES;
 	}
 
+	bool keep_searching = true;
 	if (count) {
 		RList *col = check_collisions (it->collisions, types);
 		ctx->matched += count;
 		types[count] = R_SIGN_END;
+		if (col && r_list_length (col) == 0) {
+			keep_searching = false;
+		}
 		sm->cb (it, ctx->fcn, types, sm->user, col);
 		r_list_free (col);
-		return 1;
 	}
-	return 0;
+	return keep_searching;
 }
 
-static int _sig_to_vec_cb(RSignItem *it, void *user) {
+static bool _sig_to_vec_cb(RSignItem *it, void *user) {
 	if (it->collisions) {
 		r_list_free (it->collisions);
 		it->collisions = NULL;
 	}
-	return r_pvector_push ((RPVector *)user, it)? 1: 0;
+	return r_pvector_push ((RPVector *)user, it)? true: false;
 }
 
 static bool item_addto_collisions(RSignItem *it, const char *add) {
