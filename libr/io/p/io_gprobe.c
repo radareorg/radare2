@@ -37,6 +37,9 @@
 
 #define GPROBE_SIZE (1LL << 32)
 #define GPROBE_I2C_ADDR 0x6e
+#ifndef B115200
+#define B115200 0010002
+#endif
 
 #define I2C_SLAVE 0x0703
 
