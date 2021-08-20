@@ -4,7 +4,9 @@ include ../../shlr/zip/deps.mk
 include ../../shlr/sdb.mk
 
 ifeq (,$(findstring tcc,${CC}))
+ifeq (,$(findstring vinix,${CC}))
 CFLAGS+=-pie
+endif
 endif
 CFLAGS:=-I$(LTOP)/include -I$(LTOP)/include/sdb $(CFLAGS)
 
