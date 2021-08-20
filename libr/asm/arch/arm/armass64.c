@@ -1406,8 +1406,10 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		*op = exception (&ops, 0x000040d4);
 	} else if (!strncmp (str, "b ", 2)) {
 		*op = branch (&ops, addr, 0x14);
-	} else if (!strncmp (str, "b.eq ", 5)) {
+	} else if (!strncmp (str, "b.eq ", 5) || !strncmp (str, "beq ", 4)) {
 		*op = bdot (&ops, addr, 0x00000054);
+	} else if (!strncmp (str, "b.ne ", 5) || !strncmp (str, "bne ", 4)) {
+		*op = bdot (&ops, addr, 0x01000054);
 	} else if (!strncmp (str, "b.hs ", 5)) {
 		*op = bdot (&ops, addr, 0x02000054);
 	} else if (!strncmp (str, "bl ", 3)) {
