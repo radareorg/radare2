@@ -447,7 +447,7 @@ static bool internal_esil_reg_write_no_null (RAnalEsil *esil, const char *regnam
 
 R_API bool r_anal_esil_pushnum(RAnalEsil *esil, ut64 num) {
 	char str[64];
-	snprintf (str, sizeof (str) - 1, "0x%" PFMT64x, num);
+	sdb_itoa (str, sizeof (str) - 1, "0x%" PFMT64x, num);
 	return r_anal_esil_push (esil, str);
 }
 
@@ -2116,9 +2116,9 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			ret = r_anal_esil_mem_read (esil, addr, a, bytes);
 			ut64 b = r_read_ble64 (&a, 0); //esil->anal->big_endian);
 			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->big_endian);
-			snprintf (res, sizeof (res), "0x%" PFMT64x, b);
+			sdb_itoa (res, sizeof (res), "0x%" PFMT64x, b);
 			r_anal_esil_push (esil, res);
-			snprintf (res, sizeof (res), "0x%" PFMT64x, c);
+			sdb_itoa (res, sizeof (res), "0x%" PFMT64x, c);
 			r_anal_esil_push (esil, res);
 			free (dst);
 			return ret;
@@ -2134,7 +2134,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
 		}
 #endif
-		snprintf (res, sizeof (res), "0x%" PFMT64x, b & bitmask);
+		sdb_itoa (res, sizeof (res), "0x%" PFMT64x, b & bitmask);
 		r_anal_esil_push (esil, res);
 		esil->lastsz = bits;
 	}
@@ -3484,7 +3484,7 @@ static bool runword(RAnalEsil *esil, const char *word) {
 	if (esil->Reil && esil->Reil->skip) {
 		char *if_buf = esil->Reil->if_buf;
 		size_t n = strlen (if_buf);
-		snprintf (if_buf + n, sizeof (esil->Reil->if_buf) - n, "%s,", word);
+		sdb_itoa (if_buf + n, sizeof (esil->Reil->if_buf) - n, "%s,", word);
 		if (!strcmp (word, "}")) {
 			r_anal_esil_pushnum (esil, esil->Reil->addr + esil->Reil->cmd_count + 1);
 			r_anal_esil_parse (esil, esil->Reil->if_buf);
