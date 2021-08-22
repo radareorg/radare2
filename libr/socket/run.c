@@ -1206,7 +1206,7 @@ R_API int r_run_start(RRunProfile *p) {
 			close (0);
 			close (1);
 			char *bin_sh = r_file_binsh ();
-			if (bin_sh != NULL) {
+			if (bin_sh) {
 				exit (execl (bin_sh, bin_sh, "-c", p->_system, NULL));
 			} else {
 				exit (r_sys_cmd (p->_system));
