@@ -1205,12 +1205,8 @@ R_API int r_run_start(RRunProfile *p) {
 #if __UNIX__
 			close (0);
 			close (1);
-			char *shell_env = r_sys_getenv ("SHELL");
-			char *bin_sh = (R_STR_ISNOTEMPTY (shell_env) && r_file_exists (shell_env))
-				? shell_env
-				: r_file_path ("sh");
-			// Honor $SHELL ?
-			if (R_STR_ISNOTEMPTY (bin_sh)) {
+			char *bin_sh = r_file_binsh ();
+			if (bin_sh) {
 				exit (execl (bin_sh, bin_sh, "-c", p->_system, NULL));
 			} else {
 				exit (r_sys_cmd (p->_system));
