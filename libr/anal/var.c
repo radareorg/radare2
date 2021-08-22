@@ -148,7 +148,9 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 	if (kind == R_ANAL_VAR_KIND_REG) {
 		reg = r_reg_index_get (fcn->anal->reg, R_ABS (delta));
 		if (!reg) {
-			eprintf ("Register wasn't found at the given delta\n");
+			if (fcn->anal->verbose) {
+				eprintf ("No register at index %d\n", delta);
+			}
 			return NULL;
 		}
 	}
