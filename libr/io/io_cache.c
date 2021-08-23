@@ -198,22 +198,40 @@ R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	bool covered = false;
 	while (iter != last) {
 		const ut64 begin = r_itv_begin (iter->itv);
+		const ut64 end = r_itv_end (iter->itv);
+		if (end < addr) {
+			iter++;
+			continue;
+		}
 		const st64 addr_offset = begin - addr;
 		const ut64 buf_offset = addr_offset > 0 ? addr_offset : 0;
-		const ut64 cur_addr = addr + buf_offset;
 		const ut64 left = len - buf_offset;
+		const ut64 cur_addr = addr + buf_offset;
 		if (begin > cur_addr + left) {
-			break;
+			iter++;
+			continue;
 		}
 		RIOCache *cache = iter->user;
 		const ut64 cache_shift = addr_offset < 0 ? -addr_offset : 0;
-		const ut64 cache_offset = begin - r_itv_begin (cache->itv) + cache_shift;
-		const ut64 read = R_MIN (left, r_itv_size (iter->itv) - cache_shift);
-		memcpy (buf + buf_offset, cache->data + cache_offset, read);
-		covered = true;
-		if (left - read <= 0) {
-			break;
+		const ut64 cache_begin = r_itv_begin (cache->itv);
+		if (end < cache_begin + cache_shift) {
+			iter++;
+			continue;
 		}
+		const st64 cache_offset = begin - cache_begin + cache_shift;
+		const st64 read = R_MIN (left, r_itv_size (iter->itv) - cache_shift);
+		if (cache_offset > r_itv_size (cache->itv)) {
+			iter++;
+			continue;
+		}
+		if (read < 0 || cache_offset < 0) {
+			iter++;
+			continue;
+		}
+		if (read > 0) {
+			memcpy (buf + buf_offset, cache->data + cache_offset, read);
+		}
+		covered = true;
 		iter++;
 	}
 	return covered;
