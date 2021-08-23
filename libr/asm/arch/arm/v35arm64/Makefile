@@ -1,26 +1,31 @@
-CFLAGS+=$(ARM64V35_CFLAGS) -fPIC
-ALIBS=$(addprefix arch-arm64/disassembler/,$(V35ARM64_OBJS))
-RANLIB?=ranlib
 
 all: arch-arm64
-	$(MAKE) arm64dis.a
+	$(MAKE) arm64dis.$(EXT_AR)
 
 include deps.mk
 
+CFLAGS+=$(V35ARM64_CFLAGS) -fPIC
+ALIBS=$(addprefix arch-arm64/disassembler/,$(V35ARM64_OBJS))
+RANLIB?=ranlib
+EXT_AR?=a
+
 clean:
-	rm -rf arch-arm64 arm64dis.a
+	rm -rf arch-arm64 arm64dis.$(EXT_AR)
+
+mrproper: clean
+	rm -rf arch-arm64
 
 .PHONY: all clean
-# -cd arch-arm64 && git checkout staging && git pull
-# cp -rf arch-arm64/disassembler disassembler
+
+ARCH_ARM64_COMMIT=5837915960c2ce862a77c99a374abfb7d18a8534
 
 $(ALIBS): arch-arm64
 
 arch-arm64:
 	git clone -q https://github.com/radareorg/vector35-arch-arm64 arch-arm64
-	cd arch-arm64 && git checkout -q radare2 > /dev/null
+	cd arch-arm64 && git checkout -q radare2 > /dev/null && git reset --hard $(ARCH_ARM64_COMMIT)
 
 $(V35ARM64_HOME)/arm64dis.a arm64dis.a: $(ALIBS)
-	rm -f arm64dis.a
-	$(AR) q arm64dis.a $(ALIBS)
-	$(RANLIB) arm64dis.a
+	rm -f arm64dis.$(EXT_AR)
+	$(AR) q arm64dis.$(EXT_AR) $(ALIBS)
+	$(RANLIB) arm64dis.$(EXT_AR)
