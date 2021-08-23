@@ -99,6 +99,11 @@ if [ "${USE_SU}" = 1 ]; then
 	SUDO="/bin/su -m root -c"
 fi
 
+${SHELL} --help 2> /dev/null | grep -q fish
+if [ $? = 0 ]; then
+	SHELL=/bin/sh
+fi
+
 if [ "${M32}" = 1 ]; then
 	${SHELL} ./sys/build-m32.sh ${ARGS} || exit 1
 elif [ "${HARDEN}" = 1 ]; then
