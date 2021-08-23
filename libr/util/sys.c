@@ -537,21 +537,16 @@ R_API bool r_sys_getenv_asbool(const char *key) {
 	return res;
 }
 
-#if __vinix__
-#define USE_GLIBC 0
-#else
-#define USE_GLIBC 1
-#endif
-
 R_API char *r_sys_getdir(void) {
 #if __WINDOWS__
 	return _getcwd (NULL, 0);
 #else
-#if USE_GLIBC
+#ifdef __GLIBC__
 	return getcwd (NULL, 0);
 #else
-	char *res = calloc (1024, 1);
-	char *cwd = getcwd (res, 1024);
+	const size_t maxpathlen = 4096;
+	char *res = calloc (maxpathlen, 1);
+	char *cwd = getcwd (res, maxpathlen);
 	if (!cwd) {
 		free (res);
 	}
