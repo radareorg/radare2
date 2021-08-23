@@ -2,6 +2,17 @@
 
 [ -z "${STATIC_BINS}" ] && STATIC_BINS=0
 
+if [ "$1" = "--help" ]; then
+	echo "Usage: sys/static.sh [--help,--meson]"
+	exit 0
+fi
+
+if [ "$1" = "--meson" ]; then
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        ninja -C build && ninja -C build install
+	exit $?
+fi
+
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
