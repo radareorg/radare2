@@ -2118,7 +2118,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			ut64 c = r_read_ble64 (&a[8], 0); //esil->anal->big_endian);
 			sdb_itoa (b, res, sizeof (res));
 			r_anal_esil_push (esil, res);
-			sdb_itoa (res, sizeof (res), "0x%" PFMT64x, c);
+			sdb_itoa (c, res, sizeof (res));
 			r_anal_esil_push (esil, res);
 			free (dst);
 			return ret;
