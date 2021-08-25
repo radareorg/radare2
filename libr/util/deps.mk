@@ -12,9 +12,10 @@ endif
 
 # FreeBSD 10.0 ships with backtrace(3) in -lexecinfo
 ifeq (${BUILD_OS},freebsd)
-ifneq ($(shell expr "`uname -r`" : '[0-9]\.'), 2)
-  LDFLAGS+=-lexecinfo
-endif
+  ifneq ($(shell expr "`uname -r`" : '[0-9]\.'), 2)
+    LDFLAGS+=-lexecinfo
+  endif
+  LDFLAGS+=-lutil
 endif
 
 ifeq (${BUILD_OS},dragonfly)
@@ -24,3 +25,11 @@ endif
 ifeq (${BUILD_OS},haiku)
   LDFLAGS+=-lexecinfo
 endif
+
+ifneq ($(OSTYPE),darwin)
+ifneq ($(OSTYPE),haiku)
+LDFLAGS+=-lm
+LINK+=-lm
+endif
+endif
+

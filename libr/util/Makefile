@@ -4,13 +4,6 @@ NAME=r_util
 CFLAGS+=-DR2_PLUGIN_INCORE -I$(TOP)/shlr
 PCLIBS=@LIBZIP@ @DL_LIBS@
 
-ifneq ($(OSTYPE),darwin)
-ifneq ($(OSTYPE),haiku)
-LDFLAGS+=-lm
-LINK=-lm
-endif
-endif
-
 OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o charset.o
 OBJS+=prof.o cache.o sys.o buf.o sys_w32.o ubase64.o base85.o base91.o
 OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o donut.o print_code.o
