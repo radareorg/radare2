@@ -2134,7 +2134,7 @@ static bool esil_peek_n(RAnalEsil *esil, int bits) {
 			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
 		}
 #endif
-		sdb_itoa (b & bitmask, res, sizeof (res));
+		sdb_itoa (b & bitmask, res, 16);
 		r_anal_esil_push (esil, res);
 		esil->lastsz = bits;
 	}
