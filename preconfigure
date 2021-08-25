@@ -5,9 +5,12 @@ if [ ! -f config-user.mk ]; then
 fi
 printf "[*] Checking out capstone... "
 rm -rf shlr/capstone
-make -C shlr capstone > /dev/null 2>&1 || exit 1
+MAKE=make
+gmake --version 2>&1 > /dev/null
+[ $? = 0 ] && MAKE=gmake
+${MAKE} -C shlr capstone > /dev/null 2>&1 || exit 1
 echo OK
 printf "[*] Checking out vector35... "
 rm -rf libr/asm/arch/arm/v35arm64/arch-arm64
-make -C libr/asm/arch/arm/v35arm64 arch-arm64 > /dev/null || exit 1
+${MAKE} -C libr/asm/arch/arm/v35arm64 arch-arm64 > /dev/null || exit 1
 echo OK
