@@ -7,15 +7,6 @@ CFLAGS+=-DR2_PLUGIN_INCORE
 
 include ../util/deps.mk
 
-ifeq (${BUILD_OS},serenityos)
-LDFLAGS+=
-else
-ifeq ($(OSTYPE),bsd)
-LDFLAGS+=-lkvm
-endif
-endif
-LDFLAGS+=-lexecinfo
-
 foo:
 	@${MAKE} libs
 	@${MAKE} plugins

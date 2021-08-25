@@ -1,5 +1,6 @@
 include $(SHLR)/sdb.mk
 include $(SHLR)/zip/deps.mk
+include $(SHLR)/../config-user.mk
 
 LDFLAGS+=-lm
 
@@ -7,6 +8,14 @@ LDFLAGS+=-lm
 ifeq (${BUILD_OS},netbsd)
 ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
   LDFLAGS+=-lexecinfo
+endif
+endif
+
+ifeq (${BUILD_OS},serenityos)
+LDFLAGS+=
+else
+ifeq ($(OSTYPE),bsd)
+LDFLAGS+=-lkvm
 endif
 endif
 
