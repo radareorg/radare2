@@ -2515,9 +2515,6 @@ static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int 
 	return r_io_read_at (anal->iob.io, addr, buf, len);
 }
 
-static void r_core_break (RCore *core) {
-}
-
 static void *r_core_sleep_begin (RCore *core) {
 	RCoreTask *task = r_core_task_self (&core->tasks);
 	if (task) {
@@ -2995,7 +2992,7 @@ R_API void r_core_bind_cons(RCore *core) {
 	core->cons->num = core->num;
 	core->cons->cb_fkey = (RConsFunctionKey)__cons_cb_fkey;
 	core->cons->cb_editor = (RConsEditorCallback)r_core_editor;
-	core->cons->cb_break = (RConsBreakCallback)r_core_break;
+	core->cons->cb_break = NULL; // (RConsBreakCallback)r_core_break;
 	core->cons->cb_sleep_begin = (RConsSleepBeginCallback)r_core_sleep_begin;
 	core->cons->cb_sleep_end = (RConsSleepEndCallback)r_core_sleep_end;
 	core->cons->cb_task_oneshot = (RConsQueueTaskOneshot) r_core_task_enqueue_oneshot;
