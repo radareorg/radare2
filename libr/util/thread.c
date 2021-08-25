@@ -129,7 +129,7 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 #if defined(__GLIBC__) && defined (__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)
 	// Old versions of GNU libc don't have this feature
 #pragma message("warning r_th_setaffinity not implemented")
-#else
+#elif !__wasi__
 	cpu_set_t c;
 	CPU_ZERO(&c);
 	CPU_SET(cpuid, &c);
