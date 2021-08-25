@@ -47,29 +47,7 @@ CWD=$(shell pwd)
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
-LDFLAGS+=-lm
 
-# NetBSD 7.0 ships with backtrace(3) in -lexecinfo
-ifeq (${BUILD_OS},netbsd)
-ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
-  LDFLAGS+=-lexecinfo
-endif
-endif
-
-# FreeBSD 10.0 ships with backtrace(3) in -lexecinfo
-ifeq (${BUILD_OS},freebsd)
-ifneq ($(shell expr "`uname -r`" : '[0-9]\.'), 2)
-  LDFLAGS+=-lexecinfo
-endif
-endif
-
-ifeq (${BUILD_OS},dragonfly)
-  LDFLAGS+=-lexecinfo
-endif
-
-ifeq (${BUILD_OS},haiku)
-  LDFLAGS+=-lexecinfo
-endif
 
 EXTRA_PRE+=spp_config
 EXTRA_PRE+=charsets
