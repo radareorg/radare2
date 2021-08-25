@@ -389,6 +389,7 @@ typedef struct r_cons_context_t {
 	RStrBuf *error; // r_cons_eprintf / r_cons_errstr / r_cons_errmode
 	int errmode;
 	bool breaked;
+	bool was_breaked;
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
@@ -767,6 +768,7 @@ R_API bool r_cons_get_click(int *x, int *y);
 
 typedef void (*RConsBreak)(void *);
 R_API bool r_cons_is_breaked(void);
+R_API bool r_cons_was_breaked(void);
 R_API bool r_cons_is_interactive(void);
 R_API bool r_cons_default_context_is_interactive(void);
 R_API void *r_cons_sleep_begin(void);
