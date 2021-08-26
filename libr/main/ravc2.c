@@ -65,7 +65,18 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	if (!strcmp (action, "branch")) {
 		if (opt.argc < 2) {
-			return -4;
+			RList *branches = r_vc_get_branches (rp);
+			if (!branches) {
+				free (rp);
+				return -4;
+			}
+			RListIter *iter;
+			const char *b;
+			r_list_foreach (branches, iter, b) {
+				printf ("%s\n", b);
+			}
+			r_list_free (branches);
+			return 0;
 		}
 		if (!r_vc_branch (rp, opt.argv[opt.ind + 1])) {
 			free (rp);
@@ -137,6 +148,19 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			return -13;
 		}
 		free (rp);
+		return 0;
+	}
+	if (!strcmp (action, "log")) {
+		RList *commits = r_vc_log (rp);
+		if (!commits) {
+			return -14;
+		}
+		RListIter *iter;
+		const char *d;
+		r_list_foreach (commits, iter, d) {
+			printf ("%s\n****\n", d);
+		}
+		r_list_free (commits);
 		return 0;
 	}
 	free (rp);
