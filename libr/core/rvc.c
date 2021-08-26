@@ -57,6 +57,25 @@ static char *strip_sys_dir(const char *path) {
 	return ret;
 }
 
+static Sdb *vcdb_open(const char *rp) {
+	char *frp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
+	if (!frp) {
+		return NULL;
+	}
+	Sdb *ret = sdb_new0();
+	if (!ret) {
+		free (frp);
+		return NULL;
+	}
+	if (sdb_open (ret, frp) < 0) {
+		free (frp);
+		sdb_free (ret);
+		return NULL;
+	}
+	free (frp);
+	return ret;
+}
+
 static int repo_exists(const char *path) {
 	char *rp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
 	if (!rp) {
@@ -172,27 +191,7 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 	if (!ret) {
 		return NULL;
 	}
-	Sdb *db = sdb_new0 ();
-	if (!db) {
-		r_list_free (ret);
-		return NULL;
-	}
-	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME,
-			rp);
-	if (!dbp) {
-		r_list_free (ret);
-		sdb_unlink (db);
-		sdb_free (db);
-		return NULL;
-	}
-	if (sdb_open (db, dbp) < 0) {
-		r_list_free (ret);
-		sdb_unlink (db);
-		sdb_free (db);
-		free (dbp);
-		return NULL;
-	}
-	free (dbp);
+	Sdb *db = vcdb_open(rp);
 	i = sdb_get (db, sdb_const_get (db, CURRENTB, 0), 0);
 	if (!i) {
 		r_list_free (ret);
@@ -783,32 +782,8 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		return false;
 	}
 	{
-		char *dbf;
 		const char *current_branch;
-		Sdb *db = sdb_new0 ();
-		if (!db) {
-			free_blobs (blobs);
-			free (commit_hash);
-			return false;
-		}
-		dbf = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME,
-				rp);
-		if (!dbf) {
-			sdb_unlink (db);
-			sdb_free (db);
-			free_blobs (blobs);
-			free (commit_hash);
-			return false;
-		}
-		if (sdb_open (db, dbf) < 0) {
-			sdb_unlink (db);
-			sdb_free (db);
-			free_blobs (blobs);
-			free (commit_hash);
-			free (dbf);
-			return false;
-		}
-		free (dbf);
+		Sdb *db = vcdb_open (rp) ;
 		current_branch = sdb_const_get (db, CURRENTB, 0);
 		if (sdb_set (db, commit_hash, sdb_const_get (db, current_branch, 0), 0) < 0) {
 			sdb_unlink (db);
@@ -834,23 +809,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 }
 
 R_API RList *r_vc_get_branches(const char *rp) {
-	Sdb *db;
-	db = sdb_new0 ();
-	if (!db) {
-		return NULL;
-	}
-	{
-		char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
-				DBNAME, rp);
-		if (!dbp) {
-			return NULL;
-		}
-		if (sdb_open (db, dbp) < 0) {
-			free (dbp);
-			return NULL;
-		}
-		free (dbp);
-	}
+	Sdb *db = vcdb_open (rp);
 	RList *ret = r_list_new ();
 	if (!ret) {
 		sdb_unlink (db);
@@ -886,7 +845,6 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 	const char *current_branch;
 	const char *commits;
 	char *dbp;
-	Sdb *db;
 	switch (repo_exists (rp)) {
 	case 1:
 		break;
@@ -913,22 +871,7 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
-	if (!dbp) {
-		return false;
-	}
-	db = sdb_new0 ();
-	if (!db) {
-		free (dbp);
-		return false;
-	}
-	if (sdb_open (db, dbp) < 0) {
-		sdb_unlink (db);
-		sdb_free (db);
-		free (dbp);
-		return false;
-	}
-	free (dbp);
+	Sdb *db = vcdb_open(rp);
 	current_branch = sdb_const_get (db, CURRENTB, 0);
 	if (!current_branch) {
 		sdb_unlink (db);
@@ -1042,26 +985,12 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		return false;
 	}
 	r_list_free (uncommitted);
-	Sdb *db = sdb_new0 ();
+	Sdb *db = vcdb_open (rp) ;
 	if (!db) {
 		return false;
 	}
 	const char *oldb;
 	{
-		char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
-				DBNAME, rp);
-		if (!dbp) {
-			sdb_unlink (db);
-			sdb_free (db);
-			return false;
-		}
-		if (sdb_open (db, dbp) < 0) {
-			free (dbp);
-			sdb_unlink (db);
-			sdb_free (db);
-			return false;
-		}
-		free (dbp);
 		char *fbname = r_str_newf (BPREFIX "%s", bname);
 		if (!fbname) {
 			sdb_unlink (db);
@@ -1135,8 +1064,6 @@ fail_ret:
 	return false;
 }
 
-// GIT commands as APIs
-
 R_API RList *r_vc_log(const char *rp) {
 	RList *commits = get_commits (rp, 0);
 	if (!commits) {
@@ -1165,7 +1092,7 @@ fail_ret:
 	r_list_free (commits);
 	return NULL;
 }
-
+// GIT commands as APIs
 R_API bool r_vc_git_init(const char *path) {
 	char *escpath = r_str_escape (path);
 	int ret = r_sys_cmdf ("git init \"%s\"", escpath);
