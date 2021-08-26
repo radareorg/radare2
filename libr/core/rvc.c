@@ -1072,6 +1072,19 @@ fail_ret:
 	return NULL;
 }
 
+R_API char *r_vc_current_branch(const char *rp) {
+	CHECK_REPO (rp, "Can't get current branch");
+	Sdb *db = vcdb_open (rp);
+	if (!db) {
+		return NULL;
+	}
+	char *ret = sdb_get (db, CURRENTB, 0);
+	sdb_unlink (db);
+	sdb_close (db);
+	sdb_free (db);
+	return ret;
+}
+
 // GIT commands as APIs
 
 R_API bool r_vc_git_init(const char *path) {
