@@ -64,7 +64,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		return 0;
 	}
 	if (!strcmp (action, "branch")) {
-		if (opt.argc < 2) {
+		if (opt.argc <= 2) {
 			RList *branches = r_vc_get_branches (rp);
 			if (!branches) {
 				free (rp);
@@ -73,7 +73,10 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			RListIter *iter;
 			const char *b;
 			r_list_foreach (branches, iter, b) {
-				printf ("%s\n", b);
+				//Possible segfault here but I don't think it
+				//is imporrtant enough to write an if len(a) == len(b)
+				//statment.
+				printf ("%s\n", b + (r_str_len_utf8 (BPREFIX)));
 			}
 			r_list_free (branches);
 			return 0;

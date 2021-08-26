@@ -2,7 +2,7 @@
 
 #ifndef R_RVC_H
 #define R_RVC_H 1
-
+#define BPREFIX "branches."
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +34,7 @@ R_API bool rvc_git_branch(const RCore *core, const char *rp, const char *bname);
 R_API bool rvc_git_checkout(const RCore *core, const char *rp, const char *bname);
 R_API bool rvc_git_repo_exists(const RCore *core, const char *rp);
 R_API RList *r_vc_log(const char *rp);
+
 #ifdef __cplusplus
 }
 #endif

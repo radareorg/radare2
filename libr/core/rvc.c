@@ -10,7 +10,6 @@
 #define COMMIT_BLOB_SEP "----"
 #define DBNAME "branches.sdb"
 #define CURRENTB "current_branch"
-#define BPREFIX "branches."
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
@@ -1052,7 +1051,7 @@ R_API RList *r_vc_log(const char *rp) {
 	RListIter *iter;
 	char *ch;
 	r_list_foreach_prev (commits, iter, ch) {
-		char *cp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "commits", ch);
+		char *cp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "commits" R_SYS_DIR "%s", rp, ch);
 		if (!cp) {
 			goto fail_ret;
 		}
