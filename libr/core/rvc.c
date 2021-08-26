@@ -14,6 +14,21 @@
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
+#define CHECK_REPO(rp, message)\
+	switch (repo_exists (rp)) {\
+	case 1:\
+		break;\
+	case 0:\
+		eprintf ("No repo in %s\n" message "\n", rp);\
+		return false;\
+	case -1:\
+		eprintf (message "\n");\
+		return false;\
+	case -2:\
+		eprintf (message "\n");\
+		return false;\
+	}
+
 static bool file_copyp(const char *src, const char *dst) {
 	if (r_file_is_directory (dst)) {
 		return r_file_copy (src, dst);
@@ -725,19 +740,7 @@ R_API char *r_vc_find_rp(const char *path) {
 
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
-	switch (repo_exists (rp)) {
-	case 1:
-		break;
-	case 0:
-		eprintf ("No repo in %s\nCan't commit\n", rp);
-		return false;
-	case -1:
-		eprintf ("Can't commit\n");
-		return false;
-	case -2:
-		eprintf ("Can't commit");
-		return false;
-	}
+	CHECK_REPO (rp, "Can't commit");
 	if (R_STR_ISEMPTY (message)) {
 		char *path = NULL;
 		(void)r_file_mkstemp ("rvc", &path);
@@ -844,19 +847,6 @@ R_API RList *r_vc_get_branches(const char *rp) {
 R_API bool r_vc_branch(const char *rp, const char *bname) {
 	const char *current_branch;
 	const char *commits;
-	switch (repo_exists (rp)) {
-	case 1:
-		break;
-	case 0:
-		eprintf ("No repo in %s\nCan't branch\n", rp);
-		return false;
-	case -1:
-		eprintf ("Can't branch\n");
-		return false;
-	case -2:
-		eprintf ("Can't branch");
-		return false;
-	}
 	if (!is_valid_branch_name (bname)) {
 		eprintf ("The branch name %s is invalid\n", bname);
 		return false;
@@ -945,19 +935,7 @@ R_API bool r_vc_new(const char *path) {
 }
 
 R_API bool r_vc_checkout(const char *rp, const char *bname) {
-	switch (repo_exists (rp)) {
-	case 1:
-		break;
-	case 0:
-		eprintf ("No repo in %s\nCan't checkout\n", rp);
-		return false;
-	case -1:
-		eprintf ("Can't checkout\n");
-		return false;
-	case -2:
-		eprintf ("Can't checkout");
-		return false;
-	}
+	CHECK_REPO (rp, "Can't checkout");
 	{
 		int ret = branch_exists (rp, bname);
 		if (ret < 0) {
