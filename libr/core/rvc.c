@@ -265,7 +265,7 @@ static int branch_exists(const char *rp, const char *bname) {
 	char *branch;
 	bool ret = 0;
 	r_list_foreach (branches, iter, branch) {
-		branch = strchr (branch, '.') + 1; //In case BPREFIX changes, r change the char
+		branch = strchr (branch, BPREFIX[r_str_len_utf8 (BPREFIX) - 1]);
 		if (!strcmp (branch, bname)) {
 			ret = 1;
 			break;
@@ -1136,6 +1136,35 @@ fail_ret:
 }
 
 // GIT commands as APIs
+
+R_API RList *r_vc_log(const char *rp) {
+	RList *commits = get_commits (rp, 0);
+	if (!commits) {
+		return NULL;
+	}
+	RListIter *iter;
+	char *ch;
+	r_list_foreach_prev (commits, iter, ch) {
+		char *cp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "commits", ch);
+		if (!cp) {
+			goto fail_ret;
+		}
+		char *contnet = r_file_slurp (cp, 0);
+		free (cp);
+		if (!contnet) {
+			goto fail_ret;
+		}
+		iter->data = r_str_appendf (ch, "\n%s", contnet);
+		free (contnet);
+		if (!iter->data) {
+			goto fail_ret;
+		}
+	}
+	return commits;
+fail_ret:
+	r_list_free (commits);
+	return NULL;
+}
 
 R_API bool r_vc_git_init(const char *path) {
 	char *escpath = r_str_escape (path);
