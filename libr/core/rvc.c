@@ -812,6 +812,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 }
 
 R_API RList *r_vc_get_branches(const char *rp) {
+	CHECK_REPO (rp, "Can't list branches");
 	Sdb *db = vcdb_open (rp);
 	RList *ret = r_list_new ();
 	if (!ret) {
@@ -847,6 +848,7 @@ R_API RList *r_vc_get_branches(const char *rp) {
 R_API bool r_vc_branch(const char *rp, const char *bname) {
 	const char *current_branch;
 	const char *commits;
+	CHECK_REPO (rp, "Can't branch");
 	if (!is_valid_branch_name (bname)) {
 		eprintf ("The branch name %s is invalid\n", bname);
 		return false;
@@ -1042,6 +1044,7 @@ fail_ret:
 }
 
 R_API RList *r_vc_log(const char *rp) {
+	CHECK_REPO (rp, "Can't log");
 	RList *commits = get_commits (rp, 0);
 	if (!commits) {
 		return NULL;
@@ -1070,48 +1073,8 @@ fail_ret:
 	return NULL;
 }
 
-R_API RList *r_vc_list_branches(const char *rp) {
-	Sdb *db = vcdb_open (rp);
-	if (!db) {
-		return NULL;
-	}
-	SdbList *bl = sdb_foreach_list (db, false);
-	if (!bl) {
-		sdb_unlink (db);
-		sdb_free (db);
-		return false;
-	}
-	SdbListIter *iter;
-	RList *ret = r_list_new ();
-	if (!ret) {
-		ls_free (bl);
-		sdb_unlink (db);
-		sdb_free (db);
-		return false;
-	}
-	char *bname;
-	ls_foreach (bl, iter, bname) {
-		char *nbname = r_str_new (strchr(bname,
-					BPREFIX[r_str_len_utf8 (BPREFIX)]));
-		if (!bname) {
-			r_list_free (ret);
-			ret = NULL;
-			break;
-		}
-		if (!r_list_append (ret, nbname)) {
-			free (bname);
-			r_list_free (ret);
-			ret = NULL;
-			break;
-		}
-	}
-	ls_free (bl);
-	sdb_unlink (db);
-	sdb_free (db);
-	return false;
-}
-
 // GIT commands as APIs
+
 R_API bool r_vc_git_init(const char *path) {
 	char *escpath = r_str_escape (path);
 	int ret = r_sys_cmdf ("git init \"%s\"", escpath);
