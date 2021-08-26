@@ -437,7 +437,8 @@ static RList *repo_files(const char *dir) {
 }
 
 //shit function:
-static RList *get_uncommitted(const char *rp) {
+R_API RList *r_vc_get_uncommitted(const char *rp) {
+	CHECK_REPO (rp, "Cant get uncommitted");
 	RList *blobs = get_blobs (rp);
 	if (!blobs) {
 		return NULL;
@@ -646,7 +647,7 @@ static RList *blobs_add(const char *rp, const RList *files) {
 	if (!ret) {
 		return NULL;
 	}
-	RList *uncommitted = get_uncommitted (rp);
+	RList *uncommitted = r_vc_get_uncommitted (rp);
 	if (!uncommitted) {
 		free (ret);
 		return NULL;
@@ -947,7 +948,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	RList *uncommitted = get_uncommitted (rp);
+	RList *uncommitted = r_vc_get_uncommitted (rp);
 	RListIter *i;
 	char *file;
 	if (!uncommitted) {
@@ -984,7 +985,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	uncommitted = get_uncommitted (rp);
+	uncommitted = r_vc_get_uncommitted (rp);
 	if (!uncommitted) {
 		goto fail_ret;
 	}
@@ -1078,7 +1079,8 @@ R_API char *r_vc_current_branch(const char *rp) {
 	if (!db) {
 		return NULL;
 	}
-	char *ret = sdb_get (db, CURRENTB, 0);
+	//TODO: return consistently either BPREFIX.bname or bname
+	char *ret = r_str_new (sdb_const_get (db, CURRENTB, 0) + r_str_len_utf8 (BPREFIX));
 	sdb_unlink (db);
 	sdb_close (db);
 	sdb_free (db);

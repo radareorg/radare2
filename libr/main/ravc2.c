@@ -166,6 +166,31 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		r_list_free (commits);
 		return 0;
 	}
+	if (!strcmp (action, "status")) {
+		char *cb = r_vc_current_branch (rp);
+		if (!cb) {
+			return -15;
+		}
+		RList *unc = r_vc_get_uncommitted (rp);
+		if (!unc) {
+			free (cb);
+			return -16;
+		}
+		printf ("Branch: %s\n", cb);
+		free (cb);
+		if (!r_list_empty (unc)) {
+			printf ("The follwing files are uncommitted:\n");
+			RListIter *iter;
+			const char *i;
+			r_list_foreach (unc, iter, i) {
+				printf ("%s\n", i);
+			}
+		} else {
+			printf ("All files are committed\n");
+		}
+		r_list_free (unc);
+		return 0;
+	}
 	free (rp);
-	return -14;
+	return -17;
 }
