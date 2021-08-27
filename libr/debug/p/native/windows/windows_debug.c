@@ -1421,12 +1421,10 @@ RList *w32_desc_list(int pid) {
 			free (name);
 		} else {
 			char *name = r_utf16_to_utf8_l (objectTypeInfo->Name.Buffer, objectTypeInfo->Name.Length / 2);
-			desc = r_debug_desc_new (handle.Handle, name, perms, '?', 0);
-			if (!desc) {
-				free (name);
-				break;
+			RDebugDesc *desc = r_debug_desc_new (handle.Handle, name, perms, '?', 0);
+			if (desc) {
+				r_list_append (ret, desc);
 			}
-			r_list_append (ret, desc);
 			free (name);
 		}
 		free (objectNameInfo);
