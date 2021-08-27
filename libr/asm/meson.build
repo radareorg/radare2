@@ -101,6 +101,7 @@ r_asm_sources = [
   join_paths('arch','avr','avr_disasm.c'),
   join_paths('arch','avr','format.c'),
   join_paths('arch','avr','disasm.c'),
+  join_paths('arch','avr','assemble.c'),
   join_paths('arch','cr16','cr16_disas.c'),
   join_paths('arch','cris','gnu','cris-dis.c'),
   join_paths('arch','cris','gnu','cris-opc.c'),
