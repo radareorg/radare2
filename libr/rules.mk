@@ -65,13 +65,14 @@ ifeq (${OSTYPE},solaris)
 LINK+=-lproc
 endif
 
-ifneq ($(EXTRA_PRE),)
+ifeq ($(EXTRA_PRE),)
+all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
+else
 all: $(EXTRA_PRE)
 	$(MAKE) all2
 
-all2: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
-else
-all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
+all2: ${LIBSO} ${LIBAR}
+	$(MAKE) ${EXTRA_TARGETS}
 endif
 ifneq ($(SILENT),)
 	@-if [ -f p/Makefile ]; then ${MAKE} -C p ; fi
