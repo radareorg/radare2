@@ -202,7 +202,7 @@ Optional Features:
   --without-libuv        disable libuv dependency
   --with-rpath           use rpath to build
   --with-compiler        Define compiler to use (see mk/) (USERCC=gcc)
-  --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
+  --with-ostype          Choose OS ( android windows wsl mingw32 bsd solaris gnulinux darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
   --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)
@@ -402,7 +402,7 @@ echo "ERROR: ${CC} cannot create executables" >&2 ;
 exit 1 ; fi
 ochof "checking for dynamic library... "
 HAVE_LIB_DL=0
-for OS in gnulinux linux gnu/kfreebsd syllable serenityos vinix sunos darwin beos solaris wsl ; do
+for OS in gnulinux linux gnu/kfreebsd syllable sunos darwin beos solaris wsl ; do
 if [ "${HOST_OS}" = "${OS}" ]; then
 	HAVE_LIB_DL=1
 	break;
