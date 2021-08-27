@@ -1087,7 +1087,7 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 
 	// Use 'G' if write_register failed/isn't supported
 	gdbr_read_registers (g);
-	memcpy (g->data + g->registers[i].offset, value, len);
+	memcpy (g->data + (g->registers[i].offset / 8), value, len);
 	gdbr_write_bin_registers (g, g->data, g->data_len);
 
 	ret = 0;
