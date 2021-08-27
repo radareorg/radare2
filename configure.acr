@@ -147,7 +147,7 @@ ARG_WITH USE_RPATH rpath use rpath to build ;
 
 (( rules for the compiler ))
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
-ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin haiku ) ;
+ARG_WITH USEROSTYPE=auto ostype Choose OS ( android windows wsl mingw32 bsd solaris gnulinux darwin haiku ) ;
 
 (( TODO: throw error if unknown ostype ))
 (( TODO: handle BSD os as different ostype? ))
