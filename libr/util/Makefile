@@ -33,33 +33,33 @@ else
   endif
 endif
 
-include deps.mk
-
 CWD=$(shell pwd)
 
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
 
-
 EXTRA_PRE+=spp_config
 EXTRA_PRE+=charsets
-EXTRA_TARGETS=$(EXTRA_PRE)
+#EXTRA_TARGETS=$(EXTRA_PRE)
 EXTRA_CLEAN=doclean
 
+myall: all
+
 include ../rules.mk
+include deps.mk
 include sdb.mk
 include spp.mk
 
 charsets:
 	$(MAKE) -C d
-.PHONY: charsets
 
 doclean:
 	$(MAKE) -C d clean
-.PHONY: doclean
 
 sync-regex regex-sync:
 	-rm -rf src/
 	cvs -qd anoncvs@anoncvs.ca.openbsd.org:/cvs get -P src/lib/libc/regex
 	cp src/lib/libc/regex/* regex
+
+.PHONY: charsets doclean sync-regex regex-sync
