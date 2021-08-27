@@ -51,7 +51,7 @@ EOF
 RUN
 
 NAME=pri cows
-FILE=../doc/cows128.data
+FILE=bins/other/cows128.data
 CMDS=pri
 EXPECT=<<EOF
 ::::::::::++++++
