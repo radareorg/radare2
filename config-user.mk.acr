@@ -54,7 +54,10 @@ ifeq ($(WANT_DYLINK),1)
 ifeq ($(OSTYPE),qnx)
 DL_LIBS=
 else
+ifeq ($(OSTYPE),windows)
+else
 DL_LIBS=@DL_LIBS@
+endif
 endif
 
 else
