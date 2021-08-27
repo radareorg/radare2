@@ -112,6 +112,8 @@ else
 	fi
 fi
 
+./preconfigure
+
 if [ "${M32}" = 1 ]; then
 	${SHELL} ./sys/build-m32.sh ${ARGS} || exit 1
 elif [ "${HARDEN}" = 1 ]; then
