@@ -278,7 +278,7 @@ static int branch_exists(const char *rp, const char *bname) {
 	char *branch;
 	bool ret = 0;
 	r_list_foreach (branches, iter, branch) {
-		branch = strchr (branch, BPREFIX[r_str_len_utf8 (BPREFIX) - 1]);
+		branch = branch + r_str_len_utf8 (BPREFIX);
 		if (!strcmp (branch, bname)) {
 			ret = 1;
 			break;
