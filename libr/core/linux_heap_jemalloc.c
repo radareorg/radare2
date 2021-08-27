@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2017 - javierptd */
+
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
 #define INCLUDE_HEAP_JEMALLOC_STD_C
 #define HEAP32 1
@@ -26,6 +28,7 @@
 #if __linux__
 // TODO: provide proper api in cbin to resolve symbols and load libraries from debug maps and such
 // this is, provide a programmatic api for the slow dmi command
+#if 0
 static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	RListIter *iter;
 	RBinSymbol *s;
@@ -54,6 +57,27 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	r_core_free (core);
 	return vaddr;
 }
+#else
+static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
+	GHT vaddr = GHT_MAX;
+	RBin *bin = core->bin;
+	RBinFile *current_bf = r_bin_cur (bin);
+	RBinFile *libc_bf = r_bin_open (bin, path, &opt);
+ 	if (!libc_bf) {
+ 		return vaddr;
+ 	}
+ 	RList *syms = r_bin_get_symbols (bin);
+ 	r_list_foreach (syms, iter, s) {
+ 		if (!strcmp (s->name, sym_name)) {
+ 			vaddr = s->vaddr;
+ 			break;
+		}
+	}
+	r_bin_file_delete (bin, libc_bf);
+ 	r_bin_file_set_cur_binfile (bin, current_bf);
+	return vaddr;
+}
+#endif
 
 static int GH(je_matched)(const char *ptr, const char *str) {
         int ret = strncmp (ptr, str, strlen (str) - 1);
@@ -64,7 +88,7 @@ static int GH(je_matched)(const char *ptr, const char *str) {
 static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	RListIter *iter;
 	RDebugMap *map;
-	const char *jemalloc_ver_end = NULL;
+	const char *path = NULL;
 	ut64 jemalloc_addr = UT64_MAX;
 
 	if (!core || !core->dbg || !core->dbg->maps){
@@ -74,31 +98,28 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	r_list_foreach (core->dbg->maps, iter, map) {
 		if (strstr (map->name, "libjemalloc.")) {
 			jemalloc_addr = map->addr;
-			jemalloc_ver_end = map->name;
+			path = map->name;
 			break;
 		}
 	}
-	if (!jemalloc_ver_end) {
-		eprintf ("Warning: Is jemalloc mapped in memory? (see dm command)\n");
+	if (!path) {
+		eprintf ("Warning: cannot find jemalloc mapped in memory (see `dm`)\n");
 		return false;
 	}
 #if __linux__
-	bool is_debug_file = GH(je_matched)(jemalloc_ver_end, "/usr/local/lib");
+	bool is_debug_file = GH(je_matched)(path, "/usr/local/lib");
 
 	if (!is_debug_file) {
-		eprintf ("Warning: Is libjemalloc.so.2 in /usr/local/lib path?\n");
+		eprintf ("Warning: Cannot find libjemalloc.so.2 in /usr/local/lib\n");
 		return false;
 	}
-	char *path = r_str_newf ("%s", jemalloc_ver_end);
 	if (r_file_exists (path)) {
-		ut64 vaddr = GH(je_get_va_symbol)(path, symname);
+		ut64 vaddr = GH(je_get_va_symbol)(core, path, symname);
 		if (jemalloc_addr != GHT_MAX && vaddr != 0) {
 			*symbol = jemalloc_addr + vaddr;
-			free (path);
 			return true;
 		}
 	}
-	free (path);
 	return false;
 #else
 	eprintf ("[*] Resolving %s from libjemalloc.2... ", symname);
