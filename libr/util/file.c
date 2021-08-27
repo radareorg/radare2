@@ -88,7 +88,7 @@ R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	if (fd == -1) {
 		return false;
 	}
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || __WINDOWS__
 	int r = _chsize (fd, newsize);
 #else
 	int r = ftruncate (fd, newsize);
