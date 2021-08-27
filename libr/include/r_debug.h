@@ -426,7 +426,7 @@ typedef struct r_debug_pid_t {
  */
 #ifdef R_API
 R_API RDebug *r_debug_new(int hard);
-R_API RDebug *r_debug_free(RDebug *dbg);
+R_API void r_debug_free(RDebug *dbg);
 
 R_API bool r_debug_attach(RDebug *dbg, int pid);
 R_API int r_debug_detach(RDebug *dbg, int pid);

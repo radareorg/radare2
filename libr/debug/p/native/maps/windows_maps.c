@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2019-2021 - gustavo */
+
 #include "windows_maps.h"
 #include "../windows/windows_debug.h"
 
@@ -131,14 +133,11 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 	IMAGE_DOS_HEADER *dos_hdr;
 	IMAGE_NT_HEADERS *nt_hdrs;
 	IMAGE_NT_HEADERS32 *nt_hdrs32;
-	IMAGE_SECTION_HEADER *sect_hdr;
+	IMAGE_SECTION_HEADER *sect_hdr = NULL;
 	ut8 pe_hdr[0x1000];
-	SIZE_T len;
-	int mod_inf_fill;
+	SIZE_T len = 0;
+	int mod_inf_fill = 1;
 
-	len = 0;
-	sect_hdr = NULL;
-	mod_inf_fill = -1;
 	ReadProcessMemory (h_proc, (LPCVOID)(size_t)map->addr, (LPVOID)pe_hdr, sizeof (pe_hdr), &len);
 	if (len == (SIZE_T)sizeof (pe_hdr) && is_pe_hdr (pe_hdr)) {
 		dos_hdr = (IMAGE_DOS_HEADER *)pe_hdr;
@@ -247,6 +246,7 @@ static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATIO
 }
 
 R_API RList *r_w32_dbg_maps(RDebug *dbg) {
+	r_return_val_if_fail (dbg, NULL);
 	if (dbg->pid == -1) {
 		return NULL;
 	}
@@ -274,6 +274,7 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 				break;
 			default:
 				add_map_reg (map_list, "", &mbi);
+				break;
 			}
 		}
 		cur_addr = (LPVOID)(size_t)((ut64)(size_t)mbi.BaseAddress + mbi.RegionSize);

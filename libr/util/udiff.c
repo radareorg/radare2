@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nikolai */
 
 #include <r_diff.h>
 

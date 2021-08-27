@@ -240,7 +240,8 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 				PTCHAR f = r_sys_conv_utf8_to_win (file);
 				int s = GetFullPathName (f, MAX_PATH, abspath, NULL);
 				if (s > MAX_PATH) {
-					R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
+					// R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
+					eprintf ("r_file_abspath/GetFullPathName: Path to file too long.\n");
 				} else if (!s) {
 					r_sys_perror ("r_file_abspath/GetFullPathName");
 				} else {
@@ -1284,7 +1285,6 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 	PTCHAR s = r_sys_conv_utf8_to_win (src);
 	PTCHAR d = r_sys_conv_utf8_to_win (dst);
 	if (!s || !d) {
-		R_LOG_ERROR ("r_file_copy: Failed to allocate memory\n");
 		free (s);
 		free (d);
 		return false;

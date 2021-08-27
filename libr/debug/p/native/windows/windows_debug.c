@@ -462,7 +462,7 @@ static char *__get_file_name_from_handle(HANDLE handle_file) {
 		goto err_get_file_name_from_handle;
 	}
 	TCHAR name[MAX_PATH];
-	TCHAR drive[3] = TEXT (" :");
+	TCHAR drive[3] = {' ', ':', 0};
 	LPTSTR cur_drive = temp_buffer;
 	while (*cur_drive) {
 		/* Look up each device name */
@@ -534,7 +534,8 @@ static char *__resolve_path(HANDLE ph, HANDLE mh) {
 	length = tmp - filename;
 	TCHAR device[MAX_PATH];
 	char *ret = NULL;
-	for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT ('Z'); drv[0]++) {
+	TCHAR drv[3] = {'A', ':', 0};
+	for (; drv[0] <= TEXT ('Z'); drv[0]++) {
 		if (QueryDosDevice (drv, device, maxlength) > 0) {
 			if (!_tcsncmp (filename, device, length)) {
 				TCHAR path[MAX_PATH];
@@ -1223,13 +1224,13 @@ static void __w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 		r_sys_perror ("__w32_info_user/GetTokenInformation");
 		goto err___w32_info_user;
 	}
-	usr = (LPTSTR)malloc (usr_len * sizeof (TCHAR));
+	usr = (LPTSTR)calloc (usr_len, sizeof (TCHAR));
 	if (!usr) {
 		perror ("__w32_info_user/malloc usr");
 		goto err___w32_info_user;
 	}
 	*usr = '\0';
-	usr_dom = (LPTSTR)malloc (usr_dom_len * sizeof (TCHAR));
+	usr_dom = (LPTSTR)calloc (usr_dom_len, sizeof (TCHAR));
 	if (!usr_dom) {
 		perror ("__w32_info_user/malloc usr_dom");
 		goto err___w32_info_user;
