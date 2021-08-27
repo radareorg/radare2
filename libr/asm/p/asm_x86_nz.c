@@ -4847,27 +4847,27 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		if (!r_str_ncasecmp (str + pos, "ptr", 3)) {
 			continue;
 		} else if (!r_str_ncasecmp (str + pos, "byte", 4)) {
-			op->type |= OT_MEMORY | OT_BYTE;
+			op->type |= OT_MEMORY | OT_BYTE | OT_GPREG;
 			op->dest_size = OT_BYTE;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "word", 4)) {
-			op->type |= OT_MEMORY | OT_WORD;
+			op->type |= OT_MEMORY | OT_WORD | OT_GPREG;
 			op->dest_size = OT_WORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "dword", 5)) {
-			op->type |= OT_MEMORY | OT_DWORD;
+			op->type |= OT_MEMORY | OT_DWORD | OT_GPREG;
 			op->dest_size = OT_DWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "qword", 5)) {
-			op->type |= OT_MEMORY | OT_QWORD;
+			op->type |= OT_MEMORY | OT_QWORD | OT_GPREG;
 			op->dest_size = OT_QWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "oword", 5)) {
-			op->type |= OT_MEMORY | OT_OWORD;
+			op->type |= OT_MEMORY | OT_OWORD | OT_GPREG;
 			op->dest_size = OT_OWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "tbyte", 5)) {
-			op->type |= OT_MEMORY | OT_TBYTE;
+			op->type |= OT_MEMORY | OT_TBYTE | OT_GPREG;
 			op->dest_size = OT_TBYTE;
 			explicit_size = true;
 		} else { // the current token doesn't denote a size
