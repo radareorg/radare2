@@ -80,5 +80,8 @@ typedef struct _formattingOptions formattingOptions;
 
 
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-int printDisassembledInstruction(avrDisassembleContext *context, char *out, const disassembledInstruction dInstruction, formattingOptions fOptions);
+int printDisassembledInstruction(RAsm *, avrDisassembleContext *context, char *out, const disassembledInstruction dInstruction, formattingOptions fOptions);
+int analPrintDisassembledInstruction(RAnal *a, avrDisassembleContext *context, char *out, const disassembledInstruction dInstruction, formattingOptions fOptions);
+int parse_registerpair(const char *operand);
+
 #endif

@@ -28,6 +28,7 @@
 
 #include <stdint.h>
 #include "avr_instructionset.h"
+#include "r_asm.h"
 
 /* OPERAND_REGISTER_GHOST:
  * Some instructions, like clr, only have one instruction when written in assembly,

@@ -28,7 +28,7 @@ ad "lsl r24" 880f
 ad "mov r0, r31" 0f2e
 ad "movw r22, r18" b901
 ad "ori r24, 0x01" 8160
-ad "out 0x3e, r25" 9ebf
+ad "out sph, r25" 9ebf
 ad "push r29" df93
 ad "rcall 0x4" 01d0
 ad "rjmp 0x4" 01c0
