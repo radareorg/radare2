@@ -239,7 +239,7 @@ static int update_self_regions(RIO *io, int pid) {
 		perm |= mbi.Protect & PAGE_EXECUTE_READ ? R_PERM_RX : 0;
 		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? R_PERM_RWX : 0;
 		perm = mbi.Protect & PAGE_NOACCESS ? 0 : perm;
-		if (perm && w32_GetMappedFileName && !w32_GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, name_size)) {
+		if (perm && !r_w32_GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, name_size)) {
 			name[0] = '\0';
 		}
 		self_sections[self_sections_count].from = (ut64) mbi.BaseAddress;

@@ -1085,29 +1085,16 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	return 0;
 }
 
-R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	// TODO: add maximum path length support
-	HANDLE processHandle;
+// w32 specific API
+R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
 	char *result = NULL;
-
-	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-	if (!processHandle) {
-		eprintf ("r_sys_pid_to_path: Cannot open process.\n");
-		return NULL;
-	}
-	DWORD length = 0;
-	if (w32_GetModuleFileNameEx) {
-		length = w32_GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
-	}
+	DWORD length = r_w32_GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
-		if (w32_GetProcessImageFileName) {
-			length = w32_GetProcessImageFileName (processHandle, filename, maxlength);
-		}
-		CloseHandle (processHandle);
+		length = r_w32_GetProcessImageFileName (processHandle, filename, maxlength);
 		if (length == 0) {
 			eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
 			return NULL;
@@ -1175,10 +1162,22 @@ R_API char *r_sys_pid_to_path(int pid) {
 		free (name);
 		free (tmp);
 	} else {
-		CloseHandle (processHandle);
 		result = r_sys_conv_win_to_utf8 (filename);
 	}
 	return result;
+}
+#endif
+
+R_API char *r_sys_pid_to_path(int pid) {
+#if __WINDOWS__
+	HANDLE processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+	if (!processHandle) {
+		// eprintf ("r_sys_pid_to_path: Cannot open process.\n");
+		return NULL;
+	}
+	char *filename = r_w32_handle_to_path (processHandle);
+	CloseHandle (processHandle);
+	return filename;
 #elif __APPLE__
 #if __POWERPC__
 #pragma message("TODO getpidproc")

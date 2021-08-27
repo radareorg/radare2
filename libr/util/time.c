@@ -12,7 +12,11 @@
 R_API ut64 r_time_now(void) {
 	ut64 ret;
 	struct timeval now;
+#if __MINGW32__
+	mingw_gettimeofday (&now, NULL);
+#else
 	gettimeofday (&now, NULL);
+#endif
 	ret = now.tv_sec * R_USEC_PER_SEC;
 	ret += now.tv_usec;
 	return ret;

@@ -21,6 +21,22 @@
 #define MUSTSEEJSON (mode & R_PRINT_JSON && mode & R_PRINT_ISFIELD)
 #define MUSTSEESTRUCT (mode & R_PRINT_STRUCT)
 
+// FOR MINGW only
+#if __MINGW32__
+// gmtime_r can be defined by mingw
+#ifndef gmtime_r
+static struct tm* gmtime_r(const time_t* t, struct tm* r) {
+	// gmtime is threadsafe in windows because it uses TLS
+	struct tm *theTm = gmtime(t);
+	if (theTm) {
+		*r = *theTm;
+		return r;
+	}
+	return 0;
+}
+#endif // gmtime_r
+#endif
+
 //this define is used as a way to acknowledge when updateAddr should take len
 //as real len of the buffer
 #define THRESHOLD (-4444)
