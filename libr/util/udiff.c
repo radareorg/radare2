@@ -330,7 +330,7 @@ R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, con
 			}
 		}
 		if (verbose && di % 10000 == 0) {
-			eprintf ("\rProcessing dist %" PFMT64d " of max %" PFMT64d "\r", di, m);
+			eprintf ("\rProcessing dist %" PFMT64d " of max %" PFMT64d "\r", (st64)di, (st64)m);
 		}
 	}
 
