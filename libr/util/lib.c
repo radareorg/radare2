@@ -51,7 +51,6 @@ R_API void *r_lib_dl_open(const char *libname) {
 	} else {
 		libname_ = calloc (MAX_PATH, sizeof (TCHAR));
 		if (!libname_) {
-			R_LOG_ERROR ("lib/r_lib_dl_open: Failed to allocate memory.\n");
 			return NULL;
 		}
 		if (!GetModuleFileName (NULL, libname_, MAX_PATH)) {

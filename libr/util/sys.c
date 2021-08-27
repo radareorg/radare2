@@ -1140,7 +1140,8 @@ R_API char *r_sys_pid_to_path(int pid) {
 		strncpy (tmp, name, length);
 		tmp[length] = '\0';
 		TCHAR device[MAX_PATH];
-		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
+		TCHAR drv[3] = {'A',':', 0};
+		for (; drv[0] <= TEXT('Z'); drv[0]++) {
 			if (QueryDosDevice (drv, device, maxlength) > 0) {
 				char *dvc = r_sys_conv_win_to_utf8 (device);
 				if (!dvc) {

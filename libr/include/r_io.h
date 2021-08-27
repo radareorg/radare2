@@ -35,7 +35,7 @@
 #if __sun
 #include <sys/types.h>
 #else
-#if DEBUGGER && HAVE_PTRACE
+#if DEBUGGER && HAVE_PTRACE && !__WINDOWS__
 #include <sys/ptrace.h>
 #endif
 #endif
