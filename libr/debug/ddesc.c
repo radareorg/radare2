@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake */
-
-// XXX: All this stuff must be linked to the code injection api
+/* radare - LGPL - Copyright 2010-2021 - pancake */
 
 #include <r_debug.h>
 
@@ -18,9 +16,7 @@ R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int 
 
 R_API void r_debug_desc_free (RDebugDesc *p) {
 	if (p) {
-		if (p->path) {
-			free (p->path);
-		}
+		free (p->path);
 		free (p);
 	}
 }

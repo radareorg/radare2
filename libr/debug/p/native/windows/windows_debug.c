@@ -1324,20 +1324,31 @@ RList *w32_desc_list(int pid) {
 	RDebugDesc *desc;
 	int i;
 	HANDLE ph;
-	PSYSTEM_HANDLE_INFORMATION handleInfo;
+	PSYSTEM_HANDLE_INFORMATION handleInfo = NULL;
 	NTSTATUS status;
 	ULONG handleInfoSize = 0x10000;
 	POBJECT_TYPE_INFORMATION objectTypeInfo = malloc (0x1000);
+	if (!objectTypeInfo) {
+		return NULL;
+	}
 	RList *ret = r_list_newf ((RListFree)r_debug_desc_free);
 	if (!ret) {
+		free (objectTypeInfo);
 		return NULL;
 	}
 	if (!(ph = OpenProcess (PROCESS_DUP_HANDLE, FALSE, pid))) {
 		r_sys_perror ("win_desc_list/OpenProcess");
+		free (objectTypeInfo);
 		r_list_free (ret);
 		return NULL;
 	}
 	handleInfo = (PSYSTEM_HANDLE_INFORMATION)malloc (handleInfoSize);
+	if (!handleInfo) {
+		CloseHandle (ph);
+		free (objectTypeInfo);
+		r_list_free (ret);
+		return NULL;
+	}
 	#define SystemHandleInformation 16
 	while ((status = r_w32_NtQuerySystemInformation (SystemHandleInformation, handleInfo, handleInfoSize, NULL)) == STATUS_INFO_LENGTH_MISMATCH) {
 		handleInfoSize *= 2;

@@ -2907,8 +2907,9 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 			// Process exited before we finished writing to pipe
 			DWORD exit;
 			if (GetExitCodeThread (th, &exit) && exit == STILL_ACTIVE) {
-				CancelSynchronousIo (th);
+				r_w32_CancelSynchronousIo (th);
 			}
+			// Windows XP
 			WaitForSingleObject (th, INFINITE);
 			__CLOSE_DUPPED_PIPES ();
 			break;
