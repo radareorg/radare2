@@ -86,8 +86,7 @@ static int rabin_show_help(int v) {
 		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
 		" RABIN2_STRFILTER: e bin.str.filter   #  r2 -qc 'e bin.str.filter=?" "?' -\n"
 		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
-		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
-		" R2_CONFIG:        # sdb config file\n");
+		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n");
 	}
 	return 1;
 }
@@ -596,7 +595,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_lib_free (l);
 	}
 	free (tmp);
-
+#if 0
 	if ((tmp = r_sys_getenv ("R2_CONFIG"))) {
 		Sdb *config_sdb = sdb_new (NULL, tmp, 0);
 		if (config_sdb) {
@@ -607,6 +606,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		}
 		free (tmp);
 	}
+#endif
 	if ((tmp = r_sys_getenv ("RABIN2_DMNGLRCMD"))) {
 		r_config_set (core.config, "cmd.demangle", tmp);
 		free (tmp);
