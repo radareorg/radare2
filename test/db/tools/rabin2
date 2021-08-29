@@ -1058,7 +1058,7 @@ RUN
 
 NAME=rabin2 -Pj
 FILE=bins/pdb/minimal.pdb
-CMDS=!!rabin2 -Pj ${R2_FILE}~{}
+CMDS=!!rabin2 -B0 -Pj ${R2_FILE}~{}
 EXPECT=<<EOF
 {
   "pdb": {
