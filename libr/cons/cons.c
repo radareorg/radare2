@@ -566,6 +566,7 @@ R_API RCons *r_cons_new(void) {
 	if (I.refcnt != 1) {
 		return &I;
 	}
+	I.use_utf8 = r_cons_is_utf8 ();
 	I.rgbstr = r_cons_rgb_str_off;
 	I.line = r_line_new ();
 	I.enable_highlight = true;

@@ -243,8 +243,9 @@ R_API bool r_cons_is_utf8(void) {
 	int row = 0, col = 0;
 	int row2 = 0, col2 = 0;
 	int fd = current_tty ();
-	if (fd == -1)
+	if (fd == -1) {
 		return false;
+	}
 	if (cursor_position (fd, &row, &col)) {
 		close (fd);
 		return false;
@@ -256,7 +257,7 @@ R_API bool r_cons_is_utf8(void) {
 	}
 	close (fd);
 	write (1, "\r    \r", 6);
-	return ((col2-col)==2);
+	return ((col2 - col) == 2);
 #endif
 	return ret;
 }
