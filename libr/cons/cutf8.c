@@ -18,6 +18,7 @@
 #define RD_EIO   (-2)
 
 /* select utf8 terminal detection method */
+#define R_UTF8_DETECT_R2ENV 1
 #define R_UTF8_DETECT_ENV 1
 #define R_UTF8_DETECT_LOCALE 0
 #define R_UTF8_DETECT_CURSOR 0
@@ -205,6 +206,19 @@ static int cursor_position(const int tty, int *const rowptr, int *const colptr) 
 
 R_API bool r_cons_is_utf8(void) {
 	bool ret = false;
+#if R_UTF8_DETECT_R2ENV
+	char *e = r_sys_getenv ("R2_UTF8");
+	if (e) {
+		bool is_set = *e;
+		if (is_set) {
+			ret = r_str_is_true (e);
+		}
+		free (e);
+		if (is_set) {
+			return ret;
+		}
+	}
+#endif
 #if R_UTF8_DETECT_ENV
 	const char *keys[] = { "LC_ALL", "LC_CTYPE", "LANG", NULL };
 	const char **key = keys;
@@ -220,8 +234,8 @@ R_API bool r_cons_is_utf8(void) {
 #endif
 #if R_UTF8_DETECT_LOCALE
 	const char *ctype = setlocale (LC_CTYPE, NULL);
-	if ( (ctype != NULL) && (ctype = strchr(ctype, '.')) && ctype++ &&
-		(r_str_casecmp(ctype, "UTF-8") == 0 || r_str_casecmp(ctype, "UTF8") == 0)) {
+	if ((ctype != NULL) && (ctype = strchr (ctype, '.')) && ctype++ &&
+		(!r_str_casecmp (ctype, "UTF-8") || !r_str_casecmp (ctype, "UTF8"))) {
 		return true;
 	}
 #endif
@@ -231,7 +245,7 @@ R_API bool r_cons_is_utf8(void) {
 	int fd = current_tty ();
 	if (fd == -1)
 		return false;
-	if (cursor_position(fd, &row, &col)) {
+	if (cursor_position (fd, &row, &col)) {
 		close (fd);
 		return false;
 	}
