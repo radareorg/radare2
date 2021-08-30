@@ -45,16 +45,15 @@ cd ravc2_branch_test
 echo hello > hello
 !!ravc2 commit "hello world!" hello
 !!ravc2 checkout hello
-ls
+ls -q ~!/
 !!ravc2 status~Branch:
 !!ravc2 checkout master
-ls
+ls -q ~!/
 cd ../
 EOF
 EXPECT=<<EOF
-             .rvc/                 ../                  ./  
 Branch: hello
-             .rvc/                 ../                  ./               hello
+hello
 EOF
 RUN
 
