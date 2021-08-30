@@ -10,7 +10,6 @@
 #define COMMIT_BLOB_SEP "----"
 #define DBNAME "branches.sdb"
 #define CURRENTB "current_branch"
-#define BPREFIX "branches."
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
@@ -57,16 +56,35 @@ static char *strip_sys_dir(const char *path) {
 	return ret;
 }
 
-static int repo_exists(const char *path) {
+static Sdb *vcdb_open(const char *rp) {
+	char *frp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
+	if (!frp) {
+		return NULL;
+	}
+	Sdb *db = sdb_new0 ();
+	if (!db) {
+		free (frp);
+		return NULL;
+	}
+	if (sdb_open (db, frp) < 0) {
+		free (frp);
+		sdb_free (db);
+		return NULL;
+	}
+	free (frp);
+	return db;
+}
+
+static bool repo_exists(const char *path) {
 	char *rp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
 	if (!rp) {
-		return -1;
+		return false;
 	}
 	if (!r_file_is_directory (rp)) {
 		free (rp);
-		return 0;
+		return false;
 	}
-	int r = 1;
+	bool r = true;
 	char *files[3] = {r_str_newf ("%s" R_SYS_DIR DBNAME, rp),
 		r_str_newf ("%s" R_SYS_DIR "commits", rp),
 		r_str_newf ("%s" R_SYS_DIR "blobs", rp),
@@ -74,18 +92,17 @@ static int repo_exists(const char *path) {
 	free (rp);
 	for (size_t i = 0; i < 3; i++) {
 		if (!files[i]) {
-			r = -1;
-			goto ret;
+			r = false;
+			break;
 		}
 		if (!r_file_is_directory (files[i]) && !r_file_exists (files[i])) {
 			eprintf ("Error: Corrupt repo: %s doesn't exist\n",
 					files[i]);
-			r = -2;
-			goto ret;
+			r = false;
+			break;
 		}
 
 	}
-ret:
 	free (files[0]);
 	free (files[1]);
 	free (files[2]);
@@ -172,27 +189,7 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 	if (!ret) {
 		return NULL;
 	}
-	Sdb *db = sdb_new0 ();
-	if (!db) {
-		r_list_free (ret);
-		return NULL;
-	}
-	char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME,
-			rp);
-	if (!dbp) {
-		r_list_free (ret);
-		sdb_unlink (db);
-		sdb_free (db);
-		return NULL;
-	}
-	if (sdb_open (db, dbp) < 0) {
-		r_list_free (ret);
-		sdb_unlink (db);
-		sdb_free (db);
-		free (dbp);
-		return NULL;
-	}
-	free (dbp);
+	Sdb *db = vcdb_open(rp);
 	i = sdb_get (db, sdb_const_get (db, CURRENTB, 0), 0);
 	if (!i) {
 		r_list_free (ret);
@@ -265,7 +262,7 @@ static int branch_exists(const char *rp, const char *bname) {
 	char *branch;
 	bool ret = 0;
 	r_list_foreach (branches, iter, branch) {
-		branch = strchr (branch, '.') + 1; //In case BPREFIX changes, r change the char
+		branch = branch + r_str_len_utf8 (BPREFIX);
 		if (!strcmp (branch, bname)) {
 			ret = 1;
 			break;
@@ -424,7 +421,11 @@ static RList *repo_files(const char *dir) {
 }
 
 //shit function:
-static RList *get_uncommitted(const char *rp) {
+R_API RList *r_vc_get_uncommitted(const char *rp) {
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
 	RList *blobs = get_blobs (rp);
 	if (!blobs) {
 		return NULL;
@@ -633,7 +634,7 @@ static RList *blobs_add(const char *rp, const RList *files) {
 	if (!ret) {
 		return NULL;
 	}
-	RList *uncommitted = get_uncommitted (rp);
+	RList *uncommitted = r_vc_get_uncommitted (rp);
 	if (!uncommitted) {
 		free (ret);
 		return NULL;
@@ -726,17 +727,8 @@ R_API char *r_vc_find_rp(const char *path) {
 
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
-	switch (repo_exists (rp)) {
-	case 1:
-		break;
-	case 0:
-		eprintf ("No repo in %s\nCan't commit\n", rp);
-		return false;
-	case -1:
-		eprintf ("Can't commit\n");
-		return false;
-	case -2:
-		eprintf ("Can't commit");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
 		return false;
 	}
 	if (R_STR_ISEMPTY (message)) {
@@ -783,32 +775,8 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		return false;
 	}
 	{
-		char *dbf;
 		const char *current_branch;
-		Sdb *db = sdb_new0 ();
-		if (!db) {
-			free_blobs (blobs);
-			free (commit_hash);
-			return false;
-		}
-		dbf = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME,
-				rp);
-		if (!dbf) {
-			sdb_unlink (db);
-			sdb_free (db);
-			free_blobs (blobs);
-			free (commit_hash);
-			return false;
-		}
-		if (sdb_open (db, dbf) < 0) {
-			sdb_unlink (db);
-			sdb_free (db);
-			free_blobs (blobs);
-			free (commit_hash);
-			free (dbf);
-			return false;
-		}
-		free (dbf);
+		Sdb *db = vcdb_open (rp) ;
 		current_branch = sdb_const_get (db, CURRENTB, 0);
 		if (sdb_set (db, commit_hash, sdb_const_get (db, current_branch, 0), 0) < 0) {
 			sdb_unlink (db);
@@ -834,23 +802,11 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 }
 
 R_API RList *r_vc_get_branches(const char *rp) {
-	Sdb *db;
-	db = sdb_new0 ();
-	if (!db) {
-		return NULL;
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
 	}
-	{
-		char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
-				DBNAME, rp);
-		if (!dbp) {
-			return NULL;
-		}
-		if (sdb_open (db, dbp) < 0) {
-			free (dbp);
-			return NULL;
-		}
-		free (dbp);
-	}
+	Sdb *db = vcdb_open (rp);
 	RList *ret = r_list_new ();
 	if (!ret) {
 		sdb_unlink (db);
@@ -885,19 +841,8 @@ R_API RList *r_vc_get_branches(const char *rp) {
 R_API bool r_vc_branch(const char *rp, const char *bname) {
 	const char *current_branch;
 	const char *commits;
-	char *dbp;
-	Sdb *db;
-	switch (repo_exists (rp)) {
-	case 1:
-		break;
-	case 0:
-		eprintf ("No repo in %s\nCan't branch\n", rp);
-		return false;
-	case -1:
-		eprintf ("Can't branch\n");
-		return false;
-	case -2:
-		eprintf ("Can't branch");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
 		return false;
 	}
 	if (!is_valid_branch_name (bname)) {
@@ -913,22 +858,7 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
-	if (!dbp) {
-		return false;
-	}
-	db = sdb_new0 ();
-	if (!db) {
-		free (dbp);
-		return false;
-	}
-	if (sdb_open (db, dbp) < 0) {
-		sdb_unlink (db);
-		sdb_free (db);
-		free (dbp);
-		return false;
-	}
-	free (dbp);
+	Sdb *db = vcdb_open(rp);
 	current_branch = sdb_const_get (db, CURRENTB, 0);
 	if (!current_branch) {
 		sdb_unlink (db);
@@ -1003,17 +933,8 @@ R_API bool r_vc_new(const char *path) {
 }
 
 R_API bool r_vc_checkout(const char *rp, const char *bname) {
-	switch (repo_exists (rp)) {
-	case 1:
-		break;
-	case 0:
-		eprintf ("No repo in %s\nCan't checkout\n", rp);
-		return false;
-	case -1:
-		eprintf ("Can't checkout\n");
-		return false;
-	case -2:
-		eprintf ("Can't checkout");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
 		return false;
 	}
 	{
@@ -1026,7 +947,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	RList *uncommitted = get_uncommitted (rp);
+	RList *uncommitted = r_vc_get_uncommitted (rp);
 	RListIter *i;
 	char *file;
 	if (!uncommitted) {
@@ -1042,26 +963,12 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		return false;
 	}
 	r_list_free (uncommitted);
-	Sdb *db = sdb_new0 ();
+	Sdb *db = vcdb_open (rp) ;
 	if (!db) {
 		return false;
 	}
 	const char *oldb;
 	{
-		char *dbp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
-				DBNAME, rp);
-		if (!dbp) {
-			sdb_unlink (db);
-			sdb_free (db);
-			return false;
-		}
-		if (sdb_open (db, dbp) < 0) {
-			free (dbp);
-			sdb_unlink (db);
-			sdb_free (db);
-			return false;
-		}
-		free (dbp);
 		char *fbname = r_str_newf (BPREFIX "%s", bname);
 		if (!fbname) {
 			sdb_unlink (db);
@@ -1077,7 +984,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	uncommitted = get_uncommitted (rp);
+	uncommitted = r_vc_get_uncommitted (rp);
 	if (!uncommitted) {
 		goto fail_ret;
 	}
@@ -1133,6 +1040,62 @@ fail_ret:
 	sdb_unlink (db);
 	sdb_free (db);
 	return false;
+}
+
+R_API RList *r_vc_log(const char *rp) {
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
+	RList *commits = get_commits (rp, 0);
+	if (!commits) {
+		return NULL;
+	}
+	RListIter *iter;
+	char *ch;
+	r_list_foreach_prev (commits, iter, ch) {
+		char *cp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "commits" R_SYS_DIR "%s", rp, ch);
+		if (!cp) {
+			goto fail_ret;
+		}
+		char *contnet = r_file_slurp (cp, 0);
+		free (cp);
+		if (!contnet) {
+			goto fail_ret;
+		}
+		iter->data = r_str_newf ("hash=%s", (char *) iter->data);
+		if (!iter->data) {
+			free (contnet);
+			goto fail_ret;
+		}
+		free (ch);
+		iter->data = r_str_appendf (iter->data, "\n%s", contnet);
+		free (contnet);
+		if (!iter->data) {
+			goto fail_ret;
+		}
+	}
+	return commits;
+fail_ret:
+	r_list_free (commits);
+	return NULL;
+}
+
+R_API char *r_vc_current_branch(const char *rp) {
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
+	Sdb *db = vcdb_open (rp);
+	if (!db) {
+		return NULL;
+	}
+	//TODO: return consistently either BPREFIX.bname or bname
+	char *ret = r_str_new (sdb_const_get (db, CURRENTB, 0) + r_str_len_utf8 (BPREFIX));
+	sdb_unlink (db);
+	sdb_close (db);
+	sdb_free (db);
+	return ret;
 }
 
 // GIT commands as APIs

@@ -35,7 +35,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			return 0;
 		default:
 			ravc2_show_help ();
-			return -1;
+			return 1;
 		}
 	}
 
@@ -45,11 +45,11 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	const char *action = (argc >= 2)? opt.argv[opt.ind] : NULL;
 	if (!action) {
-		return -1;
+		return 1;
 	}
 	char *pwd = r_sys_getdir ();
 	if (!pwd) {
-		return -2;
+		return 1;
 	}
 	char *rp = r_vc_find_rp (pwd);
 	if (rp) {
@@ -59,17 +59,31 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 	}
 	if (!strcmp (action, "init")) {
 		if (!r_vc_new (rp)) {
-			return -3;
+			return 1;
 		}
 		return 0;
 	}
 	if (!strcmp (action, "branch")) {
-		if (opt.argc < 2) {
-			return -4;
+		if (opt.argc <= 2) {
+			RList *branches = r_vc_get_branches (rp);
+			if (!branches) {
+				free (rp);
+				return 1;
+			}
+			RListIter *iter;
+			const char *b;
+			r_list_foreach (branches, iter, b) {
+				//Possible segfault here but I don't think it
+				//is imporrtant enough to write an if len(a) == len(b)
+				//statment.
+				printf ("%s\n", b + (r_str_len_utf8 (BPREFIX)));
+			}
+			r_list_free (branches);
+			return 0;
 		}
 		if (!r_vc_branch (rp, opt.argv[opt.ind + 1])) {
 			free (rp);
-			return -5;
+			return 1;
 		}
 		return 0;
 	}
@@ -78,18 +92,18 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		if (opt.argc < 4) {
 			eprintf ("Usage: ravc2 commit [message] [files...]\n");
 			free (rp);
-			return -6;
+			return 1;
 		}
 		char *message = r_str_new (opt.argv[opt.ind + 1]);
 		if (!message) {
 			free (rp);
-			return -8;
+			return 1;
 		}
 		RList *files = r_list_new ();
 		if (!files) {
 			free (rp);
 			free (message);
-			return -9;
+			return 1;
 		}
 		for (i = 2; i < argc - 1; i++) {
 			char *cf = r_str_new (argv[opt.ind + i]);
@@ -97,13 +111,13 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 				free (message);
 				r_list_free (files);
 				free (rp);
-				return -10;
+				return 1;
 			}
 			if (!r_list_append (files, cf)) {
 				free (message);
 				r_list_free (files);
 				free (rp);
-				return -10;
+				return 1;
 			}
 		}
 		char *author = r_sys_getenv ("RAVC2_USER");
@@ -115,7 +129,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 			free (message);
 			r_list_free (files);
 			free (rp);
-			return -12;
+			return 1;
 		}
 		bool ret = r_vc_commit (rp, message, author, files);
 		free (message);
@@ -123,22 +137,60 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		r_list_free (files);
 		free (rp);
 		if (!ret) {
-			return -11;
+			return 1;
 		}
 		return 0;
 	}
 	if (!strcmp (action, "checkout")) {
 		if (opt.argc < 2) {
 			free (rp);
-			return -12;
+			return 1;
 		}
 		if (!r_vc_checkout (rp, opt.argv[opt.ind + 1])) {
 			free (rp);
-			return -13;
+			return 1;
 		}
 		free (rp);
 		return 0;
 	}
+	if (!strcmp (action, "log")) {
+		RList *commits = r_vc_log (rp);
+		if (!commits) {
+			return 1;
+		}
+		RListIter *iter;
+		const char *d;
+		r_list_foreach (commits, iter, d) {
+			printf ("%s\n****\n", d);
+		}
+		r_list_free (commits);
+		return 0;
+	}
+	if (!strcmp (action, "status")) {
+		char *cb = r_vc_current_branch (rp);
+		if (!cb) {
+			return 1;
+		}
+		RList *unc = r_vc_get_uncommitted (rp);
+		if (!unc) {
+			free (cb);
+			return 1;
+		}
+		printf ("Branch: %s\n", cb);
+		free (cb);
+		if (!r_list_empty (unc)) {
+			printf ("The follwing files are uncommitted:\n");
+			RListIter *iter;
+			const char *i;
+			r_list_foreach (unc, iter, i) {
+				printf ("%s\n", i);
+			}
+		} else {
+			printf ("All files are committed\n");
+		}
+		r_list_free (unc);
+		return 0;
+	}
 	free (rp);
-	return -14;
+	return 1;
 }
