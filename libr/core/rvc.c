@@ -13,21 +13,6 @@
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
-#define CHECK_REPO(rp, message)\
-	switch (repo_exists (rp)) {\
-	case 1:\
-		break;\
-	case 0:\
-		eprintf ("No repo in %s\n" message "\n", rp);\
-		return false;\
-	case -1:\
-		eprintf (message "\n");\
-		return false;\
-	case -2:\
-		eprintf (message "\n");\
-		return false;\
-	}
-
 static bool file_copyp(const char *src, const char *dst) {
 	if (r_file_is_directory (dst)) {
 		return r_file_copy (src, dst);
@@ -90,16 +75,16 @@ static Sdb *vcdb_open(const char *rp) {
 	return db;
 }
 
-static int repo_exists(const char *path) {
+static bool repo_exists(const char *path) {
 	char *rp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
 	if (!rp) {
-		return -1;
+		return false;
 	}
 	if (!r_file_is_directory (rp)) {
 		free (rp);
-		return 0;
+		return false;
 	}
-	int r = 1;
+	bool r = true;
 	char *files[3] = {r_str_newf ("%s" R_SYS_DIR DBNAME, rp),
 		r_str_newf ("%s" R_SYS_DIR "commits", rp),
 		r_str_newf ("%s" R_SYS_DIR "blobs", rp),
@@ -107,18 +92,17 @@ static int repo_exists(const char *path) {
 	free (rp);
 	for (size_t i = 0; i < 3; i++) {
 		if (!files[i]) {
-			r = -1;
-			goto ret;
+			r = false;
+			break;
 		}
 		if (!r_file_is_directory (files[i]) && !r_file_exists (files[i])) {
 			eprintf ("Error: Corrupt repo: %s doesn't exist\n",
 					files[i]);
-			r = -2;
-			goto ret;
+			r = false;
+			break;
 		}
 
 	}
-ret:
 	free (files[0]);
 	free (files[1]);
 	free (files[2]);
@@ -438,7 +422,10 @@ static RList *repo_files(const char *dir) {
 
 //shit function:
 R_API RList *r_vc_get_uncommitted(const char *rp) {
-	CHECK_REPO (rp, "Cant get uncommitted");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
 	RList *blobs = get_blobs (rp);
 	if (!blobs) {
 		return NULL;
@@ -740,7 +727,10 @@ R_API char *r_vc_find_rp(const char *path) {
 
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
-	CHECK_REPO (rp, "Can't commit");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
 	if (R_STR_ISEMPTY (message)) {
 		char *path = NULL;
 		(void)r_file_mkstemp ("rvc", &path);
@@ -812,7 +802,10 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 }
 
 R_API RList *r_vc_get_branches(const char *rp) {
-	CHECK_REPO (rp, "Can't list branches");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
 	Sdb *db = vcdb_open (rp);
 	RList *ret = r_list_new ();
 	if (!ret) {
@@ -848,7 +841,10 @@ R_API RList *r_vc_get_branches(const char *rp) {
 R_API bool r_vc_branch(const char *rp, const char *bname) {
 	const char *current_branch;
 	const char *commits;
-	CHECK_REPO (rp, "Can't branch");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
 	if (!is_valid_branch_name (bname)) {
 		eprintf ("The branch name %s is invalid\n", bname);
 		return false;
@@ -937,7 +933,10 @@ R_API bool r_vc_new(const char *path) {
 }
 
 R_API bool r_vc_checkout(const char *rp, const char *bname) {
-	CHECK_REPO (rp, "Can't checkout");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
 	{
 		int ret = branch_exists (rp, bname);
 		if (ret < 0) {
@@ -1044,7 +1043,10 @@ fail_ret:
 }
 
 R_API RList *r_vc_log(const char *rp) {
-	CHECK_REPO (rp, "Can't log");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
 	RList *commits = get_commits (rp, 0);
 	if (!commits) {
 		return NULL;
@@ -1080,7 +1082,10 @@ fail_ret:
 }
 
 R_API char *r_vc_current_branch(const char *rp) {
-	CHECK_REPO (rp, "Can't get current branch");
+	if (!repo_exists (rp)) {
+		eprintf ("No valid repo in %s\n", rp);
+		return false;
+	}
 	Sdb *db = vcdb_open (rp);
 	if (!db) {
 		return NULL;
