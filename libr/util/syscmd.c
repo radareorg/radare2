@@ -150,9 +150,11 @@ R_API char *r_syscmd_ls(const char *input) {
 		input++;
 	}
 	if (*input) {
-		if ((!strncmp (input, "-h", 2))) {
+		if (!strncmp (input, "-h", 2) || *input == '?') {
 			eprintf ("Usage: ls ([-e,-l,-j,-q]) ([path]) # long, json, quiet\n");
-		} else if ((!strncmp (input, "-e", 2))) {
+			return NULL;
+		}
+		if ((!strncmp (input, "-e", 2))) {
 			printfmt = 'e';
 			path = r_str_trim_head_ro (path + 1);
 		} else if ((!strncmp (input, "-q", 2))) {

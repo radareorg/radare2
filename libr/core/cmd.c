@@ -81,6 +81,20 @@ static const char *help_msg_dollar[] = {
 	NULL
 };
 
+static const char *help_msg_l[] = {
+	"Usage:", "l[erls] ([arg])", "# internal less (~..) and list files (!ls)",
+	"ll", " [path]", "same as ls -l",
+	"lr", " [path]", "same as ls -r",
+	"ls", " ([-e,-l,-j,-q]) ([path])", "list files in current or given directory",
+	"ls", " -e ([path])", "list files using emojis",
+	"ls", " -l ([path])", "same as ll (list files with details)",
+	"ls", " -j ([path])", "list files in json format",
+	"ls", " -q ([path])", "quiet output (one file per line)",
+	"le", "[ss] ([path])", "same as cat file~.. (or less)",
+	"TODO: last command should honor asm.bits", "", "",
+	NULL
+};
+
 static const char *help_msg_star[] = {
 	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
 	"*", "entry0=cc", "write trap in entrypoint",
@@ -1313,8 +1327,19 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	case 'r':
 		cmd_lsr (core, arg);
 		break;
+	case 'l':
+		{
+			char *carg = r_str_newf ("-l%s", r_str_get (arg));
+			char *res = r_syscmd_ls (carg);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+			free (carg);
+		}
+		break;
 	case '?': // "l?"
-		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
+		r_core_cmd_help (core, help_msg_l);
 		break;
 	case 'e': // "le"
 		if (arg) {
