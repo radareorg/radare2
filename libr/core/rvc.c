@@ -1061,7 +1061,13 @@ R_API RList *r_vc_log(const char *rp) {
 		if (!contnet) {
 			goto fail_ret;
 		}
-		iter->data = r_str_appendf (ch, "\n%s", contnet);
+		iter->data = r_str_newf ("hash=%s", (char *) iter->data);
+		if (!iter->data) {
+			free (contnet);
+			goto fail_ret;
+		}
+		free (ch);
+		iter->data = r_str_appendf (iter->data, "\n%s", contnet);
 		free (contnet);
 		if (!iter->data) {
 			goto fail_ret;
