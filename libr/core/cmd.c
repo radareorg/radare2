@@ -1297,19 +1297,14 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 
 static int cmd_lsr(RCore *core, const char *input) {
 	const char *arg;
-	char *path;
-	RList *files;
 	RListIter *iter;
-	if (R_STR_ISEMPTY (input)) {
-		arg = ".";
-	} else {
-		arg = input;
-	}
-	files = r_file_lsrf (arg);
+	const char *path = R_STR_ISEMPTY (input)? ".": input;
+	RList *files = r_file_lsrf (arg);
 	if (!files) {
 		eprintf ("Failed to read directories\n");
 		return 0;
 	}
+	r_list_sort (files, (RListComparator)strcmp);
 	r_list_foreach (files, iter, path) {
 		r_cons_println (path);
 	}
