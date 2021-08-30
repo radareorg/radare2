@@ -1,7 +1,7 @@
 NAME=ravc2 init
 FILE=-
 CMDS=<<EOF
-mkdir ravc2_test
+mkdir ravc2_init_test
 cd ravc2_test
 !!ravc2 init
 lr
@@ -10,9 +10,9 @@ lr
 EOF
 EXPECT=<<EOF
 ./.rvc
-./.rvc/commits
 ./.rvc/blobs
 ./.rvc/branches.sdb
+./.rvc/commits
 Branch: master
 All files are committed
 EOF
