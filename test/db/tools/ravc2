@@ -2,7 +2,7 @@ NAME=ravc2 init
 FILE=-
 CMDS=<<EOF
 mkdir ravc2_init_test
-cd ravc2_test
+cd ravc2_init_test
 !!ravc2 init
 lr
 !!ravc2 status
