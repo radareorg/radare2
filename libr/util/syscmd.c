@@ -130,7 +130,6 @@ R_API char *r_syscmd_ls(const char *input) {
 	char *pattern = NULL;
 	int printfmt = 0;
 	RListIter *iter;
-	RList *files;
 	char *name;
 	char *dir;
 	int off;
@@ -216,7 +215,8 @@ R_API char *r_syscmd_ls(const char *input) {
 		free (d);
 		return res;
 	}
-	files = r_sys_dir (path);
+	RList *files = r_sys_dir (path);
+	r_list_sort (files, (RListComparator)strcmp);
 
 	if (path[strlen (path) - 1] == '/') {
 		dir = strdup (path);
