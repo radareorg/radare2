@@ -77,17 +77,17 @@ static Sdb *vcdb_open(const char *rp) {
 		return NULL;
 	}
 	Sdb *db = sdb_new0 ();
-	if (!ret) {
+	if (!db) {
 		free (frp);
 		return NULL;
 	}
-	if (sdb_open (ret, frp) < 0) {
+	if (sdb_open (db, frp) < 0) {
 		free (frp);
-		sdb_free (ret);
+		sdb_free (db);
 		return NULL;
 	}
 	free (frp);
-	return ret;
+	return db;
 }
 
 static int repo_exists(const char *path) {
