@@ -76,7 +76,7 @@ static Sdb *vcdb_open(const char *rp) {
 	if (!frp) {
 		return NULL;
 	}
-	Sdb *ret = sdb_new0();
+	Sdb *db = sdb_new0 ();
 	if (!ret) {
 		free (frp);
 		return NULL;
