@@ -1,0 +1,76 @@
+NAME=ravc2 init
+FILE=-
+CMDS=<<EOF
+mkdir ravc2_test
+cd ravc2_test
+!!ravc2 init
+lr
+!!ravc2 status
+!!cd ../
+EOF
+EXPECT=<<EOF
+./.rvc
+./.rvc/commits
+./.rvc/blobs
+./.rvc/branches.sdb
+Branch: master
+All files are committed
+EOF
+RUN
+
+NAME=ravc2 commit
+CMDS=<<EOF
+mkdir ravc2_commit_test
+cd ravc2_commit_test
+!!ravc2 init
+echo hello > hello
+!!ravc2 commit "hello world!" hello
+!!ravc2 log~!author,time,hash
+cd ../
+EOF
+EXPECT=<<EOF
+message=hello world!
+----
+/hello=5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03
+****
+EOF
+RUN
+
+NAME=ravc2 branch
+CMDS=<<EOF
+mkdir ravc2_branch_test
+cd ravc2_branch_test
+!!ravc2 init
+!!ravc2 branch hello
+echo hello > hello
+!!ravc2 commit "hello world!" hello
+!!ravc2 checkout hello
+ls
+!!ravc2 status~Branch:
+!!ravc2 checkout master
+ls
+cd ../
+EOF
+EXPECT=<<EOF
+             .rvc/                 ../                  ./  
+Branch: hello
+             .rvc/                 ../                  ./               hello
+EOF
+RUN
+
+NAME=ravc2 log
+CMDS=<<EOF
+mkdir ravc2_log_test
+cd ravc2_log_test
+!!ravc2 init
+echo hello > hello
+!!ravc2 commit "hello world!" hello
+!!ravc2 log ~!hash,author,time
+EOF
+EXPECT=<<EOF
+message=hello world!
+----
+/hello=5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03
+****
+EOF
+RUN
