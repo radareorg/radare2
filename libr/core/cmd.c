@@ -1296,9 +1296,9 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 }
 
 static int cmd_lsr(RCore *core, const char *input) {
-	const char *arg;
+	const char *path;
 	RListIter *iter;
-	const char *path = R_STR_ISEMPTY (input)? ".": input;
+	const char *arg = R_STR_ISEMPTY (input)? ".": input;
 	RList *files = r_file_lsrf (arg);
 	if (!files) {
 		eprintf ("Failed to read directories\n");
