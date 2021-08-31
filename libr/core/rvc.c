@@ -475,6 +475,7 @@ R_API RList *r_vc_get_uncommitted(const char *rp) {
 				goto fail_ret;
 			}
 		}
+		free (blob_absp);
 		if (!found) {
 			if (!strcmp (NULLVAL, blob->fhash)) {
 				continue;
@@ -772,6 +773,7 @@ R_API RList *r_vc_get_branches(const char *rp) {
 		sdb_unlink (db);
 		sdb_free (db);
 		r_list_free (ret);
+		return NULL;
 	}
 	SdbListIter *i;
 	SdbKv *kv;
@@ -783,6 +785,7 @@ R_API RList *r_vc_get_branches(const char *rp) {
 		if (!r_list_append (ret, r_str_new (kv->base.key))
 				&& !ret->head->data) {
 			r_list_free (ret);
+			ret = NULL;
 			break;
 		}
 	}
