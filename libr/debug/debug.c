@@ -465,9 +465,14 @@ R_API int r_debug_stop(RDebug *dbg) {
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	if (arch && dbg && dbg->h) {
 		switch (bits) {
+		case 16:
+			if (dbg->h->bits == 16) {
+				dbg->bits = R_SYS_BITS_16;
+			}
+			break;
 		case 27:
 			if (dbg->h->bits == 27) {
-				dbg->bits = 27;
+				dbg->bits = R_SYS_BITS_27;
 			}
 			break;
 		case 32:
