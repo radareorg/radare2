@@ -507,7 +507,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input);
 R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, int colors);
 
 /* descriptors */
-R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int off);
+R_API RDebugDesc *r_debug_desc_new (int fd, const char *path, int perm, int type, int off);
 R_API void r_debug_desc_free (RDebugDesc *p);
 R_API int r_debug_desc_open(RDebug *dbg, const char *path);
 R_API int r_debug_desc_close(RDebug *dbg, int fd);

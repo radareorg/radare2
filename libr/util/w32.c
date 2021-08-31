@@ -122,6 +122,15 @@ R_API DWORD r_w32_GetModuleFileNameEx(HANDLE a, HMODULE b, LPTSTR c, DWORD d) {
 	return x? x (a, b, c, d): 0;
 }
 
+R_API BOOL r_w32_CancelSynchronousIo(HANDLE a) {
+	static BOOL (*x)(HANDLE) = NULL;
+	if (!x) {
+		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
+		x = (BOOL (*)(HANDLE)) GetProcAddress (lib, W32_TCALL ("CancelSynchronousIo"));
+	}
+	return x? x (a): 0;
+}
+
 R_API BOOL r_w32_QueryFullProcessImageName(HANDLE h, DWORD p, LPTSTR s, PDWORD l) {
 	static DWORD (*x)(HANDLE, DWORD, LPTSTR, PDWORD) = NULL;
 	if (!x) {

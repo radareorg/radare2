@@ -130,7 +130,6 @@ R_API char *r_syscmd_ls(const char *input) {
 	char *pattern = NULL;
 	int printfmt = 0;
 	RListIter *iter;
-	RList *files;
 	char *name;
 	char *dir;
 	int off;
@@ -150,9 +149,11 @@ R_API char *r_syscmd_ls(const char *input) {
 		input++;
 	}
 	if (*input) {
-		if ((!strncmp (input, "-h", 2))) {
+		if (!strncmp (input, "-h", 2) || *input == '?') {
 			eprintf ("Usage: ls ([-e,-l,-j,-q]) ([path]) # long, json, quiet\n");
-		} else if ((!strncmp (input, "-e", 2))) {
+			return NULL;
+		}
+		if ((!strncmp (input, "-e", 2))) {
 			printfmt = 'e';
 			path = r_str_trim_head_ro (path + 1);
 		} else if ((!strncmp (input, "-q", 2))) {
@@ -214,7 +215,8 @@ R_API char *r_syscmd_ls(const char *input) {
 		free (d);
 		return res;
 	}
-	files = r_sys_dir (path);
+	RList *files = r_sys_dir (path);
+	r_list_sort (files, (RListComparator)strcmp);
 
 	if (path[strlen (path) - 1] == '/') {
 		dir = strdup (path);

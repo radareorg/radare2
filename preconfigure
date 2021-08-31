@@ -6,7 +6,7 @@ fi
 printf "[*] Checking out capstone... "
 rm -rf shlr/capstone
 MAKE=make
-gmake --version 2>&1 > /dev/null
+gmake --version > /dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 ${MAKE} -C shlr capstone > /dev/null 2>&1 || exit 1
 echo OK

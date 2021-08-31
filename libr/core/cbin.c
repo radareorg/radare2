@@ -1219,8 +1219,9 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 	if (core->bin->cur && core->bin->cur->o && core->bin->cur->o->baddr) {
 		baddr = core->bin->cur->o->baddr;
-	} else {
+	} else if (baddr == UT64_MAX) {
 		eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
+		baddr = 0LL;
 	}
 
 	RPdb pdb = R_EMPTY;

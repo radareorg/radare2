@@ -81,6 +81,20 @@ static const char *help_msg_dollar[] = {
 	NULL
 };
 
+static const char *help_msg_l[] = {
+	"Usage:", "l[erls] ([arg])", "# internal less (~..) and list files (!ls)",
+	"ll", " [path]", "same as ls -l",
+	"lr", " [path]", "same as ls -r",
+	"ls", " ([-e,-l,-j,-q]) ([path])", "list files in current or given directory",
+	"ls", " -e ([path])", "list files using emojis",
+	"ls", " -l ([path])", "same as ll (list files with details)",
+	"ls", " -j ([path])", "list files in json format",
+	"ls", " -q ([path])", "quiet output (one file per line)",
+	"le", "[ss] ([path])", "same as cat file~.. (or less)",
+	"TODO: last command should honor asm.bits", "", "",
+	NULL
+};
+
 static const char *help_msg_star[] = {
 	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
 	"*", "entry0=cc", "write trap in entrypoint",
@@ -1282,20 +1296,15 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 }
 
 static int cmd_lsr(RCore *core, const char *input) {
-	const char *arg;
-	char *path;
-	RList *files;
+	const char *path;
 	RListIter *iter;
-	if (R_STR_ISEMPTY (input)) {
-		arg = ".";
-	} else {
-		arg = input;
-	}
-	files = r_file_lsrf (arg);
+	const char *arg = R_STR_ISEMPTY (input)? ".": input;
+	RList *files = r_file_lsrf (arg);
 	if (!files) {
 		eprintf ("Failed to read directories\n");
 		return 0;
 	}
+	r_list_sort (files, (RListComparator)strcmp);
 	r_list_foreach (files, iter, path) {
 		r_cons_println (path);
 	}
@@ -1313,8 +1322,19 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	case 'r':
 		cmd_lsr (core, arg);
 		break;
+	case 'l':
+		{
+			char *carg = r_str_newf ("-l%s", r_str_get (arg));
+			char *res = r_syscmd_ls (carg);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+			free (carg);
+		}
+		break;
 	case '?': // "l?"
-		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
+		r_core_cmd_help (core, help_msg_l);
 		break;
 	case 'e': // "le"
 		if (arg) {
@@ -2907,8 +2927,9 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 			// Process exited before we finished writing to pipe
 			DWORD exit;
 			if (GetExitCodeThread (th, &exit) && exit == STILL_ACTIVE) {
-				CancelSynchronousIo (th);
+				r_w32_CancelSynchronousIo (th);
 			}
+			// Windows XP
 			WaitForSingleObject (th, INFINITE);
 			__CLOSE_DUPPED_PIPES ();
 			break;
