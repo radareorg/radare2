@@ -44,8 +44,7 @@ static char *strip_sys_dir(const char *path) {
 		return NULL;
 	}
 	for (; *path && !(*path == *R_SYS_DIR && !*(path + 1)); path++) {
-		if (*path == *R_SYS_DIR &&
-				*(ret + r_str_len_utf8 (ret) - 1) == *R_SYS_DIR) {
+		if (!r_str_cmp (path, R_SYS_DIR R_SYS_DIR, 2)) {
 			continue;
 		}
 		ret = r_str_appendf (ret, "%c", *path);
@@ -479,14 +478,11 @@ R_API RList *r_vc_get_uncommitted(const char *rp) {
 		}
 		if (!found) {
 			if (!strcmp (NULLVAL, blob->fhash)) {
+				free (blob_absp);
 				continue;
 			}
-			char *fname = r_str_new (blob_absp) ;
-			if (!fname) {
-				goto fail_ret;
-			}
-			if (!r_list_append (ret, fname)) {
-				free (fname);
+			if (!r_list_append (ret, blob_absp)) {
+				free (blob_absp);
 				goto fail_ret;
 			}
 		}
@@ -515,28 +511,27 @@ fail_ret:
 
 static char *find_blob_hash(const char *rp, const char *fname) {
 	RList *blobs = get_blobs (rp);
-	if (!blobs) {
-		return NULL;
-	}
-	RListIter *i;
-	RvcBlob *b;
-	r_list_foreach_prev (blobs, i, b) {
-		if (!strcmp (b->fname, fname)) {
-			char *bhash = r_str_new (b->fhash);
-			free_blobs (blobs);
-			return bhash;
+	if (blobs) {
+		RListIter *i;
+		RvcBlob *b;
+		r_list_foreach_prev (blobs, i, b) {
+			if (!strcmp (b->fname, fname)) {
+				char *bhash = r_str_new (b->fhash);
+				free_blobs (blobs);
+				return bhash;
+			}
 		}
 	}
-	free_blobs (blobs);
 	return NULL;
 }
+
 static char *write_commit(const char *rp, const char *message, const char *author, RList *blobs) {
 	RvcBlob *blob;
 	RListIter *iter;
 	char *commit_path, *commit_hash;
 	FILE *commitf;
-	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%ld\n"
-			COMMIT_BLOB_SEP, message, author, time (NULL));
+	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%" PFMT64x "\n"
+			COMMIT_BLOB_SEP, message, author, (ut64) r_time_now ());
 	if (!content) {
 		return false;
 	}
@@ -681,50 +676,6 @@ fail_ret:
 	return NULL;
 }
 
-R_API char *r_vc_find_rp(const char *path) {
-	{
-		int ret = repo_exists (path);
-		switch (ret) {
-		case 0:
-			break;
-		case 1:
-			return r_str_new (path);
-		case -1:
-			eprintf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", path);
-			break;
-		}
-	}
-	const char *p = r_str_rchr (path, path + strlen (path), *R_SYS_DIR);
-	if (!p) {
-		return NULL;
-	}
-	char *i = r_str_ndup (path, p - path);
-	if (!i) {
-		return NULL;
-	}
-	while (true) {
-		int ret = repo_exists (i);
-		switch (ret) {
-		case 0:
-			break;
-		case 1:
-			return i;
-		case -1:
-			eprintf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", i);
-			break;
-		}
-		p = r_str_rchr (i, p, *R_SYS_DIR);
-		if (!p) {
-			return NULL;
-		}
-		free (i);
-		i = r_str_ndup (i, p - path);
-		if (!i) {
-			return NULL;
-		}
-	}
-}
-
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
 	char *commit_hash;
 	if (!repo_exists (rp)) {
@@ -818,6 +769,7 @@ R_API RList *r_vc_get_branches(const char *rp) {
 		sdb_unlink (db);
 		sdb_free (db);
 		r_list_free (ret);
+		return NULL;
 	}
 	SdbListIter *i;
 	SdbKv *kv;
@@ -829,6 +781,7 @@ R_API RList *r_vc_get_branches(const char *rp) {
 		if (!r_list_append (ret, r_str_new (kv->base.key))
 				&& !ret->head->data) {
 			r_list_free (ret);
+			ret = NULL;
 			break;
 		}
 	}

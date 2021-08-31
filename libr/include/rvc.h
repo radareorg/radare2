@@ -26,7 +26,6 @@ R_API bool r_vc_branch(const char *rp, const char *bname);
 R_API bool r_vc_new(const char *path);
 R_API bool r_vc_checkout(const char *rp, const char *bname);
 R_API RList *r_vc_get_branches(const char *rp);
-R_API char *r_vc_find_rp(const char *path);
 R_API RList *r_vc_get_uncommitted(const char *rp);
 R_API RList *r_vc_log(const char *rp);
 R_API char *r_vc_current_branch(const char *rp);
