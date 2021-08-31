@@ -225,6 +225,7 @@ upgradeOutdated() {
 }
 
 r2pm_update() {
+	[ "${R2PM_OFFLINE}" != 0 ] && return
 	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
 	mkdir -p "${R2PM_GITDIR}"
 	mkdir -p "${HOME}/.config"
@@ -524,9 +525,7 @@ r2pm_doc() {
 }
 
 r2pm_install() {
-	if [ "${R2PM_OFFLINE}" = 0 ]; then
-		r2pm_update
-	fi
+	r2pm_update
 	FILE="$(pkgFilePath "$2")"
 	if [ -f "${FILE}" ]; then
 		NAME="$2"
