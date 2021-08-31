@@ -524,7 +524,9 @@ r2pm_doc() {
 }
 
 r2pm_install() {
-	r2pm_update
+	if [ "${R2PM_OFFLINE}" = 0 ]; then
+		r2pm_update
+	fi
 	FILE="$(pkgFilePath "$2")"
 	if [ -f "${FILE}" ]; then
 		NAME="$2"
