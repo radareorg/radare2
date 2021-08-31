@@ -1257,6 +1257,8 @@ ad "lea edx, [0x2c4b]" 8d154b2c0000
 a "les eax, [eax]" c400
 a "les eax, [eax+12]" c4400c
 a "les eax, [eax-233]" c48017ffffff
+a "les ebx, [ecx]" c419
+aB "les ebx, [esp]" c41c24
 a "lfence" 0faee8
 aB "lfs eax, dword [eax]" 0fb400
 a "lgdt [eax]" 0f0110
