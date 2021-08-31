@@ -510,6 +510,7 @@ struct ctxSearchCB {
 	int refs_count;
 	int types_count;
 	int bbhash_count;
+	int next_count;
 };
 
 static void apply_name(RCore *core, RAnalFunction *fcn, RSignItem *it, bool rad) {
@@ -608,6 +609,7 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void 
 	RSignType t;
 	bool collides = false;
 	if (!col || !r_list_empty (col)) {
+		// NULL col implies collision computation err, so assume collides
 		collides = true;
 		ctx->collisions++;
 	}
@@ -638,6 +640,10 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void 
 		case R_SIGN_BBHASH:
 			prefix = "bbhash";
 			ctx->bbhash_count++;
+			break;
+		case R_SIGN_NEXT:
+			prefix = "next";
+			ctx->next_count++;
 			break;
 		default:
 			r_warn_if_reached ();
@@ -762,6 +768,10 @@ static void print_ctx_hits(struct ctxSearchCB *ctx) {
 	}
 	if (ctx->bbhash_count) {
 		eprintf ("bbhash: %d\n", ctx->bbhash_count);
+		prints++;
+	}
+	if (ctx->next_count) {
+		eprintf ("next: %d\n", ctx->next_count);
 		prints++;
 	}
 	if (prints > 1) {
