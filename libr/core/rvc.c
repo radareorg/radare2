@@ -44,11 +44,9 @@ static char *strip_sys_dir(const char *path) {
 		return NULL;
 	}
 	for (; *path && !(*path == *R_SYS_DIR && !*(path + 1)); path++) {
-		if (*path == *R_SYS_DIR &&
-				*(ret + r_str_len_utf8 (ret) - 1) == *R_SYS_DIR) {
+		if (!r_str_cmp (path, R_SYS_DIR R_SYS_DIR, 2)) {
 			continue;
-		}
-		ret = r_str_appendf (ret, "%c", *path);
+		} ret = r_str_appendf (ret, "%c", *path);
 		if (!ret) {
 			return NULL;
 		}
@@ -679,50 +677,6 @@ fail_ret:
 	r_list_free (uncommitted);
 	free (ret);
 	return NULL;
-}
-
-R_API char *r_vc_find_rp(const char *path) {
-	{
-		int ret = repo_exists (path);
-		switch (ret) {
-		case 0:
-			break;
-		case 1:
-			return r_str_new (path);
-		case -1:
-			eprintf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", path);
-			break;
-		}
-	}
-	const char *p = r_str_rchr (path, path + strlen (path), *R_SYS_DIR);
-	if (!p) {
-		return NULL;
-	}
-	char *i = r_str_ndup (path, p - path);
-	if (!i) {
-		return NULL;
-	}
-	while (true) {
-		int ret = repo_exists (i);
-		switch (ret) {
-		case 0:
-			break;
-		case 1:
-			return i;
-		case -1:
-			eprintf ("A corrupted repo may have been found at %s, please refrain from naming any files .rvc\n", i);
-			break;
-		}
-		p = r_str_rchr (i, p, *R_SYS_DIR);
-		if (!p) {
-			return NULL;
-		}
-		free (i);
-		i = r_str_ndup (i, p - path);
-		if (!i) {
-			return NULL;
-		}
-	}
 }
 
 R_API bool r_vc_commit(const char *rp, const char *message, const char *author, const RList *files) {
