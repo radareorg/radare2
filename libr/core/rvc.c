@@ -475,12 +475,13 @@ R_API RList *r_vc_get_uncommitted(const char *rp) {
 				goto fail_ret;
 			}
 		}
-		free (blob_absp);
 		if (!found) {
 			if (!strcmp (NULLVAL, blob->fhash)) {
+				free (blob_absp);
 				continue;
 			}
-			char *fname = r_str_new (blob_absp) ;
+			char *fname = r_str_new (blob_absp);
+			free (blob_absp);
 			if (!fname) {
 				goto fail_ret;
 			}
