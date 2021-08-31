@@ -3340,6 +3340,9 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_BFI:
 	case ARM64_INS_BFXIL:
 		op->type = R_ANAL_OP_TYPE_MOV;
+		if (ISIMM64 (1)) {
+			op->val = IMM64(1);
+		}
 		break;
 	case ARM64_INS_MRS:
 	case ARM64_INS_MSR:
