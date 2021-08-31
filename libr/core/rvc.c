@@ -481,12 +481,8 @@ R_API RList *r_vc_get_uncommitted(const char *rp) {
 				free (blob_absp);
 				continue;
 			}
-			char *fname = blob_absp;
-			if (!fname) {
-				goto fail_ret;
-			}
-			if (!r_list_append (ret, fname)) {
-				free (fname);
+			if (!r_list_append (ret, blob_absp)) {
+				free (blob_absp);
 				goto fail_ret;
 			}
 		}
@@ -515,28 +511,27 @@ fail_ret:
 
 static char *find_blob_hash(const char *rp, const char *fname) {
 	RList *blobs = get_blobs (rp);
-	if (!blobs) {
-		return NULL;
-	}
-	RListIter *i;
-	RvcBlob *b;
-	r_list_foreach_prev (blobs, i, b) {
-		if (!strcmp (b->fname, fname)) {
-			char *bhash = r_str_new (b->fhash);
-			free_blobs (blobs);
-			return bhash;
+	if (blobs) {
+		RListIter *i;
+		RvcBlob *b;
+		r_list_foreach_prev (blobs, i, b) {
+			if (!strcmp (b->fname, fname)) {
+				char *bhash = r_str_new (b->fhash);
+				free_blobs (blobs);
+				return bhash;
+			}
 		}
 	}
-	free_blobs (blobs);
 	return NULL;
 }
+
 static char *write_commit(const char *rp, const char *message, const char *author, RList *blobs) {
 	RvcBlob *blob;
 	RListIter *iter;
 	char *commit_path, *commit_hash;
 	FILE *commitf;
-	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%ld\n"
-			COMMIT_BLOB_SEP, message, author, time (NULL));
+	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%" PFMT64x "\n"
+			COMMIT_BLOB_SEP, message, author, (ut64) r_time_now ());
 	if (!content) {
 		return false;
 	}
