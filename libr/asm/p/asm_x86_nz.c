@@ -504,7 +504,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 
 static int opadc(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
-		if (op->operands[0].type & OT_GPREG &&
+		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))&&
 		    op->operands[0].type & OT_WORD) {
 			return process_16bit_group_1 (a, data, op, 0x10);
 		}
@@ -517,7 +517,7 @@ static int opadc(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opadd(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
-		if (op->operands[0].type & OT_GPREG &&
+		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))&&
 		    op->operands[0].type & OT_WORD) {
 			return process_16bit_group_1 (a, data, op, 0x00);
 		}
@@ -530,7 +530,7 @@ static int opadd(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opand(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
-		if (op->operands[0].type & OT_GPREG &&
+		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) &&
 		    op->operands[0].type & OT_WORD) {
 			return process_16bit_group_1 (a, data, op, 0x20);
 		}
@@ -543,7 +543,7 @@ static int opand(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opcmp(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
-		if (op->operands[0].type & OT_GPREG &&
+		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) &&
 		    op->operands[0].type & OT_WORD) {
 			return process_16bit_group_1 (a, data, op, 0x38);
 		}
@@ -556,7 +556,7 @@ static int opcmp(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opsub(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
-		if (op->operands[0].type & OT_GPREG &&
+		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) &&
 		    op->operands[0].type & OT_WORD) {
 			return process_16bit_group_1 (a, data, op, 0x28);
 		}
@@ -569,7 +569,7 @@ static int opsub(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opor(RAsm *a, ut8 * data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
-		if (op->operands[0].type & OT_GPREG &&
+		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) &&
 		    op->operands[0].type & OT_WORD) {
 			return process_16bit_group_1 (a, data, op, 0x08);
 		}
@@ -617,7 +617,7 @@ static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
 		return -1;
 	}
 	if (op->operands[1].type & OT_CONSTANT) {
-		if (op->operands[0].type & OT_GPREG &&
+		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) &&
 		    op->operands[0].type & OT_WORD) {
 			return process_16bit_group_1 (a, data, op, 0x30);
 		}
@@ -632,7 +632,7 @@ static int opneg(RAsm *a, ut8 * data, const Opcode *op) {
     is_valid_registers (op);
     int l = 0;
 
-    if (op->operands[0].type & OT_GPREG) {
+    if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
         if (op->operands[0].type & OT_WORD) {
             data[l++] = 0x66;
         } else if (op->operands[0].type & OT_QWORD)  {
@@ -695,7 +695,7 @@ static int opnot(RAsm *a, ut8 * data, const Opcode *op) {
 
 static int opsbb(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
-		if (op->operands[0].type & OT_GPREG &&
+		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) &&
 		    op->operands[0].type & OT_WORD) {
 			return process_16bit_group_1 (a, data, op, 0x18);
 		}
@@ -783,7 +783,7 @@ static int opcall(RAsm *a, ut8 *data, const Opcode *op) {
 	int offset = 0;
 	int mod = 0;
 
-	if (op->operands[0].type & OT_GPREG) {
+	if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
 		if (op->operands[0].reg == X86R_UNDEFINED) {
 			return -1;
 		}
@@ -1228,7 +1228,7 @@ static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		break;
 	case 2:
-		if (op->operands[0].type & OT_GPREG) {
+		if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
 			if (op->operands[1].type & OT_CONSTANT) {
 				if (op->operands[1].immediate == -1) {
 					eprintf ("Error: Immediate exceeds max\n");
@@ -1297,7 +1297,7 @@ static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 		break;
 	case 3:
-		if (op->operands[0].type & OT_GPREG &&
+		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) &&
 		    (op->operands[1].type & OT_GPREG || op->operands[1].type & OT_MEMORY) &&
 		    op->operands[2].type & OT_CONSTANT) {
 				data[l++] = 0x6b;
@@ -1771,7 +1771,7 @@ static int oples(RAsm *a, ut8* data, const Opcode *op) {
 	int l = 0;
 	int offset = 0;
 	int mod = 0;
-
+	
 	if (op->operands[1].type & OT_MEMORY) {
 		data[l++] = 0xc4;
 		if (op->operands[1].type & OT_GPREG) {
@@ -2370,7 +2370,7 @@ static int oppop(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	int offset = 0;
 	int mod = 0;
-	if (op->operands[0].type & OT_GPREG) {
+	if ((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY)) {
 		if (op->operands[0].type & OT_MEMORY) {
 			return -1;
 		}
@@ -4847,27 +4847,27 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		if (!r_str_ncasecmp (str + pos, "ptr", 3)) {
 			continue;
 		} else if (!r_str_ncasecmp (str + pos, "byte", 4)) {
-			op->type |= OT_MEMORY | OT_BYTE;
+			op->type |= OT_MEMORY | OT_BYTE | OT_GPREG;
 			op->dest_size = OT_BYTE;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "word", 4)) {
-			op->type |= OT_MEMORY | OT_WORD;
+			op->type |= OT_MEMORY | OT_WORD | OT_GPREG;
 			op->dest_size = OT_WORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "dword", 5)) {
-			op->type |= OT_MEMORY | OT_DWORD;
+			op->type |= OT_MEMORY | OT_DWORD | OT_GPREG;
 			op->dest_size = OT_DWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "qword", 5)) {
-			op->type |= OT_MEMORY | OT_QWORD;
+			op->type |= OT_MEMORY | OT_QWORD | OT_GPREG;
 			op->dest_size = OT_QWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "oword", 5)) {
-			op->type |= OT_MEMORY | OT_OWORD;
+			op->type |= OT_MEMORY | OT_OWORD | OT_GPREG;
 			op->dest_size = OT_OWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "tbyte", 5)) {
-			op->type |= OT_MEMORY | OT_TBYTE;
+			op->type |= OT_MEMORY | OT_TBYTE | OT_GPREG;
 			op->dest_size = OT_TBYTE;
 			explicit_size = true;
 		} else { // the current token doesn't denote a size
@@ -5110,6 +5110,7 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	LookupTable *lt_ptr;
 	int retval;
+
 	if (!strcmp (op->mnemonic, "rep") ||
 	    !strcmp (op->mnemonic, "repe") ||
 	    !strcmp (op->mnemonic, "repz")) {
@@ -5166,7 +5167,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	LookupTable *lt_ptr;
 	int retval = -1;
 	Opcode instr = {0};
-
+	
 	strncpy (op, str, sizeof (op) - 1);
 	op[sizeof (op) - 1] = '\0';
 	parseOpcode (a, op, &instr);
