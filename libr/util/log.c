@@ -138,8 +138,7 @@ R_API void r_vlog(const char *funcname, const char *filename,
 
   This function is used by the R_LOG_* preprocessor macros for logging
 */
-R_API void r_log(const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
+R_API void r_log(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
 	va_list args;
 
 	va_start (args, fmtstr);

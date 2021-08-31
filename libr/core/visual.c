@@ -1522,16 +1522,16 @@ repeat:
 					res = r_str_appendf (res, "; ---------------------------\n");
 					switch (printMode) {
 					case 0:
-						dis = r_core_cmd_strf (core, "pd $r-4 @ 0x%08"PFMT64x, refi->addr);
+						dis = r_core_cmd_strf (core, "pd--6 @ 0x%08"PFMT64x, refi->addr);
 						break;
 					case 1:
-						dis = r_core_cmd_strf (core, "pd @ 0x%08"PFMT64x"-32", refi->addr);
+						dis = r_core_cmd_strf (core, "pds @ 0x%08"PFMT64x, refi->addr);
 						break;
 					case 2:
 						dis = r_core_cmd_strf (core, "px @ 0x%08"PFMT64x, refi->addr);
 						break;
 					case 3:
-						dis = r_core_cmd_strf (core, "pds @ 0x%08"PFMT64x, refi->addr);
+						dis = r_core_cmd_strf (core, "pxr @ 0x%08"PFMT64x, refi->addr);
 						break;
 					}
 					if (dis) {

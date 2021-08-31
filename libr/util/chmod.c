@@ -172,7 +172,7 @@ static void recurse(const char *path, int rec, bool (*fn)(const char *,int)) {
 		eprintf ("opendir %s:", path);
 		return;
 	}
-        cwd = agetcwd();
+        cwd = agetcwd ();
         if (chdir (path) == -1) {
                 eprintf ("chdir %s:", path);
 		closedir (dp);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include <r_userconf.h>
 
@@ -95,13 +95,6 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return !strncmp (file, "w32dbg://", 9);
 }
 
-// mingw32 toolchain doesnt have this symbol
-static HANDLE (WINAPI *r2_OpenThread)(
-	DWORD dwDesiredAccess,
-	BOOL  bInheritHandle,
-	DWORD dwThreadId
-) = NULL;
-
 static int __w32_first_thread(int pid) {
 	HANDLE th;
 	HANDLE thid;
@@ -119,9 +112,7 @@ static int __w32_first_thread(int pid) {
 	do {
 		/* get all threads of process */
 		if (te32.th32OwnerProcessID == pid) {
-			r2_OpenThread = OpenThread;
-			thid = r2_OpenThread
-			? r2_OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID) : NULL;
+			thid = OpenThread (THREAD_ALL_ACCESS, 0, te32.th32ThreadID);
 			if (!thid) {
 				r_sys_perror ("__w32_first_thread/OpenThread");
 				goto err_first_th;

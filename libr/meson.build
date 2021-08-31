@@ -22,6 +22,7 @@ if get_option('nogpl')
   user_plugins += ['nogrub']
 endif
 
+
 # This must be splitted in meson.builds for each module
 # meson split is results in 1 empty element when splitting an empty string :facepalm:
 if not no_user_plugins
@@ -258,6 +259,9 @@ if no_user_plugins
   endif
 endif
 
+if get_option('use_v35')
+  anal_plugins += ['arm_v35']
+endif
 
 bin_plugins += [
   'art',

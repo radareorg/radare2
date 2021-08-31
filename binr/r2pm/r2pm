@@ -225,6 +225,7 @@ upgradeOutdated() {
 }
 
 r2pm_update() {
+	[ "${R2PM_OFFLINE}" != 0 ] && return
 	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
 	mkdir -p "${R2PM_GITDIR}"
 	mkdir -p "${HOME}/.config"
@@ -611,7 +612,7 @@ case "$1" in
 -v|version)
 	echo "r2pm ${R2_VERSION}"
 	;;
--gi|global-install)
+-gi|-cgi|-gci|global-install)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
 	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/${R2_VERSION}/"
@@ -624,7 +625,7 @@ case "$1" in
 	fi
 	r2pm_install "$@"
 	;;
--gu|global-uninstall)
+-gu|-cgu|-gcu|global-uninstall)
 	GLOBAL=1
 	R2PM_PREFIX="${R2PM_SYSPREFIX}"
 	#R2PM_PLUGDIR="${R2PM_SYSLIBDIR}/radare2/${R2_VERSION}/"

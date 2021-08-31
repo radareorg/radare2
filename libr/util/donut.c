@@ -6,7 +6,7 @@
 
 // https://www.a1k0n.net/2006/09/15/obfuscated-c-donut.html
 
-             k;double sin()
+             k;float sin()
          ,cos();main(){float A=
        0,B=0,i,j,z[1760];char b[
      1760];printf("\x1b[2J");for(;;
@@ -36,9 +36,9 @@ in(B),t=c*h*g-f*        e;int x=40+30*D*
 // global iterators
 R_API char *r_str_donut(int osize) {
 	int size = osize;
-	static double A= 0;
-	static double B= 0;
-	double i,j,z[1760];
+	static float A = 0;
+	static float B = 0;
+	float i,j,z[1760];
 	int k;
 	char b[1760];
 	char o[1760];
@@ -49,10 +49,10 @@ R_API char *r_str_donut(int osize) {
 	} else {
 		A = B = 0;
 	}
-	double Zero = (((double)(100 - size) / 100) * 6);
-	double Width = 30;
-	double Height = 15;
-	double Align = 25; // 40;
+	float Zero = (((float)(100 - size) / 100) * 6);
+	float Width = 30;
+	float Height = 15;
+	float Align = 25; // 40;
 	if (osize != 0) {
 		Align = 40;
 	}
@@ -68,8 +68,8 @@ R_API char *r_str_donut(int osize) {
 			int x = (int)(Align+Width*D*(l*h*m-t*n));
 			int y = (int)(12 + Height*D*(l*h*n +t*m));
 			int o = x + 80 * y;
-			int N = (int)(8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n));
-			if (22 >y && y > 0 && x > 0 && 80 > x && D > z[o]) {
+			int N = 8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n);
+			if (22 > y && y > 0 && x > 0 && 80 > x && D > z[o]) {
 				z[o] = D;
 				b[o] = " .,-:!/|S$@&"[N > 0? N: 0];
 			}

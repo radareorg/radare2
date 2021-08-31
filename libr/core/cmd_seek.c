@@ -70,7 +70,7 @@ static const char *help_msg_sl[] = {
 	"sl", "[+-][line]", "Seek to relative line",
 	"slc", "", "Clear line cache",
 	"sll", "", "Show total number of lines",
-	"sleep", " [seconds]", "Sleep for an specific amount of time",
+	"sleep", " [seconds]", "Sleep for an specific amount of time (support decimal values)",
 	NULL
 };
 
@@ -623,9 +623,9 @@ static int cmd_seek(void *data, const char *input) {
 		case '-': // "s--"
 		default:
 			{
-				st64 delta = -off;
+				st64 delta = -(st64)off;
 				if (input[1] == '-') {
-					delta = -core->blocksize;
+					delta = -(st64)core->blocksize;
 					int mult = r_num_math (core->num, input + 2);
 					if (mult > 0) {
 						delta /= mult;
@@ -774,8 +774,15 @@ static int cmd_seek(void *data, const char *input) {
 			{
 				const char *arg = strchr (input, ' ');
 				if (arg) {
+					arg++;
 					void *bed = r_cons_sleep_begin ();
-					r_sys_sleep (atoi (arg + 1));
+					if (strchr (arg, '.')) {
+						double d = 0;
+						sscanf (arg, "%lf", &d);
+						r_sys_usleep ((int)(d * 1000000));
+					} else {
+						r_sys_sleep (atoi (arg));
+					}
 					r_cons_sleep_end (bed);
 				} else {
 					eprintf ("Usage: sleep [seconds]\n");

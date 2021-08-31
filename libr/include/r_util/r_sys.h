@@ -19,6 +19,7 @@ extern "C" {
 #define R_SYS_BITS_16 2
 #define R_SYS_BITS_32 4
 #define R_SYS_BITS_64 8
+#define R_SYS_BITS_27 16
 
 typedef struct {
 	char *sysname;

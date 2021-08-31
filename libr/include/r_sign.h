@@ -68,7 +68,7 @@ typedef struct r_sign_item_t {
 	RSignHash *hash;
 } RSignItem;
 
-typedef int (*RSignForeachCallback) (RSignItem *it, void *user);
+typedef bool (*RSignForeachCallback) (RSignItem *it, void *user);
 typedef int (*RSignSearchCallback) (RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user);
 typedef int (*RSignMatchCallback) (RSignItem *it, RAnalFunction *fcn, RSignType *types, void *user, RList *col);
 

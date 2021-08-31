@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2021 - pancake */
 
 #if __WINDOWS__
 #include <stdlib.h>
@@ -117,7 +117,7 @@ R_API char *r_num_units(char *buf, size_t len, ut64 num) {
 			return NULL;
 		}
 	}
-	fnum = num;
+	fnum = (long double)num;
 	if (num >= EB) { unit = 'E'; fnum /= EB; } else
 	if (num >= PB) { unit = 'P'; fnum /= PB; } else
 	if (num >= TB) { unit = 'T'; fnum /= TB; } else

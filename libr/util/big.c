@@ -100,9 +100,8 @@ R_API st64 r_big_to_int(RNumBig *b) {
 	ret <<= 32;
 	ret += b->array[0];
 #endif
-
 	if (b->sign < 0) {
-		return -ret;
+		return -(st64)ret;
 	}
 	return ret;
 }

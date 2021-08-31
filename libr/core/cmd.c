@@ -81,6 +81,20 @@ static const char *help_msg_dollar[] = {
 	NULL
 };
 
+static const char *help_msg_l[] = {
+	"Usage:", "l[erls] ([arg])", "# internal less (~..) and list files (!ls)",
+	"ll", " [path]", "same as ls -l",
+	"lr", " [path]", "same as ls -r",
+	"ls", " ([-e,-l,-j,-q]) ([path])", "list files in current or given directory",
+	"ls", " -e ([path])", "list files using emojis",
+	"ls", " -l ([path])", "same as ll (list files with details)",
+	"ls", " -j ([path])", "list files in json format",
+	"ls", " -q ([path])", "quiet output (one file per line)",
+	"le", "[ss] ([path])", "same as cat file~.. (or less)",
+	"TODO: last command should honor asm.bits", "", "",
+	NULL
+};
+
 static const char *help_msg_star[] = {
 	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
 	"*", "entry0=cc", "write trap in entrypoint",
@@ -1282,20 +1296,15 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 }
 
 static int cmd_lsr(RCore *core, const char *input) {
-	const char *arg;
-	char *path;
-	RList *files;
+	const char *path;
 	RListIter *iter;
-	if (R_STR_ISEMPTY (input)) {
-		arg = ".";
-	} else {
-		arg = input;
-	}
-	files = r_file_lsrf (arg);
+	const char *arg = R_STR_ISEMPTY (input)? ".": input;
+	RList *files = r_file_lsrf (arg);
 	if (!files) {
 		eprintf ("Failed to read directories\n");
 		return 0;
 	}
+	r_list_sort (files, (RListComparator)strcmp);
 	r_list_foreach (files, iter, path) {
 		r_cons_println (path);
 	}
@@ -1313,8 +1322,19 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	case 'r':
 		cmd_lsr (core, arg);
 		break;
+	case 'l':
+		{
+			char *carg = r_str_newf ("-l%s", r_str_get (arg));
+			char *res = r_syscmd_ls (carg);
+			if (res) {
+				r_cons_print (res);
+				free (res);
+			}
+			free (carg);
+		}
+		break;
 	case '?': // "l?"
-		eprintf ("Usage: l[es] # ls to list files, le[ss] to less a file\n");
+		r_core_cmd_help (core, help_msg_l);
 		break;
 	case 'e': // "le"
 		if (arg) {
@@ -2784,6 +2804,9 @@ static int cmd_system(void *data, const char *input) {
 			if (cmd) {
 				void *bed = r_cons_sleep_begin ();
 				ret = r_sys_cmd (cmd);
+				if (ret != 0) {
+					r_cons_singleton()->context->was_breaked = true;
+				}
 				r_cons_sleep_end (bed);
 				r_core_sysenv_end (core, input);
 				free (cmd);
@@ -2904,8 +2927,9 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 			// Process exited before we finished writing to pipe
 			DWORD exit;
 			if (GetExitCodeThread (th, &exit) && exit == STILL_ACTIVE) {
-				CancelSynchronousIo (th);
+				r_w32_CancelSynchronousIo (th);
 			}
+			// Windows XP
 			WaitForSingleObject (th, INFINITE);
 			__CLOSE_DUPPED_PIPES ();
 			break;
@@ -3145,6 +3169,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	} else {
 		colon = NULL;
 	}
+	// repeat command N times
 	if (rep > 0) {
 		while (IS_DIGIT (*cmd)) {
 			cmd++;
@@ -3159,14 +3184,13 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	// XXX if output is a pipe then we don't want to be interactive
 	if (rep > 1 && r_sandbox_enable (0)) {
-		eprintf ("Command repeat sugar disabled in sandbox mode (%s)\n", cmd);
+		eprintf ("The command repeat syntax sugar is disabled in sandbox mode (%s)\n", cmd);
 		goto beach;
-	} else {
-		if (rep > INTERACTIVE_MAX_REP) {
-			if (r_cons_is_interactive ()) {
-				if (!r_cons_yesno ('n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
-					goto beach;
-				}
+	}
+	if (rep > INTERACTIVE_MAX_REP) {
+		if (r_cons_is_interactive ()) {
+			if (!r_cons_yesno ('n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
+				goto beach;
 			}
 		}
 	}
@@ -3174,10 +3198,17 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	const char *cmdrep = r_str_get (core->cmdtimes);
 	orep = rep;
 
+	bool is_root_cmd = core->cons->context->cmd_depth + 1 == core->max_cmd_depth;
+	if (is_root_cmd) {
+		r_cons_break_clear ();
+	}
 	r_cons_break_push (NULL, NULL);
 
-	int ocur_enabled = core->print && core->print->cur_enabled;
+	bool ocur_enabled = core->print && core->print->cur_enabled;
 	while (rep-- && *cmd) {
+		if (r_cons_was_breaked ()) {
+			break;
+		}
 		if (core->print) {
 			core->print->cur_enabled = false;
 			if (ocur_enabled && core->seltab >= 0) {
@@ -3185,9 +3216,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 					core->print->cur_enabled = true;
 				}
 			}
-		}
-		if (r_cons_is_breaked ()) {
-			break;
 		}
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
@@ -3216,8 +3244,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 		free (cr);
 	}
-
 	r_cons_break_pop ();
+	if (is_root_cmd) {
+		r_cons_break_clear ();
+	}
 
 	if (tmpseek) {
 		r_core_seek (core, orig_offset, true);
@@ -3928,7 +3958,7 @@ repeat_arroba:
 							}
 							tmpdesc = d;
 							if (pamode) {
-								r_config_set_i (core->config, "io.va", 1);
+								r_config_set_b (core->config, "io.va", true);
 							}
 							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						}
@@ -4004,7 +4034,7 @@ repeat_arroba:
 						}
 						tmpdesc = d;
 						if (pamode) {
-							r_config_set_i (core->config, "io.va", 1);
+							r_config_set_b (core->config, "io.va", true);
 						}
 						r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						r_core_block_size (core, len);
@@ -4029,7 +4059,7 @@ repeat_arroba:
 								}
 								tmpdesc = d;
 								if (pamode) {
-									r_config_set_i (core->config, "io.va", 1);
+									r_config_set_b (core->config, "io.va", true);
 								}
 								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 								r_core_block_size (core, len);
@@ -4085,7 +4115,7 @@ repeat_arroba:
 						RBuffer *b = r_buf_new_with_bytes (buf, len);
 						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
 						if (!core->io->va) {
-							r_config_set_i (core->config, "io.va", 1);
+							r_config_set_b (core->config, "io.va", true);
 						}
 						if (d) {
 							if (tmpdesc) {
@@ -4093,7 +4123,7 @@ repeat_arroba:
 							}
 							tmpdesc = d;
 							if (pamode) {
-								r_config_set_i (core->config, "io.va", 1);
+								r_config_set_b (core->config, "io.va", true);
 							}
 							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 							r_core_block_size (core, len);
@@ -4123,8 +4153,8 @@ ignore:
 		cmd = r_str_trim_nc (cmd);
 		if (ptr2) {
 			if (strlen (ptr + 1) == 13 && strlen (ptr2 + 1) == 6 &&
-				!memcmp (ptr + 1, "0x", 2) &&
-				!memcmp (ptr2 + 1, "0x", 2)) {
+				!strncmp (ptr + 1, "0x", 2) &&
+				!strncmp (ptr2 + 1, "0x", 2)) {
 				/* 0xXXXX:0xYYYY */
 			} else if (strlen (ptr + 1) == 9 && strlen (ptr2 + 1) == 4) {
 				/* XXXX:YYYY */
@@ -4133,8 +4163,7 @@ ignore:
 				if (!ptr2[1]) {
 					goto fail;
 				}
-				r_core_block_size (
-					core, r_num_math (core->num, ptr2 + 1));
+				r_core_block_size (core, r_num_math (core->num, ptr2 + 1));
 			}
 		}
 
@@ -4230,17 +4259,13 @@ next_arroba:
 				if (addr_is_set) {
 					core->offset = addr;
 				}
-				ret = r_cmd_call (core->rcmd, r_str_trim_head_ro (cmd));
 			} else {
-				if (addr_is_set) {
-					if (ptr[1]) {
-						r_core_seek (core, addr, true);
-						r_core_block_read (core);
-					}
+				if (addr_is_set && ptr[1]) {
+					r_core_seek (core, addr, true);
+					r_core_block_read (core);
 				}
-				ret = r_cmd_call (core->rcmd, r_str_trim_head_ro (cmd));
-
 			}
+			ret = r_cmd_call (core->rcmd, r_str_trim_head_ro (cmd));
 			if (tmpseek) {
 				// restore ranges
 				for (i = 0; fromvars[i]; i++) {
@@ -4262,7 +4287,7 @@ next_arroba:
 		}
 		if (tmpdesc) {
 			if (pamode) {
-				r_config_set_i (core->config, "io.va", 0);
+				r_config_set_b (core->config, "io.va", false);
 			}
 			r_io_desc_close (tmpdesc);
 			tmpdesc = NULL;
@@ -5323,7 +5348,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 	if (log) {
 		r_line_hist_add (cstr);
 	}
-
 	ret = run_cmd_depth (core, cmd);
 	free (cmd);
 beach:

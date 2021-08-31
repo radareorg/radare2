@@ -59,5 +59,17 @@ if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community" (
   )
 )
 )
+
+if EXIST "libr\asm\arch\arm\v35arm64\arch-arm64" (
+  echo "v35arm64 ok"
+) else (
+  pushd "libr\asm\arch\arm\v35arm64"
+  git clone https://github.com/radareorg/vector35-arch-arm64 arch-arm64
+  cd arch-arm64
+  git checkout radare2
+  git reset --hard 5837915960c2ce862a77c99a374abfb7d18a8534
+  popd
+)
+
 echo Now you can run 'configure'
 cmd

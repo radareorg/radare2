@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nikolai */
 
 #include <r_diff.h>
 
@@ -223,7 +223,7 @@ R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *
 }
 #endif
 
-#define diffHit(void) { \
+#define diffHit() { \
 	const size_t i_hit = i - hit; \
 	int ra = la - i_hit; \
 	int rb = lb - i_hit; \
@@ -330,7 +330,7 @@ R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, con
 			}
 		}
 		if (verbose && di % 10000 == 0) {
-			eprintf ("\rProcessing dist %" PFMT64d " of max %" PFMT64d "\r", di, m);
+			eprintf ("\rProcessing dist %" PFMT64d " of max %" PFMT64d "\r", (st64)di, (st64)m);
 		}
 	}
 

@@ -4,13 +4,6 @@ NAME=r_util
 CFLAGS+=-DR2_PLUGIN_INCORE -I$(TOP)/shlr
 PCLIBS=@LIBZIP@ @DL_LIBS@
 
-ifneq ($(OSTYPE),darwin)
-ifneq ($(OSTYPE),haiku)
-LDFLAGS+=-lm
-LINK=-lm
-endif
-endif
-
 OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o charset.o
 OBJS+=prof.o cache.o sys.o buf.o sys_w32.o ubase64.o base85.o base91.o
 OBJS+=list.o flist.o chmod.o graph.o event.o alloc.o donut.o print_code.o
@@ -40,55 +33,33 @@ else
   endif
 endif
 
-include deps.mk
-
 CWD=$(shell pwd)
 
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
-LDFLAGS+=-lm
-
-# NetBSD 7.0 ships with backtrace(3) in -lexecinfo
-ifeq (${BUILD_OS},netbsd)
-ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
-  LDFLAGS+=-lexecinfo
-endif
-endif
-
-# FreeBSD 10.0 ships with backtrace(3) in -lexecinfo
-ifeq (${BUILD_OS},freebsd)
-ifneq ($(shell expr "`uname -r`" : '[0-9]\.'), 2)
-  LDFLAGS+=-lexecinfo
-endif
-endif
-
-ifeq (${BUILD_OS},dragonfly)
-  LDFLAGS+=-lexecinfo
-endif
-
-ifeq (${BUILD_OS},haiku)
-  LDFLAGS+=-lexecinfo
-endif
 
 EXTRA_PRE+=spp_config
 EXTRA_PRE+=charsets
-EXTRA_TARGETS=$(EXTRA_PRE)
+#EXTRA_TARGETS=$(EXTRA_PRE)
 EXTRA_CLEAN=doclean
 
+myall: all
+
 include ../rules.mk
+include deps.mk
 include sdb.mk
 include spp.mk
 
 charsets:
 	$(MAKE) -C d
-.PHONY: charsets
 
 doclean:
 	$(MAKE) -C d clean
-.PHONY: doclean
 
 sync-regex regex-sync:
 	-rm -rf src/
 	cvs -qd anoncvs@anoncvs.ca.openbsd.org:/cvs get -P src/lib/libc/regex
 	cp src/lib/libc/regex/* regex
+
+.PHONY: charsets doclean sync-regex regex-sync

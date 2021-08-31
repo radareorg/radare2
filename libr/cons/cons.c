@@ -303,6 +303,7 @@ R_API RCons *r_cons_singleton(void) {
 }
 
 R_API void r_cons_break_clear(void) {
+	I.context->was_breaked = false;
 	I.context->breaked = false;
 }
 
@@ -351,6 +352,7 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 			r_sys_signal (SIGINT, SIG_IGN);
 		}
 #endif
+		I.context->was_breaked = I.context->breaked;
 		context->breaked = false;
 	}
 }
@@ -371,6 +373,13 @@ R_API bool r_cons_default_context_is_interactive(void) {
 	return r_cons_context_default.is_interactive;
 }
 
+R_API bool r_cons_was_breaked(void) {
+	bool res = r_cons_is_breaked () || I.context->was_breaked;
+	I.context->breaked = false;
+	I.context->was_breaked = false;
+	return res;
+}
+
 R_API bool r_cons_is_breaked(void) {
 	if (I.cb_break) {
 		I.cb_break (I.user);
@@ -381,6 +390,9 @@ R_API bool r_cons_is_breaked(void) {
 			eprintf ("\nTimeout!\n");
 			I.timeout = 0;
 		}
+	}
+	if (!I.context->was_breaked) {
+		I.context->was_breaked = I.context->breaked;
 	}
 	return I.context && I.context->breaked;
 }
@@ -554,6 +566,7 @@ R_API RCons *r_cons_new(void) {
 	if (I.refcnt != 1) {
 		return &I;
 	}
+	I.use_utf8 = r_cons_is_utf8 ();
 	I.rgbstr = r_cons_rgb_str_off;
 	I.line = r_line_new ();
 	I.enable_highlight = true;
@@ -1914,11 +1927,11 @@ R_API void r_cons_highlight(const char *word) {
 R_API char *r_cons_lastline(int *len) {
 	char *b = I.context->buffer + I.context->buffer_len;
 	while (b > I.context->buffer) {
+		b--;
 		if (*b == '\n') {
 			b++;
 			break;
 		}
-		b--;
 	}
 	if (len) {
 		int delta = b - I.context->buffer;

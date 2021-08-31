@@ -3507,7 +3507,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "cfg.editor", r_str_get_fail (p, "vi"));
 #endif
 	free (p);
-	r_config_desc (cfg, "cfg.editor", "Select default editor program");
+	r_config_desc (cfg, "cfg.editor", "Select default editor program, portable %EDITOR");
 	char *whoami = r_sys_whoami ();
 	SETPREF ("cfg.user", whoami, "Set current username/pid");
 	free (whoami);
@@ -4034,13 +4034,13 @@ R_API int r_core_config_init(RCore *core) {
 	/* RVC */
 	{
 		char *p = r_file_path ("git");
+		SETPREF ("prj.vc.message", "", "Default commit message for rvc/git");
 		if (strcmp (p, "git")) {
 			SETCB ("prj.vc.type", "git", &cb_prjvctype, "What should projects use as a vc");
 		} else {
 			SETBPREF ("prj.vc", "false", "Use your version control system of choice (rvc, git) to manage projects");
 			/*The follwing is just a place holder*/
 			SETCB ("prj.vc.type", "rvc", &cb_prjvctype, "What should projects use as a vc");
-			SETBPREF ("prj.vc.message", "", "Default commit message for rvc/git");
 		}
 		free (p);
 	}

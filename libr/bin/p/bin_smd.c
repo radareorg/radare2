@@ -153,7 +153,7 @@ static RList *symbols(RBinFile *bf) {
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	SMD_Header hdr = {0};
+	SMD_Header hdr = {{0}};
 	int left = r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
 	if (left < sizeof (SMD_Header)) {
 		return NULL;

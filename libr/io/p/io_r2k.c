@@ -10,7 +10,9 @@
 #include "io_r2k_windows.h"
 #elif defined (__linux__) && !defined (__GNU__)
 #include "io_r2k_linux.h"
-struct io_r2k_linux r2k_struct;		//TODO: move this into desc->data
+struct io_r2k_linux r2k_struct; // TODO: move this into desc->data
+#else
+int r2k_struct; // dummy
 #endif
 
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {

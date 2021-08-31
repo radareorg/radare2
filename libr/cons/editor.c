@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2018 - pancake */
+/* radare - LGPL - Copyright 2008-2021 - pancake */
 
 #include <r_cons.h>
 #define I r_cons_singleton ()
@@ -57,6 +57,10 @@ static void filesave(void) {
 				path = strdup (buf);
 			}
 		}
+	}
+	if (!path) {
+		eprintf ("No file given.\n");
+		return;
 	}
 	if (lines) {
 		for (i = 0; i < bytes; i++) {

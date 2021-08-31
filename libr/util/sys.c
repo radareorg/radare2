@@ -341,11 +341,7 @@ R_API void r_sys_backtrace(void) {
 		printf ("[%d] pc == %p fp == %p\n", depth++, saved_pc, saved_fp);
 	}
 #else
-#ifdef _MSC_VER
 #pragma message ("TODO: r_sys_bt : unimplemented")
-#else
-#warning TODO: r_sys_bt : unimplemented
-#endif
 #endif
 }
 
@@ -407,11 +403,7 @@ R_API int r_sys_clearenv(void) {
 #endif
 	return 0;
 #else
-#ifdef _MSC_VER
 #pragma message ("r_sys_clearenv : unimplemented for this platform")
-#else
-#warning r_sys_clearenv : unimplemented for this platform
-#endif
 	return 0;
 #endif
 }
@@ -437,7 +429,7 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 	free (value_);
 	return ret ? 0 : -1;
 #else
-#warning r_sys_setenv : unimplemented for this platform
+#pragma message("r_sys_setenv : unimplemented for this platform")
 	return 0;
 #endif
 }
@@ -549,7 +541,17 @@ R_API char *r_sys_getdir(void) {
 #if __WINDOWS__
 	return _getcwd (NULL, 0);
 #else
+#ifdef __GLIBC__
 	return getcwd (NULL, 0);
+#else
+	const size_t maxpathlen = 4096;
+	char *res = calloc (maxpathlen, 1);
+	char *cwd = getcwd (res, maxpathlen);
+	if (!cwd) {
+		free (res);
+	}
+	return cwd;
+#endif
 #endif
 }
 
@@ -825,11 +827,7 @@ R_API int r_sys_cmdbg (const char *str) {
 	exit (0);
 	return -1;
 #else
-#ifdef _MSC_VER
 #pragma message ("r_sys_cmdbg is not implemented for this platform")
-#else
-#warning r_sys_cmdbg is not implemented for this platform
-#endif
 	return -1;
 #endif
 }
@@ -1087,29 +1085,16 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	return 0;
 }
 
-R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
-	// TODO: add maximum path length support
-	HANDLE processHandle;
+// w32 specific API
+R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 	const DWORD maxlength = MAX_PATH;
 	TCHAR filename[MAX_PATH];
 	char *result = NULL;
-
-	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
-	if (!processHandle) {
-		eprintf ("r_sys_pid_to_path: Cannot open process.\n");
-		return NULL;
-	}
-	DWORD length = 0;
-	if (w32_GetModuleFileNameEx) {
-		length = w32_GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
-	}
+	DWORD length = r_w32_GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
-		if (w32_GetProcessImageFileName) {
-			length = w32_GetProcessImageFileName (processHandle, filename, maxlength);
-		}
-		CloseHandle (processHandle);
+		length = r_w32_GetProcessImageFileName (processHandle, filename, maxlength);
 		if (length == 0) {
 			eprintf ("r_sys_pid_to_path: Error calling GetProcessImageFileName\n");
 			return NULL;
@@ -1142,7 +1127,8 @@ R_API char *r_sys_pid_to_path(int pid) {
 		strncpy (tmp, name, length);
 		tmp[length] = '\0';
 		TCHAR device[MAX_PATH];
-		for (TCHAR drv[] = TEXT("A:"); drv[0] <= TEXT('Z'); drv[0]++) {
+		TCHAR drv[3] = {'A',':', 0};
+		for (; drv[0] <= TEXT('Z'); drv[0]++) {
 			if (QueryDosDevice (drv, device, maxlength) > 0) {
 				char *dvc = r_sys_conv_win_to_utf8 (device);
 				if (!dvc) {
@@ -1176,13 +1162,25 @@ R_API char *r_sys_pid_to_path(int pid) {
 		free (name);
 		free (tmp);
 	} else {
-		CloseHandle (processHandle);
 		result = r_sys_conv_win_to_utf8 (filename);
 	}
 	return result;
+}
+#endif
+
+R_API char *r_sys_pid_to_path(int pid) {
+#if __WINDOWS__
+	HANDLE processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+	if (!processHandle) {
+		// eprintf ("r_sys_pid_to_path: Cannot open process.\n");
+		return NULL;
+	}
+	char *filename = r_w32_handle_to_path (processHandle);
+	CloseHandle (processHandle);
+	return filename;
 #elif __APPLE__
 #if __POWERPC__
-#warning TODO getpidproc
+#pragma message("TODO getpidproc")
 	return NULL;
 #else
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
@@ -1278,11 +1276,14 @@ R_API char *r_sys_whoami(void) {
 
 R_API int r_sys_uid(void) {
 #if __WINDOWS__
+#pragma message ("r_sys_uid not implemented for windows")
 	char buf[32];
 	DWORD buf_sz = sizeof (buf);
+	// TODO
 	if (!GetUserName (buf, (LPDWORD)&buf_sz) ) {
-		return strdup ("?");
+		return 1; // 
 	}
+	return 0;
 #elif __wasi__
 	return 0;
 #else
@@ -1298,7 +1299,7 @@ R_API int r_sys_getpid(void) {
 #elif __WINDOWS__
 	return GetCurrentProcessId();
 #else
-#warning r_sys_getpid not implemented for this platform
+#pragma message ("r_sys_getpid not implemented for this platform")
 	return -1;
 #endif
 }

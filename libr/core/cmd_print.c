@@ -5424,7 +5424,7 @@ static int cmd_print(void *data, const char *input) {
 		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -mbs) {
 			bw_disassemble = true;
 			l = use_blocksize; // negative
-			use_blocksize = -use_blocksize;
+			use_blocksize = (ut64)-(st64)use_blocksize;
 		} else {
 			l = use_blocksize;
 		}

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, jduck, TheLemonMan, saucec0de */
+/* radare - LGPL - Copyright 2009-2021 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
 #include <r_drx.h>
@@ -11,13 +11,11 @@ R_LIB_VERSION(r_debug);
 #define DBG_BUF_SIZE 512
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
-	if (!dbg || !dbg->h || !dbg->h->info) {
-		return NULL;
-	}
+	r_return_val_if_fail (dbg && dbg->h, NULL);
 	if (dbg->pid < 0) {
 		return NULL;
 	}
-	return dbg->h->info (dbg, arg);
+	return dbg->h->info? dbg->h->info (dbg, arg): NULL;
 }
 
 R_API void r_debug_info_free(RDebugInfo *rdi) {
@@ -326,7 +324,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 		}
 	}
 	if (watch) {
-		hw = 1; //XXX
+		hw = 1; // XXX
 		bpi = r_bp_watch_add (dbg->bp, addr, bpsz, hw, rw);
 	} else {
 		bpi = hw
@@ -347,7 +345,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 
 static const char *r_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
 	// RDebug *dbg = (RDebug *)userptr;
-	eprintf ("STR CALLBACK WTF WTF WTF\n");
+	// TODO: implement the rnum callback for str or just get rid of it as we dont need it
 	return NULL;
 }
 
@@ -413,7 +411,7 @@ R_API void r_debug_tracenodes_reset(RDebug *dbg) {
 	sdb_reset (dbg->tracenodes);
 }
 
-R_API RDebug *r_debug_free(RDebug *dbg) {
+R_API void r_debug_free(RDebug *dbg) {
 	if (dbg) {
 		// TODO: free it correctly.. we must ensure this is an instance and not a reference..
 		r_bp_free (dbg->bp);
@@ -440,7 +438,6 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		free (dbg->glob_unlibs);
 		free (dbg);
 	}
-	return NULL;
 }
 
 R_API bool r_debug_attach(RDebug *dbg, int pid) {
@@ -468,9 +465,14 @@ R_API int r_debug_stop(RDebug *dbg) {
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	if (arch && dbg && dbg->h) {
 		switch (bits) {
+		case 16:
+			if (dbg->h->bits == 16) {
+				dbg->bits = R_SYS_BITS_16;
+			}
+			break;
 		case 27:
 			if (dbg->h->bits == 27) {
-				dbg->bits = 27;
+				dbg->bits = R_SYS_BITS_27;
 			}
 			break;
 		case 32:

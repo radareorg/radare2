@@ -37,7 +37,12 @@ R_API void *r_lib_dl_open(const char *libname) {
 #if WANT_DYLINK
 #if __UNIX__
 	if (libname) {
-		ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
+#if __linux__
+		ret = dlopen (libname, RTLD_NOW);
+#endif
+		if (!ret) {
+			ret = dlopen (libname, RTLD_GLOBAL | RTLD_LAZY);
+		}
 	} else {
 		ret = dlopen (NULL, RTLD_NOW);
 	}
@@ -51,7 +56,6 @@ R_API void *r_lib_dl_open(const char *libname) {
 	} else {
 		libname_ = calloc (MAX_PATH, sizeof (TCHAR));
 		if (!libname_) {
-			R_LOG_ERROR ("lib/r_lib_dl_open: Failed to allocate memory.\n");
 			return NULL;
 		}
 		if (!GetModuleFileName (NULL, libname_, MAX_PATH)) {

@@ -221,6 +221,7 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 	r_sys_setenv ("R2_FILE", NULL);
 	r_sys_setenv ("R2_BYTES", NULL);
 	r_sys_setenv ("R2_OFFSET", NULL);
+	r_sys_setenv ("R2_UTF8", NULL);
 
 	// remove temporary R2_CONFIG file
 	char *r2_config = r_sys_getenv ("R2_CONFIG");
@@ -257,28 +258,32 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	r_sys_setenv ("R2_XOFFSET", sdb_fmt ("0x%08"PFMT64x, core->offset));
 	r_sys_setenv ("R2_ENDIAN", core->rasm->big_endian? "big": "little");
 	r_sys_setenv ("R2_BSIZE", sdb_fmt ("%d", core->blocksize));
-
+#if 0
 	// dump current config file so other r2 tools can use the same options
 	char *config_sdb_path = NULL;
 	int config_sdb_fd = r_file_mkstemp (NULL, &config_sdb_path);
 	if (config_sdb_fd >= 0) {
 		close (config_sdb_fd);
 	}
-
 	Sdb *config_sdb = sdb_new (NULL, config_sdb_path, 0);
 	r_config_serialize (core->config, config_sdb);
 	sdb_sync (config_sdb);
 	sdb_free (config_sdb);
 	r_sys_setenv ("R2_CONFIG", config_sdb_path);
-
+#endif
 	r_sys_setenv ("RABIN2_LANG", r_config_get (core->config, "bin.lang"));
 	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
 	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
 	r_sys_setenv ("R2_BITS", sdb_fmt ("%"PFMT64u, r_config_get_i (core->config, "asm.bits")));
-	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color")? "1": "0");
-	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug")? "1": "0");
-	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va")? "1": "0");
+	char *s = sdb_itoa (r_config_get_i (core->config, "scr.color"), NULL, 10);
+	r_sys_setenv ("R2_COLOR", s);
+	free (s);
+	r_sys_setenv ("R2_UTF8", r_config_get_b (core->config, "scr.utf8")? "1": "0");
+	r_sys_setenv ("R2_DEBUG", r_config_get_b (core->config, "cfg.debug")? "1": "0");
+	r_sys_setenv ("R2_IOVA", r_config_get_b (core->config, "io.va")? "1": "0");
+#if 0
 	free (config_sdb_path);
+#endif
 	return ret;
 }
 
