@@ -46,7 +46,8 @@ static char *strip_sys_dir(const char *path) {
 	for (; *path && !(*path == *R_SYS_DIR && !*(path + 1)); path++) {
 		if (!r_str_cmp (path, R_SYS_DIR R_SYS_DIR, 2)) {
 			continue;
-		} ret = r_str_appendf (ret, "%c", *path);
+		}
+		ret = r_str_appendf (ret, "%c", *path);
 		if (!ret) {
 			return NULL;
 		}
@@ -480,8 +481,7 @@ R_API RList *r_vc_get_uncommitted(const char *rp) {
 				free (blob_absp);
 				continue;
 			}
-			char *fname = r_str_new (blob_absp);
-			free (blob_absp);
+			char *fname = blob_absp;
 			if (!fname) {
 				goto fail_ret;
 			}
