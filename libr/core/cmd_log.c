@@ -388,6 +388,9 @@ static int cmd_plugins(void *data, const char *input) {
 			pj_free (pj);
 			break;
 			}
+		case ' ':
+			r_lib_open (core->lib, r_str_trim_head_ro (input + 2));
+			break;
 		case 0:
 			r_lib_list (core->lib);
 			r_list_foreach (core->rcmd->plist, iter, cp) {
@@ -395,7 +398,7 @@ static int cmd_plugins(void *data, const char *input) {
 			}
 			break;
 		default:
-			eprintf ("oops\n");
+			r_core_cmd_help (core, help_msg_L);
 			break;
 		}
 		}
