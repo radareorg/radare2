@@ -211,8 +211,14 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 	if (mz->blocks_in_file < 1) {
 		return false;
 	}
-	dos_file_size = ((mz->blocks_in_file - 1) << 9) +
-		mz->bytes_in_last_block;
+	if (mz->bytes_in_last_block == 0) {
+		// last block is full
+		dos_file_size = mz->blocks_in_file << 9;
+	} else {
+		// last block is partially full
+		dos_file_size = ((mz->blocks_in_file - 1) << 9) +
+			mz->bytes_in_last_block;
+	}
 
 	bin->dos_file_size = dos_file_size;
 	if (dos_file_size > bin->size) {

@@ -1,0 +1,32 @@
+NAME=MZ: cblp0.exe - open
+FILE=bins/mz/cblp0.exe
+ARGS=-A
+CMDS=q!
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=MZ: cblp0.exe - entrypoint
+FILE=bins/mz/cblp0.exe
+CMDS=s
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
+NAME=MZ: cblp0.exe - pi 1
+FILE=bins/mz/cblp0.exe
+CMDS=pi 1
+EXPECT=<<EOF
+xor al, al
+EOF
+RUN
+
+NAME=MZ: cblp0.exe segments
+FILE=bins/mz/cblp0.exe
+CMDS=iS*
+EXPECT=<<EOF
+fs sections
+"f section.seg_000 1 0x00000000"
+EOF
+RUN
