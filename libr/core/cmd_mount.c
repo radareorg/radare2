@@ -11,7 +11,7 @@ static const char *help_msg_m[] = {
 	"mc", " [file]", "Cat: Show the contents of the given file",
 	"md", " /", "List directory contents for path",
 	"mf", "[?] [o|n]", "Search files for given filename or for offset",
-	"mg", " /foo [offset size]", "Get fs file/dir and dump it to disk",
+	"mg", " /foo [offset size]", "Get fs file/dir and dump to disk (support base64:)",
 	"mi", " /foo/bar", "Get offset and size of given file",
 	"mj", "", "List mounted filesystems in JSON",
 	"mo", " /foo/bar", "Open given file into a malloc://",
@@ -225,10 +225,7 @@ static int cmd_mount(void *data, const char *_input) {
 		cmd_mount_ls (core, input + 1);
 		break;
 	case 'p':
-		input++;
-		if (*input == ' ') {
-			input++;
-		}
+		input = (char *)r_str_trim_head_ro (input + 1);
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr = 0;
@@ -246,11 +243,8 @@ static int cmd_mount(void *data, const char *_input) {
 			eprintf ("Cannot read partition\n");
 		}
 		break;
-	case 'o': //"mo"
-		input++;
-		if (input[0]==' ') {
-			input++;
-		}
+	case 'o': // "mo"
+		input = (char *)r_str_trim_head_ro (input + 1);
 		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			r_fs_read (core->fs, file, 0, file->size);
@@ -264,10 +258,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'i':
-		input++;
-		if (input[0]==' ') {
-			input++;
-		}
+		input = (char *)r_str_trim_head_ro (input + 1);
 		file = r_fs_open (core->fs, input, false);
 		if (file) {
 			// XXX: dump to file or just pipe?
@@ -279,10 +270,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'c': // "mc"
-		input++;
-		if (*input == ' ') {
-			input++;
-		}
+		input = (char *)r_str_trim_head_ro (input + 1);
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr++ = 0;
@@ -300,12 +288,9 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'g': // "mg"
-		input++;
+		input = (char *)r_str_trim_head_ro (input + 1);
 		int offset = 0;
 		int size = 0;
-		if (*input == ' ') {
-			input++;
-		}
 		ptr = strchr (input, ' ');
 		if (ptr) {
 			*ptr++ = 0;
@@ -340,12 +325,8 @@ static int cmd_mount(void *data, const char *_input) {
 				break;
 			}
 			while (total_bytes_read < size && ptr < file->size) {
-				int bytes_read = 0;
-				if (size - total_bytes_read < blocksize) {
-					bytes_read = r_fs_read (core->fs, file, ptr, size - total_bytes_read);
-				} else {
-					bytes_read = r_fs_read (core->fs, file, ptr, blocksize);
-				}
+				int left = (size - total_bytes_read < blocksize)? size - total_bytes_read: blocksize;
+				int bytes_read = r_fs_read (core->fs, file, ptr, left);
 				if (bytes_read > 0) {
 					r_file_dump (localFile, file->data, bytes_read, true);
 				}
@@ -353,15 +334,17 @@ static int cmd_mount(void *data, const char *_input) {
 				total_bytes_read += bytes_read;
 			}
 			r_fs_close (core->fs, file);
+			eprintf ("File '%s' created. ", localFile);
 			if (offset) {
-				eprintf ("File '%s' created. (offset: 0x%"PFMT64x" size: %d bytes)\n", localFile, (ut64) offset, size);
+				eprintf ("(offset: 0x%"PFMT64x" size: %d bytes)\n", (ut64) offset, size);
 			} else {
-				eprintf ("File '%s' created. (size: %d bytes)\n", localFile, size);
+				eprintf ("(size: %d bytes)\n", size);
 			}
 			free (localFile);
 		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
-			eprintf ("Cannot open file\n");
+			eprintf ("Cannot open file (%s) (%s).\n", filename, ptr);
 		}
+		free (hfilename);
 		break;
 	case 'f':
 		input++;
@@ -370,9 +353,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_core_cmd_help (core, help_msg_mf);
 			break;
 		case 'n':
-			input++;
-			if (*input == ' ')
-				input++;
+			input = (char *)r_str_trim_head_ro (input + 1);
 			ptr = strchr (input, ' ');
 			if (ptr) {
 				*ptr++ = 0;
@@ -382,12 +363,12 @@ static int cmd_mount(void *data, const char *_input) {
 					printf ("%s\n", ptr);
 				}
 				//XXX: r_list_purge (list);
-			} else eprintf ("Unknown store path\n");
+			} else {
+				eprintf ("Unknown store path\n");
+			}
 			break;
 		case 'o':
-			input++;
-			if (*input == ' ')
-				input++;
+			input = (char *)r_str_trim_head_ro (input + 1);
 			ptr = strchr (input, ' ');
 			if (ptr) {
 				*ptr++ = 0;
@@ -395,10 +376,12 @@ static int cmd_mount(void *data, const char *_input) {
 				list = r_fs_find_off (core->fs, input, off);
 				r_list_foreach (list, iter, ptr) {
 					r_str_trim_path (ptr);
-					printf ("%s\n", ptr);
+					r_cons_println (ptr);
 				}
 				//XXX: r_list_purge (list);
-			} else eprintf ("Unknown store path\n");
+			} else {
+				eprintf ("Unknown store path\n");
+			}
 			break;
 		}
 		break;
@@ -407,10 +390,7 @@ static int cmd_mount(void *data, const char *_input) {
 			free (oinput);
 			return false;
 		}
-		input++;
-		if (input[0] == ' ') {
-			input++;
-		}
+		input = (char *)r_str_trim_head_ro (input + 1);
 		r_cons_set_raw (false);
 		{
 			RFSShell shell = {
@@ -453,15 +433,10 @@ static int cmd_mount(void *data, const char *_input) {
 		} else if (input[1] == ' ') {
 			char *args = r_str_trim_dup (input + 1);
 			char *arg = strchr (args, ' ');
-			if (arg) {
-				data = arg + 1;
-			} else {
-				data = "";
-				// touch and truncate
-			}
+			const char *data = arg? arg + 1: "";
 			RFSFile *f = r_fs_open (core->fs, args, true);
 			if (f) {
-				r_fs_write (core->fs, f, 0, (const ut8 *)data, strlen (data));
+				r_fs_write (core->fs, f, 0, (const void *)data, strlen (data));
 				r_fs_close (core->fs, f);
 				r_fs_file_free (f);
 			}
@@ -471,7 +446,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'y':
-		eprintf ("TODO\n");
+		eprintf ("TODO: my command not implemented.\n");
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_m);

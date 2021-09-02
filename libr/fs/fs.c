@@ -303,17 +303,13 @@ R_API RList* r_fs_dir(RFS* fs, const char* p) {
 	RList *ret = NULL;
 	RFSRoot* root;
 	RListIter* iter;
-	const char* dir;
 	char* path = strdup (p);
 	r_str_trim_path (path);
 	RList *roots = r_fs_root (fs, path);
 	r_list_foreach (roots, iter, root) {
 		if (root) {
-			if (strlen (root->path) == 1) {
-				dir = path;
-			} else {
-				dir = path + strlen (root->path);
-			}
+			const char *dir = r_str_nlen (root->path, 2) == 1
+				? path: path + strlen (root->path);
 			if (!*dir) {
 				dir = "/";
 			}
@@ -323,19 +319,17 @@ R_API RList* r_fs_dir(RFS* fs, const char* p) {
 			}
 		}
 	}
-	free (roots);
+	r_list_free (roots);
 	free (path);
 	return ret;
 }
 
 R_API bool r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 	r_return_val_if_fail (fs && path && name, false);
-	RList* list;
 	RListIter* iter;
-	RFSFile* file, * item;
-	char* str, * npath;
+	RFSFile *file, *item;
 
-	list = r_fs_dir (fs, path);
+	RList *list = r_fs_dir (fs, path);
 	if (!list) {
 		return false;
 	}
@@ -349,21 +343,9 @@ R_API bool r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 		if (!strcmp (file->name, ".") || !strcmp (file->name, "..")) {
 			continue;
 		}
-		str = (char*) malloc (strlen (name) + strlen (file->name) + 2);
-		if (!str) {
-			return false;
-		}
-		strcpy (str, name);
-		strcat (str, "/");
-		strcat (str, file->name);
-		npath = malloc (strlen (path) + strlen (file->name) + 2);
-		if (!npath) {
-			free (str);
-			return false;
-		}
-		strcpy (npath, path);
-		strcat (npath, "/");
-		strcat (npath, file->name);
+		char *str = r_str_newf ("%s/%s", name, file->name);
+		char *npath = r_str_newf ("%s/%s", path, file->name);
+
 		switch (file->type) {
 		// DON'T FOLLOW MOUNTPOINTS
 		case R_FS_FILE_TYPE_DIRECTORY:
@@ -610,7 +592,18 @@ R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
 }
 
 R_API int r_fs_partition_type_str(const char* type) {
-	// TODO: implement
+#if USE_GRUB && WITH_GPL
+	// TODO: properly implement our types to not depend on grub
+	if (!strcmp (type, "fat")) {
+		return GRUB_PC_PARTITION_TYPE_FAT32;
+	}
+	if (!strcmp (type, "ext2")) {
+		return GRUB_PC_PARTITION_TYPE_EXT2FS;
+	}
+	if (!strcmp (type, "hfs")) {
+		return GRUB_PC_PARTITION_TYPE_HFS;
+	}
+#endif
 	return 0;
 }
 
@@ -638,7 +631,7 @@ R_API const char* r_fs_partition_type(const char* part, int type) {
 
 	case GRUB_PC_PARTITION_TYPE_EXTENDED:
 	case GRUB_PC_PARTITION_TYPE_LINUX_EXTENDED:
-		return strdup ("ext3");
+		return strdup ("ext3"); // XXX
 
 	case GRUB_PC_PARTITION_TYPE_HFS:
 		return strdup ("hfs");
