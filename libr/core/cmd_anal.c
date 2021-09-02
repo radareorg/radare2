@@ -702,6 +702,7 @@ static const char *help_msg_ao[] = {
 	"Usage:", "ao[e?] [len]", "Analyze Opcodes",
 	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
 	"aoe", " N", "display esil form for N opcodes",
+	"aoeq", " N", "display only the esil expression of N opcodes",
 	"aoef", " expr", "filter esil expression of opcode by given output",
 	"aos", " N", "display size of N opcodes",
 	"aom", " [id]", "list current or all mnemonics for current arch",
@@ -1883,7 +1884,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (opname) {
 				r_str_split (opname, ' ');
 				char *d = r_asm_describe (core->rasm, opname);
-				if (d && *d) {
+				if (R_STR_ISNOTEMPTY (d)) {
 					r_cons_printf ("%s: %s\n", opname, d);
 					free (d);
 				} else {
@@ -1891,6 +1892,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 				free (opname);
 			}
+		} else if (fmt == 'E') {
+			r_cons_printf ("%s\n", esilstr);
 		} else if (fmt == 'e') {
 			if (R_STR_ISNOTEMPTY (esilstr)) {
 				if (use_color) {
@@ -7152,7 +7155,11 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		} else {
 			count = 1;
 		}
-		core_anal_bytes (core, core->block, core->blocksize, count, input[0]);
+		int fmt = input[0];
+		if (input[0] == 'e' && input[1] == 'q') {
+			fmt = 'E'; // quiet esil
+		}
+		core_anal_bytes (core, core->block, core->blocksize, count, fmt);
 		if (obs != core->blocksize) {
 			r_core_block_size (core, obs);
 		}
