@@ -307,8 +307,20 @@ static int cmd_mount(void *data, const char *_input) {
 		} else {
 			ptr = "./";
 		}
+		char *hfilename = NULL;
 		const char *filename = r_str_trim_head_ro (input);
-
+		if (R_STR_ISEMPTY (filename)) {
+			eprintf ("No filename given\n");
+			break;
+		}
+		if (r_str_startswith (filename, "base64:")) {
+			const char *encoded = filename + 7;
+			char *decoded = (char *)sdb_decode (encoded, NULL);
+			if (decoded) {
+				filename = decoded;
+				hfilename = decoded;
+			}
+		}
 		file = r_fs_open (core->fs, filename, false);
 		if (file) {
 			char *localFile = strdup (filename);
@@ -420,23 +432,24 @@ static int cmd_mount(void *data, const char *_input) {
 				break;
 			}
 			size_t size = 0;
-			char *data = r_file_slurp (arg0, &size);
+			char *buf = r_file_slurp (arg0, &size);
 			RFSFile *f = r_fs_open (core->fs, arg1, true);
 			if (f) {
-				r_fs_write (core->fs, f, 0, (const ut8 *)data, size);
+				r_fs_write (core->fs, f, 0, (const ut8 *)buf, size);
 				r_fs_close (core->fs, f);
 				r_fs_file_free (f);
 			} else {
 				eprintf ("Cannot write\n");
 			}
 			free (arg0);
+			free (buf);
 		} else if (input[1] == ' ') {
 			char *args = r_str_trim_dup (input + 1);
 			char *arg = strchr (args, ' ');
-			const char *data = arg? arg + 1: "";
+			const char *buf = arg? arg + 1: "";
 			RFSFile *f = r_fs_open (core->fs, args, true);
 			if (f) {
-				r_fs_write (core->fs, f, 0, (const void *)data, strlen (data));
+				r_fs_write (core->fs, f, 0, (const void *)buf, strlen (data));
 				r_fs_close (core->fs, f);
 				r_fs_file_free (f);
 			}
