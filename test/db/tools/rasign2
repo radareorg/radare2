@@ -104,6 +104,14 @@ spacename
 EOF
 RUN
 
+NAME=rasign2 collision check
+FILE=-
+CMDS=!!rasign2 -cr bins/elf/hello_world~sym.imp.free~ C ?
+EXPECT=<<EOF
+7
+EOF
+RUN
+
 NAME=rasign2 -f libc-v7.sig
 FILE=
 CMDS=!rasign2 -f bins/other/sigs/libc-v7.sig

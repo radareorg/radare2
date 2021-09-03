@@ -12,6 +12,7 @@ static void rasign_show_help(void) {
 		" -q               quiet mode\n"
 		" -r               show output in radare commands\n"
 		" -s signspace     save all signatures under this signspace\n"
+		" -c               add collision signatures before writing file\n"
 		" -v               show version information\n"
 		"Examples:\n"
 		"  rasign2 -o libc.sdb libc.so.6\n");
@@ -66,9 +67,10 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	bool quiet = false;
 	bool json = false;
 	bool flirt = false;
+	bool collision = false;
 	RGetopt opt;
 
-	r_getopt_init (&opt, argc, argv, "afhjo:qrs:v");
+	r_getopt_init (&opt, argc, argv, "afhjo:qrs:cv");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -76,6 +78,9 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			break;
 		case 'o':
 			ofile = opt.arg;
+			break;
+		case 'c':
+			collision = true;
 			break;
 		case 's':
 			space = opt.arg;
@@ -153,6 +158,10 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 
 	// create zignatures
 	r_sign_all_functions (core->anal);
+
+	if (collision) {
+		r_sign_resolve_collisions (core->anal);
+	}
 
 	// write sigs to file
 	if (ofile && !r_sign_save (core->anal, ofile)) {
