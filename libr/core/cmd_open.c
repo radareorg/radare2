@@ -1618,9 +1618,11 @@ static int cmd_open(void *data, const char *input) {
 		}
 		if (argv) {
 			if (r_str_startswith (argv[0], "base64:")) {
-				char *decoded = sdb_decode (argv[0] + 7, NULL);
-				free (argv[0]);
-				argv[0] = decoded;
+				char *decoded = (char *)sdb_decode (argv[0] + 7, NULL);
+				if (decoded) {
+					free (argv[0]);
+					argv[0] = decoded;
+				}
 			} else {
 				// Unescape spaces from the path
 				r_str_path_unescape (argv[0]);
