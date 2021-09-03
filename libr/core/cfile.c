@@ -834,6 +834,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		goto beach;
 	}
 beach:
+	r_flag_space_set (r->flags, "*");
 	return true;
 }
 
