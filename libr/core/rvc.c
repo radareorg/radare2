@@ -711,8 +711,8 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		eprintf ("Commit message is too long\n");
 		return false;
 	}
-	for (const char *m = message; m; m++) {
-		if (*m < ' '){
+	for (const char *m = message; *m; m++) {
+		if (*m < ' ') {
 			eprintf ("commit messages must not contain unprintable charecters\n");
 			return false;
 		}
