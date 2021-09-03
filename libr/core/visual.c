@@ -3676,7 +3676,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 }
 
 R_API void r_core_visual_title(RCore *core, int color) {
-	bool showDelta = r_config_get_i (core->config, "scr.slow");
+	bool showDelta = r_config_get_b (core->config, "asm.slow");
 	static ut64 oldpc = 0;
 	const char *BEGIN = core->cons->context->pal.prompt;
 	const char *filename;
