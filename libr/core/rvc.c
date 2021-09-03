@@ -708,10 +708,19 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 			return false;
 		}
 	} else if (r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
+		eprintf ("Commit message is too long\n");
 		return false;
 	}
-	RList *blobs;
-	blobs = blobs_add (rp, files);
+	if (strchr (message, '\n')) {
+		return false;
+	}
+	for (const char *m = message; m; m++) {
+		if (*m < ' '){
+			eprintf ("commit messages must not contain unprintable charecters\n");
+			return false;
+		}
+	}
+	RList *blobs = blobs_add (rp, files);
 	if (!blobs) {
 		return false;
 	}
