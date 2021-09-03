@@ -1617,8 +1617,14 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (argv) {
-			// Unescape spaces from the path
-			r_str_path_unescape (argv[0]);
+			if (r_str_startswith (argv[0], "base64:")) {
+				char *decoded = sdb_decode (argv[0] + 7, NULL);
+				free (argv[0]);
+				argv[0] = decoded;
+			} else {
+				// Unescape spaces from the path
+				r_str_path_unescape (argv[0]);
+			}
 			if (argc == 2) {
 				if (r_num_is_valid_input (core->num, argv[1])) {
 					addr = r_num_math (core->num, argv[1]);
