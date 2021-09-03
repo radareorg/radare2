@@ -12,7 +12,7 @@ static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool fo
 static const char *help_msg_s[] = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
 	"s", "", "Print current address",
-	"s.", "hexoff", "Seek honoring a base from core->offset",
+	"s.", "[?]hexoff", "Seek honoring a base from core->offset",
 	"s:", "pad", "Print current address with N padded zeros (defaults to 8)",
 	"s", " addr", "Seek to address",
 	"s-", "", "Undo seek",
@@ -40,6 +40,13 @@ static const char *help_msg_s[] = {
 	"sr", " pc", "Seek to register",
 	"ss", "[?]", "Seek silently (without adding an entry to the seek history)",
 	// "sp [page]  seek page N (page = block)",
+	NULL
+};
+
+static const char *help_msg_sdot[] = {
+	"Usage:", "s.", "seek here or there (near seeks)",
+	"s.", "", "Seek here, same as 's $$'",
+	"s..", "32a8", "Seek to the same address but replacing the lower nibbles",
 	NULL
 };
 
@@ -473,11 +480,19 @@ static int cmd_seek(void *data, const char *input) {
 	}
 	break;
 	case '.': // "s." "s.."
-		for (input++; *input == '.'; input++) {
-			;
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_sdot);
+		} else if (input[1]) {
+			for (input++; *input == '.'; input++) {
+				;
+			}
+			r_core_seek_base (core, input);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		} else {
+			// just re-read the current block
+			r_core_seek (core, core->offset, true);
+			r_core_block_read (core);
 		}
-		r_core_seek_base (core, input);
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case 'j':  // "sj"
 		{
