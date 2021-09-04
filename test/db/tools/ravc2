@@ -6,13 +6,8 @@ cd ravc2_init_test
 !!ravc2 init
 lr
 !!ravc2 status
-!!cd ../
-rm ./.rvc/branches.sdb
-rm ./.rvc/blobs
-rm ./.rvc/commits
-rm ./.rvc
 cd ../
-rm ravc2_init_test
+rr ravc2_init_test
 EOF
 EXPECT=<<EOF
 ./.rvc
@@ -32,20 +27,8 @@ cd ravc2_commit_test
 echo hello > hello
 !!ravc2 commit "hello world!" hello
 !!ravc2 log~!author,time,hash
-cd ./.rvc/commits
-rm $(ls -q~!/)
 cd ../
-rm commits
-cd blobs
-rm 5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03
-cd ../
-rm blobs
-rm branches.sdb
-cd ../
-rm hello
-rm .rvc
-cd ../
-rm ravc2_commit_test
+rr ravc2_commit_test
 EOF
 EXPECT=<<EOF
 message=hello world!
@@ -69,20 +52,8 @@ ls -q ~!/
 !!ravc2 status~Branch:
 !!ravc2 checkout master
 ls -q ~!/
-cd ./.rvc/commits
-rm $(ls -q~!/)
 cd ../
-rm commits
-cd blobs
-rm 5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03
-cd ../
-rm blobs
-rm branches.sdb
-cd ../
-rm hello
-rm .rvc
-cd ../
-rm ravc2_branch_test
+rr ravc2_branch_test
 EOF
 EXPECT=<<EOF
 Branch: hello
@@ -98,20 +69,8 @@ cd ravc2_log_test
 echo hello > hello
 !!ravc2 commit "hello world!" hello
 !!ravc2 log ~!hash,author,time
-cd ./.rvc/commits
-rm $(ls -q~!/)
 cd ../
-rm commits
-cd blobs
-rm 5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03
-cd ../
-rm blobs
-rm branches.sdb
-cd ../
-rm hello
-rm .rvc
-cd ../
-rm ravc2_log_test
+rr ravc2_log_test
 EOF
 EXPECT=<<EOF
 message=hello world!
