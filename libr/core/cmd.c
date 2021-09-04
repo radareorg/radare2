@@ -2293,6 +2293,13 @@ static int cmd_resize(void *data, const char *input) {
 			eprintf ("Usage: rm [file]   # removes a file\n");
 		}
 		return true;
+	case 'r': //"rr"
+		if (input[1] == ' ')  {
+			const char *file = r_str_trim_head_ro (input + 2);
+			return r_file_rm_rf (input + 2);
+		}
+		eprintf ("Usage rr <directory>\n");
+		return false;
 	case '\0':
 		if (core->io->desc) {
 			if (oldsize != -1) {
