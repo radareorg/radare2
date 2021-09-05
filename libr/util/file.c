@@ -1352,6 +1352,23 @@ R_API RList *r_file_lsrf(const char *dir) {
 	return ret;
 }
 
+R_API bool r_file_rm_rf(const char *dir) {
+	RList *files = r_file_lsrf (dir);
+	if (r_file_exists (dir)) {
+		return r_file_rm (dir);
+	}
+	if (!files) {
+		return false;
+	}
+	r_list_sort (files, (RListComparator) strcmp);
+	RListIter *iter;
+	char *f;
+	r_list_foreach_prev (files, iter, f)  {
+		r_file_rm (f);
+	}
+	return r_file_rm (dir);
+}
+
 
 static void recursive_glob(const char *path, const char *glob, RList* list, int depth) {
 	if (depth < 1) {
