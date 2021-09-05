@@ -2282,6 +2282,15 @@ static int cmd_resize(void *data, const char *input) {
 		r_sys_cmdf ("radare%s", input);
 		return true;
 	case 'm': // "rm"
+		if (!r_str_cmp (input, "mrf", 3)) {
+			if (input[3] == ' ')  {
+				const char *file = r_str_trim_head_ro (input + 3);
+				puts (file);
+				return r_file_rm_rf (file);
+			}
+			eprintf ("Usage rr <directory>\n");
+			return false;
+		}
 		if (input[1] == ' ') {
 			const char *file = r_str_trim_head_ro (input + 2);
 			if (*file == '$') {
