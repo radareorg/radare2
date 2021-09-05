@@ -7,7 +7,7 @@ cd ravc2_init_test
 lr
 !!ravc2 status
 cd ../
-rr ravc2_init_test
+rmrf ravc2_init_test
 EOF
 EXPECT=<<EOF
 ./.rvc
@@ -28,7 +28,7 @@ echo hello > hello
 !!ravc2 commit "hello world!" hello
 !!ravc2 log~!author,time,hash
 cd ../
-rr ravc2_commit_test
+rmrf ravc2_commit_test
 EOF
 EXPECT=<<EOF
 message=hello world!
@@ -53,7 +53,7 @@ ls -q ~!/
 !!ravc2 checkout master
 ls -q ~!/
 cd ../
-rr ravc2_branch_test
+rmrf ravc2_branch_test
 EOF
 EXPECT=<<EOF
 Branch: hello
@@ -70,7 +70,7 @@ echo hello > hello
 !!ravc2 commit "hello world!" hello
 !!ravc2 log ~!hash,author,time
 cd ../
-rr ravc2_log_test
+rmrf ravc2_log_test
 EOF
 EXPECT=<<EOF
 message=hello world!
