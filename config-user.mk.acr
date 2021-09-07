@@ -21,7 +21,9 @@ WANT_CAPSTONE=@WANT_CAPSTONE@
 WITH_LIBR=@WITH_LIBR@
 
 ifeq ($(USE_RPATH),1)
-LDFLAGS_LIB+=-Wl,-rpath,"${LIBDIR}"
+LDFLAGS_RPATH=-Wl,-rpath,"${LIBDIR}"
+else
+LDFLAGS_RPATH=
 endif
 
 MKPLUGINS=mk/stat.mk mk/sloc.mk
