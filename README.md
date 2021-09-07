@@ -2,54 +2,99 @@
 
 ## Radare2: Unix-Like Reverse Engineering Framework
 
-[![Tests Status](https://github.com/radareorg/radare2/workflows/CI/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/) [![TODO counter](https://img.shields.io/github/search/radareorg/radare2/TODO.svg)](https://github.com/radareorg/radare2/search?q=TODO) [![XXX counter](https://img.shields.io/github/search/radareorg/radare2/XXX.svg)](https://github.com/radareorg/radare2/search?q=XXX)
+[![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/workflows/CI/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/)
 
-Next release will be 5.6.0, current git is 5.5.5 and the [![latest packaged version(s)](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) See the [Release](https://github.com/radareorg/radare2/releases) downloads page.
+The current packaged version is displayed above. See the
+[Releases](https://github.com/radareorg/radare2/releases) page for binary
+downloads. The current git `master` branch is `5.5.5`, and the next release will
+be `5.6.0`.
 
-r2 is a rewrite from scratch of radare. It provies a set of libraries, tools and
+r2 is a complete rewrite of radare. It provides a set of libraries, tools and
 plugins to ease reverse engineering tasks.
 
-The radare project started as a simple command-line hexadecimal editor focused on
-forensics, over time more features were added to support a scriptable command-line
-low level tool to edit from local hard drives, kernel memory, programs, remote gdb
-servers and be able to analyze, emulate, debug, modify and disassemble any binary.
+The radare project started as a simple command-line hexadecimal editor focused
+on forensics. Today, r2 is a featureful low-level command-line tool with
+support for scripting. r2 can edit files on local hard drives, view kernel
+memory, and debug programs locally or via a remote gdb server. r2's wide
+architecture support allows you to analyze, emulate, debug, modify, and
+disassemble any binary.
 
 <p align="center">
 <a href="https://www.radare.org/"><img src="doc/images/shot.png" alt="screenshot" align="center" border=0 width="600px"></a>
 </p>
 
-* Install r2 from **Git** (Clone the repo and run `sys/install.sh`) or use `pip install r2env`
-* Read the [Official radare2 book](https://book.rada.re)
-* [COMMUNITY.md](COMMUNITY.md) engagement
-* [CONTRIBUTING.md](CONTRIBUTING.md) general rules
-* [DEVELOPERS.md](DEVELOPERS.md) to improve r2 for your needs
-* [SECURITY.md](SECURITY.md) on vulnerability report instructions
-* [USAGE.md](USAGE.md) for an introductory session
-* [INSTALL.md](INSTALL.md) instructions
+## Installation
+
+r2 can be installed via `git` or `pip`.
 
 ```
 git clone https://github.com/radareorg/radare2
 radare2/sys/install.sh
 ```
 
-# Plugins
+```
+pip install r2env
+```
 
-Most of the plugins you need may be available in the stock r2 installation,
-but you can find more in the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
+## Resources
+
+* [Official radare2 book](https://book.rada.re): Read about r2 usage.
+* [COMMUNITY.md](COMMUNITY.md): Community engagement and loose guidelines.
+* [CONTRIBUTING.md](CONTRIBUTING.md): Information about reporting issues and contributing. See also the [Contributing](#contributing) section below.
+* [DEVELOPERS.md](DEVELOPERS.md): Development guidelines for r2.
+* [SECURITY.md](SECURITY.md): Instructions for reporting vulnerabilities.
+* [USAGE.md](USAGE.md): Some example commands.
+* [INSTALL.md](INSTALL.md) Full instructions for different installation methods.
+
+## Plugins
+
+Many plugins are included with r2 by default. You can find more plugins using
+the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
 
 ```
-r2pm update          # initialize and update the package database
-r2pm install [pkg]   # installs the package
+r2pm update          # update (or initialize) the package database
+r2pm install <pkg>   # install a package
 ```
 
 Some of the most installed packages are:
 
-* [radius](https://github.com/aemmitt-ns/radius) fast symbolic execution engine based on boolector and r2
-* [r2ghidra](https://github.com/radareorg/r2ghidra) the native ghidra decompiler plugin: `pdg` command
-* [esilsolve](https://github.com/radareorg/esilsolve) symbolic execution r2 plugin based on esil and z3
-* [r2dec](https://github.com/wargio/r2dec-js) decompiler based on r2 written in js `pdd`
-* [r2frida](https://github.com/nowsecure/r2frida) the frida io plugin `r2 frida://0`
-* [iaito](https://github.com/radareorg/iaito) - official graphical interface (Qt)
+* [radius](https://github.com/aemmitt-ns/radius) A fast symbolic execution engine based on boolector and r2.
+* [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command.
+* [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3.
+* [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command.
+* [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it.
+* [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface.
+
+# Contributing
+
+There are many ways to contribute to the project. Join the
+IRC/Matrix/Telegram/Discord channels, check out the github issues or grep for
+TODO comments in the source.
+
+To contribute code, push your changes to a branch on your fork of the
+repository. Please ensure that you follow the coding and style guidelines and
+that your changes pass the testing suite, which you can run with the `r2r`
+tool. If you are adding significant code, it may be necessary to add additional
+tests in the `tests/` directory.
+
+For more details, read [CONTRIBUTING.md](CONTRIBUTING.md) and
+[DEVELOPERS.md](DEVELOPERS.md).
+
+## Community and Documentation
+
+To learn more about r2 we encourage you to watch [youtube
+talks](https://www.youtube.com/c/r2con) from [r2con](https://rada.re/con). In
+addition to reading blogposts, slides or the [official radare2
+book](https://book.rada.re), you can reach us in the following chats:
+
+* [irc.libera.chat](https://libera.chat) `#radare` `#radare_side`
+* [Matrix](https://matrix.org/) `#radare:matrix.org`
+* [Telegram](https://t.me/radare) and the [Side Channel](https://t.me/radare_side)
+* [Discord](https://discord.gg/MgEdxrMnqx) server
+* Twitter: [@radareorg](https://twitter.com/radareorg)
+* Website: [https://www.radare.org/](https://www.radare.org/)
+
+# Supported Platforms
 
 ## Operating Systems
 
@@ -73,29 +118,6 @@ Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
 ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
 WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF, TIC-80
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
-
-# Contributing
-
-There are many ways to contribute to the project, join the IRC/Matrix/Telegram
-channels, check out the github issues or grep for the TODO comments in the source.
-To contribute with code, create a branch in your forked repository and push
-a pull request, follow the coding style and ensure it passes the tests with
-the `r2r` tool to run the tests that are under the `tests/` subdirectory.
-
-For more details read the [CONTRIBUTING.md](CONTRIBUTING.md) file.
-
-## Community and Documentation
-
-To learn more about r2 we encourage you to watch youtube talks from
-[r2con](https://www.youtube.com/c/r2con) [conference](https://rada.re/con). As well as reading blogposts,
-slides or read the [Official radare2 book](https://book.rada.re), You can reach us in the following chats:
-
-* irc.libera.chat `#radare` `#radare_side`
-* [Matrix](https://matrix.org/) `#radare:matrix.org`
-* [Telegram](https://t.me/radare) and the [Side Channel](https://t.me/radare_side)
-* [Discord](https://discord.gg/MgEdxrMnqx) server
-* Twitter: [@radareorg](https://twitter.com/radareorg)
-* Website: [https://www.radare.org/](https://www.radare.org/)
 
 ## Packaging Status
 
