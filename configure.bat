@@ -2,6 +2,7 @@
 REM call preconfigure.bat
 
 set PATH=%CD%\prefix\bin;%PATH%
+meson vs -Dsdb_cgen=false --backend vs
 
 meson b -Dsdb_cgen=false --reconfigure
 if %ERRORLEVEL% == 0 (
