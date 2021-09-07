@@ -14,3 +14,8 @@ printf "[*] Checking out vector35... "
 rm -rf libr/asm/arch/arm/v35arm64/arch-arm64
 ${MAKE} -C libr/asm/arch/arm/v35arm64 arch-arm64 > /dev/null || exit 1
 echo OK
+if [ `uname` = Linux ]; then
+	./configure  --with-rpath
+else
+	./configure
+fi

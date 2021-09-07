@@ -74,9 +74,7 @@ EXT_EXE=.bc
 #EXT_EXE=.wasm
 endif
 
-ifeq ($(USE_RPATH),1)
-LDFLAGS+=-Wl,-rpath,"${LIBDIR}"
-endif
+LDFLAGS+=$(LDFLAGS_RPATH)
 
 OBJ+=${BIN}.o
 BEXE=${BIN}${EXT_EXE}
