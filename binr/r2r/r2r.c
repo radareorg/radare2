@@ -331,6 +331,7 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
+	r_sys_setenv ("TZ", "UTC");
 	ut64 time_start = r_time_now_mono ();
 	R2RState state = {{0}};
 	state.run_config.r2_cmd = radare2_cmd ? radare2_cmd : RADARE2_CMD_DEFAULT;
