@@ -1117,6 +1117,55 @@ R_API bool r_vc_git_commit(const char *path, const char *message) {
 		!r_sys_cmdf ("git -C \"%s\" commit", r_str_escape (path));
 }
 
+R_API bool r_vc_reset(const char *rp) {
+	if (!repo_exists (rp)) {
+		return false;
+	}
+	bool ret = true;
+	RList *uncommitted = r_vc_get_uncommitted (rp);
+	if (!uncommitted) {
+		return false;
+	}
+	RListIter *iter;
+	const char *fp;
+	r_list_foreach (uncommitted, iter, fp) {
+		char *blobp;
+		{
+			char *p = absp2rp (rp, fp);
+			if (!p) {
+				ret = false;
+				break;
+			}
+			char *b = find_blob_hash (rp, p);
+			if (!b || !strcmp (b, "-")) {
+				free (p);
+				if (!r_file_rm(fp)) {
+					ret = false;
+					break;
+
+				}
+				continue;
+
+			}
+			blobp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
+					R_SYS_DIR "blobs" R_SYS_DIR
+					"%s", rp, b);
+			free (b);
+		}
+		if (!blobp) {
+			ret = false;
+			break;
+		}
+		if (!file_copyp (blobp, fp)) {
+			free (blobp);
+			ret = false;
+			break;
+		}
+	}
+	r_list_free (uncommitted);
+	return ret;
+}
+
 //Access both git and rvc functionality from one set of functions
 
 R_API bool rvc_git_init(const RCore *core, const char *rp) {
