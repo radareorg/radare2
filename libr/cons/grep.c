@@ -37,6 +37,7 @@ static const char *help_detail_tilde[] = {
 	" ..",       "", "internal 'less'",
 	" ...",      "", "internal 'hud' (like V_)",
 	" ....",     "", "internal 'hud' in one line",
+	" :)",       "", "parse C-like output from decompiler",
 	" {:",       "", "human friendly indentation (yes, it's a smiley)",
 	" {:..",     "", "less the output of {:",
 	" {:...",    "", "hud the output of {:",
@@ -123,6 +124,12 @@ static void parse_grep_expression(const char *str) {
 		end_ptr = ptr2 = ptr3 = NULL;
 		while (*ptr) {
 			switch (*ptr) {
+			case ':':
+				if (ptr[1] == ')') { // ":)"
+					grep->code = true;
+					ptr++;
+				}
+				goto while_end;
 			case '.':
 				if (ptr[1] == '.') {
 					if (ptr[2] == '.') {
@@ -501,6 +508,20 @@ R_API void r_cons_grepbuf(void) {
 	if (cons->context->filter) {
 		cons->context->buffer_len = 0;
 		R_FREE (cons->context->buffer);
+		return;
+	}
+	if (grep->code) {
+		const char *buf = cons->context->buffer;
+		char *res = r_str_tokenize_json (buf);
+		if (res) {
+			cons->context->buffer_len = strlen (res);
+			free (cons->context->buffer);
+			cons->context->buffer = res;
+		} else {
+			cons->context->buffer_len = 0;
+			free (cons->context->buffer);
+			cons->context->buffer = strdup ("");
+		}
 		return;
 	}
 

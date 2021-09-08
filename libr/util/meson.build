@@ -8,6 +8,7 @@ r_util_sources = [
   'alloc.c',
   'charset.c',
   'donut.c',
+  'token.c',
   'table.c',
   'bplist.c',
   'sstext.c',
