@@ -462,7 +462,7 @@ static char *__get_file_name_from_handle(HANDLE handle_file) {
 
 			if (name_length < MAX_PATH) {
 				if (_tcsnicmp (filename, name, name_length) == 0
-					&& *(filename + name_length) == TEXT ('\\')) {
+					&& *(filename + name_length) == '\\') {
 					TCHAR temp_filename[MAX_PATH];
 					_sntprintf_s (temp_filename, MAX_PATH, _TRUNCATE, TEXT ("%s%s"),
 						drive, filename + name_length);
@@ -520,7 +520,7 @@ static char *__resolve_path(HANDLE ph, HANDLE mh) {
 	TCHAR device[MAX_PATH];
 	char *ret = NULL;
 	TCHAR drv[3] = {'A', ':', 0};
-	for (; drv[0] <= TEXT ('Z'); drv[0]++) {
+	for (; drv[0] <= 'Z'; drv[0]++) {
 		if (QueryDosDevice (drv, device, maxlength) > 0) {
 			if (!_tcsncmp (filename, device, length)) {
 				TCHAR path[MAX_PATH];
@@ -1321,13 +1321,11 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 }
 
 RList *w32_desc_list(int pid) {
-	RDebugDesc *desc;
 	int i;
 	HANDLE ph;
-	PSYSTEM_HANDLE_INFORMATION handleInfo = NULL;
 	NTSTATUS status;
-	ULONG handleInfoSize = 0x10000;
-	POBJECT_TYPE_INFORMATION objectTypeInfo = malloc (0x1000);
+	ULONG handleInfoSize = 0x10;
+	POBJECT_TYPE_INFORMATION objectTypeInfo = calloc (0x1000, 1);
 	if (!objectTypeInfo) {
 		return NULL;
 	}
@@ -1336,13 +1334,14 @@ RList *w32_desc_list(int pid) {
 		free (objectTypeInfo);
 		return NULL;
 	}
+
 	if (!(ph = OpenProcess (PROCESS_DUP_HANDLE, FALSE, pid))) {
 		r_sys_perror ("win_desc_list/OpenProcess");
 		free (objectTypeInfo);
 		r_list_free (ret);
 		return NULL;
 	}
-	handleInfo = (PSYSTEM_HANDLE_INFORMATION)malloc (handleInfoSize);
+	PSYSTEM_HANDLE_INFORMATION handleInfo = (PSYSTEM_HANDLE_INFORMATION)calloc (handleInfoSize,1);
 	if (!handleInfo) {
 		CloseHandle (ph);
 		free (objectTypeInfo);
@@ -1350,20 +1349,32 @@ RList *w32_desc_list(int pid) {
 		return NULL;
 	}
 	#define SystemHandleInformation 16
+//	#define SystemHandleInformation SYSTEM_HANDLE_INFORMATION
 	while ((status = r_w32_NtQuerySystemInformation (SystemHandleInformation, handleInfo, handleInfoSize, NULL)) == STATUS_INFO_LENGTH_MISMATCH) {
 		handleInfoSize *= 2;
+		printf ("MISMATCH %d \n",handleInfoSize);
 		void *tmp = realloc (handleInfo, (size_t)handleInfoSize);
 		if (tmp) {
 			handleInfo = (PSYSTEM_HANDLE_INFORMATION)tmp;
 		}
+		else {
+			eprintf ("NULL\n");
+			return NULL;
+		}
 	}
-	if (status) {
+	if (status != STATUS_SUCCESS) {
 		r_sys_perror ("win_desc_list/NtQuerySystemInformation");
 		CloseHandle (ph);
 		r_list_free (ret);
 		return NULL;
 	}
-	for (i = 0; i < handleInfo->HandleCount; i++) {
+
+	DWORD handleCount = 0;
+	int res = GetProcessHandleCount (ph, &handleCount);
+	printf ("handlecount = %d %d\n", res, handleCount);
+	handleInfo->HandleCount = handleCount;
+
+	for (i = 0; i < handleCount; i++) {
 		SYSTEM_HANDLE handle = handleInfo->Handles[i];
 		HANDLE dupHandle = NULL;
 		PVOID objectNameInfo;
@@ -1384,6 +1395,7 @@ RList *w32_desc_list(int pid) {
 			CloseHandle (dupHandle);
 			continue;
 		}
+
 		GENERIC_MAPPING *gm = &objectTypeInfo->GenericMapping;
 		if ((handle.GrantedAccess & gm->GenericRead) == gm->GenericRead) {
 			perms |= R_PERM_R;
@@ -1412,7 +1424,7 @@ RList *w32_desc_list(int pid) {
 		objectName = *(PUNICODE_STRING)objectNameInfo;
 		if (objectName.Length) {
 			char *name = r_utf16_to_utf8_l (objectName.Buffer, objectName.Length / 2);
-			desc = r_debug_desc_new (handle.Handle, name, perms, '?', 0);
+			RDebugDesc *desc = r_debug_desc_new (handle.Handle, name, perms, '?', 0);
 			if (!desc) {
 				free (name);
 				break;
