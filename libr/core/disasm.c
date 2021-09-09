@@ -4061,11 +4061,11 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				bool printable = true;
 				const char *ptr = str;
 				for (; *ptr ; ptr++) {
-					if (!IS_PRINTABLE (*ptr) && *ptr > '~') {
+					if (*ptr < 0) {
 						printable = false;
 					}
 				}
-				if (r_flag_get_i (core->flags, v)) {
+				if (printable && r_flag_get_i (core->flags, v)) {
 					printable = false;
 				}
 				if (canHaveChar && printable) {
