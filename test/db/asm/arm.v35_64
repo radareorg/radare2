@@ -1,0 +1,6 @@
+ad "and x1, x2,  0x3" 41044092
+ad "bl 0x8" 02000094
+d "ldr b0, [x0]" 0000403d
+ad "ldrsh x0, [x1]" 20008079
+ad "mov x1,  0x3" 610080d2
+ad "orr w0, w13, w20" a001142a
