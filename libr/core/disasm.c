@@ -4058,15 +4058,15 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (ds->immstr) {
 			char *str = r_str_from_ut64 (r_read_ble64 (&v, core->print->big_endian));
 			if (str && *str) {
-				const char *ptr = str;
 				bool printable = true;
-				char *s = r_str_escape (str);
 				if (r_flag_get_i (core->flags, v)) {
 					printable = false;
 				}
 				if (canHaveChar && printable) {
+					char *s = r_str_escape (str);
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%s'", s);
+					free (s);
 				}
 			}
 			free (str);
