@@ -129,7 +129,7 @@ anal_plugins += [
   '6502',
   '8051',
   'amd29k',
-  'arc',
+  #'arc',
   'arm_cs',
   'avr',
   'bf',
