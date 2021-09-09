@@ -1,3 +1,17 @@
+NAME=arm coff
+FILE=bins/coff/arm.obj
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+EOF
+EXPECT=<<EOF
+format   coff
+x86
+64
+EOF
+RUN
+
 NAME=tifdir imports and sections
 FILE=bins/coff/tif_dir.obj
 CMDS=<<EOF
