@@ -4060,18 +4060,13 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			if (str && *str) {
 				const char *ptr = str;
 				bool printable = true;
-				for (; *ptr; ptr++) {
-					if (!IS_PRINTABLE (*ptr)) {
-						printable = false;
-						break;
-					}
-				}
+				char *s = r_str_escape (str);
 				if (r_flag_get_i (core->flags, v)) {
 					printable = false;
 				}
 				if (canHaveChar && printable) {
 					ds_begin_comment (ds);
-					ds_comment (ds, true, "; '%s'", str);
+					ds_comment (ds, true, "; '%s'", s);
 				}
 			}
 			free (str);
