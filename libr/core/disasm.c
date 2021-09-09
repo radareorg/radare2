@@ -4061,7 +4061,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				bool printable = true;
 				const char *ptr = str;
 				for (; *ptr ; ptr++) {
-					if (*ptr < 0) {
+					if (*ptr < 10) {
 						printable = false;
 					}
 				}
