@@ -184,7 +184,7 @@ static inline bool r_fs_match(const char* root, const char* path, int len) {
 }
 
 R_API bool r_fs_umount(RFS* fs, const char* path) {
-	r_return_val_if_fail (fs && path, NULL);
+	r_return_val_if_fail (fs && path, false);
 	RFSRoot* root;
 	RListIter* iter, * riter = NULL;
 

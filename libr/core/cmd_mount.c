@@ -172,7 +172,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case '-':
-		r_fs_umount (core->fs, input+1);
+		r_fs_umount (core->fs, input + 1);
 		break;
 	case 'j':
 		{
