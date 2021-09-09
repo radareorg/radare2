@@ -671,7 +671,6 @@ static void selection_widget_down(int steps) {
 }
 
 static void print_rline_task(void *_core) {
-	RCore *core =(RCore *)_core;
 	r_cons_clear_line (0);
 	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data);
 	r_cons_flush ();
