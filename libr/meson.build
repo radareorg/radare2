@@ -129,7 +129,7 @@ anal_plugins += [
   '6502',
   '8051',
   'amd29k',
-  'arc',
+  #'arc',
   'arm_cs',
   'avr',
   'bf',
@@ -172,14 +172,14 @@ anal_plugins += [
   'x86_cs',
   'xap',
   'xcore_cs',
-  'xtensa',
+#  'xtensa',
 ]
 
 asm_plugins += [
   '6502',
   '8051',
   'amd29k',
-  'arc',
+#  'arc',
   'arm_as',
   'arm_cs',
   'arm_winedbg',
@@ -231,7 +231,7 @@ asm_plugins += [
   'x86_nz',
   'xap',
   'xcore_cs',
-  'xtensa',
+#  'xtensa',
 ]
 
 if no_user_plugins
@@ -240,7 +240,7 @@ if no_user_plugins
       'z80',
       'arm_gnu',
       'cris_gnu',
-      'hppa_gnu',
+  #    'hppa_gnu',
       'm68k_gnu',
       'lanai_gnu',
       'mips_gnu',
