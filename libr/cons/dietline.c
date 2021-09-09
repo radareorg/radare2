@@ -671,10 +671,7 @@ static void selection_widget_down(int steps) {
 }
 
 static void print_rline_task(void *_core) {
-	RCore *core =(RCore *)_core;
-	if (core->cons->context->color_mode) {
-		r_cons_clear_line (0);
-	}
+	r_cons_clear_line (0);
 	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data);
 	r_cons_flush ();
 }
@@ -948,8 +945,8 @@ static void __print_prompt(void) {
                 r_cons_gotoxy (0,  cons->rows);
                 r_cons_flush ();
 	}
+	r_cons_clear_line (0);
 	if (cons->context->color_mode > 0) {
-		r_cons_clear_line (0);
 		printf ("\r%s%s", Color_RESET, I.prompt);
 	} else {
 		printf ("\r%s", I.prompt);
