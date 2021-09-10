@@ -54,7 +54,6 @@ static const char *help_msg_aaf[] = {
 	NULL
 };
 
-
 static const char *help_msg_aa[] = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
@@ -7143,6 +7142,11 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case 'r': {
 		int count = 1;
 		int obs = core->blocksize;
+		int fmt = input[0];
+		if (input[0] == 'e' && input[1] == 'q') { // "aoeq"
+			fmt = 'E'; // quiet esil
+			input++;
+		}
 		if (input[1] && input[2]) {
 			l = (int)r_num_get (core->num, input + 1);
 			if (l > 0) {
@@ -7154,10 +7158,6 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			}
 		} else {
 			count = 1;
-		}
-		int fmt = input[0];
-		if (input[0] == 'e' && input[1] == 'q') {
-			fmt = 'E'; // quiet esil
 		}
 		core_anal_bytes (core, core->block, core->blocksize, count, fmt);
 		if (obs != core->blocksize) {
