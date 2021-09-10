@@ -62,6 +62,7 @@ libr/config.h
 libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
+libr/asm/arch/arm/v35arm64/arch-arm64
 shlr/capstone/
 shlr/java/out
 shlr/java/out.exe
