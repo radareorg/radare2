@@ -403,7 +403,7 @@ jobs:
     - name: Packaging
       run: dist/macos/build-pkg.sh
     - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      run: echo "##[set-output name=branch;]$( python sys/version.py )"
       id: r2v
 #    - name: Building Radare2
 #      run: |
@@ -414,6 +414,21 @@ jobs:
       with:
         path: dist/macos/*.pkg
         name: radare2-${{ steps.r2v.outputs.branch }}_macos.pkg
+  macos-acr-m1:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Packaging
+      run: export CC="xcrun --sdk macosx11.1 gcc -arch arm64" ; dist/macos/build-pkg.sh
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( python sys/version.py )"
+      id: r2v
+    - name: Pub
+      uses: actions/upload-artifact@v2
+      with:
+        path: dist/macos/*.pkg
+        name: radare2-${{ steps.r2v.outputs.branch }}_macos_m1.pkg
   macos-test:
     runs-on: macos-latest
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -455,7 +470,7 @@ jobs:
         popd
         mv /tmp/r2ios-sdk.zip .
     - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      run: echo "##[set-output name=branch;]$( python sys/version.py )"
       id: r2v
     - uses: actions/upload-artifact@v2
       with:
