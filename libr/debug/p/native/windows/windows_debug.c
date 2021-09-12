@@ -1122,7 +1122,7 @@ RList *w32_thread_list(RDebug *dbg, int pid, RList *list) {
 		if (!te.th32ThreadID) {
 			path = __resolve_path (ph, NULL);
 			DWORD sid;
-			if (ProcessIdToSessionId (pid, &sid)) {
+			if (r_w32_ProcessIdToSessionId (pid, &sid)) {
 				uid = sid;
 			}
 		}
@@ -1263,7 +1263,7 @@ static RDebugPid *__build_debug_pid(int pid, int ppid, HANDLE ph, const TCHAR* n
 		if (ph) {
 			path = __resolve_path (ph, NULL);
 			DWORD sid;
-			if (ProcessIdToSessionId (pid, &sid)) {
+			if (r_w32_ProcessIdToSessionId (pid, &sid)) {
 				uid = sid;
 			}
 			CloseHandle (ph);
@@ -1273,7 +1273,7 @@ static RDebugPid *__build_debug_pid(int pid, int ppid, HANDLE ph, const TCHAR* n
 	} else {
 		path = __resolve_path (ph, NULL);
 		DWORD sid;
-		if (ProcessIdToSessionId (pid, &sid)) {
+		if (r_w32_ProcessIdToSessionId (pid, &sid)) {
 			uid = sid;
 		}
 	}

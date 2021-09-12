@@ -16,6 +16,7 @@ extern "C" {
 #define TEXT(x) (TCHAR*)(x)
 #endif
 
+R_API BOOL r_w32_ProcessIdToSessionId(DWORD a, DWORD *b);
 R_API BOOL r_w32_CancelSynchronousIo(HANDLE a);
 R_API DWORD r_w32_GetProcessImageFileName(HANDLE,LPSTR,DWORD);
 R_API DWORD r_w32_GetModuleBaseName(HANDLE, HMODULE, LPTSTR, DWORD);
