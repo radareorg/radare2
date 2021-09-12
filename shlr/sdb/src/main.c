@@ -457,7 +457,8 @@ static int sdb_dump(MainOptions *mo) {
 	const char *expgrep = mo->grep;
 	const bool grep = mo->grep;
 
-	char *v, k[SDB_MAX_KEY] = { 0 };
+	char *v = NULL;
+	char k[SDB_MAX_KEY] = { 0 };
 	const char *comma = "";
 	Sdb *db = sdb_new (NULL, dbname, 0);
 	if (!db) {
@@ -491,17 +492,19 @@ static int sdb_dump(MainOptions *mo) {
 		SdbKv *kv;
 		SdbListIter *it;
 		ls_foreach (l, it, kv) {
-			if (grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
+			const char *k = sdbkv_key (kv);
+			const char *v = sdbkv_value (kv);
+			if (v && *v && grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
 				continue;
 			}
-			sdb_dump_cb (mo, sdbkv_key (kv), sdbkv_value (kv), comma);
+			sdb_dump_cb (mo, k, v, comma);
 			comma = ",";
 		}
 		ls_free (l);
 	} else {
 		int count = 0;
 		while (sdb_dump_dupnext (db, k, &v, NULL)) {
-			if (grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
+			if (v && *v && grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
 				free (v);
 				continue;
 			}

@@ -92,13 +92,13 @@ INCFILES+=src/dict.h src/set.h src/ht_inc.h
 
 install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${DESTDIR}${MANDIR}
-	$(INSTALL_LIB) src/libsdb.${EXT_SO} ${DESTDIR}${LIBDIR}
-	$(INSTALL_DATA) src/libsdb.a ${DESTDIR}${LIBDIR}
+	$(INSTALL_LIB) src/libsdb$(EXT_SO) ${DESTDIR}${LIBDIR}
+	$(INSTALL_DATA) src/libsdb$(EXT_AR) ${DESTDIR}${LIBDIR}
 	-if [ "$(EXT_SO)" != "$(SOVER)" ]; then \
 	  cd ${DESTDIR}${LIBDIR} ; \
-	  mv libsdb.$(EXT_SO) libsdb.$(SOVER) ; \
-	  ln -s libsdb.$(SOVER) libsdb.$(EXT_SO) ; \
-	  ln -s libsdb.$(SOVER) libsdb.$(EXT_SO).$(SOVERSION) ; \
+	  mv libsdb$(EXT_SO) libsdb$(SOVER) ; \
+	  ln -s libsdb$(SOVER) libsdb$(EXT_SO) ; \
+	  ln -s libsdb$(SOVER) libsdb$(EXT_SO).$(SOVERSION) ; \
 	fi
 	$(INSTALL_DATA) $(INCFILES) ${DESTDIR}${INCDIR}/sdb
 	$(INSTALL_PROGRAM) src/sdb ${DESTDIR}${BINDIR}
@@ -179,5 +179,8 @@ IOS_RL=$(shell xcrun --sdk iphoneos --find ranlib)
 ios: src/sdb_version.h
 	${MAKE} CFLAGS=-DUSE_DLSYSTEM=1 OS=Darwin ARCH=arm CC="${IOS_CC}" AR="${IOS_AR}" RANLIB="${IOS_RL}" HAVE_VALA= all
 
-.PHONY: all ${VALADIR} clean dist w32 ios
+v version:
+	@echo $(SDBVER)
+
+.PHONY: all ${VALADIR} clean dist w32 ios v version
 .PHONY: install-dirs install uninstall deinstall symstall
