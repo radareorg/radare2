@@ -2782,7 +2782,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 		}
 	}
 
-	for (i = 0; i < bin->nsymtab; i++) {
+	for (i = 0; i < bin->nsymtab && i < symbols_count; i++) {
 		struct MACH0_(nlist) *st = &bin->symtab[i];
 		// 0 is for imports
 		// 1 is for symbols
