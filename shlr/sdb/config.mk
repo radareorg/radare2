@@ -61,6 +61,7 @@ AR?=ar
 CC?=gcc
 EXT_EXE=
 EXT_SO=.so
+EXT_AR=.a
 
 ifneq (,$(findstring MINGW32,${OSTYPE}))
 OS=w32
@@ -78,7 +79,8 @@ LDFLAGS_SHARED?=-shared
 
 ifeq (${OS},w32)
 EXT_EXE=.exe
-EXT_SO=.dll
+EXT_AR=lib
+EXT_SO=dll
 LDFLAGS_SHARED=-shared
 endif
 
@@ -95,6 +97,7 @@ endif
 
 ifneq (,$(findstring MINGW,${OSTYPE})$(findstring MSYS,${OSTYPE})$(findstring CYGWIN,${OSTYPE}))
 EXT_SO=dll
+EXT_AR=a
 SOVER=${EXT_SO}
 CFLAGS+=-DUNICODE -D_UNICODE
 else

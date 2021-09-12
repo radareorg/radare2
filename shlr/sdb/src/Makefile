@@ -36,13 +36,13 @@ sdb_objs: sdb_version.h
 sdb_objs2: sdb_version.h
 	$(MAKE) ${SOBJ}
 
-libsdb.a: sdb_objs
+libsdb.$(EXT_AR): sdb_objs
 ifneq ($(SILENT),)
-	@echo AR libsdb.a
+	@echo AR libsdb.$(EXT_AR)
 endif
-	rm -f libsdb.a
-	${AR} q libsdb.a ${OBJ}
-	${RANLIB} libsdb.a
+	rm -f libsdb.$(EXT_AR)
+	${AR} q libsdb.$(EXT_AR) ${OBJ}
+	${RANLIB} libsdb.$(EXT_AR)
 
 ifeq ($(CC),tcc)
 libsdb.${SOVER}:
