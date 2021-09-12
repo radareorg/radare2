@@ -204,6 +204,17 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 
 	ut64 page_zero_size = 0;
 	size_t page_zero_idx = 0;
+	if (UT32_MUL_OVFCHK (hdr->n_segments, sizeof (RCoreSymCacheElementSegment))) {
+		goto beach;
+	} else if (UT32_MUL_OVFCHK (hdr->n_sections, sizeof (RCoreSymCacheElementSection))) {
+		goto beach;
+	} else if (UT32_MUL_OVFCHK (hdr->n_symbols, sizeof (RCoreSymCacheElementSymbol))) {
+		goto beach;
+	} else if (UT32_MUL_OVFCHK (hdr->n_lined_symbols, sizeof (RCoreSymCacheElementLinedSymbol))) {
+		goto beach;
+	} else if (UT32_MUL_OVFCHK (hdr->n_line_info, sizeof (RCoreSymCacheElementLineInfo))) {
+		goto beach;
+	}
 	if (hdr->n_segments > 0) {
 		result->segments = R_NEWS0 (RCoreSymCacheElementSegment, hdr->n_segments);
 		if (!result->segments) {
