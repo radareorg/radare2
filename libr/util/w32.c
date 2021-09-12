@@ -26,13 +26,13 @@ static inline HANDLE w32_loadlib(const char *name, const char *libname) {
 	return lib;
 }
 
-R_API BOOL r_w32_ProcessIdToSessionId(DWORD dwProcessId, DWORD *pSessionId) {
+R_API BOOL r_w32_ProcessIdToSessionId(DWORD a, DWORD *b) {
 	static BOOL (*x)(DWORD, DWORD*) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
 		x = (BOOL (*)(DWORD, DWORD*)) GetProcAddress (lib, W32_TCALL ("ProcessIdToSessionId"));
 	}
-	return x? x (a, b): 0;
+	return x? x (a, b): FALSE;
 }
 
 R_API NTSTATUS r_w32_NtQuerySystemInformation(ULONG a, PVOID b, ULONG c, PULONG d) {
