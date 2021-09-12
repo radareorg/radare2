@@ -92,8 +92,8 @@ INCFILES+=src/dict.h src/set.h src/ht_inc.h
 
 install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${DESTDIR}${MANDIR}
-	$(INSTALL_LIB) src/libsdb.${EXT_SO} ${DESTDIR}${LIBDIR}
-	$(INSTALL_DATA) src/libsdb.a ${DESTDIR}${LIBDIR}
+	$(INSTALL_LIB) src/libsdb.$(EXT_SO) ${DESTDIR}${LIBDIR}
+	$(INSTALL_DATA) src/libsdb.$(EXT_AR) ${DESTDIR}${LIBDIR}
 	-if [ "$(EXT_SO)" != "$(SOVER)" ]; then \
 	  cd ${DESTDIR}${LIBDIR} ; \
 	  mv libsdb.$(EXT_SO) libsdb.$(SOVER) ; \

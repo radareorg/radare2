@@ -79,8 +79,8 @@ LDFLAGS_SHARED?=-shared
 
 ifeq (${OS},w32)
 EXT_EXE=.exe
-EXT_AR=lib
-EXT_SO=dll
+EXT_AR=.lib
+EXT_SO=.dll
 LDFLAGS_SHARED=-shared
 endif
 
@@ -96,17 +96,17 @@ OSTYPE=MINGW32
 endif
 
 ifneq (,$(findstring MINGW,${OSTYPE})$(findstring MSYS,${OSTYPE})$(findstring CYGWIN,${OSTYPE}))
-EXT_SO=dll
-EXT_AR=a
+EXT_SO=.dll
+EXT_AR=.a
 SOVER=${EXT_SO}
 CFLAGS+=-DUNICODE -D_UNICODE
 else
-EXT_SO=so
+EXT_SO=.so
 SOVER=${EXT_SO}.${SDBVER}
 endif
 ifeq (${OS},Darwin)
-EXT_SO=dylib
-SOVER=dylib
+EXT_SO=.dylib
+SOVER=.dylib
 LDFLAGS+=-dynamic
 LDFLAGS_SHARED+=-dynamiclib
   ifeq (${ARCH},i386)
