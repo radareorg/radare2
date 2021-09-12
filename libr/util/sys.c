@@ -1128,7 +1128,7 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 		tmp[length] = '\0';
 		TCHAR device[MAX_PATH];
 		TCHAR drv[3] = {'A',':', 0};
-		for (; drv[0] <= TEXT('Z'); drv[0]++) {
+		for (; drv[0] <= 'Z'; drv[0]++) {
 			if (QueryDosDevice (drv, device, maxlength) > 0) {
 				char *dvc = r_sys_conv_win_to_utf8 (device);
 				if (!dvc) {
