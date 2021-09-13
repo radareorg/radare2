@@ -5426,14 +5426,17 @@ toro:
 	r_cons_break_push (NULL, NULL);
 	int totalbytes = cbytes > 0? len: -1;
 	bool lastinv = false;
-	for (i = idx = ret = 0; (totalbytes<1 || ds->index < totalbytes) && ds->index < totalbytes && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
+	for (i = idx = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
 		if (cbytes) {
 			if (idx >= ds->l) {
 				ds->lines = ds->l;
-eprintf ("hack%c", 10);
 				continue;
+			}
+		} else {
+			if (ds->lines < ds->l) {
+				// break;
 			}
 		}
 		if (r_cons_is_breaked ()) {
@@ -5555,8 +5558,11 @@ eprintf ("hack%c", 10);
 		} else {
 			if (idx >= 0) {
 				// check if we have enough bytes for this arch, if not just reloop with totoro
-				int left = len - addrbytes * idx;
+				int left = len - (addrbytes * idx);
 				if (left < max_op_size) {
+					//		ds->retry = true;
+					goto retry;
+				} else if (left < max_op_size) {
 					ds->retry = true;
 				} else {
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
@@ -5569,12 +5575,16 @@ eprintf ("hack%c", 10);
 				}
 			}
 		}
-		if (ds->retry) {
+#if 0
+//		if (ds->cbytes && ds->retry) {
+		if (cbytes && ds->retry) {
 			ds->retry = false;
 			r_cons_break_pop ();
+eprintf("enof%c", 10);
 			r_anal_op_fini (&ds->analop);
 			goto retry;
 		}
+#endif
 		ds_atabs_option (ds);
 		if (ds->analop.addr != ds->at) {
 			r_anal_op_fini (&ds->analop);
@@ -5599,7 +5609,7 @@ eprintf ("hack%c", 10);
 		}
 		skip_bytes_flag = handleMidFlags (core, ds, true);
 		if (ds->midbb) {
-			skip_bytes_bb = handleMidBB(core, ds);
+			skip_bytes_bb = handleMidBB (core, ds);
 		}
 		ds_show_flags (ds, false);
 		ds_show_xrefs (ds);
@@ -5806,28 +5816,28 @@ eprintf ("hack%c", 10);
 		if (skip_bytes_bb && skip_bytes_bb < inc) {
 			inc = skip_bytes_bb;
 		}
-		if (inc < 1) {
-			inc = 1;
-		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
 	}
 #if 0
-				if (!ds->oplen) {
-					ds->oplen = 1;
-				}
-			if (!inc) {
-				inc = ds->oplen;
-			}
-	r_anal_op_fini (&ds->analop);
+	if (!ds->oplen) {
+		ds->oplen = 1;
+	}
+	if (!inc) {
+		inc = ds->oplen;
+	}
 #endif
+	r_anal_op_fini (&ds->analop);
 
 	R_FREE (nbuf);
 	r_cons_break_pop ();
 
 #if HASRETRY
 	if (!ds->cbytes && ds->lines < ds->l) {
-		ds->addr = ds->at + inc;
+		ds->addr = ds->at + idx; // inc;
 	retry:
+		if (len < max_op_size) {
+			len = max_op_size + 32;
+		}
 		free (nbuf);
 		buf = nbuf = malloc (len);
 		bool theend = false;
@@ -5837,9 +5847,6 @@ eprintf ("hack%c", 10);
 		}
 
 		// r_cons_printf ("letry%d %c", cbytes, 10);
-		if (len < max_op_size) {
-			len = max_op_size + 32;
-		}
 #if 0
 		if (cbytes) {
 			if (idx + inc >= len) {
@@ -5851,8 +5858,26 @@ eprintf ("hack%c", 10);
 			//	ds->addr += ds->oplen;
 			}
 		}
+		if (ds->tries < 1) {
+			theend = true;
+		}
 #endif
 		if (theend) {
+r_cons_printf ("uuuure%c", 10);
+eprintf ("over%c", 10);
+if (!cbytes) {
+				if (ds->lines < ds->l) {
+// idx = ds->l;
+eprintf ("inc %d%c", ds->oplen);
+idx += ds->oplen;
+ds->idx += ds->oplen;
+ ds->addr += inc;
+					if (r_io_read_at (core->io, ds->addr, buf, len)) {
+						goto toro;
+					}
+				}
+				goto toro;
+}
 #if 0
 			ds->l = ds->lines;
 			R_FREE (nbuf);
@@ -5862,31 +5887,32 @@ eprintf ("hack%c", 10);
 			if (cbytes) {
 				// enough bytes?
 
-eprintf ("the end dsidx=%d idx=%d inc=%d %c", (int)ds->at, idx, inc, 10);
 				if (idx + inc >= 20) { // ds->l) {
 					theend = true;
-r_cons_printf("the end%c", 10);
 				}
 					theend = true;
-				if (ds->tries > 0 || ds->lines < ds->l) {
-ds->addr += idx;
-ds->tries--;
-					if (r_io_read_at (core->io, ds->addr, buf, len)) {
+					if (ds->lines < ds->l) {
+						// idx = ds->l;
+						ds->addr += idx;
+						if (r_io_read_at (core->io, ds->addr, buf, len)) {
+							goto toro;
+						}
 						goto toro;
 					}
-				}
-			} else {
-				// enough lines?
-				if (ds->tries > 0 || ds->lines < ds->l) {
-ds->tries--;
-ds->addr += ds->l;
-					if (r_io_read_at (core->io, ds->addr, buf, len)) {
-						goto toro;
+				} else {
+					// enough lines?
+					// ds->addr += idx;
+					if (ds->lines < ds->l) {
+						// idx = ds->l;
+						ds->addr += idx;
+
+						if (r_io_read_at (core->io, ds->addr, buf, len)) {
+							goto toro;
 					}
 				}
+				goto toro;
 			}
 			if (continueoninvbreak && ds->tries > 0) {
-				ds->tries--;
 				goto toro;
 			}
 		}

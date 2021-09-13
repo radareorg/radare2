@@ -1,6 +1,7 @@
 NAME=pd-bb-trunk
 FILE=bins/other/dump.x16
 CMDS=<<EOF
+e asm.arch=x86
 e asm.bits=16
 pd 1799~!invali
 ?e ------
@@ -26,5 +27,46 @@ EXPECT=<<EOF
         |   0000:06fc     33c0           xor ax, ax
         |   0000:06fe     ef             out dx, ax
         |   0000:06ff     ba5aff         mov dx, 0xff5a
+EOF
+RUN
+
+NAME=pd invalid pd pD
+FILE=bins/other/dump.x16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+pd 10~?
+?e ------
+pD 10~?
+?e ------
+b 4
+pd 10~?
+?e ------
+pD 10~?
+EOF
+EXPECT=<<EOF
+10
+------
+10
+------
+10
+------
+10
+EOF
+RUN
+
+NAME=pd add pd pD
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+pd 10~?
+?e ------
+pD 10~?
+EOF
+EXPECT=<<EOF
+10
+------
+5
 EOF
 RUN
