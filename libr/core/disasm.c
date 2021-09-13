@@ -5425,7 +5425,6 @@ toro:
 	}
 	r_cons_break_push (NULL, NULL);
 	int totalbytes = cbytes > 0? len: -1;
-	bool lastinv = false;
 	for (i = idx = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
@@ -5566,7 +5565,6 @@ toro:
 					ds->retry = true;
 				} else {
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
-					lastinv = (ret == -1);
 					if (ret == -31337) {
 						inc = ds->oplen; // minopsz maybe? or we should add invopsz
 						r_anal_op_fini (&ds->analop);
