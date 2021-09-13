@@ -5423,6 +5423,7 @@ toro:
 		ds->l = core->blocksize;
 	}
 	r_cons_break_push (NULL, NULL);
+	bool lastrunk = false;
 	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
@@ -5545,6 +5546,7 @@ toro:
 		} else {
 			if (idx >= 0) {
 				ret = ds_disassemble (ds, buf + addrbytes * idx, len - addrbytes * idx);
+				lastrunk = (ret == -1);
 				if (ret == -31337) {
 					inc = ds->oplen;
 					r_anal_op_fini (&ds->analop);
@@ -5808,13 +5810,16 @@ toro:
 		}
 		free (nbuf);
 		buf = nbuf = malloc (len);
+		if (lastrunk) {
+			ds->addr --;
+		}
 		if (ds->tries > 0) {
 			if (r_io_read_at (core->io, ds->addr, buf, len)) {
 				goto toro;
 			}
 		}
 		if (ds->lines < ds->l) {
-			//ds->addr += idx;
+			// ds->addr += idx;
 			if (!r_io_read_at (core->io, ds->addr, buf, len)) {
 				//ds->tries = -1;
 			}
