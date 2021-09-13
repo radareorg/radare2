@@ -11,7 +11,7 @@ meson vs -Dsdb_cgen=false --backend vs
 if EXIST b (
 meson b -Dsdb_cgen=false --reconfigure
 ) else (
-meson b -Dsdb_cgen=false
+meson b -Dsdb_cgen=false --buildtype=release
 )
 
 if %ERRORLEVEL% == 0 (

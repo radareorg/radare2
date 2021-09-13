@@ -10,6 +10,7 @@ if %ERRORLEVEL% == 0 (
     set DESTDIR=%CD%\prefix
     ninja -C b install > NUL
     copy /y %DESTDIR%\bin\radare2.exe %DESTDIR%\bin\r2.exe
+    copy /y C:\WINDOWS\System32\vcruntime140.dll %DESTDIR%\bin\vcruntime140.dll
   ) else (
     exit /b 1
   )
