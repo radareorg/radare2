@@ -5396,7 +5396,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	}
 toro:
 	// uhm... is this necessary? imho can be removed
-	r_asm_set_pc (core->rasm, r_core_pava (core, ds->addr + idx));
+	r_asm_set_pc (core->rasm, r_core_pava (core, ds->addr));
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? (r_config_get_i (core->config, "scr.utf8.curvy") ? r_vline_uc : r_vline_u) : r_vline_a;
 
 	if (core->print->cur_enabled) {
@@ -5561,10 +5561,9 @@ toro:
 				if (left < max_op_size) {
 					//		ds->retry = true;
 					goto retry;
-				} else if (left < max_op_size) {
-					ds->retry = true;
 				} else {
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
+					ds->retry = true;
 					if (ret == -31337) {
 						inc = ds->oplen; // minopsz maybe? or we should add invopsz
 						r_anal_op_fini (&ds->analop);
@@ -5837,10 +5836,8 @@ toro:
 		}
 		free (nbuf);
 		buf = nbuf = malloc (len);
-		bool theend = false;
 		if (!buf) {
 			eprintf ("Cannot allocate %d bytes%c", len, 10);
-			theend = true;
 		}
 
 		// r_cons_printf ("letry%d %c", cbytes, 10);
@@ -5855,60 +5852,38 @@ toro:
 			//	ds->addr += ds->oplen;
 			}
 		}
-		if (ds->tries < 1) {
-			theend = true;
-		}
 #endif
-		if (theend) {
-if (!cbytes) {
+		if (cbytes) {
+			// enough bytes?
+			if (ds->index < totalbytes) {
+
 				if (ds->lines < ds->l) {
-// idx = ds->l;
-idx += ds->oplen;
-ds->idx += ds->oplen;
- ds->addr += inc;
+					// idx = ds->l;
+					ds->addr += idx;
 					if (r_io_read_at (core->io, ds->addr, buf, len)) {
 						goto toro;
 					}
+					goto toro;
 				}
-				goto toro;
-}
-#if 0
-			ds->l = ds->lines;
-			R_FREE (nbuf);
-			goto toro;
-#endif
+			} else {
+				// le fin
+			}
 		} else {
-			if (cbytes) {
-				// enough bytes?
+			// enough lines?
+			// ds->addr += idx;
+			if (ds->lines < ds->l) {
+				// idx = ds->l;
+				ds->addr += idx;
 
-				if (idx + inc >= 20) { // ds->l) {
-					theend = true;
+				inc = 0;
+				if (r_io_read_at (core->io, ds->addr, buf, len)) {
+					goto toro;
 				}
-					theend = true;
-					if (ds->lines < ds->l) {
-						// idx = ds->l;
-						ds->addr += idx;
-						if (r_io_read_at (core->io, ds->addr, buf, len)) {
-							goto toro;
-						}
-						goto toro;
-					}
-				} else {
-					// enough lines?
-					// ds->addr += idx;
-					if (ds->lines < ds->l) {
-						// idx = ds->l;
-						ds->addr += idx;
-
-						if (r_io_read_at (core->io, ds->addr, buf, len)) {
-							goto toro;
-					}
-				}
-				goto toro;
 			}
-			if (continueoninvbreak && ds->tries > 0) {
-				goto toro;
-			}
+			goto toro;
+		}
+		if (continueoninvbreak && ds->tries > 0) {
+			goto toro;
 		}
 		R_FREE (nbuf);
 	}
