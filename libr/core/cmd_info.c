@@ -251,6 +251,10 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 		if (v > 0) {
 			pj_ki (pj, "maxopsz", v);
 		}
+		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+		if (v > 0) {
+			pj_ki (pj, "invopsz", v);
+		}
 		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 		if (v > 0) {
 			pj_ki (pj, "pcalign", v);
@@ -292,6 +296,10 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 		if (v > 0) {
 			pair ("maxopsz", sdb_fmt ("%d", v));
+		}
+		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
+		if (v > 0) {
+			pair ("invopsz", sdb_fmt ("%d", v));
 		}
 		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 		if (v > 0) {

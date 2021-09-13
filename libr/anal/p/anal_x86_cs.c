@@ -3894,6 +3894,8 @@ static int archinfo(RAnal *anal, int q) {
 		return 0;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
 		return 16;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 1;
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 1;
 	}
