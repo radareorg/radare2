@@ -626,7 +626,7 @@ R_API void r_cons_grepbuf(void) {
 			grep->l_line = total_lines + grep->l_line;
 		}
 	}
-	bool is_range_line_grep_only = grep->range_line != 2 && !*grep->str;
+	bool is_range_line_grep_only = grep->range_line != 2 && grep->str && *grep->str == '\0';
 	in = buf;
 	while ((int) (size_t) (in - buf) < len) {
 		char *p = strchr (in, '\n');
