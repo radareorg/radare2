@@ -4905,6 +4905,9 @@ static int archinfo(RAnal *anal, int q) {
 		}
 		return 4;
 	}
+	if (q == R_ANAL_ARCHINFO_INV_OP_SIZE) {
+		return 4;
+	}
 	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
 		return 4;
 	}

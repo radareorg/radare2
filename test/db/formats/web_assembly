@@ -17,6 +17,7 @@ size     0x2ae89a
 humansz  2.7M
 minopsz  1
 maxopsz  1
+invopsz  1
 pcalign  1
 mode     r-x
 format   wasm

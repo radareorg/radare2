@@ -10,6 +10,7 @@ size     0x11000
 humansz  68K
 minopsz  2
 maxopsz  6
+invopsz  2
 pcalign  2
 mode     r-x
 format   off

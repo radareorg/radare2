@@ -215,6 +215,7 @@ size     0x401
 humansz  1.0K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -290,6 +291,7 @@ size     0x400
 humansz  1K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -331,6 +333,7 @@ size     0x1323
 humansz  4.8K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     r-x
 format   elf
 iorw     false
@@ -3064,6 +3067,7 @@ size     0x1a36
 humansz  6.6K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     r-x
 format   elf64
 iorw     false
@@ -3521,6 +3525,7 @@ size     0x1a36
 humansz  6.6K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     r-x
 iorw     false
 block    0x100
