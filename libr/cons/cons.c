@@ -32,8 +32,6 @@ typedef struct {
 	void *event_interrupt_data;
 } RConsBreakStack;
 
-static void cons_grep_reset(RConsGrep *grep);
-
 static void break_stack_free(void *ptr) {
 	RConsBreakStack *b = (RConsBreakStack*)ptr;
 	free (b);
@@ -92,6 +90,14 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 		free (I.context->grep.str);
 		memcpy (&I.context->grep, data->grep, sizeof (RConsGrep));
 	}
+}
+
+static void cons_grep_reset(RConsGrep *grep) {
+	R_FREE (grep->str);
+	ZERO_FILL (*grep);
+	grep->line = -1;
+	grep->sort = -1;
+	grep->sort_invert = false;
 }
 
 static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
@@ -765,14 +771,6 @@ R_API void r_cons_clear(void) {
 #else
 	r_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
 #endif
-}
-
-static void cons_grep_reset(RConsGrep *grep) {
-	R_FREE (grep->str);
-	ZERO_FILL (*grep);
-	grep->line = -1;
-	grep->sort = -1;
-	grep->sort_invert = false;
 }
 
 R_API void r_cons_reset(void) {

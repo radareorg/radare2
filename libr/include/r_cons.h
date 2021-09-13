@@ -461,6 +461,8 @@ typedef struct r_cons_t {
 #elif __WINDOWS__
 	DWORD term_raw, term_buf, term_xterm;
 	UINT old_cp;
+	bool bCtrl;
+	bool is_arrow;
 #endif
 	RNum *num;
 	/* Pager (like more or less) to use if the output doesn't fit on the
