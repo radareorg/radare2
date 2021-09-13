@@ -398,7 +398,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		bp = "ebp";
 		si = "esi";
 		break;
-	case 64:
+	// case 64:
+	default:
 		pc = "rip";
 		sp = "rsp";
 		bp = "rbp";
