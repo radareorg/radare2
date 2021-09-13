@@ -118,6 +118,7 @@ file     malloc://1024
 humansz  1K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -134,6 +135,7 @@ file     malloc://1024
 humansz  1K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -150,6 +152,7 @@ size     0x400
 humansz  1K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
