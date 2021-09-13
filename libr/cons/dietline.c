@@ -305,7 +305,6 @@ do_it_again:
 			} else {
 				int idx = 0;
 				buf[idx++] = 27;
-				printf ("this is not unicode path\n");
 				buf[idx++] = '['; // Simulate escaping
 				if (irInBuf.Event.KeyEvent.dwControlKeyState & 8) {
 					buf[idx++] = '1'; // control key
