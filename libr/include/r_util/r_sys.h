@@ -69,7 +69,7 @@ R_API int r_sys_clearenv(void);
 R_API char *r_sys_whoami(void);
 R_API int r_sys_uid(void);
 R_API char *r_sys_getdir(void);
-R_API int r_sys_chdir(const char *s);
+R_API bool r_sys_chdir(const char *s);
 R_API bool r_sys_aslr(int val);
 R_API int r_sys_thp_mode(void);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr);
