@@ -5339,6 +5339,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	bool calc_row_offsets = p->calc_row_offsets;
 	int ret, i, inc = 0, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
 	ut8 *nbuf = NULL;
+	const int max_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	const int addrbytes = core->io->addrbytes;
 
 	// TODO: All those ds must be print flags
@@ -5423,7 +5424,7 @@ toro:
 		ds->l = core->blocksize;
 	}
 	r_cons_break_push (NULL, NULL);
-	bool lastrunk = false;
+	bool lastinv = false;
 	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
@@ -5545,12 +5546,19 @@ toro:
 			}
 		} else {
 			if (idx >= 0) {
-				ret = ds_disassemble (ds, buf + addrbytes * idx, len - addrbytes * idx);
-				lastrunk = (ret == -1);
-				if (ret == -31337) {
-					inc = ds->oplen;
-					r_anal_op_fini (&ds->analop);
-					continue;
+				// check if we have enough bytes for this arch, if not just reloop with totoro
+				int left = len - addrbytes * idx;
+				if (left < max_op_size) {
+					eprintf ("omg not enough lets reloop%c", 10);
+					ds->retry = true;
+				} else {
+					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
+					lastinv = (ret == -1);
+					if (ret == -31337) {
+						inc = ds->oplen; // minopsz maybe? or we should add invopsz
+						r_anal_op_fini (&ds->analop);
+						continue;
+					}
 				}
 			}
 		}
@@ -5805,13 +5813,13 @@ toro:
 	if (!ds->cbytes && ds->lines < ds->l) {
 		ds->addr = ds->at + inc;
 	retry:
-		if (len < 4) {
-			len = 4;
+		if (len < max_op_size) {
+			len = max_op_size + 32;
 		}
 		free (nbuf);
 		buf = nbuf = malloc (len);
-		if (lastrunk) {
-			ds->addr --;
+		if (lastinv) {
+			ds->addr += len - inc - ds->oplen;
 		}
 		if (ds->tries > 0) {
 			if (r_io_read_at (core->io, ds->addr, buf, len)) {
