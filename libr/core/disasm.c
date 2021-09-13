@@ -5812,7 +5812,7 @@ toro:
 
 #if HASRETRY
 	if (!ds->cbytes && ds->lines < ds->l) {
-		ds->addr = ds->at + idx; // inc;
+		ds->addr = ds->at + inc; // idx; // inc;
 	retry:
 		if (len < max_op_size) {
 			len = max_op_size + 32;
