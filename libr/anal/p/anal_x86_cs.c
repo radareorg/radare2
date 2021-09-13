@@ -383,15 +383,28 @@ static const char *reg32_to_name(ut8 reg) {
 }
 
 static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
-	int rs = a->bits/8;
-	const char *pc = (a->bits==16)?"ip":
-		(a->bits==32)?"eip":"rip";
-	const char *sp = (a->bits==16)?"sp":
-		(a->bits==32)?"esp":"rsp";
-	const char *bp = (a->bits==16)?"bp":
-		(a->bits==32)?"ebp":"rbp";
-	const char *si = (a->bits==16)?"si":
-		(a->bits==32)?"esi":"rsi";
+	int rs = a->bits / 8;
+	const char *pc, *sp, *bp, *si;
+	switch (a->bits) {
+	case 16:
+		pc = "ip";
+		sp = "sp";
+		bp = "bp";
+		si = "si";
+		break;
+	case 32:
+		pc = "eip";
+		sp = "esp";
+		bp = "ebp";
+		si = "esi";
+		break;
+	case 64:
+		pc = "rip";
+		sp = "rsp";
+		bp = "rbp";
+		si = "rsi";
+		break;
+	}
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
@@ -1079,9 +1092,16 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		}
 		break;
 	case X86_INS_ENTER:
+		{
+			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
+			esilprintf (op, "%s,%d,%s,-,=[%d],%d,%s,-=",
+				r_str_get_fail (dst, "eax"), rs, sp, rs, rs, sp);
+		}
+		break;
 	case X86_INS_PUSH:
 		{
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
+			rs = INSOP(0).size;
 			esilprintf (op, "%s,%d,%s,-,=[%d],%d,%s,-=",
 				r_str_get_fail (dst, "eax"), rs, sp, rs, rs, sp);
 		}
@@ -1135,6 +1155,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			default:
 				{
 					dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
+					rs = INSOP(0).size;
 					esilprintf (op,
 						"%s,[%d],%s,=,%d,%s,+=",
 						sp, rs, dst, rs, sp);
