@@ -35,19 +35,25 @@ static int r_io_ar_close(RIODesc *fd) {
 static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 	r_return_val_if_fail (r_io_ar_plugin_open (io, file, false), NULL);
 	char *uri = strdup (file);
-	const char *arname = strstr (uri, "://") + 3;
-	char *filename = strstr (arname, "//");
-	if (filename) {
-		*filename = 0;
-		filename += 2;
+	if (!uri) {
+		return NULL;
 	}
-
-	RArFp *arf = ar_open_file (arname, filename);
 	RIODesc *res = NULL;
-	if (arf) {
-		res = r_io_desc_new (io, &r_io_plugin_ar, file, rw, mode, arf);
-		if (res) {
-			res->name = strdup (filename);
+	const char *arname = strstr (uri, "://");
+	if (arname) {
+		arname += 3;
+		char *filename = strstr (arname, "//");
+		if (filename) {
+			*filename = 0;
+			filename += 2;
+		}
+
+		RArFp *arf = ar_open_file (arname, filename);
+		if (arf) {
+			res = r_io_desc_new (io, &r_io_plugin_ar, file, rw, mode, arf);
+			if (res) {
+				res->name = strdup (filename);
+			}
 		}
 	}
 	free (uri);
