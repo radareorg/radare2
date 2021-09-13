@@ -5580,7 +5580,6 @@ toro:
 		if (cbytes && ds->retry) {
 			ds->retry = false;
 			r_cons_break_pop ();
-eprintf("enof%c", 10);
 			r_anal_op_fini (&ds->analop);
 			goto retry;
 		}
@@ -5863,12 +5862,9 @@ eprintf("enof%c", 10);
 		}
 #endif
 		if (theend) {
-r_cons_printf ("uuuure%c", 10);
-eprintf ("over%c", 10);
 if (!cbytes) {
 				if (ds->lines < ds->l) {
 // idx = ds->l;
-eprintf ("inc %d%c", ds->oplen);
 idx += ds->oplen;
 ds->idx += ds->oplen;
  ds->addr += inc;
