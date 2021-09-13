@@ -1099,7 +1099,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user);
 
 R_API int r_line_hist_load(const char *file);
 R_API int r_line_hist_add(const char *line);
-R_API int r_line_hist_save(const char *file);
+R_API bool r_line_hist_save(const char *file);
 R_API int r_line_hist_label(const char *label, void (*cb)(const char*));
 R_API void r_line_label_show(void);
 R_API int r_line_hist_list(void);
