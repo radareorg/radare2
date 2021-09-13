@@ -5572,15 +5572,6 @@ toro:
 				}
 			}
 		}
-#if 0
-//		if (ds->cbytes && ds->retry) {
-		if (cbytes && ds->retry) {
-			ds->retry = false;
-			r_cons_break_pop ();
-			r_anal_op_fini (&ds->analop);
-			goto retry;
-		}
-#endif
 		ds_atabs_option (ds);
 		if (ds->analop.addr != ds->at) {
 			r_anal_op_fini (&ds->analop);
@@ -5814,14 +5805,6 @@ toro:
 		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
 	}
-#if 0
-	if (!ds->oplen) {
-		ds->oplen = 1;
-	}
-	if (!inc) {
-		inc = ds->oplen;
-	}
-#endif
 	r_anal_op_fini (&ds->analop);
 
 	R_FREE (nbuf);
@@ -5840,19 +5823,6 @@ toro:
 			eprintf ("Cannot allocate %d bytes%c", len, 10);
 		}
 
-		// r_cons_printf ("letry%d %c", cbytes, 10);
-#if 0
-		if (cbytes) {
-			if (idx + inc >= len) {
-				theend = true;
-			}
-			if (len < max_op_size) {
-				len = max_op_size + 32;
-			} else {
-			//	ds->addr += ds->oplen;
-			}
-		}
-#endif
 		if (cbytes) {
 			// enough bytes?
 			if (ds->index < totalbytes) {
