@@ -169,7 +169,7 @@ jobs:
       shell: pwsh
       run: |
         .github\vsdevenv.ps1
-        meson -Db_vscrt=mt --buildtype=release --prefix=$PWD\radare2-install build
+        meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
     - name: Extract r2 version
@@ -215,7 +215,7 @@ jobs:
         # cmd '/c call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"'
         bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "x86_64"
         # meson_options: --default-library=shared|static -Dstatic_runtime=true --backend vs2019
-        meson -Db_vscrt=mt --buildtype=release --prefix=$PWD\radare2-install build
+        meson --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
     - name: Extract r2 version
