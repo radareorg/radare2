@@ -40,12 +40,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		path = NULL;
 	} else {
 		if (core->io->desc && (!path || !*path)) {
-			if (!strcmp (httpui, "p")
-			|| !strcmp (httpui, "m")
-			|| !strcmp (httpui, "enyo")
-			|| !strcmp (httpui, "t")) {
-				path = httpui;
-			}
+			path = httpui;
 		}
 	}
 
