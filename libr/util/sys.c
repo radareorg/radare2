@@ -555,8 +555,8 @@ R_API char *r_sys_getdir(void) {
 #endif
 }
 
-R_API int r_sys_chdir(const char *s) {
-	return r_sandbox_chdir (s)==0;
+R_API bool r_sys_chdir(const char *s) {
+	return r_sandbox_chdir (s) == 0;
 }
 
 R_API bool r_sys_aslr(int val) {
@@ -601,25 +601,6 @@ R_API bool r_sys_aslr(int val) {
 #elif __DragonFly__
 #endif
 	return ret;
-}
-
-R_API int r_sys_thp_mode(void) {
-#if __linux__
-	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
-	int ret = 0;
-	char *val = r_file_slurp (thp, NULL);
-	if (val) {
-		if (strstr (val, "[madvise]")) {
-			ret = 1;
-		} else if (strstr (val, "[always]")) {
-			ret = 2;
-		}
-		free (val);
-	}
-	return ret;
-#else
-	return 0;
-#endif
 }
 
 #if __UNIX__ && HAVE_SYSTEM

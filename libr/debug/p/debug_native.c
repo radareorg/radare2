@@ -778,8 +778,24 @@ static int io_perms_to_prot (int io_perms) {
 	return prot_perms;
 }
 
+#if __linux__
+static int thp_mode(void) {
+	const char *thp = "/sys/kernel/mm/transparent_hugepage/enabled";
+	int ret = 0;
+	char *val = r_file_slurp (thp, NULL);
+	if (val) {
+		if (strstr (val, "[madvise]")) {
+			ret = 1;
+		} else if (strstr (val, "[always]")) {
+			ret = 2;
+		}
+		free (val);
+	}
+	return ret;
+}
+#endif
 
-static int linux_map_thp (RDebug *dbg, ut64 addr, int size) {
+static int linux_map_thp(RDebug *dbg, ut64 addr, int size) {
 #if !defined(__ANDROID__) && defined(MADV_HUGEPAGE)
 	RBuffer *buf = NULL;
 	char code[1024];
@@ -792,19 +808,19 @@ static int linux_map_thp (RDebug *dbg, ut64 addr, int size) {
 	// In architectures where radare is supported, arm and x86, it is 2MB
 	const size_t thpsize = 1<<21;
 
-	if ((size%thpsize)) {
+	if (size % thpsize) {
 		eprintf ("size not a power of huge pages size\n");
 		return false;
 	}
-
+#if __linux__
 	// In always mode, is more into mmap syscall level
 	// even though the address might not have the 'hg'
 	// vmflags
-	if (r_sys_thp_mode() != 1) {
+	if (thp_mode () != 1) {
 		eprintf ("transparent huge page mode is not in madvise mode\n");
 		return false;
 	}
-
+#endif
 	int num = r_syscall_get_num (dbg->anal->syscall, "madvise");
 
 	snprintf (code, sizeof (code),
