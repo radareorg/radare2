@@ -1092,25 +1092,23 @@ R_API bool r_vc_git_checkout(const char *path, const char *name) {
 }
 
 R_API bool r_vc_git_add(const char *path, const char *fname) {
-	int ret;
 	char *cwd = r_sys_getdir ();
 	if (!cwd) {
 		return false;
 	}
-	ret = r_sys_chdir (path);
-	if (!ret) {
+	if (!r_sys_chdir (path)) {
 		free (cwd);
 		return false;
 	}
 	char *escfname = r_str_escape (fname);
-	ret = r_sys_cmdf ("git add \"%s\"", escfname);
+	int ret = r_sys_cmdf ("git add \"%s\"", escfname);
 	free (escfname);
 	if (!r_sys_chdir (cwd)) {
 		free (cwd);
 		return false;
 	}
 	free (cwd);
-	return !ret;
+	return ret == 0;
 }
 
 R_API bool r_vc_git_commit(const char *path, const char *message) {
