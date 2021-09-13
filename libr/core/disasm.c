@@ -2959,13 +2959,14 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (hasCustomColor) {
 			int of = core->print->flags;
 			core->print->flags = 0;
-			r_print_offset_sg (core->print, at, (at == ds->dest) || show_trace,
-					ds->show_offseg, seggrn, ds->show_offdec, delta, label);
+			core->print->seggrn = seggrn;
+			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
+					delta, label);
 			core->print->flags = of;
 			r_cons_strcat (Color_RESET);
 		} else {
-			r_print_offset_sg (core->print, at, (at == ds->dest) || show_trace,
-					ds->show_offseg, seggrn, ds->show_offdec, delta, label);
+			r_print_offset (core->print, at, (at == ds->dest) || show_trace,
+					delta, label);
 		}
 	}
 	if (ds->atabsoff > 0 && ds->show_offset) {
@@ -6600,20 +6601,18 @@ toro:
 				RFlagItem *item = r_flag_get_i (core->flags, at);
 				if (item) {
 					if (show_offset) {
-						const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
-						const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
 						unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
-						r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
+						core->print->seggrn = seggrn;
+						r_print_offset (core->print, at, 0, 0, NULL);
 					}
 					r_cons_printf ("  %s:\n", item->name);
 				}
 			} // do not show flags in pie
 		}
 		if (show_offset) {
-			const int show_offseg = (core->print->flags & R_PRINT_FLAGS_SEGOFF) != 0;
-			const int show_offdec = (core->print->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
 			unsigned int seggrn = r_config_get_i (core->config, "asm.seggrn");
-			r_print_offset_sg (core->print, at, 0, show_offseg, seggrn, show_offdec, 0, NULL);
+			core->print->seggrn = seggrn;
+			r_print_offset (core->print, at, 0, 0, NULL);
 		}
 		ut64 meta_start = at;
 		ut64 meta_size = 0;

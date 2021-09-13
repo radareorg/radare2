@@ -614,8 +614,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'j': // "?j"
 	case ' ': // "? "
 		{
-			char *asnum, unit[8];
-			ut32 s, a;
+			char unit[8];
 			double d;
 			float f;
 			char * const inputs = strdup (input + 1);
@@ -623,7 +622,7 @@ static int cmd_help(void *data, const char *input) {
 			const int list_len = r_list_length (list);
 			PJ *pj = NULL;
 			if (*input ==  'j') {
-				pj = pj_new ();
+				pj = r_core_pj_new (core);
 				pj_o (pj);
 			}
 			for (i = 0; i < list_len; i++) {
@@ -635,10 +634,10 @@ static int cmd_help(void *data, const char *input) {
 				if (core->num->dbz) {
 					eprintf ("RNum ERROR: Division by Zero\n");
 				}
-				asnum  = r_num_as_string (NULL, n, false);
-				/* decimal, hexa, octal */
-				s = n >> 16 << 12;
-				a = n & 0x0fff;
+				char *asnum  = r_num_as_string (NULL, n, false);
+
+				ut32 s = 0, a = 0;
+				r_num_segaddr (core->offset, core->print->segbas, core->print->seggrn, &s, &a);
 				r_num_units (unit, sizeof (unit), n);
 				if (*input ==  'j') {
 					pj_ks (pj, "int32", sdb_fmt ("%d", (st32)(n & UT32_MAX)));

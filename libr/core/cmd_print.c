@@ -5894,7 +5894,7 @@ static int cmd_print(void *data, const char *input) {
 				int i, j, hasnl = 0;
 				if (s) {
 					if (!quiet) {
-						r_print_offset (core->print, core->offset, 0, 0, 0, 0, NULL);
+						r_print_offset (core->print, core->offset, 0, 0, NULL);
 					}
 					// TODO: filter more chars?
 					for (i = j = 0; i < core->blocksize; i++) {
@@ -5905,7 +5905,7 @@ static int cmd_print(void *data, const char *input) {
 								if (*s) {
 									r_cons_println (s);
 									if (!quiet) {
-										r_print_offset (core->print, core->offset + i, 0, 0, 0, 0, NULL);
+										r_print_offset (core->print, core->offset + i, 0, 0, NULL);
 									}
 								}
 								j = 0;
@@ -6394,7 +6394,7 @@ static int cmd_print(void *data, const char *input) {
 							}
 						}
 						r_print_section (core->print, ea);
-						r_print_offset (core->print, ea, 0, 0, 0, 0, NULL);
+						r_print_offset (core->print, ea, 0, 0, NULL);
 					}
 					r_str_bits (buf, core->block + i, 8, NULL);
 
@@ -7141,7 +7141,9 @@ static int lenof(ut64 off, int two) {
 	return strlen (buf);
 }
 
-R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label) {
+R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char *label) {
+	int offdec = (p->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
+	const int offseg = (p->flags & R_PRINT_FLAGS_SEGOFF) != 0;
 	char space[32] = {
 		0
 	};
@@ -7156,8 +7158,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 		}
 		if (offseg) {
 			ut32 s, a;
-			a = off & 0xffff;
-			s = ((off - a) >> seggrn) & 0xffff;
+			r_num_segaddr (off, p->segbas, p->seggrn, &s, &a);
 			if (offdec) {
 				snprintf (space, sizeof (space), "%d:%d", s, a);
 				r_cons_printf ("%s%s%9s%s", k, inv, space, reset);
@@ -7206,8 +7207,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 	} else {
 		if (offseg) {
 			ut32 s, a;
-			a = off & 0xffff;
-			s = (off - a) >> seggrn;
+			r_num_segaddr (off, p->segbas, p->seggrn, &s, &a);
 			if (offdec) {
 				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
 				r_cons_printf ("%9s%s", space, reset);
@@ -7236,8 +7236,10 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 	}
 }
 
+#if 0
 // TODO : move to r_util? .. depends on r_cons...
 // XXX: dupe of r_print_addr
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int offseg, int offdec, int delta, const char *label) {
 	r_print_offset_sg(p, off, invert, offseg, 4, offdec, delta, label);
 }
+#endif

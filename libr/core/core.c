@@ -3165,12 +3165,11 @@ static void set_prompt(RCore *r) {
 
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
+		ut32 sb = r_config_get_i (r->config, "anal.cs"); // segment base value
+		ut32 sg = r_config_get_i (r->config, "asm.seggrn"); // segment granurality
 		ut32 a, b;
-		unsigned int seggrn = r_config_get_i (r->config, "asm.seggrn");
-
-		a = ((r->offset >> 16) << (16 - seggrn));
-		b = (r->offset & 0xffff);
-		snprintf (tmp, 128, "%04x:%04x", a, b);
+		r_num_segaddr (r->offset, sb, sg, &a, &b);
+		snprintf (tmp, sizeof (tmp), "%04x:%04x", a, b);
 	} else {
 		char p[64], sec[32];
 		int promptset = false;
