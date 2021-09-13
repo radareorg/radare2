@@ -5549,7 +5549,6 @@ toro:
 				// check if we have enough bytes for this arch, if not just reloop with totoro
 				int left = len - addrbytes * idx;
 				if (left < max_op_size) {
-					eprintf ("omg not enough lets reloop%c", 10);
 					ds->retry = true;
 				} else {
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
@@ -5818,20 +5817,14 @@ toro:
 		}
 		free (nbuf);
 		buf = nbuf = malloc (len);
-		if (lastinv) {
-			ds->addr += len - inc - ds->oplen;
+		if (inc != 0) {
+			ds->tries = 0;
+			// ds->addr += len - inc - inc;
 		}
-		if (ds->tries > 0) {
+		if (ds->tries > 0 || ds->lines < ds->l) {
 			if (r_io_read_at (core->io, ds->addr, buf, len)) {
 				goto toro;
 			}
-		}
-		if (ds->lines < ds->l) {
-			// ds->addr += idx;
-			if (!r_io_read_at (core->io, ds->addr, buf, len)) {
-				//ds->tries = -1;
-			}
-			goto toro;
 		}
 		if (continueoninvbreak) {
 			goto toro;
