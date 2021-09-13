@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2020 - pancake */
+/* radare - LGPL - Copyright 2015-2021 - pancake */
 /*
 Usage Example:
 
@@ -23,6 +23,12 @@ Usage Example:
 #define R2P_PID(x) (((R2Pipe*)(x)->data)->pid)
 #define R2P_INPUT(x) (((R2Pipe*)(x)->data)->input[0])
 #define R2P_OUTPUT(x) (((R2Pipe*)(x)->data)->output[1])
+
+#if __WINDOWS__
+#define NO_CHILD 0
+#else
+#define NO_CHILD -1
+#endif
 
 #if !__WINDOWS__
 static void env(const char *s, int f) {
@@ -140,10 +146,10 @@ R_API int r2pipe_close(R2Pipe *r2pipe) {
 		close (r2pipe->output[1]);
 		r2pipe->output[1] = -1;
 	}
-	if (r2pipe->child != -1) {
+	if (r2pipe->child != NO_CHILD) {
 		kill (r2pipe->child, SIGTERM);
 		waitpid (r2pipe->child, NULL, 0);
-		r2pipe->child = -1;
+		r2pipe->child = NO_CHILD;
 	}
 #endif
 	free (r2pipe);
@@ -202,7 +208,7 @@ static R2Pipe *r2pipe_new(void) {
 		r2pipe->input[0] = r2pipe->input[1] = -1;
 		r2pipe->output[0] = r2pipe->output[1] = -1;
 #endif
-		r2pipe->child = -1;
+		r2pipe->child = NO_CHILD;
 	}
 	return r2pipe;
 }
@@ -239,7 +245,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 		return NULL;
 	}
 	if (R_STR_ISEMPTY (cmd)) {
-		r2p->child = -1;
+		r2p->child = NO_CHILD;
 		return r2p_open_spawn (r2p, cmd);
 	}
 #if __WINDOWS__
@@ -259,7 +265,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 		return NULL;
 	}
 	r2p->child = r_sys_fork ();
-	if (r2p->child == -1) {
+	if (r2p->child == NO_CHILD) {
 		r2pipe_close (r2p);
 		return NULL;
 	}
@@ -305,7 +311,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 			close (0);
 			close (1);
 		}
-		r2p->child = -1;
+		r2p->child = NO_CHILD;
 		r2pipe_close (r2p);
 		exit (rc);
 		return NULL;
