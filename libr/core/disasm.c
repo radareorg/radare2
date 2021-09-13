@@ -5340,6 +5340,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	bool calc_row_offsets = p->calc_row_offsets;
 	int ret, i, inc = 0, skip_bytes_flag = 0, skip_bytes_bb = 0, idx = 0;
 	ut8 *nbuf = NULL;
+	const int max_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	const int addrbytes = core->io->addrbytes;
 
 	// TODO: All those ds must be print flags
@@ -5396,7 +5397,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	}
 toro:
 	// uhm... is this necessary? imho can be removed
-	r_asm_set_pc (core->rasm, r_core_pava (core, ds->addr + idx));
+	r_asm_set_pc (core->rasm, r_core_pava (core, ds->addr));
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? (r_config_get_i (core->config, "scr.utf8.curvy") ? r_vline_uc : r_vline_u) : r_vline_a;
 
 	if (core->print->cur_enabled) {
@@ -5424,9 +5425,20 @@ toro:
 		ds->l = core->blocksize;
 	}
 	r_cons_break_push (NULL, NULL);
-	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
+	int totalbytes = cbytes > 0? l: -1;
+	for (i = idx = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
+		if (cbytes) {
+			if (idx >= ds->l) {
+				ds->lines = ds->l;
+				continue;
+			}
+		} else {
+			if (ds->lines < ds->l) {
+				// break;
+			}
+		}
 		if (r_cons_is_breaked ()) {
 			R_FREE (nbuf);
 			if (ds->pj) {
@@ -5545,19 +5557,21 @@ toro:
 			}
 		} else {
 			if (idx >= 0) {
-				ret = ds_disassemble (ds, buf + addrbytes * idx, len - addrbytes * idx);
-				if (ret == -31337) {
-					inc = ds->oplen;
-					r_anal_op_fini (&ds->analop);
-					continue;
+				// check if we have enough bytes for this arch, if not just reloop with totoro
+				int left = len - (addrbytes * idx);
+				if (left < max_op_size) {
+					//		ds->retry = true;
+					goto retry;
+				} else {
+					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
+					ds->retry = true;
+					if (ret == -31337) {
+						inc = ds->oplen; // minopsz maybe? or we should add invopsz
+						r_anal_op_fini (&ds->analop);
+						continue;
+					}
 				}
 			}
-		}
-		if (ds->retry) {
-			ds->retry = false;
-			r_cons_break_pop ();
-			r_anal_op_fini (&ds->analop);
-			goto retry;
 		}
 		ds_atabs_option (ds);
 		if (ds->analop.addr != ds->at) {
@@ -5583,7 +5597,7 @@ toro:
 		}
 		skip_bytes_flag = handleMidFlags (core, ds, true);
 		if (ds->midbb) {
-			skip_bytes_bb = handleMidBB(core, ds);
+			skip_bytes_bb = handleMidBB (core, ds);
 		}
 		ds_show_flags (ds, false);
 		ds_show_xrefs (ds);
@@ -5790,9 +5804,6 @@ toro:
 		if (skip_bytes_bb && skip_bytes_bb < inc) {
 			inc = skip_bytes_bb;
 		}
-		if (inc < 1) {
-			inc = 1;
-		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
 	}
 	r_anal_op_fini (&ds->analop);
@@ -5802,26 +5813,47 @@ toro:
 
 #if HASRETRY
 	if (!ds->cbytes && ds->lines < ds->l) {
-		ds->addr = ds->at + inc;
+		ds->addr = ds->at + inc; // idx; // inc;
 	retry:
-		if (len < 4) {
-			len = 4;
+		if (len < max_op_size) {
+			len = max_op_size + 32;
 		}
 		free (nbuf);
 		buf = nbuf = malloc (len);
-		if (ds->tries > 0) {
-			if (r_io_read_at (core->io, ds->addr, buf, len)) {
-				goto toro;
-			}
+		if (!buf) {
+			eprintf ("Cannot allocate %d bytes%c", len, 10);
 		}
-		if (ds->lines < ds->l) {
-			//ds->addr += idx;
-			if (!r_io_read_at (core->io, ds->addr, buf, len)) {
-				//ds->tries = -1;
+
+		if (cbytes) {
+			// enough bytes?
+			if (ds->index < totalbytes) {
+
+				if (ds->lines < ds->l) {
+					// idx = ds->l;
+					ds->addr += idx;
+					if (r_io_read_at (core->io, ds->addr, buf, len)) {
+						goto toro;
+					}
+					goto toro;
+				}
+			} else {
+				// le fin
+			}
+		} else {
+			// enough lines?
+			// ds->addr += idx;
+			if (ds->lines < ds->l) {
+				// idx = ds->l;
+				ds->addr += idx;
+
+				inc = 0;
+				if (r_io_read_at (core->io, ds->addr, buf, len)) {
+					goto toro;
+				}
 			}
 			goto toro;
 		}
-		if (continueoninvbreak) {
+		if (continueoninvbreak && ds->tries > 0) {
 			goto toro;
 		}
 		R_FREE (nbuf);
