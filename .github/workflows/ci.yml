@@ -169,7 +169,7 @@ jobs:
       shell: pwsh
       run: |
         .github\vsdevenv.ps1
-        meson --buildtype=release --prefix=$PWD\radare2-install build
+        meson -Db_vscrt=mt --buildtype=release --prefix=$PWD\radare2-install build
         ninja -C build
         ninja -C build install
     - name: Extract r2 version
