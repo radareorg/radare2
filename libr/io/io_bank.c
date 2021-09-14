@@ -413,7 +413,7 @@ R_API bool r_io_bank_update_map_location(RIO *io, const ut32 bankid, const ut32 
 	// map is not referenced by this map
 	return false;
 found:
-	RIOMap *map = r_io_map_get_by_ref (io, mapref);
+	;RIOMap *map = r_io_map_get_by_ref (io, mapref);
 	if (!map) {
 		// inconsistent mapref
 		// mapref should be deleted from bank here
