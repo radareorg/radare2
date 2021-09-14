@@ -1205,6 +1205,12 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
+				} else if (!strcmp (ext, "rexx")) {
+					r_lang_use (core->lang, "pipe");
+					char *cmd = cmdstr ("rexx");
+					lang_run_file (core, core->lang, cmd);
+					free (cmd);
+					ret = 1;
 				} else if (!strcmp (ext, "zig")) {
 					char *cmd = cmdstr ("zig run");
 					r_lang_use (core->lang, "pipe");
