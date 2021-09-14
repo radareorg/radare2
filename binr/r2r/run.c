@@ -448,6 +448,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			}
 			ut8 r = 0;
 			if (write (proc->killpipe[1], &r, 1) != 1) {
+				r_th_lock_leave (subprocs_mutex);
 				break;
 			}
 		}
