@@ -464,6 +464,7 @@ int main(int argc, char **argv) {
 		RThread *th = r_th_new (worker_th, &state, 0);
 		if (!th) {
 			eprintf ("Failed to start thread.\n");
+			r_th_lock_leave (state.lock);
 			exit (-1);
 		}
 		r_pvector_push (&workers, th);
