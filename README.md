@@ -53,7 +53,7 @@ Some of the most installed packages are:
 ## Operating Systems
 
 Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android
-[Dragonfly, Net, Free, Open] BSD, Z/OS, QNX, Solaris, Haiku, FirefoxOS.
+[Dragonfly, Net, Free, Open] BSD, Z/OS, QNX, SerenityOS, Solaris, Haiku, Vinix, FirefoxOS.
 
 ## Architectures
 
@@ -70,7 +70,7 @@ MCORE, mcs96, RSP, SuperH-4, VAX, AMD Am29000.
 ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
 Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
 ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
-WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF,
+WASM (WebAssembly binary), Commodore VICE emulator, QNX, WAD, OFF, TIC-80
 Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
 
 # Contributing
