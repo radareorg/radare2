@@ -113,9 +113,10 @@ typedef struct r_io_t {
 	size_t addrbytes;
 	bool aslr;
 	bool autofd;
-	ut32 cached; // uses R_PERM_RWX
+	ut32 cached; // uses R_PERM_RWX // wtf cache for exec?
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	ut32 p_cache; // uses 1, 2, 4.. probably R_PERM_RWX :D
+	ut64 mts;	// map "timestamps", this sucks somehow
 	RIDPool *map_ids;
 	RPVector maps; //from tail backwards maps with higher priority are found
 	RSkyline map_skyline; // map parts that are not covered by others
