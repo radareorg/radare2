@@ -355,7 +355,7 @@ static bool duplicate_flag(RFlagItem *flag, void *u) {
 }
 
 static bool foreach_newline(RCore *core) {
-	bool nl = r_config_get_i (core->config, "scr.loopnl");
+	bool nl = r_config_get_b (core->config, "scr.loopnl");
 	if (nl) {
 		r_cons_newline ();
 	}
