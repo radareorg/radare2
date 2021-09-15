@@ -165,6 +165,12 @@ static int handle_archive_files(const char *fname, struct rasignconf *conf) {
 		return -1;
 	}
 
+	bool collision = false;
+	if (conf->collision && conf->ofile) {
+		collision = true;
+	}
+	conf->collision = false;
+
 	RListIter *iter;
 	char *u;
 	int ret = 0;
@@ -180,6 +186,21 @@ static int handle_archive_files(const char *fname, struct rasignconf *conf) {
 		}
 	}
 	r_list_free (uris);
+
+	if (collision) {
+		eprintf ("Computing collisions on sdb file\n");
+		RAnal *anal = r_anal_new ();
+		if (anal) {
+			r_sign_load (anal, conf->ofile);
+			r_sign_resolve_collisions (anal);
+			int tmpret = r_sign_save (anal, conf->ofile);
+			r_anal_free (anal);
+			if (!ret && tmpret) {
+				ret = tmpret;
+			}
+		}
+	}
+
 	return ret;
 }
 
@@ -253,8 +274,8 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		if (conf.json) {
 			eprintf ("JSON does not work with .a files currently\n");
 			return -1;
-		} else if (conf.collision) {
-			eprintf ("Collisions can't currently be computed with .a files\n");
+		} else if (conf.collision && conf.rad) {
+			eprintf ("Rasign2 can not currently handle .a files with -c and -r\n");
 			return -1;
 		} else {
 			return handle_archive_files (ifile, &conf);
