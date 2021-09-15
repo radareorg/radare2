@@ -4374,9 +4374,33 @@ struct exec_command_t {
 	const char *cmd;
 };
 
-static bool copy_into_flagitem_list(RFlagItem *flg, void *u) {
-	RFlagItem *fi = r_mem_dup (flg, sizeof (RFlagItem));
-	r_list_append (u, fi);
+typedef struct {
+	char *name;
+	ut64 addr;
+	ut64 size;
+} ForeachListItem;
+
+static void foreach3list_free(void* u) {
+	ForeachListItem *fli = (ForeachListItem*)u;
+	free (fli->name);
+	free (fli);
+}
+
+static void append_item(RList *list, const char *name, ut64 addr, ut64 size) {
+	ForeachListItem *fli = R_NEW0 (ForeachListItem);
+	if (fli) {
+		if (name) {
+			fli->name = strdup (name);
+		}
+		fli->addr = addr;
+		fli->size = size;
+		r_list_append (list, fli);
+	}
+}
+
+static bool copy_into_flagitem_list(RFlagItem *item, void *u) {
+	RList *list = (RList*)u;
+	append_item (list, item->name, item->offset, item->size);
 	return true;
 }
 
@@ -4405,16 +4429,190 @@ static void foreach_pairs(RCore *core, const char *cmd, const char *each) {
 	}
 }
 
-R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@@"
-	RDebug *dbg = core->dbg;
-	RList *list, *head;
+static RList *foreach3list(RCore *core, char type, const char *glob) {
+	bool va = r_config_get_b (core->config, "io.va");
+	RList *list = r_list_newf (foreach3list_free);
 	RListIter *iter;
 	int i;
-	const char *filter = NULL;
-
-	if (each[0] && each[1] == ':') {
-		filter = each + 2;
+	switch (type) {
+	case 'C':
+		{
+			RIntervalTreeIter it;
+			RAnalMetaItem *meta;
+			r_interval_tree_foreach (&core->anal->meta, it, meta) {
+				if (meta->type != R_META_TYPE_COMMENT) {
+					continue;
+				}
+				if (!glob || (meta->str && r_str_glob (meta->str, glob))) {
+					ut64 addr = r_interval_tree_iter_get (&it)->start;
+					append_item (list, NULL, addr, UT64_MAX);
+				}
+			}
+		}
+		break;
+	case 'm': // @@@m
+		{
+			int fd = r_io_fd_get_current (core->io);
+			// only iterate maps of current fd
+			RList *maps = r_io_map_get_by_fd (core->io, fd);
+			RIOMap *map;
+			if (maps) {
+				RListIter *iter;
+				r_list_foreach (maps, iter, map) {
+					append_item (list, NULL, r_io_map_begin (map), r_io_map_size (map));
+				}
+				r_list_free (maps);
+			}
+		}
+		break;
+	case 'M': // @@@M
+		if (core->dbg && core->dbg->h && core->dbg->maps) {
+			RDebugMap *map;
+			r_list_foreach (core->dbg->maps, iter, map) {
+				append_item (list, NULL, map->addr, map->size);
+			}
+		}
+		break;
+	case 'e': // @@@e
+		{
+			RBinAddr *entry;
+			RList *elist = r_bin_get_entries (core->bin);
+			r_list_foreach (elist, iter, entry) {
+				ut64 addr = va? entry->vaddr: entry->paddr;
+				append_item (list, NULL, addr, UT64_MAX);
+			}
+			r_list_free (elist);
+		}
+		break;
+	case 't': // @@@t
+		// iterate over all threads
+		if (core->dbg && core->dbg->h && core->dbg->h->threads) {
+			RDebugPid *p;
+			RList *thlist = core->dbg->h->threads (core->dbg, core->dbg->pid);
+			r_list_foreach (thlist, iter, p) {
+				append_item (list, NULL, (ut64)p->pid, UT64_MAX);
+			}
+			r_list_free (thlist);
+		}
+		break;
+	case 'i': // @@@i
+		{
+			RBinImport *imp;
+			RList *implist = r_bin_get_imports (core->bin);
+			r_list_foreach (implist, iter, imp) {
+				char *impflag = r_str_newf ("sym.imp.%s", imp->name);
+				ut64 addr = r_num_math (core->num, impflag);
+				free (impflag);
+				append_item (list, NULL, addr, UT64_MAX);
+			}
+			r_list_free (implist);
+		}
+		break;
+	case 'E':
+		{
+			RBinSymbol *sym;
+			RList *symlist = r_bin_get_symbols (core->bin);
+			bool va = r_config_get_b (core->config, "io.va");
+			r_list_foreach (symlist, iter, sym) {
+				if (!isAnExport (sym)) {
+					continue;
+				}
+				ut64 addr = va? sym->vaddr: sym->paddr;
+				append_item (list, NULL, addr, UT64_MAX);
+			}
+		}
+		break;
+	case 's': // @@@s symbols
+		{
+			RBinSymbol *sym;
+			RList *syms = r_bin_get_symbols (core->bin);
+			r_list_foreach (syms, iter, sym) {
+				ut64 addr = va? sym->vaddr: sym->paddr;
+				append_item (list, NULL, addr, sym->size);
+			}
+		}
+		break;
+	case 'S': // "@@@S"
+		{
+			RBinObject *obj = r_bin_cur_object (core->bin);
+			if (obj) {
+				RBinSection *sec;
+				r_list_foreach (obj->sections, iter, sec) {
+					ut64 addr = va ? sec->vaddr: sec->paddr;
+					ut64 size = va ? sec->vsize: sec->size;
+					append_item (list, NULL, addr, size);
+				}
+			}
+		}
+		break;
+	case 'z':
+		{
+			RList *zlist = r_bin_get_strings (core->bin);
+			if (zlist) {
+				RBinString *s;
+				r_list_foreach (zlist, iter, s) {
+					ut64 addr = va? s->vaddr: s->paddr;
+					append_item (list, NULL, addr, s->size);
+				}
+			}
+		}
+		break;
+	case 'b':
+		{
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (fcn) {
+				RListIter *iter;
+				RAnalBlock *bb;
+				r_list_foreach (fcn->bbs, iter, bb) {
+					append_item (list, NULL, bb->addr, bb->size);
+				}
+			}
+		}
+		break;
+	case 'F':
+		{
+			RAnalFunction *fcn;
+			r_list_foreach (core->anal->fcns, iter, fcn) {
+				if (!glob || r_str_glob (fcn->name, glob)) {
+					ut64 size = r_anal_function_linear_size (fcn);
+					append_item (list, NULL, fcn->addr, size);
+				}
+			}
+		}
+		break;
+	case 'r':
+		{
+			for (i = 0; i < R_REG_TYPE_LAST; i++) {
+				RRegItem *item;
+				RList *head = r_reg_get_list (core->dbg->reg, i);
+				r_list_foreach (head, iter, item) {
+					if (item->size != core->anal->bits) {
+						continue;
+					}
+					if (item->type != i) {
+						continue;
+					}
+					ut64 addr = r_reg_getv (core->dbg->reg, item->name);
+					append_item (list, item->name, addr, item->size);
+				}
+			}
+		}
+		break;
+	case 'f':
+		r_flag_foreach_glob (core->flags, glob, copy_into_flagitem_list, list);
+		break;
 	}
+	return list;
+}
+
+R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@@"
+	ForeachListItem *item;
+	RListIter *iter;
+	char *glob = (each[0] && each[1] == ':')
+		? r_str_trim_dup (each + 2): NULL;
+
+	RList *list = foreach3list (core, *each, glob);
+	free (glob);
 
 	switch (each[0]) {
 	case '=':
@@ -4424,358 +4622,73 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		r_core_cmd_help (core, help_msg_at_at_at);
 		break;
 	case 'c':
-		if (filter) {
-			char *arg = r_core_cmd_str (core, filter);
+		if (glob) {
+			char *arg = r_core_cmd_str (core, glob);
 			foreach_pairs (core, cmd, arg);
 			free (arg);
 		} else {
 			eprintf ("Usage: @@@c:command   # same as @@@=`command`\n");
 		}
 		break;
-	case 'C': {
-		char *glob = filter ? r_str_trim_dup (filter): NULL;
-		RIntervalTreeIter it;
-		RAnalMetaItem *meta;
-		r_interval_tree_foreach (&core->anal->meta, it, meta) {
-			if (meta->type != R_META_TYPE_COMMENT) {
-				continue;
-			}
-			if (!glob || (meta->str && r_str_glob (meta->str, glob))) {
-				r_core_seek (core, r_interval_tree_iter_get (&it)->start, true);
-				r_core_cmd0 (core, cmd);
-				if (!foreach_newline (core)) {
-					break;
-				}
-			}
-		}
-		free (glob);
-		break;
-	}
+	case 'C':
+	case 's':
 	case 'm':
+	case 'M':
+	case 'e':
+	case 'E':
+	case 'f':
+	case 'F':
+	case 'b':
+	case 'z':
+	case 'S':
+	case 'r':
+	case 'i':
 		{
-			int fd = r_io_fd_get_current (core->io);
-			// only iterate maps of current fd
-			RList *maps = r_io_map_get_by_fd (core->io, fd);
-			RIOMap *map;
-			if (maps) {
-				RListIter *iter;
-				r_list_foreach (maps, iter, map) {
-					r_core_seek (core, r_io_map_begin (map), true);
-					r_core_block_size (core, r_io_map_size (map));
-					r_core_cmd0 (core, cmd);
-					if (!foreach_newline (core)) {
-						break;
-					}
+			ut64 offorig = core->offset;
+			ut64 bszorig = core->blocksize;
+			r_cons_break_push (NULL, NULL);
+			r_list_foreach (list, iter, item) {
+				if (r_cons_is_breaked ()) {
+					break;
 				}
-				r_list_free (maps);
-			}
-		}
-		break;
-	case 'M': // @@@M
-		if (dbg && dbg->h && dbg->maps) {
-			RDebugMap *map;
-			r_list_foreach (dbg->maps, iter, map) {
-				r_core_seek (core, map->addr, true);
-				//r_core_block_size (core, map->size);
+				if (item->addr == UT64_MAX) {
+					continue;
+				}
+				if (item->name) {
+					r_cons_printf ("%s: ", item->name);
+				}
+				r_core_seek (core, item->addr, true);
+				if (item->size) {
+					r_core_block_size (core, item->size);
+				}
 				r_core_cmd0 (core, cmd);
 				if (!foreach_newline (core)) {
 					break;
 				}
 			}
+			r_core_seek (core, offorig, true);
+			r_core_block_size (core, bszorig);
+			r_cons_break_pop ();
 		}
 		break;
 	case 't':
-		// iterate over all threads
-		if (dbg && dbg->h && dbg->h->threads) {
-			int origpid = dbg->pid;
-			RDebugPid *p;
-			list = dbg->h->threads (dbg, dbg->pid);
-			if (!list) {
-				return false;
-			}
-			r_list_foreach (list, iter, p) {
-				r_core_cmdf (core, "dp %d", p->pid);
-				r_cons_printf ("PID %d\n", p->pid);
+		// TODO: generalize like the rest, just call dp before and after
+		if (core->dbg && core->dbg->h && core->dbg->h->threads) {
+			int origpid = core->dbg->pid;
+			r_list_foreach (list, iter, item) {
+				int curpid = (int) item->addr;
+				r_core_cmdf (core, "dp %d", curpid);
+				r_cons_printf ("# PID %d\n", curpid);
 				r_core_cmd0 (core, cmd);
 				if (!foreach_newline (core)) {
 					break;
 				}
 			}
 			r_core_cmdf (core, "dp %d", origpid);
-			r_list_free (list);
-		}
-		break;
-	case 'r': // @@@r
-		{
-			ut64 offorig = core->offset;
-			for (i = 0; i < R_REG_TYPE_LAST; i++) {
-				RRegItem *item;
-				ut64 value;
-				head = r_reg_get_list (core->dbg->reg, i);
-				if (!head) {
-					continue;
-				}
-				RList *list = r_list_newf (free);
-				r_list_foreach (head, iter, item) {
-					if (item->size != core->anal->bits) {
-						continue;
-					}
-					if (item->type != i) {
-						continue;
-					}
-					r_list_append (list, strdup (item->name));
-				}
-				const char *item_name;
-				r_list_foreach (list, iter, item_name) {
-					value = r_reg_getv (core->dbg->reg, item_name);
-					r_core_seek (core, value, true);
-					r_cons_printf ("%s: ", item_name);
-					r_core_cmd0 (core, cmd);
-					if (!foreach_newline (core)) {
-						break;
-					}
-				}
-				r_list_free (list);
-			}
-			r_core_seek (core, offorig, true);
-		}
-		break;
-	case 'i': // @@@i
-		{
-			RBinImport *imp;
-			ut64 offorig = core->offset;
-			list = r_bin_get_imports (core->bin);
-			RList *lost = r_list_newf (free);
-			r_list_foreach (list, iter, imp) {
-				char *impflag = r_str_newf ("sym.imp.%s", imp->name);
-				ut64 addr = r_num_math (core->num, impflag);
-				ut64 *n = R_NEW (ut64);
-				*n = addr;
-				r_list_append (lost, n);
-				free (impflag);
-			}
-			ut64 *naddr;
-			r_list_foreach (lost, iter, naddr) {
-				ut64 addr = *naddr;
-				if (addr && addr != UT64_MAX) {
-					r_core_seek (core, addr, true);
-					r_core_cmd0 (core, cmd);
-					if (!foreach_newline (core)) {
-						break;
-					}
-				}
-			}
-			r_core_seek (core, offorig, true);
-			r_list_free (lost);
-		}
-		break;
-	case 'e': // @@@e @@@entries
-		{
-			RBinAddr *entry;
-			ut64 offorig = core->offset;
-			list = r_bin_get_entries(core->bin);
-			RList *lost = r_list_newf (free);
-			bool va = r_config_get_b (core->config, "io.va");
-			r_list_foreach (list, iter, entry) {
-				ut64 addr = va? entry->vaddr: entry->paddr;
-				r_core_seek (core, addr, true);
-				r_core_cmd0 (core, cmd);
-				if (!foreach_newline (core)) {
-					break;
-				}
-			}
-			r_core_seek (core, offorig, true);
-			r_list_free (lost);
-		}
-		break;
-	case 'E': // @@@E @@@exports
-		{
-			RBinSymbol *sym;
-			ut64 offorig = core->offset;
-			list = r_bin_get_symbols (core->bin);
-			RList *lost = r_list_newf (free);
-			bool va = r_config_get_b (core->config, "io.va");
-			r_list_foreach (list, iter, sym) {
-				if (!isAnExport (sym)) {
-					continue;
-				}
-				ut64 addr = va? sym->vaddr: sym->paddr;
-				r_core_seek (core, addr, true);
-				r_core_cmd0 (core, cmd);
-				if (!foreach_newline (core)) {
-					break;
-				}
-			}
-			r_core_seek (core, offorig, true);
-			r_list_free (lost);
-		}
-		break;
-	case 'S': // "@@@S"
-		{
-			RBinObject *obj = r_bin_cur_object (core->bin);
-			if (obj) {
-				ut64 offorig = core->offset;
-				ut64 bszorig = core->blocksize;
-				RBinSection *sec;
-				RListIter *iter;
-				r_list_foreach (obj->sections, iter, sec) {
-					r_core_seek (core, sec->vaddr, true);
-					r_core_block_size (core, sec->vsize);
-					r_core_cmd0 (core, cmd);
-					if (!foreach_newline (core)) {
-						break;
-					}
-				}
-				r_core_block_size (core, bszorig);
-				r_core_seek (core, offorig, true);
-			}
-		}
-#if ATTIC
-		if (each[1] == 'S') {
-			RListIter *it;
-			RBinSection *sec;
-			RBinObject *obj = r_bin_cur_object (core->bin);
-			int cbsz = core->blocksize;
-			r_list_foreach (obj->sections, it, sec){
-				ut64 addr = sec->vaddr;
-				ut64 size = sec->vsize;
-				// TODO:
-				//if (R_BIN_SCN_EXECUTABLE & sec->perm) {
-				//	continue;
-				//}
-				r_core_seek_size (core, addr, size);
-				r_core_cmd (core, cmd, 0);
-				if (!foreach_newline (core)) {
-					break;
-				}
-			}
-			r_core_block_size (core, cbsz);
-		}
-#endif
-		break;
-	case 's':
-		if (each[1] == 't') { // strings
-			list = r_bin_get_strings (core->bin);
-			if (list) {
-				ut64 offorig = core->offset;
-				ut64 obs = core->blocksize;
-				RBinString *s;
-				RList *lost = r_list_newf (free);
-				r_list_foreach (list, iter, s) {
-					RBinString *bs = r_mem_dup (s, sizeof (RBinString));
-					r_list_append (lost, bs);
-				}
-				r_list_foreach (lost, iter, s) {
-					r_core_block_size (core, s->size);
-					r_core_seek (core, s->vaddr, true);
-					r_core_cmd0 (core, cmd);
-					if (!foreach_newline (core)) {
-						break;
-					}
-				}
-				r_core_block_size (core, obs);
-				r_core_seek (core, offorig, true);
-				r_list_free (lost);
-			}
-		} else {
-			// symbols
-			RBinSymbol *sym;
-			ut64 offorig = core->offset;
-			ut64 obs = core->blocksize;
-			list = r_bin_get_symbols (core->bin);
-			r_cons_break_push (NULL, NULL);
-			RList *lost = r_list_newf (free);
-			r_list_foreach (list, iter, sym) {
-				RBinSymbol *bs = r_mem_dup (sym, sizeof (RBinSymbol));
-				r_list_append (lost, bs);
-			}
-			r_list_foreach (lost, iter, sym) {
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				r_core_block_size (core, sym->size);
-				r_core_seek (core, sym->vaddr, true);
-				r_core_cmd0 (core, cmd);
-				if (!foreach_newline (core)) {
-					break;
-				}
-			}
-			r_cons_break_pop ();
-			r_list_free (lost);
-			r_core_block_size (core, obs);
-			r_core_seek (core, offorig, true);
-		}
-		break;
-	case 'f': // flags
-		{
-		// TODO: honor ^C
-			char *glob = filter? r_str_trim_dup (filter): NULL;
-			ut64 off = core->offset;
-			ut64 obs = core->blocksize;
-			RList *flags = r_list_newf (free);
-			r_flag_foreach_glob (core->flags, glob, copy_into_flagitem_list, flags);
-			RListIter *iter;
-			RFlagItem *f;
-			r_list_foreach (flags, iter, f) {
-				r_core_block_size (core, f->size);
-				r_core_seek (core, f->offset, true);
-				r_core_cmd0 (core, cmd);
-				if (!foreach_newline (core)) {
-					break;
-				}
-			}
-			r_core_seek (core, off, false);
-			r_core_block_size (core, obs);
-			free (glob);
-		}
-		break;
-	case 'F': // functions
-		{
-			ut64 obs = core->blocksize;
-			ut64 offorig = core->offset;
-			RAnalFunction *fcn;
-			list = core->anal->fcns;
-			r_cons_break_push (NULL, NULL);
-			r_list_foreach (list, iter, fcn) {
-				if (r_cons_is_breaked ()) {
-					break;
-				}
-				if (!filter || r_str_glob (fcn->name, filter)) {
-					r_core_seek (core, fcn->addr, true);
-					r_core_block_size (core, r_anal_function_linear_size (fcn));
-					r_core_cmd0 (core, cmd);
-					if (!foreach_newline (core)) {
-						break;
-					}
-				}
-			}
-			r_cons_break_pop ();
-			r_core_block_size (core, obs);
-			r_core_seek (core, offorig, true);
-		}
-		break;
-	case 'b':
-		{
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			ut64 offorig = core->offset;
-			ut64 obs = core->blocksize;
-			if (fcn) {
-				RListIter *iter;
-				RAnalBlock *bb;
-				r_list_foreach (fcn->bbs, iter, bb) {
-					r_core_seek (core, bb->addr, true);
-					r_core_block_size (core, bb->size);
-					r_core_cmd0 (core, cmd);
-					if (!foreach_newline (core)) {
-						break;
-					}
-				}
-				r_core_block_size (core, obs);
-				r_core_seek (core, offorig, true);
-			}
 		}
 		break;
 	}
+	r_list_free (list);
 	return 0;
 }
 
