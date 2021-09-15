@@ -4389,7 +4389,7 @@ static void foreach3list_free(void* u) {
 static void append_item(RList *list, const char *name, ut64 addr, ut64 size) {
 	ForeachListItem *fli = R_NEW0 (ForeachListItem);
 	if (fli) {
-		if (fli->name) {
+		if (name) {
 			fli->name = strdup (name);
 		}
 		fli->addr = addr;
