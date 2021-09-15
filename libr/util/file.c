@@ -1277,8 +1277,13 @@ R_API char *r_file_tmpdir(void) {
 }
 
 R_API bool r_file_copy(const char *src, const char *dst) {
+	r_return_val_if_fail (R_STR_ISNOTEMPTY (str) && R_STR_ISNOTEMPTY (dst), false);
+	if (!strcmp (src, dst)) {
+		return false;
+	}
 	/* TODO: implement in C */
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
+	if (!str
 #if HAVE_COPYFILE_H
 	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
