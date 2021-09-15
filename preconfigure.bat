@@ -45,19 +45,28 @@ cl --help > NUL 2> NUL
 if %ERRORLEVEL% == 0 (
   echo FOUND
 ) else (
-
-if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community" (
-  echo "Found community edition"
-  call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
-) else (
-  if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
-    echo "Found Enterprise edition"
-    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" "x86_64"
+  if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community" (
+    echo "Found community edition"
+    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
   ) else (
-    echo "Not Found"
-    exit /b 1
+    if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
+      echo "Found Enterprise edition"
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+    ) else (
+      if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" (
+        echo "Found Professional edition"
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+      ) else (
+        if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" (
+          echo "Found BuildTools"
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+        ) else (
+          echo "Not Found"
+          exit /b 1
+        )
+      )
+    )
   )
-)
 )
 
 if EXIST "libr\asm\arch\arm\v35arm64\arch-arm64" (
