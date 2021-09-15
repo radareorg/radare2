@@ -446,10 +446,14 @@ static int cmd_mount(void *data, const char *_input) {
 		} else if (input[1] == ' ') {
 			char *args = r_str_trim_dup (input + 1);
 			char *arg = strchr (args, ' ');
-			const char *buf = arg? arg + 1: "";
+			if (arg) {
+				*arg++ = 0;
+			} else {
+				arg = "";
+			}
 			RFSFile *f = r_fs_open (core->fs, args, true);
 			if (f) {
-				r_fs_write (core->fs, f, 0, (const void *)buf, strlen (data));
+				r_fs_write (core->fs, f, 0, (const void *)arg, strlen (arg));
 				r_fs_close (core->fs, f);
 				r_fs_file_free (f);
 			}

@@ -274,7 +274,7 @@ R_API void r_fs_close(RFS* fs, RFSFile* file) {
 }
 
 R_API int r_fs_write(RFS* fs, RFSFile* file, ut64 addr, const ut8 *data, int len) {
-	r_return_val_if_fail (fs && file && data && len > 0, -1);
+	r_return_val_if_fail (fs && file && data && len >= 0, -1);
 	if (fs && file) {
 		// TODO: fill file->data ? looks like dupe of rbuffer 
 		if (file->p && file->p->write) {

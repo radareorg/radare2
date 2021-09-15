@@ -28,12 +28,16 @@ FILE=-
 CMDS=<<EOF
 m r2 /r2
 mc /r2/seek
+s
 mw /r2/seek 123
+s
 mc /r2/seek
 EOF
 EXPECT=<<EOF
 0x0
 
+0x0
+0x7b
 0x7b
 
 EOF
