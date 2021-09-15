@@ -2840,6 +2840,12 @@ static bool cb_anal_gp(RCore *core, RConfigNode *node) {
 	return true;
 }
 
+static bool cb_anal_cs(RCore *core, RConfigNode *node) {
+	// core->anal->cs = node->i_value;
+	core->print->segbas = node->i_value;
+	return true;
+}
+
 static bool cb_anal_from(RCore *core, RConfigNode *node) {
 	if (r_config_get_i (core->config, "anal.limits")) {
 		r_anal_set_limits (core->anal,
@@ -3175,6 +3181,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.verbose", "false", &cb_analverbose, "Show RAnal warnings when analyzing code");
 	SETBPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "Comma separated list of register names to be readonly");
+	SETICB ("anal.cs", 0, (RConfigCallback)&cb_anal_cs, "Set the value for the x86-16 CS segment register (see asm.seggrn and asm.segoff)");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
 	SETBPREF ("anal.gpfixed", "true", "Set gp register to anal.gp before emulating each instruction in aae");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");

@@ -909,3 +909,28 @@ R_API double r_num_cos(double a) {
 R_API double r_num_sin(double a) {
 	return sin (a);
 }
+
+// sega dance dance revolution numbers
+// convert address into segmented address
+// takes addr, segment base and segment granurality
+R_API bool r_num_segaddr(ut64 addr, ut64 sb, int sg, ut32 *a, ut32 *b) {
+#if 0
+	s = n >> 16 << 12;
+	a = n & 0x0fff;
+#endif
+	if (sb) {
+		ut32 csbase = (sb << 4);
+		if (addr > csbase) {
+			*a = sb;
+			*b = addr - csbase;
+		} else {
+			int delta = csbase - addr;
+			*a = csbase + delta;
+			*b = addr - csbase+ delta;
+		}
+	} else {
+		*a = ((addr >> 16) << (16 - sg));
+		*b = (addr & 0xffff);
+	}
+	return *a <= 0xffff && *b <= 0xffff;
+}

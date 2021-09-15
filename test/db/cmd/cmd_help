@@ -185,7 +185,7 @@ uint64  18446744073709551615
 hex     0xffffffffffffffff
 octal   01777777777777777777777
 unit    16E
-segment fffff000:0fff
+segment fffff000:ffff
 string  "\xff\xff\xff\xff\xff\xff\xff\xff"
 fvalue  -1.0
 float   nanf
