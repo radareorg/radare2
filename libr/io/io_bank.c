@@ -655,10 +655,9 @@ R_API void r_io_bank_drain (RIO *io, const ut32 bankid) {
 	while (node) {
 		next = r_rbtree_cont_node_next (node);
 		if (next) {
-			RIOSubMap *bd, *sm;
-			bd = (RIOSubMap *)node->data;
-			sm = (RIOSubMap *)next->data;
-			if (!memcmp (&bd->mapref, &sm->mapref, sizeof(RIOMapRef))) {
+			RIOSubMap *bd = (RIOSubMap *)node->data;
+			RIOSubMap *sm = (RIOSubMap *)next->data;
+			if (!memcmp (&bd->mapref, &sm->mapref, sizeof (RIOMapRef))) {
 				r_io_submap_set_to (bd, r_io_submap_to (sm));
 				r_rbtree_cont_delete (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
 				continue;
