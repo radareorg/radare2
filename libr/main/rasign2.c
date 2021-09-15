@@ -2,9 +2,16 @@
 #include <r_main.h>
 #include <r_core.h>
 
+struct rasignconf {
+	const char *ofile, *space;
+	size_t a_cnt;
+	bool ar, rad, quiet, json, flirt, collision;
+};
+
 static void rasign_show_help(void) {
 	printf ("Usage: rasign2 [options] [file]\n"
 		" -a [-a]          add extra 'a' to analysis command\n"
+		" -A               make signatures from all .o files in the provided .a file\n"
 		" -f               interpret the file as a FLIRT .sig file and dump signatures\n"
 		" -h               help menu\n"
 		" -j               show signatures in json\n"
@@ -58,44 +65,159 @@ static void find_functions(RCore *core, size_t count) {
 	r_core_cmd0 (core, cmd);
 }
 
-R_API int r_main_rasign2(int argc, const char **argv) {
-	const char *ofile = NULL;
-	const char *space = NULL;
-	int c;
-	size_t a_cnt = 0;
-	bool rad = false;
-	bool quiet = false;
-	bool json = false;
-	bool flirt = false;
-	bool collision = false;
-	RGetopt opt;
+static int signs_from_file(const char *fname, struct rasignconf *conf) {
+	RCore *core = opencore (fname);
+	if (!core) {
+		eprintf ("Could not get core\n");
+		return -1;
+	}
 
-	r_getopt_init (&opt, argc, argv, "afhjo:qrs:cv");
+	// quiet mode
+	if (conf->quiet) {
+		r_config_set (core->config, "scr.prompt", "false");
+		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+	}
+
+	if (conf->space) {
+		r_spaces_set (&core->anal->zign_spaces, conf->space);
+	}
+
+	// run analysis to find functions
+	find_functions (core, conf->a_cnt);
+
+	// create zignatures
+	r_sign_all_functions (core->anal);
+
+	if (conf->collision) {
+		r_sign_resolve_collisions (core->anal);
+	}
+
+	if (conf->rad) {
+		r_sign_list (core->anal, '*');
+	}
+
+	if (conf->json) {
+		r_sign_list (core->anal, 'j');
+	}
+
+	// write sigs to file
+	if (conf->ofile && !r_sign_save (core->anal, conf->ofile)) {
+		eprintf ("Failed to write file\n");
+	}
+
+	r_cons_flush ();
+	r_core_free (core);
+	return 0;
+}
+
+static RList *get_ar_file_uris(const char *fname) {
+	r_return_val_if_fail (fname, NULL);
+	RIO *io = r_io_new ();
+	// core is only used to to list uri's in archive, then it's free'd
+	if (!io) {
+		eprintf ("Failed to alloc io\n");
+		return NULL;
+	}
+
+	char *allfiles = r_str_newf ("arall://%s", fname);
+	if (!allfiles) {
+		eprintf ("Failed to alloc\n");
+		r_io_free (io);
+		return NULL;
+	}
+	RList *uris = r_list_newf (free);
+	RList *list_fds = r_io_open_many (io, allfiles, 0, 0444);
+	free (allfiles);
+
+	bool fail = false;
+	if (list_fds && uris) {
+		RIODesc *fd;
+		RListIter *iter;
+		r_list_foreach (list_fds, iter, fd) {
+			char *u = strdup (fd->uri);
+			if (!u) {
+				fail = true;
+				break;
+			}
+			r_list_append (uris, u);
+		}
+	}
+	r_list_free (list_fds);
+	r_io_free (io);
+	if (fail) {
+		r_list_free (uris);
+		uris = NULL;
+	}
+	return uris;
+}
+
+static int dump_flirt(const char *ifile) {
+	RCore *core = opencore (NULL);
+	r_sign_flirt_dump (core->anal, ifile);
+	r_cons_flush ();
+	r_core_free (core);
+	return 0;
+}
+
+static int handle_archive_files(const char *fname, struct rasignconf *conf) {
+	RList *uris = get_ar_file_uris (fname);
+	if (!uris) {
+		return -1;
+	}
+
+	RListIter *iter;
+	char *u;
+	int ret = 0;
+	r_list_foreach (uris, iter, u) {
+		if (r_str_endswith (u, ".o")) {
+			eprintf ("\nProcessing %s...\n", u);
+			int err = signs_from_file (u, conf);
+			if (err) {
+				ret = err;
+			}
+		} else {
+			eprintf ("[!!] skipping %s because it is not a .o file\n", u);
+		}
+	}
+	r_list_free (uris);
+	return ret;
+}
+
+R_API int r_main_rasign2(int argc, const char **argv) {
+	int c;
+	RGetopt opt;
+	struct rasignconf conf;
+	memset (&conf, 0, sizeof (struct rasignconf));
+
+	r_getopt_init (&opt, argc, argv, "Aafhjo:qrs:cv");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
+		case 'A':
+			conf.ar = true;
+			break;
 		case 'a':
-			a_cnt++;
+			conf.a_cnt++;
 			break;
 		case 'o':
-			ofile = opt.arg;
+			conf.ofile = opt.arg;
 			break;
 		case 'c':
-			collision = true;
+			conf.collision = true;
 			break;
 		case 's':
-			space = opt.arg;
+			conf.space = opt.arg;
 			break;
 		case 'r':
-			rad = true;
+			conf.rad = true;
 			break;
 		case 'j':
-			json = true;
+			conf.json = true;
 			break;
 		case 'q':
-			quiet = true;
+			conf.quiet = true;
 			break;
 		case 'f':
-			flirt = true;
+			conf.flirt = true;
 			break;
 		case 'v':
 			return r_main_version_print ("rasign2");
@@ -108,75 +230,36 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		}
 	}
 
-	if (a_cnt > 2) {
+	if (conf.a_cnt > 2) {
 		eprintf ("Invalid analysis (too many -a's?)\n");
 		rasign_show_help ();
 		return -1;
 	}
 
-	const char *ifile = NULL;
 	if (opt.ind >= argc) {
 		eprintf ("must provide a file\n");
 		rasign_show_help ();
 		return -1;
 	}
-	ifile = argv[opt.ind];
 
-	RCore *core = NULL;
-	if (flirt) {
-		if (rad || ofile || json) {
+	const char *ifile = argv[opt.ind];
+	if (conf.flirt) {
+		if (conf.rad || conf.ofile || conf.json) {
 			eprintf ("Only FLIRT output is supported for FLIRT files\n");
 			return -1;
 		}
-		core = opencore (NULL);
-		r_sign_flirt_dump (core->anal, ifile);
-		r_cons_flush ();
-		r_core_free (core);
-		return 0;
+		return dump_flirt (ifile);
+	} else if (conf.ar) {
+		if (conf.json) {
+			eprintf ("JSON does not work with .a files currently\n");
+			return -1;
+		} else if (conf.collision) {
+			eprintf ("Collisions can't currently be computed with .a files\n");
+			return -1;
+		} else {
+			return handle_archive_files (ifile, &conf);
+		}
 	} else {
-		core = opencore (ifile);
+		return signs_from_file (ifile, &conf);
 	}
-
-	if (!core) {
-		eprintf ("Could not get core\n");
-		return -1;
-	}
-
-	// quiet mode
-	if (quiet) {
-		r_config_set (core->config, "scr.interactive", "false");
-		r_config_set (core->config, "scr.prompt", "false");
-		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-	}
-
-	if (space) {
-		r_spaces_set (&core->anal->zign_spaces, space);
-	}
-
-	// run analysis to find functions
-	find_functions (core, a_cnt);
-
-	// create zignatures
-	r_sign_all_functions (core->anal);
-
-	if (collision) {
-		r_sign_resolve_collisions (core->anal);
-	}
-
-	// write sigs to file
-	if (ofile && !r_sign_save (core->anal, ofile)) {
-		eprintf ("Failed to write file\n");
-	}
-
-	if (rad) {
-		r_sign_list (core->anal, '*');
-	}
-
-	if (json) {
-		r_sign_list (core->anal, 'j');
-	}
-	r_cons_flush ();
-
-	r_core_free (core);
-	return 0;
 }
