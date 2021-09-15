@@ -921,7 +921,7 @@ R_API bool r_num_segaddr(ut64 addr, ut64 sb, int sg, ut32 *a, ut32 *b) {
 	if (sb) {
 		ut32 csbase = (sb << 4);
 		if (addr > csbase) {
-			*a = csbase;
+			*a = sb;
 			*b = addr - csbase;
 		} else {
 			int delta = csbase - addr;

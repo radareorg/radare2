@@ -637,7 +637,7 @@ static int cmd_help(void *data, const char *input) {
 				char *asnum  = r_num_as_string (NULL, n, false);
 
 				ut32 s = 0, a = 0;
-				r_num_segaddr (core->offset, core->print->segbas, core->print->seggrn, &s, &a);
+				r_num_segaddr (n, core->print->segbas, core->print->seggrn, &s, &a);
 				r_num_units (unit, sizeof (unit), n);
 				if (*input ==  'j') {
 					pj_ks (pj, "int32", sdb_fmt ("%d", (st32)(n & UT32_MAX)));
