@@ -129,3 +129,11 @@ EXPECT=<<EOF
  0. 16 D2A2 0298 0000:__libc_start_main
 EOF
 RUN
+
+NAME=rasign2 -Ar libc-v10.sig
+FILE=
+CMDS=!!rasign2 -Ar bins/ar/libgdbr.a~ g ?
+EXPECT=<<EOF
+94
+EOF
+RUN
