@@ -6,6 +6,105 @@
 #include "r_core.h"
 #include "r_util.h"
 
+static const char *help_msg_at[] = {
+	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
+	"0", "", "alias for 's 0'",
+	"0x", "addr", "alias for 's 0x..'",
+	"#", "cmd", "if # is a number repeat the command # times",
+	"/*", "", "start multiline comment",
+	"*/", "", "end multiline comment",
+	".", "cmd", "execute output of command as r2 script",
+	".:", "8080", "wait for commands on port 8080",
+	".!", "rabin2 -re $FILE", "run command output as r2 script",
+	"*", "", "output of command in r2 script format (CC*)",
+	"j", "", "output of command in JSON format (pdj)",
+	"~", "?", "count number of lines (like wc -l)",
+	"~", "??", "show internal grep help",
+	"~", "..", "internal less",
+	"~", "{}", "json indent",
+	"~", "{}..", "json indent and less",
+	"~", "word", "grep for lines matching word",
+	"~", "!word", "grep for lines NOT matching word",
+	"~", "word[2]", "grep 3rd column of lines matching word",
+	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
+	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
+	"@", " [addr]!blocksize", "temporary set a new blocksize",
+	"@..", "addr", "temporary partial address seek (see s..)",
+	"@!", "blocksize", "temporary change the block size (p8@3!3)",
+	"@{", "from to}", "temporary set from and to for commands supporting ranges",
+	"@a:", "arch[:bits]", "temporary set arch and bits",
+	"@b:", "bits", "temporary set asm.bits",
+	"@B:", "nth", "temporary seek to nth instruction in current bb (negative numbers too)",
+	"@e:", "k=v,k=v", "temporary change eval vars",
+	"@f:", "file", "temporary replace block with file contents",
+	"@F:", "flagspace", "temporary change flag space",
+	"@i:", "nth.op", "temporary seek to the Nth relative instruction",
+	"@k:", "k", "temporary seek at value of sdb key `k`",
+	"@o:", "fd", "temporary switch to another fd",
+	"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
+	"@s:", "string", "same as above but from a string",
+	"@v:", "value", "modify the current offset to a custom value",
+	"@x:", "909192", "from hex pairs string",
+	"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
+	"@@==", "foo bar", "run the previous command appending a word on each iteration",
+	"@@", " hit*", "run the command on every flag matching 'hit*'",
+	"@@", "[?][ktfb..]", "show help for the iterator operator",
+	"@@@", "[?] [type]", "run a command on every [type] (see @@@? for help)",
+	">", "file", "pipe output of command to file",
+	">>", "file", "append to file",
+	"H>", "file", "pipe output of command to file in HTML",
+	"H>>", "file", "append to file with the output of command in HTML",
+	"`", "pdi~push:0[0]`", "replace output of command inside the line",
+	"|", "cmd", "pipe output to command (pd|less) (.dr*)",
+	NULL
+};
+
+static const char *help_msg_at_at[] = {
+	"@@", "", " # foreach iterator command:",
+	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
+	"x", " @@.file", "run 'x' over the offsets specified in the file (one offset per line)",
+	"x", " @@/x 9090", "temporary set cmd.hit to run a command on each search result",
+	"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
+	"x", " @@=off1 off2 ..", "manual list of offsets",
+	"x", " @@b", "run 'x' on all basic blocks of current function (see afb)",
+	"x", " @@c:cmd", "the same as @@=`` without the backticks",
+	"x", " @@dbt[abs]", "run 'x' command on every backtrace address, bp or sp",
+	"x", " @@f", "run 'x' on all functions (see aflq)",
+	"x", " @@f:write", "run 'x' on all functions matching write in the name",
+	"x", " @@i", "run 'x' on all instructions of the current function (see pdr)",
+	"x", " @@iS", "run 'x' on all sections adjusting blocksize",
+	"x", " @@k sdbquery", "run 'x' on all offsets returned by that sdbquery",
+	"x", " @@s:from to step", "run 'x' on all offsets from, to incrementing by step",
+	"x", " @@t", "run 'x' on all threads (see dp)",
+	// TODO: Add @@k sdb-query-expression-here
+	NULL
+};
+
+static const char *help_msg_at_at_at[] = {
+	"@@@", "", " # foreach offset+size iterator command:",
+	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
+	"x", " @@@C:cmd", "comments matching",
+	"x", " @@@E", "exports",
+	"x", " @@@F", "functions (set fcn size which may be incorrect if not linear)",
+	"x", " @@@F:glob", "functions matching glob expression",
+	"x", " @@@M", "dbg.maps (See ?$?~size)",
+	"x", " @@@S", "sections",
+	"x", " @@@b", "basic blocks of current function",
+	"x", " @@@c:cmd", "Same as @@@=`cmd`, without the backticks",
+	"x", " @@@e", "entries",
+	"x", " @@@f", "flags",
+	"x", " @@@f:hit*", "flags matching glob expression",
+	"x", " @@@i", "imports",
+	"x", " @@@m", "io.maps",
+	"x", " @@@r", "registers",
+	"x", " @@@r", "regs",
+	"x", " @@@s", "symbols",
+	"x", " @@@t", "threads",
+	"x", " @@@z", "ztrings",
+	// TODO: Add @@k sdb-query-expression-here
+	NULL
+};
+
 static ut32 vernum(const char *s) {
 	// XXX this is known to be buggy, only works for strings like "x.x.x"
 	// XXX anything like "x.xx.x" will break the parsing
@@ -1247,3 +1346,4 @@ static int cmd_help(void *data, const char *input) {
 	}
 	return 0;
 }
+
