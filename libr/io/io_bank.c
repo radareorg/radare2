@@ -400,7 +400,7 @@ static int _mapref_priority_cmp (RIOBank *bank, RIOMapRef *mr0, RIOMapRef *mr1) 
 	return 0;	// should never happen
 }
 
-R_API bool r_io_bank_update_map_location(RIO *io, const ut32 bankid, const ut32 mapid, ut64 oaddr) {
+R_API bool r_io_bank_update_map_boundaries(RIO *io, const ut32 bankid, const ut32 mapid, ut64 ofrom, ut64 oto) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank, false);
 	RListIter *iter;
@@ -419,7 +419,7 @@ found:
 		// mapref should be deleted from bank here
 		return false;
 	}
-	if (r_io_map_from (map) == oaddr) {
+	if (r_io_map_from (map) == ofrom && r_io_map_to (map) == oto) {
 		// nothing todo here
 		return true;
 	}
@@ -435,7 +435,8 @@ found:
 	// 2. adjust addr and insert submaps at new addr respecting priority
 	RIOMap fake_map;
 	memcpy (&fake_map, map, sizeof (RIOMap));
-	fake_map.itv.addr = oaddr;
+	fake_map.itv.addr = ofrom;
+	fake_map.itv.size = oto - ofrom + 1;
 	_delete_submaps_from_bank_tree (io, bank, iter, &fake_map);
 
 	RContRBNode *entry = _find_entry_submap_node (bank, sm);
