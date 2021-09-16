@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
+#include "isotp.h"
 #endif
 
 #if EMSCRIPTEN || __wasi__ || defined(__serenity__)
@@ -290,20 +291,23 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		if (fd == -1) {
 			return false;
 		}
-		static struct can_isotp_options opts = {0};
-		static struct can_isotp_fc_options fcopts = {0};
-		static struct can_isotp_ll_options llopts = {0};
-		opts.txpad_content = 0xcc;
-		opts.rxpad_content = 0xcc;
-		opts.frame_txtime = 0x1000;
-		fcopts.stmin = 0xf3;
-		llopts.mtu = 8;
-		llopts.tx_dl = 8;
+		static struct can_isotp_options opts = {
+			.txpad_content = 0xcc,
+			.rxpad_content = 0xcc,
+			.frame_txtime = 0x1000,
+		};
 		setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_OPTS, &opts, sizeof (opts));
+		static struct can_isotp_fc_options fcopts = {
+			.stmin = 0xf3
+		};
 		setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, &fcopts, sizeof (fcopts));
+		static struct can_isotp_ll_options llopts = {
+			.mtu = 8,
+			.tx_dl = 8,
+		};
 		setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_LL_OPTS, &llopts, sizeof (llopts));
 
-		struct ifreq ifr;
+		struct ifreq ifr = {0};
 		r_str_ncpy (ifr.ifr_name, host, sizeof (ifr.ifr_name));
 		if (ioctl (fd, SIOCGIFINDEX, &ifr) == -1) {
 			r_sys_perror ("ioctl");
@@ -311,8 +315,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 			return -1;
 		}
 
-		struct sockaddr_can addr;
-		memset (&addr, 0, sizeof (addr));
+		struct sockaddr_can addr = {0};
 		addr.can_family = AF_CAN;
 		addr.can_ifindex = ifr.ifr_ifindex;
 		addr.can_addr.tp.rx_id = srcid | 0x80000000;
@@ -320,7 +323,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 
 		if (bind (fd, (struct sockaddr *)&addr, sizeof (addr)) < 0) {
 			r_sys_perror ("bind");
-			close (s);
+			close (fd);
 			return false;
 		}
 		s->fd = fd;
