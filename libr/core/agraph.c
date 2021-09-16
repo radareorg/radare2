@@ -321,7 +321,7 @@ static void tiny_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	if (cur) {
 		W ("##");
 	} else {
-		W (circle);
+		W ("*");
 	}
 }
 
