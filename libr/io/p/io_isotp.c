@@ -6,6 +6,7 @@
 
 #if __linux__
 
+#include "../io_memory.h"
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -106,7 +107,13 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (*pathname == '?') {
 		eprintf ("Usage: r2 isotp://interface/source/destination\n");
 	} else {
-		int s = isotpsock (pathname);
+		char *host = strdup (pathname);
+		const char *port = "";
+		char *slash = strchr (host, '/');
+		if (slash) {
+			*slash = 0;
+			port = slash + 1;
+		}
 		data->sc = r_socket_new (false);
 		if (!r_socket_connect (data->sc, host, port, R_SOCKET_PROTO_CAN, 0)) {
 			eprintf ("Cannot connect\n");
