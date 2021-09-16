@@ -483,7 +483,7 @@ static bool cb_scrrainbow(void *user, void *data) {
 	return true;
 }
 
-static bool cb_asmpseudo (void *user, void *data) {
+static bool cb_asmpseudo(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->rasm->pseudo = node->i_value;
@@ -505,6 +505,18 @@ static bool cb_asmsubsec(void *user, void *data) {
 static bool cb_asmassembler(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	if (*node->value == '?') {
+		if (strlen (node->value) > 1 && node->value[1] == '?') {
+			/* print more verbose help instead of plain option values */
+			rasm2_list (core, NULL, node->value[1]);
+			return false;
+		}
+		RConfigNode* asm_arch_node = r_config_node_get (core->config, "asm.arch");
+		if (asm_arch_node) {
+			print_node_options (asm_arch_node);
+		}
+		return false;
+	}
 	r_asm_use_assembler (core->rasm, node->value);
 	return true;
 }
