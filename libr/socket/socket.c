@@ -291,16 +291,25 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 			.rxpad_content = 0xcc,
 			.frame_txtime = 0x1000,
 		};
-		setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_OPTS, &opts, sizeof (opts));
+		if (setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_OPTS, &opts, sizeof (opts)) == -1) {
+			close (fd);
+			return false;
+		}
 		static struct can_isotp_fc_options fcopts = {
 			.stmin = 0xf3
 		};
-		setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, &fcopts, sizeof (fcopts));
+		if (setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, &fcopts, sizeof (fcopts)) == -1) {
+			close (fd);
+			return false;
+		}
 		static struct can_isotp_ll_options llopts = {
 			.mtu = 8,
 			.tx_dl = 8,
 		};
-		setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_LL_OPTS, &llopts, sizeof (llopts));
+		if (setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_LL_OPTS, &llopts, sizeof (llopts)) == -1) {
+			close (fd);
+			return false;
+		}
 
 		struct ifreq ifr = {0};
 		r_str_ncpy (ifr.ifr_name, host, sizeof (ifr.ifr_name));

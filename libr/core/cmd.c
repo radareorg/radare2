@@ -4612,7 +4612,6 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		? r_str_trim_dup (each + 2): NULL;
 
 	RList *list = foreach3list (core, *each, glob);
-	free (glob);
 
 	switch (each[0]) {
 	case '=':
@@ -4689,6 +4688,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 		break;
 	}
 	r_list_free (list);
+	free (glob);
 	return 0;
 }
 

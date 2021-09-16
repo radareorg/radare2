@@ -394,7 +394,7 @@ struct r2r_subprocess_t {
 };
 
 static RPVector subprocs;
-static RThreadLock *subprocs_mutex;
+static RThreadLock *subprocs_mutex = NULL;
 static int sigchld_pipe[2];
 static RThread *sigchld_thread;
 
@@ -437,7 +437,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				}
 			}
 			if (!proc) {
-				r_th_lock_leave (subprocs_mutex);
+			 	r_th_lock_leave (subprocs_mutex);
 				continue;
 			}
 
@@ -451,6 +451,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				r_th_lock_leave (subprocs_mutex);
 				break;
 			}
+			 r_th_lock_leave (subprocs_mutex);
 		}
 	}
 	return R_TH_STOP;

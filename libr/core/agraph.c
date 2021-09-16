@@ -316,7 +316,6 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 
 static void tiny_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	G (n->x, n->y);
-	RCons *cons = r_cons_singleton ();
 	if (cur) {
 		W ("##");
 	} else {
