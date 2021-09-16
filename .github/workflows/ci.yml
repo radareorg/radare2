@@ -165,6 +165,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install meson ninja r2pipe wget
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
     - name: Build with meson + ninja
       shell: pwsh
       run: |
@@ -172,11 +175,8 @@ jobs:
         meson -Db_vscrt=mt --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w32 build
         ninja -C build
         ninja -C build install
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
-      id: r2v
     - name: Create zip artifact
-      run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}
+      run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
     - uses: actions/upload-artifact@v2
       with:
         name: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
@@ -209,6 +209,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install meson ninja r2pipe wget
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
+      id: r2v
     - name: Build with meson + ninja
       shell: pwsh
       run: |
@@ -218,9 +221,6 @@ jobs:
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64 build
         ninja -C build
         ninja -C build install
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
-      id: r2v
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
     - uses: actions/upload-artifact@v2
