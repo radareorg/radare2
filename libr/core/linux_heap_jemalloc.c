@@ -65,7 +65,10 @@ static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_n
 	RBinSymbol *s;
 	RListIter *iter;
 	RBinFile *current_bf = r_bin_cur (core->bin);
-	RBinFile *libc_bf = r_bin_open (core->bin, path, &opt);
+	if (!r_bin_open (core->bin, path, &opt)) {
+		return vaddr;
+	}
+	RBinFile *libc_bf = r_bin_cur (core->bin);
  	if (!libc_bf) {
  		return vaddr;
  	}
@@ -76,7 +79,7 @@ static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_n
  			break;
 		}
 	}
-	r_bin_file_delete (core->bin, libc_bf);
+	r_bin_file_delete (core->bin, libc_bf->id);
  	r_bin_file_set_cur_binfile (core->bin, current_bf);
 	return vaddr;
 }
