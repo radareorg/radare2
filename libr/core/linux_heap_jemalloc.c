@@ -60,21 +60,24 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 #else
 static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
 	GHT vaddr = GHT_MAX;
-	RBin *bin = core->bin;
-	RBinFile *current_bf = r_bin_cur (bin);
-	RBinFile *libc_bf = r_bin_open (bin, path, &opt);
+	RBinFileOptions opt = {0};
+	r_bin_options_init (&opt, -1, 0, 0, false);
+	RBinSymbol *s;
+	RListIter *iter;
+	RBinFile *current_bf = r_bin_cur (core->bin);
+	RBinFile *libc_bf = r_bin_open (core->bin, path, &opt);
  	if (!libc_bf) {
  		return vaddr;
  	}
- 	RList *syms = r_bin_get_symbols (bin);
+ 	RList *syms = r_bin_get_symbols (core->bin);
  	r_list_foreach (syms, iter, s) {
  		if (!strcmp (s->name, sym_name)) {
  			vaddr = s->vaddr;
  			break;
 		}
 	}
-	r_bin_file_delete (bin, libc_bf);
- 	r_bin_file_set_cur_binfile (bin, current_bf);
+	r_bin_file_delete (core->bin, libc_bf);
+ 	r_bin_file_set_cur_binfile (core->bin, current_bf);
 	return vaddr;
 }
 #endif
@@ -156,7 +159,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			GHT arena = GHT_MAX;
 			arena_t *ar = R_NEW0 (arena_t);
 			extent_node_t *node = R_NEW0 (extent_node_t), *head = R_NEW0 (extent_node_t);
-			input += 1;
+			input++;
 			arena = r_num_math (core->num, input);
 
 			if (arena) {
