@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - javierptd */
+/* radare - LGPL - Copyright 2017-2021 - javierptd, pancake */
 
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
 #define INCLUDE_HEAP_JEMALLOC_STD_C
@@ -60,7 +60,7 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 #else
 static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
 	GHT vaddr = GHT_MAX;
-	RBinFileOptions opt = {0};
+	RBinOptions opt = {0};
 	r_bin_options_init (&opt, -1, 0, 0, false);
 	RBinSymbol *s;
 	RListIter *iter;
