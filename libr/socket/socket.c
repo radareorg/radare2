@@ -7,10 +7,7 @@
 #include <errno.h>
 
 #if __linux__
-#include <net/if.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include "isotp.h"
+#include "i/isotp.h"
 #endif
 
 #if EMSCRIPTEN || __wasi__ || defined(__serenity__)
