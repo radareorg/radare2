@@ -46,8 +46,16 @@
 #ifndef _CAN_H
 #define _CAN_H
 
+#if 0
 #include <linux/types.h>
 #include <linux/socket.h>
+#else
+#define __u8 unsigned char
+#define __u16 unsigned short
+#define __u32 unsigned int
+#define __u64 unsigned long long
+#define __kernel_sa_family_t unsigned short
+#endif
 
 /* controller area network (CAN) kernel definitions */
 
