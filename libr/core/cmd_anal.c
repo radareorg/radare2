@@ -898,6 +898,17 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	RList *all_vars = cache.rvars;
 	r_list_join (all_vars, cache.bvars);
 	r_list_join (all_vars, cache.svars);
+#if 0
+	r_list_foreach (all_vars, iter, var) {
+		if (var->isarg) {
+			arg_count++;
+		}
+	}
+	int old_arg_count = r_num_get (NULL, args);
+	if (old_arg_count >= arg_count) {
+		return;
+	}
+#endif
 	r_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
 			char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
@@ -2990,6 +3001,60 @@ static char * getFunctionName(RCore *core, ut64 off, const char *name, bool pref
 	return strdup (name); // r_str_newf ("%s%s%s", fcnpfx, *fcnpfx? ".": "", name);
 }
 
+static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
+#define DB anal->sdb_types
+	// rename type
+	const char *type = sdb_const_get (DB, oname, 0);
+	if (type && !strcmp (type, "func")) {
+		sdb_unset (DB, oname, 0);
+		sdb_set (DB, nname, "func", 0);
+	}
+	// rename args
+	char *k = r_str_newf ("func.%s.args", oname);
+	const char *argstr = sdb_const_get (DB, k, 0);
+	if (R_STR_ISEMPTY (argstr)) {
+		free (k);
+		return;
+	}
+	int i, args = r_num_get (NULL, argstr);
+	sdb_unset (DB, k, 0);
+	free (k);
+	k = r_str_newf ("func.%s.args", nname);
+	char *v = r_str_newf ("%d", (int)args);
+	sdb_set (DB, k, v, 0);
+	free (v);
+	// rename arg#
+	free (k);
+	for (i = 0; i < args; i++) {
+		k = r_str_newf ("func.%s.arg.%d", oname, i);
+		char *v = sdb_get (DB, k, 0);
+		if (v) {
+			sdb_unset (DB, k, 0);
+			free (k);
+			k = r_str_newf ("func.%s.arg.%d", nname, i);
+			sdb_set (DB, k, v, 0);
+			free (v);
+		}
+		free (k);
+	}
+	// unset the leftovers
+	for (; i < args + 8; i++) {
+		k = r_str_newf ("func.%s.arg.%d", oname, i);
+		sdb_unset (DB, k, 0);
+		free (k);
+	}
+	// rename ret
+	k = r_str_newf ("func.%s.ret", oname);
+	v = sdb_get (DB, k, 0);
+	sdb_unset (DB, k, 0);
+	free (k);
+	k = r_str_newf ("func.%s.ret", nname);
+	sdb_set (DB, k, v, 0);
+	free (k);
+	free (v);
+#undef DB
+}
+
 /* TODO: move into r_anal_function_rename (); */
 static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool prefix) {
 	r_return_val_if_fail (core && _name, false);
@@ -2998,6 +3063,7 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 	// RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_ANY);
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
 	if (fcn) {
+		char *oname = strdup (fcn->name);
 		RFlagItem *flag = r_flag_get (core->flags, fcn->name);
 		if (flag && flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
@@ -3008,10 +3074,12 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 			r_flag_set (core->flags, name, fcn->addr, r_anal_function_size_from_entry (fcn));
 			r_flag_space_pop (core->flags);
 		}
+		rename_fcnsig (core->anal, oname, name);
 		r_anal_function_rename (fcn, name);
 		if (core->anal->cb.on_fcn_rename) {
 			core->anal->cb.on_fcn_rename (core->anal, core->anal->user, fcn, name);
 		}
+		free (oname);
 		free (name);
 		return true;
 	}

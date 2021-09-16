@@ -1863,6 +1863,10 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	for (i = 0; i < argc; i++) {
 		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
 		char *arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
+		if (!arg_i) {
+			free (sdb_arg_i);
+			break;
+		}
 		// parse commas
 		int arg_i_len = strlen (arg_i);
 		for (j = 0; j < arg_i_len; j++) {
