@@ -3,21 +3,26 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
-#include "../io_memory.h"
 
-#define SOCKETURI "socket://"
+#if __linux__
+
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+
+#include <linux/can.h>
+#include <linux/can/raw.h>
+
+#define ISOTPURI "isotp://"
 
 typedef struct {
 	RSocket *sc;
-	RSocket *sl;
 	int count;
 } RIOSocketData;
-
 
 static void free_socketdata(RIOSocketData *sd) {
 	if (sd) {
 		r_socket_free (sd->sc);
-		r_socket_free (sd->sl);
 		free (sd);
 	}
 }
@@ -66,18 +71,21 @@ static int __close(RIODesc *desc) {
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return !strncmp (pathname, SOCKETURI, strlen (SOCKETURI));
+	return !strncmp (pathname, ISOTPURI, strlen (ISOTPURI));
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (r_sandbox_enable (false)) {
-		eprintf ("Do not permit " SOCKETURI " in sandbox mode.\n");
+		eprintf ("The " ISOTPURI " uri is not permitted in sandbox mode.\n");
 		return NULL;
 	}
 	if (!__check (io, pathname, 0)) {
 		return NULL;
 	}
 	RIOMalloc *mal = R_NEW0 (RIOMalloc);
+	if (!mal) {
+		return NULL;
+	}
 	RIOSocketData *data = R_NEW0 (RIOSocketData);
 	if (!mal || !data) {
 		free (mal);
@@ -93,40 +101,14 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	}
 	mal->size = 1;
 	mal->offset = 0;
-	pathname += strlen (SOCKETURI);
+	pathname += strlen (ISOTPURI);
 
 	if (*pathname == '?') {
-		eprintf ("Usage: $ nc -l -p 9999 ; r2 socket://localhost:9999\n");
-		eprintf ("   or: $ nc localhost 9999 ; r2 socket://:9999\n");
-	} else if (*pathname == ':') {
-		/* listen and wait for connection */
-		data->sl = r_socket_new (false);
-		if (!r_socket_listen (data->sl, pathname + 1, NULL)) {
-			eprintf ("Cannot listen\n");
-			r_socket_free (data->sl);
-			data->sl = NULL;
-			return NULL;
-		}
-		data->sc = r_socket_accept (data->sl);
-		r_socket_block_time (data->sc, false, 0, 0);
+		eprintf ("Usage: r2 isotp://interface/source/destination\n");
 	} else {
-		/* connect and slurp the end point */
-		char *host = strdup (pathname);
-		if (!host) {
-			return NULL;
-		}
-		char *port = strchr (host, ':');
-		if (port) {
-			*port++ = 0;
-		} else {
-			eprintf ("Missing port.\n");
-			free_socketdata (data);
-			free (host);
-			return NULL;
-		}
-		/* listen and wait for connection */
+		int s = isotpsock (pathname);
 		data->sc = r_socket_new (false);
-		if (!r_socket_connect (data->sc, host, port, R_SOCKET_PROTO_TCP, 0)) {
+		if (!r_socket_connect (data->sc, host, port, R_SOCKET_PROTO_CAN, 0)) {
 			eprintf ("Cannot connect\n");
 			free (host);
 			free_socketdata (data);
@@ -135,13 +117,13 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		r_socket_block_time (data->sc, false, 0, 0);
 		free (host);
 	}
-	return r_io_desc_new (io, &r_io_plugin_socket, pathname, R_PERM_RW | rw, mode, mal);
+	return r_io_desc_new (io, &r_io_plugin_isotp, pathname, R_PERM_RW | rw, mode, mal);
 }
 
-RIOPlugin r_io_plugin_socket = {
-	.name = "socket",
-	.desc = "Connect or listen via TCP on a growing io.",
-	.uris = SOCKETURI,
+RIOPlugin r_io_plugin_isotp = {
+	.name = "isotp",
+	.desc = "Connect using the ISOTP protocol (isotp://interface/srcid/dstid)",
+	.uris = ISOTPURI,
 	.license = "MIT",
 	.open = __open,
 	.close = __close,
@@ -151,10 +133,17 @@ RIOPlugin r_io_plugin_socket = {
 	.write = __write,
 };
 
+#else
+RIOPlugin r_io_plugin_isotp = {
+	.name = "isotp",
+	.desc = "shared memory resources (not for this platform)",
+};
+#endif
+
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
-	.data = &r_io_plugin_socket,
+	.data = &r_io_plugin_isotp,
 	.version = R2_VERSION
 };
 #endif

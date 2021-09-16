@@ -71,6 +71,7 @@ endif
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
   r_io_sources += [
     'p/io_r2k_linux.c',
+    'p/io_isotp.c',
   ]
   ## only for shm_open
   # r_io_deps += meson.get_compiler('c').find_library('rt')

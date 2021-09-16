@@ -144,7 +144,7 @@ RIOPlugin r_io_plugin_shm = {
 #else
 RIOPlugin r_io_plugin_shm = {
 	.name = "shm",
-	.desc = "shared memory resources (not for w32)",
+	.desc = "shared memory resources (not for this platform)",
 };
 #endif
 
