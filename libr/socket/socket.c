@@ -6,6 +6,10 @@
 #include <r_util.h>
 #include <errno.h>
 
+#if __linux__
+#include "i/isotp.h"
+#endif
+
 #if EMSCRIPTEN || __wasi__ || defined(__serenity__)
 #define NETWORK_DISABLED 1
 #else
@@ -269,6 +273,60 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 		if (!__connect_unix (s, host)) {
 			return false;
 		}
+#endif
+	} else if (proto == R_SOCKET_PROTO_CAN) {
+#if __linux__
+		// host: can interface name
+		// port: src and dst can identifiers
+		ut32 srcid = 0;
+		ut32 dstid = 0;
+		sscanf (port, "0x%x/0x%x", &srcid, &dstid);
+		// s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+		int fd = socket (PF_CAN, SOCK_DGRAM, CAN_ISOTP);
+		if (fd == -1) {
+			return false;
+		}
+		static struct can_isotp_options opts = {
+			.txpad_content = 0xcc,
+			.rxpad_content = 0xcc,
+			.frame_txtime = 0x1000,
+		};
+		setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_OPTS, &opts, sizeof (opts));
+		static struct can_isotp_fc_options fcopts = {
+			.stmin = 0xf3
+		};
+		setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, &fcopts, sizeof (fcopts));
+		static struct can_isotp_ll_options llopts = {
+			.mtu = 8,
+			.tx_dl = 8,
+		};
+		setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_LL_OPTS, &llopts, sizeof (llopts));
+
+		struct ifreq ifr = {0};
+		r_str_ncpy (ifr.ifr_name, host, sizeof (ifr.ifr_name));
+		if (ioctl (fd, SIOCGIFINDEX, &ifr) == -1) {
+			r_sys_perror ("ioctl");
+			close (fd);
+			return -1;
+		}
+
+		struct sockaddr_can addr = {0};
+		addr.can_family = AF_CAN;
+		addr.can_ifindex = ifr.ifr_ifindex;
+		addr.can_addr.tp.rx_id = srcid | 0x80000000;
+		addr.can_addr.tp.tx_id = dstid | 0x80000000;
+
+		if (bind (fd, (struct sockaddr *)&addr, sizeof (addr)) < 0) {
+			r_sys_perror ("bind");
+			close (fd);
+			return false;
+		}
+		s->fd = fd;
+		s->is_ssl = false;
+		return true;
+#else
+		eprintf ("Unsupported ISOTP socket protocol\n");
+		return false;
 #endif
 	} else {
 		hints.ai_family = AF_UNSPEC; /* Allow IPv4 or IPv6 */
