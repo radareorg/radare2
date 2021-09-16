@@ -175,12 +175,12 @@ jobs:
         meson -Db_vscrt=mt --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w32 build
         ninja -C build
         ninja -C build install
-    - name: Create zip artifact
-      run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
+    #- name: Create zip artifact
+    #  run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
     - uses: actions/upload-artifact@v2
       with:
         name: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
-        path: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
+        path: radare2-${{ steps.r2v.outputs.branch }}-w32
 #    - uses: actions/checkout@v2
 #      with:
 #        repository: radareorg/radare2-win-installer
