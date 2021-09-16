@@ -71,40 +71,31 @@ static int signs_from_file(const char *fname, struct rasignconf *conf) {
 		eprintf ("Could not get core\n");
 		return -1;
 	}
-
 	// quiet mode
 	if (conf->quiet) {
 		r_config_set (core->config, "scr.prompt", "false");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	}
-
 	if (conf->space) {
 		r_spaces_set (&core->anal->zign_spaces, conf->space);
 	}
-
 	// run analysis to find functions
 	find_functions (core, conf->a_cnt);
-
 	// create zignatures
 	r_sign_all_functions (core->anal);
-
 	if (conf->collision) {
 		r_sign_resolve_collisions (core->anal);
 	}
-
 	if (conf->rad) {
 		r_sign_list (core->anal, '*');
 	}
-
 	if (conf->json) {
 		r_sign_list (core->anal, 'j');
 	}
-
 	// write sigs to file
 	if (conf->ofile && !r_sign_save (core->anal, conf->ofile)) {
 		eprintf ("Failed to write file\n");
 	}
-
 	r_cons_flush ();
 	r_core_free (core);
 	return 0;
@@ -207,8 +198,7 @@ static int handle_archive_files(const char *fname, struct rasignconf *conf) {
 R_API int r_main_rasign2(int argc, const char **argv) {
 	int c;
 	RGetopt opt;
-	struct rasignconf conf;
-	memset (&conf, 0, sizeof (struct rasignconf));
+	struct rasignconf conf = {0};
 
 	r_getopt_init (&opt, argc, argv, "Aafhjo:qrs:cv");
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -274,12 +264,12 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 		if (conf.json) {
 			eprintf ("JSON does not work with .a files currently\n");
 			return -1;
-		} else if (conf.collision && conf.rad) {
+		}
+		if (conf.collision && conf.rad) {
 			eprintf ("Rasign2 can not currently handle .a files with -c and -r\n");
 			return -1;
-		} else {
-			return handle_archive_files (ifile, &conf);
 		}
+		return handle_archive_files (ifile, &conf);
 	} else {
 		return signs_from_file (ifile, &conf);
 	}
