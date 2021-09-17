@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - nibble, pancake, dso */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake, dso, lazula */
 
 #include "r_core.h"
 
@@ -11,6 +11,8 @@
 #define COLOR_ARG(ds, field) ((ds)->show_color && (ds)->show_color_args ? (ds)->field : "")
 #define COLOR_CONST(ds, color) ((ds)->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
+
+#define TEMP_DEBUG 0
 
 // ugly globals but meh
 static ut64 emustack_min = 0LL;
@@ -257,9 +259,8 @@ typedef struct {
 	int stackptr, ostackptr;
 	int index;
 	ut64 at, vat, addr, dest;
-	int tries, cbytes, idx;
+	int tries, cbytes;
 	char chref;
-	bool retry;
 	RAsmOp asmop;
 	RAnalOp analop;
 	RAnalFunction *fcn;
@@ -2702,10 +2703,12 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ret = -1;
 #if HASRETRY
 		if (!ds->cbytes && ds->tries > 0) {
-			ds->addr = core->rasm->pc;
+			ds->at = core->rasm->pc;
+			ds->index = ds->at - ds->addr;
+#if TEMP_DEBUG
+			r_cons_printf ("ds_disassemble set ds->at to %#"PFMT64x"\n", ds->at);
+#endif
 			ds->tries--;
-			ds->idx = 0;
-			ds->retry = true;
 			return ret;
 		}
 #endif
@@ -5303,7 +5306,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 				if (kwname) {
 					char* numstr = r_str_ndup (ptr, nptr-ptr);
 					if (numstr) {
-						// eprintf("ithiis(%s,%s)", numstr, kwname);
+						// eprintf ("ithiis(%s,%s)", numstr, kwname);
 						str = r_str_replace (str, numstr, kwname, 0);
 						free (numstr);
 					}
@@ -5332,9 +5335,21 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 	}
 }
 
-// int l is for lines
-R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json, PJ *pj, RAnalFunction *pdf) {
-	int continueoninvbreak = (len == l) && invbreak;
+/**
+ * \brief Disassemble `count` instructions, or bytes if `count_bytes is enabled
+ * \param read_buffer_only Do not enable in new code. Workaround for code that
+ *        relied on this function incorrectly stopping at basic block
+ *        boundaries. This options prevents the function from reading past the
+ *        buffer with r_io like it does now.  Do not enable in new code!
+ */
+R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, bool count_bytes, bool read_buffer_only, bool json, PJ *pj, RAnalFunction *pdf) {
+	RPrint *p = core->print;
+
+	/* temp: previous variable names */
+	int l = count;
+	bool cbytes = count_bytes;
+	bool never_read_past_buffer = read_buffer_only;
+
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
@@ -5369,7 +5384,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// disable row_offsets to prevent other commands to overwrite computed info
 	p->calc_row_offsets = false;
 
-	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
+	//r_cons_printf ("len=%d l=%d limit=%d\n", len, l, p->limit);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace
@@ -5426,7 +5441,7 @@ toro:
 	}
 	r_cons_break_push (NULL, NULL);
 	int totalbytes = cbytes > 0? l: -1;
-	for (i = idx = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
+	for (i = idx = ds->index = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, cbytes? ds->lines += inc: ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
 		if (cbytes) {
@@ -5522,7 +5537,7 @@ toro:
 				ds->addr += delta + idx;
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
-				idx = 0;
+				ds->index = idx = 0;
 				of = f;
 				r_anal_op_fini (&ds->analop);
 				if (len == l) {
@@ -5530,10 +5545,10 @@ toro:
 				}
 			} else {
 				ds->lines--;
-				ds->addr += 1;
+				ds->addr++;
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
-				idx = 0;
+				ds->index = idx = 0;
 				r_anal_op_fini (&ds->analop);
 			}
 			continue;
@@ -5559,12 +5574,25 @@ toro:
 			if (idx >= 0) {
 				// check if we have enough bytes for this arch, if not just reloop with totoro
 				int left = len - (addrbytes * idx);
-				if (left < max_op_size) {
-					//		ds->retry = true;
+#if TEMP_DEBUG
+				r_cons_printf ("BEFORE ds_disassemble:\n");
+				r_cons_printf ("idx=%#x ds->index=%#x len=%#x left=%#x\n", idx, ds->index, len, left);
+				r_cons_printf ("ds->addr=%#"PFMT64x" ds->at=%#"PFMT64x" ds->l=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->l, ds->lines);
+#endif
+				if (left < max_op_size && !never_read_past_buffer) {
+#if TEMP_DEBUG
+					r_cons_printf ("Not enough bytes to disassemble, going to retry.\n");
+#endif
 					goto retry;
 				} else {
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
-					ds->retry = true;
+					/* Make sure the index variables track properly */
+					idx = ds->index;
+#if TEMP_DEBUG
+					r_cons_printf ("AFTER ds_disassemble:\n");
+					r_cons_printf ("ret=%d idx=%#x len=%#x left=%#x ", ret, idx, len, left);
+					r_cons_printf ("ds->addr=%#"PFMT64x" ds->at=%#"PFMT64x" ds->l=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->l, ds->lines);
+#endif
 					if (ret == -31337) {
 						inc = ds->oplen; // minopsz maybe? or we should add invopsz
 						r_anal_op_fini (&ds->analop);
@@ -5813,8 +5841,12 @@ toro:
 
 #if HASRETRY
 	if (!ds->cbytes && ds->lines < ds->l) {
-		ds->addr = ds->at + inc; // idx; // inc;
+		ds->at = ds->addr = ds->at + inc; // idx; // inc;
+		ds->index = idx = 0;
 	retry:
+#if TEMP_DEBUG
+		r_cons_printf ("Retrying. ds->at,ds->addr=%#"PFMT64x", ds->index,idx=%d\n", ds->at, idx);
+#endif
 		if (len < max_op_size) {
 			len = max_op_size + 32;
 		}
@@ -5828,7 +5860,7 @@ toro:
 			// enough bytes?
 			if (ds->index < totalbytes) {
 
-				if (ds->lines < ds->l) {
+				if (ds->lines < ds->l && !never_read_past_buffer) {
 					// idx = ds->l;
 					ds->addr += idx;
 					if (r_io_read_at (core->io, ds->addr, buf, len)) {
@@ -5842,7 +5874,7 @@ toro:
 		} else {
 			// enough lines?
 			// ds->addr += idx;
-			if (ds->lines < ds->l) {
+			if (ds->lines < ds->l && !never_read_past_buffer) {
 				// idx = ds->l;
 				ds->addr += idx;
 
@@ -5851,9 +5883,6 @@ toro:
 					goto toro;
 				}
 			}
-			goto toro;
-		}
-		if (continueoninvbreak && ds->tries > 0) {
 			goto toro;
 		}
 		R_FREE (nbuf);
@@ -6951,7 +6980,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 					r_core_print_disasm_instructions_with_buf (core, block_start, buf, block_sz, block_instr);
 					break;
 				default:
-					r_core_print_disasm (core->print, core, block_start, buf, block_sz, block_instr, 0, 0, false, NULL, NULL);
+					r_core_print_disasm (core, block_start, buf, block_sz, block_instr, false, false, false, NULL, NULL);
 					break;
 				}
 			}
