@@ -12,6 +12,8 @@
 #define COLOR_CONST(ds, color) ((ds)->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
 
+#define TEMP_DEBUG 1
+
 // ugly globals but meh
 static ut64 emustack_min = 0LL;
 static ut64 emustack_max = 0LL;
@@ -2703,7 +2705,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 #if HASRETRY
 		if (!ds->cbytes && ds->tries > 0) {
 			ds->addr = core->rasm->pc;
-			//r_cons_printf("ds_disassemble set ds->addr to %#"PFMT64x"\n", ds->addr);
+			#if TEMP_DEBUG
+			r_cons_printf("ds_disassemble set ds->addr to %#"PFMT64x"\n", ds->addr);
+			#endif
 			ds->tries--;
 			ds->index = 0;
 			ds->retry = true;
@@ -5564,8 +5568,10 @@ toro:
 					goto retry;
 				} else {
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
-					//r_cons_printf("ret=%d idx=%#x len=%d left=%#x ", ret, idx, len, left);
-					//r_cons_printf("ds->addr=%#"PFMT64x" ds->index=%#x ds->oplen=%#x\n", ds->addr, ds->index, ds->oplen);
+					#if TEMP_DEBUG
+					r_cons_printf("ret=%d idx=%#x len=%d left=%#x ", ret, idx, len, left);
+					r_cons_printf("ds->addr=%#"PFMT64x" ds->index=%#x ds->oplen=%#x\n", ds->addr, ds->index, ds->oplen);
+					#endif
 					ds->retry = true;
 					if (ret == -31337) {
 						inc = ds->oplen; // minopsz maybe? or we should add invopsz
