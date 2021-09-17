@@ -5838,10 +5838,10 @@ toro:
 	if (!ds->cbytes && ds->lines < ds->l) {
 		ds->at = ds->addr = ds->at + inc; // idx; // inc;
 		ds->index = idx = 0;
+	retry:
 		#if TEMP_DEBUG
 		r_cons_printf("Retrying. ds->at,ds->addr=%#"PFMT64x", ds->index,idx=%d\n", ds->at, idx);
 		#endif
-	retry:
 		if (len < max_op_size) {
 			len = max_op_size + 32;
 		}
