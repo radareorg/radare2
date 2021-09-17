@@ -2597,9 +2597,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	r_asm_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
-	#if TEMP_DEBUG
-	r_cons_printf("ds_disassemble: r_asm_disassemble returned %d\n", ret);
-	#endif
 	if (ds->asmop.size < 1) {
 		ds->asmop.size = 1;
 	}
