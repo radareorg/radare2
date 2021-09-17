@@ -12,7 +12,7 @@
 #define COLOR_CONST(ds, color) ((ds)->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
 
-#define TEMP_DEBUG 1
+#define TEMP_DEBUG 0
 
 // ugly globals but meh
 static ut64 emustack_min = 0LL;
@@ -5431,7 +5431,7 @@ toro:
 	}
 	r_cons_break_push (NULL, NULL);
 	int totalbytes = cbytes > 0? l: -1;
-	for (i = idx = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
+	for (i = idx = ds->index = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		#if TEMP_DEBUG
 		r_cons_printf("Top of loop: idx=0x%x ds->index=0x%x\n", idx, ds->index);
 		#endif
@@ -5527,10 +5527,10 @@ toro:
 				if (delta < 0) {
 					delta = -delta;
 				}
-				ds->addr += delta + idx;
+				ds->at = ds->addr += delta + idx;
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
-				idx = 0;
+				ds->index = idx = 0;
 				of = f;
 				r_anal_op_fini (&ds->analop);
 				if (len == l) {
@@ -5538,7 +5538,9 @@ toro:
 				}
 			} else {
 				ds->lines--;
-				ds->addr += 1;
+				ds->addr++;
+				ds->at++;
+				ds->index--;
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
 				idx = 0;
@@ -5567,14 +5569,17 @@ toro:
 			if (idx >= 0) {
 				// check if we have enough bytes for this arch, if not just reloop with totoro
 				int left = len - (addrbytes * idx);
+				#if TEMP_DEBUG
+				r_cons_printf("BEFORE ds_disassemble:\n");
+				r_cons_printf("idx=%#x ds->index=%#x len=%#x left=%#x\n", idx, ds->index, len, left);
+				r_cons_printf("ds->addr=%#"PFMT64x" ds->at=%#"PFMT64x"\n", ds->addr, ds->at);
+				#endif
 				if (left < max_op_size) {
+					#if TEMP_DEBUG
+					r_cons_printf("Not enough bytes to disassemble, going to retry.\n");
+					#endif
 					goto retry;
 				} else {
-					#if TEMP_DEBUG
-					r_cons_printf("BEFORE ds_disassemble:\n");
-					r_cons_printf("idx=%#x ds->index=%#x len=%#x left=%#x\n", idx, ds->index, len, left);
-					r_cons_printf("ds->addr=%#"PFMT64x" ds->at=%#"PFMT64x"\n", ds->addr, ds->at);
-					#endif
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
 					/* Make sure the index variables track properly */
 					idx = ds->index;
@@ -5834,7 +5839,7 @@ toro:
 		ds->at = ds->addr = ds->at + inc; // idx; // inc;
 		ds->index = idx = 0;
 		#if TEMP_DEBUG
-		r_cons_printf("Need to retry. ds->at,ds->addr=%#"PFMT64x", ds->index,idx=%d\n", ds->at, idx);
+		r_cons_printf("Retrying. ds->at,ds->addr=%#"PFMT64x", ds->index,idx=%d\n", ds->at, idx);
 		#endif
 	retry:
 		if (len < max_op_size) {
