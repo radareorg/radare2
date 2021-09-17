@@ -2703,6 +2703,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 #if HASRETRY
 		if (!ds->cbytes && ds->tries > 0) {
 			ds->addr = core->rasm->pc;
+			//r_cons_printf("ds_disassemble set ds->addr to %#"PFMT64x"\n", ds->addr);
 			ds->tries--;
 			ds->idx = 0;
 			ds->retry = true;
@@ -5563,6 +5564,8 @@ toro:
 					goto retry;
 				} else {
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
+					//r_cons_printf("ret=%d idx=%#x len=%d left=%#x ", ret, idx, len, left);
+					//r_cons_printf("ds->addr=%#"PFMT64x" ds->index=%#x ds->oplen=%#x\n", ds->addr, ds->index, ds->oplen);
 					ds->retry = true;
 					if (ret == -31337) {
 						inc = ds->oplen; // minopsz maybe? or we should add invopsz
