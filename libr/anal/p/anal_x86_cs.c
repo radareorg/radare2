@@ -1835,7 +1835,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		{
 			dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
 			src = getarg (&gop, 1, 0, NULL, SRC_AR, NULL);
-			if (INSOP(0).type == X86_OP_MEM) {
+			if (!strcmp (src, dst)) {
+				esilprintf (op, ",");
+			} else if (INSOP(0).type == X86_OP_MEM) {
 				dst2 = getarg (&gop, 0, 1, NULL, DST2_AR, NULL);
 				esilprintf (op,
 					"%s,%s,^,%s,=,"
