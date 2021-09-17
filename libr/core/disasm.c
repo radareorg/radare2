@@ -2597,6 +2597,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	r_asm_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
+	#if TEMP_DEBUG
+	r_cons_printf("ds_disassemble: r_asm_disassemble returned %d\n", ret);
+	#endif
 	if (ds->asmop.size < 1) {
 		ds->asmop.size = 1;
 	}
@@ -2703,12 +2706,12 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ret = -1;
 #if HASRETRY
 		if (!ds->cbytes && ds->tries > 0) {
-			ds->addr = core->rasm->pc;
+			ds->at = core->rasm->pc;
+			ds->index = ds->at - ds->addr;
 			#if TEMP_DEBUG
-			r_cons_printf("ds_disassemble set ds->addr to %#"PFMT64x"\n", ds->addr);
+			r_cons_printf("ds_disassemble set ds->at to %#"PFMT64x"\n", ds->at);
 			#endif
 			ds->tries--;
-			ds->index = 0;
 			return ret;
 		}
 #endif
@@ -5822,7 +5825,11 @@ toro:
 
 #if HASRETRY
 	if (!ds->cbytes && ds->lines < ds->l) {
-		ds->addr = ds->at + inc; // idx; // inc;
+		ds->at = ds->addr = ds->at + inc; // idx; // inc;
+		ds->index = idx = 0;
+		#if TEMP_DEBUG
+		r_cons_printf("Need to retry. ds->at,ds->addr=%#"PFMT64x", ds->index,idx=%d\n", ds->at, idx);
+		#endif
 	retry:
 		if (len < max_op_size) {
 			len = max_op_size + 32;
