@@ -261,7 +261,6 @@ typedef struct {
 	ut64 at, vat, addr, dest;
 	int tries, cbytes;
 	char chref;
-	bool retry;
 	RAsmOp asmop;
 	RAnalOp analop;
 	RAnalFunction *fcn;
@@ -2710,7 +2709,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			#endif
 			ds->tries--;
 			ds->index = 0;
-			ds->retry = true;
 			return ret;
 		}
 #endif
@@ -5567,7 +5565,6 @@ toro:
 				// check if we have enough bytes for this arch, if not just reloop with totoro
 				int left = len - (addrbytes * idx);
 				if (left < max_op_size) {
-					//		ds->retry = true;
 					goto retry;
 				} else {
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
@@ -5577,7 +5574,6 @@ toro:
 					r_cons_printf("ret=%d idx=%#x len=%d left=%#x ", ret, idx, len, left);
 					r_cons_printf("ds->addr=%#"PFMT64x" ds->index=%#x ds->at=%#"PFMT64x"\n", ds->addr, ds->index, ds->at);
 					#endif
-					ds->retry = true;
 					if (ret == -31337) {
 						inc = ds->oplen; // minopsz maybe? or we should add invopsz
 						r_anal_op_fini (&ds->analop);
