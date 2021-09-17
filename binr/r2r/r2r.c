@@ -875,13 +875,19 @@ static void interact(R2RState *state) {
 		goto beach;
 	}
 
+	bool use_fancy_stuff = !r_cons_is_windows ();
 #if __WINDOWS__
+	// XXX move to rcons
 	(void)SetConsoleOutputCP (65001); // UTF-8
 #endif
 	printf ("\n");
 	printf ("#####################\n");
-	printf (" %"PFMT64u" failed test(s) "R_UTF8_POLICE_CARS_REVOLVING_LIGHT"\n",
-	        (ut64)r_pvector_len (&failed_results));
+	if (use_fancy_stuff) {
+		printf (" %"PFMT64u" failed test(s)"R_UTF8_POLICE_CARS_REVOLVING_LIGHT"\n",
+			(ut64)r_pvector_len (&failed_results));
+	} else {
+		printf (" %"PFMT64u" failed test(s)\n", (ut64)r_pvector_len (&failed_results));
+	}
 
 	r_pvector_foreach (&failed_results, it) {
 		R2RTestResultInfo *result = *it;
@@ -893,13 +899,17 @@ static void interact(R2RState *state) {
 		printf ("#####################\n\n");
 		print_result_diff (&state->run_config, result);
 menu:
-		printf ("Wat do?    "
-				"(f)ix "R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
-				"(i)gnore "R_UTF8_SEE_NO_EVIL_MONKEY"    "
-				"(b)roken "R_UTF8_SKULL_AND_CROSSBONES R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
-				"(c)ommands "R_UTF8_KEYBOARD R_UTF8_VS16"    "
-				"(d)iffchar "R_UTF8_LEFT_POINTING_MAGNIFYING_GLASS"    "
-				"(q)uit "R_UTF8_DOOR"\n");
+		if (use_fancy_stuff) {
+			printf ("Wat do?    "
+					"(f)ix "R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
+					"(i)gnore "R_UTF8_SEE_NO_EVIL_MONKEY"    "
+					"(b)roken "R_UTF8_SKULL_AND_CROSSBONES R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
+					"(c)ommands "R_UTF8_KEYBOARD R_UTF8_VS16"    "
+					"(d)iffchar "R_UTF8_LEFT_POINTING_MAGNIFYING_GLASS"    "
+					"(q)uit "R_UTF8_DOOR"\n");
+		} else {
+			printf ("Wat do?    (f)ix     (i)gnore     (b)roken     (c)ommands     (d)iffchar     (q)uit\n");
+		}
 		printf ("> ");
 		char buf[0x30];
 		if (!fgets (buf, sizeof (buf), stdin)) {

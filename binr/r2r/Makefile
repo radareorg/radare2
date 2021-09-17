@@ -1,5 +1,5 @@
 BIN=r2r
-BINDEPS=r_util
+BINDEPS=r_util r_cons
 OBJ=load.o run.o
 
 include ../rules.mk

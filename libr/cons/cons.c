@@ -1438,6 +1438,17 @@ R_API int r_cons_get_cursor(int *rows) {
 	return col;
 }
 
+R_API bool r_cons_is_windows(void) {
+#if __WINDOWS__
+	return true;
+#else
+	char *e = r_sys_getenv ("WSL_INTEROP");
+	bool res = R_STR_ISNOTEMPTY (e);
+	free (e);
+	return res;
+#endif
+}
+
 R_API bool r_cons_isatty(void) {
 #if EMSCRIPTEN || __wasi__
 	return false;
