@@ -257,7 +257,7 @@ typedef struct {
 	int stackptr, ostackptr;
 	int index;
 	ut64 at, vat, addr, dest;
-	int tries, cbytes, idx;
+	int tries, cbytes;
 	char chref;
 	bool retry;
 	RAsmOp asmop;
@@ -2705,7 +2705,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			ds->addr = core->rasm->pc;
 			//r_cons_printf("ds_disassemble set ds->addr to %#"PFMT64x"\n", ds->addr);
 			ds->tries--;
-			ds->idx = 0;
+			ds->index = 0;
 			ds->retry = true;
 			return ret;
 		}
