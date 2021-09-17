@@ -5570,11 +5570,17 @@ toro:
 				if (left < max_op_size) {
 					goto retry;
 				} else {
+					#if TEMP_DEBUG
+					r_cons_printf("BEFORE ds_disassemble:\n");
+					r_cons_printf("idx=%#x ds->index=%#x len=%#x left=%#x\n", idx, ds->index, len, left);
+					r_cons_printf("ds->addr=%#"PFMT64x" ds->at=%#"PFMT64x"\n", ds->addr, ds->at);
+					#endif
 					ret = ds_disassemble (ds, buf + addrbytes * idx, left);
 					/* Make sure the index variables track properly */
 					idx = ds->index;
 					#if TEMP_DEBUG
-					r_cons_printf("ret=%d idx=%#x len=%d left=%#x ", ret, idx, len, left);
+					r_cons_printf("AFTER ds_disassemble:\n");
+					r_cons_printf("ret=%d idx=%#x len=%#x left=%#x ", ret, idx, len, left);
 					r_cons_printf("ds->addr=%#"PFMT64x" ds->index=%#x ds->at=%#"PFMT64x"\n", ds->addr, ds->index, ds->at);
 					#endif
 					if (ret == -31337) {
