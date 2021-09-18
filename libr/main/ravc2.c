@@ -182,6 +182,14 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		r_list_free (unc);
 		return 0;
 	}
+	if (!strcmp (action, "reset")) {
+		if (!r_vc_reset (rp)) {
+			free (rp);
+			eprintf ("Couldn't reset\n");
+			return 1;
+		}
+		return 0;
+	}
 	free (rp);
 	return 1;
 }
