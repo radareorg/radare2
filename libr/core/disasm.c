@@ -5429,9 +5429,6 @@ toro:
 	r_cons_break_push (NULL, NULL);
 	int totalbytes = cbytes > 0? l: -1;
 	for (i = idx = ds->index = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
-		#if TEMP_DEBUG
-		r_cons_printf("Top of loop: idx=0x%x ds->index=0x%x\n", idx, ds->index);
-		#endif
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
 		if (cbytes) {
@@ -5567,7 +5564,7 @@ toro:
 				#if TEMP_DEBUG
 				r_cons_printf("BEFORE ds_disassemble:\n");
 				r_cons_printf("idx=%#x ds->index=%#x len=%#x left=%#x\n", idx, ds->index, len, left);
-				r_cons_printf("ds->addr=%#"PFMT64x" ds->at=%#"PFMT64x"\n", ds->addr, ds->at);
+				r_cons_printf("ds->addr=%#"PFMT64x" ds->at=%#"PFMT64x" ds->l=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->l, ds->lines);
 				#endif
 				if (left < max_op_size) {
 					#if TEMP_DEBUG
@@ -5581,7 +5578,7 @@ toro:
 					#if TEMP_DEBUG
 					r_cons_printf("AFTER ds_disassemble:\n");
 					r_cons_printf("ret=%d idx=%#x len=%#x left=%#x ", ret, idx, len, left);
-					r_cons_printf("ds->addr=%#"PFMT64x" ds->index=%#x ds->at=%#"PFMT64x"\n", ds->addr, ds->index, ds->at);
+					r_cons_printf("ds->addr=%#"PFMT64x" ds->at=%#"PFMT64x" ds->l=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->l, ds->lines);
 					#endif
 					if (ret == -31337) {
 						inc = ds->oplen; // minopsz maybe? or we should add invopsz
