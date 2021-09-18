@@ -73,7 +73,7 @@ static int r_main_r2pipe(int argc, const char **argv) {
         int i, rc = 0;
         char *_in = r_sys_getenv ("R2PIPE_IN");
         char *_out = r_sys_getenv ("R2PIPE_OUT");
-        if (_in && _out) {
+        if (R_STR_ISNOTEMPTY (_in) && R_STR_ISNOTEMPTY (_out)) {
 		int in = atoi (_in);
 		int out = atoi (_out);
 		for (i = 1; i < argc; i++) {

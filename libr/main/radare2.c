@@ -855,7 +855,10 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	r_bin_force_plugin (r->bin, forcebin);
 
 	if (project_name) {
-		r_core_project_open (r, project_name);
+		if (!r_core_project_open (r, project_name)) {
+			eprintf ("Cannot find project.\n");
+			return 1;
+		}
 	}
 
 	if (do_connect) {
