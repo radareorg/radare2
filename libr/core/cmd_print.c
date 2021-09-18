@@ -5575,7 +5575,7 @@ static int cmd_print(void *data, const char *input) {
 						} else {
 							core->num->value = r_core_print_disasm (
 								core->print, core, b->addr, block,
-								b->size, 9999, 0, 2, input[2] == 'J', NULL, NULL);
+								b->size, 9999, 1, 2, input[2] == 'J', NULL, NULL);
 						}
 						free (block);
 						pd_result = 0;
