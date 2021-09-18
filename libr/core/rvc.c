@@ -1139,7 +1139,7 @@ R_API bool r_vc_reset(const char *rp) {
 			char *b = find_blob_hash (rp, p);
 			if (!b || !strcmp (b, "-")) {
 				free (p);
-				if (!r_file_rm(fp)) {
+				if (!r_file_rm (fp)) {
 					ret = false;
 					break;
 
