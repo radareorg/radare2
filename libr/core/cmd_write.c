@@ -101,6 +101,7 @@ static const char *help_msg_wo[] = {
 	"woD","[algo] [key] [IV]","decrypt current block with given algo and key",
 	"woe"," [from to] [step] [wsz=1]","..  create sequence",
 	"woE"," [algo] [key] [IV]", "encrypt current block with given algo and key",
+	"woi","", "inverse bytes in current block",
 	"wol"," [val]","<<= shift left",
 	"wom"," [val]", "*=  multiply",
 	"woo"," [val]","|=  or",
@@ -311,27 +312,28 @@ static int wo_handler_old(void *data, const char *input) {
 	int len;
 	int value;
 	switch (input[0]) {
-	case 'e':
+	case 'e': // "woe"
 		if (input[1]!=' ') {
 			r_cons_printf ("Usage: 'woe from-to step'\n");
 			return -1;
 		}
 		/* fallthru */
-	case 'a':
-	case 's':
-	case 'A':
-	case 'x':
-	case 'r':
-	case 'l':
-	case 'm':
-	case 'd':
-	case 'o':
-	case 'w':
+	case 'a': // "woa"
+	case 's': // "wos"
+	case 'A': // "woA"
+	case 'x': // "wox"
+	case 'r': // "wor"
+	case 'l': // "wol"
+	case 'm': // "wom"
+	case 'i': // "woi"
+	case 'd': // "wod"
+	case 'o': // "woo"
+	case 'w': // "wow"
 	case '2': // "wo2"
 	case '4': // "wo4"
 	case '8': // "wo8"
 		if (input[1]) {  // parse val from arg
-			r_core_write_op (core, input + 2, input[0]);
+			r_core_write_op (core, r_str_trim_head_ro (input + 2), input[0]);
 		} else {  // use clipboard instead of val
 			r_core_write_op (core, NULL, input[0]);
 		}
