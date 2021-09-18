@@ -411,7 +411,6 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 }
 
 R_API char *r_core_project_name(RCore *core, const char *prjfile) {
-	FILE *fd;
 	char buf[256], *file = NULL;
 	if (*prjfile != '/') {
 		return strdup (prjfile);
@@ -421,7 +420,7 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
 		return NULL;
 	}
-	fd = r_sandbox_fopen (prj, "r");
+	FILE *fd = r_sandbox_fopen (prj, "r");
 	if (fd) {
 		for (;;) {
 			if (!fgets (buf, sizeof (buf), fd)) {
