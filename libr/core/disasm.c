@@ -5524,7 +5524,7 @@ toro:
 				if (delta < 0) {
 					delta = -delta;
 				}
-				ds->at = ds->addr += delta + idx;
+				ds->addr += delta + idx;
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
 				ds->index = idx = 0;
@@ -5536,11 +5536,9 @@ toro:
 			} else {
 				ds->lines--;
 				ds->addr++;
-				ds->at++;
-				ds->index--;
 				r_io_read_at (core->io, ds->addr, buf, len);
 				inc = 0; //delta;
-				idx = 0;
+				ds->index = idx = 0;
 				r_anal_op_fini (&ds->analop);
 			}
 			continue;
