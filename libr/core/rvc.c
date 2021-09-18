@@ -89,7 +89,8 @@ static bool repo_exists(const char *path) {
 		r_str_newf ("%s" R_SYS_DIR "blobs", rp),
 	};
 	free (rp);
-	for (size_t i = 0; i < 3; i++) {
+	size_t i;
+	for (i = 0; i < 3; i++) {
 		if (!files[i]) {
 			r = false;
 			break;
@@ -528,8 +529,6 @@ static char *find_blob_hash(const char *rp, const char *fname) {
 static char *write_commit(const char *rp, const char *message, const char *author, RList *blobs) {
 	RvcBlob *blob;
 	RListIter *iter;
-	char *commit_path, *commit_hash;
-	FILE *commitf;
 	char *content = r_str_newf ("message=%s\nauthor=%s\ntime=%" PFMT64x "\n"
 			COMMIT_BLOB_SEP, message, author, (ut64) r_time_now ());
 	if (!content) {
@@ -542,33 +541,19 @@ static char *write_commit(const char *rp, const char *message, const char *autho
 			return false;
 		}
 	}
-	commit_hash = find_sha256 ((unsigned char *)
+	char *commit_hash = find_sha256 ((unsigned char *)
 			content, r_str_len_utf8 (content));
 	if (!commit_hash) {
 		free (content);
 		return false;
 	}
-	commit_path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "commits"
+	char *commit_path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "commits"
 			R_SYS_DIR "%s", rp, commit_hash);
-	if (!commit_path) {
+	if (!commit_path || !r_file_dump (commit_path, (const ut8*)content, -1, false)) {
 		free (content);
 		free (commit_hash);
 		return false;
 	}
-	commitf = fopen (commit_path, "w+");
-	free (commit_path);
-	if (!commitf) {
-		free (content);
-		free (commit_hash);
-		return false;
-	}
-	if (fprintf (commitf, "%s", content) != r_str_len_utf8 (content) * sizeof (char)) {
-		free (content);
-		free (commit_hash);
-		fclose (commitf);
-		return false;
-	}
-	fclose (commitf);
 	free (content);
 	return commit_hash;
 }
@@ -686,32 +671,22 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		char *path = NULL;
 		(void)r_file_mkstemp ("rvc", &path);
 		if (path) {
-			char m[MAX_MESSAGE_LEN + 1];
 			r_cons_editor (path, NULL);
-			FILE *f = fopen (path, "r");
-			if (f) {
-				if (r_file_size (path) > 80) {
-					eprintf ("Commit message is too long\n");
-					r_file_rm (path);
-					free (path);
-					return false;
-				}
-				free (path);
-				fread (m, sizeof (char), MAX_MESSAGE_LEN, f);
-				fclose (f);
-				message = m;
-			} else {
+			message = r_file_slurp (path, NULL);
+			if (!message) {
 				free (path);
 				return false;
 			}
 		} else {
 			return false;
 		}
-	} else if (r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
+	}
+	if (message && r_str_len_utf8 (message) > MAX_MESSAGE_LEN) {
 		eprintf ("Commit message is too long\n");
 		return false;
 	}
-	for (const char *m = message; *m; m++) {
+	const char *m;
+	for (m = message; *m; m++) {
 		if (*m < ' ') {
 			eprintf ("commit messages must not contain unprintable charecters\n");
 			return false;
@@ -817,7 +792,7 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	Sdb *db = vcdb_open(rp);
+	Sdb *db = vcdb_open (rp);
 	current_branch = sdb_const_get (db, CURRENTB, 0);
 	if (!current_branch) {
 		sdb_unlink (db);
@@ -901,7 +876,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		if (ret < 0) {
 			return false;
 		}
-		else if (!ret) {
+		if (ret == 0) {
 			eprintf ("The branch %s doesn't exist.\n", bname);
 			return false;
 		}
@@ -1112,9 +1087,18 @@ R_API bool r_vc_git_add(const char *path, const char *fname) {
 }
 
 R_API bool r_vc_git_commit(const char *path, const char *message) {
-	return !R_STR_ISEMPTY(message) ? !r_sys_cmdf ("git -C %s commit -m %s",
-			r_str_escape (path), r_str_escape (message)):
-		!r_sys_cmdf ("git -C \"%s\" commit", r_str_escape (path));
+	if (R_STR_ISEMPTY (message)) {
+		char *epath = r_str_escape (path);
+		int res = r_sys_cmdf ("git -C \"%s\" commit", epath);
+		free (epath);
+		return res == 0;
+	}
+	char *epath = r_str_escape (path);
+	char *emsg = r_str_escape (message);
+	int res = r_sys_cmdf ("git -C %s commit -m %s", epath, emsg);
+	free (epath);
+	free (emsg);
+	return res == 0;
 }
 
 R_API bool r_vc_reset(const char *rp) {
@@ -1179,15 +1163,14 @@ R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, cons
 	const char *m = r_config_get (core->config, "prj.vc.message");
 	if (!*m) {
 		if (!r_cons_is_interactive ()) {
-			r_config_set (core->config,
-					"prj.vc.message", "test");
+			r_config_set (core->config, "prj.vc.message", "test");
 			m = r_config_get (core->config, "prj.vc.message");
 		}
 	}
 	message = R_STR_ISEMPTY (message)? m : message;
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
 		author = author? author : r_config_get (core->config, "cfg.user");
-		printf ("rvc is just for testing please don't use it\n");
+		eprintf ("rvc is just for testing please don't use it\n");
 		return r_vc_commit (rp, message, author, files);
 	}
 	char *path;
@@ -1202,7 +1185,7 @@ R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, cons
 
 R_API bool rvc_git_branch(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
-		printf ("rvc is just for testing please don't use it\n");
+		eprintf ("rvc is just for testing please don't use it\n");
 		return r_vc_branch (rp, bname);
 	}
 	return !r_vc_git_branch (rp, bname);
@@ -1210,7 +1193,7 @@ R_API bool rvc_git_branch(const RCore *core, const char *rp, const char *bname) 
 
 R_API bool rvc_git_checkout(const RCore *core, const char *rp, const char *bname) {
 	if (!strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")) {
-		printf ("rvc is just for testing please don't use it\n");
+		eprintf ("rvc is just for testing please don't use it\n");
 		return r_vc_checkout (rp, bname);
 	}
 	return r_vc_git_checkout (rp, bname);
