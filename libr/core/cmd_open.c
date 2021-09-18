@@ -20,7 +20,7 @@ static const char *help_msg_o[] = {
 	"oa","[?][-] [A] [B] [filename]","Specify arch and bits for given file",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
-	"of"," [file]","open file and map it at addr 0 as read-only",
+	"of","[?] [file]","open file and map it at addr 0 as read-only",
 	"oj","[?]	","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
 	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
@@ -31,6 +31,11 @@ static const char *help_msg_o[] = {
 	NULL
 };
 
+static const char *help_msg_of[] = {
+	"Usage: of","[s] [file]","Open file without adding maps",
+	"of"," \"/bin/ls\" r-x", " open /bin/ls with r-x perms without creating maps",
+	NULL
+};
 static const char *help_msg_on[] = {
 	"Usage: on","[n+*] [file] ([addr] [rwx])","Open file without parsing headers",
 	"on"," /bin/ls 0x4000","map raw file at 0x4000 (no r_bin involved)",
@@ -1317,13 +1322,18 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	RIOMap *map;
 	r_list_foreach (maps, iter, map) {
 		bool map_from_bin = false;
+		bool have_segments = false;
 		r_list_foreach (list, iter2, sec) {
 			if (sec->is_segment) {
-				if (sec->vaddr == map->itv.addr && sec->size == map->itv.size) {
+				have_segments = true;
+				if (sec->vaddr == map->itv.addr && sec->vsize == map->itv.size) {
 					map_from_bin = true;
 					break;
 				}
 			}
+		}
+		if (!have_segments) {
+			map_from_bin = true;
 		}
 		if (!map_from_bin) {
 			// ut64 paddr = 0; // map->itv.addr;
@@ -1333,8 +1343,10 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 			}
 			ut64 vaddr = map->itv.addr + map->delta;
 			ut64 vsize = map->itv.size;
-			p->cb_printf ("om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
-				vaddr, vsize, paddr, r_str_rwx_i (map->perm), r_str_get (map->name));
+			if (vsize > 0) {
+				p->cb_printf ("om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
+						vaddr, vsize, paddr, r_str_rwx_i (map->perm), r_str_get (map->name));
+			}
 		}
 	}
 	return true;
@@ -1562,11 +1574,12 @@ static int cmd_open(void *data, const char *input) {
 	case 'f': // "of"
 		ptr = r_str_trim_head_ro (input + 2);
 		argv = r_str_argv (ptr, &argc);
-		if (argc == 0) {
-			eprintf ("Usage: of [filename] (rwx)\n");
+		if (argc == 0 || input[1] == '?') {
+			r_core_cmd_help (core, help_msg_of);
 			r_str_argv_free (argv);
 			return 0;
-		} else if (argc == 2) {
+		}
+		if (argc == 2) {
 			perms = r_str_rwx (argv[1]);
 		}
 		fd = r_io_fd_open (core->io, argv[0], perms, 0);
