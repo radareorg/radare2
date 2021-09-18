@@ -5335,8 +5335,10 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 }
 
 // int l is for lines
-R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json, PJ *pj, RAnalFunction *pdf) {
-	int continueoninvbreak = (len == l) && invbreak;
+// now refreshes buffer, enable never_read_past_buffer to prevent this as a
+// workaround in places where len improperly used as a hard cap (weird
+// placement is because it replaced the old unused invbreak arg)
+R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int never_read_past_buffer, int cbytes, bool json, PJ *pj, RAnalFunction *pdf) {
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
@@ -5371,7 +5373,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// disable row_offsets to prevent other commands to overwrite computed info
 	p->calc_row_offsets = false;
 
-	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
+	//r_cons_printf ("len=%d l=%d limit=%d\n", len, l, p->limit);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace
@@ -5566,7 +5568,7 @@ toro:
 				r_cons_printf("idx=%#x ds->index=%#x len=%#x left=%#x\n", idx, ds->index, len, left);
 				r_cons_printf("ds->addr=%#"PFMT64x" ds->at=%#"PFMT64x" ds->l=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->l, ds->lines);
 				#endif
-				if (left < max_op_size) {
+				if (left < max_op_size && !never_read_past_buffer) {
 					#if TEMP_DEBUG
 					r_cons_printf("Not enough bytes to disassemble, going to retry.\n");
 					#endif
@@ -5847,7 +5849,7 @@ toro:
 			// enough bytes?
 			if (ds->index < totalbytes) {
 
-				if (ds->lines < ds->l) {
+				if (ds->lines < ds->l && !never_read_past_buffer) {
 					// idx = ds->l;
 					ds->addr += idx;
 					if (r_io_read_at (core->io, ds->addr, buf, len)) {
@@ -5861,7 +5863,7 @@ toro:
 		} else {
 			// enough lines?
 			// ds->addr += idx;
-			if (ds->lines < ds->l) {
+			if (ds->lines < ds->l && !never_read_past_buffer) {
 				// idx = ds->l;
 				ds->addr += idx;
 
@@ -5870,9 +5872,6 @@ toro:
 					goto toro;
 				}
 			}
-			goto toro;
-		}
-		if (continueoninvbreak && ds->tries > 0) {
 			goto toro;
 		}
 		R_FREE (nbuf);

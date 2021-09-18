@@ -5651,7 +5651,7 @@ static int cmd_print(void *data, const char *input) {
 						ut8 *buf = calloc (sz, 1);
 						if (buf) {
 							(void)r_io_read_at (core->io, at, buf, sz);
-							core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0, NULL, f);
+							core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 1, 1, 0, NULL, f);
 							free (buf);
 							// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_function_realsize (f), f->addr);
 						}
