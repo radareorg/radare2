@@ -1142,7 +1142,6 @@ R_API bool r_vc_reset(const char *rp) {
 				if (!r_file_rm (fp)) {
 					ret = false;
 					break;
-
 				}
 				continue;
 
