@@ -4244,9 +4244,22 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	}
 	r_config_set_i (core->config, "asm.bbmiddle", false);
 	// r_cons_printf ("| loc_0x%08"PFMT64x":", b->addr);
+	ut8 *buf = malloc(b->size);
+	if (!buf) {
+		r_cons_printf("Failed to allocate %"PFMT64u" bytes", b->size);
+		return;
+	}
+	r_io_nread_at(core->io, b->addr, buf, b->size);
+
+	// currently need to use a hack argument because this code relied on
+	// pD/pI incorrectly stopping at the block boundary
 	p_type == 'D'
-	? r_core_cmdf (core, "pD %"PFMT64u" @0x%"PFMT64x, b->size, b->addr)
-	: r_core_cmdf (core, "pI %"PFMT64u" @0x%"PFMT64x, b->size, b->addr);
+	//? r_core_cmdf (core, "pD %"PFMT64u" @0x%"PFMT64x, b->size, b->addr)
+	? r_core_print_disasm(core->print, core, b->addr, buf, b->size, b->size, 1, 1, 0, NULL, NULL)
+	//: r_core_cmdf (core, "pI %"PFMT64u" @0x%"PFMT64x, b->size, b->addr);
+	: r_core_print_disasm(core->print, core, b->addr, buf, b->size, b->size, 1, 0, 0, NULL, NULL);
+	free(buf);
+
 	r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
 
 	if (b->jump != UT64_MAX) {
