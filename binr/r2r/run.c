@@ -432,7 +432,6 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				R2RSubprocess *p = *it;
 				if (p->pid == pid) {
 					proc = p;
-					r_th_lock_leave (subprocs_mutex);
 					break;
 				}
 			}
@@ -440,7 +439,6 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			 	r_th_lock_leave (subprocs_mutex);
 				continue;
 			}
-
 			if (WIFEXITED (wstat)) {
 				proc->ret = WEXITSTATUS (wstat);
 			} else {
@@ -451,14 +449,14 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				r_th_lock_leave (subprocs_mutex);
 				break;
 			}
-			 r_th_lock_leave (subprocs_mutex);
+			r_th_lock_leave (subprocs_mutex);
 		}
 	}
 	return R_TH_STOP;
 }
 
 R_API bool r2r_subprocess_init(void) {
-	r_pvector_init(&subprocs, NULL);
+	r_pvector_init (&subprocs, NULL);
 	subprocs_mutex = r_th_lock_new (false);
 	if (!subprocs_mutex) {
 		return false;
