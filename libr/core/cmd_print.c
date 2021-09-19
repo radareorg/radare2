@@ -4255,9 +4255,9 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	// pD/pI incorrectly stopping at the block boundary
 	p_type == 'D'
 	//? r_core_cmdf (core, "pD %"PFMT64u" @0x%"PFMT64x, b->size, b->addr)
-	? r_core_print_disasm(core->print, core, b->addr, buf, b->size, b->size, 1, 1, 0, NULL, NULL)
+	? r_core_print_disasm (core->print, core, b->addr, buf, b->size, b->size, 1, 1, 0, NULL, NULL)
 	//: r_core_cmdf (core, "pI %"PFMT64u" @0x%"PFMT64x, b->size, b->addr);
-	: r_core_print_disasm(core->print, core, b->addr, buf, b->size, b->size, 1, 0, 0, NULL, NULL);
+	: r_core_print_disasm_instructions_with_buf (core, b->addr, buf, b->size, 0);
 	free(buf);
 
 	r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
