@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-R_API void r_core_task_scheduler_init (RCoreTaskScheduler *tasks, RCore *core) {
+R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->task_id_next = 0;
 	tasks->tasks = r_list_newf ((RListFree)r_core_task_decref);
 	tasks->tasks_queue = r_list_new ();
@@ -16,7 +16,7 @@ R_API void r_core_task_scheduler_init (RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->current_task = NULL;
 }
 
-R_API void r_core_task_scheduler_fini (RCoreTaskScheduler *tasks) {
+R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
 	r_list_free (tasks->tasks);
 	r_list_free (tasks->tasks_queue);
 	r_list_free (tasks->oneshot_queue);
