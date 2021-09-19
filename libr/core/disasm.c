@@ -5430,7 +5430,7 @@ toro:
 	}
 	r_cons_break_push (NULL, NULL);
 	int totalbytes = cbytes > 0? l: -1;
-	for (i = idx = ds->index = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
+	for (i = idx = ds->index = ret = 0; (totalbytes < 1 || ds->index < totalbytes) && addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, cbytes? ds->lines += inc: ds->lines++) {
 		ds->at = ds->addr + idx;
 		ds->vat = r_core_pava (core, ds->at);
 		if (cbytes) {
