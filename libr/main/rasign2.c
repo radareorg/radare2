@@ -5,7 +5,7 @@
 struct rasignconf {
 	const char *ofile, *space;
 	size_t a_cnt;
-	bool ar, rad, quiet, json, flirt, collision;
+	bool sdb, ar, rad, quiet, json, flirt, collision;
 };
 
 static void rasign_show_help(void) {
@@ -18,6 +18,7 @@ static void rasign_show_help(void) {
 		" -o sigs.sdb      add signatures to file, create if it does not exist\n"
 		" -q               quiet mode\n"
 		" -r               show output in radare commands\n"
+		" -S               perform operation on sdb signature file ('-o -' to save to same file)\n"
 		" -s signspace     save all signatures under this signspace\n"
 		" -c               add collision signatures before writing file\n"
 		" -v               show version information\n"
@@ -65,13 +66,45 @@ static void find_functions(RCore *core, size_t count) {
 	r_core_cmd0 (core, cmd);
 }
 
+static int inline output(RAnal *anal, struct rasignconf *conf) {
+	if (conf->collision) {
+		r_sign_resolve_collisions (anal);
+	}
+	if (conf->rad) {
+		r_sign_list (anal, '*');
+	}
+	if (conf->json) {
+		r_sign_list (anal, 'j');
+	}
+	// write sigs to file
+	if (conf->ofile && !r_sign_save (anal, conf->ofile)) {
+		eprintf ("Failed to write file\n");
+		return -1;
+	}
+	r_cons_flush ();
+	return 0;
+}
+
+static int handle_sdb(const char *fname, struct rasignconf *conf) {
+	int ret = -1;
+	// can't use RAnal here because JSON output requires core, in a sneaky way
+	RCore *core = r_core_new ();
+	if (core && r_sign_load (core->anal, fname)) {
+		if (conf->collision) {
+			r_sign_resolve_collisions (core->anal);
+		}
+		ret = output (core->anal, conf);
+	}
+	r_core_free (core);
+	return ret;
+}
+
 static int signs_from_file(const char *fname, struct rasignconf *conf) {
 	RCore *core = opencore (fname);
 	if (!core) {
 		eprintf ("Could not get core\n");
 		return -1;
 	}
-	// quiet mode
 	if (conf->quiet) {
 		r_config_set (core->config, "scr.prompt", "false");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -79,26 +112,15 @@ static int signs_from_file(const char *fname, struct rasignconf *conf) {
 	if (conf->space) {
 		r_spaces_set (&core->anal->zign_spaces, conf->space);
 	}
+
 	// run analysis to find functions
 	find_functions (core, conf->a_cnt);
 	// create zignatures
 	r_sign_all_functions (core->anal);
-	if (conf->collision) {
-		r_sign_resolve_collisions (core->anal);
-	}
-	if (conf->rad) {
-		r_sign_list (core->anal, '*');
-	}
-	if (conf->json) {
-		r_sign_list (core->anal, 'j');
-	}
-	// write sigs to file
-	if (conf->ofile && !r_sign_save (core->anal, conf->ofile)) {
-		eprintf ("Failed to write file\n");
-	}
-	r_cons_flush ();
+
+	int ret = output (core->anal, conf);
 	r_core_free (core);
-	return 0;
+	return ret;
 }
 
 static RList *get_ar_file_uris(const char *fname) {
@@ -200,7 +222,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	RGetopt opt;
 	struct rasignconf conf = {0};
 
-	r_getopt_init (&opt, argc, argv, "Aafhjo:qrs:cv");
+	r_getopt_init (&opt, argc, argv, "Aafhjo:qrSs:cv");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'A':
@@ -214,6 +236,9 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			break;
 		case 'c':
 			conf.collision = true;
+			break;
+		case 'S':
+			conf.sdb = true;
 			break;
 		case 's':
 			conf.space = opt.arg;
@@ -259,6 +284,10 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			eprintf ("Only FLIRT output is supported for FLIRT files\n");
 			return -1;
 		}
+		if (conf.sdb) {
+			eprintf ("Can't use -S with -f\n");
+			return -1;
+		}
 		return dump_flirt (ifile);
 	} else if (conf.ar) {
 		if (conf.json) {
@@ -269,7 +298,24 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			eprintf ("Rasign2 can not currently handle .a files with -c and -r\n");
 			return -1;
 		}
+		if (conf.sdb) {
+			eprintf ("Can't use -S with -A\n");
+			return -1;
+		}
 		return handle_archive_files (ifile, &conf);
+	} else if (conf.sdb) {
+		if (conf.a_cnt > 0) {
+			eprintf ("Option -a invalid with -S\n");
+			return -1;
+		}
+		if (conf.ofile && !strcmp (conf.ofile, "-")) {
+			if (!conf.collision) {
+				eprintf ("Option '-So -' is only useful with '-c'\n");
+				return -1;
+			}
+			conf.ofile = ifile;
+		}
+		return handle_sdb (ifile, &conf);
 	} else {
 		return signs_from_file (ifile, &conf);
 	}
