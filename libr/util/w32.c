@@ -57,7 +57,7 @@ R_API FARPROC r_w32_WakeAllConditionVariable(PCONDITION_VARIABLE a) {
 }
 
 R_API BOOL r_w32_SleepConditionVariableCS(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) {
-	static BOOL (*r_w32_SleepConditionVariableCS)(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) = NULL;
+	static BOOL (*x)(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) = NULL;
 	// requires 2008 / vista
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
