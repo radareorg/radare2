@@ -5806,7 +5806,7 @@ static int cmd_print(void *data, const char *input) {
 								bs1 - (bs - bs % addrbytes));
 						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, core->offset, block1, R_MAX (bs, bs1), l, 0, 1, formatted_json, NULL, NULL);
+							core, core->offset, block1, R_MAX (bs, bs1), l, 0, 0, formatted_json, NULL, NULL);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
