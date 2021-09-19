@@ -17,17 +17,13 @@ static bool file_copyp(const char *src, const char *dst) {
 	if (r_file_is_directory (dst)) {
 		return r_file_copy (src, dst);
 	}
-	char *dir;
-	{	const char *d = r_str_rchr (dst, dst + r_str_len_utf8 (dst) - 1,
-			*R_SYS_DIR);
-		if (!d) {
-			return false;
-		}
-		dir = malloc (d - dst);
-		if (!dir) {
-			return false;
-		}
-		dir = strncpy (dir, dst, d - dst);
+	const char *d = r_str_rchr (dst, dst + r_str_len_utf8 (dst) - 1, *R_SYS_DIR);
+	if (!d) {
+		return false;
+	}
+	char *dir = r_str_ndup (dst, d - dst);
+	if (!dir) {
+		return false;
 	}
 	if (!r_file_is_directory (dir)) {
 		if (!r_sys_mkdirp (dir)) {
@@ -35,9 +31,12 @@ static bool file_copyp(const char *src, const char *dst) {
 			return false;
 		}
 	}
-	return r_file_copy (src, dst);
+	bool res = r_file_copy (src, dst);
+	free (dir);
+	return res;
 }
 
+// XXX this function is overengineered. and needs to be deleted
 static char *strip_sys_dir(const char *path) {
 	char *ret = r_str_new ("");
 	if (!ret)  {
@@ -47,10 +46,13 @@ static char *strip_sys_dir(const char *path) {
 		if (!r_str_cmp (path, R_SYS_DIR R_SYS_DIR, 2)) {
 			continue;
 		}
-		ret = r_str_appendf (ret, "%c", *path);
-		if (!ret) {
+		char *nret = r_str_appendf (ret, "%c", *path);
+		free (ret);
+		if (!nret) {
+			free (ret);
 			return NULL;
 		}
+		ret = nret;
 	}
 	return ret;
 }
@@ -671,7 +673,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 		char *path = NULL;
 		(void)r_file_mkstemp ("rvc", &path);
 		if (path) {
-			r_cons_editor (path, NULL);
+			free (r_cons_editor (path, NULL));
 			message = r_file_slurp (path, NULL);
 			if (!message) {
 				free (path);
