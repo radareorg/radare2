@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2019 nodepad */
+/* radare - LGPL - Copyright 2015-2021 nodepad, pancake */
 
 #include <r_types.h>
 #include <r_bin.h>

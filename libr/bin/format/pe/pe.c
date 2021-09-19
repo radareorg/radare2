@@ -4223,7 +4223,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 			section_count++;
 		}
 	}
-	sections = calloc (section_count + 1, sizeof(struct r_bin_pe_section_t));
+	sections = calloc (section_count + 1, sizeof (struct r_bin_pe_section_t));
 	if (!sections) {
 		r_sys_perror ("malloc (sections)");
 		return NULL;
