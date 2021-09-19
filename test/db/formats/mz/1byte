@@ -1,0 +1,10 @@
+NAME=MZ: 1byte
+FILE=bins/mz/1byte.exe
+CMDS=<<EOF
+iS
+pd 3
+om
+EOF
+EXPECT=<<EOF
+EOF
+RUN

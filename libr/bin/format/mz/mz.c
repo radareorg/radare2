@@ -45,19 +45,15 @@ static int cmp_sections(const void *a, const void *b) {
 	return s_a->vaddr - s_b->vaddr;
 }
 
-static RBinSection *r_bin_mz_init_section(const struct r_bin_mz_obj_t *bin,
-					  ut64 laddr) {
-	RBinSection *section;
-
-	section = R_NEW0 (RBinSection);
+static RBinSection *r_bin_mz_init_section(const struct r_bin_mz_obj_t *bin, ut64 laddr) {
+	RBinSection *section = R_NEW0 (RBinSection);
 	if (section) {
 		section->vaddr = laddr;
 	}
-
 	return section;
 }
 
-RList *r_bin_mz_get_segments (const struct r_bin_mz_obj_t *bin) {
+RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
 	RList *seg_list;
 	RListIter *iter;
 	RBinSection *section;
@@ -224,7 +220,12 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 	if (dos_file_size > bin->size) {
 		return false;
 	}
-	bin->load_module_size = dos_file_size - (mz->header_paragraphs << 4);
+	eprintf ("ii %d %d\n", dos_file_size , (mz->header_paragraphs << 4));
+	if (dos_file_size < (mz->header_paragraphs << 4)) {
+		bin->load_module_size = dos_file_size;
+	} else {
+		bin->load_module_size = dos_file_size - (mz->header_paragraphs << 4);
+	}
 	relocations_size = mz->num_relocs * sizeof (MZ_image_relocation_entry);
 	if ((mz->reloc_table_offset + relocations_size) > bin->size) {
 		return false;
