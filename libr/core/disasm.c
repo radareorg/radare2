@@ -5334,11 +5334,21 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 	}
 }
 
-// int l is for lines
-// now refreshes buffer, enable never_read_past_buffer to prevent this as a
-// workaround in places where len improperly used as a hard cap (weird
-// placement is because it replaced the old unused invbreak arg)
-R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int never_read_past_buffer, int cbytes, bool json, PJ *pj, RAnalFunction *pdf) {
+/**
+ * \brief Disassemble `count` instructions, or bytes if `count_bytes is enabled
+ * \param read_buffer_only Do not enable in new code. Workaround for code that
+ *        relied on this function incorrectly stopping at basic block
+ *        boundaries. This options prevents the function from reading past the
+ *        buffer with r_io like it does now.  Do not enable in new code!
+ */
+R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, bool count_bytes, bool read_buffer_only, bool json, PJ *pj, RAnalFunction *pdf) {
+	RPrint *p = core->print;
+
+	/* temp: previous variable names */
+	int l = count;
+	bool cbytes = count_bytes;
+	bool never_read_past_buffer = read_buffer_only;
+
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
@@ -6971,7 +6981,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 					r_core_print_disasm_instructions_with_buf (core, block_start, buf, block_sz, block_instr);
 					break;
 				default:
-					r_core_print_disasm (core->print, core, block_start, buf, block_sz, block_instr, 0, 0, false, NULL, NULL);
+					r_core_print_disasm (core, block_start, buf, block_sz, block_instr, false, false, false, NULL, NULL);
 					break;
 				}
 			}

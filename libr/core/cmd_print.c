@@ -4255,7 +4255,7 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	// pD/pI incorrectly stopping at the block boundary
 	p_type == 'D'
 	//? r_core_cmdf (core, "pD %"PFMT64u" @0x%"PFMT64x, b->size, b->addr)
-	? r_core_print_disasm (core->print, core, b->addr, buf, b->size, b->size, 1, 1, 0, NULL, NULL)
+	? r_core_print_disasm (core, b->addr, buf, b->size, b->size, true, true, false, NULL, NULL)
 	//: r_core_cmdf (core, "pI %"PFMT64u" @0x%"PFMT64x, b->size, b->addr);
 	: r_core_print_disasm_instructions_with_buf (core, b->addr, buf, b->size, 0);
 	free(buf);
@@ -5574,8 +5574,9 @@ static int cmd_print(void *data, const char *input) {
 							pj_free (pj);
 						} else {
 							core->num->value = r_core_print_disasm (
-								core->print, core, b->addr, block,
-								b->size, 9999, 1, 2, input[2] == 'J', NULL, NULL);
+								core, b->addr, block,
+								b->size, b->size, true, true,
+								input[2] == 'J', NULL, NULL);
 						}
 						free (block);
 						pd_result = 0;
@@ -5664,7 +5665,7 @@ static int cmd_print(void *data, const char *input) {
 						ut8 *buf = calloc (sz, 1);
 						if (buf) {
 							(void)r_io_read_at (core->io, at, buf, sz);
-							core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 1, 1, 0, NULL, f);
+							core->num->value = r_core_print_disasm (core, at, buf, sz, sz, true, true, false, NULL, f);
 							free (buf);
 							// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_function_realsize (f), f->addr);
 						}
@@ -5779,7 +5780,7 @@ static int cmd_print(void *data, const char *input) {
 							break;
 						}
 						r_io_read_at (core->io, addr - l, block1, l); // core->blocksize);
-						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json, NULL, NULL);
+						core->num->value = r_core_print_disasm (core, addr - l, block1, l, l, true, false, formatted_json, NULL, NULL);
 					} else { // pd
 						int instr_len;
 						if (!r_core_prevop_addr (core, core->offset, l, &start)) {
@@ -5805,8 +5806,10 @@ static int cmd_print(void *data, const char *input) {
 								block1 + (bs - bs % addrbytes),
 								bs1 - (bs - bs % addrbytes));
 						}
-						core->num->value = r_core_print_disasm (core->print,
-							core, core->offset, block1, R_MAX (bs, bs1), l, 0, 0, formatted_json, NULL, NULL);
+						core->num->value = r_core_print_disasm (core,
+								core->offset, block1,
+								R_MAX (bs, bs1), l, false, false,
+								formatted_json, NULL, NULL);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
@@ -5821,8 +5824,10 @@ static int cmd_print(void *data, const char *input) {
 					block1 = malloc (addrbytes * l);
 					if (block1) {
 						r_io_read_at (core->io, addr, block1, addrbytes * l);
-						core->num->value = r_core_print_disasm (core->print,
-							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL, NULL);
+						core->num->value = r_core_print_disasm (core,
+								addr, block1, addrbytes * l, l,
+								true, false, formatted_json,
+								NULL, NULL);
 					} else {
 						eprintf ("Cannot allocate %" PFMT64d " byte(s)\n", addrbytes * l);
 					}
@@ -5836,9 +5841,9 @@ static int cmd_print(void *data, const char *input) {
 								l /= 4;
 							}
 						}
-						core->num->value = r_core_print_disasm (core->print,
-								core, addr, buf, buf_size, l,
-								0, 0, formatted_json, NULL, NULL);
+						core->num->value = r_core_print_disasm (core,
+								addr, buf, buf_size, l,	false,
+								false, formatted_json, NULL, NULL);
 					}
 				}
 			}
