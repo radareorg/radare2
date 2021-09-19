@@ -36,25 +36,22 @@ static bool file_copyp(const char *src, const char *dst) {
 	return res;
 }
 
-// XXX this function is overengineered. and needs to be deleted
 static char *strip_sys_dir(const char *path) {
-	char *ret = r_str_new ("");
-	if (!ret)  {
-		return NULL;
-	}
-	for (; *path && !(*path == *R_SYS_DIR && !*(path + 1)); path++) {
-		if (!r_str_cmp (path, R_SYS_DIR R_SYS_DIR, 2)) {
-			continue;
+	char *res = strdup (path);
+	char *ptr = res;
+	while (*ptr) {
+		if (*ptr == *R_SYS_DIR) {
+			if (ptr[1] == *R_SYS_DIR) {
+				char *ptr2 = ptr + 1;
+				while (*ptr2 == *R_SYS_DIR) {
+					ptr2++;
+				}
+				memmove (ptr + 1, ptr2, strlen (ptr2) + 1);
+			}
 		}
-		char *nret = r_str_appendf (ret, "%c", *path);
-		free (ret);
-		if (!nret) {
-			free (ret);
-			return NULL;
-		}
-		ret = nret;
+		ptr++;
 	}
-	return ret;
+	return res;
 }
 
 static Sdb *vcdb_open(const char *rp) {
@@ -126,6 +123,9 @@ static bool is_valid_branch_name(const char *name) {
 
 static char *find_sha256(const ut8 *block, int len) {
 	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
+	if (!ctx) {
+		return NULL;
+	}
 	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
 	char *ret = r_hex_bin2strdup (c, R_HASH_SIZE_SHA256);
 	r_hash_free (ctx);
@@ -133,9 +133,12 @@ static char *find_sha256(const ut8 *block, int len) {
 }
 
 static inline char *sha256_file(const char *fname) {
-	char *content = r_file_slurp (fname, NULL);
-	r_return_val_if_fail (content, NULL);
-	return find_sha256 ((ut8 *)content, r_str_len_utf8 (content) * sizeof (ut8));
+	size_t content_length = 0;
+	char *content = r_file_slurp (fname, &content_length);
+	if (content) {
+		return find_sha256 ((const ut8 *)content, content_length);
+	}
+	return NULL;
 }
 
 static void free_blobs (RList *blobs) {
