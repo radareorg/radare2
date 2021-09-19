@@ -155,6 +155,7 @@ static RList* sections(RBinFile *bf) {
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = true;
+		ptr->is_segment = true;
 		ptr->perm = 0;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
 			ptr->perm |= R_PERM_X;
@@ -352,7 +353,7 @@ static RList* libs(RBinFile *bf) {
 	return ret;
 }
 
-static int is_dot_net(RBinFile *bf) {
+static bool is_dot_net(RBinFile *bf) {
 	struct r_bin_pe_lib_t *libs = NULL;
 	int i;
 	if (!(libs = PE_(r_bin_pe_get_libs)(bf->o->bin_obj))) {
@@ -368,7 +369,7 @@ static int is_dot_net(RBinFile *bf) {
 	return false;
 }
 
-static int is_vb6(RBinFile *bf) {
+static bool is_vb6(RBinFile *bf) {
 	struct r_bin_pe_lib_t *libs = NULL;
 	int i;
 	if (!(libs = PE_(r_bin_pe_get_libs)(bf->o->bin_obj))) {
@@ -384,7 +385,7 @@ static int is_vb6(RBinFile *bf) {
 	return false;
 }
 
-static int has_canary(RBinFile *bf) {
+static bool has_canary(RBinFile *bf) {
 	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
 	RListIter *iter;
@@ -414,18 +415,17 @@ static int has_canary(RBinFile *bf) {
 }
 
 static int haschr(const RBinFile* bf, ut16 dllCharacteristic) {
-	const ut8 *buf;
 	unsigned int idx;
 	ut64 sz;
 	if (!bf) {
 		return false;
 	}
-	buf = r_buf_data (bf->buf, &sz);
+	const ut8 *buf = r_buf_data (bf->buf, &sz);
 	if (!buf) {
 		return false;
 	}
 	idx = (buf[0x3c] | (buf[0x3d]<<8));
-	if (idx + 0x5E + 1 >= sz ) {
+	if (idx + 0x5e + 1 >= sz) {
 		return false;
 	}
 	//it's funny here idx+0x5E can be 158 and sz 159 but with
