@@ -26,6 +26,46 @@ static inline HANDLE w32_loadlib(const char *name, const char *libname) {
 	return lib;
 }
 
+R_API FARPROC r_w32_InitializeConditionVariable(PCONDITION_VARIABLE a) {
+	// requires 2008 / vista
+	static FARPROC (*x)(PCONDITION_VARIABLE a) = NULL;
+	if (!x) {
+		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
+		x = (FARPROC (*)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("InitializeConditionVariable"));
+	}
+	return x? x (a): NULL;
+}
+
+R_API FARPROC r_w32_WakeConditionVariable(PCONDITION_VARIABLE a) {
+	// requires 2008 / vista
+	static FARPROC (*x)(PCONDITION_VARIABLE a) = NULL;
+	if (!x) {
+		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
+		x = (FARPROC (*)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeConditionVariable"));
+	}
+	return x? x (a): NULL;
+}
+
+R_API FARPROC r_w32_WakeAllConditionVariable(PCONDITION_VARIABLE a) {
+	// requires 2008 / vista
+	static FARPROC (*x)(PCONDITION_VARIABLE a) = NULL;
+	if (!x) {
+		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
+		x = (FARPROC (*)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeAllConditionVariable"));
+	}
+	return x? x (a): NULL;
+}
+
+R_API BOOL r_w32_SleepConditionVariableCS(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) {
+	static BOOL (*x)(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) = NULL;
+	// requires 2008 / vista
+	if (!x) {
+		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
+		x = (BOOL (*)(PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD)) GetProcAddress (lib, W32_TCALL ("SleepConditionVariableCS"));
+	}
+	return x? x (a, b, c): NULL;
+}
+
 R_API BOOL r_w32_ProcessIdToSessionId(DWORD a, DWORD *b) {
 	static BOOL (*x)(DWORD, DWORD*) = NULL;
 	if (!x) {
