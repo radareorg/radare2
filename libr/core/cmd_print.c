@@ -4150,7 +4150,12 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 		r_cons_printf ("Failed to allocate %"PFMT64u" bytes", b->size);
 		return;
 	}
-	r_io_nread_at (core->io, b->addr, buf, b->size);
+
+	if (r_io_nread_at (core->io, b->addr, buf, b->size) < 0) {
+		r_cons_printf ("Failed to read %" PFMT64u " bytes at 0x%" PFMT64x "\n",
+				b->size, b->addr);
+		return;
+	}
 
 	// currently need to use a hack argument because this code relied on
 	// pD/pI incorrectly stopping at the block boundary
