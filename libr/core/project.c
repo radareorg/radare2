@@ -27,7 +27,10 @@ static bool is_valid_project_name(const char *name) {
 }
 
 static char *get_project_script_path(RCore *core, const char *file) {
-	r_return_val_if_fail (core && !R_STR_ISEMPTY (file), NULL);
+	r_return_val_if_fail (core && file, NULL);
+	if (!*file) {
+		return NULL;
+	}
 	const char *magic = "# r2 rdb project file";
 	char *data, *prjfile;
 	if (r_file_is_abspath (file)) {

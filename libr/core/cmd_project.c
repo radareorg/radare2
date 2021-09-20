@@ -78,7 +78,11 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'd': // "Pd"
 	case '-': // "P-"
-		r_core_project_delete (core, file);
+		if (R_STR_ISNOTEMPTY (file)) {
+			r_core_project_delete (core, file);
+		} else {
+			eprintf ("Usage: Pd [prjname]   # Use P or Pl to list the available projects.\n");
+		}
 		break;
 	case 's': // "Ps"
 		if (R_STR_ISEMPTY (file)) {
