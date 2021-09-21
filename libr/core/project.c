@@ -139,46 +139,6 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
-static inline void remove_project_file(char *path) {
-	if (r_file_exists (path)) {
-		r_file_rm (path);
-		eprintf ("rm %s\n", path);
-	}
-}
-
-static inline void remove_notes_file(const char *pd) {
-	char *notes_txt = r_file_new (pd, "notes.txt", NULL);
-	if (r_file_exists (notes_txt)) {
-		r_file_rm (notes_txt);
-		eprintf ("rm %s\n", notes_txt);
-	}
-	free (notes_txt);
-}
-
-static inline void remove_rop_directory(const char *prj_dir) {
-	char *rop_d = r_file_new (prj_dir, "rop.d", NULL);
-
-	if (r_file_is_directory (rop_d)) {
-		char *f;
-		RListIter *iter;
-		RList *files = r_sys_dir (rop_d);
-		r_list_foreach (files, iter, f) {
-			char *filepath = r_str_append (strdup (rop_d), R_SYS_DIR);
-			filepath = r_str_append (filepath, f);
-			if (!r_file_is_directory (filepath)) {
-				eprintf ("rm %s\n", filepath);
-				r_file_rm (filepath);
-			}
-
-			free (filepath);
-		}
-		r_file_rm (rop_d);
-		eprintf ("rm %s\n", rop_d);
-		r_list_free (files);
-	}
-
-	free (rop_d);
-}
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
@@ -196,11 +156,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			free (path);
 			return false;
 		}
-		remove_project_file (path);
-		remove_notes_file (prj_dir);
-		remove_rop_directory (prj_dir);
-		// remove directory only if it's empty
-		r_file_rm (prj_dir);
+		r_file_rm_rf (prj_dir);
 		free (prj_dir);
 	}
 	free (path);
