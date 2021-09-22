@@ -346,7 +346,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				gai_strerror (gai), host, port);
 			return false;
 		}
-		for (rp = res; rp != NULL; rp = rp->ai_next) {
+		for (rp = res; rp; rp = rp->ai_next) {
 			int flag = 1;
 
 			s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);

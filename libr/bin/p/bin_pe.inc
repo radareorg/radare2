@@ -384,7 +384,47 @@ static int is_vb6(RBinFile *bf) {
 	return false;
 }
 
-static int has_canary(RBinFile *bf) {
+static bool check_inlined_canary(RBinFile *bf) {
+	ut8 buf[64];
+	struct r_bin_pe_addr_t *entry = PE_(r_bin_pe_get_entrypoint) (bf->o->bin_obj);
+	// check for 32bit canary
+	ut64 addr = entry->paddr;;
+	if (addr == UT64_MAX || !addr) {
+		return false;
+	}
+	if (r_buf_read_at (bf->buf, addr, buf, sizeof (buf)) < 1) {
+		return UT64_MAX;
+	}
+	if (buf[0] == 0xe8) {
+#if 0
+	mov edi, edi
+	push ebp
+	mov ebp, esp
+	sub esp, 0x10
+	mov eax, dword [0x8a2b84] // contents of 0x8a2b84 should be 0xbb40e64e
+	and dword [ebp - 8], 0
+	and dword [ebp - 4], 0
+	push ebx
+	push edi
+	mov edi, 0xbb40e64e
+#endif
+		// follow call
+		ut64 rel_addr = (ut64)((int)(buf[1] + (buf[2] << 8) + (buf[3] << 16) + (buf[4] << 24)));
+		ut64 calldst = addr + 5 + rel_addr;
+		if (r_buf_read_at (bf->buf, calldst, buf, sizeof (buf)) < 1) {
+			return UT64_MAX;
+		}
+		if (buf[0] == 0x8b && buf[1] == 0xff && buf[2] == 0x55) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool has_canary(RBinFile *bf) {
+	if (check_inlined_canary (bf)) {
+		return true;
+	}
 	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
 	RListIter *iter;
