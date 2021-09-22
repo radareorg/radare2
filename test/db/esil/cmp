@@ -2,7 +2,7 @@ NAME=cmp 1,2,<
 FILE=-
 CMDS="ae 1,2,<"
 EXPECT=<<EOF
-0x0
+0
 EOF
 RUN
 
@@ -26,7 +26,7 @@ NAME=cmp 2,1,>
 FILE=-
 CMDS="ae 2,1,>"
 EXPECT=<<EOF
-0x0
+0
 EOF
 RUN
 
@@ -34,7 +34,7 @@ NAME=cmp 1,2,<=
 FILE=-
 CMDS="ae 1,2,<="
 EXPECT=<<EOF
-0x0
+0
 EOF
 RUN
 
@@ -58,7 +58,7 @@ NAME=cmp 2,1,>=
 FILE=-
 CMDS="ae 2,1,>="
 EXPECT=<<EOF
-0x0
+0
 EOF
 RUN
 
@@ -90,7 +90,7 @@ NAME=cmp 1,2,==
 FILE=-
 CMDS="ae 1,2,==,$z,NUM"
 EXPECT=<<EOF
-0x0
+0
 EOF
 RUN
 
@@ -106,7 +106,7 @@ NAME=cmp -1,1,<
 FILE=-
 CMDS="ae -1,1,<"
 EXPECT=<<EOF
-0x0
+0
 EOF
 RUN
 
@@ -122,7 +122,7 @@ NAME=cmp -1,1,<=
 FILE=-
 CMDS="ae -1,1,<="
 EXPECT=<<EOF
-0x0
+0
 EOF
 RUN
 
@@ -130,7 +130,7 @@ NAME=cmp -1,-2,>=
 FILE=-
 CMDS="ae -1,-2,>="
 EXPECT=<<EOF
-0x0
+0
 EOF
 RUN
 
