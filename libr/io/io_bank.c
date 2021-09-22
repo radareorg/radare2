@@ -5,11 +5,13 @@
 
 #define	OLD_SM	0
 
-R_API RIOBank *r_io_bank_new(void) {
+// TODO: add name
+R_API RIOBank *r_io_bank_new(const char *name) {
 	RIOBank *bank = R_NEW0 (RIOBank);
 	if (!bank) {
 		return NULL;
 	}
+	bank->name = strdup (name);
 	bank->submaps = r_rbtree_cont_newf (free);
 	if (!bank->submaps) {
 		free (bank);
@@ -38,12 +40,8 @@ R_API void r_io_bank_free(RIOBank *bank) {
 	r_queue_free (bank->todo);
 	r_list_free (bank->maprefs);
 	r_rbtree_cont_free (bank->submaps);
+	free (bank->name);
 	free (bank);
-}
-
-static bool _bank_free_cb(void *user, void *data, ut32 id) {
-	r_io_bank_free ((RIOBank *)data);
-	return true;
 }
 
 R_API void r_io_bank_init(RIO *io) {
@@ -52,11 +50,19 @@ R_API void r_io_bank_init(RIO *io) {
 	io->banks = r_id_storage_new (0, UT32_MAX);
 }
 
+#if 0
+static bool _bank_free_cb(void *user, void *data, ut32 id) {
+	r_io_bank_free ((RIOBank *)data);
+	return true;
+}
+#endif
+
 R_API void r_io_bank_fini(RIO *io) {
 	r_return_if_fail (io);
 	if (io->banks) {
-		r_id_storage_foreach (io->banks, _bank_free_cb, NULL);
-		r_id_storage_free (io->banks);
+		// XXX segfaults
+		// r_id_storage_foreach (io->banks, _bank_free_cb, NULL);
+		// r_id_storage_free (io->banks);
 		io->banks = NULL;
 	}
 }
@@ -64,6 +70,36 @@ R_API void r_io_bank_fini(RIO *io) {
 R_API RIOBank *r_io_bank_get(RIO *io, const ut32 bankid) {
 	r_return_val_if_fail (io && io->banks, NULL);
 	return (RIOBank *)r_id_storage_get (io->banks, bankid);
+}
+
+static bool firstbank(void *user, void *data, ut32 __) {
+	ut32 *id = (ut32*)user;
+	RIOBank *bank = (RIOBank *)data;
+	*id = bank->id;
+	return false;
+}
+
+R_API ut32 r_io_bank_first(RIO *io) {
+	ut32 bankid = -1;
+	r_id_storage_foreach (io->banks, firstbank, &bankid);
+	return bankid;
+}
+
+R_API bool r_io_bank_use(RIO *io, ut32 bankid) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	if (bank) {
+		io->bank = bankid;
+		return true;
+	}
+	return false;
+}
+
+R_API ut32 r_io_bank_add(RIO *io, RIOBank *bank) {
+	r_return_val_if_fail (io && io->banks && bank, 0);
+	ut32 id = 0;
+	(void)r_id_storage_add (io->banks, bank, &id);
+	bank->id = id;
+	return id;
 }
 
 static RIOMapRef *_mapref_from_map(RIOMap *map) {
@@ -382,7 +418,7 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 // returns 1, if mr0 has higher priority than mr1
 // returns -1, if mr1 has higher priority tham mr0
 // returns 0, if neither mr0 nor mr1 are an element of the bank
-static int _mapref_priority_cmp (RIOBank *bank, RIOMapRef *mr0, RIOMapRef *mr1) {
+static int _mapref_priority_cmp(RIOBank *bank, RIOMapRef *mr0, RIOMapRef *mr1) {
 	if (mr0->id == mr1->id) {
 		// mapref have the same priority, if their mapid matches
 		return 0;
@@ -631,8 +667,8 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, i
 	return true;
 }
 
-R_API void r_io_bank_delete_map (RIO *io, const ut32 bankid, const ut32 mapid) {
-//no need to check for mapref here, since this is "just" deleting
+R_API void r_io_bank_delete_map(RIO *io, const ut32 bankid, const ut32 mapid) {
+	// no need to check for mapref here, since this is "just" deleting
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	RIOMap *map = r_io_map_get (io, mapid);
 	r_return_if_fail (bank && map);
@@ -647,10 +683,20 @@ R_API void r_io_bank_delete_map (RIO *io, const ut32 bankid, const ut32 mapid) {
 	// map is not referenced by this bank; nothing to do
 }
 
+R_API void r_io_bank_del(RIO *io, const ut32 bankid) {
+	r_id_storage_delete (io->banks, bankid);
+	if (io->bank == bankid) {
+		io->bank = r_io_bank_first (io);
+	}
+}
+
 // merges nearby submaps, that have a map ref to the same map, and free unneeded tree nodes
-R_API void r_io_bank_drain (RIO *io, const ut32 bankid) {
+R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
+	r_return_if_fail (io);
 	RIOBank *bank = r_io_bank_get (io, bankid);
-	r_return_if_fail (bank);
+	if (!bank) {
+		return;
+	}
 	RContRBNode *node = r_rbtree_cont_node_first (bank->submaps);
 	RContRBNode *next = NULL;
 	while (node) {

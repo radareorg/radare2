@@ -109,6 +109,16 @@ R_API RIO* r_io_init(RIO* io) {
 	io->cb_printf = printf; // r_cons_printf;
 	r_io_desc_init (io);
 	r_io_bank_init (io);
+	RIOBank *bank = r_io_bank_new ("default");
+	if (bank) {
+		io->bank = bank->id;
+		r_io_bank_add (io, bank);
+		void **p;
+		r_pvector_foreach (&io->maps, p) {
+			RIOMap *map = (RIOMap*) p;
+			r_io_bank_map_add_top (io, bank->id, map->id);
+		}
+	}
 	r_skyline_init (&io->map_skyline);
 	r_io_map_init (io);
 	r_io_cache_init (io);
@@ -284,7 +294,9 @@ static bool internal_r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	bool ret = (io->va)
-		? r_io_vread_at_mapped (io, addr, buf, len)
+		? (io->use_banks)
+			? r_io_bank_read_at (io, io->bank, addr, buf, len)
+			: r_io_vread_at_mapped (io, addr, buf, len)
 		: r_io_pread_at (io, addr, buf, len) > 0;
 	if (io->cached & R_PERM_R) {
 		(void)r_io_cache_read (io, addr, buf, len);
@@ -690,12 +702,19 @@ R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
 }
 #endif
 
+static bool free_banks_cb (void *user, void *data, ut32 id) {
+	RIOBank *bank = (RIOBank *)data;
+	r_io_bank_free (bank);
+	return true;
+}
 
 //remove all descs and maps
 R_API int r_io_fini(RIO* io) {
 	if (!io) {
 		return false;
 	}
+	r_id_storage_foreach (io->banks, free_banks_cb, NULL);
+	r_id_storage_free (io->banks);
 	r_io_desc_cache_fini_all (io);
 	r_io_desc_fini (io);
 	r_io_bank_fini (io);
