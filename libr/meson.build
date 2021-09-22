@@ -343,6 +343,7 @@ core_plugins += [
 crypto_plugins += [
   'aes',
   'aes_cbc',
+  'aes_wrap',
   'base64',
   'base91',
   'blowfish',

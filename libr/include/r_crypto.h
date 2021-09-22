@@ -84,6 +84,7 @@ extern RCryptoPlugin r_crypto_plugin_punycode;
 extern RCryptoPlugin r_crypto_plugin_rc6;
 extern RCryptoPlugin r_crypto_plugin_cps2;
 extern RCryptoPlugin r_crypto_plugin_serpent;
+extern RCryptoPlugin r_crypto_plugin_aes_wrap;
 
 #define R_CRYPTO_NONE 0ULL
 #define R_CRYPTO_RC2 1ULL
@@ -91,14 +92,15 @@ extern RCryptoPlugin r_crypto_plugin_serpent;
 #define R_CRYPTO_RC6 1ULL<<2
 #define R_CRYPTO_AES_ECB 1ULL<<3
 #define R_CRYPTO_AES_CBC 1ULL<<4
-#define R_CRYPTO_ROR 1ULL<<5
-#define R_CRYPTO_ROL 1ULL<<6
-#define R_CRYPTO_ROT 1ULL<<7
-#define R_CRYPTO_BLOWFISH 1ULL<<8
-#define R_CRYPTO_CPS2 1ULL<<9
-#define R_CRYPTO_DES_ECB 1ULL<<10
-#define R_CRYPTO_XOR 1ULL<<11
-#define R_CRYPTO_SERPENT 1ULL<<12
+#define R_CRYPTO_AES_WRAP 1ULL<<5
+#define R_CRYPTO_ROR 1ULL<<6
+#define R_CRYPTO_ROL 1ULL<<7
+#define R_CRYPTO_ROT 1ULL<<8
+#define R_CRYPTO_BLOWFISH 1ULL<<9
+#define R_CRYPTO_CPS2 1ULL<<10
+#define R_CRYPTO_DES_ECB 1ULL<<11
+#define R_CRYPTO_XOR 1ULL<<12
+#define R_CRYPTO_SERPENT 1ULL<<13
 #define R_CRYPTO_ALL 0xFFFF
 
 #define R_CODEC_NONE 0ULL
