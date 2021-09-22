@@ -25,6 +25,10 @@
 #  define r_SHA512_Init         SHA512_Init
 #  define r_SHA512_Update       SHA512_Update
 #  define r_SHA512_Final        SHA512_Final
+
+#  define r_MD5_Init            MD5_Init
+#  define r_MD5_Update          MD5_Update
+#  define r_MD5_Final           MD5_Final
 #else
 #include "md4.h"
 #include "md5.h"
@@ -136,22 +140,22 @@ R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len) {
 R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
 	if (len < 0) {
 		if (len == -1) {
-			MD5_Init (&ctx->md5);
+			r_MD5_Init (&ctx->md5);
 		} else if (len == -2) {
-			MD5_Final (ctx->digest, &ctx->md5);
+			r_MD5_Final (ctx->digest, &ctx->md5);
 		}
 		return NULL;
 	}
 	if (ctx->rst) {
-		MD5_Init (&ctx->md5);
+		r_MD5_Init (&ctx->md5);
 	}
 	if (len > 0) {
-		MD5_Update (&ctx->md5, input, len);
+		r_MD5_Update (&ctx->md5, input, len);
 	} else {
-		MD5_Update (&ctx->md5, (const ut8 *) "", 0);
+		r_MD5_Update (&ctx->md5, (const ut8 *) "", 0);
 	}
 	if (ctx->rst) {
-		MD5_Final (ctx->digest, &ctx->md5);
+		r_MD5_Final (ctx->digest, &ctx->md5);
 	}
 	return ctx->digest;
 }
