@@ -626,7 +626,7 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 		}
 		const ut64 buf_off = addr - R_MAX (addr, r_io_submap_from (sm));
 		const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
-					     r_io_submap_to (sm)) - buf_off + 1;
+					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
 		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
 		r_io_fd_read_at (io, map->fd, paddr, &buf[buf_off], read_len);
 		// check return value here?
@@ -657,7 +657,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, i
 		}
 		const ut64 buf_off = addr - R_MAX (addr, r_io_submap_from (sm));
 		const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
-					     r_io_submap_to (sm)) - buf_off + 1;
+					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
 		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
 		r_io_fd_write_at (io, map->fd, paddr, &buf[buf_off], read_len);
 		// check return value here?
