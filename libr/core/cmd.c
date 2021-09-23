@@ -5543,6 +5543,34 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	return retstr;
 }
 
+/* get command output in raw bytes */
+R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd) {
+	r_cons_push ();
+	core->cons->context->noflush = true;
+
+	core->cons->context->cmd_str_depth++;
+	if (r_core_cmd0 (core, cmd) == -1) {
+		//eprintf ("Invalid command: %s\n", cmd);
+		if (--core->cons->context->cmd_str_depth == 0) {
+			core->cons->context->noflush = false;
+			r_cons_flush ();
+		}
+		r_cons_pop ();
+		return NULL;
+	}
+
+	if (--core->cons->context->cmd_str_depth == 0) {
+		core->cons->context->noflush = false;
+	}
+
+	r_cons_filter ();
+	RBuffer *out = r_buf_new_with_bytes ((const ut8*)r_cons_get_buffer (), r_cons_get_buffer_len ());
+
+	r_cons_pop ();
+	r_cons_echo (NULL);
+	return out;
+}
+
 /* run cmd in the main task synchronously */
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log) {
 	RCoreTask *task = core->tasks.main_task;

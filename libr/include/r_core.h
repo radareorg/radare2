@@ -433,6 +433,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
 R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
+R_API RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd);
 R_API int r_core_cmd_file(RCore *core, const char *file);
 R_API int r_core_cmd_lines(RCore *core, const char *lines);
 R_API int r_core_cmd_command(RCore *core, const char *command);
