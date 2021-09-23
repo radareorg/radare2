@@ -700,8 +700,8 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 				r_pvector_foreach_prev (&core->io->maps, it) {
 					RIOMap *map = *it;
 					r_io_bank_map_add_top (core->io, core->io->bank, map->id);
-					ut64 from = map->itv.addr;
-					ut64 to = from + map->itv.size;
+					ut64 from = r_io_map_from (map);
+					ut64 to = r_io_map_to (map);
 					r_io_bank_update_map_boundaries(core->io, core->io->bank,
 						map->id, from, to);
 					break;
@@ -713,19 +713,22 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 			break;
 		case 0: // "omb"
 			{
-				RList *list = r_id_storage_list (core->io->banks);
-				RIOMap *map;
-				RIOBank *bank;
-				RListIter *iter, *iter2;
-				r_list_foreach (list, iter, bank) {
-					const char ch = core->io->bank == bank->id? '*': '-';
+				ut32 bank_id = 0;
+				if (!r_id_storage_get_lowest (core->io->banks, &bank_id)) {
+					break;
+				}
+				do {
+					RIOBank *bank = r_id_storage_get (core->io->banks, bank_id);
+					const char ch = core->io->bank == bank_id? '*': '-';
 					r_cons_printf ("%c %d %s [", ch, bank->id, bank->name);
-					r_list_foreach (bank->maprefs, iter2, map) {
-						r_cons_printf (" %d", map->id);
+					RIOMapRef *mapref;
+					RListIter *iter;
+					r_list_foreach (bank->maprefs, iter, mapref) {
+						r_cons_printf (" %d", mapref->id);
 					}
 					r_cons_printf (" ]\n");
 					// list all the associated maps
-				}
+				} while (r_id_storage_get_next (core->io->banks, &bank_id));
 			}
 			break;
 		case '+': // "omb+ [name]"
