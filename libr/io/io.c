@@ -702,23 +702,15 @@ R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
 }
 #endif
 
-static bool free_banks_cb (void *user, void *data, ut32 id) {
-	RIOBank *bank = (RIOBank *)data;
-	r_io_bank_free (bank);
-	return true;
-}
-
-//remove all descs and maps
+//remove all banks, maps and descs
 R_API int r_io_fini(RIO* io) {
 	if (!io) {
 		return false;
 	}
-	r_id_storage_foreach (io->banks, free_banks_cb, NULL);
-	r_id_storage_free (io->banks);
-	r_io_desc_cache_fini_all (io);
-	r_io_desc_fini (io);
 	r_io_bank_fini (io);
 	r_io_map_fini (io);
+	r_io_desc_cache_fini_all (io);
+	r_io_desc_fini (io);
 	ls_free (io->plugins);
 	r_io_cache_fini (io);
 	r_list_free (io->undo.w_list);

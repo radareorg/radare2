@@ -385,18 +385,6 @@ R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
 	return lowest;
 }
 
-R_API RIOMap* r_io_map_get_by_id(RIO* io, ut32 id) {
-	r_return_val_if_fail (io, NULL);
-	void **it;
-	r_pvector_foreach (&io->maps, it) {
-		RIOMap *map = *it;
-		if (map && map->id == id) {
-			return map;
-		}
-	}
-	return NULL;
-}
-
 R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
 	r_return_val_if_fail (io, NULL);
 	RList* map_list = r_list_newf (NULL);

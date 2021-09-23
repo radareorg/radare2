@@ -50,19 +50,17 @@ R_API void r_io_bank_init(RIO *io) {
 	io->banks = r_id_storage_new (0, UT32_MAX);
 }
 
-#if 0
+
 static bool _bank_free_cb(void *user, void *data, ut32 id) {
 	r_io_bank_free ((RIOBank *)data);
 	return true;
 }
-#endif
 
 R_API void r_io_bank_fini(RIO *io) {
 	r_return_if_fail (io);
 	if (io->banks) {
-		// XXX segfaults
-		// r_id_storage_foreach (io->banks, _bank_free_cb, NULL);
-		// r_id_storage_free (io->banks);
+		r_id_storage_foreach (io->banks, _bank_free_cb, NULL);
+		r_id_storage_free (io->banks);
 		io->banks = NULL;
 	}
 }
@@ -72,16 +70,9 @@ R_API RIOBank *r_io_bank_get(RIO *io, const ut32 bankid) {
 	return (RIOBank *)r_id_storage_get (io->banks, bankid);
 }
 
-static bool firstbank(void *user, void *data, ut32 __) {
-	ut32 *id = (ut32*)user;
-	RIOBank *bank = (RIOBank *)data;
-	*id = bank->id;
-	return false;
-}
-
 R_API ut32 r_io_bank_first(RIO *io) {
 	ut32 bankid = -1;
-	r_id_storage_foreach (io->banks, firstbank, &bankid);
+	r_id_storage_get_lowest (io->banks, &bankid);
 	return bankid;
 }
 
@@ -94,12 +85,9 @@ R_API bool r_io_bank_use(RIO *io, ut32 bankid) {
 	return false;
 }
 
-R_API ut32 r_io_bank_add(RIO *io, RIOBank *bank) {
-	r_return_val_if_fail (io && io->banks && bank, 0);
-	ut32 id = 0;
-	(void)r_id_storage_add (io->banks, bank, &id);
-	bank->id = id;
-	return id;
+R_API bool r_io_bank_add(RIO *io, RIOBank *bank) {
+	r_return_val_if_fail (io && io->banks && bank, false);
+	return r_id_storage_add (io->banks, bank, &bank->id);
 }
 
 static RIOMapRef *_mapref_from_map(RIOMap *map) {
