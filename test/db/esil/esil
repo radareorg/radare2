@@ -20,7 +20,7 @@ ae 3,3,-
 EOF
 EXPECT=<<EOF
 0x6
-0x0
+0
 EOF
 RUN
 
@@ -33,7 +33,7 @@ ae 3,--
 ae 0,--
 EOF
 EXPECT=<<EOF
-0x0
+0
 0x4
 0x2
 0xffffffffffffffff
@@ -81,7 +81,7 @@ CMDS=<<EOF
 EOF
 EXPECT=<<EOF
 0x4
-0x0
+0
 EOF
 RUN
 
@@ -100,7 +100,7 @@ ae 3,3,+,!
 ae 3,3,-,!
 EOF
 EXPECT=<<EOF
-0x0
+0
 0x1
 EOF
 RUN
