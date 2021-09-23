@@ -97,7 +97,7 @@ static const char *help_msg_at_at_at[] = {
 	"x", " @@@i", "imports",
 	"x", " @@@m", "io.maps",
 	"x", " @@@r", "registers",
-	"x", " @@@r", "regs",
+	"x", " @@@R", "relocs",
 	"x", " @@@s", "symbols",
 	"x", " @@@t", "threads",
 	"x", " @@@z", "ztrings",

@@ -4581,7 +4581,18 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 			}
 		}
 		break;
-	case 'r':
+	case 'R': // relocs
+		{
+			RBinReloc *rel;
+			const RList *rels = r_bin_get_relocs_list (core->bin);
+			// const RList *rels = r_bin_patch_relocs_list (core->bin);
+			r_list_foreach (rels, iter, rel) {
+				ut64 addr = va? rel->vaddr: rel->paddr;
+				append_item (list, NULL, addr, UT64_MAX);
+			}
+		}
+		break;
+	case 'r': // registers
 		{
 			for (i = 0; i < R_REG_TYPE_LAST; i++) {
 				RRegItem *item;
@@ -4640,6 +4651,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	case 'F':
 	case 'b':
 	case 'z':
+	case 'R':
 	case 'S':
 	case 'r':
 	case 'i':
