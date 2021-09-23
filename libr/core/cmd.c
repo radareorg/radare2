@@ -4635,8 +4635,10 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 	case 'c':
 		if (glob) {
 			char *arg = r_core_cmd_str (core, glob);
-			foreach_pairs (core, cmd, arg);
-			free (arg);
+			if (arg) {
+				foreach_pairs (core, cmd, arg);
+				free (arg);
+			}
 		} else {
 			eprintf ("Usage: @@@c:command   # same as @@@=`command`\n");
 		}
