@@ -752,8 +752,9 @@ static ut8 *get_imports(RCore *c, int *len) {
 		return NULL;
 	}
 
-	RList *list = r_bin_get_imports (c->bin);
-	r_list_sort (list, (RListComparator) import_cmp);
+	const RList *list = r_bin_get_imports (c->bin);
+	// XXX we probably dont want to sort an unowned list
+	r_list_sort ((RList *)list, (RListComparator) import_cmp);
 
 	*len = 0;
 
