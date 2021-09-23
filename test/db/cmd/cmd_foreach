@@ -53,3 +53,35 @@ hello
 world
 EOF
 RUN
+
+NAME=foreach iterator for other stuff
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+?e hello
+?e=1@@@s~?
+?e=1@@@s~?
+?e=1@@@S~?
+?e=1@@@S~?
+?e=1@@@f~?
+?e=1@@@f~?
+?e=1@@@m~?
+?e=1@@@m~?
+?e=1@@@s~?
+?e=1@@@s~?
+?e world
+EOF
+EXPECT=<<EOF
+hello
+116
+116
+16
+16
+342
+342
+3
+3
+116
+116
+world
+EOF
+RUN

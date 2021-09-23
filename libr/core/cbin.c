@@ -1977,7 +1977,7 @@ static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 		return false;
 	}
 
-	RList *imports = r_bin_get_imports (r->bin);
+	const RList *imports = r_bin_get_imports (r->bin);
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
