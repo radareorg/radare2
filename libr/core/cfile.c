@@ -752,7 +752,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_config_set_i (r->config, "bin.at", true);
 		eprintf ("[bin.libs] Linking imports...\n");
 		RBinImport *imp;
-		RList *imports = r_bin_get_imports (r->bin);
+		const RList *imports = r_bin_get_imports (r->bin);
 		r_list_foreach (imports, iter, imp) {
 			// PLT finding
 			RFlagItem *impsym = r_flag_get (r->flags, sdb_fmt ("sym.imp.%s", imp->name));

@@ -4498,14 +4498,15 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 	case 'i': // @@@i
 		{
 			RBinImport *imp;
-			RList *implist = r_bin_get_imports (core->bin);
+			const RList *implist = r_bin_get_imports (core->bin);
 			r_list_foreach (implist, iter, imp) {
 				char *impflag = r_str_newf ("sym.imp.%s", imp->name);
 				ut64 addr = r_num_math (core->num, impflag);
+				if (addr != 0 && addr != UT64_MAX) {
+					append_item (list, NULL, addr, UT64_MAX);
+				}
 				free (impflag);
-				append_item (list, NULL, addr, UT64_MAX);
 			}
-			r_list_free (implist);
 		}
 		break;
 	case 'E':
