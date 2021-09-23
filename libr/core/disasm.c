@@ -5872,12 +5872,13 @@ toro:
 	// TODO: this too (must review)
 	ds_print_esil_anal_fini (ds);
 	ds_reflines_fini (ds);
-	ds_free (ds);
 	R_FREE (nbuf);
 	p->calc_row_offsets = calc_row_offsets;
 	/* used by asm.emu */
 	r_reg_arena_pop (core->anal->reg);
-	return ds_offset (ds); //-ds->lastfail;
+	ut64 res = ds_offset (ds); //-ds->lastfail;
+	ds_free (ds);
+	return res;
 }
 
 static inline bool check_end(int nb_opcodes, int nb_bytes, int i, int j) {
