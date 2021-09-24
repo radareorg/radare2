@@ -8,7 +8,7 @@
 #define BLOCK_SIZE 8
 
 static struct aes_state st;
-static bool iv_set = 0;
+static bool iv_set = false;
 static ut8 iv[8];
 
 static bool aes_wrap_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
@@ -33,7 +33,7 @@ static bool aes_wrap_set_iv(RCrypto *cry, const ut8 *iv_src, int ivlen) {
 	} else {
 		memcpy (iv, iv_src, BLOCK_SIZE);
 	}
-	iv_set = 1;
+	iv_set = true;
 	return true;
 }
 
@@ -44,8 +44,8 @@ static bool aes_wrap_use(const char *algo) {
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	ut64 blocks = len / BLOCK_SIZE;
 	static ut8 tmp[16];
-	long *tmp_ptr =  (long *)tmp;
-	ut64 t=0;
+	long *tmp_ptr = (long *)tmp;
+	ut64 t = 0;
 	int i, j;
 
 	if (len % BLOCK_SIZE != 0) {
@@ -56,8 +56,9 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	if (len < 16 && cry->dir == 0) {
 		eprintf ("Length must be at least 16.\n");
 		return false;
-	} else if (len < 24 && cry->dir == 1)
-	{
+	}
+
+	if (len < 24 && cry->dir == 1) {
 		eprintf ("Length must be at least 24.\n");
 		return false;
 	}
@@ -67,30 +68,30 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		return false;
 	}
 	long *obuf_ptr = (long *)obuf;
-	
+
 	if (!iv_set) {
-		memset (iv, 0xa6, 8);
+		memset (iv, 0xa6, BLOCK_SIZE);
 	}
 
 	if (cry->dir == 0) {
 		// Encrypt
 		memcpy (obuf, iv, BLOCK_SIZE);
-		memcpy (obuf+8, buf, len);
+		memcpy (obuf + BLOCK_SIZE, buf, len);
 		for (j = 0; j <= 5; j++) {
 			for (i = 0; i < blocks; i++) {
 				/* B = AES(K, A | R[i]) */
 				*tmp_ptr = *obuf_ptr;
-				*(tmp_ptr+1) = *(obuf_ptr+i+1);
+				*(tmp_ptr + 1) = *(obuf_ptr + i + 1);
 				aes_encrypt (&st, tmp, tmp);
 
 				/* A = MSB(64, B) ^ t */
 				t++;
 				t = r_swap_ut64 (t);
-				*obuf_ptr =  t ^ *tmp_ptr;
+				*obuf_ptr = t ^ *tmp_ptr;
 				t = r_swap_ut64 (t);
 
 				/* R[i] = LSB(64, B) */
-				*(obuf_ptr+i+1) = *(tmp_ptr+1);
+				*(obuf_ptr + i + 1) = *(tmp_ptr + 1);
 			}
 		}
 		r_crypto_append (cry, obuf, len + BLOCK_SIZE);
@@ -100,28 +101,28 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		t = 6 * blocks;
 		memcpy (obuf, buf, len);
 		for (j = 0; j <= 5; j++) {
-      		for (i = blocks; i >= 1; i--) {
+			for (i = blocks; i >= 1; i--) {
 				/* B = AES^-1( (A ^ t)| R[i] ) */
 				t = r_swap_ut64 (t);
-				*tmp_ptr =  t ^ *obuf_ptr;
+				*tmp_ptr = t ^ *obuf_ptr;
 				t = r_swap_ut64 (t);
 				t--;
-				*(tmp_ptr+1) = *(obuf_ptr+i);
+				*(tmp_ptr + 1) = *(obuf_ptr + i);
 				aes_decrypt (&st, tmp, tmp);
-				
+
 				/* A = MSB_64(B) */
 				*obuf_ptr = *tmp_ptr;
 				/* R[i] = LSB_64(B) */
-				*(obuf_ptr+i) = *(tmp_ptr+1);
-        	}
-   		}
-		if (memcmp(iv, obuf,8)){
+				*(obuf_ptr + i) = *(tmp_ptr + 1);
+			}
+		}
+		if (memcmp (iv, obuf, BLOCK_SIZE)) {
 			eprintf ("Invalid integrity check\n");
 			return false;
 		}
-		r_crypto_append (cry, obuf+BLOCK_SIZE, len-BLOCK_SIZE);
+		r_crypto_append (cry, obuf + BLOCK_SIZE, len - BLOCK_SIZE);
 	}
-	
+
 	free (obuf);
 	return true;
 }
