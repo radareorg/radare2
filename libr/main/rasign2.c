@@ -34,7 +34,7 @@ static RCore *opencore(const char *fname) {
 		return NULL;
 	}
 	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
-	r_config_set_i (c->config, "scr.interactive", false);
+	r_config_set_b (c->config, "scr.interactive", false);
 	if (fname) {
 #if __WINDOWS__
 		char *winf = r_acp_to_utf8 (fname);
@@ -90,7 +90,7 @@ static int handle_sdb(const char *fname, struct rasignconf *conf) {
 	// can't use RAnal here because JSON output requires core, in a sneaky way
 	RCore *core = r_core_new ();
 	if (core && r_sign_load (core->anal, fname)) {
-		r_config_set_i (core->config, "scr.interactive", false);
+		r_config_set_b (core->config, "scr.interactive", false);
 		if (conf->collision) {
 			r_sign_resolve_collisions (core->anal);
 		}
