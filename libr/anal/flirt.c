@@ -669,10 +669,6 @@ static int node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 	RListIter *it_func;
 	RAnalFunction *func;
 	r_list_foreach (anal->fcns, it_func, func) {
-		if (func->type != R_ANAL_FCN_TYPE_FCN && func->type != R_ANAL_FCN_TYPE_LOC) { // scan only for unknown functions
-			continue;
-		}
-
 		ut64 func_size = r_anal_function_linear_size (func);
 		ut8 *func_buf = malloc (func_size);
 		if (!func_buf) {
