@@ -155,7 +155,6 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 			}
 
 			bbAddOpcode (addr + cur);
-				eprintf ("a2f: iji %llx\n", addr+ cur);
 			switch (op->type) {
 			case R_ANAL_OP_TYPE_NOP:
 				// skip nops

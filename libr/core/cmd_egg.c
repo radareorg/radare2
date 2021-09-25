@@ -14,6 +14,7 @@ static const char *help_msg_g[] = {
 	"gL", "[?]", "List plugins (shellcodes, encoders)",
 	"gs", " name args", "Compile syscall name(args)",
 	"gi", " [type]", "Define the shellcode type",
+	"git", " [...]", "Your favourite version control",
 	"gp", " padding", "Define padding for command",
 	"ge", " [encoder] [key]", "Specify an encoder and a key",
 	"gr", "", "Reset r_egg",
@@ -205,7 +206,13 @@ static int cmd_egg(void *data, const char *input) {
 		}
 		break;
 	case 'i': // "gi"
-		if (input[1] == ' ') {
+		if (input[1] == 't') {
+			if (input[2] == '?') {
+				r_sys_cmd ("git --help");
+			} else {
+				r_sys_cmdf ("git%s", input + 2);
+			}
+		} else if (input[1] == ' ') {
 			if (input[0] && input[2]) {
 				r_egg_option_set (egg, "egg.shellcode", input + 2);
 			} else {
