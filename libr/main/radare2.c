@@ -1392,7 +1392,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 #if UNCOLORIZE_NONTTY
 #if __UNIX__
-	if (!r_cons_isatty ()) {
+	if (!r_cons_is_tty ()) {
 		r_config_set_i (r->config, "scr.color", COLOR_MODE_DISABLED);
 	}
 #endif
