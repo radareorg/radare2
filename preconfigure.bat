@@ -40,6 +40,16 @@ if %ERRORLEVEL% == 0 (
     exit /b 0
   )
 )
+
+REM vs uses HOST_TARGET syntax, so: x86_amd64 means 32bit compiler for 64bit target
+REM: Hosts: x86 amd64 x64
+REM: Targets: x86 amd64 x64 arm arm64
+if "%*" == "x86" (
+  set VSARCH=x86
+) ELSE (
+  set VSARCH=x86_amd64
+)
+
 echo === Finding Visual Studio...
 cl --help > NUL 2> NUL
 if %ERRORLEVEL% == 0 (
@@ -47,19 +57,19 @@ if %ERRORLEVEL% == 0 (
 ) else (
   if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community" (
     echo "Found community edition"
-    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
   ) else (
     if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
       echo "Found Enterprise edition"
-      call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
     ) else (
       if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" (
         echo "Found Professional edition"
-        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
       ) else (
         if EXIST "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" (
           echo "Found BuildTools"
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" %VSARCH%
         ) else (
           echo "Not Found"
           exit /b 1
