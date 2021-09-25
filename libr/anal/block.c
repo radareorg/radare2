@@ -490,6 +490,9 @@ typedef struct {
 
 R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, R_NULLABLE RAnalBlockCb on_exit, void *user) {
 	bool breaked = false;
+	if (!block) {
+		return false;
+	}
 	HtUP *visited = ht_up_new0 ();
 	if (!visited) {
 		goto beach;
