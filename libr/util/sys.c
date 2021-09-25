@@ -442,9 +442,14 @@ static void signal_handler(int signum) {
 	if (!crash_handler_cmd) {
 		return;
 	}
-	snprintf (cmd, sizeof(cmd) - 1, crash_handler_cmd, r_sys_getpid ());
-	r_sys_backtrace ();
-	exit (r_sys_cmd (cmd));
+	char *cmd = r_str_newf ("%s %d", crash_handler_cmd, r_sys_getpid ());
+	int rc = 1;
+	if (cmd) {
+		r_sys_backtrace ();
+		rc = r_sys_cmd (cmd);
+		free (cmd);
+	}
+	exit (rc);
 }
 
 static int checkcmd(const char *c) {
