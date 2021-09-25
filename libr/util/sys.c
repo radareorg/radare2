@@ -438,7 +438,6 @@ R_API int r_sys_setenv(const char *key, const char *value) {
 static char *crash_handler_cmd = NULL;
 
 static void signal_handler(int signum) {
-	char cmd[1024];
 	if (!crash_handler_cmd) {
 		return;
 	}
