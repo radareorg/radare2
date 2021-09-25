@@ -269,7 +269,7 @@ static ut64 getFunctionSize(Sdb *db) {
 	return max - min;
 }
 
-static int analyzeFunction(RCore *core, ut64 addr) {
+static bool analyzeFunction(RCore *core, ut64 addr) {
 	Sdb *db = sdb_new0 ();
 	RFlagItem *fi;
 	RList *delayed_commands = NULL;
@@ -277,7 +277,7 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	ut64 loc_addr = 0;
 	char *command = NULL;
 	char *function_label;
-	bool vars = r_config_get_i (core->config, "anal.vars");
+	bool vars = r_config_get_b (core->config, "anal.vars");
 	if (!db) {
 		eprintf ("Cannot create db\n");
 		return false;
@@ -318,10 +318,15 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	if (fi && fi->name && strncmp (fi->name, "sect", 4)) {
 		function_label = strdup (fi->name);
 	} else {
-		function_label = r_str_newf ("fcn2.%08"PFMT64x, addr);
+		function_label = r_str_newf ("fcn.%08"PFMT64x, addr);
 	}
 	// loc_addr = core->offset; // sdb_num_get (db, "addr", NULL);
 	loc_addr = sdb_num_get (db, "addr", NULL);
+	RAnalFunction *fcn_at_addr = r_anal_get_function_at (core->anal, loc_addr);
+	if (fcn_at_addr) {
+		return false;
+	}
+
 	// r_cons_printf ("af+ 0x%08"PFMT64x" %s\n", loc_addr, function_label);
 	r_core_cmdf (core, "af+ 0x%08"PFMT64x" %s", loc_addr, function_label);
 	{
@@ -342,7 +347,10 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 
 		if (vars) {
 			// handling arguments
-			r_core_cmdf (core, "afva @ 0x%"PFMT64x, addr);
+			RAnalFunction *fcn_at_addr = r_anal_get_function_at (core->anal, addr);
+			if (fcn_at_addr) {
+				r_core_cmdf (core, "afva @ 0x%"PFMT64x, addr);
+			}
 		}
 		free (bbs);
 		free (function_label);
@@ -376,7 +384,7 @@ static int r_cmd_anal_call(void *user, const char *input) {
 		switch (input[2]) {
 		case 'f':
 			if (!analyzeFunction (core, core->offset)) {
-				eprintf ("a2f: Failed to analyze function.\n");
+				eprintf ("a2f: Failed to analyze function at 0x%08"PFMT64x".\n", core->offset);
 			}
 			break;
 		default:
