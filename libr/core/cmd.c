@@ -5325,7 +5325,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	size_t line_count = r_str_char_count(lines, '\n');
 
 #if __UNIX__
-	const bool istty = r_cons_isatty ();
+	const bool istty = r_cons_is_tty ();
 #else
 	const bool istty = true;
 #endif

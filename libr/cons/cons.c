@@ -1452,7 +1452,7 @@ R_API bool r_cons_is_windows(void) {
 #endif
 }
 
-R_API bool r_cons_isatty(void) {
+R_API bool r_cons_is_tty(void) {
 #if EMSCRIPTEN || __wasi__
 	return false;
 #elif __UNIX__
