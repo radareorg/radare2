@@ -15,6 +15,7 @@ static const struct {
 	{ "rc6", R_CRYPTO_RC6 },
 	{ "aes-ecb", R_CRYPTO_AES_ECB },
 	{ "aes-cbc", R_CRYPTO_AES_CBC },
+	{ "aes-wrap", R_CRYPTO_AES_WRAP },
 	{ "ror", R_CRYPTO_ROR },
 	{ "rol", R_CRYPTO_ROL },
 	{ "rot", R_CRYPTO_ROT },
