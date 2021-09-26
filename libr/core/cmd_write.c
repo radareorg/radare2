@@ -225,18 +225,17 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 		binkey = (ut8 *)strdup (key);
 		keylen = r_hex_str2bin (key, binkey);
 	}
+	if (!binkey) {
+		eprintf ("Cannot allocate %d byte(s)\n", keylen);
+		return false;
+	}
 	if (!no_key_mode && keylen < 1) {
-		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
+		eprintf ("%s key not defined. Use -S [key]\n", ((!direction)? "Encryption": "Decryption"));
 		free (binkey);
 		return false;
 	}
 	RCrypto *cry = r_crypto_new ();
 	if (r_crypto_use (cry, algo)) {
-		if (!binkey) {
-			eprintf ("Cannot allocate %d byte(s)\n", keylen);
-			r_crypto_free (cry);
-			return false;
-		}
 		if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
 			if (iv) {
 				ut8 *biniv = malloc (strlen (iv) + 1);
@@ -251,7 +250,6 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 				}
 			}
 			r_crypto_update (cry, (const ut8*)core->block, core->blocksize);
-			r_crypto_final (cry, NULL, 0);
 
 			int result_size = 0;
 			ut8 *result = r_crypto_get_output (cry, &result_size);
