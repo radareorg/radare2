@@ -159,7 +159,7 @@ static const char *help_msg_p[] = {
 	"ps", "[?][pwz] [len]", "print pascal/wide/zero-terminated strings",
 	"pt", "[?][dn] [len]", "print different timestamps",
 	"pu", "[?][w] [len]", "print N url encoded bytes (w=wide)",
-	"pv", "[?][jh] [mode]", "show variable/pointer/value in memory",
+	"pv", "[?][ejh] [mode]", "show value of given size (1, 2, 4, 8)",
 	"pwd", "", "display current working directory",
 	"px", "[?][owq] [len]", "hexdump of N bytes (o=octal, w=32bit, q=64bit)",
 	"pz", "[?] [len]", "print zoom view (see pz? for help)",
@@ -457,6 +457,7 @@ static const char *help_msg_pv[] = {
 	"pv2", "", "print 2 bytes in memory",
 	"pv4", "", "print 4 bytes in memory",
 	"pv8", "", "print 8 bytes in memory",
+	"pve", " [1234] ([bsize])", "print value with any endian (1234, ",
 	"pvz", "", "print value as string (alias for ps)",
 	NULL
 };
@@ -2943,6 +2944,20 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	return handled_cmd;
 }
 
+static ut32 convert(ut8 *data, const char *bo) {
+	ut32 n = 0;
+	while (*bo) {
+		int i = *bo - '0';
+		if (i < 1 || i > 4) {
+			break;
+		}
+		n <<= 8;
+		n |= (data[i - 1] & 0xff);
+		bo++;
+	}
+	return n;
+}
+
 // XXX blocksize is missing
 static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	const char *stack[] = {
@@ -3091,6 +3106,37 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		r_core_seek (core, oldAt, false);
 		break;
 	}
+	case 'e': // "pve"
+		{
+			ut32 n = 0;
+			ut8 *p = (ut8*)(ut32*)(n);
+			int size = 4; // default is 4.. or asm.bits?
+			const char *byteorder = r_config_get_b (core->config, "cfg.bigendian")
+				? "1234": "4321";
+			if (strchr (input, ' ')) {
+				size = atoi (input + 1);
+				byteorder = r_str_trim_head_ro (input + 2);
+			} else {
+				size = strlen (byteorder);
+			}
+			int length = size;
+			char *space = strchr (byteorder, ' ');
+			if (space) {
+				length = atoi (space + 1);
+			}
+			int i = 0;
+			ut8 * data = malloc (length + size);
+			if (data) {
+				r_io_read_at (core->io, core->offset, data, length + size);
+				while (i < length) {
+					ut32 n = convert (data + i, byteorder);
+					r_cons_printf ("0x%08"PFMT64x"  %d (0x%08x)\n", core->offset + i, n, n);
+					i += size;
+				}
+				free (data);
+			}
+		}
+		break;
 	case '?': // "pv?"
 		r_core_cmd_help (core, help_msg_pv);
 		break;
