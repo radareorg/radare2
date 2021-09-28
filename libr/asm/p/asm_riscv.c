@@ -4,12 +4,29 @@
 #include <r_util.h>
 #include <r_asm.h>
 #include <r_lib.h>
-// #include "cs_version.h"
+// GNU Binutils Disassembler
 #include "../arch/riscv/riscv-opc.c"
 #include "../arch/riscv/riscv.c"
+// custom handwritten assembler
+#include "../arch/riscv/riscvasm.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return op->size = riscv_dis (a, op, buf, len);
+}
+
+static int assemble(RAsm *a, RAsmOp *op, const char *str) {
+	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
+	int ret = riscv_assemble (str, a->pc, opbuf);
+	if (a->big_endian) {
+		ut8 *buf = opbuf;
+		ut8 tmp = buf[0];
+		buf[0] = buf[3];
+		buf[3] = tmp;
+		tmp = buf[1];
+		buf[1] = buf[2];
+		buf[2] = tmp;
+	}
+	return ret;
 }
 
 RAsmPlugin r_asm_plugin_riscv = {
@@ -20,6 +37,7 @@ RAsmPlugin r_asm_plugin_riscv = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.license = "GPL",
 	.disassemble = &disassemble,
+	.assemble = &assemble,
 };
 
 #ifndef R2_PLUGIN_INCORE
