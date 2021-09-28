@@ -3108,8 +3108,6 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	}
 	case 'e': // "pve"
 		{
-			ut32 n = 0;
-			ut8 *p = (ut8*)(ut32*)(n);
 			int size = 4; // default is 4.. or asm.bits?
 			const char *byteorder = r_config_get_b (core->config, "cfg.bigendian")
 				? "1234": "4321";
@@ -3125,9 +3123,13 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				length = atoi (space + 1);
 			}
 			int i = 0;
-			ut8 * data = malloc (length + size);
+			if (length + size > 0xfffff) {
+				eprintf ("Too large\n");
+				break;
+			}
+			ut8 * data = calloc (length + size, 1);
 			if (data) {
-				r_io_read_at (core->io, core->offset, data, length + size);
+				(void)r_io_read_at (core->io, core->offset, data, length + size);
 				while (i < length) {
 					ut32 n = convert (data + i, byteorder);
 					r_cons_printf ("0x%08"PFMT64x"  %d (0x%08x)\n", core->offset + i, n, n);
