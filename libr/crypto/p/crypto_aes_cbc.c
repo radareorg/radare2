@@ -6,32 +6,26 @@
 
 #define BLOCK_SIZE 16
 
-static struct aes_state st;
-static bool iv_set = 0;
-static ut8 iv[32];
-
 static bool aes_cbc_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
-	st.key_size = keylen;
-	st.rounds = 6 + (int)(keylen / 4);
-	st.columns = (int)(keylen / 4);
-	memcpy (st.key, key, keylen);
+	cry->key_len = keylen;
+	memcpy (cry->key, key, keylen);
 	cry->dir = direction;
 	return true;
 }
 
 static int aes_cbc_get_key_size(RCrypto *cry) {
-	return st.key_size;
+	return cry->key_len;
 }
 
 static bool aes_cbc_set_iv(RCrypto *cry, const ut8 *iv_src, int ivlen) {
 	if (ivlen != BLOCK_SIZE) {
 		return false;
 	}
-	memcpy (iv, iv_src, BLOCK_SIZE);
-	iv_set = 1;
+	cry->iv = calloc (1, BLOCK_SIZE);
+	memcpy (cry->iv, iv_src, BLOCK_SIZE);
 	return true;
 }
 
@@ -40,10 +34,11 @@ static bool aes_cbc_use(const char *algo) {
 }
 
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
-	if (!iv_set) {
+	if (NULL == cry->iv) {
 		eprintf ("IV not set. Use -I [iv]\n");
 		return false;
 	}
+	struct aes_state st;
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
 	const int blocks = size / BLOCK_SIZE;
@@ -66,22 +61,27 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		ibuf[len] = 8; // 0b1000;
 	}
 
+	st.key_size = cry->key_len;
+	st.rounds = 6 + (int)(st.key_size / 4);
+	st.columns = (int)(st.key_size / 4);
+	memcpy (st.key, cry->key, st.key_size);
+
 	int i, j;
 	if (cry->dir == 0) {
 		for (i = 0; i < blocks; i++) {
 			for (j = 0; j < BLOCK_SIZE; j++) {
-				ibuf[i * BLOCK_SIZE + j] ^= iv[j];
+				ibuf[i * BLOCK_SIZE + j] ^= cry->iv[j];
 			}
 			aes_encrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
-			memcpy (iv, obuf + BLOCK_SIZE * i, BLOCK_SIZE);
+			memcpy (cry->iv, obuf + BLOCK_SIZE * i, BLOCK_SIZE);
 		}
 	} else if (cry->dir == 1) {
 		for (i = 0; i < blocks; i++) {
 			aes_decrypt (&st, ibuf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 			for (j = 0; j < BLOCK_SIZE; j++) {
-				obuf[i * BLOCK_SIZE + j] ^= iv[j];
+				obuf[i * BLOCK_SIZE + j] ^= cry->iv[j];
 			}
-			memcpy(iv, buf + BLOCK_SIZE * i, BLOCK_SIZE);
+			memcpy(cry->iv, buf + BLOCK_SIZE * i, BLOCK_SIZE);
 		}
 	}
 

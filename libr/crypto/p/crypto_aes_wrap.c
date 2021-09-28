@@ -7,33 +7,27 @@
 
 #define BLOCK_SIZE 8
 
-static struct aes_state st;
-static bool iv_set = false;
-static ut8 iv[8];
-
 static bool aes_wrap_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	if (!(keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
-	st.key_size = keylen;
-	st.rounds = 6 + (int)(keylen / 4);
-	st.columns = (int)(keylen / 4);
-	memcpy (st.key, key, keylen);
+	cry->key_len = keylen;
+	memcpy (cry->key, key, keylen);
 	cry->dir = direction;
 	return true;
 }
 
 static int aes_wrap_get_key_size(RCrypto *cry) {
-	return st.key_size;
+	return cry->key_len;
 }
 
 static bool aes_wrap_set_iv(RCrypto *cry, const ut8 *iv_src, int ivlen) {
 	if (ivlen != BLOCK_SIZE) {
 		return false;
 	} else {
-		memcpy (iv, iv_src, BLOCK_SIZE);
+		cry->iv = calloc (1, BLOCK_SIZE);
+		memcpy (cry->iv, iv_src, BLOCK_SIZE);
 	}
-	iv_set = true;
 	return true;
 }
 
@@ -42,6 +36,7 @@ static bool aes_wrap_use(const char *algo) {
 }
 
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
+	struct aes_state st;
 	ut64 blocks = len / BLOCK_SIZE;
 	static ut8 tmp[16];
 	long *tmp_ptr = (long *)tmp;
@@ -69,13 +64,19 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	}
 	long *obuf_ptr = (long *)obuf;
 
-	if (!iv_set) {
-		memset (iv, 0xa6, BLOCK_SIZE);
+	if (NULL == cry->iv) {
+		cry->iv = calloc (1, BLOCK_SIZE);
+		memset (cry->iv, 0xa6, BLOCK_SIZE);
 	}
+
+	st.key_size = cry->key_len;
+	st.rounds = 6 + (st.key_size / 4);
+	st.columns = st.key_size / 4;
+	memcpy (st.key, cry->key, st.key_size);
 
 	if (cry->dir == 0) {
 		// Encrypt
-		memcpy (obuf, iv, BLOCK_SIZE);
+		memcpy (obuf, cry->iv, BLOCK_SIZE);
 		memcpy (obuf + BLOCK_SIZE, buf, len);
 		for (j = 0; j <= 5; j++) {
 			for (i = 0; i < blocks; i++) {
@@ -116,7 +117,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 				*(obuf_ptr + i) = *(tmp_ptr + 1);
 			}
 		}
-		if (memcmp (iv, obuf, BLOCK_SIZE)) {
+		if (memcmp (cry->iv, obuf, BLOCK_SIZE)) {
 			eprintf ("Invalid integrity check\n");
 			return false;
 		}
@@ -128,7 +129,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 }
 
 static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return true;
+	return update (cry, buf, len);
 }
 
 RCryptoPlugin r_crypto_plugin_aes_wrap = {
