@@ -1110,7 +1110,7 @@ R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test) {
 		if (!out->bytes || !test->bytes || out->bytes_size != test->bytes_size || out->as_timeout) {
 			return false;
 		}
-		if (memcmp (out->bytes, test->bytes, test->bytes_size) != 0) {
+		if (memcmp (out->bytes, test->bytes, test->bytes_size)) {
 			return false;
 		}
 	}
@@ -1118,7 +1118,7 @@ R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test) {
 		if (!out->disasm || !test->disasm || out->as_timeout) {
 			return false;
 		}
-		if (strcmp (out->disasm, test->disasm) != 0) {
+		if (strcmp (out->disasm, test->disasm)) {
 			return false;
 		}
 	}
@@ -1210,9 +1210,19 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			success = true;
 			ret->run_failed = false;
 		} else {
-			R2RAsmTest *asm_test = test->asm_test;
-			R2RAsmTestOutput *out = r2r_run_asm_test (config, asm_test);
-			success = r2r_check_asm_test (out, asm_test);
+			R2RAsmTest *at = test->asm_test;
+			R2RAsmTestOutput *out = r2r_run_asm_test (config, at);
+			success = r2r_check_asm_test (out, at);
+			if (!success) {
+				eprintf ("\n");
+				eprintf ("[rasm2:error] code: %s vs %s\n", at->disasm, out->disasm);
+				char *b0 = r_hex_bin2strdup (at->bytes, at->bytes_size);
+				char *b1 = r_hex_bin2strdup (out->bytes, out->bytes_size);
+				eprintf ("[rasm2:error] data: %s vs %s\n", b0, b1);
+				free (b0);
+				free (b1);
+			}
+			// TODO: show more details of the failed assembled instruction
 			ret->asm_out = out;
 			ret->timeout = out->as_timeout || out->disas_timeout;
 			ret->run_failed = !out;
