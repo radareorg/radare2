@@ -82,8 +82,8 @@ static int help(bool verbose) {
 		"\n"
 		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
 		"R2R_SKIP_JSON=1    # do not run the JSON tests\n"
-		"R2R_SKIP_FUZZ=1     # do not run the rasm2 tests\n"
-		"R2R_SKIP_UNIT=1     # do not run the rasm2 tests\n"
+		"R2R_SKIP_FUZZ=1    # do not run the rasm2 tests\n"
+		"R2R_SKIP_UNIT=1    # do not run the rasm2 tests\n"
 		"R2R_SKIP_CMD=1     # do not run the rasm2 tests\n"
 		"R2R_SKIP_ASM=1     # do not run the rasm2 tests\n"
 		"\n"
@@ -230,8 +230,10 @@ int main(int argc, char **argv) {
 				printf (R2_VERSION "\n");
 			} else {
 				char *s = r_str_version ("r2r");
-				printf ("%s\n", s);
-				free (s);
+				if (s) {
+					printf ("%s\n", s);
+					free (s);
+				}
 			}
 			return 0;
 		case 'V':
