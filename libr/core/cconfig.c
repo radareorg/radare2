@@ -2322,7 +2322,6 @@ static bool cb_scrfgets(void* user, void* data) {
 static bool cb_scrhtml(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_context ()->is_html = node->i_value;
-	r_cons_singleton ()->is_html = node->i_value;
 	// TODO: control error and restore old value (return false?) show errormsg?
 	return true;
 }
