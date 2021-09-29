@@ -3681,7 +3681,6 @@ escape_pipe:
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
 		if (ptr > (cmd + 1) && IS_WHITECHAR (ptr[-2])) {
-eprintf ("lewhite%c", 10);
 			char *fdnum = ptr - 1;
 			if (*fdnum == 'H') { // "H>"
 				scr_html = r_cons_context ()->is_html;
