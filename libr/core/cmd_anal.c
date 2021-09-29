@@ -5258,11 +5258,14 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			// this is x86 and r2wars specific, shouldnt hurt outside x86
 			ut64 vECX = r_reg_getv (core->anal->reg, "ecx");
 			if (op.prefix  & R_ANAL_OP_PREFIX_REP && vECX > 1) {
-				char *tmp = strstr (op.esil.ptr, ",ecx,?{,5,GOTO,}");
+				//char *tmp = strstr (op.esil.ptr, ",ecx,?{,5,GOTO,}");
+				char *tmp = strstr (op.esil.ptr, ",0,GOTO");
 				if (tmp) {
 					tmp[0] = 0;
+					op.esil.len -= 7; //16;
+				} else {
+					r_reg_setv (core->anal->reg, name, addr + op.size);
 				}
-				op.esil.len -= 16;
 			} else {
 				r_reg_setv (core->anal->reg, name, addr + op.size);
 			}
@@ -5995,7 +5998,8 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			}
 			if (cfg_r2wars) {
 				if (aop.prefix  & R_ANAL_OP_PREFIX_REP) {
-					char * tmp = strstr (esilstr, ",ecx,?{,5,GOTO,}");
+					//char * tmp = strstr (esilstr, ",ecx,?{,5,GOTO,}");
+					char *tmp = strstr (esilstr, ",0,GOTO");
 					if (tmp) {
 						tmp[0] = 0;
 					}
