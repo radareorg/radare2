@@ -39,6 +39,7 @@ r_bin_sources = [
   'p/bin_mz.c',
   'p/bin_ne.c',
   'p/bin_nes.c',
+  'p/bin_hunk.c',
   'p/bin_nin3ds.c',
   'p/bin_ninds.c',
   'p/bin_ningb.c',
