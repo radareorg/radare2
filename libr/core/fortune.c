@@ -70,7 +70,7 @@ R_API void r_core_fortune_print_random(RCore *core) {
 	if (!line) {
 		line = getrandomline (core);
 	}
-	if (line && *line) {
+	if (R_STR_ISNOTEMPTY (line)) {
 		if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
 			r_core_clippy (core, line);
 		} else {
