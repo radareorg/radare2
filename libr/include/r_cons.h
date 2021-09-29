@@ -442,7 +442,6 @@ typedef struct r_cons_t {
 	int force_columns;
 	int fix_rows;
 	int fix_columns;
-	bool is_html;
 	bool break_lines;
 	int optimize;
 	bool show_autocomplete_widget;
