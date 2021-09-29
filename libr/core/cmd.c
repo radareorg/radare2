@@ -5517,19 +5517,19 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 /* return: pointer to a buffer with the output of the command */
 R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	r_cons_push ();
-	r_cons_singleton ()->noflush = true;
-	core->in_cmdstr++;
+	core->cons->context->noflush = true;
+	core->cons->context->cmd_str_depth++;
 	if (r_core_cmd (core, cmd, 0) == -1) {
 		//eprintf ("Invalid command: %s\n", cmd);
-		if (--core->in_cmdstr == 0) {
-			r_cons_singleton ()->noflush = false;
+		if (--core->cons->context->cmd_str_depth == 0) {
+			core->cons->context->noflush = false;
 			r_cons_flush ();
 		}
 		r_cons_pop ();
 		return NULL;
 	}
-	if (--core->in_cmdstr == 0) {
-		r_cons_singleton ()->noflush = false;
+	if (--core->cons->context->cmd_str_depth == 0) {
+		core->cons->context->noflush = false;
 	}
 	r_cons_filter ();
 	const char *static_str = r_cons_get_buffer ();

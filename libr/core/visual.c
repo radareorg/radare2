@@ -4103,7 +4103,7 @@ static void visual_refresh(RCore *core) {
 	}
 	r_cons_flush ();
 	r_cons_print_clear ();
-	r_cons_singleton ()->noflush = true;
+	core->cons->context->noflush = true;
 
 	int hex_cols = r_config_get_i (core->config, "hex.cols");
 	int split_w = 12 + 4 + hex_cols + (hex_cols * 3);
@@ -4201,7 +4201,7 @@ static void visual_refresh(RCore *core) {
 	}
 #endif
 	blocksize = core->num->value? core->num->value: core->blocksize;
-	r_cons_singleton ()->noflush = false;
+	core->cons->context->noflush = false;
 	/* this is why there's flickering */
 	if (core->print->vflush) {
 		r_cons_visual_flush ();

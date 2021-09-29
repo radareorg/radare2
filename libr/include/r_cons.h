@@ -394,6 +394,8 @@ typedef struct r_cons_context_t {
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
 	int cmd_depth;
+	int cmd_str_depth;
+	bool noflush;
 
 	// Used for per-task logging redirection
 	RLogCallback log_callback; // TODO: RList of callbacks
@@ -436,7 +438,6 @@ typedef struct r_cons_t {
 	int fix_rows;
 	int fix_columns;
 	bool break_lines;
-	int noflush;
 	int optimize;
 	bool show_autocomplete_widget;
 	FILE *fdin; // FILE? and then int ??

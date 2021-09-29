@@ -116,6 +116,8 @@ static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *pa
 	context->event_interrupt_data = NULL;
 	context->pageable = true;
 	context->log_callback = NULL;
+	context->cmd_str_depth = 0;
+	context->noflush = false;
 
 	if (parent) {
 		context->color_mode = parent->color_mode;
@@ -588,7 +590,6 @@ R_API RCons *r_cons_new(void) {
 	I.force_columns = 0;
 	I.event_resize = NULL;
 	I.event_data = NULL;
-	I.noflush = false;
 	I.linesleep = 0;
 	I.fdin = stdin;
 	I.fdout = 1;
@@ -975,11 +976,11 @@ static void optimize(void) {
 
 R_API void r_cons_flush(void) {
 	const char *tee = I.teefile;
-	if (I.noflush) {
-		return;
-	}
 	if (!I.context) {
 		r_cons_context_reset ();
+	}
+	if (I.context->noflush) {
+		return;
 	}
 	if (I.context->errmode == R_CONS_ERRMODE_FLUSH) {
 		r_cons_eflush ();
@@ -1095,7 +1096,7 @@ R_API void r_cons_flush(void) {
 }
 
 R_API void r_cons_visual_flush(void) {
-	if (I.noflush) {
+	if (I.context->noflush) {
 		return;
 	}
 	r_cons_highlight (I.highlight);
