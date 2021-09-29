@@ -3696,7 +3696,6 @@ eprintf ("lewhite%c", 10);
 			}
 		}
 		r_cons_set_interactive (false);
-eprintf ("false%c", 10);
 		if (!strcmp (str, "-")) {
 			use_editor = true;
 			str = r_file_temp ("dumpedit");
