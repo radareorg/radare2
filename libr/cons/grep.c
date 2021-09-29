@@ -6,7 +6,7 @@
 
 #define I(x) r_cons_singleton ()->x
 
-static char *strchr_ns (char *s, const char ch) {
+static char *strchr_ns(char *s, const char ch) {
 	char *p = strchr (s, ch);
 	if (p && p > s) {
 		char *prev = p - 1;
@@ -76,11 +76,14 @@ static void parse_grep_expression(const char *str) {
 	if (R_STR_ISEMPTY (str)) {
 		return;
 	}
-	RConsContext *ctx = r_cons_singleton()->context;
 	RCons *cons = r_cons_singleton ();
-	RConsGrep *grep = &cons->context->grep;
+	RConsContext *ctx = cons->context;
+	RConsGrep *grep = &ctx->grep;
 
 	len = strlen (str) - 1;
+	if (len < 0) {
+		len = 0;
+	}
 	if (len > R_CONS_GREP_BUFSIZE - 1) {
 		eprintf ("r_cons_grep: too long!\n");
 		return;
@@ -214,7 +217,7 @@ static void parse_grep_expression(const char *str) {
 					grep->charCounter = true;
 					ptr++;
 				} else if (*ptr == '?') {
-					cons->filter = true;
+					cons->context->filter = true;
 					r_cons_grep_help ();
 					return;
 				}
@@ -455,7 +458,7 @@ static int cmp(const void *a, const void *b) {
 	if (!a || !b) {
 		return (int) (size_t) ((char *) a - (char *) b);
 	}
-	RConsContext *ctx = r_cons_singleton()->context;
+	RConsContext *ctx = r_cons_context ();
 	if (ctx->sorted_column > 0) {
 		da = strdup (ca);
 		db = strdup (cb);
@@ -491,7 +494,7 @@ R_API void r_cons_grepbuf(void) {
 	const char *in = buf;
 	int ret, total_lines = 0, buffer_len = 0, l = 0, tl = 0;
 	bool show = false;
-	if (cons->filter) {
+	if (cons->context->filter) {
 		cons->context->buffer_len = 0;
 		R_FREE (cons->context->buffer);
 		return;
@@ -636,7 +639,7 @@ R_API void r_cons_grepbuf(void) {
 		l = p - in;
 		if ((!l && is_range_line_grep_only) || l > 0) {
 			char *tline = r_str_ndup (in, l);
-			if (cons->grep_color) {
+			if (cons->context->grep_color) {
 				tl = l;
 			} else {
 				tl = r_str_ansi_filter (tline, NULL, NULL, l);
@@ -663,7 +666,7 @@ R_API void r_cons_grepbuf(void) {
 			if ((!ret && is_range_line_grep_only) || ret > 0) {
 				if (show) {
 					char *str = r_str_ndup (tline, ret);
-					if (cons->grep_highlight) {
+					if (cons->context->grep_highlight) {
 						int i;
 						for (i = 0; i < grep->nstrings; i++) {
 							char *newstr = r_str_newf (Color_INVERT"%s"Color_RESET, grep->strings[i]);
@@ -816,7 +819,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 		hit = 1;
 	}
 
-	RConsContext *ctx = r_cons_singleton()->context;
+	RConsContext *ctx = r_cons_context ();
 	if (hit) {
 		if (!grep->range_line) {
 			if (grep->line == cons->lines) {

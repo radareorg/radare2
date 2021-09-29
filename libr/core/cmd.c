@@ -1841,10 +1841,10 @@ static int cmd_interpret(void *data, const char *input) {
 		if (filter) {
 			*filter = 0;
 		}
-		int tmp_html = r_cons_singleton ()->is_html;
-		r_cons_singleton ()->is_html = false;
+		int tmp_html = r_cons_context ()->is_html;
+		r_cons_context ()->is_html = false;
 		ptr = str = r_core_cmd_str (core, inp);
-		r_cons_singleton ()->is_html = tmp_html;
+		r_cons_context ()->is_html = tmp_html;
 
 		if (filter) {
 			*filter = '~';
@@ -3539,7 +3539,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 
 	// TODO must honor " and `
 	/* pipe console to shell process */
-	//ptr = strchr (cmd, '|');
 	ptr = (char *)r_str_lastbut (cmd, '|', quotestr);
 	if (ptr) {
 		if (ptr > cmd) {
@@ -3558,13 +3557,20 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					r_core_cmd_help (core, help_msg_vertical_bar);
 					r_list_free (tmpenvs);
 					return ret;
-				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
+				} else if (ptr[1] == 'H') { // "|H"
+#if 1
 					scr_html = r_config_get_b (core->config, "scr.html");
 					r_config_set_b (core->config, "scr.html", true);
-				} else if (!strcmp (ptr + 1, "T")) { // "|T"
+#endif
+					r_cons_context ()->is_html = true;
+					r_cons_context ()->was_html = false;
+					return r_core_cmd0 (core, cmd);
+				} else if (!ptr[1] || !strcmp (ptr + 1, "T")) { // "|T"
+					scr_html = r_config_get_b (core->config, "scr.html");
+					r_config_set_b (core->config, "scr.html", false);
 					scr_color = r_config_get_i (core->config, "scr.color");
 					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-					core->cons->use_tts = true;
+					core->cons->context->use_tts = true;
 				} else if (!strcmp (ptr + 1, ".")) { // "|."
 					ret = *cmd ? r_core_cmdf (core, ".%s", cmd) : 0;
 					r_list_free (tmpenvs);
@@ -3675,10 +3681,11 @@ escape_pipe:
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
 		if (ptr > (cmd + 1) && IS_WHITECHAR (ptr[-2])) {
+eprintf ("lewhite%c", 10);
 			char *fdnum = ptr - 1;
 			if (*fdnum == 'H') { // "H>"
-				scr_html = r_config_get_i (core->config, "scr.html");
-				r_config_set_i (core->config, "scr.html", true);
+				scr_html = r_cons_context ()->is_html;
+				r_config_set_b (core->config, "scr.html", true);
 				pipecolor = true;
 				*fdnum = 0;
 			} else {
@@ -3689,6 +3696,7 @@ escape_pipe:
 			}
 		}
 		r_cons_set_interactive (false);
+eprintf ("false%c", 10);
 		if (!strcmp (str, "-")) {
 			use_editor = true;
 			str = r_file_temp ("dumpedit");
@@ -3747,12 +3755,12 @@ escape_pipe:
 			free (str);
 		}
 		if (scr_html != -1) {
-			r_config_set_i (core->config, "scr.html", scr_html);
+			r_config_set_b (core->config, "scr.html", scr_html);
 		}
 		if (scr_color != -1) {
 			r_config_set_i (core->config, "scr.color", scr_color);
 		}
-		core->cons->use_tts = false;
+		core->cons->context->use_tts = false;
 		r_list_free (tmpenvs);
 		return ret;
 	}

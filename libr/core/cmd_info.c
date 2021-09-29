@@ -374,13 +374,11 @@ static void cmd_info_bin(RCore *core, int va, PJ *pj, int mode) {
 }
 
 static void playMsg(RCore *core, const char *n, int len) {
-	if (r_config_get_i (core->config, "scr.tts")) {
-		if (len > 0) {
-			char *s = r_str_newf ("%d %s", len, n);
-			r_sys_tts (s, true);
-			free (s);
-		} else if (len == 0) {
-			char *s = r_str_newf ("there are no %s", n);
+	if (r_config_get_b (core->config, "scr.tts")) {
+		char *s = (*n && len > 0)
+			? r_str_newf ("%d %s", len, n)
+			: r_str_newf ("there are no %s", n);
+		if (s) {
 			r_sys_tts (s, true);
 			free (s);
 		}

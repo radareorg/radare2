@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2013-2020 - pancake, sghctoma, xarkes */
+/* radare - LGPL - Copyright 2013-2021 - pancake, sghctoma, xarkes */
 
 #include <r_cons.h>
 
-#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_singleton ()->context->cpal)) + keys[i].coff)
-#define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_singleton ()->context->pal)) + keys[i].off)
+#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_context ()->cpal)) + keys[i].coff)
+#define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_context ()->pal)) + keys[i].off)
 
 static struct {
 	const char *name;
@@ -508,7 +508,7 @@ R_API void r_cons_pal_show(void) {
 			colors[i].bgcode,
 			colors[i].name);
 	}
-	switch (r_cons_singleton ()->context->color_mode) {
+	switch (r_cons_context ()->color_mode) {
 	case COLOR_MODE_256: // 256 color palette
 		r_cons_pal_show_gs ();
 		r_cons_pal_show_256 ();
@@ -654,7 +654,7 @@ R_API int r_cons_pal_len(void) {
 }
 
 R_API void r_cons_pal_update_event(void) {
-	__cons_pal_update_event (r_cons_singleton ()->context);
+	__cons_pal_update_event (r_cons_context ());
 }
 
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz) {

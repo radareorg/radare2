@@ -3268,10 +3268,12 @@ R_API int r_core_prompt_exec(RCore *r) {
 		r->rc = r->num->value;
 		// int ret = r_core_cmd (r, cmd, true);
 		free (cmd);
-		if (r->cons && r->cons->use_tts) {
+		if (r->cons && r->cons->context->use_tts) {
 			const char *buf = r_cons_get_buffer ();
-			r_sys_tts (buf, true);
-			r->cons->use_tts = false;
+			if (buf && *buf) {
+				r_sys_tts (buf, true);
+			}
+			r->cons->context->use_tts = false;
 		}
 		r_cons_echo (NULL);
 		r_cons_flush ();

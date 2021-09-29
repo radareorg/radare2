@@ -5712,9 +5712,9 @@ static int cmd_print(void *data, const char *input) {
 			return 0;
 		}
 		if (formatted_json) {
-			if (r_cons_singleton ()->is_html) {
-				r_cons_singleton ()->is_html = false;
-				r_cons_singleton ()->was_html = true;
+			if (r_cons_context ()->is_html) {
+				r_cons_context ()->is_html = false;
+				r_cons_context ()->was_html = true;
 			}
 		}
 		if (!processed_cmd) {

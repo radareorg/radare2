@@ -832,15 +832,15 @@ static ut8 *get_strings(RCore *c, int *len) {
 }
 
 static char *get_graph_commands(RCore *c, ut64 off) {
-        bool tmp_html = r_cons_singleton ()->is_html;
-        r_cons_singleton ()->is_html = false;
+        bool tmp_html = r_cons_context ()->is_html;
+        r_cons_context ()->is_html = false;
         r_cons_push ();
         r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF |  R_CORE_ANAL_STAR);
         const char *static_str = r_cons_get_buffer ();
         char *retstr = strdup (r_str_get (static_str));
         r_cons_pop ();
         r_cons_echo (NULL);
-        r_cons_singleton ()->is_html = tmp_html;
+        r_cons_context ()->is_html = tmp_html;
         return retstr;
 }
 
