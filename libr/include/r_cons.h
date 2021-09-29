@@ -414,6 +414,13 @@ typedef struct r_cons_context_t {
 	RList *sorted_lines;
 	RList *unsorted_lines;
 	int sorted_column; // -1
+	bool is_html;
+	bool was_html;
+	bool grep_color;
+	bool grep_highlight;
+	bool filter;
+	bool use_tts;
+	bool flush;
 } RConsContext;
 
 #define HUD_BUF_SIZE 512
@@ -426,8 +433,6 @@ typedef struct {
 typedef struct r_cons_t {
 	RConsContext *context;
 	char *lastline;
-	bool is_html;
-	bool was_html;
 	int lines;
 	int rows;
 	int echo; // dump to stdout in realtime
@@ -474,13 +479,12 @@ typedef struct r_cons_t {
 	bool enable_highlight;
 	int null; // if set, does not show anything
 	int mouse;
-	int is_wine;
+	bool is_wine;
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
 	R_DEPRECATE bool newline;
 	int vtmode;
-	bool flush;
 	bool use_utf8; // use utf8 features
 	bool use_utf8_curvy; // use utf8 curved corners
 	bool dotted_lines;
@@ -489,10 +493,6 @@ typedef struct r_cons_t {
 	char *break_word;
 	int break_word_len;
 	ut64 timeout; // must come from r_time_now_mono()
-	bool grep_color;
-	bool grep_highlight;
-	bool use_tts;
-	bool filter;
 	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
 	bool click_set;
 	int click_x;
@@ -763,6 +763,7 @@ R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int 
 R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert);
 R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
+R_API RConsContext *r_cons_context(void);
 R_API RCons *r_cons_free(void);
 R_API char *r_cons_lastline(int *size);
 R_API char *r_cons_lastline_utf8_ansi_len(int *len);

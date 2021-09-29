@@ -2242,14 +2242,14 @@ static bool cb_scr_color_grep(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 
 	/* Let cons know we have a new pager. */
-	core->cons->grep_color = node->i_value;
+	core->cons->context->grep_color = node->i_value;
 	return true;
 }
 
 static bool cb_scr_color_grep_highlight(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	core->cons->grep_highlight = node->i_value;
+	core->cons->context->grep_highlight = node->i_value;
 	return true;
 }
 
@@ -2321,7 +2321,7 @@ static bool cb_scrfgets(void* user, void* data) {
 
 static bool cb_scrhtml(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->is_html = node->i_value;
+	r_cons_context ()->is_html = node->i_value;
 	// TODO: control error and restore old value (return false?) show errormsg?
 	return true;
 }
@@ -2396,7 +2396,7 @@ static bool cb_scrpagesize(void *user, void *data) {
 
 static bool cb_scrflush(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->flush = node->i_value;
+	r_cons_context ()->flush = node->i_value;
 	return true;
 }
 
