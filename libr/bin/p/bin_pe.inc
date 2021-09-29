@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake, alvarofe */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -42,8 +42,8 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
 		case R_BIN_SYM_MAIN:
-				peaddr = PE_(r_bin_pe_get_main_vaddr) (bf->o->bin_obj);
-				break;
+			peaddr = PE_(r_bin_pe_get_main_vaddr) (bf->o->bin_obj);
+			break;
 		}
 	}
 	if (peaddr && (ret = R_NEW0 (RBinAddr))) {
@@ -395,8 +395,51 @@ static bool check_inlined_canary(RBinFile *bf) {
 	if (r_buf_read_at (bf->buf, addr, buf, sizeof (buf)) < 1) {
 		return UT64_MAX;
 	}
-	if (buf[0] == 0xe8) {
+	if (buf[0] == 0x48) {
+		// x86-64
 #if 0
+	// X86-64
+	;-- entry0, rip:
+	0x140001348      4883ec28       sub   rsp,  0x28
+	0x14000134c      e85b020000     call  0x1400015ac
+	....
+	0x1400015ac      48895c2420     mov   qword [rsp + 0x20], rbx
+	0x1400015b1      55             push  rbp
+	0x1400015b2      488bec         mov   rbp,  rsp
+	0x1400015b5      4883ec20       sub   rsp,  0x20
+	0x1400015b9      488b0580ba01.  mov   rax,  qword [0x14001d040]
+	0x1400015c0      48bb32a2df2d.  movabs rbx,  0x2b992ddfa232
+	0x1400015ca      483bc3         cmp   rax,  rbx
+#endif
+		// follow call
+		ut64 rel_addr = (ut64)((int)(buf[5] + (buf[6] << 8) + (buf[7] << 16) + (buf[8] << 24)));
+		ut64 calldst = addr + 5 + 4 + rel_addr;
+		if (r_buf_read_at (bf->buf, calldst, buf, sizeof (buf)) < 1) {
+			return UT64_MAX;
+		}
+		if (buf[0] != 0x48 && buf[1] != 0x89) {
+			return false;
+		}
+		ut64 canaddr = 0;
+		r_buf_read_at (bf->buf, calldst + 16, (ut8*)&canaddr, 4);
+
+		ut32 panaddr = canaddr - 0x40; // PE_(va2pa)(bf->o->bin_obj, canaddr);
+
+		ut8 can0[8] = {0};
+		r_buf_read_at (bf->buf, panaddr, can0, 8);
+		ut8 can1[8] = {0};
+		r_buf_read_at (bf->buf, calldst + 0x16, can1, 8);
+		if (!memcmp (can0, can1, 8)) {
+			char *canstr = r_str_newf ("%02x%02x%02x%02x%02x%02x%02x%02x",
+				can0[0], can0[1], can0[2], can0[3],
+				can0[4], can0[5], can0[6], can0[7]);
+			sdb_set (bf->sdb, "canary.value", canstr, 0);
+			free (canstr);
+			return true;
+		}
+	} else if (buf[0] == 0xe8) {
+#if 0
+// X86-32
 	mov edi, edi
 	push ebp
 	mov ebp, esp
@@ -415,6 +458,19 @@ static bool check_inlined_canary(RBinFile *bf) {
 			return UT64_MAX;
 		}
 		if (buf[0] == 0x8b && buf[1] == 0xff && buf[2] == 0x55) {
+			return true;
+		}
+		ut32 canaddr = 0;
+		r_buf_read_at (bf->buf, calldst + 2, (ut8*)&canaddr, 4);
+		ut32 panaddr = PE_(va2pa)(bf->o->bin_obj, canaddr);
+		ut8 can0[4] = {0};
+		r_buf_read_at (bf->buf, panaddr, can0, 4);
+		ut8 can1[4] = {0};
+		r_buf_read_at (bf->buf, calldst + 9, can1, 4);
+		if (!memcmp (can0, can1, 4)) {
+			char *canstr = r_str_newf ("%02x%02x%02x%02x", can0[0], can0[1], can0[2], can0[3]);
+			sdb_set (bf->sdb, "canary.value", canstr, 0);
+			free (canstr);
 			return true;
 		}
 	}
