@@ -39,6 +39,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
+#if 0
 static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 	if (!ptr) {
@@ -50,6 +51,7 @@ static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 	ptr->ordinal = 0;
 	r_list_append (ret, ptr);
 }
+#endif
 
 static RList* symbols(RBinFile *bf) {
 	RList *ret = NULL;
