@@ -3558,7 +3558,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					r_list_free (tmpenvs);
 					return ret;
 				} else if (ptr[1] == 'H') { // "|H"
-#if 1
 					scr_html = r_config_get_b (core->config, "scr.html");
 					r_config_set_b (core->config, "scr.html", true);
 #endif
