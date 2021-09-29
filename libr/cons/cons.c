@@ -986,7 +986,7 @@ R_API void r_cons_flush(void) {
 		r_cons_context_reset ();
 	}
 	if (C->noflush) {
-	//	return;
+		return;
 	}
 	if (C->errmode == R_CONS_ERRMODE_FLUSH) {
 		r_cons_eflush ();

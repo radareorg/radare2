@@ -346,6 +346,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 								r_core_cmd0 (core, cmd + 1);
 								out = NULL;
 							} else {
+								RConsContext *ctx = r_cons_context ();
+								ctx->noflush = false;
 								out = r_core_cmd_str_pipe (core, cmd);
 							}
 

@@ -352,7 +352,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 	ut64 m_off, reg_val;
 	bool be;
 	RDebugPid *dbgpid;
-	if (!core_ptr || ! cmd) {
+	if (!core_ptr || !cmd) {
 		return -1;
 	}
 	RCore *core = (RCore*) core_ptr;
