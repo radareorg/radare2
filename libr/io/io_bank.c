@@ -577,7 +577,9 @@ found:
 		}
 	}
 	entry = r_rbtree_cont_node_next (entry);
-	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
+	// it is given that entry->data->from >= sm->from on every iteration
+	// so only check for upper boundary of sm for intersection with entry->data
+	while (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		// iterate forwards starting at entry, while entry->data and sm overlap
 		bd = (RIOSubMap *)entry->data;
 		entry = r_rbtree_cont_node_next (entry);
