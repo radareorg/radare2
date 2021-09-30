@@ -612,6 +612,7 @@ static const ut8 *parse_line_header (
 	hdr->line_range = READ8 (buf);
 	hdr->opcode_base = READ8 (buf);
 
+	hdr->file_names_count = 0;
 	hdr->file_names = NULL;
 
 	if (mode == R_MODE_PRINT) {
