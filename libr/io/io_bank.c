@@ -235,6 +235,50 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 	return true;
 }
 
+R_API bool r_io_bank_map_add_bottom(RIO *io, const ut32 bankid, const ut32 mapid) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	RIOMap *map = r_io_map_get (io, mapid);
+	r_return_val_if_fail (io && bank && map, false);
+	RIOMapRef *mapref = _mapref_from_map (map);
+	if (!mapref) {
+		return false;
+	}
+	RIOSubMap *sm = r_io_submap_new (io, mapref);
+	if (!sm) {
+		free (mapref);
+		return false;
+	}
+	RContRBNode *entry = _find_entry_submap_node (bank, sm);
+	if (!entry) {
+		// no intersection with any submap, so just insert
+		if (!r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL)) {
+			free (sm);
+			free (mapref);
+			return false;
+		}
+		r_list_prepend (bank->maprefs, mapref);
+		return true;
+	}
+	while (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
+		RIOSubMap *bd = (RIOSubMap *)entry->data;
+		if (r_io_submap_from (sm) < r_io_submap_from (bd)) {
+			RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, sm);
+			r_io_submap_set_to (bdsm, r_io_submap_from (bd) - 1);
+			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+		}
+		if (r_io_submap_to (sm) <= r_io_submap_to (bd)) {
+			r_list_prepend (bank->maprefs, mapref);
+			free (sm);
+			return true;
+		}
+		r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
+		entry = r_rbtree_cont_node_next (entry);
+	}
+	r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+	r_list_prepend (bank->maprefs, mapref);
+	return true;
+}
+
 R_API bool r_io_bank_map_priorize(RIO *io, const ut32 bankid, const ut32 mapid) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank, false);
@@ -321,7 +365,6 @@ found:
 	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
 }
 
-
 // deletes submaps that belong to a mapref with a specified priority from the submap tree of a bank.
 // the mapref is accessed by it's iter from the priority list in the bank,
 // so that the function can insert new submaps that fill the gaps. The iter represents the priority of the mapref.
@@ -399,6 +442,29 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 		}
 		free (sm);
 	}
+}
+
+R_API bool r_io_bank_map_depriorize(RIO *io, const ut32 bankid, const ut32 mapid) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	RIOMap *map = r_io_map_get (io, mapid);
+	r_return_val_if_fail (bank && map, false);
+	RListIter *iter;
+	RIOMapRef *mapref = NULL;
+	r_list_foreach (bank->maprefs, iter, mapref) {
+		if (mapref->id == mapid) {
+			goto found;
+		}
+	}
+	// map is not referenced by this bank
+	return false;
+found:
+	if (iter == bank->maprefs->head) {
+		// map is already lowest priority
+		return true;
+	}
+	_delete_submaps_from_bank_tree (io, bank, iter, map);
+	r_list_delete (bank->maprefs, iter);
+	return r_io_bank_map_add_bottom (io, bankid, mapid);
 }
 
 // compared 2 maprefs of the same bank by their priority (position in  the mapref list)
