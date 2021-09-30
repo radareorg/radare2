@@ -1416,20 +1416,30 @@ static void autocomplete_project(RCore *core, RLineCompletion *completion, const
 	}
 }
 
+static bool get_alias_keys(void *keylist_in, const void *k, const void *v){
+	RList *keylist = (RList *)keylist_in;
+	return r_list_append (keylist, (char *)k);
+}
+
 static void autocomplete_minus(RCore *core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (str);
-	int count;
 	int length = strlen (str);
-	char **keys = r_cmd_alias_keys(core->rcmd, &count);
+
+	RList *keys = r_list_new ();
 	if (!keys) {
 		return;
 	}
-	int i;
-	for (i = 0; i < count; i++) {
-		if (!strncmp (keys[i], str, length)) {
-			r_line_completion_push (completion, keys[i]);
+
+	ht_pp_foreach (core->rcmd->aliases, get_alias_keys, keys);
+
+	RListIter *it;
+	r_list_foreach_iter (keys, it) {
+		if (!strncmp (it->data, str, length)) {
+			r_line_completion_push (completion, it->data);
 		}
 	}
+
+	r_list_free (keys);
 }
 
 static void autocomplete_breakpoints(RCore *core, RLineCompletion *completion, const char *str) {
@@ -1976,14 +1986,16 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		}
 		ls_free (l);
 	} else if (!strncmp (buf->data, "$", 1)) {
-		int i;
-		for (i = 0; i < core->rcmd->aliases.count; i++) {
-			const char *key = core->rcmd->aliases.keys[i];
-			int len = strlen (buf->data);
+		RList *keys = r_cmd_alias_keys (core->rcmd);
+		RListIter *it;
+		int len = strlen (buf->data);
+		r_list_foreach_iter (keys, it) {
+			char *key = (char *)it->data;
 			if (!len || !strncmp (buf->data, key, len)) {
 				r_line_completion_push (completion, key);
 			}
 		}
+		r_list_free (keys);
 	} else if (!strncmp (buf->data, "ts ", 3)
 	|| !strncmp (buf->data, "ta ", 3)
 	|| !strncmp (buf->data, "tp ", 3)
