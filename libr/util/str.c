@@ -1381,6 +1381,24 @@ out:
 	return new_buf;
 }
 
+/* hex-escape unprintable characters in a raw buffer (null-safe) */
+R_API char *r_str_escape_raw(const ut8 *buf, int sz) {
+	r_return_val_if_fail (buf, NULL);
+
+	/* Worst case scenario, we convert every byte to a \xhh escape */
+	char *new_buf = malloc (1 + sz * 4);
+	if (!new_buf) {
+		return NULL;
+	}
+	char *q = new_buf;
+	int i;
+	for (i = 0; i < sz; i++) {
+		r_str_byte_escape ((char *)&buf[i], &q, false, false, true);
+	}
+	*q = '\0';
+	return new_buf;
+}
+
 R_API char *r_str_escape(const char *buf) {
 	return r_str_escape_ (buf, false, true, true, false, true);
 }

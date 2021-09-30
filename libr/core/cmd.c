@@ -63,21 +63,21 @@ static void cmd_debug_reg(RCore *core, const char *str);
 static const char *help_msg_dollar[] = {
 	"Usage:", "$alias[=cmd] [args...]", "Alias commands and strings (See ?$? for help on $variables)",
 	"$", "", "list all defined aliases",
-	"$*", "", "list all the aliases as r2 commands in base64",
-	"$**", "", "same as above, but using plain text",
+	"$*", "", "list all defined aliases and their respective values, unprintable characters escaped",
+	"$**", "", "same as above, but if an alias has unprintable characters, b64 encode it",
 	"$", "foo:=123", "alias for 'f foo=123'",
 	"$", "foo-=4", "alias for 'f foo-=4'",
 	"$", "foo+=4", "alias for 'f foo+=4'",
 	"$", "foo", "alias for 's foo' (note that command aliases can override flag resolution)",
-	"$", "dis=base64:AAA==", "alias this base64 encoded text to be printed when $dis is called",
-	"$", "dis=$hello world", "alias this text to be printed when $dis is called",
-	"$", "dis=-", "open cfg.editor to set the new value for dis alias",
-	"$", "dis=af;pdf", "create command - analyze to show function",
+	"$", "dis=base64:AAA=", "alias $dis to the raw byte output from decoding this base64 string",
+	"$", "dis=$hello world", "alias $dis to the string after '$' (accepts double-backslash and hex escaping)",
+	"$", "dis=-", "edit $dis in cfg.editor (accepts backslash and hex escaping)",
+	"$", "dis=af", "alias $dis to the af command",
+	"$", "dis=af;pdf", "alias $dis to the af command, then run pdf",
 	"$", "test=#!pipe node /tmp/test.js", "create command - rlangpipe script",
 	"$", "dis=", "undefine alias",
-	"$", "dis", "execute the previously defined alias",
+	"$", "dis", "execute a defined command alias, or print a data alias with unprintable characters escaped",
 	"$", "dis?", "show commands aliased by $dis",
-	"$", "dis?n", "show commands aliased by $dis, without a new line",
 	NULL
 };
 
@@ -463,6 +463,24 @@ static int r_core_cmd_nullcallback(void *data) {
 	return 1;
 }
 
+/* Escape raw bytes if not using b64 */
+static bool print_aliases(void *use_b64, const void *key, const void *val){
+	const char *k = (char *) key;
+	RCmdAliasVal *v = (RCmdAliasVal *) val;
+	bool base64 = *(bool *)use_b64;
+	if (v->is_str) {
+		r_cons_printf ("$%s=%s\n", k, (char *)v->data);
+	} else {
+		char *val_str = base64
+			? r_cmd_alias_val_strdup_b64 (v)
+			: r_cmd_alias_val_strdup (v);
+
+		r_cons_printf ("$%s=%s%s\n", k, base64? "base64:": "", val_str);
+		free (val_str);
+	}
+	return true;
+}
+
 static int cmd_uname(void *data, const char *input) { // "uniq"
 	RSysInfo *si = r_sys_info();
 	if (si) {
@@ -624,17 +642,13 @@ static int cmd_alias(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_dollar);
 		return 0;
 	}
-	int i = strlen (input);
-	char *buf = malloc (i + 2);
+	char *buf = strdup (input);
 	if (!buf) {
 		return 0;
 	}
-	*buf = '$'; // prefix aliases with a dollar
-	memcpy (buf + 1, input, i + 1);
 	char *q = strchr (buf, ' ');
 	char *def = strchr (buf, '=');
 	char *desc = strchr (buf, '?');
-	char *nonl = strchr (buf, 'n');
 
 	int defmode = 0;
 	if (def && def > buf) {
@@ -663,15 +677,15 @@ static int cmd_alias(void *data, const char *input) {
 			ut64 at = r_num_math (core->num, def);
 			switch (defmode) {
 			case ':':
-				r_flag_set (core->flags, buf + 1, at, 1);
+				r_flag_set (core->flags, buf, at, 1);
 				return 1;
 			case '+':
 				at = r_num_get (core->num, buf + 1) + at;
-				r_flag_set (core->flags, buf + 1, at, 1);
+				r_flag_set (core->flags, buf, at, 1);
 				return 1;
 			case '-':
 				at = r_num_get (core->num, buf + 1) - at;
-				r_flag_set (core->flags, buf + 1, at, 1);
+				r_flag_set (core->flags, buf, at, 1);
 				return 1;
 			}
 		}
@@ -684,14 +698,44 @@ static int cmd_alias(void *data, const char *input) {
 		if (!q || (q && q > def)) {
 			if (*def) {
 				if (!strcmp (def, "-")) {
-					const char *v = r_cmd_alias_get (core->rcmd, buf, 0);
-					char *n = r_cons_editor (NULL, v);
+					RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, buf);
+					char *n;
+					if (v) {
+						char *v_str = r_cmd_alias_val_strdup (v);
+						n = r_cons_editor (NULL, v_str);
+						free (v_str);
+					} else {
+						n = r_cons_editor (NULL, NULL);
+					}
+
 					if (n) {
-						r_cmd_alias_set (core->rcmd, buf, n, 0);
+						int l = r_str_unescape (n);
+						r_cmd_alias_set_raw (core->rcmd, buf, (ut8 *)n, l);
 						free (n);
 					}
+				} else if (*def == '$') {
+					char *s = strdup (def+1);
+					int l = r_str_unescape (s);
+					r_cmd_alias_set_raw (core->rcmd, buf, (ut8 *)s, l);
+					free (s);
+				} else if (!strncmp (def, "base64:", 7)) {
+					int b64_len = strlen (def+7);
+					if (b64_len) {
+						ut8* decoded = malloc (b64_len);
+						if (decoded) {
+							int decoded_sz = r_base64_decode (decoded, def+7, b64_len);
+							if (decoded_sz > 0) {
+								r_cmd_alias_set_raw (core->rcmd, buf, decoded, decoded_sz);
+							} else {
+								eprintf ("Invalid base64.\n");
+							}
+							free (decoded);
+						}
+					} else {
+						eprintf ("Invalid base64.\n");
+					}
 				} else {
-					r_cmd_alias_set (core->rcmd, buf, def, 0);
+					r_cmd_alias_set_cmd (core->rcmd, buf, def);
 				}
 			} else {
 				r_cmd_alias_del (core->rcmd, buf);
@@ -700,61 +744,56 @@ static int cmd_alias(void *data, const char *input) {
 	/* Show command for alias */
 	} else if (desc && !q) {
 		*desc = 0;
-		const char *v = r_cmd_alias_get (core->rcmd, buf, 0);
-		if (v) {
-			if (nonl == desc + 1) {
-				r_cons_print (v);
-			} else {
-				r_cons_println (v);
-			}
+		RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, buf);
+		if (v && !v->is_data) {
+			/* Commands are always strings */
+			r_cons_println ((char *)v->data);
+			r_cons_flush ();
+
 			free (buf);
 			return 1;
+		} else if (v) {
+			eprintf ("Alias \"$%s\" is not a command\n", buf);
 		} else {
-			eprintf ("unknown key '%s'\n", buf);
+			eprintf ("No such alias \"$%s\"\n", buf);
 		}
-	} else if (buf[1] == '*') {
-		/* Show aliases */
-		int i, count = 0;
-		char **keys = r_cmd_alias_keys (core->rcmd, &count);
-		for (i = 0; i < count; i++) {
-			const char *v = r_cmd_alias_get (core->rcmd, keys[i], 0);
-			char *q = r_base64_encode_dyn (v, -1);
-			if (buf[2] == '*') {
-				r_cons_printf ("%s=%s\n", keys[i], v);
-			} else {
-				r_cons_printf ("%s=base64:%s\n", keys[i], q);
+	} else if (*buf == '*') {
+		bool use_b64 = (buf[1] == '*');
+		ht_pp_foreach (core->rcmd->aliases, print_aliases, &use_b64);
+	} else if (!*buf) {
+		RList *keys = r_cmd_alias_keys (core->rcmd);
+		if (keys) {
+			RListIter *it;
+			r_list_foreach_iter (keys, it) {
+				r_cons_printf ("$%s\n", (char *)it->data);
 			}
-			free (q);
-		}
-	} else if (!buf[1]) {
-		int i, count = 0;
-		char **keys = r_cmd_alias_keys (core->rcmd, &count);
-		for (i = 0; i < count; i++) {
-			r_cons_println (keys[i]);
+			r_list_free (keys);
 		}
 	} else {
 		/* Execute alias */
 		if (q) {
 			*q = 0;
 		}
-		const char *v = r_cmd_alias_get (core->rcmd, buf, 0);
+		RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, buf);
 		if (v) {
-			if (*v == '$') {
-				r_cons_strcat (v + 1);
+			if (v->is_data) {
+				char *v_str = r_cmd_alias_val_strdup (v);
+				r_cons_strcat (v_str);
 				r_cons_newline ();
+				free (v_str);
 			} else if (q) {
-				char *out = r_str_newf ("%s %s", v, q + 1);
+				char *out = r_str_newf ("%s %s", (char *)v->data, q + 1);
 				r_core_cmd0 (core, out);
 				free (out);
 			} else {
-				r_core_cmd0 (core, v);
+				r_core_cmd0 (core, (char *)v->data);
 			}
 		} else {
 			ut64 at = r_num_get (core->num, buf + 1);
 			if (at != UT64_MAX) {
 				r_core_seek (core, at, true);
 			} else {
-				eprintf ("Unknown alias '%s'\n", buf + 1);
+				eprintf ("No such alias \"$%s\"\n", buf + 1);
 			}
 		}
 	}
@@ -769,31 +808,6 @@ static int getArg(char ch, int def) {
 		return ch;
 	}
 	return def;
-}
-
-// wtf dupe for local vs remote?
-static void aliascmd(RCore *core, const char *str) {
-	switch (str[0]) {
-	case '\0': // "=$"
-		r_core_cmd0 (core, "$");
-		break;
-	case '-': // "=$-"
-		if (str[1]) {
-			r_cmd_alias_del (core->rcmd, str + 2);
-		} else {
-			r_cmd_alias_del (core->rcmd, NULL);
-		//	r_cmd_alias_reset (core->rcmd);
-		}
-		break;
-	case '?': // "=$?"
-		eprintf ("Usage: =$[-][remotecmd]  # remote command alias\n");
-		eprintf (" =$dr   # makes 'dr' alias for =!dr\n");
-		eprintf (" =$-dr  # unset 'dr' alias\n");
-		break;
-	default:
-		r_cmd_alias_set (core->rcmd, str, "", 1);
-		break;
-	}
 }
 
 static void cmd_remote(RCore *core, const char *input, bool retry) {
@@ -913,10 +927,6 @@ static int cmd_rap(void *data, const char *input) {
 				free (res);
 			}
 		}
-		break;
-	case '$': // "=$"
-		// XXX deprecate?
-		aliascmd (core, input + 1);
 		break;
 	case '+': // "=+"
 		if (input[1] && input[1] != '?') {
@@ -1685,9 +1695,13 @@ static int cmd_table(void *data, const char *input) {
 		} else {
 			const char *file = r_str_trim_head_ro (input + 1);
 			if (*file == '$') {
-				const char *file_data = r_cmd_alias_get (core->rcmd, file, 1);
+				RCmdAliasVal *file_data = r_cmd_alias_get (core->rcmd, file+1);
 				if (file_data) {
-					load_table (core, core->table, strdup (file_data + 1));
+					char *file_data_str = r_cmd_alias_val_strdup (file_data);
+					load_table (core, core->table, strdup (file_data_str));
+					free (file_data_str);
+				} else {
+					eprintf ("No such alias \"$%s\"\n", file+1);
 				}
 			} else {
 				char *file_data = r_file_slurp (file, NULL);
@@ -1812,8 +1826,14 @@ static int cmd_interpret(void *data, const char *input) {
 		{
 			const char *script_file = r_str_trim_head_ro (input + 1);
 			if (*script_file == '$') {
-				const char *oldText = r_cmd_alias_get (core->rcmd, script_file, 1);
-				r_core_cmd0 (core, oldText); // script_file);
+				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, script_file+1);
+				if (v) {
+					char *cmd_text = r_cmd_alias_val_strdup (v);
+					r_core_cmd0 (core, cmd_text);
+					free (cmd_text);
+				} else {
+					eprintf ("No such alias \"$%s\"\n", script_file+1);
+				}
 			} else {
 				if (!r_core_run_script (core, script_file)) {
 					eprintf ("Cannot find script '%s'\n", script_file);
@@ -3702,27 +3722,22 @@ escape_pipe:
 		if (*str == '$') {
 			// pipe to alias variable
 			// register output of command as an alias
-			char *o = r_core_cmd_str (core, cmd);
+
+			RBuffer *cmd_out = r_core_cmd_tobuf (core, cmd);
+			int alias_len;
+			ut8 *alias_data = r_buf_read_all (cmd_out, &alias_len);
 			if (appendResult) {
-				const char *oldText = r_cmd_alias_get (core->rcmd, str, 1);
-				if (oldText) {
-					char *two = r_str_newf ("%s%s", oldText, o);
-					if (two) {
-						r_cmd_alias_set (core->rcmd, str, two, 1);
-						free (two);
-					}
+				if (r_cmd_alias_append_raw (core->rcmd, str+1, alias_data, alias_len)) {
+					eprintf ("Alias \"$%s\" is a command - will not attempt to append.\n", str+1);
 				} else {
-					char *n = r_str_newf ("$%s", o);
-					r_cmd_alias_set (core->rcmd, str, n, 1);
-					free (n);
+					/* No existing alias */
+					r_cmd_alias_set_raw (core->rcmd, str+1, alias_data, alias_len);
 				}
 			} else {
-				char *n = r_str_newf ("$%s", o);
-				r_cmd_alias_set (core->rcmd, str, n, 1);
-				free (n);
+				r_cmd_alias_set_raw (core->rcmd, str+1, alias_data, alias_len);
 			}
 			ret = 0;
-			free (o);
+			r_buf_free (cmd_out);
 		} else if (fdn > 0) {
 			// pipe to file (or append)
 			pipefd = r_cons_pipe_open (str, fdn, appendResult);

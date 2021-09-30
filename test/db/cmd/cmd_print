@@ -39,7 +39,7 @@ CMDS=<<EOF
 b 6
 w hello world
 ps
-wtf $jej
+wtf $jeje
 w xxxxx_xxxxx
 wff $jeje
 ps

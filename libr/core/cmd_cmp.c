@@ -560,9 +560,13 @@ static int cmd_cmp(void *data, const char *input) {
 		if (input[1] == 't') {
 			const char *path = r_str_trim_head_ro (input + 2);
 			if (*path == '$') {
-				const char *oldText = r_cmd_alias_get (core->rcmd, path, 1);
-				if (oldText) {
-					r_cons_printf ("%s\n", oldText + 1);
+				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, path+1);
+				if (v) {
+					char *v_str = r_cmd_alias_val_strdup (v);
+					r_cons_println (v_str);
+					free (v_str);
+				} else {
+					eprintf ("No such alias \"$%s\"\n", path+1);
 				}
 			} else {
 				if (r_fs_check (core->fs, path)) {

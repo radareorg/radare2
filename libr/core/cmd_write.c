@@ -588,10 +588,17 @@ static bool cmd_wff(RCore *core, const char *input) {
 	}
 	
 	if (*a == '$') {
-		const char *res = r_cmd_alias_get (core->rcmd, a, 1);
-		if (res) {
-			buf = (ut8*)strdup (res);
-			size = strlen (res);
+		RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, a+1);
+		if (v) {
+			buf = malloc (v->sz);
+			if (buf) {
+				size = v->sz;
+				memcpy (buf, v->data, size);
+			} else {
+				size = 0;
+			}
+		} else {
+			eprintf ("No such alias \"$%s\"\n", a+1);
 		}
 	} else {
 		buf = (ut8*) r_file_slurp (a, &size);
@@ -1436,7 +1443,7 @@ static int wt_handler_old(void *data, const char *input) {
 	const char *filename = "";
 	char _fn[32];
 	_fn[0] = 0;
-	char *tmp;
+	char *size_sep;
 	if (*str == 's') { // "wts"
 		if (str[1] == ' ') {
 			eprintf ("Write to server\n");
@@ -1546,27 +1553,47 @@ static int wt_handler_old(void *data, const char *input) {
 		} else {
 			filename = str + 1;
 		}
-		tmp = *str? strchr (str + 1, ' ') : NULL;
+		size_sep = *str? strchr (str + 1, ' ') : NULL;
 		if (!filename || !*filename) {
 			const char* prefix = r_config_get (core->config, "cfg.prefixdump");
 			snprintf (_fn, sizeof (_fn), "%s.0x%08"PFMT64x, prefix, poff);
 			filename = _fn;
 		}
-		if (tmp) {
+
+		/* TODO: I think this logic can be cleaned up, size_sep looks tacked-on */
+		if (size_sep) {
 			if (toend) {
 				sz = r_io_fd_size (core->io, core->io->desc->fd) - core->offset;
 				if (sz < 0) {
 					eprintf ("Warning: File size is unknown.");
 				}
 			} else {
-				sz = (st64) r_num_math (core->num, tmp + 1);
-				*tmp = 0;
+				sz = (st64) r_num_math (core->num, size_sep + 1);
+				/* Don't attempt to write if we can't parse size */
+				if (sz < 1) {
+					eprintf ("%s is not a valid size.\n", size_sep + 1);
+					sz = -1;
+				}
+				*size_sep = '\0';
 			}
-			if ((st64)sz < 1) {
-				// wtf?
-				sz = 0;
-			} else if (!r_core_dump (core, filename, poff, (ut64)sz, append)) {
-				sz = -1;
+
+			// XXX: this branch didn't handle aliases at all before
+			// but im not fixing the duplication rn
+			if (*filename == '$') {
+				if (append) {
+					if (sz > 0 && r_cmd_alias_append_raw (core->rcmd, filename+1, core->block, sz)) {
+						eprintf ("Alias \"$%s\" is a command - will not attempt to append.\n", filename+1);
+					}
+				} else {
+					if (sz > 0) {
+						r_cmd_alias_set_raw (core->rcmd, filename+1, core->block, sz);
+					}
+				}
+			} else {
+				/* XXX: r_core_dump vs r_file_dump below? */
+				if (sz > 0 && !r_core_dump (core, filename, poff, (ut64)sz, append)) {
+					sz = -1;
+				}
 			}
 		} else {
 			if (toend) {
@@ -1583,13 +1610,16 @@ static int wt_handler_old(void *data, const char *input) {
 					sz = -1;
 				}
 			} else {
-				sz = core->blocksize;
 				if (*filename == '$') {
-					char *data = r_str_ndup ((const char *)core->block, sz);
-					r_cmd_alias_set (core->rcmd, filename, data, 1);
-					free (data);
+					if (append) {
+						if (r_cmd_alias_append_raw (core->rcmd, filename+1, core->block, sz)) {
+							eprintf ("Alias \"$%s\" is a command - will not attempt to append.\n", filename+1);
+						}
+					} else {
+						r_cmd_alias_set_raw (core->rcmd, filename+1, core->block, sz);
+					}
 				} else {
-					if (!r_file_dump (filename, core->block, sz, append)) {
+					if (sz > 0 && !r_file_dump (filename, core->block, sz, append)) {
 						sz = -1;
 					}
 				}
