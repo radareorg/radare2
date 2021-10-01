@@ -442,6 +442,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 	char *om_cmds = NULL;
 
+	bool check_for_current_map = true;
 	void **it;
 	r_pvector_foreach_prev (&io->maps, it) { //this must be prev (LIFO)
 		RIOMap *map = *it;
@@ -481,10 +482,12 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 			break;
 		}
 		default:
-			print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
-					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
-					map->delta, r_io_map_begin (map), r_io_map_to (map),
-					r_str_rwx_i (map->perm), r_str_get (map->name));
+			print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+					" - 0x%08"PFMT64x" %s %s\n",
+					(check_for_current_map && r_io_map_contain (map, io->off)) ?
+					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
+					r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
+			check_for_current_map |= !r_io_map_contain (map, io->off);
 			break;
 		}
 	}
