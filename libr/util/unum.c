@@ -156,6 +156,41 @@ static void error(RNum *num, const char *err_str) {
 	}
 }
 
+static ut64 r_num_from_binary(const char *str) {
+	int i, j;
+	ut64 ret = 0;
+	for (j = 0, i = strlen (str) - 1; i > 0; i--, j++) {
+		if (str[i] == '1') {
+			ret |= (1 << j);
+		} else if (str[i] != '0') {
+			break;
+		}
+	}
+	sscanf (str, "0x%"PFMT64x, &ret);
+	return ret;
+}
+
+R_API ut64 r_num_from_ternary(const char *inp) {
+	if (!inp) {
+		return 0LL;
+	}
+	const char *p;
+	int pos = strlen (inp);
+	ut64 fr = 0;
+	for (p = inp; *p ; p++, pos--) {
+		int n012 = 0;
+		switch (*p) {
+		case '0':
+		case '1':
+		case '2':
+			n012 = *p - '0';
+			fr += n012 * pow (3, pos - 1);
+			break;
+		}
+	}
+	return fr;
+}
+
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
 R_API ut64 r_num_get(RNum *num, const char *str) {
@@ -218,21 +253,16 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		}
 	}
 	if (str[0] == '0' && str[1] == 'b') {
-		ret = 0;
-		for (j = 0, i = strlen (str) - 1; i > 0; i--, j++) {
-			if (str[i] == '1') {
-				ret|=1 << j;
-			} else if (str[i] != '0') {
-				break;
-			}
-		}
-		sscanf (str, "0x%"PFMT64x, &ret);
+		ret = r_num_from_binary (str + 2);
 	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;
 	// ugly as hell
 	} else if (!strncmp (str, "0xff..", 6) || !strncmp (str, "0xFF..", 6)) {
 		ret = r_num_tailff (num, str + 6);
 	// ugly as hell
+	} else if (!strncmp (str, "0t", 2)) {
+		// parse ternary number
+		ret = r_num_from_ternary (str + 2);
 	} else if (!strncmp (str, "0o", 2)) {
 		if (sscanf (str + 2, "%"PFMT64o, &ret) != 1) {
 			error (num, "invalid octal number");
