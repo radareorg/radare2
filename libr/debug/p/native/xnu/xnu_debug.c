@@ -345,7 +345,6 @@ char *xnu_reg_profile(RDebug *dbg) {
 #endif
 }
 
-//r_debug_select
 //using getcurthread has some drawbacks. You lose the ability to select
 //the thread you want to write or read from. but how that feature
 //is not implemented yet i don't care so much
@@ -467,7 +466,7 @@ static int xnu_get_kinfo_proc (int pid, struct kinfo_proc *kp) {
 	return 0;
 }
 
-RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
+RDebugInfo *xnu_info(RDebug *dbg, const char *arg) {
 	struct kinfo_proc kp; // XXX This need to be freed?
 	int kinfo_proc_error = 0;
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
@@ -908,6 +907,23 @@ static uid_t uidFromPid(pid_t pid) {
 	return uid;
 }
 
+static uid_t ppidFromPid(pid_t pid) {
+	uid_t ppid = -1;
+
+	struct kinfo_proc process;
+	size_t procBufferSize = sizeof (process);
+
+	// Compose search path for sysctl. Here you can specify PID directly.
+	int path[] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+	const int pathLenth = (sizeof (path) / sizeof (int));
+	int sysctlResult = sysctl (path, pathLenth, &process, &procBufferSize, NULL, 0);
+	// If sysctl did not fail and process with PID available - take UID.
+	if ((sysctlResult == 0) && (procBufferSize != 0)) {
+		ppid = process.kp_eproc.e_ppid;
+	}
+	return ppid;
+}
+
 bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	int error = 0, i;
 	int tstate_size;
@@ -1090,7 +1106,9 @@ RDebugPid *xnu_get_pid (int pid) {
 		return NULL;
 	}
 #endif
-	return r_debug_pid_new (psname, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
+	RDebugPid *p = r_debug_pid_new (psname, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
+	p->ppid = ppidFromPid (pid);
+	return p;
 }
 
 kern_return_t mach_vm_region_recurse (
