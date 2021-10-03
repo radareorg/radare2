@@ -237,11 +237,11 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	if (nd) {
 		r_io_desc_exchange (io, od->fd, nd->fd);
 		r_io_desc_del (io, od->fd);
-		bool res = r_io_desc_close (od);
+		// bool res = r_io_desc_close (od);
 		if (nd->perm & R_PERM_W) {
 			io->corebind.cmdf (io->corebind.core, "omfg");
 		}
-		return res;
+		return true;
 	}
 	return false;
 }

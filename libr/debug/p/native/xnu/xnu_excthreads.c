@@ -111,7 +111,7 @@ static bool is_thumb_32(ut16 op) {
 }
 #endif
 
-static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
+static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int ret = xnu_thread_get_drx (dbg, th);
 	if (!ret) {
 		eprintf ("error to get drx registers modificy_trace_bit arm\n");
@@ -211,7 +211,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 
 #elif __POWERPC__
 	// no need to do this here
-static int modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
+static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 	return true;
 }
 #else
@@ -221,7 +221,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 // TODO: Tuck this into RDebug; `void *user` seems like a good candidate.
 static xnu_exception_info ex = { { 0 } };
 
-static bool xnu_restore_exception_ports (int pid) {
+static bool xnu_restore_exception_ports(int pid) {
 	kern_return_t kr;
 	int i;
 	task_t task = pid_to_task (pid);
@@ -257,7 +257,7 @@ static void encode_reply(mig_reply_error_t *reply, mach_msg_header_t *hdr, int c
 	reply->RetCode = code;
 }
 
-static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
+static bool validate_mach_message(RDebug *dbg, exc_msg *msg) {
 	kern_return_t kr;
 #if __POWERPC__
 	return false;
@@ -311,7 +311,7 @@ static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 #endif
 }
 
-static bool handle_dead_notify (RDebug *dbg, exc_msg *msg) {
+static bool handle_dead_notify(RDebug *dbg, exc_msg *msg) {
 	if (msg->hdr.msgh_id == 0x48) {
 		dbg->pid = -1;
 		return true;
@@ -319,7 +319,7 @@ static bool handle_dead_notify (RDebug *dbg, exc_msg *msg) {
 	return false;
 }
 
-static int handle_exception_message (RDebug *dbg, exc_msg *msg, int *ret_code) {
+static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	kern_return_t kr;
 	*ret_code = KERN_SUCCESS;
@@ -373,8 +373,7 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg, int *ret_code) {
 	return ret;
 }
 
-//TODO improve this code
-static int __xnu_wait (RDebug *dbg, int pid) {
+static int __xnu_wait(RDebug *dbg, int pid) {
 	// here comes the important thing
 	kern_return_t kr;
 	int ret_code, reason = R_DEBUG_REASON_UNKNOWN;
@@ -439,7 +438,7 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 	return reason;
 }
 
-bool xnu_create_exception_thread(RDebug *dbg) {
+bool xnu_create_exception_thread(RDebug *dbg, int pid) {
 #if __POWERPC__
 	return false;
 #else
@@ -448,13 +447,12 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 	mach_port_t req_port;
         // Got the mach port for the current process
 	mach_port_t task_self = mach_task_self ();
-	task_t task = pid_to_task (dbg->pid);
+	task_t task = pid_to_task (pid);
 	if (!task) {
-		eprintf ("error to get task for the debuggee process"
-			" xnu_start_exception_thread\n");
+		eprintf ("xnu_start_exception_thread: error to get task for pid %d\n", pid);
 		return false;
 	}
-	r_debug_ptrace (dbg, PT_ATTACHEXC, dbg->pid, 0, 0);
+	r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0);
 	if (!MACH_PORT_VALID (task_self)) {
 		eprintf ("error to get the task for the current process"
 			" xnu_start_exception_thread\n");

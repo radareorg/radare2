@@ -238,7 +238,7 @@ ptid_t qnxr_attach (libqnxr_t *g, pid_t pid) {
 	return g->inferior_ptid;
 }
 
-ptid_t qnxr_run (libqnxr_t *g, const char *file, char **args, char **env) {
+ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
 	ut32 argc = 0;
 	ut32 envc = 0;
 
@@ -431,8 +431,8 @@ void qnxr_pidlist (libqnxr_t *g, void *ctx, pidlist_cb_t *cb) {
 	}
 }
 
-int qnxr_select (libqnxr_t *g, pid_t pid, int tid) {
-	if (!g) return 0;
+bool qnxr_select (libqnxr_t *g, pid_t pid, int tid) {
+	if (!g) return false;
 
 	/* TODO */
 	tid = 1;
@@ -445,17 +445,17 @@ int qnxr_select (libqnxr_t *g, pid_t pid, int tid) {
 
 	if (g->recv.pkt.hdr.cmd == DSrMsg_err) {
 		eprintf ("%s: failed to select %d\n", __func__, pid);
-		return 0;
+		return false;
 	}
 
-	return 1;
+	return true;
 }
 
-int qnxr_step (libqnxr_t *g, int thread_id) {
+int qnxr_step(libqnxr_t *g, int thread_id) {
 	return qnxr_send_vcont (g, 1, thread_id);
 }
 
-int qnxr_continue (libqnxr_t *g, int thread_id) {
+int qnxr_continue(libqnxr_t *g, int thread_id) {
 	return qnxr_send_vcont (g, 0, thread_id);
 }
 
@@ -500,7 +500,7 @@ int qnxr_write_reg (libqnxr_t *g, const char *name, char *value, int len) {
 	return 0;
 }
 
-int qnxr_send_vcont (libqnxr_t *g, int step, int thread_id) {
+int qnxr_send_vcont(libqnxr_t *g, int step, int thread_id) {
 	if (!g) return -1;
 
 	nto_send_init (g, DStMsg_run, step ? DSMSG_RUN_COUNT : DSMSG_RUN,
@@ -510,7 +510,7 @@ int qnxr_send_vcont (libqnxr_t *g, int step, int thread_id) {
 	return 0;
 }
 
-int qnxr_stop (libqnxr_t *g) {
+int qnxr_stop(libqnxr_t *g) {
 	if (!g) return 0;
 
 	eprintf ("%s: waiting for stop\n", __func__);
@@ -523,7 +523,7 @@ int qnxr_stop (libqnxr_t *g) {
 	return 1;
 }
 
-ptid_t qnxr_wait (libqnxr_t *g, pid_t pid) {
+ptid_t qnxr_wait(libqnxr_t *g, pid_t pid) {
 	if (!g || pid < 0) {
 		return null_ptid;
 	}
@@ -580,11 +580,11 @@ ptid_t qnxr_wait (libqnxr_t *g, pid_t pid) {
 	return returned_ptid;
 }
 
-int qnxr_set_bp (libqnxr_t *g, ut64 address, const char *conditions) {
+int qnxr_set_bp(libqnxr_t *g, ut64 address, const char *conditions) {
 	return _qnxr_set_bp (g, address, conditions, BREAKPOINT);
 }
 
-int qnxr_set_hwbp (libqnxr_t *g, ut64 address, const char *conditions) {
+int qnxr_set_hwbp(libqnxr_t *g, ut64 address, const char *conditions) {
 	return _qnxr_set_bp (g, address, conditions, HARDWARE_BREAKPOINT);
 }
 
