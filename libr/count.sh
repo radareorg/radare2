@@ -6,7 +6,7 @@ if [ -n "$1" ]; then
 	echo 1 > "$T"
 else
 	N=`cat $T 2> /dev/null`
-	N=$(($N+1))
+	N=$((1+$N))
 	basename `pwd`
 	echo "$N" | tee "$T" 2> /dev/null
 fi
