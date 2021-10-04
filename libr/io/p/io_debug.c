@@ -560,7 +560,6 @@ RIOPlugin r_io_plugin_debug = {
 	.license = "LGPL3",
 	.uris = "dbg://,pidof://,waitfor://",
 	.author = "pancake",
-	.version = "0.3.0",
 	.open = __open,
 	.check = __plugin_open,
 	.isdbg = true,

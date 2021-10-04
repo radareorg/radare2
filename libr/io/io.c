@@ -223,21 +223,22 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 }
 
 R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
-	RIODesc *old = r_io_desc_get (io, fd);
-	if (!old) {
+	RIODesc *od = r_io_desc_get (io, fd);
+	if (!od) {
 		return false;
 	}
-	char *uri = old->referer? old->referer: old->uri;
+	const char *uri = od->referer? od->referer: od->uri;
 #if __WINDOWS__ //TODO: workaround, see https://github.com/radareorg/radare2/issues/8840
-	if (old->plugin->close && old->plugin->close (old)) {
-		return false; // TODO: this is an unrecoverable scenario
+	if (old->plugin->close && !od->plugin->close (od)) {
+		return false;
 	}
 #endif
 	RIODesc *nd = r_io_open_nomap (io, uri, perm, mode);
 	if (nd) {
-		r_io_desc_exchange (io, old->fd, nd->fd);
-		r_io_desc_del (io, old->fd);
-		return r_io_desc_close (old); // magic
+		r_io_desc_exchange (io, od->fd, nd->fd);
+		r_io_desc_del (io, od->fd);
+		// io->corebind.cmdf (io->corebind.core, "omfg");
+		return r_io_desc_close (od); // magic
 	}
 	return false;
 }

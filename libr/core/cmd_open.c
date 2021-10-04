@@ -499,35 +499,36 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 }
 
+// TODO: move into r_io_remap()
 static void cmd_omfg(RCore *core, const char *input) {
 	input = r_str_trim_head_ro (input);
-	if (input) {
-		int perm = *input
-		? (*input == '+' || *input == '-')
-			? r_str_rwx (input + 1)
-			: r_str_rwx (input)
-		: 7;
-		void **it;
-		switch (*input) {
-		case '+':
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				map->perm |= perm;
-			}
-			break;
-		case '-':
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				map->perm &= ~perm;
-			}
-			break;
-		default:
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				map->perm = perm;
-			}
-			break;
+	int perm = *input ? (*input == '+' || *input == '-')
+		? r_str_rwx (input + 1)
+		: r_str_rwx (input) : 7;
+	void **it;
+	switch (*input) {
+	case '+':
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
+			map->perm |= perm;
 		}
+		break;
+	case '-':
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
+			map->perm &= ~perm;
+		}
+		break;
+	default:
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
+			bool doexec = map->perm & 1;
+			map->perm = perm;
+			if (!doexec) {
+				map->perm = map->perm & (0xFFFF << 1);
+			}
+		}
+		break;
 	}
 }
 
