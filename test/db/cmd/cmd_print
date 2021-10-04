@@ -16,7 +16,6 @@ EOF
 RUN
 
 NAME=null raw wff
-BROKEN=1
 FILE=-
 CMDS=<<EOF
 b 6

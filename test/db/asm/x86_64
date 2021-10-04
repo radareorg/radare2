@@ -45,7 +45,7 @@ a "and dword[rax], 0x1234" 812034120000
 a "and dword[rax], 0x123490" 812090341200
 a "and dword[rax], 0x12349012" 812012903412
 a "and qword[rax], 0x12349012" 48812012903412
-aB "and r15b, 0x2a" ff2a
+a "and r15b, 0x2a" ff2a
 a "and ebx, 0x1234" 81e334120000
 a "and byte[rax-0x2a], 12" 8060d60c
 a "and byte[rbx], 99" 802363
@@ -65,7 +65,7 @@ a "call qword[rax - 0x123456]" ff90aacbedff
 a "call qword[rax + 0x0eadbeef]" ff90efbead0e
 a "call qword[rax - 0x0eadbeef]" ff90114152f1
 a "call qword[rsi]" ff16
-aB "call qword[r14]" ff1f
+a "call qword[r14]" ff1f
 aB "call qword[r14 - 0x0eadbeef]" 41ff96114152f1
 a "cdqe" 4898
 a "cmp al, 1" 3c01
@@ -83,7 +83,7 @@ a "cmp qword[rax-0x1234], 0x8765" 4881b8ccedffff65870000
 a "cmp qword[rsp-0x1111], rsi" 4839b424efeeffff
 a "cmp byte[rsp-0x1111], al" 388424efeeffff
 aB "cmp word[rsp-0x1111], dx" 66399424efeeffff
-aB "cmp dword[rdi-0x9888], ecx" 67398f7867ffff
+a "cmp dword[rdi-0x9888], ecx" 67398f7867ffff
 a "cmp qword[rsp-0x9888], rax" 483984247867ffff
 a "cmp rax, 33" 4883f821
 a "cmp rax, rbx" 4839d8
@@ -98,8 +98,8 @@ a "imul ecx" f7e9
 a "imul rax" 48f7e8
 a "imul word[rax]" 66f728
 aB "imul word[rax+0x345]" 66f7a845030000
-aB "imul dword[rax+0x345]" f728
-aB "imul dword[rax+0x1234]" f728
+a "imul dword[rax+0x345]" f728
+a "imul dword[rax+0x1234]" f728
 aB "imul qword[rax+0x1234]" 48f7a834120000
 aB "imul ax, bx" 660fafc3
 aB "imul ax, si" 660fafc6
