@@ -1961,7 +1961,7 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 	RBinInfo *info = r_bin_get_info (r->bin);
 	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
-	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
+	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
 	RTable *table = r_core_table (r, "imports");
 	r_return_val_if_fail (table, false);
 	RBinImport *import;
@@ -2130,7 +2130,7 @@ typedef struct {
 
 static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 	int bin_demangle = lang != NULL;
-	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
+	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
 	if (!r || !sym || !sym->name) {
 		return;
 	}

@@ -171,7 +171,7 @@ static char *swift_demangle_lib(const char *s) {
 	return NULL;
 }
 
-R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
+R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 #define STRCAT_BOUNDS(x) if (((x) + 2 + strlen (out)) > sizeof (out)) break;
 	char out[1024];
 	int i, len, is_generic = 0;
@@ -191,18 +191,15 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 			return NULL;
 		}
 	}
-
 	if (!strncmp (s, "__", 2)) {
 		s = s + 2;
 	}
-#if 0
-	const char *element[] = {
-		"module", "class", "method", NULL
-	};
-#endif
-	char *res = swift_demangle_lib (s);
-	if (res) {
-		return res;
+	char *res = NULL;
+	if (trylib) {
+		res = swift_demangle_lib (s);
+		if (res) {
+			return res;
+		}
 	}
 	const char *attr = NULL;
 	const char *attr2 = NULL;
@@ -516,27 +513,29 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd) {
 						const char *s = getstring (q, len);
 						if (s && *s) {
 							if (is_first) {	
-								strcat (out, is_generic?"<":"(");
+								strcat (out, is_generic?"<":": ");
 								is_first = 0;
 							}
 							//printf ("ISLAST (%s)\n", q+len);
-							is_last = q[len];
+							is_last = strlen (q+len) < 5;
 							if (attr) {
 								STRCAT_BOUNDS (strlen (attr));
 								strcat (out, attr);
-								strcat (out, " ");
+								if (!is_last) {
+									strcat (out, ", ");
+								}
 							}
 							STRCAT_BOUNDS (strlen (s));
-							strcat (out, s);
-							if (is_last) {
-								strcat (out, is_generic?">":")");
-								is_first = (*s != '_');
-								if (is_generic && !is_first) {
-									break;
+								if (strcmp (s, "_")) {
+									strcat (out, s);
+									strcat (out, is_generic?">":"");
+									is_first = (*s != '_');
+									if (is_generic && !is_first) {
+										break;
+									}
+								} else {
+									strcat(out, ")");
 								}
-							} else {
-								strcat (out, ", ");
-							}
 						} else {
 							if (attr) {
 								strcat (out, " -> ");

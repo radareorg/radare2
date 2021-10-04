@@ -338,7 +338,8 @@ struct r_bin_t {
 	char *prefix; // bin.prefix
 	char *strenc;
 	ut64 filter_rules;
-	bool demanglercmd;
+	bool demangle_usecmd;
+	bool demangle_trylib;
 	bool verbose;
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
@@ -786,7 +787,7 @@ R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str,
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
-R_API char *r_bin_demangle_swift(const char *s, bool syscmd);
+R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib);
 R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym);
 R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API int r_bin_demangle_type(const char *str);
