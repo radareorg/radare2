@@ -27,7 +27,6 @@ r2 -d ls      # start debugging the ls in PATH
 
 ```
 rasm2 -L       # list all supported assembler/disassembler/emulator plugins
-rasm2 -L       # list all supported assembler/disassembler/emulator plugins
 rasm2 -a arm -b 64 'nop'
 rasm2 -d 90    # disassembles a nop asuming local x86
 ```
