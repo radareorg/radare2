@@ -37,7 +37,7 @@ static void pidlist_cb (void *ctx, pid_t pid, char *name) {
 	r_list_append (list, __r_debug_pid_new (name, pid, 's', 0));
 }
 
-static int r_debug_qnx_select (RDebug *dbg, int pid, int tid) {
+static bool r_debug_qnx_select (RDebug *dbg, int pid, int tid) {
 	return qnxr_select (desc, pid, tid);
 }
 
@@ -64,7 +64,7 @@ static RList *r_debug_qnx_pids (RDebug *dbg, int pid) {
 	return list;
 }
 
-static int r_debug_qnx_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
+static int r_debug_qnx_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int copy_size;
 	int buflen = 0;
 	if (!desc) {
@@ -107,11 +107,11 @@ static int r_debug_qnx_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	return len;
 }
 
-static RList *r_debug_qnx_map_get (RDebug *dbg) {
+static RList *r_debug_qnx_map_get(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_qnx_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
+static int r_debug_qnx_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	int buflen = 0;
 	int bits = dbg->anal->bits;
 	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
@@ -154,17 +154,17 @@ static int r_debug_qnx_reg_write (RDebug *dbg, int type, const ut8 *buf, int siz
 	return true;
 }
 
-static int r_debug_qnx_continue (RDebug *dbg, int pid, int tid, int sig) {
+static bool r_debug_qnx_continue(RDebug *dbg, int pid, int tid, int sig) {
 	qnxr_continue (desc, -1);
 	return true;
 }
 
-static int r_debug_qnx_step (RDebug *dbg) {
+static bool r_debug_qnx_step(RDebug *dbg) {
 	qnxr_step (desc, -1);
 	return true;
 }
 
-static int r_debug_qnx_wait (RDebug *dbg, int pid) {
+static RDebugReasonType r_debug_qnx_wait(RDebug *dbg, int pid) {
 	ptid_t ptid = qnxr_wait (desc, pid);
 	if (!ptid_equal (ptid, null_ptid)) {
 		dbg->reason.signum = desc->signal;
@@ -173,12 +173,12 @@ static int r_debug_qnx_wait (RDebug *dbg, int pid) {
 	return 0;
 }
 
-static int r_debug_qnx_stop (RDebug *dbg) {
+static int r_debug_qnx_stop(RDebug *dbg) {
 	qnxr_stop (desc);
 	return true;
 }
 
-static int r_debug_qnx_attach (RDebug *dbg, int pid) {
+static bool r_debug_qnx_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	dbg->swstep = false;
 
@@ -220,7 +220,7 @@ static int r_debug_qnx_attach (RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_qnx_detach (RDebug *dbg, int pid) {
+static bool r_debug_qnx_detach (RDebug *dbg, int pid) {
 	qnxr_disconnect (desc);
 	free (reg_buf);
 	return true;

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2019 - pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2015-2021 - pancake, alvaro_fe */
 
 #include <r_userconf.h>
 #if DEBUGGER
@@ -65,7 +65,7 @@ typedef struct {
 } DyldImageInfo64;
 
 /* XXX: right now it just returns the first thread, not the one selected in dbg->tid */
-static thread_t getcurthread (RDebug *dbg) {
+static thread_t getcurthread(RDebug *dbg) {
 	thread_t th;
 	thread_array_t threads = NULL;
 	unsigned int n_threads = 0;
@@ -197,29 +197,30 @@ bool xnu_step(RDebug *dbg) {
 #endif
 }
 
-int xnu_attach(RDebug *dbg, int pid) {
+bool xnu_attach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
-  #if PT_ATTACHEXC
-	if (r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0) == -1) {
-  #else
-	if (r_debug_ptrace (dbg, PT_ATTACH, pid, 0, 0) == -1) {
-  #endif
+# if PT_ATTACHEXC
+#  define MY_ATTACH PT_ATTACHEXC
+# else
+#  define MY_ATTACH PT_ATTACH
+# endif
+	if (r_debug_ptrace (dbg, MY_ATTACH, pid, 0, 0) == -1) {
 		perror ("ptrace (PT_ATTACH)");
-		return -1;
+		return false;
 	}
-	return pid;
 #else
-	dbg->pid = pid;
-	if (!xnu_create_exception_thread (dbg)) {
+	if (!xnu_create_exception_thread (dbg, pid)) {
 		eprintf ("error setting up exception thread\n");
-		return -1;
+		return false;
 	}
+	dbg->tid = getcurthread (dbg);
 	xnu_stop (dbg, pid);
-	return pid;
 #endif
+	dbg->pid = pid;
+	return true;
 }
 
-int xnu_detach(RDebug *dbg, int pid) {
+bool xnu_detach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
 	return r_debug_ptrace (dbg, PT_DETACH, pid, NULL, 0);
 #else
@@ -252,7 +253,7 @@ static int task_suspend_count(task_t task) {
 	return info.suspend_count;
 }
 
-int xnu_stop(RDebug *dbg, int pid) {
+bool xnu_stop(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
 	eprintf ("xnu_stop: not implemented\n");
 	return false;
@@ -290,7 +291,7 @@ int xnu_stop(RDebug *dbg, int pid) {
 #endif
 }
 
-int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
+bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if XNU_USE_PTRACE
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	task_resume (pid_to_task (pid));
@@ -521,7 +522,7 @@ static void xnu_free_threads_ports (RDebugPid *p) {
 }
 */
 
-RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
+RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
 #if __arm__ || __arm64__ || __aarch_64__
 	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
 		state.ts_64.__pc : state.ts_32.__pc
@@ -570,7 +571,7 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 	return true;
 }
 
-task_t pid_to_task (int pid) {
+task_t pid_to_task(int pid) {
 	static int old_pid = -1;
 	kern_return_t kr;
 	task_t task = -1;
@@ -614,7 +615,7 @@ task_t pid_to_task (int pid) {
 	return task;
 }
 
-int xnu_get_vmmap_entries_for_pid (pid_t pid) {
+int xnu_get_vmmap_entries_for_pid(pid_t pid) {
 	task_t task = pid_to_task (pid);
 	kern_return_t kr = KERN_SUCCESS;
 	vm_address_t address = 0;
@@ -656,11 +657,11 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 static void get_mach_header_sizes(size_t *mach_header_sz, 
 									size_t *segment_command_sz) {
 #if __ppc64__ || __x86_64__
-	*mach_header_sz = sizeof(struct mach_header_64);
-	*segment_command_sz = sizeof(struct segment_command_64);
+	*mach_header_sz = sizeof (struct mach_header_64);
+	*segment_command_sz = sizeof (struct segment_command_64);
 #elif __i386__ || __ppc__ || __POWERPC__
-	*mach_header_sz = sizeof(struct mach_header);
-	*segment_command_sz = sizeof(struct segment_command);
+	*mach_header_sz = sizeof (struct mach_header);
+	*segment_command_sz = sizeof (struct segment_command);
 #else
 #endif
 // XXX: What about arm?

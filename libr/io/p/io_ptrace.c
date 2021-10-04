@@ -282,13 +282,10 @@ static bool __close(RIODesc *desc) {
 	}
 	RIOPtrace *riop = desc->data;
 	desc->data = NULL;
-	long ret = r_io_ptrace (desc->io, PTRACE_DETACH, pid, 0, 0);
-	if (errno == ESRCH) {
-		// process does not exist, may have been killed earlier -- continue as normal
-		ret = 0;
-	}
+	(void) r_io_ptrace (desc->io, PTRACE_DETACH, pid, 0, 0);
 	free (riop);
-	return ret;
+	// always return true, even if ptrace fails, otherwise the link is lost and the fd cant be removed
+	return true;
 }
 
 static void show_help(void) {

@@ -20,7 +20,7 @@
 
 static WindCtx *wctx = NULL;
 
-static int r_debug_winkd_step(RDebug *dbg) {
+static bool r_debug_winkd_step(RDebug *dbg) {
 	return true;
 }
 
@@ -49,8 +49,8 @@ static int r_debug_winkd_reg_write(RDebug *dbg, int type, const ut8 *buf, int si
 	return ret;
 }
 
-static int r_debug_winkd_continue(RDebug *dbg, int pid, int tid, int sig) {
-	return winkd_continue(wctx);
+static bool r_debug_winkd_continue(RDebug *dbg, int pid, int tid, int sig) {
+	return winkd_continue (wctx);
 }
 
 static RDebugReasonType r_debug_winkd_wait(RDebug *dbg, int pid) {
@@ -87,7 +87,7 @@ static RDebugReasonType r_debug_winkd_wait(RDebug *dbg, int pid) {
 	return reason;
 }
 
-static int r_debug_winkd_attach(RDebug *dbg, int pid) {
+static bool r_debug_winkd_attach(RDebug *dbg, int pid) {
 	RIODesc *desc = dbg->iob.io->desc;
 
 	if (!desc || !desc->plugin || !desc->plugin->name || !desc->data) {
@@ -117,15 +117,13 @@ static int r_debug_winkd_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_winkd_detach(RDebug *dbg, int pid) {
+static bool r_debug_winkd_detach(RDebug *dbg, int pid) {
 	eprintf ("Detaching...\n");
 	return true;
 }
 
 static char *r_debug_winkd_reg_profile(RDebug *dbg) {
-	if (!dbg) {
-		return NULL;
-	}
+	r_return_val_if_fail (dbg, NULL);
 	if (dbg->arch && strcmp (dbg->arch, "x86")) {
 		return NULL;
 	}
@@ -154,7 +152,7 @@ static int r_debug_winkd_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool se
 	return winkd_bkpt (wctx, b->addr, set, b->hw, tag);
 }
 
-static int r_debug_winkd_init(RDebug *dbg) {
+static bool r_debug_winkd_init(RDebug *dbg) {
 	return true;
 }
 
@@ -187,7 +185,7 @@ static RList *r_debug_winkd_pids(RDebug *dbg, int pid) {
 	return ret;
 }
 
-static int r_debug_winkd_select(RDebug *dbg, int pid, int tid) {
+static bool r_debug_winkd_select(RDebug *dbg, int pid, int tid) {
 	ut32 old = winkd_get_target (wctx);
 	int ret = winkd_set_target (wctx, pid);
 	if (!ret) {

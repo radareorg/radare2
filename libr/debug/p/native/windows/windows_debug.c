@@ -13,19 +13,6 @@ static PLIB_ITEM last_lib = NULL;
 #define w32_PROCESS_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF)
 #define w32_THREAD_ALL_ACCESS w32_PROCESS_ALL_ACCESS
 
-bool w32_init(RDebug *dbg) {
-	W32DbgWInst *wrap = dbg->user;
-	r_w32_init ();
-	if (!wrap) {
-		if (dbg->iob.io->w32dbg_wrap) {
-			dbg->user = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
-		} else {
-			return false;
-		}
-	}
-	return true;
-}
-
 static int __w32_findthread_cmp(int *tid, PTHREAD_ITEM th) {
 	return (int)!(*tid == th->tid);
 }
@@ -598,24 +585,31 @@ int w32_attach_new_process(RDebug* dbg, int pid) {
 		return -1;
 	}
 
-	dbg->tid = tid;
+#if 0
 	dbg->pid = pid;
+	dbg->tid = tid;
+#endif
 	// Call select to sync the new pid's data
 	r_debug_select (dbg, pid, tid);
 	return dbg->tid;
 }
 
-int w32_select(RDebug *dbg, int pid, int tid) {
+bool w32_select(RDebug *dbg, int pid, int tid) {
 	RListIter *it;
 	W32DbgWInst *wrap = dbg->user;
 
 	// Re-attach to a different pid
 	if (dbg->pid > -1 && dbg->pid != pid) {
-		return w32_attach_new_process (dbg, pid);
+		if (w32_attach_new_process (dbg, pid)) {
+			dbg->tid = tid;
+			return true;
+		}
+		return false;
 	}
 
 	if (dbg->tid == -1) {
-		return tid;
+		dbg->tid = tid;
+		return true;
 	}
 
 	if (!dbg->threads) {
@@ -630,7 +624,7 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 		}
 	}
 
-	int selected = 0;
+	int selected = -1;
 	if (th && __is_thread_alive (dbg, th->tid)) {
 		wrap->pi.hThread = th->hThread;
 		selected = tid;
@@ -655,8 +649,10 @@ int w32_select(RDebug *dbg, int pid, int tid) {
 			}
 		}
 	}
-
-	return selected;
+	if (selected != -1) {
+		dbg->tid = selected;
+	}
+	return true;
 }
 
 int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
@@ -834,7 +830,7 @@ RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 				}
 				if (!__is_thread_alive (dbg, dbg->tid)) {
 					ret = w32_select (dbg, dbg->pid, dbg->tid);
-					if (ret == -1) {
+					if (!ret) {
 						ret = R_DEBUG_REASON_DEAD;
 						goto end;
 					}
@@ -1002,7 +998,7 @@ end:
 	return ret;
 }
 
-int w32_step(RDebug *dbg) {
+bool w32_step(RDebug *dbg) {
 	/* set TRAP flag */
 	CONTEXT ctx;
 	if (!w32_reg_read (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
@@ -1012,23 +1008,24 @@ int w32_step(RDebug *dbg) {
 	if (!w32_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&ctx, sizeof (ctx))) {
 		return false;
 	}
-	return w32_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
 	// (void)r_debug_handle_signals (dbg);
+	return w32_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
 }
 
-int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
+bool w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (tid != dbg->tid) {
-		dbg->tid = w32_select (dbg, pid, tid);
-		r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+		if (w32_select (dbg, pid, tid)) {
+			r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+		}
 	}
 	// Don't continue with a thread that wasn't requested
 	if (dbg->tid != tid) {
-		return -1;
+		return false;
 	}
 
 	if (interrupted) {
 		interrupted = false;
-		return -1;
+		return false;
 	}
 
 	PTHREAD_ITEM th = __find_thread (dbg, tid);
@@ -1049,10 +1046,10 @@ int w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (!w32dbgw_ret (wrap)) {
 		w32dbgw_err (wrap);
 		r_sys_perror ("w32_continue/ContinueDebugEvent");
-		return -1;
+		return false;
 	}
-
-	return tid;
+	dbg->tid = tid;
+	return true;
 }
 
 RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
@@ -1066,7 +1063,7 @@ RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	return r_debug_map_get (dbg, (ut64)base);
 }
 
-int w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
+bool w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 	W32DbgWInst *wrap = dbg->user;
 	if (!VirtualFreeEx (wrap->pi.hProcess, (LPVOID)addr, 0, MEM_RELEASE)) {
 		r_sys_perror ("w32_map_dealloc/VirtualFreeEx");
@@ -1098,7 +1095,7 @@ static int __io_perms_to_prot(int io_perms) {
 	return prot_perms;
 }
 
-int w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
+bool w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 	DWORD old;
 	W32DbgWInst *wrap = dbg->user;
 	return VirtualProtectEx (wrap->pi.hProcess, (LPVOID)(size_t)addr,
@@ -1352,15 +1349,11 @@ RList *w32_desc_list(int pid) {
 //	#define SystemHandleInformation SYSTEM_HANDLE_INFORMATION
 	while ((status = r_w32_NtQuerySystemInformation (SystemHandleInformation, handleInfo, handleInfoSize, NULL)) == STATUS_INFO_LENGTH_MISMATCH) {
 		handleInfoSize *= 2;
-		printf ("MISMATCH %d \n",handleInfoSize);
 		void *tmp = realloc (handleInfo, (size_t)handleInfoSize);
-		if (tmp) {
-			handleInfo = (PSYSTEM_HANDLE_INFORMATION)tmp;
-		}
-		else {
-			eprintf ("NULL\n");
+		if (!tmp) {
 			return NULL;
 		}
+		handleInfo = (PSYSTEM_HANDLE_INFORMATION)tmp;
 	}
 	if (status != STATUS_SUCCESS) {
 		r_sys_perror ("win_desc_list/NtQuerySystemInformation");

@@ -6,11 +6,8 @@
 
 // shall be used by plugins for creating descs
 R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int perm, int mode, void* data) {
+	r_return_val_if_fail (io && plugin && uri, NULL);
 	ut32 fd32 = 0;
-	// this is required for emscripten builds to work, but should assert
-	if (!io || !plugin || !uri) {
-		return NULL;
-	}
 	if (io->files) {
 		if (!r_id_pool_grab_id (io->files->pool, &fd32)) {
 			return NULL;
@@ -39,8 +36,8 @@ R_API void r_io_desc_free(RIODesc* desc) {
 			r_id_storage_delete (desc->io->files, desc->fd);
 		}
 //		free (desc->plugin);
+		free (desc);
 	}
-	free (desc);
 }
 
 R_API bool r_io_desc_add(RIO* io, RIODesc* desc) {
@@ -55,15 +52,16 @@ R_API bool r_io_desc_add(RIO* io, RIODesc* desc) {
 	return true;
 }
 
-R_API bool r_io_desc_del(RIO* io, int fd) {		//can we pass this a riodesc and check if it belongs to the desc->io ?
+// can we pass this a riodesc and check if it belongs to the desc->io ?
+R_API bool r_io_desc_del(RIO* io, int fd) {
 	r_return_val_if_fail (io && io->files, false);
 	RIODesc* desc = r_id_storage_get (io->files, fd);
-	r_io_desc_free (desc);
 	if (desc == io->desc) {
 		io->desc = NULL;
 	}
 	// remove all dead maps
 	r_io_map_cleanup (io);
+	r_io_desc_free (desc);
 	return true;
 }
 
@@ -134,8 +132,8 @@ R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
 }
 
 R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri, int perm, int mode) {
-	r_return_val_if_fail (io && io->files && uri, NULL);
-	if (!plugin || !plugin->open || !plugin->check || !plugin->check (io, uri, false)) {
+	r_return_val_if_fail (io && io->files && uri && plugin, NULL);
+	if (!plugin->open || !plugin->check || !plugin->check (io, uri, false)) {
 		return NULL;
 	}
 	RIODesc *desc = plugin->open (io, uri, perm, mode);
@@ -164,13 +162,14 @@ R_API bool r_io_desc_close(RIODesc *desc) {
 	if (!desc || !desc->io || !desc->plugin) {
 		return false;
 	}
+	RIO *io = desc->io;
 	if (desc->plugin->close && !desc->plugin->close (desc)) {
 		return false;
 	}
 	// remove entry from idstorage and free the desc-struct
 	r_io_desc_del (desc->io, desc->fd);
 	// remove all dead maps
-	r_io_map_cleanup (desc->io);
+	r_io_map_cleanup (io);
 	return true;
 }
 

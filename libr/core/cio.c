@@ -19,9 +19,13 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	r_core_cmdf (r, "dL %s", debugbackend);
 	if (!is_gdb) {
 		pid = r_io_desc_get_pid (fd);
-		r_core_cmdf (r, "dp=%d", pid);
-		if (attach) {
-			r_core_cmdf (r, "dpa %d", pid);
+		if (pid >= 0) {
+			r_core_cmdf (r, "dp=%d", pid);
+			if (attach) {
+				r_core_cmdf (r, "dpa %d", pid);
+			}
+		} else {
+			eprintf ("Cannot retrieve pid from io.\n");
 		}
 	}
 	//this makes to attach twice showing warnings in the output

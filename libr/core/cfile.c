@@ -49,7 +49,6 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 	const bool isdebug = r_config_get_b (core->config, "cfg.debug");
 	char *path;
 	ut64 laddr = r_config_get_i (core->config, "bin.laddr");
-	RIODesc *file = NULL;
 	RIODesc *odesc = core->io ? core->io->desc : NULL;
 	RBinFile *bf = odesc ? r_bin_file_find_by_fd (core->bin, odesc->fd) : NULL;
 	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
@@ -110,15 +109,13 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 	// HACK: move last mapped address to higher place
 	// XXX - why does this hack work?
 	// when the new memory maps are created.
-	path = strdup (ofilepath);
+	path = r_str_trim_dup (ofilepath);
 	free (obinfilepath);
-	obinfilepath = strdup (ofilepath);
+	obinfilepath = r_str_trim_dup (ofilepath);
 
-	// r_str_trim (path);
-	file = r_core_file_open (core, path, perm, laddr);
+	RIODesc *file = r_core_file_open (core, path, perm, laddr);
 	if (isdebug) {
 		int newtid = newpid;
-		// XXX - select the right backend
 		if (core->io->desc) {
 			newpid = r_io_fd_get_pid (core->io, core->io->desc->fd);
 #if __linux__

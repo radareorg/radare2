@@ -1372,7 +1372,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 		return;
 	}
 	char *escaped_path = r_str_arg_escape (bin_abspath);
-	char *newfile = r_str_newf ("dbg://%s %s", escaped_path, args);
+	char *newfile = r_str_newf ("dbg://%s%c%s", escaped_path, *args?' ':0, args);
 	desc->uri = newfile;
 	desc->referer = NULL;
 	r_config_set_i (core->config, "asm.bits", bits);

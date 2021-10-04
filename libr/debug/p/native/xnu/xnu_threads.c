@@ -7,7 +7,7 @@
 #include "xnu_debug.h"
 #include "xnu_threads.h"
 
-static void xnu_thread_free (xnu_thread_t *thread) {
+static void xnu_thread_free(xnu_thread_t *thread) {
 	kern_return_t kr;
 	if (!thread) {
 		return;
@@ -23,7 +23,7 @@ static void xnu_thread_free (xnu_thread_t *thread) {
 }
 
 // XXX this should work as long as in arm trace bit relies on this
-static bool xnu_thread_get_drx (RDebug *dbg, xnu_thread_t *thread) {
+static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 	r_return_val_if_fail (dbg && thread, false);
 	kern_return_t rc;
 #if __x86_64__ || __i386__
@@ -67,7 +67,7 @@ static bool xnu_thread_get_drx (RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_set_drx (RDebug *dbg, xnu_thread_t *thread) {
+static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	r_return_val_if_fail (dbg && thread, false);
 	kern_return_t rc;
 #if __i386__ || __x86_64__
@@ -127,7 +127,7 @@ static bool xnu_thread_set_drx (RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_set_gpr (RDebug *dbg, xnu_thread_t *thread) {
+static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	r_return_val_if_fail (dbg && thread, false);
 	kern_return_t rc;
 	R_REG_T *regs = (R_REG_T *)&thread->gpr;
@@ -181,7 +181,7 @@ static bool xnu_thread_set_gpr (RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_get_gpr (RDebug *dbg, xnu_thread_t *thread) {
+static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	r_return_val_if_fail (dbg && thread, false);
 	R_REG_T *regs = &thread->gpr;
 	if (!regs) {
@@ -225,7 +225,7 @@ static bool xnu_thread_get_gpr (RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_fill_info_thread (RDebug *dbg, xnu_thread_t *thread) {
+static bool xnu_fill_info_thread(RDebug *dbg, xnu_thread_t *thread) {
 #if __POWERPC__
 	thread->name = strdup ("unknown");
 	return false;
@@ -264,7 +264,7 @@ static bool xnu_fill_info_thread (RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static xnu_thread_t *xnu_get_thread_with_info (RDebug *dbg, thread_t port) {
+static xnu_thread_t *xnu_get_thread_with_info(RDebug *dbg, thread_t port) {
 	xnu_thread_t *thread = R_NEW0 (xnu_thread_t);
 	if (!thread) {
 		return NULL;
@@ -277,7 +277,7 @@ static xnu_thread_t *xnu_get_thread_with_info (RDebug *dbg, thread_t port) {
 	return thread;
 }
 
-static int xnu_update_thread_info (RDebug *dbg, xnu_thread_t *thread) {
+static int xnu_update_thread_info(RDebug *dbg, xnu_thread_t *thread) {
 	if (!xnu_fill_info_thread (dbg, thread)) {
 		free (thread->name);
 		thread->name = strdup ("unknown");
@@ -285,11 +285,11 @@ static int xnu_update_thread_info (RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static int thread_find (thread_t *port, xnu_thread_t *a) {
+static int thread_find(thread_t *port, xnu_thread_t *a) {
 	return (a && port && (a->port == *port))? 0: 1;
 }
 
-static int xnu_update_thread_list (RDebug *dbg) {
+static int xnu_update_thread_list(RDebug *dbg) {
 	thread_array_t thread_list = NULL;
 	unsigned int thread_count  = 0;
 	xnu_thread_t *thread;

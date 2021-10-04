@@ -644,10 +644,10 @@ bool linux_stop_threads(RDebug *dbg, int except) {
 	return ret;
 }
 
-static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
+static bool linux_attach_single_pid(RDebug *dbg, int pid) {
 	siginfo_t sig = { 0 };
 
-	if (ptid < 0) {
+	if (pid < 0) {
 		return false;
 	}
 
@@ -655,25 +655,26 @@ static bool linux_attach_single_pid(RDebug *dbg, int ptid) {
 	// Attaching to a process that has already been started with PTRACE_TRACEME.
 	// sets errno to "Operation not permitted" which may be misleading.
 	// GETSIGINFO can be called multiple times and would fail without attachment.
-	if (r_debug_ptrace (dbg, PTRACE_GETSIGINFO, ptid, NULL,
+	if (r_debug_ptrace (dbg, PTRACE_GETSIGINFO, pid, NULL,
 		(r_ptrace_data_t)&sig) == -1) {
-		if (r_debug_ptrace (dbg, PTRACE_ATTACH, ptid, NULL, NULL) == -1) {
+		if (r_debug_ptrace (dbg, PTRACE_ATTACH, pid, NULL, NULL) == -1) {
 			perror ("ptrace (PT_ATTACH)");
 			return false;
 		}
 
 		// Make sure SIGSTOP is delivered and wait for it since we can't affect the pid
 		// until it hits SIGSTOP.
-		if (!linux_stop_thread (dbg, ptid)) {
-			eprintf ("Could not stop pid (%d)\n", ptid);
+		if (!linux_stop_thread (dbg, pid)) {
+			eprintf ("Could not stop pid (%d)\n", pid);
 			return false;
 		}
 	}
 
-	if (!linux_set_options (dbg, ptid)) {
-		eprintf("failed set_options on %d\n", ptid);
+	if (!linux_set_options (dbg, pid)) {
+		eprintf("failed set_options on %d\n", pid);
 		return false;
 	}
+	dbg->pid = pid;
 	return true;
 }
 
@@ -686,18 +687,18 @@ static RList *get_pid_thread_list(RDebug *dbg, int main_pid) {
 	return list;
 }
 
-int linux_attach(RDebug *dbg, int pid) {
-	// First time we run: We try to attach to all "possible" threads and to the main pid
+bool linux_attach(RDebug *dbg, int pid) {
 	if (!dbg->threads) {
 		dbg->threads = get_pid_thread_list (dbg, pid);
+		if (dbg->threads) {
+			dbg->pid = pid;
+		}
 	} else {
-		// This means we did a first run, so we probably attached to all possible threads already.
-		// So check if the requested thread is being traced already. If not, attach it
 		if (!r_list_find (dbg->threads, &pid, &match_pid)) {
 			linux_attach_single_pid (dbg, pid);
 		}
 	}
-	return pid;
+	return true;
 }
 
 static char *read_link(int pid, const char *file) {
@@ -907,6 +908,7 @@ RList *linux_thread_list(RDebug *dbg, int pid, RList *list) {
 		closedir (dh);
 		// Return to the original thread
 		linux_attach_single_pid (dbg, prev_tid);
+		dbg->pid = pid;
 		dbg->tid = prev_tid;
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 	} else {
@@ -1058,6 +1060,13 @@ static void print_fpu(void *f){
 int linux_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	bool showfpu = false;
 	int pid = dbg->tid;
+	if (pid == -1) {
+		if (dbg->pid == -1) {
+			eprintf ("linux_reg_read: Invalid pid %d\n", pid);
+			return 0;
+		}
+		pid = dbg->pid;
+	}
 	int ret = 0;
 	if (type < -1) {
 		showfpu = true;
