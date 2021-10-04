@@ -161,18 +161,16 @@ R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri
 
 
 R_API bool r_io_desc_close(RIODesc *desc) {
-	RIO *io;
 	if (!desc || !desc->io || !desc->plugin) {
 		return false;
 	}
 	if (desc->plugin->close && desc->plugin->close (desc)) {
 		return false;
 	}
-	io = desc->io;
 	// remove entry from idstorage and free the desc-struct
-	r_io_desc_del (io, desc->fd);
+	r_io_desc_del (desc->io, desc->fd);
 	// remove all dead maps
-	r_io_map_cleanup (io);
+	r_io_map_cleanup (desc->io);
 	return true;
 }
 

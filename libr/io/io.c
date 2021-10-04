@@ -237,16 +237,17 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	if (nd) {
 		r_io_desc_exchange (io, od->fd, nd->fd);
 		r_io_desc_del (io, od->fd);
-		// io->corebind.cmdf (io->corebind.core, "omfg");
-		return r_io_desc_close (od); // magic
+		bool res = r_io_desc_close (od);
+		if (nd->perm & R_PERM_W) {
+			io->corebind.cmdf (io->corebind.core, "omfg");
+		}
+		return res;
 	}
 	return false;
 }
 
 R_API bool r_io_close_all(RIO* io) { // what about undo?
-	if (!io) {
-		return false;
-	}
+	r_return_val_if_fail (io, false);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
 	ls_free (io->plugins);
