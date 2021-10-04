@@ -522,11 +522,7 @@ static void cmd_omfg(RCore *core, const char *input) {
 	default:
 		r_pvector_foreach (&core->io->maps, it) {
 			RIOMap *map = *it;
-			bool doexec = map->perm & 1;
 			map->perm = perm;
-			if (!doexec) {
-				map->perm = map->perm & (0xFFFF << 1);
-			}
 		}
 		break;
 	}
