@@ -469,7 +469,6 @@ static bool __close(RIODesc *fd) {
 		return false;
 	}
 	RIOMachData *iodd = fd->data;
-	kern_return_t kr;
 	if (!iodd) {
 		return false;
 	}
@@ -477,7 +476,7 @@ static bool __close(RIODesc *fd) {
 		return false;
 	}
 	task_t task = pid_to_task (fd, iodd->pid);
-	kr = mach_port_deallocate (mach_task_self (), task);
+	kern_return_t kr = mach_port_deallocate (mach_task_self (), task);
 	if (kr != KERN_SUCCESS) {
 		perror ("__close io_mach");
 	}
@@ -493,9 +492,6 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (iodd->magic != R_MACH_MAGIC) {
 		return NULL;
 	}
-
-	task_t task = pid_to_task (fd, iodd->tid);
-	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "")) {
 		return NULL;
 	}
@@ -503,6 +499,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		int perm = r_str_rwx (cmd + 4);
 		if (perm) {
 			int pagesize = tsk_pagesize (fd);
+			task_t task = pid_to_task (fd, iodd->tid);
 			tsk_setperm (io, task, io->off, pagesize, perm);
 		} else {
 			eprintf ("Usage: =!perm [rwx]\n");
