@@ -229,7 +229,7 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	}
 	const char *uri = od->referer? od->referer: od->uri;
 #if __WINDOWS__ //TODO: workaround, see https://github.com/radareorg/radare2/issues/8840
-	if (old->plugin->close && !od->plugin->close (od)) {
+	if (od->plugin->close && !od->plugin->close (od)) {
 		return false;
 	}
 #endif
