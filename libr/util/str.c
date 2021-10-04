@@ -2648,6 +2648,9 @@ R_API const char *r_str_firstbut_escape(const char *s, char ch, const char *but)
 		if (*p == '\\') {
 			p++;
 			if (*p == ch || strchr(but, *p)) {
+				if (!*p) {
+					break;
+				}
 				continue;
 			} else if (!*p) {
 				break;
