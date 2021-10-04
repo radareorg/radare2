@@ -3723,6 +3723,7 @@ escape_pipe:
 			// pipe to alias variable
 			// register output of command as an alias
 
+			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 			RBuffer *cmd_out = r_core_cmd_tobuf (core, cmd);
 			int alias_len;
 			ut8 *alias_data = r_buf_read_all (cmd_out, &alias_len);
