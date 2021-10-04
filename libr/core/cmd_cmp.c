@@ -559,7 +559,9 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'a': // "cat"
 		if (input[1] == 't') {
 			const char *path = r_str_trim_head_ro (input + 2);
-			if (*path == '$') {
+			if (*path == '$' && !path[1]) {
+				eprintf ("No alias name given.\n");
+			} else if (*path == '$') {
 				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, path+1);
 				if (v) {
 					char *v_str = r_cmd_alias_val_strdup (v);

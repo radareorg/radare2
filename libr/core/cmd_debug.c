@@ -4728,7 +4728,9 @@ static int cmd_debug_step (RCore *core, const char *input) {
 static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 	ut8 *out = NULL;
 	int size = 0;
-	if (*arg == '$') {
+	if (*arg == '$' && !arg[1]) {
+		eprintf ("No alias name given\n");
+	} else if (*arg == '$') {
 		RCmdAliasVal *v  = r_cmd_alias_get (core->rcmd, arg+1);
 		if (v) {
 			out = malloc (v->sz);

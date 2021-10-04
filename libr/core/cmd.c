@@ -650,6 +650,12 @@ static int cmd_alias(void *data, const char *input) {
 	char *def = strchr (buf, '=');
 	char *desc = strchr (buf, '?');
 
+	if (buf == def) {
+		eprintf ("No alias name given.\n");
+		free (buf);
+		return 0;
+	}
+
 	int defmode = 0;
 	if (def && def > buf) {
 		char *prev = def - 1;
@@ -720,7 +726,9 @@ static int cmd_alias(void *data, const char *input) {
 					free (s);
 				} else if (!strncmp (def, "base64:", 7)) {
 					int b64_len = strlen (def+7);
-					if (b64_len) {
+					if (b64_len > 0 && b64_len % 4 == 0) {
+						/* b64 decode result is always shorter
+						 * than strlen() of input */
 						ut8* decoded = malloc (b64_len);
 						if (decoded) {
 							int decoded_sz = r_base64_decode (decoded, def+7, b64_len);
@@ -770,7 +778,7 @@ static int cmd_alias(void *data, const char *input) {
 			r_list_free (keys);
 		}
 	} else {
-		/* Execute alias */
+		/* Execute or evaluate alias */
 		if (q) {
 			*q = 0;
 		}
@@ -789,11 +797,11 @@ static int cmd_alias(void *data, const char *input) {
 				r_core_cmd0 (core, (char *)v->data);
 			}
 		} else {
-			ut64 at = r_num_get (core->num, buf + 1);
+			ut64 at = r_num_get (core->num, buf);
 			if (at != UT64_MAX) {
 				r_core_seek (core, at, true);
 			} else {
-				eprintf ("No such alias \"$%s\"\n", buf + 1);
+				eprintf ("No such alias \"$%s\"\n", buf);
 			}
 		}
 	}
@@ -1694,7 +1702,9 @@ static int cmd_table(void *data, const char *input) {
 			eprintf ("Usage: ,. [file | $alias]\n");
 		} else {
 			const char *file = r_str_trim_head_ro (input + 1);
-			if (*file == '$') {
+			if (*file == '$' && !file[1]) {
+				eprintf ("No alias name given.\n");
+			} else if (*file == '$') {
 				RCmdAliasVal *file_data = r_cmd_alias_get (core->rcmd, file+1);
 				if (file_data) {
 					char *file_data_str = r_cmd_alias_val_strdup (file_data);
@@ -1825,7 +1835,9 @@ static int cmd_interpret(void *data, const char *input) {
 	case ' ': // ". "
 		{
 			const char *script_file = r_str_trim_head_ro (input + 1);
-			if (*script_file == '$') {
+			if (*script_file == '$' && !script_file[1]) {
+				eprintf ("No alias name given.\n");
+			} else if (*script_file == '$') {
 				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, script_file+1);
 				if (v) {
 					char *cmd_text = r_cmd_alias_val_strdup (v);
@@ -3719,7 +3731,9 @@ escape_pipe:
 			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		}
 		const bool appendResult = (ptr[1] == '>');
-		if (*str == '$') {
+		if (*str == '$' && !str[1]) {
+			eprintf ("No alias name given.\n");
+		} else if (*str == '$') {
 			// pipe to alias variable
 			// register output of command as an alias
 
@@ -3739,6 +3753,7 @@ escape_pipe:
 			}
 			ret = 0;
 			r_buf_free (cmd_out);
+			free (alias_data);
 		} else if (fdn > 0) {
 			// pipe to file (or append)
 			pipefd = r_cons_pipe_open (str, fdn, appendResult);
