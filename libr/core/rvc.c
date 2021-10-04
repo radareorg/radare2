@@ -10,6 +10,7 @@
 #define COMMIT_BLOB_SEP "----"
 #define DBNAME "branches.sdb"
 #define CURRENTB "current_branch"
+#define IGNORE_NAME ".rvc_ignore"
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
@@ -227,9 +228,26 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 	return ret;
 }
 
-static bool update_blobs(RList *blobs, const RList *nh) {
+
+static bool in_rvc_ignore(const char *rp, const char *rpf) {
+	char *ignorep = r_str_newf ("%s" R_SYS_DIR IGNORE_NAME, rp);
+	if (ignorep) {
+		char *content = r_file_slurp (ignorep, 0);
+		free (ignorep);
+		if (content) {
+			bool ret = strstr (content, rpf);
+			return ret;
+		}
+	}
+	return false;
+}
+
+static bool update_blobs(const char *rp, RList *blobs, const RList *nh) {
 	RListIter *iter;
 	RvcBlob *blob;
+	if (in_rvc_ignore (rp, nh->head->data)) {
+		return true;
+	}
 	r_list_foreach (blobs, iter, blob) {
 		if (strcmp (nh->head->data, blob->fname)) {
 			continue;
@@ -330,7 +348,7 @@ static RList *get_blobs(const char *rp) {
 				ret = NULL;
 				break;
 			}
-			if (!update_blobs (ret, kv)) {
+			if (!update_blobs (rp, ret, kv)) {
 				free_blobs (ret);
 				ret = NULL;
 				free (kv);
@@ -497,6 +515,15 @@ R_API RList *r_vc_get_uncommitted(const char *rp) {
 	free_blobs (blobs);
 	blobs = NULL;
 	r_list_foreach (files, iter, file) {
+		char *rfp = absp2rp (rp, file);
+		if (!rfp) {
+			goto fail_ret;
+		}
+		if (in_rvc_ignore (rp, rfp)) {
+			free (rfp);
+			continue;
+		}
+		free (rfp);
 		char *append = r_str_new (file);
 		if (!append) {
 			goto fail_ret;
