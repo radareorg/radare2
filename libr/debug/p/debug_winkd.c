@@ -20,7 +20,7 @@
 
 static WindCtx *wctx = NULL;
 
-static int r_debug_winkd_step(RDebug *dbg) {
+static bool r_debug_winkd_step(RDebug *dbg) {
 	return true;
 }
 
