@@ -586,8 +586,10 @@ static bool cmd_wff(RCore *core, const char *input) {
 			free (out);
 		}
 	}
-	
-	if (*a == '$') {
+
+	if (*a == '$' && !a[1]) {
+		eprintf ("No alias name given.\n");
+	} else if (*a == '$') {
 		RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, a+1);
 		if (v) {
 			buf = malloc (v->sz);

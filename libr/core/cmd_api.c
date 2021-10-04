@@ -101,8 +101,77 @@ err:
 	return NULL;
 }
 
+static void alias_freefn(HtPPKv *kv) {
+	char *k = kv->key;
+	RCmdAliasVal *v = kv->value;
+
+	free (v->data);
+	free (k);
+	free (v);
+}
+
+static void *alias_dupkey(const void *k) {
+	return strdup ((const char *)k);
+}
+
+static void *alias_dupvalue(const void *v_void) {
+	RCmdAliasVal *v = (RCmdAliasVal *)v_void;
+	RCmdAliasVal *vcopy = R_NEW (RCmdAliasVal);
+	if (!vcopy) {
+		return NULL;
+	}
+	ut8 *data = malloc (v->sz);
+	if (!data) {
+		free (vcopy);
+		return NULL;
+	}
+	vcopy->is_data = v->is_data;
+	vcopy->is_str = v->is_str;
+	vcopy->sz = v->sz;
+	vcopy->data = data;
+	memcpy (vcopy->data, v->data, v->sz);
+
+	return vcopy;
+}
+
+static ut32 alias_calcsizeK(const void *k) {
+	return strlen ((const char *)k);
+}
+
+static ut32 alias_calcsizeV(const void *v) {
+	return ((RCmdAliasVal *)v)->sz;
+}
+
+static int alias_cmp(const void *k1, const void *k2) {
+	return strcmp ((const char *)k1, (const char *)k2);
+}
+
+static ut32 alias_hashfn(const void *k_in) {
+	/* djb2 algorithm by Dan Bernstein */
+	ut32 hash = 5381;
+	ut8 c;
+	const char *k = k_in;
+
+	while (*k) {
+		c = *k++;
+		/* hash * 33 + c */
+		hash += (hash << 5) + c;
+	}
+
+	return hash;
+}
+
 R_API void r_cmd_alias_init(RCmd *cmd) {
-	cmd->aliases = ht_pp_new0 ();
+	HtPPOptions opt = { 0 };
+	opt.cmp = alias_cmp;
+	opt.hashfn = alias_hashfn;
+	opt.dupkey = alias_dupkey;
+	opt.dupvalue = alias_dupvalue;
+	opt.calcsizeK = alias_calcsizeK;
+	opt.calcsizeV = alias_calcsizeV;
+	opt.freefn = alias_freefn;
+
+	cmd->aliases = ht_pp_new_opt (&opt);
 }
 
 R_API RCmd *r_cmd_new(void) {
@@ -210,33 +279,42 @@ R_API bool r_cmd_alias_del(RCmd *cmd, const char *k) {
 }
 
 R_API int r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
-	RCmdAliasVal *val = R_NEW (RCmdAliasVal);
-	val->data = (ut8 *) strdup (v);
-	val->sz = strlen (v) + 1;
-	val->is_str = true;
-	val->is_data = false;
+	RCmdAliasVal val;
+	val.data = (ut8 *)v;
+	if (!val.data) {
+		return 1;
+	}
+	val.sz = strlen (v) + 1;
+	val.is_str = true;
+	val.is_data = false;
 
-	return ht_pp_update (cmd->aliases, strdup (k), val);
+	return ht_pp_update (cmd->aliases, k, &val);
 }
 
 R_API int r_cmd_alias_set_str(RCmd *cmd, const char *k, const char *v) {
-	RCmdAliasVal *val = R_NEW (RCmdAliasVal);
-	val->data = (ut8 *) strdup (v);
-	val->is_str = true;
-	val->is_data = true;
+	RCmdAliasVal val;
+	val.data = (ut8 *)strdup (v);
+	if (!val.data) {
+		return 1;
+	}
+	val.is_str = true;
+	val.is_data = true;
 
 	/* No trailing newline */
 	int len = strlen (v);
 	while (len-- > 0) {
 		if (v[len] == '\r' || v[len] == '\n') {
-			val->data[len] = '\0';
+			val.data[len] = '\0';
 		} else {
 			break;
 		}
 	}
-	val->sz = len+1;
+	// len is strlen()-1 now
+	val.sz = len + 2;
 
-	return ht_pp_update (cmd->aliases, strdup (k), val);
+	int ret = ht_pp_update (cmd->aliases, k, &val);
+	free (val.data);
+	return ret;
 }
 
 R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
@@ -246,19 +324,14 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 		return 1;
 	}
 
-	RCmdAliasVal *val = R_NEW (RCmdAliasVal);
-	if (!val) {
+	RCmdAliasVal val;
+	val.data = malloc (sz);
+	if (!val.data) {
 		return 1;
 	}
 
-	val->data = malloc (sz);
-	if (!val->data) {
-		free (val);
-		return 1;
-	}
-
-	memcpy (val->data, v, sz);
-	val->sz = sz;
+	memcpy (val.data, v, sz);
+	val.sz = sz;
 
 	/* If it's a string already, we speed things up later by checking now */
 	const ut8 *firstnull = NULL;
@@ -279,46 +352,47 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 
 	if (firstnull == &v[sz-1] && !is_binary) {
 		/* Data is already a string */
-		val->is_str = true;
+		val.is_str = true;
 	} else if (!firstnull && !is_binary) {
 		/* Data is an unterminated string */
-		val->sz++;
-		ut8 *data = realloc (val->data, val->sz);
+		val.sz++;
+		ut8 *data = realloc (val.data, val.sz);
 		if (!data) {
-			return 0;
+			return 1;
 		}
-		val->data = data;
-		val->data[val->sz-1] = '\0';
-		val->is_str = true;
+		val.data = data;
+		val.data[val.sz - 1] = '\0';
+		val.is_str = true;
 	} else {
 		/* Data has nulls or non-ascii, not a string */
-		val->is_str = false;
+		val.is_str = false;
 	}
 
-	val->is_data = true;
+	val.is_data = true;
 
-	if (val->is_str) {
+	if (val.is_str) {
 		/* No trailing newline */
-		int len = val->sz - 1;
+		int len = val.sz - 1;
 		while (len-- > 0) {
 			if (v[len] == '\r' || v[len] == '\n') {
-				val->data[len] = '\0';
+				val.data[len] = '\0';
 			} else {
 				break;
 			}
 		}
-		val->sz = len+1;
+		// len is strlen()-1 now
+		val.sz = len + 2;
 	}
 
-	return ht_pp_update (cmd->aliases, strdup (k), val);
+	int ret = ht_pp_update (cmd->aliases, k, &val);
+	free (val.data);
+	return ret;
 }
 
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k) {
 	r_return_val_if_fail (cmd && cmd->aliases && k, NULL);
 
-	bool found;
-	RCmdAliasVal *v = ht_pp_find(cmd->aliases, k, &found);
-	return found? v: NULL;
+	return ht_pp_find(cmd->aliases, k, NULL);
 }
 
 static ut8 *alias_append_internal(int *out_szp, const RCmdAliasVal *first, const ut8 *second, int second_sz) {
