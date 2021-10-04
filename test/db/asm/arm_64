@@ -215,12 +215,9 @@ a "mov w15, 0xacdb0000" 6f9bb552
 dB "mov w15, 0xacdb0000" 6f9bb552
 a "mov w15, 0xffff0000" efffbf52
 dB "mov w15, 0xffff0000" efffbf52
-a "mov x30, 0x884800000000" 1e09d1d2
-dB "mov x30, 0x884800000000" 1e09d1d2
-a "mov x29, 0xffff00000000" fdffdfd2
-dB "mov x29, 0xffff00000000" fdffdfd2
-a "mov x27, 0x3721000000000000" 3be4e6d2
-dB "mov x27, 0x3721000000000000" 3be4e6d2
+ad "mov x30, 0x884800000000" 1e09d1d2
+ad "mov x29, 0xffff00000000" fdffdfd2
+ad "mov x27, 0x3721000000000000" 3be4e6d2
 a "mov x26, 0xffff000000000000" faffffd2
 dB "mov x26, 0xffff000000000000" faffffd2
 a "mov w25, 0xffffcfc7" 19078612

@@ -66,7 +66,7 @@ a "popeq {r4, r5, r6, r7, pc}" f080bd08
 a "popeq {r3, r4, r5, r6, r7, pc}" f880bd08
 a "popeq {r3, r4, r5, r6, r7, r8, sl, pc}" f885bd08
 a "popeq {r3, r4, r5, r6, r7, r8, r9, sl, fp, pc}" f88fbd08
-aB "reveq r3, r3" 333fbf06
+a "reveq r3, r3" 333fbf06
 a "rsbeq ip, r1, r7" 07c06100
 a "rsbne r6, r0, r6" 06606010
 aB "stmeq r0, {r2, r3}" 0c008008

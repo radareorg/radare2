@@ -17,7 +17,6 @@ RUN
 
 NAME=comma table2
 FILE=bins/mach0/mac-ls
-BROKEN=1
 CMDS=<<EOF
 afr
 e scr.utf8=false

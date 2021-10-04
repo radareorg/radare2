@@ -39,7 +39,6 @@ EOF
 RUN
 
 NAME=ravc2 branch
-BROKEN=1
 CMDS=<<EOF
 mkdir ravc2_branch_test
 cd ravc2_branch_test

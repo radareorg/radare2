@@ -280,7 +280,6 @@ EOF
 RUN
 
 NAME=float args afli
-BROKEN=1
 FILE=bins/elf/float_point
 CMDS=<<EOF
 aa

@@ -422,7 +422,6 @@ EOF
 RUN
 
 NAME=escaped chars 2
-BROKEN=1
 CMDS=?e Hello\n\x3bWorld~\;
 EXPECT=<<EOF
 ;World
