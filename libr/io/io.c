@@ -223,33 +223,26 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 }
 
 R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
-	RIODesc	*old, *new;
-	char *uri;
-	if (!(old = r_io_desc_get (io, fd))) {
+	RIODesc *old = r_io_desc_get (io, fd);
+	if (!old) {
 		return false;
 	}
-	//does this really work, or do we have to handler debuggers ugly
-	uri = old->referer? old->referer: old->uri;
+	char *uri = old->referer? old->referer: old->uri;
 #if __WINDOWS__ //TODO: workaround, see https://github.com/radareorg/radare2/issues/8840
 	if (old->plugin->close && old->plugin->close (old)) {
 		return false; // TODO: this is an unrecoverable scenario
 	}
-	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
-		return false;
+#endif
+	RIODesc *nd = r_io_open_nomap (io, uri, perm, mode);
+	if (nd) {
+		r_io_desc_exchange (io, old->fd, nd->fd);
+		r_io_desc_del (io, old->fd);
+		return r_io_desc_close (old); // magic
 	}
-	r_io_desc_exchange (io, old->fd, new->fd);
-	r_io_desc_del (io, old->fd);
-	return true;
-#else
-	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
-		return false;
-	}
-	r_io_desc_exchange (io, old->fd, new->fd);
-	return r_io_desc_close (old); // magic
-#endif // __WINDOWS__
+	return false;
 }
 
-R_API int r_io_close_all(RIO* io) { // what about undo?
+R_API bool r_io_close_all(RIO* io) { // what about undo?
 	if (!io) {
 		return false;
 	}

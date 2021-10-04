@@ -44,9 +44,9 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 	return -1;
 }
 
-static int __close(RIODesc *desc) {
+static bool __close(RIODesc *desc) {
 	R_FREE (desc->data);
-	return 0;
+	return true;
 }
 
 static ut64 __lseek(RIO* io, RIODesc *desc, ut64 offset, int whence) {

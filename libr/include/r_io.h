@@ -176,7 +176,7 @@ typedef struct r_io_plugin_t {
 	void *widget;
 	const char *uris;
 	int (*listener)(RIODesc *io);
-	int (*init)(void);
+	bool (*init)(void);
 	RIOUndo undo;
 	bool isdbg;
 	// int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
@@ -186,7 +186,7 @@ typedef struct r_io_plugin_t {
 	int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	ut64 (*seek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
-	int (*close)(RIODesc *desc);
+	bool (*close)(RIODesc *desc);
 	bool (*is_blockdevice)(RIODesc *desc);
 	bool (*is_chardevice)(RIODesc *desc);
 	int (*getpid)(RIODesc *desc);
@@ -391,7 +391,7 @@ R_API RList *r_io_open_many(RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc* r_io_open_buffer(RIO *io, RBuffer *b, int flags, int mode);
 R_API bool r_io_close(RIO *io);
 R_API bool r_io_reopen(RIO *io, int fd, int flags, int mode);
-R_API int r_io_close_all(RIO *io);
+R_API bool r_io_close_all(RIO *io);
 R_API int r_io_pread_at(RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_pwrite_at(RIO *io, ut64 paddr, const ut8 *buf, int len);
 R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len);

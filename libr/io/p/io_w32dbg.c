@@ -214,11 +214,12 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	if (r_str_startswith (fd->uri, "attach://")) {
 		W32DbgWInst *wrap = fd->data;
 		wrap->params.type = W32_DETACH;
 		w32dbg_wrap_wait_ret (wrap);
+		return true;
 	}
 	return false;
 }

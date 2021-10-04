@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2021 - pancake */
 
 #include <errno.h>
 #include <r_io.h>
@@ -7,8 +7,6 @@
 #include <r_cons.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 #include <string.h>
-
-#define USE_RARUN 0
 
 #if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
 #define DEBUGGER_SUPPORTED 1
@@ -556,26 +554,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	return ret;
 }
 
-static int __close (RIODesc *desc) {
-	int ret = -2;
-	eprintf ("something went wrong\n");
-	if (desc) {
-		eprintf ("trying to close %d with io_debug\n", desc->fd);
-		ret = -1;
-	}
-	r_sys_backtrace ();
-	return ret;
-}
-
 RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
 	.desc = "Attach to native debugger instance",
 	.license = "LGPL3",
 	.uris = "dbg://,pidof://,waitfor://",
 	.author = "pancake",
-	.version = "0.2.0",
+	.version = "0.3.0",
 	.open = __open,
-	.close = __close,
 	.check = __plugin_open,
 	.isdbg = true,
 };

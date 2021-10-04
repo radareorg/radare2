@@ -84,8 +84,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-static int __close(RIODesc *fd) {
-	lprintf("io_close\n");
+static bool __close(RIODesc *fd) {
 	bochs_close (desc);
 	return true;
 }

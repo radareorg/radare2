@@ -149,14 +149,7 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	return mmo;
 }
 
-static int r_io_def_mmap_close(RIODesc *fd) {
-	r_return_val_if_fail (fd && fd->data, -1);
-	r_io_def_mmap_free ((RIOMMapFileObj *) fd->data);
-	fd->data = NULL;
-	return 0;
-}
-
-static bool r_io_def_mmap_check_default (const char *filename) {
+static bool r_io_def_mmap_check_default(const char *filename) {
 	r_return_val_if_fail (filename && *filename, false);
 	if (r_str_startswith (filename, "file://")) {
 		filename += strlen ("file://");
@@ -303,8 +296,13 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return r_io_def_mmap_lseek (io, fd, offset, whence);
 }
 
-static int __close(RIODesc *fd) {
-	return r_io_def_mmap_close (fd);
+static bool __close(RIODesc *fd) {
+	r_return_val_if_fail (fd, -1);
+	if (fd->data) {
+		r_io_def_mmap_free ((RIOMMapFileObj *) fd->data);
+		fd->data = NULL;
+	}
+	return true;
 }
 
 static bool __resize(RIO *io, RIODesc *fd, ut64 size) {

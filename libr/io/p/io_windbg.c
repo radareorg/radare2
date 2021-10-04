@@ -573,7 +573,7 @@ remote_client:
 	return fd;
 }
 
-static int windbg_close(RIODesc *fd) {
+static bool windbg_close(RIODesc *fd) {
 	DbgEngContext *idbg = fd->data;
 	RCore *core = fd->io->corebind.core;
 	if (idbg->server) {
@@ -585,7 +585,7 @@ static int windbg_close(RIODesc *fd) {
 	}
 	__free_context (idbg);
 	core->dbg->user = NULL;
-	return 1;
+	return true;
 }
 
 static ut64 windbg_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {

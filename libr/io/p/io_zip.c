@@ -616,15 +616,15 @@ static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return ret;
 }
 
-static int r_io_zip_close(RIODesc *fd) {
+static bool r_io_zip_close(RIODesc *fd) {
 	RIOZipFileObj *zfo;
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
 	zfo = fd->data;
 	r_io_zip_free_zipfileobj (zfo);
 	zfo = fd->data = NULL;
-	return 0;
+	return true;
 }
 
 RIOPlugin r_io_plugin_zip = {

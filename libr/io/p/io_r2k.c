@@ -60,7 +60,7 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #endif
 }
 
-static int r2k__close(RIODesc *fd) {
+static bool r2k__close(RIODesc *fd) {
 #if __WINDOWS__
 	if (gHandleDriver) {
 		CloseHandle (gHandleDriver);
@@ -73,7 +73,7 @@ static int r2k__close(RIODesc *fd) {
 #else
 	eprintf ("TODO: r2k not implemented for this plataform.\n");
 #endif
-	return 0;
+	return true;
 }
 
 static ut64 r2k__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
