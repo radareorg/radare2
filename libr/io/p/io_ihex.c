@@ -197,23 +197,22 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return r;
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
 	Rihex *rih = fd->data;
 	r_buf_free (rih->rbuf);
 	free (rih);
 	fd->data = NULL;
-	return 0;
+	return true;
 }
 
 static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
-	Rihex *rih;
 	if (!fd || !fd->data) {
-		return -1;
+		return UT64_MAX;
 	}
-	rih = fd->data;
+	Rihex *rih = fd->data;
 	io->off = r_buf_seek (rih->rbuf, offset, whence);
 	return io->off;
 }

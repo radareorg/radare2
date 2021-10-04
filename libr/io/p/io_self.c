@@ -314,10 +314,6 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __close(RIODesc *fd) {
-	return 0;
-}
-
 static void got_alarm(int sig) {
 #if !defined(__WINDOWS__)
 	// !!! may die if not running from r2preload !!! //
@@ -495,7 +491,6 @@ RIOPlugin r_io_plugin_self = {
 	.uris = "self://",
 	.license = "LGPL3",
 	.open = __open,
-	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
 	.seek = __lseek,

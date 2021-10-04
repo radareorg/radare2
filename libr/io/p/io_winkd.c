@@ -104,7 +104,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return winkd_read_at (fd->data, buf, io->off, count);
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	winkd_ctx_free ((WindCtx**)&fd->data);
 	return true;
 }

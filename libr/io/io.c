@@ -7,11 +7,11 @@
 
 R_LIB_VERSION (r_io);
 
-static int fd_read_at_wrap (RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user) {
+static int fd_read_at_wrap(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user) {
 	return r_io_fd_read_at (io, fd, addr, buf, len);
 }
 
-static int fd_write_at_wrap (RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user) {
+static int fd_write_at_wrap(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user) {
 	return r_io_fd_write_at (io, fd, addr, buf, len);
 }
 
@@ -223,36 +223,31 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 }
 
 R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
-	RIODesc	*old, *new;
-	char *uri;
-	if (!(old = r_io_desc_get (io, fd))) {
+	RIODesc *od = r_io_desc_get (io, fd);
+	if (!od) {
 		return false;
 	}
-	//does this really work, or do we have to handler debuggers ugly
-	uri = old->referer? old->referer: old->uri;
+	const char *uri = od->referer? od->referer: od->uri;
 #if __WINDOWS__ //TODO: workaround, see https://github.com/radareorg/radare2/issues/8840
-	if (old->plugin->close && old->plugin->close (old)) {
-		return false; // TODO: this is an unrecoverable scenario
-	}
-	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
+	if (od->plugin->close && !od->plugin->close (od)) {
 		return false;
 	}
-	r_io_desc_exchange (io, old->fd, new->fd);
-	r_io_desc_del (io, old->fd);
-	return true;
-#else
-	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
-		return false;
+#endif
+	RIODesc *nd = r_io_open_nomap (io, uri, perm, mode);
+	if (nd) {
+		r_io_desc_exchange (io, od->fd, nd->fd);
+		r_io_desc_del (io, od->fd);
+		bool res = r_io_desc_close (od);
+		if (nd->perm & R_PERM_W) {
+			io->corebind.cmdf (io->corebind.core, "omfg");
+		}
+		return res;
 	}
-	r_io_desc_exchange (io, old->fd, new->fd);
-	return r_io_desc_close (old); // magic
-#endif // __WINDOWS__
+	return false;
 }
 
-R_API int r_io_close_all(RIO* io) { // what about undo?
-	if (!io) {
-		return false;
-	}
+R_API bool r_io_close_all(RIO* io) {
+	r_return_val_if_fail (io, false);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
 	ls_free (io->plugins);

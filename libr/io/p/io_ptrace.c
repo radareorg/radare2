@@ -271,13 +271,12 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int __close(RIODesc *desc) {
-	int pid, fd;
+static bool __close(RIODesc *desc) {
 	if (!desc || !desc->data) {
-		return -1;
+		return false;
 	}
-	pid = RIOPTRACE_PID (desc);
-	fd = RIOPTRACE_FD (desc);
+	int pid = RIOPTRACE_PID (desc);
+	int fd = RIOPTRACE_FD (desc);
 	if (fd != -1) {
 		close (fd);
 	}

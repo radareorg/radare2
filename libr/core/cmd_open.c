@@ -264,7 +264,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					r_core_cmd0 (core, ".is*");
 					r_io_use_fd (core->io, saved_fd);
 				} else {
-					eprintf ("Cannot open %s\n", filename + 1);
+					eprintf ("Cannot open '%s'\n", r_str_trim_head_ro (filename + 1));
 				}
 			} else if (filename && *filename) {
 				ut64 baddr = r_num_math (core->num, filename);
@@ -499,35 +499,32 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 }
 
+// TODO: move into r_io_remap()
 static void cmd_omfg(RCore *core, const char *input) {
 	input = r_str_trim_head_ro (input);
-	if (input) {
-		int perm = *input
-		? (*input == '+' || *input == '-')
-			? r_str_rwx (input + 1)
-			: r_str_rwx (input)
-		: 7;
-		void **it;
-		switch (*input) {
-		case '+':
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				map->perm |= perm;
-			}
-			break;
-		case '-':
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				map->perm &= ~perm;
-			}
-			break;
-		default:
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				map->perm = perm;
-			}
-			break;
+	int perm = *input ? (*input == '+' || *input == '-')
+		? r_str_rwx (input + 1)
+		: r_str_rwx (input) : 7;
+	void **it;
+	switch (*input) {
+	case '+':
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
+			map->perm |= perm;
 		}
+		break;
+	case '-':
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
+			map->perm &= ~perm;
+		}
+		break;
+	default:
+		r_pvector_foreach (&core->io->maps, it) {
+			RIOMap *map = *it;
+			map->perm = perm;
+		}
+		break;
 	}
 }
 
@@ -1343,8 +1340,12 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 		eprintf ("Cannot debug file (%s) with permissions set to 0x%x.\n"
 			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
 		int fd = desc->fd;
-		r_io_reopen (core->io, fd, R_PERM_RX, 755);
-		desc = r_io_desc_get (core->io, fd);
+		if (r_io_reopen (core->io, fd, R_PERM_RX, 755)) {
+			desc = r_io_desc_get (core->io, fd);
+		} else {
+			eprintf ("Cannot reopen\n");
+			return;
+		}
 	}
 
 	RBinFile *bf = r_bin_file_find_by_fd (core->bin, desc->fd);
@@ -1903,20 +1904,8 @@ static int cmd_open(void *data, const char *input) {
 		case '-': // "o--"
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
-
-			// TODO: Move to a-- ?
-			r_anal_purge (core->anal);
-			// TODO: Move to f-- ?
-			r_flag_unset_all (core->flags);
-			// TODO: rbin?
-#if 0
-			// delete
-			r_core_file_close_fd (core, -1);
-			r_io_close_all (core->io);
 			r_anal_purge (core->anal);
 			r_flag_unset_all (core->flags);
-			r_bin_file_delete_all (core->bin);
-#endif
 			break;
 		default:
 			{
@@ -2105,7 +2094,9 @@ static int cmd_open(void *data, const char *input) {
 					}
 				} else {
 					// r_io_reopen (core->io, fd, R_PERM_R, 644);
-					r_io_reopen (core->io, fd, R_PERM_RX, 755);
+					if (!r_io_reopen (core->io, fd, R_PERM_RX, 755)) {
+						eprintf ("Cannot reopen.\n");
+					}
 				}
 			}
 			break;

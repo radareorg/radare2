@@ -1080,18 +1080,14 @@ static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return has_read;
 }
 
-static int __close(RIODesc *fd) {
-	RIOGprobe *gprobe;
-
+static bool __close(RIODesc *fd) {
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
-	gprobe = (RIOGprobe *)fd->data;
-
+	RIOGprobe *gprobe = (RIOGprobe *)fd->data;
 	sp_close (&gprobe->gport);
 	R_FREE (fd->data);
-
-	return 0;
+	return true;
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {

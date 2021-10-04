@@ -100,15 +100,15 @@ int io_memory_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-int io_memory_close(RIODesc *fd) {
+bool io_memory_close(RIODesc *fd) {
 	RIOMalloc *riom;
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
 	riom = fd->data;
 	R_FREE (riom->buf);
 	R_FREE (fd->data);
-	return 0;
+	return true;
 }
 
 ut64 io_memory_lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {

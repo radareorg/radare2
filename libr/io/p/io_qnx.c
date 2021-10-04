@@ -128,11 +128,11 @@ static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return debug_qnx_write_at (buf, count, addr);
 }
 
-static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
 	if (!desc) {
@@ -141,12 +141,12 @@ static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return debug_qnx_read_at (buf, count, addr);
 }
 
-static int __close (RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	// TODO
-	return -1;
+	return true;
 }
 
-static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	return NULL;
 }
 

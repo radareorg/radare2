@@ -25,9 +25,9 @@ static bool r_io_ar_plugin_open(RIO *io, const char *file, bool many) {
 	return !strncmp ("ar://", file, 5) || !strncmp ("lib://", file, 6);
 }
 
-static int r_io_ar_close(RIODesc *fd) {
+static bool r_io_ar_close(RIODesc *fd) {
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
 	return ar_close ((RArFp *)fd->data);
 }
