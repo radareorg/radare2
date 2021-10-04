@@ -1908,20 +1908,8 @@ static int cmd_open(void *data, const char *input) {
 		case '-': // "o--"
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
-
-			// TODO: Move to a-- ?
-			r_anal_purge (core->anal);
-			// TODO: Move to f-- ?
-			r_flag_unset_all (core->flags);
-			// TODO: rbin?
-#if 0
-			// delete
-			r_core_file_close_fd (core, -1);
-			r_io_close_all (core->io);
 			r_anal_purge (core->anal);
 			r_flag_unset_all (core->flags);
-			r_bin_file_delete_all (core->bin);
-#endif
 			break;
 		default:
 			{

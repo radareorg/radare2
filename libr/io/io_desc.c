@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2020 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2021 - condret, pancake, alvaro */
 
 #include <r_io.h>
 #include <sdb.h>
@@ -164,7 +164,7 @@ R_API bool r_io_desc_close(RIODesc *desc) {
 	if (!desc || !desc->io || !desc->plugin) {
 		return false;
 	}
-	if (desc->plugin->close && desc->plugin->close (desc)) {
+	if (desc->plugin->close && !desc->plugin->close (desc)) {
 		return false;
 	}
 	// remove entry from idstorage and free the desc-struct

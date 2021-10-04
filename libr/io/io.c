@@ -7,11 +7,11 @@
 
 R_LIB_VERSION (r_io);
 
-static int fd_read_at_wrap (RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user) {
+static int fd_read_at_wrap(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user) {
 	return r_io_fd_read_at (io, fd, addr, buf, len);
 }
 
-static int fd_write_at_wrap (RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user) {
+static int fd_write_at_wrap(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user) {
 	return r_io_fd_write_at (io, fd, addr, buf, len);
 }
 
@@ -246,7 +246,7 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	return false;
 }
 
-R_API bool r_io_close_all(RIO* io) { // what about undo?
+R_API bool r_io_close_all(RIO* io) {
 	r_return_val_if_fail (io, false);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
