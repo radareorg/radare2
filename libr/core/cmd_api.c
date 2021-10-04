@@ -262,28 +262,36 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 
 	/* If it's a string already, we speed things up later by checking now */
 	const ut8 *firstnull = NULL;
+	bool is_binary = false;
 	for (i = 0; i < sz; i++) {
 		/* \0 before expected -> not string */
 		if (v[i] == '\0') {
 			firstnull = &v[i];
 			break;
 		}
+
+		/* Non-ascii character -> not string */
+		if (!IS_PRINTABLE(v[i]) && !IS_WHITECHAR(v[i])) {
+			is_binary = true;
+			break;
+		}
 	}
 
-	if (firstnull && firstnull == &v[sz-1]) {
+	if (firstnull == &v[sz-1] && !is_binary) {
 		/* Data is already a string */
 		val->is_str = true;
-	} else if (!firstnull) {
+	} else if (!firstnull && !is_binary) {
 		/* Data is an unterminated string */
 		val->sz++;
-		val->data = realloc(val->data, val->sz);
-		if (!val->data) {
-			free (val);
-			return 1;
+		ut8 *data = realloc (val->data, val->sz);
+		if (!data) {
+			return 0;
 		}
+		val->data = data;
 		val->data[val->sz-1] = '\0';
 		val->is_str = true;
 	} else {
+		/* Data has nulls or non-ascii, not a string */
 		val->is_str = false;
 	}
 

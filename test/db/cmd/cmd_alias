@@ -93,6 +93,8 @@ wx 430043004300
 pr 6 >$bytes_redirect_alias
 $bytes_set_alias=$D\\x00D\\x00D\\x00
 $bytes_decode_alias=base64:RQBFAEUA
+wx 909090
+pr 3 >$bytes_unterminated_alias
 
 $*
 ?e -----
@@ -101,12 +103,14 @@ EOF
 EXPECT=<<EOF
 $bytes_redirect_alias=C\x00C\x00C\x00
 $str_set_alias=BBBB
+$bytes_unterminated_alias=\x90\x90\x90
 $str_redirect_alias=AAAA
 $bytes_set_alias=D\x00D\x00D\x00
 $bytes_decode_alias=E\x00E\x00E\x00
 -----
 $bytes_redirect_alias=base64:QwBDAEMA
 $str_set_alias=BBBB
+$bytes_unterminated_alias=base64:kJCQ
 $str_redirect_alias=AAAA
 $bytes_set_alias=base64:RABEAEQA
 $bytes_decode_alias=base64:RQBFAEUA
