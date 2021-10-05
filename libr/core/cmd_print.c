@@ -5469,9 +5469,9 @@ static int cmd_print(void *data, const char *input) {
 			if (input[2] == 'j') {
 				mode = R_MODE_JSON;
 			} else if (input[2] == 'q') {
-				if (input[3] == 'q') {
+				if (input[3] == 'q') { // "pdeqq"
 					mode = R_MODE_SIMPLEST; // Like pi
-				} else {
+				} else { // "pdeq"
 					mode = R_MODE_SIMPLE; // Like pdi
 				}
 			}
