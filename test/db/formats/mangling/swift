@@ -11,6 +11,6 @@ FILE=bins/elf/analysis/hello-swift
 ARGS=-e bin.demangle.trylib=false
 CMDS=isq~0x004009e0
 EXPECT=<<EOF
-0x004009e0 16 Swift.String.init (_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1, ) -> String
+0x004009e0 16 Swift.String.init (_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> String
 EOF
 RUN
