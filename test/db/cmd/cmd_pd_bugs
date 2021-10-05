@@ -221,3 +221,21 @@ EXPECT=<<EOF
             0x080484c8      55             push ebp
 EOF
 RUN
+
+NAME=invalid pid and pdi
+FILE=bins/mach0/ls-osx-x86_64
+# BROKEN=1
+CMDS=<<EOF
+pdi 270~invalid
+?e ----
+pid 270~invalid
+pd 1
+EOF
+EXPECT=<<EOF
+----
+            ;-- main:
+            ;-- entry0:
+            ;-- func.1000013d8:
+            0x1000013d8      55             push rbp
+EOF
+RUN

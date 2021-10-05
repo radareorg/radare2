@@ -5884,7 +5884,16 @@ toro:
 static inline bool check_end(int nb_opcodes, int nb_bytes, int i, int j) {
 	if (nb_opcodes > 0) {
 		if (nb_bytes > 0) {
+#if 1
+			const int maxinstrsz = 32;
+			if (nb_bytes < maxinstrsz) {
+				// XXX if bbsize <32 expect invalid in disasm
+				return j < nb_opcodes && i < nb_bytes;
+			}
+			return j < nb_opcodes && i + maxinstrsz < nb_bytes;
+#else
 			return j < nb_opcodes && i < nb_bytes;
+#endif
 		}
 		return j < nb_opcodes;
 	}
@@ -6946,12 +6955,13 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 					r_core_print_disasm_json (core, block_start, buf, block_sz, block_instr, pj);
 					break;
 				case R_MODE_SIMPLE:
-					r_core_disasm_pdi_with_buf (core, block_start, buf, block_instr, block_sz, 0);
+					r_core_disasm_pdi_with_buf (core, block_start, buf, -1, block_sz, 0);
 					break;
 				case R_MODE_SIMPLEST:
 					r_core_print_disasm_instructions_with_buf (core, block_start, buf, block_sz, block_instr);
 					break;
 				default:
+					// ok
 					r_core_print_disasm (core, block_start, buf, block_sz, block_instr, false, false, false, NULL, NULL);
 					break;
 				}

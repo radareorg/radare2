@@ -99,10 +99,11 @@ b0 = 2 .bitset b0 .. 2
 a30 = (word)*+b15[0x4883]
 *+b15[0x47c1] = (word)b17
 *+b15[0x7fff] = (word)b31
-a2 = (half)*+b15[0x0]
-a16 = a17 * a29
-b0 = b18 + 4
-b16 = 2 == b22
+a1 = a16 * a15
+*-a3[a7] = (word)b1
+a10 = 8 ext a0 .. 0
+a18 = max(a24, a16)
+b20 = (half)*+b14[0x5bc3]
 b30 = (word)*-a16[0]
 a0 = 0x10 ext a15 .. 0
 a2 = 8 ext a29 .. 0x18
@@ -201,5 +202,8 @@ a16 = (half)*+b14[0x29f0]
 a0 = 0 ext a0 .. 0
 b30 = b30 * b17
 a16 = 2 .bitset a2 .. 2
+a0 = 0x10 .bitset a28 .. 0x10
+b3 = b15 * b16
+a7:a6 = a5 * a18
 EOF
 RUN
