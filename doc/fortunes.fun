@@ -87,7 +87,7 @@ Wait a minute! I found a bug, self-fixing ... OK
 Hold on, this should never happen!
 Well this is embarrasing ...
 THIS IS NOT FUNNY
-♥ --
+♥  --
 Can you stand on your head?
 May the segfault be with you.
 I script in C, because I can.
