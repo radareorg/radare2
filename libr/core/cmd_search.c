@@ -30,6 +30,13 @@ static const char *help_msg_search_backward[] = {
 	NULL
 };
 
+static const char *help_msg_search_pattern[] = {
+	"Usage: /p[p]", " [pattern]", "Search for patterns or preludes",
+	"/p", " [hexpattern]", "search in hexpairs pattern in search.in",
+	"/pp", "", "search for function preludes",
+	NULL
+};
+
 static const char *help_msg_search_ad[] = {
 	"Usage: /ad<jq>", "[value]", "Backward search subcommands",
 	"/ad", " rax", "search in disasm plaintext for matching instructions",
@@ -3802,9 +3809,10 @@ reread:
 		r_cons_clear_line (1);
 		break;
 	case 'p': // "/p"
-		if (input[1] == 'p') { // "/pp" -- find next prelude
+		if (input[1] == '?') { // "/pp" -- find next prelude
+			r_core_cmd_help (core, help_msg_search_pattern);
+		} else if (input[1] == 'p') { // "/pp" -- find next prelude
 			__core_cmd_search_backward_prelude (core, false, true);
-			break;
 		} else if (input[param_offset - 1]) {
 			int ps = atoi (input + param_offset);
 			if (ps > 1) {
@@ -3819,8 +3827,8 @@ reread:
 				}
 				break;
 			}
+			eprintf ("Invalid pattern size (must be > 0)\n");
 		}
-		eprintf ("Invalid pattern size (must be > 0)\n");
 		break;
 	case 'P': // "/P"
 		search_similar_pattern (core, atoi (input + 1), &param);
