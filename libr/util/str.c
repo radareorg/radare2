@@ -3686,8 +3686,13 @@ R_API char *r_str_from_ut64(ut64 val) {
 R_API int r_snprintf(char *string, int len, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
-	int ret = vsnprintf (string, len, fmt, ap);
-	string[len - 1] = 0;
+	int ret = 0;
+	if (len > 0) {
+		ret = vsnprintf (string, len, fmt, ap);
+		string[len - 1] = 0;
+	} else {
+		*string = 0;
+	}
 	va_end (ap);
 	return ret;
 }
