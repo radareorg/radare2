@@ -388,6 +388,9 @@ out:
 #undef DBL_VAL_FAIL
 
 static inline char *str_serialize_key(const char *sp, const char *name) {
+	if (!sp || !name) {
+		return NULL;
+	}
 	return r_str_newf ("zign|%s|%s", sp, name);
 }
 
@@ -917,7 +920,28 @@ static int fcn_sort(const void *va, const void *vb) {
 	return 0;
 }
 
-R_API int r_sign_all_functions(RAnal *a) {
+static char *get_unique_name(RAnal *a, const char *name) {
+	RSpace *sp = r_spaces_current (&a->zign_spaces);
+	char *key = space_serialize_key (sp, name);
+	if (!key) {
+		return NULL;
+	}
+
+	int count = 2;
+	char *unique = strdup (name);
+	while (sdb_exists (a->sdb_zigns, key)) {
+		free (unique);
+		unique = r_str_newf ("%s_%d", name, count);
+		if ((key = space_serialize_key (sp, unique)) == NULL) {
+			break;
+		}
+		count++;
+	}
+	free (key);
+	return unique;
+}
+
+R_API int r_sign_all_functions(RAnal *a, bool merge) {
 	RAnalFunction *fcni = NULL;
 	RListIter *iter = NULL;
 	int count = 0;
@@ -928,7 +952,16 @@ R_API int r_sign_all_functions(RAnal *a) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		RSignItem *it = item_from_func (a, fcni, fcni->name);
+		RSignItem *it = NULL;
+		if (merge) {
+			it = item_from_func (a, fcni, fcni->name);
+		} else {
+			char *name = get_unique_name (a, fcni->name);
+			if (name) {
+				it = item_from_func (a, fcni, name);
+				free (name);
+			}
+		}
 		if (it) {
 			if (prev_name) {
 				it->next = prev_name;
