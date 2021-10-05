@@ -631,7 +631,48 @@ R_API RSignItem *r_sign_get_item(RAnal *a, const char *name) {
 	return NULL;
 }
 
-R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
+static char *get_unique_key(RAnal *a, RSignItem *it) {
+	char *key = item_serialize_key (it);
+	if (!key || !sdb_exists (a->sdb_zigns, key)) {
+		return key;
+	}
+
+	// "name" exists, so try "name_2", "name_3"...
+	char *name = it->name;
+	int count = 2;
+	it->name = NULL;
+	do {
+		free (key);
+		free (it->name);
+		if ((it->name = r_str_newf ("%s_%d", name, count)) == NULL) {
+			it->name = name;
+			return NULL;
+		}
+		count++;
+		key = item_serialize_key (it);
+	} while (sdb_exists (a->sdb_zigns, key));
+	if (it->realname) {
+		free (name);
+	} else {
+		it->realname = name;
+	}
+	return key;
+}
+
+static bool r_sign_add_no_merge(RAnal *a, RSignItem *it) {
+	char *key = get_unique_key (a, it);
+	bool retval = false;
+	if (key) {
+		retval = r_sign_set_item (a->sdb_zigns, it, key);
+		free (key);
+	}
+	return retval;
+}
+
+R_API bool r_sign_add_item(RAnal *a, RSignItem *it, bool merge) {
+	if (!merge) {
+		return r_sign_add_no_merge (a, it);
+	}
 	char *key = item_serialize_key (it);
 	RSignItem *current = sign_get_sdb_item (a, key);
 
@@ -669,7 +710,7 @@ static bool addHash(RAnal *a, const char *name, int type, const char *val) {
 	switch (type) {
 	case R_SIGN_BBHASH:
 		it->hash->bbhash = strdup (val);
-		retval = r_sign_add_item (a, it);
+		retval = r_sign_add_item (a, it, true);
 		r_sign_item_free (it);
 		break;
 	}
@@ -690,7 +731,7 @@ static bool addBBHash(RAnal *a, RAnalFunction *fcn, const char *name) {
 	it->space = r_spaces_current (&a->zign_spaces);
 
 	if (r_sign_addto_item (a, it, fcn, R_SIGN_BBHASH)) {
-		retval = r_sign_add_item (a, it);
+		retval = r_sign_add_item (a, it, true);
 	}
 beach:
 	r_sign_item_free (it);
@@ -731,7 +772,7 @@ static bool addBytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, co
 		goto fail;
 	}
 	memcpy (it->bytes->mask, mask, size);
-	retval = r_sign_add_item (a, it);
+	retval = r_sign_add_item (a, it, true);
 	r_sign_item_free (it);
 	return retval;
 fail:
@@ -917,7 +958,7 @@ static int fcn_sort(const void *va, const void *vb) {
 	return 0;
 }
 
-R_API int r_sign_all_functions(RAnal *a) {
+R_API int r_sign_all_functions(RAnal *a, bool merge) {
 	RAnalFunction *fcni = NULL;
 	RListIter *iter = NULL;
 	int count = 0;
@@ -933,8 +974,8 @@ R_API int r_sign_all_functions(RAnal *a) {
 			if (prev_name) {
 				it->next = prev_name;
 			}
-			prev_name = strdup (it->name);
-			r_sign_add_item (a, it);
+			r_sign_add_item (a, it, merge);
+			prev_name = strdup (it->name); // MUST come after r_sign_add_item, to prevent name duplication
 			r_sign_item_free (it);
 			count++;
 		} else {
@@ -951,7 +992,7 @@ R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name) {
 	r_return_val_if_fail (a && fcn, false);
 	RSignItem *it = item_from_func (a, fcn, name);
 	if (it) {
-		r_sign_add_item (a, it);
+		r_sign_add_item (a, it, true);
 		r_sign_item_free (it);
 		return true;
 	}
@@ -1013,7 +1054,7 @@ R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph) {
 		return false;
 	}
 	*it->graph = graph;
-	retval = r_sign_add_item (a, it);
+	retval = r_sign_add_item (a, it, true);
 	r_sign_item_free (it);
 
 	return retval;
@@ -1029,7 +1070,7 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment) {
 	it->name = r_str_new (name);
 	it->space = r_spaces_current (&a->zign_spaces);
 	it->comment = strdup (comment);
-	bool retval = r_sign_add_item (a, it);
+	bool retval = r_sign_add_item (a, it, true);
 	r_sign_item_free (it);
 	return retval;
 }
@@ -1041,7 +1082,7 @@ R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 		it->name = r_str_new (name);
 		it->realname = strdup (realname);
 		it->space = r_spaces_current (&a->zign_spaces);
-		bool retval = r_sign_add_item (a, it);
+		bool retval = r_sign_add_item (a, it, true);
 		r_sign_item_free (it);
 		return retval;
 	}
@@ -1059,7 +1100,7 @@ R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr) {
 	it->space = r_spaces_current (&a->zign_spaces);
 	it->addr = addr;
 
-	bool retval = r_sign_add_item (a, it);
+	bool retval = r_sign_add_item (a, it, true);
 
 	r_sign_item_free (it);
 
@@ -1086,7 +1127,7 @@ R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars) {
 	r_list_foreach (vars, iter, var) {
 		r_list_append (it->vars, strdup (var));
 	}
-	bool retval = r_sign_add_item (a, it);
+	bool retval = r_sign_add_item (a, it, true);
 	r_sign_item_free (it);
 
 	return retval;
@@ -1112,7 +1153,7 @@ R_API bool r_sign_add_types(RAnal *a, const char *name, RList *types) {
 	r_list_foreach (types, iter, type) {
 		r_list_append (it->types, strdup (type));
 	}
-	bool retval = r_sign_add_item (a, it);
+	bool retval = r_sign_add_item (a, it, true);
 	r_sign_item_free (it);
 
 	return retval;
@@ -1137,7 +1178,7 @@ R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs) {
 	r_list_foreach (refs, iter, ref) {
 		r_list_append (it->refs, strdup (ref));
 	}
-	bool retval = r_sign_add_item (a, it);
+	bool retval = r_sign_add_item (a, it, true);
 	r_sign_item_free (it);
 
 	return retval;
@@ -1162,7 +1203,7 @@ R_API bool r_sign_add_xrefs(RAnal *a, const char *name, RList *xrefs) {
 	r_list_foreach (xrefs, iter, ref) {
 		r_list_append (it->xrefs, strdup (ref));
 	}
-	bool retval = r_sign_add_item (a, it);
+	bool retval = r_sign_add_item (a, it, true);
 	r_sign_item_free (it);
 
 	return retval;
@@ -2741,7 +2782,7 @@ R_API bool r_sign_resolve_collisions(RAnal *a) {
 		RSignItem *it = *p;
 		if (it->collisions) {
 			r_list_sort (it->collisions, list_str_cmp);
-			r_sign_add_item (a, it);
+			r_sign_add_item (a, it, true);
 		}
 	}
 

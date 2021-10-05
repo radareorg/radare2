@@ -110,7 +110,7 @@ typedef struct {
 R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
-R_API int r_sign_all_functions(RAnal *a);
+R_API int r_sign_all_functions(RAnal *a, bool merge);
 R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignType type);
 R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr);
@@ -128,7 +128,7 @@ R_API bool r_sign_add_bb_hash(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn);
 R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char *v);
 R_API RSignItem *r_sign_get_item(RAnal *a, const char *name);
-R_API bool r_sign_add_item(RAnal *a, RSignItem *it);
+R_API bool r_sign_add_item(RAnal *a, RSignItem *it, bool merge);
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);
 R_API const char *r_sign_type_to_name(int type);

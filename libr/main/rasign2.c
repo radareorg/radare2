@@ -5,7 +5,7 @@
 struct rasignconf {
 	const char *ofile, *space;
 	size_t a_cnt;
-	bool sdb, ar, rad, quiet, json, flirt, collision;
+	bool merge, sdb, ar, rad, quiet, json, flirt, collision;
 };
 
 static void rasign_show_help(void) {
@@ -22,6 +22,7 @@ static void rasign_show_help(void) {
 		" -s signspace     save all signatures under this signspace\n"
 		" -c               add collision signatures before writing file\n"
 		" -v               show version information\n"
+		" -m               merge/overwrite signatures with same name\n"
 		"Examples:\n"
 		"  rasign2 -o libc.sdb libc.so.6\n");
 }
@@ -113,11 +114,14 @@ static int signs_from_file(const char *fname, struct rasignconf *conf) {
 	if (conf->space) {
 		r_spaces_set (&core->anal->zign_spaces, conf->space);
 	}
+	if (conf->ofile && r_file_exists (conf->ofile)) {
+		r_sign_load (core->anal, conf->ofile);
+	}
 
 	// run analysis to find functions
 	find_functions (core, conf->a_cnt);
 	// create zignatures
-	r_sign_all_functions (core->anal);
+	r_sign_all_functions (core->anal, conf->merge);
 
 	int ret = output (core->anal, conf);
 	r_core_free (core);
@@ -223,7 +227,7 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 	RGetopt opt;
 	struct rasignconf conf = {0};
 
-	r_getopt_init (&opt, argc, argv, "Aafhjo:qrSs:cv");
+	r_getopt_init (&opt, argc, argv, "Aafhjmo:qrSs:cv");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'A':
@@ -249,6 +253,9 @@ R_API int r_main_rasign2(int argc, const char **argv) {
 			break;
 		case 'j':
 			conf.json = true;
+			break;
+		case 'm':
+			conf.merge = true;
 			break;
 		case 'q':
 			conf.quiet = true;
