@@ -1082,7 +1082,7 @@ static bool cb_binfilter(void *user, void *data) {
 static bool cb_bdc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	core->bin->demanglercmd = node->i_value;
+	core->bin->demangle_usecmd = node->i_value;
 	return true;
 }
 
@@ -2693,6 +2693,16 @@ static bool cb_binstrings(void *user, void *data) {
 	return true;
 }
 
+static bool cb_demangle_trylib(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (!core || !core->bin) {
+		return false;
+	}
+	core->bin->demangle_trylib = node->i_value;
+	return true;
+}
+
 static bool cb_bindbginfo(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3501,6 +3511,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("bin.cache", "false", "Use io.cache.read if bin needs to patch relocs");
 	SETPREF ("bin.lang", "", "Language for bin.demangle");
 	SETBPREF ("bin.demangle", "true", "Import demangled symbols from RBin");
+	SETCB("bin.demangle.trylib", "true", &cb_demangle_trylib, "Try to use system available libraries to demangle");
 	SETBPREF ("bin.demangle.libs", "false", "Show library name on demangled symbols names");
 	SETI ("bin.baddr", -1, "Base address of the binary");
 	SETI ("bin.laddr", 0, "Base address for loading library ('*.so')");
