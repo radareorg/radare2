@@ -549,6 +549,15 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->arch = strdup ("x86");
 		ret->bits = 32;
 		break;
+	case COFF_FILE_MACHINE_ARM64:
+		ret->machine = strdup ("aarch64");
+		ret->arch = strdup ("arm");
+		ret->bits = 64;
+		break;
+	case COFF_FILE_MACHINE_ARM:
+		ret->machine = strdup ("ARM");
+		ret->arch = strdup ("arm");
+		ret->bits = 32;
 	case COFF_FILE_MACHINE_AMD64:
 		ret->machine = strdup ("AMD64");
 		ret->arch = strdup ("x86");
@@ -570,11 +579,6 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->machine = strdup ("arm");
 		ret->arch = strdup ("arm");
 		ret->bits = 32;
-		break;
-	case COFF_FILE_MACHINE_ARM64:
-		ret->machine = strdup ("arm");
-		ret->arch = strdup ("arm");
-		ret->bits = 64;
 		break;
 	case COFF_FILE_TI_COFF:
 		switch (obj->target_id) {
