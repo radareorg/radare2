@@ -21,7 +21,7 @@ struct Type {
 static struct Type types[] = {
 	/* basic types */
 	{ "Sb", "Bool" },
-	{ "SS", "String" },
+	{ "SS", "Swift.String" },
 	{ "FS", "String" },
 	{ "GV", "mutableAddressor" }, // C_ARGC
 	{ "Ss", "generic" }, // C_ARGC
@@ -36,7 +36,6 @@ static struct Type types[] = {
 	{ "SQ", "ImplicitlyUnwrappedOptional" },
 	{ "Sc", "UnicodeScalar" },
 	{ "Sd", "Double" },
-	{ "SS", "String" }, // Swift.String
 	/* builtin */
 	{ "Bi1", "Builtin.Int1" },
 	{ "Bp", "Builtin.RawPointer" },
@@ -276,8 +275,8 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	
 	// _TF or __TW
 	if (IS_DIGIT (*p) || *p == 'v' || *p == 'I' || *p == 'o' || *p == 'T' || *p == 'V' || *p == 'M' || *p == 'C' || *p == 'F' || *p == 'W') {
-		if (!strncmp (p+1, "SS", 2)) {
-			strcat (out, "Swift.String.init (");
+		if (!strncmp (p + 1, "SS", 2)) {
+			strcat (out, "Swift.String.init(");
 			p += 3;
 		}
 		if (!strncmp (p, "vdv", 3)) {
@@ -422,7 +421,6 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 						if (attr) {
 							strcat (out, attr);
 						}
-						//p = q + 7;
 						q = p = q + 1;
 						attr = "";
 						break;
@@ -584,13 +582,12 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 		p = outstr;
 		for (;;) {
 			p = strstr (p, ")(");
-			if (p) {
-				p[0] = '_';
-				p[1] = '_';
-				p+=2;
-			} else {
+			if (!p) {
 				break;
 			}
+			p[0] = '_';
+			p[1] = '_';
+			p += 2;
 		}
 		return outstr;
 #endif

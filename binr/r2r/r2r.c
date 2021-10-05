@@ -333,6 +333,7 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
+	r_sys_setenv ("RABIN2_TRYLIB", "0");
 	r_sys_setenv ("TZ", "UTC");
 	ut64 time_start = r_time_now_mono ();
 	R2RState state = {{0}};
