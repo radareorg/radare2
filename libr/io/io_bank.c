@@ -428,7 +428,9 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 			}
 			if (r_io_submap_to (sm) <= r_io_map_to (map)) {
 				// case 3
+				// adjust bd upper boundary to avoid overlap with existing submaps
 				r_io_submap_set_to (bd, r_io_submap_to (sm));
+				// adjust sm upper boundary to avoid hitting again on sm in further iterations
 				r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
 				r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
 				continue;
