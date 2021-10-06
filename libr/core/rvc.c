@@ -455,7 +455,7 @@ static RList *repo_files(const char *dir) {
 
 static RList *load_rvc_ignore(const char *rp) {
 	RList *ignore = NULL;
-	char *path = r_file_new (path, NULL);
+	char *path = r_file_new (rp, IGNORE_NAME, NULL);
 	if (!path) {
 		return false;
 	}
