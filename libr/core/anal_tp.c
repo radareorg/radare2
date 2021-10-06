@@ -450,7 +450,7 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
-	RListIter *it;
+	RListIter *it, *tmp;
 	RAnalOp aop = {0};
 	bool resolved = false;
 
@@ -516,7 +516,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	}
 	r_cons_break_push (NULL, NULL);
 	r_list_sort (fcn->bbs, bb_cmpaddr); // TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
-	r_list_foreach (fcn->bbs, it, bb) {
+	r_list_foreach_safe (fcn->bbs, it, tmp, bb) {
 		ut64 addr = bb->addr;
 		int i = 0;
 		r_reg_set_value (core->dbg->reg, r, addr);
