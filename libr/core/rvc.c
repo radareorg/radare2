@@ -10,6 +10,7 @@
 #define COMMIT_BLOB_SEP "----"
 #define DBNAME "branches.sdb"
 #define CURRENTB "current_branch"
+#define IGNORE_NAME ".rvc_ignore"
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
@@ -227,9 +228,36 @@ static RList *get_commits(const char *rp, const size_t max_num) {
 	return ret;
 }
 
-static bool update_blobs(RList *blobs, const RList *nh) {
+
+// check if rpf is in the ignore file. if ignore is NULL it just returns false
+static bool in_rvc_ignore(const RList *ignore, const char *rpf) {
+	RListIter *iter;
+	char *p;
+	bool ret = false;
+	if (!ignore) {
+		return false;
+	}
+	r_list_foreach (ignore, iter, p) {
+		char *stripped = strip_sys_dir (p);
+		if (stripped) {
+			if (!strcmp (stripped, rpf)) {
+				free (stripped);
+				ret = true;
+				break;
+			}
+			free (stripped);
+		}
+
+	}
+	return ret;
+}
+
+static bool update_blobs(const RList *ignore, RList *blobs, const RList *nh) {
 	RListIter *iter;
 	RvcBlob *blob;
+	if (in_rvc_ignore (ignore, nh->head->data)) {
+		return true;
+	}
 	r_list_foreach (blobs, iter, blob) {
 		if (strcmp (nh->head->data, blob->fname)) {
 			continue;
@@ -277,7 +305,7 @@ static int branch_exists(const char *rp, const char *bname) {
 	return ret;
 }
 
-static RList *get_blobs(const char *rp) {
+static RList *get_blobs(const char *rp, RList *ignore) {
 	RList *commits = get_commits (rp, 0);
 	if (!commits) {
 		return NULL;
@@ -330,7 +358,7 @@ static RList *get_blobs(const char *rp) {
 				ret = NULL;
 				break;
 			}
-			if (!update_blobs (ret, kv)) {
+			if (!update_blobs (ignore, ret, kv)) {
 				free_blobs (ret);
 				ret = NULL;
 				free (kv);
@@ -425,13 +453,29 @@ static RList *repo_files(const char *dir) {
 	return ret;
 }
 
+static RList *load_rvc_ignore(const char *rp) {
+	RList *ignore = NULL;
+	char *path = r_file_new (rp, IGNORE_NAME, NULL);
+	if (!path) {
+		return false;
+	}
+	char *c = r_file_slurp (path, 0);
+	// skip if contnet is not readable
+	if (c) {
+		ignore = r_str_split_duplist (c, "\n", true);
+		free (c);
+	}
+	return ignore;
+}
+
 //shit function:
 R_API RList *r_vc_get_uncommitted(const char *rp) {
+	RList *ignore = load_rvc_ignore (rp);
 	if (!repo_exists (rp)) {
 		eprintf ("No valid repo in %s\n", rp);
 		return false;
 	}
-	RList *blobs = get_blobs (rp);
+	RList *blobs = get_blobs(rp, ignore);
 	if (!blobs) {
 		return NULL;
 	}
@@ -497,6 +541,15 @@ R_API RList *r_vc_get_uncommitted(const char *rp) {
 	free_blobs (blobs);
 	blobs = NULL;
 	r_list_foreach (files, iter, file) {
+		char *rfp = absp2rp (rp, file);
+		if (!rfp) {
+			goto fail_ret;
+		}
+		if (in_rvc_ignore (ignore, rfp)) {
+			free (rfp);
+			continue;
+		}
+		free (rfp);
 		char *append = r_str_new (file);
 		if (!append) {
 			goto fail_ret;
@@ -516,7 +569,7 @@ fail_ret:
 }
 
 static char *find_blob_hash(const char *rp, const char *fname) {
-	RList *blobs = get_blobs (rp);
+	RList *blobs = get_blobs (rp, load_rvc_ignore(rp));
 	if (blobs) {
 		RListIter *i;
 		RvcBlob *b;
