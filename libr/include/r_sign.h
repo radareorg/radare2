@@ -110,7 +110,7 @@ typedef struct {
 R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
 R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
-R_API int r_sign_all_functions(RAnal *a);
+R_API int r_sign_all_functions(RAnal *a, bool merge);
 R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignType type);
 R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr);

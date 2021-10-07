@@ -1965,3 +1965,20 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=zaF vs zaM
+FILE=bins/elf/analysis/zigs
+CMDS=<<EOF
+aa
+zg
+f test_orig_size = `z~?`
+zaM
+?v test_orig_size - `z~?`
+zaF
+?v test_orig_size - `z~?`~0xf?
+EOF
+EXPECT=<<EOF
+0x0
+1
+EOF
+RUN

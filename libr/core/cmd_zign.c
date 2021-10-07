@@ -46,10 +46,11 @@ static const char *help_msg_z_slash[] = {
 };
 
 static const char *help_msg_za[] = {
-	"Usage:", "za[fF?] [args] ", "# Add zignature",
+	"Usage:", "za[fFM?] [args] ", "# Add zignature",
 	"za ", "zigname type params", "add zignature",
 	"zaf ", "[fcnname] [zigname]", "create zignature for function",
 	"zaF ", "", "generate zignatures for all functions",
+	"zaM ", "", "Same as zaF but merge signatures of same name",
 	"za?? ", "", "show extended help",
 	NULL
 };
@@ -319,12 +320,18 @@ out_case_manual:
 		r_sign_resolve_collisions (core->anal);
 		r_cons_break_pop ();
 		break;
-	case 'F':
-		r_cons_break_push (NULL, NULL);
-		int count = r_sign_all_functions (core->anal);
-		r_cons_break_pop ();
+	case 'F': // "zaF"
+	{
+		int count = r_sign_all_functions (core->anal, false);
 		eprintf ("generated zignatures: %d\n", count);
 		break;
+	}
+	case 'M': // "zaM"
+	{
+		int count = r_sign_all_functions (core->anal, true);
+		eprintf ("generated zignatures: %d\n", count);
+		break;
+	}
 	case '?':
 		if (input[1] == '?') {
 			// TODO #7967 help refactor: move to detail
