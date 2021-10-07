@@ -336,6 +336,7 @@ R_API void r_io_map_set_name(RIOMap* map, const char* name) {
 
 R_API void r_io_map_del_name(RIOMap* map) {
 	r_return_if_fail (map);
+	R_FREE (map->name);
 }
 
 // TODO: very similar to r_io_map_next_address, decide which one to use
