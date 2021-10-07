@@ -321,11 +321,11 @@ out_case_manual:
 		r_cons_break_pop ();
 		break;
 	case 'F': // "zaF"
+		int count = r_sign_all_functions (core->anal, false);
+		eprintf ("generated zignatures: %d\n", count);
+		break;
 	case 'M': // "zaM"
-		bool merge = input[0] == 'M'? true: false;
-		r_cons_break_push (NULL, NULL);
-		int count = r_sign_all_functions (core->anal, merge);
-		r_cons_break_pop ();
+		int count = r_sign_all_functions (core->anal, true);
 		eprintf ("generated zignatures: %d\n", count);
 		break;
 	case '?':
