@@ -426,22 +426,6 @@ R_API int r_io_plugin_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many);
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many);
 
-/* bank */
-R_API void r_io_use_bank(RIO *io, RIOBank *bank);
-R_API RIOBank* r_io_new_bank(const char *name);
-R_API bool r_io_bank_add_map(RIO *io, RIOBank *bank, ut32 map_id);
-R_API void r_io_bank_free(RIOBank *bank);
-R_API void r_io_bank_rename(RIOBank *bank, const char *name);
-
-/* banks */
-R_API void r_io_banks_reset(RIO *io);
-R_API bool r_io_banks_add(RIO *io, RIOBank *bank);
-R_API bool r_io_banks_del(RIO *io, RIOBank *bank);
-R_API char *r_io_banks_list(RIO *io, int mode);
-R_API bool r_io_banks_use(RIO *io, ut32 id);
-R_API RIOBank* r_io_bank_get_by_name(RIO *io, const char *name);
-R_API RIOBank* r_io_bank_get_by_id(RIO *io, ut32 id);
-
 /* undo api */
 // track seeks and writes
 // TODO: needs cleanup..kinda big?
