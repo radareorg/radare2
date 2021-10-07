@@ -57,6 +57,11 @@ R_API char *r_file_new(const char *root, ...) {
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!strcmp (root, "~")) {
 		char *h = r_str_home (NULL);
+		if (!h) {
+			va_end (ap);
+			r_strbuf_free (sb);
+			return NULL;
+		}
 		r_strbuf_append (sb, h);
 		free (h);
 	} else {
