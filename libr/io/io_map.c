@@ -39,12 +39,11 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) 
 	map->delta = delta;
 	map->ts = io->mts++;
 	if ((UT64_MAX - size + 1) < addr) {
-		/// XXX: this is leaking a map!!!
 		io_map_new (io, fd, perm, delta - addr, 0LL, size + addr);
 		size = -(st64)addr;
 	}
 	// RIOMap describes an interval of addresses
-	// r_io_map_begin (map) -> r_io_map_to (map)
+	// r_io_map_from (map) -> r_io_map_to (map)
 	map->itv = (RInterval){ addr, size };
 	map->perm = perm;
 	map->delta = delta;
@@ -173,7 +172,8 @@ R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
 // gets first map where addr fits in
 R_API RIOMap *r_io_map_get_at(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, NULL);
-	return r_skyline_get (&io->map_skyline, addr);
+	return io->use_banks ? r_io_bank_get_map_at (io, io->bank, addr):
+		r_skyline_get (&io->map_skyline, addr);
 }
 
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
