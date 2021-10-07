@@ -39,7 +39,7 @@ R_API int r_io_fd_write(RIO *io, int fd, const ut8 *buf, int len) {
 
 R_API ut64 r_io_fd_seek(RIO *io, int fd, ut64 addr, int whence) {
 	r_return_val_if_fail (io, UT64_MAX);
-	return io? r_io_desc_seek (r_io_desc_get (io, fd), addr, whence): UT64_MAX;
+	return r_io_desc_seek (r_io_desc_get (io, fd), addr, whence);
 }
 
 R_API ut64 r_io_fd_size(RIO *io, int fd) {

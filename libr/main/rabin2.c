@@ -526,7 +526,7 @@ static void setup_trylib_from_environment(RBin *bin, int type) {
 }
 
 static char *__demangleAs(RBin *bin, int type, const char *file) {
-	bool syscmd = bin? bin->demangle_usecmd: false;
+	bool syscmd = bin->demangle_usecmd;
 	char *res = NULL;
 	switch (type) {
 	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;

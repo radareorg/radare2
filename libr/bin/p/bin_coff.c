@@ -558,6 +558,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->machine = strdup ("ARM");
 		ret->arch = strdup ("arm");
 		ret->bits = 32;
+		break;
 	case COFF_FILE_MACHINE_AMD64:
 		ret->machine = strdup ("AMD64");
 		ret->arch = strdup ("x86");
