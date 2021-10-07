@@ -321,13 +321,17 @@ out_case_manual:
 		r_cons_break_pop ();
 		break;
 	case 'F': // "zaF"
+	{
 		int count = r_sign_all_functions (core->anal, false);
 		eprintf ("generated zignatures: %d\n", count);
 		break;
+	}
 	case 'M': // "zaM"
+	{
 		int count = r_sign_all_functions (core->anal, true);
 		eprintf ("generated zignatures: %d\n", count);
 		break;
+	}
 	case '?':
 		if (input[1] == '?') {
 			// TODO #7967 help refactor: move to detail
