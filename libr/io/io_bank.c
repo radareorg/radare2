@@ -645,7 +645,7 @@ found:
 	return true;
 }
 
-R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr) {
+R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr, ut64 load_align) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank && bank->submaps && addr && size, false);
 	RContRBNode *entry = r_rbtree_cont_first (bank->submaps);
@@ -654,6 +654,9 @@ R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *a
 		*addr = 0LL;
 		return true;
 	}
+	if (load_align == 0LL) {
+		load_align = 1;
+	}
 	ut64 next_location = 0LL;
 	while (entry) {
 		RIOSubMap *sm = (RIOSubMap *)entry->data;
@@ -661,7 +664,8 @@ R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *a
 			*addr = next_location;
 			return true;
 		}
-		next_location = r_io_submap_to (sm) + 1;
+		next_location = (r_io_submap_to (sm) + 1) +
+			(load_align - ((r_io_submap_to (sm) + 1) % load_align)) % load_align;
 		entry = r_rbtree_cont_node_next (entry);
 	}
 	if (next_location == 0LL) {

@@ -375,7 +375,7 @@ R_API bool r_io_bank_map_add_bottom(RIO *io, const ut32 bankid, const ut32 mapid
 R_API bool r_io_bank_map_priorize (RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_map_depriorize(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_update_map_boundaries(RIO *io, const ut32 bankid, const ut32 mapid, ut64 ofrom, ut64 oto);
-R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr);
+R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr, ut64 load_align);
 R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, const ut64 addr);
 R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
