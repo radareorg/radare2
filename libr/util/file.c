@@ -55,20 +55,21 @@ R_API char *r_file_new(const char *root, ...) {
 	va_list ap;
 	va_start (ap, root);
 	RStrBuf *sb = r_strbuf_new ("");
-	char *home = r_str_home (NULL);
+	if (!strcmp (root, "~")) {
+		char *h = r_str_home (NULL);
+		r_strbuf_append (sb, h);
+		free (h);
+	} else {
+		r_strbuf_append (sb, root);
+	}
+	r_strbuf_append (sb, R_SYS_DIR);
 	const char *arg = va_arg (ap, char *);
-	r_strbuf_append (sb, arg);
-	arg = va_arg (ap, char *);
 	while (arg) {
-		if (!strcmp (arg, "~")) {
-			arg = home;
-		}
 		r_strbuf_append (sb, R_SYS_DIR);
 		r_strbuf_append (sb, arg);
 		arg = va_arg (ap, char *);
 	}
 	va_end (ap);
-	free (home);
 	char *path = r_strbuf_drain (sb);
 	char *abs = r_file_abspath (path);
 	free (path);
