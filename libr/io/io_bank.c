@@ -426,6 +426,9 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 			RIOMapRef *mapref = _mapref_from_map (map);
 			bd = r_io_submap_new (io, mapref);
 			free (mapref);
+			if (!bd) {
+				continue;
+			}
 			if (r_io_submap_from (sm) >= r_io_map_from (map)) {
 				// case 4 and 2
 				r_io_submap_set_from (bd, r_io_submap_from (sm));

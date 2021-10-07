@@ -7,8 +7,8 @@ e asm.bits
 EOF
 EXPECT=<<EOF
 format   coff
-x86
-64
+arm
+32
 EOF
 RUN
 

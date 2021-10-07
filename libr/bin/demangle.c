@@ -94,7 +94,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 				break;
 			}
 		}
-		if (found) {
+		if (found && bin && bin->file) {
 			size_t len = strlen (bin->file);
 			if (!r_str_ncasecmp (str, bin->file, len)) {
 				lib = bin->file;

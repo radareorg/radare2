@@ -205,7 +205,7 @@ R_IPI int riscv_assemble(const char *str, ut64 pc, ut8 *out) {
 						invalid = true;
 						break;
 					}
-					if (!invalid) {
+					if (invalid) {
 						free (s);
 						op = ops[i].op;
 						return riscv_ri (out, op, rs, imm);
