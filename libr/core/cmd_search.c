@@ -740,40 +740,53 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overridden by others (skyline)
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
-#define USE_SKYLINE 0
-#if USE_SKYLINE
-		const RPVector *skyline = &core->io->map_skyline;
-		size_t i;
-		for (i = 0; i < r_pvector_len (skyline); i++) {
-			const RIOMapSkyline *part = r_pvector_at (skyline, i);
-		//  	int perm = part->map->perm;
-			ut64 from = r_itv_begin (part->itv);
-			ut64 to = r_itv_end (part->itv);
-			// XXX skyline's fake map perms are wrong
-			RIOMap *m = r_io_map_get_at (core->io, from);
-			int rwx = m? m->perm: part->map->perm;
-#else
-		void **it;
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
-			ut64 from = r_io_map_begin (map);
-			ut64 to = r_io_map_end (map);
-			int rwx = map->perm;
-#endif
-			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
-			if (begin == UT64_MAX) {
-				begin = from;
-			}
-			if (end == UT64_MAX) {
-				end = to;
-			} else {
-				if (end == from) {
+		if (!core->io->use_banks) {
+			void **it;
+			r_pvector_foreach (&core->io->maps, it) {
+				RIOMap *map = *it;
+				ut64 from = r_io_map_begin (map);
+				ut64 to = r_io_map_end (map);
+				int rwx = map->perm;
+				// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
+				if (begin == UT64_MAX) {
+					begin = from;
+				}
+				if (end == UT64_MAX) {
 					end = to;
 				} else {
-					append_bound (list, NULL, search_itv,
-						begin, end - begin, rwx);
+					if (end == from) {
+						end = to;
+					} else {
+						append_bound (list, NULL, search_itv,
+							begin, end - begin, rwx);
+						begin = from;
+						end = to;
+					}
+				}
+			}
+		} else {
+			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+			RListIter *iter;
+			RIOMapRef *mapref;
+			r_list_foreach (bank->maprefs, iter, mapref) {
+				RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+				const ut64 from = r_io_map_begin (map);
+				const ut64 to = r_io_map_end (map);
+				const int rwx = map->perm;
+				if (begin == UT64_MAX) {
 					begin = from;
+				}
+				if (end == UT64_MAX) {
 					end = to;
+				} else {
+					if (end == from) {
+						end = to;
+					} else {
+						append_bound (list, NULL, search_itv,
+							begin, end - begin, rwx);
+						begin = from;
+						end = to;
+					}
 				}
 			}
 		}
@@ -784,53 +797,31 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		int len = strlen ("io.maps.");
 		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
 		// bool only = (bool)(size_t)strstr (mode, ".only");
-
-		void **it;
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
-			ut64 from = r_io_map_begin (map);
-			//ut64 to = r_io_map_end (map);
-			int rwx = map->perm;
-			if ((rwx & mask) != mask) {
-				continue;
-			}
-			append_bound (list, core->io, search_itv, from, r_io_map_size (map), rwx);
-		}
-	} else if (r_str_startswith (mode, "io.sky.")) {
-		int len = strlen ("io.sky.");
-		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
-		bool only = (bool)(size_t)strstr (mode, ".only");
-		RVector *skyline = &core->io->map_skyline.v;
-		ut64 begin = UT64_MAX;
-		ut64 end = UT64_MAX;
-		size_t i;
-		for (i = 0; i < r_vector_len (skyline); i++) {
-			const RSkylineItem *part = r_vector_index_ptr (skyline, i);
-			ut64 from = part->itv.addr;
-			ut64 to = part->itv.addr + part->itv.size;
-			int perm = ((RIOMap *)part->user)->perm;
-			if (maskMatches (perm, mask, only)) {
-				continue;
-			}
-			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
-			if (begin == UT64_MAX) {
-				begin = from;
-			}
-			if (end == UT64_MAX) {
-				end = to;
-			} else {
-				if (end == from) {
-					end = to;
-				} else {
-					// eprintf ("[%llx - %llx]\n", begin, end);
-					append_bound (list, NULL, search_itv, begin, end - begin, perm);
-					begin = from;
-					end = to;
+		if (!core->io->use_banks) {
+			void **it;
+			r_pvector_foreach (&core->io->maps, it) {
+				RIOMap *map = *it;
+				ut64 from = r_io_map_begin (map);
+				//ut64 to = r_io_map_end (map);
+				int rwx = map->perm;
+				if ((rwx & mask) != mask) {
+					continue;
 				}
+				append_bound (list, core->io, search_itv, from, r_io_map_size (map), rwx);
 			}
-		}
-		if (end != UT64_MAX) {
-			append_bound (list, NULL, search_itv, begin, end - begin, 7);
+		} else {
+			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+			RListIter *iter;
+			RIOMapRef *mapref;
+			r_list_foreach (bank->maprefs, iter, mapref) {
+				RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+				const ut64 from = r_io_map_begin (map);
+				const int rwx = map->perm;
+				if ((rwx & mask) != mask) {
+					continue;
+				}
+				append_bound (list, core->io, search_itv, from, r_io_map_size (map), rwx);
+			}
 		}
 	} else if (r_str_startswith (mode, "bin.segments")) {
 		int len = strlen ("bin.segments.");
@@ -873,16 +864,31 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			}
 			if (from == UT64_MAX) {
 				int mask = 1;
-				void **it;
-				r_pvector_foreach (&core->io->maps, it) {
-					RIOMap *map = *it;
-					ut64 from = r_io_map_begin (map);
-					ut64 size = r_io_map_size (map);
-					int rwx = map->perm;
-					if ((rwx & mask) != mask) {
-						continue;
+				if (!core->io->use_banks) {
+					void **it;
+					r_pvector_foreach (&core->io->maps, it) {
+						RIOMap *map = *it;
+						ut64 from = r_io_map_begin (map);
+						ut64 size = r_io_map_size (map);
+						int rwx = map->perm;
+						if ((rwx & mask) != mask) {
+							continue;
+						}
+						append_bound (list, core->io, search_itv, from, size, rwx);
 					}
-					append_bound (list, core->io, search_itv, from, size, rwx);
+				} else {
+					RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+					RIOMapRef *mapref;
+					r_list_foreach (bank->maprefs, iter, mapref) {
+						RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+						const ut64 from = r_io_map_begin (map);
+						const ut64 size = r_io_map_size (map);
+						const int rwx = map->perm;
+						if ((rwx & mask) != mask) {
+							continue;
+						}
+						append_bound (list, core->io, search_itv, from, size, rwx);
+					}
 				}
 			}
 			append_bound (list, core->io, search_itv, from, to-from, 1);
