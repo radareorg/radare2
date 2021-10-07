@@ -364,7 +364,6 @@ R_API bool r_io_submap_set_to(RIOSubMap *sm, const ut64 to);
 R_API RIOBank *r_io_bank_new(const char *name);
 R_API void r_io_bank_del(RIO *io, const ut32 bankid);
 R_API ut32 r_io_bank_first(RIO *io);
-R_API void r_io_bank_delete_map(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_add(RIO *io, RIOBank *bank);
 R_API void r_io_bank_free(RIOBank *bank);
 R_API void r_io_bank_init(RIO *io);
@@ -377,6 +376,8 @@ R_API bool r_io_bank_map_priorize (RIO *io, const ut32 bankid, const ut32 mapid)
 R_API bool r_io_bank_map_depriorize(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_update_map_boundaries(RIO *io, const ut32 bankid, const ut32 mapid, ut64 ofrom, ut64 oto);
 R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr);
+R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid);
+R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, const ut64 addr);
 R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid);

@@ -772,7 +772,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 			int mapid = atoi (argv[1]);
 			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 			if (bank) {
-				r_io_bank_delete_map (core->io, core->io->bank, mapid);
+				r_io_bank_del_map (core->io, core->io->bank, mapid);
 			} else {
 				eprintf ("Unknown bank id\n");
 			}

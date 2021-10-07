@@ -100,15 +100,28 @@ static RIOMapRef *_mapref_from_map(RIOMap *map) {
 	return mapref;
 }
 
-static int _find_sm_by_vaddr_cb(void *incoming, void *in, void *user) {
+// cb for finding sm by lower boundary vaddr
+static int _find_sm_by_from_vaddr_cb(void *incoming, void *in, void *user) {
 	RIOSubMap *bd = (RIOSubMap *)incoming, *sm = (RIOSubMap *)in;
-	if (bd->itv.addr > sm->itv.addr) {
+	if (r_io_submap_from (bd) > r_io_submap_from (sm)) {
 		return -1;
 	}
-	if (bd->itv.addr < sm->itv.addr) {
+	if (r_io_submap_from (bd) < r_io_submap_from (sm)) {
 		return 1;
 	}
 	return 0;
+}
+
+static int _find_sm_by_vaddr_cb(void *incoming, void *in, void *user) {
+	const ut64 addr = ((ut64 *)incoming)[0];
+	RIOSubMap *sm = (RIOSubMap *)in;
+	if (r_io_submap_contain (sm, addr)) {
+		return 0;
+	}
+	if (addr > r_io_submap_from (sm)) {
+		return -1;
+	}
+	return 1;
 }
 
 static int _find_lowest_intersection_sm_cb(void *incoming, void *in, void *user) {
@@ -116,7 +129,7 @@ static int _find_lowest_intersection_sm_cb(void *incoming, void *in, void *user)
 	if (r_io_submap_overlap (bd, sm)) {
 		return 0;
 	}
-	if (bd->itv.addr > sm->itv.addr) {
+	if (r_io_submap_from (bd) > r_io_submap_from (sm)) {
 		return -1;
 	}
 	return 1;
@@ -152,7 +165,7 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 	RContRBNode *entry = _find_entry_submap_node (bank, sm);
 	if (!entry) {
 		// no intersection with any submap, so just insert
-		if (!r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL)) {
+		if (!r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL)) {
 			free (sm);
 			free (mapref);
 			return false;
@@ -187,14 +200,14 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 		r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
 #endif
 		// TODO: insert and check return value, before adjusting sm size
-		if (!r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL)) {
+		if (!r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL)) {
 			free (sm);
 			free (bdsm);
 			free (mapref);
 			return false;
 		}
-		if (!r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL)) {
-			r_rbtree_cont_delete (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+		if (!r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL)) {
+			r_rbtree_cont_delete (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 			free (sm);
 			free (bdsm);
 			free (mapref);
@@ -214,7 +227,7 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 		//delete all submaps that are completly included in sm
 		RContRBNode *next = r_rbtree_cont_node_next (entry);
 		// this can be optimized, there is no need to do search here
-		r_rbtree_cont_delete (bank->submaps, entry->data, _find_sm_by_vaddr_cb, NULL);
+		r_rbtree_cont_delete (bank->submaps, entry->data, _find_sm_by_from_vaddr_cb, NULL);
 		entry = next;
 	}
 	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
@@ -226,7 +239,7 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 		r_io_submap_set_from (bd, r_io_submap_to (sm) + 1);
 #endif
 	}
-	if (!r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL)) {
+	if (!r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL)) {
 		free (sm);
 		free (mapref);
 		return false;
@@ -251,7 +264,7 @@ R_API bool r_io_bank_map_add_bottom(RIO *io, const ut32 bankid, const ut32 mapid
 	RContRBNode *entry = _find_entry_submap_node (bank, sm);
 	if (!entry) {
 		// no intersection with any submap, so just insert
-		if (!r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL)) {
+		if (!r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL)) {
 			free (sm);
 			free (mapref);
 			return false;
@@ -264,7 +277,7 @@ R_API bool r_io_bank_map_add_bottom(RIO *io, const ut32 bankid, const ut32 mapid
 		if (r_io_submap_from (sm) < r_io_submap_from (bd)) {
 			RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, sm);
 			r_io_submap_set_to (bdsm, r_io_submap_from (bd) - 1);
-			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL);
 		}
 		if (r_io_submap_to (sm) <= r_io_submap_to (bd)) {
 			r_list_prepend (bank->maprefs, mapref);
@@ -274,7 +287,7 @@ R_API bool r_io_bank_map_add_bottom(RIO *io, const ut32 bankid, const ut32 mapid
 		r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
 		entry = r_rbtree_cont_node_next (entry);
 	}
-	r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+	r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 	r_list_prepend (bank->maprefs, mapref);
 	return true;
 }
@@ -333,8 +346,8 @@ found:
 #endif
 		// TODO: insert and check return value, before adjusting sm size
 		r_list_iter_to_top (bank->maprefs, iter);
-		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL) &
-			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+		return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL) &
+			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL);
 	}
 
 	// bd overlaps by it's upper boundary with sm, due to how _find_entry_submap_node works
@@ -349,7 +362,7 @@ found:
 		//delete all submaps that are completly included in sm
 		RContRBNode *next = r_rbtree_cont_node_next (entry);
 		// this can be optimized, there is no need to do search here
-		r_rbtree_cont_delete (bank->submaps, entry->data, _find_sm_by_vaddr_cb, NULL);
+		r_rbtree_cont_delete (bank->submaps, entry->data, _find_sm_by_from_vaddr_cb, NULL);
 		entry = next;
 	}
 	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
@@ -362,7 +375,7 @@ found:
 #endif
 	}
 	r_list_iter_to_top (bank->maprefs, iter);
-	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+	return r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 }
 
 // deletes submaps that belong to a mapref with a specified priority from the submap tree of a bank.
@@ -381,7 +394,7 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 		RContRBNode *next = r_rbtree_cont_node_next (entry);
 		if (bd->mapref.id == fake_sm.mapref.id) {
 			r_queue_enqueue (bank->todo, R_NEWCOPY (RIOSubMap, bd));
-			r_rbtree_cont_delete (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+			r_rbtree_cont_delete (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
 		}
 		entry = next;
 		bd = entry ? (RIOSubMap *)entry->data : NULL;
@@ -416,7 +429,7 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 			if (r_io_submap_from (sm) >= r_io_map_from (map)) {
 				// case 4 and 2
 				r_io_submap_set_from (bd, r_io_submap_from (sm));
-				r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+				r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
 				if (r_io_submap_to (sm) <= r_io_map_to (map)) {
 					// case 2
 					r_io_submap_set_to (bd, r_io_submap_to (sm));
@@ -432,14 +445,14 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 				r_io_submap_set_to (bd, r_io_submap_to (sm));
 				// adjust sm upper boundary to avoid hitting again on sm in further iterations
 				r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
-				r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+				r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
 				continue;
 			}
 			// case 5 because all other cases are already handled
 			RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, sm);
 			r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
 			r_io_submap_set_from (bdsm, r_io_submap_to (bd) + 1);
-			r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+			r_rbtree_cont_insert (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
 			r_queue_enqueue (bank->todo, bdsm);
 		}
 		free (sm);
@@ -534,7 +547,7 @@ found:
 	RContRBNode *entry = _find_entry_submap_node (bank, sm);
 	if (!entry) {
 		// no intersection here, so just insert sm into the tree and we're done
-		r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+		r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 		// assumption here is that there is no need to check for return value of r_rbtree_cont_insert,
 		// since it only fails, if allocation fails and a delete was performed before, so it should just be fine
 		return true;
@@ -558,8 +571,8 @@ found:
 			r_io_submap_set_from (bdsm, r_io_submap_to (sm) + 1);
 			r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
 			// What do if this fails?
-			r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
-			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+			r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
+			r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL);
 			return true;
 		}
 		r_io_submap_set_to (bd, r_io_submap_from (sm) -1);
@@ -588,7 +601,7 @@ found:
 		// check if sm has higher priority than bd by comparing their maprefs
 		if (_mapref_priority_cmp (bank, &sm->mapref, &bd->mapref) == 1) {
 			// delete bd
-			r_rbtree_cont_delete (bank->submaps, bd, _find_sm_by_vaddr_cb, NULL);
+			r_rbtree_cont_delete (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
 		} else {
 			// _mapref_priority_cmp cannot return 0 in this scenario,
 			// since all submaps with the same mapref as sm were deleted from
@@ -597,7 +610,7 @@ found:
 			if (r_io_submap_from (sm) < r_io_submap_from (bd)) {
 				RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, sm);
 				r_io_submap_set_to (bdsm, r_io_submap_from (bd) - 1);
-				r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_vaddr_cb, NULL);
+				r_rbtree_cont_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL);
 			}
 			if (r_io_submap_to (sm) == r_io_submap_from (bd)) {
 				// in this case the size of sm would be 0,
@@ -609,7 +622,7 @@ found:
 		}
 	}
 	if (!entry) {
-		r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+		r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 		return true;
 	}
 	bd = (RIOSubMap *)entry->data;
@@ -617,13 +630,13 @@ found:
 		if (r_io_submap_from (bd) <= r_io_submap_to (sm)) {
 			r_io_submap_set_from (bd, r_io_submap_to (sm) + 1);
 		}
-		r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+		r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 	} else {
 		if (r_io_submap_from (sm) < r_io_submap_from (bd)) {
 			if (r_io_submap_to (sm) >= r_io_submap_from (bd)) {
 				r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
 			}
-			r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+			r_rbtree_cont_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 		} else {
 			// can this happen?
 			free (sm);
@@ -725,7 +738,21 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, i
 	return true;
 }
 
-R_API void r_io_bank_delete_map(RIO *io, const ut32 bankid, const ut32 mapid) {
+R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, ut64 addr) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	r_return_val_if_fail (io && bank, NULL);
+	RContRBNode *node = r_rbtree_cont_find_node (bank->submaps, &addr, _find_sm_by_vaddr_cb, NULL);
+	if (!node) {
+		return NULL;
+	}
+	RIOSubMap *sm = (RIOSubMap *)node->data;
+	if (!r_io_submap_contain (sm, addr)) {
+		return NULL;
+	}
+	return r_io_map_get_by_ref (io, &sm->mapref);
+}
+
+R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 	// no need to check for mapref here, since this is "just" deleting
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	RIOMap *map = r_io_map_get (io, mapid);
@@ -764,7 +791,7 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
 			RIOSubMap *sm = (RIOSubMap *)next->data;
 			if (!memcmp (&bd->mapref, &sm->mapref, sizeof (RIOMapRef))) {
 				r_io_submap_set_to (bd, r_io_submap_to (sm));
-				r_rbtree_cont_delete (bank->submaps, sm, _find_sm_by_vaddr_cb, NULL);
+				r_rbtree_cont_delete (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 				continue;
 			}
 		}
