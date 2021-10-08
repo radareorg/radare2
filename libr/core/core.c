@@ -1140,14 +1140,12 @@ static void autocomplete_mount_point(RLineCompletion *completion, RCore *core, c
 }
 
 static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const char *str, const char *path) {
+	r_return_if_fail (completion && core && str && path);
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
 	char *p = NULL;
 	char *pwd = (core->rfs && core->rfs->cwd && *(core->rfs->cwd)) ? *(core->rfs->cwd): ".";
 	int n = 0;
-	RList *list;
-	RListIter *iter;
 	RFSFile *file;
-	r_return_if_fail (path);
 	lpath = r_str_new (path);
 	p = (char *)r_str_last (lpath, R_SYS_DIR);
 	if (p) {
@@ -1178,10 +1176,11 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
 	if (!dirname || !basename) {
 		goto out;
 	}
-	list= r_fs_dir (core->fs, dirname);
+	RList *list = r_fs_dir (core->fs, dirname);
 	n = strlen (basename);
 	bool chgdir = !strncmp (str, "cd ", 3);
 	if (list) {
+		RListIter *iter;
 		r_list_foreach (list, iter, file) {
 			if (!file) {
 				continue;
@@ -1211,8 +1210,6 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
 	char *home = NULL, *filename = NULL, *p = NULL;
 	int n = 0;
-	RList *list;
-	RListIter *iter;
 
 	if (!path) {
 		goto out;
@@ -1260,10 +1257,11 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 		goto out;
 	}
 
-	list= r_sys_dir (dirname);
+	RList *list = r_sys_dir (dirname);
 	n = strlen (basename);
 	bool chgdir = !strncmp (str, "cd ", 3);
 	if (list) {
+		RListIter *iter;
 		r_list_foreach (list, iter, filename) {
 			if (*filename == '.') {
 				continue;

@@ -107,13 +107,26 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 			r_str_rwx_i (perm & 7),
 			uid, gid, sz, nn);
 	} else if (printfmt == FMT_JSON) {
-		//TODO PJ
 		if (nth > 0) {
 			res = r_str_append (res, ",");
 		}
-		res = r_str_appendf (res, "{\"name\":\"%s\",\"size\":%d,\"uid\":%d,"
-			"\"gid\":%d,\"perm\":%d,\"isdir\":%s}",
-			name, sz, uid, gid, perm, isdir? "true": "false");
+		PJ *pj = pj_new ();
+		pj_o (pj);
+		pj_ks (pj, "name", name);
+		pj_kn (pj, "size", sz);
+		pj_kn (pj, "uid", uid);
+		pj_kn (pj, "gid", gid);
+		pj_kn (pj, "perm", perm);
+		pj_ks (pj, "perm_root", r_str_rwx_i ((perm >> 6)&7));
+		pj_ks (pj, "perm_group", r_str_rwx_i ((perm >> 3)&7));
+		pj_ks (pj, "perm_other", r_str_rwx_i (perm & 7));
+		pj_kb (pj, "isdir", isdir);
+		pj_end (pj);
+		char *js = pj_drain (pj);
+		res = r_str_append (res, js);
+		free (js);
+	} else {
+		eprintf ("unknown format\n");
 	}
 	free (nn);
 	free (u_rwx);
