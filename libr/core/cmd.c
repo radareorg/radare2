@@ -1374,7 +1374,7 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 		if (r_fs_check (core->fs, arg)) {
 			r_core_cmdf (core, "md %s", arg);
 		} else {
-			char *res = r_syscmd_ls (arg);
+			char *res = r_syscmd_ls (input + 1);
 			if (res) {
 				r_cons_print (res);
 				free (res);

@@ -194,6 +194,7 @@ static const char *help_msg_di[] = {
 	"Usage: di", "", "Debugger target information",
 	"di", "", "Show debugger target information",
 	"di*", "", "Same as above, but in r2 commands",
+	"dir", "", "Alias for 'ls'",
 	"diq", "", "Same as above, but in one line",
 	"dij", "", "Same as above, but in JSON format",
 	"dif", " [$a] [$b]", "Compare two files (or $alias files)",
@@ -5186,7 +5187,9 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'i': // "di"
-		{
+		if (input[1] == 'r' ) { // "dir"
+			r_core_cmdf (core, "ls%s", input + 2);
+		} else {
 			RDebugInfo *rdi = r_debug_info (core->dbg, input + 2);
 			RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 			char *escaped_str;
