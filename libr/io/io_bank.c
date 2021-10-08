@@ -648,19 +648,27 @@ found:
 	return true;
 }
 
+// locates next available address for a map with given size and alignment starting at *addr
 R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr, ut64 load_align) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank && bank->submaps && addr && size, false);
-	RContRBNode *entry = r_rbtree_cont_first (bank->submaps);
-	if (!entry) {
-		// no submaps in this bank
-		*addr = 0LL;
-		return true;
-	}
 	if (load_align == 0LL) {
 		load_align = 1;
 	}
-	ut64 next_location = 0LL;
+	RIOSubMap fake_sm;
+	memset (&fake_sm, 0x00, sizeof(RIOSubMap));
+	fake_sm.itv.addr = *addr + (load_align - *addr % load_align) % load_align;
+	fake_sm.itv.size = size;
+	RContRBNode *entry = _find_entry_submap_node (bank, &fake_sm);
+	if (!entry) {
+		// no submaps in this bank
+		*addr = fake_sm.itv.addr;
+		return true;
+	}
+	// this is a bit meh: first iteration can never be successful,
+	// bc entry->sm will always intersect with fake_sm, if
+	// _find_entry_submap_node suceeded previously
+	ut64 next_location = fake_sm.itv.addr;
 	while (entry) {
 		RIOSubMap *sm = (RIOSubMap *)entry->data;
 		if (size <= r_io_submap_from (sm) - next_location) {
