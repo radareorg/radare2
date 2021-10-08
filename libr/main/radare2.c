@@ -909,9 +909,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (file && *file && *file != '.') {
 				complete_path = r_str_newf ("%s"R_SYS_DIR"%s", path, file);
 				if (r_str_endswith (complete_path, "gz")) {
-					r_sign_load_gz (r->anal, complete_path);
+					r_sign_load_gz (r->anal, complete_path, false);
 				} else {
-					r_sign_load (r->anal, complete_path);
+					r_sign_load (r->anal, complete_path, false);
 				}
 				free (complete_path);
 			}

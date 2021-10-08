@@ -608,9 +608,9 @@ static RSignItem *sign_get_sdb_item(RAnal *a, const char *key) {
 	return NULL;
 }
 
-static bool r_sign_set_item(Sdb *sdb, RSignItem *it, char *key_optional) {
+static bool r_sign_set_item(Sdb *sdb, RSignItem *it, const char *key_optional) {
 	bool retval = false;
-	char *key = NULL, *mykey = key_optional;
+	const char *key = NULL, *mykey = key_optional;
 	if (!mykey) {
 		key = mykey = item_serialize_key (it);
 	}
@@ -619,7 +619,7 @@ static bool r_sign_set_item(Sdb *sdb, RSignItem *it, char *key_optional) {
 		sdb_set (sdb, mykey, value, 0);
 		retval = true;
 	}
-	free (key);
+	free ((void *)key);
 	free (value);
 	return retval;
 }
@@ -920,8 +920,7 @@ static int fcn_sort(const void *va, const void *vb) {
 	return 0;
 }
 
-static char *get_unique_name(RAnal *a, const char *name) {
-	RSpace *sp = r_spaces_current (&a->zign_spaces);
+static char *get_unique_name(RAnal *a, const char *name, const RSpace *sp) {
 	char *key = space_serialize_key (sp, name);
 	if (!key) {
 		return NULL;
@@ -956,7 +955,8 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 		if (merge) {
 			it = item_from_func (a, fcni, fcni->name);
 		} else {
-			char *name = get_unique_name (a, fcni->name);
+			const RSpace *sp = r_spaces_current (&a->zign_spaces);
+			char *name = get_unique_name (a, fcni->name, sp);
 			if (name) {
 				it = item_from_func (a, fcni, name);
 				free (name);
@@ -2872,11 +2872,25 @@ R_API void r_sign_hash_free(RSignHash *hash) {
 	}
 }
 
+struct load_sign_data {
+	RAnal *anal;
+	bool merge;
+};
+
 static bool loadCB(void *user, const char *k, const char *v) {
-	RAnal *a = (RAnal *)user;
+	struct load_sign_data *u = (struct load_sign_data *)user;
+	RAnal *a = u->anal;
 	RSignItem *it = r_sign_item_new ();
 	if (it && r_sign_deserialize (a, it, k, v)) {
-		r_sign_set_item (a->sdb_zigns, it, NULL);
+		if (!u->merge) {
+			char *name = get_unique_name (a, it->name, it->space);
+			if (name) {
+				free (it->name);
+				it->name = name;
+				k = NULL;
+			}
+		}
+		r_sign_set_item (a->sdb_zigns, it, k);
 	} else {
 		eprintf ("error: cannot deserialize zign\n");
 	}
@@ -2920,7 +2934,7 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 	return NULL;
 }
 
-R_API bool r_sign_load(RAnal *a, const char *file) {
+R_API bool r_sign_load(RAnal *a, const char *file, bool merge) {
 	if (!a || !file) {
 		return false;
 	}
@@ -2935,14 +2949,15 @@ R_API bool r_sign_load(RAnal *a, const char *file) {
 		free (path);
 		return false;
 	}
-	sdb_foreach (db, loadCB, a);
+	struct load_sign_data u = { .anal = a, .merge = merge };
+	sdb_foreach (db, loadCB, &u);
 	sdb_close (db);
 	sdb_free (db);
 	free (path);
 	return true;
 }
 
-R_API bool r_sign_load_gz(RAnal *a, const char *filename) {
+R_API bool r_sign_load_gz(RAnal *a, const char *filename, bool merge) {
 	ut8 *buf = NULL;
 	int size = 0;
 	char *tmpfile = NULL;
@@ -2973,7 +2988,7 @@ R_API bool r_sign_load_gz(RAnal *a, const char *filename) {
 		goto out;
 	}
 
-	if (!r_sign_load (a, tmpfile)) {
+	if (!r_sign_load (a, tmpfile, merge)) {
 		eprintf ("error: cannot load file\n");
 		retval = false;
 		goto out;

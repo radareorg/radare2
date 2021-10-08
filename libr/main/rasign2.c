@@ -90,8 +90,11 @@ static int handle_sdb(const char *fname, struct rasignconf *conf) {
 	int ret = -1;
 	// can't use RAnal here because JSON output requires core, in a sneaky way
 	RCore *core = r_core_new ();
-	if (core && r_sign_load (core->anal, fname)) {
-		r_config_set_b (core->config, "scr.interactive", false);
+	r_config_set_b (core->config, "scr.interactive", false);
+	if (conf->ofile && r_file_exists (conf->ofile)) {
+		r_sign_load (core->anal, conf->ofile, true);
+	}
+	if (core && r_sign_load (core->anal, fname, false)) {
 		if (conf->collision) {
 			r_sign_resolve_collisions (core->anal);
 		}
@@ -115,7 +118,7 @@ static int signs_from_file(const char *fname, struct rasignconf *conf) {
 		r_spaces_set (&core->anal->zign_spaces, conf->space);
 	}
 	if (conf->ofile && r_file_exists (conf->ofile)) {
-		r_sign_load (core->anal, conf->ofile);
+		r_sign_load (core->anal, conf->ofile, true);
 	}
 
 	// run analysis to find functions
@@ -209,7 +212,7 @@ static int handle_archive_files(const char *fname, struct rasignconf *conf) {
 		eprintf ("Computing collisions on sdb file\n");
 		RAnal *anal = r_anal_new ();
 		if (anal) {
-			r_sign_load (anal, conf->ofile);
+			r_sign_load (anal, conf->ofile, true);
 			r_sign_resolve_collisions (anal);
 			int tmpret = r_sign_save (anal, conf->ofile);
 			r_anal_free (anal);
