@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2020 - pancake */
+/* radare2 - LGPL - Copyright 2009-2021 - pancake */
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -352,7 +352,7 @@ static int cmd_eval(void *data, const char *input) {
 			eprintf ("Usage: et [varname]  ; show type of eval var\n");
 		}
 		break;
-	case 'n': // "en"
+	case 'n': // "en" "env"
 		if (!strchr (input, '=')) {
 			char *var, *p;
 			var = strchr (input, ' ');
@@ -370,12 +370,19 @@ static int cmd_eval(void *data, const char *input) {
 			}
 		} else if (strlen (input) > 3) {
 			char *v, *k = strdup (input + 3);
-			if (!k) break;
+			if (!k) {
+				break;
+			}
 			v = strchr (k, '=');
-			if (v) {
+			if (*k && v) {
 				*v++ = 0;
 				r_str_trim (k);
 				r_str_trim (v);
+				char *last = k + strlen (k) - 1;
+				if (*last == '%') {
+					*last = 0;
+					r_str_trim (k);
+				}
 				r_sys_setenv (k, v);
 			}
 			free (k);

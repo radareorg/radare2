@@ -3949,8 +3949,17 @@ repeat_arroba:
 			char *v = strchr (k, '=');
 			if (v) {
 				*v++ = 0;
-				r_sys_setenv (k, v);
-				r_list_append (tmpenvs, k);
+				r_str_trim (k);
+				r_str_trim (v);
+				if (*k) {
+					char *last = k + strlen (k) - 1;
+					if (*last == '%') {
+						*last = 0;
+						r_str_trim (k);
+					}
+					r_sys_setenv (k, v);
+					r_list_append (tmpenvs, k);
+				} 
 			} else {
 				free (k);
 			}
