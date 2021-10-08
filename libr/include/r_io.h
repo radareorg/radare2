@@ -348,7 +348,6 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
 
 // next free address to place a map.. maybe just unify
 R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_align);
-R_API ut64 r_io_map_next_address(RIO* io, ut64 addr);
 
 // p2v/v2p
 

@@ -339,7 +339,6 @@ R_API void r_io_map_del_name(RIOMap* map) {
 	R_FREE (map->name);
 }
 
-// TODO: very similar to r_io_map_next_address, decide which one to use
 R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_align) {
 	r_return_val_if_fail (io, UT64_MAX);
 	if (load_align == 0) {
@@ -365,25 +364,6 @@ R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_alig
 		break;
 	}
 	return next_addr;
-}
-
-// TODO: very similar to r_io_map_next_available. decide which one to use
-R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
-	r_return_val_if_fail (io, UT64_MAX);
-	ut64 lowest = UT64_MAX;
-	void **it;
-	r_pvector_foreach (&io->maps, it) {
-		RIOMap *map = *it;
-		ut64 from = r_io_map_begin (map);
-		if (from > addr && addr < lowest) {
-			lowest = from;
-		}
-		ut64 to = r_io_map_end (map);
-		if (to > addr && to < lowest) {
-			lowest = to;
-		}
-	}
-	return lowest;
 }
 
 R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
