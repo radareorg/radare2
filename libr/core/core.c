@@ -1158,9 +1158,9 @@ static void autocomplete_ms_path(RLineCompletion *completion, RCore *core, const
       			dirname = r_str_newf ("%s%s", lpath, R_SYS_DIR);
     		} else { // xxx/yyy
       			if (strlen (pwd) == 1) { // if pwd is root
-        			dirname = r_str_newf ("%s%s%s", R_SYS_DIR, lpath, R_SYS_DIR);
+				dirname = r_file_new ("", lpath, NULL);
       			} else {
-				dirname = r_str_newf ("%s%s%s%s", pwd, R_SYS_DIR, lpath, R_SYS_DIR);
+				dirname = r_file_new (pwd, lpath, NULL);
       			}
 		}
 		basename = r_str_new (p + 1);

@@ -5,11 +5,11 @@
 
 #define FMT_NONE 0
 #define FMT_RAW  1
-#define FMT_JSON 2
+#define FMT_JSON 'j'
+#define FMT_QUIET 'q'
+#define FMT_EMOJI 'e'
 
-static int needs_newline = 0;
-
-static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt) {
+static char *showfile(char *res, const int nth, const char *fpath, const char *name, int printfmt, bool needs_newline) {
 #if __UNIX__
 	struct stat sb;
 #endif
@@ -33,8 +33,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	}
 	perm = isdir? 0755: 0644;
 	if (!printfmt) {
-		needs_newline = ((nth + 1) % 4)? 1: 0;
-		res = r_str_appendf (res, "%18s%s", nn, needs_newline? "  ": "\n");
+		res = r_str_appendf (res, "%18s%s", nn, needs_newline? "\n": "  ");
 		free (nn);
 		return res;
 	}
@@ -74,9 +73,9 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	u_rwx = strdup ("-");
 	fch = isdir? 'd': '-';
 #endif
-	if (printfmt == 'q') {
+	if (printfmt == FMT_QUIET) {
 		res = r_str_appendf (res, "%s\n", nn);
-	} else if (printfmt == 'e') {
+	} else if (printfmt == FMT_EMOJI) {
 		const char *eDIR = "📁";
 		const char *eIMG = "🌅";
 		const char *eHID = "👀";
@@ -134,7 +133,7 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 }
 
 // TODO: Move into r_util .. r_print maybe? r_cons dep is annoying
-R_API char *r_syscmd_ls(const char *input) {
+R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	char *res = NULL;
 	const char *path = ".";
 	char *d = NULL;
@@ -150,8 +149,16 @@ R_API char *r_syscmd_ls(const char *input) {
 		input = "";
 		path = ".";
 	}
-	if (*input == 'q') {
-		printfmt = 'q';
+	if (*input == '?') {
+		input = "-h";
+	} else if (*input == 'e') {
+		printfmt = FMT_EMOJI;
+		input++;
+	} else if (*input == 'j') {
+		printfmt = FMT_JSON;
+		input++;
+	} else if (*input == 'q') {
+		printfmt = FMT_QUIET;
 		input++;
 	}
 	if (r_sandbox_enable (0)) {
@@ -167,10 +174,10 @@ R_API char *r_syscmd_ls(const char *input) {
 			return NULL;
 		}
 		if ((!strncmp (input, "-e", 2))) {
-			printfmt = 'e';
+			printfmt = FMT_EMOJI;
 			path = r_str_trim_head_ro (path + 1);
 		} else if ((!strncmp (input, "-q", 2))) {
-			printfmt = 'q';
+			printfmt = FMT_QUIET;
 			path = r_str_trim_head_ro (path + 1);
 		} else if ((!strncmp (input, "-l", 2)) || (!strncmp (input, "-j", 2))) {
 			// mode = 'l';
@@ -222,7 +229,7 @@ R_API char *r_syscmd_ls(const char *input) {
 		pattern = strdup ("*");
 	}
 	if (r_file_is_regular (path)) {
-		res = showfile (res, 0, path, path, printfmt);
+		res = showfile (res, 0, path, path, printfmt, false);
 		free (homepath);
 		free (pattern);
 		free (d);
@@ -240,7 +247,8 @@ R_API char *r_syscmd_ls(const char *input) {
 	if (printfmt == FMT_JSON) {
 		res = strdup ("[");
 	}
-	needs_newline = 0;
+	bool needs_newline = false;
+	int linelen = 0;
 	r_list_foreach (files, iter, name) {
 		char *n = r_str_append (strdup (dir), name);
 		if (!n) {
@@ -248,7 +256,16 @@ R_API char *r_syscmd_ls(const char *input) {
 		}
 		if (r_str_glob (name, pattern)) {
 			if (*n) {
-				res = showfile (res, nth, n, name, printfmt);
+				int namelen = strlen (name);
+				linelen += (namelen > 20)? namelen*2: 32;
+				if (linelen > cons_width) {
+					needs_newline = true;
+				}
+				res = showfile (res, nth, n, name, printfmt, needs_newline);
+				if (needs_newline) {
+					needs_newline = false;
+					linelen = 0;
+				}
 			}
 			nth++;
 		}
@@ -256,9 +273,13 @@ R_API char *r_syscmd_ls(const char *input) {
 	}
 	if (printfmt == FMT_JSON) {
 		res = r_str_append (res, "]");
-	}
-	if (needs_newline) {
-		res = r_str_append (res, "\n");
+	} else {
+		if (res) {
+			char * last = res + strlen (res) - 1;
+			if (*last != '\n') {
+				res = r_str_append (res, "\n");
+			}
+		}
 	}
 	free (dir);
 	free (d);

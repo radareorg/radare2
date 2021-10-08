@@ -1349,7 +1349,8 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 	case 'l':
 		{
 			char *carg = r_str_newf ("-l%s", r_str_get (arg));
-			char *res = r_syscmd_ls (carg);
+			int w = r_cons_get_size (NULL) - 8;
+			char *res = r_syscmd_ls (carg, w);
 			if (res) {
 				r_cons_print (res);
 				free (res);
@@ -1374,7 +1375,8 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 		if (r_fs_check (core->fs, arg)) {
 			r_core_cmdf (core, "md %s", arg);
 		} else {
-			char *res = r_syscmd_ls (input + 1);
+			int w = r_cons_get_size (NULL) - 8;
+			char *res = r_syscmd_ls (input + 1, w);
 			if (res) {
 				r_cons_print (res);
 				free (res);
