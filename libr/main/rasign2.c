@@ -94,7 +94,7 @@ static int handle_sdb(const char *fname, struct rasignconf *conf) {
 	if (conf->ofile && r_file_exists (conf->ofile)) {
 		r_sign_load (core->anal, conf->ofile, true);
 	}
-	if (core && r_sign_load (core->anal, fname, false)) {
+	if (core && r_sign_load (core->anal, fname, conf->merge)) {
 		if (conf->collision) {
 			r_sign_resolve_collisions (core->anal);
 		}

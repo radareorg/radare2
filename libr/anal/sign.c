@@ -2885,7 +2885,11 @@ static bool loadCB(void *user, const char *k, const char *v) {
 		if (!u->merge) {
 			char *name = get_unique_name (a, it->name, it->space);
 			if (name) {
-				free (it->name);
+				if (!it->realname) {
+					it->realname = it->name;
+				} else {
+					free (it->name);
+				}
 				it->name = name;
 				k = NULL;
 			}
