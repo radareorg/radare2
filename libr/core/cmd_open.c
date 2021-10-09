@@ -700,11 +700,6 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 				r_pvector_foreach_prev (&core->io->maps, it) {
 					RIOMap *map = *it;
 					r_io_bank_map_add_top (core->io, core->io->bank, map->id);
-					ut64 from = r_io_map_from (map);
-					ut64 to = r_io_map_to (map);
-					r_io_bank_update_map_boundaries(core->io, core->io->bank,
-						map->id, from, to);
-					break;
 				}
 			}
 			break;
