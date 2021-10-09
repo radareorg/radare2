@@ -32,6 +32,7 @@ static const char *help_detail_tilde[] = {
 	" ?",        "", "count number of matching lines",
 	" ?.",       "", "count number chars",
 	" ??",       "", "show this help message",
+	" ?ea",      "", "convert text into seven segment style ascii art",
 	" :s..e",    "", "show lines s-e",
 	" ..",       "", "internal 'less'",
 	" ...",      "", "internal 'hud' (like V_)",
@@ -197,7 +198,7 @@ static void parse_grep_expression(const char *str) {
 			case '+':
 				if (first) {
 					ptr++;
-					grep->icase = 1;
+					grep->icase = true;
 				} else {
 					goto while_end;
 				}
@@ -216,6 +217,9 @@ static void parse_grep_expression(const char *str) {
 				if (*ptr == '.') {
 					grep->charCounter = true;
 					ptr++;
+				} else if (!strcmp (ptr, "ea")) {
+					// "?ea"
+					grep->ascart = true;
 				} else if (*ptr == '?') {
 					cons->context->filter = true;
 					r_cons_grep_help ();
@@ -506,7 +510,16 @@ R_API void r_cons_grepbuf(void) {
 		grep->hud = 0;
 		return;
 	}
-
+	if (grep->ascart) {
+		char *buf = strdup (cons->context->buffer);
+		r_str_ansi_filter (buf, NULL, NULL, -1);
+		char *out = r_str_ss (buf);
+		free (cons->context->buffer);
+		cons->context->buffer = out;
+		cons->context->buffer_len = strlen (out);
+		cons->context->buffer_sz = cons->context->buffer_len;
+		return;
+	}
 	if (grep->zoom) {
 		char *in = calloc (cons->context->buffer_len + 2, 4);
 		strcpy (in, cons->context->buffer);
