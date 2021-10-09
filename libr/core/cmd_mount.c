@@ -63,6 +63,13 @@ static void cmd_mount_ls (RCore *core, const char *input) {
 	RFSFile *file;
 	RFSRoot *root;
 	input = r_str_trim_head_ro (input + isJSON);
+	if (r_str_startswith (input, "base64:")) {
+		const char *encoded = input + 7;
+		char *decoded = (char *)sdb_decode (encoded, NULL);
+		if (decoded) {
+			input = decoded;
+		}
+	}
 	RList *list = r_fs_dir (core->fs, input);
 	PJ *pj = NULL;
 	if (isJSON) {
