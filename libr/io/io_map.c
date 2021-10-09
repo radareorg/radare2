@@ -193,10 +193,20 @@ R_API bool r_io_map_del(RIO *io, ut32 id) {
 	for (i = 0; i < r_pvector_len (&io->maps); i++) {
 		RIOMap *map = r_pvector_at (&io->maps, i);
 		if (map->id == id) {
+			if (io->use_banks) {
+				ut32 bankid;
+				r_return_val_if_fail (r_id_storage_get_lowest (io->banks, &bankid), false);
+				do {
+					// TODO: use threads for every bank, except the current bank (io->bank)
+					r_io_bank_del_map (io, bankid, id);
+				} while (r_id_storage_get_next (io->banks, &bankid));
+			}
 			r_pvector_remove_at (&io->maps, i);
 			_map_free (map);
 			r_id_pool_kick_id (io->map_ids, id);
-			io_map_calculate_skyline (io);
+			if (!io->use_banks) {
+				io_map_calculate_skyline (io);
+			}
 			return true;
 		}
 	}
