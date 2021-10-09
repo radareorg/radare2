@@ -333,7 +333,7 @@ R_API void r_io_update(RIO *io);
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
 R_API RIOMap *r_io_map_get_paddr(RIO *io, ut64 paddr);		//returns the map at paddr with the highest priority
 R_API void r_io_map_reset(RIO* io);
-R_API bool r_io_map_del(RIO *io, ut32 id);
+R_API void r_io_map_del(RIO *io, ut32 id);
 R_API bool r_io_map_del_for_fd(RIO *io, int fd);
 R_API bool r_io_map_depriorize(RIO* io, ut32 id);
 R_API bool r_io_map_priorize(RIO *io, ut32 id);
