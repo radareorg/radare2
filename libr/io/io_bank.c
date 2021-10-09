@@ -770,7 +770,7 @@ R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, ut64 addr) {
 R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 	// no need to check for mapref here, since this is "just" deleting
 	RIOBank *bank = r_io_bank_get (io, bankid);
-	RIOMap *map = r_io_map_get (io, mapid);
+	RIOMap *map = r_io_map_get (io, mapid);	//is this needed?
 	r_return_if_fail (bank && map);
 	RListIter *iter;
 	RIOMapRef *mapref = NULL;
