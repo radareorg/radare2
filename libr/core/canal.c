@@ -5597,8 +5597,8 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 		bool res = r_io_read_at_mapped (core->io, from, buf, size);
 		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4) || !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 			if (!isValidAddress (core, from)) {
-				ut64 next = r_io_map_next_available (core->io, from, 1, 0);
-				if (next == UT64_MAX) {
+				ut64 next = from;
+				if (!r_io_map_locate (core->io, &next, 1, 0)) {
 					from += sizeof (buf);
 				} else {
 					from += (next - from);
