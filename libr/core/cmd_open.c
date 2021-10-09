@@ -697,7 +697,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		case 'g': // "ombg"
 			{
 				void **it;
-				r_pvector_foreach_prev (&core->io->maps, it) {
+				r_pvector_foreach (&core->io->maps, it) {
 					RIOMap *map = *it;
 					r_io_bank_map_add_top (core->io, core->io->bank, map->id);
 				}
