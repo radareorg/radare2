@@ -134,7 +134,7 @@ R_API RIOMap* r_io_map_get(RIO *io, ut32 id) {
 	return NULL;
 }
 
-RIOMap* io_map_add(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
+R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
 	//check if desc exists
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
@@ -145,16 +145,10 @@ RIOMap* io_map_add(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) 
 	return NULL;
 }
 
-R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	return io_map_add (io, fd, perm, delta, addr, size);
-}
-
-R_API RIOMap *r_io_map_add_batch(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	return io_map_add (io, fd, perm, delta, addr, size);
-}
-
 R_API void r_io_update(RIO *io) {
-	io_map_calculate_skyline (io);
+	if (io && !io->use_banks) {
+		io_map_calculate_skyline (io);
+	}
 }
 
 R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {

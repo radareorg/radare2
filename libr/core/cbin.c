@@ -2607,7 +2607,7 @@ static bool io_create_mem_map(RIO *io, RBinSection *sec, ut64 at) {
 	if (desc) {
 		RIOMap *map = r_io_map_get_at (io, at);
 		if (!map) {
-			r_io_map_add_batch (io, desc->fd, desc->perm, 0LL, at, gap);
+			r_io_map_add (io, desc->fd, desc->perm, 0LL, at, gap);
 		}
 		reused = true;
 	}
@@ -2661,7 +2661,7 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 		perm |= R_PERM_X;
 	}
 
-	RIOMap *map = r_io_map_add_batch (core->io, fd, perm, sec->paddr, addr, size);
+	RIOMap *map = r_io_map_add (core->io, fd, perm, sec->paddr, addr, size);
 	if (!map) {
 		free (map_name);
 		return;
