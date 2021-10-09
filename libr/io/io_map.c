@@ -339,13 +339,16 @@ R_API void r_io_map_del_name(RIOMap* map) {
 	R_FREE (map->name);
 }
 
-R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_align) {
-	r_return_val_if_fail (io, UT64_MAX);
+R_API bool r_io_map_locate(RIO *io, ut64 *addr, const ut64 size, ut64 load_align) {
+	r_return_val_if_fail (io, false);
 	if (load_align == 0) {
 		load_align = 1;
 	}
-	ut64 next_addr = addr,
-	end_addr = next_addr + size;
+	if (io->use_banks) {
+		return r_io_bank_locate (io, io->bank, addr, size, load_align);
+	}
+	ut64 next_addr = *addr;
+	ut64 end_addr = next_addr + size;
 	void **it;
 	r_pvector_foreach (&io->maps, it) {
 		RIOMap *map = *it;
@@ -356,14 +359,17 @@ R_API ut64 r_io_map_next_available(RIO* io, ut64 addr, ut64 size, ut64 load_alig
 		// memory mapping with multiple files. infinite loop ahead?
 		if ((r_io_map_begin (map) <= next_addr && next_addr < to) || r_io_map_contain (map, end_addr)) {
 			next_addr = to + (load_align - (to % load_align)) % load_align;
-			if (next_addr == addr) {
-				return UT64_MAX;
+			if (next_addr == *addr) {
+				return false;
 			}
-			return r_io_map_next_available (io, next_addr, size, load_align);
+			*addr = next_addr;
+			return r_io_map_locate (io, addr, size, load_align);
 		}
+		// wtf is this garbage
 		break;
 	}
-	return next_addr;
+	*addr = next_addr;
+	return true;
 }
 
 R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {

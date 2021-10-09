@@ -649,7 +649,7 @@ found:
 }
 
 // locates next available address for a map with given size and alignment starting at *addr
-R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, const ut64 size, ut64 *addr, ut64 load_align) {
+R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 size, ut64 load_align) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank && bank->submaps && addr && size, false);
 	if (load_align == 0LL) {
