@@ -24,7 +24,7 @@ static void io_map_calculate_skyline(RIO *io) {
 	}
 }
 
-RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
+R_API RIOMap *r_io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
 	r_return_val_if_fail (io && io->map_ids, NULL);
 	if (!size) {
 		return NULL;
@@ -39,7 +39,7 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) 
 	map->delta = delta;
 	map->ts = io->mts++;
 	if ((UT64_MAX - size + 1) < addr) {
-		io_map_new (io, fd, perm, delta - addr, 0LL, size + addr);
+		r_io_map_new (io, fd, perm, delta - addr, 0LL, size + addr);
 		size = -(st64)addr;
 	}
 	// RIOMap describes an interval of addresses
@@ -49,12 +49,16 @@ RIOMap* io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) 
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
 	r_pvector_push (&io->maps, map);
-	r_skyline_add (&io->map_skyline, map->itv, map);
+	if (io->use_banks) {
+		if (!r_io_bank_map_add_top (io, io->bank, map->id)) {
+			r_id_pool_kick_id (io->map_ids, map->id);
+			free (map);
+			return NULL;
+		}
+	} else {
+		r_skyline_add (&io->map_skyline, map->itv, map);
+	}
 	return map;
-}
-
-R_API RIOMap *r_io_map_new(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	return io_map_new (io, fd, perm, delta, addr, size);
 }
 
 R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
@@ -139,7 +143,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
-		return io_map_new (io, fd, (perm & desc->perm) | (perm & R_PERM_X),
+		return r_io_map_new (io, fd, (perm & desc->perm) | (perm & R_PERM_X),
 				delta, addr, size);
 	}
 	return NULL;
