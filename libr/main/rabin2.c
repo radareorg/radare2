@@ -1082,8 +1082,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 
-	RBinOptions bo;
-	r_bin_options_init (&bo, fd, baddr, laddr, rawstr);
+	RBinFileOptions bo;
+	r_bin_file_options_init (&bo, fd, baddr, laddr, rawstr);
 	bo.xtr_idx = xtr_idx;
 
 	if (!r_bin_open (bin, file, &bo)) {

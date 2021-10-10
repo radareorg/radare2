@@ -300,12 +300,15 @@ typedef struct r_bin_file_t {
 } RBinFile;
 
 typedef struct r_bin_file_options_t {
+	const char *pluginname;
+	ut64 baseaddr; // where the linker maps the binary in memory
+	ut64 loadaddr; // starting physical address to read from the target file
+	// ut64 paddr; // offset
+	ut64 sz;
+	int xtr_idx; // load Nth binary
 	int rawstr;
-	ut64 baddr; // base address
-	ut64 laddr; // load address
-	ut64 paddr; // offset
-	const char *plugname; // force a plugin? why do i need this?
-	// const char *xtrname;
+	int fd;
+	const char *filename;
 } RBinFileOptions;
 
 struct r_bin_t {
@@ -655,31 +658,20 @@ R_API void r_bin_string_free(void *_str);
 
 #ifdef R_API
 
-typedef struct r_bin_options_t {
-	const char *pluginname;
-	ut64 baseaddr; // where the linker maps the binary in memory
-	ut64 loadaddr; // starting physical address to read from the target file
-	ut64 sz;
-	int xtr_idx; // load Nth binary
-	int rawstr;
-	int fd;
-	const char *filename;
-} RBinOptions;
-
 R_API RBinImport *r_bin_import_clone(RBinImport *o);
 R_API const char *r_bin_symbol_name(RBinSymbol *s);
 typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 
 // options functions
-R_API void r_bin_options_init(RBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr);
+R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr);
 R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int bits);
 
 // open/close/reload functions
 R_API RBin *r_bin_new(void);
 R_API void r_bin_free(RBin *bin);
-R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt);
-R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt);
-R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt);
+R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt);
+R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt);
+R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt);
 R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
 
 // plugins/bind functions

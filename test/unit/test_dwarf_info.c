@@ -56,7 +56,7 @@ bool test_dwarf3_c(void) {
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinOptions opt = { 0 };
+	RBinFileOptions opt = { 0 };
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert ("dwarf3_c.elf binary could not be opened", res);
 
@@ -119,7 +119,7 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinOptions opt = { 0 };
+	RBinFileOptions opt = { 0 };
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
 
@@ -329,7 +329,7 @@ bool test_dwarf2_big_endian(void) {
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinOptions opt = { 0 };
+	RBinFileOptions opt = { 0 };
 	bool res = r_bin_open (bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
 

@@ -9,7 +9,7 @@ bool test_r_bin(void) {
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinOptions opt = {0};
+	RBinFileOptions opt = { 0 };
 	bool res = r_bin_open (bin, "bins/elf/ioli/crackme0x00", &opt);
 	mu_assert ("crackme0x00 binary could not be opened", res);
 
