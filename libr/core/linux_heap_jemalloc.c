@@ -39,8 +39,8 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 		return GHT_MAX;
 	}
 
-	RBinOptions opt;
-	r_bin_options_init (&opt, -1, 0, 0, false);
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	if (r_bin_open (core->bin, path, &opt)) {
 		RList *syms = r_bin_get_symbols (core->bin);
 		if (!syms) {
@@ -60,8 +60,8 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 #else
 static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
 	GHT vaddr = GHT_MAX;
-	RBinOptions opt = {0};
-	r_bin_options_init (&opt, -1, 0, 0, false);
+	RBinFileOptions opt = { 0 };
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	RBinSymbol *s;
 	RListIter *iter;
 	RBinFile *current_bf = r_bin_cur (core->bin);

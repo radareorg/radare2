@@ -296,7 +296,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 		eprintf ("Invalid char found in filename\n");
 		return false;
 	}
-	RBinOptions opt = { 0 };
+	RBinFileOptions opt = { 0 };
 	r_bin_open (core->bin, file, &opt);
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf) {

@@ -1448,7 +1448,7 @@ static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, PJ *pj, i
 	if ((fd = r_io_fd_open (core->io, file, R_PERM_R, 0)) == -1) {
 		return false;
 	}
-	RBinOptions opt = { 0 };
+	RBinFileOptions opt = { 0 };
 	opt.fd = fd;
 	opt.sz = r_io_fd_size (core->io, fd);
 	opt.baseaddr = baseaddr;

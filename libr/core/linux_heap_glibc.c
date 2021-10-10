@@ -43,8 +43,8 @@ static GHT GH(get_va_symbol)(RCore *core, const char *path, const char *sym_name
 	RListIter *iter;
 	RBinSymbol *s;
 
-	RBinOptions opt;
-	r_bin_options_init (&opt, -1, 0, 0, false);
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	bool res = r_bin_open (bin, path, &opt);
 	if (!res) {
 		return vaddr;

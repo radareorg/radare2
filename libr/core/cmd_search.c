@@ -286,7 +286,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 		if (plug) {
 			r_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->name);
 			if (plug->size) {
-				RBinOptions opt = {
+				RBinFileOptions opt = {
 					.pluginname = plug->name,
 					.baseaddr = 0,
 					.loadaddr = 0,

@@ -105,7 +105,7 @@ R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 	return r_bin_file_get_strings (bf, min, 1, raw);
 }
 
-R_API void r_bin_options_init(RBinOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
+R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
 	memset (opt, 0, sizeof (*opt));
 	opt->baseaddr = baseaddr;
 	opt->loadaddr = loadaddr;
@@ -215,7 +215,7 @@ R_API void r_bin_string_free(void *_str) {
 // kinda a clunky functions
 // XXX - this is a rather hacky way to do things, there may need to be a better
 // way.
-R_API bool r_bin_open(RBin *bin, const char *file, RBinOptions *opt) {
+R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt) {
 	r_return_val_if_fail (bin && bin->iob.io && opt, false);
 
 	RIOBind *iob = &(bin->iob);
@@ -239,8 +239,8 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 		eprintf ("r_bin_reload: No file to reopen\n");
 		return false;
 	}
-	RBinOptions opt;
-	r_bin_options_init (&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, bf->fd, baseaddr, bf->loadaddr, bin->rawstr);
 	opt.filename = bf->file;
 
 	bool res = r_bin_open_buf (bin, bf->buf, &opt);
@@ -248,7 +248,7 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 	return res;
 }
 
-R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt) {
+R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 	r_return_val_if_fail (bin && opt, false);
 
 	RListIter *it;
@@ -296,7 +296,7 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinOptions *opt) {
 	return true;
 }
 
-R_API bool r_bin_open_io(RBin *bin, RBinOptions *opt) {
+R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	r_return_val_if_fail (bin && opt && bin->iob.io, false);
 	r_return_val_if_fail (opt->fd >= 0 && (st64)opt->sz >= 0, false);
 
