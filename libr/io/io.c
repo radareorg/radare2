@@ -109,6 +109,12 @@ R_API RIO* r_io_init(RIO* io) {
 	io->cb_printf = printf; // r_cons_printf;
 	r_io_desc_init (io);
 	r_io_bank_init (io);
+	r_skyline_init (&io->map_skyline);
+	r_io_map_init (io);
+	r_io_cache_init (io);
+	r_io_plugin_init (io);
+	r_io_undo_init (io);
+	io->event = r_event_new (io);
 	RIOBank *bank = r_io_bank_new ("default");
 	if (bank) {
 		io->bank = bank->id;
@@ -119,12 +125,6 @@ R_API RIO* r_io_init(RIO* io) {
 			r_io_bank_map_add_top (io, bank->id, map->id);
 		}
 	}
-	r_skyline_init (&io->map_skyline);
-	r_io_map_init (io);
-	r_io_cache_init (io);
-	r_io_plugin_init (io);
-	r_io_undo_init (io);
-	io->event = r_event_new (io);
 	return io;
 }
 
