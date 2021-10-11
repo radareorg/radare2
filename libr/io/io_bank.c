@@ -780,6 +780,7 @@ R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 		if (mapref->id == map->id) {
 			_delete_submaps_from_bank_tree (io, bank, iter, map);
 			r_list_delete (bank->maprefs, iter);
+			break;
 		}
 	}
 	// map is not referenced by this bank; nothing to do
