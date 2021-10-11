@@ -141,8 +141,8 @@ R_API bool r_sign_resolve_collisions(RAnal *a);
 R_API int r_sign_metric_search(RAnal *a, RSignSearchMetrics *sm);
 R_API int r_sign_fcn_match_metrics(RSignSearchMetrics *sm, RAnalFunction *fcn);
 
-R_API bool r_sign_load(RAnal *a, const char *file);
-R_API bool r_sign_load_gz(RAnal *a, const char *filename);
+R_API bool r_sign_load(RAnal *a, const char *file, bool merge);
+R_API bool r_sign_load_gz(RAnal *a, const char *filename, bool merge);
 R_API char *r_sign_path(RAnal *a, const char *file);
 R_API bool r_sign_save(RAnal *a, const char *file);
 

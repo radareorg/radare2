@@ -607,7 +607,6 @@ static RSignItem *sign_get_sdb_item(RAnal *a, const char *key) {
 	}
 	return NULL;
 }
-
 static bool r_sign_set_item(Sdb *sdb, RSignItem *it, char *key_optional) {
 	bool retval = false;
 	char *key = NULL, *mykey = key_optional;
@@ -920,25 +919,26 @@ static int fcn_sort(const void *va, const void *vb) {
 	return 0;
 }
 
-static char *get_unique_name(RAnal *a, const char *name) {
-	RSpace *sp = r_spaces_current (&a->zign_spaces);
-	char *key = space_serialize_key (sp, name);
-	if (!key) {
-		return NULL;
+static bool name_exists(Sdb *sdb, const char *n, const RSpace *sp) {
+	char *key = space_serialize_key (sp, n);
+	bool exist = false;
+	if (key) {
+		exist = sdb_exists (sdb, key);
+		free (key);
 	}
+	return exist;
+}
 
-	int count = 2;
-	char *unique = strdup (name);
-	while (sdb_exists (a->sdb_zigns, key)) {
-		free (unique);
-		unique = r_str_newf ("%s_%d", name, count);
-		if ((key = space_serialize_key (sp, unique)) == NULL) {
-			break;
+static char *get_unique_name(Sdb *sdb, const char *name, const RSpace *sp) {
+	ut32 i;
+	for (i = 2; i < UT32_MAX; i++) {
+		char *unique = r_str_newf ("%s_%d", name, i);
+		if (!unique || !name_exists (sdb, unique, sp)) {
+			return unique;
 		}
-		count++;
+		free (unique);
 	}
-	free (key);
-	return unique;
+	return NULL;
 }
 
 R_API int r_sign_all_functions(RAnal *a, bool merge) {
@@ -946,6 +946,7 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 	RListIter *iter = NULL;
 	int count = 0;
 	r_list_sort (a->fcns, fcn_sort);
+	const RSpace *sp = r_spaces_current (&a->zign_spaces);
 	char *prev_name = NULL;
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach_prev (a->fcns, iter, fcni) {
@@ -953,14 +954,14 @@ R_API int r_sign_all_functions(RAnal *a, bool merge) {
 			break;
 		}
 		RSignItem *it = NULL;
-		if (merge) {
+		if (merge || !name_exists (a->sdb_zigns, fcni->name, sp)) {
 			it = item_from_func (a, fcni, fcni->name);
 		} else {
-			char *name = get_unique_name (a, fcni->name);
+			char *name = get_unique_name (a->sdb_zigns, fcni->name, sp);
 			if (name) {
 				it = item_from_func (a, fcni, name);
-				free (name);
 			}
+			free (name);
 		}
 		if (it) {
 			if (prev_name) {
@@ -2872,11 +2873,30 @@ R_API void r_sign_hash_free(RSignHash *hash) {
 	}
 }
 
+struct load_sign_data {
+	RAnal *anal;
+	bool merge;
+};
+
 static bool loadCB(void *user, const char *k, const char *v) {
-	RAnal *a = (RAnal *)user;
+	struct load_sign_data *u = (struct load_sign_data *)user;
+	RAnal *a = u->anal;
 	RSignItem *it = r_sign_item_new ();
 	if (it && r_sign_deserialize (a, it, k, v)) {
-		r_sign_set_item (a->sdb_zigns, it, NULL);
+		if (u->merge || !name_exists (a->sdb_zigns, it->name, it->space)) {
+			sdb_set (a->sdb_zigns, k, v, 0);
+		} else {
+			char *name = get_unique_name (a->sdb_zigns, it->name, it->space);
+			if (name) {
+				if (!it->realname) {
+					it->realname = it->name;
+				} else {
+					free (it->name);
+				}
+				it->name = name;
+				r_sign_set_item (a->sdb_zigns, it, NULL);
+			}
+		}
 	} else {
 		eprintf ("error: cannot deserialize zign\n");
 	}
@@ -2920,7 +2940,7 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 	return NULL;
 }
 
-R_API bool r_sign_load(RAnal *a, const char *file) {
+R_API bool r_sign_load(RAnal *a, const char *file, bool merge) {
 	if (!a || !file) {
 		return false;
 	}
@@ -2935,14 +2955,15 @@ R_API bool r_sign_load(RAnal *a, const char *file) {
 		free (path);
 		return false;
 	}
-	sdb_foreach (db, loadCB, a);
+	struct load_sign_data u = { .anal = a, .merge = merge };
+	sdb_foreach (db, loadCB, &u);
 	sdb_close (db);
 	sdb_free (db);
 	free (path);
 	return true;
 }
 
-R_API bool r_sign_load_gz(RAnal *a, const char *filename) {
+R_API bool r_sign_load_gz(RAnal *a, const char *filename, bool merge) {
 	ut8 *buf = NULL;
 	int size = 0;
 	char *tmpfile = NULL;
@@ -2973,7 +2994,7 @@ R_API bool r_sign_load_gz(RAnal *a, const char *filename) {
 		goto out;
 	}
 
-	if (!r_sign_load (a, tmpfile)) {
+	if (!r_sign_load (a, tmpfile, merge)) {
 		eprintf ("error: cannot load file\n");
 		retval = false;
 		goto out;
