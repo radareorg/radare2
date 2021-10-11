@@ -3962,9 +3962,8 @@ repeat_arroba:
 					r_sys_setenv (k, v);
 					r_list_append (tmpenvs, k);
 				} 
-			} else {
-				free (k);
 			}
+			free (k);
 		} else if (ptr[1] == '.') { // "@."
 			if (ptr[2] == '.') { // "@.."
 				if (ptr[3] == '.') { // "@..."

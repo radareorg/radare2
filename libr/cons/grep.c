@@ -515,6 +515,7 @@ R_API void r_cons_grepbuf(void) {
 		r_str_ansi_filter (buf, NULL, NULL, -1);
 		char *out = r_str_ss (buf);
 		free (cons->context->buffer);
+		free (buf);
 		cons->context->buffer = out;
 		cons->context->buffer_len = strlen (out);
 		cons->context->buffer_sz = cons->context->buffer_len;

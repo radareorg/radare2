@@ -225,7 +225,8 @@ static const SevenSegments ss[] = {
 	{ 'z', {" __ ",
 		"  / ",
 		" /_ "}
-	}
+	},
+	{ '\0', { 0 }}
 };
 
 R_API char *r_str_ss(const char* msg) {
