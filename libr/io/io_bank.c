@@ -701,6 +701,7 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 	RContRBNode *node = _find_entry_submap_node (bank, &fake_sm);
 	memset (buf, io->Oxff, len);
 	RIOSubMap *sm = node ? (RIOSubMap *)node->data : NULL;
+	bool ret = true;
 	while (sm && r_io_submap_overlap ((&fake_sm), sm)) {
 		RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
 		if (!map) {
@@ -714,12 +715,12 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 		const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
 					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
 		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
-		r_io_fd_read_at (io, map->fd, paddr, &buf[buf_off], read_len);
+		ret &= (r_io_fd_read_at (io, map->fd, paddr, &buf[buf_off], read_len) == read_len);
 		// check return value here?
 		node = r_rbtree_cont_node_next (node);
 		sm = node ? (RIOSubMap *)node->data : NULL;
 	}
-	return true;
+	return ret;
 }
 
 R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len) {
@@ -732,6 +733,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, i
 	// TODO: handle overflow
 	RContRBNode *node = _find_entry_submap_node (bank, &fake_sm);
 	RIOSubMap *sm = node ? (RIOSubMap *)node->data : NULL;
+	bool ret = true;
 	while (sm && r_io_submap_overlap ((&fake_sm), sm)) {
 		RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
 		if (!map) {
@@ -742,15 +744,15 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, i
 			continue;
 		}
 		const ut64 buf_off = addr - R_MAX (addr, r_io_submap_from (sm));
-		const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
+		const int write_len = R_MIN (r_io_submap_to ((&fake_sm)),
 					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
 		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
-		r_io_fd_write_at (io, map->fd, paddr, &buf[buf_off], read_len);
+		ret &= (r_io_fd_write_at (io, map->fd, paddr, &buf[buf_off], write_len) == write_len);
 		// check return value here?
 		node = r_rbtree_cont_node_next (node);
 		sm = node ? (RIOSubMap *)node->data : NULL;
 	}
-	return true;
+	return ret;
 }
 
 R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, ut64 addr) {
