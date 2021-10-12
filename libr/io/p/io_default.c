@@ -291,7 +291,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __close(RIODesc *fd) {
-	r_return_val_if_fail (fd, -1);
+	r_return_val_if_fail (fd, false);
 	if (fd->data) {
 		r_io_def_mmap_free ((RIOMMapFileObj *) fd->data);
 		fd->data = NULL;
