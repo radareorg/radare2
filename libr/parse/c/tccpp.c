@@ -1519,7 +1519,11 @@ include_syntax:
 				goto include_done;
 			}
 
-			if (tcc_open (s1, buf1) < 0) {
+			bool skip = false;
+			if (strstr (buf1, "_overflow.h")) {
+				skip = true;
+			}
+			if (!skip && tcc_open (s1, buf1) < 0) {
 include_trynext:
 				continue;
 			}
@@ -1551,13 +1555,18 @@ include_trynext:
 			filepath_len = R_MIN ((size_t) (e - file->filename) + 1, sizeof (filepath) - 1);
 			memcpy (filepath, file->filename, filepath_len);
 			strcpy (filepath + filepath_len, buf);
-			if (tcc_open (s1, filepath) < 0) {
+			bool skip = false;
+			if (strstr (file->filename, "_overflow.h")) {
+				skip = true;
+			}
+			if (!skip && tcc_open (s1, filepath) < 0) {
 				if (!dir_name) {
-					dir_name = "/usr/include";
+					dir_name = ".";
 				}
 				int len = snprintf (filepath, sizeof (filepath), "%s/%s", dir_name, buf);
 				if (len >= sizeof (filepath) || tcc_open (s1, filepath) < 0) {
-					tcc_error ("include file '%s' not found", filepath);
+					fprintf (stderr, "include file '%s' not found\n", filepath);
+					goto the_end;
 				} else {
 					fprintf (stderr, "#include \"%s\"\n", filepath);
 					++s1->include_stack_ptr;

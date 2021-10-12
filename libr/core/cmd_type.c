@@ -1304,7 +1304,7 @@ static int cmd_type(void *data, const char *input) {
 		} else if (!r_sandbox_enable (0)) {
 			if (input[1] == ' ') {
 				const char *dir = r_config_get (core->config, "dir.types");
-				const char *filename = input + 2;
+				const char *filename = r_str_trim_head_ro (input + 2);
 				char *homefile = NULL;
 				if (*filename == '~') {
 					if (filename[1] && filename[2]) {
