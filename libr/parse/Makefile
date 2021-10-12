@@ -7,8 +7,8 @@ R2DEPS+=r_cons
 
 CFLAGS+=-Ic
 
-LINK+=$(STOP)/mpc/libmpc.a
-CFLAGS+=-I$(STOP)/mpc/
+# LINK+=$(STOP)/mpc/libmpc.a
+# CFLAGS+=-I$(STOP)/mpc/
 
 include $(SHLR)/zip/deps.mk
 
