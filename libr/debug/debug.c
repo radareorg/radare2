@@ -605,6 +605,10 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (tid < 0) {
 		tid = pid;
 	}
+#if 0
+	pid = r_io_desc_get_pid (dbg->iob.io->desc);
+	tid = r_io_desc_get_tid (dbg->iob.io->desc);
+#endif
 	if (pid == -1 && tid == -1) {
 		if (dbg->pid != -1) {
 			eprintf ("Child %d is dead\n", dbg->pid);
@@ -617,14 +621,17 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		if (!dbg->h->select (dbg, pid, tid)) {
 			return false;
 		}
-		dbg->pid = pid;
-		dbg->tid = tid;
 	}
-
-	char *pidcmd = r_str_newf ("pid %d", dbg->tid);
-	if (pidcmd) {
-		free (r_io_system (dbg->iob.io, pidcmd));
-		free (pidcmd);
+	dbg->pid = pid;
+	dbg->tid = tid;
+	if (dbg->tid != -1) {
+		char *pidcmd = r_str_newf ("pid %d", dbg->tid);
+		if (pidcmd) {
+			free (r_io_system (dbg->iob.io, pidcmd));
+			free (pidcmd);
+		}
+	} else {
+		eprintf ("Cannot find pid for child %d\n", dbg->pid);
 	}
 
 	// Synchronize with the current thread's data
