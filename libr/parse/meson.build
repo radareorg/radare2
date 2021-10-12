@@ -22,7 +22,6 @@ r_parse_sources = [
   'code.c',
   'filter.c',
   'parse.c',
-  'ctype.c',
   'p/parse_6502_pseudo.c',
   'p/parse_arm_pseudo.c',
   'p/parse_att2intel.c',
