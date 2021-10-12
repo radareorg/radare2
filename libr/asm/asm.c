@@ -366,13 +366,33 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		return false;
 	}
 	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, name) && h->arch) {
-			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
-				load_asm_descriptions (a, h);
-				r_asm_set_cpu (a, NULL);
+		if (h->arch) {
+			if (!strcmp (h->name, name)) {
+				if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
+					load_asm_descriptions (a, h);
+					r_asm_set_cpu (a, NULL);
+				}
+				a->cur = h;
+				return true;
 			}
-			a->cur = h;
-			return true;
+		} else {
+			char *vv = strchr (name, '.');
+			if (vv) {
+				if (!strcmp (vv + 1, h->name)) {
+					char *cpu = r_str_ndup (name, vv - name);
+					r_asm_set_cpu (a, cpu);
+					a->cur = h;
+					free (cpu);
+					return true;
+				}
+			} else {
+				if (!strcmp (name, h->name)) {
+					h->arch = name;
+					r_asm_set_cpu (a, NULL);
+					a->cur = h;
+					return true;
+				}
+			}
 		}
 	}
 	sdb_free (a->pair);
@@ -527,7 +547,7 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h) {
 	if (!a || !h->arch || !h->assemble || !has_bits (h, a->bits)) {
 		return false;
 	}
-	return (!strncmp (a->cur->arch, h->arch, strlen (a->cur->arch)));
+	return (a->cur->arch && !strncmp (a->cur->arch, h->arch, strlen (a->cur->arch)));
 }
 
 static Ase findAssembler(RAsm *a, const char *kw) {
@@ -846,7 +866,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				continue;
 			}
 			// XXX TODO remove arch-specific hacks
-			if (!strncmp (a->cur->arch, "avr", 3)) {
+			if (a->cur->arch && !strncmp (a->cur->arch, "avr", 3)) {
 				for (ptr_start = buf_token; *ptr_start && isavrseparator (*ptr_start); ptr_start++);
 			} else {
 				for (ptr_start = buf_token; *ptr_start && IS_SEPARATOR (*ptr_start); ptr_start++);
