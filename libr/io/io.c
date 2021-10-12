@@ -231,7 +231,7 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	}
 	//does this really work, or do we have to handler debuggers ugly
 	uri = old->referer? old->referer: old->uri;
-	if (old->plugin->close && old->plugin->close (old)) {
+	if (old->plugin->close && !old->plugin->close (old)) {
 		return false; // TODO: this is an unrecoverable scenario
 	}
 	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
@@ -251,8 +251,7 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	RIODesc *nd = r_io_open_nomap (io, uri, perm, mode);
 	if (nd) {
 		r_io_desc_exchange (io, od->fd, nd->fd);
-		r_io_desc_del (io, od->fd);
-		// bool res = r_io_desc_close (od);
+		r_io_desc_close (od);
 		if (nd->perm & R_PERM_W) {
 			io->corebind.cmdf (io->corebind.core, "omfg");
 		}
