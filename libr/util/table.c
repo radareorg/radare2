@@ -683,6 +683,10 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 				match = false;
 			}
 			break;
+		case 'S':
+			nrow++;
+			match = (nrow > uv);
+			break;
 		case 'h':
 			nrow++;
 			if (nrow > uv) {
@@ -1017,6 +1021,7 @@ R_API const char *r_table_help(void) {
 		" c/ne/0x800     grep rows matching col0 != 0x800\n"
 		" */uniq         get the first row of each that col0 is unique\n"
 		" */head/10      same as | head -n 10\n"
+		" */skip/10      skip the first 10 rows\n"
 		" */tail/10      same as | tail -n 10\n"
 		" */page/1/10    show the first 10 rows (/page/2/10 will show the 2nd)\n"
 		" c/str/warn     grep rows matching col(name).str(warn)\n"
@@ -1133,6 +1138,10 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		} else if (!strcmp (operation, "tail")) {
 			if (operand) {
 				r_table_filter (t, col, 't', operand);
+			}
+		} else if (!strcmp (operation, "skip")) {
+			if (operand) {
+				r_table_filter (t, col, 'S', operand);
 			}
 		} else if (!strcmp (operation, "head")) {
 			if (operand) {
