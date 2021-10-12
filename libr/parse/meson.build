@@ -51,7 +51,6 @@ r_parse = library('r_parse', r_parse_sources,
     r_reg_dep,
     r_cons_dep,
     tcc_dep
-    // mpc_dep
   ],
   install: true,
   implicit_include_directories: false,
