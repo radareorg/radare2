@@ -826,7 +826,9 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		ret = 0;
 		goto beach;
 	}
-	r_asm_set_cpu (as->a, cpu);
+	if (cpu) {
+		r_asm_set_cpu (as->a, cpu);
+	}
 	r_asm_set_bits (as->a, (env_bits && *env_bits)? atoi (env_bits): bits);
 	r_anal_set_bits (as->anal, (env_bits && *env_bits)? atoi (env_bits): bits);
 	as->a->syscall = r_syscall_new ();
