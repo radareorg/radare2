@@ -531,6 +531,7 @@ static void tcc_init_defines(TCCState *s) {
 	tcc_define_symbol (s, "R_IPI", "");
 	tcc_define_symbol (s, "R_NULLABLE", "");
 	tcc_define_symbol (s, "R_PRINTF_CHECK(a,b)", "");
+#if 0
 	tcc_compile_string (s, "typedef int (*PrintfCallback)(const char *s);");
 	tcc_compile_string (s, "typedef struct RList {} RList;");
 	tcc_compile_string (s, "typedef struct RCore {} RCore;");
@@ -539,6 +540,7 @@ static void tcc_init_defines(TCCState *s) {
 	tcc_compile_string (s, "typedef struct RStrBuf {} RStrBuf;");
 	tcc_compile_string (s, "typedef struct RStrConstPool {} RStrConstPool;");
 	tcc_compile_string (s, "typedef struct RStack {} RStack;");
+#endif
 
 	/* standard defines */
 	tcc_define_symbol (s, "__STDC__", NULL);
