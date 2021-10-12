@@ -44,6 +44,7 @@ static const char *help_msg_i[] = {
 	"ir", "", "List the Relocations",
 	"iR", "", "List the Resources",
 	"is", "", "List the Symbols",
+	"is,", "[table-query]", "List symbols in table using given expression",
 	"is.", "", "Current symbol",
 	"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
 	"iS.", "", "Current section",
@@ -519,7 +520,7 @@ static int cmd_info(void *data, const char *input) {
 		goto done;
 	}
 	R_FREE (core->table_query);
-	if (space && *space == ' ') {
+	if (space && (*space == ' ' || *space == ',')) {
 		core->table_query = r_str_trim_dup (space + 1);
 	}
 	while (*input) {
@@ -783,6 +784,10 @@ static int cmd_info(void *data, const char *input) {
 				mode = R_MODE_JSON;
 				INIT_PJ ();
 				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+			} else if (input[1] == ',') {
+				R_FREE (core->table_query);
+				core->table_query = strdup (input + 2);
+				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 			} else if (input[1] == 'q' && input[2] == 'q') {
 				mode = R_MODE_SIMPLEST;
 				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);

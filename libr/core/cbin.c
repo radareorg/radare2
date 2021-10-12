@@ -279,7 +279,6 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 	}
 }
 
-
 R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	r_return_val_if_fail (core && core->io, false);
 	if (!file) {
