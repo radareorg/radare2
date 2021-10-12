@@ -124,8 +124,8 @@ static task_t task_for_pid_workaround(int Pid) {
 	}
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
-		//mach_error ("host_processor_set_priv",kr);
+		eprintf ("host_processor_set_priv failed for pid %d with error 0x%x\n", Pid, kr);
+		// mach_error ("host_processor_set_priv",kr);
 		return -1;
 	}
 
@@ -213,6 +213,7 @@ bool xnu_attach(RDebug *dbg, int pid) {
 		eprintf ("error setting up exception thread\n");
 		return false;
 	}
+	dbg->pid = pid;
 	dbg->tid = getcurthread (dbg);
 	xnu_stop (dbg, pid);
 #endif
@@ -591,6 +592,9 @@ task_t pid_to_task(int pid) {
 		}
 
 	}
+	if (pid == -1) {
+		pid = old_pid;
+	}
 	err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
 		task = task_for_pid_workaround (pid);
@@ -610,7 +614,9 @@ task_t pid_to_task(int pid) {
 			}
 		}
 	}
-	old_pid = pid;
+	if (pid != -1) {
+		old_pid = pid;
+	}
 	task_dbg = task;
 	return task;
 }

@@ -539,17 +539,16 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	return NULL;
 }
 
-static int __get_pid (RIODesc *desc) {
+static int __get_pid(RIODesc *desc) {
 	// dupe for ? r_io_desc_get_pid (desc);
-	if (!desc || !desc->data) {
-		return -1;
-	}
-	RIOMachData *iodd = desc->data;
-	if (iodd) {
-		if (iodd->magic != R_MACH_MAGIC) {
-			return -1;
+	if (desc) {
+		RIOMachData *iodd = desc->data;
+		if (iodd) {
+			if (iodd->magic != R_MACH_MAGIC) {
+				return -1;
+			}
+			return iodd->pid;
 		}
-		return iodd->pid;
 	}
 	return -1;
 }
