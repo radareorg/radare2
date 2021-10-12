@@ -576,7 +576,7 @@ task_t pid_to_task(int pid) {
 	kern_return_t kr;
 	task_t task = -1;
 	int err;
-	/* it means that we are done with the task*/
+
 	if (task_dbg != 0 && old_pid == pid) {
 		return task_dbg;
 	}

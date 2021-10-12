@@ -430,7 +430,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #else
 	r = fork_and_ptraceme_for_unix (io, bits, _eff_cmd);
 #endif
-
 	free (_eff_cmd);
 	return r;
 }
