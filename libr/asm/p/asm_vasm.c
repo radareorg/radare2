@@ -27,7 +27,7 @@ RAsmPlugin r_asm_plugin_vasm = {
 	.license = "MIT",
 	.desc = "Use -a arm.vasm, 6502.vasm, 6809, c16x, jagrisc, m68k, pdp11, ppc, qnice, tr3200, vidcore, x86, z80",
 	.author = "http://sun.hasenbraten.de/vasm/",
-	.bits = 16 | 32 | 64,
+	.bits = 8 | 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.assemble = &assemble
 };
