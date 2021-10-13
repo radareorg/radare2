@@ -44,7 +44,6 @@ if get_option('enable_tests')
     'json',
     'list',
     'ovf',
-    'parse_ctype',
     'pdb',
     'pj',
     'queue',
