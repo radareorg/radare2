@@ -1714,23 +1714,43 @@ static void print_function_args_json(PJ *pj, char *arg_type) {
 	pj_end (pj);
 }
 
-static void list_types_json(RSignItem *it, PJ *pj) {
-	pj_ka (pj, "types");
-
+static void types_set_return_json(RList *types, PJ *pj) {
+	const char needle[] = ".ret=";
 	int i = 0;
+	char *element;
+	RListIter *iter = NULL;
+	r_list_foreach (types, iter, element) {
+		// func.main.ret=int
+		char *ptr = strstr (element, needle);
+		if (ptr) {
+			pj_ks (pj, "return", ptr + sizeof (needle) - 1);
+			return;
+		}
+		if (i++ > 3) {
+			break;
+		}
+	}
+	pj_ks (pj, "return", "void");
+}
+
+static void list_types_json(RList *types, PJ *pj) {
+	pj_ko (pj, "types");
+	types_set_return_json (types, pj);
+
+	pj_ka (pj, "args");
 	char *element = NULL;
 	RListIter *iter = NULL;
-	r_list_foreach (it->types, iter, element) {
+	r_list_foreach (types, iter, element) {
 		char *t = strdup (element);
-		char *sep = NULL;
-		if (i > 0 && (sep = strchr (t, '='))) {
+		char *sep = strchr (t, '=');
+		if (sep) {
 			*sep = '\0';
 			++sep;
 			print_function_args_json (pj, sep);
 		}
 		free (t);
-		i++;
 	}
+	pj_end (pj);
 	pj_end (pj);
 }
 
@@ -1888,7 +1908,7 @@ static bool listCB(RSignItem *it, void *user) {
 	// Types
 	if (it->types) {
 		if (ctx->format == 'j') {
-			list_types_json (it, ctx->pj);
+			list_types_json (it->types, ctx->pj);
 		} else {
 			list_sign_list (a, it->types, ctx->pj, ctx->format, R_SIGN_TYPES, it->name);
 		}
