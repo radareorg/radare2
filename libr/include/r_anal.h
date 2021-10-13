@@ -515,10 +515,6 @@ typedef enum {
 } _RAnalCond;
 
 typedef enum {
-	R_ANAL_VAR_SCOPE_LOCAL  = 0x01
-} _RAnalVarScope;
-
-typedef enum {
 	R_ANAL_STACK_NULL = 0,
 	R_ANAL_STACK_NOP,
 	R_ANAL_STACK_INC,
