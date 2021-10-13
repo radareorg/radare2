@@ -1715,7 +1715,7 @@ static void print_function_args_json(PJ *pj, char *arg_type) {
 }
 
 static void types_set_return_json(RList *types, PJ *pj) {
-	const char needle[] = ".ret=";
+	const char *needle = ".ret=";
 	int i = 0;
 	char *element;
 	RListIter *iter = NULL;
