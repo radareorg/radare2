@@ -239,10 +239,16 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 		if (!map) {
 			r_pvector_remove_at (&io->maps, i);
 		} else if (map->fd == fd) {
-			r_id_pool_kick_id (io->map_ids, map->id);
-			//delete iter and map
-			r_pvector_remove_at (&io->maps, i);
-			_map_free (map);
+			if(io->use_banks) {
+				// this is slower than it needs to be
+				// TODO: use RIDStorage instead of RPVector to speed this up
+				r_io_map_del (io, map->id);
+			} else {
+				r_id_pool_kick_id (io->map_ids, map->id);
+				//delete iter and map
+				r_pvector_remove_at (&io->maps, i);
+				_map_free (map);
+			}
 			ret = true;
 		} else {
 			i++;
@@ -268,7 +274,7 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 		if (map->id == id) {
 			r_pvector_remove_at (&io->maps, i);
 			r_pvector_push (&io->maps, map);
-			io_map_calculate_skyline (io);
+			io_map_calculate_skyline (io);	//done
 			return true;
 		}
 	}
