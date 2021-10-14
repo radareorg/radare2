@@ -334,6 +334,7 @@ int main(int argc, char **argv) {
 	atexit (r2r_subprocess_fini);
 
 	r_sys_setenv ("RABIN2_TRYLIB", "0");
+	r_sys_setenv ("R2_DEBUG_ASSERT", "1");
 	r_sys_setenv ("TZ", "UTC");
 	ut64 time_start = r_time_now_mono ();
 	R2RState state = {{0}};
@@ -556,7 +557,9 @@ static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD:
 		pj_s (pj, "cmd");
-		pj_ks (pj, "name", test->cmd_test->name.value);
+		if (test->cmd_test->name.value) {
+			pj_ks (pj, "name", test->cmd_test->name.value);
+		}
 		break;
 	case R2R_TEST_TYPE_ASM:
 		pj_s (pj, "asm");
