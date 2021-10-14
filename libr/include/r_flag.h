@@ -45,6 +45,7 @@ typedef struct r_flag_item_t {
 	char *color;    /* item color */
 	char *comment;  /* item comment */
 	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
+	char *type;
 } RFlagItem;
 
 typedef struct r_flag_t {
@@ -110,9 +111,11 @@ R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off);
 R_API bool r_flag_unset(RFlag *f, RFlagItem *item);
 R_API bool r_flag_unset_name(RFlag *f, const char *name);
+R_API void r_flag_item_set_type(RFlagItem *fi, const char *type);
 R_API bool r_flag_unset_off(RFlag *f, ut64 addr);
 R_API void r_flag_unset_all (RFlag *f);
 R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size);
+R_API RFlagItem *r_flag_set_inspace(RFlag *f, const char *space, const char *name, ut64 off, ut32 size);
 R_API RFlagItem *r_flag_set_next(RFlag *fo, const char *name, ut64 addr, ut32 size);
 R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free (RFlagItem *item);

@@ -33,7 +33,22 @@ static const char *help_msg_a[] = {
 	"ar", "[?]", "like 'dr' but for the esil vm. (registers)",
 	"as", "[?] [num]", "analyze syscall using dbg.reg",
 	"av", "[?] [.]", "show vtables",
+	"avg", "[?] [.]", "manage global variables",
 	"ax", "[?]", "manage refs/xrefs (see also afx?)",
+	NULL
+};
+
+static const char *help_msg_ap[] = {
+	"Usage:", "ap[?]", "analyze prelude in current offset",
+	"ap", "", "check if current offset contains a function prelude",
+	NULL
+};
+
+static const char *help_msg_avg[] = {
+	"Usage:", "avg", "analyze variable global",
+	"avg", "", "Use ESIL emulation to find out arguments of a call (uses 'abte')",
+	"avg", " [type] [name]", "add global",
+	"avg-", "", "delete global",
 	NULL
 };
 
@@ -10732,8 +10747,40 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_avg(RCore *core, const char* input) {
+	switch (input[0]) {
+	case ' ':
+		if (strchr (input + 1, ' ')) {
+			char *a = r_str_trim_dup (input + 1);
+			char *b = strchr (a, ' ');
+			if (b) {
+				*b++ = 0;
+				r_anal_global_add (core->anal, core->offset, a, b);
+			} else {
+				RFlagItem *fi = r_anal_global_get (core->anal, core->offset);
+				if (fi) {
+					eprintf ("type %s\n", fi->type);
+				}
+			}
+			free (a);
+		}
+		break;
+	case '-':
+		r_anal_global_del (core->anal, core->offset);
+		break;
+	case '\0': // "av"
+		r_core_cmd0 (core, "fs+globals;f;fs-");
+		break;
+	default :
+		r_core_cmd_help (core, help_msg_avg);
+		break;
+	}
+}
 static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 	switch (input[0]) {
+	case 'g':
+		cmd_avg (core, input + 1);
+		break;
 	case '\0': // "av"
 	case '*': // "av*"
 	case 'j': // "avj"
@@ -10747,8 +10794,6 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 		break;
 	}
 }
-
-
 
 static void cmd_anal_class_method(RCore *core, const char *input) {
 	RAnalClassErr err = R_ANAL_CLASS_ERR_SUCCESS;
@@ -11273,18 +11318,18 @@ static int cmd_anal(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
 	case 'p': // "ap"
-		{
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_ap);
+		} else {
 			const ut8 *prelude = (const ut8*)"\xe9\x2d"; //:fffff000";
 			const int prelude_sz = 2;
 			const int bufsz = 4096;
 			ut8 *buf = calloc (1, bufsz);
 			ut64 off = core->offset;
 			if (input[1] == ' ') {
-				off = r_num_math (core->num, input+1);
-				r_io_read_at (core->io, off - bufsz + prelude_sz, buf, bufsz);
-			} else {
-				r_io_read_at (core->io, off - bufsz + prelude_sz, buf, bufsz);
+				off = r_num_math (core->num, input + 1);
 			}
+			r_io_read_at (core->io, off - bufsz + prelude_sz, buf, bufsz);
 			//const char *prelude = "\x2d\xe9\xf0\x47"; //:fffff000";
 			r_mem_reverse (buf, bufsz);
 			//r_print_hexdump (NULL, off, buf, bufsz, 16, -16);
