@@ -1725,7 +1725,7 @@ false
 EOF
 RUN
 
-NAME=types afs [before]
+NAME=types afs [before] 2
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aaa
