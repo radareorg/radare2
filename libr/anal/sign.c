@@ -2332,7 +2332,9 @@ static int sig_graph_cmp(RSignItem *ia, RSignItem *ib) {
 static int sig_bytes_diff(RSignItem *isig, RSignItem *ifunc) {
 	RSignBytes *sig = isig->bytes;
 	RSignBytes *func = ifunc->bytes;
-	r_return_val_if_fail (sig && func, 1);
+	if (!sig || !func) {
+		return 1;
+	}
 
 	if (sig->size != func->size) {
 		return 1;

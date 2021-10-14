@@ -713,7 +713,7 @@ INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
 }
 
 INST_HANDLER (ijmp) {	// IJMP k
-	ut64 z;
+	ut64 z = 0;
 	// read z for calculating jump address on runtime
 	r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
 	// real target address may change during execution, so this value will

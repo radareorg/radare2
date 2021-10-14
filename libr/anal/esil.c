@@ -548,12 +548,9 @@ R_API bool r_anal_esil_reg_read_nocallback(RAnalEsil *esil, const char *regname,
 }
 
 R_API bool r_anal_esil_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, int *size) {
-	r_return_val_if_fail (esil && regname && num, false);
+	r_return_val_if_fail (esil && regname, false);
 	bool ret = false;
-	ut64 localnum; // XXX why is this necessary?
-	if (!esil || !regname) {
-		return false;
-	}
+	ut64 localnum = 0LL; // XXX why is this necessary?
 	if (!num) {
 		num = &localnum;
 	}
