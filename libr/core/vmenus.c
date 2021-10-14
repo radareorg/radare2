@@ -3040,45 +3040,43 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 	}
 
 	r_list_foreach (list, iter, var) {
-		if (i >= wdelta) {
-			if (i > window + wdelta) {
-				r_cons_printf ("...\n");
-				break;
-			}
-			if (show) {
-				switch (var->kind & 0xff) {
-				case 'r':
-					{
-						RRegItem *r = r_reg_index_get (core->anal->reg, var->delta);
-						if (!r) {
-							eprintf ("Register not found");
-							break;
-						}
-						r_cons_printf ("%sarg %s %s @ %s\n",
-								i == *vindex ? "* ":"  ",
-								var->type, var->name,
-								r->name);
+		if (i > window + wdelta) {
+			r_cons_printf ("...\n");
+			break;
+		}
+		if (show) {
+			switch (var->kind & 0xff) {
+			case 'r':
+				{
+					RRegItem *r = r_reg_index_get (core->anal->reg, var->delta);
+					if (!r) {
+						eprintf ("Register not found");
+						break;
 					}
-					break;
-				case 'b':
-					r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
+					r_cons_printf ("%sarg %s %s @ %s\n",
 							i == *vindex ? "* ":"  ",
-							var->delta < 0? "var": "arg",
 							var->type, var->name,
-							core->anal->reg->name[R_REG_NAME_BP],
-							(var->kind == 'v')?"-":"+",
-							var->delta);
-					break;
-				case 's':
-					r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
-							i == *vindex ? "* ":"  ",
-							var->delta < 0? "var": "arg",
-							var->type, var->name,
-							core->anal->reg->name[R_REG_NAME_SP],
-							(var->kind == 'v')?"-":"+",
-							var->delta + fcn->maxstack);
-					break;
+							r->name);
 				}
+				break;
+			case 'b':
+				r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
+						i == *vindex ? "* ":"  ",
+						var->delta < 0? "var": "arg",
+						var->type, var->name,
+						core->anal->reg->name[R_REG_NAME_BP],
+						(var->kind == 'v')?"-":"+",
+						var->delta);
+				break;
+			case 's':
+				r_cons_printf ("%s%s %s %s @ %s%s0x%x\n",
+						i == *vindex ? "* ":"  ",
+						var->delta < 0? "var": "arg",
+						var->type, var->name,
+						core->anal->reg->name[R_REG_NAME_SP],
+						(var->kind == 'v')?"-":"+",
+						var->delta + fcn->maxstack);
+				break;
 			}
 		}
 		++i;
