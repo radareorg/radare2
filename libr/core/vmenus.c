@@ -3074,9 +3074,9 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 							i == *vindex ? "* ":"  ",
 							var->delta < 0? "var": "arg",
 							var->type, var->name,
-							core->anal->reg->name[R_REG_NAME_BP],
+							core->anal->reg->name[R_REG_NAME_SP],
 							(var->kind == 'v')?"-":"+",
-							var->delta);
+							var->delta + fcn->maxstack);
 					break;
 				}
 			}
