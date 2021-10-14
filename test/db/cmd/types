@@ -881,9 +881,9 @@ tsc three_elements
 EOF
 EXPECT=<<EOF
 struct three_elements {
-	int32_t x;
-	char y;
-	float z;
+  int32_t x;
+  char y;
+  float z;
 };
 EOF
 RUN
@@ -896,9 +896,9 @@ tsc with_array
 EOF
 EXPECT=<<EOF
 struct with_array {
-	int32_t x;
-	char y[50];
-	float z;
+  int32_t x;
+  char y[50];
+  float z;
 };
 EOF
 RUN
@@ -925,9 +925,9 @@ tuc x
 EOF
 EXPECT=<<EOF
 union x {
-	int32_t x;
-	int32_t y;
-	int32_t z;
+  int32_t x;
+  int32_t y;
+  int32_t z;
 };
 EOF
 RUN
