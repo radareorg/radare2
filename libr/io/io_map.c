@@ -175,13 +175,27 @@ R_API void r_io_update(RIO *io) {
 	}
 }
 
-R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
+R_API RIOMap *r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	r_return_val_if_fail (io, NULL);
-	void **it;
-	r_pvector_foreach_prev (&io->maps, it) {
-		RIOMap *map = *it;
-		if (map->delta <= paddr && paddr < map->delta + r_io_map_size (map)) {
-			return map;
+	if (io->use_banks) {
+		RIOBank *bank = r_io_bank_get (io, io->bank);
+		if (bank) {
+			RListIter *iter;
+			RIOMapRef *mapref;
+			r_list_foreach_prev (bank->maprefs, iter, mapref) {
+				RIOMap *map = r_io_map_get_by_ref (io, mapref);
+				if (map && map->delta <= paddr && paddr < map->delta + r_io_map_size (map)) {
+					return map;
+				}
+			}
+		}
+	} else {
+		void **it;
+		r_pvector_foreach_prev (&io->maps, it) {
+			RIOMap *map = *it;
+			if (map->delta <= paddr && paddr < map->delta + r_io_map_size (map)) {
+				return map;
+			}
 		}
 	}
 	return NULL;
