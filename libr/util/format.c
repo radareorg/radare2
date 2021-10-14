@@ -1621,7 +1621,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 	if (n >= 5) {  // This is the nesting level, is this not a bit arbitrary?!
 		return 0;
 	}
-	const char *fmt2 = sdb_get (p->formats, f, NULL);
+	const char *fmt2 = p? sdb_get (p->formats, f, NULL): NULL;
 	if (!fmt2) {
 		fmt2 = f;
 	}

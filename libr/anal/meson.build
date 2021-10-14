@@ -23,6 +23,7 @@ r_anal_sources = [
   'esil_dfg.c',
   'fcn.c',
   'flirt.c',
+  'global.c',
   'hint.c',
   'labels.c',
   'meta.c',

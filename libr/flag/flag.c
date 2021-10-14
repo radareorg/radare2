@@ -726,6 +726,17 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
 	return NULL;
 }
 
+R_API RFlagItem *r_flag_set_inspace(RFlag *f, const char *space, const char *name, ut64 off, ut32 size) {
+	if (space) {
+		r_flag_space_push (f, space);
+	}
+	RFlagItem *fi = r_flag_set (f, name, off, size);
+	if (space) {
+		r_flag_space_pop (f);
+	}
+	return fi;
+}
+
 /* create or modify an existing flag item with the given name and parameters.
  * The realname of the item will be the same as the name.
  * NULL is returned in case of any errors during the process. */
@@ -806,6 +817,12 @@ R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color) {
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	r_return_val_if_fail (f && item && name && *name, false);
 	return update_flag_item_name (f, item, name, false);
+}
+
+R_API void r_flag_item_set_type(RFlagItem *fi, const char *type) {
+	r_return_if_fail (fi && type);
+	free (fi->type);
+	fi->type = strdup (type);
 }
 
 /* unset the given flag item.

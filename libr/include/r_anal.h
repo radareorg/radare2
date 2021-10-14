@@ -11,6 +11,7 @@
 #include <r_io.h>
 #include <r_reg.h>
 #include <r_list.h>
+#include <r_util/r_print.h>
 #include <r_search.h>
 #include <r_util.h>
 #include <r_bind.h>
@@ -652,6 +653,7 @@ typedef struct r_anal_t {
 	RSpaces zign_spaces;
 	char *zign_path; // dir.zigns
 	PrintfCallback cb_printf;
+	RPrint *print;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
 	Sdb *sdb_pins;
@@ -2154,6 +2156,14 @@ R_API void r_anal_base_type_free(RAnalBaseType *type);
 R_API RAnalBaseType *r_anal_base_type_new(RAnalBaseTypeKind kind);
 R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx);
 R_API void r_anal_dwarf_integrate_functions(RAnal *anal, RFlag *flags, Sdb *dwarf_sdb);
+/* global.c */
+R_API RFlagItem *r_anal_global_get(RAnal *anal, ut64 addr);
+R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, const char *name);
+R_API bool r_anal_global_del(RAnal *anal, ut64 addr);
+R_API bool r_anal_global_retype(RAnal *anal, ut64 addr, const char *new_type);
+R_API bool r_anal_global_rename(RAnal *anal, ut64 addr, const char *new_name);
+R_API const char *r_anal_global_get_type(RAnal *anal, ut64 addr);
+
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;

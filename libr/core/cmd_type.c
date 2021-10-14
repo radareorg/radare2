@@ -463,6 +463,7 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 	return 1;
 }
 
+// Rename to char *RAnal.type_to_c() {}
 static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, const char *arg, bool multiline) {
 	char *name = NULL;
 	SdbKv *kv;
@@ -496,7 +497,7 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 					int arrnum = atoi (arr);
 					free (arr);
 					if (multiline) {
-						r_cons_printf ("\t%s", val);
+						r_cons_printf ("  %s", val);
 						if (p && p[0] != '\0') {
 							r_cons_printf ("%s%s", strstr (val, " *")? "": " ", p);
 							if (arrnum) {
@@ -855,7 +856,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
-	bool ioCache = r_config_get_i (core->config, "io.cache");
+	bool ioCache = r_config_get_b (core->config, "io.cache");
 	bool stack_set = false;
 	bool resolved = false;
 	const char *varpfx;
@@ -903,7 +904,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		r_core_cmd0 (core, "aeim");
 		stack_set = true;
 	}
-	r_config_set_i (core->config, "io.cache", 1);
+	r_config_set_b (core->config, "io.cache", true);
 	r_config_set_i (core->config, "dbg.follow", 0);
 	ut64 oldoff = core->offset;
 	r_cons_break_push (NULL, NULL);
@@ -994,7 +995,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	}
 beach:
 	r_core_cmd0 (core, "wc-*"); // drop cache writes
-	r_config_set_i (core->config, "io.cache", ioCache);
+	r_config_set_b (core->config, "io.cache", ioCache);
 	r_config_set_i (core->config, "dbg.follow", dbg_follow);
 	if (stack_set) {
 		r_core_cmd0 (core, "aeim-");
@@ -1123,7 +1124,6 @@ static int cmd_type(void *data, const char *input) {
 				SdbList *l = sdb_foreach_list_filter (TDB, stdifstruct, true);
 				SdbListIter *it;
 				SdbKv *kv;
-
 				ls_foreach (l, it, kv) {
 					showFormat (core, sdbkv_key (kv), 1);
 				}
