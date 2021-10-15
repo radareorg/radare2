@@ -429,6 +429,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	r_io_use_fd (r->io, fd);
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, fd, baseaddr, loadaddr, r->bin->rawstr);
+	// opt.fd = fd;
 	opt.xtr_idx = xtr_idx;
 	if (!r_bin_open_io (r->bin, &opt)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
@@ -619,28 +620,28 @@ static bool linkcb(void *user, void *data, ut32 id) {
 }
 
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
-	RIODesc *desc = r->io->desc;
+	r_return_val_if_fail (r && r->io, false);
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin = NULL;
-	bool is_io_load;
 	const char *cmd_load;
+	RIODesc *desc = r->io->desc;
+	if (!desc && filenameuri) {
+		desc = r_io_desc_get_byuri (r->io, filenameuri);
+	}
 	if (!desc) {
-		return false;
-	}
-	// NULL deref guard
-	if (desc) {
-		is_io_load = desc && desc->plugin;
-		if (!filenameuri || !*filenameuri) {
-			filenameuri = desc->name;
+		// hack for openmany handlers
+		if (*filenameuri == '-') {
+			// filenameuri = "malloc://512";
+			return false;
 		}
-	} else {
-		is_io_load = false;
+		r_core_file_open (r, filenameuri, 0, baddr);
+		desc = r->io->desc;
 	}
-
-	if (!filenameuri) {
-		eprintf ("r_core_bin_load: no file specified\n");
-		return false;
+	bool is_io_load = false;
+	if (desc && desc->plugin) {
+		is_io_load = true;
+	//	r_io_use_fd (r->io, desc->fd);
 	}
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
@@ -831,7 +832,6 @@ beach:
 }
 
 R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 loadaddr) {
-	RListIter *fd_iter, *iter2;
 	RIODesc *fd;
 
 	RList *list_fds = r_io_open_many (r->io, file, perm, 0644);
@@ -840,11 +840,27 @@ R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 
 		r_list_free (list_fds);
 		return NULL;
 	}
-
-	r_list_foreach_safe (list_fds, fd_iter, iter2, fd) {
-		r_core_bin_load (r, fd->name, loadaddr);
+	RListIter *iter;
+	RIODesc *first = NULL;
+	bool incloadaddr = loadaddr == 0;
+	// r_config_set_b (r->config, "io.va", false);
+	r_list_foreach (list_fds, iter, fd) {
+		if (fd->uri) {
+			if (!first) {
+				first = fd;
+			}
+			r_io_use_fd (r->io, fd->fd);
+			// r_core_file_open (r, fd->uri, perm, loadaddr);
+			ut64 sz = r_io_fd_size (r->io, fd->fd);
+			r_core_bin_load (r, fd->uri, loadaddr);
+			if (incloadaddr && sz != UT64_MAX) {
+				const int rest = (sz % 4096);
+				const int pillow = 0x4000;
+				loadaddr += sz + rest + pillow;
+			}
+		}
 	}
-	return NULL;
+	return first;
 }
 
 /* loadaddr is r2 -m (mapaddr) */
