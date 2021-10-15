@@ -4007,7 +4007,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	ut64 at;
 	int count = 0;
-	const int bsz = 8096;
+	int bsz = 8096;
 	RAnalOp op = { 0 };
 
 	if (from == to) {
@@ -4037,10 +4037,27 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	r_cons_break_push (NULL, NULL);
 	at = from;
 	st64 asm_sub_varmin = r_config_get_i (core->config, "asm.sub.varmin");
+	int maxopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	if (maxopsz < 1) {
+		maxopsz = 4;
+	}
+	if (minopsz < 1) {
+		minopsz = 1;
+	}
+	if (bsz < maxopsz) {
+		// wtf
+		eprintf ("Error: Something is really wrong deep inside\n");
+		return -1;
+	}
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = bsz;
 		if (!r_io_is_valid_offset (core->io, at, R_PERM_X)) {
 			break;
+		}
+		ut64 left = to - at;
+		if (bsz > left) {
+			bsz = left;
 		}
 		(void)r_io_read_at (core->io, at, buf, bsz);
 		memset (block, -1, bsz);
@@ -4055,11 +4072,17 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			at += ret;
 			continue;
 		}
-		while (i < bsz && !r_cons_is_breaked ()) {
+		(void) r_anal_op (core->anal, &op, at, buf, bsz, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
+		while ((i + maxopsz) < bsz && !r_cons_is_breaked ()) {
+			r_anal_op_fini (&op);
 			ret = r_anal_op (core->anal, &op, at + i, buf + i, bsz - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
-			ret = ret > 0 ? ret : 1;
+			if (ret < 1) {
+				i += minopsz;
+				continue;
+			}
 			i += ret;
-			if (ret <= 0 || i > bsz) {
+			if (i > bsz) {
+				// at += minopsz;
 				break;
 			}
 			// find references
@@ -4116,10 +4139,12 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 			default:
 				break;
 			}
-			r_anal_op_fini (&op);
 		}
-		at += bsz;
 		r_anal_op_fini (&op);
+		if (i < 1) {
+			break;
+		}
+		at += i + 1;
 	}
 	r_cons_break_pop ();
 	free (buf);
