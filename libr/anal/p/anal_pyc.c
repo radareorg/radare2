@@ -29,19 +29,30 @@ static char *get_reg_profile(RAnal *anal) {
 		"=PC    pc\n"
 		"=BP    bp\n"
 		"=SP    sp\n"
-		"=A0    sp\n"
-		"=RS    32\n"
-		"gpr    sp  .32 0   0\n" // stack pointer
-		"gpr    pc  .32 4   0\n" // program counter
-		"gpr    bp  .32 8   0\n" // base pointer // unused
+		"=A0    a0\n"
+		"=A1    a1\n"
+		"=A2    a2\n"
+		"=A3    a3\n"
+		"=R0    r0\n"
+		"gpr    a0  .32  0   0\n"
+		"gpr    a1  .32  4   0\n"
+		"gpr    a2  .32  8   0\n"
+		"gpr    a3  .32 12   0\n"
+		"gpr    r0  .32 16   0\n"
+		"gpr    sp  .32 20   0\n" // stack pointer
+		"gpr    pc  .32 24   0\n" // program counter
+		"gpr    bp  .32 28   0\n" // base pointer // unused
 	);
 }
 
 static bool set_reg_profile(RAnal *anal) {
 	char *rp = get_reg_profile (anal);
-	bool b = r_reg_set_profile_string (anal->reg, rp);
-	free (rp);
-	return b;
+	if (rp) {
+		bool b = r_reg_set_profile_string (anal->reg, rp);
+		free (rp);
+		return b;
+	}
+	return false;
 }
 
 static RList *get_pyc_code_obj(RAnal *anal) {

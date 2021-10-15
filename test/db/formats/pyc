@@ -15,14 +15,11 @@ dr
 dr=
 EOF
 EXPECT=<<EOF
-sp = 0x00000000
-pc = 0x00000000
-bp = 0x00000000
-     sp 0x00000000            pc 0x00000000            bp 0x00000000
+     a0 0x00000000            a1 0x00000000            a2 0x00000000
+     a3 0x00000000            r0 0x00000000            sp 0x00000000
+     pc 0x00000000            bp 0x00000000       
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc load version38
