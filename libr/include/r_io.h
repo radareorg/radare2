@@ -458,6 +458,7 @@ R_API void r_io_desc_free(RIODesc *desc);
 R_API bool r_io_desc_add(RIO *io, RIODesc *desc);
 R_API bool r_io_desc_del(RIO *io, int fd);
 R_API RIODesc *r_io_desc_get(RIO *io, int fd);
+R_API RIODesc *r_io_desc_get_byuri(RIO *io, const char *uri);
 R_API RIODesc *r_io_desc_get_next(RIO *io, RIODesc *desc);
 R_API RIODesc *r_io_desc_get_prev(RIO *io, RIODesc *desc);
 R_API RIODesc *r_io_desc_get_highest(RIO *io);

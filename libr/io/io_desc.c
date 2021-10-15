@@ -70,6 +70,18 @@ R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 	return (RIODesc*) r_id_storage_get (io->files, fd);
 }
 
+R_API RIODesc *r_io_desc_get_byuri(RIO *io, const char *uri) {
+	r_return_val_if_fail (io && io->files, NULL);
+	RIODesc *d = r_io_desc_get_lowest (io);
+	while (d) {
+		if (!strcmp (d->uri, uri)) {
+			return d;
+		}
+		d = r_io_desc_get_next (io, d);
+	}
+	return NULL;
+}
+
 R_API RIODesc *r_io_desc_get_next(RIO *io, RIODesc *desc) {
 	r_return_val_if_fail (desc && io && io->files, NULL);
 	const int next_fd = r_io_fd_get_next (io, desc->fd);
