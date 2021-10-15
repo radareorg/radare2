@@ -52,7 +52,11 @@ static RList *get_pyc_code_obj(RAnal *anal) {
 }
 
 static int pyc_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
-	RList *cobjs = r_list_get_n (get_pyc_code_obj (a), 0);
+	RList *pyobj = get_pyc_code_obj (a);
+	if (!pyobj) {
+		return -1;
+	}
+	RList *cobjs = r_list_get_n (pyobj, 0);
 	RListIter *iter = NULL;
 	pyc_code_object *func = NULL, *t = NULL;
 	r_list_foreach (cobjs, iter, t) {
