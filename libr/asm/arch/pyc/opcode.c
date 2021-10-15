@@ -194,7 +194,7 @@ void free_opcode(pyc_opcodes *opcodes) {
 	free (opcodes);
 }
 
-void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter) (ut32 oparg)) {
+void add_arg_fmt(pyc_opcodes *ret, char *op_name, char *(*formatter) (ut32 oparg)) {
 	pyc_arg_fmt *fmt = R_NEW0 (pyc_arg_fmt);
 	if (!fmt) {
 		return;

@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2020 - c0riolis, x0urc3 */
+/* radare - LGPL3 - Copyright 2016-2021 - c0riolis, x0urc3 */
 
 #include <r_types.h>
 #include <r_lib.h>
@@ -22,10 +22,17 @@ static int disassemble(RAsm *a, RAsmOp *opstruct, const ut8 *buf, int len) {
 			shared = bin->cur->o->bin_obj;
 		}
 	}
-	RList *cobjs = r_list_get_n (shared, 0);
-	RList *interned_table = r_list_get_n (shared, 1);
+	RList *cobjs = NULL;
+	RList *interned_table = NULL;
+	if (shared) {
+		cobjs = r_list_get_n (shared, 0);
+		interned_table = r_list_get_n (shared, 1);
+	}
 	if (!opcodes_cache || !pyc_opcodes_equal (opcodes_cache, a->cpu)) {
 		opcodes_cache = get_opcode_by_version (a->cpu);
+		if (!opcodes_cache) {
+			opcodes_cache = get_opcode_by_version ("v3.9.0");
+		}
 		if (opcodes_cache) {
 			opcodes_cache->bits = a->bits;
 		} else {

@@ -1,10 +1,10 @@
-/* radare - LGPL3 - Copyright 2016-2020 - c0riolis, x0urc3 */
+/* radare - LGPL3 - Copyright 2016-2021 - c0riolis, x0urc3, pancake */
 
 #include "pyc_dis.h"
 
 static const char *cmp_op[] = { "<", "<=", "==", "!=", ">", ">=", "in", "not in", "is", "is not", "exception match", "BAD" };
 
-static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
+static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt);
 
 int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interned_table, ut64 pc, pyc_opcodes *ops) {
 	pyc_code_object *cobj = NULL, *t = NULL;
@@ -12,67 +12,69 @@ int r_pyc_disasm(RAsmOp *opstruct, const ut8 *code, RList *cobjs, RList *interne
 	st64 start_offset, end_offset;
 	RListIter *iter = NULL;
 
-	r_list_foreach (cobjs, iter, t) {
-		start_offset = t->start_offset;
-		end_offset = t->end_offset;
-		if (start_offset <= pc && pc < end_offset) { // pc in [start_offset, end_offset)
-			cobj = t;
-			break;
+	if (cobjs) {
+		r_list_foreach (cobjs, iter, t) {
+			start_offset = t->start_offset;
+			end_offset = t->end_offset;
+			// pc in [start_offset, end_offset)
+			if (start_offset <= pc && pc < end_offset) {
+				cobj = t;
+				break;
+			}
 		}
 	}
 
-	if (cobj) {
-		/* TODO: adding line number and offset */
-		RList *varnames = cobj->varnames->data;
-		RList *consts = cobj->consts->data;
-		RList *names = cobj->names->data;
-		RList *freevars = cobj->freevars->data;
-		RList *cellvars = cobj->cellvars->data;
+	/* TODO: adding line number and offset */
+	RList *varnames = cobj? cobj->varnames->data: NULL;
+	RList *consts = cobj?cobj->consts->data: NULL;
+	RList *names = cobj?cobj->names->data: NULL;
+	RList *freevars = cobj?cobj->freevars->data: NULL;
+	RList *cellvars = cobj? cobj->cellvars->data: NULL;
 
-		ut8 op = code[i];
-		i++;
-		char *name = strdup (ops->opcodes[op].op_name);
-		if (!name) {
-			return 0;
-		}
-		r_str_case (name, 0);
-		r_strbuf_set (&opstruct->buf_asm, name);
-		free (name);
-		if (op >= ops->have_argument) {
-			if (ops->bits == 16) {
-				oparg = code[i] + code[i + 1] * 256 + extended_arg;
-				i += 2;
-			} else {
-				oparg = code[i] + extended_arg;
-				i += 1;
-			}
-			extended_arg = 0;
-			if (op == ops->extended_arg) {
-				if (ops->bits == 16) {
-					extended_arg = oparg * 65536;
-				} else {
-					extended_arg = oparg << 8;
-				}
-			}
-			const char *arg = parse_arg (&ops->opcodes[op], oparg, names, consts, varnames, interned_table, freevars, cellvars, ops->opcode_arg_fmt);
-			if (arg != NULL) {
-				r_strbuf_appendf (&opstruct->buf_asm, " %s", arg);
-				free ((char *)arg);
-			}
-		} else if (ops->bits == 8) {
+	ut8 op = code[i];
+	i++;
+	char *name = strdup (ops->opcodes[op].op_name);
+	if (!name) {
+		return 0;
+	}
+	r_str_case (name, 0);
+	r_strbuf_set (&opstruct->buf_asm, name);
+	free (name);
+	if (op >= ops->have_argument) {
+		if (ops->bits == 16) {
+			oparg = code[i] + code[i + 1] * 256 + extended_arg;
+			i += 2;
+		} else {
+			oparg = code[i] + extended_arg;
 			i += 1;
 		}
-
-		return i;
+		extended_arg = 0;
+		if (op == ops->extended_arg) {
+			if (ops->bits == 16) {
+				extended_arg = oparg * 65536;
+			} else {
+				extended_arg = oparg << 8;
+			}
+		}
+		char *arg = parse_arg (&ops->opcodes[op], oparg, names,
+			consts, varnames, interned_table, freevars, cellvars,
+			ops->opcode_arg_fmt);
+		if (arg) {
+			r_strbuf_appendf (&opstruct->buf_asm, " %s", arg);
+			free ((char *)arg);
+		}
+	} else if (ops->bits == 8) {
+		i += 1;
 	}
-	return 0;
+
+	return i;
 }
 
 static char *generic_array_obj_to_string(RList *l);
 
-static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
+static char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RList *consts, RList *varnames, RList *interned_table, RList *freevars, RList *cellvars, RList *opcode_arg_fmt) {
 	pyc_object *t = NULL;
-	const char *arg = NULL;
+	char *arg = NULL;
 	pyc_code_object *tmp_cobj;
 	pyc_arg_fmt *fmt;
 	RListIter *i = NULL;
@@ -84,8 +86,11 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 		}
 
 	if (op->type & HASCONST) {
+		if (!consts) {
+			return NULL;
+		}
 		t = (pyc_object *)r_list_get_n (consts, oparg);
-		if (t == NULL) {
+		if (!t) {
 			return NULL;
 		}
 		switch (t->type) {
@@ -111,20 +116,25 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 		}
 	}
 	if (op->type & HASNAME) {
-		t = (pyc_object *)r_list_get_n (names, oparg);
-		if (t == NULL) {
-			return NULL;
+		if (names) {
+			t = (pyc_object *)r_list_get_n (names, oparg);
+			if (t) {
+				return r_str_new (t->data);
+			}
 		}
-		arg = r_str_new (t->data);
+		return NULL;
 	}
 	if ((op->type & HASJREL) || (op->type & HASJABS)) {
 		arg = r_str_newf ("%u", oparg);
 	}
 	if (op->type & HASLOCAL) {
-		t = (pyc_object *)r_list_get_n (varnames, oparg);
-		if (!t)
-			return NULL;
-		arg = r_str_new (t->data);
+		if (varnames) {
+			t = (pyc_object *)r_list_get_n (varnames, oparg);
+			if (t) {
+				return strdup (t->data);
+			}
+		}
+		return NULL;
 	}
 	if (op->type & HASCOMPARE) {
 		arg = r_str_new (cmp_op[oparg]);
@@ -140,8 +150,7 @@ static const char *parse_arg(pyc_opcode_object *op, ut32 oparg, RList *names, RL
 		} else if ((oparg - r_list_length (cellvars)) < r_list_length (freevars)) {
 			t = (pyc_object *)r_list_get_n (freevars, oparg);
 		} else {
-			arg = r_str_newf ("%u", oparg);
-			return arg;
+			return r_str_newf ("%u", oparg);
 		}
 		if (!t) {
 			return NULL;
