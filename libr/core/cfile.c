@@ -832,8 +832,6 @@ beach:
 }
 
 R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 loadaddr) {
-	const bool openmany = r_config_get_i (r->config, "file.openmany");
-	int opened_count = 0;
 	RListIter *fd_iter, *iter2;
 	RIODesc *fd;
 
@@ -845,15 +843,6 @@ R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 
 	}
 
 	r_list_foreach_safe (list_fds, fd_iter, iter2, fd) {
-		opened_count++;
-		if (openmany && opened_count > 1) {
-			// XXX - Open Many should limit the number of files
-			// loaded in io plugin area this needs to be more premptive
-			// like down in the io plugin layer.
-			// start closing down descriptors
-			r_list_delete (list_fds, fd_iter);
-			continue;
-		}
 		r_core_bin_load (r, fd->name, loadaddr);
 	}
 	return NULL;
@@ -863,7 +852,6 @@ R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 
 R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
 	r_return_val_if_fail (r && file, NULL);
 	ut64 prev = r_time_now_mono ();
-	const bool openmany = r_config_get_i (r->config, "file.openmany");
 
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
@@ -877,7 +865,7 @@ R_API RIODesc *r_core_file_open(RCore *r, const char *file, int flags, ut64 load
 	if (r_cons_is_breaked()) {
 		goto beach;
 	}
-	if (!fd && openmany) {
+	if (!fd) {
 		// XXX - make this an actual option somewhere?
 		fd = r_core_file_open_many (r, file, flags, loadaddr);
 		if (fd) {
