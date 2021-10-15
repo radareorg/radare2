@@ -750,7 +750,7 @@ static const char *help_msg_ar[] = {
 	"ar?", " <reg>", "Show register value",
 	"arb", " <type>", "Display hexdump of the given arena",
 	"arc", "[cq=] <name>", "Conditional flag registers",
-	"arcc", "", "Show calling convention defined from the register profile",
+	"arcc", "", "Derive calling convention from the register profile",
 	"ard", " <name>", "Show only different registers",
 	"arn", " <regalias>", "Get regname for pc,sp,bp,a0-3,zf,cf,of,sg",
 	"aro", "", "Show old (previous) register values",
