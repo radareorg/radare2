@@ -3468,6 +3468,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=PC	ip\n"
 		"=SP	sp\n"
 		"=BP	bp\n"
+		"=R0	ax\n"
 		"=A0	ax\n"
 		"=A1	bx\n"
 		"=A2	cx\n"
@@ -3520,6 +3521,7 @@ static char *get_reg_profile(RAnal *anal) {
 		break;
 	case 32: p =
 		"=PC	eip\n"
+		"=R0	eax\n"
 		"=SP	esp\n"
 		"=BP	ebp\n"
 		"=A0	eax\n"
@@ -3633,6 +3635,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"# RSP     stack pointer\n"
 		 "=PC	rip\n"
 		 "=SP	rsp\n"
+		 "=R0	rax\n"
 		 "=BP	rbp\n"
 		 "=A0	rcx\n"
 		 "=A1	rdx\n"
