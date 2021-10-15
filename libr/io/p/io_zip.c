@@ -61,10 +61,10 @@ static int r_io_zip_has_uri_substr(const char *file) {
 	return (file && strstr (file, "://"));
 }
 
-static int r_io_zip_check_uri_many(const char *file) {
+static bool r_io_zip_check_uri_many(const char *file) {
 	int i;
 	if (r_io_zip_has_uri_substr (file)) {
-		for (i = 0; ZIP_ALL_URIS[i].name != NULL; i++) {
+		for (i = 0; ZIP_ALL_URIS[i].name; i++) {
 			if (!strncmp (file, ZIP_ALL_URIS[i].name, ZIP_ALL_URIS[i].len) && file[ZIP_ALL_URIS[i].len]) {
 				return true;
 			}
@@ -73,10 +73,10 @@ static int r_io_zip_check_uri_many(const char *file) {
 	return false;
 }
 
-static int r_io_zip_check_uri(const char *file) {
+static bool r_io_zip_check_uri(const char *file) {
 	int i;
 	if (r_io_zip_has_uri_substr (file)) {
-		for (i = 0; ZIP_URIS[i].name != NULL; i++) {
+		for (i = 0; ZIP_URIS[i].name; i++) {
 			if (!strncmp (file, ZIP_URIS[i].name, ZIP_URIS[i].len) && file[ZIP_URIS[i].len]) {
 				return true;
 			}
@@ -376,13 +376,12 @@ char * r_io_zip_get_by_file_idx(const char * archivename, const char *idx, ut32 
 static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *res = NULL;
 	char *pikaboo, *tmp;
-	RIOZipFileObj *zfo = NULL;
-	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
+	char *zip_filename = NULL, *filename_in_zipfile = NULL;
 
 	if (!r_io_zip_plugin_open (io, file, false)) {
 		return NULL;
 	}
-	zip_uri = strdup (file);
+	char *zip_uri = strdup (file);
 	if (!zip_uri) {
 		return NULL;
 	}
@@ -494,16 +493,13 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	//eprintf("After parsing the given uri: %s\n", file);
 	//eprintf("Zip filename the given uri: %s\n", zip_filename);
 	//eprintf("File in the zip: %s\n", filename_in_zipfile);
-	zfo = r_io_zip_alloc_zipfileobj (zip_filename,
-		filename_in_zipfile, ZIP_CREATE, mode, rw);
-
+	RIOZipFileObj *zfo = r_io_zip_alloc_zipfileobj (zip_filename, filename_in_zipfile, ZIP_CREATE, mode, rw);
 	if (zfo) {
 		if (zfo->entry == -1) {
 			eprintf ("Warning: File did not exist, creating a new one.\n");
 		}
 		zfo->io_backref = io;
-		res = r_io_desc_new (io, &r_io_plugin_zip,
-			zfo->name, rw, mode, zfo);
+		res = r_io_desc_new (io, &r_io_plugin_zip, zfo->name, rw, mode, zfo);
 	}
 
 	if (!res) {
