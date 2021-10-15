@@ -4036,7 +4036,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("file.offset", "", "Offset where the file will be mapped at");
 	SETPREF ("file.type", "", "Type of current file");
 	SETI ("file.loadalign", 1024, "Alignment of load addresses");
-	SETI ("file.openmany", 1, "Maximum number of files opened at once");
 	/* magic */
 	SETI ("magic.depth", 100, "Recursivity depth in magic description strings");
 
