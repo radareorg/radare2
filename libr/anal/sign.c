@@ -64,56 +64,6 @@ R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
-R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn) {
-
-	// From anal/types/*:
-	// Get key-value types from sdb matching "func.%s", fcn->name
-	// Get func.%s.args (number of args)
-	// Get type,name pairs
-	// Put everything in RList following the next format:
-	// types: main.ret=%type%, main.args=%num%, main.arg.0="int,argc", ...
-
-	r_return_val_if_fail (a && fcn, NULL);
-
-	RList *ret = r_list_newf ((RListFree) free);
-	if (!ret) {
-		return NULL;
-	}
-
-	char *scratch = r_str_newf ("func.%s.args", fcn->name);
-	if (!scratch) {
-		return NULL;
-	}
-	const char *fcntypes = sdb_const_get (a->sdb_types, scratch, 0);
-	free (scratch);
-
-	scratch = r_str_newf ("func.%s.ret", fcn->name);
-	if (!scratch) {
-		return NULL;
-	}
-	const char *ret_type = sdb_const_get (a->sdb_types, scratch, 0);
-	free (scratch);
-
-	if (fcntypes) {
-		if (ret_type) {
-			r_list_append (ret, r_str_newf ("func.%s.ret=%s", fcn->name, ret_type));
-		}
-		int argc = atoi (fcntypes);
-		r_list_append (ret, r_str_newf ("func.%s.args=%d", fcn->name, argc));
-		int i;
-		for (i = 0; i < argc; i++) {
-			char *k = r_str_newf ("func.%s.arg.%d", fcn->name, i);
-			if (k) {
-				const char *arg = sdb_const_get (a->sdb_types, k, 0);
-				r_list_append (ret, r_str_newf ("func.%s.arg.%d=\"%s\"", fcn->name, i, arg));
-				free (k);
-			}
-		}
-	}
-
-	return ret;
-}
-
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
@@ -166,30 +116,43 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
-static RList *zign_types_to_list(RAnal *a, const char *types) {
-	RList *ret = r_list_newf ((RListFree)free);
-	if (!ret) {
-		return NULL;
-	}
-
-	unsigned int i = 0, prev = 0, len = strlen (types);
-	bool quoted = false;
-	char *token = NULL;
-	for (i = 0; i <= len; i++) {
-		if (types[i] == '"') {
-			quoted = !quoted;
-		} else if ((types[i] == ',' && !quoted) || types[i] == '\0') {
-			token = r_str_ndup (types + prev, i - prev);
-			if (token) {
-				prev = i + 1;
-				r_list_append (ret, token);
-				token = NULL;
+#define ALPH(x) \
+	(x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z')
+#define ISNUM(x) \
+	(x >= '0' && x <= '9')
+#define VALID_TOKEN_CHR(x) \
+	(ALPH (x) || ISNUM (x) || x == '_' || x == '*' || x == ' ')
+static bool types_sig_valid(const char *types) {
+	// quick state machine parser to validate types being sent to tcc_compile
+	int state = 0; // before, inside, or after ()
+	char ch;
+	const char *t = types;
+	while ((ch = *(t++)) && state >= 0) {
+		switch (state) {
+		case 0:
+			if (ch == '(') {
+				state++;
+			} else if (!VALID_TOKEN_CHR (ch) && ch != '.') {
+				state = -1;
 			}
+			break;
+		case 1:
+			if (ch == ')') {
+				state++;
+			} else if (!VALID_TOKEN_CHR (ch) && ch != ',') {
+				state = -1;
+			}
+			break;
+		case 2:
+			state = -1;
+			break;
 		}
 	}
-
-	return ret;
+	return state == 2? true: false;
 }
+#undef ALPH
+#undef ISNUM
+#undef VALID_TOKEN_CHR
 
 #define DBL_VAL_FAIL(x,y) \
 	if (x) { \
@@ -261,6 +224,15 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			DBL_VAL_FAIL (it->next, R_SIGN_NEXT);
 			it->next = strdup (token);
 			break;
+		case R_SIGN_TYPES:
+			DBL_VAL_FAIL (it->types, R_SIGN_TYPES);
+			if (!types_sig_valid (token)) {
+				eprintf ("Invalid types: ```%s``` in signatuer for %s\n", token, k);
+				success = false;
+				goto out;
+			}
+			it->types = strdup (token);
+			break;
 		case R_SIGN_GRAPH:
 			DBL_VAL_FAIL (it->graph, R_SIGN_GRAPH);
 			if (strlen (token) == 2 * sizeof (RSignGraph)) {
@@ -294,10 +266,6 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 				success = false;
 				goto out;
 			}
-			break;
-		case R_SIGN_TYPES:
-			DBL_VAL_FAIL (it->types, R_SIGN_TYPES);
-			it->types = zign_types_to_list (a, token);
 			break;
 		case R_SIGN_COLLISIONS:
 			DBL_VAL_FAIL (it->collisions, R_SIGN_COLLISIONS);
@@ -425,7 +393,10 @@ static inline size_t serial_val_reserv(RSignItem *it) {
 		reserve += 0x10;
 	}
 	if (it->next) {
-		reserve += 0x10;
+		reserve += 0x20;
+	}
+	if (it->types) {
+		reserve += 0x20;
 	}
 	if (it->hash && it->hash->bbhash) {
 		reserve += 64;
@@ -439,9 +410,6 @@ static inline size_t serial_val_reserv(RSignItem *it) {
 	}
 	if (it->vars) {
 		reserve += mul * r_list_length (it->vars);
-	}
-	if (it->types) {
-		reserve += mul * r_list_length (it->types);
 	}
 	return reserve;
 }
@@ -500,7 +468,6 @@ static char *serialize_value(RSignItem *it) {
 	FreeRet_on_fail (serialize_str_list (it->refs, sb, R_SIGN_REFS), sb);
 	FreeRet_on_fail (serialize_str_list (it->xrefs, sb, R_SIGN_XREFS), sb);
 	FreeRet_on_fail (serialize_str_list (it->vars, sb, R_SIGN_VARS), sb);
-	FreeRet_on_fail (serialize_str_list (it->types, sb, R_SIGN_TYPES), sb);
 	FreeRet_on_fail (serialize_str_list (it->collisions, sb, R_SIGN_COLLISIONS), sb);
 
 	if (it->comment) {
@@ -509,6 +476,10 @@ static char *serialize_value(RSignItem *it) {
 
 	if (it->realname) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_NAME, it->realname), sb);
+	}
+
+	if (it->types) {
+		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_TYPES, it->types), sb);
 	}
 
 	if (it->next) {
@@ -575,12 +546,12 @@ static inline void merge_item_clobber(RSignItem *dst, RSignItem *src) {
 	quick_merge (comment, free);
 	quick_merge (realname, free);
 	quick_merge (next, free);
+	quick_merge (types, free);
 
 	// lists
 	quick_merge (refs, r_list_free);
 	quick_merge (xrefs, r_list_free);
 	quick_merge (vars, r_list_free);
-	quick_merge (types, r_list_free);
 	quick_merge (collisions, r_list_free);
 }
 #undef quick_merge
@@ -596,6 +567,7 @@ static RSignItem *sign_get_sdb_item(RAnal *a, const char *key) {
 	}
 	return NULL;
 }
+
 static bool r_sign_set_item(Sdb *sdb, RSignItem *it, char *key_optional) {
 	bool retval = false;
 	char *key = NULL, *mykey = key_optional;
@@ -957,7 +929,19 @@ R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignT
 	case R_SIGN_VARS:
 		return !it->vars && (it->vars = r_sign_fcn_vars (a, fcn));
 	case R_SIGN_TYPES:
-		return !it->types && (it->types = r_sign_fcn_types (a, fcn));
+		if (!it->types) {
+			it->types = r_anal_function_get_signature (fcn);
+			if (it->types) {
+				size_t l = strlen (it->types) - 1;
+				if (l > 0 && it->types[l] == ';') {
+					it->types[l] = '\0';
+					return true;
+				} else {
+					free (it->types);
+				}
+			}
+		}
+		return false;
 	case R_SIGN_BBHASH:
 		return !it->hash && (it->hash = r_sign_fcn_bbhash (a, fcn));
 	case R_SIGN_OFFSET:
@@ -1005,9 +989,26 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment) {
 R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 	r_return_val_if_fail (a && name && realname, false);
 
+	if (strchr (realname, ' ')) {
+		eprintf ("Realname sig can't contain spaces\n");
+		return false;
+	}
+
 	bool retval = false;
 	RSignItem *it = item_new_named (a, name);
 	if (it && (it->realname = strdup (realname))) {
+		retval = r_sign_add_item (a, it);
+		r_sign_item_free (it);
+	}
+	return retval;
+}
+
+R_API bool r_sign_add_types(RAnal *a, const char *name, const char *types) {
+	r_return_val_if_fail (a && name && types && types_sig_valid (types), false);
+
+	bool retval = false;
+	RSignItem *it = item_new_named (a, name);
+	if (it && (it->types = strdup (types))) {
 		retval = r_sign_add_item (a, it);
 		r_sign_item_free (it);
 	}
@@ -1037,23 +1038,6 @@ R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars) {
 		char *var;
 		r_list_foreach (vars, iter, var) {
 			r_list_append (it->vars, strdup (var));
-		}
-		retval = r_sign_add_item (a, it);
-	}
-	r_sign_item_free (it);
-	return retval;
-}
-
-R_API bool r_sign_add_types(RAnal *a, const char *name, RList *types) {
-	r_return_val_if_fail (a && name && types, false);
-
-	bool retval = false;
-	RSignItem *it = item_new_named (a, name);
-	if (it && (it->types = r_list_newf ((RListFree)free))) {
-		RListIter *iter;
-		char *type;
-		r_list_foreach (types, iter, type) {
-			r_list_append (it->types, strdup (type));
 		}
 		retval = r_sign_add_item (a, it);
 	}
@@ -1485,7 +1469,6 @@ R_API bool r_sign_diff_by_name(RAnal *a, RSignOptions *options, const char *othe
 
 	r_list_free (la);
 	r_list_free (lb);
-
 	return true;
 }
 
@@ -1508,11 +1491,11 @@ static void listBytes(RAnal *a, RSignItem *it, PJ *pj, int format) {
 		masked += bytes->mask[i] == 0xff;
 	}
 
-	char * strbytes = r_hex_bin2strdup (bytes->bytes, bytes->size);
+	char *strbytes = r_hex_bin2strdup (bytes->bytes, bytes->size);
 	if (!strbytes) {
 		return;
 	}
-	char * strmask = r_hex_bin2strdup (bytes->mask, bytes->size);
+	char *strmask = r_hex_bin2strdup (bytes->mask, bytes->size);
 	if (!strmask) {
 		free (strbytes);
 		return;
@@ -1586,65 +1569,6 @@ static void listOffset(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	} else {
 		a->cb_printf ("  addr: 0x%08"PFMT64x"\n", it->addr);
 	}
-}
-
-static void print_function_args_json(PJ *pj, char *arg_type) {
-	char *arg_name = strchr (arg_type, ',');
-
-	if (arg_name == NULL) {
-		return;
-	}
-
-	*arg_name = '\0';
-	++arg_name;
-
-	size_t len_arg_name = strlen (arg_name);
-	arg_name[len_arg_name - 1] = '\0';
-
-	pj_o (pj);
-	pj_ks (pj, "name", arg_name);
-	pj_ks (pj, "type", arg_type + 1);
-	pj_end (pj);
-}
-
-static void types_set_return_json(RList *types, PJ *pj) {
-	const char *needle = ".ret=";
-	int i = 0;
-	char *element;
-	RListIter *iter = NULL;
-	r_list_foreach (types, iter, element) {
-		// func.main.ret=int
-		char *ptr = strstr (element, needle);
-		if (ptr) {
-			pj_ks (pj, "return", ptr + sizeof (needle) - 1);
-			return;
-		}
-		if (i++ > 3) {
-			break;
-		}
-	}
-	pj_ks (pj, "return", "void");
-}
-
-static void list_types_json(RList *types, PJ *pj) {
-	pj_ko (pj, "types");
-	types_set_return_json (types, pj);
-
-	pj_ka (pj, "args");
-	char *element = NULL;
-	RListIter *iter = NULL;
-	r_list_foreach (types, iter, element) {
-		char *t = strdup (element);
-		char *sep = strchr (t, '=');
-		if (sep) {
-			*sep = '\0';
-			++sep;
-			print_function_args_json (pj, sep);
-		}
-		free (t);
-	}
-	pj_end (pj);
-	pj_end (pj);
 }
 
 static void list_sign_list(RAnal *a, RList *l, PJ *pj, int fmt, int type, const char *name) {
@@ -1776,6 +1700,7 @@ static bool listCB(RSignItem *it, void *user) {
 	liststring (a, R_SIGN_NAME, it->realname, ctx->pj, ctx->format, it->name);
 	liststring (a, R_SIGN_COMMENT, it->comment, ctx->pj, ctx->format, it->name);
 	liststring (a, R_SIGN_NEXT, it->next, ctx->pj, ctx->format, it->name);
+	liststring (a, R_SIGN_TYPES, it->types, ctx->pj, ctx->format, it->name);
 
 	// References
 	if (it->refs) {
@@ -1796,17 +1721,6 @@ static bool listCB(RSignItem *it, void *user) {
 		list_sign_list (a, it->vars, ctx->pj, ctx->format, R_SIGN_VARS, it->name);
 	} else if (ctx->format == 'j') {
 		pj_ka (ctx->pj, "vars");
-		pj_end (ctx->pj);
-	}
-	// Types
-	if (it->types) {
-		if (ctx->format == 'j') {
-			list_types_json (it->types, ctx->pj);
-		} else {
-			list_sign_list (a, it->types, ctx->pj, ctx->format, R_SIGN_TYPES, it->name);
-		}
-	} else if (ctx->format == 'j') {
-		pj_ka (ctx->pj, "types");
 		pj_end (ctx->pj);
 	}
 
@@ -2451,16 +2365,16 @@ static bool match_metrics(RSignItem *it, struct metric_ctx *ctx) {
 	if (fit->addr != UT64_MAX && !sig_addr_cmp (it->addr, fit->addr)) {
 		types[count++] = R_SIGN_OFFSET;
 	}
-	if (fit->hash && !sig_hash_cmp (it->hash, fit->hash)) {
+	if (fit->hash && it->hash && !sig_hash_cmp (it->hash, fit->hash)) {
 		types[count++] = R_SIGN_BBHASH;
 	}
-	if (fit->refs && !str_list_cmp (it->refs, fit->refs)) {
+	if (fit->refs && it->refs && !str_list_cmp (it->refs, fit->refs)) {
 		types[count++] = R_SIGN_REFS;
 	}
-	if (fit->vars && !str_list_cmp (it->vars, fit->vars)) {
+	if (fit->vars && it->vars && !str_list_cmp (it->vars, fit->vars)) {
 		types[count++] = R_SIGN_VARS;
 	}
-	if (fit->types && !str_list_cmp (it->types, fit->types)) {
+	if (fit->types && it->types && !strcmp (it->types, fit->types)) {
 		types[count++] = R_SIGN_TYPES;
 	}
 
@@ -2585,6 +2499,7 @@ static bool item_has_type(RSignItem *it, RSignType t) {
 }
 
 typedef int (*RSignSorter) (RSignItem *, RSignItem *);
+
 RSignSorter type_to_cmp(int type, bool exact) {
 	switch (type) {
 	case R_SIGN_GRAPH:
@@ -2648,7 +2563,7 @@ static inline bool sign_collide_by(RPVector *sigs, RSignType type) {
 static inline RSignItem *metric_build_item(RSignSearchMetrics *sm, RAnalFunction *fcn) {
 	RSignItem *it = r_sign_item_new ();
 	if (it) {
-		RSignType *t = sm->types;
+		RSignType *t = sm->stypes;
 		while (*t != R_SIGN_END) {
 			if (*t == R_SIGN_BYTES) {
 				// no need for mask
@@ -2760,10 +2675,10 @@ R_API void r_sign_item_free(RSignItem *item) {
 		r_sign_graph_free (item->graph);
 		free (item->comment);
 		free (item->realname);
+		free (item->types);
 		r_list_free (item->refs);
 		r_list_free (item->vars);
 		r_list_free (item->xrefs);
-		r_list_free (item->types);
 		r_list_free (item->collisions);
 		free (item);
 	}
