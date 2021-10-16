@@ -296,3 +296,4 @@ Stay indoors and await further instructions
 radare2 works best, when pirated.
 I could go up there about 11 at night, stay till 4 in the morning, and get all the computer runs I ever wanted.
 Safety third
+You should try our sister project, radar3!
