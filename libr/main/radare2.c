@@ -1174,12 +1174,12 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							/* the baddr should be set manually here */
 							if (filepath) {
 								(void)r_core_bin_load (r, filepath, baddr);
-							}
-							// check if bin info is loaded and complain if -B was used
-							RBinFile *bi = r_bin_cur (r->bin);
-							bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
-							if (!haveBinInfo && baddr != UT64_MAX) {
-								eprintf ("Warning: Don't use -B on unknown files. Consider using -m.\n");
+								// check if bin info is loaded and complain if -B was used
+								RBinFile *bi = r_bin_cur (r->bin);
+								bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;
+								if (!haveBinInfo && baddr != UT64_MAX) {
+									eprintf ("Warning: Don't use -B on unknown files. Consider using -m.\n");
+								}
 							}
 						} else {
 							r_io_map_new (r->io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
