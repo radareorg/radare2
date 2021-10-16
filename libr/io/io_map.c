@@ -102,7 +102,7 @@ R_API bool r_io_map_remap_fd(RIO *io, int fd, ut64 addr) {
 	bool retval = false;
 	RList *maps = r_io_map_get_by_fd (io, fd);
 	if (maps) {
-		map = r_list_get_n (maps, 0);
+		map = r_list_get_n (maps, 0);	//this looks wrong
 		if (map) {
 			retval = r_io_map_remap (io, map->id, addr);
 		}
@@ -279,7 +279,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	r_return_val_if_fail (io, false);
 	if (io->use_banks) {
-		r_io_bank_map_priorize (io, io->bank, id);
+		return r_io_bank_map_priorize (io, io->bank, id);
 	}
 	size_t i;
 	for (i = 0; i < r_pvector_len (&io->maps); i++) {
@@ -297,6 +297,9 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 
 R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 	r_return_val_if_fail (io, false);
+	if (io->use_banks) {
+		return r_io_bank_map_depriorize (io, io->bank, id);
+	}
 	size_t i;
 	for (i = 0; i < r_pvector_len (&io->maps); i++) {
 		RIOMap *map = r_pvector_at (&io->maps, i);
@@ -304,7 +307,7 @@ R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 		if (map->id == id) {
 			r_pvector_remove_at (&io->maps, i);
 			r_pvector_push_front (&io->maps, map);
-			io_map_calculate_skyline (io);
+			io_map_calculate_skyline (io);	//done
 			return true;
 		}
 	}
