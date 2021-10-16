@@ -77,7 +77,7 @@ ax~?
 ax~selref
 EOF
 EXPECT=<<EOF
-94
+89
               section.0.__TEXT.__text+20 0x100000db4 ->      DATA -> 0x100001150 section.14.__DATA.__objc_selrefs
                                  main+15 0x100000e5f ->      DATA -> 0x100001158 section.14.__DATA.__objc_selrefs+8
                                  main+45 0x100000e7d ->      DATA -> 0x100001160 section.14.__DATA.__objc_selrefs+16

@@ -768,6 +768,9 @@ static bool cb_asmbits(void *user, void *data) {
 		return false;
 	}
 #if 0
+	if (bits == core->rasm->bits) {
+		return false;
+	}
 // TODO: pretty good optimization, but breaks many tests when arch is different i think
 	if (bits == core->rasm->bits && bits == core->anal->bits && bits == core->dbg->bits) {
 		// early optimization
