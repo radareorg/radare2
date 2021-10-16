@@ -681,7 +681,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		if (!strcmp (plugin->name, "any")) {
 			ut64 size = (r_str_startswith (desc->name, "rap") && strstr (desc->name, "://"))
 				? UT64_MAX : r_io_desc_size (desc);
-			r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, UT64_MAX);
+			r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, size);
 			// set use of raw strings
 			//r_config_set (r->config, "bin.rawstr", "true");
 			// r_config_set_i (r->config, "io.va", false);
