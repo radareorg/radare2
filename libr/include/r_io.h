@@ -377,7 +377,7 @@ R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 s
 R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, const ut64 addr);
 R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
-R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
+R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
 
 //io.c
@@ -393,11 +393,11 @@ R_API bool r_io_reopen(RIO *io, int fd, int flags, int mode);
 R_API bool r_io_close_all(RIO *io);
 R_API int r_io_pread_at(RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_pwrite_at(RIO *io, ut64 paddr, const ut8 *buf, int len);
-R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len);
+R_API bool r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len);
+R_API bool r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len);
-R_API void r_io_alprint(RList *ls);
 R_API bool r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_read(RIO *io, ut8 *buf, int len);
 R_API bool r_io_write(RIO *io, ut8 *buf, int len);
