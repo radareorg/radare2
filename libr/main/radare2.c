@@ -1172,7 +1172,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 							}
 							/* Load rbin info from r2 dbg:// or r2 /bin/ls */
 							/* the baddr should be set manually here */
-							(void)r_core_bin_load (r, filepath, baddr);
+							if (filepath) {
+								(void)r_core_bin_load (r, filepath, baddr);
+							}
 							// check if bin info is loaded and complain if -B was used
 							RBinFile *bi = r_bin_cur (r->bin);
 							bool haveBinInfo = bi && bi->o && bi->o->info && bi->o->info->type;

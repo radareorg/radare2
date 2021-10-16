@@ -679,11 +679,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 	if (plugin && plugin->name) {
 		if (!strcmp (plugin->name, "any")) {
-			if (r_str_startswith (desc->name, "rap") && strstr (desc->name, "://")) {
-				r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, UT64_MAX);
-			} else {
-				r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
-			}
+			ut64 size = (r_str_startswith (desc->name, "rap") && strstr (desc->name, "://"))
+				? UT64_MAX : r_io_desc_size (desc);
+			r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, size);
 			// set use of raw strings
 			//r_config_set (r->config, "bin.rawstr", "true");
 			// r_config_set_i (r->config, "io.va", false);
@@ -766,8 +764,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				ut64 a = linkdata.addr;
 				ut64 b = imp_addr;
 				r_core_cmdf (r, "ax 0x%08"PFMT64x" 0x%08"PFMT64x, a, b);
-			} else {
-				eprintf ("NO\n");
 			}
 		}
 	}
