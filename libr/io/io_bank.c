@@ -723,7 +723,7 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 	return ret;
 }
 
-R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len) {
+R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank, false);
 	RIOSubMap fake_sm;
