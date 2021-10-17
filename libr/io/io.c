@@ -384,7 +384,11 @@ R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (io->ff) {
 			memset (buf, io->Oxff, len);
 		}
-		ret = on_map_skyline (io, addr, buf, len, R_PERM_R, fd_read_at_wrap, true);
+		if (io->use_banks) {
+			ret = r_io_bank_read_from_submap_at (io, io->bank, addr, buf, len);
+		} else {
+			ret = on_map_skyline (io, addr, buf, len, R_PERM_R, fd_read_at_wrap, true);
+		}
 	} else {
 		ret = r_io_pread_at (io, addr, buf, len);
 	}
