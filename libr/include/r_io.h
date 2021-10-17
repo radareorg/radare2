@@ -378,6 +378,8 @@ R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, const ut64 addr);
 R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
+R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len);
+R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
 
 //io.c

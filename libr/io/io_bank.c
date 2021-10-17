@@ -755,6 +755,56 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 	return ret;
 }
 
+// reads only from single submap at addr and returns amount of bytes read.
+// if no submap is mapped at addr, fcn returns 0. returns -1 on error
+R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, int len) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	r_return_val_if_fail (io && bank, -1);
+	if (!len) {
+		return 0;
+	}
+	RContRBNode *node = r_rbtree_cont_find_node (bank->submaps, &addr, _find_sm_by_vaddr_cb, NULL);
+	if (!node) {
+		return 0;
+	}
+	RIOSubMap *sm = (RIOSubMap *)node->data;
+	if (!r_io_submap_contain (sm, addr)) {
+		return 0;
+	}
+	RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
+	if (!map || !(map->perm & R_PERM_R)) {
+		return -1;
+	}
+	const int read_len = R_MIN (len, r_io_submap_to (sm) - addr + 1);
+	const ut64 paddr = addr - r_io_map_from (map) + map->delta;
+	return r_io_fd_read_at (io, map->fd, paddr, buf, read_len);
+}
+
+// writes only to single submap at addr and returns amount of bytes written.
+// if no submap is mapped at addr, fcn returns 0. returns -1 on error
+R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len) {
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	r_return_val_if_fail (io && bank, -1);
+	if (!len) {
+		return 0;
+	}
+	RContRBNode *node = r_rbtree_cont_find_node (bank->submaps, &addr, _find_sm_by_vaddr_cb, NULL);
+	if (!node) {
+		return 0;
+	}
+	RIOSubMap *sm = (RIOSubMap *)node->data;
+	if (!r_io_submap_contain (sm, addr)) {
+		return 0;
+	}
+	RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
+	if (!map || !(map->perm & R_PERM_W)) {
+		return -1;
+	}
+	const int write_len = R_MIN (len, r_io_submap_to (sm) - addr + 1);
+	const ut64 paddr = addr - r_io_map_from (map) + map->delta;
+	return r_io_fd_write_at (io, map->fd, paddr, buf, write_len);
+}
+
 R_API RIOMap *r_io_bank_get_map_at(RIO *io, const ut32 bankid, ut64 addr) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank, NULL);
