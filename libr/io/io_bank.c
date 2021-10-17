@@ -224,11 +224,11 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 #endif
 	entry = r_rbtree_cont_node_next (entry);
 	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
-		//delete all submaps that are completly included in sm
-		RContRBNode *next = r_rbtree_cont_node_next (entry);
-		// this can be optimized, there is no need to do search here
-		r_rbtree_cont_delete (bank->submaps, entry->data, _find_sm_by_from_vaddr_cb, NULL);
-		entry = next;
+		r_queue_enqueue (bank->todo, entry->data);
+		entry = r_rbtree_cont_node_next (entry);
+	}
+	while (!r_queue_is_empty (bank->todo)) {
+		r_rbtree_cont_delete (bank->submaps, r_queue_dequeue (bank->todo), _find_sm_by_from_vaddr_cb, NULL);
 	}
 	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		bd = (RIOSubMap *)entry->data;
@@ -358,12 +358,13 @@ found:
 	r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
 #endif
 	entry = r_rbtree_cont_node_next (entry);
+	// delete all submaps that are completly included in sm
 	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
-		//delete all submaps that are completly included in sm
-		RContRBNode *next = r_rbtree_cont_node_next (entry);
-		// this can be optimized, there is no need to do search here
-		r_rbtree_cont_delete (bank->submaps, entry->data, _find_sm_by_from_vaddr_cb, NULL);
-		entry = next;
+		r_queue_enqueue (bank->todo, entry->data);
+		entry = r_rbtree_cont_node_next (entry);
+	}
+	while (!r_queue_is_empty (bank->todo)) {
+		r_rbtree_cont_delete (bank->submaps, r_queue_dequeue (bank->todo), _find_sm_by_from_vaddr_cb, NULL);
 	}
 	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		bd = (RIOSubMap *)entry->data;
@@ -393,11 +394,21 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 		// and also enqueues them in bank->todo
 		RContRBNode *next = r_rbtree_cont_node_next (entry);
 		if (bd->mapref.id == fake_sm.mapref.id) {
-			r_queue_enqueue (bank->todo, R_NEWCOPY (RIOSubMap, bd));
-			r_rbtree_cont_delete (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
+			r_queue_enqueue (bank->todo, bd);
 		}
 		entry = next;
 		bd = entry ? (RIOSubMap *)entry->data : NULL;
+	}
+	{
+		// HACK
+		bank->submaps->free = NULL;
+		ut32 i;
+		for (i = 0; i < bank->todo->size; i++) {
+			bd = r_queue_dequeue (bank->todo);
+			r_rbtree_cont_delete (bank->submaps, bd, _find_sm_by_from_vaddr_cb, NULL);
+			r_queue_enqueue (bank->todo, bd);
+		}
+		bank->submaps->free = free;
 	}
 	RListIter *iter = prio;
 	while (!r_queue_is_empty (bank->todo)) {
@@ -708,12 +719,12 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 			// mapref doesn't belong to map
 			return false;
 		}
-		if (!(map->perm & R_PERM_R)) {
+		if (!(map->perm & R_PERM_R) && !(io->p_cache & 1)) {
 			node = r_rbtree_cont_node_next (node);
 			sm = node ? (RIOSubMap *)node->data : NULL;
 			continue;
 		}
-		const ut64 buf_off = addr - R_MAX (addr, r_io_submap_from (sm));
+		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
 		const int read_len = R_MIN (r_io_submap_to ((&fake_sm)),
 					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
 		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
@@ -742,12 +753,12 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 			// mapref doesn't belong to map
 			return false;
 		}
-		if (!(map->perm & R_PERM_W)) {
+		if (!(map->perm & R_PERM_W) && !(io->p_cache & 2)) {
 			node = r_rbtree_cont_node_next (node);
 			sm = node ? (RIOSubMap *)node->data : NULL;
 			continue;
 		}
-		const ut64 buf_off = addr - R_MAX (addr, r_io_submap_from (sm));
+		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
 		const int write_len = R_MIN (r_io_submap_to ((&fake_sm)),
 					     r_io_submap_to (sm)) - (addr + buf_off) + 1;
 		const ut64 paddr = addr + buf_off - r_io_map_from (map) + map->delta;
