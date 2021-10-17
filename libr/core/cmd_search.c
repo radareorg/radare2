@@ -14,6 +14,14 @@ static int cmd_search(void *data, const char *input);
 #define AES_SEARCH_LENGTH 40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
+static const char *help_msg_search_offset[] = {
+	"Usage: /o", "[n]", "Shows Backward instruction offset", NULL
+};
+
+static const char *help_msg_search_offset_without_anal[] = {
+	"Usage: /O", "[n]", "Shows Backward instruction offset, but with a different fallback if anal cannot be used.", NULL
+};
+
 static const char *help_msg_search_esil[] = {
 	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
 	"/Ej", " [esil-expr]", "same as above but using the given magic file",
@@ -3289,6 +3297,10 @@ reread:
 		}
 		goto reread;
 	case 'o': { // "/o" print the offset of the Previous opcode
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_offset);
+			break;
+		}
 		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
 		n = R_ABS((st64)n);
 		if (((st64)n) < 1) {
@@ -3306,6 +3318,10 @@ reread:
 		break;
 	}
 	case 'O': { // "/O" alternative to "/o"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_offset_without_anal);
+			break;
+		}
 		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
 		if (!n) {
 			n = 1;
