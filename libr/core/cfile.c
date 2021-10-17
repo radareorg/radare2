@@ -738,8 +738,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				continue;
 			}
 			eprintf ("[bin.libs] Opening %s\n", lib);
-			ut64 baddr = r_io_map_location (r->io, 0x200000);
-			if (baddr != UT64_MAX) {
+			ut64 baddr = (r->io->bits == 64)? 0x60000000000LL: 0x60000000;	// do we really need io->bits?
+			if (r_io_map_locate (r->io, &baddr, 0x200000, 1)) {
 				r_core_file_loadlib (r, lib, baddr);
 			}
 		}
