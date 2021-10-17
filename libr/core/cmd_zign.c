@@ -212,8 +212,10 @@ static inline bool za_add(RCore *core, const char *input) {
 		ret = r_sign_add_types (core->anal, name, sig);
 		break;
 	case R_SIGN_OFFSET:
-		ut64 offset = r_num_get (core->num, sig);
-		ret = r_sign_add_addr (core->anal, name, offset);
+		{
+			ut64 offset = r_num_get (core->num, sig);
+			ret = r_sign_add_addr (core->anal, name, offset);
+		}
 		break;
 	case R_SIGN_REFS:
 		lst = r_str_split_list (sig, " ", 0);
