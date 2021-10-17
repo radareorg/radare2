@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake<nopcode.org>
-				2013 - condret		*/
+/* radare - LGPL - Copyright 2012-2021 - pancake, condret */
 
 #include <string.h>
 #include <r_types.h>
@@ -10,7 +9,7 @@
 
 static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
 	int type = 0;
-	if (len <1) {
+	if (len < 1) {
 		return;
 	}
 	switch (data[0]) {
@@ -45,7 +44,6 @@ static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
 	} else if (type & Z80_OP24) {
 		*size_prefix = 3;
 	}
-
 	if (type & Z80_ARG16) {
 		*size = *size_prefix + 2;
 	} else if (type & Z80_ARG8) {
@@ -241,7 +239,6 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 		op->jump = addr + ((len>1)? (st8)data[1]:0) + ilen;
 		op->fail = addr + ilen;
 		break;
-
 	// conditional jumps
 	case 0xc2:
 	case 0xca:
@@ -411,6 +408,16 @@ static bool set_reg_profile(RAnal *anal) {
 }
 
 static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 0;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 3;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 1;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	}
 	return 1;
 }
 
