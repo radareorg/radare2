@@ -268,7 +268,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 			i++;
 		}
 	}
-	if (ret) {
+	if (ret && !io->use_banks) {
 		io_map_calculate_skyline (io);
 	}
 	return ret;
@@ -343,6 +343,9 @@ R_API void r_io_map_cleanup(RIO* io) {
 	if (!io->files) {
 		r_io_map_fini (io);
 		r_io_map_init (io);
+		return;
+	}
+	if (io->use_banks) {
 		return;
 	}
 	bool del = false;
@@ -453,17 +456,6 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	r_io_map_set_size (map, newsize);
 	io_map_calculate_skyline (io);
 	return true;
-}
-
-// find a location that can hold enough bytes without overlapping
-// XXX this function is buggy and doesnt works as expected, but i need it for a PoC for now
-R_API ut64 r_io_map_location(RIO *io, ut64 size) {
-	r_return_val_if_fail (io, UT64_MAX);
-	ut64 base = (io->bits == 64)? 0x60000000000LL: 0x60000000;
-	while (r_io_map_get_at (io, base)) {
-		base += 0x200000;
-	}
-	return base;
 }
 
 R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref) {
