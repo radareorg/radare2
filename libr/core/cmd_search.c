@@ -14,12 +14,23 @@ static int cmd_search(void *data, const char *input);
 #define AES_SEARCH_LENGTH 40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
+static const char *help_msg_search_wide_string[] = {
+	"Usage: /w[ij]", "[str]", "Wide string search subcommands",
+	"/w ", "foo", "search for wide string 'f\\0o\\0o\\0'",
+	"/wj ", "foo", "search for wide string 'f\\0o\\0o\\0' (json output)",
+	"/wi ", "foo", "search for wide string 'f\\0o\\0o\\0' but ignoring case",
+	"/wij ", "foo", "search for wide string 'f\\0o\\0o\\0' but ignoring case (json output)",
+	NULL
+};
+
 static const char *help_msg_search_offset[] = {
-	"Usage: /o", "[n]", "Shows Backward instruction offset", NULL
+	"Usage: /o", "[n]", "Shows offset of 'n' Backward instruction",
+	NULL
 };
 
 static const char *help_msg_search_offset_without_anal[] = {
-	"Usage: /O", "[n]", "Shows Backward instruction offset, but with a different fallback if anal cannot be used.", NULL
+	"Usage: /O", "[n]", "Shows offset of 'n' Backward instruction, but with a different fallback if anal cannot be used.",
+	NULL
 };
 
 static const char *help_msg_search_esil[] = {
@@ -3969,7 +3980,15 @@ reread:
 		dosearch = true;
 		break;
 	case 'w': // "/w" search wide string, includes ignorecase search functionality (/wi cmd)!
-		if (input[2] ) {
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_wide_string);
+			break;
+		}
+		if (input[2]) {
+			if (input[2] == '?') {
+				r_core_cmd_help (core, help_msg_search_wide_string);
+				break;
+			}
 			if (input[1] == 'j' || input[2] == 'j') {
 				param.outmode = R_MODE_JSON;
 			}
