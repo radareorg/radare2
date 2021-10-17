@@ -3996,7 +3996,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("rop.comments", "false", "Display comments in rop search output");
 
 	/* io */
-	SETCB ("io.banks", "false", &cb_io_banks, "Use RIOBank api instead of the skyline implementation");
+	SETCB ("io.banks", "true", &cb_io_banks, "Use RIOBank api instead of the skyline implementation");
 	SETCB ("io.cache", "false", &cb_io_cache, "Change both of io.cache.{read,write}");
 	SETCB ("io.cache.auto", "false", &cb_io_cache_mode, "Automatic cache all reads in the IO backend");
 	SETCB ("io.cache.read", "false", &cb_io_cache_read, "Enable read cache for vaddr (or paddr when io.va=0)");
