@@ -44,6 +44,7 @@ r2pm install [pkg]   # installs the package
 
 Some of the most installed packages are:
 
+* [radius](https://github.com/aemmitt-ns/radius) fast symbolic execution engine based on boolector and r2
 * [r2ghidra](https://github.com/radareorg/r2ghidra) the native ghidra decompiler plugin: `pdg` command
 * [esilsolve](https://github.com/radareorg/esilsolve) symbolic execution r2 plugin based on esil and z3
 * [r2dec](https://github.com/wargio/r2dec-js) decompiler based on r2 written in js `pdd`
