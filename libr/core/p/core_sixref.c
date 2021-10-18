@@ -344,7 +344,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 		}
 	} else {
 		ut64 offset = core->offset;
-		if ((offset & 0x3) != 0) {
+		if (offset & 3) {
 			offset -= offset % 4;
 			eprintf ("Current offset is not 4-byte aligned, using 0x%"PFMT64x" instaed\n", offset);
 		}
