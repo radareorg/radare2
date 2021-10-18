@@ -1565,6 +1565,20 @@ static int esil_gb_fini (RAnalEsil *esil) {
 	return true;
 }
 
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 0;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 3;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 1;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 1;
+	}
+	return 1;
+}
+
 RAnalPlugin r_anal_plugin_gb = {
 	.name = "gb",
 	.desc = "Gameboy CPU code analysis plugin",
@@ -1574,6 +1588,7 @@ RAnalPlugin r_anal_plugin_gb = {
 	.bits = 16,
 	.op = &gb_anop,
 	.set_reg_profile = &set_reg_profile,
+	.archinfo = archinfo,
 	.esil_init = esil_gb_init,
 	.esil_fini = esil_gb_fini,
 };
