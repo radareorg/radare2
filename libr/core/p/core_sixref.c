@@ -306,6 +306,8 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	RCore *core = (RCore *)user;
 	const char *arch = r_config_get (core->config, "asm.arch");
 	const int bits = r_config_get_i (core->config, "asm.bits");
+	char *args = NULL;
+
 	if (!strstr (arch, "arm") || bits != 64) {
 		eprintf ("This command only works on arm64. Please check your asm.{arch,bits}\n");
 		return true;
@@ -319,11 +321,23 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	ut64 search = 0;
 	int len = 0;
 
-	const char *args = input + sizeof("sixref");
-	const char *address = strtok (args, " ");
-	if (address != NULL) {
-		search = r_num_math (core->num, address);
-		len = r_num_math (core->num, strtok(NULL, " "));
+	args = strdup (input + strlen ("sixref"));
+	int num_args = r_str_split (args, ' ');
+	char *tmp = args;
+
+	if (num_args > 0) {
+		while (!(*tmp)) {
+			tmp++;
+		}
+		search = r_num_math (core->num, tmp);
+		tmp += strlen (tmp);
+	}
+
+	if (num_args > 1) {
+		while (!(*tmp)) {
+			tmp++;
+		}
+		len = r_num_math (core->num, tmp);
 	}
 
 	if (len == 0) {
@@ -365,6 +379,10 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	}
 
 done:
+	if (args) {
+		free (args);
+	}
+
 	return true;
 }
 
