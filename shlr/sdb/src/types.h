@@ -45,7 +45,11 @@
 #define lseek _lseek
 #include <windows.h>
 #include <io.h>
+#if __MINGW32__
+#define ULLFMT "ll"
+#else
 #define ULLFMT "I64"
+#endif
 #undef HAVE_MMAN
 #define HAVE_MMAN 0
 #else
