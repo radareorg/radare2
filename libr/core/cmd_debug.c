@@ -3345,7 +3345,7 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 }
 
 #if __WINDOWS__
-#include "..\debug\p\native\windows\windows_message.h"
+#include "../debug/p/native/windows/windows_message.h"
 #endif
 
 #define DB_ARG(x) r_str_word_get0(str, x)

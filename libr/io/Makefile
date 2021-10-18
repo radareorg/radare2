@@ -12,6 +12,9 @@ OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o undo.o ioutils.o 
 OBJS+=io_bank.o io_submap.o
 
 CFLAGS+=-Wall -DR2_PLUGIN_INCORE
+## XXX unify all the debugger code
+CFLAGS+=-I$(SHLR)/heap/include/r_windows
+CFLAGS+=-I$(SHLR)/w32dbg_wrap/include
 
 include ../socket/deps.mk
 include $(SHLR)/ar/deps.mk

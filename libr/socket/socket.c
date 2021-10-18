@@ -10,7 +10,7 @@
 #include "i/isotp.h"
 #endif
 
-#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
+#if EMSCRIPTEN || __wasi__ || defined(__serenity__) || defined(__MINGW32__)
 #define NETWORK_DISABLED 1
 #else
 #define NETWORK_DISABLED 0

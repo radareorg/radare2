@@ -3,6 +3,7 @@
 
 #include "jemalloc_internal_defs.h"
 #include "jemalloc_internal_decls.h"
+#include <stdint.h>
 
 #ifdef JEMALLOC_UTRACE
 #include <sys/ktrace.h>

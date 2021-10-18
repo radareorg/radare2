@@ -327,7 +327,7 @@ do_it_again:
 	if (!buf[0]) {
 		goto do_it_again;
 	}
-	r_str_ncpy (s, buf, slen);
+	r_str_ncpy ((char *)s, buf, slen);
 	SetConsoleMode (h, mode);
 	return strlen ((char *)s);
 }
@@ -1627,7 +1627,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 27: // esc-5b-41-00-00 alt/meta key
 #if __WINDOWS__
 			// always skip escape
-			memmove (buf, buf + 1, strlen (buf));
+			memmove (buf, buf + 1, strlen ((char *)buf));
 #if 0
 			if (I.vtmode != 2) {
 				if (buf[1] == '[') {

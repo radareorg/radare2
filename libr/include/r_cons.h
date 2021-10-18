@@ -481,7 +481,7 @@ typedef struct r_cons_t {
 	bool enable_highlight;
 	int null; // if set, does not show anything
 	int mouse;
-	bool is_wine;
+	int is_wine; // -1, 0, 1
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
