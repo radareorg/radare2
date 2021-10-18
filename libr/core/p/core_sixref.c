@@ -350,7 +350,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 		}
 
 		RBinSection *s = r_bin_get_section_at (core->bin->cur->o, offset, true);
-		if (s == NULL || !(s->perm & R_PERM_X)) {
+		if (!s || !(s->perm & R_PERM_X)) {
 			eprintf ("Current section is not executable\n");
 			goto done;
 		}
