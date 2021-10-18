@@ -1,16 +1,16 @@
 
-/* radare - LGPL - Copyright 2021 - Siguza, pancake */
+/* radare - LGPL - Copyright 2021 - Siguza, pancake, hot3eed */
 
 // Context: https://raw.githubusercontent.com/Siguza/misc/master/xref.c
 
 #include <r_core.h>
 
-static void siguza_xrefs(RCore *core, ut64 search, bool all) {
+static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 	const ut8 *mem = core->block;
-	const size_t fs = core->blocksize;
-	ut64 addr = core->offset;
 	ut32 *p = (ut32*)((uint8_t*)mem);
-	ut32 *e = (ut32*)(p + (fs / 4));
+	ut32 *e = (ut32*)(p + (lenbytes / 4));
+	ut64 addr = core->offset;
+
 	for (; p < e; p++, addr += 4) {
 		ut32 v = *p;
 		if((v & 0x1f000000) == 0x10000000) // adr and adrp
@@ -269,22 +269,103 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 	}
 }
 
+/**
+ * @param search Address to find xrefs to. If 0, all xrefs will be emitted.
+ * @param start Address at which to start looking for xrefs.
+ * @param lenbytes Reach of the search for xrefs, in bytes.
+ */
+static void siguza_xrefs(RCore *core, ut64 search, ut64 start, int lenbytes) {
+	ut64 end = start + lenbytes;
+	ut64 cursor = start;
+	int lenbytes_rem = lenbytes;
+	char target_ref[24];
+
+	if (search == 0) {
+		sprintf (target_ref, "all xrefs");
+	} else {
+		sprintf (target_ref, "xrefs to 0x%08"PFMT64x, search);
+	}
+	eprintf ("Finding %s in 0x%08"PFMT64x"-0x%08"PFMT64x"\n", target_ref, start, end);
+
+	do {
+		int lenbytes_to_read = lenbytes_rem >= core->blocksize_max ? core->blocksize_max : end - cursor;
+
+		r_core_seek_size (core, cursor, lenbytes_to_read);
+		siguza_xrefs_chunked (core, search, lenbytes_to_read);
+
+		lenbytes_rem -= lenbytes_to_read;
+		cursor += lenbytes_to_read;
+	} while (lenbytes_rem > core->blocksize_max);
+}
+
 static int r_cmdsixref_call(void *user, const char *input) {
-	if (r_str_startswith (input, "sixref")) {
-		RCore *core = (RCore *)user;
-		const char *arch = r_config_get (core->config, "asm.arch");
-		const int bits = r_config_get_i (core->config, "asm.bits");
-		if (!strstr (arch, "arm") || bits != 64) {
-			eprintf ("This command only works on arm64. Please check your asm.{arch,bits}\n");
-			return true;
-		}
-		ut64 search = r_num_math (core->num, input + 6);
-		// TODO: honor search.in and such
-		eprintf ("Finding xrefs to 0x%08"PFMT64x" in 0x%08"PFMT64x"-0x%08"PFMT64x"\n", search, core->offset, core->offset + core->blocksize);
-		siguza_xrefs (core, search, true);
+	if (!r_str_startswith (input, "sixref")) {
+		return false;
+	}
+
+	RCore *core = (RCore *)user;
+	const char *arch = r_config_get (core->config, "asm.arch");
+	const int bits = r_config_get_i (core->config, "asm.bits");
+	if (!strstr (arch, "arm") || bits != 64) {
+		eprintf ("This command only works on arm64. Please check your asm.{arch,bits}\n");
 		return true;
 	}
-	return false;
+
+	if (input[6] == '?') {
+		eprintf ("Usage: sixref [address] [len]   Find x-refs in executable sections (arm64 only. fast!)\n");
+		goto done;
+	}
+
+	ut64 search = 0;
+	int len = 0;
+
+	const char *args = input + sizeof("sixref");
+	const char *address = strtok (args, " ");
+	if (address != NULL) {
+		search = r_num_math (core->num, address);
+		len = r_num_math (core->num, strtok(NULL, " "));
+	}
+
+	if (len == 0) {
+		RList *sections = r_bin_get_sections (core->bin);
+		if (!sections) {
+			eprintf ("No executable sections found\n");
+			goto done;
+		}
+
+		RBinSection *s;
+		RListIter *iter;
+
+		r_list_foreach (sections, iter, s) {
+			if (s->is_segment || !(s->perm & R_PERM_X)) {
+				continue;
+			}
+			siguza_xrefs (core, search, s->vaddr, s->vsize);
+		}
+	} else {
+		ut64 offset = core->offset;
+		if ((offset & 0x3) != 0) {
+			offset -= offset % 4;
+			eprintf ("Current offset is not 4-byte aligned, using 0x%"PFMT64x" instaed\n", offset);
+		}
+
+		RBinSection *s = r_bin_get_section_at (core->bin->cur->o, offset, true);
+		if (s == NULL || !(s->perm & R_PERM_X)) {
+			eprintf ("Current section is not executable\n");
+			goto done;
+		}
+
+		ut64 sect_end = s->vaddr + s->vsize;
+		if (offset + len > sect_end || offset + len < s->vaddr) {
+			len = sect_end - offset;
+			eprintf ("Length is not within range for this section, using %u instead\n", len);
+		}
+
+		siguza_xrefs (core, search, offset, len);
+	}
+
+done:
+	return true;
 }
 
 RCorePlugin r_core_plugin_sixref = {
