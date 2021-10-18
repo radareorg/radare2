@@ -5680,7 +5680,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 			r_cons_strcat (r);
 			r_cons_flush ();
 			free (r);
-			r_sys_usleep (3000);
+			r_sys_usleep (5000);
 		}
 		free (s);
 	}

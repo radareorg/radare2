@@ -1855,7 +1855,14 @@ static void ds_show_functions(RDisasmState *ds) {
 	} else {
 		fcn_name = f->name;
 	}
-
+	if (core->cons->context->demo) {
+		const char *nl = core->vmode? "\n"R_CONS_CLEAR_LINE: NULL;
+		char *r = r_str_ss (fcn_name, nl);
+		char *s_in = r_str_newf ("%s%s%s", COLOR (ds, color_fname), r, COLOR_RESET (ds));
+		free (r);
+		r_cons_print (s_in);
+		free (s_in);
+	}
 	ds_begin_line (ds);
 	char *sign = r_anal_function_get_signature (f);
 	if (empty_signature (sign)) {

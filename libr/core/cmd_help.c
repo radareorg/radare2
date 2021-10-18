@@ -222,6 +222,7 @@ static const char *help_msg_question_e[] = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
+	"?ea", " text", "ascii art echo (seven segment text, same as ~?ea",
 	"?eb", " 10 20 30", "proportional segments bar",
 	"?ed", " 1", "draw a 3D ascii donut at the given animation frame",
 	"?eg", " 10 20", "move cursor to column 10, row 20",
@@ -1087,7 +1088,7 @@ static int cmd_help(void *data, const char *input) {
 		switch (input[1]) {
 		case 'a': // "?a hello world
 			{
-				char *s = r_str_ss (r_str_trim_head_ro (input + 2));
+				char *s = r_str_ss (r_str_trim_head_ro (input + 2), NULL);
 				r_cons_println (s);
 				free (s);
 			}
