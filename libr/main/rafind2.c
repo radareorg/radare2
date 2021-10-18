@@ -514,7 +514,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		return show_help (argv[0], 1);
 	}
 	/* Enable quiet mode if searching just a single file */
-	if (opt.ind + 1 == argc && !r_file_is_directory (argv[opt.ind])) {
+	if (opt.ind + 1 == argc && argv[opt.ind] && argv[opt.ind][0] && !r_file_is_directory (argv[opt.ind])) {
 		ro.quiet = true;
 	}
 	if (ro.json && (ro.mode == R_SEARCH_KEYWORD || ro.mode == R_SEARCH_REGEXP)) {
