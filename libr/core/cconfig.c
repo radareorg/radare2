@@ -2478,6 +2478,12 @@ static bool cb_scrnkey(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scr_demo(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->context->demo = node->i_value;
+	return true;
+}
+
 static bool cb_scr_histblock(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -3964,7 +3970,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.errmode", "echo", &cb_screrrmode, "Error string handling");
 	SETCB ("scr.utf8", r_str_bool (r_cons_is_utf8()), &cb_utf8, "Show UTF-8 characters instead of ANSI");
 	SETCB ("scr.utf8.curvy", "false", &cb_utf8_curvy, "Show curved UTF-8 corners (requires scr.utf8)");
-	SETBPREF ("scr.demo", "false", "Use demoscene effects if available");
+	SETCB ("scr.demo", "false", &cb_scr_demo, "Use demoscene effects if available");
 	SETCB ("scr.hist.block", "true", &cb_scr_histblock, "Use blocks for histogram");
 	SETCB ("scr.hist.filter", "true", &cb_scr_histfilter, "Filter history for matching lines when using up/down keys");
 	SETBPREF ("scr.hist.save", "true", "Always save history on exit");

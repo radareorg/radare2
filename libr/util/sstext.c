@@ -6,7 +6,7 @@
 
 typedef struct {
 	char ch;
-	const char *l[4];
+	const char *l[3];
 } SevenSegments;
 
 static const SevenSegments ss[] = {
@@ -229,7 +229,10 @@ static const SevenSegments ss[] = {
 	{ '\0', { 0 }}
 };
 
-R_API char *r_str_ss(const char* msg) {
+R_API char *r_str_ss(const char* msg, const char *nl) {
+	if (!nl) {
+		nl = "\n";
+	}
 	int i, j, n;
 	RStrBuf *sb = r_strbuf_new ("");
 	char *omsg = strdup (msg);
@@ -246,19 +249,12 @@ R_API char *r_str_ss(const char* msg) {
 					}
 				}
 			}
-			r_strbuf_append (sb, "\n");
+			r_strbuf_append (sb, nl);
 		}
-		r_strbuf_append (sb, "\n");
+		r_strbuf_append (sb, nl);
 	}
+	char *res = r_strbuf_drain (sb);
 	r_list_free (lines);
 	free (omsg);
-	return r_strbuf_drain (sb);
+	return res;
 }
-
-#if 0
-int main() {
-	char *s = r_str_ss ("[0x7f52a754a100]> ? 3+3 = $ * 3");
-	printf ("%s\n", s);
-	free (s);
-}
-#endif

@@ -513,7 +513,7 @@ R_API void r_cons_grepbuf(void) {
 	if (grep->ascart) {
 		char *buf = strdup (cons->context->buffer);
 		r_str_ansi_filter (buf, NULL, NULL, -1);
-		char *out = r_str_ss (buf);
+		char *out = r_str_ss (buf, NULL);
 		free (cons->context->buffer);
 		free (buf);
 		cons->context->buffer = out;
