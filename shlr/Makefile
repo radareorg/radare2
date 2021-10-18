@@ -142,7 +142,7 @@ sdb-target:
 	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
 	$(MAKE) -C sdb/src sdb_version.h
 ifeq ($(EXT_EXE),.wasm)
-	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=:$(EXT_AR) RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
+	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS} -DHAVE_MMAN=0' LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
 else
 	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
