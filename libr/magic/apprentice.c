@@ -1989,6 +1989,9 @@ static char *mkdbname(const char *fn, int strip) {
 	}
 	fnlen = strlen (fn);
 	extlen = strlen (ext);
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 256
+#endif
 	if (fnlen + extlen + 1 > MAXPATHLEN) {
 		return NULL;
 	}

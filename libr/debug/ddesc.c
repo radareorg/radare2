@@ -69,7 +69,7 @@ R_API int r_debug_desc_list(RDebug *dbg, int rad) {
 
 	if (rad) {
 		if (dbg && dbg->cb_printf) {
-			dbg->cb_printf ("TODO \n");
+			dbg->cb_printf ("TODO: list target process files\n");
 		}
 	} else {
 		RListIter *iter;

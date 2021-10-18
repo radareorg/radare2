@@ -30,6 +30,10 @@ OBJS+= p/${NATIVE_OBJS}
 endif
 endif
 
+## XXX unify all the debugger code
+CFLAGS+=-I$(SHLR)/heap/include/r_windows
+CFLAGS+=-I$(SHLR)/w32dbg_wrap/include
+
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
 CFLAGS+=-I../bin/format/elf
 OBJS+=$(addprefix p/,$(NATIVE_OBJS))

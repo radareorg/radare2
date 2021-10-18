@@ -1,6 +1,11 @@
 #ifndef WINDOWS_HEAP_H
 #define WINDOWS_HEAP_H
 
+#include <r_types.h>
+#if !__WINDOWS__
+#warning do nothing
+#else
+
 #include <windows.h>
 #include <winternl.h>
 
@@ -1010,4 +1015,5 @@ __kernel_entry NTSTATUS (NTAPI *w32_NtQueryInformationProcess)(
   IN ULONG            ProcessInformationLength,
   OUT PULONG          ReturnLength
 );
+#endif
 #endif
