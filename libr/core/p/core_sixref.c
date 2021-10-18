@@ -379,10 +379,7 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	}
 
 done:
-	if (args) {
-		free (args);
-	}
-
+	free (args);
 	return true;
 }
 
