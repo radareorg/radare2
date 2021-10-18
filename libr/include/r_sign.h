@@ -58,6 +58,7 @@ typedef struct r_sign_item_t {
 	char *realname;
 	char *next;
 	char *comment;
+	char *types;
 	const RSpace *space;
 
 	RSignBytes *bytes;
@@ -66,20 +67,20 @@ typedef struct r_sign_item_t {
 	RList *refs;
 	RList *xrefs;
 	RList *vars;
-	RList *types;
 	RList *collisions;
 	RSignHash *hash;
 } RSignItem;
 
 typedef bool (*RSignForeachCallback) (RSignItem *it, void *user);
 typedef int (*RSignSearchCallback) (RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user);
-typedef int (*RSignMatchCallback) (RSignItem *it, RAnalFunction *fcn, RSignType *types, void *user, RList *col);
+typedef int (*RSignMatchCallback) (RSignItem *it, RAnalFunction *fcn, RSignType *stypes, void *user, RList *col);
 
 typedef struct r_sign_search_met {
-	/* types is an R_SIGN_END terminated array of RSignTypes that are going to be
-	 * searched for. Valid types are: graph, offset, refs, bbhash, types, vars
+	/* stypes (sign types) is an R_SIGN_END terminated array of RSignTypes that
+	 * are going to be searched for. Valid stypes are: graph, offset, refs,
+	 * bbhash, stypes, vars
 	 */
-	RSignType types[R_SIGN_TYPEMAX];
+	RSignType stypes[R_SIGN_TYPEMAX];
 	int mincc; // min complexity for graph search
 	int minsz;
 	RAnal *anal;
@@ -116,10 +117,10 @@ R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignT
 R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr);
 R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname);
 R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment);
+R_API bool r_sign_add_types(RAnal *a, const char *name, const char *types);
 R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs);
 R_API bool r_sign_add_xrefs(RAnal *a, const char *name, RList *xrefs);
 R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars);
-R_API bool r_sign_add_types(RAnal *a, const char *name, RList *vars);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 R_API RList *r_sign_get_list(RAnal *a);
@@ -155,7 +156,6 @@ R_API void r_sign_hash_free(RSignHash *hash);
 R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn);
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn);
 R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn);
-R_API RList *r_sign_fcn_types(RAnal *a, RAnalFunction *fcn);
 
 R_API int r_sign_is_flirt(RBuffer *buf);
 R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file);
