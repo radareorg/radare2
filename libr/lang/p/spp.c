@@ -7,7 +7,7 @@
 
 static RLang *Glang = NULL;
 #undef S_API
-#define S_API static
+#define S_API __attribute__((visibility("hidden")))
 #include "../../../shlr/spp/spp.c"
 #include "spp_r2.inc"
 
