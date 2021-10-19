@@ -36,6 +36,11 @@
 #ifndef LIBIBERTY_H
 #define LIBIBERTY_H
 
+#if __MINGW32__
+#define _MSC_VER 1
+#endif
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -170,6 +175,7 @@ extern char *concat_copy2 (const char *, ...) ATTRIBUTE_SENTINEL;
 
 extern char *libiberty_concat_ptr;
 
+#if 1
 /* Concatenate an arbitrary number of strings.  You must pass NULL as
    the last argument of this function, to terminate the list of
    strings.  Allocates memory using alloca.  The arguments are
@@ -177,6 +183,7 @@ extern char *libiberty_concat_ptr;
 #define ACONCAT(ACONCAT_PARAMS) \
   (libiberty_concat_ptr = (char *) alloca (concat_length ACONCAT_PARAMS + 1), \
    concat_copy2 ACONCAT_PARAMS)
+#endif
 
 /* Check whether two file descriptors refer to the same file.  */
 
@@ -339,6 +346,7 @@ extern unsigned int xcrc32 (const unsigned char *, int, unsigned int);
 
 #ifdef _MSC_VER
 #include <stdlib.h>
+#undef alloca
 #define alloca(x) _alloca(x)
 #define xmalloc malloc
 #define xcalloc calloc

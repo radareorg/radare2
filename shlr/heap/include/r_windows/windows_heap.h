@@ -1008,7 +1008,10 @@ NTSTATUS (NTAPI *RtlDestroyQueryDebugBuffer)(
 	IN PDEBUG_BUFFER DebugBuffer
 );
 
-__kernel_entry NTSTATUS (NTAPI *w32_NtQueryInformationProcess)(
+#ifdef _MSC_VER
+__kernel_entry
+#endif
+NTSTATUS (NTAPI *w32_NtQueryInformationProcess)(
   IN HANDLE           ProcessHandle,
   IN PROCESSINFOCLASS ProcessInformationClass,
   OUT PVOID           ProcessInformation,

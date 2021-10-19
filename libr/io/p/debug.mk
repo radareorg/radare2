@@ -5,7 +5,6 @@ TARGET_IODBG=io_debug.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_IODBG}
 
-
 ifeq (${WITHPIC},0)
 LINKFLAGS=../../socket/libr_socket.a
 LINKFLAGS+=../../util/libr_util.a

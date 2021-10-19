@@ -1,7 +1,7 @@
 OBJ_XNU_KERNELCACHE=bin_xnu_kernelcache.o
 OBJ_XNU_KERNELCACHE+=../format/xnu/r_cf_dict.o
 
-LINK+=$(STOP)/yxml/libyxml.a
+LINK+=$(STOP)/yxml/libyxml.$(EXT_AR)
 CFLAGS+=-I$(STOP)/yxml/
 
 STATIC_OBJ+=${OBJ_XNU_KERNELCACHE}

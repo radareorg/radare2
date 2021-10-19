@@ -296,15 +296,16 @@ typedef unsigned szind_t;
 #  endif
 #endif
 
-#define	QUANTUM			((size_t)(1U << LG_QUANTUM))
-#define	QUANTUM_MASK		(QUANTUM - 1)
+#define	QUANTUM	((unsigned int)(1U << LG_QUANTUM))
+#define	QUANTUM_MASK (QUANTUM - 1)
 
 /* Return the smallest quantum multiple that is >= a. */
-#define	QUANTUM_CEILING(a)						\
-	(((a) + QUANTUM_MASK) & ~QUANTUM_MASK)
+#define	QUANTUM_CEILING(a) (((a) + QUANTUM_MASK) & ~QUANTUM_MASK)
 
-#define	LONG			((size_t)(1U << LG_SIZEOF_LONG))
-#define	LONG_MASK		(LONG - 1)
+#if !__MINGW32__
+#define	LONG ((unsigned int)(1U << LG_SIZEOF_LONG))
+#define	LONG_MASK (LONG - 1)
+#endif
 
 /* Return the smallest long multiple that is >= a. */
 #define	LONG_CEILING(a)							\

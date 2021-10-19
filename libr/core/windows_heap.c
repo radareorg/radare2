@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2019-2021 - GustavoLCR */
 
 #include <r_core.h>
-#include <TlHelp32.h>
+#include <tlhelp32.h>
 #include "r_windows/windows_heap.h"
 #include "../debug/p/native/maps/windows_maps.h"
 

@@ -6,19 +6,23 @@ TARGET_PTRACE=debug_native.${EXT_SO}
 ALL_TARGETS+=${TARGET_PTRACE}
 
 ifeq (${OSTYPE},darwin)
-NATIVE_OBJS=native/xnu/xnu_debug.o
+NATIVE_OBJS+=native/xnu/xnu_debug.o
 endif
-
+ifeq (${OSTYPE},windows)
+NATIVE_OBJS+=native/windows/windows_debug.o
+NATIVE_OBJS+=native/windows/windows_message.o
+NATIVE_OBJS+=native/maps/windows_maps.o
+endif
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
 NATIVE_OBJS=native/linux/linux_debug.o
 NATIVE_OBJS+=native/procfs.o
 endif
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux))
-COREDUMP_OBJS=native/linux/linux_coredump.o
+COREDUMP_OBJS+=native/linux/linux_coredump.o
 endif
 
 ifneq (,$(findstring bsd,$(OSTYPE))$(findstring dragonfly,$(OSTYPE)))
-NATIVE_OBJS=native/bsd/bsd_debug.o
+NATIVE_OBJS+=native/bsd/bsd_debug.o
 endif
 
 ${TARGET_PTRACE}: ${OBJ_PTRACE}

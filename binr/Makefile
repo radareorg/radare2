@@ -25,7 +25,7 @@ install:
 	mkdir -p "${DESTDIR}${BINDIR}"
 	for BINARY in ${BINS} ; do \
 		rm -f "${DESTDIR}${BINDIR}/$$BINARY" ; \
-		${INSTALL_PROGRAM} "$$BINARY/$$BINARY" "${DESTDIR}${BINDIR}/$$BINARY" ; \
+		${INSTALL_PROGRAM} "$$BINARY/$$BINARY$(EXT_EXE)" "${DESTDIR}${BINDIR}/$$BINARY$(EXT_EXE)" ; \
 	done
 	${INSTALL_SCRIPT} "$(BTOP)/r2pm/r2pm" "${DESTDIR}${BINDIR}/r2pm"
 	rm -rf "${DESTDIR}${DATADIR}/radare2/${VERSION}/r2pm"
