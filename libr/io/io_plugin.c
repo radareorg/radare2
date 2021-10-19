@@ -112,9 +112,15 @@ R_API int r_io_plugin_list_json(RIO *io) {
 
 		pj_o (pj);
 		pj_ks (pj, "permissions", str);
-		pj_ks (pj, "name", plugin->name);
-		pj_ks (pj, "description", plugin->desc);
-		pj_ks (pj, "license", plugin->license);
+		if (plugin->name) {
+			pj_ks (pj, "name", plugin->name);
+		}
+		if (plugin->desc) {
+			pj_ks (pj, "description", plugin->desc);
+		}
+		if (plugin->license) {
+			pj_ks (pj, "license", plugin->license);
+		}
 
 		if (plugin->uris) {
 			char *uri;
