@@ -487,7 +487,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 					(check_for_current_map && r_io_map_contain (map, io->off)) ?
 					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
 					r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
-			check_for_current_map |= !r_io_map_contain (map, io->off);
+			check_for_current_map &= !r_io_map_contain (map, io->off);
 			break;
 		}
 	}
