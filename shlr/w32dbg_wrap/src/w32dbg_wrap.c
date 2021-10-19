@@ -1,6 +1,13 @@
 /* radare - LGPL - Copyright 2019-2021 - gustavo */
 
-#include <r_types.h>
+#undef __WINDOWS__
+#ifdef _MSC_VER
+#define __WINDOWS__ 1
+#endif
+#if __MINGW32__
+#define __WINDOWS__ 1
+#endif
+
 #if __WINDOWS__
 #include <windows.h>
 #include <w32dbg_wrap.h>
