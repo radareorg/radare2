@@ -39,7 +39,7 @@ STATIC_OBJS=$(addprefix $(LTOP)/core/p/,$(STATIC_OBJ))
 OBJS+=$(STATIC_OBJS)
 
 include $(TOP)/shlr/gdb/deps.mk
-include $(LIBR)/util/spp.mk
+# include $(LIBR)/util/spp.mk
 include $(LTOP)/rules.mk
 include $(STOP)/java/deps.mk
 
