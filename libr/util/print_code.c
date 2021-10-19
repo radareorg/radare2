@@ -265,7 +265,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		print_c_code (p, addr, buf, len, 8, p->cols / 5); //3);
 		break;
 	default:
-		print_c_code (p, addr, buf, len, 1, p->cols / 1.5); // 12);
+		print_c_code (p, addr, buf, len, 1, (int)(p->cols / 1.5)); // 12);
 		break;
 	}
 }

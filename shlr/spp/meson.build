@@ -1,5 +1,5 @@
 project('spp', 'c')
-spp_version = '1.2.0'
+spp_version = '1.3.0'
 
 configure_file(input: 'config.def.h',
   output: 'config.h',
