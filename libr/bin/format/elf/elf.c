@@ -3164,7 +3164,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 				goto beach;
 			}
 			ret = temp_ret;
-			capacity2 *= GROWTH_FACTOR;
+			capacity2 = (size_t)(capacity2 * GROWTH_FACTOR);
 		}
 		// read in one entry
 		r = r_buf_read_at (bin->b, addr_sym_table + i * sizeof (Elf_ (Sym)), s, sizeof (Elf_ (Sym)));

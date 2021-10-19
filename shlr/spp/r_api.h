@@ -9,9 +9,9 @@
 #endif
 
 #ifdef _MSC_VER
-void out_printf(Output *out, char *str, ...);
+S_API void out_printf(Output *out, char *str, ...);
 #else
-void out_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
+S_API void out_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
 #endif
 
 #if USE_R2

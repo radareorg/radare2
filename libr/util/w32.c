@@ -63,7 +63,7 @@ R_API BOOL r_w32_SleepConditionVariableCS(PCONDITION_VARIABLE a, PCRITICAL_SECTI
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
 		x = (BOOL (*)(PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD)) GetProcAddress (lib, W32_TCALL ("SleepConditionVariableCS"));
 	}
-	return x? x (a, b, c): NULL;
+	return x? x (a, b, c): FALSE;
 }
 
 R_API BOOL r_w32_ProcessIdToSessionId(DWORD a, DWORD *b) {

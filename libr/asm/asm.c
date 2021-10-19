@@ -7,9 +7,6 @@
 #include <r_asm.h>
 #include <r_anal.h> // for RAnalBind
 #define USE_R2 1
-#undef S_API
-#define S_API static
-// #include "../../shlr/spp/spp.c"
 #include <spp/spp.h>
 #include <config.h>
 
