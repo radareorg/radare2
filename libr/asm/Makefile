@@ -81,4 +81,3 @@ OBJS+=d/pic18c.o
 endif
 
 include $(TOP)/libr/rules.mk
-include $(LIBR)/util/spp.mk
