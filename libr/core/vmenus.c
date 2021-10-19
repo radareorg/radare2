@@ -3020,11 +3020,13 @@ static ut64 var_functions_show(RCore *core, int idx, int show, int cols) {
 // In visual mode, display the variables.
 static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int cols) {
 	int i = 0;
+	int window, wdelta = (idx > 5) ? idx - 5 : 0;
 	const ut64 addr = var_functions_show (core, idx, 0, cols);
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	int window;
-	int wdelta = (idx > 5) ? idx - 5 : 0;
 	RListIter *iter;
+	if (!fcn) {
+		return UT64_MAX;
+	}
 	RList *list = r_anal_var_all_list (core->anal, fcn);
 	RAnalVar* var;
 	// Adjust the window size automatically.

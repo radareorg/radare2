@@ -1662,6 +1662,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 		mode &= ~R_PRINT_UNIONMODE;
 	}
 
+	int p_bits = p? p->bits: 32;
 	int words = r_str_word_set0_stack (args);
 	fmt_len = strlen (fmt);
 	for (; i < fmt_len; i++) {
@@ -1718,7 +1719,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			size += tabsize;
 			break;
 		case '*':
-			size += tabsize * (p->bits / 8);
+			size += tabsize * (p_bits / 8);
 			i++;
 			idx--;	//no need to go ahead for args
 			break;
@@ -1766,7 +1767,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 					tmp = *format;
 				}
 			} else {
-				format = sdb_get (p->formats, structname + 1, NULL);
+				format = p? sdb_get (p->formats, structname + 1, NULL): NULL;
 				if (format && !strncmp (format, f, strlen (format) - 1)) { // Avoid recursion here
 					free (o);
 					free (structname);
@@ -1823,7 +1824,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			} else if (fmt[i+1] == '8') {
 				size += tabsize * 8;
 			} else {
-				size += tabsize * (p->bits / 8);
+				size += tabsize * (p_bits / 8);
 				break;
 			}
 			i++;
@@ -1995,7 +1996,7 @@ static char *get_format_type(const char fmt, const char arg) {
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
-	const int old_bits = p->bits;
+	const int old_bits = p? p->bits: 32;
 	char *args = NULL, *bracket, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	static int slide = 0, oldslide = 0, ident = 4;
