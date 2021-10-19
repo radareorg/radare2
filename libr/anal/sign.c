@@ -1008,7 +1008,8 @@ R_API bool r_sign_add_types(RAnal *a, const char *name, const char *types) {
 
 	bool retval = false;
 	RSignItem *it = item_new_named (a, name);
-	if (it && (it->types = strdup (types))) {
+	if (it) {
+		it->types = strdup (types);
 		retval = r_sign_add_item (a, it);
 		r_sign_item_free (it);
 	}

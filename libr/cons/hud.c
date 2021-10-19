@@ -280,13 +280,15 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			p = r_str_appendf (p, ">> %s\n", prompt);
 		}
 		p = r_str_appendf (p, "%d> %s|\n", hud->top_entry_n, user_input);
-		if (demo) {
-			char *q = r_str_ss (p, NULL);
+		if (p) {
+			if (demo) {
+				char *q = r_str_ss (p, NULL);
+				free (p);
+				p = q;
+			}
+			r_cons_printf ("%s", p);
 			free (p);
-			p = q;
 		}
-		r_cons_printf ("%s", p);
-		free (p);
 		char *row;
 		RList *filtered_list = NULL;
 

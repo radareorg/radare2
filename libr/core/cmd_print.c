@@ -1599,10 +1599,14 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		}
 	} else {
 		/* Make sure the structure will be printed entirely */
+		ut8 *buf = NULL;
 		const char *fmt = r_str_trim_head_ro (input + 1);
 		int struct_sz = r_print_format_struct_size (core->print, fmt, mode, 0);
 		int size = R_MAX (core->blocksize, struct_sz);
-		ut8 *buf = calloc (1, size);
+		if (size < 1) {
+			goto err_buf;
+		}
+		buf = calloc (1, size);
 		if (!buf) {
 			goto err_buf;
 		}

@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake, DennisGoodlett */
+
 #include <r_main.h>
 #include <r_core.h>
 
@@ -90,11 +91,14 @@ static int handle_sdb(const char *fname, struct rasignconf *conf) {
 	int ret = -1;
 	// can't use RAnal here because JSON output requires core, in a sneaky way
 	RCore *core = r_core_new ();
+	if (!core) {
+		return -1;
+	}
 	r_config_set_b (core->config, "scr.interactive", false);
 	if (conf->ofile && r_file_exists (conf->ofile)) {
 		r_sign_load (core->anal, conf->ofile, true);
 	}
-	if (core && r_sign_load (core->anal, fname, conf->merge)) {
+	if (r_sign_load (core->anal, fname, conf->merge)) {
 		if (conf->collision) {
 			r_sign_resolve_collisions (core->anal);
 		}
