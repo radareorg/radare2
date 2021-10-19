@@ -3,7 +3,7 @@
 
 #include <r_userconf.h>
 
-#if (defined(_WIN32) || defined(_WIN64)) && !defined(__GNUC__)
+#if __MINGW32__ || (defined(_WIN32) || defined(_WIN64)) && !defined(__GNUC__)
 #define MACRO_LOG_FUNC __FUNCTION__
 #define MACRO_WEAK_SYM
 // TODO: Windows weak symbols?

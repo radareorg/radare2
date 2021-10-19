@@ -18,6 +18,7 @@ endif
 # windows
 ifeq (${OSTYPE},windows)
 LDFLAGS+=-lwsock32
+LDFLAGS+=-lwininet
 #LDFLAGS+=-lws2_32
 endif
 
