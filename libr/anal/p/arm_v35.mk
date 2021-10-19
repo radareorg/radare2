@@ -2,7 +2,7 @@ include ../config.mk
 N=anal_arm_v35
 V35ARM64_HOME=$(LIBR)/asm/arch/arm/v35arm64/
 
-include ../asm/arch/arm/v35arm64/deps.mk
+include ../asm/arch/arm/v35arm64/deps-arm64.mk
 
 OBJ_ARM_V35=anal_arm_v35.o
 # OBJ_ARM_V35+=${V35ARM64_LINK}

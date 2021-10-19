@@ -1,11 +1,16 @@
+EXT_AR?=a
 
-all: arch-arm64
+all: arch-arm64 arch-armv7
 	$(MAKE) arm64dis.$(EXT_AR)
+	$(MAKE) armv7dis.$(EXT_AR)
 
+V35ARM64_HOME=$(CURDIR)
 include deps.mk
 
 CFLAGS+=$(V35ARM64_CFLAGS) -fPIC
+CFLAGS+=$(V35ARMV7_CFLAGS) -fPIC
 ALIBS=$(addprefix arch-arm64/disassembler/,$(V35ARM64_OBJS))
+ALIBS+=$(addprefix arch-armv7/armv7_disasm/,$(V35ARMV7_OBJS))
 RANLIB?=ranlib
 EXT_AR?=a
 
@@ -17,10 +22,12 @@ mrproper: clean
 
 .PHONY: all clean
 
-ARCH_ARM64_COMMIT=91ff0d24ab189263eed241bc551484a2d0af69ec
+ARCH_ARM64_COMMIT=3c5eaba46dab72ecb7d5f5b865a13fdeee95b464
+ARCH_ARMV7_COMMIT=0cf81cd6d404076ceaff31da3619ef45e4178651
 
-$(ALIBS): arch-arm64
+$(ALIBS): arch-arm64 arch-armv7
 
+## ARM64
 arch-arm64:
 	git clone -q https://github.com/radareorg/vector35-arch-arm64 arch-arm64
 	cd arch-arm64 && git checkout -q radare2 > /dev/null && git reset --hard $(ARCH_ARM64_COMMIT)
@@ -29,3 +36,13 @@ $(V35ARM64_HOME)/arm64dis.a arm64dis.a: $(ALIBS)
 	rm -f arm64dis.$(EXT_AR)
 	$(AR) q arm64dis.$(EXT_AR) $(ALIBS)
 	$(RANLIB) arm64dis.$(EXT_AR)
+
+## ARMV7
+arch-armv7:
+	git clone -q https://github.com/radareorg/vector35-arch-armv7 arch-armv7
+	cd arch-armv7 && git checkout -q radare2 > /dev/null && git reset --hard $(ARCH_ARMV7_COMMIT)
+
+$(V35ARMV7_HOME)/armv7dis.a armv7dis.a: $(ALIBS)
+	rm -f armv7dis.$(EXT_AR)
+	$(AR) q armv7dis.$(EXT_AR) $(ALIBS)
+	$(RANLIB) armv7dis.$(EXT_AR)
