@@ -511,16 +511,21 @@ R_API void r_cons_grepbuf(void) {
 		return;
 	}
 	if (grep->code) {
-		const char *buf = cons->context->buffer;
-		char *res = r_str_tokenize_json (buf);
-		if (res) {
-			cons->context->buffer_len = strlen (res);
-			free (cons->context->buffer);
-			cons->context->buffer = res;
-		} else {
-			cons->context->buffer_len = 0;
-			free (cons->context->buffer);
-			cons->context->buffer = strdup ("");
+		char *buf = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
+		if (buf) {
+			char *res = r_str_tokenize_json (buf);
+			free (buf);
+			if (res) {
+				cons->context->buffer_len = strlen (res);
+				cons->context->buffer_sz = cons->context->buffer_len;
+				free (cons->context->buffer);
+				cons->context->buffer = res;
+			} else {
+				cons->context->buffer_len = 0;
+				cons->context->buffer_sz = 0;
+				free (cons->context->buffer);
+				cons->context->buffer = strdup ("");
+			}
 		}
 		return;
 	}

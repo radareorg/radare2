@@ -330,7 +330,7 @@ bool callback(RTokenizer *tok) {
 				r_list_free (data->args);
 				data->args = NULL;
 				if (data->pj) {
-					pj_end(data->pj);
+					pj_end (data->pj);
 				}
 			}
 		} else if (tok->ch == '{') {
@@ -391,7 +391,7 @@ bool callback(RTokenizer *tok) {
 			R_FREE (data->word);
 			data->s = r_str_appendlen (data->s, tok->buf + tok->begin, tok->end - tok->begin);
 			data->incase = false;
-			//			data->inassign = false;
+			// data->inassign = false;
 			break;
 		} else {
 			if (!data->s) {
@@ -416,7 +416,7 @@ bool callback(RTokenizer *tok) {
 		case '=':
 			// eprintf ("PAR %d %c", data->parlevel, 10);
 			if (data->parlevel == 0) {
-				indent(tok);
+				indent (tok);
 				eprintf ("ASSIGN (%s)%c", data->word, 10);
 				data->inassign = true;
 				if (data->word && data->pj) {
@@ -488,7 +488,7 @@ bool callback(RTokenizer *tok) {
 R_API char *r_str_tokenize_json(const char *buf) {
 	Data data = {0};
 	data.pj = pj_new ();
-	pj_o (data.pj);
+	pj_a (data.pj);
 	r_str_tokenize (buf, (RTokenizerCallback)callback, &data);
 	pj_end (data.pj);
 	data.pj->level = 0; // force level 0 to permit invalid jsons for now
