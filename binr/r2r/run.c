@@ -2,6 +2,18 @@
 
 #include "r2r.h"
 
+#if __wasi__
+static int pipe(int fildes[2]) {return -1;}
+static int dup2(int a, int b) {return -1;}
+static int waitpid(int a, void *b, int c) {return -1;}
+static int kill(int a, int b) {return -1;}
+static int execvp(const char *a, char **b) {return -1;}
+#define WNOHANG 0
+#define WIFEXITED(x) 0
+#define WEXITSTATUS(x) 0
+#define __SIG_IGN 0
+#endif
+
 #if __WINDOWS__
 struct r2r_subprocess_t {
 	HANDLE stdin_write;
