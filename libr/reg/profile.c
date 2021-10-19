@@ -267,7 +267,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 
 // read profile from file
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
-	r_return_val_if_fail (reg && profile, NULL);
+	r_return_val_if_fail (reg && profile, false);
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
 		char *base = r_sys_getenv (R_LIB_ENV);
