@@ -1225,9 +1225,8 @@ static bool r_debug_native_init(RDebug *dbg) {
 	if (!dbg->user && dbg->iob.io->w32dbg_wrap) {
 		dbg->user = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
 	}
-#else
-	return true;
 #endif
+	return true;
 }
 
 #if __i386__ || __x86_64__
