@@ -1,3 +1,7 @@
+/* radare - LGPL - Copyright 2019-2021 - gustavo */
+
+#include <r_types.h>
+#if __WINDOWS__
 #include <windows.h>
 #include <w32dbg_wrap.h>
 
@@ -65,3 +69,4 @@ int w32dbg_wrap_wait_ret(W32DbgWInst *inst) {
 	WaitForSingleObject (inst->result_sem, INFINITE);
 	return w32dbgw_ret(inst);
 }
+#endif
