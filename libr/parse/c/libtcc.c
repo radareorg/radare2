@@ -57,35 +57,12 @@ static char *normalize_slashes(char *path)
 }
 #endif
 
-/********************************************************/
-/* copy a string and truncate it. */
-PUB_FUNC char *pstrcpy(char *buf, int buf_size, const char *s)
-{
-	char *q, *q_end;
-	int c;
-
-	if (buf_size > 0) {
-		q = buf;
-		q_end = buf + buf_size - 1;
-		while (q < q_end) {
-			c = *s++;
-			if (c == '\0') {
-				break;
-			}
-			*q++ = c;
-		}
-		*q = '\0';
-	}
-	return buf;
-}
-
 /* strcat and truncate. */
 PUB_FUNC char *pstrcat(char *buf, int buf_size, const char *s)
 {
-	int len;
-	len = strlen (buf);
+	int len = strlen (buf);
 	if (len < buf_size) {
-		pstrcpy (buf + len, buf_size - len, s);
+		r_str_ncpy (buf + len, s, buf_size - len);
 	}
 	return buf;
 }
@@ -301,7 +278,7 @@ ST_FUNC void tcc_open_bf(TCCState *s1, const char *filename, int initlen)
 	bf->buf_ptr = bf->buffer;
 	bf->buf_end = bf->buffer + initlen;
 	bf->buf_end[0] = CH_EOB;/* put eob symbol */
-	pstrcpy (bf->filename, sizeof(bf->filename), filename);
+	r_str_ncpy (bf->filename, filename, sizeof(bf->filename));
 #ifdef __WINDOWS__
 	normalize_slashes (bf->filename);
 #endif

@@ -1051,7 +1051,7 @@ static int macro_is_equal(const int *a, const int *b)
 	int t;
 	while (*a && *b) {
 		TOK_GET (&t, &a, &cv);
-		pstrcpy (buf, sizeof buf, get_tok_str (t, &cv));
+		r_str_ncpy (buf, get_tok_str (t, &cv), sizeof (buf));
 		TOK_GET (&t, &b, &cv);
 		if (strcmp (buf, get_tok_str (t, &cv))) {
 			return 0;
@@ -1492,7 +1492,7 @@ include_syntax:
 				} else {
 					path = s1->sysinclude_paths[i - s1->nb_include_paths];
 				}
-				pstrcpy (buf1, sizeof(buf1), path);
+				r_str_ncpy (buf1, path, sizeof (buf1));
 				pstrcat (buf1, sizeof(buf1), "/");
 			}
 
@@ -1677,8 +1677,7 @@ skip:
 			if (tok != TOK_STR) {
 				tcc_error ("#line");
 			}
-			pstrcpy (file->filename, sizeof(file->filename),
-				(char *) tokc.cstr->data);
+			r_str_ncpy (file->filename, (char *) tokc.cstr->data, sizeof(file->filename));
 		}
 		break;
 	case TOK_ERROR:

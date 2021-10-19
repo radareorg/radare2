@@ -773,7 +773,7 @@ add_tstr:
 		if (t & VT_ARRAY) {
 			type_to_str (buf, buf_size, &s->type, NULL);
 		} else {
-			pstrcpy (buf1, sizeof(buf1), "*");
+			r_str_ncpy (buf1, "*", sizeof (buf1));
 			if (varstr) {
 				pstrcat (buf1, sizeof(buf1), varstr);
 			}
