@@ -313,7 +313,9 @@ typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
 #elif R_INLINE
   #define R_API inline
 #else
-  #if defined(__GNUC__) && __GNUC__ >= 4
+  #if __MINGW32__
+    #define R_API __declspec(dllexport)
+  #elif defined(__GNUC__) && __GNUC__ >= 4
     #define R_API __attribute__((visibility("default")))
   #elif defined(_MSC_VER)
     #define R_API __declspec(dllexport)
