@@ -9,20 +9,31 @@ spp_files = [
   'spp.c',
 ]
 
+inc_dirs = [
+  '../../libr/include',
+  '../../shlr/sdb/src'
+]
+
 libspp_static = static_library('spp', spp_files,
+  include_directories: inc_dirs,
+  c_args: ['-DUSE_R2=1'],
   install: not meson.is_subproject()
 )
 
 libspp = shared_library('spp', spp_files,
+  include_directories: inc_dirs,
   install: not meson.is_subproject(),
   soversion: spp_version
 )
 
 spp_static_dep = declare_dependency(
+  include_directories: inc_dirs,
+  c_args: ['-DUSE_R2=1'],
   link_with: libspp_static,
 )
 
 spp_dep = declare_dependency(
+  c_args: ['-DUSE_R2=1'],
   link_with: libspp
 )
 
