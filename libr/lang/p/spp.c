@@ -7,8 +7,8 @@
 
 static RLang *Glang = NULL;
 #undef S_API
-#define S_API static
-#include "../../../shlr/spp/spp.c"
+// #include "../../../shlr/spp/spp.c"
+#include "../../../shlr/spp/spp.h"
 #include "spp_r2.inc"
 
 static bool lang_spp_init(RLang *l) {

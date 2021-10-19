@@ -1,4 +1,4 @@
-w32dbg_wrap_inc = include_directories('include')
+w32dbg_wrap_inc = include_directories(['include', '../../libr/include'])
 w32dbg_wrap_src = ['src/w32dbg_wrap.c']
 w32dbg_wrap_lib = static_library(
   'r2w32dbg_wrap',

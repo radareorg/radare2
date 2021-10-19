@@ -9,8 +9,8 @@
 #define USE_R2 1
 #undef S_API
 #define S_API static
-#include "../../shlr/spp/spp.c"
-// #include <spp/spp.h>
+// #include "../../shlr/spp/spp.c"
+#include <spp/spp.h>
 #include <config.h>
 
 R_LIB_VERSION (r_asm);
