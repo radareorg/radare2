@@ -221,7 +221,7 @@ typedef struct r_io_submap_t {
 
 typedef struct r_io_bank_t {
 	char *name;
-	RContRBTree *submaps;
+	RRBTree *submaps;
 	RList *maprefs;	// references to maps, avoid double-free and dups
 	RQueue *todo;	// needed for operating on submap tree
 	ut32 id;	// for fast selection with RIDStorage
