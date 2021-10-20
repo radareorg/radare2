@@ -216,6 +216,75 @@ out_exit:
 	return inserted;
 }
 
+static void _exchange_nodes (RRBNode *node_a, RRBNode *node_b) {
+	if (!node_a || !node_b) {
+		return;
+	}
+	RRBNode node_a_tmp, node_b_tmp;
+	memcpy (&node_a_tmp, node_a, sizeof (RRBNode));
+	memcpy (&node_b_tmp, node_b, sizeof (RRBNode));
+	node_a->link[0] = node_b_tmp.link[0];
+	node_a->link[1] = node_b_tmp.link[1];
+	node_a->red = node_b_tmp.red;
+	node_b->link[0] = node_a_tmp.link[0];
+	node_b->link[1] = node_a_tmp.link[1];
+	node_b->red = node_a_tmp.red;
+	if (node_a->parent == node_b->parent) {
+		if (node_a->parent) {
+			if (node_a->parent->link[0] == node_a) {
+				node_a->parent->link[0] = node_b;
+				node_a->parent->link[1] = node_a;
+			} else {
+				node_a->parent->link[1] = node_b;
+				node_a->parent->link[0] = node_a;
+			}
+		}
+		if (node_a->link[0]) {
+			node_a->link[0]->parent = node_a;
+		}
+		if (node_a->link[1]) {
+			node_a->link[1]->parent = node_a;
+		}
+		if (node_b->link[0]) {
+			node_b->link[0]->parent = node_b;
+		}
+		if (node_b->link[1]) {
+			node_b->link[0]->parent = node_b;
+		}
+		return;
+	}
+	RRBNode *parent_a = node_a->parent;
+	RRBNode *parent_b = node_b->parent;
+	if (parent_a) {
+		if (parent_a->link[0] == node_a) {
+			parent_a->link[0] = node_b;
+		} else {
+			parent_a->link[1] = node_b;
+		}
+	}
+	node_b->parent = parent_a;
+	if (parent_b) {
+		if (parent_b->link[0] == node_b) {
+			parent_b->link[0] = node_a;
+		} else {
+			parent_b->link[1] = node_a;
+		}
+	}
+	node_a->parent = parent_b;
+	if (node_a->link[0]) {
+		node_a->link[0]->parent = node_a;
+	}
+	if (node_a->link[1]) {
+		node_a->link[1]->parent = node_a;
+	}
+	if (node_b->link[0]) {
+		node_b->link[0]->parent = node_b;
+	}
+	if (node_b->link[1]) {
+		node_b->link[1]->parent = node_b;
+	}
+}
+
 R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
 	r_return_val_if_fail (tree && data && tree->size && tree->root && cmp, false);
 
@@ -276,10 +345,20 @@ R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *
 
 	/* Replace and remove if found */
 	if (found) {
+#if 0
 		tree->free (found->data);	// does this break next/prev?
 		found->data = q->data;
 		_set_link (p, q->link[q->link[0] == NULL], p->link[1] == q);
 		free (q);
+#else
+		_set_link (p, q->link[q->link[0] == NULL], p->link[1] == q);
+		q->link[0] = NULL;
+		q->link[1] = NULL;
+		q->parent = NULL;
+		_exchange_nodes (found, q);
+		tree->free (found->data);
+		free (found);
+#endif
 		tree->size--;
 	}
 
