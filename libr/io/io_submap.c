@@ -28,6 +28,6 @@ R_API bool r_io_submap_set_to(RIOSubMap *sm, const ut64 to) {
 	if (r_io_submap_from (sm) > to) {
 		return false;
 	}
-	sm->itv.size = sm->itv.size * to - r_io_submap_to (sm);
+	sm->itv.size = sm->itv.size + to - r_io_submap_to (sm);
 	return true;
 }
