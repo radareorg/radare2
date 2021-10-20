@@ -33,6 +33,11 @@ static const char *help_msg_search_offset_without_anal[] = {
 	NULL
 };
 
+static const char *help_msg_search_string_no_case[] = {
+	"Usage: /i", "[str]", "Search str string ignorning case",
+	NULL
+};
+
 static const char *help_msg_search_esil[] = {
 	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
 	"/Ej", " [esil-expr]", "same as above but using the given magic file",
@@ -4033,6 +4038,10 @@ reread:
 			break;
 		}
 	case 'i': // "/i"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_string_no_case);
+			break;
+		}
 		if (input[param_offset - 1] != ' ') {
 			eprintf ("Missing ' ' after /i\n");
 			ret = false;
