@@ -54,6 +54,11 @@ static const char *help_msg_search_backward[] = {
 	NULL
 };
 
+static const char *help_msg_search_forward[] = {
+	"Usage: /f", " ", "search forwards, command modifier, followed by other command",
+	NULL
+};
+
 static const char *help_msg_search_pattern[] = {
 	"Usage: /p[p]", " [pattern]", "Search for patterns or preludes",
 	"/p", " [hexpattern]", "search in hexpairs pattern in search.in",
@@ -4153,6 +4158,10 @@ reread:
 	}
 	break;
 	case 'f': // "/f" forward search
+		if (input[1] == '?') {
+			r_core_cmd_help(core, help_msg_search_forward);
+			break;
+		}
 		if (core->offset) {
 			st64 coff = core->offset;
 			RInterval itv = {core->offset, -coff};
