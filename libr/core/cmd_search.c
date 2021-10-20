@@ -59,6 +59,16 @@ static const char *help_msg_search_forward[] = {
 	NULL
 };
 
+static const char *help_msg_search_sections[] = {
+	"Usage: /s[*]", "[threshold]", "finds sections by grouping blocks with similar entropy.",
+	NULL
+};
+
+static const char *help_msg_search_delta[] = {
+	"Usage: /d", "delta", "search for a deltified sequence of bytes.",
+	NULL
+};
+
 static const char *help_msg_search_pattern[] = {
 	"Usage: /p[p]", " [pattern]", "Search for patterns or preludes",
 	"/p", " [hexpattern]", "search in hexpairs pattern in search.in",
@@ -4118,6 +4128,10 @@ reread:
 		do_esil_search (core, &param, input);
 		goto beach;
 	case 'd': // "/d" search delta key
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_delta);
+			break;
+		} 
 		if (input[1]) {
 			r_search_reset (core->search, R_SEARCH_DELTAKEY);
 			r_search_kw_add (core->search,
@@ -4275,6 +4289,10 @@ reread:
 		}
 		break;
 	case 's': // "/s"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_sections);
+			break;
+		}
 		do_section_search (core, &param, input + 1);
 		break;
 	case '+': // "/+"
