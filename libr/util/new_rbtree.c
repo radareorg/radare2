@@ -40,7 +40,7 @@ static void _set_link(RRBNode *parent, RRBNode *child, const int dir) {
 	}
 }
 
-R_API RRBTree *r_rbtree_new(RRBFree freefn) {
+R_API RRBTree *r_crbtree_new(RRBFree freefn) {
 	RRBTree *tree = R_NEW0 (RRBTree);
 	if (tree) {
 		tree->free = freefn;
@@ -48,7 +48,7 @@ R_API RRBTree *r_rbtree_new(RRBFree freefn) {
 	return tree;
 }
 
-R_API void r_rbtree_clear(RRBTree *tree) {
+R_API void r_crbtree_clear(RRBTree *tree) {
 	if (!tree) {
 		return;
 	}
@@ -64,7 +64,6 @@ R_API void r_rbtree_clear(RRBTree *tree) {
 			}
 			free (iter);
 			tree->size--;
-			size1++;
 		} else {
 			save = iter->link[0];
 			_set_link (iter, save->link[1], 0);
@@ -75,15 +74,15 @@ R_API void r_rbtree_clear(RRBTree *tree) {
 	tree->root = NULL;
 }
 
-R_API void r_rbtree_free(RRBTree *tree) {
+R_API void r_crbtree_free(RRBTree *tree) {
 	if (!tree) {
 		return;
 	}
-	r_rbtree_clear (tree);
+	r_crbtree_clear (tree);
 	free (tree);
 }
 
-R_API RRBNode *r_rbtree_find_node(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
+R_API RRBNode *r_crbtree_find_node(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
 	r_return_val_if_fail (tree && cmp, NULL);
 
 	RRBNode *iter = tree->root;
@@ -97,15 +96,15 @@ R_API RRBNode *r_rbtree_find_node(RRBTree *tree, void *data, RRBComparator cmp, 
 	return NULL;
 }
 
-R_API void *r_rbtree_find(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
+R_API void *r_crbtree_find(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
 	r_return_val_if_fail (tree && cmp, NULL);
-	RRBNode *node = r_rbtree_find_node (tree, data, cmp, user);
+	RRBNode *node = r_crbtree_find_node (tree, data, cmp, user);
 	return node ? node->data : NULL;
 }
 
 static RRBNode *_node_new(void *data, RRBNode *parent) {
 	RRBNode *node = R_NEW0 (RRBNode);
-	r_return_val_if_fail (n, NULL);
+	r_return_val_if_fail (node, NULL);
 
 	node->red = 1;
 	node->data = data;
@@ -137,8 +136,8 @@ static RRBNode *_rot_twice(RRBNode *root, int dir) {
 	return _rot_once (root, dir);
 }
 
-R_API bool r_rbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
-	r_return_val_if_fail (tree && datai && cmp, false);
+R_API bool r_crbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
+	r_return_val_if_fail (tree && data && cmp, false);
 	bool inserted = false;
 
 	if (tree->root == NULL) {
@@ -162,7 +161,7 @@ R_API bool r_rbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *u
 			/* Insert a node at first null link(also set its parent link) */
 			q = _node_new (data, p);
 			if (!q) {
-				return false
+				return false;
 			}
 			p->link[dir] = q;
 			inserted = true;
@@ -216,7 +215,7 @@ out_exit:
 	return inserted;
 }
 
-R_API bool r_rbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
+R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
 	r_return_val_if_fail (tree && data && tree->size && tree->root && cmp, false);
 
 	RRBNode head = { .red = 0 };
@@ -292,7 +291,7 @@ R_API bool r_rbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *u
 	return !!found;
 }
 
-R_API RRBNode *r_rbtree_first_node(RRBTree *tree) {
+R_API RRBNode *r_crbtree_first_node(RRBTree *tree) {
 	r_return_val_if_fail (tree, NULL);
 	if (!tree->root) {
 		// empty tree
@@ -305,7 +304,7 @@ R_API RRBNode *r_rbtree_first_node(RRBTree *tree) {
 	return node;
 }
 
-R_API RRBNode *r_rbtree_last_node(RRBTree *tree) {
+R_API RRBNode *r_crbtree_last_node(RRBTree *tree) {
 	r_return_val_if_fail (tree, NULL);
 	if (!tree->root) {
 		// empty tree
