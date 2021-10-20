@@ -247,18 +247,18 @@ R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *
 				_set_link (p, _rot_once (q, dir), last);
 				p = p->link[last];
 			} else {
-				RRBNode *s = p->link[!last];
+				RRBNode *sibling = p->link[!last];
 
-				if (s != NULL) {
-					if (!IS_RED (s->link[!last]) && !IS_RED (s->link[last])) {
+				if (sibling != NULL) {
+					if (!IS_RED (sibling->link[!last]) && !IS_RED (sibling->link[last])) {
 						/* Color flip */
 						p->red = 0;
-						s->red = 1;
+						sibling->red = 1;
 						q->red = 1;
 					} else {
 						int dir2 = g->link[1] == p;
 
-						if (IS_RED (s->link[last])) {
+						if (IS_RED (sibling->link[last])) {
 							_set_link (g, _rot_twice (p, last), dir2);
 						} else {
 							_set_link (g, _rot_once (p, last), dir2);
@@ -276,9 +276,9 @@ R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *
 
 	/* Replace and remove if found */
 	if (found) {
+		tree->free (found->data);	// does this break next/prev?
 		found->data = q->data;
 		_set_link (p, q->link[q->link[0] == NULL], p->link[1] == q);
-		tree->free (q->data);
 		free (q);
 		tree->size--;
 	}
