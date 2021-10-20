@@ -554,6 +554,7 @@ r_util_files = [
   'include/r_util/r_log.h',
   'include/r_util/r_mem.h',
   'include/r_util/r_name.h',
+  'include/r_util/r_new_rbtree.h',
   'include/r_util/r_num.h',
   'include/r_util/r_panels.h',
   'include/r_util/r_table.h',

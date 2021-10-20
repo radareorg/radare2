@@ -36,6 +36,7 @@ r_util_sources = [
   'log.c',
   'mem.c',
   'name.c',
+  'new_rbtree.c',
   'format.c',
   'pie.c',
   'seven.c',
