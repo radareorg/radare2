@@ -100,13 +100,14 @@ static RIOMapRef *_mapref_from_map(RIOMap *map) {
 	return mapref;
 }
 
+// incoming - in
 // cb for finding sm by lower boundary vaddr
 static int _find_sm_by_from_vaddr_cb(void *incoming, void *in, void *user) {
 	RIOSubMap *bd = (RIOSubMap *)incoming, *sm = (RIOSubMap *)in;
-	if (r_io_submap_from (bd) > r_io_submap_from (sm)) {
+	if (r_io_submap_from (bd) < r_io_submap_from (sm)) {
 		return -1;
 	}
-	if (r_io_submap_from (bd) < r_io_submap_from (sm)) {
+	if (r_io_submap_from (bd) > r_io_submap_from (sm)) {
 		return 1;
 	}
 	return 0;
@@ -118,7 +119,7 @@ static int _find_sm_by_vaddr_cb(void *incoming, void *in, void *user) {
 	if (r_io_submap_contain (sm, addr)) {
 		return 0;
 	}
-	if (addr > r_io_submap_from (sm)) {
+	if (addr < r_io_submap_from (sm)) {
 		return -1;
 	}
 	return 1;
@@ -129,7 +130,7 @@ static int _find_lowest_intersection_sm_cb(void *incoming, void *in, void *user)
 	if (r_io_submap_overlap (bd, sm)) {
 		return 0;
 	}
-	if (r_io_submap_from (bd) > r_io_submap_from (sm)) {
+	if (r_io_submap_from (bd) < r_io_submap_from (sm)) {
 		return -1;
 	}
 	return 1;
