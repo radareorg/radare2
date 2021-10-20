@@ -38,9 +38,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif
 
-typedef struct r_rbtree_node {
-	struct r_rbtree_node *link[2];
-	struct r_rbtree_node *parent;
+typedef struct r_crbtree_node {
+	struct r_crbtree_node *link[2];
+	struct r_crbtree_node *parent;
 	ut32 red;
 	void *data;
 } RRBNode;
@@ -48,21 +48,21 @@ typedef struct r_rbtree_node {
 typedef int (*RRBComparator) (void *incoming, void *in, void *user);
 typedef void (*RRBFree) (void *data);
 
-typedef struct r_rbtree_t {
+typedef struct r_crbtree_t {
 	RRBNode *root;
 	size_t size;
 	RRBFree free;
 } RRBTree;
 
-R_API RBTree *r_rbtree_new(RRBFree freefn);
-R_API void r_rbtree_clear(RRBTree *tree);
-R_API void r_rbtree_free(RRBTree *tree);
-R_API RRBNode *r_rbtree_find_node(RRBTree *tree, void *data, RRBComparator cmp, void *user);
-R_API void *r_rbtree_find(RRBTree *tree, void *data, RRBComparator cmp, void *user);
-R_API bool r_rbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *user);
-R_API bool r_rbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user);
-R_API RRBNode *r_rbtree_first_node(RRBTree *tree);
-R_API RRBNode *r_rbtree_last_node(RRBTree *tree);
+R_API RRBTree *r_crbtree_new(RRBFree freefn);
+R_API void r_crbtree_clear(RRBTree *tree);
+R_API void r_crbtree_free(RRBTree *tree);
+R_API RRBNode *r_crbtree_find_node(RRBTree *tree, void *data, RRBComparator cmp, void *user);
+R_API void *r_crbtree_find(RRBTree *tree, void *data, RRBComparator cmp, void *user);
+R_API bool r_crbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *user);
+R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user);
+R_API RRBNode *r_crbtree_first_node(RRBTree *tree);
+R_API RRBNode *r_crbtree_last_node(RRBTree *tree);
 R_API RRBNode *r_rbnode_next(RRBNode *node);
 R_API RRBNode *r_rbnode_prev(RRBNode *node);
 
