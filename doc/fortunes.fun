@@ -298,3 +298,4 @@ I could go up there about 11 at night, stay till 4 in the morning, and get all t
 Safety third
 You should try our sister project, radar3!
 This pancake guy sure does know his way around r2.
+make: r2: Command not found

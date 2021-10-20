@@ -160,7 +160,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 	} else if (!child) {
 		/* children */
 		r_sandbox_system (code, 1);
-		(void) write (input[1], "", 1);
+		write (input[1], "", 1);
 		close (input[0]);
 		close (input[1]);
 		close (output[0]);

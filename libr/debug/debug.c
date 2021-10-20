@@ -402,7 +402,7 @@ R_API RDebug *r_debug_new(int hard) {
 
 static int free_tracenodes_entry(RDebug *dbg, const char *k, const char *v) {
 	ut64 v_num = r_num_get (NULL, v);
-	free((void *)(size_t)v_num);
+	free ((void *)(size_t)v_num);
 	return true;
 }
 
