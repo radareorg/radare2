@@ -149,7 +149,8 @@ R_API bool r_crbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *
 		goto out_exit;
 	}
 
-	RRBNode head = { .red = 0 }; /* Fake tree root */
+	RRBNode head; /* Fake tree root */
+	memset (&head, 0, sizeof (RRBNode));
 	RRBNode *g = NULL, *parent = &head; /* Grandparent & parent */
 	RRBNode *p = NULL, *q = tree->root; /* Iterator & parent */
 	int dir = 0, last = 0; /* Directions */
@@ -218,7 +219,8 @@ out_exit:
 R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
 	r_return_val_if_fail (tree && data && tree->size && tree->root && cmp, false);
 
-	RRBNode head = { .red = 0 };
+	RRBNode head; /* Fake tree root */
+	memset (&head, 0, sizeof (RRBNode));
 	RRBNode *q = &head, *p = NULL, *g = NULL;
 	RRBNode *found = NULL;
 	int dir = 1, last;
@@ -285,6 +287,7 @@ R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *
 	tree->root = head.link[1];
 	if (tree->root) {
 		tree->root->red = 0;
+		tree->root->parent = NULL;
 	} else {
 		r_return_val_if_fail (tree->size == 0, false);
 	}
@@ -327,12 +330,9 @@ R_API RRBNode *r_rbnode_next(RRBNode *node) {
 		return node;
 	}
 	RRBNode *parent = node->parent;
-	while (parent->link[1] == node) {
+	while (parent && parent->link[1] == node) {
 		node = parent;
 		parent = node->parent;
-		if (!parent) {
-			return NULL;
-		}
 	}
 	return parent;
 }
@@ -347,12 +347,9 @@ R_API RRBNode *r_rbnode_prev(RRBNode *node) {
 		return node;
 	}
 	RRBNode *parent = node->parent;
-	while (parent->link[0] == node) {
+	while (parent && parent->link[0] == node) {
 		node = parent;
 		parent = node->parent;
-		if (!parent) {
-			return NULL;
-		}
 	}
 	return parent;
 }
