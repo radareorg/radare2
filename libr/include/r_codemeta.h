@@ -62,7 +62,7 @@ typedef struct r_codemeta_item_t {
 typedef struct r_codemeta_t {
 	char *code; /**< Decompiled code. RCodeMeta owns this string and it must free it. */
 	RVector annotations; /**< @ref RVector <RCodeMetaItem> contains the list of annotations for the decompiled code. */
-	RContRBTree *tree;
+	RRBTree *tree;
 } RCodeMeta;
 
 R_API RCodeMeta *r_codemeta_new(const char *code);

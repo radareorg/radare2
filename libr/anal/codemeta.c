@@ -40,7 +40,7 @@ R_API RCodeMeta *r_codemeta_new(const char *code) {
 	if (!r) {
 		return NULL;
 	}
-	r->tree = r_rbtree_cont_new ();
+	r->tree = r_crbtree_new (NULL);
 	r->code = code? strdup (code): NULL;
 	r_vector_init (&r->annotations, sizeof (RCodeMetaItem), (RVectorFree)r_codemeta_item_fini, NULL);
 	return r;
@@ -90,7 +90,7 @@ R_API void r_codemeta_free(RCodeMeta *code) {
 		return;
 	}
 	r_vector_clear (&code->annotations);
-	r_rbtree_cont_free (code->tree);
+	r_crbtree_free (code->tree);
 	r_free (code->code);
 	r_free (code);
 }
@@ -153,7 +153,7 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *mi) {
 	r_return_if_fail (code && mi);
 	r_vector_push (&code->annotations, mi);
-	r_rbtree_cont_insert (code->tree, mi, cmp_ins, NULL);
+	r_crbtree_insert (code->tree, mi, cmp_ins, NULL);
 }
 
 R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset) {
@@ -169,25 +169,25 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 #if USE_TRI
 	size_t search_start = start / 2;
 	RCodeMetaItem *min = NULL;
-	r_rbtree_cont_find (code->tree, &search_start, cmp_find_min_mid, &min);
+	r_crbtree_find (code->tree, &search_start, cmp_find_min_mid, &min);
 	if (min) {
 		const size_t end_mid = (end - 1) + ((SIZE_MAX - end - 1) / 2);
-		RContRBNode *node = r_rbtree_cont_find_node (code->tree, min, cmp_ins, NULL);	//get node for min
-		RContRBNode *prev = r_rbtree_cont_node_prev (node);
+		RRBNode *node = r_crbtree_find_node (code->tree, min, cmp_ins, NULL);	//get node for min
+		RRBNode *prev = r_rbnode_prev (node);
 		while (prev) {
 			RCodeMetaItem *mi = (RCodeMetaItem *)prev->data;
 			if (mi->end <= start) {
 				break;
 			}
 			node = prev;
-			prev = r_rbtree_cont_node_prev (node);
+			prev = r_rbnode_prev (node);
 		}
 		while (node) {
 			RCodeMetaItem *mi = (RCodeMetaItem *)node->data;
 			if (!(start >= mi->end || end < mi->start)) {
 				r_pvector_push (r, mi);
 			}
-			node = r_rbtree_cont_node_next (node);
+			node = r_rbnode_next (node);
 			if (node) {
 				mi = (RCodeMetaItem *)node->data;
 				const size_t mi_mid = mi->start + (mi->end - mi->start) / 2;
