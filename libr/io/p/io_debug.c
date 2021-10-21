@@ -117,7 +117,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	setup_tokens ();
 	if (!io->dbgwrap) {
-		io->dbgwrap = (struct dbgwrap_instance_t *)r_w32dw_new ();
+		io->dbgwrap = r_w32dw_new ();
 	}
 	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
 		strdup (cmd);
@@ -141,7 +141,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	wrap->params.func.user = &p;
 	r_w32dw_waitret (wrap);
 	if (!r_w32dw_ret (wrap)) {
-		w32dbgw_err (wrap);
+		r_w32dw_err (wrap);
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		free (appname_);
 		free (cmdline_);

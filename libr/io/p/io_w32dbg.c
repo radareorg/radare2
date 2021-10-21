@@ -131,7 +131,7 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 	DEBUG_EVENT de;
 	int ret = -1;
 	if (!io->dbgwrap) {
-		io->dbgwrap = (struct r_w32dw_instance_t *)r_w32debugwrap_new ();
+		io->dbgwrap = (struct r_w32dw_instance_t *)r_w32dw_new ();
 	}
 
 	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
@@ -155,7 +155,7 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 		wrap->params.type = W32_WAIT;
 		wrap->params.wait.wait_time = 10000;
 		wrap->params.wait.de = &de;
-		r_w32dw_wait_ret (wrap);
+		r_w32dw_waitret (wrap);
 		if (!r_w32dw_ret (wrap)) {
 			r_w32dw_err (wrap);
 			r_sys_perror ("__open_proc/WaitForDebugEvent");
