@@ -3780,14 +3780,14 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 	}
 }
 
-//define the data at offset according to the type (byte, word...) n times
-static void define_data_ntimes (RCore *core, ut64 off, int times, int type) {
+// define the data at offset according to the type (byte, word...) n times
+static void define_data_ntimes(RCore *core, ut64 off, int times, int type, int typesize) {
 	int i = 0;
-	r_meta_del (core->anal, R_META_TYPE_ANY, off, core->blocksize);
-	if (times < 0) {
+	if (times < 1) {
 		times = 1;
 	}
-	for (i = 0; i < times; i++, off += type) {
+	r_meta_del (core->anal, R_META_TYPE_ANY, off, typesize * times);
+	for (i = 0; i < times; i++, off += typesize) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, off, type, "");
 	}
 }
@@ -3970,29 +3970,29 @@ onemoretime:
 		if (plen != core->blocksize) {
 			rep = plen / 2;
 		}
-		define_data_ntimes (core, off, rep, R_BYTE_DATA);
 		wordsize = 1;
+		define_data_ntimes (core, off, rep, R_BYTE_DATA, wordsize);
 		break;
 	case 'B': // "VdB"
 		if (plen != core->blocksize) {
 			rep = plen / 2;
 		}
-		define_data_ntimes (core, off, rep, R_WORD_DATA);
 		wordsize = 2;
+		define_data_ntimes (core, off, rep, R_WORD_DATA, wordsize);
 		break;
 	case 'w':
 		if (plen != core->blocksize) {
 			rep = plen / 4;
 		}
-		define_data_ntimes (core, off, rep, R_DWORD_DATA);
 		wordsize = 4;
+		define_data_ntimes (core, off, rep, R_DWORD_DATA, wordsize);
 		break;
 	case 'W':
 		if (plen != core->blocksize) {
 			rep = plen / 8;
 		}
-		define_data_ntimes (core, off, rep, R_QWORD_DATA);
 		wordsize = 8;
+		define_data_ntimes (core, off, rep, R_QWORD_DATA, wordsize);
 		break;
 	case 'm':
 		{
