@@ -3,7 +3,6 @@
 #include <r_io.h>
 #include <stdlib.h>
 #include <sdb.h>
-#include "r_binheap.h"
 #include "io_private.h"
 #include "r_util.h"
 #include "r_vector.h"

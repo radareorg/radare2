@@ -16,7 +16,6 @@ if get_option('enable_tests')
     'base64',
     'big',
     'bin',
-    'binheap',
     'bitmap',
     'buf',
     'cmd',

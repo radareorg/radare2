@@ -485,7 +485,6 @@ include_files = [
   'include/r_getopt.h',
   'include/r_bin_dwarf.h',
   'include/r_bin.h',
-  'include/r_binheap.h',
   'include/r_bp.h',
   'include/r_cmd.h',
   'include/r_config.h',
