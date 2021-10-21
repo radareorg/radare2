@@ -3054,6 +3054,9 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	memcpy (buf, obuf, R_MIN (sizeof (ut64), size));
 	// adjust alignment
 	ut64 n = r_read_ble (buf, core->print->big_endian, size * 8);
+	if (ds->asm_hint_imm) { // thats not really an imm.. but well dont add more hints for now
+		(void) ds_print_shortcut (ds, n, ds->asm_hint_pos);
+	}
 	if (r_config_get_i (core->config, "asm.marks")) {
 		r_cons_printf ("  ");
 		int q = core->print->cur_enabled &&
