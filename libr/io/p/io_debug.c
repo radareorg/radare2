@@ -48,7 +48,7 @@
 #include <tlhelp32.h>
 #include <winbase.h>
 #include <psapi.h>
-#include <w32dbg_wrap.h>
+#include <r_util/r_w32dw.h>
 #endif
 
 /*
@@ -116,8 +116,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		return -1;
 	}
 	setup_tokens ();
-	if (!io->w32dbg_wrap) {
-		io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new ();
+	if (!io->dbgwrap) {
+		io->dbgwrap = r_w32dw_new ();
 	}
 	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
 		strdup (cmd);
@@ -135,13 +135,13 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	free (cmdline);
 	struct __createprocess_params p = {appname_, cmdline_, &pi};
-	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
+	RW32Dw *wrap = (RW32Dw *)io->dbgwrap;
 	wrap->params.type = W32_CALL_FUNC;
 	wrap->params.func.func = __createprocess_wrap;
 	wrap->params.func.user = &p;
-	w32dbg_wrap_wait_ret (wrap);
-	if (!w32dbgw_ret (wrap)) {
-		w32dbgw_err (wrap);
+	r_w32dw_waitret (wrap);
+	if (!r_w32dw_ret (wrap)) {
+		r_w32dw_err (wrap);
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		free (appname_);
 		free (cmdline_);
@@ -159,8 +159,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	wrap->params.type = W32_WAIT;
 	wrap->params.wait.wait_time = 10000;
 	wrap->params.wait.de = &de;
-	w32dbg_wrap_wait_ret (wrap);
-	if (!w32dbgw_ret (wrap)) goto err_fork;
+	r_w32dw_waitret (wrap);
+	if (!r_w32dw_ret (wrap)) {
+		goto err_fork;
+	}
 
 	/* check if is a create process debug event */
 	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
@@ -178,10 +180,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	return pid;
 
 err_fork:
-	eprintf ("ERRFORK\n");
+	eprintf ("Error: Cannot create new process.\n");
 	TerminateProcess (pi.hProcess, 1);
-	w32dbg_wrap_fini ((W32DbgWInst *)io->w32dbg_wrap);
-	io->w32dbg_wrap = NULL;
+	r_w32dw_free (io->dbgwrap);
+	io->dbgwrap = NULL;
 	CloseHandle (pi.hThread);
 	CloseHandle (pi.hProcess);
 	return -1;
@@ -511,7 +513,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 			if ((ret = _plugin->open (io, uri, rw, mode))) {
 				RCore *c = io->corebind.core;
-				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
+				RW32Dw *wrap = (RW32Dw *)ret->data;
 				c->dbg->user = wrap;
 			}
 #elif __APPLE__
@@ -540,7 +542,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #if __WINDOWS__
 			if (ret) {
 				RCore *c = io->corebind.core;
-				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
+				RW32Dw *wrap = (RW32Dw *)ret->data;
 				c->dbg->user = wrap;
 			}
 #endif

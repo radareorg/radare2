@@ -298,7 +298,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	// require switching to the event's thread that shouldn't bother the user
 	int orig_tid = dbg->tid;
 	bool restore_thread = false;
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 
 	if (pid == -1) {
 		eprintf ("ERROR: r_debug_native_wait called with pid -1\n");
@@ -1222,8 +1222,8 @@ static bool r_debug_native_init(RDebug *dbg) {
 	dbg->h->desc = r_debug_desc_plugin_native;
 #if __WINDOWS__
 	r_w32_init ();
-	if (!dbg->user && dbg->iob.io->w32dbg_wrap) {
-		dbg->user = (W32DbgWInst *)dbg->iob.io->w32dbg_wrap;
+	if (!dbg->user && dbg->iob.io->dbgwrap) {
+		dbg->user = (RW32Dw *)dbg->iob.io->dbgwrap;
 	}
 #endif
 	return true;

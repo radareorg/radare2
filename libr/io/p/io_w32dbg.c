@@ -11,9 +11,9 @@
 
 #include <windows.h>
 #include <tlhelp32.h>
-#include <w32dbg_wrap.h>
+#include <r_util/r_w32dw.h>
 
-#define W32DbgWInst_PID(x) (((W32DbgWInst*)x->data)->pi.dwProcessId)
+#define RW32Dw_PID(x) (((RW32Dw*)x->data)->pi.dwProcessId)
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
@@ -29,7 +29,7 @@ static ut64 __find_next_valid_addr(HANDLE h, ut64 from, ut64 to) {
 	return from < to ? from : UT64_MAX;
 }
 
-static int debug_os_read_at(W32DbgWInst *dbg, ut8 *buf, int len, ut64 addr) {
+static int debug_os_read_at(RW32Dw *dbg, ut8 *buf, int len, ut64 addr) {
 	SIZE_T ret = 0;
 	if (!ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret)
 		&& GetLastError () == ERROR_PARTIAL_COPY) {
@@ -79,7 +79,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	return debug_os_read_at (fd->data, buf, len, io->off);
 }
 
-static int w32dbg_write_at(W32DbgWInst *dbg, const ut8 *buf, int len, ut64 addr) {
+static int w32dbg_write_at(RW32Dw *dbg, const ut8 *buf, int len, ut64 addr) {
 	SIZE_T ret;
 	return 0 != WriteProcessMemory (dbg->pi.hProcess, (void *)(size_t)addr, buf, len, &ret)? len: 0;
 }
@@ -130,8 +130,8 @@ err_first_th:
 static int __open_proc(RIO *io, int pid, bool attach) {
 	DEBUG_EVENT de;
 	int ret = -1;
-	if (!io->w32dbg_wrap) {
-		io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new ();
+	if (!io->dbgwrap) {
+		io->dbgwrap = (struct r_w32dw_instance_t *)r_w32dw_new ();
 	}
 
 	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
@@ -140,14 +140,14 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 		r_sys_perror ("__open_proc/OpenProcess");
 		goto att_exit;
 	}
-	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
+	RW32Dw *wrap = (RW32Dw *)io->dbgwrap;
 	wrap->pi.dwProcessId = pid;
 	if (attach) {
 		/* Attach to the process */	
 		wrap->params.type = W32_ATTACH;
-		w32dbg_wrap_wait_ret (wrap);
-		if (!w32dbgw_ret (wrap)) {
-			w32dbgw_err (wrap);
+		r_w32dw_waitret (wrap);
+		if (!r_w32dw_ret (wrap)) {
+			r_w32dw_err (wrap);
 			r_sys_perror ("__open_proc/DebugActiveProcess");
 			goto att_exit;
 		}
@@ -155,9 +155,9 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 		wrap->params.type = W32_WAIT;
 		wrap->params.wait.wait_time = 10000;
 		wrap->params.wait.de = &de;
-		w32dbg_wrap_wait_ret (wrap);
-		if (!w32dbgw_ret (wrap)) {
-			w32dbgw_err (wrap);
+		r_w32dw_waitret (wrap);
+		if (!r_w32dw_ret (wrap)) {
+			r_w32dw_err (wrap);
 			r_sys_perror ("__open_proc/WaitForDebugEvent");
 			goto att_exit;
 		}
@@ -184,7 +184,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		if (__open_proc (io, atoi (file + 9), !strncmp (file, "attach://", 9)) == -1) {
 			return NULL;
 		}
-		W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
+		RW32Dw *wrap = io->dbgwrap;
 		if (!wrap->pi.dwThreadId) {
 			wrap->pi.dwThreadId = __w32_first_thread (wrap->pi.dwProcessId);
 		}
@@ -216,16 +216,16 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 
 static bool __close(RIODesc *fd) {
 	if (r_str_startswith (fd->uri, "attach://")) {
-		W32DbgWInst *wrap = fd->data;
+		RW32Dw *wrap = fd->data;
 		wrap->params.type = W32_DETACH;
-		w32dbg_wrap_wait_ret (wrap);
+		r_w32dw_waitret (wrap);
 		return true;
 	}
 	return false;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	W32DbgWInst *wrap = fd->data;
+	RW32Dw *wrap = fd->data;
 	//printf("w32dbg io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "")) {
@@ -250,7 +250,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 static int __getpid(RIODesc *fd) {
-	W32DbgWInst *wrap = (W32DbgWInst *)(fd ? fd->data : NULL);
+	RW32Dw *wrap = (RW32Dw *)(fd ? fd->data : NULL);
 	if (!wrap) {
 		return -1;
 	}
@@ -258,12 +258,12 @@ static int __getpid(RIODesc *fd) {
 }
 
 static int __gettid(RIODesc *fd) {
-	W32DbgWInst *wrap = (W32DbgWInst *)(fd ? fd->data : NULL);
+	RW32Dw *wrap = (RW32Dw *)(fd ? fd->data : NULL);
 	return wrap? wrap->pi.dwThreadId: -1;
 }
 
 static bool __getbase(RIODesc *fd, ut64 *base) {
-	W32DbgWInst *wrap = (W32DbgWInst *)(fd ? fd->data : NULL);
+	RW32Dw *wrap = (RW32Dw *)(fd ? fd->data : NULL);
 	if (base && wrap) {
 		*base = wrap->winbase;
 		return true;

@@ -34,9 +34,7 @@ endif
 ifeq ($(OSTYPE),windows)
 ## XXX unify all the debugger code
 CFLAGS+=-I$(SHLR)/heap/include/r_windows
-CFLAGS+=-I$(SHLR)/w32dbg_wrap/include
 OBJS+=$(addprefix p/,$(NATIVE_OBJS))
-OBJS+=$(SHLR)/w32dbg_wrap/src/w32dbg_wrap.o
 endif
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))
 CFLAGS+=-I../bin/format/elf

@@ -3,11 +3,12 @@
 #ifndef R2_IO_H
 #define R2_IO_H
 
-#include "r_list.h"
+#include <r_list.h>
 #include <r_util.h>
-#include "r_socket.h"
-#include "r_vector.h"
+#include <r_socket.h>
+#include <r_vector.h>
 #include "r_skyline.h"
+#include <r_util/r_w32dw.h>
 
 #define R_IO_SEEK_SET	0
 #define R_IO_SEEK_CUR	1
@@ -139,11 +140,13 @@ typedef struct r_io_t {
 	REvent *event;
 	PrintfCallback cb_printf;
 	RCoreBind corebind;
+	// TODO Wrap ... well its more like a proxy, should unify across OS instead of using separate apis
 	bool want_ptrace_wrap;
 #if __WINDOWS__
-	struct w32dbg_wrap_instance_t *w32dbg_wrap;
+	RW32Dw *dbgwrap;
 #endif
 #if USE_PTRACE_WRAP
+	// TODO: rename to dbgwrap
 	struct ptrace_wrap_instance_t *ptrace_wrap;
 #endif
 } RIO;

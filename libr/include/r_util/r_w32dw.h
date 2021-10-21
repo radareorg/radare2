@@ -1,7 +1,11 @@
 #ifndef W32DBG_WRAP
 #define W32DBG_WRAP
 
-typedef enum {
+#include <r_types.h>
+
+#if __WINDOWS__
+
+typedef enum r_w32dw_request {
 	W32_NONE,
 	W32_CONTINUE,
 	W32_ATTACH,
@@ -9,10 +13,10 @@ typedef enum {
 	W32_WAIT,
 	W32_STOP,
 	W32_CALL_FUNC
-} w32dbg_wrap_req;
+} RW32DwRequest;
 
-typedef struct {
-	w32dbg_wrap_req type;
+typedef struct r_w32dw_params_t {
+	RW32DwRequest type;
 	union {
 		DWORD continue_status;
 		struct {
@@ -26,24 +30,26 @@ typedef struct {
 	};
 	int ret;
 	DWORD err;
-} W32DbgWParams;
+} RW32DwParams;
 
-typedef struct {
+typedef struct r_w32dw_t {
 	HANDLE debugThread;
-	W32DbgWParams params;
+	RW32DwParams params;
 	HANDLE request_sem;
 	HANDLE result_sem;
 	ULONG_PTR winbase;
 	PROCESS_INFORMATION pi;
 	// Stores the TID of the thread DebugBreakProcess creates to ignore it's breakpoint
 	DWORD break_tid;
-} W32DbgWInst;
+} RW32Dw;
 
-#define w32dbgw_ret(inst) inst->params.ret
-#define w32dbgw_err(inst) (SetLastError (inst->params.err), inst->params.err)
+#define r_w32dw_ret(inst) inst->params.ret
+#define r_w32dw_err(inst) (SetLastError (inst->params.err), inst->params.err)
 
-W32DbgWInst *w32dbg_wrap_new(void);
-int w32dbg_wrap_wait_ret(W32DbgWInst *inst);
-void w32dbg_wrap_fini(W32DbgWInst *inst);
+R_API RW32Dw *r_w32dw_new(void);
+R_API int r_w32dw_waitret(RW32Dw *inst);
+R_API void r_w32dw_free(RW32Dw *inst);
+
+#endif
 
 #endif

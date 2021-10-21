@@ -1,15 +1,14 @@
 /* radare - LGPL - Copyright 2019-2021 - MapleLeaf-X */
 
 #include <ntstatus.h>
-#define WIN32_NO_STATUS
 #include "windows_debug.h"
-#include <w32dbg_wrap.h>
-#undef WIN32_NO_STATUS
 
+// XXX remove globals
 const DWORD wait_time = 1000;
 static RList *lib_list = NULL;
 static PLIB_ITEM last_lib = NULL;
 
+// XXX bad names for those defines
 #define w32_PROCESS_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | 0xFFF)
 #define w32_THREAD_ALL_ACCESS w32_PROCESS_ALL_ACCESS
 
@@ -34,13 +33,13 @@ static PTHREAD_ITEM __r_debug_thread_add(RDebug *dbg, DWORD pid, DWORD tid, HAND
 		r_w32_NtQueryInformationThread (hThread, 9, &lpStartAddress, sizeof (LPVOID), NULL);
 	}
 	THREAD_ITEM th = {
-			pid,
-			tid,
-			bFinished,
-			false,
-			hThread,
-			lpThreadLocalBase,
-			lpStartAddress
+		pid,
+		tid,
+		bFinished,
+		false,
+		hThread,
+		lpThreadLocalBase,
+		lpStartAddress
 	};
 	PTHREAD_ITEM pthread = __find_thread (dbg, tid);
 	if (pthread) {
@@ -292,7 +291,7 @@ int w32_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		showfpu = true; // hack for debugging
 		type = -type;
 	}
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 
 	bool alive = __is_thread_alive (dbg, dbg->tid);
 	HANDLE th = wrap->pi.dwThreadId == dbg->tid ? wrap->pi.hThread : NULL;
@@ -367,7 +366,7 @@ int w32_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 }
 
 int w32_attach(RDebug *dbg, int pid) {
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 	if (wrap->pi.hProcess) {
 		return wrap->pi.dwThreadId;
 	}
@@ -378,9 +377,9 @@ int w32_attach(RDebug *dbg, int pid) {
 	wrap->pi.hProcess = ph;
 	wrap->pi.dwProcessId = pid;
 	wrap->params.type = W32_ATTACH;
-	w32dbg_wrap_wait_ret (wrap);
+	r_w32dw_waitret (wrap);
 	if (!wrap->params.ret) {
-		w32dbgw_err (wrap);
+		r_w32dw_err (wrap);
 		r_sys_perror ("DebugActiveProcess");
 		CloseHandle (ph);
 		return -1;
@@ -395,11 +394,11 @@ int w32_detach(RDebug *dbg, int pid) {
 	}
 
 	DebugSetProcessKillOnExit (FALSE);
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 	bool ret = false;
 	wrap->pi.dwProcessId = pid;
 	wrap->params.type = W32_DETACH;
-	w32dbg_wrap_wait_ret (wrap);
+	r_w32dw_waitret (wrap);
 	ret = wrap->params.ret;
 	if (wrap->pi.hProcess) {
 		CloseHandle (wrap->pi.hProcess);
@@ -596,7 +595,7 @@ int w32_attach_new_process(RDebug* dbg, int pid) {
 
 bool w32_select(RDebug *dbg, int pid, int tid) {
 	RListIter *it;
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 
 	// Re-attach to a different pid
 	if (dbg->pid > -1 && dbg->pid != pid) {
@@ -656,7 +655,7 @@ bool w32_select(RDebug *dbg, int pid, int tid) {
 }
 
 int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 
 	if (sig == 0) {
 		if (r_list_empty (dbg->threads) || (dbg->reason.tid == pid && dbg->reason.signum == EXIT_PROCESS_DEBUG_EVENT)) {
@@ -683,7 +682,7 @@ int w32_kill(RDebug *dbg, int pid, int tid, int sig) {
 
 void w32_break_process(void *user) {
 	RDebug *dbg = (RDebug *)user;
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 	if (dbg->corebind.cfggeti (dbg->corebind.core, "dbg.threads")) {
 		w32_select (dbg, wrap->pi.dwProcessId, -1); // Suspend all threads
 	} else {
@@ -792,14 +791,8 @@ static void print_exception_event(DEBUG_EVENT *de) {
 	}
 }
 
-#if 0
-static char *__r_debug_get_dll(void) {
-	return lstLibPtr->Path;
-}
-#endif
-
 RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 	DEBUG_EVENT de;
 	int tid, next_event = 0;
 	char *dllname = NULL;
@@ -820,10 +813,10 @@ RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 			wrap->params.wait.de = &de;
 			wrap->params.wait.wait_time = wait_time;
 			void *bed = r_cons_sleep_begin ();
-			w32dbg_wrap_wait_ret (wrap);
+			r_w32dw_waitret (wrap);
 			r_cons_sleep_end (bed);
-			if (!w32dbgw_ret (wrap)) {
-				if (w32dbgw_err (wrap) != ERROR_SEM_TIMEOUT) {
+			if (!r_w32dw_ret (wrap)) {
+				if (r_w32dw_err (wrap) != ERROR_SEM_TIMEOUT) {
 					r_sys_perror ("w32_dbg_wait/WaitForDebugEvent");
 					ret = -1;
 					goto end;
@@ -890,7 +883,7 @@ RDebugReasonType w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		}
 		case LOAD_DLL_DEBUG_EVENT:
-			dllname = __resolve_path (((W32DbgWInst *)dbg->user)->pi.hProcess, de.u.LoadDll.hFile); //__get_file_name_from_handle
+			dllname = __resolve_path (((RW32Dw *)dbg->user)->pi.hProcess, de.u.LoadDll.hFile); //__get_file_name_from_handle
 			if (dllname) {
 				last_lib = lib_list_add (pid, de.u.LoadDll.lpBaseOfDll, de.u.LoadDll.hFile, dllname);
 				free (dllname);
@@ -1034,7 +1027,7 @@ bool w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 		th->bSuspended = false;
 	}
 
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 	wrap->params.type = W32_CONTINUE;
 
 	/* Honor the Windows-specific signal that instructs threads to process exceptions */
@@ -1042,9 +1035,9 @@ bool w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 		? DBG_EXCEPTION_NOT_HANDLED
 		: DBG_EXCEPTION_HANDLED;
 
-	w32dbg_wrap_wait_ret (wrap);
-	if (!w32dbgw_ret (wrap)) {
-		w32dbgw_err (wrap);
+	r_w32dw_waitret (wrap);
+	if (!r_w32dw_ret (wrap)) {
+		r_w32dw_err (wrap);
 		r_sys_perror ("w32_continue/ContinueDebugEvent");
 		return false;
 	}
@@ -1053,7 +1046,7 @@ bool w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 	LPVOID base = VirtualAllocEx (wrap->pi.hProcess, (LPVOID)addr, (SIZE_T)size, MEM_COMMIT, PAGE_READWRITE);
 	if (!base) {
 		r_sys_perror ("w32_map_alloc/VirtualAllocEx");
@@ -1064,7 +1057,7 @@ RDebugMap *w32_map_alloc(RDebug *dbg, ut64 addr, int size) {
 }
 
 bool w32_map_dealloc(RDebug *dbg, ut64 addr, int size) {
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 	if (!VirtualFreeEx (wrap->pi.hProcess, (LPVOID)addr, 0, MEM_RELEASE)) {
 		r_sys_perror ("w32_map_dealloc/VirtualFreeEx");
 		return false;
@@ -1097,7 +1090,7 @@ static int __io_perms_to_prot(int io_perms) {
 
 bool w32_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 	DWORD old;
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 	return VirtualProtectEx (wrap->pi.hProcess, (LPVOID)(size_t)addr,
 		size, __io_perms_to_prot (perms), &old);
 }
@@ -1173,7 +1166,7 @@ static void __w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 	DWORD usr_len = 512;
 	DWORD usr_dom_len = 512;
 	SID_NAME_USE snu = {0};
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 
 	if (!wrap->pi.hProcess) {
 		return;
@@ -1227,7 +1220,7 @@ err___w32_info_user:
 }
 
 static void __w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 	rdi->exe = __resolve_path (wrap->pi.hProcess, NULL);
 }
 
@@ -1293,7 +1286,7 @@ RList *w32_pid_list(RDebug *dbg, int pid, RList *list) {
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof (pe);
 	if (Process32First (sh, &pe)) {
-		W32DbgWInst *wrap = dbg->user;
+		RW32Dw *wrap = dbg->user;
 		bool all = pid == 0;
 		do {
 			if (all || pe.th32ProcessID == pid || pe.th32ParentProcessID == pid) {
