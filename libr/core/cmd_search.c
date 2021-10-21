@@ -4173,7 +4173,7 @@ reread:
 	break;
 	case 'f': // "/f" forward search
 		if (input[1] == '?') {
-			r_core_cmd_help(core, help_msg_search_forward);
+			r_core_cmd_help (core, help_msg_search_forward);
 			break;
 		}
 		if (core->offset) {
