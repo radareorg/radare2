@@ -38,6 +38,13 @@ static const char *help_msg_a[] = {
 	NULL
 };
 
+static const char *help_msg_a8[] = {
+	"Usage:", "a8 [hexpairs]", "analyze the byte array given as input",
+	"a8 ", "5548", "analyzes 5548 byte array",
+	NULL
+};
+
+
 static const char *help_msg_ap[] = {
 	"Usage:", "ap[?]", "analyze prelude in current offset",
 	"ap", "", "check if current offset contains a function prelude",
@@ -11345,6 +11352,7 @@ static int cmd_anal(void *data, const char *input) {
 			free (buf);
 		}
 		break;
+<<<<<<< HEAD
 	case '8': // "a8"
 		{
 			ut8 *buf = malloc (strlen (input) + 1);
@@ -11354,7 +11362,19 @@ static int cmd_anal(void *data, const char *input) {
 					core_anal_bytes (core, buf, len, 0, input[1]);
 				}
 				free (buf);
+=======
+	case '8':  // "a8"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_a8);
+		}
+		ut8 *buf = malloc (strlen (input) + 1);
+		if (buf) {
+			int len = r_hex_str2bin (input + 1, buf);
+			if (len > 0) {
+				core_anal_bytes (core, buf, len, 0, input[1]);
+>>>>>>> add a8 help cmd
 			}
+			free (buf);
 		}
 		break;
 	case 'b': // "ab"
