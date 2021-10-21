@@ -14,6 +14,30 @@ static int cmd_search(void *data, const char *input);
 #define AES_SEARCH_LENGTH 40
 #define PRIVATE_KEY_SEARCH_LENGTH 11
 
+static const char *help_msg_search_wide_string[] = {
+	"Usage: /w[ij]", "[str]", "Wide string search subcommands",
+	"/w ", "foo", "search for wide string 'f\\0o\\0o\\0'",
+	"/wj ", "foo", "search for wide string 'f\\0o\\0o\\0' (json output)",
+	"/wi ", "foo", "search for wide string 'f\\0o\\0o\\0' but ignoring case",
+	"/wij ", "foo", "search for wide string 'f\\0o\\0o\\0' but ignoring case (json output)",
+	NULL
+};
+
+static const char *help_msg_search_offset[] = {
+	"Usage: /o", "[n]", "Shows offset of 'n' Backward instruction",
+	NULL
+};
+
+static const char *help_msg_search_offset_without_anal[] = {
+	"Usage: /O", "[n]", "Shows offset of 'n' Backward instruction, but with a different fallback if anal cannot be used.",
+	NULL
+};
+
+static const char *help_msg_search_string_no_case[] = {
+	"Usage: /i", "[str]", "Search str string ignorning case",
+	NULL
+};
+
 static const char *help_msg_search_esil[] = {
 	"/E", " [esil-expr]", "search offsets matching a specific esil expression",
 	"/Ej", " [esil-expr]", "same as above but using the given magic file",
@@ -27,6 +51,21 @@ static const char *help_msg_search_backward[] = {
 	"Usage: /b[p]<command>", "[value]", "Backward search subcommands",
 	"/b", "[x] [str|414243]", "search in hexadecimal 'ABC' backwards starting in current address",
 	"/bp", "", "search previous prelude and set hit.prelude flag",
+	NULL
+};
+
+static const char *help_msg_search_forward[] = {
+	"Usage: /f", " ", "search forwards, command modifier, followed by other command",
+	NULL
+};
+
+static const char *help_msg_search_sections[] = {
+	"Usage: /s[*]", "[threshold]", "finds sections by grouping blocks with similar entropy.",
+	NULL
+};
+
+static const char *help_msg_search_delta[] = {
+	"Usage: /d", "delta", "search for a deltified sequence of bytes.",
 	NULL
 };
 
@@ -3289,6 +3328,10 @@ reread:
 		}
 		goto reread;
 	case 'o': { // "/o" print the offset of the Previous opcode
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_offset);
+			break;
+		}
 		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
 		n = R_ABS((st64)n);
 		if (((st64)n) < 1) {
@@ -3306,6 +3349,10 @@ reread:
 		break;
 	}
 	case 'O': { // "/O" alternative to "/o"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_offset_without_anal);
+			break;
+		}
 		ut64 addr, n = input[param_offset - 1] ? r_num_math (core->num, input + param_offset) : 1;
 		if (!n) {
 			n = 1;
@@ -3953,7 +4000,15 @@ reread:
 		dosearch = true;
 		break;
 	case 'w': // "/w" search wide string, includes ignorecase search functionality (/wi cmd)!
-		if (input[2] ) {
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_wide_string);
+			break;
+		}
+		if (input[2]) {
+			if (input[2] == '?') {
+				r_core_cmd_help (core, help_msg_search_wide_string);
+				break;
+			}
 			if (input[1] == 'j' || input[2] == 'j') {
 				param.outmode = R_MODE_JSON;
 			}
@@ -3998,6 +4053,10 @@ reread:
 			break;
 		}
 	case 'i': // "/i"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_string_no_case);
+			break;
+		}
 		if (input[param_offset - 1] != ' ') {
 			eprintf ("Missing ' ' after /i\n");
 			ret = false;
@@ -4069,6 +4128,10 @@ reread:
 		do_esil_search (core, &param, input);
 		goto beach;
 	case 'd': // "/d" search delta key
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_delta);
+			break;
+		} 
 		if (input[1]) {
 			r_search_reset (core->search, R_SEARCH_DELTAKEY);
 			r_search_kw_add (core->search,
@@ -4109,6 +4172,10 @@ reread:
 	}
 	break;
 	case 'f': // "/f" forward search
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_forward);
+			break;
+		}
 		if (core->offset) {
 			st64 coff = core->offset;
 			RInterval itv = {core->offset, -coff};
@@ -4222,6 +4289,10 @@ reread:
 		}
 		break;
 	case 's': // "/s"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_search_sections);
+			break;
+		}
 		do_section_search (core, &param, input + 1);
 		break;
 	case '+': // "/+"
