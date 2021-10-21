@@ -13,7 +13,7 @@
 #include <tlhelp32.h> // CreateToolhelp32Snapshot
 #include <psapi.h> // GetModuleFileNameEx, GetProcessImageFileName
 #include <tchar.h>
-#include <w32dbg_wrap.h>
+#include <r_util/r_w32dw.h>
 
 #ifndef XSTATE_GSSE
 #define XSTATE_GSSE 2

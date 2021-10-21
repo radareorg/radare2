@@ -4,6 +4,11 @@ STATIC_OBJ+=${OBJ_SHM}
 TARGET_SHM=io_shm.${EXT_SO}
 ALL_TARGETS+=${TARGET_SHM}
 
+# only for shm_open
+ifeq (${OSTYPE},gnulinux)
+LDFLAGS+=-lrt
+endif
+
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a
 LINKFLAGS+=../../io/libr_io.a

@@ -1,22 +1,16 @@
-/* radare - LGPL - Copyright 2019-2021 - gustavo */
+/* radare - LGPL - Copyright 2019-2021 - gustavo, pancake */
 
-#undef __WINDOWS__
-#ifdef _MSC_VER
-#define __WINDOWS__ 1
-#endif
-#if __MINGW32__
-#define __WINDOWS__ 1
-#endif
+#include <r_types.h>
 
 #if __WINDOWS__
 #include <windows.h>
-#include <w32dbg_wrap.h>
+#include <r_util/r_w32dw.h>
 
 static DWORD WINAPI __w32dbg_thread(LPVOID param) {
 	W32DbgWInst *inst = param;
 	W32DbgWParams *params = &inst->params;
 	PROCESS_INFORMATION *pi = &inst->pi;
-	while (1) {
+	for (;;) {
 		WaitForSingleObject (inst->request_sem, INFINITE);
 		switch (params->type) {
 		case W32_CONTINUE:
@@ -53,7 +47,7 @@ static DWORD WINAPI __w32dbg_thread(LPVOID param) {
 	return 0;
 }
 
-W32DbgWInst *w32dbg_wrap_new(void) {
+R_API W32DbgWInst *r_w32dw_new(void) {
 	W32DbgWInst *inst = calloc (1, sizeof (W32DbgWInst));
 	if (inst) {
 		inst->request_sem = CreateSemaphore (NULL, 0, 1, NULL);
@@ -63,7 +57,7 @@ W32DbgWInst *w32dbg_wrap_new(void) {
 	return inst;
 }
 
-void w32dbg_wrap_fini(W32DbgWInst *inst) {
+R_API void r_w32dw_free(W32DbgWInst *inst) {
 	inst->params.type = W32_STOP;
 	ReleaseSemaphore (inst->request_sem, 1, NULL);
 	CloseHandle (inst->request_sem);
@@ -71,9 +65,9 @@ void w32dbg_wrap_fini(W32DbgWInst *inst) {
 	free (inst);
 }
 
-int w32dbg_wrap_wait_ret(W32DbgWInst *inst) {
+R_API int r_w32dw_waitret(W32DbgWInst *inst) {
 	ReleaseSemaphore (inst->request_sem, 1, NULL);
 	WaitForSingleObject (inst->result_sem, INFINITE);
-	return w32dbgw_ret(inst);
+	return r_w32dw_ret (inst);
 }
 #endif

@@ -244,7 +244,7 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	MEMORY_BASIC_INFORMATION mbi;
 	RWinModInfo mod_inf = {0};
 	RList *map_list = r_list_newf ((RListFree)r_debug_map_free), *mod_list = NULL;
-	W32DbgWInst *wrap = dbg->user;
+	RW32Dw *wrap = dbg->user;
 
 	GetSystemInfo (&si);
 	cur_addr = si.lpMinimumApplicationAddress;

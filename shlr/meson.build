@@ -512,11 +512,6 @@ ar_dep = declare_dependency(
   include_directories: ar_inc
 )
 
-
-if host_machine.system() == 'windows'
-  subdir('w32dbg_wrap')
-endif
-
 # handle mpc dependency
 mpc_files = [
   'mpc/mpc.c'
