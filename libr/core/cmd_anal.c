@@ -58,7 +58,7 @@ static const char *help_msg_afm[] = {
 
 static const char *help_msg_aF[] = {
 	"Usage:", "aF", " # analyze a function, but using anal.depth=1",
-	"", "", "Check af? for more options and information.",
+	"aF", "", "Check af? for more options and information.",
 	NULL
 };
 
@@ -11386,17 +11386,6 @@ static int cmd_anal(void *data, const char *input) {
 			free (buf);
 		}
 		break;
-<<<<<<< HEAD
-	case '8': // "a8"
-		{
-			ut8 *buf = malloc (strlen (input) + 1);
-			if (buf) {
-				int len = r_hex_str2bin (input + 1, buf);
-				if (len > 0) {
-					core_anal_bytes (core, buf, len, 0, input[1]);
-				}
-				free (buf);
-=======
 	case '8':  // "a8"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_a8);
@@ -11407,7 +11396,6 @@ static int cmd_anal(void *data, const char *input) {
 			int len = r_hex_str2bin (input + 1, buf);
 			if (len > 0) {
 				core_anal_bytes (core, buf, len, 0, input[1]);
->>>>>>> add a8 help cmd
 			}
 			free (buf);
 		}
