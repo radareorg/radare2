@@ -38,21 +38,45 @@ static const char *help_msg_a[] = {
 	NULL
 };
 
+static const char *help_msg_afna[] = {
+	"Usage:", "afna", " # construct a function name and rename the function for the current offset.",
+	"", "", "Based on flags or methods calls found inside that function.",
+	NULL
+};
+
+static const char *help_msg_afu[] = {
+	"Usage:", "afu", "[addr]   # resize and analyze function from current address until addr.",
+	"afu", " 0x100004093", "Resize and analyze function from current address until 0x100004093",
+	NULL
+};
+
+static const char *help_msg_afm[] = {
+	"Usage:", "afm", "[name]   # merge two functions.",
+	"afm", " sym.func.100003d74", "Merge current function into 0x100003d74",
+	NULL
+};
+
+static const char *help_msg_aF[] = {
+	"Usage:", "aF", " # analyze a function, but using anal.depth=1",
+	"", "", "Check af? for more options and information.",
+	NULL
+};
+
 static const char *help_msg_a8[] = {
-	"Usage:", "a8 [hexpairs]", "analyze the byte array given as input",
+	"Usage:", "a8", "[hexpairs]   # analyze the byte array given as input",
 	"a8 ", "5548", "analyzes 5548 byte array",
 	NULL
 };
 
 
 static const char *help_msg_ap[] = {
-	"Usage:", "ap[?]", "analyze prelude in current offset",
+	"Usage:", "ap[?]", " # analyze prelude in current offset",
 	"ap", "", "check if current offset contains a function prelude",
 	NULL
 };
 
 static const char *help_msg_avg[] = {
-	"Usage:", "avg", "analyze variable global",
+	"Usage:", "avg", " # analyze variable global",
 	"avg", "", "Use ESIL emulation to find out arguments of a call (uses 'abte')",
 	"avg", " [type] [name]", "add global",
 	"avg-", "", "delete global",
@@ -60,7 +84,7 @@ static const char *help_msg_avg[] = {
 };
 
 static const char *help_msg_aC[] = {
-	"Usage:", "aC[fej] [addr-of-call]", "analyze call args",
+	"Usage:", "aC[fej] [addr-of-call]", " # analyze call args",
 	"aCe", "", "Use ESIL emulation to find out arguments of a call (uses 'abte')",
 	"aCf", "", "Same as .aCe* $$ @@=`pdr~call`",
 	NULL
@@ -3813,7 +3837,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 'u': // "afu"
-		{
+		if (input[2] == '?') {
+			r_core_cmd_help (core, help_msg_afu);
+			break;
+		}
+
 		if (input[2] != ' ') {
 			eprintf ("Missing argument\n");
 			return false;
@@ -3845,7 +3873,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			r_config_set_i (core->config, "anal.from", a);
 			r_config_set_i (core->config, "anal.to", b);
 			r_config_set (core->config, "anal.limits", r_str_get (c));
-		}
 		}
 		break;
 	case '+': { // "af+"
@@ -4169,6 +4196,10 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case 'm': // "afm" - merge two functions
+		if (input[2] == '?') {
+			r_core_cmd_help (core, help_msg_afm);
+			break;
+		}
 		r_core_anal_fcn_merge (core, core->offset, r_num_math (core->num, input + 2));
 		break;
 	case 'M': // "afM" - print functions map
@@ -4422,14 +4453,17 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				free (r_core_anal_fcn_autoname (core, core->offset, 1, 0));
 			}
 			break;
-		case 'a': { // "afna"
-				  char *name = r_core_anal_fcn_autoname (core, core->offset, 0, 0);
-				  if (name) {
-					  r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
-					  free (name);
-				  }
-				  break;
-			  }
+		case 'a': // "afna"
+			if (input[3] == '?') {
+				r_core_cmd_help (core, help_msg_afna);
+				break;
+			}
+			char *name = r_core_anal_fcn_autoname (core, core->offset, 0, 0);
+			if (name) {
+				r_cons_printf ("afn %s 0x%08" PFMT64x "\n", name, core->offset);
+				free (name);
+			}
+			break;
 		case '.': // "afn."
 		case 0: { // "afn"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
@@ -11366,6 +11400,7 @@ static int cmd_anal(void *data, const char *input) {
 	case '8':  // "a8"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_a8);
+			break;
 		}
 		ut8 *buf = malloc (strlen (input) + 1);
 		if (buf) {
@@ -11438,6 +11473,10 @@ static int cmd_anal(void *data, const char *input) {
 	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
 	case 'O': cmd_anal_bytes (core, input + 1); break; // "aO"
 	case 'F': // "aF"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_aF);
+			break;
+		}
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
 	case 'f': // "af"
