@@ -3148,13 +3148,18 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		do {
 			repeat--;
 			if (block + 8 >= block_end) {
+				int blockdelta = block - core->block;
+				if (heaped_block) {
+					blockdelta = block - heaped_block;
+					free (heaped_block);
+				}
 				blocksize = ((1 + repeat) * 8) + 8;
 				block_end = block + blocksize;
 				heaped_block = calloc (blocksize, 1);
 				if (!heaped_block) {
 					break;
 				}
-				r_io_read_at (core->io, core->offset, heaped_block, blocksize); 
+				r_io_read_at (core->io, core->offset + blockdelta, heaped_block, blocksize); 
 				block = heaped_block;
 			}
 			ut64 v;
