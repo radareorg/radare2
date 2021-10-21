@@ -7,8 +7,8 @@
 #include <r_util/r_w32dw.h>
 
 static DWORD WINAPI __w32dbg_thread(LPVOID param) {
-	W32DbgWInst *inst = param;
-	W32DbgWParams *params = &inst->params;
+	RW32Dw *inst = param;
+	RW32DwParams *params = &inst->params;
 	PROCESS_INFORMATION *pi = &inst->pi;
 	for (;;) {
 		WaitForSingleObject (inst->request_sem, INFINITE);
@@ -47,8 +47,8 @@ static DWORD WINAPI __w32dbg_thread(LPVOID param) {
 	return 0;
 }
 
-R_API W32DbgWInst *r_w32dw_new(void) {
-	W32DbgWInst *inst = calloc (1, sizeof (W32DbgWInst));
+R_API RW32Dw *r_w32dw_new(void) {
+	RW32Dw *inst = calloc (1, sizeof (RW32Dw));
 	if (inst) {
 		inst->request_sem = CreateSemaphore (NULL, 0, 1, NULL);
 		inst->result_sem = CreateSemaphore (NULL, 0, 1, NULL);
@@ -57,7 +57,7 @@ R_API W32DbgWInst *r_w32dw_new(void) {
 	return inst;
 }
 
-R_API void r_w32dw_free(W32DbgWInst *inst) {
+R_API void r_w32dw_free(RW32Dw *inst) {
 	inst->params.type = W32_STOP;
 	ReleaseSemaphore (inst->request_sem, 1, NULL);
 	CloseHandle (inst->request_sem);
@@ -65,7 +65,7 @@ R_API void r_w32dw_free(W32DbgWInst *inst) {
 	free (inst);
 }
 
-R_API int r_w32dw_waitret(W32DbgWInst *inst) {
+R_API int r_w32dw_waitret(RW32Dw *inst) {
 	ReleaseSemaphore (inst->request_sem, 1, NULL);
 	WaitForSingleObject (inst->result_sem, INFINITE);
 	return r_w32dw_ret (inst);
