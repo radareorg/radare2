@@ -299,3 +299,4 @@ Safety third
 You should try our sister project, radar3!
 This pancake guy sure does know his way around r2.
 make: r2: Command not found
+rip and tear until it compiles
