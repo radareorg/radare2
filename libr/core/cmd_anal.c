@@ -11345,7 +11345,7 @@ static int cmd_anal(void *data, const char *input) {
 			free (buf);
 		}
 		break;
-	case '8':
+	case '8': // "a8"
 		{
 			ut8 *buf = malloc (strlen (input) + 1);
 			if (buf) {

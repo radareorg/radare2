@@ -451,11 +451,12 @@ static const char *help_msg_pt[] = {
 };
 
 static const char *help_msg_pv[] = {
-	"Usage: pv[j][1,2,4,8,z]", "", "",
+	"Usage: pv[1248z][j]", "", "Print value(s) given size and endian",
 	"pv", "", "print bytes based on asm.bits",
 	"pv1", "", "print 1 byte in memory",
 	"pv2", "", "print 2 bytes in memory",
 	"pv4", "", "print 4 bytes in memory",
+	"pv8", "", "print 8 bytes in memory",
 	"pv8", "", "print 8 bytes in memory",
 	"pve", " [1234] ([bsize])", "print value with any endian (1234, ",
 	"pvz", "", "print value as string (alias for ps)",
@@ -2962,13 +2963,13 @@ static ut32 convert(ut8 *data, const char *bo) {
 	return n;
 }
 
-// XXX blocksize is missing
 static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	const char *stack[] = {
 		"ret", "arg0", "arg1", "arg2", "arg3", "arg4", NULL
 	};
 	ut8 *block = core->block;
 	int blocksize = core->blocksize;
+	ut8 *heaped_block = NULL;
 	ut8 *block_end = core->block + blocksize;
 	int i, n = core->rasm->bits / 8;
 	int type = 'v';
@@ -2998,11 +2999,8 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		break;
 	}
 	const char *arg = strchr (input, ' ');
-	if (arg) {
-		arg = r_str_trim_head_ro (arg + 1);
-	} else {
-		arg = input;
-	}
+	arg = arg? r_str_trim_head_ro (arg + 1): input;
+
 	st64 repeat = r_num_math (core->num, arg);
 	if (repeat < 0) {
 		repeat = 1;
@@ -3038,8 +3036,8 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	case '*': { // "pv*"
 		for (i = 0; i < repeat; i++) {
 			const bool be = core->print->big_endian;
-		ut64 at = core->offset + (i * n);
-		ut8 *b = block + (i * n);
+			ut64 at = core->offset + (i * n);
+			ut8 *b = block + (i * n);
 			switch (n) {
 			case 1:
 				r_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, r_read_ble8 (b));
@@ -3051,7 +3049,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				r_cons_printf ("f pval.0x%08"PFMT64x"=%d\n", at, r_read_ble32 (b, be));
 				break;
 			case 8:
-		default:
+			default:
 				r_cons_printf ("f pval.0x%08"PFMT64x"=%"PFMT64d"\n", at, r_read_ble64 (b, be));
 				break;
 			}
@@ -3150,8 +3148,14 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		do {
 			repeat--;
 			if (block + 8 >= block_end) {
-				eprintf ("Truncated. TODO: use r_io_read apis insgtead of depending on blocksize\n");
-				break;
+				blocksize = ((1 + repeat) * 8) + 8;
+				block_end = block + blocksize;
+				heaped_block = calloc (blocksize, 1);
+				if (!heaped_block) {
+					break;
+				}
+				r_io_read_at (core->io, core->offset, heaped_block, blocksize); 
+				block = heaped_block;
 			}
 			ut64 v;
 			if (!fixed_size) {
@@ -3191,6 +3195,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 					break;
 			}
 		} while (repeat > 0);
+		free (heaped_block);
 		break;
 	}
 }
