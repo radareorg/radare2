@@ -15,7 +15,6 @@ r_util_sources = [
   'base85.c',
   'base91.c',
   'bdiff.c',
-  'binheap.c',
   'bitmap.c',
   'buf.c',
   'cache.c',
