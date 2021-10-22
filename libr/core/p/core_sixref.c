@@ -281,9 +281,9 @@ static void siguza_xrefs(RCore *core, ut64 search, ut64 start, int lenbytes) {
 	char target_ref[24];
 
 	if (search == 0) {
-		sprintf (target_ref, "all xrefs");
+		snprintf (target_ref, sizeof (target_ref), "all xrefs");
 	} else {
-		sprintf (target_ref, "xrefs to 0x%08"PFMT64x, search);
+		snprintf (target_ref, sizeof (target_ref), "xrefs to 0x%08"PFMT64x, search);
 	}
 	eprintf ("Finding %s in 0x%08"PFMT64x"-0x%08"PFMT64x"\n", target_ref, start, end);
 
