@@ -451,7 +451,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		}
 		RIOMapRef *mapref;
 		RListIter *iter;
-		r_list_foreach (bank->maprefs, iter, mapref) {
+		r_list_foreach_prev (bank->maprefs, iter, mapref) {
 			RIOMap *map = r_io_map_get (io, mapref->id);
 			if (fd >= 0 && map->fd != fd) {
 				continue;
@@ -1131,7 +1131,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 			RListIter *iter;
 			RIOMapRef *mapref;
-			r_list_foreach (bank->maprefs, iter, mapref) {
+			r_list_foreach_prev (bank->maprefs, iter, mapref) {
 				RIOMap *map = r_io_map_get (core->io, mapref->id);
 				char temp[32];
 				snprintf (temp, sizeof (temp), "%d", map->fd);
