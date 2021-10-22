@@ -173,10 +173,12 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 		return true;
 	}
 	RIOSubMap *bd = (RIOSubMap *)entry->data;
-	if (r_itv_eq (bd->itv, sm->itv)) {
-		// this makes gb bankswitches way faster than skyline
-		// instead of deleting and inserting, just replace the mapref
-		bd->mapref = sm->mapref;
+	if (r_io_submap_to (bd) == r_io_submap_to (sm) &&
+		r_io_submap_from (bd) >= r_io_submap_from (sm)) {
+		// _find_entry_submap_node guarantees, that there is no submap
+		// prior to bd in the range of sm, so instead of deleting and inserting
+		// we can just memcpy
+		memcpy (bd, sm, sizeof (RIOSubMap));
 		free (sm);
 		r_list_append (bank->maprefs, mapref);
 		return true;
@@ -539,8 +541,7 @@ found:
 				//
 				// instead of deleting and inserting, just replace the mapref,
 				// similar to r_io_bank_map_priorize
-				bd->mapref = sm->mapref;
-				r_io_submap_set_from (bd, r_io_submap_from (sm));
+				memcpy (bd, sm, sizeof (RIOSubMap));
 				free (sm);
 			} else {
 				r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
@@ -559,15 +560,9 @@ found:
 			r_crbtree_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL);
 			return true;
 		}
-		if (r_io_submap_to (sm) < r_io_submap_to (bd)) {
-			// bd and sm must intersect here, bc of _find_entry_submap_node
-			// no need to do a full check here
-			r_io_submap_set_from (bd, r_io_submap_to (sm) + 1);
-			r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
-			return true;
-		}
-		if (r_io_submap_to (bd) < r_io_submap_to (sm)) {
+		if (r_io_submap_from (bd) < r_io_submap_from (sm)) {
 			r_io_submap_set_to (bd, r_io_submap_from (sm) - 1);
+			entry = r_rbnode_next (entry);
 		}
 	} else {
 		// _mapref_priority_cmp cannot return 0 in this scenario,
@@ -581,13 +576,37 @@ found:
 				return true;
 			} // else
 			// adjust sm
-			r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
+			// r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
+		} else {
+			if (r_io_submap_to (sm) <= r_io_submap_to (bd)) {
+				r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
+				if (!r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL)) {
+					free (sm);
+					return false;
+				}
+				return true;
+			}
+			RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, sm);
+			if (!bdsm) {
+				free (sm);
+				return false;
+			}
+			r_io_submap_set_to (bdsm, r_io_submap_from (bd) - 1);
+			// r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
+			if (!r_crbtree_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL)) {
+				free (bdsm);
+				free (sm);
+				return false;
+			}
+			// r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
+			entry = r_rbnode_next (entry);
 		}
+		r_io_submap_set_from (sm, r_io_submap_to (bd) + 1);
 	}
-	entry = r_rbnode_next (entry);
+	// entry = r_rbnode_next (entry);
 	// it is given that entry->data->from >= sm->from on every iteration
 	// so only check for upper boundary of sm for intersection with entry->data
-	while (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
+	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		// iterate forwards starting at entry, while entry->data and sm overlap
 		bd = (RIOSubMap *)entry->data;
 		entry = r_rbnode_next (entry);
@@ -600,12 +619,12 @@ found:
 			// since all submaps with the same mapref as sm were deleted from
 			// the submap tree previously. so _mapref_priority_cmp can only return 1 or -1
 			// bd has higher priority than sm => adjust sm
-			if (r_io_submap_from (sm) < r_io_submap_from (bd)) {
+			if (r_io_submap_from (bd) > r_io_submap_from (sm)) {
 				RIOSubMap *bdsm = R_NEWCOPY (RIOSubMap, sm);
 				r_io_submap_set_to (bdsm, r_io_submap_from (bd) - 1);
 				r_crbtree_insert (bank->submaps, bdsm, _find_sm_by_from_vaddr_cb, NULL);
 			}
-			if (r_io_submap_to (sm) == r_io_submap_from (bd)) {
+			if (r_io_submap_to (bd) == r_io_submap_to (sm)) {
 				// in this case the size of sm would be 0,
 				// but since empty maps are not allowed free sm and return
 				free (sm);
@@ -615,8 +634,7 @@ found:
 		}
 	}
 	if (!entry) {
-		r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
-		return true;
+		return r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 	}
 	bd = (RIOSubMap *)entry->data;
 	if (_mapref_priority_cmp (bank, &sm->mapref, &bd->mapref) == 1) {
@@ -626,7 +644,7 @@ found:
 		r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
 	} else {
 		if (r_io_submap_from (sm) < r_io_submap_from (bd)) {
-			if (r_io_submap_to (sm) >= r_io_submap_from (bd)) {
+			if (r_io_submap_from (bd) <= r_io_submap_to (sm)) {
 				r_io_submap_set_to (sm, r_io_submap_from (bd) - 1);
 			}
 			r_crbtree_insert (bank->submaps, sm, _find_sm_by_from_vaddr_cb, NULL);
