@@ -162,11 +162,15 @@ static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (!ret || !ptr) {
+		free (ret);
+		free (ptr);
 		return NULL;
 	}
 	ut8 gbuf[32];
 	int left = r_buf_read_at (bf->buf, 0, (ut8*)&gbuf, sizeof (gbuf));
 	if (left < sizeof (gbuf)) {
+		free (ret);
+		free (ptr);
 		return NULL;
 	}
 	if (!memcmp (gbuf, "AB", 2)) {
@@ -182,7 +186,6 @@ static RList *entries(RBinFile *bf) {
 		ptr->paddr = 0;
 		r_list_append (ret, ptr);
 	}
-
 	return ret;
 }
 

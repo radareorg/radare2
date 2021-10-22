@@ -182,13 +182,13 @@ static inline bool za_add(RCore *core, const char *input) {
 	char *name = strtok (args, " ");
 	char *stype = strtok (NULL, " ");
 	char *sig = strtok (NULL, "");
-	char t = *stype;
 
 	if (!stype || !sig || stype[1] != '\0') {
 		eprintf ("Invalid input\n");
 		free (args);
 		return false;
 	}
+	char t = *stype;
 
 	RList *lst = NULL;
 	bool ret = false;
