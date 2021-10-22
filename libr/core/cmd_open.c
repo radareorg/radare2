@@ -443,52 +443,109 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	char *om_cmds = NULL;
 
 	bool check_for_current_map = true;
-	void **it;
-	r_pvector_foreach_prev (&io->maps, it) { //this must be prev (LIFO)
-		RIOMap *map = *it;
-		if (fd >= 0 && map->fd != fd) {
-			continue;
+	if (io->use_banks) {
+		RIOBank *bank = r_io_bank_get (io, io->bank);
+		if (!bank) {
+			pj_free (pj);
+			return;
 		}
-		switch (mode) {
-		case 'q':
-			if (fd == -2) {
-				print->cb_printf ("0x%08"PFMT64x"\n", r_io_map_begin (map));
-			} else {
-				print->cb_printf ("%d %d\n", map->fd, map->id);
+		RIOMapRef *mapref;
+		RListIter *iter;
+		r_list_foreach (bank->maprefs, iter, mapref) {
+			RIOMap *map = r_io_map_get (io, mapref->id);
+			if (fd >= 0 && map->fd != fd) {
+				continue;
 			}
-			break;
-		case 'j':
-			pj_o (pj);
-			pj_ki (pj, "map", map->id);
-			pj_ki (pj, "fd", map->fd);
-			pj_kn (pj, "delta", map->delta);
-			pj_kn (pj, "from", r_io_map_begin (map));
-			pj_kn (pj, "to", r_io_map_to (map));
-			pj_ks (pj, "perm", r_str_rwx_i (map->perm));
-			pj_ks (pj, "name", r_str_get (map->name));
-			pj_end (pj);
-			break;
-		case 1:
-		case '*':
-		case 'r': {
-			// Need FIFO order here
-			char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
-					map->fd, r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
-					R_STR_ISEMPTY (map->name)? "" : " ", r_str_get (map->name));
-			if (om_cmd) {
-				om_cmds = r_str_prepend (om_cmds, om_cmd);
-				free (om_cmd);
+			switch (mode) {
+			case 'q':
+				if (fd == -2) {
+					print->cb_printf ("0x%08"PFMT64x"\n", r_io_map_begin (map));
+				} else {
+					print->cb_printf ("%d %d\n", map->fd, map->id);
+				}
+				break;
+			case 'j':
+				pj_o (pj);
+				pj_ki (pj, "map", map->id);
+				pj_ki (pj, "fd", map->fd);
+				pj_kn (pj, "delta", map->delta);
+				pj_kn (pj, "from", r_io_map_begin (map));
+				pj_kn (pj, "to", r_io_map_to (map));
+				pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+				pj_ks (pj, "name", r_str_get (map->name));
+				pj_end (pj);
+				break;
+			case 1:
+			case '*':
+			case 'r': {
+				// Need FIFO order here
+				char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
+						map->fd, r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
+						R_STR_ISEMPTY (map->name)? "" : " ", r_str_get (map->name));
+				if (om_cmd) {
+					om_cmds = r_str_prepend (om_cmds, om_cmd);
+					free (om_cmd);
+				}
+				break;
 			}
-			break;
+			default:
+				print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+						" - 0x%08"PFMT64x" %s %s\n",
+						(check_for_current_map && r_io_map_contain (map, io->off)) ?
+						'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
+						r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
+				check_for_current_map &= !r_io_map_contain (map, io->off);
+				break;
+			}
 		}
-		default:
-			print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
-					" - 0x%08"PFMT64x" %s %s\n",
-					(check_for_current_map && r_io_map_contain (map, io->off)) ?
-					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
-					r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
-			check_for_current_map &= !r_io_map_contain (map, io->off);
-			break;
+	} else {
+		void **it;
+		r_pvector_foreach_prev (&io->maps, it) { //this must be prev (LIFO)
+			RIOMap *map = *it;
+			if (fd >= 0 && map->fd != fd) {
+				continue;
+			}
+			switch (mode) {
+			case 'q':
+				if (fd == -2) {
+					print->cb_printf ("0x%08"PFMT64x"\n", r_io_map_begin (map));
+				} else {
+					print->cb_printf ("%d %d\n", map->fd, map->id);
+				}
+				break;
+			case 'j':
+				pj_o (pj);
+				pj_ki (pj, "map", map->id);
+				pj_ki (pj, "fd", map->fd);
+				pj_kn (pj, "delta", map->delta);
+				pj_kn (pj, "from", r_io_map_begin (map));
+				pj_kn (pj, "to", r_io_map_to (map));
+				pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+				pj_ks (pj, "name", r_str_get (map->name));
+				pj_end (pj);
+				break;
+			case 1:
+			case '*':
+			case 'r': {
+				// Need FIFO order here
+				char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
+						map->fd, r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
+						R_STR_ISEMPTY (map->name)? "" : " ", r_str_get (map->name));
+				if (om_cmd) {
+					om_cmds = r_str_prepend (om_cmds, om_cmd);
+					free (om_cmd);
+				}
+				break;
+			}
+			default:
+				print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+						" - 0x%08"PFMT64x" %s %s\n",
+						(check_for_current_map && r_io_map_contain (map, io->off)) ?
+						'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
+						r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
+				check_for_current_map &= !r_io_map_contain (map, io->off);
+				break;
+			}
 		}
 	}
 	if (om_cmds) {
@@ -1066,16 +1123,36 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (!list) {
 			return;
 		}
-		void **it;
-		r_pvector_foreach_prev (&core->io->maps, it) {
-			RIOMap *map = *it;
-			char temp[32];
-			snprintf (temp, sizeof (temp), "%d", map->fd);
-			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
-			if (!info) {
-				break;
+		if (core->io->use_banks) {
+			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+			if (!bank) {
+				r_list_free (list);
+				return;
 			}
-			r_list_append (list, info);
+			RListIter *iter;
+			RIOMapRef *mapref;
+			r_list_foreach (bank->maprefs, iter, mapref) {
+				RIOMap *map = r_io_map_get (core->io, mapref->id);
+				char temp[32];
+				snprintf (temp, sizeof (temp), "%d", map->fd);
+				RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
+				if (!info) {
+					break;
+				}
+				r_list_append (list, info);
+			}
+		} else {
+			void **it;
+			r_pvector_foreach_prev (&core->io->maps, it) {
+				RIOMap *map = *it;
+				char temp[32];
+				snprintf (temp, sizeof (temp), "%d", map->fd);
+				RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
+				if (!info) {
+					break;
+				}
+				r_list_append (list, info);
+			}
 		}
 		RTable *table = r_core_table (core, "maps");
 		r_table_visual_list (table, list, core->offset, core->blocksize,
