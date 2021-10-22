@@ -32,8 +32,6 @@ endif
 
 
 ifeq ($(OSTYPE),windows)
-## XXX unify all the debugger code
-CFLAGS+=-I$(SHLR)/heap/include/r_windows
 OBJS+=$(addprefix p/,$(NATIVE_OBJS))
 endif
 ifeq ($(OSTYPE),$(filter $(OSTYPE),gnulinux android))

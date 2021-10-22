@@ -13,7 +13,6 @@ OBJS+=vmenus.o vmenus_graph.o vmenus_zigns.o zdiff.o citem.o
 OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o anal_objc.o blaze.o cundo.o
 OBJS+=cproject.o
 
-CFLAGS+=-I../../shlr/heap/include
 CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=${CLOCK_LDFLAGS}
