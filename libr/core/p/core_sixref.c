@@ -45,9 +45,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 						if (v & 0x400000) {
 							aoff <<= 12;
 						}
-						if (search == 0) {
-							r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr, target + aoff);
-						} else if(target + aoff == search) {
+						if(target + aoff == search) {
 							r_cons_printf ("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff);
 							found = true;
 						} else {
@@ -64,9 +62,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 							if (v & 0x400000) {
 								xoff <<= 12;
 							}
-							if (search == 0) {
-								r_cons_printf("ax 0x%"PFMT64x" 0x%#"PFMT64x" # add\n", addr, target);
-							} else if (target + aoff + xoff == search) {
+							if (target + aoff + xoff == search) {
 								// If we get here, we know the previous add matched
 								r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; add x%u, x%u, %#x\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, v & 0x1f, reg2, xoff);
 							}
@@ -95,10 +91,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 								if((v & 0x1000000) != 0) // unsigned offset
 								{
 									ut64 uoff = ((v >> 10) & 0xfff) << size;
-									if (!search) {
-										r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x" # add\n",
-											addr, target+aoff+uoff);
-									} else if (target + aoff + uoff == search) {
+									if (target + aoff + uoff == search) {
 										if (aoff) // Have add
 										{
 											r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %#"PFMT64x"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, uoff);
@@ -111,10 +104,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 								} else if((v & 0x00200000) == 0) {
 									int64_t soff = ((int64_t)((v >> 12) & 0x1ff) << 55) >> 55;
 									const char *sign = soff < 0 ? "-" : "";
-									if (!search) {
-										ut64 dst = target + aoff + soff;
-										r_cons_printf("ax 0x%"PFMT64x" 0x%"PFMT64x" # add/adrp\n", addr, dst);
-									} else if(target + aoff + soff == search) {
+									if(target + aoff + soff == search) {
 										if((v & 0x400) == 0) {
 											if((v & 0x800) == 0) // unscaled
 											{
