@@ -178,10 +178,10 @@ R_API bool r_io_desc_close(RIODesc *desc) {
 	if (desc->plugin->close && !desc->plugin->close (desc)) {
 		return false;
 	}
+	// remove all related maps
+	r_io_map_del_for_fd (io, desc->fd);
 	// remove entry from idstorage and free the desc-struct
-	r_io_desc_del (desc->io, desc->fd);
-	// remove all dead maps
-	r_io_map_cleanup (io);
+	r_io_desc_del (io, desc->fd);
 	return true;
 }
 
