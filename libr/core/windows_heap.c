@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 #include <tlhelp32.h>
-#include "r_windows/windows_heap.h"
+#include "heap/r_windows.h"
 #include "../debug/p/native/maps/windows_maps.h"
 
 /*
