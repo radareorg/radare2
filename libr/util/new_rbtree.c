@@ -49,9 +49,7 @@ R_API RRBTree *r_crbtree_new(RRBFree freefn) {
 }
 
 R_API void r_crbtree_clear(RRBTree *tree) {
-	if (!tree) {
-		return;
-	}
+	r_return_if_fail (tree);
 	RRBNode *iter = tree->root, *save = NULL;
 
 	// Rotate away the left links into a linked list so that
@@ -157,8 +155,8 @@ R_API bool r_crbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *
 
 	_set_link (parent, q, 1);
 
-	while (1) {
-		if (q == NULL) {
+	for (;;) {
+		if (!q) {
 			/* Insert a node at first null link(also set its parent link) */
 			q = _node_new (data, p);
 			if (!q) {
@@ -174,10 +172,13 @@ R_API bool r_crbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *
 		}
 
 		if (IS_RED (q) && IS_RED (p)) {
+#if 0
+			// coverity error, parent is never null
 			/* Hard red violation: rotate */
 			if (!parent) {
 				return false;
 			}
+#endif
 			int dir2 = parent->link[1] == g;
 			if (q == p->link[last]) {
 				_set_link (parent, _rot_once (g, !last), dir2);
@@ -193,7 +194,7 @@ R_API bool r_crbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *
 		last = dir;
 		dir = cmp (data, q->data, user) >= 0;
 
-		if (g != NULL) {
+		if (g) {
 			parent = g;
 		}
 
@@ -297,7 +298,7 @@ R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *
 	_set_link (q, tree->root, 1);
 
 	/* Find in-order predecessor */
-	while (q->link[dir] != NULL) {
+	while (q->link[dir]) {
 		last = dir;
 
 		g = p;
@@ -309,35 +310,35 @@ R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *
 			found = q;
 		}
 
-		dir = dir > 0;
+		dir = (bool)(dir > 0);
 
-		if (!IS_RED (q) && !IS_RED (q->link[dir])) {
-			if (IS_RED (q->link[!dir])) {
-				_set_link (p, _rot_once (q, dir), last);
-				p = p->link[last];
-			} else {
-				RRBNode *sibling = p->link[!last];
+		if (IS_RED (q) || IS_RED (q->link[dir])) {
+			continue;
+		}
+		if (IS_RED (q->link[!dir])) {
+			_set_link (p, _rot_once (q, dir), last);
+			p = p->link[last];
+		} else {
+			RRBNode *sibling = p->link[!last];
+			if (sibling) {
+				if (!IS_RED (sibling->link[!last]) && !IS_RED (sibling->link[last])) {
+					/* Color flip */
+					p->red = 0;
+					sibling->red = 1;
+					q->red = 1;
+				} else if (g) {
+					int dir2 = (bool)(g->link[1] == p);
 
-				if (sibling != NULL) {
-					if (!IS_RED (sibling->link[!last]) && !IS_RED (sibling->link[last])) {
-						/* Color flip */
-						p->red = 0;
-						sibling->red = 1;
-						q->red = 1;
+					if (IS_RED (sibling->link[last])) {
+						_set_link (g, _rot_twice (p, last), dir2);
 					} else {
-						int dir2 = g->link[1] == p;
-
-						if (IS_RED (sibling->link[last])) {
-							_set_link (g, _rot_twice (p, last), dir2);
-						} else {
-							_set_link (g, _rot_once (p, last), dir2);
-						}
-
-						/* Ensure correct coloring */
-						q->red = g->link[dir2]->red = 1;
-						g->link[dir2]->link[0]->red = 0;
-						g->link[dir2]->link[1]->red = 0;
+						_set_link (g, _rot_once (p, last), dir2);
 					}
+
+					/* Ensure correct coloring */
+					q->red = g->link[dir2]->red = 1;
+					g->link[dir2]->link[0]->red = 0;
+					g->link[dir2]->link[1]->red = 0;
 				}
 			}
 		}
