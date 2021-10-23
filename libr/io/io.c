@@ -288,8 +288,16 @@ R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
 }
 
 // Returns true iff all reads on mapped regions are successful and complete.
-R_API bool r_io_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
+R_API bool r_io_vread_at(RIO *io, ut64 vaddr, ut8* buf, int len) {
 	r_return_val_if_fail (io && buf && len > 0, false);
+	if ((UT64_MAX - (len - 1)) < vaddr) {
+		int _len = UT64_MAX - vaddr + 1;
+		len -= _len;
+		if (!r_io_vread_at (io, 0ULL, &buf[_len], len)) {
+			return false;
+		}
+		len = _len;
+	}
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
@@ -297,7 +305,16 @@ R_API bool r_io_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
 		on_map_skyline (io, vaddr, buf, len, R_PERM_R, fd_read_at_wrap, false);	//done
 }
 
-R_API bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
+R_API bool r_io_vwrite_at(RIO *io, ut64 vaddr, const ut8* buf, int len) {
+	r_return_val_if_fail (io && buf && len > 0, false);
+	if ((UT64_MAX - (len - 1)) < vaddr) {
+		int _len = UT64_MAX - vaddr + 1;
+		len -= _len;
+		if (!r_io_vwrite_at (io, 0ULL, &buf[_len], len)) {
+			return false;
+		}
+		len = _len;
+	}
 	return io->use_banks? r_io_bank_write_at (io, io->bank, vaddr, buf, len):
 		on_map_skyline (io, vaddr, (ut8*)buf, len, R_PERM_W, fd_write_at_wrap, false);	//done
 }
@@ -307,9 +324,7 @@ static bool internal_r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	bool ret = (io->va)
-		? (io->use_banks)
-			? r_io_bank_read_at (io, io->bank, addr, buf, len)
-			: r_io_vread_at (io, addr, buf, len)
+		? r_io_vread_at (io, addr, buf, len)
 		: r_io_pread_at (io, addr, buf, len) > 0;
 	if (io->cached & R_PERM_R) {
 		(void)r_io_cache_read (io, addr, buf, len);
