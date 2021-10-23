@@ -717,6 +717,8 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 			return false;
 		}
 		if (!(map->perm & R_PERM_R)) {
+			node = r_rbnode_next (node);
+			sm = node ? (RIOSubMap *)node->data : NULL;
 			continue;
 		}
 		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
@@ -749,6 +751,8 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 			return false;
 		}
 		if (!(map->perm & R_PERM_W)) {
+			node = r_rbnode_next (node);
+			sm = node ? (RIOSubMap *)node->data : NULL;
 			continue;
 		}
 		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
