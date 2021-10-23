@@ -376,7 +376,7 @@ R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
 		memset (buf, io->Oxff, len);
 	}
 	if (io->va) {
-		ret = on_map_skyline (io, addr, buf, len, R_PERM_R, fd_read_at_wrap, false);	//done
+		ret = r_io_vread_at (io, addr, buf, len);
 	} else {
 		ret = r_io_pread_at (io, addr, buf, len) > 0;
 	}
