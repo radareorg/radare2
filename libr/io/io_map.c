@@ -380,12 +380,21 @@ R_API void r_io_map_cleanup(RIO* io) {
 	}
 }
 
+static bool _clear_banks_cb (void *user, void *data, ut32 id) {
+	r_io_bank_clear ((RIOBank *)data);
+	return true;
+}
+
 R_API void r_io_map_fini(RIO* io) {
 	r_return_if_fail (io);
+	if (io->use_banks) {
+		r_id_storage_foreach (io->banks, _clear_banks_cb, NULL);
+	} else {
+		r_skyline_clear (&io->map_skyline);
+	}
 	r_pvector_clear (&io->maps);
 	r_id_pool_free (io->map_ids);
 	io->map_ids = NULL;
-	r_skyline_clear (&io->map_skyline);
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {

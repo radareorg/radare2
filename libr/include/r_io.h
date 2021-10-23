@@ -365,6 +365,7 @@ R_API RIOBank *r_io_bank_new(const char *name);
 R_API void r_io_bank_del(RIO *io, const ut32 bankid);
 R_API ut32 r_io_bank_first(RIO *io);
 R_API bool r_io_bank_add(RIO *io, RIOBank *bank);
+R_API void r_io_bank_clear(RIOBank *bank);
 R_API void r_io_bank_free(RIOBank *bank);
 R_API void r_io_bank_init(RIO *io);
 R_API void r_io_bank_fini(RIO *io);

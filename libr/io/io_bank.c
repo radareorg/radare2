@@ -31,6 +31,17 @@ R_API RIOBank *r_io_bank_new(const char *name) {
 	return bank;
 }
 
+R_API void r_io_bank_clear (RIOBank *bank) {
+	if (!bank) {
+		return;
+	}
+	while (!r_queue_is_empty (bank->todo)) {
+		free (r_queue_dequeue (bank->todo));
+	}
+	r_crbtree_clear (bank->submaps);
+	r_list_purge (bank->maprefs);
+}
+
 R_API void r_io_bank_free(RIOBank *bank) {
 	if (!bank) {
 		return;
