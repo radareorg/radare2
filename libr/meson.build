@@ -583,6 +583,7 @@ r_util_files = [
   'include/r_util/r_utf16.h',
   'include/r_util/r_utf32.h',
   'include/r_util/r_utf8.h',
+  'include/r_util/r_w32dw.h',
   'include/r_util/r_x509.h'
 ]
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
