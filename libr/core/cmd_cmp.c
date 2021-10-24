@@ -3,7 +3,7 @@
 #include "r_core.h"
 
 static const char *help_message_ci[] = {
-	"Usage: ci", " [obid] ([obid2])", "Compare two bin objects",
+	"Usage: ci", "[sil] ([obid])", "Compare two bin objects",
 	"cis", " 0", "Compare symbols with current `ob 1` with given obid (0)",
 	"cii", " 0", "Compare imports",
 	"cil", " 0", "Compare libraries",
