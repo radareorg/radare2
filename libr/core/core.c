@@ -1330,7 +1330,7 @@ out:
 }
 
 //TODO: make it recursive to handle nested struct
-static int autocomplete_pfele (RCore *core, RLineCompletion *completion, char *key, char *pfx, int idx, char *ptr) {
+static int autocomplete_pfele(RCore *core, RLineCompletion *completion, char *key, char *pfx, int idx, char *ptr) {
 	int i, ret = 0;
 	int len = strlen (ptr);
 	char* fmt = sdb_get (core->print->formats, key, NULL);
@@ -1828,6 +1828,15 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 }
 
 R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
+	if (r_config_get_b (core->config, "scr.prompt.tabhelp")) {
+		if (buf->data[0] && buf->data[strlen (buf->data) - 1] != ' ' && !strchr (buf->data, ' ')) {
+			r_line_completion_clear (completion);
+			char *s = r_core_cmd_strf (core, "%s?", buf->data);
+			eprintf ("%s %s\n%s", core->cons->line->prompt, buf->data, s);
+			free (s);
+			return;
+		}
+	}
 	if (!core) {
 		autocomplete_default (core, completion, buf);
 		return;
@@ -1953,8 +1962,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 				}
 			}
 		}
-	} else if (!strncmp (buf->data, "t ", 2)
-	|| !strncmp (buf->data, "t- ", 3)) {
+	} else if (!strncmp (buf->data, "t ", 2) || !strncmp (buf->data, "t- ", 3)) {
 		SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
 		SdbListIter *iter;
 		SdbKv *kv;

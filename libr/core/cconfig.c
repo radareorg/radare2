@@ -3951,6 +3951,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.highlight.grep", "false", &cb_scr_color_grep_highlight, "Highlight (INVERT) the grepped words");
 	SETCB ("scr.prompt.popup", "false", &cb_scr_prompt_popup, "Show widget dropdown for autocomplete");
 	SETCB ("scr.prompt.vi", "false", &cb_scr_vi, "Use vi mode for input prompt");
+	SETPREF ("scr.prompt.tabhelp", "true", "Show command help when pressing the TAB key");
 	SETCB ("scr.prompt.mode", "false", &cb_scr_prompt_mode,  "Set prompt color based on vi mode");
 	SETBPREF ("scr.prompt.file", "false", "Show user prompt file (used by r2 -q)");
 	SETBPREF ("scr.prompt.flag", "false", "Show flag name in the prompt");
