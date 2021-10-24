@@ -1392,11 +1392,14 @@ static bool cb_cfg_fortunes_type(void *user, void *data) {
 }
 
 static void check_decompiler(const char* name) {
+#if 0
+	// 1s startup time on wsl
 	char *path = r_file_path (name);
 	if (path && path[0] == '/') {
 		r_cons_printf ("!*%s\n", name);
 	}
 	free (path);
+#endif
 }
 
 static bool cb_cmdpdc(void *user, void *data) {
@@ -4121,17 +4124,17 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 			RListIter *iter;
 			RList *files = r_sys_dir (homerc);
 			r_list_foreach (files, iter, file) {
-					if (*file != '.') {
-						char *path = r_str_newf ("%s/%s", homerc, file);
-						if (r_file_is_regular (path)) {
-							if (has_debug) {
-								eprintf ("USER CONFIG loaded from %s\n", homerc);
-							}
-							r_core_cmd_file (r, path);
+				if (*file != '.') {
+					char *path = r_str_newf ("%s/%s", homerc, file);
+					if (r_file_is_regular (path)) {
+						if (has_debug) {
+							eprintf ("USER CONFIG loaded from %s\n", homerc);
 						}
-						free (path);
+						r_core_cmd_file (r, path);
 					}
+					free (path);
 				}
+			}
 			r_list_free (files);
 		}
 		free (homerc);
@@ -4139,6 +4142,7 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 }
 
 R_API void r_core_config_update(RCore *core) {
+	return;
 	RConfigNode *cmdpdc = r_config_node_get (core->config, "cmd.pdc");
 	update_cmdpdc_options (core, cmdpdc);
 }
