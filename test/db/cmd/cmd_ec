@@ -162,10 +162,10 @@ EXPECT=<<EOF
  [36m##[0m  b0x7f
  [31m##[0m  b0xff
  [33m##[0m  math
- [36m##[0m  bin
+ [33m##[0m  bin
  [33m##[0m  btext
  [35m##[0m  push
- [1;95m##[0m  pop
+ [35m##[0m  pop
  [44m##[0m  crypto
  [32m##[0m  jmp
  [32m##[0m  cjmp
@@ -176,7 +176,7 @@ EXPECT=<<EOF
  [32m##[0m  ucall
  [32m##[0m  ujmp
  [35m##[0m  swi
- [36m##[0m  cmp
+ [33m##[0m  cmp
  [36m##[0m  reg
  [36m##[0m  creg
  [33m##[0m  num
