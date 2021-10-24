@@ -1391,21 +1391,12 @@ static bool cb_cfg_fortunes_type(void *user, void *data) {
 	return true;
 }
 
-static void check_decompiler(const char* name) {
-	char *path = r_file_path (name);
-	if (path && path[0] == '/') {
-		r_cons_printf ("!*%s\n", name);
-	}
-	free (path);
-}
-
 static bool cb_cmdpdc(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
 		r_cons_printf ("pdc\n");
 		// spaguetti
-		check_decompiler ("r2retdec");
 		RListIter *iter;
 		RCorePlugin *cp;
 		r_list_foreach (core->rcmd->plist, iter, cp) {
@@ -1415,9 +1406,6 @@ static bool cb_cmdpdc(void *user, void *data) {
 				r_cons_printf ("pdg\n");
 			}
 		}
-		check_decompiler ("r2ghidra");
-		check_decompiler ("r2jadx");
-		check_decompiler ("r2snow");
 		RConfigNode *r2dec = r_config_node_get (core->config, "r2dec.asm");
 		if (r2dec) {
 			r_cons_printf ("pdd\n");
@@ -4121,17 +4109,17 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 			RListIter *iter;
 			RList *files = r_sys_dir (homerc);
 			r_list_foreach (files, iter, file) {
-					if (*file != '.') {
-						char *path = r_str_newf ("%s/%s", homerc, file);
-						if (r_file_is_regular (path)) {
-							if (has_debug) {
-								eprintf ("USER CONFIG loaded from %s\n", homerc);
-							}
-							r_core_cmd_file (r, path);
+				if (*file != '.') {
+					char *path = r_str_newf ("%s/%s", homerc, file);
+					if (r_file_is_regular (path)) {
+						if (has_debug) {
+							eprintf ("USER CONFIG loaded from %s\n", homerc);
 						}
-						free (path);
+						r_core_cmd_file (r, path);
 					}
+					free (path);
 				}
+			}
 			r_list_free (files);
 		}
 		free (homerc);
@@ -4139,6 +4127,7 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 }
 
 R_API void r_core_config_update(RCore *core) {
+	return;
 	RConfigNode *cmdpdc = r_config_node_get (core->config, "cmd.pdc");
 	update_cmdpdc_options (core, cmdpdc);
 }
