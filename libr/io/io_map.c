@@ -25,12 +25,12 @@ void io_map_calculate_skyline(RIO *io) {
 }
 
 R_API RIOMap *r_io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	r_return_val_if_fail (io && io->map_ids, NULL);
+	r_return_val_if_fail (io && io->maps_by_id, NULL);
 	if (!size) {
 		return NULL;
 	}
 	RIOMap* map = R_NEW0 (RIOMap);
-	if (!map || !io->map_ids || !r_id_pool_grab_id (io->map_ids, &map->id)) {
+	if (!map || !r_id_storage_add (io->maps_by_id, map, &map->id)) {
 		free (map);
 		return NULL;
 	}
@@ -51,7 +51,8 @@ R_API RIOMap *r_io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	r_pvector_push (&io->maps, map);
 	if (io->use_banks) {
 		if (!r_io_bank_map_add_top (io, io->bank, map->id)) {	//XXX: this causes unnecessary work in r_io_map_remap and r_io_map_resize
-			r_id_pool_kick_id (io->map_ids, map->id);
+			r_id_storage_delete (io->maps_by_id, map->id);
+			r_pvector_pop (&io->maps);
 			free (map);
 			return NULL;
 		}
@@ -130,10 +131,10 @@ static void _map_free(void* p) {
 R_API void r_io_map_init(RIO* io) {
 	r_return_if_fail (io);
 	r_pvector_init (&io->maps, _map_free);
-	if (io->map_ids) {
-		r_id_pool_free (io->map_ids);
+	if (io->maps_by_id) {
+		r_id_storage_free (io->maps_by_id);
 	}
-	io->map_ids = r_id_pool_new (1, END_OF_MAP_IDS);
+	io->maps_by_id = r_id_storage_new (1, END_OF_MAP_IDS);
 }
 
 // check if a map with exact the same properties exists
@@ -156,14 +157,7 @@ R_API bool r_io_map_exists_for_id(RIO* io, ut32 id) {
 
 R_API RIOMap* r_io_map_get(RIO *io, ut32 id) {
 	r_return_val_if_fail (io, false);
-	void **it;
-	r_pvector_foreach (&io->maps, it) {
-		RIOMap *map = *it;
-		if (map->id == id) {
-			return map;
-		}
-	}
-	return NULL;
+	return r_id_storage_get (io->maps_by_id, id);
 }
 
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
@@ -243,7 +237,7 @@ R_API void r_io_map_del(RIO *io, ut32 id) {
 			}
 			r_pvector_remove_at (&io->maps, i);
 			_map_free (map);
-			r_id_pool_kick_id (io->map_ids, id);
+			r_id_storage_delete (io->maps_by_id, id);
 			if (!io->use_banks) {
 				io_map_calculate_skyline (io);	//done
 			}
@@ -266,7 +260,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 				// TODO: use RIDStorage instead of RPVector to speed this up
 				r_io_map_del (io, map->id);
 			} else {
-				r_id_pool_kick_id (io->map_ids, map->id);
+				r_id_storage_delete (io->maps_by_id, map->id);
 				//delete iter and map
 				r_pvector_remove_at (&io->maps, i);
 				_map_free (map);
@@ -367,7 +361,7 @@ R_API void r_io_map_cleanup(RIO* io) {
 			del = true;
 		} else if (!r_io_desc_get (io, map->fd)) {
 			//delete map and iter if no desc exists for map->fd in io->files
-			r_id_pool_kick_id (io->map_ids, map->id);
+			r_id_storage_delete (io->maps_by_id, map->id);
 			map = r_pvector_remove_at (&io->maps, i);
 			_map_free (map);
 			del = true;
@@ -393,8 +387,8 @@ R_API void r_io_map_fini(RIO* io) {
 		r_skyline_clear (&io->map_skyline);
 	}
 	r_pvector_clear (&io->maps);
-	r_id_pool_free (io->map_ids);
-	io->map_ids = NULL;
+	r_id_storage_free (io->maps_by_id);
+	io->maps_by_id = NULL;
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
