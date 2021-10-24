@@ -227,6 +227,7 @@ typedef struct r_io_bank_t {
 	RRBTree *submaps;
 	RList *maprefs;	// references to maps, avoid double-free and dups
 	RQueue *todo;	// needed for operating on submap tree
+	RRBNode *last_used;
 	ut32 id;	// for fast selection with RIDStorage
 } RIOBank;
 

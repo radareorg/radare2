@@ -38,6 +38,7 @@ R_API void r_io_bank_clear (RIOBank *bank) {
 	while (!r_queue_is_empty (bank->todo)) {
 		free (r_queue_dequeue (bank->todo));
 	}
+	bank->last_used = NULL;
 	r_crbtree_clear (bank->submaps);
 	r_list_purge (bank->maprefs);
 }
@@ -183,6 +184,7 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 		r_list_append (bank->maprefs, mapref);
 		return true;
 	}
+	bank->last_used = NULL;
 	RIOSubMap *bd = (RIOSubMap *)entry->data;
 	if (r_io_submap_to (bd) == r_io_submap_to (sm) &&
 		r_io_submap_from (bd) >= r_io_submap_from (sm)) {
@@ -317,6 +319,7 @@ found:
 		free (sm);
 		return false;
 	}
+	bank->last_used = NULL;
 	RIOSubMap *bd = (RIOSubMap *)entry->data;
 	if (r_itv_eq (bd->itv, sm->itv)) {
 		// no need to insert new sm, if boundaries match perfectly
@@ -465,6 +468,7 @@ found:
 		// map is already lowest priority
 		return true;
 	}
+	bank->last_used = NULL;
 	_delete_submaps_from_bank_tree (io, bank, iter, map);
 	r_list_delete (bank->maprefs, iter);
 	return r_io_bank_map_add_bottom (io, bankid, mapid);
@@ -523,6 +527,7 @@ found:
 		return false;
 	}
 
+	bank->last_used = NULL;
 	// this problem can be divided in 2 steps:
 	// 1. delete corresponding submaps and insert intersecting submaps with lower priority
 	// 2. adjust addr and insert submaps at new addr respecting priority
@@ -716,12 +721,17 @@ R_API bool r_io_bank_read_at(RIO *io, const ut32 bankid, ut64 addr, ut8 *buf, in
 	memset (&fake_sm, 0x00, sizeof(RIOSubMap));
 	fake_sm.itv.addr = addr;
 	fake_sm.itv.size = len;
-	// TODO: handle overflow
-	RRBNode *node = _find_entry_submap_node (bank, &fake_sm);
+	RRBNode *node;
+	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr)) {
+		node = bank->last_used;
+	} else {
+		node = _find_entry_submap_node (bank, &fake_sm);
+	}
 	memset (buf, io->Oxff, len);
 	RIOSubMap *sm = node ? (RIOSubMap *)node->data : NULL;
 	bool ret = true;
 	while (sm && r_io_submap_overlap ((&fake_sm), sm)) {
+		bank->last_used = node;
 		RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
 		if (!map) {
 			// mapref doesn't belong to map
@@ -751,11 +761,16 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 	memset (&fake_sm, 0x00, sizeof(RIOSubMap));
 	fake_sm.itv.addr = addr;
 	fake_sm.itv.size = len;
-	// TODO: handle overflow
-	RRBNode *node = _find_entry_submap_node (bank, &fake_sm);
+	RRBNode *node;
+	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr)) {
+		node = bank->last_used;
+	} else {
+		node = _find_entry_submap_node (bank, &fake_sm);
+	}
 	RIOSubMap *sm = node ? (RIOSubMap *)node->data : NULL;
 	bool ret = true;
 	while (sm && r_io_submap_overlap ((&fake_sm), sm)) {
+		bank->last_used = node;
 		RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
 		if (!map) {
 			// mapref doesn't belong to map
@@ -786,9 +801,15 @@ R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, u
 	if (!len) {
 		return 0;
 	}
-	RRBNode *node = r_crbtree_find_node (bank->submaps, &addr, _find_sm_by_vaddr_cb, NULL);
-	if (!node) {
-		return 0;
+	RRBNode *node;
+	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr)) {
+		node = bank->last_used;
+	} else {
+		node = r_crbtree_find_node (bank->submaps, &addr, _find_sm_by_vaddr_cb, NULL);
+		if (!node) {
+			return 0;
+		}
+		bank->last_used = node;
 	}
 	RIOSubMap *sm = (RIOSubMap *)node->data;
 	if (!r_io_submap_contain (sm, addr)) {
@@ -811,9 +832,15 @@ R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, co
 	if (!len) {
 		return 0;
 	}
-	RRBNode *node = r_crbtree_find_node (bank->submaps, &addr, _find_sm_by_vaddr_cb, NULL);
-	if (!node) {
-		return 0;
+	RRBNode *node;
+	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), addr)) {
+		node = bank->last_used;
+	} else {
+		node = r_crbtree_find_node (bank->submaps, &addr, _find_sm_by_vaddr_cb, NULL);
+		if (!node) {
+			return 0;
+		}
+		bank->last_used = node;
 	}
 	RIOSubMap *sm = (RIOSubMap *)node->data;
 	if (!r_io_submap_contain (sm, addr)) {
@@ -874,6 +901,7 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
 	if (!bank) {
 		return;
 	}
+	bank->last_used = NULL;
 	RRBNode *node = r_crbtree_first_node (bank->submaps);
 	RRBNode *next = NULL;
 	while (node) {
