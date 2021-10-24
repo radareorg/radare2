@@ -446,6 +446,7 @@ typedef struct r_cons_t {
 	int fix_columns;
 	bool break_lines;
 	int optimize;
+	// move into Completion
 	bool show_autocomplete_widget;
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
