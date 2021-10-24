@@ -26,7 +26,7 @@ static const char *help_msg_a[] = {
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"aj", "", "same as a* but in json (aflj)",
 	"aL", "", "list all asm/anal plugins (e asm.arch=?)",
-	"an", " [name] [@addr]", "show/rename/create whatever flag/function is used at addr",
+	"an", "[?] [name]", "show/rename/create whatever var/flag/function is used in current instruction",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
 	"aO", "[?] [len]", "Analyze N instructions in M bytes",
 	"ap", "", "find prelude for current offset",
@@ -59,6 +59,13 @@ static const char *help_msg_afm[] = {
 static const char *help_msg_aF[] = {
 	"Usage:", "aF", " # analyze a function, but using anal.depth=1",
 	"aF", "", "Check af? for more options and information.",
+	NULL
+};
+
+static const char *help_msg_an[] = {
+	"Usage:", "an", " # show flag/function/name at current address",
+	"an", "", "ShowCheck af? for more options and information.",
+	"anj", "", "Same as above but in json",
 	NULL
 };
 
@@ -11475,16 +11482,19 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		}
 		break;
-	case 'n': // 'an'
+	case 'n': // "an"
 		{
 		const char *name = "";
 		bool use_json = false;
 
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_an);
+			break;
+		}
 		if (input[1] == 'j') {
 			use_json = true;
 			input++;
 		}
-
 		if (input[1] == ' ') {
 			name = input + 1;
 			while (name[0] == ' ') {
