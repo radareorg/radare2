@@ -421,6 +421,23 @@ static int __r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	return result;
 }
 
+static RList *r_core_bin_files(RCore *core) {
+	RList *list = r_list_newf (NULL);
+	if (core->allbins) {
+		RBinFile *bf;
+		RListIter *iter;
+		r_list_foreach (core->bin->binfiles, iter, bf) {
+			r_list_append (list, bf);
+		}
+	} else {
+		RBinFile *bf = r_bin_cur (core->bin);
+		if (bf && bf->o) {
+			r_list_append (list, bf);
+		}
+	}
+	return list;
+}
+
 static bool isKnownPackage(const char *cn) {
 	if (*cn == 'L') {
 		if (r_str_startswith (cn, "Lkotlin")) {
@@ -757,8 +774,17 @@ static int cmd_info(void *data, const char *input) {
 			RBININFO ("fields", R_CORE_BIN_ACC_FIELDS, NULL, 0);
 			break;
 		case 'l': { // "il"
-			RBinObject *obj = r_bin_cur_object (core->bin);
-			RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, (obj && obj->libs)? r_list_length (obj->libs): 0);
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (objs, iter, bf) {
+				RBinObject *obj = bf->o;
+				core->bin->cur = bf;
+				RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, (obj && obj->libs)? r_list_length (obj->libs): 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
 			break;
 		}
 		case 'L': { // "iL"
@@ -778,34 +804,58 @@ static int cmd_info(void *data, const char *input) {
 			goto done;
 		}
 		case 's': { // "is"
-			RBinObject *obj = r_bin_cur_object (core->bin);
-			// Case for isj.
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
 			if (input[1] == 'j' && input[2] == '.') {
 				mode = R_MODE_JSON;
 				INIT_PJ ();
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
-			} else if (input[1] == ',') {
-				R_FREE (core->table_query);
-				core->table_query = strdup (input + 2);
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 			} else if (input[1] == 'q' && input[2] == 'q') {
 				mode = R_MODE_SIMPLEST;
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
-			} else if (input[1] == 'q' && input[2] == '.') {
-				mode = R_MODE_SIMPLE;
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, 0);
-			} else {
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+			}
+			r_list_foreach (objs, iter, bf) {
+				RBinObject *obj = bf->o;
+				if (!obj) {
+					continue;
+				}
+				// Case for isj.
+				if (input[1] == 'j' && input[2] == '.') {
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+				} else if (input[1] == ',') {
+					R_FREE (core->table_query);
+					core->table_query = strdup (input + 2);
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+				} else if (input[1] == 'q' && input[2] == 'q') {
+					mode = R_MODE_SIMPLEST;
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+				} else if (input[1] == 'q' && input[2] == '.') {
+					mode = R_MODE_SIMPLE;
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, 0);
+				} else {
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+				}
 			}
 			while (*(++input)) ;
 			input--;
+			r_list_free (objs);
 			break;
 		}
 		case 'R': // "iR"
 			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
 			break;
 		case 'r': // "ir"
-			RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
+			{
+				RList *objs = r_core_bin_files (core);
+				RListIter *iter;
+				RBinFile *bf;
+				RBinFile *cur = core->bin->cur;
+				r_list_foreach (objs, iter, bf) {
+					core->bin->cur = bf;
+					RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0);
+				}
+				core->bin->cur = cur;
+				r_list_free (objs);
+			}
 			break;
 		case 'X': // "iX"
 			RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0);
@@ -925,9 +975,18 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'i': { // "ii"
-			RBinObject *obj = r_bin_cur_object (core->bin);
-			RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
-				(obj && obj->imports)? r_list_length (obj->imports): 0);
+			RList *objs = r_core_bin_files (core);
+			RListIter *iter;
+			RBinFile *bf;
+			RBinFile *cur = core->bin->cur;
+			r_list_foreach (objs, iter, bf) {
+				RBinObject *obj = bf->o;
+				core->bin->cur = bf;
+				RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
+					(obj && obj->imports)? r_list_length (obj->imports): 0);
+			}
+			core->bin->cur = cur;
+			r_list_free (objs);
 			break;
 		}
 		case 'I': // "iI"

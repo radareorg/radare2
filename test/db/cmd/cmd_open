@@ -304,7 +304,7 @@ bins/elf/libverifyPass.so
 bins/elf/libc.so.6
 EOF
 CMDS=<<EOF
-ob~[0-1]
+ob~[1-2]
 ?e
 ob 1; i~^fd
 ob 2; i~^fd
@@ -357,7 +357,7 @@ o: 1024
 ob
 EOF
 EXPECT=<<EOF
-0 3 x86-64 ba:0x00000000 sz:1024 malloc://1024
+* 0 3 x86-64 ba:0x00000000 sz:1024 malloc://1024
 EOF
 RUN
 
@@ -514,4 +514,30 @@ Cannot find file nonfile
 Missing argument
 EOF
 BROKEN=1
+RUN
+
+NAME=ob *
+FILE=bins/elf/ls
+CMDS=<<EOF
+is~?
+o bins/elf/ezpz
+is~?
+?e --
+ob *
+is~?
+?e --
+ob 0
+is~?
+ob 1
+is~?
+EOF
+EXPECT=<<EOF
+133
+134
+--
+268
+--
+133
+134
+EOF
 RUN
