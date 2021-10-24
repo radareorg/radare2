@@ -118,9 +118,9 @@ static bool GH(is_tcache)(RCore *core) {
 			}
 		}
 	} else {
-		int tcv = r_config_get_i (core->config, "dbg.glibc.tcache");
-		eprintf ("dbg.glibc.tcache = %i\n", tcv);
-		return tcv != 0;
+		bool tcv = r_config_get_b (core->config, "dbg.glibc.tcache");
+		// eprintf ("dbg.glibc.tcache = %i\n", tcv);
+		return tcv;
 	}
 	if (fp) {
 		v = r_num_get_float (NULL, fp + 5);
@@ -1504,7 +1504,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		return false;
 	}
 
-	r_config_set_i (core->config, "dbg.glibc.tcache", GH(is_tcache) (core));
+	r_config_set_b (core->config, "dbg.glibc.tcache", GH(is_tcache) (core));
 
 	int format = 'c';
 	bool get_state = false;
