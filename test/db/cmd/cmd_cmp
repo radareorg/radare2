@@ -1,7 +1,6 @@
 NAME=cmp obj
 FILE=bins/elf/ls
 CMDS=<<EOF
-pwd
 o bins/elf/crackme
 ob
 cil
@@ -16,7 +15,6 @@ ob 1
 cii 1
 EOF
 EXPECT=<<EOF
-/Users/pancake/prg/radare2/test
 - 0 3 x86-64 ba:0x00000000 sz:136038 bins/elf/ls
 * 1 5 x86-64 ba:0x00400000 sz:7441 bins/elf/crackme
  libc.so.6
