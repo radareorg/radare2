@@ -1396,7 +1396,6 @@ static bool cb_cmdpdc(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
 		r_cons_printf ("pdc\n");
-		// spaguetti
 		RListIter *iter;
 		RCorePlugin *cp;
 		r_list_foreach (core->rcmd->plist, iter, cp) {
@@ -3284,9 +3283,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.malloc", "jemalloc", &cb_malloc, "Choose malloc structure parser");
 #endif
 #if __GLIBC_MINOR__ > 25
-	SETBPREF ("dbg.glibc.tcache", "true", "Set glib tcache parsing");
+	SETBPREF ("dbg.glibc.tcache", "true", "Parse the tcache (glibc.minor > 2.25.x)");
 #else
-	SETBPREF ("dbg.glibc.tcache", "false", "Set glib tcache parsing");
+	SETBPREF ("dbg.glibc.tcache", "false", "Parse the tcache (glibc.minor > 2.25.x)");
 #endif
 #if __x86_64__
 	SETI ("dbg.glibc.ma_offset", 0x000000, "Main_arena offset from his symbol");
@@ -4127,7 +4126,6 @@ R_API void r_core_parse_radare2rc(RCore *r) {
 }
 
 R_API void r_core_config_update(RCore *core) {
-	return;
 	RConfigNode *cmdpdc = r_config_node_get (core->config, "cmd.pdc");
 	update_cmdpdc_options (core, cmdpdc);
 }
