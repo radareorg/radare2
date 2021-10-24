@@ -103,7 +103,7 @@ endif
 
 if use_sys_openssl
   r_util_deps += [sys_openssl]
-  r_util_sources += ['big-ssl.c']
+  r_util_sources += ['big_ssl.c']
 else
   r_util_sources += ['big.c']
 endif

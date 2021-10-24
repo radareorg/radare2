@@ -24,10 +24,10 @@ OBJS+=d/ebcdic37.o
 endif
 
 ifeq (${HAVE_LIB_GMP},1)
-  OBJS+=big-gmp.o
+  OBJS+=big_gmp.o
 else
   ifeq (${HAVE_LIB_SSL},1)
-    OBJS+=big-ssl.o
+    OBJS+=big_ssl.o
   else
     OBJS+=big.o
   endif
