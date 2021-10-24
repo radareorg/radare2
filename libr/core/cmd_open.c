@@ -100,6 +100,7 @@ static const char *help_msg_ob[] = {
 	"ob", " [bfid]", "Switch to open given objid",
 	"ob", "", "List opened binary files and objid",
 	"ob*", "", "List opened binary files and objid (r2 commands)",
+	"ob", " *", "Select all bins (use 'ob bfid' to pick one)",
 	"ob-", "*", "Delete all binfiles",
 	"ob-", "[objid]", "Delete binfile by binobjid",
 	"ob.", " ([addr])", "Show bfid at current address",
@@ -323,15 +324,19 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case ' ': // "ob "
 	{
 		ut32 id;
-		int n;
 		const char *tmp;
-		char *v;
-		v = input[2] ? strdup (input + 2) : NULL;
+		if (input[2] == '-' || input[2] == '*') {
+			core->allbins = true;
+			break;
+		}
+		core->allbins = false;
+		
+		char *v = input[2] ? strdup (input + 2) : NULL;
 		if (!v) {
 			eprintf ("Invalid arguments");
 			break;
 		}
-		n = r_str_word_set0 (v);
+		int n = r_str_word_set0 (v);
 		if (n < 1 || n > 2) {
 			eprintf ("Usage: ob [file|objid]\n");
 			free (v);
