@@ -2323,12 +2323,6 @@ static bool cb_scrhtml(void *user, void *data) {
 	return true;
 }
 
-static bool cb_newshell(void *user, void *data) {
-	// uncommenting this will break 39 tests
-	// eprintf ("Warning: newshell has been temporarily disabled\n");
-	return true;
-}
-
 static bool cb_scrhighlight(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_highlight (node->value);
@@ -3568,9 +3562,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
-	p = r_sys_getenv ("R2_CFG_NEWSHELL");
-	SETCB ("cfg.newshell", r_str_bool (p && atoi (p)), &cb_newshell, "Use new commands parser");
-	free (p);
 	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
 
 	/* log */
