@@ -515,3 +515,29 @@ Missing argument
 EOF
 BROKEN=1
 RUN
+
+NAME=ob *
+FILE=bins/elf/ls
+CMDS=<<EOF
+is~?
+o bins/elf/ezpz
+is~?
+?e --
+ob *
+is~?
+?e --
+ob 0
+is~?
+ob 1
+is~?
+EOF
+EXPECT=<<EOF
+133
+134
+--
+268
+--
+133
+134
+EOF
+RUN
