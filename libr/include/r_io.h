@@ -107,7 +107,6 @@ typedef struct r_io_t {
 	struct r_io_desc_t *desc; // XXX deprecate... we should use only the fd integer, not hold a weak pointer
 	ut64 off;
 	ut32 bank;	// current bank
-	bool use_banks; // read from banks instead of the skyline thing
 	int bits;
 	int va;	// keep it as int, value can be 0, 1 or 2
 	bool ff;
