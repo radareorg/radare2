@@ -3073,7 +3073,6 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 		r_list_foreach_prev (io_section_info, it, ibs) {
 			add_section (r, ibs->sec, ibs->addr, ibs->fd);
 		}
-		r_io_update (r->io);
 	}
 	r_list_free (io_section_info);
 	io_section_info = NULL;

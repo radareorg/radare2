@@ -9,21 +9,6 @@
 
 #define END_OF_MAP_IDS UT32_MAX
 
-// Store map parts that are not covered by others into io->map_skyline
-void io_map_calculate_skyline(RIO *io) {
-	if (io->use_banks) {
-		r_io_bank_drain (io, io->bank);
-		return;
-	}
-	r_skyline_clear (&io->map_skyline);	//done
-	// Last map has highest priority (it shadows previous maps)
-	void **it;
-	r_pvector_foreach (&io->maps, it) {
-		RIOMap *map = (RIOMap *)*it;
-		r_skyline_add (&io->map_skyline, map->itv, map);	//done
-	}
-}
-
 R_API RIOMap *r_io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
 	r_return_val_if_fail (io && io->maps_by_id, NULL);
 	if (!size) {
@@ -49,15 +34,11 @@ R_API RIOMap *r_io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	map->delta = delta;
 	// new map lives on the top, being top the list's tail
 	r_pvector_push (&io->maps, map);
-	if (io->use_banks) {
-		if (!r_io_bank_map_add_top (io, io->bank, map->id)) {	//XXX: this causes unnecessary work in r_io_map_remap and r_io_map_resize
-			r_id_storage_delete (io->maps_by_id, map->id);
-			r_pvector_pop (&io->maps);
-			free (map);
-			return NULL;
-		}
-	} else {
-		r_skyline_add (&io->map_skyline, map->itv, map);	//done
+	if (!r_io_bank_map_add_top (io, io->bank, map->id)) {	//XXX: this causes unnecessary work in r_io_map_remap and r_io_map_resize
+		r_id_storage_delete (io->maps_by_id, map->id);
+		r_pvector_pop (&io->maps);
+		free (map);
+		return NULL;
 	}
 	return map;
 }
@@ -93,16 +74,12 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 			return false;
 		}
 	}
-	if (io->use_banks) {
-		ut32 bankid;
-		r_id_storage_get_lowest (io->banks, &bankid);
-		do {
-			// TODO: use threads here
-			r_io_bank_update_map_boundaries (io, bankid, id, ofrom, oto);
-		} while (r_id_storage_get_next (io->banks, &bankid));
-	} else {
-		io_map_calculate_skyline (io);	//done
-	}
+	ut32 bankid;
+	r_id_storage_get_lowest (io->banks, &bankid);
+	do {
+		// TODO: use threads here
+		r_io_bank_update_map_boundaries (io, bankid, id, ofrom, oto);
+	} while (r_id_storage_get_next (io->banks, &bankid));
 	return true;
 }
 
@@ -171,12 +148,6 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	return NULL;
 }
 
-R_API void r_io_update(RIO *io) {
-	if (io && !io->use_banks) {
-		io_map_calculate_skyline (io);	//done
-	}
-}
-
 R_API RIOMap *r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	r_return_val_if_fail (io, NULL);
 	if (io->use_banks) {
@@ -206,8 +177,7 @@ R_API RIOMap *r_io_map_get_paddr(RIO* io, ut64 paddr) {
 // gets first map where addr fits in
 R_API RIOMap *r_io_map_get_at(RIO* io, ut64 addr) {
 	r_return_val_if_fail (io, NULL);
-	return io->use_banks ? r_io_bank_get_map_at (io, io->bank, addr):
-		r_skyline_get (&io->map_skyline, addr);	//done
+	return r_io_bank_get_map_at (io, io->bank, addr);
 }
 
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
@@ -218,7 +188,6 @@ R_API bool r_io_map_is_mapped(RIO* io, ut64 addr) {
 R_API void r_io_map_reset(RIO* io) {
 	r_io_map_fini (io);
 	r_io_map_init (io);
-	io_map_calculate_skyline (io);	//done
 }
 
 R_API void r_io_map_del(RIO *io, ut32 id) {
@@ -238,9 +207,6 @@ R_API void r_io_map_del(RIO *io, ut32 id) {
 			r_pvector_remove_at (&io->maps, i);
 			_map_free (map);
 			r_id_storage_delete (io->maps_by_id, id);
-			if (!io->use_banks) {
-				io_map_calculate_skyline (io);	//done
-			}
 		}
 	}
 }
@@ -270,9 +236,6 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 			i++;
 		}
 	}
-	if (ret && !io->use_banks) {
-		io_map_calculate_skyline (io);
-	}
 	return ret;
 }
 
@@ -290,7 +253,6 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 		if (map->id == id) {
 			r_pvector_remove_at (&io->maps, i);
 			r_pvector_push (&io->maps, map);
-			io_map_calculate_skyline (io);	//done
 			return true;
 		}
 	}
@@ -309,7 +271,6 @@ R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 		if (map->id == id) {
 			r_pvector_remove_at (&io->maps, i);
 			r_pvector_push_front (&io->maps, map);
-			io_map_calculate_skyline (io);	//done
 			return true;
 		}
 	}
@@ -334,7 +295,6 @@ R_API bool r_io_map_priorize_for_fd(RIO *io, int fd) {
 	}
 	r_pvector_insert_range (&io->maps, r_pvector_len (&io->maps), temp.v.a, r_pvector_len (&temp));
 	r_pvector_clear (&temp);
-	io_map_calculate_skyline (io);
 	return true;
 }
 
@@ -350,29 +310,9 @@ R_API void r_io_map_cleanup(RIO* io) {
 	if (io->use_banks) {
 		return;
 	}
-	bool del = false;
-	size_t i;
-	for (i = 0; i < r_pvector_len (&io->maps);) {
-		RIOMap *map = r_pvector_at (&io->maps, i);
-		if (!map) {
-			// remove iter if the map is a null-ptr, this may fix some segfaults. This should never happen.
-			r_warn_if_reached ();
-			r_pvector_remove_at (&io->maps, i);
-			del = true;
-		} else if (!r_io_desc_get (io, map->fd)) {
-			//delete map and iter if no desc exists for map->fd in io->files
-			r_id_storage_delete (io->maps_by_id, map->id);
-			map = r_pvector_remove_at (&io->maps, i);
-			_map_free (map);
-			del = true;
-		} else {
-			i++;
-		}
-	}
-	if (del) {
-		io_map_calculate_skyline (io);
-	}
+	// TODO: implement RIOBank mapref consistency cleanup here @condret
 }
+
 
 static bool _clear_banks_cb (void *user, void *data, ut32 id) {
 	r_io_bank_clear ((RIOBank *)data);
@@ -381,11 +321,7 @@ static bool _clear_banks_cb (void *user, void *data, ut32 id) {
 
 R_API void r_io_map_fini(RIO* io) {
 	r_return_if_fail (io);
-	if (io->use_banks) {
-		r_id_storage_foreach (io->banks, _clear_banks_cb, NULL);
-	} else {
-		r_skyline_clear (&io->map_skyline);
-	}
+	r_id_storage_foreach (io->banks, _clear_banks_cb, NULL);
 	r_pvector_clear (&io->maps);
 	r_id_storage_free (io->maps_by_id);
 	io->maps_by_id = NULL;
@@ -464,7 +400,7 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 		const ut64 osize = r_io_map_size (map);
 		r_io_map_set_size (map, -saddr);
 		RIOMap *newmap = r_io_map_new (io, map->fd, map->perm, map->delta - addr, 0, newsize + addr);
-		if (io->use_banks && newmap) {
+		if (newmap) {
 			if (!io_bank_has_map (io, io->bank, id)) {
 				r_io_bank_del_map (io, io->bank, newmap->id);
 			} else {
@@ -479,7 +415,7 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 					r_io_bank_map_add_top (io, bankid, newmap->id);
 				}
 			} while (r_id_storage_get_next (io->banks, &bankid));
-		} else if (!newmap) {
+		} else {
 			// restore previous size if creating newmap failed
 			r_io_map_set_size (map, osize);
 			return false;
@@ -487,18 +423,14 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 		return true;
 	}
 	r_io_map_set_size (map, newsize);
-	if (io->use_banks) {
-		ut32 bankid;
-		r_id_storage_get_lowest (io->banks, &bankid);
-		do {
-			if (io_bank_has_map (io, bankid, id)) {
-				// TODO: use threads here
-				r_io_bank_update_map_boundaries (io, bankid, id, r_io_map_from (map), oto);
-			}
-		} while (r_id_storage_get_next (io->banks, &bankid));
-	} else {
-		io_map_calculate_skyline (io);
-	}
+	ut32 bankid;
+	r_id_storage_get_lowest (io->banks, &bankid);
+	do {
+		if (io_bank_has_map (io, bankid, id)) {
+			// TODO: use threads here
+			r_io_bank_update_map_boundaries (io, bankid, id, r_io_map_from (map), oto);
+		}
+	} while (r_id_storage_get_next (io->banks, &bankid));
 	return true;
 }
 
