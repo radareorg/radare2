@@ -27,11 +27,6 @@ R_API RIO* r_io_init(RIO* io) {
 	if (bank) {
 		io->bank = bank->id;
 		r_io_bank_add (io, bank);
-		void **p;
-		r_pvector_foreach (&io->maps, p) {
-			RIOMap *map = (RIOMap*) p;
-			r_io_bank_map_add_top (io, bank->id, map->id);
-		}
 	}
 	return io;
 }
@@ -507,6 +502,8 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->fd_get_map = r_io_map_get_by_fd;
 	bnd->fd_remap = r_io_map_remap_fd;
 	bnd->is_valid_offset = r_io_is_valid_offset;
+	bnd->bank_get = r_io_bank_get;
+	bnd->map_get = r_io_map_get;
 	bnd->map_get_at = r_io_map_get_at;
 	bnd->map_get_paddr = r_io_map_get_paddr;
 	bnd->addr_is_mapped = r_io_addr_is_mapped;

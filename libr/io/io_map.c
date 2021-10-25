@@ -5,7 +5,6 @@
 #include <sdb.h>
 #include "io_private.h"
 #include "r_util.h"
-#include "r_vector.h"
 
 #define END_OF_MAP_IDS UT32_MAX
 
@@ -32,11 +31,8 @@ R_API RIOMap *r_io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	map->itv = (RInterval){ addr, size };
 	map->perm = perm;
 	map->delta = delta;
-	// new map lives on the top, being top the list's tail
-	r_pvector_push (&io->maps, map);
-	if (!r_io_bank_map_add_top (io, io->bank, map->id)) {	//XXX: this causes unnecessary work in r_io_map_remap and r_io_map_resize
+	if (!r_io_bank_map_add_top (io, io->bank, map->id)) {
 		r_id_storage_delete (io->maps_by_id, map->id);
-		r_pvector_pop (&io->maps);
 		free (map);
 		return NULL;
 	}
@@ -107,7 +103,6 @@ static void _map_free(void* p) {
 
 R_API void r_io_map_init(RIO* io) {
 	r_return_if_fail (io);
-	r_pvector_init (&io->maps, _map_free);
 	if (io->maps_by_id) {
 		r_id_storage_free (io->maps_by_id);
 	}
@@ -117,18 +112,16 @@ R_API void r_io_map_init(RIO* io) {
 // check if a map with exact the same properties exists
 R_API bool r_io_map_exists(RIO *io, RIOMap *map) {
 	r_return_val_if_fail (io && map, false);
-	void **it;
-	r_pvector_foreach (&io->maps, it) {
-		RIOMap *m = *it;
-		if (!memcmp (m, map, sizeof (RIOMap))) {
-			return true;
-		}
+	RIOMap *_map = r_io_map_get (io, map->id);
+	if (!_map) {
+		return false;
 	}
-	return false;
+	return !memcmp (_map, map, sizeof (RIOMap));
 }
 
 // check if a map with specified id exists
-R_API bool r_io_map_exists_for_id(RIO* io, ut32 id) {
+R_API bool r_io_map_exists_for_id(RIO *io, ut32 id) {
+	r_return_val_if_fail (io && io->maps_by_id, false);
 	return r_io_map_get (io, id) != NULL;
 }
 
@@ -150,23 +143,13 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 
 R_API RIOMap *r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	r_return_val_if_fail (io, NULL);
-	if (io->use_banks) {
-		RIOBank *bank = r_io_bank_get (io, io->bank);
-		if (bank) {
-			RListIter *iter;
-			RIOMapRef *mapref;
-			r_list_foreach_prev (bank->maprefs, iter, mapref) {
-				RIOMap *map = r_io_map_get_by_ref (io, mapref);
-				if (map && map->delta <= paddr && paddr < map->delta + r_io_map_size (map)) {
-					return map;
-				}
-			}
-		}
-	} else {
-		void **it;
-		r_pvector_foreach_prev (&io->maps, it) {
-			RIOMap *map = *it;
-			if (map->delta <= paddr && paddr < map->delta + r_io_map_size (map)) {
+	RIOBank *bank = r_io_bank_get (io, io->bank);
+	if (bank) {
+		RListIter *iter;
+		RIOMapRef *mapref;
+		r_list_foreach_prev (bank->maprefs, iter, mapref) {
+			RIOMap *map = r_io_map_get_by_ref (io, mapref);
+			if (map && map->delta <= paddr && paddr < map->delta + r_io_map_size (map)) {
 				return map;
 			}
 		}
@@ -191,51 +174,41 @@ R_API void r_io_map_reset(RIO* io) {
 }
 
 R_API void r_io_map_del(RIO *io, ut32 id) {
-	r_return_if_fail (io);
-	size_t i;
-	for (i = 0; i < r_pvector_len (&io->maps); i++) {
-		RIOMap *map = r_pvector_at (&io->maps, i);
-		if (map->id == id) {
-			if (io->use_banks) {
-				ut32 bankid;
-				r_return_if_fail (r_id_storage_get_lowest (io->banks, &bankid));
-				do {
-					// TODO: use threads for every bank, except the current bank (io->bank)
-					r_io_bank_del_map (io, bankid, id);
-				} while (r_id_storage_get_next (io->banks, &bankid));
-			}
-			r_pvector_remove_at (&io->maps, i);
-			_map_free (map);
-			r_id_storage_delete (io->maps_by_id, id);
-		}
+	r_return_if_fail (io && io->maps_by_id);
+	RIOMap *map = (RIOMap *)r_id_storage_get (io->maps_by_id, id);
+	if (!map) {
+		return;
 	}
+	ut32 bankid;
+	r_return_if_fail (r_id_storage_get_lowest (io->banks, &bankid));
+	do {
+		// TODO: use threads for every bank, except the current bank (io->bank)
+		r_io_bank_del_map (io, bankid, id);
+	} while (r_id_storage_get_next (io->banks, &bankid));
+	r_id_storage_delete (io->maps_by_id, id);
+	_map_free (map);
 }
 
 //delete all maps with specified fd
 R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
-	r_return_val_if_fail (io, false);
-	bool ret = false;
-	size_t i;
-	for (i = 0; i < r_pvector_len (&io->maps);) {
-		RIOMap *map = r_pvector_at (&io->maps, i);
-		if (!map) {
-			r_pvector_remove_at (&io->maps, i);
-		} else if (map->fd == fd) {
-			if(io->use_banks) {
-				// this is slower than it needs to be
-				// TODO: use RIDStorage instead of RPVector to speed this up
-				r_io_map_del (io, map->id);
-			} else {
-				r_id_storage_delete (io->maps_by_id, map->id);
-				//delete iter and map
-				r_pvector_remove_at (&io->maps, i);
-				_map_free (map);
-			}
-			ret = true;
-		} else {
-			i++;
-		}
+	r_return_val_if_fail (io && io->maps_by_id, false);
+	ut32 map_id;
+	if (!r_id_storage_get_lowest (io->maps_by_id, &map_id)) {
+		return false;
 	}
+
+	bool ret = false;
+	bool cont;
+	do {
+		ut32 next = map_id;	// is this actually needed?
+		cont = r_id_storage_get_next (io->maps_by_id, &next);
+		RIOMap *map = r_io_map_get (io, map_id);
+		if (map->fd == fd) {
+			ret = true;
+			r_io_map_del (io, map_id);
+		}
+		map_id = next;
+	} while (cont);
 	return ret;
 }
 
@@ -243,58 +216,26 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 //return a boolean denoting whether is was possible to priorized
 R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	r_return_val_if_fail (io, false);
-	if (io->use_banks) {
-		return r_io_bank_map_priorize (io, io->bank, id);
-	}
-	size_t i;
-	for (i = 0; i < r_pvector_len (&io->maps); i++) {
-		RIOMap *map = r_pvector_at (&io->maps, i);
-		// search for iter with the correct map
-		if (map->id == id) {
-			r_pvector_remove_at (&io->maps, i);
-			r_pvector_push (&io->maps, map);
-			return true;
-		}
-	}
-	return false;
+	return r_io_bank_map_priorize (io, io->bank, id);
 }
 
 R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 	r_return_val_if_fail (io, false);
-	if (io->use_banks) {
-		return r_io_bank_map_depriorize (io, io->bank, id);
-	}
-	size_t i;
-	for (i = 0; i < r_pvector_len (&io->maps); i++) {
-		RIOMap *map = r_pvector_at (&io->maps, i);
-		// search for iter with the correct map
-		if (map->id == id) {
-			r_pvector_remove_at (&io->maps, i);
-			r_pvector_push_front (&io->maps, map);
-			return true;
-		}
-	}
-	return false;
+	return r_io_bank_map_depriorize (io, io->bank, id);
 }
 
 R_API bool r_io_map_priorize_for_fd(RIO *io, int fd) {
 	r_return_val_if_fail (io, false);
-	//we need a clean list for this, or this becomes a segfault-field
-	r_io_map_cleanup (io);
-	RPVector temp;
-	r_pvector_init (&temp, NULL);
-	size_t i;
-	for (i = 0; i < r_pvector_len (&io->maps);) {
-		RIOMap *map = r_pvector_at (&io->maps, i);
-		if (map->fd == fd) {
-			r_pvector_push (&temp, map);
-			r_pvector_remove_at (&io->maps, i);
-			continue;
-		}
-		i++;
+	RList *map_list = r_io_map_get_by_fd (io, fd);
+	if (!map_list) {
+		return false;
 	}
-	r_pvector_insert_range (&io->maps, r_pvector_len (&io->maps), temp.v.a, r_pvector_len (&temp));
-	r_pvector_clear (&temp);
+	RListIter *iter;
+	RIOMap *map;
+	r_list_foreach (map_list, iter, map) {
+		r_io_map_priorize (io, map->id);
+	}
+	r_list_free (map_list);
 	return true;
 }
 
@@ -322,7 +263,6 @@ static bool _clear_banks_cb (void *user, void *data, ut32 id) {
 R_API void r_io_map_fini(RIO* io) {
 	r_return_if_fail (io);
 	r_id_storage_foreach (io->banks, _clear_banks_cb, NULL);
-	r_pvector_clear (&io->maps);
 	r_id_storage_free (io->maps_by_id);
 	io->maps_by_id = NULL;
 }
@@ -343,32 +283,7 @@ R_API bool r_io_map_locate(RIO *io, ut64 *addr, const ut64 size, ut64 load_align
 	if (load_align == 0) {
 		load_align = 1;
 	}
-	if (io->use_banks) {
-		return r_io_bank_locate (io, io->bank, addr, size, load_align);
-	}
-	ut64 next_addr = *addr;
-	ut64 end_addr = next_addr + size;
-	void **it;
-	r_pvector_foreach (&io->maps, it) {
-		RIOMap *map = *it;
-		ut64 to = r_io_map_end (map);
-		next_addr = R_MAX (next_addr, to + (load_align - (to % load_align)) % load_align);
-		// XXX - This does not handle when file overflow 0xFFFFFFFF000 -> 0x00000FFF
-		// adding the check for the map's fd to see if this removes contention for
-		// memory mapping with multiple files. infinite loop ahead?
-		if ((r_io_map_begin (map) <= next_addr && next_addr < to) || r_io_map_contain (map, end_addr)) {
-			next_addr = to + (load_align - (to % load_align)) % load_align;
-			if (next_addr == *addr) {
-				return false;
-			}
-			*addr = next_addr;
-			return r_io_map_locate (io, addr, size, load_align);
-		}
-		// wtf is this garbage
-		break;
-	}
-	*addr = next_addr;
-	return true;
+	return r_io_bank_locate (io, io->bank, addr, size, load_align);
 }
 
 R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
@@ -377,10 +292,15 @@ R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
 	if (!map_list) {
 		return NULL;
 	}
-	void **it;
-	r_pvector_foreach (&io->maps, it) {
-		RIOMap *map = *it;
-		if (map && map->fd == fd) {
+	RIOBank *bank = r_io_bank_get (io, io->bank);
+	if (!bank) {
+		return NULL;
+	}
+	RListIter *iter;
+	RIOMapRef *mapref;
+	r_list_foreach_prev (bank->maprefs, iter, mapref) {
+		RIOMap *map = (RIOMap *)r_id_storage_get (io->maps_by_id, mapref->id);
+		if (map->fd == fd) {
 			r_list_append (map_list, map);
 		}
 	}

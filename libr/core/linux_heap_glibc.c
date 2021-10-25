@@ -221,33 +221,19 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 			}
 		}
 	} else {
-		if (core->io->use_banks) {
-			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
-			if (!bank) {
-				return;
-			}
-			RIOMapRef *mapref;
-			RListIter *iter;
-			r_list_foreach (bank->maprefs, iter, mapref) {
-				RIOMap *map = r_io_map_get (core->io, mapref->id);
-				if (map->name) {
-					if (strstr (map->name, "[heap]")) {
-						*brk_start = r_io_map_begin (map);
-						*brk_end = r_io_map_end (map);
-						break;
-					}
-				}
-			}
-		} else {
-			void **it;
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				if (map->name) {
-					if (strstr (map->name, "[heap]")) {
-						*brk_start = r_io_map_begin (map);
-						*brk_end = r_io_map_end (map);
-						break;
-					}
+		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+		if (!bank) {
+			return;
+		}
+		RIOMapRef *mapref;
+		RListIter *iter;
+		r_list_foreach (bank->maprefs, iter, mapref) {
+			RIOMap *map = r_io_map_get (core->io, mapref->id);
+			if (map->name) {
+				if (strstr (map->name, "[heap]")) {
+					*brk_start = r_io_map_begin (map);
+					*brk_end = r_io_map_end (map);
+					break;
 				}
 			}
 		}
@@ -436,9 +422,14 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 			}
 		}
 	} else {
-		void **it;
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
+		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+		if (!bank) {
+			return false;
+		}
+		RIOMapRef *mapref;
+		RListIter *iter;
+		r_list_foreach (bank->maprefs, iter, mapref) {
+			RIOMap *map = r_io_map_get (core->io, mapref->id);
 			if (map->name && strstr (map->name, "arena")) {
 				libc_addr_sta = r_io_map_begin (map);
 				libc_addr_end = r_io_map_end (map);

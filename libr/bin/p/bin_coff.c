@@ -487,10 +487,12 @@ static RList *patch_relocs(RBin *b) {
 	}
 	ut64 m_vaddr = UT64_MAX;
 	if (nimports) {
-		void **it;
 		ut64 offset = 0;
-		r_pvector_foreach (&io->maps, it) {
-			RIOMap *map = *it;
+		RIOBank *bank = b->iob.bank_get (io, io->bank);
+		RListIter *iter;
+		RIOMapRef *mapref;
+		r_list_foreach (bank->maprefs, iter, mapref) {
+			RIOMap *map = b->iob.map_get (io, mapref->id);
 			if (r_io_map_end (map) > offset) {
 				offset = r_io_map_end (map);
 			}

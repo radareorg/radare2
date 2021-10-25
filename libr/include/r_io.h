@@ -120,9 +120,8 @@ typedef struct r_io_t {
 	ut32 p_cache; // uses 1, 2, 4.. probably R_PERM_RWX :D
 	ut64 mts;	// map "timestamps", this sucks somehow
 	ut32 curbank;	// id of current bank
-	RIDStorage *maps_by_id;
-	RPVector maps; //from tail backwards maps with higher priority are found
 	RIDStorage *files;
+	RIDStorage *maps_by_id;
 	RIDStorage *banks;
 	RCache *buffer;
 	RPVector cache;
@@ -270,7 +269,9 @@ typedef const char *(*RIOFdGetName)(RIO *io, int fd);
 typedef RList *(*RIOFdGetMap)(RIO *io, int fd);
 typedef bool (*RIOFdRemap)(RIO *io, int fd, ut64 addr);
 typedef bool (*RIOIsValidOff)(RIO *io, ut64 addr, int hasperm);
-typedef RIOMap *(*RIOMapGet)(RIO *io, ut64 addr);
+typedef RIOBank *(*RIOBankGet)(RIO *io, ut32 bankid);
+typedef RIOMap *(*RIOMapGet)(RIO *io, ut32 id);
+typedef RIOMap *(*RIOMapGetAt)(RIO *io, ut64 addr);
 typedef RIOMap *(*RIOMapGetPaddr)(RIO *io, ut64 paddr);
 typedef bool (*RIOAddrIsMapped)(RIO *io, ut64 addr);
 typedef RIOMap *(*RIOMapAdd)(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
@@ -306,7 +307,9 @@ typedef struct r_io_bind_t {
 	RIOFdRemap fd_remap;
 	RIOIsValidOff is_valid_offset;
 	RIOAddrIsMapped addr_is_mapped;
-	RIOMapGet map_get_at;
+	RIOBankGet bank_get;
+	RIOMapGet map_get;
+	RIOMapGetAt map_get_at;
 	RIOMapGetPaddr map_get_paddr;
 	RIOMapAdd map_add;
 	RIOV2P v2p;
