@@ -1097,6 +1097,19 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				}
 				input++;
+#if 1
+				if (rdump) {
+					RBinFile *bf = r_bin_cur (core->bin);
+					int min = r_config_get_i (core->config, "bin.minstr");
+					if (bf) {
+						bf->strmode = mode;
+						RList *res = r_bin_dump_strings (bf, min, 2);
+						free (res);
+					}
+					goto done;
+				}
+				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
+#else
 				int min = r_config_get_i (core->config, "bin.minstr");
 				{
 					RList *objs = r_core_bin_files (core);
@@ -1114,7 +1127,11 @@ static int cmd_info(void *data, const char *input) {
 					}
 					core->bin->cur = cur;
 					r_list_free (objs);
+					if (rdump) {
+						goto done;
+					}
 				}
+#endif
 			} else {
 				// "iz"
 				if (input[1] == 'q') {
@@ -1123,7 +1140,7 @@ static int cmd_info(void *data, const char *input) {
 					: R_MODE_SIMPLE;
 					input++;
 				}
-#if 1
+#if 0
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (obj) {
 					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
