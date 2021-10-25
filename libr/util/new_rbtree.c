@@ -352,10 +352,12 @@ R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *
 		free (q);
 #else
 		_set_link (p, q->link[q->link[0] == NULL], p->link[1] == q);
-		q->link[0] = NULL;
-		q->link[1] = NULL;
-		q->parent = NULL;
-		_exchange_nodes (found, q);
+		if (q != found) {
+			q->link[0] = NULL;
+			q->link[1] = NULL;
+			q->parent = NULL;
+			_exchange_nodes (found, q);
+		}		
 		if (tree->free) {
 			tree->free (found->data);
 		}

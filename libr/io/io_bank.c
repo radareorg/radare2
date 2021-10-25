@@ -884,6 +884,7 @@ R_API void r_io_bank_del_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 			break;
 		}
 	}
+	bank->last_used = NULL;
 	// map is not referenced by this bank; nothing to do
 }
 
