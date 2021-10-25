@@ -779,14 +779,15 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overridden by others (skyline)
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
-		if (!core->io->use_banks) {
-			void **it;
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				ut64 from = r_io_map_begin (map);
-				ut64 to = r_io_map_end (map);
-				int rwx = map->perm;
-				// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
+		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+		RListIter *iter;
+		RIOMapRef *mapref;
+		if (bank) {
+			r_list_foreach (bank->maprefs, iter, mapref) {
+				RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+				const ut64 from = r_io_map_begin (map);
+				const ut64 to = r_io_map_end (map);
+				const int rwx = map->perm;
 				if (begin == UT64_MAX) {
 					begin = from;
 				}
@@ -803,33 +804,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 					}
 				}
 			}
-		} else {
-			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
-			RListIter *iter;
-			RIOMapRef *mapref;
-			if (bank) {
-				r_list_foreach (bank->maprefs, iter, mapref) {
-					RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
-					const ut64 from = r_io_map_begin (map);
-					const ut64 to = r_io_map_end (map);
-					const int rwx = map->perm;
-					if (begin == UT64_MAX) {
-						begin = from;
-					}
-					if (end == UT64_MAX) {
-						end = to;
-					} else {
-						if (end == from) {
-							end = to;
-						} else {
-							append_bound (list, NULL, search_itv,
-								begin, end - begin, rwx);
-							begin = from;
-							end = to;
-						}
-					}
-				}
-			}
 		}
 		if (end != UT64_MAX) {
 			append_bound (list, NULL, search_itv, begin, end - begin, 7);
@@ -838,32 +812,18 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		int len = strlen ("io.maps.");
 		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
 		// bool only = (bool)(size_t)strstr (mode, ".only");
-		if (!core->io->use_banks) {
-			void **it;
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				ut64 from = r_io_map_begin (map);
-				//ut64 to = r_io_map_end (map);
-				int rwx = map->perm;
+		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+		RListIter *iter;
+		RIOMapRef *mapref;
+		if (bank) {
+			r_list_foreach (bank->maprefs, iter, mapref) {
+				RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+				const ut64 from = r_io_map_begin (map);
+				const int rwx = map->perm;
 				if ((rwx & mask) != mask) {
 					continue;
 				}
 				append_bound (list, core->io, search_itv, from, r_io_map_size (map), rwx);
-			}
-		} else {
-			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
-			RListIter *iter;
-			RIOMapRef *mapref;
-			if (bank) {
-				r_list_foreach (bank->maprefs, iter, mapref) {
-					RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
-					const ut64 from = r_io_map_begin (map);
-					const int rwx = map->perm;
-					if ((rwx & mask) != mask) {
-						continue;
-					}
-					append_bound (list, core->io, search_itv, from, r_io_map_size (map), rwx);
-				}
 			}
 		}
 	} else if (r_str_startswith (mode, "bin.segments")) {
@@ -907,32 +867,18 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			}
 			if (from == UT64_MAX) {
 				int mask = 1;
-				if (!core->io->use_banks) {
-					void **it;
-					r_pvector_foreach (&core->io->maps, it) {
-						RIOMap *map = *it;
-						ut64 from = r_io_map_begin (map);
-						ut64 size = r_io_map_size (map);
-						int rwx = map->perm;
+				RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+				RIOMapRef *mapref;
+				if (bank) {
+					r_list_foreach (bank->maprefs, iter, mapref) {
+						RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
+						const ut64 from = r_io_map_begin (map);
+						const ut64 size = r_io_map_size (map);
+						const int rwx = map->perm;
 						if ((rwx & mask) != mask) {
 							continue;
 						}
 						append_bound (list, core->io, search_itv, from, size, rwx);
-					}
-				} else {
-					RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
-					RIOMapRef *mapref;
-					if (bank) {
-						r_list_foreach (bank->maprefs, iter, mapref) {
-							RIOMap *map = r_io_map_get_by_ref (core->io, mapref);
-							const ut64 from = r_io_map_begin (map);
-							const ut64 size = r_io_map_size (map);
-							const int rwx = map->perm;
-							if ((rwx & mask) != mask) {
-								continue;
-							}
-							append_bound (list, core->io, search_itv, from, size, rwx);
-						}
 					}
 				}
 			}

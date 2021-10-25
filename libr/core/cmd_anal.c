@@ -9915,15 +9915,19 @@ static int compute_coverage(RCore *core) {
 	RAnalFunction *fcn;
 	int cov = 0;
 	cov += r_meta_get_size(core->anal, R_META_TYPE_DATA);
-	r_list_foreach (core->anal->fcns, iter, fcn) {
-		void **it;
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
-			if (map->perm & R_PERM_X) {
-				ut64 section_end = r_io_map_end (map);
-				ut64 s = r_anal_function_realsize (fcn);
-				if (fcn->addr >= r_io_map_begin (map) && (fcn->addr + s) < section_end) {
-					cov += s;
+	RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+	if (bank) {
+		r_list_foreach (core->anal->fcns, iter, fcn) {
+			RIOMapRef *mapref;
+			RListIter *ator;
+			r_list_foreach (bank->maprefs, ator, mapref) {
+				RIOMap *map = r_io_map_get (core->io, mapref->id);
+				if (map->perm & R_PERM_X) {
+					ut64 section_end = r_io_map_end (map);
+					ut64 s = r_anal_function_realsize (fcn);
+					if (fcn->addr >= r_io_map_from (map) && (fcn->addr + s) < section_end) {
+						cov += s;
+					}
 				}
 			}
 		}
@@ -9933,11 +9937,15 @@ static int compute_coverage(RCore *core) {
 
 static int compute_code (RCore* core) {
 	int code = 0;
-	void **it;
-	r_pvector_foreach (&core->io->maps, it) {
-		RIOMap *map = *it;
-		if (map->perm & R_PERM_X) {
-			code += r_io_map_size (map);
+	RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+	if (bank) {
+		RIOMapRef *mapref;
+		RListIter *ator;
+		r_list_foreach (bank->maprefs, ator, mapref) {
+			RIOMap *map = r_io_map_get (core->io, mapref->id);
+			if (map->perm & R_PERM_X) {
+				code += r_io_map_size (map);
+			}
 		}
 	}
 	return code;

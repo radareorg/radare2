@@ -448,109 +448,59 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	char *om_cmds = NULL;
 
 	bool check_for_current_map = true;
-	if (io->use_banks) {
-		RIOBank *bank = r_io_bank_get (io, io->bank);
-		if (!bank) {
-			pj_free (pj);
-			return;
+	RIOBank *bank = r_io_bank_get (io, io->bank);
+	if (!bank) {
+		pj_free (pj);
+		return;
+	}
+	RIOMapRef *mapref;
+	RListIter *iter;
+	r_list_foreach_prev (bank->maprefs, iter, mapref) {
+		RIOMap *map = r_io_map_get (io, mapref->id);
+		if (fd >= 0 && map->fd != fd) {
+			continue;
 		}
-		RIOMapRef *mapref;
-		RListIter *iter;
-		r_list_foreach_prev (bank->maprefs, iter, mapref) {
-			RIOMap *map = r_io_map_get (io, mapref->id);
-			if (fd >= 0 && map->fd != fd) {
-				continue;
+		switch (mode) {
+		case 'q':
+			if (fd == -2) {
+				print->cb_printf ("0x%08"PFMT64x"\n", r_io_map_begin (map));
+			} else {
+				print->cb_printf ("%d %d\n", map->fd, map->id);
 			}
-			switch (mode) {
-			case 'q':
-				if (fd == -2) {
-					print->cb_printf ("0x%08"PFMT64x"\n", r_io_map_begin (map));
-				} else {
-					print->cb_printf ("%d %d\n", map->fd, map->id);
-				}
-				break;
-			case 'j':
-				pj_o (pj);
-				pj_ki (pj, "map", map->id);
-				pj_ki (pj, "fd", map->fd);
-				pj_kn (pj, "delta", map->delta);
-				pj_kn (pj, "from", r_io_map_begin (map));
-				pj_kn (pj, "to", r_io_map_to (map));
-				pj_ks (pj, "perm", r_str_rwx_i (map->perm));
-				pj_ks (pj, "name", r_str_get (map->name));
-				pj_end (pj);
-				break;
-			case 1:
-			case '*':
-			case 'r': {
-				// Need FIFO order here
-				char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
-						map->fd, r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
-						R_STR_ISEMPTY (map->name)? "" : " ", r_str_get (map->name));
-				if (om_cmd) {
-					om_cmds = r_str_prepend (om_cmds, om_cmd);
-					free (om_cmd);
-				}
-				break;
+			break;
+		case 'j':
+			pj_o (pj);
+			pj_ki (pj, "map", map->id);
+			pj_ki (pj, "fd", map->fd);
+			pj_kn (pj, "delta", map->delta);
+			pj_kn (pj, "from", r_io_map_begin (map));
+			pj_kn (pj, "to", r_io_map_to (map));
+			pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+			pj_ks (pj, "name", r_str_get (map->name));
+			pj_end (pj);
+			break;
+		case 1:
+		case '*':
+		case 'r': {
+			// Need FIFO order here
+			char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x
+					" 0x%08"PFMT64x" %s%s%s\n", map->fd, r_io_map_begin (map),
+					r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
+					R_STR_ISEMPTY (map->name)? "" : " ", r_str_get (map->name));
+			if (om_cmd) {
+				om_cmds = r_str_prepend (om_cmds, om_cmd);
+				free (om_cmd);
 			}
-			default:
-				print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
-						" - 0x%08"PFMT64x" %s %s\n",
-						(check_for_current_map && r_io_map_contain (map, io->off)) ?
-						'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
-						r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
-				check_for_current_map &= !r_io_map_contain (map, io->off);
-				break;
-			}
+			break;
 		}
-	} else {
-		void **it;
-		r_pvector_foreach_prev (&io->maps, it) { //this must be prev (LIFO)
-			RIOMap *map = *it;
-			if (fd >= 0 && map->fd != fd) {
-				continue;
-			}
-			switch (mode) {
-			case 'q':
-				if (fd == -2) {
-					print->cb_printf ("0x%08"PFMT64x"\n", r_io_map_begin (map));
-				} else {
-					print->cb_printf ("%d %d\n", map->fd, map->id);
-				}
-				break;
-			case 'j':
-				pj_o (pj);
-				pj_ki (pj, "map", map->id);
-				pj_ki (pj, "fd", map->fd);
-				pj_kn (pj, "delta", map->delta);
-				pj_kn (pj, "from", r_io_map_begin (map));
-				pj_kn (pj, "to", r_io_map_to (map));
-				pj_ks (pj, "perm", r_str_rwx_i (map->perm));
-				pj_ks (pj, "name", r_str_get (map->name));
-				pj_end (pj);
-				break;
-			case 1:
-			case '*':
-			case 'r': {
-				// Need FIFO order here
-				char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
-						map->fd, r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
-						R_STR_ISEMPTY (map->name)? "" : " ", r_str_get (map->name));
-				if (om_cmd) {
-					om_cmds = r_str_prepend (om_cmds, om_cmd);
-					free (om_cmd);
-				}
-				break;
-			}
-			default:
-				print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
-						" - 0x%08"PFMT64x" %s %s\n",
-						(check_for_current_map && r_io_map_contain (map, io->off)) ?
-						'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
-						r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
-				check_for_current_map &= !r_io_map_contain (map, io->off);
-				break;
-			}
+		default:
+			print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+					" - 0x%08"PFMT64x" %s %s\n",
+					(check_for_current_map && r_io_map_contain (map, io->off)) ?
+					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
+					r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
+			check_for_current_map &= !r_io_map_contain (map, io->off);
+			break;
 		}
 	}
 	if (om_cmds) {
@@ -570,25 +520,28 @@ static void cmd_omfg(RCore *core, const char *input) {
 	int perm = *input ? (*input == '+' || *input == '-')
 		? r_str_rwx (input + 1)
 		: r_str_rwx (input) : 7;
-	void **it;
+	ut32 mapid;
+	if (!r_id_storage_get_lowest (core->io->maps_by_id, &mapid)) {
+		return;
+	}
 	switch (*input) {
 	case '+':
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
+		do {
+			RIOMap *map = r_io_map_get (core->io, mapid);
 			map->perm |= perm;
-		}
+		} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
 		break;
 	case '-':
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
+		do {
+			RIOMap *map = r_io_map_get (core->io, mapid);
 			map->perm &= ~perm;
-		}
+		} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
 		break;
 	default:
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
+		do {
+			RIOMap *map = r_io_map_get (core->io, mapid);
 			map->perm = perm;
-		}
+		} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
 		break;
 	}
 }
@@ -600,28 +553,16 @@ static void cmd_omf(RCore *core, const char *input) {
 	}
 	char *sp = strchr (arg, ' ');
 	if (sp) {
-		// change perms of Nth map
 		*sp++ = 0;
 		int id = r_num_math (core->num, arg);
 		int perm = (*sp)? r_str_rwx (sp): R_PERM_RWX;
-		void **it;
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
-			if (map->id == id) {
-				map->perm = perm;
-				break;
-			}
-		}
+		RIOMap *map = r_io_map_get (core->io, id);
+		map->perm = perm;
 	} else {
 		// change perms of current map
 		int perm = (arg && *arg)? r_str_rwx (arg): R_PERM_RWX;
-		void **it;
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
-			if (r_io_map_contain (map, core->offset)) {
-				map->perm = perm;
-			}
-		}
+		RIOMap *map = r_io_map_get_at (core->io, core->offset);
+		map->perm = perm;
 	}
 	free (arg);
 }
@@ -631,9 +572,10 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 
 	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
-	void **it;
-	r_pvector_foreach (&core->io->maps, it) {
-		RIOMap *m = *it;
+	ut32 mapid;
+	r_id_storage_get_lowest (core->io->maps_by_id, &mapid);
+	do {
+		RIOMap *m = r_id_storage_get (core->io->maps_by_id, mapid);
 		ut64 va = r_itv_begin (m->itv);
 		ut64 va_end = r_itv_end (m->itv);
 		ut64 pa = m->delta;
@@ -643,7 +585,7 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 		r_table_add_rowf (t, "ddxxxxxss",
 			m->id, m->fd, pa, pa_end, pa_size,
 			va, va_end, r_str_rwx_i (m->perm), name);
-	}
+	} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
 	if (r_table_query (t, arg)) {
 		char *ts = r_table_tofancystring (t);
 		r_cons_printf ("%s", ts);
@@ -758,11 +700,12 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		switch (argv[0][1]) {
 		case 'g': // "ombg"
 			{
-				void **it;
-				r_pvector_foreach (&core->io->maps, it) {
-					RIOMap *map = *it;
+				ut32 mapid;
+				r_id_storage_get_lowest (core->io->maps_by_id, &mapid);
+				do {
+					RIOMap *map = r_id_storage_get (core->io->maps_by_id, mapid);
 					r_io_bank_map_add_top (core->io, core->io->bank, map->id);
-				}
+				} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
 			}
 			break;
 		case 'q': // "ombq"
@@ -1128,36 +1071,22 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (!list) {
 			return;
 		}
-		if (core->io->use_banks) {
-			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 			if (!bank) {
-				r_list_free (list);
-				return;
+			r_list_free (list);
+			return;
+		}
+		RListIter *iter;
+		RIOMapRef *mapref;
+		r_list_foreach_prev (bank->maprefs, iter, mapref) {
+			RIOMap *map = r_io_map_get (core->io, mapref->id);
+			char temp[32];
+			snprintf (temp, sizeof (temp), "%d", map->fd);
+			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
+			if (!info) {
+				break;
 			}
-			RListIter *iter;
-			RIOMapRef *mapref;
-			r_list_foreach_prev (bank->maprefs, iter, mapref) {
-				RIOMap *map = r_io_map_get (core->io, mapref->id);
-				char temp[32];
-				snprintf (temp, sizeof (temp), "%d", map->fd);
-				RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
-				if (!info) {
-					break;
-				}
-				r_list_append (list, info);
-			}
-		} else {
-			void **it;
-			r_pvector_foreach_prev (&core->io->maps, it) {
-				RIOMap *map = *it;
-				char temp[32];
-				snprintf (temp, sizeof (temp), "%d", map->fd);
-				RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
-				if (!info) {
-					break;
-				}
-				r_list_append (list, info);
-			}
+			r_list_append (list, info);
 		}
 		RTable *table = r_core_table (core, "maps");
 		r_table_visual_list (table, list, core->offset, core->blocksize,
@@ -1541,7 +1470,7 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	RListIter *iter, *iter2;
 	RBinSection *sec;
 	RIOMap *map;
-	r_list_foreach (maps, iter, map) {
+	r_list_foreach_prev (maps, iter, map) {
 		bool map_from_bin = false;
 		bool have_segments = false;
 		r_list_foreach (list, iter2, sec) {
@@ -1886,13 +1815,16 @@ static int cmd_open(void *data, const char *input) {
 				if (*input == '+') { // "o+"
 					RIODesc *desc = r_io_desc_get (core->io, fd);
 					if (desc && (desc->perm & R_PERM_W)) {
-						void **it;
-						r_pvector_foreach_prev (&core->io->maps, it) {
-							RIOMap *map = *it;
-							if (map->fd == fd) {
-								map->perm |= R_PERM_WX;
-							}
+						RListIter *iter;
+						RList *maplist =r_io_map_get_by_fd (core->io, desc->fd);
+						if (!maplist) {
+							break;
 						}
+						RIOMap *map;
+						r_list_foreach (maplist, iter, map) {
+							map->perm |= R_PERM_WX;
+						}
+						r_list_free (maplist);
 					} else {
 						eprintf ("Error: %s is not writable\n", argv0);
 					}
@@ -2133,13 +2065,16 @@ static int cmd_open(void *data, const char *input) {
 					perms |= core->io->desc->perm;
 				}
 				if (r_io_reopen (core->io, fd, perms, 644)) {
-					void **it;
-					r_pvector_foreach_prev (&core->io->maps, it) {
-						RIOMap *map = *it;
-						if (map->fd == fd) {
-							map->perm |= R_PERM_WX;
-						}
+					RListIter *iter;
+					RList *maplist = r_io_map_get_by_fd (core->io, fd);
+					if (!maplist) {
+						break;
 					}
+					RIOMap *map;
+					r_list_foreach (maplist, iter, map) {
+						map->perm |= R_PERM_WX;
+					}
+					r_list_free (maplist);
 				}
 			}
 			break;

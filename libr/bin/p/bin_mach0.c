@@ -621,11 +621,13 @@ static RList* patch_relocs(RBin *b) {
 	int cdsz = obj->info ? obj->info->bits / 8 : 8;
 
 	ut64 offset = 0;
-	void **vit;
-	r_pvector_foreach (&io->maps, vit) {
-		RIOMap *map = *vit;
-		if (r_io_map_begin (map) > offset) {
-			offset = r_io_map_begin (map);
+	RIOBank *bank = b->iob.bank_get (io, io->bank);
+	RListIter *iter;
+	RIOMapRef *mapref;
+	r_list_foreach (bank->maprefs, iter, mapref) {
+		RIOMap *map = b->iob.map_get (io, mapref->id);
+		if (r_io_map_from (map) > offset) {
+			offset = r_io_map_from (map);
 			g = map;
 		}
 	}
