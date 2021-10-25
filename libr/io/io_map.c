@@ -491,9 +491,9 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 		ut32 bankid;
 		r_id_storage_get_lowest (io->banks, &bankid);
 		do {
-			if (io->bank && io_bank_has_map (io, bankid, id)) {
+			if (io_bank_has_map (io, bankid, id)) {
 				// TODO: use threads here
-				r_io_bank_update_map_boundaries (io, io->bank, id, r_io_map_from (map), oto);
+				r_io_bank_update_map_boundaries (io, bankid, id, r_io_map_from (map), oto);
 			}
 		} while (r_id_storage_get_next (io->banks, &bankid));
 	} else {
