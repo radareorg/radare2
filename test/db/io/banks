@@ -28,15 +28,15 @@ Usage: omb[jq,+] [fd]  Operate on memory banks
 EOF
 RUN
 
-NAME=omb+ needs a space to work (BUG?)
+NAME=omb+
 FILE=malloc://1024
 CMDS=<<EOF
-omb+one
+omb+ one
 omb+ two
 omb
 EOF
 EXPECT=<<EOF
-* 0 default [ ]
+* 0 default [ 1 ]
 - 1 one [ ]
 - 2 two [ ]
 EOF
