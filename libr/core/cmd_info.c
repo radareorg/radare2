@@ -1074,7 +1074,7 @@ static int cmd_info(void *data, const char *input) {
 				newline = false;
 			} else if (input[1] == 'z') { //izz
 				switch (input[2]) {
-				case 'z'://izzz
+				case 'z':// "izzz"
 					rdump = true;
 					break;
 				case '*':
@@ -1097,22 +1097,7 @@ static int cmd_info(void *data, const char *input) {
 					break;
 				}
 				input++;
-				if (rdump) {
-					int min = r_config_get_i (core->config, "bin.minstr");
-					RList *objs = r_core_bin_files (core);
-					RListIter *iter;
-					RBinFile *bf;
-					RBinFile *cur = core->bin->cur;
-					r_list_foreach (objs, iter, bf) {
-						core->bin->cur = bf;
-						bf->strmode = mode;
-						RList *res = r_bin_dump_strings (bf, min, 2);
-						r_list_free (res);
-					}
-					core->bin->cur = cur;
-					r_list_free (objs);
-					goto done;
-				}
+				int min = r_config_get_i (core->config, "bin.minstr");
 				{
 					RList *objs = r_core_bin_files (core);
 					RListIter *iter;
@@ -1120,12 +1105,19 @@ static int cmd_info(void *data, const char *input) {
 					RBinFile *cur = core->bin->cur;
 					r_list_foreach (objs, iter, bf) {
 						core->bin->cur = bf;
+						if (rdump) {
+							bf->strmode = mode;
+						}
+						RList *res = r_bin_dump_strings (bf, min, rdump?2:0);
 						RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
+						r_list_free (res);
 					}
 					core->bin->cur = cur;
 					r_list_free (objs);
 				}
 			} else {
+				// "iz"
+				mode = R_MODE_PRINT;
 				if (input[1] == 'q') {
 					mode = (input[2] == 'q')
 					? R_MODE_SIMPLEST
@@ -1138,8 +1130,8 @@ static int cmd_info(void *data, const char *input) {
 					RBinFile *bf;
 					RBinFile *cur = core->bin->cur;
 					r_list_foreach (objs, iter, bf) {
-						RBinObject *obj = bf->o;
 						core->bin->cur = bf;
+						RBinObject *obj = r_bin_cur_object (core->bin);
 						RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
 								(obj && obj->strings)? r_list_length (obj->strings): 0);
 					}
