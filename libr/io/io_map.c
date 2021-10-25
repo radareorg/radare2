@@ -51,7 +51,7 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 		const ut64 osize = r_io_map_size (map);
 		r_io_map_set_size (map, -saddr);
 		RIOMap *newmap = r_io_map_new (io, map->fd, map->perm, map->delta - addr, 0, size + addr);
-		if (io->use_banks && newmap) {
+		if (newmap) {
 			if (!io_bank_has_map (io, io->bank, id)) {
 				r_io_bank_del_map (io, io->bank, newmap->id);
 			}
@@ -63,7 +63,7 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 					r_io_bank_map_add_top (io, bankid, newmap->id);
 				}
 			} while (r_id_storage_get_next (io->banks, &bankid));
-		} else if (!newmap) {
+		} else {
 			// restore previous location and size if creation of newmap failed
 			r_io_map_set_begin (map, ofrom);
 			r_io_map_set_size (map, osize);
@@ -248,12 +248,8 @@ R_API void r_io_map_cleanup(RIO* io) {
 		r_io_map_init (io);
 		return;
 	}
-	if (io->use_banks) {
-		return;
-	}
 	// TODO: implement RIOBank mapref consistency cleanup here @condret
 }
-
 
 static bool _clear_banks_cb (void *user, void *data, ut32 id) {
 	r_io_bank_clear ((RIOBank *)data);

@@ -13,7 +13,6 @@ R_API RIO* r_io_new(void) {
 
 R_API RIO* r_io_init(RIO* io) {
 	r_return_val_if_fail (io, NULL);
-	io->use_banks = true;
 	io->addrbytes = 1;
 	io->cb_printf = printf; // r_cons_printf;
 	r_io_desc_init (io);
