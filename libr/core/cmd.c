@@ -329,6 +329,7 @@ static const char *help_msg_v[] = {
 	"v", " test", "load saved layout with name test",
 	"v=", " test", "save current layout with name test",
 	"vi", " test", "open the file test in 'cfg.editor'",
+	"vk", " alert", "run k.ui.alert.x sdb interactive interface",
 	NULL
 };
 
@@ -2419,9 +2420,17 @@ static int cmd_resize(void *data, const char *input) {
 	return true;
 }
 
+static void cmd_panels_kui(void *data, const char *input) {
+	RConsUI *ui = r_cons_ui_new ();
+}
+
 static int cmd_panels(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	if (core->vmode) {
+		return false;
+	}
+	if (*input == 'k') {
+		cmd_panels_kui (core, r_str_trim_head_ro (input + 1);
 		return false;
 	}
 	if (*input == '?') {

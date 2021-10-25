@@ -43,20 +43,53 @@ R_API int r_cons_ui_run(RConsUI *ui) {
 	return ret;
 }
 
-R_API void r_cons_ui_render(RConsUI *ui, RConsUIElement *parent, RConsUIElement *node) {
-	
-	// RConsUIElement e = *node;
-	// restrict widet within parent boundaries
-	// r_cons_ui_element_render (&e);
+
+static void ui_layout(RConsUI *ui) {
+	// measure the size of every element and adjust bounds
+}
+
+static const char *get(RConsUI *ui, const char *path, const char *k) {
+	char *k = r_str_newf ("%s.%s.%s", ui->name, path, k);
+	const char *s = sdb_const_get (ui->db, k);
+	free (k);
+	return s;
+}
+
+static int get_width(RConsUI *ui, const char *path) {
+	const char *type = get (ui, path, "type");
+	if (!strcmp (type, "button")) {
+		const char *text = get (ui, path, "text");
+		return text? strlen (text) + 4: 5;
+	}
+	if (!strcmp (type, "label")) {
+		const char *text = get (ui, path, "text");
+		return text? strlen (text) + 2: 2;
+	}
+	return 2;
+}
+
+static const char *get_height(RConsUI *ui, const char *path) {
+	const char *type = get (ui, path, "type");
+	if (!strcmp (type, "label")) {
+		const char *text = get (ui, path, "text");
+		return r_str_char_count (text, '\n') + 1;
+	}
+	if (!strcmp (type, "textarea")) {
+		return 5;
+	}
+	return 1;
+}
+
+static void ui_render(RConsUI *ui, const char *path) {
+	const char *type = get_type (ui, path);
+	eprintf ("==> %s\n", type);
 }
 
 R_API char *r_cons_ui_tostring(RConsUI *ui) {
 	RListIter *iter;
-	RConsUIElement *parent = &ui->root;
-	RConsUIElement *e;
-	r_list_foreach (ui->children, iter, e) {
-		r_cons_ui_render (ui, parent, e);
-	}
+	ui_layout (ui);
+	ui_render (ui, "");
+
 	return r_cons_canvas_to_string (ui->canvas);
 }
 
