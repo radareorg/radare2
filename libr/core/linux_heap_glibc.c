@@ -221,14 +221,33 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 			}
 		}
 	} else {
-		void **it;
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
-			if (map->name) {
-				if (strstr (map->name, "[heap]")) {
-					*brk_start = r_io_map_begin (map);
-					*brk_end = r_io_map_end (map);
-					break;
+		if (core->io->use_banks) {
+			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+			if (!bank) {
+				return;
+			}
+			RIOMapRef *mapref;
+			RListIter *iter;
+			r_list_foreach (bank->maprefs, iter, mapref) {
+				RIOMap *map = r_io_map_get (core->io, mapref->id);
+				if (map->name) {
+					if (strstr (map->name, "[heap]")) {
+						*brk_start = r_io_map_begin (map);
+						*brk_end = r_io_map_end (map);
+						break;
+					}
+				}
+			}
+		} else {
+			void **it;
+			r_pvector_foreach (&core->io->maps, it) {
+				RIOMap *map = *it;
+				if (map->name) {
+					if (strstr (map->name, "[heap]")) {
+						*brk_start = r_io_map_begin (map);
+						*brk_end = r_io_map_end (map);
+						break;
+					}
 				}
 			}
 		}
