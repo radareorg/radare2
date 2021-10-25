@@ -9,12 +9,12 @@
 #define END_OF_MAP_IDS UT32_MAX
 
 R_API RIOMap *r_io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
-	r_return_val_if_fail (io && io->maps_by_id, NULL);
+	r_return_val_if_fail (io && io->maps, NULL);
 	if (!size) {
 		return NULL;
 	}
 	RIOMap* map = R_NEW0 (RIOMap);
-	if (!map || !r_id_storage_add (io->maps_by_id, map, &map->id)) {
+	if (!map || !r_id_storage_add (io->maps, map, &map->id)) {
 		free (map);
 		return NULL;
 	}
@@ -32,7 +32,7 @@ R_API RIOMap *r_io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	map->perm = perm;
 	map->delta = delta;
 	if (!r_io_bank_map_add_top (io, io->bank, map->id)) {
-		r_id_storage_delete (io->maps_by_id, map->id);
+		r_id_storage_delete (io->maps, map->id);
 		free (map);
 		return NULL;
 	}
@@ -103,10 +103,10 @@ static void _map_free(void* p) {
 
 R_API void r_io_map_init(RIO* io) {
 	r_return_if_fail (io);
-	if (io->maps_by_id) {
-		r_id_storage_free (io->maps_by_id);
+	if (io->maps) {
+		r_id_storage_free (io->maps);
 	}
-	io->maps_by_id = r_id_storage_new (1, END_OF_MAP_IDS);
+	io->maps = r_id_storage_new (1, END_OF_MAP_IDS);
 }
 
 // check if a map with exact the same properties exists
@@ -121,13 +121,13 @@ R_API bool r_io_map_exists(RIO *io, RIOMap *map) {
 
 // check if a map with specified id exists
 R_API bool r_io_map_exists_for_id(RIO *io, ut32 id) {
-	r_return_val_if_fail (io && io->maps_by_id, false);
+	r_return_val_if_fail (io && io->maps, false);
 	return r_io_map_get (io, id) != NULL;
 }
 
 R_API RIOMap* r_io_map_get(RIO *io, ut32 id) {
 	r_return_val_if_fail (io, false);
-	return r_id_storage_get (io->maps_by_id, id);
+	return r_id_storage_get (io->maps, id);
 }
 
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
@@ -174,8 +174,8 @@ R_API void r_io_map_reset(RIO* io) {
 }
 
 R_API void r_io_map_del(RIO *io, ut32 id) {
-	r_return_if_fail (io && io->maps_by_id);
-	RIOMap *map = (RIOMap *)r_id_storage_get (io->maps_by_id, id);
+	r_return_if_fail (io && io->maps);
+	RIOMap *map = (RIOMap *)r_id_storage_get (io->maps, id);
 	if (!map) {
 		return;
 	}
@@ -185,15 +185,15 @@ R_API void r_io_map_del(RIO *io, ut32 id) {
 		// TODO: use threads for every bank, except the current bank (io->bank)
 		r_io_bank_del_map (io, bankid, id);
 	} while (r_id_storage_get_next (io->banks, &bankid));
-	r_id_storage_delete (io->maps_by_id, id);
+	r_id_storage_delete (io->maps, id);
 	_map_free (map);
 }
 
 //delete all maps with specified fd
 R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
-	r_return_val_if_fail (io && io->maps_by_id, false);
+	r_return_val_if_fail (io && io->maps, false);
 	ut32 map_id;
-	if (!r_id_storage_get_lowest (io->maps_by_id, &map_id)) {
+	if (!r_id_storage_get_lowest (io->maps, &map_id)) {
 		return false;
 	}
 
@@ -201,7 +201,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 	bool cont;
 	do {
 		ut32 next = map_id;	// is this actually needed?
-		cont = r_id_storage_get_next (io->maps_by_id, &next);
+		cont = r_id_storage_get_next (io->maps, &next);
 		RIOMap *map = r_io_map_get (io, map_id);
 		if (map->fd == fd) {
 			ret = true;
@@ -259,8 +259,8 @@ static bool _clear_banks_cb (void *user, void *data, ut32 id) {
 R_API void r_io_map_fini(RIO* io) {
 	r_return_if_fail (io);
 	r_id_storage_foreach (io->banks, _clear_banks_cb, NULL);
-	r_id_storage_free (io->maps_by_id);
-	io->maps_by_id = NULL;
+	r_id_storage_free (io->maps);
+	io->maps = NULL;
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
@@ -295,7 +295,7 @@ R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
 	RListIter *iter;
 	RIOMapRef *mapref;
 	r_list_foreach_prev (bank->maprefs, iter, mapref) {
-		RIOMap *map = (RIOMap *)r_id_storage_get (io->maps_by_id, mapref->id);
+		RIOMap *map = (RIOMap *)r_id_storage_get (io->maps, mapref->id);
 		if (map->fd == fd) {
 			r_list_append (map_list, map);
 		}

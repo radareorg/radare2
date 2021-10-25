@@ -278,15 +278,15 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 		r_io_desc_cache_cleanup (descx);
 	}
 	ut32 map_id;
-	if (r_id_storage_get_lowest (io->maps_by_id, &map_id)) {
+	if (r_id_storage_get_lowest (io->maps, &map_id)) {
 		do {
-			RIOMap *map = r_id_storage_get (io->maps_by_id, map_id);
+			RIOMap *map = r_id_storage_get (io->maps, map_id);
 			if (map->fd == fdx) {
 				map->perm &= (desc->perm | R_PERM_X);
 			} else if (map->fd == fd) {
 				map->perm &= (descx->perm | R_PERM_X);
 			}
-		} while (r_id_storage_get_next (io->maps_by_id, &map_id));
+		} while (r_id_storage_get_next (io->maps, &map_id));
 	}
 	return true;
 }
