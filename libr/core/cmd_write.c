@@ -1538,6 +1538,7 @@ static int wt_handler_old(void *data, const char *input) {
 						const char *encoded = filename + 7;
 						char *decoded = (char *)sdb_decode (encoded, NULL);
 						if (decoded) {
+							r_free (filename);
 							filename = decoded;
 						}
 					}
