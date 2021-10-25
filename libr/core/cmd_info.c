@@ -750,14 +750,27 @@ static int cmd_info(void *data, const char *input) {
 					mode = R_MODE_JSON;
 					INIT_PJ ();
 				}
-				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (mode == R_MODE_RADARE || mode == R_MODE_JSON || mode == R_MODE_SIMPLE) {
 					if (input[param_shift + 1]) {
 						param_shift ++;
 					}
 				}
-				RBININFO (name, action, input + 1 + param_shift,
-					(obj && obj->sections)? r_list_length (obj->sections): 0);
+				{
+					RList *objs = r_core_bin_files (core);
+					RListIter *iter;
+					RBinFile *bf;
+					RBinFile *cur = core->bin->cur;
+					r_list_foreach (objs, iter, bf) {
+						RBinObject *obj = bf->o;
+						core->bin->cur = bf;
+						RBININFO (name, action, input + 1 + param_shift,
+								(obj && obj->sections)? r_list_length (obj->sections): 0);
+					}
+					core->bin->cur = cur;
+					r_list_free (objs);
+				}
+
+
 			}
 			//we move input until get '\0'
 			while (*(++input)) ;
@@ -990,15 +1003,37 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		case 'I': // "iI"
-			RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
+			  {
+				  RList *objs = r_core_bin_files (core);
+				  RListIter *iter;
+				  RBinFile *bf;
+				  RBinFile *cur = core->bin->cur;
+				  r_list_foreach (objs, iter, bf) {
+					  core->bin->cur = bf;
+					  RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
+				  }
+				  core->bin->cur = cur;
+				  r_list_free (objs);
+			  }
 			break;
 		case 'e': // "ie"
-			if (input[1] == 'e') {
-				RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
-				input++;
-			} else {
-				RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
-			}
+			  {
+				  RList *objs = r_core_bin_files (core);
+				  RListIter *iter;
+				  RBinFile *bf;
+				  RBinFile *cur = core->bin->cur;
+				  r_list_foreach (objs, iter, bf) {
+					  core->bin->cur = bf;
+					  if (input[1] == 'e') {
+						  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+						  input++;
+					  } else {
+						  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
+					  }
+				  }
+				  core->bin->cur = cur;
+				  r_list_free (objs);
+			  }
 			break;
 		case 'M': // "iM"
 			RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0);
@@ -1063,27 +1098,53 @@ static int cmd_info(void *data, const char *input) {
 				}
 				input++;
 				if (rdump) {
-					RBinFile *bf = r_bin_cur (core->bin);
 					int min = r_config_get_i (core->config, "bin.minstr");
-					if (bf) {
+					RList *objs = r_core_bin_files (core);
+					RListIter *iter;
+					RBinFile *bf;
+					RBinFile *cur = core->bin->cur;
+					r_list_foreach (objs, iter, bf) {
+						core->bin->cur = bf;
 						bf->strmode = mode;
 						RList *res = r_bin_dump_strings (bf, min, 2);
 						r_list_free (res);
 					}
+					core->bin->cur = cur;
+					r_list_free (objs);
 					goto done;
 				}
-				RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
+				{
+					RList *objs = r_core_bin_files (core);
+					RListIter *iter;
+					RBinFile *bf;
+					RBinFile *cur = core->bin->cur;
+					r_list_foreach (objs, iter, bf) {
+						core->bin->cur = bf;
+						RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
+					}
+					core->bin->cur = cur;
+					r_list_free (objs);
+				}
 			} else {
-				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (input[1] == 'q') {
 					mode = (input[2] == 'q')
 					? R_MODE_SIMPLEST
 					: R_MODE_SIMPLE;
 					input++;
 				}
-				if (obj) {
-					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
-						(obj && obj->strings)? r_list_length (obj->strings): 0);
+				{
+					RList *objs = r_core_bin_files (core);
+					RListIter *iter;
+					RBinFile *bf;
+					RBinFile *cur = core->bin->cur;
+					r_list_foreach (objs, iter, bf) {
+						RBinObject *obj = bf->o;
+						core->bin->cur = bf;
+						RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
+								(obj && obj->strings)? r_list_length (obj->strings): 0);
+					}
+					core->bin->cur = cur;
+					r_list_free (objs);
 				}
 			}
 			break;
