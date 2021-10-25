@@ -1117,13 +1117,19 @@ static int cmd_info(void *data, const char *input) {
 				}
 			} else {
 				// "iz"
-				mode = R_MODE_PRINT;
 				if (input[1] == 'q') {
 					mode = (input[2] == 'q')
 					? R_MODE_SIMPLEST
 					: R_MODE_SIMPLE;
 					input++;
 				}
+#if 1
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				if (obj) {
+					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
+							(obj && obj->strings)? r_list_length (obj->strings): 0);
+				}
+#else
 				{
 					RList *objs = r_core_bin_files (core);
 					RListIter *iter;
@@ -1138,6 +1144,7 @@ static int cmd_info(void *data, const char *input) {
 					core->bin->cur = cur;
 					r_list_free (objs);
 				}
+#endif
 			}
 			break;
 		case 'c': // "ic"
