@@ -521,7 +521,7 @@ static void cmd_omfg(RCore *core, const char *input) {
 		? r_str_rwx (input + 1)
 		: r_str_rwx (input) : 7;
 	ut32 mapid;
-	if (!r_id_storage_get_lowest (core->io->maps_by_id, &mapid)) {
+	if (!r_id_storage_get_lowest (core->io->maps, &mapid)) {
 		return;
 	}
 	switch (*input) {
@@ -529,19 +529,19 @@ static void cmd_omfg(RCore *core, const char *input) {
 		do {
 			RIOMap *map = r_io_map_get (core->io, mapid);
 			map->perm |= perm;
-		} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
+		} while (r_id_storage_get_next (core->io->maps, &mapid));
 		break;
 	case '-':
 		do {
 			RIOMap *map = r_io_map_get (core->io, mapid);
 			map->perm &= ~perm;
-		} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
+		} while (r_id_storage_get_next (core->io->maps, &mapid));
 		break;
 	default:
 		do {
 			RIOMap *map = r_io_map_get (core->io, mapid);
 			map->perm = perm;
-		} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
+		} while (r_id_storage_get_next (core->io->maps, &mapid));
 		break;
 	}
 }
@@ -573,9 +573,9 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
 	ut32 mapid;
-	r_id_storage_get_lowest (core->io->maps_by_id, &mapid);
+	r_id_storage_get_lowest (core->io->maps, &mapid);
 	do {
-		RIOMap *m = r_id_storage_get (core->io->maps_by_id, mapid);
+		RIOMap *m = r_id_storage_get (core->io->maps, mapid);
 		ut64 va = r_itv_begin (m->itv);
 		ut64 va_end = r_itv_end (m->itv);
 		ut64 pa = m->delta;
@@ -585,7 +585,7 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 		r_table_add_rowf (t, "ddxxxxxss",
 			m->id, m->fd, pa, pa_end, pa_size,
 			va, va_end, r_str_rwx_i (m->perm), name);
-	} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
+	} while (r_id_storage_get_next (core->io->maps, &mapid));
 	if (r_table_query (t, arg)) {
 		char *ts = r_table_tofancystring (t);
 		r_cons_printf ("%s", ts);
@@ -701,11 +701,11 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		case 'g': // "ombg"
 			{
 				ut32 mapid;
-				r_id_storage_get_lowest (core->io->maps_by_id, &mapid);
+				r_id_storage_get_lowest (core->io->maps, &mapid);
 				do {
-					RIOMap *map = r_id_storage_get (core->io->maps_by_id, mapid);
+					RIOMap *map = r_id_storage_get (core->io->maps, mapid);
 					r_io_bank_map_add_top (core->io, core->io->bank, map->id);
-				} while (r_id_storage_get_next (core->io->maps_by_id, &mapid));
+				} while (r_id_storage_get_next (core->io->maps, &mapid));
 			}
 			break;
 		case 'q': // "ombq"
