@@ -1091,7 +1091,7 @@ static const char *radare_argv[] = {
 	"tu?", "tu", "tuj", "tu*", "tuc", "tt?", "tt", "ttj", "ttc",
 	"T?", "T", "T*", "T-", "Tl", "Tj", "Tm", "Ts", "TT", "T=", "T=.", "T=&",
 	"u?", "u", "uw", "us", "uc",
-	"v", "V", "v!", "vv", "vV", "vVV", "VV",
+	"v", "v.", "V", "v!", "vv", "vV", "vVV", "VV",
 	"w?", "w", "w1+", "w1-", "w2+", "w2-", "w4+", "w4-", "w8+", "w8-",
 	"w0", "w", "w6", "w6d", "w6e", "wa", "wa*", "waf", "wao?", "wao",
 	"wA?", "wA", "wB", "wB-", "wc", "wcj", "wc-", "wc+", "wc*", "wcr", "wci", "wcp", "wcp*", "wcpi",
@@ -2574,7 +2574,7 @@ static void __init_autocomplete_default (RCore* core) {
 		"db-", "dbc", "dbC", "dbd", "dbe", "dbs", "dbi", "dbte", "dbtd", "dbts", NULL
 	};
 	const char *files[] = {
-		".", "..", ".*", ":. ", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala",
+		".", "..", ".*", ":. ", "/F", "/m", "!", "!!", "#!c", "#!v", "#!cpipe", "#!vala", "v.",
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
 		"idp", "idpi", "L", "obf", "o+", "oc", "r2", "rabin2", "rasm2", "rahash2", "rax2",
 		"rafind2", "cd", "ls", "on", "op", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
