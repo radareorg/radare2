@@ -327,6 +327,7 @@ static const char *help_msg_v[] = {
 	"Usage:", "v[*i]", "",
 	"v", "", "open visual panels",
 	"v", " test", "load saved layout with name test",
+	"v.", " [file]", "load visual script (also known as slides)",
 	"v=", " test", "save current layout with name test",
 	"vi", " test", "open the file test in 'cfg.editor'",
 	NULL
@@ -2422,6 +2423,11 @@ static int cmd_resize(void *data, const char *input) {
 static int cmd_panels(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	if (core->vmode) {
+		return false;
+	}
+	if (*input == '.') {
+		const char *f = r_str_trim_head_ro (input + 1);
+		r_core_visual_slides (core, f);
 		return false;
 	}
 	if (*input == '?') {

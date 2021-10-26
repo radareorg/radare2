@@ -60,6 +60,7 @@ r_core_sources = [
   'task.c',
   'vasm.c',
   'visual.c',
+  'vslides.c',
   'vmarks.c',
   'vmenus.c',
   'vmenus_graph.c',
