@@ -1857,7 +1857,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	if (core->cons->context->demo) {
 		const char *nl = core->vmode? "\n"R_CONS_CLEAR_LINE: NULL;
-		char *r = r_str_ss (fcn_name, nl);
+		char *r = r_str_ss (fcn_name, nl, 0);
 		char *s_in = r_str_newf ("%s%s%s", COLOR (ds, color_fname), r, COLOR_RESET (ds));
 		free (r);
 		r_cons_print (s_in);

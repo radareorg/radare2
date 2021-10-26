@@ -1087,9 +1087,9 @@ static int cmd_help(void *data, const char *input) {
 		r_str_trim_args ((char *)input);
 
 		switch (input[1]) {
-		case 'a': // "?a hello world
+		case 'a': // "?ea hello world
 			{
-				char *s = r_str_ss (r_str_trim_head_ro (input + 2), NULL);
+				char *s = r_str_ss (r_str_trim_head_ro (input + 2), NULL, 0);
 				r_cons_println (s);
 				free (s);
 			}
