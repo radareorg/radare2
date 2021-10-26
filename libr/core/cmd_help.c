@@ -226,6 +226,7 @@ static const char *help_msg_question_e[] = {
 	"?eb", " 10 20 30", "proportional segments bar",
 	"?ed", " 1", "draw a 3D ascii donut at the given animation frame",
 	"?eg", " 10 20", "move cursor to column 10, row 20",
+	"?ef", " text", "echo text with thin ascii art frame around",
 	"?en", " nonl", "echo message without ending newline",
 	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
 	"?es", " msg", "speak message using the text-to-speech program (e cfg.tts)",
@@ -1142,6 +1143,25 @@ static int cmd_help(void *data, const char *input) {
 			free (newmsg);
 			break;
 		}
+		case 'f': // "?ef"
+			{
+				const char *text = r_str_trim_head_ro (input + 2);
+				int len = strlen (text) + 2;
+				RStrBuf *b = r_strbuf_new ("");
+				r_strbuf_append (b, ".");
+				r_strbuf_append (b, r_str_pad('-', len));
+				r_strbuf_append (b, ".\n");
+				r_strbuf_append (b, "| ");
+				r_strbuf_append (b, text);
+				r_strbuf_append (b, " |\n");
+				r_strbuf_append (b, "'");
+				r_strbuf_append (b, r_str_pad('-', len));
+				r_strbuf_append (b, "'\n");
+				char * s = r_strbuf_drain (b);
+				r_cons_print (s);
+				free (s);
+			}
+			break;
 		case 'd': // "?ed"
 			  if (input[2] == 'd') {
 				  int i,j;
