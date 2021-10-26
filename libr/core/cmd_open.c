@@ -1552,9 +1552,9 @@ static bool cmd_op(RCore *core, char mode, int fd) {
 			r_core_block_read (core);
 			return true;
 		}
-		eprintf ("Invalid RBinFile.id number.\n");
+	//	eprintf ("Invalid RBinFile.id number.\n");
 	}
-	return false;
+	return next_fd != -1;
 }
 
 static bool cmd_onn(RCore *core, const char* input) {
