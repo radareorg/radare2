@@ -1442,6 +1442,7 @@ static int wt_handler_old(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *str = strdup (input);
 	char *ostr = str;
+	char *hfilename = NULL;
 	const char *filename = "";
 	char _fn[32];
 	_fn[0] = 0;
@@ -1538,7 +1539,7 @@ static int wt_handler_old(void *data, const char *input) {
 						const char *encoded = filename + 7;
 						char *decoded = (char *)sdb_decode (encoded, NULL);
 						if (decoded) {
-							free (filename);
+							hfilename = decoded;
 							filename = decoded;
 						}
 					}
@@ -1640,6 +1641,8 @@ static int wt_handler_old(void *data, const char *input) {
 					sz, poff, filename);
 		}
 	}
+	free (ostr);
+	free (hfilename);
 	return 0;
 }
 
