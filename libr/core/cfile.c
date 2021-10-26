@@ -477,7 +477,6 @@ static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
 	void *p = r_core_file_open (core, lib, 0, addr);
 	if (p) {
 		r_core_bin_load (core, lib, addr);
-		R_FREE (p);
 		return true;
 	}
 	return false;
