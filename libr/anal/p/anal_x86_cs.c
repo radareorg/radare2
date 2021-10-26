@@ -1326,9 +1326,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			esilprintf (op,
 					"%s,%s,"
 					"%d,%s,-=,%s,"
-					"=[],"
+					"=[%d],"
 					"%s,=",
-					arg0, pc, rs, sp, sp, pc);
+					arg0, pc, rs, sp, sp, rs, pc);
 		}
 		break;
 	case X86_INS_LCALL:
@@ -1338,15 +1338,15 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			if (arg1) {
 				esilprintf (op,
 						"2,%s,-=,cs,%s,=[2],"	// push CS
-						"%d,%s,-=,%s,%s,=[],"	// push IP/EIP
+						"%d,%s,-=,%s,%s,=[%d],"	// push IP/EIP
 						"%s,cs,=,"		// set CS
 						"%s,%s,=",		// set IP/EIP
-						sp, sp, rs, sp, pc, sp, arg0, arg1, pc);
+						sp, sp, rs, sp, pc, sp, rs, arg0, arg1, pc);
 			} else {
 				esilprintf (op,
-						"%s,%s,-=,%d,%s,=[],"	// push IP/EIP
+						"%s,%s,-=,%d,%s,=[%d],"	// push IP/EIP
 						"%s,%s,=",		// set IP/EIP
-						sp, sp, rs, sp, arg0, pc);
+						sp, sp, rs, sp, rs, arg0, pc);
 			}
 		}
 		break;
@@ -1381,7 +1381,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					if (in.mem.segment != X86_REG_INVALID) {
 						esilprintf (
 							op,
-							"4,%s,<<,0x%"PFMT64x",+,[],%s,=",
+							"4,%s,<<,0x%"PFMT64x",+,[%d],%s,=",
 							INSOP(0).mem.segment == X86_REG_ES ? "es"
 							: INSOP(0).mem.segment == X86_REG_CS ? "cs"
 							: INSOP(0).mem.segment == X86_REG_DS ? "ds"
@@ -1390,12 +1390,12 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 							: INSOP(0).mem.segment == X86_REG_SS ? "ss"
 							: "unknown_segment_register",
 							(ut64)INSOP(0).mem.disp,
-							pc);
+							rs, pc);
 					} else {
 						esilprintf (
 							op,
-							"0x%"PFMT64x",[],%s,=",
-							(ut64)INSOP(0).mem.disp, pc);
+							"0x%"PFMT64x",[%d],%s,=",
+							(ut64)INSOP(0).mem.disp, rs, pc);
 					}
 				}
 			}
