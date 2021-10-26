@@ -2,7 +2,7 @@
 @echo off
 :: Preconfigure script for Windows
 
-echo|set /p= === Finding Python...
+echo === Finding Python...
 python --version > NUL 2> NUL
 if %ERRORLEVEL% == 0 (
   echo OK
