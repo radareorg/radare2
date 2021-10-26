@@ -36,7 +36,11 @@ static int fs_io_read(RFSFile *file, ut64 addr, int len) {
 		return -1;
 	}
 	
-	char *cmd = r_str_newf ("mg %s 0x%08"PFMT64x" %d", abs_path, addr, len);
+	char *enc_path = r_base64_encode_dyn (abs_path, -1);
+	char *enc_uri = r_str_newf ("base64:%s", enc_path);
+	char *cmd = r_str_newf ("mg %s 0x%08"PFMT64x" %d", enc_uri, addr, len);
+	free (enc_uri);
+	free (enc_path);
 	R_FREE (abs_path);
 	if (!cmd) {
 		return -1;
