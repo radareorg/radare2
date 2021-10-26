@@ -1534,6 +1534,14 @@ static int wt_handler_old(void *data, const char *input) {
 						return 0;
 					}
 					filename = r_str_trim_head_ro (str);
+					if (r_str_startswith (filename, "base64:")) {
+						const char *encoded = filename + 7;
+						char *decoded = (char *)sdb_decode (encoded, NULL);
+						if (decoded) {
+							free (filename);
+							filename = decoded;
+						}
+					}
 				} else {
 					filename = "";
 				}
