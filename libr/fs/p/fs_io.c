@@ -29,6 +29,13 @@ static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
 	return NULL;
 }
 
+static char *enbase(const char *p) {
+	char *enc_path = r_base64_encode_dyn (p, -1);
+	char *res = r_str_newf ("base64:%s", enc_path);
+	free (enc_path);
+	return res;
+}
+
 static int fs_io_read(RFSFile *file, ut64 addr, int len) {
 	RFSRoot *root = file->root;
 	char *abs_path = r_fs_file_copy_abs_path (file);
@@ -36,12 +43,10 @@ static int fs_io_read(RFSFile *file, ut64 addr, int len) {
 		return -1;
 	}
 	
-	char *enc_path = r_base64_encode_dyn (abs_path, -1);
-	char *enc_uri = r_str_newf ("base64:%s", enc_path);
+	char *enc_uri = enbase (abs_path);
+	free (abs_path);
 	char *cmd = r_str_newf ("mg %s 0x%08"PFMT64x" %d", enc_uri, addr, len);
 	free (enc_uri);
-	free (enc_path);
-	R_FREE (abs_path);
 	if (!cmd) {
 		return -1;
 	}
@@ -90,7 +95,9 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	if (!list) {
 		return NULL;
 	}
-	char *cmd = r_str_newf ("md %s", path);
+	char *uri_path = enbase (path);
+	char *cmd = r_str_newf ("md %s", uri_path);
+	free (uri_path);
 	char *res = root->iob.system (root->iob.io, cmd);
 	if (res) {
 		size_t i, count = 0;
