@@ -1,4 +1,3 @@
-
 /* radare - LGPL - Copyright 2021 - Siguza, pancake, hot3eed */
 
 // Context: https://raw.githubusercontent.com/Siguza/misc/master/xref.c
@@ -292,18 +291,18 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	if (!r_str_startswith (input, "sixref")) {
 		return false;
 	}
+	input = r_str_trim_head_ro (input + strlen ("sixref"));
 
 	RCore *core = (RCore *)user;
 	const char *arch = r_config_get (core->config, "asm.arch");
 	const int bits = r_config_get_i (core->config, "asm.bits");
-	char *args = NULL;
 
 	if (!strstr (arch, "arm") || bits != 64) {
 		eprintf ("This command only works on arm64. Please check your asm.{arch,bits}\n");
 		return true;
 	}
 
-	if (input[6] == '?') {
+	if (*input == '?') {
 		eprintf ("Usage: sixref [address] [len]   Find x-refs in executable sections (arm64 only. fast!)\n");
 		goto done;
 	}
@@ -311,24 +310,14 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	ut64 search = 0;
 	int len = 0;
 
-	args = strdup (input + strlen ("sixref"));
-	int num_args = r_str_split (args, ' ');
-	char *tmp = args;
-
-	if (num_args > 0) {
-		while (!(*tmp)) {
-			tmp++;
-		}
-		search = r_num_math (core->num, tmp);
-		tmp += strlen (tmp);
+	char *args = strdup (input);
+	char *space = strchr (args, ' ');
+	if (space) {
+		*space++ = 0;
+		len = r_num_math (core->num, space);
 	}
-
-	if (num_args > 1) {
-		while (!(*tmp)) {
-			tmp++;
-		}
-		len = r_num_math (core->num, tmp);
-	}
+	search = r_num_math (core->num, args);
+	free (args);
 
 	if (len == 0) {
 		RList *sections = r_bin_get_sections (core->bin);
@@ -369,7 +358,6 @@ static int r_cmdsixref_call(void *user, const char *input) {
 	}
 
 done:
-	free (args);
 	return true;
 }
 
