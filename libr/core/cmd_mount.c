@@ -314,19 +314,10 @@ static int cmd_mount(void *data, const char *_input) {
 		} else {
 			ptr = "./";
 		}
-		char *hfilename = NULL;
 		const char *filename = r_str_trim_head_ro (input);
 		if (R_STR_ISEMPTY (filename)) {
 			eprintf ("No filename given\n");
 			break;
-		}
-		if (r_str_startswith (filename, "base64:")) {
-			const char *encoded = filename + 7;
-			char *decoded = (char *)sdb_decode (encoded, NULL);
-			if (decoded) {
-				filename = decoded;
-				hfilename = decoded;
-			}
 		}
 		file = r_fs_open (core->fs, filename, false);
 		if (file) {
@@ -363,7 +354,6 @@ static int cmd_mount(void *data, const char *_input) {
 		} else if (!r_fs_dir_dump (core->fs, filename, ptr)) {
 			eprintf ("Cannot open file (%s) (%s).\n", filename, ptr);
 		}
-		free (hfilename);
 		break;
 	case 'f':
 		input++;

@@ -235,6 +235,14 @@ R_API RFSFile* r_fs_open(RFS* fs, const char* p, bool create) {
 	RFSFile* f = NULL;
 	const char* dir;
 	char* path = r_str_trim_dup (p);
+	if (r_str_startswith (path, "base64:")) {
+			const char *encoded = path + 7;
+			char *decoded = (char *)sdb_decode (encoded, NULL);
+			if (decoded) {
+				r_free (path);
+				path = decoded;
+			}
+	}
 	r_str_trim_path (path);
 	RList *roots = r_fs_root (fs, path);
 	if (!r_list_empty (roots)) {
