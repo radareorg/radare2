@@ -900,29 +900,29 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	op->id = i;
 
 	switch (_8051_ops[i].instr) {
-	default:
-		op->cond = R_ANAL_COND_AL;
-	break;
 	case OP_CJNE:
 	case OP_DJNZ:
 	case OP_JB:
 	case OP_JBC:
 	case OP_JNZ:
 		op->cond = R_ANAL_COND_NE;
-	break;
+		break;
 	case OP_JNB:
 	case OP_JZ:
 		op->cond = R_ANAL_COND_EQ;
-	break; case OP_JC:
+		break;
+	case OP_JC:
 		op->cond = R_ANAL_COND_HS;
-	break; case OP_JNC:
+		break;
+	case OP_JNC:
 		op->cond = R_ANAL_COND_LO;
+		break;
+	default:
+		op->cond = R_ANAL_COND_AL;
+		break;
 	}
 
 	switch (_8051_ops[i].instr) {
-	default:
-		op->eob = false;
-	break;
 	case OP_CJNE:
 	case OP_DJNZ:
 	case OP_JB:
@@ -934,50 +934,61 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_JNZ:
 	case OP_JZ:
 		op->eob = true;
+		break;
+	default:
+		op->eob = false;
+		break;
 	}
 
 	// TODO: op->datatype
 
 	switch (arg1) {
-	default:
-	break; case A_DIRECT:
+	case A_DIRECT:
 		op->ptr = map_direct_addr (anal, buf[1]);
-	break; case A_BIT:
+		break;
+	case A_BIT:
 		op->ptr = map_direct_addr (anal, arg_bit (buf[1]));
-	break; case A_IMMEDIATE:
+		break;
+	case A_IMMEDIATE:
 		op->val = buf[1];
-	break; case A_IMM16:
+		break;
+	case A_IMM16:
 		op->val = buf[1] * 256 + buf[2];
 		op->ptr = op->val + i8051_reg_read (anal->reg, "_xdata"); // best guess, it's a XRAM pointer
+		break;
 	}
 
 	switch (arg2) {
-	default:
-	break; case A_DIRECT:
+	case A_DIRECT:
 		if (arg1 == A_RI || arg1 == A_RN) {
 			op->ptr = map_direct_addr (anal, buf[1]);
 		} else if (arg1 != A_DIRECT) {
 			op->ptr = map_direct_addr (anal, buf[2]);
 		}
-	break; case A_BIT:
+		break;
+	case A_BIT:
 		op->ptr = arg_bit ((arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2]);
 		op->ptr = map_direct_addr (anal, op->ptr);
-	break; case A_IMMEDIATE:
+		break;
+	case A_IMMEDIATE:
 		op->val = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
+		break;
 	}
 
 	switch(_8051_ops[i].instr) {
-	default:
-	break; case OP_PUSH:
+	case OP_PUSH:
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 1;
-	break; case OP_POP:
+		break;
+	case OP_POP:
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -1;
-	break; case OP_RET:
+		break;
+	case OP_RET:
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -2;
-	break; case OP_CALL:
+		break;
+	case OP_CALL:
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 2;
 		if (arg1 == A_ADDR11) {
@@ -987,7 +998,8 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			op->jump = 0x100 * buf[1] + buf[2];
 			op->fail = addr + op->size;
 		}
-	break; case OP_JMP:
+		break;
+	case OP_JMP:
 		if (arg1 == A_ADDR11) {
 			op->jump = arg_addr11 (addr + op->size, buf);
 			op->fail = addr + op->size;
@@ -998,7 +1010,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			op->jump = arg_offset (addr + op->size, buf[1]);
 			op->fail = addr + op->size;
 		}
-	break;
+		break;
 	case OP_CJNE:
 	case OP_DJNZ:
 	case OP_JC:
@@ -1010,6 +1022,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_JNB:
 		op->jump = arg_offset (addr + op->size, buf[op->size - 1]);
 		op->fail = addr + op->size;
+		break;
 	}
 
 	if (op->ptr != -1 && op->refptr == 0) {
