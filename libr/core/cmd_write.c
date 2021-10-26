@@ -1526,7 +1526,7 @@ static int wt_handler_old(void *data, const char *input) {
 					prefix = "dump";
 				}
 				str++;
-				filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
+				filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);	//XXX: memleak
 			} else {
 				if (*str) {
 					if (str[1] == '?') {
@@ -1632,6 +1632,7 @@ static int wt_handler_old(void *data, const char *input) {
 					sz, poff, filename);
 		}
 	}
+	free (ostr);
 	return 0;
 }
 
