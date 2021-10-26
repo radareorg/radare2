@@ -245,7 +245,7 @@ R_API const char *r_str_sep(const char *base, const char *sep);
 R_API const char *r_str_rsep(const char *base, const char *p, const char *sep);
 R_API char *r_str_donut(int size);
 R_API char *r_str_version(const char *program);
-R_API char *r_str_ss(const char* msg, const char *nl);
+R_API char *r_str_ss(const char* msg, const char *nl, int cs);
 
 #ifdef __cplusplus
 }
