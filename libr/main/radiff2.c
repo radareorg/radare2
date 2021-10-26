@@ -702,7 +702,7 @@ static char *handle_sha256(const ut8 *block, int len) {
 }
 
 static ut8 *slurp(RadiffOptions *ro, RCore **c, const char *file, size_t *sz) {
-	RIODesc *d;
+	int fd;
 	RIO *io;
 	if (c && file && strstr (file, "://")) {
 		ut8 *data = NULL;
@@ -715,14 +715,14 @@ static ut8 *slurp(RadiffOptions *ro, RCore **c, const char *file, size_t *sz) {
 			return NULL;
 		}
 		io = (*c)->io;
-		d = r_io_open (io, file, 0, 0);
-		if (!d) {
+		fd = r_io_fd_open (io, file, R_PERM_R, 0);
+		if (fd < 1) {
 			return NULL;
 		}
-		size = r_io_size (io);
+		size = r_io_fd_size (io, fd);
 		if (size > 0 && size < ST32_MAX) {
 			data = calloc (1, size);
-			if (r_io_read_at (io, 0, data, size)) {
+			if (r_io_fd_read_at (io, fd, 0, data, size)) {
 				if (sz) {
 					*sz = size;
 				}
@@ -733,7 +733,7 @@ static ut8 *slurp(RadiffOptions *ro, RCore **c, const char *file, size_t *sz) {
 		} else {
 			eprintf ("slurp: Invalid file size\n");
 		}
-		r_io_desc_close (d);
+		r_io_fd_close (io, fd);
 		return data;
 	}
 	return (ut8 *) r_file_slurp (file, sz);
