@@ -4,8 +4,17 @@
 #include <r_lib.h>
 #include <sys/stat.h>
 
+static char *enbase(const char *p) {
+	char *enc_path = r_base64_encode_dyn (p, -1);
+	char *res = r_str_newf ("base64:%s", enc_path);
+	free (enc_path);
+	return res;
+}
+
 static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
-	char *cmd = r_str_newf ("m %s", path);
+	char *enc_uri = enbase (path);
+	char *cmd = r_str_newf ("m %s", enc_uri);
+	free (enc_uri);
 	char *res = root->iob.system (root->iob.io, cmd);
 	R_FREE (cmd);
 	if (res) {
@@ -27,13 +36,6 @@ static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
 		return file;
 	}
 	return NULL;
-}
-
-static char *enbase(const char *p) {
-	char *enc_path = r_base64_encode_dyn (p, -1);
-	char *res = r_str_newf ("base64:%s", enc_path);
-	free (enc_path);
-	return res;
 }
 
 static int fs_io_read(RFSFile *file, ut64 addr, int len) {
