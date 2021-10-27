@@ -1129,6 +1129,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			char *input = strdup (ds->opstr? ds->opstr: ds->str);
 			r_parse_filter (core->parser, ds->vat, core->flags, ds->hint, input, // asm_str,
 					ds->str, sizeof (ds->str), core->print->big_endian);
+			free (input);
 			//ds->opstr = strdup (ds->str);
 		} else {
 			if (ds->opstr) {
@@ -6493,6 +6494,10 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	RDisasmState *ds = ds_init (core);
 	if (l > core->blocksize || addr != core->offset) {
 		buf = malloc (l + 1);
+		if (!buf) {
+			ds_free (ds);
+			return 0;
+		}
 		r_io_read_at (core->io, addr, buf, l);
 	}
 	PJ *pj = NULL;

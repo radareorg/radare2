@@ -372,7 +372,9 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	int maxstr = r_config_get_i (r->config, "bin.maxstr");
 	RTable *table = r_core_table (r, "strings");
-	r_return_if_fail (table);
+	if (!table) {
+		return;
+	}
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
@@ -4074,7 +4076,7 @@ static void bin_no_resources(RCore *r, PJ *pj, int mode) {
 	}
 }
 
-static int bin_resources(RCore *r, PJ *pj, int mode) {
+static bool bin_resources(RCore *r, PJ *pj, int mode) {
 	const RBinInfo *info = r_bin_get_info (r->bin);
 	if (!info || !info->rclass) {
 		if (IS_MODE_JSON (mode)) {
@@ -4091,7 +4093,7 @@ static int bin_resources(RCore *r, PJ *pj, int mode) {
 	return true;
 }
 
-static int bin_versioninfo(RCore *r, PJ *pj, int mode) {
+static bool bin_versioninfo(RCore *r, PJ *pj, int mode) {
 	const RBinInfo *info = r_bin_get_info (r->bin);
 	if (!info || !info->rclass) {
 		if (IS_MODE_JSON (mode)) {
@@ -4117,7 +4119,7 @@ static int bin_versioninfo(RCore *r, PJ *pj, int mode) {
 	return true;
 }
 
-static int bin_signature(RCore *r, PJ *pj, int mode) {
+static bool bin_signature(RCore *r, PJ *pj, int mode) {
 	RBinFile *cur = r_bin_cur (r->bin);
 	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 	if (plg && plg->signature) {
@@ -4141,7 +4143,7 @@ static int bin_signature(RCore *r, PJ *pj, int mode) {
 	return false;
 }
 
-static int bin_header(RCore *r, int mode) {
+static bool bin_header(RCore *r, int mode) {
 	RBinFile *cur = r_bin_cur (r->bin);
 	RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 	if (plg && plg->header) {
@@ -4151,8 +4153,8 @@ static int bin_header(RCore *r, int mode) {
 	return false;
 }
 
-R_API int r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
-	int ret = true;
+R_API bool r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCoreBinFilter *filter, const char *chksum) {
+	bool ret = true;
 	const char *name = NULL;
 	ut64 at = UT64_MAX, loadaddr = r_bin_get_laddr (core->bin);
 	if (filter && filter->offset) {
@@ -4261,7 +4263,7 @@ R_API int r_core_bin_info(RCore *core, int action, PJ *pj, int mode, int va, RCo
 	return ret;
 }
 
-R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch, ut16 bits) {
+R_API bool r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch, ut16 bits) {
 	int fd = r_io_fd_get_current (r->io);
 	RIODesc *desc = r_io_desc_get (r->io, fd);
 	RBinFile *curfile, *binfile = NULL;
@@ -4292,7 +4294,7 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 	return true;
 }
 
-R_API int r_core_bin_update_arch_bits(RCore *r) {
+R_API bool r_core_bin_update_arch_bits(RCore *r) {
 	RBinFile *binfile = NULL;
 	const char *name = NULL, *arch = NULL;
 	ut16 bits = 0;
@@ -4489,3 +4491,18 @@ padding:
 out:
 	return r_strbuf_drain (buf);
 }
+
+R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
+	if (!core || !core->bin || !core->bin->cur) {
+		return 0;
+	}
+	if (baddr == UT64_MAX) {
+		return 0;
+	}
+	RBinFile *bf = core->bin->cur;
+	bf->o->baddr = baddr;
+	bf->o->loadaddr = baddr;
+	r_bin_object_set_items (bf, bf->o);
+	return 1;
+}
+
