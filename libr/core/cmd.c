@@ -1285,6 +1285,9 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 						free (shell);
 					}
 					ret = 1;
+				} else if (!strcmp (ext, "r2s")) {
+					r_core_visual_slides (core, file);
+					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
 					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");
