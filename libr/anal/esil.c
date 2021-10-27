@@ -2042,10 +2042,6 @@ static bool esil_poke16(RAnalEsil *esil) {
 	return esil_poke_n (esil, 128);
 }
 
-static bool esil_poke(RAnalEsil *esil) {
-	return esil_poke_n (esil, esil->anal->bits);
-}
-
 static bool esil_poke_some(RAnalEsil *esil) {
 	bool ret = false;
 	int i, regsize;
@@ -2164,10 +2160,6 @@ static bool esil_peek16(RAnalEsil *esil) {
 	return esil_peek_n (esil, 128);
 }
 
-static bool esil_peek(RAnalEsil *esil) {
-	return esil_peek_n (esil, esil->anal->bits);
-};
-
 static bool esil_peek_some(RAnalEsil *esil) {
 	int i;
 	ut64 ptr, regs;
@@ -2255,9 +2247,6 @@ static bool esil_mem_oreq4(RAnalEsil *esil) {
 static bool esil_mem_oreq8(RAnalEsil *esil) {
 	return esil_mem_oreq_n (esil, 64);
 }
-static bool esil_mem_oreq(RAnalEsil *esil) {
-	return esil_mem_oreq_n (esil, esil->anal->bits);
-}
 
 /* XOREQ */
 
@@ -2300,9 +2289,6 @@ static bool esil_mem_xoreq4(RAnalEsil *esil) {
 }
 static bool esil_mem_xoreq8(RAnalEsil *esil) {
 	return esil_mem_xoreq_n (esil, 64);
-}
-static bool esil_mem_xoreq(RAnalEsil *esil) {
-	return esil_mem_xoreq_n (esil, esil->anal->bits);
 }
 
 /* ANDEQ */
@@ -2347,9 +2333,6 @@ static bool esil_mem_andeq4(RAnalEsil *esil) {
 static bool esil_mem_andeq8(RAnalEsil *esil) {
 	return esil_mem_andeq_n (esil, 64);
 }
-static bool esil_mem_andeq(RAnalEsil *esil) {
-	return esil_mem_andeq_n (esil, esil->anal->bits);
-}
 
 /* ADDEQ */
 
@@ -2393,9 +2376,6 @@ static bool esil_mem_addeq4(RAnalEsil *esil) {
 static bool esil_mem_addeq8(RAnalEsil *esil) {
 	return esil_mem_addeq_n (esil, 64);
 }
-static bool esil_mem_addeq(RAnalEsil *esil) {
-	return esil_mem_addeq_n (esil, esil->anal->bits);
-}
 
 /* SUBEQ */
 
@@ -2438,9 +2418,6 @@ static bool esil_mem_subeq4(RAnalEsil *esil) {
 }
 static bool esil_mem_subeq8(RAnalEsil *esil) {
 	return esil_mem_subeq_n (esil, 64);
-}
-static bool esil_mem_subeq(RAnalEsil *esil) {
-	return esil_mem_subeq_n (esil, esil->anal->bits);
 }
 
 /* MODEQ */
@@ -2492,9 +2469,6 @@ static bool esil_mem_modeq4(RAnalEsil *esil) {
 static bool esil_mem_modeq8(RAnalEsil *esil) {
 	return esil_mem_modeq_n (esil, 64);
 }
-static bool esil_mem_modeq(RAnalEsil *esil) {
-	return esil_mem_modeq_n (esil, esil->anal->bits);
-}
 
 /* DIVEQ */
 
@@ -2544,9 +2518,6 @@ static bool esil_mem_diveq4(RAnalEsil *esil) {
 static bool esil_mem_diveq8(RAnalEsil *esil) {
 	return esil_mem_diveq_n (esil, 64);
 }
-static bool esil_mem_diveq(RAnalEsil *esil) {
-	return esil_mem_diveq_n (esil, esil->anal->bits);
-}
 
 /* MULEQ */
 
@@ -2589,16 +2560,6 @@ static bool esil_mem_muleq4(RAnalEsil *esil) {
 }
 static bool esil_mem_muleq8(RAnalEsil *esil) {
 	return esil_mem_muleq_n (esil, 64, UT64_MAX);
-}
-
-static bool esil_mem_muleq(RAnalEsil *esil) {
-	switch (esil->anal->bits) {
-	case 64: return esil_mem_muleq8 (esil);
-	case 32: return esil_mem_muleq4 (esil);
-	case 16: return esil_mem_muleq2 (esil);
-	case 8: return esil_mem_muleq1 (esil);
-	}
-	return 0;
 }
 
 /* INCEQ */
@@ -2644,9 +2605,6 @@ static bool esil_mem_inceq4(RAnalEsil *esil) {
 static bool esil_mem_inceq8(RAnalEsil *esil) {
 	return esil_mem_inceq_n (esil, 64);
 }
-static bool esil_mem_inceq(RAnalEsil *esil) {
-	return esil_mem_inceq_n (esil, esil->anal->bits);
-}
 
 /* DECEQ */
 
@@ -2687,9 +2645,6 @@ static bool esil_mem_deceq4(RAnalEsil *esil) {
 }
 static bool esil_mem_deceq8(RAnalEsil *esil) {
 	return esil_mem_deceq_n (esil, 64);
-}
-static bool esil_mem_deceq(RAnalEsil *esil) {
-	return esil_mem_deceq_n (esil, esil->anal->bits);
 }
 
 /* LSLEQ */
@@ -2742,9 +2697,6 @@ static bool esil_mem_lsleq4(RAnalEsil *esil) {
 static bool esil_mem_lsleq8(RAnalEsil *esil) {
 	return esil_mem_lsleq_n (esil, 64);
 }
-static bool esil_mem_lsleq(RAnalEsil *esil) {
-	return esil_mem_lsleq_n (esil, esil->anal->bits);
-}
 
 /* LSREQ */
 
@@ -2787,9 +2739,6 @@ static bool esil_mem_lsreq4(RAnalEsil *esil) {
 }
 static bool esil_mem_lsreq8(RAnalEsil *esil) {
 	return esil_mem_lsreq_n (esil, 64);
-}
-static bool esil_mem_lsreq(RAnalEsil *esil) {
-	return esil_mem_lsreq_n (esil, esil->anal->bits);
 }
 
 /* get value of register or memory reference and push the value */
@@ -3853,74 +3802,60 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("%", esil_mod, 1, 2, OT_MATH);
 	OP ("~%", esil_signed_mod, 1, 2, OT_MATH);
 	OP ("%=", esil_modeq, 0, 2, OT_MATH | OT_REGW);
-	OP ("=[]", esil_poke, 0, 2, OT_MEMW);
 	OP ("=[1]", esil_poke1, 0, 2, OT_MEMW);
 	OP ("=[2]", esil_poke2, 0, 2, OT_MEMW);
 	OP ("=[3]", esil_poke3, 0, 2, OT_MEMW);
 	OP ("=[4]", esil_poke4, 0, 2, OT_MEMW);
 	OP ("=[8]", esil_poke8, 0, 2, OT_MEMW);
 	OP ("=[16]", esil_poke16, 0, 2, OT_MEMW);
-	OP ("|=[]", esil_mem_oreq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("|=[1]", esil_mem_oreq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("|=[2]", esil_mem_oreq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("|=[4]", esil_mem_oreq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("|=[8]", esil_mem_oreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("^=[]", esil_mem_xoreq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("^=[1]", esil_mem_xoreq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("^=[2]", esil_mem_xoreq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("^=[4]", esil_mem_xoreq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("^=[8]", esil_mem_xoreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("&=[]", esil_mem_andeq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("&=[1]", esil_mem_andeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("&=[2]", esil_mem_andeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("&=[4]", esil_mem_andeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("&=[8]", esil_mem_andeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("+=[]", esil_mem_addeq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("+=[1]", esil_mem_addeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("+=[2]", esil_mem_addeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("+=[4]", esil_mem_addeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("+=[8]", esil_mem_addeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("-=[]", esil_mem_subeq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("-=[1]", esil_mem_subeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("-=[2]", esil_mem_subeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("-=[4]", esil_mem_subeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("-=[8]", esil_mem_subeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("%=[]", esil_mem_modeq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("%=[1]", esil_mem_modeq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("%=[2]", esil_mem_modeq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("%=[4]", esil_mem_modeq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("%=[8]", esil_mem_modeq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("/=[]", esil_mem_diveq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("/=[1]", esil_mem_diveq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("/=[2]", esil_mem_diveq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("/=[4]", esil_mem_diveq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("/=[8]", esil_mem_diveq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("*=[]", esil_mem_muleq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("*=[1]", esil_mem_muleq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("*=[2]", esil_mem_muleq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("*=[4]", esil_mem_muleq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("*=[8]", esil_mem_muleq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("++=[]", esil_mem_inceq, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("++=[1]", esil_mem_inceq1, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("++=[2]", esil_mem_inceq2, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("++=[4]", esil_mem_inceq4, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("++=[8]", esil_mem_inceq8, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("--=[]", esil_mem_deceq, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("--=[1]", esil_mem_deceq1, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("--=[2]", esil_mem_deceq2, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("--=[4]", esil_mem_deceq4, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("--=[8]", esil_mem_deceq8, 0, 1, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("<<=[]", esil_mem_lsleq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("<<=[1]", esil_mem_lsleq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("<<=[2]", esil_mem_lsleq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("<<=[4]", esil_mem_lsleq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP ("<<=[8]", esil_mem_lsleq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP (">>=[]", esil_mem_lsreq, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP (">>=[1]", esil_mem_lsreq1, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP (">>=[2]", esil_mem_lsreq2, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP (">>=[4]", esil_mem_lsreq4, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
 	OP (">>=[8]", esil_mem_lsreq8, 0, 2, OT_MATH | OT_MEMR | OT_MEMW);
-	OP ("[]", esil_peek, 1, 1, OT_MEMR);
 	OP ("[*]", esil_peek_some, 0, 0, OT_MEMR);
 	OP ("=[*]", esil_poke_some, 0, 0, OT_MEMW);
 	OP ("[1]", esil_peek1, 1, 1, OT_MEMR);
