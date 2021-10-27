@@ -27,7 +27,7 @@ R_API bool r_core_file_close_all_but(RCore *core) {
        return true;
 }
 
-static bool __isMips (RAsm *a) {
+static bool __isMips(RAsm *a) {
 	return a && a->cur && a->cur->arch && strstr (a->cur->arch, "mips");
 }
 
