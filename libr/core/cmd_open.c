@@ -68,6 +68,14 @@ static const char *help_msg_op[] = {
 	NULL
 };
 
+static const char *help_msg_omn[] = {
+	"Usage:", "omn[.-] ([fd]) [name]", "# define a name for the given map",
+	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
+	"omn.", "([-|name])", "show/set/delete name for current map",
+	"omni", " mapid [name]", "set/delete name for map with mapid",
+	NULL
+};
+
 static const char *help_msg_omb[] = {
 	"Usage:", "omb[jq,+] [fd]", "Operate on memory banks",
 	"omb", "", "list all memory banks",
@@ -142,9 +150,7 @@ static const char *help_msg_om[] = {
 	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
 	"omj", "", "list all maps in json format",
 	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
-	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
-	"omn.", "([-|name])", "show/set/delete name for current map",
-	"omni", " mapid [name]", "set/delete name for map with mapid",
+	"omn", "[?] ([id]) [name]", "manage map names",
 	"omo", " fd", "map the given fd with lowest priority",
 	"omp", " mapid", "prioritize map with corresponding id",
 	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
@@ -933,7 +939,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		cmd_om (core, input);
 		break;
 	case 'n': // "omn"
-		if (input[2] == '.') { // "omn."
+		if (input[2] == '?') { // "omn?"
+			r_core_cmd_help (core, help_msg_omn);
+		} else if (input[2] == '.') { // "omn."
 			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				switch (input[3]) {
@@ -950,7 +958,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		} else {
 			bool use_id = (input[2] == 'i') ? true : false;
-			s = strdup ( use_id ? &input[3] : &input[2]);
+			s = strdup (use_id ? input + 3 : input + 2);
 			if (!s) {
 				break;
 			}
