@@ -27,13 +27,13 @@ typedef struct r_io_zip_uri_const_t {
 
 static RIOZipConstURI ZIP_URIS[] = {
 	{"zip://", 6},
-	{"apk://", 6},
 	{"ipa://", 6},
 	{"jar://", 6},
 	{NULL, 0}
 };
 
 static RIOZipConstURI ZIP_ALL_URIS[] = {
+	{"apk://", 6},
 	{"zipall://", 9},
 	{"apkall://", 9},
 	{"ipaall://", 9},
@@ -296,7 +296,7 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	// 1) Tokenize to the '//' and find the base file directory ('/')
-	zip_filename = strstr(zip_uri, "//");
+	zip_filename = strstr (zip_uri, "//");
 	if (zip_filename && zip_filename[2]) {
 		if (zip_filename[0] && zip_filename[0] == '/' &&
 			zip_filename[1] && zip_filename[1] == '/' ) {
@@ -331,8 +331,10 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 		if (zfo) {
 			zfo->io_backref = io;
 			bool append = false;
-			if (r_str_startswith (file, "apkall://")) {
-				if (r_str_endswith (zfo->name, ".dex")) {
+			if (r_str_startswith (file, "apkall://") || r_str_startswith (file, "apk://")) {
+				if (!strcmp (zfo->name, "AndroidManifest.xml")) {
+					append = true;
+				} else if (r_str_endswith (zfo->name, ".dex")) {
 					append = true;
 				}
 			} else {
@@ -399,23 +401,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		zip_filename = tmp ? strdup (tmp) : NULL;
 		// 1) Tokenize to the '//' and find the base file directory ('/')
 		if (!zip_filename) {
-			if (r_str_startswith (zip_uri, "apk://")) {
-				RListIter *iter;
-				char *name;
-				RList *files = r_io_zip_get_files (pikaboo + 3, 0, mode, rw );
-				if (files) {
-					r_list_foreach (files, iter, name) {
-						if (r_str_startswith (name, "classes") && r_str_endswith (name, ".dex")) {
-							if (strcmp (name, "classes.dex")) {
-								eprintf ("Warning: This is a multidex APK, you may want to use apkall:// instead\n");
-								break;
-							}
-						}
-					}
-				}
-				r_list_free (files);
-				zip_filename = r_str_newf ("//%s//classes.dex", pikaboo + 3);
-			} else if (r_str_startswith (zip_uri, "ipa://")) {
+			if (r_str_startswith (zip_uri, "ipa://")) {
 				RListIter *iter;
 				char *name;
 				zip_filename = strdup (pikaboo + 3);
