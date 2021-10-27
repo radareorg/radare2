@@ -1832,7 +1832,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		if (buf->data[0] && buf->data[strlen (buf->data) - 1] != ' ' && !strchr (buf->data, ' ')) {
 			r_line_completion_clear (completion);
 			char *s = r_core_cmd_strf (core, "%s?", buf->data);
-			eprintf ("%s %s\n%s", core->cons->line->prompt, buf->data, s);
+			eprintf ("%s%s\n%s", core->cons->line->prompt, buf->data, s);
 			free (s);
 			return;
 		}
