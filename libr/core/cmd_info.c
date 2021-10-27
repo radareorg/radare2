@@ -831,6 +831,7 @@ static int cmd_info(void *data, const char *input) {
 				if (!obj) {
 					continue;
 				}
+				core->bin->cur = bf;
 				// Case for isj.
 				if (input[1] == 'j' && input[2] == '.') {
 					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
@@ -1036,23 +1037,78 @@ static int cmd_info(void *data, const char *input) {
 			  }
 			break;
 		case 'M': // "iM"
-			RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0);
+			  {
+				  RList *objs = r_core_bin_files (core);
+				  RListIter *iter;
+				  RBinFile *bf;
+				  RBinFile *cur = core->bin->cur;
+				  r_list_foreach (objs, iter, bf) {
+					  core->bin->cur = bf;
+					  RBININFO ("main", R_CORE_BIN_ACC_MAIN, NULL, 0);
+				  }
+				  core->bin->cur = cur;
+				  r_list_free (objs);
+			  }
 			break;
 		case 'm': // "im"
-			RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL, 0);
+			  {
+				  RList *objs = r_core_bin_files (core);
+				  RListIter *iter;
+				  RBinFile *bf;
+				  RBinFile *cur = core->bin->cur;
+				  r_list_foreach (objs, iter, bf) {
+					  core->bin->cur = bf;
+					  RBININFO ("memory", R_CORE_BIN_ACC_MEM, NULL, 0);
+				  }
+				  core->bin->cur = cur;
+				  r_list_free (objs);
+			  }
 			break;
 		case 'w': // "iw"
-			RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
+			  {
+				  RList *objs = r_core_bin_files (core);
+				  RListIter *iter;
+				  RBinFile *bf;
+				  RBinFile *cur = core->bin->cur;
+				  r_list_foreach (objs, iter, bf) {
+					  core->bin->cur = bf;
+					  RBININFO ("trycatch", R_CORE_BIN_ACC_TRYCATCH, NULL, 0);
+				  }
+				  core->bin->cur = cur;
+				  r_list_free (objs);
+			  }
 			break;
 		case 'V': // "iV"
-			RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
+			  {
+				  RList *objs = r_core_bin_files (core);
+				  RListIter *iter;
+				  RBinFile *bf;
+				  RBinFile *cur = core->bin->cur;
+				  r_list_foreach (objs, iter, bf) {
+					  core->bin->cur = bf;
+					  RBININFO ("versioninfo", R_CORE_BIN_ACC_VERSIONINFO, NULL, 0);
+				  }
+				  core->bin->cur = cur;
+				  r_list_free (objs);
+			  }
 			break;
 		case 'T': // "iT"
 		case 'C': // "iC" // rabin2 -C create // should be deprecated and just use iT (or find a better name)
-			RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL, 0);
+			  {
+				  RList *objs = r_core_bin_files (core);
+				  RListIter *iter;
+				  RBinFile *bf;
+				  RBinFile *cur = core->bin->cur;
+				  r_list_foreach (objs, iter, bf) {
+					  core->bin->cur = bf;
+					  RBININFO ("signature", R_CORE_BIN_ACC_SIGNATURE, NULL, 0);
+				  }
+				  core->bin->cur = cur;
+				  r_list_free (objs);
+			  }
 			break;
 		case 'z': // "iz"
-			if (input[1] == '-') { //iz-
+			if (input[1] == '-') { // "iz-"
 				char *strpurge = core->bin->strpurge;
 				ut64 addr = core->offset;
 				bool old_tmpseek = core->tmpseek;
@@ -1200,6 +1256,7 @@ static int cmd_info(void *data, const char *input) {
 					RBinClass *cls;
 					RBinSymbol *sym;
 					RListIter *iter, *iter2;
+					core->bin->cur = bf;
 					//RBinObject *obj = r_bin_cur_object (core->bin);
 					if (!obj) {
 						break;
