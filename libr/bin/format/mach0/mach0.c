@@ -2556,7 +2556,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 					}
 					name = r_str_append (name, s->label);
 				}
-				if (name == NULL) {
+				if (!name) {
 					bprintf ("malformed export trie %d\n", __LINE__);
 					goto beach;
 				}
