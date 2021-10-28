@@ -21,7 +21,6 @@ if get_option('enable_tests')
     'cmd',
     'cmd_str',
     'cons',
-    'contrbtree',
     'debruijn',
     'debug',
     'debug_session',
