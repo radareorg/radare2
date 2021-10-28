@@ -212,7 +212,7 @@ RAsmPlugin r_asm_plugin_arm_gnu = {
 	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2",
 	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.desc = "Acorn RISC Machine CPU",
+	.desc = "GNU Disassembler for ARM, Thumb and Aarch64",
 	.disassemble = &disassemble,
 	.license = "GPL3"
 };
