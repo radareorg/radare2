@@ -142,6 +142,53 @@ a = (b << 3) * 5;
 +         : r_debug_step (dbg, 1);
 ```
 
+* When breaking up a long line, use a single additional tab if the current and
+  next lines are aligned. Do not align start of line using spaces.
+
+```diff
+- x = function_with_long_signature_and_many_args (arg1, arg2, arg3, arg4, arg5,
+-                                                 arg6, arg7, arg8);
+- y = z;
++ x = function_with_long_signature_and_many_args (arg1, arg2, arg3, arg4, arg5,
++         arg6, arg7, arg8);
++ y = z;
+```
+
+* Use two additional tabs if the next line is indented to avoid confusion with
+  control flow.
+
+```diff
+- if (function_with_long_signature_and_many_args (arg1, arg2, arg3, arg4, arg5,
+-         arg6, arg7, arg8)) {
+-         do_stuff ();
+- }
++ if (function_with_long_signature_and_many_args (arg1, arg2, arg3, arg4, arg5,
++                 arg6, arg7, arg8)) {
++         do_stuff ();
++ }
+```
+
+* When following the above guideline, if additional indentation is needed on
+  consecutive lines, use a single tab for each nested level. Avoid heavy
+  nesting in this manner.
+
+```diff
+- if (condition_1
+-                 && condition_2
+-                 && condition_3
+-                 && (condition_4
+-                                 || condition_5)) {
+-         do_stuff ();
+- }
++ if (condition_1
++                 && condition_2
++                 && condition_3
++                 && (condition_4
++                         || condition_5)) {
++         do_stuff ();
++ }
+```
+
 * Split long conditional expressions into small `static inline` functions to make them more readable:
 
 ```diff
