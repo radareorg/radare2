@@ -1646,7 +1646,7 @@ static void populate_cache_maps(RDyldCache *cache) {
 	}
 
 	ut32 next_map = 0;
-	ut32 last_idx;
+	ut32 last_idx = UT32_MAX;
 	ut64 max_address = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
@@ -1674,7 +1674,11 @@ static void populate_cache_maps(RDyldCache *cache) {
 
 	cache->maps = maps;
 	cache->n_maps = next_map;
-	cache->symbols_off_base = cache->hdr_offset[last_idx];
+	if (last_idx == UT32_MAX) {
+		cache->symbols_off_base = 0;
+	} else {
+		cache->symbols_off_base = cache->hdr_offset[last_idx];
+	}
 }
 
 static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps) {
