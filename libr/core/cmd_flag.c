@@ -154,21 +154,21 @@ static size_t countMatching (const char *a, const char *b) {
 }
 
 static const char *__isOnlySon(RCore *core, RList *flags, const char *kw) {
-        RListIter *iter;
-        RFlagItem *f;
+	RListIter *iter;
+	RFlagItem *f;
 
-        size_t count = 0;
-        char *fname = NULL;
-        r_list_foreach (flags, iter, f) {
-                if (!strncmp (f->name, kw, strlen (kw))) {
-                        count++;
-                        if (count > 1) {
-                                return NULL;
-                        }
-                        fname = f->name;
-                }
-        }
-        return fname;
+	size_t count = 0;
+	char *fname = NULL;
+	r_list_foreach (flags, iter, f) {
+		if (!strncmp (f->name, kw, strlen (kw))) {
+			count++;
+			if (count > 1) {
+				return NULL;
+			}
+			fname = f->name;
+		}
+	}
+	return fname;
 }
 
 static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
@@ -896,7 +896,7 @@ rep:
 			r_core_cmd_help (core, help_msg_fR);
 			break;
 		default:
-            {
+	    {
 				char *p = strchr (str+1, ' ');
 				ut64 from, to, mask = 0xffff;
 				int ret;

@@ -298,25 +298,25 @@ capstone bug
 }
 
 static void set_opdir(RAnalOp *op) {
-        switch (op->type & R_ANAL_OP_TYPE_MASK) {
-        case R_ANAL_OP_TYPE_LOAD:
-                op->direction = R_ANAL_OP_DIR_READ;
-                break;
-        case R_ANAL_OP_TYPE_STORE:
-                op->direction = R_ANAL_OP_DIR_WRITE;
-                break;
-        case R_ANAL_OP_TYPE_LEA:
-                op->direction = R_ANAL_OP_DIR_REF;
-                break;
-        case R_ANAL_OP_TYPE_CALL:
-        case R_ANAL_OP_TYPE_JMP:
-        case R_ANAL_OP_TYPE_UJMP:
-        case R_ANAL_OP_TYPE_UCALL:
-                op->direction = R_ANAL_OP_DIR_EXEC;
-                break;
-        default:
-                break;
-        }
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_LOAD:
+		op->direction = R_ANAL_OP_DIR_READ;
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		op->direction = R_ANAL_OP_DIR_WRITE;
+		break;
+	case R_ANAL_OP_TYPE_LEA:
+		op->direction = R_ANAL_OP_DIR_REF;
+		break;
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_UCALL:
+		op->direction = R_ANAL_OP_DIR_EXEC;
+		break;
+	default:
+		break;
+	}
 }
 
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {

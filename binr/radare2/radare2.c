@@ -45,35 +45,35 @@ void r2_asmjs_openurl(void *kore, const char *url) {
 }
 #else
 static void r2cmd(int in, int out, const char *cmd) {
-        write (out, cmd, strlen (cmd) + 1);
-        write (out, "\n", 1);
-        int bufsz = (1024 * 64);
-        unsigned char *buf = malloc (bufsz);
-        if (!buf) {
-                return;
-        }
-        while (1) {
-                int n = read (in, buf, bufsz);
-				buf[bufsz - 1] = '\0';
-                int len = strlen ((const char *)buf);
-                n = len;
-                if (n < 1) {
-                        break;
-                }
-                write (1, buf, n);
-			if (n != bufsz) {
-				break;
-			}
-        }
-        free (buf);
-        write (1, "\n", 1);
+	write (out, cmd, strlen (cmd) + 1);
+	write (out, "\n", 1);
+	int bufsz = (1024 * 64);
+	unsigned char *buf = malloc (bufsz);
+	if (!buf) {
+		return;
+	}
+	while (1) {
+		int n = read (in, buf, bufsz);
+		buf[bufsz - 1] = '\0';
+		int len = strlen ((const char *)buf);
+		n = len;
+		if (n < 1) {
+			break;
+		}
+		write (1, buf, n);
+		if (n != bufsz) {
+			break;
+		}
+	}
+	free (buf);
+	write (1, "\n", 1);
 }
 
 static int r_main_r2pipe(int argc, const char **argv) {
-        int i, rc = 0;
-        char *_in = r_sys_getenv ("R2PIPE_IN");
-        char *_out = r_sys_getenv ("R2PIPE_OUT");
-        if (R_STR_ISNOTEMPTY (_in) && R_STR_ISNOTEMPTY (_out)) {
+	int i, rc = 0;
+	char *_in = r_sys_getenv ("R2PIPE_IN");
+	char *_out = r_sys_getenv ("R2PIPE_OUT");
+	if (R_STR_ISNOTEMPTY (_in) && R_STR_ISNOTEMPTY (_out)) {
 		int in = atoi (_in);
 		int out = atoi (_out);
 		for (i = 1; i < argc; i++) {

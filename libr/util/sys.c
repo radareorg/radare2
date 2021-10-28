@@ -917,7 +917,7 @@ R_API void r_sys_perror_str(const char *fun) {
 		char *err = r_sys_conv_win_to_utf8 (lpMsgBuf);
 		if (err) {
 			eprintf ("%s: (%#lx) %s%s", fun, dw, err,
-			         r_str_endswith (err, "\n") ? "" : "\n");
+				r_str_endswith (err, "\n") ? "" : "\n");
 			free (err);
 		}
 		LocalFree (lpMsgBuf);
@@ -1048,14 +1048,14 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 	} else {
 		R_SYS_ASM_START_ROP ();
 		exit (0);
-                return 0;
+		return 0;
 	}
 	st = 0;
 	if (waitpid (pid, &st, 0) == -1) {
-            eprintf ("r_sys_run_rop: waitpid failed\n");
-            free (bufptr);
-            return -1;
-        }
+		eprintf ("r_sys_run_rop: waitpid failed\n");
+		free (bufptr);
+		return -1;
+	}
 	if (WIFSIGNALED (st)) {
 		int num = WTERMSIG (st);
 		eprintf ("Got signal %d\n", num);

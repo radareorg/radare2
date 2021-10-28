@@ -832,92 +832,92 @@ static ut8 *get_strings(RCore *c, int *len) {
 }
 
 static char *get_graph_commands(RCore *c, ut64 off) {
-        bool tmp_html = r_cons_context ()->is_html;
-        r_cons_context ()->is_html = false;
-        r_cons_push ();
-        r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF |  R_CORE_ANAL_STAR);
-        const char *static_str = r_cons_get_buffer ();
-        char *retstr = strdup (r_str_get (static_str));
-        r_cons_pop ();
-        r_cons_echo (NULL);
-        r_cons_context ()->is_html = tmp_html;
-        return retstr;
+	bool tmp_html = r_cons_context ()->is_html;
+	r_cons_context ()->is_html = false;
+	r_cons_push ();
+	r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF |  R_CORE_ANAL_STAR);
+	const char *static_str = r_cons_get_buffer ();
+	char *retstr = strdup (r_str_get (static_str));
+	r_cons_pop ();
+	r_cons_echo (NULL);
+	r_cons_context ()->is_html = tmp_html;
+	return retstr;
 }
 
 static void __generate_graph(RCore *c, ut64 off) {
-        r_return_if_fail (c);
-        char *ptr = get_graph_commands (c, off);
+	r_return_if_fail (c);
+	char *ptr = get_graph_commands (c, off);
 	char *str = ptr;
-        r_cons_break_push (NULL, NULL);
-        if (str) {
-                for (;;) {
-                        if (r_cons_is_breaked ()) {
-                                break;
-                        }
-                        char *eol = strchr (ptr, '\n');
-                        if (eol) {
-                                *eol = '\0';
-                        }
-                        if (*ptr) {
-                                char *p = strdup (ptr);
-                                if (!p) {
-                                        free (str);
-                                        return;
-                                }
-                                r_core_cmd0 (c, p);
-                                free (p);
-                        }
-                        if (!eol) {
-                                break;
-                        }
-                        ptr = eol + 1;
-                }
+	r_cons_break_push (NULL, NULL);
+	if (str) {
+		for (;;) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+			char *eol = strchr (ptr, '\n');
+			if (eol) {
+				*eol = '\0';
+			}
+			if (*ptr) {
+				char *p = strdup (ptr);
+				if (!p) {
+					free (str);
+					return;
+				}
+				r_core_cmd0 (c, p);
+				free (p);
+			}
+			if (!eol) {
+				break;
+			}
+			ptr = eol + 1;
+		}
 		free (str);
-        }
-        r_cons_break_pop ();
+	}
+	r_cons_break_pop ();
 }
 
 static void __print_diff_graph(RCore *c, ut64 off, int gmode) {
-        int opts = R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF;
-        int use_utf8 = r_config_get_i (c->config, "scr.utf8");
-        r_agraph_reset(c->graph);
-        switch (gmode) {
-        case GRAPH_DOT_MODE:
-                r_core_anal_graph (c, off, opts);
-                break;
-        case GRAPH_STAR_MODE:
-                r_core_anal_graph (c, off, opts |  R_CORE_ANAL_STAR);
-                break;
-        case GRAPH_TINY_MODE:
-                __generate_graph (c, off);
-                r_core_agraph_print (c, use_utf8, "t");
-                break;
-        case GRAPH_INTERACTIVE_MODE:
-                __generate_graph (c, off);
-                r_core_agraph_print (c, use_utf8, "v");
-                r_cons_reset_colors ();
-                break;
-        case GRAPH_SDB_MODE:
-                __generate_graph (c, off);
-                r_core_agraph_print (c, use_utf8, "k");
-                break;
-        case GRAPH_GML_MODE:
-                __generate_graph (c, off);
-                r_core_agraph_print (c, use_utf8, "g");
-                break;
-        case GRAPH_JSON_MODE:
-                r_core_anal_graph (c, off, opts | R_CORE_ANAL_JSON);
-                break;
-        case GRAPH_JSON_DIS_MODE:
-                r_core_anal_graph (c, off, opts | R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
-                break;
-        case GRAPH_DEFAULT_MODE:
-        default:
-                __generate_graph (c, off);
-                r_core_agraph_print (c, use_utf8, "");
-                r_cons_reset_colors ();
-        	break;
-        }
+	int opts = R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF;
+	int use_utf8 = r_config_get_i (c->config, "scr.utf8");
+	r_agraph_reset(c->graph);
+	switch (gmode) {
+	case GRAPH_DOT_MODE:
+		r_core_anal_graph (c, off, opts);
+		break;
+	case GRAPH_STAR_MODE:
+		r_core_anal_graph (c, off, opts |  R_CORE_ANAL_STAR);
+		break;
+	case GRAPH_TINY_MODE:
+		__generate_graph (c, off);
+		r_core_agraph_print (c, use_utf8, "t");
+		break;
+	case GRAPH_INTERACTIVE_MODE:
+		__generate_graph (c, off);
+		r_core_agraph_print (c, use_utf8, "v");
+		r_cons_reset_colors ();
+		break;
+	case GRAPH_SDB_MODE:
+		__generate_graph (c, off);
+		r_core_agraph_print (c, use_utf8, "k");
+		break;
+	case GRAPH_GML_MODE:
+		__generate_graph (c, off);
+		r_core_agraph_print (c, use_utf8, "g");
+		break;
+	case GRAPH_JSON_MODE:
+		r_core_anal_graph (c, off, opts | R_CORE_ANAL_JSON);
+		break;
+	case GRAPH_JSON_DIS_MODE:
+		r_core_anal_graph (c, off, opts | R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
+		break;
+	case GRAPH_DEFAULT_MODE:
+	default:
+		__generate_graph (c, off);
+		r_core_agraph_print (c, use_utf8, "");
+		r_cons_reset_colors ();
+		break;
+	}
 }
 
 static void radiff_options_init(RadiffOptions *ro) {
@@ -989,19 +989,19 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			addr = opt.arg;
 			break;
 		case 'm':{
-		        const char *tmp = opt.arg;
-		        switch (tmp[0]) {
-	                case 'i': ro.gmode = GRAPH_INTERACTIVE_MODE; break;
-	                case 'k': ro.gmode = GRAPH_SDB_MODE; break;
-	                case 'j': ro.gmode = GRAPH_JSON_MODE; break;
-	                case 'J': ro.gmode = GRAPH_JSON_DIS_MODE; break;
-	                case 't': ro.gmode = GRAPH_TINY_MODE; break;
-	                case 'd': ro.gmode = GRAPH_DOT_MODE; break;
-	                case 's': ro.gmode = GRAPH_STAR_MODE; break;
-	                case 'g': ro.gmode = GRAPH_GML_MODE; break;
-	                case 'a':
-                        default: ro.gmode = GRAPH_DEFAULT_MODE; break;
-		        }
+			const char *tmp = opt.arg;
+			switch (tmp[0]) {
+			case 'i': ro.gmode = GRAPH_INTERACTIVE_MODE; break;
+			case 'k': ro.gmode = GRAPH_SDB_MODE; break;
+			case 'j': ro.gmode = GRAPH_JSON_MODE; break;
+			case 'J': ro.gmode = GRAPH_JSON_DIS_MODE; break;
+			case 't': ro.gmode = GRAPH_TINY_MODE; break;
+			case 'd': ro.gmode = GRAPH_DOT_MODE; break;
+			case 's': ro.gmode = GRAPH_STAR_MODE; break;
+			case 'g': ro.gmode = GRAPH_GML_MODE; break;
+			case 'a':
+			default: ro.gmode = GRAPH_DEFAULT_MODE; break;
+			}
 		}       break;
 		case 'G':
 			ro.runcmd = opt.arg;

@@ -32,9 +32,9 @@ Usage Example:
 
 #if !__WINDOWS__
 static void env(const char *s, int f) {
-        char *a = r_str_newf ("%d", f);
-        r_sys_setenv (s, a);
-        free (a);
+	char *a = r_str_newf ("%d", f);
+	r_sys_setenv (s, a);
+	free (a);
 }
 #endif
 

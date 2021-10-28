@@ -784,7 +784,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 
 	GHT bin = main_arena->GH(fastbinsY)[bin_num];
 	if (!bin) {
-        free (cnk);
+		free (cnk);
 		return -1;
 	}
 

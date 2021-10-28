@@ -13,9 +13,9 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 			return 1;
 		}
 		if (buf[3] == 0xff  /* bits 4-5 (from right) of next byte must be 01 */
-		    && ((buf[4] & 0xf0) == 0xd0  /* Mod is 11 */
-		        || ((buf[4] & 0xf0) == 0x10  /* Mod is 00 */
-		            && (buf[4] & 0x06) != 0x04))) {  /* R/M not 10x */
+				&& ((buf[4] & 0xf0) == 0xd0  /* Mod is 11 */
+					|| ((buf[4] & 0xf0) == 0x10  /* Mod is 00 */
+						&& (buf[4] & 0x06) != 0x04))) {  /* R/M not 10x */
 			return 1;
 		}
 		// IMMAMISSINGANYOP

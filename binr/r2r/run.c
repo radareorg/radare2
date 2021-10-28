@@ -1192,7 +1192,7 @@ R_API bool r2r_test_broken(R2RTest *test) {
 	case R2R_TEST_TYPE_CMD:
 		return test->cmd_test->broken.value;
 	case R2R_TEST_TYPE_ASM:
-		return test->asm_test->mode & R2R_ASM_TEST_MODE_BROKEN ? true : false;
+		return test->asm_test->mode & R2R_ASM_TEST_MODE_BROKEN? true: false;
 	case R2R_TEST_TYPE_JSON:
 		return test->json_test->broken;
 	case R2R_TEST_TYPE_FUZZ:
@@ -1200,6 +1200,18 @@ R_API bool r2r_test_broken(R2RTest *test) {
 	}
 	return false;
 }
+
+#if ASAN
+static bool check_cmd_asan_result(R2RProcessOutput *out) {
+	bool stdout_success = !out->out || (!strstr (out->out, "WARNING:")
+			&& !strstr (out->out, "ERROR:")
+			&& !strstr (out->out, "FATAL:"));
+	bool stderr_success = !out->err || (!strstr (out->err, "Sanitizer")
+			&& !strstr (out->err, "runtime error:");
+
+	return stdout_success && stderr_success;
+}
+#endif
 
 R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	R2RTestResultInfo *ret = R_NEW0 (R2RTestResultInfo);
@@ -1279,18 +1291,14 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 # error R2_ASSERT_STDOUT undefined or 0
 # endif
 	R2RProcessOutput *out = ret->proc_out;
-	if (!success && test->type == R2R_TEST_TYPE_CMD && strstr (test->path, "/dbg")
-	    && (!out->out ||
-	        (!strstr (out->out, "WARNING:") && !strstr (out->out, "ERROR:") && !strstr (out->out, "FATAL:")))
-	    && (!out->err ||
-	        (!strstr (out->err, "Sanitizer") && !strstr (out->err, "runtime error:")))) {
-		broken = true;
+	if (!success && test->type == R2R_TEST_TYPE_CMD && strstr (test->path, "/dbg")) {
+		broken = check_cmd_asan_result (out);
 	}
 #endif
 	if (success) {
-		ret->result = broken ? R2R_TEST_RESULT_FIXED : R2R_TEST_RESULT_OK;
+		ret->result = broken? R2R_TEST_RESULT_FIXED: R2R_TEST_RESULT_OK;
 	} else {
-		ret->result = broken ? R2R_TEST_RESULT_BROKEN : R2R_TEST_RESULT_FAILED;
+		ret->result = broken? R2R_TEST_RESULT_BROKEN: R2R_TEST_RESULT_FAILED;
 	}
 	return ret;
 }

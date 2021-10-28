@@ -537,7 +537,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		case 'H':
 			main_print_var (opt.arg);
 			LISTS_FREE ();
-            free (debugbackend);
+			free (debugbackend);
 			return 0;
 		case 'i':
 			if (R_STR_ISEMPTY (opt.arg)) {

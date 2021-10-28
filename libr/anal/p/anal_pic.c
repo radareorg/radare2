@@ -25,14 +25,14 @@ typedef struct _pic_midrange_op_anal_info {
 	pic_midrange_inst_handler_t handler;
 } PicMidrangeOpAnalInfo;
 
-#define INST_HANDLER(OPCODE_NAME)                                            \
-	static void _inst__##OPCODE_NAME (RAnal *anal, RAnalOp *op,          \
-					  ut64 addr,                         \
+#define INST_HANDLER(OPCODE_NAME)					\
+	static void _inst__##OPCODE_NAME (RAnal *anal, RAnalOp *op,	\
+					  ut64 addr,			\
 					  PicMidrangeOpArgsVal *args)
-#define INST_DECL(NAME, ARGS)                                                \
-	{                                                                    \
-		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS,     \
-			_inst__##NAME                                        \
+#define INST_DECL(NAME, ARGS)							\
+	{									\
+		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS,	\
+			_inst__##NAME						\
 	}
 
 #define e(frag) r_strbuf_append (&op->esil, frag)
@@ -45,30 +45,30 @@ typedef struct _pic_midrange_op_anal_info {
 
 #define PIC_MIDRANGE_ESIL_OPTION_ADDR "0x95,_sram,+"
 
-#define PIC_MIDRANGE_ESIL_UPDATE_FLAGS                                       \
-	"$z,z,:=,"                                                            \
-	"7,$c,c,:=,"                                                           \
+#define PIC_MIDRANGE_ESIL_UPDATE_FLAGS	\
+	"$z,z,:=,"			\
+	"7,$c,c,:=,"			\
 	"4,$c,dc,:=,"
 
-#define PIC_MIDRANGE_ESIL_LW_OP(O)                                           \
+#define PIC_MIDRANGE_ESIL_LW_OP(O)				\
 	"0x%x,wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_FWF_OP(O)                                          \
-	"wreg," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O                            \
+#define PIC_MIDRANGE_ESIL_FWF_OP(O)			\
+	"wreg," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O	\
 	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_WWF_OP(O)                                          \
-	PIC_MIDRANGE_ESIL_BSR_ADDR                                           \
-	",[1],"                                                              \
+#define PIC_MIDRANGE_ESIL_WWF_OP(O)			\
+	PIC_MIDRANGE_ESIL_BSR_ADDR			\
+	",[1],"						\
 	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_FWF_OP_C(O)                                        \
-	"c,wreg,"                                                            \
-	"+," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O                               \
+#define PIC_MIDRANGE_ESIL_FWF_OP_C(O)		\
+	"c,wreg,"				\
+	"+," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O	\
 	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_WWF_OP_C(O)                                        \
-	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O ","                       \
+#define PIC_MIDRANGE_ESIL_WWF_OP_C(O)			\
+	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O ","	\
 	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
 INST_HANDLER (NOP) {}

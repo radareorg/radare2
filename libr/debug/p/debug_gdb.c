@@ -432,7 +432,7 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 		return false;
 	}
 	bpsize = b->size;
-        // TODO handle conditions
+	// TODO handle conditions
 	switch (b->perm) {
 	case R_BP_PROT_EXEC : {
 		if (set) {

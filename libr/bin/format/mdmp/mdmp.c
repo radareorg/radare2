@@ -904,7 +904,7 @@ static bool r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj) {
 	size_t max_entries = R_MIN (obj->hdr->number_of_streams, bytes_left / sizeof (struct minidump_directory));
 	if (max_entries < obj->hdr->number_of_streams) {
 		eprintf ("[ERROR] Number of streams = %u is greater than is supportable by bin size\n",
-		         obj->hdr->number_of_streams);
+				obj->hdr->number_of_streams);
 	}
 	/* Parse each entry in the directory */
 	for (i = 0; i < max_entries; i++) {

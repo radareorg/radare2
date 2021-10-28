@@ -528,7 +528,7 @@ R_API bool r_cons_get_click(int *x, int *y) {
 }
 
 R_API void r_cons_enable_highlight(const bool enable) {
-        I.enable_highlight = enable;
+	I.enable_highlight = enable;
 }
 
 R_API bool r_cons_enable_mouse(const bool enable) {

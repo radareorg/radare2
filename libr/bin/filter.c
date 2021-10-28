@@ -333,7 +333,7 @@ loop_end:
 			return false;
 		}
 		break;
-        case 'i': //IPV4
+	case 'i': //IPV4
 		{
 			int segment = 0;
 			int segmentsum = 0;

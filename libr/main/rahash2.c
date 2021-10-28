@@ -660,7 +660,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					if (str != hashstr) {
 						free (str);
 					}
-                    free (iv);
+					free (iv);
 					return 1;
 				}
 				pj_a (pj);

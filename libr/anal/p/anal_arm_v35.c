@@ -742,7 +742,7 @@ static void set_opdir(RAnalOp *op) {
 		break;
 	default:
 		break;
-        }
+	}
 }
 
 
@@ -1220,14 +1220,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		int size = REGSIZE64 (1);
 #if 0
 		r_strbuf_setf (&op->esil,
-			"0,%s,=,"                        // dst = 0
-			"%d,"                            // initial counter = size
-			"DUP,"                           // counter: size -> 0 (repeat here)
-				"DUP,1,SWAP,-,8,*,"          // counter to bits in source
-					"DUP,0xff,<<,%s,&,>>,"   // src byte moved to LSB
-				"SWAP,%d,-,8,*,"             // invert counter, calc dst bit
-				"SWAP,<<,%s,|=,"             // shift left to there and insert
-			"4,REPEAT",                      // goto 5th instruction
+			"0,%s,=,"               // dst = 0
+			"%d,"                   // initial counter = size
+			"DUP,"                  // counter: size -> 0 (repeat here)
+			"DUP,1,SWAP,-,8,*,"     // counter to bits in source
+			"DUP,0xff,<<,%s,&,>>,"  // src byte moved to LSB
+			"SWAP,%d,-,8,*,"        // invert counter, calc dst bit
+			"SWAP,<<,%s,|=,"        // shift left to there and insert
+			"4,REPEAT",             // goto 5th instruction
 			r0, size, r1, size, r0);
 #endif
 		if (size == 8) {
@@ -2109,39 +2109,43 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	}
 	case ARM64_BIC:
-        if (OPCOUNT64 () == 2) {
-            if (REGSIZE64 (0) == 4) {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=", REG64 (1), REG64 (0));
-            } else {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=", REG64 (1), REG64 (0));
-            }
-        } else {
-            if (REGSIZE64 (0) == 4) {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=", REG64 (2), REG64 (1), REG64 (0));
-            } else {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=", REG64 (2), REG64 (1), REG64 (0));
-            }
-        }
-        break;
+	if (OPCOUNT64 () == 2) {
+		if (REGSIZE64 (0) == 4) {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=",
+					REG64 (1), REG64 (0));
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=",
+					REG64 (1), REG64 (0));
+		}
+	} else {
+		if (REGSIZE64 (0) == 4) {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=",
+					REG64 (2), REG64 (1), REG64 (0));
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=",
+					REG64 (2), REG64 (1), REG64 (0));
+		}
+	}
+	break;
 	case ARM64_CBZ:
 		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64u",pc,=,}",
-			REG64 (0), GETIMM64 (1));
+				REG64 (0), GETIMM64 (1));
 		break;
 	case ARM64_CBNZ:
 		r_strbuf_setf (&op->esil, "%s,?{,%"PFMT64u",pc,=,}",
-			REG64 (0), GETIMM64 (1));
+				REG64 (0), GETIMM64 (1));
 		break;
 	case ARM64_TBZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
 		r_strbuf_setf (&op->esil, "%" PFMT64u ",1,<<,%s,&,!,?{,%"PFMT64u",pc,=,}",
-			GETIMM64 (1), REG64 (0), GETIMM64 (2));
+				GETIMM64 (1), REG64 (0), GETIMM64 (2));
 		break;
 	case ARM64_TBNZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
 		r_strbuf_setf (&op->esil, "%" PFMT64u ",1,<<,%s,&,?{,%"PFMT64u",pc,=,}",
-			GETIMM64 (1), REG64 (0), GETIMM64 (2));
+				GETIMM64 (1), REG64 (0), GETIMM64 (2));
 		break;
 	case ARM64_STNP:
 	case ARM64_STP: // stp x6, x7, [x6,0xf90]
@@ -2155,7 +2159,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			// "stp x2, x3, [x8, 0x20]!
 			// "32,x8,+=,x2,x8,=[8],x3,x8,8,+,=[8]",
 			r_strbuf_setf(&op->esil,
-					"%"PFMT64u",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
+					"%" PFMT64u ",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
 					abs, MEMBASE64 (2), sign,
 					REG64 (0), MEMBASE64 (2), size,
 					REG64 (1), MEMBASE64 (2), size, size);

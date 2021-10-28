@@ -509,12 +509,12 @@ R_API RLibStruct radare_plugin = {
 #if __APPLE__
 // mach/mach_vm.h not available for iOS
 kern_return_t mach_vm_region_recurse (
-        vm_map_t target_task,
-        mach_vm_address_t *address,
-        mach_vm_size_t *size,
-        natural_t *depth,
-        vm_region_recurse_info_t info,
-        mach_msg_type_number_t *infoCnt
+	vm_map_t target_task,
+	mach_vm_address_t *address,
+	mach_vm_size_t *size,
+	natural_t *depth,
+	vm_region_recurse_info_t info,
+	mach_msg_type_number_t *infoCnt
 );
 // TODO: unify that implementation in a single reusable place
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max) {

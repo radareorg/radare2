@@ -3069,7 +3069,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							if (isDisasmPrint (core->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
 							} else if (!strcmp (__core_visual_print_command (core),
-							                    "prc")) {
+									"prc")) {
 								cols = r_config_get_i (core->config, "hex.cols");
 							}
 							r_core_seek (core, core->offset + cols, true);

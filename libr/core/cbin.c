@@ -1405,7 +1405,8 @@ static int bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin
 			type = "unknown";
 		}
 		const char *hpaddr_key = (entry->type == R_BIN_ENTRY_TYPE_PROGRAM)
-		                ? "haddr" : "hpaddr";
+			? "haddr"
+			: "hpaddr";
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (r->flags, R_FLAGS_FS_SYMBOLS);
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
@@ -2924,7 +2925,8 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 			if (section->format) {
 				// This is damn slow if section vsize is HUGE
 				if (section->vsize < 1024 * 1024 * 2) {
-					r_core_cmdf (r, "%s @ 0x%"PFMT64x, section->format, section->vaddr);
+					r_core_cmdf (r, "%s @ 0x%" PFMT64x,
+							section->format, section->vaddr);
 				}
 			}
 			if (r->bin->prefix) {
@@ -2939,16 +2941,19 @@ static int bin_sections(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at,
 
 			if (!section->is_segment || segments_only) {
 				char *pfx = r->bin->prefix;
-				str = r_str_newf ("[%02d] %s %s size %" PFMT64d" named %s%s%s",
-				                  i, perms, type, size,
-				                  r_str_get (pfx), pfx ? "." : "", section->name);
+				str = r_str_newf ("[%02d] %s %s size %" PFMT64d " named %s%s%s",
+						i, perms, type, size,
+						r_str_get (pfx), pfx? ".": "", section->name);
 				r_meta_set (r->anal, R_META_TYPE_COMMENT, addr, 1, str);
 				R_FREE (str);
 			}
 			if (section->add) {
 				bool found;
-				str = r_str_newf ("%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
-					section->paddr, addr, section->size, section->vsize, section->perm, section->name, r->bin->cur->id, fd);
+				str = r_str_newf ("%" PFMT64x ".%" PFMT64x ".%" PFMT64x ".%" PFMT64x
+							".%" PFMT32u ".%s.%" PFMT32u ".%d",
+						section->paddr, addr, section->size,
+						section->vsize, section->perm, section->name,
+						r->bin->cur->id, fd);
 				ht_pp_find (dup_chk_ht, str, &found);
 				if (!found) {
 					// can't directly add maps because they

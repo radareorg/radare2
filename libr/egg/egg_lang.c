@@ -308,18 +308,18 @@ static void rcc_mathop(REgg *egg, char **pos, int level) {
 	} while (**pos && op_ret >= level);
 
 /* following code block sould not handle '-' and '/' well
-    if (op_ret < level) {
-        rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)) ,'=');
-        return;
-    }
-    op = *pos, *pos = '\x00', (*pos)++;
-    rcc_mathop(egg, pos, op_ret);
-    if (op_ret > level) {
-        rcc_internal_mathop(egg, p, strdup(e->regs(egg, op_ret-1)), op);
-        rcc_internal_mathop(egg, (char *)e->regs(egg, op_ret-1)
-                            , strdup(e->regs(egg, level-1)), '=');
-    }
-    else rcc_internal_mathop(egg, p, strdup(e->regs(egg, level-1)), op);
+	if (op_ret < level) {
+		rcc_internal_mathop (egg, p, strdup (e->regs (egg, level-1)), '=');
+		return;
+	}
+	op = *pos, *pos = '\x00', (*pos)++;
+	rcc_mathop (egg, pos, op_ret);
+	if (op_ret > level) {
+		rcc_internal_mathop (egg, p, strdup (e->regs (egg, op_ret-1)), op);
+		rcc_internal_mathop (egg, (char *)e->regs (egg, op_ret-1),
+				strdup (e->regs (egg, level-1)), '=');
+	}
+	else rcc_internal_mathop(egg, p, strdup (e->regs (egg, level-1)), op);
 */
 }
 
@@ -1128,14 +1128,16 @@ static void rcc_next(REgg *egg) {
 // fixed by izhuer
 		/*
 		if (ocn) { // Used to call .var0()
-		    // WTF? ocn mustn't be NULL here
-		    // XXX: Probably buggy and wrong
-		    *buf = 0;
-		    free (str);
-		    str = r_egg_mkvar (egg, buf, ocn, 0);
-		    if (*buf)
-		        e->get_result (egg, buf); // Why should get_result into ocn?
-		    //else { eprintf("external symbol %s\n", ocn); }
+			// WTF? ocn mustn't be NULL here
+			// XXX: Probably buggy and wrong
+			*buf = 0;
+			free (str);
+			str = r_egg_mkvar (egg, buf, ocn, 0);
+			if (*buf) {
+				e->get_result (egg, buf); // Why should get_result into ocn?
+			} else {
+				eprintf ("external symbol %s\n", ocn);
+			}
 		}
 		*/
 
@@ -1189,34 +1191,34 @@ static void rcc_next(REgg *egg) {
 				}
 				e->mathop (egg, '=', vs, type, e->regs (egg, 1), p);
 				free (p);
-				/*
-				    char str2[64], *p, ch = *(eq-1);
-				    *eq = '\0';
-				    eq = (char*) skipspaces (eq+1);
-				    p = r_egg_mkvar (egg, str2, ptr, 0);
-				    vs = egg->lang.varsize;
-				    if (is_var (eq)) {
-				        eq = r_egg_mkvar (egg, buf, eq, 0);
-				        if (egg->lang.varxs=='*')
-				            e->load (egg, eq, egg->lang.varsize);
-				        else
-				        // XXX this is a hack .. must be integrated with pusharg
-				        if (egg->lang.varxs=='&')
-				            e->load_ptr (egg, eq);
-				        if (eq) {
-				            R_FREE (eq);
-				        }
-				        type = ' ';
-				    } else type = '$';
-				    vs = 'l'; // XXX: add support for != 'l' size
+#if 0
+				char str2[64], *p, ch = *(eq-1);
+				*eq = '\0';
+				eq = (char*) skipspaces (eq+1);
+				p = r_egg_mkvar (egg, str2, ptr, 0);
+				vs = egg->lang.varsize;
+				if (is_var (eq)) {
+					eq = r_egg_mkvar (egg, buf, eq, 0);
+					if (egg->lang.varxs=='*') {
+						e->load (egg, eq, egg->lang.varsize);
+					} else if (egg->lang.varxs=='&') {
+						// XXX this is a hack .. must be integrated with pusharg
+						e->load_ptr (egg, eq);
+					}
+					R_FREE (eq);
+					type = ' ';
+				} else {
+					type = '$';
+				}
+				vs = 'l'; // XXX: add support for != 'l' size
 				eprintf("Getting into e->mathop with ch: %c\n", ch);
 				eprintf("Getting into e->mathop with vs: %c\n", vs);
 				eprintf("Getting into e->mathop with type: %c\n", type);
 				eprintf("Getting into e->mathop with eq: %s\n", eq);
 				eprintf("Getting into e->mathop with p: %s\n", p);
-				    e->mathop (egg, ch, vs, type, eq, p);
-				    free(p);
-				*/
+				e->mathop (egg, ch, vs, type, eq, p);
+				free(p);
+#endif
 			} else {
 				if (!strcmp (ptr, "break")) {	// handle 'break;'
 					e->trap (egg);

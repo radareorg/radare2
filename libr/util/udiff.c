@@ -467,9 +467,11 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 			const ut8 a_ch = a[col - 1];
 			const ut8 b_ch = b[row - 1];
 			const st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
-			                    + (a_ch == b_ch ?
-			                       (a_ch == '\n' ? match_nl : match) :
-			                       mismatch);
+				+ (a_ch == b_ch
+					? (a_ch == '\n'
+						? match_nl
+						: match)
+					: mismatch);
 			const st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
 			const st16 l_score = *(align_table + row * dim + col - 1) + gap;
 			st16 score;
@@ -627,14 +629,16 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 					printf ("%c", a_ch);
 				}
 			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
-				printf (a_ch == '\n' ?
-				        "%c"Color_HLDELETE :
-				        Color_HLDELETE"%c", a_ch);
+				printf (a_ch == '\n'
+						? "%c" Color_HLDELETE
+						: Color_HLDELETE "%c",
+					a_ch);
 				cur_mode = R2R_DIFF_DELETE;
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
-				printf (b_ch == '\n' ?
-				        "%c"Color_HLINSERT :
-				        Color_HLINSERT"%c", b_ch);
+				printf (b_ch == '\n'
+						? "%c" Color_HLINSERT
+						: Color_HLINSERT "%c",
+					b_ch);
 				cur_mode = R2R_DIFF_INSERT;
 			}
 		} else if (cur_mode == R2R_DIFF_DELETE) {
@@ -645,13 +649,15 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				}
 				cur_mode = R2R_DIFF_MATCH;
 			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
-				printf (a_ch == '\n' ?
-				        Color_RESET"%c"Color_HLDELETE :
-				        "%c", a_ch);
+				printf (a_ch == '\n'
+						? Color_RESET "%c" Color_HLDELETE
+						: "%c",
+					a_ch);
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
-				printf (b_ch == '\n' ?
-				        Color_RESET"%c"Color_HLINSERT :
-				        Color_HLINSERT"%c", b_ch);
+				printf (b_ch == '\n'
+						? Color_RESET "%c" Color_HLINSERT
+						: Color_HLINSERT "%c",
+					b_ch);
 				cur_mode = R2R_DIFF_INSERT;
 			}
 		} else if (cur_mode == R2R_DIFF_INSERT) {
@@ -662,19 +668,21 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				}
 				cur_mode = R2R_DIFF_MATCH;
 			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
-				printf (a_ch == '\n' ?
-				        Color_RESET"%c"Color_HLDELETE :
-				        Color_HLDELETE"%c", a_ch);
+				printf (a_ch == '\n'
+						? Color_RESET "%c" Color_HLDELETE
+						: Color_HLDELETE "%c",
+					a_ch);
 				cur_mode = R2R_DIFF_DELETE;
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
-				printf (b_ch == '\n' ?
-				        Color_RESET"%c"Color_HLINSERT :
-				        "%c", b_ch);
+				printf (b_ch == '\n'
+						? Color_RESET "%c" Color_HLINSERT
+						: "%c",
+					b_ch);
 			}
 		}
 		idx_align++;
 	}
-	printf (Color_RESET"\n");
+	printf (Color_RESET "\n");
 }
 
 R_API void r_diffchar_free(RDiffChar *diffchar) {

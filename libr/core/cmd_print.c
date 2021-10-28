@@ -609,7 +609,8 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 			if (show_color) {
 				ut32 color_val = colormap[block[j]];
 				int brightness = ((color_val & 0xff0000) >> 16)
-				                + 2 * ((color_val & 0xff00) >> 8) + (color_val & 0xff) / 2;
+					+ 2 * ((color_val & 0xff00) >> 8)
+					+ (color_val & 0xff) / 2;
 				char *str = r_str_newf ("rgb:%s rgb:%06x",
 					brightness <= 0x7f * 3 ? "fff" : "000", color_val);
 				color = r_cons_pal_parse (str, NULL);
@@ -6036,7 +6037,7 @@ static int cmd_print(void *data, const char *input) {
 					print_json_string (core, (const char *) core->block + 1, len, NULL);
 				} else {
 					r_print_string (core->print, core->offset, core->block + 1,
-					                len, R_PRINT_STRING_ZEROEND);
+						len, R_PRINT_STRING_ZEROEND);
 				}
 			}
 			break;

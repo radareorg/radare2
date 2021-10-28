@@ -397,8 +397,8 @@ static RList *imports(RBinFile *bf) {
 		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;
 		}
-		if (!strcmp (name, "__asan_init") ||
-                   !strcmp (name, "__tsan_init")) {
+		if (!strcmp (name, "__asan_init")
+				|| !strcmp (name, "__tsan_init")) {
 			bin->has_sanitizers = true;
 		}
 		if (!strcmp (name, "_NSConcreteGlobalBlock")) {

@@ -311,11 +311,11 @@ R_API bool r_lang_prompt(RLang *lang) {
 		if (!strcmp (buf, "?")) {
 			RLangDef *def;
 			RListIter *iter;
-			eprintf("  ?        - show this help message\n"
-				"  !        - run $EDITOR\n"
-				"  !command - run system command\n"
-				"  . file   - interpret file\n"
-				"  q        - quit prompt\n");
+			eprintf("  ?	- show this help message\n"
+					"  !	- run $EDITOR\n"
+					"  !command - run system command\n"
+					"  . file   - interpret file\n"
+					"  q	- quit prompt\n");
 			eprintf ("%s example:\n", lang->cur->name);
 			if (lang->cur->help) {
 				eprintf ("%s", *lang->cur->help);

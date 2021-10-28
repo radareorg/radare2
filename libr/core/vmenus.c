@@ -696,7 +696,7 @@ static bool sdbforcb (void *p, const char *k, const char *v) {
 		}
 		vt->t_ctr ++;
 	}
-        return true;
+	return true;
 }
 
 R_API int r_core_visual_types(RCore *core) {
@@ -3653,21 +3653,22 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				}
 			}
 			break;
-		case 'g': {
+		case 'g':
+			{
 			r_core_visual_showcursor (core, true);
 			r_core_visual_offset (core);        // change the seek to selected offset
 			RListIter *iter;		   // change the current option to selected seek
 			RAnalFunction *fcn;
 			int i = 0;
 			r_list_foreach (core->anal->fcns, iter, fcn) {
-				if (core->offset ==  fcn->addr){
+				if (core->offset == fcn->addr){
 					option = i;
 				}
 				i++;
 			}
 			r_core_visual_showcursor (core, false);
-		}
-		        break;
+			}
+			break;
 		case 'G':
 			r_core_seek (core, addr, SEEK_SET);
 			goto beach;
@@ -4269,7 +4270,7 @@ onemoretime:
 		}
 		break;
 	case 'v':
-        {
+	{
 		ut64 N;
 		char *endptr = NULL;
 		char *end_off = r_cons_input ("Last hexadecimal digits of instruction: ");
@@ -4329,7 +4330,7 @@ onemoretime:
 
 		r_anal_op_free (op);
 		break;
-        }
+	}
 	case 'Q':
 	case 'q':
 	default:

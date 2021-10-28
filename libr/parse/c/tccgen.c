@@ -530,12 +530,12 @@ ST_FUNC int type_size(CType *type, int *a) {
 			}
 		} else if (!strncmp (tcc_state->arch, "arm", 3)) {
 			/* It was like originally:
-			        #ifdef TCC_ARM_EABI
-			                *a = 8;
-			        #else
-			        *a = 4;
-			        #endif
-			        FIXME: Determine EABI then too
+			#ifdef TCC_ARM_EABI
+				*a = 8;
+			#else
+				*a = 4;
+			#endif
+			FIXME: Determine EABI then too
 			*/
 			*a = 8;
 		} else {

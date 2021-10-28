@@ -163,7 +163,7 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 		free (buff);
 	}
 
-        /* /proc/[pid]/status for uid, gid, sigpend and sighold */
+	/* /proc/[pid]/status for uid, gid, sigpend and sighold */
 	file = sdb_fmt ("/proc/%d/task/%d/status", pid, tid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
@@ -1143,14 +1143,14 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 		n_notes++;
 		type = NT_FPREGSET_T;
 		size += note_info[type].size_roundedup;
-                size += note_info[type].size_name;
+		size += note_info[type].size_name;
 		n_notes++;
 #if __i386__
 		type = NT_PRXFPREG_T;
 		if (note_info[type].size) {
 			fpx_flag = true;
 			size += note_info[type].size_roundedup;
-        	        size += note_info[type].size_name;
+			size += note_info[type].size_name;
 			n_notes++;
 		}
 #endif
@@ -1159,7 +1159,7 @@ static ut8 *build_note_section(RDebug *dbg, elf_proc_note_t *elf_proc_note, proc
 		if (note_info[type].size) {
 			xsave_flag = true;
 			size += note_info[type].size_roundedup;
-                	size += note_info[type].size_name;
+			size += note_info[type].size_name;
 			n_notes++;
 		}
 #endif

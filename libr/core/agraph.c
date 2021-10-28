@@ -324,13 +324,17 @@ static void tiny_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 }
 
 static char *get_node_color(int color, int cur) {
-        RCons *cons = r_cons_singleton ();
-        if (color == -1) {
-                return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
-        }
-        return color ? (\
-                color == R_ANAL_DIFF_TYPE_MATCH ? cons->context->pal.graph_diff_match:
-                color == R_ANAL_DIFF_TYPE_UNMATCH? cons->context->pal.graph_diff_unmatch : cons->context->pal.graph_diff_new): cons->context->pal.graph_diff_unknown;
+	RCons *cons = r_cons_singleton ();
+	if (color == -1) {
+		return cur ? cons->context->pal.graph_box2 : cons->context->pal.graph_box;
+	}
+	return color
+		? (color == R_ANAL_DIFF_TYPE_MATCH
+			? cons->context->pal.graph_diff_match
+			: color == R_ANAL_DIFF_TYPE_UNMATCH
+				? cons->context->pal.graph_diff_unmatch
+				: cons->context->pal.graph_diff_new)
+		: cons->context->pal.graph_diff_unknown;
 }
 
 static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
@@ -433,10 +437,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	}
 }
 
-static int **get_crossing_matrix(const RGraph *g,
-                                 const struct layer_t layers[],
-                                 int maxlayer, int i, int from_up,
-                                 int *n_rows) {
+static int **get_crossing_matrix(const RGraph *g, const struct layer_t layers[], int maxlayer, int i, int from_up, int *n_rows) {
 	int j, len = layers[i].n_nodes;
 
 	int **m = R_NEWS0 (int *, len);
@@ -549,8 +550,7 @@ err_row:
 	return NULL;
 }
 
-static int layer_sweep(const RGraph *g, const struct layer_t layers[],
-                       int maxlayer, int i, int from_up) {
+static int layer_sweep(const RGraph *g, const struct layer_t layers[], int maxlayer, int i, int from_up) {
 	RGraphNode *u, *v;
 	const RANode *au, *av;
 	int n_rows, j, changed = false;
@@ -1307,7 +1307,7 @@ static void place_single(const RAGraph *g, int l, const RGraphNode *bm, const RG
 	const RListIter *itk;
 
 	const RList *neigh = from_up
-	        ? r_graph_innodes (g->graph, v)
+		? r_graph_innodes (g->graph, v)
 		: r_graph_get_neighbours (g->graph, v);
 
 	int len = r_list_length (neigh);
@@ -1367,7 +1367,7 @@ static void collect_changes(const RAGraph *g, int l, const RGraphNode *b, int fr
 			continue;
 		}
 		neigh = from_up
-		        ? r_graph_innodes (g->graph, vi)
+			? r_graph_innodes (g->graph, vi)
 			: r_graph_get_neighbours (g->graph, vi);
 
 		graph_foreach_anode (neigh, it, v, av) {
@@ -2543,8 +2543,8 @@ static const RGraphNode *find_near_of(const RAGraph *g, const RGraphNode *cur, i
 	graph_foreach_anode (nodes, it, gn, n) {
 		// tab in horizontal layout is not correct, lets force vertical nextnode for now (g->layout == 0)
 		bool isNear = true
-		              ? is_near (n, start_x, start_y, is_next)
-			      : is_near_h (n, start_x, start_y, is_next);
+			? is_near (n, start_x, start_y, is_next)
+			: is_near_h (n, start_x, start_y, is_next);
 		if (isNear) {
 			const RANode *resn;
 
@@ -2556,8 +2556,8 @@ static const RGraphNode *find_near_of(const RAGraph *g, const RGraphNode *cur, i
 			resn = get_anode (resgn);
 			if ((is_next && resn->y > n->y) || (!is_next && resn->y < n->y)) {
 				resgn = gn;
-			} else if ((is_next && resn->y == n->y && resn->x > n->x) ||
-			           (!is_next && resn->y == n->y && resn->x < n->x)) {
+			} else if ((is_next && resn->y == n->y && resn->x > n->x)
+					|| (!is_next && resn->y == n->y && resn->x < n->x)) {
 				resgn = gn;
 			}
 		}
@@ -3448,7 +3448,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
 	if (!g->is_tiny) {
-                W (g->title);
+		W (g->title);
 	}
 	if (is_interactive && g->title) {
 		int title_len = strlen (g->title);

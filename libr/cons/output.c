@@ -337,7 +337,7 @@ static int r_cons_w32_hprint(DWORD hdl, const char *ptr, int len, bool vmode) {
 				str = ptr + 1;
 				continue;
 			} else if ((ptr[0] == '4' && ptr[2] == 'm')
-			           || (bright = ptr[0] == '1' && ptr[1] == '0' && ptr[3] == 'm')) {
+					|| (bright = ptr[0] == '1' && ptr[1] == '0' && ptr[3] == 'm')) {
 				/* background color */
 				ut8 col = bright ? ptr[2] : ptr[1];
 				switch (col) {

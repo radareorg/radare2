@@ -46,21 +46,21 @@ printf("--\n");
 
 		printf ("r_big_cmp a ? b = %d\n",r_big_cmp(&n1, &n2));
 
-		r_big_sub (&n3,&n1,&n2);
+		r_big_sub (&n3, &n1, &n2);
 		printf("subtraction -- ");
 		r_big_print (&n3);
 
-                r_big_mul (&n3,&n1,&n2);
+		r_big_mul (&n3,&n1,&n2);
 		printf("multiplication -- ");
-                r_big_print (&n3);
+		r_big_print (&n3);
 
 		r_big_set_st(&zero, 0);
 		if (r_big_cmp(&zero, &n2) == 0)
 			printf("division -- NaN \n");
-                else {
+		else {
 			r_big_div (&n3,&n1,&n2);
 			printf("division -- ");
-                	r_big_print (&n3);
+			r_big_print (&n3);
 		}
 		printf("--------------------------\n");
 	}

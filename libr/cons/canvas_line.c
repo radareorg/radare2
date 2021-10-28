@@ -301,7 +301,7 @@ R_API void r_cons_canvas_line_diagonal(RConsCanvas *c, int x, int y, int x2, int
 	char chizzle[2] = {0}; // = '.';//my nizzle
 	// destination
 	int dx = abs (x2-x);
-        int dy = abs (y2-y);
+	int dy = abs (y2-y);
 	// source
 	int sx = (x < x2) ? 1 : -1;
 	int sy = (y < y2) ? 1 : -1;

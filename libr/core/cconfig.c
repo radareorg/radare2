@@ -278,10 +278,10 @@ static bool cb_anal_endsize(void *user, void *data) {
 }
 
 static bool cb_analvars(void *user, void *data) {
-        RCore *core = (RCore*) user;
-        RConfigNode *node = (RConfigNode*) data;
-        core->anal->opt.vars = node->i_value;
-        return true;
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.vars = node->i_value;
+	return true;
 }
 
 static bool cb_analvars_stackname(void *user, void *data) {
@@ -292,10 +292,10 @@ static bool cb_analvars_stackname(void *user, void *data) {
 }
 
 static bool cb_anal_nonull(void *user, void *data) {
-        RCore *core = (RCore*) user;
-        RConfigNode *node = (RConfigNode*) data;
-        core->anal->opt.nonull = node->i_value;
-        return true;
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.nonull = node->i_value;
+	return true;
 }
 
 static bool cb_analstrings(void *user, void *data) {
@@ -1031,8 +1031,8 @@ static bool cb_binstrenc (void *user, void *data) {
 	if (*node->value == '?') {
 		print_node_options (node);
 		r_cons_printf ("  -- if string's 2nd & 4th bytes are 0 then utf16le else "
-		               "if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
-		               "if utf8 char detected then utf8 else latin1\n");
+				"if 2nd - 4th & 6th bytes are 0 & no char > 0x10ffff then utf32le else "
+				"if utf8 char detected then utf8 else latin1\n");
 		return false;
 	}
 	const namealiases_pair names[] = {
@@ -1129,7 +1129,8 @@ static bool cb_strpurge(void *user, void *data) {
 	}
 	free (core->bin->strpurge);
 	core->bin->strpurge = !*node->value || !strcmp (node->value, "false")
-	                ? NULL : strdup (node->value);
+		? NULL
+		: strdup (node->value);
 	return true;
 }
 
@@ -1365,10 +1366,10 @@ static bool cb_str_escbslash(void *user, void *data) {
 }
 
 static bool cb_completion_maxtab (void *user, void *data) {
-        RCore *core = (RCore*) user;
-        RConfigNode *node = (RConfigNode*) data;
-        core->cons->line->completion.args_limit = node->i_value;
-        return true;
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->cons->line->completion.args_limit = node->i_value;
+	return true;
 }
 
 static bool cb_cfg_fortunes(void *user, void *data) {
@@ -3164,7 +3165,7 @@ R_API int r_core_config_init(RCore *core) {
 		}
 	}
 #endif
-        SETCB ("cmd.times", "", &cb_cmdtimes, "Run when a command is repeated (number prefix)");
+	SETCB ("cmd.times", "", &cb_cmdtimes, "Run when a command is repeated (number prefix)");
 	/* pdb */
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Semi-colon separated list of base URLs for Microsoft symbol servers");

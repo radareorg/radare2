@@ -74,8 +74,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (ins == 0xbf) {
 		// TODO: add support for more NOP instructions
 		op->type = R_ANAL_OP_TYPE_NOP;
-	} else if (((op_code = ((ins & B4 (B1111, B1000, 0, 0)) >> 11)) >= 12 &&
-	            op_code <= 17)) {
+	} else if (((op_code = ((ins & B4 (B1111, B1000, 0, 0)) >> 11)) >= 12 && op_code <= 17)) {
 		if (op_code % 2) {
 			op->type = R_ANAL_OP_TYPE_LOAD;
 		} else {
@@ -100,13 +99,11 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addr + 4 + (delta << 1);
 		op->fail = addr + 4;
-	} else if ((ins & B4 (B1111, B1111, B1000, 0)) ==
-	           B4 (B0100, B0111, B1000, 0)) {
+	} else if ((ins & B4 (B1111, B1111, B1000, 0)) == B4 (B0100, B0111, B1000, 0)) {
 		// BLX
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->fail = addr + 4;
-	} else if ((ins & B4 (B1111, B1111, B1000, 0)) ==
-	           B4 (B0100, B0111, 0, 0)) {
+	} else if ((ins & B4 (B1111, B1111, B1000, 0)) == B4 (B0100, B0111, 0, 0)) {
 		// BX
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->fail = addr + 4;
@@ -271,10 +268,9 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->stackop = R_ANAL_STACK_INC;
 		op->val = -b[0];
-	} else if ((code[i] == 0x1eff2fe1) ||
-	           (code[i] == 0xe12fff1e)) {  // bx lr
+	} else if (code[i] == 0x1eff2fe1 || code[i] == 0xe12fff1e) {  // bx lr
 		op->type = R_ANAL_OP_TYPE_RET;
-	} else if ((code[i] & ARM_DTX_LOAD)) {  // IS_LOAD(code[i])) {
+	} else if (code[i] & ARM_DTX_LOAD) {  // IS_LOAD(code[i])) {
 		ut32 ptr = 0;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		if (b[2] == 0x1b) {

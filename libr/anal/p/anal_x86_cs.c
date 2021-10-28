@@ -1313,11 +1313,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					   c3          ret
 					*/
 					if (thunk[0] == 0x8b && thunk[3] == 0xc3
-					    && (thunk[1] & 0xc7) == 4        /* 00rrr100 */
-					    && (thunk[2] & 0x3f) == 0x24) {  /* --100100: ignore scale in SIB byte */
+							&& (thunk[1] & 0xc7) == 4        /* 00rrr100 */
+							&& (thunk[2] & 0x3f) == 0x24) {  /* --100100: ignore scale in SIB byte */
 						ut8 reg = (thunk[1] & 0x38) >> 3;
 						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size,
-						            reg32_to_name (reg));
+								reg32_to_name (reg));
 						break;
 					}
 				}
@@ -2302,7 +2302,7 @@ static void op1_memimmhandle(RAnalOp *op, cs_insn *insn, ut64 addr, int regsz) {
 				op->stackop = R_ANAL_STACK_GET;
 				op->stackptr = regsz;
 			} else if (INSOP(1).mem.segment == X86_REG_INVALID && INSOP(1).mem.base == X86_REG_INVALID
-			           && INSOP(1).mem.index == X86_REG_INVALID && INSOP(1).mem.scale == 1) { // [<addr>]
+					&& INSOP(1).mem.index == X86_REG_INVALID && INSOP(1).mem.scale == 1) { // [<addr>]
 				op->ptr = op->disp;
 			}
 			break;
@@ -2736,7 +2736,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				op->stackptr = regsz;
 				op->type |= R_ANAL_OP_TYPE_REG;
 			} else if (INSOP(0).mem.segment == X86_REG_INVALID && INSOP(0).mem.base == X86_REG_INVALID
-			           && INSOP(0).mem.index == X86_REG_INVALID && INSOP(0).mem.scale == 1) { // [<addr>]
+					&& INSOP(0).mem.index == X86_REG_INVALID && INSOP(0).mem.scale == 1) { // [<addr>]
 				op->ptr = op->disp;
 			}
 			if (INSOP(1).type == X86_OP_IMM) {
@@ -2755,9 +2755,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 					op->stackop = R_ANAL_STACK_SET;
 					op->stackptr = regsz;
 				} else if (INSOP(1).mem.segment == X86_REG_INVALID
-				           && INSOP(1).mem.base == X86_REG_INVALID
-				           && INSOP(1).mem.index == X86_REG_INVALID
-				           && INSOP(1).mem.scale == 1) { // [<addr>]
+						&& INSOP(1).mem.base == X86_REG_INVALID
+						&& INSOP(1).mem.index == X86_REG_INVALID
+						&& INSOP(1).mem.scale == 1) { // [<addr>]
 					op->ptr = op->disp;
 				}
 				if (INSOP(0).type == X86_OP_IMM) {

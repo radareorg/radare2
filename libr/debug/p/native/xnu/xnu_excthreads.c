@@ -445,7 +445,7 @@ bool xnu_create_exception_thread(RDebug *dbg, int pid) {
 	kern_return_t kr;
 	mach_port_t exception_port = MACH_PORT_NULL;
 	mach_port_t req_port;
-        // Got the mach port for the current process
+	// Got the mach port for the current process
 	mach_port_t task_self = mach_task_self ();
 	task_t task = pid_to_task (pid);
 	if (!task) {
@@ -455,27 +455,27 @@ bool xnu_create_exception_thread(RDebug *dbg, int pid) {
 	r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0);
 	if (!MACH_PORT_VALID (task_self)) {
 		eprintf ("error to get the task for the current process"
-			" xnu_start_exception_thread\n");
+				" xnu_start_exception_thread\n");
 		return false;
 	}
-        // Allocate an exception port that we will use to track our child process
-        kr = mach_port_allocate (task_self, MACH_PORT_RIGHT_RECEIVE,
-				&exception_port);
+	// Allocate an exception port that we will use to track our child process
+	kr = mach_port_allocate (task_self, MACH_PORT_RIGHT_RECEIVE,
+			&exception_port);
 	RETURN_ON_MACH_ERROR ("error to allocate mach_port exception\n", false);
-        // Add the ability to send messages on the new exception port
+	// Add the ability to send messages on the new exception port
 	kr = mach_port_insert_right (task_self, exception_port, exception_port,
-				     MACH_MSG_TYPE_MAKE_SEND);
+			MACH_MSG_TYPE_MAKE_SEND);
 	RETURN_ON_MACH_ERROR ("error to allocate insert right\n", false);
 	// Atomically swap out (and save) the child process's exception ports
 	// for the one we just created. We'll want to receive all exceptions.
 	ex.count = (sizeof (ex.ports) / sizeof (*ex.ports));
 	kr = task_swap_exception_ports (task, EXC_MASK_ALL, exception_port,
-		EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES, THREAD_STATE_NONE,
-		ex.masks, &ex.count, ex.ports, ex.behaviors, ex.flavors);
+			EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES, THREAD_STATE_NONE,
+			ex.masks, &ex.count, ex.ports, ex.behaviors, ex.flavors);
 	RETURN_ON_MACH_ERROR ("failed to swap exception ports\n", false);
 	//get notification when process die
 	kr = mach_port_request_notification (task_self, task, MACH_NOTIFY_DEAD_NAME,
-		 0, exception_port, MACH_MSG_TYPE_MAKE_SEND_ONCE, &req_port);
+			0, exception_port, MACH_MSG_TYPE_MAKE_SEND_ONCE, &req_port);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Termination notification request failed\n");
 	}

@@ -169,10 +169,10 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 
 R_API int r_print_date_get_now(RPrint *p, char *str) {
 	int ret = 0;
-        time_t l;
+	time_t l;
 
-        *str = 0;
-        l = time(0);
+	*str = 0;
+	l = time (0);
 
 	str = r_time_stamp_to_str (l);
 	p->cb_printf ("%s\n", str);

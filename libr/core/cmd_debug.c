@@ -1657,8 +1657,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 							newfile = r_file_temp ("memlib");
 							if (newfile) {
 								file = newfile;
-								r_core_cmdf (core, "wtf %s 0x%"PFMT64x" @ 0x%"PFMT64x" 2> %s",
-								             file, map->size, baddr, R_SYS_DEVNULL);
+								r_core_cmdf (core, "wtf %s 0x%" PFMT64x " @ 0x%" PFMT64x " 2> %s",
+										file, map->size, baddr, R_SYS_DEVNULL);
 							}
 						}
 						get_bin_info (core, file, baddr, pj, mode, symbols_only, &filter);
@@ -4342,15 +4342,15 @@ static bool cmd_dcu(RCore *core, const char *input) {
 					ut32 ret_addr;
 					RDebugFrame *frame = R_NEW0 (RDebugFrame);
 					cur_sp = r_debug_reg_get (core->dbg, sp_name);
-					(void)core->dbg->iob.read_at (core->dbg->iob.io, cur_sp, (ut8 *)&ret_addr,
-					                              sizeof (ret_addr));
+					(void)core->dbg->iob.read_at (core->dbg->iob.io, cur_sp,
+							(ut8 *)&ret_addr, sizeof (ret_addr));
 					frame->addr = ret_addr;
 					frame->size = old_sp - cur_sp;
 					frame->sp = cur_sp;
 					frame->bp = old_sp;
 					r_list_prepend (core->dbg->call_frames, frame);
-					eprintf ("%ld Call from 0x%08"PFMT64x" to 0x%08"PFMT64x" ret 0x%08"PFMT32x"\n",
-					         level, prev_pc, pc, ret_addr);
+					eprintf ("%ld Call from 0x%08" PFMT64x " to 0x%08" PFMT64x " ret 0x%08" PFMT32x "\n",
+							level, prev_pc, pc, ret_addr);
 					level++;
 					old_sp = cur_sp;
 					prev_call = false;
@@ -4363,12 +4363,12 @@ static bool cmd_dcu(RCore *core, const char *input) {
 						eprintf ("%ld", level);
 						level--;
 					}
-					eprintf (" Ret from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n",
-					         prev_pc, pc);
+					eprintf (" Ret from 0x%08" PFMT64x " to 0x%08" PFMT64x "\n",
+							prev_pc, pc);
 					prev_ret = false;
 				}
 				if (steps % 500 == 0 || pc == addr) {
-					eprintf ("At 0x%08"PFMT64x" after %lu steps\n", pc, steps);
+					eprintf ("At 0x%08" PFMT64x " after %lu steps\n", pc, steps);
 				}
 				if (r_cons_is_breaked () || r_debug_is_dead (core->dbg) || pc == addr) {
 					break;
