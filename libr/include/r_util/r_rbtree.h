@@ -44,18 +44,6 @@ typedef struct r_rb_iter_t {
 	RBNode *path[R_RBTREE_MAX_HEIGHT];
 } RBIter;
 
-typedef int (*RContRBCmp)(void *incoming, void *in, void *user);
-typedef void (*RContRBFree)(void *);
-typedef struct r_containing_rb_node_t {
-	RBNode node;
-	void *data;
-} RContRBNode;
-
-typedef struct r_containing_rb_tree_t {
-	RContRBNode *root;
-	RContRBFree free;
-} RContRBTree;
-
 // Routines for augmented red-black trees. The user should provide an aggregation (monoid sum) callback `sum`
 // to calculate extra information such as size, sum, ...
 R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void *cmp_user, RBNodeFree freefn, void *free_user, RBNodeSum sum);
@@ -104,28 +92,6 @@ R_API void r_rbtree_iter_prev(RBIter *it);
 
 #define r_rbtree_foreach_prev(root, it, data, struc, rb) \
 	for ((it) = r_rbtree_last (root); r_rbtree_iter_has(&it) && (data = r_rbtree_iter_get (&it, struc, rb)); r_rbtree_iter_prev (&(it)))
-
-
-R_API RContRBTree *r_rbtree_cont_new(void);
-R_API RContRBTree *r_rbtree_cont_newf(RContRBFree f);
-R_API bool r_rbtree_cont_insert(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
-R_API bool r_rbtree_cont_delete(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
-R_API RContRBNode *r_rbtree_cont_find_node(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
-R_API RContRBNode *r_rbtree_cont_node_next(RContRBNode *node);
-R_API RContRBNode *r_rbtree_cont_node_prev(RContRBNode *node);
-R_API RContRBNode *r_rbtree_cont_node_first(RContRBTree *tree);
-R_API RContRBNode *r_rbtree_cont_node_last(RContRBTree *tree);
-R_API void *r_rbtree_cont_find(RContRBTree *tree, void *data, RContRBCmp cmp, void *user);
-R_API void *r_rbtree_cont_first(RContRBTree *tree);
-R_API void *r_rbtree_cont_last(RContRBTree *tree);
-
-#define r_rbtree_cont_foreach(tree, it, dat) \
-	for ((it) = r_rbtree_first ((tree)->root ? &(tree)->root->node : NULL); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RContRBNode, node)->data); r_rbtree_iter_next (&(it)))
-
-#define r_rbtree_cont_foreach_prev(tree, it, dat) \
-	for ((it) = r_rbtree_last ((tree)->root ? &(tree)->root->node : NULL); r_rbtree_iter_has(&it) && (dat = r_rbtree_iter_get (&it, RContRBNode, node)->data); r_rbtree_iter_prev (&(it)))
-
-R_API void r_rbtree_cont_free(RContRBTree *tree);
 
 #ifdef __cplusplus
 }
