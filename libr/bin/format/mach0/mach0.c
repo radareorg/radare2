@@ -2557,7 +2557,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 					name = r_str_append (name, s->label);
 				}
 				if (name == NULL) {
-					eprintf ("malformed export trie 01\n");
+					bprintf ("malformed export trie %d\n", __LINE__);
 					goto beach;
 				}
 				if (hasResolver) {
@@ -2597,7 +2597,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		next->label = (char *) p;
 		p += strlen (next->label) + 1;
 		if (p >= end) {
-			eprintf ("malformed export trie 02\n");
+			bprintf ("malformed export trie %d\n", __LINE__);
 			R_FREE (next);
 			goto beach;
 		}
@@ -2608,7 +2608,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		}
 		next->node = tr + trie;
 		if (next->node >= end) {
-			eprintf ("malformed export trie 03\n");
+			bprintf ("malformed export trie %d\n", __LINE__);
 			R_FREE (next);
 			goto beach;
 		}
@@ -2618,7 +2618,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			RTrieState *s;
 			r_list_foreach (states, it, s) {
 				if (s->node == next->node) {
-					eprintf ("malformed export trie 04\n");
+					bprintf ("malformed export trie %d\n", __LINE__);
 					R_FREE (next);
 					goto beach;
 				}
