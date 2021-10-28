@@ -210,11 +210,11 @@ static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * 
 			lstLibPtr->BaseOfDll = lpBaseOfDll;//DBGEvent->u.LoadDll.lpBaseOfDll;
 			strncpy (lstLibPtr->Path,dllname,MAX_PATH-1);
 			int i = strlen (dllname);
-                        int n = i;
-                        while (dllname[i] != '\\' && i >= 0) {
-                             i--;
-                        }
-                        strncpy (lstLibPtr->Name, &dllname[i+1], n-i);
+			int n = i;
+			while (dllname[i] != '\\' && i >= 0) {
+				i--;
+			}
+			strncpy (lstLibPtr->Name, &dllname[i+1], n-i);
 			return;
 		}
 		lstLibPtr++;
@@ -447,14 +447,14 @@ static HANDLE w32_open_thread(int pid, int tid) {
 }
 
 RList *w32_thread_list(int pid, RList *list) {
-        HANDLE thid;
-        THREADENTRY32 te32;
+	HANDLE thid;
+	THREADENTRY32 te32;
 
-        te32.dwSize = sizeof (THREADENTRY32);
+	te32.dwSize = sizeof (THREADENTRY32);
 
-        HANDLE th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
-        if (th == INVALID_HANDLE_VALUE || !Thread32First (th, &te32)) {
-                goto err_load_th;
+	HANDLE th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
+	if (th == INVALID_HANDLE_VALUE || !Thread32First (th, &te32)) {
+		goto err_load_th;
 	}
 	do {
 		// get all threads of process
@@ -627,7 +627,7 @@ static int GetAVX(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 		return 0;
 	}
 	Xmm = (ut128 *)r_w32_LocateXStateFeature(Context, XSTATE_LEGACY_SSE, &FeatureLength);
-        nRegs = FeatureLength / sizeof (*Xmm);
+	nRegs = FeatureLength / sizeof (*Xmm);
 	for (Index = 0; Index < nRegs; Index++) {
 		ymm[Index].High = 0;
 		xmm[Index].High = 0;

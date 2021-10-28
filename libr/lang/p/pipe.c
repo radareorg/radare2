@@ -60,7 +60,7 @@ static void lang_pipe_run_win(RLang *lang) {
 		ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, NULL, &oRead);
 		HANDLE hReadEvents[] = { hRead, hproc };
 		dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hReadEvents), hReadEvents,
-		                                  FALSE, INFINITE);
+				FALSE, INFINITE);
 		if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 			break;
 		} else if (dwEvent == WAIT_FAILED) {
@@ -83,11 +83,11 @@ static void lang_pipe_run_win(RLang *lang) {
 					dwWritten = 0;
 					int writelen = res_len - i;
 					WriteFile (hPipeInOut, res + i,
-					           writelen > PIPE_BUF_SIZE ? PIPE_BUF_SIZE : writelen,
-					           NULL, &oWrite);
+							writelen > PIPE_BUF_SIZE? PIPE_BUF_SIZE: writelen,
+							NULL, &oWrite);
 					HANDLE hWriteEvents[] = { hWritten, hproc };
 					dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hWriteEvents), hWriteEvents,
-					                                  FALSE, INFINITE);
+							FALSE, INFINITE);
 					if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 						break;
 					} else if (dwEvent == WAIT_FAILED) {
@@ -262,7 +262,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 			if (err == ERROR_IO_PENDING) {
 				HANDLE hEvents[] = { hConnected, hproc };
 				DWORD dwEvent = WaitForMultipleObjects (R_ARRAY_SIZE (hEvents), hEvents,
-				                                        FALSE, INFINITE);
+						FALSE, INFINITE);
 				if (dwEvent == WAIT_OBJECT_0 + 1) { // hproc
 					goto cleanup;
 				} else if (dwEvent == WAIT_FAILED) {

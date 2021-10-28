@@ -457,7 +457,7 @@ static bool parse_namemap(RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 
 		ut32 idx;
 		if (!(consume_u32_r (b, max, &idx))) {
-            		R_FREE (name);
+			R_FREE (name);
 			return false;
 		}
 

@@ -72,10 +72,10 @@ static struct {
 	{ "graph.current", r_offsetof (RConsPrintablePalette, graph_current), r_offsetof (RConsPalette, graph_current) },
 	{ "graph.traced", r_offsetof (RConsPrintablePalette, graph_traced), r_offsetof (RConsPalette, graph_traced) },
 
-        { "graph.diff.unknown", r_offsetof (RConsPrintablePalette, graph_diff_unknown), r_offsetof (RConsPalette, graph_diff_unknown) },
-        { "graph.diff.new", r_offsetof (RConsPrintablePalette, graph_diff_new), r_offsetof (RConsPalette, graph_diff_new) },
-        { "graph.diff.match", r_offsetof (RConsPrintablePalette, graph_diff_match), r_offsetof (RConsPalette, graph_diff_match) },
-        { "graph.diff.unmatch", r_offsetof (RConsPrintablePalette, graph_diff_unmatch), r_offsetof (RConsPalette, graph_diff_unmatch) },
+	{ "graph.diff.unknown", r_offsetof (RConsPrintablePalette, graph_diff_unknown), r_offsetof (RConsPalette, graph_diff_unknown) },
+	{ "graph.diff.new", r_offsetof (RConsPrintablePalette, graph_diff_new), r_offsetof (RConsPalette, graph_diff_new) },
+	{ "graph.diff.match", r_offsetof (RConsPrintablePalette, graph_diff_match), r_offsetof (RConsPalette, graph_diff_match) },
+	{ "graph.diff.unmatch", r_offsetof (RConsPrintablePalette, graph_diff_unmatch), r_offsetof (RConsPalette, graph_diff_unmatch) },
 
 	{ "gui.cflow", r_offsetof (RConsPrintablePalette, gui_cflow), r_offsetof (RConsPalette, gui_cflow) },
 	{ "gui.dataoffset", r_offsetof (RConsPrintablePalette, gui_dataoffset), r_offsetof (RConsPalette, gui_dataoffset) },

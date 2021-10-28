@@ -339,8 +339,8 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	RBinWasmObj *bin = bf->o->bin_obj;
-        switch (type) {
-        case 'f': // fcnidx
+	switch (type) {
+	case 'f': // fcnidx
 		{
 			const char *r = r_bin_wasm_get_function_name (bin, idx);
 			return r? strdup (r): NULL;

@@ -31,24 +31,24 @@ static unsigned char UDS[] = {
 
 #if 0
 static int is_unique_UDS(unsigned int position) {
-    unsigned int j, flag;
-    flag = 0;
-    for (j = 0; j < UDS_SIZE; j++) {
-        if (firmware[position] == UDS[j]) {
-            flag = 1;
-            break;
-        }
-    }
+	unsigned int j, flag;
+	flag = 0;
+	for (j = 0; j < UDS_SIZE; j++) {
+		if (firmware[position] == UDS[j]) {
+			flag = 1;
+			break;
+		}
+	}
 
-    if (flag == 1) {
-        for (j = position - CANDB_SIZE / 2; j < position + CANDB_SIZE / 2; j++) {
-            if ((firmware[j] == firmware[position]) && (j != position)) {
-                flag = 0;
-                break;
-            }
-        }
-    }
-    return flag;
+	if (flag == 1) {
+		for (j = position - CANDB_SIZE / 2; j < position + CANDB_SIZE / 2; j++) {
+			if ((firmware[j] == firmware[position]) && (j != position)) {
+				flag = 0;
+				break;
+			}
+		}
+	}
+	return flag;
 }
 #endif
 

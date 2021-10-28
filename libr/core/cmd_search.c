@@ -1558,9 +1558,9 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			// Get the depth of rop search, should just be max_instr
 			// instructions, x86 and friends are weird length instructions, so
 			// we'll just assume 15 byte instructions.
-			ropdepth = increment == 1?
-			           max_instr * max_inst_size_x86 /* wow, x86 is long */:
-			           max_instr * increment;
+			ropdepth = (increment == 1)
+				? max_instr * max_inst_size_x86 /* wow, x86 is long */
+				: max_instr * increment;
 			if (r_cons_is_breaked ()) {
 				break;
 			}

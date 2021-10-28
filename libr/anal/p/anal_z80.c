@@ -104,7 +104,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_data, in
 	case 0x97:
 	case 0xd6:
 		op->type = R_ANAL_OP_TYPE_SUB;
-                break;
+		break;
 	case 0x22: // ld (**), hl
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->refptr = 2;

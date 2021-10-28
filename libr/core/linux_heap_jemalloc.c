@@ -86,7 +86,7 @@ static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_n
 #endif
 
 static int GH(je_matched)(const char *ptr, const char *str) {
-        int ret = strncmp (ptr, str, strlen (str) - 1);
+	int ret = strncmp (ptr, str, strlen (str) - 1);
 	return !ret;
 }
 #endif
@@ -157,8 +157,8 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 	case '\0':
 		eprintf ("need an arena_t to associate chunks");
 		break;
-        case ' ':
-        	{
+	case ' ':
+		{
 			GHT arena = GHT_MAX;
 			arena_t *ar = R_NEW0 (arena_t);
 			extent_node_t *node = R_NEW0 (extent_node_t), *head = R_NEW0 (extent_node_t);
@@ -191,8 +191,8 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			free (head);
 			free (node);
 		break;
-        	}
-        case '*':
+		}
+	case '*':
 		{
 			int i = 0;
 			ut64 sym;
@@ -511,7 +511,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 			}
 			free (c);
 			free (r);
-         	}
+		}
 	break;
 	}
 }

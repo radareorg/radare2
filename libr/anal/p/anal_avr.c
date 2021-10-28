@@ -525,7 +525,7 @@ INST_HANDLER (cp) {	// CP Rd, Rr
 	if (len < 2) {
 		return;
 	}
-	const ut32 r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
+	const ut32 r = (buf[0] & 0x0f) | ((buf[1] << 3) & 0x10);
 	const ut32 d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
 	ESIL_A ("r%d,r%d,-,0x80,&,!,!,nf,:=,", r, d);
 	ESIL_A ("r%d,r%d,==,", r, d);
@@ -540,7 +540,7 @@ INST_HANDLER (cpc) {	// CPC Rd, Rr
 	if (len < 2) {
 		return;
 	}
-	const ut32 r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
+	const ut32 r = (buf[0] & 0x0f) | ((buf[1] << 3) & 0x10);
 	const ut32 d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
 
 	ESIL_A ("cf,r%d,+,DUP,r%d,-,0x80,&,!,!,nf,:=,", r, d);		// Rd - Rr - C

@@ -643,60 +643,60 @@ char *get_reg_name_1(ut32 idx) {
 
 
 char *get_status_regs_and_bits(char *reg_arg, int reg_bit) {
-  char *res = NULL;
-  if(!strncmp(reg_arg, "ST0", 3)) {
-    switch(reg_bit) {
-	case 0:
-		res = "st0_dp07";
-		break;
-	case 1:
-		res = "st0_dp08";
-		break;
-	case 2:
-		res = "st0_dp09";
-		break;
-	case 3:
-		res = "st0_dp10";
-		break;
-	case 4:
-		res = "st0_dp11";
-		break;
-	case 5:
-		res = "st0_dp12";
-		break;
-	case 6:
-		res = "st0_dp13";
-		break;
-	case 7:
-		res = "st0_dp14";
-		break;
-	case 8:
-		res = "st0_dp15";
-		break;
-	case 9:
-		res = "st0_acov1";
-		break;
-	case 10:
-		res = "st0_acov0";
-		break;
-	case 11:
-		res = "st0_carry";
-		break;
-	case 12:
-		res = "st0_tc2";
-		break;
-	case 13:
-		res = "st0_tc1";
-		break;
-	case 14:
-		res = "st0_acov3";
-		break;
-	case 15:
-		res = "st0_acov2";
-		break;
-    }
-  } else if(!strncmp(reg_arg, "ST1", 3)) {
-		switch(reg_bit) {
+	char *res = NULL;
+	if (!strncmp (reg_arg, "ST0", 3)) {
+		switch (reg_bit) {
+		case 0:
+			res = "st0_dp07";
+			break;
+		case 1:
+			res = "st0_dp08";
+			break;
+		case 2:
+			res = "st0_dp09";
+			break;
+		case 3:
+			res = "st0_dp10";
+			break;
+		case 4:
+			res = "st0_dp11";
+			break;
+		case 5:
+			res = "st0_dp12";
+			break;
+		case 6:
+			res = "st0_dp13";
+			break;
+		case 7:
+			res = "st0_dp14";
+			break;
+		case 8:
+			res = "st0_dp15";
+			break;
+		case 9:
+			res = "st0_acov1";
+			break;
+		case 10:
+			res = "st0_acov0";
+			break;
+		case 11:
+			res = "st0_carry";
+			break;
+		case 12:
+			res = "st0_tc2";
+			break;
+		case 13:
+			res = "st0_tc1";
+			break;
+		case 14:
+			res = "st0_acov3";
+			break;
+		case 15:
+			res = "st0_acov2";
+			break;
+		}
+	} else if (!strncmp (reg_arg, "ST1", 3)) {
+		switch (reg_bit) {
 		case 0:
 			res = "st1_dr2_00";
 			break;
@@ -745,9 +745,9 @@ char *get_status_regs_and_bits(char *reg_arg, int reg_bit) {
 		case 15:
 			res = "st1_braf";
 			break;
-      }
-  } else if(!strncmp(reg_arg, "ST2", 3)) {
-		switch ( reg_bit ) {
+		}
+	} else if (!strncmp (reg_arg, "ST2", 3)) {
+		switch (reg_bit) {
 		case 0:
 			res = "st2_ar0lc";
 			break;
@@ -796,8 +796,8 @@ char *get_status_regs_and_bits(char *reg_arg, int reg_bit) {
 		case 15:
 			res = "st2_arms";
 			break;
-       }
-  } else if (!strncmp(reg_arg, "ST3", 3)) {
+		}
+	} else if (!strncmp (reg_arg, "ST3", 3)) {
 		switch (reg_bit) {
 		case 0:
 			res = "st3_sst";
@@ -847,14 +847,14 @@ char *get_status_regs_and_bits(char *reg_arg, int reg_bit) {
 		case 15:
 			res = "st3_cafrz";
 			break;
-        }
-  }
+		}
+	}
 
-  if (res != NULL) {
-	  res = strdup (res);
-  }
+	if (res != NULL) {
+	        res = strdup (res);
+	}
 
-  return res;
+	return res;
 }
 
 

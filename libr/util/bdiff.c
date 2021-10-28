@@ -243,8 +243,8 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
 	t = equatelines(a, an, b, bn);
 	pos = (struct pos *)calloc(bn ? bn : 1, sizeof(struct pos));
 	/* we can't have more matches than lines in the shorter file */
-	l.head = l.base = (struct hunk *)malloc(sizeof(struct hunk) *
-	                                        ((an<bn ? an:bn) + 1));
+	l.head = l.base = (struct hunk *)malloc (sizeof(struct hunk)
+		* ((an<bn ? an:bn) + 1));
 
 	if (pos && l.base && t) {
 		/* generate the matching block list */

@@ -2023,39 +2023,43 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	}
 	case ARM64_INS_BIC:
-        if (OPCOUNT64 () == 2) {
-            if (REGSIZE64 (0) == 4) {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=", REG64 (1), REG64 (0));
-            } else {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=", REG64 (1), REG64 (0));
-            }
-        } else {
-            if (REGSIZE64 (0) == 4) {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=", REG64 (2), REG64 (1), REG64 (0));
-            } else {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=", REG64 (2), REG64 (1), REG64 (0));
-            }
-        }
-        break;
+	if (OPCOUNT64 () == 2) {
+		if (REGSIZE64 (0) == 4) {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=",
+					REG64 (1), REG64 (0));
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=",
+					REG64 (1), REG64 (0));
+		}
+	} else {
+		if (REGSIZE64 (0) == 4) {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=",
+					REG64 (2), REG64 (1), REG64 (0));
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=",
+					REG64 (2), REG64 (1), REG64 (0));
+		}
+	}
+	break;
 	case ARM64_INS_CBZ:
 		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64d",pc,=,}",
-			REG64 (0), IMM64 (1));
+				REG64 (0), IMM64 (1));
 		break;
 	case ARM64_INS_CBNZ:
 		r_strbuf_setf (&op->esil, "%s,?{,%"PFMT64d",pc,=,}",
-			REG64 (0), IMM64 (1));
+				REG64 (0), IMM64 (1));
 		break;
 	case ARM64_INS_TBZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
 		r_strbuf_setf (&op->esil, "%" PFMT64d ",1,<<,%s,&,!,?{,%"PFMT64d",pc,=,}",
-			IMM64 (1), REG64 (0), IMM64 (2));
+				IMM64 (1), REG64 (0), IMM64 (2));
 		break;
 	case ARM64_INS_TBNZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
 		r_strbuf_setf (&op->esil, "%" PFMT64d ",1,<<,%s,&,?{,%"PFMT64d",pc,=,}",
-			IMM64 (1), REG64 (0), IMM64 (2));
+				IMM64 (1), REG64 (0), IMM64 (2));
 		break;
 	case ARM64_INS_STNP:
 	case ARM64_INS_STP: // stp x6, x7, [x6,0xf90]
@@ -2069,7 +2073,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			// "stp x2, x3, [x8, 0x20]!
 			// "32,x8,+=,x2,x8,=[8],x3,x8,8,+,=[8]",
 			r_strbuf_setf(&op->esil,
-					"%"PFMT64d",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
+					"%" PFMT64d ",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
 					abs, MEMBASE64 (2), sign,
 					REG64 (0), MEMBASE64 (2), size,
 					REG64 (1), MEMBASE64 (2), size, size);
@@ -4271,7 +4275,7 @@ static void set_opdir(RAnalOp *op) {
 		break;
 	default:
 		break;
-        }
+	}
 }
 
 static void set_src_dst(RAnalValue *val, RReg *reg, csh *handle, cs_insn *insn, int x, int bits) {

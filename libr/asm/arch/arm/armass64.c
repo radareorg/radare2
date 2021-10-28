@@ -88,8 +88,8 @@ typedef struct Opcode_t {
 static int get_mem_option(char *token) {
 	// values 4, 8, 12, are unused. XXX to adjust
 	const char *options[] = {"sy", "st", "ld", "xxx", "ish", "ishst",
-	                         "ishld", "xxx", "nsh", "nshst", "nshld",
-	                         "xxx", "osh", "oshst", "oshld", NULL};
+			"ishld", "xxx", "nsh", "nshst", "nshld",
+			"xxx", "osh", "oshst", "oshld", NULL};
 	int i = 0;
 	while (options[i]) {
 		if (!r_str_casecmp (token, options[i])) {
@@ -308,29 +308,29 @@ static ut32 mov(ArmOp *op) {
 static ut32 cb(ArmOp *op) {
 	ut32 data = UT32_MAX;
 	int k = 0;
-    if (!strncmp (op->mnemonic, "cbnz", 4)) {
-        if (op->operands[0].reg_type & ARM_REG64) {
-            k =  0x000000b5;
-        } else if (op->operands[0].reg_type & ARM_REG32) {
-            k =  0x00000035;
-        } else {
-            return UT32_MAX;
-        }
-    } else if (!strncmp (op->mnemonic, "cbz", 3)) {
-        if (op->operands[0].reg_type & ARM_REG64) {
-            k =  0x000000b4;
-        } else if (op->operands[0].reg_type & ARM_REG32) {
-            k =  0x00000034;
-        } else {
-            return UT32_MAX;
-        }
-    } else {
-        return UT32_MAX;
-    }
-    //printf ("%s %d, %llu\n", op->mnemonic, op->operands[0].reg, op->operands[1].immediate);
-    ut32 imm = op->operands[1].immediate;
+	if (!strncmp (op->mnemonic, "cbnz", 4)) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0x000000b5;
+		} else if (op->operands[0].reg_type & ARM_REG32) {
+			k =  0x00000035;
+		} else {
+			return UT32_MAX;
+		}
+	} else if (!strncmp (op->mnemonic, "cbz", 3)) {
+		if (op->operands[0].reg_type & ARM_REG64) {
+			k =  0x000000b4;
+		} else if (op->operands[0].reg_type & ARM_REG32) {
+			k =  0x00000034;
+		} else {
+			return UT32_MAX;
+		}
+	} else {
+		return UT32_MAX;
+	}
+	//printf ("%s %d, %llu\n", op->mnemonic, op->operands[0].reg, op->operands[1].immediate);
+	ut32 imm = op->operands[1].immediate;
 	data = k | encode1reg (op) | ((imm & 0x1c) << 27) | ((imm & 0x1fe0) << 11);
-    data = data | ((imm & 0x1fe000) >> 5);
+	data = data | ((imm & 0x1fe000) >> 5);
 
 	return data;
 }
@@ -905,8 +905,7 @@ static ut32 arithmetic(ArmOp *op, int k) {
 		return data;
 	}
 
-	if (!(op->operands[0].type & ARM_GPR &&
-	      op->operands[1].type & ARM_GPR)) {
+	if (!(op->operands[0].type & ARM_GPR && op->operands[1].type & ARM_GPR)) {
 		return data;
 	}
 	if (op->operands[2].type & ARM_GPR) {

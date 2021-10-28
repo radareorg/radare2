@@ -343,7 +343,7 @@ R_API char *r_hex_from_code(const char *code) {
 	if (strstr (code, "var")) {
 		return r_hex_from_js (code);
 	}
-        /* Python */
+	/* Python */
 	return r_hex_from_py (code);
 }
 

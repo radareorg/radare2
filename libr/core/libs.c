@@ -140,7 +140,7 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 	}
 	// load script plugins
 	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
-        RList *files = r_sys_dir (homeplugindir);
+	RList *files = r_sys_dir (homeplugindir);
 	RListIter *iter;
 	char *file;
 	r_list_foreach (files, iter, file) {

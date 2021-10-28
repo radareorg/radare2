@@ -587,8 +587,7 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
-static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
-                                 int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
+static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
 	if (rad) {
 		printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
 		printf ("e asm.bits=%d\n", bits? bits: R_SYS_BITS);

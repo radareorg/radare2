@@ -2824,8 +2824,8 @@ static bool esil_smaller(RAnalEsil *esil) { // 'dst < src' => 'src,dst,<'
 				// default size is set to 64 as internally operands are ut64
 				esil->lastsz = 64;
 			}
-			r_anal_esil_pushnum (esil, (num != num2) &
-			                           !signed_compare_gt (num, num2, esil->lastsz));
+			r_anal_esil_pushnum (esil, (num != num2)
+				& !signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
 	free (dst);
@@ -2903,8 +2903,8 @@ static bool esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
 				// default size is set to 64 as internally operands are ut64
 				esil->lastsz = 64;
 			}
-			r_anal_esil_pushnum (esil, (num == num2) |
-			                           signed_compare_gt (num, num2, esil->lastsz));
+			r_anal_esil_pushnum (esil, (num == num2)
+					| signed_compare_gt (num, num2, esil->lastsz));
 		}
 	}
 	free (dst);

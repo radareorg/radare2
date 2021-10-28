@@ -917,8 +917,8 @@ static int cmpaddr(const void *_a, const void *_b) {
 }
 
 static bool listOpDescriptions(void *_core, const char *k, const char *v) {
-        r_cons_printf ("%s=%s\n", k, v);
-        return true;
+	r_cons_printf ("%s=%s\n", k, v);
+	return true;
 }
 
 /* better aac for windows-x86-32 */
@@ -3421,7 +3421,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_core_seek (core, fcn->addr, true);
 		Sdb *db = __core_cmd_anal_fcn_stats (core, inp);
-                sdb_num_set (db, ".addr", fcn->addr, 0);
+		sdb_num_set (db, ".addr", fcn->addr, 0);
 		r_list_append (dbs, db);
 	}
 	free (inp);
@@ -9832,7 +9832,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'd': {// "agd"
-	        int diff_opt = R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF;
+		int diff_opt = R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF;
 		switch (input[1]) {
 		case 'j': {
 				  ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
@@ -9876,7 +9876,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			  }
 		}
 		break;
-        }
+	}
 	case 'v': // "agv" alias for "agfv"
 		r_core_cmdf (core, "agfv%s", input + 1);
 		break;
@@ -10619,8 +10619,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
-					oldstr = r_print_rowlog (core->print, "Speculatively constructing a function name "
-					                         "for fcn.* and sym.func.* functions (aan)");
+					oldstr = r_print_rowlog (core->print,
+							"Speculatively constructing a function name "
+							"for fcn.* and sym.func.* functions (aan)");
 					r_core_anal_autoname_all_fcns (core);
 					r_print_rowlog_done (core->print, oldstr);
 					r_core_task_yield (&core->tasks);

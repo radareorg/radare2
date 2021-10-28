@@ -907,7 +907,7 @@ err_r_file_mmap_write:
 	const int pagesize = getpagesize ();
 	int mmlen = len + pagesize;
 	int rest = addr % pagesize;
-        ut8 *mmap_buf;
+	ut8 *mmap_buf;
 	if (fd == -1) {
 		return -1;
 	}

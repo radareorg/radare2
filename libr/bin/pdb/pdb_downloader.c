@@ -199,7 +199,7 @@ int r_bin_pdb_download(RCore *core, PJ *pj, int isradjson, SPDBOptions *options)
 	opt.extract = options->extract;
 
 	init_pdb_downloader (&opt, &pdb_downloader);
-	ret = pdb_downloader.download ? pdb_downloader.download (&pdb_downloader) : 0;
+	ret = pdb_downloader.download? pdb_downloader.download (&pdb_downloader): 0;
 	if (isradjson) {
 		pj_ko (pj, "pdb");
 		pj_ks (pj, "file", opt.dbg_file);
@@ -207,7 +207,7 @@ int r_bin_pdb_download(RCore *core, PJ *pj, int isradjson, SPDBOptions *options)
 		pj_end (pj);
 	} else {
 		r_cons_printf ("PDB \"%s\" download %s\n",
-		        opt.dbg_file, ret ? "success" : "failed");
+				opt.dbg_file, ret? "success": "failed");
 	}
 	deinit_pdb_downloader (&pdb_downloader);
 

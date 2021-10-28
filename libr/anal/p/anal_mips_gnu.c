@@ -1677,7 +1677,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 static bool mips_set_reg_profile(RAnal* anal){
      const char *p =
 #if 0
-          "=PC    pc\n"
+	  "=PC    pc\n"
 	  "=SP    sp\n"
 	  "=A0    a0\n"
 	  "=A1    a1\n"
@@ -1787,7 +1787,7 @@ RAnalPlugin r_anal_plugin_mips_gnu = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-        .type = R_LIB_TYPE_ANAL,
-        .data = &r_anal_plugin_mips_gnu
+	.type = R_LIB_TYPE_ANAL,
+	.data = &r_anal_plugin_mips_gnu
 };
 #endif

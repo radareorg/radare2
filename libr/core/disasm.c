@@ -1053,9 +1053,10 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	core->parser->subreg = r_config_get_i (core->config, "asm.sub.reg");
 	core->parser->subrel_addr = 0;
 	if (core->parser->subrel
-	    && (ds->analop.type == R_ANAL_OP_TYPE_LEA || ds->analop.type == R_ANAL_OP_TYPE_MOV
-	        || ds->analop.type == R_ANAL_OP_TYPE_CMP)
-	    && ds->analop.ptr != UT64_MAX) {
+			&& (ds->analop.type == R_ANAL_OP_TYPE_LEA
+				|| ds->analop.type == R_ANAL_OP_TYPE_MOV
+				|| ds->analop.type == R_ANAL_OP_TYPE_CMP)
+			&& ds->analop.ptr != UT64_MAX) {
 		core->parser->subrel_addr = ds->analop.ptr;
 	}
 	if (ds->subvar && ds->opstr) {
@@ -1299,7 +1300,7 @@ static void ds_begin_cont(RDisasmState *ds) {
 	ds_setup_print_pre (ds, false, false);
 	if (!ds->linesright && ds->show_lines_bb && ds->line) {
 		RAnalRefStr *refstr = r_anal_reflines_str (ds->core, ds->at,
-		                    ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
+				ds->linesopts | R_ANAL_REFLINE_TYPE_MIDDLE_AFTER);
 		ds_print_ref_lines (refstr->str, refstr->cols, ds);
 		r_anal_reflines_str_free (refstr);
 	}
@@ -1462,7 +1463,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 						RFlagItem *f_sym = f;
 						if (!r_str_startswith (f_sym->name, "sym.")) {
 							f_sym = r_flag_get_by_spaces (core->flags, f->offset,
-							                              R_FLAGS_FS_SYMBOLS, NULL);
+									R_FLAGS_FS_SYMBOLS, NULL);
 						}
 						if (f_sym && f_sym->demangled && f_sym->realname) {
 							f = f_sym;
@@ -3572,16 +3573,19 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	if (!f && ds->core->flags && (!ds->core->vmode || (!ds->subjmp && !ds->subnames))) {
 		const char *arch;
 		RFlagItem *flag = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
-		                                        R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
-		if (flag && flag->name && ds->opstr && !strstr (ds->opstr, flag->name)
-		    && (r_str_startswith (flag->name, "sym.") || r_str_startswith (flag->name, "method."))
-		    && (arch = r_config_get (ds->core->config, "asm.arch")) && strcmp (arch, "dalvik")) {
+				R_FLAGS_FS_CLASSES, R_FLAGS_FS_SYMBOLS, NULL);
+		if (flag && flag->name
+				&& ds->opstr && !strstr (ds->opstr, flag->name)
+				&& (r_str_startswith (flag->name, "sym.")
+					|| r_str_startswith (flag->name, "method."))
+				&& (arch = r_config_get (ds->core->config, "asm.arch"))
+				&& strcmp (arch, "dalvik")) {
 			RFlagItem *flag_sym = flag;
 			if (ds->core->vmode && ds->asm_demangle
-			    && (r_str_startswith (flag->name, "sym.")
-			        || (flag_sym = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
-			                                             R_FLAGS_FS_SYMBOLS, NULL)))
-			    && flag_sym->demangled) {
+					&& (r_str_startswith (flag->name, "sym.")
+						|| (flag_sym = r_flag_get_by_spaces (ds->core->flags,
+							ds->analop.jump, R_FLAGS_FS_SYMBOLS, NULL)))
+				&& flag_sym->demangled) {
 				return;
 			}
 			ds_begin_comment (ds);
@@ -3611,10 +3615,12 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 		} else if ((!ds->core->vmode || (!ds->subjmp && !ds->subnames))
 			   && (!ds->opstr || !strstr (ds->opstr, f->name))) {
 			RFlagItem *flag_sym;
-			if (ds->core->vmode && ds->asm_demangle
-			    && (flag_sym = r_flag_get_by_spaces (ds->core->flags, ds->analop.jump,
-			                                         R_FLAGS_FS_SYMBOLS, NULL))
-			    && flag_sym->demangled) {
+			if (ds->core->vmode
+					&& ds->asm_demangle
+					&& (flag_sym = r_flag_get_by_spaces (ds->core->flags,
+						ds->analop.jump,
+						R_FLAGS_FS_SYMBOLS, NULL))
+					&& flag_sym->demangled) {
 				return;
 			}
 			ds_begin_comment (ds);
@@ -4029,8 +4035,8 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment (ds);
-		ds_comment (ds, true, "; %s%s\"%s\"%s", inv ? Color_INVERT : "", prefix, escstr,
-		            inv ? Color_INVERT_RESET : "");
+		ds_comment (ds, true, "; %s%s\"%s\"%s", inv? Color_INVERT: "", prefix, escstr,
+				inv? Color_INVERT_RESET: "");
 		ds->printed_str_addr = refaddr;
 		free (escstr);
 	}
@@ -4573,8 +4579,8 @@ static bool myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 					if (ds->show_color) {
 						bool inv = ds->show_emu_strinv;
 						m = r_str_newf ("%s%s%s\"%s\"%s",
-						                  prefix, r_str_get (type), inv ? Color_INVERT : "",
-						                  escstr, inv ? Color_INVERT_RESET : "");
+								prefix, r_str_get (type), inv? Color_INVERT: "",
+								escstr, inv? Color_INVERT_RESET: "");
 					} else {
 						m = r_str_newf ("%s%s\"%s\"", prefix, r_str_get (type), escstr);
 					}
@@ -5485,7 +5491,7 @@ toro:
 				ds_pre_line (ds);
 				ds_setup_print_pre (ds, false, false);
 				r_cons_strcat ("      ");
-                                ds_print_lines_left (ds);
+				ds_print_lines_left (ds);
 				ds_begin_comment (ds);
 				if (ds->show_color) {
 					ds_comment (ds, true, "; %s%s%s",

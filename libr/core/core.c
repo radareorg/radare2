@@ -94,35 +94,35 @@ static void r_core_debug_syscall_hit(RCore *core) {
 }
 
 struct getreloc_t {
-        ut64 vaddr;
-        int size;
+	ut64 vaddr;
+	int size;
 };
 
 static int getreloc_tree(void *incoming, void *in, void *user) {
-        struct getreloc_t *gr = (struct getreloc_t *)incoming;
-        RBinReloc *r = (RBinReloc *)in;
-        if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
-                return 0;
-        }
-        if (gr->vaddr > r->vaddr) {
-                return 1;
-        }
-        if (gr->vaddr < r->vaddr) {
-                return -1;
-        }
-        return 0;
+	struct getreloc_t *gr = (struct getreloc_t *)incoming;
+	RBinReloc *r = (RBinReloc *)in;
+	if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
+		return 0;
+	}
+	if (gr->vaddr > r->vaddr) {
+		return 1;
+	}
+	if (gr->vaddr < r->vaddr) {
+		return -1;
+	}
+	return 0;
 }
 
 R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
-        if (size < 1 || addr == UT64_MAX) {
-                return NULL;
+	if (size < 1 || addr == UT64_MAX) {
+		return NULL;
+	}
+	RRBTree *relocs = r_bin_get_relocs (core->bin);
+	if (!relocs) {
+		return NULL;
         }
-        RRBTree *relocs = r_bin_get_relocs (core->bin);
-        if (!relocs) {
-                return NULL;
-        }
-        struct getreloc_t gr = { .vaddr = addr, .size = size };
-        return r_crbtree_find (relocs, &gr, getreloc_tree, NULL);
+	struct getreloc_t gr = { .vaddr = addr, .size = size };
+	return r_crbtree_find (relocs, &gr, getreloc_tree, NULL);
 }
 
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
@@ -3264,9 +3264,9 @@ R_API int r_core_prompt(RCore *r, int sync) {
 		return r_core_prompt_exec (r);
 	}
 	r_core_cmd_queue (r, line);
-        if (r->scr_gadgets && *line && *line != 'q') {
-                r_core_cmd0 (r, "pg");
-        }
+	if (r->scr_gadgets && *line && *line != 'q') {
+		r_core_cmd0 (r, "pg");
+	}
 	r->num->value = r->rc;
 	return true;
 }

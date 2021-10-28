@@ -936,12 +936,12 @@ static inline void delete_till_end(void) {
 }
 
 static void __print_prompt(void) {
-        RCons *cons = r_cons_singleton ();
+	RCons *cons = r_cons_singleton ();
 	int columns = r_cons_get_size (NULL) - 2;
 	int len, i, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
 	if (cons->line->prompt_type == R_LINE_PROMPT_OFFSET) {
-                r_cons_gotoxy (0,  cons->rows);
-                r_cons_flush ();
+		r_cons_gotoxy (0,  cons->rows);
+		r_cons_flush ();
 	}
 	r_cons_clear_line (0);
 	if (cons->context->color_mode > 0) {
@@ -2043,7 +2043,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				}
 				dietline_print_risprompt (gcomp_line);
 			} else {
-			        __print_prompt ();
+				__print_prompt ();
 			}
 			fflush (stdout);
 		}

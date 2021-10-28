@@ -524,8 +524,7 @@ static void print_node(const RAnal *anal, const RFlirtNode *node, int indent) {
 	}
 }
 
-static int module_match_buffer(RAnal *anal, const RFlirtModule *module,
-                               ut8 *b, ut64 address, ut32 buf_size) {
+static int module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b, ut64 address, ut32 buf_size) {
 	/* Returns true if module matches b, according to the signatures infos.
 	* Return false otherwise.
 	* The buffer starts from the first byte after the pattern */

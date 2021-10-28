@@ -1,21 +1,21 @@
 #if __APPLE__
 
 kern_return_t mach_vm_region_recurse (
-        vm_map_t target_task,
-        mach_vm_address_t *address,
-        mach_vm_size_t *size,
-        natural_t *nesting_depth,
-        vm_region_recurse_info_t info,
-        mach_msg_type_number_t *infoCnt
+	vm_map_t target_task,
+	mach_vm_address_t *address,
+	mach_vm_size_t *size,
+	natural_t *nesting_depth,
+	vm_region_recurse_info_t info,
+	mach_msg_type_number_t *infoCnt
 );
 
-static const char * unparse_inheritance (vm_inherit_t i) {
-        switch (i) {
-        case VM_INHERIT_SHARE: return "share";
-        case VM_INHERIT_COPY: return "copy";
-        case VM_INHERIT_NONE: return "none";
-        default: return "???";
-        }
+static const char *unparse_inheritance(vm_inherit_t i) {
+	switch (i) {
+	case VM_INHERIT_SHARE: return "share";
+	case VM_INHERIT_COPY: return "copy";
+	case VM_INHERIT_NONE: return "none";
+	default: return "???";
+	}
 }
 
 #if __LP64__

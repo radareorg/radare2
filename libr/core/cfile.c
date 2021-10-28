@@ -13,10 +13,10 @@ static bool close_but_cb(void *user, void *data, ut32 id) {
        RCore *core = (RCore *)user;
        RIODesc *desc = (RIODesc *)data;
        if (core && desc && core->io->desc) {
-               if (desc->fd != core->io->desc->fd) {
-                       // TODO: use the API
-                       r_core_cmdf (core, "o-%d", desc->fd);
-               }
+	       if (desc->fd != core->io->desc->fd) {
+		       // TODO: use the API
+		       r_core_cmdf (core, "o-%d", desc->fd);
+	       }
        }
        return true;
 }

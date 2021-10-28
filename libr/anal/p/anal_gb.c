@@ -1270,7 +1270,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->cycles = 24;
 			op->failcycles = 12;
 			break;
-                case 0xc7:				//rst 0
+		case 0xc7:				//rst 0
 			op->jump = 0x00;
 			op->fail = addr + ilen;
 			op->eob = true;
@@ -1279,13 +1279,13 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_CALL;
 			break;
 		case 0xcf:				//rst 8
-                        op->jump = 0x08;
+			op->jump = 0x08;
 			op->fail = addr + ilen;
 			op->eob = true;
 			gb_anal_esil_call (op);
 			op->cycles = 16;
 			op->type = R_ANAL_OP_TYPE_CALL;
-                        break;
+			break;
 		case 0xd7:				//rst 16
 			op->jump = 0x10;
 			op->fail = addr + ilen;

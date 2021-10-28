@@ -7,10 +7,10 @@
 #include "bfvm.c"
 
 typedef struct {
-        int desc;
-        ut8 *buf;
-        ut32 size;
-        BfvmCPU *bfvm;
+	int desc;
+	ut8 *buf;
+	ut32 size;
+	BfvmCPU *bfvm;
 } RIOBdescbg;
 
 struct bfvm_regs {

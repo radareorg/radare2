@@ -75,5 +75,5 @@ static const char *ascii_table =
 ;
 
 R_API const char *ret_ascii_table(void) {
-        return ascii_table;
+	return ascii_table;
 }

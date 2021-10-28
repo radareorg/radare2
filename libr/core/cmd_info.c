@@ -717,11 +717,11 @@ static int cmd_info(void *data, const char *input) {
 		case 'O': // "iO"
 			switch (input[1]) {
 			case ' ':
-			        r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_head_ro (input + 1), desc->name);
-			        break;
+				r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_head_ro (input + 1), desc->name);
+				break;
 			default:
-			        r_sys_cmdf ("rabin2 -O help");
-			        break;
+				r_sys_cmdf ("rabin2 -O help");
+				break;
 			}
 			return 0;
 		case 'S': // "iS"
@@ -1123,9 +1123,9 @@ static int cmd_info(void *data, const char *input) {
 				}
 				core->tmpseek = false;
 				r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x,
-				             r_str_get (strpurge),
-				             strpurge && *strpurge ? "," : "",
-				             addr);
+						r_str_get (strpurge),
+						(strpurge && *strpurge)? ",": "",
+						addr);
 				core->tmpseek = old_tmpseek;
 				newline = false;
 			} else if (input[1] == 'z') { // "izz"

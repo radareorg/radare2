@@ -374,8 +374,8 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
 	/*  
-    Take divmod and throw away div part
-    */
+	Take divmod and throw away div part
+	*/
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);
@@ -390,14 +390,14 @@ R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
 
 R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b) {
 	/*
-    Puts a%b in d 
-    and a/b in c
-        
-    mod(a,b) = a - ((a / b) * b)
-    
-    example:
-      mod(8, 3) = 8 - ((8 / 3) * 3) = 2
-    */
+	Puts a%b in d
+	and a/b in c
+
+	mod(a,b) = a - ((a / b) * b)
+
+	example:
+	mod(8, 3) = 8 - ((8 / 3) * 3) = 2
+	*/
 	r_return_if_fail (a);
 	r_return_if_fail (b);
 	r_return_if_fail (c);

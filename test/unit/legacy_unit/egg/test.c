@@ -15,8 +15,8 @@ int main(int argc, char **argv) {
 	RBuffer *b;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "ha:b:")) != -1) {
-                switch (c) {
+	while ((c = getopt (argc, argv, "ha:b:")) != -1) {
+		switch (c) {
 		case 'a':
 			arch = optarg;
 			break;

@@ -1560,8 +1560,8 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, 
 			if (endaddr == bb->addr) {
 				endaddr += bb->size;
 			} else if ((endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN)
-			           || (anal->opt.jmpmid && is_x86 && endaddr > bb->addr
-			               && bb->addr + bb->size > endaddr)) {
+					|| (anal->opt.jmpmid && is_x86 && endaddr > bb->addr
+						&& bb->addr + bb->size > endaddr)) {
 				endaddr = bb->addr + bb->size;
 			} else {
 				break;
@@ -1733,12 +1733,12 @@ R_API int r_anal_function_loops(RAnalFunction *fcn) {
 }
 
 R_API int r_anal_function_complexity(RAnalFunction *fcn) {
-/*
-        CC = E - N + 2P
-        E = the number of edges of the graph.
-        N = the number of nodes of the graph.
-        P = the number of connected components (exit nodes).
- */
+	/*
+	 * CC = E - N + 2P
+	 * E = the number of edges of the graph.
+	 * N = the number of nodes of the graph.
+	 * P = the number of connected components (exit nodes).
+	 */
 	RAnal *anal = fcn->anal;
 	int E = 0, N = 0, P = 0;
 	RListIter *iter;
