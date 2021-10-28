@@ -959,7 +959,7 @@ extern RCorePlugin r_core_plugin_sixref;
 R_API bool r_core_plugin_init(RCmd *cmd);
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
 R_API bool r_core_plugin_check(RCmd *cmd, const char *a0);
-R_API bool r_core_plugin_fini(RCmd *cmd);
+R_API void r_core_plugin_fini(RCmd *cmd);
 
 
 /* DECOMPILER PRINTING FUNCTIONS */

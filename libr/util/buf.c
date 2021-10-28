@@ -618,13 +618,13 @@ R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	return r;
 }
 
-R_API bool r_buf_fini(RBuffer *b) {
+R_API void r_buf_fini(RBuffer *b) {
 	if (!b) {
-		return false;
+		return;
 	}
 	if (b->refctr > 0) {
 		b->refctr--;
-		return false;
+		return;
 	}
 
 	// free the whole_buf only if it was initially allocated by the buf types
@@ -635,11 +635,13 @@ R_API bool r_buf_fini(RBuffer *b) {
 	} else {
 		buf_wholefree (b);
 	}
-	return buf_fini (b);
+	buf_fini (b);
 }
 
 R_API void r_buf_free(RBuffer *b) {
-	if (r_buf_fini (b)) {
+	bool unreferenced = b && b->refctr == 0;
+	r_buf_fini (b);
+	if (unreferenced) {
 		free (b);
 	}
 }

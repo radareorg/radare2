@@ -393,7 +393,7 @@ R_API RList *r_io_open_many(RIO *io, const char *uri, int flags, int mode);
 R_API RIODesc* r_io_open_buffer(RIO *io, RBuffer *b, int flags, int mode);
 R_API bool r_io_close(RIO *io);
 R_API bool r_io_reopen(RIO *io, int fd, int flags, int mode);
-R_API bool r_io_close_all(RIO *io);
+R_API void r_io_close_all(RIO *io);
 R_API int r_io_pread_at(RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_pwrite_at(RIO *io, ut64 paddr, const ut8 *buf, int len);
 R_API bool r_io_vread_at(RIO *io, ut64 vaddr, ut8 *buf, int len);
@@ -413,7 +413,7 @@ R_API bool r_io_set_write_mask(RIO *io, const ut8 *mask, int len);
 R_API void r_io_bind(RIO *io, RIOBind *bnd);
 R_API bool r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
 R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
-R_API int r_io_fini(RIO *io);
+R_API void r_io_fini(RIO *io);
 R_API void r_io_free(RIO *io);
 #define r_io_bind_init(x) memset(&x,0,sizeof(x))
 
@@ -481,7 +481,7 @@ R_API int r_io_desc_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len);
 
 /* lifecycle */
 R_IPI bool r_io_desc_init(RIO *io);
-R_IPI bool r_io_desc_fini(RIO *io);
+R_IPI void r_io_desc_fini(RIO *io);
 
 /* io/cache.c */
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
