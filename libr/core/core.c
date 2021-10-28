@@ -1828,6 +1828,10 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 }
 
 R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
+	if (!core) {
+		autocomplete_default (core, completion, buf);
+		return;
+	}
 	if (r_config_get_b (core->config, "scr.prompt.tabhelp")) {
 		if (buf->data[0] && buf->data[strlen (buf->data) - 1] != ' ' && !strchr (buf->data, ' ')) {
 			r_line_completion_clear (completion);
@@ -1836,10 +1840,6 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			free (s);
 			return;
 		}
-	}
-	if (!core) {
-		autocomplete_default (core, completion, buf);
-		return;
 	}
 	r_line_completion_clear (completion);
 	char *pipe = strchr (buf->data, '>');

@@ -485,16 +485,14 @@ static bool try_loadlib(RCore *core, const char *lib, ut64 addr) {
 
 R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	const char *dirlibs = r_config_get (core->config, "dir.libs");
-	bool free_libdir = true;
 #ifdef __WINDOWS__
 	char *libdir = r_str_r2_prefix (R2_LIBDIR);
+	if (!libdir) {
+		libdir = strdup (R2_LIBDIR);
+	}
 #else
 	char *libdir = strdup (R2_LIBDIR);
 #endif
-	if (!libdir) {
-		libdir = R2_LIBDIR;
-		free_libdir = false;
-	}
 	if (!dirlibs || !*dirlibs) {
 		dirlibs = "." R_SYS_DIR;
 	}
@@ -533,28 +531,11 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 			libpath++;
 		}
 	}
-	if (free_libdir) {
-		free (libdir);
-	}
+	free (libdir);
 	return ret;
 }
 
-R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
-	if (!core || !core->bin || !core->bin->cur) {
-		return 0;
-	}
-	if (baddr == UT64_MAX) {
-		return 0;
-	}
-	RBinFile *bf = core->bin->cur;
-	bf->o->baddr = baddr;
-	bf->o->loadaddr = baddr;
-	r_bin_object_set_items (bf, bf->o);
-	return 1;
-}
-
 static void load_scripts_for(RCore *core, const char *name) {
-	// TODO:
 	char *file;
 	RListIter *iter;
 	char *hdir = r_str_newf (R_JOIN_2_PATHS (R2_HOME_BINRC, "bin-%s"), name);
