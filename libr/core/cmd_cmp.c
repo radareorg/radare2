@@ -552,7 +552,7 @@ static const RList *symbols_of(RCore *core, int id0) {
 	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
 	RBinFile *old_bf = core->bin->cur;
 	r_bin_file_set_cur_binfile (core->bin, bf);
-	const RList *list = bf? r_bin_get_symbols (core->bin): r_list_newf (NULL);
+	const RList *list = bf? r_bin_get_symbols (core->bin): NULL;
 	r_bin_file_set_cur_binfile (core->bin, old_bf);
 	return list;
 }
@@ -682,8 +682,6 @@ static void _core_cmp_info_symbols(RCore *core, int id0, int id1) {
 			r_cons_printf ("+%s\n", s->name);
 		}
 	}
-	// r_list_free (s0);
-	// r_list_free (s1);
 }
 
 static void _core_cmp_info(RCore *core, const char *input) {
