@@ -718,6 +718,9 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 				match = (nv != uv);
 			}
 			break;
+		case '$':
+			match = strstr (nn, un) == NULL;
+			break;
 		case '~':
 			match = strstr (nn, un) != NULL;
 			break;
@@ -1025,6 +1028,7 @@ R_API const char *r_table_help(void) {
 		" */tail/10      same as | tail -n 10\n"
 		" */page/1/10    show the first 10 rows (/page/2/10 will show the 2nd)\n"
 		" c/str/warn     grep rows matching col(name).str(warn)\n"
+		" c/nostr/warn   grep rows not matching col(name).str(warn)\n"
 		" c/strlen/3     grep rows matching strlen(col) == X\n"
 		" c/minlen/3     grep rows matching strlen(col) > X\n"
 		" c/maxlen/3     grep rows matching strlen(col) < X\n"
@@ -1146,6 +1150,10 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		} else if (!strcmp (operation, "head")) {
 			if (operand) {
 				r_table_filter (t, col, 'h', operand);
+			}
+		} else if (!strcmp (operation, "nostr")) {
+			if (operand) {
+				r_table_filter (t, col, '$', operand);
 			}
 		} else if (!strcmp (operation, "str")) {
 			if (operand) {
