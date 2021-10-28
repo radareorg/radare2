@@ -102,10 +102,12 @@ R_API void r_interval_tree_init(RIntervalTree *tree, RIntervalNodeFree free) {
 	tree->free = free;
 }
 
+typedef void (*ITVTreeFree)(void *);
+
 static void interval_node_free(RBNode *node, void *user) {
 	RIntervalNode *ragenode /* >:-O */ = unwrap (node);
 	if (user) {
-		((RContRBFree)user) (ragenode->data);
+		((ITVTreeFree)user) (ragenode->data);
 	}
 	free (ragenode);
 }
