@@ -164,8 +164,8 @@ R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 }
 #endif
 
-R_API bool r_io_close_all(RIO* io) {
-	r_return_val_if_fail (io, false);
+R_API void r_io_close_all(RIO* io) {
+	r_return_if_fail (io);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
 	ls_free (io->plugins);
@@ -173,7 +173,6 @@ R_API bool r_io_close_all(RIO* io) {
 	r_io_map_init (io);
 	r_io_cache_fini (io);
 	r_io_plugin_init (io);
-	return true;
 }
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
@@ -634,9 +633,9 @@ R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
 #endif
 
 //remove all banks, maps and descs
-R_API int r_io_fini(RIO* io) {
+R_API void r_io_fini(RIO* io) {
 	if (!io) {
-		return false;
+		return;
 	}
 	r_io_bank_fini (io);
 	r_io_map_fini (io);
@@ -653,5 +652,4 @@ R_API int r_io_fini(RIO* io) {
 		free (io->ptrace_wrap);
 	}
 #endif
-	return true;
 }
