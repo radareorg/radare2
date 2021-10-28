@@ -93,17 +93,19 @@ R_API bool r_io_map_remap_fd(RIO *io, int fd, ut64 addr) {
 	return retval;
 }
 
-static void _map_free(void* p) {
-	RIOMap* map = (RIOMap*) p;
+static bool _map_free_cb(void *user, void *data, ut32 id) {
+	RIOMap *map = (RIOMap *)data;
 	if (map) {
 		free (map->name);
 		free (map);
 	}
+	return true;
 }
 
 R_API void r_io_map_init(RIO* io) {
 	r_return_if_fail (io);
 	if (io->maps) {
+		r_id_storage_foreach (io->maps, _map_free_cb, NULL);
 		r_id_storage_free (io->maps);
 	}
 	io->maps = r_id_storage_new (1, END_OF_MAP_IDS);
@@ -186,7 +188,7 @@ R_API void r_io_map_del(RIO *io, ut32 id) {
 		r_io_bank_del_map (io, bankid, id);
 	} while (r_id_storage_get_next (io->banks, &bankid));
 	r_id_storage_delete (io->maps, id);
-	_map_free (map);
+	_map_free_cb (NULL, map, id);
 }
 
 //delete all maps with specified fd
@@ -259,6 +261,7 @@ static bool _clear_banks_cb (void *user, void *data, ut32 id) {
 R_API void r_io_map_fini(RIO* io) {
 	r_return_if_fail (io);
 	r_id_storage_foreach (io->banks, _clear_banks_cb, NULL);
+	r_id_storage_foreach (io->maps, _map_free_cb, NULL);
 	r_id_storage_free (io->maps);
 	io->maps = NULL;
 }
