@@ -17,8 +17,8 @@
 #ifndef MACH0_CLASSES_H
 #define MACH0_CLASSES_H
 
-R_API RList *MACH0_(parse_classes)(RBinFile *bf);
-R_API void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, RSkipList *relocs);
-R_API void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipList *relocs);
+R_API RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi);
+R_API void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, RSkipList *relocs, objc_cache_opt_info *oi);
+R_API void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipList *relocs, objc_cache_opt_info *oi);
 
 #endif // MACH0_CLASSES_H

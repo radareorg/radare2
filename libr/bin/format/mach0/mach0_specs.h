@@ -322,6 +322,12 @@ typedef struct {
 } cache_locsym_entry_t;
 
 typedef struct {
+	uint64_t dylibOffset;
+	uint32_t nlistStartIndex;
+	uint32_t nlistCount;
+} cache_locsym_entry_large_t;
+
+typedef struct {
 	uint64_t address;
 	uint64_t size;
 	uint64_t fileOffset;
@@ -331,6 +337,10 @@ typedef struct {
 	uint32_t maxProt;
 	uint32_t initProt;
 } cache_mapping_slide;
+
+typedef struct {
+	uint64_t sel_string_base;
+} objc_cache_opt_info;
 
 #define DYLD_CACHE_SLIDE_PAGE_ATTRS 0xC000
 #define DYLD_CACHE_SLIDE_PAGE_ATTR_EXTRA 0x8000

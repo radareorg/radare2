@@ -109,6 +109,7 @@ struct super_blob_t {
 struct MACH0_(opts_t) {
 	bool verbose;
 	ut64 header_at;
+	ut64 symbols_off;
 };
 
 struct MACH0_(obj_t) {
@@ -170,6 +171,7 @@ struct MACH0_(obj_t) {
 	int func_size;
 	bool verbose;
 	ut64 header_at;
+	ut64 symbols_off;
 	void *user;
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
 	struct symbol_t *symbols;

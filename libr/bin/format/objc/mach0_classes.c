@@ -108,10 +108,10 @@ static mach0_ut va2pa(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf);
 static void copy_sym_name_with_namespace(char *class_name, char *read_name, RBinSymbol *sym);
 static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass);
 static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass);
-static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static);
-static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass);
-static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass);
-static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs);
+static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi);
+static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi);
+static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi);
+static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out);
 static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out);
 static char *read_str(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
@@ -515,7 +515,7 @@ error:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static) {
+static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static, objc_cache_opt_info *oi) {
 	struct MACH0_(SMethodList) ml;
 	mach0_ut r;
 	ut32 offset, left, i;
@@ -613,7 +613,12 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 			m.imp = r_read_ble (&sm[2 * sizeof (mach0_ut)], bigendian, 8 * sizeof (mach0_ut));
 		} else {
 			st64 name_offset = (st32) r_read_ble (&sm[0], bigendian, 8 * sizeof (ut32));
-			mach0_ut name = p + name_offset;
+			mach0_ut name;
+			if (oi && oi->sel_string_base) {
+				name = oi->sel_string_base + name_offset;
+			} else {
+				name = p + name_offset;
+			}
 			if (mlflags != METHOD_LIST_FLAG_IS_PREOPT) {
 				r = va2pa (name, &offset, &left, bf);
 				if (!r) {
@@ -715,7 +720,7 @@ error:
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
+static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi) {
 	struct MACH0_(SProtocolList) pl = { 0 };
 	struct MACH0_(SProtocol) pc;
 	char *class_name = NULL;
@@ -852,10 +857,10 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		}
 
 		if (pc.instanceMethods > 0) {
-			get_method_list_t (pc.instanceMethods, bf, class_name, klass, false);
+			get_method_list_t (pc.instanceMethods, bf, class_name, klass, false, oi);
 		}
 		if (pc.classMethods > 0) {
-			get_method_list_t (pc.classMethods, bf, class_name, klass, true);
+			get_method_list_t (pc.classMethods, bf, class_name, klass, true, oi);
 		}
 		R_FREE (class_name);
 		p += sizeof (ut32);
@@ -1004,7 +1009,7 @@ static char *get_class_name(mach0_ut p, RBinFile *bf) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass) {
+static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi) {
 	struct MACH0_(obj_t) *bin;
 	struct MACH0_(SClassRoT) cro = { 0 };
 	ut32 offset, left, i;
@@ -1102,11 +1107,11 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 #endif
 
 	if (cro.baseMethods > 0) {
-		get_method_list_t (cro.baseMethods, bf, klass->name, klass, (cro.flags & RO_META) ? true : false);
+		get_method_list_t (cro.baseMethods, bf, klass->name, klass, (cro.flags & RO_META) ? true : false, oi);
 	}
 
 	if (cro.baseProtocols > 0) {
-		get_protocol_list_t (cro.baseProtocols, bf, klass);
+		get_protocol_list_t (cro.baseProtocols, bf, klass, oi);
 	}
 
 	if (cro.ivars > 0) {
@@ -1127,7 +1132,7 @@ static mach0_ut get_isa_value(void) {
 	return 0;
 }
 
-void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, RSkipList *relocs) {
+void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, RSkipList *relocs, objc_cache_opt_info *oi) {
 	struct MACH0_(SClass) c = { 0 };
 	const int size = sizeof (struct MACH0_(SClass));
 	mach0_ut r = 0;
@@ -1191,7 +1196,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 			}
 		}
 	}
-	get_class_ro_t (RO_DATA_PTR (c.data), bf, &is_meta_class, klass);
+	get_class_ro_t (RO_DATA_PTR (c.data), bf, &is_meta_class, klass, oi);
 
 #if SWIFT_SUPPORT
 	if (q (c.data + n_value) & 7) {
@@ -1201,7 +1206,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, 
 	if (!is_meta_class && !dupe) {
 		mach0_ut isa_n_value = get_isa_value ();
 		ut64 tmp = klass->addr;
-		MACH0_(get_class_t) (c.isa + isa_n_value, bf, klass, true, relocs);
+		MACH0_(get_class_t) (c.isa + isa_n_value, bf, klass, true, relocs, oi);
 		klass->addr = tmp;
 	}
 }
@@ -1242,7 +1247,7 @@ static RList *parse_swift_classes(RBinFile *bf) {
 }
 #endif
 
-RList *MACH0_(parse_classes)(RBinFile *bf) {
+RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	RList /*<RBinClass>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RBinClass *klass = NULL;
@@ -1266,7 +1271,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 
 	RSkipList *relocs = MACH0_(get_relocs) (bf->o->bin_obj);
 
-	ret = MACH0_(parse_categories) (bf, relocs);
+	ret = MACH0_(parse_categories) (bf, relocs, oi);
 
 	/* check if it's Swift */
 	// ret = parse_swift_classes (bf);
@@ -1336,7 +1341,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 			goto get_classes_error;
 		}
 		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
-		MACH0_(get_class_t) (p, bf, klass, false, relocs);
+		MACH0_(get_class_t) (p, bf, klass, false, relocs, oi);
 		if (!klass->name) {
 			klass->name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
 			if (!klass->name) {
@@ -1357,7 +1362,7 @@ get_classes_error:
 	return NULL;
 }
 
-static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs) {
+static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs, objc_cache_opt_info *oi) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj && bf->o->info, NULL);
 
 	RList /*<RBinClass>*/ *ret = NULL;
@@ -1419,7 +1424,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, RSkipList *relocs) {
 			R_FREE (klass);
 			goto error;
 		}
-		MACH0_(get_category_t) (p, bf, klass, relocs);
+		MACH0_(get_category_t) (p, bf, klass, relocs, oi);
 		if (!klass->name) {
 			R_FREE (klass);
 			continue;
@@ -1433,7 +1438,7 @@ error:
 	return NULL;
 }
 
-void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipList *relocs) {
+void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipList *relocs, objc_cache_opt_info *oi) {
 	r_return_if_fail (bf && bf->o && bf->o->info);
 
 	struct MACH0_(SCategory) c = { 0 };
@@ -1542,15 +1547,15 @@ void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipLis
 	R_FREE (category_name);
 
 	if (c.instanceMethods > 0) {
-		get_method_list_t (c.instanceMethods, bf, klass->name, klass, false);
+		get_method_list_t (c.instanceMethods, bf, klass->name, klass, false, oi);
 	}
 
 	if (c.classMethods > 0) {
-		get_method_list_t (c.classMethods, bf, klass->name, klass, true);
+		get_method_list_t (c.classMethods, bf, klass->name, klass, true, oi);
 	}
 
 	if (c.protocols > 0) {
-		get_protocol_list_t (c.protocols, bf, klass);
+		get_protocol_list_t (c.protocols, bf, klass, oi);
 	}
 
 	if (c.properties > 0) {
