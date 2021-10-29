@@ -794,7 +794,7 @@ R_API bool r_vc_commit(const char *rp, const char *message, const char *author, 
 R_API RList *r_vc_get_branches(const char *rp) {
 	if (!repo_exists (rp)) {
 		eprintf ("No valid repo in %s\n", rp);
-		return false;
+		return NULL;
 	}
 	Sdb *db = vcdb_open (rp);
 	RList *ret = r_list_new ();

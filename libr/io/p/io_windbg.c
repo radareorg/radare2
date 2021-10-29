@@ -340,9 +340,9 @@ fail:
 	return NULL;
 }
 
-static int windbg_init(void) {
+static bool windbg_init(void) {
 	if (w32_DebugCreate && w32_DebugConnectWide) {
-		return 1;
+		return true;
 	}
 	char *ext_path = r_sys_getenv ("_NT_DEBUGGER_EXTENSION_PATH");
 	HANDLE h = NULL;
@@ -362,22 +362,21 @@ static int windbg_init(void) {
 	}
 	if (!h) {
 		r_sys_perror ("LoadLibrary (\"dbgeng.dll\")");
-		return 0;
+		return false;
 	}
 
 	w32_DebugCreate = (DebugCreate_t)GetProcAddress (h, "DebugCreate");
 	if (!w32_DebugCreate) {
 		r_sys_perror ("GetProcAddress (\"DebugCreate\")");
-		return 0;
+		return false;
 	}
 
 	w32_DebugConnectWide = (DebugConnectWide_t)GetProcAddress (h, "DebugConnectWide");
 	if (!w32_DebugConnectWide) {
 		r_sys_perror ("GetProcAddress (\"DebugConnectWide\")");
-		return 0;
+		return false;
 	}
-
-	return 1;
+	return true;
 }
 
 static bool windbg_check(RIO *io, const char *uri, bool many) {

@@ -131,7 +131,7 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 	DEBUG_EVENT de;
 	int ret = -1;
 	if (!io->dbgwrap) {
-		io->dbgwrap = (struct r_w32dw_instance_t *)r_w32dw_new ();
+		io->dbgwrap = r_w32dw_new ();
 	}
 
 	HANDLE h_proc = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
