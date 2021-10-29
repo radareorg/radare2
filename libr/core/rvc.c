@@ -70,8 +70,7 @@ bool file_copyrf(const char *src, const char *dst) {
 			free (dstp);
 		} else {
 			ret = false;
-			eprintf ("Failed to copy the file: %s to %s\n", path,
-					dstp);
+			eprintf ("Failed to copy the file: %s\n", path);
 		}
 	}
 	return ret;
