@@ -4767,7 +4767,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	int size = 0, i, type = R_REG_TYPE_GPR;
 	int bits = (core->anal->bits & R_SYS_BITS_64)? 64: 32;
 	int use_colors = r_config_get_i (core->config, "scr.color");
-	RRegItem *r;
+	RRegItem *r = NULL;
 	const char *use_color;
 	const char *name;
 	char *arg;
@@ -5099,6 +5099,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		arg = strchr (str + 1, '=');
 		if (arg) {
 			*arg = 0;
+			ut64 n = r_num_math (core->num, arg + 1);
 			char *ostr = r_str_trim_dup (str + 1);
 			char *regname = r_str_trim_nc (ostr);
 			r = r_reg_get (core->dbg->reg, regname, -1);
@@ -5114,8 +5115,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			if (r) {
 				//eprintf ("%s 0x%08"PFMT64x" -> ", str,
 				//	r_reg_get_value (core->dbg->reg, r));
-				r_reg_set_value (core->dbg->reg, r,
-						r_num_math (core->num, arg + 1));
+				r_reg_set_value (core->dbg->reg, r, n); 
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 				//eprintf ("0x%08"PFMT64x"\n",
 				//	r_reg_get_value (core->dbg->reg, r));
