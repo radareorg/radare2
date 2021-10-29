@@ -3492,11 +3492,10 @@ static ut32 hashRBinElfSymbol(const void * obj) {
 }
 
 static int cmp_RBinElfSymbol(const RBinElfSymbol *a, const RBinElfSymbol *b) {
-	int result = 0;
 	if (a->offset != b->offset) {
 		return 1;
 	}
-	result = strcmp(a->name, b->name);
+	int result = strcmp (a->name, b->name);
 	if (result != 0) {
 		return result;
 	}
@@ -3504,6 +3503,9 @@ static int cmp_RBinElfSymbol(const RBinElfSymbol *a, const RBinElfSymbol *b) {
 }
 
 static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
+	if (ret_size) {
+		*ret_size = 0;
+	}
 	if (bin->g_sections) {
 		size_t i;
 		for (i = 0; !bin->g_sections[i].last; i++) {
@@ -3530,7 +3532,9 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 					}
 					r_buf_free (newelf);
 					free (odata);
-					*ret_size = i;
+					if (ret_size) {
+						*ret_size = i;
+					}
 					return symbol;
 				}
 				free (data);
@@ -3578,6 +3582,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	if (dbgsyms) {
 		ret = dbgsyms;
 		ret_ctr = ret_size;
+	} else {
+		ret_size = 0;
 	}
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		if (((type & R_BIN_ELF_SYMTAB_SYMBOLS) && bin->shdr[i].sh_type == SHT_SYMTAB) ||
@@ -3673,14 +3679,20 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				sym[j].st_shndx = READ16 (s, k);
 #endif
 			}
-			ret = realloc (ret, (ret_size + nsym) * sizeof (RBinElfSymbol));
-			if (!ret) {
-				bprintf ("Cannot allocate %d symbols\n", nsym);
-				goto beach;
+			int retsz = (ret_size + nsym) * sizeof (RBinElfSymbol);
+			if (dbgsyms) {
+				prev_ret_size = 0; // ret_size;
+			} else {
+				RBinElfSymbol *rett = realloc (ret, retsz);
+				if (!rett) {
+					bprintf ("Cannot allocate %d symbols\n", nsym);
+					goto beach;
+				}
+				ret = rett;
+				memset (ret + ret_size, 0, nsym * sizeof (RBinElfSymbol));
+				prev_ret_size = ret_size;
+				ret_size += nsym;
 			}
-			memset (ret + ret_size, 0, nsym * sizeof (RBinElfSymbol));
-			prev_ret_size = ret_size;
-			ret_size += nsym;
 			symbol_map = ht_pp_new_opt (&symbol_map_options);
 			for (k = 0; k < prev_ret_size; k++) {
 				if (ret[k].name[0]) {
