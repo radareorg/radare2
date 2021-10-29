@@ -4382,9 +4382,11 @@ static void __print_default_cb(void *user, void *p) {
 	char *cmdstr = __find_cmd_str_cache (core, panel);
 	if (update || !cmdstr) {
 		cmdstr = __handle_cmd_str_cache (core, panel, false);
+#if 0
 		if (panel->model->cache && panel->model->cmdStrCache) {
 			__reset_scroll_pos (panel);
 		}
+#endif
 	}
 	__update_panel_contents (core, panel, cmdstr);
 }
@@ -4422,7 +4424,7 @@ static void __print_decompiler_cb(void *user, void *p) {
 	}
 }
 
-static void __print_disasmsummary_cb (void *user, void *p) {
+static void __print_disasmsummary_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
