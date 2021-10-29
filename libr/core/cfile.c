@@ -662,7 +662,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		if (!strcmp (plugin->name, "any")) {
 			ut64 size = (desc->name && (r_str_startswith (desc->name, "rap") && strstr (desc->name, "://")))
 				? UT64_MAX : r_io_desc_size (desc);
-			r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, size);
+			r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, size);
 			// set use of raw strings
 			//r_config_set (r->config, "bin.rawstr", "true");
 			// r_config_set_i (r->config, "io.va", false);
@@ -678,7 +678,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				}
 				//workaround to map correctly malloc:// and raw binaries
 				if (r_io_desc_is_dbg (desc) || (!obj->sections || !va)) {
-					r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
+					r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 				}
 				RBinInfo *info = obj->info;
 				if (info) {
@@ -692,7 +692,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 	} else {
 		if (desc) {
-			r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
+			r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 		}
 		if (binfile) {
 			r_core_bin_set_arch_bits (r, binfile->file,

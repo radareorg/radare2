@@ -968,7 +968,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				R_FREE (debugbackend);
 				return 1;
 			}
-			r_io_map_new (r->io, fh->fd, 7, 0LL, mapaddr,
+			r_io_map_add (r->io, fh->fd, 7, 0LL, mapaddr,
 					r_io_fd_size (r->io, fh->fd));
 			r_io_write_at (r->io, mapaddr, (const ut8 *)buf, sz);
 			r_core_block_read (r);
@@ -1182,7 +1182,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 								}
 							}
 						} else {
-							r_io_map_new (r->io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
+							r_io_map_add (r->io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
 							if (load_bin == LOAD_BIN_STRUCTURES_ONLY) {
 								r_core_bin_load_structs (r, iod->name);
 							}
@@ -1206,7 +1206,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 						iod = r->io ? r_io_desc_get (r->io, fh->fd) : NULL;
 						if (iod) {
 							perms = iod->perm;
-							r_io_map_new (r->io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod));
+							r_io_map_add (r->io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod));
 						}
 					}
 				}
