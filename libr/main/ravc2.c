@@ -190,6 +190,14 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		}
 		return 0;
 	}
+	if (!strcmp (action, "clone")) {
+		free (rp);
+		if (opt.argc < 3) {
+			eprintf ("Usage: %s <src> <dst>", argv[0]);
+			return -1;
+		}
+		return !r_vc_clone (argv[1 + opt.ind], argv[2 + opt.ind]);
+	}
 	free (rp);
 	return 1;
 }
