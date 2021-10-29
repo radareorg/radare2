@@ -1004,13 +1004,18 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 	for (i = 0; i < block.length; i++) {
 		switch (block.data[i]) {
 		case DW_OP_fbreg: {
-		/* TODO sometimes CFA is referenced, but we don't parse that yet
-		   just an offset involving framebase of a function*/
+			/* TODO sometimes CFA is referenced, but we don't parse that yet
+			   just an offset involving framebase of a function*/
 			if (i == block.length - 1) {
 				return NULL;
 			}
-			const ut8 *dump = &block.data[++i];
-			offset = r_sleb128 (&dump, &block.data[loc->block.length]);
+			i++;
+			const ut8 *dump = block.data + i;
+			if (loc->block.length > block.length) {
+				// eprintf ("skip = %d%c", loc->block.length, 10);
+				return NULL;
+			}
+			offset = r_sleb128 (&dump, block.data + loc->block.length);
 			if (frame_base) {
 				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
@@ -1019,12 +1024,10 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 					location->offset += offset;
 					return location;
 				}
-				return NULL;
 			} else {
 				/* Might happen if frame_base has a frame_base reference? I don't think it can tho */
-				return NULL;
 			}
-			break;
+			return NULL;
 		}
 		case DW_OP_reg0:
 		case DW_OP_reg1:

@@ -383,7 +383,7 @@ static inline ut64 dwarf_read_offset(bool is_64bit, const ut8 **buf, const ut8 *
 	if (is_64bit) {
 		result = READ64 (*buf);
 	} else {
-		result = READ32 (*buf);
+		result = (ut64)READ32 (*buf);
 	}
 	return result;
 }
@@ -391,13 +391,10 @@ static inline ut64 dwarf_read_offset(bool is_64bit, const ut8 **buf, const ut8 *
 static inline ut64 dwarf_read_address(size_t size, const ut8 **buf, const ut8 *buf_end) {
 	ut64 result;
 	switch (size) {
-		case 2:
-		result = READ16 (*buf); break;
-		case 4:
-		result = READ32 (*buf); break;
-		case 8:
-		result = READ64 (*buf); break;
-		default:
+	case 2: result = READ16 (*buf); break;
+	case 4: result = READ32 (*buf); break;
+	case 8: result = READ64 (*buf); break;
+	default:
 		result = 0;
 		*buf += size;
 		eprintf ("Weird dwarf address size: %zu.", size);
@@ -1860,8 +1857,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
  * @param sdb
  * @return const ut8* Updated buffer
  */
-static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev,
-		RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die, const ut8 *debug_str, size_t debug_str_len, Sdb *sdb) {
+static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die, const ut8 *debug_str, size_t debug_str_len, Sdb *sdb) {
 	size_t i;
 	for (i = 0; i < abbrev->count - 1; i++) {
 		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
@@ -1871,9 +1867,8 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
 
 		RBinDwarfAttrValue *attribute = &die->attr_values[i];
 
-		bool is_valid_string_form = (attribute->attr_form == DW_FORM_strp ||
-			attribute->attr_form == DW_FORM_string) &&
-			attribute->string.content;
+		bool is_string = (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string);
+		bool is_valid_string_form = is_string && attribute->string.content;
 		// TODO  does this have a purpose anymore?
 		// Or atleast it needs to rework becase there will be
 		// more comp units -> more comp dirs and only the last one will be kept
@@ -1883,7 +1878,6 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
 		}
 		die->count++;
 	}
-
 	return buf;
 }
 
