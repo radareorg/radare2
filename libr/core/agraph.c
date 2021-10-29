@@ -2136,18 +2136,18 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	return body;
 }
 
-static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena) {
+static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fcn, bool emu, ut64 saved_gp, ut8 *saved_arena, int saved_arena_size) {
 	if (emu) {
 		core->anal->gp = saved_gp;
 		if (b->parent_reg_arena) {
-			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena);
+			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena, b->parent_reg_arena_size);
 			R_FREE (b->parent_reg_arena);
 			ut64 gp = r_reg_getv (core->anal->reg, "gp");
 			if (gp) {
 				core->anal->gp = gp;
 			}
 		} else {
-			r_reg_arena_poke (core->anal->reg, saved_arena);
+			r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 		}
 	}
 	if (b->parent_stackptr != INT_MAX) {
@@ -2193,13 +2193,14 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	bool emu = r_config_get_i (core->config, "asm.emu");
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
+	int saved_arena_size = 0;
 	int saved_stackptr = core->anal->stackptr;
 	char *shortcut = 0;
 	int shortcuts = 0;
 	core->keep_asmqjmps = false;
 
 	if (emu) {
-		saved_arena = r_reg_arena_peek (core->anal->reg);
+		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	}
 	if (!fcn) {
 		R_FREE (saved_arena);
@@ -2212,7 +2213,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
-		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
+		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size);
 		char *title = get_title (bb->addr);
 
 		if (shortcuts) {
@@ -2240,7 +2241,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (emu) {
 		core->anal->gp = saved_gp;
 		if (saved_arena) {
-			r_reg_arena_poke (core->anal->reg, saved_arena);
+			r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 			R_FREE (saved_arena);
 		}
 	}
@@ -2327,6 +2328,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	bool few = r_config_get_i (core->config, "graph.few");
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
+	int saved_arena_size = 0;
 	ut8 *saved_arena = NULL;
 	int saved_stackptr = core->anal->stackptr;
 	core->keep_asmqjmps = false;
@@ -2335,7 +2337,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		return false;
 	}
 	if (emu) {
-		saved_arena = r_reg_arena_peek (core->anal->reg);
+		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	}
 	r_list_sort (fcn->bbs, (RListComparator) bbcmp);
 	RAnalBlock *curbb = NULL;
@@ -2359,7 +2361,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (few && !isbbfew (curbb, bb)) {
 			continue;
 		}
-		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena);
+		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size);
 		char *title = get_title (bb->addr);
 		char *color = (bb->color.r || bb->color.g || bb->color.b)? r_cons_rgb_str (NULL, -1, &bb->color): NULL;
 		RANode *node = r_agraph_add_node (g, title, body, color);
@@ -2410,7 +2412,7 @@ cleanup:
 	if (emu) {
 		core->anal->gp = saved_gp;
 		if (saved_arena) {
-			r_reg_arena_poke (core->anal->reg, saved_arena);
+			r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 			R_FREE (saved_arena);
 		}
 	}

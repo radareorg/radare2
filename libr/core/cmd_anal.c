@@ -1049,14 +1049,15 @@ static bool cmd_anal_aaft(RCore *core) {
 	r_reg_arena_push (core->anal->reg);
 	r_reg_arena_zero (core->anal->reg);
 	r_core_cmd0 (core, "aei;aeim");
-	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg);
+	int saved_arena_size = 0;
+	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	// Iterating Reverse so that we get function in top-bottom call order
 	r_list_foreach_prev (core->anal->fcns, it, fcn) {
 		int ret = r_core_seek (core, fcn->addr, true);
 		if (!ret) {
 			continue;
 		}
-		r_reg_arena_poke (core->anal->reg, saved_arena);
+		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 		r_anal_esil_set_pc (core->anal->esil, fcn->addr);
 		r_core_anal_type_match (core, fcn);
 		if (r_cons_is_breaked ()) {
