@@ -65,7 +65,7 @@ R_API RIODesc* r_io_open(RIO* io, const char* uri, int perm, int mode) {
 	r_return_val_if_fail (io, NULL);
 	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
-		r_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, r_io_desc_size (desc));
+		r_io_map_add (io, desc->fd, desc->perm, 0LL, 0LL, r_io_desc_size (desc));
 	}
 	return desc;
 }
@@ -79,15 +79,16 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int perm, int mode, ut64 a
 		return NULL;
 	}
 	ut64 size = r_io_desc_size (desc);
+#if 0
 	// second map
 	if (size && ((UT64_MAX - size + 1) < at)) {
 		// split map into 2 maps if only 1 big map results into interger overflow
-		r_io_map_new (io, desc->fd, desc->perm, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1);
+		r_io_map_add (io, desc->fd, desc->perm, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1);
 		// someone pls take a look at this confusing stuff
 		size = UT64_MAX - at + 1;
 	}
-	// skyline not updated
-	r_io_map_new (io, desc->fd, desc->perm, 0LL, at, size);
+#endif
+	r_io_map_add (io, desc->fd, desc->perm, 0LL, at, size);
 	return desc;
 }
 

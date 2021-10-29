@@ -4031,7 +4031,7 @@ repeat_arroba:
 							if (pamode) {
 								r_config_set_b (core->config, "io.va", true);
 							}
-							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+							r_io_map_add (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						}
 					}
 				} else {
@@ -4107,7 +4107,7 @@ repeat_arroba:
 						if (pamode) {
 							r_config_set_b (core->config, "io.va", true);
 						}
-						r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+						r_io_map_add (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 						r_core_block_size (core, len);
 						r_core_block_read (core);
 					}
@@ -4132,7 +4132,7 @@ repeat_arroba:
 								if (pamode) {
 									r_config_set_b (core->config, "io.va", true);
 								}
-								r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+								r_io_map_add (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 								r_core_block_size (core, len);
 								r_core_block_read (core);
 							}
@@ -4196,7 +4196,7 @@ repeat_arroba:
 							if (pamode) {
 								r_config_set_b (core->config, "io.va", true);
 							}
-							r_io_map_new (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
+							r_io_map_add (core->io, d->fd, d->perm, 0, core->offset, r_buf_size (b));
 							r_core_block_size (core, len);
 							// r_core_block_read (core);
 						}
@@ -4259,7 +4259,7 @@ ignore:
 		if (addr) {
 			RIODesc *d = tmpdesc;
 			if (d) {
-				r_io_map_new (core->io, d->fd, d->perm, 0, addr, r_io_desc_size (d));
+				r_io_map_add (core->io, d->fd, d->perm, 0, addr, r_io_desc_size (d));
 			}
 		}
 next_arroba:
