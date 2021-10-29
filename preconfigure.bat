@@ -35,7 +35,7 @@ if %ERRORLEVEL% == 0 (
   if %ERRORLEVEL% == 0 (
     echo FOUND
   ) else (
-    pip install -UI pip meson ninja
+    pip install -UI pip meson==0.59.4 ninja
     preconfigure.bat
     exit /b 0
   )
