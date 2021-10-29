@@ -1897,12 +1897,15 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
  *
  * @return const ut8* Update buffer
  */
-static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 *buf_start,
+static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 *buf_start, const ut8 *buf_end,
 		RBinDwarfCompUnit *unit, const RBinDwarfDebugAbbrev *abbrevs,
 		size_t first_abbr_idx, const ut8 *debug_str, size_t debug_str_len) {
 
 	const ut8 *buf = buf_start;
-	const ut8 *buf_end = buf_start + unit->hdr.length - unit->hdr.header_size;
+	const ut8 *theoric_buf_end = buf_start + unit->hdr.length - unit->hdr.header_size;
+	if (theoric_buf_end < buf_end) {
+		buf_end = theoric_buf_end;
+	}
 
 	while (buf && buf < buf_end && buf >= buf_start) {
 		if (unit->count && unit->capacity == unit->count) {
@@ -1914,7 +1917,7 @@ static const ut8 *parse_comp_unit(RBinDwarfDebugInfo *info, Sdb *sdb, const ut8 
 		die->offset += unit->hdr.is_64bit ? 12 : 4;
 
 		// DIE starts with ULEB128 with the abbreviation code
-		ut64 abbr_code;
+		ut64 abbr_code = 0;
 		buf = r_uleb128 (buf, buf_end - buf, &abbr_code, NULL);
 
 		if (abbr_code > abbrevs->count || !buf) { // something invalid
@@ -2077,8 +2080,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		// They point to the same array object, so should be def. behaviour
 		size_t first_abbr_idx = abbrev_start - da->decls;
 
-		buf = parse_comp_unit (info, sdb, buf, unit, da, first_abbr_idx, debug_str, debug_str_len);
-
+		buf = parse_comp_unit (info, sdb, buf, buf_end, unit, da, first_abbr_idx, debug_str, debug_str_len);
 		if (!buf) {
 			goto cleanup;
 		}

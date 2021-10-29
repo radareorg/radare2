@@ -136,7 +136,9 @@ R_API const ut8 *r_leb128(const ut8 *data, int datalen, st64 *v) {
 		}
 	}
 	if ((s < (8 * sizeof (sum))) && (c & 0x40)) {
-		sum |= -((st64)1 << s);
+		if (s >= 0 && s < 63) {
+			sum |= -((st64)1 << s);
+		}
 	}
 beach:
 	if (v) {
