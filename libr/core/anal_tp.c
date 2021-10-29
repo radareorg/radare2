@@ -504,11 +504,12 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	char prev_type[256] = {0};
 	const char *prev_dest = NULL;
 	char *ret_reg = NULL;
-	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	if (!pc) {
-        free (buf);
+	const char *_pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+	if (!_pc) {
+		free (buf);
 		return;
 	}
+	char *pc = strdup (_pc);
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	if (!r) {
 		free (buf);
@@ -778,4 +779,5 @@ out_function:
 	free (buf);
 	r_cons_break_pop();
 	anal_emul_restore (core, hc, dt, et);
+	free (pc);
 }
