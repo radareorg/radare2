@@ -3273,7 +3273,7 @@ done:
 	} else if (type == R_BIN_ELF_ALL_SYMBOLS && !bin->symbols_by_ord_size && ret_ctr) {
 		bin->symbols_by_ord_size = ret_ctr + 1;
 		if (ret_ctr > 0) {
-			bin->symbols_by_ord = (RBinSymbol * *) calloc (ret_ctr + 1, sizeof (RBinSymbol*));
+			bin->symbols_by_ord = (RBinSymbol **) calloc (ret_ctr + 1, sizeof (RBinSymbol*));
 		} else {
 			bin->symbols_by_ord = NULL;
 		}
@@ -3481,6 +3481,9 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 
 static ut32 hashRBinElfSymbol(const void * obj) {
 	const RBinElfSymbol *symbol = (const RBinElfSymbol *)obj;
+	if (!symbol || !*symbol->name) {
+		return 0;
+	}
 	int hash = sdb_hash (symbol->name);
 	hash ^= sdb_hash (symbol->type);
 	hash ^= (symbol->offset >> 32);
@@ -3518,10 +3521,13 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 				ut8 *odata = r_sys_unxz (data, size, &osize);
 				if (odata) {
 					RBuffer *newelf = r_buf_new_with_pointers (odata, osize, false);
-					ELFOBJ* newobj = Elf_(r_bin_elf_new_buf)(newelf, false);
-					RBinElfSymbol *symbol = Elf_(r_bin_elf_get_symbols) (newobj);
-					newobj->g_symbols = NULL;
-					Elf_(r_bin_elf_free)(newobj);
+					ELFOBJ* newobj = Elf_(r_bin_elf_new_buf) (newelf, false);
+					RBinElfSymbol *symbol = NULL;
+					if (newobj) {
+						symbol = Elf_(r_bin_elf_get_symbols) (newobj);
+						newobj->g_symbols = NULL;
+						Elf_(r_bin_elf_free)(newobj);
+					}
 					r_buf_free (newelf);
 					free (odata);
 					*ret_size = i;
