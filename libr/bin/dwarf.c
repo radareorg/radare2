@@ -1590,7 +1590,10 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	const ut8 *buf_end = obuf + obuf_len;
 	size_t j;
 
-	r_return_val_if_fail(def && value && hdr && obuf && obuf_len >= 1, NULL);
+	r_return_val_if_fail (def && value && hdr && obuf, NULL);
+	if (obuf_len < 1) {
+		return NULL;
+	}
 
 	value->attr_form = def->attr_form;
 	value->attr_name = def->attr_name;
@@ -1651,8 +1654,8 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
-		value->string.content = *buf ? strdup ((const char *)buf) : NULL;
-		buf += (strlen ((const char *)buf) + 1);
+		value->string.content = *buf ? r_str_ndup ((const char *)buf, buf_end - buf) : NULL;
+		buf += (strlen (value->string.content) + 1);
 		break;
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;
