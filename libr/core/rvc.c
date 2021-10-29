@@ -49,7 +49,7 @@ bool file_copyrf(const char *src, const char *dst) {
 		return false;
 	}
 	RListIter *iter;
-	const char *path = path;
+	const char *path;
 	bool ret = true;
 	r_list_foreach (fl, iter, path) {
 		//strlen(src) should always be less than strlen(path) so
