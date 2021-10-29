@@ -1860,10 +1860,15 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die, const ut8 *debug_str, size_t debug_str_len, Sdb *sdb) {
 	size_t i;
 	for (i = 0; i < abbrev->count - 1; i++) {
+		if ((buf_end - buf) < 8) {
+			break;
+		}
 		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
-
-		buf = parse_attr_value (buf, buf_end - buf, &abbrev->defs[i],
-			&die->attr_values[i], hdr, debug_str, debug_str_len);
+		debug_str_len = r_str_nlen (debug_str, buf_end - buf);
+		buf = parse_attr_value (buf, buf_end - buf,
+			&abbrev->defs[i],
+			&die->attr_values[i],
+			hdr, debug_str, debug_str_len);
 
 		RBinDwarfAttrValue *attribute = &die->attr_values[i];
 
