@@ -579,11 +579,11 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	RCore *core = ds->core;
 	if (ds->show_emu && ds->esil_regstate) {
 		RCore* core = ds->core;
-		core->anal->last_disasm_reg = r_reg_arena_peek (core->anal->reg);
+		core->anal->last_disasm_reg = r_reg_arena_peek (core->anal->reg, &core->anal->last_disasm_reg_size);
 		const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 		RRegSet *regset = r_reg_regset_get (ds->core->anal->reg, R_REG_TYPE_GPR);
 		if (ds->esil_regstate_size  == regset->arena->size) {
-			r_reg_arena_poke (core->anal->reg, ds->esil_regstate);
+			r_reg_arena_poke (core->anal->reg, ds->esil_regstate, ds->esil_regstate);
 		}
 		r_reg_setv (core->anal->reg, pc, ds->esil_old_pc);
 		R_FREE (ds->esil_regstate);
@@ -4697,7 +4697,7 @@ static void ds_print_esil_anal_init(RDisasmState *ds) {
 	if (core->anal->gp) {
 		r_reg_setv (core->anal->reg, "gp", core->anal->gp);
 	}
-	ds->esil_regstate = r_reg_arena_peek (core->anal->reg);
+	ds->esil_regstate = r_reg_arena_peek (core->anal->reg, &ds->esil_regstate_size);
 	RRegSet *regset = r_reg_regset_get (core->anal->reg, R_REG_TYPE_GPR);
 	if (ds->esil_regstate && regset) {
 		ds->esil_regstate_size = regset->arena->size;

@@ -226,8 +226,8 @@ R_API int r_reg_arena_push(RReg *reg);
 R_API void r_reg_arena_pop(RReg *reg);
 R_API void r_reg_arena_zero(RReg *reg);
 
-R_API ut8 *r_reg_arena_peek(RReg *reg);
-R_API void r_reg_arena_poke(RReg *reg, const ut8 *buf);
+R_API ut8 *r_reg_arena_peek(RReg *reg, int *len);
+R_API void r_reg_arena_poke(RReg *reg, const ut8 *buf, int len);
 R_API ut8 *r_reg_arena_dup(RReg *reg, const ut8 *source);
 R_API const char *r_reg_cond_to_string(int n);
 R_API int r_reg_cond_from_string(const char *str);

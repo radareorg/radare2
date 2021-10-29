@@ -4178,8 +4178,8 @@ static void __printPattern(RCore *core, const char *_input) {
 	free (input);
 }
 
-static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, char p_type, bool fromHere) {
-	bool show_flags = r_config_get_i (core->config, "asm.flags");
+static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, int saved_arena_size, char p_type, bool fromHere) {
+	bool show_flags = r_config_get_b (core->config, "asm.flags");
 	const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
 	core->anal->gp = saved_gp;
 	if (fromHere) {
@@ -4192,14 +4192,14 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	if (emu) {
 		if (b->parent_reg_arena) {
 			ut64 gp;
-			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena);
+			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena, &b->parent_reg_arena_size);
 			R_FREE (b->parent_reg_arena);
 			gp = r_reg_getv (core->anal->reg, "gp");
 			if (gp) {
 				core->anal->gp = gp;
 			}
 		} else {
-			r_reg_arena_poke (core->anal->reg, saved_arena);
+			r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 		}
 	}
 	if (b->parent_stackptr != INT_MAX) {
@@ -4435,20 +4435,21 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		bool asm_lines = r_config_get_i (core->config, "asm.lines.jmp");
 		bool emu = r_config_get_i (core->config, "asm.emu");
 		ut64 saved_gp = 0;
+		int saved_arena_size = 0;
 		ut8 *saved_arena = NULL;
 		int saved_stackptr = core->anal->stackptr;
 		if (emu) {
 			saved_gp = core->anal->gp;
-			saved_arena = r_reg_arena_peek (core->anal->reg);
+			saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 		}
 		r_config_set_i (core->config, "asm.lines.jmp", 0);
 		r_list_foreach (f->bbs, iter, b) {
-			pr_bb (core, f, b, emu, saved_gp, saved_arena, type_print, fromHere);
+			pr_bb (core, f, b, emu, saved_gp, saved_arena, saved_arena_size, type_print, fromHere);
 		}
 		if (emu) {
 			core->anal->gp = saved_gp;
 			if (saved_arena) {
-				r_reg_arena_poke (core->anal->reg, saved_arena);
+				r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 				R_FREE (saved_arena);
 			}
 		}
