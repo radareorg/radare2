@@ -1655,7 +1655,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
 		value->string.content = *buf ? r_str_ndup ((const char *)buf, buf_end - buf) : NULL;
-		buf += (strlen (value->string.content) + 1);
+		buf += value->string.content? (strlen (value->string.content) + 1): 0;
 		break;
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1871,6 +1871,9 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
 			hdr, debug_str, debug_str_len);
 
 		RBinDwarfAttrValue *attribute = &die->attr_values[i];
+		if (attribute->string.content && (attribute->string.content < buf || attribute->string.content >= buf_end)) {
+			attribute->string.content = NULL;
+		}
 
 		bool is_string = (attribute->attr_form == DW_FORM_strp || attribute->attr_form == DW_FORM_string);
 		bool is_valid_string_form = is_string && attribute->string.content;
