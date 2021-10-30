@@ -3,7 +3,7 @@ FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-e asm.fcnlines=false
+e asm.lines.fcn=false
 wx 48c7c01000000075084805b8000000eb064805e60000004889c7c3
 af
 e asm.emu=true
@@ -22,7 +22,7 @@ e asm.arch=mips
 e anal.gpfixed=false
 wx 10000824cc009c270500281500000000200c082521401c010a00000800000000300c082521401c010800e003
 af
-e asm.fcnlines=false
+e asm.lines.fcn=false
 e asm.emu=true
 e anal.gp=0xabc
 pdr~addu t0[7]
