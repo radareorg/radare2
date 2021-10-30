@@ -2,6 +2,7 @@
 
 #include "r_config.h"
 #include "r_core.h"
+#include "types.h"
 #include <rvc.h>
 #include <r_util.h>
 #include <sdb.h>
@@ -14,6 +15,7 @@
 #define MAX_MESSAGE_LEN 80
 #define NULLVAL "-"
 
+//copies src to dst and creates the parent dirs if they do not exist.
 static bool file_copyp(const char *src, const char *dst) {
 	if (r_file_is_directory (dst)) {
 		return r_file_copy (src, dst);
@@ -35,6 +37,43 @@ static bool file_copyp(const char *src, const char *dst) {
 	bool res = r_file_copy (src, dst);
 	free (dir);
 	return res;
+}
+
+//should I move to file.c?
+bool file_copyrf(const char *src, const char *dst) {
+	if (r_file_exists (src)) {
+		return file_copyp (src, dst);
+	}
+	RList *fl = r_file_lsrf (src);
+	if (!fl) {
+		return false;
+	}
+	RListIter *iter;
+	const char *path;
+	bool ret = true;
+	r_list_foreach (fl, iter, path) {
+		//strlen(src) should always be less than strlen(path) so
+		//I think this is ok??
+		char *dstp = r_str_newf ("%s" R_SYS_DIR "%s", dst,
+				path + strlen (src));
+		if (dstp) {
+			if (r_file_is_directory (path)) {
+				r_sys_mkdirp (dstp);
+			} else {
+				if (!file_copyp (path, dstp)) {
+				eprintf ("Failed to copy the file: %s to %s\n",
+						path, dstp);
+				ret = false;
+				//continue copying files don't break
+				}
+			}
+			free (dstp);
+		} else {
+			ret = false;
+			eprintf ("Failed to copy the file: %s\n", path);
+		}
+	}
+	return ret;
 }
 
 static char *strip_sys_dir(const char *path) {
@@ -1087,6 +1126,29 @@ R_API char *r_vc_current_branch(const char *rp) {
 	sdb_unlink (db);
 	sdb_close (db);
 	sdb_free (db);
+	return ret;
+}
+
+R_API bool r_vc_clone(const char *src, const char *dst) {
+	printf ("src, dst: %s, %s\n", src, dst);
+	char *drp = r_file_new (dst, ".rvc", NULL);
+	bool ret = false;
+	if (drp) {
+		char *srp = r_file_new (src, ".rvc", NULL);
+		if (srp) {
+			if (file_copyrf (srp, drp)) {
+				if (r_vc_reset (dst)) {
+					ret = true;
+				} else {
+					eprintf("Failed to reset\n");
+				}
+			} else {
+				eprintf ("Failed to copy files\n");
+			}
+			free (srp);
+		}
+		free (drp);
+	}
 	return ret;
 }
 

@@ -30,6 +30,7 @@ R_API RList *r_vc_get_uncommitted(const char *rp);
 R_API RList *r_vc_log(const char *rp);
 R_API char *r_vc_current_branch(const char *rp);
 R_API bool r_vc_reset(const char *rp);
+R_API bool r_vc_clone(const char *src, const char *dst);
 
 R_API bool rvc_git_init(const RCore *core, const char *rp);
 R_API bool rvc_git_commit(RCore *core, const char *rp, const char *message, const char *author, const RList *files);
