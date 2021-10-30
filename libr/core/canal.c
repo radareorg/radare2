@@ -831,7 +831,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 					const RList *syms = r_bin_get_symbols (core->bin);
 					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 					r_list_foreach (syms, iter, sym) {
-						if ((sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
+						if (sym->type && (sym->paddr + baddr) == fcn->addr && !strcmp (sym->type, R_BIN_TYPE_FUNC_STR)) {
 							free (new_name);
 							new_name = r_str_newf ("sym.%s", sym->name);
 							break;
