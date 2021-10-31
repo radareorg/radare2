@@ -54,7 +54,7 @@ bool file_copyrf(const char *src, const char *dst) {
 	r_list_foreach (fl, iter, path) {
 		//strlen(src) should always be less than strlen(path) so
 		//I think this is ok??
-		char *dstp = r_file_new(dst, path + strlen(src), NULL);
+		char *dstp = r_file_new (dst, path + strlen (src), NULL);
 		if (dstp) {
 			if (r_file_is_directory (path)) {
 				r_sys_mkdirp (dstp);
