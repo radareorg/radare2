@@ -1656,7 +1656,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->kind = DW_AT_KIND_STRING;
 		value->string.content = *buf ? r_str_ndup ((const char *)buf, buf_end - buf) : NULL;
 		if (value->string.content) {
-			buf += (strlen (value->string.content) + 1);
+			buf += (r_str_nlen (value->string.content, buf_end - buf) + 1);
 		}
 		break;
 	case DW_FORM_block1:
@@ -1865,9 +1865,6 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
 		return NULL;
 	}
 	for (i = 0; i < abbrev->count - 1; i++) {
-		if ((buf_end - buf) < 4) {
-			break;
-		}
 		if (die->capacity < 1) {
 			break;
 		}
