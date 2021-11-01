@@ -991,6 +991,8 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 		return false;
 	}
 	r_list_free (uncommitted);
+	//Must set to NULL to avoid double r_list_free on fail_ret
+	uncommitted = NULL;
 	Sdb *db = vcdb_open (rp) ;
 	if (!db) {
 		return false;
@@ -1012,47 +1014,9 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 			return false;
 		}
 	}
-	uncommitted = r_vc_get_uncommitted (rp);
-	if (!uncommitted) {
+	if (!r_vc_reset (rp)) {
 		goto fail_ret;
 	}
-	r_list_foreach (uncommitted, i, file) {
-		char *fname = absp2rp (rp, file);
-		if (!fname) {
-			goto fail_ret;
-		}
-		char *fhash = find_blob_hash (rp, fname);
-		free (fname);
-		if (!fhash) {
-			if (!r_file_rm (file)) {
-				eprintf ("Failed to remove the file %s\n",
-						file);
-				goto fail_ret;
-			}
-			continue;
-		}
-		if (!strcmp (fhash, NULLVAL)) {
-			free (fhash);
-			if (!r_file_rm (file)) {
-				eprintf ("Failed to remove the file %s\n",
-						file);
-				goto fail_ret;
-			}
-			continue;
-		}
-		char *blob_path = r_file_new (rp, ".rvc", "blobs", fhash, NULL);
-		free (fhash);
-		if (!blob_path) {
-			goto fail_ret;
-		}
-		if (!file_copyp (blob_path, file)) {
-			free (blob_path);
-			eprintf ("Failed to checkout the file %s\n", file);
-			goto fail_ret;
-		}
-	}
-	r_list_free (uncommitted);
-	uncommitted = NULL;
 	if (!rm_empty_dir (rp)) {
 		goto fail_ret;
 	}
@@ -1246,7 +1210,7 @@ R_API bool r_vc_reset(const char *rp) {
 				continue;
 
 			}
-			blobp = r_file_new (rp, ".rvc", "blobs", b);
+			blobp = r_file_new (rp, ".rvc", "blobs", b, NULL);
 			free (b);
 		}
 		if (!blobp) {
