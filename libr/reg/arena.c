@@ -284,8 +284,9 @@ R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret, int len) {
 	if (!ret || !regset || !regset->arena || !regset->arena->bytes) {
 		return;
 	}
-	if (len != regset->arena->size) {
-		eprintf ("Invalid size of the arena bytes to poke (%d vs %d).\n", len, regset->arena->size);
+	if (len > 0 && len != regset->arena->size) {
+		eprintf ("Invalid size of the arena bytes to poke (%d vs %d).\n",
+			len, regset->arena->size);
 		return;
 	}
 	memcpy (regset->arena->bytes, ret, regset->arena->size);

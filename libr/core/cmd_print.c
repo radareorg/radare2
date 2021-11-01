@@ -4192,7 +4192,7 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	if (emu) {
 		if (b->parent_reg_arena) {
 			ut64 gp;
-			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena, &b->parent_reg_arena_size);
+			r_reg_arena_poke (core->anal->reg, b->parent_reg_arena, b->parent_reg_arena_size);
 			R_FREE (b->parent_reg_arena);
 			gp = r_reg_getv (core->anal->reg, "gp");
 			if (gp) {
