@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2018 - pancake, Fedor Sakharov */
+/* radare - LGPL - Copyright 2012-2021 - pancake, Fedor Sakharov */
 
 #define D0 if(1)
 #define D1 if(1)

@@ -2100,9 +2100,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->symstr);
 	free (mo->indirectsyms);
 	free (mo->imports_by_ord);
-	if (mo->imports_by_name) {
-		ht_pp_free (mo->imports_by_name);
-	}
+	ht_pp_free (mo->imports_by_name);
 	free (mo->dyld_info);
 	free (mo->toc);
 	free (mo->modtab);
