@@ -3680,32 +3680,15 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				sym[j].st_shndx = READ16 (s, k);
 #endif
 			}
-#if 1
 			void *rett = realloc (ret, (ret_size + nsym) * sizeof (RBinElfSymbol));
 			if (!rett) {
 				bprintf ("Cannot allocate %d symbols\n", (int)(nsym + ret_size));
-				// goto beach;
+				goto beach;
 			}
 			ret = rett;
 			memset (ret + ret_size, 0, nsym * sizeof (RBinElfSymbol));
 			prev_ret_size = ret_size;
 			ret_size += nsym;
-#else
-			int retsz = (1 + ret_size + nsym) * sizeof (RBinElfSymbol);
-			if (false && dbgsyms) {
-				prev_ret_size = ret_size;
-			} else {
-				RBinElfSymbol *rett = realloc (ret, retsz);
-				if (!rett) {
-					bprintf ("Cannot allocate %d symbols\n", nsym);
-					goto beach;
-				}
-				ret = rett;
-				// memset (ret + ret_size, 0, nsym * sizeof (RBinElfSymbol));
-				prev_ret_size = ret_size;
-				ret_size += nsym;
-			}
-#endif
 			symbol_map = ht_pp_new_opt (&symbol_map_options);
 			for (k = 0; k < prev_ret_size; k++) {
 				if (ret[k].name[0]) {
