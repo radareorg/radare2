@@ -37,33 +37,6 @@ int list_str_cmp (const void *a, const void *b) {
 	return strcmp ((const char *)a, (const char *)b);
 }
 
-R_API RList *r_sign_fcn_vars(RAnal *a, RAnalFunction *fcn) {
-	r_return_val_if_fail (a && fcn, NULL);
-
-	RListIter *iter;
-	RAnalVar *var;
-	RList *ret = r_list_newf ((RListFree) free);
-	if (!ret) {
-		return NULL;
-	}
-	RList *reg_vars = r_anal_var_list (a, fcn, R_ANAL_VAR_KIND_REG);
-	RList *spv_vars = r_anal_var_list (a, fcn, R_ANAL_VAR_KIND_SPV);
-	RList *bpv_vars = r_anal_var_list (a, fcn, R_ANAL_VAR_KIND_BPV);
-	r_list_foreach (bpv_vars, iter, var) {
-		r_list_append (ret, r_str_newf ("b%d", var->delta));
-	}
-	r_list_foreach (spv_vars, iter, var) {
-		r_list_append (ret, r_str_newf ("s%d", var->delta));
-	}
-	r_list_foreach (reg_vars, iter, var) {
-		r_list_append (ret, r_str_newf ("r%d", var->delta));
-	}
-	r_list_free (reg_vars);
-	r_list_free (bpv_vars);
-	r_list_free (spv_vars);
-	return ret;
-}
-
 R_API RList *r_sign_fcn_xrefs(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalRef *refi = NULL;
@@ -262,7 +235,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			break;
 		case R_SIGN_VARS:
 			DBL_VAL_FAIL (it->vars, R_SIGN_VARS);
-			if (!(it->vars = r_str_split_duplist (token, ",", true))) {
+			if (!(it->vars = r_anal_var_deserialize (token))) {
 				success = false;
 				goto out;
 			}
@@ -370,7 +343,10 @@ static bool serialize_str_list(RList *l, RStrBuf *sb, RSignType t) {
 	char *e, *c = "";
 	RListIter *iter;
 	r_list_foreach (l, iter, e) {
-		if (!r_strbuf_appendf (sb, "%s%s", c, e)) {
+		if (strchr (e, ',')) {
+			return false;
+		}
+		if (strchr (e, ',') || !r_strbuf_appendf (sb, "%s%s", c, e)) {
 			return false;
 		}
 		if (!*c) {
@@ -401,7 +377,7 @@ static inline size_t serial_val_reserv(RSignItem *it) {
 	if (it->hash && it->hash->bbhash) {
 		reserve += 64;
 	}
-	int mul = 5;
+	int mul = 10;
 	if (it->refs) {
 		reserve += mul * r_list_length (it->refs);
 	}
@@ -467,22 +443,29 @@ static char *serialize_value(RSignItem *it) {
 
 	FreeRet_on_fail (serialize_str_list (it->refs, sb, R_SIGN_REFS), sb);
 	FreeRet_on_fail (serialize_str_list (it->xrefs, sb, R_SIGN_XREFS), sb);
-	FreeRet_on_fail (serialize_str_list (it->vars, sb, R_SIGN_VARS), sb);
 	FreeRet_on_fail (serialize_str_list (it->collisions, sb, R_SIGN_COLLISIONS), sb);
 
-	if (it->comment) {
+	char *vrs = r_anal_var_prot_serialize (it->vars, false);
+	bool vars_good = false;
+	if (vrs) {
+		vars_good = r_strbuf_appendf (sb, "|%c:%s", R_SIGN_VARS, vrs);
+		free (vrs);
+	}
+	FreeRet_on_fail (vars_good, sb);
+
+	if (it->comment && !strchr (it->comment, '|')) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_COMMENT, it->comment), sb);
 	}
 
-	if (it->realname) {
+	if (it->realname && !strchr (it->realname, '|')) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_NAME, it->realname), sb);
 	}
 
-	if (it->types) {
+	if (it->types && !strchr (it->types, '|')) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_TYPES, it->types), sb);
 	}
 
-	if (it->next) {
+	if (it->next && !strchr (it->types, '|')) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_NEXT, it->next), sb);
 	}
 
@@ -927,7 +910,7 @@ R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignT
 	case R_SIGN_REFS:
 		return !it->refs && (it->refs = r_sign_fcn_refs (a, fcn));
 	case R_SIGN_VARS:
-		return !it->vars && (it->vars = r_sign_fcn_vars (a, fcn));
+		return !it->vars && (it->vars = r_anal_var_get_prots (fcn));
 	case R_SIGN_TYPES:
 		if (!it->types) {
 			it->types = r_anal_function_get_signature (fcn);
@@ -1029,17 +1012,12 @@ R_API bool r_sign_add_addr(RAnal *a, const char *name, ut64 addr) {
 	return retval;
 }
 
-R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars) {
+R_API bool r_sign_add_vars(RAnal *a, const char *name, const char *vars) {
 	r_return_val_if_fail (a && name && vars, false);
 
 	bool retval = false;
 	RSignItem *it = item_new_named (a, name);
-	if (it && (it->vars = r_list_newf ((RListFree)free))) {
-		RListIter *iter;
-		char *var;
-		r_list_foreach (vars, iter, var) {
-			r_list_append (it->vars, strdup (var));
-		}
+	if (it && (it->vars = r_anal_var_deserialize (vars))) {
 		retval = r_sign_add_item (a, it);
 	}
 	r_sign_item_free (it);
@@ -1572,6 +1550,56 @@ static void listOffset(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	}
 }
 
+static void inline list_vars_abs(RAnal *a, RSignItem *it, bool rad) {
+	if (it->vars && !r_list_empty (it->vars)) {
+		char *ser = r_anal_var_prot_serialize (it->vars, true);
+		if (ser) {
+			if (rad) {
+				a->cb_printf ("za %s %c %s\n", it->name, R_SIGN_VARS, ser);
+			} else {
+				a->cb_printf ("  vars: %s\n", ser);
+			}
+		}
+		free (ser);
+	}
+}
+
+static void inline list_vars_json(RSignItem *it, PJ *pj) {
+	pj_ka (pj, "vars");
+	if (it->vars) {
+		RAnalVarProt *v;
+		RListIter *iter;
+		r_list_foreach (it->vars, iter, v) {
+			char kind[] = { v->kind, '\0' };
+			pj_ks (pj, "name", v->name);
+			pj_ks (pj, "type", v->type);
+			pj_ks (pj, "kind", kind);
+			pj_kN (pj, "delta", v->delta);
+			pj_kb (pj, "isarg", v->isarg);
+		}
+	}
+	pj_end (pj);
+}
+
+static void inline list_vars(RAnal *a, RSignItem *it, PJ *pj, int fmt) {
+	switch (fmt) {
+	case '*':
+		list_vars_abs (a, it, true);
+		break;
+	case 'q':
+		if (it->vars) {
+			a->cb_printf (" vars(%d)", r_list_length (it->vars));
+		}
+		break;
+	case 'j':
+		list_vars_json (it, pj);
+		break;
+	default:
+		list_vars_abs (a, it, false);
+		break;
+	}
+}
+
 static void list_sign_list(RAnal *a, RList *l, PJ *pj, int fmt, int type, const char *name) {
 	const char *tname = r_sign_type_to_name (type);
 	switch (fmt) {
@@ -1717,14 +1745,6 @@ static bool listCB(RSignItem *it, void *user) {
 		pj_ka (ctx->pj, "xrefs");
 		pj_end (ctx->pj);
 	}
-	// Vars
-	if (it->vars) {
-		list_sign_list (a, it->vars, ctx->pj, ctx->format, R_SIGN_VARS, it->name);
-	} else if (ctx->format == 'j') {
-		pj_ka (ctx->pj, "vars");
-		pj_end (ctx->pj);
-	}
-
 	// Collisions
 	if (it->collisions) {
 		list_sign_list (a, it->collisions, ctx->pj, ctx->format, R_SIGN_COLLISIONS, it->name);
@@ -1732,6 +1752,9 @@ static bool listCB(RSignItem *it, void *user) {
 		pj_ka (ctx->pj, "collisions");
 		pj_end (ctx->pj);
 	}
+
+	// Vars
+	list_vars (a, it, ctx->pj, ctx->format);
 
 	// Hash
 	if (it->hash) {
@@ -2192,6 +2215,37 @@ static int sig_hash_cmp(RSignHash *a, RSignHash *b) {
 	return strcmp (a->bbhash, b->bbhash);
 }
 
+static int sig_var_diff(RList *la, RList *lb) {
+	if (!la) {
+		return lb? -1: 0;
+	}
+	if (!lb) {
+		return 1;
+	}
+	int len = r_list_length (la);
+	int dif = len - r_list_length (lb);
+	if (dif) {
+		return dif;
+	}
+	size_t i;
+	for (i = 0; i < len; i++) {
+		const RAnalVarProt *a = r_list_get_n (la, i);
+		const RAnalVarProt *b = r_list_get_n (lb, i);
+		dif = a->delta - b->delta;
+		if (dif) {
+			return dif;
+		}
+		if (a->isarg != b->isarg) {
+			return a->isarg? 1: -1;
+		}
+		dif = a->kind - b->kind;
+		if (dif) {
+			return dif;
+		}
+	}
+	return 0;
+}
+
 static int str_list_cmp(RList *la, RList *lb) {
 	if (!la) {
 		return lb? -1: 0;
@@ -2372,7 +2426,7 @@ static bool match_metrics(RSignItem *it, struct metric_ctx *ctx) {
 	if (fit->refs && it->refs && !str_list_cmp (it->refs, fit->refs)) {
 		types[count++] = R_SIGN_REFS;
 	}
-	if (fit->vars && it->vars && !str_list_cmp (it->vars, fit->vars)) {
+	if (fit->vars && it->vars && !sig_var_diff (it->vars, fit->vars)) {
 		types[count++] = R_SIGN_VARS;
 	}
 	if (fit->types && it->types && !strcmp (it->types, fit->types)) {
