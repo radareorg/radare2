@@ -624,6 +624,7 @@ typedef struct r_anal_t {
 	HtPP *ht_name_fun; // name => function
 	RReg *reg;
 	ut8 *last_disasm_reg;
+	int last_disasm_reg_size;
 	RSyscall *syscall;
 	int diff_ops;
 	double diff_thbb;
@@ -927,6 +928,7 @@ typedef struct r_anal_bb_t {
 	ut16 *op_pos; // offsets of instructions in this block, count is ninstr - 1 (first is always 0)
 	ut8 *op_bytes;
 	ut8 *parent_reg_arena;
+	int parent_reg_arena_size;
 	int op_pos_size; // size of the op_pos array
 	int ninstr;
 	int stackptr;

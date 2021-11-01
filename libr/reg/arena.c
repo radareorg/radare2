@@ -263,7 +263,7 @@ R_API void r_reg_arena_zero(RReg *reg) {
 	}
 }
 
-R_API ut8 *r_reg_arena_peek(RReg *reg) {
+R_API ut8 *r_reg_arena_peek(RReg *reg, int *size) {
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
 	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
@@ -273,12 +273,20 @@ R_API ut8 *r_reg_arena_peek(RReg *reg) {
 		return NULL;
 	}
 	memcpy (ret, regset->arena->bytes, regset->arena->size);
+	if (size) {
+		*size = regset->arena->size;
+	}
 	return ret;
 }
 
-R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret) {
+R_API void r_reg_arena_poke(RReg *reg, const ut8 *ret, int len) {
 	RRegSet *regset = r_reg_regset_get (reg, R_REG_TYPE_GPR);
 	if (!ret || !regset || !regset->arena || !regset->arena->bytes) {
+		return;
+	}
+	if (len > 0 && len != regset->arena->size) {
+		eprintf ("Invalid size of the arena bytes to poke (%d vs %d).\n",
+			len, regset->arena->size);
 		return;
 	}
 	memcpy (regset->arena->bytes, ret, regset->arena->size);
