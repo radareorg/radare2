@@ -54,8 +54,7 @@ bool file_copyrf(const char *src, const char *dst) {
 	r_list_foreach (fl, iter, path) {
 		//strlen(src) should always be less than strlen(path) so
 		//I think this is ok??
-		char *dstp = r_str_newf ("%s" R_SYS_DIR "%s", dst,
-				path + strlen (src));
+		char *dstp = r_file_new (dst, path + strlen (src), NULL);
 		if (dstp) {
 			if (r_file_is_directory (path)) {
 				r_sys_mkdirp (dstp);
@@ -95,7 +94,7 @@ static char *strip_sys_dir(const char *path) {
 }
 
 static Sdb *vcdb_open(const char *rp) {
-	char *frp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR DBNAME, rp);
+	char *frp = r_file_new (rp, ".rvc", DBNAME, NULL);
 	if (!frp) {
 		return NULL;
 	}
@@ -114,7 +113,7 @@ static Sdb *vcdb_open(const char *rp) {
 }
 
 static bool repo_exists(const char *path) {
-	char *rp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
+	char *rp = r_file_new (path, ".rvc", NULL);
 	if (!rp) {
 		return false;
 	}
@@ -123,9 +122,9 @@ static bool repo_exists(const char *path) {
 		return false;
 	}
 	bool r = true;
-	char *files[3] = {r_str_newf ("%s" R_SYS_DIR DBNAME, rp),
-		r_str_newf ("%s" R_SYS_DIR "commits", rp),
-		r_str_newf ("%s" R_SYS_DIR "blobs", rp),
+	char *files[3] = {r_file_new (rp, DBNAME, NULL),
+		r_file_new (rp, "commits", NULL),
+		r_file_new (rp, "blobs", NULL)
 	};
 	free (rp);
 	size_t i;
@@ -216,7 +215,7 @@ char *rp2absp(const char *rp, const char *path) {
 	if (!arp) {
 		return NULL;
 	}
-	char *appended = r_str_newf ("%s" R_SYS_DIR "%s", arp, path);
+	char *appended = r_file_new (arp, path, NULL);
 	free (arp);
 	if (!appended) {
 		return NULL;
@@ -356,8 +355,8 @@ static RList *get_blobs(const char *rp, RList *ignore) {
 	RListIter *i;
 	char *hash;
 	r_list_foreach (commits, i, hash) {
-		char *commit_path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
-				"commits" R_SYS_DIR "%s", rp, hash);
+		char *commit_path = r_file_new (rp, ".rvc", "commits",
+				hash, NULL);
 		if (!commit_path) {
 			free_blobs (ret);
 			ret = NULL;
@@ -411,7 +410,7 @@ static RList *get_blobs(const char *rp, RList *ignore) {
 }
 
 static bool rm_empty_dir(const char *rp) {
-	char *rvc = r_str_newf ("%s" R_SYS_DIR ".rvc", rp);
+	char *rvc = r_file_new (rp, ".rvc", NULL);
 	if (!rvc) {
 		return false;
 	}
@@ -434,7 +433,7 @@ static bool traverse_files(RList *dst, const char *dir) {
 	bool ret = true;
 	RList *files = r_sys_dir (dir);
 	if (!r_list_empty (dst)) {
-		char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", dir);
+		char *vcp = r_file_new (dir, ".rvc", NULL);
 		if (!vcp) {
 			r_list_free (files);
 			return false;
@@ -458,7 +457,7 @@ static bool traverse_files(RList *dst, const char *dir) {
 		if (!strcmp (name, ".rvc")) {
 			continue;
 		}
-		path = r_str_newf ("%s" R_SYS_DIR "%s", dir, name);
+		path = r_file_new (dir, name, NULL);
 		if (!path) {
 			ret = false;
 			break;
@@ -644,8 +643,7 @@ static char *write_commit(const char *rp, const char *message, const char *autho
 		free (content);
 		return false;
 	}
-	char *commit_path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "commits"
-			R_SYS_DIR "%s", rp, commit_hash);
+	char *commit_path = r_file_new (rp, ".rvc","commits", commit_hash, NULL);
 	if (!commit_path || !r_file_dump (commit_path, (const ut8*)content, -1, false)) {
 		free (content);
 		free (commit_hash);
@@ -684,8 +682,7 @@ static RvcBlob *bfadd(const char *rp, const char *fname) {
 		free (absp);
 		goto fail_ret;
 	}
-	char *bpath = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "blobs"
-			R_SYS_DIR "%s", rp, ret->fhash);
+	char *bpath = r_file_new (rp, ".rvc", "blobs", ret->fhash, NULL);
 	if (!bpath) {
 		goto fail_ret;
 	}
@@ -914,7 +911,7 @@ R_API bool r_vc_branch(const char *rp, const char *bname) {
 R_API bool r_vc_new(const char *path) {
 	Sdb *db;
 	char *commitp, *blobsp;
-	char *vcp = r_str_newf ("%s" R_SYS_DIR ".rvc", path);
+	char *vcp = r_file_new (path, ".rvc", NULL);
 	if (r_file_is_directory (vcp)) {
 		eprintf ("A repository already exists in %s\n", path);
 		free (vcp);
@@ -924,8 +921,8 @@ R_API bool r_vc_new(const char *path) {
 	if (!vcp) {
 		return false;
 	}
-	commitp = r_str_newf ("%s" R_SYS_DIR "commits", vcp);
-	blobsp = r_str_newf ("%s" R_SYS_DIR "blobs", vcp);
+	commitp = r_file_new (vcp, "commits", NULL);
+	blobsp = r_file_new (vcp, "blobs", NULL);
 	if (!commitp || !blobsp) {
 		free (commitp);
 		free (blobsp);
@@ -1043,8 +1040,7 @@ R_API bool r_vc_checkout(const char *rp, const char *bname) {
 			}
 			continue;
 		}
-		char *blob_path = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
-				"blobs" R_SYS_DIR "%s", rp, fhash);
+		char *blob_path = r_file_new (rp, ".rvc", "blobs", fhash, NULL);
 		free (fhash);
 		if (!blob_path) {
 			goto fail_ret;
@@ -1085,7 +1081,7 @@ R_API RList *r_vc_log(const char *rp) {
 	RListIter *iter;
 	char *ch;
 	r_list_foreach_prev (commits, iter, ch) {
-		char *cp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR "commits" R_SYS_DIR "%s", rp, ch);
+		char *cp = r_file_new (rp, ".rvc", "commits", ch, NULL);
 		if (!cp) {
 			goto fail_ret;
 		}
@@ -1250,9 +1246,7 @@ R_API bool r_vc_reset(const char *rp) {
 				continue;
 
 			}
-			blobp = r_str_newf ("%s" R_SYS_DIR ".rvc" R_SYS_DIR
-					R_SYS_DIR "blobs" R_SYS_DIR
-					"%s", rp, b);
+			blobp = r_file_new (rp, ".rvc", "blobs", b);
 			free (b);
 		}
 		if (!blobp) {
@@ -1321,8 +1315,8 @@ R_API bool rvc_git_checkout(const RCore *core, const char *rp, const char *bname
 
 R_API bool rvc_git_repo_exists(const RCore *core, const char *rp) {
 	char *frp = !strcmp (r_config_get (core->config, "prj.vc.type"), "rvc")?
-		r_str_newf ("%s" R_SYS_DIR ".rvc", rp):
-		r_str_newf ("%s" R_SYS_DIR ".git", rp);
+		r_file_new (rp, ".rvc", NULL):
+		r_file_new (rp, ".git", NULL);
 	if (frp) {
 		bool ret = r_file_is_directory (frp);
 		free (frp);
