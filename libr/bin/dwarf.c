@@ -1585,12 +1585,12 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		RBinDwarfAttrDef *def, RBinDwarfAttrValue *value,
 		const RBinDwarfCompUnitHdr *hdr,
 		const ut8 *debug_str, size_t debug_str_len) {
+	r_return_val_if_fail (def && value && hdr && obuf, NULL);
 
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + obuf_len;
 	size_t j;
 
-	r_return_val_if_fail (def && value && hdr && obuf, NULL);
 	if (obuf_len < 1) {
 		return NULL;
 	}
@@ -1655,7 +1655,9 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
 		value->string.content = *buf ? r_str_ndup ((const char *)buf, buf_end - buf) : NULL;
-		buf += (strlen (value->string.content) + 1);
+		if (value->string.content) {
+			buf += (r_str_nlen (value->string.content, buf_end - buf) + 1);
+		}
 		break;
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -1859,11 +1861,24 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
  */
 static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevDecl *abbrev, RBinDwarfCompUnitHdr *hdr, RBinDwarfDie *die, const ut8 *debug_str, size_t debug_str_len, Sdb *sdb) {
 	size_t i;
+	if (!buf || !buf_end || buf > buf_end) {
+		return NULL;
+	}
 	for (i = 0; i < abbrev->count - 1; i++) {
+		if (die->capacity < 1) {
+			break;
+		}
 		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
-
-		buf = parse_attr_value (buf, buf_end - buf, &abbrev->defs[i],
-			&die->attr_values[i], hdr, debug_str, debug_str_len);
+		// debug_str_len = r_str_nlen (debug_str, buf_end - buf);
+		const ut8 *nbuf = parse_attr_value (buf, buf_end - buf,
+			&abbrev->defs[i],
+			&die->attr_values[i],
+			hdr, debug_str, debug_str_len);
+		if (nbuf) {
+			buf = nbuf;
+		} else {
+			break;
+		}
 
 		RBinDwarfAttrValue *attribute = &die->attr_values[i];
 
@@ -2382,12 +2397,9 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *bin, int mode) {
 
 static inline ut64 get_max_offset(size_t addr_size) {
 	switch (addr_size) {
-		case 2:
-		return UT16_MAX;
-		case 4:
-		return UT32_MAX;
-		case 8:
-		return UT64_MAX;
+	case 2: return UT16_MAX;
+	case 4: return UT32_MAX;
+	case 8: return UT64_MAX;
 	}
 	return 0;
 }
