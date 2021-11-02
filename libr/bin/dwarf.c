@@ -1,17 +1,6 @@
 /* radare - LGPL - Copyright 2012-2021 - pancake, Fedor Sakharov */
 
-#define D0 if(1)
-#define D1 if(1)
-
 #include <errno.h>
-
-#define DWARF_DUMP 0
-
-#if DWARF_DUMP
-#define DBGFD stdout
-#else
-#define DBGFD NULL
-#endif
 
 #include <r_bin.h>
 #include <r_bin_dwarf.h>
@@ -1203,17 +1192,17 @@ static int init_die(RBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
 	return 0;
 }
 
-static int init_comp_unit(RBinDwarfCompUnit *cu) {
+static bool init_comp_unit(RBinDwarfCompUnit *cu) {
 	if (!cu) {
-		return -EINVAL;
+		return false;
 	}
 	cu->dies = calloc (sizeof (RBinDwarfDie), COMP_UNIT_CAPACITY);
 	if (!cu->dies) {
-		return -ENOMEM;
+		return false;
 	}
 	cu->capacity = COMP_UNIT_CAPACITY;
 	cu->count = 0;
-	return 0;
+	return true;
 }
 
 static int expand_cu(RBinDwarfCompUnit *cu) {
@@ -1864,10 +1853,10 @@ static const ut8 *parse_die(const ut8 *buf, const ut8 *buf_end, RBinDwarfAbbrevD
 	if (!buf || !buf_end || buf > buf_end) {
 		return NULL;
 	}
-	for (i = 0; i < abbrev->count - 1; i++) {
-		if (die->capacity < 1) {
-			break;
-		}
+	for (i = 0; i < die->count; i++) {
+		memset (&die->attr_values[i], 0, sizeof (RBinDwarfDie));
+	}
+	for (i = 0; i < abbrev->count && i < die->capacity; i++) {
 		memset (&die->attr_values[i], 0, sizeof (die->attr_values[i]));
 		// debug_str_len = r_str_nlen (debug_str, buf_end - buf);
 		const ut8 *nbuf = parse_attr_value (buf, buf_end - buf,
@@ -2060,7 +2049,7 @@ static RBinDwarfDebugInfo *parse_info_raw(Sdb *sdb, RBinDwarfDebugAbbrev *da,
 		}
 
 		RBinDwarfCompUnit *unit = &info->comp_units[unit_idx];
-		if (init_comp_unit (unit) < 0) {
+		if (!init_comp_unit (unit)) {
 			unit_idx--;
 			goto cleanup;
 		}
