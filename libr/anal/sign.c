@@ -445,13 +445,15 @@ static char *serialize_value(RSignItem *it) {
 	FreeRet_on_fail (serialize_str_list (it->xrefs, sb, R_SIGN_XREFS), sb);
 	FreeRet_on_fail (serialize_str_list (it->collisions, sb, R_SIGN_COLLISIONS), sb);
 
-	char *vrs = r_anal_var_prot_serialize (it->vars, false);
-	bool vars_good = false;
-	if (vrs) {
-		vars_good = r_strbuf_appendf (sb, "|%c:%s", R_SIGN_VARS, vrs);
-		free (vrs);
+	if (it->vars) {
+		char *vrs = r_anal_var_prot_serialize (it->vars, false);
+		bool vars_good = false;
+		if (vrs) {
+			vars_good = r_strbuf_appendf (sb, "|%c:%s", R_SIGN_VARS, vrs);
+			free (vrs);
+		}
+		FreeRet_on_fail (vars_good, sb);
 	}
-	FreeRet_on_fail (vars_good, sb);
 
 	if (it->comment && !strchr (it->comment, '|')) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_COMMENT, it->comment), sb);
