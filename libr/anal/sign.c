@@ -89,7 +89,7 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
-static inline RList *r_sign_vars(RAnalFunction *fcn) {
+static inline RList *sign_vars(RAnalFunction *fcn) {
 	RList *l = r_anal_var_get_prots (fcn);
 	if (l && r_list_empty (l)) {
 		r_list_free (l);
@@ -921,7 +921,7 @@ R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignT
 	case R_SIGN_REFS:
 		return !it->refs && (it->refs = r_sign_fcn_refs (a, fcn));
 	case R_SIGN_VARS:
-		return !it->vars && (it->vars = r_sign_vars (fcn));
+		return !it->vars && (it->vars = sign_vars (fcn));
 	case R_SIGN_TYPES:
 		if (!it->types) {
 			it->types = r_anal_function_get_signature (fcn);
@@ -1469,6 +1469,35 @@ struct ctxListCB {
 	PJ *pj;
 };
 
+static void list_sanitise_warn(char *s, const char *name, const char *field) {
+	if (s) { // NULL value accepted and sane
+		bool sanitized = false;
+		for (; *s; s++) {
+			switch (*name) {
+			case '`':
+			case '$':
+			case '{':
+			case '}':
+			case '~':
+			case '|':
+			case '#':
+			case '@':
+			case '&':
+			case '<':
+			case '>':
+			case ',':
+				*s = '_';
+				sanitized = true;
+				continue;
+			}
+		}
+		if (sanitized) {
+			eprintf ("%s->%s needed sanitized\n", name, field);
+			r_warn_if_reached ();
+		}
+	}
+}
+
 static void listBytes(RAnal *a, RSignItem *it, PJ *pj, int format) {
 	RSignBytes *bytes = it->bytes;
 
@@ -1491,6 +1520,8 @@ static void listBytes(RAnal *a, RSignItem *it, PJ *pj, int format) {
 		return;
 	}
 
+	list_sanitise_warn (strbytes, it->name, "bytes");
+	list_sanitise_warn (strmask, it->name, "mask");
 	if (format == '*') {
 		if (masked == bytes->size) {
 			a->cb_printf ("za %s b %s\n", it->name, strbytes);
@@ -1536,15 +1567,19 @@ static void listGraph(RAnal *a, RSignItem *it, PJ *pj, int format) {
 
 static void liststring(RAnal *a, RSignType t, char *value, PJ *pj, int format, char *name) {
 	if (value) {
-		if (format == 'q') {
-			a->cb_printf ("\n ; %s\n", value);
-		} else if (format == '*') {
-			// comment injection via CCu..
-			a->cb_printf ("za %s %c %s\n", name, t, value);
-		} else if (format == 'j') {
+		if (format == 'j') {
 			pj_ks (pj, r_sign_type_to_name (t), value);
 		} else {
-			a->cb_printf ("  %s: %s\n", r_sign_type_to_name (t), value);
+			const char *type = r_sign_type_to_name (t);
+			list_sanitise_warn (value, name, type);
+			if (format == 'q') {
+				a->cb_printf ("\n ; %s\n", value);
+			} else if (format == '*') {
+				// comment injection via CCu..
+				a->cb_printf ("za %s %c %s\n", name, t, value);
+			} else {
+				a->cb_printf ("  %s: %s\n", type, value);
+			}
 		}
 	}
 }
@@ -1565,6 +1600,8 @@ static void inline list_vars_abs(RAnal *a, RSignItem *it, bool rad) {
 	if (it->vars && !r_list_empty (it->vars)) {
 		char *ser = r_anal_var_prot_serialize (it->vars, true);
 		if (ser) {
+			// sholdn't do anyting, but just in case
+			list_sanitise_warn (ser, it->name, "var");
 			if (rad) {
 				a->cb_printf ("za %s %c %s\n", it->name, R_SIGN_VARS, ser);
 			} else {
@@ -1599,7 +1636,7 @@ static void inline list_vars(RAnal *a, RSignItem *it, PJ *pj, int fmt) {
 		break;
 	case 'q':
 		if (it->vars) {
-			a->cb_printf (" vars(%d)", r_list_length (it->vars));
+			a->cb_printf (" vars[%d]", r_list_length (it->vars));
 		}
 		break;
 	case 'j':
@@ -1618,7 +1655,7 @@ static void list_sign_list(RAnal *a, RList *l, PJ *pj, int fmt, int type, const 
 		a->cb_printf ("za %s %c ", name, type);
 		break;
 	case 'q':
-		a->cb_printf (" %s(%d)", tname, r_list_length (l));
+		a->cb_printf (" %s[%d]", tname, r_list_length (l));
 		return;
 	case 'j':
 		pj_ka (pj, tname);
@@ -1667,6 +1704,7 @@ static void listHash(RAnal *a, RSignItem *it, PJ *pj, int format) {
 		break;
 	case '*':
 		if (it->hash->bbhash) {
+			list_sanitise_warn (it->hash->bbhash, it->name, "bbhash");
 			a->cb_printf ("za %s h %s\n", it->name, it->hash->bbhash);
 		}
 		break;
@@ -1679,6 +1717,7 @@ static void listHash(RAnal *a, RSignItem *it, PJ *pj, int format) {
 		break;
 	default:
 		if (it->hash->bbhash) {
+			list_sanitise_warn (it->hash->bbhash, it->name, "bbhash");
 			a->cb_printf ("  bbhash: %s\n", it->hash->bbhash);
 		}
 		break;
@@ -1694,10 +1733,17 @@ static bool listCB(RSignItem *it, void *user) {
 		pj_o (ctx->pj);
 	}
 
+	char *spname = NULL;
+	if (it->space && it->space->name) {
+		spname = strdup (it->space->name);
+		list_sanitise_warn (spname, it->name, "space");
+	}
+	list_sanitise_warn (it->name, it->name, "name");
+
 	// Zignspace and name (except for radare format)
 	if (ctx->format == '*') {
 		if (it->space) {
-			a->cb_printf ("zs %s\n", it->space->name);
+			a->cb_printf ("zs %s\n", spname);
 		} else {
 			a->cb_printf ("zs *\n");
 		}
@@ -1712,10 +1758,11 @@ static bool listCB(RSignItem *it, void *user) {
 		pj_ks (ctx->pj, "name", it->name);
 	} else {
 		if (!r_spaces_current (&a->zign_spaces) && it->space) {
-			a->cb_printf ("(%s) ", it->space->name);
+			a->cb_printf ("(%s) ", spname);
 		}
 		a->cb_printf ("%s:\n", it->name);
 	}
+	free (spname);
 
 	// Bytes pattern
 	if (it->bytes) {
@@ -2242,6 +2289,11 @@ static int sig_var_diff(RList *la, RList *lb) {
 	for (i = 0; i < len; i++) {
 		const RAnalVarProt *a = r_list_get_n (la, i);
 		const RAnalVarProt *b = r_list_get_n (lb, i);
+
+		// shouldn't happen, but try to keep it together if it does
+		r_return_val_if_fail (a, -1);
+		r_return_val_if_fail (b, 1);
+
 		dif = a->delta - b->delta;
 		if (dif) {
 			return dif;
