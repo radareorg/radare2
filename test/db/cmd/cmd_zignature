@@ -432,7 +432,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: b-12, b-24, r82, r78
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 (zigs) main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -441,7 +441,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: b-12, b-24, r82, r78
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -465,7 +465,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: b-12, b-24, r82, r78
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 (zigs) main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -474,7 +474,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: b-12, b-24, r82, r78
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -495,7 +495,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: b-12, b-24, r82, r78
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -518,7 +518,7 @@ foobar:
   realname: main
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: b-12, b-24, r82, r78
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -540,7 +540,7 @@ foobar:
   realname: main
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: b-12, b-24, r82, r78
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -1253,7 +1253,7 @@ za sym.__write g cc=6 nbbs=7 edges=7 ebbs=3 bbsum=148
 za sym.__write o 0x000ec800
 za sym.__write t void sym.__write (int64_t arg1, int64_t arg2, int64_t arg3)
 za sym.__write r sym.__libc_enable_asynccancel sym.__libc_disable_asynccancel
-za sym.__write v s-32 r72 r78 r82
+za sym.__write v fs-32:var_8h:int64_t, tr72:arg3:int64_t, tr78:arg2:int64_t, tr82:arg1:int64_t
 za sym.__write h 4f2d194bae72345352b26e0a36531e7d6ff6cb5d6b50b92487246507b8dafdc5
 EOF
 RUN
@@ -1273,7 +1273,7 @@ za sym.bcopy g cc=1 nbbs=2 edges=1 ebbs=1 bbsum=23
 za sym.bcopy o 0x0008a900
 za sym.bcopy t void sym.bcopy (int64_t arg1)
 za sym.bcopy r sym..plt.sec
-za sym.bcopy v r82
+za sym.bcopy v tr82:arg1:int64_t
 za sym.bcopy h 7549556f94a4c26907f0304da9892c797a73e6c44907dc2030389392a9df8f69
 EOF
 RUN
@@ -1357,7 +1357,7 @@ za sym.fpathconf b 3c1c0005279c11200399e02127bdfef8afbf0100afb100fcafb000f8afbc0
 za sym.fpathconf g cc=5 nbbs=8 edges=9 ebbs=2 bbsum=176
 za sym.fpathconf o 0x00051490
 za sym.fpathconf t void sym.fpathconf (int32_t arg1, int32_t arg2)
-za sym.fpathconf v s-8 s-12 s-16 s-248 r4 r5
+za sym.fpathconf v fs-8:var_100h:int32_t, fs-12:var_fch:int32_t, fs-16:var_f8h:int32_t, fs-248:var_10h:int32_t, tr4:arg1:int32_t, tr5:arg2:int32_t
 za sym.fpathconf h 52f232c2d8158ce806cadf84ed77273fb11711dfa6cb5feb997ce03c1459be43
 EOF
 RUN
@@ -1377,7 +1377,7 @@ za sym._dl_malloc g cc=8 nbbs=12 edges=16 ebbs=2 bbsum=396
 za sym._dl_malloc o 0x00002a1c
 za sym._dl_malloc t void sym._dl_malloc (int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg_10h)
 za sym._dl_malloc r sym._dl_dprintf sym._dl_dprintf
-za sym._dl_malloc v b16 s-4 s-12 s-16 s-20 s-8 s-24 s-32 s-80 s-76 s-28 s-36 s-40 r4 r6 r7 r5
+za sym._dl_malloc v fs-4:var_4h:int32_t, fs-12:var_24h:int32_t, fs-16:var_20h:int32_t, fs-20:var_1ch:int32_t, fs-8:var_28h:int32_t, fs-24:var_18h:int32_t, fs-32:var_10h:int32_t, fs-80:var_10h_2:int32_t, fs-76:var_14h:int32_t, tb16:arg_10h:int32_t, fs-28:var_24h_2:int32_t, fs-36:var_1ch_2:int32_t, fs-40:var_18h_2:int32_t, tr4:arg1:int32_t, tr6:arg3:int32_t, tr7:arg4:int32_t, tr5:arg2:int32_t
 za sym._dl_malloc h ec986971438cf486e01f14e9bc442d9f4c457854207d30fe4aa9f1ffdf892911
 EOF
 RUN
@@ -1410,7 +1410,7 @@ za fcn.100e2b0c b 38c000014800000c38c00000480000049421ffd07c0802a63d401013bf2100
 za fcn.100e2b0c g cc=6 nbbs=17 edges=23 ebbs=0 bbsum=344
 za fcn.100e2b0c o 0x100e2b0c
 za fcn.100e2b0c t void fcn.100e2b0c (int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg_0h, int32_t arg_1h)
-za fcn.100e2b0c v b0 b1 r6 r7 r5
+za fcn.100e2b0c v tb0:arg_0h:int32_t, tb1:arg_1h:int32_t, tr6:arg2:int32_t, tr7:arg3:int32_t, tr5:arg1:int32_t
 za fcn.100e2b0c h d965748ce310bc40814dc20fd6e233a7131706af48e2f21ac93f7c0c5ab5bbd1
 EOF
 RUN
@@ -1429,7 +1429,7 @@ za fcn.10002d70 b 38a0000038c000004bfffed4:ffffffffffffffffff000000
 za fcn.10002d70 g cc=3 nbbs=8 edges=9 ebbs=1 bbsum=232
 za fcn.10002d70 o 0x10002d70
 za fcn.10002d70 t void fcn.10002d70 (int32_t arg1, int32_t arg2, int32_t arg_1030h, int32_t arg_1034h)
-za fcn.10002d70 v b-4096 s-4136 s4 s-36 s0 r5 r6
+za fcn.10002d70 v fs-4136:var_8h:int32_t, ts4:arg_1034h:int32_t, fs-36:var_100ch:int32_t, ts0:arg_1030h:int32_t, fb-4096:var_1000h:int32_t, tr5:arg1:int32_t, tr6:arg2:int32_t
 za fcn.10002d70 h 5f59f157d9e3548e81fed794bff828e7fc6ab90932a879b643d6d2a30c20c3b0
 EOF
 RUN
@@ -1463,7 +1463,7 @@ za sym._Unwind_VRS_Get g cc=2 nbbs=4 edges=4 ebbs=1 bbsum=28
 za sym._Unwind_VRS_Get o 0x000078ea
 za sym._Unwind_VRS_Get t void sym._Unwind_VRS_Get (int16_t arg1, int16_t arg2)
 za sym._Unwind_VRS_Get r sym.__gnu_thumb1_case_uqi
-za sym._Unwind_VRS_Get v r0 r1
+za sym._Unwind_VRS_Get v tr0:arg1:int16_t, tr1:arg2:int16_t
 za sym._Unwind_VRS_Get h 3132d0ebfa3b792867a4ffc36455e088bf3fcffc7627bd48c64bf901308463db
 EOF
 RUN
@@ -1509,7 +1509,7 @@ za sym.memset b 200c014e0400028b5f8001f1c80300545f4000f102020054013c084ea2001836
 za sym.memset g cc=28 nbbs=35 edges=47 ebbs=8 bbsum=460
 za sym.memset o 0x00012180
 za sym.memset t void sym.memset (void *s, int c, size_t n)
-za sym.memset v r10 r6 r14
+za sym.memset v tr10:c:int, tr6:s:void *, tr14:n:size_t
 za sym.memset h 82e8b18bbf263f9ed0e31d6b68099efe6eb8805a429444f8aa119af00c47369c
 EOF
 RUN
@@ -1528,7 +1528,7 @@ za sym.strnlen b c1ffffb4ecc300b202ec7c92080c40f2610300542e0400d1cefd44d34310c1a
 za sym.strnlen g cc=7 nbbs=11 edges=14 ebbs=2 bbsum=196
 za sym.strnlen o 0x000131a4
 za sym.strnlen t void sym.strnlen (int64_t arg1, int64_t arg2, int64_t arg5)
-za sym.strnlen v r10 r6 r22
+za sym.strnlen v tr10:arg2:int64_t, tr6:arg1:int64_t, tr22:arg5:int64_t
 za sym.strnlen h c573e9053dfa735f51cca8aea51eda71ca46fd402d11feb4d7f8ccf1b3b46d72
 EOF
 RUN
