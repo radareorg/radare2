@@ -200,7 +200,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	RListIter *iter;
 	RAnalRef *ref;
 	PJ *pj = NULL;
-	RList *list = r_anal_ref_list_new();
+	RList *list = r_anal_ref_list_new ();
 	listxrefs (anal->dict_refs, UT64_MAX, list);
 	sortxrefs (list);
 	if (rad == 'j') {

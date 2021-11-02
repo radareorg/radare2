@@ -858,11 +858,18 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axt", "[?] [addr]", "find data/code references to this address",
-	"axf", " [addr]", "find data/code references from this address",
-	"axv", " [addr]", "list local variables read-write-exec references",
+	"axf", "[?] [addr]", "find data/code references from this address",
+	"axv", "[?] [addr]", "list local variables read-write-exec references",
 	"ax.", " [addr]", "find data/code references from and to this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
+	NULL
+};
+
+static const char *help_msg_axv[]= {
+	"Usage:", "axv[?j]", "show xrefs to local variables in current function",
+	"axv", " ([addr])", "optionally you can specify address instead of current seek",
+	"axvj", " ([addr])", "show in json",
 	NULL
 };
 
@@ -871,7 +878,18 @@ static const char *help_msg_axt[]= {
 	"axtj", " [addr]", "find data/code references to this address and print in json format",
 	"axtg", " [addr]", "display commands to generate graphs according to the xrefs",
 	"axtq", " [addr]", "find and list the data/code references in quiet mode",
+	"axtm", " [addr]", "show xrefs to in 'make' syntax (see aflm and axfm)",
 	"axt*", " [addr]", "same as axt, but prints as r2 commands",
+	NULL
+};
+
+static const char *help_msg_axf[]= {
+	"Usage:", "axf[?gq*]", "find data/code references from this address",
+	"axfj", " [addr]", "find data/code references to this address and print in json format",
+	"axfg", " [addr]", "display commands to generate graphs according to the xrefs",
+	"axfq", " [addr]", "find and list the data/code references in quiet mode",
+	"axfm", " [addr]", "show refs to in 'make' syntax (see aflm and axtm)",
+	"axf*", " [addr]", "same as axt, but prints as r2 commands",
 	NULL
 };
 
@@ -8094,6 +8112,45 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	return buf_asm;
 }
 
+static const char *axtm_name(RCore *core, ut64 addr) {
+	const char *name = NULL;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
+	if (fcn) {
+		name = fcn->name;
+	} else {
+		RFlagItem *f = r_flag_get_at (core->flags, addr, false);
+		if (f) {
+			name = f->name;
+		}
+	}
+	return name;
+}
+
+static bool axtm_cb(void *u, const ut64 k, const void *v) {
+	RCore *core = (RCore*)u;
+	const char *name = axtm_name (core, k);
+	RListIter *iter;
+	RAnalRef *ref;
+	RList *list = r_anal_xrefs_get (core->anal, k);
+	if (list && r_list_length (list) > 0) {
+		r_cons_printf ("0x%"PFMT64x": %s%c", k, name? name: "?", 10);
+		r_list_foreach (list, iter, ref) {
+			name = axtm_name (core, ref->addr);
+			r_cons_printf ("  0x%"PFMT64x": %s%c", ref->addr, name? name: "?", 10);
+		}
+	}
+	r_list_free (list);
+	return true;
+}
+
+static void axtm(RCore *core) {
+	ht_up_foreach (core->anal->dict_refs, axtm_cb, core);
+}
+
+static void axfm(RCore *core) {
+	ht_up_foreach (core->anal->dict_xrefs, axtm_cb, core);
+}
+
 #define var_ref_list(a,d,t) sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",\
 		a, 1, d, (t == 'R')?"reads":"writes");
 
@@ -8201,11 +8258,20 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		free (ptr);
 	} break;
 	case 'v': // "axv"
-		cmd_afvx (core, NULL, input[1] == 'j');
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_axv);
+		} else {
+			cmd_afvx (core, NULL, input[1] == 'j');
+		}
 		break;
 	case 't': { // "axt"
-		if (input[1] == '?') { // axt?
+		if (input[1] == '?') { // "axt?"
 			r_core_cmd_help (core, help_msg_axt);
+			break;
+		}
+		if (input[1] == 'm') { // "axtm"
+			// like aflm but reversed
+			axtm (core);
 			break;
 		}
 		RList *list = NULL;
@@ -8301,7 +8367,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				r_list_foreach (list, iter, ref)
 					r_cons_printf ("CCa 0x%" PFMT64x " \"XREF type %d at 0x%" PFMT64x"%s\n",
 						ref->addr, ref->type, addr, iter->n? ",": "");
-			} else { // axt
+			} else if (input[1] == ' ' || input[1] == 0) { // "axt"
 				RAnalFunction *fcn;
 				r_list_foreach (list, iter, ref) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
@@ -8321,6 +8387,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					free (buf_asm);
 					free (buf_fcn);
 				}
+			} else {
+				r_core_cmd_help (core, help_msg_axt);
+				break;
 			}
 		} else {
 			if (input[1] == 'j') { // "axtj"
@@ -8373,6 +8442,15 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			}
 			pj_free (pj);
 		} else { // "axf"
+			if (input[1] == '?') { // "axf?"
+				r_core_cmd_help (core, help_msg_axf);
+				break;
+			}
+			if (input[1] == 'm') { // "axfm"
+				// like aflm but reversed
+				axfm (core);
+				break;
+			}
 			RAsmOp asmop;
 			RList *list = NULL;
 			RAnalRef *ref;
