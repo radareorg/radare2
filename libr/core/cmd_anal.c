@@ -5233,7 +5233,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	ut64 addr = r_reg_getv (core->anal->reg, name);
-	bool breakoninvalid = r_config_get_i (core->config, "esil.breakoninvalid");
+	bool r2wars = r_config_get_b (core->config, "cfg.r2wars");
+	bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
 	int esiltimeout = r_config_get_i (core->config, "esil.timeout");
 	ut64 startTime;
 
@@ -5336,7 +5337,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				return 1;
 			}
 		}
-		if (r_config_get_i (core->config, "cfg.r2wars")) {
+		if (r2wars) {
 			// this is x86 and r2wars specific, shouldnt hurt outside x86
 			ut64 vECX = r_reg_getv (core->anal->reg, "ecx");
 			if (op.prefix  & R_ANAL_OP_PREFIX_REP && vECX > 1) {

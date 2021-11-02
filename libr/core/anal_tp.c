@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2020 - oddcoder, sivaramaaa */
+/* radare - LGPL - Copyright 2016-2021 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
 #include <r_anal.h>
@@ -286,7 +286,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 	RAnal *anal = core->anal;
 	RList *types = NULL;
 	int idx = sdb_num_get (trace, "idx", 0);
-	bool verbose = r_config_get_i (core->config, "anal.types.verbose");
+	bool verbose = r_config_get_b (core->config, "anal.types.verbose");
 	bool stack_rev = false, in_stack = false, format = false;
 
 	if (!fcn_name || !cc) {
@@ -312,6 +312,10 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		} else {
 			max = DEFAULT_MAX;
 		}
+	}
+	// TODO: if function takes more than 8 args is usually bad analysis
+	if (max > 8) {
+		max = DEFAULT_MAX;
 	}
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev ? (max - 1 - i) : i;
@@ -448,6 +452,66 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
+static bool fast_step(RCore *core, RAnalOp *aop) {
+	int ret;
+	RAnalEsil *esil = core->anal->esil;
+	const char *e = R_STRBUF_SAFEGET (&aop->esil);
+	if (R_STR_ISEMPTY (e)) {
+		return false;
+	}
+	if (!esil) {
+		r_core_cmd0 (core, "aeim");
+		// addr = initializeEsil (core);
+		esil = core->anal->esil;
+		if (!esil) {
+			return false;
+		}
+	} else {
+		esil->trap = 0;
+		//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
+	}
+	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	ut64 addr = aop->addr;
+	if (aop->type == R_ANAL_OP_TYPE_ILL) {
+		ret = -1;
+	} else {
+		ret = aop->size;
+	}
+	// TODO: sometimes this is dupe
+	// if type is JMP then we execute the next N instructions
+	// update the esil pointer because RAnal.op() can change it
+	esil = core->anal->esil;
+	if (aop->size < 1 || ret < 1) {
+		if (esil->cmd && esil->cmd_trap) {
+			esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
+		}
+		return false;
+	}
+	r_reg_setv (core->anal->reg, name, addr + aop->size);
+	if (ret > 0) {
+		// r_anal_esil_parse (esil, e);
+		r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
+#if 0
+		r_anal_esil_set_pc (esil, addr);
+		const char *e = R_STRBUF_SAFEGET (&aop->esil);
+		if (core->dbg->trace->enabled) {
+			RReg *reg = core->dbg->reg;
+			core->dbg->reg = core->anal->reg;
+			r_debug_trace_op (core->dbg, aop);
+			core->dbg->reg = reg;
+		} else if (R_STR_ISNOTEMPTY (e)) {
+			r_anal_esil_parse (esil, e);
+			if (core->anal->cur && core->anal->cur->esil_post_loop) {
+				core->anal->cur->esil_post_loop (esil, aop);
+			}
+			r_anal_esil_stack_free (esil);
+		}
+#endif
+		return true;
+	}
+	return false;
+}
+
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
@@ -515,12 +579,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	r_list_foreach (fcn->bbs, it, bb) {
 		ut64 addr = bb->addr;
 		int i = 0;
-		RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
-		if (!r) {
-			free (buf);
-			return;
-		}
-		r_reg_set_value (core->dbg->reg, r, addr);
+		r_reg_setv (core->dbg->reg, pc, addr);
 		while (1) {
 			if (r_cons_is_breaked ()) {
 				goto out_function;
@@ -530,12 +589,13 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			}
 			ut64 pcval = r_reg_getv (anal->reg, pc);
 			if ((addr >= bb->addr + bb->size) || (addr < bb->addr) || pcval != addr) {
+				// stop emulating this bb if pc is outside the basic block boundaries
 				break;
 			}
 			if (!i) {
 				r_io_read_at (core->io, addr, buf, bsize);
 			}
-			ret = r_anal_op (anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
+			ret = r_anal_op (anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
@@ -549,14 +609,13 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			}
 			sdb_num_set (anal->esil->trace->db, sdb_fmt ("0x%"PFMT64x".count", addr), loop_count + 1, 0);
 			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
-				RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
-				if (!r) {
-					free (buf);
-					return;
-				}
-				r_reg_set_value (core->dbg->reg, r, addr + ret);
+				r_reg_setv (core->dbg->reg, pc, addr + ret);
 			} else {
+#if 0
 				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+#else
+				fast_step (core, &aop);
+#endif
 			}
 			bool userfnc = false;
 			Sdb *trace = anal->esil->trace->db;
