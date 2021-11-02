@@ -257,6 +257,9 @@ bool test_r_anal_var() {
 	r_list_free (vps);
 	free (serial);
 
+	vps = r_anal_var_deserialize ("ts-16:v,r_name:char **");
+	mu_assert ("No ',' in serialized name", !vps);
+
 	r_anal_var_delete (b);
 	r_anal_var_delete (c);
 

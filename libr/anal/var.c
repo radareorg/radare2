@@ -116,6 +116,17 @@ static void shadow_var_struct_members(RAnalVar *var) {
 	}
 }
 
+static bool inline valid_var_kind(char kind) {
+	switch (kind) {
+	case R_ANAL_VAR_KIND_BPV: // base pointer var/args
+	case R_ANAL_VAR_KIND_SPV: // stack pointer var/args
+	case R_ANAL_VAR_KIND_REG: // registers args
+		return true;
+	default:
+		return false;
+	}
+}
+
 R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name) {
 	r_return_val_if_fail (fcn && name, NULL);
 	RAnalVar *existing = r_anal_function_get_var_byname (fcn, name);
@@ -136,12 +147,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 			type = "int32_t";
 		}
 	}
-	switch (kind) {
-	case R_ANAL_VAR_KIND_BPV: // base pointer var/args
-	case R_ANAL_VAR_KIND_SPV: // stack pointer var/args
-	case R_ANAL_VAR_KIND_REG: // registers args
-		break;
-	default:
+	if (!valid_var_kind (kind)) {
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return NULL;
 	}
@@ -182,13 +188,12 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
 	RListIter *iter;
 	RAnalVarProt *vp;
-	bool ret = true;
 	r_list_foreach (l, iter, vp) {
 		if (!r_anal_function_set_var (fcn, vp->delta, vp->kind, vp->type, -1, vp->isarg, vp->name)) {
-			ret = false;
+			return false;
 		}
 	}
-	return ret;
+	return true;
 }
 
 R_API void r_anal_var_set_type(RAnalVar *var, const char *type) {
@@ -275,97 +280,100 @@ R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 	var_free (var);
 }
 
-static inline bool deser_single_var(RAnalVarProt *v, char *tok) {
-	if (!tok || !tok) {
-		return false;
-	}
-	while (*tok == ' ') {
-		tok++;
-	}
-
-	switch (*tok) {
-	case 't':
-		v->isarg = true;
-	case 'f':
-		v->isarg = false;
-		break;
-	default:
-		return false;
-	}
-	tok++;
-
-	switch (*tok) {
-	case R_ANAL_VAR_KIND_REG:
-	case R_ANAL_VAR_KIND_BPV:
-	case R_ANAL_VAR_KIND_SPV:
-		break;
-	default:
-		return false;
-	}
-
-	v->kind = *tok++;
-
-	char *tmp;
-	v->delta = strtol (tok, &tmp, 10);
-	if ((!v->delta && tmp == tok) || *tmp != ':') {
-		r_anal_var_proto_free (v);
-		return NULL;
-	}
-	tok = tmp + 1;
-	tmp = NULL;
-
-	char *name = strtok_r (tok, ":", &tmp);
-	char *type = strtok_r (NULL, "", &tmp);
-	if (type && name) {
-		v->name = strdup (name);
-		v->type = strdup (type);
-	}
-	return (v->type && v->name)? true: false;
-}
-
 R_API RList *r_anal_var_deserialize(const char *ser) {
 	RList *ret = r_list_newf ((RListFree)r_anal_var_proto_free);
-	char *dup = strdup (ser);
-	char *hldr = NULL;
-	char *tok = strtok_r (dup, ",", &hldr);
-	while (tok) {
+	while (*ser) {
 		RAnalVarProt *v = R_NEW0 (RAnalVarProt);
-		if (!deser_single_var (v, tok)) {
-			eprintf ("Failed to deserialize: %s\n", tok);
-			free (v);
-			r_list_free (ret);
-			return NULL;
-		}
 		r_list_append (ret, v);
-		tok = strtok_r (NULL, ",", &hldr);
+		if (!v) {
+			goto bad_serial;
+		}
+
+		// isarg
+		switch (*ser) {
+		case 't':
+			v->isarg = true;
+			break;
+		case 'f':
+			v->isarg = false;
+			break;
+		default:
+			goto bad_serial;
+		}
+		ser++;
+
+		// kind
+		if (!valid_var_kind (*ser)) {
+			goto bad_serial;
+		}
+		v->kind = *ser++;
+
+		// delta
+		char *nxt;
+		v->delta = strtol (ser, &nxt, 10);
+		if ((!v->delta && nxt == ser) || *nxt != ':') {
+			goto bad_serial;
+		}
+		ser = ++nxt;
+
+		// name
+		int i;
+		for (i = 0; *nxt != ':'; i++) {
+			if (*nxt == ',' || !*nxt) {
+				goto bad_serial;
+			}
+			nxt++;
+		}
+		v->name = r_str_newlen (ser, i);
+		if (!v->name) {
+			goto bad_serial;
+		}
+		ser = ++nxt;
+
+		// type
+		for (i = 0; *nxt && *nxt != ','; i++) {
+			nxt++;
+		}
+		v->type = r_str_newlen (ser, i);
+		if (!v->type) {
+			goto bad_serial;
+		}
+		ser = nxt;
+		if (*ser == ',') {
+			ser++;
+		}
+		while (*ser == ' ') {
+			ser++;
+		}
 	}
-	free (dup);
 	return ret;
+bad_serial:
+	r_list_free (ret);
+	return NULL;
 }
 
 static inline void sanitize_var_serial(char *name, bool colon) {
-	if (name) {
-		for (; *name; name++) {
-			switch (*name) {
-			case ':':
-				if (colon) {
-					break;
-				}
-			case '`':
-			case '$':
-			case '{':
-			case '}':
-			case '~':
-			case '|':
-			case '#':
-			case '@':
-			case '&':
-			case '<':
-			case '>':
-			case ',':
-				*name = '_';
-				continue;
+	r_return_if_fail (name);
+	for (; *name; name++) {
+		switch (*name) {
+		case ':':
+			if (colon) {
+				break;
 			}
+		case '`':
+		case '$':
+		case '{':
+		case '}':
+		case '~':
+		case '|':
+		case '#':
+		case '@':
+		case '&':
+		case '<':
+		case '>':
+		case ',':
+			*name = '_';
+			continue;
 		}
 	}
 }
@@ -375,12 +383,7 @@ static inline bool serialize_single_var(RAnalVarProt *vp, RStrBuf *sb) {
 	sanitize_var_serial (vp->name, false);
 	sanitize_var_serial (vp->type, true);
 	char b = vp->isarg? 't': 'f';
-	switch (vp->kind) {
-	case R_ANAL_VAR_KIND_REG:
-	case R_ANAL_VAR_KIND_BPV:
-	case R_ANAL_VAR_KIND_SPV:
-		break;
-	default:
+	if (!valid_var_kind (vp->kind)) {
 		return NULL;
 	}
 	return r_strbuf_appendf (sb, "%c%c%d:%s:%s", b, vp->kind, vp->delta, vp->name, vp->type);
