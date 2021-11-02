@@ -129,7 +129,9 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 
 static bool objc_build_refs(RCoreObjc *objc) {
 	ut64 off;
-	r_return_val_if_fail (objc->_const && objc->_selrefs, false);
+	if (!objc->_const || !objc->_selrefs) {
+		return false;
+	}
 
 	const ut64 va_const = objc->_const->vaddr;
 	size_t ss_const = objc->_const->vsize;
