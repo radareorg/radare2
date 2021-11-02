@@ -1447,7 +1447,8 @@ static void parse_function(Context *ctx, ut64 idx) {
 		r_strbuf_append (&ret_type, "void");
 	}
 	r_warn_if_fail (ctx->lang);
-	char *new_name = ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
+	char *new_name = ctx->anal->binb.demangle
+		? ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false): NULL;
 	fcn.name = new_name ? new_name : strdup (fcn.name);
 	fcn.signature = r_str_newf ("%s %s(%s);", r_strbuf_get (&ret_type), fcn.name, r_strbuf_get (&args));
 	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
