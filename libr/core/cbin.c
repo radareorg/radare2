@@ -1064,7 +1064,7 @@ static void file_lines_free_kv(HtPPKv *kv) {
 	file_lines_free (kv->value);
 }
 
-static int bin_dwarf(RCore *core, PJ *pj, int mode) {
+static bool bin_dwarf(RCore *core, PJ *pj, int mode) {
 	RBinDwarfRow *row;
 	RListIter *iter;
 	if (!r_config_get_i (core->config, "bin.dbginfo")) {
