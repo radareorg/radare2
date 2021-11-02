@@ -89,7 +89,7 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
-static inline *r_sign_vars(RAnalFunction *fcn) {
+static inline RList *r_sign_vars(RAnalFunction *fcn) {
 	RList *l = r_anal_var_get_prots (fcn);
 	if (l && r_list_empty (l)) {
 		r_list_free (l);
