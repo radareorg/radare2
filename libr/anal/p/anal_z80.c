@@ -23,7 +23,7 @@ static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
 		type = Z80_OP16;
 		break;
 	case 0xdd:
-		if (len >1) {
+		if (len > 1) {
 			type = dd[z80_fddd_branch_index_res(data[1])].type;
 		}
 		break;
@@ -53,8 +53,10 @@ static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
 	}
 }
 
-static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
+static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_data, int len, RAnalOpMask mask) {
 	int ilen = 0;
+	ut8 data[4] = {0};
+	memcpy (data, _data, R_MIN (len, 4));
 	z80_op_size (data, len, &ilen, &op->nopcode);
 
 	op->addr = addr;
@@ -172,12 +174,16 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 		case 0x22: // ld (**), ix; ld (**), iy
 			op->type = R_ANAL_OP_TYPE_STORE;
 			op->refptr = 2;
-			op->ptr = data[2] | data[3] << 8;
+			if (len > 2) {
+				op->ptr = data[2] | data[3] << 8;
+			}
 			break;
 		case 0x2a: // ld ix, (**); ld ix, (**)
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op->refptr = 2;
-			op->ptr = data[2] | data[3] << 8;
+			if (len > 2) {
+				op->ptr = data[2] | data[3] << 8;
+			}
 			break;
 		}
 		break;
@@ -316,7 +322,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 		op->jump = data[1] | data[2] << 8;
 		break;
 	case 0xcb:			//the same as for gameboy
-		switch(data[1]/8) {
+		switch (data[1] / 8) {
 		case 0:
 		case 2:
 		case 4:
