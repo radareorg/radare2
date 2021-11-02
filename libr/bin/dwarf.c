@@ -369,9 +369,18 @@ static inline bool is_printable_unit_type(ut64 unit_type) {
  */
 static inline ut64 dwarf_read_offset(bool is_64bit, const ut8 **buf, const ut8 *buf_end) {
 	ut64 result;
+	if (!buf || !*buf || !buf_end) {
+		return 0;
+	}
 	if (is_64bit) {
+		if (*buf + 8 >= buf_end) {
+			return 0;
+		}
 		result = READ64 (*buf);
 	} else {
+		if (*buf + 4 >= buf_end) {
+			return 0;
+		}
 		result = (ut64)READ32 (*buf);
 	}
 	return result;
@@ -1645,7 +1654,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->kind = DW_AT_KIND_STRING;
 		value->string.content = *buf ? r_str_ndup ((const char *)buf, buf_end - buf) : NULL;
 		if (value->string.content) {
-			buf += (r_str_nlen (value->string.content, buf_end - buf) + 1);
+			buf += strlen (value->string.content) + 1;
 		}
 		break;
 	case DW_FORM_block1:
@@ -1686,10 +1695,10 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	// offset in .debug_str
 	case DW_FORM_strp:
 		value->kind = DW_AT_KIND_STRING;
-		value->string.offset = dwarf_read_offset(hdr->is_64bit, &buf, buf_end);
+		value->string.offset = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 		if (debug_str && value->string.offset < debug_str_len) {
-			value->string.content =
-				strdup ((const char *)(debug_str + value->string.offset));
+			const char *ds = (const char *)(debug_str + value->string.offset);
+			value->string.content = strdup (ds); // r_str_ndup (ds, debug_str_len - value->string.offset);
 		} else {
 			value->string.content = NULL; // Means malformed DWARF, should we print error message?
 		}
@@ -1697,7 +1706,7 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	// offset in .debug_info
 	case DW_FORM_ref_addr:
 		value->kind = DW_AT_KIND_REFERENCE;
-		value->reference = dwarf_read_offset(hdr->is_64bit, &buf, buf_end);
+		value->reference = dwarf_read_offset (hdr->is_64bit, &buf, buf_end);
 		break;
 	// This type of reference is an offset from the first byte of the compilation
 	// header for the compilation unit containing the reference

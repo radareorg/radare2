@@ -501,7 +501,7 @@ aaa
 e asm.arch=x86
 e asm.bits=32
 s entry0
-e asm.reflines=false
+e asm.lines=false
 e asm.offset=false
 e asm.functions=false
 e asm.comments=false
@@ -510,8 +510,8 @@ f.blah
 pd 1
 EOF
 EXPECT=<<EOF
-           .blah:
-               31ed           xor ebp, ebp           ; start.S:67
+ .blah:
+     31ed           xor ebp, ebp                               ; start.S:67
 EOF
 RUN
 
