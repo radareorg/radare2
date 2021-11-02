@@ -170,13 +170,25 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		free (var->type);
 	}
 	var->name = strdup (name);
-	var->regname = reg ? strdup (reg->name) : NULL; // TODO: no strdup here? pool? or not keep regname at all?
+	var->regname = reg? strdup (reg->name): NULL; // TODO: no strdup here? pool? or not keep regname at all?
 	var->type = strdup (type);
 	var->kind = kind;
 	var->isarg = isarg;
 	var->delta = delta;
 	shadow_var_struct_members (var);
 	return var;
+}
+
+R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList *l) {
+	RListIter *iter;
+	RAnalVarProt *vp;
+	bool ret = true;
+	r_list_foreach (l, iter, vp) {
+		if (!r_anal_function_set_var (fcn, vp->delta, vp->kind, vp->type, -1, vp->isarg, vp->name)) {
+			ret = false;
+		}
+	}
+	return ret;
 }
 
 R_API void r_anal_var_set_type(RAnalVar *var, const char *type) {
@@ -190,16 +202,23 @@ R_API void r_anal_var_set_type(RAnalVar *var, const char *type) {
 }
 
 static void var_free(RAnalVar *var) {
-	if (!var) {
-		return;
+	if (var) {
+		r_anal_var_clear_accesses (var);
+		r_vector_fini (&var->constraints);
+		free (var->name);
+		free (var->regname);
+		free (var->type);
+		free (var->comment);
+		free (var);
 	}
-	r_anal_var_clear_accesses (var);
-	r_vector_fini (&var->constraints);
-	free (var->name);
-	free (var->regname);
-	free (var->type);
-	free (var->comment);
-	free (var);
+}
+
+static void r_anal_var_proto_free(RAnalVarProt *vp) {
+	if (vp) {
+		free (vp->name);
+		free (vp->type);
+		free (vp);
+	}
 }
 
 R_API void r_anal_var_delete(RAnalVar *var) {
@@ -254,6 +273,164 @@ R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 	r_return_if_fail (fcn && var);
 	r_pvector_remove_data (&fcn->vars, var);
 	var_free (var);
+}
+
+static inline bool deser_single_var(RAnalVarProt *v, char *tok) {
+	if (!tok || !tok) {
+		return false;
+	}
+	while (*tok == ' ') {
+		tok++;
+	}
+
+	switch (*tok) {
+	case 't':
+		v->isarg = true;
+	case 'f':
+		v->isarg = false;
+		break;
+	default:
+		return false;
+	}
+	tok++;
+
+	switch (*tok) {
+	case R_ANAL_VAR_KIND_REG:
+	case R_ANAL_VAR_KIND_BPV:
+	case R_ANAL_VAR_KIND_SPV:
+		break;
+	default:
+		return false;
+	}
+
+	v->kind = *tok++;
+
+	char *tmp;
+	v->delta = strtol (tok, &tmp, 10);
+	if ((!v->delta && tmp == tok) || *tmp != ':') {
+		r_anal_var_proto_free (v);
+		return NULL;
+	}
+	tok = tmp + 1;
+	tmp = NULL;
+
+	char *name = strtok_r (tok, ":", &tmp);
+	char *type = strtok_r (NULL, "", &tmp);
+	if (type && name) {
+		v->name = strdup (name);
+		v->type = strdup (type);
+	}
+	return (v->type && v->name)? true: false;
+}
+
+R_API RList *r_anal_var_deserialize(const char *ser) {
+	RList *ret = r_list_newf ((RListFree)r_anal_var_proto_free);
+	char *dup = strdup (ser);
+	char *hldr = NULL;
+	char *tok = strtok_r (dup, ",", &hldr);
+	while (tok) {
+		RAnalVarProt *v = R_NEW0 (RAnalVarProt);
+		if (!deser_single_var (v, tok)) {
+			eprintf ("Failed to deserialize: %s\n", tok);
+			free (v);
+			r_list_free (ret);
+			return NULL;
+		}
+		r_list_append (ret, v);
+		tok = strtok_r (NULL, ",", &hldr);
+	}
+	free (dup);
+	return ret;
+}
+
+static inline void sanitize_var_serial(char *name, bool colon) {
+	if (name) {
+		for (; *name; name++) {
+			switch (*name) {
+			case ':':
+				if (colon) {
+					break;
+				}
+			case '`':
+			case '$':
+			case '{':
+			case '}':
+			case '~':
+			case '|':
+			case '#':
+			case '@':
+			case '&':
+			case '<':
+			case '>':
+			case ',':
+				*name = '_';
+				continue;
+			}
+		}
+	}
+}
+
+static inline bool serialize_single_var(RAnalVarProt *vp, RStrBuf *sb) {
+	// shouldn't have special chars in them anyways, so replace in place
+	sanitize_var_serial (vp->name, false);
+	sanitize_var_serial (vp->type, true);
+	char b = vp->isarg? 't': 'f';
+	switch (vp->kind) {
+	case R_ANAL_VAR_KIND_REG:
+	case R_ANAL_VAR_KIND_BPV:
+	case R_ANAL_VAR_KIND_SPV:
+		break;
+	default:
+		return NULL;
+	}
+	return r_strbuf_appendf (sb, "%c%c%d:%s:%s", b, vp->kind, vp->delta, vp->name, vp->type);
+}
+
+R_API char *r_anal_var_prot_serialize(RList *l, bool spaces) {
+	r_return_val_if_fail (l, NULL);
+	if (l->length == 0) {
+		return NULL;
+	}
+
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return NULL;
+	}
+	r_strbuf_reserve (sb, r_list_length (l) * 0x10);
+
+	char *sep = spaces? ", ": ",";
+	size_t len = strlen (sep);
+	RAnalVarProt *v;
+	RAnalVarProt *top = (RAnalVarProt *)r_list_get_top (l);
+	RListIter *iter;
+	r_list_foreach (l, iter, v) {
+		if (!serialize_single_var (v, sb) || (v != top && !r_strbuf_append_n (sb, sep, len))) {
+			r_strbuf_free (sb);
+			return NULL;
+		}
+	}
+	return r_strbuf_drain (sb);
+}
+
+R_API RList *r_anal_var_get_prots(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, NULL);
+	RList *ret = r_list_newf ((RListFree)r_anal_var_proto_free);
+	if (ret) {
+		void **p;
+		r_pvector_foreach (&fcn->vars, p) {
+			RAnalVar *var = *p;
+			RAnalVarProt *vp = R_NEW0 (RAnalVarProt);
+			if (vp) {
+				vp->isarg = var->isarg;
+				vp->name = strdup (var->name);
+				vp->type = strdup (var->type);
+				vp->kind = var->kind;
+				vp->delta = var->delta;
+				r_list_append (ret, vp);
+			}
+		}
+	}
+	return ret;
 }
 
 R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name) {
