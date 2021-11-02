@@ -39,7 +39,9 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	}
 	RAnalFunction *f = ht_pp_find (anal->ht_name_fun, name, &found);
 	if (f && found) {
-		eprintf ("Invalid function name '%s' at 0x%08"PFMT64x"\n", name, addr);
+		if (f->addr != addr) {
+			eprintf ("Invalid function name '%s' at 0x%08"PFMT64x" (function at 0x%08"PFMT64x")\n", name, addr, f->addr);
+		}
 		return true;
 	}
 	// check if there's a function already in the given address
