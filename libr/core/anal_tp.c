@@ -452,15 +452,18 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
+#define SLOW_STEP 1
 static bool fast_step(RCore *core, RAnalOp *aop) {
-	int ret;
+#if SLOW_STEP
+	return r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+#else
 	RAnalEsil *esil = core->anal->esil;
 	const char *e = R_STRBUF_SAFEGET (&aop->esil);
 	if (R_STR_ISEMPTY (e)) {
 		return false;
 	}
 	if (!esil) {
-		r_core_cmd0 (core, "aeim");
+		r_core_cmd0 (core, "aei");
 		// addr = initializeEsil (core);
 		esil = core->anal->esil;
 		if (!esil) {
@@ -470,46 +473,33 @@ static bool fast_step(RCore *core, RAnalOp *aop) {
 		esil->trap = 0;
 		//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
 	}
-	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	// const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	// ut64 addr = r_reg_getv (core->anal->reg, name);
 	ut64 addr = aop->addr;
-	if (aop->type == R_ANAL_OP_TYPE_ILL) {
-		ret = -1;
-	} else {
-		ret = aop->size;
-	}
+	int ret = (aop->type == R_ANAL_OP_TYPE_ILL) ? -1: aop->size;
 	// TODO: sometimes this is dupe
 	// if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
 	if (aop->size < 1 || ret < 1) {
-		if (esil->cmd && esil->cmd_trap) {
-			esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
-		}
 		return false;
 	}
-	r_reg_setv (core->anal->reg, name, addr + aop->size);
-	if (ret > 0) {
-		// r_anal_esil_parse (esil, e);
-		r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
+	// r_anal_esil_parse (esil, e);
 #if 0
-		r_anal_esil_set_pc (esil, addr);
-		const char *e = R_STRBUF_SAFEGET (&aop->esil);
-		if (core->dbg->trace->enabled) {
-			RReg *reg = core->dbg->reg;
-			core->dbg->reg = core->anal->reg;
-			r_debug_trace_op (core->dbg, aop);
-			core->dbg->reg = reg;
-		} else if (R_STR_ISNOTEMPTY (e)) {
-			r_anal_esil_parse (esil, e);
-			if (core->anal->cur && core->anal->cur->esil_post_loop) {
-				core->anal->cur->esil_post_loop (esil, aop);
-			}
-			r_anal_esil_stack_free (esil);
-		}
+	r_anal_esil_set_pc (esil, addr);
+	RReg *reg = core->dbg->reg;
+	core->dbg->reg = core->anal->reg;
+	r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
+	core->dbg->reg = reg;
+#else
+	r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
 #endif
-		return true;
-	}
-	return false;
+	// select next instruction
+	const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	r_reg_setv (core->anal->reg, pcname, aop->addr + aop->size);
+	r_anal_esil_stack_free (esil);
+	return true;
+#endif
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
@@ -599,6 +589,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
+				r_reg_setv (core->dbg->reg, pc, addr);
 				r_anal_op_fini (&aop);
 				continue;
 			}
@@ -609,13 +600,10 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			}
 			sdb_num_set (anal->esil->trace->db, sdb_fmt ("0x%"PFMT64x".count", addr), loop_count + 1, 0);
 			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
+				// just analyze statically the instruction if its a call, dont emulate it
 				r_reg_setv (core->dbg->reg, pc, addr + ret);
 			} else {
-#if 0
-				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
-#else
 				fast_step (core, &aop);
-#endif
 			}
 			bool userfnc = false;
 			Sdb *trace = anal->esil->trace->db;
