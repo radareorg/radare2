@@ -1827,6 +1827,9 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->kind = DW_AT_KIND_ADDRESS;
 		buf = r_uleb128 (buf, buf_end - buf, &value->address, NULL);
 		break;
+	case 0:
+		// ignore
+		break;
 	default:
 		eprintf ("Unknown DW_FORM 0x%02" PFMT64x "\n", def->attr_form);
 		value->uconstant = 0;
