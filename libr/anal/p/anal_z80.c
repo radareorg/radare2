@@ -7,14 +7,16 @@
 #include <r_anal.h>
 #include "../../asm/arch/z80/z80_tab.h"
 
-static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
+static void z80_op_size(const ut8 *_data, int len, int *size, int *size_prefix) {
+	ut8 data[4] = {0};
 	int type = 0;
 	if (len < 1) {
 		return;
 	}
+	memcpy (data, _data, R_MIN (len, 4));
 	switch (data[0]) {
 	case 0xed:
-		if (len > 1) {
+		{
 			int idx = z80_ed_branch_index_res (data[1]);
 			type = ed[idx].type;
 		}
@@ -23,14 +25,10 @@ static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
 		type = Z80_OP16;
 		break;
 	case 0xdd:
-		if (len > 1) {
-			type = dd[z80_fddd_branch_index_res(data[1])].type;
-		}
+		type = dd[z80_fddd_branch_index_res(data[1])].type;
 		break;
 	case 0xfd:
-		if (len > 1) {
-			type = fd[z80_fddd_branch_index_res(data[1])].type;
-		}
+		type = fd[z80_fddd_branch_index_res(data[1])].type;
 		break;
 	default:
 		type = z80_op[data[0]].type;
@@ -174,16 +172,12 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_data, in
 		case 0x22: // ld (**), ix; ld (**), iy
 			op->type = R_ANAL_OP_TYPE_STORE;
 			op->refptr = 2;
-			if (len > 2) {
-				op->ptr = data[2] | data[3] << 8;
-			}
+			op->ptr = data[2] | data[3] << 8;
 			break;
 		case 0x2a: // ld ix, (**); ld ix, (**)
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op->refptr = 2;
-			if (len > 2) {
-				op->ptr = data[2] | data[3] << 8;
-			}
+			op->ptr = data[2] | data[3] << 8;
 			break;
 		}
 		break;
@@ -255,12 +249,12 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_data, in
 	case 0xf2:
 	case 0xfa:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
+		op->jump = data[1] | data[2] << 8;
 		op->fail = addr + ilen;
 		break;
 	case 0xc3: // jp xx
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
+		op->jump = data[1] | (data[2] << 8);
 		break;
 	case 0xe9: // jp (HL)
 		op->type = R_ANAL_OP_TYPE_UJMP;
