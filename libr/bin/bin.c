@@ -1147,7 +1147,7 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 
 static RBinSection* __get_vsection_at(RBin *bin, ut64 vaddr) {
 	r_return_val_if_fail (bin, NULL);
-	if (!bin->cur) {
+	if (!bin->cur || !bin->cur->o) {
 		return NULL;
 	}
 	return r_bin_get_section_at (bin->cur->o, vaddr, true);

@@ -619,8 +619,10 @@ INST_HANDLER (des) {	// DES k
 INST_HANDLER (eijmp) {	// EIJMP
 	ut64 z, eind;
 	// read z and eind for calculating jump address on runtime
-	r_anal_esil_reg_read (anal->esil, "z",    &z,    NULL);
-	r_anal_esil_reg_read (anal->esil, "eind", &eind, NULL);
+	if (anal->esil) {
+		r_anal_esil_reg_read (anal->esil, "z",    &z,    NULL);
+		r_anal_esil_reg_read (anal->esil, "eind", &eind, NULL);
+	}
 	// real target address may change during execution, so this value will
 	// be changing all the time
 	op->jump = ((eind << 16) + z) << 1;
@@ -715,7 +717,9 @@ INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
 INST_HANDLER (ijmp) {	// IJMP k
 	ut64 z = 0;
 	// read z for calculating jump address on runtime
-	r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
+	if (anal->esil) {
+		r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
+	}
 	// real target address may change during execution, so this value will
 	// be changing all the time
 	op->jump = z << 1;
@@ -1377,7 +1381,9 @@ INST_HANDLER (spm) {	// SPM Z+
 	ut64 spmcsr;
 
 	// read SPM Control Register (SPMCR)
-	r_anal_esil_reg_read (anal->esil, "spmcsr", &spmcsr, NULL);
+	if (anal->esil) {
+		r_anal_esil_reg_read (anal->esil, "spmcsr", &spmcsr, NULL);
+	}
 
 	// clear SPMCSR
 	ESIL_A ("0x7c,spmcsr,&=,");
@@ -1721,7 +1727,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	// process opcode
 	avr_op_analyze (anal, op, addr, buf, len, cpu);
 
-	op->mnemonic = strdup(mnemonic);
+	op->mnemonic = strdup (mnemonic);
 	op->size = size;
 
 	return size;
