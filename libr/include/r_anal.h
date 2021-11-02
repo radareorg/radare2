@@ -794,6 +794,15 @@ typedef struct r_anal_var_t {
 	int argnum;
 } RAnalVar;
 
+// RAnalVar "prototype", RAnalVar w/o function used for serialization
+typedef struct r_anal_var_proto_t {
+	char *name;
+	char *type;
+	RAnalVarKind kind;
+	bool isarg;
+	int delta;
+} RAnalVarProt;
+
 // Refers to a variable or a struct field inside a variable, only for varsub
 R_DEPRECATE typedef struct r_anal_var_field_t {
 	char *name;
@@ -1711,7 +1720,11 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
 /* var.c */
 R_API R_OWN char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr);
 R_API R_BORROW RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind, R_NULLABLE const char *type, int size, bool isarg, R_NONNULL const char *name);
+R_API bool r_anal_function_set_var_prot(RAnalFunction *fcn, RList /*<RAnalVarProt>*/ *l);
 R_API R_BORROW RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta);
+R_API RList *r_anal_var_deserialize(const char *ser);
+R_API char *r_anal_var_prot_serialize(RList /*<RAnalVarProt>*/ *l, bool spaces);
+R_API RList /*<RAnalVarProt>*/ *r_anal_var_get_prots(RAnalFunction *fcn);
 R_API R_BORROW RAnalVar *r_anal_function_get_var_byname(RAnalFunction *fcn, const char *name);
 R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind kind);
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn);
