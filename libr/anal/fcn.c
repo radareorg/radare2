@@ -1273,6 +1273,7 @@ repeat:
 					}
 					ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, jmptbl_base + movdisp, jmptbl_base, movscale, table_size, default_case, ret);
 					cmpval = UT64_MAX;
+#if 0
 				} else if (movdisp != UT64_MAX) {
 					ut64 table_size, default_case;
 					st64 case_shift;
@@ -1281,6 +1282,7 @@ repeat:
 						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
 					movdisp = UT64_MAX;
+#endif
 				} else if (is_arm) {
 					if (op->ptrsize == 1) { // TBB
 						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op->ireg);
