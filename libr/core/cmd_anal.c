@@ -8281,6 +8281,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		char *space = strchr (input, ' ');
 		if (space) {
 			addr = r_num_math (core->num, space + 1);
+			if (core->num->nc.errors > 0) {
+				eprintf ("Invalid argument.\n");
+				break;
+			}
 		} else {
 			addr = core->offset;
 		}
@@ -8458,6 +8462,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			char *space = strchr (input, ' ');
 			if (space) {
 				addr = r_num_math (core->num, space + 1);
+				if (core->num->nc.errors > 0) {
+					eprintf ("Invalid argument.\n");
+					break;
+				}
 			} else {
 				addr = core->offset;
 			}
