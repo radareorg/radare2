@@ -89,6 +89,15 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
+static inline *r_sign_vars(RAnalFunction *fcn) {
+	RList *l = r_anal_var_get_prots (fcn);
+	if (l && r_list_empty (l)) {
+		r_list_free (l);
+		l = NULL;
+	}
+	return l;
+}
+
 #define ALPH(x) \
 	(x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z')
 #define ISNUM(x) \
@@ -445,7 +454,7 @@ static char *serialize_value(RSignItem *it) {
 	FreeRet_on_fail (serialize_str_list (it->xrefs, sb, R_SIGN_XREFS), sb);
 	FreeRet_on_fail (serialize_str_list (it->collisions, sb, R_SIGN_COLLISIONS), sb);
 
-	if (it->vars) {
+	if (it->vars && !r_list_empty (it->vars)) {
 		char *vrs = r_anal_var_prot_serialize (it->vars, false);
 		bool vars_good = false;
 		if (vrs) {
@@ -912,7 +921,7 @@ R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignT
 	case R_SIGN_REFS:
 		return !it->refs && (it->refs = r_sign_fcn_refs (a, fcn));
 	case R_SIGN_VARS:
-		return !it->vars && (it->vars = r_anal_var_get_prots (fcn));
+		return !it->vars && (it->vars = r_sign_vars (fcn));
 	case R_SIGN_TYPES:
 		if (!it->types) {
 			it->types = r_anal_function_get_signature (fcn);
