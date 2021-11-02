@@ -1984,18 +1984,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Rename when collision intersection unique
-FILE=bins/elf/ls
-CMDS=<<EOF
-s main
-zaf
-z
-EOF
-EXPECT=<<EOF
-1
-EOF
-RUN
-
 NAME=Rename vars on sign match
 FILE=bins/elf/ls
 CMDS=<<EOF
