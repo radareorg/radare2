@@ -169,6 +169,53 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	return NULL;
 }
 
+R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
+	r_return_val_if_fail (io, NULL);
+	if (!size) {
+		return NULL;
+	}
+	//check if desc exists
+	RIODesc* desc = r_io_desc_get (io, fd);
+	if (desc) {
+		//a map cannot have higher permissions than the desc belonging to it
+		perm &= desc->perm | R_PERM_X;
+		RIOMap *map[2] = {NULL, NULL};
+		if ((UT64_MAX - size + 1) < addr) {
+			const ut64 new_size = size - (UT64_MAX - addr + 1);
+			map[0] = io_map_new (io, fd, perm, delta + new_size, 0LL, size - new_size);
+			if (!map[0]) {
+				return NULL;
+			}
+			if (!r_io_bank_map_add_bottom (io, io->bank, map[0]->id)) {
+				r_id_storage_delete (io->maps, map[0]->id);
+				free (map[0]);
+				return NULL;
+			}
+			size = new_size;
+		}
+		map[1] = io_map_new (io, fd, perm, delta, addr, size);
+		if (!map[1]) {
+			if (map[0]) {
+				r_id_storage_delete (io->maps, map[0]->id);
+				free (map[0]);
+			}
+			free (map[1]);
+			return NULL;
+		}
+		if (!r_io_bank_map_add_bottom (io, io->bank, map[1]->id)) {
+			if (map[0]) {
+				r_id_storage_delete (io->maps, map[0]->id);
+				free (map[0]);
+			}
+			r_id_storage_delete (io->maps, map[1]->id);
+			free (map[1]);
+			return NULL;
+		}
+		return map[1];
+	}
+	return NULL;
+}
+
 R_API RIOMap *r_io_map_get_paddr(RIO* io, ut64 paddr) {
 	r_return_val_if_fail (io, NULL);
 	RIOBank *bank = r_io_bank_get (io, io->bank);

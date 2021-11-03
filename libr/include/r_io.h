@@ -326,6 +326,7 @@ R_API bool r_io_map_exists(RIO *io, RIOMap *map);
 R_API bool r_io_map_exists_for_id(RIO *io, ut32 id);
 R_API RIOMap *r_io_map_get(RIO *io, ut32 id);
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
+R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_get_at(RIO *io, ut64 addr);		//returns the map at vaddr with the highest priority
 R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref);
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
