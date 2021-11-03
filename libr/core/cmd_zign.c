@@ -116,17 +116,11 @@ static bool addGraphZign(RCore *core, const char *name, RList *args) {
 	return r_sign_add_graph (core->anal, name, graph);
 }
 
-static bool addBytesZign(RCore *core, const char *name, int type, RList *args) {
+static bool addBytesZign(RCore *core, const char *name, int type, char *hexbytes) {
 	ut8 *mask = NULL, *bytes = NULL, *sep = NULL;
 	int size = 0;
 	bool retval = true;
 
-	if (r_list_length (args) != 1) {
-		eprintf ("error: invalid syntax\n");
-		return false;
-	}
-
-	const char *hexbytes = (const char *)r_list_get_top (args);
 	if ((sep = (ut8 *)strchr (hexbytes, ':'))) {
 		size_t blen = sep - (ut8 *)hexbytes;
 		sep++;
@@ -195,8 +189,7 @@ static inline bool za_add(RCore *core, const char *input) {
 	switch (t) {
 	case R_SIGN_BYTES:
 	case R_SIGN_ANAL:
-		lst = r_str_split_list (sig, " ", 0);
-		ret = addBytesZign (core, name, t, lst);
+		ret = addBytesZign (core, name, t, sig);
 		break;
 	case R_SIGN_GRAPH:
 		lst = r_str_split_list (sig, " ", 0);
@@ -226,8 +219,7 @@ static inline bool za_add(RCore *core, const char *input) {
 		r_sign_add_xrefs (core->anal, name, lst);
 		break;
 	case R_SIGN_VARS:
-		lst = r_str_split_list (sig, " ", 0);
-		r_sign_add_vars (core->anal, name, lst);
+		r_sign_add_vars (core->anal, name, sig);
 		break;
 	case R_SIGN_BBHASH:
 		ret = r_sign_add_hash (core->anal, name, t, sig, strlen (sig));
@@ -537,6 +529,9 @@ static int searchBytesHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *
 				r_anal_str_to_fcn (ctx->core->anal, fcn, tmp);
 				free (tmp);
 			}
+			if (it->vars) {
+				r_anal_function_set_var_prot (fcn, it->vars);
+			}
 		}
 		ctx->bytes_count++;
 	}
@@ -608,6 +603,9 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, RSignType *types, void 
 		if (it->types && (tmp = r_str_newf ("%s;", it->types))) { // apply types
 			r_anal_str_to_fcn (ctx->core->anal, fcn, tmp);
 			free (tmp);
+		}
+		if (it->vars) {
+			r_anal_function_set_var_prot (fcn, it->vars);
 		}
 	}
 	return 1;

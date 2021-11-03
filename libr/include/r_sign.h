@@ -64,10 +64,10 @@ typedef struct r_sign_item_t {
 	RSignBytes *bytes;
 	RSignGraph *graph;
 	ut64 addr;
-	RList *refs;
-	RList *xrefs;
-	RList *vars;
-	RList *collisions;
+	RList /*<char>*/ *refs;
+	RList /*<char>*/ *xrefs;
+	RList /*<char>*/ *collisions;
+	RList /*<RAnalVarProt>*/ *vars;
 	RSignHash *hash;
 } RSignItem;
 
@@ -120,7 +120,7 @@ R_API bool r_sign_add_comment(RAnal *a, const char *name, const char *comment);
 R_API bool r_sign_add_types(RAnal *a, const char *name, const char *types);
 R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs);
 R_API bool r_sign_add_xrefs(RAnal *a, const char *name, RList *xrefs);
-R_API bool r_sign_add_vars(RAnal *a, const char *name, RList *vars);
+R_API bool r_sign_add_vars(RAnal *a, const char *name, const char *vars);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
 R_API RList *r_sign_get_list(RAnal *a);

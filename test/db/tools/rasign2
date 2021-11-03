@@ -91,7 +91,7 @@ NAME=rasign2 vars/args
 FILE=-
 CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main v
 EXPECT=<<EOF
-za main v b-32 b-24 b-40 b-36 b-16
+za main v fb-32:src:char *, fb-24:s2:char *, fb-40:var_20h:size_t, fb-36:size:size_t, fb-16:dest:char *
 EOF
 RUN
 
