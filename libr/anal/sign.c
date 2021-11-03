@@ -1733,17 +1733,16 @@ static bool listCB(RSignItem *it, void *user) {
 		pj_o (ctx->pj);
 	}
 
+	r_name_filter (it->name, -1);
 	char *spname = NULL;
 	if (it->space && it->space->name) {
-		spname = strdup (it->space->name);
-		list_sanitise_warn (spname, it->name, "space");
+		r_name_filter (it->space->name, -1);
 	}
-	list_sanitise_warn (it->name, it->name, "name");
 
 	// Zignspace and name (except for radare format)
 	if (ctx->format == '*') {
 		if (it->space) {
-			a->cb_printf ("zs %s\n", spname);
+			a->cb_printf ("zs %s\n", it->space->name);
 		} else {
 			a->cb_printf ("zs *\n");
 		}
@@ -1758,11 +1757,10 @@ static bool listCB(RSignItem *it, void *user) {
 		pj_ks (ctx->pj, "name", it->name);
 	} else {
 		if (!r_spaces_current (&a->zign_spaces) && it->space) {
-			a->cb_printf ("(%s) ", spname);
+			a->cb_printf ("(%s) ", it->space->name);
 		}
 		a->cb_printf ("%s:\n", it->name);
 	}
-	free (spname);
 
 	// Bytes pattern
 	if (it->bytes) {
