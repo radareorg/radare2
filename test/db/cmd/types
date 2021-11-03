@@ -1592,12 +1592,12 @@ tu* foo
 EOF
 EXPECT=<<EOF
 pf.foo dc a b
-tk foo=union
-tk union.foo=a,b
-tk union.foo.a=int32_t,0,0
-tk union.foo.a.meta=0
-tk union.foo.b=char,0,0
-tk union.foo.b.meta=2
+"tk foo=union"
+"tk union.foo=a,b"
+"tk union.foo.a=int32_t,0,0"
+"tk union.foo.a.meta=0"
+"tk union.foo.b=char,0,0"
+"tk union.foo.b.meta=2"
 pf dc a b
 pf.foo dc a b
 EOF

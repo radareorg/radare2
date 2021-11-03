@@ -167,8 +167,8 @@ Pc var~blahblah
 rm .tmp/var
 EOF
 EXPECT=<<EOF
-afvb 8 ImageHandle blah @ 0x10002d8d
-afvr edi blahblah typeR @ 0x10002d8d
+"afvb 8 ImageHandle blah @ 0x10002d8d"
+"afvr edi blahblah typeR @ 0x10002d8d"
 EOF
 RUN
 
