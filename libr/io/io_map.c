@@ -8,7 +8,7 @@
 
 #define END_OF_MAP_IDS UT32_MAX
 
-RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
+static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
 	r_return_val_if_fail (io && io->maps, NULL);
 	if (!size) {
 		return NULL;
@@ -18,7 +18,6 @@ RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) 
 		free (map);
 		return NULL;
 	}
-	map->ts = r_time_now ();
 	map->fd = fd;
 	map->delta = delta;
 	map->ts = io->mts++;
@@ -124,6 +123,10 @@ R_API RIOMap* r_io_map_get(RIO *io, ut32 id) {
 }
 
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
+	r_return_val_if_fail (io, NULL);
+	if (!size) {
+		return NULL;
+	}
 	//check if desc exists
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
@@ -131,8 +134,8 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 		perm &= desc->perm | R_PERM_X;
 		RIOMap *map[2] = {NULL, NULL};
 		if ((UT64_MAX - size + 1) < addr) {
-			map[0] = io_map_new (io, fd, perm, delta - addr, 0LL, size + addr);
-			size = -(st64)addr;
+			const ut64 new_size = size - (UT64_MAX - addr + 1);
+			map[0] = io_map_new (io, fd, perm, delta + new_size, 0LL, size - new_size);
 			if (!map[0]) {
 				return NULL;
 			}
@@ -141,6 +144,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 				free (map[0]);
 				return NULL;
 			}
+			size = new_size;
 		}
 		map[1] = io_map_new (io, fd, perm, delta, addr, size);
 		if (!map[1]) {

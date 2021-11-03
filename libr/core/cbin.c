@@ -2650,6 +2650,9 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 			return;
 		}
 		size = sec->size;
+		if (!size) {
+			return;
+		}
 	}
 
 	// then we map the part of the section that comes from the physical file
