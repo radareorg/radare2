@@ -18,7 +18,7 @@ NAME=VSF: Rocky Horror Picture Show- ROMs
 FILE=bins/vsf/c128-rhps-rom.vsf
 CMDS=om
 EXPECT=<<EOF
-- 6 fd: 3 +0x000420a1 0x00004000 - 0x0000afff r-x fmap.BASIC
+* 6 fd: 3 +0x000420a1 0x00004000 - 0x0000afff r-x fmap.BASIC
 - 5 fd: 3 +0x000490a1 0x0000b000 - 0x0000bfff r-x fmap.MONITOR
 - 4 fd: 3 +0x0004a0a1 0x0000c000 - 0x0000cfff r-x fmap.EDITOR
 - 3 fd: 3 +0x000400a1 0x0000e000 - 0x0000ffff r-x fmap.KERNAL

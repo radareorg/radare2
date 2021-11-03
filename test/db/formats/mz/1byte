@@ -20,6 +20,6 @@ nth paddr       size vaddr       vsize perm name
             0000:0000     30ff           xor bh, bh                    ; [01] -rwx section size 1 named seg_001
             0000:0002     ff             invalid
             0000:0003     ff             invalid
-- 1 fd: 3 +0x00000200 0x00000000 - 0x00000000 r-x fmap.seg_001
+* 1 fd: 3 +0x00000200 0x00000000 - 0x00000000 r-x fmap.seg_001
 EOF
 RUN

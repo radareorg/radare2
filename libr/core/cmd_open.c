@@ -441,7 +441,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 }
 
 // TODO: discuss the output format
-static void map_list(RIO *io, int mode, RPrint *print, int fd) {
+static void map_list(RIO *io, ut64 off, int mode, RPrint *print, int fd) {
 	r_return_if_fail (io && print && print->cb_printf);
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -502,10 +502,10 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		default:
 			print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s\n",
-					(check_for_current_map && r_io_map_contain (map, io->off)) ?
+					(check_for_current_map && r_io_map_contain (map, off)) ?
 					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
 					r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
-			check_for_current_map &= !r_io_map_contain (map, io->off);
+			check_for_current_map &= !r_io_map_contain (map, off);
 			break;
 		}
 	}
@@ -654,7 +654,7 @@ static bool cmd_om(RCore *core, const char *input) {
 	} else {
 		int fd = r_io_fd_get_current (core->io);
 		if (r_io_desc_get (core->io, fd)) {
-			map_list (core->io, 0, core->print, fd);
+			map_list (core->io, core->offset, 0, core->print, fd);
 		} else {
 			eprintf ("Invalid fd %d\n", (int)fd);
 		}
@@ -1067,9 +1067,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] && input[2] == 'q') { // "omqq"
-				map_list (core->io, input[1], core->print, -2);
+				map_list (core->io, core->offset, input[1], core->print, -2);
 			} else {
-				map_list (core->io, input[1], core->print, -1);
+				map_list (core->io, core->offset, input[1], core->print, -1);
 			}
 		}
 		break;

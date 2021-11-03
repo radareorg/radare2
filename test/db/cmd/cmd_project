@@ -343,7 +343,7 @@ EOF
 EXPECT=<<EOF
  3 * r-x 0x000021da bins/elf/analysis/main
  4 - rw- 0x00000008 null://8
-- 3 fd: 3 +0x00000000 0x00001337 - 0x00001a12 r-x fmap.LOAD0
+* 3 fd: 3 +0x00000000 0x00001337 - 0x00001a12 r-x fmap.LOAD0
 - 2 fd: 3 +0x000006e0 0x00201a17 - 0x00201c46 r-- fmap.LOAD1
 - 1 fd: 4 +0x00000000 0x00201c47 - 0x00201c4e rw- mmap.LOAD1
 om 4 0x00201c47 0x00000008 0x00000000 rw- mmap.LOAD1
@@ -385,7 +385,7 @@ om*~[2]
 EOF
 EXPECT=<<EOF
  3 * r-x 0x000021da bins/elf/analysis/main
-- 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x 
+* 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x 
 om 3 0x00001337 0x000021da 0x00000000 r-x
 --
 --
@@ -425,7 +425,7 @@ EXPECT=<<EOF
  5 - rw- 0x00002200 null://8704
  6 - r-- 0x00000400 null://1024
  7 - r-x 0x00000200 null://512
-- 9 fd: 3 +0x00000400 0x140001000 - 0x14001adff r-x fmap..text
+* 9 fd: 3 +0x00000400 0x140001000 - 0x14001adff r-x fmap..text
 - 8 fd: 7 +0x00000000 0x14001ae00 - 0x14001afff r-x mmap..text
 - 7 fd: 3 +0x0001a200 0x14001b000 - 0x14001dbff r-- fmap..rdata
 - 6 fd: 6 +0x00000000 0x14001dc00 - 0x14001dfff r-- mmap..rdata
