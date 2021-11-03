@@ -1734,7 +1734,6 @@ static bool listCB(RSignItem *it, void *user) {
 	}
 
 	r_name_filter (it->name, -1);
-	char *spname = NULL;
 	if (it->space && it->space->name) {
 		r_name_filter (it->space->name, -1);
 	}
