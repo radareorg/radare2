@@ -433,7 +433,7 @@ tk a=b
 t*
 EOF
 EXPECT=<<EOF
-tk a=b
+"tk a=b"
 EOF
 RUN
 
