@@ -1435,13 +1435,13 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					eprintf ("Register not found");
 					break;
 				}
-				anal->cb_printf ("afv%c %s %s %s @ 0x%"PFMT64x "\n",
+				anal->cb_printf ("\"afv%c %s %s %s @ 0x%"PFMT64x "\"\n",
 					kind, i->name, var->name, var->type, fcn->addr);
 			} else {
 				int delta = kind == R_ANAL_VAR_KIND_BPV
 					? var->delta + fcn->bp_off
 					: var->delta;
-				anal->cb_printf ("afv%c %d %s %s @ 0x%"PFMT64x "\n",
+				anal->cb_printf ("\"afv%c %d %s %s @ 0x%"PFMT64x "\"\n",
 					kind, delta, var->name, var->type,
 					fcn->addr);
 			}
