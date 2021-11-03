@@ -128,7 +128,7 @@ afb+ 0x100000da0 0x100000e8b 5 0x100000e99 0xffffffffffffffff
 afb+ 0x100000da0 0x100000e90 9 0x100000eba 0xffffffffffffffff
 afB 64 @ 0x100000da0
 "afc amd64 @ 0x100000da0"
-afvb -40 var_28h int64_t @ 0x100000da0"
+"afvb -40 var_28h int64_t @ 0x100000da0"
 "afvb -32 var_20h int64_t @ 0x100000da0"
 "afvb -24 var_18h int64_t @ 0x100000da0"
 "afvb -20 var_14h int64_t @ 0x100000da0"
