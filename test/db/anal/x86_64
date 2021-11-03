@@ -127,14 +127,14 @@ afb+ 0x100000da0 0x100000e74 14 0x100000e8b 0xffffffffffffffff
 afb+ 0x100000da0 0x100000e8b 5 0x100000e99 0xffffffffffffffff
 afb+ 0x100000da0 0x100000e90 9 0x100000eba 0xffffffffffffffff
 afB 64 @ 0x100000da0
-afc amd64 @ 0x100000da0
-afvb -40 var_28h int64_t @ 0x100000da0
-afvb -32 var_20h int64_t @ 0x100000da0
-afvb -24 var_18h int64_t @ 0x100000da0
-afvb -20 var_14h int64_t @ 0x100000da0
-afvb -16 var_10h int64_t @ 0x100000da0
-afvb -1 var_1h int64_t @ 0x100000da0
-afvr rdi arg1 int64_t @ 0x100000da0
+"afc amd64 @ 0x100000da0"
+afvb -40 var_28h int64_t @ 0x100000da0"
+"afvb -32 var_20h int64_t @ 0x100000da0"
+"afvb -24 var_18h int64_t @ 0x100000da0"
+"afvb -20 var_14h int64_t @ 0x100000da0"
+"afvb -16 var_10h int64_t @ 0x100000da0"
+"afvb -1 var_1h int64_t @ 0x100000da0"
+"afvr rdi arg1 int64_t @ 0x100000da0"
 axd 0x100000ec0 0x100000dd0
 axc 0x100000de4 0x100000de2
 axc 0x100000e00 0x100000de2
@@ -2124,7 +2124,7 @@ afvb 8 ImageHandle blah @ 0x10002d8d
 afvb*~ImageHandle
 EOF
 EXPECT=<<EOF
-afvb 8 ImageHandle blah @ 0x10002d8d
+"afvb 8 ImageHandle blah @ 0x10002d8d"
 EOF
 RUN
 
