@@ -135,7 +135,7 @@ static RSignBytes *deserialize_anal(RAnal *a, const char *in) {
 	RSignBytes *b = R_NEW0 (RSignBytes);
 	if (b && (b->size = r_hex_str2bin_until_new (in, &b->bytes)) > 0) {
 		in += 2 * b->size;
-		if (*in == '\0' && (b->mask = r_anal_mask (a, b->size, b->bytes, 0))) {
+		if (!*in && (b->mask = r_anal_mask (a, b->size, b->bytes, 0))) {
 			return b;
 		}
 	}
