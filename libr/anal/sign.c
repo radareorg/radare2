@@ -617,7 +617,7 @@ static bool validate_item(RSignItem *it) {
 			eprintf ("Signature '%s' has empty byte field\n", it->name);
 			return false;
 		}
-		if (b->mask[0] == '\0') {
+		if (!b->mask[0]) {
 			eprintf ("Signature '%s' mask starts empty\n", it->name);
 			return false;
 		}
