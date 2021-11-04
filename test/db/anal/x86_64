@@ -127,14 +127,22 @@ afb+ 0x100000da0 0x100000e74 14 0x100000e8b 0xffffffffffffffff
 afb+ 0x100000da0 0x100000e8b 5 0x100000e99 0xffffffffffffffff
 afb+ 0x100000da0 0x100000e90 9 0x100000eba 0xffffffffffffffff
 afB 64 @ 0x100000da0
-"afc amd64 @ 0x100000da0"
-"afvb -40 var_28h int64_t @ 0x100000da0"
-"afvb -32 var_20h int64_t @ 0x100000da0"
-"afvb -24 var_18h int64_t @ 0x100000da0"
-"afvb -20 var_14h int64_t @ 0x100000da0"
-"afvb -16 var_10h int64_t @ 0x100000da0"
-"afvb -1 var_1h int64_t @ 0x100000da0"
-"afvr rdi arg1 int64_t @ 0x100000da0"
+s 0x100000da0
+"afc amd64 "
+s-
+s 0x100000da0
+"afvb -40 var_28h int64_t"
+"afvb -32 var_20h int64_t"
+"afvb -24 var_18h int64_t"
+"afvb -20 var_14h int64_t"
+"afvb -16 var_10h int64_t"
+"afvb -1 var_1h int64_t"
+s-
+s 0x100000da0
+"afvr rdi arg1 int64_t"
+s-
+s 0x100000da0
+s-
 axd 0x100000ec0 0x100000dd0
 axc 0x100000de4 0x100000de2
 axc 0x100000e00 0x100000de2
@@ -1861,11 +1869,17 @@ af
 afv
 EOF
 EXPECT=<<EOF
+s 0x100000f00
+s-
+s 0x100000f00
 var int64_t var_14h @ rbp-0x14
 var int64_t var_10h @ rbp-0x10
 var int64_t var_8h @ rbp-0x8
+s-
+s 0x100000f00
 arg int64_t arg2 @ rsi
 arg int64_t arg1 @ rdi
+s-
 EOF
 RUN
 
@@ -2122,9 +2136,11 @@ CMDS=<<EOF
 af
 afvb 8 ImageHandle blah @ 0x10002d8d
 afvb*~ImageHandle
+afvb*~0x10002d8d
 EOF
 EXPECT=<<EOF
-"afvb 8 ImageHandle blah @ 0x10002d8d"
+"afvb 8 ImageHandle blah"
+s 0x10002d8d
 EOF
 RUN
 
@@ -2205,8 +2221,8 @@ afvb~?
 afvr~?
 EOF
 EXPECT=<<EOF
-0
-0
+2
+2
 EOF
 RUN
 
@@ -2217,7 +2233,7 @@ af
 afvb~?
 EOF
 EXPECT=<<EOF
-13
+15
 EOF
 RUN
 
@@ -2805,6 +2821,12 @@ out-degree: 0
 data-xrefs:
 locals: 0
 args: 0
+s 0x0
+s-
+s 0x0
+s-
+s 0x0
+s-
 diff: type: new
 
 0x00000000 0x00000004 00:0000 4 j 0x00000004
@@ -2864,6 +2886,12 @@ out-degree: 0
 data-xrefs:
 locals: 0
 args: 0
+s 0x0
+s-
+s 0x0
+s-
+s 0x0
+s-
 diff: type: new
 
 0x00000000 0x00000007 00:0000 7 j 0x00000004
@@ -2939,6 +2967,12 @@ out-degree: 0
 data-xrefs:
 locals: 0
 args: 0
+s 0x0
+s-
+s 0x0
+s-
+s 0x0
+s-
 diff: type: new
 
 0x00000000 0x00000007 00:0000 7 j 0x00000004
@@ -3022,6 +3056,12 @@ out-degree: 0
 data-xrefs:
 locals: 0
 args: 0
+s 0x0
+s-
+s 0x0
+s-
+s 0x0
+s-
 diff: type: new
 
 0x00000000 0x00000005 00:0000 5 j 0x00000005
@@ -3114,6 +3154,12 @@ out-degree: 0
 data-xrefs:
 locals: 0
 args: 0
+s 0x0
+s-
+s 0x0
+s-
+s 0x0
+s-
 diff: type: new
 
 0x00000000 0x00000005 00:0000 5 j 0x00000005

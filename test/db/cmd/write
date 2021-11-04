@@ -504,6 +504,12 @@ EXPECT=<<EOF
 | 0x00000006      0000           add byte [rax], al
 \ 0x00000008      c3             ret
 
+s 0x0
+s-
+s 0x0
+s-
+s 0x0
+s-
 EOF
 RUN
 
