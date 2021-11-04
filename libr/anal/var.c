@@ -1421,6 +1421,8 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 		}
 		return;
 	}
+	//s- at the end of the look
+	anal->cb_printf ("s 0x%"PFMT64x, fcn->addr);
 	r_list_sort (list, (RListComparator) var_comparator);
 	r_list_foreach (list, iter, var) {
 		if (var->kind != kind) {
@@ -1435,13 +1437,13 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					eprintf ("Register not found");
 					break;
 				}
-				anal->cb_printf ("\"afv%c %s %s %s @ 0x%"PFMT64x "\"\n",
+				anal->cb_printf ("\"afv%c %s %s %s\"\n",
 					kind, i->name, var->name, var->type, fcn->addr);
 			} else {
 				int delta = kind == R_ANAL_VAR_KIND_BPV
 					? var->delta + fcn->bp_off
 					: var->delta;
-				anal->cb_printf ("\"afv%c %d %s %s @ 0x%"PFMT64x "\"\n",
+				anal->cb_printf ("\"afv%c %d %s %s\"\n",
 					kind, delta, var->name, var->type,
 					fcn->addr);
 			}
@@ -1550,6 +1552,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			}
 		}
 	}
+	anal->cb_printf ("s-");
 	if (mode == 'j') {
 		pj_end (pj);
 	}
