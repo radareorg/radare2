@@ -3028,14 +3028,11 @@ static int fcn_list_verbose_json(RCore *core, RList *fcns) {
 
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	const char *defaultCC = r_anal_cc_default (core->anal);
-	char *tmp = r_core_anal_fcn_name (core, fcn);
-	char *paren = strchr (tmp, '(');
+	char *name = r_core_anal_fcn_name (core, fcn);
+	char *paren = strchr (name, '(');
 	if (paren) {
 		*paren = '\0';
 	}
-	char *name = strdup (tmp);
-	free (tmp);
-	
 	r_cons_printf ("\"f %s %"PFMT64u" 0x%08"PFMT64x"\"\n", name, r_anal_function_linear_size (fcn), fcn->addr);
 	r_cons_printf ("\"af+ 0x%08"PFMT64x" %s %c %c\"\n",
 			fcn->addr, name, //r_anal_fcn_size (fcn), name,
