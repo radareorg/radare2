@@ -1552,7 +1552,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			}
 		}
 	}
-	anal->cb_printf ("s-");
+	anal->cb_printf ("s-\n");
 	if (mode == 'j') {
 		pj_end (pj);
 	}
