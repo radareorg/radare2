@@ -989,12 +989,13 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 			char *db_name = comma? strdup (comma + 1): NULL;
 			if (!strstr (var->name, "arg_") || (o && strstr (o, ",arg_"))) {
 				// #if 0
-				char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
+				char *ks = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
 				// eprintf ("VARNAME %s %s %c", var->name, db_name, 10);
 				// eprintf ("VARTYPE %s %s %c", var->type,db_type, 10);
 				char *type = db_type && strstr (var->type, "arg_")? db_type: var->type;
 				char *v = r_str_newf ("%s,%s", type, var->name);
-				sdb_set (core->anal->sdb_types, k, v, 0);
+				sdb_set (core->anal->sdb_types, ks, v, 0);
+				free (ks);
 				free (v);
 			} else {
 				char *name = db_name ? db_name: var->name;
