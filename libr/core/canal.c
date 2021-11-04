@@ -3033,7 +3033,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	if (paren) {
 		*paren = '\0';
 	}
-	char *name = strdup(tmp);
+	char *name = strdup (tmp);
 	free (tmp);
 	
 	r_cons_printf ("\"f %s %"PFMT64u" 0x%08"PFMT64x"\"\n", name, r_anal_function_linear_size (fcn), fcn->addr);
