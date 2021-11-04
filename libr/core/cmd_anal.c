@@ -994,7 +994,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 				// eprintf ("VARTYPE %s %s %c", var->type,db_type, 10);
 				char *type = db_type && strstr (var->type, "arg_")? db_type: var->type;
 				char *v = r_str_newf ("%s,%s", type, var->name);
-				sdb_set (core->anal->sdb_types, k, v, 0);
+				sdb_set (core->anal->sdb_types, ks, v, 0);
 				free (ks);
 				free (v);
 			} else {
