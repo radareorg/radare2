@@ -1422,7 +1422,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 		return;
 	}
 	//s- at the end of the loop
-	anal->cb_printf ("s 0x%"PFMT64x, fcn->addr);
+	anal->cb_printf ("s 0x%"PFMT64x"\n", fcn->addr);
 	r_list_sort (list, (RListComparator) var_comparator);
 	r_list_foreach (list, iter, var) {
 		if (var->kind != kind) {
