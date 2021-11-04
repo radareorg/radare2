@@ -89,6 +89,60 @@ R_API RList *r_sign_fcn_refs(RAnal *a, RAnalFunction *fcn) {
 	return ret;
 }
 
+static RSignBytes *des_bytes_norm(const char *in) {
+	// "444444:ffffff" or "44444444"
+	RSignBytes *b = R_NEW0 (RSignBytes);
+	if (b && (b->size = r_hex_str2bin_until_new (in, &b->bytes)) > 0) {
+		in += 2 * b->size;
+		if (*in == '\0' && (b->mask = malloc (b->size)) != NULL) {
+			// no mask, set it to f's
+			memset (b->mask, 0xff, b->size);
+			return b;
+		} else if (*in++ == ':') {
+			// get mask
+			int size = r_hex_str2bin_until_new (in, &b->mask);
+			in += 2 * size;
+			if (size == b->size && *in == '\0') {
+				return b;
+			}
+		}
+	}
+	r_sign_bytes_free (b);
+	return NULL;
+}
+
+static RSignBytes *deserialize_bytes(const char *in) {
+	RSignBytes *b = des_bytes_norm (in);
+	if (b) {
+		return b;
+	}
+
+	// "44..44.."
+	b = R_NEW0 (RSignBytes);
+	size_t len = strlen (in) + 3;
+	b->bytes = malloc (len);
+	b->mask = malloc (len);
+	if (b && b->bytes && b->mask) {
+		b->size = r_hex_str2binmask (in, b->bytes, b->mask);
+		if (b->size > 0) {
+			return b;
+		}
+	}
+	return NULL;
+}
+
+static RSignBytes *deserialize_anal(RAnal *a, const char *in) {
+	RSignBytes *b = R_NEW0 (RSignBytes);
+	if (b && (b->size = r_hex_str2bin_until_new (in, &b->bytes)) > 0) {
+		in += 2 * b->size;
+		if (*in == '\0' && (b->mask = r_anal_mask (a, b->size, b->bytes, 0))) {
+			return b;
+		}
+	}
+	r_sign_bytes_free (b);
+	return NULL;
+}
+
 static inline RList *sign_vars(RAnalFunction *fcn) {
 	RList *l = r_anal_var_get_prots (fcn);
 	if (l && r_list_empty (l)) {
@@ -174,7 +228,7 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 	// Deserialize value: |k:v|k:v|k:v|...
 	n = r_str_split (v2, '|');
 	const char *token = NULL;
-	int w, size;
+	int w;
 	for (w = 0; w < n; w++) {
 		const char *word = r_str_word_get0 (v2, w);
 		if (!word) {
@@ -266,52 +320,10 @@ R_API bool r_sign_deserialize(RAnal *a, RSignItem *it, const char *k, const char
 			}
 			break;
 		case R_SIGN_BYTES:
-			// following two errors are not due to double entries
-			if (!it->bytes) {
-				eprintf ("Warning: Skipping signature with no bytes size (%s)\n", k);
+			DBL_VAL_FAIL (it->bytes, R_SIGN_BYTES);
+			if (!(it->bytes = des_bytes_norm (token))) {
 				success = false;
 				goto out;
-			}
-			if (strlen (token) != 2 * it->bytes->size) {
-				eprintf ("Warning: Skipping signature with invalid size (%s)\n", k);
-				success = false;
-				goto out;
-			}
-			DBL_VAL_FAIL (it->bytes->bytes, R_SIGN_BYTES);
-			it->bytes->bytes = malloc (it->bytes->size);
-			if (it->bytes->bytes) {
-				r_hex_str2bin (token, it->bytes->bytes);
-			}
-			break;
-		case R_SIGN_BYTES_MASK:
-			// following two errors are not due to double entries
-			if (!it->bytes) {
-				eprintf ("Warning: Skipping signature with no mask size (%s)\n", k);
-				success = false;
-				goto out;
-			}
-			if (strlen (token) != 2 * it->bytes->size) {
-				eprintf ("Warning: Skipping signature invalid mask size (%s)\n", k);
-				success = false;
-				goto out;
-			}
-			DBL_VAL_FAIL (it->bytes->mask, R_SIGN_BYTES);
-			it->bytes->mask = malloc (it->bytes->size);
-			if (!it->bytes->mask) {
-				goto out;
-			}
-			r_hex_str2bin (token, it->bytes->mask);
-			break;
-		case R_SIGN_BYTES_SIZE:
-			// allocate
-			size = atoi (token);
-			if (size > 0) {
-				DBL_VAL_FAIL (it->bytes, R_SIGN_BYTES_SIZE);
-				it->bytes = R_NEW0 (RSignBytes);
-				if (!it->bytes) {
-					goto out;
-				}
-				it->bytes->size = size;
 			}
 			break;
 		default:
@@ -426,9 +438,8 @@ static char *serialize_value(RSignItem *it) {
 		if (hexbytes && hexmask) {
 			r_hex_bin2str (bytes->bytes, bytes->size, hexbytes);
 			r_hex_bin2str (bytes->mask, bytes->size, hexmask);
-			success = r_strbuf_appendf (sb, "|%c:%d|%c:%s|%c:%s",
-				R_SIGN_BYTES_SIZE, bytes->size, R_SIGN_BYTES, hexbytes,
-				R_SIGN_BYTES_MASK, hexmask);
+			success = r_strbuf_appendf (sb, "|%c:%s:%s", R_SIGN_BYTES,
+				hexbytes, hexmask);
 			free (hexbytes);
 			free (hexmask);
 		}
@@ -588,7 +599,36 @@ R_API RSignItem *r_sign_get_item(RAnal *a, const char *name) {
 	return NULL;
 }
 
+static bool validate_item(RSignItem *it) {
+	// TODO: validate more
+	if (!r_name_check (it->name)) {
+		eprintf ("Bad name in signature: %s\n", it->name);
+		return false;
+	}
+
+	if (it->space && it->space->name && !r_name_check (it->space->name)) {
+		eprintf ("Bad space name in signature: %s\n", it->space->name);
+		return false;
+	}
+
+	if (it->bytes) {
+		RSignBytes *b = it->bytes;
+		if (!b->mask || !b->bytes || b->size <= 0) {
+			eprintf ("Signature '%s' has empty byte field\n", it->name);
+			return false;
+		}
+		if (b->mask[0] == '\0') {
+			eprintf ("Signature '%s' mask starts empty\n", it->name);
+			return false;
+		}
+	}
+	return true;
+}
+
 R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
+	if (!validate_item (it)) {
+		return false;
+	}
 	char *key = item_serialize_key (it);
 	RSignItem *current = sign_get_sdb_item (a, key);
 
@@ -648,28 +688,6 @@ static bool addBBHash(RAnal *a, RAnalFunction *fcn, const char *name) {
 	return retval;
 }
 
-static bool addBytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
-	if (r_mem_is_zero (mask, size)) {
-		eprintf ("error: zero mask\n");
-		return false;
-	}
-
-	bool retval = false;
-	RSignItem *it = item_new_named (a, name);
-	if (it && (it->bytes = R_NEW0 (RSignBytes))) {
-		it->bytes->size = size;
-		it->bytes->bytes = malloc (size);
-		it->bytes->mask = malloc (size);
-		if (it->bytes->bytes && it->bytes->mask) {
-			memcpy (it->bytes->bytes, bytes, size);
-			memcpy (it->bytes->mask, mask, size);
-			retval = r_sign_add_item (a, it);
-		}
-	}
-	r_sign_item_free (it);
-	return retval;
-}
-
 R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len) {
 	r_return_val_if_fail (a && name && type && val && len > 0, false);
 	if (type != R_SIGN_BBHASH) {
@@ -689,20 +707,26 @@ R_API bool r_sign_add_bb_hash(RAnal *a, RAnalFunction *fcn, const char *name) {
 	return addBBHash (a, fcn, name);
 }
 
-R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask) {
-	r_return_val_if_fail (a && name && size > 0 && bytes && mask, false);
-	return addBytes (a, name, size, bytes, mask);
+R_API bool r_sign_add_bytes(RAnal *a, const char *name, const char *val) {
+	r_return_val_if_fail (a && name && val, false);
+	bool ret = false;
+	RSignItem *it = item_new_named (a, name);
+	if (it && (it->bytes = deserialize_bytes (val))) {
+		ret = r_sign_add_item (a, it);
+	}
+	r_sign_item_free (it);
+	return ret;
 }
 
-R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at) {
-	bool retval = false;
-	r_return_val_if_fail (a && name && size > 0 && bytes, false);
-	ut8 *mask = r_anal_mask (a, size, bytes, at);
-	if (mask) {
-		retval = addBytes (a, name, size, bytes, mask);
-		free (mask);
+R_API bool r_sign_add_anal(RAnal *a, const char *name, const char *val) {
+	r_return_val_if_fail (a && name && val, false);
+	bool ret = false;
+	RSignItem *it = item_new_named (a, name);
+	if (it && (it->bytes = deserialize_anal (a, val))) {
+		ret = r_sign_add_item (a, it);
 	}
-	return retval;
+	r_sign_item_free (it);
+	return ret;
 }
 
 static RSignGraph *r_sign_fcn_graph(RAnalFunction *fcn) {
@@ -1727,15 +1751,13 @@ static void listHash(RAnal *a, RSignItem *it, PJ *pj, int format) {
 static bool listCB(RSignItem *it, void *user) {
 	struct ctxListCB *ctx = (struct ctxListCB *)user;
 	RAnal *a = ctx->anal;
+	if (!validate_item (it)) {
+		return true;
+	}
 
 	// Start item
 	if (ctx->format == 'j') {
 		pj_o (ctx->pj);
-	}
-
-	r_name_filter (it->name, -1);
-	if (it->space && it->space->name) {
-		r_name_filter (it->space->name, -1);
 	}
 
 	// Zignspace and name (except for radare format)
@@ -1859,10 +1881,6 @@ R_API const char *r_sign_type_to_name(int type) {
 	switch (type) {
 	case R_SIGN_BYTES:
 		return "bytes";
-	case R_SIGN_BYTES_MASK:
-		return "mask";
-	case R_SIGN_BYTES_SIZE:
-		return "size";
 	case R_SIGN_COMMENT:
 		return "comment";
 	case R_SIGN_GRAPH:
@@ -2585,8 +2603,6 @@ static bool update_collide(RPVector *sigs, int start, int end, int type) {
 static bool item_has_type(RSignItem *it, RSignType t) {
 	switch (t) {
 	case R_SIGN_BYTES:
-	case R_SIGN_BYTES_MASK:
-	case R_SIGN_BYTES_SIZE:
 		return it->bytes? true: false;
 	case R_SIGN_COMMENT:
 		return it->comment? true: false;
