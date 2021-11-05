@@ -22,8 +22,10 @@ af
 afvs
 EOF
 EXPECT=<<EOF
+s 0x0
 var int32_t var_ch @ a1+0x4
 var int32_t var_8h @ a1+0x8
 var int32_t var_4h @ a1+0xc
+s-
 EOF
 RUN

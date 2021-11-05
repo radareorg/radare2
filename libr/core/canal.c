@@ -3029,6 +3029,10 @@ static int fcn_list_verbose_json(RCore *core, RList *fcns) {
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	const char *defaultCC = r_anal_cc_default (core->anal);
 	char *name = r_core_anal_fcn_name (core, fcn);
+	char *paren = strchr (name, '(');
+	if (paren) {
+		*paren = '\0';
+	}
 	r_cons_printf ("\"f %s %"PFMT64u" 0x%08"PFMT64x"\"\n", name, r_anal_function_linear_size (fcn), fcn->addr);
 	r_cons_printf ("\"af+ 0x%08"PFMT64x" %s %c %c\"\n",
 			fcn->addr, name, //r_anal_fcn_size (fcn), name,
@@ -3044,7 +3048,9 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	}
 	// FIXME command injection vuln here
 	if (fcn->cc || defaultCC) {
-		r_cons_printf ("afc %s @ 0x%08"PFMT64x"\n", fcn->cc?fcn->cc: defaultCC, fcn->addr);
+		r_cons_printf ("s 0x%"PFMT64x"\n", fcn->addr);
+		r_cons_printf ("\"afc %s\"\n", fcn->cc? fcn->cc: defaultCC);
+		r_cons_println ("s-");
 	}
 	if (fcn->folded) {
 		r_cons_printf ("afF @ 0x%08"PFMT64x"\n", fcn->addr);
