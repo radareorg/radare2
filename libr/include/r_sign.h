@@ -17,8 +17,6 @@ R_LIB_VERSION_HEADER(r_sign);
 
 typedef enum {
 	R_SIGN_BYTES = 'b', // bytes pattern
-	R_SIGN_BYTES_MASK = 'm', // bytes pattern
-	R_SIGN_BYTES_SIZE = 's', // bytes pattern
 	R_SIGN_ANAL = 'a', // bytes pattern, input only, creates mask from byte analysis
 	R_SIGN_COMMENT = 'c', // comment
 	R_SIGN_GRAPH = 'g', // graph metrics
@@ -108,8 +106,8 @@ typedef struct {
 } RSignCloseMatch;
 
 #ifdef R_API
-R_API bool r_sign_add_bytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, const ut8 *mask);
-R_API bool r_sign_add_anal(RAnal *a, const char *name, ut64 size, const ut8 *bytes, ut64 at);
+R_API bool r_sign_add_bytes(RAnal *a, const char *name, const char *val);
+R_API bool r_sign_add_anal(RAnal *a, const char *name, const char *val);
 R_API bool r_sign_add_graph(RAnal *a, const char *name, RSignGraph graph);
 R_API int r_sign_all_functions(RAnal *a, bool merge);
 R_API bool r_sign_add_func(RAnal *a, RAnalFunction *fcn, const char *name);

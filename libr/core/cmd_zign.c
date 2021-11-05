@@ -116,57 +116,6 @@ static bool addGraphZign(RCore *core, const char *name, RList *args) {
 	return r_sign_add_graph (core->anal, name, graph);
 }
 
-static bool addBytesZign(RCore *core, const char *name, int type, char *hexbytes) {
-	ut8 *mask = NULL, *bytes = NULL, *sep = NULL;
-	int size = 0;
-	bool retval = true;
-
-	if ((sep = (ut8 *)strchr (hexbytes, ':'))) {
-		size_t blen = sep - (ut8 *)hexbytes;
-		sep++;
-		if (!blen || (blen & 1) || strlen ((char *)sep) != blen) {
-			eprintf ("error: cannot parse hexpairs\n");
-			return false;
-		}
-		bytes = calloc (1, blen + 1);
-		mask = calloc (1, blen + 1);
-		memcpy (bytes, hexbytes, blen);
-		memcpy (mask, sep, blen);
-		size = r_hex_str2bin ((char*) bytes, bytes);
-		if (size != blen / 2 || r_hex_str2bin ((char*)mask, mask) != size) {
-			eprintf ("error: cannot parse hexpairs\n");
-			retval = false;
-			goto out;
-		}
-	} else {
-		size_t blen = strlen (hexbytes) + 4;
-		bytes = malloc (blen);
-		mask = malloc (blen);
-
-		size = r_hex_str2binmask (hexbytes, bytes, mask);
-		if (size <= 0) {
-			eprintf ("error: cannot parse hexpairs\n");
-			retval = false;
-			goto out;
-		}
-	}
-
-	switch (type) {
-	case R_SIGN_BYTES:
-		retval = r_sign_add_bytes (core->anal, name, size, bytes, mask);
-		break;
-	case R_SIGN_ANAL:
-		retval = r_sign_add_anal (core->anal, name, size, bytes, 0);
-		break;
-	}
-
-out:
-	free (bytes);
-	free (mask);
-
-	return retval;
-}
-
 static inline bool za_add(RCore *core, const char *input) {
 	char *args = r_str_trim_dup (input + 1);
 	if (!args) {
@@ -188,8 +137,10 @@ static inline bool za_add(RCore *core, const char *input) {
 	bool ret = false;
 	switch (t) {
 	case R_SIGN_BYTES:
+		ret = r_sign_add_bytes (core->anal, name, sig);
+		break;
 	case R_SIGN_ANAL:
-		ret = addBytesZign (core, name, t, sig);
+		ret = r_sign_add_anal (core->anal, name, sig);
 		break;
 	case R_SIGN_GRAPH:
 		lst = r_str_split_list (sig, " ", 0);
