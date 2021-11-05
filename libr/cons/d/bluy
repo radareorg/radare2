@@ -9,12 +9,12 @@ ec args rgb:0099ff
 ec flow rgb:e07010
 ec prompt rgb:0099ff
 ec offset rgb:606060
-ec input rgb:234
+ec input rgb:fc1
 ec invalid rgb:ef3444
 ec other rgb:0099ff
 ec b0x00 rgb:999cab
 ec b0x7f rgb:09f
-ec b0xff rgb:224
+ec b0xff rgb:555
 ec btext rgb:33ccff
 ec math rgb:0099ff
 ec bin rgb:99a
