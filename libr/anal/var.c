@@ -1445,7 +1445,6 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					: var->delta;
 				anal->cb_printf ("\"afv%c %d %s %s\"\n",
 					kind, delta, var->name, var->type);
-					fcn->addr);
 			}
 			break;
 		case 'j':
