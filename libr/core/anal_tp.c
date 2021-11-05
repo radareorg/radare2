@@ -560,6 +560,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	r_cons_break_push (NULL, NULL);
 repeat:
 	if (retries < 0) {
+		free (pc);
 		return;
 	}
 	r_list_sort (fcn->bbs, bb_cmpaddr); // TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
@@ -820,7 +821,7 @@ repeat:
 		}
 		free (buf);
 	}
-	free (bblist);
+	R_FREE (bblist);
 	// Type propgation for register based args
 	RList *list = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
 	RAnalVar *rvar;
@@ -843,6 +844,7 @@ out_function:
 	R_FREE (ret_reg);
 	R_FREE (ret_type);
 	r_cons_break_pop();
+	free (bblist);
 	anal_emul_restore (core, hc, dt, et);
 	free (pc);
 }

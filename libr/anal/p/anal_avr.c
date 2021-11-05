@@ -617,7 +617,8 @@ INST_HANDLER (des) {	// DES k
 }
 
 INST_HANDLER (eijmp) {	// EIJMP
-	ut64 z, eind;
+	ut64 z = 0;
+	ut64 eind = 0;
 	// read z and eind for calculating jump address on runtime
 	if (anal->esil) {
 		r_anal_esil_reg_read (anal->esil, "z",    &z,    NULL);
@@ -1377,8 +1378,8 @@ INST_HANDLER (sleep) {	// SLEEP
 	ESIL_A ("BREAK");
 }
 
-INST_HANDLER (spm) {	// SPM Z+
-	ut64 spmcsr;
+INST_HANDLER (spm) { // SPM Z+
+	ut64 spmcsr = 0;
 
 	// read SPM Control Register (SPMCR)
 	if (anal->esil) {
