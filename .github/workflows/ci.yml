@@ -16,13 +16,14 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Setting up bad libnames
+    - name: Building r2 without network access
       run: |
         ./preconfigure
         echo UNPLUG
         sudo rm -f /etc/resolv.conf || true
         ping av.com || true
-        sys/install.sh
+        ./configure --with-rpath --prefix=/usr
+        make -j ; sudo make install
   build-oldlibs:
     name: linux-acr-oldlibsbug
     runs-on: ubuntu-20.04

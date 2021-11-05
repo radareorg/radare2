@@ -112,7 +112,9 @@ else
 	fi
 fi
 
-./preconfigure
+if [ ! -d shlr/capstone ]; then
+	./preconfigure
+fi
 
 if [ "${M32}" = 1 ]; then
 	${SHELL} ./sys/build-m32.sh ${ARGS} || exit 1
