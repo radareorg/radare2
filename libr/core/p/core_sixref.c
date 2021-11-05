@@ -267,7 +267,7 @@ static void siguza_xrefs(RCore *core, ut64 search, ut64 start, int lenbytes) {
 	ut64 end = start + lenbytes;
 	ut64 cursor = start;
 	int lenbytes_rem = lenbytes;
-	char target_ref[24];
+	char target_ref[64];
 
 	if (search == 0) {
 		snprintf (target_ref, sizeof (target_ref), "all xrefs");
