@@ -1731,19 +1731,23 @@ static int cmd_open(void *data, const char *input) {
 		return 0;
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
-		ptr = r_str_trim_head_ro (input + 2);
-		argv = r_str_argv (ptr, &argc);
-		if (argc == 0 || input[1] == '?') {
-			r_core_cmd_help (core, help_msg_of);
+		if (input[1]) {
+			ptr = r_str_trim_head_ro (input + 2);
+			argv = r_str_argv (ptr, &argc);
+			if (argc == 0 || input[1] == '?') {
+				r_core_cmd_help (core, help_msg_of);
+				r_str_argv_free (argv);
+				return 0;
+			}
+			if (argc == 2) {
+				perms = r_str_rwx (argv[1]);
+			}
+			fd = r_io_fd_open (core->io, argv[0], perms, 0);
+			core->num->value = fd;
 			r_str_argv_free (argv);
-			return 0;
+		} else {
+			eprintf ("Usage: of [arg...]\n");
 		}
-		if (argc == 2) {
-			perms = r_str_rwx (argv[1]);
-		}
-		fd = r_io_fd_open (core->io, argv[0], perms, 0);
-		core->num->value = fd;
-		r_str_argv_free (argv);
 		return 0;
 	case 'p': // "op"
 		/* handle prioritize */
