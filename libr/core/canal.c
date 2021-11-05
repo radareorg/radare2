@@ -3049,7 +3049,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	// FIXME command injection vuln here
 	if (fcn->cc || defaultCC) {
 		r_cons_printf ("s 0x%"PFMT64x"\n", fcn->addr);
-		r_cons_printf ("\"afc %s \"\n", fcn->cc?fcn->cc: defaultCC);
+		r_cons_printf ("\"afc %s\"\n", fcn->cc? fcn->cc: defaultCC);
 		r_cons_println ("s-");
 	}
 	if (fcn->folded) {
