@@ -579,6 +579,7 @@ repeat:
 			free (bblist);
 			goto repeat;
 		}
+		ut64 bb_addr = bb->addr;
 		ut64 addr = bb->addr;
 		ut8 *buf = calloc (bb->size + 32, 1);
 		if (!buf) {
@@ -619,6 +620,18 @@ repeat:
 			} else {
 				fast_step (core, &aop);
 			}
+
+			// maybe the basic block is gone after the step...
+			if (i < bblist_size) {
+				bb = r_anal_get_block_at (core->anal, bb_addr);
+				if (!bb) {
+					eprintf ("Warning: basic block at 0x%08"PFMT64x" was removed during analysis.\n", bblist[i]);
+					retries--;
+					free (bblist);
+					goto repeat;
+				}
+			}
+
 			bool userfnc = false;
 			Sdb *trace = anal->esil->trace->db;
 			cur_idx = sdb_num_get (trace, "idx", 0);
