@@ -2063,7 +2063,12 @@ R_API size_t r_wstr_clen(const char *s) {
 	return len + 1;
 }
 
+// TODO: rename to r_str_ansi_at() ? or find better name?
 R_API const char *r_str_ansi_chrn(const char *str, size_t n) {
+#if 0
+	size_t pos = r_str_ansi_nlen (str, at);
+	return str + pos;
+#endif
 	int len, i, li;
 	for (li = i = len = 0; str[i] && (n != len); i++) {
 		size_t chlen = __str_ansi_length (str + i);

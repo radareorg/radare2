@@ -339,17 +339,6 @@ R_API void r_codemeta_print_json(RCodeMeta *code) {
  * @param width maximum nibbles per address
  */
 static void print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t width) {
-	static const char *fmt[9] = {
-		"0x%08" PFMT64x,
-		"0x%09" PFMT64x,
-		"0x%010" PFMT64x,
-		"0x%011" PFMT64x,
-		"0x%012" PFMT64x,
-		"0x%013" PFMT64x,
-		"0x%014" PFMT64x,
-		"0x%015" PFMT64x,
-		"0x%016" PFMT64x
-	};
 	if (width < 8) {
 		width = 8;
 	}
@@ -369,13 +358,59 @@ static void print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t
 	} else {
 		PRINT_COLOR (PALETTE (offset)
 			     : Color_GREEN);
-		r_cons_printf (fmt[width], offset);
+		r_cons_printf ("0x%08" PFMT64x, offset);
 		PRINT_COLOR (Color_RESET);
 	}
 	r_cons_printf ("    |");
 }
 
-R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
+static void print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t width, RAnal *anal) {
+	if (width < 8) {
+		width = 8;
+	}
+	if (width > 16) {
+		width = 16;
+	}
+	width -= 8;
+
+	width = 40;
+	RCons *cons = r_cons_singleton ();
+	r_cons_printf ("    ");
+	if (offset == UT64_MAX) {
+		const char *pad = r_str_pad (' ', width);
+		r_cons_print (pad);
+	} else {
+		width = 40;
+		if (anal && anal->coreb.core) {
+			RCore *core = anal->coreb.core;
+			char *c = r_str_newf ("pid 1 @ 0x%" PFMT64x " @e:asm.flags=0@e:asm.lines=0@e:asm.bytes=0", offset);
+			char *res = anal->coreb.cmdstrf (core, c);
+			free (c);
+			r_str_trim (res);
+			int w = r_str_ansi_len (res);
+			r_cons_print (res);
+			if (w < width) {
+				const char *pad = r_str_pad (' ', width - w);
+				r_cons_print (pad);
+			} else {
+				char *p = (char *)r_str_ansi_chrn (res, width);
+				if (p) {
+					*p = 0;
+				}
+			}
+			free (res);
+		} else {
+			PRINT_COLOR (PALETTE (offset) : Color_GREEN);
+			r_cons_printf ("0x%08" PFMT64x, offset);
+			PRINT_COLOR (Color_RESET);
+			const char *pad = r_str_pad (' ', width - 11);
+			r_cons_print (pad);
+		}
+	}
+	r_cons_printf ("    |");
+}
+
+R_API void r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, RAnal *anal) {
 	if (code->annotations.len == 0) {
 		r_cons_printf ("%s\n", code->code);
 		return;
@@ -448,7 +483,11 @@ R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
 				if (line_idx < line_offsets->len) {
 					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 				}
-				print_offset_in_binary_line_bar (code, offset, offset_width);
+				if (anal) {
+					print_disasm_in_binary_line_bar (code, offset, offset_width, anal);
+				} else {
+					print_offset_in_binary_line_bar (code, offset, offset_width);
+				}
 				line_idx++;
 			}
 			r_cons_printf ("%c", code->code[cur]);
@@ -466,7 +505,11 @@ R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
 					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 				}
 				PRINT_COLOR (Color_RESET);
-				print_offset_in_binary_line_bar (code, offset, offset_width);
+				if (anal) {
+					print_disasm_in_binary_line_bar (code, offset, offset_width, anal);
+				} else {
+					print_offset_in_binary_line_bar (code, offset, offset_width);
+				}
 				PRINT_COLOR (color);
 				line_idx++;
 			}
@@ -484,11 +527,24 @@ R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
 			if (line_idx < line_offsets->len) {
 				offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 			}
-			print_offset_in_binary_line_bar (code, offset, offset_width);
+			if (anal) {
+				print_disasm_in_binary_line_bar (code, offset, offset_width, anal);
+			} else {
+				print_offset_in_binary_line_bar (code, offset, offset_width);
+			}
 			line_idx++;
 		}
 		r_cons_printf ("%c", code->code[cur]);
 	}
+}
+
+R_API void r_codemeta_print_disasm(RCodeMeta *code, RVector *line_offsets, void *anal) {
+	r_codemeta_print_internal (code, line_offsets, anal);
+}
+
+// TODO rename R_API void r_codemeta_print_offsets(RCodeMeta *code, RVector *line_offsets, bool d) {
+R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
+	r_codemeta_print_internal (code, line_offsets, NULL);
 }
 
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {
