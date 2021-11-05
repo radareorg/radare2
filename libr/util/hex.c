@@ -460,19 +460,30 @@ R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
 	}
 	len = (len + 1) / 2;
 
-	ut8 *buf = NULL;
+	int ret = -1;
 	size_t nibbles = 0;
-	if ((buf = malloc (len)) != NULL) {
-		while (!r_hex_to_byte (&buf[nibbles / 2], *in)) {
+	ut8 *buf = malloc (len);
+	if (buf) {
+		while (!r_hex_to_byte (buf + nibbles / 2, *in)) {
 			nibbles++;
 			in++;
 		}
+
+		if (!nibbles || nibbles % 2) {
+			ret = 0;
+		} else {
+			ret = nibbles / 2;
+			*out = realloc (buf, ret);
+			if (!*out) {
+				ret = -1;
+			}
+		}
+
+		if (ret <= 0) {
+			free (buf);
+		}
 	}
-	if (!nibbles || nibbles % 2 || !(*out = realloc (buf, nibbles / 2))) {
-		free (buf);
-		return !nibbles? 0: -1;
-	}
-	return nibbles / 2;
+	return ret;
 }
 
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
