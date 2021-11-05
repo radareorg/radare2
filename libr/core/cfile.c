@@ -612,7 +612,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	if (!desc) {
 		// hack for openmany handlers
-		if (*filenameuri == '-') {
+		if (!filenameuri || *filenameuri == '-') {
 			// filenameuri = "malloc://512";
 			return false;
 		}
