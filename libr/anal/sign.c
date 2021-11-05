@@ -489,7 +489,7 @@ static char *serialize_value(RSignItem *it) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_TYPES, it->types), sb);
 	}
 
-	if (it->next && !strchr (it->types, '|')) {
+	if (it->next && !strchr (it->next, '|')) {
 		FreeRet_on_fail (r_strbuf_appendf (sb, "|%c:%s", R_SIGN_NEXT, it->next), sb);
 	}
 
