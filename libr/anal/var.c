@@ -1438,7 +1438,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					break;
 				}
 				anal->cb_printf ("\"afv%c %s %s %s\"\n",
-					kind, i->name, var->name, var->type, fcn->addr);
+					kind, i->name, var->name, var->type);
 			} else {
 				int delta = kind == R_ANAL_VAR_KIND_BPV
 					? var->delta + fcn->bp_off
