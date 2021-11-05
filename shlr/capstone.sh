@@ -66,6 +66,9 @@ git_clone() {
 }
 
 get_capstone() {
+	if [ -d capstone ]; then
+		return
+	fi
 	git_clone || fatal_msg 'Clone failed'
 	cd capstone || fatal_msg 'Failed to chdir'
 	parse_capstone_tip
