@@ -94,15 +94,16 @@ static RSignBytes *des_bytes_norm(const char *in) {
 	RSignBytes *b = R_NEW0 (RSignBytes);
 	if (b && (b->size = r_hex_str2bin_until_new (in, &b->bytes)) > 0) {
 		in += 2 * b->size;
-		if (*in == '\0' && (b->mask = malloc (b->size)) != NULL) {
+		if (!*in && (b->mask = malloc (b->size))) {
 			// no mask, set it to f's
 			memset (b->mask, 0xff, b->size);
 			return b;
-		} else if (*in++ == ':') {
+		}
+		if (*in++ == ':') {
 			// get mask
 			int size = r_hex_str2bin_until_new (in, &b->mask);
 			in += 2 * size;
-			if (size == b->size && *in == '\0') {
+			if (size == b->size && !*in) {
 				return b;
 			}
 		}
@@ -128,6 +129,7 @@ static RSignBytes *deserialize_bytes(const char *in) {
 			return b;
 		}
 	}
+	r_sign_bytes_free (b);
 	return NULL;
 }
 
@@ -600,6 +602,7 @@ R_API RSignItem *r_sign_get_item(RAnal *a, const char *name) {
 }
 
 static bool validate_item(RSignItem *it) {
+	r_return_val_if_fail (it, false);
 	// TODO: validate more
 	if (!r_name_check (it->name)) {
 		eprintf ("Bad name in signature: %s\n", it->name);
@@ -617,7 +620,7 @@ static bool validate_item(RSignItem *it) {
 			eprintf ("Signature '%s' has empty byte field\n", it->name);
 			return false;
 		}
-		if (!b->mask[0]) {
+		if (b->mask[0] == '\0') {
 			eprintf ("Signature '%s' mask starts empty\n", it->name);
 			return false;
 		}
@@ -630,6 +633,9 @@ R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
 		return false;
 	}
 	char *key = item_serialize_key (it);
+	if (!key) {
+		return false;
+	}
 	RSignItem *current = sign_get_sdb_item (a, key);
 
 	bool retval = false;
