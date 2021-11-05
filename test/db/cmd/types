@@ -1027,13 +1027,9 @@ afv
 EOF
 EXPECT=<<EOF
 s 0x76a
-s-
-s 0x76a
 var size_t size @ rbp-0x14
 var char * dest @ rbp-0x10
 var char * src @ rbp-0x8
-s-
-s 0x76a
 s-
 EOF
 RUN
@@ -1048,13 +1044,9 @@ afv
 EOF
 EXPECT=<<EOF
 s 0x6da
-s-
-s 0x6da
 var size_t size @ rbp-0x14
 var char * ptr @ rbp-0x10
 var char * src @ rbp-0x8
-s-
-s 0x6da
 s-
 EOF
 RUN
@@ -1069,14 +1061,10 @@ afv
 EOF
 EXPECT=<<EOF
 s 0x68a
-s-
-s 0x68a
 var size_t var_1ch @ rbp-0x1c
 var char * var_18h @ rbp-0x18
 var char * s @ rbp-0x10
 var char * var_8h @ rbp-0x8
-s-
-s 0x68a
 s-
 EOF
 RUN
@@ -1091,15 +1079,11 @@ afv
 EOF
 EXPECT=<<EOF
 s 0x7aa
-s-
-s 0x7aa
 var size_t var_20h @ rbp-0x20
 var size_t size @ rbp-0x1c
 var char * src @ rbp-0x18
 var char * s2 @ rbp-0x10
 var char * dest @ rbp-0x8
-s-
-s 0x7aa
 s-
 EOF
 RUN
@@ -1123,8 +1107,6 @@ var size_t var_14h @ ebp-0x14
 var size_t size @ ebp-0x10
 var char * dest @ ebp-0xc
 var int32_t var_8h @ ebp-0x8
-s-
-s 0x60d
 s-
 EOF
 RUN
@@ -1278,8 +1260,6 @@ afv
 EOF
 EXPECT=<<EOF
 s 0x7aa
-s-
-s 0x7aa
 var int64_t var_34h @ rbp-0x34
 var signed int64_t var_30h @ rbp-0x30
 var uint32_t var_2ch @ rbp-0x2c
@@ -1288,8 +1268,6 @@ var char * s @ rbp-0x20
 var char * var_18h @ rbp-0x18
 var char * var_10h @ rbp-0x10
 var int64_t canary @ rbp-0x8
-s-
-s 0x7aa
 s-
 EOF
 RUN
@@ -1305,8 +1283,6 @@ s sym.processCmd
 afv
 EOF
 EXPECT=<<EOF
-s 0x86ca
-s-
 s 0x86ca
 var char ** var_14e0h @ rbp-0x14e0
 var int64_t var_14d4h @ rbp-0x14d4
@@ -1334,8 +1310,6 @@ s-
 s 0x86ca
 arg char ** argv @ rsi
 arg int argc @ rdi
-s-
-s 0x782e
 s-
 s 0x782e
 var char * str @ rbp-0xb0
@@ -1426,8 +1400,6 @@ afv
 EOF
 EXPECT=<<EOF
 s 0x68a
-s-
-s 0x68a
 var int64_t var_25h @ rbp-0x25
 var signed int64_t var_24h @ rbp-0x24
 var uint32_t var_20h @ rbp-0x20
@@ -1435,8 +1407,6 @@ var int64_t var_1ch @ rbp-0x1c
 var char * var_18h @ rbp-0x18
 var long int var_10h @ rbp-0x10
 var char * var_8h @ rbp-0x8
-s-
-s 0x68a
 s-
 EOF
 RUN
@@ -1450,8 +1420,6 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-s 0x4004d7
-s-
 s 0x4004d7
 var char ** var_28h @ rbp-0x28
 var char ** var_20h @ rbp-0x20

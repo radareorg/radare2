@@ -2009,8 +2009,6 @@ var int64_t XXX_47h @ rsp+0x57
 var int64_t XXX_48h @ rsp+0x58
 s-
 s 0x4070
-s-
-s 0x4070
 arg char ** ARGV @ rsi
 arg int ARGC @ rdi
 s-

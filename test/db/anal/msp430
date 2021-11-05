@@ -50,12 +50,6 @@ out-degree: 6
 data-xrefs:
 locals: 0
 args: 0
-s 0x4438
-s-
-s 0x4438
-s-
-s 0x4438
-s-
 diff: type: new
 EOF
 RUN
