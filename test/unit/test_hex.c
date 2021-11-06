@@ -173,15 +173,13 @@ bool test_str2bin_alloc () {
 	mu_assert_eq (len, 0, "r_hex_str2bin_until_new invalid str 4");
 	mu_assert_null (buf, "r_hex_str2bin_until_new invalid str 4");
 
-#if 0
 	// bad bufs
-	ut8 *buf2[3];
+	ut8 buf2[3];
 	len = r_hex_str2bin_until_new ("44", (ut8 **)&buf2);
 	mu_assert_eq (len, -1, "r_hex_str2bin_until_new accepted non-null **");
 
 	len = r_hex_str2bin_until_new ("4142", NULL);
 	mu_assert_eq (len, -1, "r_hex_str2bin_until_new NULL *");
-#endif
 
 	// valid input
 	buf = NULL;
