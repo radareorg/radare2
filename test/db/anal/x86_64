@@ -1867,15 +1867,11 @@ af
 afv
 EOF
 EXPECT=<<EOF
-s 0x100000f00
 var int64_t var_14h @ rbp-0x14
 var int64_t var_10h @ rbp-0x10
 var int64_t var_8h @ rbp-0x8
-s-
-s 0x100000f00
 arg int64_t arg2 @ rsi
 arg int64_t arg1 @ rdi
-s-
 EOF
 RUN
 
@@ -2229,7 +2225,7 @@ af
 afvb~?
 EOF
 EXPECT=<<EOF
-15
+13
 EOF
 RUN
 
