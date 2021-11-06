@@ -150,11 +150,9 @@ af
 afv
 EOF
 EXPECT=<<EOF
-s 0x18000103c
 arg int64_t arg3 @ r8
 arg const char * s @ rcx
 arg int64_t arg2 @ rdx
-s-
 EOF
 RUN
 
@@ -166,14 +164,10 @@ af
 afv
 EOF
 EXPECT=<<EOF
-s 0x14000184c
 var int64_t var_20h @ rsp+0x48
-s-
-s 0x14000184c
 var int64_t var_10h @ rbp+0x10
 var int64_t var_18h @ rbp+0x18
 var int64_t var_bp_20h @ rbp+0x20
-s-
 EOF
 RUN
 
@@ -316,12 +310,10 @@ EOF
 EXPECT=<<EOF
 afvR
 afvW
-s 0x10
 var int32_t var_4h_2 @ ebp-0x4
 var int32_t var_4h @ ebp+0x0
 arg int32_t arg_8h @ ebp+0x8
 arg int32_t arg_ch @ ebp+0xc
-s-
 afvR
     arg_8h  0x16
     arg_ch  0x19

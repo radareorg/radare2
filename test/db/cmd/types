@@ -1026,11 +1026,9 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-s 0x76a
 var size_t size @ rbp-0x14
 var char * dest @ rbp-0x10
 var char * src @ rbp-0x8
-s-
 EOF
 RUN
 
@@ -1043,11 +1041,9 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-s 0x6da
 var size_t size @ rbp-0x14
 var char * ptr @ rbp-0x10
 var char * src @ rbp-0x8
-s-
 EOF
 RUN
 
@@ -1060,12 +1056,10 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-s 0x68a
 var size_t var_1ch @ rbp-0x1c
 var char * var_18h @ rbp-0x18
 var char * s @ rbp-0x10
 var char * var_8h @ rbp-0x8
-s-
 EOF
 RUN
 
@@ -1078,13 +1072,11 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-s 0x7aa
 var size_t var_20h @ rbp-0x20
 var size_t size @ rbp-0x1c
 var char * src @ rbp-0x18
 var char * s2 @ rbp-0x10
 var char * dest @ rbp-0x8
-s-
 EOF
 RUN
 
@@ -1097,17 +1089,13 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-s 0x60d
 arg char ** argv @ esp+0x44
-s-
-s 0x60d
 var char * src @ ebp-0x1c
 var char * s2 @ ebp-0x18
 var size_t var_14h @ ebp-0x14
 var size_t size @ ebp-0x10
 var char * dest @ ebp-0xc
 var int32_t var_8h @ ebp-0x8
-s-
 EOF
 RUN
 
@@ -1119,12 +1107,10 @@ s sym.funcarg
 afvr
 EOF
 EXPECT=<<EOF
-s 0x7aa
 arg int64_t arg4 @ rcx
 arg int64_t arg3 @ rdx
 arg int64_t arg2 @ rsi
 arg int64_t arg1 @ rdi
-s-
 EOF
 RUN
 
@@ -1137,12 +1123,10 @@ s sym.funcarg
 afvr
 EOF
 EXPECT=<<EOF
-s 0x7aa
 arg size_t arg4 @ rcx
 arg int64_t arg3 @ rdx
 arg char * arg2 @ rsi
 arg char * arg1 @ rdi
-s-
 EOF
 RUN
 
@@ -1259,7 +1243,6 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-s 0x7aa
 var int64_t var_34h @ rbp-0x34
 var signed int64_t var_30h @ rbp-0x30
 var uint32_t var_2ch @ rbp-0x2c
@@ -1268,7 +1251,6 @@ var char * s @ rbp-0x20
 var char * var_18h @ rbp-0x18
 var char * var_10h @ rbp-0x10
 var int64_t canary @ rbp-0x8
-s-
 EOF
 RUN
 
@@ -1283,7 +1265,6 @@ s sym.processCmd
 afv
 EOF
 EXPECT=<<EOF
-s 0x86ca
 var char ** var_14e0h @ rbp-0x14e0
 var int64_t var_14d4h @ rbp-0x14d4
 var int64_t wstatus @ rbp-0x14cc
@@ -1306,12 +1287,8 @@ var char * dest @ rbp-0x1470
 var void * var_1420h @ rbp-0x1420
 var char * s1 @ rbp-0x1020
 var int64_t var_18h @ rbp-0x18
-s-
-s 0x86ca
 arg char ** argv @ rsi
 arg int argc @ rdi
-s-
-s 0x782e
 var char * str @ rbp-0xb0
 var signed int var_a4h @ rbp-0xa4
 var signed int64_t var_a0h @ rbp-0xa0
@@ -1341,11 +1318,8 @@ var char * var_28h @ rbp-0x28
 var char * var_20h @ rbp-0x20
 var int64_t var_18h @ rbp-0x18
 var int64_t var_8h @ rbp-0x8
-s-
-s 0x782e
 arg char * arg2 @ rsi
 arg signed int arg1 @ rdi
-s-
 EOF
 RUN
 
@@ -1359,10 +1333,7 @@ aaft
 afv
 EOF
 EXPECT=<<EOF
-s 0x1069c
 var int32_t var_1454h @ sp+0x0
-s-
-s 0x1069c
 var void * var_1438h @ fp-0x1440
 var char * s1 @ fp-0x1040
 var int32_t wstatus @ fp-0x4c
@@ -1382,11 +1353,8 @@ var char * var_10h @ fp-0x18
 var int32_t var_ch @ fp-0x14
 var int32_t var_8h @ fp-0x10
 var char * option @ fp-0xc
-s-
-s 0x1069c
 arg int argc @ r0
 arg char ** argv @ r1
-s-
 EOF
 RUN
 
@@ -1399,7 +1367,6 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-s 0x68a
 var int64_t var_25h @ rbp-0x25
 var signed int64_t var_24h @ rbp-0x24
 var uint32_t var_20h @ rbp-0x20
@@ -1407,7 +1374,6 @@ var int64_t var_1ch @ rbp-0x1c
 var char * var_18h @ rbp-0x18
 var long int var_10h @ rbp-0x10
 var char * var_8h @ rbp-0x8
-s-
 EOF
 RUN
 
@@ -1420,18 +1386,14 @@ s main
 afv
 EOF
 EXPECT=<<EOF
-s 0x4004d7
 var char ** var_28h @ rbp-0x28
 var char ** var_20h @ rbp-0x20
 var int64_t var_14h @ rbp-0x14
 var void * var_10h @ rbp-0x10
 var int64_t var_4h @ rbp-0x4
-s-
-s 0x4004d7
 arg char ** envp @ rdx
 arg char ** argv @ rsi
 arg int argc @ rdi
-s-
 EOF
 RUN
 
