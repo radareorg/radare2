@@ -442,9 +442,9 @@ static char *serialize_value(RSignItem *it) {
 			r_hex_bin2str (bytes->mask, bytes->size, hexmask);
 			success = r_strbuf_appendf (sb, "|%c:%s:%s", R_SIGN_BYTES,
 				hexbytes, hexmask);
-			free (hexbytes);
-			free (hexmask);
 		}
+		free (hexbytes);
+		free (hexmask);
 		FreeRet_on_fail (success, sb);
 	}
 
