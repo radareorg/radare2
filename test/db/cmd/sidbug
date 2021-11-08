@@ -11,7 +11,7 @@ FILE=-
 CMDS=<<EOF
 e search.from=0
 e search.to=10
-e search.in=raw
+e search.in=range
 b 10
 wx 0101010102
 /x 01010102
