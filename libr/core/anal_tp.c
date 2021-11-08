@@ -580,27 +580,28 @@ repeat:
 			goto repeat;
 		}
 		ut64 bb_addr = bb->addr;
+		ut64 bb_size = bb->size;
 		ut64 addr = bb->addr;
 		ut8 *buf = calloc (bb->size + 32, 1);
 		if (!buf) {
 			break;
 		}
-		r_io_read_at (core->io, addr, buf, bb->size);
+		r_io_read_at (core->io, addr, buf, bb_size);
 		int i = 0;
 		r_reg_setv (core->dbg->reg, pc, addr);
 		while (1) {
 			if (r_cons_is_breaked ()) {
 				goto out_function;
 			}
-			if (i >= bb->size) {
+			if (i >= bb_size) {
 				break;
 			}
 			ut64 pcval = r_reg_getv (anal->reg, pc);
-			if ((addr >= bb->addr + bb->size) || (addr < bb->addr) || pcval != addr) {
+			if ((addr >= bb_addr + bb_size) || (addr < bb_addr) || pcval != addr) {
 				// stop emulating this bb if pc is outside the basic block boundaries
 				break;
 			}
-			ret = r_anal_op (anal, &aop, addr, buf + i, bb->size - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
+			ret = r_anal_op (anal, &aop, addr, buf + i, bb_size - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
