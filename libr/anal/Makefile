@@ -16,7 +16,7 @@ LDFLAGS+=$(CS_LDFLAGS)
 include $(STOP)/java/deps.mk
 LDFLAGS+=$(LINK)
 
-.PHONY: all plugins libs ${EXTRA_CLEAN}
+.PHONY: all main plugins libs ${EXTRA_CLEAN}
 
 # all: plugins
 main:

@@ -101,7 +101,7 @@ $(LIBSO): ;
 endif
 
 ifeq ($(WITH_LIBR),1)
-$(LIBAR): ${OBJS}
+$(LIBAR): $(OBJS)
 	@[ "${SILENT}" = 1 ] && echo "CC_AR $(LIBAR)" || true
 	rm -f $(LIBAR)
 	${CC_AR} ${OBJS} ${SHARED_OBJ}

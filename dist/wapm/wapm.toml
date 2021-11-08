@@ -1,0 +1,15 @@
+[package]
+name = "pancake/r2"
+version = "5.4.4"
+description = "Unix-Like Reverse Engineering Framework"
+readme = "README.md"
+license = "LGPL3"
+
+[[module]]
+name = "r2"
+abi = "wasi"
+source = "r2.wasm"
+
+[[command]]
+name = "r2"
+module = "r2"

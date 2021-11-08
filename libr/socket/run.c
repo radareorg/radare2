@@ -949,7 +949,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (p->_r2sleep != 0) {
 		r_sys_sleep (p->_r2sleep);
 	}
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	if (p->_chroot) {
 		if (chdir (p->_chroot) == -1) {
 			eprintf ("Cannot chdir to chroot in %s\n", p->_chroot);
@@ -992,7 +992,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		}
 	}
 #endif
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 	if (p->_setuid) {
 		ret = setgroups (0, NULL);
 		if (ret < 0) {
@@ -1010,7 +1010,11 @@ R_API int r_run_config_env(RRunProfile *p) {
 		}
 	}
 	if (p->_setgid) {
+#if __wasi__
+		ret = 0;
+#else
 		ret = setgid (atoi (p->_setgid));
+#endif
 		if (ret < 0) {
 			return 1;
 		}
@@ -1079,7 +1083,9 @@ R_API int r_run_config_env(RRunProfile *p) {
 #endif
 	}
 	if (p->_timeout) {
-#if __UNIX__
+#if __wasi__
+		// do nothing
+#elif __UNIX__
 		int mypid = r_sys_getpid ();
 		if (!r_sys_fork ()) {
 			int use_signal = p->_timeout_sig;
@@ -1181,7 +1187,9 @@ R_API int r_run_start(RRunProfile *p) {
 				}
 				exit (0);
 			}
+#if !__wasi__
 			setsid ();
+#endif
 			if (p->_timeout) {
 #if __UNIX__
 				int mypid = r_sys_getpid ();
@@ -1191,10 +1199,12 @@ R_API int r_run_start(RRunProfile *p) {
 						use_signal = SIGKILL;
 					}
 					sleep (p->_timeout);
+#if !__wasi__
 					if (!kill (mypid, 0)) {
 						// eprintf ("\nrarun2: Interrupted by timeout\n");
 					}
 					kill (mypid, use_signal);
+#endif
 					exit (0);
 				}
 #else
@@ -1202,7 +1212,7 @@ R_API int r_run_start(RRunProfile *p) {
 #endif
 			}
 #endif
-#if __UNIX__
+#if __UNIX__ && !__wasi__
 			close (0);
 			close (1);
 			char *bin_sh = r_file_binsh ();
@@ -1243,7 +1253,11 @@ R_API int r_run_start(RRunProfile *p) {
 		}
 		// TODO: use posix_spawn
 		if (p->_setgid) {
+#if __wasi__
+			int ret = -1;
+#else
 			int ret = setgid (atoi (p->_setgid));
+#endif
 			if (ret < 0) {
 				return 1;
 			}
@@ -1261,7 +1275,7 @@ R_API int r_run_start(RRunProfile *p) {
 #endif
 
 		if (p->_nice) {
-#if __UNIX__ && !defined(__HAIKU__) && !defined(__serenity__)
+#if __UNIX__ && !defined(__HAIKU__) && !defined(__serenity__) && !__wasi__
 			if (nice (p->_nice) == -1) {
 				return 1;
 			}
@@ -1288,9 +1302,11 @@ R_API int r_run_start(RRunProfile *p) {
 					exit (0);
 				}
 			}
+#if !__wasi__
 			setsid ();
 #if !LIBC_HAVE_FORK
-		exit (execv (p->_program, (char* const*)p->_args));
+			exit (execv (p->_program, (char* const*)p->_args));
+#endif
 #endif
 #endif
 		}

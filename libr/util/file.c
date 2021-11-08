@@ -1277,7 +1277,8 @@ R_API char *r_file_tmpdir(void) {
 	}
 #endif
 	if (!r_file_is_directory (path)) {
-		eprintf ("Cannot find dir.tmp '%s'\n", path);
+		return NULL;
+		//eprintf ("Cannot find dir.tmp '%s'\n", path);
 	}
 	return path;
 }
