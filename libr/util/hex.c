@@ -453,7 +453,10 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 // get the hex chars from start of string, until first non-hex char, as a heap
 // allocated ut8* buffer
 R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
-	r_return_val_if_fail (in && out && !*out, -1);
+	// r_return_val_if_fail (in && out, -1);
+	if (!in || !out) {
+		return -1;
+	}
 	size_t len = strlen (in);
 	if (len <= 1) {
 		return 0;
