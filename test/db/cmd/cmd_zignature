@@ -355,7 +355,7 @@ e zign.minsz = 0
 e zign.mincc = 0
 fs *
 f~?
-e search.in=raw
+e search.in=range
 e search.from=0x0
 e search.to=0x8
 z/
