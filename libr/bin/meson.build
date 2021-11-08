@@ -1,4 +1,5 @@
 subdir('d')
+
 r_bin_sources = [
   'bin.c',
   'bin_write.c',
@@ -139,9 +140,7 @@ r_bin_sources = [
   'pdb/tpi.c'
 ]
 
-if get_option('sdb_cgen')
-  r_bin_sources += r_bin_d_sources
-endif
+# r_bin_sources += r_bin_d_sources
 
 r_bin_inc = [platform_inc, yxml_inc, include_directories('mangling', 'format')]
 
@@ -158,7 +157,8 @@ r_bin = library('r_bin', r_bin_sources,
     r_syscall_dep,
     java_dep,
     lz4_dep,
-    yxml_dep
+    yxml_dep,
+r_bin_d_sources
   ],
   install: true,
   implicit_include_directories: false,
