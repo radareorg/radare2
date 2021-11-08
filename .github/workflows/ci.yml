@@ -157,7 +157,7 @@ jobs:
       run: |
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf
-        sudo pip3 install meson==0.59.4 ninja==1.10.0
+        sudo pip3 install meson==0.59.1 ninja==1.10.0
         git config --global pull.rebase false
         git clone --depth 1 . "spa ces"
         cd "spa ces"
@@ -194,7 +194,7 @@ jobs:
     - name: Static static r2 with meson 
       run: |
         sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
-        sudo pip3 install meson==0.59.4 ninja==1.10.0
+        sudo pip3 install meson==0.59.1 ninja==1.10.0
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
   linux-acr-deb-64:
