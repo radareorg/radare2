@@ -61,9 +61,9 @@ static void r2cmd(int in, int out, const char *cmd) {
                         break;
                 }
                 write (1, buf, n);
-		if (n != bufsz) {
-			break;
-		}
+			if (n != bufsz) {
+				break;
+			}
         }
         free (buf);
         write (1, "\n", 1);
@@ -79,14 +79,14 @@ static int r_main_r2pipe(int argc, const char **argv) {
 		for (i = 1; i < argc; i++) {
 			r2cmd (in, out, argv[i]);
 		}
-        } else {
+	} else {
 		eprintf ("Error: R2PIPE_(IN|OUT) environment not set\n");
 		eprintf ("Usage: r2 -c '!*r2p x' # run commands via r2pipe\n");
-                rc = 1;
+		rc = 1;
 	}
 	free (_in);
 	free (_out);
-        return rc;
+	return rc;
 }
 
 int main(int argc, const char **argv) {

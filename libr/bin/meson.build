@@ -1,3 +1,4 @@
+subdir('d')
 r_bin_sources = [
   'bin.c',
   'bin_write.c',
@@ -8,6 +9,7 @@ r_bin_sources = [
   'filter.c',
   'bfile.c',
   'bobj.c',
+
   'p/bin_any.c',
   'p/bin_art.c',
   'p/bin_avr.c',
@@ -78,7 +80,6 @@ r_bin_sources = [
   'p/bin_z64.c',
   'p/bin_zimg.c',
 
-
   'format/bflt/bflt.c',
   'format/coff/coff.c',
   'format/dex/dex.c',
@@ -137,6 +138,10 @@ r_bin_sources = [
   'pdb/stream_pe.c',
   'pdb/tpi.c'
 ]
+
+if get_option('sdb_cgen')
+  r_bin_sources += r_bin_d_sources
+endif
 
 r_bin_inc = [platform_inc, yxml_inc, include_directories('mangling', 'format')]
 

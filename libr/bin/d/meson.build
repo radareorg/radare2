@@ -149,9 +149,11 @@ sdb_files = [
   'WSASRV'
 ]
 
+r_bin_d_sources = []
+
 foreach file : sdb_files
   outfile = '@0@.sdb'.format(file)
-  custom_target(outfile,
+  target = custom_target(outfile,
     input: 'dll/@0@.sdb.txt'.format(file),
     output: outfile,
     command: sdb_gen_cmd,
@@ -160,6 +162,7 @@ foreach file : sdb_files
     install: true,
     install_dir: join_paths(r2_sdb, 'format/dll')
   )
+  r_bin_d_sources += target
 endforeach
 
 format_files = [

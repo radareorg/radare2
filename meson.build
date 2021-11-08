@@ -109,7 +109,15 @@ if get_option('static_runtime')
   endif
 endif
 
+add_project_arguments('/MD', language: 'c')
+
 if cc.get_id() == 'clang-cl'
+  if get_option('debug')
+    add_project_arguments('/fsanitize=address', language: 'c')
+    add_project_arguments('/Zi', language: 'c')
+    add_project_arguments('/debug:full', language: 'c')
+    add_project_arguments('/guard:cf', language: 'c')
+  endif
   add_project_arguments('-D__STDC__=1', language: 'c')
   add_project_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
   add_project_arguments('-D_CRT_SECURE_NO_WARNINGS', language: 'c')
@@ -614,7 +622,7 @@ subdir('libr/core')
 
 # subdir('libr/anal/d')
 # subdir('libr/asm/d')
-subdir('libr/bin/d')
+# subdir('libr/bin/d')
 # subdir('libr/syscall/d')
 subdir('libr/cons/d')
 subdir('libr/magic/d')
