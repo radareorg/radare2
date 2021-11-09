@@ -365,14 +365,6 @@ static void print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t
 }
 
 static void print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t width, RAnal *anal) {
-	if (width < 8) {
-		width = 8;
-	}
-	if (width > 16) {
-		width = 16;
-	}
-	width -= 8;
-
 	width = 40;
 	RCons *cons = r_cons_singleton ();
 	r_cons_printf ("    ");
@@ -380,7 +372,6 @@ static void print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t
 		const char *pad = r_str_pad (' ', width);
 		r_cons_print (pad);
 	} else {
-		width = 40;
 		if (anal && anal->coreb.core) {
 			RCore *core = anal->coreb.core;
 			char *c = r_str_newf ("pid 1 @ 0x%" PFMT64x " @e:asm.flags=0@e:asm.lines=0@e:asm.bytes=0", offset);
