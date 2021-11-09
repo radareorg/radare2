@@ -2,6 +2,7 @@
 #include <r_io.h>
 #include <r_anal.h>
 #include <r_util.h>
+#include <r_bin.h>
 
 const ut8 gb_license_bytes[]={
 	0xce, 0xed, 0x66, 0x66, 0xcc, 0x0d, 0x00, 0x0b, 0x03, 0x73, 0x00,
@@ -55,7 +56,51 @@ static RMBCType get_mbc_type (RIO *io) {
 	return (RMBCType)mbc_type;
 }
 
-static int bgd_call (void *user, const char *input) {
+// tries to figure out blocksize of a bb starting at specified offset
+static ut64 gbd_discover_bblen_at (RAnal *anal, ut64 addr, ut64 base, ut8 *rombank) {
+	if (!anal || !rombank || (addr - base > 0x3fff)) {
+		return 0;
+	}
+	RAnalOp op;
+	r_anal_op_init (&op);
+	ut64 bb_len = 0;
+	do {
+		r_anal_op_fini (&op);
+		r_anal_op_init (&op);
+		const ut64 off = addr - base + bb_len;
+		if (off > 0x3fff) {
+			break;
+		}
+		const int len = r_anal_op (anal, &op, addr + bb_len, &rombank[off], 0x4000 - off, R_ANAL_OP_MASK_BASIC);
+		if (len < 1) {
+			break;
+		}
+		bb_len += len;
+	} while (!op.eob);
+	r_anal_op_fini (&op);
+	return bb_len;
+}
+
+static void gbd_anal_mbc3_rom (RCore *core) {
+	eprintf ("Start analyzing mbc3 rom\n");
+	RBinAddr *gb_main = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN);
+	if (!gb_main) {
+		eprintf ("Couldn't find main (TODO: implement entrypoint analysis)\n");
+		return;
+	}
+	ut8 rombank0[0x4000];
+	if (r_io_nread_at (core->io, 0x0, rombank0, 0x4000) != 0x4000) {
+		eprintf ("Couldn't slurp rombank0 entirely\n");
+		return;
+	}
+	ut64 bb_len = gbd_discover_bblen_at (core->anal, gb_main->vaddr, 0x0ULL, rombank0);
+	if (bb_len) {
+		eprintf ("Found block at 0x%04"PFMT64x"\n", gb_main->vaddr);
+		r_core_cmdf (core, "pD %"PFMT64d" @ 0x%"PFMT64x"", bb_len, gb_main->vaddr);
+	}
+}
+
+static int gbd_call (void *user, const char *input) {
 	RCore *core = (RCore *) user;
 	if (strncmp (input, "gbd", 3)) {
 		return false;
@@ -64,16 +109,27 @@ static int bgd_call (void *user, const char *input) {
 		eprintf ("not a gb rom\n");
 		return true;
 	}
-	if (strcmp (core->anal->cur->arch, "gb")) {
-		eprintf ("wrong anal arch selected\n");
+	if (strcmp (core->anal->cur->name, "gb")) {
+		eprintf ("wrong anal arch selected (%s)\n", core->anal->cur->name);
 		return true;
 	}
 	RMBCType mbc = get_mbc_type (core->io);
-	if (mbc == GB_ROM) {
+	switch (mbc) {
+	case GB_ROM:
+	case GB_ROM_RAM:
+	case GB_ROM_RAM_BAT:
 		eprintf ("no rombanks here, nothing todo\n");
-		return true;
+		break;
+	case GB_ROM_MBC3_TIMER_BAT:
+	case GB_ROM_MBC3_TIMER_RAM_BAT:
+	case GB_ROM_MBC3:
+	case GB_ROM_MBC3_RAM:
+	case GB_ROM_MBC3_RAM_BAT:
+		gbd_anal_mbc3_rom (core);
+		break;
+	default:
+		eprintf ("mbc type is 0x%02x\n", mbc);
 	}
-	eprintf ("mbc type is 0x%02x\n", mbc);
 	return true;
 }
 
