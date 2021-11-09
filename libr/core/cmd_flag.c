@@ -74,6 +74,7 @@ static const char *help_msg_fc[] = {
 	"Usage: fc", "<flagname> [color]", " # List colors with 'ecs'",
 	"fc", " flagname", "Get current color for given flagname",
 	"fc", " flagname color", "Set color to a flag",
+	"fc.", " color", "Set color to all flags in current offset",
 	NULL
 };
 
@@ -1268,9 +1269,15 @@ rep:
 		}
 		break;
 	case 'c': // "fc"
-		if (input[1]=='?' || input[1] != ' ') {
-			r_core_cmd_help (core, help_msg_fc);
-		} else {
+		if (input[1] == '.') {
+			const char *color = r_str_trim_head_ro (input + 2);
+			const RList *list = r_flag_get_list (core->flags, core->offset);
+			RListIter *iter;
+			RFlagItem *fi;
+			r_list_foreach (list, iter, fi) {
+				r_flag_item_set_color (fi, color);
+			}
+		} else if (input[1] == ' ') {
 			RFlagItem *fi;
 			const char *ret;
 			char *arg = r_str_trim_dup (input + 2);
@@ -1287,6 +1294,8 @@ rep:
 				eprintf ("Unknown flag '%s'\n", arg);
 			}
 			free (arg);
+		} else {
+			r_core_cmd_help (core, help_msg_fc);
 		}
 		break;
 	case 'C': // "fC"
