@@ -159,12 +159,13 @@ static inline RList *sign_vars(RAnalFunction *fcn) {
 #define ISNUM(x) \
 	(x >= '0' && x <= '9')
 #define VALID_TOKEN_CHR(x) \
-	(ALPH (x) || ISNUM (x) || x == '_' || x == '*' || x == ' ')
+	(ALPH (x) || ISNUM (x) || x == '_' || x == '*' || x == ' ' || x == '.')
 static bool types_sig_valid(const char *types) {
 	// quick state machine parser to validate types being sent to tcc_compile
 	int state = 0; // before, inside, or after ()
 	char ch;
 	const char *t = types;
+	int paren_cnt = 0;
 	while ((ch = *(t++)) && state >= 0) {
 		switch (state) {
 		case 0:
@@ -175,8 +176,16 @@ static bool types_sig_valid(const char *types) {
 			}
 			break;
 		case 1:
-			if (ch == ')') {
-				state++;
+			if (ch == '(') {
+				paren_cnt++;
+			} else if (ch == ')') {
+				if (paren_cnt == 0) {
+					state++;
+				} else if (paren_cnt > 0) {
+					paren_cnt--;
+				} else {
+					state = -1;
+				}
 			} else if (!VALID_TOKEN_CHR (ch) && ch != ',') {
 				state = -1;
 			}
@@ -1028,7 +1037,11 @@ R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 }
 
 R_API bool r_sign_add_types(RAnal *a, const char *name, const char *types) {
-	r_return_val_if_fail (a && name && types && types_sig_valid (types), false);
+	r_return_val_if_fail (a && name && types, false);
+	if (!types_sig_valid (types)) {
+		eprintf ("Invalid types signature: %s\n", types);
+		return false;
+	}
 
 	bool retval = false;
 	RSignItem *it = item_new_named (a, name);
