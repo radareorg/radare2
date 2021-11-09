@@ -2010,3 +2010,27 @@ arg char ** ARGV @ rsi
 arg int ARGC @ rdi
 EOF
 RUN
+
+NAME=Types with . accepted
+FILE=-
+CMDS=<<EOF
+za foo t void sym.__isoc99_sscanf (  ..., int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg7, int64_t arg8 )
+z
+EOF
+EXPECT=<<EOF
+foo:
+  types: void sym.__isoc99_sscanf (  ..., int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg7, int64_t arg8 )
+EOF
+RUN
+
+NAME=Types with parens accepted
+FILE=-
+CMDS=<<EOF
+za foo t void sym.bsearch (const void *key, const void *base, size_t nmemb, size_t size, int (*compar)(const void *const void *))
+z
+EOF
+EXPECT=<<EOF
+foo:
+  types: void sym.bsearch (const void *key, const void *base, size_t nmemb, size_t size, int (*compar)(const void *const void *))
+EOF
+RUN
