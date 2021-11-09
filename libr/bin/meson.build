@@ -140,7 +140,9 @@ r_bin_sources = [
   'pdb/tpi.c'
 ]
 
-r_bin_sources += r_bin_d_sources
+if get_option('sdb_cgen')
+  r_bin_sources += r_bin_d_sources
+endif
 
 r_bin_inc = [platform_inc, yxml_inc, include_directories('mangling', 'format')]
 
