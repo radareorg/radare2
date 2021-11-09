@@ -109,10 +109,9 @@ if get_option('static_runtime')
   endif
 endif
 
-add_project_arguments('/MD', language: 'c')
-
 if cc.get_id() == 'clang-cl'
   if get_option('debug')
+    add_project_arguments('/MD', language: 'c')
     add_project_arguments('/fsanitize=address', language: 'c')
     add_project_arguments('/Zi', language: 'c')
     add_project_arguments('/debug:full', language: 'c')
