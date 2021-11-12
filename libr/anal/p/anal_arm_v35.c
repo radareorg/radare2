@@ -2041,6 +2041,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				size = 2;
 				break;
 			}
+		default:
+			break;
 		}
 		if (ISMEM64 (1)) {
 			if (HASMEMINDEX64 (1)) {
