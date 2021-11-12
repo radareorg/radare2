@@ -48,6 +48,7 @@ static const char *help_msg_z_slash[] = {
 static const char *help_msg_za[] = {
 	"Usage:", "za[fFM?] [args] ", "# Add zignature",
 	"za ", "zigname type params", "add zignature",
+	"zac ", "", "Compute collisions between signatures",
 	"zaf ", "[fcnname] [zigname]", "create zignature for function",
 	"zaF ", "", "generate zignatures for all functions",
 	"zaM ", "", "Same as zaF but merge signatures of same name",
