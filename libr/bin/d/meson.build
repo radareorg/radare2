@@ -9,7 +9,6 @@ sdb_files = [
   'csmfpapi',
   'csmtpapi',
   'csncdapi',
-  'dsound'
   'dsound',
   'gsprop32',
   'iertutil',
