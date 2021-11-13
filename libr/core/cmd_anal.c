@@ -1168,6 +1168,9 @@ static void var_help(RCore *core, char ch) {
 static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, PJ *pj, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
+	if (r_vector_empty (&var->accesses)) {
+		eprintf ("Warning: Variable '%s' have no references?\n", name);
+	}
 	if (pj) {
 		pj_o (pj);
 		pj_ks (pj, "name", name);
