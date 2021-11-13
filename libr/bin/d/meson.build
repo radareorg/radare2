@@ -56,7 +56,7 @@ sdb_pre_cmd = [
 foreach file : sdb_files
   infile = '@0@.sdb.txt'.format(file)
   if host_machine.system() == 'windows'
-    infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), infile)]).stdout().strip()
+    infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), 'd', infile)]).stdout().strip()
   endif
   tmp_outfile = '@0@.sdb.txt.tmp'.format(file)
   pre_sdb_txt = custom_target(tmp_outfile,
