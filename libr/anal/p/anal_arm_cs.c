@@ -2062,7 +2062,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	{
 		int disp = (int)MEMDISP64 (2);
 		char sign = disp>=0?'+':'-';
-		ut64 abs = disp>=0? MEMDISP64 (2): -MEMDISP64 (2);
+		st64 abs = disp>=0? MEMDISP64 (2): -(st64)MEMDISP64 (2);
 		int size = REGSIZE64 (0);
 		// Pre-index case
 		if (ISPREINDEX64 ()) {
