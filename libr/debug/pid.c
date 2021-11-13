@@ -17,8 +17,10 @@ R_API RDebugPid *r_debug_pid_new(const char *path, int pid, int uid, char status
 }
 
 R_API RDebugPid *r_debug_pid_free(RDebugPid *pid) {
-	free (pid->path);
-	free (pid);
+	if (pid) {
+		free (pid->path);
+		free (pid);
+	}
 	return NULL;
 }
 

@@ -223,8 +223,11 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 }
 
 static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATION *mbi) {
-	TCHAR f_name[MAX_PATH + 1];
-	DWORD len = r_w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
+	TCHAR *f_name = calloc (MAX_PATH + 1, 2); // [MAX_PATH + 1];
+	if (!f_name) {
+		return;
+	}
+	DWORD len = 0; // r_w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
 	if (len > 0) {
 		char *f_name_ = r_sys_conv_win_to_utf8 (f_name);
 		add_map_reg (map_list, f_name_, mbi);
@@ -241,15 +244,15 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	}
 	SYSTEM_INFO si = {0};
 	LPVOID cur_addr;
-	MEMORY_BASIC_INFORMATION mbi;
+	MEMORY_BASIC_INFORMATION mbi = {0};
 	RWinModInfo mod_inf = {0};
-	RList *map_list = r_list_newf ((RListFree)r_debug_map_free), *mod_list = NULL;
+	RList *map_list = r_list_newf ((RListFree)r_debug_map_free);
 	RW32Dw *wrap = dbg->user;
 
 	GetSystemInfo (&si);
 	cur_addr = si.lpMinimumApplicationAddress;
 	/* get process modules list */
-	mod_list = r_w32_dbg_modules (dbg);
+	RList *mod_list = NULL; // r_w32_dbg_modules (dbg);
 	/* process memory map */
 	while (cur_addr < si.lpMaximumApplicationAddress &&
 		VirtualQueryEx (wrap->pi.hProcess, cur_addr, &mbi, sizeof (mbi)) != 0) {

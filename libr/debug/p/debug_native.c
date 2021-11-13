@@ -1135,7 +1135,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	return list;
 }
 
-static RList *r_debug_native_modules_get (RDebug *dbg) {
+static RList *r_debug_native_modules_get(RDebug *dbg) {
 	char *lastname = NULL;
 	RDebugMap *map;
 	RListIter *iter, *iter2;
