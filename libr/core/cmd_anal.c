@@ -1168,6 +1168,17 @@ static void var_help(RCore *core, char ch) {
 static void var_accesses_list(RAnalFunction *fcn, RAnalVar *var, PJ *pj, int access_type, const char *name) {
 	RAnalVarAccess *acc;
 	bool first = true;
+	bool any = false;
+	r_vector_foreach (&var->accesses, acc) {
+		if (!(acc->type & access_type)) {
+			continue;
+		}
+		any = true;
+		break;
+	}
+	if (!any) {
+		return;
+	}
 	if (pj) {
 		pj_o (pj);
 		pj_ks (pj, "name", name);
