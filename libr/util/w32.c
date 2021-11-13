@@ -161,11 +161,19 @@ R_API NTSTATUS r_w32_NtQueryInformationThread(HANDLE a, ULONG b, PVOID c, ULONG 
 }
 
 // Requires Windows XP
-R_API DWORD r_w32_GetModuleFileNameEx(HANDLE a, HMODULE b, LPTSTR c, DWORD d) {
-	static DWORD (*x)(HANDLE, HMODULE, LPTSTR, DWORD) = NULL;
+#if 0
+DWORD GetModuleFileNameExA(
+  [in]           HANDLE  hProcess,
+  [in, optional] HMODULE hModule,
+  [out]          LPSTR   lpFilename,
+  [in]           DWORD   nSize
+);
+#endif
+R_API DWORD r_w32_GetModuleFileNameEx(HANDLE a, HMODULE b, LPSTR c, DWORD d) {
+	static DWORD (*x)(HANDLE, HMODULE, LPSTR, DWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("psapi", "psapi.dll");
-		x = (DWORD (*)(HANDLE, HMODULE, LPTSTR, DWORD))
+		x = (DWORD (*)(HANDLE, HMODULE, LPSTR, DWORD))
 			GetProcAddress (lib, W32_TCALL ("GetModuleFileNameEx"));
 	}
 	return x? x (a, b, c, d): 0;
@@ -190,11 +198,11 @@ R_API BOOL r_w32_QueryFullProcessImageName(HANDLE h, DWORD p, LPTSTR s, PDWORD l
 	return x? x (h, p, s, l): 0;
 }
 
-R_API DWORD r_w32_GetMappedFileName(HANDLE h, LPVOID p, LPTSTR s, DWORD l) {
-	static DWORD (*x)(HANDLE, LPVOID, LPTSTR, DWORD) = NULL;
+R_API DWORD r_w32_GetMappedFileName(HANDLE h, LPVOID p, LPSTR s, DWORD l) {
+	static DWORD (*x)(HANDLE, LPVOID, LPSTR, DWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("psapi", "psapi.dll");
-		x = (DWORD (*)(HANDLE, LPVOID, LPTSTR, DWORD))
+		x = (DWORD (*)(HANDLE, LPVOID, LPSTR, DWORD))
 			GetProcAddress (lib, W32_TCALL ("GetMappedFileName"));
 	}
 	return x? x (h, p, s, l): 0;

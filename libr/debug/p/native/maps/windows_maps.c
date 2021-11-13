@@ -9,27 +9,36 @@ typedef struct {
 	int sect_count;
 } RWinModInfo;
 
-static char *get_map_type(MEMORY_BASIC_INFORMATION *mbi) {
-	char *type;
-	switch (mbi->Type) {
-	case MEM_IMAGE:
-		type = "IMAGE";
-		break;
-	case MEM_MAPPED:
-		type = "MAPPED";
-		break;
-	case MEM_PRIVATE:
-		type = "PRIVATE";
-		break;
-	default:
-		type = "UNKNOWN";
+static const char *get_map_type(MEMORY_BASIC_INFORMATION *mbi) {
+	const char *type = NULL;
+	if (mbi) {
+		switch (mbi->Type) {
+		case MEM_IMAGE:
+			type = "IMAGE";
+			break;
+		case MEM_MAPPED:
+			type = "MAPPED";
+			break;
+		case MEM_PRIVATE:
+			type = "PRIVATE";
+			break;
+		default:
+			type = "UNKNOWN";
+			break;
+		}
 	}
 	return type;
 }
 
 static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, MEMORY_BASIC_INFORMATION *mbi) {
 	int perm;
-	char *map_type = get_map_type (mbi);
+	const char *map_type = get_map_type (mbi);
+	if (!map_type) {
+		map_type = NULL;
+	}
+	if (!name) {
+		name = "";
+	}
 
 	switch (mbi->Protect) {
 	case PAGE_EXECUTE:
@@ -56,7 +65,7 @@ static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, ME
 	default:
 		perm = 0;
 	}
-	char *map_name = r_str_newf ("%-8s %s", map_type, name);
+	char *map_name = name? r_str_newf ("%s %s", map_type, name): strdup (map_type);
 	if (!map_name) {
 		return NULL;
 	}

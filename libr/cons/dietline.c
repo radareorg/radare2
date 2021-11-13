@@ -297,7 +297,9 @@ do_it_again:
 	if (irInBuf.EventType == KEY_EVENT) {
 		if (irInBuf.Event.KeyEvent.bKeyDown) {
 			if (irInBuf.Event.KeyEvent.uChar.UnicodeChar) {
-				char *tmp = r_sys_conv_win_to_utf8_l ((PTCHAR)&irInBuf.Event.KeyEvent.uChar, 1);
+				ut8 chbuf[4] = {0};
+				memcpy (chbuf, &(irInBuf.Event.KeyEvent.uChar), 2);
+				char *tmp = r_sys_conv_win_to_utf8_l ((PTCHAR)&chbuf, 1);
 				if (tmp) {
 					r_str_ncpy (buf, tmp, sizeof (buf));
 					free (tmp);

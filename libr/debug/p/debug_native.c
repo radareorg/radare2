@@ -1162,6 +1162,9 @@ static RList *r_debug_native_modules_get(RDebug *dbg) {
 	r_list_foreach_safe (list, iter, iter2, map) {
 		const char *file = map->file;
 		if (!map->file) {
+			if (!map->name) {
+				map->name = strdup ("");
+			}
 			file = map->file = strdup (map->name);
 		}
 		must_delete = true;

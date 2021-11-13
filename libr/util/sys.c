@@ -497,7 +497,7 @@ R_API char *r_sys_getenv(const char *key) {
 	if (!key) {
 		return NULL;
 	}
-	envbuf = (LPTSTR)malloc (sizeof (TCHAR) * TMP_BUFSIZE);
+	envbuf = (LPTSTR)calloc (sizeof (TCHAR), TMP_BUFSIZE);
 	if (!envbuf) {
 		goto err_r_sys_get_env;
 	}
@@ -1074,9 +1074,9 @@ R_API int r_sys_run_rop(const ut8 *buf, int len) {
 // w32 specific API
 R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 	const DWORD maxlength = MAX_PATH;
-	TCHAR filename[MAX_PATH];
+	char *filename = calloc ((MAX_PATH * 2) + 2, 1);
 	char *result = NULL;
-	DWORD length = r_w32_GetModuleFileNameEx (processHandle, NULL, filename, maxlength);
+	DWORD length = r_w32_GetModuleFileNameEx (processHandle, NULL, (LPSTR)filename, maxlength);
 	if (length == 0) {
 		// Upon failure fallback to GetProcessImageFileName
 		length = r_w32_GetProcessImageFileName (processHandle, filename, maxlength);
@@ -1109,8 +1109,7 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 			eprintf ("r_sys_pid_to_path: Error allocating memory\n");
 			return NULL;
 		}
-		strncpy (tmp, name, length);
-		tmp[length] = '\0';
+		r_str_ncpy (tmp, name, length);
 		TCHAR device[MAX_PATH];
 		TCHAR drv[3] = {'A',':', 0};
 		for (; drv[0] <= 'Z'; drv[0]++) {
@@ -1149,6 +1148,7 @@ R_API char *r_w32_handle_to_path(HANDLE processHandle) {
 	} else {
 		result = r_sys_conv_win_to_utf8 (filename);
 	}
+	free (filename);
 	return result;
 }
 #endif
