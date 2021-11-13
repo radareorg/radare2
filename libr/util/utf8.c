@@ -618,12 +618,19 @@ R_API int r_isprint(const RRune c) {
 
 #if __WINDOWS__
 R_API char *r_utf16_to_utf8_l(const wchar_t *wc, int len) {
-	if (!wc || !len || len < -1) {
+	if (!wc) {
 		return NULL;
 	}
-	char *rutf8 = NULL;
-	int csize;
-
+	if (len < 0) {
+		len = wcslen (wc);
+	}
+	int csize = 2 + ((len > 0)? len * 2: 0);
+	char *rutf8 = calloc (csize, 2);
+	if (!rutf8) {
+		return NULL;
+	}
+	WideCharToMultiByte (CP_UTF8, 0, wc, len, rutf8, csize, NULL, NULL);
+#if 0
 	if ((csize = WideCharToMultiByte (CP_UTF8, 0, wc, len, NULL, 0, NULL, NULL))) {
 		++csize;
 		if ((rutf8 = malloc (csize))) {
@@ -633,19 +640,22 @@ R_API char *r_utf16_to_utf8_l(const wchar_t *wc, int len) {
 			}
 		}
 	}
+#endif
 	return rutf8;
 }
 
 R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
-	if (!cstring || !len || len < -1) {
-		return NULL;
+	r_return_val_if_fail (cstring && len >= -1, NULL);
+
+	if (len == -1) {
+		len = strlen (cstring);
 	}
 	wchar_t *rutf16 = NULL;
 	int wcsize;
 
 	if ((wcsize = MultiByteToWideChar (CP_UTF8, 0, cstring, len, NULL, 0))) {
-		++wcsize;
-		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
+		wcsize ++;
+		if ((rutf16 = (wchar_t *) calloc (wcsize + 1, sizeof (wchar_t)))) {
 			MultiByteToWideChar (CP_UTF8, 0, cstring, len, rutf16, wcsize);
 			if (len != -1) {
 				rutf16[wcsize - 1] = L'\0';
@@ -656,7 +666,7 @@ R_API wchar_t *r_utf8_to_utf16_l(const char *cstring, int len) {
 }
 
 R_API char *r_utf8_to_acp_l(const char *str, int len) {
-	if (!str || !len || len < -1) {
+	if (!str || len < -1) {
 		return NULL;
 	}
 	char *acp = NULL;
@@ -670,8 +680,9 @@ R_API char *r_utf8_to_acp_l(const char *str, int len) {
 				rutf16[wcsize - 1] = L'\0';
 			}
 			if ((csize = WideCharToMultiByte (CP_ACP, 0, rutf16, wcsize, NULL, 0, NULL, NULL))) {
-				++csize;
-				if ((acp = malloc (csize))) {
+				csize ++;
+				acp = malloc (csize);
+				if (acp) {
 					WideCharToMultiByte (CP_ACP, 0, rutf16, wcsize, acp, csize, NULL, NULL);
 					if (len != -1) {
 						acp[csize - 1] = '\0';
@@ -685,18 +696,17 @@ R_API char *r_utf8_to_acp_l(const char *str, int len) {
 }
 
 R_API char *r_acp_to_utf8_l(const char *str, int len) {
-	if (!str || !len || len < -1) {
-		return NULL;
+	r_return_val_if_fail (str && len >= -1, NULL);
+	if (len == -1) {
+		len = strlen (str);
 	}
 	int wcsize;
 	if ((wcsize = MultiByteToWideChar (CP_ACP, 0, str, len, NULL, 0))) {
 		wchar_t *rutf16;
-		++wcsize;
-		if ((rutf16 = (wchar_t *) calloc (wcsize, sizeof (wchar_t)))) {
+		wcsize++;
+		if ((rutf16 = (wchar_t *) calloc (wcsize + 1, sizeof (wchar_t)))) {
 			MultiByteToWideChar (CP_ACP, 0, str, len, rutf16, wcsize);
-			if (len != -1) {
-				rutf16[wcsize - 1] = L'\0';
-			}
+			rutf16[wcsize - 1] = L'\0';
 			char *ret = r_utf16_to_utf8_l (rutf16, wcsize);
 			free (rutf16);
 			return ret;

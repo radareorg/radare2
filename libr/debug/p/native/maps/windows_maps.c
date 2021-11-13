@@ -9,27 +9,36 @@ typedef struct {
 	int sect_count;
 } RWinModInfo;
 
-static char *get_map_type(MEMORY_BASIC_INFORMATION *mbi) {
-	char *type;
-	switch (mbi->Type) {
-	case MEM_IMAGE:
-		type = "IMAGE";
-		break;
-	case MEM_MAPPED:
-		type = "MAPPED";
-		break;
-	case MEM_PRIVATE:
-		type = "PRIVATE";
-		break;
-	default:
-		type = "UNKNOWN";
+static const char *get_map_type(MEMORY_BASIC_INFORMATION *mbi) {
+	const char *type = NULL;
+	if (mbi) {
+		switch (mbi->Type) {
+		case MEM_IMAGE:
+			type = "IMAGE";
+			break;
+		case MEM_MAPPED:
+			type = "MAPPED";
+			break;
+		case MEM_PRIVATE:
+			type = "PRIVATE";
+			break;
+		default:
+			type = "UNKNOWN";
+			break;
+		}
 	}
 	return type;
 }
 
 static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, MEMORY_BASIC_INFORMATION *mbi) {
 	int perm;
-	char *map_type = get_map_type (mbi);
+	const char *map_type = get_map_type (mbi);
+	if (!map_type) {
+		map_type = NULL;
+	}
+	if (!name) {
+		name = "";
+	}
 
 	switch (mbi->Protect) {
 	case PAGE_EXECUTE:
@@ -56,7 +65,7 @@ static RDebugMap *add_map(RList *list, const char *name, ut64 addr, ut64 len, ME
 	default:
 		perm = 0;
 	}
-	char *map_name = r_str_newf ("%-8s %s", map_type, name);
+	char *map_name = name? r_str_newf ("%s %s", map_type, name): strdup (map_type);
 	if (!map_name) {
 		return NULL;
 	}
@@ -223,8 +232,11 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 }
 
 static void proc_mem_map(HANDLE h_proc, RList *map_list, MEMORY_BASIC_INFORMATION *mbi) {
-	TCHAR f_name[MAX_PATH + 1];
-	DWORD len = r_w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
+	TCHAR *f_name = calloc (MAX_PATH + 1, 2); // [MAX_PATH + 1];
+	if (!f_name) {
+		return;
+	}
+	DWORD len = 0; // r_w32_GetMappedFileName (h_proc, mbi->BaseAddress, f_name, MAX_PATH);
 	if (len > 0) {
 		char *f_name_ = r_sys_conv_win_to_utf8 (f_name);
 		add_map_reg (map_list, f_name_, mbi);
@@ -241,15 +253,15 @@ R_API RList *r_w32_dbg_maps(RDebug *dbg) {
 	}
 	SYSTEM_INFO si = {0};
 	LPVOID cur_addr;
-	MEMORY_BASIC_INFORMATION mbi;
+	MEMORY_BASIC_INFORMATION mbi = {0};
 	RWinModInfo mod_inf = {0};
-	RList *map_list = r_list_newf ((RListFree)r_debug_map_free), *mod_list = NULL;
+	RList *map_list = r_list_newf ((RListFree)r_debug_map_free);
 	RW32Dw *wrap = dbg->user;
 
 	GetSystemInfo (&si);
 	cur_addr = si.lpMinimumApplicationAddress;
 	/* get process modules list */
-	mod_list = r_w32_dbg_modules (dbg);
+	RList *mod_list = NULL; // r_w32_dbg_modules (dbg);
 	/* process memory map */
 	while (cur_addr < si.lpMaximumApplicationAddress &&
 		VirtualQueryEx (wrap->pi.hProcess, cur_addr, &mbi, sizeof (mbi)) != 0) {

@@ -309,18 +309,18 @@ int winkd_wait_packet(WindCtx *ctx, const uint32_t type, kd_packet_t **p) {
 R_PACKED (
 	typedef struct {
 	char tag[4];
-	uint32_t start_vpn;
-	uint32_t end_vpn;
-	uint32_t parent;
-	uint32_t left;
-	uint32_t right;
-	uint32_t flags;
+	ut32 start_vpn;
+	ut32 end_vpn;
+	ut32 parent;
+	ut32 left;
+	ut32 right;
+	ut32 flags;
 }) mmvad_short;
 
 int winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent) {
 	mmvad_short entry = { { 0 } };
 	ut64 start, end;
-	int prot;
+	ut32 prot;
 
 	if (winkd_read_at (ctx, (uint8_t *) &entry, address - 0x4, sizeof(mmvad_short)) != sizeof (mmvad_short)) {
 		eprintf ("0x%"PFMT64x " Could not read the node!\n", (ut64) address);

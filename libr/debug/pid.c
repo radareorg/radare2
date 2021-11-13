@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_debug.h>
 
@@ -7,7 +7,7 @@ R_API RDebugPid *r_debug_pid_new(const char *path, int pid, int uid, char status
 	if (!p) {
 		return NULL;
 	}
-	p->path = strdup (path);
+	p->path = strdup (path? path: "");
 	p->pid = pid;
 	p->uid = uid;
 	p->status = status;
@@ -17,8 +17,10 @@ R_API RDebugPid *r_debug_pid_new(const char *path, int pid, int uid, char status
 }
 
 R_API RDebugPid *r_debug_pid_free(RDebugPid *pid) {
-	free (pid->path);
-	free (pid);
+	if (pid) {
+		free (pid->path);
+		free (pid);
+	}
 	return NULL;
 }
 
