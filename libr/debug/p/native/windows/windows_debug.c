@@ -422,7 +422,7 @@ static char *__get_file_name_from_handle(HANDLE handle_file) {
 	if (!handle_file_map) {
 		goto err_get_file_name_from_handle;
 	}
-	filename = malloc ((MAX_PATH + 1) * sizeof (TCHAR));
+	filename = calloc ((MAX_PATH + 1), sizeof (TCHAR));
 	if (!filename) {
 		goto err_get_file_name_from_handle;
 	}
@@ -432,12 +432,12 @@ static char *__get_file_name_from_handle(HANDLE handle_file) {
 		R_FREE (filename);
 		goto err_get_file_name_from_handle;
 	}
-	TCHAR temp_buffer[512];
+	TCHAR temp_buffer[MAX_PATH + 1];
 	/* Translate path with device name to drive letters. */
 	if (!GetLogicalDriveStrings (_countof (temp_buffer) - 1, temp_buffer)) {
 		goto err_get_file_name_from_handle;
 	}
-	TCHAR name[MAX_PATH];
+	TCHAR name[MAX_PATH + 1];
 	TCHAR drive[3] = {' ', ':', 0};
 	LPTSTR cur_drive = temp_buffer;
 	while (*cur_drive) {
@@ -449,7 +449,7 @@ static char *__get_file_name_from_handle(HANDLE handle_file) {
 			if (name_length < MAX_PATH) {
 				if (_tcsnicmp (filename, name, name_length) == 0
 					&& *(filename + name_length) == '\\') {
-					TCHAR temp_filename[MAX_PATH];
+					TCHAR temp_filename[MAX_PATH + 1];
 					_sntprintf_s (temp_filename, MAX_PATH, _TRUNCATE, TEXT ("%s%s"),
 						drive, filename + name_length);
 					_tcsncpy (filename, temp_filename,
@@ -479,8 +479,9 @@ err_get_file_name_from_handle:
 static char *__resolve_path(HANDLE ph, HANDLE mh) {
 	// TODO: add maximum path length support
 	const DWORD maxlength = MAX_PATH;
-	TCHAR filename[MAX_PATH];
-	DWORD length = r_w32_GetModuleFileNameEx (ph, mh, filename, maxlength);
+	TCHAR *filename = calloc (MAX_PATH + 1, sizeof (TCHAR));
+	DWORD length;
+	length = r_w32_GetModuleFileNameEx (ph, mh, filename, maxlength);
 	if (length > 0) {
 		return r_sys_conv_win_to_utf8 (filename);
 	}
@@ -516,6 +517,7 @@ static char *__resolve_path(HANDLE ph, HANDLE mh) {
 			}
 		}
 	}
+	free (filename);
 	return ret;
 }
 

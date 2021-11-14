@@ -170,11 +170,22 @@ DWORD GetModuleFileNameExA(
 );
 #endif
 R_API DWORD r_w32_GetModuleFileNameEx(HANDLE a, HMODULE b, LPSTR c, DWORD d) {
-	static DWORD (*x)(HANDLE, HMODULE, LPSTR, DWORD) = NULL;
+	// requires windows XP, and its important to note its STDCALL for 32bit compat
+	// return GetModuleFileNameExA (a,b,c,d);
+	static DWORD (__stdcall *x)(HANDLE, HMODULE, LPSTR, DWORD) = NULL; // &GetModuleFileNameExA;
 	if (!x) {
-		HANDLE lib = w32_loadlib ("psapi", "psapi.dll");
-		x = (DWORD (*)(HANDLE, HMODULE, LPSTR, DWORD))
-			GetProcAddress (lib, W32_TCALL ("GetModuleFileNameEx"));
+		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
+		if (lib != INVALID_HANDLE_VALUE) {
+			x = (DWORD (__stdcall *)(HANDLE, HMODULE, LPSTR, DWORD))
+				GetProcAddress (lib, W32_TCALL ("GetModuleFileNameEx"));
+		}
+		if (!x) {
+			lib = w32_loadlib ("psapi", "psapi.dll");
+			if (lib != INVALID_HANDLE_VALUE) {
+				x = (DWORD (__stdcall *)(HANDLE, HMODULE, LPSTR, DWORD))
+					GetProcAddress (lib, W32_TCALL ("GetModuleFileNameEx"));
+			}
+		}
 	}
 	return x? x (a, b, c, d): 0;
 }
@@ -199,10 +210,10 @@ R_API BOOL r_w32_QueryFullProcessImageName(HANDLE h, DWORD p, LPTSTR s, PDWORD l
 }
 
 R_API DWORD r_w32_GetMappedFileName(HANDLE h, LPVOID p, LPSTR s, DWORD l) {
-	static DWORD (*x)(HANDLE, LPVOID, LPSTR, DWORD) = NULL;
+	static DWORD (__stdcall *x)(HANDLE, LPVOID, LPSTR, DWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("psapi", "psapi.dll");
-		x = (DWORD (*)(HANDLE, LPVOID, LPSTR, DWORD))
+		x = (DWORD (__stdcall *)(HANDLE, LPVOID, LPSTR, DWORD))
 			GetProcAddress (lib, W32_TCALL ("GetMappedFileName"));
 	}
 	return x? x (h, p, s, l): 0;
@@ -218,10 +229,10 @@ R_API DWORD r_w32_NtQueryObject(HANDLE a, ULONG b, PVOID c, ULONG d, PULONG e) {
 }
 
 R_API DWORD r_w32_GetProcessImageFileName(HANDLE a, LPSTR b, DWORD c) {
-	static DWORD (*x)(HANDLE,LPSTR,DWORD) = NULL; 
+	static DWORD (__stdcall *x)(HANDLE,LPSTR,DWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("psapi", "psapi.dll");
-		x = (DWORD (*)(HANDLE, LPSTR, DWORD))
+		x = (DWORD (__stdcall *)(HANDLE, LPSTR, DWORD))
 			GetProcAddress (lib, W32_TCALL ("GetProcessImageFileName"));
 	}
 	return x ? x (a, b, c): 0;
