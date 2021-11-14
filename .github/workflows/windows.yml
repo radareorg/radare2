@@ -27,7 +27,7 @@ jobs:
     - name: Build with meson + ninja
       shell: cmd
       run: |
-        preconfigure
+        REM preconfigure
         configure
         make
   w32-meson:
