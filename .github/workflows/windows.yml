@@ -7,6 +7,29 @@ on:
   pull_request:
 
 jobs:
+  w64-make:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Preparing nmake
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja r2pipe wget
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
+      id: r2v
+    - name: Build with meson + ninja
+      shell: cmd
+      run: |
+        preconfigure
+        configure
+        make
   w32-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-latest
@@ -48,28 +71,6 @@ jobs:
 #      with:
 #        name: radare2-w32-installer-git.exe
 #        path: radare2-win-installer\Output\radare2.exe
-  w64-make:
-    runs-on: windows-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - name: Preparing nmake
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install meson ninja r2pipe wget
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
-      id: r2v
-    - name: Build with meson + ninja
-      run: |
-        preconfigure
-        configure
-        make
   w64-meson:
     runs-on: windows-latest
     steps:
