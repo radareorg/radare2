@@ -155,8 +155,9 @@ foreach file : sdb_files
   if get_option('sdb_cgen')
     outfile = '@0@.c'.format(file)
     gen_cmd = sdb_gen_cmd_cgen
-    ofile = join_paths(meson.current_source_dir(), 'dll', '@0@.sdb.txt'.format(file))
-  r_bin_d_sources += ofile # target
+    # outfile = join_paths(meson.current_source_dir(), 'dll', '@0@.sdb.txt'.format(file))
+    # XXX cgen builds not working well yet
+    r_bin_d_sources += outfile
   else
     outfile = '@0@.sdb'.format(file)
     gen_cmd = sdb_gen_cmd
