@@ -28,8 +28,8 @@ jobs:
       shell: cmd
       run: |
         REM preconfigure
-        configure
-        make
+        call configure
+        call make
   w32-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-latest
