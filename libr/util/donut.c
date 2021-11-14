@@ -80,11 +80,11 @@ R_API char *r_str_donut(int osize) {
 	}
 	o[sizeof (o) - 1] = 0;
 	if (osize == 0)  {
-		A += 0.03;
-		B += 0.02;
+		A += 0.03f;
+		B += 0.02f;
 	} else {
-		A += 0.0000;
-		B += 0.01;
+		A += 0.0f;
+		B += 0.01f;
 	}
 	char *r = strdup (o);
 	r_str_trim_tail (r);

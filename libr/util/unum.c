@@ -178,13 +178,13 @@ R_API ut64 r_num_from_ternary(const char *inp) {
 	int pos = strlen (inp);
 	ut64 fr = 0;
 	for (p = inp; *p ; p++, pos--) {
-		int n012 = 0;
+		ut64 n012 = 0;
 		switch (*p) {
 		case '0':
 		case '1':
 		case '2':
 			n012 = *p - '0';
-			fr += n012 * pow (3, pos - 1);
+			fr += (ut64)(n012 * pow (3, pos - 1));
 			break;
 		}
 	}
