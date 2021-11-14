@@ -63,7 +63,7 @@ static int  jdh8Disass (RAsmOp *op, const ut8 *buf, int len) {
 		if (rlen == 1) {
 			buf_asm = sdb_fmt ("jnz %c", reg[(low & 7)); break;
 		else {
-			buf_asm = sdb_fmt ("jnz 0x%02d", buf[1]); break;
+			buf_asm = sdb_fmt ("jnz 0x%02x", buf[1]); break;
 		}
 	case 7: 
 		if ( low & 8) {
