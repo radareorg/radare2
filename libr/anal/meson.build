@@ -162,13 +162,11 @@ r_anal_sources += [
   '../asm/arch/arm/v35arm64/arch-arm64/disassembler/sysregs.c'
 ]
 incdirs += [
-    '../asm/arch/arm/v35arm64/arch-arm64/disassembler',
+  '../asm/arch/arm/v35arm64/arch-arm64/disassembler',
 ]
 endif
 
-if get_option('sdb_cgen')
-  r_anal_sources += r_anal_d_sources
-endif
+r_anal_sources += r_anal_d_sources
 
 r_anal_inc = [
   platform_inc,
