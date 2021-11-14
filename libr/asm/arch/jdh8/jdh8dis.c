@@ -11,9 +11,9 @@ static const int jdh_len[16] = {
 static const char reg[6] = {'A', 'B', 'C', 'D', 'L', 'H'};
 
 
-static int i4004_get_ins_len (ut8 hex) {
+static int jdh_get_ins_len (ut8 hex) {
 	ut8 high = (hex & 0xf0)>>4;
-	int ret = i4004_ins_len[high];
+	int ret = jdh_len[high];
 	if (ret == 3)
 		ret = (hex & 8) ? 2 : 3;
 	if (ret == 1)
@@ -22,7 +22,7 @@ static int i4004_get_ins_len (ut8 hex) {
 }
 
 static int  jdh8Disass (RAsmOp *op, const ut8 *buf, int len) {
-	int rlen = i4004_get_ins_len (*buf);
+	int rlen = jdh_get_ins_len (*buf);
 	ut8 high = (*buf & 0xf0) >> 4;
 	ut8 low = (*buf & 0xf);
 	const char *buf_asm = "invalid";
