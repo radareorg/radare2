@@ -693,31 +693,33 @@ R_API RList *r_bin_get_libs(RBin *bin) {
 	return o ? o->libs : NULL;
 }
 
-static RList *relocs_rbtree2list(RBNode *root) {
-	RList *res = r_list_new ();
-	RBinReloc *reloc;
-	RBIter it;
-
-	r_rbtree_foreach (root, it, reloc, RBinReloc, vrb) {
-		r_list_append (res, reloc);
+static RList *relocs_rbtree2list(RRBTree *tree) {
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
 	}
-	return res;
+	RRBNode *node = r_crbtree_first_node (tree);
+	while (node) {
+		r_list_append (ret, node->data);
+		node = r_rbnode_next (node);
+	}
+	return ret;
 }
 
-R_API RBNode *r_bin_patch_relocs(RBin *bin) {
+R_API RRBTree *r_bin_patch_relocs(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o? r_bin_object_patch_relocs (bin, o): NULL;
 }
 
-// return a list of <const RBinReloc> that needs to be freed by the caller
+// return a list of RBinReloc that needs to be freed by the caller
 R_API RList *r_bin_patch_relocs_list(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
-	RBNode *root = r_bin_patch_relocs (bin);
-	return root? relocs_rbtree2list (root): NULL;
+	RRBTree *tree = r_bin_patch_relocs (bin);
+	return tree? relocs_rbtree2list (tree): NULL;
 }
 
-R_API RBNode *r_bin_get_relocs(RBin *bin) {
+R_API RRBTree *r_bin_get_relocs(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? o->relocs : NULL;
@@ -726,8 +728,8 @@ R_API RBNode *r_bin_get_relocs(RBin *bin) {
 // return a list of <const RBinReloc> that needs to be freed by the caller
 R_API RList *r_bin_get_relocs_list(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
-	RBNode *root = r_bin_get_relocs (bin);
-	return root? relocs_rbtree2list (root): NULL;
+	RRBTree *tree = r_bin_get_relocs (bin);
+	return tree? relocs_rbtree2list (tree): NULL;
 }
 
 R_API RList *r_bin_get_sections(RBin *bin) {

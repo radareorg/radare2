@@ -98,9 +98,9 @@ struct getreloc_t {
         int size;
 };
 
-static int getreloc_tree(const void *user, const RBNode *n, void *user2) {
-        struct getreloc_t *gr = (struct getreloc_t *)user;
-        const RBinReloc *r = container_of (n, const RBinReloc, vrb);
+static int getreloc_tree(void *incoming, void *in, void *user) {
+        struct getreloc_t *gr = (struct getreloc_t *)incoming;
+        RBinReloc *r = (RBinReloc *)in;
         if ((r->vaddr >= gr->vaddr) && (r->vaddr < (gr->vaddr + gr->size))) {
                 return 0;
         }
@@ -117,13 +117,12 @@ R_API RBinReloc *r_core_getreloc(RCore *core, ut64 addr, int size) {
         if (size < 1 || addr == UT64_MAX) {
                 return NULL;
         }
-        RBNode *relocs = r_bin_get_relocs (core->bin);
+        RRBTree *relocs = r_bin_get_relocs (core->bin);
         if (!relocs) {
                 return NULL;
         }
         struct getreloc_t gr = { .vaddr = addr, .size = size };
-        RBNode *res = r_rbtree_find (relocs, &gr, getreloc_tree, NULL);
-        return res? container_of (res, RBinReloc, vrb): NULL;
+        return r_crbtree_find (relocs, &gr, getreloc_tree, NULL);
 }
 
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
