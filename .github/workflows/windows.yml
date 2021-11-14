@@ -30,6 +30,11 @@ jobs:
         REM preconfigure
         call configure
         call make
+    - name: Test executable
+      shell: cmd
+      run: |
+        cd prefix\bin
+        radare2 -v
   w32-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-latest
