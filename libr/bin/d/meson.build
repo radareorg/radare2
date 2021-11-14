@@ -157,7 +157,6 @@ foreach file : sdb_files
     gen_cmd = sdb_gen_cmd_cgen
     # outfile = join_paths(meson.current_source_dir(), 'dll', '@0@.sdb.txt'.format(file))
     # XXX cgen builds not working well yet
-    r_bin_d_sources += outfile
   else
     outfile = '@0@.sdb'.format(file)
     gen_cmd = sdb_gen_cmd
@@ -171,6 +170,9 @@ foreach file : sdb_files
     install: true,
     install_dir: join_paths(r2_sdb, join_paths('format', 'dll'))
   )
+  if get_option('sdb_cgen')
+    r_bin_d_sources += target
+  endif
 endforeach
 
 format_files = [

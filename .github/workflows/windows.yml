@@ -7,6 +7,34 @@ on:
   pull_request:
 
 jobs:
+  w64-make:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+    - name: Preparing nmake
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install meson ninja r2pipe wget
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
+      id: r2v
+    - name: Build with meson + ninja
+      shell: cmd
+      run: |
+        REM preconfigure
+        call configure
+        call make
+    - name: Test executable
+      shell: cmd
+      run: |
+        cd prefix\bin
+        radare2 -v
   w32-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-latest
@@ -26,7 +54,7 @@ jobs:
       run: |
         .github\vsdevenv.ps1
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w32 build
-        ninja -C build
+        ninja -C build -j 2
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
@@ -72,7 +100,7 @@ jobs:
         bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "x86_64"
         # meson_options: --default-library=shared|static -Dstatic_runtime=true --backend vs2019
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64 build
-        ninja -C build
+        ninja -C build -j 2
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64

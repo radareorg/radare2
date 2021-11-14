@@ -85,7 +85,7 @@ foreach file : sdb_files
       infiles += 'types-windows_@0@.sdb.txt'.format(f)
     endforeach
   endif
-  r_anal_d_sources += custom_target(outfile,
+  ct = custom_target(outfile,
     input: infiles,
     output: outfile,
     command: gen_cmd,
@@ -94,4 +94,7 @@ foreach file : sdb_files
     install: true,
     install_dir: join_paths(r2_sdb, 'fcnsign')
   )
+  if get_option('sdb_cgen')
+    r_anal_d_sources += ct
+  endif
 endforeach

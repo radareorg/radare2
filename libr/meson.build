@@ -594,8 +594,8 @@ r_crypto_files = [
 install_headers(r_crypto_files, install_dir: join_paths(r2_incdir, 'r_crypto'))
 
 sflib_common_files = [
-  'include/sflib/common/sftypes.h',
-  'include/sflib/common/sfsocketcall.h'
+  join_paths('include','sflib','common','sftypes.h'),
+  join_paths('include','sflib','common','sfsocketcall.h')
 ]
 
 sflib_arch = [
@@ -615,10 +615,10 @@ sflib_arch_files = [
   'sfsysnr.h'
 ]
 
-install_headers(sflib_common_files, install_dir: join_paths(r2_incdir, 'sflib/common'))
+install_headers(sflib_common_files, install_dir: join_paths(r2_incdir, 'sflib', 'common'))
 foreach arch : sflib_arch
   foreach file : sflib_arch_files
-    install_headers(join_paths('include/sflib', arch, file), install_dir: join_paths(r2_incdir, 'sflib', arch))
+    install_headers(join_paths('include', 'sflib', arch, file), install_dir: join_paths(r2_incdir, 'sflib', arch))
   endforeach
 endforeach
 
