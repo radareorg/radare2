@@ -496,7 +496,7 @@ sdb_files = [
 sdb_inc = [platform_inc, include_directories(join_paths('shlr','sdb','src'))]
 
 # Create sdb_version.h
-r = run_command(py3_exe, 'sys/sdb_version.py', 'shlr/sdb/config.mk')
+r = run_command(py3_exe, join_paths('sys','sdb_version.py'), join_paths('shlr','sdb','config.mk'))
 if r.returncode() == 0
   sdb_version = r.stdout().strip().split('\n')[0]
 else
@@ -535,9 +535,9 @@ sdb_dep = declare_dependency(
   include_directories: sdb_inc
 )
 
-sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
+sdb_exe = executable('sdb', [join_paths('shlr','sdb','src','main.c')] + sdb_files,
   include_directories: [
-    include_directories(['shlr/sdb/src'])
+    include_directories([join_paths('shlr','sdb','src')])
   ],
   implicit_include_directories: false,
   native: true,
@@ -594,39 +594,39 @@ if get_option('local') and get_option('default_library') == 'shared'
 endif
 
 subdir(join_paths('libr','util'))
-subdir('libr/socket')
-subdir('libr/hash')
-subdir('libr/crypto')
-subdir('shlr')
+subdir(join_paths('libr','socket'))
+subdir(join_paths('libr','hash'))
+subdir(join_paths('libr','crypto'))
+subdir(join_paths('shlr'))
 
-subdir('libr/cons')
-subdir('shlr/gdb')
-subdir('libr/io')
-subdir('libr/bp')
-subdir('libr/syscall')
-subdir('libr/search')
-subdir('libr/magic')
-subdir('libr/flag')
-subdir('libr/reg')
-subdir('libr/bin')
-subdir('libr/config')
-subdir('libr/parse')
-subdir('libr/lang')
-subdir('libr/asm')
-subdir('libr/anal')
-subdir('libr/egg')
-subdir('libr/fs')
-subdir('libr/debug')
-subdir('libr/core')
+subdir(join_paths('libr','cons'))
+subdir(join_paths('shlr','gdb'))
+subdir(join_paths('libr','io'))
+subdir(join_paths('libr','bp'))
+subdir(join_paths('libr','syscall'))
+subdir(join_paths('libr','search'))
+subdir(join_paths('libr','magic'))
+subdir(join_paths('libr','flag'))
+subdir(join_paths('libr','reg'))
+subdir(join_paths('libr','bin'))
+subdir(join_paths('libr','config'))
+subdir(join_paths('libr','parse'))
+subdir(join_paths('libr','lang'))
+subdir(join_paths('libr','asm'))
+subdir(join_paths('libr','anal'))
+subdir(join_paths('libr','egg'))
+subdir(join_paths('libr','fs'))
+subdir(join_paths('libr','debug'))
+subdir(join_paths('libr','core'))
 
-# subdir('libr/anal/d')
-# subdir('libr/asm/d')
-#subdir('libr/bin/d')
-# subdir('libr/syscall/d')
-subdir('libr/cons/d')
-subdir('libr/magic/d')
-subdir('libr/flag/d')
-subdir('libr/main')
+# subdir(join_paths('libr','anal','d'))
+# subdir(join_paths('libr','asm','d'))
+#subdir(join_paths('libr','bin','d'))
+# subdir(join_paths('libr','syscall','d'))
+subdir(join_paths('libr','cons','d'))
+subdir(join_paths('libr','magic','d'))
+subdir(join_paths('libr','flag','d'))
+subdir(join_paths('libr','main'))
 
 cli_option = get_option('cli')
 if cli_option.auto()
@@ -636,23 +636,23 @@ else
 endif
 if cli_enabled
   if get_option('blob')
-    subdir('binr/blob')
+    subdir(join_paths('binr','blob'))
   else
-    subdir('binr/rahash2')
-    subdir('binr/rarun2')
-    subdir('binr/rasm2')
-    subdir('binr/rabin2')
-    subdir('binr/radare2')
-    subdir('binr/ragg2')
-    subdir('binr/r2agent')
-    subdir('binr/radiff2')
-    subdir('binr/rafind2')
-    subdir('binr/rasign2')
-    subdir('binr/ravc2')
-    subdir('binr/rax2')
+    subdir(join_paths('binr','rahash2'))
+    subdir(join_paths('binr','rarun2'))
+    subdir(join_paths('binr','rasm2'))
+    subdir(join_paths('binr','rabin2'))
+    subdir(join_paths('binr','radare2'))
+    subdir(join_paths('binr','ragg2'))
+    subdir(join_paths('binr','r2agent'))
+    subdir(join_paths('binr','radiff2'))
+    subdir(join_paths('binr','rafind2'))
+    subdir(join_paths('binr','rasign2'))
+    subdir(join_paths('binr','ravc2'))
+    subdir(join_paths('binr','rax2'))
   endif
-  subdir('binr/r2pm')
-  subdir('binr/r2r')
+  subdir(join_paths('binr','r2pm'))
+  subdir(join_paths('binr','r2r'))
 endif
 
 if meson.is_subproject()
@@ -682,42 +682,42 @@ if meson.is_subproject()
       r_syscall_dep,
       r_util_dep
     ],
-    include_directories: include_directories('.', 'libr/include'),
+    include_directories: include_directories('.', join_paths('libr','include')),
     version: r2_version
   )
 endif
 
 if get_option('use_webui')
-  install_subdir('shlr/www',
+  install_subdir(join_paths('shlr','www'),
     install_dir: r2_wwwroot,
     strip_directory: true
   )
 endif
 
-subdir('test/unit')
+subdir(join_paths('test','unit'))
 
 install_data(
-  'doc/fortunes.fun',
-  'doc/fortunes.tips',
+  join_paths('doc','fortunes.fun'),
+  join_paths('doc','fortunes.tips'),
   install_dir: r2_fortunes
 )
 
 if cli_enabled
   install_man(
-    'man/r2agent.1',
-    'man/r2-docker.1',
-    'man/r2pm.1',
-    'man/rabin2.1',
-    'man/radare2.1',
-    'man/radiff2.1',
-    'man/rafind2.1',
-    'man/ragg2.1',
-    'man/rahash2.1',
-    'man/rarun2.1',
-    'man/rasm2.1',
-    'man/rax2.1',
-    'man/ravc2.1',
-    'man/esil.7'
+    join_paths('man','r2agent.1'),
+    join_paths('man','r2-docker.1'),
+    join_paths('man','r2pm.1'),
+    join_paths('man','rabin2.1'),
+    join_paths('man','radare2.1'),
+    join_paths('man','radiff2.1'),
+    join_paths('man','rafind2.1'),
+    join_paths('man','ragg2.1'),
+    join_paths('man','rahash2.1'),
+    join_paths('man','rarun2.1'),
+    join_paths('man','rasm2.1'),
+    join_paths('man','rax2.1'),
+    join_paths('man','ravc2.1'),
+    join_paths('man','esil.7')
   )
 
   install_data('doc/hud',
@@ -726,19 +726,19 @@ if cli_enabled
   )
 
   install_data(
-    'doc/zsh/_r2',
-    'doc/zsh/_rabin2',
-    'doc/zsh/_radiff2',
-    'doc/zsh/_rafind2',
-    'doc/zsh/_ragg2',
-    'doc/zsh/_rahash2',
-    'doc/zsh/_rasm2',
-    'doc/zsh/_rax2',
+    join_paths('doc','zsh','_r2'),
+    join_paths('doc','zsh','_rabin2'),
+    join_paths('doc','zsh','_radiff2'),
+    join_paths('doc','zsh','_rafind2'),
+    join_paths('doc','zsh','_ragg2'),
+    join_paths('doc','zsh','_rahash2'),
+    join_paths('doc','zsh','_rasm2'),
+    join_paths('doc','zsh','_rax2'),
     install_dir: r2_zsh_compdir
   )
 
   if host_machine.system() == 'windows'
-    meson.add_install_script('sys/create_r2.bat')
+    meson.add_install_script(join_paths('sys','create_r2.bat'))
   else
     meson.add_install_script('sys/create_r2.sh')
   endif
