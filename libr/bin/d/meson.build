@@ -152,21 +152,6 @@ sdb_files = [
 r_bin_d_sources = []
 
 if get_option('sdb_cgen')
-foreach file : sdb_files
-  outfile = '@0@.sdb'.format(file)
-  target = custom_target(outfile,
-    input: 'dll/@0@.sdb.txt'.format(file),
-    output: outfile,
-    command: sdb_gen_cmd,
-    depends: sdb_exe,
-    build_by_default: true,
-    install: true,
-    install_dir: join_paths(r2_sdb, 'format/dll')
-  )
-  r_bin_d_sources += target
-endforeach
-    
-else
 
 sdb_pre_script = '''#script
 import re
@@ -193,7 +178,8 @@ sdb_pre_cmd = [
 foreach file : sdb_files
   infile = '@0@.sdb.txt'.format(file)
   if host_machine.system() == 'windows'
-    infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), 'd', infile)]).stdout().strip()
+    #infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), 'd', infile)]).stdout().strip()
+    #infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), 'd', infile)]).stdout().strip()
   endif
   tmp_outfile = '@0@.sdb.txt.tmp'.format(file)
   pre_sdb_txt = custom_target(tmp_outfile,
@@ -203,13 +189,8 @@ foreach file : sdb_files
     build_by_default: true,
     install: false
   )
-  if get_option('sdb_cgen')
-    outfile = '@0@.c'.format(file)
-    gen_cmd = sdb_gen_cmd_cgen
-  else
-    outfile = '@0@.sdb'.format(file)
-    gen_cmd = sdb_gen_cmd
-  endif
+  outfile = '@0@.sdb'.format(file)
+  gen_cmd = sdb_gen_cmd
 
   custom_target(outfile,
     input: pre_sdb_txt,
@@ -221,6 +202,23 @@ foreach file : sdb_files
     install_dir: join_paths(r2_sdb, 'bin')
   )
 endforeach
+    
+else # sdb_cgen
+
+foreach file : sdb_files
+  outfile = '@0@.sdb'.format(file)
+  target = custom_target(outfile,
+    input: 'dll/@0@.sdb.txt'.format(file),
+    output: outfile,
+    command: sdb_gen_cmd,
+    depends: sdb_exe,
+    build_by_default: true,
+    install: true,
+    install_dir: join_paths(r2_sdb, 'format/dll')
+  )
+  r_bin_d_sources += target
+endforeach
+
 endif
 
 format_files = [
