@@ -49,7 +49,7 @@ jobs:
       run: |
         .github\vsdevenv.ps1
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w32 build
-        ninja -C build -v -j 3
+        ninja -C build -j 4
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
@@ -95,7 +95,7 @@ jobs:
         bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "x86_64"
         # meson_options: --default-library=shared|static -Dstatic_runtime=true --backend vs2019
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64 build
-        ninja -C build -v -j 3
+        ninja -C build -j 4
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
