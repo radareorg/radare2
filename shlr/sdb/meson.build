@@ -31,37 +31,32 @@ configure_file(
 )
 
 libsdb_sources = [
-  'src/array.c',
-  'src/set.c',
-  'src/base64.c',
-  'src/buffer.c',
-  'src/cdb.c',
-  'src/cdb_make.c',
-  'src/dict.c',
-  'src/diff.c',
-  'src/disk.c',
-  'src/fmt.c',
-  'src/ht_uu.c',
-  'src/ht_up.c',
-  'src/ht_pp.c',
-  'src/ht_pu.c',
-  'src/journal.c',
-  'src/json.c',
-  #'src/json/api.c',
-  #'src/json/indent.c',
-  #'src/json/js0n.c',
-  #'src/json/path.c',
-  #'src/json/rangstr.c',
-  'src/lock.c',
-  'src/ls.c',
-  'src/match.c',
-  'src/ns.c',
-  'src/num.c',
-  'src/query.c',
-  'src/sdb.c',
-  'src/sdbht.c',
-  'src/util.c',
-  'src/text.c'
+  join_paths('src','array.c'),
+  join_paths('src','set.c'),
+  join_paths('src','base64.c'),
+  join_paths('src','buffer.c'),
+  join_paths('src','cdb.c'),
+  join_paths('src','cdb_make.c'),
+  join_paths('src','dict.c'),
+  join_paths('src','diff.c'),
+  join_paths('src','disk.c'),
+  join_paths('src','fmt.c'),
+  join_paths('src','ht_uu.c'),
+  join_paths('src','ht_up.c'),
+  join_paths('src','ht_pp.c'),
+  join_paths('src','ht_pu.c'),
+  join_paths('src','journal.c'),
+  join_paths('src','json.c'),
+  join_paths('src','lock.c'),
+  join_paths('src','ls.c'),
+  join_paths('src','match.c'),
+  join_paths('src','ns.c'),
+  join_paths('src','num.c'),
+  join_paths('src','query.c'),
+  join_paths('src','sdb.c'),
+  join_paths('src','sdbht.c'),
+  join_paths('src','util.c'),
+  join_paths('src','text.c')
 ]
 
 sdb_inc = include_directories(['.', 'src'])
@@ -87,21 +82,21 @@ sdb_dep = declare_dependency(
 
 if not meson.is_subproject()
   include_files = [
-    'src/buffer.h',
-    'src/cdb.h',
-    'src/cdb_make.h',
-    'src/config.h',
-    'src/dict.h',
-    'src/ht_inc.h',
-    'src/ht_pp.h',
-    'src/ht_up.h',
-    'src/ht_uu.h',
-    'src/ht_up.h',
-    'src/ls.h',
-    'src/sdb.h',
-    'src/sdbht.h',
-    'src/set.h',
-    'src/types.h'
+    join_paths('src','buffer.h'),
+    join_paths('src','cdb.h'),
+    join_paths('src','cdb_make.h'),
+    join_paths('src','config.h'),
+    join_paths('src','dict.h'),
+    join_paths('src','ht_inc.h'),
+    join_paths('src','ht_pp.h'),
+    join_paths('src','ht_up.h'),
+    join_paths('src','ht_uu.h'),
+    join_paths('src','ht_up.h'),
+    join_paths('src','ls.h'),
+    join_paths('src','sdb.h'),
+    join_paths('src','sdbht.h'),
+    join_paths('src','set.h'),
+    join_paths('src','types.h')
   ]
   install_headers(include_files, subdir: 'sdb')
 endif
@@ -112,7 +107,7 @@ else
   link_with = libsdb.get_shared_lib()
 endif
 
-sdb_exe = executable('sdb', 'src/main.c',
+sdb_exe = executable('sdb', join_paths('src','main.c'),
   include_directories: sdb_inc,
   link_with: [link_with],
   install: not meson.is_subproject(),
@@ -121,7 +116,7 @@ sdb_exe = executable('sdb', 'src/main.c',
 )
 
 if meson.is_cross_build()
-  sdb_native_exe = executable('sdb_native', 'src/main.c',
+  sdb_native_exe = executable('sdb_native', join_paths('src','main.c'),
     include_directories: sdb_inc,
     link_with: [link_with],
     install: false,
@@ -132,7 +127,7 @@ else
 endif
 
 if not meson.is_subproject()
-  install_man(['src/sdb.1'])
+  install_man([join_paths('src','sdb.1')])
 endif
 
 pkgconfig_mod.generate(
@@ -156,6 +151,6 @@ if not meson.is_subproject()
     )
   endif
 
-  subdir('test/bench')
-  subdir('test/unit')
+  subdir(join_paths('test','bench'))
+  subdir(join_paths('test','unit'))
 endif
