@@ -1,5 +1,9 @@
 :: Build (and eventually install) r2 for windows
 @echo off
+if "%*" == "clean" (
+	wsl rm -rf b vs
+	exit /b 0
+)
 ninja --version > NUL 2> NUL
 if %ERRORLEVEL% == 0 (
   if EXIST b (

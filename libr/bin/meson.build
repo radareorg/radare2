@@ -1,4 +1,3 @@
-subdir('d')
 
 r_bin_sources = [
   'bin.c',

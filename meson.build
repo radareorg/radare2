@@ -621,7 +621,7 @@ subdir('libr/core')
 
 # subdir('libr/anal/d')
 # subdir('libr/asm/d')
-# subdir('libr/bin/d')
+subdir('libr/bin/d')
 # subdir('libr/syscall/d')
 subdir('libr/cons/d')
 subdir('libr/magic/d')
