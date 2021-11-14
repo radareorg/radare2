@@ -159,7 +159,7 @@ r_anal_sources += [
   join_paths('..','asm','arch','arm','v35arm64','arch-arm64','disassembler','operations.c'),
   join_paths('..','asm','arch','arm','v35arm64','arch-arm64','disassembler','pcode.c'),
   join_paths('..','asm','arch','arm','v35arm64','arch-arm64','disassembler','regs.c'),
-  join_paths('..','asm','arch','arm','v35arm64','arch-arm64','disassembler','sysregs.c'
+  join_paths('..','asm','arch','arm','v35arm64','arch-arm64','disassembler','sysregs.c')
 ]
 incdirs += [
   join_paths('..','asm','arch','arm','v35arm64','arch-arm64','disassembler'),
