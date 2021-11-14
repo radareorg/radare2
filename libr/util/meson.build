@@ -86,9 +86,9 @@ r_util_sources = [
   'sys_w32.c',
   'zip.c',
   'protobuf.c',
-  'regex/regcomp.c',
-  'regex/regexec.c',
-  'regex/regerror.c'
+  join_paths('regex','regcomp.c'),
+  join_paths('regex','regexec.c'),
+  join_paths('regex','regerror.c')
 ]
 
 if get_option('sdb_cgen')
