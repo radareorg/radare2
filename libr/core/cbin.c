@@ -1694,8 +1694,6 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	const char *lang = r_config_get (r->config, "bin.lang");
 	RTable *table = r_core_table (r, "relocs");
 	r_return_val_if_fail (table, false);
-	RBIter iter;
-	RBinReloc *reloc = NULL;
 	Sdb *db = NULL;
 	char *sdb_module = NULL;
 	int i = 0;
@@ -1708,7 +1706,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	if (bin_cache) {
 		r_config_set (r->config, "io.cache", "true");
 	}
-	RBNode *relocs = r_bin_patch_relocs (r->bin);
+	RRBTree *relocs = r_bin_patch_relocs (r->bin);
 	if (!relocs) {
 		if (bin_cache) {
 			r_config_set (r->config, "io.cache", "false");
@@ -1735,7 +1733,10 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_RELOCS);
 	}
 
-	r_rbtree_foreach (relocs, iter, reloc, RBinReloc, vrb) {
+	RRBNode *node = relocs? r_crbtree_first_node (relocs): NULL;
+	while (node) {
+		RBinReloc *reloc = (RBinReloc *)node->data;
+		node = r_rbnode_next (node);
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
 			/*

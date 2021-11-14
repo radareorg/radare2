@@ -253,7 +253,7 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *entries;
 	RList/*<??>*/ *fields;
 	RList/*<??>*/ *libs;
-	RBNode/*<RBinReloc>*/ *relocs;
+	RRBTree/*<RBinReloc>*/ *relocs;
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
 	HtPP *classes_ht;
@@ -570,7 +570,6 @@ typedef struct r_bin_reloc_t {
 	 * cf. https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
 	 */
 	bool is_ifunc;
-	RBNode vrb;
 } RBinReloc;
 
 typedef struct r_bin_string_t {
@@ -701,9 +700,9 @@ R_API RList *r_bin_get_entries(RBin *bin);
 R_API RList *r_bin_get_fields(RBin *bin);
 R_API const RList *r_bin_get_imports(RBin *bin);
 R_API RList *r_bin_get_libs(RBin *bin);
-R_API RBNode *r_bin_patch_relocs(RBin *bin);
+R_API RRBTree *r_bin_patch_relocs(RBin *bin);
 R_API RList *r_bin_patch_relocs_list(RBin *bin);
-R_API RBNode *r_bin_get_relocs(RBin *bin);
+R_API RRBTree *r_bin_get_relocs(RBin *bin);
 R_API RList *r_bin_get_relocs_list(RBin *bin);
 R_API RList *r_bin_get_sections(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
