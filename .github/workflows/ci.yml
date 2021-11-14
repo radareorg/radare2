@@ -163,7 +163,7 @@ jobs:
         cd "spa ces"
         export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
         meson --prefix="/tmp/r 2" build
-        ninja -C build
+        ninja -C build -v
         ninja -C build install
         cd ..
         find "/tmp/r 2"
