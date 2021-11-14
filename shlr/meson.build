@@ -385,7 +385,7 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     join_paths('zip','zip','zip_unchange_all.c'),
     join_paths('zip','zip','zip_unchange_archive.c'),
     join_paths('zip','zip','zip_unchange_data.c'),
-    join_paths('zip','zip','zip_utf-8.c'
+    join_paths('zip','zip','zip_utf-8.c')
   ]
 
   zip_inc = [platform_inc, include_directories('zip/include')]
