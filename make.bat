@@ -7,7 +7,7 @@ if "%*" == "clean" (
 call ninja.exe --version > NUL 2> NUL && (
   if EXIST b (
     REM meson compile -C b
-    call ninja.exe -C b && (
+    call ninja.exe -C b -v && (
       echo Installing r2 in %CD%\prefix
       set DESTDIR=%CD%\prefix
       rmdir /q /s prefix
