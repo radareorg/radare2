@@ -1,4 +1,4 @@
-/* radare - <TODO> - Copyright 2021 - <TODO> */
+/* radare - LGPL3 - Copyright 2021 - condret, slowhand99 */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -15,8 +15,8 @@ RAsmPlugin r_asm_plugin_jdh8 = {
 	.name = "jdh8",
 	.desc = "jdh-8 toy architecture",
 	.arch = "jdh-8",
-	.author = "TODO",
-	.license = "TODO",
+	.author = "condret, slowhand99",
+	.license = "LGPL3",
 	.bits = 16,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.disassemble = &disassemble,
