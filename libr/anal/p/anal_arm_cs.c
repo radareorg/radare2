@@ -1361,13 +1361,13 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_AND:
 		OPCALL("&");
 		break;
-	case ARM64_INS_NAND:
-		OPCALL_NEG("&");
-		break;
 	case ARM64_INS_ORR:
 		OPCALL("|");
 		break;
 #if CS_API_MAJOR > 4	
+	case ARM64_INS_NAND:
+		OPCALL_NEG("&");
+		break;
 	case ARM64_INS_ADDS:
 	case ARM64_INS_ADCS:
 		OPCALL("+");
