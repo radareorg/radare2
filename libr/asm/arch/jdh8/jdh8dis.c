@@ -1,4 +1,4 @@
-/* radare - <TODO> - Copyright 2021 - <TODO> */
+/* radare - LGPL - Copyright 2021 - condret, slowhand99 */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -138,12 +138,3 @@ static int jdh8Disass(RAsmOp *op, const ut8 *buf, int len) {
 	r_strbuf_set (&op->buf_asm, buf_asm);
 	return op->size = rlen;
 }
-/*static int jdh8Disass(RAsmOp *op, const ut8 *buf, int len) {
-	if (len < 1) {
-		return 0;
-	}
-	
-	r_strbuf_setf (&op->buf_asm, "unknown(0x%02x)", buf[0]);
-	return 1;
-}
-*/
