@@ -263,6 +263,9 @@ typedef unsigned szind_t;
 #  ifdef __mips__
 #    define LG_QUANTUM		3
 #  endif
+#  ifdef __loongarch__
+#    define LG_QUANTUM		4	//TODO check me
+#  endif
 #  ifdef __or1k__
 #    define LG_QUANTUM		3
 #  endif

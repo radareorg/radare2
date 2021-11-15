@@ -39,6 +39,8 @@ char *linux_reg_profile (RDebug *dbg) {
 	} else {
 #		include "reg/linux-mips64.h"
 	}
+#elif __loongarch__
+#		include "reg/linux-loongarch64.h"
 #elif (__i386__ || __x86_64__)
 	if (dbg->bits & R_SYS_BITS_32) {
 #if __x86_64__
