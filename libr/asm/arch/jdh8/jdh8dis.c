@@ -16,14 +16,14 @@ static int jdh_get_ins_len(ut8 hex) {
 	if (ret == 3) {
 		ret = (hex & 8) ? 2 : 3;
 	}
-	if (ret == 1) {
+	else if (ret == 1) {
 		ret = (hex & 8) ? 1 : 2;
 	}
 	return ret;
 }
 
 static int jdh8Disass(RAsmOp *op, const ut8 *buf, int len) {
-	int rlen = jdh_get_ins_len (*buf);
+	int ilen = jdh_get_ins_len (*buf);
 	ut8 high = (*buf & 0xf0) >> 4;
 	ut8 low = (*buf & 0xf);
 	const char *buf_asm = "invalid";
