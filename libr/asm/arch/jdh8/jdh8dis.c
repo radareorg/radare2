@@ -27,7 +27,7 @@ static int jdh8Disass(RAsmOp *op, const ut8 *buf, int len) {
 	const ut8 high = (*buf & 0xf0) >> 4;
 	const ut8 low = (*buf & 0xf);
 	const char *buf_asm = "invalid";
-	if (rlen > len) {
+	if (ilen > len) {
 		return op->size = 0;
 	}
 	switch (high) {
@@ -36,21 +36,21 @@ static int jdh8Disass(RAsmOp *op, const ut8 *buf, int len) {
 			snprintf (buf, sizeof (buf), "mw %c, 0x%02x", reg[low & 7], buf[1]);
 		break;
 	case 1:
-		if (rlen == 2) {
+		if (ilen == 2) {
 			buf_asm = snprintf (buf, sizeof (buf), "lw %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
 			buf_asm = snprintf (buf, sizeof (buf), "lw %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 2:
-		if (rlen == 2) {
+		if (ilen == 2) {
 			buf_asm = snprintf (buf, sizeof (buf), "sw %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
 			buf_asm = snprintf (buf, sizeof (buf), "sw 0x%04x, %c", ((ut16)(buf[1] << 8) | buf[2]), reg[low & 7]);
 		}
 		break;
 	case 3:
-		if (rlen == 1) {
+		if (ilen == 1) {
 			buf_asm = snprintf (buf, sizeof (buf), "push %c", reg[low & 7]);
 		} else {
 			buf_asm = snprintf (buf, sizeof (buf), "push 0x%02x", buf[1]);
@@ -63,7 +63,7 @@ static int jdh8Disass(RAsmOp *op, const ut8 *buf, int len) {
 		buf_asm = snprintf (buf, sizeof (buf), "lda 0x%03x", ((ut16)(buf[1] << 8) | buf[2]));
 		break;
 	case 6:
-		if (rlen == 1) {
+		if (ilen == 1) {
 			buf_asm = snprintf (buf, sizeof (buf), "jnz %c", reg[low & 7]);
 		} else {
 			buf_asm = snprintf (buf, sizeof (buf), "jnz 0x%02x", buf[1]);
@@ -136,5 +136,5 @@ static int jdh8Disass(RAsmOp *op, const ut8 *buf, int len) {
 		break;
 	}
 	r_strbuf_set (&op->buf_asm, buf_asm);
-	return op->size = rlen;
+	return op->size = ilen;
 }
