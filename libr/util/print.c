@@ -815,7 +815,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 }
 
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
-	r_return_if_fail (p && buf && len > 0);
+	r_return_if_fail (buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
 #define print(x) printfmt("%s", x)
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
@@ -935,14 +935,15 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					print ("..offset..");
 				} else {
 					print ("- offset -");
-					if (p->wide_offsets) {
+					if (p && p->wide_offsets) {
 						print ("       ");
 					}
 				}
 				if (use_segoff) {
+					int seggrn = p? p->seggrn: 4;
 					ut32 s, a;
 					a = addr & 0xffff;
-					s = ((addr - a) >> p->seggrn) & 0xffff;
+					s = ((addr - a) >> seggrn) & 0xffff;
 					snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
 					delta = strlen (soff) - 10;
 				} else {
@@ -1023,7 +1024,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	// is this necessary?
-	r_print_set_screenbounds (p, addr);
+	if (p) {
+		r_print_set_screenbounds (p, addr);
+	}
 	int rowbytes;
 	int rows = 0;
 	int bytes = 0;
@@ -1082,7 +1085,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 				}
 				if (row_have_cursor == -1) {
-					if (r_print_cursor_pointer (p, j, 1)) {
+					if (p && r_print_cursor_pointer (p, j, 1)) {
 						row_have_cursor = j - i;
 						row_have_addr = addr + j;
 					}
@@ -1164,7 +1167,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						}
 					} else {
 						if (hasNull) {
-							const char *n = p->offname (p->user, addr + j);
+							const char *n = p? p->offname (p->user, addr + j): NULL;
 							r_print_section (p, at);
 							r_print_addr (p, addr + j * zoomsz);
 							printfmt ("..[ null bytes ]..   00000000 %s\n", r_str_get (n));
@@ -1204,7 +1207,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (j >= len) {
 						break;
 					}
-					if (use_unalloc && !p->iob.is_valid_offset (p->iob.io, addr + j, false)) {
+					if (p && use_unalloc && !p->iob.is_valid_offset (p->iob.io, addr + j, false)) {
 						char ch = p->io_unalloc_ch;
 						char dbl_ch_str[] = { ch, ch, 0 };
 						p->cb_printf ("%s", dbl_ch_str);
@@ -1266,7 +1269,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
 						? ' ' : buf[j];
-					if (p->charset && p->charset->loaded) {
+					if (p && p->charset && p->charset->loaded) {
 						ut8 input[2] = {ch, 0};
 						ut8 output[32];
 						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, 1);
