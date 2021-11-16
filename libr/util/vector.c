@@ -349,3 +349,29 @@ R_API void r_pvector_sort(RPVector *vec, RPVectorComparator cmp) {
 	r_return_if_fail (vec && cmp);
 	quick_sort (vec->v.a, vec->v.len, cmp);
 }
+
+R_API int r_pvector_bsearch(RPVector *vec, void *needle, RPVectorComparator cmp) {
+	r_return_val_if_fail (vec && cmp, -1);
+	size_t top = 0;
+	size_t end = vec->v.len;
+	void **ar = vec->v.a;
+
+	size_t dif;
+	while ((dif = end - top) > 0) {
+		size_t piv = top + dif / 2;
+		int match = cmp (ar[piv], needle);
+		if (!match) {
+			while (piv > top && !cmp (ar[piv - 1], needle)) {
+				piv--;
+			}
+			return piv;
+		}
+
+		if (match < 0) {
+			top = piv + 1;
+		} else {
+			end = piv;
+		}
+	}
+	return -1;
+}

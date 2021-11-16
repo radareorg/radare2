@@ -1040,6 +1040,162 @@ static bool test_pvector_sort(void) {
 	mu_end;
 }
 
+static bool test_pvector_bsearch(void) {
+	RPVector v;
+	r_pvector_init (&v, NULL);
+	RPVectorComparator cmp = (RPVectorComparator)strcmp;
+
+	r_pvector_push (&v, "A");
+	mu_assert_eq (v.v.len, 1UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+
+	r_pvector_push (&v, "B");
+	mu_assert_eq (v.v.len, 2UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+
+	r_pvector_push (&v, "C");
+	mu_assert_eq (v.v.len, 3UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+
+	r_pvector_push (&v, "D");
+	mu_assert_eq (v.v.len, 4UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+
+	// skipping E so we have something in middle to fail to find
+	r_pvector_push (&v, "F");
+	mu_assert_eq (v.v.len, 5UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "F", cmp), 4UL, "searching 'F'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+	mu_assert_eq (r_pvector_bsearch (&v, "E", cmp), -1, "Found E, shoulnd't have");
+
+	r_pvector_push (&v, "G");
+	mu_assert_eq (v.v.len, 6UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "F", cmp), 4UL, "searching 'F'");
+	mu_assert_eq (r_pvector_bsearch (&v, "G", cmp), 5UL, "searching 'G'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+	mu_assert_eq (r_pvector_bsearch (&v, "E", cmp), -1, "Found E, shoulnd't of");
+
+	r_pvector_push (&v, "H");
+	mu_assert_eq (v.v.len, 7UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "F", cmp), 4UL, "searching 'F'");
+	mu_assert_eq (r_pvector_bsearch (&v, "G", cmp), 5UL, "searching 'G'");
+	mu_assert_eq (r_pvector_bsearch (&v, "H", cmp), 6UL, "searching 'H'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+	mu_assert_eq (r_pvector_bsearch (&v, "E", cmp), -1, "Found E, shoulnd't of");
+
+	// duplicate should return first instance
+	r_pvector_push (&v, "H");
+	mu_assert_eq (v.v.len, 8UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "F", cmp), 4UL, "searching 'F'");
+	mu_assert_eq (r_pvector_bsearch (&v, "G", cmp), 5UL, "searching 'G'");
+	mu_assert_eq (r_pvector_bsearch (&v, "H", cmp), 6UL, "searching 'H'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+	mu_assert_eq (r_pvector_bsearch (&v, "E", cmp), -1, "Found E, shoulnd't of");
+
+	// duplicate again
+	r_pvector_push (&v, "H");
+	mu_assert_eq (v.v.len, 9UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "F", cmp), 4UL, "searching 'F'");
+	mu_assert_eq (r_pvector_bsearch (&v, "G", cmp), 5UL, "searching 'G'");
+	mu_assert_eq (r_pvector_bsearch (&v, "H", cmp), 6UL, "searching 'H'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+	mu_assert_eq (r_pvector_bsearch (&v, "E", cmp), -1, "Found E, shoulnd't of");
+
+	// duplicate again, again
+	r_pvector_push (&v, "H");
+	mu_assert_eq (v.v.len, 10UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "F", cmp), 4UL, "searching 'F'");
+	mu_assert_eq (r_pvector_bsearch (&v, "G", cmp), 5UL, "searching 'G'");
+	mu_assert_eq (r_pvector_bsearch (&v, "H", cmp), 6UL, "searching 'H'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+	mu_assert_eq (r_pvector_bsearch (&v, "E", cmp), -1, "Found E, shoulnd't of");
+
+	// duplicates in middle
+	r_pvector_push (&v, "I");
+	mu_assert_eq (v.v.len, 11UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "F", cmp), 4UL, "searching 'F'");
+	mu_assert_eq (r_pvector_bsearch (&v, "G", cmp), 5UL, "searching 'G'");
+	mu_assert_eq (r_pvector_bsearch (&v, "H", cmp), 6UL, "searching 'H'");
+	mu_assert_eq (r_pvector_bsearch (&v, "I", cmp), 10UL, "searching 'I'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+	mu_assert_eq (r_pvector_bsearch (&v, "E", cmp), -1, "Found E, shoulnd't of");
+
+	// duplicates further in middle...
+	r_pvector_push (&v, "I");
+	mu_assert_eq (v.v.len, 12UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "F", cmp), 4UL, "searching 'F'");
+	mu_assert_eq (r_pvector_bsearch (&v, "G", cmp), 5UL, "searching 'G'");
+	mu_assert_eq (r_pvector_bsearch (&v, "H", cmp), 6UL, "searching 'H'");
+	mu_assert_eq (r_pvector_bsearch (&v, "I", cmp), 10UL, "searching 'I'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+	mu_assert_eq (r_pvector_bsearch (&v, "E", cmp), -1, "Found E, shoulnd't of");
+
+	// last
+	r_pvector_push (&v, "I");
+	r_pvector_push (&v, "I");
+	r_pvector_push (&v, "I");
+	r_pvector_push (&v, "I");
+	r_pvector_push (&v, "I");
+	r_pvector_push (&v, "I");
+	r_pvector_push (&v, "I");
+	mu_assert_eq (v.v.len, 19UL, "bsearch len");
+	mu_assert_eq (r_pvector_bsearch (&v, "A", cmp), 0UL, "searching 'A'");
+	mu_assert_eq (r_pvector_bsearch (&v, "B", cmp), 1UL, "searching 'B'");
+	mu_assert_eq (r_pvector_bsearch (&v, "C", cmp), 2UL, "searching 'C'");
+	mu_assert_eq (r_pvector_bsearch (&v, "D", cmp), 3UL, "searching 'D'");
+	mu_assert_eq (r_pvector_bsearch (&v, "F", cmp), 4UL, "searching 'F'");
+	mu_assert_eq (r_pvector_bsearch (&v, "G", cmp), 5UL, "searching 'G'");
+	mu_assert_eq (r_pvector_bsearch (&v, "H", cmp), 6UL, "searching 'H'");
+	mu_assert_eq (r_pvector_bsearch (&v, "I", cmp), 10UL, "searching 'I'");
+	mu_assert_eq (r_pvector_bsearch (&v, "z", cmp), -1, "Found 'z', shouldn't have");
+	mu_assert_eq (r_pvector_bsearch (&v, "E", cmp), -1, "Found E, shoulnd't of");
+
+	r_pvector_clear (&v);
+	mu_end;
+}
+
 static bool test_pvector_foreach(void) {
 	RPVector v;
 	init_test_pvector2 (&v, 5, 5);
@@ -1125,6 +1281,7 @@ static int all_tests(void) {
 	mu_run_test (test_pvector_push);
 	mu_run_test (test_pvector_push_front);
 	mu_run_test (test_pvector_sort);
+	mu_run_test (test_pvector_bsearch);
 	mu_run_test (test_pvector_foreach);
 	mu_run_test (test_pvector_lower_bound);
 
