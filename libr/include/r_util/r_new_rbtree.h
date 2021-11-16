@@ -66,6 +66,9 @@ R_API RRBNode *r_crbtree_last_node(RRBTree *tree);
 R_API RRBNode *r_rbnode_next(RRBNode *node);
 R_API RRBNode *r_rbnode_prev(RRBNode *node);
 
+#define r_crbtree_foreach(tree, iter, stuff) \
+	for (iter = tree? r_crbtree_first_node (tree): NULL, stuff = iter? iter->data: NULL; iter; iter = r_rbnode_next (iter), stuff = iter? iter->data: NULL)
+
 #ifdef __cplusplus
 }
 #endif
