@@ -1733,10 +1733,9 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		r_flag_space_set (r->flags, R_FLAGS_FS_RELOCS);
 	}
 
-	RRBNode *node = relocs? r_crbtree_first_node (relocs): NULL;
-	while (node) {
-		RBinReloc *reloc = (RBinReloc *)node->data;
-		node = r_rbnode_next (node);
+	RRBNode *node;
+	RBinReloc *reloc;
+	r_crbtree_foreach (relocs, node, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
 		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
 			/*
