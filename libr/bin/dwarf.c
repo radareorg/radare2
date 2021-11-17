@@ -340,6 +340,13 @@ static int abbrev_cmp(const void *a, const void *b) {
 	}
 }
 
+static bool is_printable_lang(ut64 attr_code) {
+	if (attr_code >= sizeof (dwarf_langs) / sizeof (dwarf_langs[0])) {
+		return false;
+	}
+	return dwarf_langs[attr_code] != NULL;
+}
+
 static inline bool is_printable_attr(ut64 attr_code) {
 	return (attr_code >= DW_AT_sibling && attr_code <= DW_AT_loclists_base) ||
 			attr_code == DW_AT_MIPS_linkage_name ||
@@ -1434,7 +1441,11 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 	case DW_FORM_data16:
 		print ("%"PFMT64u"", val->uconstant);
 		if (val->attr_name == DW_AT_language) {
-			print ("   (%s)", dwarf_langs[val->uconstant]);
+			if (is_printable_lang (val->uconstant)) {
+				print ("   (%s)", dwarf_langs[val->uconstant]);
+			} else {
+				print ("   (unknown language)");
+			}
 		}
 		break;
 	case DW_FORM_string:
