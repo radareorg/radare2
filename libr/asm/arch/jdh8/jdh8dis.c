@@ -24,8 +24,8 @@ static int jdh_get_ins_len(ut8 hex) {
 
 static int jdh8Disass(RAsmOp *op, const ut8 *buf, int len) {
 	int ilen = jdh_get_ins_len (*buf);
-	ut8 high = (*buf & 0xf0) >> 4;
-	ut8 low = (*buf & 0xf);
+	const ut8 high = (*buf & 0xf0) >> 4;
+	const ut8 low = (*buf & 0xf);
 	const char *buf_asm = "invalid";
 	if (rlen > len) {
 		return op->size = 0;
