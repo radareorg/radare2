@@ -2287,9 +2287,8 @@ static void delete_dup_edges (RAGraph *g) {
 	}
 }
 
-static bool isbbfew(RAnalBlock *curbb, RAnalBlock *bb) {
+static inline bool cur_points_to_bb(RAnalBlock *curbb, RAnalBlock *bb) {
 	if (bb->addr == curbb->addr || bb->addr == curbb->jump || bb->addr == curbb->fail) {
-		// do nothing
 		return true;
 	}
 	if (curbb->switch_op) {
@@ -2302,6 +2301,10 @@ static bool isbbfew(RAnalBlock *curbb, RAnalBlock *bb) {
 		}
 	}
 	return false;
+}
+
+static bool isbbfew(RAnalBlock *curbb, RAnalBlock *bb) {
+	return cur_points_to_bb (curbb, bb) || cur_points_to_bb (bb, curbb);
 }
 
 static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
@@ -3327,6 +3330,9 @@ static bool check_changes(RAGraph *g, int is_interactive, RCore *core, RAnalFunc
 	int oldpos[2] = {
 		0, 0
 	};
+	if (g->update_seek_on && r_config_get_i (core->config, "graph.few")) {
+		g->need_reload_nodes = true;
+	}
 	if (g->need_reload_nodes && core) {
 		if (!g->update_seek_on && !g->force_update_seek) {
 			// save scroll here
@@ -4550,9 +4556,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				eprintf ("Cannot undo\n");
 			}
-			if (r_config_get_i (core->config, "graph.few")) {
-				g->need_reload_nodes = true;
-			}
 			break;
 		}
 		case 'U':
@@ -4783,30 +4786,18 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'i':
 			agraph_follow_innodes (g, true);
-			if (r_config_get_i (core->config, "graph.few")) {
-				g->need_reload_nodes = true;
-			}
 			break;
 		case 'I':
 			agraph_follow_innodes (g, false);
-			if (r_config_get_i (core->config, "graph.few")) {
-				g->need_reload_nodes = true;
-			}
 			break;
 		case 't':
 			agraph_follow_true (g);
-			if (r_config_get_i (core->config, "graph.few")) {
-				g->need_reload_nodes = true;
-			}
 			break;
 		case 'T':
 			// XXX WIP	agraph_merge_child (g, 0);
 			break;
 		case 'f':
 			agraph_follow_false (g);
-			if (r_config_get_i (core->config, "graph.few")) {
-				g->need_reload_nodes = true;
-			}
 			break;
 		case 'F':
 			if (okey == 27) {
