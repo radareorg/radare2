@@ -2227,12 +2227,12 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (node) {
 			free (node->body);
 			node->body = body;
+			R_FREE (node->color);
+			if (bb->color.r || bb->color.g || bb->color.b) {
+				node->color = r_cons_rgb_str (NULL, -1, &bb->color);
+			}
 		} else {
 			free (body);
-		}
-		R_FREE (node->color);
-		if (bb->color.r || bb->color.g || bb->color.b) {
-			node->color = r_cons_rgb_str (NULL, -1, &bb->color);
 		}
 		free (title);
 		core->keep_asmqjmps = true;
