@@ -4556,6 +4556,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				eprintf ("Cannot undo\n");
 			}
+			if (r_config_get_i (core->config, "graph.few")) {
+				g->need_reload_nodes = true;
+			}
 			break;
 		}
 		case 'U':
@@ -4568,6 +4571,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				r_core_seek (core, undo->off, false);
 			} else {
 				eprintf ("Cannot redo\n");
+			}
+			if (r_config_get_i (core->config, "graph.few")) {
+				g->need_reload_nodes = true;
 			}
 			break;
 		}
