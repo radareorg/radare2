@@ -2319,6 +2319,8 @@ static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
 		const char *k = sdb_fmt ("agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight", a, b);
 		bool hl = sdb_exists (core->sdb, k);
 		r_agraph_add_edge (g, u, v, hl);
+	} else {
+		eprintf ("[!!] Failed to add child node 0x%" PFMT64x " to %s. Child not found\n", jump, u->title);
 	}
 	free (title);
 }
