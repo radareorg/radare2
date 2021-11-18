@@ -7,7 +7,7 @@ export ANDROID=1
 # make clean > /dev/null 2>&1
 rm -f libr/include/r_version.h
 cp -f dist/plugins-cfg/plugins.termux.cfg plugins.cfg
-git pull
+git pull https://github.com/radareorg/radare2 master
 ./preconfigure
 ./configure-plugins
 bash ./configure --with-compiler=termux --prefix=${PREFIX} || exit 1

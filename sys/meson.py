@@ -249,7 +249,7 @@ def main():
 
     # Check arguments
     if args.pull:
-        os.system('git pull')
+        os.system('git pull https://github.com/radareorg/radare2 master')
     if args.project and args.backend == 'ninja':
         log.error('--project is not compatible with --backend ninja')
         sys.exit(1)
