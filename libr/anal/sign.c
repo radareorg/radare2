@@ -1662,11 +1662,13 @@ static void inline list_vars_json(RSignItem *it, PJ *pj) {
 		RListIter *iter;
 		r_list_foreach (it->vars, iter, v) {
 			char kind[] = { v->kind, '\0' };
+			pj_o (pj);
 			pj_ks (pj, "name", v->name);
 			pj_ks (pj, "type", v->type);
 			pj_ks (pj, "kind", kind);
 			pj_kN (pj, "delta", v->delta);
 			pj_kb (pj, "isarg", v->isarg);
+			pj_end (pj);
 		}
 	}
 	pj_end (pj);
