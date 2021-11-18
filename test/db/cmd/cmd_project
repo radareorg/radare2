@@ -407,6 +407,7 @@ om*
 Pd hund
 Ps hund > /dev/null
 CC-$$
+e prj.name= # close current project
 Po hund > /dev/null
 pd 4
 om*
