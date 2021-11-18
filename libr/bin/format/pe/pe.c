@@ -1188,33 +1188,29 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 
 static int bin_pe_read_metadata_string(char* to, RBuffer *frombuf, int fromoff) {
 	int covered = 0;
+	*to = 0;
 	while (covered < MAX_METADATA_STRING_LENGTH) {
-		char covch = r_buf_read8_at (frombuf, covered);
-		to[covered] = covch;
-		if (covch == '\0') {
-			covered += 1;
+		const char covch = r_buf_read8_at (frombuf, fromoff + covered);
+		to[covered++] = covch;
+		if (!covch) {
 			break;
 		}
-		covered++;
 	}
 	while (covered % 4 != 0) { covered++; }
 	return covered;
 }
 
-static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
-	PE_DWord metadata_directory = bin->clr_hdr? PE_(va2pa) (bin, bin->clr_hdr->MetaDataDirectoryAddress): 0;
+static bool bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_metadata_header) * metadata = R_NEW0 (PE_(image_metadata_header));
-	int rr;
 	if (!metadata) {
-		return 0;
+		return false;
 	}
+	PE_DWord metadata_directory = bin->clr_hdr? PE_(va2pa) (bin, bin->clr_hdr->MetaDataDirectoryAddress): 0;
 	if (!metadata_directory) {
 		free (metadata);
-		return 0;
+		return false;
 	}
-
-
-	rr = r_buf_fread_at (bin->b, metadata_directory,
+	int rr = r_buf_fread_at (bin->b, metadata_directory,
 		(ut8*) metadata, bin->big_endian? "1I2S": "1i2s", 1);
 	if (rr < 1) {
 		goto fail;
@@ -1266,22 +1262,26 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 
 
 	// read metadata streams
-	int start_of_stream = metadata_directory + 20 + metadata->VersionStringLength;
+	int stream_addr = metadata_directory + 20 + metadata->VersionStringLength;
 	PE_(image_metadata_stream) * stream;
 	PE_(image_metadata_stream) **streams = calloc (sizeof (PE_(image_metadata_stream)*), metadata->NumberOfStreams);
 	if (!streams) {
 		goto fail;
 	}
-	int count = 0;
-
-	while (count < metadata->NumberOfStreams) {
+	int count;
+	for (count = 0; count < metadata->NumberOfStreams; count++) {
 		stream = R_NEW0 (PE_(image_metadata_stream));
 		if (!stream) {
 			free (streams);
 			goto fail;
 		}
-
-		if (r_buf_fread_at (bin->b, start_of_stream, (ut8*) stream, bin->big_endian? "2I": "2i", 1) < 1) {
+		if (r_buf_size (bin->b) < (stream_addr + 8 + MAX_METADATA_STRING_LENGTH)) {
+			eprintf ("Truncated\n");
+			free (stream);
+			free (streams);
+			goto fail;
+		}
+		if (r_buf_fread_at (bin->b, stream_addr, (ut8*) stream, bin->big_endian? "2I": "2i", 1) < 1) {
 			free (stream);
 			free (streams);
 			goto fail;
@@ -1295,13 +1295,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 			goto fail;
 		}
 
-		if (r_buf_size (bin->b) < (start_of_stream + 8 + MAX_METADATA_STRING_LENGTH)) {
-			free (stream_name);
-			free (stream);
-			free (streams);
-			goto fail;
-		}
-		int c = bin_pe_read_metadata_string (stream_name, bin->b, start_of_stream + 8);
+		int c = bin_pe_read_metadata_string (stream_name, bin->b, stream_addr + 8);
 		if (c == 0) {
 			free (stream_name);
 			free (stream);
@@ -1311,15 +1305,14 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		eprintf ("Stream name: %s %d\n", stream_name, c);
 		stream->Name = stream_name;
 		streams[count] = stream;
-		start_of_stream += 8 + c;
-		count += 1;
+		stream_addr += 8 + c;
 	}
 	bin->streams = streams;
-	return 1;
+	return true;
 fail:
 	eprintf ("Warning: read (metadata header)\n");
 	free (metadata);
-	return 0;
+	return false;
 }
 
 static int bin_pe_init_overlay(struct PE_(r_bin_pe_obj_t)* bin) {
