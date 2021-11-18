@@ -397,7 +397,7 @@ NAME=Save PE project with maddr
 FILE=bins/pe/rabin2.exe
 CMDS=<<EOF
 e prj.vc=false
-e dir.projects = .tmp/
+e dir.projects = .tmp2/
 CC hello world
 pd 4
 o
