@@ -2313,12 +2313,17 @@ static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
 	}
 	char *title = get_title (jump);
 	RANode *v = r_agraph_get_node (g, title);
-	ut64 a = r_num_get (NULL, u->title);
-	ut64 b = r_num_get (NULL, title);
+	if (v) {
+		ut64 a = r_num_get (NULL, u->title);
+		char key[64];
+		const char *fmt = "agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight";
+		snprintf (key, sizeof (key), fmt, a, jump);
+		bool hl = sdb_exists (core->sdb, key);
+		r_agraph_add_edge (g, u, v, hl);
+	} else {
+		eprintf ("[!!] Failed to add child node 0x%" PFMT64x " to %s. Child not found\n", jump, u->title);
+	}
 	free (title);
-	const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
-	bool hl = sdb_exists (core->sdb, k);
-	r_agraph_add_edge (g, u, v, hl);
 }
 
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
