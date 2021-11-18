@@ -32,104 +32,104 @@ static int jdh8Disass(RAsmOp *op, const ut8 *buf, int len) {
 	}
 	switch (high) {
 	case 0:
-		buf_asm = (low & 8)? sdb_fmt ("mw %c, %c", reg[low & 7], reg[buf[1]]):
-			sdb_fmt ("mw %c, 0x%02x", reg[low & 7], buf[1]);
+		buf_asm = (low & 8)? snprintf (buf, sizeof (buf), "mw %c, %c", reg[low & 7], reg[buf[1]]):
+			snprintf (buf, sizeof (buf), "mw %c, 0x%02x", reg[low & 7], buf[1]);
 		break;
 	case 1:
 		if (rlen == 2) {
-			buf_asm = sdb_fmt ("lw %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "lw %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("lw %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "lw %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 2:
 		if (rlen == 2) {
-			buf_asm = sdb_fmt ("sw %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "sw %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("sw 0x%04x, %c", ((ut16)(buf[1] << 8) | buf[2]), reg[low & 7]);
+			buf_asm = snprintf (buf, sizeof (buf), "sw 0x%04x, %c", ((ut16)(buf[1] << 8) | buf[2]), reg[low & 7]);
 		}
 		break;
 	case 3:
 		if (rlen == 1) {
-			buf_asm = sdb_fmt ("push %c", reg[low & 7]);
+			buf_asm = snprintf (buf, sizeof (buf), "push %c", reg[low & 7]);
 		} else {
-			buf_asm = sdb_fmt ("push 0x%02x", buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "push 0x%02x", buf[1]);
 		}
 		break;
 	case 4:
-		buf_asm = sdb_fmt ("pop %c", reg[low & 7]);
+		buf_asm = snprintf (buf, sizeof (buf), "pop %c", reg[low & 7]);
 		break;
 	case 5:
-		buf_asm = sdb_fmt ("lda 0x%03x", ((ut16)(buf[1] << 8) | buf[2]));
+		buf_asm = snprintf (buf, sizeof (buf), "lda 0x%03x", ((ut16)(buf[1] << 8) | buf[2]));
 		break;
 	case 6:
 		if (rlen == 1) {
-			buf_asm = sdb_fmt ("jnz %c", reg[low & 7]);
+			buf_asm = snprintf (buf, sizeof (buf), "jnz %c", reg[low & 7]);
 		} else {
-			buf_asm = sdb_fmt ("jnz 0x%02x", buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "jnz 0x%02x", buf[1]);
 		}
 		break;
 	case 7:
 		if (low & 8) {
-			buf_asm = sdb_fmt ("inb %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "inb %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("inb %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "inb %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 8:
 		if (low & 8) {
-			buf_asm = sdb_fmt ("outb %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "outb %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("outb %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "outb %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 9:
 		if (low & 8) {
-			buf_asm = sdb_fmt ("add %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "add %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("add %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "add %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 10:
 		if (low & 8) {
-			buf_asm = sdb_fmt ("adc %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "adc %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("adc %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "adc %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 11:
 		if (low & 8) {
-			buf_asm = sdb_fmt ("and %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "and %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("and %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "and %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 12:
 		if (low & 8) {
-			buf_asm = sdb_fmt ("or %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "or %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("or %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "or %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 13:
 		if (low & 8) {
-			buf_asm = sdb_fmt ("nor %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "nor %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("nor %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "nor %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 14:
 		if (low & 8) {
-			buf_asm = sdb_fmt ("cmp %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "cmp %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("cmp %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "cmp %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	case 15:
 		if (low & 8) {
-			buf_asm = sdb_fmt ("sbb %c, %c", reg[low & 7], reg[buf[1]]);
+			buf_asm = snprintf (buf, sizeof (buf), "sbb %c, %c", reg[low & 7], reg[buf[1]]);
 		} else {
-			buf_asm = sdb_fmt ("sbb %c, 0x%02x", reg[low & 7], buf[1]);
+			buf_asm = snprintf (buf, sizeof (buf), "sbb %c, 0x%02x", reg[low & 7], buf[1]);
 		}
 		break;
 	default:
