@@ -53,7 +53,7 @@ if [ $WITHOUT_PULL -eq 0 ]; then
 		git branch | grep "^\* master" > /dev/null
 		if [ $? = 0 ]; then
 			echo "WARNING: Updating from remote repository"
-			git pull
+			git pull https://github.com/radareorg/radare2 master
 		fi
 	fi
 fi
