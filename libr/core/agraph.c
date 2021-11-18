@@ -2315,10 +2315,16 @@ static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
 	RANode *v = r_agraph_get_node (g, title);
 	if (v) {
 		ut64 a = r_num_get (NULL, u->title);
-		ut64 b = r_num_get (NULL, title);
-		const char *k = sdb_fmt ("agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight", a, b);
-		bool hl = sdb_exists (core->sdb, k);
-		r_agraph_add_edge (g, u, v, hl);
+		int len = 64;
+		char key[len];
+		char *fmt = "agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight";
+		if (len > snprintf (key, len, fmt, a, jump)) {
+			bool hl = sdb_exists (core->sdb, key);
+			r_agraph_add_edge (g, u, v, hl);
+		} else {
+			// shouldn't overflow but implies len is wrong
+			r_warn_if_reached ();
+		}
 	} else {
 		eprintf ("[!!] Failed to add child node 0x%" PFMT64x " to %s. Child not found\n", jump, u->title);
 	}
