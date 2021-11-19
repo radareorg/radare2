@@ -19,7 +19,7 @@ static inline HANDLE w32_loadlib(const char *name, const char *libname) {
 	if (!lib) {
 		lib = LoadLibrary (TEXT (libname));
 		if (!lib) {
-			eprintf ("Cannot load psapi.dll. Aborting\n");
+			eprintf ("Cannot load %s to resolve %s. Aborting\n", libname, name);
 			return (HANDLE)(size_t)0;
 		}
 	}
@@ -28,133 +28,133 @@ static inline HANDLE w32_loadlib(const char *name, const char *libname) {
 
 R_API FARPROC r_w32_InitializeConditionVariable(PCONDITION_VARIABLE a) {
 	// requires 2008 / vista
-	static FARPROC (*x)(PCONDITION_VARIABLE a) = NULL;
+	static FARPROC (WINAPI *x)(PCONDITION_VARIABLE a) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (FARPROC (*)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("InitializeConditionVariable"));
+		x = (FARPROC (WINAPI *)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("InitializeConditionVariable"));
 	}
 	return x? x (a): NULL;
 }
 
 R_API FARPROC r_w32_WakeConditionVariable(PCONDITION_VARIABLE a) {
 	// requires 2008 / vista
-	static FARPROC (*x)(PCONDITION_VARIABLE a) = NULL;
+	static FARPROC (WINAPI *x)(PCONDITION_VARIABLE a) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (FARPROC (*)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeConditionVariable"));
+		x = (FARPROC (WINAPI *)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeConditionVariable"));
 	}
 	return x? x (a): NULL;
 }
 
 R_API FARPROC r_w32_WakeAllConditionVariable(PCONDITION_VARIABLE a) {
 	// requires 2008 / vista
-	static FARPROC (*x)(PCONDITION_VARIABLE a) = NULL;
+	static FARPROC (WINAPI *x)(PCONDITION_VARIABLE a) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (FARPROC (*)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeAllConditionVariable"));
+		x = (FARPROC (WINAPI *)(PCONDITION_VARIABLE)) GetProcAddress (lib, W32_TCALL ("WakeAllConditionVariable"));
 	}
 	return x? x (a): NULL;
 }
 
 R_API BOOL r_w32_SleepConditionVariableCS(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) {
-	static BOOL (*x)(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) = NULL;
+	static BOOL (WINAPI *x)(PCONDITION_VARIABLE a, PCRITICAL_SECTION b, DWORD c) = NULL;
 	// requires 2008 / vista
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (BOOL (*)(PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD)) GetProcAddress (lib, W32_TCALL ("SleepConditionVariableCS"));
+		x = (BOOL (WINAPI *)(PCONDITION_VARIABLE, PCRITICAL_SECTION, DWORD)) GetProcAddress (lib, W32_TCALL ("SleepConditionVariableCS"));
 	}
 	return x? x (a, b, c): FALSE;
 }
 
 R_API BOOL r_w32_ProcessIdToSessionId(DWORD a, DWORD *b) {
-	static BOOL (*x)(DWORD, DWORD*) = NULL;
+	static BOOL (WINAPI *x)(DWORD, DWORD*) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (BOOL (*)(DWORD, DWORD*)) GetProcAddress (lib, W32_TCALL ("ProcessIdToSessionId"));
+		x = (BOOL (WINAPI *)(DWORD, DWORD*)) GetProcAddress (lib, W32_TCALL ("ProcessIdToSessionId"));
 	}
 	return x? x (a, b): FALSE;
 }
 
 R_API NTSTATUS r_w32_NtQuerySystemInformation(ULONG a, PVOID b, ULONG c, PULONG d) {
-	static NTSTATUS (*x)(ULONG, PVOID, ULONG, PULONG) = NULL;
+	static NTSTATUS (WINAPI *x)(ULONG, PVOID, ULONG, PULONG) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("ntdll", "ntdll.dll");
-		x = (NTSTATUS (*)(ULONG, PVOID, ULONG, PULONG)) GetProcAddress (lib, W32_TCALL ("NtQuerySystemInformation"));
+		x = (NTSTATUS (WINAPI *)(ULONG, PVOID, ULONG, PULONG)) GetProcAddress (lib, W32_TCALL ("NtQuerySystemInformation"));
 	}
 	return x? x (a, b, c, d): 0;
 }
 
 // XP1
 R_API BOOL r_w32_DebugBreakProcess(HANDLE a) {
-	static BOOL (*x)(HANDLE) = NULL;
+	static BOOL (WINAPI *x)(HANDLE) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (BOOL (*)(HANDLE)) GetProcAddress (lib, W32_TCALL ("DebugBreakProcess"));
+		x = (BOOL (WINAPI *)(HANDLE)) GetProcAddress (lib, W32_TCALL ("DebugBreakProcess"));
 	}
 	return x? x (a): false;
 }
 
 R_API BOOL r_w32_SetXStateFeaturesMask(PCONTEXT a, DWORD64 b) {
-	static BOOL (*x)(PCONTEXT, DWORD64) = NULL;
+	static BOOL (WINAPI *x)(PCONTEXT, DWORD64) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (BOOL (*)(PCONTEXT, DWORD64)) GetProcAddress (lib, W32_TCALL ("SetXStateFeaturesMask"));
+		x = (BOOL (WINAPI *)(PCONTEXT, DWORD64)) GetProcAddress (lib, W32_TCALL ("SetXStateFeaturesMask"));
 	}
 	return x? x (a, b): 0;
 }
 
 R_API PVOID r_w32_LocateXStateFeature(PCONTEXT a, DWORD b, PDWORD c) {
-	static PVOID (*x)(PCONTEXT, DWORD, PDWORD) = NULL;
+	static PVOID (WINAPI *x)(PCONTEXT, DWORD, PDWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (PVOID (*)(PCONTEXT, DWORD, PDWORD)) GetProcAddress (lib, W32_TCALL ("LocateXStateFeature"));
+		x = (PVOID (WINAPI *)(PCONTEXT, DWORD, PDWORD)) GetProcAddress (lib, W32_TCALL ("LocateXStateFeature"));
 	}
 	return x? x (a, b, c): 0;
 }
 
 R_API BOOL r_w32_GetXStateFeaturesMask(PCONTEXT a, PDWORD64 b) {
-	static BOOL (*x)(PCONTEXT, PDWORD64) = NULL;
+	static BOOL (WINAPI *x)(PCONTEXT, PDWORD64) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (BOOL (*)(PCONTEXT, PDWORD64)) GetProcAddress (lib, W32_TCALL ("GetXStateFeaturesMask"));
+		x = (BOOL (WINAPI *)(PCONTEXT, PDWORD64)) GetProcAddress (lib, W32_TCALL ("GetXStateFeaturesMask"));
 	}
 	return x? x (a, b): 0;
 }
 
 R_API NTSTATUS r_w32_NtDuplicateObject(HANDLE a, HANDLE b, HANDLE c, PHANDLE d, ACCESS_MASK e, ULONG f, ULONG g) {
-	static NTSTATUS (*x)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG) = NULL;
+	static NTSTATUS (WINAPI *x)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("ntdll", "ntdll.dll");
-		x = (NTSTATUS (*)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG)) GetProcAddress (lib, W32_TCALL ("NtDuplicateObject"));
+		x = (NTSTATUS (WINAPI *)(HANDLE, HANDLE, HANDLE, PHANDLE, ACCESS_MASK, ULONG, ULONG)) GetProcAddress (lib, W32_TCALL ("NtDuplicateObject"));
 	}
 	return x? x (a, b, c, d, e, f, g): 0;
 }
 
 // api to retrieve YMM from w7 sp1
 R_API ut64 r_w32_GetEnabledXStateFeatures(void) {
-	static ut64 (*x)(void) = NULL;
+	static ut64 (WINAPI *x)(void) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (ut64 (*)(void)) GetProcAddress (lib, W32_TCALL ("GetEnabledXStateFeatures"));
+		x = (ut64 (WINAPI *)(void)) GetProcAddress (lib, W32_TCALL ("GetEnabledXStateFeatures"));
 	}
 	return x? x (): 0;
 }
 
 R_API BOOL r_w32_InitializeContext(PVOID a, DWORD b, PCONTEXT* c, PDWORD d) {
-	static BOOL (*x) (PVOID, DWORD, PCONTEXT*, PDWORD) = NULL;
+	static BOOL (WINAPI *x) (PVOID, DWORD, PCONTEXT*, PDWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("ntdll", "ntdll.dll");
-		x = (BOOL (*) (PVOID, DWORD, PCONTEXT*, PDWORD))
+		x = (BOOL (WINAPI *) (PVOID, DWORD, PCONTEXT*, PDWORD))
 			GetProcAddress (lib, W32_TCALL ("InitializeContext"));
 	}
 	return x? x (a, b, c, d): 0;
 }
 
 R_API NTSTATUS r_w32_NtQueryInformationThread(HANDLE a, ULONG b, PVOID c, ULONG d, PULONG e) {
-	static NTSTATUS (*x)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
+	static NTSTATUS (WINAPI *x)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("ntdll", "ntdll.dll");
-		x = (NTSTATUS (*)(HANDLE, ULONG, PVOID, ULONG, PULONG))
+		x = (NTSTATUS (WINAPI *)(HANDLE, ULONG, PVOID, ULONG, PULONG))
 			GetProcAddress (lib, W32_TCALL ("NtQueryInformationThread"));
 	}
 	return x? x (a, b, c, d, e): 0;
@@ -172,17 +172,17 @@ DWORD GetModuleFileNameExA(
 R_API DWORD r_w32_GetModuleFileNameEx(HANDLE a, HMODULE b, LPSTR c, DWORD d) {
 	// requires windows XP, and its important to note its STDCALL for 32bit compat
 	// return GetModuleFileNameExA (a,b,c,d);
-	static DWORD (__stdcall *x)(HANDLE, HMODULE, LPSTR, DWORD) = NULL; // &GetModuleFileNameExA;
+	static DWORD (WINAPI *x)(HANDLE, HMODULE, LPSTR, DWORD) = NULL; // &GetModuleFileNameExA;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
 		if (lib != INVALID_HANDLE_VALUE) {
-			x = (DWORD (__stdcall *)(HANDLE, HMODULE, LPSTR, DWORD))
+			x = (DWORD (WINAPI *)(HANDLE, HMODULE, LPSTR, DWORD))
 				GetProcAddress (lib, W32_TCALL ("GetModuleFileNameEx"));
 		}
 		if (!x) {
 			lib = w32_loadlib ("psapi", "psapi.dll");
 			if (lib != INVALID_HANDLE_VALUE) {
-				x = (DWORD (__stdcall *)(HANDLE, HMODULE, LPSTR, DWORD))
+				x = (DWORD (WINAPI *)(HANDLE, HMODULE, LPSTR, DWORD))
 					GetProcAddress (lib, W32_TCALL ("GetModuleFileNameEx"));
 			}
 		}
@@ -191,48 +191,48 @@ R_API DWORD r_w32_GetModuleFileNameEx(HANDLE a, HMODULE b, LPSTR c, DWORD d) {
 }
 
 R_API BOOL r_w32_CancelSynchronousIo(HANDLE a) {
-	static BOOL (*x)(HANDLE) = NULL;
+	static BOOL (WINAPI *x)(HANDLE) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (BOOL (*)(HANDLE)) GetProcAddress (lib, W32_TCALL ("CancelSynchronousIo"));
+		x = (BOOL (WINAPI *)(HANDLE)) GetProcAddress (lib, W32_TCALL ("CancelSynchronousIo"));
 	}
 	return x? x (a): 0;
 }
 
 R_API BOOL r_w32_QueryFullProcessImageName(HANDLE h, DWORD p, LPTSTR s, PDWORD l) {
-	static DWORD (*x)(HANDLE, DWORD, LPTSTR, PDWORD) = NULL;
+	static DWORD (WINAPI *x)(HANDLE, DWORD, LPTSTR, PDWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");
-		x = (DWORD (*)(HANDLE, DWORD, LPTSTR, PDWORD))
+		x = (DWORD (WINAPI *)(HANDLE, DWORD, LPTSTR, PDWORD))
 			GetProcAddress (lib, W32_TCALL ("QueryFullProcessImageName"));
 	}
 	return x? x (h, p, s, l): 0;
 }
 
 R_API DWORD r_w32_GetMappedFileName(HANDLE h, LPVOID p, LPSTR s, DWORD l) {
-	static DWORD (__stdcall *x)(HANDLE, LPVOID, LPSTR, DWORD) = NULL;
+	static DWORD (WINAPI *x)(HANDLE, LPVOID, LPSTR, DWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("psapi", "psapi.dll");
-		x = (DWORD (__stdcall *)(HANDLE, LPVOID, LPSTR, DWORD))
+		x = (DWORD (WINAPI *)(HANDLE, LPVOID, LPSTR, DWORD))
 			GetProcAddress (lib, W32_TCALL ("GetMappedFileName"));
 	}
 	return x? x (h, p, s, l): 0;
 }
 
 R_API DWORD r_w32_NtQueryObject(HANDLE a, ULONG b, PVOID c, ULONG d, PULONG e) {
-	static NTSTATUS (*x)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
+	static NTSTATUS (WINAPI *x)(HANDLE, ULONG, PVOID, ULONG, PULONG) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("ntdll", "ntdll.dll");
-		x = (NTSTATUS (*)(HANDLE, ULONG, PVOID, ULONG, PULONG)) GetProcAddress(lib,"NtQueryObject");
+		x = (NTSTATUS (WINAPI *)(HANDLE, ULONG, PVOID, ULONG, PULONG)) GetProcAddress(lib,"NtQueryObject");
 	}
 	return x? x (a, b, c, d , e): 0;
 }
 
 R_API DWORD r_w32_GetProcessImageFileName(HANDLE a, LPSTR b, DWORD c) {
-	static DWORD (__stdcall *x)(HANDLE,LPSTR,DWORD) = NULL;
+	static DWORD (WINAPI *x)(HANDLE,LPSTR,DWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("psapi", "psapi.dll");
-		x = (DWORD (__stdcall *)(HANDLE, LPSTR, DWORD))
+		x = (DWORD (WINAPI *)(HANDLE, LPSTR, DWORD))
 			GetProcAddress (lib, W32_TCALL ("GetProcessImageFileName"));
 	}
 	return x ? x (a, b, c): 0;
