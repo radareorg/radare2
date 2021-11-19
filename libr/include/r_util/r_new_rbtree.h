@@ -60,6 +60,7 @@ R_API void r_crbtree_free(RRBTree *tree);
 R_API RRBNode *r_crbtree_find_node(RRBTree *tree, void *data, RRBComparator cmp, void *user);
 R_API void *r_crbtree_find(RRBTree *tree, void *data, RRBComparator cmp, void *user);
 R_API bool r_crbtree_insert(RRBTree *tree, void *data, RRBComparator cmp, void *user);
+R_API void *r_crbtree_take(RRBTree *tree, void *data, RRBComparator cmp, void *user);
 R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user);
 R_API RRBNode *r_crbtree_first_node(RRBTree *tree);
 R_API RRBNode *r_crbtree_last_node(RRBTree *tree);

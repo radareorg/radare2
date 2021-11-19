@@ -298,7 +298,7 @@ static void __flag_graph (RCore *core, const char *input, int mode) {
 }
 
 static void spaces_list(RSpaces *sp, int mode) {
-	RSpaceIter it;
+	RSpaceIter *it;
 	RSpace *s;
 	const RSpace *cur = r_spaces_current (sp);
 	PJ *pj = NULL;

@@ -1544,7 +1544,7 @@ static void autocomplete_zignatures(RCore *core, RLineCompletion *completion, co
 	int length = strlen (msg);
 	RSpaces *zs = &core->anal->zign_spaces;
 	RSpace *s;
-	RSpaceIter it;
+	RSpaceIter *it;
 
 	r_spaces_foreach (zs, it, s) {
 		if (!strncmp (msg, s->name, length)) {
@@ -1561,7 +1561,7 @@ static void autocomplete_flagspaces(RCore *core, RLineCompletion *completion, co
 	r_return_if_fail (msg);
 	int length = strlen (msg);
 	RFlag *flag = core->flags;
-	RSpaceIter it;
+	RSpaceIter *it;
 	RSpace *s;
 	r_flag_space_foreach (flag, it, s) {
 		if (!strncmp (msg, s->name, length)) {
