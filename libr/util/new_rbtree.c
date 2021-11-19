@@ -286,8 +286,9 @@ static void _exchange_nodes (RRBNode *node_a, RRBNode *node_b) {
 	}
 }
 
-R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
-	r_return_val_if_fail (tree && data && tree->size && tree->root && cmp, false);
+// remove data from the tree, without freeing it
+R_API void *r_crbtree_take(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
+	r_return_val_if_fail (tree && data && tree->size && tree->root && cmp, NULL);
 
 	RRBNode head; /* Fake tree root */
 	memset (&head, 0, sizeof (RRBNode));
@@ -344,26 +345,18 @@ R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *
 		}
 	}
 
+	void *ret = NULL;
 	/* Replace and remove if found */
 	if (found) {
-#if 0
-		tree->free (found->data);	// does this break next/prev?
-		found->data = q->data;
-		_set_link (p, q->link[q->link[0] == NULL], p->link[1] == q);
-		free (q);
-#else
 		_set_link (p, q->link[q->link[0] == NULL], p->link[1] == q);
 		if (q != found) {
 			q->link[0] = NULL;
 			q->link[1] = NULL;
 			q->parent = NULL;
 			_exchange_nodes (found, q);
-		}		
-		if (tree->free) {
-			tree->free (found->data);
 		}
+		ret = found->data;
 		free (found);
-#endif
 		tree->size--;
 	}
 
@@ -373,9 +366,18 @@ R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *
 		tree->root->red = 0;
 		tree->root->parent = NULL;
 	} else {
-		r_return_val_if_fail (tree->size == 0, false);
+		r_return_val_if_fail (tree->size == 0, NULL);
 	}
-	return !!found;
+	return ret;
+}
+
+R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
+	r_return_val_if_fail (tree && data && tree->size && tree->root && cmp, false);
+	data = r_crbtree_take (tree, data, cmp, user);
+	if (tree->free) {
+		tree->free (data);
+	}
+	return !!data;
 }
 
 R_API RRBNode *r_crbtree_first_node(RRBTree *tree) {

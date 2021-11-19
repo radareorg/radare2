@@ -1993,7 +1993,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		} else {
 			r_cons_printf ("Flag spaces:\n\n");
 			hit = 0;
-			RSpaceIter it;
+			RSpaceIter *it;
 			const RSpace *s, *cur = r_flag_space_cur (core->flags);
 			int i = 0;
 			r_flag_space_foreach (core->flags, it, s) {

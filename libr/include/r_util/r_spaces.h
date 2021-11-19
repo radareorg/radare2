@@ -23,9 +23,9 @@ extern "C" {
  * R_SPACE_EVENT_UNSET: called when deleting a RSpace with a given name
  */
 
+// XXX: kill this
 typedef struct r_space_t {
 	char *name;
-	RBNode rb;
 } RSpace;
 
 typedef enum {
@@ -54,7 +54,7 @@ typedef struct r_space_event_t {
 typedef struct r_spaces_t {
 	const char *name;
 	RSpace *current;
-	RBTree spaces;
+	RRBTree *spaces;
 	RList *spacestack;
 	REvent *event;
 } RSpaces;
@@ -95,13 +95,12 @@ static inline const char *r_spaces_current_name(RSpaces *sp) {
 }
 
 static inline bool r_spaces_is_empty(RSpaces *sp) {
-	RBIter it = r_rbtree_first (sp->spaces);
-	return it.len == 0;
+	return !!r_crbtree_first_node (sp->spaces);
 }
 
-typedef RBIter RSpaceIter;
+typedef RRBNode RSpaceIter;
 #define r_spaces_foreach(sp, it, s) \
-	r_rbtree_foreach ((sp)->spaces, (it), (s), RSpace, rb)
+	r_crbtree_foreach ((sp)->spaces, (it), (s))
 
 #ifdef __cplusplus
 }
