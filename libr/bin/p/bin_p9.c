@@ -167,7 +167,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("bss");
 	ptr->size = 0;
-	ptr->vsize = ALIGN(header->bss, align);
+	ptr->vsize = ALIGN (header->bss, align);
 	ptr->paddr = 0;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_RW;
