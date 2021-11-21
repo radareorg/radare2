@@ -1433,7 +1433,7 @@ repeat:
 		if (fun) {
 			if (xref) { //  function xrefs
 				xrefs = r_anal_xrefs_get (core->anal, addr);
-				//XXX xrefs = r_anal_fcn_get_xrefs (core->anal, fun);
+				//XXX xrefs = r_anal_function_get_xrefs (core->anal, fun);
 				// this function is buggy so we must get the xrefs of the addr
 			} else { // functon refs
 				xrefs = r_anal_function_get_refs (fun);
@@ -2370,7 +2370,7 @@ static bool canWrite(RCore *core, ut64 addr) {
 static bool toggle_bb(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, addr);
+		RAnalBlock *bb = r_anal_function_bbget_in (core->anal, fcn, addr);
 		if (bb) {
 			bb->folded = !bb->folded;
 		} else {

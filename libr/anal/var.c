@@ -1562,7 +1562,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 	r_list_free (list);
 }
 
-R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
+R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn) {
 	cache->bvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
 	cache->rvars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
 	cache->svars = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_SPV);
@@ -1576,7 +1576,7 @@ R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAn
 	r_list_sort (cache->svars, (RListComparator)var_comparator);
 }
 
-R_API void r_anal_fcn_vars_cache_fini(RAnalFcnVarsCache *cache) {
+R_API void r_anal_function_vars_cache_fini(RAnalFcnVarsCache *cache) {
 	if (!cache) {
 		return;
 	}
@@ -1585,7 +1585,7 @@ R_API void r_anal_fcn_vars_cache_fini(RAnalFcnVarsCache *cache) {
 	r_list_free (cache->svars);
 }
 
-R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name,
+R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name,
 		R_NULLABLE RAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post) {
 	RAnalFcnVarsCache *cache = NULL;
 
@@ -1655,7 +1655,7 @@ R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction
 			type_fcn_name = NULL;
 			goto beach;
 		}
-		r_anal_fcn_vars_cache_init (anal, cache, fcn);
+		r_anal_function_vars_cache_init (anal, cache, fcn);
 	}
 
 	bool comma = true;
@@ -1715,7 +1715,7 @@ beach:
 	R_FREE (type_fcn_name);
 	if (!reuse_cache) {
 		// !reuse_cache => we created our own cache
-		r_anal_fcn_vars_cache_fini (cache);
+		r_anal_function_vars_cache_fini (cache);
 		free (cache);
 	}
 	return r_strbuf_drain (buf);

@@ -40,7 +40,7 @@ static void apply_switch(RAnal *anal, ut64 switch_addr, ut64 jmptbl_addr, ut64 c
 	}
 }
 
-// analyze a jmptablle inside a function // maybe rename to r_anal_fcn_jmptbl() ?
+// analyze a jmptablle inside a function // maybe rename to r_anal_function_jmptbl() ?
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr) {
 	const int depth = 50;
 	return try_walkthrough_jmptbl (anal, fcn, block, depth, jmpaddr, 0, table, table, tablesize, tablesize, default_addr, false);
@@ -48,7 +48,7 @@ R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 
 static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, ut64 jmpptr, int depth) {
 	const ut64 block_size = block->size;
-	(void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
+	(void)r_anal_function_bb (anal, fcn, jmpptr, depth - 1);
 	if (block->size != block_size) {
 		// block was be split during anal and does not contain the
 		// jmp instruction anymore, so we need to search for it and get it again
@@ -238,7 +238,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 			}
 		}
 		//apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs);
-		//(void)r_anal_fcn_bb (anal, fcn, jmpptr, depth - 1);
+		//(void)r_anal_function_bb (anal, fcn, jmpptr, depth - 1);
 		int case_idx = offs / sz;
 		int casenum = case_idx + start_casenum_shift;
 		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs);

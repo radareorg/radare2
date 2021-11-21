@@ -960,7 +960,7 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 // function argument types and names into anal/types
 static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	RAnalFcnVarsCache cache;
-	r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
+	r_anal_function_vars_cache_init (core->anal, &cache, fcn);
 	RListIter *iter;
 	RAnalVar *var;
 	size_t arg_count = 0;
@@ -1046,7 +1046,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		free (v);
  	}
 	free (args);
-	r_anal_fcn_vars_cache_fini (&cache);
+	r_anal_function_vars_cache_fini (&cache);
 }
 
 static bool cmd_anal_aaft(RCore *core) {
@@ -2905,8 +2905,8 @@ static int cmd_afbplus(RCore *core, const char *input) {
 	}
 	fcn = r_anal_get_function_at (core->anal, fcnaddr);
 	if (fcn) {
-		if (!r_anal_fcn_add_bb (core->anal, fcn, addr, size, jump, fail, diff))
-		//if (!r_anal_fcn_add_bb_raw (core->anal, fcn, addr, size, jump, fail, type, diff))
+		if (!r_anal_function_add_bb (core->anal, fcn, addr, size, jump, fail, diff))
+		//if (!r_anal_function_add_bb_raw (core->anal, fcn, addr, size, jump, fail, type, diff))
 		{
 			eprintf ("afb+: Cannot add basic block at 0x%08"PFMT64x"\n", addr);
 		}
@@ -3250,7 +3250,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 			pj_a (j);
 
 			RAnalFcnVarsCache cache;
-			r_anal_fcn_vars_cache_init (core->anal, &cache, fcn);
+			r_anal_function_vars_cache_init (core->anal, &cache, fcn);
 			int nargs = 0;
 			RAnalVar *var;
 			r_list_foreach (cache.rvars, iter, var) {
@@ -3280,7 +3280,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 				pj_ks (j, "type", var->type);
 				pj_end (j);
 			}
-			r_anal_fcn_vars_cache_fini (&cache);
+			r_anal_function_vars_cache_fini (&cache);
 
 			pj_end (j);
 			pj_ki (j, "count", nargs);
@@ -3293,7 +3293,7 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 		}
 		pj_free (j);
 	} else {
-		char *sig = r_anal_fcn_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
+		char *sig = r_anal_function_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
 		if (sig) {
 			r_cons_printf ("%s\n", sig);
 			free (sig);
@@ -3794,8 +3794,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				? r_num_math (core->num, input + 2)
 				: core->offset;
 			r_core_anal_undefine (core, addr);
-			r_anal_fcn_del_locs (core->anal, addr);
-			r_anal_fcn_del (core->anal, addr);
+			r_anal_function_del_locs (core->anal, addr);
+			r_anal_function_del (core->anal, addr);
 		}
 		break;
 	case 'j': // "afj"
@@ -4433,7 +4433,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case 'F': { // "afbF"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 			if (fcn) {
-				RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, core->offset);
+				RAnalBlock *bb = r_anal_function_bbget_in (core->anal, fcn, core->offset);
 				if (bb) {
 					if (input[3]) {
 						int n = atoi (input + 3);

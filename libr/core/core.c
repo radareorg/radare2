@@ -868,7 +868,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return fcn->addr;
 			}
 #if 0
-			ut64 addr = r_anal_fcn_label_get (core->anal, core->offset, str);
+			ut64 addr = r_anal_function_label_get (core->anal, core->offset, str);
 			if (addr != 0) {
 				ret = addr;
 			} else {
