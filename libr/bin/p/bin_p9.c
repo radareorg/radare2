@@ -261,7 +261,7 @@ static RList *symbols(RBinFile *bf) {
 		const char type = typ & 0x7f;
 
 		char *name = r_buf_get_string (bf->buf, syms + offset);
-		if (name == NULL) {
+		if (!name) {
 			goto error;
 		}
 		offset += strlen (name) + 1;
