@@ -210,7 +210,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("};\n");
 		break;
 	case 'V': // "pcV" // vlang.io
-		p->cb_printf ("data := [ byte(%d),\n  ", buf[0]);
+		p->cb_printf ("const data = [ byte(%d),\n  ", buf[0]);
 		for (i = 1; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ", ": "");
