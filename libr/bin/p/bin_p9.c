@@ -300,7 +300,7 @@ static RList *symbols(RBinFile *bf) {
 
 		RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 		if (!ptr) {
-			free(name);
+			free (name);
 			goto error;
 		}
 
