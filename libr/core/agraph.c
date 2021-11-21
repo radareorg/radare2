@@ -4065,7 +4065,7 @@ static void rotateColor(RCore *core) {
 static bool toggle_bb(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		RAnalBlock *bb = r_anal_fcn_bbget_in (core->anal, fcn, addr);
+		RAnalBlock *bb = r_anal_function_bbget_in (core->anal, fcn, addr);
 		if (bb) {
 			bb->folded = !bb->folded;
 		} else {

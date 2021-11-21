@@ -5630,7 +5630,7 @@ static int cmd_print(void *data, const char *input) {
 					if (realsz + 4096 < linearsz) {
 						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
 					} else {
-						ut64 at = f->addr; // TODO: should be min from r_anal_fcn_get_range()?
+						ut64 at = f->addr; // TODO: should be min from r_anal_function_get_range()?
 						ut64 sz = R_MAX (linearsz, realsz);
 						ut8 *buf = calloc (sz, 1);
 						if (buf) {

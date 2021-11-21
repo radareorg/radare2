@@ -276,7 +276,7 @@ struct r_anal_attr_t {
 
 /* Stores useful function metadata */
 /* TODO: Think about moving more stuff to this structure? */
-typedef struct r_anal_fcn_meta_t {
+typedef struct r_anal_function_meta_t {
 	// _min and _max are calculated lazily when queried.
 	// On changes, they will either be updated (if this can be done trivially) or invalidated.
 	// They are invalid iff _min == UT64_MAX.
@@ -1556,8 +1556,8 @@ R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
 R_API void r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
-R_API const char *r_anal_fcntype_tostring(int type);
-R_API int r_anal_fcn_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
+R_API const char *r_anal_functiontype_tostring(int type);
+R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth);
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
 R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
 R_API void r_anal_add_import(RAnal *anal, const char *imp);
@@ -1658,13 +1658,13 @@ R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr
 R_API RAnalFunction *r_anal_get_function_byname(RAnal *anal, const char *name);
 
 R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype);
-R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
-R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
-R_API bool r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn,
+R_API int r_anal_function_del(RAnal *anal, ut64 addr);
+R_API int r_anal_function_del_locs(RAnal *anal, ut64 addr);
+R_API bool r_anal_function_add_bb(RAnal *anal, RAnalFunction *fcn,
 		ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, R_BORROW RAnalDiff *diff);
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high);
-R_API void r_anal_fcn_invalidate_read_ahead_cache(void);
+R_API void r_anal_function_invalidate_read_ahead_cache(void);
 
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn);
 R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size);
@@ -1673,7 +1673,7 @@ R_API void r_anal_function_update_analysis(RAnalFunction *fcn);
 #define R_ANAL_FCN_VARKIND_LOCAL 'v'
 
 
-R_API int r_anal_fcn_var_del_byindex (RAnal *a, ut64 fna, const char kind, int scope, ut32 idx);
+R_API int r_anal_function_var_del_byindex (RAnal *a, ut64 fna, const char kind, int scope, ut32 idx);
 /* args */
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 
@@ -1685,13 +1685,13 @@ R_API int r_anal_function_loops(RAnalFunction *fcn);
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API char *r_anal_function_get_json(RAnalFunction *function);
-R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr);
+R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
 R_API char *r_anal_function_get_signature(RAnalFunction *function);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
-R_API int r_anal_fcn_count (RAnal *a, ut64 from, ut64 to);
-R_API RAnalBlock *r_anal_fcn_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut64 addr);
-R_API RAnalBlock *r_anal_fcn_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr);
-R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
+R_API int r_anal_function_count (RAnal *a, ut64 from, ut64 to);
+R_API RAnalBlock *r_anal_function_bbget_in(const RAnal *anal, RAnalFunction *fcn, ut64 addr);
+R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr);
+R_API bool r_anal_function_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);
 R_API bool r_anal_function_purity(RAnalFunction *fcn);
 
@@ -1761,15 +1761,15 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 // so if var is the reg arg then this will return the stack var.
 R_API RAnalVar *r_anal_var_get_dst_var(RAnalVar *var);
 
-typedef struct r_anal_fcn_vars_cache {
+typedef struct r_anal_function_vars_cache {
 	RList *bvars;
 	RList *rvars;
 	RList *svars;
 } RAnalFcnVarsCache;
-R_API void r_anal_fcn_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
-R_API void r_anal_fcn_vars_cache_fini(RAnalFcnVarsCache *cache);
+R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
+R_API void r_anal_function_vars_cache_fini(RAnalFcnVarsCache *cache);
 
-R_API char *r_anal_fcn_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name,
+R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFunction *fcn, R_NULLABLE char *fcn_name,
 		R_NULLABLE RAnalFcnVarsCache *reuse_cache, R_NULLABLE const char *fcn_name_pre, R_NULLABLE const char *fcn_name_post);
 
 

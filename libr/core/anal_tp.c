@@ -770,7 +770,7 @@ repeat:
 					bool jmp = false;
 					RAnalOp *jmp_op = {0};
 					ut64 jmp_addr = next_op->jump;
-					RAnalBlock *jmpbb = r_anal_fcn_bbget_in (anal, fcn, jmp_addr);
+					RAnalBlock *jmpbb = r_anal_function_bbget_in (anal, fcn, jmp_addr);
 
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR ; i++) {

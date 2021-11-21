@@ -236,7 +236,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 		if (__isdata (core, cur->start)) {
 			continue;
 		}
-		r_anal_fcn_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
+		r_anal_function_add_bb (core->anal, f, cur->start, (cur->end - cur->start), cur->jump, cur->fail, NULL);
 	}
 	if (!r_anal_add_function (core->anal, f)) {
 		// eprintf ("Failed to insert function\n");
