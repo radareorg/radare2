@@ -56,6 +56,8 @@ static const char *help_msg_eco[] = {
 	"Usage: eco[jc] [theme]", "", "load theme (cf. Path and dir.prefix)",
 	"eco", "", "list available themes",
 	"eco.", "", "display current theme name",
+	"eco*", "", "show current theme script",
+	"eco!", "", "edit and reload current theme",
 	"ecoo", "", "reload current theme",
 	"ecoq", "", "list available themes without showing the current one",
 	"ecoj", "", "list available themes in JSON",
@@ -135,12 +137,20 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 	path = tmp ? r_str_r2_prefix (tmp) : NULL;
 	free (tmp);
 
-	if (!load_theme (core, home)) {
+	if (load_theme (core, home)) {
+		core->theme = r_str_dup (core->theme, arg);
+		core->themepath = home;
+		home = NULL;
+	} else {
 		if (load_theme (core, path)) {
 			core->theme = r_str_dup (core->theme, arg);
+			core->themepath = path;
+			path = NULL;
 		} else {
 			if (load_theme (core, arg)) {
 				core->theme = r_str_dup (core->theme, arg);
+				core->themepath = arg;
+				arg = NULL;
 			} else {
 				char *absfile = r_file_abspath (arg);
 				eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
@@ -167,7 +177,7 @@ static void list_themes_in_path(RList *list, const char *path) {
 	r_list_free (files);
 }
 
-R_API char *r_core_get_theme (RCore *core) {
+R_API char *r_core_get_theme(RCore *core) {
 	return core->theme;
 }
 
@@ -188,6 +198,7 @@ R_API RList *r_core_list_themes(RCore *core) {
 		R_FREE (path);
 	}
 
+	r_list_sort (list, (RListComparator)strcmp);
 	return list;
 }
 
@@ -411,6 +422,11 @@ static int cmd_eval(void *data, const char *input) {
 		case 'o': // "eco"
 			if (input[2] == 'j') {
 				nextpal (core, 'j');
+			} else if (input[2] == '*') {
+				r_core_cmdf (core, "cat %s", core->themepath);
+			} else if (input[2] == '!') {
+				r_core_editor (core, core->themepath, NULL);
+				cmd_load_theme (core, core->theme); // reload
 			} else if (input[2] == ' ') {
 				cmd_load_theme (core, input + 3);
 			} else if (input[2] == 'o') {
