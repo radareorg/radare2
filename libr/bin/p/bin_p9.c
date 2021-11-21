@@ -269,7 +269,8 @@ static RList *symbols(RBinFile *bf) {
 		// source file names or source file line offsets contain additional details
 		if (type == 'Z' || type == 'z') {
 			// look for two adjacent zeros to terminate the sequence
-			for (ut64 j = 0; j < header->syms - offset; j++) {
+			ut64 j, fin = (header->syms > offset)? header->syms - offset: 0;
+			for (j = 0; j < fin; j++) {
 				ut16 data = r_buf_read_be16_at (bf->buf, syms + offset + j);
 				if (data == UT16_MAX) {
 					goto error;
