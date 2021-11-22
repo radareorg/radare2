@@ -822,10 +822,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			break;
 		}
 		case 'O': // $O
-			  if (core->print->cur_enabled) {
-				  return core->offset + core->print->cur;
-			  }
-			  return core->offset;
+			if (core->print->cur_enabled) {
+				return core->offset + core->print->cur;
+			}
+			return core->offset;
 		case 'C': // $C nth call
 			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
 		case 'J': // $J nth jump
@@ -1205,6 +1205,56 @@ out:
 	free (basename);
 }
 
+static void autocomplete_alias(RLineCompletion *completion, RCmd *cmd, const char *needle, bool is_data) {
+	const int needle_len = strlen (needle);
+
+	RList *alias_keys = r_cmd_alias_keys (cmd);
+	RList *alias_match = r_list_new ();
+	RListIter *it;
+
+	/* Get possible completions */
+	r_list_foreach_iter (alias_keys, it) {
+		const char *k = it->data;
+		const RCmdAliasVal *val = r_cmd_alias_get (cmd, k);
+		/* Skip aliases that don't match given data/command setting */
+		if (val->is_data != is_data) {
+			continue;
+		}
+
+		if (!needle_len || !strncmp (k, needle, needle_len)) {
+			r_list_append (alias_match, (void *)k);
+		}
+	}
+	r_list_free (alias_keys);
+
+	const int match_count = r_list_length (alias_match);
+	if (match_count == 1) {
+		/* If only 1 possible completion, use it */
+		const char *k = r_list_pop (alias_match);
+		const RCmdAliasVal *val = r_cmd_alias_get (cmd, k);
+		const char *v = (char *)val->data;
+
+		r_cons_printf ("$%s=%s\n", k, v);
+		r_cons_flush ();
+		char *completed_alias = r_str_newf ("$%s", k);
+		r_line_completion_push (completion, completed_alias);
+		free (completed_alias);
+	} else if (match_count > 1) {
+		/* If multiple possible completions, show them */
+		r_list_foreach_iter (alias_match, it) {
+			const char *k = it->data;
+			const RCmdAliasVal *val = r_cmd_alias_get (cmd, k);
+			const char *v = (char *)val->data;
+
+			char *line = r_str_newf ("$%s=%s", k, v);
+			r_line_completion_push (completion, line);
+			free (line);
+		}
+	}
+	/* If 0 possible completions, do nothing */
+	r_list_free (alias_match);
+}
+
 static void autocomplete_process_path(RLineCompletion *completion, const char *str, const char *path) {
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
 	char *home = NULL, *filename = NULL, *p = NULL;
@@ -1285,7 +1335,7 @@ out:
 	free (basename);
 }
 
-static void autocompleteFilename(RLineCompletion *completion, RLineBuffer *buf, char **extra_paths, int narg) {
+static void autocompleteFilename(RLineCompletion *completion, RLineBuffer *buf, RCmd *cmd, char **extra_paths, int narg) {
 	char *args = NULL, *input = NULL;
 	int n = 0, i = 0;
 	char *pipe = strchr (buf->data, '>');
@@ -1308,6 +1358,11 @@ static void autocompleteFilename(RLineCompletion *completion, RLineBuffer *buf, 
 		goto out;
 	}
 	const char *tinput = r_str_trim_head_ro (input);
+
+	if (input[0] == '$') {
+		autocomplete_alias (completion, cmd, input+1, true);
+		goto out;
+	}
 
 	autocomplete_process_path (completion, buf->data, tinput);
 
@@ -1413,22 +1468,11 @@ static void autocomplete_project(RCore *core, RLineCompletion *completion, const
 	}
 }
 
-static bool get_alias_keys(void *keylist_in, const void *k, const void *v){
-	RList *keylist = (RList *)keylist_in;
-	return r_list_append (keylist, (char *)k);
-}
-
 static void autocomplete_minus(RCore *core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (str);
 	int length = strlen (str);
 
-	RList *keys = r_list_new ();
-	if (!keys) {
-		return;
-	}
-
-	ht_pp_foreach (core->rcmd->aliases, get_alias_keys, keys);
-
+	RList *keys = r_cmd_alias_keys (core->rcmd);
 	RListIter *it;
 	r_list_foreach_iter (keys, it) {
 		if (!strncmp (it->data, str, length)) {
@@ -1832,7 +1876,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		return;
 	}
 	if (r_config_get_b (core->config, "scr.prompt.tabhelp")) {
-		if (buf->data[0] && buf->data[strlen (buf->data) - 1] != ' ' && !strchr (buf->data, ' ')) {
+		if (buf->data[0] && buf->data[0] != '$' && !strchr (buf->data, ' ')) {
 			r_line_completion_clear (completion);
 			char *s = r_core_cmd_strf (core, "%s?", buf->data);
 			eprintf ("%s%s\n%s", core->cons->line->prompt, buf->data, s);
@@ -1843,8 +1887,8 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 	r_line_completion_clear (completion);
 	char *pipe = strchr (buf->data, '>');
 	char *ptr = strchr (buf->data, '@');
-	if (pipe && strchr (pipe + 1, ' ') && buf->data + buf->index >= pipe) {
-		autocompleteFilename (completion, buf, NULL, 1);
+	if (pipe && strchr (ptr + 1, ' ') && buf->data + buf->index >= pipe) {
+		autocompleteFilename (completion, buf, core->rcmd, NULL, 1);
 	} else if (ptr && strchr (ptr + 1, ' ') && buf->data + buf->index >= ptr) {
 		int sdelta, n;
 		ptr = (char *)r_str_trim_head_ro (ptr + 1);
@@ -1853,7 +1897,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		r_flag_foreach_prefix (core->flags, buf->data + sdelta, n, add_argv, completion);
 	} else if (!strncmp (buf->data, "#!pipe ", 7)) {
 		if (strchr (buf->data + 7, ' ')) {
-			autocompleteFilename (completion, buf, NULL, 2);
+			autocompleteFilename (completion, buf, core->rcmd, NULL, 2);
 		} else {
 			int chr = 7;
 			ADDARG ("node");
@@ -1865,76 +1909,76 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		}
 	} else if (!strncmp (buf->data, "ec ", 3)) {
 		if (strchr (buf->data + 3, ' ')) {
-			autocompleteFilename (completion, buf, NULL, 2);
+			autocompleteFilename (completion, buf, core->rcmd, NULL, 2);
 		} else {
 			int chr = 3;
-			ADDARG("comment")
-			ADDARG("usrcmt")
-			ADDARG("args")
-			ADDARG("fname")
-			ADDARG("floc")
-			ADDARG("fline")
-			ADDARG("flag")
-			ADDARG("label")
-			ADDARG("help")
-			ADDARG("flow")
-			ADDARG("prompt")
-			ADDARG("offset")
-			ADDARG("input")
-			ADDARG("invalid")
-			ADDARG("other")
-			ADDARG("b0x00")
-			ADDARG("b0x7f")
-			ADDARG("b0xff")
-			ADDARG("math")
-			ADDARG("bin")
-			ADDARG("btext")
-			ADDARG("push")
-			ADDARG("pop")
-			ADDARG("crypto")
-			ADDARG("jmp")
-			ADDARG("cjmp")
-			ADDARG("call")
-			ADDARG("nop")
-			ADDARG("ret")
-			ADDARG("trap")
-			ADDARG("swi")
-			ADDARG("cmp")
-			ADDARG("reg")
-			ADDARG("creg")
-			ADDARG("num")
-			ADDARG("mov")
-			ADDARG("func_var")
-			ADDARG("func_var_type")
-			ADDARG("func_var_addr")
-			ADDARG("widget_bg")
-			ADDARG("widget_sel")
-			ADDARG("ai.read")
-			ADDARG("ai.write")
-			ADDARG("ai.exec")
-			ADDARG("ai.seq")
-			ADDARG("ai.ascii")
-			ADDARG("ai.unmap")
-			ADDARG("graph.box")
-			ADDARG("graph.box2")
-			ADDARG("graph.box3")
-			ADDARG("graph.box4")
-			ADDARG("graph.true")
-			ADDARG("graph.false")
-			ADDARG("graph.trufae")
-			ADDARG("graph.current")
-			ADDARG("graph.traced")
-			ADDARG("gui.cflow")
-			ADDARG("gui.dataoffset")
-			ADDARG("gui.background")
-			ADDARG("gui.alt_background")
-			ADDARG("gui.border")
+			ADDARG ("comment");
+			ADDARG ("usrcmt");
+			ADDARG ("args");
+			ADDARG ("fname");
+			ADDARG ("floc");
+			ADDARG ("fline");
+			ADDARG ("flag");
+			ADDARG ("label");
+			ADDARG ("help");
+			ADDARG ("flow");
+			ADDARG ("prompt");
+			ADDARG ("offset");
+			ADDARG ("input");
+			ADDARG ("invalid");
+			ADDARG ("other");
+			ADDARG ("b0x00");
+			ADDARG ("b0x7f");
+			ADDARG ("b0xff");
+			ADDARG ("math");
+			ADDARG ("bin");
+			ADDARG ("btext");
+			ADDARG ("push");
+			ADDARG ("pop");
+			ADDARG ("crypto");
+			ADDARG ("jmp");
+			ADDARG ("cjmp");
+			ADDARG ("call");
+			ADDARG ("nop");
+			ADDARG ("ret");
+			ADDARG ("trap");
+			ADDARG ("swi");
+			ADDARG ("cmp");
+			ADDARG ("reg");
+			ADDARG ("creg");
+			ADDARG ("num");
+			ADDARG ("mov");
+			ADDARG ("func_var");
+			ADDARG ("func_var_type");
+			ADDARG ("func_var_addr");
+			ADDARG ("widget_bg");
+			ADDARG ("widget_sel");
+			ADDARG ("ai.read");
+			ADDARG ("ai.write");
+			ADDARG ("ai.exec");
+			ADDARG ("ai.seq");
+			ADDARG ("ai.ascii");
+			ADDARG ("ai.unmap");
+			ADDARG ("graph.box");
+			ADDARG ("graph.box2");
+			ADDARG ("graph.box3");
+			ADDARG ("graph.box4");
+			ADDARG ("graph.true");
+			ADDARG ("graph.false");
+			ADDARG ("graph.trufae");
+			ADDARG ("graph.current");
+			ADDARG ("graph.traced");
+			ADDARG ("gui.cflow");
+			ADDARG ("gui.dataoffset");
+			ADDARG ("gui.background");
+			ADDARG ("gui.alt_background");
+			ADDARG ("gui.border");
 		}
 	} else if (!strncmp (buf->data, "pf.", 3)
-	|| !strncmp (buf->data, "pf*.", 4)
-	|| !strncmp (buf->data, "pfd.", 4)
-	|| !strncmp (buf->data, "pfv.", 4)
-	|| !strncmp (buf->data, "pfj.", 4)) {
+			|| !strncmp (buf->data, "pf*.", 4)
+			|| !strncmp (buf->data, "pfd.", 4)
+			|| !strncmp (buf->data, "pfv.", 4)
+			|| !strncmp (buf->data, "pfj.", 4)) {
 		char pfx[2];
 		int chr = (buf->data[2]=='.')? 3: 4;
 		if (chr == 4) {
@@ -1969,8 +2013,9 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		ls_foreach (l, iter, kv) {
 			int len = strlen (buf->data + chr);
 			if (!len || !strncmp (buf->data + chr, sdbkv_key (kv), len)) {
-				if (!strcmp (sdbkv_value (kv), "type") || !strcmp (sdbkv_value (kv), "enum")
-				|| !strcmp (sdbkv_value (kv), "struct")) {
+				if (!strcmp (sdbkv_value (kv), "type")
+						|| !strcmp (sdbkv_value (kv), "enum")
+						|| !strcmp (sdbkv_value (kv), "struct")) {
 					r_line_completion_push (completion, sdbkv_key (kv));
 				}
 			}
@@ -1990,24 +2035,15 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			}
 		}
 		ls_free (l);
-	} else if (!strncmp (buf->data, "$", 1)) {
-		RList *keys = r_cmd_alias_keys (core->rcmd);
-		RListIter *it;
-		int len = strlen (buf->data);
-		r_list_foreach_iter (keys, it) {
-			char *key = (char *)it->data;
-			if (!len || !strncmp (buf->data, key, len)) {
-				r_line_completion_push (completion, key);
-			}
-		}
-		r_list_free (keys);
+	} else if (buf->data[0] == '$') {
+		autocomplete_alias (completion, core->rcmd, buf->data + 1, false);
 	} else if (!strncmp (buf->data, "ts ", 3)
-	|| !strncmp (buf->data, "ta ", 3)
-	|| !strncmp (buf->data, "tp ", 3)
-	|| !strncmp (buf->data, "tl ", 3)
-	|| !strncmp (buf->data, "tpx ", 4)
-	|| !strncmp (buf->data, "tss ", 4)
-	|| !strncmp (buf->data, "ts* ", 4)) {
+			|| !strncmp (buf->data, "ta ", 3)
+			|| !strncmp (buf->data, "tp ", 3)
+			|| !strncmp (buf->data, "tl ", 3)
+			|| !strncmp (buf->data, "tpx ", 4)
+			|| !strncmp (buf->data, "tss ", 4)
+			|| !strncmp (buf->data, "ts* ", 4)) {
 		SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
 		SdbListIter *iter;
 		SdbKv *kv;
@@ -2023,14 +2059,14 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		}
 		ls_free (l);
 	} else if (!strncmp (buf->data, "zo ", 3)
-	|| !strncmp (buf->data, "zoz ", 4)) {
+			|| !strncmp (buf->data, "zoz ", 4)) {
 		if (core->anal->zign_path && core->anal->zign_path[0]) {
 			char *zignpath = r_file_abspath (core->anal->zign_path);
 			char *paths[2] = { zignpath, NULL };
-			autocompleteFilename (completion, buf, paths, 1);
+			autocompleteFilename (completion, buf, core->rcmd, paths, 1);
 			free (zignpath);
 		} else {
-			autocompleteFilename (completion, buf, NULL, 1);
+			autocompleteFilename (completion, buf, core->rcmd, NULL, 1);
 		}
 	} else if (find_e_opts (core, completion, buf)) {
 		return;
