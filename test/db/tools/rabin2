@@ -7,6 +7,32 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=qpe
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+!!rabin2 -qe ${R2_FILE}
+!!rabin2 -qpe ${R2_FILE}
+EOF
+EXPECT=<<EOF
+0x00400410
+0x00000410
+EOF
+RUN
+
+NAME=qps
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+!!rabin2 -qs ${R2_FILE}~main
+!!rabin2 -qps ${R2_FILE}~main
+EOF
+EXPECT=<<EOF
+0x004004fc 21 main
+0x004003f0 16 imp.__libc_start_main
+0x000004fc 21 main
+0x000003f0 16 imp.__libc_start_main
+EOF
+RUN
+
 NAME=baddr > 0
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=!rabin2 -qe ${R2_FILE};!rabin2 -B 0x800000 -qe ${R2_FILE}
