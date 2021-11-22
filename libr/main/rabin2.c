@@ -11,7 +11,7 @@
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
-		"              [-o str] [-O str] [-k query] [-D lang symname] file\n");
+		"              [-o str] [-O str] [-k query] [-D lang mangledsymbol] file\n");
 	if (v) {
 		printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
@@ -24,7 +24,7 @@ static int rabin_show_help(int v) {
 		" -C [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -d              show debug/dwarf information\n"
 		" -D lang name    demangle symbol name (-D all for bin.demangle=true)\n"
-		" -e              entrypoint\n"
+		" -e              program entrypoint\n"
 		" -ee             constructor/destructor entrypoints\n"
 		" -E              globally exportable symbols\n"
 		" -f [str]        select sub-bin named str\n"
@@ -46,7 +46,7 @@ static int rabin_show_help(int v) {
 		" -N [min:max]    force min:max number of chars per string (see -z and -zz)\n"
 		" -o [str]        output file/folder for write operations (out by default)\n"
 		" -O [str]        write/extract operations (-O help)\n"
-		" -p              show physical addresses\n"
+		" -p              show always physical addresses\n"
 		" -P              show debug/pdb information\n"
 		" -PP             download pdb file for binary\n"
 		" -q              be quiet, just show fewer data\n"
