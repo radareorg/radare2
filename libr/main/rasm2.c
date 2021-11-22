@@ -166,11 +166,13 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 }
 
 static const char *has_esil(RAsmState *as, const char *name) {
-	RListIter *iter;
-	RAnalPlugin *h;
-	r_list_foreach (as->anal->plugins, iter, h) {
-		if (h->name && !strcmp (name, h->name)) {
-			return h->esil? "Ae": "A_";
+	if (as && name) {
+		RListIter *iter;
+		RAnalPlugin *h;
+		r_list_foreach (as->anal->plugins, iter, h) {
+			if (h->name && !strcmp (name, h->name)) {
+				return h->esil? "Ae": "A_";
+			}
 		}
 	}
 	return "__";
