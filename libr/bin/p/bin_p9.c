@@ -137,6 +137,12 @@ static RList *sections(RBinFile *bf) {
 	phys += ptr->size;
 	vsize += ptr->vsize;
 
+	// the header is included in the text segment but not in further segments
+	phys += sizeof (struct plan9_exec);
+	if (header->magic & HDR_MAGIC) {
+		phys += 8;
+	}
+
 	// switch back to 4k page size
 	align = 0x1000;
 
@@ -156,7 +162,19 @@ static RList *sections(RBinFile *bf) {
 	vsize += ptr->vsize;
 
 	// add bss segment
-	vsize += header->bss;
+	if (!(ptr = R_NEW0 (RBinSection))) {
+		return ret;
+	}
+	ptr->name = strdup ("bss");
+	ptr->size = 0;
+	ptr->vsize = ALIGN (header->bss, align);
+	ptr->paddr = 0;
+	ptr->vaddr = baddr (bf) + vsize;
+	ptr->perm = R_PERM_RW;
+	ptr->add = true;
+	r_list_append (ret, ptr);
+	phys += ptr->size;
+	vsize += ptr->vsize;
 
 	// add syms segment
 	if (!(ptr = R_NEW0 (RBinSection))) {
@@ -205,6 +223,98 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *symbols(RBinFile *bf) {
+	RList *ret = NULL;
+	struct plan9_exec *header = (struct plan9_exec *)bf->o->bin_obj;
+
+	if (!(ret = r_list_newf (free))) {
+		return NULL;
+	}
+
+	ut64 syms = sizeof (struct plan9_exec) + header->text + header->data;
+	if (header->magic & HDR_MAGIC) {
+		syms += 8;
+	}
+
+	ut64 offset = 0;
+	while (offset < header->syms) {
+		ut64 value;
+		if (header->magic & HDR_MAGIC) {
+			// for 64-bit binaries the value type is 8 bytes
+			value = r_buf_read_be64_at (bf->buf, syms + offset);
+			if (value == UT64_MAX) {
+				goto error;
+			}
+			offset += sizeof (ut64);
+		} else {
+			value = (ut64)r_buf_read_be32_at (bf->buf, syms + offset);
+			if (value == UT32_MAX) {
+				goto error;
+			}
+			offset += sizeof (ut32);
+		}
+
+		const ut8 typ = r_buf_read8_at (bf->buf, syms + offset);
+		if (typ == UT8_MAX) {
+			goto error;
+		}
+		offset += sizeof (typ);
+		const char type = typ & 0x7f;
+
+		char *name = r_buf_get_string (bf->buf, syms + offset);
+		if (!name) {
+			goto error;
+		}
+		offset += strlen (name) + 1;
+
+		// source file names or source file line offsets contain additional details
+		if (type == 'Z' || type == 'z') {
+			// look for two adjacent zeros to terminate the sequence
+			ut64 j, fin = (header->syms > offset)? header->syms - offset: 0;
+			for (j = 0; j < fin; j++) {
+				ut16 data = r_buf_read_be16_at (bf->buf, syms + offset + j);
+				if (data == UT16_MAX) {
+					goto error;
+				}
+
+				if (data == 0) {
+					offset += j + sizeof (ut16);
+					break;
+				}
+			}
+		}
+
+		// skip non symbol information
+		switch (type) {
+		case 'T':
+		case 't':
+		case 'L':
+		case 'l':
+		case 'D':
+		case 'd':
+		case 'B':
+		case 'b':
+			break;
+		default:
+			continue;
+		}
+
+		RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+		if (!ptr) {
+			free (name);
+			goto error;
+		}
+
+		ptr->name = name;
+		ptr->paddr = value - baddr (bf);
+		ptr->vaddr = value;
+		ptr->size = 0;
+		ptr->ordinal = 0;
+		r_list_append (ret, ptr);
+	}
+
+	return ret;
+error:
+	r_list_free (ret);
 	return NULL;
 }
 
