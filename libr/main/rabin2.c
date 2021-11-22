@@ -854,6 +854,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			break;
 		}
 	}
+	core.io->va = va;
 
 	PJ *pj = NULL;
 	if (rad == R_MODE_JSON) {
