@@ -78,6 +78,7 @@ r_asm_sources = [
   join_paths('p','asm_xcore_cs.c'),
   # join_paths('p','asm_xtensa.c'),
   join_paths('p','asm_z80.c'),
+  join_paths('p','asm_jdh8.c'),
   #join_paths('arch','6502','6502dis.c'),
   join_paths('arch','amd29k','amd29k.c'),
   #join_paths('arch','8051','8051_disas.c'),
@@ -178,6 +179,7 @@ r_asm_sources = [
   #join_paths('arch','z80','expressions.c'),
   join_paths('arch','z80','z80.c'),
   #join_paths('arch','z80','z80asm.c'),
+  join_paths('arch','jdh8','jdh8dis.c'),
 ]
 
 r_asm_inc = [
