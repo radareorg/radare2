@@ -10,6 +10,11 @@
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
+#define DPRINTstr(x) eprintf (#x"=%s\n", x)
+#define DPRINTd(x) eprintf (#x"=%d\n", x)
+#define DPRINTut64(x) eprintf (#x"=%" PFMT64u " (0x%" PFMT64x ")\n", x, x)
+#define DPRINTst64(x) eprintf (#x"=%" PFMT64d "\n", x)
+
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
@@ -241,6 +246,7 @@ static const char *help_msg_pd[] = {
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
+	"pdu", "[aces?]", "disassemble instructions until condition",
 	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
 	NULL
@@ -283,6 +289,15 @@ static const char *help_msg_pds[] = {
 	"Usage:", "pds[bf]", "Summarize N bytes or function",
 	"pdsf", "", "Summarize the current function",
 	"pdsb", "", "Summarize N bytes",
+	NULL
+};
+
+static const char *help_msg_pdu[] = {
+	"Usage:", "pdu[aces]", "Disassemble instructions until condition",
+	"pdua", " [addr]", "disassemble until address",
+	"pduc", "", "disassemble until call",
+	"pdue", " [expr]", "disassemble until esil expression",
+	"pdus", "", "disassemble until syscall",
 	NULL
 };
 
@@ -1071,6 +1086,95 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 	// XXX - this needs to be done here, because
 	// if arch == x86 and bits == 16, segoff automatically changes
 	r_config_set_i (core->config, "asm.segoff", segoff);
+}
+
+static void pdu_help(RCore *core, char spec) {
+	/* XXX better "temp color" functionality? */
+	const bool c = r_config_get_b (core->config, "scr.color.grep");
+	r_config_set_b (core->config, "scr.color.grep", true);
+
+	/* only show relevant subcmd line if applicable */
+	const char *help = r_core_cmd_strf (core, "pdu?~pdu%c", spec);
+	if (help && *help) { // strlen (help) > 0
+		r_cons_printf ("%s", help);
+	} else {
+		r_core_cmd0 (core, "pdu?");
+	}
+	free (help);
+
+	r_cons_flush ();
+	r_config_set_b (core->config, "scr.color.grep", c);
+}
+
+// TODO: json support
+static int cmd_pdu(RCore *core, const char *input) {
+	const char *sep = strchr (input, ' ');
+	const char *arg = sep? sep+1: NULL;
+
+#if 0
+	DPRINTstr (input);
+	DPRINTstr (help);
+	DPRINTstr (sep);
+#endif
+
+	//ut8 *block = core->block;
+	ut64 to;
+	ut64 count;
+
+	switch (*input) {
+	case 'a': // "pdua"
+		if (input[1] == '?' || !arg) {
+			pdu_help (core, 'a');
+			return 0;
+		}
+
+		to = r_num_math (core->num, arg);
+
+		if (!to) {
+			eprintf ("Couldn't parse address \"%s\"\n", arg);
+			return 1;
+		} else if (to < core->offset) {
+			eprintf ("Can't print until an earlier address\n");
+			return 2;
+		} else if (to == core->offset) {
+			eprintf ("Can't print until the start address\n");
+			return 2;
+		}
+
+		count = to - core->offset;
+		// pD <count> @<offset>
+		r_core_cmdf (core, "pD %" PFMT64u " @0x%" PFMT64x, count, core->offset);
+		break;
+	case 'c':  // "pduc"
+		if (input[1] == '?') {
+			pdu_help (core, 'c');
+			return 0;
+		}
+
+		r_cons_printf ("pduc functionality goes here\n");
+		break;
+	case 'e':  // "pdue"
+		if (input[1] == '?' || !arg) {
+			pdu_help (core, 'e');
+			return 0;
+		}
+
+		r_cons_printf ("pdue functionality goes here\n");
+		break;
+	case 's':  // "pdus"
+		if (input[1] == '?') {
+			pdu_help (core, 's');
+			return 0;
+		}
+
+		r_cons_printf ("pdus functionality goes here\n");
+		break;
+	case '?': // "pdu?"
+	default:
+		r_core_cmd_help (core, help_msg_pdu);
+		break;
+	}
+	return 0;
 }
 
 static void cmd_pDj(RCore *core, const char *arg) {
@@ -5041,6 +5145,12 @@ static int cmd_print(void *data, const char *input) {
 	i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
 	PJ *pj = NULL;
+
+	/* !strncmp (input, "du", 2) */
+	if (input[0] == 'd' && input[1] == 'u') { // "pdu"
+		/* hijack here for now, idk how to more cleanly integrate it */
+		return cmd_pdu (core, input+2);
+	}
 
 	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
