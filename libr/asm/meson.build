@@ -179,7 +179,7 @@ r_asm_sources = [
   #join_paths('arch','z80','expressions.c'),
   join_paths('arch','z80','z80.c'),
   #join_paths('arch','z80','z80asm.c'),
-  join_paths('arch','jdh8','jdh8dis.c'),
+  #join_paths('arch','jdh8','jdh8dis.c'),
 ]
 
 r_asm_inc = [
