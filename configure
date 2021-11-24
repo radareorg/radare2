@@ -439,7 +439,8 @@ else
 fi
 if [ -n "${PKGCONFIG}" ]; then
 	ocho ${PKGCONFIG}
-else ; ocho no; fi
+else
+ocho no; fi
 ochof "checking for patch... "
 if [ -x "${PATCH}" ]; then
 	FIND=${PATCH}
