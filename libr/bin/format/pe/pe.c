@@ -1067,11 +1067,11 @@ static const char* PE_(bin_pe_get_claimed_authentihash)(struct PE_(r_bin_pe_obj_
 		return NULL;
 	}
 	RASN1Binary *digest = bin->spcinfo->messageDigest.digest;
-	return r_hex_bin2strdup (digest->binary, digest->length);
+	return digest? r_hex_bin2strdup (digest->binary, digest->length): NULL;
 }
 
 const char* PE_(bin_pe_compute_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
-	if (!bin->spcinfo) {
+	if (!bin->spcinfo || !bin->spcinfo->messageDigest.digestAlgorithm.algorithm) {
 		return NULL;
 	}
 
@@ -1110,7 +1110,7 @@ const char* PE_(bin_pe_compute_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
 		r_hash_do_begin (ctx, algobit);
 		int digest_size = r_hash_calculate (ctx, algobit, data, len);
 		r_hash_do_end (ctx, algobit);
-		hashstr = r_hex_bin2strdup (ctx->digest, digest_size);
+		hashstr = ctx->digest? r_hex_bin2strdup (ctx->digest, digest_size): NULL;
 		r_buf_free (buf);
 		r_hash_free (ctx);
 	}
