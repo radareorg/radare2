@@ -212,6 +212,9 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 			left += 15;
 
 			while (left >= 4) {
+				if (j < 0) {
+					break;
+				}
 				hexstr[--j] = digist2hex[tmp & 0xf];
 				tmp >>= 4;
 				left -= 4;
@@ -222,9 +225,13 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 			hexstr[--j] = digist2hex[tmp & 0xf];
 		}
 
-		hexstr[--j] = 'x';
-		hexstr[--j] = '0';
-		if (neg) {
+		if (j > 0) {
+			hexstr[--j] = 'x';
+		}
+		if (j > 0) {
+			hexstr[--j] = '0';
+		}
+		if (neg && j > 0) {
 			hexstr[--j] = '-';
 		}
 
