@@ -15,7 +15,7 @@ endif
 
 CFLAGS?=-Wall -O2
 
-CFLAGS+=-fvisibility=hidden
+#CFLAGS+=-fvisibility=hidden
 CFLAGS+=-DUSE_R2=$(SPP_USE_R2)
 CFLAGS+=-DHAVE_FORK=$(SPP_HAVE_FORK)
 CFLAGS+=-DVERSION=$(VERSION)
@@ -31,11 +31,9 @@ ${BIN}: config.h ${OBJ}
 r2lib: config.h
 	${CC} -DUSE_R2=1 -c ${CFLAGS} ${LDFLAGS} -o spp.o spp.c
 
+BINS=acr cpp pod sh
 symlinks:
-	ln -s ${BIN} acr
-	ln -s ${BIN} cpp
-	ln -s ${BIN} pod
-	ln -s ${BIN} sh
+	for a in $(BINS); do ln -s ${BIN} $$a ; done
 
 test:
 	@for a in t/*spp* ; do \

@@ -199,7 +199,7 @@ R_API BOOL r_w32_CancelSynchronousIo(HANDLE a) {
 	return x? x (a): 0;
 }
 
-R_API BOOL r_w32_QueryFullProcessImageName(HANDLE h, DWORD p, LPTSTR s, PDWORD l) {
+R_API BOOL r_w32_QueryFullProcessImageName(HANDLE h, DWORD p, LPSTR s, PDWORD l) {
 	static DWORD (WINAPI *x)(HANDLE, DWORD, LPTSTR, PDWORD) = NULL;
 	if (!x) {
 		HANDLE lib = w32_loadlib ("kernel32", "kernel32.dll");

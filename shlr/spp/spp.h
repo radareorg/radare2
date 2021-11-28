@@ -20,10 +20,10 @@
 #elif R_INLINE
   #define S_API inline
 #else
-  #if defined(__GNUC__) && __GNUC__ >= 4
-    #define S_API __attribute__((visibility("default")))
-  #elif defined(_MSC_VER)
+  #if __WIN32__ || MINGW32 && !__CYGWIN__ || _MSC_VER
     #define S_API __declspec(dllexport)
+  #elif defined(__GNUC__) && __GNUC__ >= 4
+    #define S_API __attribute__((visibility("default")))
   #else
     #define S_API
   #endif
@@ -41,7 +41,7 @@
   #define __addr_t_defined
   #include <windows.h>
 #endif
-#if __WIN32__ || MINGW32 && !__CYGWIN__ || _MSC_VER
+#if __WIN32__ && (!__CYGWIN__ || _MSC_VER)
   #ifndef _MSC_VER
     #include <winsock.h>
   #endif
@@ -64,6 +64,8 @@
 
 #ifndef DLL_LOCAL
 #ifdef _MSC_VER
+#define DLL_LOCAL
+#elif __WIN32__
 #define DLL_LOCAL
 #else
 #define DLL_LOCAL  __attribute__ ((visibility ("hidden")))
