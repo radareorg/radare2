@@ -694,7 +694,7 @@ static pyc_object *get_ref_object(RBuffer *buffer) {
 	if (index >= r_list_length (refs)) {
 		return NULL;
 	}
-	pyc_object *obj = NULL; // r_list_get_n (refs, index);
+	pyc_object *obj = r_list_get_n (refs, index);
 	return obj? copy_object (obj): NULL;
 }
 
