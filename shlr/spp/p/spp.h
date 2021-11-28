@@ -10,6 +10,14 @@
 #if __WIN32__
 #undef HAVE_SYSTEM
 #define HAVE_SYSTEM 0
+#undef __WINDOWS__
+#define __WINDOWS__ 1
+#endif
+#ifdef _MSC_VER
+#undef HAVE_SYSTEM
+#define HAVE_SYSTEM 0
+#undef __WINDOWS__
+#define __WINDOWS__ 1
 #endif
 
 static char *spp_var_get(char *var) {
@@ -95,7 +103,7 @@ static TAG_CALLBACK(spp_getrandom) {
 		return 0;
 	}
 	// XXX srsly? this is pretty bad random
-#if __WIN32__
+#if __WINDOWS__
 	srand (r_sys_getpid ());
 #else
 	srandom (r_sys_getpid ()); // TODO: change this to be portable
