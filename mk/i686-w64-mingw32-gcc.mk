@@ -7,6 +7,7 @@ ONELIB=0
 OSTYPE=windows
 LINK=
 AR=${CROSS}ar
+EXT_AR=lib
 CC_AR=${AR} -r ${LIBAR}
 PARTIALLD=${CROSS}ld -r --whole-archive
 PICFLAGS=
