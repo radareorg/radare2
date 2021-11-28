@@ -64,11 +64,15 @@ R_API char *r_str_donut(int osize) {
 			float f = sin (j);
 			float g = cos (A);
 			float h = d + 2;
-			float D = 1 / (c* h*e+f*g+5),l=cos(i),m=cos(B),n=sin(B),t=c*h*g-f*e;
+			float D = 1 / (c* h*e+f*g+5);
+			float l = cos (i);
+			float m = cos (B);
+			float n = sin (B);
+			float t = c*h*g-f*e;
 			int x = (int)(Align+Width*D*(l*h*m-t*n));
 			int y = (int)(12 + Height*D*(l*h*n +t*m));
 			int o = x + 80 * y;
-			int N = 8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n);
+			int N = (int)(8 * ((f*e-c*d*g)*m-c*d*e-f*g-l*d*n));
 			if (22 > y && y > 0 && x > 0 && 80 > x && D > z[o]) {
 				z[o] = D;
 				b[o] = " .,-:!/|S$@&"[N > 0? N: 0];

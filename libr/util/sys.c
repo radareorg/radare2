@@ -220,11 +220,7 @@ R_API int r_sys_truncate(const char *file, int sz) {
 	if (fd == -1) {
 		return false;
 	}
-#ifdef _MSC_VER
 	int r = _chsize (fd, sz);
-#else
-	int r = ftruncate (fd, sz);
-#endif
 	if (r != 0) {
 		eprintf ("Could not resize '%s' file\n", file);
 		close (fd);
@@ -1243,7 +1239,7 @@ R_API char *r_sys_whoami(void) {
 	char buf[32];
 #if __WINDOWS__
 	DWORD buf_sz = sizeof (buf);
-	if (!GetUserName (buf, (LPDWORD)&buf_sz) ) {
+	if (!GetUserName ((LPWSTR)buf, (LPDWORD)&buf_sz) ) {
 		return strdup ("?");
 	}
 #elif __wasi__
@@ -1265,7 +1261,7 @@ R_API int r_sys_uid(void) {
 	char buf[32];
 	DWORD buf_sz = sizeof (buf);
 	// TODO
-	if (!GetUserName (buf, (LPDWORD)&buf_sz) ) {
+	if (!GetUserName ((LPWSTR)buf, (LPDWORD)&buf_sz) ) {
 		return 1; // 
 	}
 	return 0;
@@ -1282,7 +1278,7 @@ R_API int r_sys_getpid(void) {
 #elif __UNIX__
 	return getpid ();
 #elif __WINDOWS__
-	return GetCurrentProcessId();
+	return (int)GetCurrentProcessId ();
 #else
 #pragma message ("r_sys_getpid not implemented for this platform")
 	return -1;
