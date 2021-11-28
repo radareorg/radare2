@@ -7,6 +7,23 @@ on:
   pull_request:
 
 jobs:
+  w32-mingw:
+    name: w32-mingw
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Build on a directory with spaces (meson only)
+      run: |
+        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
+        sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
+        sys/mingw32.sh
+        make install DESTDIR=$PWD/prefix
+        zip -r prefix.zip prefix
+    - uses: actions/upload-artifact@v2
+      with:
+        name: prefix.zip
+        path: prefix.zip
   w64-make:
     runs-on: windows-latest
     steps:
