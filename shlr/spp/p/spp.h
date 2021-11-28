@@ -84,7 +84,7 @@ static TAG_CALLBACK(spp_get) {
 	return 0;
 }
 
-static TAG_CALLBACK(spp_getrandom) {
+TAG_CALLBACK(spp_getrandom) {
 	int max;
 	if (!state->echo[state->ifl]) {
 		return 0;
@@ -172,7 +172,7 @@ static TAG_CALLBACK(spp_warning) {
 	return 0;
 }
 
-static TAG_CALLBACK(spp_system) {
+TAG_CALLBACK(spp_system) {
 	if (!state->echo[state->ifl]) {
 		return 0;
 	}

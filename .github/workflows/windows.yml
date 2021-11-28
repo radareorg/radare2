@@ -18,12 +18,9 @@ jobs:
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
         sys/mingw32.sh
-        make install DESTDIR=$PWD/prefix
-        zip -r prefix.zip prefix
     - uses: actions/upload-artifact@v2
       with:
-        name: prefix.zip
-        path: prefix.zip
+        path: radare2*.zip
   w64-mingw:
     name: w32-mingw
     runs-on: ubuntu-20.04
@@ -35,12 +32,9 @@ jobs:
         export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
         sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
         sys/mingw64.sh
-        make install DESTDIR=$PWD/prefix
-        zip -r prefix.zip prefix
     - uses: actions/upload-artifact@v2
       with:
-        name: prefix.zip
-        path: prefix.zip
+        path: radare2*.zip
   w64-make:
     runs-on: windows-latest
     steps:
