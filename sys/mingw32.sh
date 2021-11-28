@@ -6,10 +6,10 @@ make -j4 || exit 1
 # install
 rm -rf prefix
 make install DESTDIR=$PWD/prefix || exit 1
-cp -f prefix/lib/*.dll prefix/bin/
-D=radare2-`./configure -qV`-mingw32
-rm -rf $D
-mkdir -p $D
-cp -rf prefix/bin/*.exe $D
-cp -rf prefix/lib/*.dll $D
-exec zip -r $D.zip $D
+D="radare2-`./configure -qV`-mingw32"
+rm -rf "$D"
+mkdir -p "$D"
+cp -f prefix/bin/*.exe "$D"
+cp -f prefix/lib/*.dll "$D"
+ls -l "$D"
+exec zip -r "$D.zip" "$D"
