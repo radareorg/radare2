@@ -141,7 +141,7 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	wrap->params.func.user = &p;
 	r_w32dw_waitret (wrap);
 	if (!r_w32dw_ret (wrap)) {
-		r_w32dw_err (wrap);
+		(void)r_w32dw_err (wrap);
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		free (appname_);
 		free (cmdline_);

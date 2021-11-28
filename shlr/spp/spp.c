@@ -1,4 +1,4 @@
-/* MIT pancake <pancake@nopcode.org> (C) 2009-2020 */
+/* MIT pancake <pancake@nopcode.org> (C) 2009-2021 */
 
 #include "spp.h"
 #include "r_api.h"

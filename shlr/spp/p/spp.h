@@ -7,6 +7,19 @@
 #include <unistd.h>
 #endif
 
+#if __WIN32__
+#undef HAVE_SYSTEM
+#define HAVE_SYSTEM 0
+#undef __WINDOWS__
+#define __WINDOWS__ 1
+#endif
+#ifdef _MSC_VER
+#undef HAVE_SYSTEM
+#define HAVE_SYSTEM 0
+#undef __WINDOWS__
+#define __WINDOWS__ 1
+#endif
+
 static char *spp_var_get(char *var) {
 	return r_sys_getenv (var);
 }
@@ -90,7 +103,11 @@ static TAG_CALLBACK(spp_getrandom) {
 		return 0;
 	}
 	// XXX srsly? this is pretty bad random
+#if __WINDOWS__
+	srand (r_sys_getpid ());
+#else
 	srandom (r_sys_getpid ()); // TODO: change this to be portable
+#endif
 	max = atoi (buf);
 	if (max > 0) {
 		max = (int)(rand () % max);
@@ -179,7 +196,7 @@ static TAG_CALLBACK(spp_system) {
 #if HAVE_SYSTEM
 	char *str = cmd_to_str (buf);
 	out_printf (out, "%s", str);
-	free(str);
+	free (str);
 #endif
 	return 0;
 }

@@ -133,7 +133,6 @@ jobs:
         /tmp/bin/rabin2 -l /tmp/bin/r2
   build-spaces:
     name: linux-meson-spaces
-    continue-on-error: true
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
