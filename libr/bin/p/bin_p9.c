@@ -58,7 +58,7 @@ static ut64 baddr(RBinFile *bf) {
 	}
 
 	// unreachable because check_buffer only supports the above architectures
-	assert(0);
+	return 0;
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
