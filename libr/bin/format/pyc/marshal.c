@@ -8,9 +8,9 @@
 // avoiding using r2 internals asserts
 #define if_true_return(cond,ret) if(cond){return(ret);}
 
+// TODO: kill globals
 static ut32 magic_int;
 static ut32 symbols_ordinal = 0;
-
 static RList *refs = NULL; // If you don't have a good reason, do not change this. And also checkout !refs in get_code_object()
 
 /* interned_table is used to handle TYPE_INTERNED object */
@@ -89,13 +89,12 @@ static ut8 *get_bytes(RBuffer *buffer, ut32 size) {
 
 static pyc_object *get_none_object(void) {
 	pyc_object *ret = R_NEW0 (pyc_object);
-	if (!ret) {
-		return NULL;
-	}
-	ret->type = TYPE_NONE;
-	ret->data = strdup ("None");
-	if (!ret->data) {
-		R_FREE (ret);
+	if (ret) {
+		ret->type = TYPE_NONE;
+		ret->data = strdup ("None");
+		if (!ret->data) {
+			R_FREE (ret);
+		}
 	}
 	return ret;
 }
@@ -128,13 +127,12 @@ static pyc_object *get_true_object(void) {
 
 static pyc_object *get_int_object(RBuffer *buffer) {
 	bool error = false;
-	pyc_object *ret = NULL;
 
 	st32 i = get_st32 (buffer, &error);
 	if (error) {
 		return NULL;
 	}
-	ret = R_NEW0 (pyc_object);
+	pyc_object *ret = R_NEW0 (pyc_object);
 	if (!ret) {
 		return NULL;
 	}
@@ -149,9 +147,7 @@ static pyc_object *get_int_object(RBuffer *buffer) {
 static pyc_object *get_int64_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
-	st64 i;
-
-	i = get_st64 (buffer, &error);
+	st64 i = get_st64 (buffer, &error);
 
 	if (error) {
 		return NULL;
@@ -196,15 +192,24 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 	if (ndigits == 0) {
 		ret->data = strdup ("0x0");
 	} else {
+		if (ndigits > 10) {
+			return NULL;
+		}
 		size = ndigits * 15;
+		if (size > 0) {
+			return NULL;
+		}
 		size = (size - 1) / 4 + 1;
 		size += 3 + (neg? 1: 0);
+		j = size - 1;
+		if (j < 1 || size < 1) {
+			return NULL;
+		}
 		hexstr = calloc (size, sizeof (char));
 		if (!hexstr) {
 			free (ret);
 			return NULL;
 		}
-		j = size - 1;
 
 		for (i = 0; i < ndigits; i++) {
 			n = get_ut16 (buffer, &error);
@@ -243,9 +248,7 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 static pyc_object *get_stringref_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
-	ut32 n = 0;
-
-	n = get_st32 (buffer, &error);
+	ut32 n = get_st32 (buffer, &error);
 	if (n >= r_list_length (interned_table)) {
 		eprintf ("bad marshal data (string ref out of range)");
 		return NULL;
@@ -579,11 +582,10 @@ static pyc_object *get_list_object(RBuffer *buffer) {
 }
 
 static pyc_object *get_dict_object(RBuffer *buffer) {
-	pyc_object *ret = NULL,
-		   *key = NULL,
+	pyc_object *key = NULL,
 		   *val = NULL;
 
-	ret = R_NEW0 (pyc_object);
+	pyc_object *ret = R_NEW0 (pyc_object);
 	if (!ret) {
 		return NULL;
 	}
@@ -621,9 +623,7 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 static pyc_object *get_set_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
-	ut32 n = 0;
-
-	n = get_ut32 (buffer, &error);
+	ut32 n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (set size out of range)\n");
 		return NULL;
@@ -640,9 +640,7 @@ static pyc_object *get_set_object(RBuffer *buffer) {
 }
 
 static pyc_object *get_ascii_object_generic(RBuffer *buffer, ut32 size, bool interned) {
-	pyc_object *ret = NULL;
-
-	ret = R_NEW0 (pyc_object);
+	pyc_object *ret = R_NEW0 (pyc_object);
 	if (!ret) {
 		return NULL;
 	}
@@ -656,9 +654,7 @@ static pyc_object *get_ascii_object_generic(RBuffer *buffer, ut32 size, bool int
 
 static pyc_object *get_ascii_object(RBuffer *buffer) {
 	bool error = false;
-	ut32 n = 0;
-
-	n = get_ut32 (buffer, &error);
+	ut32 n = get_ut32 (buffer, &error);
 	if (error) {
 		return NULL;
 	}
@@ -667,9 +663,7 @@ static pyc_object *get_ascii_object(RBuffer *buffer) {
 
 static pyc_object *get_ascii_interned_object(RBuffer *buffer) {
 	bool error = false;
-	ut32 n;
-
-	n = get_ut32 (buffer, &error);
+	ut32 n = get_ut32 (buffer, &error);
 	if (error) {
 		return NULL;
 	}
@@ -678,9 +672,7 @@ static pyc_object *get_ascii_interned_object(RBuffer *buffer) {
 
 static pyc_object *get_short_ascii_object(RBuffer *buffer) {
 	bool error = false;
-	ut8 n;
-
-	n = get_ut8 (buffer, &error);
+	ut8 n = get_ut8 (buffer, &error);
 	if (error) {
 		return NULL;
 	}
@@ -689,34 +681,21 @@ static pyc_object *get_short_ascii_object(RBuffer *buffer) {
 
 static pyc_object *get_short_ascii_interned_object(RBuffer *buffer) {
 	bool error = false;
-	ut8 n;
-
-	n = get_ut8 (buffer, &error);
-	if (error) {
-		return NULL;
-	}
-	return get_ascii_object_generic (buffer, n, true);
+	ut8 n = get_ut8 (buffer, &error);
+	return error? NULL: get_ascii_object_generic (buffer, n, true);
 }
 
 static pyc_object *get_ref_object(RBuffer *buffer) {
 	bool error = false;
-	pyc_object *ret;
-	pyc_object *obj;
-	ut32 index;
-
-	index = get_ut32 (buffer, &error);
+	ut32 index = get_ut32 (buffer, &error);
 	if (error) {
 		return NULL;
 	}
 	if (index >= r_list_length (refs)) {
 		return NULL;
 	}
-	obj = r_list_get_n (refs, index);
-	if (!obj) {
-		return NULL;
-	}
-	ret = copy_object (obj);
-	return ret;
+	pyc_object *obj = NULL; // r_list_get_n (refs, index);
+	return obj? copy_object (obj): NULL;
 }
 
 static void free_object(pyc_object *object) {
