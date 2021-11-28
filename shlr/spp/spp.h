@@ -52,7 +52,7 @@
   #undef __BSD__
 #endif
 
-#ifdef __WINDOWS__
+#if __WINDOWS__ || __WIN32__
 #include <io.h>
 #define popen    _popen
 #define pclose   _pclose
