@@ -23,7 +23,7 @@ static bool r_x509_parse_validity(RX509Validity *validity, RASN1Object *object) 
 			}
 		}
 		o = object->list.objects[1];
-		if (o->klass == CLASS_UNIVERSAL && o->form == FORM_PRIMITIVE) {
+		if (o && o->klass == CLASS_UNIVERSAL && o->form == FORM_PRIMITIVE) {
 			if (o->tag == TAG_UTCTIME) {
 				validity->notAfter = r_asn1_stringify_utctime (o->sector, o->length);
 			} else if (o->tag == TAG_GENERALIZEDTIME) {
@@ -280,10 +280,22 @@ R_API RX509CertificateRevocationList *r_x509_parse_crl(RASN1Object *object) {
 		return NULL;
 	}
 	RASN1Object **elems = object->list.objects;
-	r_x509_parse_algorithmidentifier (&crl->signature, elems[0]);
-	r_x509_parse_name (&crl->issuer, elems[1]);
-	crl->lastUpdate = r_asn1_stringify_utctime (elems[2]->sector, elems[2]->length);
-	crl->nextUpdate = r_asn1_stringify_utctime (elems[3]->sector, elems[3]->length);
+	if (!elems) {
+		free (crl);
+		return NULL;
+	}
+	if (elems[0]) {
+		r_x509_parse_algorithmidentifier (&crl->signature, elems[0]);
+	}
+	if (elems[1]) {
+		r_x509_parse_name (&crl->issuer, elems[1]);
+	}
+	if (elems[2]) {
+		crl->lastUpdate = r_asn1_stringify_utctime (elems[2]->sector, elems[2]->length);
+	}
+	if (elems[3]) {
+		crl->nextUpdate = r_asn1_stringify_utctime (elems[3]->sector, elems[3]->length);
+	}
 	if (object->list.length > 4 && object->list.objects[4]) {
 		ut32 i;
 		crl->revokedCertificates = calloc (object->list.objects[4]->list.length, sizeof (RX509CRLEntry *));
