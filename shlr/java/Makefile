@@ -1,7 +1,7 @@
 NAME=r_java
-LIBAR?=libr_java.$(EXT_AR)
 
 include ../../config-user.mk
+include ../../mk/${COMPILER}.mk
 include ../../libr/config.mk
 include ../../global.mk
 include ../../mk/platform.mk
@@ -9,6 +9,8 @@ _INCLUDE_MK_GCC_=
 include ../../mk/${COMPILER}.mk
 SHLR?=..
 include ../zip/deps.mk
+LIBAR=libr_java.$(EXT_AR)
+CC_AR=$(AR) -r $(LIBAR)
 
 OSTYPE?=$(shell uname | tr 'A-Z' 'a-z')
 ifeq (${OSTYPE},)

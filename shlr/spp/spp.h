@@ -41,7 +41,7 @@
   #define __addr_t_defined
   #include <windows.h>
 #endif
-#if __WIN32__ && (!__CYGWIN__ || _MSC_VER)
+#if __WIN32__ && (!__CYGWIN__ || _MSC_VER || __MINGW32__)
   #ifndef _MSC_VER
     #include <winsock.h>
   #endif
@@ -52,7 +52,7 @@
   #undef __BSD__
 #endif
 
-#if __WINDOWS__ || __WIN32__
+#if __WINDOWS__ || __WIN32__ || __MINGW32__
 #include <io.h>
 #define popen    _popen
 #define pclose   _pclose
