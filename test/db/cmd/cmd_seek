@@ -1,3 +1,34 @@
+NAME=prev seek opcode mill bug
+FILE=bins/elf/runofthemill
+CMDS=<<EOF
+s 0x4117e4
+so+1
+s
+so-1
+s
+so-1
+s
+aa
+?e --
+s 0x4117e4
+so+1
+s
+so-1
+s
+so-1
+s
+EOF
+EXPECT=<<EOF
+0x4117ef
+0x4117e4
+0x4117dc
+--
+0x4117ef
+0x4117e4
+0x4117dc
+EOF
+RUN
+
 NAME=seek preludes
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF

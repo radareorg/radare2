@@ -69,7 +69,7 @@ static const char *print5Formats[PRINT_5_FORMATS] = {
 };
 
 R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
-	currentFormat = R_ABS(hexMode) % PRINT_HEX_FORMATS;
+	currentFormat = R_ABS (hexMode) % PRINT_HEX_FORMATS;
 	switch (currentFormat) {
 	case 0: /* px */
 	case 3: /* prx */
@@ -141,7 +141,7 @@ static void setcursor(RCore *core, bool cur) {
 }
 
 R_API void r_core_visual_applyDisMode(RCore *core, int disMode) {
-	currentFormat = R_ABS(disMode) % 5;
+	currentFormat = R_ABS (disMode) % 5;
 	switch (currentFormat) {
 	case 0:
 		r_config_set (core->config, "asm.pseudo", "false");
@@ -450,7 +450,7 @@ static void printFormat(RCore *core, const int next) {
 	case R_CORE_VISUAL_MODE_PX: // 0 // xc
 		hexMode += next;
 		r_core_visual_applyHexMode (core, hexMode);
-		printfmtSingle[0] = printHexFormats[R_ABS(hexMode) % PRINT_HEX_FORMATS];
+		printfmtSingle[0] = printHexFormats[R_ABS (hexMode) % PRINT_HEX_FORMATS];
 		break;
 	case R_CORE_VISUAL_MODE_PD: // pd
 		disMode += next;
@@ -1198,7 +1198,9 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	if (bb) {
 		ut64 res = r_anal_bb_opaddr_at (bb, addr - minop);
 		if (res != UT64_MAX) {
-			return res;
+			if (res < addr && addr - res <= maxop) {
+				return res;
+			}
 		}
 	}
 	// if we anal info didn't help then fallback to the dumb solution.
@@ -1237,13 +1239,11 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 //  sets prev_addr to the value of the instruction numinstrs back.
 //  If we can't use the anal, then set prev_addr to UT64_MAX and return false;
 R_API bool r_core_prevop_addr(RCore *core, ut64 start_addr, int numinstrs, ut64 *prev_addr) {
-	RAnalBlock *bb;
-	int i;
 	// Check that we're in a bb, otherwise this prevop stuff won't work.
-	bb = r_anal_bb_from_offset (core->anal, start_addr);
+	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, start_addr);
 	if (bb) {
 		if (r_anal_bb_opaddr_at (bb, start_addr) != UT64_MAX) {
-			// Do some anal looping.
+			int i;
 			for (i = 0; i < numinstrs; i++) {
 				*prev_addr = prevop_addr (core, start_addr);
 				start_addr = *prev_addr;
@@ -1301,13 +1301,10 @@ R_API int r_line_hist_offset_down(RLine *line) {
 	}
 	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
 	RFlagItem *f = r_flag_get_at (core->flags, off, false);
-	char *command;
-	if (f && f->offset == off && f->offset > 0) {
-		command = r_str_newf ("%s", f->name);
-	} else {
-		command = r_str_newf ("0x%"PFMT64x, off);
-	}
-	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
+	char *command = (f && f->offset == off && f->offset > 0)
+		? r_str_newf ("%s", f->name)
+		: r_str_newf ("0x%"PFMT64x, off);
+	r_str_ncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	free (command);
 	return true;
