@@ -1165,6 +1165,7 @@ typedef enum {
 typedef struct {
 	int x;
 	int y;
+	bool stuck;
 } RPanelsSnow;
 
 typedef struct {

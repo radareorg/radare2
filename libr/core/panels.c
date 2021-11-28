@@ -4580,32 +4580,103 @@ static void __print_snow(RPanels *panels) {
 		panels->snows = r_list_newf (free);
 	}
 	RPanel *cur = __get_cur_panel (panels);
-	int i, amount = r_num_rand (4);
+	int i, amount = r_num_rand (8);
 	if (amount > 0) {
 		for (i = 0; i < amount; i++) {
 			RPanelsSnow *snow = R_NEW (RPanelsSnow);
 			snow->x = r_num_rand (cur->view->pos.w) + cur->view->pos.x;
 			snow->y = cur->view->pos.y;
+			snow->stuck = false;
 			r_list_append (panels->snows, snow);
 		}
 	}
 	RListIter *iter, *iter2;
 	RPanelsSnow *snow;
 	r_list_foreach_safe (panels->snows, iter, iter2, snow) {
+		if (r_num_rand (30) == 0) {
+			r_list_delete (panels->snows, iter);
+			continue;
+		}
+		if (snow->stuck) {
+			goto print_this_snow;
+		}
 		int pos = r_num_rand (3) - 1;
 		snow->x += pos;
 		snow->y++;
+#if 0
 		if (snow->x >= cur->view->pos.w + cur->view->pos.x || snow->x <= cur->view->pos.x + 1) {
 			r_list_delete (panels->snows, iter);
 			continue;
 		}
+#endif
+		bool fall = false;
+		{
+			RListIter *it;
+			RPanelsSnow *snw;
+			r_list_foreach (panels->snows, it, snw) {
+				if (snw->stuck) {
+					if (snw->x == snow->x && snw->y == snow->y) {
+						bool is_down_right = (snw->x == snow->x + 1 && snw->y == snow->y);
+						bool is_down_left = (snw->x == snow->x - 1 && snw->y == snow->y);
+						fall = false;
+						if (is_down_right) {
+							if (!is_down_left) {
+								snow->x --;
+								snow->y --;
+								fall = true;
+							}
+						} else {
+							if (is_down_left) {
+								snow->x ++;
+								snow->y --;
+								fall = true;
+							}
+						}
+						if (!fall) {
+							snow->stuck = true;
+							snow->y --;
+						}
+						goto print_this_snow;
+					}
+				}
+			}
+		}
+		if (fall) {
+			snow->stuck = false;
+	//		r_list_delete (panels->snows, iter);
+		}
+		if (snow->y + 1 >= panels->can->h) {
+			snow->stuck = true;
+			snow->y--;
+			//r_list_delete (panels->snows, iter);
+			goto print_this_snow;
+		}
 		if (snow->y >= cur->view->pos.h + cur->view->pos.y - 1) {
-			r_list_delete (panels->snows, iter);
+			snow->stuck = true;
+			snow->y--;
+			// r_list_delete (panels->snows, iter);
+			// continue;
+			goto print_this_snow;
+		}
+		if (snow->x < 0 || snow->x + 3 >= panels->can->w) {
 			continue;
 		}
+print_this_snow:
 		if (r_cons_canvas_gotoxy (panels->can, snow->x, snow->y)) {
+			RConsCanvas *c = panels->can;
+			char *line = c->b[c->y];
+			if (line && c->x < c->w && line [c->x] != ' ') {
+				continue;
+			}
+			if (line && c->x + 1 < c->w && line [c->x + 1] != ' ') {
+				continue;
+			}
 			if (panels->fun == PANEL_FUN_SAKURA) {
-				r_cons_canvas_write (panels->can, Color_BMAGENTA","Color_RESET);
+				if (panels->can->color) {
+					r_cons_canvas_write (panels->can, Color_MAGENTA",");
+				} else {
+					r_cons_canvas_write (panels->can, ",");
+				}
 			} else {
 				r_cons_canvas_write (panels->can, "*");
 			}
@@ -6904,8 +6975,8 @@ virtualmouse:
 	case '(':
 		if (panels->fun != PANEL_FUN_SNOW && panels->fun != PANEL_FUN_SAKURA) {
 			//TODO: Refactoring the FUN if bored af
-			//panels->fun = PANEL_FUN_SNOW;
-			panels->fun = PANEL_FUN_SAKURA;
+			panels->fun = PANEL_FUN_SNOW;
+			// panels->fun = PANEL_FUN_SAKURA;
 		} else {
 			panels->fun = PANEL_FUN_NOFUN;
 			__reset_snow (panels);

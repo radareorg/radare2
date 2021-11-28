@@ -373,7 +373,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 		attr_x = 0;
 		for (x = 0; x < c->blen[y]; x++) {
 			if ((c->b[y][x] & 0xc0) != 0x80) {
-				const char *atr = __attributeAt (c, y * c->w + attr_x);
+				const char *atr = __attributeAt (c, (y * c->w) + attr_x);
 				if (atr) {
 					size_t len = strlen (atr);
 					memcpy (o + olen, atr, len);
