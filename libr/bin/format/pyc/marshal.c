@@ -1002,16 +1002,13 @@ static pyc_object *get_object(RBuffer *buffer) {
 		return NULL;
 	}
 
+	bool doref = false;
 	if (flag) {
 		ret = get_none_object ();
 		if (!ret) {
 			return NULL;
 		}
-		ref_idx = r_list_append (refs, ret);
-		if (!ref_idx) {
-			free_object (ret);
-			return NULL;
-		}
+		doref = true;
 	}
 
 	switch (type) {
@@ -1118,6 +1115,13 @@ static pyc_object *get_object(RBuffer *buffer) {
 		eprintf ("Undefined type in get_object (0x%x)\n", type);
 		free_object (ret);
 		return NULL;
+	}
+	if (doref) {
+		ref_idx = r_list_append (refs, ret);
+		if (!ref_idx) {
+			free_object (ret);
+			return NULL;
+		}
 	}
 
 	if (flag && ref_idx) {
