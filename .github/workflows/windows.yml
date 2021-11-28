@@ -22,7 +22,7 @@ jobs:
       with:
         path: radare2*.zip
   w64-mingw:
-    name: w32-mingw
+    name: w64-mingw
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
