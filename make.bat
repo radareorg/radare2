@@ -1,8 +1,8 @@
 :: Build (and eventually install) r2 for windows
 @echo off
 if "%*" == "clean" (
-	wsl rm -rf b vs
-	exit /b 0
+  wsl rm -rf b vs
+  exit /b 0
 )
 call ninja.exe --version > NUL 2> NUL && (
   if EXIST b (
