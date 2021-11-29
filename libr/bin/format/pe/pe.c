@@ -883,10 +883,11 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 int PE_(read_image_section_header)(RBuffer *b, ut64 addr, PE_(image_section_header) *section_header) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
+		section_header->Name[0] = 0;
 		return -1;
 	}
 
-	ut8 buf[sizeof (PE_(image_section_header))];
+	ut8 buf[sizeof (PE_(image_section_header))] = {0};
 	r_buf_read (b, buf, sizeof (buf));
 	memcpy (section_header->Name, buf, PE_IMAGE_SIZEOF_SHORT_NAME);
 	PE_READ_STRUCT_FIELD (section_header, PE_(image_section_header), Misc.PhysicalAddress, 32);
@@ -1110,7 +1111,7 @@ const char* PE_(bin_pe_compute_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
 		r_hash_do_begin (ctx, algobit);
 		int digest_size = r_hash_calculate (ctx, algobit, data, len);
 		r_hash_do_end (ctx, algobit);
-		hashstr = ctx->digest? r_hex_bin2strdup (ctx->digest, digest_size): NULL;
+		hashstr = r_hex_bin2strdup (ctx->digest, digest_size);
 		r_buf_free (buf);
 		r_hash_free (ctx);
 	}
@@ -4206,13 +4207,12 @@ out_function:
 
 static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_section_t* sections = NULL;
-	PE_(image_section_header) * shdr;
 	int i, j, section_count = 0;
 
 	if (!bin || !bin->nt_headers) {
 		return NULL;
 	}
-	shdr = bin->section_header;
+	PE_(image_section_header) * shdr = bin->section_header;
 	for (i = 0; i < bin->num_sections; i++) {
 		//just allocate the needed
 		if (shdr[i].SizeOfRawData || shdr[i].Misc.VirtualSize) {
@@ -4230,11 +4230,13 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 		}
 		if (shdr[i].Name[0] == '\0') {
 			char* new_name = r_str_newf ("sect_%d", j);
-			strncpy ((char*) sections[j].name, new_name, R_ARRAY_SIZE (sections[j].name) - 1);
+			r_str_ncpy ((char*) sections[j].name, new_name, R_ARRAY_SIZE (sections[j].name) - 1);
 			free (new_name);
 		} else if (shdr[i].Name[0] == '/') {
-			//long name is something deprecated but still used
-			int idx = atoi ((const char *)shdr[i].Name + 1);
+			// section header is not null terminated, so use ndup
+			char *n = r_str_ndup ((const char *)shdr[i].Name + 1, sizeof (shdr[i].Name) - 1);
+			int idx = atoi (n);
+			free (n);
 			ut64 sym_tbl_off = bin->nt_headers->file_header.PointerToSymbolTable;
 			int num_symbols = bin->nt_headers->file_header.NumberOfSymbols;
 			st64 off = num_symbols * COFF_SYMBOL_SIZE;
