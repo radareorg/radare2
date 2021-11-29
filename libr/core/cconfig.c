@@ -3885,7 +3885,7 @@ R_API int r_core_config_init(RCore *core) {
 	// RENAME TO scr.mouse
 	SETBPREF ("scr.wheel", "true", "Mouse wheel in Visual; temporaryly disable/reenable by right click/Enter)");
 	SETBPREF ("scr.cursor", "false", "Keyboard controlled cursor in visual and panels");
-	SETPREF ("scr.layout", "", "Name of the selected layout");
+	SETPREF ("scr.layout", "", "Name of the selected panels layout to load as default");
 	// DEPRECATED: USES hex.cols now SETI ("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "Emulate console break (^C) when a word is printed (useful for pD)");
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "Break lines in Visual instead of truncating them");
