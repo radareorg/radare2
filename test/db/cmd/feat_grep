@@ -438,3 +438,14 @@ Hello World
 4e2420
 EOF
 RUN
+
+NAME=highlight grep with empty string
+ARGS=-escr.highlight.grep=true
+TIMEOUT=2
+CMDS=<<EOF
+i~[0]:0
+EOF
+EXPECT=<<EOF
+fd
+EOF
+RUN
