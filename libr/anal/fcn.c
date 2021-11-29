@@ -27,6 +27,9 @@
 // 256KB max function size
 #define MAX_FCN_SIZE (1024 * 256)
 
+// Max NOP count to stop analysis
+#define MAX_NOP_PREFIX_CNT 1024
+
 #define DB a->sdb_fcns
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
 #define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
@@ -548,6 +551,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool overlapped = false;
 	int oplen, idx = 0;
 	size_t lea_cnt = 0;
+	size_t nop_prefix_cnt = 0;
 	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
 	bool varset = false;
 	struct {
@@ -725,6 +729,10 @@ repeat:
 			case R_ANAL_OP_TYPE_TRAP:
 			case R_ANAL_OP_TYPE_ILL:
 			case R_ANAL_OP_TYPE_NOP:
+				nop_prefix_cnt++;
+				if (nop_prefix_cnt > MAX_NOP_PREFIX_CNT) {
+					gotoBeach (R_ANAL_RET_ERROR);
+				}
 				if (r_anal_block_relocate (bb, at + op->size, bb->size)) {
 					addr = at + op->size;
 					fcn->addr = addr;
