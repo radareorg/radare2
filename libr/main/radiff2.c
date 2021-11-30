@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h>
 #include <r_main.h>
@@ -7,6 +7,7 @@ enum {
 	MODE_DIFF,
 	MODE_DIFF_STRS,
 	MODE_DIFF_IMPORTS,
+	MODE_DIFF_SYMBOLS,
 	MODE_DIST_MYERS,
 	MODE_DIST_LEVENSHTEIN,
 	MODE_CODE,
@@ -437,7 +438,7 @@ static int show_help(int v) {
 			"  -e [k=v]   set eval config var value for all RCore instances\n"
 			"  -g [sym|off1,off2]   graph diff of given symbol, or between two offsets\n"
 			"  -G [cmd]   run an r2 command on every RCore instance created\n"
-			"  -i         diff imports of target files (see -u, -U and -z)\n"
+			"  -i [i,s]   diff symbols or imports of target files (-U is default)\n"
 			"  -j         output in json format\n"
 			"  -n         print bare addresses only (diff.bare=1)\n"
                         "  -m [aditsjJ]  choose the graph output mode\n"
@@ -743,6 +744,25 @@ static int import_cmp(const RBinImport *a, const RBinImport *b) {
 	return strcmp (a->name, b->name);
 }
 
+static ut8 *get_symbols(RCore *c, int *len) {
+	RListIter *iter;
+
+	if (!c || !len) {
+		return NULL;
+	}
+
+	RBinSymbol *sym;
+	const RList *list = r_bin_get_symbols (c->bin);
+	RList *reslist = r_list_newf (free);
+	r_list_foreach (list, iter, sym) {
+		r_list_append (reslist, strdup (sym->name));
+	}
+	char *buf = r_str_list_join (reslist, "\n");
+	*len = strlen (buf);
+	r_list_free (reslist);
+	return (ut8*)buf;
+}
+
 static ut8 *get_imports(RCore *c, int *len) {
 	RListIter *iter;
 	RBinImport *str, *old = NULL;
@@ -960,7 +980,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 
 	radiff_options_init (&ro);
 
-	r_getopt_init (&opt, argc, argv, "Aa:b:BCDe:npg:m:G:OijrhcdsS:uUvVxXt:zqZ");
+	r_getopt_init (&opt, argc, argv, "Aa:b:BCDe:npg:m:G:Oi:jrhcdsS:uUvVxXt:zqZ");
 	while ((o = r_getopt_next (&opt)) != -1) {
 		switch (o) {
 		case 'a':
@@ -1013,7 +1033,18 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 			ro.mode = MODE_CODE;
 			break;
 		case 'i':
-			ro.mode = MODE_DIFF_IMPORTS;
+			ro.diffmode = 'U';
+			switch (opt.arg[0]) {
+			case 'i':
+				ro.mode = MODE_DIFF_IMPORTS;
+				break;
+			case 's':
+				ro.mode = MODE_DIFF_SYMBOLS;
+				break;
+			default:
+				eprintf ("-i expects [s,i] for symbols or imports diffing\n");
+				return 1;
+			}
 			break;
 		case 'n':
 			ro.showbare = true;
@@ -1099,6 +1130,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	case MODE_GRAPH:
 	case MODE_CODE:
 	case MODE_DIFF_STRS:
+	case MODE_DIFF_SYMBOLS:
 	case MODE_DIFF_IMPORTS:
 		c = opencore (&ro, ro.file);
 		if (!c) {
@@ -1181,6 +1213,12 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 				r_core_gdiff (c, c2);
 				r_core_diff_show (c, c2);
 			}
+		} else if (ro.mode == MODE_DIFF_SYMBOLS) {
+			int sz;
+			bufa = get_symbols (c, &sz);
+			sza = sz;
+			bufb = get_symbols (c2, &sz);
+			szb = sz;
 		} else if (ro.mode == MODE_DIFF_IMPORTS) {
 			int sz;
 			bufa = get_imports (c, &sz);
@@ -1244,6 +1282,7 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		break;
 	case MODE_DIFF:
 	case MODE_DIFF_STRS:
+	case MODE_DIFF_SYMBOLS:
 	case MODE_DIFF_IMPORTS:
 		d = r_diff_new ();
 		r_diff_set_delta (d, delta);

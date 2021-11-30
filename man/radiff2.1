@@ -7,6 +7,7 @@
 .Nm radiff2
 .Op Fl AabcCdDhOrspxXvzZ
 .Op Fl t Ar 0-100
+.Op Fl i Ar i,s
 .Op Fl g Ar sym
 .Op Fl S Ar algo
 .Ar file1
@@ -37,8 +38,8 @@ Show disasm instead of hexpairs (honors -a arch and -b bits)
 Graph diff output of given symbol, or between two functions, at given offsets: one for each binary.
 .It Fl h
 Show usage help message.
-.It Fl i
-Compare the list of imports
+.It Fl i Ar i, s
+Compare imports or symbols from given files (radiff2 -ii /bin/ls /bin/cat)
 .It Fl n
 Suppress address names (show only addresses) when code diffing.
 .It Fl O
