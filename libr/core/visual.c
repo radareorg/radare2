@@ -1773,8 +1773,25 @@ static void cursor_ocur(RCore *core, bool use_ocur) {
 	}
 }
 
+static ut64 insoff(RCore *core, int delta) {
+	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	ut64 addr = core->offset + delta; // should be core->print->cur
+	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, addr - minop);
+	if (bb) {
+		ut64 res = r_anal_bb_opaddr_at (bb, addr - minop);
+		if (res != UT64_MAX) {
+			if (res < addr && addr - res <= maxop) {
+				return res;
+			}
+		}
+	}
+	return addr;
+}
+
 static void nextOpcode(RCore *core) {
-	RAnalOp *aop = r_core_anal_op (core, core->offset + core->print->cur, R_ANAL_OP_MASK_BASIC);
+	ut64 opaddr = insoff (core, core->print->cur);
+	RAnalOp *aop = r_core_anal_op (core, opaddr, R_ANAL_OP_MASK_BASIC);
 	RPrint *p = core->print;
 	if (aop) {
 		p->cur += aop->size;
@@ -1786,9 +1803,11 @@ static void nextOpcode(RCore *core) {
 
 static void prevOpcode(RCore *core) {
 	RPrint *p = core->print;
-	ut64 addr, oaddr = core->offset + core->print->cur;
-	if (r_core_prevop_addr (core, oaddr, 1, &addr)) {
-		const int delta = oaddr - addr;
+	// ut64 addr, oaddr = core->offset + core->print->cur;
+	ut64 addr = 0;
+	ut64 opaddr = insoff (core, core->print->cur);
+	if (r_core_prevop_addr (core, opaddr, 1, &addr)) {
+		const int delta = opaddr - addr;
 		p->cur -= delta;
 	} else {
 		p->cur -= 4;
