@@ -2417,7 +2417,7 @@ static int cmd_resize(void *data, const char *input) {
 			eprintf ("r_io_resize: cannot resize\n");
 		}
 	}
-	if (newsize < core->offset+core->blocksize || oldsize < core->offset + core->blocksize) {
+	if (newsize < (core->offset + core->blocksize) || oldsize < (core->offset + core->blocksize)) {
 		r_core_block_read (core);
 	}
 	return true;
