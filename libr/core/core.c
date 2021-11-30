@@ -3316,6 +3316,9 @@ R_API int r_core_prompt_exec(RCore *r) {
 		}
 		ret = r_core_cmd (r, cmd, true);
 		if (ret < 0) {
+			if (r->cons && r->cons->line && r->cons->line->zerosep) {
+				r_cons_zero ();
+			}
 			r_core_cmd_queue (r, NULL);
 			break;
 		}
