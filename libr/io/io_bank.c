@@ -375,6 +375,9 @@ static void _delete_submaps_from_bank_tree(RIO *io, RIOBank *bank, RListIter *pr
 	fake_sm.itv = map->itv;
 	fake_sm.mapref.id = map->id;
 	RRBNode *entry = _find_entry_submap_node (bank, &fake_sm);
+	if (!entry) {
+		return;
+	}
 	RIOSubMap *bd = (RIOSubMap *)entry->data;
 	while (bd && r_io_submap_overlap (bd, (&fake_sm))) {
 		// this loop deletes all affected submaps from the rbtree
