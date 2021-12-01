@@ -325,8 +325,8 @@ static pyc_object *get_complex_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
 	ut32 size = 0;
-	ut32 n1 = 0;
-	ut32 n2 = 0;
+	st32 n1 = 0;
+	st32 n2 = 0;
 
 	ret = R_NEW0 (pyc_object);
 	if (!ret) {
@@ -338,7 +338,7 @@ static pyc_object *get_complex_object(RBuffer *buffer) {
 	} else {
 		n1 = get_st32 (buffer, &error);
 	}
-	if (error) {
+	if (error || n1 < 1) {
 		free (ret);
 		return NULL;
 	}
