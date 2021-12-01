@@ -10,6 +10,5 @@ CFLAGS+=-I../asm/arch/v850/
 ALL_TARGETS+=${TARGET_V850}
 
 ${TARGET_V850}: ${OBJ_V850} ${SHARED_OBJ}
-	$(call pwd)
 	${CC} $(call libname,anal_v850) ${CFLAGS} \
 		-I../../asm/arch/v850/ -o ${TARGET_V850} ${OBJ_V850}

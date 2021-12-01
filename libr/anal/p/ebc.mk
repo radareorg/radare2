@@ -9,6 +9,5 @@ TARGET_EBC=anal_ebc.${EXT_SO}
 ALL_TARGETS+=${TARGET_EBC}
 
 ${TARGET_EBC}: ${OBJ_EBC} ${SHARED_OBJ}
-	$(call pwd)
 	${CC} $(call libname,anal_ebc) ${CFLAGS} \
 		-o ${TARGET_EBC} ${OBJ_EBC}
