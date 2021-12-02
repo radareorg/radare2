@@ -37,6 +37,6 @@
         #"^/usr/lib/libr*"
         #"^/usr/bin/r2"
         #"^/bin/ls"
-    )   
+    )
 )
 (deny default)

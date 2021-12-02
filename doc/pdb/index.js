@@ -60,14 +60,14 @@ var extract_pdb_file = function (archive_name, dbg_fname) {
     console.log('check if cabextract is installed');
     process.exit(1);
   });
-    
+
   cab_extractor_cmd.on('exit', function (code) {
     if (code != 0) {
       console.log("Failed to extract with code: " + code);
     } else {
       fs.unlink(archive_name);
       console.log("File " + archive_name + " has been uncompressed successfully");
-    }      
+    }
   });
 };
 
@@ -75,14 +75,14 @@ var curl_start = function(guid, dbg_fname) {
   var archive_name = dbg_fname;
   var link_end = '';
   var spawn = require('child_process').spawn;
-   
-  archive_name = archive_name.substring(0, archive_name.length - 1)  + '_';  
+
+  archive_name = archive_name.substring(0, archive_name.length - 1)  + '_';
   link_end = '/' + dbg_fname + '/' + guid + '/' + archive_name;
 
   var stream = fs.createWriteStream(archive_name, {flags:'a'});
-  
+
   console.log("downloading file: " + archive_name);
-  
+
   var curl_ = new curl(DOWNLOABLE_LINK + link_end, {RAW:0}, function(err) {
     console.info(this);
     return;
@@ -95,13 +95,13 @@ var curl_start = function(guid, dbg_fname) {
     stream.write(chunk);
     return chunk.length;
   });
-  
+
   curl_.on('error', function(e) {
     console.log('File: ' + archive_name + 'has not been downloaded successfully');
     curl_.close();
     return;
   });
-  
+
   curl_.on('end', function() {
     console.log('File ' + archive_name + 'has been downloaded and saved successfully');
     console.log('Decompress of file: ' + archive_name);
@@ -125,13 +125,13 @@ var downloader = function (currentValue, index, array) {
   if (currentValue.indexOf('pdb') != -1) {
     return;
   }
-  
+
   rabin2_cmd.stdout.on('error', function (err) {
     console.log('check if rabin is installed');
     process.exit(1);
   });
-  
-  rabin2_cmd.stdout.on('data', function (data) {     
+
+  rabin2_cmd.stdout.on('data', function (data) {
     data.toString().split(EOL).map(function (str) {
       var parts = str.split(' ');
 
@@ -171,7 +171,7 @@ walk(IN_FOLDER, function(err, results) {
     console.log('Error while walking the directory.Error: ' + err);
     process.exit(1);
   }
-    
+
   results.forEach(downloader);
 });
 

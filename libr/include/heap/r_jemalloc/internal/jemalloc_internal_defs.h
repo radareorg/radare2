@@ -54,7 +54,7 @@
 /*
  * Defined if __builtin_clz() and __builtin_clzl() are available.
  */
-#define JEMALLOC_HAVE_BUILTIN_CLZ 
+#define JEMALLOC_HAVE_BUILTIN_CLZ
 
 /*
  * Defined if os_unfair_lock_*() functions are available, as provided by Darwin.
@@ -68,12 +68,12 @@
 /* #undef JEMALLOC_OSSPIN */
 
 /* Defined if syscall(2) is usable. */
-#define JEMALLOC_USE_SYSCALL 
+#define JEMALLOC_USE_SYSCALL
 
 /*
  * Defined if secure_getenv(3) is available.
  */
-#define JEMALLOC_HAVE_SECURE_GETENV 
+#define JEMALLOC_HAVE_SECURE_GETENV
 
 /*
  * Defined if issetugid(2) is available.
@@ -81,7 +81,7 @@
 /* #undef JEMALLOC_HAVE_ISSETUGID */
 
 /* Defined if pthread_atfork(3) is available. */
-#define JEMALLOC_HAVE_PTHREAD_ATFORK 
+#define JEMALLOC_HAVE_PTHREAD_ATFORK
 
 /*
  * Defined if clock_gettime(CLOCK_MONOTONIC_COARSE, ...) is available.
@@ -112,7 +112,7 @@
  * Among other things, it must be possible to initialize a mutex without
  * triggering allocation in order for threaded allocation to be safe.
  */
-#define JEMALLOC_THREADED_INIT 
+#define JEMALLOC_THREADED_INIT
 
 /*
  * Defined if the pthreads implementation defines
@@ -125,7 +125,7 @@
 #define JEMALLOC_TLS_MODEL __attribute__((tls_model("initial-exec")))
 
 /* JEMALLOC_CC_SILENCE enables code that silences unuseful compiler warnings. */
-#define JEMALLOC_CC_SILENCE 
+#define JEMALLOC_CC_SILENCE
 
 /* JEMALLOC_CODE_COVERAGE enables test code coverage analysis. */
 /* #undef JEMALLOC_CODE_COVERAGE */
@@ -137,7 +137,7 @@
 /* #undef JEMALLOC_DEBUG */
 
 /* JEMALLOC_STATS enables statistics calculation. */
-#define JEMALLOC_STATS 
+#define JEMALLOC_STATS
 
 /* JEMALLOC_PROF enables allocation profiling. */
 /* #undef JEMALLOC_PROF */
@@ -156,16 +156,16 @@
  * This makes it possible to allocate/deallocate objects without any locking
  * when the cache is in the steady state.
  */
-#define JEMALLOC_TCACHE 
+#define JEMALLOC_TCACHE
 
 /*
  * JEMALLOC_DSS enables use of sbrk(2) to allocate chunks from the data storage
  * segment (DSS).
  */
-#define JEMALLOC_DSS 
+#define JEMALLOC_DSS
 
 /* Support memory filling (junk/zero/quarantine/redzone). */
-#define JEMALLOC_FILL 
+#define JEMALLOC_FILL
 
 /* Support utrace(2)-based tracing. */
 /* #undef JEMALLOC_UTRACE */
@@ -198,7 +198,7 @@
  * VirtualAlloc()/VirtualFree() operations must be precisely matched, i.e.
  * mappings do *not* coalesce/fragment.
  */
-#define JEMALLOC_MAPS_COALESCE 
+#define JEMALLOC_MAPS_COALESCE
 
 /*
  * If defined, use munmap() to unmap freed chunks, rather than storing them for
@@ -236,7 +236,7 @@
  * If defined, explicitly attempt to more uniformly distribute large allocation
  * pointer alignments across all cache indices.
  */
-#define JEMALLOC_CACHE_OBLIVIOUS 
+#define JEMALLOC_CACHE_OBLIVIOUS
 
 /*
  * Darwin (OS X) uses zones to work around Mach-O symbol override shortcomings.
@@ -250,16 +250,16 @@
  * JEMALLOC_SYSCTL_VM_OVERCOMMIT: FreeBSD's vm.overcommit sysctl.
  */
 /* #undef JEMALLOC_SYSCTL_VM_OVERCOMMIT */
-#define JEMALLOC_PROC_SYS_VM_OVERCOMMIT_MEMORY 
+#define JEMALLOC_PROC_SYS_VM_OVERCOMMIT_MEMORY
 
 /* Defined if madvise(2) is available. */
-#define JEMALLOC_HAVE_MADVISE 
+#define JEMALLOC_HAVE_MADVISE
 
 /*
  * Defined if transparent huge pages are supported via the MADV_[NO]HUGEPAGE
  * arguments to madvise(2).
  */
-#define JEMALLOC_HAVE_MADVISE_HUGE 
+#define JEMALLOC_HAVE_MADVISE_HUGE
 
 /*
  * Methods for purging unused pages differ between operating systems.
@@ -271,10 +271,10 @@
  *                                 address region is later touched.
  */
 /* #undef JEMALLOC_PURGE_MADVISE_FREE */
-#define JEMALLOC_PURGE_MADVISE_DONTNEED 
+#define JEMALLOC_PURGE_MADVISE_DONTNEED
 
 /* Defined if transparent huge page support is enabled. */
-#define JEMALLOC_THP 
+#define JEMALLOC_THP
 
 /* Define if operating system has alloca.h header. */
 #define JEMALLOC_HAS_ALLOCA_H 1
@@ -298,13 +298,13 @@
 #define LG_SIZEOF_INTMAX_T 3
 
 /* glibc malloc hooks (__malloc_hook, __realloc_hook, __free_hook). */
-#define JEMALLOC_GLIBC_MALLOC_HOOK 
+#define JEMALLOC_GLIBC_MALLOC_HOOK
 
 /* glibc memalign hook. */
-#define JEMALLOC_GLIBC_MEMALIGN_HOOK 
+#define JEMALLOC_GLIBC_MEMALIGN_HOOK
 
 /* Adaptive mutex support in pthreads. */
-#define JEMALLOC_HAVE_PTHREAD_MUTEX_ADAPTIVE_NP 
+#define JEMALLOC_HAVE_PTHREAD_MUTEX_ADAPTIVE_NP
 
 /*
  * If defined, jemalloc symbols are not exported (doesn't work when

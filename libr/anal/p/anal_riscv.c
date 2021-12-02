@@ -445,7 +445,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "csrrc", 5)) {
 			// Ands the inverse of rs1 with CSR, places old value in rd
 			esilprintf (op, "%s,0,+,%s,1,+,0,-,%s,&=,%s,=", ARG (1), ARG (1), ARG (2), ARG (0));
-		} 
+		}
 		// stores
 		else if (!strcmp (name, "sd") || !strcmp (name, "sdsp")) {
 			esilprintf (op, "%s,%s,%s,+,=[8]", ARG (0), ARG (2), ARG (1));

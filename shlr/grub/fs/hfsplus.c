@@ -983,7 +983,7 @@ grub_hfsplus_dir (grub_device_t device, const char *path,
 
 
 static grub_err_t
-grub_hfsplus_label (grub_device_t device 
+grub_hfsplus_label (grub_device_t device
 		    , char **label)
 {
   /* XXX: It's not documented how to read a label.  */

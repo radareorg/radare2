@@ -443,7 +443,7 @@ grub_ufs_lookup_symlink (struct grub_ufs_data *data, int ino)
     {
       grub_disk_read (data->disk,
 		      (INODE_DIRBLOCKS (data, 0)
-		       << grub_num_to_cpu32 (data->sblock.log2_blksz, 
+		       << grub_num_to_cpu32 (data->sblock.log2_blksz,
 					     data->be)),
 		      0, INODE_SIZE (data), symlink);
       symlink[INODE_SIZE (data)] = '\0';
@@ -535,7 +535,7 @@ grub_ufs_find_file (struct grub_ufs_data *data, const char *path)
 	if (!grub_strcmp (name, filename))
 	  {
 	    dirino = data->ino;
-	    grub_ufs_read_inode (data, grub_num_to_cpu32 (dirent.ino, 
+	    grub_ufs_read_inode (data, grub_num_to_cpu32 (dirent.ino,
 							  data->be), 0);
 
 	    if ((INODE_MODE(data) & GRUB_UFS_ATTR_TYPE)

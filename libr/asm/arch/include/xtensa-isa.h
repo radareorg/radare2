@@ -15,7 +15,7 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, 
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301,
    USA.  */
 
 #ifndef XTENSA_LIBISA_H
@@ -184,7 +184,7 @@ typedef xtensa_insnbuf_word *xtensa_insnbuf;
 /* Get the size in "insnbuf_words" of the xtensa_insnbuf array.  */
 
 extern int
-xtensa_insnbuf_size (xtensa_isa isa); 
+xtensa_insnbuf_size (xtensa_isa isa);
 
 
 /* Allocate an xtensa_insnbuf of the right size.  */
@@ -240,7 +240,7 @@ xtensa_isa_free (xtensa_isa isa);
 /* Get the maximum instruction size in bytes.  */
 
 extern int
-xtensa_isa_maxlength (xtensa_isa isa); 
+xtensa_isa_maxlength (xtensa_isa isa);
 
 
 /* Decode the length in bytes of an instruction in raw memory (not an
@@ -260,7 +260,7 @@ xtensa_isa_length_from_chars (xtensa_isa isa, const unsigned char *cp);
    stages before stage 0.  Returns XTENSA_UNDEFINED on error.  */
 
 extern int
-xtensa_isa_num_pipe_stages (xtensa_isa isa); 
+xtensa_isa_num_pipe_stages (xtensa_isa isa);
 
 
 /* Get the number of various entities that are defined for this processor.  */
@@ -537,7 +537,7 @@ xtensa_operand_regfile (xtensa_isa isa, xtensa_opcode opc, int opnd);
 
 extern int
 xtensa_operand_num_regs (xtensa_isa isa, xtensa_opcode opc, int opnd);
-				 
+				
 
 /* Some register operands do not completely identify the register being
    accessed.  For example, the operand value may be added to an internal
@@ -554,7 +554,7 @@ xtensa_operand_is_known_reg (xtensa_isa isa, xtensa_opcode opc, int opnd);
 /* Check if an immediate operand is PC-relative.  Returns 0 for register
    operands and non-PC-relative immediates, 1 for PC-relative
    immediates, and XTENSA_UNDEFINED on error.  */
- 
+
 extern int
 xtensa_operand_is_PCrelative (xtensa_isa isa, xtensa_opcode opc, int opnd);
 

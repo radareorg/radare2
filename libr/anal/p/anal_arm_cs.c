@@ -1040,10 +1040,10 @@ static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int 
 		size_t s = sizeof (bitmask_by_width) / sizeof (*bitmask_by_width);
 		int width = size > 0? (size - 1) % s: 0;
 		if (shift > 0) {
-			r_strbuf_appendf (sb, "0x%"PFMT64x",%d,%s%s,>>,&", 
+			r_strbuf_appendf (sb, "0x%"PFMT64x",%d,%s%s,>>,&",
 				bitmask_by_width[width], shift, REG64 (n), regc);
 		} else {
-			r_strbuf_appendf (sb, "0x%"PFMT64x",%s%s,&", 
+			r_strbuf_appendf (sb, "0x%"PFMT64x",%s%s,&",
 				bitmask_by_width[width], REG64 (n), regc);
 		}
 	} else {
@@ -1080,11 +1080,11 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 		}
 
 		if (shift > 0 && shift < 64) {
-			r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s", 
+			r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s",
 				shift, mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
 		} else {
 			int dimsize = size % 64;
-			r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s,0x%"PFMT64x",&,|,%s%s", 
+			r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s,0x%"PFMT64x",&,|,%s%s",
 				mask, REG64 (n), regc, VEC64_MASK (shift, dimsize), REG64 (n), regc);
 		}
 	} else {
@@ -1098,13 +1098,13 @@ static ut64 shifted_imm64(csh *handle, cs_insn *insn, int n, int sz) {
 	cs_arm64_op op = INSOP64 (n);
 	int sft = op.shift.value;
 	switch (op.shift.type) {
-		case ARM64_SFT_MSL: 
+		case ARM64_SFT_MSL:
 			return (IMM64 (n) << sft) | ((1 << sft) - 1);
 		case ARM64_SFT_LSL:
 			return IMM64 (n) << sft;
 		case ARM64_SFT_LSR:
 			return IMM64 (n) >> sft;
-		case ARM64_SFT_ROR: 
+		case ARM64_SFT_ROR:
 			return (IMM64 (n) >> sft)|(IMM64 (n) << (sz - sft));
 		case ARM64_SFT_ASR:
 			switch (sz) {
@@ -1224,7 +1224,7 @@ static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 
 	cs_arm64_op dst = INSOP64 (0);
 	int start = -1;
-	int end = 0; 
+	int end = 0;
 	int convert = size == 64 ? 0 : 1;
 	if (dst.vas) {
 		start = 0;
@@ -1462,7 +1462,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		cs_arm64_op src = INSOP64 (1);
 
 		if (dst.vas && src.vas) {
-			r_strbuf_setf (&op->esil, "%sh,%sh,=,%sl,%sl,=", 
+			r_strbuf_setf (&op->esil, "%sh,%sh,=,%sl,%sl,=",
 				REG64 (1), REG64 (0), REG64 (1), REG64 (0));
 		} else {
 			ARG64_APPEND (&op->esil, 1);
@@ -1477,7 +1477,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_FCCMP:
 	case ARM64_INS_FCCMPE:
 		if (ISREG64 (1)) {
-			r_strbuf_setf (&op->esil, 
+			r_strbuf_setf (&op->esil,
 				"%d,%s,F2D,NAN,%d,%s,F2D,NAN,|,vf,:="
 				",%d,%s,F2D,%d,%s,F2D,F==,vf,|,zf,:="
 				",%d,%s,F2D,%d,%s,F2D,F<,vf,|,nf,:=",
@@ -1486,7 +1486,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0)
 			);	
 		} else {
-			r_strbuf_setf (&op->esil, 
+			r_strbuf_setf (&op->esil,
 				"%d,%s,F2D,NAN,vf,:="
 				",0,I2D,%d,%s,F2D,F==,vf,|,zf,:="
 				",0,I2D,%d,%s,F2D,F<,vf,|,nf,:=",
@@ -1504,7 +1504,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 	case ARM64_INS_FCVT:
-		r_strbuf_setf (&op->esil, "%d,%d,%s,F2D,D2F,%s,=", 
+		r_strbuf_setf (&op->esil, "%d,%d,%s,F2D,D2F,%s,=",
 			REGBITS64 (0), REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_SCVTF:
@@ -1565,17 +1565,17 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FNEG:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,D2F,%s,=", 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,D2F,%s,=",
 			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_INS_FMIN:
-		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,?{,%s,}{,%s,},%s,=", 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,?{,%s,}{,%s,},%s,=",
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (1), REG64 (1), REG64 (1), REG64 (2), REG64 (0));
 		break;
 	case ARM64_INS_FMAX:
-		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,!,?{,%s,}{,%s,},%s,=", 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,!,?{,%s,}{,%s,},%s,=",
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (1), REG64 (1), REG64 (1), REG64 (2), REG64 (0));
 		break;
 	case ARM64_INS_FADD:
@@ -1591,26 +1591,26 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		FPOPCALL_NEGATE("*");
 		break;
 	case ARM64_INS_FMADD:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F+,D2F,%s,=", 
-			REGBITS64 (1), REG64 (1), 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F+,D2F,%s,=",
+			REGBITS64 (1), REG64 (1),
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (3), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_FNMADD:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F+,-F,D2F,%s,=", 
-			REGBITS64 (1), REG64 (1), 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F+,-F,D2F,%s,=",
+			REGBITS64 (1), REG64 (1),
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (3), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_FMSUB:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F-,D2F,%s,=", 
-			REGBITS64 (1), REG64 (1), 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F-,D2F,%s,=",
+			REGBITS64 (1), REG64 (1),
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (3), REG64 (3), REG64 (0));
 		break;
 	case ARM64_INS_FNMSUB:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F-,-F,D2F,%s,=", 
-			REGBITS64 (1), REG64 (1), 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F-,-F,D2F,%s,=",
+			REGBITS64 (1), REG64 (1),
 			REGBITS64 (2), REG64 (2),
 			REGBITS64 (3), REG64 (3), REG64 (0));
 		break;
@@ -1624,7 +1624,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		/* TODO: support WZR XZR to specify 32, 64bit op */
 		OPCALL("/");
 		break;
-#if CS_API_MAJOR > 4 
+#if CS_API_MAJOR > 4
 	case ARM64_INS_BRAA:
 	case ARM64_INS_BRAAZ:
 	case ARM64_INS_BRAB:
@@ -1640,7 +1640,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_BL:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64d",pc,=", IMM64 (0));
 		break;
-#if CS_API_MAJOR > 4 
+#if CS_API_MAJOR > 4
 	case ARM64_INS_BLRAA:
 	case ARM64_INS_BLRAAZ:
 	case ARM64_INS_BLRAB:
@@ -1738,7 +1738,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 			if (HASMEMINDEX64 (1)) {
 				if (LSHIFT2_64 (1) || EXT64 (1)) {
 					ARG64_APPEND (&op->esil, 1);
-					r_strbuf_appendf (&op->esil, ",%s,+,[%d],%s,=", 
+					r_strbuf_appendf (&op->esil, ",%s,+,[%d],%s,=",
 						MEMBASE64 (1), size, REG64 (0));
 				} else {
 					r_strbuf_appendf (&op->esil, "%s,%s,+,[%d],%s,=",
@@ -1902,7 +1902,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		ARG64_APPEND(&op->esil, 1);
 		COMMA(&op->esil);
 		ARG64_APPEND(&op->esil, 0);
-		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", 
+		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) -1);
 	
 		if (insn->id == ARM64_INS_CCMP || insn->id == ARM64_INS_CCMN) {
@@ -2159,7 +2159,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_RBIT:
 		// slightly shorter expression to reverse bits
-		r_strbuf_setf (&op->esil, "0,tmp,=,0,DUP,DUP,DUP,%d,-,%s,>>,1,&,<<,tmp,+=,%d,-,?{,++,4,GOTO,},tmp,%s,=", 
+		r_strbuf_setf (&op->esil, "0,tmp,=,0,DUP,DUP,DUP,%d,-,%s,>>,1,&,<<,tmp,+=,%d,-,?{,++,4,GOTO,},tmp,%s,=",
 			REGBITS64 (1)-1, REG64 (1), REGBITS64 (1)-1, REG64 (0));
 		break;
 	case ARM64_INS_MVN:
@@ -2169,7 +2169,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		cs_arm64_op src = INSOP64 (1);
 
 		if (dst.vas && src.vas) {
-			r_strbuf_setf (&op->esil, "%sh,-1,^,%sh,=,%sl,-1,^,%sl,=", 
+			r_strbuf_setf (&op->esil, "%sh,-1,^,%sh,=,%sl,-1,^,%sl,=",
 				REG64 (1), REG64 (0), REG64 (1), REG64 (0));
 		} else {
 			ARG64_APPEND (&op->esil, 1);

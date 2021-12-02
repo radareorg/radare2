@@ -12,7 +12,7 @@ LINKFLAGS+=../../io/libr_io.a
 else
 LINKFLAGS=-L../../socket -lr_socket
 LINKFLAGS+=-L../../util -lr_util
-LINKFLAGS+=-L.. -lr_io 
+LINKFLAGS+=-L.. -lr_io
 endif
 ifeq (${HAVE_LIB_SSL},1)
 CFLAGS+=${SSL_CFLAGS}

@@ -349,7 +349,7 @@ static ut32 cmp(ArmOp *op) {
 	} else if (op->operands[0].type & ARM_GPR  && op->operands[1].type & ARM_CONSTANT) {
 		if (op->operands[0].reg_type & ARM_REG64) {
 			k =  0x1f0000f1;
-		} else { 
+		} else {
 			k =  0x1f000071;
 		}
 		k |= ( op->operands[1].immediate  * 4 ) << 16 ;

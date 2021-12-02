@@ -3,12 +3,12 @@ version: '4.5.0'
 base: core18
 summary: Radare2 reverse engineering framework and tool
 description: |
-  Radare2 (also known as r2) is a complete framework for reverse-engineering 
-  and analyzing binaries; composed of a set of small utilities 
-  that can be used together or independently from the command line. 
-  Built around a disassembler for computer software which generates 
-  assembly language source code from machine-executable code, 
-  it supports a variety of executable formats for different processors 
+  Radare2 (also known as r2) is a complete framework for reverse-engineering
+  and analyzing binaries; composed of a set of small utilities
+  that can be used together or independently from the command line.
+  Built around a disassembler for computer software which generates
+  assembly language source code from machine-executable code,
+  it supports a variety of executable formats for different processors
   and operating systems.
 
 grade: devel # Development version, can only publish to beta/candidate channels.

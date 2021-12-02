@@ -34,7 +34,7 @@ typedef enum {
 	LE_RT_FD = 21, /* DBCS uniq/font driver */
 } LE_resource_type;
 
-// This bit signifies that additional information is contained in the linear EXE module 
+// This bit signifies that additional information is contained in the linear EXE module
 // and will be used in the future for parameter type checking.
 #define ENTRY_PARAMETER_TYPING_PRESENT 0x80
 

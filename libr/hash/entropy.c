@@ -1,5 +1,5 @@
 /*
- * This code was done 
+ * This code was done
  *    by an anonymous gnome
  * ------------------------
  * That's pure mathematics, so no sense to adding license shit here.

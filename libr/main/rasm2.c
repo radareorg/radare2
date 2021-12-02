@@ -157,7 +157,7 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 		r_anal_op_fini (&aop);
 	}
 	if (as->json) {
-		pj_end (pj); 
+		pj_end (pj);
 		printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}

@@ -167,7 +167,7 @@ static int decode_emulation(ut16 instr, struct msp430_cmd *cmd)
 	} else if (opcode == MSP430_ADD && as == 2 && src == MSP430_R3) {
 		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "incd.b" : "incd");
 		remove_first_operand(cmd);
-	} else if (opcode == MSP430_XOR && as == 3 && src == MSP430_R3) { 
+	} else if (opcode == MSP430_XOR && as == 3 && src == MSP430_R3) {
 		snprintf(cmd->instr, sizeof (cmd->instr), "%s", bw ? "inv.b" : "inv");
 		remove_first_operand(cmd);
 	} else if (opcode == MSP430_ADD && src == dst) {
@@ -279,7 +279,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 	/* addressing mode of destination operand */
 	switch (ad) {
 	case 0: /* register mode */
-		snprintf(dstbuf, sizeof (dstbuf), ", %s", msp430_register_names[dst]); 
+		snprintf(dstbuf, sizeof (dstbuf), ", %s", msp430_register_names[dst]);
 		break;
 	case 1:
 		/* check addr. mode of source operand */

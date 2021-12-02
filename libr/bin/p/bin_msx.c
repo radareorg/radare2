@@ -158,7 +158,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) { 
+static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (!ret || !ptr) {

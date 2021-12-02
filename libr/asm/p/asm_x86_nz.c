@@ -137,7 +137,7 @@ typedef struct Opcode_t {
 } Opcode;
 
 static bool immediate_out_of_range(int bits, ut64 immediate) {
-	return bits == 32 && (immediate >> 32); 
+	return bits == 32 && (immediate >> 32);
 }
 
 static inline bool is_debug_or_control(Operand op) {

@@ -773,7 +773,7 @@ static pyc_object *copy_object(pyc_object *object) {
 	copy->type = object->type;
 	if ((int)object->type == 0) {
 		// do nothing
-	} else 
+	} else
 	switch (object->type) {
 	case TYPE_NULL:
 		break;

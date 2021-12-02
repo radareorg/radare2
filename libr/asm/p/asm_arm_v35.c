@@ -21,7 +21,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		return -1;
 	}
 	ut32 n = r_read_le32 (buf);
-	// FailureCodes 
+	// FailureCodes
 	int fc = aarch64_decompose (n, &inst, a->pc);
 	if (fc != DISASM_SUCCESS) {
 		return -1;

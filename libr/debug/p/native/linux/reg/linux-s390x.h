@@ -11,7 +11,7 @@ r3       argument 1 / return value 1 (if long long) call-clobbered
 r4       argument 2                                 call-clobbered
 r5       argument 3                                 call-clobbered
 r6	 argument 4				    saved
-r7       pointer-to arguments 5 to ...              saved      
+r7       pointer-to arguments 5 to ...              saved
 r8       this & that                                saved
 r9       this & that                                saved
 r10      static-chain ( if nested function )        saved
@@ -32,7 +32,7 @@ f1,f3,f5 f7-f15 are call-clobbered.
 
 
 The current architectures have the following registers.
- 
+
 16 General propose registers, 32 bit on s/390 and 64 bit on z/Architecture,
 r0-r15 (or gpr0-gpr15), used for arithmetic and addressing.
 
@@ -49,8 +49,8 @@ Access register 0 (and access register 1 on z/Architecture, which needs a
 64 bit pointer) is currently used by the pthread library as a pointer to
 the current running threads private area.
 
-16 64 bit floating point registers (fp0-fp15 ) IEEE & HFP floating 
-point format compliant on G5 upwards & a Floating point control reg (FPC) 
+16 64 bit floating point registers (fp0-fp15 ) IEEE & HFP floating
+point format compliant on G5 upwards & a Floating point control reg (FPC)
 4  64 bit registers (fp0,fp2,fp4 & fp6) HFP only on older machines.
 Note:
 Linux (currently) always uses IEEE & emulates G5 IEEE format on older machines,

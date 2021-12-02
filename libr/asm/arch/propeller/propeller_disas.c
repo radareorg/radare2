@@ -186,7 +186,7 @@ static int decode_jmp (struct propeller_cmd *cmd, ut32 instr) {
 							"#0x%x", get_src (instr) << 2);
 				} else {
 					cmd->immed = 0;
-					cmd->src = get_src (instr) << 2; 
+					cmd->src = get_src (instr) << 2;
 					snprintf (cmd->operands, PROP_INSTR_MAXLEN - 1,
 							"0x%x", get_src (instr) << 2);
 				}

@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -142,7 +142,7 @@ decrypt_header(struct zip_source *src, struct trad_pkware *ctx)
 	zip_source_error(src, ctx->e, ctx->e+1);
 	return -1;
     }
-    
+
     if (n != HEADERLEN) {
 	ctx->e[0] = ZIP_ER_EOF;
 	ctx->e[1] = 0;

@@ -42,7 +42,7 @@ ec push rgb:ff7733              # push instructions
 ec reg rgb:400080               # register names
 ec ret rgb:F92672 0 bold                  # ret opcode
 ec swi rgb:d66
-ec trap rgb:d66                 
+ec trap rgb:d66
 ec ucall rgb:A63A00 0 bold
 ec ujmp rgb:376B4C 0 bold underline
 ec usrcmt rgb:007D96 0 bold           # user comment

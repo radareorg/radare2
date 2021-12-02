@@ -44,7 +44,7 @@ enum overflow_type
   no_overflow
 };
 
-/* This structure holds information for a particular instruction. 
+/* This structure holds information for a particular instruction.
 
    The args field is a string describing the operands.  The following
    letters can appear in the args:
@@ -78,24 +78,24 @@ enum overflow_type
 struct nios2_opcode
 {
   const char *name;		/* The name of the instruction.  */
-  const char *args;		/* A string describing the arguments for this 
+  const char *args;		/* A string describing the arguments for this
 				   instruction.  */
-  const char *args_test;	/* Like args, but with an extra argument for 
+  const char *args_test;	/* Like args, but with an extra argument for
 				   the expected opcode.  */
-  unsigned long num_args;	/* The number of arguments the instruction 
+  unsigned long num_args;	/* The number of arguments the instruction
 				   takes.  */
   unsigned long match;		/* The basic opcode for the instruction.  */
-  unsigned long mask;		/* Mask for the opcode field of the 
+  unsigned long mask;		/* Mask for the opcode field of the
 				   instruction.  */
-  unsigned long pinfo;		/* Is this a real instruction or instruction 
+  unsigned long pinfo;		/* Is this a real instruction or instruction
 				   macro?  */
-  enum overflow_type overflow_msg;  /* Used to generate informative 
+  enum overflow_type overflow_msg;  /* Used to generate informative
 				       message when fixup overflows.  */
 };
 
-/* This value is used in the nios2_opcode.pinfo field to indicate that the 
-   instruction is a macro or pseudo-op.  This requires special treatment by 
-   the assembler, and is used by the disassembler to determine whether to 
+/* This value is used in the nios2_opcode.pinfo field to indicate that the
+   instruction is a macro or pseudo-op.  This requires special treatment by
+   the assembler, and is used by the disassembler to determine whether to
    check for a nop.  */
 #define NIOS2_INSN_MACRO	0x80000000
 #define NIOS2_INSN_MACRO_MOV	0x80000001

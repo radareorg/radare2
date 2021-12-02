@@ -7,7 +7,7 @@
 
 #ifdef __wasi__
 #define FE_OVERFLOW 0
-#define feclearexcept(x) 
+#define feclearexcept(x)
 #endif
 // should these be here?
 #include <math.h>
@@ -598,7 +598,7 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 	}
 	
 	//Make sure the other bits are 0
-	src &= UT64_MAX >> (64 - dst); 
+	src &= UT64_MAX >> (64 - dst);
 
 	ut64 m = 0;
 	if (dst < 64) {
@@ -1737,7 +1737,7 @@ static void mult64to128(ut64 op1, ut64 op2, ut64 *hi, ut64 *lo) {
 
 static bool esil_long_mul(RAnalEsil *esil) {
 	bool ret = false;
-	ut64 s, d; 
+	ut64 s, d;
 	ut64 hi, lo;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);

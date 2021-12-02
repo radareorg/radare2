@@ -1205,7 +1205,7 @@ R_API void r_anal_class_list_vtables(RAnal *anal, const char *class_name) {
 static void list_all_functions_at_vtable_offset(RAnal *anal, const char *class_name, ut64 offset) {
 	RVTableContext vtableContext;
 	r_anal_vtable_begin (anal, &vtableContext);
-	ut8 function_ptr_size = vtableContext.word_size; 
+	ut8 function_ptr_size = vtableContext.word_size;
 
 	ut64 func_address;
 	RVector *vtables = r_anal_class_vtable_get_all (anal, class_name);
@@ -1252,10 +1252,10 @@ R_API void r_anal_class_list_vtable_offset_functions(RAnal *anal, const char *cl
 }
 
 /**
- * @brief Creates RGraph from class inheritance information where 
+ * @brief Creates RGraph from class inheritance information where
  *        each node has RGraphNodeInfo as generic data
- * 
- * @param anal 
+ *
+ * @param anal
  * @return RGraph* NULL if failure
  */
 R_API RGraph *r_anal_class_get_inheritance_graph(RAnal *anal) {

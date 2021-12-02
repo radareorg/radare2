@@ -1,4 +1,4 @@
-OBJ_QNX+=bin_qnx.o 
+OBJ_QNX+=bin_qnx.o
 
 
 STATIC_OBJ+=${OBJ_QNX}

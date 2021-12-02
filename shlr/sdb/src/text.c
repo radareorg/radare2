@@ -15,11 +15,11 @@
  * ********************
  *
  * Files are UTF-8 and use '\n' line endings. Always.
- * 
+ *
  * Lines starting with '/' denote the path of the namespace for the following data:
  *
  *   /some/namespace
- * 
+ *
  * The default path is root, just a slash also means root.
  * These paths are always absolute from the root. Characters that must be escaped in a path are: '/', '\\', '\n', '\r':
  *
@@ -35,13 +35,13 @@
  *   \/slashedkey=somevalue
  *
  * Other than that, at any postion, '\\', '\n' and '\r' must be escaped:
- *   
+ *
  *   some\\key=some\nvalue
  *
  * In the key, '=' must also be escaped (not necessary in the value):
  *
  *   some\=key=some=value
- * 
+ *
  * --------
  * Example:
  *

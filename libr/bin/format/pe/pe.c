@@ -155,7 +155,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(r_bin_pe_obj_t) *bin) {
 		}
 	}
 
-	// MSVC 32bit debug 
+	// MSVC 32bit debug
 	if (b[3] == 0xe8) {
 		// 55                    push ebp
 		// 8B EC                 mov ebp, esp
@@ -177,7 +177,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh)(struct PE_(r_bin_pe_obj_t) *bin) {
 				// E8 xx xx xx xx    call xxxxxxxx <- Follow this
 				// 89 xx xx          mov dword [xxxx], eax
 				// E8 xx xx xx xx    call xxxxxxxx
-				if (b[n] == 0xe8 && n + 8 <= sizeof (b) && !memcmp (b + n + 5, "\x83\xc4\x04", 3) 
+				if (b[n] == 0xe8 && n + 8 <= sizeof (b) && !memcmp (b + n + 5, "\x83\xc4\x04", 3)
 					&& b[n + 8] == 0xe8 && b[n + 13] == 0x89 && b[n + 16] == 0xe8) {
 					follow_offset (entry, bin->b, b, sizeof (b), bin->big_endian, n + 8);
 					int j, calls = 0;

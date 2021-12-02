@@ -717,7 +717,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 0;
 		return 0;
-	} 
+	}
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		char mn[32];
 		memset (mn, '\0', sizeof (char) * sizeof (mn));

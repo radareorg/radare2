@@ -230,7 +230,7 @@ ut64 Elf_(r_bin_elf_get_phnum)(ELFOBJ *obj) {
 	ut64 num = obj->ehdr.e_phnum & UT16_MAX;
 	if (obj->ehdr.e_phnum == 0xffff) {
 		ut32 shnum = obj->ehdr.e_shnum;
-		// sh_info member of the initial entry in section header table. 
+		// sh_info member of the initial entry in section header table.
 		if (shnum > 0) {
 			ut32 shoff = obj->ehdr.e_shoff;
 			Elf_(Shdr) shdr = {0};

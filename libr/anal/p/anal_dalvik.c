@@ -235,7 +235,7 @@ static void format51l(int len, const unsigned char* data, ut32* dst, st64* src) 
 
 
 #define OPCALL(x, y, z) dalvik_math_op(op, data, len, mask, x, y, z)
-static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len, 
+static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 	RAnalOpMask mask, char* operation, unsigned int optype, OperandType ot) {
 
 	ut32 vA = 0, vB = 0, vC = 0;
@@ -275,7 +275,7 @@ static void dalvik_math_op(RAnalOp* op, const unsigned char* data, int len,
 		} else if (ot == OP_FLOAT) {
 			esilprintf (op, "32,32,v%u,F2D,32,v%u,F2D,F%s,D2F,v%u,=", vC, vB, operation, vA);
 		} else if (ot == OP_DOUBLE) {
-			esilprintf (op, GETWIDE "," GETWIDE ",F%s," SETWIDE, 
+			esilprintf (op, GETWIDE "," GETWIDE ",F%s," SETWIDE,
 				vC+1, vC, vB+1, vB, operation, vA, vA+1);
 		}
 	}
@@ -302,7 +302,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		vC = data[3];
 	}
 	switch (data[0]) {
-	case 0x00: 
+	case 0x00:
 		op->type = R_ANAL_OP_TYPE_NOP;
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			esilprintf (op, ",");
@@ -784,8 +784,8 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xeb: // sput-wide-volatile
 	case 0xf5: // iput-quick
 	case 0xf6:
-	case 0xfc: 
-	case 0xfe: 
+	case 0xfc:
+	case 0xfe:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		vC = len > 3?(data[3] << 8) | data[2] : 0;
 		op->ptr = anal->binb.get_offset (anal->binb.bin, 'f', vC);
@@ -858,7 +858,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_CAST;
 		format12x(len, data, &vA, &vB);
 
-		// do all the casting here 
+		// do all the casting here
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			// op->refptr = 0;
 			// many of these might need sign extensions
@@ -878,7 +878,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 				case 0x85:
 					esilprintf (op, "32," GETWIDE ",I2D,D2F,v%u,=", vB+1, vB, vA);
 					break;
-				case 0x86: 
+				case 0x86:
 					esilprintf (op, GETWIDE ",I2D," SETWIDE, vB+1, vB, vA, vA+1);
 					break;
 				case 0x87:
@@ -906,7 +906,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 				case 0x8f:
 					esilprintf (op, "v%u,0xffff,&,v%u,=", vB, vA);
 					break;
-				default: 
+				default:
 					break;
 			}
 		}

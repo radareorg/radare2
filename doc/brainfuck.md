@@ -16,7 +16,7 @@ To debug a brainfuck program:
 
 The debugger creates virtual sections for code, data, screen and input.
 
-TODO 
+TODO
 ----
 - add support for comments, ignore invalid instructions as nops
 - enhance io and debugger plugins to generate sections and set arch opts

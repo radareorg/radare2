@@ -21,9 +21,9 @@ fi
 #echo `dirname "$(readlink -f "$_")"`
 ___update_env_func___() {
 tmpbat=$(mktemp --suffix .bat)
-rc=$?; if [[ $rc != 0 ]]; then 
+rc=$?; if [[ $rc != 0 ]]; then
   echo "Could not create temporary bat file"
-  return $rc 
+  return $rc
 fi
 
 echo "@echo off " >> $tmpbat
@@ -31,16 +31,16 @@ echo "call \"$@\" 1>&2 " >> $tmpbat
 echo "if %errorlevel% neq 0 exit /b %errorlevel%" >> $tmpbat
 echo "printenv " >> $tmpbat
 echo "if %errorlevel% neq 0 exit /b %errorlevel%" >> $tmpbat
-rc=$?; if [[ $rc != 0 ]]; then 
+rc=$?; if [[ $rc != 0 ]]; then
   echo "Could not write temporary bat file"
   return $rc
 fi
 
 tmpbat_win=$(basename $tmpbat)
 env_data=$(cmd "/c call %TEMP%\\$tmpbat_win ")
-rc=$?; if [[ $rc != 0 ]]; then 
+rc=$?; if [[ $rc != 0 ]]; then
   echo "Could not run temporary bat file"
-  return $rc 
+  return $rc
 fi
 
 echo
@@ -53,7 +53,7 @@ ps1_old=$PS1
 
 while read -r line; do
     echo "export $line"
-    export "$line"     
+    export "$line"
 done <<< "$env_data"
 
 export PS1="$ps1_old"

@@ -871,7 +871,7 @@ int arm_disasm_one_insn(struct winedbg_arm_insn *arminsn) {
 			}
 			else {
 				t2_ptr->func(arminsn, inst);
-			} 
+			}
 			arminsn->str_hex = r_str_appendf (arminsn->str_hex, "%02x%02x%02x%02x",
 					*((ut8*)(&inst)), *((ut8*)(&inst)+1),  *((ut8*)(&inst)+2),  *((ut8*)(&inst)+3));
 			return size;

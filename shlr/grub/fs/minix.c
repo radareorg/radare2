@@ -524,7 +524,7 @@ grub_minix_dir (grub_device_t device, const char *path,
 	  char filename[data->filename_size + 1];
 #else
 	  char * filename = grub_malloc(data->filename_size + 1);
-#endif      
+#endif
 	  int dirino = data->ino;
       struct grub_dirhook_info info;
       grub_memset (&info, 0, sizeof (info));

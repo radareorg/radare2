@@ -4077,7 +4077,7 @@ reread:
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_search_delta);
 			break;
-		} 
+		}
 		if (input[1]) {
 			r_search_reset (core->search, R_SEARCH_DELTAKEY);
 			r_search_kw_add (core->search,

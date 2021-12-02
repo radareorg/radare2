@@ -123,7 +123,7 @@ CFLAGS+=-DMINGW32=1
     else
 CFLAGS+=-fPIC
 SOVERSION=0
-LDFLAGS_SHARED?=-fPIC 
+LDFLAGS_SHARED?=-fPIC
     endif
   endif
 LDFLAGS_SHARED+=-Wl,-soname,libsdb.so.$(SOVERSION)

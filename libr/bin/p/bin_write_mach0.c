@@ -26,7 +26,7 @@ static MachoPointers findLastCommand(RBinFile *bf) {
 		ut32 loadc[2] = {0};
 		r_buf_read_at (bin->b, off, (ut8*)&loadc, sizeof (loadc));
 		//r_buf_seek (bin->b, off, R_BUF_SET);
-		int len = loadc[1]; // r_buf_read_le32 (loadc[1]); // bin->b); // 
+		int len = loadc[1]; // r_buf_read_le32 (loadc[1]); // bin->b); //
 		if (len < 1) {
 			eprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
 			break;

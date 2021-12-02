@@ -278,7 +278,7 @@ static struct riscv_opcode *get_opcode (insn_t word) {
 			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
 				riscv_hash[OP_HASH_IDX (op->match)] = op;
 			}
-		} 
+		}
 		init = 1;
 	}
 

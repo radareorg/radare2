@@ -35,7 +35,7 @@ static const ut8 *parse_next_field(const ut8 *start, ut32 *len) {
 }
 
 /* Check if `start` points to an ensemble of BER fields
-with the format as a private key syntax. We check only the first 
+with the format as a private key syntax. We check only the first
 three fields of the key */
 static int check_fields(const ut8 *start) {
 #define KEY_MAX_LEN 26000
@@ -62,7 +62,7 @@ static int check_fields(const ut8 *start) {
 }
 
 // Finds and return index of a private key:
-// As defined in RFC 3447 for RSA, as defined in RFC 5915 for 
+// As defined in RFC 3447 for RSA, as defined in RFC 5915 for
 // elliptic curves and as defined in 7 of RFC 8410 for SafeCurves
 R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, k, max, index, t;

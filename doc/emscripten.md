@@ -19,7 +19,7 @@ Building for the browser
 
 export CC="emcc --ignore-dynamic-linking"
 ./configure --prefix=/usr --disable-shared --enable-static --disable-debugger --with-compiler=emscripten --without-pic --with-nonpic
-emmake make -j4 
+emmake make -j4
 
 cd binr/radare2
  emcc ../../libr/*/*.o radare2.c -I ../../libr/include/ -DR2_BIRTH=\"pop\" -DR2_GITTIP=\"123\" ../../libr/db/sdb/src/*.o

@@ -205,7 +205,7 @@
 !:mime	application/octet-stream
 
 #
-# LBR. NB: May conflict with the questionable 
+# LBR. NB: May conflict with the questionable
 #          "binary Computer Graphics Metafile" format.
 #
 0       string  \0\ \ \ \ \ \ \ \ \ \ \ \0\0    LBR archive data
@@ -218,7 +218,7 @@
 2       string          -pms-           PMarc SFX archive (CP/M, DOS)
 5       string          -pc1-           PopCom compressed executable (CP/M)
 
-# Microsoft cabinets 
+# Microsoft cabinets
 # by David Necas (Yeti) <yeti@physics.muni.cz>
 #0	string	MSCF\0\0\0\0	Microsoft cabinet file data,
 #>25	byte	x		v%d

@@ -26,7 +26,7 @@ Global picture
   - simplify code
 
 A library implements a set of functionalities, those ones are mainly
-the lifecycle of the class containing the state of 
+the lifecycle of the class containing the state of
 
 Plugins are singletons. Or we will have to create factories for every class.
 

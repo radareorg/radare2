@@ -615,11 +615,11 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 					if (value_dst != diff_dst) {
 						r_list_foreach (constants, iter_const, constant) {
 							ut64 value_ct = r_num_get (NULL, constant);
-							simulate = simulate_op (op, value_src1, value_ct, 
-							  			diff_src1, value_ct, op_result, 
+							simulate = simulate_op (op, value_src1, value_ct,
+							  			diff_src1, value_ct, op_result,
 									 	item_dst->size);
-							simulate_r = simulate_op (op, value_ct, value_src1, 
-							  			value_ct, diff_src1, op_result_r, 
+							simulate_r = simulate_op (op, value_ct, value_src1,
+							  			value_ct, diff_src1, op_result_r,
 										item_dst->size);
 							if (simulate && op_result && value_dst == *op_result) {
 								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, constant);

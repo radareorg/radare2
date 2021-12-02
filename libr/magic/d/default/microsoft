@@ -71,7 +71,7 @@
 !:mime	application/zip
 
 >0x18  leshort >0x3f
->>(0x3c.l) string PE\0\0 PE 
+>>(0x3c.l) string PE\0\0 PE
 !:mime	application/x-dosexec
 # hooray, there's a DOS extender using the PE format, with a valid PE
 # executable inside (which just prints a message and exits if run in win)
@@ -201,7 +201,7 @@
 >>(8.s*16)	string		go32stub for MS-DOS, DJGPP go32 DOS extender
 >>(8.s*16)	string		emx
 >>>&1		string		x for DOS, Win or OS/2, emx %s
->>&(&0x42.l-3)	byte		x 
+>>&(&0x42.l-3)	byte		x
 >>>&0x26	string		UPX \b, UPX compressed
 # and yet another guess: small .text, and after large .data is unusal, could be 32lite
 >>&0x2c		search/0xa0	.text
@@ -239,8 +239,8 @@
 >28      string WWP\           \b, WWPACK compressed
 
 # skip to the end of the exe
->(4.s*512)	long	x 
->>&(2.s-517)	byte	x 
+>(4.s*512)	long	x
+>>&(2.s-517)	byte	x
 >>>&0	string		PK\3\4 \b, ZIP self-extracting archive
 >>>&0	string		Rar! \b, RAR self-extracting archive
 >>>&0	string		=!\x11 \b, AIN 2.x self-extracting archive
@@ -437,13 +437,13 @@
 
 
 # .chr files
-0	string	PK\010\010BGI	Borland font 
+0	string	PK\010\010BGI	Borland font
 >4	string	>\0	%s
 # then there is a copyright notice
 
 
 # .bgi files
-0	string	pk\010\010BGI	Borland device 
+0	string	pk\010\010BGI	Borland device
 >4	string	>\0	%s
 # then there is a copyright notice
 
@@ -516,7 +516,7 @@
 
 
 # Windows Enhanced Metafile (EMF)
-# See msdn.microsoft.com/archive/en-us/dnargdi/html/msdn_enhmeta.asp 
+# See msdn.microsoft.com/archive/en-us/dnargdi/html/msdn_enhmeta.asp
 # for further information. Note that "0 lelong 1" should be true i.e.
 # the first double word in the file should be 1. With the extended
 # syntax available by some file commands you could write:
@@ -524,11 +524,11 @@
 # &40 ulelong 0x464D4520 Windows Enhanced Metafile (EMF) image data
 #40	ulelong 0x464D4520	Windows Enhanced Metafile (EMF) image data
 #>44	ulelong x		version 0x%x.
-# If the description has a length greater than zero, it exists and is 
+# If the description has a length greater than zero, it exists and is
 # found at offset (*64).
 #>64	ulelong >0		Description available at offset 0x%x
 #>>60	ulelong	>0		(length 0x%x)
-# Note it would be better to print out the description, which is found 
+# Note it would be better to print out the description, which is found
 # as below. Unfortunately the following only prints out the first couple
 # of characters instead of all the "description length"
 # number of characters -- indicated by the ulelong at offset 60.

@@ -314,7 +314,7 @@ st32 get_hashfunc_03(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_04(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x80000000 ) {
 		if ((arg2 & 0x80000000) == 0x80000000) {
@@ -329,7 +329,7 @@ st32 get_hashfunc_04(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_05(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x80000000 ) {
 		if ((arg2 & 0x80000000) == 0x80000000) {
@@ -344,7 +344,7 @@ st32 get_hashfunc_05(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_06(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x80000000 ) {
 		if ((st32) (arg2 & 0x80000000) == 0x80000000) {
@@ -374,7 +374,7 @@ st32 get_hashfunc_07(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_08(st32 arg1, st32 arg2) {
-	st32 tmp; 
+	st32 tmp;
 
 	tmp = arg2 & 0xC0000000;
 	if ( (arg2 & 0xC0000000u) <= 0x80000000 ) {
@@ -396,7 +396,7 @@ st32 get_hashfunc_08(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_09(st32 arg1, st32 arg2) {
-	st32 v2; 
+	st32 v2;
 
 	v2 = arg2 & 0xC0000000;
 	if ( (arg2 & 0xC0000000u) <= 0x80000000 ) {
@@ -418,8 +418,8 @@ st32 get_hashfunc_09(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_10(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
+	st32 v2;
+	st32 v3;
 
 	v2 = arg2;
 	v3 = v2 & 0x500000;
@@ -442,7 +442,7 @@ st32 get_hashfunc_10(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_11(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	/* */
 
@@ -459,9 +459,9 @@ st32 get_hashfunc_11(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_12(st32 arg1, st32 arg2) {
-	st32 tmp; 
-	st32 v3; 
-	st32 result; 
+	st32 tmp;
+	st32 v3;
+	st32 result;
 
 	tmp = arg2;
 	v3 = tmp & 0x400000;
@@ -478,7 +478,7 @@ st32 get_hashfunc_12(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_13(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -493,7 +493,7 @@ st32 get_hashfunc_13(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_14(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if (arg2 & 0x1000000) {
 		if ((arg2 & 0x1000000) == 0x1000000) {
@@ -508,7 +508,7 @@ st32 get_hashfunc_14(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_15(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -523,7 +523,7 @@ st32 get_hashfunc_15(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_16(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -538,7 +538,7 @@ st32 get_hashfunc_16(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_17(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -553,7 +553,7 @@ st32 get_hashfunc_17(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_18(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -568,7 +568,7 @@ st32 get_hashfunc_18(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_19(st32 arg1, st32 arg2) {
-	st32 v2; 
+	st32 v2;
 
 	v2 = arg2 & 0xC1000000;
 	if ( (arg2 & 0xC1000000u) > 0x40000000 ) {
@@ -587,7 +587,7 @@ st32 get_hashfunc_19(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_20(st32 arg1, st32 arg2) {
-	st32 v2; 
+	st32 v2;
 
 	v2 = arg2 & 0x1400000;
 	if ( (arg2 & 0x1400000u) <= 0x1000000 ) {
@@ -609,7 +609,7 @@ st32 get_hashfunc_20(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_21(st32 arg1, st32 arg2) {
-	st32 v2; 
+	st32 v2;
 
 	v2 = arg2 & 0x1400000;
 	if ( (arg2 & 0x1400000u) <= 0x1000000 ) {
@@ -631,7 +631,7 @@ st32 get_hashfunc_21(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_22(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x8200 ) {
 		if ((unsigned short)(arg2 & 0x8200) == 512) {
@@ -646,8 +646,8 @@ st32 get_hashfunc_22(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_23(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
+	st32 v2;
+	st32 v3;
 
 	v2 = arg2;
 	v3 = v2 & 0x41C000;
@@ -707,8 +707,8 @@ st32 get_hashfunc_23(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_24(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
+	st32 v2;
+	st32 v3;
 
 	v2 = arg2;
 	v3 = v2 & 0x418000;
@@ -747,7 +747,7 @@ st32 get_hashfunc_24(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_25(st32 arg1, st32 arg2) {
-	ut32 v2; 
+	ut32 v2;
 
 	v2 = (ut32)hash_const_02 & arg2;
 	if ( ((ut32)hash_const_02 & arg2) <= 0x8000 ) {
@@ -782,8 +782,8 @@ st32 get_hashfunc_25(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_26(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
+	st32 v2;
+	st32 v3;
 
 	v2 = arg2;
 	v3 = v2 & 0x41C000;
@@ -810,9 +810,9 @@ st32 get_hashfunc_26(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_27(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
-	st32 result; 
+	st32 v2;
+	st32 v3;
+	st32 result;
 
 	v2 = arg2;
 	v3 = v2 & 0x18000;
@@ -834,9 +834,9 @@ st32 get_hashfunc_27(st32 arg1, st32 arg2) {
 
 
 st32 get_hashfunc_28(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
-	char v5; 
+	st32 v2;
+	st32 v3;
+	char v5;
 
 	v2 = arg2;
 	v3 = v2 & 0x1F800;
@@ -924,8 +924,8 @@ st32 get_hashfunc_28(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_29(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
+	st32 v2;
+	st32 v3;
 
 	v2 = arg2;
 	v3 = v2 & 0x40F800;
@@ -949,9 +949,9 @@ st32 get_hashfunc_29(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_30(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
-	st32 result; 
+	st32 v2;
+	st32 v3;
+	st32 result;
 
 	v2 = arg2;
 	v3 = v2 & 0x18000;
@@ -972,7 +972,7 @@ st32 get_hashfunc_30(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_31(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 	st32 v3 = arg2 & 0x380000;
 
 	if ( (ut32)v3 <= 0x200000 ) {
@@ -1012,9 +1012,9 @@ st32 get_hashfunc_31(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_32(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
-	st32 result; 
+	st32 v2;
+	st32 v3;
+	st32 result;
 
 	v2 = arg2;
 	v3 = v2 & 0x18000;
@@ -1036,7 +1036,7 @@ st32 get_hashfunc_32(st32 arg1, st32 arg2) {
 
 
 st32 get_hashfunc_33(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x8000 ) {
 		if ((unsigned short)(arg2 & 0x8000) == 32768) {
@@ -1051,7 +1051,7 @@ st32 get_hashfunc_33(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_34(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 	st32 v2 = arg2;
 	st32 v3 = v2 & 0x580000;
 	if ( (ut32)v3 <= 0x180000 ) {
@@ -1082,7 +1082,7 @@ st32 get_hashfunc_34(st32 arg1, st32 arg2) {
 
 
 st32 get_hashfunc_35(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1097,7 +1097,7 @@ st32 get_hashfunc_35(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_36(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1C00000 ) {
 		if ((arg2 & 0x1C00000) == 16777216) {
@@ -1112,7 +1112,7 @@ st32 get_hashfunc_36(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_37(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( (arg2 & 0x1800000) == 8388608 ) {
 		result = 473;
@@ -1147,7 +1147,7 @@ st32 get_hashfunc_38(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_39(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( (arg2 & 0x1010000) == 65536 ) {
 		result = 25;
@@ -1162,7 +1162,7 @@ st32 get_hashfunc_39(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_40(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1010000 ) {
 		if ((arg2 & 0x1010000) == 16777216) {
@@ -1177,7 +1177,7 @@ st32 get_hashfunc_40(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_41(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 	st32 v2 = arg2 & 0x1010000;
 	if ( arg2 & 0x1010000 ) {
 		if ( v2 == 16777216 ) {
@@ -1216,7 +1216,7 @@ st32 get_hashfunc_42(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_43(st32 arg1, st32 arg2) {
-	st32 v2; 
+	st32 v2;
 
 	v2 = arg2 & 0x1010000;
 	if ( (arg2 & 0x1010000u) <= 0x1000000 ) {
@@ -1238,7 +1238,7 @@ st32 get_hashfunc_43(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_44(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1253,7 +1253,7 @@ st32 get_hashfunc_44(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_45(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1268,7 +1268,7 @@ st32 get_hashfunc_45(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_46(st32 arg1, st32 arg2) {
-	st32 v2; 
+	st32 v2;
 
 	v2 = arg2 & 0xC1000000;
 	if ( (arg2 & 0xC1000000u) > 0x40000000 ) {
@@ -1287,7 +1287,7 @@ st32 get_hashfunc_46(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_47(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1302,7 +1302,7 @@ st32 get_hashfunc_47(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_48(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1317,7 +1317,7 @@ st32 get_hashfunc_48(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_49(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if (arg2 & 0x80000000) {
 		if ((arg2 & 0x80000000) == 0x80000000) {
@@ -1417,7 +1417,7 @@ st32 get_hashfunc_52(st32 arg1, st32 arg2) {
 
 st32 get_hashfunc_53(st32 arg1, st32 arg2) {
 	st32 v2 = arg2 & 0x8200;
-	st32 result; 
+	st32 result;
 
 	if (arg2 & 0x8200) {
 		if (v2 == 512) {
@@ -1466,7 +1466,7 @@ st32 get_hashfunc_55(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_56(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 	st32 v3 = arg2 & 0x18180;
 	if ( (ut32)v3 <= 0x8080 ) {
 		if (v3 == 32896) {
@@ -1495,7 +1495,7 @@ st32 get_hashfunc_56(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_57(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x8000 ) {
 		if ((unsigned short)(arg2 & 0x8000) == 32768) {
@@ -1510,9 +1510,9 @@ st32 get_hashfunc_57(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_58(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
-	st32 result; 
+	st32 v2;
+	st32 v3;
+	st32 result;
 
 	v2 = arg2;
 	v3 = v2 & 0x18000;
@@ -1533,7 +1533,7 @@ st32 get_hashfunc_58(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_59(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 	st32 v2 = arg2 & 0x8180;
 	if ( (ut32)v2 <= 0x100 ) {
 		if (v2 == 256) {
@@ -1559,7 +1559,7 @@ st32 get_hashfunc_59(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_60(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1574,7 +1574,7 @@ st32 get_hashfunc_60(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_61(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1589,7 +1589,7 @@ st32 get_hashfunc_61(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_62(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1604,7 +1604,7 @@ st32 get_hashfunc_62(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_63(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1619,7 +1619,7 @@ st32 get_hashfunc_63(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_64(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1634,7 +1634,7 @@ st32 get_hashfunc_64(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_65(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1649,7 +1649,7 @@ st32 get_hashfunc_65(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_66(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( (arg2 & 0x1C00000) == 12582912 ) {
 		result = 157;
@@ -1665,7 +1665,7 @@ st32 get_hashfunc_66(st32 arg1, st32 arg2) {
 
 
 st32 get_hashfunc_67(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1680,7 +1680,7 @@ st32 get_hashfunc_67(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_68(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1695,7 +1695,7 @@ st32 get_hashfunc_68(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_69(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1710,8 +1710,8 @@ st32 get_hashfunc_69(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_70(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 result; 
+	st32 v2;
+	st32 result;
 
 	v2 = arg2 & 0x1400000;
 	if ( arg2 & 0x1400000 ) {
@@ -1731,7 +1731,7 @@ st32 get_hashfunc_70(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_71(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1400000 ) {
 		if ((arg2 & 0x1400000) == 4194304) {
@@ -1746,7 +1746,7 @@ st32 get_hashfunc_71(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_72(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1761,7 +1761,7 @@ st32 get_hashfunc_72(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_73(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1010000 ) {
 		if ((arg2 & 0x1010000) == 16777216) {
@@ -1776,7 +1776,7 @@ st32 get_hashfunc_73(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_74(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( (arg2 & 0x1010000) == 65536 ) {
 		result = 213;
@@ -1791,7 +1791,7 @@ st32 get_hashfunc_74(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_75(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x80000000 ) {
 		if ((arg2 & 0x80000000) == 0x80000000) {
@@ -1806,7 +1806,7 @@ st32 get_hashfunc_75(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_76(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1821,7 +1821,7 @@ st32 get_hashfunc_76(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_77(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -1857,9 +1857,9 @@ st32 get_hashfunc_78(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_79(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
-	st32 result; 
+	st32 v2;
+	st32 v3;
+	st32 result;
 
 	v2 = arg2;
 	v3 = v2 & 0x18180;
@@ -1917,9 +1917,9 @@ st32 get_hashfunc_79(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_80(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v3; 
-	st32 result; 
+	st32 v2;
+	st32 v3;
+	st32 result;
 
 	v2 = arg2;
 	v3 = v2 & 0x18180;
@@ -1977,7 +1977,7 @@ st32 get_hashfunc_80(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_81(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 	st32 v2 = arg2 & 0x1000180;
 	if ( (arg2 & 0x1000180u) <= 0x1000000 ) {
 		if ((arg2 & 0x1000180) == 16777216) {
@@ -2016,8 +2016,8 @@ st32 get_hashfunc_81(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_82(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 result; 
+	st32 v2;
+	st32 result;
 
 	v2 = arg2 & 0x1000180;
 	if ( (arg2 & 0x1000180u) <= 0x100 ) {
@@ -2044,9 +2044,9 @@ st32 get_hashfunc_82(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_83(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 result; 
-	char v4; 
+	st32 v2;
+	st32 result;
+	char v4;
 
 	v2 = arg2 & 0x1810180;
 	if ( (arg2 & 0x1810180u) <= 0x800080 ) {
@@ -2127,7 +2127,7 @@ st32 get_hashfunc_83(st32 arg1, st32 arg2) {
 
 
 st32 get_hashfunc_84(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 	st32 v2 = arg2 & 0x1000180;
 	if ( arg2 & 0x1000180 ) {
 		if ( v2 == 16777344 ) {
@@ -2146,7 +2146,7 @@ st32 get_hashfunc_84(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_85(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( (arg2 & 0x1000180) == 128 ) {
 		result = 511;
@@ -2161,7 +2161,7 @@ st32 get_hashfunc_85(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_86(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( arg2 & 0x1000000 ) {
 		if ((arg2 & 0x1000000) == 16777216) {
@@ -2176,7 +2176,7 @@ st32 get_hashfunc_86(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_87(st32 arg1, st32 v2) {
-	st32 result; 
+	st32 result;
 	st32 v3 = v2 & 0x79B981;
 	if (v3 == 33024 || v3 == 4227328) {
 		result = 490;
@@ -2205,7 +2205,7 @@ st32 get_hashfunc_88(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_89(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( (arg2 & 0x1B901B9) == 16777600 ) {
 		result = 488;
@@ -2220,9 +2220,9 @@ st32 get_hashfunc_89(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_90(st32 arg1, st32 arg2) {
-	st32 v2; 
-	st32 v4; 
-	st32 v5; 
+	st32 v2;
+	st32 v4;
+	st32 v5;
 
 	v2 = arg2 & 0x1F901B9;
 	if ( (arg2 & 0x1F901B9u) <= 0x1810101 ) {
@@ -2267,7 +2267,7 @@ st32 get_hashfunc_90(st32 arg1, st32 arg2) {
 }
 
 st32 get_hashfunc_91(st32 arg1, st32 arg2) {
-	st32 result; 
+	st32 result;
 
 	if ( (arg2 & 0x1F901BF) == 8454145 ) {
 		result = 501;

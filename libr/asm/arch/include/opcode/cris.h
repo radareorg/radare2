@@ -340,7 +340,7 @@ extern const struct cris_opcode cris_opcodes[];
 #define CRIS_DIS_FLAG_MEM_TARGET2_MULT2 (1 << 3)
 
 /* Yet another add-on: the register in "target2" must be multiplied
-   by 4 (mutually exclusive with .._MULT2).  */ 
+   by 4 (mutually exclusive with .._MULT2).  */
 #define CRIS_DIS_FLAG_MEM_TARGET2_MULT4 (1 << 4)
 
 /* The register in "target2" is an indirect memory reference (of the

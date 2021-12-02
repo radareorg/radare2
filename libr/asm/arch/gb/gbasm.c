@@ -557,7 +557,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			}
 		}
 		break;
-	case 0x63616c6c:		//call 
+	case 0x63616c6c:		//call
 		if (strlen(buf_asm) < 6) {
 			return op->size = 0;
 		}

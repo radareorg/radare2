@@ -4444,7 +4444,7 @@ arc_opcode_lookup_dis (unsigned int insn)
 }
 
 /* START ARC LOCAL */
-int 
+int
 arc_test_wb (void)
 {
   return addrwb_p;

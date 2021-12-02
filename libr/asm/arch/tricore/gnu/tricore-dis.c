@@ -1434,7 +1434,7 @@ print_decoded_insn (memaddr, info)
 	  abs = (dec_insn.cexp[i] << 1) + memaddr;
 	  (*info->print_address_func) (abs, info);
 	  break;
-	  
+	
 	case 'c':
 	  needs_creg = 1;
 	  /* Fall through. */
@@ -1458,7 +1458,7 @@ print_decoded_insn (memaddr, info)
 
 	case '&':
 	  dec_insn.regs[i] = 10;
-	  /* Fall through. */ 
+	  /* Fall through. */
 	case '@':
 		if (dec_insn.regs[i] == 10) {
 			DPRINT (DFILE, "[" REGPREFIX "sp]");
@@ -1524,7 +1524,7 @@ print_decoded_insn (memaddr, info)
 		break;
 
 	case 'S':
-	  DPRINT (DFILE, "["REGPREFIX"a15]"); 
+	  DPRINT (DFILE, "["REGPREFIX"a15]");
 	  need_comma = 0;
 	  break;
 	}
@@ -1577,7 +1577,7 @@ decode_tricore_insn (memaddr, insn, len32, info)
     }
 
   /* Oops -- this isn't a valid TriCore insn!  Since we know that
-     MEMADDR is an even address (otherwise it already would have 
+     MEMADDR is an even address (otherwise it already would have
      been handled by print_insn_tricore below) and that TriCore
      insns can only start at even addresses, we just print the
      lower 16 bits of INSN as a .hword pseudo-opcode and return 2,
@@ -1880,7 +1880,7 @@ decode_pcp_insn (memaddr, buffer, info)
    (or possible) to decode a single instruction or a pseudo-op, i.e.
    1, 2 or 4 bytes.  */
 
-int 
+int
 print_insn_tricore (memaddr, info)
      bfd_vma memaddr;
      struct disassemble_info *info;

@@ -26,7 +26,7 @@ R_LIB_VERSION (r_magic);
 
 R_API RMagic* r_magic_new(int flags) { return magic_open (flags); }
 R_API void r_magic_free(RMagic* m) { if (m) { magic_close (m); } }
-R_API const char *r_magic_file(RMagic* m, const char * f) { return magic_file (m, f); } 
+R_API const char *r_magic_file(RMagic* m, const char * f) { return magic_file (m, f); }
 R_API const char *r_magic_descriptor(RMagic* m, int fd) { return magic_descriptor (m, fd); }
 R_API const char *r_magic_buffer(RMagic* m, const void *b, size_t s) { return magic_buffer (m, b, s); }
 R_API const char *r_magic_error(RMagic* m) { return magic_error (m); }
@@ -42,7 +42,7 @@ R_API int r_magic_errno(RMagic* m) { return magic_errno (m); }
 
 #include "file.h"
 
-#ifndef PIPE_BUF 
+#ifndef PIPE_BUF
 /* Get the PIPE_BUF from pathconf */
 #ifdef _PC_PIPE_BUF
 #define PIPE_BUF pathconf(".", _PC_PIPE_BUF)

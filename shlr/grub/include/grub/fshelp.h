@@ -69,7 +69,7 @@ grub_err_t grub_fshelp_find_file (const char *path,
    beginning with the block POS.  READ_HOOK should be set before
    reading a block from the file.  GET_BLOCK is used to translate file
    blocks to disk blocks.  The file is FILESIZE bytes big and the
-   blocks have a size of LOG2BLOCKSIZE (in log2).  
+   blocks have a size of LOG2BLOCKSIZE (in log2).
 */
 grub_ssize_t grub_fshelp_read_file (grub_disk_t disk, grub_fshelp_node_t node,
 				    void (*read_hook)

@@ -178,7 +178,7 @@ struct grub_jfs_inode
   {
     /* The tree describing the extents of the file.  */
 	R_PACKED (
-	struct 
+	struct
     {
       struct grub_jfs_treehead tree;
       struct grub_jfs_tree_extent extents[16];

@@ -6,7 +6,7 @@ ifeq (${OSTYPE},solaris)
 LDFLAGS+=-lsocket
 endif
 
-OBJ_RAP=debug_rap.o 
+OBJ_RAP=debug_rap.o
 
 STATIC_OBJ+=${OBJ_RAP}
 TARGET_RAP=debug_rap.${EXT_SO}

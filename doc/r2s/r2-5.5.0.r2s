@@ -38,7 +38,7 @@ is then taken by the text before '.vasm'
 This is an optional feature, so it's also optional to test it unless you
 are looking for modiying binaries for the supported architectures.
 
-Supported archs: 
+Supported archs:
 
 * arm.vasm, 6502.vasm, 6809, c16x, jagrisc, m68k,
 * pdp11, ppc, qnice, tr3200, vidcore, x86, z80"

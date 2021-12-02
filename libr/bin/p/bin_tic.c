@@ -14,7 +14,7 @@
 #define CHUNK_COVER_DEP 3 // deprecated in 0.90
 #define CHUNK_MAP	4 // map data. This is copied to RAM at0x8000...0xFF7F.
 #define CHUNK_CODE	5
-#define CHUNK_FLAGS	6 // sprite flags data. This is copied to RAM at 0x14404...0x14603.  
+#define CHUNK_FLAGS	6 // sprite flags data. This is copied to RAM at 0x14404...0x14603.
 #define CHUNK_SAMPLES	9 // SFX. This is copied to RAM at0x100E4...0x11163.
 #define CHUNK_WAVEFORM	10 // This is copied to RAM at0x0FFE4...0x100E3.
 #define CHUNK_PALETTE	12 // The SCN palette is copied to RAM at0x3FC0...0x3FEF.
@@ -107,7 +107,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 		case CHUNK_SCREEN:
 #if 0
 			eprintf ("BANK %d CHUNK %2d (%s) LENGTH %d\n",
-				bank_number, chunk_type, 
+				bank_number, chunk_type,
 				chunk_name (chunk_type), chunk_length);
 #endif
 			break;
@@ -261,7 +261,7 @@ static RList *sections(RBinFile *bf) {
 			}
 #if 0
 			eprintf ("BANK %d CHUNK %2d (%s) LENGTH %d\n",
-				bank_number, chunk_type, 
+				bank_number, chunk_type,
 				chunk_name (chunk_type), chunk_length);
 #endif
 			break;

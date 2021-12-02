@@ -57,7 +57,7 @@ export MAKE="$MAKE"
 
 [ -z "${INSTALL_TARGET}" ] && INSTALL_TARGET=symstall
 
-# find 
+# find
 cd "$(dirname $0)"/..
 pwd
 

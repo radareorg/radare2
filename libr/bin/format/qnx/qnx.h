@@ -1,4 +1,4 @@
-/* radare - LGPL - 2019 - deepakchethan */ 
+/* radare - LGPL - 2019 - deepakchethan */
 
 #ifndef _QNX_H
 #define _QNX_H

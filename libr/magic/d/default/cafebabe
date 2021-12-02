@@ -7,8 +7,8 @@
 # must be performed in the same "magic" sequence to get both right.  The long
 # at offset 4 in a mach-O fat file tells the number of architectures; the short at
 # offset 4 in a Java bytecode file is the JVM minor version and the
-# short at offset 6 is the JVM major version.  Since there are only 
-# only 18 labeled Mach-O architectures at current, and the first released 
+# short at offset 6 is the JVM major version.  Since there are only
+# only 18 labeled Mach-O architectures at current, and the first released
 # Java class format was version 43.0, we can safely choose any number
 # between 18 and 39 to test the number of architectures against
 # (and use as a hack). Let's not use 18, because the Mach-O people

@@ -1262,7 +1262,7 @@ R_API int r_sys_uid(void) {
 	DWORD buf_sz = sizeof (buf);
 	// TODO
 	if (!GetUserName ((LPWSTR)buf, (LPDWORD)&buf_sz) ) {
-		return 1; // 
+		return 1; //
 	}
 	return 0;
 #elif __wasi__

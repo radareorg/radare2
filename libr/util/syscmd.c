@@ -332,7 +332,7 @@ R_API char *r_syscmd_head(const char *file, int count) {
 		} else {
 			p = file;
 		}
-	} 
+	}
 	if (p && *p) {
 		char *filename = strdup (p);
 		r_str_trim (filename);
