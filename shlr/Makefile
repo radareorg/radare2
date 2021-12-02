@@ -39,7 +39,7 @@ ifeq ($(USE_CS4),1)
 CS_TIP=a7cac8352f7397aa73bb2e2dcc1b6cdb2e1b8461
 CS_BRA=v4
 else
-CS_TIP=f278de39c1e8a9fca977b8dfeed99d6d1f8b82bf
+CS_TIP=6a261d3700a5f7f7aa1fa76d7bb97e65d3065bf9
 CS_BRA=next
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)
