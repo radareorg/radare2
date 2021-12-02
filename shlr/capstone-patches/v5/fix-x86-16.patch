@@ -5,7 +5,7 @@ index 216efb25..37cab473 100644
 @@ -536,6 +536,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
  			imm = imm & 0xffffffff;
  		}
- 
+
 +		if (MI->csh->mode == CS_MODE_16)
 +			imm = (imm & 0xf0000) + (imm&0xffff);
 +
@@ -19,10 +19,10 @@ index 5361172d..45625ab1 100644
 @@ -767,6 +767,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
  			imm = imm & 0xffffffff;
  		}
- 
+
 +		if (MI->csh->mode == CS_MODE_16)
 +			imm = (imm & 0xf0000) + (imm&0xffff);
 +
  		printImm(MI, O, imm, true);
- 
+
  		if (MI->csh->detail) {

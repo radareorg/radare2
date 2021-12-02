@@ -12,6 +12,6 @@ index f7d35d2..06827c3 100644
 +	int first = 0;
 +	int last = ARR_SIZE(insn_regs_intel) - 1;
 +	int mid = ARR_SIZE(insn_regs_intel) / 2;
- 
+
  	if (!intel_regs_sorted) {
  		memcpy (insn_regs_intel_sorted, insn_regs_intel,

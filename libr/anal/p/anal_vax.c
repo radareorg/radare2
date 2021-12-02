@@ -72,7 +72,7 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		op->size = 7;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
-	case 0xd4: // 
+	case 0xd4: //
 		op->size = 3;
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;

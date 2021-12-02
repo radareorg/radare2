@@ -5,7 +5,7 @@ index 4c39f999..e1bce3a6 100644
 @@ -24,6 +24,7 @@ void MCInst_Init(MCInst *inst)
  		inst->Operands[i].ImmVal = 0;
  	}
- 
+
 +	memset (inst, 0, sizeof (MCInst));
  	inst->Opcode = 0;
  	inst->OpcodePub = 0;
@@ -16,7 +16,7 @@ index 98f30f76..11092880 100644
 +++ b/cs.c
 @@ -838,7 +838,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  	size_org = size;
- 
+
  	total_size = sizeof(cs_insn) * cache_size;
 -	total = cs_mem_malloc(total_size);
 +	total = cs_mem_calloc(1, total_size);
@@ -24,7 +24,7 @@ index 98f30f76..11092880 100644
  		// insufficient memory
  		handle->errnum = CS_ERR_MEM;
 @@ -856,7 +856,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
- 
+
  		if (handle->detail) {
  			// allocate memory for @detail pointer
 -			insn_cache->detail = cs_mem_malloc(sizeof(cs_detail));

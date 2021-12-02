@@ -1147,7 +1147,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			if (callee) {
 				callee_rargs = R_MIN (max_count, r_type_func_args_count (TDB, callee));
 			}
-			callee_rargs = callee_rargs 
+			callee_rargs = callee_rargs
 				? callee_rargs
 				: r_anal_var_count (anal, f, R_ANAL_VAR_KIND_REG, 1);
 			callee_rargs_l = r_anal_var_list (anal, f, R_ANAL_VAR_KIND_REG);

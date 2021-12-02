@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -71,7 +71,7 @@ zip_source_crc(struct zip *za, struct zip_source *src, int validate)
     ctx->e[0] = ctx->e[1] = 0;
     ctx->size = 0;
     ctx->crc = 0;
-    
+
     return zip_source_layered(za, src, crc_read, ctx);
 }
 
@@ -112,13 +112,13 @@ crc_read(struct zip_source *src, void *_ctx, void *data,
 		if ((st.valid & ZIP_STAT_CRC) && st.crc != ctx->crc) {
 		    ctx->e[0] = ZIP_ER_CRC;
 		    ctx->e[1] = 0;
-		    
+		
 		    return -1;
 		}
 		if ((st.valid & ZIP_STAT_SIZE) && st.size != ctx->size) {
 		    ctx->e[0] = ZIP_ER_INCONS;
 		    ctx->e[1] = 0;
-		    
+		
 		    return -1;
 		}
 	    }
@@ -162,5 +162,5 @@ crc_read(struct zip_source *src, void *_ctx, void *data,
     default:
 	return -1;
     }
-    
+
 }

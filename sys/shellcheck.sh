@@ -4,7 +4,7 @@ checkshellscript() {
 	filelist="$1"
 	checkfun="$2"
 
-	printf '%s\n' "$filelist" | while IFS= read -r file 
+	printf '%s\n' "$filelist" | while IFS= read -r file
 	do
 		$checkfun "$file"	
 	done

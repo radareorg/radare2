@@ -160,7 +160,7 @@ static struct nios2_reg *
 nios2_coprocessor_regs (void)
 {
   static struct nios2_reg *cached = NULL;
-  
+
   if (!cached)
     {
       int i;
@@ -180,7 +180,7 @@ static struct nios2_reg *
 nios2_control_regs (void)
 {
   static struct nios2_reg *cached = NULL;
-  
+
   if (!cached)
     {
       int i;

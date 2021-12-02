@@ -10,7 +10,7 @@
 # >16	lelong			>0		not stripped
 # 0	belong			000000407	OpenBSD big-endian object file
 # >16	belong			>0		not stripped
-# 
+#
 # 0	belong&0377777777	041400413	OpenBSD/i386 demand paged
 # >0	byte			&0x80		
 # >>20	lelong			<4096		shared library
@@ -31,7 +31,7 @@
 # >16	lelong			>0		not stripped
 # 0	belong&0377777777	041400507	OpenBSD/i386 core
 # >12	string			>\0		from '%s'
-# 
+#
 # 0	belong&0377777777	041600413	OpenBSD/m68k demand paged
 # >0	byte			&0x80		
 # >>20	belong			<8192		shared library
@@ -52,7 +52,7 @@
 # >16	belong			>0		not stripped
 # 0	belong&0377777777	041600507	OpenBSD/m68k core
 # >12	string			>\0		from '%s'
-# 
+#
 # 0	belong&0377777777	042000413	OpenBSD/m68k4k demand paged
 # >0	byte			&0x80		
 # >>20	belong			<4096		shared library
@@ -73,7 +73,7 @@
 # >16	belong			>0		not stripped
 # 0	belong&0377777777	042000507	OpenBSD/m68k4k core
 # >12	string			>\0		from '%s'
-# 
+#
 # 0	belong&0377777777	042200413	OpenBSD/ns32532 demand paged
 # >0	byte			&0x80		
 # >>20	lelong			<4096		shared library
@@ -94,7 +94,7 @@
 # >16	lelong			>0		not stripped
 # 0	belong&0377777777	042200507	OpenBSD/ns32532 core
 # >12	string			>\0		from '%s'
-# 
+#
 # 0	belong&0377777777	042400413	OpenBSD/sparc demand paged
 # >0	byte			&0x80		
 # >>20	belong			<8192		shared library
@@ -115,7 +115,7 @@
 # >16	belong			>0		not stripped
 # 0	belong&0377777777	042400507	OpenBSD/sparc core
 # >12	string			>\0		from '%s'
-# 
+#
 # 0	belong&0377777777	042600413	OpenBSD/pmax demand paged
 # >0	byte			&0x80		
 # >>20	lelong			<4096		shared library
@@ -136,7 +136,7 @@
 # >16	lelong			>0		not stripped
 # 0	belong&0377777777	042600507	OpenBSD/pmax core
 # >12	string			>\0		from '%s'
-# 
+#
 # 0	belong&0377777777	043000413	OpenBSD/vax1k demand paged
 # >0	byte			&0x80		
 # >>20	lelong			<4096		shared library
@@ -157,7 +157,7 @@
 # >16	lelong			>0		not stripped
 # 0	belong&0377777777	043000507	OpenBSD/vax1k core
 # >12	string			>\0		from '%s'
-# 
+#
 # 0	belong&0377777777	045400413	OpenBSD/vax demand paged
 # >0	byte			&0x80		
 # >>20	lelong			<4096		shared library
@@ -178,19 +178,19 @@
 # >16	lelong			>0		not stripped
 # 0	belong&0377777777	045400507	OpenBSD/vax core
 # >12	string			>\0		from '%s'
-# 
+#
 # # OpenBSD/powerpc core files
 # 0	belong&0377777777	045200507	OpenBSD/powerpc core
 # >12	string			>\0		from '%s'
-# 
+#
 # # OpenBSD/sparc64 core files
 # 0	belong&0377777777	045600507	OpenBSD/sparc64 core
 # >12	string			>\0		from '%s'
-# 
+#
 # # OpenBSD/hppa core files
 # 0	belong&0377777777	046400507	OpenBSD/hppa core
 # >12	string			>\0		from '%s'
-# 
+#
 # # OpenBSD/mips64
 # 0	belong&0377777777	047400413	OpenBSD/mips64 demand paged
 # >0	byte			&0x80		
@@ -212,7 +212,7 @@
 # >16	belong			>0		not stripped
 # 0	belong&0377777777	047400507	OpenBSD/mips64 core
 # >12	string			>\0		from '%s'
-# 
+#
 # 0	belong&0377777777	043600413	OpenBSD/arm demand paged
 # >0	byte			&0x80
 # >>20	lelong			<8192		shared library

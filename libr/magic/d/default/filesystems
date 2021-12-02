@@ -139,7 +139,7 @@
 >0		ulelong		0x009048EB	
 >>0x41		ubyte		<2		
 >>>0x3E		ubyte		>2		\b; GRand Unified Bootloader
-# 0x3 for 0.5.95,0.93,0.94,0.96 0x4 for 1.90 
+# 0x3 for 0.5.95,0.93,0.94,0.96 0x4 for 1.90
 >>>>0x3E	ubyte		x		\b, stage1 version 0x%x
 #If it is 0xFF, use a drive passed by BIOS
 >>>>0x40	ubyte		<0xFF		\b, boot drive 0x%x
@@ -382,7 +382,7 @@
 >>>>>376	ubyte&0xDF	>0			
 >>>>>>376	string		x 			\b.%-.3s
 #>3	string	NTFS\ \ \ \ 				
->389	string	Fehler\ beim\ Lesen\ 
+>389	string	Fehler\ beim\ Lesen\
 >>407	string	des\ Datentr\204gers
 >>>426	string	NTLDR\ fehlt				
 >>>>440	string	NTLDR\ ist\ komprimiert
@@ -731,8 +731,8 @@
 # JuMP short     bootcodeoffset NOP assembler instructions will usually be EB xx 90
 # http://mirror.href.com/thestarman/asm/2bytejumps.htmm#FWD
 # older drives may use Near JuMP instruction E9 xx xx
->0		lelong&0x009000EB	0x009000EB 
->0		lelong&0x000000E9	0x000000E9 
+>0		lelong&0x009000EB	0x009000EB
+>0		lelong&0x000000E9	0x000000E9
 # maximal short forward jump is 07fx
 >1		ubyte			<0xff	\b, code offset 0x%x
 # mtools-3.9.8/msdos.h
@@ -760,7 +760,7 @@
 >>>>>16		ubyte		>0
 >>>>>17		uleshort	>0		\b, root entries %u
 #>>>>>17	uleshort	=0		\b, root entries %u=0 (usual Fat32)
->>>>>19		uleshort	>0		\b, sectors %u (volumes <=32 MB) 
+>>>>>19		uleshort	>0		\b, sectors %u (volumes <=32 MB)
 #>>>>>19	uleshort	=0		\b, sectors %u=0 (usual Fat32)
 >>>>>21		ubyte		>0xF0		\b, Media descriptor 0x%x
 #>>>>>21	ubyte		=0xF0		\b, Media descriptor 0x%x (usual floppy)
@@ -774,9 +774,9 @@
 >>>>>38		ubyte		!0x70		
 >>>>>>28	ulelong		>0		\b, hidden sectors %u
 #>>>>>>28	ulelong		=0		\b, hidden sectors %u (usual floppy)
->>>>>>32	ulelong		>0		\b, sectors %u (volumes > 32 MB) 
+>>>>>>32	ulelong		>0		\b, sectors %u (volumes > 32 MB)
 #>>>>>>32	ulelong		=0		\b, sectors %u (volumes > 32 MB)
-# FAT<32 specific 
+# FAT<32 specific
 >>>>>82		string		!FAT32
 #>>>>>>36	ubyte		0x80		\b, physical drive 0x%x=0x80 (usual harddisk)
 #>>>>>>36	ubyte		0		\b, physical drive 0x%x=0 (usual floppy)
@@ -808,12 +808,12 @@
 #>>>>>>48	uleshort	=1		\b, infoSector %u (usual)
 >>>>>>48	uleshort	<1		\b, infoSector %u
 >>>>>>50	uleshort	>6		\b, Backup boot sector %u
-#>>>>>>50	uleshort	=6		\b, Backup boot sector %u (usual) 
+#>>>>>>50	uleshort	=6		\b, Backup boot sector %u (usual)
 >>>>>>50	uleshort	<6		\b, Backup boot sector %u
 >>>>>>54	ulelong		>0		\b, reserved1 0x%x
 >>>>>>58	ulelong		>0		\b, reserved2 0x%x
 >>>>>>62	ulelong		>0		\b, reserved3 0x%x
-# same structure as FAT1X 
+# same structure as FAT1X
 >>>>>>64	ubyte		>0x80		\b, physical drive 0x%x
 #>>>>>>64	ubyte		=0x80		\b, physical drive 0x%x=80 (usual harddisk)
 >>>>>>64	ubyte&0x7F	>0		\b, physical drive 0x%x
@@ -828,7 +828,7 @@
 >>>>>>71	string		=NO\ NAME	\b, unlabeled
 ### FATs end
 >0x200	lelong	0x82564557		\b, BSD disklabel
-# FATX 
+# FATX
 0		string		FATX		FATX filesystem data
 
 
@@ -1103,7 +1103,7 @@
 #     FE     250K       8-inch, 1-sided, single-density
 #     FD     500K       8-inch, 2-sided, single-density
 #     FE     1.2 MB     8-inch, 2-sided, double-density
-#     F8     -----      Fixed disk 
+#     F8     -----      Fixed disk
 #
 #     FC     xxxK       Apricot 70x1x9 boot disk.
 #
@@ -1280,7 +1280,7 @@
 #0	string		td\000		floppy image data (TeleDisk)
 
 # AFS Dump Magic
-# From: Ty Sarna <tsarna@sarna.org> 
+# From: Ty Sarna <tsarna@sarna.org>
 0       string                  \x01\xb3\xa1\x13\x22    AFS Dump
 >&0     belong                  x                       (v%d)
 >>&0    byte                    0x76
@@ -1375,7 +1375,7 @@
 >>>>>16		ubyte		>0
 >>>>>17		uleshort	>0		\b, root entries %u
 #>>>>>17	uleshort	=0		\b, root entries %hu=0 (usual Fat32)
->>>>>19		uleshort	>0		\b, sectors %u (volumes <=32 MB) 
+>>>>>19		uleshort	>0		\b, sectors %u (volumes <=32 MB)
 #>>>>>19	uleshort	=0		\b, sectors %hu=0 (usual Fat32)
 >>>>>21		ubyte		>0xF0		\b, Media descriptor 0x%x
 #>>>>>21	ubyte		=0xF0		\b, Media descriptor 0x%x (usual floppy)
@@ -1394,9 +1394,9 @@
 >>>>>>38	ubyte&0x56	=0		
 >>>>>>>28	ulelong		>0		\b, hidden sectors %u
 #>>>>>>>28	ulelong		=0		\b, hidden sectors %u (usual floppy)
->>>>>>>32	ulelong		>0		\b, sectors %u (volumes > 32 MB) 
+>>>>>>>32	ulelong		>0		\b, sectors %u (volumes > 32 MB)
 #>>>>>>>32	ulelong		=0		\b, sectors %u (volumes > 32 MB)
-# FAT<32 bit specific 
+# FAT<32 bit specific
 >>>>>>>82	string/c	!fat32		
 #>>>>>>>>36	ubyte		0x80		\b, physical drive 0x%x=0x80 (usual harddisk)
 #>>>>>>>>36	ubyte		0		\b, physical drive 0x%x=0 (usual floppy)
@@ -1464,14 +1464,14 @@
 # 0 or 0xFFFF instead of usual 6 means no backup sector
 >>>>>>50	uleshort	=0xFFFF		\b, no Backup boot sector
 >>>>>>50	uleshort	=0		\b, no Backup boot sector
-#>>>>>>50	uleshort	=6		\b, Backup boot sector %u (usual) 
+#>>>>>>50	uleshort	=6		\b, Backup boot sector %u (usual)
 >>>>>>50	default		x		
 >>>>>>>50	uleshort	x		\b, Backup boot sector %u
 # corrected by Joerg Jenderek at Feb 2011 according to http://thestarman.pcministry.com/asm/mbr/MSWIN41.htm#FSINFO
 >>>>>>52	ulelong		>0		\b, reserved1 0x%x
 >>>>>>56	ulelong		>0		\b, reserved2 0x%x
 >>>>>>60	ulelong		>0		\b, reserved3 0x%x
-# same structure as FAT1X 
+# same structure as FAT1X
 #>>>>>>64	ubyte		=0x80		\b, physical drive 0x%x=80 (usual harddisk)
 #>>>>>>64	ubyte		=0		\b, physical drive 0x%x=0 (usual floppy)
 >>>>>>64	ubyte		!0x80		
@@ -1485,7 +1485,7 @@
 >>>>>>>71	string		>NO\ NAME	\b, label: "%11.11s"
 >>>>>>>71	string		=NO\ NAME	\b, unlabeled
 # additional tests for floppy image added by Joerg Jenderek
-# no fixed disk 
+# no fixed disk
 >>>>>21		ubyte		!0xF8		
 # floppy media with 12 bit FAT
 >>>>>>54	string		!FAT16		
@@ -1511,7 +1511,7 @@
 >>>>>>>>>48	ulequad		>0		\b, $MFT start cluster %lld
 >>>>>>>>>56	ulequad		>0		\b, $MFTMirror start cluster %lld
 # Values 0 to 127 represent MFT record sizes of 0 to 127 clusters.
-# Values 128 to 255 represent MFT record sizes of 2^(256-N) bytes. 
+# Values 128 to 255 represent MFT record sizes of 2^(256-N) bytes.
 >>>>>>>>>64	lelong		<256		
 >>>>>>>>>>64	lelong		<128		\b, clusters/RecordSegment %d
 >>>>>>>>>>64	ubyte		>127		\b, bytes/RecordSegment 2^(-1*%i)
@@ -1525,7 +1525,7 @@
 >>>>>>>>>80	ulelong		>0		\b, checksum 0x%x
 #>>>>>>>>>80	ulelong		=0		\b, checksum 0x%x=0 (usual)
 >>>>>>>>>0x258	ulelong&0x00009090	=0x00009090	
-#>>>>>>>>>>&-92		indirect	x	\b; contains 
+#>>>>>>>>>>&-92		indirect	x	\b; contains
 # For 2nd NTFS sector added by Joerg Jenderek at Jan 2013
 # http://thestarman.pcministry.com/asm/mbr/NTFSbrHexEd.htm
 # unused assembler instructions JMP y2;NOP;NOP

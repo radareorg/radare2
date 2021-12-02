@@ -37,7 +37,7 @@ ec call rgb:ff7733              # push instructions
 ec reg rgb:e6e1cf               # register names
 ec ret rgb:d66                  # ret opcode
 ec swi rgb:d66
-ec trap rgb:d66                 
+ec trap rgb:d66
 ec cmp rgb:5de
 ec push rgb:5de
 ec math rgb:5de

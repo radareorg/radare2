@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -44,10 +44,10 @@ zip_uint32_t
 _zip_string_crc32(const struct zip_string *s)
 {
     zip_uint32_t crc;
-    
+
     crc = (zip_uint32_t)crc32(0L, Z_NULL, 0);
 
-    if (s != NULL)    
+    if (s != NULL)
 	crc = (zip_uint32_t)crc32(crc, s->raw, s->length);
 
     return crc;
@@ -113,7 +113,7 @@ _zip_string_get(struct zip_string *string, zip_uint32_t *lenp, zip_flags_t flags
 	    return string->converted;
 	}
     }
-    
+
     if (lenp)
 	*lenp = string->length;
     return string->raw;
@@ -137,7 +137,7 @@ _zip_string_new(const zip_uint8_t *raw, zip_uint16_t length, zip_flags_t flags, 
 {
     struct zip_string *s;
     enum zip_encoding_type expected_encoding;
-    
+
     if (length == 0)
 	return NULL;
 
@@ -180,7 +180,7 @@ _zip_string_new(const zip_uint8_t *raw, zip_uint16_t length, zip_flags_t flags, 
 	    return NULL;
 	}
     }
-    
+
     return s;
 }
 
@@ -191,6 +191,6 @@ _zip_string_write(const struct zip_string *s, FILE *f)
 {
     if (s == NULL)
 	return;
-    
+
     fwrite(s->raw, s->length, 1, f);
 }

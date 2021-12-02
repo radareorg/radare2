@@ -1014,7 +1014,7 @@ typedef enum {
 	eLF_SKIP                 = 0x00001200,
 	eLF_ARGLIST              = 0x00001201,
 	eLF_DEFARG_ST            = 0x00001202,
-	eLF_FIELDLIST            = 0x00001203, 
+	eLF_FIELDLIST            = 0x00001203,
 	eLF_DERIVED              = 0x00001204, // derived class list leaf
 	eLF_BITFIELD             = 0x00001205, // type record for LF_BITFIELD
 	eLF_METHODLIST           = 0x00001206, // subfield record for overloaded method list

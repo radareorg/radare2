@@ -197,9 +197,9 @@ static ut8 decode_parameter(char* param, int* extra_word_needed, ut16* extra_wor
 	
 	/* Must be a label, store a labelref */
 	*extra_word_needed = 1;
-		/* Allocate blank extra word, this will be where the 
+		/* Allocate blank extra word, this will be where the
 		   pointer to the label will be stored at link stage */
-	*extra_word_value = 0; 
+	*extra_word_value = 0;
 	return 0x1f;
 }
 

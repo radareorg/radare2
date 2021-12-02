@@ -1,5 +1,5 @@
 /*
-  Based on commits 250d07de5cf6efc81ed934c25292beb63c7e3129 from master branch 
+  Based on commits 250d07de5cf6efc81ed934c25292beb63c7e3129 from master branch
   of binutils-gdb.
 */
 /* Default disassembler options are modified to match radare2 config.  */
@@ -983,7 +983,7 @@ parse_mips_ase_option (const char *option)
       mips_ase |= ASE_LOONGSON_CAM;
       return TRUE;
     }
-  
+
   /* Put here for match ext2 frist */
   if (CONST_STRNEQ (option, "loongson-ext2"))
     {

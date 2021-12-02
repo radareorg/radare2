@@ -86,7 +86,7 @@ font-size: 1.8em;
 
 .button {
     -webkit-box-shadow: 0px 4px 0px #101010;
-    -webkit-border-radius:0; 
+    -webkit-border-radius:0;
     -webkit-appearance: none;
     -moz-box-shadow: 0px 4px 0px #101010;
     box-shadow: 0px 4px 0px #101010;
@@ -217,11 +217,11 @@ b.type='button';
 b.className='button';
 b.setAttribute('value', title);
 if (mode == 'set-input') {
-onClick(b, () => { 
+onClick(b, () => {
 input.value = cmd || title;
 });
 } else if (!cmd || mode == 'input') {
-onClick(b, () => { 
+onClick(b, () => {
 input.value += title;
 });
 } else {

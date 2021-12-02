@@ -148,7 +148,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 				info.inheritance? " inherit": "",
 				info.is_submap ? " submap": "",
 				module_name, depth);
-				//info.shared ? "shar" : "priv", 
+				//info.shared ? "shar" : "priv",
 				//info.reserved ? "reserved" : "not-reserved",
 				//""); //module_name);
 			mr = r_debug_map_new (buf, address, address+size,
@@ -318,7 +318,7 @@ static RList *darwin_dbg_maps(RDebug *dbg) {
 	const char *osname = dbg->anal->syscall->os;
 	if (osname && !strcmp (osname, "ios")) {
 		return ios_dbg_maps (dbg);
-	} 
+	}
 	return osx_dbg_maps (dbg);
 #endif
 }

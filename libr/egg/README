@@ -173,7 +173,7 @@ Traps
 -----
 Each architecture have a different instruction to break the execution of
 the program. REgg language captures calls to 'break()' to run the emit_trap
-callback of the selected arch. The 
+callback of the selected arch. The
 
   break(); --> compiles into 'int3' on x86
   break; --> compiles into 'int3' on x86
@@ -202,8 +202,8 @@ Control flow
 
 Comments
 --------
-Supported syntax for comments are: 
+Supported syntax for comments are:
 
-  /* multiline comment */' 
+  /* multiline comment */'
   // single line comment
   # single line comment

@@ -8,7 +8,7 @@ var nn6=document.getElementById&&!document.all;
 /****************************************************
  * This class is a scanner for the visitor pattern. *
  ****************************************************/
- 
+
 /**
  * Constructor, parameters are:
  * visitor: the visitor implementation, it must be a class with a visit(element) method.
@@ -36,7 +36,7 @@ function DocumentScanner(visitor, scanElementsOnly) {
 /*****************
  * drag and drop *
  *****************/
- 
+
 var isdrag=false;					// this flag indicates that the mouse movement is actually a drag.
 var mouseStartX, mouseStartY;		// mouse position when drag starts
 var elementStartX, elementStartY;	// element position when drag starts
@@ -54,7 +54,7 @@ var blocksToMove;
 /**
  * this variable stores the original z-index of the object being dragged in order
  * to restore it upon drop.
- */ 
+ */
 var originalZIndex;
 
 /**
@@ -169,7 +169,7 @@ function startDrag(e) {
 }
 
 function stopDrag(e) {
-	isdrag = false; 
+	isdrag = false;
 	if (elementToMove)
 		elementToMove.style.zIndex=originalZIndex;
 	elementToMove = null;
@@ -315,7 +315,7 @@ function Canvas(htmlElement) {
 			this.blocks.push(newBlock);
 			return false;
 		} else if(isConnector(element)) {
-			// connector found, just create it, source or destination blocks may not 
+			// connector found, just create it, source or destination blocks may not
 			// have been initialized yet
 			var newConnector = new Connector(element, this);
 			this.connectors.push(newConnector);
@@ -389,7 +389,7 @@ function Block(htmlElement, canvas)
 	/*
 	 * initialization
 	 */
-	 
+	
 	this.canvas = canvas;
 	this.htmlElement = htmlElement;
 	this.id = htmlElement.id;
@@ -636,7 +636,7 @@ function Segment(id, parentElement)
 }
 /**
  * Connector class.
- * The init function takes two Block objects as arguments representing 
+ * The init function takes two Block objects as arguments representing
  * the source and destination of the connector
  */
 function Connector(htmlElement, canvas)
@@ -1184,7 +1184,7 @@ function findBlock(blockId) {
 	}
 	return null;
 }
- 
+
 /*
  * This function determines whether a html element is to be considered a canvas
  */
@@ -1214,7 +1214,7 @@ function calculateOffsetTop(obj) {
 	var curtop = 0;
 	if (obj.offsetParent) {
 		curtop = obj.offsetTop
-		while (obj = obj.offsetParent) 
+		while (obj = obj.offsetParent)
 			curtop += obj.offsetTop
 	} else if (obj.y)
 		curtop += obj.y;
@@ -1229,7 +1229,7 @@ function calculateOffsetLeft(obj)
 	var curleft = 0;
 	if (obj.offsetParent) {
 		curleft = obj.offsetLeft
-		while (obj = obj.offsetParent) 
+		while (obj = obj.offsetParent)
 			curleft += obj.offsetLeft;
 	} else if (obj.x)
 		curleft += obj.x;

@@ -373,7 +373,7 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 }
 
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b) {
-	/*  
+	/*
 	Take divmod and throw away div part
 	*/
 	r_return_if_fail (a);

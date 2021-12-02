@@ -116,7 +116,7 @@ R_API int r_core_patch(RCore *core, const char *patch) {
 	for (; *p; p++) {
 		/* read until newline */
 		if (!*p || *p == '\n') {
-			*p++ = 0; 
+			*p++ = 0;
 		} else {
 			continue;
 		}

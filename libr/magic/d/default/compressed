@@ -17,7 +17,7 @@
 0	string		\211LZO\000\015\012\032\012	LZO compressed data
 
 # 7-zip archiver, from Thomas Klausner (wiz@danbala.tuwien.ac.at)
-# http://www.7-zip.org or DOC/7zFormat.txt 
+# http://www.7-zip.org or DOC/7zFormat.txt
 #
 0       string          7z\274\257\047\034      7-zip archive data,
 >6	byte		<0			invalid

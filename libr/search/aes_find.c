@@ -1,9 +1,9 @@
 /*
- * Find expanded AES keys in memory 
- * 
+ * Find expanded AES keys in memory
+ *
  * Algorithm discovered and developed by Victor Muñoz
  *  - PoC and source published at 24c3 at December 2007
- * 
+ *
  * Thanks for the great moments and code snippets!
  *
  * This source is public domain. Feel free to use it and distribute it.

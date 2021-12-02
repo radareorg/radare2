@@ -101,7 +101,7 @@ static const char *help_msg_aaf[] = {
 	"Usage:", "aaf[efrt?]", " # analyse all functionsee also 'af' and 'afna'",
 	"aaf", "", "same as afr@@c:isq",
 	"aafe", " ", "same as aef@@F",
-	"aaff", "", "set a flag for every function", 
+	"aaff", "", "set a flag for every function",
 	"aafr", " [len]", "consecutive function analysis (e anal.hasnext=1;afr@@c:isq)",
 	"aaft", "", "recursive type matching across all functions",
 	NULL
@@ -5137,7 +5137,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			if (r) {
 				//eprintf ("%s 0x%08"PFMT64x" -> ", str,
 				//	r_reg_get_value (core->dbg->reg, r));
-				r_reg_set_value (core->dbg->reg, r, n); 
+				r_reg_set_value (core->dbg->reg, r, n);
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 				//eprintf ("0x%08"PFMT64x"\n",
 				//	r_reg_get_value (core->dbg->reg, r));

@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -148,7 +148,7 @@ zip_close(struct zip *za)
 	free(filelist);
 	return -1;
     }
-    
+
     if (zip_get_archive_flag(za, ZIP_AFL_TORRENT, 0))
 	qsort(filelist, survivors, sizeof(filelist[0]),
 	      _zip_torrentzip_cmp);
@@ -430,14 +430,14 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de, FILE *ft
 
     if ((ret=_zip_dirent_write(de, ft, flags, &za->error)) < 0)
 	return -1;
- 
+
     if (is_zip64 != ret) {
 	/* Zip64 mismatch between preliminary file header written before data and final file header written afterwards */
 	_zip_error_set(&za->error, ZIP_ER_INTERNAL, 0);
 	return -1;
     }
 
-   
+
     if (fseeko(ft, offend, SEEK_SET) < 0) {
 	_zip_error_set(&za->error, ZIP_ER_SEEK, errno);
 	return -1;
@@ -531,7 +531,7 @@ write_cdir(struct zip *za, const struct zip_filelist *filelist, zip_uint64_t sur
 
     if ((size=_zip_cdir_write(za, filelist, survivors, out)) < 0)
 	return -1;
-    
+
     end = ftello(out);
 
     if (zip_get_archive_flag(za, ZIP_AFL_TORRENT, 0) == 0)

@@ -54,7 +54,7 @@ bool bochs_open(libbochs_t* b, const char *rutaBochs, const char *rutaConfig);
 #endif
 
 
-/*! 
+/*!
 int gdbr_remove_bp(libgdbr_t* g, ut64 address);
 int gdbr_remove_hwbp(libgdbr_t* g, ut64 address);
 */

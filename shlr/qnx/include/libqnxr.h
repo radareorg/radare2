@@ -29,7 +29,7 @@ typedef struct {
 	st64 tid;
 } ptid_t;
 
-/*! 
+/*!
  * Core "object" that saves
  * the instance of the lib
  */

@@ -16,7 +16,7 @@ TARGET_ARM_V35=$(N).${LIBEXT}
 
 ALL_TARGETS+=$(TARGET_ARM_V35)
 
-$(TARGET_ARM_V35): 
+$(TARGET_ARM_V35):
 # $(STATIC_OBJ)
 	${CC} $(V35ARM64_CFLAGS) ${CFLAGS} $(call libname,$(N)) \
 		-lr_util -lr_search \

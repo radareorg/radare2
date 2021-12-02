@@ -114,7 +114,7 @@ else
 			ls -l libr/flag/libr_flag.a || exit 1
 			rm -f libr/*/*.dylib
 			(
-			cd binr ; make clean ; 
+			cd binr ; make clean ;
 			cd blob ; make USE_LTO=1
 			xcrun --sdk iphoneos strip radare2
 			)

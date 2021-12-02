@@ -116,7 +116,7 @@ R_API void r_core_visual_slides(RCore *core, const char *file) {
 			}
 			break;
 		case '!':
-			// 
+			//
 			{
 				r_core_cmdf (core, "vim %s", file);
 				char *ndata = r_file_slurp (file, NULL);

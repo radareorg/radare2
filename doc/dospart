@@ -22,7 +22,7 @@
 0a  OS/2 Boot ManagerOS/2 is the operating system designed by Microsoft and IBM to be
 0a  Coherent swap partition
 0a  OPUSOpen Parallel Unisys Server.
-0b  WIN95 OSR2 FAT32Partitions up to 2047GB. See 
+0b  WIN95 OSR2 FAT32Partitions up to 2047GB. See
 0c  WIN95 OSR2 FAT32, LBA-mappedExtended-INT13 equivalent of 0b.
 0e  WIN95: DOS 16-bit FAT, LBA-mapped
 0f  WIN95: Extended partition, LBA-mappedWindows 95 uses 0e and 0f as the extended-INT13 equivalents
@@ -31,7 +31,7 @@
 11  Leading Edge DOS 3.x
 12  Configuration/diagnostics partitionID 12 (decimal 18) is used by Compaq for their configuration utility
 14  Hidden DOS 16-bit FAT <32M(Ralf Brown's interrupt list adds: `ID 14 resulted from using Novell
-14  AST DOS with 
+14  AST DOS with
 16  Hidden DOS 16-bit FAT >=32M
 17  Hidden IFS (e.g., HPFS)
 18  AST SmartSleep PartitionAscentia laptops have a `Zero Volt Suspend Partition'
@@ -40,18 +40,18 @@
 1c  Hidden WIN95 OSR2 FAT32, LBA-mappedSometimes a hidden IBM rescue partition.
 1e  Hidden WIN95 16-bit FAT, LBA-mapped
 20  UnusedRumoured to be used by Willowsoft Overture File System (OFS1),
-21  Reserved(according to 
+21  Reserved(according to
 21  UnusedClaimed for FSo2 (Oxygen File System) by Dave Poirier
 22  UnusedClaimed for Oxygen Extended Partition Table by ekstazya@sprint.ca.
 23  Reserved
-24  NEC DOS 3.xThis is NEC MS-DOS 3.30 
+24  NEC DOS 3.xThis is NEC MS-DOS 3.30
 26  Reserved
 27  PQserviceAcer laptop hidden rescue partition. Must be FAT32.
 27  Windows RE hidden partitionOn MBR disks, type 0x27. On GPT disks, GUID:
 27  MirOS partition
 27  RouterBOOT kernel partitionSee
 2a  AtheOS File System (AFS)AtheOS is an open source operating system written by Kurt Skauen.
-2b  SyllableSecure (SylStor)A variation on AthFS is 
+2b  SyllableSecure (SylStor)A variation on AthFS is
 31  Reserved
 32  NOSSimon Butcher (simonb@alien.net.au) writes:
 33  Reserved
@@ -64,7 +64,7 @@
 3a  THEOS ver 4 4gb partition
 3b  THEOS ver 4 extended partitionTHEOS is a multiuser multitasking OS for PCs founded by Timothy Williams
 3c  PartitionMagic recovery partitionCody Batt (codyb@powerquest.com) writes:
-3d  Hidden NetWareAccording to 
+3d  Hidden NetWareAccording to
 40  Venix 80286A very old Unix-like operating system for PCs.
 40  PICKRoss Stell writes:
 41  Linux/MINIX (sharing disk with DRDOS)Very old FAQs recommended to use 41 etc instead of 81 etc
@@ -76,18 +76,18 @@
 43  Linux native (sharing disk with DRDOS)
 44  GoBack partition
 45  Boot-US boot managerUlrich Straub (ustraub@boot-us.de) writes:
-45  PriamAccording to 
-45  EUMEL/Elan 
-46  EUMEL/Elan 
-47  EUMEL/Elan 
+45  PriamAccording to
+45  EUMEL/Elan
+46  EUMEL/Elan
+47  EUMEL/Elan
 48  EUMEL/Elan Eumel, and later Ergos L3, are multiuser multitasking systems
-4a  Mark Aitchison's ALFS/THIN lightweight filesystem for DOSAccording to 
+4a  Mark Aitchison's ALFS/THIN lightweight filesystem for DOSAccording to
 4a  AdaOS Aquila (Withdrawn)Nick Roberts at some point in time announced that he would use 4a
-4c  Oberon partitionSee 
+4c  Oberon partitionSee
 4d  QNX4.x
 4e  QNX4.x 2nd part
 4f  QNX4.x 3rd partQNX is a POSIX-certified, microkernel, distributed, fault-tolerant
-4f  Oberon partitionSee 
+4f  Oberon partitionSee
 50  OnTrack Disk Manager (older versions) RODisk Manager is a program of OnTrack, to enable people to use
 50  Lynx RTOS"Beginning with version 3.0, LynxOS gives users the ability to
 50  Native Oberon (alt)
@@ -124,14 +124,14 @@
 76  Reserved
 77  M2FS/M2CS partitionJeff Merkey writes: 77 is one we are using internally for M2FS/M2CS partitions.
 77  VNDI Partition(According to disk.c in the Netware source. Not in actual use.)
-78  XOSL FSXOSL Bootloader filesystem, see 
+78  XOSL FSXOSL Bootloader filesystem, see
 7e  UnusedClaimed for F.I.X. by gruberr@kapsch.net. See dejanews.
-7f  UnusedProposed for the 
+7f  UnusedProposed for the
 80  MINIX until 1.4a
 81  MINIX since 1.4b, early LinuxMinix is a Unix-like operating system written by Andy Tanenbaum
 81  Mitac disk manager
 82  Prime
-82  Solaris x86Solaris creates a single partition with id 0x82, then uses Sun disk labels 
+82  Solaris x86Solaris creates a single partition with id 0x82, then uses Sun disk labels
 82  Linux swap
 83  Linux native partitionLinux is a Unix-like operating system written by Linus Torvalds
 84  OS/2 hidden C: driveOS/2-renumbered type 04 partition.
@@ -145,7 +145,7 @@
 8b  Legacy Fault Tolerant FAT32 volume
 8c  Legacy Fault Tolerant FAT32 volume using BIOS extd INT 13h
 8d  Free FDISK 0.96+ hidden Primary DOS FAT12 partitition
-8e  Linux Logical Volume Manager partitionSee 
+8e  Linux Logical Volume Manager partitionSee
 90  Free FDISK 0.96+ hidden Primary DOS FAT16 partitition
 91  Free FDISK 0.96+ hidden DOS extended partitition
 92  Free FDISK 0.96+ hidden Primary DOS large FAT16 partitition
@@ -156,7 +156,7 @@
 96  CHRP ISO-9660 filesystem
 97  Free FDISK 0.96+ hidden Primary DOS FAT32 partitition
 98  Free FDISK 0.96+ hidden Primary DOS FAT32 partitition (LBA)
-98  Datalight ROM-DOS Super-Boot PartitionSee 
+98  Datalight ROM-DOS Super-Boot PartitionSee
 99  DCE376 logical driveNo, it's not a hibernation partition; it's closest to a DOS extended
 9a  Free FDISK 0.96+ hidden Primary DOS FAT16 partitition (LBA)
 9b  Free FDISK 0.96+ hidden DOS extended partitition (LBA)
@@ -200,7 +200,7 @@ c0  REAL/32 secure small partitionSee d0 below.
 c0  NTFT PartitionAccording to disk.c in the Netware source.
 c0  DR-DOS/Novell DOS secured partitionDR-DOS 7.02+ / OpenDOS 7.01 / Novell DOS 7 secured partition.
 c1  DRDOS/secured (FAT-12)
-c2  UnusedAccording to 
+c2  UnusedAccording to
 c2  Hidden Linux
 c3  Hidden Linux swapBenedict Chong (bchong@blueskyinnovations.com) writes:
 c4  DRDOS/secured (FAT-16, < 32M)
@@ -214,7 +214,7 @@ c9  Reserved for DR-DOS 8.0+
 ca  Reserved for DR-DOS 8.0+
 cb  DR-DOS 7.04+ secured FAT32 (CHS)/
 cc  DR-DOS 7.04+ secured FAT32 (LBA)/
-cd  CTOS Memdump? 
+cd  CTOS Memdump?
 ce  DR-DOS 7.04+ FAT16X (LBA)/
 cf  DR-DOS 7.04+ secured EXT DOS (LBA)/
 d0  REAL/32 secure big partitionREAL/32 is a continuation of DR Multiuser DOS.
@@ -229,11 +229,11 @@ da  Powercopy BackupPowercopy Backup (shielded disk),
 db  Digital Research CP/M, Concurrent CP/M, Concurrent DOS
 db  CTOS (Convergent Technologies OS -Unisys)
 db  KDG Telemetry SCPU bootMark Morgan Lloyd (markMLl.in@telemetry.co.uk) writes:
-dd  Hidden CTOS Memdump? 
+dd  Hidden CTOS Memdump?
 de  Dell PowerEdge Server utilities (FAT fs)
 df  DG/UX virtual disk manager partitionGlenn Steen (glenn.steen@ap1.se) writes:
 df  BootIt EMBRMThe boot manager BootIt manages its own partition table,
-e0  Reserved by 
+e0  Reserved by
 e1  DOS access or SpeedStor 12-bit FAT extended partitionKevin Cummings reports in alt.os.linux:
 e3  DOS R/O or SpeedStor
 e4  SpeedStor 16-bit FAT extended partition < 1024 cyl.

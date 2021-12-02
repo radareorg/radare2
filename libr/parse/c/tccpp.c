@@ -824,7 +824,7 @@ ST_FUNC void save_parse_state(ParseState *s)
 	s->tokc = tokc;
 }
 
-/* restore parse state from 's' 
+/* restore parse state from 's'
 ST_FUNC void restore_parse_state(ParseState *s)
 {
 	file->line_num = s->line_num;

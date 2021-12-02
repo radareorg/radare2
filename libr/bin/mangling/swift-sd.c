@@ -1,4 +1,4 @@
-/* work-in-progress reverse engineered swift-demangler in C 
+/* work-in-progress reverse engineered swift-demangler in C
  * Copyright MIT 2015-2019
  * by pancake@nopcode.org */
 

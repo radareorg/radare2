@@ -57,7 +57,7 @@ ut32 get_ins_part(ut32 pos, ut32 len) {
 	if ((st32)pos < 0 || pos >= ins_buff_len) {
 		has_failed = 1;
 		return ret;
-	} 
+	}
 
 	for (; len > 0; len--) {
 		ret <<= 8;

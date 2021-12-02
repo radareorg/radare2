@@ -1,5 +1,5 @@
 /*
-  Based on commits 250d07de5cf6efc81ed934c25292beb63c7e3129 from master branch 
+  Based on commits 250d07de5cf6efc81ed934c25292beb63c7e3129 from master branch
   of binutils-gdb.
 */
 /* mips.h.  Mips opcode list for GDB, the GNU debugger.
@@ -1159,7 +1159,7 @@ mips_opcode_32bit_p (const struct mips_opcode *mo)
 #define INSN_ISA32R3              8
 #define INSN_ISA32R5              9
 #define INSN_ISA32R6              10
-#define INSN_ISA64                11 
+#define INSN_ISA64                11
 #define INSN_ISA64R2              12
 #define INSN_ISA64R3              13
 #define INSN_ISA64R5              14

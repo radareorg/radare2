@@ -171,7 +171,7 @@ ifneq ($(USE_ZIP),NO)
 	$(ZIP) -r "${ZIPNAME}" "radare2-${WINBITS}-${VERSION}"
 endif
 
-clean: 
+clean:
 	rm -f libr/libr.a libr/libr.dylib libr/include/r_version.h
 	rm -rf libr/.libr
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done

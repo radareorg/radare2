@@ -33,7 +33,7 @@
  * controled by the nullification bit, and conditional, which depends
  * on the direction of the branch and its success or failure.
  *
- * NONE is unfortunately #defined in the hiux system include files.  
+ * NONE is unfortunately #defined in the hiux system include files.
  * #undef it away.
  */
 #undef NONE
@@ -257,7 +257,7 @@ Floating point registers all have 'f' as a prefix:
    fC   operand 3 register with L/R halves at 16:18,21:23
    fe   Like fT, but encoding is different.
    fE   Same as fe, except prints a space before register during disasm.
-   fx	target register at 15 (only for PA 2.0 long format FLDD/FSTD). 
+   fx	target register at 15 (only for PA 2.0 long format FLDD/FSTD).
 
 Float registers for fmpyadd and fmpysub:
 
@@ -592,11 +592,11 @@ static const struct pa_opcode pa_opcodes[] =
 { "addbf",	0xa8000000, 0xfc000000, "?dnx,b,w", pa10, 0},
 { "addibt",	0xa4000000, 0xfc000000, "?dn5,b,w", pa10, 0},
 { "addibf",	0xac000000, 0xfc000000, "?dn5,b,w", pa10, 0},
-{ "bb",		0xc0006000, 0xffe06000, "?Bnx,!,w", pa20, FLAG_STRICT}, 
-{ "bb",		0xc0004000, 0xffe06000, "?bnx,!,w", pa10, FLAG_STRICT}, 
-{ "bb",		0xc4004000, 0xfc004000, "?Bnx,B,w", pa20, FLAG_STRICT}, 
-{ "bb",		0xc4004000, 0xfc006000, "?bnx,Q,w", pa10, FLAG_STRICT}, 
-{ "bb",		0xc4004000, 0xfc006000, "?bnx,Q,w", pa10, 0}, 
+{ "bb",		0xc0006000, 0xffe06000, "?Bnx,!,w", pa20, FLAG_STRICT},
+{ "bb",		0xc0004000, 0xffe06000, "?bnx,!,w", pa10, FLAG_STRICT},
+{ "bb",		0xc4004000, 0xfc004000, "?Bnx,B,w", pa20, FLAG_STRICT},
+{ "bb",		0xc4004000, 0xfc006000, "?bnx,Q,w", pa10, FLAG_STRICT},
+{ "bb",		0xc4004000, 0xfc006000, "?bnx,Q,w", pa10, 0},
 { "bvb",	0xc0004000, 0xffe04000, "?bnx,w", pa10, 0},
 { "clrbts",	0xe8004005, 0xffffffff, "", pa20, FLAG_STRICT},
 { "popbts",	0xe8004005, 0xfffff007, "$", pa20, FLAG_STRICT},
@@ -810,7 +810,7 @@ static const struct pa_opcode pa_opcodes[] =
 { "gfr",	0x04001a80, 0xfc003fdf, "cZx(s,b)", pa11, 0},
 
 /* Floating Point Coprocessor Instructions.  */
- 
+
 { "fldw",	0x24000000, 0xfc00df80, "cXx(b),fT", pa10, FLAG_STRICT},
 { "fldw",	0x24000000, 0xfc001f80, "cXx(s,b),fT", pa10, FLAG_STRICT},
 { "fldw",	0x24000000, 0xfc00d380, "cxccx(b),fT", pa11, FLAG_STRICT},

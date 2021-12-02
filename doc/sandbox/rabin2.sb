@@ -34,6 +34,6 @@
         #"^/usr/lib/system/*"
         #"^/usr/lib/libr*"
         #"^/usr/bin/rabin2"
-    )   
+    )
 )
 (deny default)

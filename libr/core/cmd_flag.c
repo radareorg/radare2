@@ -1512,7 +1512,7 @@ rep:
 				}
 				flaglist = r_flag_get_list (core->flags, addr);
 				isJson = strchr (input, 'j');
-				PJ *pj = pj_new (); 
+				PJ *pj = pj_new ();
 				if (isJson) {
 					pj_a (pj);
 				}
@@ -1602,7 +1602,7 @@ rep:
 				if (f->offset != addr) {
 					// if input contains 'j' print json
 					if (strchr (input, 'j')) {
-						PJ *pj = pj_new (); 
+						PJ *pj = pj_new ();
 						pj_o (pj);
 						pj_kn (pj, "offset", f->offset);
 						pj_ks (pj, "name", f->name);

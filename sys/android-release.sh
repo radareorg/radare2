@@ -55,7 +55,7 @@ if [ ! -d "${R2B}" ]; then
 fi
 
 cd "$R2B"
-for a in ${ARCHS} ; do 
+for a in ${ARCHS} ; do
 	echo "Releasing $a ..."
 	git checkout android-${a} || exit 1
 	if [ -f "${R2T}/radare2-${v}-android-${a}.tar.gz" ]; then

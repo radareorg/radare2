@@ -52,7 +52,7 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 			r_anal_op_free (op);
 		}
 		at += sz;
-	} 
+	}
 	return stackptr;
 }
 

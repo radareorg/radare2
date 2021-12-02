@@ -13,7 +13,7 @@
 // publish, distribute, sublicense, and/or sell copies of the Software,
 // and to permit persons to whom the Software is furnished to do so,
 // subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included
 // in all copies or substantial portions of the Software.
 //
@@ -127,7 +127,7 @@ static int i8080_disasm(unsigned char const* const code, char* text, int text_sz
   struct opcode_t const *op;
   for (op = &opcodes[0]; op->size; ++op) {
     int const grp = cmd &
-      ~((op->arg1.mask << op->arg1.shift) | 
+      ~((op->arg1.mask << op->arg1.shift) |
        (op->arg2.mask << op->arg2.shift));
     int const branch = (grp == 0xc0 || grp == 0xc2 || grp == 0xc4);
     if (grp == op->cmd) {

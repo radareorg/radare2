@@ -9,7 +9,7 @@
 #include <windows.h>
 #include <winternl.h>
 
-/* 
+/*
 	Defines most of heap related structures on Windows (some still missing)
 	Tested only on Windows 10 1809 x64
 	TODO:

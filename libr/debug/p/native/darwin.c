@@ -23,7 +23,7 @@ int pids_sons_of_r(int pid, int recursive, int limit) {
 	char tmp2[1024];
 	struct dirent *file;
 	DIR *dh;
-       
+
 	if (pid < 1)
 	       return false;
 	dh = opendir ("/proc/");

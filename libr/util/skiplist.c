@@ -237,7 +237,7 @@ R_API RSkipListNode* r_skiplist_find_leq(RSkipList* list, void* data) {
 	int i;
 
 	for (i = list->list_level; i >= 0; i--) {
-		while (x->forward[i] != list->head 
+		while (x->forward[i] != list->head
 			&& list->compare (x->forward[i]->data, data) <= 0) {
 			x = x->forward[i];
 		}

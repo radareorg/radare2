@@ -1319,7 +1319,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					free (rstr);
 				}
 			}
-			bool first = true; 
+			bool first = true;
 			if (!eol && p && p->use_comments) {
 				for (; j < i + inc; j++) {
 					print (" ");

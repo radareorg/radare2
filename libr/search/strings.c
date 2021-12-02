@@ -21,7 +21,7 @@ R_API int r_search_get_encoding(const char *name) {
 	for (i = 0; encodings[i]; i++) {
 		ut32 sz = R_MIN (strlen (encodings[i]), lename);
 		if (!r_str_ncasecmp (name, encodings[i], sz)) {
-			return i; 
+			return i;
 		}
 	}
 	return ENCODING_ASCII;

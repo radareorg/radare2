@@ -3160,7 +3160,7 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 				if (!heaped_block) {
 					break;
 				}
-				r_io_read_at (core->io, core->offset + blockdelta, heaped_block, blocksize); 
+				r_io_read_at (core->io, core->offset + blockdelta, heaped_block, blocksize);
 				block = heaped_block;
 			}
 			ut64 v;

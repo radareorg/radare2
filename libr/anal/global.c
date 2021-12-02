@@ -31,7 +31,7 @@ R_API bool r_anal_global_add(RAnal *anal, ut64 addr, const char *type_name, cons
 		r_flag_item_set_type (fi, fmtstr);
 	}
 	r_meta_set (anal, R_META_TYPE_FORMAT, addr, fmtsize, fmtstr);
-	// implicit 
+	// implicit
 	r_type_set_link (anal->sdb_types, fmtstr, addr);
 	return true;
 }
