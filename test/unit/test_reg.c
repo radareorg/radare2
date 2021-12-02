@@ -45,8 +45,8 @@ bool test_r_reg_get_value_gpr(void) {
 	reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
-	r_reg_set_profile_string (reg,
-		"gpr eax .32 0 0\n\
+	r_reg_set_profile_string (reg, "=A0 eax\n\
+		gpr eax .32 0 0\n\
 		gpr	ax	.16	0	0\n\
 		gpr	ah	.8	1	0\n\
 		gpr	al	.8	0	0\n\

@@ -164,18 +164,15 @@ static inline char *create_type_name_from_offset(ut64 offset) {
  * @return char* DIEs name or NULL if error
  */
 static char *get_die_name(const RBinDwarfDie *die) {
-	char *name = NULL;
 	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
 	if (name_attr_idx < 0 || name_attr_idx >= die->count) {
 		return NULL;
 	}
 	RBinDwarfAttrValue *av = &die->attr_values[name_attr_idx];
 	if (av->kind == DW_AT_KIND_STRING && name_attr_idx != -1 && av->string.content) {
-		name = strdup (av->string.content);
-	} else {
-		name = create_type_name_from_offset (die->offset);
+		return strdup (av->string.content);
 	}
-	return name;
+	return create_type_name_from_offset (die->offset);
 }
 
 /**
@@ -391,7 +388,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
  * @param result ptr to result member to fill up
  * @return RAnalStructMember* ptr to parsed Member
  */
-static RAnalStructMember *parse_struct_member (Context *ctx, ut64 idx, RAnalStructMember *result) {
+static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStructMember *result) {
 	r_return_val_if_fail (result, NULL);
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
@@ -1190,15 +1187,16 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		bool get_linkage_name = prefer_linkage_name (ctx->lang);
 		bool has_linkage_name = false;
 		int argNumber = 1;
+		const char *name = NULL;
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			const RBinDwarfDie *child_die = &ctx->all_dies[j];
 			RStrBuf type;
 			r_strbuf_init (&type);
-			const char *name = NULL;
 			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
 				Variable *var = R_NEW0 (Variable);
 				size_t i;
+				name = NULL;
 				for (i = 0; i < child_die->count; i++) {
 					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
 					switch (val->attr_name) {
@@ -1229,10 +1227,10 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 				if (child_die->tag == DW_TAG_formal_parameter && child_depth == 1) {
 					/* arguments sometimes have only type, create generic argX */
 					if (type.len) {
-						if (!name) {
-							var->name = r_str_newf ("arg%d", argNumber);
-						} else {
+						if (name) {
 							var->name = strdup (name);
+						} else {
+							var->name = r_str_newf ("arg%d", argNumber);
 						}
 						r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), var->name);
 						var->type = strdup (r_strbuf_get (&type));
@@ -1434,6 +1432,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 			break;
 		}
 	}
+
 	if (!fcn.name || !fcn.addr) { /* we need a name, faddr */
 		goto cleanup;
 	}

@@ -1327,7 +1327,7 @@ static void print_abbrev_section(RBinDwarfDebugAbbrev *da, PrintfCallback print)
 	for (i = 0; i < da->count; i++) {
 		int declstag = da->decls[i].tag;
 		print ("   %-4"PFMT64d" ", da->decls[i].code);
-		if (declstag>=0 && declstag < DW_TAG_LAST) {
+		if (declstag >= 0 && declstag < DW_TAG_LAST) {
 			print ("  %-25s ", dwarf_tag_name_encodings[declstag]);
 		}
 		print ("[%s]", da->decls[i].has_children ?
@@ -1416,7 +1416,7 @@ R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 	}
 	ht_up_free (inf->lookup_table);
 	free (inf->comp_units);
-	free(inf);
+	free (inf);
 }
 
 static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print) {
@@ -1514,7 +1514,7 @@ static void print_debug_info(const RBinDwarfDebugInfo *inf, PrintfCallback print
 	RBinDwarfDie *dies;
 	RBinDwarfAttrValue *values;
 
-	r_return_if_fail(inf);
+	r_return_if_fail (inf);
 
 	for (i = 0; i < inf->count; i++) {
 		print ("\n");
@@ -1596,6 +1596,13 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 		const ut8 *debug_str, size_t debug_str_len) {
 	r_return_val_if_fail (def && value && hdr && obuf, NULL);
 
+	value->attr_form = def->attr_form;
+	value->attr_name = def->attr_name;
+	value->block.data = NULL;
+	value->string.content = NULL;
+	value->string.offset = 0;
+
+
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + obuf_len;
 	size_t j;
@@ -1603,12 +1610,6 @@ static const ut8 *parse_attr_value(const ut8 *obuf, int obuf_len,
 	if (obuf_len < 1) {
 		return NULL;
 	}
-
-	value->attr_form = def->attr_form;
-	value->attr_name = def->attr_name;
-	value->block.data = NULL;
-	value->string.content = NULL;
-	value->string.offset = 0;
 
 	// http://www.dwarfstd.org/doc/DWARF4.pdf#page=161&zoom=100,0,560
 	switch (def->attr_form) {

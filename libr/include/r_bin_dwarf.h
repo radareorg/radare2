@@ -711,7 +711,7 @@ typedef struct dwarf_attr_kind {
 	/* This is subideal, as dw_form_data can be anything 
 	   we could lose information example: encoding signed 
 	   2 byte int into ut64 and then interpreting it as st64 TODO*/
-	union { 
+//	union { 
 		ut64 address;
 		RBinDwarfBlock block;
 		ut64 uconstant;
@@ -722,7 +722,7 @@ typedef struct dwarf_attr_kind {
 			const char *content;
 			ut64 offset;
 		} string;
-	};
+//	};
 } RBinDwarfAttrValue;
 
 typedef struct {
