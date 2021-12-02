@@ -96,7 +96,8 @@ linux-x86-32.sdb: linux-x86-32
 
 types-windows.sdb:
 
-EXTRA_FILES = $(addsuffix .sdb.txt,$(addprefix types-windows_,$(WIN_TYPES)))
+# XXX disable the windows types as they are too heavy and make the testsuite unusable
+# EXTRA_FILES = $(addsuffix .sdb.txt,$(addprefix types-windows_,$(WIN_TYPES)))
 
 %.sdb:%.sdb.txt $(EXTRA_FILES)
 ifneq ($(SILENT),)
