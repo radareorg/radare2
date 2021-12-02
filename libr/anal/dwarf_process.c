@@ -205,7 +205,11 @@ static ut64 get_die_size(const RBinDwarfDie *die) {
  * @param strbuf strbuf to store the type into
  * @return st32 -1 if error else 0
  */
-static st32 parse_array_type(Context *ctx, ut64 idx, RStrBuf *strbuf) {
+static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
+	if (idx < 0 || idx >= ctx->count) {
+		// eprintf ("die out of bounds\n");
+		return;
+	}
 	const RBinDwarfDie *die = &ctx->all_dies[idx++];
 
 	if (die->has_children) {
@@ -239,7 +243,6 @@ static st32 parse_array_type(Context *ctx, ut64 idx, RStrBuf *strbuf) {
 			}
 		}
 	}
-	return 0;
 }
 
 /**
