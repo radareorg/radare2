@@ -704,7 +704,7 @@ FILE=bins/pe/a.exe
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
+0x00000000 1 PE for MS Windows (console) Intel 80386 32-bit
 EOF
 RUN
 
