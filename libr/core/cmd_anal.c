@@ -2075,6 +2075,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			pj_kb (pj, "sign", op.sign);
 			pj_kn (pj, "prefix", op.prefix);
 			pj_ki (pj, "id", op.id);
+			if (op.vliw > 0) {
+				pj_ki (pj, "id", op.vliw);
+			}
 			if (opexstr && *opexstr) {
 				pj_k (pj, "opex");
 				pj_j (pj, opexstr);
@@ -2220,6 +2223,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			printline ("prefix", "%u\n", op.prefix);
 			printline ("id", "%d\n", op.id);
+			if (op.vliw > 0) {
+				printline ("id", "%d\n", op.vliw);
+			}
 #if 0
 // no opex here to avoid lot of tests broken..and having json in here is not much useful imho
 			if (opexstr && *opexstr) {
