@@ -166,9 +166,14 @@ enum {
 };
 
 enum {
+	R_BIN_RELOC_1 = 1,
+	R_BIN_RELOC_2 = 2,
+	R_BIN_RELOC_4 = 4,
 	R_BIN_RELOC_8 = 8,
 	R_BIN_RELOC_16 = 16,
+	R_BIN_RELOC_24= 24,
 	R_BIN_RELOC_32 = 32,
+	R_BIN_RELOC_48= 48,
 	R_BIN_RELOC_64 = 64
 };
 
