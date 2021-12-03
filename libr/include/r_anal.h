@@ -895,6 +895,7 @@ typedef struct r_anal_op_t {
 	RAnalSwitchOp *switch_op;
 	RAnalHint hint;
 	RAnalDataType datatype;
+	int vliw; // begin of opcode block.
 } RAnalOp;
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
