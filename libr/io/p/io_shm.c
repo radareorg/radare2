@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2019 pancake */
+/* radare - LGPL - Copyright 2008-2021 pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -49,7 +49,7 @@ static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		count = shm->size - io->off;
 	}
 	if (shm->buf) {
-		memcpy (buf, shm->buf+io->off , count);
+		memcpy (buf, shm->buf + io->off , count);
 		return count;
 	}
 	return read (shm->fd, buf, count);
@@ -70,21 +70,25 @@ static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RIOShm *shm = fd->data;
 	switch (whence) {
 	case SEEK_SET:
-		return io->off = offset;
+		io->off = offset;
+		break;
 	case SEEK_CUR:
 		if (io->off + offset > shm->size) {
-			return io->off = shm->size;
+			io->off = shm->size;
+		} else {
+			io->off += offset;
 		}
-		io->off += offset;
-		return io->off;
+		break;
 	case SEEK_END:
-		return 0xffffffff;
+		io->off = ((int)shm->size > 0) ? shm->size : UT64_MAX;
+		io->off += (int)offset;
+		break;
 	}
 	return io->off;
 }
 
 static bool shm__plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "shm://", 6));
+	return !strncmp (pathname, "shm://", 6);
 }
 
 static inline int getshmfd (RIOShm *shm) {
@@ -130,6 +134,7 @@ RIOPlugin r_io_plugin_shm = {
 	.desc = "Shared memory resources plugin",
 	.uris = "shm://",
 	.license = "MIT",
+	.author = "pancake",
 	.open = shm__open,
 	.close = shm__close,
 	.read = shm__read,
