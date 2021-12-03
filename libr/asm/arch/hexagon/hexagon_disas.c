@@ -1,4 +1,5 @@
-#include <stdio.h>
+/* radare - LGPL - Copyright 2018-2021 - xvilka */
+
 #include <stdbool.h>
 #include <r_types.h>
 #include <r_util.h>

@@ -192,6 +192,7 @@ typedef struct {
 	int show_utf8;
 	int lines;
 	int oplen;
+	int vliw_count;
 	bool show_varaccess;
 	bool show_vars;
 	bool show_fcnsig;
@@ -1010,7 +1011,7 @@ static void __replaceImports(RDisasmState *ds) {
 	}
 }
 
-static char *get_op_ireg (void *user, ut64 addr) {
+static char *get_op_ireg(void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	char *res = NULL;
 	RAnalOp *op = r_core_anal_op (core, addr, 0);
@@ -3460,6 +3461,28 @@ static void ds_print_indent(RDisasmState *ds) {
 	}
 }
 
+static void ds_print_vliw(RDisasmState *ds, bool after) {
+	const int c = ds->vliw_count;
+	const int v = ds->analop.vliw;
+	if (after) {
+		if (c > 0) {
+			ds->vliw_count--;
+			if (c == 1) {
+				r_cons_printf (" }");
+			}
+		}
+	} else {
+		if (v > 0) {
+			if (c > 0) {
+				r_cons_printf ("}{ ");
+			} else {
+				r_cons_printf ("{ ");
+			}
+			ds->vliw_count = v;
+		}
+	}
+}
+
 static void ds_print_optype(RDisasmState *ds) {
 	if (ds->show_optype) {
 		const char *optype = r_anal_optype_to_string (ds->analop.type);
@@ -5746,12 +5769,10 @@ toro:
 					ds_print_core_vmode (ds, ds->asm_hint_pos);
 				}
 			}
-			{
-				ds_end_line_highlight (ds);
-				if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
-					ds_print_color_reset (ds);
-					ds_print_comments_right (ds);
-				}
+			ds_end_line_highlight (ds);
+			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
+				ds_print_color_reset (ds);
+				ds_print_comments_right (ds);
 			}
 		} else {
 			/* show cursor */
@@ -5761,8 +5782,10 @@ toro:
 			}
 			ds_print_lines_right (ds);
 			ds_print_optype (ds);
+			ds_print_vliw (ds, false);
 			ds_build_op_str (ds, true);
 			ds_print_opstr (ds);
+			ds_print_vliw (ds, true);
 			ds_end_line_highlight (ds);
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);

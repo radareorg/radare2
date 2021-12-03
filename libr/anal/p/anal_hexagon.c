@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - xvilka */
+/* radare - LGPL - Copyright 2018-2021 - xvilka, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -10,18 +10,17 @@
 #include "hexagon_anal.h"
 
 static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	HexInsn hi = {0};
-	ut32 data = 0;
 	if (len < 4) {
 		return 0;
 	}
-	data = r_read_le32 (buf);
+	ut32 data = r_read_le32 (buf);
+	HexInsn hi = {0};
 	int size = hexagon_disasm_instruction (data, &hi, (ut32) addr);
 	op->size = size;
-	if (size <= 0) {
+	if (size < 1) {
 		return size;
 	}
-
+	op->vliw = hi.op_count;
 	op->addr = addr;
 	return hexagon_anal_instruction (&hi, op);
 }
