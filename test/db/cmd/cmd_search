@@ -527,7 +527,7 @@ e search.to = 0x10
 /m
 EOF
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows Intel 80386 32-bit
+0x00000000 1 PE for MS Windows Intel 80386 32-bit
 EOF
 RUN
 
@@ -541,7 +541,7 @@ e search.to = 0x10
 /m
 EOF
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows Intel 80386 32-bit
+0x00000000 1 PE for MS Windows Intel 80386 32-bit
 EOF
 RUN
 
