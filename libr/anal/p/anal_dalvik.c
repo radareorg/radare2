@@ -24,24 +24,16 @@ static const char *getCond(ut8 cond) {
 		return "<";
 	case 0x35: // if-ge
 	case 0x3b: // if-gez
-		return ">=";
+		return "<,!";
 	case 0x36: // if-gt
 	case 0x3c: // if-gtz
-		return ">";
+		return "<=,!";
 	case 0x37: // if-le
 	case 0x3d: // if-lez
 		return "<=";
 	}
 	return "";
 }
-
-/*
-		op->type = R_ANAL_OP_TYPE_XOR;
-		format23x(data, &vA, &vB, &vC);
-		if (mask & R_ANAL_OP_MASK_ESIL) {
-			esilprintf (op, "v%u,v%u,^,v%u,=", vC, vB, vA);
-		}
-*/
 
 typedef enum {
 	OP_INT,
@@ -50,11 +42,6 @@ typedef enum {
 	OP_FLOAT,
 	OP_DOUBLE
 } OperandType;
-
-/* does nothing
-static void format10x(unsigned char* data, ut8* dst, ut8* src) {
-
-}*/
 
 /*static void format10t(int len, const unsigned char* data, ut32* dst) {
 	if (len > 1) {
