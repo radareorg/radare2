@@ -562,10 +562,10 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x26: // filled-new-array-data
 		op->type = R_ANAL_OP_TYPE_NEW;
 		// 0x1c, 0x1f, 0x22
-		if (len > 2 && mask & R_ANAL_OP_MASK_ESIL) {
+		/*if (len > 2 && mask & R_ANAL_OP_MASK_ESIL) {
 			format35c(data, &vA, &vB, &vC);
 			esilprintf (op, "%u,%u,newarray,v%u,=",vC, vB, vA);
-		}
+		}*/
 		break;
 	case 0x27: // throw
 		op->type = R_ANAL_OP_TYPE_TRAP;
