@@ -14,45 +14,26 @@
 static const char *getCond(ut8 cond) {
 	switch (cond) {
 	case 0x32: // if-eq
-		return "$z";
-	case 0x33: // if-ne
-		return "$z,!";
-	case 0x34: // if-lt
-		return "63,$c,!";
-	case 0x35: // if-ge
-		return "63,$c,$z,|";
-	case 0x36: // if-gt
-		return "63,$c";
-	case 0x37: // if-le
-		return "63,$c,!,$z,|";
-	}
-	return "";
-}
-
-static const char *getCondz(ut8 cond) {
-	switch (cond) {
 	case 0x38: // if-eqz
-		return ",";
+		return "-,!";
+	case 0x33: // if-ne
 	case 0x39: // if-nez
-		return "!";
+		return "-";
+	case 0x34: // if-lt
 	case 0x3a: // if-ltz
-		return "0,==,63,$c,!";
+		return "<";
+	case 0x35: // if-ge
 	case 0x3b: // if-gez
-		return "0,==,63,$c,$z,|";
+		return "<,!";
+	case 0x36: // if-gt
 	case 0x3c: // if-gtz
-		return "0,==,63,$c";
+		return "<=,!";
+	case 0x37: // if-le
 	case 0x3d: // if-lez
-		return "0,==,63,$c,!";
+		return "<=";
 	}
 	return "";
 }
-/*
-		op->type = R_ANAL_OP_TYPE_XOR;
-		format23x(data, &vA, &vB, &vC);
-		if (mask & R_ANAL_OP_MASK_ESIL) {
-			esilprintf (op, "v%u,v%u,^,v%u,=", vC, vB, vA);
-		}
-*/
 
 typedef enum {
 	OP_INT,
@@ -61,11 +42,6 @@ typedef enum {
 	OP_FLOAT,
 	OP_DOUBLE
 } OperandType;
-
-/* does nothing
-static void format10x(unsigned char* data, ut8* dst, ut8* src) {
-
-}*/
 
 /*static void format10t(int len, const unsigned char* data, ut32* dst) {
 	if (len > 1) {
@@ -97,14 +73,14 @@ static void format12x(int len, const unsigned char* data, ut32* dst, ut32* src) 
 	if (len > 3) {
 		*dst = r_read_le16(data+2);
 	}
-}
+}*/
 
 static void format21t(int len, const unsigned char* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
-		*src = r_read_le16(data+2);
+		*src = 2*r_read_le16(data+2);
 	}
-}*/
+}
 
 static void format21s(int len, const unsigned char* data, ut32* dst, ut32* src) {
 	if (len > 3) {
@@ -150,13 +126,13 @@ static void format22x(int len, const unsigned char* data, ut32* dst, ut32* src) 
 	}
 }
 
-/*static void format22t(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
+static void format22t(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
-		*ref = r_read_le16(data+2);
+		*ref = 2*r_read_le16(data+2);
 	}
-}*/
+}
 
 static void format22s(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 3) {
@@ -576,7 +552,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		/*if (len > 2 && mask & R_ANAL_OP_MASK_ESIL) {
 			format35c(data, &vA, &vB, &vC);
 			esilprintf (op, "%u,%u,newarray,v%u,=",vC, vB, vA);
-		}*/ // don't want to do this right now
+		}*/
 		break;
 	case 0x27: // throw
 		op->type = R_ANAL_OP_TYPE_TRAP;
@@ -644,7 +620,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			format23x(len, data, &vA, &vB, &vC);
 			// weird expression but should work
-			esilprintf (op, GETWIDE "," GETWIDE ",==,63,$c,!,?{,-1,}{,1,},$z,?{,0,},v%u,=", vC+1, vC, vB+1, vB, vA);
+			esilprintf (op, GETWIDE "," GETWIDE ",-,DUP,0,<=,?{,1,}{,-1,},SWAP,!,?{,0,},v%u,=", vC+1, vC, vB+1, vB, vA);
 		}
 		break;
 	case 0x32: // if-eq
@@ -656,14 +632,13 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		//XXX fix this better the check is to avoid an oob
 		if (len > 2) {
-			op->jump = addr + (len>3?(short)(data[2]|data[3]<<8)*2 : 0);
+			format22t(len, data, &vA, &vB, &vC);
+			op->jump = addr + vC; //(len>3?(short)(data[2]|data[3]<<8)*2 : 0);
 			op->fail = addr + sz;
 			op->eob = true;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
-				ut32 vA = data[1];
-				ut32 vB = data[2];
 				const char *cond = getCond (data[0]);
-				esilprintf (op, "v%d,v%d,==,%s,?{,%"PFMT64d",ip,=}", vB, vA, cond, op->jump);
+				esilprintf (op, "v%u,v%u,%s,?{,%"PFMT64d",ip,=,}", vB, vA, cond, op->jump);
 			}
 		}
 		break;
@@ -677,13 +652,13 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		//XXX fix this better the check is to avoid an oob
 		if (len > 2) {
-			op->jump = addr + (len>3?(short)(data[2]|data[3]<<8)*2 : 0);
+			format21t(len, data, &vA, &vB);
+			op->jump = addr + vB; //(len>3?(short)(data[2]|data[3]<<8)*2 : 0);
 			op->fail = addr + sz;
 			op->eob = true;
 			if (mask & R_ANAL_OP_MASK_ESIL) {
-				ut32 vA = data[1];
-				const char *cond = getCondz (data[0]);
-				esilprintf (op, "v%d,%s,?{,%"PFMT64d",ip,=}", vA, cond, op->jump);
+				const char *cond = getCond (data[0]);
+				esilprintf (op, "0,v%u,%s,?{,%"PFMT64d",ip,=,}", vA, cond, op->jump);
 			}
 		}
 		break;
