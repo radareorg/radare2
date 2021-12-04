@@ -21,7 +21,7 @@ static const char *getCond(ut8 cond) {
 		return "-";
 	case 0x34: // if-lt
 	case 0x3a: // if-ltz
-		return "<=";
+		return "<";
 	case 0x35: // if-ge
 	case 0x3b: // if-gez
 		return ">=";
@@ -30,7 +30,7 @@ static const char *getCond(ut8 cond) {
 		return ">";
 	case 0x37: // if-le
 	case 0x3d: // if-lez
-		return "<";
+		return "<=";
 	}
 	return "";
 }
