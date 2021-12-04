@@ -1192,13 +1192,21 @@ static int cmd_info(void *data, const char *input) {
 #endif
 			} else {
 				// "iz"
-				if (input[1] == 'q') {
+				bool validcmd = true;
+				switch (input[1]) {
+				case 'J':
+				case '*':
+					validcmd = false;
+					break;
+				case 'q':
+					// "izq"
 					mode = (input[2] == 'q')
 					? R_MODE_SIMPLEST
 					: R_MODE_SIMPLE;
 					input++;
+					break;
 				}
-				{
+				if (validcmd) {
 					RList *objs = r_core_bin_files (core);
 					RListIter *iter;
 					RBinFile *bf;

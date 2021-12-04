@@ -12,8 +12,6 @@
 */
 
 #include <r_util.h>
-#include <r_diff.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
