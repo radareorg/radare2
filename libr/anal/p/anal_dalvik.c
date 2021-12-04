@@ -633,7 +633,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		if (mask & R_ANAL_OP_MASK_ESIL) {
 			format23x(len, data, &vA, &vB, &vC);
 			// weird expression but should work
-			esilprintf (op, GETWIDE "," GETWIDE ",==,63,$c,!,?{,-1,}{,1,},$z,?{,0,},v%u,=", vC+1, vC, vB+1, vB, vA);
+			esilprintf (op, GETWIDE "," GETWIDE ",-,DUP,0,<=,?{,1,}{,-1,},SWAP,!,?{,0,},v%u,=", vC+1, vC, vB+1, vB, vA);
 		}
 		break;
 	case 0x32: // if-eq
