@@ -56,6 +56,7 @@ typedef struct r_search_hit_t {
 } RSearchHit;
 
 typedef int (*RSearchCallback)(RSearchKeyword *kw, void *user, ut64 where);
+typedef void (*RSearchDFree)(void *);
 
 typedef struct r_search_t {
 	int n_kws; // hit${n_kws}_${count}
@@ -64,6 +65,7 @@ typedef struct r_search_t {
 	ut32 string_min; // max length of strings for R_SEARCH_STRING
 	ut32 string_max; // min length of strings for R_SEARCH_STRING
 	void *data; // data used by search algorithm
+	RSearchDFree *datafree;
 	void *user; // user data passed to callback
 	RSearchCallback callback;
 	ut64 nhits;
