@@ -2627,7 +2627,7 @@ static void __init_autocomplete_default (RCore* core) {
 		"Pc", "Pd", "Pi", "Po", "Ps", "P-", NULL
 	};
 	const char *mounts[] = {
-		"md", "mg", "mo", "ms", "mc", "mi", "mw", NULL
+		"m", "md", "mg", "mo", "ms", "mc", "mi", "mw", NULL
 	};
 	__foreach (core, flags, R_CORE_AUTOCMPLT_FLAG);
 	__foreach (core, seeks, R_CORE_AUTOCMPLT_SEEK);
