@@ -134,7 +134,6 @@ Commands:
  -l,list                     list installed pkgs
  -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH
  -s,search [<keyword>]       search in database
- -t,test FX,XX,BR BID        check in Travis regressions
  -v,version                  show version
  -h,help                     show this message
  -H variable                 show value of given variable
@@ -142,7 +141,6 @@ Commands:
  -ci (pkgname)               clean install of given package
  -cp                         clean the user's home plugin directory
  -d,doc [pkgname]            show documentation for given package
- -w <pkgname>                what/where is installed
  init | update ..            initialize/update database
  cd [git/dir]                cd into given git (see 'r2pm ls')
  ls                          ls all cloned git repos in GITDIR
@@ -153,6 +151,7 @@ Environment:
  R2PM_PLUGDIR=${R2PM_PLUGDIR}
  R2PM_BINDIR=${R2PM_BINDIR}
  R2PM_OFFLINE=0              disabled by default, avoid init/update calls if set to !=0
+ R2PM_NATIVE=0               set to 1 to use the native C codepath for r2pm
  R2PM_DBDIR=${R2PM_DBDIR}
  R2PM_GITDIR=${R2PM_GITDIR}
  R2PM_GITSKIP=${R2PM_GITSKIP}
@@ -511,7 +510,7 @@ pkgFilePath() {
 }
 
 r2pm_doc() {
-	if [ -z "$2" ]; then
+	if [ -z "$1" ]; then
 		echo "Usage: r2pm -d [package]     # show docs on [package] (see r2pm -l)"
 		exit 1
 	else
@@ -599,9 +598,6 @@ case "$1" in
 -u|uninstall)
 	r2pm_uninstall "$@"
 	;;
--t|test)
-	echo "Deprecated"
-	;;
 -l|list)
 	R2PM_List "$2"
 	;;
@@ -687,14 +683,6 @@ case "$1" in
 			echo "do not disassemble do not disassemble do not disassemble do not disassemble"
 			exit 1
 		fi
-	fi
-	;;
-what|-w)
-	if [ -n "$2" ]; then
-		exec cat "${R2PM_USRDIR}/pkg/$2" 2> /dev/null
-	else
-		cd "${R2PM_USRDIR}/pkg/" 2> /dev/null
-		ls
 	fi
 	;;
 cd)

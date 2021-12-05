@@ -38,6 +38,7 @@ R_API int r_main_rafind2(int argc, const char **argv);
 R_API int r_main_radiff2(int argc, const char **argv);
 R_API int r_main_ragg2(int argc, const char **argv);
 R_API int r_main_rasign2(int argc, const char **argv);
+R_API int r_main_r2pm(int argc, const char **argv);
 
 #ifdef __cplusplus
 }
