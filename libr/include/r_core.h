@@ -676,18 +676,17 @@ R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags);
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen);
 
 // both do the same, we should get rid of one of them
-R_API bool r_core_bin_raise (RCore *core, ut32 bfid);
+R_API bool r_core_bin_raise(RCore *core, ut32 bfid);
 R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile);
 
-R_API int r_core_bin_set_env (RCore *r, RBinFile *binfile);
-R_API int r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);
-R_API int r_core_bin_set_by_name (RCore *core, const char *name);
-R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
+R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile);
+R_API bool r_core_bin_set_by_fd(RCore *core, ut64 bin_fd);
+R_API bool r_core_bin_set_by_name(RCore *core, const char *name);
 R_API bool r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
-R_API int r_core_bin_rebase(RCore *core, ut64 baddr);
+R_API bool r_core_bin_rebase(RCore *core, ut64 baddr);
 R_API void r_core_bin_export_info(RCore *core, int mode);
-R_API int r_core_bin_list(RCore *core, int mode);
-R_API bool r_core_bin_delete (RCore *core, ut32 binfile_idx);
+R_API bool r_core_bin_list(RCore *core, int mode);
+R_API bool r_core_bin_delete(RCore *core, ut32 binfile_idx);
 R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name);
 
 // XXX - this is kinda hacky, maybe there should be a way to
@@ -769,8 +768,8 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode);
 R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode);
 
 /* rtr */
-R_API int r_core_rtr_cmds (RCore *core, const char *port);
-R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *port, const char *cmd);
+R_API int r_core_rtr_cmds(RCore *core, const char *port);
+R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *port, const char *cmd);
 R_API void r_core_rtr_help(RCore *core);
 R_API void r_core_rtr_pushout(RCore *core, const char *input);
 R_API void r_core_rtr_list(RCore *core);
@@ -829,9 +828,9 @@ R_API void r_core_undo_pop(RCore *core);
 /* logs */
 typedef int (*RCoreLogCallback)(RCore *core, int count, const char *message);
 R_API void r_core_log_free(RCoreLog *log);
-R_API void r_core_log_init (RCoreLog *log);
+R_API void r_core_log_init(RCoreLog *log);
 R_API char *r_core_log_get(RCore *core, int index);
-R_API RCoreLog *r_core_log_new (void);
+R_API RCoreLog *r_core_log_new(void);
 R_API bool r_core_log_run(RCore *core, const char *buf, RCoreLogCallback cb);
 R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
 R_API void r_core_log_add(RCore *core, const char *msg);
@@ -862,11 +861,11 @@ typedef struct {
 } RCoreAnalStats;
 
 R_API bool core_anal_bbs(RCore *core, const char* input);
-R_API bool core_anal_bbs_range (RCore *core, const char* input);
+R_API bool core_anal_bbs_range(RCore *core, const char* input);
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, int mode);
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr);
-R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
-R_API void r_core_anal_stats_free (RCoreAnalStats *s);
+R_API RCoreAnalStats* r_core_anal_get_stats(RCore *a, ut64 from, ut64 to, ut64 step);
+R_API void r_core_anal_stats_free(RCoreAnalStats *s);
 
 R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
@@ -916,8 +915,8 @@ typedef void (*RCoreTaskOneShot)(void *);
 R_API void r_core_echo(RCore *core, const char *msg);
 R_API RTable *r_core_table(RCore *core, const char *name);
 
-R_API void r_core_task_scheduler_init (RCoreTaskScheduler *tasks, RCore *core);
-R_API void r_core_task_scheduler_fini (RCoreTaskScheduler *tasks);
+R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core);
+R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks);
 R_API RCoreTask *r_core_task_get(RCoreTaskScheduler *scheduler, int id);
 R_API RCoreTask *r_core_task_get_incref(RCoreTaskScheduler *scheduler, int id);
 R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode);
@@ -942,12 +941,11 @@ R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler);
 R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler);
 R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id);
 typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize, void *cb_user);
-R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
-		ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
+R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
 
 R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, int type, bool lock);
 R_API void r_core_autocomplete_free(RCoreAutocomplete *obj);
-R_API void r_core_autocomplete_reload (RCore *core);
+R_API void r_core_autocomplete_reload(RCore *core);
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact);
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd);
 R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr);

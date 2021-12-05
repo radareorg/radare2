@@ -66,7 +66,7 @@ typedef struct r_bin_elf_symbol_t {
 typedef struct r_bin_elf_reloc_t {
 	int sym;
 	int type;
-	Elf_(Xword) rel_mode;
+	Elf_(Xword) mode;
 	st64 addend;
 	ut64 offset;
 	ut64 rva;

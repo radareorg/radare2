@@ -1482,8 +1482,8 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 	return plt_addr;
 }
 
-static size_t get_size_rel_mode(Elf_(Xword) rel_mode) {
-	return rel_mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
+static size_t get_size_rel_mode(Elf_(Xword) mode) {
+	return mode == DT_RELA? sizeof (Elf_(Rela)): sizeof (Elf_(Rel));
 }
 
 static ut64 get_num_relocs_dynamic_plt(ELFOBJ *bin) {
@@ -2683,7 +2683,7 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 
 		r->addend = reloc_info.r_addend;
 	}
 
-	r->rel_mode = rel_mode;
+	r->mode = rel_mode;
 	r->last = 0;
 	r->offset = reloc_info.r_offset;
 	r->sym = ELF_R_SYM (reloc_info.r_info);

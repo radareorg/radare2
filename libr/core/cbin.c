@@ -142,7 +142,7 @@ static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 	return paddr;
 }
 
-R_API int r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
+R_API bool r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
 	if (r_bin_file_set_cur_by_fd (core->bin, bin_fd)) {
 		r_core_bin_set_cur (core, r_bin_cur (core->bin));
 		return true;
@@ -307,7 +307,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	return false;
 }
 
-R_API int r_core_bin_set_by_name(RCore *core, const char * name) {
+R_API bool r_core_bin_set_by_name(RCore *core, const char * name) {
 	if (r_bin_file_set_cur_by_name (core->bin, name)) {
 		r_core_bin_set_cur (core, r_bin_cur (core->bin));
 		return true;
@@ -315,7 +315,7 @@ R_API int r_core_bin_set_by_name(RCore *core, const char * name) {
 	return false;
 }
 
-R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
+R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 	r_return_val_if_fail (r, false);
 
 	RBinObject *binobj = binfile? binfile->o: NULL;
@@ -1495,9 +1495,14 @@ static int bin_entry(RCore *r, PJ *pj, int mode, ut64 laddr, int va, bool inifin
 static const char *bin_reloc_type_name(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return reloc->additive ? "ADD_" #T : "SET_" #T
 	switch (reloc->type) {
+	CASE(1);
+	CASE(2);
+	CASE(4);
 	CASE(8);
 	CASE(16);
+	CASE(24);
 	CASE(32);
+	CASE(48);
 	CASE(64);
 	}
 	return "UNKNOWN";
@@ -1507,9 +1512,14 @@ static const char *bin_reloc_type_name(RBinReloc *reloc) {
 static ut8 bin_reloc_size(RBinReloc *reloc) {
 #define CASE(T) case R_BIN_RELOC_ ## T: return (T) / 8
 	switch (reloc->type) {
+	CASE(1);
+	CASE(2);
+	CASE(4);
 	CASE(8);
 	CASE(16);
+	CASE(24);
 	CASE(32);
+	CASE(48);
 	CASE(64);
 	}
 	return 0;
@@ -4407,9 +4417,8 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 	return true;
 }
 
-R_API int r_core_bin_list(RCore *core, int mode) {
+R_API bool r_core_bin_list(RCore *core, int mode) {
 	// list all binfiles and there objects and there archs
-	int count = 0;
 	RListIter *iter;
 	RBinFile *binfile = NULL; //, *cur_bf = r_bin_cur (core->bin) ;
 	RBin *bin = core->bin;
@@ -4433,7 +4442,7 @@ R_API int r_core_bin_list(RCore *core, int mode) {
 		r_cons_print (pj_string (pj));
 		pj_free (pj);
 	}
-	return count;
+	return true;
 }
 
 R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
@@ -4502,17 +4511,15 @@ out:
 	return r_strbuf_drain (buf);
 }
 
-R_API int r_core_bin_rebase(RCore *core, ut64 baddr) {
-	if (!core || !core->bin || !core->bin->cur) {
-		return 0;
-	}
-	if (baddr == UT64_MAX) {
-		return 0;
+R_API bool r_core_bin_rebase(RCore *core, ut64 baddr) {
+	r_return_val_if_fail (core && core->bin, false);
+	if (!core->bin->cur || baddr == UT64_MAX) {
+		return false;
 	}
 	RBinFile *bf = core->bin->cur;
 	bf->o->baddr = baddr;
 	bf->o->loadaddr = baddr;
 	r_bin_object_set_items (bf, bf->o);
-	return 1;
+	return true;
 }
 
