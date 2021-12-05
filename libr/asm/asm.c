@@ -360,11 +360,13 @@ static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
 
 // TODO: this can be optimized using r_str_hash()
 R_API bool r_asm_use(RAsm *a, const char *name) {
-	RAsmPlugin *h;
-	RListIter *iter;
-	if (!a || !name) {
+	r_return_val_if_fail (a, false);
+	if (R_STR_ISEMPTY (name)) {
+		// that shouldnt be permitted imho, keep for backward compat
 		return false;
 	}
+	RAsmPlugin *h;
+	RListIter *iter;
 	r_list_foreach (a->plugins, iter, h) {
 		if (h->arch) {
 			if (!strcmp (h->name, name)) {
@@ -397,6 +399,9 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	}
 	sdb_free (a->pair);
 	a->pair = NULL;
+	if (strcmp (name, "null")) {
+		return r_asm_use (a, "null");
+	}
 	return false;
 }
 
