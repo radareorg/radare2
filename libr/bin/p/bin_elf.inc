@@ -767,10 +767,11 @@ static void _patch_reloc(struct Elf_(r_bin_elf_obj_t) *bo, ut16 e_machine, RIOBi
 	ut8 buf[8];
 	switch (e_machine) {
 	case EM_ARM:
-		V = S + A;
 		if (!rel->sym && rel->mode == DT_REL) {
 			iob->read_at (iob->io, rel->rva, buf, 4);
-			V += r_read_ble32 (buf, bo->endian);
+			V = r_read_ble32 (buf, bo->endian);
+		} else {
+			V = S + A;
 		}
 		r_write_le32 (buf, V);
 		iob->write_at (iob->io, rel->rva, buf, 4);
