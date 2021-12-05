@@ -512,7 +512,7 @@ pkgFilePath() {
 
 r2pm_doc() {
 	if [ -z "$2" ]; then
-		echo "Usage: r2pm -d [package]  # show docs on [package]"
+		echo "Usage: r2pm -d [package]     # show docs on [package] (see r2pm -l)"
 		exit 1
 	else
 		FILE="$(pkgFilePath "$1")"
@@ -588,9 +588,13 @@ case "$1" in
 	fi
 	;;
 -uu)
-	FILE="${R2PM_USRDIR}/pkg/$2"
-	$0 -u $2 2> /dev/null
-	rm -f "${FILE}"
+	if [ -z "$2" ]; then
+		echo "Usage: r2pm -uu [pkgname] # force uninstall given package"
+	else
+		FILE="${R2PM_USRDIR}/pkg/$2"
+		$0 -u $2 2> /dev/null
+		rm -f "${FILE}"
+	fi
 	;;
 -u|uninstall)
 	r2pm_uninstall "$@"
