@@ -77,6 +77,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ELF: arm sh unpatched relocs
+ARGS=-e bin.cache=false
+FILE=bins/elf/r2pay-arm32.so
+CMDS=<<EOF
+ir*~reloc?
+s section..init_array
+pd 10
+EOF
+EXPECT=<<EOF
+366
+            ;-- section..init_array:
+            0x000b58c4      .dword 0x00000000                          ; RELOC 32 .datadiv_decode1794556967687044894 @ 0x00004560 ; [15] -rw- section size 364 named .init_array
+            0x000b58c8      .dword 0x00000000                          ; RELOC 32 .datadiv_decode12875440098136793118 @ 0x00004570
+            0x000b58cc      .dword 0x00000000                          ; RELOC 32 .datadiv_decode11893604691534341392 @ 0x00098028
+            0x000b58d0      .dword 0x00008115 ; entry.init0            ; RELOC 32 
+            0x000b58d4      .dword 0x00055049 ; entry.init1            ; RELOC 32 
+            0x000b58d8      .dword 0x00000000                          ; RELOC 32 .datadiv_decode668687990735969933 @ 0x00098b44
+            0x000b58dc      .dword 0x00000000                          ; RELOC 32 .datadiv_decode16868916699024037624 @ 0x00098b48
+            0x000b58e0      .dword 0x00000000                          ; RELOC 32 .datadiv_decode12802097292201864397 @ 0x00098b4c
+            0x000b58e4      .dword 0x00000000                          ; RELOC 32 .datadiv_decode12428479046606065387 @ 0x00098b50
+            0x000b58e8      .dword 0x00000000                          ; RELOC 32 .datadiv_decode7496105736011033460 @ 0x00098b54
+EOF
+RUN
+
 NAME=ELF: arm64 sh relocs
 ARGS=-e bin.cache=true
 FILE=bins/elf/r2pay-arm64.so
