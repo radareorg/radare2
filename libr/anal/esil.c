@@ -3745,7 +3745,6 @@ R_API void r_anal_esil_setup_macros(RAnalEsil *esil) {
 }
 
 R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
-
 	OP ("$", esil_interrupt, 0, 1, OT_UNK);		//hm, type seems a bit wrong
 	OP ("()", esil_syscall, 0, 1, OT_UNK);		//same
 	OP ("$z", esil_zf, 1, 0, OT_UNK);

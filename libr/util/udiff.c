@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2021 - pancake, nikolai */
 
-#include <r_diff.h>
+#include <r_util/r_diff.h>
 
 // the non-system-diff doesnt work well
 #define USE_SYSTEM_DIFF 1
@@ -13,7 +13,7 @@ R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 		d->user = NULL;
 		d->off_a = off_a;
 		d->off_b = off_b;
-		d->diff_cmd = "diff -u";
+		d->diff_cmd = strdup ("diff -u");
 	}
 	return d;
 }
@@ -22,9 +22,11 @@ R_API RDiff *r_diff_new(void) {
 	return r_diff_new_from (0, 0);
 }
 
-R_API RDiff *r_diff_free(RDiff *d) {
-	free (d);
-	return NULL;
+R_API void r_diff_free(RDiff *d) {
+	if (d) {
+		free (d->diff_cmd);
+		free (d);
+	}
 }
 
 R_API int r_diff_set_callback(RDiff *d, RDiffCallback callback, void *user) {

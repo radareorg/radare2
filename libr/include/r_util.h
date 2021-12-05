@@ -4,7 +4,6 @@
 #define R2_UTIL_H
 
 #include <r_types.h>
-#include <r_diff.h>
 #include <r_regex.h>
 #include <r_getopt.h>
 #include <r_list.h> // radare linked list
@@ -52,6 +51,7 @@ int gettimeofday (struct timeval* p, void* tz);
 #include "r_util/r_graph.h"
 #include "r_util/r_panels.h"
 #include "r_util/r_pool.h"
+#include "r_util/r_diff.h"
 #include "r_util/r_punycode.h"
 #include "r_util/r_queue.h"
 #include "r_util/r_range.h"

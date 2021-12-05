@@ -1784,7 +1784,7 @@ R_API bool r_anal_xrefs_init (RAnal *anal);
 R_API RAnalDiff *r_anal_diff_new(void);
 R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn);
 R_API void r_anal_diff_setup_i(RAnal *anal, int doops, int thbb, int thfcn);
-R_API void* r_anal_diff_free(RAnalDiff *diff);
+R_API void r_anal_diff_free(RAnalDiff *diff);
 R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb);
 R_API size_t r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2);

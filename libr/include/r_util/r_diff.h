@@ -39,7 +39,7 @@ typedef struct r_diff_t {
 	void *user;
 	bool verbose;
 	int type;
-	const char *diff_cmd;
+	char *diff_cmd;
 	int (*callback)(struct r_diff_t *diff, void *user, RDiffOp *op);
 } RDiff;
 
@@ -70,7 +70,7 @@ typedef struct r_diffchar_t {
 #ifdef R_API
 R_API RDiff *r_diff_new(void);
 R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b);
-R_API RDiff *r_diff_free(RDiff *d);
+R_API void r_diff_free(RDiff *d);
 
 R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb);
 R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb);
