@@ -830,23 +830,26 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 	}
 	if (op->operands[1].type == ARM_CONSTANT) {
 		// XXX what about negative values?
-		at = op->operands[1].immediate - addr;
-		at /= 4;
+		ut64 imm = op->operands[1].immediate;
+		if (imm > addr) {
+			imm -= addr;
+		}
+		at = imm / 4096;
 	} else {
 		eprintf ("Usage: adrp, x0, addr\n");
 		return UT32_MAX;
 	}
-	ut8 b0 = at;
-	ut8 b1 = (at >> 3) & 0xff;
-
 #if 0
-	ut8 b2 = (at >> (8 + 7)) & 0xff;
-	data += b0 << 29;
-	data += b1 << 16;
-	data += b2 << 24;
+        31   30 29   28 ... 24   23..5  4..0
+        ---+-------+-----------+-------+----
+	op | immlo | 1 0 0 0 0 | immhi | Rd
+
+	op = 0 (adr) || 1 (adrp) 
 #endif
-	data += b0 << 16;
-	data += b1 << 8;
+	ut32 immlo = at & 3;
+	ut32 immhi = at >> 2;
+	data += (immlo << 5);
+	data += (immhi << 29);
 	return data;
 }
 

@@ -42,6 +42,7 @@ a "eon w0, w13, w20" a001344a
 a "eon x0, x13, x20" a00134ca
 a "eon x0, x13, x20, ror 15" a03df4ca
 a "adrp x5, 0x0" 05000090
+ad "adrp x16, 0x1000" 100000b0
 a "add x0, x1, x2" 2000028b
 a "add x0, xzr, x30" e0031e8b
 a "b 0x0" 00000014
