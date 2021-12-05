@@ -3,8 +3,8 @@
 #include <r_io.h>
 #include <r_util.h>
 
-
 R_API RIOBank *r_io_bank_new(const char *name) {
+	r_return_val_if_fail (name, NULL);
 	RIOBank *bank = R_NEW0 (RIOBank);
 	if (!bank) {
 		return NULL;
@@ -31,10 +31,8 @@ R_API RIOBank *r_io_bank_new(const char *name) {
 	return bank;
 }
 
-R_API void r_io_bank_clear (RIOBank *bank) {
-	if (!bank) {
-		return;
-	}
+R_API void r_io_bank_clear(RIOBank *bank) {
+	r_return_if_fail (bank);
 	while (!r_queue_is_empty (bank->todo)) {
 		free (r_queue_dequeue (bank->todo));
 	}
@@ -44,14 +42,13 @@ R_API void r_io_bank_clear (RIOBank *bank) {
 }
 
 R_API void r_io_bank_free(RIOBank *bank) {
-	if (!bank) {
-		return;
+	if (bank) {
+		r_queue_free (bank->todo);
+		r_list_free (bank->maprefs);
+		r_crbtree_free (bank->submaps);
+		free (bank->name);
+		free (bank);
 	}
-	r_queue_free (bank->todo);
-	r_list_free (bank->maprefs);
-	r_crbtree_free (bank->submaps);
-	free (bank->name);
-	free (bank);
 }
 
 R_API void r_io_bank_init(RIO *io) {
@@ -102,11 +99,10 @@ R_API bool r_io_bank_add(RIO *io, RIOBank *bank) {
 
 static RIOMapRef *_mapref_from_map(RIOMap *map) {
 	RIOMapRef *mapref = R_NEW (RIOMapRef);
-	if (!mapref) {
-		return NULL;
+	if (mapref) {
+		mapref->id = map->id;
+		mapref->ts = map->ts;
 	}
-	mapref->id = map->id;
-	mapref->ts = map->ts;
 	return mapref;
 }
 
@@ -761,7 +757,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank, false);
 	RIOSubMap fake_sm;
-	memset (&fake_sm, 0x00, sizeof(RIOSubMap));
+	memset (&fake_sm, 0x00, sizeof (RIOSubMap));
 	fake_sm.itv.addr = addr;
 	fake_sm.itv.size = len;
 	RRBNode *node;
@@ -782,6 +778,7 @@ R_API bool r_io_bank_write_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *
 		if (!(map->perm & R_PERM_W)) {
 			node = r_rbnode_next (node);
 			sm = node ? (RIOSubMap *)node->data : NULL;
+			ret = false;
 			continue;
 		}
 		const ut64 buf_off = R_MAX (addr, r_io_submap_from (sm)) - addr;
@@ -923,7 +920,7 @@ R_API void r_io_bank_drain(RIO *io, const ut32 bankid) {
 	}
 }
 
-bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid) {
+R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 	RIOBank *bank = r_io_bank_get (io, bankid);
 	r_return_val_if_fail (io && bank, false);
 	RListIter *iter;

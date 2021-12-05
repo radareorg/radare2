@@ -3,10 +3,10 @@
 #include <r_io.h>
 #include <stdlib.h>
 #include <sdb.h>
-#include "io_private.h"
-#include "r_util.h"
+#include <r_util.h>
 
 #define END_OF_MAP_IDS UT32_MAX
+R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid);
 
 static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
 	r_return_val_if_fail (io && io->maps, NULL);

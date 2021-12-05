@@ -3,7 +3,6 @@
 #include <r_io.h>
 #include <sdb.h>
 #include <config.h>
-#include "io_private.h"
 
 R_LIB_VERSION (r_io);
 
@@ -310,12 +309,12 @@ R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 }
 
 R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
-	int i;
+	r_return_val_if_fail (io && buf && len > 0, false);
 	bool ret = false;
 	ut8 *mybuf = (ut8*)buf;
-	r_return_val_if_fail (io && buf && len > 0, false);
 	if (io->write_mask) {
 		mybuf = r_mem_dup ((void*)buf, len);
+		int i;
 		for (i = 0; i < len; i++) {
 			//this sucks
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
@@ -326,7 +325,7 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 	} else if (io->va) {
 		ret = r_io_vwrite_at (io, addr, mybuf, len);
 	} else {
-		ret = r_io_pwrite_at (io, addr, mybuf, len) > 0;
+		ret = r_io_pwrite_at (io, addr, mybuf, len) > 0; // == len;
 	}
 	if (buf != mybuf) {
 		free (mybuf);
