@@ -963,7 +963,7 @@ aes
 aer r0
 EOF
 EXPECT=<<EOF
-0x00000002
+0x00000004
 EOF
 RUN
 
@@ -1206,5 +1206,33 @@ EXPECT=<<EOF
             0x0000000e      054b           ldr r3, [0x00000024]        ; [0x24:4]=0x4b054b05
             0x00000010      054b           ldr r3, [0x00000028]        ; [0x28:4]=0x4b054b05
             0x00000012      054b           ldr r3, [0x00000028]        ; [0x28:4]=0x4b054b05
+EOF
+RUN
+
+NAME=thumb mov PC and add
+FILE=bins/elf/thumb-movpcadd
+CMDS=<<EOF
+e emu.str=true
+e asm.bytes=false
+s main
+af
+pdf~pstr
+EOF
+EXPECT=<<EOF
+|           0x00010556      adds r0, 0x10                              ; (pstr 0x000618b4) "Hello World\n"
+EOF
+RUN
+
+NAME=thumb mov PC and add unaligned
+FILE=bins/elf/thumb-movpcadd2
+CMDS=<<EOF
+e emu.str=true
+e asm.bytes=false
+s main
+af
+pdf~pstr
+EOF
+EXPECT=<<EOF
+|           0x00010558      adds r0, 0xe                               ; (pstr 0x000618b4) "Hello World\n"
 EOF
 RUN
