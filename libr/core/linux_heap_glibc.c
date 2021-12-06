@@ -109,9 +109,13 @@ static bool GH(is_tcache)(RCore *core) {
 		RListIter *iter;
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
-			// In case the binary is named *libc-*
+			// In case the binary is named *libc-* or *libc.*
 			if (strncmp (map->name, core->bin->file, strlen(map->name)) != 0) {
 				fp = strstr (map->name, "libc-");
+				if (fp) {
+					break;
+				}
+				fp = strstr (map->name, "libc.");
 				if (fp) {
 					break;
 				}
@@ -411,11 +415,13 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 		r_debug_map_sync (core->dbg);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			/* Try to find the main arena address using the glibc's symbols. */
-			if (strstr (map->name, "/libc-") && first_libc && main_arena_sym == GHT_MAX) {
+			if ((strstr (map->name, "/libc-") || strstr (map->name, "/libc."))
+					&& first_libc && main_arena_sym == GHT_MAX) {
 				first_libc = false;
 				main_arena_sym = GH (get_main_arena_with_symbol) (core, map);
 			}
-			if (strstr (map->name, "/libc-") && map->perm == R_PERM_RW) {
+			if ((strstr (map->name, "/libc-") || strstr (map->name, "/libc."))
+					&& map->perm == R_PERM_RW) {
 				libc_addr_sta = map->addr;
 				libc_addr_end = map->addr_end;
 				break;
