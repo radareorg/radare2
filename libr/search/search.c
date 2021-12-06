@@ -27,6 +27,7 @@ R_API RSearch *r_search_new(int mode) {
 	}
 	s->inverse = false;
 	s->data = NULL;
+	s->datafree = free;
 	s->user = NULL;
 	s->callback = NULL;
 	s->align = 0;
@@ -48,16 +49,16 @@ R_API RSearch *r_search_new(int mode) {
 	return s;
 }
 
-R_API RSearch *r_search_free(RSearch *s) {
-	if (!s) {
-		return NULL;
+R_API void r_search_free(RSearch *s) {
+	if (s) {
+		r_list_free (s->hits);
+		r_list_free (s->kws);
+		//r_io_free(s->iob.io); this is supposed to be a weak reference
+		if (s->datafree) {
+			s->datafree (s->data);
+		}
+		free (s);
 	}
-	r_list_free (s->hits);
-	r_list_free (s->kws);
-	//r_io_free(s->iob.io); this is supposed to be a weak reference
-	free (s->data);
-	free (s);
-	return NULL;
 }
 
 R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
@@ -546,5 +547,9 @@ R_API void r_search_reset(RSearch *s, int mode) {
 R_API void r_search_kw_reset(RSearch *s) {
 	r_list_purge (s->kws);
 	r_list_purge (s->hits);
-	R_FREE (s->data);
+	if (s->datafree) {
+		s->datafree (s->data);
+		s->datafree = free;
+		s->data = NULL;
+	}
 }
