@@ -5381,7 +5381,7 @@ static RList *__sorted_list(RCore *core, const char *menu[], int count) {
 	return list;
 }
 
-static void __init_menu_color_settings_layout (void *_core, const char *parent) {
+static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
 	const char *color = core->cons->context->pal.graph_box2;
 	char *now = r_core_cmd_str (core, "eco.");
@@ -5404,7 +5404,7 @@ static void __init_menu_color_settings_layout (void *_core, const char *parent) 
 	r_strbuf_free (buf);
 }
 
-static void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
+static void __init_menu_disasm_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
 	int i = 0;
 	RList *list = __sorted_list (core, menus_settings_disassembly, COUNT (menus_settings_disassembly));
@@ -5479,12 +5479,11 @@ static bool __init_panels_menu(RCore *core) {
 
 	__load_config_menu (core);
 
-	int i = 0;
-	while (menus[i]) {
+	int i;
+	for (i = 0; menus[i]; i++) {
 		__add_menu (core, NULL, menus[i], __open_menu_cb);
-		i++;
 	}
-	char *parent = "File";
+	const char *parent = "File";
 	i = 0;
 	while (menus_File[i]) {
 		if (!strcmp (menus_File[i], "Open")) {
@@ -5638,8 +5637,7 @@ static bool __init_panels_menu(RCore *core) {
 		i++;
 	}
 	parent = "Help";
-	i = 0;
-	while (menus_Help[i]) {
+	for (i = 0; menus_Help[i]; i++) {
 		if (!strcmp (menus_Help[i], "License")) {
 			__add_menu (core, parent, menus_Help[i], __license_cb);
 		} else if (!strcmp (menus_Help[i], "Version")) {
@@ -5655,25 +5653,21 @@ static bool __init_panels_menu(RCore *core) {
 	}
 
 	parent = "File.ReOpen";
-	i = 0;
-	while (menus_ReOpen[i]) {
+	for (i = 0; menus_ReOpen[i]; i++) {
 		if (!strcmp (menus_ReOpen[i], "In RW")) {
 			__add_menu (core, parent, menus_ReOpen[i], __rw_cb);
 		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
 			__add_menu (core, parent, menus_ReOpen[i], __debugger_cb);
 		}
-		i++;
 	}
 
 	parent = "File.Load Layout";
-	i = 0;
-	while (menus_loadLayout[i]) {
+	for (i = 0; menus_loadLayout[i]; i++) {
 		if (!strcmp (menus_loadLayout[i], "Saved")) {
 			__add_menu (core, parent, menus_loadLayout[i], __open_menu_cb);
 		} else if (!strcmp (menus_loadLayout[i], "Default")) {
 			__add_menu (core, parent, menus_loadLayout[i], __load_layout_default_cb);
 		}
-		i++;
 	}
 
 	__init_menu_saved_layout (core, "File.Load Layout.Saved");
@@ -5697,14 +5691,12 @@ static bool __init_panels_menu(RCore *core) {
 	__init_menu_screen_settings_layout (core, "Settings.Screen");
 
 	parent = "Edit.io.cache";
-	i = 0;
-	while (menus_iocache[i]) {
+	for (i = 0; menus_iocache[i]; i++) {
 		if (!strcmp (menus_iocache[i], "On")) {
 			__add_menu (core, parent, menus_iocache[i], __io_cache_on_cb);
 		} else if (!strcmp (menus_iocache[i], "Off")) {
 			__add_menu (core, parent, menus_iocache[i], __io_cache_off_cb);
 		}
-		i++;
 	}
 
 	panels_menu->history = calloc (8, sizeof (RPanelsMenuItem *));
