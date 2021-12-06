@@ -56,7 +56,7 @@ typedef struct r_search_hit_t {
 } RSearchHit;
 
 typedef int (*RSearchCallback)(RSearchKeyword *kw, void *user, ut64 where);
-typedef void (*RSearchDFree)(void *);
+typedef void (RSearchDFree)(void *ptr);
 
 typedef struct r_search_t {
 	int n_kws; // hit${n_kws}_${count}
@@ -88,7 +88,7 @@ typedef struct r_search_t {
 
 R_API RSearch *r_search_new(int mode);
 R_API int r_search_set_mode(RSearch *s, int mode);
-R_API RSearch *r_search_free(RSearch *s);
+R_API void r_search_free(RSearch *s);
 
 /* keyword management */
 R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len);
