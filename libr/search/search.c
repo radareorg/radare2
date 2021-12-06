@@ -483,10 +483,6 @@ R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 	return ret;
 }
 
-R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
-	return r_search_update (s, from, buf, len);
-}
-
 static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
 	RSearchHit *hit = R_NEW0 (RSearchHit);
 	if (!hit) {
