@@ -2671,7 +2671,11 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 	case ARM_INS_MOV:
 	case ARM_INS_VMOV:
 	case ARM_INS_MOVW:
-		r_strbuf_appendf (&op->esil, "%s,%s,=", ARG (1), REG (0));
+		if (a->bits == 16) {
+			MATH32 ("=");
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,%s,=", ARG (1), REG (0));
+		}
 		break;
 	case ARM_INS_CBZ:
 		r_strbuf_appendf (&op->esil, "%s,!,?{,%" PFMT32u ",pc,=,}",
