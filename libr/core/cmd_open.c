@@ -552,25 +552,28 @@ static void cmd_omfg(RCore *core, const char *input) {
 	}
 }
 
-static void cmd_omf(RCore *core, const char *input) {
-	char *arg = strdup (r_str_trim_head_ro (input));
-	if (!arg) {
-		return;
+static void cmd_omf(RCore *core, int argc, char *argv[]) {
+	switch (argc) {
+	case 0:
+		break;
+	case 1:
+		{
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			if (map) {
+				map->perm = r_str_rwx (argv[0]);
+			}
+		}
+		break;
+	case 2:
+	default:
+		{
+			const int id = r_num_math (core->num, argv[0]);
+			RIOMap *map = r_io_map_get (core->io, id);
+			if (map) {
+				map->perm = r_str_rwx (argv[1]);
+			}
+		}
 	}
-	char *sp = strchr (arg, ' ');
-	if (sp) {
-		*sp++ = 0;
-		int id = r_num_math (core->num, arg);
-		int perm = (*sp)? r_str_rwx (sp): R_PERM_RWX;
-		RIOMap *map = r_io_map_get (core->io, id);
-		map->perm = perm;
-	} else {
-		// change perms of current map
-		int perm = (arg && *arg)? r_str_rwx (arg): R_PERM_RWX;
-		RIOMap *map = r_io_map_get_at (core->io, core->offset);
-		map->perm = perm;
-	}
-	free (arg);
 }
 
 static void r_core_cmd_omt(RCore *core, const char *arg) {
@@ -1049,7 +1052,12 @@ static void cmd_open_map(RCore *core, const char *input) {
 			cmd_omfg (core, input + 3);
 			break;
 		case ' ': // "omf"
-			cmd_omf (core, input + 3);
+			{
+				int argc;
+				char **argv = r_str_argv (&input[3], &argc);
+				cmd_omf (core, argc, argv);
+				r_str_argv_free (argv);
+			}
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_om);
