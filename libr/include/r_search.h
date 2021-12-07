@@ -123,7 +123,6 @@ R_API int r_search_magic_update(RSearch *_s, ut64 from, const ut8 *buf, int len)
 R_API int r_search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_xrefs_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr);
 R_API void r_search_set_distance(RSearch *s, int dist);
