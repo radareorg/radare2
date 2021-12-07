@@ -3,6 +3,7 @@
 #include <r_search.h>
 #include <r_list.h>
 #include <ctype.h>
+#include "search.h"
 
 // Experimental search engine (fails, because stops at first hit of every block read
 #define USE_BMH 0
