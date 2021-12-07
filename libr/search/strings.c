@@ -58,7 +58,7 @@ static bool is_encoded(int encoding, unsigned char c) {
 	return false;
 }
 
-R_API int r_search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+int search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i = 0;
 	int widechar = 0;
 	int matches = 0;

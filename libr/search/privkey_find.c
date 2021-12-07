@@ -64,7 +64,7 @@ static int check_fields(const ut8 *start) {
 // Finds and return index of a private key:
 // As defined in RFC 3447 for RSA, as defined in RFC 5915 for
 // elliptic curves and as defined in 7 of RFC 8410 for SafeCurves
-R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+int search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, k, max, index, t;
 	RListIter *iter;
 	RSearchKeyword *kw;
