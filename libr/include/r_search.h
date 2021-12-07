@@ -113,8 +113,6 @@ R_API int r_search_range_add(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_set(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_reset(RSearch *s);
 
-R_API int r_search_bmh(const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len, ut64 *out);
-
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr);
 R_API void r_search_set_distance(RSearch *s, int dist);
