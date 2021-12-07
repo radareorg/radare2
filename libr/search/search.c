@@ -70,7 +70,7 @@ R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
 	return true;
 }
 
-R_API int r_search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+static int search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	eprintf ("TODO: import libr/core/cmd_search.c /m implementation into rsearch\n");
 	return false;
 }
@@ -84,7 +84,7 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 	case R_SEARCH_PRIV_KEY: s->update = r_search_privkey_update; break;
 	case R_SEARCH_STRING: s->update = r_search_strings_update; break;
 	case R_SEARCH_DELTAKEY: s->update = r_search_deltakey_update; break;
-	case R_SEARCH_MAGIC: s->update = r_search_magic_update; break;
+	case R_SEARCH_MAGIC: s->update = search_magic_update; break;
 	}
 	if (s->update || mode == R_SEARCH_PATTERN) {
 		s->mode = mode;
