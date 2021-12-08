@@ -3,7 +3,7 @@
 #include "r_search.h"
 #include <r_regex.h>
 
-int search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_IPI int search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RSearchKeyword *kw;
 	RListIter *iter;
 	RRegexMatch match;

@@ -55,7 +55,7 @@ static bool aes128_key_test(const unsigned char *buf) {
 	return word1 && word2;
 }
 
-int search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_IPI int search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, t, last = len - AES128_SEARCH_LENGTH;
 	RListIter *iter;
 	RSearchKeyword *kw;

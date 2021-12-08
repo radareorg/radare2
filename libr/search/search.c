@@ -136,12 +136,12 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 		hit->addr = addr;
 		r_list_append (s->hits, hit);
 	}
-	return s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
+	return s->maxhits && s->nhits >= s->maxhits? 2: 1;
 }
 
 // TODO support search across block boundaries
 // Supported search variants: backward, overlap
-int search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_IPI int search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RListIter *iter;
 	int longest = 0, i, j;
 	RSearchKeyword *kw;
@@ -358,7 +358,7 @@ static bool brute_force_match(RSearch *s, RSearchKeyword *kw, const ut8 *buf, in
 }
 
 // Supported search variants: backward, binmask, icase, inverse, overlap
-int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RSearchKeyword *kw;
 	RListIter *iter;
 	RSearchLeftover *left;
