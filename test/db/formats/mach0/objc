@@ -97,3 +97,20 @@ EXPECT=<<EOF
                                 main+116 0x100000ec4 ->      CODE -> 0x100000e20 method.Person.setName:
 EOF
 RUN
+
+NAME=macOS arm64 with DYLD_CHAINED_PTR_64_OFFSET
+FILE=bins/mach0/hello-macos-arm64-chained
+CMDS=<<EOF
+ic Test
+EOF
+EXPECT=<<EOF
+class Test
+0x100003a7c method Test      init
+0x100003acc method Test      methodWithoutArgs
+0x100003b18 method Test      methodWithOneArg:
+0x100003b68 method Test      methodWithTwoArgs:secondArg:
+0x100003be0 method Test      methodWithReturn
+0x100003aa0 method Test c    someStaticMethod
+EOF
+RUN
+

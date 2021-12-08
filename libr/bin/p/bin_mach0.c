@@ -799,34 +799,53 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 						break;
 					}
 					ut64 raw_ptr = r_read_le64 (tmp);
-					bool is_auth = IS_PTR_AUTH (raw_ptr);
-					bool is_bind = IS_PTR_BIND (raw_ptr);
 					ut64 ptr_value = raw_ptr;
-					ut64 delta;
-					if (is_auth && is_bind) {
-						struct dyld_chained_ptr_arm64e_auth_bind *p =
-								(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
-						delta = p->next;
-					} else if (!is_auth && is_bind) {
-						struct dyld_chained_ptr_arm64e_bind *p =
-								(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
-						delta = p->next;
-					} else if (is_auth && !is_bind) {
-						struct dyld_chained_ptr_arm64e_auth_rebase *p =
-								(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
-						delta = p->next;
-						ptr_value = p->target + obj->baddr;
+					ut64 delta, stride;
+					ut16 pointer_format = obj->chained_starts[i]->pointer_format;
+					if (pointer_format == DYLD_CHAINED_PTR_ARM64E) {
+						stride = 8;
+						bool is_auth = IS_PTR_AUTH (raw_ptr);
+						bool is_bind = IS_PTR_BIND (raw_ptr);
+						if (is_auth && is_bind) {
+							struct dyld_chained_ptr_arm64e_auth_bind *p =
+									(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
+							delta = p->next;
+						} else if (!is_auth && is_bind) {
+							struct dyld_chained_ptr_arm64e_bind *p =
+									(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
+							delta = p->next;
+						} else if (is_auth && !is_bind) {
+							struct dyld_chained_ptr_arm64e_auth_rebase *p =
+									(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
+							delta = p->next;
+							ptr_value = p->target + obj->baddr;
+						} else {
+							struct dyld_chained_ptr_arm64e_rebase *p =
+									(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
+							delta = p->next;
+							ptr_value = ((ut64)p->high8 << 56) | p->target;
+						}
+					} else if (pointer_format == DYLD_CHAINED_PTR_64_OFFSET) {
+						stride = 4;
+						struct dyld_chained_ptr_64_bind *bind =
+								(struct dyld_chained_ptr_64_bind *) &raw_ptr;
+						if (bind->bind) {
+							delta = bind->next;
+						} else {
+							struct dyld_chained_ptr_64_rebase *p =
+								(struct dyld_chained_ptr_64_rebase *)&raw_ptr;
+							delta = p->next;
+							ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
+						}
 					} else {
-						struct dyld_chained_ptr_arm64e_rebase *p =
-								(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
-						delta = p->next;
-						ptr_value = ((ut64)p->high8 << 56) | p->target;
+						eprintf ("Unsupported chained pointer format\n");
+						goto beach;
 					}
 					ut64 in_buf = cursor - off;
 					if (cursor >= off && cursor <= eob - 8) {
 						r_write_le64 (&buf[in_buf], ptr_value);
 					}
-					cursor += delta * 8;
+					cursor += delta * stride;
 					if (!delta) {
 						break;
 					}
@@ -834,6 +853,7 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 			}
 		}
 	}
+beach:
 	obj->rebasing_buffer = false;
 }
 
