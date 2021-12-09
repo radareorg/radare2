@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2018 - pancake, dark_k3y */
+/* radare - LGPL - Copyright 2010-2021 - pancake, dark_k3y */
 /* AVR assembler realization by Alexander Bolshev aka @dark_k3y, LGPL -- 2015,
    heavily based (and using!) on disassemble module */
 
@@ -22,21 +22,22 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char buf_asm[32] = {0};
-	op->size = avr_decode (a, buf_asm, a->pc, buf, len);
+	int ret = avr_decode (a, buf_asm, sizeof (buf_asm), a->pc, buf, len);
 	if (*buf_asm == '.') {
 		*buf_asm = 0;
 	}
-	if (op->size >= 0) {
-    	r_strbuf_set (&op->buf_asm, buf_asm);
-	}  else{
-		r_strbuf_set (&op->buf_asm, "invalid");
+	if (ret > 1) {
+		op->size = ret;
+	} else {
+		op->size = 2;
 	}
-	return op->size;
+	const char *arg = (ret > 1)? buf_asm: "invalid";
+	r_strbuf_set (&op->buf_asm, arg);
+	return R_MAX (2, op->size);
 }
 
 static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
-    size_t size = avr_encode(a, ao, str);
-    return size;
+    return avr_encode (a, ao, str);
 }
 
 // AVR assembler realization ends
