@@ -137,11 +137,21 @@ static bool objc_build_refs(RCoreObjc *objc) {
 	size_t ss_const = objc->_const->vsize;
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	size_t ss_selrefs = objc->_selrefs->vsize;
-
 	// TODO: check if ss_const or ss_selrefs are too big before going further
 	size_t maxsize = R_MAX (ss_const, ss_selrefs);
 	maxsize = R_MIN (maxsize, objc->file_size);
-
+	if (ss_const > maxsize) {
+		if (objc->core->bin->verbose) {
+			eprintf ("aao: Truncating ss_const from %zu to %zu\n", ss_const, maxsize);
+		}
+		ss_selrefs = maxsize;
+	}
+	if (ss_selrefs > maxsize) {
+		if (objc->core->bin->verbose) {
+			eprintf ("aao: Truncating ss_selrefs from %zu to %zu\n", ss_selrefs, maxsize);
+		}
+		ss_selrefs = maxsize;
+	}
 	ut8 *buf = calloc (1, maxsize);
 	if (!buf) {
 		return false;
