@@ -114,3 +114,19 @@ class Test
 EOF
 RUN
 
+NAME=aao-crash because of truncated file
+FILE=bins/mach0/objc-crash
+CMDS=<<EOF
+aao
+ic
+EOF
+EXPECT=<<EOF
+0x100001098 [0x100000c47 - 0x100000d1d]    214 class 0 Test :: NSObject
+0x100000d1d method 0      sayHello2
+0x100000cf7 method 1      sayHello:
+0x100000cce method 2      sayHello3::
+0x100000ca7 method 3      sayLong:
+0x100000c6a method 4      init
+0x100000c47 method 5 c    callMeNot
+EOF
+RUN
