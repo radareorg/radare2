@@ -428,6 +428,28 @@ jobs:
         name: radare2-${{ steps.r2v.outputs.branch }}-android-aarch64.tar.gz
         path: radare2*android*aarch64.tar.gz
 
+  android-acr-armv7:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Compile with acr
+      run: |
+        sys/android-ndk-install.sh
+        sys/android-build.sh arm
+        ls -l
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
+      id: r2v
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-${{ steps.r2v.outputs.branch }}-android-armv7.tar.gz
+        path: radare2*android*armv7.tar.gz
+
   android-meson:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-latest
@@ -435,7 +457,7 @@ jobs:
       fail-fast: false
       matrix:
       #  name: [x86_64, arm, aarch64]
-        name: [x86_64, arm]
+        name: [x86_64]
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
