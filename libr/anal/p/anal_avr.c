@@ -151,6 +151,7 @@ CPU_MODEL cpu_models[] = {
 			NULL
 		}
 	},
+	//{ .model = NULL },
 };
 
 /// XXX this code is awful
@@ -178,8 +179,11 @@ static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
 
 static CPU_MODEL *get_cpu_model(const char *model) {
 	static CPU_MODEL *cpu = NULL;
+	if (!model) {
+		return NULL;
+	}
 	// cache
-	if (cpu && !r_str_casecmp (model, cpu->model)) {
+	if (cpu && cpu->model && !r_str_casecmp (model, cpu->model)) {
 		return cpu;
 	}
 	return cpu = __get_cpu_model_recursive (model);
@@ -1687,31 +1691,26 @@ INVALID_OP:
 
 //TODO: remove register analysis comment when each avr cpu will be implemented in asm plugin
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	CPU_MODEL *cpu;
-	ut64 offset;
-	int size = -1;
 	char mnemonic[32] = {0};
 
 	set_invalid_op (op, addr);
 
-	size = avr_anal (anal, mnemonic, addr, buf, len);
+	int size = avr_anal (anal, mnemonic, sizeof (mnemonic), addr, buf, len);
 
 	if (!strcmp (mnemonic, "invalid") ||
 		!strcmp (mnemonic, "truncated")) {
 		op->eob = true;
-		op->mnemonic = strdup(mnemonic);
-		return -1;
-	}
-	if (!op) {
-		return -1;
+		op->mnemonic = strdup (mnemonic);
+		op->size = 2;
+		return -1;//R_MIN (len, 2);
 	}
 
 	// select cpu info
-	cpu = get_cpu_model (anal->cpu);
+	CPU_MODEL *cpu = get_cpu_model (anal->cpu);
 
 	// set memory layout registers
 	if (anal->esil) {
-		offset = 0;
+		ut64 offset = 0;
 		r_anal_esil_reg_write (anal->esil, "_prog", offset);
 
 		offset += (1 << cpu->pc);
@@ -1729,7 +1728,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	// process opcode
 	avr_op_analyze (anal, op, addr, buf, len, cpu);
 
-	op->mnemonic = strdup (mnemonic);
+	op->mnemonic = op->size > 1? strdup (mnemonic): "invalid";
 	op->size = size;
 
 	return size;
@@ -1818,8 +1817,7 @@ static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
 
 // ESIL operation SPM_PAGE_FILL
 static bool avr_custom_spm_page_fill(RAnalEsil *esil) {
-	CPU_MODEL *cpu;
-	ut64 addr, page_size_bits, i;
+	ut64 addr, i;
 	ut8 r0, r1;
 
 	// sanity check
@@ -1843,8 +1841,8 @@ static bool avr_custom_spm_page_fill(RAnalEsil *esil) {
 	r1 = i;
 
 	// get details about current MCU and fix input address
-	cpu = get_cpu_model (esil->anal->cpu);
-	page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
+	CPU_MODEL *cpu = get_cpu_model (esil->anal->cpu);
+	ut64 page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align and crop base address
 	addr &= (MASK (page_size_bits) ^ 1);
@@ -1895,14 +1893,13 @@ static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 }
 
 static bool esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
-	CPU_MODEL *cpu;
-
+	// r_return_val_if_fail (esil && esil->anal, false);
 	if (!esil || !esil->anal) {
 		return false;
 	}
 
 	// select cpu info
-	cpu = get_cpu_model (esil->anal->cpu);
+	CPU_MODEL *cpu = get_cpu_model (esil->anal->cpu);
 
 	// crop registers and force certain values
 	if (!strcmp (name, "pc")) {
@@ -1929,7 +1926,6 @@ static int esil_avr_init(RAnalEsil *esil) {
 	r_anal_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
 	r_anal_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
 	esil->cb.hook_reg_write = esil_avr_hook_reg_write;
-
 	return true;
 }
 
@@ -1938,7 +1934,7 @@ static int esil_avr_fini(RAnalEsil *esil) {
 }
 
 static bool set_reg_profile(RAnal *anal) {
-	char *registers_profile = strdup(
+	char *registers_profile = strdup (
 		"=PC	pcl\n"
 		"=SN	r24\n"
 		"=SP	sp\n"

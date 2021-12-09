@@ -36,12 +36,12 @@
  * and so that the printing of the formatted operand is not hard coded into the format operand code.
  * If an addressLabelPrefix is specified in formattingOptions (option is set and string is not NULL),
  * it will print the relative branch/jump/call with this prefix and the destination address as the label. */
-static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
-static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *context, char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
+static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
+static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
 
 
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-int printDisassembledInstruction(RAsm *a, avrDisassembleContext *context, char *out, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+int printDisassembledInstruction(RAsm *a, avrDisassembleContext *context, char *out, int out_len, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	//char fmt[64];
 	int retVal, i;
 	char strOperand[256];
@@ -49,64 +49,75 @@ int printDisassembledInstruction(RAsm *a, avrDisassembleContext *context, char *
 
 	/* If we just found a long instruction, there is nothing to be printed yet, since we don't
 	 * have the entire long address ready yet. */
-	if (context->status == AVR_LONG_INSTRUCTION_FOUND)
+	if (context->status == AVR_LONG_INSTRUCTION_FOUND) {
 		return 0;
+	}
 
-	strcat (out, dInstruction.instruction->mnemonic);
-	if (dInstruction.instruction->numOperands > 0)
-		strcat (out, " ");
+	RStrBuf *sb = r_strbuf_new (dInstruction.instruction->mnemonic);
+	if (dInstruction.instruction->numOperands > 0) {
+		r_strbuf_append (sb, " ");
+	}
 
 	for (i = 0; i < dInstruction.instruction->numOperands; i++) {
 		/* If we're not on the first operand, but not on the last one either, print a comma separating
 		 * the operands. */
-		if (i > 0 && i != dInstruction.instruction->numOperands)
-			strcat (out, ", ");
+		if (i > 0 && i != dInstruction.instruction->numOperands) {
+			r_strbuf_append (sb, ", ");
+		}
 		/* Format the disassembled operand into the string strOperand, and print it */
-		retVal = formatDisassembledOperand(a, context, strOperand, i, dInstruction, fOptions);
-		if (retVal < 0)
+		retVal = formatDisassembledOperand (a, context, strOperand, sizeof (strOperand), i, dInstruction, fOptions);
+		if (retVal < 0) {
+			r_strbuf_free (sb);
 			return retVal;
+		}
 		/* Print the operand and free if it's not NULL */
-		strcat (out, strOperand);
+		r_strbuf_append (sb, strOperand);
 	}
-
+	const char *src = r_strbuf_get (sb);
+	r_str_ncpy (out, src, out_len);
+	r_strbuf_free (sb);
 	return 1;
 }
 
-
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-int analPrintDisassembledInstruction(RAnal *a, avrDisassembleContext *context, char *out, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+int analPrintDisassembledInstruction(RAnal *a, avrDisassembleContext *context, char *out, int out_len, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	//char fmt[64];
 	int retVal, i;
 	char strOperand[256];
-	*out = '\0';
 
 	/* If we just found a long instruction, there is nothing to be printed yet, since we don't
 	 * have the entire long address ready yet. */
-	if (context->status == AVR_LONG_INSTRUCTION_FOUND)
+	if (context->status == AVR_LONG_INSTRUCTION_FOUND) {
 		return 0;
+	}
 
-	strcat (out, dInstruction.instruction->mnemonic);
-	if (dInstruction.instruction->numOperands > 0)
-		strcat (out, " ");
-
+	RStrBuf *sb = r_strbuf_new (dInstruction.instruction->mnemonic);
+	if (dInstruction.instruction->numOperands > 0) {
+		r_strbuf_append (sb, " ");
+	}
 	for (i = 0; i < dInstruction.instruction->numOperands; i++) {
 		/* If we're not on the first operand, but not on the last one either, print a comma separating
 		 * the operands. */
-		if (i > 0 && i != dInstruction.instruction->numOperands)
-			strcat (out, ", ");
+		if (i > 0 && i != dInstruction.instruction->numOperands) {
+			r_strbuf_append (sb, ", ");
+		}
 		/* Format the disassembled operand into the string strOperand, and print it */
-		retVal = analFormatDisassembledOperand(a, context, strOperand, i, dInstruction, fOptions);
-		if (retVal < 0)
+		retVal = analFormatDisassembledOperand (a, context, strOperand, sizeof (strOperand), i, dInstruction, fOptions);
+		if (retVal < 0) {
+			r_strbuf_free (sb);
 			return retVal;
+		}
 		/* Print the operand and free if it's not NULL */
-		strcat (out, strOperand);
+		r_strbuf_append (sb, strOperand);
 	}
-
+	char *src = r_strbuf_get (sb);
+	r_str_ncpy (out, src, out_len);
+	r_strbuf_free (sb);
 	return 1;
 }
 
 
-static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	char binary[9];
 	int retVal;
 
@@ -192,8 +203,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 		const char *current_register = NULL;
 		bool is_register_found = false;
 
-		switch (dInstruction.operands[operandNum])
-		{
+		switch (dInstruction.operands[operandNum]) {
 		case 0x3d:
 			current_register = "spl";//check the architecture for spl
 			is_register_found = true;
@@ -208,10 +218,8 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 			break;
 		}
 
-		if (!strcmp (r_str_get (a->cpu), "ATmega328p"))
-		{
-			switch (dInstruction.operands[operandNum])
-			{
+		if (!strcmp (r_str_get (a->cpu), "ATmega328p")) {
+			switch (dInstruction.operands[operandNum]) {
 			case 0x03:
 				current_register = "pinb";
 				is_register_found = true;
@@ -384,33 +392,30 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 			}
 		}
 		if (!strcmp (r_str_get (a->cpu), "AT90S1200")) {
-			switch (dInstruction.operands[operandNum])
-			{
+			switch (dInstruction.operands[operandNum]) {
 			case 0x08:
 				current_register = "acsr";
-			   	is_register_found = true;
-			    break;
+				is_register_found = true;
+				break;
 			case 0x10:
-			    current_register = "pind";
-			    is_register_found = true;
-			    break;
+				current_register = "pind";
+				is_register_found = true;
+				break;
 			case 0x11:
-			    current_register = "ddrd";
-			    is_register_found = true;
-			    break;
+				current_register = "ddrd";
+				is_register_found = true;
+				break;
 			case 0x12:
-			    current_register = "portd";
-			    is_register_found = true;
-			    break;
+				current_register = "portd";
+				is_register_found = true;
+				break;
 			default:
-			    break;
+				break;
 			}
 		}
-
-		if (is_register_found == true) {
-			retVal = r_str_ncpy (strOperand, current_register, sizeof (current_register));
-		}
-		else {
+		if (is_register_found) {
+			retVal = r_str_ncpy (strOperand, current_register, sizeof (strOperand));
+		} else {
 			retVal = snprintf (strOperand, 5, "0x%x", dInstruction.operands[operandNum]);
 		}
 		break;
@@ -446,24 +451,8 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 	/* This is impossible by normal operation. */
 	default: return ERROR_UNKNOWN_OPERAND;
 	}
-	if (retVal < 0)
-		return ERROR_MEMORY_ALLOCATION_ERROR;
-	return 0;
+	return retVal <0? ERROR_MEMORY_ALLOCATION_ERROR: 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Formats a disassembled operand with its prefix (such as 'R' to indicate a register) into the
  * pointer to a C-string strOperand, which must be free'd after it has been used.
@@ -471,7 +460,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
  * and so that the printing of the formatted operand is not hard coded into the format operand code.
  * If an addressLabelPrefix is specified in formattingOptions (option is set and string is not NULL),
  * it will print the relative branch/jump/call with this prefix and the destination address as the label. */
-static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *context, char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
+static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *context, char *strOperand, int strOperandSize, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions) {
 	char binary[9];
 	int retVal;
 
@@ -488,7 +477,7 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 	case OPERAND_REGISTER_STARTR16:
 	case OPERAND_REGISTER_EVEN_PAIR_STARTR24:
 	case OPERAND_REGISTER_EVEN_PAIR:
-		retVal = sprintf (strOperand, "%s%d", OPERAND_PREFIX_REGISTER,
+		retVal = snprintf (strOperand, strOperandSize, "%s%d", OPERAND_PREFIX_REGISTER,
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_DATA:
@@ -502,20 +491,20 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 					binary[7-i] = '0';
 			}
 			binary[8] = '\0';
-			retVal = sprintf(strOperand, "%s%s",
+			retVal = snprintf (strOperand, strOperandSize, "%s%s",
 				OPERAND_PREFIX_DATA_BIN, binary);
 		} else if (fOptions.options & FORMAT_OPTION_DATA_DEC) {
-			retVal = sprintf(strOperand, "%s%d",
+			retVal = snprintf (strOperand, strOperandSize, "%s%d",
 				OPERAND_PREFIX_DATA_DEC,
 				dInstruction.operands[operandNum]);
 		} else {
-			retVal = sprintf(strOperand, "%s%02x",
+			retVal = snprintf (strOperand, strOperandSize, "%s%02x",
 				OPERAND_PREFIX_DATA_HEX,
 				dInstruction.operands[operandNum]);
 		}
 		break;
 	case OPERAND_BIT:
-		retVal = sprintf(strOperand, "%s%d", OPERAND_PREFIX_BIT,
+		retVal = snprintf (strOperand, strOperandSize, "%s%d", OPERAND_PREFIX_BIT,
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_BRANCH_ADDRESS:
@@ -543,12 +532,12 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 //					retVal = sprintf(strOperand, "%s%d", OPERAND_PREFIX_BRANCH_ADDRESS, dInstruction.operands[operandNum]);
 			}
 #endif
-			retVal = sprintf(strOperand, "0x%x",
+			retVal = snprintf (strOperand, strOperandSize, "0x%x",
 				dInstruction.address + dInstruction.operands[operandNum]);
 		//}
 		break;
 	case OPERAND_LONG_ABSOLUTE_ADDRESS:
-		retVal = sprintf(strOperand, "%s%0*x",
+		retVal = snprintf (strOperand, strOperandSize, "%s%0*x",
 			OPERAND_PREFIX_ABSOLUTE_ADDRESS,
 			fOptions.addressFieldWidth, context->longAddress);
 		break;
@@ -557,8 +546,7 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 		const char *current_register = NULL;
 		bool is_register_found = false;
 
-		switch (dInstruction.operands[operandNum])
-		{
+		switch (dInstruction.operands[operandNum]) {
 		case 0x3d:
 			current_register = "spl";//check the architecture for spl
 			is_register_found = true;
@@ -573,10 +561,8 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 			break;
 		}
 
-		if (!strcmp (r_str_get (a->cpu), "ATmega328p"))
-		{
-			switch (dInstruction.operands[operandNum])
-			{
+		if (!strcmp (r_str_get (a->cpu), "ATmega328p")) {
+			switch (dInstruction.operands[operandNum]) {
 			case 0x03:
 				current_register = "pinb";
 				is_register_found = true;
@@ -746,7 +732,7 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 
 			default:
 				if (is_register_found == false) {
-					retVal = snprintf (strOperand, 5, "0x%x", dInstruction.operands[operandNum]);
+					retVal = snprintf (strOperand, strOperandSize, "0x%x", dInstruction.operands[operandNum]);
 				}
 				break;
 			}
@@ -754,12 +740,10 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 
 
 		if (is_register_found) {
-			r_str_ncpy (strOperand, current_register, sizeof (current_register));
+			r_str_ncpy (strOperand, current_register, strOperandSize);
+		} else {
+			retVal = snprintf (strOperand, strOperandSize, "0x%x", dInstruction.operands[operandNum]);
 		}
-		else {
-			retVal = snprintf (strOperand, 5, "0x%x", dInstruction.operands[operandNum]);
-		}
-
 		retVal = strlen (strOperand);
 		break;
 	}
@@ -775,45 +759,39 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_YPQ:
-		retVal = sprintf(strOperand, "y+%d",
+		retVal = snprintf (strOperand, strOperandSize, "y+%d",
 			dInstruction.operands[operandNum]);
 		break;
 	case OPERAND_ZPQ:
-		retVal = sprintf(strOperand, "z+%d",
+		retVal = snprintf (strOperand, strOperandSize, "z+%d",
 			dInstruction.operands[operandNum]);
 		break;
-	case OPERAND_X: retVal = sprintf(strOperand, "x"); break;
-	case OPERAND_XP: retVal = sprintf(strOperand, "x+"); break;
-	case OPERAND_MX: retVal = sprintf(strOperand, "-x"); break;
-	case OPERAND_Y: retVal = sprintf(strOperand, "y"); break;
-	case OPERAND_YP: retVal = sprintf(strOperand, "y+"); break;
-	case OPERAND_MY: retVal = sprintf(strOperand, "-y"); break;
-	case OPERAND_Z: retVal = sprintf(strOperand, "z"); break;
-	case OPERAND_ZP: retVal = sprintf(strOperand, "z+"); break;
-	case OPERAND_MZ: retVal = sprintf(strOperand, "-z"); break;
+	case OPERAND_X: retVal = snprintf (strOperand, strOperandSize, "x"); break;
+	case OPERAND_XP: retVal = snprintf (strOperand, strOperandSize, "x+"); break;
+	case OPERAND_MX: retVal = snprintf (strOperand, strOperandSize, "-x"); break;
+	case OPERAND_Y: retVal = snprintf (strOperand, strOperandSize, "y"); break;
+	case OPERAND_YP: retVal = snprintf (strOperand, strOperandSize, "y+"); break;
+	case OPERAND_MY: retVal = snprintf (strOperand, strOperandSize, "-y"); break;
+	case OPERAND_Z: retVal = snprintf (strOperand, strOperandSize, "z"); break;
+	case OPERAND_ZP: retVal = snprintf (strOperand, strOperandSize, "z+"); break;
+	case OPERAND_MZ: retVal = snprintf (strOperand, strOperandSize, "-z"); break;
 	/* This is impossible by normal operation. */
 	default: return ERROR_UNKNOWN_OPERAND;
 	}
-	if (retVal < 0)
-		return ERROR_MEMORY_ALLOCATION_ERROR;
-	return 0;
+	return retVal < 0? ERROR_MEMORY_ALLOCATION_ERROR: 0;
 }
-
 
 int parse_registerpair(const char *operand) {
 		int res = -1;
-		char *first, *second, *op;
-		int fnum, snum;
-
-		op = strdup (operand);
-		first = strtok (op, ":");
+		char *op = strdup (operand);
+		char *first = strtok (op, ":");
 
 		if (!first || strlen (first) < 2) {
 			free (op);
 			return -1;
 		}
 
-		second = strtok (NULL, ":");
+		char *second = strtok (NULL, ":");
 
 		/* the next code handles two possible different representation of pair
 		   by pair rx+1:rx
@@ -825,21 +803,21 @@ int parse_registerpair(const char *operand) {
 			   this is currently useless, cause rasm2 filters ':' from assembler
 			   however, this bug soon will be fixed */
 			if (first[0] == 'r' && second[0] == 'r') {
-				fnum = atoi(first+1);
-				snum = atoi(second+1);
+				int fnum = atoi (first + 1);
+				int snum = atoi (second + 1);
 				if (fnum > snum && snum >= 0 && snum <= 30) {
 					res = snum / 2;
 				}
 			} else if (first[0] >= 'x' && first[0] <= 'z'
-				 && second[0] >= 'x' && second[0] <= 'z'
-				 && first[1] == 'h' && second[1] == 'l') {
+					&& second[0] >= 'x' && second[0] <= 'z'
+					&& first[1] == 'h' && second[1] == 'l') {
 				// convert to register pair number by inversing and invert (and adding 12)
 				res = (2 - ('z' - first[0])) + 12;
 			}
 		} else {
 			// the pair by even register (first)
 			if (first[0] == 'r') {
-				snum = atoi(first+1);
+				int snum = atoi(first+1);
 				if (snum >= 0 && snum <= 30) {
 					res = snum / 2;
 				}
