@@ -776,15 +776,24 @@ static bool mnem_jb(char const*const*arg, ut16 pc, ut8**out) {
 }
 
 static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
+
 	ut8 cmp_addr;
 	if (!address_bit (arg[0], &cmp_addr)) {
+		eprintf ("error during the assembly: address bit not found\n");
 		return false;
 	}
+
 	ut16 jmp_addr;
-	if (!to_address (arg[1], &jmp_addr)
-		|| !relative_address (pc + 1, jmp_addr, (*out) + 2)) {
+	if (!to_address (arg[1], &jmp_addr)) {
+		eprintf ("error during the assembly: address not found\n");
 		return false;
 	}
+
+	if (!relative_address (pc + 1, jmp_addr, (*out) + 2)) {
+		eprintf ("error during the assembly: not a relative address\n");
+		return false;
+	}
+
 	(*out)[0] = 0x10;
 	(*out)[1] = cmp_addr;
 	// out[2] set earlier
@@ -1277,12 +1286,14 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 		not without compiler warnings, at least */
 	int wants_arguments;
 	parse_mnem_args mnem = mnemonic (user_asm, &wants_arguments);
+
 	if (!mnem || nr_of_arguments != wants_arguments) {
 		free (arg[2]); arg[2] = 0; carg[2] = 0;
 		free (arg[1]); arg[1] = 0; carg[1] = 0;
 		free (arg[0]); arg[0] = 0; carg[0] = 0;
 		return 0;
 	}
+
 	ut8 instr[4] = {0};
 	ut8 *binp = instr;
 	if (!mnem (carg, a->pc, &binp)) {
@@ -1296,6 +1307,7 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 		free (arg[2]); arg[2] = 0; carg[0] = 0;
 		size_t len = binp - instr;
 		r_strbuf_setbin (&op->buf, instr, len);
+
 		return binp - instr;
 	}
 }
