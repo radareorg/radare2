@@ -166,7 +166,6 @@ static pyc_object *get_int64_object(RBuffer *buffer) {
 
 /* long is used when the number is > MAX_INT64 */
 static pyc_object *get_long_object(RBuffer *buffer) {
-	pyc_object *ret = NULL;
 	bool error = false;
 	bool neg = false;
 	ut32 tmp = 0;
@@ -180,7 +179,7 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 	if (error) {
 		return NULL;
 	}
-	ret = R_NEW0 (pyc_object);
+	pyc_object *ret = R_NEW0 (pyc_object);
 	if (!ret) {
 		return NULL;
 	}
@@ -193,16 +192,18 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 		ret->data = strdup ("0x0");
 	} else {
 		if (ndigits > 10) {
+			free (ret);
 			return NULL;
 		}
 		size = ndigits * 15;
-		if (size > 0) {
+		if (size < 0) {
 			return NULL;
 		}
 		size = (size - 1) / 4 + 1;
 		size += 3 + (neg? 1: 0);
 		j = size - 1;
 		if (j < 1 || size < 1) {
+			free (ret);
 			return NULL;
 		}
 		hexstr = calloc (size, sizeof (char));
@@ -216,10 +217,7 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 			tmp |= n << left;
 			left += 15;
 
-			while (left >= 4) {
-				if (j < 0) {
-					break;
-				}
+			while (left >= 4 && j >= 0) {
 				hexstr[--j] = digist2hex[tmp & 0xf];
 				tmp >>= 4;
 				left -= 4;

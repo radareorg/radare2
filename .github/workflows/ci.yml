@@ -428,7 +428,7 @@ jobs:
         name: radare2-${{ steps.r2v.outputs.branch }}-android-aarch64.tar.gz
         path: radare2*android*aarch64.tar.gz
 
-  android-acr-armv7:
+  android-acr-arm:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-latest
     strategy:
@@ -447,8 +447,8 @@ jobs:
       id: r2v
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2-${{ steps.r2v.outputs.branch }}-android-armv7.tar.gz
-        path: radare2*android*armv7.tar.gz
+        name: radare2-${{ steps.r2v.outputs.branch }}-android-arm.tar.gz
+        path: radare2*android*arm.tar.gz
 
   android-meson:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
