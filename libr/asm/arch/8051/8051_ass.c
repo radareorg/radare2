@@ -401,34 +401,94 @@ static bool address_bit(char const* addr_str, ut8* addr_out) {
 	char const *separator = r_str_lchr (addr_str, '.');
 	ut8 byte;
 	int bit;
-	bool ret = false;
+	bool ret = true;
 	// TODO: check if symbols are resolved properly in all cases:
 	// - symbol.2
 	// - 0x25.symbol
 	// - symbol.symbol
 	// - symbol
 	if (!separator) {
+		ret = false;
 		goto end;
 	}
 	r_str_ncpy (bytepart, addr_str, separator - addr_str + 1);
 	bytepart[separator - addr_str + 1] = '\0';
 	r_str_ncpy (bitpart, separator + 1, strlen (separator));
-	if (!address_direct (bytepart, &byte)) {
-		goto end;
-	}
-	if (1 < strlen (bitpart)
-		|| bitpart[0] < '0' || '7' < bitpart[0]) {
+
+	bit = bitpart[0] - '0';
+
+	if (bit > 9) {
 		ret = false;
 		goto end;
 	}
-	bit = bitpart[0] - '0';
-	if (0x20 <= byte && byte < 0x30) {
-		*addr_out = (byte - 0x20) * 8 + bit;
-		ret = true;
-	} else if (0x80 <= byte && !(byte%8)) {
-		*addr_out = byte + bit;
-		ret = true;
+
+	ut8 addr_bytepart;
+	if (!strcmp (bytepart, "b")) {
+		addr_bytepart = 0xf0;
+	} else if (!strcmp (bytepart, "a") || !strcmp (bytepart, "acc")) {
+		addr_bytepart = 0xe0;
+	} else if (!strcmp (bytepart, "psw")) {
+		addr_bytepart = 0xd0;
+	} else if (!strcmp (bytepart, "r8")) {
+		addr_bytepart = 0xc0;
+	} else if (!strcmp (bytepart, "ip")) {
+		addr_bytepart = 0xb8;
+	} else if (!strcmp (bytepart, "p3")) {
+		addr_bytepart = 0xb0;
+	} else if (!strcmp (bytepart, "ie")) {
+		addr_bytepart = 0xa8;
+	} else if (!strcmp (bytepart, "p2")) {
+		addr_bytepart = 0xa0;
+	} else if (!strcmp (bytepart, "sbuf")) {
+		addr_bytepart = 0x99;
+	} else if (!strcmp (bytepart, "scon")) {
+		addr_bytepart = 0x98;
+	} else if (!strcmp (bytepart, "p1")) {
+		addr_bytepart = 0x90;
+	} else if (!strcmp (bytepart, "th1")) {
+		addr_bytepart = 0x8d;
+	} else if (!strcmp (bytepart, "th0")) {
+		addr_bytepart = 0x8c;
+	} else if (!strcmp (bytepart, "tl1")) {
+		addr_bytepart = 0x8b;
+	} else if (!strcmp (bytepart, "tl0")) {
+		addr_bytepart = 0x8a;
+	} else if (!strcmp (bytepart, "tmod")) {
+		addr_bytepart = 0x89;
+	} else if (!strcmp (bytepart, "tcon")) {
+		addr_bytepart = 0x88;
+	} else if (!strcmp (bytepart, "pcon")) {
+		addr_bytepart = 0x87;
+	} else if (!strcmp (bytepart, "dph")) {
+		addr_bytepart = 0x83;
+	} else if (!strcmp (bytepart, "dpl")) {
+		addr_bytepart = 0x82;
+	} else if (!strcmp (bytepart, "sp")) {
+		addr_bytepart = 0x81;
+	} else if (!strcmp (bytepart, "p0")) {
+		addr_bytepart = 0x80;
+	} else {
+		addr_bytepart = 0x00; // does not correspond to any opcode. Just to make it compile
+		if (!address_direct (bytepart, &byte)) {
+			ret = false;
+			goto end;
+		}
+		if (1 < strlen (bitpart)
+			|| bitpart[0] < '0' || '7' < bitpart[0]) {
+			ret = false;
+			goto end;
+		}
+
+		if (0x20 <= byte && byte < 0x30) {
+			*addr_out = (byte - 0x20) * 8 + bit;
+		} else if (0x80 <= byte && !(byte%8)) {
+			*addr_out = byte + bit;
+		}
+		goto end;
 	}
+
+	*addr_out = addr_bytepart + bit;
+
 end:
 	free (bitpart); bitpart = 0;
 	free (bytepart); bytepart = 0;
@@ -790,7 +850,7 @@ static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	}
 
 	if (!relative_address (pc + 1, jmp_addr, (*out) + 2)) {
-		eprintf ("error during the assembly: not a relative address\n");
+		eprintf ("error during the assembly: It is not possible to assemble a single instruction with no context. Did you provide full code?\n");
 		return false;
 	}
 
