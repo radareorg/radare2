@@ -5383,12 +5383,8 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 
 /**
  * \brief Disassemble `count` instructions, or bytes if `count_bytes` is enabled
- * \param read_buffer_only Do not enable in new code! Workaround for code that
- *        relied on this function incorrectly stopping at basic block
- *        boundaries. This options prevents the function from reading past the
- *        buffer with r_io like it does now.
  */
-R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, bool count_bytes, bool read_buffer_only, bool json, PJ *pj, RAnalFunction *pdf) {
+R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf) {
 	RPrint *p = core->print;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
@@ -5607,7 +5603,7 @@ toro:
 			eprintf ("ds->index=%#x len=%#x left=%#x\n", ds->index, len, left);
 			eprintf ("ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->count, ds->lines);
 #endif
-			if (left < max_op_size && !count_bytes && !read_buffer_only) {
+			if (left < max_op_size && !count_bytes) {
 #if DEBUG_DISASM
 				eprintf ("Not enough bytes to disassemble, going to retry.\n");
 #endif
@@ -5881,7 +5877,7 @@ toro:
 		}
 
 		// enough bytes?
-		if (ds->lines < ds->count && !count_bytes && !read_buffer_only) {
+		if (ds->lines < ds->count && !count_bytes) {
 			ds->addr += ds->index;
 #if DEBUG_DISASM
 			eprintf ("len=%d\n", len);
@@ -7009,7 +7005,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 					break;
 				default:
 					// ok
-					r_core_print_disasm (core, block_start, buf, block_sz, block_instr, false, false, false, NULL, NULL);
+					r_core_print_disasm (core, block_start, buf, block_sz, block_instr, false, false, NULL, NULL);
 					break;
 				}
 			}
