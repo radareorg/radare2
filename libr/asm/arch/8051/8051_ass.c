@@ -422,7 +422,7 @@ static bool address_bit(char const* addr_str, ut8* addr_out) {
 		goto end;
 	}
 
-	ut8 addr_bytepart;
+	ut8 addr_bytepart = 0x00;
 	if (!strcmp (bytepart, "b")) {
 		addr_bytepart = 0xf0;
 	} else if (!strcmp (bytepart, "a") || !strcmp (bytepart, "acc")) {
@@ -468,7 +468,6 @@ static bool address_bit(char const* addr_str, ut8* addr_out) {
 	} else if (!strcmp (bytepart, "p0")) {
 		addr_bytepart = 0x80;
 	} else {
-		addr_bytepart = 0x00; // does not correspond to any opcode. Just to make it compile
 		if (!address_direct (bytepart, &byte)) {
 			ret = false;
 			goto end;
@@ -850,7 +849,7 @@ static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	}
 
 	if (!relative_address (pc + 1, jmp_addr, (*out) + 2)) {
-		eprintf ("error during the assembly: It is not possible to assemble a single instruction with no context. Did you provide full code?\n");
+		eprintf ("error during the assembly: not a relative address. It is not possible to assemble a single instruction with no context. Did you provide full code?\n");
 		return false;
 	}
 
