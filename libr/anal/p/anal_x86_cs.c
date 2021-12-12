@@ -20,13 +20,13 @@ call = 4
 
 // TODO: when capstone-4 is released, add proper check here
 
-#if CS_NEXT_VERSION>0
+#if CS_NEXT_VERSION > 0
 #define HAVE_CSGRP_PRIVILEGE 1
 #else
 #define HAVE_CSGRP_PRIVILEGE 0
 #endif
 
-#define USE_ITER_API 0
+#define USE_ITER_API 1
 
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported
@@ -3289,9 +3289,6 @@ static int cs_len_prefix_opcode(uint8_t *item) {
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	static int omode = 0;
-#if USE_ITER_API
-	static
-#endif
 	cs_insn *insn = NULL;
 	int mode = (a->bits==64)? CS_MODE_64:
 		(a->bits==32)? CS_MODE_32:
@@ -3316,15 +3313,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	// capstone-next
 #if USE_ITER_API
-	{
-		ut64 naddr = addr;
-		size_t size = len;
-		if (!insn) {
-			insn = cs_malloc (handle);
-		}
-		n = cs_disasm_iter (handle, (const uint8_t**)&buf,
+	cs_detail insnack_detail = {0};
+	cs_insn insnack = {0};
+	insnack.detail = &insnack_detail;
+	ut64 naddr = addr;
+	size_t size = len;
+	insn = &insnack;
+	n = cs_disasm_iter (handle, (const uint8_t**)&buf,
 			&size, (uint64_t*)&naddr, insn);
-	}
 #else
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif

@@ -104,13 +104,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_insn *insn = NULL;
 #if USE_ITER_API
 	cs_insn insnack = {0};
-	{
-		size_t size = len;
-		if (!insn || cd < 1) {
-			insn = &insnack;
-		}
-		n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
-	}
+	cs_detail insnack_detail = {0};
+	insnack.detail = &insnack_detail;
+	size_t size = len;
+	insn = &insnack;
+	n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
 #else
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
 #endif
