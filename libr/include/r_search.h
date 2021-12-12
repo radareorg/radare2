@@ -94,7 +94,6 @@ R_API void r_search_free(RSearch *s);
 R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len);
 R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size_t size, bool verbose);
 R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len);
-R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len);
 
 R_API void r_search_keyword_free (RSearchKeyword *kw);
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data);
@@ -113,19 +112,7 @@ R_API void r_search_kw_reset(RSearch *s);
 R_API int r_search_range_add(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_set(RSearch *s, ut64 from, ut64 to);
 R_API int r_search_range_reset(RSearch *s);
-R_API int r_search_set_blocksize(RSearch *s, ut32 bsize);
 
-R_API int r_search_bmh(const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len, ut64 *out);
-
-// TODO: is this an internal API?
-R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_privkey_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_magic_update(RSearch *_s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_strings_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len);
-R_API int r_search_xrefs_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr);
 R_API void r_search_set_distance(RSearch *s, int dist);

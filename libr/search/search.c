@@ -3,6 +3,7 @@
 #include <r_search.h>
 #include <r_list.h>
 #include <ctype.h>
+#include "search.h"
 
 // Experimental search engine (fails, because stops at first hit of every block read
 #define USE_BMH 0
@@ -70,7 +71,7 @@ R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
 	return true;
 }
 
-R_API int r_search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+static int search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	eprintf ("TODO: import libr/core/cmd_search.c /m implementation into rsearch\n");
 	return false;
 }
@@ -78,13 +79,13 @@ R_API int r_search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) 
 R_API int r_search_set_mode(RSearch *s, int mode) {
 	s->update = NULL;
 	switch (mode) {
-	case R_SEARCH_KEYWORD: s->update = r_search_mybinparse_update; break;
-	case R_SEARCH_REGEXP: s->update = r_search_regexp_update; break;
-	case R_SEARCH_AES: s->update = r_search_aes_update; break;
-	case R_SEARCH_PRIV_KEY: s->update = r_search_privkey_update; break;
-	case R_SEARCH_STRING: s->update = r_search_strings_update; break;
-	case R_SEARCH_DELTAKEY: s->update = r_search_deltakey_update; break;
-	case R_SEARCH_MAGIC: s->update = r_search_magic_update; break;
+	case R_SEARCH_KEYWORD: s->update = search_kw_update; break;
+	case R_SEARCH_REGEXP: s->update = search_regexp_update; break;
+	case R_SEARCH_AES: s->update = search_aes_update; break;
+	case R_SEARCH_PRIV_KEY: s->update = search_privkey_update; break;
+	case R_SEARCH_STRING: s->update = search_strings_update; break;
+	case R_SEARCH_DELTAKEY: s->update = search_deltakey_update; break;
+	case R_SEARCH_MAGIC: s->update = search_magic_update; break;
 	}
 	if (s->update || mode == R_SEARCH_PATTERN) {
 		s->mode = mode;
@@ -135,12 +136,12 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 		hit->addr = addr;
 		r_list_append (s->hits, hit);
 	}
-	return s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
+	return s->maxhits && s->nhits >= s->maxhits? 2: 1;
 }
 
 // TODO support search across block boundaries
 // Supported search variants: backward, overlap
-R_API int r_search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_IPI int search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RListIter *iter;
 	int longest = 0, i, j;
 	RSearchKeyword *kw;
@@ -357,7 +358,7 @@ static bool brute_force_match(RSearch *s, RSearchKeyword *kw, const ut8 *buf, in
 }
 
 // Supported search variants: backward, binmask, icase, inverse, overlap
-R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RSearchKeyword *kw;
 	RListIter *iter;
 	RSearchLeftover *left;
@@ -481,10 +482,6 @@ R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 		eprintf ("r_search_update: No search method defined\n");
 	}
 	return ret;
-}
-
-R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
-	return r_search_update (s, from, buf, len);
 }
 
 static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
