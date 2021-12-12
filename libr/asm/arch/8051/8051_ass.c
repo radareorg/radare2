@@ -545,14 +545,76 @@ static bool singlearg_reladdr(ut8 const firstbyte, char const* arg
 static bool singlearg_direct(ut8 const firstbyte, char const* arg
 	, ut8 **out)
 {
-	ut8 address;
-	if (!address_direct (arg, &address)) {
-		return false;
+	bool ret = true;
+	ut8 address = 0x00;
+	if (!address_direct (arg, &address) && !is_reg (arg)) {
+		ret = false;
+	} else if (is_reg (arg)) {
+		if (!strcmp (arg, "r0")) {
+			address = 0x00;
+		} else if (!strcmp (arg, "r1")) {
+			address = 0x01;
+		} else if (!strcmp (arg, "r2")) {
+			address = 0x02;
+		} else if (!strcmp (arg, "r3")) {
+			address = 0x03;
+		} else if (!strcmp (arg, "r4")) {
+			address = 0x04;
+		} else if (!strcmp (arg, "r5")) {
+			address = 0x05;
+		} else if (!strcmp (arg, "r6")) {
+			address = 0x06;
+		} else if (!strcmp (arg, "r7")) {
+			address = 0x07;
+		}  else if (!strcmp (arg, "p0")) {
+			address = 0x80;
+		}  else if (!strcmp (arg, "sp")) {
+			address = 0x81;
+		}  else if (!strcmp (arg, "dpl")) {
+			address = 0x82;
+		}  else if (!strcmp (arg, "dph")) {
+			address = 0x83;
+		}  else if (!strcmp (arg, "pcon")) {
+			address = 0x87;
+		}  else if (!strcmp (arg, "tcon")) {
+			address = 0x88;
+		}  else if (!strcmp (arg, "tmod")) {
+			address = 0x89;
+		}  else if (!strcmp (arg, "tl0")) {
+			address = 0x8a;
+		}  else if (!strcmp (arg, "tl1")) {
+			address = 0x8b;
+		}  else if (!strcmp (arg, "th0")) {
+			address = 0x8c;
+		}  else if (!strcmp (arg, "th1")) {
+			address = 0x8d;
+		}  else if (!strcmp (arg, "p1")) {
+			address = 0x90;
+		}  else if (!strcmp (arg, "scon")) {
+			address = 0x98;
+		}  else if (!strcmp (arg, "sbuf")) {
+			address = 0x99;
+		}  else if (!strcmp (arg, "p2")) {
+			address = 0xa0;
+		}  else if (!strcmp (arg, "ie")) {
+			address = 0xa8;
+		}  else if (!strcmp (arg, "p3")) {
+			address = 0xb0;
+		}  else if (!strcmp (arg, "ip")) {
+			address = 0xb8;
+		}  else if (!strcmp (arg, "psw")) {
+			address = 0xd0;
+		}  else if (!strcmp (arg, "a") || !strcmp (arg, "acc")) {
+			address = 0xe8;
+		}  else if (!strcmp (arg, "b")) {
+			address = 0xf0;
+		}
 	}
+
 	(*out)[0] = firstbyte;
 	(*out)[1] = address;
 	*out += 2;
-	return true;
+	return ret;
 }
 
 static bool singlearg_immediate(ut8 firstbyte, char const* imm_str, ut8**out) {
