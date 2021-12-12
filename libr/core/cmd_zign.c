@@ -734,21 +734,37 @@ static bool search(RCore *core, bool rad, bool only_func) {
 	return ctx.count > 0? true: false;
 }
 
-static void print_possible_matches(RList *list) {
+static void print_possible_matches(RList *list, bool json, RCore *core) {
 	RListIter *itr;
 	RSignCloseMatch *row;
-	r_list_foreach (list, itr, row) {
-		// total score
-		if (row->bscore > 0.0 && row->gscore > 0.0) {
-			r_cons_printf ("%02.5lf  ", row->score);
+	if (json) {
+		PJ *pj = core->anal->coreb.pjWithEncoding (core);
+		pj_a (pj);
+		r_list_foreach (list, itr, row) {
+			pj_o (pj);
+			pj_ks (pj, "name", row->item->name);
+			pj_kd (pj, "similarity", row->score);
+			pj_kd (pj, "byte similarity", row->bscore);
+			pj_kd (pj, "graph similarity", row->gscore);
+			pj_end (pj);
 		}
-		if (row->bscore > 0.0) {
-			r_cons_printf ("%02.5lf B  ", row->bscore);
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_string (pj));
+		pj_free (pj);
+	} else {
+		r_list_foreach (list, itr, row) {
+			// total score
+			if (row->bscore > 0.0 && row->gscore > 0.0) {
+				r_cons_printf ("%02.5lf  ", row->score);
+			}
+			if (row->bscore > 0.0) {
+				r_cons_printf ("%02.5lf B  ", row->bscore);
+			}
+			if (row->gscore > 0.0) {
+				r_cons_printf ("%02.5lf G  ", row->gscore);
+			}
+			r_cons_printf (" %s\n", row->item->name);
 		}
-		if (row->gscore > 0.0) {
-			r_cons_printf ("%02.5lf G  ", row->gscore);
-		}
-		r_cons_printf (" %s\n", row->item->name);
 	}
 }
 
@@ -788,7 +804,7 @@ static double get_zb_threshold(RCore *core) {
 	return thresh;
 }
 
-static bool bestmatch_fcn(RCore *core, const char *input) {
+static bool bestmatch_fcn(RCore *core, const char *input, bool json) {
 	r_return_val_if_fail (input && core, false);
 
 	char *argv = r_str_new (input);
@@ -838,14 +854,14 @@ static bool bestmatch_fcn(RCore *core, const char *input) {
 	r_sign_item_free (it);
 
 	if (list) {
-		print_possible_matches (list);
+		print_possible_matches (list, json, core);
 		r_list_free (list);
 		return true;
 	}
 	return false;
 }
 
-static bool bestmatch_sig(RCore *core, const char *input) {
+static bool bestmatch_sig(RCore *core, const char *input, bool json) {
 	r_return_val_if_fail (input && core, false);
 	int count = 5;
 	if (!R_STR_ISEMPTY (input)) {
@@ -886,7 +902,7 @@ static bool bestmatch_sig(RCore *core, const char *input) {
 		RList *list = r_sign_find_closest_sig (core->anal, item, count, th);
 		if (list) {
 			found = true;
-			print_possible_matches (list);
+			print_possible_matches (list, json, core);
 			r_list_free (list);
 		}
 		r_cons_break_pop ();
@@ -900,17 +916,22 @@ static bool bestmatch_sig(RCore *core, const char *input) {
 
 static bool bestmatch(void *data, const char *input) {
 	r_return_val_if_fail (data && input, false);
+	bool json = false;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case 'r':
 		input++;
-		return bestmatch_fcn (core, input);
-		break;
+		if (*input == 'j') {
+			input++;
+			json = true;
+		}
+		return bestmatch_fcn (core, input, json);
+	case 'j':
+		json = true;
 	case ' ':
 		input++;
 	case '\x00':
-		return bestmatch_sig (core, input);
-		break;
+		return bestmatch_sig (core, input, json);
 	case '?':
 	default:
 		r_core_cmd_help (core, help_msg_zb);
