@@ -1133,6 +1133,31 @@ sym.fith
 EOF
 RUN
 
+NAME=zbj
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+s 0x00410210
+e zign.maxsz = 32
+af
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.second g cc=16 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.second b ff5541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.third g cc=16 nbbs=28 edges=44 ebbs=1 bbsum=407
+za sym.third b ffff41544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.fourth g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=407
+za sym.fourth b ffffff544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.fith g cc=16 nbbs=28 edges=43 ebbs=1 bbsum=401
+za sym.fith b ffffffff4989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+za sym.not_shown g cc=15 nbbs=28 edges=43 ebbs=1 bbsum=395
+za sym.not_shown b ffffffffff89fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbj~{[0][name]}
+EOF
+EXPECT=<<EOF
+sym.exact
+EOF
+RUN
+
 NAME=zb match 6 of 6 with 100 count
 FILE=bins/elf/static-glibc-2.27
 CMDS=<<EOF
@@ -1611,6 +1636,20 @@ zbr sym.exact 1
 EOF
 EXPECT=<<EOF
 1.00000  1.00000 B  1.00000 G   fcn.00410210
+EOF
+RUN
+
+NAME=zbrj exact match
+FILE=bins/elf/static-glibc-2.27
+CMDS=<<EOF
+aa
+e zign.maxsz = 32
+za sym.exact g cc=17 nbbs=29 edges=44 ebbs=1 bbsum=407
+za sym.exact b 415541544989fc55534883ec08e89e02ffff488b2d77952a004889c38b450048:ffffffffffffffffffffffffffff00000000ff000000000000ffffffffffffff
+zbrj sym.exact 1
+EOF
+EXPECT=<<EOF
+[{"name":"fcn.00410210","similarity":1.000000,"byte similarity":1.000000,"graph similarity":1.000000}]
 EOF
 RUN
 
