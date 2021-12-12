@@ -66,7 +66,7 @@ LINK+=-lproc
 endif
 
 ifeq ($(EXTRA_PRE),)
-all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
+all: $(LIBSO) ${LIBAR} ${EXTRA_TARGETS}
 else
 all: $(EXTRA_PRE)
 	$(MAKE) all2
@@ -82,9 +82,12 @@ else
 	@-if [ -f d/Makefile ] ; then (echo "DIR ${NAME}/d"; ${MAKE} -C d) ; fi
 endif
 
-$(OBJS): $(EXTRA_TARGETS)
+prelib-build: $(EXTRA_TARGETS)
+	$(MAKE) $(OBJS)
+
 ifeq ($(WITH_LIBS),1)
-$(LIBSO): ${WFD} ${OBJS} ${SHARED_OBJ}
+
+$(LIBSO): prelib-build ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e "${LIBSO}" ] && do=1 ; \
 	  test "$$a" -nt "${LIBSO}" && do=1 ; \
@@ -101,7 +104,8 @@ $(LIBSO): ;
 endif
 
 ifeq ($(WITH_LIBR),1)
-$(LIBAR): $(OBJS)
+
+$(LIBAR): prelib-build
 	@[ "${SILENT}" = 1 ] && echo "CC_AR $(LIBAR)" || true
 	rm -f $(LIBAR)
 	${CC_AR} ${OBJS} ${SHARED_OBJ}
@@ -136,7 +140,7 @@ mrproper: clean
 	-rm -f *.d
 	@true
 
-.PHONY: all install pkgcfg clean deinstall uninstall echodir
+.PHONY: all install pkgcfg clean deinstall uninstall echodir prelib-build
 
 # autodetect dependencies object
 -include $(OBJS:.o=.d)

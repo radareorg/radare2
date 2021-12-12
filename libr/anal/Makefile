@@ -18,14 +18,12 @@ LDFLAGS+=$(LINK)
 
 .PHONY: all main plugins libs ${EXTRA_CLEAN}
 
-# all: plugins
 main:
 	$(MAKE) -C d
 	$(MAKE) all
 
-
 plugins: ${LIBSO} ${LIBAR}
-	@${MAKE} -C p all
+	@$(MAKE) -C p all
 
 include ${STATIC_ANAL_PLUGINS}
 include ${STATIC_ESIL_PLUGINS}
@@ -44,7 +42,6 @@ ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/elf32-xtensa.o
 
 OBJS=${STATIC_OBJS} ${OBJLIBS} ${ASMOBJS}
 ifeq ($(HAVE_GPERF),1)
-
 OBJS+=d/cc-arm-16.o
 OBJS+=d/cc-arm-32.o
 OBJS+=d/cc-arm-64.o
@@ -83,15 +80,14 @@ endif
 test tests: tests-esil
 
 tests-esil:
-	cd ../../test ; \
-		sh run_tests.sh t.esil
+	cd ../../test && sh run_tests.sh t.esil
 
 .PHONY: do doclean
 
 do:
-	${MAKE} -C d
+	$(MAKE) -C d
 
 doclean:
-	${MAKE} -C d clean
+	$(MAKE) -C d clean
 
 include $(LTOP)/rules.mk
