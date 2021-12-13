@@ -35,7 +35,7 @@ static RAsmEqu *__asm_equ_new(const char *key, const char *value) {
 	return equ;
 }
 
-R_API bool r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value) {
+R_API bool r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value) {
 	r_return_val_if_fail (code && key && value, false);
 
 	if (code->equs) {
@@ -55,7 +55,7 @@ R_API bool r_asm_code_set_equ (RAsmCode *code, const char *key, const char *valu
 	return true;
 }
 
-R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str) {
+R_API char *r_asm_code_equ_replace(RAsmCode *code, char *str) {
 	r_return_val_if_fail (code && str, NULL);
 	RAsmEqu *equ;
 	RListIter *iter;
