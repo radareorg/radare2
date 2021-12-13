@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2020 - pancake */
+/* radare - LGPL - Copyright 2012-2021 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -23,7 +23,7 @@ static bool inHomeWww(const char *path) {
 	bool ret = false;
 	char *homeWww = r_str_home (R2_HOME_WWWROOT R_SYS_DIR);
 	if (homeWww) {
-		if (!strncmp (path, homeWww, strlen (homeWww))) {
+		if (r_str_startswith (path, homeWww)) {
 			ret = true;
 		}
 		free (homeWww);
@@ -37,7 +37,7 @@ static bool inHomeWww(const char *path) {
  * Paths pointing into the webroot are an exception: For reaching the webroot, .. and absolute
  * path are ok.
  */
-R_API bool r_sandbox_check_path (const char *path) {
+R_API bool r_sandbox_check_path(const char *path) {
 	r_return_val_if_fail (path, false);
 	size_t root_len;
 	char *p;
@@ -120,7 +120,7 @@ R_API bool r_sandbox_disable (bool e) {
 	return enabled;
 }
 
-R_API bool r_sandbox_enable (bool e) {
+R_API bool r_sandbox_enable(bool e) {
 	if (enabled) {
 		if (!e) {
 			// eprintf ("Can't disable sandbox\n");
@@ -187,7 +187,7 @@ R_API bool r_sandbox_enable (bool e) {
 			eprintf ("sandbox: priv_allocset failed\n");
 			return false;
 		}
-		priv_basicset(priv);
+		priv_basicset (priv);
 		
 		for (i = 0; i < privrulescnt; i ++) {
 			if (priv_delset (priv, privrules[i]) != 0) {
@@ -210,7 +210,9 @@ R_API int r_sandbox_system(const char *x, int n) {
 		eprintf ("sandbox: system call disabled\n");
 		return -1;
 	}
-#if LIBC_HAVE_FORK
+#if __WINDOWS__
+	return system (x);
+#elif LIBC_HAVE_FORK
 #if LIBC_HAVE_SYSTEM
 	if (n) {
 #if APPLE_SDK_IPHONEOS
@@ -287,7 +289,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 	return -1;
 }
 
-R_API bool r_sandbox_creat (const char *path, int mode) {
+R_API bool r_sandbox_creat(const char *path, int mode) {
 	if (enabled) {
 		return false;
 #if 0
@@ -419,7 +421,7 @@ R_API int r_sandbox_open(const char *path, int perm, int mode) {
 	return ret;
 }
 
-R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
+R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 	r_return_val_if_fail (path && mode, NULL);
 	FILE *ret = NULL;
 	char *epath = NULL;
@@ -487,7 +489,7 @@ R_API int r_sandbox_kill(int pid, int sig) {
 	return -1;
 }
 #if __WINDOWS__
-R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
+R_API HANDLE r_sandbox_opendir(const char *path, WIN32_FIND_DATAW *entry) {
 	r_return_val_if_fail (path, NULL);
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath = 0;
@@ -504,7 +506,7 @@ R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
 	return FindFirstFileW (dir, entry);
 }
 #else
-R_API DIR* r_sandbox_opendir (const char *path) {
+R_API DIR* r_sandbox_opendir(const char *path) {
 	r_return_val_if_fail (path, NULL);
 	if (r_sandbox_enable (0)) {
 		if (path && !r_sandbox_check_path (path)) {
@@ -514,7 +516,7 @@ R_API DIR* r_sandbox_opendir (const char *path) {
 	return opendir (path);
 }
 #endif
-R_API bool r_sys_stop (void) {
+R_API bool r_sys_stop(void) {
 	if (enabled) {
 		return false;
 	}
