@@ -200,12 +200,12 @@ static pyc_object *get_long_object(RBuffer *buffer) {
 			return NULL;
 		}
 		size = (size - 1) / 4 + 1;
-		size += 3 + (neg? 1: 0);
-		j = size - 1;
-		if (j < 1 || size < 1) {
+		if (size < 1) {
 			free (ret);
 			return NULL;
 		}
+		size += 3 + (neg? 1: 0);
+		j = size - 1;
 		hexstr = calloc (size, sizeof (char));
 		if (!hexstr) {
 			free (ret);
