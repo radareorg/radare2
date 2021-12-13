@@ -377,6 +377,71 @@ static bool to_address(char const* addr_str, ut16* addr_out) {
 	return parse_hexadecimal (addr_str, addr_out);
 }
 
+static bool parse_register(char const* register_input, ut16* hex_out) {
+	if (!strcmp (register_input, "r0")) {
+		*hex_out = 0x00;
+	} else if (!strcmp (register_input, "r1")) {
+		*hex_out = 0x01;
+	} else if (!strcmp (register_input, "r2")) {
+		*hex_out = 0x02;
+	} else if (!strcmp (register_input, "r3")) {
+		*hex_out = 0x03;
+	} else if (!strcmp (register_input, "r4")) {
+		*hex_out = 0x04;
+	} else if (!strcmp (register_input, "r5")) {
+		*hex_out = 0x05;
+	} else if (!strcmp (register_input, "r6")) {
+		*hex_out = 0x06;
+	} else if (!strcmp (register_input, "r7")) {
+		*hex_out = 0x07;
+	} else if (!strcmp (register_input, "p0")) {
+		*hex_out = 0x80;
+	} else if (!strcmp (register_input, "sp")) {
+		*hex_out = 0x81;
+	} else if (!strcmp (register_input, "dpl")) {
+		*hex_out = 0x82;
+	} else if (!strcmp (register_input, "dph")) {
+		*hex_out = 0x83;
+	} else if (!strcmp (register_input, "pcon")) {
+		*hex_out = 0x87;
+	} else if (!strcmp (register_input, "tcon")) {
+		*hex_out = 0x88;
+	} else if (!strcmp (register_input, "tmod")) {
+		*hex_out = 0x89;
+	} else if (!strcmp (register_input, "tl0")) {
+		*hex_out = 0x8a;
+	} else if (!strcmp (register_input, "tl1")) {
+		*hex_out = 0x8b;
+	} else if (!strcmp (register_input, "th0")) {
+		*hex_out = 0x8c;
+	} else if (!strcmp (register_input, "th1")) {
+		*hex_out = 0x8d;
+	} else if (!strcmp (register_input, "p1")) {
+		*hex_out = 0x90;
+	} else if (!strcmp (register_input, "scon")) {
+		*hex_out = 0x98;
+	} else if (!strcmp (register_input, "sbuf")) {
+		*hex_out = 0x99;
+	} else if (!strcmp (register_input, "p2")) {
+		*hex_out = 0xa0;
+	} else if (!strcmp (register_input, "ie")) {
+		*hex_out = 0xa8;
+	} else if (!strcmp (register_input, "p3")) {
+		*hex_out = 0xb0;
+	} else if (!strcmp (register_input, "ip")) {
+		*hex_out = 0xb8;
+	} else if (!strcmp (register_input, "psw")) {
+		*hex_out = 0xd0;
+	} else if (!strcmp (register_input, "a") || !strcmp (register_input, "acc")) {
+		*hex_out = 0xe8;
+	} else if (!strcmp (register_input, "b")) {
+		*hex_out = 0xf0;
+	} else {
+		return false;
+	}
+	return true;
+}
+
 /**
  * attempts to parse the given string as an 8bit-wide address
  */
@@ -384,12 +449,24 @@ static bool address_direct(char const* addr_str, ut8* addr_out) {
 	ut16 addr_big;
 	// rasm2 resolves symbols, so does this really only need to parse hex?
 	// maybe TODO: check address bounds?
+	bool found;
 	if ( !parse_hexadecimal (addr_str, &addr_big)
 		|| (0xFF < addr_big)) {
-		return false;
+		found = false;
+	} else {
+		found = true;
 	}
+
+	if (found == false) {
+    	if ( !parse_register (addr_str, &addr_big)) {
+	    	found = false;
+	    } else {
+	    	found = true;
+	    }
+	}
+
 	*addr_out = addr_big;
-	return true;
+	return found;
 }
 
 /**
@@ -547,68 +624,8 @@ static bool singlearg_direct(ut8 const firstbyte, char const* arg
 {
 	bool ret = true;
 	ut8 address = 0x00;
-	if (!address_direct (arg, &address) && !is_reg (arg)) {
-		ret = false;
-	} else if (is_reg (arg)) {
-		if (!strcmp (arg, "r0")) {
-			address = 0x00;
-		} else if (!strcmp (arg, "r1")) {
-			address = 0x01;
-		} else if (!strcmp (arg, "r2")) {
-			address = 0x02;
-		} else if (!strcmp (arg, "r3")) {
-			address = 0x03;
-		} else if (!strcmp (arg, "r4")) {
-			address = 0x04;
-		} else if (!strcmp (arg, "r5")) {
-			address = 0x05;
-		} else if (!strcmp (arg, "r6")) {
-			address = 0x06;
-		} else if (!strcmp (arg, "r7")) {
-			address = 0x07;
-		}  else if (!strcmp (arg, "p0")) {
-			address = 0x80;
-		}  else if (!strcmp (arg, "sp")) {
-			address = 0x81;
-		}  else if (!strcmp (arg, "dpl")) {
-			address = 0x82;
-		}  else if (!strcmp (arg, "dph")) {
-			address = 0x83;
-		}  else if (!strcmp (arg, "pcon")) {
-			address = 0x87;
-		}  else if (!strcmp (arg, "tcon")) {
-			address = 0x88;
-		}  else if (!strcmp (arg, "tmod")) {
-			address = 0x89;
-		}  else if (!strcmp (arg, "tl0")) {
-			address = 0x8a;
-		}  else if (!strcmp (arg, "tl1")) {
-			address = 0x8b;
-		}  else if (!strcmp (arg, "th0")) {
-			address = 0x8c;
-		}  else if (!strcmp (arg, "th1")) {
-			address = 0x8d;
-		}  else if (!strcmp (arg, "p1")) {
-			address = 0x90;
-		}  else if (!strcmp (arg, "scon")) {
-			address = 0x98;
-		}  else if (!strcmp (arg, "sbuf")) {
-			address = 0x99;
-		}  else if (!strcmp (arg, "p2")) {
-			address = 0xa0;
-		}  else if (!strcmp (arg, "ie")) {
-			address = 0xa8;
-		}  else if (!strcmp (arg, "p3")) {
-			address = 0xb0;
-		}  else if (!strcmp (arg, "ip")) {
-			address = 0xb8;
-		}  else if (!strcmp (arg, "psw")) {
-			address = 0xd0;
-		}  else if (!strcmp (arg, "a") || !strcmp (arg, "acc")) {
-			address = 0xe8;
-		}  else if (!strcmp (arg, "b")) {
-			address = 0xf0;
-		}
+	if (!address_direct (arg, &address)) {
+		return false;
 	}
 
 	(*out)[0] = firstbyte;
