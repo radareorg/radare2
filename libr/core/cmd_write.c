@@ -315,7 +315,7 @@ static int wo_handler_old(void *data, const char *input) {
 			r_cons_printf ("Usage: 'woe from-to step'\n");
 			return -1;
 		}
-		/* fallthru */
+		/* fallthrough */
 	case 'a': // "woa"
 	case 's': // "wos"
 	case 'A': // "woA"

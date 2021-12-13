@@ -2053,7 +2053,7 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 		break;
 	case 'w':
 		size = 4;
-		// fallthru
+		// fallthrough
 	case 'x':
 		switch (size) {
 		default:

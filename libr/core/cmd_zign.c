@@ -928,8 +928,10 @@ static bool bestmatch(void *data, const char *input) {
 		return bestmatch_fcn (core, input, json);
 	case 'j':
 		json = true;
+		/* fallthrough */
 	case ' ':
 		input++;
+		/* fallthrough */
 	case '\x00':
 		return bestmatch_sig (core, input, json);
 	case '?':
