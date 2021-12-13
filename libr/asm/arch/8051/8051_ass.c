@@ -377,19 +377,97 @@ static bool to_address(char const* addr_str, ut16* addr_out) {
 	return parse_hexadecimal (addr_str, addr_out);
 }
 
+static bool parse_register(char const* register_input, ut8* hex_out) {
+	if (!strcmp (register_input, "r0")) {
+		*hex_out = 0x00;
+	} else if (!strcmp (register_input, "r1")) {
+		*hex_out = 0x01;
+	} else if (!strcmp (register_input, "r2")) {
+		*hex_out = 0x02;
+	} else if (!strcmp (register_input, "r3")) {
+		*hex_out = 0x03;
+	} else if (!strcmp (register_input, "r4")) {
+		*hex_out = 0x04;
+	} else if (!strcmp (register_input, "r5")) {
+		*hex_out = 0x05;
+	} else if (!strcmp (register_input, "r6")) {
+		*hex_out = 0x06;
+	} else if (!strcmp (register_input, "r7")) {
+		*hex_out = 0x07;
+	} else if (!strcmp (register_input, "p0")) {
+		*hex_out = 0x80;
+	} else if (!strcmp (register_input, "sp")) {
+		*hex_out = 0x81;
+	} else if (!strcmp (register_input, "dpl")) {
+		*hex_out = 0x82;
+	} else if (!strcmp (register_input, "dph")) {
+		*hex_out = 0x83;
+	} else if (!strcmp (register_input, "pcon")) {
+		*hex_out = 0x87;
+	} else if (!strcmp (register_input, "tcon")) {
+		*hex_out = 0x88;
+	} else if (!strcmp (register_input, "tmod")) {
+		*hex_out = 0x89;
+	} else if (!strcmp (register_input, "tl0")) {
+		*hex_out = 0x8a;
+	} else if (!strcmp (register_input, "tl1")) {
+		*hex_out = 0x8b;
+	} else if (!strcmp (register_input, "th0")) {
+		*hex_out = 0x8c;
+	} else if (!strcmp (register_input, "th1")) {
+		*hex_out = 0x8d;
+	} else if (!strcmp (register_input, "p1")) {
+		*hex_out = 0x90;
+	} else if (!strcmp (register_input, "scon")) {
+		*hex_out = 0x98;
+	} else if (!strcmp (register_input, "sbuf")) {
+		*hex_out = 0x99;
+	} else if (!strcmp (register_input, "p2")) {
+		*hex_out = 0xa0;
+	} else if (!strcmp (register_input, "ie")) {
+		*hex_out = 0xa8;
+	} else if (!strcmp (register_input, "p3")) {
+		*hex_out = 0xb0;
+	} else if (!strcmp (register_input, "ip")) {
+		*hex_out = 0xb8;
+	} else if (!strcmp (register_input, "psw")) {
+		*hex_out = 0xd0;
+	} else if (!strcmp (register_input, "a") || !strcmp (register_input, "acc")) {
+		*hex_out = 0xe8;
+	} else if (!strcmp (register_input, "b")) {
+		*hex_out = 0xf0;
+	} else {
+		return false;
+	}
+	return true;
+}
+
 /**
  * attempts to parse the given string as an 8bit-wide address
  */
 static bool address_direct(char const* addr_str, ut8* addr_out) {
 	ut16 addr_big;
+	ut8 addr_short;
 	// rasm2 resolves symbols, so does this really only need to parse hex?
 	// maybe TODO: check address bounds?
+	bool found;
 	if ( !parse_hexadecimal (addr_str, &addr_big)
 		|| (0xFF < addr_big)) {
-		return false;
+		found = false;
+	} else {
+		found = true;
 	}
+
+	if (!found) {
+		if ( !parse_register (addr_str, &addr_short)) {
+			return false;
+		}
+		*addr_out = addr_short;
+		return true;
+	}
+
 	*addr_out = addr_big;
-	return true;
+	return found;
 }
 
 /**
@@ -423,51 +501,7 @@ static bool address_bit(char const* addr_str, ut8* addr_out) {
 	}
 
 	ut8 addr_bytepart = 0x00;
-	if (!strcmp (bytepart, "b")) {
-		addr_bytepart = 0xf0;
-	} else if (!strcmp (bytepart, "a") || !strcmp (bytepart, "acc")) {
-		addr_bytepart = 0xe0;
-	} else if (!strcmp (bytepart, "psw")) {
-		addr_bytepart = 0xd0;
-	} else if (!strcmp (bytepart, "r8")) {
-		addr_bytepart = 0xc0;
-	} else if (!strcmp (bytepart, "ip")) {
-		addr_bytepart = 0xb8;
-	} else if (!strcmp (bytepart, "p3")) {
-		addr_bytepart = 0xb0;
-	} else if (!strcmp (bytepart, "ie")) {
-		addr_bytepart = 0xa8;
-	} else if (!strcmp (bytepart, "p2")) {
-		addr_bytepart = 0xa0;
-	} else if (!strcmp (bytepart, "sbuf")) {
-		addr_bytepart = 0x99;
-	} else if (!strcmp (bytepart, "scon")) {
-		addr_bytepart = 0x98;
-	} else if (!strcmp (bytepart, "p1")) {
-		addr_bytepart = 0x90;
-	} else if (!strcmp (bytepart, "th1")) {
-		addr_bytepart = 0x8d;
-	} else if (!strcmp (bytepart, "th0")) {
-		addr_bytepart = 0x8c;
-	} else if (!strcmp (bytepart, "tl1")) {
-		addr_bytepart = 0x8b;
-	} else if (!strcmp (bytepart, "tl0")) {
-		addr_bytepart = 0x8a;
-	} else if (!strcmp (bytepart, "tmod")) {
-		addr_bytepart = 0x89;
-	} else if (!strcmp (bytepart, "tcon")) {
-		addr_bytepart = 0x88;
-	} else if (!strcmp (bytepart, "pcon")) {
-		addr_bytepart = 0x87;
-	} else if (!strcmp (bytepart, "dph")) {
-		addr_bytepart = 0x83;
-	} else if (!strcmp (bytepart, "dpl")) {
-		addr_bytepart = 0x82;
-	} else if (!strcmp (bytepart, "sp")) {
-		addr_bytepart = 0x81;
-	} else if (!strcmp (bytepart, "p0")) {
-		addr_bytepart = 0x80;
-	} else {
+    if (!parse_register(bytepart, &addr_bytepart)) {
 		if (!address_direct (bytepart, &byte)) {
 			ret = false;
 			goto end;
@@ -545,14 +579,16 @@ static bool singlearg_reladdr(ut8 const firstbyte, char const* arg
 static bool singlearg_direct(ut8 const firstbyte, char const* arg
 	, ut8 **out)
 {
-	ut8 address;
+	bool ret = true;
+	ut8 address = 0x00;
 	if (!address_direct (arg, &address)) {
 		return false;
 	}
+
 	(*out)[0] = firstbyte;
 	(*out)[1] = address;
 	*out += 2;
-	return true;
+	return ret;
 }
 
 static bool singlearg_immediate(ut8 firstbyte, char const* imm_str, ut8**out) {
