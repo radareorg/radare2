@@ -386,7 +386,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 				break;*/
 			default:
 				if (is_register_found == false) {
-					retVal = snprintf (strOperand, 5, "0x%x", dInstruction.operands[operandNum]);
+					retVal = snprintf (strOperand, strOperandSize, "0x%x", dInstruction.operands[operandNum]);
 				}
 				break;
 			}
@@ -414,7 +414,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 			}
 		}
 		if (is_register_found) {
-			retVal = r_str_ncpy (strOperand, current_register, sizeof (strOperand));
+			retVal = r_str_ncpy (strOperand, current_register, strOperandSize);
 		} else {
 			retVal = snprintf (strOperand, 5, "0x%x", dInstruction.operands[operandNum]);
 		}
@@ -727,13 +727,7 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 				current_register = "pcicr";
 				is_register_found = true;
 				break;*/
-
-
-
 			default:
-				if (is_register_found == false) {
-					retVal = snprintf (strOperand, strOperandSize, "0x%x", dInstruction.operands[operandNum]);
-				}
 				break;
 			}
 		}
@@ -741,10 +735,10 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 
 		if (is_register_found) {
 			r_str_ncpy (strOperand, current_register, strOperandSize);
+			retVal = strlen (strOperand);
 		} else {
 			retVal = snprintf (strOperand, strOperandSize, "0x%x", dInstruction.operands[operandNum]);
 		}
-		retVal = strlen (strOperand);
 		break;
 	}
 	case OPERAND_WORD_DATA:

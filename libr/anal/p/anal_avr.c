@@ -2278,9 +2278,10 @@ static bool set_reg_profile(RAnal *anal) {
 			"gpr		ubrr0l	.8		90		0\n"
 			"gpr		ubrr0l	.8		90		0\n"
 			;
-		RStrBuf *registers_profile_buffer = r_strbuf_new (registers_profile);
-		r_strbuf_append (registers_profile_buffer, section_two);
-		registers_profile = r_strbuf_drain (registers_profile_buffer);
+		RStrBuf *sb = r_strbuf_new (registers_profile);
+		r_strbuf_append (sb, section_two);
+		free (registers_profile);
+		registers_profile = r_strbuf_drain (sb);
 	}
 
 	int status = r_reg_set_profile_string (anal->reg, registers_profile);

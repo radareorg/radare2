@@ -144,7 +144,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 		if (objc->core->bin->verbose) {
 			eprintf ("aao: Truncating ss_const from %zu to %zu\n", ss_const, maxsize);
 		}
-		ss_selrefs = maxsize;
+		ss_const = maxsize;
 	}
 	if (ss_selrefs > maxsize) {
 		if (objc->core->bin->verbose) {
