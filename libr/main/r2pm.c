@@ -9,41 +9,38 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 		r_strbuf_appendf (sb, " %s", argv[i]);
 	}
 	char *cmd = r_strbuf_drain (sb);
-	int res = r_sandbox_system (cmd);
+	int res = r_sandbox_system (cmd, 0);
 	free (cmd);
 	return res;
 }
 
 static const char *helpmsg = \
-"Usage: r2pm [init|update|cmd] [...]\n"\
+"Usage: r2pm [-flags] [pkgs...]\n"\
 "Commands:\n"\
-" -I,info                     information about repository and installed packages\n"\
-" -i,install <pkgname>        install or update package in your home (pkgname=all)\n"\
-" -gi,global-install <pkg>    install or update package system-wide\n"\
-" -gu,global-uninstall <pkg>  uninstall pkg from systemdir\n"\
-" -U,upgrade                  r2pm -U (upgrade all outdated plugins)\n"\
-" -u,uninstall <pkgname>      r2pm -u baleful (-uu to force)\n"\
-" -l,list                     list installed pkgs\n"\
-" -r,run [cmd ...args]        run shell command with R2PM_BINDIR in PATH\n"\
-" -s,search [<keyword>]       search in database\n"\
-" -v,version                  show version\n"\
-" -h,help                     show this message\n"\
-" -H variable                 show value of given variable\n"\
-" -c,clean ([git/dir])        clear source cache (GITDIR)\n"\
-" -ci (pkgname)               clean install of given package\n"\
-" -cp                         clean the user's home plugin directory\n"\
-" -d,doc [pkgname]            show documentation for given package (WIP)\n"\
-" init | update ..            initialize/update database\n"\
-" cd [git/dir]                cd into given git (see 'r2pm ls')\n"\
-" ls                          ls all cloned git repos in GITDIR\n"\
-" purge                       self destroy all r2 installations\n"\
-" cache                       cache contents of r2 -H to make r2pm r2-independent\n"\
+" -c ([git/dir])      clear source cache (GITDIR)\n"\
+" -ci <pkgname>       clean + install\n"\
+" -cp                 clean the user's home plugin directory\n"\
+" -d,doc [pkgname]    show documentation for given package\n"\
+" -f                  force operation (install, uninstall, ..)\n"\
+" -gi <pkg>           global install (system-wide)\n"\
+" -h                  show this message\n"\
+" -H variable         show value of given variable\n"\
+" -I                  information about repository and installed packages\n"\
+" -i <pkgname>        install or update package in your home (pkgname=all)\n"\
+" -l                  list installed pkgs\n"\
+" -r [cmd ...args]    run shell command with R2PM_BINDIR in PATH\n"\
+" -s [<keyword>]      search in database\n"\
+" -uci <pkgname>      uninstall + clean + install\n"\
+" -ui <pkgname>       uninstall + install\n"\
+" -u <pkgname>        r2pm -u baleful (See -f to force uninstall)\n"\
+" -U                  r2pm -U (upgrade all outdated packages)\n"\
+" -v                  show version\n"\
 "Environment:\n"\
-" SUDO=sudo                   use this tool as sudo\n"\
+" SUDO=sudo           use this tool as sudo\n"\
 " R2PM_PLUGDIR=${R2PM_PLUGDIR}\n"\
 " R2PM_BINDIR=${R2PM_BINDIR}\n"\
-" R2PM_OFFLINE=0              disabled by default, avoid init/update calls if set to !=0\n"\
-" R2PM_NATIVE=0               set to 1 to use the native C codepath for r2pm\n"\
+" R2PM_OFFLINE=0      disabled by default, avoid init/update calls if set to !=0\n"\
+" R2PM_NATIVE=0       set to 1 to use the native C codepath for r2pm\n"\
 " R2PM_DBDIR=${R2PM_DBDIR}\n"\
 " R2PM_GITDIR=${R2PM_GITDIR}\n"\
 " R2PM_GITSKIP=${R2PM_GITSKIP}\n";
@@ -65,14 +62,14 @@ typedef struct r_r2pm_t {
 
 static int git_pull(const char *dir) {
 	char *s = r_str_newf ("cd %s\ngit pull", dir);
-	int rc = r_sandbox_system (s);
+	int rc = r_sandbox_system (s, 0);
 	free (s);
 	return rc;
 }
 
 static int git_clone(const char *dir, const char *url) {
 	char *cmd = r_str_newf ("git clone -q --depth=3 --recursive %s %s", url, dir);
-	int rc = r_sandbox_system (cmd);
+	int rc = r_sandbox_system (cmd, 0);
 	free (cmd);
 	return rc;
 }
@@ -80,21 +77,16 @@ static int git_clone(const char *dir, const char *url) {
 static bool r2pm_actionword(R2Pm *r2pm, const char *action) {
 	if (!strcmp (action, "init") || !strcmp (action, "update")) {
 		r2pm->init = true;
-		return true;
-	}
-	if (!strcmp (action, "help")) {
+	} else if (!strcmp (action, "help")) {
 		r2pm->help = true;
-		return true;
-	}
-	if (!strcmp (action, "info")) {
+	} else if (!strcmp (action, "info")) {
 		r2pm->info = true;
-		return true;
-	}
-	if (!strcmp (action, "help")) {
+	} else if (!strcmp (action, "help")) {
 		r2pm->help = true;
-		return true;
+	} else {
+		return false;
 	}
-	return false;
+	return true;
 }
 
 static char *r2pm_bindir(void) {
@@ -245,7 +237,7 @@ static int r2pm_install_pkg(const char *pkg) {
 	r2pm_setenv ();
 	char *srcdir = r2pm_gitdir ();
 	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
-	int res = r_sandbox_system (s);
+	int res = r_sandbox_system (s, 0);
 	free (s);
 	return res;
 }
@@ -274,7 +266,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 	char *srcdir = r2pm_gitdir ();
 	char *s = r_str_newf ("cd %s/%s\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s",
 		srcdir, pkg, script);
-	int res = r_sandbox_system (s);
+	int res = r_sandbox_system (s, 0);
 	free (s);
 	free (srcdir);
 	return res;
@@ -418,6 +410,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "cihflgrsuI");
 	if (opt.ind < argc) {
+		// TODO: deprecate, only use flags imho
 		r2pm_actionword (&r2pm, argv[opt.ind]);
 	}
 	int i, c;
@@ -465,11 +458,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	if (r2pm.run) {
 		char *opath = r_sys_getenv ("PATH");
 		char *bindir = r2pm_bindir ();
-#if __WINDOWS__
-		const char *sep = ";";
-#else
-		const char *sep = ":";
-#endif
+		const char *sep = R_SYS_ENVSEP;
 		char *newpath = r_str_newf ("%s%s%s", bindir, sep, opath);
 		r_sys_setenv ("PATH", newpath);
 		int res = 0;
@@ -482,7 +471,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			r_strbuf_appendf (sb, " %s", argv[i]);
 		}
 		char *cmd = r_strbuf_drain (sb);
-		r_sandbox_system (cmd);
+		r_sandbox_system (cmd, 0);
 		free (cmd);
 		return res;
 	}
