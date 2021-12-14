@@ -975,7 +975,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	}
 
-	switch(_8051_ops[i].instr) {
+	switch (_8051_ops[i].instr) {
 	case OP_PUSH:
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 1;
@@ -1022,6 +1022,9 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case OP_JNB:
 		op->jump = arg_offset (addr + op->size, buf[op->size - 1]);
 		op->fail = addr + op->size;
+		break;
+	default:
+		// TODO
 		break;
 	}
 
