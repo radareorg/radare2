@@ -681,9 +681,9 @@ static bool gb_custom_daa (RAnalEsil *esil) {
 	if (!esil || !esil->anal || !esil->anal->reg) {
 		return false;
 	}
-	char *v = r_anal_esil_pop(esil);
+	char *v = r_anal_esil_pop (esil);
 	ut64 n;
-	if (!v || !r_anal_esil_get_parm(esil, v, &n)) {
+	if (!v || !r_anal_esil_get_parm (esil, v, &n)) {
 		return false;
 	}
 	R_FREE (v);
@@ -708,7 +708,7 @@ static bool gb_custom_daa (RAnalEsil *esil) {
 			val += 0x06;
 		};
 	}
-	return r_anal_esil_pushnum(esil, val);
+	return r_anal_esil_pushnum (esil, val);
 }
 
 static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
