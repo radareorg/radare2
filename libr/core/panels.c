@@ -5649,7 +5649,6 @@ static bool __init_panels_menu(RCore *core) {
 		} else {
 			__add_menu (core, parent, menus_Help[i], __help_cb);
 		}
-		i++;
 	}
 
 	parent = "File.ReOpen";
