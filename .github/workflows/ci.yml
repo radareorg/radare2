@@ -429,7 +429,7 @@ jobs:
         path: radare2*android*aarch64.tar.gz
 
   android-acr-arm:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -439,7 +439,7 @@ jobs:
       run: sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with acr
       run: |
-        sys/android-ndk-install.sh
+        sys/android-ndk-install.sh 9
         sys/android-build.sh arm
         ls -l
     - name: Extract r2 version
