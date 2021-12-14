@@ -487,9 +487,6 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 
 				if (!sdb_module || strcmp (symdllname, sdb_module)) {
 					sdb_free (db);
-					if (db) {
-						sdb_free (db);
-					}
 					db = NULL;
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
@@ -498,8 +495,11 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 						db = sdb_new (NULL, filename, 0);
 					} else {
 						const char *dirPrefix = r_sys_prefix (NULL);
+						char *lower_symdllname = strdup (symdllname);
+						r_str_case (lower_symdllname, false);
 						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
-							dirPrefix, symdllname);
+							dirPrefix, lower_symdllname);
+						free (lower_symdllname);
 						if (r_file_exists (filename)) {
 							db = sdb_new (NULL, filename, 0);
 						}
