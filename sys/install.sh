@@ -67,7 +67,13 @@ if [ "$1" != "--without-pull" ]; then
 		git branch | grep "^\* master" > /dev/null
 		if [ $? = 0 ]; then
 			echo "WARNING: Updating from remote repository"
-			git pull https://github.com/radareorg/radare2 master
+			# Attempt to update from an existing remote
+			UPSTREAM_REMOTE=$(git remote -v | grep 'radareorg/radare2 (fetch)' | cut -f1 | head -n1)
+			if [ -n "$UPSTREAM_REMOTE" ]; then
+				git pull "$UPSTREAM_REMOTE" master
+			else
+				git pull https://github.com/radareorg/radare2 master
+			fi
 		fi
 	fi
 else
