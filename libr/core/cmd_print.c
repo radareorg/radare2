@@ -246,7 +246,7 @@ static const char *help_msg_pd[] = {
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
-	"pdu", "[aces?]", "disassemble instructions until condition",
+	"pdu", "[aceios?]", "disassemble instructions until condition",
 	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
 	NULL
@@ -293,10 +293,12 @@ static const char *help_msg_pds[] = {
 };
 
 static const char *help_msg_pdu[] = {
-	"Usage:", "pdu[aces]", "Disassemble instructions until condition",
+	"Usage:", "pdu[aceios]", "Disassemble instructions until condition",
 	"pdua", " [addr]", "disassemble until address",
 	"pduc", "", "disassemble until call",
 	"pdue", " [expr]", "disassemble until esil expression",
+	"pdui", " [inst]", "disassemble until instruction (e.g.: add esp, 0x20)",
+	"pduo", " [opcode]", "disassemble until opcode (e.g.: mul)",
 	"pdus", "", "disassemble until syscall",
 	NULL
 };
@@ -1094,7 +1096,7 @@ static void pdu_help(RCore *core, char spec) {
 	r_config_set_b (core->config, "scr.color.grep", true);
 
 	/* only show relevant subcmd line if applicable */
-	const char *help = r_core_cmd_strf (core, "pdu?~pdu%c", spec);
+	char *help = r_core_cmd_strf (core, "pdu?~pdu%c", spec);
 	if (help && *help) { // strlen (help) > 0
 		r_cons_printf ("%s", help);
 	} else {
@@ -1108,18 +1110,18 @@ static void pdu_help(RCore *core, char spec) {
 
 // TODO: json support
 static int cmd_pdu(RCore *core, const char *input) {
+	int ret = 0;
 	const char *sep = strchr (input, ' ');
 	const char *arg = sep? sep+1: NULL;
 
-#if 0
-	DPRINTstr (input);
-	DPRINTstr (help);
-	DPRINTstr (sep);
-#endif
-
-	//ut8 *block = core->block;
-	ut64 to;
-	ut64 count;
+	ut64 len = core->blocksize;
+	ut8 *buf = malloc (len);
+	if (buf) {
+		r_io_read_at (core->io, core->offset, buf, len);
+	} else {
+		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		return 1;
+	}
 
 	switch (*input) {
 	case 'a': // "pdua"
@@ -1141,40 +1143,65 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 2;
 		}
 
-		count = to - core->offset;
+		//count = to - core->offset;
 		// pD <count> @<offset>
-		r_core_cmdf (core, "pD %" PFMT64u " @0x%" PFMT64x, count, core->offset);
+		//r_core_cmdf (core, "pD %" PFMT64u " @0x%" PFMT64x, count, core->offset);
+		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
+				"address", &to, input[1] == 'j', NULL, NULL);
 		break;
-	case 'c':  // "pduc"
+	case 'c': // "pduc"
 		if (input[1] == '?') {
 			pdu_help (core, 'c');
 			return 0;
 		}
 
-		r_cons_printf ("pduc functionality goes here\n");
+		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
+				"opcode", "call", input[1] == 'j', NULL, NULL;);
 		break;
-	case 'e':  // "pdue"
+	case 'e': // "pdue"
 		if (input[1] == '?' || !arg) {
 			pdu_help (core, 'e');
 			return 0;
 		}
 
-		r_cons_printf ("pdue functionality goes here\n");
+		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM, "esil",
+				arg, input[1] == 'j', NULL, NULL);
 		break;
-	case 's':  // "pdus"
+	case 'i': // "pdui"
+		if (input[1] == '?' || !arg) {
+			pdu_help (core, 'i');
+			return 0;
+		}
+
+		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
+				"instruction", arg, input[1] == 'j', NULL, NULL);
+		break;
+	case 'o': // "pduo"
+		if (input[1] == '?' || !arg) {
+			pdu_help (core, 'o');
+			return 0;
+		}
+
+		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
+				"opcode", arg, input[1] == 'j', NULL, NULL);
+		break;
+	case 's': // "pdus"
 		if (input[1] == '?') {
 			pdu_help (core, 's');
 			return 0;
 		}
 
-		r_cons_printf ("pdus functionality goes here\n");
+		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
+				"opcode", "syscall", input[1] == 'j', NULL, NULL);
 		break;
 	case '?': // "pdu?"
 	default:
 		r_core_cmd_help (core, help_msg_pdu);
 		break;
 	}
-	return 0;
+
+	free (buf);
+	return ret;
 }
 
 static void cmd_pDj(RCore *core, const char *arg) {
