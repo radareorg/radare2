@@ -621,7 +621,7 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 // example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
 // output  : 0xffffffffffffff81
 static bool esil_signext(RAnalEsil *esil) {
-	return r_anal_esil_signext(esil, false);
+	return r_anal_esil_signext (esil, false);
 }
 
 // sign extension assignement
@@ -630,7 +630,7 @@ static bool esil_signext(RAnalEsil *esil) {
 // output  : > ar a0
 //           0xffffff81
 static bool esil_signexteq(RAnalEsil *esil) {
-	return r_anal_esil_signext(esil, true);
+	return r_anal_esil_signext (esil, true);
 }
 
 static bool esil_zf(RAnalEsil *esil) {
@@ -2959,19 +2959,19 @@ static bool esil_set_delay_slot(RAnalEsil *esil) {
 }
 
 static int esil_get_parm_float(RAnalEsil *esil, const char *str, double *num) {
-	return r_anal_esil_get_parm(esil, str, (ut64 *)num);
+	return r_anal_esil_get_parm (esil, str, (ut64 *)num);
 }
 
 static bool esil_pushnum_float(RAnalEsil *esil, double num) {
 	RNumFloat n;
 	n.f64 = num;
-	return r_anal_esil_pushnum(esil, n.u64);
+	return r_anal_esil_pushnum (esil, n.u64);
 }
 
 static bool esil_is_nan(RAnalEsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop(esil);
+	char *src = r_anal_esil_pop (esil);
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
 			ret = r_anal_esil_pushnum (esil, isnan(s));
@@ -2988,7 +2988,7 @@ static bool esil_is_nan(RAnalEsil *esil) {
 static bool esil_int_to_double(RAnalEsil *esil, int sign) {
 	bool ret = false;
 	RNumFloat s;
-	char *src = r_anal_esil_pop(esil);
+	char *src = r_anal_esil_pop (esil);
 	if (src) {
 		if (r_anal_esil_get_parm (esil, src, &s.u64)) {
 			if (sign) {
@@ -3017,13 +3017,13 @@ static bool esil_unsigned_to_double(RAnalEsil *esil) {
 static bool esil_double_to_int(RAnalEsil *esil) {
 	bool ret = false;
 	RNumFloat s;
-	char *src = r_anal_esil_pop(esil);
+	char *src = r_anal_esil_pop (esil);
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s.f64)) {
 			if (isnan(s.f64) || isinf(s.f64)) {
 				ERR("esil_float_to_int: nan or inf detected.");
 			}
-			ret = r_anal_esil_pushnum(esil, (st64)(s.f64));
+			ret = r_anal_esil_pushnum (esil, (st64)(s.f64));
 		} else {
 			ERR("esil_float_to_int: invalid parameters.");
 		}
@@ -3039,8 +3039,8 @@ static bool esil_double_to_float(RAnalEsil *esil) {
 	RNumFloat d;
 	RNumFloat f;
 	ut64 s = 0;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d.f64)) {
 		if (isnan(d.f64) || isinf(d.f64)) {
@@ -3067,8 +3067,8 @@ static bool esil_float_to_double(RAnalEsil *esil) {
 	bool ret = false;
 	RNumFloat d;
 	ut64 s = 0;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (r_anal_esil_get_parm(esil, src, &s) && esil_get_parm_float(esil, dst, &d.f64)) {
 		if (isnan(d.f64) || isinf(d.f64)) {
@@ -3092,8 +3092,8 @@ static bool esil_float_to_double(RAnalEsil *esil) {
 static bool esil_float_cmp(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (src && dst && esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
@@ -3112,8 +3112,8 @@ static bool esil_float_cmp(RAnalEsil *esil) {
 static bool esil_float_negcmp(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (src && dst && esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s) || isnan(d)) {
@@ -3202,8 +3202,8 @@ static bool esil_float_add(RAnalEsil *esil) {
 static bool esil_float_sub(RAnalEsil *esil) {
 	bool ret = false;
 	double s, d;
-	char *dst = r_anal_esil_pop(esil);
-	char *src = r_anal_esil_pop(esil);
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (esil_get_parm_float(esil, src, &s) && esil_get_parm_float(esil, dst, &d)) {
 		if (isnan(s)) {
@@ -3355,7 +3355,7 @@ static bool esil_float_floor(RAnalEsil *esil) {
 static bool esil_float_round(RAnalEsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop(esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
@@ -3377,7 +3377,7 @@ static bool esil_float_round(RAnalEsil *esil) {
 static bool esil_float_sqrt(RAnalEsil *esil) {
 	bool ret = false;
 	double s;
-	char *src = r_anal_esil_pop(esil);
+	char *src = r_anal_esil_pop (esil);
 
 	if (src) {
 		if (esil_get_parm_float(esil, src, &s)) {
