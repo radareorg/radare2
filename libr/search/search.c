@@ -86,6 +86,7 @@ R_API int r_search_set_mode(RSearch *s, int mode) {
 	case R_SEARCH_STRING: s->update = search_strings_update; break;
 	case R_SEARCH_DELTAKEY: s->update = search_deltakey_update; break;
 	case R_SEARCH_MAGIC: s->update = search_magic_update; break;
+	case R_SEARCH_PATTERN: s->update = NULL; break;
 	}
 	if (s->update || mode == R_SEARCH_PATTERN) {
 		s->mode = mode;
@@ -482,6 +483,17 @@ R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 		eprintf ("r_search_update: No search method defined\n");
 	}
 	return ret;
+}
+
+// like r_search_update but uses s->iob, does not need to loop as much
+R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
+	switch (s->mode) {
+	case R_SEARCH_PATTERN:
+		return search_pattern (s, from, to);
+	default:
+		eprintf ("Unsupported mode\n");
+		return -1;
+	}
 }
 
 static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
