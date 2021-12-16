@@ -61,6 +61,7 @@ typedef void (RSearchDFree)(void *ptr);
 typedef struct r_search_t {
 	int n_kws; // hit${n_kws}_${count}
 	int mode;
+	int longest; // iff > 0, longest element in kws
 	ut32 pattern_size;
 	ut32 string_min; // max length of strings for R_SEARCH_STRING
 	ut32 string_max; // min length of strings for R_SEARCH_STRING
