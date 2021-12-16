@@ -16,7 +16,7 @@ Darwin)
 esac
 
 API=28
-[ -z "$1" ] && API="$1"
+[ -n "$1" ] && API="$1"
 
 echo Downloading NDK $V...
 wget -c -q https://dl.google.com/android/repository/android-ndk-$V-$O-x86_64.zip

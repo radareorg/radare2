@@ -28,7 +28,8 @@ endif
 
 MKPLUGINS=mk/stat.mk mk/sloc.mk
 
-COMPILER=@USERCC@
+USERCC=@USERCC@
+COMPILER=$(shell basename ${USERCC})
 DEBUGGER=@DEBUGGER@
 
 INSTALL_DIR=@INSTALL_DIR@
