@@ -3821,13 +3821,18 @@ reread:
 		} else if (input[param_offset - 1]) {
 			int ps = atoi (input + param_offset);
 			if (ps > 1) {
+				r_search_set_mode (core->search, R_SEARCH_PATTERN);
+				r_search_pattern_size (core->search, ps);
+
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
-					eprintf ("-- %llx %llx\n", r_io_map_begin (map), r_io_map_end (map));
+					ut64 from = r_io_map_begin (map);
+					ut64 to = r_io_map_end (map);
+					eprintf ("-- %llx %llx\n", from, to);
+
 					r_cons_break_push (NULL, NULL);
-					r_search_pattern_size (core->search, ps);
-					r_search_pattern (core->search, r_io_map_begin (map), r_io_map_end (map));
+					r_search_update_read (core->search, from, to);
 					r_cons_break_pop ();
 				}
 				break;
