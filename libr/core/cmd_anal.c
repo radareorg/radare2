@@ -11579,6 +11579,17 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
+case 'l':
+{
+RList *l = r_asm_cpus (core->rasm);
+RListIter *iter;
+char *c;
+r_list_foreach (l, iter, c) {
+eprintf ("- %s\n", c);
+}
+r_list_free (l);
+}
+break;
 	case 'f': // "af"
 		{
 		int res = cmd_anal_fcn (core, input);

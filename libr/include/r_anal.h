@@ -1307,6 +1307,7 @@ typedef struct r_anal_plugin_t {
 	char *arch;
 	char *author;
 	char *version;
+	char *cpus;
 	int bits;
 	int esil; // can do esil or not
 	int fileformat_type;
