@@ -439,7 +439,7 @@ jobs:
       run: sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with acr
       run: |
-        sys/android-ndk-install.sh 9 arm
+        sys/android-ndk-install.sh 16 arm
         sys/android-build.sh arm
         ls -l
     - name: Extract r2 version
