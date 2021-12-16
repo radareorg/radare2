@@ -147,7 +147,7 @@ static inline int get_longest(RSearch *s) {
 	RListIter *iter;
 	RSearchKeyword *kw;
 	r_list_foreach (s->kws, iter, kw) {
-		s->longest = R_MAX (l, kw->keyword_length);
+		s->longest = R_MAX (s->longest, kw->keyword_length);
 	}
 	return s->longest;
 }
