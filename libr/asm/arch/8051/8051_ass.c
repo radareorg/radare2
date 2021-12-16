@@ -958,6 +958,7 @@ static bool mnem_mov_c(char const*const*arg, ut16 pc, ut8**out) {
 }
 
 static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
+	//TODO handle r1!!!
 	if (!r_str_casecmp (arg[0], "dptr")) {
 		ut16 imm;
 		if (!resolve_immediate (arg[1] + 1, &imm)) {
@@ -1040,6 +1041,31 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 		*out += 3;
 		return true;
 	}
+
+	if (!r_str_casecmp (arg[0], "@r0")) {
+		ut16 imm;
+		if (!resolve_immediate (arg[1] + 1, &imm)) {
+			return false;
+		}
+		(*out)[0] = 0x76;
+		(*out)[1] = imm >> 8;
+		(*out)[2] = imm;
+		*out += 3;
+		return true;
+	}
+
+	if (!r_str_casecmp (arg[0], "@r1")) {
+		ut16 imm;
+		if (!resolve_immediate (arg[1] + 1, &imm)) {
+			return false;
+		}
+		(*out)[0] = 0x77;
+		(*out)[1] = imm >> 8;
+		(*out)[2] = imm;
+		*out += 3;
+		return true;
+	}
+
 	ut8 src_addr;
 	if (!address_direct (arg[1], &src_addr)) {
 		return false;
