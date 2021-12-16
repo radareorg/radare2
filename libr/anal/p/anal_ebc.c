@@ -4,7 +4,7 @@
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_anal.h>
-#include <ebc_disas.h>
+#include "../arch/ebc/ebc_disas.h"
 
 static void ebc_anal_jmp8(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	int jmpadr = (int8_t)buf[1];
