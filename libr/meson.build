@@ -190,7 +190,6 @@ asm_plugins += [
   'cr16',
   'dalvik',
   'dcpu16',
-  'ebc',
   'gb',
   'h8300',
   'hexagon',
