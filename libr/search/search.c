@@ -36,6 +36,7 @@ R_API RSearch *r_search_new(int mode) {
 	s->contiguous = 0;
 	s->overlap = false;
 	s->pattern_size = 0;
+	s->longest = -1;
 	s->string_max = 255;
 	s->string_min = 3;
 	s->hits = r_list_newf (free);
@@ -140,17 +141,28 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	return s->maxhits && s->nhits >= s->maxhits? 2: 1;
 }
 
+static inline int get_longest(RSearch *s) {
+	if (s->longest > 0) {
+		return s->longest;
+	}
+	RListIter *iter;
+	RSearchKeyword *kw;
+	r_list_foreach (s->kws, iter, kw) {
+		s->longest = R_MAX (s->longest, (int)kw->keyword_length);
+	}
+	return s->longest;
+}
+
 // TODO support search across block boundaries
 // Supported search variants: backward, overlap
 R_IPI int search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RListIter *iter;
-	int longest = 0, i, j;
+	int i, j;
 	RSearchKeyword *kw;
 	RSearchLeftover *left;
 	const int old_nhits = s->nhits;
-	r_list_foreach (s->kws, iter, kw) {
-		longest = R_MAX (longest, kw->keyword_length + 1);
-	}
+
+	int longest = get_longest (s) + 1;
 	if (!longest) {
 		return 0;
 	}
@@ -363,13 +375,11 @@ R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RSearchKeyword *kw;
 	RListIter *iter;
 	RSearchLeftover *left;
-	int longest = 0, i;
+	int i;
 	const int old_nhits = s->nhits;
 
-	r_list_foreach (s->kws, iter, kw) {
-		longest = R_MAX (longest, kw->keyword_length);
-	}
-	if (!longest) {
+	int longest = get_longest (s);
+	if (longest <= 0) {
 		return 0;
 	}
 	if (s->data) {
@@ -519,6 +529,7 @@ R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
 	if (!kw || !kw->keyword_length) {
 		return false;
 	}
+	s->longest = R_MAX ((int)kw->keyword_length, s->longest);
 	kw->kwidx = s->n_kws++;
 	r_list_append (s->kws, kw);
 	return true;
@@ -554,6 +565,7 @@ R_API void r_search_reset(RSearch *s, int mode) {
 }
 
 R_API void r_search_kw_reset(RSearch *s) {
+	s->longest = -1;
 	r_list_purge (s->kws);
 	r_list_purge (s->hits);
 	if (s->datafree) {
