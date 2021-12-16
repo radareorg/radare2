@@ -1622,6 +1622,10 @@ RDebugPlugin r_debug_plugin_native = {
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "mips",
 	.canstep = false,
+#elif __loongarch
+	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
+	.arch = "loongarch",
+	.canstep = false,
 #elif __powerpc__
 # if __powerpc64__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,

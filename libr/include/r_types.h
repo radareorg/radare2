@@ -530,6 +530,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_SYS_ARCH "mips"
 #define R_SYS_BITS R_SYS_BITS_32
 #define R_SYS_ENDIAN 1
+#elif __loongarch__
+#define R_SYS_ARCH "loongarch"
+#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
+#define R_SYS_ENDIAN 1
 #elif __EMSCRIPTEN__
 /* we should default to wasm when ready */
 #define R_SYS_ARCH "x86"

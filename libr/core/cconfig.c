@@ -3669,7 +3669,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_getter (cfg, "dbg.swstep", (RConfigCallback)__dbg_swstep_getter);
 
 // TODO: This should be specified at first by the debug backend when attaching
-#if __arm__ || __mips__
+#if __arm__ || __mips__ || __loongarch__
 	SETICB ("dbg.bpsize", 4, &cb_dbgbpsize, "Size of software breakpoints");
 #else
 	SETICB ("dbg.bpsize", 1, &cb_dbgbpsize, "Size of software breakpoints");

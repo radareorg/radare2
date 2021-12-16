@@ -121,6 +121,8 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 #  endif
 #elif __mips__
 #  define r_sys_breakpoint() __asm__ volatile ("break");
+#elif __loongarch__
+#  define r_sys_breakpoint() __asm__ volatile ("break");
 // #  define r_sys_breakpoint() __asm__ volatile ("teq $0, $0");
 #elif __EMSCRIPTEN__
 // TODO: cannot find a better way to breakpoint in wasm/asm.js
