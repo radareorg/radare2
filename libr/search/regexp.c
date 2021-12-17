@@ -29,7 +29,8 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 			ut8 buf[512];
 			int len = R_MIN (to - addr, sizeof (buf));
 			if (!s->iob.read_at (s->iob.io, addr, buf, len)) {
-				return -1; // failed to read
+				ret = -1; // failed to read
+				goto beach;
 			}
 			match.rm_so = 0;
 			match.rm_eo = len;
