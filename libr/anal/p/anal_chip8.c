@@ -8,9 +8,8 @@
 
 static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	char fmtstr[128];
-#define fmt(x,...) snprintf (fmtstr, sizeof (fmtstr), x, ...)
+#define fmt(x,...) fmtstr,snprintf (fmtstr, sizeof (fmtstr), x, __VA_ARGS__)
 
-	bool do_disasm = mask & R_ANAL_MASK_DISASM;
 	if (len < 2) {
 		return -1;
 	}
@@ -211,7 +210,7 @@ static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int 
 		}
 		break;
 	}
-	if (mask & R_ANAL_MASK_DISASM) {
+	if (mask & R_ANAL_OP_MASK_DISASM) {
 		op->mnemonic = strdup (buf_asm);
 	}
 	return op->size;
