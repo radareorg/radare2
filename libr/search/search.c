@@ -483,19 +483,13 @@ R_API void r_search_pattern_size(RSearch *s, int size) {
 }
 
 R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *user) {
-	if (s->r_callback) {
-		// prevent user from being passed to wrong function
-		s->r_callback = NULL;
-	}
+	s->r_callback = NULL; // prevent user from being passed to wrong function
 	s->callback = callback;
 	s->user = user;
 }
 
 R_API void r_search_set_read_cb(RSearch *s, RSearchRCb cb, void *user) {
-	if (s->callback) {
-		// prevent user from being passed to wrong function
-		s->callback = NULL;
-	}
+	s->callback = NULL; // prevent user from being passed to wrong function
 	s->r_callback = cb;
 	s->user = user;
 }
