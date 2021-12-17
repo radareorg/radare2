@@ -186,7 +186,6 @@ asm_plugins += [
   'arm_winedbg',
   'avr',
   'bf',
-  'chip8',
   'cr16',
   'dalvik',
   'dcpu16',

@@ -49,31 +49,31 @@ OBJS=${STATIC_OBJS} asm.o acode.o aop.o binutils_as.o aplugs.o
 OBJS+=${SHARED2_OBJ}
 
 ifeq ($(HAVE_GPERF),1)
-OBJS+=d/z80.o
 OBJS+=d/6502.o
-OBJS+=d/i4004.o
+OBJS+=d/8051.o
+OBJS+=d/LH5801.o
+OBJS+=d/arc.o
+OBJS+=d/arm.o
 OBJS+=d/avr.o
 OBJS+=d/chip8.o
+OBJS+=d/i4004.o
 OBJS+=d/i8080.o
 OBJS+=d/java.o
 OBJS+=d/lm32.o
 OBJS+=d/m68k.o
 OBJS+=d/malbolge.o
 OBJS+=d/mips.o
+OBJS+=d/msp430.o
+OBJS+=d/pic18c.o
 OBJS+=d/ppc.o
+OBJS+=d/propeller.o
 OBJS+=d/riscv.o
 OBJS+=d/sh.o
 OBJS+=d/sparc.o
-OBJS+=d/x86.o
 OBJS+=d/v810.o
 OBJS+=d/v850.o
-OBJS+=d/8051.o
-OBJS+=d/LH5801.o
-OBJS+=d/arc.o
-OBJS+=d/arm.o
-OBJS+=d/msp430.o
-OBJS+=d/propeller.o
-OBJS+=d/pic18c.o
+OBJS+=d/x86.o
+OBJS+=d/z80.o
 endif
 
 include $(TOP)/libr/rules.mk

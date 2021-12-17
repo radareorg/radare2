@@ -47,11 +47,14 @@ static int chip8_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int 
 		break;
 	case 0x1000:
 		buf_asm = fmt ("jp 0x%03x", nnn);
+		op->jump = nnn;
 		op->type = R_ANAL_OP_TYPE_JMP;
 		break;
 	case 0x2000:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		buf_asm = fmt ("call 0x%03x", nnn);
+		op->jump = nnn;
+		op->fail = addr + op->size;
 		break;
 	case 0x3000:
 		op->type = R_ANAL_OP_TYPE_RJMP;
