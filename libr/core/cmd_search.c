@@ -231,6 +231,7 @@ struct search_parameters {
 	bool inverse;
 	bool aes_search;
 	bool privkey_search;
+	int c; // used for progress
 };
 
 struct endlist_pair {
@@ -688,18 +689,16 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return _cb_hit_sz (kw, klen, user, addr);
 }
 
-static int c = 0;
-
 static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
-	if ((++c % 64) || (param->outmode == R_MODE_JSON)) {
+	if ((++param->c % 64) || (param->outmode == R_MODE_JSON)) {
 		return;
 	}
 	if (r_cons_singleton ()->columns < 50) {
-		eprintf ("\r[  ]  0x%08"PFMT64x "  hits = %d   \r%s",
-			at, n, (c % 2)? "[ #]": "[# ]");
+		eprintf ("\r[  ]  0x%08" PFMT64x "  hits = %d   \r%s",
+			at, n, (param->c % 2)? "[ #]": "[# ]");
 	} else {
-		eprintf ("\r[  ]  0x%08"PFMT64x " < 0x%08"PFMT64x "  hits = %d   \r%s",
-			at, to, n, (c % 2)? "[ #]": "[# ]");
+		eprintf ("\r[  ]  0x%08" PFMT64x " < 0x%08" PFMT64x "  hits = %d   \r%s",
+			at, to, n, (param->c % 2)? "[ #]": "[# ]");
 	}
 }
 
@@ -3193,6 +3192,7 @@ static int cmd_search(void *data, const char *input) {
 		.inverse = false,
 		.aes_search = false,
 		.privkey_search = false,
+		.c = 0,
 	};
 	if (!param.cmd_hit) {
 		param.cmd_hit = "";
@@ -3243,8 +3243,6 @@ static int cmd_search(void *data, const char *input) {
 		search_itv.addr = 0;
 		search_itv.size = UT64_MAX;
 	}
-
-	c = 0;
 
 	searchshow = r_config_get_i (core->config, "search.show");
 	param.mode = r_config_get (core->config, "search.in");
