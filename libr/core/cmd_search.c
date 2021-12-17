@@ -568,6 +568,7 @@ static char *getstring(char *b, int l) {
 }
 
 static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
+	r_return_val_if_fail (kw && user, -1);
 	struct search_parameters *param = user;
 	RCore *core = param->core;
 	ut64 base_addr = 0;
@@ -682,11 +683,16 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 	return true;
 }
 
-static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
-	struct search_parameters *param = user;
-	const RSearch *search = param->core->search;
-	int klen = kw? kw->keyword_length + (search->mode == R_SEARCH_DELTAKEY): 0;
-	return _cb_hit_sz (kw, klen, user, addr);
+static int _cb_hit(R_NULLABLE RSearchKeyword *kw, void *user, ut64 addr) {
+	RSearchKeyword kw_fake = { 0 };
+	RSearchKeyword *kw_used = &kw_fake;
+	int klen = 0;
+	if (kw) {
+		struct search_parameters *param = user;
+		const RSearch *search = param->core->search;
+		klen = kw? kw->keyword_length + (search->mode == R_SEARCH_DELTAKEY): 0;
+	}
+	return _cb_hit_sz (kw_used, klen, user, addr);
 }
 
 static inline void print_search_progress(ut64 at, ut64 to, int n, struct search_parameters *param) {
