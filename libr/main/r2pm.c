@@ -69,7 +69,7 @@ static int git_pull(const char *dir) {
 }
 
 static int git_clone(const char *dir, const char *url) {
-	char *cmd = r_str_newf ("git clone -q --depth=3 --recursive %s %s", url, dir);
+	char *cmd = r_str_newf ("git clone --depth=3 --recursive %s %s", url, dir);
 	int rc = r_sandbox_system (cmd, 0);
 	free (cmd);
 	return rc;
@@ -240,6 +240,10 @@ static void r2pm_setenv(void) {
 	char *r2_plugdir = r_str_home (R2_HOME_PLUGINS);
 	r_sys_setenv ("R2PM_PLUGDIR", r2_plugdir);
 	free (r2_plugdir);
+
+	char *r2_prefix = r_str_home (R2_HOME_DATADIR "/prefix");
+	r_sys_setenv ("R2PM_PREFIX", r2_prefix);
+	free (r2_prefix);
 }
 
 static int r2pm_install_pkg(const char *pkg) {
@@ -271,9 +275,9 @@ static int r2pm_doc_pkg(const char *pkg) {
 static int r2pm_clean_pkg(const char *pkg) {
 	printf ("Cleaning %s ...\n", pkg);
 	char *srcdir = r2pm_gitdir ();
-	if (srcdir) {
+	if (R_STR_ISNOTEMPTY (srcdir)) {
 		char *d = r_file_new (srcdir, pkg, NULL);
-		eprintf ("rm -rf %s\n", d);
+		eprintf ("rm -rf '%s'\n", d);
 		r_file_rm_rf (d);
 		free (srcdir);
 		free (d);
@@ -301,12 +305,8 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 static int r2pm_clone(const char *pkg) {
 	char *pkgdir = r2pm_gitdir ();
 	char *srcdir = r_file_new (pkgdir, pkg, NULL);
-	if (r_file_exists (srcdir)) {
-		if (r_file_is_directory (srcdir)) {
-			git_pull (srcdir);
-		} else {
-			eprintf ("Warning: %s should be a directory\n", srcdir);
-		}
+	if (r_file_is_directory (srcdir)) {
+		git_pull (srcdir);
 	} else {
 		char *url = r2pm_get (pkg, "\nR2PM_GIT ", TT_OPT_QUOTED_LINE);
 		if (url) {

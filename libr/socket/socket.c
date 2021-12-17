@@ -311,7 +311,8 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 			return false;
 		}
 
-		struct ifreq ifr = {0};
+		struct ifreq ifr;
+		memset (&ifr, 0, sizeof (ifr));
 		r_str_ncpy (ifr.ifr_name, host, sizeof (ifr.ifr_name));
 		if (ioctl (fd, SIOCGIFINDEX, &ifr) == -1) {
 			r_sys_perror ("ioctl");

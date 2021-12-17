@@ -429,7 +429,7 @@ jobs:
         path: radare2*android*aarch64.tar.gz
 
   android-acr-arm:
-    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
