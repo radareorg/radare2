@@ -231,6 +231,13 @@ R_API int r_sandbox_system(const char *x, int n) {
 			int s = waitpid (pid, &status, 0);
 			return WEXITSTATUS (s);
 		}
+		int child = fork ();
+		if (child == -1) {
+			return -1;
+		}
+		if (child) {
+			return waitpid (child, NULL, 0);
+		}
 #else
 		return system (x);
 #endif
@@ -268,13 +275,6 @@ R_API int r_sandbox_system(const char *x, int n) {
 		return -1;
 	}
 #endif
-	int child = fork ();
-	if (child == -1) {
-		return -1;
-	}
-	if (child) {
-		return waitpid (child, NULL, 0);
-	}
 	char *bin_sh = r_file_binsh ();
 	if (execl (bin_sh, "sh", "-c", x, (const char*)NULL) == -1) {
 		perror ("execl");

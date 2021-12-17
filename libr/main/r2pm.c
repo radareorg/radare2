@@ -9,7 +9,7 @@ static int r_main_r2pm_sh(int argc, const char **argv) {
 		r_strbuf_appendf (sb, " %s", argv[i]);
 	}
 	char *cmd = r_strbuf_drain (sb);
-	int res = r_sandbox_system (cmd, 0);
+	int res = r_sandbox_system (cmd, 1);
 	free (cmd);
 	return res;
 }
@@ -63,14 +63,14 @@ typedef struct r_r2pm_t {
 
 static int git_pull(const char *dir) {
 	char *s = r_str_newf ("cd %s\ngit pull", dir);
-	int rc = r_sandbox_system (s, 0);
+	int rc = r_sandbox_system (s, 1);
 	free (s);
 	return rc;
 }
 
 static int git_clone(const char *dir, const char *url) {
 	char *cmd = r_str_newf ("git clone --depth=3 --recursive %s %s", url, dir);
-	int rc = r_sandbox_system (cmd, 0);
+	int rc = r_sandbox_system (cmd, 1);
 	free (cmd);
 	return rc;
 }
@@ -256,7 +256,7 @@ static int r2pm_install_pkg(const char *pkg) {
 	r2pm_setenv ();
 	char *srcdir = r2pm_gitdir ();
 	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
-	int res = r_sandbox_system (s, 0);
+	int res = r_sandbox_system (s, 1);
 	free (s);
 	return res;
 }
@@ -296,7 +296,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 	char *srcdir = r2pm_gitdir ();
 	char *s = r_str_newf ("cd %s/%s\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s",
 		srcdir, pkg, script);
-	int res = r_sandbox_system (s, 0);
+	int res = r_sandbox_system (s, 1);
 	free (s);
 	free (srcdir);
 	return res;
@@ -512,7 +512,7 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 			r_strbuf_appendf (sb, " %s", argv[i]);
 		}
 		char *cmd = r_strbuf_drain (sb);
-		int res = r_sandbox_system (cmd, 0);
+		int res = r_sandbox_system (cmd, 1);
 		free (cmd);
 		return res;
 	}
