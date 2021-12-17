@@ -29,7 +29,8 @@ endif
 MKPLUGINS=mk/stat.mk mk/sloc.mk
 
 USERCC=@USERCC@
-COMPILER=$(shell basename ${USERCC})
+COMPILER0=$(shell echo "${USERCC}" | awk '{print $$1}')
+COMPILER=$(shell basename ${COMPILER0})
 DEBUGGER=@DEBUGGER@
 
 INSTALL_DIR=@INSTALL_DIR@
