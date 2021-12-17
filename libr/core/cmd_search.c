@@ -566,20 +566,18 @@ static char *getstring(char *b, int l) {
 	return res;
 }
 
-static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
+static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 	struct search_parameters *param = user;
 	RCore *core = param->core;
-	const RSearch *search = core->search;
 	ut64 base_addr = 0;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	int keyword_len = kw ? kw->keyword_length + (search->mode == R_SEARCH_DELTAKEY) : 0;
 
 	if (searchshow && kw && kw->keyword_length > 0) {
 		int len, i, extra, mallocsize;
 		char *s = NULL, *str = NULL, *p = NULL;
 		extra = (param->outmode == R_MODE_JSON)? 3: 1;
 		const char *type = "hexpair";
-		ut8 *buf = malloc (keyword_len);
+		ut8 *buf = malloc (klen);
 		if (!buf) {
 			return 0;
 		}
@@ -589,7 +587,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			const int ctx = 16;
 			const int prectx = addr > 16 ? ctx : addr;
 			char *pre, *pos, *wrd;
-			const int len = keyword_len;
+			const int len = klen;
 			char *buf = calloc (1, len + 32 + ctx * 2);
 			type = "string";
 			r_io_read_at (core->io, addr - prectx, (ut8 *) buf, len + (ctx * 2));
@@ -614,13 +612,13 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			free (p);
 			break;
 		default:
-			len = keyword_len; // 8 byte context
+			len = klen; // 8 byte context
 			mallocsize = (len * 2) + extra;
 			str = (len > 0xffff)? NULL: malloc (mallocsize);
 			if (str) {
 				p = str;
 				memset (str, 0, len);
-				r_io_read_at (core->io, base_addr + addr, buf, keyword_len);
+				r_io_read_at (core->io, base_addr + addr, buf, klen);
 				if (param->outmode == R_MODE_JSON) {
 					p = str;
 				}
@@ -659,20 +657,20 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		if (param->outmode == R_MODE_JSON) {
 			pj_o (param->pj);
 			pj_kN (param->pj, "offset", base_addr + addr);
-			pj_ki (param->pj, "len", keyword_len);
+			pj_ki (param->pj, "len", klen);
 			pj_end (param->pj);
 		} else {
 			if (searchflags) {
 				r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
 			} else {
 				r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x "\n", searchprefix,
-					kw->kwidx, kw->count, keyword_len, base_addr + addr);
+					kw->kwidx, kw->count, klen, base_addr + addr);
 			}
 		}
 	}
 	if (searchflags && kw) {
 		const char *flag = sdb_fmt ("%s%d_%d", searchprefix, kw->kwidx, kw->count);
-		r_flag_set (core->flags, flag, base_addr + addr, keyword_len);
+		r_flag_set (core->flags, flag, base_addr + addr, klen);
 	}
 	if (*param->cmd_hit) {
 		ut64 here = core->offset;
@@ -681,6 +679,13 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		r_core_seek (core, here, true);
 	}
 	return true;
+}
+
+static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
+	struct search_parameters *param = user;
+	const RSearch *search = param->core->search;
+	int klen = kw? kw->keyword_length + (search->mode == R_SEARCH_DELTAKEY): 0;
+	return _cb_hit_sz (kw, klen, user, addr);
 }
 
 static int c = 0;
@@ -2442,6 +2447,29 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 	r_cons_break_pop ();
 }
 
+static void do_read_search(RSearch *s, struct search_parameters *param) {
+	RListIter *iter;
+	RIOMap *map;
+
+	// TODO: update pattern search to work with this
+	if (s->mode != R_SEARCH_PATTERN) {
+		r_search_set_read_cb (s, &_cb_hit_sz, param);
+	}
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (param->boundaries, iter, map) {
+		// TODO: pair adjacent maps
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
+
+		eprintf ("Searching in [0x%" PFMT64x "-0x%" PFMT64x "]\n", from, to);
+		r_search_update_read (s, from, to);
+	}
+	r_cons_break_pop ();
+}
+
 static void do_string_search(RCore *core, RInterval search_itv, struct search_parameters *param) {
 	ut64 at;
 	ut8 *buf;
@@ -3155,6 +3183,7 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
+	bool dosearch_read = false;
 	int ret = true;
 	RCore *core = (RCore *) data;
 	struct search_parameters param = {
@@ -3821,23 +3850,12 @@ reread:
 		} else if (input[param_offset - 1]) {
 			int ps = atoi (input + param_offset);
 			if (ps > 1) {
-				r_search_set_mode (core->search, R_SEARCH_PATTERN);
-				r_search_pattern_size (core->search, ps);
-
-				RListIter *iter;
-				RIOMap *map;
-				r_list_foreach (param.boundaries, iter, map) {
-					ut64 from = r_io_map_begin (map);
-					ut64 to = r_io_map_end (map);
-					eprintf ("-- %"PFMT64x" %"PFMT64x"\n", from, to);
-
-					r_cons_break_push (NULL, NULL);
-					r_search_update_read (core->search, from, to);
-					r_cons_break_pop ();
-				}
-				break;
+				r_search_set_mode (search, R_SEARCH_PATTERN);
+				r_search_pattern_size (search, ps);
+				dosearch_read = true;
+			} else {
+				eprintf ("Invalid pattern size (must be > 0)\n");
 			}
-			eprintf ("Invalid pattern size (must be > 0)\n");
 		}
 		break;
 	case 'P': // "/P"
@@ -4067,7 +4085,7 @@ reread:
 				r_config_get_i (core->config, "search.distance"));
 			r_search_kw_add (core->search, kw);
 			r_search_begin (core->search);
-			dosearch = true;
+			dosearch_read = true;
 		} else {
 			eprintf ("Missing regex\n");
 		}
@@ -4326,6 +4344,8 @@ again:
 	r_config_set_i (core->config, "search.kwidx", search->n_kws);
 	if (dosearch) {
 		do_string_search (core, search_itv, &param);
+	} else if (dosearch_read) {
+		do_read_search (search, &param);
 	}
 beach:
 	core->num->value = search->nhits;

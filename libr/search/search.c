@@ -31,6 +31,7 @@ R_API RSearch *r_search_new(int mode) {
 	s->datafree = free;
 	s->user = NULL;
 	s->callback = NULL;
+	s->r_callback = NULL;
 	s->align = 0;
 	s->distance = 0;
 	s->contiguous = 0;
@@ -106,8 +107,8 @@ R_API int r_search_begin(RSearch *s) {
 	return true;
 }
 
-// Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
-R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
+// use when the size of the hit does not match the size of the keyword (ie: /a{30}/)
+R_IPI int r_search_hit_sz(RSearch *s, RSearchKeyword *kw, ut64 addr, ut32 sz) {
 	if (s->align && (addr%s->align)) {
 		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
 		return 1;
@@ -115,23 +116,24 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
-			kw->last = s->bckwrds? addr: addr + kw->keyword_length;
+			kw->last = s->bckwrds? addr: addr + sz;
 			eprintf ("0x%08"PFMT64x" Sequential hit ignored.\n", addr);
 			return 1;
 		}
 	}
 	// kw->last is used by string search, the right endpoint of last match (forward search), to honor search.overlap
-	kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
+	kw->last = s->bckwrds ? addr : addr + sz;
+	kw->count++;
+	s->nhits++;
 
 	if (s->callback) {
 		int ret = s->callback (kw, s->user, addr);
-		kw->count++;
-		s->nhits++;
 		// If callback returns 0 or larger than 1, forwards it; otherwise returns 2 if search.maxhits is reached
-		return !ret || ret > 1 ? ret : s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
+		return !ret || ret > 1? ret: s->maxhits && s->nhits >= s->maxhits? 2: 1;
+	} else if (s->r_callback) {
+		int ret = s->r_callback (kw, sz, s->user, addr);
+		return !ret || ret > 1? ret: s->maxhits && s->nhits >= s->maxhits? 2: 1;
 	}
-	kw->count++;
-	s->nhits++;
 	RSearchHit* hit = R_NEW0 (RSearchHit);
 	if (hit) {
 		hit->kw = kw;
@@ -139,6 +141,11 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 		r_list_append (s->hits, hit);
 	}
 	return s->maxhits && s->nhits >= s->maxhits? 2: 1;
+}
+
+// Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
+R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
+	return r_search_hit_sz (s, kw, addr, kw->keyword_length);
 }
 
 static inline int get_longest(RSearch *s) {
@@ -476,7 +483,20 @@ R_API void r_search_pattern_size(RSearch *s, int size) {
 }
 
 R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *user) {
+	if (s->r_callback) {
+		// prevent user from being passed to wrong function
+		s->r_callback = NULL;
+	}
 	s->callback = callback;
+	s->user = user;
+}
+
+R_API void r_search_set_read_cb(RSearch *s, RSearchRCb cb, void *user) {
+	if (s->callback) {
+		// prevent user from being passed to wrong function
+		s->callback = NULL;
+	}
+	s->r_callback = cb;
 	s->user = user;
 }
 
@@ -500,6 +520,8 @@ R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
 	switch (s->mode) {
 	case R_SEARCH_PATTERN:
 		return search_pattern (s, from, to);
+	case R_SEARCH_REGEXP:
+		return search_regex_read (s, from, to);
 	default:
 		eprintf ("Unsupported mode\n");
 		return -1;

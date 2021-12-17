@@ -55,8 +55,9 @@ typedef struct r_search_hit_t {
 	ut64 addr;
 } RSearchHit;
 
-typedef int (*RSearchCallback)(RSearchKeyword *kw, void *user, ut64 where);
-typedef void (RSearchDFree)(void *ptr);
+typedef int (*RSearchCallback) (RSearchKeyword *kw, void *user, ut64 where); // TODO: depricate, b/c lacks match len
+typedef int (*RSearchRCb) (RSearchKeyword *kw, int mlen, void *user, ut64 where);
+typedef void (RSearchDFree) (void *ptr);
 
 typedef struct r_search_t {
 	int n_kws; // hit${n_kws}_${count}
@@ -68,7 +69,8 @@ typedef struct r_search_t {
 	void *data; // data used by search algorithm
 	RSearchDFree *datafree;
 	void *user; // user data passed to callback
-	RSearchCallback callback;
+	RSearchCallback callback; // TODO: depricate
+	RSearchRCb r_callback;
 	ut64 nhits;
 	ut64 maxhits; // search.maxhits
 	RList *hits;
@@ -120,8 +122,8 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr);
 R_API void r_search_set_distance(RSearch *s, int dist);
 R_API int r_search_strings(RSearch *s, ut32 min, ut32 max);
 R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max); // WTF dupped?
-//R_API int r_search_set_callback(RSearch *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user);
-R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *user);
+R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *user); // TODO: depricate
+R_API void r_search_set_read_cb(RSearch *s, RSearchRCb cb, void *user);
 R_API int r_search_begin(RSearch *s);
 
 /* pattern search */
