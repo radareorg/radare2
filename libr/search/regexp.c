@@ -34,6 +34,10 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 			match.rm_so = 0;
 			match.rm_eo = len;
 
+			if (r_cons_is_breaked ()) {
+				break;
+			}
+
 			int m = r_regex_exec (&rx, (char *)buf, 1, &match, R_REGEX_STARTEND);
 			if (!m) { // match
 				ut32 mtch_len = match.rm_eo - match.rm_so;
