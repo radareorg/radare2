@@ -235,10 +235,6 @@ R_API int r_sandbox_system(const char *x, int n) {
 		return system (x);
 #endif
 	}
-	char *bin_sh = r_file_binsh ();
-	int rc = execl (bin_sh, "sh", "-c", x, (const char*)NULL);
-	free (bin_sh);
-	return rc;
 #else
 	#include <spawn.h>
 	if (n && !strchr (x, '|')) {
@@ -271,6 +267,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 		eprintf ("Error parsing command arguments\n");
 		return -1;
 	}
+#endif
 	int child = fork ();
 	if (child == -1) {
 		return -1;
@@ -284,7 +281,6 @@ R_API int r_sandbox_system(const char *x, int n) {
 	}
 	free (bin_sh);
 	exit (1);
-#endif
 #endif
 	return -1;
 }
