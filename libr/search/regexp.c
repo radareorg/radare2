@@ -12,6 +12,12 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 	const int old_nhits = s->nhits;
 	int ret = 0;
 
+	ut64 buflen = 0x1000;
+	ut8 *buf = malloc (buflen);
+	if (!buf) {
+		return -1;
+	}
+
 	r_list_foreach (s->kws, iter, kw) {
 		ut64 addr = from;
 		int reflags = R_REGEX_EXTENDED;
@@ -22,12 +28,15 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 
 		if (r_regex_init (&rx, (char *)kw->bin_keyword, reflags)) {
 			eprintf ("Cannot compile '%s' regexp\n", kw->bin_keyword);
-			return -1;
+			ret = -1;
+			goto beach;
 		}
 
+		// TODO: allow user to configure according to the maximum expected
+		// match length to prevent FN on matches that span boundaries.
+
 		while (addr < to) { // get buffer
-			ut8 buf[512];
-			int len = R_MIN (to - addr, sizeof (buf));
+			int len = R_MIN (to - addr, buflen);
 			if (!s->iob.read_at (s->iob.io, addr, buf, len)) {
 				ret = -1; // failed to read
 				goto beach;
@@ -70,8 +79,7 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 			} else if (m == R_REGEX_NOMATCH) {
 				// if a match exists accross buffer boundary, this will still
 				// find it, unless start of match is withen first 7/8th of buffer
-				// TODO: use some RSearch member to allow user to tune this distance
-				addr += len - (len / 8);
+				addr += buflen - (buflen / 8);
 			} else { // regex error
 				ret = -1;
 				goto beach;
@@ -81,6 +89,7 @@ R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to) {
 
 beach:
 	r_regex_fini (&rx);
+	free (buf);
 	if (!ret) {
 		ret = s->nhits - old_nhits;
 	}
