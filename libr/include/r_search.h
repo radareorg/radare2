@@ -55,7 +55,10 @@ typedef struct r_search_hit_t {
 	ut64 addr;
 } RSearchHit;
 
-typedef int (*RSearchCallback) (RSearchKeyword *kw, void *user, ut64 where); // TODO: depricate, b/c lacks match len
+typedef int (*RSearchCallback) (R_NULLABLE RSearchKeyword *kw, void *user, ut64 where); // TODO: depricate, b/c lacks match len
+
+// kw should never be NULL, send a fake kw from stack if backend search
+// function does not use kw's
 typedef int (*RSearchRCb) (RSearchKeyword *kw, int mlen, void *user, ut64 where);
 typedef void (RSearchDFree) (void *ptr);
 
