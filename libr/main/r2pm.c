@@ -205,7 +205,7 @@ static int r2pm_update(void) {
 			return 1;
 		}
 	} else {
-		const char *giturl = "https://githubcom/radareorg/radare2-pm";
+		const char *giturl = "https://github.com/radareorg/radare2-pm";
 		git_clone (pmpath, giturl);
 	}
 
