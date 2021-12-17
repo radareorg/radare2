@@ -12,7 +12,7 @@ LIBR2=$(call libname-version,libr2.$(EXT_SO),${LIBVERSION})
 
 all: preload
 	@for BINARY in $(BINS) ; do $(MAKE) -C $${BINARY} all || exit 1; done
-ifeq (,$(findstring ios-sdk,$(COMPILER)))
+ifneq (,$(findstring ios-sdk,$(COMPILER)))
 	$(MAKE) ios-sign
 endif
 
