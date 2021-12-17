@@ -442,9 +442,9 @@ static bool parse_register(char const* register_input, ut8* hex_out) {
 	return true;
 }
 
-/**
- * attempts to parse the given string as an 8bit-wide address
- */
+  /*
+  * attempts to parse the given string as an 8bit-wide address
+  */
 static bool address_direct(char const* addr_str, ut8* addr_out) {
 	ut16 addr_big;
 	ut8 addr_short;
@@ -458,13 +458,15 @@ static bool address_direct(char const* addr_str, ut8* addr_out) {
 		found = true;
 	}
 
-	if (!found) {
+	/* need opinion in order to remove this comment
+	 *
+	  if (!found) {
 		if ( !parse_register (addr_str, &addr_short)) {
 			return false;
 		}
 		*addr_out = addr_short;
 		return true;
-	}
+	}*/
 
 	*addr_out = addr_big;
 	return found;
@@ -589,6 +591,36 @@ static bool singlearg_direct(ut8 const firstbyte, char const* arg
 	(*out)[1] = address;
 	*out += 2;
 	return ret;
+}
+
+static bool singlearg_direct_or_register(ut8 const first_byte, char const* arg, ut8**out) {
+	ut16 addr_big;
+	ut8 addr_short;
+
+	bool found;
+	if ( !parse_hexadecimal (arg, &addr_big)
+		|| (0xFF < addr_big)) {
+		found = false;
+	} else {
+		found = true;
+	}
+
+	if (!found) {
+		if ( !parse_register (arg, &addr_short)) {
+			return false;
+		}
+
+		(*out)[0] = first_byte;
+		(*out)[1] = addr_short;
+		*out += 2;
+
+		return true;
+	}
+
+	(*out)[0] = first_byte;
+	(*out)[1] = addr_big;
+	*out += 2;
+	return found;
 }
 
 static bool singlearg_immediate(ut8 firstbyte, char const* imm_str, ut8**out) {
@@ -1166,11 +1198,11 @@ static bool mnem_orl(char const*const*arg, ut16 pc, ut8**out) {
 }
 
 static bool mnem_pop(char const*const*arg, ut16 pc, ut8**out) {
-	return singlearg_direct (0xd0, arg[0], out);
+	return singlearg_direct_or_register (0xd0, arg[0], out);
 }
 
 static bool mnem_push(char const*const*arg, ut16 pc, ut8**out) {
-	return singlearg_direct (0xc0, arg[0], out);
+	return singlearg_direct_or_register (0xc0, arg[0], out);
 }
 
 static bool mnem_ret(char const*const*arg, ut16 pc, ut8**out) {
