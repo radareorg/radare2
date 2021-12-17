@@ -1041,11 +1041,6 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	int olen = 0;
 	op->mnemonic = r_8051_disas (addr, buf, len, &olen);
 	op->size = olen;
-
-	if (mask & R_ANAL_OP_MASK_HINT) {
-		// TODO: op->hint
-	}
-
 	return op->size;
 }
 
