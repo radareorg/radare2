@@ -691,6 +691,7 @@ static int _cb_hit(R_NULLABLE RSearchKeyword *kw, void *user, ut64 addr) {
 		struct search_parameters *param = user;
 		const RSearch *search = param->core->search;
 		klen = kw? kw->keyword_length + (search->mode == R_SEARCH_DELTAKEY): 0;
+		kw_used = kw;
 	}
 	return _cb_hit_sz (kw_used, klen, user, addr);
 }
