@@ -258,6 +258,7 @@ static int r2pm_install_pkg(const char *pkg) {
 	char *s = r_str_newf ("cd '%s/%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script);
 	int res = r_sandbox_system (s, 1);
 	free (s);
+	free (srcdir);
 	return res;
 }
 
@@ -305,6 +306,7 @@ static int r2pm_uninstall_pkg(const char *pkg) {
 static int r2pm_clone(const char *pkg) {
 	char *pkgdir = r2pm_gitdir ();
 	char *srcdir = r_file_new (pkgdir, pkg, NULL);
+	free (pkgdir);
 	if (r_file_is_directory (srcdir)) {
 		git_pull (srcdir);
 	} else {
@@ -315,10 +317,12 @@ static int r2pm_clone(const char *pkg) {
 		} else {
 			char *url = r2pm_get (pkg, "\nR2PM_TGZ", TT_OPT_QUOTED_LINE);
 			eprintf ("TODO: wget tarball from '%s'\n", url); 
+			free (srcdir);
 			free (url);
 			return 1;
 		}
 	}
+	free (srcdir);
 	return 0;
 }
 
@@ -394,6 +398,7 @@ static int count_available(void) {
 		}
 	}
 	r_list_free (dbfiles);
+	free (dbdir);
 	return count;
 }
 
@@ -409,6 +414,7 @@ static int count_installed(void) {
 		}
 	}
 	r_list_free (dbfiles);
+	free (dbdir);
 	return count;
 }
 
@@ -536,8 +542,8 @@ static int r_main_r2pm_c(int argc, const char **argv) {
 	} else if (r2pm.list) {
 		res = r2pm_list ();
 	}
+	r_list_free (targets);
 	if (res != -1) {
-		r_list_free (targets);
 		return res;
 	}
 	if (opt.ind == 1) {
