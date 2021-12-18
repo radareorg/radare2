@@ -122,16 +122,21 @@ R_IPI int r_search_hit_sz(RSearch *s, RSearchKeyword *kw, ut64 addr, ut32 sz) {
 		}
 	}
 	// kw->last is used by string search, the right endpoint of last match (forward search), to honor search.overlap
-	kw->last = s->bckwrds ? addr : addr + sz;
+	kw->last = s->bckwrds? addr: addr + sz;
+
+	bool callback = false;
+	int ret;
+	if (s->callback) {
+		callback = true;
+		ret = s->callback (kw, s->user, addr);
+	} else if (s->r_callback) {
+		callback = true;
+		ret = s->r_callback (kw, sz, s->user, addr);
+	}
 	kw->count++;
 	s->nhits++;
-
-	if (s->callback) {
-		int ret = s->callback (kw, s->user, addr);
+	if (callback) {
 		// If callback returns 0 or larger than 1, forwards it; otherwise returns 2 if search.maxhits is reached
-		return !ret || ret > 1? ret: s->maxhits && s->nhits >= s->maxhits? 2: 1;
-	} else if (s->r_callback) {
-		int ret = s->r_callback (kw, sz, s->user, addr);
 		return !ret || ret > 1? ret: s->maxhits && s->nhits >= s->maxhits? 2: 1;
 	}
 	RSearchHit* hit = R_NEW0 (RSearchHit);
