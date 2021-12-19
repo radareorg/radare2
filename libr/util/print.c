@@ -545,10 +545,10 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 // TODO: Use r_cons primitives here
 #define memcat(x, y)\
 	{ \
-		memcpy (x, y, strlen (y));\
+		memcpy ((x), (y), strlen (y));\
 		(x) += strlen (y);\
 	}
-	for (s = str, i = 0; s[0]; i++) {
+	for (s = str, i = 0; *s; i++) {
 		int d_inc = 2;
 		if (p->cur_enabled) {
 			if (i == ocur - n) {
@@ -562,7 +562,12 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 			}
 		}
 		if (colors) {
-			if (s[0] == '0' && s[1] == '0') {
+			if (p->nbcolor > 0) {
+				// colorize N first bytes only
+				// used for op+arg in disasm hexpairs
+				lastcol = (i < p->nbcolor)
+					? color_0x00: color_0x7f;
+			} else if (s[0] == '0' && s[1] == '0') {
 				lastcol = color_0x00;
 			} else if (s[0] == '7' && s[1] == 'f') {
 				lastcol = color_0x7f;
