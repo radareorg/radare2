@@ -27,6 +27,12 @@ R_IPI int search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 		match.rm_eo = len;
 
 		while (!r_regex_exec (&rx, (char *)buf, 1, &match, R_REGEX_STARTEND)) {
+			if (match.rm_eo <= match.rm_so) {
+				// empty match
+				match.rm_so++;
+				match.rm_eo = len;
+				continue;
+			}
 			int t = r_search_hit_new (s, kw, from + match.rm_so);
 			if (!t) {
 				ret = -1;
