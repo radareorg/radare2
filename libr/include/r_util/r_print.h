@@ -165,6 +165,7 @@ typedef struct r_print_t {
 	// segmented memory addressing
 	int seggrn;
 	int segbas;
+	int nbcolor;
 } RPrint;
 
 #ifdef R_API

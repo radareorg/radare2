@@ -145,6 +145,7 @@ typedef struct {
 	bool bblined;
 	bool show_bytes;
 	bool show_bytes_right;
+	bool show_bytes_opcolor;
 	bool show_reloff;
 	bool show_reloff_flags;
 	bool show_comments;
@@ -749,6 +750,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
 	ds->show_bytes_right = r_config_get_i (core->config, "asm.bytes.right");
+	ds->show_bytes_opcolor = r_config_get_i (core->config, "asm.bytes.opcolor");
 	ds->show_optype = r_config_get_i (core->config, "asm.optype");
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
 	ds->asm_xrefs_code = r_config_get_i (core->config, "asm.xrefs.code");
@@ -3353,10 +3355,13 @@ static void ds_cdiv_optimization(RDisasmState *ds) {
 			esil = comma + 1;
 		}
 	}
-	// /TODO: check following SHR instructions
+	// TODO: check following SHR instructions
 }
 
 static void ds_print_show_bytes(RDisasmState *ds) {
+	if (!ds->show_bytes || ds->nb < 1) {
+		return;
+	}
 	RCore* core = ds->core;
 	char *nstr, *str = NULL, pad[64];
 	char *flagstr = NULL;
@@ -3364,9 +3369,6 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	char extra[128];
 	int j, k;
 
-	if (!ds->show_bytes || ds->nb < 1) {
-		return;
-	}
 	if (!ds->show_color_bytes) {
 		core->print->flags &= ~R_PRINT_FLAGS_COLOR;
 	}
@@ -3413,7 +3415,13 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 				}
 			}
 			ds->print->cur_enabled = (ds->cursor != -1);
+			if (ds->show_bytes_opcolor) {
+				ds->print->nbcolor = (ds->analop.nopcode > 1)? ds->analop.nopcode: 1;
+			} else {
+				ds->print->nbcolor = 0;
+			}
 			nstr = r_print_hexpair (ds->print, str, ds->index);
+			ds->print->nbcolor = 0;
 			if (ds->print->bytespace) {
 				k = (ds->nb + (ds->nb / 2)) - r_str_ansi_len (nstr) + 2;
 			} else {

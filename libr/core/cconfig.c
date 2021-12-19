@@ -400,10 +400,8 @@ static bool cb_analcpu(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_anal_set_cpu (core->anal, node->value);
 	/* set pcalign */
-	{
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
-	}
+	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	return true;
 }
 
@@ -3303,6 +3301,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
 	SETBPREF ("asm.bytes", "true", "Display the bytes of each instruction");
 	SETBPREF ("asm.bytes.right", "false", "Display the bytes at the right of the disassembly");
+	SETBPREF ("asm.bytes.opcolor", "false", "Colorize bytes depending on opcode size + variant information");
 	SETI ("asm.types", 1, "Display the fcn types in calls (0=no,1=quiet,2=verbose)");
 	SETBPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");
 	SETBPREF ("asm.cmt.flgrefs", "true", "Show comment flags associated to branch reference");
