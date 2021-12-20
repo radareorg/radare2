@@ -140,6 +140,9 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
 };
 
 R_API int r_sys_fork(void) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return false;
+	}
 #if HAVE_FORK
 #if __WINDOWS__
 	return -1;

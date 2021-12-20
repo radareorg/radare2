@@ -1347,6 +1347,35 @@ static bool cb_dirsrc(void *user, void *data) {
 	return true;
 }
 
+static bool cb_cfgsanbox_grain(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (strstr (node->value, "?")) {
+		eprintf ("Usage: comma separated grain types to be masked out by the sandbox.\n");
+		eprintf ("all, none, disk, files, exec, socket, exec\n");
+		return false;
+	}
+	int gt = R_SANDBOX_GRAIN_NONE;
+	if (strstr (node->value, "all")) {
+		gt = R_SANDBOX_GRAIN_ALL;
+	} else if (strstr (node->value, "none")) {
+		gt = R_SANDBOX_GRAIN_NONE;
+	} else {
+		if (strstr (node->value, "exec")) {
+			gt |= R_SANDBOX_GRAIN_EXEC;
+		}
+		if (strstr (node->value, "socket") || strstr (node->value, "net")) {
+			gt |= R_SANDBOX_GRAIN_SOCKET;
+		}
+		if (strstr (node->value, "file") || strstr (node->value, "files")) {
+			gt |= R_SANDBOX_GRAIN_FILES;
+		}
+		if (strstr (node->value, "disk")) {
+			gt |= R_SANDBOX_GRAIN_DISK;
+		}
+	}
+	return r_sandbox_grain (gt);
+}
+
 static bool cb_cfgsanbox(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int ret = r_sandbox_enable (node->i_value);
@@ -3530,6 +3559,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
+	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "Select which sand grains must pass the filter (all, net, files, socket, exec, disk)");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");
