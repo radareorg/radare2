@@ -164,7 +164,7 @@ do_print_insn_loongarch (int insn,
     info->private_data = &insn;
     loongarch_foreach_args (opc->format, fake_arg_strs, dis_one_arg, info);
   }
-  infprintf(is, args_buf->buf);
+  infprintf(is, "%s", args_buf->buf);
 
   if (info->insn_type == dis_branch || info->insn_type == dis_condbranch
 	  /* || someother if we have extra info to print */)
