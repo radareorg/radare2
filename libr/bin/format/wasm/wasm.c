@@ -152,7 +152,8 @@ static size_t consume_limits_r(RBuffer *b, ut64 max, struct r_bin_wasm_resizable
 	if (out->flags && (!(consume_u32_r (b, max, &out->maximum)))) {
 		return 0;
 	}
-	return (size_t)R_ABS (r_buf_tell (b) - i);
+	int delta = r_buf_tell (b) - i;
+	return (delta > 0)? delta: 0;
 }
 
 // Utils
