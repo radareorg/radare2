@@ -5890,7 +5890,7 @@ R_API void r_core_anal_inflags(RCore *core, const char *glob) {
 			continue;
 		}
 		if (a0 > a1) {
-			eprintf ("Warning: unsorted flag list 0x%llx 0x%llx\n", a0, a1);
+			eprintf ("Warning: unsorted flag list 0x%"PFMT64x" 0x%"PFMT64x"\n", a0, a1);
 			continue;
 		}
 		st64 sz = a1 - a0;

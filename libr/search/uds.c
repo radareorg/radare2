@@ -55,7 +55,7 @@ static int is_unique_UDS(unsigned int position) {
 R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size_t size, bool verbose) {
 	RList *list = r_list_newf (free);
 	if (size < (CANDB_SIZE * 2)) {
-		eprintf ("requires at least 1024 bytes. %zd\n", size);
+		eprintf ("requires at least 1024 bytes. %d\n", (int)size);
 		r_list_free (list);
 		return NULL;
 	}

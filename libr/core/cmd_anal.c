@@ -1760,7 +1760,7 @@ static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) 
 			} else {
 				r_cons_printf ("f trampoline.%" PFMT32x " @ 0x%" PFMT64x "\n", n, core->offset + i);
 			}
-			r_cons_printf ("Cd %zu @ 0x%" PFMT64x ":%zu\n", element_size, core->offset + i, element_size);
+			r_cons_printf ("Cd %u @ 0x%" PFMT64x ":%u\n", (unsigned int)element_size, core->offset + i, (unsigned int)element_size);
 			// TODO: add data xrefs
 		}
 	}

@@ -402,7 +402,7 @@ static inline ut64 dwarf_read_address(size_t size, const ut8 **buf, const ut8 *b
 	default:
 		result = 0;
 		*buf += size;
-		eprintf ("Weird dwarf address size: %zu.", size);
+		eprintf ("Weird dwarf address size: %u.", (int)size);
 	}
 	return result;
 }
@@ -643,7 +643,7 @@ static const ut8 *parse_line_header (
 			}
 			hdr->std_opcode_lengths[i] = READ (buf, ut8);
 			if (mode == R_MODE_PRINT) {
-				print ("  Opcode %zu has %d arg\n", i, hdr->std_opcode_lengths[i]);
+				print ("  Opcode %u has %d arg\n", (int)i, hdr->std_opcode_lengths[i]);
 			}
 		}
 		if (mode == R_MODE_PRINT) {

@@ -168,7 +168,7 @@ int qnxr_connect(libqnxr_t *g, const char *host, int port) {
 	nto_send (g, sizeof (g->tran.pkt.connect), 0);
 
 	if (g->recv.pkt.hdr.cmd == DSrMsg_err) {
-		eprintf ("%s: connection failed: %lld\n", __func__,
+		eprintf ("%s: connection failed: %"PFMT64d"\n", __func__,
 			 EXTRACT_SIGNED_INTEGER (&g->recv.pkt.err.err, 4));
 		return -1;
 	}
@@ -188,7 +188,7 @@ int qnxr_connect(libqnxr_t *g, const char *host, int port) {
 		g->target_proto_major = (g->target_proto_major >> 8) & DSMSG_PROTOVER_MAJOR;
 		g->target_proto_minor = g->target_proto_minor & DSMSG_PROTOVER_MINOR;
 	} else {
-		eprintf ("Connection failed (Protocol Version Query): %lld\n",
+		eprintf ("Connection failed (Protocol Version Query): %"PFMT64d"\n",
 			 EXTRACT_SIGNED_INTEGER (&g->recv.pkt.err.err, 4));
 		return -1;
 	}
@@ -227,7 +227,7 @@ ptid_t qnxr_attach (libqnxr_t *g, pid_t pid) {
 
 	nto_send (g, sizeof (g->tran.pkt.attach), 0);
 	if (g->recv.pkt.hdr.cmd != DSrMsg_okdata) {
-		eprintf ("%s: failed to attach to %d\n", __func__, pid);
+		eprintf ("%s: failed to attach to %d\n", __func__, (int)pid);
 		return null_ptid;
 	}
 
@@ -303,7 +303,7 @@ ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env) {
 
 	if (g->recv.pkt.hdr.cmd == DSrMsg_okdata) {
 		ptid_t ptid = nto_parse_notify (g);
-		eprintf ("%s: inferior pid: %d\n", __func__, ptid.pid);
+		eprintf ("%s: inferior pid: %d\n", __func__, (int)ptid.pid);
 		g->inferior_ptid = ptid;
 
 		return ptid;
@@ -325,7 +325,7 @@ int qnxr_read_registers(libqnxr_t *g) {
 		regset = i386nto_regset_id (i);
 		len = i386nto_register_area (i, regset, &off);
 		if (len < 1) {
-			eprintf ("%s: unknown register %d\n", __func__, i);
+			eprintf ("%s: unknown register %d\n", __func__, (int)i);
 			len = g->registers[i].size;
 		}
 		nto_send_init (g, DStMsg_regrd, regset, SET_CHANNEL_DEBUG);
@@ -343,7 +343,7 @@ int qnxr_read_registers(libqnxr_t *g) {
 					0, len);
 			}
 		} else {
-			eprintf ("%s: couldn't read register %d\n", __func__, i);
+			eprintf ("%s: couldn't read register %d\n", __func__, (int)i);
 			return -1;
 		}
 		i++;
@@ -444,7 +444,7 @@ bool qnxr_select (libqnxr_t *g, pid_t pid, int tid) {
 	nto_send (g, sizeof (g->tran.pkt.select), 1);
 
 	if (g->recv.pkt.hdr.cmd == DSrMsg_err) {
-		eprintf ("%s: failed to select %d\n", __func__, pid);
+		eprintf ("%s: failed to select %d\n", __func__, (int)pid);
 		return false;
 	}
 
@@ -636,7 +636,7 @@ ptid_t nto_parse_notify (libqnxr_t *g) {
 	tid = EXTRACT_SIGNED_INTEGER (&g->recv.pkt.notify.tid, 4);
 
 	if (tid == 0) tid = 1;
-	eprintf ("%s: parse notify %d\n", __func__, g->recv.pkt.hdr.subcmd);
+	eprintf ("%s: parse notify %d\n", __func__, (int)g->recv.pkt.hdr.subcmd);
 
 	switch (g->recv.pkt.hdr.subcmd) {
 	case DSMSG_NOTIFY_PIDUNLOAD:
@@ -669,8 +669,7 @@ ptid_t nto_parse_notify (libqnxr_t *g) {
 		g->notify_type = R_DEBUG_REASON_SWI;
 		break;
 	default:
-		eprintf ("%s: Unexpected notify type %d\n", __func__,
-			 g->recv.pkt.hdr.subcmd);
+		eprintf ("%s: Unexpected notify type %d\n", __func__, (int)g->recv.pkt.hdr.subcmd);
 		g->notify_type = R_DEBUG_REASON_UNKNOWN;
 	}
 
@@ -702,7 +701,7 @@ int nto_send_env (libqnxr_t *g, const char *env) {
 	} else if (len > DS_DATA_MAX_SIZE) {
 		/* Not supported by this protocol version.  */
 		eprintf ("Protovers < 0.2 do not handle env vars longer than %d\n",
-			 DS_DATA_MAX_SIZE - 1);
+			 (int)(DS_DATA_MAX_SIZE - 1));
 		return 0;
 	}
 	nto_send_init (g, DStMsg_env, DSMSG_ENV_SETENV, SET_CHANNEL_DEBUG);
@@ -751,8 +750,8 @@ int nto_send (libqnxr_t *g, ut32 len, st32 report_errors) {
 		}
 		if ((rlen >= 0) && (g->recv.pkt.hdr.mid == g->tran.pkt.hdr.mid))
 			break;
-		eprintf ("%s: mid mismatch: %d/%d\n", __func__, g->recv.pkt.hdr.mid,
-			 g->tran.pkt.hdr.mid);
+		eprintf ("%s: mid mismatch: %d/%d\n", __func__, (int)g->recv.pkt.hdr.mid,
+			 (int)g->tran.pkt.hdr.mid);
 	}
 
 	switch (g->channelrd) {
@@ -764,7 +763,7 @@ int nto_send (libqnxr_t *g, ut32 len, st32 report_errors) {
 					EXTRACT_SIGNED_INTEGER (&g->recv.pkt.err.err, 4));
 				switch (g->recv.pkt.hdr.subcmd) {
 				case PDEBUG_ENOERR:
-					eprintf ("remote: error packet with errno %d\n", nerrno);
+					eprintf ("remote: error packet with errno %d\n", (int)nerrno);
 					break;
 				case PDEBUG_ENOPTY:
 					eprintf ("remote: no ptys available\n");
