@@ -417,7 +417,7 @@ aes
 p8 5 @ 0
 EOF
 EXPECT=<<EOF
-000000bb03
+000000bba4
 EOF
 RUN
 
@@ -427,13 +427,13 @@ CMDS=<<EOF
 e asm.arch=loongarch
 e asm.bits=64
 ar > /dev/null
-ar v0=0x0001ffff
+ar a0=0x0001ffff
 wx 84c04000
 aes
 ar a0
 EOF
 EXPECT=<<EOF
-0xffff0000
+0xffffffffffff0000
 EOF
 RUN
 
@@ -450,6 +450,6 @@ aes
 ar a0
 EOF
 EXPECT=<<EOF
-0xffff0000
+0xffffffffffff0000
 EOF
 RUN

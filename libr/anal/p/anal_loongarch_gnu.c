@@ -82,6 +82,7 @@ static __always_inline st64 sign_extend64(ut64 value, int index)
 #define I21s2_SX(op) sign_extend64(I_I21s2((op)), 21+1)
 #define I26s2_SX(op) sign_extend64(I_I26s2((op)), 26+1)
 
+#define ES_SX32(x) "32,"x",~"
 #define ES_B(x) "0xff,"x",&"
 #define ES_H(x) "0xffff,"x",&"
 #define ES_W(x) "0xffffffff,"x",&"
@@ -1055,28 +1056,28 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 			break;
 			/* FIXME rk only bits 0~4 are used*/
 		case LA_INS_SLL_W:
-			r_strbuf_appendf(&op->esil,"%s,"ES_W("%s")",<<,%s,=", LA_RK(), LA_RJ(), LA_RD());
+			r_strbuf_appendf(&op->esil, ES_SX32("%s,"ES_W("%s")",<<")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
 		case LA_INS_SRL_W:
-			r_strbuf_appendf(&op->esil,"%s,"ES_W("%s")",>>,%s,=", LA_RK(), LA_RJ(), LA_RD());
+			r_strbuf_appendf(&op->esil,ES_SX32("%s,"ES_W("%s")",>>")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
 		case LA_INS_SRA_W:
-			r_strbuf_appendf(&op->esil,"%s,"ES_W("%s")",>>>>,%s,=", LA_RK(), LA_RJ(), LA_RD());
+			r_strbuf_appendf(&op->esil,ES_SX32("%s,"ES_W("%s")",>>>>")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
 		case LA_INS_ROTR_W:
-			r_strbuf_appendf(&op->esil,"%s,"ES_W("%s")",>>>,%s,=", LA_RK(), LA_RJ(), LA_RD());
+			r_strbuf_appendf(&op->esil,ES_SX32("%s,"ES_W("%s")",>>>")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
 		case LA_INS_SLLI_W:
-			r_strbuf_appendf(&op->esil,"%d,"ES_W("%s")",<<,%s,=", I_I5(opcode), LA_RJ(), LA_RD());
+			r_strbuf_appendf(&op->esil,ES_SX32("%d,"ES_W("%s")",<<")",%s,=", I_I5(opcode), LA_RJ(), LA_RD());
 			break;
 		case LA_INS_SRLI_W:
-			r_strbuf_appendf(&op->esil,"%d,"ES_W("%s")",>>,%s,=", I_I5(opcode), LA_RJ(), LA_RD());
+			r_strbuf_appendf(&op->esil,ES_SX32("%d,"ES_W("%s")",>>")",%s,=", I_I5(opcode), LA_RJ(), LA_RD());
 			break;
 		case LA_INS_SRAI_W:
-			r_strbuf_appendf(&op->esil,"%d,"ES_W("%s")",>>>>,%s,=", I_I5(opcode), LA_RJ(), LA_RD());
+			r_strbuf_appendf(&op->esil,ES_SX32("%d,"ES_W("%s")",>>>>")",%s,=", I_I5(opcode), LA_RJ(), LA_RD());
 			break;
 		case LA_INS_ROTRI_W:
-			r_strbuf_appendf(&op->esil,"%d,"ES_W("%s")",>>>,%s,=", I_I5(opcode), LA_RJ(), LA_RD());
+			r_strbuf_appendf(&op->esil,ES_SX32("%d,"ES_W("%s")",>>>")",%s,=", I_I5(opcode), LA_RJ(), LA_RD());
 			break;
 		case LA_INS_ALSL_WU:
 		case LA_INS_ALSL_W:
