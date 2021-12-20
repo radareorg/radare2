@@ -27,7 +27,7 @@ const char * const loongarch_r_lp64_name[32] =
  *
  * This is safe to use for 16- and 8-bit types as well.
  */
-static __always_inline st32 sign_extend32(ut32 value, int index)
+static inline st32 sign_extend32(ut32 value, int index)
 {
 	ut8 shift = 31 - index;
 	return (st32)(value << shift) >> shift;
@@ -38,7 +38,7 @@ static __always_inline st32 sign_extend32(ut32 value, int index)
  * @value: value to sign extend
  * @index: 0 based bit index (0<=index<64) to sign bit
  */
-static __always_inline st64 sign_extend64(ut64 value, int index)
+static inline st64 sign_extend64(ut64 value, int index)
 {
 	ut8 shift = 63 - index;
 	return (st64)(value << shift) >> shift;
