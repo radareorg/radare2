@@ -181,8 +181,6 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	char *prj_dir = r_file_dirname (rc_path);
 	R_FREE (rc_path);
 	if (r_str_endswith (prjfile, R_SYS_DIR "rc.r2")) {
-		// XXX
-		eprintf ("ENDS WITH\n");
 		path = strdup (prjfile);
 		path[strlen (path) - 3] = 0;
 	} else if (r_file_fexists ("%s%s%src.r2", R_SYS_DIR, prj_dir, prjfile)) {
@@ -301,7 +299,20 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	const bool scr_interactive = r_cons_is_interactive ();
 	const bool scr_prompt = r_config_get_b (core->config, "scr.prompt");
 	(void) load_project_rop (core, prj_name);
-	bool ret = r_core_cmd_file (core, rcpath);
+	const bool sandy = r_config_get_b (core->config, "prj.sandbox");
+	bool ret = false;
+	if (sandy) {
+		// enable sandbox (only allow file access, no network or program exec)
+		// projects can also tweak the cmd. eval vars to run code after the project is loaded
+		// users must be careful on that.
+		int oldgrain = r_sandbox_grain (R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_FILES);
+		r_sandbox_enable (true);
+		ret = r_core_cmd_file (core, rcpath);
+		r_sandbox_disable (true);
+		r_sandbox_grain (oldgrain);
+	} else {
+		ret = r_core_cmd_file (core, rcpath);
+	}
 	r_config_set_b (core->config, "cfg.fortunes", cfg_fortunes);
 	r_config_set_b (core->config, "scr.interactive", scr_interactive);
 	r_config_set_b (core->config, "scr.prompt", scr_prompt);
