@@ -278,6 +278,7 @@ extern RAsmPlugin r_asm_plugin_pdp11_gnu;
 extern RAsmPlugin r_asm_plugin_alpha;
 extern RAsmPlugin r_asm_plugin_vasm;
 extern RAsmPlugin r_asm_plugin_jdh8;
+extern RAsmPlugin r_asm_plugin_loongarch_gnu;
 
 #endif
 
