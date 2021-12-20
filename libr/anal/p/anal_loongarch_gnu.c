@@ -106,14 +106,6 @@ struct loongarch_ASE
 
 };
 
-
-typedef struct gnu_insn {
-	ut8 optype;
-	ut32 id;
-	union {
-	};
-} gnu_insn;
-
 typedef enum la_insn {
 	LA_INS_INVALID = 0,
 	LA_INS_ADDI_D,
