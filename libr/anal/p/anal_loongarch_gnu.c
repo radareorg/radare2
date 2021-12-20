@@ -1051,7 +1051,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 			break;
 		case LA_INS_MOD_WU:
 		case LA_INS_MOD_W:
-			r_strbuf_appendf(&op->esil, ES_W("%s")","ES_W("%s")",%,%s,=", LA_RJ(), LA_RK(), LA_RD());
+			r_strbuf_appendf(&op->esil, ES_W("%s")","ES_W("%s")",%%,%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
 			/* FIXME rk only bits 0~4 are used*/
 		case LA_INS_SLL_W:
