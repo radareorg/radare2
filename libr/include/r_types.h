@@ -428,7 +428,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define HAVE_REGEXP 1
 #endif
 
-#if __WINDOWS__ && !__MINGW32__
+#if __WINDOWS__
 #define PFMT64x "I64x"
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
