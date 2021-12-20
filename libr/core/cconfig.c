@@ -132,18 +132,19 @@ static const char *has_esil(RCore *core, const char *name) {
 }
 
 // copypasta from binr/rasm2/rasm2.c
-static void rasm2_list(RCore *core, const char *arch, int fmt) {
+static bool rasm2_list(RCore *core, const char *arch, int fmt) {
 	int i;
 	const char *feat2, *feat;
 	RAsm *a = core->rasm;
 	char bits[32];
 	RAsmPlugin *h;
 	RListIter *iter;
+	bool any = false;
 	PJ *pj = NULL;
 	if (fmt == 'j') {
 		pj = pj_new ();
 		if (!pj) {
-			return;
+			return false;
 		}
 		pj_o (pj);
 	}
@@ -154,6 +155,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 				int n = r_str_split (c, ',');
 				for (i = 0; i < n; i++) {
 					r_cons_println (r_str_word_get0 (c, i));
+					any = true;
 				}
 				free (c);
 				break;
@@ -208,6 +210,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 						feat, feat2, bits, h->name,
 						r_str_get_fail (h->license, "unknown"), h->desc);
 			}
+			any = true;
 		}
 	}
 	if (fmt == 'j') {
@@ -215,6 +218,100 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
+	return any;
+}
+// more copypasta
+static bool ranal2_list(RCore *core, const char *arch, int fmt) {
+	int i;
+	const char *feat2, *feat;
+	RAnal *a = core->anal;
+	char bits[32];
+	RAnalPlugin *h;
+	RListIter *iter;
+	bool any = false;
+	PJ *pj = NULL;
+	if (fmt == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			return false;
+		}
+		pj_o (pj);
+	}
+	r_list_foreach (a->plugins, iter, h) {
+		if (arch && *arch) {
+			if (h->cpus && !strcmp (arch, h->name)) {
+				char *c = strdup (h->cpus);
+				int n = r_str_split (c, ',');
+				for (i = 0; i < n; i++) {
+					r_cons_println (r_str_word_get0 (c, i));
+					any = true;
+				}
+				free (c);
+				break;
+			}
+		} else {
+			bits[0] = 0;
+			/* The underscore makes it easier to distinguish the
+			 * columns */
+			if (h->bits & 8) {
+				strcat (bits, "_8");
+			}
+			if (h->bits & 16) {
+				strcat (bits, "_16");
+			}
+			if (h->bits & 32) {
+				strcat (bits, "_32");
+			}
+			if (h->bits & 64) {
+				strcat (bits, "_64");
+			}
+			if (!*bits) {
+				strcat (bits, "_0");
+			}
+			feat = "__";
+#if 0
+			if (h->assemble && h->disassemble) {
+				feat = "ad";
+			}
+			if (h->assemble && !h->disassemble) {
+				feat = "a_";
+			}
+			if (!h->assemble && h->disassemble) {
+				feat = "_d";
+			}
+#else
+			feat = "_d";
+#endif
+			feat2 = has_esil (core, h->name);
+			if (fmt == 'q') {
+				r_cons_println (h->name);
+			} else if (fmt == 'j') {
+				const char *license = "GPL";
+				pj_k (pj, h->name);
+				pj_o (pj);
+				pj_k (pj, "bits");
+				pj_a (pj);
+				pj_i (pj, 32);
+				pj_i (pj, 64);
+				pj_end (pj);
+				pj_ks (pj, "license", license);
+				pj_ks (pj, "description", h->desc);
+				pj_ks (pj, "features", feat);
+				pj_end (pj);
+			} else {
+				r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
+						feat, feat2, bits, h->name,
+						r_str_get_fail (h->license, "unknown"), h->desc);
+			}
+			any = true;
+		}
+	}
+	if (fmt == 'j') {
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
+	}
+	return any;
 }
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
@@ -398,6 +495,9 @@ static bool cb_analarch(void *user, void *data) {
 static bool cb_analcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	if (strstr (node->value, "?")) {
+		ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
+	}
 	r_anal_set_cpu (core->anal, node->value);
 	/* set pcalign */
 	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
@@ -564,7 +664,9 @@ static bool cb_asmcpu(void *user, void *data) {
 	if (*node->value == '?') {
 		update_asmcpu_options (core, node);
 		/* print verbose help instead of plain option listing */
-		rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1]);
+		if (!rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1])) {
+			ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
+		}
 		return 0;
 	}
 	r_asm_set_cpu (core->rasm, node->value);
