@@ -475,8 +475,8 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			break;
 		case V850_EXT_SAR:
 			op->type = R_ANAL_OP_TYPE_SAR;
-			reg1 = F9_RN1(word1);
-			reg2 = F9_RN2(word1);
+			reg1 = F9_RN1 (word1);
+			reg2 = F9_RN2 (word1);
 			r_strbuf_appendf (&op->esil, "31,%s,>>,?{,%s,32,-,%s,1,<<,--,<<,}{,0,},%s,%s,>>,|,%s,=", reg2, reg1, reg1, reg1, reg2, reg2);
 			update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
