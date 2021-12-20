@@ -123,12 +123,10 @@ R_API bool r_sandbox_disable(bool e) {
 	return G_enabled;
 }
 
-R_API bool r_sandbox_grain(int mask) {
-	if (G_enabled) {
-		return false;
-	}
+R_API int r_sandbox_grain(int mask) {
+	int old_grain = G_graintype;
 	G_graintype = (mask & R_SANDBOX_GRAIN_ALL);
-	return mask == G_graintype;
+	return old_grain;
 }
 
 R_API bool r_sandbox_check(int mask) {

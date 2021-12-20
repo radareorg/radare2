@@ -50,7 +50,7 @@ R_API int r_sandbox_kill(int pid, int sig);
 #define R_SANDBOX_GRAIN_ALL (8|4|2|1)
 R_API bool r_sandbox_enable(bool e);
 R_API bool r_sandbox_disable(bool e);
-R_API bool r_sandbox_grain(int mask);
+R_API int r_sandbox_grain(int mask);
 R_API bool r_sandbox_check(int mask);
 
 #ifdef __cplusplus
