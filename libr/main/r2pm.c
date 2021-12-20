@@ -275,14 +275,17 @@ static int r2pm_doc_pkg(const char *pkg) {
 
 static int r2pm_clean_pkg(const char *pkg) {
 	printf ("Cleaning %s ...\n", pkg);
+	// TODO. make clean/mrproper instead maybe better?
 	char *srcdir = r2pm_gitdir ();
 	if (R_STR_ISNOTEMPTY (srcdir)) {
 		char *d = r_file_new (srcdir, pkg, NULL);
-		eprintf ("rm -rf '%s'\n", d);
-		r_file_rm_rf (d);
-		free (srcdir);
+		if (d && r_file_exists (d)) {
+			eprintf ("rm -rf '%s'\n", d);
+			r_file_rm_rf (d);
+		}
 		free (d);
 	}
+	free (srcdir);
 	return 0;
 }
 
