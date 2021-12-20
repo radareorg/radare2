@@ -644,7 +644,7 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 	RListIter *iter, *iter2;
 	ut64 uv = r_num_math (NULL, un);
 	ut64 sum = 0;
-	size_t page = 0, page_items = 0;
+	int page = 0, page_items = 0;
 	size_t lrow = 0;
 	if (op == 't') {
 		size_t ll = r_list_length (t->rows);
@@ -653,7 +653,7 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 		}
 	}
 	if (op == 'p') {
-		sscanf (un, "%zd/%zd", &page, &page_items);
+		sscanf (un, "%d/%d", &page, &page_items);
 		if (page < 1) {
 			page = 1;
 		}

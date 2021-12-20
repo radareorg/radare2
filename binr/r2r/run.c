@@ -158,7 +158,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	if (args_size) {
 		memcpy (argv + 1, args, sizeof (char *) * args_size);
 	}
-	char *cmdline = r_str_format_msvc_argv (args_size + 1, argv);
+	char *cmdline = r_str_format_msvc_argv (args_size + 1, (const char **)argv);
 	free (argv);
 	if (!cmdline) {
 		return NULL;
@@ -319,7 +319,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 				continue;
 			}
 			stdout_buf[r] = '\0';
-			r_str_remove_char (stdout_buf, '\r');
+			r_str_remove_char ((char *)stdout_buf, '\r');
 			r_strbuf_append (&proc->out, (const char *)stdout_buf);
 			ResetEvent (stdout_overlapped.hEvent);
 			DO_READ (stdout)
@@ -333,7 +333,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 				continue;
 			}
 			stderr_buf[read] = '\0';
-			r_str_remove_char (stderr_buf, '\r');
+			r_str_remove_char ((char *)stderr_buf, '\r');
 			r_strbuf_append (&proc->err, (const char *)stderr_buf);
 			ResetEvent (stderr_overlapped.hEvent);
 			DO_READ (stderr);
@@ -829,7 +829,7 @@ static char *convert_win_cmds(const char *cmds) {
 					if (c == '{') {
 						*p++ = '%';
 						cmds++;
-						for (; c = *cmds, c && c != '}'; *cmds++) {
+						for (; c = *cmds, c && c != '}'; *++cmds) {
 							*p++ = c;
 						}
 						if (c) { // must check c to prevent overflow

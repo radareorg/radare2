@@ -3785,7 +3785,7 @@ reread:
 			int hits = 0;
 			r_list_foreach (param.boundaries, iter, map) {
 				if (param.outmode != R_MODE_JSON) {
-					eprintf ("-- %llx %llx\n", r_io_map_begin (map), r_io_map_end (map));
+					eprintf ("-- %"PFMT64x" %"PFMT64x"\n", r_io_map_begin (map), r_io_map_end (map));
 				}
 				r_cons_break_push (NULL, NULL);
 				for (addr = r_io_map_begin (map); addr < r_io_map_end (map); addr++) {
@@ -3829,7 +3829,7 @@ reread:
 				r_list_foreach (param.boundaries, iter, map) {
 					ut64 from = r_io_map_begin (map);
 					ut64 to = r_io_map_end (map);
-					eprintf ("-- %llx %llx\n", from, to);
+					eprintf ("-- %"PFMT64x" %"PFMT64x"\n", from, to);
 
 					r_cons_break_push (NULL, NULL);
 					r_search_update_read (core->search, from, to);
