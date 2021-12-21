@@ -524,7 +524,7 @@ the_end:
 }
 
 #if 0
-static RThreadFunctionRet r_core_rtr_http_thread (RThread *th) {
+static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 	if (!th) {
 		return false;
 	}

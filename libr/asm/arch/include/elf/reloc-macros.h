@@ -69,7 +69,7 @@
    the relocation is not recognised, NULL is returned.  */
 
 #define START_RELOC_NUMBERS(name)   				\
-static const char *name (unsigned long rtype);			\
+static const char *name(unsigned long rtype);			\
 static const char *						\
 name (unsigned long rtype)					\
 {								\

@@ -23,7 +23,7 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
-static Sdb *get_sdb (RBinFile *bf) {
+static Sdb *get_sdb(RBinFile *bf) {
 	RBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
@@ -528,7 +528,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t * reloc, ut64 symbol_at) {
+static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t *reloc, ut64 symbol_at) {
 	ut64 pc = reloc->addr;
 	ut64 ins_len = 0;
 

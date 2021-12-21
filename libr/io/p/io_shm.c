@@ -91,7 +91,7 @@ static bool shm__plugin_open(RIO *io, const char *pathname, bool many) {
 	return !strncmp (pathname, "shm://", 6);
 }
 
-static inline int getshmfd (RIOShm *shm) {
+static inline int getshmfd(RIOShm *shm) {
 	return (((int)(size_t)shm->buf) >> 4) & 0xfff;
 }
 

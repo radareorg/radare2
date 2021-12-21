@@ -50,7 +50,7 @@ static const bool config_lazy_lock =
     false
 #endif
     ;
-static const char * const config_malloc_conf = JEMALLOC_CONFIG_MALLOC_CONF;
+static const char *const config_malloc_conf = JEMALLOC_CONFIG_MALLOC_CONF;
 static const bool config_prof =
 #ifdef JEMALLOC_PROF
     true

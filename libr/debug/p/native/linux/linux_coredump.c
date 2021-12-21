@@ -783,7 +783,7 @@ static bool dump_elf_map_content(RDebug *dbg, RBuffer *dest, linux_map_entry_t *
 	return true;
 }
 
-static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
+static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	proc_per_process_t *p;
 	char *temp_p_uid, *temp_p_gid, *p_uid, *p_gid;
 	ut16 filter_flags, default_filter_flags = 0x33;
@@ -907,7 +907,7 @@ static bool dump_elf_sheader_pxnum(RBuffer *dest, elf_shdr_t *shdr) {
 }
 
 #if __i386__
-static elf_fpxregset_t *linux_get_fpx_regset (RDebug *dbg, int tid) {
+static elf_fpxregset_t *linux_get_fpx_regset(RDebug *dbg, int tid) {
 #ifdef PTRACE_GETREGSET
 	struct iovec transfer;
 	elf_fpxregset_t *fpxregset = R_NEW0 (elf_fpxregset_t);
@@ -1032,7 +1032,7 @@ void write_note_hdr (note_type_t type, ut8 **note_data) {
 	*note_data += size_note_hdr;
 }
 
-static int *get_unique_thread_id (RDebug *dbg, int n_threads) {
+static int *get_unique_thread_id(RDebug *dbg, int n_threads) {
 	RListIter *it;
 	RList *list;
 	RDebugPid *th;

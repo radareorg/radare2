@@ -26,20 +26,20 @@ static unsigned long G_pos;
 #define one(x)		((unsigned int) (x))
 #define two(x,y)	((unsigned int) (x) | ((unsigned int) (y) << 16))
 
-static const char * not_valid    = "displacement value is not in range and is not aligned";
-static const char * out_of_range = "displacement value is out of range";
-static const char * not_aligned  = "displacement value is not aligned";
-static const char * immediate_out_of_range = "immediate value is out of range";
-static const char * branch_out_of_range = "branch value out of range";
-static const char * branch_out_of_range_and_odd_offset = "branch value not in range and to odd offset";
-static const char * branch_to_odd_offset = "branch to odd offset";
-static const char * pos_out_of_range = "position value is out of range";
-static const char * width_out_of_range = "width value is out of range";
-static const char * selid_out_of_range = "SelID is out of range";
-static const char * vector8_out_of_range = "vector8 is out of range";
-static const char * vector5_out_of_range = "vector5 is out of range";
-static const char * imm10_out_of_range = "imm10 is out of range";
-static const char * sr_selid_out_of_range = "SR/SelID is out of range";
+static const char *not_valid    = "displacement value is not in range and is not aligned";
+static const char *out_of_range = "displacement value is out of range";
+static const char *not_aligned  = "displacement value is not aligned";
+static const char *immediate_out_of_range = "immediate value is out of range";
+static const char *branch_out_of_range = "branch value out of range";
+static const char *branch_out_of_range_and_odd_offset = "branch value not in range and to odd offset";
+static const char *branch_to_odd_offset = "branch to odd offset";
+static const char *pos_out_of_range = "position value is out of range";
+static const char *width_out_of_range = "width value is out of range";
+static const char *selid_out_of_range = "SelID is out of range";
+static const char *vector8_out_of_range = "vector8 is out of range";
+static const char *vector5_out_of_range = "vector5 is out of range";
+static const char *imm10_out_of_range = "imm10 is out of range";
+static const char *sr_selid_out_of_range = "SR/SelID is out of range";
 
 inline bool v850_msg_is_out_of_range(const char* msg) {
 	return msg == out_of_range || msg == immediate_out_of_range || msg == branch_out_of_range;

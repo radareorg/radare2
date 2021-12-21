@@ -114,7 +114,7 @@ typedef struct _r_bin_image {
 	ut32 nlist_count;
 } RDyldBinImage;
 
-static RList * pending_bin_files = NULL;
+static RList *pending_bin_files = NULL;
 
 static ut64 va2pa(uint64_t addr, ut32 n_maps, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left);
 
@@ -1869,7 +1869,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 #if 0
-static void parse_mach0 (RList *ret, ut64 paddr, RBinFile *bf) {
+static void parse_mach0(RList *ret, ut64 paddr, RBinFile *bf) {
 	// TODO
 }
 #endif

@@ -76,7 +76,7 @@ RIOMMapFileObj *r_io_mmap_create_new_file(RIO  *io, const char *filename, int mo
 	return mmo;
 }
 
-static int r_io_mmap_check (const char *filename) {
+static int r_io_mmap_check(const char *filename) {
 	return (filename && !strncmp (filename, "mmap://", 7) && *(filename + 7));
 }
 

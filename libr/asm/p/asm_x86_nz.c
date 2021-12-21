@@ -569,7 +569,7 @@ static int opsub(RAsm *a, ut8 *data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x28);
 }
 
-static int opor(RAsm *a, ut8 * data, const Opcode *op) {
+static int opor(RAsm *a, ut8 *data, const Opcode *op) {
 	if (op->operands[1].type & OT_CONSTANT) {
 		if (((op->operands[0].type & OT_GPREG) && !(op->operands[0].type & OT_MEMORY))
 				&& op->operands[0].type & OT_WORD) {
@@ -605,7 +605,7 @@ static int opxadd(RAsm *a, ut8 *data, const Opcode *op) {
 	return i;
 }
 
-static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
+static int opxor(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	if (op->operands_count < 2) {
 		return -1;
@@ -628,7 +628,7 @@ static int opxor(RAsm *a, ut8 * data, const Opcode *op) {
 	return process_1byte_op (a, data, op, 0x30);
 }
 
-static int opneg(RAsm *a, ut8 * data, const Opcode *op) {
+static int opneg(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 
@@ -650,17 +650,17 @@ static int opneg(RAsm *a, ut8 * data, const Opcode *op) {
 	return -1;
 }
 
-static int endbr64(RAsm *a, ut8 * data, const Opcode *op) {
+static int endbr64(RAsm *a, ut8 *data, const Opcode *op) {
 	memcpy (data, "\xf3\x0f\x1e\xfa", 4);
 	return 4;
 }
 
-static int endbr32(RAsm *a, ut8 * data, const Opcode *op) {
+static int endbr32(RAsm *a, ut8 *data, const Opcode *op) {
 	memcpy (data, "\xf3\x0f\x1e\xfb", 4);
 	return 4;
 }
 
-static int opnot(RAsm *a, ut8 * data, const Opcode *op) {
+static int opnot(RAsm *a, ut8 *data, const Opcode *op) {
 	is_valid_registers (op);
 	int l = 0;
 

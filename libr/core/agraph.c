@@ -1711,7 +1711,7 @@ static void fix_back_edge_dummy_nodes(RAGraph *g, RANode *from, RANode *to) {
 	}
 }
 
-static int get_edge_number (const RAGraph *g, RANode *src, RANode *dst, bool outgoing) {
+static int get_edge_number(const RAGraph *g, RANode *src, RANode *dst, bool outgoing) {
 	RListIter *itn;
 	RGraphNode *gv;
 	int cur_nth = 0;
@@ -2269,7 +2269,7 @@ static void fold_asm_trace(RCore *core, RAGraph *g) {
 	//agraph_refresh (r_cons_singleton ()->event_data);
 }
 
-static void delete_dup_edges (RAGraph *g) {
+static void delete_dup_edges(RAGraph *g) {
 	RListIter *it, *in_it, *in_it2, *in_it2_tmp;
 	RGraphNode *n, *a, *b;
 	r_list_foreach (g->graph->nodes, it, n) {
@@ -2814,7 +2814,7 @@ static void agraph_print_edges_simple(RAGraph *g) {
 	}
 }
 
-static int first_x_cmp (const void *_a, const void *_b) {
+static int first_x_cmp(const void *_a, const void *_b) {
 	RGraphNode *ga = (RGraphNode *)_a;
 	RGraphNode *gb = (RGraphNode *)_b;
 	RANode *a = (RANode*) ga->data;

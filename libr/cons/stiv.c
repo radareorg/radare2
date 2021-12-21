@@ -8,7 +8,7 @@
 
 void (*renderer)(PrintfCallback cb_printf, const ut8*, const ut8 *);
 
-static int reduce8 (int r, int g, int b) {
+static int reduce8(int r, int g, int b) {
 	int colors_len = 8;
 	int select = 0;
 	int odistance = -1;
@@ -94,7 +94,7 @@ static void render_ascii(PrintfCallback cb_printf, const ut8 *c, const ut8 *d) {
 	cb_printf ("%c", pal[idx]);
 }
 
-static void dorender (PrintfCallback cb_printf, const ut8 *buf, int len, int w, int h) {
+static void dorender(PrintfCallback cb_printf, const ut8 *buf, int len, int w, int h) {
 	const ut8 *c, *d;
 	int x, y;
 	for (y=0; y<h; y+=2) {

@@ -35,7 +35,7 @@ static void fini_fi(fnditem* fi) {
 	free (fu);
 }
 
-static void add_fi (fnditem* n, unsigned char* blk, int patlen) {
+static void add_fi(fnditem* n, unsigned char* blk, int patlen) {
 	fnditem* p;
 	for (p = n; p->next != NULL; p = p->next) {
 		;

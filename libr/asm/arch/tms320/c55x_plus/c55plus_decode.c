@@ -210,7 +210,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 	return res;
 }
 
-static char *decode_ins (st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len_dec,
+static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len_dec,
 	ut32 *reg_len_dec, ut32 *ret_ins_bits, ut32 magic_value, ut8 two_ins, int *err_code)
 {
 	ut32 ins_len;
@@ -350,7 +350,7 @@ void set_magic_value(ut32 *magic_value, st32 hash_code, int *err_code) {
 	}
 }
 
-static char *do_decode (ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_pos,
+static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_pos,
 	st32 *ins_hash_code, int *err_code) {
 	st32 hash_code, hash_aux;
 	ut32 reg_len_dec, ins_len_dec, ret_ins_bits;

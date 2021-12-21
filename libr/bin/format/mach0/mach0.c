@@ -673,14 +673,14 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 	return true;
 }
 
-static char *readString (ut8 *p, int off, int len) {
+static char *readString(ut8 *p, int off, int len) {
 	if (off < 0 || off >= len) {
 		return NULL;
 	}
 	return r_str_ndup ((const char *)p + off, len - off);
 }
 
-static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
+static void parseCodeDirectory(RBuffer *b, int offset, int datasize) {
 	typedef struct __CodeDirectory {
 		uint32_t magic;		/* magic number (CSMAGIC_CODEDIRECTORY) */
 		uint32_t length;	/* total length of CodeDirectory blob */
@@ -1144,7 +1144,7 @@ wrong_read:
 	return false;
 }
 
-static int parse_function_starts (struct MACH0_(obj_t) *bin, ut64 off) {
+static int parse_function_starts(struct MACH0_(obj_t) *bin, ut64 off) {
 	struct linkedit_data_command fc;
 	ut8 sfc[sizeof (struct linkedit_data_command)] = {0};
 	int len;
@@ -2474,7 +2474,7 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 	return NULL;
 }
 
-static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void * ctx) {
+static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void *ctx) {
 	r_return_val_if_fail (bin, 0);
 	if (!bin->dyld_info) {
 		return 0;
@@ -2634,7 +2634,7 @@ beach:
 	return count;
 }
 
-static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void * ctx) {
+static void fill_exports_list(struct MACH0_(obj_t) *bin, const char *name, ut64 flags, ut64 offset, void *ctx) {
 	RList *list = (RList*) ctx;
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (!sym) {
@@ -3134,7 +3134,7 @@ static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
 	return a->addr - b->addr;
 }
 
-static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList * relocs, ut32 offset, ut32 num) {
+static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList *relocs, ut32 offset, ut32 num) {
 	if (!num || !offset || (st32)num < 0) {
 		return;
 	}
@@ -3759,7 +3759,7 @@ const char *MACH0_(get_cputype)(struct MACH0_(obj_t) *bin) {
 	return bin? MACH0_(get_cputype_from_hdr) (&bin->hdr): "unknown";
 }
 
-static const char *cpusubtype_tostring (ut32 cputype, ut32 cpusubtype) {
+static const char *cpusubtype_tostring(ut32 cputype, ut32 cpusubtype) {
 	switch (cputype) {
 	case CPU_TYPE_VAX:
 		switch (cpusubtype) {

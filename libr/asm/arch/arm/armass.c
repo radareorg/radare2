@@ -490,7 +490,7 @@ static ut32 getimmed8(const char *str) {
 	}
 }
 
-static st32 firstsigdigit (ut32 num) {
+static st32 firstsigdigit(ut32 num) {
 	st32 f = -1;
 	st32 b = -1;
 	ut32 forwardmask = 0x80000000;
@@ -762,7 +762,7 @@ static st32 getreglist(const char *input) {
 	return res;
 }
 
-static st32 getnummemend (const char *input) {
+static st32 getnummemend(const char *input) {
 	st32 res;
 	err = false;
 	if (!input || !*input || !r_str_endswith (input, "]")) {
@@ -779,7 +779,7 @@ static st32 getnummemend (const char *input) {
 	return res;
 }
 
-static st32 getnummemendbang (const char *input) {
+static st32 getnummemendbang(const char *input) {
 	st32 res;
 	err = false;
 	if (!input || (strlen (input) < 2) || (input[strlen(input) - 2] != ']' || !r_str_endswith (input, "!"))) {
@@ -845,7 +845,7 @@ static int getcoprocreg(const char *str) {
 	return -1;
 }
 
-static ut8 interpret_msrbank (char *str, ut8 *spsr) {
+static ut8 interpret_msrbank(char *str, ut8 *spsr) {
 	const char fields[] = {'c', 'x', 's', 'f', 0};
 	int res = 0;
 	int i, j;

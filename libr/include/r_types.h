@@ -737,6 +737,6 @@ typedef int RRef;
 #define R_REF_TYPE RRef R_REF_NAME
 #define R_REF_FUNCTIONS(s, n) \
 static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
-static inline void n##_unref(s *x) { r_unref (x, n##_free); }
+static inline void n##_unref(s *x) { r_unref(x, n##_free); }
 
 #endif // R2_TYPES_H

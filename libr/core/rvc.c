@@ -180,7 +180,7 @@ static inline char *sha256_file(const char *fname) {
 	return NULL;
 }
 
-static void free_blobs (RList *blobs) {
+static void free_blobs(RList *blobs) {
 	RListIter *iter;
 	RvcBlob *blob;
 	r_list_foreach (blobs, iter, blob) {

@@ -274,20 +274,20 @@ static st64 get_immed_sgnext(const ut64 insn, const ut8 nbit) {
 		| (((insn & ((ut64)1 << nbit)) >> nbit) * mask));
 }
 
-static RAnalValue * value_fill_addr_pc_disp(const ut64 addr, const st64 disp) {
+static RAnalValue *value_fill_addr_pc_disp(const ut64 addr, const st64 disp) {
 	RAnalValue *val = r_anal_value_new();
 	val->base = addr + disp;
 	return val;
 }
 
-static RAnalValue * value_fill_addr_reg_regdelta(RAnal const * const anal, const int ireg, const int iregdelta) {
+static RAnalValue * value_fill_addr_reg_regdelta(RAnal const *const anal, const int ireg, const int iregdelta) {
 	RAnalValue *val = r_anal_value_new();
 	val->reg = r_reg_get(anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
 	val->reg = r_reg_get(anal->reg, gpr_regs[iregdelta], R_REG_TYPE_GPR);
 	return val;
 }
 
-static RAnalValue * value_fill_addr_reg_disp(RAnal const * const anal, const int ireg, const st64 disp) {
+static RAnalValue * value_fill_addr_reg_disp(RAnal const *const anal, const int ireg, const st64 disp) {
 	RAnalValue *val = r_anal_value_new();
 	val->reg = r_reg_get(anal->reg, gpr_regs[ireg], R_REG_TYPE_GPR);
 	val->delta = disp;
@@ -302,7 +302,7 @@ static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
 	op->fail = addr + 4;
 }
 
-static void anal_jmpl(RAnal const * const anal, RAnalOp *op, const ut32 insn, const ut64 addr) {
+static void anal_jmpl(RAnal const *const anal, RAnalOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
 	if (X_LDST_I (insn)) {
 		disp = get_immed_sgnext (insn, 12);

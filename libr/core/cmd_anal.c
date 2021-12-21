@@ -2338,7 +2338,7 @@ static int bb_cmp(const void *a, const void *b) {
 	return ba->addr - bb->addr;
 }
 
-static int casecmp(const void* _a, const void * _b) {
+static int casecmp(const void* _a, const void *_b) {
 	const RAnalCaseOp* a = _a;
 	const RAnalCaseOp* b = _b;
 	return a->addr != b->addr;
@@ -2825,7 +2825,7 @@ static bool anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 	return true;
 }
 
-static bool anal_bb_edge (RCore *core, const char *input) {
+static bool anal_bb_edge(RCore *core, const char *input) {
 	// "afbe" switch-bb-addr case-bb-addr
 	char *arg = strdup (r_str_trim_head_ro (input));
 	char *sp = strchr (arg, ' ');
@@ -3068,7 +3068,7 @@ static bool fcnNeedsPrefix(const char *name) {
 	return (!strchr (name, '.'));
 }
 
-static char * getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
+static char *getFunctionName(RCore *core, ut64 off, const char *name, bool prefix) {
 	const char *fcnpfx = "";
 	if (prefix) {
 		if (fcnNeedsPrefix (name) && (!fcnpfx || !*fcnpfx)) {
@@ -5597,7 +5597,7 @@ static void cmd_anal_info(RCore *core, const char *input) {
 	}
 }
 
-static void initialize_stack (RCore *core, ut64 addr, ut64 size) {
+static void initialize_stack(RCore *core, ut64 addr, ut64 size) {
 	const char *mode = r_config_get (core->config, "esil.fillstack");
 	if (mode && *mode && *mode != '0') {
 		const ut64 bs = 4096 * 32;
@@ -5802,7 +5802,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 static ut64 opc = UT64_MAX;
 static ut8 *regstate = NULL;
 
-static void esil_init (RCore *core) {
+static void esil_init(RCore *core) {
 	const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 	int nonull = r_config_get_i (core->config, "esil.nonull");
 	opc = r_reg_getv (core->anal->reg, pc);
@@ -5839,7 +5839,7 @@ typedef struct {
 	RList *inputregs;
 } AeaStats;
 
-static void aea_stats_init (AeaStats *stats) {
+static void aea_stats_init(AeaStats *stats) {
 	stats->regs = r_list_newf (free);
 	stats->regread = r_list_newf (free);
 	stats->regwrite = r_list_newf (free);
@@ -5847,7 +5847,7 @@ static void aea_stats_init (AeaStats *stats) {
 	stats->inputregs = r_list_newf (free);
 }
 
-static void aea_stats_fini (AeaStats *stats) {
+static void aea_stats_fini(AeaStats *stats) {
 	R_FREE (stats->regs);
 	R_FREE (stats->regread);
 	R_FREE (stats->regwrite);
@@ -8058,7 +8058,7 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 	r_list_free (xrefs);
 }
 
-static void cmd_anal_ucall_ref (RCore *core, ut64 addr) {
+static void cmd_anal_ucall_ref(RCore *core, ut64 addr) {
 	RAnalFunction * fcn = r_anal_get_function_at (core->anal, addr);
 	if (fcn) {
 		r_cons_printf (" ; %s", fcn->name);
@@ -10031,7 +10031,7 @@ static int compute_coverage(RCore *core) {
 	return cov;
 }
 
-static int compute_code (RCore* core) {
+static int compute_code(RCore* core) {
 	int code = 0;
 	RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
 	if (bank) {
@@ -10063,7 +10063,7 @@ static int compute_calls(RCore *core) {
 	return cov;
 }
 
-static void r_core_anal_info (RCore *core, const char *input) {
+static void r_core_anal_info(RCore *core, const char *input) {
 	int fcns = r_list_length (core->anal->fcns);
 	int strs = r_flag_count (core->flags, "str.*");
 	int syms = r_flag_count (core->flags, "sym.*");

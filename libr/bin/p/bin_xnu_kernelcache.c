@@ -123,18 +123,18 @@ typedef struct _RKmodInfo {
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
-static ut64 p_ptr (ut64 decorated_addr, RKernelCacheObj *obj);
-static ut64 r_ptr (ut8 *buf, RKernelCacheObj *obj);
+static ut64 p_ptr(ut64 decorated_addr, RKernelCacheObj *obj);
+static ut64 r_ptr(ut8 *buf, RKernelCacheObj *obj);
 
 static RRebaseInfo *r_rebase_info_new_from_mach0(RBuffer *cache_buf, struct MACH0_(obj_t) *mach0);
 static void r_rebase_info_free(RRebaseInfo *info);
 static void r_rebase_info_populate(RRebaseInfo *info, RKernelCacheObj *obj);
 static ut64 iterate_rebase_list(RBuffer *cache_buf, ut64 multiplier, ut64 start_offset, ROnRebaseFunc func, void *user_data);
-static ut64 r_rebase_offset_to_paddr (RKernelCacheObj *obj, struct section_t *sections, ut64 offset);
+static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, struct section_t *sections, ut64 offset);
 static void swizzle_io_read(RKernelCacheObj *obj, RIO *io);
 static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static bool r_parse_pointer(RParsedPointer *ptr, ut64 decorated_addr, RKernelCacheObj *obj);
-static bool on_rebase_pointer (ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx);
+static bool on_rebase_pointer(ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx);
 static void rebase_buffer(RKernelCacheObj *obj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut8 *buf, int count);
 
@@ -150,7 +150,7 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr);
 static RList *resolve_mig_subsystem(RKernelCacheObj *obj);
 static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCacheObj *obj, RBinFile *bf, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj);
-static int prot2perm (int x);
+static int prot2perm(int x);
 
 static void r_kext_free(RKext *kext);
 static void r_kext_fill_text_range(RKext *kext);
@@ -174,7 +174,7 @@ static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf);
 
 static void r_kernel_cache_free(RKernelCacheObj *obj);
 
-static RList * pending_bin_files = NULL;
+static RList *pending_bin_files = NULL;
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RBuffer *fbuf = r_buf_ref (buf);
@@ -451,13 +451,13 @@ static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf) {
 	return kexts;
 }
 
-static ut64 p_ptr (ut64 decorated_addr, RKernelCacheObj *obj) {
+static ut64 p_ptr(ut64 decorated_addr, RKernelCacheObj *obj) {
 	RParsedPointer ptr;
 	r_parse_pointer (&ptr, decorated_addr, obj);
 	return ptr.address;
 }
 
-static ut64 r_ptr (ut8 *buf, RKernelCacheObj *obj) {
+static ut64 r_ptr(ut8 *buf, RKernelCacheObj *obj) {
 	ut64 decorated_addr = r_read_le64 (buf);
 	return K_PPTR (decorated_addr);
 }
@@ -1090,7 +1090,7 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static int prot2perm (int x) {
+static int prot2perm(int x) {
 	int r = 0;
 	if (x&1) r |= 4;
 	if (x&2) r |= 2;
@@ -1940,7 +1940,7 @@ cleanup:
 	R_FREE (sections);
 }
 
-static ut64 r_rebase_offset_to_paddr (RKernelCacheObj *obj, struct section_t *sections, ut64 offset) {
+static ut64 r_rebase_offset_to_paddr(RKernelCacheObj *obj, struct section_t *sections, ut64 offset) {
 	ut64 vaddr = obj->rebase_info->kernel_base + offset;
 	int i = 0;
 	for (; !sections[i].last; i++) {
@@ -2190,7 +2190,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 	kobj->rebasing_buffer = false;
 }
 
-static bool on_rebase_pointer (ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx) {
+static bool on_rebase_pointer(ut64 offset, ut64 decorated_addr, RRebaseCtx *ctx) {
 	if (offset < ctx->off) {
 		return true;
 	}

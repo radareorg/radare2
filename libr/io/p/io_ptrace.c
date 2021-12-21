@@ -23,7 +23,7 @@ typedef struct {
 #define RIOPTRACE_OPID(x) (((RIOPtrace*)(x)->data)->opid)
 #define RIOPTRACE_PID(x) (((RIOPtrace*)(x)->data)->pid)
 #define RIOPTRACE_FD(x) (((RIOPtrace*)(x)->data)->fd)
-static void open_pidmem (RIOPtrace *iop);
+static void open_pidmem(RIOPtrace *iop);
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
@@ -152,7 +152,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return ptrace_write_at (io, RIOPTRACE_PID (fd), buf, len, io->off);
 }
 
-static void open_pidmem (RIOPtrace *iop) {
+static void open_pidmem(RIOPtrace *iop) {
 #if USE_PROC_PID_MEM
 	char pidmem[32];
 	snprintf (pidmem, sizeof (pidmem), "/proc/%d/mem", iop->pid);
@@ -332,7 +332,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	return NULL;
 }
 
-static int __getpid (RIODesc *fd) {
+static int __getpid(RIODesc *fd) {
 	RIOPtrace *iop = (RIOPtrace *)fd->data;
 	if (!iop) {
 		return -1;

@@ -11,7 +11,7 @@
 #endif
 
 #if __WINDOWS__
-static HANDLE myCreateChildProcess(const char * szCmdline) {
+static HANDLE myCreateChildProcess(const char *szCmdline) {
 	PROCESS_INFORMATION piProcInfo = {0};
 	STARTUPINFO siStartInfo = {0};
 	BOOL bSuccess = FALSE;

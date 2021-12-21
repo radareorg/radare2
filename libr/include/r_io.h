@@ -371,7 +371,7 @@ R_API RIOBank *r_io_bank_get(RIO *io, const ut32 bankid);
 R_API bool r_io_bank_use(RIO *io, ut32 bankid);
 R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_map_add_bottom(RIO *io, const ut32 bankid, const ut32 mapid);
-R_API bool r_io_bank_map_priorize (RIO *io, const ut32 bankid, const ut32 mapid);
+R_API bool r_io_bank_map_priorize(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_map_depriorize(RIO *io, const ut32 bankid, const ut32 mapid);
 R_API bool r_io_bank_update_map_boundaries(RIO *io, const ut32 bankid, const ut32 mapid, ut64 ofrom, ut64 oto);
 R_API bool r_io_bank_locate(RIO *io, const ut32 bankid, ut64 *addr, const ut64 size, ut64 load_align);
@@ -546,7 +546,7 @@ R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 
 #if HAVE_PTRACE
 R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
-R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *child_callback_user);
+R_API pid_t r_io_ptrace_fork(RIO *io, void(*child_callback)(void *), void *child_callback_user);
 R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user);
 #endif
 

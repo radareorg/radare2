@@ -289,7 +289,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	return res;
 }
 
-static int cmpstr (const void *_a, const void *_b) {
+static int cmpstr(const void *_a, const void *_b) {
 	const char *a = _a, *b = _b;
 	return (int)strcmp (a, b);
 }

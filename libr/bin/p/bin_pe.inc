@@ -7,7 +7,7 @@
 #include "../i/private.h"
 #include "pe/pe.h"
 
-static Sdb* get_sdb (RBinFile *bf) {
+static Sdb* get_sdb(RBinFile *bf) {
 	RBinObject *o = bf->o;
 	struct PE_(r_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) {
@@ -618,7 +618,7 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 get_vaddr (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
 }
 

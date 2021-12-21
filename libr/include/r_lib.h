@@ -112,7 +112,7 @@ R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol);
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type);
 R_API int r_lib_open(RLib *lib, const char *file);
 R_API bool r_lib_opendir(RLib *lib, const char *path);
-R_API int r_lib_open_ptr (RLib *lib, const char *file, void *handler, RLibStruct *stru);
+R_API int r_lib_open_ptr(RLib *lib, const char *file, void *handler, RLibStruct *stru);
 R_API char *r_lib_path(const char *libname);
 R_API void r_lib_list(RLib *lib);
 R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, RLibCallback ct, RLibCallback dt, void *user);

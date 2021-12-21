@@ -8,7 +8,7 @@ R_LIB_VERSION (r_bp);
 static struct r_bp_plugin_t *bp_static_plugins[] =
 	{ R_BP_STATIC_PLUGINS };
 
-static void r_bp_item_free (RBreakpointItem *b) {
+static void r_bp_item_free(RBreakpointItem *b) {
 	free (b->name);
 	free (b->bbytes);
 	free (b->obytes);
@@ -339,7 +339,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	return n;
 }
 
-R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp) {
+R_API RBreakpointItem *r_bp_item_new(RBreakpoint *bp) {
 	int i, j;
 	/* find empty slot */
 	for (i = 0; i < bp->bps_idx_count; i++) {
@@ -370,7 +370,7 @@ R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx) {
 	return NULL;
 }
 
-R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr) {
+R_API int r_bp_get_index_at(RBreakpoint *bp, ut64 addr) {
 	int i;
 	for (i = 0; i< bp->bps_idx_count; i++) {
 		if (bp->bps_idx[i] && bp->bps_idx[i]->addr == addr) {

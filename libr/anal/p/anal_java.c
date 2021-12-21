@@ -16,15 +16,15 @@
 
 static ut64 METHOD_START = 0;
 
-static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj);
+static void java_update_anal_types(RAnal *anal, RBinJavaObj *bin_obj);
 
 static int java_cmd_ext(RAnal *anal, const char* input);
 
 static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 
-static RBinJavaObj * get_java_bin_obj(RAnal *anal);
+static RBinJavaObj *get_java_bin_obj(RAnal *anal);
 
-static RBinJavaObj * get_java_bin_obj(RAnal *anal) {
+static RBinJavaObj *get_java_bin_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
 	RBinPlugin *plugin = b->cur && b->cur->o ? b->cur->o->plugin : NULL;
 	ut8 is_java = (plugin && strcmp (plugin->name, "java") == 0) ? 1 : 0;
@@ -143,7 +143,7 @@ ut64 extract_load_store_op(ut64 ranal2_op_type) {
 	return R_ANAL_OP_TYPE_UNK;
 }
 
-static ut64 map_java_op_to_anal_op_type (ut64 t) {
+static ut64 map_java_op_to_anal_op_type(ut64 t) {
 	ut64 t2 = extract_bin_op(t);
 	if (t2 != R_ANAL_OP_TYPE_UNK) {
 		return t2;
@@ -281,7 +281,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 }
 
 
-static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj) {
+static void java_update_anal_types(RAnal *anal, RBinJavaObj *bin_obj) {
 	Sdb *D = anal->sdb_types;
 	if (D && bin_obj) {
 		RListIter *iter;

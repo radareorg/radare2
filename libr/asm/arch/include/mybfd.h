@@ -5276,18 +5276,18 @@ bfd_byte *bfd_simple_get_relocated_section_contents
 /** -- **/
 
 
-static inline bfd_vma bfd_getl16 (const void *p) {
+static inline bfd_vma bfd_getl16(const void *p) {
   const bfd_byte *addr = p;
   return (addr[1] << 8) | addr[0];
 }
 
-static inline bfd_vma bfd_getb16 (const void *p) {
+static inline bfd_vma bfd_getb16(const void *p) {
   const bfd_byte *addr = p;
   return (addr[0] << 8) | addr[1];
 }
 
 
-static inline bfd_vma bfd_getb32 (const void *p) {
+static inline bfd_vma bfd_getb32(const void *p) {
   const bfd_byte *addr = p;
   unsigned long v;
 
@@ -5298,7 +5298,7 @@ static inline bfd_vma bfd_getb32 (const void *p) {
   return v;
 }
 
-static inline bfd_vma bfd_getl32 (const void *p) {
+static inline bfd_vma bfd_getl32(const void *p) {
   const bfd_byte *addr = p;
   unsigned long v;
 

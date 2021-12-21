@@ -70,7 +70,7 @@ exit:
 	return result;
 }
 
-static bool fcnAddBB (fcn_t *fcn, bb_t* block) {
+static bool fcnAddBB(fcn_t *fcn, bb_t* block) {
 	if (!fcn) {
 		eprintf ("No function given to add a basic block\n");
 		return false;
@@ -88,7 +88,7 @@ static bool fcnAddBB (fcn_t *fcn, bb_t* block) {
 	return true;
 }
 
-static fcn_t* fcnNew (bb_t *block) {
+static fcn_t* fcnNew(bb_t *block) {
 	fcn_t* fcn = R_NEW0 (fcn_t);
 	if (!fcn) {
 		eprintf ("Failed to allocate memory for function\n");
@@ -102,18 +102,18 @@ static fcn_t* fcnNew (bb_t *block) {
 	return fcn;
 }
 
-static void fcnFree (fcn_t *fcn) {
+static void fcnFree(fcn_t *fcn) {
 	r_list_free (fcn->bbs);
 	free (fcn);
 }
 
-static int bbCMP (void *_a, void *_b) {
+static int bbCMP(void *_a, void *_b) {
 	bb_t *a = (bb_t*)_a;
 	bb_t *b = (bb_t*)_b;
 	return b->start - a->start;
 }
 
-static void initBB (bb_t *bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score, int reached, int called) {
+static void initBB(bb_t *bb, ut64 start, ut64 end, ut64 jump, ut64 fail, bb_type_t type, int score, int reached, int called) {
 	if (bb) {
 		bb->start = start;
 		bb->end = end;
@@ -528,7 +528,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 	return true;
 }
 
-R_API bool core_anal_bbs_range (RCore *core, const char* input) {
+R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 	if (!r_io_is_valid_offset (core->io, core->offset, false)) {
 		eprintf ("No valid offset given to analyze\n");
 		return false;

@@ -65,7 +65,7 @@ static long get_operand_value(const struct v850_operand *operand, unsigned long 
 	return value;
 }
 
-static const char * get_v850_sreg_name(size_t reg) {
+static const char *get_v850_sreg_name(size_t reg) {
 	static const char *const v850_sreg_names[] = {
 		"eipc/vip/mpm", "eipsw/mpc", "fepc/tid", "fepsw/ppa", "ecr/vmecr", "psw/vmtid",
 		"sr6/fpsr/vmadr/dcc", "sr7/fpepc/dc0",
@@ -82,7 +82,7 @@ static const char * get_v850_sreg_name(size_t reg) {
 	return "<invalid s-reg number>";
 }
 
-static const char * get_v850_reg_name(size_t reg) {
+static const char *get_v850_reg_name(size_t reg) {
 	static const char *const v850_reg_names[] = {
 		"r0", "r1", "r2", "sp", "gp", "r5", "r6", "r7",
 		"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15",
@@ -93,7 +93,7 @@ static const char * get_v850_reg_name(size_t reg) {
 	return v850_reg_names[reg];
 }
 
-static const char * get_v850_vreg_name (unsigned int reg) {
+static const char *get_v850_vreg_name(unsigned int reg) {
 	static const char *const v850_vreg_names[] = {
 		"vr0", "vr1", "vr2", "vr3", "vr4", "vr5", "vr6", "vr7", "vr8", "vr9",
 		"vr10", "vr11", "vr12", "vr13", "vr14", "vr15", "vr16", "vr17", "vr18",
@@ -104,7 +104,7 @@ static const char * get_v850_vreg_name (unsigned int reg) {
 	return v850_vreg_names[reg];
 }
 
-static const char * get_v850_cc_name (unsigned int reg) {
+static const char *get_v850_cc_name(unsigned int reg) {
 	static const char *const v850_cc_names[] = {
 		"v", "c/l", "z", "nh", "s/n", "t", "lt", "le",
 		"nv", "nc/nl", "nz", "h", "ns/p", "sa", "ge", "gt"
@@ -113,7 +113,7 @@ static const char * get_v850_cc_name (unsigned int reg) {
 	return v850_cc_names[reg];
 }
 
-static const char * get_v850_float_cc_name (unsigned int reg) {
+static const char *get_v850_float_cc_name(unsigned int reg) {
 	static const char *const v850_float_cc_names[] = {
 		"f/t", "un/or", "eq/neq", "ueq/ogl", "olt/uge", "ult/oge", "ole/ugt", "ule/ogt",
 		"sf/st", "ngle/gle", "seq/sne", "ngl/gl", "lt/nlt", "nge/ge", "le/nle", "ngt/gt"
@@ -122,7 +122,7 @@ static const char * get_v850_float_cc_name (unsigned int reg) {
 	return v850_float_cc_names[reg];
 }
 
-static const char * get_v850_cacheop_name(size_t reg) {
+static const char *get_v850_cacheop_name(size_t reg) {
 	static const char *const v850_cacheop_names[] = {
 		"chbii", "cibii", "cfali", "cisti", "cildi", "chbid", "chbiwbd",
 		"chbwbd", "cibid", "cibiwbd", "cibwbd", "cfald", "cistd", "cildd"

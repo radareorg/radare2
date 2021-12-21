@@ -33,7 +33,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static void destroy (RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_ne_free (bf->o->bin_obj);
 }
 

@@ -452,7 +452,7 @@ int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	return true;
 }
 
-static int xnu_get_kinfo_proc (int pid, struct kinfo_proc *kp) {
+static int xnu_get_kinfo_proc(int pid, struct kinfo_proc *kp) {
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, 0 };
 	int len = 4;
 	size_t kpl = sizeof (struct kinfo_proc);
@@ -509,7 +509,7 @@ RDebugInfo *xnu_info(RDebug *dbg, const char *arg) {
 }
 
 /*
-static void xnu_free_threads_ports (RDebugPid *p) {
+static void xnu_free_threads_ports(RDebugPid *p) {
 	kern_return_t kr;
 	if (!p) return;
 	free (p->path);
@@ -694,7 +694,7 @@ static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 	return -1;
 }
 
-static cpu_subtype_t xnu_get_cpu_subtype (void) {
+static cpu_subtype_t xnu_get_cpu_subtype(void) {
 	size_t size;
 	cpu_subtype_t subtype;
 
@@ -730,7 +730,7 @@ static void xnu_build_corefile_header(vm_offset_t header, int segment_count, int
 #endif
 }
 
-static int xnu_dealloc_threads (RList *threads) {
+static int xnu_dealloc_threads(RList *threads) {
 	RListIter *iter, *iter2;
 	xnu_thread_t *thread;
 	mach_msg_type_number_t thread_count;
@@ -755,7 +755,7 @@ static int xnu_dealloc_threads (RList *threads) {
 /* XXX which follow the header. */
 /* XXX Maybe this function needs refactoring, but I haven't come up with */
 /* XXX a better way to do it yet. */
-static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int start_offset,
+static int xnu_write_mem_maps_to_buffer(RBuffer *buffer, RList *mem_maps, int start_offset,
 	vm_offset_t header, int header_end, int segment_command_sz, int *hoffset_out) {
 	RListIter *iter, *iter2;
 	RDebugMap *curr_map;
@@ -859,12 +859,12 @@ cleanup:
 	return error;
 }
 
-static int xnu_get_thread_status (register thread_t thread, int flavor,
+static int xnu_get_thread_status(register thread_t thread, int flavor,
 	thread_state_t tstate, mach_msg_type_number_t *count) {
 	return thread_get_state (thread, flavor, tstate, count);
 }
 
-static void xnu_collect_thread_state (thread_t port, void *tirp) {
+static void xnu_collect_thread_state(thread_t port, void *tirp) {
 	coredump_thread_state_flavor_t *flavors;
 	tir_t *tir = (tir_t *)tirp;
 	struct thread_command *tc;
@@ -1127,7 +1127,7 @@ kern_return_t mach_vm_region_recurse (
 	mach_msg_type_number_t *infoCnt
 );
 
-static const char * unparse_inheritance (vm_inherit_t i) {
+static const char *unparse_inheritance(vm_inherit_t i) {
 	switch (i) {
 	case VM_INHERIT_SHARE: return "share";
 	case VM_INHERIT_COPY: return "copy";
@@ -1192,7 +1192,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 }
 
 // TODO: Implement mach0 size.. maybe copypasta from rbin?
-static int mach0_size (RDebug *dbg, ut64 addr) {
+static int mach0_size(RDebug *dbg, ut64 addr) {
 	return 4096;
 }
 
@@ -1308,7 +1308,7 @@ static RDebugMap *moduleAt(RList *list, ut64 addr) {
 	return NULL;
 }
 
-static int cmp (const void *_a, const void *_b) {
+static int cmp(const void *_a, const void *_b) {
 	const RDebugMap *a = _a;
 	const RDebugMap *b = _b;
 	if (a->addr > b->addr) {
@@ -1320,7 +1320,7 @@ static int cmp (const void *_a, const void *_b) {
 	return 0;
 }
 
-static RDebugMap *r_debug_map_clone (RDebugMap *m) {
+static RDebugMap *r_debug_map_clone(RDebugMap *m) {
 	RDebugMap *map = R_NEWCOPY (RDebugMap, m);
 	// memcpy (map, m, sizeof (RDebugMap));
 	if (m->name) {

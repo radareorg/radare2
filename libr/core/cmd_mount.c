@@ -57,7 +57,7 @@ static const char *t2s(const char ch) {
 	return "unknown";
 }
 
-static void cmd_mount_ls (RCore *core, const char *input) {
+static void cmd_mount_ls(RCore *core, const char *input) {
 	bool isJSON = *input == 'j';
 	RListIter *iter;
 	RFSFile *file;

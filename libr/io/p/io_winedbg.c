@@ -187,7 +187,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-static void printcmd (RIO *io, const char *cmd) {
+static void printcmd(RIO *io, const char *cmd) {
 	char *res = runcmd (cmd);
 	io->cb_printf ("%s\n", res);
 	free (res);

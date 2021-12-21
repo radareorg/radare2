@@ -5,7 +5,7 @@
 
 #include <r_types.h>
 
-static inline ut16 arg_offset (ut16 pc, ut8 offset) {
+static inline ut16 arg_offset(ut16 pc, ut8 offset) {
 	if (offset < 0x80) {
 		return pc + offset;
 	}
@@ -13,12 +13,12 @@ static inline ut16 arg_offset (ut16 pc, ut8 offset) {
 	return pc - offset;
 }
 
-static inline ut16 arg_addr11 (ut16 pc, const ut8 *buf) {
+static inline ut16 arg_addr11(ut16 pc, const ut8 *buf) {
 	// ADDR11 is replacing lower 11 bits of (pre-incremented) PC
 	return (pc & 0xf800) + ((buf[0] & 0xe0) << 3) + buf[1];
 }
 
-static inline ut8 arg_bit (ut8 bit_addr) {
+static inline ut8 arg_bit(ut8 bit_addr) {
 	if (bit_addr < 0x80) {
 		// bit addresses 0x00-0x7f are mapped to bytes at 0x20-0x2f
 		return (bit_addr >> 3) + 0x20;

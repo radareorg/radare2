@@ -620,7 +620,7 @@ static int showreg(RCore *core, const char *str) {
 	return size;
 }
 
-static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node *tn) {
+static RGraphNode *get_graphtrace_node(RGraph *g, Sdb *nodes, struct trace_node *tn) {
 	RGraphNode *gn;
 	char tn_key[TN_KEY_LEN];
 
@@ -633,13 +633,13 @@ static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node
 	return gn;
 }
 
-static void dot_trace_create_node (RTreeNode *n, RTreeVisitor *vis) {
+static void dot_trace_create_node(RTreeNode *n, RTreeVisitor *vis) {
 	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
 	struct trace_node *tn = n->data;
 	if (tn) get_graphtrace_node (data->graph, data->graphnodes, tn);
 }
 
-static void dot_trace_discover_child (RTreeNode *n, RTreeVisitor *vis) {
+static void dot_trace_discover_child(RTreeNode *n, RTreeVisitor *vis) {
 	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
 	RGraph *g = data->graph;
 	Sdb *gnodes = data->graphnodes;
@@ -2266,7 +2266,7 @@ static char *__table_format_string(RTable *t, int fmt) {
 	return r_table_tofancystring (t);
 }
 
-static void __tableRegList (RCore *core, RReg *reg, const char *str) {
+static void __tableRegList(RCore *core, RReg *reg, const char *str) {
 	int i;
 	RRegItem *e;
 	RTable *t = r_core_table (core, "regprofile");
@@ -3834,7 +3834,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	free (str);
 }
 
-static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 addr) {
+static RTreeNode *add_trace_tree_child(Sdb *db, RTree *t, RTreeNode *cur, ut64 addr) {
 	struct trace_node *t_node;
 	char dbkey[TN_KEY_LEN];
 
@@ -3853,7 +3853,7 @@ static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 
 
 static RCore *_core = NULL;
 
-static void trace_traverse_pre (RTreeNode *n, RTreeVisitor *vis) {
+static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	const char *name = "";
 	struct trace_node *tn = n->data;
 	unsigned int i;
@@ -3870,7 +3870,7 @@ static void trace_traverse_pre (RTreeNode *n, RTreeVisitor *vis) {
 	r_cons_printf (" 0x%08"PFMT64x" refs %d %s\n", tn->addr, tn->refs, name);
 }
 
-static void trace_traverse (RTree *t) {
+static void trace_traverse(RTree *t) {
 	RTreeVisitor vis = { 0 };
 
 	/* clear the line on stderr, because somebody has written there */
@@ -4043,7 +4043,7 @@ static void debug_trace_calls(RCore *core, const char *input) {
 	r_cons_break_pop ();
 }
 
-static void r_core_debug_esil (RCore *core, const char *input) {
+static void r_core_debug_esil(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '\0': // "de"
 		// list
@@ -4403,7 +4403,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_debug_continue (RCore *core, const char *input) {
+static int cmd_debug_continue(RCore *core, const char *input) {
 	int pid, old_pid, signum;
 	char *ptr;
 	// TODO: we must use this for step 'ds' too maybe...
@@ -4544,13 +4544,13 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	return 1;
 }
 
-static char *get_corefile_name (const char *raw_name, int pid) {
+static char *get_corefile_name(const char *raw_name, int pid) {
 	return (!*raw_name)?
 		r_str_newf ("core.%u", pid) :
 		r_str_trim_dup (raw_name);
 }
 
-static int cmd_debug_step (RCore *core, const char *input) {
+static int cmd_debug_step(RCore *core, const char *input) {
 	ut64 addr = core->offset;;
 	ut8 buf[64];
 	RAnalOp aop;

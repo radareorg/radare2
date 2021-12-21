@@ -80,7 +80,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections (RBinFile *bf) {
+static RList *sections(RBinFile *bf) {
 	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	RList *ret = NULL;
 	RList *secs = NULL;
@@ -224,7 +224,7 @@ bad_alloc:
 	return NULL;
 }
 
-static RList *imports (RBinFile *bf) {
+static RList *imports(RBinFile *bf) {
 	RBinWasmObj *bin = NULL;
 	RList *imports = NULL;
 	RBinImport *ptr = NULL;
@@ -275,11 +275,11 @@ bad_alloc:
 	return NULL;
 }
 
-static RList *libs (RBinFile *bf) {
+static RList *libs(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info (RBinFile *bf) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 
 	if (!(ret = R_NEW0 (RBinInfo))) {
@@ -300,7 +300,7 @@ static RBinInfo *info (RBinFile *bf) {
 	return ret;
 }
 
-static ut64 size (RBinFile *bf) {
+static ut64 size(RBinFile *bf) {
 	if (!bf || !bf->buf) {
 		return 0;
 	}
@@ -308,7 +308,7 @@ static ut64 size (RBinFile *bf) {
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer *create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
 #define B(x, y) r_buf_append_bytes (buf, (const ut8 *)(x), y)
 #define D(x) r_buf_append_ut32 (buf, x)

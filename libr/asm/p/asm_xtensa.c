@@ -17,7 +17,7 @@ static ut64 offset = 0;
 static RStrBuf *buf_global = NULL;
 static ut8 bytes[INSN_BUFFER_SIZE];
 
-static int xtensa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+static int xtensa_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	if (length > INSN_BUFFER_SIZE) {
 		length = INSN_BUFFER_SIZE;
 	}
@@ -25,7 +25,7 @@ static int xtensa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 le
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 

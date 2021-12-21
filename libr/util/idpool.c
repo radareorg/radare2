@@ -465,7 +465,7 @@ R_API void *r_oids_first(ROIDStorage *storage) {
 	return NULL;
 }
 
-R_API bool r_oids_foreach (ROIDStorage *storage, RIDStorageForeachCb cb, void *user) {
+R_API bool r_oids_foreach(ROIDStorage *storage, RIDStorageForeachCb cb, void *user) {
 	ut32 i;
 	ut32 id;
 	if (!cb || !storage || !storage->data || !storage->data->data
@@ -482,7 +482,7 @@ R_API bool r_oids_foreach (ROIDStorage *storage, RIDStorageForeachCb cb, void *u
 	return cb (user, storage->data->data[id], id);
 }
 
-R_API bool r_oids_foreach_prev (ROIDStorage* storage, RIDStorageForeachCb cb, void* user) {
+R_API bool r_oids_foreach_prev(ROIDStorage* storage, RIDStorageForeachCb cb, void* user) {
 	ut32 i;
 	ut32 id;
 	if (!cb || !storage || !storage->data || !storage->data->data

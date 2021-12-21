@@ -4,7 +4,7 @@
 
 #define RS(from, to) (replace_seq ((const char **)&in, &out, (const char *)(from), to))
 
-static bool replace_seq (const char **in, char **out, const char *seq, char value) {
+static bool replace_seq(const char **in, char **out, const char *seq, char value) {
 	size_t len = strlen (seq);
 
 	if (strncmp (*in, seq, len)) {
@@ -19,7 +19,7 @@ static bool replace_seq (const char **in, char **out, const char *seq, char valu
 	return true;
 }
 
-R_API char *r_bin_demangle_rust (RBinFile *binfile, const char *sym, ut64 vaddr) {
+R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) {
 	int len;
 	char *str, *out, *in;
 

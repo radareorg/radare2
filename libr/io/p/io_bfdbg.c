@@ -150,7 +150,7 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "bfdbg://", 8));
 }
 
-static inline int getmalfd (RIOBfdbg *mal) {
+static inline int getmalfd(RIOBfdbg *mal) {
 	return 0xffff & (int)(size_t)mal->buf;
 }
 

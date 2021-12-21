@@ -35,7 +35,7 @@
  * ~ + - (unary)  rd_factor
  */
 
-static int do_rd_expr (const char **p, char delimiter, int *valid, int level,
+static int do_rd_expr(const char **p, char delimiter, int *valid, int level,
 		       int *check, int print_errors);
 
 static int

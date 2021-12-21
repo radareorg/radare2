@@ -84,7 +84,7 @@ static inline char readbit(const ut8 *src, int bitoffset) {
 	return (src[wholeBytes] & 1<< remainingBits);
 }
 
-static inline void writebit (ut8 *dst, int i, bool c) {
+static inline void writebit(ut8 *dst, int i, bool c) {
 	const int byte = i / 8;
 	const int bit = (i % 8);
 	// eprintf ("Write %d %d = %d\n", byte, bit, c);

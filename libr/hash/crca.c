@@ -34,7 +34,7 @@ void crc_update (R_CRC_CTX *ctx, const ut8 *data, ut32 sz) {
 	ctx->crc = crc;
 }
 
-static void crc_final (R_CRC_CTX *ctx, utcrc *r) {
+static void crc_final(R_CRC_CTX *ctx, utcrc *r) {
 	utcrc crc;
 	int i;
 

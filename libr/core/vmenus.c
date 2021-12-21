@@ -56,7 +56,7 @@ static char *prompt(const char *str, const char *txt) {
 	return res;
 }
 
-static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
+static inline char *getformat(RCoreVisualTypes *vt, const char *k) {
 	return sdb_get (vt->core->anal->sdb_types,
 		sdb_fmt ("type.%s", k), 0);
 }
@@ -94,7 +94,7 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, u
 	return res;
 }
 
-static int rotate_nibble (const ut8 b, int dir) {
+static int rotate_nibble(const ut8 b, int dir) {
 	if (dir > 0) {
 		bool high = b >> 7;
 		return (b << 1) | high;
@@ -607,7 +607,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 }
 
 // belongs to r_core_visual_types
-static bool sdbforcb (void *p, const char *k, const char *v) {
+static bool sdbforcb(void *p, const char *k, const char *v) {
 	const char *pre = " ";
 	RCoreVisualTypes *vt = (RCoreVisualTypes*)p;
 	bool use_color = vt->core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -2221,7 +2221,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	return true;
 }
 
-R_API int r_core_visual_comments (RCore *core) {
+R_API int r_core_visual_comments(RCore *core) {
 	char *str;
 	char cmd[512], *p = NULL;
 	int ch, option = 0;
@@ -2917,7 +2917,7 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 	}
 }
 
-static void variable_rename (RCore *core, ut64 addr, int vindex, const char *name) {
+static void variable_rename(RCore *core, ut64 addr, int vindex, const char *name) {
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	ut64 a_tmp = core->offset;
 	int i = 0;
@@ -2937,7 +2937,7 @@ static void variable_rename (RCore *core, ut64 addr, int vindex, const char *nam
 	r_list_free (list);
 }
 
-static void variable_set_type (RCore *core, ut64 addr, int vindex, const char *type) {
+static void variable_set_type(RCore *core, ut64 addr, int vindex, const char *type) {
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	RList *list = r_anal_var_all_list (core->anal, fcn);
 	RListIter *iter;
@@ -3098,7 +3098,7 @@ static const char *printCmds[lastPrintMode] = {
 	"pdf", "pd $r", "afi", "pdsf", "pdc", "pdr"
 };
 
-static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
+static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
 	const ut64 addr = (level != 0 && level != 1)
 		? core->offset
 		: var_functions_show (core, option, 0, colpos);
@@ -3166,7 +3166,7 @@ static const char *help_visual_anal_keys[] = {
 	NULL
 };
 
-static void r_core_vmenu_append_help (RStrBuf *p, const char **help) {
+static void r_core_vmenu_append_help(RStrBuf *p, const char **help) {
 	int i;
 	RConsContext *cons_ctx = r_cons_singleton ()->context;
 	const char *pal_args_color = cons_ctx->color_mode ? cons_ctx->pal.args : "",
@@ -3180,7 +3180,7 @@ static void r_core_vmenu_append_help (RStrBuf *p, const char **help) {
 	}
 }
 
-static ut64 r_core_visual_anal_refresh (RCore *core) {
+static ut64 r_core_visual_anal_refresh(RCore *core) {
 	if (!core) {
 		return 0LL;
 	}
@@ -3269,7 +3269,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	return addr;
 }
 
-static void r_core_visual_anal_refresh_oneshot (RCore *core) {
+static void r_core_visual_anal_refresh_oneshot(RCore *core) {
 	r_core_task_enqueue_oneshot (&core->tasks, (RCoreTaskOneShot) r_core_visual_anal_refresh, core);
 }
 
@@ -3754,7 +3754,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 	}
 }
 
-R_API void r_core_seek_previous (RCore *core, const char *type) {
+R_API void r_core_seek_previous(RCore *core, const char *type) {
 	RListIter *iter;
 	ut64 next = 0;
 	if (strstr (type, "opc")) {

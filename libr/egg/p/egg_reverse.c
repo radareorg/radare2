@@ -27,7 +27,7 @@ unsigned char x86_freebsd_reverse[] =
 "\x43\x7f\x00\x00\x01\x2f\x62\x69\x6e\x2f\x73\x68";
 
 
-static RBuffer *build (REgg *egg) {
+static RBuffer *build(REgg *egg) {
 	RBuffer *buf = r_buf_new ();
 	const ut8 *sc = NULL;
 	int cd = 0;

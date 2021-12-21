@@ -3165,7 +3165,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	_store_resource_sdb (bin);
 }
 
-static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) * bin) {
+static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (!bin || !bin->nt_headers) {
 		return false;
 	}

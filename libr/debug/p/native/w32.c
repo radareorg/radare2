@@ -122,7 +122,7 @@ static bool debug_exception_event(DEBUG_EVENT *de) {
 	return false;
 }
 
-static char *get_file_name_from_handle (HANDLE handle_file) {
+static char *get_file_name_from_handle(HANDLE handle_file) {
 	HANDLE handle_file_map = NULL;
 	LPTSTR filename = NULL;
 	DWORD file_size_high = 0;
@@ -189,7 +189,7 @@ err_get_file_name_from_handle:
 	return NULL;
 }
 /*
-static char * r_debug_get_dll(void) {
+static char *r_debug_get_dll(void) {
 	return lstLibPtr->Path;
 }
 */
@@ -197,7 +197,7 @@ static PLIB_ITEM r_debug_get_lib_item(void) {
 	return lstLibPtr;
 }
 
-static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * dllname) {
+static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char *dllname) {
 	int x;
 	if (lstLib == 0) {
 		lstLib = VirtualAlloc (0, PLIB_MAX * sizeof (LIB_ITEM), MEM_COMMIT, PAGE_READWRITE);
@@ -222,7 +222,7 @@ static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * 
 	eprintf ("r_debug_lstLibAdd: Cannot find slot\n");
 }
 
-static void * r_debug_findlib(void * BaseOfDll) {
+static void * r_debug_findlib(void *BaseOfDll) {
 	PLIB_ITEM libPtr = NULL;
 	if (lstLib) {
 		libPtr = (PLIB_ITEM)lstLib;
@@ -238,13 +238,13 @@ static void * r_debug_findlib(void * BaseOfDll) {
 	return NULL;
 }
 
-static PTHREAD_ITEM r_debug_get_thread_item (void) {
+static PTHREAD_ITEM r_debug_get_thread_item(void) {
 	return lstThreadPtr;
 }
 #define CONST_ThreadQuerySetWin32StartAddress 9
 #define PTHREAD_MAX 1024
 
-static void r_debug_lstThreadAdd (DWORD pid, DWORD tid, HANDLE hThread, LPVOID  lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
+static void r_debug_lstThreadAdd(DWORD pid, DWORD tid, HANDLE hThread, LPVOID  lpThreadLocalBase, LPVOID lpStartAddress, BOOL bFinished) {
 	int x;
 	PVOID startAddress = 0;
 	if (lstThread == 0) {
@@ -269,7 +269,7 @@ static void r_debug_lstThreadAdd (DWORD pid, DWORD tid, HANDLE hThread, LPVOID  
 	eprintf ("r_debug_lstThreadAdd: Cannot find slot\n");
 }
 
-static void * r_debug_findthread (int pid, int tid) {
+static void *r_debug_findthread(int pid, int tid) {
 	PTHREAD_ITEM threadPtr = NULL;
 	if (lstThread) {
 		threadPtr = (PTHREAD_ITEM)lstThread;
@@ -652,7 +652,7 @@ static int GetAVX(HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 	return nRegs;
 }
 
-static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
+static void printwincontext(HANDLE hThread, CONTEXT *ctx) {
 	ut128 xmm[16];
 	ut128 ymm[16];
 	ut80 st[8];

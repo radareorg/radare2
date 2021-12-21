@@ -150,7 +150,7 @@ static bool isMask(ut64 value) {
   return value && ((value + 1) & value) == 0;
 }
 
-static bool isShiftedMask (ut64 value) {
+static bool isShiftedMask(ut64 value) {
   return value && isMask ((value - 1) | value);
 }
 

@@ -142,7 +142,7 @@ R_API RAnal *r_anal_new(void) {
 	return anal;
 }
 
-R_API void r_anal_plugin_free (RAnalPlugin *p) {
+R_API void r_anal_plugin_free(RAnalPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
@@ -399,7 +399,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	}
 }
 
-R_API RList* r_anal_get_fcns (RAnal *anal) {
+R_API RList* r_anal_get_fcns(RAnal *anal) {
 	// avoid received to free this thing
 	anal->fcns->free = NULL;
 	return anal->fcns;

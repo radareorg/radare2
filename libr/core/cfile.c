@@ -229,7 +229,7 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 	}
 }
 
-R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
+R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	char *f, *ret = cmd? strdup (cmd): NULL;
 	RIODesc *desc = core->io->desc;
 	if (cmd && strstr (cmd, "R2_BYTES")) {

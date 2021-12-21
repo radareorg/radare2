@@ -930,7 +930,7 @@ err_r_file_mmap_write:
 #endif
 }
 
-R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
+R_API int r_file_mmap_read(const char *file, ut64 addr, ut8 *buf, int len) {
 #if __WINDOWS__
 	HANDLE fm = NULL, fh = INVALID_HANDLE_VALUE;
 	LPTSTR file_ = NULL;
@@ -1039,7 +1039,7 @@ err_r_file_mmap_windows:
 	return m;
 }
 #else
-static RMmap *file_mmap_other (RMmap *m) {
+static RMmap *file_mmap_other(RMmap *m) {
 	ut8 empty = m->len == 0;
 	m->buf = malloc ((empty? BS: m->len));
 	if (!empty && m->buf) {

@@ -97,7 +97,7 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 	return segments;
 }
 
-static int __find_symbol_by_paddr (const void *paddr, const void *sym) {
+static int __find_symbol_by_paddr(const void *paddr, const void *sym) {
 	return (int)!(*(ut64 *)paddr == ((RBinSymbol *)sym)->paddr);
 }
 

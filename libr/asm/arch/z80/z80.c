@@ -8,7 +8,7 @@
 #include <string.h>
 #include "z80_tab.h"
 
-static ut8 z80_op_24_branch_index_res (ut8 hex) {
+static ut8 z80_op_24_branch_index_res(ut8 hex) {
 	if (hex < 0x40) {
 		return hex;
 	}
@@ -25,7 +25,7 @@ static ut8 z80_op_24_branch_index_res (ut8 hex) {
 	return (hex > 0x7f)? hex - 0x38: 0xc8;
 }
 
-static int z80OpLength (const ut8 *buf, int len) {
+static int z80OpLength(const ut8 *buf, int len) {
 	const z80_opcode *op;
 	int type = 0, ret = 0;
 	if (len < 1) {

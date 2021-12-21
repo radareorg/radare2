@@ -43,7 +43,7 @@ static i8051_cpu_model cpu_models[] = {
 static bool i8051_is_init = false;
 static const i8051_cpu_model *cpu_curr_model = NULL;
 
-static bool i8051_reg_write (RReg *reg, const char *regname, ut32 num) {
+static bool i8051_reg_write(RReg *reg, const char *regname, ut32 num) {
 	if (reg) {
 		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
 		if (item) {
@@ -54,7 +54,7 @@ static bool i8051_reg_write (RReg *reg, const char *regname, ut32 num) {
 	return false;
 }
 
-static ut32 i8051_reg_read (RReg *reg, const char *regname) {
+static ut32 i8051_reg_read(RReg *reg, const char *regname) {
 	if (reg) {
 		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
 		if (item) {
@@ -80,7 +80,7 @@ static i8051_map_entry mem_map[3] = {
 	{ NULL, UT32_MAX, "xdata" }
 };
 
-static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size, bool force) {
+static void map_cpu_memory(RAnal *anal, int entry, ut32 addr, ut32 size, bool force) {
 	RIODesc *desc = mem_map[entry].desc;
 	if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
 		if (force || addr != mem_map[entry].addr) {
@@ -256,7 +256,7 @@ static void exr_bit(RAnalOp *op, ut8 addr) {
 	exr_dir1 (op, addr);
 }
 
-static void exr_dpx (RAnalOp *op, ut8 dummy) {
+static void exr_dpx(RAnalOp *op, ut8 dummy) {
 	e ("_xdata,dptr,+,[1],");
 }
 
@@ -319,11 +319,11 @@ static void exw_bit(RAnalOp *op, ut8 addr) {
 	exw_dir1 (op, addr);
 }
 
-static void exw_dp (RAnalOp *op, ut8 dummy) {
+static void exw_dp(RAnalOp *op, ut8 dummy) {
 	e ("dptr,=,");
 }
 
-static void exw_dpx (RAnalOp *op, ut8 dummy) {
+static void exw_dpx(RAnalOp *op, ut8 dummy) {
 	e ("_xdata,dptr,+,=[1],");
 }
 
@@ -358,11 +358,11 @@ static void exi_c(RAnalOp *op, ut8 dummy, const char* operation) {
 	ef ("c,%s=,", operation);
 }
 
-static void exi_dp (RAnalOp *op, ut8 dummy, const char *operation) {
+static void exi_dp(RAnalOp *op, ut8 dummy, const char *operation) {
 	ef ("dptr,%s=,", operation);
 }
 
-static void exi_dir1 (RAnalOp *op, ut8 addr, const char *operation) {
+static void exi_dir1(RAnalOp *op, ut8 addr, const char *operation) {
 	if (addr < 0x80) {
 		ef ("_idata,%d,+,%s=[1],", addr, operation);
 	} else {
@@ -370,7 +370,7 @@ static void exi_dir1 (RAnalOp *op, ut8 addr, const char *operation) {
 	}
 }
 
-static void exi_bit (RAnalOp *op, ut8 addr, const char *operation) {
+static void exi_bit(RAnalOp *op, ut8 addr, const char *operation) {
 	exi_dir1 (op, addr, operation);
 }
 
@@ -787,7 +787,7 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 }
 #endif
 
-static int esil_i8051_init (RAnalEsil *esil) {
+static int esil_i8051_init(RAnalEsil *esil) {
 	if (esil->cb.user) {
 		return true;
 	}
@@ -802,7 +802,7 @@ static int esil_i8051_init (RAnalEsil *esil) {
 	return true;
 }
 
-static int esil_i8051_fini (RAnalEsil *esil) {
+static int esil_i8051_fini(RAnalEsil *esil) {
 	if (!i8051_is_init) {
 		return false;
 	}
