@@ -51,7 +51,7 @@ aes
 ar a1
 EOF
 EXPECT=<<EOF
-0xfffffffa
+0xfffffffffffffffa
 EOF
 RUN
 
@@ -121,7 +121,7 @@ CMDS=<<EOF
 e asm.arch=loongarch
 e asm.bits=64
 ar > /dev/null
-ar t1=0x01010111
+ar t0=0x01010111
 ar t1=0x10101010
 wx 85351500
 aei
