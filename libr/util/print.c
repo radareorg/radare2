@@ -2132,6 +2132,9 @@ static bool is_flag(const char *p) {
 	while (*e && is_not_token (*e)) {
 		e++;
 	}
+	if (*p == 'r' && isdigit (p[1])) {
+		p++;
+	}
 	size_t len = e? e - p: strlen (p);
 	return len > 3;
 }
