@@ -155,15 +155,15 @@ R_API int r_sys_fork(void) {
 }
 
 #if __WINDOWS__
-R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
+R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	return -1;
 }
 #elif __wasi__
-R_API int r_sys_sigaction(int *sig, void (*handler)(int)) {
+R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	return 0;
 }
 #elif HAVE_SIGACTION
-R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
+R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	struct sigaction sigact = { };
 	int ret, i;
 
@@ -188,7 +188,7 @@ R_API int r_sys_sigaction(int *sig, void (*handler) (int)) {
 	return 0;
 }
 #else
-R_API int r_sys_sigaction(int *sig, void (*handler)(int)) {
+R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	if (!sig) {
 		return -EINVAL;
 	}
@@ -204,7 +204,7 @@ R_API int r_sys_sigaction(int *sig, void (*handler)(int)) {
 }
 #endif
 
-R_API int r_sys_signal(int sig, void (*handler) (int)) {
+R_API int r_sys_signal(int sig, void(*handler)(int)) {
 	int s[2] = { sig, 0 };
 	return r_sys_sigaction (s, handler);
 }

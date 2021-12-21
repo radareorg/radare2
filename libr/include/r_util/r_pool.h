@@ -12,7 +12,7 @@ typedef struct r_mem_pool_factory_t {
 } RPoolFactory;
 
 R_API RPoolFactory *r_poolfactory_instance(void);
-R_API void r_poolfactory_init (int limit);
+R_API void r_poolfactory_init(int limit);
 R_API RPoolFactory* r_poolfactory_new(int limit);
 R_API void *r_poolfactory_alloc(RPoolFactory *pf, int nodesize);
 R_API void r_poolfactory_stats(RPoolFactory *pf);

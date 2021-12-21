@@ -220,7 +220,7 @@ cleanup:
  * @param type Current type
  * @param types List of all types
  */
-static void parse_type (const RAnal *anal, SType *type, RList *types) {
+static void parse_type(const RAnal *anal, SType *type, RList *types) {
 	r_return_if_fail (anal && type && types);
 
 	int is_forward_decl;

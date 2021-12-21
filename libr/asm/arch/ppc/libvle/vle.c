@@ -426,7 +426,7 @@ const se_vle_t se_ops[] = {
 	{ "se_subi."  , 0x2600, 0x27FF, 2,   R_ANAL_OP_TYPE_SUB, R_ANAL_COND_AL, {{0x01F0,  4,  0,  1, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 };
 
-static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
+static void set_e_fields(vle_t *v, const e_vle_t* p, ut32 data) {
 	if (!v) {
 		return;
 	}
@@ -708,7 +708,7 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 	}
 }
 
-static void set_ppc_fields(vle_t * v, const ppc_t* p, ut32 data) {
+static void set_ppc_fields(vle_t *v, const ppc_t* p, ut32 data) {
 	if (!v) {
 		return;
 	}

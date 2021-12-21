@@ -173,7 +173,7 @@ static inline int cr16_print_short_reg(struct cr16_cmd *cmd, ut8 sh, ut8 reg)
 	return 0;
 }
 
-static inline int cr16_print_reg_short(struct cr16_cmd * cmd, ut8 sh, ut8 reg)
+static inline int cr16_print_reg_short(struct cr16_cmd *cmd, ut8 sh, ut8 reg)
 {
 	if (cr16_check_reg_boundaries(reg)) {
 		return -1;

@@ -13,8 +13,8 @@
 #define RISCVARGN(x) ((x)->arg[(x)->num++])
 
 static bool init = false;
-static const char * const *riscv_gpr_names = riscv_gpr_names_abi;
-static const char * const *riscv_fpr_names = riscv_fpr_names_abi;
+static const char *const *riscv_gpr_names = riscv_gpr_names_abi;
+static const char *const *riscv_fpr_names = riscv_fpr_names_abi;
 
 typedef struct riscv_args {
 	int num;

@@ -73,7 +73,7 @@ static char *op_names[] =
 { "add", "addc", "sub", "subb", "and", "or", "xor", "sh" };
 
 /* Nonzero if INSN is the opcode for a delayed branch.  */
-static int is_delayed_branch (unsigned long insn);
+static int is_delayed_branch(unsigned long insn);
 
 static int
 is_delayed_branch (insn)
@@ -93,7 +93,7 @@ is_delayed_branch (insn)
 
 static int opcodes_sorted = 0;
 /* extern void qsort (); */
-static int compare_opcodes (char *a, char *b);
+static int compare_opcodes(char *a, char *b);
 
 /* Print one instruction from MEMADDR on INFO->STREAM.
 

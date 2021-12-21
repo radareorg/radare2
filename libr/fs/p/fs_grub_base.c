@@ -37,7 +37,7 @@ static void FSP(_close)(RFSFile *file) {
 
 static RList *list = NULL;
 
-static int dirhook (const char *filename, const struct grub_dirhook_info *info, void *closure) {
+static int dirhook(const char *filename, const struct grub_dirhook_info *info, void *closure) {
 	RFSFile *fsf = r_fs_file_new (NULL, filename);
 	fsf->type = info->dir? 'd':'f';
 	fsf->time = info->mtime;
@@ -64,7 +64,7 @@ static RList *FSP(_dir)(RFSRoot *root, const char *path, int view) {
 	return list;
 }
 
-static int do_nothing (const char *a, const struct grub_dirhook_info *b, void *c) { return 0; }
+static int do_nothing(const char *a, const struct grub_dirhook_info *b, void *c) { return 0; }
 
 static int FSP(_mount)(RFSRoot *root) {
 	int ret;

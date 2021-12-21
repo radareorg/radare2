@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
+R_API RCoreItem *r_core_item_at(RCore *core, ut64 addr) {
 	RCoreItem *ci = R_NEW0 (RCoreItem);
 	ci->addr = addr;
 	RIOMap *map = r_io_map_get_at (core->io, addr);
@@ -83,7 +83,7 @@ R_API RCoreItem *r_core_item_at (RCore *core, ut64 addr) {
 	return ci;
 }
 
-R_API void r_core_item_free (RCoreItem *ci) {
+R_API void r_core_item_free(RCoreItem *ci) {
 	free (ci->data);
 	free (ci);
 }

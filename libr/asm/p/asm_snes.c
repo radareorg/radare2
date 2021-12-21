@@ -9,7 +9,7 @@
 
 static struct snes_asm_flags* snesflags = NULL;
 
-static bool snes_asm_init (void* user) {
+static bool snes_asm_init(void* user) {
 	if (!snesflags) {
 		snesflags = malloc (sizeof (struct snes_asm_flags));
 	}
@@ -17,7 +17,7 @@ static bool snes_asm_init (void* user) {
 	return 0;
 }
 
-static bool snes_asm_fini (void* user) {
+static bool snes_asm_fini(void* user) {
 	free(snesflags);
 	snesflags = NULL;
 	return 0;

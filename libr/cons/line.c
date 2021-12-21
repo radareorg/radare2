@@ -40,7 +40,7 @@ R_API void r_line_free(void) {
 	r_line_completion_fini (&I.completion);
 }
 
-R_API void r_line_clipboard_push (const char *str) {
+R_API void r_line_clipboard_push(const char *str) {
 	I.kill_ring_ptr += 1;
 	r_list_insert (I.kill_ring, I.kill_ring_ptr, strdup (str));
 }

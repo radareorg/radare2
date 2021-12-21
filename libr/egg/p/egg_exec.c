@@ -55,7 +55,7 @@ static ut8 thumb_linux_binsh[] =
 	"\x01\x30\x8f\xe2\x13\xff\x2f\xe1\x78\x46\x0c\x30\xc0\x46\x01\x90"
 	"\x49\x1a\x92\x1a\x0b\x27\x01\xdf\x2f\x62\x69\x6e\x2f\x73\x68"; // "/bin/sh";
 
-static RBuffer *build (REgg *egg) {
+static RBuffer *build(REgg *egg) {
 	RBuffer *buf = r_buf_new ();
 	const ut8 *sc = NULL;
 	int cd = 0;

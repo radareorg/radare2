@@ -3252,7 +3252,7 @@ R_API char *r_str_wrap(const char *str, int w) {
 	return ret;
 }
 
-R_API const char * r_str_tok(const char *str1, const char b, size_t len) {
+R_API const char *r_str_tok(const char *str1, const char b, size_t len) {
 	const char *p = str1;
 	size_t i = 0;
 	if (!p || !*p) {

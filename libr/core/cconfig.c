@@ -1125,7 +1125,7 @@ typedef struct {
 	const char *aliases;
 } namealiases_pair;
 
-static bool cb_binstrenc (void *user, void *data) {
+static bool cb_binstrenc(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
@@ -1234,14 +1234,14 @@ static bool cb_strpurge(void *user, void *data) {
 	return true;
 }
 
-static bool cb_maxname (void *user, void *data) {
+static bool cb_maxname(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	RCore *core = (RCore *) user;
 	core->parser->maxflagnamelen = node->i_value;
 	return true;
 }
 
-static bool cb_midflags (void *user, void *data) {
+static bool cb_midflags(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value == '?') {
 		print_node_options (node);
@@ -1494,7 +1494,7 @@ static bool cb_str_escbslash(void *user, void *data) {
 	return true;
 }
 
-static bool cb_completion_maxtab (void *user, void *data) {
+static bool cb_completion_maxtab(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	core->cons->line->completion.args_limit = node->i_value;
@@ -1838,7 +1838,7 @@ static bool cb_gotolimit(void *user, void *data) {
 	return true;
 }
 
-static bool cb_esilverbose (void *user, void *data) {
+static bool cb_esilverbose(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (core->anal->esil) {
@@ -1847,7 +1847,7 @@ static bool cb_esilverbose (void *user, void *data) {
 	return true;
 }
 
-static bool cb_esilstackdepth (void *user, void *data) {
+static bool cb_esilstackdepth(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value < 3) {
 		eprintf ("esil.stack.depth must be greater than 2\n");
@@ -1994,7 +1994,7 @@ static bool cb_hex_hdroff(void *user, void *data) {
 	return true;
 }
 
-static bool cb_log_events (void *user, void *data) {
+static bool cb_log_events(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->log_events = node->i_value;

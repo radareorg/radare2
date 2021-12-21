@@ -1,13 +1,13 @@
 #include <r_util.h>
 #include "minunit.h"
 
-static int cmp_cb (void *incoming, void *in, void *user) {
+static int cmp_cb(void *incoming, void *in, void *user) {
 	int *_incoming = (int *)incoming;
 	int *_in = (int *)in;
 	return _incoming[0] - _in[0];
 }
 
-static RRBTree *create_test_tree (void) {
+static RRBTree *create_test_tree(void) {
 	int test_data[] = {19, 3, 11, 2, 42, 79, 23, 13, 17, 42};
 	RRBTree *tree = r_crbtree_new (free);
 	int i;
@@ -17,7 +17,7 @@ static RRBTree *create_test_tree (void) {
 	return tree;
 }
 
-static bool test_r_crbtree_in_ascending_order_iteration (void) {
+static bool test_r_crbtree_in_ascending_order_iteration(void) {
 	RRBTree *tree = create_test_tree ();
 	RRBNode *node = r_crbtree_first_node (tree);
 	int *data = node->data;
@@ -37,7 +37,7 @@ static bool test_r_crbtree_in_ascending_order_iteration (void) {
 	mu_end;
 }
 
-static bool test_r_crbtree_in_ascending_order_iteration2 (void) {
+static bool test_r_crbtree_in_ascending_order_iteration2(void) {
 	RRBTree *tree = create_test_tree ();
 	int s = 17;
 	RRBNode *node = r_crbtree_find_node (tree, &s, cmp_cb, NULL);
@@ -56,7 +56,7 @@ static bool test_r_crbtree_in_ascending_order_iteration2 (void) {
 	mu_end;
 }
 
-static bool test_r_crbtree_in_descending_order_iteration (void) {
+static bool test_r_crbtree_in_descending_order_iteration(void) {
 	RRBTree *tree = create_test_tree ();
 	RRBNode *node = r_crbtree_last_node (tree);
 	int *data = node->data;
@@ -76,7 +76,7 @@ static bool test_r_crbtree_in_descending_order_iteration (void) {
 	mu_end;
 }
 
-static bool test_r_crbtree_in_descending_order_iteration2 (void) {
+static bool test_r_crbtree_in_descending_order_iteration2(void) {
 	RRBTree *tree = create_test_tree ();
 	int s = 17;
 	RRBNode *node = r_crbtree_find_node (tree, &s, cmp_cb, NULL);
@@ -95,7 +95,7 @@ static bool test_r_crbtree_in_descending_order_iteration2 (void) {
 	mu_end;
 }
 
-static bool test_r_crbtree_delete (void) {
+static bool test_r_crbtree_delete(void) {
 	RRBTree *tree = create_test_tree ();
 	int s = 17;
 	r_crbtree_delete (tree, &s, cmp_cb, NULL);
@@ -104,7 +104,7 @@ static bool test_r_crbtree_delete (void) {
 	mu_end;
 }
 
-static bool test_r_crbtree_in_ascending_order_iteration_after_deletion (void) {
+static bool test_r_crbtree_in_ascending_order_iteration_after_deletion(void) {
 	RRBTree *tree = create_test_tree ();
 	RRBNode *node = r_crbtree_first_node (tree);
 	int s = 17;
@@ -130,7 +130,7 @@ static bool test_r_crbtree_in_ascending_order_iteration_after_deletion (void) {
 	mu_end;
 }
 
-static bool test_r_crbtree_in_ascending_order_iteration_after_deletion2 (void) {
+static bool test_r_crbtree_in_ascending_order_iteration_after_deletion2(void) {
 	RRBTree *tree = create_test_tree ();
 	int s = 17;
 	r_crbtree_delete (tree, &s, cmp_cb, NULL);

@@ -141,7 +141,7 @@ static char *reorder(char *buf) {
 	return buf;
 }
 
-static void guard_braces (char *buf) {
+static void guard_braces(char *buf) {
 	bool braces = false;
 	char *p = buf;
 	for (;*p;p++) {

@@ -603,7 +603,7 @@ R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *add
 	return ptrace (request, pid, addr, data);
 }
 
-R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *child_callback_user) {
+R_API pid_t r_io_ptrace_fork(RIO *io, void(*child_callback)(void *), void *child_callback_user) {
 #if USE_PTRACE_WRAP
 	if (io->want_ptrace_wrap) {
 		ptrace_wrap_instance *wrap = io_ptrace_wrap_instance (io);

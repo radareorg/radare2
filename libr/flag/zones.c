@@ -5,7 +5,7 @@
 
 #define DB f->zones
 
-static RFlagZoneItem *r_flag_zone_get (RFlag *f, const char *name) {
+static RFlagZoneItem *r_flag_zone_get(RFlag *f, const char *name) {
 	RListIter *iter;
 	RFlagZoneItem *zi;
 	r_list_foreach (DB, iter, zi) {
@@ -16,7 +16,7 @@ static RFlagZoneItem *r_flag_zone_get (RFlag *f, const char *name) {
 	return NULL;
 }
 
-static RFlagZoneItem *r_flag_zone_get_inrange (RFlag *f, ut64 from, ut64 to) {
+static RFlagZoneItem *r_flag_zone_get_inrange(RFlag *f, ut64 from, ut64 to) {
 	RListIter *iter;
 	RFlagZoneItem *zi;
 	r_list_foreach (DB, iter, zi) {

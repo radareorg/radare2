@@ -549,7 +549,7 @@ static bool __check_root_state(RCore *core, RPanelsRootState state) {
 	return core->panels_root->root_state == state;
 }
 
-static bool search_db_check_panel_type (RCore *core, RPanel *panel, const char *ch) {
+static bool search_db_check_panel_type(RCore *core, RPanel *panel, const char *ch) {
 	char *str = __search_db (core, ch);
 	bool ret = str && __check_panel_type (panel, str);
 	free (str);
@@ -1973,7 +1973,7 @@ static RPanels *__get_panels(RPanelsRoot *panels_root, int i) {
 	return panels_root->panels[i];
 }
 
-static void __update_disassembly_or_open (RCore *core) {
+static void __update_disassembly_or_open(RCore *core) {
 	RPanels *panels = core->panels;
 	int i;
 	bool create_new = true;
@@ -2364,7 +2364,7 @@ static RPanels *__panels_new(RCore *core) {
 	return panels;
 }
 
-static void __handle_tab_new_with_cur_panel (RCore *core) {
+static void __handle_tab_new_with_cur_panel(RCore *core) {
 	RPanels *panels = core->panels;
 	if (panels->n_panels <= 1) {
 		return;
@@ -4943,7 +4943,7 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 	__free_menu_item (item);
 }
 
-static void __init_menu_saved_layout (void *_core, const char *parent) {
+static void __init_menu_saved_layout(void *_core, const char *parent) {
 	char *dir_path = __get_panels_config_dir_path ();
 	RList *dir = r_sys_dir (dir_path);
 	if (!dir) {
@@ -5336,7 +5336,7 @@ static int __quit_cb(void *user) {
 	return 0;
 }
 
-static int __open_menu_cb (void *user) {
+static int __open_menu_cb(void *user) {
 	RCore* core = (RCore *)user;
 	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
@@ -5722,7 +5722,7 @@ static bool __init_panels(RCore *core, RPanels *panels) {
 	return true;
 }
 
-static void __refresh_core_offset (RCore *core) {
+static void __refresh_core_offset(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
 	if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {

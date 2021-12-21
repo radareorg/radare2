@@ -85,24 +85,24 @@ typedef struct r_asn1_object_t {
 } RASN1Object;
 
 
-R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length, const ut8 *start_pointer);
-R_API RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_create_string (const char *string, bool allocated, ut32 length);
-R_API RASN1String *r_asn1_stringify_bits (const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_stringify_integer (const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_stringify_bytes (const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_stringify_boolean (const ut8 *buffer, ut32 length);
-R_API RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length);
+R_API RASN1Object *r_asn1_create_object(const ut8 *buffer, ut32 length, const ut8 *start_pointer);
+R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_create_string(const char *string, bool allocated, ut32 length);
+R_API RASN1String *r_asn1_stringify_bits(const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_stringify_utctime(const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_stringify_time(const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_stringify_integer(const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_stringify_string(const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_stringify_bytes(const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_stringify_boolean(const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_stringify_oid(const ut8* buffer, ut32 length);
 
-R_API void r_asn1_free_object (RASN1Object *object);
+R_API void r_asn1_free_object(RASN1Object *object);
 // R_API void r_asn1_print_object (RASN1Object *object, ut32 depth);
-R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb);
-R_API void r_asn1_free_string (RASN1String *string);
-R_API void r_asn1_free_binary (RASN1Binary *string);
-R_API void asn1_setformat (int fmt);
+R_API char *r_asn1_to_string(RASN1Object *object, ut32 depth, RStrBuf *sb);
+R_API void r_asn1_free_string(RASN1String *string);
+R_API void r_asn1_free_binary(RASN1Binary *string);
+R_API void asn1_setformat(int fmt);
 
 #ifdef __cplusplus
 }

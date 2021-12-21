@@ -111,7 +111,7 @@ static char *__esil_reg_profile(RDebug *dbg) {
 	return r_anal_get_reg_profile (dbg->anal);
 }
 
-static int __esil_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int __esil_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }
@@ -126,7 +126,7 @@ static int __esil_stop(RDebug *dbg) {
 	return true;
 }
 
-static int __reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
+static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int sz;
 	/* do nothing */
 	ut8 *bytes = r_reg_get_bytes (dbg->reg, type, &sz);

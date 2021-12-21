@@ -9,7 +9,7 @@
 #if __UNIX__
 static bool chmodr(const char *, int recursive);
 static bool parsemode(const char *);
-static void recurse(const char *path, int rec, bool (*fn)(const char *,int));
+static void recurse(const char *path, int rec, bool(*fn)(const char *,int));
 
 static char oper = '=';
 static mode_t mode = 0;
@@ -160,7 +160,7 @@ static char *agetcwd(void) {
 	return buf;
 }
 
-static void recurse(const char *path, int rec, bool (*fn)(const char *,int)) {
+static void recurse(const char *path, int rec, bool(*fn)(const char *,int)) {
 	char *cwd;
 	struct dirent *d;
 	struct stat st;

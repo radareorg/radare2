@@ -262,7 +262,7 @@ R_API void r_anal_hint_set_esil(RAnal *a, ut64 addr, const char *esil) {
 	);
 }
 
-R_API void r_anal_hint_set_type (RAnal *a, ut64 addr, int type) {
+R_API void r_anal_hint_set_type(RAnal *a, ut64 addr, int type) {
 	SET_HINT (R_ANAL_ADDR_HINT_TYPE_OPTYPE, r->optype = type;);
 }
 
@@ -350,11 +350,11 @@ R_API void r_anal_hint_unset_newbits(RAnal *a, ut64 addr) {
 	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_NEW_BITS, addr);
 }
 
-R_API void r_anal_hint_unset_val (RAnal *a, ut64 addr) {
+R_API void r_anal_hint_unset_val(RAnal *a, ut64 addr) {
 	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_VAL, addr);
 }
 
-R_API void r_anal_hint_unset_type (RAnal *a, ut64 addr) {
+R_API void r_anal_hint_unset_type(RAnal *a, ut64 addr) {
 	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_OPTYPE, addr);
 }
 

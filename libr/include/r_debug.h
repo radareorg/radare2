@@ -472,7 +472,7 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits);
 R_API bool r_debug_use(RDebug *dbg, const char *str);
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg);
-R_API void r_debug_info_free (RDebugInfo *rdi);
+R_API void r_debug_info_free(RDebugInfo *rdi);
 
 R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file);
 
@@ -509,8 +509,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input);
 R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, int colors);
 
 /* descriptors */
-R_API RDebugDesc *r_debug_desc_new (int fd, const char *path, int perm, int type, int off);
-R_API void r_debug_desc_free (RDebugDesc *p);
+R_API RDebugDesc *r_debug_desc_new(int fd, const char *path, int perm, int type, int off);
+R_API void r_debug_desc_free(RDebugDesc *p);
 R_API int r_debug_desc_open(RDebug *dbg, const char *path);
 R_API int r_debug_desc_close(RDebug *dbg, int fd);
 R_API int r_debug_desc_dup(RDebug *dbg, int fd, int newfd);
@@ -576,7 +576,7 @@ R_API void r_debug_esil_watch(RDebug *dbg, int rwx, int dev, const char *expr);
 R_API void r_debug_esil_watch_reset(RDebug *dbg);
 R_API void r_debug_esil_watch_list(RDebug *dbg);
 R_API bool r_debug_esil_watch_empty(RDebug *dbg);
-R_API void r_debug_esil_prestep (RDebug *d, int p);
+R_API void r_debug_esil_prestep(RDebug *d, int p);
 
 /* record & replay */
 // R_API ut8 r_debug_get_byte(RDebug *dbg, ut32 cnum, ut64 addr);

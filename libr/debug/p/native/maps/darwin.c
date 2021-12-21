@@ -170,7 +170,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 
 #if 0
 // TODO: this loop MUST be cleaned up
-static RList *osx_dbg_maps (RDebug *dbg) {
+static RList *osx_dbg_maps(RDebug *dbg) {
 	RDebugMap *mr;
 	char buf[1024];
 	int i, print;

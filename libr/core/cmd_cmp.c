@@ -509,7 +509,7 @@ static int cmd_cp(void *data, const char *input) {
 	return false;
 }
 
-static void __core_cmp_bits (RCore *core, ut64 addr) {
+static void __core_cmp_bits(RCore *core, ut64 addr) {
 	const bool scr_color = r_config_get_i (core->config, "scr.color");
 	int i;
 	ut8 a, b;

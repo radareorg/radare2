@@ -519,7 +519,7 @@ R_API int r_hash_parity(const ut8 *buf, ut64 len);
 R_API ut8 r_hash_mod255(const ut8 *b, ut64 len);
 R_API ut64 r_hash_luhn(const ut8 *buf, ut64 len);
 R_API char *r_hash_ssdeep(const ut8 *buf, size_t len);
-R_API utcrc r_hash_crc_preset (const ut8 *data, ut32 size, enum CRC_PRESETS preset);
+R_API utcrc r_hash_crc_preset(const ut8 *data, ut32 size, enum CRC_PRESETS preset);
 
 /* analysis */
 R_API ut8  r_hash_hamdist(const ut8 *buf, int len);

@@ -71,7 +71,7 @@ static struct rerr {
 /*
  - regatoi - internal routine to implement R_REGEX_ATOI
  */
-static char * regatoi(const RRegex *preg, char *localbuf, size_t localbufsize) {
+static char *regatoi(const RRegex *preg, char *localbuf, size_t localbufsize) {
 	struct rerr *r;
 
 	for (r = rerrs; r->code != 0; r++) {

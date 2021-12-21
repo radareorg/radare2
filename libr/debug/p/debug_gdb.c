@@ -22,7 +22,7 @@ static int support_sw_bp = UNKNOWN;
 static int support_hw_bp = UNKNOWN;
 
 static bool r_debug_gdb_attach(RDebug *dbg, int pid);
-static void check_connection (RDebug *dbg) {
+static void check_connection(RDebug *dbg) {
 	if (!desc) {
 		r_debug_gdb_attach (dbg, -1);
 	}
@@ -426,7 +426,7 @@ static int r_debug_gdb_set_reg_profile(const char *str) {
 	return false;
 }
 
-static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int r_debug_gdb_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	int ret = 0, bpsize;
 	if (!b) {
 		return false;

@@ -20,7 +20,7 @@ static RTableColumnType r_table_type_string = { "string", sortString };
 static RTableColumnType r_table_type_number = { "number", sortNumber };
 static RTableColumnType r_table_type_bool = { "bool", sortNumber };
 
-R_API RTableColumnType *r_table_type (const char *name) {
+R_API RTableColumnType *r_table_type(const char *name) {
 	if (!strcmp (name, "bool")) {
 		return &r_table_type_bool;
 	}
@@ -1192,7 +1192,7 @@ R_API bool r_table_align(RTable *t, int nth, int align) {
 	return false;
 }
 
-R_API void r_table_hide_header (RTable *t) {
+R_API void r_table_hide_header(RTable *t) {
 	t->showHeader = false;
 }
 

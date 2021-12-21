@@ -351,7 +351,7 @@ static int cmp_strings_by_leading_number(void *data1, void *data2) {
 	return 0;
 }
 
-R_API void r_anal_esil_trace_list (RAnalEsil *esil) {
+R_API void r_anal_esil_trace_list(RAnalEsil *esil) {
 	PrintfCallback p = esil->anal->cb_printf;
 	SdbKv *kv;
 	SdbListIter *iter;

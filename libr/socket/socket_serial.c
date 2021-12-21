@@ -10,7 +10,7 @@
 #include <fcntl.h>
 #include <termios.h>
 
-static int set_interface_attribs (int fd, int speed, int parity) {
+static int set_interface_attribs(int fd, int speed, int parity) {
 	struct termios tty;
 	memset (&tty, 0, sizeof tty);
 	if (tcgetattr (fd, &tty) != 0) {

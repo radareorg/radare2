@@ -172,7 +172,7 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *mem (RBinFile *bf) {
+static RList *mem(RBinFile *bf) {
 	RList *ret;
 	RBinMem *m;
 	RBinMem *m_bak;

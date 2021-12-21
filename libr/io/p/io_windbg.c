@@ -71,7 +71,7 @@ static P##IFace IFace##_impl_new(                     \
 }
 
 #define DECLARE_QUERYINTERFACE(IFace, IFaceIID)       \
-static STDMETHODIMP IFace##_QueryInterface_impl (     \
+static STDMETHODIMP IFace##_QueryInterface_impl(     \
 	P##IFace This,                                    \
 	_In_ REFIID InterfaceId,                          \
 	_Out_ PVOID *Interface) {                         \

@@ -28,7 +28,7 @@ static bool isBochs(RDebug *dbg) {
 	return false;
 }
 
-static int r_debug_bochs_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int r_debug_bochs_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	char cmd[64];
 	char num[4];
 	char addr[19];

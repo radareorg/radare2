@@ -1511,7 +1511,7 @@ static void autocomplete_flags(RCore *core, RLineCompletion *completion, const c
 }
 
 // TODO: Should be refactored
-static void autocomplete_sdb (RCore *core, RLineCompletion *completion, const char *str) {
+static void autocomplete_sdb(RCore *core, RLineCompletion *completion, const char *str) {
 	r_return_if_fail (core && completion && str);
 	char *pipe = strchr (str, '>');
 	Sdb *sdb = core->sdb;
@@ -2533,7 +2533,7 @@ R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbo
 	return NULL;
 }
 
-static void r_core_setenv (RCore *core) {
+static void r_core_setenv(RCore *core) {
 	char *e = r_sys_getenv ("PATH");
 	char *h = r_str_home (R2_HOME_BIN);
 	char *n = r_str_newf ("%s%s%s", h, R_SYS_ENVSEP, e);
@@ -2568,7 +2568,7 @@ static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int 
 	return r_io_read_at (anal->iob.io, addr, buf, len);
 }
 
-static void *r_core_sleep_begin (RCore *core) {
+static void *r_core_sleep_begin(RCore *core) {
 	RCoreTask *task = r_core_task_self (&core->tasks);
 	if (task) {
 		r_core_task_sleep_begin (task);
@@ -2576,7 +2576,7 @@ static void *r_core_sleep_begin (RCore *core) {
 	return task;
 }
 
-static void r_core_sleep_end (RCore *core, void *user) {
+static void r_core_sleep_end(RCore *core, void *user) {
 	RCoreTask *task = (RCoreTask *)user;
 	if (task) {
 		r_core_task_sleep_end (task);
@@ -2590,7 +2590,7 @@ static void __foreach(RCore *core, const char **cmds, int type) {
 	}
 }
 
-static void __init_autocomplete_default (RCore* core) {
+static void __init_autocomplete_default(RCore* core) {
 	const char *fcns[] = {
 		"afi", "afcf", "afn", NULL
 	};
@@ -3435,7 +3435,7 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr, RAnalOpMask mask) {
 	return op;
 }
 
-static void rap_break (void *u) {
+static void rap_break(void *u) {
 	RIORap *rior = (RIORap*) u;
 	if (u) {
 		r_socket_close (rior->fd);

@@ -1,6 +1,6 @@
 #include <r_search.h>
 
-static const ut8 *buffer = (const ut8*) "ELF,e,e,e,ELF--fooo";
+static const ut8 *buffer =(const ut8*) "ELF,e,e,e,ELF--fooo";
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	const ut8 *buf = (const ut8*)user;

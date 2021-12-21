@@ -2,7 +2,7 @@
 
 HANDLE gHandleDriver = NULL;
 
-static BOOL InstallService(const char * rutaDriver, LPCTSTR  lpServiceName, LPCTSTR  lpDisplayName) {
+static BOOL InstallService(const char *rutaDriver, LPCTSTR  lpServiceName, LPCTSTR  lpDisplayName) {
 	HANDLE hService;
 	BOOL ret = FALSE;
 	HANDLE hSCManager = OpenSCManager (NULL, NULL, SC_MANAGER_CREATE_SERVICE);

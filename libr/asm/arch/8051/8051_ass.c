@@ -123,7 +123,7 @@ static bool parse_hexadecimal(char const* hexstr, ut16* out) {
  * any text after a single-quote and before the next single-quote is considered
  * quoted. There is no escaping.
  */
-static bool get_arg(char const*multi, int n, char * dest)
+static bool get_arg(char const*multi, int n, char *dest)
 {
 	char* lastnonws = dest;
 	bool anynonws = false;
@@ -183,7 +183,7 @@ static bool get_arg(char const*multi, int n, char * dest)
  * arg parameter must be 3 char pointers wide.
  * TODO: merge with get_arg, as this is now the only user
  */
-static int get_arguments (char**arg, char const*arguments) {
+static int get_arguments(char**arg, char const*arguments) {
 	size_t arglen = strlen (arguments) + 1;
 	char*tmp = malloc (arglen);
 	if (!get_arg (arguments, 1, tmp)) {

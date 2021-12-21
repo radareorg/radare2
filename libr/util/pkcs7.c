@@ -588,7 +588,7 @@ R_API void r_x509_signedinfo_json(PJ *pj, RPKCS7SignerInfo *si) {
 	}
 }
 
-R_API PJ *r_pkcs7_cms_json (RCMS *container) {
+R_API PJ *r_pkcs7_cms_json(RCMS *container) {
 	PJ *pj = NULL;
 	if (container) {
 		ut32 i;

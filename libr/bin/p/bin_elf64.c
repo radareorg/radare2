@@ -18,7 +18,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
 extern struct r_bin_write_t r_bin_write_elf64;
 
-static ut64 get_elf_vaddr64 (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_elf_vaddr64(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
 	struct Elf_(r_bin_elf_obj_t)* obj = bf->o->bin_obj;
 	return obj->baddr - obj->boffset + vaddr;

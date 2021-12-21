@@ -1154,7 +1154,7 @@ R_API bool r_sign_delete(RAnal *a, const char *name) {
 	return retval;
 }
 
-static ut8 * build_combined_bytes(RSignBytes *bsig) {
+static ut8 *build_combined_bytes(RSignBytes *bsig) {
 	r_return_val_if_fail (bsig && bsig->bytes && bsig->mask, NULL);
 	ut8 *buf = (ut8 *)malloc (bsig->size);
 	if (buf) {

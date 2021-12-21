@@ -54,13 +54,13 @@ Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
 #endif
 #endif
 
-static int mant_bits_set (const struct floatformat *, const unsigned char *);
-static unsigned long get_field (const unsigned char *,
+static int mant_bits_set(const struct floatformat *, const unsigned char *);
+static unsigned long get_field(const unsigned char *,
                                 enum floatformat_byteorders,
                                 unsigned int,
                                 unsigned int,
                                 unsigned int);
-static int floatformat_always_valid (const struct floatformat *fmt,
+static int floatformat_always_valid(const struct floatformat *fmt,
                                      const void *from);
 
 static int
@@ -164,7 +164,7 @@ const struct floatformat floatformat_vax_g =
   NULL
 };
 
-static int floatformat_i387_ext_is_valid (const struct floatformat *fmt,
+static int floatformat_i387_ext_is_valid(const struct floatformat *fmt,
 					  const void *from);
 
 static int
@@ -562,7 +562,7 @@ floatformat_to_double (const struct floatformat *fmt,
     *to = dto;
 }
 
-static void put_field (unsigned char *, enum floatformat_byteorders,
+static void put_field(unsigned char *, enum floatformat_byteorders,
                        unsigned int,
                        unsigned int,
                        unsigned int,

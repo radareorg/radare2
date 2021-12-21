@@ -621,7 +621,7 @@ static void finish_pdb_parse(RPdb *pdb) {
 // printf("finish_pdb_parse()\n");
 }
 
-static SimpleTypeMode get_simple_type_mode (PDB_SIMPLE_TYPES type) {
+static SimpleTypeMode get_simple_type_mode(PDB_SIMPLE_TYPES type) {
 	ut32 value = type; // cast to unsigned for defined bitwise operations
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
         .---------------------------.------.----------.
@@ -633,7 +633,7 @@ static SimpleTypeMode get_simple_type_mode (PDB_SIMPLE_TYPES type) {
 	return (value & 0x00000000F0000);
 }
 
-static SimpleTypeKind get_simple_type_kind (PDB_SIMPLE_TYPES type) {
+static SimpleTypeKind get_simple_type_kind(PDB_SIMPLE_TYPES type) {
 	ut32 value = type; // cast to unsigned for defined bitwise operations
 	/*   https://llvm.org/docs/PDB/TpiStream.html#type-indices
         .---------------------------.------.----------.
@@ -651,7 +651,7 @@ static SimpleTypeKind get_simple_type_kind (PDB_SIMPLE_TYPES type) {
  * @param member_format pointer to assert member format to
  * @return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
  */
-static int simple_type_to_format (const SLF_SIMPLE_TYPE *simple_type, char **member_format) {
+static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **member_format) {
 	SimpleTypeMode mode = get_simple_type_mode (simple_type->simple_type);
 	switch (mode) {
 	case DIRECT: {

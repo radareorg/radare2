@@ -72,7 +72,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool final (RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

@@ -877,7 +877,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 	return true;
 }
 
-static bool read_entry (RBuffer *b, ut64 addr, struct minidump_directory *entry) {
+static bool read_entry(RBuffer *b, ut64 addr, struct minidump_directory *entry) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	if (r_buf_seek (b, addr, R_BUF_SET) < 0) {
 		return false;

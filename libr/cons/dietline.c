@@ -1076,7 +1076,7 @@ static inline void vi_cmd_e(void) {
 	}
 }
 
-static void __update_prompt_color (void) {
+static void __update_prompt_color(void) {
 	RCons *cons = r_cons_singleton ();
 	const char *BEGIN = "", *END = "";
 	if (cons->context->color_mode) {

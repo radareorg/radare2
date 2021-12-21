@@ -99,7 +99,7 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 	return false;
 }
 
-static void r_io_def_mmap_free (RIOMMapFileObj *mmo) {
+static void r_io_def_mmap_free(RIOMMapFileObj *mmo) {
 	if (mmo) {
 		free (mmo->filename);
 		r_buf_free (mmo->buf);
@@ -309,7 +309,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 }
 
 #if __UNIX__
-static bool __is_blockdevice (RIODesc *desc) {
+static bool __is_blockdevice(RIODesc *desc) {
 	r_return_val_if_fail (desc && desc->data, false);
 	RIOMMapFileObj *mmo = desc->data;
 	struct stat buf;

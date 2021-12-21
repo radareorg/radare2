@@ -311,7 +311,7 @@ static void ds_begin_cont(RDisasmState *ds);
 static void ds_print_esil_anal(RDisasmState *ds);
 static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
-static RDisasmState * ds_init(RCore * core);
+static RDisasmState * ds_init(RCore *core);
 static void ds_build_op_str(RDisasmState *ds, bool print_color);
 static void ds_print_show_bytes(RDisasmState *ds);
 static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines);
@@ -353,7 +353,7 @@ static void ds_end_line_highlight(RDisasmState *ds);
 static bool line_highlighted(RDisasmState *ds);
 static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos);
 
-R_API ut64 r_core_pava (RCore *core, ut64 addr) {
+R_API ut64 r_core_pava(RCore *core, ut64 addr) {
 	if (core->print->pava) {
 		RIOMap *map = r_io_map_get_paddr (core->io, addr);
 		if (map) {
@@ -596,7 +596,7 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	}
 }
 
-static RDisasmState * ds_init(RCore *core) {
+static RDisasmState *ds_init(RCore *core) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
 	if (!ds) {
 		return NULL;
@@ -989,7 +989,7 @@ static bool ds_must_strip(RDisasmState *ds) {
 	return false;
 }
 
-static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
+static void ds_highlight_word(RDisasmState *ds, char *word, char *color) {
 	char *source = ds->opstr? ds->opstr: r_asm_op_get_asm (&ds->asmop);
 	const char *color_reset = line_highlighted (ds) ? ds->color_linehl : Color_RESET_BG;
 	char *asm_str = r_str_highlight (source, word, color, color_reset);
@@ -1711,7 +1711,7 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 }
 
 //TODO: this function is a temporary fix. All analysis should be based on realsize. However, now for same architectures realisze is not used
-static ut32 tmp_get_realsize (RAnalFunction *f) {
+static ut32 tmp_get_realsize(RAnalFunction *f) {
 	ut32 size = r_anal_function_realsize (f);
 	return (size > 0) ? size : r_anal_function_linear_size (f);
 }
@@ -2291,7 +2291,7 @@ static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
 	}
 }
 
-static bool is_first (const char *fs) {
+static bool is_first(const char *fs) {
 	if (fs) {
 		if (strstr (fs, "segment")) {
 			return true;

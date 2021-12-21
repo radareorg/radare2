@@ -142,7 +142,7 @@ static bool listFlag(RFlagItem *flag, void *user) {
 	return true;
 }
 
-static size_t countMatching (const char *a, const char *b) {
+static size_t countMatching(const char *a, const char *b) {
 	size_t matches = 0;
 	for (; *a && *b; a++, b++) {
 		if (*a != *b) {
@@ -260,9 +260,9 @@ static RList *__childrenFlagsOf(RCore *core, RList *flags, const char *prefix) {
 	return list;
 }
 
-static void __printRecursive (RCore *core, RList *list, const char *prefix, int mode, int depth);
+static void __printRecursive(RCore *core, RList *list, const char *prefix, int mode, int depth);
 
-static void __printRecursive (RCore *core, RList *flags, const char *prefix, int mode, int depth) {
+static void __printRecursive(RCore *core, RList *flags, const char *prefix, int mode, int depth) {
 	char *fn;
 	RListIter *iter;
 	const int prefix_len = strlen (prefix);
@@ -290,7 +290,7 @@ static void __printRecursive (RCore *core, RList *flags, const char *prefix, int
 	r_list_free (children);
 }
 
-static void __flag_graph (RCore *core, const char *input, int mode) {
+static void __flag_graph(RCore *core, const char *input, int mode) {
 	RList *flags = r_list_newf (NULL);
 	r_flag_foreach_space (core->flags, r_flag_space_cur (core->flags), listFlag, flags);
 	__printRecursive (core, flags, input, mode, 0);

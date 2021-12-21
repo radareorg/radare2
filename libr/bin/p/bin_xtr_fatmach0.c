@@ -7,7 +7,7 @@
 #include "mach0/fatmach0.h"
 #include "mach0/mach0.h"
 
-static RBinXtrData * extract(RBin *bin, int idx);
+static RBinXtrData *extract(RBin *bin, int idx);
 
 static bool checkHeader(RBuffer *b) {
 	ut8 buf[4];
@@ -118,7 +118,7 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	return NULL;
 }
 
-static RList * oneshotall_buffer(RBin *bin, RBuffer *b) {
+static RList *oneshotall_buffer(RBin *bin, RBuffer *b) {
 	RBinXtrData *data = oneshot_buffer (bin, b, 0);
 	if (data) {
 		// XXX - how do we validate a valid narch?

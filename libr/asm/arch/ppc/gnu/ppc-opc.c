@@ -38,49 +38,49 @@
 
 /* Local insertion and extraction functions.  */
 
-static unsigned long insert_bat (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bat (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_bba (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bba (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_bdm (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bdm (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_bdp (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bdp (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_bo (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bo (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_boe (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_boe (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_fxm (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_fxm (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_mbe (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_mbe (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_mb6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_mb6 (unsigned long, ppc_cpu_t, int *);
-static long extract_nb (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_nsi (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_nsi (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_ral (unsigned long, long, ppc_cpu_t, const char **);
-static unsigned long insert_ram (unsigned long, long, ppc_cpu_t, const char **);
-static unsigned long insert_raq (unsigned long, long, ppc_cpu_t, const char **);
-static unsigned long insert_ras (unsigned long, long, ppc_cpu_t, const char **);
-static unsigned long insert_rbs (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_rbs (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_sh6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_sh6 (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_spr (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_spr (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_sprg (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_sprg (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_tbr (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_tbr (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_xt6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_xt6 (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_xa6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_xa6 (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_xb6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_xb6 (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_xb6s (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_xb6s (unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bat(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bat(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bba(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bba(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bdm(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bdm(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bdp(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bdp(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bo(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bo(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_boe(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_boe(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_fxm(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_fxm(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_mbe(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_mbe(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_mb6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_mb6(unsigned long, ppc_cpu_t, int *);
+static long extract_nb(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_nsi(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_nsi(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_ral(unsigned long, long, ppc_cpu_t, const char **);
+static unsigned long insert_ram(unsigned long, long, ppc_cpu_t, const char **);
+static unsigned long insert_raq(unsigned long, long, ppc_cpu_t, const char **);
+static unsigned long insert_ras(unsigned long, long, ppc_cpu_t, const char **);
+static unsigned long insert_rbs(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_rbs(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_sh6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_sh6(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_spr(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_spr(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_sprg(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_sprg(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_tbr(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_tbr(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_xt6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_xt6(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_xa6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_xa6(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_xb6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_xb6(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_xb6s(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_xb6s(unsigned long, ppc_cpu_t, int *);
 
 /* The operands table.
 

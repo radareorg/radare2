@@ -163,7 +163,7 @@ static int getIndexFromLogString(const char *s) {
 	return -1;
 }
 
-static char *expr2cmd (RCoreLog *log, const char *line) {
+static char *expr2cmd(RCoreLog *log, const char *line) {
 	if (!line || !*line) {
 		return NULL;
 	}
@@ -189,7 +189,7 @@ static char *expr2cmd (RCoreLog *log, const char *line) {
 	return NULL;
 }
 
-static int log_callback_r2 (RCore *core, int count, const char *line) {
+static int log_callback_r2(RCore *core, int count, const char *line) {
 	if (*line == ':') {
 		char *cmd = expr2cmd (core->log, line);
 		if (cmd) {
@@ -201,7 +201,7 @@ static int log_callback_r2 (RCore *core, int count, const char *line) {
 	return 0;
 }
 
-static int log_callback_all (RCore *log, int count, const char *line) {
+static int log_callback_all(RCore *log, int count, const char *line) {
 	r_cons_printf ("%d %s\n", count, line);
 	return 0;
 }

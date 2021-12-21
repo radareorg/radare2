@@ -32,10 +32,10 @@
    are provided because this file handles disassembly for the PowerPC
    in both big and little endian mode and also for the POWER (RS/6000)
    chip.  */
-static int print_insn_powerpc (bfd_vma, struct disassemble_info *, int,
+static int print_insn_powerpc(bfd_vma, struct disassemble_info *, int,
 			       ppc_cpu_t);
 
-static bfd_vma __bfd_getb32 (const void *p) {
+static bfd_vma __bfd_getb32(const void *p) {
   const bfd_byte *addr = p;
   unsigned long v;
 
@@ -46,7 +46,7 @@ static bfd_vma __bfd_getb32 (const void *p) {
   return v;
 }
 
-static bfd_vma __bfd_getl32 (const void *p) {
+static bfd_vma __bfd_getl32(const void *p) {
   const bfd_byte *addr = p;
   unsigned long v;
 

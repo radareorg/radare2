@@ -97,13 +97,13 @@ R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size
 R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len);
 R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to);
 
-R_API void r_search_keyword_free (RSearchKeyword *kw);
+R_API void r_search_keyword_free(RSearchKeyword *kw);
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data);
 R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bm, const char *data, int icase);
 R_API RSearchKeyword* r_search_keyword_new_wide(const char *kw, const char *bm, const char *data, int icase);
 R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bmstr, const char *data);
 R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data);
-R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *data);
+R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *data);
 
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw);
 R_API void r_search_reset(RSearch *s, int mode);

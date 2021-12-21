@@ -28,7 +28,7 @@ static int vax_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length
 	return 0;
 }
 
-static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
+static int symbol_at_address(bfd_vma addr, struct disassemble_info *info) {
 	return 0;
 }
 

@@ -40,7 +40,7 @@ enum  {
 void main_main (gchar** args, int args_length1);
 Main* main_new (void);
 Main* main_construct (GType object_type);
-static GObject * main_constructor (GType type, guint n_construct_properties, GObjectConstructParam * construct_properties);
+static GObject * main_constructor(GType type, guint n_construct_properties, GObjectConstructParam *construct_properties);
 
 
 void main_main (gchar** args, int args_length1) {
@@ -76,7 +76,7 @@ Main* main_new (void) {
 }
 
 
-static GObject * main_constructor (GType type, guint n_construct_properties, GObjectConstructParam * construct_properties) {
+static GObject * main_constructor(GType type, guint n_construct_properties, GObjectConstructParam *construct_properties) {
 	GObject * obj;
 	GObjectClass * parent_class;
 	Main * self;
@@ -164,13 +164,13 @@ static GObject * main_constructor (GType type, guint n_construct_properties, GOb
 }
 
 
-static void main_class_init (MainClass * klass) {
+static void main_class_init(MainClass *klass) {
 	main_parent_class = g_type_class_peek_parent (klass);
 	G_OBJECT_CLASS (klass)->constructor = main_constructor;
 }
 
 
-static void main_instance_init (Main * self) {
+static void main_instance_init(Main *self) {
 }
 
 

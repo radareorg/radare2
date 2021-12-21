@@ -1097,7 +1097,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 }
 
 // TODO: support len for binary data?
-R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *port, const char *cmd) {
+R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *port, const char *cmd) {
 	RSocket *s = r_socket_new (0);
 	const int timeout = 0;
 	char *rbuf = NULL;
@@ -1329,7 +1329,7 @@ beach:
 
 #else
 
-R_API int r_core_rtr_cmds (RCore *core, const char *port) {
+R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	unsigned char buf[4097];
 	RSocket *ch = NULL;
 	int i, ret;

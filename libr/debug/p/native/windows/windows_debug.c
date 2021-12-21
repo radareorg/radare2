@@ -697,7 +697,7 @@ void w32_break_process(void *user) {
 	interrupted = true;
 }
 
-static RDebugReasonType exception_to_reason (DWORD ExceptionCode) {
+static RDebugReasonType exception_to_reason(DWORD ExceptionCode) {
 	switch (ExceptionCode) {
 	case EXCEPTION_ACCESS_VIOLATION:
 	case EXCEPTION_GUARD_PAGE:

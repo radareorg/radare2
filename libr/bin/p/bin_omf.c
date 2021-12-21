@@ -6,7 +6,7 @@
 #include <r_bin.h>
 #include "omf/omf.h"
 
-static bool load_buffer (RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
+static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	ut64 size;
 	const ut8 *buf = r_buf_data (b, &size);
 	r_return_val_if_fail (buf, false);

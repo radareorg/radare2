@@ -3479,7 +3479,7 @@ RBinSymbol *Elf_(_r_bin_elf_convert_symbol)(struct Elf_(r_bin_elf_obj_t) *bin,
 	return ptr;
 }
 
-static ut32 hashRBinElfSymbol(const void * obj) {
+static ut32 hashRBinElfSymbol(const void *obj) {
 	const RBinElfSymbol *symbol = (const RBinElfSymbol *)obj;
 	if (!symbol || !*symbol->name) {
 		return 0;
@@ -3921,11 +3921,11 @@ ELFOBJ* Elf_(r_bin_elf_new_buf)(RBuffer *buf, bool verbose) {
 	return bin;
 }
 
-static int is_in_pphdr(Elf_(Phdr) * p, ut64 addr) {
+static int is_in_pphdr(Elf_(Phdr) *p, ut64 addr) {
 	return addr >= p->p_offset && addr < p->p_offset + p->p_filesz;
 }
 
-static int is_in_vphdr(Elf_(Phdr) * p, ut64 addr) {
+static int is_in_vphdr(Elf_(Phdr) *p, ut64 addr) {
 	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_filesz;
 }
 
@@ -4020,7 +4020,7 @@ ut64 Elf_(r_bin_elf_v2p_new) (ELFOBJ *bin, ut64 vaddr) {
 	return UT64_MAX;
 }
 
-static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
+static bool get_nt_file_maps(ELFOBJ *bin, RList *core_maps) {
 	ut16 ph, ph_num = bin->ehdr.e_phnum;
 
 	for (ph = 0; ph < ph_num; ph++) {

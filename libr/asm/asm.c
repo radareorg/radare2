@@ -466,7 +466,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return true;
 }
 
-static bool __isInvalid (RAsmOp *op) {
+static bool __isInvalid(RAsmOp *op) {
 	const char *buf_asm = r_strbuf_get (&op->buf_asm);
 	return (buf_asm && *buf_asm && !strcmp (buf_asm, "invalid"));
 }

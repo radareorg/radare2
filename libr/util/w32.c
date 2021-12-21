@@ -7,10 +7,10 @@
 #include <windows.h>
 
 #if 1
-static DWORD (*w32_GetThreadId)(HANDLE) = NULL; // Vista
-static DWORD (*w32_GetProcessId)(HANDLE) = NULL; // XP
+static DWORD(*w32_GetThreadId)(HANDLE) = NULL; // Vista
+static DWORD(*w32_GetProcessId)(HANDLE) = NULL; // XP
 // fpu access API
-static BOOL (*w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = NULL;
+static BOOL(*w32_InitializeContext)(PVOID, DWORD, PCONTEXT*, PDWORD) = NULL;
 // static BOOL (*w32_GetXStateFeaturesMask)(PCONTEXT Context, PDWORD64) = NULL;
 #endif
 

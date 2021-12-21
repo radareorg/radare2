@@ -217,7 +217,7 @@ out_exit:
 	return inserted;
 }
 
-static void _exchange_nodes (RRBNode *node_a, RRBNode *node_b) {
+static void _exchange_nodes(RRBNode *node_a, RRBNode *node_b) {
 	if (!node_a || !node_b) {
 		return;
 	}

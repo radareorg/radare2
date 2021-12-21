@@ -37,8 +37,8 @@
     warning: implicit declaration of function `eprintf'
     if dbg is 1 then this definition is required
   */
-static bfd_vma bfd_getm32 (unsigned int);
-static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
+static bfd_vma bfd_getm32(unsigned int);
+static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 
 
 #ifndef dbg

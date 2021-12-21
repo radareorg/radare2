@@ -326,7 +326,7 @@ R_API void r_io_map_cleanup(RIO* io) {
 	// TODO: implement RIOBank mapref consistency cleanup here @condret
 }
 
-static bool _clear_banks_cb (void *user, void *data, ut32 id) {
+static bool _clear_banks_cb(void *user, void *data, ut32 id) {
 	r_io_bank_clear ((RIOBank *)data);
 	return true;
 }

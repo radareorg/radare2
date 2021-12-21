@@ -983,7 +983,7 @@ void decode_qualifiers(tms320_dasm_t * dasm)
 	}
 }
 
-static insn_item_t * finalize(tms320_dasm_t * dasm)
+static insn_item_t * finalize(tms320_dasm_t *dasm)
 {
 	// remove odd spaces
 
@@ -1080,7 +1080,7 @@ insn_head_t * lookup_insn_head(tms320_dasm_t * dasm) {
 	return dasm->head;
 }
 
-static void init_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
+static void init_dasm(tms320_dasm_t * dasm, const ut8 *stream, int len)
 {
 	strcpy(dasm->syntax, "invalid");
 	memcpy(dasm->stream, stream, min(sizeof(dasm->stream), len));
@@ -1094,7 +1094,7 @@ static void init_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 	dasm->insn = NULL;
 }
 
-static int full_insn_size(tms320_dasm_t * dasm)
+static int full_insn_size(tms320_dasm_t *dasm)
 {
 	int qualifier_size = 0;
 

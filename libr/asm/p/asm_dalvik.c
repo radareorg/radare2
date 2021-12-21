@@ -9,7 +9,7 @@
 
 #include <dalvik/opcode.h>
 
-static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int dalvik_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	r_return_val_if_fail  (a && op && buf && len > 0, -1);
 
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, i = (int) buf[0];

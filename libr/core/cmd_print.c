@@ -4534,7 +4534,7 @@ static char *__op_refs(RCore *core, RAnalOp *op, int n) {
 	return res;
 }
 
-static void r_core_disasm_table(RCore * core, int l, const char *input) {
+static void r_core_disasm_table(RCore *core, int l, const char *input) {
 	int i;
 	RTable *t = r_core_table (core, "disasm");
 	char *arg = strchr (input, ' ');

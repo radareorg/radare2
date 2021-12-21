@@ -91,7 +91,7 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, uri, strlen (uri)));
 }
 
-static inline int getmalfd (RIOR2Web *mal) {
+static inline int getmalfd(RIOR2Web *mal) {
 	return 0xfffffff & (int)(size_t)mal;
 }
 

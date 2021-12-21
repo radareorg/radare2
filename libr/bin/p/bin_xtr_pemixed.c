@@ -6,10 +6,10 @@
 #include <r_bin.h>
 #include "pe/pemixed.h"
 
-static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
-static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int subbin_type);
+static RList *oneshotall(RBin *bin, const ut8 *buf, ut64 size);
+static RBinXtrData *oneshot(RBin *bin, const ut8 *buf, ut64 size, int subbin_type);
 
-static void free_xtr (void *xtr_obj) {
+static void free_xtr(void *xtr_obj) {
 	r_bin_pemixed_free ((struct r_bin_pemixed_obj_t*) xtr_obj);
 }
 
@@ -47,7 +47,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 }
 
 // TODO RBufferify
-static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
+static RList *oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	//extract dos componenent first
 	RBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS);
 
@@ -81,7 +81,7 @@ static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// st
 }
 
 // XXX: ut8* should be RBuffer *
-static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
+static RBinXtrData *oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
 	r_return_val_if_fail (bin && bin->cur && buf, false);
 
 	if (!bin->cur->xtr_obj) {

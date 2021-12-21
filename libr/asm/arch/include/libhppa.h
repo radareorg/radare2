@@ -156,22 +156,22 @@ enum hppa_reloc_expr_type_alt
 /* Some functions to manipulate PA instructions.  */
 
 /* Declare the functions with the unused attribute to avoid warnings.  */
-static inline int sign_extend (int, int) ATTRIBUTE_UNUSED;
-static inline int low_sign_extend (int, int) ATTRIBUTE_UNUSED;
-static inline int sign_unext (int, int) ATTRIBUTE_UNUSED;
-static inline int low_sign_unext (int, int) ATTRIBUTE_UNUSED;
-static inline int re_assemble_3 (int) ATTRIBUTE_UNUSED;
-static inline int re_assemble_12 (int) ATTRIBUTE_UNUSED;
-static inline int re_assemble_14 (int) ATTRIBUTE_UNUSED;
-static inline int re_assemble_16 (int) ATTRIBUTE_UNUSED;
-static inline int re_assemble_17 (int) ATTRIBUTE_UNUSED;
-static inline int re_assemble_21 (int) ATTRIBUTE_UNUSED;
-static inline int re_assemble_22 (int) ATTRIBUTE_UNUSED;
+static inline int sign_extend(int, int) ATTRIBUTE_UNUSED;
+static inline int low_sign_extend(int, int) ATTRIBUTE_UNUSED;
+static inline int sign_unext(int, int) ATTRIBUTE_UNUSED;
+static inline int low_sign_unext(int, int) ATTRIBUTE_UNUSED;
+static inline int re_assemble_3(int) ATTRIBUTE_UNUSED;
+static inline int re_assemble_12(int) ATTRIBUTE_UNUSED;
+static inline int re_assemble_14(int) ATTRIBUTE_UNUSED;
+static inline int re_assemble_16(int) ATTRIBUTE_UNUSED;
+static inline int re_assemble_17(int) ATTRIBUTE_UNUSED;
+static inline int re_assemble_21(int) ATTRIBUTE_UNUSED;
+static inline int re_assemble_22(int) ATTRIBUTE_UNUSED;
 static inline bfd_signed_vma hppa_field_adjust
   (bfd_vma, bfd_signed_vma, enum hppa_reloc_field_selector_type_alt)
   ATTRIBUTE_UNUSED;
-static inline int bfd_hppa_insn2fmt (bfd *, int) ATTRIBUTE_UNUSED;
-static inline int hppa_rebuild_insn (int, int, int) ATTRIBUTE_UNUSED;
+static inline int bfd_hppa_insn2fmt(bfd *, int) ATTRIBUTE_UNUSED;
+static inline int hppa_rebuild_insn(int, int, int) ATTRIBUTE_UNUSED;
 
 
 /* The *sign_extend functions are used to assemble various bitfields

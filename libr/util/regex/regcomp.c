@@ -1226,7 +1226,7 @@ seterr(struct parse *p, int e)
 /*
  - allocset - allocate a set of characters for []
  */
-static cset * allocset(struct parse *p) {
+static cset *allocset(struct parse *p) {
 	int no = p->g->ncsets++;
 	size_t nc;
 	size_t nbytes;

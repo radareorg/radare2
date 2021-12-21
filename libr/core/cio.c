@@ -2,7 +2,7 @@
 
 #include "r_core.h"
 
-R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach) {
+R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
 	bool is_gdb = !strcmp (debugbackend, "gdb");
 	RIODesc * fd = r->io->desc;
@@ -60,7 +60,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	return true;
 }
 
-R_API int r_core_seek_base (RCore *core, const char *hex) {
+R_API int r_core_seek_base(RCore *core, const char *hex) {
 	ut64 addr = r_num_tail (core->num, core->offset, hex);
 	return r_core_seek (core, addr, true);
 }

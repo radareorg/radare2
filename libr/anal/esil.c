@@ -418,7 +418,7 @@ static bool internal_esil_reg_write(RAnalEsil *esil, const char *regname, ut64 n
 //Are you really trying to prevent the analyzed binary from doing anything that would cause it to segfault irl?
 //WHY?
 //	- condret
-static bool internal_esil_reg_write_no_null (RAnalEsil *esil, const char *regname, ut64 num) {
+static bool internal_esil_reg_write_no_null(RAnalEsil *esil, const char *regname, ut64 num) {
 	r_return_val_if_fail (esil && esil->anal && esil->anal->reg, false);
 
 	RRegItem *reg = r_reg_get (esil->anal->reg, regname, -1);

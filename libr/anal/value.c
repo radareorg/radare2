@@ -79,7 +79,7 @@ R_API int r_anal_value_set_ut64(RAnal *anal, RAnalValue *val, ut64 num) {
 	return false;							//is this necessary
 }
 
-R_API char *r_anal_value_to_string (RAnalValue *value) {
+R_API char *r_anal_value_to_string(RAnalValue *value) {
 	char *out = NULL;
 	if (value) {
 		out = r_str_new ("");

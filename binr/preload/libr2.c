@@ -34,7 +34,7 @@ static void sigusr2(int s) {
 	r_core_cmd0 (core, "=H&");
 }
 
-static void _libwrap_init() __attribute__ ((constructor));
+static void _libwrap_init() __attribute__((constructor));
 static void _libwrap_init(void) {
 	char *web;
 	r_sys_signal (SIGUSR1, sigusr1);

@@ -4540,7 +4540,7 @@ R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv
 	return info;
 }
 
-R_API void r_listinfo_free (RListInfo *info) {
+R_API void r_listinfo_free(RListInfo *info) {
 	if (!info) {
 		return;
 	}

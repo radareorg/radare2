@@ -531,7 +531,7 @@ static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cm
 	return head;
 }
 
-static RListIter * _r_list_half_split(RListIter *head) {
+static RListIter *_r_list_half_split(RListIter *head) {
 	RListIter *tmp;
 	RListIter *fast;
 	RListIter *slow;
@@ -567,7 +567,7 @@ static void list_insertion_sort_iter(RListIter *iter, RListComparator cmp) {
 	}
 }
 
-static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
+static RListIter *_merge_sort(RListIter *head, RListComparator cmp) {
 	RListIter *second;
 	if (!head || !head->n) {
 		return head;

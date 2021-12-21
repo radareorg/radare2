@@ -567,7 +567,7 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 #undef MAXPID
 #define MAXPID 99999
 
-static RList *r_debug_native_tids (RDebug *dbg, int pid) {
+static RList *r_debug_native_tids(RDebug *dbg, int pid) {
 	printf ("TODO: Threads: \n");
 	// T
 	return NULL;
@@ -603,7 +603,7 @@ static RList *r_debug_native_pids(RDebug *dbg, int pid) {
 	return list;
 }
 
-static RList *r_debug_native_threads (RDebug *dbg, int pid) {
+static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
 	if (!list) {
 		eprintf ("No list?\n");
@@ -688,7 +688,7 @@ static int bsd_reg_read(RDebug *dbg, int type, ut8* buf, int size) {
 
 // TODO: what about float and hardware regs here ???
 // TODO: add flag for type
-static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
+static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	if (size < 1) {
 		return false;
 	}
@@ -706,7 +706,7 @@ static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 #endif
 }
 
-static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
+static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #if __i386__ || __x86_64__
@@ -753,7 +753,7 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 }
 
 #if __linux__
-static int io_perms_to_prot (int io_perms) {
+static int io_perms_to_prot(int io_perms) {
 	int prot_perms = PROT_NONE;
 
 	if (io_perms & R_PERM_R) {
@@ -844,7 +844,7 @@ err_linux_map_thp:
 #endif
 }
 
-static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size, bool thp) {
+static RDebugMap* linux_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 	RBuffer *buf = NULL;
 	RDebugMap* map = NULL;
 	char code[1024], *sc_name;
@@ -947,7 +947,7 @@ err_linux_map_dealloc:
 }
 #endif
 
-static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size, bool thp) {
+static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size, bool thp) {
 #if __APPLE__
 	(void)thp;
 	return xnu_map_alloc (dbg, addr, size);
@@ -962,7 +962,7 @@ static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size, bo
 #endif
 }
 
-static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
+static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
 #if __APPLE__
 	return xnu_map_dealloc (dbg, addr, size);
 #elif __WINDOWS__
@@ -986,7 +986,7 @@ static void _map_free(RDebugMap *map) {
 }
 #endif
 
-static RList *r_debug_native_map_get (RDebug *dbg) {
+static RList *r_debug_native_map_get(RDebug *dbg) {
 	RList *list = NULL;
 #if __KFBSD__
 	int ign;
@@ -1233,7 +1233,7 @@ static bool r_debug_native_init(RDebug *dbg) {
 }
 
 #if __i386__ || __x86_64__
-static void sync_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
+static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS) {
 		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
@@ -1257,7 +1257,7 @@ static void sync_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
 #endif
 
 #if __i386__ || __x86_64__
-static void set_drx_regs (RDebug *dbg, drxt *regs, size_t num_regs) {
+static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 	/* sanity check, we rely on this assumption */
 	if (num_regs != NUM_DRX_REGISTERS){
 		eprintf ("drx: Unsupported number of registers for get_debug_regs\n");
@@ -1414,11 +1414,11 @@ static bool ll_arm64_hwbp_del(pid_t pid, ut64 _addr, int size, int wp, ut32 type
 	return false;
 }
 
-static bool arm64_hwbp_add (RDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
+static bool arm64_hwbp_add(RDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
 	return ll_arm64_hwbp_set (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
 }
 
-static bool arm64_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+static bool arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	return ll_arm64_hwbp_del (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
 }
 
@@ -1469,7 +1469,7 @@ static int getMaxFiles(void) {
 }
 #endif
 
-static RList *xnu_desc_list (int pid) {
+static RList *xnu_desc_list(int pid) {
 #if TARGET_OS_IPHONE || __POWERPC__
 	return NULL;
 #else
@@ -1502,7 +1502,7 @@ static RList *xnu_desc_list (int pid) {
 }
 #endif
 
-static RList *r_debug_desc_native_list (int pid) {
+static RList *r_debug_desc_native_list(int pid) {
 #if __APPLE__
 	return xnu_desc_list (pid);
 #elif __WINDOWS__
@@ -1517,7 +1517,7 @@ static RList *r_debug_desc_native_list (int pid) {
 #endif
 }
 
-static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
+static int r_debug_native_map_protect(RDebug *dbg, ut64 addr, int size, int perms) {
 #if __WINDOWS__
 	return w32_map_protect (dbg, addr, size, perms);
 #elif __APPLE__
@@ -1562,12 +1562,12 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 #endif
 }
 
-static int r_debug_desc_native_open (const char *path) {
+static int r_debug_desc_native_open(const char *path) {
 	return 0;
 }
 
 #if 0
-static int r_debug_setup_ownership (int fd, RDebug *dbg) {
+static int r_debug_setup_ownership(int fd, RDebug *dbg) {
 	RDebugInfo *info = r_debug_info (dbg, NULL);
 
 	if (!info) {
@@ -1580,7 +1580,7 @@ static int r_debug_setup_ownership (int fd, RDebug *dbg) {
 }
 #endif
 
-static bool r_debug_gcore (RDebug *dbg, RBuffer *dest) {
+static bool r_debug_gcore(RDebug *dbg, RBuffer *dest) {
 #if __APPLE__
 	return xnu_generate_corefile (dbg, dest);
 #elif __linux__ && (__x86_64__ || __i386__ || __arm__ || __arm64__)

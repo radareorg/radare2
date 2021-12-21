@@ -45,7 +45,7 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut
 	return kw;
 }
 
-R_API void r_search_keyword_free (RSearchKeyword *kw) {
+R_API void r_search_keyword_free(RSearchKeyword *kw) {
 	if (!kw) {
 		return;
 	}
@@ -192,7 +192,7 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 }
 
 /* Validate a regexp in the canonical format /<regexp>/<options> */
-R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *data) {
+R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *data) {
 	RSearchKeyword *kw;
 	int i = 0, start, length;
 

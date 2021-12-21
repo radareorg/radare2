@@ -300,7 +300,7 @@ R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 	return opc;
 }
 
-R_API ut64 r_debug_esil_continue (RDebug *dbg) {
+R_API ut64 r_debug_esil_continue(RDebug *dbg) {
 	return r_debug_esil_step (dbg, UT32_MAX);
 }
 
