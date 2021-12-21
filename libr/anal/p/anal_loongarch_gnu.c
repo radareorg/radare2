@@ -1004,26 +1004,27 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 	case LA_INS_SLTI:
 			r_strbuf_appendf(&op->esil, "0,%s,=,0x%"LA_PFM",%s,<,?{,1,%s,=,}", LA_RD(), I12_SX(opcode), LA_RJ(),LA_RD());
 			break;
-		//FIXME Lack of signed expansion
+		//FIXME maybe Lack of signed expansion
 	case LA_INS_ADD_W:
+			r_strbuf_appendf(&op->esil, ES_SX32("%s,%s,+")",%s,=", LA_RJ(), LA_RK(), LA_RD());
+			break;
 	case LA_INS_ADD_D:
 			r_strbuf_appendf(&op->esil, "%s,%s,+,%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
 	case LA_INS_ADDI_W:
-	case LA_INS_ADDI_D:
-			r_strbuf_appendf(&op->esil, "%s,0x%"LA_PFM",+,%s,=", LA_RJ(), I12_SX(opcode), LA_RD());
+			r_strbuf_appendf(&op->esil, ES_SX32("%s,0x%"LA_PFM",+")",%s,=", LA_RJ(), I12_SX(opcode), LA_RD());
 			break;
 	case LA_INS_ADDU16I_D:
 			r_strbuf_appendf(&op->esil, "16,0x%"LA_PFM",<<,%s,+,%s,=", I16_SX(opcode), LA_RJ(), LA_RD());
 			break;
 	case LA_INS_SUB_W:
-			r_strbuf_appendf(&op->esil, ES_W("%s")","ES_W("%s")",-,%s,=", LA_RK(), LA_RJ(), LA_RD());
+			r_strbuf_appendf(&op->esil, ES_SX32(ES_W("%s")","ES_W("%s")",-")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
 	case LA_INS_SUB_D:
 			r_strbuf_appendf(&op->esil, "%s,%s,-,%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
 	case LA_INS_MUL_W:
-			r_strbuf_appendf(&op->esil, ES_W(ES_W("%s")","ES_W("%s")",*")",%s,=", LA_RJ(), LA_RK(), LA_RD());
+			r_strbuf_appendf(&op->esil, ES_SX32(ES_W(ES_W("%s")","ES_W("%s")",*"))",%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
 	case LA_INS_MULH_WU:
 	case LA_INS_MULH_W:
@@ -1042,7 +1043,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 			break;
 	case LA_INS_MOD_WU:
 	case LA_INS_MOD_W:
-			r_strbuf_appendf(&op->esil, ES_W("%s")","ES_W("%s")",%%,%s,=", LA_RJ(), LA_RK(), LA_RD());
+			r_strbuf_appendf(&op->esil, ES_SX32(ES_W("%s")","ES_W("%s")",%%")",%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
 			/* FIXME rk only bits 0~4 are used*/
 	case LA_INS_SLL_W:
@@ -1277,7 +1278,7 @@ static bool la_set_reg_profile(RAnal* anal){
 	"=A5	a5\n"
 	"=A6	a6\n"
 	"=A7	a7\n"
-	"gpr	zero	.64	0	0\n"
+	"gpr	zero	.64	?	0\n"
 	"gpr	ra	.64	8	0\n"
 	"gpr	tp	.64	16	0\n"
 	"gpr	sp	.64	24	0\n"
