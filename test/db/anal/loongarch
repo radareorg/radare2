@@ -1,6 +1,6 @@
 
 NAME=la hello ref anal
-FILE=bins/analysis/loongarch64-curl
+FILE=bins/elf/analysis/loongarch64-curl
 CMDS=<<EOF
 s sym.main
 aflc
@@ -11,7 +11,7 @@ EOF
 RUN
 
 NAME=mozi aae functions
-FILE=bins/analysis/loongarch64-curl
+FILE=bins/elf/analysis/loongarch64-curl
 CMDS=<<EOF
 aae
 aflc
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=based ref
-FILE=bins/analysis/loongarch64-curl
+FILE=bins/elf/analysis/loongarch64-curl
 CMDS=<<EOF
 aae aae sym.main
 axt sym.imp.signal
