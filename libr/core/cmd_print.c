@@ -4077,7 +4077,7 @@ static void __printPattern(RCore *core, const char *_input) {
 		{
 			int min = (core->offset & 0xff);
 			for (i = 0; i < len; i++) {
-				r_cons_printf ("%02zx", i + min);
+				r_cons_printf ("%02x", (int)(i + min));
 			}
 			r_cons_newline ();
 		}
@@ -4088,7 +4088,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			// TODO: honor cfg.bigendian
 			int min = (core->offset & 0xffff);
 			for (i = 0; i < len; i++) {
-				r_cons_printf ("%04zx", i + min);
+				r_cons_printf ("%04x", (int)(i + min));
 			}
 			r_cons_newline ();
 		}
@@ -4099,7 +4099,7 @@ static void __printPattern(RCore *core, const char *_input) {
 			// TODO: honor cfg.bigendian
 			int min = (core->offset & UT32_MAX);
 			for (i = 0; i < len; i++) {
-				r_cons_printf ("%08zx", i + min);
+				r_cons_printf ("%08x", (int)(i + min));
 			}
 			r_cons_newline ();
 		}

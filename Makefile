@@ -7,7 +7,7 @@ B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
-R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent r2r)
+R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2pm.sh r2-indent r2r)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
 else
@@ -418,6 +418,7 @@ meson-install:
 meson-symstall: symstall-sdb
 	@echo "[ Meson symstall (not stable) ]"
 	ln -fs $(PWD)/binr/r2pm/r2pm ${B}/r2pm
+	ln -fs $(PWD)/binr/r2pm/r2pm.sh ${B}/r2pm.sh
 	ln -fs $(PWD)/build/binr/rasm2/rasm2 ${B}/rasm2
 	ln -fs $(PWD)/build/binr/rarun2/rarun2 ${B}/rarun2
 	ln -fs $(PWD)/build/binr/radare2/radare2 ${B}/radare2

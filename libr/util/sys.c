@@ -140,6 +140,9 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
 };
 
 R_API int r_sys_fork(void) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return false;
+	}
 #if HAVE_FORK
 #if __WINDOWS__
 	return -1;
@@ -317,7 +320,7 @@ R_API void r_sys_backtrace(void) {
 #ifdef HAVE_BACKTRACE
 	void *array[10];
 	size_t size = backtrace (array, 10);
-	eprintf ("Backtrace %zd stack frames.\n", size);
+	eprintf ("Backtrace %d stack frames.\n", (int)size);
 	backtrace_symbols_fd (array, size, 2);
 #elif __APPLE__
 	void **fp = (void **) __builtin_frame_address (0);
@@ -794,16 +797,16 @@ R_API int r_sys_cmdf(const char *fmt, ...) {
 	return ret;
 }
 
-R_API int r_sys_cmdbg (const char *str) {
+R_API int r_sys_cmdbg(const char *str) {
 #if __UNIX__
-	int ret, pid = r_sys_fork ();
+	int pid = r_sys_fork ();
 	if (pid == -1) {
 		return -1;
 	}
-	if (pid) {
+	if (pid > 0) {
 		return pid;
 	}
-	ret = r_sandbox_system (str, 0);
+	int ret = r_sandbox_system (str, 0);
 	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
 	exit (0);
 	return -1;

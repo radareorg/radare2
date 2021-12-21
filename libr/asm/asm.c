@@ -1227,3 +1227,28 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 	free (lbuf);
 	return acode;
 }
+
+R_API RList *r_asm_cpus(RAsm *a) {
+	RList *list = NULL;
+	RListIter *iter;
+	char *item;
+	// get asm plugin
+	if (a->cur && a->cur->cpus) {
+		list = r_str_split_duplist (a->cur->cpus, ",", 0);
+	} else {
+		list = r_list_newf (free);
+	}
+	// get anal plugin
+	if (a->analb.anal && a->analb.anal->cur && a->analb.anal->cur->cpus) {
+		char *cpus = a->analb.anal->cur->cpus;
+		RList *al = r_str_split_duplist (cpus, ",", 0);
+		r_list_foreach (al, iter, item) {
+			if (!r_list_find (list, item, (RListComparator)strcmp)) {
+				r_list_append (list, strdup (item));
+			}
+		}
+		r_list_free (al);
+	}
+	r_list_sort (list, (RListComparator)strcmp);
+	return list;
+}

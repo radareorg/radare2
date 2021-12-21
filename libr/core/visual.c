@@ -4286,8 +4286,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
 		size_t bufsize = maxopsize > -1? R_MAX (maxopsize, 32): 32;
 		ut8 *buf = calloc (bufsize, sizeof (ut8));
 		if (!buf) {
-			r_cons_eprintf ("Cannot allocate %zu byte(s)\n",
-				bufsize);
+			r_cons_eprintf ("Cannot allocate %d byte(s)\n", (int)bufsize);
 			return;
 		};
 		ut64 orig = core->offset;

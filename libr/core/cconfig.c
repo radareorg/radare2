@@ -132,18 +132,19 @@ static const char *has_esil(RCore *core, const char *name) {
 }
 
 // copypasta from binr/rasm2/rasm2.c
-static void rasm2_list(RCore *core, const char *arch, int fmt) {
+static bool rasm2_list(RCore *core, const char *arch, int fmt) {
 	int i;
 	const char *feat2, *feat;
 	RAsm *a = core->rasm;
 	char bits[32];
 	RAsmPlugin *h;
 	RListIter *iter;
+	bool any = false;
 	PJ *pj = NULL;
 	if (fmt == 'j') {
 		pj = pj_new ();
 		if (!pj) {
-			return;
+			return false;
 		}
 		pj_o (pj);
 	}
@@ -154,6 +155,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 				int n = r_str_split (c, ',');
 				for (i = 0; i < n; i++) {
 					r_cons_println (r_str_word_get0 (c, i));
+					any = true;
 				}
 				free (c);
 				break;
@@ -208,6 +210,7 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 						feat, feat2, bits, h->name,
 						r_str_get_fail (h->license, "unknown"), h->desc);
 			}
+			any = true;
 		}
 	}
 	if (fmt == 'j') {
@@ -215,6 +218,100 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
+	return any;
+}
+// more copypasta
+static bool ranal2_list(RCore *core, const char *arch, int fmt) {
+	int i;
+	const char *feat2, *feat;
+	RAnal *a = core->anal;
+	char bits[32];
+	RAnalPlugin *h;
+	RListIter *iter;
+	bool any = false;
+	PJ *pj = NULL;
+	if (fmt == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			return false;
+		}
+		pj_o (pj);
+	}
+	r_list_foreach (a->plugins, iter, h) {
+		if (arch && *arch) {
+			if (h->cpus && !strcmp (arch, h->name)) {
+				char *c = strdup (h->cpus);
+				int n = r_str_split (c, ',');
+				for (i = 0; i < n; i++) {
+					r_cons_println (r_str_word_get0 (c, i));
+					any = true;
+				}
+				free (c);
+				break;
+			}
+		} else {
+			bits[0] = 0;
+			/* The underscore makes it easier to distinguish the
+			 * columns */
+			if (h->bits & 8) {
+				strcat (bits, "_8");
+			}
+			if (h->bits & 16) {
+				strcat (bits, "_16");
+			}
+			if (h->bits & 32) {
+				strcat (bits, "_32");
+			}
+			if (h->bits & 64) {
+				strcat (bits, "_64");
+			}
+			if (!*bits) {
+				strcat (bits, "_0");
+			}
+			feat = "__";
+#if 0
+			if (h->assemble && h->disassemble) {
+				feat = "ad";
+			}
+			if (h->assemble && !h->disassemble) {
+				feat = "a_";
+			}
+			if (!h->assemble && h->disassemble) {
+				feat = "_d";
+			}
+#else
+			feat = "_d";
+#endif
+			feat2 = has_esil (core, h->name);
+			if (fmt == 'q') {
+				r_cons_println (h->name);
+			} else if (fmt == 'j') {
+				const char *license = "GPL";
+				pj_k (pj, h->name);
+				pj_o (pj);
+				pj_k (pj, "bits");
+				pj_a (pj);
+				pj_i (pj, 32);
+				pj_i (pj, 64);
+				pj_end (pj);
+				pj_ks (pj, "license", license);
+				pj_ks (pj, "description", h->desc);
+				pj_ks (pj, "features", feat);
+				pj_end (pj);
+			} else {
+				r_cons_printf ("%s%s  %-9s  %-11s %-7s %s\n",
+						feat, feat2, bits, h->name,
+						r_str_get_fail (h->license, "unknown"), h->desc);
+			}
+			any = true;
+		}
+	}
+	if (fmt == 'j') {
+		pj_end (pj);
+		r_cons_println (pj_string (pj));
+		pj_free (pj);
+	}
+	return any;
 }
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
@@ -398,12 +495,13 @@ static bool cb_analarch(void *user, void *data) {
 static bool cb_analcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	if (strstr (node->value, "?")) {
+		ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
+	}
 	r_anal_set_cpu (core->anal, node->value);
 	/* set pcalign */
-	{
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
-	}
+	int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+	r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
 	return true;
 }
 
@@ -566,7 +664,9 @@ static bool cb_asmcpu(void *user, void *data) {
 	if (*node->value == '?') {
 		update_asmcpu_options (core, node);
 		/* print verbose help instead of plain option listing */
-		rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1]);
+		if (!rasm2_list (core, r_config_get (core->config, "asm.arch"), node->value[1])) {
+			ranal2_list (core, r_config_get (core->config, "anal.arch"), node->value[1]);
+		}
 		return 0;
 	}
 	r_asm_set_cpu (core->rasm, node->value);
@@ -1347,6 +1447,35 @@ static bool cb_dirsrc(void *user, void *data) {
 	free (core->bin->srcdir);
 	core->bin->srcdir = strdup (node->value);
 	return true;
+}
+
+static bool cb_cfgsanbox_grain(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	if (strstr (node->value, "?")) {
+		eprintf ("Usage: comma separated grain types to be masked out by the sandbox.\n");
+		eprintf ("all, none, disk, files, exec, socket, exec\n");
+		return false;
+	}
+	int gt = R_SANDBOX_GRAIN_NONE;
+	if (strstr (node->value, "all")) {
+		gt = R_SANDBOX_GRAIN_ALL;
+	} else if (strstr (node->value, "none")) {
+		gt = R_SANDBOX_GRAIN_NONE;
+	} else {
+		if (strstr (node->value, "exec")) {
+			gt |= R_SANDBOX_GRAIN_EXEC;
+		}
+		if (strstr (node->value, "socket") || strstr (node->value, "net")) {
+			gt |= R_SANDBOX_GRAIN_SOCKET;
+		}
+		if (strstr (node->value, "file") || strstr (node->value, "files")) {
+			gt |= R_SANDBOX_GRAIN_FILES;
+		}
+		if (strstr (node->value, "disk")) {
+			gt |= R_SANDBOX_GRAIN_DISK;
+		}
+	}
+	return r_sandbox_grain (gt);
 }
 
 static bool cb_cfgsanbox(void *user, void *data) {
@@ -3303,6 +3432,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
 	SETBPREF ("asm.bytes", "true", "Display the bytes of each instruction");
 	SETBPREF ("asm.bytes.right", "false", "Display the bytes at the right of the disassembly");
+	SETBPREF ("asm.bytes.opcolor", "false", "Colorize bytes depending on opcode size + variant information");
 	SETI ("asm.types", 1, "Display the fcn types in calls (0=no,1=quiet,2=verbose)");
 	SETBPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");
 	SETBPREF ("asm.cmt.flgrefs", "true", "Show comment flags associated to branch reference");
@@ -3503,6 +3633,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.vc", "true", "Use your version control system of choice (rvc, git) to manage projects");
 	SETBPREF ("prj.zip", "false", "Use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
+	SETBPREF ("prj.sandbox", "false", "Sandbox r2 while loading project files");
 
 	/* cfg */
 	n = SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use when printing strings");
@@ -3531,6 +3662,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("cfg.fortunes.tts", "false", "Speak out the fortune");
 	SETPREF ("cfg.prefixdump", "dump", "Filename prefix for automated dumps");
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
+	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "Select which sand grains must pass the filter (all, net, files, socket, exec, disk)");
 	SETBPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 	SETI ("cfg.cpuaffinity", 0, "Run on cpuid");

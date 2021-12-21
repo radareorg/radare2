@@ -1760,7 +1760,7 @@ static void print_trampolines(RCore *core, ut64 a, ut64 b, size_t element_size) 
 			} else {
 				r_cons_printf ("f trampoline.%" PFMT32x " @ 0x%" PFMT64x "\n", n, core->offset + i);
 			}
-			r_cons_printf ("Cd %zu @ 0x%" PFMT64x ":%zu\n", element_size, core->offset + i, element_size);
+			r_cons_printf ("Cd %u @ 0x%" PFMT64x ":%u\n", (unsigned int)element_size, core->offset + i, (unsigned int)element_size);
 			// TODO: add data xrefs
 		}
 	}
@@ -11579,6 +11579,17 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
+case 'l':
+{
+RList *l = r_asm_cpus (core->rasm);
+RListIter *iter;
+char *c;
+r_list_foreach (l, iter, c) {
+eprintf ("- %s\n", c);
+}
+r_list_free (l);
+}
+break;
 	case 'f': // "af"
 		{
 		int res = cmd_anal_fcn (core, input);

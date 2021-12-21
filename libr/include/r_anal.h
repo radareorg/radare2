@@ -1307,6 +1307,7 @@ typedef struct r_anal_plugin_t {
 	char *arch;
 	char *author;
 	char *version;
+	char *cpus;
 	int bits;
 	int esil; // can do esil or not
 	int fileformat_type;
@@ -2229,6 +2230,7 @@ extern RAnalPlugin r_anal_plugin_tms320c64x;
 extern RAnalPlugin r_anal_plugin_tricore;
 extern RAnalPlugin r_anal_plugin_v810;
 extern RAnalPlugin r_anal_plugin_v850;
+extern RAnalPlugin r_anal_plugin_v850_np;
 extern RAnalPlugin r_anal_plugin_vax;
 extern RAnalPlugin r_anal_plugin_wasm;
 extern RAnalPlugin r_anal_plugin_ws;

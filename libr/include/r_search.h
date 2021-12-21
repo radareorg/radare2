@@ -61,6 +61,7 @@ typedef void (RSearchDFree)(void *ptr);
 typedef struct r_search_t {
 	int n_kws; // hit${n_kws}_${count}
 	int mode;
+	int longest; // iff > 0, longest element in kws
 	ut32 pattern_size;
 	ut32 string_min; // max length of strings for R_SEARCH_STRING
 	ut32 string_max; // min length of strings for R_SEARCH_STRING
@@ -94,6 +95,7 @@ R_API void r_search_free(RSearch *s);
 R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len);
 R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size_t size, bool verbose);
 R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len);
+R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to);
 
 R_API void r_search_keyword_free (RSearchKeyword *kw);
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *bm, int bmlen, const char *data);
@@ -124,7 +126,6 @@ R_API int r_search_begin(RSearch *s);
 
 /* pattern search */
 R_API void r_search_pattern_size(RSearch *s, int size);
-R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to);
 
 #ifdef __cplusplus
 }

@@ -1936,7 +1936,7 @@ static int wb_handler_old(void *data, const char *input) {
 		}
 		free (buf);
 	} else {
-		eprintf ("Cannot malloc %zd\n", buf_size);
+		eprintf ("Cannot malloc %d\n", (int)buf_size);
 	}
 	return 0;
 }

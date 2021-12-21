@@ -33,8 +33,6 @@ R_API int r_sandbox_lseek(int fd, ut64 addr, int mode);
 R_API int r_sandbox_close(int fd);
 R_API int r_sandbox_read(int fd, ut8 *buf, int len);
 R_API int r_sandbox_write(int fd, const ut8 *buf, int len);
-R_API bool r_sandbox_enable(bool e);
-R_API bool r_sandbox_disable(bool e);
 R_API int r_sandbox_system(const char *x, int fork);
 R_API bool r_sandbox_creat(const char *path, int mode);
 R_API int r_sandbox_open(const char *path, int mode, int perm);
@@ -42,6 +40,18 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode);
 R_API int r_sandbox_chdir(const char *path);
 R_API bool r_sandbox_check_path(const char *path);
 R_API int r_sandbox_kill(int pid, int sig);
+
+/* management */
+#define R_SANDBOX_GRAIN_NONE (0)
+#define R_SANDBOX_GRAIN_SOCKET (1)
+#define R_SANDBOX_GRAIN_DISK (2)
+#define R_SANDBOX_GRAIN_FILES (4)
+#define R_SANDBOX_GRAIN_EXEC (8)
+#define R_SANDBOX_GRAIN_ALL (8|4|2|1)
+R_API bool r_sandbox_enable(bool e);
+R_API bool r_sandbox_disable(bool e);
+R_API int r_sandbox_grain(int mask);
+R_API bool r_sandbox_check(int mask);
 
 #ifdef __cplusplus
 }

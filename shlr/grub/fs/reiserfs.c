@@ -1088,7 +1088,7 @@ grub_reiserfs_read (grub_file_t file, char *buf, grub_size_t len)
   current_position = 0;
   final_position = MIN (len + initial_position, file->size);
   grub_dprintf ("reiserfs",
-		"Reading from %lld to %lld (%lld instead of requested %ld)\n",
+		"Reading from %"PFMT64d" to %"PFMT64d" (%"PFMT64d" instead of requested %ld)\n",
 		(unsigned long long) initial_position,
 		(unsigned long long) final_position,
 		(unsigned long long) (final_position - initial_position),
@@ -1190,9 +1190,9 @@ grub_reiserfs_read (grub_file_t file, char *buf, grub_size_t len)
     }
 
   grub_dprintf ("reiserfs",
-		"Have successfully read %lld bytes (%ld requested)\n",
+		"Have successfully read %"PFMT64d" bytes (%"PFMT64d" requested)\n",
 		(unsigned long long) (current_position - initial_position),
-		(unsigned long) len);
+		(unsigned long long) len);
   return current_position - initial_position;
 
 #if 0

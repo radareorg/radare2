@@ -153,19 +153,19 @@ pyc_opcodes *get_opcode_by_version(char *version) {
 }
 
 pyc_opcodes *new_pyc_opcodes() {
-	size_t i, j;
+	int i, j;
 	pyc_opcodes *ret = R_NEW0 (pyc_opcodes);
 	if (!ret) {
 		return NULL;
 	}
 	ret->have_argument = 90;
-	ret->opcodes = malloc (sizeof (pyc_opcode_object) * 256);
+	ret->opcodes = calloc (sizeof (pyc_opcode_object), 256);
 	if (!ret->opcodes) {
 		free (ret);
 		return NULL;
 	}
 	for (i = 0; i < 256; i++) {
-		ret->opcodes[i].op_name = r_str_newf ("<%zu>", i);
+		ret->opcodes[i].op_name = r_str_newf ("<%u>", i);
 		if (!ret->opcodes[i].op_name) {
 			for (j = 0; j < i; j++) {
 				free (ret->opcodes[j].op_name);

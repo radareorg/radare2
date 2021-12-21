@@ -827,7 +827,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 
 		for (j = 0; (j < 4) && (i + j) < num_entries; j++) {
 			int k;
-			snprintf (key, sizeof (key), "entry%zd", i + j);
+			snprintf (key, sizeof (key), "entry%d", (int)(i + j));
 			switch (data[i + j]) {
 			case 0:
 				sdb_set (sdb, key, "0 (*local*)", 0);

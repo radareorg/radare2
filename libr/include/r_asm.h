@@ -177,6 +177,7 @@ R_API char *r_asm_describe(RAsm *a, const char* str);
 R_API RList* r_asm_get_plugins(RAsm *a);
 R_API void r_asm_list_directives(void);
 R_API SdbGperf *r_asm_get_gperf(const char *k);
+R_API RList *r_asm_cpus(RAsm *a);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new(void);
@@ -213,12 +214,10 @@ extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_avr;
 extern RAsmPlugin r_asm_plugin_bf;
 extern RAsmPlugin r_asm_plugin_null;
-extern RAsmPlugin r_asm_plugin_chip8;
 extern RAsmPlugin r_asm_plugin_cr16;
 extern RAsmPlugin r_asm_plugin_cris_gnu;
 extern RAsmPlugin r_asm_plugin_dalvik;
 extern RAsmPlugin r_asm_plugin_dcpu16;
-extern RAsmPlugin r_asm_plugin_ebc;
 extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_h8300;
 extern RAsmPlugin r_asm_plugin_hexagon;
