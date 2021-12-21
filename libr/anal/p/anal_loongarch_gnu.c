@@ -9,8 +9,7 @@
 
 #define INSNLEN 4
 
-const char * const loongarch_r_lp64_name[32] =
-{
+const char * const loongarch_r_lp64_name[32] = {
   "zero", "ra", "tp", "sp", "a0", "a1", "a2", "a3",
   "a4", "a5", "a6", "a7", "t0", "t1", "t2", "t3",
   "t4", "t5", "t6", "t7", "t8", "x", "fp", "s0",
@@ -548,9 +547,9 @@ static struct loongarch_opcode la_privilege_opcodes[] = {
 	{0}
 };
 static struct loongarch_opcode la_jmp_opcodes[] = {
-	{ 0x40000000, 0xfc000000, "beqz", LA_INS_BEQZ, R_ANAL_OP_TYPE_CJMP},
-	{ 0x44000000, 0xfc000000, "bnez", LA_INS_BNEZ, R_ANAL_OP_TYPE_CJMP},
-	{ 0x48000000, 0xfc000300, "bceqz", LA_INS_BCEQZ, R_ANAL_OP_TYPE_CJMP},
+	{ 0x40000000, 0xfc000000, "beqz", LA_INS_BEQZ, R_ANAL_OP_TYPE_CJMP },
+	{ 0x44000000, 0xfc000000, "bnez", LA_INS_BNEZ, R_ANAL_OP_TYPE_CJMP },
+	{ 0x48000000, 0xfc000300, "bceqz", LA_INS_BCEQZ, R_ANAL_OP_TYPE_CJMP },
 	{ 0x48000100, 0xfc000300, "bcnez", LA_INS_BCNEZ, R_ANAL_OP_TYPE_CJMP },
 	{ 0x4c000000, 0xfc000000, "jirl", LA_INS_JIRL, R_ANAL_OP_TYPE_RCALL },
 	{ 0x50000000, 0xfc000000, "b", LA_INS_B, R_ANAL_OP_TYPE_JMP },
@@ -925,242 +924,241 @@ struct loongarch_ASE la_ases[] = {
 	{0}
 };
 
-
 static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 	
 	ut32 insn_id = op->id;
 
 	switch (insn_id) {
-		case LA_INS_PCADDU12I:
-			r_strbuf_appendf(&op->esil, "0x%llx,0x%x,+,%s,=", op->addr, I_I20(opcode), LA_RD());
+	case LA_INS_PCADDU12I:
+			r_strbuf_appendf(&op->esil, "0x%"LA_PFM",0x%x,+,%s,=", op->addr, I_I20(opcode), LA_RD());
 			break;
-		case LA_INS_LU12I_W:
+	case LA_INS_LU12I_W:
 			r_strbuf_appendf(&op->esil, "%d,12,<<,%s,=", I_I20(opcode), LA_RD());
 			break;
-		case LA_INS_LU32I_D:
+	case LA_INS_LU32I_D:
 			r_strbuf_appendf(&op->esil,"32,0x%x,<<,%s,0xffffffff,&,+,%s,=", I_I20(opcode), LA_RD(), LA_RD());
 			break;
-		case LA_INS_LU52I_D:
+	case LA_INS_LU52I_D:
 			r_strbuf_appendf(&op->esil, "52,0x%x,<<,%s,+,%s,=", I_I12(opcode), LA_RD(), LA_RD());
 			break;
 			/* FIXME U means unsigned comparison*/
-		case LA_INS_LDX_BU:
-		case LA_INS_LDX_B:
+	case LA_INS_LDX_BU:
+	case LA_INS_LDX_B:
 			r_strbuf_appendf(&op->esil, "%s,%s,+,[1],%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
-		case LA_INS_LDX_HU:
-		case LA_INS_LDX_H:
+	case LA_INS_LDX_HU:
+	case LA_INS_LDX_H:
 			r_strbuf_appendf(&op->esil, "%s,%s,+,[2],%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
-		case LA_INS_LDX_WU:
-		case LA_INS_LDX_W:
+	case LA_INS_LDX_WU:
+	case LA_INS_LDX_W:
 			r_strbuf_appendf(&op->esil, "%s,%s,+,[4],%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
-		case LA_INS_LDX_D:
+	case LA_INS_LDX_D:
 			r_strbuf_appendf(&op->esil, "%s,%s,+,[8],%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
-		case LA_INS_LD_BU:
-		case LA_INS_LD_B:
+	case LA_INS_LD_BU:
+	case LA_INS_LD_B:
 			r_strbuf_appendf(&op->esil, "%s,0x%"LA_PFM",+,[1],%s,=", LA_RJ(),I12_SX(opcode), LA_RD());
 			break;
-		case LA_INS_LD_HU:
-		case LA_INS_LD_H:
+	case LA_INS_LD_HU:
+	case LA_INS_LD_H:
 			r_strbuf_appendf(&op->esil, "%s,0x%"LA_PFM",+,[2],%s,=", LA_RJ(),I12_SX(opcode), LA_RD());
 			break;
-		case LA_INS_LD_WU:
-		case LA_INS_LD_W:
+	case LA_INS_LD_WU:
+	case LA_INS_LD_W:
 			r_strbuf_appendf(&op->esil, "%s,0x%"LA_PFM",+,[4],%s,=", LA_RJ(),I12_SX(opcode), LA_RD());
 			break;
-		case LA_INS_LD_D:
+	case LA_INS_LD_D:
 			r_strbuf_appendf(&op->esil, "%s,0x%"LA_PFM",+,[8],%s,=", LA_RJ(),I12_SX(opcode), LA_RD());
 			break;
-		case LA_INS_LDPTR_W:
+	case LA_INS_LDPTR_W:
 			r_strbuf_appendf(&op->esil, "%s,0x%"LA_PFM",+,[4],%s,=", LA_RJ(), I14s2_SX(opcode), LA_RD());
 			break;
-		case LA_INS_LDPTR_D:
+	case LA_INS_LDPTR_D:
 			r_strbuf_appendf(&op->esil,"%s,0x%"LA_PFM",+,[8],%s,=", LA_RJ(), I14s2_SX(opcode), LA_RD());
 			break;
-		case LA_INS_ST_B:
+	case LA_INS_ST_B:
 			r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[1]", LA_RD(), LA_RJ(), I12_SX(opcode));
 			break;
-		case LA_INS_ST_H:
+	case LA_INS_ST_H:
 			r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[2]", LA_RD(), LA_RJ(), I12_SX(opcode)); 
 			break;
-		case LA_INS_ST_W:
+	case LA_INS_ST_W:
 			r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[4]", LA_RD(), LA_RJ(), I12_SX(opcode)); 
 			break;
-		case LA_INS_ST_D:
+	case LA_INS_ST_D:
 			r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[8]", LA_RD(), LA_RJ(), I12_SX(opcode));
 			break;
-		case LA_INS_STPTR_W:
+	case LA_INS_STPTR_W:
 			r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[8]", LA_RD(), LA_RJ(), I14s2_SX(opcode));
 			break;
-		case LA_INS_STPTR_D:
+	case LA_INS_STPTR_D:
 			r_strbuf_appendf(&op->esil, "%s,%s,0x%"LA_PFM",+,=[8]", LA_RD(), LA_RJ(), I14s2_SX(opcode));
 			break;
-		case LA_INS_SLTU:
-		case LA_INS_SLT:
+	case LA_INS_SLTU:
+	case LA_INS_SLT:
 			r_strbuf_appendf(&op->esil, "0,%s,=,%s,%s,<,?{,1,%s,=,}", LA_RD(), LA_RK(), LA_RJ(),LA_RD());
 			break;
-		case LA_INS_SLTUI:
-		case LA_INS_SLTI:
+	case LA_INS_SLTUI:
+	case LA_INS_SLTI:
 			r_strbuf_appendf(&op->esil, "0,%s,=,0x%"LA_PFM",%s,<,?{,1,%s,=,}", LA_RD(), I12_SX(opcode), LA_RJ(),LA_RD());
 			break;
 		//FIXME Lack of signed expansion
-		case LA_INS_ADD_W:
-		case LA_INS_ADD_D:
+	case LA_INS_ADD_W:
+	case LA_INS_ADD_D:
 			r_strbuf_appendf(&op->esil, "%s,%s,+,%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
-		case LA_INS_ADDI_W:
-		case LA_INS_ADDI_D:
+	case LA_INS_ADDI_W:
+	case LA_INS_ADDI_D:
 			r_strbuf_appendf(&op->esil, "%s,0x%"LA_PFM",+,%s,=", LA_RJ(), I12_SX(opcode), LA_RD());
 			break;
-		case LA_INS_ADDU16I_D:
+	case LA_INS_ADDU16I_D:
 			r_strbuf_appendf(&op->esil, "16,0x%"LA_PFM",<<,%s,+,%s,=", I16_SX(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SUB_W:
+	case LA_INS_SUB_W:
 			r_strbuf_appendf(&op->esil, ES_W("%s")","ES_W("%s")",-,%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SUB_D:
+	case LA_INS_SUB_D:
 			r_strbuf_appendf(&op->esil, "%s,%s,-,%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_MUL_W:
+	case LA_INS_MUL_W:
 			r_strbuf_appendf(&op->esil, ES_W(ES_W("%s")","ES_W("%s")",*")",%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
-		case LA_INS_MULH_WU:
-		case LA_INS_MULH_W:
+	case LA_INS_MULH_WU:
+	case LA_INS_MULH_W:
 			r_strbuf_appendf(&op->esil, ES_WH(ES_W("%s")","ES_W("%s")",*")",%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
-		case LA_INS_MUL_D:
+	case LA_INS_MUL_D:
 			r_strbuf_appendf(&op->esil, "%s,%s,*,%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
 			/* FIXME */
-		case LA_INS_MULH_DU:
-		case LA_INS_MULH_D:
+	case LA_INS_MULH_DU:
+	case LA_INS_MULH_D:
 			break;
-		case LA_INS_DIV_WU:
-		case LA_INS_DIV_W:
+	case LA_INS_DIV_WU:
+	case LA_INS_DIV_W:
 			r_strbuf_appendf(&op->esil, ES_W("%s")","ES_W("%s")",/,%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
-		case LA_INS_MOD_WU:
-		case LA_INS_MOD_W:
+	case LA_INS_MOD_WU:
+	case LA_INS_MOD_W:
 			r_strbuf_appendf(&op->esil, ES_W("%s")","ES_W("%s")",%%,%s,=", LA_RJ(), LA_RK(), LA_RD());
 			break;
 			/* FIXME rk only bits 0~4 are used*/
-		case LA_INS_SLL_W:
+	case LA_INS_SLL_W:
 			r_strbuf_appendf(&op->esil, ES_SX32("%s,"ES_W("%s")",<<")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SRL_W:
+	case LA_INS_SRL_W:
 			r_strbuf_appendf(&op->esil,ES_SX32("%s,"ES_W("%s")",>>")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SRA_W:
+	case LA_INS_SRA_W:
 			r_strbuf_appendf(&op->esil,ES_SX32("%s,"ES_W("%s")",>>>>")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_ROTR_W:
+	case LA_INS_ROTR_W:
 			r_strbuf_appendf(&op->esil,ES_SX32("%s,"ES_W("%s")",>>>")",%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SLLI_W:
+	case LA_INS_SLLI_W:
 			r_strbuf_appendf(&op->esil,ES_SX32("%d,"ES_W("%s")",<<")",%s,=", I_I5(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SRLI_W:
+	case LA_INS_SRLI_W:
 			r_strbuf_appendf(&op->esil,ES_SX32("%d,"ES_W("%s")",>>")",%s,=", I_I5(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SRAI_W:
+	case LA_INS_SRAI_W:
 			r_strbuf_appendf(&op->esil,ES_SX32("%d,"ES_W("%s")",>>>>")",%s,=", I_I5(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_ROTRI_W:
+	case LA_INS_ROTRI_W:
 			r_strbuf_appendf(&op->esil,ES_SX32("%d,"ES_W("%s")",>>>")",%s,=", I_I5(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_ALSL_WU:
-		case LA_INS_ALSL_W:
+	case LA_INS_ALSL_WU:
+	case LA_INS_ALSL_W:
 			r_strbuf_appendf(&op->esil,ES_W(ES_W("%s")",%d,"ES_W("%s")",<<,+")",%s,=",LA_RK() ,I_SA2(opcode)+1, LA_RJ(), LA_RD());
 			break;
-		case LA_INS_ALSL_D:
+	case LA_INS_ALSL_D:
 			r_strbuf_appendf(&op->esil,"%s,%d,%s,<<,+,%s,=", LA_RK(), I_SA2(opcode), LA_RJ(), LA_RD());
 			break;
 			/* FIXME rk only bits 0~5 are used*/
-		case LA_INS_SLL_D:
+	case LA_INS_SLL_D:
 			r_strbuf_appendf(&op->esil,"%s,%s,<<,%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SRL_D:
+	case LA_INS_SRL_D:
 			r_strbuf_appendf(&op->esil,"%s,%s,>>,%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SRA_D:
+	case LA_INS_SRA_D:
 			r_strbuf_appendf(&op->esil,"%s,%s,>>>>,%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_ROTR_D:
+	case LA_INS_ROTR_D:
 			r_strbuf_appendf(&op->esil,"%s,%s,>>>,%s,=", LA_RK(), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SLLI_D:
+	case LA_INS_SLLI_D:
 			r_strbuf_appendf(&op->esil,"%d,%s,<<,%s,=", I_I6(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SRLI_D:
+	case LA_INS_SRLI_D:
 			r_strbuf_appendf(&op->esil,"%d,%s,>>,%s,=", I_I6(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_SRAI_D:
+	case LA_INS_SRAI_D:
 			r_strbuf_appendf(&op->esil,"%d,%s,>>>>,%s,=", I_I6(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_ROTRI_D:
+	case LA_INS_ROTRI_D:
 			r_strbuf_appendf(&op->esil,"%d,%s,>>>,%s,=", I_I6(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_MOVE:
+	case LA_INS_MOVE:
 			r_strbuf_appendf(&op->esil,"%s,%s,=",LA_RJ(), LA_RD());
 			break;
-		case LA_INS_AND:
+	case LA_INS_AND:
 			r_strbuf_appendf(&op->esil,"%s,%s,&,%s,=", LA_RJ(), LA_RK(),LA_RD());
 			break;
-		case LA_INS_OR:
+	case LA_INS_OR:
 			r_strbuf_appendf(&op->esil,"%s,%s,|,%s,=", LA_RJ(), LA_RK(),LA_RD());
 			break;
-		case LA_INS_XOR:
+	case LA_INS_XOR:
 			r_strbuf_appendf(&op->esil,"%s,%s,^,%s,=", LA_RJ(), LA_RK(),LA_RD());
 			break;
-		case LA_INS_NOR:
+	case LA_INS_NOR:
 			r_strbuf_appendf(&op->esil,"%s,%s,|,0xffffffff,^,%s,=", LA_RJ(), LA_RK(),LA_RD());
 			break;
-		case LA_INS_ANDN:
+	case LA_INS_ANDN:
 			r_strbuf_appendf(&op->esil,"%s,^,0xffffffff,%s,&,%s,=", LA_RK(), LA_RJ(),LA_RD());
 			break;
-		case LA_INS_ORN:
+	case LA_INS_ORN:
 			r_strbuf_appendf(&op->esil,"%s,^,0xffffffff,%s,|,%s,=", LA_RK(), LA_RJ(),LA_RD());
 			break;
-		case LA_INS_ANDI:
+	case LA_INS_ANDI:
 			r_strbuf_appendf(&op->esil,"%d,%s,&,%s,=", I_I12(opcode), LA_RJ(),LA_RD());
 			break;
-		case LA_INS_ORI:
+	case LA_INS_ORI:
 			r_strbuf_appendf(&op->esil,"%d,%s,|,%s,=", I_I12(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_XORI:
+	case LA_INS_XORI:
 			r_strbuf_appendf(&op->esil,"%d,%s,^,%s,=", I_I12(opcode), LA_RJ(), LA_RD());
 			break;
-		case LA_INS_B:
+	case LA_INS_B:
 			r_strbuf_appendf(&op->esil,"0x%"LA_PFM",pc,+,pc,=", I26s2_SX(opcode));
 			break;
-		case LA_INS_BL:
+	case LA_INS_BL:
 			r_strbuf_appendf(&op->esil,"4,pc,+,ra,=,0x%"LA_PFM",pc,+,pc,=", I26s2_SX(opcode));
 			break;
-		case LA_INS_JIRL:
+	case LA_INS_JIRL:
 			r_strbuf_appendf(&op->esil,"4,pc,+,%s,=,0x%"LA_PFM",pc,+,pc,=",LA_RD(), I16s2_SX(opcode));
 			break;
-		case LA_INS_BEQ:
+	case LA_INS_BEQ:
 			r_strbuf_appendf(&op->esil,"%s,%s,==,$z,?{,0x%"LA_PFM",pc,+,pc,=,}",LA_RJ(), LA_RD(), I16s2_SX(opcode));
 			break;
-		case LA_INS_BEQZ:
+	case LA_INS_BEQZ:
 			r_strbuf_appendf(&op->esil,"%s,0,==,$z,?{,0x%"LA_PFM",pc,+,pc,=,}",LA_RJ(),  I21s2_SX(opcode));
 			break;
-		case LA_INS_BNEZ:
+	case LA_INS_BNEZ:
 			r_strbuf_appendf(&op->esil,"%s,0,==,$z,!,?{,0x%"LA_PFM",pc,+,pc,=,}",LA_RJ(),  I21s2_SX(opcode));
 			break;
-		case LA_INS_BNE:
+	case LA_INS_BNE:
 			r_strbuf_appendf(&op->esil,"%s,%s,==,$z,!,?{,0x%"LA_PFM",pc,+,pc,=,}",LA_RJ(), LA_RD(), I16s2_SX(opcode));
 			break;
 			/* FIXME U means unsigned comparison*/
-		case LA_INS_BLTU:
-		case LA_INS_BLT:
+	case LA_INS_BLTU:
+	case LA_INS_BLT:
 			r_strbuf_appendf(&op->esil,"%s,%s,<,?{,0x%"LA_PFM",pc,+,pc,=,}",LA_RD(), LA_RJ(), I16s2_SX(opcode));
 			break;
-		case LA_INS_BGEU:
-		case LA_INS_BGE:
+	case LA_INS_BGEU:
+	case LA_INS_BGE:
 			r_strbuf_appendf(&op->esil,"%s,%s,>,?{,0x%"LA_PFM",pc,+,pc,=,}",LA_RD(), LA_RJ(), I16s2_SX(opcode));
 			break;
 
@@ -1169,6 +1167,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 	}
 	return 0;
 }
+
 static int 
 loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	
@@ -1176,7 +1175,7 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 	struct loongarch_opcode *it;
 	ut32 opcode, optype;
 	ut32 insn_id = 0;
-	if(!op){
+	if (!op) {
 		return INSNLEN;
 	}
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -1188,14 +1187,14 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 	/* eprintf("opcode: 0x%x \n", opcode); */
 	optype = 0;
 
-	for(ase=la_ases; ase->opcode; ase++){
-		if(!ase->opc_htab_inited){
-			for (it=ase->opcode; it->match; it++){
+	for (ase=la_ases; ase->opcode; ase++) {
+		if (!ase->opc_htab_inited) {
+			for (it=ase->opcode; it->match; it++) {
 				if(!ase->la_opcode_ht[LA_INSN_HASH(it->match)]){
 					ase->la_opcode_ht[LA_INSN_HASH(it->match)] = it;
 				}
 			}
-			for(int i=0; i<HT_NUM; i++){
+			for (int i=0; i<HT_NUM; i++) {
 				if(!ase->la_opcode_ht[i]){
 					ase->la_opcode_ht[i]=it;
 				}
@@ -1205,9 +1204,9 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 		
 		it = ase->la_opcode_ht[LA_INSN_HASH(opcode)];
 		/* it = ase->opcode; */
-		for(; it->match; it++){
+		for (; it->match; it++) {
 			optype ++;
-			if((opcode & it->mask) == it->match){
+			if ((opcode & it->mask) == it->match) {
 				insn_id = it->index;
 				op->type = it->r_type;
 				/* break; //FIXME */
@@ -1216,31 +1215,31 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 	}
 	op->id = insn_id;
 	
-	switch (insn_id ) {
-		case LA_INS_BEQ:
-		case LA_INS_BNE:
-		case LA_INS_BLT:
-		case LA_INS_BGE:
-		case LA_INS_BLTU:
-		case LA_INS_BGEU:
+	switch (insn_id) {
+	case LA_INS_BEQ:
+	case LA_INS_BNE:
+	case LA_INS_BLT:
+	case LA_INS_BGE:
+	case LA_INS_BLTU:
+	case LA_INS_BGEU:
 			op->jump= addr + I16s2_SX(opcode);
 			op->fail = addr + 4;
 			break;
-		case LA_INS_BEQZ:
-		case LA_INS_BNEZ:
+	case LA_INS_BEQZ:
+	case LA_INS_BNEZ:
 			op->jump= addr + I21s2_SX(opcode);
 			op->fail = addr + 4;
 			break;
-		case LA_INS_B:
-		case LA_INS_BL:
+	case LA_INS_B:
+	case LA_INS_BL:
 			op->jump = addr + I26s2_SX(opcode);
 		break;
-		case LA_INS_JIRL:
+	case LA_INS_JIRL:
 			/* op->jump = addr + I_I16s2(opcode) + rj; */
 		break;
-		case LA_INS_LD_B:
+	case LA_INS_LD_B:
 		break;
-		case LA_INS_PCADDU12I:
+	case LA_INS_PCADDU12I:
 			/* op->val = sign_extend32(I_I20(opcode)<<12, 32); */
 		break;
 	default:
@@ -1254,6 +1253,9 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 	}
 	if (mask & R_ANAL_OP_MASK_VAL) {
 		//TODO: add op_fillval (anal, op, &insn);
+	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+
 	}
 	return INSNLEN;
 }

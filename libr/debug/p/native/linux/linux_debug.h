@@ -109,7 +109,7 @@ typedef ut64 mips64_regs_t [274];
 #elif __loongarch__
 
 #include <sys/ucontext.h>
-typedef ut64 la_regs_t [274];
+typedef ut64 la_regs_t [32];
 #define R_DEBUG_REG_T la_regs_t
 #endif
 #endif

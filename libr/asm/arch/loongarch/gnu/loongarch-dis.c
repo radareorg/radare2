@@ -60,8 +60,7 @@ dis_one_arg (char esc1, char esc2, const char *bit_field,
   struct disassemble_info *info = context;
   insn_t insn = *(insn_t *) info->private_data;
   int32_t imm, u_imm, abs_imm;
-  if (esc1)
-    {
+  if (esc1) {
       if (need_comma)
 	  r_strbuf_append(args_buf, ",");
       need_comma = 1;
@@ -69,37 +68,36 @@ dis_one_arg (char esc1, char esc2, const char *bit_field,
       u_imm = loongarch_decode_imm (bit_field, insn, 0);
     }
 
-  switch (esc1)
-    {
-    case 'r':
+  switch (esc1) {
+  case 'r':
       r_strbuf_appendf(args_buf, " %s", loongarch_r_disname[u_imm]);
       break;
-    case 'f':
+  case 'f':
       r_strbuf_appendf(args_buf, " %s", loongarch_f_disname[u_imm]);
       break;
-    case 'c':
-      switch (esc2)
-	{
-	case 'r':
-	  r_strbuf_appendf(args_buf, " %s", loongarch_cr_disname[u_imm]);
-	  break;
-	default:
-	  r_strbuf_appendf(args_buf, " %s", loongarch_c_disname[u_imm]);
-	}
+  case 'c':
+
+	  switch (esc2) {
+	  case 'r':
+		  r_strbuf_appendf (args_buf, " %s", loongarch_cr_disname[u_imm]);
+		  break;
+	  default:
+		  r_strbuf_appendf (args_buf, " %s", loongarch_c_disname[u_imm]);
+	  }
       break;
-    case 'v':
+  case 'v':
       r_strbuf_appendf(args_buf, " %s", loongarch_v_disname[u_imm]);
       break;
-    case 'x':
+  case 'x':
       r_strbuf_appendf(args_buf, " %s", loongarch_x_disname[u_imm]);
       break;
-    case 'u':
+  case 'u':
       r_strbuf_appendf(args_buf, " 0x%x", u_imm);
       break;
-    case 's':
-	  if (imm == 0){
+  case 's':
+	  if (imm == 0) {
 		  r_strbuf_appendf(args_buf, " %d", imm);
-	  } else{
+	  } else {
 		  abs_imm = abs(imm);
 		  r_strbuf_appendf(args_buf, " ");
 		  if(abs_imm != imm){
@@ -107,14 +105,13 @@ dis_one_arg (char esc1, char esc2, const char *bit_field,
 		  }
 		  r_strbuf_appendf(args_buf, "0x%x", abs_imm);
 	  }
-      switch (esc2)
-	{
-	case 'b':
-	  info->insn_type = dis_branch;
-	  info->target += imm;
-	}
+	  switch (esc2) {
+	  case 'b':
+		  info->insn_type = dis_branch;
+		  info->target += imm;
+	  }
       break;
-    case '\0':
+  case '\0':
       need_comma = 0;
     }
   return 0;
