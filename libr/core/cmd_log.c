@@ -13,16 +13,17 @@ static const char *help_msg_L[] = {
 	"L-", "duk", "unload core plugin by name",
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins",
-	"Ld", "", "list debug plugins (same as dL)",
+	"Ld", "", "list debug plugins (dL)",
 	"LD", "", "list supported decompilers (e cmd.pdc=?)",
 	"Le", "", "list esil plugins",
 	"Lg", "", "list egg plugins",
-	"Lh", "", "list hash plugins (same as ph)",
-	"Li", "", "list bin plugins (same as iL)",
-	"Ll", "", "list lang plugins (same as #!)",
+	"Lh", "", "list hash plugins (ph)",
+	"Li", "", "list bin plugins (iL)",
+	"Lt", "", "list color themes (eco)",
+	"Ll", "", "list lang plugins (#!)",
 	"LL", "", "lock screen",
-	"Lm", "", "list fs plugins (same as mL)",
-	"Lo", "", "list io plugins (same as oL)",
+	"Lm", "", "list fs plugins (mL)",
+	"Lo", "", "list io plugins (oL)",
 	"Lp", "", "list parser plugins (e asm.parser=?)",
 	NULL
 };
@@ -328,6 +329,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_L);
+		break;
+	case 't': // "Lt"
+		r_core_cmd0 (core, "eco");
 		break;
 	case 'm': // "Lm"
 		r_core_cmdf (core, "mL%s", input + 1);
