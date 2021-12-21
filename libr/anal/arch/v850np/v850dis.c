@@ -48,12 +48,10 @@ static long get_operand_value(const struct v850_operand *operand, unsigned long 
 		ut32 value = r_read_le16 (buffer);
 		return (operand->extract) (value, invalid);
 	}
-
 	if (operand->flags & V850E_IMMEDIATE32) {
 		// len += 4;
 		return r_read_le32 (buffer);
 	}
-
 	if (operand->extract) {
 		return (operand->extract) (insn, invalid);
 	}
@@ -64,7 +62,6 @@ static long get_operand_value(const struct v850_operand *operand, unsigned long 
 		unsigned long sign = 1ul << (operand->bits - 1);
 		value = (value ^ sign) - sign;
 	}
-
 	return value;
 }
 
@@ -421,8 +418,8 @@ int v850np_disasm(v850np_inst *inst, int cpumodel, ut64 addr, const ut8* buffer,
 	if (len < 2) {
 		return -1;
 	}
-	ut16 insn = r_read_le16 (buffer);
-	ut16 insn2 = (len < 4)? 0: r_read_le16 (buffer + 2);
+	ut32 insn = r_read_le16 (buffer);
+	ut32 insn2 = (len < 4)? 0: r_read_le16 (buffer + 2);
 
 	/* Special case.  */
 	if (length == 0 && ((cpumodel & V850_CPU_E2_UP) != 0)) {

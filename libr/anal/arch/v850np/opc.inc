@@ -23,12 +23,8 @@ static unsigned long G_pos;
 #define BOP7(x)		(0x107e0 | (x & 0xf))
 #define BOP7_MASK	(0x1ffe0 | 0xf)
 
-/* One-word opcodes.  */
 #define one(x)		((unsigned int) (x))
-
-/* Two-word opcodes.  */
 #define two(x,y)	((unsigned int) (x) | ((unsigned int) (y) << 16))
-
 
 static const char * not_valid    = "displacement value is not in range and is not aligned";
 static const char * out_of_range = "displacement value is out of range";

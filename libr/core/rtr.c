@@ -74,7 +74,7 @@ static void http_logf(RCore *core, const char *fmt, ...) {
 	va_end (ap);
 }
 
-static char *rtrcmd (TextLog T, const char *str) {
+static char *rtrcmd(TextLog T, const char *str) {
 	char *res, *ptr2;
 	char *ptr = r_str_uri_encode (str);
 	char *uri = r_str_newf ("http://%s:%s/%s%s", T.host, T.port, T.file, ptr? ptr: str);
@@ -105,7 +105,7 @@ static void showcursor(RCore *core, int x) {
 
 // TODO: rename /name to /nick or /so?
 // clone of textlog_chat () using rtrcmd()
-static void rtr_textlog_chat (RCore *core, TextLog T) {
+static void rtr_textlog_chat(RCore *core, TextLog T) {
 	char prompt[64];
 	char buf[1024];
 	int lastmsg = 0;
