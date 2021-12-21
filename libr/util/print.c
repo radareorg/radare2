@@ -2107,11 +2107,40 @@ static bool ishexprefix(char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
+static bool is_not_token(const char p) {
+	if (isalpha (p) || isdigit (p)) {
+		return true;
+	}
+	switch (p) {
+	case '.':
+	case '_':
+		return true;
+	}
+	return false;
+}
+
+static bool is_flag(const char *p) {
+	while (*p && !isalpha (*p) && !isdigit (*p)) {
+		if (*p == 0x1b) {
+			while (*p && *p != 'm') {
+				p++;
+			}
+		}
+		p++;
+	}
+	const char *e = p;
+	while (*e && is_not_token (*e)) {
+		e++;
+	}
+	size_t len = e? e - p: strlen (p);
+	return len > 3;
+}
+
 R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
+	bool expect_reg = true;
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
 	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
 	ut32 c_reset = strlen (reset);
-	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
 	char previous = '\0';
 	const char *color_flag = print->cons->context->pal.flag;
@@ -2120,6 +2149,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		return NULL;
 	}
 #if 0
+	// bool is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	// uncomment to ignore color of call/jmp arguments and inherit the op one
 	if (is_jmp) {
 		return strdup (p);
@@ -2134,7 +2164,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	memset (o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
 		/* colorize numbers */
-		if ((ishexprefix (&p[i]) && previous != ':') \
+		if ((ishexprefix (p + i) && previous != ':') \
 		     || (isdigit ((ut8)p[i]) && issymbol (previous))) {
 			const char *num2 = num;
 			ut64 n = r_num_get (NULL, p + i);
@@ -2200,8 +2230,13 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
-				if (!(p[i + 1] == '$' || ((p[i + 1] > '0') && (p[i + 1] < '9')))) {
+				if (!(p[i + 1] == '$' || isdigit (p[i + 1]))) {
 					const char *color = found_var ? print->cons->context->pal.func_var_type : reg;
+					expect_reg = false;
+					if (is_flag (p + i)) {
+						color = color_flag;
+						expect_reg = false;
+					}
 					ut32 color_len = strlen (color);
 					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
@@ -2240,14 +2275,16 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			}
 			if (is_mod) {
 				// COLOR FOR REGISTER
-				ut32 reg_len = strlen (reg);
 				/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
-				if (reg_len + j + 10 >= COLORIZE_BUFSIZE) {
-					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
-					return strdup (p);
+				if (is_flag (p + i)) {
+					strcpy (o + j, color_flag);
+					j += strlen (o + j);
+				} else {
+					if (expect_reg) {
+						strcpy (o + j, reg);
+						j += strlen (o + j);
+					}
 				}
-				strcpy (o + j, reg);
-				j += strlen (reg);
 			}
 			break;
 		case '0': /* address */

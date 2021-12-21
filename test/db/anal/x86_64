@@ -1,3 +1,4 @@
+
 NAME=got switch cases
 FILE=bins/elf/fedora_32_bin_ls
 CMDS=<<EOF
