@@ -2116,12 +2116,15 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	char previous = '\0';
 	const char *color_flag = print->cons->context->pal.flag;
 
-	if (!p || !*p) {
+	if (R_STR_ISEMPTY (p)) {
 		return NULL;
 	}
+#if 0
+	// uncomment to ignore color of call/jmp arguments and inherit the op one
 	if (is_jmp) {
 		return strdup (p);
 	}
+#endif
 	r_str_trim (p);
 	if (opcode_sz > COLORIZE_BUFSIZE) {
 		/* return same string in case of error */
@@ -2197,7 +2200,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
-				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
+				if (!(p[i + 1] == '$' || ((p[i + 1] > '0') && (p[i + 1] < '9')))) {
 					const char *color = found_var ? print->cons->context->pal.func_var_type : reg;
 					ut32 color_len = strlen (color);
 					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
