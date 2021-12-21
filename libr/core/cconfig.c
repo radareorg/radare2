@@ -2382,6 +2382,19 @@ static bool cb_fps(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scrtheme(void* user, void* data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (*node->value) {
+		if (*node->value == '?') {
+			r_core_cmd0 (core, "eco");
+		} else {
+			r_core_cmdf (core, "eco %s", node->value);
+		}
+	}
+	return true;
+}
+
 static bool cb_scrbreakword(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value) {
@@ -4023,6 +4036,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "Break lines in Visual instead of truncating them");
 	SETCB ("scr.gadgets", "true", &cb_scr_gadgets, "Run pg in prompt, visual and panels");
 	SETBPREF ("scr.panelborder", "false", "Specify panels border active area (0 by default)");
+	SETCB ("scr.theme", "default", &cb_scrtheme, "Specify the theme name to load on startup (See 'ec?')");
 	SETICB ("scr.columns", 0, &cb_scrcolumns, "Force console column count (width)");
 	SETICB ("scr.optimize", 0, &cb_scroptimize, "Optimize the amount of ansi escapes and spaces (0, 1, 2 passes)");
 	SETBPREF ("scr.dumpcols", "false", "Prefer pC commands before p ones");
