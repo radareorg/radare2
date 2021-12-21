@@ -732,7 +732,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "bnv", BOP (0x8), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "bnz", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "bp", BOP (0xc), BOP_MASK, IF3, 0, V850_CPU_ALL },
-	{ "br", BOP (0x5), BOP_MASK, IF3, 0, V850_CPU_ALL },
+	{ "br", BOP (0x5), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_JMP },
 	{ "bsa", BOP (0xd), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "bt", BOP (0x2), BOP_MASK, IF3, 0, V850_CPU_ALL },
 	{ "bv", BOP (0x0), BOP_MASK, IF3, 0, V850_CPU_ALL },
@@ -758,7 +758,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "bnv", two (0x07e8, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP },
 	{ "bnz", two (0x07ea, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP },
 	{ "bp", two (0x07ec, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP },
-	{ "br", two (0x07e5, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP },
+	{ "br", two (0x07e5, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_JMP },
 	{ "bsa", two (0x07ed, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP },
 	{ "bt", two (0x07e2, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP },
 	{ "bv", two (0x07e0, 0x0001), two (0xffef, 0x0001), IF7, 0, V850_CPU_E3V5_UP },
@@ -858,19 +858,19 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "hvcall", two (0xd7e0, 0x4160), two (0xffe0, 0x41ff), {VECTOR8}, 0, V850_CPU_E3V5_UP },
 	{ "hvtrap", two (0x07e0, 0x0110), two (0xffe0, 0xffff), {VECTOR5}, 0, V850_CPU_E3V5_UP },
 
-	{ "jarl", two (0xc7e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3_NOTR0}, 1, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_RCALL},
-	{ "jarl", two (0x0780, 0x0000), two (0x07c0, 0x0001), {D22, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_RCALL},
-	{ "jarl", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP },
+	{ "jarl", two (0xc7e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3_NOTR0}, 1, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_CALL},
+	{ "jarl", two (0x0780, 0x0000), two (0x07c0, 0x0001), {D22, R2_NOTR0}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CALL},
+	{ "jarl", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_CALL },
 	/* Gas local alias (not defined in spec). */
-	{ "jarlr", two (0xc7e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3_NOTR0}, 1, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS},
+	{ "jarlr", two (0xc7e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3_NOTR0}, 1, V850_CPU_E3V5_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_RCALL},
 	/* Gas local alias of jarl imm22 (not defined in spec). */
 	{ "jarl22", two (0x0780, 0x0000), two (0x07c0, 0x0001), {D22, R2_NOTR0}, 0, V850_CPU_ALL | V850_CPU_OPTION_ALIAS},
 	/* Gas local alias of jarl imm32 (not defined in spec). */
 	{ "jarl32", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS },
 	{ "jarlw", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS },
 
-	{ "jmp", two (0x06e0, 0x0000), two (0xffe0, 0x0001), {D32_31, R1}, 2, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_RJMP},
-	{ "jmp", one (0x06e0), one (0xffe0), {D32_31, R1}, 2, V850_CPU_E2 | V850_CPU_E2V3, R_ANAL_OP_TYPE_RJMP },
+	{ "jmp", two (0x06e0, 0x0000), two (0xffe0, 0x0001), {D32_31, R1}, 2, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_MJMP},
+	{ "jmp", one (0x06e0), one (0xffe0), {D32_31, R1}, 2, V850_CPU_E2 | V850_CPU_E2V3, R_ANAL_OP_TYPE_MJMP },
 	{ "jmp", one (0x0060), one (0xffe0), {R1}, 1, V850_CPU_ALL, R_ANAL_OP_TYPE_RJMP },
 	/* Gas local alias of jmp disp22(not defined in spec). */
 	{ "jmp22", one (0x0060), one (0xffe0), {R1}, 1, V850_CPU_ALL | V850_CPU_OPTION_ALIAS },

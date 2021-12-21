@@ -53,6 +53,9 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 	if (inst.op) {
 		op->type = inst.op->type;
+		if (!memcmp (buf, "\x7f\x00", 2)) {
+			op->type = R_ANAL_OP_TYPE_RET;
+		}
 	}
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_JMP:
@@ -80,6 +83,7 @@ static char *get_reg_profile(RAnal *anal) {
 	const char *p =
 		"=PC	pc\n"
 		"=SP	r3\n"
+		"=SN	r1\n"
 		"=ZF	z\n"
 		"=A0	r1\n"
 		"=A1	r5\n"

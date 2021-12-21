@@ -175,8 +175,7 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 		regs = list12_regs;
 		break;
 	default:
-		eprintf ("unknown operand shift: 0x%x", operand->shift);
-		inst->text = r_strbuf_drain (sb);
+		// eprintf ("unknown operand shift: 0x%x\n", operand->shift);
 		return false;
 	}
 
@@ -186,8 +185,8 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 			switch (regs[i]) {
 			case 0:
 				/* xgettext:c-format */
-				eprintf ("unknown reg: %d", i);
-				inst->text = r_strbuf_drain (sb);
+				// eprintf ("unknown reg: %d at 0x%x\n", i);
+				// inst->text = r_strbuf_drain (sb);
 				return false;
 			case -1:
 				pc = 1;
@@ -262,7 +261,9 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 			operand = &v850_operands[*opindex_ptr];
 
 			long value = get_operand_value (operand, insn, buffer, buffer_size, &invalid);
-			inst->value = value;
+			if (value) {
+				inst->value = value;
+			}
 
 			operand_fail = true;
 			if (invalid) {
@@ -299,6 +300,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		   output stream.  */
 
 		int atype = 0;
+		inst->value = 0;
 		opindex_ptr = op->operands;
 		opnum = 1;
 		for (; *opindex_ptr; opindex_ptr++, opnum++) {
@@ -309,10 +311,9 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 			bool invalid = false;
 			long value = get_operand_value (operand, insn, buffer + 2, buffer_size - 2, &invalid);
 			if (invalid) {
-				eprintf ("Warning: Cannot get operand value.\n");
+				// eprintf ("Warning: Cannot get operand value.\n");
 				break;
 			}
-			inst->value = value;
 
 			// first argument have no special processing
 			const char *prefix = (operand->flags & V850_OPERAND_BANG)? "|" :(operand->flags & V850_OPERAND_PERCENT)? "%":""; 
@@ -390,6 +391,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 				break;
 			default:
 				print_value (sb, operand->flags, memaddr, value);
+				inst->value = value;
 				break;
 			}
 			inst->args[opnum - 1].atype = atype;
