@@ -5,6 +5,7 @@
 #include <r_util.h>
 #include <r_list.h>
 #include <r_io.h>
+#include "r_cons.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,6 +86,7 @@ typedef struct r_search_t {
 	int (*update)(struct r_search_t *s, ut64 from, const ut8 *buf, int len);
 	RList *kws; // TODO: Use r_search_kw_new ()
 	RIOBind iob;
+	RConsBind consb;
 	char bckwrds;
 } RSearch;
 
