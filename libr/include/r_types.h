@@ -404,18 +404,19 @@ static inline void *r_new_copy(int size, void *data) {
 #define eprintf(...) fprintf (stderr, __VA_ARGS__)
 #define HAVE_EPRINTF 1
 
-#define EPRINT_STR(x) eprintf (#x ": %s", x)
-#define EPRINT_CHAR(x) eprintf (#x ": %c", x)
-#define EPRINT_INT(x) eprintf (#x ": %d (%x)", x, x)
-#define EPRINT_BOOL(x) eprintf (#x ": %s", x? "true": "false")
-#define EPRINT_UT64(x) eprintf (#x ": %" PFMT64u " (%" PFMT64x ")", x, x)
-#define EPRINT_ST64(x) eprintf (#x ": %" PFMT64d " (%" PFMT64x ")", x, x)
-#define EPRINT_UT32(x) eprintf (#x ": %" PFMT32u " (%" PFMT32x ")", x, x)
-#define EPRINT_ST32(x) eprintf (#x ": %" PFMT32d " (%" PFMT32x ")", x, x)
-#define EPRINT_UT16(x) eprintf (#x ": %hu (%hx)", x, x)
-#define EPRINT_ST16(x) eprintf (#x ": %hd (%hx)", x, x)
-#define EPRINT_UT8(x) eprintf (#x ": %hhu (%hhx)", x, x)
-#define EPRINT_ST8(x) eprintf (#x ": %hhd (%hhx)", x, x)
+#define EPRINT_STR(x) eprintf (#x ": \"%s\"\n", x)
+#define EPRINT_CHAR(x) eprintf (#x ": %c\n", x)
+#define EPRINT_INT(x) eprintf (#x ": %d (0x%x)\n", x, x)
+#define EPRINT_BOOL(x) eprintf (#x ": %s\n", x? "true": "false")
+
+#define EPRINT_UT64(x) eprintf (#x ": %" PFMT64u " (0x%" PFMT64x ")\n", x, x)
+#define EPRINT_ST64(x) eprintf (#x ": %" PFMT64d " (0x%" PFMT64x ")\n", x, x)
+#define EPRINT_UT32(x) eprintf (#x ": %" PFMT32u " (0x%" PFMT32x ")\n", x, x)
+#define EPRINT_ST32(x) eprintf (#x ": %" PFMT32d " (0x%" PFMT32x ")\n", x, x)
+#define EPRINT_UT16(x) eprintf (#x ": %hu (0x%hx)\n", x, x)
+#define EPRINT_ST16(x) eprintf (#x ": %hd (0x%hx)\n", x, x)
+#define EPRINT_UT8(x) eprintf (#x ": %hhu (0x%hhx)\n", x, x)
+#define EPRINT_ST8(x) eprintf (#x ": %hhd (0x%hhx)\n", x, x)
 #endif
 
 #ifndef typeof
