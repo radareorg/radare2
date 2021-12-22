@@ -798,12 +798,7 @@ static int cmd_alias(void *data, const char *input) {
 				r_core_cmd0 (core, (char *)v->data);
 			}
 		} else {
-			ut64 at = r_num_get (core->num, buf);
-			if (at != UT64_MAX) {
-				r_core_seek (core, at, true);
-			} else {
-				eprintf ("No such alias \"$%s\"\n", buf);
-			}
+			eprintf ("No such alias \"$%s\"\n", buf);
 		}
 	}
 	free (buf);
