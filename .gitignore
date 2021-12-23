@@ -53,6 +53,8 @@ binr/rasm2/rasm2
 binr/rasm2/rasm2.exe
 binr/rax2/rax2
 binr/rax2/rax2.exe
+binr/r2pm/r2pm
+binr/r2pm/r2pm.exe
 binr/*/_CodeSignature/*
 build
 build_sdb
