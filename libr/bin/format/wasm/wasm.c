@@ -55,7 +55,7 @@ static size_t consume_u7_r(RBuffer *b, ut64 max, ut8 *out) {
 }
 
 static size_t consume_s7_r(RBuffer *b, ut64 max, st8 *out) {
-	size_t n;
+	size_t n = 0;
 	ut32 tmp = consume_r (b, max, &n, (ConsumeFcn)read_i32_leb128);
 	if (out) {
 		*out = (st8) (((tmp & 0x10000000) << 7) | (tmp & 0x7f));
@@ -792,18 +792,14 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 }
 
 void r_bin_wasm_destroy(RBinFile *bf) {
-	RBinWasmObj *bin;
-
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return;
 	}
-
-	bin = bf->o->bin_obj;
+	RBinWasmObj *bin = bf->o->bin_obj;
 	r_buf_free (bin->buf);
 
 	r_list_free (bin->g_sections);
 	r_list_free (bin->g_types);
-
 	r_list_free (bin->g_imports);
 	r_list_free (bin->g_exports);
 	r_list_free (bin->g_tables);
