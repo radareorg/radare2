@@ -152,7 +152,7 @@ do_print_insn_loongarch (int insn,
   infprintf(is, "%s", opc->name);
 
   {
-    char fake_args[strlen (opc->format) + 1];
+	char *fake_args = (char *)malloc(strlen (opc->format) + 1);
     const char *fake_arg_strs[MAX_ARG_NUM_PLUS_2];
     strcpy (fake_args, opc->format);
     if (0 < loongarch_split_args_by_comma (fake_args, fake_arg_strs))
@@ -160,6 +160,7 @@ do_print_insn_loongarch (int insn,
 
     info->private_data = &insn;
     loongarch_foreach_args (opc->format, fake_arg_strs, dis_one_arg, info);
+	free(fake_args);
   }
   infprintf(is, "%s", args_buf->buf);
 
