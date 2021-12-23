@@ -10,7 +10,7 @@ wx 410fb744245883f80c
 pd 2
 EOF
 EXPECT=<<EOF
-  0x00000000      410fb7442458   movzx   eax,    word [r12 + 0x58]
-  0x00000006      83f80c         cmp     eax,    0xc
+  0x00000000      410fb7442458   movzx    eax,    word [r12 + 0x58]
+  0x00000006      83f80c         cmp      eax,    0xc
 EOF
 RUN

@@ -1517,7 +1517,6 @@ static void ds_show_xrefs(RDisasmState *ds) {
 static void ds_atabs_option(RDisasmState *ds) {
 	int n, i = 0, comma = 0, word = 0;
 	int brackets = 0;
-	char *t, *b;
 	if (!ds || !ds->atabs) {
 		return;
 	}
@@ -1526,18 +1525,10 @@ static void ds_atabs_option(RDisasmState *ds) {
 	if (size < 1 || size < bufasm_len) {
 		return;
 	}
-	b = malloc (size + 1);
-	if (!b) {
-		return;
-	}
-	if (ds->opstr) {
-		strcpy (b, ds->opstr);
-	} else {
-		strcpy (b, r_asm_op_get_asm (&ds->asmop));
-	}
-	free (ds->opstr);
-	ds->opstr = b;
-	for (; *b; b++, i++) {
+	RStrBuf *sb = r_strbuf_new ("");;
+	char *b, *ob = (ds->opstr)? strdup (ds->opstr): strdup (r_asm_op_get_asm (&ds->asmop));
+	for (b = ob; b && *b; b++, i++) {
+		r_strbuf_append_n (sb, b, 1);
 		if (*b == '(' || *b == '[') {
 			brackets++;
 		}
@@ -1559,20 +1550,20 @@ static void ds_atabs_option(RDisasmState *ds) {
 		comma = 0;
 		brackets = 0;
 		n = (ds->atabs - i);
-		t = strdup (b + 1); //XXX slow!
 		if (n < 1) {
 			n = 1;
 		}
-		memset (b, ' ', n);
-		b += n;
-		strcpy (b, t);
-		free (t);
+		const char *tab = r_str_pad (' ', n);
+		r_strbuf_append_n (sb, tab, n);
 		i = 0;
 		word++;
 		if (ds->atabsonce) {
 			break;
 		}
 	}
+	free (ob);
+	free (ds->opstr);
+	ds->opstr = r_strbuf_drain (sb);
 }
 
 static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
