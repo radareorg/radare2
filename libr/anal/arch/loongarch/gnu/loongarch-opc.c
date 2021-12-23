@@ -20,6 +20,7 @@
 
 #include <stddef.h>
 #include "loongarch-private.h"
+#include "r_types.h"
 
 //default dis option
 struct loongarch_ASEs_option LARCH_opts={
@@ -32,7 +33,7 @@ struct loongarch_ASEs_option LARCH_opts={
 };
 
 size_t
-loongarch_insn_length (insn_t insn ATTRIBUTE_UNUSED)
+loongarch_insn_length (insn_t insn R_UNUSED)
 {
   return 4;
 }

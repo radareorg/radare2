@@ -28,7 +28,6 @@
 extern "C"
 {
 #endif
-#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
   typedef uint32_t insn_t;
 
   struct loongarch_opcode

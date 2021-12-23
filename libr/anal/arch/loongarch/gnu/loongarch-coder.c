@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "loongarch-private.h"
+#include "r_types.h"
 
 int
 is_unsigned (const char *c_str)
@@ -366,7 +367,7 @@ loongarch_check_macro (const char *format, const char *macro)
 }
 
 static const char *
-I (char esc_ch1 ATTRIBUTE_UNUSED, char esc_ch2 ATTRIBUTE_UNUSED,
+I (char esc_ch1 R_UNUSED, char esc_ch2 R_UNUSED,
    const char *c_str)
 {
   return c_str;
