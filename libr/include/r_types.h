@@ -400,9 +400,8 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 #endif
 
-#ifndef HAVE_EPRINTF
+#ifndef eprintf
 #define eprintf(...) fprintf (stderr, __VA_ARGS__)
-#define HAVE_EPRINTF 1
 
 #define EPRINT_STR(x) eprintf (#x ": \"%s\"\n", x)
 #define EPRINT_CHAR(x) eprintf (#x ": %c\n", x)
