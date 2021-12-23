@@ -1,3 +1,8 @@
+# Contents
+
+* [Issue reporting](#How to report issues)
+* [Contributing](#How to contribute)
+
 # How to report issues
 
 Before reporting an issue on GitHub, please check that:
@@ -11,11 +16,12 @@ provide a precise description, and as many of the following as possible:
 
 * Your operating system and architecture; e.g. "Windows 10 32-bit", "Debian 11
   64-bit".
-* The file in use when the issue was encountered (we may add it to our test
-  suite to ensure the bug doesn't crop up again).
+* The file in use when the issue was encountered (we may add the file or a
+  section of it to our test suite to avoid regressions).
 * A backtrace, if the issue is a segmentation fault. You can compile with ASan
-  on Linux using `sys/sanitize.sh`.
-* Detailed steps to reproduce the issue.
+  on Linux using `sys/sanitize.sh` to allow easier diagnosis of such issues.
+* Detailed steps to reproduce the issue, including a list of commands and
+  expected and/or actual output.
 
 # How to contribute
 
@@ -24,14 +30,20 @@ the codebase is clean and consistent.
 
 ## Getting Started
 
-* Make sure you have a GitHub account and a basic understanding of `git`. (If
+* Make sure you have a GitHub account and a basic understanding of `git`. If
   you don't know how to use `git`, there is a useful guide
-  [here](https://learnxinyminutes.com/docs/git))
+  [here](https://learnxinyminutes.com/docs/git).
 * Fork the repository on GitHub (there should be a "Fork" button on the top
   right of the repository home page).
 * Create a branch on your fork based off of `master`. Please avoid working
   directly on the `master` branch. This will make it easier to prepare your
   changes for merging when it's ready.
+
+  ```sh
+  $ git checkout master
+  $ git checkout -b mybranch
+  ```
+
 * Make commits of logical units. Try not to make several unrelated changes in
   the same commit, but don't feel obligated to split them up too much either.
   Ideally, r2 should successfully compile at each commit. This simplifies the
@@ -40,12 +52,14 @@ the codebase is clean and consistent.
 * Check for coding style issues with:
 
   ```sh
-  git diff master..mybranch | ./sys/clang-format-diff.py -p1
+  $ git diff master..mybranch | sys/clang-format-diff.py -p1
   ```
 
   For more on the coding style, see [DEVELOPERS.md](DEVELOPERS.md).
-* Open a pull request (PR) on Github.
-* Prefix the PR title with `WIP:` if you aren't ready to merge.
+* Open a [pull request](https://github.com/radareorg/radare2/pulls) (PR) on
+  Github.
+* Prefix the PR title with `WIP:` and mark it as a draft if you aren't ready to
+  merge.
 * When relevant, add or modify tests in [test/](test).
 
 ## Rebasing onto updated master
@@ -54,11 +68,10 @@ New changes are frequently pushed to the `master` branch. Before your branch
 can be merged, you must resolve any conflicts with new commits made to
 `master`.
 
-To prepare your branch for merging onto `master`, you first `rebase` it onto
-the most recent commit on `radareorg/master`, then, if you already pushed to
-your remote, force-`push` it to overwrite the previous commits after any
-conflict resolution. The following commands can all be performed while working
-on your feature branch, without switching to `master`.
+To prepare your branch for merging onto `master`, you must first `rebase` it
+onto the most recent commit on `radareorg/master`, then, if you already pushed
+to your remote, force-`push` it to overwrite the previous commits after any
+conflict resolution.
 
 #### Step 0: Configuring git
 
@@ -67,9 +80,9 @@ provide specific options. These do not need to be set again after initial
 configuration unless your git settings are lost, e.g. if you delete the
 repository folder and then clone it again.
 
-You can add `radareorg` as a separate remote from `origin` (assuming you cloned
-from your fork) using HTTPS or SSH. The following examples use this convention
-for brevity. You can also name this remote `upstream` or similar.
+If you cloned from your fork, you can add a new remote for upstream. The
+commands here will assume that `origin` is your fork and `radareorg` is
+upstream, but you can name them as you choose.
 
 ```sh
 # Use SSH
@@ -85,45 +98,40 @@ commit", the commits are directly copied and applied to `master`, "replaying"
 them to bring `master` up to date with your branch.
 
 Default settings may create these "merge commits", which are undesirable and
-make the commit history harder to interpret. You can set `merge` and `pull` to
-fast-forward only to avoid this.
+make the commit history harder to read and interpret. You can set `merge` and
+`pull` to fast-forward only to avoid this.
 
 ```sh
 $ git config merge.ff only
 $ git config pull.ff only
 ```
 
-#### Step 1: Pull new commits to `master` from the main repository.
+#### Step 1: Pull new commits to `master` from upstream
 
 ```sh
-$ git fetch radareorg master:master
+$ git checkout master
+$ git pull radareorg master
 ```
 
 You may need to add the `-f` flag to force the fetch if it is rejected. If you
 have made commits to your local `master` branch (not recommended!) this may
 overwrite them.
 
-If there are new commits to master, you will see output that looks like this:
+If there are new commits to master, you will see the list of changed files. If
+there are no updates, you will see `Already up to date.`.
+
+#### Step 2: Rebase `mybranch` onto master
 
 ```sh
-From github.com:radareorg/radare2
-   <old commit id>..<new commit id>  master     -> master
-   <old commit id>..<new commit id>  master     -> radareorg/master
-```
-
-If there is no output, you have the most up-to-date patches for `master`.
-
-#### Step 2: Rebase `mybranch` onto master.
-
-```sh
-$ git rebase master mybranch
+$ git checkout mybranch
+$ git rebase master
 ```
 
 You may optionally use the interactive mode. This allows you to reorder,
 `reword`, `edit`, `squash` your commits into fewer individual commits.
 
 ```sh
-$ git rebase -i master mybranch
+$ git rebase -i master
 ```
 
 Again, you must resolve any conflicts that occur before you can merge.
@@ -132,20 +140,31 @@ If you are concerned about potential loss of work, you can back up your code by
 creating a new branch using your feature branch as a base before rebasing.
 
 ```sh
-$ git branch backup mybranch
+$ git checkout mybranch
+$ git branch backup
+$ git rebase master
 ```
 
-#### Step 3: Publish your updated local branch.
+#### Step 3: Publish your updated local branch
+
+If you have not pushed this branch before:
+
+```sh
+$ git push -u origin mybranch
+```
+
+If you are updating an existing branch:
 
 ```sh
 $ git push -f
 ```
 
-The `-f` flag is needed to `force` the push onto the remote because git commits
-are immutable - this discards the old commits on your remote, and git won't
-take potentially destructive actions without confirmation.
+The `-f` flag may be needed to `force` the push onto the remote if you are
+replacing existing commits on the remote because git commits are immutable -
+this discards the old commits on your remote, and git won't take potentially
+destructive actions without confirmation.
 
-## Commit message rules
+## Commit message guidelines
 
 When committing changes, we ask that you follow some guidelines to keep the
 history readable and consistent:
@@ -156,13 +175,15 @@ history readable and consistent:
   a summary line, followed by an empty line, then an asterisk item list of
   changes.
 * If a command is inlined, use backticks, e.g.:
-  ```
+
+  ```sh
   Modify output of `ls`
   ```
+
 * Add a tag if the change falls into a relevant category (see below)
-* If the commit fixes an issue, start the message with `Fix #number - `
-* Use present simple grammar tense. Use "add", "fix", or "change" instead of
-  "added", "fixed", or "changed".
+* If the commit fixes an issue, you may start the message with `Fix #number - `
+* Use present simple grammar tense and avoid past tense. Use "add", "fix", or
+  "change" instead of "added", "fixed", or "changed".
 
 ### Commit message tag list
 
@@ -192,11 +213,11 @@ history readable and consistent:
 | `##projects`     | Saving and loading state |
 | `##refactor`     | Code quality improvements |
 | `##remote`       | Usage over a remote connection (TCP, HTTP, RAP, etc.), collaboration |
-| `##search`       | rafind2, / command, etc. |
+| `##search`       | `rafind2`, `/` command, etc. |
 | `##shell`        | Command-line, argument parsing, new commands, etc. |
 | `##signatures`   | Searching for or generating signatures |
-| `##test`         | Testing infrastructure |
-| `##tools`        | r2pm, rarun2, rax2 changes that don't fit in another category |
+| `##test`         | Testing infrastructure, including `r2r` |
+| `##tools`        | `r2pm`, `rarun2`, `rax2` changes that don't fit in another category |
 | `##util`         | Core APIs |
 | `##visual`       | Visual UI, including panels |
 
