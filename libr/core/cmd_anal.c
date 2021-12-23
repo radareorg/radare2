@@ -8398,7 +8398,9 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char *str = get_buf_asm (core, addr, ref->addr, fcn, false);
 					pj_o (pj);
 					pj_kn (pj, "from", ref->addr);
-					pj_ks (pj, "type", r_anal_xrefs_type_tostring (ref->type));
+					if (ref->type) {
+						pj_ks (pj, "type", r_anal_xrefs_type_tostring (ref->type));
+					}
 					pj_ks (pj, "opcode", str);
 					if (fcn) {
 						pj_kn (pj, "fcn_addr", fcn->addr);
@@ -8427,6 +8429,12 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 								pj_ks (pj, "realname", escaped);
 								free (escaped);
 							}
+						}
+					} else {
+						RFlagItem *fi = r_flag_get_at (core->flags, fcn? fcn->addr: ref->addr, false);
+						if (fi) {
+							pj_ks (pj, "near_name", fi->name);
+							pj_kn (pj, "near_addr", fi->offset);
 						}
 					}
 					char *refname = core->anal->coreb.getNameDelta (core, ref->at);
