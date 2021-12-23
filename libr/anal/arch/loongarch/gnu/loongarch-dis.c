@@ -1,8 +1,8 @@
-#include "loongarch-private.h"
-#include "disas-asm.h"
 #include <stdlib.h>
 #include <r_util.h>
 #include <string.h>
+#include "loongarch-private.h"
+#include "disas-asm.h"
 
 #define INSNLEN 4
 
@@ -14,7 +14,6 @@ static const char * const *loongarch_c_disname = loongarch_c_normal_name;
 static const char * const *loongarch_cr_disname = loongarch_cr_normal_name;
 static const char * const *loongarch_v_disname = loongarch_v_normal_name;
 static const char * const *loongarch_x_disname = loongarch_x_normal_name;
-
 
 static const struct loongarch_opcode *
 get_loongarch_opcode_by_binfmt (insn_t insn)
