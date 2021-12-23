@@ -48,6 +48,7 @@ static const char *help_msg_i[] = {
 	"is.", "", "Current symbol",
 	"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
 	"iS.", "", "Current section",
+	"iS,", "[table-query]", "List sections in table using given expression",
 	"iS=", "", "Show ascii-art color bars with the section ranges",
 	"iSS", "", "List memory segments (maps with om)",
 	"it", "", "File hashes",
@@ -728,6 +729,11 @@ static int cmd_info(void *data, const char *input) {
 			//we comes from ia or iS
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
 				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
+			} else if (input[1] == ',') {
+				R_FREE (core->table_query);
+				core->table_query = strdup (input + 2);
+				RBinObject *obj = r_bin_cur_object (core->bin);
+				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 1, (obj && obj->sections)? r_list_length (obj->sections): 0);
 			} else if (input[1] == 'S' && !input[2]) {  // "iSS"
 				RBININFO ("segments", R_CORE_BIN_ACC_SEGMENTS, NULL, 0);
 			} else {  //iS/iSS entropy,sha1
