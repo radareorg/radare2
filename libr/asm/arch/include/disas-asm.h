@@ -336,6 +336,7 @@ extern int print_insn_rl78		(bfd_vma, disassemble_info *);
 extern int print_insn_rl78_g10		(bfd_vma, disassemble_info *);
 extern int print_insn_rl78_g13		(bfd_vma, disassemble_info *);
 extern int print_insn_rl78_g14		(bfd_vma, disassemble_info *);
+extern int print_insn_loongarch		(bfd_vma, disassemble_info *);
 
 extern disassembler_ftype arc_get_disassembler (bfd *);
 extern disassembler_ftype cris_get_disassembler (bfd *);

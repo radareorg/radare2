@@ -1,0 +1,35 @@
+NAME=la hello ref anal
+FILE=bins/elf/analysis/loongarch64-curl
+CMDS=<<EOF
+s sym.main
+aac
+afl~?
+EOF
+EXPECT=<<EOF
+206
+EOF
+RUN
+
+NAME=mozi aae functions
+FILE=bins/elf/analysis/loongarch64-curl
+CMDS=<<EOF
+aae
+aflc
+EOF
+EXPECT=<<EOF
+404
+EOF
+RUN
+
+NAME=based ref
+FILE=bins/elf/analysis/loongarch64-curl
+CMDS=<<EOF
+aae @entry0
+axt sym.imp.signal
+EOF
+EXPECT=<<EOF
+sym.imp.open 0x9acc [CALL] jirl  zero, t3, 0
+(nofunc) 0x9f98 [CALL] bl  -sym.imp.signal #
+EOF
+RUN
+

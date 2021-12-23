@@ -1,0 +1,454 @@
+NAME=addi.w zero, zero, 5
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+wx 00148002
+aei
+aeim
+aeip
+aes
+ar zero
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
+
+NAME=addi.w a1, zero, 5
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a1=0
+wx 05148002
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x00000005
+EOF
+RUN
+
+NAME=sub.w a1, 0xFFFFFFFF, 5
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar t0=0xffffffff
+ar t1=5
+wx 85351100
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0xfffffffffffffffa
+EOF
+RUN
+
+
+NAME=sub.w a1, 1, 5
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar t0=1
+ar t1=5
+wx 85351100
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0xfffffffffffffffc
+EOF
+RUN
+
+NAME=and a1, 0xFFFFFFFF, 0x10101010
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar t0=0xFFFFFFFF
+ar t1=0x10101010
+wx 85b51400
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x10101010
+EOF
+RUN
+
+NAME=andi a1, 0xFFFFFFFF, 0x1
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar t0=0xFFFFFFFF
+wx 85054003
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x00000001
+EOF
+RUN
+
+NAME=or a1, 0x10101010, 0x10101010
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar t0=0x01010111
+ar t1=0x10101010
+wx 85351500
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x11111111
+EOF
+RUN
+
+NAME=ori a1, zero, 0xfff
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+wx 05fcbf03
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x00000fff
+EOF
+RUN
+
+NAME=xor a1, 0x01010111, 0x10101010
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar t0=0x01010111
+ar t1=0x10101010
+wx 85b51500
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x11111101
+EOF
+RUN
+
+NAME=xori zero, zero, 0xFFF
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+wx 00fcff03
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
+
+NAME=nor a1, zero, 0x10101010
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar t0=0x10101010
+wx 05301400
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0xefefefef
+EOF
+RUN
+
+NAME=ld.h a1, a0, 0
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x00000004
+s 4
+wx aabbccdd85004028
+s 8
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x0000bbaa
+EOF
+RUN
+
+NAME=ld.h a1, a0, -2
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=32
+ar > /dev/null
+ar a0=0x00000006
+s 4
+wx aabbccdd85f87f28
+s 8
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0x0000bbaa
+EOF
+RUN
+
+NAME=ld.w a1, a0, 0
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x00000004
+s 4
+wx aabbccdd1122334485008028
+s +8
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0xddccbbaa
+EOF
+RUN
+
+NAME=ld.w a1, a0, -4
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x00000008
+s 0x4
+wx aabbccdd1122334485f0bf28
+s +8
+aei
+aeim
+aeip
+aes
+ar a1
+EOF
+EXPECT=<<EOF
+0xddccbbaa
+EOF
+RUN
+
+NAME=st.w a0, a1, 0
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x11aa22bb
+ar a1=0x10
+s 4
+wx a4008029
+aei
+aeim
+aeip
+aes
+p8 4 @ 0x10
+EOF
+EXPECT=<<EOF
+bb22aa11
+EOF
+RUN
+
+NAME=st.w a0, a1, -4
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x11aa22bb
+ar a1=0x14
+s 4
+wx a4f0bf29
+aei
+aeim
+aeip
+aes
+p8 4 @ 0x10
+EOF
+EXPECT=<<EOF
+bb22aa11
+EOF
+RUN
+
+NAME=st.h a0, a1, 0
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x11aa22bb
+ar a1=0x10
+wx 00000000a4004029
+s 4
+aei
+aeim
+aeip
+aes
+p8 4 @ 0x10
+EOF
+EXPECT=<<EOF
+bb220000
+EOF
+RUN
+
+NAME=st.h a0, a1, 2
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x11aa22bb
+ar a1=0x10
+wx 00000000a4084029
+s 4
+aei
+aeim
+aeip
+aes
+p8 4 @ 0x12
+EOF
+EXPECT=<<EOF
+bb220000
+EOF
+RUN
+
+NAME=st.b a0, a1, 0
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x11aa22bb
+ar a1=0x10
+wx 00000000a4000029
+s 4
+aei
+aeim
+aeip
+aes
+p8 4 @ 0x10
+EOF
+EXPECT=<<EOF
+bb000000
+EOF
+RUN
+
+NAME=st.b a0, a1, 3
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x11aa22bb
+ar a1=0
+wx 00000000a40c0029
+s 4
+aei
+aeim
+aeip
+aes
+p8 5 @ 0
+EOF
+EXPECT=<<EOF
+000000bba4
+EOF
+RUN
+
+NAME=slli.w a0, a0, 16
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x0001ffff
+wx 84c04000
+aes
+ar a0
+EOF
+EXPECT=<<EOF
+0xffffffffffff0000
+EOF
+RUN
+
+NAME=sll.w a0, a0, a1
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=loongarch
+e asm.bits=64
+ar > /dev/null
+ar a0=0x0001ffff
+ar a1=16
+wx 84141700
+aes
+ar a0
+EOF
+EXPECT=<<EOF
+0xffffffffffff0000
+EOF
+RUN

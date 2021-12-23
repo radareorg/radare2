@@ -1,0 +1,107 @@
+NAME=ELF: loongarch.elf
+FILE=bins/elf/analysis/loongarch64-curl
+ARGS=-A
+CMDS=?v entry0
+EXPECT=<<EOF
+0xa128
+EOF
+RUN
+
+NAME=ELF: loongarch.elf
+FILE=bins/elf/analysis/loongarch64-curl
+CMDS=<<EOF
+s sym.tool_seek_cb
+af
+e asm.sub.var=false
+pif
+EOF
+EXPECT=<<EOF
+ldptr.w  a0, a0, 0
+addi.d  sp, sp, -0x10
+st.d  ra, sp, 0x8
+bl  -0x1b5c #
+addi.w  t0, zero, -0x1
+beq  a0, t0, 0x14 #
+ld.d  ra, sp, 0x8
+move  a0, zero
+addi.d  sp, sp, 0x10
+jirl  zero, ra, 0
+ld.d  ra, sp, 0x8
+addi.w  a0, zero, 0x2
+addi.d  sp, sp, 0x10
+jirl  zero, ra, 0
+addi.d  sp, sp, -0x20
+ld.d  t0, a0, 0x18
+st.d  s0, sp, 0x10
+move  s0, a0
+ldptr.d  a0, a0, 0
+st.d  s1, sp, 0x8
+st.d  ra, sp, 0x18
+ld.d  s1, t0, 0x490
+beqz  a0, 0x68 #
+ld.b  t0, a0, 0
+beqz  t0, 0x60 #
+ld.bu  t0, s0, 0x9
+bnez  t0, 0x40 #
+pcaddu12i  a1, 0x10
+addi.d  a1, a1, -0x2c4
+bl  -0x1c14 #
+beqz  a0, 0xb0 #
+addi.w  t0, zero, 0x101
+st.d  a0, s0, 0x10
+st.h  t0, s0, 0xa
+st.d  zero, s0, 0x20
+st.d  zero, s0, 0x28
+addi.w  a0, zero, 0x1
+ld.d  ra, sp, 0x18
+ld.d  s0, sp, 0x10
+ld.d  s1, sp, 0x8
+addi.d  sp, sp, 0x20
+jirl  zero, ra, 0
+pcaddu12i  a1, 0x10
+addi.d  a1, a1, -0x328
+bl  -0x1c50 #
+bnez  a0, 0x34 #
+ldptr.d  a0, s0, 0
+b  -0x50 #
+move  a0, s1
+pcaddu12i  a1, 0x10
+addi.d  a1, a1, -0x364
+bl  0x6e8c #
+ld.d  ra, sp, 0x18
+ld.d  s0, sp, 0x10
+ld.d  s1, sp, 0x8
+move  a0, zero
+addi.d  sp, sp, 0x20
+jirl  zero, ra, 0
+bl  -0x1c98 #
+ldptr.d  s0, s0, 0
+addi.w  a0, zero, 0x11
+bl  -0x1914 #
+move  a3, a0
+move  a2, s0
+move  a0, s1
+pcaddu12i  a1, 0x10
+addi.d  a1, a1, -0x37c
+bl  0x6e4c #
+ld.d  ra, sp, 0x18
+ld.d  s0, sp, 0x10
+ld.d  s1, sp, 0x8
+move  a0, zero
+addi.d  sp, sp, 0x20
+jirl  zero, ra, 0
+bl  -0x1ae8 #
+ldptr.w  a0, a0, 0
+ldptr.d  s0, s0, 0
+bl  -0x1954 #
+move  a3, a0
+move  a2, s0
+move  a0, s1
+pcaddu12i  a1, 0x10
+addi.d  a1, a1, -0x394
+bl  0x6e0c #
+move  a0, zero
+b  -0xc0 #
+EOF
+RUN
+

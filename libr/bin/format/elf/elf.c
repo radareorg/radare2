@@ -9,8 +9,10 @@
 
 #define MIPS_PLT_OFFSET 0x20
 #define RISCV_PLT_OFFSET 0x20
+#define LOONGARCH_PLT_OFFSET 0x20
 
 #define RISCV_PLT_ENTRY_SIZE 0x10
+#define LOONGARCH_PLT_ENTRY_SIZE 0x10
 #define X86_PLT_ENTRY_SIZE 0x10
 
 #define SPARC_OFFSET_PLT_ENTRY_FROM_GOT_ADDR -0x6
@@ -168,7 +170,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 			" EM_INTEL208=208, EM_INTEL209=209, EM_KM32=210, EM_KMX32=211, EM_KMX16=212,"
 			" EM_KMX8=213, EM_KVARC=214, EM_CDP=215, EM_COGE=216, EM_COOL=217, EM_NORC=218,"
 			" EM_CSR_KALIMBA=219, EM_AMDGPU=224, EM_RISCV=243, EM_LANAI=244, EM_BPF=247,"
-			" EM_CSKY=252}", 0);
+			" EM_CSKY=252, EM_LOONGARCH=258}", 0);
 	sdb_set (bin->kv, "elf_class.cparse", "enum elf_class {ELFCLASSNONE=0, ELFCLASS32=1, ELFCLASS64=2};", 0);
 	sdb_set (bin->kv, "elf_data.cparse", "enum elf_data {ELFDATANONE=0, ELFDATA2LSB=1, ELFDATA2MSB=2};", 0);
 	sdb_set (bin->kv, "elf_hdr_version.cparse", "enum elf_hdr_version {EV_NONE=0, EV_CURRENT=1};", 0);
@@ -1510,6 +1512,20 @@ static ut64 get_import_addr_riscv(ELFOBJ *bin, RBinElfReloc *rel) {
 	return plt_addr + RISCV_PLT_OFFSET + pos * RISCV_PLT_ENTRY_SIZE;
 }
 
+static ut64 get_import_addr_loongarch(ELFOBJ *bin, RBinElfReloc *rel) {
+	ut64 got_addr = bin->dyn_info.dt_pltgot;
+	if (got_addr == R_BIN_ELF_ADDR_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 plt_addr = get_got_entry (bin, rel);
+	if (plt_addr == UT64_MAX) {
+		return UT64_MAX;
+	}
+
+	ut64 pos = COMPUTE_PLTGOT_POSITION(rel, got_addr, 0x2);
+	return plt_addr + LOONGARCH_PLT_OFFSET + pos * LOONGARCH_PLT_ENTRY_SIZE;
+}
 static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
 	if (rel->type != R_SPARC_JMP_SLOT) {
 		bprintf ("Unknown sparc reloc type %d\n", rel->type);
@@ -1658,6 +1674,8 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	case EM_386:
 	case EM_X86_64:
 		return get_import_addr_x86 (bin, rel);
+	case EM_LOONGARCH:
+		return get_import_addr_loongarch(bin, rel);
 	default:
 		eprintf ("Unsupported relocs type %" PFMT64u " for arch %d\n",
 				(ut64) rel->type, bin->ehdr.e_machine);
@@ -2142,6 +2160,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 		return strdup ("ia64");
 	case EM_S390:
 		return strdup ("s390");
+	case EM_LOONGARCH:
+		return strdup ("loongarch");
 	default: return strdup ("x86");
 	}
 }
@@ -2357,6 +2377,7 @@ char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	case EM_FT32:          return strdup ("FTDI Chip FT32 high performance 32-bit RISC architecture");
 	case EM_MOXIE:         return strdup ("Moxie processor family");
 	case EM_AMDGPU:        return strdup ("AMD GPU architecture");
+	case EM_LOONGARCH:     return strdup ("Loongson Loongarch");
 
 	default:             return r_str_newf ("<unknown>: 0x%x", bin->ehdr.e_machine);
 	}
