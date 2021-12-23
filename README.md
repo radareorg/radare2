@@ -4,7 +4,7 @@
 
 [![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/workflows/CI/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/)
 
-The current packaged version is displayed above. See the
+The current packaged version is `5.5.4`. See the
 [Releases](https://github.com/radareorg/radare2/releases) page for binary
 downloads. The current git `master` branch is `5.5.5`, and the next release will
 be `5.6.0`.
@@ -27,12 +27,12 @@ disassemble any binary.
 
 r2 can be installed via `git` or `pip`.
 
-```
+```sh
 git clone https://github.com/radareorg/radare2
 radare2/sys/install.sh
 ```
 
-```
+```sh
 pip install r2env
 ```
 
@@ -51,14 +51,14 @@ pip install r2env
 Many plugins are included with r2 by default. You can find more plugins using
 the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
 
-```
+```sh
 r2pm update          # update (or initialize) the package database
 r2pm install <pkg>   # install a package
 ```
 
 Some of the most installed packages are:
 
-* [radius](https://github.com/aemmitt-ns/radius) A fast symbolic execution engine based on boolector and r2.
+* [radius](https://github.com/aemmitt-ns/radius): A fast symbolic execution engine based on boolector and r2.
 * [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command.
 * [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3.
 * [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command.
@@ -87,8 +87,8 @@ talks](https://www.youtube.com/c/r2con) from [r2con](https://rada.re/con). In
 addition to reading blogposts, slides or the [official radare2
 book](https://book.rada.re), you can reach us in the following chats:
 
-* [irc.libera.chat](https://libera.chat) `#radare` `#radare_side`
-* [Matrix](https://matrix.org/) `#radare:matrix.org`
+* [irc.libera.chat](https://libera.chat): `#radare`, `#radare_side`
+* [Matrix](https://matrix.org/): `#radare:matrix.org`
 * [Telegram](https://t.me/radare) and the [Side Channel](https://t.me/radare_side)
 * [Discord](https://discord.gg/MgEdxrMnqx) server
 * Twitter: [@radareorg](https://twitter.com/radareorg)
