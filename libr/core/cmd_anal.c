@@ -7,6 +7,13 @@
 #define MAX_SCAN_SIZE 0x7ffffff
 // should be 1 unless it makes the CI sad
 
+static const char *help_msg_af_plus[] = {
+	"Usage:", "af+", " [addr] ([name] ([type] [diff]))",
+	"af+", "$$", "add a raw function element. See afb+ to add basic blocks to it",
+	"af+", "$$ main", "add new function in current offset with 'main' as name",
+	NULL
+};
+
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
@@ -104,6 +111,7 @@ static const char *help_msg_aaf[] = {
 	"aaff", "", "set a flag for every function",
 	"aafr", " [len]", "consecutive function analysis (e anal.hasnext=1;afr@@c:isq)",
 	"aaft", "", "recursive type matching across all functions",
+	"aafs", "", "single basic block function analysis",
 	NULL
 };
 
@@ -1115,9 +1123,10 @@ static void type_cmd(RCore *core, const char *input) {
 }
 
 static void find_refs(RCore *core, const char *glob) {
-	char cmd[128];
 	ut64 curseek = core->offset;
-	while (*glob == ' ') glob++;
+	while (*glob == ' ') {
+		glob++;
+	}
 	if (!*glob) {
 		glob = "str.";
 	}
@@ -1126,11 +1135,74 @@ static void find_refs(RCore *core, const char *glob) {
 		return;
 	}
 	eprintf ("Finding references of flags matching '%s'...\n", glob);
-	snprintf (cmd, sizeof (cmd) - 1, ".(findstref) @@=`f~%s[0]`", glob);
+	char *cmd = r_str_newf (".(findstref) @@=`f~%s[0]`", glob);
 	r_core_cmd0 (core, "(findstref;f here=$$;s entry0;/r here;f-here)");
 	r_core_cmd0 (core, cmd);
 	r_core_cmd0 (core, "(-findstref)");
 	r_core_seek (core, curseek, true);
+	free (cmd);
+}
+
+static int sort64(const void *a, const void *b) {
+	ut64 *na = (ut64*)a;
+	ut64 *nb = (ut64*)b;
+	return *na - *nb;
+}
+
+static RList *collect_addresses(RCore *core) {
+#if 0
+	WIP: return addresses where functions start from different sources:
+	* [x] symbols
+	* [ ] exports
+	* [ ] prelude search
+	* [ ] call ref analysis
+	result is then sorted and uniqified
+#endif
+	RList *list = r_list_newf (free);
+	RListIter *iter, *iter2;
+	ut64 *n;
+	RBinSymbol *sym;
+	RList *syms = r_bin_get_symbols (core->bin);
+	r_list_foreach (syms, iter, sym) {
+		bool found = false;
+		r_list_foreach (list, iter2, n) {
+			if (*n == sym->vaddr) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			r_list_append (list, ut64_new (sym->vaddr));
+		}
+	}
+	// find all calls and mark the destinations as function entrypoints
+	// r_core_search_preludes (core, true); // __prelude_cb_hit uses globals and calls 'af', should be changed to just return a list for later processing
+	r_list_sort (list, sort64);
+	r_list_uniq (list, sort64);
+	return list;
+}
+
+static void single_block_analysis(RCore *core) {
+	const ut64 max_fcn_size = 1024 * 1024;
+	RList *list = collect_addresses (core);
+	RListIter *iter;
+	ut64 *addr;
+	r_list_foreach (list, iter, addr) {
+		ut64 *next = iter->n? iter->n->data: addr;
+		int len = (*next) - *addr;
+		if (len > 0 && len < max_fcn_size) {
+			ut64 at = *addr;
+			if (r_anal_get_function_at (core->anal, at)) {
+				continue;
+			}
+			RFlagItem *fi = r_flag_get_at (core->flags, at, false);
+			char *name = (fi) ? strdup (fi->name): r_str_newf ("fcn.%08"PFMT64x, at);
+			RAnalFunction *fcn = r_anal_create_function (core->anal, name, at, 0, NULL);
+			if (fcn) {
+				r_anal_function_add_bb (core->anal, fcn, at, len, UT64_MAX, UT64_MAX, 0);
+			}
+		}
+	}
 }
 
 /* set flags for every function */
@@ -3912,18 +3984,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		}
 		break;
 	case '+': { // "af+"
-		if (input[2] != ' ') {
-			eprintf ("Missing arguments\n");
-			return false;
+		if (input[2] == '?' || !input[2]) {
+			r_core_cmd_help (core, help_msg_af_plus);
+			break;
 		}
-		char *ptr = strdup (input + 3);
+		char *ptr = input[2]? r_str_trim_dup (input + 2): r_str_newf ("0x%"PFMT64x, core->offset);;
 		const char *ptr2;
 		int n = r_str_word_set0 (ptr);
 		const char *name = NULL;
+		char *hname = NULL; // heaped name
 		ut64 addr = UT64_MAX;
 		RAnalDiff *diff = NULL;
 		int type = R_ANAL_FCN_TYPE_FCN;
-		if (n > 1) {
+		if (n > 0) {
 			switch (n) {
 			case 4:
 				ptr2 = r_str_word_get0 (ptr, 3);
@@ -3937,6 +4010,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				} else if (ptr2[0] == 'u') {
 					diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
 				}
+				/* fallthrough */
 			case 3:
 				ptr2 = r_str_word_get0 (ptr, 2);
 				if (strchr (ptr2, 'l')) {
@@ -3948,15 +4022,25 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				} else {
 					type = R_ANAL_FCN_TYPE_FCN;
 				}
+				/* fallthrough */
 			case 2:
 				name = r_str_word_get0 (ptr, 1);
+				/* fallthrough */
 			case 1:
 				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				if (!name) {
+					RFlagItem *fi = r_flag_get_at (core->flags, addr, false);
+					name = hname = (fi)
+						? strdup (fi->name)
+						: r_str_newf ("fcn.%08"PFMT64x, addr);
+				}
+				break;
 			}
 			RAnalFunction *fcn = r_anal_create_function (core->anal, name, addr, type, diff);
 			if (!fcn) {
-				eprintf ("Cannot add function (duplicated)\n");
+				eprintf ("Cannot add function '%s' (duplicated) at 0x%08"PFMT64x"\n", name, addr);
 			}
+			free (hname);
 		}
 		r_anal_diff_free (diff);
 		free (ptr);
@@ -10418,6 +10502,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			cmd_anal_aaft (core);
 		} else if (input[1] == 'f') { // "aaff"
 			flag_every_function (core);
+		} else if (input[1] == 's') { // "aafs"
+			single_block_analysis (core);
 		} else if (input[1] == 0) { // "aaf"
 			const bool analHasnext = r_config_get_i (core->config, "anal.hasnext");
 			r_config_set_i (core->config, "anal.hasnext", true);
