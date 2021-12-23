@@ -1,19 +1,19 @@
-# DEVELOPERS
+# Development information
 
 This file aims to describe an introduction for developers to work
 on the code base of radare2 project.
 
 ## Documentation
 
-There is support for Doxygen document generation in this repo.
-By running `doxygen` in the root of this repository, it will autodetect the
-Doxyfile and generate HTML documentation into
-[doc/doxygen/html/index.html](./doc/doxygen/html/index.html)
+This repository support Doxygen document generation. By running `doxygen` in
+the root of this repository, it will autodetect the Doxyfile and generate HTML
+documentation at [doc/doxygen/html/index.html](doc/doxygen/html/index.html).
 
-If you're contributing code or willing to update existing code, you can use the
-doxygen C-style comments to improve documentation and comments in code.
-See the [Doxygen Manual](http://www.doxygen.nl/manual/index.html)
-for more info. Example usage can be found [here](http://www.doxygen.nl/manual/docblocks.html)
+If you're contributing code or updating existing code, you can use Doxygen
+C-style comments to document function arguments and usage.  See the [Doxygen
+Manual](http://www.doxygen.nl/manual/index.html) for more info. Example usage
+can be found [here](http://www.doxygen.nl/manual/docblocks.html).
+
 ```c
 /**
  * \brief Find the min and max addresses in an RList of maps.
@@ -34,19 +34,25 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
 
 ### C
 
-In order to contribute with patches or plugins, we encourage you to
-use the same coding style as the rest of the code base.
+In order to contribute patches or plugins, we encourage you to use the same
+coding style as the rest of the code base.
 
 Please use `./sys/clang-format-diff.py` before submitting a PR to be sure you
-are following the coding style. If you find a bug in this script, please create
-an issue on GitHub. You can also install the pre-commit hook
-`./sys/pre-commit-indent.sh` by copying it in `.git/hooks/pre-commit` which
-will check the coding style of the modified lines before committing them.
+are following the coding style, as described in
+[CONTRIBUTING.md](CONTRIBUTING.md#Getting Started). If you find a bug in this
+script, please submit a bug report issue.
 
-You may find some additional notes on this topic in doc/vim.
+A pre-commit hook to check coding style is located at
+`sys/pre-commit-indent.sh`. You can install it by copying it to
+`.git/hooks/pre-commit`. To preserve your existing pre-commit hook, use `cat
+sys/pre-commit-indent.sh >> .git/hooks/pre-commit` instead.
 
-* Tabs are used for indentation. In a switch statement, the
-  cases are indented at the switch level.
+For a premade `.vimrc`, see `doc/vim`.
+
+You may find some additional notes on this topic in `doc/vim`.
+
+* Tabs are used for indentation. In a switch statement, the cases are indented
+  at the switch level.
 
 * Switch-cases where local variables are needed should be refactored into
   separate functions instead of using braces. Even so, if braced scope syntax
@@ -63,7 +69,8 @@ default:
 }
 ```
 
-* Lines should be at most 78 chars. A tab is considered as 8 chars.
+* Lines should be at most 78 characters in length. A tab is considered 8
+  characters.
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of their own, except in the else of an if statement
@@ -93,23 +100,21 @@ do {
 if (a == b) {
 	b = 3;
 }
-
 ```
 
-* In general, don't use goto. The goto statement only comes in handy when a
+* In general, avoid `goto`. The `goto` statement only comes in handy when a
   function exits from multiple locations and some common work such as cleanup
   has to be done. If there is no cleanup needed, then just return directly.
 
-  Choose label names which say what the goto does or why the goto exists.  An
-  example of a good name could be "out_buffer:" if the goto frees "buffer".
-  Avoid using GW-BASIC names like "err1:" and "err2:".
+  Choose label names which say what the `goto` does or why it exists.  An
+  example of a good name could be `out_buffer:` if the goto frees `buffer`.
+  Avoid using GW-BASIC names like `err1:` and `err2:`.
 
-* Use `r_return_*` macros to check preconditions that are caused by
-  programmers' errors. Please, keep in mind:
-  * conditions that should never happen should be handled through
-    `r_return_*` macros;
-  * runtime conditions (e.g. malloc returns NULL, input coming from user,
-    etc.) should be handled in the usual way through if-else.
+* Use `r_return_*` macros to check preconditions that are caused by programming
+  errors or bugs. Use them to check for conditions that should **never**
+  happen. Do not use them when checking for runtime error conditions, such as a
+  `NULL` value being returned from `malloc()`; Use a standard if statement for
+  these cases.
 
 ```c
 int check(RCore *c, int a, int b) {
