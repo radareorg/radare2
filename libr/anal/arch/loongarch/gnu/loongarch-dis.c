@@ -130,7 +130,7 @@ do_print_insn_loongarch (int insn,
   void *is = info->stream;
   const struct loongarch_opcode *opc = get_loongarch_opcode_by_binfmt (insn);
 
-  if (!opc){
+  if (!opc) {
 		info->insn_type = dis_noninsn;
 		infprintf(is, "0x%08x", insn);
 		return INSNLEN;
@@ -167,8 +167,7 @@ do_print_insn_loongarch (int insn,
 	  /* || someother if we have extra info to print */)
 	infprintf(is, " #");
 
-  if (info->insn_type == dis_branch || info->insn_type == dis_condbranch)
-	{
+  if (info->insn_type == dis_branch || info->insn_type == dis_condbranch) {
 	  /* infprintf(is, " "); */
 	  /* info->print_address_func (info->target, info); */
 	}
@@ -183,15 +182,12 @@ int print_insn_loongarch (bfd_vma memaddr,
   int status;
 
   status = (*info->read_memory_func) (memaddr, buffer, INSNLEN, info);
-  if (status == 0)
-    {
+  if (status == 0) {
       int insn;
       insn = bfd_getl32 (buffer);
 
       return do_print_insn_loongarch( insn, info);
-    }
-  else
-    {
+    } else {
       (*info->memory_error_func) (status, memaddr, info);
       return -1;
     }

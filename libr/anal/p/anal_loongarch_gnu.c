@@ -1,5 +1,9 @@
-/* radare - LGPL - Copyright 2010-2015 - junchao */
+/* radare - LGPL - Copyright 2021-2021 - junchao82@qq.com;zhaojunchao@loongson.cn love lanhy*/
 
+#include "../arch/loongarch/gnu/loongarch-private.h"
+#include "disas-asm.h"
+#include "r_util/r_str.h"
+#include "r_util/r_strbuf.h"
 #include "types.h"
 #include <string.h>
 #include <r_types.h>
@@ -8,13 +12,6 @@
 #include <r_anal.h>
 
 #define INSNLEN 4
-
-const char * const loongarch_r_lp64_name[32] = {
-  "zero", "ra", "tp", "sp", "a0", "a1", "a2", "a3",
-  "a4", "a5", "a6", "a7", "t0", "t1", "t2", "t3",
-  "t4", "t5", "t6", "t7", "t8", "x", "fp", "s0",
-  "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8",
-};
 
 //use bit[30:26] to cal hash index
 #define LA_INSN_HASH(insn) (((insn) & 0x7c000000) >> 26)
@@ -53,10 +50,12 @@ static inline st64 sign_extend64(ut64 value, int index)
 
 #define GET_BIT(op, h, l) (((op)&GENMASK_ULL(h,l))>>(l))
 
+/*Get the reg name by index*/
 #define LA_RD() loongarch_r_lp64_name[GET_BIT((opcode), 4, 0)]
 #define LA_RJ() loongarch_r_lp64_name[GET_BIT((opcode), 9, 5)]
 #define LA_RK() loongarch_r_lp64_name[GET_BIT((opcode), 14, 10)]
 
+/*Get the imm in different format instructions*/
 #define I_I26(op) ((((op)>>10) & 0xffff) | (((op)&0x3ff)<<16))  //26bit number
 #define I_I21(op) ((((op)>>10) & 0xffff)|(((op)&0x1f)<<16))
 #define I_I20(op) (((op)>>5) & 0xfffff)
@@ -76,6 +75,7 @@ static inline st64 sign_extend64(ut64 value, int index)
 #define I12_SX(op) sign_extend64(I_I12((op)), 11)
 #define I16_SX(op) sign_extend64(I_I16((op)), 15)
 
+/*not is esil syntax*/
 #define I16s2_SX(op) sign_extend64(I_I16s2((op)), 16+1)
 #define I14s2_SX(op) sign_extend64(I_I14s2((op)), 16+1)
 #define I21s2_SX(op) sign_extend64(I_I21s2((op)), 21+1)
@@ -87,7 +87,7 @@ static inline st64 sign_extend64(ut64 value, int index)
 #define ES_W(x) "0xffffffff,"x",&"
 #define ES_WH(x) "32,0xffffffff00000000,"x",&,>>"
 
-struct loongarch_opcode
+struct loongarch_anal_opcode
 {
   const ut32 match;
   const ut32 mask; /* High 1 byte is main opcode and it must be 0xf. */
@@ -99,12 +99,12 @@ struct loongarch_opcode
 #define HT_NUM 32
 struct loongarch_ASE
 {
-	struct loongarch_opcode *const opcode;
-	struct loongarch_opcode *la_opcode_ht[HT_NUM];
+	struct loongarch_anal_opcode *const opcode;
+	struct loongarch_anal_opcode *la_opcode_ht[HT_NUM];
 	ut8 opc_htab_inited;
-
 };
 
+/*Maybe should be moved to another file*/
 typedef enum la_insn {
 	LA_INS_INVALID = 0,
 	LA_INS_ADDI_D,
@@ -502,7 +502,8 @@ typedef enum la_insn {
 	LA_INS_ENDING,
 
 }la_insn;
-static struct loongarch_opcode la_lmm_opcodes[] = {
+
+static struct loongarch_anal_opcode la_lmm_opcodes[] = {
 	{ 0x2000000, 0xffc00000, "slti", LA_INS_SLTI },
 	{ 0x2400000, 0xffc00000, "sltui", LA_INS_SLTUI },
 	{ 0x2800000, 0xffc00000, "addi.w", LA_INS_ADDI_W },
@@ -520,7 +521,7 @@ static struct loongarch_opcode la_lmm_opcodes[] = {
 	{ 0x1e000000, 0xfe000000, "pcaddu18i", LA_INS_PCADDU18I, R_ANAL_OP_TYPE_ADD },
 	{0}
 };
-static struct loongarch_opcode la_privilege_opcodes[] = {
+static struct loongarch_anal_opcode la_privilege_opcodes[] = {
 	{ 0x4000000, 0xff0003e0, "csrrd", LA_INS_CSRRD },
 	{ 0x4000020, 0xff0003e0, "csrwr", LA_INS_CSRWR },
 	{ 0x4000000, 0xff000000, "csrxchg", LA_INS_CSRXCHG },
@@ -546,7 +547,7 @@ static struct loongarch_opcode la_privilege_opcodes[] = {
 	{ 0x6498000, 0xffff8000, "invtlb", LA_INS_INVTLB },
 	{0}
 };
-static struct loongarch_opcode la_jmp_opcodes[] = {
+static struct loongarch_anal_opcode la_jmp_opcodes[] = {
 	{ 0x40000000, 0xfc000000, "beqz", LA_INS_BEQZ, R_ANAL_OP_TYPE_CJMP },
 	{ 0x44000000, 0xfc000000, "bnez", LA_INS_BNEZ, R_ANAL_OP_TYPE_CJMP },
 	{ 0x48000000, 0xfc000300, "bceqz", LA_INS_BCEQZ, R_ANAL_OP_TYPE_CJMP },
@@ -570,7 +571,7 @@ static struct loongarch_opcode la_jmp_opcodes[] = {
 	{ 0x6c000000, 0xfc000000, "bleu", LA_INS_BLEU, R_ANAL_OP_TYPE_CJMP },
 	{0}
 };
-static struct loongarch_opcode la_load_opcodes[] = {
+static struct loongarch_anal_opcode la_load_opcodes[] = {
 	{ 0x20000000, 0xff000000, "ll.w", LA_INS_LL_W, R_ANAL_OP_TYPE_LOAD },
 	{ 0x21000000, 0xff000000, "sc.w", LA_INS_SC_W, R_ANAL_OP_TYPE_STORE },
 	{ 0x22000000, 0xff000000, "ll.d", LA_INS_LL_D, R_ANAL_OP_TYPE_LOAD },
@@ -675,7 +676,7 @@ static struct loongarch_opcode la_load_opcodes[] = {
 	{ 0x387f8000, 0xffff8000, "stle.d", LA_INS_STLE_D },
 	{0}
 };
-static struct loongarch_opcode la_fix_opcodes[] = {
+static struct loongarch_anal_opcode la_fix_opcodes[] = {
 	{ 0x1000, 0xfffffc00, "clo.w", LA_INS_CLO_W },
 	{ 0x1400, 0xfffffc00, "clz.w", LA_INS_CLZ_W },
 	{ 0x1800, 0xfffffc00, "cto.w", LA_INS_CTO_W },
@@ -772,7 +773,7 @@ static struct loongarch_opcode la_fix_opcodes[] = {
 	{0}
 };
 //TODO add float type
-static struct loongarch_opcode la_4opt_opcodes[] = {
+static struct loongarch_anal_opcode la_4opt_opcodes[] = {
 	{ 0x8100000, 0xfff00000, "fmadd.s", LA_INS_FMADD_S },
 	{ 0x8200000, 0xfff00000, "fmadd.d", LA_INS_FMADD_D },
 	{ 0x8500000, 0xfff00000, "fmsub.s", LA_INS_FMSUB_S },
@@ -835,7 +836,7 @@ static struct loongarch_opcode la_4opt_opcodes[] = {
 	{ 0xd000000, 0xfffc0000, "fsel", LA_INS_FSEL },
 	{0}
 };
-static struct loongarch_opcode la_float_opcodes[] = {
+static struct loongarch_anal_opcode la_float_opcodes[] = {
 	{ 0x1008000, 0xffff8000, "fadd.s", LA_INS_FADD_S },
 	{ 0x1010000, 0xffff8000, "fadd.d", LA_INS_FADD_D },
 	{ 0x1028000, 0xffff8000, "fsub.s", LA_INS_FSUB_S },
@@ -1169,11 +1170,42 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 	return 0;
 }
 
+static unsigned long insn_offset = 0;
+static unsigned char insn_bytes[4];
+
+static int insn_fprintf_func(void *stream, const char *format, ...) {
+	int ret;
+	va_list ap;
+	if (!stream || !format) {
+		return 0;
+	}
+	va_start (ap, format);
+	ret = r_strbuf_vappendf (stream, format, ap);
+	va_end (ap);
+	return ret;
+}
+
+static int insn_read_func(bfd_vma memaddr, bfd_byte *addr, unsigned int length, struct disassemble_info *info) {
+	int delta = (memaddr - insn_offset);
+	if (delta < 0) {
+		return -1;      // disable backward reads
+	}
+	if ((delta + length) > 4) {
+		return -1;
+	}
+	memcpy (addr, insn_bytes + delta, length);
+	return 0;
+}
+
+static void insn_memory_error_func(int status, bfd_vma memaddr, struct disassemble_info *info) {
+	//TODO
+}
+
 static int 
 loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOpMask mask) {
 	
 	struct loongarch_ASE *ase = NULL;
-	struct loongarch_opcode *it;
+	struct loongarch_anal_opcode *it;
 	ut32 opcode, optype;
 	ut32 insn_id = 0;
 	if (!op) {
@@ -1236,11 +1268,13 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 			op->jump = addr + I26s2_SX(opcode);
 		break;
 	case LA_INS_JIRL:
+			//TODO
 			/* op->jump = addr + I_I16s2(opcode) + rj; */
 		break;
 	case LA_INS_LD_B:
 		break;
 	case LA_INS_PCADDU12I:
+			//TODO
 			/* op->val = sign_extend32(I_I20(opcode)<<12, 32); */
 		break;
 	default:
@@ -1255,11 +1289,25 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 	if (mask & R_ANAL_OP_MASK_VAL) {
 		//TODO: add op_fillval (anal, op, &insn);
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
 
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		static struct disassemble_info disasm_obj;
+
+		op->mnemonic = r_strbuf_new("");
+		insn_offset = addr;
+		/*Looks kind of lame*/
+		memcpy(insn_bytes, b, 4);
+
+		disasm_obj.fprintf_func = &insn_fprintf_func;
+		disasm_obj.memory_error_func = &insn_memory_error_func;
+		disasm_obj.read_memory_func = &insn_read_func;
+		disasm_obj.stream = op->mnemonic;
+
+		print_insn_loongarch (addr, &disasm_obj);
 	}
 	return INSNLEN;
 }
+
 static int archinfo(RAnal *anal, int q) {
 	return 4;
 }
