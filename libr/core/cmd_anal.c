@@ -866,11 +866,20 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axm", " addr [at]", "copy data/code references pointing to addr to also point to curseek (or at)",
 	"axt", "[?] [addr]", "find data/code references to this address",
+	"axl", "[cq]", "list xrefs (axlc = count, axlq = quiet)",
 	"axf", "[?] [addr]", "find data/code references from this address",
 	"axv", "[?] [addr]", "list local variables read-write-exec references",
 	"ax.", " [addr]", "find data/code references from and to this address",
 	"axff[j]", " [addr]", "find data/code references from this function",
 	"axs", " addr [at]", "add string ref",
+	NULL
+};
+
+static const char *help_msg_axl[]= {
+	"Usage:", "axl[cq]", "show global xrefs",
+	"axl", "", "list all xrefs",
+	"axlc", "", "count how many xrefs are registered",
+	"axlq", "", "list xrefs in quiet mode (axq)",
 	NULL
 };
 
@@ -8355,6 +8364,25 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_axv);
 		} else {
 			cmd_afvx (core, NULL, input[1] == 'j');
+		}
+		break;
+	case 'l': // "axl"
+		switch (input[1]) {
+		case '?':
+			r_core_cmd_help (core, help_msg_axl);
+			break;
+		case 'c':
+			{
+				ut64 count = r_anal_xrefs_count (core->anal);
+				r_cons_printf ("%"PFMT64d"\n", count);
+			}
+			break;
+		case 'q':
+			r_core_cmd0 (core, "axq");
+			break;
+		default:
+			r_core_cmd0 (core, "ax");
+			break;
 		}
 		break;
 	case 't': { // "axt"
