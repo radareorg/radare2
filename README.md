@@ -40,11 +40,13 @@ pip install r2env
 
 * [Official radare2 book](https://book.rada.re): Read about r2 usage.
 * [COMMUNITY.md](COMMUNITY.md): Community engagement and loose guidelines.
-* [CONTRIBUTING.md](CONTRIBUTING.md): Information about reporting issues and contributing. See also the [Contributing](#contributing) section below.
+* [CONTRIBUTING.md](CONTRIBUTING.md): Information about reporting issues and
+  contributing. See also the [Contributing](#Contributing) section below.
 * [DEVELOPERS.md](DEVELOPERS.md): Development guidelines for r2.
 * [SECURITY.md](SECURITY.md): Instructions for reporting vulnerabilities.
 * [USAGE.md](USAGE.md): Some example commands.
-* [INSTALL.md](INSTALL.md) Full instructions for different installation methods.
+* [INSTALL.md](INSTALL.md): Full instructions for different installation
+  methods.
 
 ## Plugins
 
@@ -69,15 +71,15 @@ Some of the most installed packages are:
 
 There are many ways to contribute to the project. Join the
 IRC/Matrix/Telegram/Discord channels, check out the github issues or grep for
-TODO comments in the source.
+TODO/FIXME/XXX comments in the source.
 
 To contribute code, push your changes to a branch on your fork of the
 repository. Please ensure that you follow the coding and style guidelines and
 that your changes pass the testing suite, which you can run with the `r2r`
-tool. If you are adding significant code, it may be necessary to add additional
-tests in the `tests/` directory.
+tool. If you are adding significant code, it may be necessary to modify or add
+additional tests in the `test/` directory.
 
-For more details, read [CONTRIBUTING.md](CONTRIBUTING.md) and
+For more details, see [CONTRIBUTING.md](CONTRIBUTING.md) and
 [DEVELOPERS.md](DEVELOPERS.md).
 
 ## Community and Documentation
