@@ -41,7 +41,7 @@ static const char *vector5_out_of_range = "vector5 is out of range";
 static const char *imm10_out_of_range = "imm10 is out of range";
 static const char *sr_selid_out_of_range = "SR/SelID is out of range";
 
-inline bool v850_msg_is_out_of_range(const char* msg) {
+bool v850_msg_is_out_of_range(const char* msg) {
 	return msg == out_of_range || msg == immediate_out_of_range || msg == branch_out_of_range;
 }
 
