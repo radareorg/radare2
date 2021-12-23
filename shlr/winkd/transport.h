@@ -4,10 +4,9 @@
 #include <r_types.h>
 #include <stdint.h>
 
-#ifndef HAVE_EPRINTF
+#ifndef eprintf
 #include <stdio.h>
 #define eprintf(...) { fprintf(stderr,##__VA_ARGS__); }
-#define HAVE_EPRINTF 1
 #endif
 
 #define KD_IO_PIPE 0
