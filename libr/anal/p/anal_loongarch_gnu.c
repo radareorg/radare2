@@ -1171,10 +1171,10 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut32 opcode) {
 }
 
 static unsigned long insn_offset = 0;
-static unsigned char insn_bytes[4];
+static unsigned char insn_bytes[INSNLEN];
 
 static int insn_fprintf_func(void *stream, const char *format, ...) {
-	int ret;
+	int ret = 1;
 	va_list ap;
 	if (!stream || !format) {
 		return 0;
@@ -1182,6 +1182,7 @@ static int insn_fprintf_func(void *stream, const char *format, ...) {
 	va_start (ap, format);
 	ret = r_strbuf_vappendf (stream, format, ap);
 	va_end (ap);
+
 	return ret;
 }
 
@@ -1190,7 +1191,7 @@ static int insn_read_func(bfd_vma memaddr, bfd_byte *addr, unsigned int length, 
 	if (delta < 0) {
 		return -1;      // disable backward reads
 	}
-	if ((delta + length) > 4) {
+	if ((delta + length) > INSNLEN) {
 		return -1;
 	}
 	memcpy (addr, insn_bytes + delta, length);
@@ -1256,12 +1257,12 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 	case LA_INS_BLTU:
 	case LA_INS_BGEU:
 			op->jump= addr + I16s2_SX(opcode);
-			op->fail = addr + 4;
+			op->fail = addr + INSNLEN;
 			break;
 	case LA_INS_BEQZ:
 	case LA_INS_BNEZ:
 			op->jump= addr + I21s2_SX(opcode);
-			op->fail = addr + 4;
+			op->fail = addr + INSNLEN;
 			break;
 	case LA_INS_B:
 	case LA_INS_BL:
@@ -1292,24 +1293,30 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 
 	if (mask & R_ANAL_OP_MASK_DISASM) {
 		static struct disassemble_info disasm_obj;
+		int n = 0;
+		RStrBuf *insn_strbuf = r_strbuf_new("");
 
-		op->mnemonic = r_strbuf_new("");
 		insn_offset = addr;
 		/*Looks kind of lame*/
-		memcpy(insn_bytes, b, 4);
+		memcpy(insn_bytes, b, INSNLEN);
 
 		disasm_obj.fprintf_func = &insn_fprintf_func;
 		disasm_obj.memory_error_func = &insn_memory_error_func;
 		disasm_obj.read_memory_func = &insn_read_func;
-		disasm_obj.stream = op->mnemonic;
-
-		print_insn_loongarch (addr, &disasm_obj);
+		disasm_obj.stream = insn_strbuf;
+		n = print_insn_loongarch (addr, &disasm_obj);
+		if (n < 0) {
+			op->mnemonic = strdup ("invalid");
+		} else {
+			op->mnemonic = r_str_newf("%s", insn_strbuf->buf);
+		}
+		r_strbuf_free(insn_strbuf);
 	}
 	return INSNLEN;
 }
 
 static int archinfo(RAnal *anal, int q) {
-	return 4;
+	return INSNLEN;
 }
 
 /* Set the profile register */
