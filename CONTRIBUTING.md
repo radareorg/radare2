@@ -39,10 +39,10 @@ the codebase is clean and consistent.
   directly on the `master` branch. This will make it easier to prepare your
   changes for merging when it's ready.
 
-  ```sh
-  $ git checkout master
-  $ git checkout -b mybranch
-  ```
+```sh
+$ git checkout master
+$ git checkout -b mybranch
+```
 
 * Make commits of logical units. Try not to make several unrelated changes in
   the same commit, but don't feel obligated to split them up too much either.
@@ -51,9 +51,9 @@ the codebase is clean and consistent.
   alongside the `r2r` testing suite to identify when a bug is introduced.
 * Check for coding style issues with:
 
-  ```sh
-  $ git diff master..mybranch | sys/clang-format-diff.py -p1
-  ```
+```sh
+$ git diff master..mybranch | sys/clang-format-diff.py -p1
+```
 
   For more on the coding style, see [DEVELOPERS.md](DEVELOPERS.md).
 * Open a [pull request](https://github.com/radareorg/radare2/pulls) (PR) on
@@ -176,9 +176,9 @@ history readable and consistent:
   changes.
 * If a command is inlined, use backticks, e.g.:
 
-  ```sh
-  Modify output of `ls`
-  ```
+```sh
+Modify output of `ls`
+```
 
 * Add a tag if the change falls into a relevant category (see below)
 * If the commit fixes an issue, you may start the message with `Fix #number - `
