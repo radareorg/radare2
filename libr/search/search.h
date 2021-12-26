@@ -9,5 +9,6 @@ R_IPI int search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len);
 // update read API's use RSearch.iob instead of provided buf
 R_IPI int search_pattern(RSearch *s, ut64 from, ut64 to);
 R_IPI int search_regex_read(RSearch *s, ut64 from, ut64 to);
+R_IPI int search_rk(RSearch *s, ut64 from, ut64 to);
 
 R_IPI int r_search_hit_sz(RSearch *s, RSearchKeyword *kw, ut64 addr, ut32 sz);
