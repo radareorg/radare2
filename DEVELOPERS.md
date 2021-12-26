@@ -420,56 +420,55 @@ You may use directory-local variables by adding the following to
 
 ## Packed structures
 
-Due to the various differences between platforms and compilers radare2
-has a special helper macro - `R_PACKED()`. Instead of non-portable
-`#pragma pack` or `__attribute__((packed))` it is advised to use this macro
-instead. To wrap the code inside of it you just need to write:
+Due to standards differing between compilers, radare2 provides a portable
+helper macro for packed structures: `R_PACKED()`, which will automatically
+utilize the correct compiler-dependent macro. Do not use `#pragma pack` or
+`__attribute__((packed))`. Place the packed structure inside `R_PACKED()` like
+so:
+
 ```c
-R_PACKED (union mystruct {
+R_PACKED (struct mystruct {
         int a;
         char b;
-})
+});
 ```
-or in case of typedef:
+
+If you are using `typedef`, do not encapsulate the type name.
+
 ```c
-R_PACKED (typedef structmystruct {
+R_PACKED (typedef struct mystruct_t {
         int a;
         char b;
-})
+}) mystruct;
 ```
 
 ## Modules
 
-The radare2 code base is modularized into different libraries that are
-found in libr/ directory. The binr/ directory contains the programs
-which use the libraries.
+radare2 is split into modular libraries in the `libr/` directory. The `binr/`
+directory contains programs which use these libraries.
 
-It is possible to generate PIC/nonPIC builds of the libraries and also
-to create a single static library so you can use a single library
-archive (.a) to link your programs and get your programs using radare
-framework libraries without depending on them. See doc/static for more info.
+The libraries can be built individually, PIC or non-PIC. You can also create a
+single static library archive (`.a`) which you can link your own programs
+against to use radare2's libraries without depending on an existing system
+installation. See [doc/static.md](doc/static.md) for more info.
 
-The following presentation gives a good overview of the libraries:
-
-   http://radare.org/get/lacon-radare-2009/
+[This presentation](http://radare.org/get/lacon-radare-2009/) gives a good
+overview of the libraries.
 
 ## API
 
-As mentioned in README.md, the API itself is maintained in a different
-repository. The API function definitions in C header files are derived
-from and documented in the radare2-bindings repository, found at:
-```sh
-git clone git://github.com/radareorg/radare2-bindings
-```
+The external API is maintained in a different repository. The API function
+definitions in C header files are derived from and documented in the
+`radare2-bindings` repository, found
+[here](https://github.com/radareorg/radare2-bindings).
 
-Currently the process of updating the header files from changed API
-bindings requires human intervention, to ensure that proper review
-occurs.  Incorrect definitions in the C header files will trigger
-a build failure in the bindings repository.
+Currently, the process of updating the header files from changed API bindings
+requires human intervention, to ensure that proper review occurs. Incorrect
+definitions in the C header files will trigger a build failure in the bindings
+repository.
 
-If you are able to write a plugin for various IDE that can associate
-the bindings with the header files, such a contribution would be
-very welcome.
+If you are able to write a plugin for various IDE that can associate the
+bindings with the header files, such a contribution would be very welcome.
 
 ## Dependencies
 
