@@ -470,23 +470,13 @@ repository.
 If you are able to write a plugin for various IDE that can associate the
 bindings with the header files, such a contribution would be very welcome.
 
-## Dependencies
+## Dependencies and Installation
 
-radare2 can be built without any special dependency. It just requires
-a C compiler, a GNU make and a unix-like system.
-
-## Cross compilation
-
-The instructions to crosscompile r2 to Windows are in doc/windows.
-
-You may find other documents in doc/ explaining how to build it on iOS,
-linux-arm and others, but the procedure is like this:
-
- - define `CC`
- - use a different compiler profile with `--with-compiler`
- - use a different OS with `--with-ostype`
- - type `make`
- - install in `DESTDIR`
+radare2 does not require external dependencies. On \*nix-like systems, it
+requires only a standard C compiler and GNU `make`. For compiling on Windows,
+see [doc/windows.md](doc/windows.md). Browse the [doc/](doc/) folder for other
+architectures. For cross-compilation, see
+[doc/cross-compile.md](doc/cross-compile.md).
 
 ## Source repository
 
