@@ -84,7 +84,7 @@ static rhash hash_full(const ut8 *buf, ut32 len) {
 	rhash hsh = 0;
 	int i;
 	for (i = 0; i < len; i++) {
-		hsh = ROL (hsh, RSHIFT) ^ UT_MAP[i];
+		hsh = ROL (hsh, RSHIFT) ^ UT_MAP[buf[i]];
 	}
 	return hsh;
 }
@@ -155,7 +155,6 @@ R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
 		// eat through data in buffer
 		ut32 i;
 		for (i = 0; i < blen - klen; i++) {
-			/* hash_check (srch, &hay, addr + i, klen); */
 			if (skip) {
 				skip--;
 			} else {
@@ -188,7 +187,6 @@ R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
 			return -1;
 		}
 	}
-
 	free (buf);
 	return 0;
 }
