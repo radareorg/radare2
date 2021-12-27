@@ -447,7 +447,7 @@ static bool parse_register(char const* register_input, ut8* hex_out) {
   */
 static bool address_direct(char const* addr_str, ut8* addr_out) {
 	ut16 addr_big;
-	ut8 addr_short;
+	//ut8 addr_short;
 	// rasm2 resolves symbols, so does this really only need to parse hex?
 	// maybe TODO: check address bounds?
 	bool found;
@@ -583,7 +583,7 @@ static bool singlearg_direct(ut8 const firstbyte, char const* arg
 {
 	bool ret = true;
 	ut8 address = 0x00;
-	if (!address_direct (arg, &address)) {
+	if (!parse_register (arg, &address)) {
 		return false;
 	}
 
@@ -593,17 +593,11 @@ static bool singlearg_direct(ut8 const firstbyte, char const* arg
 	return ret;
 }
 
-static bool singlearg_direct_or_register(ut8 const first_byte, char const* arg, ut8**out) {
+/*static bool singlearg_direct_or_register(ut8 const first_byte, char const* arg, ut8**out) {
 	ut16 addr_big;
 	ut8 addr_short;
 
-	bool found;
-	if ( !parse_hexadecimal (arg, &addr_big)
-		|| (0xFF < addr_big)) {
-		found = false;
-	} else {
-		found = true;
-	}
+	bool found = (parse_hexadecimal (arg, &addr_big) || (0xFF < addr_big));
 
 	if (!found) {
 		if ( !parse_register (arg, &addr_short)) {
@@ -621,7 +615,7 @@ static bool singlearg_direct_or_register(ut8 const first_byte, char const* arg, 
 	(*out)[1] = addr_big;
 	*out += 2;
 	return found;
-}
+}*/
 
 static bool singlearg_immediate(ut8 firstbyte, char const* imm_str, ut8**out) {
 	ut16 imm;
@@ -990,6 +984,8 @@ static bool mnem_mov_c(char const*const*arg, ut16 pc, ut8**out) {
 }
 
 static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
+	eprintf ("mnemonic is: %x\n", pc);
+
 	//TODO handle r1!!!
 	if (!r_str_casecmp (arg[0], "dptr")) {
 		ut16 imm;
@@ -1198,11 +1194,11 @@ static bool mnem_orl(char const*const*arg, ut16 pc, ut8**out) {
 }
 
 static bool mnem_pop(char const*const*arg, ut16 pc, ut8**out) {
-	return singlearg_direct_or_register (0xd0, arg[0], out);
+	return singlearg_direct (0xd0, arg[0], out);
 }
 
 static bool mnem_push(char const*const*arg, ut16 pc, ut8**out) {
-	return singlearg_direct_or_register (0xc0, arg[0], out);
+	return singlearg_direct (0xc0, arg[0], out);
 }
 
 static bool mnem_ret(char const*const*arg, ut16 pc, ut8**out) {
@@ -1351,9 +1347,8 @@ static bool mnem_xchd(char const*const*arg, ut16 pc, ut8**out) {
                  -------------------------*/
 
 static parse_mnem_args mnemonic(char const *user_asm, int*nargs) {
-	return match_prefix_f (nargs, user_asm, (ftable){
+	return match_prefix_f (nargs, user_asm, (ftable) {
 	#define mnem(n, mn) { #mn " ", &mnem_ ## mn, n },
-	#define zeroarg_mnem(mn) { #mn , &mnem_ ## mn, 0 },
 		mnem (1, acall)
 		mnem (2, addc)
 		mnem (2, add)
@@ -1402,9 +1397,9 @@ static parse_mnem_args mnemonic(char const *user_asm, int*nargs) {
 		mnem (1, sjmp)
 		mnem (2, subb)
 		mnem (1, swap)
-		zeroarg_mnem (nop)
-		zeroarg_mnem (reti)
-		zeroarg_mnem (ret)
+		mnem (0, nop)
+		mnem (0, reti)
+		mnem (0, ret)
 	#undef mnem
 		{0}});
 }
@@ -1454,13 +1449,13 @@ int assemble_8051(RAsm *a, RAsmOp *op, char const *user_asm) {
 		free (arg[1]); arg[1] = 0; carg[1] = 0;
 		free (arg[2]); arg[2] = 0; carg[0] = 0;
 		return 0;
-	} else {
-		free (arg[0]); arg[0] = 0; carg[2] = 0;
-		free (arg[1]); arg[1] = 0; carg[1] = 0;
-		free (arg[2]); arg[2] = 0; carg[0] = 0;
-		size_t len = binp - instr;
-		r_strbuf_setbin (&op->buf, instr, len);
-
-		return binp - instr;
 	}
+
+	free (arg[0]); arg[0] = 0; carg[2] = 0;
+	free (arg[1]); arg[1] = 0; carg[1] = 0;
+	free (arg[2]); arg[2] = 0; carg[0] = 0;
+	size_t len = binp - instr;
+	r_strbuf_setbin (&op->buf, instr, len);
+
+	return binp - instr;
 }
