@@ -2456,22 +2456,38 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 static void do_read_search(RSearch *s, struct search_parameters *param) {
 	RListIter *iter;
 	RIOMap *map;
+	ut64 prevto = UT64_MAX;
+	ut64 prevfrom = UT64_MAX;
 
 	// TODO: update pattern search to work with this
 	if (s->mode != R_SEARCH_PATTERN) {
 		r_search_set_read_cb (s, &_cb_hit_sz, param);
 	}
+
 	r_cons_break_push (NULL, NULL);
-	r_list_foreach (param->boundaries, iter, map) {
-		// TODO: pair adjacent maps
+	r_list_foreach_prev (param->boundaries, iter, map) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
 
-		eprintf ("Searching in [0x%" PFMT64x "-0x%" PFMT64x "]\n", from, to);
-		r_search_update_read (s, from, to);
+		if (prevto == from) { // absorb new search area into previous
+			prevto = to;
+			continue;
+		}
+		if (prevto != UT64_MAX && prevfrom != UT64_MAX) {
+			// do last search
+			eprintf ("Searching in [0x%" PFMT64x "-0x%" PFMT64x "]\n", prevfrom, prevto);
+			r_search_update_read (s, prevfrom, prevto);
+		}
+		prevto = to;
+		prevfrom = from;
+	}
+	if (prevto != UT64_MAX && prevfrom != UT64_MAX) {
+		eprintf ("Searching in [0x%" PFMT64x "-0x%" PFMT64x "]\n", prevfrom, prevto);
+		r_search_update_read (s, prevfrom, prevto);
 	}
 	r_cons_break_pop ();
 }
