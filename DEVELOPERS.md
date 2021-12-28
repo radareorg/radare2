@@ -480,22 +480,38 @@ architectures. For cross-compilation, see
 
 ## Source repository
 
-The source of radare2 can be found in the following GitHub repository.
+The source for radare2 can be found in the following GitHub repository:
+
 ```sh
-git clone git://github.com/radareorg/radare2
+git clone https://github.com/radareorg/radare2
 ```
+
 Other packages radare2 depends on, such as Capstone, are pulled from
 their git repository as required.
 
 To get an up-to-date copy of the repository, you should perform the
-following steps:
+following steps while on the `master` branch:
+
 ```sh
 git pull
 ```
 
-If you have conflicts in your local copy, it's because you have modified
-files which are conflicting with the incoming patchsets. To get a clean
-source directory, type the following command:
+If your local git repository is not tracking upstream, you may need to use the
+following:
+
+```sh
+git pull https://github.com:radareorg/radare2 master
+```
+
+The installation scripts `sys/user.sh`, `sys/install.sh`, `sys/meson.py`, and
+`sys/termux.sh` will automatically identify and update using an existing
+upstream remote, if one exists. If not, it will pull using a direct URL.
+
+If you have modified files on the `master` branch, you may encounter conflicts
+that must be resolved manually. To save your changes, work on a different
+branch as described in [CONTRIBUTING.md](CONTRIBUTING.md). If you wish to
+discard your current work, use the following commands:
+
 ```sh
 git clean -xdf
 git reset --hard
