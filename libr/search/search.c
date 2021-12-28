@@ -529,6 +529,47 @@ R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
 	}
 }
 
+// TODO: show progress
+R_API int r_search_maps(RSearch *s, RList *maps) {
+	r_return_val_if_fail (s && s->consb.is_breaked && maps, -1);
+	RListIter *iter;
+	RIOMap *m;
+	ut64 prevto = UT64_MAX;
+	ut64 prevfrom = UT64_MAX;
+	int ret = 0;
+
+	r_list_foreach_prev (maps, iter, m) {
+		if (s->consb.is_breaked ()) {
+			break;
+		}
+		ut64 from = r_io_map_begin (m);
+		ut64 to = r_io_map_end (m);
+
+		if (prevto == from) { // absorb new search area into previous
+			prevto = to;
+			continue;
+		}
+		if (prevto != UT64_MAX && prevfrom != UT64_MAX) {
+			// do last search
+			int tmp = r_search_update_read (s, prevfrom, prevto);
+			if (tmp < 0) {
+				return tmp;
+			}
+			ret += tmp;
+		}
+		prevto = to;
+		prevfrom = from;
+	}
+	if (prevto != UT64_MAX && prevfrom != UT64_MAX) {
+		int tmp = r_search_update_read (s, prevfrom, prevto);
+		if (tmp < 0) {
+			return tmp;
+		}
+		ret += tmp;
+	}
+	return ret;
+}
+
 static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
 	RSearchHit *hit = R_NEW0 (RSearchHit);
 	if (!hit) {
