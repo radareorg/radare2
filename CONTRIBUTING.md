@@ -1,8 +1,3 @@
-# Contents
-
-* [Issue reporting](#How to report issues)
-* [Contributing](#How to contribute)
-
 # How to report issues
 
 Before reporting an issue on GitHub, please check that:
