@@ -82,12 +82,14 @@ additional tests in the `test/` directory.
 For more details, see [CONTRIBUTING.md](CONTRIBUTING.md) and
 [DEVELOPERS.md](DEVELOPERS.md).
 
-## Community and Documentation
+## Documentation
 
 To learn more about r2 we encourage you to watch [youtube
 talks](https://www.youtube.com/c/r2con) from [r2con](https://rada.re/con). In
 addition to reading blogposts, slides or the [official radare2
-book](https://book.rada.re), you can reach us in the following chats:
+book](https://book.rada.re), here are some methods to contact us:
+
+## Community
 
 * [irc.libera.chat](https://libera.chat): `#radare`, `#radare_side`
 * [Matrix](https://matrix.org/): `#radare:matrix.org`
