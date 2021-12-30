@@ -66,7 +66,7 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 
 
 %files
-%doc AUTHORS.md CONTRIBUTING.md DEVELOPERS.md README.md TODO.md
+%doc COMMUNITY.md CONTRIBUTING.md DEVELOPERS.md INSTALL.md README.md SECURITY.md USAGE.md
 %license COPYING
 %{_bindir}/r*
 %{_libdir}/libr*
