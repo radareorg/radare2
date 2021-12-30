@@ -108,8 +108,8 @@ git checkout master
 git pull radareorg master
 ```
 
-You may need to add the `-f` flag to force the fetch if it is rejected. If you
-have made commits to your local `master` branch (not recommended!) this may
+You may need to add the `-f` flag to force the pull if it is rejected. If you
+have made commits to your local `master` branch (not recommended!), this may
 overwrite them.
 
 If there are new commits to master, you will see the list of changed files. If
@@ -123,7 +123,7 @@ git rebase master
 ```
 
 You may optionally use the interactive mode. This allows you to reorder,
-`reword`, `edit`, `squash` your commits into fewer individual commits.
+`reword`, `edit`, or `squash` your commits into fewer individual commits.
 
 ```sh
 git rebase -i master

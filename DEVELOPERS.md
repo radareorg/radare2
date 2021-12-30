@@ -7,6 +7,9 @@ The GitHub issues page contains a list of all the bugs that have been reported,
 with labels to classify them by difficulty, type, milestone, etc. It is a good
 place to start if you are looking to contribute.
 
+For information about the git process, see
+[CONTRIBUTING.md](CONTRIBUTING.md#How_to_contribute).
+
 ## Documentation
 
 radare2 supports Doxygen document generation. By running `doxygen` in the
