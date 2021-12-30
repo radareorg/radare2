@@ -34,6 +34,19 @@ can be found [here](http://www.doxygen.nl/manual/docblocks.html).
 static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
 ```
 
+## Error diagnosis
+
+There are several utilities that can be used to diagnose errors in r2, whether
+they are related to memory (segfaults, uninitialized read, etc.) or problems
+with features.
+
+* `sys/sanitize.sh`: Compile with ASan, the address sanitizer. Provides
+  detailed backtraces for memory errors.
+* `R2_DEBUG_ASSERT=1`: Provides a backtrace when a debug assert (typically a
+  `r_return_` macro) fails.
+* `EPRINT_` macros: Defined in `libr/include/r_types.h`. Allows you to quickly
+  add or remove a debug print without worrying about format specifiers.
+
 ## Code style
 
 ### C
