@@ -556,7 +556,7 @@ git reset --hard
 Use `r2r` to run the radare2 regression test suite, e.g.:
 
 ```sh
-sys/user.sh
+sys/install.sh
 r2r
 ```
 
