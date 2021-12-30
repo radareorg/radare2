@@ -35,8 +35,8 @@ the codebase is clean and consistent.
   changes for merging when it's ready.
 
 ```sh
-$ git checkout master
-$ git checkout -b mybranch
+git checkout master
+git checkout -b mybranch
 ```
 
 * Make commits of logical units. Try not to make several unrelated changes in
@@ -47,7 +47,7 @@ $ git checkout -b mybranch
 * Check for coding style issues with:
 
 ```sh
-$ git diff master..mybranch | sys/clang-format-diff.py -p1
+git diff master..mybranch | sys/clang-format-diff.py -p1
 ```
 
   For more on the coding style, see [DEVELOPERS.md](DEVELOPERS.md).
@@ -81,10 +81,10 @@ upstream, but you can name them as you choose.
 
 ```sh
 # Use SSH
-$ git remote add radareorg git@github.com:radareorg/radare2.git
+git remote add radareorg git@github.com:radareorg/radare2.git
 
 # Use HTTPS
-$ git remote add radareorg https://github.com/radareorg/radare2
+git remote add radareorg https://github.com/radareorg/radare2
 ```
 
 radare2 uses a `fast-forward` merging style. This means that instead of taking
@@ -97,15 +97,15 @@ make the commit history harder to read and interpret. You can set `merge` and
 `pull` to fast-forward only to avoid this.
 
 ```sh
-$ git config merge.ff only
-$ git config pull.ff only
+git config merge.ff only
+git config pull.ff only
 ```
 
 #### Step 1: Pull new commits to `master` from upstream
 
 ```sh
-$ git checkout master
-$ git pull radareorg master
+git checkout master
+git pull radareorg master
 ```
 
 You may need to add the `-f` flag to force the fetch if it is rejected. If you
@@ -118,15 +118,15 @@ there are no updates, you will see `Already up to date.`.
 #### Step 2: Rebase `mybranch` onto master
 
 ```sh
-$ git checkout mybranch
-$ git rebase master
+git checkout mybranch
+git rebase master
 ```
 
 You may optionally use the interactive mode. This allows you to reorder,
 `reword`, `edit`, `squash` your commits into fewer individual commits.
 
 ```sh
-$ git rebase -i master
+git rebase -i master
 ```
 
 Again, you must resolve any conflicts that occur before you can merge.
@@ -135,9 +135,9 @@ If you are concerned about potential loss of work, you can back up your code by
 creating a new branch using your feature branch as a base before rebasing.
 
 ```sh
-$ git checkout mybranch
-$ git branch backup
-$ git rebase master
+git checkout mybranch
+git branch backup
+git rebase master
 ```
 
 #### Step 3: Publish your updated local branch
@@ -145,13 +145,13 @@ $ git rebase master
 If you have not pushed this branch before:
 
 ```sh
-$ git push -u origin mybranch
+git push -u origin mybranch
 ```
 
 If you are updating an existing branch:
 
 ```sh
-$ git push -f
+git push -f
 ```
 
 The `-f` flag may be needed to `force` the push onto the remote if you are
@@ -172,13 +172,14 @@ history readable and consistent:
 * If a command is inlined, use backticks, e.g.:
 
 ```sh
-Modify output of `ls`
+git commit -m 'Modify output of `ls`'
 ```
 
 * Add a tag if the change falls into a relevant category (see below)
-* If the commit fixes an issue, you may start the message with `Fix #number - `
-* Use present simple grammar tense and avoid past tense. Use "add", "fix", or
-  "change" instead of "added", "fixed", or "changed".
+* If the commit fixes an issue, you may optionally start the message with
+  `Fix #number - `
+* Use present simple tense and avoid past tense. Use "add", "fix", or "change"
+  instead of "added", "fixed", or "changed".
 
 ### Commit message tag list
 
