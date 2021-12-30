@@ -324,11 +324,11 @@ $ grep -R 'function_name (' libr
 
 ### Shell scripts
 
-* Use `#!/bin/sh`
+* Use `#!/bin/sh`.
 
-* Do not use bashisms `[[`, `$'...'` etc.
+* Do not use BASH-only features; `[[`, `$'...'`, etc.
 
-* Use `sys/shellcheck.sh` to check for problems and for bashisms
+* Use `sys/shellcheck.sh` to check for problems and BASH-only features.
 
 ## Managing endianness
 
