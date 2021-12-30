@@ -318,7 +318,7 @@ $ grep -R 'function_name (' libr
 * Never use `%lld` or `%llx`, which are not portable. Use the `PFMT64` macros
   from `<r_types.h>`.
 
-### Shell Scripts
+### Shell scripts
 
 * Use `#!/bin/sh`
 
@@ -326,10 +326,12 @@ $ grep -R 'function_name (' libr
 
 * Use `sys/shellcheck.sh` to check for problems and for bashisms
 
-# Managing Endianness
+## Managing endianness
 
 Endianness is a common stumbling block when processing buffers or streams and
 storing intermediate values as integers larger than one byte.
+
+### Problem
 
 The following code may seem intuitively correct:
 
@@ -345,7 +347,7 @@ as x86, the least-signficiant byte comes first, so `value` contains
 first, so `value` contains `0x10203040`. This implementation-defined behavior
 is inherently unstable and should be avoided.
 
-## Solution
+### Solution
 
 To avoid dependency on endianness, use bit-shifting and bitwise OR
 instructions. Instead of casting streams of bytes to larger width integers, do
@@ -383,7 +385,7 @@ Such helper functions exist for 64, 32, 16, and 8 bit reads and writes.
 * Note that 8 bit reads are equivalent to casting a single byte of the buffer
   to a `ut8` value, i.e.: endian is irrelevant.
 
-### Editor configuration
+## Editor configuration
 
 Vim/Neovim:
 
@@ -470,13 +472,45 @@ repository.
 If you are able to write a plugin for various IDE that can associate the
 bindings with the header files, such a contribution would be very welcome.
 
-## Dependencies and Installation
+## Dependencies and installation
 
 radare2 does not require external dependencies. On \*nix-like systems, it
 requires only a standard C compiler and GNU `make`. For compiling on Windows,
 see [doc/windows.md](doc/windows.md). Browse the [doc/](doc/) folder for other
 architectures. For cross-compilation, see
 [doc/cross-compile.md](doc/cross-compile.md).
+
+## Recompiling and Outdated Dependencies
+
+When recompiling code, ensure that you recompile all dependent modules (or
+simply recompile the entire project). If a module's dependency is not
+recompiled and relinked, it may cause segmentation faults due to outdated
+structures and libraries. Such errors are not handles automatically, so if you
+are not sure, recompile all modules.
+
+To speed up frequent recompilation, you can use `ccache` like so:
+
+```sh
+export CC="ccache gcc"
+```
+
+This will automatically detect when files do not need to recompiled and avoid
+unnecessary work.
+
+## Repeated installation
+
+Developers use to modify the code, type make and then try.
+
+radare2 has a specific makefile target that allows you to install
+system wide but using symlinks instead of hard copies.
+```sh
+sudo make symstall
+```
+This kind of installation is really helpful if you do lot of changes
+in the code for various reasons.
+
+  - only one install is required across multiple builds
+  - installation time is much faster
 
 ## Source repository
 
@@ -517,38 +551,6 @@ git clean -xdf
 git reset --hard
 ```
 
-## Compilation
-
-Inter-module rebuild dependencies are not handled automatically and
-require human interaction to recompile the affected modules.
-
-This is a common issue and can end up having outdated libraries trying
-to use deprecated structures which may result into segfaults.
-
-You have to make clean on the affected modules. If you are not
-sure enough that everything is OK, just make clean the whole project.
-
-If you want to accelerate the build process after full make cleans,
-you should use ccache in this way:
-```
-  export CC="ccache gcc"
-```
-
-## Installation
-
-Developers use to modify the code, type make and then try.
-
-radare2 has a specific makefile target that allows you to install
-system wide but using symlinks instead of hard copies.
-```sh
-sudo make symstall
-```
-This kind of installation is really helpful if you do lot of changes
-in the code for various reasons.
-
-  - only one install is required across multiple builds
-  - installation time is much faster
-
 ## Regression testing
 
 The source of the radare2 regression test suite can be found in the
@@ -584,7 +586,7 @@ have been reported classified with labels by difficulty, type,
 milestone, etc. It is a good place to start if you are looking
 to contribute.
 
-## HOW TO RELEASE
+# HOW TO RELEASE
 
  - Set `RELEASE=1` in global.mk and r2-bindings/config.mk.acr.
  - Use `bsdtar` from libarchive package. GNU tar is broken.
@@ -603,7 +605,7 @@ to contribute.
 
   - Update the [paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
 
-## Additional resources
+# Additional resources
 
  * [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTRIBUTING.md)
  * [README.md](https://github.com/radareorg/radare2/blob/master/README.md)
