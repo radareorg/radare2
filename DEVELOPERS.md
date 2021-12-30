@@ -3,6 +3,10 @@
 This file aims to introduce developers to conventions for working on the code
 base of radare2.
 
+The GitHub issues page contains a list of all the bugs that have been reported,
+with labels to classify them by difficulty, type, milestone, etc. It is a good
+place to start if you are looking to contribute.
+
 ## Documentation
 
 radare2 supports Doxygen document generation. By running `doxygen` in the
@@ -577,24 +581,13 @@ existing tests, it is greatly appreciated.
 
 ## Reporting bugs
 
-If you notice any misfeature, issue, error, problem or you just
-don't know how to do something which is supposed to be covered
-by this framework.
+If you encounter a broken feature, issue, error, problem, or it is unclear how
+to do something that should be covered by radare2's functionality, report an
+issue on the GitHub repository
+[here](https://github.com/radareorg/radare2/issues).
 
-You should report it into the GitHub issues page.
-   https://github.com/radareorg/radare2/issues
-
-Otherwise, if you are looking for some more feedback, I will
-encourage you to send an email to any of the emails enumerated
-in the AUTHORS file.
-
-Anyway, if you want to get even more feedback and discuss this
-in a public place: join the #radare channel on irc.freenode.net.
-
-The issues page of GitHub contains a list of all the bugs that
-have been reported classified with labels by difficulty, type,
-milestone, etc. It is a good place to start if you are looking
-to contribute.
+If you are looking for feedback, check out the [Community section in the
+README](README.md#Community) for places where you can contact other r2 devs.
 
 # HOW TO RELEASE
 
