@@ -5,6 +5,7 @@ r_search_sources = [
   'regexp.c',
   'uds.c',
   'privkey_find.c',
+  'rabin_karp.c',
   'search.c',
   'strings.c'
 ]

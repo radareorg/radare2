@@ -113,6 +113,7 @@ static const char *help_msg_slash[] = {
 	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
 	"/h", "[t] [hash] [len]", "find block matching this hash. See ph",
 	"/i", " foo", "search for string 'foo' ignoring case",
+	"/k", " foo", "search for string 'foo' using Rabin Karp alg",
 	"/m", "[?][ebm] magicfile", "search for magic, filesystems or binary headers",
 	"/o", " [n]", "show offset of n instructions backward",
 	"/O", " [n]", "same as /o, but with a different fallback if anal cannot be used",
@@ -4050,6 +4051,27 @@ reread:
 		}
 		r_search_begin (core->search);
 		dosearch = true;
+		break;
+	case 'k': // "/k" Rabin Karp String search
+		inp = r_str_trim_dup (input + 1);
+		len = r_str_unescape (inp);
+		r_search_reset (core->search, R_SEARCH_RABIN_KARP);
+		r_search_set_distance (core->search, (int)r_config_get_i (core->config, "search.distance"));
+		{
+			RSearchKeyword *skw;
+			skw = r_search_keyword_new ((const ut8 *)inp, len, NULL, 0, NULL);
+			free (inp);
+			if (skw) {
+				skw->icase = ignorecase;
+				skw->type = R_SEARCH_KEYWORD_TYPE_STRING;
+				r_search_kw_add (core->search, skw);
+			} else {
+				eprintf ("Invalid keyword\n");
+				break;
+			}
+		}
+		r_search_begin (core->search);
+		dosearch_read = true;
 		break;
 	case 'e': // "/e" match regexp
 		if (input[1] == '?') {
