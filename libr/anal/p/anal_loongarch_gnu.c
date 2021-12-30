@@ -23,7 +23,7 @@
  *
  * This is safe to use for 16- and 8-bit types as well.
  */
-static inline st32 sign_extend32(ut32 value, int index)
+R_UNUSED static inline st32 sign_extend32(ut32 value, int index)
 {
 	ut8 shift = 31 - index;
 	return (st32)(value << shift) >> shift;

@@ -32,7 +32,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr,
 }
 
 static void destroy(RBinFile *bf) {
-	r_buf_free (bf->o->bin_obj);
+	// r_buf_free (bf->o->bin_obj);
 }
 
 static ut64 baddr(RBinFile *bf) {
