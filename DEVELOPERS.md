@@ -499,18 +499,14 @@ unnecessary work.
 
 ## Repeated installation
 
-Developers use to modify the code, type make and then try.
+There is an alternative installation method for radare2 to make it easier to
+repeatedly install while making changes. The `symstall` target creates a single
+system-wide installation using symlinks instead of copies, making repeated
+builds faster.
 
-radare2 has a specific makefile target that allows you to install
-system wide but using symlinks instead of hard copies.
 ```sh
 sudo make symstall
 ```
-This kind of installation is really helpful if you do lot of changes
-in the code for various reasons.
-
-  - only one install is required across multiple builds
-  - installation time is much faster
 
 ## Source repository
 
