@@ -607,6 +607,6 @@ to contribute.
 
 # Additional resources
 
- * [CONTRIBUTING.md](https://github.com/radareorg/radare2/blob/master/CONTRIBUTING.md)
- * [README.md](https://github.com/radareorg/radare2/blob/master/README.md)
- * [USAGE.md](https://github.com/radareorg/radare2/blob/master/USAGE.md)
+ * [CONTRIBUTING.md](CONTRIBUTING.md)
+ * [README.md](README.md)
+ * [USAGE.md](USAGE.md)
