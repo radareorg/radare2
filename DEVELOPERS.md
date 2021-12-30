@@ -549,17 +549,31 @@ git reset --hard
 
 ## Regression testing
 
-The source of the radare2 regression test suite can be found in the
- `test/` directory, while binaries for this test are located in the
- following GitHub repository.
+Use `r2r` to run the radare2 regression test suite, e.g.:
+
 ```sh
-git clone git://github.com/radareorg/radare2-testbins
+sys/user.sh
+r2r
 ```
 
-See the `README.md` file in that repository for further information.
+r2r's source can be found in the `test/` directory, while binaries used for
+tests are located in the following GitHub repository:
 
-The existing test coverage can always do with improvement. So if you can
-contribute additional tests, that would be gratefully accepted.
+```sh
+git clone https://github.com/radareorg/radare2-testbins
+```
+
+These can be found in `test/bins/` after being downloaded by r2r.
+
+For more information, see [r2r's
+README](https://github.com/radareorg/radare2-testbins/blob/master/README).
+
+The test files can be found in `test/db/`. Each test consists of a unique name,
+an input file, a list of input commands, and the expected output. The test must
+be terminated with a line consisting only of `RUN`.
+
+Testing can always be improved. If you can contribute additional tests or fix
+existing tests, it is greatly appreciated.
 
 ## Reporting bugs
 
