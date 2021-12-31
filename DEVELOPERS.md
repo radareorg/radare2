@@ -12,28 +12,13 @@ For information about the git process, see
 
 ## Documentation
 
-radare2 supports Doxygen document generation. By running `doxygen` in the
-repository root, it will autodetect the Doxyfile and generate HTML
-documentation at [doc/doxygen/html/index.html](doc/doxygen/html/index.html).
-
-If you're contributing code or updating existing code, you can use Doxygen
-C-style comments to document function arguments and usage.  See the [Doxygen
-Manual](http://www.doxygen.nl/manual/index.html) for more info. Example usage
-can be found [here](http://www.doxygen.nl/manual/docblocks.html).
+Functions should have descriptive names and parameters. It should be clear what
+the function and its arguments do from the declaration. Comments should be used
+to explain purpose or clarify something that may not be immediately apparent or
+relatively complicated.
 
 ```c
-/**
- * \brief Find the min and max addresses in an RList of maps.
- * \param maps RList of maps that will be searched through
- * \param min Pointer to a ut64 that the min will be stored in
- * \param max Pointer to a ut64 that the max will be stored in
- * \param skip How many maps to skip at the start of an iteration
- * \param width Divisor for the return value
- * \return (max-min)/width
- *
- * Used to determine the min & max addresses of maps and
- * scale the ascii bar to the width of the terminal
- */
+/* Find the min and max addresses in an RList of maps. Returns (max-min)/width. */
 static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
 ```
 
@@ -43,12 +28,34 @@ There are several utilities that can be used to diagnose errors in r2, whether
 they are related to memory (segfaults, uninitialized read, etc.) or problems
 with features.
 
+### Compilation options
+
 * `sys/sanitize.sh`: Compile with ASan, the address sanitizer. Provides
   detailed backtraces for memory errors.
 * `R2_DEBUG_ASSERT=1`: Provides a backtrace when a debug assert (typically a
   `r_return_` macro) fails.
-* `EPRINT_` macros: Defined in `libr/include/r_types.h`. Allows you to quickly
-  add or remove a debug print without worrying about format specifiers.
+* `R2_DEBUG=1`: Show error messages and crash signal. Used for debugging plugin
+  loading issues.
+
+### Useful macros from [r\_types.h](libr/include/r_types.h)
+
+* `EPRINT_*`: Allows you to quickly add or remove a debug print without
+  worrying about format specifiers.
+
+#### Parameter marking
+
+r2 provides several empty macros to make function signatures more informative.
+
+* `R_OUT`: Parameter is output - written to instead of read.
+* `R_INOUT`: Parameter is read/write.
+* `R_OWN`: Pointer ownership is transferred from the caller.
+* `R_BORROW`: The caller retains ownership of the pointer - the reciever must
+  not free it.
+* `R_NONNULL`: Pointer must not be null.
+* `R_NULLABLE`: Pointer may ne null.
+* `R_DEPRECATE`: Do not use in new code and will be removed in the future.
+* `R_IFNULL(x)`: Default value for a pointer when null.
+* `R_UNUSED`: Not used.
 
 ## Code style
 
@@ -161,7 +168,7 @@ int check(RCore *c, int a, int b) {
         r_return_val_if_fail (a >= 0, b >= 1, false);
 
         /* check for runtime errors */
-        ut8 *buf = malloc(sizeof (a) * b);
+        ut8 *buf = calloc (b, sizeof (a));
         if (!buf) {
                 return -1;
         }
