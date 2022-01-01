@@ -2034,7 +2034,9 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			}
 		}
 		if (fd->plugin->read == kernelcache_io_read) {
-			eprintf ("fail%c", 10);
+			if (core->bin->verbose) {
+				eprintf ("Avoid recursive reads\n");
+			}
 			return -1;
 		}
 		return fd->plugin->read (io, fd, buf, count);
