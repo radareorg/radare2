@@ -1209,7 +1209,7 @@ loongarch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, RAnalOp
 	struct loongarch_anal_opcode *it;
 	ut32 opcode, optype;
 	ut32 insn_id = 0;
-	if (!op) {
+	if (!op || (len < INSNLEN)) {
 		return INSNLEN;
 	}
 	op->type = R_ANAL_OP_TYPE_UNK;
