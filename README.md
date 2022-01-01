@@ -93,8 +93,8 @@ book](https://book.rada.re), here are some methods to contact us:
 
 * [irc.libera.chat](https://libera.chat): `#radare`, `#radare_side`
 * [Matrix](https://matrix.to/#/#radare:matrix.org): `#radare:matrix.org`
-* [Telegram](https://t.me/radare) and the [Side Channel](https://t.me/radare_side)
-* [Discord](https://discord.gg/MgEdxrMnqx) server
+* Telegram: [Main Channel](https://t.me/radare) and [Side Channel](https://t.me/radare_side)
+* [Discord server](https://discord.gg/MgEdxrMnqx)
 * Twitter: [@radareorg](https://twitter.com/radareorg)
 * Website: [https://www.radare.org/](https://www.radare.org/)
 
