@@ -1887,7 +1887,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 	r_line_completion_clear (completion);
 	char *pipe = strchr (buf->data, '>');
 	char *ptr = strchr (buf->data, '@');
-	if (pipe && strchr (ptr + 1, ' ') && buf->data + buf->index >= pipe) {
+	if (pipe && ptr && *ptr && strchr (ptr + 1, ' ') && buf->data + buf->index >= pipe) {
 		autocompleteFilename (completion, buf, core->rcmd, NULL, 1);
 	} else if (ptr && strchr (ptr + 1, ' ') && buf->data + buf->index >= ptr) {
 		int sdelta, n;

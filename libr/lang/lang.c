@@ -18,6 +18,7 @@ R_LIB_VERSION(r_lang);
 #endif
 #endif
 #include "p/go.c"    // hardcoded
+#include "p/wren.c"
 #include "p/lib.c"
 
 static RLang *__lang = NULL;
@@ -59,6 +60,7 @@ R_API RLang *r_lang_new(void) {
 	r_lang_add (lang, &r_lang_plugin_pipe);
 #endif
 	r_lang_add (lang, &r_lang_plugin_go);
+	r_lang_add (lang, &r_lang_plugin_wren);
 	r_lang_add (lang, &r_lang_plugin_spp);
 	r_lang_add (lang, &r_lang_plugin_lib);
 
