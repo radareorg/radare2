@@ -318,13 +318,13 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 * Where is `function_name()` defined?
 
 ```sh
-$ grep -R 'function_name(' libr
+grep -R 'function_name(' libr
 ```
 
 * Where is `function_name()` used?
 
 ```sh
-$ grep -R 'function_name (' libr
+grep -R 'function_name (' libr
 ```
 
 * Function names should be explicit enough to not require a comment explaining
@@ -547,7 +547,7 @@ Other packages radare2 depends on, such as Capstone, are pulled from
 their git repository as required.
 
 To get an up-to-date copy of the repository, you should perform the
-following steps while on the `master` branch:
+following while on the `master` branch:
 
 ```sh
 git pull

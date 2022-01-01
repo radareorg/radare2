@@ -185,8 +185,9 @@ git commit -m 'Modify output of `ls`'
 
 | Tag              | Relevant changes |
 |------------------|------------------|
-| `##anal`         | Analysis |
-| `##asm`          | Assembly |
+| `##analysis`     | Analysis |
+| `##arch`         | Architecture |
+| `##asm`          | Assembly (not disassembly) |
 | `##bin`          | Binary parsing |
 | `##build`        | Build system |
 | `##config`       | Configuration variables |
@@ -204,6 +205,7 @@ git commit -m 'Modify output of `ls`'
 | `##lang`         | Language bindings |
 | `##meta`         | Metadata handling, excluding printing |
 | `##optimization` | Space/time optimizations |
+| `##platform`     | Platform-specific code |
 | `##port`         | Portability - new OS or architectures |
 | `##print`        | Printing data, structures, strings, tables, types, etc. |
 | `##projects`     | Saving and loading state |

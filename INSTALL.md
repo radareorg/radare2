@@ -35,7 +35,7 @@ r2env install radare2@latest
 In case of a polluted filesystem, you can uninstall the current version
 or remove all previous installations with one or more of those commands:
 
-```
+```sh
 make uninstall       # Remove the current installation
 make purge           # Remove all files from all installations
 make system-purge    # Remove all installed packages

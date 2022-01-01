@@ -60,17 +60,17 @@ r2pm install <pkg>   # install a package
 
 Some of the most installed packages are:
 
-* [radius](https://github.com/aemmitt-ns/radius): A fast symbolic execution engine based on boolector and r2.
-* [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command.
 * [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3.
-* [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command.
-* [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it.
 * [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface.
+* [radius](https://github.com/aemmitt-ns/radius): A fast symbolic execution engine based on boolector and r2.
+* [r2dec](https://github.com/wargio/r2dec-js): A decompiler based on r2 written in JS, accessed with the `pdd` command.
+* [r2ghidra](https://github.com/radareorg/r2ghidra): The native ghidra decompiler plugin, accessed with the `pdg` command.
+* [r2frida](https://github.com/nowsecure/r2frida): The frida io plugin. Start r2 with `r2 frida://0` to use it.
 
 # Contributing
 
-There are many ways to contribute to the project. Join the
-IRC/Matrix/Telegram/Discord channels, check out the github issues or grep for
+There are many ways to contribute to the project. Contact the
+[community](#Community), check out the github issues, or grep for
 TODO/FIXME/XXX comments in the source.
 
 To contribute code, push your changes to a branch on your fork of the
@@ -92,7 +92,7 @@ book](https://book.rada.re), here are some methods to contact us:
 ## Community
 
 * [irc.libera.chat](https://libera.chat): `#radare`, `#radare_side`
-* [Matrix](https://matrix.org/): `#radare:matrix.org`
+* [Matrix](https://matrix.to/#/#radare:matrix.org): `#radare:matrix.org`
 * [Telegram](https://t.me/radare) and the [Side Channel](https://t.me/radare_side)
 * [Discord](https://discord.gg/MgEdxrMnqx) server
 * Twitter: [@radareorg](https://twitter.com/radareorg)
