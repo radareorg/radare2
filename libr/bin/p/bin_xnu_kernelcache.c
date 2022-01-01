@@ -1990,7 +1990,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	r_return_val_if_fail (io, -1);
 	RCore *core = (RCore*) io->corebind.core;
 
-	if (!core || !core->bin || !core->bin->binfiles) {
+	if (!fd || !core || !core->bin || !core->bin->binfiles) {
 		return -1;
 	}
 
@@ -1998,7 +1998,7 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RListIter *iter;
 	RBinFile *bf;
 	r_list_foreach (core->bin->binfiles, iter, bf) {
-		if (bf->fd == fd->fd ) {
+		if (bf->fd == fd->fd && bf->o && bf->o->bin_obj) {
 			cache = bf->o->bin_obj;
 			if (pending_bin_files) {
 				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
@@ -2032,6 +2032,12 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			if (cache->rebasing_buffer) {
 				return cache->original_io_read (io, fd, buf, count);
 			}
+		}
+		if (fd->plugin->read == kernelcache_io_read) {
+			if (core->bin->verbose) {
+				eprintf ("Avoid recursive reads\n");
+			}
+			return -1;
 		}
 		return fd->plugin->read (io, fd, buf, count);
 	}

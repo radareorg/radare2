@@ -2063,9 +2063,11 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 
 	if (!has_chained_fixups && bin->hdr.cputype == CPU_TYPE_ARM64 &&
 		(bin->hdr.cpusubtype & ~CPU_SUBTYPE_MASK) == CPU_SUBTYPE_ARM64E) {
+#if 0
 		if (bin->verbose) {
 			eprintf ("reconstructing chained fixups\n");
 		}
+#endif
 		reconstruct_chained_fixup (bin);
 	}
 	return true;
