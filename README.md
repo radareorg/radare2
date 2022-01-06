@@ -4,10 +4,9 @@
 
 [![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/workflows/CI/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/)
 
-The current packaged version is `5.5.4`. See the
-[Releases](https://github.com/radareorg/radare2/releases) page for binary
-downloads. The current git `master` branch is `5.5.5`, and the next release will
-be `5.6.0`.
+See the [Releases](https://github.com/radareorg/radare2/releases) page for
+binary downloads. The current git `master` branch is `5.5.5`, and the next
+release will be `5.6.0`.
 
 r2 is a complete rewrite of radare. It provides a set of libraries, tools and
 plugins to ease reverse engineering tasks.
@@ -34,6 +33,8 @@ radare2/sys/install.sh
 
 ```sh
 pip install r2env
+r2env init
+r2env add radare2@git
 ```
 
 ## Resources
@@ -54,8 +55,7 @@ Many plugins are included with r2 by default. You can find more plugins using
 the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
 
 ```sh
-r2pm update          # update (or initialize) the package database
-r2pm install <pkg>   # install a package
+r2pm -ci <pkg> # install a package
 ```
 
 Some of the most installed packages are:
@@ -132,5 +132,5 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems
 * [![FreeBSD port](https://repology.org/badge/version-for-repo/freebsd/radare2.svg)](https://repology.org/project/radare2/versions) [![OpenBSD port](https://repology.org/badge/version-for-repo/openbsd/radare2.svg)](https://repology.org/project/radare2/versions) [![pkgsrc current package](https://repology.org/badge/version-for-repo/pkgsrc_current/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Homebrew package](https://repology.org/badge/version-for-repo/homebrew/radare2.svg)](https://repology.org/project/radare2/versions) [![MacPorts package](https://repology.org/badge/version-for-repo/macports/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![HaikuPorts master package](https://repology.org/badge/version-for-repo/haikuports_master/radare2.svg)](https://repology.org/project/radare2/versions)
-* [![Ubuntu 20.10 package](https://repology.org/badge/version-for-repo/ubuntu_20_10/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 20.04 package](https://repology.org/badge/version-for-repo/ubuntu_20_04/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 18.04 package](https://repology.org/badge/version-for-repo/ubuntu_18_04/radare2.svg)](https://repology.org/project/radare2/versions)
+* [![Ubuntu 20.04 package](https://repology.org/badge/version-for-repo/ubuntu_20_04/radare2.svg)](https://repology.org/project/radare2/versions) [![Ubuntu 18.04 package](https://repology.org/badge/version-for-repo/ubuntu_18_04/radare2.svg)](https://repology.org/project/radare2/versions)
 * [![Debian Unstable package](https://repology.org/badge/version-for-repo/debian_unstable/radare2.svg)](https://repology.org/project/radare2/versions) [![Raspbian Stable package](https://repology.org/badge/version-for-repo/raspbian_stable/radare2.svg)](https://repology.org/project/radare2/versions) [![Kali Linux Rolling package](https://repology.org/badge/version-for-repo/kali_rolling/radare2.svg)](https://repology.org/project/radare2/versions)
