@@ -1,5 +1,5 @@
 diff --git a/cs.c b/cs.c
-index 786922b4..ec5cda47 100644
+index 786922b4..db75c756 100644
 --- a/cs.c
 +++ b/cs.c
 @@ -540,6 +540,7 @@ static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCI
@@ -10,14 +10,14 @@ index 786922b4..ec5cda47 100644
  	insn->size = copy_size;
  
  	// alias instruction might have ID saved in OpcodePub
-@@ -559,6 +560,10 @@ static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCI
- 	if (tab) {
- 		strcpy (insn->op_str, tab + 1);
- 	}
+@@ -551,6 +552,10 @@ static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCI
+ 		postprinter((csh)handle, insn, buffer, mci);
+ 
+ #ifndef CAPSTONE_DIET
 +	char *prefix = strchr (buffer, '|');
 +	if (prefix) {
-+		*tab = ' ';
++		*prefix = ' ';
 +	}
- 
- 	// we might have customized mnemonic
- 	if (handle->mnem_list) {
+ 	char *tab = strchr (buffer, '\t');
+ 	if (tab) {
+ 		*tab = 0;

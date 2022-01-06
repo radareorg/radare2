@@ -631,7 +631,7 @@ repeat:
 	case 'e':
 		r_strbuf_appendf (p, "Visual Evals:\n\n");
 		r_strbuf_appendf (p,
-			" E      toggle asm.leahints\n"
+			" E      toggle asm.hint.lea\n"
 			" &      rotate asm.bits=16,32,64\n"
 		);
 		ret = r_cons_less_str (r_strbuf_get (p), "?");
