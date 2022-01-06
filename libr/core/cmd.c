@@ -1283,6 +1283,20 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 				} else if (!strcmp (ext, "r2s")) {
 					r_core_visual_slides (core, file);
 					ret = 1;
+				} else if (!strcmp (ext, "qjs")) {
+					if (r_lang_use (core->lang, "qjs")) {
+						r_lang_run_file (core->lang, file);
+					} else {
+						eprintf ("Error: r2pm -ci rlang-qjs\n");
+					}
+					ret = 1;
+				} else if (!strcmp (ext, "wren")) {
+					if (r_lang_use (core->lang, "wren")) {
+						r_lang_run_file (core->lang, file);
+					} else {
+						eprintf ("Error: r2pm -ci rlang-wren\n");
+					}
+					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
 					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");
