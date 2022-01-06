@@ -26,7 +26,7 @@ cd ravc2_commit_test
 !!ravc2 init
 echo hello > hello
 !!ravc2 commit "hello world!" hello
-!!ravc2 log~!author,time,hash
+!!ravc2 log~!author~!time~!hash
 cd ../
 rmrf ravc2_commit_test
 EOF
@@ -67,7 +67,7 @@ cd ravc2_log_test
 !!ravc2 init
 echo hello > hello
 !!ravc2 commit "hello world!" hello
-!!ravc2 log ~!hash,author,time
+!!ravc2 log~!hash~!author~!time
 cd ../
 rmrf ravc2_log_test
 EOF

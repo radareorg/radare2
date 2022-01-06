@@ -205,11 +205,11 @@ static void parse_grep_expression(const char *str) {
 				break;
 			case '^':
 				ptr++;
-				grep->begin = true;
+				grep->begin[grep->nstrings] = true;
 				break;
 			case '!':
 				ptr++;
-				grep->neg = true;
+				grep->neg[grep->nstrings] = true;
 				break;
 			case '?':
 				ptr++;
@@ -323,7 +323,7 @@ static void parse_grep_expression(const char *str) {
 
 		len = strlen (ptr) - 1;
 		if (len > 1 && ptr[len] == '$' && ptr[len - 1] != '\\') {
-			grep->end = 1;
+			grep->end[i] = 1;
 			ptr[len] = '\0';
 		}
 
@@ -773,7 +773,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	RConsGrep *grep = &cons->context->grep;
 	const char *delims = " |,;=\t";
 	char *tok = NULL;
-	bool hit = grep->neg;
+	bool hit = true;
 	int outlen = 0;
 	bool use_tok = false;
 	size_t i;
@@ -790,7 +790,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	memcpy (in, buf, len);
 
 	if (grep->nstrings > 0) {
-		int ampfail = grep->amp;
+		bool all_hits = true;
 		if (grep->icase) {
 			r_str_case (in, false);
 		}
@@ -801,28 +801,30 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			}
 			const char *p = r_strstr_ansi (in, grep->strings[i]);
 			if (!p) {
-				ampfail = 0;
+				hit = grep->neg[i];
+				all_hits &= hit;
 				continue;
 			}
-			hit = grep->begin
-				? grep->neg
+			hit = grep->begin[i]
+				? grep->neg[i]
 					? p != in
 					: p == in
-				: !grep->neg;
+				: !grep->neg[i];
 
 			// TODO: optimize without strlen without breaking t/feat_grep (grep end)
-			if (grep->end && (strlen (grep->strings[i]) != strlen (p))) {
-				hit = 0;
+			if (grep->end[i] && (strlen (grep->strings[i]) != strlen (p))) {
+				hit = false;
 			}
+			all_hits &= hit;
 			if (!grep->amp) {
 				break;
 			}
 		}
 		if (grep->amp) {
-			hit = ampfail;
+			hit = all_hits;
 		}
 	} else {
-		hit = 1;
+		hit = true;
 	}
 
 	RConsContext *ctx = r_cons_context ();
