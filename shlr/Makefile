@@ -25,7 +25,7 @@ endif
 
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.2
-CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
+CS_TAR=https://codeload.github.com/capstone-engine/capstone/tar.gz/$(CS_VER)
 #CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
 else
@@ -39,7 +39,7 @@ ifeq ($(USE_CS4),1)
 CS_TIP=a7cac8352f7397aa73bb2e2dcc1b6cdb2e1b8461
 CS_BRA=v4
 else
-CS_TIP=6a261d3700a5f7f7aa1fa76d7bb97e65d3065bf9
+CS_TIP=667f45d5a956bce950d43ce60e02f2c9bad8b234
 CS_BRA=next
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)

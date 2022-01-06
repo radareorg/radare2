@@ -20,7 +20,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     patches_files = []
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     if capstone_version == 'v5'
-      CS_TIP = '6a261d3700a5f7f7aa1fa76d7bb97e65d3065bf9'
+      CS_TIP = '667f45d5a956bce950d43ce60e02f2c9bad8b234'
       CS_BRA = 'next'
       patches_files = [
         'fix-x86-16.patch',
@@ -42,7 +42,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       error('Wrong capstone version selected. Please use one of the supported versions.')
     endif
 
-    capstone_git_user = 'aquynh'
+    capstone_git_user = 'capstone-engine'
 
     message('Cloning capstone ' + CS_BRA + ' branch, commit ' + CS_TIP + ', into ' + capstone_path)
     git_cmd = 'clone -b @0@ https://github.com/@1@/capstone.git @2@'.format(CS_BRA, capstone_git_user, capstone_path)
