@@ -31,6 +31,7 @@ patch_capstone() {
 		CV=v4
 	fi
 	for patchfile in ../capstone-patches/$CV/*.patch ; do
+		echo "Patch $patchFile"
 		patch -p 1 < "${patchfile}"
 	done
 }

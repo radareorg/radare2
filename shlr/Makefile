@@ -30,7 +30,7 @@ CS_TAR=https://codeload.github.com/capstone-engine/capstone/tar.gz/$(CS_VER)
 CS_PATCHES=0
 else
 CS_TAR=
-CS_URL_BASE=github.com/aquynh/capstone
+CS_URL_BASE=github.com/capstone-engine/capstone
 CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
 CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20201203
@@ -229,7 +229,7 @@ capstone: capstone-$(CS_VER).tar.gz
 	$(MAKE) patch-capstone
 
 # already implemented in capstone.sh
-patch-capstone:
+patch-capstone capstone-patch:
 ifeq ($(CS_PATCHES),1)
 	if [ -d capstone/.git ]; then \
 ifeq ($(USE_CS4),1)
