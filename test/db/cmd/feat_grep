@@ -169,7 +169,6 @@ EOF
 RUN
 
 NAME=double grep neg
-BROKEN=1
 FILE=malloc://1024
 CMDS=i~f~!file
 EXPECT=<<EOF
@@ -308,7 +307,6 @@ EOF
 RUN
 
 NAME=multigrep2
-BROKEN=1
 FILE=malloc://1024
 CMDS=<<EOF
 ?e hello world~hello~!boing
