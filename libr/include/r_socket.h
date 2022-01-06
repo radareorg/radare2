@@ -229,6 +229,7 @@ typedef struct r_run_profile_t {
 	char *_libpath;
 	char *_preload;
 	int _bits;
+	bool _time;
 	int _pid;
 	char *_pidfile;
 	int _r2preload;

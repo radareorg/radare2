@@ -559,6 +559,8 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		p->_maxfd = atoi (e);
 	} else if (!strcmp (b, "bits")) {
 		p->_bits = atoi (e);
+	} else if (!strcmp (b, "time")) {
+		p->_time = true;
 	} else if (!strcmp (b, "chroot")) {
 		p->_chroot = strdup (e);
 	} else if (!strcmp (b, "libpath")) {
@@ -1110,6 +1112,13 @@ R_API int r_run_config_env(RRunProfile *p) {
 	return 0;
 }
 
+static void time_end(bool chk, ut64 time_begin) {
+	if (chk) {
+		ut64 now = r_time_now ();
+		eprintf ("%"PFMT64d"\n", now - time_begin);
+	}
+}
+
 // NOTE: return value is like in unix return code (0 = ok, 1 = not ok)
 R_API int r_run_start(RRunProfile *p) {
 #if LIBC_HAVE_FORK
@@ -1117,6 +1126,10 @@ R_API int r_run_start(RRunProfile *p) {
 		exit (execv (p->_program, (char* const*)p->_args));
 	}
 #endif
+	ut64 time_begin = 0;
+	if (p->_time) {
+		time_begin = r_time_now ();
+	}
 #if __APPLE__ && !__POWERPC__ && LIBC_HAVE_FORK
 	posix_spawnattr_t attr = {0};
 	pid_t pid = -1;
@@ -1165,6 +1178,7 @@ R_API int r_run_start(RRunProfile *p) {
 	}
 #endif
 	if (p->_system) {
+		int rc = 0;
 		if (p->_pid) {
 			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
 		}
@@ -1205,6 +1219,7 @@ R_API int r_run_start(RRunProfile *p) {
 					}
 					kill (mypid, use_signal);
 #endif
+					time_end (p->_time, time_begin);
 					exit (0);
 				}
 #else
@@ -1217,20 +1232,22 @@ R_API int r_run_start(RRunProfile *p) {
 			close (1);
 			char *bin_sh = r_file_binsh ();
 			if (bin_sh) {
-				exit (execl (bin_sh, bin_sh, "-c", p->_system, NULL));
+				rc = execl (bin_sh, bin_sh, "-c", p->_system, NULL);
 			} else {
-				exit (r_sys_cmd (p->_system));
+				rc = r_sys_cmd (p->_system);
 			}
 			free (bin_sh);
 #else
-			exit (r_sys_cmd (p->_system));
+			rc = r_sys_cmd (p->_system);
 #endif
 		} else {
 			if (p->_pidfile) {
 				eprintf ("Warning: pidfile doesnt work with 'system'.\n");
 			}
-			exit (r_sys_cmd (p->_system));
+			rc = r_sys_cmd (p->_system);
 		}
+		time_end (p->_time, time_begin);
+		exit(rc);
 	}
 	if (p->_program) {
 		if (!r_file_exists (p->_program)) {
@@ -1312,6 +1329,7 @@ R_API int r_run_start(RRunProfile *p) {
 		}
 // TODO: must be HAVE_EXECVE
 #if LIBC_HAVE_FORK
+		time_end (p->_time, time_begin);
 		exit (execv (p->_program, (char* const*)p->_args));
 #endif
 	}
@@ -1376,6 +1394,7 @@ R_API int r_run_start(RRunProfile *p) {
 		}
 		r_lib_dl_close (addr);
 	}
+	time_end (p->_time, time_begin);
 	return 0;
 }
 
