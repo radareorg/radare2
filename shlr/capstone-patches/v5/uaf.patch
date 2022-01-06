@@ -1,0 +1,23 @@
+diff --git a/cs.c b/cs.c
+index 786922b4..ec5cda47 100644
+--- a/cs.c
++++ b/cs.c
+@@ -540,6 +540,7 @@ static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCI
+ 	// fill the instruction bytes.
+ 	// we might skip some redundant bytes in front in the case of X86
+ 	memcpy(insn->bytes, code + insn->size - copy_size, copy_size);
++	insn->op_str[0] = '\0';
+ 	insn->size = copy_size;
+ 
+ 	// alias instruction might have ID saved in OpcodePub
+@@ -559,6 +560,10 @@ static void fill_insn(struct cs_struct *handle, cs_insn *insn, char *buffer, MCI
+ 	if (tab) {
+ 		strcpy (insn->op_str, tab + 1);
+ 	}
++	char *prefix = strchr (buffer, '|');
++	if (prefix) {
++		*tab = ' ';
++	}
+ 
+ 	// we might have customized mnemonic
+ 	if (handle->mnem_list) {

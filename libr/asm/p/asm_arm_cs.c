@@ -202,10 +202,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			r_str_cpy (insn->mnemonic, tmpstr);
 			free (tmpstr);
 		}
-		char *buf_asm = snprintf (opstr, sizeof (opstr), "%s%s%s",
+		snprintf (opstr, sizeof (opstr), "%s%s%s",
 			insn->mnemonic,
-			insn->op_str[0]?" ":"",
+			insn->op_str[0]? " ": "",
 			insn->op_str);
+		char *buf_asm = &opstr;
 		if (!disp_hash) {
 			r_str_replace_char (buf_asm, '#', 0);
 		}
