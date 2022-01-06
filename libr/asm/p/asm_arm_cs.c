@@ -184,6 +184,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			r_strbuf_set (&op->buf_asm, "illegal");
 		}
 	}
+	char opstr[128];
 	if (op && !op->size) {
 		op->size = insn->size;
 		if (insn->id == ARM_INS_IT) {
@@ -201,7 +202,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			r_str_cpy (insn->mnemonic, tmpstr);
 			free (tmpstr);
 		}
-		char *buf_asm = sdb_fmt ("%s%s%s",
+		char *buf_asm = snprintf (opstr, sizeof (opstr), "%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
 			insn->op_str);
