@@ -512,21 +512,21 @@ const char *help_msg_pz[] = {
 
 const char *help_msg_pxA[] = {
 	"Usage: pxA [len]", "", "show op analysis color map",
-	"$$", "", "int/swi/trap/new\n",
-	"+-*/", "", "math ops\n",
-	"->", "", "push\n",
-	"..", "", "nop\n",
-	"<-", "", "pop\n",
-	"<<>>", "", "shift ops\n",
-	"==", "", "cmp/test\n",
-	"XX", "", "invalid\n",
-	"_C", "", "call\n",
-	"_J", "", "jump\n",
-	"_R", "", "ret\n",
-	"cJ", "", "conditional jump\n",
-	"io", "", "in/out ops\n",
-	"mv", "", "move,lea,li\n",
-	"|&^", "", "bin ops\n",
+	"$$", "", "int/swi/trap/new",
+	"+-*/", "", "math ops",
+	"->", "", "push",
+	"..", "", "nop",
+	"<-", "", "pop",
+	"<<>>", "", "shift ops",
+	"==", "", "cmp/test",
+	"XX", "", "invalid",
+	"_C", "", "call",
+	"_J", "", "jump",
+	"_R", "", "ret",
+	"cJ", "", "conditional jump",
+	"io", "", "in/out ops",
+	"mv", "", "move,lea,li",
+	"|&^", "", "bin ops",
 	NULL
 };
 
@@ -5560,7 +5560,11 @@ static int cmd_print(void *data, const char *input) {
 			if (input[2] == '?') {
 				r_core_cmd_help (core, help_msg_pds);
 			} else {
-				disasm_strings (core, input, NULL);
+				if (input[2] && input[3] == '?') {
+					r_core_cmd_help (core, help_msg_pds);
+				} else {
+					disasm_strings (core, input, NULL);
+				}
 			}
 			break;
 		case 'f': // "pdf"

@@ -4369,7 +4369,10 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	obs = core->blocksize;
 	//r_cons_set_cup (true);
-
+	if (strchr (input, '?')) {
+		// show V? help message, disables oneliner to open visual help
+		return 0;
+	}
 	core->vmode = false;
 	/* honor vim */
 	if (!strncmp (input, "im", 2)) {
