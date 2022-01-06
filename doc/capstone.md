@@ -26,6 +26,6 @@ is from v4, so it fails to compile because of missing enums and archs.
 v4
 --
 
-To build r2 against capstone5 use the following oneliner:
+To build r2 against capstone4 use the following oneliner:
 
 	sys/install.sh --with-capstone4
