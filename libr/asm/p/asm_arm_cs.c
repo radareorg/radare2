@@ -201,7 +201,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			r_str_cpy (insn->mnemonic, tmpstr);
 			free (tmpstr);
 		}
-		char opstr[128];
+		char opstr[256];
 		snprintf (opstr, sizeof (opstr) - 1, "%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0]? " ": "",
