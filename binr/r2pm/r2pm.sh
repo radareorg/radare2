@@ -26,6 +26,8 @@ export R2PMCACHE="$HOME/.r2pm.cache"
 eval $(r2 -H 2> /dev/null)
 export R2_VERSION
 
+[ -z "$R2PM_CLEAN_INSTALL" ] && export R2PM_CLEAN_INSTALL=0
+
 R2PM=$0
 R2PMCACHE_LOADED=0
 if [ -f ~/.r2pm.cache ]; then
@@ -487,15 +489,30 @@ R2PM_DEPS() {
 	if [ -n "${R2PM_IGNORE_DEPS}" ]; then
 		return
 	fi
+	if [ "$ACTION" != Install ]; then
+		return
+	fi
+	S="\$"
 	for a in "$@" ; do
 		echo "DEPENDS: $a"
-		r2pm -w "$a"
-		doInstall=$?
-		if [ "${R2PM_UPGRADE}" ]; then
+		doInstall=0
+		if [ "$R2PM_CLEAN_INSTALL" = 1 ]; then
 			doInstall=1
+		else
+			r2pm -l "$a${S}" | grep "^$a"
+			isInstalled=$?
+			doInstall=0
+			if [ $isInstalled = 1 ]; then
+				doInstall=1
+			fi
+			if [ "${R2PM_UPGRADE}" ]; then
+				doInstall=1
+			fi
 		fi
-		if [ $doInstall = 1 ]; then
-			r2pm -i "$a"
+		if [ "$doInstall" = 1 ]; then
+			${R2PM} clean "$a"
+			export R2PM_CLEAN_INSTALL=1
+			${R2PM} install "$a"
 		fi
 	done
 }
@@ -641,6 +658,7 @@ case "$1" in
 	;;
 -ci)
 	shift
+	export R2PM_CLEAN_INSTALL=1
 	${R2PM} clean $*
 	${R2PM} install $*
 	;;
