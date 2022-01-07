@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2022 - pancake, maijin */
 
 #include <r_core.h>
 #include <r_util/r_graph_drawable.h>
@@ -4219,8 +4219,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_list_sort (core->anal->fcns, cmpname);
 				break;
 			}
-			core->anal->fcns->sorted = true;
-			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {

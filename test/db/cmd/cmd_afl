@@ -4,13 +4,13 @@ CMDS=<<EOF
 aa
 afn aaa @ 0x100001245
 ?e afls
-afls~:0..10
+afls;afl~:0..10
 ?e aflsn
-aflsn~:0..10
+aflsn;afl~:0..10
 ?e aflsb
-aflsb~:0..10
+aflsb;afl~:0..10
 ?e aflss
-aflss~:0..10
+aflss;afl~:0..10
 EOF
 EXPECT=<<EOF
 afls
