@@ -16,6 +16,9 @@ static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	ut32 data = r_read_le32 (buf);
 	HexInsn hi = {0};
 	int size = hexagon_disasm_instruction (data, &hi, (ut32) addr);
+	if (size > 0 && mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = strdup (hi.mnem);
+	}
 	op->size = size;
 	if (size < 1) {
 		return size;
@@ -105,7 +108,7 @@ RAnalPlugin r_anal_plugin_hexagon = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_hexagon_v6,
+	.data = &r_anal_plugin_hexagon,
 	.version = R2_VERSION
 };
 #endif

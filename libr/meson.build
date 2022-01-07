@@ -191,7 +191,6 @@ asm_plugins += [
   'dcpu16',
   'gb',
   'h8300',
-  'hexagon',
   'i4004',
   'i8080',
   'java',
