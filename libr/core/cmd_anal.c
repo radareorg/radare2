@@ -4197,9 +4197,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		case 's': // "afls"
 			switch (input[3]) {
+			default:
 			case '?':
 				r_core_cmd_help (core, help_msg_afls);
-				break;
+				return true;
+			case 0: // default for "afls"
 			case 'a': // "aflsa"
 				core->anal->fcns->sorted = false;
 				r_list_sort (core->anal->fcns, cmpaddr);
@@ -4216,11 +4218,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				core->anal->fcns->sorted = false;
 				r_list_sort (core->anal->fcns, cmpname);
 				break;
-			default:
-				core->anal->fcns->sorted = false;
-				r_list_sort (core->anal->fcns, cmpaddr);
-				break;
 			}
+			core->anal->fcns->sorted = true;
+			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {
