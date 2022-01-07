@@ -2439,7 +2439,9 @@ static int cmd_panels(void *data, const char *input) {
 	}
 	if (*input == '.') {
 		const char *f = r_str_trim_head_ro (input + 1);
-		r_core_visual_slides (core, f);
+		if (*f) {
+			r_core_visual_slides (core, f);
+		}
 		return false;
 	}
 	if (*input == '?') {

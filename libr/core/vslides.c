@@ -84,6 +84,10 @@ static void render(RCore *core, RList *list, int page) {
 
 R_API void r_core_visual_slides(RCore *core, const char *file) {
 	bool having_fun = true;
+	r_return_if_fail (core && file);
+	if (!*file) {
+		return;
+	}
 	char *data = r_file_slurp (file, NULL);
 	if (!data) {
 		eprintf ("Cannot open file.\n");
