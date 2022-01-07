@@ -264,6 +264,13 @@ static const char *help_msg_pdp[] = {
 	NULL
 };
 
+static const char *help_msg_ph[] = {
+	"Usage:", "ph", " [algorithm] ([size])",
+	"ph", " md5", "compute md5 hash of current block",
+	"ph.", " sha1 32 @ 0x1000", "calculate sha1 of 32 bytes starting at 0x1000",
+	NULL
+};
+
 static const char *help_msg_pdr[] = {
 	"Usage:", "pdr", "Disassemble N instructions following execution flow from current PC",
 	"pdr", "", "recursive disassemble across the function graph",
@@ -2906,7 +2913,11 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	const char *ptr;
 	int pos = 0, handled_cmd = false;
 
-	if (!*input || *input == '?') {
+	if (*input == '?') {
+		r_core_cmd_help (core, help_msg_ph);
+		return true;
+	}
+	if (!*input) {
 		algolist (1);
 		return true;
 	}

@@ -2119,7 +2119,7 @@ static void cmd_search_aF(RCore *core, const char *input) {
 				}
 				r_str_trim (s);
 				if (strstr (s, input)) {
-					eprintf ("0x%08"PFMT64x" %s: %s\n", addr, fcn->name, s);
+					r_cons_printf ("0x%08"PFMT64x" %s: %s\n", addr, fcn->name, s);
 				}
 				free (s);
 			}
