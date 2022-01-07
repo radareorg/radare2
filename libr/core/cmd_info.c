@@ -465,7 +465,6 @@ static bool isKnownPackage(const char *cn) {
 
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	bool newline = r_cons_is_interactive ();
 	int fd = r_io_fd_get_current (core->io);
 	RIODesc *desc = r_io_desc_get (core->io, fd);
 	int i;
@@ -558,7 +557,6 @@ static int cmd_info(void *data, const char *input) {
 			// TODO: Might be nice to reload a bin at a specified offset?
 			__r_core_bin_reload (core, NULL, baddr);
 			r_core_block_read (core);
-			newline = false;
 		}
 		break;
 		case 'k': // "ik"
@@ -630,7 +628,6 @@ static int cmd_info(void *data, const char *input) {
 				pj_end (pj);
 			} else {
 				r_bin_list_archs (core->bin, NULL, 1);
-				newline = false;
 			}
 			break;
 		case 'E': // "iE"
@@ -707,7 +704,6 @@ static int cmd_info(void *data, const char *input) {
 							r_cons_printf ("%s %s\n", fh_new->type, fh_new->hex);
 						}
 					}
-					newline = false;
 				}
 				r_list_free (old_hashes);
 			}
@@ -819,7 +815,6 @@ static int cmd_info(void *data, const char *input) {
 			} else {
 				r_bin_list (core->bin, pj, json);
 			}
-			newline = false;
 			goto done;
 		}
 		case 's': { // "is"
@@ -847,7 +842,7 @@ static int cmd_info(void *data, const char *input) {
 					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 				} else if (input[1] == 'q' && input[2] == 'q') {
 					mode = R_MODE_SIMPLEST;
-					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 3, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 				} else if (input[1] == 'q' && input[2] == '.') {
 					mode = R_MODE_SIMPLE;
 					RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, 0);
@@ -1133,7 +1128,6 @@ static int cmd_info(void *data, const char *input) {
 						(strpurge && *strpurge)? ",": "",
 						addr);
 				core->tmpseek = old_tmpseek;
-				newline = false;
 			} else if (input[1] == 'z') { // "izz"
 				switch (input[2]) {
 				case 'z':// "izzz"
@@ -1467,8 +1461,6 @@ done:
 		}
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
-	} else if (newline) {
-		r_cons_newline ();
 	}
 redone:
 	return 0;
