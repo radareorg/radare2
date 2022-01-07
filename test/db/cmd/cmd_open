@@ -491,7 +491,6 @@ mode     rwx
 format   any
 iorw     true
 block    0x100
-
 EOF
 RUN
 

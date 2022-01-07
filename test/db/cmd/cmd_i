@@ -3531,6 +3531,28 @@ block    0x100
 EOF
 RUN
 
+NAME=isqq
+FILE=bins/elf/redpill
+CMDS=<<EOF
+s main
+is.
+isq.
+isqq.
+is~?
+isq~?
+EOF
+EXPECT=<<EOF
+
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+41  0x0000142e 0x0000142e GLOBAL FUNC 563      main
+0x0000142e 563 main
+main
+45
+42
+EOF
+RUN
+
 NAME=iM command
 FILE=bins/elf/redpill
 CMDS=iM
