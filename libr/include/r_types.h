@@ -400,24 +400,6 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 #endif
 
-#ifndef eprintf
-#define eprintf(...) fprintf (stderr, __VA_ARGS__)
-
-#define EPRINT_STR(x) eprintf (#x ": \"%s\"\n", x)
-#define EPRINT_CHAR(x) eprintf (#x ": %c\n", x)
-#define EPRINT_INT(x) eprintf (#x ": %d (0x%x)\n", x, x)
-#define EPRINT_BOOL(x) eprintf (#x ": %s\n", x? "true": "false")
-
-#define EPRINT_UT64(x) eprintf (#x ": %" PFMT64u " (0x%" PFMT64x ")\n", x, x)
-#define EPRINT_ST64(x) eprintf (#x ": %" PFMT64d " (0x%" PFMT64x ")\n", x, x)
-#define EPRINT_UT32(x) eprintf (#x ": %" PFMT32u " (0x%" PFMT32x ")\n", x, x)
-#define EPRINT_ST32(x) eprintf (#x ": %" PFMT32d " (0x%" PFMT32x ")\n", x, x)
-#define EPRINT_UT16(x) eprintf (#x ": %hu (0x%hx)\n", x, x)
-#define EPRINT_ST16(x) eprintf (#x ": %hd (0x%hx)\n", x, x)
-#define EPRINT_UT8(x) eprintf (#x ": %hhu (0x%hhx)\n", x, x)
-#define EPRINT_ST8(x) eprintf (#x ": %hhd (0x%hhx)\n", x, x)
-#endif
-
 #ifndef typeof
 #define typeof(arg) __typeof__(arg)
 #endif
@@ -453,10 +435,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define LDBLFMT "f"
 #define HHXFMT  "x"
 #else
-#define PFMT64x "llx"
-#define PFMT64d "lld"
-#define PFMT64u "llu"
-#define PFMT64o "llo"
+#define PFMT64x PRIx64
+#define PFMT64d PRId64
+#define PFMT64u PRIu64
+#define PFMT64o PRIo64
 #define PFMTSZx "zx"
 #define PFMTSZd "zd"
 #define PFMTSZu "zu"
@@ -475,6 +457,25 @@ static inline void *r_new_copy(int size, void *data) {
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
+
+#ifndef eprintf
+#define eprintf(...) fprintf (stderr, __VA_ARGS__)
+
+#define EPRINT_STR(x) eprintf (#x ": \"%s\"\n", x)
+#define EPRINT_CHAR(x) eprintf (#x ": %c\n", x)
+#define EPRINT_INT(x) eprintf (#x ": %d (0x%x)\n", x, x)
+#define EPRINT_BOOL(x) eprintf (#x ": %s\n", x? "true": "false")
+
+#define EPRINT_UT64(x) eprintf (#x ": %" PFMT64u " (0x%" PFMT64x ")\n", x, x)
+#define EPRINT_ST64(x) eprintf (#x ": %" PFMT64d " (0x%" PFMT64x ")\n", x, x)
+#define EPRINT_UT32(x) eprintf (#x ": %" PFMT32u " (0x%" PFMT32x ")\n", x, x)
+#define EPRINT_ST32(x) eprintf (#x ": %" PFMT32d " (0x%" PFMT32x ")\n", x, x)
+#define EPRINT_UT16(x) eprintf (#x ": %hu (0x%hx)\n", x, x)
+#define EPRINT_ST16(x) eprintf (#x ": %hd (0x%hx)\n", x, x)
+#define EPRINT_UT8(x) eprintf (#x ": %hhu (0x%hhx)\n", x, x)
+#define EPRINT_ST8(x) eprintf (#x ": %hhd (0x%hhx)\n", x, x)
+#endif
+
 
 #if __APPLE__
 # if __i386__
