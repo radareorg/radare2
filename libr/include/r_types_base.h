@@ -8,17 +8,18 @@ extern "C" {
 #include <ctype.h>
 #include <sys/types.h>
 #include <limits.h>
+#include <stdint.h>
+#include <stdbool.h>
 
-#define cut8 const unsigned char
-#define ut64 unsigned long long
-#define st64 long long
-#define ut32 unsigned int
-#define st32 int
-#define ut16 unsigned short
-#define st16 short
-#define ut8 unsigned char
-#define st8 signed char
-#define boolt int
+#define cut8 const uint8_t
+#define ut64 uint64_t
+#define st64 int64_t
+#define ut32 uint32_t
+#define st32 int32_t
+#define ut16 uint16_t
+#define st16 int16_t
+#define ut8 uint8_t
+#define st8 int8_t
 
 #if defined(_MSC_VER)
 # define R_ALIGNED(x) __declspec(align(x))
