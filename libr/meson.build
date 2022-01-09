@@ -232,7 +232,7 @@ asm_plugins += [
 if no_user_plugins
   if use_gpl
     asm_plugins += [
-      'z80',
+      # 'z80',
       'arm_gnu',
       'cris_gnu',
   #    'hppa_gnu',

@@ -8,6 +8,7 @@
 #include <string.h>
 #include "z80_tab.h"
 
+// deprecate this file completely
 static ut8 z80_op_24_branch_index_res(ut8 hex) {
 	if (hex < 0x40) {
 		return hex;
@@ -68,7 +69,7 @@ static int z80OpLength(const ut8 *buf, int len) {
 }
 
 // #include'd in asm/p/asm_z80.c
-FUNC_ATTR_USED static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
+FUNC_ATTR_USED static int z80Disass(RAsmOp *op, const ut8 *buf, int len) {
 	int ret = z80OpLength (buf, len);
 	const z80_opcode *z_op;
 	const char **cb_tab;

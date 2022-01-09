@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2022 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -264,7 +264,6 @@ extern RAsmPlugin r_asm_plugin_x86_nz;
 extern RAsmPlugin r_asm_plugin_xap;
 extern RAsmPlugin r_asm_plugin_xcore_cs;
 extern RAsmPlugin r_asm_plugin_xtensa;
-extern RAsmPlugin r_asm_plugin_z80;
 extern RAsmPlugin r_asm_plugin_arm_v35;
 extern RAsmPlugin r_asm_plugin_pyc;
 extern RAsmPlugin r_asm_plugin_pdp11_gnu;
