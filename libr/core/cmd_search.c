@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2021 - pancake */
+/* radare - LGPL - Copyright 2010-2022 - pancake */
 
 #include <ht_uu.h>
 #include <r_core.h>
@@ -176,6 +176,12 @@ static const char *help_msg_slash_c[] = {
 	"/ck", "", "Find well known constant tables from different hash and crypto algorithms",
 	"/cr", "", "Search for ASN1/DER private keys (RSA and ECC)",
 	NULL
+};
+
+static const char *help_msg_slash_re[] = {
+	"Usage:", "/re $$", "search references using linear esil emulation",
+	"/re", " [addr]", "target address is specified as addr",
+	NULL,
 };
 
 static const char *help_msg_slash_r[] = {
@@ -3430,7 +3436,7 @@ reread:
 		{
 		ut64 n = (input[1] == ' ' || (input[1] && input[2]==' '))
 			? r_num_math (core->num, input + 2): UT64_MAX;
-		if (n == 0LL) {
+		if (!n) {
 			eprintf ("Cannot find null references.\n");
 			break;
 		}
@@ -3456,9 +3462,7 @@ reread:
 			}
 			break;
 		case 'e': // "/re"
-			if (input[2] == '?') {
-				eprintf ("Usage: /re $$ - to find references to current address\n");
-			} else {
+			if (input[2] == ' ') {
 				RListIter *iter;
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
@@ -3473,6 +3477,9 @@ reread:
 					free (trg);
 					r_core_seek (core, curseek, true);
 				}
+			} else {
+				r_core_cmd_help (core, help_msg_slash_re);
+				dosearch = false;
 			}
 			break;
 		case 'r': // "/rr" - read refs
@@ -3529,7 +3536,9 @@ reread:
 			}
 			break;
 		case '?':
+		default:
 			r_core_cmd_help (core, help_msg_slash_r);
+			dosearch = false;
 			break;
 		}
 		}
@@ -3540,23 +3549,23 @@ reread:
 			r_core_cmd_help (core, help_msg_slash_a);
 			break;
 		case 'd': // "/ad"
-			dosearch = 0;
+			dosearch = false;
 			do_asm_search (core, &param, input + 1, 0, search_itv);
 			break;
 		case 'e': // "/ae"
-			dosearch = 0;
+			dosearch = false;
 			do_asm_search (core, &param, input + 2, 'e', search_itv);
 			break;
 		case 'c': // "/ac"
-			dosearch = 0;
+			dosearch = false;
 			do_asm_search (core, &param, input + 2, 'c', search_itv);
 			break;
 		case 'o':  // "/ao"
-			dosearch = 0;
+			dosearch = false;
 			do_asm_search (core, &param, input + 2, 'o', search_itv);
 			break;
 		case 'a': // "/aa"
-			dosearch = 0;
+			dosearch = false;
 			do_asm_search (core, &param, input + 2, 'a', search_itv);
 			break;
 		case 'i': // "/ai"
