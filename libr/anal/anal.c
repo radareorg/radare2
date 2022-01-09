@@ -697,6 +697,7 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 		b->anal = anal;
 		b->get_fcn_in = r_anal_get_fcn_in;
 		b->get_hint = r_anal_hint_get;
+		b->encode = (RAnalEncode)r_anal_opasm;
 		b->decode = (RAnalDecode)r_anal_op;
 		b->opinit = r_anal_op_init;
 		b->opfini = r_anal_op_fini;

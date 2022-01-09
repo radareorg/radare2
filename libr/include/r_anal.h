@@ -900,6 +900,7 @@ typedef struct r_anal_op_t {
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
 typedef RAnalHint *(* RAnalGetHint)(RAnal *anal, ut64 addr);
+typedef int (* RAnalEncode)(RAnal *anal, ut64 addr, const char *s, const ut8 *data, int len);
 typedef int (* RAnalDecode)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
 typedef void (* RAnalOpInit)(RAnalOp *op);
 typedef void (* RAnalOpFini)(RAnalOp *op);
@@ -908,6 +909,7 @@ typedef struct r_anal_bind_t {
 	RAnal *anal;
 	RAnalGetFcnIn get_fcn_in;
 	RAnalGetHint get_hint;
+	RAnalEncode encode;
 	RAnalDecode decode;
 	RAnalOpInit opinit;
 	RAnalOpFini opfini;
@@ -1285,8 +1287,9 @@ typedef struct r_anal_esil_dfg_node_t {
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 
-// TODO: rm data + len
+// TODO: use RBuffer instead of data+len?
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
+typedef int (*RAnalOpAsmCallback)(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
 
 typedef bool (*RAnalRegProfCallback)(RAnal *a);
 typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
@@ -1320,6 +1323,7 @@ typedef struct r_anal_plugin_t {
 
 	// legacy r_anal_functions
 	RAnalOpCallback op;
+	RAnalOpAsmCallback opasm;
 
 	// command extension to directly call any analysis functions
 	RAnalCmdExt cmd_ext;
@@ -1584,6 +1588,7 @@ R_API int r_anal_op_reg_delta(RAnal *anal, ut64 addr, const char *name);
 R_API bool r_anal_op_is_eob(RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask);
+R_API int r_anal_opasm(RAnal *anal, ut64 pc, const char *s, ut8 *outbuf, int outlen);
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
