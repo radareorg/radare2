@@ -1722,7 +1722,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 		lc.cmdsize = r_read_ble32 (&loadc[4], bin->big_endian);
 
 		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
-			bprintf ("Warning: mach0_header %d = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
+			bprintf ("Warning: mach0_header %d = cmdsize<1. (0x%"PFMT64x" vs 0x%"PFMT64x")\n", i,
 				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
 			break;
 		}
@@ -1996,7 +1996,7 @@ static int init_items(struct MACH0_(obj_t) *bin) {
 		lc.cmdsize = r_read_ble32 (&loadc[4], bin->big_endian);
 
 		if (lc.cmdsize < 1 || off + lc.cmdsize > bin->size) {
-			bprintf ("Warning: mach0_header %d = cmdsize<1. (0x%llx vs 0x%llx)\n", i,
+			bprintf ("Warning: mach0_header %d = cmdsize<1. (0x%"PFMT64x" vs 0x%"PFMT64x")\n", i,
 				(ut64)(off + lc.cmdsize), (ut64)(bin->size));
 			break;
 		}

@@ -2165,7 +2165,7 @@ static RList *classes(RBinFile *bf) {
 				bf->buf = orig_buf;
 
 				if (!klass->name) {
-					eprintf ("KLASS ERROR AT 0x%llx, is_classlist %d\n", pointer_to_class, is_classlist);
+					eprintf ("KLASS ERROR AT 0x%"PFMT64x", is_classlist %d\n", pointer_to_class, is_classlist);
 					klass->name = r_str_newf ("UnnamedClass%u", num_of_unnamed_class);
 					if (!klass->name) {
 						R_FREE (klass);
