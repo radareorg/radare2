@@ -158,7 +158,7 @@ static inline void __cons_write_ll(const char *buf, int len) {
 	if (I.fdout < 1) {
 		I.fdout = 1;
 	}
-	(void) write (I.fdout, buf, len);
+	R_IGNORE_RETURN (write (I.fdout, buf, len));
 #endif
 }
 

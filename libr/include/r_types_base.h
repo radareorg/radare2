@@ -27,6 +27,8 @@ extern "C" {
 # define R_ALIGNED(x) __attribute__((aligned(x)))
 #endif
 
+#define R_IGNORE_RETURN(x) if ((x)) {;}
+
 typedef R_ALIGNED(1) ut16 uut16;
 typedef R_ALIGNED(1) ut32 uut32;
 typedef R_ALIGNED(1) ut64 uut64;
