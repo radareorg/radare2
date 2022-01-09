@@ -284,7 +284,7 @@ ST_FUNC char *get_tok_str(int v, CValue *cv)
 	case TOK_CULLONG:
 		/* XXX: not quite exact, but only useful for testing  */
 		if (cv) {
-			sprintf (p, "%"PFMT64u, cv->ull);
+			sprintf (p, "%"PFMT64u, (ut64)cv->ull);
 		}
 		break;
 	case TOK_LCHAR:

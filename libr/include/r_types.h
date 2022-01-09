@@ -11,6 +11,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <stdint.h> // required for uint64_t
+#include <inttypes.h> // required for PRIx64
+
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
 #undef __BSD__

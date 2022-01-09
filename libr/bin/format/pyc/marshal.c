@@ -145,21 +145,19 @@ static pyc_object *get_int_object(RBuffer *buffer) {
 }
 
 static pyc_object *get_int64_object(RBuffer *buffer) {
-	pyc_object *ret = NULL;
 	bool error = false;
 	st64 i = get_st64 (buffer, &error);
 
 	if (error) {
 		return NULL;
 	}
-	ret = R_NEW0 (pyc_object);
-	if (!ret) {
-		return NULL;
-	}
-	ret->type = TYPE_INT64;
-	ret->data = r_str_newf ("%lld", i);
-	if (!ret->data) {
-		R_FREE (ret);
+	pyc_object *ret = R_NEW0 (pyc_object);
+	if (ret) {
+		ret->type = TYPE_INT64;
+		ret->data = r_str_newf ("%"PFMT64d, (st64)i);
+		if (!ret->data) {
+			R_FREE (ret);
+		}
 	}
 	return ret;
 }

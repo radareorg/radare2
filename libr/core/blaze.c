@@ -202,8 +202,8 @@ static void printFunctionCommands(RCore *core, fcn_t* fcn, const char *name) {
 	}
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {
-		r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %llu 0x%08"PFMT64x" 0x%08"PFMT64x"\n"
-			, fcn->addr, cur->start, cur->end - cur->start, cur->jump, cur->fail);
+		r_cons_printf ("afb+ 0x%08" PFMT64x " 0x%08" PFMT64x " %"PFMT64u" 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+			fcn->addr, cur->start, cur->end - cur->start, cur->jump, cur->fail);
 	}
 }
 

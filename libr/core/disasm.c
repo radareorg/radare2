@@ -3339,7 +3339,7 @@ static void ds_cdiv_optimization(RDisasmState *ds) {
 			if (comma && comma == end) {
 				divisor = revert_cdiv_magic (imm);
 				if (divisor) {
-					r_cons_printf (" ; CDIV: %lld * 2^n", divisor);
+					r_cons_printf (" ; CDIV: %"PFMT64d" * 2^n", divisor);
 					break;
 				}
 			}
