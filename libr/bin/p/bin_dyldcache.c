@@ -547,9 +547,10 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask, ut6
 	r_list_foreach (cache->bins, iter, bin) {
 		bool found_sample = false;
 
-		struct MACH0_(opts_t) opts;
+		struct MACH0_(opts_t) opts = {0};
 		opts.verbose = bf->rbin->verbose;
 		opts.header_at = bin->header_at;
+		opts.symbols_off = 0;
 
 		struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (cache->buf, &opts);
 		if (!mach0) {
@@ -1723,9 +1724,10 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			continue;
 		}
 
-		struct MACH0_(opts_t) opts;
+		struct MACH0_(opts_t) opts = {0};
 		opts.verbose = bf->rbin->verbose;
 		opts.header_at = bin->header_at;
+		opts.symbols_off = 0;
 
 		struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (cache->buf, &opts);
 		if (!mach0) {
