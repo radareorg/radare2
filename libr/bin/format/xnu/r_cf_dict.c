@@ -485,7 +485,7 @@ static void r_cf_value_integer_free(RCFValueInteger *integer) {
 }
 
 static void r_cf_value_integer_print(RCFValueInteger *integer) {
-	printf ("%llu", integer->value);
+	printf ("%"PFMT64u, integer->value);
 }
 
 static RCFValueData *r_cf_value_data_new(char *string) {

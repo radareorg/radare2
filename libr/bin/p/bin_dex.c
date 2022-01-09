@@ -657,7 +657,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 
 	rbin->cb_printf ("      positions     :\n");
 	r_list_foreach (debug_positions, iter2, position) {
-		rbin->cb_printf ("        0x%04"PFMT64x" line=%llu\n",
+		rbin->cb_printf ("        0x%04"PFMT64x" line=%"PFMT64u"\n",
 				 position->address, position->line);
 	}
 
