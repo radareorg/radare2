@@ -151,7 +151,6 @@ int qnxr_connect(libqnxr_t *g, const char *host, int port) {
 	g->connected = 0;
 	g->mid = 0;
 
-
 	memmove (g->host, host, strlen (host) + 1);
 	g->port = port;
 
