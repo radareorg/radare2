@@ -1184,7 +1184,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				} else if (base == -8) {
 					long long w = r_read_ble64 (buf + j, p && p->big_endian);
 					r_print_cursor (p, j, 8, 1);
-					printfmt ("%23" PFMT64d " ", w);
+					printfmt ("%23" PFMT64d " ", (st64)w);
 					r_print_cursor (p, j, 8, 0);
 					j += 7;
 				} else if (base == -1) {
