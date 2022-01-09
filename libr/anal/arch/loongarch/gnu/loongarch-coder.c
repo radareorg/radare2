@@ -398,9 +398,11 @@ loongarch_expand_macro_with_format_map (
 	if ('1' <= *src && *src <= '9')
 	  {
 	    size_t i = *src - '1';
-	    const char *t = map (esc1s[i], esc2s[i], arg_strs[i]);
-	    while (*t)
-	      *dest++ = *t++;
+            if (i < MAX_ARG_NUM_PLUS_2) {
+	      const char *t = map (esc1s[i], esc2s[i], arg_strs[i]);
+	      while (*t)
+	        *dest++ = *t++;
+            }
 	  }
 	else if (*src == '%')
 	  *dest++ = '%';
