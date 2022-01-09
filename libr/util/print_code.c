@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -118,6 +118,27 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		break;
 	case 'A': // "pcA"
 		/* implemented in core because of disasm :( */
+		break;
+	case 'c': // "pcc"
+		p->cb_printf ("const char cstr[%d] = \"", len);
+		{
+		int col = 0;
+		const int max_cols = 60;
+		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+			if (col == 0 || col > max_cols) {
+				p->cb_printf ("\"\\\n  \"");
+				col = 0;
+			}
+			if (IS_PRINTABLE (buf[i])) {
+				p->cb_printf ("%c", buf[i]);
+				col ++;
+			} else {
+				p->cb_printf ("\\x%02x", buf[i]);
+				col += 4;
+			}
+		}
+		}
+		p->cb_printf ("\";\n", len);
 		break;
 	case 'a': // "pca"
 		p->cb_printf ("shellcode:");

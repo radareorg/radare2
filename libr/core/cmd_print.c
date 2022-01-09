@@ -48,6 +48,7 @@ static const char *help_msg_pc[] = {
 	"pc*", "", "print 'wx' r2 commands",
 	"pcA", "", ".bytes with instructions in comments",
 	"pca", "", "GAS .byte blob",
+	"pcc", "", "C char * multiline string",
 	"pcd", "", "C dwords (8 byte)",
 	"pch", "", "C half-words (2 byte)",
 	"pci", "", "C array of bytes with instructions",
