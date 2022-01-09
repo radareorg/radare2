@@ -656,6 +656,16 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 					ase = findAssembler (a, NULL);
 				}
 			}
+			if (!ase && a->analb.anal) {
+				// disassemble using the analysis plugin if found
+				ase = NULL;
+				RAnalOp aop;
+				a->analb.opinit (&aop);
+				ut8 buf[256] = {0};
+				ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
+				r_strbuf_setbin (&op->buf, buf, R_MIN (ret, sizeof (buf)));
+				a->analb.opfini (&aop);
+			}
 		} else {
 			ase = a->cur->assemble;
 		}

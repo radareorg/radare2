@@ -87,6 +87,17 @@ static int defaultCycles(RAnalOp *op) {
 	}
 }
 
+R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
+	if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
+		// use core binding to set asm.bits correctly based on the addr
+		// this is because of the hassle of arm/thumb
+		int ret = anal->cur->opasm (anal, addr, s, outbuf, outlen);
+		/* consider at least 1 byte to be part of the opcode */
+		return ret;
+	}
+	return 0;
+}
+
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	r_anal_op_init (op);
 	r_return_val_if_fail (anal && op && len > 0, -1);

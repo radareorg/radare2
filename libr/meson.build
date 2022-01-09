@@ -75,7 +75,6 @@ if not no_user_plugins
     parse_plugins += [ 'v850_pseudo' ]
   endif
   if user_plugins.contains('wasm')
-    asm_plugins += [ 'wasm' ]
     anal_plugins += [ 'wasm' ]
     parse_plugins += [ 'wasm_pseudo' ]
   endif
@@ -221,7 +220,6 @@ asm_plugins += [
   'v810',
   'v850',
   'vax',
-  'wasm',
   'ws',
   'x86_as',
   'x86_cs',
