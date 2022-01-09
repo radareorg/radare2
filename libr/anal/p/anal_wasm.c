@@ -18,6 +18,9 @@ static ut64 addr_old = UT64_MAX;
 // finds the address of the call function (essentially where to jump to).
 static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
 	ut32 fcn_id;
+	if (!anal->binb.bin) {
+		return UT64_MAX;
+	}
 	if (len < 2 || !read_u32_leb128 (&data[1], &data[len - 1], &fcn_id)) {
 		return UT64_MAX;
 	}
@@ -30,6 +33,9 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 	ut8 *end = ptr + sizeof (buffer);
 	WasmOp wop = {{0}};
 	int size = 0;
+	if (!anal->iob.io) {
+		return false;
+	}
 	while (anal->iob.read_at (anal->iob.io, address, buffer, sizeof (buffer))) {
 		size = wasm_dis (&wop, ptr, end - ptr);
 		if (!wop.txt || (wop.type == WASM_TYPE_OP_CORE && wop.op.core == WASM_OP_TRAP)) {
