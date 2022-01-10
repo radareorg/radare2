@@ -54,6 +54,7 @@ R_API void r_spaces_free(RSpaces *sp) {
 }
 
 R_API void r_spaces_fini(RSpaces *sp) {
+	r_event_free (sp->event);
 	r_list_free (sp->spacestack);
 	sp->spacestack = NULL;
 	r_crbtree_free (sp->spaces);

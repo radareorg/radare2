@@ -234,7 +234,7 @@ R_API RFlag *r_flag_new(void) {
 	f->tags = sdb_new0 ();
 	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
 	f->by_off = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
-	new_spaces(f);
+	new_spaces (f);
 	return f;
 }
 
