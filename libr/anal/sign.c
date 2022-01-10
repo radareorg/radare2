@@ -1031,8 +1031,8 @@ R_API bool r_sign_add_name(RAnal *a, const char *name, const char *realname) {
 	RSignItem *it = item_new_named (a, name);
 	if (it && (it->realname = strdup (realname))) {
 		retval = r_sign_add_item (a, it);
-		r_sign_item_free (it);
 	}
+	r_sign_item_free (it);
 	return retval;
 }
 
