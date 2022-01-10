@@ -1167,7 +1167,7 @@ static RList *collect_addresses(RCore *core) {
 	* [ ] call ref analysis
 	result is then sorted and uniqified
 #endif
-	RList *list = r_list_newf (free);
+	RList *list = r_list_newf (free), *out;
 	RListIter *iter, *iter2;
 	ut64 *n;
 	RBinSymbol *sym;
@@ -1187,8 +1187,9 @@ static RList *collect_addresses(RCore *core) {
 	// find all calls and mark the destinations as function entrypoints
 	// r_core_search_preludes (core, true); // __prelude_cb_hit uses globals and calls 'af', should be changed to just return a list for later processing
 	r_list_sort (list, sort64);
-	r_list_uniq (list, sort64);
-	return list;
+	out = r_list_uniq (list, sort64);
+	free (list);
+	return out;
 }
 
 static void single_block_analysis(RCore *core) {
@@ -1210,8 +1211,10 @@ static void single_block_analysis(RCore *core) {
 			if (fcn) {
 				r_anal_function_add_bb (core->anal, fcn, at, len, UT64_MAX, UT64_MAX, 0);
 			}
+			free (name);
 		}
 	}
+	r_list_free (list);
 }
 
 /* set flags for every function */
