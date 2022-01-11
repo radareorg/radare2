@@ -1272,8 +1272,8 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	return true;
 }
 
-static int srclineCmp(const void *a, const void *b) {
-	return r_str_cmp (a, b, -1);
+static ut64 srclineVal(const void *a) {
+	return r_str_hash64 (a);
 }
 
 static int bin_source(RCore *r, PJ *pj, int mode) {
@@ -1306,11 +1306,10 @@ static int bin_source(RCore *r, PJ *pj, int mode) {
 		r_list_free (list);
 	}
 	r_cons_printf ("[Source file]\n");
-	RList *uniqlist = r_list_uniq (final_list, srclineCmp);
-	r_list_foreach (uniqlist, iter2, srcline) {
+	r_list_uniq_inplace (final_list, srclineVal);
+	r_list_foreach (final_list, iter2, srcline) {
 		r_cons_printf ("%s\n", srcline);
 	}
-	r_list_free (uniqlist);
 	r_list_free (final_list);
 	return true;
 }

@@ -32,6 +32,7 @@ typedef struct r_list_range_t {
 
 // RListComparator should return -1, 0, 1 to indicate "a<b", "a==b", "a>b".
 typedef int (*RListComparator)(const void *a, const void *b);
+typedef ut64 (*RListComparatorItem)(const void *a);
 
 #define ROFList_Parent RList
 typedef struct r_oflist_t {
@@ -87,7 +88,8 @@ R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp)
 R_API void r_list_sort(RList *list, RListComparator cmp);
 R_API void r_list_merge_sort(RList *list, RListComparator cmp);
 R_API void r_list_insertion_sort(RList *list, RListComparator cmp);
-R_API RList *r_list_uniq(const RList *list, RListComparator cmp);
+R_API RList *r_list_uniq(const RList *list, RListComparatorItem cmp);
+R_API int r_list_uniq_inplace(RList *list, RListComparatorItem cmp);
 R_API void r_list_init(RList *list);
 R_API void r_list_delete(RList *list, RListIter *iter);
 R_API bool r_list_delete_data(RList *list, void *ptr);

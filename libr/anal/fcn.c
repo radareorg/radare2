@@ -1607,7 +1607,6 @@ R_API int r_anal_function_del(RAnal *a, ut64 addr) {
 	RAnalFunction *fcn;
 	RListIter *iter, *iter_tmp;
 	r_list_foreach_safe (a->fcns, iter, iter_tmp, fcn) {
-		D eprintf ("fcn at %"PFMT64x" %"PFMT64x"\n", fcn->addr, addr);
 		if (fcn->addr == addr) {
 			r_anal_function_delete (fcn);
 		}
