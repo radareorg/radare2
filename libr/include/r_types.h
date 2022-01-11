@@ -5,12 +5,12 @@
 #define _FILE_OFFSET_BITS 64
 
 // defines like IS_DIGIT, etc'
+#include <r_types_base.h>
 #include "r_util/r_str_util.h"
 #include <r_userconf.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
-
 #include <stdint.h> // required for uint64_t
 #include <inttypes.h> // required for PRIx64
 
@@ -243,8 +243,6 @@
 #else
 #define R_PRINTF_CHECK(fmt, dots)
 #endif
-
-#include <r_types_base.h>
 
 #undef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64

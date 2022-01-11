@@ -2356,6 +2356,11 @@ R_API RGraph *r_core_anal_codexrefs(RCore *core, ut64 addr) {
 	return graph;
 }
 
+static ut64 RAnalRef_val(const void *_ref1) {
+	const RAnalRef* ref1 = _ref1;
+	return ref1->addr;
+}
+
 static int RAnalRef_cmp(const RAnalRef* ref1, const RAnalRef* ref2) {
 	return ref1->addr != ref2->addr;
 }
@@ -2813,7 +2818,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 		// Get all refs for a function
 		refs = r_core_anal_fcn_get_calls (core, fcn);
 		// Uniquify the list by ref->addr
-		refs = r_list_uniq (refs, (RListComparator)RAnalRef_cmp);
+		r_list_uniq_inplace (refs, RAnalRef_val);
 
 		// don't enter for functions with 0 refs
 		if (!r_list_empty (refs)) {
@@ -3219,6 +3224,7 @@ static int fcn_list_detail(RCore *core, RList *fcns) {
 }
 
 static int fcn_list_table(RCore *core, const char *q, int fmt) {
+	char xref[128], ccstr[128], castr[128];
 	RAnalFunction *fcn;
 	RListIter *iter;
 	RTable *t = r_core_table (core, "fcns");
@@ -3236,21 +3242,19 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		const char *fcnSize = sdb_fmt ("%"PFMT64u, r_anal_function_linear_size (fcn));
 		const char *nbbs = sdb_fmt ("%d", r_list_length (fcn->bbs)); // r_anal_function_size (fcn));
 		RList *xrefs = r_anal_function_get_xrefs (fcn);
-		char xref[128], ccstr[128];
 		snprintf (xref, sizeof (xref), "%d", r_list_length (xrefs));
 		r_list_free (xrefs);
 
-		RList * calls = r_core_anal_fcn_get_calls (core, fcn);
-		// Uniquify the list by ref->addr
-		calls = r_list_uniq (calls, (RListComparator)RAnalRef_cmp);
-		const char *callstr = sdb_fmt ("%d", r_list_length (calls));
+		RList *calls = r_core_anal_fcn_get_calls (core, fcn);
+		r_list_uniq_inplace (calls, (RListComparatorItem)RAnalRef_val);
+		snprintf (castr, sizeof (castr), "%d", r_list_length (calls));
 		r_list_free (calls);
 		snprintf (ccstr, sizeof (ccstr), "%d", r_anal_function_complexity (fcn));
 
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, nbbs, xref, callstr, ccstr, NULL);
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, nbbs, xref, castr, ccstr, NULL);
 	}
 	if (r_table_query (t, q)) {
-		char *s = (fmt== 'j')
+		char *s = (fmt == 'j')
 			? r_table_tojson (t)
 			: r_table_tostring (t);
 		r_cons_printf ("%s\n", s);

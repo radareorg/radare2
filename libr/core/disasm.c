@@ -2249,6 +2249,12 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	ds->show_comment_right = scr;
 }
 
+static ut64 flagVal(const void *a) {
+	const RFlagItem *fa = a;
+	return r_str_hash64 (fa->realname? fa->realname: fa->name);
+}
+
+#if 0
 static int flagCmp(const void *a, const void *b) {
 	const RFlagItem *fa = a;
 	const RFlagItem *fb = b;
@@ -2257,6 +2263,7 @@ static int flagCmp(const void *a, const void *b) {
 	}
 	return strcmp (fa->name, fb->name);
 }
+#endif
 
 static void __preline_flag(RDisasmState *ds, RFlagItem *flag) {
 	ds_newline (ds);
@@ -2299,13 +2306,14 @@ static bool is_first(const char *fs) {
 	}
 	return false;
 }
+
 static RList *custom_sorted_flags(const RList *flaglist) {
 	RListIter *iter;
 	RFlagItem *flag;
 	if (!flaglist) {
 		return NULL;
 	}
-	RList *list = r_list_uniq (flaglist, flagCmp);
+	RList *list = r_list_uniq (flaglist, flagVal);
 	RList *res = r_list_newf (NULL);
 	RList *rest = r_list_newf (NULL);
 	RList *tail = r_list_newf (NULL);

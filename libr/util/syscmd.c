@@ -289,6 +289,12 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	return res;
 }
 
+static ut64 valstr(const void *_a) {
+	const char *a = _a;
+	return r_str_hash64 (a);
+}
+
+
 static int cmpstr(const void *_a, const void *_b) {
 	const char *a = _a, *b = _b;
 	return (int)strcmp (a, b);
@@ -390,7 +396,7 @@ R_API char *r_syscmd_uniq(const char *file) {
 			eprintf ("No such file or directory\n");
 		} else {
 			list = r_str_split_list (data, "\n", 0);
-			RList *uniq_list = r_list_uniq (list, cmpstr);
+			RList *uniq_list = r_list_uniq (list, valstr);
 			data = r_list_to_str (uniq_list, '\n');
 			r_list_free (uniq_list);
 			r_list_free (list);
