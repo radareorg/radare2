@@ -1,3 +1,16 @@
+NAME=pcc
+FILE=README.md
+CMDS=pcc
+
+EXPECT=<<EOF
+const char cstr[256] = ""\
+  "Radare2 Regression Test Suite\n=============================\n\n"\
+  "A set of regression tests for Radare2 (http://radare.org).\n\nO"\
+  "riginally based on work by and now in collaboration with panc"\
+  "ake.\n\nDirectory Hierarchy\n-------------------\n\n * db/:       "\
+  "   The tests";
+EOF
+RUN
 NAME=endian tests: pv4
 FILE=-
 CMDS=<<EOF

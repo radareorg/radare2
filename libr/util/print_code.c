@@ -120,25 +120,47 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		/* implemented in core because of disasm :( */
 		break;
 	case 'c': // "pcc"
-		p->cb_printf ("const char cstr[%d] = \"", len);
 		{
-		int col = 0;
-		const int max_cols = 60;
-		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
-			if (col == 0 || col > max_cols) {
-				p->cb_printf ("\"\\\n  \"");
-				col = 0;
+			int col = 0;
+			const int max_cols = 60;
+
+			p->cb_printf ("const char cstr[%d] = \"", len);
+			for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+				if (col == 0 || col > max_cols) {
+					p->cb_printf ("\"\\\n  \"");
+					col = 0;
+				}
+				ut8 ch = buf[i];
+				switch (ch) {
+				case '\\':
+					p->cb_printf ("\\\\");
+					break;
+				case '\t':
+					p->cb_printf ("\\t");
+					break;
+				case '\r':
+					p->cb_printf ("\\r");
+					break;
+				case '\n':
+					p->cb_printf ("\\n");
+					break;
+				default:
+					if (IS_PRINTABLE (buf[i])) {
+						if (buf[i] == '"') {
+							p->cb_printf ("\\\"");
+						} else {
+							p->cb_printf ("%c", buf[i]);
+						}
+					} else {
+						p->cb_printf ("\\x%02x", buf[i]);
+						col += 3;
+					}
+					break;
+				}
+				col += 1;
 			}
-			if (IS_PRINTABLE (buf[i])) {
-				p->cb_printf ("%c", buf[i]);
-				col ++;
-			} else {
-				p->cb_printf ("\\x%02x", buf[i]);
-				col += 4;
-			}
+			p->cb_printf ("\";\n");
 		}
-		}
-		p->cb_printf ("\";\n");
 		break;
 	case 'a': // "pca"
 		p->cb_printf ("shellcode:");
