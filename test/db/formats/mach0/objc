@@ -130,3 +130,15 @@ EXPECT=<<EOF
 0x100000c47 method 5 c    callMeNot
 EOF
 RUN
+
+NAME=macOS arm64e with DYLD_CHAINED_PTR_ARM64E_USERLAND24
+FILE=bins/mach0/TestMacOS-arm64e
+CMDS=<<EOF
+ic AppDelegate~:1..
+EOF
+EXPECT=<<EOF
+0x100003238 method AppDelegate      applicationDidFinishLaunching:
+0x100003288 method AppDelegate      applicationWillTerminate:
+0x1000032d8 method AppDelegate      applicationSupportsSecureRestorableState:
+EOF
+RUN
