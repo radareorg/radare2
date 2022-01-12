@@ -709,7 +709,6 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
 		off &= f->mask;
 	}
 	if (!r_flag_get (f, name)) {
-		f->is_dirty = true;
 		return r_flag_set (f, name, off, size);
 	}
 	int i, newNameSize = strlen (name);
@@ -945,7 +944,6 @@ R_API bool r_flag_move(RFlag *f, ut64 at, ut64 to) {
 	RFlagItem *item = r_flag_get_i (f, at);
 	if (item) {
 		r_flag_set (f, item->name, to, item->size);
-		f->is_dirty = true;
 		return true;
 	}
 	return false;
