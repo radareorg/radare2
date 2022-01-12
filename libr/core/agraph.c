@@ -4567,9 +4567,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'u':
 		{
-			if (!fcn) {
-				break;
-			}
 			RIOUndos *undo = r_io_sundo (core->io, core->offset);
 			if (undo) {
 				r_core_seek (core, undo->off, false);
@@ -4583,9 +4580,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		}
 		case 'U':
 		{
-			if (!fcn) {
-				break;
-			}
 			RIOUndos *undo = r_io_sundo_redo (core->io);
 			if (undo) {
 				r_core_seek (core, undo->off, false);
@@ -4598,6 +4592,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		}
 		case 'r':
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				g->layout = r_config_get_i (core->config, "graph.layout");
 				g->need_reload_nodes = true;
