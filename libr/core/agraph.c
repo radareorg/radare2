@@ -4620,9 +4620,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			} else {
 				r_core_cmd0 (core, "ecn");
 			}
-			if (!fcn) {
-				break;
-			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
