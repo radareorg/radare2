@@ -5,3 +5,4 @@ CMDS=aae
 EXPECT=<<EOF
 EOF
 RUN
+

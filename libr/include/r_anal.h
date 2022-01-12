@@ -1397,6 +1397,7 @@ typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
 // lifetime
 R_API void r_anal_block_ref(RAnalBlock *bb);
 R_API void r_anal_block_unref(RAnalBlock *bb);
+R_API void r_anal_block_reset(RAnal *a);
 
 // Create one block covering the given range.
 // This will fail if the range overlaps any existing blocks.
@@ -1424,6 +1425,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b);
 // Manually delete a block and remove it from all its functions
 // If there are more references to it than from its functions only, it will not be removed immediately!
 R_API void r_anal_delete_block(RAnalBlock *bb);
+R_API void r_anal_delete_block_at(RAnal *anal, ut64 addr);
 
 R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size);
 

@@ -178,7 +178,7 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, void
 			}
 		}
 	}
-	if (del_link) {
+	if (del_link && *del_link) {
 		del = *del_link;
 		if (q->child[q->child[0] == NULL]) {
 			q->child[q->child[0] == NULL]->parent = p;

@@ -97,11 +97,13 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	}
 
 	RAnalBlock *block;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, block) {
-		r_list_delete_data (block->fcns, fcn);
-		r_anal_block_unref (block);
+	RListIter *iter, *iter2;
+	r_list_foreach_safe (fcn->bbs, iter, iter2, block) {
+		r_anal_function_remove_block (fcn, block);
+		// r_list_delete_data (block->fcns, fcn);
+		//r_anal_block_unref (block);
 	}
+	// fcn->bbs->free = r_anal_block_unref;
 	r_list_free (fcn->bbs);
 
 	RAnal *anal = fcn->anal;

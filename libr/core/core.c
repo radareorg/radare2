@@ -2796,11 +2796,16 @@ static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	RCore *core = user;
 	REventIOWrite *iow = data;
 	if (r_config_get_i (core->config, "anal.detectwrites")) {
+		// works, but loses varnames and such, but at least is not crashing
+		char *cmd = r_str_newf ("af-0x%08"PFMT64x";af 0x%08"PFMT64x, iow->addr, iow->addr);
+		r_list_append (core->cmdqueue, cmd);
+#if 0
 		r_anal_update_analysis_range (core->anal, iow->addr, iow->len);
 		if (core->cons->event_resize && core->cons->event_data) {
 			// Force a reload of the graph
 			core->cons->event_resize (core->cons->event_data);
 		}
+#endif
 	}
 }
 

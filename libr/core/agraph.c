@@ -2206,7 +2206,9 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		R_FREE (saved_arena);
 		return;
 	}
-	r_list_sort (fcn->bbs, (RListComparator) bbcmp);
+	if (fcn->bbs) {
+		r_list_sort (fcn->bbs, (RListComparator) bbcmp);
+	}
 
 	shortcuts = r_config_get_i (core->config, "graph.nodejmps");
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -4300,7 +4302,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		exit_graph = true;
 		is_error = !ret;
 	}
-	get_bbupdate (g, core, fcn);
+	fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	if (fcn) {
+		get_bbupdate (g, core, fcn);
+		fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	}
 
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = grd;
@@ -4397,7 +4403,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				r_config_set_i (core->config, "graph.edges", e);
 				g->edgemode = e;
 				g->need_update_dim = true;
-				get_bbupdate (g, core, fcn);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (fcn) {
+					get_bbupdate (g, core, fcn);
+				}
 			}
 			break;
 		case '\\':
@@ -4415,7 +4424,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				}
 				r_config_set_i (core->config, "graph.linemode", e);
 				g->can->linemode = e;
-				get_bbupdate (g, core, fcn);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (fcn) {
+					get_bbupdate (g, core, fcn);
+				}
 			}
 			break;
 		case 13:
@@ -4548,7 +4560,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			disMode = (disMode + 1) % 3;
 			applyDisMode (core);
 			g->need_reload_nodes = true;
-			get_bbupdate (g, core, fcn);
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (fcn) {
+				get_bbupdate (g, core, fcn);
+			}
 			break;
 		case 'u':
 		{
@@ -4609,7 +4624,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				break;
 			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
-			get_bbupdate (g, core, fcn);
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+			if (fcn) {
+				get_bbupdate (g, core, fcn);
+			}
 			break;
 		case '$':
 			r_core_cmd (core, "dr PC=$$", 0);
@@ -4620,12 +4638,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_core_panels_root (core, core->panels_root);
 			break;
 		case '\'':
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				r_config_toggle (core->config, "graph.comments");
 				g->need_reload_nodes = true;
 			}
 			break;
 		case ';':
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				showcursor (core, true);
 				char buf[256];
@@ -4653,12 +4673,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case '(':
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				r_core_cmd0 (core, "wao recj@B:-1");
 				g->need_reload_nodes = true;
 			}
 			break;
 		case ')':
+			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				rotateAsmemu (core);
 				g->need_reload_nodes = true;
@@ -4668,7 +4690,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			{
 				showcursor (core, true);
 				r_core_visual_define (core, "", 0);
-				get_bbupdate (g, core, fcn);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				if (fcn) {
+					get_bbupdate (g, core, fcn);
+				}
 				showcursor (core, false);
 			}
 			break;

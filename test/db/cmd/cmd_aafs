@@ -1,0 +1,26 @@
+NAME=aafs
+FILE=bins/elf/arm32esilcrash
+CMDS=<<EOF
+aafs
+aflc
+ablc
+s 0x000081ac
+af-$$
+ablc
+af
+ablc
+ab-$$
+ablc
+ab-*
+ablc
+EOF
+EXPECT=<<EOF
+1921
+1921
+1920
+1923
+1922
+0
+EOF
+RUN
+
