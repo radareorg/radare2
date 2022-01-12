@@ -102,6 +102,7 @@ NAME=macOS arm64 with DYLD_CHAINED_PTR_64_OFFSET
 FILE=bins/mach0/hello-macos-arm64-chained
 CMDS=<<EOF
 ic Test
+ic~::
 EOF
 EXPECT=<<EOF
 class Test
@@ -111,6 +112,7 @@ class Test
 0x100003b68 method Test      methodWithTwoArgs:secondArg:
 0x100003be0 method Test      methodWithReturn
 0x100003aa0 method Test c    someStaticMethod
+0x1000080f8 [0x100003a7c - 0x100003be0]    356 class 0 Test :: NSObject
 EOF
 RUN
 
@@ -135,10 +137,13 @@ NAME=macOS arm64e with DYLD_CHAINED_PTR_ARM64E_USERLAND24
 FILE=bins/mach0/TestMacOS-arm64e
 CMDS=<<EOF
 ic AppDelegate~:1..
+ic~::
 EOF
 EXPECT=<<EOF
 0x100003238 method AppDelegate      applicationDidFinishLaunching:
 0x100003288 method AppDelegate      applicationWillTerminate:
 0x1000032d8 method AppDelegate      applicationSupportsSecureRestorableState:
+0x100008a70 [0x10000313c - 0x100003184]     72 class 0 ViewController :: NSViewController
+0x100008a98 [0x100003238 - 0x1000032d8]    160 class 0 AppDelegate :: NSObject
 EOF
 RUN
