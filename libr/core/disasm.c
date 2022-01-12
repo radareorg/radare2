@@ -1824,7 +1824,6 @@ static bool empty_signature(const char *s) {
 }
 
 static void ds_show_functions(RDisasmState *ds) {
-	RAnalFunction *f;
 	RCore *core = ds->core;
 	char *fcn_name;
 	bool fcn_name_alloc = false; // whether fcn_name needs to be freed by this function
@@ -1837,7 +1836,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	bool showSig = ds->show_fcnsig && ds->show_calls;
 	bool call = r_config_get_i (core->config, "asm.calls");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
-	f = r_anal_get_function_at (core->anal, ds->at);
+	RAnalFunction *f = r_anal_get_function_at (core->anal, ds->at);
 	if (!f) {
 		return;
 	}
@@ -2348,7 +2347,6 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 	//const char *beginch;
 	RFlagItem *flag;
 	RListIter *iter;
-	RAnalFunction *f = NULL;
 	if (!ds->show_flags) {
 		return;
 	}
@@ -2356,7 +2354,7 @@ static void ds_show_flags(RDisasmState *ds, bool overlapped) {
 	char addr[64] = {0};
 	ut64 switch_addr = UT64_MAX;
 	int case_start = -1, case_prev = 0, case_current = 0;
-	f = r_anal_get_function_at (ds->core->anal, ds->at);
+	RAnalFunction *f = r_anal_get_function_at (ds->core->anal, ds->at);
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
 	RList *uniqlist = custom_sorted_flags (flaglist);
 	int count = 0;

@@ -174,10 +174,11 @@ static const char *help_msg_ab[] = {
 	"Usage:", "ab", "# analyze basic block",
 	"ab", " [addr]", "show basic block information at given address",
 	"ab.", "", "same as: ab $$",
+	"ab-", "[addr]", "delete basic block at given address",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
 	"abj", " [addr]", "display basic block information in JSON",
-	"abl", "[,qj]", "list all basic blocks",
+	"abl", "[?] [.-cqj]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
 	"abt", "[?] [addr] [num]", "find num paths from current offset to addr",
 	NULL
@@ -187,6 +188,7 @@ static const char *help_msg_abl[] = {
 	"Usage:", "abl", "analyzed basicblocks listing",
 	"abl", "", "list all program-wide basic blocks analyzed",
 	"abl,", " [table-query]", "render the list using a table",
+	"ablc", "", "count how many basic blocks are registered",
 	"ablj", "", "in json format",
 	"ablq", "", "in quiet format",
 	NULL
@@ -1630,7 +1632,7 @@ static int var_cmd(RCore *core, const char *str) {
 		return true;
 	case 'd': // "afvd"
 		if (!fcn) {
-			eprintf ("Cannot find function.\n");
+			eprintf ("afvd: Cannot find function.\n");
 		} else if (str[1]) {
 			p = strchr (ostr, ' ');
 			if (!p) {
@@ -1688,7 +1690,7 @@ static int var_cmd(RCore *core, const char *str) {
 			free (ostr);
 			return true;
 		} else {
-			eprintf ("Cannot find function\n");
+			eprintf ("afvt: Cannot find function\n");
 			return false;
 		}
 	}
@@ -1711,7 +1713,7 @@ static int var_cmd(RCore *core, const char *str) {
 		break;
 	case '-': // "afv[bsr]-"
 		if (!fcn) {
-			eprintf ("Cannot find function\n");
+			eprintf ("afv: Cannot find function\n");
 			return false;
 		}
 		if (str[2] == '*') {
@@ -2512,6 +2514,14 @@ static void anal_bb_list(RCore *core, const char *input) {
 	RTable *table = NULL;
 	RBIter iter;
 	RAnalBlock *block;
+	if (mode == 'c') {
+		ut64 count = 0;
+		r_rbtree_foreach (core->anal->bb_tree, iter, block, RAnalBlock, _rb) {
+			count++;
+		}
+		r_cons_printf ("%"PFMT64d"\n", count);
+		return;
+	}
 	if (mode == 'j') {
 		pj = pj_new ();
 		pj_o (pj);
@@ -2941,8 +2951,6 @@ static bool anal_fcn_del_bb(RCore *core, const char *input) {
 			}
 			eprintf ("Cannot find basic block\n");
 		}
-	} else {
-		eprintf ("Cannot find function\n");
 	}
 	return false;
 }
@@ -3853,29 +3861,32 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 #endif
 }
 
-static int cmd_anal_fcn(RCore *core, const char *input) {
+int cmd_anal_fcn(RCore *core, const char *input) {
 	char i;
 
 	r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
 	case '-': // "af-"
-		if (!input[2]) {
+		if (!input[2]) { // "af-"
 			cmd_anal_fcn (core, "f-$$");
 			r_core_anal_undefine (core, core->offset);
-		} else if (!strcmp (input + 2, "*")) {
+		} else if (!strcmp (input + 2, "*")) { // "af-*"
 			RAnalFunction *f;
 			RListIter *iter, *iter2;
 			r_list_foreach_safe (core->anal->fcns, iter, iter2, f) {
+				ut64 addr = f->addr;
 				r_anal_del_jmprefs (core->anal, f);
-				r_core_anal_undefine (core, f->addr);
+				// r_anal_function_del_locs (core->anal, f->addr);
+			//	r_anal_function_del (core->anal, addr);
+				r_core_anal_undefine (core, addr);
 			}
 		} else {
 			ut64 addr = input[2]
 				? r_num_math (core->num, input + 2)
 				: core->offset;
+			// r_anal_function_del_locs (core->anal, addr);
+			// r_anal_function_del (core->anal, addr);
 			r_core_anal_undefine (core, addr);
-			r_anal_function_del_locs (core->anal, addr);
-			r_anal_function_del (core->anal, addr);
 		}
 		break;
 	case 'j': // "afj"
@@ -11658,6 +11669,17 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_cmdf (core, "afbij @ 0x%"PFMT64x, addr);
 			break;
 		}
+		case '-': // "ab-"
+			  if (input[2] == '*') {
+				  r_anal_block_reset (core->anal);
+			  } else {
+				  ut64 addr = core->offset;
+				  if (input[2] == ' ') {
+					  addr = r_num_math (core->num, input + 1);
+				  }
+				  r_anal_delete_block_at (core->anal, addr);
+			  }
+			  break;
 		case 0:
 		case ' ': { // "ab "
 			// find block

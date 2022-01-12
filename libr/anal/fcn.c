@@ -1597,6 +1597,7 @@ R_API int r_anal_function_del_locs(RAnal *anal, ut64 addr) {
 		}
 		if (r_anal_function_contains (fcn, addr)) {
 			r_anal_function_delete (fcn);
+			break;
 		}
 	}
 	r_anal_function_del (anal, addr);
@@ -1604,14 +1605,13 @@ R_API int r_anal_function_del_locs(RAnal *anal, ut64 addr) {
 }
 
 R_API int r_anal_function_del(RAnal *a, ut64 addr) {
-	RAnalFunction *fcn;
-	RListIter *iter, *iter_tmp;
-	r_list_foreach_safe (a->fcns, iter, iter_tmp, fcn) {
-		if (fcn->addr == addr) {
-			r_anal_function_delete (fcn);
-		}
+	RAnalFunction *fcn = r_anal_get_function_at (a, addr);
+	if (fcn) {
+		r_anal_function_delete (fcn);
+		// r_anal_function_free (fcn);
+		return true;
 	}
-	return true;
+	return false;
 }
 
 R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
@@ -2241,6 +2241,7 @@ static void clear_bb_vars(RAnalFunction *fcn, RAnalBlock *bb, ut64 from, ut64 to
 }
 
 static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
+	// huge slowdown
 	RListIter *it, *it2, *tmp;
 	RAnalFunction *fcn;
 	bool old_jmpmid = anal->opt.jmpmid;

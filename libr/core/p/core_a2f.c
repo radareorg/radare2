@@ -282,7 +282,6 @@ static ut64 getFunctionSize(Sdb *db) {
 static bool analyzeFunction(RCore *core, ut64 addr) {
 	Sdb *db = sdb_new0 ();
 	RFlagItem *fi;
-	RList *delayed_commands = NULL;
 	RListIter *iter;
 	ut64 loc_addr = 0;
 	char *command = NULL;
@@ -293,7 +292,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 		return false;
 	}
 
-	delayed_commands = r_list_newf (free);
+	RList *delayed_commands = r_list_newf (free);
 	if (!delayed_commands) {
 		eprintf ("Failed to initialize the delayed command list\n");
 		sdb_free (db);
@@ -354,7 +353,6 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 			  	loc_addr, addr, (int)(addr_end - addr), jump, fail);
 			sdb_aforeach_next (c);
 		}
-
 		if (vars) {
 			// handling arguments
 			RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
