@@ -2795,7 +2795,7 @@ static int win_eprintf(const char *format, ...) {
 static void ev_iowrite_cb(REvent *ev, int type, void *user, void *data) {
 	RCore *core = user;
 	REventIOWrite *iow = data;
-	if (r_config_get_i (core->config, "anal.detectwrites")) {
+	if (r_config_get_i (core->config, "anal.onchange")) {
 		// works, but loses varnames and such, but at least is not crashing
 		char *cmd = r_str_newf ("af-0x%08"PFMT64x";af 0x%08"PFMT64x, iow->addr, iow->addr);
 		r_list_append (core->cmdqueue, cmd);

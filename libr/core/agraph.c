@@ -3512,7 +3512,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 
 static void check_function_modified(RCore *core, RAnalFunction *fcn) {
 	if (r_anal_function_was_modified (fcn)) {
-		if (r_config_get_i (core->config, "anal.detectwrites")
+		if (r_config_get_i (core->config, "anal.onchange")
 			|| r_cons_yesno ('y', "Function was modified. Reanalyze? (Y/n)")) {
 			r_anal_function_update_analysis (fcn);
 		}

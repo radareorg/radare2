@@ -3320,7 +3320,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("pdb.autoload", false, "Automatically load the required pdb files for loaded DLLs");
 
 	/* anal */
-	SETBPREF ("anal.detectwrites", "false", "Automatically reanalyze function after a write");
+	SETBPREF ("anal.onchange", "false", "Automatically reanalyze function if any byte has changed (EXPERIMENTAL)");
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
 	const char *analcc = r_anal_cc_default (core->anal);
 	SETCB ("anal.cc", analcc? analcc: "", (RConfigCallback)&cb_analcc, "Specify default calling convention");
