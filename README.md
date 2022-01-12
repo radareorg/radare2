@@ -46,10 +46,11 @@ $ r2 /bin/ls   # open the binary in read-only mode
 > aaa          # same as r2 -A, analyse the binary
 > afl          # list all functions (try aflt, aflm)
 > px 32        # print 32 byte hexdump current block
+> s sym.main   # seek to the given offset (by flag name, number, ..)
 > f~foo        # filter flags with ~grep (same as |grep)
 > iS;is        # list sections and symbols (same as rabin2 -Ss)
-> pdf; agf     # print function and show cfg graph
-> oo+;w hello  # reopen in rw mode and write a string
+> pdf; agf     # print function and show control-flow-graph in ascii-art
+> oo+;w hello  # reopen in rw mode and write a string in the current offset
 > ?*~...       # interactive filter all command help messages
 > q            # quit
 ```
