@@ -24,6 +24,7 @@ typedef struct v850_opcode {
 	unsigned int memop; // which operand is accessing the memory?
 	unsigned int processors; // mask for cpu models
 	int type; // R_ANAL_OP_TYPE_xxx
+	char *esil;
 } v850_opcode;
 
 typedef struct {
@@ -34,6 +35,7 @@ typedef struct {
 
 typedef struct {
 	char *text;
+	char *esil;
 	int size;
 	int value;
 	const v850_opcode *op;

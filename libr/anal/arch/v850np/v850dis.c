@@ -23,11 +23,11 @@ static void print_value(RStrBuf *sb, int flags, ut64 memaddr, long value) {
 		if (flags & V850_INVERSE_PCREL) {
 			addr = memaddr - value;
 		}
-		r_strbuf_appendf (sb, "0x%08lx", (unsigned long)addr); // memaddr);
+		r_strbuf_appendf (sb, "0x%"PFMT64x, (ut64)addr); // memaddr);
 	} else if (flags & V850_OPERAND_DISP) {
 		r_strbuf_appendf (sb, format, value);
 	} else if ((flags & V850E_IMMEDIATE32) || (flags & V850E_IMMEDIATE16HI)) {
-		r_strbuf_appendf (sb, "0x%lx", value);
+		r_strbuf_appendf (sb, "0x%"PFMT64x, (ut64)value);
 	} else {
 		r_strbuf_appendf (sb, format, value);
 	}
@@ -230,6 +230,31 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 	return true;
 }
 
+char *distillate(v850np_inst *inst, const char *esilfmt) {
+	RStrBuf *sb = r_strbuf_new ("");
+	RList *args = NULL;
+	char *arg = strchr (inst->text, ' ');
+	if (arg) {
+		arg = strdup (arg + 1);
+		args = r_str_split_list (arg, ",", 0);
+	}
+	while (*esilfmt) {
+		char ch = *esilfmt;
+		if (ch == '$') {
+			int n = esilfmt[1] - '0';
+			if (n >= 0 && n < 10) {
+				r_strbuf_appendf (sb, "%s", (const char *)r_list_get_n (args, n));
+				esilfmt += 2;
+				continue;
+			}
+		}
+		r_strbuf_append_n (sb, &ch, 1);
+		esilfmt++;
+	}
+	r_list_free (args);
+	return r_strbuf_drain (sb);
+}
+
 static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, const ut8* buffer, int buffer_size, unsigned long insn) {
 	const v850_opcode *op = (v850_opcode *) v850_opcodes;
 	const struct v850_operand *operand = NULL;
@@ -284,7 +309,6 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 		r_strbuf_append (sb, op->name);
 		r_strbuf_append (sb, " ");
 		inst->op = op;
-
 		memop = op->memop;
 		/* Now print the operands.
 
@@ -408,8 +432,13 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 
 	if (match) {
 		inst->text = r_strbuf_drain (sb);
-		return true;
+		if (op->esil) {
+			// take advantage of the arguments parsed and honor the formats tring below
+			// eprintf ("ESIL (%s)\n", op->esil);
+			inst->esil = distillate (inst, op->esil);
+		}
 	}
+	return true;
 fail:
 	r_strbuf_free (sb);
 	return false;
