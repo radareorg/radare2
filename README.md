@@ -43,9 +43,11 @@ These are the first steps to use r2, read the book or find tutorials for more de
 
 ```sh
 $ r2 /bin/ls   # open the binary in read-only mode
+> aaa          # same as r2 -A, analyse the binary
+> afl          # list all functions (try aflt, aflm)
 > px 32        # print 32 byte hexdump current block
 > f~foo        # filter flags with ~grep (same as |grep)
-> aaa          # same as r2 -A, analyse the binary
+> iS;is        # list sections and symbols (same as rabin2 -Ss)
 > pdf; agf     # print function and show cfg graph
 > oo+;w hello  # reopen in rw mode and write a string
 > ?*~...       # interactive filter all command help messages
