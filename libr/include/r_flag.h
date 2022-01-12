@@ -59,6 +59,7 @@ typedef struct r_flag_t {
 	PrintfCallback cb_printf;
 	RList *zones;
 	ut64 mask;
+	bool is_dirty; /*has the flag been changed since the last call to r_flag_is_dirty() */
 } RFlag;
 
 /* compile time dependency */
