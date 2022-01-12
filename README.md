@@ -37,6 +37,21 @@ r2env init
 r2env add radare2@git
 ```
 
+## Usage
+
+These are the first steps to use r2, read the book or find tutorials for more details
+
+```sh
+$ r2 /bin/ls   # open the binary in read-only mode
+> px 32        # print 32 byte hexdump current block
+> f~foo        # filter flags with ~grep (same as |grep)
+> aaa          # same as r2 -A, analyse the binary
+> pdf; agf     # print function and show cfg graph
+> oo+;w hello  # reopen in rw mode and write a string
+> ?*~...       # interactive filter all command help messages
+> q            # quit
+```
+
 ## Resources
 
 * [Official radare2 book](https://book.rada.re): Read about r2 usage.
