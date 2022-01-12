@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2021 - pancake, brainstorm */
+/* radare - MIT - Copyright 2021-2022 - pancake, brainstorm */
 
 #include <string.h>
 #include <r_types.h>
@@ -12,7 +12,7 @@
 
 #define DEFAULT_CPU_MODEL V850_CPU_E2
 static int cpumodel_from_string(const char *s) {
-	if (R_STR_ISEMPTY (s)) {
+	if (R_STR_ISEMPTY (s) || !strcmp (s, "v850")) {
 		return DEFAULT_CPU_MODEL;
 	}
 	if (strstr (s, "all")) {
@@ -30,7 +30,7 @@ static int cpumodel_from_string(const char *s) {
 	if (strstr (s, "e1")) {
 		return V850_CPU_E1;
 	}
-	if (strstr (s, "e")) {
+	if (*s == 'e') {
 		return V850_CPU_E;
 	}
 	if (strstr (s, "0")) {
@@ -50,6 +50,9 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	op->size = v850np_disasm (&inst, cpumodel, addr, buf, len);
 	if (op->size < 2) {
 		op->size = 2;
+	}
+	if (mask & R_ANAL_OP_MASK_ESIL) {
+		r_strbuf_set (&op->esil, inst.esil);
 	}
 	if (inst.op) {
 		op->type = inst.op->type;
@@ -168,6 +171,15 @@ static int archinfo(RAnal *anal, int q) {
 	return 0;
 }
 
+static int v850_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *buf, int len) {
+	r_return_val_if_fail (anal && s && buf && len >= 0, -1);
+	if (!strcmp (s, "nop")) {
+		memset (buf, 0, R_MIN (len, 2));
+		return 2;
+	}
+	return 0;
+}
+
 RAnalPlugin r_anal_plugin_v850_np = {
 	.name = "v850.np",
 	.desc = "V850 code analysis plugin",
@@ -177,6 +189,7 @@ RAnalPlugin r_anal_plugin_v850_np = {
 	.arch = "v850",
 	.bits = 32,
 	.op = v850_op,
+	.opasm = v850_opasm,
 	.esil = true,
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
