@@ -323,7 +323,6 @@ R_API bool r_config_toggle(RConfig *cfg, const char *name) {
 		eprintf ("(error: '%s' config key is read only)\n", name);
 		return false;
 	}
-	cfg->is_dirty = true;
 	(void)r_config_set_b (cfg, name, !node->i_value);
 	return true;
 }
@@ -398,7 +397,6 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 	RConfigNode *node = NULL;
 	char *ov = NULL;
 	ut64 oi;
-	cfg->is_dirty = true;
 	r_return_val_if_fail (cfg && cfg->ht, NULL);
 	r_return_val_if_fail (!IS_NULLSTR (name), NULL);
 
@@ -417,6 +415,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 		} else {
 			node->value = strdup ("");
 		}
+		cfg->is_dirty = true;
 		if (r_config_node_is_bool (node)) {
 			bool b = r_str_is_true (value);
 			node->i_value = b;
@@ -530,6 +529,7 @@ R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 	if (node && r_config_node_is_bool (node)) {
 		return r_config_set_i (cfg, name, b? 1: 0);
 	}
+	cfg->is_dirty = true;
 	return NULL;
 }
 
