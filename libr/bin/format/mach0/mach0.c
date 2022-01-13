@@ -3233,6 +3233,9 @@ static bool walk_bind_chains_callback(void * context, RFixupEventDetails * event
 				addend += item->addend;
 				break;
 			}
+			default:
+				bprintf ("Unsupported imports format\n");
+				return false;
 		}
 
 		ut64 symbols_offset = bin->fixups_header.symbols_offset + fixups_offset;
@@ -4577,9 +4580,9 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *bin, ut64 limit_start,
 					ut64 delta, stride, addend;
 					ut16 pointer_format = bin->chained_starts[i]->pointer_format;
 					RFixupEvent event = R_FIXUP_EVENT_NONE;
-					ut8 key, addr_div;
-					ut16 diversity;
-					ut32 ordinal;
+					ut8 key = 0, addr_div = 0;
+					ut16 diversity = 0;
+					ut32 ordinal = UT32_MAX;
 					if (pointer_format == DYLD_CHAINED_PTR_ARM64E) {
 						stride = 8;
 						bool is_auth = IS_PTR_AUTH (raw_ptr);
