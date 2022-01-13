@@ -1852,9 +1852,9 @@ static int cmd_open(void *data, const char *input) {
 			} else {
 				eprintf ("cannot open file %s\n", argv0);
 			}
-			r_str_argv_free (argv);
 		}
 		r_core_block_read (core);
+		r_str_argv_free (argv);
 		return 0;
 	}
 
