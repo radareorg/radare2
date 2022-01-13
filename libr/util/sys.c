@@ -1248,12 +1248,17 @@ R_API char *r_sys_whoami(void) {
 #elif __wasi__
 	strcpy (buf, "user");
 #else
+	char *user = r_sys_getenv ("USER");
+	return user? user: r_str_newf ("uid%d", getuid ());
+#if 0
+	// XXX this is not thread safe and getpwuid_r is not available
 	struct passwd *pw = getpwuid (getuid ());
 	if (pw) {
 		return strdup (pw->pw_name);
 	}
 	int uid = getuid ();
 	snprintf (buf, sizeof (buf), "uid%d", uid);
+#endif
 #endif
 	return strdup (buf);
 }
@@ -1308,7 +1313,7 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 }
 
 R_API const char *r_sys_prefix(const char *pfx) {
-	static char *prefix = NULL;
+	static R_TH_LOCAL char *prefix = NULL;
 	if (!prefix) {
 #if __WINDOWS__
 		prefix = r_sys_get_src_dir_w32 ();

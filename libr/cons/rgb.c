@@ -1,11 +1,12 @@
-/* radare - LGPL - Copyright 2013-2020 - pancake, xarkes */
+/* radare - LGPL - Copyright 2013-2022 - pancake, xarkes */
 /* ansi 256 color extension for r_cons */
 /* https://en.wikipedia.org/wiki/ANSI_color */
 
 #include <r_cons.h>
+#include <r_th.h>
 
-int color_table[256] = { 0 };
-int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
+static R_TH_LOCAL int color_table[256] = { 0 };
+static R_TH_LOCAL int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
 
 static void init_color_table(void) {
 	int i, r, g, b;

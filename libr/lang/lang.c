@@ -20,7 +20,7 @@ R_LIB_VERSION(r_lang);
 #include "p/go.c"    // hardcoded
 #include "p/lib.c"
 
-static RLang *__lang = NULL;
+static R_TH_LOCAL RLang *__lang = NULL;
 
 R_API void r_lang_plugin_free(RLangPlugin *p) {
 	if (p && p->fini) {

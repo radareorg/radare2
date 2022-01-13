@@ -1,7 +1,9 @@
 #!/bin/sh
 # SANITIZE="address leak memory undefined"
 # SANITIZE="address signed-integer-overflow"  # Faster build
-SANITIZE=${SANITIZE:="address undefined signed-integer-overflow"}
+# default:
+# SANITIZE=${SANITIZE:="address undefined signed-integer-overflow"}
+SANITIZE=${SANITIZE:="thread undefined signed-integer-overflow"}
 
 printf "\033[32m"
 echo "========================================================================="

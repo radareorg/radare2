@@ -10,7 +10,7 @@
 #include "anal_tms320c64x.c"
 #include "../../asm/arch/tms320/tms320_dasm.h"
 
-static tms320_dasm_t engine = { 0 };
+static R_TH_LOCAL tms320_dasm_t engine = { 0 };
 
 typedef int (* TMS_ANAL_OP_FN)(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 

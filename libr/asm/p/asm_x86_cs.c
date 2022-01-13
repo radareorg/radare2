@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2021 - pancake */
+/* radare2 - LGPL - Copyright 2013-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -6,8 +6,8 @@
 
 #define USE_ITER_API 1
 
-static csh cd = 0;
-static int n = 0;
+static _Thread_local csh cd = 0;
+static _Thread_local int n = 0;
 
 static bool the_end(void *p) {
 #if 0
@@ -57,7 +57,7 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	static int omode = 0;
+	static R_TH_LOCAL int omode = 0;
 	int mode, ret;
 	ut64 off = a->pc;
 

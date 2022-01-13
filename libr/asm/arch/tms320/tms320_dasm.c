@@ -94,8 +94,8 @@ int run_f_list(tms320_dasm_t * dasm) {
 			break;
 
 		case TMS320_FLAG_l1:
-			temp = get_bits(dasm->opcode64, flag->f, 1);
-			set_field_value(dasm, l1, temp);
+			temp = get_bits (dasm->opcode64, flag->f, 1);
+			set_field_value (dasm, l1, temp);
 			break;
 		case TMS320_FLAG_l3:
 			temp = get_bits(dasm->opcode64, flag->f, 3);
@@ -1026,9 +1026,8 @@ insn_item_t * decode_insn(tms320_dasm_t * dasm)
 
 }
 
-insn_item_t * decode_insn_head(tms320_dasm_t * dasm)
-{
-	run_f_list(dasm);
+insn_item_t * decode_insn_head(tms320_dasm_t * dasm) {
+	run_f_list (dasm);
 
 	if (dasm->insn->i_list) {
 		dasm->insn = dasm->insn->i_list;
@@ -1112,8 +1111,7 @@ static int full_insn_size(tms320_dasm_t *dasm)
  * TMS320 disassembly engine public interface
  */
 
-int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
-{
+int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len) {
 	init_dasm(dasm, stream, len);
 
 	if (tms320_f_get_cpu(dasm) != TMS320_F_CPU_C55X_PLUS) {
@@ -1140,25 +1138,23 @@ int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 // insn_head_t c55x_list[]
 #include "c55x/table.h"
 
-int tms320_dasm_init(tms320_dasm_t * dasm) {
+bool tms320_dasm_init(tms320_dasm_t * dasm) {
 	int i = 0;
 
 	if (dasm->map) {
 		/* already initialized */
-		return 0;
+		return false;
 	}
 
 	dasm->map = ht_up_new0 ();
 	if (!dasm->map) {
-		return 0;
+		return false;
 	}
 	for (i = 0; i < ARRAY_SIZE(c55x_list); i++) {
 		ht_up_insert (dasm->map, c55x_list[i].byte, &c55x_list[i]);
 	}
-
-	tms320_f_set_cpu(dasm, TMS320_F_CPU_C55X);
-
-	return 0;
+	tms320_f_set_cpu (dasm, TMS320_F_CPU_C55X);
+	return true;
 }
 
 int tms320_dasm_fini(tms320_dasm_t * dasm) {

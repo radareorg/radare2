@@ -5,7 +5,10 @@
 
 #define DFLT_ROWS 16
 
+// global
 static const char hex[16] = "0123456789ABCDEF";
+// global mutable
+static R_TH_LOCAL RPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 static int nullprinter(const char *a, ...) {
 	return 0;
@@ -26,8 +29,6 @@ static int libc_eprintf(const char *format, ...) {
 	va_end (ap);
 	return 0;
 }
-
-static RPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
@@ -2059,9 +2060,9 @@ R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
 	}
 }
 
-// Global buffer to speed up colorizing performance
+// XXX Global buffer to speed up colorizing performance
 #define COLORIZE_BUFSIZE 1024
-static char o[COLORIZE_BUFSIZE];
+static __thread char o[COLORIZE_BUFSIZE];
 
 static bool issymbol(char c) {
 	switch (c) {

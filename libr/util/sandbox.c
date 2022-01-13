@@ -15,9 +15,9 @@
 #include <priv.h>
 #endif
 
-static bool G_enabled = false;
-static bool G_disabled = false;
-static int G_graintype = R_SANDBOX_GRAIN_NONE;
+static R_TH_LOCAL bool G_enabled = false;
+static R_TH_LOCAL bool G_disabled = false;
+static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_NONE;
 
 #define R_SANDBOX_GUARD(x,y) if (G_enabled && !(G_graintype & (x))) { return (y); }
 

@@ -19,8 +19,8 @@
 #define DEBUG_DISASM 0
 
 // ugly globals but meh
-static ut64 emustack_min = 0LL;
-static ut64 emustack_max = 0LL;
+static R_TH_LOCAL ut64 emustack_min = 0LL;
+static R_TH_LOCAL ut64 emustack_max = 0LL;
 
 static const char* r_vline_a[] = {
 	"|",  // LINE_VERT
@@ -881,7 +881,7 @@ static RDisasmState *ds_init(RCore *core) {
 	return ds;
 }
 
-static ut64 lastaddr = UT64_MAX;
+static __thread ut64 lastaddr = UT64_MAX;
 
 static void ds_reflines_fini(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
