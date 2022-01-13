@@ -920,7 +920,6 @@ static bool flag_relocate_foreach(RFlagItem *fi, void *user) {
 		update_flag_item_offset (u->f, fi, (u->to & u->neg_mask) + fm + om, false, false);
 		u->n++;
 	}
-	u->f->is_dirty = true;
 	return true;
 }
 
@@ -934,7 +933,6 @@ R_API int r_flag_relocate(RFlag *f, ut64 off, ut64 off_mask, ut64 to) {
 		.to = to,
 		.n = 0
 	};
-	f->is_dirty = true;
 	r_flag_foreach (f, flag_relocate_foreach, &u);
 	return u.n;
 }
