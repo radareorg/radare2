@@ -346,6 +346,8 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 						name, rw, mode, zfo);
 				free (name);
 				r_list_append (list_fds, res);
+			} else {
+				r_io_zip_free_zipfileobj (zfo);
 			}
 		}
 	}
