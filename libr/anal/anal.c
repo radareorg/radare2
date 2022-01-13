@@ -17,7 +17,6 @@ R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
 	anal->limit = R_NEW0 (RAnalRange);
 	if (anal->limit) {
-		anal->is_dirty = true;
 		anal->limit->from = from;
 		anal->limit->to = to;
 	}
