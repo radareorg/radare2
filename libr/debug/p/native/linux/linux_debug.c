@@ -32,7 +32,11 @@ char *linux_reg_profile (RDebug *dbg) {
 #elif __riscv
 #	include "reg/linux-riscv64.h"
 #elif __arm64__ || __aarch64__
-#	include "reg/linux-arm64.h"
+	if (dbg->bits & R_SYS_BITS_32) {
+#		include "reg/linux-arm.h"
+	} else {
+#		include "reg/linux-arm64.h"
+	}
 #elif __mips__
 	if ((dbg->bits & R_SYS_BITS_32) && (dbg->bp->endian == 1)) {
 #		include "reg/linux-mips.h"
