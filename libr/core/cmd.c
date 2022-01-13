@@ -337,6 +337,14 @@ R_API void r_core_cmd_help(const RCore *core, const char *help[]) {
 	r_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
 }
 
+R_API void r_core_cmd_help_match(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd) {
+	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, 0);
+}
+
+R_API void r_core_cmd_help_match_spec(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd, char spec) {
+	r_cons_cmd_help_match (help, core->print->flags & R_PRINT_FLAGS_COLOR, cmd, spec);
+}
+
 struct duplicate_flag_t {
 	RList *ret;
 	const char *word;

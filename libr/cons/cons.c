@@ -2146,6 +2146,42 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	}
 }
 
+/* See r_cons_cmd_help().
+ * This version will only print help for a specific command.
+ * Will append spec to cmd before looking for a match, if spec != 0.
+ */
+R_API void r_cons_cmd_help_match(const char *help[], bool use_color, R_BORROW R_NONNULL char *cmd, char spec) {
+	const char **match = NULL;
+	const char *match_help_text[4];
+	int i;
+
+	if (spec) {
+		/* We now own cmd */
+		cmd = r_str_newf ("%s%c", cmd, spec);
+	}
+
+	for (i = 0; help[i]; i += 3) {
+		if (!strcmp (help[i], cmd)) {
+			match = &help[i];
+			break;
+		}
+	}
+
+	/* Command was not found in help text. */
+	r_return_if_fail (match);
+
+	/* Manually construct help array. No need to strdup, just borrow. */
+	match_help_text[3] = NULL;
+	for (i = 0; i < 3; i++) {
+		match_help_text[i] = match[i];
+	}
+	r_cons_cmd_help (match_help_text, use_color);
+
+	if (spec) {
+		free (cmd);
+	}
+}
+
 R_API void r_cons_clear_buffer(void) {
 	if (I.vtmode) {
 		(void)write (1, "\x1b" "c\x1b[3J", 6);
