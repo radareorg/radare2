@@ -1582,4 +1582,31 @@ struct dyld_chained_ptr_arm64e_auth_bind24 {
 		auth : 1; // == 1
 };
 
+enum {
+	DYLD_CHAINED_IMPORT          = 1,
+	DYLD_CHAINED_IMPORT_ADDEND   = 2,
+	DYLD_CHAINED_IMPORT_ADDEND64 = 3,
+};
+
+struct dyld_chained_import {
+	uint32_t lib_ordinal : 8,
+		weak_import : 1,
+		name_offset : 23;
+};
+
+struct dyld_chained_import_addend {
+	uint32_t lib_ordinal : 8,
+		weak_import : 1,
+		name_offset : 23;
+	int32_t addend;
+};
+
+struct dyld_chained_import_addend64 {
+	uint64_t lib_ordinal : 16,
+		weak_import : 1,
+		reserved : 15,
+		name_offset : 32;
+	uint64_t addend;
+};
+
 #endif

@@ -10,6 +10,12 @@
 #include "objc/mach0_classes.h"
 #include <ht_uu.h>
 
+typedef struct {
+	ut8 *buf;
+	int count;
+	ut64 off;
+} RFixupRebaseContext;
+
 // wip settings
 
 extern RBinWrite r_bin_write_mach0;
@@ -764,115 +770,40 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 	return result;
 }
 
+static bool rebase_buffer_callback(void * context, RFixupEventDetails * event_details) {
+	RFixupRebaseContext *ctx = context;
+
+	ut64 in_buf = event_details->offset - ctx->off;
+	switch (event_details->type) {
+		case R_FIXUP_EVENT_BIND:
+		case R_FIXUP_EVENT_BIND_AUTH:
+			r_write_le64 (&ctx->buf[in_buf], 0);
+			break;
+		case R_FIXUP_EVENT_REBASE:
+		case R_FIXUP_EVENT_REBASE_AUTH:
+			r_write_le64 (&ctx->buf[in_buf], ((RFixupRebaseEventDetails *) event_details)->ptr_value);
+			break;
+		default:
+			eprintf ("Unexpected event while rebasing buffer\n");
+			return false;
+	}
+
+	return true;
+}
+
 static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count) {
 	if (obj->rebasing_buffer) {
 		return;
 	}
 	obj->rebasing_buffer = true;
-	ut64 eob = off + count;
-	int i = 0;
-	for (; i < obj->nsegs; i++) {
-		if (!obj->chained_starts[i]) {
-			continue;
-		}
-		int page_size = obj->chained_starts[i]->page_size;
-		if (page_size < 1) {
-			page_size = 4096;
-		}
-		ut64 start = obj->segs[i].fileoff;
-		ut64 end = start + obj->segs[i].filesize;
-		if (end >= off && start <= eob) {
-			ut64 page_idx = (R_MAX (start, off) - start) / page_size;
-			ut64 page_end_idx = (R_MIN (eob, end) - start) / page_size;
-			for (; page_idx <= page_end_idx; page_idx++) {
-				if (page_idx >= obj->chained_starts[i]->page_count) {
-					break;
-				}
-				ut16 page_start = obj->chained_starts[i]->page_start[page_idx];
-				if (page_start == DYLD_CHAINED_PTR_START_NONE) {
-					continue;
-				}
-				ut64 cursor = start + page_idx * page_size + page_start;
-				while (cursor < eob && cursor < end) {
-					ut8 tmp[8];
-					if (r_buf_read_at (obj->b, cursor, tmp, 8) != 8) {
-						break;
-					}
-					ut64 raw_ptr = r_read_le64 (tmp);
-					ut64 ptr_value = raw_ptr;
-					ut64 delta, stride;
-					ut16 pointer_format = obj->chained_starts[i]->pointer_format;
-					if (pointer_format == DYLD_CHAINED_PTR_ARM64E) {
-						stride = 8;
-						bool is_auth = IS_PTR_AUTH (raw_ptr);
-						bool is_bind = IS_PTR_BIND (raw_ptr);
-						if (is_auth && is_bind) {
-							struct dyld_chained_ptr_arm64e_auth_bind *p =
-									(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
-							delta = p->next;
-						} else if (!is_auth && is_bind) {
-							struct dyld_chained_ptr_arm64e_bind *p =
-									(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
-							delta = p->next;
-						} else if (is_auth && !is_bind) {
-							struct dyld_chained_ptr_arm64e_auth_rebase *p =
-									(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
-							delta = p->next;
-							ptr_value = p->target + obj->baddr;
-						} else {
-							struct dyld_chained_ptr_arm64e_rebase *p =
-									(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
-							delta = p->next;
-							ptr_value = ((ut64)p->high8 << 56) | p->target;
-						}
-					} else if (pointer_format == DYLD_CHAINED_PTR_ARM64E_USERLAND24) {
-						stride = 8;
-						struct dyld_chained_ptr_arm64e_bind24 *bind =
-								(struct dyld_chained_ptr_arm64e_bind24 *) &raw_ptr;
-						if (bind->bind) {
-							delta = bind->next;
-						} else {
-							if (bind->auth) {
-								struct dyld_chained_ptr_arm64e_auth_rebase *p =
-										(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
-								delta = p->next;
-								ptr_value = p->target + obj->baddr;
-							} else {
-								struct dyld_chained_ptr_arm64e_rebase *p =
-									(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
-								delta = p->next;
-								ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
-							}
-						}
-					} else if (pointer_format == DYLD_CHAINED_PTR_64_OFFSET) {
-						stride = 4;
-						struct dyld_chained_ptr_64_bind *bind =
-								(struct dyld_chained_ptr_64_bind *) &raw_ptr;
-						if (bind->bind) {
-							delta = bind->next;
-						} else {
-							struct dyld_chained_ptr_64_rebase *p =
-								(struct dyld_chained_ptr_64_rebase *)&raw_ptr;
-							delta = p->next;
-							ptr_value = obj->baddr + (((ut64)p->high8 << 56) | p->target);
-						}
-					} else {
-						eprintf ("Unsupported chained pointer format %d\n", pointer_format);
-						goto beach;
-					}
-					ut64 in_buf = cursor - off;
-					if (cursor >= off && cursor <= eob - 8) {
-						r_write_le64 (&buf[in_buf], ptr_value);
-					}
-					cursor += delta * stride;
-					if (!delta) {
-						break;
-					}
-				}
-			}
-		}
-	}
-beach:
+
+	RFixupRebaseContext ctx;
+
+	ctx.buf = buf;
+	ctx.count = count;
+	ctx.off = off;
+
+	MACH0_(iterate_chained_fixups) (obj, off, off + count, R_FIXUP_EVENT_MASK_ALL, &rebase_buffer_callback, &ctx);
 	obj->rebasing_buffer = false;
 }
 
