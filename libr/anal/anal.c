@@ -17,6 +17,7 @@ R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
 	anal->limit = R_NEW0 (RAnalRange);
 	if (anal->limit) {
+		anal->is_dirty = true;
 		anal->limit->from = from;
 		anal->limit->to = to;
 	}
@@ -24,6 +25,7 @@ R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 
 R_API void r_anal_unset_limits(RAnal *anal) {
 	R_FREE (anal->limit);
+	anal->is_dirty = true;
 }
 
 static void meta_unset_for(REvent *ev, int type, void *user, void *data) {
@@ -139,6 +141,7 @@ R_API RAnal *r_anal_new(void) {
 			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
+	anal->is_dirty = true;
 	return anal;
 }
 
@@ -212,6 +215,7 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 		foo->init (anal->user);
 	}
 	r_list_append (anal->plugins, foo);
+	anal->is_dirty = true;
 	return true;
 }
 
@@ -232,6 +236,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 #endif
 			anal->cur = h;
 			r_anal_set_reg_profile (anal, NULL);
+			anal->is_dirty = true;
 			return true;
 		}
 	}
@@ -251,10 +256,12 @@ R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
 	bool ret = false;
 	if (anal && anal->cur && anal->cur->set_reg_profile) {
 		ret = anal->cur->set_reg_profile (anal);
+		anal->is_dirty = true;
 	} else {
 		char *p = r_anal_get_reg_profile (anal);
 		if (p && *p) {
 			r_reg_set_profile_string (anal->reg, p);
+			anal->is_dirty = true;
 			ret = true;
 		}
 		free (p);
@@ -298,6 +305,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 		sdb_merge (anal->sdb_types, gd);
 		sdb_close (gd);
 		sdb_free (gd);
+		anal->is_dirty = true;
 		return r_anal_set_triplet (anal, os, NULL, -1);
 	}
 
@@ -308,6 +316,7 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 		sdb_concat_by_path (types, dbpath);
 	}
 	free (dbpath);
+	anal->is_dirty = true;
 	return r_anal_set_triplet (anal, os, NULL, -1);
 }
 
@@ -322,6 +331,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 			anal->bits = bits;
 			r_anal_set_reg_profile (anal, NULL);
 		}
+		anal->is_dirty = true;
 		return true;
 	}
 	return false;
@@ -334,6 +344,7 @@ R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
 	if (v != -1) {
 		anal->pcalign = v;
 	}
+	anal->is_dirty = true;
 }
 
 R_API void r_anal_set_big_endian(RAnal *anal, int bigend) {
@@ -342,6 +353,7 @@ R_API void r_anal_set_big_endian(RAnal *anal, int bigend) {
 	if (anal->reg) {
 		anal->reg->big_endian = bigend;
 	}
+	anal->is_dirty = true;
 }
 
 R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
@@ -380,7 +392,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	}
 
 	r_anal_op_free (op);
-
+	anal->is_dirty = true;
 	return ret;
 }
 
@@ -397,11 +409,13 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 			}
 		}
 	}
+	anal->is_dirty = true;
 }
 
 R_API RList* r_anal_get_fcns(RAnal *anal) {
 	// avoid received to free this thing
 	anal->fcns->free = NULL;
+	anal->is_dirty = true;
 	return anal->fcns;
 }
 
@@ -454,6 +468,7 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_list_free (anal->fcns);
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	r_anal_purge_imports (anal);
+	anal->is_dirty = true;
 }
 
 R_API int r_anal_archinfo(RAnal *anal, int query) {
@@ -552,6 +567,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 			return false;
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
+		anal->is_dirty = true;
 		if (fcn) {
 			fcn->is_noreturn = true;
 		}
@@ -745,6 +761,7 @@ R_API void r_anal_add_import(RAnal *anal, const char *imp) {
 	if (!cimp) {
 		return;
 	}
+	anal->is_dirty = true;
 	r_list_push (anal->imports, cimp);
 }
 
@@ -753,6 +770,7 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 	const char *eimp;
 	r_list_foreach (anal->imports, it, eimp) {
 		if (!strcmp (eimp, imp)) {
+			anal->is_dirty = true;
 			r_list_delete (anal->imports, it);
 			return;
 		}
@@ -760,5 +778,12 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 }
 
 R_API void r_anal_purge_imports(RAnal *anal) {
+	anal->is_dirty = true;
 	r_list_purge (anal->imports);
+}
+
+R_API bool r_anal_is_dirty(RAnal *anal) {
+	bool ret = anal->is_dirty;
+	anal->is_dirty = false;
+	return ret;
 }
