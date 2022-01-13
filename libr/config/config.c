@@ -323,6 +323,7 @@ R_API bool r_config_toggle(RConfig *cfg, const char *name) {
 		eprintf ("(error: '%s' config key is read only)\n", name);
 		return false;
 	}
+	cfg->is_dirty = true;
 	(void)r_config_set_b (cfg, name, !node->i_value);
 	return true;
 }
@@ -397,7 +398,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 	RConfigNode *node = NULL;
 	char *ov = NULL;
 	ut64 oi;
-
+	cfg->is_dirty = true;
 	r_return_val_if_fail (cfg && cfg->ht, NULL);
 	r_return_val_if_fail (!IS_NULLSTR (name), NULL);
 
@@ -504,6 +505,7 @@ R_API RConfigNode* r_config_node_desc(RConfigNode *node, const char *desc) {
 R_API bool r_config_rm(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
+		cfg->is_dirty = true;
 		ht_pp_delete (cfg->ht, node->name);
 		r_list_delete_data (cfg->nodes, node);
 		return true;
@@ -535,6 +537,7 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 	char buf[128], *ov = NULL;
 	r_return_val_if_fail (cfg && name, NULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
+	cfg->is_dirty = true;
 	if (node) {
 		if (r_config_node_is_ro (node)) {
 			node = NULL;
@@ -674,6 +677,7 @@ R_API RConfig* r_config_new(void *user) {
 	cfg->num = NULL;
 	cfg->lock = false;
 	cfg->cb_printf = (void *) printf;
+	cfg->is_dirty = true;
 	return cfg;
 }
 
@@ -691,6 +695,7 @@ R_API RConfig* r_config_clone(RConfig *cfg) {
 	}
 	c->lock = cfg->lock;
 	c->cb_printf = cfg->cb_printf;
+	c->is_dirty = true;
 	return c;
 }
 
@@ -738,4 +743,9 @@ static bool load_config_cb(void *user, const char *k, const char *v) {
 R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_NULLABLE char **err) {
 	sdb_foreach (db, load_config_cb, config);
 	return true;
+}
+R_API bool r_config_is_dirty(RConfig *cfg) {
+	bool ret = cfg->is_dirty;
+	cfg->is_dirty = false;
+	return ret;
 }
