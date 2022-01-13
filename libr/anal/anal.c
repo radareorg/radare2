@@ -214,7 +214,6 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 		foo->init (anal->user);
 	}
 	r_list_append (anal->plugins, foo);
-	anal->is_dirty = true;
 	return true;
 }
 
