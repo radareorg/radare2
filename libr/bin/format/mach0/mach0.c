@@ -3255,7 +3255,7 @@ static bool walk_bind_chains_callback(void * context, RFixupEventDetails * event
 				reloc->size = 8;
 				reloc->addend = addend;
 				r_str_ncpy (reloc->name, name, sizeof (reloc->name) - 1);
-				r_skiplist_insert (ctx->relocs, reloc);
+				r_skiplist_insert_autofree (ctx->relocs, reloc);
 				free (name);
 			} else if (bin->verbose) {
 				eprintf ("Malformed chained bind: failed to read name\n");
