@@ -482,6 +482,7 @@ CMDS=ic*
 EXPECT=<<EOF
 fs classes
 "f class.Employee = 0x1000079a8"
+"f super.Employee.NSObject = 0"
 "f method.Employee.sayHello = 0x1000079d8"
 "f method.Employee.helloWorld = 0x100007a08"
 "f method.Employee.p0 = 0x100007a38"
