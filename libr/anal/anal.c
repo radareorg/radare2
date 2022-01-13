@@ -554,7 +554,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
 		if (fcn) {
-			anal->is_dirty = fcn->is_noreturn? true : anal->is_dirty;
+			anal->is_dirty = fcn->is_noreturn? anal->is_dirty : true;
 			fcn->is_noreturn = true;
 		}
 	}
