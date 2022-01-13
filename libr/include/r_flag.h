@@ -136,6 +136,9 @@ R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void 
 R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, void *user);
 R_API void r_flag_foreach_space_glob(RFlag *f, const char *glob, const RSpace *space, RFlagItemCb cb, void *user);
 
+/*return flag->is_dirty and sets it to false*/
+R_API bool r_flag_is_dirty(RFlag *flag);
+
 /* spaces */
 static inline RSpace *r_flag_space_get(RFlag *f, const char *name) {
 	return r_spaces_get (&f->spaces, name);

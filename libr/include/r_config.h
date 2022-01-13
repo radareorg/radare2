@@ -107,6 +107,7 @@ R_API RConfigNode *r_config_node_new(const char *name, const char *value);
 R_API void r_config_node_free(void *n);
 R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node);
 
+/* returns cfg->is_dirty and sets it to false*/
 R_API bool r_config_is_dirty(RConfig *cfg);
 
 static inline bool r_config_node_is_bool(RConfigNode *node) {
