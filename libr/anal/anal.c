@@ -323,7 +323,6 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 			anal->bits = bits;
 			r_anal_set_reg_profile (anal, NULL);
 		}
-		anal->is_dirty = true;
 		return true;
 	}
 	return false;
