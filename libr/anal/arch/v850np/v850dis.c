@@ -437,6 +437,8 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 			// eprintf ("ESIL (%s)\n", op->esil);
 			inst->esil = distillate (inst, op->esil);
 		}
+	} else {
+		r_strbuf_free (sb);
 	}
 	return true;
 fail:
