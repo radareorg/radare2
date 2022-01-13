@@ -366,6 +366,7 @@ R_API RList* r_io_map_get_by_fd(RIO* io, int fd) {
 	}
 	RIOBank *bank = r_io_bank_get (io, io->bank);
 	if (!bank) {
+		r_list_free (map_list);
 		return NULL;
 	}
 	RListIter *iter;
