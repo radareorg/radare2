@@ -1153,10 +1153,22 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					break;
 				}
 			case X86_OP_REG:
+				// check if previous instruction was a call to here
+				{
+					// handle CALLPOP sequence: 'CALL $$ + 5; POP REG'
+					ut8 buf[5] = {0};
+					const ut8 data[] = { 0xe8, 0, 0, 0, 0 };
+					a->read_at (a, addr - 5, buf, sizeof (buf));
+					if (!memcmp (buf, data, sizeof (buf))) {
+						dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
+						esilprintf (op, "0x%"PFMT64x",%s,=", addr, dst);
+						break;
+					}
+				}
 			default:
 				{
 					dst = getarg (&gop, 0, 0, NULL, DST_AR, NULL);
-					rs = INSOP(0).size;
+					rs = INSOP (0).size;
 					esilprintf (op,
 						"%s,[%d],%s,=,%d,%s,+=",
 						sp, rs, dst, rs, sp);
@@ -1309,7 +1321,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			if (a->read_at && a->bits != 16) {
 				ut8 thunk[4] = {0};
 				if (a->read_at (a, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
-					/* 8b xx x4    mov <reg>, dword [esp]
+					/* Handle CALL ebx_pc (callpop)
+					   8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
 					*/
 					if (thunk[0] == 0x8b && thunk[3] == 0xc3
@@ -1323,6 +1336,19 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				}
 			}
 			arg0 = getarg (&gop, 0, 0, NULL, ARG0_AR, NULL);
+			if (a->read_at && a->bits == 32) {
+				ut8 b[4] = {0};
+				ut64 at = addr + op->size;
+				ut64 n = r_num_get (NULL, arg0);
+				if (n == at) {
+					if (a->read_at (a, at, b, sizeof (b))) {
+						if (b[0] == 0x5b) { // pop ebx
+							esilprintf (op, "0x%"PFMT64x",ebx,=", at);
+							break;
+						}
+					}
+				}
+			}
 			esilprintf (op,
 					"%s,%s,"
 					"%d,%s,-=,%s,"
