@@ -309,7 +309,6 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 		sdb_concat_by_path (types, dbpath);
 	}
 	free (dbpath);
-	anal->is_dirty = true;
 	return r_anal_set_triplet (anal, os, NULL, -1);
 }
 
