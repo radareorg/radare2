@@ -50,7 +50,7 @@ typedef struct r_config_t {
 	RList *nodes;
 	HtPP *ht;
 	bool lock;
-	/*was the struct modified after the last call to r_config_is_dirty()?*/
+	/*was the struct modified after the last project save*/
 	bool is_dirty;
 } RConfig;
 
@@ -106,9 +106,6 @@ R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name);
 R_API RConfigNode *r_config_node_new(const char *name, const char *value);
 R_API void r_config_node_free(void *n);
 R_API void r_config_node_value_format_i(char *buf, size_t buf_size, const ut64 i, R_NULLABLE RConfigNode *node);
-
-/* returns cfg->is_dirty and sets it to false*/
-R_API bool r_config_is_dirty(RConfig *cfg);
 
 static inline bool r_config_node_is_bool(RConfigNode *node) {
 	return node->flags & CN_BOOL;

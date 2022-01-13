@@ -697,6 +697,9 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	free (script_path);
 	r_config_set (core->config, "prj.name", prj_name);
+	core->config->is_dirty = false;
+	core->anal->is_dirty = false;
+	core->flags->is_dirty = false;
 	return ret;
 }
 
@@ -709,7 +712,7 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 }
 
 R_API bool r_core_project_is_saved(RCore *core) {
-	return !r_config_is_dirty (core->config) 
-		&& !r_anal_is_dirty(core->anal)
-		&& !r_flag_is_dirty (core->flags);
+	return !core->config->is_dirty 
+		&& !core->anal->is_dirty
+		&& !core->flags->is_dirty;
 }

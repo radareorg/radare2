@@ -59,7 +59,7 @@ typedef struct r_flag_t {
 	PrintfCallback cb_printf;
 	RList *zones;
 	ut64 mask;
-	bool is_dirty; /*has the flag been changed since the last call to r_flag_is_dirty() */
+	bool is_dirty; /*did struct change after the last project save?*/
 } RFlag;
 
 /* compile time dependency */
@@ -135,9 +135,6 @@ R_API void r_flag_foreach_range(RFlag *f, ut64 from, ut64 to, RFlagItemCb cb, vo
 R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void *user);
 R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, void *user);
 R_API void r_flag_foreach_space_glob(RFlag *f, const char *glob, const RSpace *space, RFlagItemCb cb, void *user);
-
-/*return flag->is_dirty and sets it to false*/
-R_API bool r_flag_is_dirty(RFlag *flag);
 
 /* spaces */
 static inline RSpace *r_flag_space_get(RFlag *f, const char *name) {

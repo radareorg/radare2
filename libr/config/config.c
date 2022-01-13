@@ -744,8 +744,3 @@ R_API bool r_config_unserialize(R_NONNULL RConfig *config, R_NONNULL Sdb *db, R_
 	sdb_foreach (db, load_config_cb, config);
 	return true;
 }
-R_API bool r_config_is_dirty(RConfig *cfg) {
-	bool ret = cfg->is_dirty;
-	cfg->is_dirty = false;
-	return ret;
-}

@@ -684,7 +684,7 @@ typedef struct r_anal_t {
 	RStrConstPool constpool;
 	RList *leaddrs;
 	char *pincmd;
-	bool is_dirty; /*was anything the instance been changed before the last call to r_anal_is_dirty?*/
+	bool is_dirty; /*was the struct changed after the last project save?*/
 } RAnal;
 
 typedef enum r_anal_addr_hint_type_t {

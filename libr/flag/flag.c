@@ -1020,9 +1020,3 @@ R_API void r_flag_foreach_space_glob(RFlag *f, const char *glob, const RSpace *s
 R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, void *user) {
 	FOREACH_BODY (IS_FI_IN_SPACE (fi, space));
 }
-
-R_API bool r_flag_is_dirty(RFlag *flag) {
-	bool ret = flag->is_dirty;
-	flag->is_dirty = false;
-	return ret;
-}
