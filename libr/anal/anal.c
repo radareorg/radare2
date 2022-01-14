@@ -554,10 +554,10 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
 		if (fcn) {
-			if (!R_IS_DIRTY(anal)) {
-				R_DIRTY(anal);
+			if (!fcn->is_noreturn) {
+  				fcn->is_noreturn = true;
+  				anal->is_dirty = true;
 			}
-			fcn->is_noreturn = true;
 		}
 	}
 	if (r_type_func_exist (TDB, tmp_name)) {
