@@ -5435,7 +5435,7 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = true;
 			break;
 		case 'z': // "pdz" // retdec
-			eprintf ("Error: r2pm -ci retdec-r2plugin\n");
+			eprintf ("Error: r2pm -ci r2retdec\n");
 			processed_cmd = true;
 			break;
 		case 'g': // "pdg" // r2ghidra
