@@ -1879,6 +1879,8 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 		int slide, int mode, const char *setval, char *field, int anon) {
 	const char *fmt;
 	char namefmt[128];
+	int ret;
+
 	slide++;
 	if ((slide % STRUCTPTR) > NESTDEPTH || (slide % STRUCTFLAG)/STRUCTPTR > NESTDEPTH) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
@@ -1906,7 +1908,9 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 		p->cb_printf ("<%s>\n", name);
 	}
 	r_print_format (p, seek, b, len, fmt, mode, setval, field);
-	return r_print_format_struct_size (p, fmt, mode, 0);
+	ret = r_print_format_struct_size (p, fmt, mode, 0);
+	free (fmt);
+	return ret;
 }
 
 static char *get_args_offset(const char *arg) {
