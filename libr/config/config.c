@@ -529,7 +529,6 @@ R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 	if (node && r_config_node_is_bool (node)) {
 		return r_config_set_i (cfg, name, b? 1: 0);
 	}
-	cfg->is_dirty = true;
 	return NULL;
 }
 
