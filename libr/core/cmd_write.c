@@ -2040,7 +2040,7 @@ static int ws_handler_old(void *data, const char *input) {
 			free (str);
 			return 0;
 		}
-		arg = r_str_trim_head_ro (arg + 1);
+		arg = (const char *)r_str_trim_head_ro (arg + 1);
 		ut64 len = r_str_unescape ((char *)arg);
 		if (len > maxlen) {
 			eprintf ("Too large\n");

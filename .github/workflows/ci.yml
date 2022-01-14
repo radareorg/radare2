@@ -379,7 +379,7 @@ jobs:
     - name: Create cydia32 package
       run: ./sys/ios-cydia32.sh
     - name: List sys/cydia
-      run: ls -lahR ./sys/cydia
+      run: ls -lahR ./dist/cydia
     - uses: actions/upload-artifact@v2
       with:
         name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
