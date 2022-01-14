@@ -236,6 +236,8 @@ char *distillate(v850np_inst *inst, const char *esilfmt) {
 	char *arg = strchr (inst->text, ' ');
 	if (arg) {
 		arg = strdup (arg + 1);
+		arg = r_str_replace (arg, "[", ",", true);
+		arg = r_str_replace (arg, "]", "", true);
 		args = r_str_split_list (arg, ",", 0);
 	}
 	while (*esilfmt) {
