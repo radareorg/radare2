@@ -390,10 +390,10 @@ static bool check_inlined_canary(RBinFile *bf) {
 	// check for 32bit canary
 	ut64 addr = entry->paddr;;
 	if (addr == UT64_MAX || !addr) {
-		return false;
+		goto out_fail;
 	}
 	if (r_buf_read_at (bf->buf, addr, buf, sizeof (buf)) < 1) {
-		return UT64_MAX;
+		goto out_fail;
 	}
 	if (buf[0] == 0x48) {
 		// x86-64
@@ -415,10 +415,10 @@ static bool check_inlined_canary(RBinFile *bf) {
 		ut64 rel_addr = (ut64)((int)(buf[5] + (buf[6] << 8) + (buf[7] << 16) + (buf[8] << 24)));
 		ut64 calldst = addr + 5 + 4 + rel_addr;
 		if (r_buf_read_at (bf->buf, calldst, buf, sizeof (buf)) < 1) {
-			return UT64_MAX;
+			goto out_fail;
 		}
 		if (buf[0] != 0x48 && buf[1] != 0x89) {
-			return false;
+			goto out_fail;
 		}
 		ut64 canaddr = 0;
 		r_buf_read_at (bf->buf, calldst + 16, (ut8*)&canaddr, 4);
@@ -435,7 +435,7 @@ static bool check_inlined_canary(RBinFile *bf) {
 				can0[4], can0[5], can0[6], can0[7]);
 			sdb_set (bf->sdb, "canary.value", canstr, 0);
 			free (canstr);
-			return true;
+			goto out_succeed;
 		}
 	} else if (buf[0] == 0xe8) {
 #if 0
@@ -455,10 +455,10 @@ static bool check_inlined_canary(RBinFile *bf) {
 		ut64 rel_addr = (ut64)((int)(buf[1] + (buf[2] << 8) + (buf[3] << 16) + (buf[4] << 24)));
 		ut64 calldst = addr + 5 + rel_addr;
 		if (r_buf_read_at (bf->buf, calldst, buf, sizeof (buf)) < 1) {
-			return UT64_MAX;
+			goto out_fail;
 		}
 		if (buf[0] == 0x8b && buf[1] == 0xff && buf[2] == 0x55) {
-			return true;
+			goto out_succeed;
 		}
 		ut32 canaddr = 0;
 		r_buf_read_at (bf->buf, calldst + 2, (ut8*)&canaddr, 4);
@@ -471,9 +471,16 @@ static bool check_inlined_canary(RBinFile *bf) {
 			char *canstr = r_str_newf ("%02x%02x%02x%02x", can0[0], can0[1], can0[2], can0[3]);
 			sdb_set (bf->sdb, "canary.value", canstr, 0);
 			free (canstr);
-			return true;
+			goto out_succeed;
 		}
 	}
+
+	out_succeed:
+	free (entry);
+	return true;
+
+	out_fail:
+	free (entry);
 	return false;
 }
 
