@@ -1183,6 +1183,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 		ds->opstr = strdup (ds->str);
 		char *asm_str = colorize_asm_string (core, ds, print_color);
 		if (asm_str) {
+			free (ds->opstr);
 			ds->opstr = asm_str;
 			r_str_ncpy (ds->str, asm_str, sizeof (ds->str));
 // strcpy (ds->str, asm_str);
