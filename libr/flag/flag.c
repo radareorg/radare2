@@ -94,7 +94,7 @@ static void remove_offsetmap(RFlag *f, RFlagItem *item) {
 		if (r_list_empty (flags->flags)) {
 			r_skiplist_delete (f->by_off, flags);
 		}
-		f->is_dirty = true;
+		R_DIRTY(f);
 	}
 }
 
@@ -155,7 +155,7 @@ static bool update_flag_item_offset(RFlag *f, RFlagItem *item, ut64 newoff, bool
 		}
 
 		r_list_append (flagsAtOffset->flags, item);
-		f->is_dirty = true;
+		R_DIRTY(f);
 		return true;
 	}
 
@@ -178,7 +178,7 @@ static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname
 		: ht_pp_insert (f->ht_name, fname, item);
 	if (res) {
 		set_name (item, fname);
-		f->is_dirty = true;
+		R_DIRTY(f);
 		return true;
 	}
 	free (fname);
@@ -238,7 +238,7 @@ R_API RFlag *r_flag_new(void) {
 	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
 	f->by_off = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
 	new_spaces (f);
-	f->is_dirty = true;
+	R_DIRTY(f);
 	return f;
 }
 
@@ -723,7 +723,7 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
 			RFlagItem *fi = r_flag_set (f, newName, off, size);
 			if (fi) {
 				free (newName);
-				f->is_dirty = true;
+				R_DIRTY(f);
 				return fi;
 			}
 		}
@@ -739,7 +739,7 @@ R_API RFlagItem *r_flag_set_inspace(RFlag *f, const char *space, const char *nam
 	if (space) {
 		r_flag_space_pop (f);
 	}
-	f->is_dirty = true;
+	R_DIRTY(f);
 	return fi;
 }
 
@@ -839,7 +839,7 @@ R_API bool r_flag_unset(RFlag *f, RFlagItem *item) {
 	r_return_val_if_fail (f && item, false);
 	remove_offsetmap (f, item);
 	ht_pp_delete (f->ht_name, item->name);
-	f->is_dirty = true;
+	R_DIRTY(f);
 	return true;
 }
 
@@ -877,7 +877,7 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
 
 	struct unset_foreach_t u = { .f = f, .n = 0 };
 	r_flag_foreach_glob (f, glob, unset_foreach, &u);
-	f->is_dirty = true;
+	R_DIRTY(f);
 	return u.n;
 }
 
@@ -886,7 +886,7 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
 R_API bool r_flag_unset_name(RFlag *f, const char *name) {
 	r_return_val_if_fail (f, false);
 	RFlagItem *item = ht_pp_find (f->ht_name, name, NULL);
-	f->is_dirty = true;
+	R_DIRTY(f);
 	return item && r_flag_unset (f, item);
 }
 
@@ -898,7 +898,7 @@ R_API void r_flag_unset_all(RFlag *f) {
 	r_skiplist_purge (f->by_off);
 	r_spaces_fini (&f->spaces);
 	new_spaces (f);
-	f->is_dirty = true;
+	R_DIRTY(f);
 }
 
 struct flag_relocate_t {
