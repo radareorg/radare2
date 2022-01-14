@@ -370,6 +370,20 @@ jobs:
       run: pip3 install r2pipe; make tests
 
   # Mobile
+  ios-cydia32:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install pkg-config/ldid2 with Homebrew
+      run: brew install pkg-config ldid
+    - name: Create cydia32 package
+      run: ./sys/ios-cydia32.sh
+    - name: List sys/cydia
+      run: ls -lahR ./sys/cydia
+    - uses: actions/upload-artifact@v2
+      with:
+        name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
+        path: ./dist/cydia/radare2/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
   ios-cydia:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
@@ -377,14 +391,6 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install pkg-config/ldid2 with Homebrew
       run: brew install pkg-config ldid
-#     - name: Create cydia32 package
-#       run: ./sys/ios-cydia32.sh
-#     - name: List sys/cydia
-#       run: ls -lahR ./sys/cydia
-#     - uses: actions/upload-artifact@v2
-#       with:
-#         name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
-#         path: ./dist/cydia/radare2/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
     - name: Create cydia package
       run: ./sys/ios-cydia.sh
     - name: Create iOS SDK
