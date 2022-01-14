@@ -2896,6 +2896,11 @@ static char *unescape_special_chars(const char *s, const char *special_chars) {
 			dst[j++] = s[i];
 			continue;
 		}
+
+		if (!s[i + 1]) {
+			break;
+		}
+
 		dst[j++] = s[i + 1];
 		i++;
 	}
