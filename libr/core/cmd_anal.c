@@ -8760,6 +8760,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			if (hint && hint->opcode) {
 				r_cons_printf ("aho %s @ 0x%08"PFMT64x"\n", hint->opcode, hint->addr);
 			}
+			r_anal_hint_free (hint);
 		} else if (input[1] == 0) {
 			// show if any
 			RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
