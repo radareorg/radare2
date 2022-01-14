@@ -274,7 +274,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 		free (dup);
 	}
 	free (offset);
-	free (ls);
+	ls_free (ls);
 	if (IS_MODE_SET (mode)) {
 		r_flag_space_pop (core->flags);
 	}
