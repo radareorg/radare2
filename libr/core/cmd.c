@@ -377,6 +377,7 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 	RList *pending = r_list_newf (free);
 	r_cons_print (s);
 	RList *rows = r_str_split_list (s, "\n", 0);
+	free (s);
 	RListIter *iter;
 	char *row;
 	r_list_foreach (rows, iter, row) {
