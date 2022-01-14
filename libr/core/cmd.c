@@ -4664,6 +4664,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 				ut64 addr = va? rel->vaddr: rel->paddr;
 				append_item (list, NULL, addr, UT64_MAX);
 			}
+			r_list_free (rels);
 		}
 		break;
 	case 'r': // registers
