@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include "r_crypto.h"
 #include "r_config.h"
@@ -28,12 +28,21 @@ static const char *help_msg_w[] = {
 	"wo","[?] hex","write in block with operation. 'wo?' fmi",
 	"wp","[?] -|file","apply radare patch file. See wp? fmi",
 	"wr"," 10","write 10 random bytes",
-	"ws"," pstring","write 1 byte for length and then the string",
+	"ws","[?] pstring","write pascal string: 1 byte for length + N for the string",
 	"wt","[?] file [sz]","write to file (from current seek, blocksize or sz bytes)",
 	"ww"," foobar","write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'",
 	"wx","[?][fs] 9090","write two intel nops (from wxfile or wxseek)",
 	"wv","[?] eip+34","write 32-64 bit value honoring cfg.bigendian",
 	"wz"," string","write zero terminated string (like w + \\x00)",
+	NULL
+};
+
+static const char *help_msg_ws[] = {
+	"Usage:", "ws[124?] [string]", "Pascal strings are not null terminated and store the length in binary at the beginning",
+	"ws", " str", "write pascal string using first byte as length",
+	"ws1", " str", "same as above",
+	"ws2", " str", "same as above but using ut16 as length (honors cfg.bigendian)",
+	"ws4", " str", "same, but using ut32 (honors cfg.bigendian)",
 	NULL
 };
 
@@ -2003,23 +2012,65 @@ static int ws_handler_old(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
-	if (str && *str && str[1]) {
-		int len = r_str_unescape (str + 1);
-		if (len > 255) {
+	if (str && *str) {
+		char *arg = str;
+		int pss = 1;
+		int maxlen = 255;
+		if (*str == ' ') {
+			arg++;
+		} else switch (*str) {
+		case '1':
+			pss = 1;
+			break;
+		case '2':
+			pss = 2;
+			maxlen = UT16_MAX;
+			break;
+		case '4':
+			pss = 4;
+			maxlen = UT32_MAX;
+			break;
+		default:
+			pss = 0;
+			break;
+		}
+		arg = strchr (str, ' ');
+		if (!arg || !pss) {
+			r_core_cmd_help (core, help_msg_ws);
+			free (str);
+			return 0;
+		}
+		arg = r_str_trim_head_ro (arg + 1);
+		ut64 len = r_str_unescape ((char *)arg);
+		if (len > maxlen) {
 			eprintf ("Too large\n");
 		} else {
-			ut8 ulen = (ut8)len;
-			if (!r_core_write_at (core, core->offset, &ulen, 1) ||
-				!r_core_write_at (core, core->offset + 1, (const ut8 *)str + 1, len)) {
-				cmd_write_fail (core);
-			} else {
-				WSEEK (core, len);
+			ut8 lenbuf[4] = {0};
+			// write string length
+			switch (pss) {
+			case 1:
+				r_write_ble8 (lenbuf, len);
+				r_io_write_at (core->io, core->offset, lenbuf, 1);
+				break;
+			case 2:
+				r_write_ble16 (lenbuf, len, core->anal->big_endian);
+				r_io_write_at (core->io, core->offset, lenbuf, 2);
+				break;
+			case 4:
+				r_write_ble32 (lenbuf, len, core->anal->big_endian);
+				r_io_write_at (core->io, core->offset, lenbuf, 4);
+				break;
 			}
+			if (!r_core_write_at (core, core->offset + pss, (const ut8 *)arg, len)) {
+				cmd_write_fail (core);
+			}
+			WSEEK (core, len);
 			r_core_block_read (core);
 		}
 	} else {
-		eprintf ("Too short.\n");
+		r_core_cmd_help (core, help_msg_ws);
 	}
+	free (str);
 	return 0;
 }
 
