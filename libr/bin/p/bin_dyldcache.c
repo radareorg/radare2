@@ -1758,6 +1758,9 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 		int i;
 		ut64 scoffs_offset = 0;
 		ut64 scoffs_size = 0;
+		ut64 selrefs_offset = 0;
+		ut64 selrefs_size = 0;
+		ut8 remaining = 2;
 		ut64 slide = rebase_infos_get_slide (cache);
 		for (i = 0; !sections[i].last; i++) {
 			if (sections[i].size == 0) {
@@ -1766,28 +1769,71 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			if (strstr (sections[i].name, "__objc_scoffs")) {
 				scoffs_offset = va2pa (sections[i].addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
 				scoffs_size = sections[i].size;
-				break;
+				remaining--;
+				if (remaining == 0) {
+					break;
+				}
+			}
+			if (strstr (sections[i].name, "__DATA.__objc_selrefs")) {
+				selrefs_offset = va2pa (sections[i].addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+				selrefs_size = sections[i].size;
+				remaining--;
+				if (remaining == 0) {
+					break;
+				}
 			}
 		}
 
 		MACH0_(mach0_free) (mach0);
 		R_FREE (sections);
 
+		ut64 sel_string_base = 0;
 		if (!scoffs_offset || scoffs_size < 40) {
-			break;
+			if (!selrefs_offset || !selrefs_size || cache->n_hdr == 1) {
+				break;
+			}
+			ut64 cursor = selrefs_offset;
+			ut64 end = cursor + selrefs_size;
+			while (cursor < end) {
+				ut64 sel_ptr = r_buf_read_le64_at (cache->buf, cursor);
+				if (sel_ptr == UT64_MAX) {
+					break;
+				}
+
+				ut64 sel_offset = va2pa (sel_ptr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+				char * selector = r_buf_get_string (cache->buf, sel_offset);
+				if (!selector) {
+					break;
+				}
+
+				bool is_magic_selector = !strncmp (selector, "\xf0\x9f\xa4\xaf", 4);
+				free (selector);
+
+				if (is_magic_selector) {
+					sel_string_base = sel_ptr;
+					break;
+				}
+
+				cursor += 8;
+			}
+			if (sel_string_base == 0) {
+				break;
+			}
+		} else {
+			ut64 check = r_buf_read_le64_at (cache->buf, scoffs_offset);
+			if (check != 2) {
+				break;
+			}
+			sel_string_base = r_buf_read_le64_at (cache->buf, scoffs_offset + 8);
+			if (sel_string_base == UT64_MAX) {
+				break;
+			}
+			ut64 sel_string_end = r_buf_read_le64_at (cache->buf, scoffs_offset + 16);
+			if (sel_string_end == sel_string_base || sel_string_end == UT64_MAX) {
+				break;
+			}
 		}
-		ut64 check = r_buf_read_le64_at (cache->buf, scoffs_offset);
-		if (check != 2) {
-			break;
-		}
-		ut64 sel_string_base = r_buf_read_le64_at (cache->buf, scoffs_offset + 8);
-		if (sel_string_base == UT64_MAX) {
-			break;
-		}
-		ut64 sel_string_end = r_buf_read_le64_at (cache->buf, scoffs_offset + 16);
-		if (sel_string_end == sel_string_base || sel_string_end == UT64_MAX) {
-			break;
-		}
+
 		result = R_NEW0 (objc_cache_opt_info);
 		if (!result) {
 			break;
