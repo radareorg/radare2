@@ -712,7 +712,7 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 }
 
 R_API bool r_core_project_is_saved(RCore *core) {
-	return !core->config->is_dirty 
-		&& !core->anal->is_dirty
-		&& !core->flags->is_dirty;
+	return !R_IS_DIRTY (core->config)
+		&& !R_IS_DIRTY (core->anal)
+		&& !R_IS_DIRTY (core->flags);
 }
