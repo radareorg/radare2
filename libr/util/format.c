@@ -1909,7 +1909,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 	}
 	r_print_format (p, seek, b, len, fmt, mode, setval, field);
 	ret = r_print_format_struct_size (p, fmt, mode, 0);
-	free (fmt);
+	R_FREE (fmt);
 	return ret;
 }
 
