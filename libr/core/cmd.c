@@ -4658,7 +4658,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 	case 'R': // relocs
 		{
 			RBinReloc *rel;
-			const RList *rels = r_bin_get_relocs_list (core->bin);
+			RList *rels = r_bin_get_relocs_list (core->bin);
 			// const RList *rels = r_bin_patch_relocs_list (core->bin);
 			r_list_foreach (rels, iter, rel) {
 				ut64 addr = va? rel->vaddr: rel->paddr;
