@@ -2,10 +2,9 @@
 #ifndef R_ANNOTATEDCODE_H
 #define R_ANNOTATEDCODE_H
 
-// #include <r_core.h>
 #include <r_types.h>
 #include <r_vector.h>
-#include <r_util/r_new_rbtree.h>
+#include <r_util.h>
 
 #ifdef __cplusplus
 extern "C" {
