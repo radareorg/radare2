@@ -1025,6 +1025,21 @@ static HtPU *create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hd
 		}
 		file[sizeof (file) - 1] = 0;
 		ht_pu_insert (path_to_idx, file, (ut64)i);
+
+		const char versions_pattern[] = ".framework/Versions/";
+		char *versions = strstr (file, versions_pattern);
+		if (versions) {
+			char *next_slash = strchr (versions + 20, '/');
+			if (next_slash) {
+				char *tail = strdup (next_slash);
+				if (!tail) {
+					break;
+				}
+				strcpy (versions + 10, tail);
+				free (tail);
+				ht_pu_insert (path_to_idx, file, (ut64)i);
+			}
+		}
 	}
 	return path_to_idx;
 }
