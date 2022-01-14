@@ -1133,6 +1133,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (opt.ind < argc) {
 				R_FREE (pfile);
 				while (opt.ind < argc) {
+					R_FREE (pfile);
 					pfile = strdup (argv[opt.ind++]);
 #if __WINDOWS__
 					pfile = r_acp_to_utf8 (pfile);
