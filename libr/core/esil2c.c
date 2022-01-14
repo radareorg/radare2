@@ -165,6 +165,7 @@ static bool esil2c_neg(RAnalEsil *esil) {
 	char *var = r_str_newf ("tmp%d", esil->stackptr);
 	r_strbuf_appendf (user->sb, "  %s = !%s;\n", var, src);
 	r_anal_esil_push (esil, var);
+	free (var);
 	return true;
 }
 
