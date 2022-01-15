@@ -278,6 +278,7 @@ beach:
 	free (buf);
 	free (ptr);
 	free (code);
+	free (inp);
 	R_FREE (opst);
 	r_cons_break_pop ();
 	return hits;
