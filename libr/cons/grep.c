@@ -606,15 +606,6 @@ R_API void r_cons_grepbuf(void) {
 		}
 		return;
 	}
-	if (!cons->context->buffer) {
-		cons->context->buffer_len = len + 20;
-		cons->context->buffer = malloc (cons->context->buffer_len);
-		if (!cons->context->buffer) {
-			cons->context->buffer_len = 0;
-			return;
-		}
-		cons->context->buffer[0] = 0;
-	}
 	RStrBuf *ob = r_strbuf_new ("");
 	// if we modify cons->lines we should update I.context->buffer too
 	cons->lines = 0;
@@ -720,11 +711,12 @@ R_API void r_cons_grepbuf(void) {
 	cons->context->buffer_len = r_strbuf_length (ob);
 	if (grep->counter) {
 		int cnt = grep->charCounter? strlen (cons->context->buffer): cons->lines;
-		if (cons->context->buffer_len < 10) {
-			cons->context->buffer_len = 10; // HACK
+		if (cons->context->buffer) {
+			free (cons->context->buffer);
 		}
-		snprintf (cons->context->buffer, cons->context->buffer_len, "%d\n", cnt);
+		cons->context->buffer = r_str_newf ("%d\n", cnt);
 		cons->context->buffer_len = strlen (cons->context->buffer);
+		cons->context->buffer_sz = cons->context->buffer_len+1;
 		cons->num->value = cons->lines;
 		r_strbuf_free (ob);
 		return;
