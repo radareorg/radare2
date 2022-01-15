@@ -2206,10 +2206,12 @@ char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
 	char *str = Elf_(r_bin_elf_get_cpu) (bin);
 	if (str) {
 		head_flag = r_str_append (head_flag, str);
+		free (str);
 	}
 	str = Elf_(r_bin_elf_get_abi) (bin);
 	if (str) {
 		head_flag = r_str_appendf (head_flag, " %s", str);
+		free (str);
 	}
 	if (R_STR_ISEMPTY (head_flag)) {
 		head_flag = r_str_append (head_flag, "unknown_flag");
