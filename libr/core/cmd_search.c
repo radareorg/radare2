@@ -2482,6 +2482,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 							if (s) {
 								r_cons_printf ("%s", s);
 							}
+							free (s);
 						}
 					} else {
 						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n",
@@ -2498,8 +2499,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 				}
 				count++;
 			}
-			r_list_purge (hits);
-			free (hits);
+			r_list_free (hits);
 		}
 	}
 	if (param->outmode == R_MODE_JSON) {
