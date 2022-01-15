@@ -5789,6 +5789,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 			// Close the fd associated with the aeim stack
 			ut64 fd = sdb_atoi (fi);
 			(void)r_io_fd_close (core->io, fd);
+			free (fi);
 		}
 	}
 	size = r_config_get_i (core->config, "esil.stack.size");
