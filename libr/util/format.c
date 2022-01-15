@@ -1618,6 +1618,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
+	bool free_fmt2 = true;
 	if (!f) {
 		return -1;
 	}
@@ -1627,8 +1628,12 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 	const char *fmt2 = p? sdb_get (p->formats, f, NULL): NULL;
 	if (!fmt2) {
 		fmt2 = f;
+		free_fmt2 = false;
 	}
 	char *o = strdup (fmt2);
+	if (free_fmt2) {
+		R_FREE (fmt2);
+	}
 	if (!o) {
 		return -1;
 	}
