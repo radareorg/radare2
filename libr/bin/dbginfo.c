@@ -40,6 +40,7 @@ R_API bool r_bin_addr2line2(RBin *bin, ut64 addr, char *file, int len, int *line
 			return true;
 		}
 	}
+	free (key);
 	return false;
 }
 
