@@ -6825,6 +6825,7 @@ toro:
 					}
 					r_cons_println (opstr);
 				}
+				free (tmpopstr);
 				r_anal_op_fini (&analop);
 			} else {
 				char opstr[128] = {
