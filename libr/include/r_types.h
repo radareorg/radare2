@@ -463,9 +463,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define eprintf(...) fprintf (stderr, __VA_ARGS__)
 
 #define EPRINT_STR(x) eprintf (#x ": \"%s\"\n", x)
-#define EPRINT_CHAR(x) eprintf (#x ": %c\n", x)
+#define EPRINT_CHAR(x) eprintf (#x ": '%c' (0x%x)\n", x, x)
 #define EPRINT_INT(x) eprintf (#x ": %d (0x%x)\n", x, x)
 #define EPRINT_BOOL(x) eprintf (#x ": %s\n", x? "true": "false")
+#define EPRINT_PTR(x) eprintf (#x ": %p\n", x)
 
 #define EPRINT_UT64(x) eprintf (#x ": %" PFMT64u " (0x%" PFMT64x ")\n", x, x)
 #define EPRINT_ST64(x) eprintf (#x ": %" PFMT64d " (0x%" PFMT64x ")\n", x, x)
