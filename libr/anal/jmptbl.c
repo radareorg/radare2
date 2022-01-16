@@ -192,6 +192,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 		return false;
 	}
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
+        bool is_x86 = anal->cur->arch && !strcmp (anal->cur->arch, "x86");
 	const bool is_v850 = !is_arm && ((anal->cur->arch && !strncmp (anal->cur->arch, "v850", 4)) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4));
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptblsz);
@@ -231,7 +232,11 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 			if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
 				break;
 			}
-		}
+		} else if (sz == 2 && is_x86) {
+			st32 jmpdelta = (st32)jmpptr;
+			// jump tables where sign extended movs are used
+			jmpptr = jmptbl_off + jmpdelta;
+                }
 		if (anal->limit) {
 			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to) {
 				break;
