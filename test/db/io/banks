@@ -1,0 +1,60 @@
+NAME=omb banks
+FILE=malloc://1024
+CMDS=<<EOF
+om
+omb+ map 1
+omb+ nomap
+omb nomap
+om
+omb map
+om
+omb-*
+omb -1
+EOF
+EXPECT=<<EOF
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx 
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx 
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx 
+Usage: omb[jq,+] [fd]  Operate on memory banks
+| omb          list all memory banks
+| omb [id]     switch to use a different bank
+| omb+[name]   create a new bank with given name
+| omba [id]    adds a map to the bank
+| ombd [id]    deletes a map from the bank
+| omb-*        delete all banks
+| omb-[mapid]  delete the bank with given id
+| ombg         associate all maps to the current bank
+| ombq         show current bankid
+EOF
+RUN
+
+NAME=omb+
+FILE=malloc://1024
+CMDS=<<EOF
+omb+ one
+omb+ two
+omb
+EOF
+EXPECT=<<EOF
+* 0 default [ 1 ]
+- 1 one [ ]
+- 2 two [ ]
+EOF
+RUN
+
+NAME=omb name deletes them all (BUG)
+BROKEN=1
+FILE=malloc://1024
+CMDS=<<EOF
+omb+ one
+omb
+omb one
+omb
+EOF
+EXPECT=<<EOF
+1: one 
+
+1: one 
+
+EOF
+RUN

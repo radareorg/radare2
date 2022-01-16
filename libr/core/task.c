@@ -2,7 +2,7 @@
 
 #include <r_core.h>
 
-R_API void r_core_task_scheduler_init (RCoreTaskScheduler *tasks, RCore *core) {
+R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->task_id_next = 0;
 	tasks->tasks = r_list_newf ((RListFree)r_core_task_decref);
 	tasks->tasks_queue = r_list_new ();
@@ -16,7 +16,7 @@ R_API void r_core_task_scheduler_init (RCoreTaskScheduler *tasks, RCore *core) {
 	tasks->current_task = NULL;
 }
 
-R_API void r_core_task_scheduler_fini (RCoreTaskScheduler *tasks) {
+R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
 	r_list_free (tasks->tasks);
 	r_list_free (tasks->tasks_queue);
 	r_list_free (tasks->oneshot_queue);
@@ -37,8 +37,8 @@ static void tasks_lock_block_signals_reset(sigset_t *old_sigset) {
 }
 #else
 #define TASK_SIGSET_T void *
-static void tasks_lock_block_signals(TASK_SIGSET_T *old_sigset) { (void)old_sigset; }
-static void tasks_lock_block_signals_reset(TASK_SIGSET_T *old_sigset) { (void)old_sigset; }
+static void tasks_lock_block_signals(TASK_SIGSET_T *old_sigset) {(void)old_sigset; }
+static void tasks_lock_block_signals_reset(TASK_SIGSET_T *old_sigset) {(void)old_sigset; }
 #endif
 
 static void tasks_lock_enter(RCoreTaskScheduler *scheduler, TASK_SIGSET_T *old_sigset) {
@@ -56,7 +56,7 @@ typedef struct oneshot_t {
 	void *user;
 } OneShot;
 
-R_API void r_core_task_print (RCore *core, RCoreTask *task, PJ *pj, int mode) {
+R_API void r_core_task_print(RCore *core, RCoreTask *task, PJ *pj, int mode) {
 	switch (mode) {
 	case 'j': {
 		pj_o (pj);
@@ -195,7 +195,7 @@ R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, i
 	}
 }
 
-static void task_free (RCoreTask *task) {
+static void task_free(RCoreTask *task) {
 	if (!task) {
 		return;
 	}
@@ -250,7 +250,7 @@ hell:
 	return NULL;
 }
 
-R_API void r_core_task_incref (RCoreTask *task) {
+R_API void r_core_task_incref(RCoreTask *task) {
 	if (!task) {
 		return;
 	}
@@ -260,7 +260,7 @@ R_API void r_core_task_incref (RCoreTask *task) {
 	tasks_lock_leave (&task->core->tasks, &old_sigset);
 }
 
-R_API void r_core_task_decref (RCoreTask *task) {
+R_API void r_core_task_decref(RCoreTask *task) {
 	if (!task) {
 		return;
 	}
@@ -535,7 +535,7 @@ R_API void r_core_task_sleep_end(RCoreTask *task) {
 	task_wakeup (task);
 }
 
-R_API const char *r_core_task_status (RCoreTask *task) {
+R_API const char *r_core_task_status(RCoreTask *task) {
 	switch (task->state) {
 	case R_CORE_TASK_STATE_RUNNING:
 		return "running";
@@ -550,11 +550,11 @@ R_API const char *r_core_task_status (RCoreTask *task) {
 	}
 }
 
-R_API RCoreTask *r_core_task_self (RCoreTaskScheduler *scheduler) {
+R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler) {
 	return scheduler->current_task ? scheduler->current_task : scheduler->main_task;
 }
 
-static RCoreTask *task_get (RCoreTaskScheduler *scheduler, int id) {
+static RCoreTask *task_get(RCoreTaskScheduler *scheduler, int id) {
 	RCoreTask *task;
 	RListIter *iter;
 	r_list_foreach (scheduler->tasks, iter, task) {
@@ -603,7 +603,7 @@ R_API void r_core_task_break_all(RCoreTaskScheduler *scheduler) {
 	tasks_lock_leave (scheduler, &old_sigset);
 }
 
-R_API int r_core_task_del (RCoreTaskScheduler *scheduler, int id) {
+R_API int r_core_task_del(RCoreTaskScheduler *scheduler, int id) {
 	RCoreTask *task;
 	RListIter *iter;
 	bool ret = false;
@@ -627,7 +627,7 @@ R_API int r_core_task_del (RCoreTaskScheduler *scheduler, int id) {
 	return ret;
 }
 
-R_API void r_core_task_del_all_done (RCoreTaskScheduler *scheduler) {
+R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler) {
 	RCoreTask *task;
 	RListIter *iter, *iter2;
 	r_list_foreach_safe (scheduler->tasks, iter, iter2, task) {

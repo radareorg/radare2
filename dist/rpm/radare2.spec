@@ -5,7 +5,7 @@
 %global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           radare2
-Version:        5.1.0
+Version:        5.4.2
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
@@ -66,7 +66,7 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 
 
 %files
-%doc AUTHORS.md CONTRIBUTING.md DEVELOPERS.md README.md TODO.md
+%doc COMMUNITY.md CONTRIBUTING.md DEVELOPERS.md INSTALL.md README.md SECURITY.md USAGE.md
 %license COPYING
 %{_bindir}/r*
 %{_libdir}/libr*
@@ -107,6 +107,9 @@ cp shlr/sdb/src/libsdb.a %{buildroot}/%{_libdir}/libsdb.a
 
 
 %changelog
+* Sun Sep 20 2021 pancake <pancake@nopcode.org> 5.4.2
+- update for latest centos8 and r2 codebase
+
 * Sat Oct 10 2020 pancake <pancake@nopcode.org> 5.1.0
 - update for latest centos8 and r2 codebase
 

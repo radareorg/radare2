@@ -1,3 +1,17 @@
+NAME=arm coff
+FILE=bins/coff/arm.obj
+CMDS=<<EOF
+i~^format
+e asm.arch
+e asm.bits
+EOF
+EXPECT=<<EOF
+format   coff
+arm
+32
+EOF
+RUN
+
 NAME=tifdir imports and sections
 FILE=bins/coff/tif_dir.obj
 CMDS=<<EOF
@@ -58,8 +72,8 @@ NAME=tiny coff
 FILE=bins/coff/coff.obj
 CMDS=om;is;ir
 EXPECT=<<EOF
- 2 fd: 3 +0x00000064 0x00000000 - 0x00000026 r-x fmap..text_0
- 1 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data_1
+* 2 fd: 3 +0x00000064 0x00000000 - 0x00000026 r-x fmap..text_0
+- 1 fd: 3 +0x0000008b 0x00000030 - 0x0000004b r-- fmap..data_1
 [Symbols]
 
 nth paddr      vaddr      bind   type size lib name
@@ -92,15 +106,15 @@ s sym.__1FooBar__QAE_XZ
 pd 2
 EOF
 EXPECT=<<EOF
- 9 fd: 3 +0x0000017c 0x00000000 - 0x000000ee --- fmap..drectve_0
- 8 fd: 3 +0x0000026b 0x000000f0 - 0x00000b9f r-- fmap..debug_S_1
- 7 fd: 3 +0x00000d1b 0x00000ba0 - 0x00000c13 r-- fmap..debug_T_2
- 6 fd: 3 +0x00000d8f 0x00000c20 - 0x00000c4c r-x fmap..text_mn_3
- 5 fd: 3 +0x00000dbc 0x00000c50 - 0x00000d23 r-- fmap..debug_S_4
- 4 fd: 3 +0x00000ec2 0x00000d30 - 0x00000d59 r-x fmap..text_mn_5
- 3 fd: 3 +0x00000eec 0x00000d60 - 0x00000e33 r-- fmap..debug_S_6
- 2 fd: 3 +0x00000ff2 0x00000e40 - 0x00000e43 r-- fmap..rtc_IMZ_7
- 1 fd: 3 +0x00001000 0x00000e50 - 0x00000e53 r-- fmap..rtc_TMZ_8
+- 9 fd: 3 +0x0000017c 0x00000000 - 0x000000ee --- fmap..drectve_0
+- 8 fd: 3 +0x0000026b 0x000000f0 - 0x00000b9f r-- fmap..debug_S_1
+- 7 fd: 3 +0x00000d1b 0x00000ba0 - 0x00000c13 r-- fmap..debug_T_2
+* 6 fd: 3 +0x00000d8f 0x00000c20 - 0x00000c4c r-x fmap..text_mn_3
+- 5 fd: 3 +0x00000dbc 0x00000c50 - 0x00000d23 r-- fmap..debug_S_4
+- 4 fd: 3 +0x00000ec2 0x00000d30 - 0x00000d59 r-x fmap..text_mn_5
+- 3 fd: 3 +0x00000eec 0x00000d60 - 0x00000e33 r-- fmap..debug_S_6
+- 2 fd: 3 +0x00000ff2 0x00000e40 - 0x00000e43 r-- fmap..rtc_IMZ_7
+- 1 fd: 3 +0x00001000 0x00000e50 - 0x00000e53 r-- fmap..rtc_TMZ_8
 0   0x00000d8f 0x00000c20 LOCAL  SECT 4        .text$mn
 0   0x00000ec2 0x00000d30 LOCAL  SECT 4        .text$mn
             ;-- section..text_mn_5:

@@ -83,7 +83,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		break;
 	case R_MODE_RADARE: {
 		char *f_name = strdup (string->string);
-		r_name_filter (f_name, 32);
+		r_name_filter (f_name, -1);
 		if (bin->prefix) {
 			io->cb_printf ("f %s.str.%s %u @ 0x%08"PFMT64x"\n"
 					"Cs %u @ 0x%08"PFMT64x"\n",
@@ -293,7 +293,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			case R_STRING_TYPE_WIDE32:
 				num_blocks = 0;
 				block_list = r_utf_block_list ((const ut8*)tmp, i - 1,
-				                               str_type == R_STRING_TYPE_WIDE ? &freq_list : NULL);
+						str_type == R_STRING_TYPE_WIDE? &freq_list: NULL);
 				if (block_list) {
 					for (j = 0; block_list[j] != -1; j++) {
 						num_blocks++;
@@ -401,7 +401,7 @@ static bool __isDataSection(RBinFile *a, RBinSection *s) {
 	return strstr (s->name, "_const") != NULL;
 }
 
-static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to, RBinSection * section) {
+static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to, RBinSection *section) {
 	r_return_if_fail (bf && bf->buf);
 
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
@@ -413,11 +413,11 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 
 		min = plugin? plugin->minstrlen: 4;
 	}
 	/* Some plugins return zero, fix it up */
-	if (!min) {
-		min = 4;
-	}
 	if (min < 0) {
 		return;
+	}
+	if (!min) {
+		min = 4;
 	}
 	{
 		RIO *io = bf->rbin->iob.io;
@@ -488,7 +488,7 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, int ra
 	return bf;
 }
 
-static RBinPlugin *get_plugin_from_buffer(RBin *bin, const char *pluginname, RBuffer *buf) {
+static RBinPlugin *get_plugin_from_buffer(RBin *bin, RBinFile *bf, const char *pluginname, RBuffer *buf) {
 	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
 	if (plugin) {
 		return plugin;
@@ -497,7 +497,7 @@ static RBinPlugin *get_plugin_from_buffer(RBin *bin, const char *pluginname, RBu
 	if (plugin) {
 		return plugin;
 	}
-	plugin = r_bin_get_binplugin_by_buffer (bin, buf);
+	plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
 	if (plugin) {
 		return plugin;
 	}
@@ -510,7 +510,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	ut64 offset = data->offset;
 	ut64 sz = data->size;
 
-	RBinPlugin *plugin = get_plugin_from_buffer (bin, NULL, data->buf);
+	RBinPlugin *plugin = get_plugin_from_buffer (bin, bf, NULL, data->buf);
 	bf->buf = r_buf_ref (data->buf);
 
 	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
@@ -556,7 +556,7 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 	if (bf) {
 		RListIter *item = r_list_append (bin->binfiles, bf);
 		bf->buf = r_buf_ref (buf);
-		RBinPlugin *plugin = get_plugin_from_buffer (bin, pluginname, bf->buf);
+		RBinPlugin *plugin = get_plugin_from_buffer (bin, bf, pluginname, bf->buf);
 		RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, 0, r_buf_size (bf->buf));
 		if (!o) {
 			r_list_delete (bin->binfiles, item);

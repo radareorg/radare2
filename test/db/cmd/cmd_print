@@ -1,3 +1,35 @@
+NAME=pv3
+FILE=malloc://1024
+CMDS=<<EOF
+wx 21436587
+pv4
+b 3
+pv4
+pv4 4
+pv 4
+?e ---
+b 7
+pv4 4
+EOF
+EXPECT=<<EOF
+0x87654321
+0x87654321
+0x87654321
+0x00000000
+0x00000000
+0x00000000
+0x0000000087654321
+0x0000000000000000
+0x0000000000000000
+0x0000000000000000
+---
+0x87654321
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
 NAME=null raw
 FILE=-
 CMDS=<<EOF
@@ -16,7 +48,6 @@ EOF
 RUN
 
 NAME=null raw wff
-BROKEN=1
 FILE=-
 CMDS=<<EOF
 b 6
@@ -39,7 +70,7 @@ CMDS=<<EOF
 b 6
 w hello world
 ps
-wtf $jej
+wtf $jeje
 w xxxxx_xxxxx
 wff $jeje
 ps
@@ -51,7 +82,7 @@ EOF
 RUN
 
 NAME=pri cows
-FILE=../doc/cows128.data
+FILE=bins/other/cows128.data
 CMDS=pri
 EXPECT=<<EOF
 ::::::::::++++++
@@ -115,7 +146,7 @@ FILE=-
 CMDS=<<EOF
 b 2
 wx 0xff
-e zoom.in=raw
+e zoom.in=range
 p=b 2 2@0
 EOF
 EXPECT=<<EOF
@@ -673,7 +704,7 @@ FILE=bins/pe/a.exe
 ARGS=-n
 CMDS=pm
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows (console) Intel 80386 32-bit
+0x00000000 1 PE for MS Windows (console) Intel 80386 32-bit
 EOF
 RUN
 

@@ -2801,13 +2801,13 @@ EXPECT=<<EOF
 ;-- start2:
 0x00001180      31c0           xor eax, eax
 0x00001182      eb06           jmp loc.start
-| ----------- true: 0x0000118a
+| // true: 0x0000118a
 18: int main (int argc, char **argv, char **envp);
 0x00001184      31c0           xor eax, eax
 0x00001186      75f8           jne loc.start2
-| ----------- true: 0x00001180  false: 0x00001188
+| // true: 0x00001180  false: 0x00001188
 0x00001188      ebf6           jmp loc.start2
-| ----------- true: 0x00001180
+| // true: 0x00001180
 ;-- start:
 0x0000118a      89c0           mov eax, eax
 0x0000118c      50             push eax
@@ -3124,7 +3124,7 @@ EXPECT=<<EOF
   {
     "opcode": "pushf",
     "disasm": "pushf",
-    "pseudo": "pushf ",
+    "pseudo": "push ()",
     "description": "push flags register onto the stack",
     "mnemonic": "pushf",
     "mask": "ffff",
@@ -3165,7 +3165,6 @@ FILE=malloc://1023
 CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
-e asm.leahints=false
 e asm.cpu=x86
 e asm.arch=x86
 e scr.utf8=true
@@ -3230,7 +3229,6 @@ FILE=malloc://1023
 CMDS=<<EOF
 e asm.calls=false
 e asm.bits=32
-e asm.leahints=false
 e asm.cpu=x86
 e anal.cpu=x86
 e anal.vars.stackname=true
@@ -3375,11 +3373,12 @@ ao 1
 p8 1
 EOF
 EXPECT=<<EOF
-17
+18
 address: 0x0
 opcode: nop
 esilcost: 0
 disasm: nop
+pseudo: no 
 mnemonic: nop
 description: no operation
 mask: ff

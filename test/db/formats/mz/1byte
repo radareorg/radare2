@@ -1,0 +1,25 @@
+NAME=MZ: 1byte
+FILE=bins/mz/1byte.exe
+CMDS=<<EOF
+iS
+pd 3
+om
+EOF
+EXPECT=<<EOF
+[Sections]
+
+nth paddr       size vaddr       vsize perm name
+------------------------------------------------
+0   0x00000200   0x0 0x00000000    0x0 -rwx seg_000
+1   0x00000200   0x1 0x00000000    0x1 -rwx seg_001
+
+            ;-- section.seg_000:
+            ;-- section.seg_001:
+            ;-- mz.dos_header:
+            ;-- entry0:
+            0000:0000     30ff           xor bh, bh                    ; [01] -rwx section size 1 named seg_001
+            0000:0002     ff             invalid
+            0000:0003     ff             invalid
+* 1 fd: 3 +0x00000200 0x00000000 - 0x00000000 r-x fmap.seg_001
+EOF
+RUN

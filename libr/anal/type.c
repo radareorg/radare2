@@ -80,8 +80,8 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 	sdb_query_lines (anal->sdb_types, parsed);
 }
 
-static int typecmp(const void *a, const void *b) {
-	return strcmp (a, b);
+static ut64 typecmp_val(const void *a) {
+	return r_str_hash64 (a);
 }
 
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
@@ -92,9 +92,8 @@ R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
 	r_list_foreach (list, iter, var) {
 		r_list_append (type_used, var->type);
 	}
-	RList *uniq = r_list_uniq (type_used, typecmp);
-	r_list_free (type_used);
-	return uniq;
+	r_list_uniq_inplace (type_used, typecmp_val);
+	return type_used;
 }
 
 R_IPI void enum_type_case_free(void *e, void *user) {
@@ -388,7 +387,7 @@ static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		sdb_set (anal->sdb_types,
 			r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
-			r_strbuf_setf (&param_val, "%s,%zu,%d", member->type, member->offset, 0), 0ULL);
+			r_strbuf_setf (&param_val, "%s,%u,%d", member->type, (unsigned int)member->offset, 0), 0ULL);
 		free (member_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);
@@ -437,7 +436,7 @@ static void save_union(const RAnal *anal, const RAnalBaseType *type) {
 		char *member_sname = r_str_sanitize_sdb_key (member->name);
 		sdb_set (anal->sdb_types,
 			r_strbuf_setf (&param_key, "%s.%s.%s", kind, sname, member_sname),
-			r_strbuf_setf (&param_val, "%s,%zu,%d", member->type, member->offset, 0), 0ULL);
+			r_strbuf_setf (&param_val, "%s,%u,%d", member->type, (unsigned int)member->offset, 0), 0ULL);
 		free (member_sname);
 
 		r_strbuf_appendf (&arglist, (i++ == 0) ? "%s" : ",%s", member->name);

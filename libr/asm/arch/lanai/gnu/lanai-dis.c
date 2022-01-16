@@ -34,7 +34,7 @@
  * Arcadia, CA 91024                                                     *
  *************************************************************************/
  /* initial version released 5/95 */
- /* This file is based upon <> from the Gnu binutils-2.5.2 
+ /* This file is based upon <> from the Gnu binutils-2.5.2
     release, which had the following copyright notice: */
 
 	/* Print SPARC instructions.
@@ -69,11 +69,11 @@ static  char *reg_names[] =
  "r24","r25","r26","r27","r28","r29","r30","r31",
 };
 
-static char *op_names[] = 
+static char *op_names[] =
 { "add", "addc", "sub", "subb", "and", "or", "xor", "sh" };
 
 /* Nonzero if INSN is the opcode for a delayed branch.  */
-static int is_delayed_branch (unsigned long insn);
+static int is_delayed_branch(unsigned long insn);
 
 static int
 is_delayed_branch (insn)
@@ -93,7 +93,7 @@ is_delayed_branch (insn)
 
 static int opcodes_sorted = 0;
 /* extern void qsort (); */
-static int compare_opcodes (char *a, char *b);
+static int compare_opcodes(char *a, char *b);
 
 /* Print one instruction from MEMADDR on INFO->STREAM.
 
@@ -147,7 +147,7 @@ print_insn_lanai (memaddr, info)
 	     the effect of adding or or'ing the imm13 field to rs1.  */
 	  int imm_added_to_rs1 = 0;
 
-	  /* Do we have an `add' or `or' immediate instruction where rs1 is 
+	  /* Do we have an `add' or `or' immediate instruction where rs1 is
 	     the same as rd?  */
 
 	  if (((!(opcode->match & 0x80000000)			/* RI insn */
@@ -356,13 +356,13 @@ print_insn_lanai (memaddr, info)
 		      && X_RD (prev_insn) )
 		    {
 		      (*info->fprintf_func) (stream, "\t! ");
-		      info->target 
+		      info->target
 			 = X_C16(     insn) << (L3_RI_H&     insn ? 16 : 0);
 		      if((prev_insn & 0xf07c0000) == 0x50000000 ){
-		        info->target 
+		        info->target
 			  |= X_C16(prev_insn) << (L3_RI_H&prev_insn ? 16 : 0);
 		      }else{
-		        info->target 
+		        info->target
 			  += X_C16(prev_insn) << (L3_RI_H&prev_insn ? 16 : 0);
 		      }
 		      (*info->print_address_func) (info->target, info);
@@ -479,7 +479,7 @@ compare_opcodes (a, b)
 		   op0->name, op1->name);
 	}
     }
-  
+
   /* Fewer arguments are preferred.  */
   {
     int length_diff = strlen (op0->args) - strlen (op1->args);

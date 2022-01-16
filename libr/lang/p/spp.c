@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 pancake */
+/* radare - LGPL - Copyright 2020-2021 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
@@ -6,7 +6,9 @@
 #define USE_R2 1
 
 static RLang *Glang = NULL;
-#include <spp.h>
+#undef S_API
+// #include "../../../shlr/spp/spp.c"
+#include "../../../shlr/spp/spp.h"
 #include "spp_r2.inc"
 
 static bool lang_spp_init(RLang *l) {

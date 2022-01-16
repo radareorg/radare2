@@ -4,16 +4,17 @@ r_util_sources = [
   'ascii_table.c',
   'assert.c',
   'w32.c',
+  'w32dw.c',
   'alloc.c',
   'charset.c',
   'donut.c',
   'table.c',
+  'sstext.c',
   'getopt.c',
   'print_code.c',
   'base85.c',
   'base91.c',
   'bdiff.c',
-  'binheap.c',
   'bitmap.c',
   'buf.c',
   'cache.c',
@@ -35,6 +36,7 @@ r_util_sources = [
   'log.c',
   'mem.c',
   'name.c',
+  'new_rbtree.c',
   'format.c',
   'pie.c',
   'seven.c',
@@ -84,9 +86,9 @@ r_util_sources = [
   'sys_w32.c',
   'zip.c',
   'protobuf.c',
-  'regex/regcomp.c',
-  'regex/regexec.c',
-  'regex/regerror.c'
+  join_paths('regex','regcomp.c'),
+  join_paths('regex','regexec.c'),
+  join_paths('regex','regerror.c')
 ]
 
 if get_option('sdb_cgen')
@@ -101,7 +103,7 @@ endif
 
 if use_sys_openssl
   r_util_deps += [sys_openssl]
-  r_util_sources += ['big-ssl.c']
+  r_util_sources += ['big_ssl.c']
 else
   r_util_sources += ['big.c']
 endif

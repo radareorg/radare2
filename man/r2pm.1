@@ -1,70 +1,71 @@
-.Dd Jun 30, 2021
+.Dd Dec 5, 2021
 .Dt R2PM 1
 .Sh NAME
 .Nm R2PM
 .Nd radare2 package manager
 .Sh SYNOPSIS
 .Nm r2pm
-.Op init|update|cmd
-.Op ...
+.Op [aIiuUglsv]
+.Op [pkg ...]
 .Sh DESCRIPTION
 Allows to install, update, uninstall and discover plugins and tools that can be used with radare2.
 .Bl -tag -width Fl
 .It Fl a, Cm repo
 Adds an external r2pm repository, no arguments to -a will list all the registered repos, use '-a - repo' to unregister/remove those repos.
-.It Fl I, Cm info
+.It Fl I
 Show information about repository and installed packages
-.It Fl i, Cm install Ar pkgname
+.It Fl i Ar pkgname
 Install a package
-.It Fl gi, Cm global-install Ar pkgname
+.It Fl gi Ar pkgname
 Install a package in the system directory
-.It Fl u, Cm uninstall Ar pkgname
+.It Fl u Ar pkgname
 Uninstall a package
-.It Fl U, Cm Upgrade all the outdated packages
-Runs the suggested lines when loading outdated plugins by r2
-.It Fl gu, Cm global-install Ar pkgname
+.It Fl uu Ar pkgname
+Force uninstall a package
+.It Fl U Ar pkgname
+Run the suggested lines when loading outdated plugins by r2
+.It Fl gu Ar pkgname
 Uninstall a package from the system directory
-.It Fl l, Cm list
+.It Fl l
 List installed packages
-.It Fl s, Cm search Ar keyword
+.It Fl s Ar keyword
 Search in database for packages matching keyword
-.It Fl r, Cm run Ar command ...args
+.It Fl r Ar command ...args
 Run command with R2PM_BINDIR in PATH
-.It Fl v, Cm version
+.It Fl v
 Show version information
-.It Fl h, Cm help
+.It Fl h
 Show usage help message
-.It Fl c, Cm clean
+.It Fl c
 Clean the source cache
-.It Fl w, Cm when
-Show when a package was installed or exit 1 if pkg does not exist
 .El
 .Sh EXAMPLES
 .Pp
-Initialize and update the package database
-.Pp
-  $ r2pm init
-  $ r2pm update
+The database is initialized and pulled automatically, all the named actions have been deprecated, use only flags
 .Pp
 Install a package
 .Pp
-  $ r2pm install yara3
+  $ r2pm -i yara3
 .Pp
 Install a test package (don't git pull on $R2PM_GITDIR/yara3)
 .Pp
-  $ R2PM_GITSKIP=1 r2pm install yara3
+  $ R2PM_GITSKIP=1 r2pm -ci yara3
+.Pp
+Avoid init/update calls (don't git pull on $R2PM_DBDIR)
+.Pp
+ $ R2PM_OFFLINE=1 r2pm -i yara
 .Pp
 Uninstall a package
 .Pp
-  $ r2pm uninstall yara3
+  $ r2pm -u yara3
 .Pp
 Search a package
 .Pp
-  $ r2pm search yara
+  $ r2pm -s yara
 .Pp
-List available packages
+List installed packages
 .Pp
-  $ r2pm -s
+  $ r2pm -l
 .Sh ENVIRONMENT
 .Pp
  SUDO=sudo

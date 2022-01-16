@@ -16,7 +16,6 @@ static struct {
 	{ "SIGSEGV", SIGSEGV },
 	{ "SIGTERM", SIGTERM },
 #if __linux__
-	{ "SIGSTKFLT", SIGSTKFLT },
 	{ "SIGWINCH", SIGWINCH },
 	{ "SIGIO", SIGIO },
 	{ "SIGPWR", SIGPWR },
@@ -95,7 +94,6 @@ R_API const char *r_signal_to_human(int signum) {
 	case SIGPROF: return "Profiling Timer Expired";
 #if __linux__
 	case SIGPWR: return "Power Failure";
-	case SIGSTKFLT: return "Stack fault";
 	case SIGPOLL: return "Pollable Event (Same as SIGIO)";
 	// case SIGIO: return "IO ready";
 #endif

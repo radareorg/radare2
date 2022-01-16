@@ -29,8 +29,8 @@ static int __rap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return r_socket_rap_client_read (s, buf, count);
 }
 
-static int __rap_close(RIODesc *fd) {
-	int ret = -1;
+static bool __rap_close(RIODesc *fd) {
+	int ret = false;
 	if (RIORAP_IS_VALID (fd)) {
 		if (RIORAP_FD (fd) != NULL) {
 			RIORap *r = fd->data;
@@ -39,7 +39,7 @@ static int __rap_close(RIODesc *fd) {
 					(void)r_socket_close (r->fd);
 				}
 				if (r->client) {
-					ret = r_socket_close (r->client);
+					ret = r_socket_close (r->client) != -1;
 				}
 				R_FREE (r);
 			}

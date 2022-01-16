@@ -10,6 +10,12 @@
 #include "objc/mach0_classes.h"
 #include <ht_uu.h>
 
+typedef struct {
+	ut8 *buf;
+	int count;
+	ut64 off;
+} RFixupRebaseContext;
+
 // wip settings
 
 extern RBinWrite r_bin_write_mach0;
@@ -23,7 +29,7 @@ static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 
 #define IS_PTR_AUTH(x) ((x & (1ULL << 63)) != 0)
 #define IS_PTR_BIND(x) ((x & (1ULL << 62)) != 0)
 
-static Sdb *get_sdb (RBinFile *bf) {
+static Sdb *get_sdb(RBinFile *bf) {
 	RBinObject *o = bf->o;
 	if (!o) {
 		return NULL;
@@ -397,8 +403,8 @@ static RList *imports(RBinFile *bf) {
 		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;
 		}
-		if (!strcmp (name, "__asan_init") ||
-                   !strcmp (name, "__tsan_init")) {
+		if (!strcmp (name, "__asan_init")
+				|| !strcmp (name, "__tsan_init")) {
 			bin->has_sanitizers = true;
 		}
 		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
@@ -528,7 +534,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t * reloc, ut64 symbol_at) {
+static bool _patch_reloc(struct MACH0_(obj_t) *bin, RIOBind *iob, struct reloc_t *reloc, ut64 symbol_at) {
 	ut64 pc = reloc->addr;
 	ut64 ins_len = 0;
 
@@ -621,11 +627,13 @@ static RList* patch_relocs(RBin *b) {
 	int cdsz = obj->info ? obj->info->bits / 8 : 8;
 
 	ut64 offset = 0;
-	void **vit;
-	r_pvector_foreach (&io->maps, vit) {
-		RIOMap *map = *vit;
-		if (r_io_map_begin (map) > offset) {
-			offset = r_io_map_begin (map);
+	RIOBank *bank = b->iob.bank_get (io, io->bank);
+	RListIter *iter;
+	RIOMapRef *mapref;
+	r_list_foreach (bank->maprefs, iter, mapref) {
+		RIOMap *map = b->iob.map_get (io, mapref->id);
+		if (r_io_map_from (map) > offset) {
+			offset = r_io_map_from (map);
 			g = map;
 		}
 	}
@@ -715,19 +723,21 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 	RListIter *iter;
 	RBinFile *bf;
 	r_list_foreach (core->bin->binfiles, iter, bf) {
-		if (bf->fd == fd->fd ) {
+		if (bf->fd == fd->fd) {
 			/* The first field of MACH0_(obj_t) is
 			 * the mach_header, whose first field is
 			 * the MH magic.
 			 * This code assumes that bin objects are
 			 * at least 4 bytes long.
 			 */
-			ut32 *magic = bf->o->bin_obj;
-			if (magic && (*magic == MH_MAGIC ||
-					*magic == MH_CIGAM ||
-					*magic == MH_MAGIC_64 ||
-					*magic == MH_CIGAM_64)) {
-				obj = bf->o->bin_obj;
+			if (bf->o) {
+				ut32 *magic = bf->o->bin_obj;
+				if (magic && (*magic == MH_MAGIC ||
+							*magic == MH_CIGAM ||
+							*magic == MH_MAGIC_64 ||
+							*magic == MH_CIGAM_64)) {
+					obj = bf->o->bin_obj;
+				}
 			}
 			break;
 		}
@@ -760,82 +770,50 @@ static int rebasing_and_stripping_io_read(RIO *io, RIODesc *fd, ut8 *buf, int co
 	return result;
 }
 
+static bool rebase_buffer_callback(void * context, RFixupEventDetails * event_details) {
+	RFixupRebaseContext *ctx = context;
+
+	ut64 in_buf = event_details->offset - ctx->off;
+	switch (event_details->type) {
+		case R_FIXUP_EVENT_BIND:
+		case R_FIXUP_EVENT_BIND_AUTH:
+			r_write_le64 (&ctx->buf[in_buf], 0);
+			break;
+		case R_FIXUP_EVENT_REBASE:
+		case R_FIXUP_EVENT_REBASE_AUTH:
+			r_write_le64 (&ctx->buf[in_buf], ((RFixupRebaseEventDetails *) event_details)->ptr_value);
+			break;
+		default:
+			eprintf ("Unexpected event while rebasing buffer\n");
+			return false;
+	}
+
+	return true;
+}
+
 static void rebase_buffer(struct MACH0_(obj_t) *obj, ut64 off, RIODesc *fd, ut8 *buf, int count) {
 	if (obj->rebasing_buffer) {
 		return;
 	}
 	obj->rebasing_buffer = true;
-	ut64 eob = off + count;
-	int i = 0;
-	for (; i < obj->nsegs; i++) {
-		if (!obj->chained_starts[i]) {
-			continue;
-		}
-		int page_size = obj->chained_starts[i]->page_size;
-		if (page_size < 1) {
-			page_size = 4096;
-		}
-		ut64 start = obj->segs[i].fileoff;
-		ut64 end = start + obj->segs[i].filesize;
-		if (end >= off && start <= eob) {
-			ut64 page_idx = (R_MAX (start, off) - start) / page_size;
-			ut64 page_end_idx = (R_MIN (eob, end) - start) / page_size;
-			for (; page_idx <= page_end_idx; page_idx++) {
-				if (page_idx >= obj->chained_starts[i]->page_count) {
-					break;
-				}
-				ut16 page_start = obj->chained_starts[i]->page_start[page_idx];
-				if (page_start == DYLD_CHAINED_PTR_START_NONE) {
-					continue;
-				}
-				ut64 cursor = start + page_idx * page_size + page_start;
-				while (cursor < eob && cursor < end) {
-					ut8 tmp[8];
-					if (r_buf_read_at (obj->b, cursor, tmp, 8) != 8) {
-						break;
-					}
-					ut64 raw_ptr = r_read_le64 (tmp);
-					bool is_auth = IS_PTR_AUTH (raw_ptr);
-					bool is_bind = IS_PTR_BIND (raw_ptr);
-					ut64 ptr_value = raw_ptr;
-					ut64 delta;
-					if (is_auth && is_bind) {
-						struct dyld_chained_ptr_arm64e_auth_bind *p =
-								(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
-						delta = p->next;
-					} else if (!is_auth && is_bind) {
-						struct dyld_chained_ptr_arm64e_bind *p =
-								(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
-						delta = p->next;
-					} else if (is_auth && !is_bind) {
-						struct dyld_chained_ptr_arm64e_auth_rebase *p =
-								(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
-						delta = p->next;
-						ptr_value = p->target + obj->baddr;
-					} else {
-						struct dyld_chained_ptr_arm64e_rebase *p =
-								(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
-						delta = p->next;
-						ptr_value = ((ut64)p->high8 << 56) | p->target;
-					}
-					ut64 in_buf = cursor - off;
-					if (cursor >= off && cursor <= eob - 8) {
-						r_write_le64 (&buf[in_buf], ptr_value);
-					}
-					cursor += delta * 8;
-					if (!delta) {
-						break;
-					}
-				}
-			}
-		}
-	}
+
+	RFixupRebaseContext ctx;
+
+	ctx.buf = buf;
+	ctx.count = count;
+	ctx.off = off;
+
+	MACH0_(iterate_chained_fixups) (obj, off, off + count, R_FIXUP_EVENT_MASK_ALL, &rebase_buffer_callback, &ctx);
 	obj->rebasing_buffer = false;
+}
+
+static RList *classes(RBinFile *bf) {
+	return MACH0_(parse_classes) (bf, NULL);
 }
 
 #if !R_BIN_MACH064
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) >= 4) {
 		ut8 buf[4] = {0};
 		if (r_buf_read_at (b, 0, buf, 4)) {
@@ -1172,7 +1150,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
 	.create = &create,
-	.classes = &MACH0_(parse_classes),
+	.classes = &classes,
 	.write = &r_bin_write_mach0,
 };
 

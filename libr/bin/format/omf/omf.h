@@ -25,7 +25,7 @@ typedef struct OMF_DATA{
 	struct OMF_DATA	*next;
 } OMF_data;
 
-// sections return by the plugin are the addr of datas because sections are 
+// sections return by the plugin are the addr of datas because sections are
 // separate on non contiguous block on the omf file
 typedef struct {
 	ut32 name_idx;

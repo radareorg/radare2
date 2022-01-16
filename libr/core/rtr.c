@@ -47,7 +47,7 @@ typedef struct {
 } RapThread;
 
 R_API void r_core_wait(RCore *core) {
-	r_cons_singleton ()->context->breaked = true;
+	r_cons_context ()->breaked = true;
 	r_th_kill (httpthread, true);
 	r_th_kill (rapthread, true);
 	r_th_wait (httpthread);
@@ -74,7 +74,7 @@ static void http_logf(RCore *core, const char *fmt, ...) {
 	va_end (ap);
 }
 
-static char *rtrcmd (TextLog T, const char *str) {
+static char *rtrcmd(TextLog T, const char *str) {
 	char *res, *ptr2;
 	char *ptr = r_str_uri_encode (str);
 	char *uri = r_str_newf ("http://%s:%s/%s%s", T.host, T.port, T.file, ptr? ptr: str);
@@ -105,7 +105,7 @@ static void showcursor(RCore *core, int x) {
 
 // TODO: rename /name to /nick or /so?
 // clone of textlog_chat () using rtrcmd()
-static void rtr_textlog_chat (RCore *core, TextLog T) {
+static void rtr_textlog_chat(RCore *core, TextLog T) {
 	char prompt[64];
 	char buf[1024];
 	int lastmsg = 0;
@@ -180,7 +180,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	RSocket* sock;
 
 #if __WINDOWS__
-	r_socket_http_server_set_breaked (&r_cons_singleton ()->context->breaked);
+	r_socket_http_server_set_breaked (&r_cons_context ()->breaked);
 #endif
 	if (((size_t)u) > 0xff) {
 		port = listenport? listenport: r_config_get (
@@ -352,7 +352,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 	ut64 m_off, reg_val;
 	bool be;
 	RDebugPid *dbgpid;
-	if (!core_ptr || ! cmd) {
+	if (!core_ptr || !cmd) {
 		return -1;
 	}
 	RCore *core = (RCore*) core_ptr;
@@ -948,16 +948,16 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	if (fd) {
 		if (r_io_is_listener (core->io)) {
 			if (!r_core_serve (core, fd)) {
-				r_cons_singleton ()->context->breaked = true;
+				r_cons_context ()->breaked = true;
 			}
 			r_io_desc_close (fd);
 			// avoid double free, we are not the owners of this fd so we can't destroy it
 			//r_io_desc_free (fd);
 		}
 	} else {
-		r_cons_singleton ()->context->breaked = true;
+		r_cons_context ()->breaked = true;
 	}
-	return !r_cons_singleton ()->context->breaked;
+	return !r_cons_context ()->breaked;
 	// r_core_cmdf (core, "o rap://%s", input);
 }
 
@@ -1097,7 +1097,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 }
 
 // TODO: support len for binary data?
-R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *port, const char *cmd) {
+R_API char *r_core_rtr_cmds_query(RCore *core, const char *host, const char *port, const char *cmd) {
 	RSocket *s = r_socket_new (0);
 	const int timeout = 0;
 	char *rbuf = NULL;
@@ -1329,7 +1329,7 @@ beach:
 
 #else
 
-R_API int r_core_rtr_cmds (RCore *core, const char *port) {
+R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	unsigned char buf[4097];
 	RSocket *ch = NULL;
 	int i, ret;

@@ -10,6 +10,6 @@ NAME=display mapped flag in sections list
 FILE=bins/elf/analysis/x86-simple
 CMDS=om
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x08048000 - 0x08048071 r-x fmap.LOAD0
+* 1 fd: 3 +0x00000000 0x08048000 - 0x08048071 r-x fmap.LOAD0
 EOF
 RUN

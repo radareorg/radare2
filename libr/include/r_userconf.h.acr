@@ -14,6 +14,7 @@
 #define WANT_THREADS @WANT_THREADS@
 #define WANT_CAPSTONE @WANT_CAPSTONE@
 
+#define HAVE_GPERF @HAVE_GPERF@
 #if (HAVE_GPERF) == 1
 #define HAVE_GPERF @HAVE_GPERF@
 #else
@@ -106,7 +107,12 @@
 
 #define HAVE_LIBUV @HAVE_LIBUV@
 
+#if __MINGW32__
+#define HAVE_PTRACE 0
+#else
 #define HAVE_PTRACE @HAVE_PTRACE@
+#endif
+
 #define USE_PTRACE_WRAP @USE_PTRACE_WRAP@
 #define HAVE_FORK @HAVE_FORK@
 #define WANT_DYLINK @WANT_DYLINK@

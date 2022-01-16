@@ -79,6 +79,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/ai arm64 finding immediates
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=/ai 0x100
+EXPECT=<<EOF
+0x10000f9cc             ff0304d1  sub sp, sp, 0x100
+0x100011030             01208072  movk w1, 0x100
+0x100011078             01208072  movk w1, 0x100
+0x1000110c0             03208072  movk w3, 0x100
+0x100011a50             02208072  movk w2, 0x100
+0x100011ac4             02208072  movk w2, 0x100
+0x100011b38             02208072  movk w2, 0x100
+0x100013704             02208072  movk w2, 0x100
+0x10006cb40             ff0304d1  sub sp, sp, 0x100
+0x100072594             04208072  movk w4, 0x100
+0x10007856c             ff0304d1  sub sp, sp, 0x100
+0x10009b4e8             ff0304d1  sub sp, sp, 0x100
+0x1000bfc00             04208072  movk w4, 0x100
+0x1000f24d0             ff0304d1  sub sp, sp, 0x100
+0x1000f3854             ff0304d1  sub sp, sp, 0x100
+0x1000f8efc             ff0304d1  sub sp, sp, 0x100
+0x1000fbc14             ff0304d1  sub sp, sp, 0x100
+EOF
+RUN
+
 NAME=/as begin of file
 FILE=bins/pe/a.exe
 ARGS=-n
@@ -503,7 +527,7 @@ e search.to = 0x10
 /m
 EOF
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows Intel 80386 32-bit
+0x00000000 1 PE for MS Windows Intel 80386 32-bit
 EOF
 RUN
 
@@ -517,7 +541,7 @@ e search.to = 0x10
 /m
 EOF
 EXPECT=<<EOF
-0x00000000 1 PE  for MS Windows Intel 80386 32-bit
+0x00000000 1 PE for MS Windows Intel 80386 32-bit
 EOF
 RUN
 
@@ -1016,5 +1040,38 @@ wx 01020304 a5a5a5 bf
 EOF
 EXPECT=<<EOF
 0x00000005 hit0_0 a5a5bf
+EOF
+RUN
+
+NAME=/k at start
+FILE=-
+CMDS=<<EOF
+w AAABAAABAAA
+/k AAABAAA
+EOF
+EXPECT=<<EOF
+0x00000000 hit0_0 "AAABAAABAAA"
+EOF
+RUN
+
+NAME=/k with overlap, middle
+FILE=-
+CMDS=<<EOF
+w ZAAABAAABAAA
+/k AAABAAA
+EOF
+EXPECT=<<EOF
+0x00000001 hit0_0 "ZAAABAAABAAA"
+EOF
+RUN
+
+NAME=/k at end
+FILE=-
+CMDS=<<EOF
+w ZZZZAAABAAA
+/k AAABAAA
+EOF
+EXPECT=<<EOF
+0x00000004 hit0_0 "ZZZZAAABAAA"
 EOF
 RUN

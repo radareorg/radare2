@@ -25,14 +25,14 @@ typedef struct _pic_midrange_op_anal_info {
 	pic_midrange_inst_handler_t handler;
 } PicMidrangeOpAnalInfo;
 
-#define INST_HANDLER(OPCODE_NAME)                                            \
-	static void _inst__##OPCODE_NAME (RAnal *anal, RAnalOp *op,          \
-					  ut64 addr,                         \
+#define INST_HANDLER(OPCODE_NAME)					\
+	static void _inst__##OPCODE_NAME (RAnal *anal, RAnalOp *op,	\
+					  ut64 addr,			\
 					  PicMidrangeOpArgsVal *args)
-#define INST_DECL(NAME, ARGS)                                                \
-	{                                                                    \
-		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS,     \
-			_inst__##NAME                                        \
+#define INST_DECL(NAME, ARGS)							\
+	{									\
+		PIC_MIDRANGE_OPCODE_##NAME, PIC_MIDRANGE_OP_ARGS_##ARGS,	\
+			_inst__##NAME						\
 	}
 
 #define e(frag) r_strbuf_append (&op->esil, frag)
@@ -45,30 +45,30 @@ typedef struct _pic_midrange_op_anal_info {
 
 #define PIC_MIDRANGE_ESIL_OPTION_ADDR "0x95,_sram,+"
 
-#define PIC_MIDRANGE_ESIL_UPDATE_FLAGS                                       \
-	"$z,z,:=,"                                                            \
-	"7,$c,c,:=,"                                                           \
+#define PIC_MIDRANGE_ESIL_UPDATE_FLAGS	\
+	"$z,z,:=,"			\
+	"7,$c,c,:=,"			\
 	"4,$c,dc,:=,"
 
-#define PIC_MIDRANGE_ESIL_LW_OP(O)                                           \
+#define PIC_MIDRANGE_ESIL_LW_OP(O)				\
 	"0x%x,wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_FWF_OP(O)                                          \
-	"wreg," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O                            \
+#define PIC_MIDRANGE_ESIL_FWF_OP(O)			\
+	"wreg," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O	\
 	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_WWF_OP(O)                                          \
-	PIC_MIDRANGE_ESIL_BSR_ADDR                                           \
-	",[1],"                                                              \
+#define PIC_MIDRANGE_ESIL_WWF_OP(O)			\
+	PIC_MIDRANGE_ESIL_BSR_ADDR			\
+	",[1],"						\
 	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_FWF_OP_C(O)                                        \
-	"c,wreg,"                                                            \
-	"+," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O                               \
+#define PIC_MIDRANGE_ESIL_FWF_OP_C(O)		\
+	"c,wreg,"				\
+	"+," PIC_MIDRANGE_ESIL_BSR_ADDR "," #O	\
 	"=[1]," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
-#define PIC_MIDRANGE_ESIL_WWF_OP_C(O)                                        \
-	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O ","                       \
+#define PIC_MIDRANGE_ESIL_WWF_OP_C(O)			\
+	"c," PIC_MIDRANGE_ESIL_BSR_ADDR ",[1]," #O ","	\
 	"wreg," #O "=," PIC_MIDRANGE_ESIL_UPDATE_FLAGS
 
 INST_HANDLER (NOP) {}
@@ -581,7 +581,7 @@ static const PicMidrangeOpAnalInfo pic_midrange_op_anal_info[PIC_MIDRANGE_OPINFO
 	INST_DECL (MOVIW_2, 1N_6K), INST_DECL (MOVWI_2, 1N_6K)
 };
 
-static void anal_pic_midrange_extract_args (ut16 instr,
+static void anal_pic_midrange_extract_args(ut16 instr,
 					    PicMidrangeOpArgs args,
 					    PicMidrangeOpArgsVal *args_val) {
 
@@ -633,7 +633,7 @@ static void anal_pic_midrange_extract_args (ut16 instr,
 static RIODesc *mem_sram = 0;
 static RIODesc *mem_stack = 0;
 
-static RIODesc *cpu_memory_map (RIOBind *iob, RIODesc *desc, ut32 addr,
+static RIODesc *cpu_memory_map(RIOBind *iob, RIODesc *desc, ut32 addr,
 				ut32 size) {
 	char *mstr = r_str_newf ("malloc://%d", size);
 	if (desc && iob->fd_get_name (iob->io, desc->fd)) {
@@ -645,7 +645,7 @@ static RIODesc *cpu_memory_map (RIOBind *iob, RIODesc *desc, ut32 addr,
 	return desc;
 }
 
-static bool pic_midrange_reg_write (RReg *reg, const char *regname, ut32 num) {
+static bool pic_midrange_reg_write(RReg *reg, const char *regname, ut32 num) {
 	if (reg) {
 		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
 		if (item) {
@@ -656,7 +656,7 @@ static bool pic_midrange_reg_write (RReg *reg, const char *regname, ut32 num) {
 	return false;
 }
 
-static void anal_pic_midrange_malloc (RAnal *anal, bool force) {
+static void anal_pic_midrange_malloc(RAnal *anal, bool force) {
 	static bool init_done = false;
 
 	if (!init_done || force) {
@@ -680,7 +680,7 @@ static void anal_pic_midrange_malloc (RAnal *anal, bool force) {
 	}
 }
 
-static int anal_pic_midrange_op (RAnal *anal, RAnalOp *op, ut64 addr,
+static int anal_pic_midrange_op(RAnal *anal, RAnalOp *op, ut64 addr,
 				 const ut8 *buf, int len) {
 
 	ut16 instr;
@@ -717,7 +717,7 @@ static int anal_pic_midrange_op (RAnal *anal, RAnalOp *op, ut64 addr,
 	return op->size;
 }
 
-static void pic18_cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf, char *flag) {
+static void pic18_cond_branch(RAnalOp *op, ut64 addr, const ut8 *buf, char *flag) {
 	op->type = R_ANAL_OP_TYPE_CJMP;
 	op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0xff);
 	op->fail = addr + op->size;
@@ -1004,7 +1004,7 @@ beach:
 	return op->size;
 }
 
-static bool anal_pic_midrange_set_reg_profile (RAnal *esil) {
+static bool anal_pic_midrange_set_reg_profile(RAnal *esil) {
 	const char *p = \
 		"=PC	pc\n"
 		"=SP	stkptr\n"

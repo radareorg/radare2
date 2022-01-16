@@ -68,6 +68,6 @@ typedef struct {
 	xbe_header header;
 	int kt_key;
 	int ep_key;
-} r_bin_xbe_obj_t; 
+} r_bin_xbe_obj_t;
 
 

@@ -176,7 +176,7 @@
 >8	string		sfbk		SoundFont/Bank
 # MPEG-1 wrapped in a RIFF, apparently
 >8      string          CDXA            \b, wrapped MPEG-1 (CDXA)
->8	string		4XMV		\b, 4X Movie file 
+>8	string		4XMV		\b, 4X Movie file
 
 #
 # XXX - some of the below may only appear in little-endian form.

@@ -2,9 +2,9 @@
 #ifndef R_ANNOTATEDCODE_H
 #define R_ANNOTATEDCODE_H
 
-// #include <r_core.h>
 #include <r_types.h>
 #include <r_vector.h>
+#include <r_util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,7 +62,7 @@ typedef struct r_codemeta_item_t {
 typedef struct r_codemeta_t {
 	char *code; /**< Decompiled code. RCodeMeta owns this string and it must free it. */
 	RVector annotations; /**< @ref RVector <RCodeMetaItem> contains the list of annotations for the decompiled code. */
-	RContRBTree *tree;
+	RRBTree *tree;
 } RCodeMeta;
 
 R_API RCodeMeta *r_codemeta_new(const char *code);
@@ -73,6 +73,13 @@ R_API void r_codemeta_item_fini(RCodeMetaItem *e);
 R_API bool r_codemeta_item_is_reference(RCodeMetaItem *annotation);
 R_API bool r_codemeta_item_is_variable(RCodeMetaItem *annotation);
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *annotation);
+
+/* DECOMPILER PRINTING FUNCTIONS */
+R_API void r_codemeta_print_json(RCodeMeta *code);
+R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets);
+R_API void r_codemeta_print_disasm(RCodeMeta *code, RVector *line_offsets, void *anal);
+R_API void r_codemeta_print_comment_cmds(RCodeMeta *code);
+
 // compatibility with 5.2.0
 #define r_codemeta_add_annotation r_codemeta_add_item
 R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset);

@@ -1,7 +1,5 @@
-/* radare - LGPL - Copyright 2012-2020 - pancake */
+/* radare - LGPL - Copyright 2012-2021 - pancake */
 
-#include <stdio.h>
-#include <string.h>
 #include <r_main.h>
 #include <r_util.h>
 
@@ -9,6 +7,7 @@ R_LIB_VERSION(r_main);
 
 static RMain foo[] = {
 	{ "r2", r_main_radare2 },
+	{ "r2pm", r_main_r2pm },
 	{ "rax2", r_main_rax2 },
 	{ "radiff2", r_main_radiff2 },
 	{ "rafind2", r_main_rafind2 },
@@ -20,8 +19,8 @@ static RMain foo[] = {
 	{ NULL, NULL }
 };
 
-R_API RMain *r_main_new (const char *name) {
-	int i = 0;
+R_API RMain *r_main_new(const char *name) {
+	size_t i = 0;
 	while (foo[i].name) {
 		if (!strcmp (name, foo[i].name)) {
 			RMain *m = R_NEW0 (RMain);
@@ -47,7 +46,9 @@ R_API int r_main_run(RMain *m, int argc, const char **argv) {
 
 R_API int r_main_version_print(const char *progname) {
 	char *s = r_str_version (progname);
-	printf ("%s\n", s);
-	free (s);
+	if (s) {
+		printf ("%s\n", s);
+		free (s);
+	}
 	return 0;
 }

@@ -24,13 +24,13 @@ static const struct {
 };
 static const int MACHINES_MAX = sizeof(_machines) / sizeof(_machines[0]);
 
-static Sdb* get_sdb (RBinFile *bf) {
+static Sdb* get_sdb(RBinFile *bf) {
 	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->o->bin_obj;
 	return bin->kv;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 magic[VICE_MAGIC_LEN];
 	if (r_buf_read_at (b, 0, magic, VICE_MAGIC_LEN) == VICE_MAGIC_LEN) {
 		return !memcmp (magic, VICE_MAGIC, VICE_MAGIC_LEN);
@@ -42,7 +42,7 @@ static bool check_buffer(RBuffer *b) {
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb) {
 	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
-	if (check_buffer (bf->buf)) {
+	if (check_buffer (bf, bf->buf)) {
 		int i = 0;
 		if (!(res = R_NEW0 (struct r_bin_vsf_obj))) {
 		    return false;

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2020 - pancake */
+/* radare2 - LGPL - Copyright 2018-2021 - pancake */
 
 #include <r_fs.h>
 

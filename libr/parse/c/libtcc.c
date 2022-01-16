@@ -57,35 +57,12 @@ static char *normalize_slashes(char *path)
 }
 #endif
 
-/********************************************************/
-/* copy a string and truncate it. */
-PUB_FUNC char *pstrcpy(char *buf, int buf_size, const char *s)
-{
-	char *q, *q_end;
-	int c;
-
-	if (buf_size > 0) {
-		q = buf;
-		q_end = buf + buf_size - 1;
-		while (q < q_end) {
-			c = *s++;
-			if (c == '\0') {
-				break;
-			}
-			*q++ = c;
-		}
-		*q = '\0';
-	}
-	return buf;
-}
-
 /* strcat and truncate. */
 PUB_FUNC char *pstrcat(char *buf, int buf_size, const char *s)
 {
-	int len;
-	len = strlen (buf);
+	int len = strlen (buf);
 	if (len < buf_size) {
-		pstrcpy (buf + len, buf_size - len, s);
+		r_str_ncpy (buf + len, s, buf_size - len);
 	}
 	return buf;
 }
@@ -301,7 +278,7 @@ ST_FUNC void tcc_open_bf(TCCState *s1, const char *filename, int initlen)
 	bf->buf_ptr = bf->buffer;
 	bf->buf_end = bf->buffer + initlen;
 	bf->buf_end[0] = CH_EOB;/* put eob symbol */
-	pstrcpy (bf->filename, sizeof(bf->filename), filename);
+	r_str_ncpy (bf->filename, filename, sizeof(bf->filename));
 #ifdef __WINDOWS__
 	normalize_slashes (bf->filename);
 #endif
@@ -402,6 +379,7 @@ static int tcc_compile(TCCState *s1)
 		ch = file->buf_ptr[0];
 		tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
 		parse_flags = PARSE_FLAG_PREPROCESS | PARSE_FLAG_TOK_NUM;
+		// parse_flags = PARSE_FLAG_TOK_NUM;
 		// pvtop = vtop;
 		next ();
 		decl0 (VT_CONST, 0);
@@ -431,12 +409,10 @@ static int tcc_compile(TCCState *s1)
 
 LIBTCCAPI int tcc_compile_string(TCCState *s, const char *str)
 {
-	int len, ret;
-	len = strlen (str);
-
+	int len = strlen (str);
 	tcc_open_bf (s, "<string>", len);
 	memcpy (file->buffer, str, len);
-	ret = tcc_compile (s);
+	int ret = tcc_compile (s);
 	tcc_close ();
 	return ret;
 }
@@ -483,7 +459,7 @@ LIBTCCAPI void tcc_undefine_symbol(TCCState *s1, const char *sym)
 static void tcc_cleanup(void)
 {
 	int i, n;
-	if (NULL == tcc_state) {
+	if (!tcc_state) {
 		return;
 	}
 	tcc_state = NULL;
@@ -508,28 +484,12 @@ static void tcc_cleanup(void)
 	macro_ptr = NULL;
 }
 
-LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os)
-{
-	TCCState *s;
+static void tcc_init_defines(TCCState *s) {
 	char buffer[100];
+	const char *arch = s->arch;
+	const int bits = s->bits;
+	const char *os = s->os;
 	int a, b, c;
-
-	if (!arch || !os) {
-		return NULL;
-	}
-	tcc_cleanup ();
-	s = tcc_mallocz (sizeof(TCCState));
-	if (!s) {
-		return NULL;
-	}
-	tcc_state = s;
-	s->arch = strdup (arch);
-	s->bits = bits;
-	s->os = strdup (os);
-	s->output_type = TCC_OUTPUT_MEMORY;
-	preprocess_new ();
-	s->include_stack_ptr = s->include_stack;
-
 	/* we add dummy defines for some special macros to speed up tests
 	   and to have working defined() */
 	define_push (TOK___LINE__, MACRO_OBJ, NULL, NULL);
@@ -542,6 +502,22 @@ LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os)
 	sprintf (buffer, "%d", a * 10000 + b * 100 + c);
 	tcc_define_symbol (s, "__TINYC__", buffer);
 	tcc_define_symbol (s, "__R2TINYC__", buffer);
+
+	// r2 specific defines
+	tcc_define_symbol (s, "R_API", "");
+	tcc_define_symbol (s, "R_IPI", "");
+	tcc_define_symbol (s, "R_NULLABLE", "");
+	tcc_define_symbol (s, "R_PRINTF_CHECK(a,b)", "");
+#if 0
+	tcc_compile_string (s, "typedef int (*PrintfCallback)(const char *s);");
+	tcc_compile_string (s, "typedef struct RList {} RList;");
+	tcc_compile_string (s, "typedef struct RCore {} RCore;");
+	tcc_compile_string (s, "typedef struct HtUP {} HtUP;");
+	tcc_compile_string (s, "typedef struct HtPP {} HtPP;");
+	tcc_compile_string (s, "typedef struct RStrBuf {} RStrBuf;");
+	tcc_compile_string (s, "typedef struct RStrConstPool {} RStrConstPool;");
+	tcc_compile_string (s, "typedef struct RStack {} RStack;");
+#endif
 
 	/* standard defines */
 	tcc_define_symbol (s, "__STDC__", NULL);
@@ -628,6 +604,27 @@ LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os)
 #ifdef CHAR_IS_UNSIGNED
 	s->char_is_unsigned = true;
 #endif
+}
+
+LIBTCCAPI TCCState *tcc_new(const char *arch, int bits, const char *os)
+{
+	TCCState *s;
+	if (!arch || !os) {
+		return NULL;
+	}
+	tcc_cleanup ();
+	s = tcc_mallocz (sizeof (TCCState));
+	if (!s) {
+		return NULL;
+	}
+	tcc_state = s;
+	s->arch = strdup (arch);
+	s->bits = bits;
+	s->os = strdup (os);
+	s->output_type = TCC_OUTPUT_MEMORY;
+	preprocess_new ();
+	s->include_stack_ptr = s->include_stack;
+
 	return s;
 }
 
@@ -663,29 +660,24 @@ LIBTCCAPI int tcc_add_sysinclude_path(TCCState *s, const char *pathname)
 	return 0;
 }
 
-ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
-{
-	const char *ext;
-	int ret;
-
+ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags) {
 	/* find source file type with extension */
-	ext = tcc_fileextension (filename);
+	const char *ext = tcc_fileextension (filename);
 	if (ext[0]) {
 		ext++;
 	}
 
 	/* open the file */
-	ret = tcc_open (s1, filename);
+	int ret = tcc_open (s1, filename);
 	if (ret < 0) {
 		if (flags & AFF_PRINT_ERROR) {
-			tcc_error ("file '%s' not found", filename);
+			fprintf (stderr, "file '%s' not found\n", filename);
 		}
 		return ret;
 	}
 
 	/* update target deps */
-	dynarray_add ((void ***) &s1->target_deps, &s1->nb_target_deps,
-		strdup (filename));
+	dynarray_add ((void ***) &s1->target_deps, &s1->nb_target_deps, strdup (filename));
 
 	if (flags & AFF_PREPROCESS) {
 		ret = tcc_preprocess (s1);
@@ -709,14 +701,15 @@ the_end:
 LIBTCCAPI int tcc_add_file(TCCState *s, const char *filename, const char *directory)
 {
 	if (directory) {
+		free (dir_name);
 		dir_name = strdup (directory);
 	}
 
+	int flags = AFF_PRINT_ERROR;
 	if (s->output_type == TCC_OUTPUT_PREPROCESS) {
-		return tcc_add_file_internal (s, filename, AFF_PRINT_ERROR | AFF_PREPROCESS);
-	} else {
-		return tcc_add_file_internal (s, filename, AFF_PRINT_ERROR);
+		flags |= AFF_PREPROCESS;
 	}
+	return tcc_add_file_internal (s, filename, flags);
 }
 
 #define WD_ALL    0x0001/* warning is activated when using -Wall */
@@ -728,11 +721,14 @@ typedef struct FlagDef {
 	const char *name;
 } FlagDef;
 
-void (*tcc_cb)(const char *, char **);
+void (*tcc_cb)(const char *, char **) = NULL;
 
 PUB_FUNC void tcc_set_callback(TCCState *s, void (*cb)(const char *, char **), char **p) {
-	tcc_cb = cb;
-	tcc_cb_ptr = p;
+	if (cb) {
+		tcc_cb = cb;
+		tcc_cb_ptr = p;
+		tcc_init_defines (s);
+	}
 }
 
 PUB_FUNC void tcc_appendf(const char *fmt, ...) {
@@ -740,7 +736,11 @@ PUB_FUNC void tcc_appendf(const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
 	vsnprintf (b, sizeof (b), fmt, ap);
-	tcc_cb (b, tcc_cb_ptr);
+	if (tcc_cb) {
+		tcc_cb (b, tcc_cb_ptr);
+	} else {
+		// eprintf ("Missing callback for tcc_cb\n");
+	}
 	va_end (ap);
 }
 

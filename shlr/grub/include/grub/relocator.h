@@ -41,7 +41,7 @@ grub_phys_addr_t
 get_physical_target_address (grub_relocator_chunk_t in);
 
 grub_err_t
-grub_relocator_alloc_chunk_align (struct grub_relocator *rel, 
+grub_relocator_alloc_chunk_align (struct grub_relocator *rel,
 				  grub_relocator_chunk_t *out,
 				  grub_phys_addr_t min_addr,
 				  grub_phys_addr_t max_addr,

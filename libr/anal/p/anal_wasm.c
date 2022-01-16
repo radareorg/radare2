@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2021 - xvilka, deroad */
+/* radare2 - LGPL - Copyright 2017-2022 - pancake, xvilka, deroad */
 
 #include <string.h>
 #include <r_types.h>
@@ -7,9 +7,8 @@
 #include <r_anal.h>
 #undef R_IPI
 #define R_IPI static
-#define WASM_NO_ASM // to get rid of a warning
 #include "../../bin/format/wasm/wasm.h"
-#include "../../asm/arch/wasm/wasm.c"
+#include "../arch/wasm/wasm.c"
 
 #define WASM_STACK_SIZE 256
 
@@ -19,6 +18,9 @@ static ut64 addr_old = UT64_MAX;
 // finds the address of the call function (essentially where to jump to).
 static ut64 get_cf_offset(RAnal *anal, const ut8 *data, int len) {
 	ut32 fcn_id;
+	if (!anal->binb.bin) {
+		return UT64_MAX;
+	}
 	if (len < 2 || !read_u32_leb128 (&data[1], &data[len - 1], &fcn_id)) {
 		return UT64_MAX;
 	}
@@ -31,6 +33,9 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 	ut8 *end = ptr + sizeof (buffer);
 	WasmOp wop = {{0}};
 	int size = 0;
+	if (!anal->iob.io) {
+		return false;
+	}
 	while (anal->iob.read_at (anal->iob.io, address, buffer, sizeof (buffer))) {
 		size = wasm_dis (&wop, ptr, end - ptr);
 		if (!wop.txt || (wop.type == WASM_TYPE_OP_CORE && wop.op.core == WASM_OP_TRAP)) {
@@ -60,11 +65,19 @@ static bool advance_till_scope_end(RAnal* anal, RAnalOp *op, ut64 address, ut32 
 	return false;
 }
 
+static int wasm_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outsize) {
+	return wasm_asm (str, outbuf, outsize);
+}
+
 // analyzes the wasm opcode.
 static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	WasmOp wop = {{0}};
 	RAnalHint *hint = NULL;
 	int ret = wasm_dis (&wop, data, len);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = strdup (wop.txt);
+	}
+	op->nopcode = 1;
 	op->size = ret;
 	op->addr = addr;
 	op->sign = true;
@@ -437,6 +450,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=PC	pc\n"
 		"=BP	bp\n"
 		"=SP	sp\n"
+		"=SN	r0\n"
 		"=A0	r0\n"
 		"=A1	r1\n"
 		"=A2	r2\n"
@@ -455,6 +469,7 @@ RAnalPlugin r_anal_plugin_wasm = {
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,
 	.op = &wasm_op,
+	.opasm = &wasm_opasm,
 	.esil = true
 };
 

@@ -35,7 +35,7 @@ static const char *help_msg_C[] = {
 	"Cs", "[?] [-] [size] [@addr]", "add string",
 	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
 	"Ct.", "[@addr]", "show comment at current or specified address",
-	"Cv", "[bsr][?]", "add comments to args",
+	"Cv", "[?][bsr]", "add comments to args",
 	"Cz", "[@addr]", "add string (see Cs?)",
 	NULL
 };
@@ -134,16 +134,6 @@ static const char *help_msg_Cvs[] = {
 	"Cvs?", "", "show this help",
 	NULL
 };
-
-static void cmd_meta_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, C);
-	DEFINE_CMD_DESCRIPTOR (core, CC);
-	DEFINE_CMD_DESCRIPTOR (core, CS);
-	DEFINE_CMD_DESCRIPTOR (core, Cs);
-	DEFINE_CMD_DESCRIPTOR (core, Cvb);
-	DEFINE_CMD_DESCRIPTOR (core, Cvr);
-	DEFINE_CMD_DESCRIPTOR (core, Cvs);
-}
 
 static int remove_meta_offset(RCore *core, ut64 offset) {
 	char aoffset[64];
@@ -429,7 +419,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		if (input[2]=='?') {
 			eprintf ("Usage: CCF [file]\n");
 		} else if (input[2] == ' ') {
-			const char *fn = input+2;
+			const char *fn = input + 2;
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 			while (*fn== ' ')fn++;
 			if (comment && *comment) {
@@ -1177,17 +1167,17 @@ static int cmd_meta(void *data, const char *input) {
 			break;
 		case 'r': // "CSr"
 			if (input[2] == ' ') {
-				r_spaces_rename (ms, NULL, input+2);
+				r_spaces_rename (ms, NULL, input + 2);
 			} else {
 				eprintf ("Usage: CSr [newname]\n");
 			}
 			break;
 		case '-': // "CS-"
 			if (input[2]) {
-				if (input[2]=='*') {
+				if (input[2] == '*') {
 					r_spaces_unset (ms, NULL);
 				} else {
-					r_spaces_unset (ms, input+2);
+					r_spaces_unset (ms, input + 2);
 				}
 			} else {
 				r_spaces_pop (ms);

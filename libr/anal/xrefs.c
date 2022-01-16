@@ -1,28 +1,7 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake, nibble, defragger, ret2libc */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nibble, defragger, ret2libc */
 
 #include <r_anal.h>
 #include <r_cons.h>
-
-#if 0
-DICT
-====
-
-refs
-  10 -> 20 C
-  16 -> 10 J
-  20 -> 10 C
-
-xrefs
-  20 -> [ 10 C ]
-  10 -> [ 16 J, 20 C ]
-
-10: call 20
-16: jmp 10
-20: call 10
-#endif
-
-// XXX: is it possible to have multiple type for the same (from, to) pair?
-//      if it is, things need to be adjusted
 
 static RAnalRef *r_anal_ref_new(ut64 addr, ut64 at, ut64 type) {
 	RAnalRef *ref = R_NEW (RAnalRef);
@@ -96,7 +75,6 @@ static void listxrefs(HtUP *m, ut64 addr, RList *list) {
 		if (!found) {
 			return;
 		}
-
 		ht_up_foreach (d, appendRef, list);
 	}
 }
@@ -118,8 +96,9 @@ static void setxref(HtUP *m, ut64 from, ut64 to, int type) {
 }
 
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
-R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
-	if (!anal || from == to) {
+R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
+	r_return_val_if_fail (anal, false);
+	if (from == to) {
 		return false;
 	}
 	if (anal->iob.is_valid_offset) {
@@ -135,16 +114,26 @@ R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType t
 	return true;
 }
 
-R_API int r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
-	if (!anal) {
-		return false;
-	}
+R_API bool r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
+	r_return_val_if_fail (anal, false);
+#if 0
 	ht_up_delete (anal->dict_refs, from);
 	ht_up_delete (anal->dict_xrefs, to);
+#else
+	HtUP *d = ht_up_find (anal->dict_refs, from, NULL);
+	if (d) {
+		ht_up_delete (d, to);
+	}
+	d = ht_up_find (anal->dict_xrefs, to, NULL);
+	if (d) {
+		ht_up_delete (d, from);
+	}
+#endif
 	return true;
 }
 
-R_API int r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
+R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
+	r_return_val_if_fail (anal, false);
 	bool res = false;
 	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_NULL);
 	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_CODE);
@@ -154,13 +143,15 @@ R_API int r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
 	return res;
 }
 
-R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
+R_API bool r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
+	r_return_val_if_fail (anal && list, false);
 	listxrefs (anal->dict_refs, addr, list);
 	sortxrefs (list);
 	return true;
 }
 
 R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to) {
+	r_return_val_if_fail (anal, NULL);
 	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -175,6 +166,7 @@ R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to) {
 }
 
 R_API RList *r_anal_refs_get(RAnal *anal, ut64 from) {
+	r_return_val_if_fail (anal, NULL);
 	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -189,6 +181,7 @@ R_API RList *r_anal_refs_get(RAnal *anal, ut64 from) {
 }
 
 R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
+	r_return_val_if_fail (anal, NULL);
 	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -203,10 +196,11 @@ R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 }
 
 R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
+	r_return_if_fail (anal);
 	RListIter *iter;
 	RAnalRef *ref;
 	PJ *pj = NULL;
-	RList *list = r_anal_ref_list_new();
+	RList *list = r_anal_ref_list_new ();
 	listxrefs (anal->dict_refs, UT64_MAX, list);
 	sortxrefs (list);
 	if (rad == 'j') {
@@ -309,6 +303,7 @@ R_API RAnalRefType r_anal_xrefs_type(char ch) {
 }
 
 R_API bool r_anal_xrefs_init(RAnal *anal) {
+	r_return_val_if_fail (anal, false);
 	ht_up_free (anal->dict_refs);
 	anal->dict_refs = NULL;
 	ht_up_free (anal->dict_xrefs);

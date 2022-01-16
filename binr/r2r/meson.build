@@ -4,6 +4,7 @@ if get_option('enable_r2r')
     include_directories: [platform_inc],
     dependencies: [
       r_util_dep,
+      r_cons_dep,
       lrt,
     ],
     install: true,

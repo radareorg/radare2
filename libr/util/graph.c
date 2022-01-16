@@ -8,7 +8,7 @@ enum {
 	BLACK_COLOR
 };
 
-static RGraphNode *r_graph_node_new (void *data) {
+static RGraphNode *r_graph_node_new(void *data) {
 	RGraphNode *p = R_NEW0 (RGraphNode);
 	if (p) {
 		p->data = data;
@@ -20,7 +20,7 @@ static RGraphNode *r_graph_node_new (void *data) {
 	return p;
 }
 
-static void r_graph_node_free (RGraphNode *n) {
+static void r_graph_node_free(RGraphNode *n) {
 	if (!n) {
 		return;
 	}
@@ -33,12 +33,12 @@ static void r_graph_node_free (RGraphNode *n) {
 	free (n);
 }
 
-static int node_cmp (unsigned int idx, RGraphNode *b) {
+static int node_cmp(unsigned int idx, RGraphNode *b) {
 	return idx == b->idx ? 0 : -1;
 }
 
 // direction == true => forwards
-static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[], const bool direction) {
+static void dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[], const bool direction) {
 	if (!n) {
 		return;
 	}
@@ -136,7 +136,7 @@ R_API RListIter *r_graph_node_iter(const RGraph *t, unsigned int idx) {
 	return r_list_find (t->nodes, (void *)(size_t)idx, (RListComparator)node_cmp);
 }
 
-R_API void r_graph_reset (RGraph *t) {
+R_API void r_graph_reset(RGraph *t) {
 	r_list_free (t->nodes);
 	t->nodes = r_list_new ();
 	if (!t->nodes) {

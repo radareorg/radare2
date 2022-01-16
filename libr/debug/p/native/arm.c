@@ -75,7 +75,7 @@ int armflag_F = (Cpsr>>6)&1;
 int armflag_T = (Cpsr>>5)&1;
 int armflag_M = (Cpsr>>0)&15;
 
-  state: JT bits: 
+  state: JT bits:
 	ARM	0 (t)	0 (j)
 	Thumb	1 (T)	0 (j)
 	Btecode	0 (t)	1 (J)

@@ -284,7 +284,7 @@ ST_FUNC char *get_tok_str(int v, CValue *cv)
 	case TOK_CULLONG:
 		/* XXX: not quite exact, but only useful for testing  */
 		if (cv) {
-			sprintf (p, "%"PFMT64u, cv->ull);
+			sprintf (p, "%"PFMT64u, (ut64)cv->ull);
 		}
 		break;
 	case TOK_LCHAR:
@@ -824,7 +824,7 @@ ST_FUNC void save_parse_state(ParseState *s)
 	s->tokc = tokc;
 }
 
-/* restore parse state from 's' 
+/* restore parse state from 's'
 ST_FUNC void restore_parse_state(ParseState *s)
 {
 	file->line_num = s->line_num;
@@ -1051,7 +1051,7 @@ static int macro_is_equal(const int *a, const int *b)
 	int t;
 	while (*a && *b) {
 		TOK_GET (&t, &a, &cv);
-		pstrcpy (buf, sizeof buf, get_tok_str (t, &cv));
+		r_str_ncpy (buf, get_tok_str (t, &cv), sizeof (buf));
 		TOK_GET (&t, &b, &cv);
 		if (strcmp (buf, get_tok_str (t, &cv))) {
 			return 0;
@@ -1492,7 +1492,7 @@ include_syntax:
 				} else {
 					path = s1->sysinclude_paths[i - s1->nb_include_paths];
 				}
-				pstrcpy (buf1, sizeof(buf1), path);
+				r_str_ncpy (buf1, path, sizeof (buf1));
 				pstrcat (buf1, sizeof(buf1), "/");
 			}
 
@@ -1519,7 +1519,11 @@ include_syntax:
 				goto include_done;
 			}
 
-			if (tcc_open (s1, buf1) < 0) {
+			bool skip = false;
+			if (strstr (buf1, "_overflow.h")) {
+				skip = true;
+			}
+			if (!skip && tcc_open (s1, buf1) < 0) {
 include_trynext:
 				continue;
 			}
@@ -1551,13 +1555,18 @@ include_trynext:
 			filepath_len = R_MIN ((size_t) (e - file->filename) + 1, sizeof (filepath) - 1);
 			memcpy (filepath, file->filename, filepath_len);
 			strcpy (filepath + filepath_len, buf);
-			if (tcc_open (s1, filepath) < 0) {
+			bool skip = false;
+			if (strstr (file->filename, "_overflow.h")) {
+				skip = true;
+			}
+			if (!skip && tcc_open (s1, filepath) < 0) {
 				if (!dir_name) {
-					dir_name = "/usr/include";
+					dir_name = ".";
 				}
 				int len = snprintf (filepath, sizeof (filepath), "%s/%s", dir_name, buf);
 				if (len >= sizeof (filepath) || tcc_open (s1, filepath) < 0) {
-					tcc_error ("include file '%s' not found", filepath);
+					fprintf (stderr, "include file '%s' not found\n", filepath);
+					goto the_end;
 				} else {
 					fprintf (stderr, "#include \"%s\"\n", filepath);
 					++s1->include_stack_ptr;
@@ -1668,8 +1677,7 @@ skip:
 			if (tok != TOK_STR) {
 				tcc_error ("#line");
 			}
-			pstrcpy (file->filename, sizeof(file->filename),
-				(char *) tokc.cstr->data);
+			r_str_ncpy (file->filename, (char *) tokc.cstr->data, sizeof(file->filename));
 		}
 		break;
 	case TOK_ERROR:

@@ -704,25 +704,25 @@ capstone bug
 }
 
 static void set_opdir(RAnalOp *op) {
-        switch (op->type & R_ANAL_OP_TYPE_MASK) {
-        case R_ANAL_OP_TYPE_LOAD:
-                op->direction = R_ANAL_OP_DIR_READ;
-                break;
-        case R_ANAL_OP_TYPE_STORE:
-                op->direction = R_ANAL_OP_DIR_WRITE;
-                break;
-        case R_ANAL_OP_TYPE_LEA:
-                op->direction = R_ANAL_OP_DIR_REF;
-                break;
-        case R_ANAL_OP_TYPE_CALL:
-        case R_ANAL_OP_TYPE_JMP:
-        case R_ANAL_OP_TYPE_UJMP:
-        case R_ANAL_OP_TYPE_UCALL:
-                op->direction = R_ANAL_OP_DIR_EXEC;
-                break;
-        default:
-                break;
-        }
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_LOAD:
+		op->direction = R_ANAL_OP_DIR_READ;
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		op->direction = R_ANAL_OP_DIR_WRITE;
+		break;
+	case R_ANAL_OP_TYPE_LEA:
+		op->direction = R_ANAL_OP_DIR_REF;
+		break;
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_UCALL:
+		op->direction = R_ANAL_OP_DIR_EXEC;
+		break;
+	default:
+		break;
+	}
 }
 
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
@@ -790,7 +790,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case MIPS_INS_LBU:
 	case MIPS_INS_LBUX:
 		op->refptr = 1;
-		 /* fallthrough */ 
+		 /* fallthrough */
 	case MIPS_INS_LW:
 	case MIPS_INS_LWC1:
 	case MIPS_INS_LWC2:
@@ -800,7 +800,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		if (!op->refptr) {
 			op->refptr = 4;
 		}
-		 /* fallthrough */ 
+		 /* fallthrough */
 	case MIPS_INS_LD:
 	case MIPS_INS_LDC1:
 	case MIPS_INS_LDC2:
@@ -860,7 +860,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 			op->jump = t9_pre;
 			t9_pre = UT64_MAX;
 			op->type = R_ANAL_OP_TYPE_RCALL;
-		} 
+		}
 		break;
 	case MIPS_INS_JAL:
 	case MIPS_INS_JALS:
@@ -918,7 +918,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == MIPS_REG_T9) {
 				t9_pre += IMM(2);
-		} 
+		}
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -IMM(2);

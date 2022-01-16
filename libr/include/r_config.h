@@ -52,7 +52,7 @@ typedef struct r_config_t {
 	bool lock;
 } RConfig;
 
-typedef struct r_config_hold_t { 
+typedef struct r_config_hold_t {
 	RConfig *cfg;
 	RList *list;
 } RConfigHold;

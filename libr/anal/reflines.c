@@ -65,7 +65,7 @@ static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx) 
 	return true;
 }
 
-R_API void r_anal_reflines_free (RAnalRefline *rl) {
+R_API void r_anal_reflines_free(RAnalRefline *rl) {
 	free (rl);
 }
 

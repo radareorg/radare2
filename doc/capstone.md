@@ -1,7 +1,7 @@
 Capstone
 ========
 
-Capstone Engine is the disassembler engine used by radare2 by default for 
+Capstone Engine is the disassembler engine used by radare2 by default for
 some architectures.
 
 R2 supports capstone 3, 4 and 5.
@@ -26,6 +26,6 @@ is from v4, so it fails to compile because of missing enums and archs.
 v4
 --
 
-To build r2 against capstone5 use the following oneliner:
+To build r2 against capstone4 use the following oneliner:
 
 	sys/install.sh --with-capstone4

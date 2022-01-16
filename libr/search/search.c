@@ -3,6 +3,8 @@
 #include <r_search.h>
 #include <r_list.h>
 #include <ctype.h>
+#include <r_util/r_assert.h>
+#include "search.h"
 
 // Experimental search engine (fails, because stops at first hit of every block read
 #define USE_BMH 0
@@ -27,13 +29,16 @@ R_API RSearch *r_search_new(int mode) {
 	}
 	s->inverse = false;
 	s->data = NULL;
+	s->datafree = free;
 	s->user = NULL;
 	s->callback = NULL;
+	s->r_callback = NULL;
 	s->align = 0;
 	s->distance = 0;
 	s->contiguous = 0;
 	s->overlap = false;
 	s->pattern_size = 0;
+	s->longest = -1;
 	s->string_max = 255;
 	s->string_min = 3;
 	s->hits = r_list_newf (free);
@@ -48,16 +53,16 @@ R_API RSearch *r_search_new(int mode) {
 	return s;
 }
 
-R_API RSearch *r_search_free(RSearch *s) {
-	if (!s) {
-		return NULL;
+R_API void r_search_free(RSearch *s) {
+	if (s) {
+		r_list_free (s->hits);
+		r_list_free (s->kws);
+		//r_io_free(s->iob.io); this is supposed to be a weak reference
+		if (s->datafree) {
+			s->datafree (s->data);
+		}
+		free (s);
 	}
-	r_list_free (s->hits);
-	r_list_free (s->kws);
-	//r_io_free(s->iob.io); this is supposed to be a weak reference
-	free (s->data);
-	free (s);
-	return NULL;
 }
 
 R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
@@ -69,23 +74,32 @@ R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
 	return true;
 }
 
-R_API int r_search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+static int search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	eprintf ("TODO: import libr/core/cmd_search.c /m implementation into rsearch\n");
 	return false;
 }
 
 R_API int r_search_set_mode(RSearch *s, int mode) {
 	s->update = NULL;
+	bool ok = true;
 	switch (mode) {
-	case R_SEARCH_KEYWORD: s->update = r_search_mybinparse_update; break;
-	case R_SEARCH_REGEXP: s->update = r_search_regexp_update; break;
-	case R_SEARCH_AES: s->update = r_search_aes_update; break;
-	case R_SEARCH_PRIV_KEY: s->update = r_search_privkey_update; break;
-	case R_SEARCH_STRING: s->update = r_search_strings_update; break;
-	case R_SEARCH_DELTAKEY: s->update = r_search_deltakey_update; break;
-	case R_SEARCH_MAGIC: s->update = r_search_magic_update; break;
+	case R_SEARCH_KEYWORD: s->update = search_kw_update; break;
+	case R_SEARCH_REGEXP: s->update = search_regexp_update; break;
+	case R_SEARCH_AES: s->update = search_aes_update; break;
+	case R_SEARCH_PRIV_KEY: s->update = search_privkey_update; break;
+	case R_SEARCH_STRING: s->update = search_strings_update; break;
+	case R_SEARCH_DELTAKEY: s->update = search_deltakey_update; break;
+	case R_SEARCH_MAGIC: s->update = search_magic_update; break;
+
+	// no r_search_update for these
+	case R_SEARCH_RABIN_KARP:
+	case R_SEARCH_PATTERN:
+		break;
+	default:
+		ok = false;
+		break;
 	}
-	if (s->update || mode == R_SEARCH_PATTERN) {
+	if (ok) {
 		s->mode = mode;
 		return true;
 	}
@@ -102,8 +116,8 @@ R_API int r_search_begin(RSearch *s) {
 	return true;
 }
 
-// Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
-R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
+// use when the size of the hit does not match the size of the keyword (ie: /a{30}/)
+R_IPI int r_search_hit_sz(RSearch *s, RSearchKeyword *kw, ut64 addr, ut32 sz) {
 	if (s->align && (addr%s->align)) {
 		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
 		return 1;
@@ -111,43 +125,65 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
-			kw->last = s->bckwrds? addr: addr + kw->keyword_length;
+			kw->last = s->bckwrds? addr: addr + sz;
 			eprintf ("0x%08"PFMT64x" Sequential hit ignored.\n", addr);
 			return 1;
 		}
 	}
 	// kw->last is used by string search, the right endpoint of last match (forward search), to honor search.overlap
-	kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
+	kw->last = s->bckwrds? addr: addr + sz;
 
+	bool callback = false;
+	int ret;
 	if (s->callback) {
-		int ret = s->callback (kw, s->user, addr);
-		kw->count++;
-		s->nhits++;
-		// If callback returns 0 or larger than 1, forwards it; otherwise returns 2 if search.maxhits is reached
-		return !ret || ret > 1 ? ret : s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
+		callback = true;
+		ret = s->callback (kw, s->user, addr);
+	} else if (s->r_callback) {
+		callback = true;
+		ret = s->r_callback (kw, sz, s->user, addr);
 	}
 	kw->count++;
 	s->nhits++;
+	if (callback) {
+		// If callback returns 0 or larger than 1, forwards it; otherwise returns 2 if search.maxhits is reached
+		return !ret || ret > 1? ret: s->maxhits && s->nhits >= s->maxhits? 2: 1;
+	}
 	RSearchHit* hit = R_NEW0 (RSearchHit);
 	if (hit) {
 		hit->kw = kw;
 		hit->addr = addr;
 		r_list_append (s->hits, hit);
 	}
-	return s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
+	return s->maxhits && s->nhits >= s->maxhits? 2: 1;
+}
+
+// Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
+R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
+	return r_search_hit_sz (s, kw, addr, kw->keyword_length);
+}
+
+static inline int get_longest(RSearch *s) {
+	if (s->longest > 0) {
+		return s->longest;
+	}
+	RListIter *iter;
+	RSearchKeyword *kw;
+	r_list_foreach (s->kws, iter, kw) {
+		s->longest = R_MAX (s->longest, (int)kw->keyword_length);
+	}
+	return s->longest;
 }
 
 // TODO support search across block boundaries
 // Supported search variants: backward, overlap
-R_API int r_search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_IPI int search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RListIter *iter;
-	int longest = 0, i, j;
+	int i, j;
 	RSearchKeyword *kw;
 	RSearchLeftover *left;
 	const int old_nhits = s->nhits;
-	r_list_foreach (s->kws, iter, kw) {
-		longest = R_MAX (longest, kw->keyword_length + 1);
-	}
+
+	int longest = get_longest (s) + 1;
 	if (!longest) {
 		return 0;
 	}
@@ -356,17 +392,15 @@ static bool brute_force_match(RSearch *s, RSearchKeyword *kw, const ut8 *buf, in
 }
 
 // Supported search variants: backward, binmask, icase, inverse, overlap
-R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
+R_IPI int search_kw_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RSearchKeyword *kw;
 	RListIter *iter;
 	RSearchLeftover *left;
-	int longest = 0, i;
+	int i;
 	const int old_nhits = s->nhits;
 
-	r_list_foreach (s->kws, iter, kw) {
-		longest = R_MAX (longest, kw->keyword_length);
-	}
-	if (!longest) {
+	int longest = get_longest (s);
+	if (longest <= 0) {
 		return 0;
 	}
 	if (s->data) {
@@ -463,7 +497,14 @@ R_API void r_search_pattern_size(RSearch *s, int size) {
 }
 
 R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *user) {
+	s->r_callback = NULL; // prevent user from being passed to wrong function
 	s->callback = callback;
+	s->user = user;
+}
+
+R_API void r_search_set_read_cb(RSearch *s, RSearchRCb cb, void *user) {
+	s->callback = NULL; // prevent user from being passed to wrong function
+	s->r_callback = cb;
 	s->user = user;
 }
 
@@ -482,8 +523,61 @@ R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 	return ret;
 }
 
-R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
-	return r_search_update (s, from, buf, len);
+// like r_search_update but uses s->iob, does not need to loop as much
+R_API int r_search_update_read(RSearch *s, ut64 from, ut64 to) {
+	r_return_val_if_fail (s && s->iob.read_at && s->consb.is_breaked, -1);
+	switch (s->mode) {
+	case R_SEARCH_PATTERN:
+		return search_pattern (s, from, to);
+	case R_SEARCH_REGEXP:
+		return search_regex_read (s, from, to);
+	case R_SEARCH_RABIN_KARP:
+		return search_rk (s, from, to);
+	default:
+		eprintf ("Unsupported mode\n");
+		return -1;
+	}
+}
+
+// TODO: show progress
+R_API int r_search_maps(RSearch *s, RList *maps) {
+	r_return_val_if_fail (s && s->consb.is_breaked && maps, -1);
+	RListIter *iter;
+	RIOMap *m;
+	ut64 prevto = UT64_MAX;
+	ut64 prevfrom = UT64_MAX;
+	int ret = 0;
+
+	r_list_foreach_prev (maps, iter, m) {
+		if (s->consb.is_breaked ()) {
+			break;
+		}
+		ut64 from = r_io_map_begin (m);
+		ut64 to = r_io_map_end (m);
+
+		if (prevto == from) { // absorb new search area into previous
+			prevto = to;
+			continue;
+		}
+		if (prevto != UT64_MAX && prevfrom != UT64_MAX) {
+			// do last search
+			int tmp = r_search_update_read (s, prevfrom, prevto);
+			if (tmp < 0) {
+				return tmp;
+			}
+			ret += tmp;
+		}
+		prevto = to;
+		prevfrom = from;
+	}
+	if (prevto != UT64_MAX && prevfrom != UT64_MAX) {
+		int tmp = r_search_update_read (s, prevfrom, prevto);
+		if (tmp < 0) {
+			return tmp;
+		}
+		ret += tmp;
+	}
+	return ret;
 }
 
 static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
@@ -509,6 +603,7 @@ R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
 	if (!kw || !kw->keyword_length) {
 		return false;
 	}
+	s->longest = R_MAX ((int)kw->keyword_length, s->longest);
 	kw->kwidx = s->n_kws++;
 	r_list_append (s->kws, kw);
 	return true;
@@ -544,7 +639,12 @@ R_API void r_search_reset(RSearch *s, int mode) {
 }
 
 R_API void r_search_kw_reset(RSearch *s) {
+	s->longest = -1;
 	r_list_purge (s->kws);
 	r_list_purge (s->hits);
-	R_FREE (s->data);
+	if (s->datafree) {
+		s->datafree (s->data);
+		s->datafree = free;
+		s->data = NULL;
+	}
 }

@@ -70,13 +70,13 @@ R_API void r_core_fortune_print_random(RCore *core) {
 	if (!line) {
 		line = getrandomline (core);
 	}
-	if (line) {
-		if (r_config_get_i (core->config, "cfg.fortunes.clippy")) {
+	if (R_STR_ISNOTEMPTY (line)) {
+		if (r_config_get_b (core->config, "cfg.fortunes.clippy")) {
 			r_core_clippy (core, line);
 		} else {
 			r_cons_printf (" -- %s\n", line);
 		}
-		if (r_config_get_i (core->config, "cfg.fortunes.tts")) {
+		if (r_config_get_b (core->config, "cfg.fortunes.tts")) {
 			r_sys_tts (line, true);
 		}
 		free (line);

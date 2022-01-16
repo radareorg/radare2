@@ -72,7 +72,7 @@ This is how are constructed the packets:
 		<< 84
 
 	RAP_CLOSE
-		>> 05 FD=(4 bytes) 
+		>> 05 FD=(4 bytes)
 		<< 85 RET=(4 bytes)
 
 	RAP_SYSTEM

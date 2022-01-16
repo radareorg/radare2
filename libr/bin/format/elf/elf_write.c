@@ -46,7 +46,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		eprintf ("Cannot find section\n");
 		return 0;
 	}
- 
+
 	eprintf ("delta: %"PFMT64d"\n", delta);
 	
 	/* rewrite rel's (imports) */
@@ -128,12 +128,12 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 
 	/* rewrite program headers */
 	for (i = 0, phdrp = phdr; i < ehdr->e_phnum; i++, phdrp++) {
-#if 0 
+#if 0
 		if (phdrp->p_offset < rsz_offset && phdrp->p_offset + phdrp->p_filesz > rsz_offset) {
 			phdrp->p_filesz += delta;
 			phdrp->p_memsz += delta;
 		}
-#endif 
+#endif
 		if (phdrp->p_offset >= rsz_offset + rsz_osize) {
 			phdrp->p_offset += delta;
 			if (phdrp->p_vaddr) {
@@ -145,7 +145,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		} else if (phdrp->p_offset + phdrp->p_filesz >= rsz_offset + rsz_osize) {
 			phdrp->p_filesz += delta;
 			phdrp->p_memsz += delta;
-		} 
+		}
 		off = ehdr->e_phoff + i * sizeof (Elf_(Phdr));
 		if (r_buf_write_at (bin->b, off, (ut8 *)phdrp, sizeof (Elf_ (Phdr))) == -1) {
 			perror ("write (phdr)");

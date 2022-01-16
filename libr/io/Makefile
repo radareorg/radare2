@@ -9,6 +9,7 @@ R2DEPS+=r_crypto
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS}
 OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o undo.o ioutils.o io_fd.o io_memory.o
+OBJS+=io_bank.o io_submap.o
 
 CFLAGS+=-Wall -DR2_PLUGIN_INCORE
 
@@ -21,11 +22,6 @@ include $(SHLR)/qnx/deps.mk
 ifeq ($(USE_PTRACE_WRAP),1)
 OBJS+=ptrace_wrap.o
 endif
-
-## only for shm_open
-#ifeq (${OSTYPE},gnulinux)
-#  LDFLAGS+=-lrt
-#endif
 
 ifeq (${BUILD_OS},dragonfly)
   LDFLAGS+=-lkvm

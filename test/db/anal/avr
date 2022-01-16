@@ -352,9 +352,23 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=avr functions 1 fail without esil
+BROKEN=1
+FILE=bins/firmware/arduino_avr.bin
+CMDS=<<EOF
+e asm.arch=avr
+aaa
+axt 0x28a
+EOF
+EXPECT=<<EOF
+fcn.0000029e 0x328 [CODE] jmp 0x28a
+EOF
+RUN
+
 NAME=avr functions 1
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
+aeim
 e asm.arch=avr
 aaa
 axt 0x28a
@@ -416,6 +430,7 @@ NAME=Search rop gadgets for in command
 FILE=bins/firmware/arduino_avr.bin
 ARGS=-a avr
 CMDS=<<EOF
+aeim
 e search.align=2
 /R in r24
 EOF
@@ -453,6 +468,7 @@ NAME=Search rop gadgets for IN command with align=2
 FILE=bins/firmware/arduino_avr.bin
 ARGS=-a avr
 CMDS=<<EOF
+aeim
 e search.align=2
 /R in r24
 EOF
@@ -531,6 +547,7 @@ RUN
 NAME=avr search
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
+aeim
 e asm.arch=avr
 aaa
 /ad call 0x4ec
@@ -543,6 +560,7 @@ RUN
 NAME=avr search - XXX dupped hit
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
+aeim
 e asm.arch=avr
 aaa
 /ad call 0x4ec
@@ -555,6 +573,7 @@ RUN
 NAME=avr search 2
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
+aeim
 e asm.arch=avr
 aac @ 0
 axt 0x4ec
@@ -567,6 +586,7 @@ RUN
 NAME=avr search 3
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
+aeim
 e asm.arch=avr
 aaa
 axt 0x4ec
@@ -579,6 +599,7 @@ RUN
 NAME=detect false xrefs
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
+aeim
 e asm.arch=avr
 e asm.lines=false
 aar
@@ -625,6 +646,7 @@ NAME=avr stop anal when invalid instruction is found
 FILE=bins/firmware/arduino_avr.bin
 CMDS=<<EOF
 e asm.arch=avr
+aeim
 aaa
 f
 EOF

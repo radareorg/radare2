@@ -3,7 +3,7 @@
 #include <r_egg.h>
 #include <getopt.h>
 
-static int usage (void) {
+static int usage(void) {
 	eprintf ("./test [-a x86|arm] [-b 32|64] hi.r\n");
 	return 1;
 }
@@ -15,8 +15,8 @@ int main(int argc, char **argv) {
 	RBuffer *b;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "ha:b:")) != -1) {
-                switch (c) {
+	while ((c = getopt (argc, argv, "ha:b:")) != -1) {
+		switch (c) {
 		case 'a':
 			arch = optarg;
 			break;

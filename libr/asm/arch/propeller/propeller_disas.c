@@ -93,27 +93,27 @@ static const char *conditions[] = {
 	[PROP_IF_Z_OR_NC]	= "if_z_or_c",
 };
 
-static ut16 get_opcode (ut32 instr) {
+static ut16 get_opcode(ut32 instr) {
 	return instr >> 26;
 }
 
-static ut16 get_opcode_ext (ut32 instr) {
+static ut16 get_opcode_ext(ut32 instr) {
 	return (instr & 0x7) | (instr >> 23);
 }
 
-static ut16 get_src (ut32 instr) {
+static ut16 get_src(ut32 instr) {
 	return instr & 0x1FF;
 }
 
-static ut16 get_dst (ut32 instr) {
+static ut16 get_dst(ut32 instr) {
 	return ((instr >> 9) & 0x1FF) << 2;
 }
 
-static int is_immediate (ut32 instr) {
+static int is_immediate(ut32 instr) {
 	return instr & 0x00400000;
 }
 
-static int decode_ext_cmd (struct propeller_cmd *cmd, ut32 instr) {
+static int decode_ext_cmd(struct propeller_cmd *cmd, ut32 instr) {
 	ut16 opcode;
 
 	opcode = get_opcode_ext (instr);
@@ -138,22 +138,22 @@ static int decode_ext_cmd (struct propeller_cmd *cmd, ut32 instr) {
 	return -1;
 }
 
-static ut8 get_zcri (ut32 instr) {
+static ut8 get_zcri(ut32 instr) {
 	return (instr >> 22) & 0xf;
 }
 
-static ut8 get_con (ut32 instr) {
+static ut8 get_con(ut32 instr) {
 	return (instr >> 18) & 0xf;
 }
 
-static void decode_prefix (struct propeller_cmd *cmd, ut32 instr) {
+static void decode_prefix(struct propeller_cmd *cmd, ut32 instr) {
 	ut8 prefix = (instr >> 18) & 0xF;
 
 	snprintf (cmd->prefix, 15, "%s", conditions[prefix]);
 	cmd->prefix[15] = '\0';
 }
 
-static int decode_jmp (struct propeller_cmd *cmd, ut32 instr) {
+static int decode_jmp(struct propeller_cmd *cmd, ut32 instr) {
 	ut16 opcode;
 	ut8 zcri;
 	int ret = 1;
@@ -186,7 +186,7 @@ static int decode_jmp (struct propeller_cmd *cmd, ut32 instr) {
 							"#0x%x", get_src (instr) << 2);
 				} else {
 					cmd->immed = 0;
-					cmd->src = get_src (instr) << 2; 
+					cmd->src = get_src (instr) << 2;
 					snprintf (cmd->operands, PROP_INSTR_MAXLEN - 1,
 							"0x%x", get_src (instr) << 2);
 				}

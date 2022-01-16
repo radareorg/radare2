@@ -35,7 +35,7 @@
  * ~ + - (unary)  rd_factor
  */
 
-static int do_rd_expr (const char **p, char delimiter, int *valid, int level,
+static int do_rd_expr(const char **p, char delimiter, int *valid, int level,
 		       int *check, int print_errors);
 
 static int
@@ -462,7 +462,7 @@ rd_factor (const char **p, int *valid, int level, int *check, int print_errors)
 	{
 	  (*p)++;
       int value = rd_value (p, valid, level, check, print_errors);
-      if (value == 0){ 
+      if (value == 0){
         printerr (1, "division by zero\n");
         return -1;
       }

@@ -104,7 +104,7 @@ get_operand_value (const struct v850_operand *operand,
 	  if (operand->flags & V850E_IMMEDIATE16HI)
 	    value <<= 16;
 	  else if (value & 0x8000)
-	    value |= (-1UL << 16);
+	    value |= ((unsigned long)0xFFFFffffFFFFffff << 16);
 
 	  return value;
 	}

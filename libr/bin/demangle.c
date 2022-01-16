@@ -68,6 +68,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 		return NULL;
 	}
 	RBin *bin = bf? bf->rbin: NULL;
+	bool trylib = bin? bin->demangle_trylib: true;
 	RBinObject *o = bf? bf->o: NULL;
 	RListIter *iter;
 	const char *lib = NULL;
@@ -93,7 +94,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 				break;
 			}
 		}
-		if (found) {
+		if (found && bin && bin->file) {
 			size_t len = strlen (bin->file);
 			if (!r_str_ncasecmp (str, bin->file, len)) {
 				lib = bin->file;
@@ -124,7 +125,7 @@ R_API char *r_bin_demangle(RBinFile *bf, const char *def, const char *str, ut64 
 	case R_BIN_NM_JAVA: demangled = r_bin_demangle_java (str); break;
 	case R_BIN_NM_RUST: demangled = r_bin_demangle_rust (bf, str, vaddr); break;
 	case R_BIN_NM_OBJC: demangled = r_bin_demangle_objc (NULL, str); break;
-	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->demanglercmd: false); break;
+	case R_BIN_NM_SWIFT: demangled = r_bin_demangle_swift (str, bin? bin->demangle_usecmd: false, trylib); break;
 	case R_BIN_NM_CXX: demangled = r_bin_demangle_cxx (bf, str, vaddr); break;
 	case R_BIN_NM_MSVC: demangled = r_bin_demangle_msvc (str); break;
 	case R_BIN_NM_DLANG: demangled = r_bin_demangle_plugin (bin, "dlang", str); break;

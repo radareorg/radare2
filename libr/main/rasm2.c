@@ -38,6 +38,7 @@ static RAsmState *__as_new(void) {
 			as->a->num = r_num_new (NULL, NULL, NULL);
 		}
 		as->anal = r_anal_new ();
+		r_anal_bind (as->anal, &as->a->analb);
 		__load_plugins (as);
 		__as_set_archbits (as);
 	}
@@ -157,7 +158,7 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 		r_anal_op_fini (&aop);
 	}
 	if (as->json) {
-		pj_end (pj); 
+		pj_end (pj);
 		printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}
@@ -166,14 +167,84 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 }
 
 static const char *has_esil(RAsmState *as, const char *name) {
-	RListIter *iter;
-	RAnalPlugin *h;
-	r_list_foreach (as->anal->plugins, iter, h) {
-		if (h->name && !strcmp (name, h->name)) {
-			return h->esil? "Ae": "A_";
+	if (as && name) {
+		RListIter *iter;
+		RAnalPlugin *h;
+		r_list_foreach (as->anal->plugins, iter, h) {
+			if (h->name && !strcmp (name, h->name)) {
+				return h->esil? "Ae": "A_";
+			}
 		}
 	}
 	return "__";
+}
+
+static void ranal2_list(RAsmState *as, const char *arch) {
+	char bits[32];
+	RAnalPlugin *h;
+	RListIter *iter;
+	PJ *pj = NULL;
+	if (as->json) {
+		pj = pj_new ();
+		pj_a (pj);
+	}
+	r_list_foreach (as->anal->plugins, iter, h) {
+		bits[0] = 0;
+		if (h->bits == 27) {
+			strcat (bits, "27");
+		} else if (h->bits == 0) {
+			strcat (bits, "any");
+		} else {
+			if (h->bits & 4) {
+				strcat (bits, "4 ");
+			}
+			if (h->bits & 8) {
+				strcat (bits, "8 ");
+			}
+			if (h->bits & 16) {
+				strcat (bits, "16 ");
+			}
+			if (h->bits & 32) {
+				strcat (bits, "32 ");
+			}
+			if (h->bits & 64) {
+				strcat (bits, "64 ");
+			}
+		}
+		const char *feat = "__";
+		const char *feat2 = has_esil (as, h->name);
+		if (as->quiet) {
+			printf ("%s\n", h->name);
+		} else if (as->json) {
+			pj_o (pj);
+			pj_ks (pj, "name", h->name);
+			pj_k (pj, "bits");
+			pj_a (pj);
+			pj_i (pj, 32);
+			pj_i (pj, 64);
+			pj_end (pj);
+			pj_ks (pj, "license", r_str_get_fail (h->license, "unknown"));
+			pj_ks (pj, "description", h->desc);
+			pj_ks (pj, "features", feat);
+			pj_end (pj);
+		} else {
+			printf ("%s%s  %-9s  %-11s %-7s %s",
+					feat, feat2, bits, h->name,
+					r_str_get_fail (h->license, "unknown"), h->desc);
+			if (h->author) {
+				printf (" (by %s)", h->author);
+			}
+			if (h->version) {
+				printf (" v%s", h->version);
+			}
+			printf ("\n");
+		}
+	}
+	if (as->json) {
+		pj_end (pj);
+		printf ("%s\n", pj_string (pj));
+	}
+	pj_free (pj);
 }
 
 static void rasm2_list(RAsmState *as, const char *arch) {
@@ -291,7 +362,8 @@ static int rasm_show_help(int v) {
 			" -j           output in json format\n"
 			" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 			" -l [len]     Input/Output length\n"
-			" -L           List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
+			" -L           List RAsm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
+			" -LL          List RAnal plugins\n"
 			" -o,-@ [addr] Set start address for code (default 0)\n"
 			" -O [file]    Output file name (rasm2 -Bf a.asm -O a)\n"
 			" -p           Run SPP over input for assembly\n"
@@ -518,8 +590,7 @@ static int __lib_anal_cb(RLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
-static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits,
-                                 int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
+static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut64 len, int bits, int bin, bool use_spp, bool rad, bool hexwords, const char *arch) {
 	if (rad) {
 		printf ("e asm.arch=%s\n", arch? arch: R_SYS_ARCH);
 		printf ("e asm.bits=%d\n", bits? bits: R_SYS_BITS);
@@ -580,6 +651,7 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	const char *filters = NULL;
 	const char *file = NULL;
 	bool list_plugins = false;
+	bool list_anal_plugins = false;
 	bool isbig = false;
 	bool rad = false;
 	bool use_spp = false;
@@ -663,7 +735,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 			len = r_num_math (NULL, opt.arg);
 			break;
 		case 'L':
-			list_plugins = true;
+			if (list_plugins) {
+				list_anal_plugins = true;
+			} else {
+				list_plugins = true;
+			}
 			break;
 		case '@':
 		case 'o':
@@ -723,6 +799,11 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		ret = rasm_show_help (help > 1? 2: 0);
 		goto beach;
 	}
+	if (list_anal_plugins) {
+		ranal2_list (as, opt.argv[opt.ind]);
+		ret = 1;
+		goto beach;
+	}
 	if (list_plugins) {
 		rasm2_list (as, opt.argv[opt.ind]);
 		ret = 1;
@@ -747,7 +828,9 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 		ret = 0;
 		goto beach;
 	}
-	r_asm_set_cpu (as->a, cpu);
+	if (cpu) {
+		r_asm_set_cpu (as->a, cpu);
+	}
 	r_asm_set_bits (as->a, (env_bits && *env_bits)? atoi (env_bits): bits);
 	r_anal_set_bits (as->anal, (env_bits && *env_bits)? atoi (env_bits): bits);
 	as->a->syscall = r_syscall_new ();

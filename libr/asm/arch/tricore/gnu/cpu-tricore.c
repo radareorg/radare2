@@ -72,7 +72,7 @@ unsigned long tricore_mask_ssr;
 unsigned long tricore_mask_ssro;
 unsigned long tricore_opmask[TRICORE_FMT_MAX];
 
-int 
+int
 bfd_default_scan (info, string)
      const bfd_arch_info_type *info;
      const char *string;
@@ -247,7 +247,7 @@ tricore_init_arch_vars (mach)
       tricore_mask_rcrw = 0x00e000ff;
       tricore_mask_rlc =  0x000000ff;
       tricore_mask_rr =   0x0ff300ff;
-      tricore_mask_rr1 =  0x0ffc00ff; 
+      tricore_mask_rr1 =  0x0ffc00ff;
       tricore_mask_rr2 =  0x0fff00ff;
       tricore_mask_rrpw = 0x006000ff;
       tricore_mask_rrr =  0x00f300ff;
@@ -295,7 +295,7 @@ tricore_init_arch_vars (mach)
   tricore_opmask[TRICORE_FMT_RCRW] = tricore_mask_rcrw;
   tricore_opmask[TRICORE_FMT_RLC] = tricore_mask_rlc;
   tricore_opmask[TRICORE_FMT_RR] = tricore_mask_rr;
-  tricore_opmask[TRICORE_FMT_RR1] = tricore_mask_rr1; 
+  tricore_opmask[TRICORE_FMT_RR1] = tricore_mask_rr1;
   tricore_opmask[TRICORE_FMT_RR2] = tricore_mask_rr2;
   tricore_opmask[TRICORE_FMT_RRPW] = tricore_mask_rrpw;
   tricore_opmask[TRICORE_FMT_RRR] = tricore_mask_rrr;

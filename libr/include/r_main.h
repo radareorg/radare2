@@ -26,7 +26,7 @@ R_API void r_main_free(RMain *m);
 R_API int r_main_run(RMain *m, int argc, const char **argv);
 
 R_API int r_main_version_print(const char *program);
-R_API int r_main_rvc2(int argc, const char **argv);
+R_API int r_main_ravc2(int argc, const char **argv);
 R_API int r_main_rax2(int argc, const char **argv);
 R_API int r_main_rarun2(int argc, const char **argv);
 R_API int r_main_rahash2(int argc, const char **argv);
@@ -38,6 +38,7 @@ R_API int r_main_rafind2(int argc, const char **argv);
 R_API int r_main_radiff2(int argc, const char **argv);
 R_API int r_main_ragg2(int argc, const char **argv);
 R_API int r_main_rasign2(int argc, const char **argv);
+R_API int r_main_r2pm(int argc, const char **argv);
 
 #ifdef __cplusplus
 }

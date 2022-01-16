@@ -27,7 +27,7 @@
 
 typedef uint64_t insn_t;
 
-static inline unsigned int riscv_insn_length (insn_t insn)
+static inline unsigned int riscv_insn_length(insn_t insn)
 {
   if ((insn & 0x3) != 0x3) /* RVC.  */
     return 2;
@@ -41,12 +41,12 @@ static inline unsigned int riscv_insn_length (insn_t insn)
   return 2;
 }
 
-static const char * const riscv_rm[8] =
+static const char *const riscv_rm[8] =
 {
   "rne", "rtz", "rdn", "rup", "rmm", 0, 0, "dyn"
 };
 
-static const char * const riscv_pred_succ[16] =
+static const char *const riscv_pred_succ[16] =
 {
   0,   "w",  "r",  "rw",  "o",  "ow",  "or",  "orw",
   "i", "iw", "ir", "irw", "io", "iow", "ior", "iorw"
@@ -59,7 +59,7 @@ static const char * const riscv_pred_succ[16] =
 #define RVC_BRANCH_REACH ((1ULL << RVC_BRANCH_BITS) * RISCV_BRANCH_ALIGN)
 
 #define RV_X(x, s, n)  (((x) >> (s)) & ((1 << (n)) - 1))
-#define RV_IMM_SIGN(x) (-(((x) >> 31) & 1))
+#define RV_IMM_SIGN(x) (-(long long)(((x) >> 31) & 1))
 
 #define EXTRACT_ITYPE_IMM(x) \
   (RV_X(x, 20, 12) | (RV_IMM_SIGN(x) << 12))
@@ -72,15 +72,15 @@ static const char * const riscv_pred_succ[16] =
 #define EXTRACT_UJTYPE_IMM(x) \
   ((RV_X(x, 21, 10) << 1) | (RV_X(x, 20, 1) << 11) | (RV_X(x, 12, 8) << 12) | (RV_IMM_SIGN(x) << 20))
 #define EXTRACT_RVC_IMM(x) \
-  (RV_X(x, 2, 5) | (-RV_X(x, 12, 1) << 5))
+  (RV_X(x, 2, 5) | (-(long long)RV_X(x, 12, 1) << 5))
 #define EXTRACT_RVC_LUI_IMM(x) \
   (EXTRACT_RVC_IMM (x) << RISCV_IMM_BITS)
 #define EXTRACT_RVC_SIMM3(x) \
-  (RV_X(x, 10, 2) | (-RV_X(x, 12, 1) << 2))
+  (RV_X(x, 10, 2) | (-(long long)RV_X(x, 12, 1) << 2))
 #define EXTRACT_RVC_ADDI4SPN_IMM(x) \
   ((RV_X(x, 6, 1) << 2) | (RV_X(x, 5, 1) << 3) | (RV_X(x, 11, 2) << 4) | (RV_X(x, 7, 4) << 6))
 #define EXTRACT_RVC_ADDI16SP_IMM(x) \
-  ((RV_X(x, 6, 1) << 4) | (RV_X(x, 2, 1) << 5) | (RV_X(x, 5, 1) << 6) | (RV_X(x, 3, 2) << 7) | (-RV_X(x, 12, 1) << 9))
+  ((RV_X(x, 6, 1) << 4) | (RV_X(x, 2, 1) << 5) | (RV_X(x, 5, 1) << 6) | (RV_X(x, 3, 2) << 7) | (-(long long)RV_X(x, 12, 1) << 9))
 #define EXTRACT_RVC_LW_IMM(x) \
   ((RV_X(x, 6, 1) << 2) | (RV_X(x, 10, 3) << 3) | (RV_X(x, 5, 1) << 6))
 #define EXTRACT_RVC_LD_IMM(x) \
@@ -94,9 +94,9 @@ static const char * const riscv_pred_succ[16] =
 #define EXTRACT_RVC_SDSP_IMM(x) \
   ((RV_X(x, 10, 3) << 3) | (RV_X(x, 7, 3) << 6))
 #define EXTRACT_RVC_B_IMM(x) \
-  ((RV_X(x, 3, 2) << 1) | (RV_X(x, 10, 2) << 3) | (RV_X(x, 2, 1) << 5) | (RV_X(x, 5, 2) << 6) | (-RV_X(x, 12, 1) << 8))
+  ((RV_X(x, 3, 2) << 1) | (RV_X(x, 10, 2) << 3) | (RV_X(x, 2, 1) << 5) | (RV_X(x, 5, 2) << 6) | (-(long long)RV_X(x, 12, 1) << 8))
 #define EXTRACT_RVC_J_IMM(x) \
-  ((RV_X(x, 3, 3) << 1) | (RV_X(x, 11, 1) << 4) | (RV_X(x, 2, 1) << 5) | (RV_X(x, 7, 1) << 6) | (RV_X(x, 6, 1) << 7) | (RV_X(x, 9, 2) << 8) | (RV_X(x, 8, 1) << 10) | (-RV_X(x, 12, 1) << 11))
+  ((RV_X(x, 3, 3) << 1) | (RV_X(x, 11, 1) << 4) | (RV_X(x, 2, 1) << 5) | (RV_X(x, 7, 1) << 6) | (RV_X(x, 6, 1) << 7) | (RV_X(x, 9, 2) << 8) | (RV_X(x, 8, 1) << 10) | (-(long long)RV_X(x, 12, 1) << 11))
 
 #define ENCODE_ITYPE_IMM(x) \
   (RV_X(x, 0, 12) << 20)

@@ -545,10 +545,10 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 // TODO: Use r_cons primitives here
 #define memcat(x, y)\
 	{ \
-		memcpy (x, y, strlen (y));\
+		memcpy ((x), (y), strlen (y));\
 		(x) += strlen (y);\
 	}
-	for (s = str, i = 0; s[0]; i++) {
+	for (s = str, i = 0; *s; i++) {
 		int d_inc = 2;
 		if (p->cur_enabled) {
 			if (i == ocur - n) {
@@ -562,7 +562,12 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 			}
 		}
 		if (colors) {
-			if (s[0] == '0' && s[1] == '0') {
+			if (p->nbcolor > 0) {
+				// colorize N first bytes only
+				// used for op+arg in disasm hexpairs
+				lastcol = (i < p->nbcolor)
+					? color_0x00: color_0x7f;
+			} else if (s[0] == '0' && s[1] == '0') {
 				lastcol = color_0x00;
 			} else if (s[0] == '7' && s[1] == 'f') {
 				lastcol = color_0x7f;
@@ -815,7 +820,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 }
 
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
-	r_return_if_fail (p && buf && len > 0);
+	r_return_if_fail (buf && len > 0);
 	PrintfCallback printfmt = (PrintfCallback)printf;
 #define print(x) printfmt("%s", x)
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
@@ -935,14 +940,15 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					print ("..offset..");
 				} else {
 					print ("- offset -");
-					if (p->wide_offsets) {
+					if (p && p->wide_offsets) {
 						print ("       ");
 					}
 				}
 				if (use_segoff) {
+					int seggrn = p? p->seggrn: 4;
 					ut32 s, a;
 					a = addr & 0xffff;
-					s = ((addr - a) >> p->seggrn) & 0xffff;
+					s = ((addr - a) >> seggrn) & 0xffff;
 					snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
 					delta = strlen (soff) - 10;
 				} else {
@@ -1023,7 +1029,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	// is this necessary?
-	r_print_set_screenbounds (p, addr);
+	if (p) {
+		r_print_set_screenbounds (p, addr);
+	}
 	int rowbytes;
 	int rows = 0;
 	int bytes = 0;
@@ -1082,7 +1090,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 				}
 				if (row_have_cursor == -1) {
-					if (r_print_cursor_pointer (p, j, 1)) {
+					if (p && r_print_cursor_pointer (p, j, 1)) {
 						row_have_cursor = j - i;
 						row_have_addr = addr + j;
 					}
@@ -1164,7 +1172,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						}
 					} else {
 						if (hasNull) {
-							const char *n = p->offname (p->user, addr + j);
+							const char *n = p? p->offname (p->user, addr + j): NULL;
 							r_print_section (p, at);
 							r_print_addr (p, addr + j * zoomsz);
 							printfmt ("..[ null bytes ]..   00000000 %s\n", r_str_get (n));
@@ -1176,7 +1184,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				} else if (base == -8) {
 					long long w = r_read_ble64 (buf + j, p && p->big_endian);
 					r_print_cursor (p, j, 8, 1);
-					printfmt ("%23" PFMT64d " ", w);
+					printfmt ("%23" PFMT64d " ", (st64)w);
 					r_print_cursor (p, j, 8, 0);
 					j += 7;
 				} else if (base == -1) {
@@ -1204,7 +1212,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (j >= len) {
 						break;
 					}
-					if (use_unalloc && !p->iob.is_valid_offset (p->iob.io, addr + j, false)) {
+					if (p && use_unalloc && !p->iob.is_valid_offset (p->iob.io, addr + j, false)) {
 						char ch = p->io_unalloc_ch;
 						char dbl_ch_str[] = { ch, ch, 0 };
 						p->cb_printf ("%s", dbl_ch_str);
@@ -1266,12 +1274,14 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					}
 					ut8 ch = (use_unalloc && p && !p->iob.is_valid_offset (p->iob.io, addr + j, false))
 						? ' ' : buf[j];
-					if (p->charset && p->charset->loaded) {
+					if (p && p->charset && p->charset->loaded) {
 						ut8 input[2] = {ch, 0};
 						ut8 output[32];
 						size_t len = r_charset_encode_str (p->charset, output, sizeof (output), input, 1);
 						if (len > 0) {
 							ch = *output;
+						} else {
+							ch = '?';
 						}
 					}
 					r_print_byte (p, "%c", j, ch);
@@ -1314,7 +1324,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					free (rstr);
 				}
 			}
-			bool first = true; 
+			bool first = true;
 			if (!eol && p && p->use_comments) {
 				for (; j < i + inc; j++) {
 					print (" ");
@@ -1771,7 +1781,7 @@ R_API void r_print_zoom(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from,
 	p->flags |= R_PRINT_FLAGS_HEADER;
 }
 
-static inline void printHistBlock (RPrint *p, int k, int cols) {
+static inline void printHistBlock(RPrint *p, int k, int cols) {
 	RConsPrintablePalette *pal = &p->cons->context->pal;
 	const char *h_line = p->cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
 	const char *block = p->cons->use_utf8 ? R_UTF8_BLOCK : "#";
@@ -2097,21 +2107,57 @@ static bool ishexprefix(char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
+static bool is_not_token(const char p) {
+	if (isalpha (p) || isdigit (p)) {
+		return true;
+	}
+	switch (p) {
+	case '.':
+	case '_':
+		return true;
+	}
+	return false;
+}
+
+static bool is_flag(const char *p) {
+	while (*p && !isalpha (*p) && !isdigit (*p)) {
+		if (*p == 0x1b) {
+			while (*p && *p != 'm') {
+				p++;
+			}
+		}
+		p++;
+	}
+	const char *e = p;
+	while (*e && is_not_token (*e)) {
+		e++;
+	}
+	if (*p == 'r' && isdigit (p[1])) {
+		p++;
+	}
+	size_t len = e? e - p: strlen (p);
+	return len > 3;
+}
+
 R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
+	bool expect_reg = true;
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
 	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
 	ut32 c_reset = strlen (reset);
-	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
 	char previous = '\0';
 	const char *color_flag = print->cons->context->pal.flag;
 
-	if (!p || !*p) {
+	if (R_STR_ISEMPTY (p)) {
 		return NULL;
 	}
+#if 0
+	// bool is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
+	// uncomment to ignore color of call/jmp arguments and inherit the op one
 	if (is_jmp) {
 		return strdup (p);
 	}
+#endif
 	r_str_trim (p);
 	if (opcode_sz > COLORIZE_BUFSIZE) {
 		/* return same string in case of error */
@@ -2121,7 +2167,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	memset (o, 0, COLORIZE_BUFSIZE);
 	for (i = j = 0; p[i]; i++, j++) {
 		/* colorize numbers */
-		if ((ishexprefix (&p[i]) && previous != ':') \
+		if ((ishexprefix (p + i) && previous != ':') \
 		     || (isdigit ((ut8)p[i]) && issymbol (previous))) {
 			const char *num2 = num;
 			ut64 n = r_num_get (NULL, p + i);
@@ -2187,8 +2233,13 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
-				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
+				if (!(p[i + 1] == '$' || isdigit (p[i + 1]))) {
 					const char *color = found_var ? print->cons->context->pal.func_var_type : reg;
+					expect_reg = false;
+					if (is_flag (p + i)) {
+						color = color_flag;
+						expect_reg = false;
+					}
 					ut32 color_len = strlen (color);
 					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
@@ -2227,14 +2278,16 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			}
 			if (is_mod) {
 				// COLOR FOR REGISTER
-				ut32 reg_len = strlen (reg);
 				/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
-				if (reg_len + j + 10 >= COLORIZE_BUFSIZE) {
-					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
-					return strdup (p);
+				if (is_flag (p + i)) {
+					strcpy (o + j, color_flag);
+					j += strlen (o + j);
+				} else {
+					if (expect_reg) {
+						strcpy (o + j, reg);
+						j += strlen (o + j);
+					}
 				}
-				strcpy (o + j, reg);
-				j += strlen (reg);
 			}
 			break;
 		case '0': /* address */

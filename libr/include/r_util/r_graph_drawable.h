@@ -11,7 +11,7 @@ extern "C" {
 
 /**
  * @brief Generic drawable graph node.
- * 
+ *
  * Provides minimal information to draw something without output format specific details.
  */
 typedef struct r_anal_graph_node_info_t {
@@ -19,7 +19,7 @@ typedef struct r_anal_graph_node_info_t {
 	char *body;
 	/**
 	 * @brief Optional offset for the object corresponding to node.
-	 * 
+	 *
 	 * Interactive output modes can use it to provide actions like seeking to
 	 * this position or modify the object.
 	 */
@@ -32,7 +32,7 @@ R_API RGraphNode *r_graph_add_node_info(RGraph *graph, const char *title, const 
 
 /**
  * @brief Convert graph to Graphviz dot format.
- * 
+ *
  * @param graph Graph with RGraphNodeInfo used as node user data
  * @param node_properties List node styling attributes. Can be set to NULL.
  * @param edge_properties List edge styling attributes. Can be set to NULL.
@@ -40,7 +40,7 @@ R_API RGraphNode *r_graph_add_node_info(RGraph *graph, const char *title, const 
 R_API char *r_graph_drawable_to_dot(RGraph /*RGraphNodeInfo*/ *graph, const char *node_properties, const char *edge_properties);
 /**
  * @brief Convert graph to JSON.
- * 
+ *
  * @param[in] graph Graph to convert
  * @param[out] pj Json output structure. Can be used to include the resulting JSON value inside bigger JSON.
  * @param[in] use_offset Set this to true if graph uses \ref RGraphNodeInfo::offset offset field.

@@ -77,7 +77,7 @@ ax~?
 ax~selref
 EOF
 EXPECT=<<EOF
-94
+89
               section.0.__TEXT.__text+20 0x100000db4 ->      DATA -> 0x100001150 section.14.__DATA.__objc_selrefs
                                  main+15 0x100000e5f ->      DATA -> 0x100001158 section.14.__DATA.__objc_selrefs+8
                                  main+45 0x100000e7d ->      DATA -> 0x100001160 section.14.__DATA.__objc_selrefs+16
@@ -95,5 +95,55 @@ EXPECT=<<EOF
               section.0.__TEXT.__text+20 0x100000db4 ->      CODE -> 0x100000df0 method.Person.name
                                  main+45 0x100000e7d ->      CODE -> 0x100000e20 method.Person.setName:
                                 main+116 0x100000ec4 ->      CODE -> 0x100000e20 method.Person.setName:
+EOF
+RUN
+
+NAME=macOS arm64 with DYLD_CHAINED_PTR_64_OFFSET
+FILE=bins/mach0/hello-macos-arm64-chained
+CMDS=<<EOF
+ic Test
+ic~::
+EOF
+EXPECT=<<EOF
+class Test
+0x100003a7c method Test      init
+0x100003acc method Test      methodWithoutArgs
+0x100003b18 method Test      methodWithOneArg:
+0x100003b68 method Test      methodWithTwoArgs:secondArg:
+0x100003be0 method Test      methodWithReturn
+0x100003aa0 method Test c    someStaticMethod
+0x1000080f8 [0x100003a7c - 0x100003be0]    356 class 0 Test :: NSObject
+EOF
+RUN
+
+NAME=aao-crash because of truncated file
+FILE=bins/mach0/objc-crash
+CMDS=<<EOF
+aao
+ic
+EOF
+EXPECT=<<EOF
+0x100001098 [0x100000c47 - 0x100000d1d]    214 class 0 Test :: NSObject
+0x100000d1d method 0      sayHello2
+0x100000cf7 method 1      sayHello:
+0x100000cce method 2      sayHello3::
+0x100000ca7 method 3      sayLong:
+0x100000c6a method 4      init
+0x100000c47 method 5 c    callMeNot
+EOF
+RUN
+
+NAME=macOS arm64e with DYLD_CHAINED_PTR_ARM64E_USERLAND24
+FILE=bins/mach0/TestMacOS-arm64e
+CMDS=<<EOF
+ic AppDelegate~:1..
+ic~::
+EOF
+EXPECT=<<EOF
+0x100003238 method AppDelegate      applicationDidFinishLaunching:
+0x100003288 method AppDelegate      applicationWillTerminate:
+0x1000032d8 method AppDelegate      applicationSupportsSecureRestorableState:
+0x100008a70 [0x10000313c - 0x100003184]     72 class 0 ViewController :: NSViewController
+0x100008a98 [0x100003238 - 0x1000032d8]    160 class 0 AppDelegate :: NSObject
 EOF
 RUN

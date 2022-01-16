@@ -76,7 +76,7 @@ R_API void r_flist_free(void **it) {
 	free (--it);
 }
 
-R_API int r_flist_length (void **it) {
+R_API int r_flist_length(void **it) {
 	void *pos;
 	int len = 0;
 	r_flist_foreach (it, pos) {

@@ -250,7 +250,7 @@ const e_vle_t e_ops[] = {
 	{ "e_and2is."   , 0x7000E800, 0x7000E800 | E_MASK_I16L, E_I16LS ,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_IMM, TYPE_IMM, TYPE_NONE, TYPE_NONE}},
 	{ "e_andi"      , 0x1800C000, 0x1800C000 | E_MASK_SCI8, E_SCI8I ,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_IMM, TYPE_IMM}},
 	{ "e_andi."     , 0x1800C800, 0x1800C800 | E_MASK_SCI8, E_SCI8I ,   R_ANAL_OP_TYPE_AND, R_ANAL_COND_AL, {TYPE_REG, TYPE_REG, TYPE_IMM, TYPE_IMM, TYPE_IMM}},
-	// has cr0-cr3   
+	// has cr0-cr3
 	{ "e_beq"       , 0x7A000000, 0x7A120000 | E_MASK_BD15, E_BD15  ,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_EQ, {TYPE_CR, TYPE_JMP, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "e_bge"       , 0x7A000000, 0x7A000000 | E_MASK_BD15, E_BD15  ,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_GE, {TYPE_CR, TYPE_JMP, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "e_bgt"       , 0x7A000000, 0x7A110000 | E_MASK_BD15, E_BD15  ,  R_ANAL_OP_TYPE_CJMP, R_ANAL_COND_GT, {TYPE_CR, TYPE_JMP, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
@@ -269,7 +269,7 @@ const e_vle_t e_ops[] = {
 	{ "e_beql"      , 0x7A000001, 0x7A130001 | E_MASK_BD15, E_BD15  , R_ANAL_OP_TYPE_CCALL, R_ANAL_COND_VC, {TYPE_CR, TYPE_JMP, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "e_bsol"      , 0x7A000001, 0x7A140001 | E_MASK_BD15, E_BD15  , R_ANAL_OP_TYPE_CCALL, R_ANAL_COND_VS, {TYPE_CR, TYPE_JMP, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "e_bcl"       , 0x7A000001, 0x7A140001 | E_MASK_BD15, E_BD15  , R_ANAL_OP_TYPE_CCALL, R_ANAL_COND_VS, {TYPE_CR, TYPE_JMP, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
-	// has cr0-cr3    
+	// has cr0-cr3
 	{ "e_bdnz"      , 0x7A200000, 0x7A200000 | E_MASK_BD15, E_BD15c ,   R_ANAL_OP_TYPE_JMP, R_ANAL_COND_AL, {TYPE_JMP, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "e_bdnzl"     , 0x7A200001, 0x7A200001 | E_MASK_BD15, E_BD15c ,  R_ANAL_OP_TYPE_CALL, R_ANAL_COND_AL, {TYPE_JMP, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
 	{ "e_bdz"       , 0x7A300000, 0x7A300000 | E_MASK_BD15, E_BD15c ,   R_ANAL_OP_TYPE_JMP, R_ANAL_COND_AL, {TYPE_JMP, TYPE_NONE, TYPE_NONE, TYPE_NONE, TYPE_NONE}},
@@ -426,7 +426,7 @@ const se_vle_t se_ops[] = {
 	{ "se_subi."  , 0x2600, 0x27FF, 2,   R_ANAL_OP_TYPE_SUB, R_ANAL_COND_AL, {{0x01F0,  4,  0,  1, 1, TYPE_IMM}, {0x000F,  0,  0,  0,  0, TYPE_REG}, {0}, {0}, {0}}},
 };
 
-static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
+static void set_e_fields(vle_t *v, const e_vle_t* p, ut32 data) {
 	if (!v) {
 		return;
 	}
@@ -708,7 +708,7 @@ static void set_e_fields(vle_t * v, const e_vle_t* p, ut32 data) {
 	}
 }
 
-static void set_ppc_fields(vle_t * v, const ppc_t* p, ut32 data) {
+static void set_ppc_fields(vle_t *v, const ppc_t* p, ut32 data) {
 	if (!v) {
 		return;
 	}

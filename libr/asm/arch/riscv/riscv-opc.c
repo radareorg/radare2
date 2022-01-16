@@ -25,7 +25,7 @@
 
 /* Register names used by gas and objdump.  */
 
-static const char * const riscv_gpr_names_numeric[NGPR] =
+static const char *const riscv_gpr_names_numeric[NGPR] =
 {
   "x0",   "x1",   "x2",   "x3",   "x4",   "x5",   "x6",   "x7",
   "x8",   "x9",   "x10",  "x11",  "x12",  "x13",  "x14",  "x15",
@@ -33,14 +33,14 @@ static const char * const riscv_gpr_names_numeric[NGPR] =
   "x24",  "x25",  "x26",  "x27",  "x28",  "x29",  "x30",  "x31"
 };
 
-static const char * const riscv_gpr_names_abi[NGPR] = {
+static const char *const riscv_gpr_names_abi[NGPR] = {
   "zero", "ra", "sp",  "gp",  "tp", "t0",  "t1",  "t2",
   "s0",   "s1", "a0",  "a1",  "a2", "a3",  "a4",  "a5",
   "a6",   "a7", "s2",  "s3",  "s4", "s5",  "s6",  "s7",
   "s8",   "s9", "s10", "s11", "t3", "t4",  "t5",  "t6"
 };
 
-static const char * const riscv_fpr_names_numeric[NFPR] =
+static const char *const riscv_fpr_names_numeric[NFPR] =
 {
   "f0",   "f1",   "f2",   "f3",   "f4",   "f5",   "f6",   "f7",
   "f8",   "f9",   "f10",  "f11",  "f12",  "f13",  "f14",  "f15",
@@ -48,7 +48,7 @@ static const char * const riscv_fpr_names_numeric[NFPR] =
   "f24",  "f25",  "f26",  "f27",  "f28",  "f29",  "f30",  "f31"
 };
 
-static const char * const riscv_fpr_names_abi[NFPR] = {
+static const char *const riscv_fpr_names_abi[NFPR] = {
   "ft0", "ft1", "ft2",  "ft3",  "ft4", "ft5", "ft6",  "ft7",
   "fs0", "fs1", "fa0",  "fa1",  "fa2", "fa3", "fa4",  "fa5",
   "fa6", "fa7", "fs2",  "fs3",  "fs4", "fs5", "fs6",  "fs7",
@@ -69,9 +69,9 @@ static const char * const riscv_fpr_names_abi[NFPR] = {
 #define MASK_RS2 (OP_MASK_RS2 << OP_SH_RS2)
 #define MASK_RD (OP_MASK_RD << OP_SH_RD)
 #define MASK_CRS2 (OP_MASK_CRS2 << OP_SH_CRS2)
-#define MASK_IMM ENCODE_ITYPE_IMM (-1U)
-#define MASK_RVC_IMM ENCODE_RVC_IMM (-1U)
-#define MASK_UIMM ENCODE_UTYPE_IMM (-1U)
+#define MASK_IMM ENCODE_ITYPE_IMM ((unsigned int)-1)
+#define MASK_RVC_IMM ENCODE_RVC_IMM ((unsigned int)-1)
+#define MASK_UIMM ENCODE_UTYPE_IMM ((unsigned int)-1)
 #define MASK_RM (OP_MASK_RM << OP_SH_RM)
 #define MASK_PRED (OP_MASK_PRED << OP_SH_PRED)
 #define MASK_SUCC (OP_MASK_SUCC << OP_SH_SUCC)

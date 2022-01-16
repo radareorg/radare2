@@ -16,21 +16,21 @@
 // no attsyntax for arm
 static char *regs[] = R_GP;
 
-static void emit_init (REgg *egg) {
+static void emit_init(REgg *egg) {
 	/* TODO */
 }
 
-static char *emit_syscall (REgg *egg, int num) {
+static char *emit_syscall(REgg *egg, int num) {
 	char buf[32];
 	snprintf (buf, sizeof (buf), "syscall (%d)\n", num);
 	return strdup (buf);
 }
 
-static void emit_frame (REgg *egg, int sz) {
+static void emit_frame(REgg *egg, int sz) {
 	r_egg_printf (egg, "frame (%d)\n", sz);
 }
 
-static void emit_frame_end (REgg *egg, int sz, int ctx) {
+static void emit_frame_end(REgg *egg, int sz, int ctx) {
 	r_egg_printf (egg, "frame_end (%d, %d)\n", sz, ctx);
 }
 
@@ -43,7 +43,7 @@ static void emit_comment(REgg *egg, const char *fmt, ...) {
 	va_end (ap);
 }
 
-static void emit_equ (REgg *egg, const char *key, const char *value) {
+static void emit_equ(REgg *egg, const char *key, const char *value) {
 	r_egg_printf (egg, "equ (%s, %s)\n", key, value);
 }
 
@@ -72,7 +72,7 @@ static void emit_jmp(REgg *egg, const char *str, int atr) {
 	}
 }
 
-static void emit_arg (REgg *egg, int xs, int num, const char *str) {
+static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 	// TODO: enhance output here
 	r_egg_printf (egg, "arg.%d.%d=%s\n", xs, num, str);
 }
@@ -81,28 +81,28 @@ static void emit_get_result(REgg *egg, const char *ocn) {
 	r_egg_printf (egg, "get_result (%s)\n", ocn);
 }
 
-static void emit_restore_stack (REgg *egg, int size) {
+static void emit_restore_stack(REgg *egg, int size) {
 	r_egg_printf (egg, "restore_stack (%d)\n", size);
 	// XXX: must die.. or add emit_store_stack. not needed by ARM
 	// r_egg_printf (egg, "  add sp, %d\n", size);
 }
 
-static void emit_get_while_end (REgg *egg, char *str, const char *ctxpush, const char *label) {
+static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
 	r_egg_printf (egg, "get_while_end (%s, %s, %s)\n", str, ctxpush, label);
 }
 
-static void emit_while_end (REgg *egg, const char *labelback) {
+static void emit_while_end(REgg *egg, const char *labelback) {
 	r_egg_printf (egg, "while_end (%s)\n", labelback);
 }
 
-static void emit_get_var (REgg *egg, int type, char *out, int idx) {
+static void emit_get_var(REgg *egg, int type, char *out, int idx) {
 	switch (type) {
 	case 0: sprintf (out, "fp,$%d", -idx); break; /* variable */
 	case 1: sprintf (out, "sp,$%d", idx); break; /* argument */ // XXX: MUST BE r0, r1, r2, ..
 	}
 }
 
-static void emit_trap (REgg *egg) {
+static void emit_trap(REgg *egg) {
 	r_egg_printf (egg, "trap\n");
 }
 

@@ -12,12 +12,12 @@
  * that such works are identified as "derived from the RSA Data
  * Security, Inc. MD5 Message-Digest Algorithm" in all material
  * mentioning or referencing the derived work.
- * 
+ *
  * RSA Data Security, Inc. makes no representations concerning either
  * the merchantability of this software or the suitability of this
  * software for any particular purpose. It is provided "as is"
  * without express or implied warranty of any kind.
- * 
+ *
  * These notices must be retained in any copies of any part of this
  * documentation and/or software.
  */
@@ -171,7 +171,7 @@ static const ut8 PADDING[64] = {
 };
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context */
-void MD5_Init(R_MD5_CTX *context) {
+void r_MD5_Init(R_MD5_CTX *context) {
 	if (context) {
 		context->count[0] = context->count[1] = 0;
 		context->state[0] = 0x67452301;
@@ -183,7 +183,7 @@ void MD5_Init(R_MD5_CTX *context) {
 
 /* MD5 block update operation. Continues an MD5 message-digest operation,
  * processing another message block, and updating the context */
-void MD5_Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
+void r_MD5_Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
 	ut32 i;
 
 	/* Compute number of bytes mod 64 */
@@ -212,7 +212,7 @@ void MD5_Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
 	memmove ((void*)&context->buffer[index], (void*)&input[i], inputLen - i);
 }
 
-void MD5_Final(ut8 digest[16], R_MD5_CTX *context) {
+void r_MD5_Final(ut8 digest[16], R_MD5_CTX *context) {
 	ut8 bits[8];
 
 	/* Save number of bits */
@@ -221,10 +221,10 @@ void MD5_Final(ut8 digest[16], R_MD5_CTX *context) {
 	/* Pad out to 56 mod 64.  */
 	ut32 index = (ut32)((context->count[0] >> 3) & 0x3f);
 	ut32 padLen = (index < 56) ? (56 - index) : (120 - index);
-	MD5_Update (context, PADDING, padLen);
+	r_MD5_Update (context, PADDING, padLen);
 
 	/* Append length (before padding) */
-	MD5_Update (context, bits, 8);
+	r_MD5_Update (context, bits, 8);
 
 	/* Store state in digest */
 	Encode (digest, context->state, 16);

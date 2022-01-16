@@ -1,6 +1,14 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_core.h"
+
+static const char *help_message_ci[] = {
+	"Usage: ci", "[sil] ([obid])", "Compare two bin objects",
+	"cis", " 0", "Compare symbols with current `ob 1` with given obid (0)",
+	"cii", " 0", "Compare imports",
+	"cil", " 0", "Compare libraries",
+	NULL
+};
 
 static const char *help_msg_c[] = {
 	"Usage:", "c[?dfx] [argument]", " # Compare",
@@ -20,6 +28,7 @@ static const char *help_msg_c[] = {
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "Compare contents of file at current seek",
 	"cg", "[?] [o] [file]", "Graphdiff current file and [file]",
+	"ci", "[?] [obid] ([obid2])", "Compare two bin-objects (symbols, imports, ...)",
 	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 	"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
@@ -31,10 +40,6 @@ static const char *help_msg_c[] = {
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
 	NULL
 };
-
-static void cmd_cmp_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, c);
-}
 
 R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w) {
 	free (w->ndata);
@@ -337,19 +342,19 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 		r_core_cmpwatch_show (core, UT64_MAX, 0);
 		break;
 	case '?': {
-		const char *help_message[] = {
-			"Usage: cw", "", "Watcher commands",
-			"cw", "", "List all compare watchers",
-			"cw", " addr", "List all compare watchers",
-			"cw", " addr sz cmd", "Add a memory watcher",
-			// "cws", " [addr]", "Show watchers",
-			"cw", "*", "List compare watchers in r2 cmds",
-			"cwr", " [addr]", "Reset/revert watchers",
-			"cwu", " [addr]", "Update watchers",
-			NULL
-		};
-		r_core_cmd_help (core, help_message);
-	}
+			  const char *help_message[] = {
+				  "Usage: cw", "", "Watcher commands",
+				  "cw", "", "List all compare watchers",
+				  "cw", " addr", "List all compare watchers",
+				  "cw", " addr sz cmd", "Add a memory watcher",
+				  // "cws", " [addr]", "Show watchers",
+				  "cw", "*", "List compare watchers in r2 cmds",
+				  "cwr", " [addr]", "Reset/revert watchers",
+				  "cwu", " [addr]", "Update watchers",
+				  NULL
+			  };
+			  r_core_cmd_help (core, help_message);
+		  }
 		  break;
 	}
 }
@@ -504,7 +509,7 @@ static int cmd_cp(void *data, const char *input) {
 	return false;
 }
 
-static void __core_cmp_bits (RCore *core, ut64 addr) {
+static void __core_cmp_bits(RCore *core, ut64 addr) {
 	const bool scr_color = r_config_get_i (core->config, "scr.color");
 	int i;
 	ut8 a, b;
@@ -543,6 +548,163 @@ static void __core_cmp_bits (RCore *core, ut64 addr) {
 	r_cons_newline ();
 }
 
+static const RList *symbols_of(RCore *core, int id0) {
+	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
+	RBinFile *old_bf = core->bin->cur;
+	r_bin_file_set_cur_binfile (core->bin, bf);
+	const RList *list = bf? r_bin_get_symbols (core->bin): NULL;
+	r_bin_file_set_cur_binfile (core->bin, old_bf);
+	return list;
+}
+
+static const RList *imports_of(RCore *core, int id0) {
+	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
+	RBinFile *old_bf = core->bin->cur;
+	r_bin_file_set_cur_binfile (core->bin, bf);
+	const RList *list = bf? r_bin_get_imports (core->bin): NULL;
+	r_bin_file_set_cur_binfile (core->bin, old_bf);
+	return list;
+}
+
+static const RList *libs_of(RCore *core, int id0) {
+	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
+	RBinFile *old_bf = core->bin->cur;
+	r_bin_file_set_cur_binfile (core->bin, bf);
+	const RList *list = bf? r_bin_get_libs (core->bin): NULL;
+	r_bin_file_set_cur_binfile (core->bin, old_bf);
+	return list;
+}
+
+static void _core_cmp_info_libs(RCore *core, int id0, int id1) {
+	const RList *s0 = libs_of (core, id0);
+	const RList *s1 = libs_of (core, id1);
+	if (!s0 || !s1) {
+		eprintf ("Missing bin object\n");
+		return;
+	}
+	RListIter *iter, *iter2;
+	char *s, *s2;
+	if (id0 == id1) {
+		eprintf ("%d == %d\n", id0, id1);
+		return;
+	}
+	r_list_foreach (s0, iter, s) {
+		bool found = false;
+		r_list_foreach (s1, iter2, s2) {
+			if (!strcmp (s, s2)) {
+				found = true;
+			}
+		}
+		r_cons_printf ("%s%s\n", found? " ": "-", s);
+	}
+	r_list_foreach (s1, iter, s) {
+		bool found = false;
+		r_list_foreach (s0, iter2, s2) {
+			if (!strcmp (s, s2)) {
+				found = true;
+			}
+		}
+		if (!found) {
+			r_cons_printf ("+%s\n", s);
+		}
+	}
+	// r_list_free (s0);
+	// r_list_free (s1);
+}
+
+static void _core_cmp_info_imports(RCore *core, int id0, int id1) {
+	const RList *s0 = imports_of (core, id0);
+	const RList *s1 = imports_of (core, id1);
+	if (!s0 || !s1) {
+		eprintf ("Missing bin object\n");
+		return;
+	}
+	RListIter *iter, *iter2;
+	RBinImport *s, *s2;
+	if (id0 == id1) {
+		eprintf ("%d == %d\n", id0, id1);
+		return;
+	}
+	r_list_foreach (s0, iter, s) {
+		bool found = false;
+		r_list_foreach (s1, iter2, s2) {
+			if (!strcmp (s->name, s2->name)) {
+				found = true;
+			}
+		}
+		r_cons_printf ("%s%s\n", found? " ": "-", s->name);
+	}
+	r_list_foreach (s1, iter, s) {
+		bool found = false;
+		r_list_foreach (s0, iter2, s2) {
+			if (!strcmp (s->name, s2->name)) {
+				found = true;
+			}
+		}
+		if (!found) {
+			r_cons_printf ("+%s\n", s->name);
+		}
+	}
+	// r_list_free (s0);
+	// r_list_free (s1);
+}
+
+static void _core_cmp_info_symbols(RCore *core, int id0, int id1) {
+	const RList *s0 = symbols_of (core, id0);
+	const RList *s1 = symbols_of (core, id1);
+	if (!s0 || !s1) {
+		eprintf ("Missing bin object\n");
+		return;
+	}
+	RListIter *iter, *iter2;
+	RBinSymbol *s, *s2;
+	if (id0 == id1) {
+		eprintf ("%d == %d\n", id0, id1);
+		return;
+	}
+	r_list_foreach (s0, iter, s) {
+		bool found = false;
+		r_list_foreach (s1, iter2, s2) {
+			if (!strcmp (s->name, s2->name)) {
+				found = true;
+			}
+		}
+		r_cons_printf ("%s%s\n", found? " ": "-", s->name);
+	}
+	r_list_foreach (s1, iter, s) {
+		bool found = false;
+		r_list_foreach (s0, iter2, s2) {
+			if (!strcmp (s->name, s2->name)) {
+				found = true;
+			}
+		}
+		if (!found) {
+			r_cons_printf ("+%s\n", s->name);
+		}
+	}
+}
+
+static void _core_cmp_info(RCore *core, const char *input) {
+	RBinFile *cur = core->bin->cur;
+	int id0 = (cur && cur->o) ? cur->id: 0;
+	int id1 = atoi (input + 1);
+	// do the magic
+	switch (input[0]) {
+	case 's':
+		_core_cmp_info_symbols (core, id0, id1);
+		break;
+	case 'l':
+		_core_cmp_info_libs (core, id0, id1);
+		break;
+	case 'i':
+		_core_cmp_info_imports (core, id0, id1);
+		break;
+	default:
+		r_core_cmd_help (core, help_message_ci);
+		break;
+	}
+}
+
 static int cmd_cmp(void *data, const char *input) {
 	static char *oldcwd = NULL;
 	int ret = 0, i, mode = 0;
@@ -563,10 +725,16 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'a': // "cat"
 		if (input[1] == 't') {
 			const char *path = r_str_trim_head_ro (input + 2);
-			if (*path == '$') {
-				const char *oldText = r_cmd_alias_get (core->rcmd, path, 1);
-				if (oldText) {
-					r_cons_printf ("%s\n", oldText + 1);
+			if (*path == '$' && !path[1]) {
+				eprintf ("No alias name given.\n");
+			} else if (*path == '$') {
+				RCmdAliasVal *v = r_cmd_alias_get (core->rcmd, path+1);
+				if (v) {
+					char *v_str = r_cmd_alias_val_strdup (v);
+					r_cons_println (v_str);
+					free (v_str);
+				} else {
+					eprintf ("No such alias \"$%s\"\n", path+1);
 				}
 			} else {
 				if (r_fs_check (core->fs, path)) {
@@ -784,6 +952,9 @@ static int cmd_cmp(void *data, const char *input) {
 			core->print->flags = oflags;
 		}
 		break;
+	case 'i': // "ci"
+		_core_cmp_info (core, input + 1);
+		break;
 	case 'g': // "cg"
 	{          // XXX: this is broken
 		int diffops = 0;
@@ -792,7 +963,12 @@ static int cmd_cmp(void *data, const char *input) {
 		switch (input[1]) {
 		case 'o':         // "cgo"
 			file2 = (char *) r_str_trim_head_ro (input + 2);
-			r_anal_diff_setup (core->anal, true, -1, -1);
+			if (*file2) {
+				r_anal_diff_setup (core->anal, true, -1, -1);
+			} else {
+				eprintf ("Usage: cgo [file]\n");
+				return false;
+			}
 			break;
 		case 'f':         // "cgf"
 			eprintf ("TODO: agf is experimental\n");

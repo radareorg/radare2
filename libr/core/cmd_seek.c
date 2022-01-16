@@ -8,10 +8,11 @@
 #include "r_io.h"
 
 static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward);
+
 static const char *help_msg_s[] = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
 	"s", "", "Print current address",
-	"s.", "hexoff", "Seek honoring a base from core->offset",
+	"s.", "[?]hexoff", "Seek honoring a base from core->offset",
 	"s:", "pad", "Print current address with N padded zeros (defaults to 8)",
 	"s", " addr", "Seek to address",
 	"s-", "", "Undo seek",
@@ -37,8 +38,15 @@ static const char *help_msg_s[] = {
 	"spp", "", "Seek to prev function prelude",
 	"so", " [N]", "Seek to N next opcode(s)",
 	"sr", " pc", "Seek to register",
-	"ss", "", "Seek silently (without adding an entry to the seek history)",
+	"ss", "[?]", "Seek silently (without adding an entry to the seek history)",
 	// "sp [page]  seek page N (page = block)",
+	NULL
+};
+
+static const char *help_msg_sdot[] = {
+	"Usage:", "s.", "seek here or there (near seeks)",
+	"s.", "", "Seek here, same as 's $$'",
+	"s..", "32a8", "Seek to the same address but replacing the lower nibbles",
 	NULL
 };
 
@@ -69,7 +77,7 @@ static const char *help_msg_sl[] = {
 	"sl", "[+-][line]", "Seek to relative line",
 	"slc", "", "Clear line cache",
 	"sll", "", "Show total number of lines",
-	"sleep", " [seconds]", "Sleep for an specific amount of time",
+	"sleep", " [seconds]", "Sleep for an specific amount of time (support decimal values)",
 	NULL
 };
 
@@ -78,13 +86,6 @@ static const char *help_msg_ss[] = {
 	"s?", "", "Works with all s subcommands",
 	NULL
 };
-
-static void cmd_seek_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, s);
-	DEFINE_CMD_DESCRIPTOR (core, sC);
-	DEFINE_CMD_DESCRIPTOR (core, sl);
-	DEFINE_CMD_DESCRIPTOR (core, ss);
-}
 
 static void __init_seek_line(RCore *core) {
 	ut64 from, to;
@@ -302,7 +303,7 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 	return val;
 }
 
-static int cmd_seek_opcode_forward (RCore *core, int n) {
+static int cmd_seek_opcode_forward(RCore *core, int n) {
 	// N forward instructions
 	int i, ret, val = 0;
 	for (val = i = 0; i < n; i++) {
@@ -479,11 +480,19 @@ static int cmd_seek(void *data, const char *input) {
 	}
 	break;
 	case '.': // "s." "s.."
-		for (input++; *input == '.'; input++) {
-			;
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_sdot);
+		} else if (input[1]) {
+			for (input++; *input == '.'; input++) {
+				;
+			}
+			r_core_seek_base (core, input);
+			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		} else {
+			// just re-read the current block
+			r_core_seek (core, core->offset, true);
+			r_core_block_read (core);
 		}
-		r_core_seek_base (core, input);
-		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case 'j':  // "sj"
 		{
@@ -629,9 +638,9 @@ static int cmd_seek(void *data, const char *input) {
 		case '-': // "s--"
 		default:
 			{
-				st64 delta = -off;
+				st64 delta = -(st64)off;
 				if (input[1] == '-') {
-					delta = -core->blocksize;
+					delta = -(st64)core->blocksize;
 					int mult = r_num_math (core->num, input + 2);
 					if (mult > 0) {
 						delta /= mult;
@@ -780,8 +789,15 @@ static int cmd_seek(void *data, const char *input) {
 			{
 				const char *arg = strchr (input, ' ');
 				if (arg) {
+					arg++;
 					void *bed = r_cons_sleep_begin ();
-					r_sys_sleep (atoi (arg + 1));
+					if (strchr (arg, '.')) {
+						double d = 0;
+						sscanf (arg, "%lf", &d);
+						r_sys_usleep ((int)(d * 1000000));
+					} else {
+						r_sys_sleep (atoi (arg));
+					}
 					r_cons_sleep_end (bed);
 				} else {
 					eprintf ("Usage: sleep [seconds]\n");

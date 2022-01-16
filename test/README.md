@@ -124,6 +124,7 @@ Advices
 
 * For portability reasons Do not use shell pipes, use `~`
 * dont use `pd` if not necessary, use `pi`
+* All tests use the UTC timezone for consistency.
 
 License
 -------

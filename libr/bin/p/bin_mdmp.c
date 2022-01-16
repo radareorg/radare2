@@ -455,7 +455,7 @@ static RList* symbols(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 magic[6];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 6) {
 		return !memcmp (magic, MDMP_MAGIC, 6);

@@ -21,12 +21,16 @@ WANT_CAPSTONE=@WANT_CAPSTONE@
 WITH_LIBR=@WITH_LIBR@
 
 ifeq ($(USE_RPATH),1)
-LDFLAGS_LIB+=-Wl,-rpath,"${LIBDIR}"
+LDFLAGS_RPATH=-Wl,-rpath,"${LIBDIR}"
+else
+LDFLAGS_RPATH=
 endif
 
 MKPLUGINS=mk/stat.mk mk/sloc.mk
 
-COMPILER=@USERCC@
+USERCC=@USERCC@
+COMPILER0=$(shell echo "${USERCC}" | awk '{print $$1}')
+COMPILER=$(shell basename ${COMPILER0})
 DEBUGGER=@DEBUGGER@
 
 INSTALL_DIR=@INSTALL_DIR@
@@ -54,7 +58,10 @@ ifeq ($(WANT_DYLINK),1)
 ifeq ($(OSTYPE),qnx)
 DL_LIBS=
 else
+ifeq ($(OSTYPE),windows)
+else
 DL_LIBS=@DL_LIBS@
+endif
 endif
 
 else

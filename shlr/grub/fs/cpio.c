@@ -363,7 +363,7 @@ grub_cpio_close (grub_file_t file)
 }
 
 #ifndef MODE_USTAR
-struct grub_fs grub_cpio_fs = { 
+struct grub_fs grub_cpio_fs = {
   .name = "cpiofs",
   .dir = grub_cpio_dir,
   .open = grub_cpio_open,

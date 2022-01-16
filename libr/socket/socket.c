@@ -6,7 +6,11 @@
 #include <r_util.h>
 #include <errno.h>
 
-#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
+#if __linux__
+#include "i/isotp.h"
+#endif
+
+#if EMSCRIPTEN || __wasi__ || defined(__serenity__) || defined(__MINGW32__)
 #define NETWORK_DISABLED 1
 #else
 #define NETWORK_DISABLED 0
@@ -91,6 +95,9 @@ R_API ut8* r_socket_slurp(RSocket *s, int *len) {
 #else
 
 R_API bool r_socket_is_connected(RSocket *s) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_SOCKET)) {
+		return false;
+	}
 #if __WINDOWS__
 	char buf[2];
 	r_socket_block_time (s, false, 0, 0);
@@ -196,6 +203,9 @@ R_API RSocket *r_socket_new(bool is_ssl) {
 }
 
 R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
+		return false;
+	}
 	// XXX TODO: dont use sockets, we can achieve the same with pipes
 	const int port = 2000 + r_num_rand (2000);
 	int childPid = r_sys_fork ();
@@ -270,6 +280,70 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 			return false;
 		}
 #endif
+	} else if (proto == R_SOCKET_PROTO_CAN) {
+#if __linux__
+		// host: can interface name
+		// port: src and dst can identifiers
+		ut32 srcid = 0;
+		ut32 dstid = 0;
+		sscanf (port, "0x%x/0x%x", &srcid, &dstid);
+		// s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+		int fd = socket (PF_CAN, SOCK_DGRAM, CAN_ISOTP);
+		if (fd == -1) {
+			return false;
+		}
+		static struct can_isotp_options opts = {
+			.txpad_content = 0xcc,
+			.rxpad_content = 0xcc,
+			.frame_txtime = 0x1000,
+		};
+		if (setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_OPTS, &opts, sizeof (opts)) == -1) {
+			close (fd);
+			return false;
+		}
+		static struct can_isotp_fc_options fcopts = {
+			.stmin = 0xf3
+		};
+		if (setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_RECV_FC, &fcopts, sizeof (fcopts)) == -1) {
+			close (fd);
+			return false;
+		}
+		static struct can_isotp_ll_options llopts = {
+			.mtu = 8,
+			.tx_dl = 8,
+		};
+		if (setsockopt (fd, SOL_CAN_ISOTP, CAN_ISOTP_LL_OPTS, &llopts, sizeof (llopts)) == -1) {
+			close (fd);
+			return false;
+		}
+
+		struct ifreq ifr;
+		memset (&ifr, 0, sizeof (ifr));
+		r_str_ncpy (ifr.ifr_name, host, sizeof (ifr.ifr_name));
+		if (ioctl (fd, SIOCGIFINDEX, &ifr) == -1) {
+			r_sys_perror ("ioctl");
+			close (fd);
+			return -1;
+		}
+
+		struct sockaddr_can addr = {0};
+		addr.can_family = AF_CAN;
+		addr.can_ifindex = ifr.ifr_ifindex;
+		addr.can_addr.tp.rx_id = srcid | 0x80000000;
+		addr.can_addr.tp.tx_id = dstid | 0x80000000;
+
+		if (bind (fd, (struct sockaddr *)&addr, sizeof (addr)) < 0) {
+			r_sys_perror ("bind");
+			close (fd);
+			return false;
+		}
+		s->fd = fd;
+		s->is_ssl = false;
+		return true;
+#else
+		eprintf ("Unsupported ISOTP socket protocol\n");
+		return false;
+#endif
 	} else {
 		hints.ai_family = AF_UNSPEC; /* Allow IPv4 or IPv6 */
 		hints.ai_protocol = proto;
@@ -279,7 +353,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				gai_strerror (gai), host, port);
 			return false;
 		}
-		for (rp = res; rp != NULL; rp = rp->ai_next) {
+		for (rp = res; rp; rp = rp->ai_next) {
 			int flag = 1;
 
 			s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
@@ -472,8 +546,7 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 #endif
 		return false;
 	}
-
-	if (r_sandbox_enable (0)) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_SOCKET)) {
 		return false;
 	}
 #if __WINDOWS__

@@ -40,7 +40,7 @@ R_API RCodeMeta *r_codemeta_new(const char *code) {
 	if (!r) {
 		return NULL;
 	}
-	r->tree = r_rbtree_cont_new ();
+	r->tree = r_crbtree_new (NULL);
 	r->code = code? strdup (code): NULL;
 	r_vector_init (&r->annotations, sizeof (RCodeMetaItem), (RVectorFree)r_codemeta_item_fini, NULL);
 	return r;
@@ -90,7 +90,7 @@ R_API void r_codemeta_free(RCodeMeta *code) {
 		return;
 	}
 	r_vector_clear (&code->annotations);
-	r_rbtree_cont_free (code->tree);
+	r_crbtree_free (code->tree);
 	r_free (code->code);
 	r_free (code);
 }
@@ -153,7 +153,7 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *mi) {
 	r_return_if_fail (code && mi);
 	r_vector_push (&code->annotations, mi);
-	r_rbtree_cont_insert (code->tree, mi, cmp_ins, NULL);
+	r_crbtree_insert (code->tree, mi, cmp_ins, NULL);
 }
 
 R_API RPVector *r_codemeta_at(RCodeMeta *code, size_t offset) {
@@ -169,25 +169,25 @@ R_API RPVector *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 #if USE_TRI
 	size_t search_start = start / 2;
 	RCodeMetaItem *min = NULL;
-	r_rbtree_cont_find (code->tree, &search_start, cmp_find_min_mid, &min);
+	r_crbtree_find (code->tree, &search_start, cmp_find_min_mid, &min);
 	if (min) {
 		const size_t end_mid = (end - 1) + ((SIZE_MAX - end - 1) / 2);
-		RContRBNode *node = r_rbtree_cont_find_node (code->tree, min, cmp_ins, NULL);	//get node for min
-		RContRBNode *prev = r_rbtree_cont_node_prev (node);
+		RRBNode *node = r_crbtree_find_node (code->tree, min, cmp_ins, NULL);	//get node for min
+		RRBNode *prev = r_rbnode_prev (node);
 		while (prev) {
 			RCodeMetaItem *mi = (RCodeMetaItem *)prev->data;
 			if (mi->end <= start) {
 				break;
 			}
 			node = prev;
-			prev = r_rbtree_cont_node_prev (node);
+			prev = r_rbnode_prev (node);
 		}
 		while (node) {
 			RCodeMetaItem *mi = (RCodeMetaItem *)node->data;
 			if (!(start >= mi->end || end < mi->start)) {
 				r_pvector_push (r, mi);
 			}
-			node = r_rbtree_cont_node_next (node);
+			node = r_rbnode_next (node);
 			if (node) {
 				mi = (RCodeMetaItem *)node->data;
 				const size_t mi_mid = mi->start + (mi->end - mi->start) / 2;
@@ -339,17 +339,6 @@ R_API void r_codemeta_print_json(RCodeMeta *code) {
  * @param width maximum nibbles per address
  */
 static void print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t width) {
-	static const char *fmt[9] = {
-		"0x%08" PFMT64x,
-		"0x%09" PFMT64x,
-		"0x%010" PFMT64x,
-		"0x%011" PFMT64x,
-		"0x%012" PFMT64x,
-		"0x%013" PFMT64x,
-		"0x%014" PFMT64x,
-		"0x%015" PFMT64x,
-		"0x%016" PFMT64x
-	};
 	if (width < 8) {
 		width = 8;
 	}
@@ -369,13 +358,50 @@ static void print_offset_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t
 	} else {
 		PRINT_COLOR (PALETTE (offset)
 			     : Color_GREEN);
-		r_cons_printf (fmt[width], offset);
+		r_cons_printf ("0x%08" PFMT64x, offset);
 		PRINT_COLOR (Color_RESET);
 	}
 	r_cons_printf ("    |");
 }
 
-R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
+static void print_disasm_in_binary_line_bar(RCodeMeta *code, ut64 offset, size_t width, RAnal *anal) {
+	width = 40;
+	RCons *cons = r_cons_singleton ();
+	r_cons_printf ("    ");
+	if (offset == UT64_MAX) {
+		const char *pad = r_str_pad (' ', width);
+		r_cons_print (pad);
+	} else {
+		if (anal && anal->coreb.core) {
+			RCore *core = anal->coreb.core;
+			char *c = r_str_newf ("pid 1 @ 0x%" PFMT64x " @e:asm.flags=0@e:asm.lines=0@e:asm.bytes=0", offset);
+			char *res = anal->coreb.cmdstrf (core, c);
+			free (c);
+			r_str_trim (res);
+			int w = r_str_ansi_len (res);
+			r_cons_print (res);
+			if (w < width) {
+				const char *pad = r_str_pad (' ', width - w);
+				r_cons_print (pad);
+			} else {
+				char *p = (char *)r_str_ansi_chrn (res, width);
+				if (p) {
+					*p = 0;
+				}
+			}
+			free (res);
+		} else {
+			PRINT_COLOR (PALETTE (offset) : Color_GREEN);
+			r_cons_printf ("0x%08" PFMT64x, offset);
+			PRINT_COLOR (Color_RESET);
+			const char *pad = r_str_pad (' ', width - 11);
+			r_cons_print (pad);
+		}
+	}
+	r_cons_printf ("    |");
+}
+
+R_API void r_codemeta_print_internal(RCodeMeta *code, RVector *line_offsets, RAnal *anal) {
 	if (code->annotations.len == 0) {
 		r_cons_printf ("%s\n", code->code);
 		return;
@@ -448,7 +474,11 @@ R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
 				if (line_idx < line_offsets->len) {
 					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 				}
-				print_offset_in_binary_line_bar (code, offset, offset_width);
+				if (anal) {
+					print_disasm_in_binary_line_bar (code, offset, offset_width, anal);
+				} else {
+					print_offset_in_binary_line_bar (code, offset, offset_width);
+				}
 				line_idx++;
 			}
 			r_cons_printf ("%c", code->code[cur]);
@@ -466,7 +496,11 @@ R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
 					offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 				}
 				PRINT_COLOR (Color_RESET);
-				print_offset_in_binary_line_bar (code, offset, offset_width);
+				if (anal) {
+					print_disasm_in_binary_line_bar (code, offset, offset_width, anal);
+				} else {
+					print_offset_in_binary_line_bar (code, offset, offset_width);
+				}
 				PRINT_COLOR (color);
 				line_idx++;
 			}
@@ -484,11 +518,24 @@ R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
 			if (line_idx < line_offsets->len) {
 				offset = *(ut64 *)r_vector_index_ptr (line_offsets, line_idx);
 			}
-			print_offset_in_binary_line_bar (code, offset, offset_width);
+			if (anal) {
+				print_disasm_in_binary_line_bar (code, offset, offset_width, anal);
+			} else {
+				print_offset_in_binary_line_bar (code, offset, offset_width);
+			}
 			line_idx++;
 		}
 		r_cons_printf ("%c", code->code[cur]);
 	}
+}
+
+R_API void r_codemeta_print_disasm(RCodeMeta *code, RVector *line_offsets, void *anal) {
+	r_codemeta_print_internal (code, line_offsets, anal);
+}
+
+// TODO rename R_API void r_codemeta_print_offsets(RCodeMeta *code, RVector *line_offsets, bool d) {
+R_API void r_codemeta_print(RCodeMeta *code, RVector *line_offsets) {
+	r_codemeta_print_internal (code, line_offsets, NULL);
 }
 
 static bool foreach_offset_annotation(void *user, const ut64 offset, const void *val) {

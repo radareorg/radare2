@@ -5,8 +5,8 @@ om
 s
 EOF
 EXPECT=<<EOF
- 2 fd: 3 +0x0000035d 0x0000035d - 0x00000368 r-x fmap.code
- 1 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
+* 2 fd: 3 +0x0000035d 0x0000035d - 0x00000368 r-x fmap.code
+- 1 fd: 3 +0x00000000 0x00000000 - 0x0000041b r-- fmap.file
 0x35d
 EOF
 RUN

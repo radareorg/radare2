@@ -14,20 +14,16 @@ R_API void r_bin_mem_free(void *data) {
 	free (mem);
 }
 
-static int reloc_cmp(const void *a, const RBNode *b, void *user) {
-	const RBinReloc *ar = (const RBinReloc *)a;
-	const RBinReloc *br = container_of (b, const RBinReloc, vrb);
-	if (ar->vaddr > br->vaddr) {
+static int reloc_cmp(void *incoming, void *in, void *user) {
+	RBinReloc *_incoming = (RBinReloc *)incoming;
+	RBinReloc *_in = (RBinReloc *)in;
+	if (_incoming->vaddr > _in->vaddr) {
 		return 1;
 	}
-	if (ar->vaddr < br->vaddr) {
+	if (_incoming->vaddr < _in->vaddr) {
 		return -1;
 	}
 	return 0;
-}
-
-static void reloc_free(RBNode *rbn, void *user) {
-	free (container_of (rbn, RBinReloc, vrb));
 }
 
 static void object_delete_items(RBinObject *o) {
@@ -38,7 +34,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->fields);
 	r_list_free (o->imports);
 	r_list_free (o->libs);
-	r_rbtree_free (o->relocs, reloc_free, NULL);
+	r_crbtree_free (o->relocs);
 	r_list_free (o->sections);
 	r_list_free (o->strings);
 	ht_up_free (o->strings_db);
@@ -200,7 +196,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 }
 
 static void filter_classes(RBinFile *bf, RList *list) {
-	Sdb *db = sdb_new0 ();
+	HtPU *db = ht_pu_new0 ();
 	HtPP *ht = ht_pp_new0 ();
 	RListIter *iter, *iter2;
 	RBinClass *cls;
@@ -229,19 +225,21 @@ static void filter_classes(RBinFile *bf, RList *list) {
 			eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
 		}
 	}
-	sdb_free (db);
+	ht_pu_free (db);
 	ht_pp_free (ht);
 }
 
-static RBNode *list2rbtree(RList *relocs) {
-	RListIter *it;
-	RBinReloc *reloc;
-	RBNode *res = NULL;
+static RRBTree *list2rbtree(RList *relocs) {
+	RRBTree *tree = r_crbtree_new (free);
 
-	r_list_foreach (relocs, it, reloc) {
-		r_rbtree_insert (&res, reloc, &reloc->vrb, reloc_cmp, NULL);
+	if (tree) {
+		RListIter *it;
+		RBinReloc *reloc;
+		r_list_foreach (relocs, it, reloc) {
+			r_crbtree_insert (tree, reloc, reloc_cmp, NULL);
+		}
 	}
-	return res;
+	return tree;
 }
 
 static void r_bin_object_rebuild_classes_ht(RBinObject *o) {
@@ -425,7 +423,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *o) {
 	return true;
 }
 
-R_IPI RBNode *r_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
+R_IPI RRBTree *r_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
 	r_return_val_if_fail (bin && o, NULL);
 
 	static bool first = true;
@@ -438,7 +436,7 @@ R_IPI RBNode *r_bin_object_patch_relocs(RBin *bin, RBinObject *o) {
 		if (!tmp) {
 			return o->relocs;
 		}
-		r_rbtree_free (o->relocs, reloc_free, NULL);
+		r_crbtree_free (o->relocs);
 		REBASE_PADDR (o, tmp, RBinReloc);
 		o->relocs = list2rbtree (tmp);
 		first = false;

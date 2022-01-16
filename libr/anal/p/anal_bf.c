@@ -16,7 +16,7 @@ static size_t countChar(const ut8 *buf, int len, char ch) {
 	return i;
 }
 
-static int getid (char ch) {
+static int getid(char ch) {
 	const char *keys = "[]<>+-,.";
 	const char *cidx = strchr (keys, ch);
 	return cidx? cidx - keys + 1: 0;

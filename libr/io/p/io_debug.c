@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2021 - pancake */
 
 #include <errno.h>
 #include <r_io.h>
@@ -7,8 +7,6 @@
 #include <r_cons.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 #include <string.h>
-
-#define USE_RARUN 0
 
 #if __linux__ ||  __APPLE__ || __WINDOWS__ || __NetBSD__ || __KFBSD__ || __OpenBSD__
 #define DEBUGGER_SUPPORTED 1
@@ -50,7 +48,7 @@
 #include <tlhelp32.h>
 #include <winbase.h>
 #include <psapi.h>
-#include <w32dbg_wrap.h>
+#include <r_util/r_w32dw.h>
 #endif
 
 /*
@@ -118,8 +116,8 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		return -1;
 	}
 	setup_tokens ();
-	if (!io->w32dbg_wrap) {
-		io->w32dbg_wrap = (struct w32dbg_wrap_instance_t *)w32dbg_wrap_new ();
+	if (!io->dbgwrap) {
+		io->dbgwrap = r_w32dw_new ();
 	}
 	char *_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) :
 		strdup (cmd);
@@ -137,13 +135,13 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	LPTSTR cmdline_ = r_sys_conv_utf8_to_win (cmdline);
 	free (cmdline);
 	struct __createprocess_params p = {appname_, cmdline_, &pi};
-	W32DbgWInst *wrap = (W32DbgWInst *)io->w32dbg_wrap;
+	RW32Dw *wrap = (RW32Dw *)io->dbgwrap;
 	wrap->params.type = W32_CALL_FUNC;
 	wrap->params.func.func = __createprocess_wrap;
 	wrap->params.func.user = &p;
-	w32dbg_wrap_wait_ret (wrap);
-	if (!w32dbgw_ret (wrap)) {
-		w32dbgw_err (wrap);
+	r_w32dw_waitret (wrap);
+	if (!r_w32dw_ret (wrap)) {
+		(void)r_w32dw_err (wrap);
 		r_sys_perror ("fork_and_ptraceme/CreateProcess");
 		free (appname_);
 		free (cmdline_);
@@ -161,8 +159,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	wrap->params.type = W32_WAIT;
 	wrap->params.wait.wait_time = 10000;
 	wrap->params.wait.de = &de;
-	w32dbg_wrap_wait_ret (wrap);
-	if (!w32dbgw_ret (wrap)) goto err_fork;
+	r_w32dw_waitret (wrap);
+	if (!r_w32dw_ret (wrap)) {
+		goto err_fork;
+	}
 
 	/* check if is a create process debug event */
 	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
@@ -180,10 +180,10 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	return pid;
 
 err_fork:
-	eprintf ("ERRFORK\n");
+	eprintf ("Error: Cannot create new process.\n");
 	TerminateProcess (pi.hProcess, 1);
-	w32dbg_wrap_fini ((W32DbgWInst *)io->w32dbg_wrap);
-	io->w32dbg_wrap = NULL;
+	r_w32dw_free (io->dbgwrap);
+	io->dbgwrap = NULL;
 	CloseHandle (pi.hThread);
 	CloseHandle (pi.hProcess);
 	return -1;
@@ -432,7 +432,6 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #else
 	r = fork_and_ptraceme_for_unix (io, bits, _eff_cmd);
 #endif
-
 	free (_eff_cmd);
 	return r;
 }
@@ -514,7 +513,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 			if ((ret = _plugin->open (io, uri, rw, mode))) {
 				RCore *c = io->corebind.core;
-				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
+				RW32Dw *wrap = (RW32Dw *)ret->data;
 				c->dbg->user = wrap;
 			}
 #elif __APPLE__
@@ -543,7 +542,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #if __WINDOWS__
 			if (ret) {
 				RCore *c = io->corebind.core;
-				W32DbgWInst *wrap = (W32DbgWInst *)ret->data;
+				RW32Dw *wrap = (RW32Dw *)ret->data;
 				c->dbg->user = wrap;
 			}
 #endif
@@ -556,26 +555,13 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	return ret;
 }
 
-static int __close (RIODesc *desc) {
-	int ret = -2;
-	eprintf ("something went wrong\n");
-	if (desc) {
-		eprintf ("trying to close %d with io_debug\n", desc->fd);
-		ret = -1;
-	}
-	r_sys_backtrace ();
-	return ret;
-}
-
 RIOPlugin r_io_plugin_debug = {
 	.name = "debug",
 	.desc = "Attach to native debugger instance",
 	.license = "LGPL3",
 	.uris = "dbg://,pidof://,waitfor://",
 	.author = "pancake",
-	.version = "0.2.0",
 	.open = __open,
-	.close = __close,
 	.check = __plugin_open,
 	.isdbg = true,
 };

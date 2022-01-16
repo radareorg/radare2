@@ -2,7 +2,7 @@
 
    Copyright 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
    2006, 2007, 2008, 2009 Free Software Foundation, Inc.
-   
+
    Note - certain prototypes declared in this header file are for
    functions whoes implementation copyright does not belong to the
    FSF.  Those prototypes are present in this file for reference
@@ -24,7 +24,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street - Fifth Floor,
    Boston, MA 02110-1301, USA.
-   
+
    Written by Cygnus Support, 1994.
 
    The libiberty library provides a number of functions which are
@@ -35,6 +35,11 @@
 
 #ifndef LIBIBERTY_H
 #define LIBIBERTY_H
+
+#if __MINGW32__
+#define _MSC_VER 1
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -170,6 +175,7 @@ extern char *concat_copy2 (const char *, ...) ATTRIBUTE_SENTINEL;
 
 extern char *libiberty_concat_ptr;
 
+#if 1
 /* Concatenate an arbitrary number of strings.  You must pass NULL as
    the last argument of this function, to terminate the list of
    strings.  Allocates memory using alloca.  The arguments are
@@ -177,6 +183,7 @@ extern char *libiberty_concat_ptr;
 #define ACONCAT(ACONCAT_PARAMS) \
   (libiberty_concat_ptr = (char *) alloca (concat_length ACONCAT_PARAMS + 1), \
    concat_copy2 ACONCAT_PARAMS)
+#endif
 
 /* Check whether two file descriptors refer to the same file.  */
 
@@ -200,7 +207,7 @@ extern char * getpwd (void);
 #ifdef __MINGW32__
 /* Forward declaration to avoid #include <sys/time.h>.   */
 struct timeval;
-extern int gettimeofday (struct timeval *, void *); 
+extern int gettimeofday (struct timeval *, void *);
 #endif
 
 /* Get the amount of time the process has run, in microseconds.  */
@@ -339,6 +346,7 @@ extern unsigned int xcrc32 (const unsigned char *, int, unsigned int);
 
 #ifdef _MSC_VER
 #include <stdlib.h>
+#undef alloca
 #define alloca(x) _alloca(x)
 #define xmalloc malloc
 #define xcalloc calloc
@@ -439,7 +447,7 @@ extern struct pex_obj *pex_init (int flags, const char *pname,
 /* Capture stderr to a pipe.  The output can be read by
    calling pex_read_err and reading from the returned
    FILE object.  This flag may be specified only for
-   the last program in a pipeline.  
+   the last program in a pipeline.
 
    This flag is supported only on Unix and Windows.  */
 #define PEX_STDERR_TO_PIPE	0x40

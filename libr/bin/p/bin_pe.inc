@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake, alvarofe */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,7 +7,7 @@
 #include "../i/private.h"
 #include "pe/pe.h"
 
-static Sdb* get_sdb (RBinFile *bf) {
+static Sdb* get_sdb(RBinFile *bf) {
 	RBinObject *o = bf->o;
 	struct PE_(r_bin_pe_obj_t) *bin;
 	if (!o || !o->bin_obj) {
@@ -42,8 +42,8 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 	if (bf && bf->o && bf->o->bin_obj) {
 		switch (type) {
 		case R_BIN_SYM_MAIN:
-				peaddr = PE_(r_bin_pe_get_main_vaddr) (bf->o->bin_obj);
-				break;
+			peaddr = PE_(r_bin_pe_get_main_vaddr) (bf->o->bin_obj);
+			break;
 		}
 	}
 	if (peaddr && (ret = R_NEW0 (RBinAddr))) {
@@ -384,7 +384,110 @@ static int is_vb6(RBinFile *bf) {
 	return false;
 }
 
-static int has_canary(RBinFile *bf) {
+static bool check_inlined_canary(RBinFile *bf) {
+	ut8 buf[64];
+	struct r_bin_pe_addr_t *entry = PE_(r_bin_pe_get_entrypoint) (bf->o->bin_obj);
+	// check for 32bit canary
+	ut64 addr = entry->paddr;;
+	if (addr == UT64_MAX || !addr) {
+		goto out_fail;
+	}
+	if (r_buf_read_at (bf->buf, addr, buf, sizeof (buf)) < 1) {
+		goto out_fail;
+	}
+	if (buf[0] == 0x48) {
+		// x86-64
+#if 0
+	// X86-64
+	;-- entry0, rip:
+	0x140001348      4883ec28       sub   rsp,  0x28
+	0x14000134c      e85b020000     call  0x1400015ac
+	....
+	0x1400015ac      48895c2420     mov   qword [rsp + 0x20], rbx
+	0x1400015b1      55             push  rbp
+	0x1400015b2      488bec         mov   rbp,  rsp
+	0x1400015b5      4883ec20       sub   rsp,  0x20
+	0x1400015b9      488b0580ba01.  mov   rax,  qword [0x14001d040]
+	0x1400015c0      48bb32a2df2d.  movabs rbx,  0x2b992ddfa232
+	0x1400015ca      483bc3         cmp   rax,  rbx
+#endif
+		// follow call
+		ut64 rel_addr = (ut64)((int)(buf[5] + (buf[6] << 8) + (buf[7] << 16) + (buf[8] << 24)));
+		ut64 calldst = addr + 5 + 4 + rel_addr;
+		if (r_buf_read_at (bf->buf, calldst, buf, sizeof (buf)) < 1) {
+			goto out_fail;
+		}
+		if (buf[0] != 0x48 && buf[1] != 0x89) {
+			goto out_fail;
+		}
+		ut64 canaddr = 0;
+		r_buf_read_at (bf->buf, calldst + 16, (ut8*)&canaddr, 4);
+
+		ut32 panaddr = canaddr - 0x40; // PE_(va2pa)(bf->o->bin_obj, canaddr);
+
+		ut8 can0[8] = {0};
+		r_buf_read_at (bf->buf, panaddr, can0, 8);
+		ut8 can1[8] = {0};
+		r_buf_read_at (bf->buf, calldst + 0x16, can1, 8);
+		if (!memcmp (can0, can1, 8)) {
+			char *canstr = r_str_newf ("%02x%02x%02x%02x%02x%02x%02x%02x",
+				can0[0], can0[1], can0[2], can0[3],
+				can0[4], can0[5], can0[6], can0[7]);
+			sdb_set (bf->sdb, "canary.value", canstr, 0);
+			free (canstr);
+			goto out_succeed;
+		}
+	} else if (buf[0] == 0xe8) {
+#if 0
+// X86-32
+	mov edi, edi
+	push ebp
+	mov ebp, esp
+	sub esp, 0x10
+	mov eax, dword [0x8a2b84] // contents of 0x8a2b84 should be 0xbb40e64e
+	and dword [ebp - 8], 0
+	and dword [ebp - 4], 0
+	push ebx
+	push edi
+	mov edi, 0xbb40e64e
+#endif
+		// follow call
+		ut64 rel_addr = (ut64)((int)(buf[1] + (buf[2] << 8) + (buf[3] << 16) + (buf[4] << 24)));
+		ut64 calldst = addr + 5 + rel_addr;
+		if (r_buf_read_at (bf->buf, calldst, buf, sizeof (buf)) < 1) {
+			goto out_fail;
+		}
+		if (buf[0] == 0x8b && buf[1] == 0xff && buf[2] == 0x55) {
+			goto out_succeed;
+		}
+		ut32 canaddr = 0;
+		r_buf_read_at (bf->buf, calldst + 2, (ut8*)&canaddr, 4);
+		ut32 panaddr = PE_(va2pa)(bf->o->bin_obj, canaddr);
+		ut8 can0[4] = {0};
+		r_buf_read_at (bf->buf, panaddr, can0, 4);
+		ut8 can1[4] = {0};
+		r_buf_read_at (bf->buf, calldst + 9, can1, 4);
+		if (!memcmp (can0, can1, 4)) {
+			char *canstr = r_str_newf ("%02x%02x%02x%02x", can0[0], can0[1], can0[2], can0[3]);
+			sdb_set (bf->sdb, "canary.value", canstr, 0);
+			free (canstr);
+			goto out_succeed;
+		}
+	}
+
+	out_succeed:
+	free (entry);
+	return true;
+
+	out_fail:
+	free (entry);
+	return false;
+}
+
+static bool has_canary(RBinFile *bf) {
+	if (check_inlined_canary (bf)) {
+		return true;
+	}
 	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
 	// TODO: use O(1) when imports sdbized
 	RListIter *iter;
@@ -522,7 +625,7 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static ut64 get_vaddr (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return baddr + vaddr;
 }
 

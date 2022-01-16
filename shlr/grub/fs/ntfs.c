@@ -1112,7 +1112,7 @@ grub_ntfs_uuid (grub_device_t device, char **uuid)
   data = grub_ntfs_mount (disk);
   if (data)
     {
-      *uuid = grub_xasprintf ("%016llx", (unsigned long long) data->uuid);
+      *uuid = grub_xasprintf ("%016"PFMT64x, (ut64) data->uuid);
     }
   else
     *uuid = NULL;

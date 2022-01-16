@@ -1,9 +1,6 @@
 #ifndef _INCLUDE_CONFIG_H_
 #define _INCLUDE_CONFIG_H_
 
-#ifndef HAVE_GPERF
-#define HAVE_GPERF 0
-#endif
 #define R_DEBUG 0
 #define R_RTDEBUG 1
 #define WANT_THREADS 1

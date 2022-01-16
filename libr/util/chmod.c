@@ -9,7 +9,7 @@
 #if __UNIX__
 static bool chmodr(const char *, int recursive);
 static bool parsemode(const char *);
-static void recurse(const char *path, int rec, bool (*fn)(const char *,int));
+static void recurse(const char *path, int rec, bool(*fn)(const char *,int));
 
 static char oper = '=';
 static mode_t mode = 0;
@@ -150,7 +150,7 @@ static bool parsemode(const char *str) {
 }
 
 static char *agetcwd(void) {
-        char *buf = malloc (4096);
+	char *buf = malloc (4096);
 	if (!buf) {
 		return NULL;
 	}
@@ -160,11 +160,11 @@ static char *agetcwd(void) {
 	return buf;
 }
 
-static void recurse(const char *path, int rec, bool (*fn)(const char *,int)) {
-        char *cwd;
-        struct dirent *d;
-        struct stat st;
-        DIR *dp;
+static void recurse(const char *path, int rec, bool(*fn)(const char *,int)) {
+	char *cwd;
+	struct dirent *d;
+	struct stat st;
+	DIR *dp;
 
 	if (lstat (path, &st) == -1 || !S_ISDIR (st.st_mode)) {
 		return;
@@ -172,9 +172,9 @@ static void recurse(const char *path, int rec, bool (*fn)(const char *,int)) {
 		eprintf ("opendir %s:", path);
 		return;
 	}
-        cwd = agetcwd();
-        if (chdir (path) == -1) {
-                eprintf ("chdir %s:", path);
+	cwd = agetcwd ();
+	if (chdir (path) == -1) {
+		eprintf ("chdir %s:", path);
 		closedir (dp);
 		free (cwd);
 		return;

@@ -501,12 +501,13 @@ static ut64 shifted_imm64(Instruction *insn, int n, int sz) {
 	InstructionOperand op = INSOP64 (n);
 	int sft = op.shiftValue;
 	switch (op.shiftType) {
-		case ShiftType_MSL: // idk what this is
+		case ShiftType_MSL:
+			return (GETIMM64 (n) << sft) | ((1 << sft) - 1);
 		case ShiftType_LSL:
 			return GETIMM64 (n) << sft;
 		case ShiftType_LSR:
 			return GETIMM64 (n) >> sft;
-		case ShiftType_ROR: 
+		case ShiftType_ROR:
 			return (GETIMM64 (n) >> sft)|(GETIMM64 (n) << (sz - sft));
 		case ShiftType_ASR:
 			switch (sz) {
@@ -553,10 +554,10 @@ static void vector64_append(RStrBuf *sb, Instruction *insn, int n, int i) {
 		size_t s = sizeof (bitmask_by_width) / sizeof (*bitmask_by_width);
 		int width = size > 0? (size - 1) % s: 0;
 		if (shift > 0) {
-			r_strbuf_appendf (sb, "0x%"PFMT64x",%d,%s%s,>>,&", 
+			r_strbuf_appendf (sb, "0x%"PFMT64x",%d,%s%s,>>,&",
 				bitmask_by_width[width], shift, REG64 (n), regc);
 		} else {
-			r_strbuf_appendf (sb, "0x%"PFMT64x",%s%s,&", 
+			r_strbuf_appendf (sb, "0x%"PFMT64x",%s%s,&",
 				bitmask_by_width[width], REG64 (n), regc);
 		}
 	} else {
@@ -589,10 +590,10 @@ static void vector64_dst_append(RStrBuf *sb, Instruction *insn, int n, int i) {
 		}
 
 		if (shift > 0 && shift < 64) {
-			r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s", 
+			r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s",
 				shift, mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
 		} else {
-			r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s,0x%"PFMT64x",&,|,%s%s", 
+			r_strbuf_appendf (sb, "0x%"PFMT64x",&,%s%s,0x%"PFMT64x",&,|,%s%s",
 				mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
 		}
 	} else {
@@ -691,7 +692,7 @@ static void arm64fpmath(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 
 	InstructionOperand dst = INSOP64 (0);
 	int start = -1;
-	int end = 0; 
+	int end = 0;
 	int convert = size == 64 ? 0 : 1;
 	int count = vas_count(dst.arrSpec);
 	if (count) {
@@ -741,7 +742,7 @@ static void set_opdir(RAnalOp *op) {
 		break;
 	default:
 		break;
-        }
+	}
 }
 
 
@@ -1063,7 +1064,7 @@ static void anop64(RAnal *a, RAnalOp *op, Instruction *insn) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -GETIMM64 (2);
 		}
-		if (0) { // REGID64(0) == REG_PC) { v35 has no REG_PC? 
+		if (0) { // REGID64(0) == REG_PC) { v35 has no REG_PC?
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			/*if (insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
@@ -1219,14 +1220,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		int size = REGSIZE64 (1);
 #if 0
 		r_strbuf_setf (&op->esil,
-			"0,%s,=,"                        // dst = 0
-			"%d,"                            // initial counter = size
-			"DUP,"                           // counter: size -> 0 (repeat here)
-				"DUP,1,SWAP,-,8,*,"          // counter to bits in source
-					"DUP,0xff,<<,%s,&,>>,"   // src byte moved to LSB
-				"SWAP,%d,-,8,*,"             // invert counter, calc dst bit
-				"SWAP,<<,%s,|=,"             // shift left to there and insert
-			"4,REPEAT",                      // goto 5th instruction
+			"0,%s,=,"               // dst = 0
+			"%d,"                   // initial counter = size
+			"DUP,"                  // counter: size -> 0 (repeat here)
+			"DUP,1,SWAP,-,8,*,"     // counter to bits in source
+			"DUP,0xff,<<,%s,&,>>,"  // src byte moved to LSB
+			"SWAP,%d,-,8,*,"        // invert counter, calc dst bit
+			"SWAP,<<,%s,|=,"        // shift left to there and insert
+			"4,REPEAT",             // goto 5th instruction
 			r0, size, r1, size, r0);
 #endif
 		if (size == 8) {
@@ -1301,8 +1302,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case ARM64_SUBS:
 		OPCALL("-");
-		r_strbuf_appendf (&op->esil, 
-			",$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", 
+		r_strbuf_appendf (&op->esil,
+			",$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) -1);
 
 		break;
@@ -1409,10 +1410,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_setf (&op->esil, ",");
 		break;
 	case ARM64_MOV:
+	case ARM64_MOVI:
 	case ARM64_FMOV:
 	{
 		if (0) {
-			r_strbuf_setf (&op->esil, "%sh,%sh,=,%sl,%sl,=", 
+			r_strbuf_setf (&op->esil, "%sh,%sh,=,%sl,%sl,=",
 				REG64 (1), REG64 (0), REG64 (1), REG64 (0));
 		} else {
 			ARG64_APPEND (&op->esil, 1);
@@ -1427,7 +1429,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM64_FCCMP:
 	case ARM64_FCCMPE:
 		if (ISREG64 (1)) {
-			r_strbuf_setf (&op->esil, 
+			r_strbuf_setf (&op->esil,
 				"%d,%s,F2D,NAN,%d,%s,F2D,NAN,|,vf,:="
 				",%d,%s,F2D,%d,%s,F2D,F==,vf,|,zf,:="
 				",%d,%s,F2D,%d,%s,F2D,F<,vf,|,nf,:=",
@@ -1436,7 +1438,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				REGBITS64 (1), REG64 (1), REGBITS64 (1), REG64 (0)
 			);	
 		} else {
-			r_strbuf_setf (&op->esil, 
+			r_strbuf_setf (&op->esil,
 				"%d,%s,F2D,NAN,vf,:="
 				",0,I2D,%d,%s,F2D,F==,vf,|,zf,:="
 				",0,I2D,%d,%s,F2D,F<,vf,|,nf,:=",
@@ -1454,7 +1456,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 	case ARM64_FCVT:
-		r_strbuf_setf (&op->esil, "%d,%d,%s,F2D,D2F,%s,=", 
+		r_strbuf_setf (&op->esil, "%d,%d,%s,F2D,D2F,%s,=",
 			REGBITS64 (0), REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_SCVTF:
@@ -1489,22 +1491,53 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		VEC64_DST_APPEND(&op->esil, 0, -1);
 		r_strbuf_appendf (&op->esil, ",=");
 		break;
+	case ARM64_FRINTA:
+	case ARM64_FRINTI:
+	case ARM64_FRINTN:
+	case ARM64_FRINTX:
+	case ARM64_FRINTZ:
+	case ARM64_FRINTP:
+	case ARM64_FRINTM:
+	case ARM64_FRINT32X:
+	case ARM64_FRINT32Z:
+	case ARM64_FRINT64X:
+	case ARM64_FRINT64Z:
+	{
+		char* rounder = "ROUND";
+		if (insn->operation == ARM64_FRINTM) {
+			rounder = "FLOOR";
+		} else if (insn->operation == ARM64_FRINTP) {
+			rounder = "CEIL";
+		}
+		r_strbuf_setf (&op->esil, "%d,DUP,", REGBITS64 (1));
+		ARG64_APPEND(&op->esil, 1);
+		r_strbuf_appendf (&op->esil, ",F2D,%s,D2F,", rounder);
+		VEC64_DST_APPEND(&op->esil, 0, -1);
+		r_strbuf_appendf (&op->esil, ",=");
+		break;
+	}
 	case ARM64_FABS:
 		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,DUP,0,I2D,F<,?{,-F,},D2F,%s,=",
 			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
 	case ARM64_FNEG:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,D2F,%s,=", 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,-F,D2F,%s,=",
 			REGBITS64 (1), REG64 (1), REG64 (0));
 		break;
+	case ARM64_FSQRT:
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,SQRT,D2F,%s,=",
+			REGBITS64 (1), REG64 (1), REG64 (0));
+		break;
+	case ARM64_FMINNM:
 	case ARM64_FMIN:
-		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,?{,%s,}{,%s,},%s,=", 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,?{,%s,}{,%s,},%s,=",
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (1), REG64 (1), REG64 (1), REG64 (2), REG64 (0));
 		break;
+	case ARM64_FMAXNM:
 	case ARM64_FMAX:
-		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,!,?{,%s,}{,%s,},%s,=", 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,%s,F2D,%d,%s,F2D,F<,!,?{,%s,}{,%s,},%s,=",
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (1), REG64 (1), REG64 (1), REG64 (2), REG64 (0));
 		break;
 	case ARM64_FADD:
@@ -1520,26 +1553,26 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		FPOPCALL_NEGATE("*");
 		break;
 	case ARM64_FMADD:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F+,D2F,%s,=", 
-			REGBITS64 (1), REG64 (1), 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F+,D2F,%s,=",
+			REGBITS64 (1), REG64 (1),
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (3), REG64 (3), REG64 (0));
 		break;
 	case ARM64_FNMADD:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F+,-F,D2F,%s,=", 
-			REGBITS64 (1), REG64 (1), 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F+,-F,D2F,%s,=",
+			REGBITS64 (1), REG64 (1),
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (3), REG64 (3), REG64 (0));
 		break;
 	case ARM64_FMSUB:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F-,D2F,%s,=", 
-			REGBITS64 (1), REG64 (1), 
-			REGBITS64 (2), REG64 (2), 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,%d,%s,F2D,F-,D2F,%s,=",
+			REGBITS64 (1), REG64 (1),
+			REGBITS64 (2), REG64 (2),
 			REGBITS64 (3), REG64 (3), REG64 (0));
 		break;
 	case ARM64_FNMSUB:
-		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F-,-F,D2F,%s,=", 
-			REGBITS64 (1), REG64 (1), 
+		r_strbuf_setf (&op->esil, "%d,DUP,%s,F2D,%d,%s,F2D,F*,-F,%d,%s,F2D,F-,-F,D2F,%s,=",
+			REGBITS64 (1), REG64 (1),
 			REGBITS64 (2), REG64 (2),
 			REGBITS64 (3), REG64 (3), REG64 (0));
 		break;
@@ -1553,12 +1586,24 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		/* TODO: support WZR XZR to specify 32, 64bit op */
 		OPCALL("/");
 		break;
+	// TODO actually implement some kind of fake PAC or at least clear the bits
+	// PAC B* instructions will not work without clearing PAC bits
+	// but as long as the PAC* instruction is emulated too its fine
+	// as those will be NOPS for now
+	case ARM64_BRAA:
+	case ARM64_BRAAZ:
+	case ARM64_BRAB:
+	case ARM64_BRABZ:
 	case ARM64_BR:
 		r_strbuf_setf (&op->esil, "%s,pc,=", REG64 (0));
 		break;
 	case ARM64_BL:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%"PFMT64u",pc,=", GETIMM64 (0));
 		break;
+	case ARM64_BLRAA:
+	case ARM64_BLRAAZ:
+	case ARM64_BLRAB:
+	case ARM64_BLRABZ:
 	case ARM64_BLR:
 		r_strbuf_setf (&op->esil, "pc,lr,=,%s,pc,=", REG64 (0));
 		break;
@@ -1681,6 +1726,11 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM64_LDUR:
 	case ARM64_LDURB:
 	case ARM64_LDURH:
+	case ARM64_LDTR:
+	case ARM64_LDTRB:
+	case ARM64_LDTRH:
+	case ARM64_LDTRSB:
+	case ARM64_LDTRSH:
 	case ARM64_LDR:
 	case ARM64_LDRB:
 	case ARM64_LDXR:
@@ -1700,6 +1750,8 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			case ARM64_LDAXRB:
 			case ARM64_LDXRB:
 			case ARM64_LDURB:
+			case ARM64_LDTRB:
+			case ARM64_LDTRSB:
 				size = 1;
 				break;
 			case ARM64_LDRH:
@@ -1707,9 +1759,12 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			case ARM64_LDXRH:
 			case ARM64_LDAXRH:
 			case ARM64_LDURH:
+			case ARM64_LDTRH:
+			case ARM64_LDTRSH:
 				size = 2;
 				break;
 			case ARM64_LDRSW:
+			case ARM64_LDTRSW:
 			case ARM64_LDURSW:
 				size = 4;
 				break;
@@ -1720,7 +1775,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		if (ISMEM64 (1)) {
 			if (HASMEMINDEX64 (1)) {
 				ARG64_APPEND (&op->esil, 1);
-				r_strbuf_appendf (&op->esil, ",%s,+,[%d],%s,=", 
+				r_strbuf_appendf (&op->esil, ",%s,+,[%d],%s,=",
 					MEMBASE64 (1), size, REG64 (0));
 			} else {
 				if (LSHIFT2_64 (1)) {
@@ -1880,42 +1935,70 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		ARG64_APPEND(&op->esil, 1);
 		COMMA(&op->esil);
 		ARG64_APPEND(&op->esil, 0);
-		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=", 
+		r_strbuf_appendf (&op->esil, ",==,$z,zf,:=,%d,$s,nf,:=,%d,$b,!,cf,:=,%d,$o,vf,:=",
 			REGBITS64 (0) - 1, REGBITS64 (0), REGBITS64 (0) -1);
 	
 		if (insn->operation == ARM64_CCMP || insn->operation == ARM64_CCMN) {
 			r_strbuf_appendf (&op->esil, ",");
-			//arm_prefix_cond(op, insn->detail->arm64.cc);
+			v35arm_prefix_cond(op, insn->operands[3].cond);
 			r_strbuf_appendf (&op->esil, "}{,pstate,1,28,1,<<,-,&,28,%"PFMT64u",<<,|,pstate,:=", GETIMM64 (2));
 		}
 		break;
 	case ARM64_FCSEL:
 	case ARM64_CSEL: // csel Wd, Wn, Wm --> Wd := (cond) ? Wn : Wm
 		if ISCOND64(3) {
-			// XXX arm_prefix_cond (op, insn->operands[3].cond);
+			v35arm_prefix_cond (op, insn->operands[3].cond);
 		}
 		r_strbuf_appendf (&op->esil, "%s,}{,%s,},%s,=", REG64 (1), REG64 (2), REG64 (0));
 		postfix = "";
 		break;
 	case ARM64_CSET: // cset Wd --> Wd := (cond) ? 1 : 0
 		if ISCOND64(1) {
-			// XXX arm_prefix_cond (op, insn->operands[1].cond);
+			v35arm_prefix_cond (op, insn->operands[1].cond);
 		}
 		r_strbuf_appendf (&op->esil, "1,}{,0,},%s,=", REG64 (0));
 		postfix = "";
 		break;
+	case ARM64_CSETM: // cset Wd --> Wd := (cond) ? 1 : 0
+		if ISCOND64(1) {
+			v35arm_prefix_cond (op, insn->operands[1].cond);
+		}
+		r_strbuf_appendf (&op->esil, "-1,}{,0,},%s,=", REG64 (0));
+		postfix = "";
+		break;
 	case ARM64_CINC: // cinc Wd, Wn --> Wd := (cond) ? (Wn+1) : Wn
 		if ISCOND64(1) {
-			// XXX arm_prefix_cond (op, insn->operands[1].cond);
+			v35arm_prefix_cond (op, insn->operands[1].cond);
 		}
 		r_strbuf_appendf (&op->esil, "1,%s,+,}{,%s,},%s,=", REG64 (1), REG64 (1), REG64 (0));
 		postfix = "";
 		break;
 	case ARM64_CSINC: // csinc Wd, Wn, Wm --> Wd := (cond) ? Wn : (Wm+1)
 		if ISCOND64(1) {
-			// XXX arm_prefix_cond (op, insn->operands[1].cond);
+			v35arm_prefix_cond (op, insn->operands[1].cond);
 		}
 		r_strbuf_appendf (&op->esil, "%s,}{,1,%s,+,},%s,=", REG64 (1), REG64 (2), REG64 (0));
+		postfix = "";
+		break;
+	case ARM64_CINV:
+		if ISCOND64(1) {
+			v35arm_prefix_cond (op, insn->operands[1].cond);
+		}
+		r_strbuf_appendf (&op->esil, "-1,%s,^,}{,%s,},%s,=", REG64 (1), REG64 (1), REG64 (0));
+		postfix = "";
+		break;
+	case ARM64_CSINV: // csinc Wd, Wn, Wm --> Wd := (cond) ? Wn : (Wm+1)
+		if ISCOND64(1) {
+			v35arm_prefix_cond (op, insn->operands[1].cond);
+		}
+		r_strbuf_appendf (&op->esil, "%s,}{,-1,%s,^,},%s,=", REG64 (1), REG64 (2), REG64 (0));
+		postfix = "";
+		break;
+	case ARM64_CNEG:
+		if ISCOND64(1) {
+			v35arm_prefix_cond (op, insn->operands[1].cond);
+		}
+		r_strbuf_appendf (&op->esil, "-1,%s,*,}{,%s,},%s,=", REG64 (1), REG64 (1), REG64 (0));
 		postfix = "";
 		break;
 	case ARM64_STXRB:
@@ -1937,13 +2020,29 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM64_STUR:
 	case ARM64_STURB:
 	case ARM64_STURH:
+	case ARM64_STTR:
+	case ARM64_STTRH:
+	case ARM64_STTRB:
 	case ARM64_STR: // str x6, [x6,0xf90]
 	{
 		int size = REGSIZE64 (0);
-		if (insn->operation == ARM64_STRB || insn->operation == ARM64_STURB) {
-		    size = 1;
-		} else if (insn->operation == ARM64_STRH || insn->operation == ARM64_STURH) {
-		    size = 2;
+		switch (insn->operation) {
+		case ARM64_STRB:
+		case ARM64_STURB:
+		case ARM64_STTRB:
+			{
+				size = 1;
+				break;
+			}
+		case ARM64_STRH:
+		case ARM64_STURH:
+		case ARM64_STTRH:
+			{
+				size = 2;
+				break;
+			}
+		default:
+			break;
 		}
 		if (ISMEM64 (1)) {
 			if (HASMEMINDEX64 (1)) {
@@ -2010,39 +2109,43 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	}
 	case ARM64_BIC:
-        if (OPCOUNT64 () == 2) {
-            if (REGSIZE64 (0) == 4) {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=", REG64 (1), REG64 (0));
-            } else {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=", REG64 (1), REG64 (0));
-            }
-        } else {
-            if (REGSIZE64 (0) == 4) {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=", REG64 (2), REG64 (1), REG64 (0));
-            } else {
-                r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=", REG64 (2), REG64 (1), REG64 (0));
-            }
-        }
-        break;
+	if (OPCOUNT64 () == 2) {
+		if (REGSIZE64 (0) == 4) {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&=",
+					REG64 (1), REG64 (0));
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&=",
+					REG64 (1), REG64 (0));
+		}
+	} else {
+		if (REGSIZE64 (0) == 4) {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffff,^,%s,&,%s,=",
+					REG64 (2), REG64 (1), REG64 (0));
+		} else {
+			r_strbuf_appendf (&op->esil, "%s,0xffffffffffffffff,^,%s,&,%s,=",
+					REG64 (2), REG64 (1), REG64 (0));
+		}
+	}
+	break;
 	case ARM64_CBZ:
 		r_strbuf_setf (&op->esil, "%s,!,?{,%"PFMT64u",pc,=,}",
-			REG64 (0), GETIMM64 (1));
+				REG64 (0), GETIMM64 (1));
 		break;
 	case ARM64_CBNZ:
 		r_strbuf_setf (&op->esil, "%s,?{,%"PFMT64u",pc,=,}",
-			REG64 (0), GETIMM64 (1));
+				REG64 (0), GETIMM64 (1));
 		break;
 	case ARM64_TBZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
 		r_strbuf_setf (&op->esil, "%" PFMT64u ",1,<<,%s,&,!,?{,%"PFMT64u",pc,=,}",
-			GETIMM64 (1), REG64 (0), GETIMM64 (2));
+				GETIMM64 (1), REG64 (0), GETIMM64 (2));
 		break;
 	case ARM64_TBNZ:
 		// tbnz x0, 4, label
 		// if ((1<<4) & x0) goto label;
 		r_strbuf_setf (&op->esil, "%" PFMT64u ",1,<<,%s,&,?{,%"PFMT64u",pc,=,}",
-			GETIMM64 (1), REG64 (0), GETIMM64 (2));
+				GETIMM64 (1), REG64 (0), GETIMM64 (2));
 		break;
 	case ARM64_STNP:
 	case ARM64_STP: // stp x6, x7, [x6,0xf90]
@@ -2056,7 +2159,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			// "stp x2, x3, [x8, 0x20]!
 			// "32,x8,+=,x2,x8,=[8],x3,x8,8,+,=[8]",
 			r_strbuf_setf(&op->esil,
-					"%"PFMT64u",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
+					"%" PFMT64u ",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
 					abs, MEMBASE64 (2), sign,
 					REG64 (0), MEMBASE64 (2), size,
 					REG64 (1), MEMBASE64 (2), size, size);
@@ -2082,6 +2185,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		}
 		break;
 	}
+	case ARM64_LDNP:
 	case ARM64_LDP: // ldp x29, x30, [sp], 0x10
 	{
 		int disp = (int)MEMDISP64 (2);
@@ -2116,10 +2220,10 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					abs, MEMBASE64 (2), sign);
 		} else {
 			r_strbuf_setf (&op->esil,
-					"%s,%"PFMT64u",%c,[%d],%s,=,"
-					"%s,%"PFMT64u",%c,%d,%c,[%d],%s,=",
-					MEMBASE64 (2), abs, sign, size, REG64 (0),
-					MEMBASE64 (2), abs, sign, size, sign, size, REG64 (1));
+					"%"PFMT64d",%s,%c,[%d],%s,=,"
+					"%d,%"PFMT64d",%s,%c,+,[%d],%s,=",
+					abs, MEMBASE64 (2), sign, size, REG64 (0),
+					size, abs, MEMBASE64 (2), sign, size, REG64 (1));
 		}
 		break;
 	}
@@ -2142,14 +2246,14 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case ARM64_RBIT:
 		// slightly shorter expression to reverse bits
-		r_strbuf_setf (&op->esil, "0,tmp,=,0,DUP,DUP,DUP,%d,-,%s,>>,1,&,<<,tmp,+=,%d,-,?{,++,4,GOTO,},tmp,%s,=", 
+		r_strbuf_setf (&op->esil, "0,tmp,=,0,DUP,DUP,DUP,%d,-,%s,>>,1,&,<<,tmp,+=,%d,-,?{,++,4,GOTO,},tmp,%s,=",
 			REGBITS64 (1)-1, REG64 (1), REGBITS64 (1)-1, REG64 (0));
 		break;
 	case ARM64_MVN:
 	case ARM64_MOVN:
 	{
 		if (0) {
-			r_strbuf_setf (&op->esil, "%sh,-1,^,%sh,=,%sl,-1,^,%sl,=", 
+			r_strbuf_setf (&op->esil, "%sh,-1,^,%sh,=,%sl,-1,^,%sl,=",
 				REG64 (1), REG64 (0), REG64 (1), REG64 (0));
 		} else {
 			ARG64_APPEND (&op->esil, 1);
@@ -2233,9 +2337,13 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM64_UXTH:
 		r_strbuf_setf (&op->esil, "%s,0xffff,&,%s,=", REG64 (1), REG64 (0));
 		break;
+	case ARM64_RETAA:
+	case ARM64_RETAB:
 	case ARM64_RET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
 		break;
+	case ARM64_ERETAA:
+	case ARM64_ERETAB:
 	case ARM64_ERET:
 		r_strbuf_setf (&op->esil, "lr,pc,=");
 		break;
@@ -2296,15 +2404,21 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 				GETIMM64 (2), REG64 (1), GETIMM64 (2) , (ut64)bitmask_by_width[index], REG64 (0));
 		}
 		break;
+	case ARM64_NGC:
 	case ARM64_NEG:
+		ARG64_APPEND (&op->esil, 1);
+		r_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64 (0));
+		break;
+	case ARM64_NGCS:
 	case ARM64_NEGS:
 		ARG64_APPEND (&op->esil, 1);
 		r_strbuf_appendf (&op->esil, ",0,-,%s,=", REG64 (0));
+		SET_FLAGS();
 		break;
 	case ARM64_SVC:
 		r_strbuf_setf (&op->esil, "%" PFMT64u ",$", GETIMM64 (0));
 		break;
-	default: 
+	default:
 		break;
 	}
 
@@ -2364,498 +2478,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	return 4;
 }
 
-static char *get_reg_profile(RAnal *anal) {
-	const char *p;
-	if (anal->bits == 64) {
-		p = \
-		"=PC	pc\n"
-		"=SP	sp\n"
-		"=BP	x29\n"
-		"=R0	x0\n"
-		"=A0	x0\n"
-		"=A1	x1\n"
-		"=A2	x2\n"
-		"=A3	x3\n"
-		"=ZF	zf\n"
-		"=SF	nf\n"
-		"=OF	vf\n"
-		"=CF	cf\n"
-		"=SN	x16\n" // x8 on linux?
-	/* 8bit sub-registers */
-		"gpr	b0	.8	0	0\n"
-		"gpr	b1	.8	8	0\n"
-		"gpr	b2	.8	16	0\n"
-		"gpr	b3	.8	24	0\n"
-		"gpr	b4	.8	32	0\n"
-		"gpr	b5	.8	40	0\n"
-		"gpr	b6	.8	48	0\n"
-		"gpr	b7	.8	56	0\n"
-		"gpr	b8	.8	64	0\n"
-		"gpr	b9	.8	72	0\n"
-		"gpr	b10	.8	80	0\n"
-		"gpr	b11	.8	88	0\n"
-		"gpr	b12	.8	96	0\n"
-		"gpr	b13	.8	104	0\n"
-		"gpr	b14	.8	112	0\n"
-		"gpr	b15	.8	120	0\n"
-		"gpr	b16	.8	128	0\n"
-		"gpr	b17	.8	136	0\n"
-		"gpr	b18	.8	144	0\n"
-		"gpr	b19	.8	152	0\n"
-		"gpr	b20	.8	160	0\n"
-		"gpr	b21	.8	168	0\n"
-		"gpr	b22	.8	176	0\n"
-		"gpr	b23	.8	184	0\n"
-		"gpr	b24	.8	192	0\n"
-		"gpr	b25	.8	200	0\n"
-		"gpr	b26	.8	208	0\n"
-		"gpr	b27	.8	216	0\n"
-		"gpr	b28	.8	224	0\n"
-		"gpr	b29	.8	232	0\n"
-		"gpr	b30	.8	240	0\n"
-		"gpr	bsp	.8	248	0\n"
-
-		/* 16bit sub-registers */
-		"gpr	h0	.16	0	0\n"
-		"gpr	h1	.16	8	0\n"
-		"gpr	h2	.16	16	0\n"
-		"gpr	h3	.16	24	0\n"
-		"gpr	h4	.16	32	0\n"
-		"gpr	h5	.16	40	0\n"
-		"gpr	h6	.16	48	0\n"
-		"gpr	h7	.16	56	0\n"
-		"gpr	h8	.16	64	0\n"
-		"gpr	h9	.16	72	0\n"
-		"gpr	h10	.16	80	0\n"
-		"gpr	h11	.16	88	0\n"
-		"gpr	h12	.16	96	0\n"
-		"gpr	h13	.16	104	0\n"
-		"gpr	h14	.16	112	0\n"
-		"gpr	h15	.16	120	0\n"
-		"gpr	h16	.16	128	0\n"
-		"gpr	h17	.16	136	0\n"
-		"gpr	h18	.16	144	0\n"
-		"gpr	h19	.16	152	0\n"
-		"gpr	h20	.16	160	0\n"
-		"gpr	h21	.16	168	0\n"
-		"gpr	h22	.16	176	0\n"
-		"gpr	h23	.16	184	0\n"
-		"gpr	h24	.16	192	0\n"
-		"gpr	h25	.16	200	0\n"
-		"gpr	h26	.16	208	0\n"
-		"gpr	h27	.16	216	0\n"
-		"gpr	h28	.16	224	0\n"
-		"gpr	h29	.16	232	0\n"
-		"gpr	h30	.16	240	0\n"
-
-		/* 32bit sub-registers */
-		"gpr	w0	.32	0	0\n"
-		"gpr	w1	.32	8	0\n"
-		"gpr	w2	.32	16	0\n"
-		"gpr	w3	.32	24	0\n"
-		"gpr	w4	.32	32	0\n"
-		"gpr	w5	.32	40	0\n"
-		"gpr	w6	.32	48	0\n"
-		"gpr	w7	.32	56	0\n"
-		"gpr	w8	.32	64	0\n"
-		"gpr	w9	.32	72	0\n"
-		"gpr	w10	.32	80	0\n"
-		"gpr	w11	.32	88	0\n"
-		"gpr	w12	.32	96	0\n"
-		"gpr	w13	.32	104	0\n"
-		"gpr	w14	.32	112	0\n"
-		"gpr	w15	.32	120	0\n"
-		"gpr	w16	.32	128	0\n"
-		"gpr	w17	.32	136	0\n"
-		"gpr	w18	.32	144	0\n"
-		"gpr	w19	.32	152	0\n"
-		"gpr	w20	.32	160	0\n"
-		"gpr	w21	.32	168	0\n"
-		"gpr	w22	.32	176	0\n"
-		"gpr	w23	.32	184	0\n"
-		"gpr	w24	.32	192	0\n"
-		"gpr	w25	.32	200	0\n"
-		"gpr	w26	.32	208	0\n"
-		"gpr	w27	.32	216	0\n"
-		"gpr	w28	.32	224	0\n"
-		"gpr	w29	.32	232	0\n"
-		"gpr	w30	.32	240	0\n"
-		"gpr	wsp	.32	248	0\n"
-		"gpr	wzr	.32	?	0\n"
-
-		/* 32bit float sub-registers */
-		"gpr	s0	.32	288	0\n"
-		"gpr	s1	.32	304	0\n"
-		"gpr	s2	.32	320	0\n"
-		"gpr	s3	.32	336	0\n"
-		"gpr	s4	.32	352	0\n"
-		"gpr	s5	.32	368	0\n"
-		"gpr	s6	.32	384	0\n"
-		"gpr	s7	.32	400	0\n"
-		"gpr	s8	.32	416	0\n"
-		"gpr	s9	.32	432	0\n"
-		"gpr	s10	.32	448	0\n"
-		"gpr	s11	.32	464	0\n"
-		"gpr	s12	.32	480	0\n"
-		"gpr	s13	.32	496	0\n"
-		"gpr	s14	.32	512	0\n"
-		"gpr	s15	.32	528	0\n"
-		"gpr	s16	.32	544	0\n"
-		"gpr	s17	.32	560	0\n"
-		"gpr	s18	.32	576	0\n"
-		"gpr	s19	.32	592	0\n"
-		"gpr	s20	.32	608	0\n"
-		"gpr	s21	.32	624	0\n"
-		"gpr	s22	.32	640	0\n"
-		"gpr	s23	.32	656	0\n"
-		"gpr	s24	.32	672	0\n"
-		"gpr	s25	.32	688	0\n"
-		"gpr	s26	.32	704	0\n"
-		"gpr	s27	.32	720	0\n"
-		"gpr	s28	.32	736	0\n"
-		"gpr	s29	.32	752	0\n"
-		"gpr	s30	.32	768	0\n"
-		"gpr	s31	.32	784	0\n"
-
-		/* 64bit */
-		"gpr	x0	.64	0	0\n" // x0
-		"gpr	x1	.64	8	0\n" // x0
-		"gpr	x2	.64	16	0\n" // x0
-		"gpr	x3	.64	24	0\n" // x0
-		"gpr	x4	.64	32	0\n" // x0
-		"gpr	x5	.64	40	0\n" // x0
-		"gpr	x6	.64	48	0\n" // x0
-		"gpr	x7	.64	56	0\n" // x0
-		"gpr	x8	.64	64	0\n" // x0
-		"gpr	x9	.64	72	0\n" // x0
-		"gpr	x10	.64	80	0\n" // x0
-		"gpr	x11	.64	88	0\n" // x0
-		"gpr	x12	.64	96	0\n" // x0
-		"gpr	x13	.64	104	0\n" // x0
-		"gpr	x14	.64	112	0\n" // x0
-		"gpr	x15	.64	120	0\n" // x0
-		"gpr	x16	.64	128	0\n" // x0
-		"gpr	x17	.64	136	0\n" // x0
-		"gpr	x18	.64	144	0\n" // x0
-		"gpr	x19	.64	152	0\n" // x0
-		"gpr	x20	.64	160	0\n" // x0
-		"gpr	x21	.64	168	0\n" // x0
-		"gpr	x22	.64	176	0\n" // x0
-		"gpr	x23	.64	184	0\n" // x0
-		"gpr	x24	.64	192	0\n" // x0
-		"gpr	x25	.64	200	0\n" // x0
-		"gpr	x26	.64	208	0\n" // x0
-		"gpr	x27	.64	216	0\n"
-		"gpr	x28	.64	224	0\n"
-		"gpr	x29	.64	232	0\n"
-		"gpr	x30	.64	240	0\n"
-		"gpr	tmp	.64	800	0\n"
-
-		/* 64bit double */
-		"gpr	d0	.64	288	0\n"
-		"gpr	d1	.64	304	0\n"
-		"gpr	d2	.64	320	0\n"
-		"gpr	d3	.64	336	0\n"
-		"gpr	d4	.64	352	0\n"
-		"gpr	d5	.64	368	0\n"
-		"gpr	d6	.64	384	0\n"
-		"gpr	d7	.64	400	0\n"
-		"gpr	d8	.64	416	0\n"
-		"gpr	d9	.64	432	0\n"
-		"gpr	d10	.64	448	0\n"
-		"gpr	d11	.64	464	0\n"
-		"gpr	d12	.64	480	0\n"
-		"gpr	d13	.64	496	0\n"
-		"gpr	d14	.64	512	0\n"
-		"gpr	d15	.64	528	0\n"
-		"gpr	d16	.64	544	0\n"
-		"gpr	d17	.64	560	0\n"
-		"gpr	d18	.64	576	0\n"
-		"gpr	d19	.64	592	0\n"
-		"gpr	d20	.64	608	0\n"
-		"gpr	d21	.64	624	0\n"
-		"gpr	d22	.64	640	0\n"
-		"gpr	d23	.64	656	0\n"
-		"gpr	d24	.64	672	0\n"
-		"gpr	d25	.64	688	0\n"
-		"gpr	d26	.64	704	0\n"
-		"gpr	d27	.64	720	0\n"
-		"gpr	d28	.64	736	0\n"
-		"gpr	d29	.64	752	0\n"
-		"gpr	d30	.64	768	0\n"
-		"gpr	d31	.64	784	0\n"
-
-		/* 128 bit vector */
-		"gpr	v0	.128	288	0\n"
-		"gpr	v1	.128	304	0\n"
-		"gpr	v2	.128	320	0\n"
-		"gpr	v3	.128	336	0\n"
-		"gpr	v4	.128	352	0\n"
-		"gpr	v5	.128	368	0\n"
-		"gpr	v6	.128	384	0\n"
-		"gpr	v7	.128	400	0\n"
-		"gpr	v8	.128	416	0\n"
-		"gpr	v9	.128	432	0\n"
-		"gpr	v10	.128	448	0\n"
-		"gpr	v11	.128	464	0\n"
-		"gpr	v12	.128	480	0\n"
-		"gpr	v13	.128	496	0\n"
-		"gpr	v14	.128	512	0\n"
-		"gpr	v15	.128	528	0\n"
-		"gpr	v16	.128	544	0\n"
-		"gpr	v17	.128	560	0\n"
-		"gpr	v18	.128	576	0\n"
-		"gpr	v19	.128	592	0\n"
-		"gpr	v20	.128	608	0\n"
-		"gpr	v21	.128	624	0\n"
-		"gpr	v22	.128	640	0\n"
-		"gpr	v23	.128	656	0\n"
-		"gpr	v24	.128	672	0\n"
-		"gpr	v25	.128	688	0\n"
-		"gpr	v26	.128	704	0\n"
-		"gpr	v27	.128	720	0\n"
-		"gpr	v28	.128	736	0\n"
-		"gpr	v29	.128	752	0\n"
-		"gpr	v30	.128	768	0\n"
-		"gpr	v31	.128	784	0\n"
-
-		/* 64bit double */
-		"gpr	v0l	.64	288	0\n"
-		"gpr	v1l	.64	304	0\n"
-		"gpr	v2l	.64	320	0\n"
-		"gpr	v3l	.64	336	0\n"
-		"gpr	v4l	.64	352	0\n"
-		"gpr	v5l	.64	368	0\n"
-		"gpr	v6l	.64	384	0\n"
-		"gpr	v7l	.64	400	0\n"
-		"gpr	v8l	.64	416	0\n"
-		"gpr	v9l	.64	432	0\n"
-		"gpr	v10l	.64	448	0\n"
-		"gpr	v11l	.64	464	0\n"
-		"gpr	v12l	.64	480	0\n"
-		"gpr	v13l	.64	496	0\n"
-		"gpr	v14l	.64	512	0\n"
-		"gpr	v15l	.64	528	0\n"
-		"gpr	v16l	.64	544	0\n"
-		"gpr	v17l	.64	560	0\n"
-		"gpr	v18l	.64	576	0\n"
-		"gpr	v19l	.64	592	0\n"
-		"gpr	v20l	.64	608	0\n"
-		"gpr	v21l	.64	624	0\n"
-		"gpr	v22l	.64	640	0\n"
-		"gpr	v23l	.64	656	0\n"
-		"gpr	v24l	.64	672	0\n"
-		"gpr	v25l	.64	688	0\n"
-		"gpr	v26l	.64	704	0\n"
-		"gpr	v27l	.64	720	0\n"
-		"gpr	v28l	.64	736	0\n"
-		"gpr	v29l	.64	752	0\n"
-		"gpr	v30l	.64	768	0\n"
-		"gpr	v31l	.64	784	0\n"
-
-		/* 128 bit vector high 64 */
-		"gpr	v0h	.64	296	0\n"
-		"gpr	v1h	.64	312	0\n"
-		"gpr	v2h	.64	328	0\n"
-		"gpr	v3h	.64	344	0\n"
-		"gpr	v4h	.64	360	0\n"
-		"gpr	v5h	.64	376	0\n"
-		"gpr	v6h	.64	392	0\n"
-		"gpr	v7h	.64	408	0\n"
-		"gpr	v8h	.64	424	0\n"
-		"gpr	v9h	.64	440	0\n"
-		"gpr	v10h	.64	456	0\n"
-		"gpr	v11h	.64	472	0\n"
-		"gpr	v12h	.64	488	0\n"
-		"gpr	v13h	.64	504	0\n"
-		"gpr	v14h	.64	520	0\n"
-		"gpr	v15h	.64	536	0\n"
-		"gpr	v16h	.64	552	0\n"
-		"gpr	v17h	.64	568	0\n"
-		"gpr	v18h	.64	584	0\n"
-		"gpr	v19h	.64	600	0\n"
-		"gpr	v20h	.64	616	0\n"
-		"gpr	v21h	.64	632	0\n"
-		"gpr	v22h	.64	648	0\n"
-		"gpr	v23h	.64	664	0\n"
-		"gpr	v24h	.64	680	0\n"
-		"gpr	v25h	.64	696	0\n"
-		"gpr	v26h	.64	712	0\n"
-		"gpr	v27h	.64	728	0\n"
-		"gpr	v28h	.64	744	0\n"
-		"gpr	v29h	.64	760	0\n"
-		"gpr	v30h	.64	776	0\n"
-		"gpr	v31h	.64	792	0\n"
-		
-		/*  foo */
-		"gpr	fp	.64	232	0\n" // fp = x29
-		"gpr	lr	.64	240	0\n" // lr = x30
-		"gpr	sp	.64	248	0\n"
-		"gpr	pc	.64	256	0\n"
-		"gpr	zr	.64	?	0\n"
-		"gpr	xzr	.64	?	0\n"
-		"flg	pstate	.64	280	0   _____tfiae_____________j__qvczn\n" // x0
-		//"flg	cpsr	.32	280	0\n" //	_____tfiae_____________j__qvczn\n"
-		"flg	vf	.1	280.28	0	overflow\n" // set if overflows
-		"flg	cf	.1	280.29	0	carry\n" // set if last op carries
-		"flg	zf	.1	280.30	0	zero\n" // set if last op is 0
-		"flg	nf	.1	280.31	0	sign\n"; // msb bit of last op
-	} else {
-		p = \
-		"=PC	r15\n"
-		"=LR	r14\n"
-		"=SP	sp\n"
-		"=BP	fp\n"
-		"=A0	r0\n"
-		"=A1	r1\n"
-		"=A2	r2\n"
-		"=A3	r3\n"
-		"=ZF	zf\n"
-		"=SF	nf\n"
-		"=OF	vf\n"
-		"=CF	cf\n"
-		"=SN	r7\n"
-		"gpr	sb	.32	36	0\n" // r9
-		"gpr	sl	.32	40	0\n" // rl0
-		"gpr	fp	.32	44	0\n" // r11
-		"gpr	ip	.32	48	0\n" // r12
-		"gpr	sp	.32	52	0\n" // r13
-		"gpr	lr	.32	56	0\n" // r14
-		"gpr	pc	.32	60	0\n" // r15
-
-		"gpr	r0	.32	0	0\n"
-		"gpr	r1	.32	4	0\n"
-		"gpr	r2	.32	8	0\n"
-		"gpr	r3	.32	12	0\n"
-		"gpr	r4	.32	16	0\n"
-		"gpr	r5	.32	20	0\n"
-		"gpr	r6	.32	24	0\n"
-		"gpr	r7	.32	28	0\n"
-		"gpr	r8	.32	32	0\n"
-		"gpr	r9	.32	36	0\n"
-		"gpr	r10	.32	40	0\n"
-		"gpr	r11	.32	44	0\n"
-		"gpr	r12	.32	48	0\n"
-		"gpr	r13	.32	52	0\n"
-		"gpr	r14	.32	56	0\n"
-		"gpr	r15	.32	60	0\n"
-		"flg	cpsr	.32	64	0\n"
-
-		  // CPSR bit fields:
-		  // 576-580 Mode fields (and register sets associated to each field):
-		  //10000 	User 	R0-R14, CPSR, PC
-		  //10001 	FIQ 	R0-R7, R8_fiq-R14_fiq, CPSR, SPSR_fiq, PC
-		  //10010 	IRQ 	R0-R12, R13_irq, R14_irq, CPSR, SPSR_irq, PC
-		  //10011 	SVC (supervisor) 	R0-R12, R13_svc R14_svc CPSR, SPSR_irq, PC
-		  //10111 	Abort 	R0-R12, R13_abt R14_abt CPSR, SPSR_abt PC
-		  //11011 	Undefined 	R0-R12, R13_und R14_und, CPSR, SPSR_und PC
-		  //11111 	System (ARMv4+) 	R0-R14, CPSR, PC
-		"flg	tf	.1	.517	0	thumb\n" // +5
-		  // 582 FIQ disable bit
-		  // 583 IRQ disable bit
-		  // 584 Disable imprecise aborts flag
-		"flg	ef	.1	.521	0	endian\n" // +9
-		"flg	itc	.4	.522	0	if_then_count\n" // +10
-		  // Reserved
-		"flg	gef	.4	.528	0	great_or_equal\n" // +16
-		"flg	jf	.1	.536	0	java\n" // +24
-		  // Reserved
-		"flg	qf	.1	.539	0	sticky_overflow\n" // +27
-		"flg	vf	.1	.540	0	overflow\n" // +28
-		"flg	cf	.1	.541	0	carry\n" // +29
-		"flg	zf	.1	.542	0	zero\n" // +30
-		"flg	nf	.1	.543	0	negative\n" // +31
-
-		/* NEON and VFP registers */
-		/* 32bit float sub-registers */
-		"fpu	s0	.32	68	0\n"
-		"fpu	s1	.32	72	0\n"
-		"fpu	s2	.32	76	0\n"
-		"fpu	s3	.32	80	0\n"
-		"fpu	s4	.32	84	0\n"
-		"fpu	s5	.32	88	0\n"
-		"fpu	s6	.32	92	0\n"
-		"fpu	s7	.32	96	0\n"
-		"fpu	s8	.32	100	0\n"
-		"fpu	s9	.32	104	0\n"
-		"fpu	s10	.32	108	0\n"
-		"fpu	s11	.32	112	0\n"
-		"fpu	s12	.32	116	0\n"
-		"fpu	s13	.32	120	0\n"
-		"fpu	s14	.32	124	0\n"
-		"fpu	s15	.32	128	0\n"
-		"fpu	s16	.32	132	0\n"
-		"fpu	s17	.32	136	0\n"
-		"fpu	s18	.32	140	0\n"
-		"fpu	s19	.32	144	0\n"
-		"fpu	s20	.32	148	0\n"
-		"fpu	s21	.32	152	0\n"
-		"fpu	s22	.32	156	0\n"
-		"fpu	s23	.32	160	0\n"
-		"fpu	s24	.32	164	0\n"
-		"fpu	s25	.32	168	0\n"
-		"fpu	s26	.32	172	0\n"
-		"fpu	s27	.32	176	0\n"
-		"fpu	s28	.32	180	0\n"
-		"fpu	s29	.32	184	0\n"
-		"fpu	s30	.32	188	0\n"
-		"fpu	s31	.32	192	0\n"
-
-		/* 64bit double */
-		"fpu	d0	.64	68	0\n"
-		"fpu	d1	.64	76	0\n"
-		"fpu	d2	.64	84	0\n"
-		"fpu	d3	.64	92	0\n"
-		"fpu	d4	.64	100	0\n"
-		"fpu	d5	.64	108	0\n"
-		"fpu	d6	.64	116	0\n"
-		"fpu	d7	.64	124	0\n"
-		"fpu	d8	.64	132	0\n"
-		"fpu	d9	.64	140	0\n"
-		"fpu	d10	.64	148	0\n"
-		"fpu	d11	.64	156	0\n"
-		"fpu	d12	.64	164	0\n"
-		"fpu	d13	.64	172	0\n"
-		"fpu	d14	.64	180	0\n"
-		"fpu	d15	.64	188	0\n"
-		"fpu	d16	.64	196	0\n"
-		"fpu	d17	.64	204	0\n"
-		"fpu	d18	.64	212	0\n"
-		"fpu	d19	.64	220	0\n"
-		"fpu	d20	.64	228	0\n"
-		"fpu	d21	.64	236	0\n"
-		"fpu	d22	.64	244	0\n"
-		"fpu	d23	.64	252	0\n"
-		"fpu	d24	.64	260	0\n"
-		"fpu	d25	.64	268	0\n"
-		"fpu	d26	.64	276	0\n"
-		"fpu	d27	.64	284	0\n"
-		"fpu	d28	.64	292	0\n"
-		"fpu	d29	.64	300	0\n"
-		"fpu	d30	.64	308	0\n"
-		"fpu	d31	.64	316	0\n"
-
-		/* 128bit double */
-		"fpu	q0	.128	68	0\n"
-		"fpu	q1	.128	84	0\n"
-		"fpu	q2	.128	100	0\n"
-		"fpu	q3	.128	116	0\n"
-		"fpu	q4	.128	132	0\n"
-		"fpu	q5	.128	148	0\n"
-		"fpu	q6	.128	164	0\n"
-		"fpu	q7	.128	180	0\n"
-		"fpu	q8	.128	196	0\n"
-		"fpu	q9	.128	212	0\n"
-		"fpu	q10	.128	228	0\n"
-		"fpu	q11	.128	244	0\n"
-		"fpu	q12	.128	260	0\n"
-		"fpu	q13	.128	276	0\n"
-		"fpu	q14	.128	292	0\n"
-		"fpu	q15	.128	308	0\n"
-		;
-	}
-	return strdup (p);
-}
+#include "anal_arm_regprofile.inc"
 
 static int archinfo(RAnal *anal, int q) {
 	if (q == R_ANAL_ARCHINFO_DATA_ALIGN) {
@@ -2892,7 +2515,7 @@ RAnalPlugin r_anal_plugin_arm_v35 = {
 	.name = "arm.v35",
 	.desc = "Vector35 ARM analyzer",
 	.license = "BSD",
-	.esil = false,
+	.esil = true,
 	.arch = "arm",
 	.archinfo = archinfo,
 	.get_reg_profile = get_reg_profile,

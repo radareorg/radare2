@@ -76,16 +76,7 @@ RIOMMapFileObj *r_io_mmap_create_new_file(RIO  *io, const char *filename, int mo
 	return mmo;
 }
 
-static int r_io_mmap_close(RIODesc *fd) {
-	if (!fd || !fd->data) {
-		return -1;
-	}
-	r_io_mmap_free ((RIOMMapFileObj *) fd->data);
-	fd->data = NULL;
-	return 0;
-}
-
-static int r_io_mmap_check (const char *filename) {
+static int r_io_mmap_check(const char *filename) {
 	return (filename && !strncmp (filename, "mmap://", 7) && *(filename + 7));
 }
 
@@ -182,8 +173,13 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return r_io_mmap_lseek (io, fd, offset, whence);
 }
 
-static int __close(RIODesc *fd) {
-	return r_io_mmap_close (fd);
+static bool __close(RIODesc *fd) {
+	if (!fd || !fd->data) {
+		return false;
+	}
+	r_io_mmap_free ((RIOMMapFileObj *) fd->data);
+	fd->data = NULL;
+	return true;
 }
 
 static bool __resize(RIO *io, RIODesc *fd, ut64 size) {

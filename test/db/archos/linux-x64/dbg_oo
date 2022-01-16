@@ -63,9 +63,9 @@ ood > /dev/null
 om
 EOF
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x00000000 - 0x7ffffffffffffffe rwx 
+* 1 fd: 3 +0x00000000 0x00000000 - 0x7ffffffffffffffe rwx 
 
- 1 fd: 4 +0x00000000 0x00000000 - 0x7ffffffffffffffe rwx 
+* 1 fd: 4 +0x00000000 0x00000000 - 0x7ffffffffffffffe rwx 
 EOF
 RUN
 

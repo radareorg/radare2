@@ -16,7 +16,7 @@ typedef struct {
 
 static const char *cur_name = NULL;
 
-static char *print_item (void *_core, void *_item, bool selected) {
+static char *print_item(void *_core, void *_item, bool selected) {
 	RSignItem *item = _item;
 	int i;
 	int bytes_mask = 0;

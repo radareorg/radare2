@@ -34,7 +34,7 @@
  * Arcadia, CA 91024                                                     *
  *************************************************************************/
  /* initial version released 5/95 */
- /* This file is based upon sparc.h from the Gnu binutils-2.5.2 
+ /* This file is based upon sparc.h from the Gnu binutils-2.5.2
     release, which had the following copyright notice: */
 
 	/* Definitions for opcode table for the sparc.
@@ -56,7 +56,7 @@
 
 	You should have received a copy of the GNU General Public License
 	along with GAS or GDB; see the file COPYING.    If not, write to
-	the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, 
+	the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139,
 		USA.   */
 
 /* The Lanai opcode table (and other related data) is defined in
@@ -144,7 +144,7 @@ Kinds of operands:
 	d	Rd register.
 
 	4	Op1 (for RRR)
-	5	Op2 (for RRR) 
+	5	Op2 (for RRR)
 	6	Op2 (for RRM)
 
 	J	0x????0000

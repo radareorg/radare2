@@ -15,6 +15,11 @@ radiff2 implements many binary diffing algorithms for data and code.
 .Bl -tag -width Fl
 .It Fl a
 Analyze binary after loading it with RCore and use -AA to run aaaa instead of aaa.
+.It Fl A
+Treat the provided input file as an ar archive of .o files, and create
+signatures for all functions in the .o files.
+.It Fl c
+After finding all signatures, find all signature collisions.
 .It Fl f
 Interpret the input file as a flirt database and dump the signatures.
 .It Fl h

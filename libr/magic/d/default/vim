@@ -1,7 +1,7 @@
 #	$OpenBSD: editors,v 1.2 2008/05/08 01:40:57 chl Exp $
 
 
-# Vi IMproved Encrypted file 
+# Vi IMproved Encrypted file
 # by David Necas <yeti@physics.muni.cz>
 0	string	VimCrypt~	Vim encrypted file data
 # Vi IMproved Swap file

@@ -26,9 +26,9 @@ typedef struct found_idx_t {
 
 typedef int (*RCMDJavaCmdHandler) (RCore *core, const char *cmd);
 
-static const char * r_cmd_java_strtok (const char *str1, const char b, size_t len);
-static const char * r_cmd_java_consumetok (const char *str1, const char b, size_t len);
-static int r_cmd_java_reload_bin_from_buf (RCore *core, RBinJavaObj *obj, ut8* buffer, ut64 len);
+static const char *r_cmd_java_strtok(const char *str1, const char b, size_t len);
+static const char *r_cmd_java_consumetok(const char *str1, const char b, size_t len);
+static int r_cmd_java_reload_bin_from_buf(RCore *core, RBinJavaObj *obj, ut8* buffer, ut64 len);
 
 static int r_cmd_java_print_json_definitions( RBinJavaObj *obj  );
 static int r_cmd_java_print_all_definitions( RAnal *anal );
@@ -37,38 +37,38 @@ static int r_cmd_java_print_field_definitions( RBinJavaObj *obj );
 static int r_cmd_java_print_method_definitions( RBinJavaObj *obj );
 static int r_cmd_java_print_import_definitions( RBinJavaObj *obj );
 
-static int r_cmd_java_resolve_cp_idx (RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_type (RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_idx_b64 (RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_address (RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_to_key (RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_resolve_cp_summary (RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_resolve_cp_idx(RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_resolve_cp_type(RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_resolve_cp_idx_b64(RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_resolve_cp_address(RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_resolve_cp_to_key(RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_resolve_cp_summary(RBinJavaObj *obj, ut16 idx);
 
-static int r_cmd_java_print_class_access_flags_value( const char * flags );
-static int r_cmd_java_print_field_access_flags_value( const char * flags );
-static int r_cmd_java_print_method_access_flags_value( const char * flags );
-static int r_cmd_java_get_all_access_flags_value (const char *cmd);
+static int r_cmd_java_print_class_access_flags_value( const char *flags );
+static int r_cmd_java_print_field_access_flags_value( const char *flags );
+static int r_cmd_java_print_method_access_flags_value( const char *flags );
+static int r_cmd_java_get_all_access_flags_value(const char *cmd);
 
-static int r_cmd_java_set_acc_flags (RCore *core, ut64 addr, ut16 num_acc_flag);
+static int r_cmd_java_set_acc_flags(RCore *core, ut64 addr, ut16 num_acc_flag);
 
 #define _(x) UNUSED_FUNCTION(x)
-static int r_cmd_java_print_field_summary (RBinJavaObj *obj, ut16 idx);
-static int _(r_cmd_java_print_field_count) (RBinJavaObj *obj);
-static int r_cmd_java_print_field_name (RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_print_field_num_name (RBinJavaObj *obj);
-static int r_cmd_java_print_method_summary (RBinJavaObj *obj, ut16 idx);
-static int _(r_cmd_java_print_method_count) (RBinJavaObj *obj);
-static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx);
-static int r_cmd_java_print_method_num_name (RBinJavaObj *obj);
+static int r_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx);
+static int _(r_cmd_java_print_field_count)(RBinJavaObj *obj);
+static int r_cmd_java_print_field_name(RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_print_field_num_name(RBinJavaObj *obj);
+static int r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx);
+static int _(r_cmd_java_print_method_count)(RBinJavaObj *obj);
+static int r_cmd_java_print_method_name(RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_print_method_num_name(RBinJavaObj *obj);
 
-static RBinJavaObj * r_cmd_java_get_bin_obj(RAnal *anal);
-static RList * r_cmd_java_get_bin_obj_list(RAnal *anal);
+static RBinJavaObj *r_cmd_java_get_bin_obj(RAnal *anal);
+static RList *r_cmd_java_get_bin_obj_list(RAnal *anal);
 static ut64 r_cmd_java_get_input_num_value(RCore *core, const char *input_value);
 static int r_cmd_java_is_valid_input_num_value(RCore *core, const char *input_value);
 
 
 static int r_cmd_java_call(void *user, const char *input);
-static int r_cmd_java_handle_help(RCore * core, const char * input);
+static int r_cmd_java_handle_help(RCore * core, const char *input);
 static int r_cmd_java_handle_set_flags(RCore *core, const char *cmd);
 static int r_cmd_java_handle_prototypes(RCore *core, const char *cmd);
 static int r_cmd_java_handle_resolve_cp(RCore *core, const char *cmd);
@@ -388,7 +388,7 @@ static int r_cmd_java_handle_help(RCore *core, const char *input) {
 	}
 	help_msg[3 + (i * 3)] = NULL;
 	r_core_cmd_help (core, help_msg);
-	free (help_msg);
+	free ((void *)help_msg);
 	return true;
 }
 

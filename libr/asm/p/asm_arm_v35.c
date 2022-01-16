@@ -8,7 +8,12 @@
 #include "encodings_dec.h"
 #include "arm64dis.h"
 
+extern int disassemble_armv7(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	if (a->bits == 16 || a->bits == 32) {
+		return disassemble_armv7 (a, op, buf, len);
+	}
 	Instruction inst = {0};
 	char output[256];
 	op->size = 4;
@@ -16,7 +21,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		return -1;
 	}
 	ut32 n = r_read_le32 (buf);
-	// FailureCodes 
+	// FailureCodes
 	int fc = aarch64_decompose (n, &inst, a->pc);
 	if (fc != DISASM_SUCCESS) {
 		return -1;
@@ -87,7 +92,7 @@ RAsmPlugin r_asm_plugin_arm_v35 = {
 	.desc = "Vector35 ARM64 disassembler",
 	.license = "Apache",
 	.arch = "arm",
-	.bits = 64,
+	.bits = 32|64,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.mnemonics = mnemonics,
 	.disassemble = &disassemble,

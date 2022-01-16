@@ -249,7 +249,13 @@ def main():
 
     # Check arguments
     if args.pull:
-        os.system('git pull')
+        # Attempt to update from an existing remote
+        upstream_remote = subprocess.check_output(["git", "remote", "-v"]).decode()
+        try:
+            remote = re.search(r'(.*?)\t.*radareorg/radare2 \(fetch\)', upstream_remote).group(1)
+        except AttributeError: # If search misses, None.group() throws this
+            remote = 'https://github.com/radareorg/radare2'
+        os.system(f'git pull {remote} master')
     if args.project and args.backend == 'ninja':
         log.error('--project is not compatible with --backend ninja')
         sys.exit(1)

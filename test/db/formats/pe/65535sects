@@ -9,7 +9,7 @@ pi 1
 q!
 EOF
 EXPECT=<<EOF
-65536
+65535
 0x291120
 mov edi, 0x7027aff9
 EOF

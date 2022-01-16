@@ -1,4 +1,5 @@
 subdir('d')
+
 r_syscall_sources = [
   'syscall.c',
   'splugs.c',
@@ -21,8 +22,7 @@ r_syscall = library('r_syscall', r_syscall_sources,
   soversion: r2_libversion
 )
 
-r_syscall_dep = declare_dependency(link_with: r_syscall,
-                                   include_directories: [platform_inc])
+r_syscall_dep = declare_dependency(link_with: r_syscall, include_directories: [platform_inc])
 
 pkgconfig_mod.generate(r_syscall,
   subdirs: 'libr',

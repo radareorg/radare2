@@ -86,3 +86,35 @@ Non-existing flags should be created
 0x08048540 92 mymain
 EOF
 RUN
+
+NAME=afn types
+FILE=bins/mach0/mac-ls2
+CMDS=<<EOF
+s main
+af
+afn
+?e --
+k anal/types/*~func.main.
+afn mein
+?e --
+k anal/types/*~func.main.
+?e --
+k anal/types/*~func.mein.
+
+EOF
+EXPECT=<<EOF
+main
+--
+func.main.arg.0=int,argc
+func.main.arg.1=char **,argv
+func.main.arg.2=char **,envp
+func.main.args=2
+func.main.ret=int
+--
+--
+func.mein.arg.0=int,argc
+func.mein.arg.1=char **,argv
+func.mein.args=2
+func.mein.ret=int
+EOF
+RUN

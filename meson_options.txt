@@ -2,6 +2,7 @@ option('cli', type: 'feature', value: 'auto', description: 'Build CLI programs (
 option('static_runtime', type: 'boolean', value: false)
 option('local', type: 'boolean', value: false, description: 'Adds support for local/side-by-side installation (sets rpath if needed)')
 option('blob', type: 'boolean', value: false, description: 'Compile just one binary which dispatch to the right handlers based on the name used to call it')
+option('wasan', type: 'boolean', value: false, description: 'Windows-specific hack to build with asan using msvc')
 
 # Plugins
 option('plugins', type: 'string', value: '', description: 'Comma separated list of plugin names')
@@ -33,6 +34,7 @@ option('use_sys_zlib', type: 'boolean', value: false)
 option('use_sys_lz4', type: 'boolean', value: false)
 option('use_sys_xxhash', type: 'boolean', value: false)
 option('use_ssl', type: 'boolean', value: false)
+option('use_v35', type: 'boolean', value: false)
 option('use_sys_openssl', type: 'boolean', value: false)
 option('static_sys_openssl', type: 'boolean', value: false)
 option('use_libuv', type: 'boolean', value: true)
@@ -46,4 +48,4 @@ option('nogpl', type: 'boolean', value: false)
 option('use_webui', type: 'boolean', value: false, description: 'install different WebUIs for radare2')
 
 option('enable_tests', type: 'boolean', value: true, description: 'Build unit tests in test/unit')
-option('enable_r2r', type: 'boolean', value: true, description: 'Build r2r executable for regression testing')
+option('enable_r2r', type: 'boolean', value: true, description: 'Build r2r executable for regression ')

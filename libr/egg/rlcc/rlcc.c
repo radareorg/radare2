@@ -41,7 +41,7 @@ static int isProcedure(mpc_ast_t *node) {
 	return 0;
 }
 
-static void processNode (mpc_ast_t *node) {
+static void processNode(mpc_ast_t *node) {
 	if (isStatement(node)) {
 		int i, narg = 0;
 		const char *args[32];

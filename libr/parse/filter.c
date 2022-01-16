@@ -214,7 +214,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 			if (f) {
 				RFlagItem *flag2;
 				bool lea = x86 && r_str_startswith (data, "lea")
-				         && (data[3] == ' ' || data[3] == 0x1b);
+						&& (data[3] == ' ' || data[3] == 0x1b);
 				bool remove_brackets = false;
 				flag = p->flag_get (f, off);
 				if ((!flag || arm) && p->subrel_addr) {

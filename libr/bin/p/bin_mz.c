@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2019 nodepad */
+/* radare - LGPL - Copyright 2015-2021 nodepad, pancake */
 
 #include <r_types.h>
 #include <r_bin.h>
@@ -72,7 +72,7 @@ static bool checkEntrypointBuffer(RBuffer *b) {
 	return false;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	ut64 b_size = r_buf_size (b);
 	if (b_size <= 0x3d) {

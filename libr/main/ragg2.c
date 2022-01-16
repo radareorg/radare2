@@ -167,7 +167,7 @@ static int openfile(const char *f, int x) {
 		fchmod (fd, 0755);
 	}
 #endif
-#if _MSC_VER
+#if _MSC_VER || __WINDOWS__
 	int r = _chsize (fd, 0);
 #else
 	int r = ftruncate (fd, 0);

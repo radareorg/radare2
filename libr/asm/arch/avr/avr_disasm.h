@@ -16,9 +16,9 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * avr_disasm.h - Header file for AVR instruction disassembly into 
+ * avr_disasm.h - Header file for AVR instruction disassembly into
  *  disassembledInstruction structure.
  *
  */
@@ -28,6 +28,7 @@
 
 #include <stdint.h>
 #include "avr_instructionset.h"
+#include "r_asm.h"
 
 /* OPERAND_REGISTER_GHOST:
  * Some instructions, like clr, only have one instruction when written in assembly,
@@ -52,7 +53,7 @@ typedef struct _assembledInstruction assembledInstruction;
 /* The disassembled/decoded instruction. */
 struct _disassembledInstruction {
 	uint32_t address;
-	/* A convenient pointer to the instructionSet, so we can refer 
+	/* A convenient pointer to the instructionSet, so we can refer
 	 * the general details of the instruction stored in there. */
 	instructionInfo *instruction;
 	/* Notice that operands can be signed!

@@ -120,7 +120,7 @@
 #define ARM_DTX_LOAD (0x01<<20)
 #define ARM_DTX_STORE 0x00
 
-// mascara registre desti 
+// mascara registre desti
 #define ARM_DTX_RD_MASK ( 0x0F << 12 )
 
 

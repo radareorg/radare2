@@ -19,6 +19,7 @@ extern "C" {
 #define R_SYS_BITS_16 2
 #define R_SYS_BITS_32 4
 #define R_SYS_BITS_64 8
+#define R_SYS_BITS_27 16
 
 typedef struct {
 	char *sysname;
@@ -31,8 +32,8 @@ typedef struct {
 R_API RSysInfo *r_sys_info(void);
 R_API void r_sys_info_free(RSysInfo *si);
 
-R_API int r_sys_sigaction(int *sig, void (*handler) (int));
-R_API int r_sys_signal(int sig, void (*handler) (int));
+R_API int r_sys_sigaction(int *sig, void(*handler)(int));
+R_API int r_sys_signal(int sig, void(*handler)(int));
 R_API void r_sys_env_init(void);
 R_API char **r_sys_get_environ(void);
 R_API void r_sys_set_environ(char **e);
@@ -68,7 +69,7 @@ R_API int r_sys_clearenv(void);
 R_API char *r_sys_whoami(void);
 R_API int r_sys_uid(void);
 R_API char *r_sys_getdir(void);
-R_API int r_sys_chdir(const char *s);
+R_API bool r_sys_chdir(const char *s);
 R_API bool r_sys_aslr(int val);
 R_API int r_sys_thp_mode(void);
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char **output, int *len, char **sterr);
@@ -120,6 +121,8 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 #  endif
 #elif __mips__
 #  define r_sys_breakpoint() __asm__ volatile ("break");
+#elif __loongarch__
+#  define r_sys_breakpoint() __asm__ volatile ("break");
 // #  define r_sys_breakpoint() __asm__ volatile ("teq $0, $0");
 #elif __EMSCRIPTEN__
 // TODO: cannot find a better way to breakpoint in wasm/asm.js
@@ -132,7 +135,7 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 #endif
 
 /* syscmd */
-R_API char *r_syscmd_ls(const char *input);
+R_API char *r_syscmd_ls(const char *input, int w);
 R_API char *r_syscmd_cat(const char *file);
 R_API char *r_syscmd_mkdir(const char *dir);
 R_API bool r_syscmd_mv(const char *input);
@@ -142,7 +145,7 @@ R_API char *r_syscmd_tail(const char *file, int count);
 R_API char *r_syscmd_join(const char *file1, const char *file2);
 R_API char *r_syscmd_sort(const char *file);
 
-R_API ut8 *r_sys_unxz (const ut8 *data, size_t len, size_t *olen);
+R_API ut8 *r_sys_unxz(const ut8 *data, size_t len, size_t *olen);
 R_API bool r_w32_init(void);
 
 #ifdef __cplusplus

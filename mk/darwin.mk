@@ -4,7 +4,7 @@ ARCH=$(shell uname -m)
 XCODE_VERSION=$(shell xcodebuild -version|grep Xcode|grep -o "[\.0-9]\+")
 XCODE_VERSION_MAJOR=$(word 1, $(subst ., ,$(XCODE_VERSION)))
 
-ifeq ($(COMPILER),ios-sdk)
+ifneq (,$(findstring ios-sdk,$(COMPILER)))
 
 IOS_VERSION="9.0"
 IOS_SDK_VERSION="9.0"

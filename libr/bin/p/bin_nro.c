@@ -30,7 +30,7 @@ static ut64 baddr(RBinFile *bf) {
 	return bf? r_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 magic[4];
 	if (r_buf_read_at (b, NRO_OFF (magic), magic, sizeof (magic)) == 4) {
 		return fileType (magic) != NULL;

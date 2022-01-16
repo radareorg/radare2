@@ -4,6 +4,7 @@ r_crypto_sources = [
   'p/crypto_aes.c',
   'p/crypto_aes_algo.c',
   'p/crypto_aes_cbc.c',
+  'p/crypto_aes_wrap.c',
   'p/crypto_base64.c',
   'p/crypto_base91.c',
   'p/crypto_blowfish.c',

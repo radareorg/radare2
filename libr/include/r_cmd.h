@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_bind.h>
+#include "ht_pp.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,12 +69,14 @@ typedef struct r_cmd_item_t {
 	RCmdCb callback;
 } RCmdItem;
 
-typedef struct r_cmd_alias_t {
-	int count;
-	char **keys;
-	char **values;
-	int *remote;
-} RCmdAlias;
+typedef HtPP *RCmdAlias;
+
+typedef struct r_cmd_alias_val_t {
+	ut8 *data; // The actual value buffer
+	int sz; // Buffer size
+	bool is_str; // Is the buffer string-safe? (i.e. strlen(v) == sz-1. dont strlen if this isnt set)
+	bool is_data; // Is the buffer data or a command? (if false, is_str must be true - commands can't be raw)
+} RCmdAliasVal;
 
 typedef struct r_cmd_desc_example_t {
 	const char *example;
@@ -283,9 +286,15 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name);
 R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 
 R_API bool r_cmd_alias_del(RCmd *cmd, const char *k);
-R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz);
-R_API int r_cmd_alias_set(RCmd *cmd, const char *k, const char *v, int remote);
-R_API const char *r_cmd_alias_get(RCmd *cmd, const char *k, int remote);
+R_API RList *r_cmd_alias_keys(RCmd *cmd);
+R_API int r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v);
+R_API int r_cmd_alias_set_str(RCmd *cmd, const char *k, const char *v);
+R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz);
+R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k);
+R_API int r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a);
+R_API int r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz);
+R_API char *r_cmd_alias_val_strdup(RCmdAliasVal *v);
+R_API char *r_cmd_alias_val_strdup_b64(RCmdAliasVal *v);
 R_API void r_cmd_alias_free(RCmd *cmd);
 R_API void r_cmd_macro_fini(RCmdMacro *mac);
 

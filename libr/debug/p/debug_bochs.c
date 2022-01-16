@@ -28,7 +28,7 @@ static bool isBochs(RDebug *dbg) {
 	return false;
 }
 
-static int r_debug_bochs_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int r_debug_bochs_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	char cmd[64];
 	char num[4];
 	char addr[19];
@@ -244,18 +244,17 @@ static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 	return list;
 }
 
-static int r_debug_bochs_step(RDebug *dbg) {
-	if (!isBochs (dbg)) {
-		return false;
+static bool r_debug_bochs_step(RDebug *dbg) {
+	if (isBochs (dbg)) {
+		bochs_send_cmd (desc, "s", true);
+		bCapturaRegs = true;
+		bStep = true;
+		return true;
 	}
-	//eprintf ("bochs_step\n");
-	bochs_send_cmd (desc,"s",true);
-	bCapturaRegs = true;
-	bStep = true;
-	return true;
+	return false;
 }
 
-static int r_debug_bochs_continue(RDebug *dbg, int pid, int tid, int sig) {
+static bool r_debug_bochs_continue(RDebug *dbg, int pid, int tid, int sig) {
 	//eprintf ("bochs_continue:\n");
 	bochs_send_cmd (desc, "c", false);
 	bCapturaRegs = true;
@@ -264,12 +263,12 @@ static int r_debug_bochs_continue(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 static void bochs_debug_break(void *u) {
-	eprintf("bochs_debug_break: Sending break...\n");
+	eprintf ("bochs_debug_break: Sending break...\n");
 	bochs_cmd_stop (desc);
 	bBreak = true;
 }
 
-static int r_debug_bochs_wait(RDebug *dbg, int pid) {
+static RDebugReasonType r_debug_bochs_wait(RDebug *dbg, int pid) {
 	if (!isBochs (dbg)) {
 		return false;
 	}
@@ -323,7 +322,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 	}
 	desc->data[0] = 0;
 
-	return true;
+	return R_DEBUG_REASON_NONE;
 }
 
 static int r_debug_bochs_stop(RDebug *dbg) {
@@ -334,7 +333,7 @@ static int r_debug_bochs_stop(RDebug *dbg) {
 	return true;
 }
 
-static int r_debug_bochs_attach(RDebug *dbg, int pid) {
+static bool r_debug_bochs_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	//eprintf ("bochs_attach:\n");
 	dbg->swstep = false;
@@ -355,7 +354,7 @@ static int r_debug_bochs_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_bochs_detach(RDebug *dbg, int pid) {
+static bool r_debug_bochs_detach(RDebug *dbg, int pid) {
 	//eprintf ("bochs_detach:\n");
 	free (saveRegs);
 	return true;

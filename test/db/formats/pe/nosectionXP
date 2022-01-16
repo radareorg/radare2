@@ -9,7 +9,7 @@ NAME=PE: nosectionXP - section
 FILE=bins/pe/nosectionXP.exe
 CMDS=om
 EXPECT=<<EOF
- 1 fd: 3 +0x00000138 0x00400138 - 0x00400236 r-x fmap.blob
+* 1 fd: 3 +0x00000138 0x00400138 - 0x00400236 r-x fmap.blob
 EOF
 RUN
 

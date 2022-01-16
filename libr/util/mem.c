@@ -84,7 +84,7 @@ static inline char readbit(const ut8 *src, int bitoffset) {
 	return (src[wholeBytes] & 1<< remainingBits);
 }
 
-static inline void writebit (ut8 *dst, int i, bool c) {
+static inline void writebit(ut8 *dst, int i, bool c) {
 	const int byte = i / 8;
 	const int bit = (i % 8);
 	// eprintf ("Write %d %d = %d\n", byte, bit, c);
@@ -349,15 +349,15 @@ R_API void r_mem_free(void *p) {
 R_API void r_mem_memzero(void *dst, size_t l) {
 #ifdef _MSC_VER
 	RtlSecureZeroMemory (dst, l);
-#else
-#if HAVE_EXPLICIT_BZERO
+#elif __MINGW32__
+	memset (dst, 0, l);
+#elif HAVE_EXPLICIT_BZERO
 	explicit_bzero (dst, l);
 #elif HAVE_EXPLICIT_MEMSET
 	(void)explicit_memset (dst, 0, l);
 #else
 	memset (dst, 0, l);
 	__asm__ volatile ("" :: "r"(dst) : "memory");
-#endif
 #endif
 }
 

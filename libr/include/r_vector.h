@@ -268,6 +268,9 @@ static inline void **r_pvector_push_front(RPVector *vec, void *x) {
 // sort vec using quick sort.
 R_API void r_pvector_sort(RPVector *vec, RPVectorComparator cmp);
 
+// binary search vector, must be sorted already
+R_API int r_pvector_bsearch(RPVector *vec, void *needle, RPVectorComparator cmp);
+
 static inline void **r_pvector_reserve(RPVector *vec, size_t capacity) {
 	return (void **)r_vector_reserve (&vec->v, capacity);
 }

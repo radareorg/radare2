@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2017-2021 - javierptd, pancake */
+
 #ifndef INCLUDE_HEAP_JEMALLOC_STD_C
 #define INCLUDE_HEAP_JEMALLOC_STD_C
 #define HEAP32 1
@@ -26,6 +28,7 @@
 #if __linux__
 // TODO: provide proper api in cbin to resolve symbols and load libraries from debug maps and such
 // this is, provide a programmatic api for the slow dmi command
+#if 0
 static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	RListIter *iter;
 	RBinSymbol *s;
@@ -36,8 +39,8 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 		return GHT_MAX;
 	}
 
-	RBinOptions opt;
-	r_bin_options_init (&opt, -1, 0, 0, false);
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	if (r_bin_open (core->bin, path, &opt)) {
 		RList *syms = r_bin_get_symbols (core->bin);
 		if (!syms) {
@@ -54,9 +57,36 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	r_core_free (core);
 	return vaddr;
 }
+#else
+static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
+	GHT vaddr = GHT_MAX;
+	RBinFileOptions opt = { 0 };
+	r_bin_file_options_init (&opt, -1, 0, 0, false);
+	RBinSymbol *s;
+	RListIter *iter;
+	RBinFile *current_bf = r_bin_cur (core->bin);
+	if (!r_bin_open (core->bin, path, &opt)) {
+		return vaddr;
+	}
+	RBinFile *libc_bf = r_bin_cur (core->bin);
+ 	if (!libc_bf) {
+ 		return vaddr;
+ 	}
+ 	RList *syms = r_bin_get_symbols (core->bin);
+ 	r_list_foreach (syms, iter, s) {
+ 		if (!strcmp (s->name, sym_name)) {
+ 			vaddr = s->vaddr;
+ 			break;
+		}
+	}
+	r_bin_file_delete (core->bin, libc_bf->id);
+ 	r_bin_file_set_cur_binfile (core->bin, current_bf);
+	return vaddr;
+}
+#endif
 
 static int GH(je_matched)(const char *ptr, const char *str) {
-        int ret = strncmp (ptr, str, strlen (str) - 1);
+	int ret = strncmp (ptr, str, strlen (str) - 1);
 	return !ret;
 }
 #endif
@@ -64,7 +94,7 @@ static int GH(je_matched)(const char *ptr, const char *str) {
 static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	RListIter *iter;
 	RDebugMap *map;
-	const char *jemalloc_ver_end = NULL;
+	const char *path = NULL;
 	ut64 jemalloc_addr = UT64_MAX;
 
 	if (!core || !core->dbg || !core->dbg->maps){
@@ -74,31 +104,28 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	r_list_foreach (core->dbg->maps, iter, map) {
 		if (strstr (map->name, "libjemalloc.")) {
 			jemalloc_addr = map->addr;
-			jemalloc_ver_end = map->name;
+			path = map->name;
 			break;
 		}
 	}
-	if (!jemalloc_ver_end) {
-		eprintf ("Warning: Is jemalloc mapped in memory? (see dm command)\n");
+	if (!path) {
+		eprintf ("Warning: cannot find jemalloc mapped in memory (see `dm`)\n");
 		return false;
 	}
 #if __linux__
-	bool is_debug_file = GH(je_matched)(jemalloc_ver_end, "/usr/local/lib");
+	bool is_debug_file = GH(je_matched)(path, "/usr/local/lib");
 
 	if (!is_debug_file) {
-		eprintf ("Warning: Is libjemalloc.so.2 in /usr/local/lib path?\n");
+		eprintf ("Warning: Cannot find libjemalloc.so.2 in /usr/local/lib\n");
 		return false;
 	}
-	char *path = r_str_newf ("%s", jemalloc_ver_end);
 	if (r_file_exists (path)) {
-		ut64 vaddr = GH(je_get_va_symbol)(path, symname);
+		ut64 vaddr = GH(je_get_va_symbol)(core, path, symname);
 		if (jemalloc_addr != GHT_MAX && vaddr != 0) {
 			*symbol = jemalloc_addr + vaddr;
-			free (path);
 			return true;
 		}
 	}
-	free (path);
 	return false;
 #else
 	eprintf ("[*] Resolving %s from libjemalloc.2... ", symname);
@@ -130,12 +157,12 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 	case '\0':
 		eprintf ("need an arena_t to associate chunks");
 		break;
-        case ' ':
-        	{
+	case ' ':
+		{
 			GHT arena = GHT_MAX;
 			arena_t *ar = R_NEW0 (arena_t);
 			extent_node_t *node = R_NEW0 (extent_node_t), *head = R_NEW0 (extent_node_t);
-			input += 1;
+			input++;
 			arena = r_num_math (core->num, input);
 
 			if (arena) {
@@ -164,8 +191,8 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 			free (head);
 			free (node);
 		break;
-        	}
-        case '*':
+		}
+	case '*':
 		{
 			int i = 0;
 			ut64 sym;
@@ -484,7 +511,7 @@ static void GH(jemalloc_get_runs)(RCore *core, const char *input) {
 			}
 			free (c);
 			free (r);
-         	}
+		}
 	break;
 	}
 }

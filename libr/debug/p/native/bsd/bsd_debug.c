@@ -28,7 +28,7 @@
 #endif
 
 #if __KFBSD__
-static void addr_to_string (struct sockaddr_storage *ss, char *buffer, int buflen) {
+static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen) {
 	char buffer2[INET6_ADDRSTRLEN];
 	struct sockaddr_in6 *sin6;
 	struct sockaddr_in *sin;

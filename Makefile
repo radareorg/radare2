@@ -7,7 +7,7 @@ B=$(DESTDIR)$(BINDIR)
 L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
-R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent r2r)
+R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2pm.sh r2-indent r2r)
 ifdef SOURCE_DATE_EPOCH
 BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
 else
@@ -56,7 +56,8 @@ all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C libr
 	${MAKE} -C binr
 
-GIT_TAP=$(shell (git tag -l --sort=refname 2> /dev/null || echo $(R2_VERSION)) | grep '^[0-9]\.[0-9]' | tail -n1 )
+# GIT_TAP=$(shell (git tag -l --sort=refname 2> /dev/null || echo $(R2_VERSION)) | grep '^[0-9]\.[0-9]' | tail -n1 )
+GIT_TAP=$(shell git log --decorate=short|grep tag:|head -n1|cut -d : -f 2|cut -c 2-|head -c 5)
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo $(R2_VERSION))
 R2_VER=$(shell ./configure -qV)
 ifdef SOURCE_DATE_EPOCH
@@ -170,7 +171,7 @@ ifneq ($(USE_ZIP),NO)
 	$(ZIP) -r "${ZIPNAME}" "radare2-${WINBITS}-${VERSION}"
 endif
 
-clean: 
+clean:
 	rm -f libr/libr.a libr/libr.dylib libr/include/r_version.h
 	rm -rf libr/.libr
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
@@ -182,6 +183,8 @@ clean:
 
 distclean mrproper: clean
 	rm -f `find . -type f -iname '*.d'`
+	rm -rf libr/asm/arch/arm/v35arm64/arch-arm64
+	rm -rf libr/asm/arch/arm/v35arm64/arch-armv7
 
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
@@ -415,6 +418,7 @@ meson-install:
 meson-symstall: symstall-sdb
 	@echo "[ Meson symstall (not stable) ]"
 	ln -fs $(PWD)/binr/r2pm/r2pm ${B}/r2pm
+	ln -fs $(PWD)/binr/r2pm/r2pm.sh ${B}/r2pm.sh
 	ln -fs $(PWD)/build/binr/rasm2/rasm2 ${B}/rasm2
 	ln -fs $(PWD)/build/binr/rarun2/rarun2 ${B}/rarun2
 	ln -fs $(PWD)/build/binr/radare2/radare2 ${B}/radare2

@@ -1,6 +1,8 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_util.h>
+
+#define FAST_FILTER 1
 
 /* Validate if char is printable , why not use ISPRINTABLE() ?? */
 R_API bool r_name_validate_print(const char ch) {
@@ -64,6 +66,7 @@ R_API bool r_name_validate_dash(const char ch) {
 	return false;
 }
 
+#if 0
 R_API bool r_name_validate_char(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || IS_DIGIT (ch)) {
 		return true;
@@ -76,6 +79,7 @@ R_API bool r_name_validate_char(const char ch) {
 	}
 	return false;
 }
+#endif
 
 R_API bool r_name_validate_first(const char ch) {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
@@ -131,24 +135,34 @@ R_API bool r_name_filter_print(char *s) {
 R_API bool r_name_filter(char *s, int maxlen) {
 	// if maxlen == -1 : R_FLAG_NAME_SIZE
 	// maxlen is ignored, the function signature must change
-	if (maxlen > 0) {
-		int slen = strlen (s);
-		if (slen > maxlen) {
-			s[maxlen] = 0;
+	// char *os = s;
+	size_t count = 0;
+	r_str_trim_head (s);
+	if (!r_name_validate_first (*s)) {
+		*s = '_';
+	}
+#if 0
+		while (*s) {
+			if (maxlen > 0 && count > maxlen) {
+				*s = 0;
+				break;
+			}
+			if (r_name_validate_char (*s)) {
+				break;
+			}
+			if (r_name_validate_dash (*s)) {
+				break;
+			}
+			r_str_cpy (s, s + 1);
+			count++;
 		}
 	}
-	char *os = s;
-	while (*s) {
-		if (r_name_validate_first (*s)) {
-			break;
-		}
-		if (r_name_validate_dash (*s)) {
-			*s = '_';
-			break;
-		}
-		r_str_cpy (s, s + 1);
-	}
+#endif
 	for (s++; *s; s++) {
+		if (maxlen > 0 && count > maxlen) {
+			*s = 0;
+			break;
+		}
 		if (*s == '\\') {
 			if (is_special_char (s[1])) {
 				*s = '_';
@@ -165,9 +179,16 @@ R_API bool r_name_filter(char *s, int maxlen) {
 				s--;
 			}
 		}
+		count++;
 	}
+#if FAST_FILTER
+	// that flag should be trimmed and checked already
+	// we dont want to iterate over it again
+	return true;
+#else
 	r_str_trim (os);
 	return r_name_check (os);
+#endif
 }
 
 R_API char *r_name_filter2(const char *name) {

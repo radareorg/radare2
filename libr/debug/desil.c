@@ -27,7 +27,7 @@ typedef struct {
 
 // TODO: Kill those globals
 RDebug *dbg = NULL;
-static int has_match = 0;
+static bool has_match = false;
 static int prestep = 1; // TODO: make it configurable
 static ut64 opc = 0;
 RList *esil_watchpoints = NULL;
@@ -67,7 +67,7 @@ static int exprmatch(RDebug *dbg, ut64 addr, const char *expr) {
 	return ret;
 }
 
-static bool esilbreak_check_pc (RDebug *dbg, ut64 pc) {
+static bool esilbreak_check_pc(RDebug *dbg, ut64 pc) {
 	EsilBreak *ew;
 	RListIter *iter;
 	if (!pc) {
@@ -76,7 +76,7 @@ static bool esilbreak_check_pc (RDebug *dbg, ut64 pc) {
 	r_list_foreach (EWPS, iter, ew) {
 		if (ew->rwx & R_PERM_X) {
 			if (exprmatch (dbg, pc, ew->expr)) {
-				return 1;
+				return true;
 			}
 		}
 	}
@@ -90,8 +90,8 @@ static bool esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	r_list_foreach (EWPS, iter, ew) {
 		if (ew->rwx & R_PERM_R && ew->dev == 'm') {
 			if (exprmatch (dbg, addr, ew->expr)) {
-				has_match = 1;
-				return 1;
+				has_match = true;
+				return true;
 			}
 		}
 	}
@@ -105,7 +105,7 @@ static bool esilbreak_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 	r_list_foreach (EWPS, iter, ew) {
 		if (ew->rwx & R_PERM_W && ew->dev == 'm') {
 			if (exprmatch (dbg, addr, ew->expr)) {
-				has_match = 1;
+				has_match = true;
 				return true;
 			}
 		}
@@ -125,7 +125,7 @@ static bool esilbreak_reg_read(RAnalEsil *esil, const char *regname, ut64 *num, 
 		if (ew->rwx & R_PERM_R && ew->dev == 'r') {
 			// XXX: support array of regs in expr
 			if (!strcmp (regname, ew->expr)) {
-				has_match = 1;
+				has_match = true;
 				return true;
 			}
 		}
@@ -201,7 +201,7 @@ static bool esilbreak_reg_write(RAnalEsil *esil, const char *regname, ut64 *num)
 		if ((ew->rwx & R_PERM_W) && (ew->dev == 'r')) {
 			// XXX: support array of regs in expr
 			if (exprmatchreg (dbg, regname, ew->expr)) {
-				has_match = 1;
+				has_match = true;
 				return true;
 			}
 		}
@@ -223,7 +223,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 		ESIL = r_anal_esil_new (32, true, 64);
 		// TODO setup something?
 		if (!ESIL) {
-			return 0;
+			return false;
 		}
 	}
 
@@ -244,7 +244,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 		// otherwise it will stop at the next instruction
 		if (r_debug_step (dbg, 1)<1) {
 			eprintf ("Step failed\n");
-			return 0;
+			return false;
 		}
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 		//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
@@ -265,12 +265,12 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 	}
 	if (!prestep) {
 		if (ret && !has_match) {
-			if (r_debug_step (dbg, 1)<1) {
+			if (r_debug_step (dbg, 1) < 1) {
 				eprintf ("Step failed\n");
 				return 0;
 			}
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
-			//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+			// npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		}
 	}
 	return ret;
@@ -278,7 +278,7 @@ R_API bool r_debug_esil_stepi(RDebug *d) {
 
 R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 	count++;
-	has_match = 0;
+	has_match = false;
 	r_cons_break_push (NULL, NULL);
 	do {
 		if (r_cons_is_breaked ()) {
@@ -300,7 +300,7 @@ R_API ut64 r_debug_esil_step(RDebug *dbg, ut32 count) {
 	return opc;
 }
 
-R_API ut64 r_debug_esil_continue (RDebug *dbg) {
+R_API ut64 r_debug_esil_continue(RDebug *dbg) {
 	return r_debug_esil_step (dbg, UT32_MAX);
 }
 

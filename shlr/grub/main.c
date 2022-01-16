@@ -78,7 +78,7 @@ grub_file_t openimage(grub_fs_t fs, const char *str) {
 int dirhook (const char *filename, const struct grub_dirhook_info *info, void *closure) {
 	//info->mtimeset
 	//info->case_insensitive
-	printf ("DIRFILE: %c (%d) %s\n", info->dir?'d':'f', 
+	printf ("DIRFILE: %c (%d) %s\n", info->dir?'d':'f',
 		info->mtime, filename);
 	return 0;
 }

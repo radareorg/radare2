@@ -146,7 +146,7 @@ Type Info at 0x100008370:
 type: __class_type_info
 found_at: 4295000200
 class_vtable: 4295000176
-ref_to_type_class: 13838435755002691596
+ref_to_type_class: 0
 ref_to_type_name: 4294999928
 name: A
 name_unique: true

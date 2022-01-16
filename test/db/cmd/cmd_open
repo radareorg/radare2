@@ -114,8 +114,6 @@ RUN
 NAME=o -
 FILE=malloc://1024
 CMDS=<<EOF
-e file.nowarn=true
-e file.loadmethod=append
 o -;o~?
 EOF
 EXPECT=<<EOF
@@ -304,7 +302,7 @@ bins/elf/libverifyPass.so
 bins/elf/libc.so.6
 EOF
 CMDS=<<EOF
-ob~[0-1]
+ob~[1-2]
 ?e
 ob 1; i~^fd
 ob 2; i~^fd
@@ -341,8 +339,8 @@ EXPECT=<<EOF
 
 0x00000010  2021 2223 2425 2627 2829 2a2b 2c2d 2e2f   !"#$%&'()*+,-./
 
- 2 fd: 4 +0x00000000 0x00000000 - 0x000000ff rwx 
- 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
+* 2 fd: 4 +0x00000000 0x00000000 - 0x000000ff rwx 
+- 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx 
 
 0x00000010  1011 1213 1415 1617 1819 1a1b 1c1d 1e1f  ................
 EOF
@@ -357,7 +355,7 @@ o: 1024
 ob
 EOF
 EXPECT=<<EOF
-0 3 x86-64 ba:0x00000000 sz:1024 malloc://1024
+* 0 3 x86-64 ba:0x00000000 sz:1024 malloc://1024
 EOF
 RUN
 
@@ -401,11 +399,11 @@ om
 # pv1
 EOF
 EXPECT=<<EOF
- 5 fd: 3 +0x00000000 0x00000000 - 0x0000347f rwx fmap.LOAD0
- 4 fd: 3 +0x00004000 0x00004000 - 0x00016790 rwx fmap.LOAD1
- 3 fd: 3 +0x00017000 0x00017000 - 0x0001f7bf rwx fmap.LOAD2
- 2 fd: 3 +0x00020050 0x00021050 - 0x00022267 rwx fmap.LOAD3
- 1 fd: 4 +0x00000000 0x00022268 - 0x00023557 rw- mmap.LOAD3
+- 5 fd: 3 +0x00000000 0x00000000 - 0x0000347f rwx fmap.LOAD0
+* 4 fd: 3 +0x00004000 0x00004000 - 0x00016790 rwx fmap.LOAD1
+- 3 fd: 3 +0x00017000 0x00017000 - 0x0001f7bf rwx fmap.LOAD2
+- 2 fd: 3 +0x00020050 0x00021050 - 0x00022267 rwx fmap.LOAD3
+- 1 fd: 4 +0x00000000 0x00022268 - 0x00023557 rw- mmap.LOAD3
 EOF
 RUN
 
@@ -448,6 +446,7 @@ size     0x560c
 humansz  21.5K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     r-x
 format   elf
 iorw     false
@@ -487,11 +486,11 @@ size     0x200
 humansz  512
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
 block    0x100
-
 EOF
 RUN
 
@@ -512,4 +511,30 @@ Cannot find file nonfile
 Missing argument
 EOF
 BROKEN=1
+RUN
+
+NAME=ob *
+FILE=bins/elf/ls
+CMDS=<<EOF
+is~?
+o bins/elf/ezpz
+is~?
+?e --
+ob *
+is~?
+?e --
+ob 0
+is~?
+ob 1
+is~?
+EOF
+EXPECT=<<EOF
+133
+134
+--
+267
+--
+133
+134
+EOF
 RUN

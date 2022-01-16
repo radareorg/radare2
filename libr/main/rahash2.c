@@ -363,7 +363,6 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 				}
 
 				r_crypto_update (cry, (const ut8 *) buf, buflen);
-				r_crypto_final (cry, NULL, 0);
 
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
@@ -414,7 +413,6 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 				}
 
 				r_crypto_update (cry, buf, file_size);
-				r_crypto_final (cry, NULL, 0);
 
 				int result_size = 0;
 				ut8 *result = r_crypto_get_output (cry, &result_size);
@@ -662,7 +660,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					if (str != hashstr) {
 						free (str);
 					}
-                    free (iv);
+					free (iv);
 					return 1;
 				}
 				pj_a (pj);

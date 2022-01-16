@@ -1,4 +1,4 @@
-project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.4.0')
+project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.5.5')
 
 py3_exe = import('python').find_installation('python3')
 git_exe = find_program('git', required: false)
@@ -97,7 +97,7 @@ else
 endif
 
 platform_deps = []
-platform_inc = ['.', 'libr/include']
+platform_inc = ['.', join_paths('libr','include')]
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
 endif
@@ -109,6 +109,13 @@ if get_option('static_runtime')
   endif
 endif
 
+if get_option('wasan')
+  add_project_arguments('/DEBUG', language: 'c')
+  add_project_arguments('/MD', language: 'c')
+  add_project_arguments('/fsanitize=address', language: 'c')
+  add_project_arguments('/Z7', language: 'c')
+  # add_project_arguments('/guard:cf', language: 'c')
+endif
 if cc.get_id() == 'clang-cl'
   add_project_arguments('-D__STDC__=1', language: 'c')
   add_project_arguments('-D_CRT_DECLARE_NONSTDC_NAMES ', language: 'c')
@@ -227,7 +234,7 @@ conf_data.set('plugins_parse', '&r_parse_plugin_' + ', &r_parse_plugin_'.join(pa
 #)
 
 config_h = configure_file(
-  input: 'libr/config.h.in',
+  input: join_paths('libr','config.h.in'),
   output: 'config.h',
   configuration: conf_data
 )
@@ -348,10 +355,10 @@ userconf.set('BINDINGS', r2_bindings)
 userconf.set10('HAVE_OPENSSL', use_sys_openssl)
 userconf.set10('HAVE_LIBUV', use_libuv)
 userconf.set10('HAVE_FORK', use_fork)
+userconf.set10('HAVE_GPERF', get_option('sdb_cgen'))
 userconf.set10('WANT_DYLINK', use_dylink)
 userconf.set10('WANT_THREADS', get_option('want_threads'))
 userconf.set10('WANT_CAPSTONE', get_option('want_capstone'))
-userconf.set10('HAVE_GPERF', get_option('sdb_cgen'))
 userconf.set10('HAVE_PTRACE', have_ptrace)
 userconf.set10('USE_PTRACE_WRAP', use_ptrace_wrap)
 userconf.set10('WITH_GPL', not get_option('nogpl'))
@@ -377,7 +384,7 @@ foreach item : [
 endforeach
 
 r_userconf_h = configure_file(
-  input: 'libr/include/r_userconf.h.acr',
+  input: join_paths('libr','include','r_userconf.h.acr'),
   output: 'r_userconf.h',
   configuration: userconf,
   install_dir: join_paths(r2_incdir)
@@ -421,24 +428,24 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
   message('Use bundled zlib')
 
   zlib_files = [
-    'shlr/zip/zlib/adler32.c',
-    'shlr/zip/zlib/compress.c',
-    'shlr/zip/zlib/crc32.c',
-    'shlr/zip/zlib/deflate.c',
-    'shlr/zip/zlib/gzclose.c',
-    'shlr/zip/zlib/gzlib.c',
-    'shlr/zip/zlib/gzread.c',
-    'shlr/zip/zlib/gzwrite.c',
-    'shlr/zip/zlib/infback.c',
-    'shlr/zip/zlib/inffast.c',
-    'shlr/zip/zlib/inflate.c',
-    'shlr/zip/zlib/inftrees.c',
-    'shlr/zip/zlib/trees.c',
-    'shlr/zip/zlib/uncompr.c',
-    'shlr/zip/zlib/zutil.c'
+    join_paths('shlr','zip','zlib','adler32.c'),
+    join_paths('shlr','zip','zlib','compress.c'),
+    join_paths('shlr','zip','zlib','crc32.c'),
+    join_paths('shlr','zip','zlib','deflate.c'),
+    join_paths('shlr','zip','zlib','gzclose.c'),
+    join_paths('shlr','zip','zlib','gzlib.c'),
+    join_paths('shlr','zip','zlib','gzread.c'),
+    join_paths('shlr','zip','zlib','gzwrite.c'),
+    join_paths('shlr','zip','zlib','infback.c'),
+    join_paths('shlr','zip','zlib','inffast.c'),
+    join_paths('shlr','zip','zlib','inflate.c'),
+    join_paths('shlr','zip','zlib','inftrees.c'),
+    join_paths('shlr','zip','zlib','trees.c'),
+    join_paths('shlr','zip','zlib','uncompr.c'),
+    join_paths('shlr','zip','zlib','zutil.c')
   ]
 
-  zlib_inc = [platform_inc, include_directories('shlr/zip/zlib')]
+  zlib_inc = [platform_inc, include_directories(join_paths('shlr','zip','zlib'))]
 
   libr2zlib = static_library('r2zlib', zlib_files,
     include_directories: zlib_inc,
@@ -458,38 +465,38 @@ endif
 # NOTE: copying most of the stuff from sdb to here for the moment, since we
 # should use subpackages to handle this well
 sdb_files = [
-  'shlr/sdb/src/array.c',
-  'shlr/sdb/src/base64.c',
-  'shlr/sdb/src/buffer.c',
-  'shlr/sdb/src/set.c',
-  'shlr/sdb/src/cdb.c',
-  'shlr/sdb/src/cdb_make.c',
-  'shlr/sdb/src/dict.c',
-  'shlr/sdb/src/diff.c',
-  'shlr/sdb/src/disk.c',
-  'shlr/sdb/src/fmt.c',
-  'shlr/sdb/src/ht_uu.c',
-  'shlr/sdb/src/ht_up.c',
-  'shlr/sdb/src/ht_pp.c',
-  'shlr/sdb/src/ht_pu.c',
-  'shlr/sdb/src/journal.c',
-  'shlr/sdb/src/json.c',
-  'shlr/sdb/src/lock.c',
-  'shlr/sdb/src/ls.c',
-  'shlr/sdb/src/match.c',
-  'shlr/sdb/src/ns.c',
-  'shlr/sdb/src/num.c',
-  'shlr/sdb/src/query.c',
-  'shlr/sdb/src/sdb.c',
-  'shlr/sdb/src/sdbht.c',
-  'shlr/sdb/src/util.c',
-  'shlr/sdb/src/text.c'
+  join_paths('shlr','sdb','src','array.c'),
+  join_paths('shlr','sdb','src','base64.c'),
+  join_paths('shlr','sdb','src','buffer.c'),
+  join_paths('shlr','sdb','src','set.c'),
+  join_paths('shlr','sdb','src','cdb.c'),
+  join_paths('shlr','sdb','src','cdb_make.c'),
+  join_paths('shlr','sdb','src','dict.c'),
+  join_paths('shlr','sdb','src','diff.c'),
+  join_paths('shlr','sdb','src','disk.c'),
+  join_paths('shlr','sdb','src','fmt.c'),
+  join_paths('shlr','sdb','src','ht_uu.c'),
+  join_paths('shlr','sdb','src','ht_up.c'),
+  join_paths('shlr','sdb','src','ht_pp.c'),
+  join_paths('shlr','sdb','src','ht_pu.c'),
+  join_paths('shlr','sdb','src','journal.c'),
+  join_paths('shlr','sdb','src','json.c'),
+  join_paths('shlr','sdb','src','lock.c'),
+  join_paths('shlr','sdb','src','ls.c'),
+  join_paths('shlr','sdb','src','match.c'),
+  join_paths('shlr','sdb','src','ns.c'),
+  join_paths('shlr','sdb','src','num.c'),
+  join_paths('shlr','sdb','src','query.c'),
+  join_paths('shlr','sdb','src','sdb.c'),
+  join_paths('shlr','sdb','src','sdbht.c'),
+  join_paths('shlr','sdb','src','util.c'),
+  join_paths('shlr','sdb','src','text.c')
 ]
 
-sdb_inc = [platform_inc, include_directories('shlr/sdb/src')]
+sdb_inc = [platform_inc, include_directories(join_paths('shlr','sdb','src'))]
 
 # Create sdb_version.h
-r = run_command(py3_exe, 'sys/sdb_version.py', 'shlr/sdb/config.mk')
+r = run_command(py3_exe, join_paths('sys','sdb_version.py'), join_paths('shlr','sdb','config.mk'))
 if r.returncode() == 0
   sdb_version = r.stdout().strip().split('\n')[0]
 else
@@ -498,22 +505,22 @@ endif
 run_command(py3_exe, '-c', 'with open("shlr/sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
 
 sdb_inc_files = [
-  'shlr/sdb/src/buffer.h',
-  'shlr/sdb/src/cdb.h',
-  'shlr/sdb/src/set.h',
-  'shlr/sdb/src/cdb_make.h',
-  'shlr/sdb/src/config.h',
-  'shlr/sdb/src/dict.h',
-  'shlr/sdb/src/ht_inc.h',
-  'shlr/sdb/src/ht_pp.h',
-  'shlr/sdb/src/ht_up.h',
-  'shlr/sdb/src/ht_uu.h',
-  'shlr/sdb/src/ht_pu.h',
-  'shlr/sdb/src/ls.h',
-  'shlr/sdb/src/sdb.h',
-  'shlr/sdb/src/sdbht.h',
-  'shlr/sdb/src/sdb_version.h',
-  'shlr/sdb/src/types.h'
+  join_paths('shlr','sdb','src','buffer.h'),
+  join_paths('shlr','sdb','src','cdb.h'),
+  join_paths('shlr','sdb','src','set.h'),
+  join_paths('shlr','sdb','src','cdb_make.h'),
+  join_paths('shlr','sdb','src','config.h'),
+  join_paths('shlr','sdb','src','dict.h'),
+  join_paths('shlr','sdb','src','ht_inc.h'),
+  join_paths('shlr','sdb','src','ht_pp.h'),
+  join_paths('shlr','sdb','src','ht_up.h'),
+  join_paths('shlr','sdb','src','ht_uu.h'),
+  join_paths('shlr','sdb','src','ht_pu.h'),
+  join_paths('shlr','sdb','src','ls.h'),
+  join_paths('shlr','sdb','src','sdb.h'),
+  join_paths('shlr','sdb','src','sdbht.h'),
+  join_paths('shlr','sdb','src','sdb_version.h'),
+  join_paths('shlr','sdb','src','types.h')
 ]
 install_headers(sdb_inc_files, install_dir: join_paths(r2_incdir, 'sdb'))
 
@@ -528,9 +535,9 @@ sdb_dep = declare_dependency(
   include_directories: sdb_inc
 )
 
-sdb_exe = executable('sdb', ['shlr/sdb/src/main.c'] + sdb_files,
+sdb_exe = executable('sdb', [join_paths('shlr','sdb','src','main.c')] + sdb_files,
   include_directories: [
-    include_directories(['shlr/sdb/src'])
+    include_directories([join_paths('shlr','sdb','src')])
   ],
   implicit_include_directories: false,
   native: true,
@@ -554,10 +561,10 @@ sdb_gen_cmd = [
 
 # handle spp dependency
 spp_files = [
-  'shlr/spp/spp.c'
+  join_paths('shlr','spp','spp.c')
 ]
 
-spp_inc = [platform_inc, include_directories('shlr/spp')]
+spp_inc = [platform_inc, include_directories(join_paths('shlr','spp'))]
 
 libr2spp = static_library('r2spp', spp_files,
   dependencies: sdb_dep,
@@ -591,7 +598,6 @@ subdir('libr/socket')
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('shlr')
-
 subdir('libr/cons')
 subdir('shlr/gdb')
 subdir('libr/io')
@@ -612,10 +618,10 @@ subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
 
-# subdir('libr/anal/d')
-# subdir('libr/asm/d')
-subdir('libr/bin/d')
-# subdir('libr/syscall/d')
+# subdir(join_paths('libr','anal','d'))
+# subdir(join_paths('libr','asm','d'))
+#subdir(join_paths('libr','bin','d'))
+# subdir(join_paths('libr','syscall','d'))
 subdir('libr/cons/d')
 subdir('libr/magic/d')
 subdir('libr/flag/d')
@@ -641,7 +647,7 @@ if cli_enabled
     subdir('binr/radiff2')
     subdir('binr/rafind2')
     subdir('binr/rasign2')
-    subdir('binr/rvc2')
+    subdir('binr/ravc2')
     subdir('binr/rax2')
   endif
   subdir('binr/r2pm')
@@ -675,13 +681,13 @@ if meson.is_subproject()
       r_syscall_dep,
       r_util_dep
     ],
-    include_directories: include_directories('.', 'libr/include'),
+    include_directories: include_directories('.', join_paths('libr','include')),
     version: r2_version
   )
 endif
 
 if get_option('use_webui')
-  install_subdir('shlr/www',
+  install_subdir(join_paths('shlr','www'),
     install_dir: r2_wwwroot,
     strip_directory: true
   )
@@ -690,27 +696,27 @@ endif
 subdir('test/unit')
 
 install_data(
-  'doc/fortunes.fun',
-  'doc/fortunes.tips',
+  join_paths('doc','fortunes.fun'),
+  join_paths('doc','fortunes.tips'),
   install_dir: r2_fortunes
 )
 
 if cli_enabled
   install_man(
-    'man/r2agent.1',
-    'man/r2-docker.1',
-    'man/r2pm.1',
-    'man/rabin2.1',
-    'man/radare2.1',
-    'man/radiff2.1',
-    'man/rafind2.1',
-    'man/ragg2.1',
-    'man/rahash2.1',
-    'man/rarun2.1',
-    'man/rasm2.1',
-    'man/rax2.1',
-    'man/rvc2.1',
-    'man/esil.7'
+    join_paths('man','r2agent.1'),
+    join_paths('man','r2-docker.1'),
+    join_paths('man','r2pm.1'),
+    join_paths('man','rabin2.1'),
+    join_paths('man','radare2.1'),
+    join_paths('man','radiff2.1'),
+    join_paths('man','rafind2.1'),
+    join_paths('man','ragg2.1'),
+    join_paths('man','rahash2.1'),
+    join_paths('man','rarun2.1'),
+    join_paths('man','rasm2.1'),
+    join_paths('man','rax2.1'),
+    join_paths('man','ravc2.1'),
+    join_paths('man','esil.7')
   )
 
   install_data('doc/hud',
@@ -719,19 +725,19 @@ if cli_enabled
   )
 
   install_data(
-    'doc/zsh/_r2',
-    'doc/zsh/_rabin2',
-    'doc/zsh/_radiff2',
-    'doc/zsh/_rafind2',
-    'doc/zsh/_ragg2',
-    'doc/zsh/_rahash2',
-    'doc/zsh/_rasm2',
-    'doc/zsh/_rax2',
+    join_paths('doc','zsh','_r2'),
+    join_paths('doc','zsh','_rabin2'),
+    join_paths('doc','zsh','_radiff2'),
+    join_paths('doc','zsh','_rafind2'),
+    join_paths('doc','zsh','_ragg2'),
+    join_paths('doc','zsh','_rahash2'),
+    join_paths('doc','zsh','_rasm2'),
+    join_paths('doc','zsh','_rax2'),
     install_dir: r2_zsh_compdir
   )
 
   if host_machine.system() == 'windows'
-    meson.add_install_script('sys/create_r2.bat')
+    meson.add_install_script(join_paths('sys','create_r2.bat'))
   else
     meson.add_install_script('sys/create_r2.sh')
   endif

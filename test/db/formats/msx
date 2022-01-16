@@ -1,0 +1,55 @@
+NAME=MSX Rom header
+FILE=bins/msx/testmsx.rom
+CMDS=<<EOF
+i
+pd 10
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/msx/testmsx.rom
+size     0x2000
+humansz  8K
+minopsz  1
+maxopsz  3
+invopsz  1
+mode     r-x
+format   msx
+iorw     false
+block    0x100
+type     rom
+arch     z80
+baddr    0x0
+binsz    8192
+bits     8
+canary   false
+retguard false
+class    AB
+crypto   false
+endian   little
+havecode true
+laddr    0x0
+linenum  false
+lsyms    false
+machine  MSX
+nx       false
+os       msx
+pic      false
+relocs   false
+sanitize false
+static   true
+stripped false
+va       true
+            ;-- entry0:
+            ;-- InitAddress:
+            0x0000802a      cd3380         call 0x8033
+            0x0000802d      cd4280         call 0x8042
+        @-> 0x00008030      c33080         jp 0x8030
+            0x00008033      21e9f3         ld hl, 0xf3e9
+            0x00008036      360f           ld [hl], 0x0f
+            0x00008038      23             inc hl
+            0x00008039      3601           ld [hl], 0x01
+            0x0000803b      23             inc hl
+            0x0000803c      3601           ld [hl], 0x01
+            0x0000803e      cd6c00         call 0x006c
+EOF
+RUN

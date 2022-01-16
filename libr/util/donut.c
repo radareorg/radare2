@@ -6,7 +6,7 @@
 
 // https://www.a1k0n.net/2006/09/15/obfuscated-c-donut.html
 
-             k;double sin()
+             k;float sin()
          ,cos();main(){float A=
        0,B=0,i,j,z[1760];char b[
      1760];printf("\x1b[2J");for(;;
@@ -36,23 +36,23 @@ in(B),t=c*h*g-f*        e;int x=40+30*D*
 // global iterators
 R_API char *r_str_donut(int osize) {
 	int size = osize;
-	static float A= 0;
-	static float B= 0;
+	static float A = 0;
+	static float B = 0;
 	float i,j,z[1760];
 	int k;
 	char b[1760];
 	char o[1760];
-	memset (b,32,1760);
-	memset (z,0,7040) ;
+	memset (b, 32, 1760);
+	memset (z, 0, 7040) ;
 	if (osize == 0) {
 		size = 100;
 	} else {
 		A = B = 0;
 	}
-	double Zero = (((double)(100 - size) / 100) * 6);
-	double Width = 30;
-	double Height = 15;
-	double Align = 25; // 40;
+	float Zero = (((float)(100 - size) / 100) * 6);
+	float Width = 30;
+	float Height = 15;
+	float Align = 25; // 40;
 	if (osize != 0) {
 		Align = 40;
 	}
@@ -64,12 +64,16 @@ R_API char *r_str_donut(int osize) {
 			float f = sin (j);
 			float g = cos (A);
 			float h = d + 2;
-			float D = 1 / (c* h*e+f*g+5),l=cos(i),m=cos(B),n=sin(B),t=c*h*g-f*e;
-			int x = Align+Width*D*(l*h*m-t*n);
-			int y = 12 + Height*D*(l*h*n +t*m);
+			float D = 1 / (c* h*e+f*g+5);
+			float l = cos (i);
+			float m = cos (B);
+			float n = sin (B);
+			float t = c*h*g-f*e;
+			int x = (int)(Align+Width*D*(l*h*m-t*n));
+			int y = (int)(12 + Height*D*(l*h*n +t*m));
 			int o = x + 80 * y;
-			int N = 8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n);
-			if (22 >y && y > 0 && x > 0 && 80 >x && D > z[o]) {
+			int N = (int)(8 * ((f*e-c*d*g)*m-c*d*e-f*g-l*d*n));
+			if (22 > y && y > 0 && x > 0 && 80 > x && D > z[o]) {
 				z[o] = D;
 				b[o] = " .,-:!/|S$@&"[N > 0? N: 0];
 			}
@@ -80,11 +84,11 @@ R_API char *r_str_donut(int osize) {
 	}
 	o[sizeof (o) - 1] = 0;
 	if (osize == 0)  {
-		A += 0.03;
-		B += 0.02;
+		A += 0.03f;
+		B += 0.02f;
 	} else {
-		A += 0.0000;
-		B += 0.01;
+		A += 0.0f;
+		B += 0.01f;
 	}
 	char *r = strdup (o);
 	r_str_trim_tail (r);

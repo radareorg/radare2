@@ -126,9 +126,8 @@ pid_t ptrace_wrap_fork(ptrace_wrap_instance *inst, void (*child_callback)(void *
 		if (r == 0) {
 			child_callback (child_callback_user);
 			return 0;
-		} else {
-			return r;
 		}
+		return r;
 	}
 
 	int _errno = 0;

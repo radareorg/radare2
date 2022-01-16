@@ -1,4 +1,4 @@
-/* radare - LGPLv3- Copyright 2017 - xarkes */
+/* radare - LGPLv3- Copyright 2017-2021 - xarkes */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -18,37 +18,45 @@ static const char *r_io_get_individual_schema(const char *file) {
 }
 
 static bool r_io_ar_plugin_open(RIO *io, const char *file, bool many) {
-	r_return_val_if_fail (io && file, NULL);
+	r_return_val_if_fail (io && file, false);
 	if (many) {
 		return (r_io_get_individual_schema (file) != NULL);
 	}
 	return !strncmp ("ar://", file, 5) || !strncmp ("lib://", file, 6);
 }
 
-static int r_io_ar_close(RIODesc *fd) {
+static bool r_io_ar_close(RIODesc *fd) {
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
 	return ar_close ((RArFp *)fd->data);
 }
 
 static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 	r_return_val_if_fail (r_io_ar_plugin_open (io, file, false), NULL);
-	const char *arname = strstr (file, "://") + 3;
-	char *filename = strstr (arname, "//");
-	if (filename) {
-		*filename = 0;
-		filename += 2;
+	char *uri = strdup (file);
+	if (!uri) {
+		return NULL;
 	}
-
-	RArFp *arf = ar_open_file (arname, filename);
 	RIODesc *res = NULL;
-	if (arf) {
-		res = r_io_desc_new (io, &r_io_plugin_ar, file, rw, mode, arf);
-		if (res) {
-			res->name = strdup (filename);
+	const char *arname = strstr (uri, "://");
+	if (arname) {
+		arname += 3;
+		char *filename = strstr (arname, "//");
+		if (filename) {
+			*filename = 0;
+			filename += 2;
+		}
+
+		RArFp *arf = ar_open_file (arname, filename);
+		if (arf) {
+			res = r_io_desc_new (io, &r_io_plugin_ar, file, rw, mode, arf);
+			if (res) {
+				res->name = strdup (filename);
+			}
 		}
 	}
+	free (uri);
 	return res;
 }
 

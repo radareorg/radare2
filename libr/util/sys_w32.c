@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2021 - pancake */
+
 #include <r_types.h>
 #include <r_util.h>
 
@@ -98,7 +100,6 @@ R_API bool r_sys_cmd_str_full_w32(const char *cmd, const char *input, int ilen, 
 	if (sterr) {
 		*sterr = ReadFromPipe (fe, NULL);
 	}
-
 	if (fi && !CloseHandle (fi)) {
 		ErrorExit ("PipeIn CloseHandle");
 	}
@@ -121,7 +122,6 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE in, HANDLE ou
 	LPTSTR _cmdline_ = malloc (max_length);
 
 	if (!_cmdline_) {
-		R_LOG_ERROR ("Failed to allocate memory\n");
 		return false;
 	}
 
@@ -159,14 +159,13 @@ char *ReadFromPipe(HANDLE fh, int *outlen) {
 	DWORD dwRead;
 	CHAR chBuf[BUFSIZE];
 	BOOL bSuccess = FALSE;
-	char *str;
 	int strl = 0;
-	int strsz = BUFSIZE+1;
+	int strsz = BUFSIZE + 1;
 
 	if (outlen) {
 		*outlen = 0;
 	}
-	str = malloc (strsz);
+	char *str = malloc (strsz);
 	if (!str) {
 		return NULL;
 	}

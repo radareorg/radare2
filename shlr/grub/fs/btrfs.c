@@ -27,7 +27,7 @@
 #define BTRFS_SIGNATURE "_BHRfS_M"
 R_PACKED(
 struct btrfs_superblock
-{ 
+{
   grub_uint8_t dummy1[32];
   grub_uint16_t uuid[8];
   grub_uint8_t dummy2[16];

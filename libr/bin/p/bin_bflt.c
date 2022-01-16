@@ -37,8 +37,7 @@ static void __patch_reloc(RBuffer *buf, ut32 addr_to_patch, ut32 data_offset) {
 	r_buf_write_at (buf, addr_to_patch, (void *) val, sizeof (val));
 }
 
-static int search_old_relocation(struct reloc_struct_t *reloc_table,
-                                 ut32 addr_to_patch, int n_reloc) {
+static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_to_patch, int n_reloc) {
 	int i;
 	for (i = 0; i < n_reloc; i++) {
 		if (addr_to_patch == reloc_table[i].data_offset) {
@@ -278,7 +277,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return info;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[4];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);

@@ -60,9 +60,9 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 	return -1;
 }
 
-static int __close(RIODesc *desc) {
+static bool __close(RIODesc *desc) {
 	R_FREE (desc->data);
-	return 0;
+	return true;
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
@@ -93,7 +93,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	}
 	mal->size = 1;
 	mal->offset = 0;
-	pathname += strlen ("socket://");
+	pathname += strlen (SOCKETURI);
 
 	if (*pathname == '?') {
 		eprintf ("Usage: $ nc -l -p 9999 ; r2 socket://localhost:9999\n");

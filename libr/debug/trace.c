@@ -4,7 +4,7 @@
 
 // DO IT WITH SDB
 
-R_API RDebugTrace *r_debug_trace_new (void) {
+R_API RDebugTrace *r_debug_trace_new(void) {
 	RDebugTrace *t = R_NEW0 (RDebugTrace);
 	if (!t) {
 		return NULL;
@@ -26,7 +26,7 @@ R_API RDebugTrace *r_debug_trace_new (void) {
 	return t;
 }
 
-R_API void r_debug_trace_free (RDebugTrace *trace) {
+R_API void r_debug_trace_free(RDebugTrace *trace) {
 	if (!trace) {
 		return;
 	}
@@ -38,7 +38,7 @@ R_API void r_debug_trace_free (RDebugTrace *trace) {
 
 // TODO: added overlap/mask support here... wtf?
 // TODO: think about tagged traces
-R_API int r_debug_trace_tag (RDebug *dbg, int tag) {
+R_API int r_debug_trace_tag(RDebug *dbg, int tag) {
 	//if (tag>0 && tag<31) core->dbg->trace->tag = 1<<(sz-1);
 	return (dbg->trace->tag = (tag>0)? tag: UT32_MAX);
 }
@@ -274,7 +274,7 @@ static int r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 	return true;
 }
 
-R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
+R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 	RDebugTracepoint *tp;
 	int tag = dbg->trace->tag;
 	if (!r_debug_trace_is_traceable (dbg, addr)) {
@@ -297,7 +297,7 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	return tp;
 }
 
-R_API void r_debug_trace_reset (RDebug *dbg) {
+R_API void r_debug_trace_reset(RDebug *dbg) {
 	RDebugTrace *t = dbg->trace;
 	r_list_purge (t->traces);
 	ht_pp_free (t->ht);

@@ -1,42 +1,40 @@
 # optimized for windows
 ecd
-k one=cyan
-k two=white
-ec fname `k one`
-ec label `k one`
-ec fline `k one`
-ec flag `k one`
-ec offset `k two`
+ec fname cyan
+ec label cyan
+ec fline cyan
+ec flag green
+ec offset white
 ec comment red
 ec usrcmt green
 ec flow green
 ec flow2 green
 ec b0x00 white
 ec b0xff red
-ec bin cyan
+ec bin gray
 ec b0x7f white
 ec other gray
 ec btext cyan
 ec invalid red
 ec trap red
-ec ucall cyan
+ec ucall green
 ec ujmp green
 ec args green
 ec help yellow
 ec prompt cyan
-ec mov gray
+ec mov white
 ec math gray
-ec push yellow
-ec reg white
-ec creg white
+ec push cyan
+ec reg yellow
+ec creg yellow
 ec num cyan
 ec invalid red
 ec swi cyan
-ec cmp yellow
-ec call cyan
+ec cmp white
+ec call green
 ec cjmp green
 ec jmp green
-ec pop yellow
+ec pop cyan
 ec linehl rgb:004
 ec graph.true green
 ec graph.false red

@@ -7,5 +7,5 @@ Name: r_lang
 Description: radare foundation libraries
 Version: @VERSION@
 Requires: r_util r_cons
-Libs: -L${libdir} -lr_lang  
-Cflags: -I${includedir}/libr 
+Libs: -L${libdir} -lr_lang
+Cflags: -I${includedir}/libr

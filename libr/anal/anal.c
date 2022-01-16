@@ -117,6 +117,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
+	anal->esil = NULL; // nul on purpose, otherwise many analysisi fail O_O
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
@@ -141,7 +142,7 @@ R_API RAnal *r_anal_new(void) {
 	return anal;
 }
 
-R_API void r_anal_plugin_free (RAnalPlugin *p) {
+R_API void r_anal_plugin_free(RAnalPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
@@ -154,6 +155,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 		return NULL;
 	}
 	/* TODO: Free anals here */
+	free (a->pincmd);
 	r_list_free (a->fcns);
 	ht_up_free (a->ht_addr_fun);
 	ht_pp_free (a->ht_name_fun);
@@ -229,7 +231,7 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 			}
 #endif
 			anal->cur = h;
-			r_anal_set_reg_profile (anal);
+			r_anal_set_reg_profile (anal, NULL);
 			return true;
 		}
 	}
@@ -242,7 +244,10 @@ R_API char *r_anal_get_reg_profile(RAnal *anal) {
 }
 
 // deprecate.. or at least reuse get_reg_profile...
-R_API bool r_anal_set_reg_profile(RAnal *anal) {
+R_API bool r_anal_set_reg_profile(RAnal *anal, const char *p) {
+	if (p) {
+		return r_reg_set_profile_string (anal->reg, p);
+	}
 	bool ret = false;
 	if (anal && anal->cur && anal->cur->set_reg_profile) {
 		ret = anal->cur->set_reg_profile (anal);
@@ -315,7 +320,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	case 64:
 		if (anal->bits != bits) {
 			anal->bits = bits;
-			r_anal_set_reg_profile (anal);
+			r_anal_set_reg_profile (anal, NULL);
 		}
 		return true;
 	}
@@ -394,7 +399,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	}
 }
 
-R_API RList* r_anal_get_fcns (RAnal *anal) {
+R_API RList* r_anal_get_fcns(RAnal *anal) {
 	// avoid received to free this thing
 	anal->fcns->free = NULL;
 	return anal->fcns;
@@ -456,6 +461,7 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 	switch (query) {
 	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
 	case R_ANAL_ARCHINFO_ALIGN:
 		if (anal->cur && anal->cur->archinfo) {
 			return anal->cur->archinfo (anal, query);
@@ -691,6 +697,10 @@ R_API void r_anal_bind(RAnal *anal, RAnalBind *b) {
 		b->anal = anal;
 		b->get_fcn_in = r_anal_get_fcn_in;
 		b->get_hint = r_anal_hint_get;
+		b->encode = (RAnalEncode)r_anal_opasm;
+		b->decode = (RAnalDecode)r_anal_op;
+		b->opinit = r_anal_op_init;
+		b->opfini = r_anal_op_fini;
 	}
 }
 

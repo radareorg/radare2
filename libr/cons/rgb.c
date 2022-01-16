@@ -74,10 +74,10 @@ static ut32 __approximate_rgb(int r, int g, int b) {
 	b &= 0xff;
 	return (ut32)((G * M * M)  + (g * M) + b) + 16;
 #else
-	const int k = (256.0 / 6);
-	r = R_DIM (r / k, 0, 6);
-	g = R_DIM (g / k, 0, 6);
-	b = R_DIM (b / k, 0, 6);
+	const int k = (int)(256.0 / 6);
+	r = R_DIM ((int)(r / k), 0, 6);
+	g = R_DIM ((int)(g / k), 0, 6);
+	b = R_DIM ((b / k), 0, 6);
 	return 16 + (r * 36) + (g * 6) + b;
 #endif
 }
@@ -208,8 +208,7 @@ R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
 }
 
 /* Compute color string depending on cons->color */
-static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b,
-                           st8 id16) {
+static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b, st8 id16) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
 
 	if (sz < 4) { // must have at least room for "<esc>[m\0"
@@ -253,8 +252,11 @@ static void r_cons_rgb_gen(RConsColorMode mode, char *outstr, size_t sz, ut8 att
 			c = id16 % 8;
 			bright = id16 >= 8 ? 60 : 0;
 		} else {
-			bright = (r == 0x80 && g == 0x80 && b == 0x80) ? 53
-			         : (r == 0xff || g == 0xff || b == 0xff) ? 60 : 0;  // eco bright-specific
+			bright = (r == 0x80 && g == 0x80 && b == 0x80)
+				? 53
+				: (r == 0xff || g == 0xff || b == 0xff)
+					? 60
+					: 0;  // eco bright-specific
 			if (r == g && g == b) {
 				r = (r > 0x7f) ? 1 : 0;
 				g = (g > 0x7f) ? 1 : 0;
@@ -300,14 +302,14 @@ R_API char *r_cons_rgb_str_mode(RConsColorMode mode, char *outstr, size_t sz, RC
 	// APPEND
 	size_t len = strlen (outstr);
 	r_cons_rgb_gen (mode, outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b,
-	                rcolor->id16);
+			rcolor->id16);
 
 	return outstr;
 }
 
 /* Return the computed color string for the specified color */
 R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
-	return r_cons_rgb_str_mode (r_cons_singleton ()->context->color_mode, outstr, sz, rcolor);
+	return r_cons_rgb_str_mode (r_cons_context ()->color_mode, outstr, sz, rcolor);
 }
 
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {

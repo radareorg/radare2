@@ -26,10 +26,11 @@ typedef union {
 
 typedef enum {
 	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
+	RNCLT, RNCGT, // comparison operators
 	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
 	RNCNEG='~', RNCAND='&', RNCOR='|', RNCXOR='^',
 	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')',
-	RNCSHL='<', RNCSHR = '>', RNCROL = '#', RNCROR = '$'
+	RNCSHL='<', RNCSHR = '>', RNCROL = '#', RNCROR = '$',
 } RNumCalcToken;
 
 typedef struct r_num_calc_t {
@@ -72,6 +73,7 @@ R_API const char *r_num_get_name(RNum *num, ut64 n);
 R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only);
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
 R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off);
+R_API bool r_num_segaddr(ut64 addr, ut64 sb, int sg, ut32 *a, ut32 *b);
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 R_API ut64 r_num_math(RNum *num, const char *str);

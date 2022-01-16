@@ -6,7 +6,7 @@ INCDIR=${PREFIX}/include
 VAPIDIR=${DATADIR}/vala/vapi/
 MANDIR=${DATADIR}/man/man1
 
-SDBVER=1.8.1
+SDBVER=1.8.3
 
 BUILD_MEMCACHE=0
 
@@ -61,6 +61,7 @@ AR?=ar
 CC?=gcc
 EXT_EXE=
 EXT_SO=.so
+EXT_AR=.a
 
 ifneq (,$(findstring MINGW32,${OSTYPE}))
 OS=w32
@@ -78,6 +79,7 @@ LDFLAGS_SHARED?=-shared
 
 ifeq (${OS},w32)
 EXT_EXE=.exe
+EXT_AR=.lib
 EXT_SO=.dll
 LDFLAGS_SHARED=-shared
 endif
@@ -94,16 +96,17 @@ OSTYPE=MINGW32
 endif
 
 ifneq (,$(findstring MINGW,${OSTYPE})$(findstring MSYS,${OSTYPE})$(findstring CYGWIN,${OSTYPE}))
-EXT_SO=dll
+EXT_SO=.dll
+EXT_AR=.a
 SOVER=${EXT_SO}
 CFLAGS+=-DUNICODE -D_UNICODE
 else
-EXT_SO=so
+EXT_SO=.so
 SOVER=${EXT_SO}.${SDBVER}
 endif
 ifeq (${OS},Darwin)
-EXT_SO=dylib
-SOVER=dylib
+EXT_SO=.dylib
+SOVER=.dylib
 LDFLAGS+=-dynamic
 LDFLAGS_SHARED+=-dynamiclib
   ifeq (${ARCH},i386)
@@ -120,7 +123,7 @@ CFLAGS+=-DMINGW32=1
     else
 CFLAGS+=-fPIC
 SOVERSION=0
-LDFLAGS_SHARED?=-fPIC 
+LDFLAGS_SHARED?=-fPIC
     endif
   endif
 LDFLAGS_SHARED+=-Wl,-soname,libsdb.so.$(SOVERSION)

@@ -1,4 +1,4 @@
-OBJ_JAVA=bin_java.o 
+OBJ_JAVA=bin_java.o
 
 SHARED2_JAVA=$(addprefix ../,${SHARED_JAVA})
 

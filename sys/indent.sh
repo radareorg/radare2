@@ -107,7 +107,7 @@ indentFile() {
 			rm -f .tmp-clang-format
 		fi
 		cp -f .clang-format ${D}/.clang-format
-		cd "$CWD" 
+		cd "$CWD"
 		(
 			clang-format "${IFILE}" > .tmp-format
 		)
@@ -153,7 +153,7 @@ indentFile() {
 	# 0xa0
 	mv .tmp-format .tmp-format2
 	perl -ne 's/[\xa0\xc2]//g;print' < .tmp-format2 > .tmp-format
-	# remove spaces after #if 
+	# remove spaces after #if
 	#mv .tmp-format .tmp-format2
 	#perl -ne 's/#if\ */#if /g;print' < .tmp-format2 > .tmp-format
 	# add spce after every //

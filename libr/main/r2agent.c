@@ -14,7 +14,7 @@ extern int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, voi
 #define USE_IOS_JETSAM 0
 #endif
 
-static int usage (int v) {
+static int usage(int v) {
 	printf ("Usage: r2agent [-adhs] [-p port]\n"
 	"  -a        listen for everyone (localhost by default)\n"
 	"  -d        run in daemon mode (background)\n"

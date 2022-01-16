@@ -103,7 +103,7 @@ R_API const char *r_str_trim_head_wp(const char *str) {
  * the string is changed in place */
 R_API void r_str_trim_head(char *str) {
 	char *p = (char *)r_str_trim_head_ro (str);
-	if (p) {
+	if (p && p != str) {
 		memmove (str, p, strlen (p) + 1);
 	}
 }

@@ -11,7 +11,7 @@
  - virtual machine
 */
 
-static RBuffer *build (REgg *egg) {
+static RBuffer *build(REgg *egg) {
 	RBuffer *buf = r_buf_new ();
 	char *key = r_egg_option_get (egg, "key");
 	char *seed = r_egg_option_get (egg, "seed");

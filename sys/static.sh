@@ -2,6 +2,17 @@
 
 [ -z "${STATIC_BINS}" ] && STATIC_BINS=0
 
+if [ "$1" = "--help" ]; then
+	echo "Usage: sys/static.sh [--help,--meson]"
+	exit 0
+fi
+
+if [ "$1" = "--meson" ]; then
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        ninja -C build && ninja -C build install
+	exit $?
+fi
+
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
@@ -12,13 +23,16 @@ Linux)
 	if [ -n "`gcc -v 2>&1 | grep gcc`" ]; then
 		export AR=gcc-ar
 	fi
+	CFLAGS_STATIC=-static
 	;;
 Darwin)
 	CFLAGS="${CFLAGS} -flto"
 	LDFLAGS="${LDFLAGS} -flto"
+	CFLAGS_STATIC=""
 	;;
 DragonFly|OpenBSD)
 	LDFLAGS="${LDFLAGS} -lpthread -lkvm -lutil -lm"
+	CFLAGS_STATIC=-static
 	;;
 esac
 MAKE=make
@@ -59,9 +73,9 @@ if [ 1 = "${DOCFG}" ]; then
 	./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv $CFGARGS || exit 1
 fi
 ${MAKE} -j 8 || exit 1
-BINS="rarun2 rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2 r2r"
+BINS="rarun2 r2pm rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2 r2r"
 # shellcheck disable=SC2086
-export CFLAGS="-static ${CFLAGS}"
+export CFLAGS="${CFLAGS_STATIC} ${CFLAGS}"
 for a in ${BINS} ; do
 (
 	cd binr/$a
@@ -70,7 +84,7 @@ for a in ${BINS} ; do
 		${MAKE} -j4 || exit 1
 	else
 		if [ "${STATIC_BINS}" = 1 ]; then
-			CFLAGS=-static LDFLAGS=-static ${MAKE} -j4 || exit 1
+			CFLAGS=${CFLAGS_STATIC} LDFLAGS=${CFLAGS_STATIC} ${MAKE} -j4 || exit 1
 		else
 			${MAKE} -j4 || exit 1
 		fi

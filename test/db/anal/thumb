@@ -18,3 +18,24 @@ EXPECT=<<EOF
 \ 0x00000048      case.0xa.0,c  pop {r4, pc}
 EOF
 RUN
+
+NAME=thumb unaligned mov, pc
+FILE=malloc://512
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=16
+wx 01308fe213ff2fe178460c30c0460190491a921a0b2701df2f62696e2f736800
+s8
+af
+aeim
+aepc 8
+2ds
+dr?r0
+x 16 @r:r0
+EOF
+EXPECT=<<EOF
+0x00000018
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000018  2f62 696e 2f73 6800 0000 0000 0000 0000  /bin/sh.........
+EOF
+RUN

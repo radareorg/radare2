@@ -8,9 +8,9 @@ RUN
 
 NAME=elf swift demangle (requires swift-demangle program)
 FILE=bins/elf/analysis/hello-swift
-BROKEN=1
+ARGS=-e bin.demangle.trylib=false
 CMDS=isq~0x004009e0
 EXPECT=<<EOF
-0x004009e0 16 Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
+0x004009e0 16 Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
 EOF
 RUN

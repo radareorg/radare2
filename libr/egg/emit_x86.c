@@ -32,7 +32,7 @@ static char *regs[] = { "eax", "ebx", "ecx", "edx", "esi", "edi", "ebp" };
 
 # define R_NGP (sizeof (regs)/sizeof (char *))
 
-static void emit_init (REgg *egg) {
+static void emit_init(REgg *egg) {
 // TODO: add 'andb rsp, 0xf0'
 if (attsyntax) {
 	r_egg_printf (egg, "mov %%" R_SP ", %%" R_BP "\n");
@@ -41,7 +41,7 @@ if (attsyntax) {
 }
 }
 
-static char *emit_syscall (REgg *egg, int nargs) {
+static char *emit_syscall(REgg *egg, int nargs) {
 	char p[512];
 	if (attsyntax) {
 		return strdup (": mov $`.arg`, %" R_AX "\n: " SYSCALL_ATT "\n");
@@ -72,7 +72,7 @@ static char *emit_syscall (REgg *egg, int nargs) {
 	return strdup (p);
 }
 
-static void emit_frame (REgg *egg, int sz) {
+static void emit_frame(REgg *egg, int sz) {
 	if (sz < 1) {
 		return;
 	}
@@ -90,7 +90,7 @@ static void emit_frame (REgg *egg, int sz) {
 	}
 }
 
-static void emit_frame_end (REgg *egg, int sz, int ctx) {
+static void emit_frame_end(REgg *egg, int sz, int ctx) {
 	if (sz>0) {
 		if (attsyntax) {
 			r_egg_printf (egg, "  add $%d, %%"R_SP"\n", sz);
@@ -118,7 +118,7 @@ static void emit_comment(REgg *egg, const char *fmt, ...) {
 	va_end (ap);
 }
 
-static void emit_equ (REgg *egg, const char *key, const char *value) {
+static void emit_equ(REgg *egg, const char *key, const char *value) {
 	r_egg_printf (egg, ".equ %s,%s\n", key, value);
 }
 
@@ -258,7 +258,7 @@ static void emit_jmp(REgg *egg, const char *str, int atr) {
 	}
 }
 
-static void emit_arg (REgg *egg, int xs, int num, const char *str) {
+static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 	int d = atoi (str);
 	if (!attsyntax && (*str == '$')) {
 		str = str + 1;
@@ -318,7 +318,7 @@ static void emit_get_result(REgg *egg, const char *ocn) {
 	}
 }
 
-static void emit_restore_stack (REgg *egg, int size) {
+static void emit_restore_stack(REgg *egg, int size) {
 	if (attsyntax) {
 		r_egg_printf (egg, "  add $%d, %%" R_SP " /* args */\n", size);
 	} else {
@@ -326,11 +326,11 @@ static void emit_restore_stack (REgg *egg, int size) {
 	}
 }
 
-static void emit_get_while_end (REgg *egg, char *str, const char *ctxpush, const char *label) {
+static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
 	sprintf (str, "  push %s\n  jmp %s\n", ctxpush, label);
 }
 
-static void emit_while_end (REgg *egg, const char *labelback) {
+static void emit_while_end(REgg *egg, const char *labelback) {
 #if 0
 	if (attsyntax) {
 		r_egg_printf (egg, "  pop %%"R_AX"\n");
@@ -345,7 +345,7 @@ static void emit_while_end (REgg *egg, const char *labelback) {
 }
 
 // XXX: this is wrong
-static void emit_get_var (REgg *egg, int type, char *out, int idx) {
+static void emit_get_var(REgg *egg, int type, char *out, int idx) {
 	switch (type) {
 	case 0:  /* variable */
 		if (idx > 0) {
@@ -380,7 +380,7 @@ static void emit_get_var (REgg *egg, int type, char *out, int idx) {
 	}
 }
 
-static void emit_trap (REgg *egg) {
+static void emit_trap(REgg *egg) {
 	r_egg_printf (egg, "  int3\n");
 }
 
@@ -537,7 +537,7 @@ static const char* emit_regs(REgg *egg, int idx) {
 	return regs[idx%R_NGP];
 }
 
-static void emit_get_ar (REgg *egg, char *out, int idx) {
+static void emit_get_ar(REgg *egg, char *out, int idx) {
 	const char *reg = emit_regs (egg, R_REG_AR_OFF + idx);
 
 	if (reg) {

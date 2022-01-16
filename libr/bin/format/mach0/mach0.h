@@ -36,6 +36,18 @@
 #define CSSLOT_ENTITLEMENTS  5
 #define CSSLOT_CMS_SIGNATURE 0x10000
 
+typedef enum {
+	R_FIXUP_EVENT_NONE = 0,
+	R_FIXUP_EVENT_REBASE = 1,
+	R_FIXUP_EVENT_REBASE_AUTH = 2,
+	R_FIXUP_EVENT_BIND = 4,
+	R_FIXUP_EVENT_BIND_AUTH = 8,
+} RFixupEvent;
+
+#define R_FIXUP_EVENT_MASK_BIND_ALL (R_FIXUP_EVENT_BIND | R_FIXUP_EVENT_BIND_AUTH)
+#define R_FIXUP_EVENT_MASK_REBASE_ALL (R_FIXUP_EVENT_REBASE | R_FIXUP_EVENT_REBASE_AUTH)
+#define R_FIXUP_EVENT_MASK_ALL (R_FIXUP_EVENT_MASK_BIND_ALL | R_FIXUP_EVENT_MASK_REBASE_ALL)
+
 struct section_t {
 	ut64 offset;
 	ut64 addr;
@@ -109,6 +121,7 @@ struct super_blob_t {
 struct MACH0_(opts_t) {
 	bool verbose;
 	ut64 header_at;
+	ut64 symbols_off;
 };
 
 struct MACH0_(obj_t) {
@@ -118,6 +131,9 @@ struct MACH0_(obj_t) {
 	char *compiler;
 	int nsegs;
 	struct r_dyld_chained_starts_in_segment **chained_starts;
+	struct dyld_chained_fixups_header fixups_header;
+	ut64 fixups_offset;
+	ut64 fixups_size;
 	struct MACH0_(section) *sects;
 	int nsects;
 	struct MACH0_(nlist) *symtab;
@@ -170,6 +186,7 @@ struct MACH0_(obj_t) {
 	int func_size;
 	bool verbose;
 	ut64 header_at;
+	ut64 symbols_off;
 	void *user;
 	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
 	struct symbol_t *symbols;
@@ -177,6 +194,54 @@ struct MACH0_(obj_t) {
 	int (*original_io_read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
 	bool rebasing_buffer;
 };
+
+typedef struct {
+	RFixupEvent type;
+	struct MACH0_(obj_t) *bin;
+	ut64 offset;
+	ut64 raw_ptr;
+} RFixupEventDetails;
+
+typedef struct {
+	RFixupEvent type;
+	struct MACH0_(obj_t) *bin;
+	ut64 offset;
+	ut64 raw_ptr;
+	ut64 ordinal;
+	ut64 addend;
+} RFixupBindEventDetails;
+
+typedef struct {
+	RFixupEvent type;
+	struct MACH0_(obj_t) *bin;
+	ut64 offset;
+	ut64 raw_ptr;
+	ut32 ordinal;
+	ut8 key;
+	ut8 addr_div;
+	ut16 diversity;
+} RFixupBindAuthEventDetails;
+
+typedef struct {
+	RFixupEvent type;
+	struct MACH0_(obj_t) *bin;
+	ut64 offset;
+	ut64 raw_ptr;
+	ut64 ptr_value;
+} RFixupRebaseEventDetails;
+
+typedef struct {
+	RFixupEvent type;
+	struct MACH0_(obj_t) *bin;
+	ut64 offset;
+	ut64 raw_ptr;
+	ut64 ptr_value;
+	ut8 key;
+	ut8 addr_div;
+	ut16 diversity;
+} RFixupRebaseAuthEventDetails;
+
+typedef bool (*RFixupCallback)(void * context, RFixupEventDetails * event_details);
 
 void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf);
 struct MACH0_(obj_t) *MACH0_(mach0_new)(const char *file, struct MACH0_(opts_t) *options);
@@ -211,4 +276,5 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
 struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf);
 void MACH0_(mach_headerfields)(RBinFile *bf);
 RList *MACH0_(mach_fields)(RBinFile *bf);
+void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *obj, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void *context);
 #endif

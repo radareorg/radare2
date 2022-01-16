@@ -57,6 +57,7 @@ endif
 #       Make control file.
 	echo "Name: ${PACKAGE}" > $@/control
 	echo "Package: ${PACKAGE}" >> $@/control
+	echo "Author: pancake@nopcode.org" >> $@/control
 	echo "Version: ${VERSION}" >> $@/control
 	echo "Section: ${SECTION}" >> $@/control
 	echo "Priority: ${PRIORITY}" >> $@/control

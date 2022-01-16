@@ -201,14 +201,15 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			r_str_cpy (insn->mnemonic, tmpstr);
 			free (tmpstr);
 		}
-		char *buf_asm = sdb_fmt ("%s%s%s",
+		char opstr[256];
+		snprintf (opstr, sizeof (opstr) - 1, "%s%s%s",
 			insn->mnemonic,
-			insn->op_str[0]?" ":"",
+			insn->op_str[0]? " ": "",
 			insn->op_str);
 		if (!disp_hash) {
-			r_str_replace_char (buf_asm, '#', 0);
+			r_str_replace_char (opstr, '#', 0);
 		}
-		r_strbuf_set (&op->buf_asm, buf_asm);
+		r_strbuf_set (&op->buf_asm, opstr);
 	}
 	cs_free (insn, n);
 	beach:

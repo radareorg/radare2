@@ -129,24 +129,36 @@ static ut64 getRefPtr(RCoreObjc *o, ut64 classMethodsVA, bool *rfound) {
 
 static bool objc_build_refs(RCoreObjc *objc) {
 	ut64 off;
-	r_return_val_if_fail (objc->_const && objc->_selrefs, false);
+	if (!objc->_const || !objc->_selrefs) {
+		return false;
+	}
 
 	const ut64 va_const = objc->_const->vaddr;
 	size_t ss_const = objc->_const->vsize;
 	const ut64 va_selrefs = objc->_selrefs->vaddr;
 	size_t ss_selrefs = objc->_selrefs->vsize;
-
 	// TODO: check if ss_const or ss_selrefs are too big before going further
 	size_t maxsize = R_MAX (ss_const, ss_selrefs);
 	maxsize = R_MIN (maxsize, objc->file_size);
-
+	if (ss_const > maxsize) {
+		if (objc->core->bin->verbose) {
+			eprintf ("aao: Truncating ss_const from %u to %u\n", (int)ss_const, (int)maxsize);
+		}
+		ss_const = maxsize;
+	}
+	if (ss_selrefs > maxsize) {
+		if (objc->core->bin->verbose) {
+			eprintf ("aao: Truncating ss_selrefs from %u to %u\n", (int)ss_selrefs, (int)maxsize);
+		}
+		ss_selrefs = maxsize;
+	}
 	ut8 *buf = calloc (1, maxsize);
 	if (!buf) {
 		return false;
 	}
 	const size_t word_size = objc->word_size; // assuming 8 because of the read_le64
 	if (!r_io_read_at (objc->core->io, objc->_const->vaddr, buf, ss_const)) {
-		eprintf ("aao: Cannot read the whole const section %zu\n", ss_const);
+		eprintf ("aao: Cannot read the whole const section %u\n", (unsigned int)ss_const);
 		return false;
 	}
 	for (off = 0; off + word_size < ss_const && off + word_size < maxsize; off += word_size) {
@@ -261,14 +273,14 @@ static bool objc_find_refs(RCore *core) {
 		ut64 delta = (objc2ClassMethSize * count);
 		ut64 to = classMethodsVA + delta - 8;
 		if (delta > objc->file_size) {
-			eprintf ("Workaround: Corrupted objc data? checking next %llx !< %llx\n", classMethodsVA, to);
+			eprintf ("Workaround: Corrupted objc data? checking next %"PFMT64x" !< %"PFMT64x"\n", classMethodsVA, to);
 			count = (objc->_data->vsize / objc2ClassMethSize) - 1;
 			delta = objc2ClassMethSize * count;
 			to = classMethodsVA + delta;
 
 		}
 		if (classMethodsVA > to) {
-			eprintf ("Warning: Fuzzed binary or bug in here, checking next %llx !< %llx\n", classMethodsVA, to);
+			eprintf ("Warning: Fuzzed binary or bug in here, checking next %"PFMT64x" !< %"PFMT64x"\n", classMethodsVA, to);
 			break;
 		}
 		for (va = classMethodsVA; va < to; va += objc2ClassMethSize) {
@@ -303,7 +315,7 @@ static bool objc_find_refs(RCore *core) {
 	const ut64 ss_selrefs = va_selrefs + objc->_selrefs->vsize;
 
 	char rs[128];
-	snprintf (rs, sizeof (rs), "Found %zu objc xrefs...", total_xrefs);
+	snprintf (rs, sizeof (rs), "Found %u objc xrefs...", (unsigned int)total_xrefs);
 	r_print_rowlog (core->print, rs);
 	size_t total_words = 0;
 	ut64 a;
@@ -313,7 +325,7 @@ static bool objc_find_refs(RCore *core) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, a, word_size, NULL);
 		total_words++;
 	}
-	snprintf (rs, sizeof (rs), "Found %zu objc xrefs in %zu dwords.", total_xrefs, total_words);
+	snprintf (rs, sizeof (rs), "Found %u objc xrefs in %u dwords.", (unsigned int)total_xrefs, (unsigned int)total_words);
 	r_print_rowlog_done (core->print, rs);
 	core_objc_free (objc);
 	return true;

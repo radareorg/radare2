@@ -259,6 +259,7 @@ d "pop gs" 0fa9
 d "pop ss" 17
 d "popfd" 9D
 d "por mm0, qword [eax]" 0feb00
+dB "prefetch byte [eax]" 0f0d
 d "prefetchnta byte [eax]" 0f1800
 d "prefetcht0 byte [eax]" 0f1808
 d "prefetcht1 byte [eax]" 0f1810
@@ -301,6 +302,7 @@ d "rdpmc" 0f33
 d "rdtsc" 0f31
 d "rdtscp" 0f01f9
 d "repne movsb byte es:[edi], byte ptr [esi]" f2a4
+dB "invalid" f389d8 # rep mov eax, ecb - not string instruction
 d "retf 0" CA0000
 d "rol byte [eax], 0" c00000
 d "rol byte [eax], 1" d000
@@ -438,7 +440,6 @@ dB "pextrq dword [eax], xmm0, 0" 660f3a16
 dB "pinsrq xmm0, dword [eax], 0" 660f3a22
 dB "pmovmskb eax, mm0" 0fd7
 dB "popcnt eax, qword [eax]" f30fb8
-dB "prefetch byte [eax]" 0f0d00
 d "rep movsb byte es:[edi], byte ptr [esi]" f3a4
 dB "retw" 66c3
 dB "skinit" 0f01de
@@ -501,10 +502,9 @@ d "pmulld xmm0, xmm0" 660f3840c0
 d "phminposuw xmm0, xmm0" 660f3841c0
 d "movbe dword [eax], eax" 0f38f100
 d "movbe eax, dword [eax]" 0f38f000
-d "mulsd xmm7, xmm7" 66f3f20f59ff
-dB "mulss xmm7, xmm7" 66f2f0f59ff0
+d "mulss xmm7, xmm7" f30f59ff
 d "mulpd xmm7, xmm7" 660f59ff
-dB "mulsd xmm7, xmm7" f2660f59ff
+d "mulsd xmm7, xmm7" f20f59ff
 d "mulps xmm7, xmm7" 0f59ff
 d "mpsadbw xmm0, xmm0, 0" 660f3a42c000
 d "pcmpestrm xmm0, xmm0, 0" 660f3a60c000
@@ -1257,6 +1257,8 @@ ad "lea edx, [0x2c4b]" 8d154b2c0000
 a "les eax, [eax]" c400
 a "les eax, [eax+12]" c4400c
 a "les eax, [eax-233]" c48017ffffff
+a "les ebx, [ecx]" c419
+aB "les ebx, [esp]" c41c24
 a "lfence" 0faee8
 aB "lfs eax, dword [eax]" 0fb400
 a "lgdt [eax]" 0f0110
@@ -1482,10 +1484,9 @@ aB "mulpd xmm7, xmm7" 660f59ff
 aB "mulps xmm0, xmmword [eax]" 0f5900
 aB "mulps xmm7, xmm7" 0f59ff
 aB "mulsd xmm0, qword [eax]" f20f5900
-aB "mulsd xmm7, xmm7" 66f3f20f59ff
-aB "mulsd xmm7, xmm7" f2660f59ff
+aB "mulsd xmm7, xmm7" f20f59ff
 aB "mulss xmm0, dword [eax]" f30f5900
-aB "mulss xmm7, xmm7" 66f2f0f59ff0
+aB "mulss xmm7, xmm7" f30f59ff
 ad "mwait" 0f01c9
 aB "neg byte [eax]" f618
 ad "nop" 90
@@ -1647,7 +1648,7 @@ a "pop gs" 0fa9
 a "pop ss" 17
 aB "por mm0, qword [eax]" 0feb00
 aB "por xmm0, xmmword [eax]" 660feb00
-aB "prefetch byte [eax]" 0f0d00
+a "prefetch byte [eax]" 0f0d
 aB "prefetchnta byte [eax]" 0f1800
 aB "prefetcht0 byte [eax]" 0f1808
 aB "prefetcht1 byte [eax]" 0f1810

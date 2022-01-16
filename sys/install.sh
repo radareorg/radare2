@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$(id -u)" = 0 ]; then
-	echo "[XX] Do not run this script as root!"
+	echo "[WW] Do not run this script as root!"
 	if [ -n "${SUDO_USER}" ]; then
 		echo "[--] Downgrading credentials to ${SUDO_USER}"
 		exec sudo -u "${SUDO_USER}" sys/install.sh $*
@@ -57,8 +57,9 @@ export MAKE="$MAKE"
 
 [ -z "${INSTALL_TARGET}" ] && INSTALL_TARGET=symstall
 
-# find root
-cd "$(dirname "$0")" ; cd ..
+# find
+cd "$(dirname $0)"/..
+pwd
 
 # update
 if [ "$1" != "--without-pull" ]; then
@@ -66,7 +67,13 @@ if [ "$1" != "--without-pull" ]; then
 		git branch | grep "^\* master" > /dev/null
 		if [ $? = 0 ]; then
 			echo "WARNING: Updating from remote repository"
-			git pull
+			# Attempt to update from an existing remote
+			UPSTREAM_REMOTE=$(git remote -v | grep 'radareorg/radare2 (fetch)' | cut -f1 | head -n1)
+			if [ -n "$UPSTREAM_REMOTE" ]; then
+				git pull "$UPSTREAM_REMOTE" master
+			else
+				git pull https://github.com/radareorg/radare2 master
+			fi
 		fi
 	fi
 else
@@ -99,6 +106,22 @@ if [ "${USE_SU}" = 1 ]; then
 	SUDO="/bin/su -m root -c"
 fi
 
+${SHELL} --help 2> /dev/null | grep -q fish
+if [ $? = 0 ]; then
+	SHELL=/bin/sh
+else
+	# TCSH
+	${SHELL} --help 2>&1 | grep -q vfork
+	if [ $? = 0 ]; then
+		SHELL=/bin/sh
+		echo IS ASH
+	fi
+fi
+
+if [ ! -d shlr/capstone ]; then
+	./preconfigure
+fi
+
 if [ "${M32}" = 1 ]; then
 	${SHELL} ./sys/build-m32.sh ${ARGS} || exit 1
 elif [ "${HARDEN}" = 1 ]; then
@@ -108,6 +131,8 @@ elif [ "${HARDEN}" = 1 ]; then
 else
 	# shellcheck disable=SC2048
 	# shellcheck disable=SC2086
+	echo ${SHELL} ./sys/build.sh ${ARGS}
+	pwd
 	${SHELL} ./sys/build.sh ${ARGS} || exit 1
 fi
 

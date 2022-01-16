@@ -15,6 +15,7 @@ static const struct {
 	{ "rc6", R_CRYPTO_RC6 },
 	{ "aes-ecb", R_CRYPTO_AES_ECB },
 	{ "aes-cbc", R_CRYPTO_AES_CBC },
+	{ "aes-wrap", R_CRYPTO_AES_WRAP },
 	{ "ror", R_CRYPTO_ROR },
 	{ "rol", R_CRYPTO_ROL },
 	{ "rot", R_CRYPTO_ROT },
@@ -127,9 +128,7 @@ R_API bool r_crypto_use(RCrypto *cry, const char *algo) {
 	r_list_foreach (cry->plugins, iter, h) {
 		if (h && h->use && h->use (algo)) {
 			cry->h = h;
-			cry->key_len = h->get_key_size (cry);
-			cry->key = calloc (1, cry->key_len);
-			return cry->key != NULL;
+			return cry->h != NULL;
 		}
 	}
 	return false;
@@ -142,6 +141,8 @@ R_API bool r_crypto_set_key(RCrypto *cry, const ut8* key, int keylen, int mode, 
 	if (!cry || !cry->h || !cry->h->set_key) {
 		return false;
 	}
+	cry->key_len = keylen;
+	cry->key = calloc (1, cry->key_len);
 	return cry->h->set_key (cry, key, keylen, mode, direction);
 }
 

@@ -2,11 +2,10 @@
 
 #include <r_core.h>
 
-R_API int r_core_patch_line(RCore *core, char *str) {
-	char *p, *q;
-	p = strchr (str + 1, ' ');
+R_API bool r_core_patch_line(RCore *core, char *str) {
+	char *q, *p = strchr (str + 1, ' ');
 	if (!p) {
-		return 0;
+		return false;
 	}
 	*p = 0;
 	for (++p; *p == ' '; p++) {
@@ -44,20 +43,20 @@ R_API int r_core_patch_line(RCore *core, char *str) {
 		r_core_cmdf (core, "wx %s", p);
 		break;
 	}
-	return 1;
+	return true;
 }
 
-static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
+static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	char tmp[128];
 	char *s, *p, *q, *off;
 	RBuffer *b = r_buf_new ();
 	if (!b) {
-		return 0;
+		return false;
 	}
 	p = off = strdup (str);
 	if (!p) {
 		r_buf_free (b);
-		return 0;
+		return false;
 	}
 	for (;*p;) {
 		if (*p == '\n') {
@@ -103,7 +102,7 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	r_core_write_at (core, *noff, tmpbuf, tmpsz);
 	*noff += r_buf_size (b);
 	free (off);
-	return 1;
+	return true;
 }
 
 R_API int r_core_patch(RCore *core, const char *patch) {
@@ -117,7 +116,7 @@ R_API int r_core_patch(RCore *core, const char *patch) {
 	for (; *p; p++) {
 		/* read until newline */
 		if (!*p || *p == '\n') {
-			*p++ = 0; 
+			*p++ = 0;
 		} else {
 			continue;
 		}

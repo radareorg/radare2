@@ -25,7 +25,7 @@ enum {
 	NRM_NRM
 };
 
-static const char* utf8_line_vert (int dot_style) {
+static const char* utf8_line_vert(int dot_style) {
 	if (r_cons_singleton ()->dotted_lines) {
 		switch (dot_style) {
 		case DOT_STYLE_NORMAL:      return RUNECODESTR_LINE_VERT;
@@ -36,7 +36,7 @@ static const char* utf8_line_vert (int dot_style) {
 	return RUNECODESTR_LINE_VERT;
 }
 
-static const char* utf8_line_horiz (int dot_style) {
+static const char* utf8_line_horiz(int dot_style) {
 	if (r_cons_singleton ()->dotted_lines) {
 		switch (dot_style) {
 		case DOT_STYLE_NORMAL:      return RUNECODESTR_LINE_HORIZ;
@@ -107,7 +107,7 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 	}
 }
 
-static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int style, int dot_style) {
+static void draw_horizontal_line(RConsCanvas *c, int x, int y, int width, int style, int dot_style) {
 	const char *l_corner = "?", *r_corner = "?";
 	int i;
 
@@ -301,7 +301,7 @@ R_API void r_cons_canvas_line_diagonal(RConsCanvas *c, int x, int y, int x2, int
 	char chizzle[2] = {0}; // = '.';//my nizzle
 	// destination
 	int dx = abs (x2-x);
-        int dy = abs (y2-y);
+	int dy = abs (y2-y);
 	// source
 	int sx = (x < x2) ? 1 : -1;
 	int sy = (y < y2) ? 1 : -1;
@@ -369,7 +369,7 @@ loop:
 	c->attr = Color_RESET;
 }
 
-R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
+R_API void r_cons_canvas_line_square(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
 	int min_x = R_MIN (x, x2);
 	int diff_x = R_ABS (x - x2);
 	int diff_y = R_ABS (y - y2);
@@ -399,7 +399,7 @@ R_API void r_cons_canvas_line_square (RConsCanvas *c, int x, int y, int x2, int 
 	c->attr = Color_RESET;
 }
 
-R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint, int isvert) {
+R_API void r_cons_canvas_line_square_defined(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int bendpoint, int isvert) {
 	if (!c->linemode) {
 		r_cons_canvas_line (c, x, y, x2, y2, style);
 		return;
@@ -452,7 +452,7 @@ R_API void r_cons_canvas_line_square_defined (RConsCanvas *c, int x, int y, int 
 	c->attr = Color_RESET;
 }
 
-R_API void r_cons_canvas_line_back_edge (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert) {
+R_API void r_cons_canvas_line_back_edge(RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style, int ybendpoint1, int xbendpoint, int ybendpoint2, int isvert) {
 	if (!c->linemode) {
 		r_cons_canvas_line (c, x, y, x2, y2, style);
 		return;

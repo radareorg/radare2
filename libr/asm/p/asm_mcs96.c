@@ -6,7 +6,7 @@
 #include <r_lib.h>
 #include "../arch/mcs96/mcs96.h"
 
-static int mcs96_len (const ut8 *buf, int len, RStrBuf *asm_buf) {
+static int mcs96_len(const ut8 *buf, int len, RStrBuf *asm_buf) {
 	int ret = 1;
 	if (buf[0] == 0xfe) {
 		if (len < 2) {

@@ -13,3 +13,37 @@ EXPECT=<<EOF
 6a656a65
 EOF
 RUN
+
+NAME=write-on-ro
+FILE=bins/elf/analysis/pie
+CMDS=<<EOF
+w hello
+ps
+EOF
+EXPECT=<<EOF
+1\xed^\x89\xe1\x83\xe4\xf0PTR\xe8"
+EOF
+EXPECT_ERR=<<EOF
+Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+ERROR: Cannot write in here, check map permissions or reopen the file with oo+
+EOF
+RUN
+
+NAME=write-on-ro-then-cache
+FILE=bins/elf/analysis/pie
+CMDS=<<EOF
+w hello
+ps
+e io.cache=1
+w hello\x00
+ps
+EOF
+EXPECT=<<EOF
+1\xed^\x89\xe1\x83\xe4\xf0PTR\xe8"
+hello
+EOF
+EXPECT_ERR=<<EOF
+Warning: run r2 with -e bin.cache=true to fix relocations in disassembly
+ERROR: Cannot write in here, check map permissions or reopen the file with oo+
+EOF
+RUN

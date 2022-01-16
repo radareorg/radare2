@@ -144,59 +144,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=cmd.hit for /ca
-FILE=bins/other/aes.dump
-CMDS=/ca
-EXPECT=<<EOF
-0x0000001e hit0_0 0000000000000000000000000000000000000000000000000000000000000000
-EOF
-RUN
-
-NAME=cmd.hit for /ca
-FILE=bins/other/aes_192.dump
-CMDS=/ca
-EXPECT=<<EOF
-0x000000fa hit0_0 000102030405060708090a0b0c0d0e0f1011121314151617
-EOF
-RUN
-
-NAME=cmd.hit for /cr
-FILE=bins/other/rsa-private-4096.key
-CMDS=/cr
-EXPECT=<<EOF
-0x0000000d hit0_0 308209280201000282020100c079f24b042787e4896db411fa7647e3bb62c88796fa979f126c575f...
-EOF
-RUN
-
-NAME=cmd.hit for /cr on edd448
-FILE=bins/other/ed448-private.key
-CMDS=/cr
-EXPECT=<<EOF
-0x000000f5 hit0_0 3047020100300506032b6571043b0439176449168ec8fc66d9e67d375d1ea310b1427e8c178b2f83...
-EOF
-RUN
-
-NAME=cmd.hit for /cd
-FILE=bins/other/certificate.ber
-CMDS=/cd
-EXPECT=<<EOF
-0x0000002f hit0_0 308203493082
-EOF
-RUN
-
-NAME=cmd.hit for multiple /cd
-FILE=bins/other/certificate.ber
-CMDS=<<EOF
-/cd
-/cr
-/cd
-EOF
-EXPECT=<<EOF
-0x0000002f hit0_0 308203493082
-0x0000002f hit2_0 308203493082
-EOF
-RUN
-
 NAME=cmd.hit for /d multiple
 FILE=malloc://1024
 CMDS=<<EOF
@@ -317,6 +264,17 @@ e search.to = 0x00005c44
 /r sym.imp.__cxa_finalize
 EOF
 EXPECT=<<EOF
+EOF
+RUN
+
+NAME=/ru search for possible UDS tables
+FILE=bins/elf/analysis/ls-linux64
+ARGS=-n
+CMDS=<<EOF
+/ruj
+EOF
+EXPECT=<<EOF
+[{"addr":102769,"score":7,"stride":20},{"addr":11772,"score":6,"stride":24},{"addr":14055,"score":6,"stride":32},{"addr":14151,"score":6,"stride":16},{"addr":87675,"score":6,"stride":32},{"addr":87751,"score":6,"stride":18},{"addr":87771,"score":6,"stride":16},{"addr":87787,"score":6,"stride":10},{"addr":87797,"score":6,"stride":8},{"addr":87813,"score":6,"stride":14},{"addr":87848,"score":6,"stride":12},{"addr":87916,"score":6,"stride":24},{"addr":102745,"score":6,"stride":32},{"addr":102749,"score":6,"stride":28},{"addr":102757,"score":6,"stride":28},{"addr":102789,"score":6,"stride":20},{"addr":11316,"score":5,"stride":24},{"addr":11796,"score":5,"stride":24},{"addr":13847,"score":5,"stride":16},{"addr":14087,"score":5,"stride":32}]
 EOF
 RUN
 

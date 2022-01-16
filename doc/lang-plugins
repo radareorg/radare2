@@ -7,7 +7,7 @@ interface from each method hook.
 We should define a common and simple way to design those inter-
 language communications.
 
-With this interface properly defined we can get some more fun and 
+With this interface properly defined we can get some more fun and
 write the language bindings using the same lang-C api.
 
 A simple perl script can be used to parse function signatures and

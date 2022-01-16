@@ -17,18 +17,37 @@ static const char *help_msg_o[] = {
 	"o:"," [len]","open a malloc://[len] copying the bytes from current offset",
 	"o=","","list opened files (ascii-art bars)",
 	"oL","","list all IO plugins registered",
-	"oa","[-] [A] [B] [filename]","Specify arch and bits for given file",
+	"oa","[?][-] [A] [B] [filename]","Specify arch and bits for given file",
 	"ob","[?] [lbdos] [...]","list opened binary files backed by fd",
 	"oc"," [file]","open core file, like relaunching r2",
-	"of"," [file]","open file and map it at addr 0 as read-only",
+	"of","[?] [file]","open file and map it at addr 0 as read-only",
 	"oj","[?]	","list opened files in JSON format",
 	"om","[?]","create, list, remove IO maps",
-	"on"," [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
-	"onn"," [file] ([rwx])","open file without creating any map or parsing headers with rbin)",
-	"oo","[?+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
+	"on","[?][n] [file] 0x4000","map raw file at 0x4000 (no r_bin involved)",
+	"oo","[?][+bcdnm]","reopen current file (see oo?) (reload in rw or debugger)",
 	"op","[r|n|p|fd]", "select priorized file by fd (see ob), opn/opp/opr = next/previous/rotate",
 	"oq","","list all open files",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
+	NULL
+};
+
+static const char *help_msg_of[] = {
+	"Usage: of","[s] [file]","Open file without adding maps",
+	"of"," \"/bin/ls\" r-x", " open /bin/ls with r-x perms without creating maps",
+	NULL
+};
+static const char *help_msg_on[] = {
+	"Usage: on","[n+*] [file] ([addr] [rwx])","Open file without parsing headers",
+	"on"," /bin/ls 0x4000","map raw file at 0x4000 (no r_bin involved)",
+	"onn"," [file] ([rwx])","open file without creating any map or parsing headers with rbin)",
+	"on+"," [file] ([rwx])","open file in rw mode without parsing headers",
+	"on*", "", "list open files as r2 commands",
+	NULL
+};
+
+static const char *help_msg_oa[] = {
+	"Usage: oa","[-][arch] [bits] ([file])", "Specify arch and bits for given file",
+	"oa"," arm 32","Force arm32 for the current open file",
 	NULL
 };
 
@@ -49,12 +68,34 @@ static const char *help_msg_op[] = {
 	NULL
 };
 
+static const char *help_msg_omn[] = {
+	"Usage:", "omn[.-] ([fd]) [name]", "# define a name for the given map",
+	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
+	"omn.", "([-|name])", "show/set/delete name for current map",
+	"omni", " mapid [name]", "set/delete name for map with mapid",
+	NULL
+};
+
+static const char *help_msg_omb[] = {
+	"Usage:", "omb[jq,+] [fd]", "Operate on memory banks",
+	"omb", "", "list all memory banks",
+	"omb", " [id]", "switch to use a different bank",
+	"omb+", "[name]", "create a new bank with given name",
+	"omba", " [id]", "adds a map to the bank",
+	"ombd", " [id]", "deletes a map from the bank",
+	"omb-", "*", "delete all banks",
+	"omb-", "[mapid]", "delete the bank with given id",
+	"ombg", "", "associate all maps to the current bank",
+	"ombq", "", "show current bankid",
+	NULL
+};
+
 static const char *help_msg_o_star[] = {
 	"Usage:", "o* [> files.r2]", "",
 	"o*", "", "list opened files in r2 commands", NULL
 };
 
-static const char *help_msg_oa[] = {
+static const char *help_msg_oba[] = {
 	"Usage:", "oba [addr] ([filename])", " # load bininfo and update flags",
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [baddr]", "Open file and load bin info at given address",
@@ -67,6 +108,7 @@ static const char *help_msg_ob[] = {
 	"ob", " [bfid]", "Switch to open given objid",
 	"ob", "", "List opened binary files and objid",
 	"ob*", "", "List opened binary files and objid (r2 commands)",
+	"ob", " *", "Select all bins (use 'ob bfid' to pick one)",
 	"ob-", "*", "Delete all binfiles",
 	"ob-", "[objid]", "Delete binfile by binobjid",
 	"ob.", " ([addr])", "Show bfid at current address",
@@ -100,16 +142,15 @@ static const char *help_msg_om[] = {
 	"om.", "", "show map, that is mapped to current offset",
 	"om=", "", "list all maps in ascii art",
 	"oma"," [fd]", "create a map covering all VA for given fd",
-	"omb", " mapid addr", "relocate map with corresponding id",
-	"omb.", " addr", "relocate current map",
+	"omb", " ", "list/select memory map banks",
+	"omB", " mapid addr", "relocate map with corresponding id",
+	"omB.", " addr", "relocate current map",
 	"omd", " from to @ paddr", "simplied om, takes current seek, fd and perms",
 	"omf", " [mapid] rwx", "change flags/perms for current/given map",
 	"omfg", "[+-]rwx", "change flags/perms for all maps (global)",
 	"omj", "", "list all maps in json format",
 	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
-	"omn", " mapaddr [name]", "set/delete name for map which spans mapaddr",
-	"omn.", "([-|name])", "show/set/delete name for current map",
-	"omni", " mapid [name]", "set/delete name for map with mapid",
+	"omn", "[?] ([id]) [name]", "manage map names",
 	"omo", " fd", "map the given fd with lowest priority",
 	"omp", " mapid", "prioritize map with corresponding id",
 	"ompb", " [fd]", "prioritize maps of the bin associated with the binid",
@@ -118,7 +159,7 @@ static const char *help_msg_om[] = {
 	"omq", "", "list all maps and their fds",
 	"omqq", "", "list all maps addresses (See $MM to get the size)",
 	"omr", " mapid newsize", "resize map with corresponding id",
-	"omt", " [query]", "list maps using table api",
+	"omt", " [query]", "list maps using table api", // "om,"
 	NULL
 };
 
@@ -132,11 +173,11 @@ static const char *help_msg_oo[] = {
 	"Usage:", "oo[-] [arg]", " # map opened files",
 	"oo", "", "reopen current file",
 	"oo+", "", "reopen in read-write",
-	"oob", " [baddr]", "reopen loading rbin info (change base address?)",
+	"oob", "[?] [baddr]", "reopen loading rbin info (change base address?)",
 	"ooc", "", "reopen core with current file",
-	"ood", "", "reopen in debug mode",
-	"oom", "", "reopen in malloc://",
-	"oon", "", "reopen without loading rbin info",
+	"ood", "[?]", "reopen in debug mode",
+	"oom", "[?]", "reopen in malloc://",
+	"oon", "[?]", "reopen without loading rbin info",
 	"oon+", "", "reopen in read-write mode without loading rbin info",
 	"oonn", "", "reopen without loading rbin info, but with header flags",
 	"oonn+", "", "reopen in read-write mode without loading rbin info, but with",
@@ -175,21 +216,6 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static void cmd_open_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, o);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, o*, o_star);
-	DEFINE_CMD_DESCRIPTOR (core, oa);
-	DEFINE_CMD_DESCRIPTOR (core, ob);
-	DEFINE_CMD_DESCRIPTOR (core, oj);
-	DEFINE_CMD_DESCRIPTOR (core, om);
-	DEFINE_CMD_DESCRIPTOR (core, oo);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, oo+, oo_plus);
-	DEFINE_CMD_DESCRIPTOR (core, oob);
-	DEFINE_CMD_DESCRIPTOR (core, ood);
-	DEFINE_CMD_DESCRIPTOR (core, oon);
-	DEFINE_CMD_DESCRIPTOR (core, oonn);
-}
-
 // HONOR bin.at
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char *value = NULL;
@@ -226,7 +252,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case 'a': // "oba"
 		if ('?' == input[2]) {
-			r_core_cmd_help (core, help_msg_oa);
+			r_core_cmd_help (core, help_msg_oba);
 			break;
 		}
 		if (input[2] && input[3]) {
@@ -238,14 +264,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				if (desc) {
 					*filename = 0;
 					ut64 addr = r_num_math (core->num, arg);
-					RBinOptions opt;
-					r_bin_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
+					RBinFileOptions opt;
+					r_bin_file_options_init (&opt, desc->fd, addr, 0, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
 					r_io_use_fd (core->io, saved_fd);
 				} else {
-					eprintf ("Cannot open %s\n", filename + 1);
+					eprintf ("Cannot open '%s'\n", r_str_trim_head_ro (filename + 1));
 				}
 			} else if (filename && *filename) {
 				ut64 baddr = r_num_math (core->num, filename);
@@ -253,11 +279,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				int fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
-					RBinOptions opt;
+					RBinFileOptions opt;
 					opt.baseaddr = baddr;
 					opt.loadaddr = addr;
 					opt.sz = 1024*1024*1;
-					r_bin_options_init (&opt, desc->fd, baddr, addr, core->bin->rawstr);
+					r_bin_file_options_init (&opt, desc->fd, baddr, addr, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -268,11 +294,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				int fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
-					RBinOptions opt;
+					RBinFileOptions opt;
 					opt.baseaddr = addr;
 					opt.loadaddr = addr;
 					opt.sz = 1024 * 1024 * 1;
-					r_bin_options_init (&opt, desc->fd, addr, addr, core->bin->rawstr);
+					r_bin_file_options_init (&opt, desc->fd, addr, addr, core->bin->rawstr);
 					r_bin_open_io (core->bin, &opt);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -292,8 +318,8 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			void *_fd;
 			r_list_foreach (files, iter, _fd) {
 				int fd = (size_t)_fd;
-				RBinOptions opt;
-				r_bin_options_init (&opt, fd, core->offset, 0, core->bin->rawstr);
+				RBinFileOptions opt;
+				r_bin_file_options_init (&opt, fd, core->offset, 0, core->bin->rawstr);
 				r_bin_open_io (core->bin, &opt);
 				r_core_cmd0 (core, ".ies*");
 				break;
@@ -304,15 +330,19 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case ' ': // "ob "
 	{
 		ut32 id;
-		int n;
 		const char *tmp;
-		char *v;
-		v = input[2] ? strdup (input + 2) : NULL;
+		if (input[2] == '-' || input[2] == '*') {
+			core->allbins = true;
+			break;
+		}
+		core->allbins = false;
+		
+		char *v = input[2] ? strdup (input + 2) : NULL;
 		if (!v) {
 			eprintf ("Invalid arguments");
 			break;
 		}
-		n = r_str_word_set0 (v);
+		int n = r_str_word_set0 (v);
 		if (n < 1 || n > 2) {
 			eprintf ("Usage: ob [file|objid]\n");
 			free (v);
@@ -411,7 +441,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 }
 
 // TODO: discuss the output format
-static void map_list(RIO *io, int mode, RPrint *print, int fd) {
+static void map_list(RIO *io, ut64 off, int mode, RPrint *print, int fd) {
 	r_return_if_fail (io && print && print->cb_printf);
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -423,9 +453,16 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 	char *om_cmds = NULL;
 
-	void **it;
-	r_pvector_foreach_prev (&io->maps, it) { //this must be prev (LIFO)
-		RIOMap *map = *it;
+	bool check_for_current_map = true;
+	RIOBank *bank = r_io_bank_get (io, io->bank);
+	if (!bank) {
+		pj_free (pj);
+		return;
+	}
+	RIOMapRef *mapref;
+	RListIter *iter;
+	r_list_foreach_prev (bank->maprefs, iter, mapref) {
+		RIOMap *map = r_io_map_get (io, mapref->id);
 		if (fd >= 0 && map->fd != fd) {
 			continue;
 		}
@@ -452,8 +489,9 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		case '*':
 		case 'r': {
 			// Need FIFO order here
-			char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n",
-					map->fd, r_io_map_begin (map), r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
+			char *om_cmd = r_str_newf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x
+					" 0x%08"PFMT64x" %s%s%s\n", map->fd, r_io_map_begin (map),
+					r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
 					R_STR_ISEMPTY (map->name)? "" : " ", r_str_get (map->name));
 			if (om_cmd) {
 				om_cmds = r_str_prepend (om_cmds, om_cmd);
@@ -462,10 +500,12 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 			break;
 		}
 		default:
-			print->cb_printf ("%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
-					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
-					map->delta, r_io_map_begin (map), r_io_map_to (map),
-					r_str_rwx_i (map->perm), r_str_get (map->name));
+			print->cb_printf ("%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
+					" - 0x%08"PFMT64x" %s %s\n",
+					(check_for_current_map && r_io_map_contain (map, off)) ?
+					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
+					r_io_map_to (map), r_str_rwx_i (map->perm), r_str_get (map->name));
+			check_for_current_map &= !r_io_map_contain (map, off);
 			break;
 		}
 	}
@@ -480,69 +520,60 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 }
 
+// TODO: move into r_io_remap()
 static void cmd_omfg(RCore *core, const char *input) {
 	input = r_str_trim_head_ro (input);
-	if (input) {
-		int perm = *input
-		? (*input == '+' || *input == '-')
-			? r_str_rwx (input + 1)
-			: r_str_rwx (input)
-		: 7;
-		void **it;
-		switch (*input) {
-		case '+':
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				map->perm |= perm;
-			}
-			break;
-		case '-':
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				map->perm &= ~perm;
-			}
-			break;
-		default:
-			r_pvector_foreach (&core->io->maps, it) {
-				RIOMap *map = *it;
-				map->perm = perm;
-			}
-			break;
-		}
+	int perm = *input ? (*input == '+' || *input == '-')
+		? r_str_rwx (input + 1)
+		: r_str_rwx (input) : 7;
+	ut32 mapid;
+	if (!r_id_storage_get_lowest (core->io->maps, &mapid)) {
+		return;
+	}
+	switch (*input) {
+	case '+':
+		do {
+			RIOMap *map = r_io_map_get (core->io, mapid);
+			map->perm |= perm;
+		} while (r_id_storage_get_next (core->io->maps, &mapid));
+		break;
+	case '-':
+		do {
+			RIOMap *map = r_io_map_get (core->io, mapid);
+			map->perm &= ~perm;
+		} while (r_id_storage_get_next (core->io->maps, &mapid));
+		break;
+	default:
+		do {
+			RIOMap *map = r_io_map_get (core->io, mapid);
+			map->perm = perm;
+		} while (r_id_storage_get_next (core->io->maps, &mapid));
+		break;
 	}
 }
 
-static void cmd_omf(RCore *core, const char *input) {
-	char *arg = strdup (r_str_trim_head_ro (input));
-	if (!arg) {
-		return;
-	}
-	char *sp = strchr (arg, ' ');
-	if (sp) {
-		// change perms of Nth map
-		*sp++ = 0;
-		int id = r_num_math (core->num, arg);
-		int perm = (*sp)? r_str_rwx (sp): R_PERM_RWX;
-		void **it;
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
-			if (map->id == id) {
-				map->perm = perm;
-				break;
+static void cmd_omf(RCore *core, int argc, char *argv[]) {
+	switch (argc) {
+	case 0:
+		break;
+	case 1:
+		{
+			RIOMap *map = r_io_map_get_at (core->io, core->offset);
+			if (map) {
+				map->perm = r_str_rwx (argv[0]);
 			}
 		}
-	} else {
-		// change perms of current map
-		int perm = (arg && *arg)? r_str_rwx (arg): R_PERM_RWX;
-		void **it;
-		r_pvector_foreach (&core->io->maps, it) {
-			RIOMap *map = *it;
-			if (r_io_map_contain (map, core->offset)) {
-				map->perm = perm;
+		break;
+	case 2:
+	default:
+		{
+			const int id = r_num_math (core->num, argv[0]);
+			RIOMap *map = r_io_map_get (core->io, id);
+			if (map) {
+				map->perm = r_str_rwx (argv[1]);
 			}
 		}
 	}
-	free (arg);
 }
 
 static void r_core_cmd_omt(RCore *core, const char *arg) {
@@ -550,18 +581,20 @@ static void r_core_cmd_omt(RCore *core, const char *arg) {
 
 	r_table_set_columnsf (t, "nnnnnnnss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "name", NULL);
 
-	void **it;
-	r_pvector_foreach (&core->io->maps, it) {
-		RIOMap *m = *it;
+	ut32 mapid;
+	r_id_storage_get_lowest (core->io->maps, &mapid);
+	do {
+		RIOMap *m = r_id_storage_get (core->io->maps, mapid);
 		ut64 va = r_itv_begin (m->itv);
 		ut64 va_end = r_itv_end (m->itv);
 		ut64 pa = m->delta;
 		ut64 pa_size = r_itv_size (m->itv);
 		ut64 pa_end = pa + pa_size;
 		const char *name = r_str_get (m->name);
-		r_table_add_rowf (t, "ddxxxxxss", m->id, m->fd, pa, pa_end, pa_size, va, va_end, r_str_rwx_i (m->perm), name);
-	}
-
+		r_table_add_rowf (t, "ddxxxxxss",
+			m->id, m->fd, pa, pa_end, pa_size,
+			va, va_end, r_str_rwx_i (m->perm), name);
+	} while (r_id_storage_get_next (core->io->maps, &mapid));
 	if (r_table_query (t, arg)) {
 		char *ts = r_table_tofancystring (t);
 		r_cons_printf ("%s", ts);
@@ -624,7 +657,7 @@ static bool cmd_om(RCore *core, const char *input) {
 	} else {
 		int fd = r_io_fd_get_current (core->io);
 		if (r_io_desc_get (core->io, fd)) {
-			map_list (core->io, 0, core->print, fd);
+			map_list (core->io, core->offset, 0, core->print, fd);
 		} else {
 			eprintf ("Invalid fd %d\n", (int)fd);
 		}
@@ -671,12 +704,124 @@ static void cmd_omd(RCore *core, const char* input) {
 	}
 }
 
+static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
+	if (argc == 1) {
+		switch (argv[0][1]) {
+		case 'g': // "ombg"
+			{
+				ut32 mapid;
+				r_id_storage_get_lowest (core->io->maps, &mapid);
+				do {
+					RIOMap *map = r_id_storage_get (core->io->maps, mapid);
+					r_io_bank_map_add_top (core->io, core->io->bank, map->id);
+				} while (r_id_storage_get_next (core->io->maps, &mapid));
+			}
+			break;
+		case 'q': // "ombq"
+			r_cons_printf ("%d\n", core->io->bank);
+			break;
+		case 0: // "omb"
+			{
+				ut32 bank_id = 0;
+				if (!r_id_storage_get_lowest (core->io->banks, &bank_id)) {
+					break;
+				}
+				do {
+					RIOBank *bank = r_id_storage_get (core->io->banks, bank_id);
+					const char ch = core->io->bank == bank_id? '*': '-';
+					r_cons_printf ("%c %d %s [", ch, bank->id, bank->name);
+					RIOMapRef *mapref;
+					RListIter *iter;
+					r_list_foreach (bank->maprefs, iter, mapref) {
+						r_cons_printf (" %d", mapref->id);
+					}
+					r_cons_printf (" ]\n");
+					// list all the associated maps
+				} while (r_id_storage_get_next (core->io->banks, &bank_id));
+			}
+			break;
+		case '+': // "omb+ [name]"
+			{
+				const char *name = argv[0] + 2;
+				if (IS_DIGIT (*name)) {
+					// add a map to the current bank
+					// we cant name a bank with a number :?
+					r_io_bank_map_add_top (core->io, core->io->bank, atoi (name));
+				} else {
+					// add a new bank
+					RIOBank *bank = r_io_bank_new (name);
+					if (bank) {
+						r_io_bank_add (core->io, bank);
+					}
+				}
+			}
+			break;
+		case '?': // "omb?"
+		default:
+			r_core_cmd_help (core, help_msg_omb);
+			break;
+		}
+		return;
+	}
+	switch (argv[0][1]) {
+	case 'a': // "omba"
+		if (IS_DIGIT (argv[1][0])) {
+			int mapid = atoi (argv[1]);
+			if (r_io_map_get (core->io, mapid)) {
+				r_io_bank_map_add_top (core->io, core->io->bank, mapid);
+			} else {
+				eprintf ("Invalid map id\n");
+			}
+		} else {
+			eprintf ("Expect a mapid number\n");
+		}
+		break;
+	case 'd': // "ombd"
+		{
+			int mapid = atoi (argv[1]);
+			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+			if (bank) {
+				r_io_bank_del_map (core->io, core->io->bank, mapid);
+			} else {
+				eprintf ("Unknown bank id\n");
+			}
+		}
+		break;
+	case '-': // "omb-"
+		if (!strcmp ("*", argv[1])) {
+			r_io_bank_drain (core->io, core->io->bank);
+			core->io->bank = r_io_bank_first (core->io);
+		} else {
+			int bank_id = atoi (argv[1]);
+			r_io_bank_del (core->io, bank_id);
+		}
+		break;
+	case '+': // "omb+ [name]"
+		{
+			RIOBank *bank = r_io_bank_new (argv[1]);
+			r_io_bank_add (core->io, bank);
+		}
+		break;
+	case 0: // "omb [id]"
+		{
+			if (!r_io_bank_use (core->io, r_num_get (NULL, argv[1]))) {
+				eprintf ("Cannot find bank by id %s\n", argv[1]);
+			}
+		}
+		break;
+	case '?': // "omb?"
+	default:
+		r_core_cmd_help (core, help_msg_omb);
+		break;
+	}
+}
+
 static void cmd_open_map(RCore *core, const char *input) {
 	ut64 fd = 0LL;
 	ut32 id = 0;
 	ut64 addr = 0;
 	char *s = NULL, *p = NULL, *q = NULL;
-	ut64 new;
+	ut64 newaddr;
 	RIOMap *map = NULL;
 	const char *P;
 	PJ *pj;
@@ -715,14 +860,22 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (input[2] != ' ') {
 			break;
 		}
-		P = strchr (input+3, ' ');
+		P = strchr (input + 3, ' ');
 		if (P) {
-			id = (ut32)r_num_math (core->num, input+3);	//mapid
-			new = r_num_math (core->num, P+1);
-			r_io_map_resize (core->io, id, new);
+			id = (ut32)r_num_math (core->num, input + 3);
+			newaddr = r_num_math (core->num, P + 1);
+			r_io_map_resize (core->io, id, newaddr);
 		}
 		break;
-	case 'b': // "omb"
+	case 'b': // "omb" -- manage memory banks
+		{
+			int argc;
+			char **argv = r_str_argv (&input[1], &argc);
+			cmd_open_banks (core, argc, argv);
+			r_str_argv_free (argv);
+		}
+		break;
+	case 'B': // "omB"
 		if (input[2] == '.') {
 			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
@@ -735,9 +888,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 			P = strchr (input + 3, ' ');
 			if (P) {
-				id = (ut32)r_num_math (core->num, input+3);	//mapid
-				new = r_num_math (core->num, P + 1);
-				r_io_map_remap (core->io, id, new);
+				id = (ut32)r_num_math (core->num, input + 3);
+				newaddr = r_num_math (core->num, P + 1);
+				r_io_map_remap (core->io, id, newaddr);
 			}
 		}
 		break;
@@ -789,7 +942,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		cmd_om (core, input);
 		break;
 	case 'n': // "omn"
-		if (input[2] == '.') { // "omn."
+		if (input[2] == '?') { // "omn?"
+			r_core_cmd_help (core, help_msg_omn);
+		} else if (input[2] == '.') { // "omn."
 			RIOMap *map = r_io_map_get_at (core->io, core->offset);
 			if (map) {
 				switch (input[3]) {
@@ -806,7 +961,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		} else {
 			bool use_id = (input[2] == 'i') ? true : false;
-			s = strdup ( use_id ? &input[3] : &input[2]);
+			s = strdup (use_id ? input + 3 : input + 2);
 			if (!s) {
 				break;
 			}
@@ -897,7 +1052,12 @@ static void cmd_open_map(RCore *core, const char *input) {
 			cmd_omfg (core, input + 3);
 			break;
 		case ' ': // "omf"
-			cmd_omf (core, input + 3);
+			{
+				int argc;
+				char **argv = r_str_argv (&input[3], &argc);
+				cmd_omf (core, argc, argv);
+				r_str_argv_free (argv);
+			}
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_om);
@@ -915,9 +1075,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		} else {
 			if (input[1] && input[2] == 'q') { // "omqq"
-				map_list (core->io, input[1], core->print, -2);
+				map_list (core->io, core->offset, input[1], core->print, -2);
 			} else {
-				map_list (core->io, input[1], core->print, -1);
+				map_list (core->io, core->offset, input[1], core->print, -1);
 			}
 		}
 		break;
@@ -927,9 +1087,15 @@ static void cmd_open_map(RCore *core, const char *input) {
 		if (!list) {
 			return;
 		}
-		void **it;
-		r_pvector_foreach_prev (&core->io->maps, it) {
-			RIOMap *map = *it;
+		RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
+			if (!bank) {
+			r_list_free (list);
+			return;
+		}
+		RListIter *iter;
+		RIOMapRef *mapref;
+		r_list_foreach_prev (bank->maprefs, iter, mapref) {
+			RIOMap *map = r_io_map_get (core->io, mapref->id);
 			char temp[32];
 			snprintf (temp, sizeof (temp), "%d", map->fd);
 			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
@@ -1199,8 +1365,12 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 		eprintf ("Cannot debug file (%s) with permissions set to 0x%x.\n"
 			"Reopening the original file in read-only mode.\n", desc->name, desc->perm);
 		int fd = desc->fd;
-		r_io_reopen (core->io, fd, R_PERM_RX, 755);
-		desc = r_io_desc_get (core->io, fd);
+		if (r_io_reopen (core->io, fd, R_PERM_RX, 755)) {
+			desc = r_io_desc_get (core->io, fd);
+		} else {
+			eprintf ("Cannot reopen\n");
+			return;
+		}
 	}
 
 	RBinFile *bf = r_bin_file_find_by_fd (core->bin, desc->fd);
@@ -1227,7 +1397,7 @@ R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 		return;
 	}
 	char *escaped_path = r_str_arg_escape (bin_abspath);
-	char *newfile = r_str_newf ("dbg://%s %s", escaped_path, args);
+	char *newfile = r_str_newf ("dbg://%s%c%s", escaped_path, *args?' ':0, args);
 	desc->uri = newfile;
 	desc->referer = NULL;
 	r_config_set_i (core->config, "asm.bits", bits);
@@ -1316,15 +1486,20 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	RListIter *iter, *iter2;
 	RBinSection *sec;
 	RIOMap *map;
-	r_list_foreach (maps, iter, map) {
+	r_list_foreach_prev (maps, iter, map) {
 		bool map_from_bin = false;
+		bool have_segments = false;
 		r_list_foreach (list, iter2, sec) {
 			if (sec->is_segment) {
-				if (sec->vaddr == map->itv.addr && sec->size == map->itv.size) {
+				have_segments = true;
+				if (sec->vaddr == map->itv.addr && sec->vsize == map->itv.size) {
 					map_from_bin = true;
 					break;
 				}
 			}
+		}
+		if (!have_segments) {
+			map_from_bin = true;
 		}
 		if (!map_from_bin) {
 			// ut64 paddr = 0; // map->itv.addr;
@@ -1334,8 +1509,10 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 			}
 			ut64 vaddr = map->itv.addr + map->delta;
 			ut64 vsize = map->itv.size;
-			p->cb_printf ("om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
-				vaddr, vsize, paddr, r_str_rwx_i (map->perm), r_str_get (map->name));
+			if (vsize > 0) {
+				p->cb_printf ("om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
+						vaddr, vsize, paddr, r_str_rwx_i (map->perm), r_str_get (map->name));
+			}
 		}
 	}
 	return true;
@@ -1391,9 +1568,9 @@ static bool cmd_op(RCore *core, char mode, int fd) {
 			r_core_block_read (core);
 			return true;
 		}
-		eprintf ("Invalid RBinFile.id number.\n");
+	//	eprintf ("Invalid RBinFile.id number.\n");
 	}
-	return false;
+	return next_fd != -1;
 }
 
 static bool cmd_onn(RCore *core, const char* input) {
@@ -1450,7 +1627,10 @@ static int cmd_open(void *data, const char *input) {
 				}
 				return 1;
 			}
+			break;
 		case '?': // "oa?"
+			r_core_cmd_help (core, help_msg_oa);
+			return 1;
 		case ' ': // "oa "
 			{
 				int i;
@@ -1493,18 +1673,23 @@ static int cmd_open(void *data, const char *input) {
 				free (ptr);
 				return 1;
 			}
-		break;
+			break;
 		default:
-			eprintf ("Usage: oa[-][arch] [bits] [filename]\n");
+			r_core_cmd_help (core, help_msg_oa);
 			return 0;
-	}
+		}
+		break;
 	case 'n': // "on"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_on);
+			return 0;
+		}
 		if (input[1] == 'n') {
 			cmd_onn (core, input);
 			return 0;
 		}
 		if (input[1] == '*') {
-			eprintf ("OTDO%c", 10); // r_core_file_list (core, 'n');
+			eprintf ("TODO%c", 10); // r_core_file_list (core, 'n');
 			return 0;
 		}
 		if (input[1] == '+') { // "on+"
@@ -1554,18 +1739,23 @@ static int cmd_open(void *data, const char *input) {
 		return 0;
 	// XXX projects use the of command, but i think we should deprecate it... keeping it for now
 	case 'f': // "of"
-		ptr = r_str_trim_head_ro (input + 2);
-		argv = r_str_argv (ptr, &argc);
-		if (argc == 0) {
-			eprintf ("Usage: of [filename] (rwx)\n");
+		if (input[1]) {
+			ptr = r_str_trim_head_ro (input + 2);
+			argv = r_str_argv (ptr, &argc);
+			if (argc == 0 || input[1] == '?') {
+				r_core_cmd_help (core, help_msg_of);
+				r_str_argv_free (argv);
+				return 0;
+			}
+			if (argc == 2) {
+				perms = r_str_rwx (argv[1]);
+			}
+			fd = r_io_fd_open (core->io, argv[0], perms, 0);
+			core->num->value = fd;
 			r_str_argv_free (argv);
-			return 0;
-		} else if (argc == 2) {
-			perms = r_str_rwx (argv[1]);
+		} else {
+			eprintf ("Usage: of [arg...]\n");
 		}
-		fd = r_io_fd_open (core->io, argv[0], perms, 0);
-		core->num->value = fd;
-		r_str_argv_free (argv);
 		return 0;
 	case 'p': // "op"
 		/* handle prioritize */
@@ -1611,8 +1801,16 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (argv) {
-			// Unescape spaces from the path
-			r_str_path_unescape (argv[0]);
+			if (r_str_startswith (argv[0], "base64:")) {
+				char *decoded = (char *)sdb_decode (argv[0] + 7, NULL);
+				if (decoded) {
+					free (argv[0]);
+					argv[0] = decoded;
+				}
+			} else {
+				// Unescape spaces from the path
+				r_str_path_unescape (argv[0]);
+			}
 			if (argc == 2) {
 				if (r_num_is_valid_input (core->num, argv[1])) {
 					addr = r_num_math (core->num, argv[1]);
@@ -1637,13 +1835,16 @@ static int cmd_open(void *data, const char *input) {
 				if (*input == '+') { // "o+"
 					RIODesc *desc = r_io_desc_get (core->io, fd);
 					if (desc && (desc->perm & R_PERM_W)) {
-						void **it;
-						r_pvector_foreach_prev (&core->io->maps, it) {
-							RIOMap *map = *it;
-							if (map->fd == fd) {
-								map->perm |= R_PERM_WX;
-							}
+						RListIter *iter;
+						RList *maplist =r_io_map_get_by_fd (core->io, desc->fd);
+						if (!maplist) {
+							break;
 						}
+						RIOMap *map;
+						r_list_foreach (maplist, iter, map) {
+							map->perm |= R_PERM_WX;
+						}
+						r_list_free (maplist);
 					} else {
 						eprintf ("Error: %s is not writable\n", argv0);
 					}
@@ -1651,9 +1852,9 @@ static int cmd_open(void *data, const char *input) {
 			} else {
 				eprintf ("cannot open file %s\n", argv0);
 			}
-			r_str_argv_free (argv);
 		}
 		r_core_block_read (core);
+		r_str_argv_free (argv);
 		return 0;
 	}
 
@@ -1736,20 +1937,8 @@ static int cmd_open(void *data, const char *input) {
 		case '-': // "o--"
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
-
-			// TODO: Move to a-- ?
-			r_anal_purge (core->anal);
-			// TODO: Move to f-- ?
-			r_flag_unset_all (core->flags);
-			// TODO: rbin?
-#if 0
-			// delete
-			r_core_file_close_fd (core, -1);
-			r_io_close_all (core->io);
 			r_anal_purge (core->anal);
 			r_flag_unset_all (core->flags);
-			r_bin_file_delete_all (core->bin);
-#endif
 			break;
 		default:
 			{
@@ -1896,13 +2085,16 @@ static int cmd_open(void *data, const char *input) {
 					perms |= core->io->desc->perm;
 				}
 				if (r_io_reopen (core->io, fd, perms, 644)) {
-					void **it;
-					r_pvector_foreach_prev (&core->io->maps, it) {
-						RIOMap *map = *it;
-						if (map->fd == fd) {
-							map->perm |= R_PERM_WX;
-						}
+					RListIter *iter;
+					RList *maplist = r_io_map_get_by_fd (core->io, fd);
+					if (!maplist) {
+						break;
 					}
+					RIOMap *map;
+					r_list_foreach (maplist, iter, map) {
+						map->perm |= R_PERM_WX;
+					}
+					r_list_free (maplist);
 				}
 			}
 			break;
@@ -1938,7 +2130,9 @@ static int cmd_open(void *data, const char *input) {
 					}
 				} else {
 					// r_io_reopen (core->io, fd, R_PERM_R, 644);
-					r_io_reopen (core->io, fd, R_PERM_RX, 755);
+					if (!r_io_reopen (core->io, fd, R_PERM_RX, 755)) {
+						eprintf ("Cannot reopen.\n");
+					}
 				}
 			}
 			break;

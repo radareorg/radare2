@@ -40,7 +40,7 @@ function resizeCanvas() {
 }
 
 /**
- * sets the active menu scanning for a menu item which url is a prefix 
+ * sets the active menu scanning for a menu item which url is a prefix
  * of the one of the current page ignoring file extension.
  * Nice trick!
  */
@@ -48,7 +48,7 @@ function setMenu() {
   var url = document.location.href;
   // strip extension
   url = stripExtension(url);
-  
+
   var ulElement = document.getElementById("menu");
   var links = ulElement.getElementsByTagName("A");
   var i;

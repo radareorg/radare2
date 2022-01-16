@@ -215,6 +215,7 @@ size     0x401
 humansz  1.0K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -290,6 +291,7 @@ size     0x400
 humansz  1K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -331,6 +333,7 @@ size     0x1323
 humansz  4.8K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     r-x
 format   elf
 iorw     false
@@ -1490,10 +1493,9 @@ RUN
 
 NAME=iD
 FILE=bins/elf/libmagic.so
-BROKEN=1
 CMDS=iD swift _TFSSCfT21_builtinStringLiteralBp8byteSizeBw7isASCIIBi1__SS
 EXPECT=<<EOF
-Swift.String.init (_builtinStringLiteral(Builtin.RawPointer byteSize__Builtin.Word isASCII__Builtin.Int1 _) -> String
+Swift.String.init(_builtinStringLiteral: Builtin.RawPointer, byteSize: Builtin.Word, isASCII: Builtin.Int1) -> Swift.String
 EOF
 RUN
 
@@ -3064,6 +3066,7 @@ size     0x1a36
 humansz  6.6K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     r-x
 format   elf64
 iorw     false
@@ -3521,9 +3524,32 @@ size     0x1a36
 humansz  6.6K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     r-x
 iorw     false
 block    0x100
+EOF
+RUN
+
+NAME=isqq
+FILE=bins/elf/redpill
+CMDS=<<EOF
+s main
+is.
+isq.
+isqq.
+is~?
+isq~?
+EOF
+EXPECT=<<EOF
+
+nth paddr      vaddr      bind   type size lib name
+---------------------------------------------------
+41  0x0000142e 0x0000142e GLOBAL FUNC 563      main
+0x0000142e 563 main
+main
+45
+42
 EOF
 RUN
 
@@ -4414,10 +4440,10 @@ NAME=izzz*
 FILE=bins/mach0/fatmach0-3true
 CMDS=izzz*~appleca
 EXPECT=<<EOF
-f str._http:__www.apple.com_appleca_ro 41 @ 0x00002562
+f str._http:__www.apple.com_appleca_root.crl0_r 41 @ 0x00002562
 f str.https:__www.apple.com_appleca_0 32 @ 0x00002963
 f str.http:__www.apple.com_appleca_0 31 @ 0x00002e47
-f str._http:__www.apple.com_appleca_co 48 @ 0x00002f3c
+f str._http:__www.apple.com_appleca_codesigning.crl0_r 48 @ 0x00002f3c
 EOF
 RUN
 
@@ -4447,11 +4473,14 @@ CMDS=<<EOF
 mkdir .tmp
 cp bins/mach0/fatmach0-3true .tmp/it2-modfile
 o .tmp/it2-modfile
+om
 oo+
+om
 it
 wx 0x90
 it
 o--
+om
 rm .tmp/it2-modfile
 EOF
 EXPECT_ERR=<<EOF
@@ -4464,6 +4493,14 @@ File has been modified.
 + sha256 53cb8b3aec20da6a313ac996ca8f518bca9fa4768ff771d35513be09a387f025
 EOF
 EXPECT=<<EOF
+* 4 fd: 3 +0x00001000 0x100000000 - 0x100000fff r-x fmap.__TEXT
+- 3 fd: 3 +0x00002000 0x100001000 - 0x100001fff r-- fmap.__DATA
+- 2 fd: 3 +0x00003000 0x100002000 - 0x100003fff r-- fmap.__LINKEDIT
+- 1 fd: 3 +0x00000000 0x00000000 - 0x0000c52f r-- 
+* 4 fd: 3 +0x00001000 0x100000000 - 0x100000fff rwx fmap.__TEXT
+- 3 fd: 3 +0x00002000 0x100001000 - 0x100001fff rwx fmap.__DATA
+- 2 fd: 3 +0x00003000 0x100002000 - 0x100003fff rwx fmap.__LINKEDIT
+- 1 fd: 3 +0x00000000 0x00000000 - 0x0000c52f rwx 
 md5 84144530144b53a704c84d9c65ab5f92
 sha1 9016e215a321184c42c28ab03847554851932713
 sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020 - pancake */
+/* radare - LGPL - Copyright 2020-2021 - pancake */
 
 #include <r_lib.h>
 #include <r_flag.h>
@@ -54,7 +54,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{3, "xori", "3 = 1 ^ 2"},
 		{2, "tst", "2 == 1"},
 		{2, "tst1", "2 == 1"},
-		{1, "jr", "jmp 1"},
+		{1, "jr", "goto 1"},
+		{1, "jmp", "goto 1"},
 		{2, "cmp", "2 == 1"},
 		{4, "cmov", "4 == 1 ? 2 : 3"},
 		{2, "mov", "2 = 1"},
@@ -140,7 +141,7 @@ static char *reorder(char *buf) {
 	return buf;
 }
 
-static void guard_braces (char *buf) {
+static void guard_braces(char *buf) {
 	bool braces = false;
 	char *p = buf;
 	for (;*p;p++) {

@@ -17,6 +17,9 @@ R_API int r_io_fd_read(RIO *io, int fd, ut8 *buf, int len) {
 	if (len < 0) {
 		return -1;
 	}
+	if (len == 0) {
+		return 0;
+	}
 	RIODesc *desc = r_io_desc_get (io, fd);
 	return desc? r_io_desc_read (desc, buf, len): -1;
 }
@@ -27,14 +30,15 @@ R_API int r_io_fd_write(RIO *io, int fd, const ut8 *buf, int len) {
 	if (len < 0) {
 		return -1;
 	}
+	if (len == 0) {
+		return 0;
+	}
 	RIODesc *desc = r_io_desc_get (io, fd);
 	return desc? r_io_desc_write (desc, buf, len): -1;
 }
 
 R_API ut64 r_io_fd_seek(RIO *io, int fd, ut64 addr, int whence) {
-	if (!io) {
-		return (ut64)-2;
-	}
+	r_return_val_if_fail (io, UT64_MAX);
 	return r_io_desc_seek (r_io_desc_get (io, fd), addr, whence);
 }
 
@@ -90,7 +94,7 @@ R_API int r_io_fd_get_tid(RIO *io, int fd) {
 	return r_io_desc_get_tid (desc);
 }
 
-R_API bool r_io_fd_get_base (RIO *io, int fd, ut64 *base) {
+R_API bool r_io_fd_get_base(RIO *io, int fd, ut64 *base) {
 	r_return_val_if_fail (io && io->files && base, false);
 	RIODesc *desc = r_io_desc_get (io, fd);
 	return r_io_desc_get_base (desc, base);

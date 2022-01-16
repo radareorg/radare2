@@ -15,6 +15,6 @@ NAME=ELF: corkami tiny.elf - sections
 FILE=bins/elf/analysis/tiny.elf
 CMDS=om
 EXPECT=<<EOF
- 1 fd: 3 +0x00000000 0x00010000 - 0x0002001f r-- fmap.LOAD0
+* 1 fd: 3 +0x00000000 0x00010000 - 0x0002001f r-- fmap.LOAD0
 EOF
 RUN

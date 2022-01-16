@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h>
-
 
 R_API void r_core_visual_mark_reset(RCore *core) {
 	size_t i;
@@ -20,7 +19,7 @@ R_API bool r_core_visual_mark_dump(RCore *core) {
 	for (i = 0; i < UT8_MAX; i++) {
 		if (core->marks[i] != UT64_MAX) {
 			if (i > ASCII_MAX) {
-				r_cons_printf ("fV %zu 0x%"PFMT64x"\n", i - ASCII_MAX - 1, core->marks[i]);
+				r_cons_printf ("fV %d 0x%"PFMT64x"\n", (int)(i - ASCII_MAX - 1), core->marks[i]);
 			} else {
 				r_cons_printf ("fV %c 0x%"PFMT64x"\n", (char)i, core->marks[i]);
 			}

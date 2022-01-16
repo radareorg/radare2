@@ -38,7 +38,7 @@ int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 		[':'] = &&l_loop, [','] = &&l_loop,
 		['['] = &&l_up, [']'] = &&l_down, // tracking [] and {} individually would allow fuller validation but is really messy
 		['{'] = &&l_up, ['}'] = &&l_down,
-//TODO: add support for rawstrings 
+//TODO: add support for rawstrings
 #if HAVE_RAWSTR
 		['a'...'z'] = &&l_rawstr,
 #else
@@ -87,7 +87,7 @@ int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 	};
 	static void **go = gostruct;
 	
-#if 0 
+#if 0
 printf ("                 gostrct= %p\n", gostruct);
 printf ("                 gobare = %p\n", gobare);
 printf ("                 gostr = %p\n", gostring);

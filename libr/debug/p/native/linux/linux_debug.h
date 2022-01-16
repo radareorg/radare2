@@ -105,6 +105,12 @@ struct powerpc_regs_t {
 #include <sys/ucontext.h>
 typedef ut64 mips64_regs_t [274];
 #define R_DEBUG_REG_T mips64_regs_t
+
+#elif __loongarch__
+
+#include <sys/ucontext.h>
+typedef ut64 la_regs_t [32];
+#define R_DEBUG_REG_T la_regs_t
 #endif
 #endif
 
@@ -121,7 +127,7 @@ typedef ut64 mips64_regs_t [274];
 bool linux_set_options(RDebug *dbg, int pid);
 int linux_step(RDebug *dbg);
 RDebugReasonType linux_ptrace_event(RDebug *dbg, int pid, int status, bool dowait);
-int linux_attach(RDebug *dbg, int pid);
+bool linux_attach(RDebug *dbg, int pid);
 bool linux_attach_new_process(RDebug *dbg, int pid);
 RDebugInfo *linux_info(RDebug *dbg, const char *arg);
 RList *linux_pid_list(int pid, RList *list);

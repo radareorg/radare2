@@ -1,6 +1,6 @@
 //ssed on the registers rdi, rsi, rdx, r10, r8 and r9
 /*
- * sfsyscall.h --- SFLib syscall macros for OpenBSD/i386 
+ * sfsyscall.h --- SFLib syscall macros for OpenBSD/i386
  * see http://www.secdev.org/projects/shellforge.html for more informations
  *
  * Copyright (C) 2004  Philippe Biondi <phil@secdev.org>
@@ -108,7 +108,7 @@ __asm__ volatile ("mov %2, %%rdi\n\t"     \
 	: "0" (0x2000000 | __NR_##name),"g" ((long)(arg1)),"c" ((long)(arg2)), \
 	  "d" ((long)(arg3)),"S" ((long)(arg4)) ); \
 __sfsyscall_return(type,__res); \
-} 
+}
 
 #define _sfsyscall5(type,name,type1,arg1,type2,arg2,type3,arg3,type4,arg4, \
 	  type5,arg5) \

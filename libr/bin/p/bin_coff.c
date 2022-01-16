@@ -285,7 +285,10 @@ static ut16 _read_le16(RBin *rbin, ut64 addr) {
 #define BYTES_PER_IMP_RELOC		8
 
 static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *bin, bool patch, ut64 imp_map) {
-	r_return_val_if_fail (bin && bin->scn_hdrs, NULL);
+	r_return_val_if_fail (bin, NULL);
+	if (!bin->scn_hdrs) {
+		return NULL;
+	}
 
 	RBinReloc *reloc;
 	struct coff_reloc *rel;
@@ -484,10 +487,12 @@ static RList *patch_relocs(RBin *b) {
 	}
 	ut64 m_vaddr = UT64_MAX;
 	if (nimports) {
-		void **it;
 		ut64 offset = 0;
-		r_pvector_foreach (&io->maps, it) {
-			RIOMap *map = *it;
+		RIOBank *bank = b->iob.bank_get (io, io->bank);
+		RListIter *iter;
+		RIOMapRef *mapref;
+		r_list_foreach (bank->maprefs, iter, mapref) {
+			RIOMap *map = b->iob.map_get (io, mapref->id);
 			if (r_io_map_end (map) > offset) {
 				offset = r_io_map_end (map);
 			}
@@ -546,6 +551,16 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->arch = strdup ("x86");
 		ret->bits = 32;
 		break;
+	case COFF_FILE_MACHINE_ARM64:
+		ret->machine = strdup ("aarch64");
+		ret->arch = strdup ("arm");
+		ret->bits = 64;
+		break;
+	case COFF_FILE_MACHINE_ARM:
+		ret->machine = strdup ("ARM");
+		ret->arch = strdup ("arm");
+		ret->bits = 32;
+		break;
 	case COFF_FILE_MACHINE_AMD64:
 		ret->machine = strdup ("AMD64");
 		ret->arch = strdup ("x86");
@@ -567,11 +582,6 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->machine = strdup ("arm");
 		ret->arch = strdup ("arm");
 		ret->bits = 32;
-		break;
-	case COFF_FILE_MACHINE_ARM64:
-		ret->machine = strdup ("arm");
-		ret->arch = strdup ("arm");
-		ret->bits = 64;
 		break;
 	case COFF_FILE_TI_COFF:
 		switch (obj->target_id) {
@@ -608,7 +618,7 @@ static ut64 size(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 #if 0
 TODO: do more checks here to avoid false positives
 

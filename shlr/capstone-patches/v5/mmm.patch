@@ -4,9 +4,9 @@ index d734ce5d..d946cd34 100644
 +++ b/functions.mk
 @@ -2,7 +2,6 @@
  # Common functions used by Makefile & tests/Makefile
- 
+
  define compile
 -        @$(CC) -MM -MP -MT $@ -MT $(@:.o=.d) $(CFLAGS) $< > $(@:.o=.d)
  	${CC} ${CFLAGS} -c $< -o $@
  endef
- 
+

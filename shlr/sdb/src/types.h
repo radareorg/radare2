@@ -9,8 +9,9 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#undef eprintf
-#define eprintf(...) fprintf(stderr,__VA_ARGS__)
+#ifndef eprintf
+#define eprintf(...) fprintf (stderr, __VA_ARGS__)
+#endif
 
 // Copied from https://gcc.gnu.org/wiki/Visibility
 #ifndef SDB_API
@@ -45,7 +46,11 @@
 #define lseek _lseek
 #include <windows.h>
 #include <io.h>
+#if __MINGW32__
+#define ULLFMT "ll"
+#else
 #define ULLFMT "I64"
+#endif
 #undef HAVE_MMAN
 #define HAVE_MMAN 0
 #else

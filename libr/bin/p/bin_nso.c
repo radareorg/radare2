@@ -47,7 +47,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0x8000000;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) >= 0x20) {
 		ut8 magic[4];
 		if (r_buf_read_at (b, 0, magic, sizeof (magic)) != 4) {
@@ -138,7 +138,7 @@ fail:
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
-	r_return_val_if_fail (bf && buf, NULL);
+	r_return_val_if_fail (bf && buf, false);
 	const ut64 la = bf->loadaddr;
 	ut64 sz = 0;
 	const ut8 *bytes = r_buf_data (buf, &sz);

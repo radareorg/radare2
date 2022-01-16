@@ -25,12 +25,12 @@ endif
 
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.2
-CS_TAR=https://codeload.github.com/aquynh/capstone/tar.gz/$(CS_VER)
+CS_TAR=https://codeload.github.com/capstone-engine/capstone/tar.gz/$(CS_VER)
 #CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
 else
 CS_TAR=
-CS_URL_BASE=github.com/aquynh/capstone
+CS_URL_BASE=github.com/capstone-engine/capstone
 CS_URL=$(GIT_PREFIX)$(CS_URL_BASE).git
 CS_ARCHIVE=https://$(CS_URL_BASE)/archive
 CS_UPD=20201203
@@ -39,7 +39,7 @@ ifeq ($(USE_CS4),1)
 CS_TIP=a7cac8352f7397aa73bb2e2dcc1b6cdb2e1b8461
 CS_BRA=v4
 else
-CS_TIP=f278de39c1e8a9fca977b8dfeed99d6d1f8b82bf
+CS_TIP=c5aa12731ff94beea4dd737a24c592e49120a97c
 CS_BRA=next
 endif
 ifeq ($(CS_COMMIT_ARCHIVE),1)
@@ -71,7 +71,7 @@ endif
 endif
 SDB_URL=git://github.com/radareorg/sdb
 #SDB_URL=/Users/pancake/prg/sdb
-SPP_URL=git://github.com/radare/spp
+SPP_URL=git://github.com/trufae/spp
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
@@ -83,7 +83,7 @@ all:
 	exit 1
 endif
 
-preall: libwinkd capstone-build bochs
+preall: libwinkd capstone-build bochs sdbs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -108,7 +108,7 @@ PIC=-fPIC
 endif
 
 SDB_HOST=sdb/sdb$(BUILD_EXT_EXE)
-SDB_LIBA=sdb/src/libsdb.a
+SDB_LIBA=sdb/src/libsdb.$(EXT_AR)
 
 $(SDB_HOST):
 	$(MAKE) sdb-host HOST_CC=$(HOST_CC) CC=$(HOST_CC)
@@ -142,10 +142,10 @@ sdb-target:
 	$(MAKE) -C sdb clean ; rm -f sdb/src/*.o sdb/src/sdb_version.h
 	$(MAKE) -C sdb/src sdb_version.h
 ifeq ($(EXT_EXE),.wasm)
-	$(MAKE) -C sdb/src ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
+	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED} -DHAVE_MMAN=0" \
 		CC="${CC}" AR="${AR}" ARCH=undefined CFLAGS='${CFLAGS} -DHAVE_MMAN=0' LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
 else
-	$(MAKE) -C sdb/src ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
+	$(MAKE) -C sdb/src ARCH=xxx EXT_AR=.$(EXT_AR) RANLIB="${RANLIB}" CFLAGS_SHARED="${CFLAGS_SHARED}" \
 		CC="${CC}" AR="${AR}" ARCH=undefined LDFLAGS='${LDFLAGS}' libsdb.$(EXT_AR)
 endif
 	$(RANLIB) sdb/src/libsdb.$(EXT_AR)
@@ -229,7 +229,7 @@ capstone: capstone-$(CS_VER).tar.gz
 	$(MAKE) patch-capstone
 
 # already implemented in capstone.sh
-patch-capstone:
+patch-capstone capstone-patch:
 ifeq ($(CS_PATCHES),1)
 	if [ -d capstone/.git ]; then \
 ifeq ($(USE_CS4),1)
@@ -252,7 +252,9 @@ capstone-sync:
 ifeq ($(WITHOUT_PULL),1)
 	@echo "Nothing to sync because of --without-pull"
 else
-	"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}"
+	if [ ! -d capstone ]; then \
+		"$(SHELL)" capstone.sh "${CS_URL}" "${CS_BRA}" "${CS_TIP}" "${CS_REV}" "${CS_ARCHIVE_URL}" ; \
+	fi
 endif
 
 .PHONY: capstone capstone-sync
@@ -265,7 +267,7 @@ all:
 endif
 
 capstone-build: capstone
-	cd capstone && CFLAGS="-Dmips=mips ${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
+	cd capstone && CFLAGS="${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) $(CAPSTONE_MAKEFLAGS) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 CAPSTONE_STATIC=yes CAPSTONE_SHARED=no \
 		RANLIB="$(RANLIB)" LIBARCHS="" AR="$(AR)" IS_MINGW=0 libcapstone.a
 ifneq (${EXT_AR},a)

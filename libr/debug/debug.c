@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, jduck, TheLemonMan, saucec0de */
+/* radare - LGPL - Copyright 2009-2021 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_debug.h>
 #include <r_drx.h>
@@ -11,13 +11,11 @@ R_LIB_VERSION(r_debug);
 #define DBG_BUF_SIZE 512
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
-	if (!dbg || !dbg->h || !dbg->h->info) {
-		return NULL;
-	}
+	r_return_val_if_fail (dbg && dbg->h, NULL);
 	if (dbg->pid < 0) {
 		return NULL;
 	}
-	return dbg->h->info (dbg, arg);
+	return dbg->h->info? dbg->h->info (dbg, arg): NULL;
 }
 
 R_API void r_debug_info_free(RDebugInfo *rdi) {
@@ -214,7 +212,7 @@ static int r_debug_bps_enable(RDebug *dbg) {
  *
  * if the user wants to step, the single step here does the job.
  */
-static int r_debug_recoil(RDebug *dbg, RDebugRecoilMode rc_mode) {
+static bool r_debug_recoil(RDebug *dbg, RDebugRecoilMode rc_mode) {
 	/* if bp_addr is not set, we must not have actually hit a breakpoint */
 	if (!dbg->reason.bp_addr) {
 		return r_debug_bps_enable (dbg);
@@ -326,7 +324,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 		}
 	}
 	if (watch) {
-		hw = 1; //XXX
+		hw = 1; // XXX
 		bpi = r_bp_watch_add (dbg->bp, addr, bpsz, hw, rw);
 	} else {
 		bpi = hw
@@ -347,7 +345,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 
 static const char *r_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
 	// RDebug *dbg = (RDebug *)userptr;
-	eprintf ("STR CALLBACK WTF WTF WTF\n");
+	// TODO: implement the rnum callback for str or just get rid of it as we dont need it
 	return NULL;
 }
 
@@ -404,7 +402,7 @@ R_API RDebug *r_debug_new(int hard) {
 
 static int free_tracenodes_entry(RDebug *dbg, const char *k, const char *v) {
 	ut64 v_num = r_num_get (NULL, v);
-	free((void *)(size_t)v_num);
+	free ((void *)(size_t)v_num);
 	return true;
 }
 
@@ -413,7 +411,7 @@ R_API void r_debug_tracenodes_reset(RDebug *dbg) {
 	sdb_reset (dbg->tracenodes);
 }
 
-R_API RDebug *r_debug_free(RDebug *dbg) {
+R_API void r_debug_free(RDebug *dbg) {
 	if (dbg) {
 		// TODO: free it correctly.. we must ensure this is an instance and not a reference..
 		r_bp_free (dbg->bp);
@@ -440,15 +438,21 @@ R_API RDebug *r_debug_free(RDebug *dbg) {
 		free (dbg->glob_unlibs);
 		free (dbg);
 	}
-	return NULL;
 }
 
-R_API int r_debug_attach(RDebug *dbg, int pid) {
-	int ret = false;
-	if (dbg && dbg->h && dbg->h->attach) {
+R_API bool r_debug_attach(RDebug *dbg, int pid) {
+	r_return_val_if_fail (dbg, false);
+	if (pid < 0) {
+		return false;
+	}
+	bool ret = false;
+	if (dbg->h && dbg->h->attach) {
 		ret = dbg->h->attach (dbg, pid);
-		if (ret != -1) {
-			r_debug_select (dbg, pid, ret); //dbg->pid, dbg->tid);
+		if (ret) {
+			dbg->tid = pid;
+			// dbg->pid = pid;
+			// r_debug_select (dbg, pid, ret);
+			r_debug_select (dbg, dbg->pid, dbg->tid);
 		}
 	}
 	dbg->reason.type = R_DEBUG_REASON_STOPPED;
@@ -466,9 +470,14 @@ R_API int r_debug_stop(RDebug *dbg) {
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
 	if (arch && dbg && dbg->h) {
 		switch (bits) {
+		case 16:
+			if (dbg->h->bits == 16) {
+				dbg->bits = R_SYS_BITS_16;
+			}
+			break;
 		case 27:
 			if (dbg->h->bits == 27) {
-				dbg->bits = 27;
+				dbg->bits = R_SYS_BITS_27;
 			}
 			break;
 		case 32:
@@ -589,16 +598,17 @@ R_API int r_debug_detach(RDebug *dbg, int pid) {
 }
 
 R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
-	ut64 pc = 0;
-	int prev_pid = dbg->pid;
-	int prev_tid = dbg->tid;
-
+	r_return_val_if_fail (dbg, false);
 	if (pid < 0) {
 		return false;
 	}
 	if (tid < 0) {
 		tid = pid;
 	}
+#if 0
+	pid = r_io_desc_get_pid (dbg->iob.io->desc);
+	tid = r_io_desc_get_tid (dbg->iob.io->desc);
+#endif
 	if (pid == -1 && tid == -1) {
 		if (dbg->pid != -1) {
 			eprintf ("Child %d is dead\n", dbg->pid);
@@ -607,20 +617,22 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (pid < 0 || tid < 0) {
 		return false;
 	}
-
-	if (dbg->h && dbg->h->select && !dbg->h->select (dbg, pid, tid)) {
-		return false;
+	if (dbg->h && dbg->h->select) {
+		if (!dbg->h->select (dbg, pid, tid)) {
+			return false;
+		}
 	}
-
-	// Don't change the pid/tid if the plugin already modified it due to internal constraints
-	if (dbg->pid == prev_pid) {
-		dbg->pid = pid;
+	dbg->pid = pid;
+	dbg->tid = tid;
+	if (dbg->tid != -1) {
+		char *pidcmd = r_str_newf ("pid %d", dbg->tid);
+		if (pidcmd) {
+			free (r_io_system (dbg->iob.io, pidcmd));
+			free (pidcmd);
+		}
+	} else {
+		eprintf ("Cannot find pid for child %d\n", dbg->pid);
 	}
-	if (dbg->tid == prev_tid) {
-		dbg->tid = tid;
-	}
-
-	free (r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid)));
 
 	// Synchronize with the current thread's data
 	if (dbg->corebind.core) {
@@ -629,8 +641,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 		r_reg_arena_swap (core->dbg->reg, true);
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, false);
 
-		pc = r_debug_reg_get (dbg, "PC");
-		core->offset = pc;
+		core->offset = r_debug_reg_get (dbg, "PC");
 	}
 
 	dbg->main_arena_resolved = false;
@@ -743,7 +754,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			/* get the program coounter */
 			pc_ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
 			if (!pc_ri) { /* couldn't find PC?! */
-				eprintf ("Couldn't find PC!\n");
+				eprintf ("Couldn't find the program counter!\n");
 				return R_DEBUG_REASON_ERROR;
 			}
 
@@ -791,7 +802,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	ut64 pc, sp, r;
 	ut64 next[2];
 	RAnalOp op;
-	int br, i, ret;
+	int br, i;
 	union {
 		ut64 r64;
 		ut32 r32[2];
@@ -885,7 +896,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 		}
 	}
 
-	ret = r_debug_continue (dbg);
+	bool ret = r_debug_continue (dbg);
 
 	for (i = 0; i < br; i++) {
 		r_bp_del (dbg->bp, next[i]);
@@ -1626,7 +1637,7 @@ R_API bool r_debug_is_dead(RDebug *dbg) {
 	if (!strcmp (dbg->h->name, "io")) {
 		return false;
 	}
-	bool is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
+	bool is_dead = (dbg->pid < 0 && strncmp (dbg->h->name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
 	if (dbg->pid > 0 && dbg->h && dbg->h->kill) {
 		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
 	}
@@ -1681,7 +1692,7 @@ R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file) {
 	if (pid < 0 || tid < 0) {
 		return 0LL;
 	}
-	if (r_debug_attach (dbg, pid) == -1) {
+	if (!r_debug_attach (dbg, pid)) {
 		return 0LL;
 	}
 #if __WINDOWS__

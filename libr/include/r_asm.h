@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2021 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -103,6 +103,7 @@ typedef struct r_asm_t {
 	_RAsmPlugin *acur;
 	RList *plugins;
 	RBinBind binb;
+	RAnalBind analb;
 	RParse *ifilter;
 	RParse *ofilter;
 	Sdb *pair;
@@ -176,6 +177,7 @@ R_API char *r_asm_describe(RAsm *a, const char* str);
 R_API RList* r_asm_get_plugins(RAsm *a);
 R_API void r_asm_list_directives(void);
 R_API SdbGperf *r_asm_get_gperf(const char *k);
+R_API RList *r_asm_cpus(RAsm *a);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new(void);
@@ -212,16 +214,12 @@ extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_avr;
 extern RAsmPlugin r_asm_plugin_bf;
 extern RAsmPlugin r_asm_plugin_null;
-extern RAsmPlugin r_asm_plugin_chip8;
 extern RAsmPlugin r_asm_plugin_cr16;
 extern RAsmPlugin r_asm_plugin_cris_gnu;
 extern RAsmPlugin r_asm_plugin_dalvik;
 extern RAsmPlugin r_asm_plugin_dcpu16;
-extern RAsmPlugin r_asm_plugin_ebc;
 extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_h8300;
-extern RAsmPlugin r_asm_plugin_hexagon;
-extern RAsmPlugin r_asm_plugin_hexagon_gnu;
 extern RAsmPlugin r_asm_plugin_hppa_gnu;
 extern RAsmPlugin r_asm_plugin_i4004;
 extern RAsmPlugin r_asm_plugin_i8080;
@@ -261,7 +259,6 @@ extern RAsmPlugin r_asm_plugin_v850;
 extern RAsmPlugin r_asm_plugin_v850_gnu;
 extern RAsmPlugin r_asm_plugin_m68k_gnu;
 extern RAsmPlugin r_asm_plugin_vax;
-extern RAsmPlugin r_asm_plugin_wasm;
 extern RAsmPlugin r_asm_plugin_ws;
 extern RAsmPlugin r_asm_plugin_x86_as;
 extern RAsmPlugin r_asm_plugin_x86_cs;
@@ -273,6 +270,11 @@ extern RAsmPlugin r_asm_plugin_xtensa;
 extern RAsmPlugin r_asm_plugin_z80;
 extern RAsmPlugin r_asm_plugin_arm_v35;
 extern RAsmPlugin r_asm_plugin_pyc;
+extern RAsmPlugin r_asm_plugin_pdp11_gnu;
+extern RAsmPlugin r_asm_plugin_alpha;
+extern RAsmPlugin r_asm_plugin_vasm;
+extern RAsmPlugin r_asm_plugin_jdh8;
+extern RAsmPlugin r_asm_plugin_loongarch_gnu;
 
 #endif
 

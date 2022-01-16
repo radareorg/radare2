@@ -1,5 +1,5 @@
 /*
- * sfsyscall.h --- SFLib syscall macros for OpenBSD/i386 
+ * sfsyscall.h --- SFLib syscall macros for OpenBSD/i386
  * see http://www.secdev.org/projects/shellforge.html for more informations
  *
  * Copyright (C) 2004  Philippe Biondi <phil@secdev.org>
@@ -124,7 +124,7 @@ __asm__ volatile (\
 	: "I" (__NR_##name),"g" ((long)(arg1)),"r" ((long)(arg2)), \
 	  "r" ((long)(arg3)),"S" ((long)(arg4)) ); \
 __sfsyscall_return(type,__res); \
-} 
+}
 
 #define _sfsyscall5(type,name,type1,arg1,type2,arg2,type3,arg3,type4,arg4, \
 	  type5,arg5) \

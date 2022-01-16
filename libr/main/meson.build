@@ -1,6 +1,7 @@
 r_main_sources = [
   'main.c',
   'r2agent.c',
+  'r2pm.c',
   'rabin2.c',
   'radare2.c',
   'radiff2.c',
@@ -10,7 +11,7 @@ r_main_sources = [
   'rarun2.c',
   'rasign2.c',
   'rasm2.c',
-  'rvc2.c',
+  'ravc2.c',
   'rax2.c'
 ]
 

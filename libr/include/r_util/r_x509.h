@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 /*
- * Following RFC 5280 
+ * Following RFC 5280
  */
 
 typedef struct r_x509_validity_t {

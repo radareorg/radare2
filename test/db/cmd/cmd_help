@@ -147,9 +147,9 @@ octal   01
 unit    1
 segment 0000:0001
 string  "\x01"
-fvalue: 1.0
-float:  0.000000f
-double: 0.000000
+fvalue  1.0
+float   0.000000f
+double  0.000000
 binary  0b00000001
 ternary 0t1
 1
@@ -167,9 +167,9 @@ octal   00
 unit    0
 segment 0000:0000
 string  "\0"
-fvalue: 0.0
-float:  0.000000f
-double: 0.000000
+fvalue  0.0
+float   0.000000f
+double  0.000000
 binary  0b00000000
 ternary 0t0
 0
@@ -185,11 +185,11 @@ uint64  18446744073709551615
 hex     0xffffffffffffffff
 octal   01777777777777777777777
 unit    16E
-segment fffff000:0fff
+segment fffff000:ffff
 string  "\xff\xff\xff\xff\xff\xff\xff\xff"
-fvalue: -1.0
-float:  nanf
-double: nan
+fvalue  -1.0
+float   nanf
+double  nan
 binary  0b1111111111111111111111111111111111111111111111111111111111111111
 ternary 0t11112220022122120101211020120210210211220
 EOF
@@ -206,9 +206,9 @@ octal   02
 unit    2
 segment 0000:0002
 string  "\x02"
-fvalue: 3.0
-float:  0.000000f
-double: 0.000000
+fvalue  3.0
+float   0.000000f
+double  0.000000
 binary  0b00000010
 ternary 0t2
 EOF
@@ -243,5 +243,39 @@ print hello;print world;println
 EOF
 EXPECT=<<EOF
 helloworld
+EOF
+RUN
+
+NAME="binary shift"
+FILE=-
+CMDS=<<EOF
+"?b 1<<1"
+"?b 1 << 1"
+"?b 1 << 2"
+EOF
+EXPECT=<<EOF
+10b
+10b
+100b
+EOF
+RUN
+
+NAME="comparison operators"
+FILE=-
+CMDS=<<EOF
+"?v 1<1"
+"?v 1<2"
+"?v 2<1"
+"?v 1>1"
+"?v 1>2"
+"?v 2>1"
+EOF
+EXPECT=<<EOF
+0x0
+0x1
+0x0
+0x0
+0x0
+0x1
 EOF
 RUN

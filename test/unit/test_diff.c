@@ -1,5 +1,5 @@
 #include <math.h>
-#include <r_diff.h>
+#include <r_util/r_diff.h>
 #include "minunit.h"
 
 #define R(a,b,c,d) {(const ut8*)a, (const ut8*)b, (int)c, (int)d}

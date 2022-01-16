@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2019 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2021 - GustavoLCR */
 
 #include <r_core.h>
-#include <TlHelp32.h>
-#include <windows_heap.h>
-#include "..\..\debug\p\native\maps\windows_maps.h"
+#include <tlhelp32.h>
+#include "heap/r_windows.h"
+#include "../debug/p/native/maps/windows_maps.h"
 
 /*
 *	Viewer discretion advised: Spaghetti code ahead

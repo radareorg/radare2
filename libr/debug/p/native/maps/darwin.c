@@ -1,21 +1,21 @@
 #if __APPLE__
 
 kern_return_t mach_vm_region_recurse (
-        vm_map_t target_task,
-        mach_vm_address_t *address,
-        mach_vm_size_t *size,
-        natural_t *nesting_depth,
-        vm_region_recurse_info_t info,
-        mach_msg_type_number_t *infoCnt
+	vm_map_t target_task,
+	mach_vm_address_t *address,
+	mach_vm_size_t *size,
+	natural_t *nesting_depth,
+	vm_region_recurse_info_t info,
+	mach_msg_type_number_t *infoCnt
 );
 
-static const char * unparse_inheritance (vm_inherit_t i) {
-        switch (i) {
-        case VM_INHERIT_SHARE: return "share";
-        case VM_INHERIT_COPY: return "copy";
-        case VM_INHERIT_NONE: return "none";
-        default: return "???";
-        }
+static const char *unparse_inheritance(vm_inherit_t i) {
+	switch (i) {
+	case VM_INHERIT_SHARE: return "share";
+	case VM_INHERIT_COPY: return "copy";
+	case VM_INHERIT_NONE: return "none";
+	default: return "???";
+	}
 }
 
 #if __LP64__
@@ -148,7 +148,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 				info.inheritance? " inherit": "",
 				info.is_submap ? " submap": "",
 				module_name, depth);
-				//info.shared ? "shar" : "priv", 
+				//info.shared ? "shar" : "priv",
 				//info.reserved ? "reserved" : "not-reserved",
 				//""); //module_name);
 			mr = r_debug_map_new (buf, address, address+size,
@@ -170,7 +170,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 
 #if 0
 // TODO: this loop MUST be cleaned up
-static RList *osx_dbg_maps (RDebug *dbg) {
+static RList *osx_dbg_maps(RDebug *dbg) {
 	RDebugMap *mr;
 	char buf[1024];
 	int i, print;
@@ -318,7 +318,7 @@ static RList *darwin_dbg_maps(RDebug *dbg) {
 	const char *osname = dbg->anal->syscall->os;
 	if (osname && !strcmp (osname, "ios")) {
 		return ios_dbg_maps (dbg);
-	} 
+	}
 	return osx_dbg_maps (dbg);
 #endif
 }

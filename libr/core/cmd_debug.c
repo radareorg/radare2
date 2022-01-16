@@ -194,6 +194,7 @@ static const char *help_msg_di[] = {
 	"Usage: di", "", "Debugger target information",
 	"di", "", "Show debugger target information",
 	"di*", "", "Same as above, but in r2 commands",
+	"dir", "", "Alias for 'ls'",
 	"diq", "", "Same as above, but in one line",
 	"dij", "", "Same as above, but in JSON format",
 	"dif", " [$a] [$b]", "Compare two files (or $alias files)",
@@ -520,37 +521,6 @@ struct trace_node {
 	int refs;
 };
 
-static void cmd_debug_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, d);
-	DEFINE_CMD_DESCRIPTOR (core, db);
-	DEFINE_CMD_DESCRIPTOR (core, dbt);
-	DEFINE_CMD_DESCRIPTOR (core, dc);
-	DEFINE_CMD_DESCRIPTOR (core, dcs);
-	DEFINE_CMD_DESCRIPTOR (core, dcu);
-	DEFINE_CMD_DESCRIPTOR (core, dd);
-	DEFINE_CMD_DESCRIPTOR (core, de);
-	DEFINE_CMD_DESCRIPTOR (core, des);
-	DEFINE_CMD_DESCRIPTOR (core, di);
-	DEFINE_CMD_DESCRIPTOR (core, dk);
-	DEFINE_CMD_DESCRIPTOR (core, dko);
-	DEFINE_CMD_DESCRIPTOR (core, dm);
-	DEFINE_CMD_DESCRIPTOR (core, dmi);
-	DEFINE_CMD_DESCRIPTOR (core, dmm);
-	DEFINE_CMD_DESCRIPTOR (core, dmp);
-	DEFINE_CMD_DESCRIPTOR (core, do);
-	DEFINE_CMD_DESCRIPTOR (core, dp);
-	DEFINE_CMD_DESCRIPTOR (core, dr);
-	DEFINE_CMD_DESCRIPTOR (core, drp);
-	DEFINE_CMD_DESCRIPTOR (core, drs);
-	DEFINE_CMD_DESCRIPTOR (core, drt);
-	DEFINE_CMD_DESCRIPTOR (core, drx);
-	DEFINE_CMD_DESCRIPTOR (core, ds);
-	DEFINE_CMD_DESCRIPTOR (core, dt);
-	DEFINE_CMD_DESCRIPTOR (core, dte);
-	DEFINE_CMD_DESCRIPTOR (core, dts);
-	DEFINE_CMD_DESCRIPTOR (core, dx);
-}
-
 // XXX those tmp files are never removed and we shuoldnt use files for this
 static void setRarunProfileString(RCore *core, const char *str) {
 	char *file = r_file_temp ("rarun2");
@@ -650,7 +620,7 @@ static int showreg(RCore *core, const char *str) {
 	return size;
 }
 
-static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node *tn) {
+static RGraphNode *get_graphtrace_node(RGraph *g, Sdb *nodes, struct trace_node *tn) {
 	RGraphNode *gn;
 	char tn_key[TN_KEY_LEN];
 
@@ -663,13 +633,13 @@ static RGraphNode *get_graphtrace_node (RGraph *g, Sdb *nodes, struct trace_node
 	return gn;
 }
 
-static void dot_trace_create_node (RTreeNode *n, RTreeVisitor *vis) {
+static void dot_trace_create_node(RTreeNode *n, RTreeVisitor *vis) {
 	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
 	struct trace_node *tn = n->data;
 	if (tn) get_graphtrace_node (data->graph, data->graphnodes, tn);
 }
 
-static void dot_trace_discover_child (RTreeNode *n, RTreeVisitor *vis) {
+static void dot_trace_discover_child(RTreeNode *n, RTreeVisitor *vis) {
 	struct dot_trace_ght *data = (struct dot_trace_ght *)vis->data;
 	RGraph *g = data->graph;
 	Sdb *gnodes = data->graphnodes;
@@ -1130,7 +1100,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
 		r_config_set_i (core->config, "dbg.swstep",
 				(core->dbg->h && !core->dbg->h->canstep));
-		r_core_cmdf (core, "=!pid %d", core->dbg->pid);
+		r_core_cmdf (core, ":pid %d", core->dbg->pid);
 		break;
 	case 'f': // "dpf"
 		if (core->io && core->io->desc) {
@@ -1478,7 +1448,7 @@ static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, PJ *pj, i
 	if ((fd = r_io_fd_open (core->io, file, R_PERM_R, 0)) == -1) {
 		return false;
 	}
-	RBinOptions opt = { 0 };
+	RBinFileOptions opt = { 0 };
 	opt.fd = fd;
 	opt.sz = r_io_fd_size (core->io, fd);
 	opt.baseaddr = baseaddr;
@@ -1687,8 +1657,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 							newfile = r_file_temp ("memlib");
 							if (newfile) {
 								file = newfile;
-								r_core_cmdf (core, "wtf %s 0x%"PFMT64x" @ 0x%"PFMT64x" 2> %s",
-								             file, map->size, baddr, R_SYS_DEVNULL);
+								r_core_cmdf (core, "wtf %s 0x%" PFMT64x " @ 0x%" PFMT64x " 2> %s",
+										file, map->size, baddr, R_SYS_DEVNULL);
 							}
 						}
 						get_bin_info (core, file, baddr, pj, mode, symbols_only, &filter);
@@ -2296,7 +2266,7 @@ static char *__table_format_string(RTable *t, int fmt) {
 	return r_table_tofancystring (t);
 }
 
-static void __tableRegList (RCore *core, RReg *reg, const char *str) {
+static void __tableRegList(RCore *core, RReg *reg, const char *str) {
 	int i;
 	RRegItem *e;
 	RTable *t = r_core_table (core, "regprofile");
@@ -3375,7 +3345,7 @@ static void core_cmd_dbi(RCore *core, const char *input, const ut64 idx) {
 }
 
 #if __WINDOWS__
-#include "..\debug\p\native\windows\windows_message.h"
+#include "../debug/p/native/windows/windows_message.h"
 #endif
 
 #define DB_ARG(x) r_str_word_get0(str, x)
@@ -3864,7 +3834,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	free (str);
 }
 
-static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 addr) {
+static RTreeNode *add_trace_tree_child(Sdb *db, RTree *t, RTreeNode *cur, ut64 addr) {
 	struct trace_node *t_node;
 	char dbkey[TN_KEY_LEN];
 
@@ -3883,7 +3853,7 @@ static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 
 
 static RCore *_core = NULL;
 
-static void trace_traverse_pre (RTreeNode *n, RTreeVisitor *vis) {
+static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 	const char *name = "";
 	struct trace_node *tn = n->data;
 	unsigned int i;
@@ -3900,7 +3870,7 @@ static void trace_traverse_pre (RTreeNode *n, RTreeVisitor *vis) {
 	r_cons_printf (" 0x%08"PFMT64x" refs %d %s\n", tn->addr, tn->refs, name);
 }
 
-static void trace_traverse (RTree *t) {
+static void trace_traverse(RTree *t) {
 	RTreeVisitor vis = { 0 };
 
 	/* clear the line on stderr, because somebody has written there */
@@ -4073,7 +4043,7 @@ static void debug_trace_calls(RCore *core, const char *input) {
 	r_cons_break_pop ();
 }
 
-static void r_core_debug_esil (RCore *core, const char *input) {
+static void r_core_debug_esil(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '\0': // "de"
 		// list
@@ -4372,15 +4342,15 @@ static bool cmd_dcu(RCore *core, const char *input) {
 					ut32 ret_addr;
 					RDebugFrame *frame = R_NEW0 (RDebugFrame);
 					cur_sp = r_debug_reg_get (core->dbg, sp_name);
-					(void)core->dbg->iob.read_at (core->dbg->iob.io, cur_sp, (ut8 *)&ret_addr,
-					                              sizeof (ret_addr));
+					(void)core->dbg->iob.read_at (core->dbg->iob.io, cur_sp,
+							(ut8 *)&ret_addr, sizeof (ret_addr));
 					frame->addr = ret_addr;
 					frame->size = old_sp - cur_sp;
 					frame->sp = cur_sp;
 					frame->bp = old_sp;
 					r_list_prepend (core->dbg->call_frames, frame);
-					eprintf ("%ld Call from 0x%08"PFMT64x" to 0x%08"PFMT64x" ret 0x%08"PFMT32x"\n",
-					         level, prev_pc, pc, ret_addr);
+					eprintf ("%ld Call from 0x%08" PFMT64x " to 0x%08" PFMT64x " ret 0x%08" PFMT32x "\n",
+							level, prev_pc, pc, ret_addr);
 					level++;
 					old_sp = cur_sp;
 					prev_call = false;
@@ -4393,12 +4363,12 @@ static bool cmd_dcu(RCore *core, const char *input) {
 						eprintf ("%ld", level);
 						level--;
 					}
-					eprintf (" Ret from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n",
-					         prev_pc, pc);
+					eprintf (" Ret from 0x%08" PFMT64x " to 0x%08" PFMT64x "\n",
+							prev_pc, pc);
 					prev_ret = false;
 				}
 				if (steps % 500 == 0 || pc == addr) {
-					eprintf ("At 0x%08"PFMT64x" after %lu steps\n", pc, steps);
+					eprintf ("At 0x%08" PFMT64x " after %lu steps\n", pc, steps);
 				}
 				if (r_cons_is_breaked () || r_debug_is_dead (core->dbg) || pc == addr) {
 					break;
@@ -4433,7 +4403,7 @@ static bool cmd_dcu(RCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_debug_continue (RCore *core, const char *input) {
+static int cmd_debug_continue(RCore *core, const char *input) {
 	int pid, old_pid, signum;
 	char *ptr;
 	// TODO: we must use this for step 'ds' too maybe...
@@ -4574,13 +4544,13 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 	return 1;
 }
 
-static char *get_corefile_name (const char *raw_name, int pid) {
+static char *get_corefile_name(const char *raw_name, int pid) {
 	return (!*raw_name)?
 		r_str_newf ("core.%u", pid) :
 		r_str_trim_dup (raw_name);
 }
 
-static int cmd_debug_step (RCore *core, const char *input) {
+static int cmd_debug_step(RCore *core, const char *input) {
 	ut64 addr = core->offset;;
 	ut8 buf[64];
 	RAnalOp aop;
@@ -4756,11 +4726,33 @@ static int cmd_debug_step (RCore *core, const char *input) {
 	return 1;
 }
 
-static ut8*getFileData(RCore *core, const char *arg) {
-	if (*arg == '$') {
-		return (ut8*) r_cmd_alias_get (core->rcmd, arg, 1);
+static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
+	ut8 *out = NULL;
+	int size = 0;
+	if (*arg == '$' && !arg[1]) {
+		eprintf ("No alias name given\n");
+	} else if (*arg == '$') {
+		RCmdAliasVal *v  = r_cmd_alias_get (core->rcmd, arg+1);
+		if (v) {
+			out = malloc (v->sz);
+			if (out) {
+				memcpy (out, v->data, v->sz);
+				size = v->sz;
+			}
+		} else {
+			eprintf ("No such alias \"$%s\"\n", arg+1);
+		}
+	} else {
+		size_t file_sz;
+		out = (ut8*) r_file_slurp (arg, &file_sz);
+		size = file_sz;
 	}
-	return (ut8*)r_file_slurp (arg, NULL);
+
+	if (sz) {
+		*sz = size;
+	}
+
+	return out;
 }
 
 static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
@@ -5195,7 +5187,9 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'i': // "di"
-		{
+		if (input[1] == 'r' ) { // "dir"
+			r_core_cmdf (core, "ls%s", input + 2);
+		} else {
 			RDebugInfo *rdi = r_debug_info (core->dbg, input + 2);
 			RDebugReasonType stop = r_debug_stop_reason (core->dbg);
 			char *escaped_str;
@@ -5256,11 +5250,11 @@ static int cmd_debug(void *data, const char *input) {
 						char *arg2 = strchr (arg, ' ');
 						if (arg2) {
 							*arg2++ = 0;
-							ut8 *a = getFileData (core, arg);
-							ut8 *b = getFileData (core, arg2);
+							int al;
+							int bl;
+							ut8 *a = getFileData (core, arg, &al);
+							ut8 *b = getFileData (core, arg2, &bl);
 							if (a && b) {
-								int al = strlen ((const char*)a);
-								int bl = strlen ((const char*)b);
 								RDiff *d = r_diff_new ();
 								char *uni = r_diff_buffers_to_string (d, a, al, b, bl);
 								r_cons_printf ("%s\n", uni);
@@ -5269,6 +5263,8 @@ static int cmd_debug(void *data, const char *input) {
 							} else {
 								eprintf ("Cannot open those alias files\n");
 							}
+							free (a);
+							free (b);
 						}
 						free (arg);
 					} else {

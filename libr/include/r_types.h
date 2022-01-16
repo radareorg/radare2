@@ -5,11 +5,14 @@
 #define _FILE_OFFSET_BITS 64
 
 // defines like IS_DIGIT, etc'
+#include <r_types_base.h>
 #include "r_util/r_str_util.h"
 #include <r_userconf.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdint.h> // required for uint64_t
+#include <inttypes.h> // required for PRIx64
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
@@ -88,6 +91,8 @@
 #define TARGET_OS_IPHONE 0
 #endif
 
+#undef LIBC_HAVE_SYSTEM
+#undef HAVE_SYSTEM
 #if __IPHONE_8_0 && TARGET_OS_IPHONE && !defined(MAC_OS_VERSION_11_0)
 #define LIBC_HAVE_SYSTEM 0
 #define HAVE_SYSTEM 0
@@ -155,7 +160,26 @@
 # define __UNIX__ 1
 #endif
 
-#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__)
+#if 0
+// XXX any non-unix system dont have termios :? android?
+#if __linux__ ||  __APPLE__ || __OpenBSD__ || __FreeBSD__ || __NetBSD__ || __DragonFly__ || __HAIKU__ || __serenity__ || __vinix__
+#define HAVE_PTY 1
+#else
+#define HAVE_PTY 0
+#endif
+#endif
+
+#undef HAVE_PTY
+#if EMSCRIPTEN || __wasi__ || defined(__serenity__)
+#define HAVE_PTY 0
+#else
+// #define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
+#define HAVE_PTY __UNIX__ && LIBC_HAVE_FORK && !__sun
+#endif
+
+
+
+#if defined(EMSCRIPTEN) || defined(__wasi__) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__) || defined(__sun) || defined(__HAIKU__) || defined(__serenity__) || defined(__vinix__)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif
@@ -219,8 +243,6 @@
 #else
 #define R_PRINTF_CHECK(fmt, dots)
 #endif
-
-#include <r_types_base.h>
 
 #undef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64
@@ -292,14 +314,16 @@ typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
 #elif R_INLINE
   #define R_API inline
 #else
-  #if defined(__GNUC__) && __GNUC__ >= 4
-    #define R_API __attribute__((visibility("default")))
-  #elif defined(_MSC_VER)
+  #if __WINDOWS__
     #define R_API __declspec(dllexport)
+  #elif defined(__GNUC__) && __GNUC__ >= 4
+    #define R_API __attribute__((visibility("default")))
   #else
     #define R_API
   #endif
 #endif
+
+#define R_HIDDEN __attribute__((visibility("hidden")))
 
 #define R_LIB_VERSION_HEADER(x) \
 R_API const char *x##_version(void)
@@ -377,11 +401,6 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 #endif
 
-#ifndef HAVE_EPRINTF
-#define eprintf(...) fprintf(stderr,__VA_ARGS__)
-#define HAVE_EPRINTF 1
-#endif
-
 #ifndef typeof
 #define typeof(arg) __typeof__(arg)
 #endif
@@ -417,10 +436,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define LDBLFMT "f"
 #define HHXFMT  "x"
 #else
-#define PFMT64x "llx"
-#define PFMT64d "lld"
-#define PFMT64u "llu"
-#define PFMT64o "llo"
+#define PFMT64x PRIx64
+#define PFMT64d PRId64
+#define PFMT64u PRIu64
+#define PFMT64o PRIo64
 #define PFMTSZx "zx"
 #define PFMTSZd "zd"
 #define PFMTSZu "zu"
@@ -439,6 +458,26 @@ static inline void *r_new_copy(int size, void *data) {
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
+
+#ifndef eprintf
+#define eprintf(...) fprintf (stderr, __VA_ARGS__)
+
+#define EPRINT_STR(x) eprintf (#x ": \"%s\"\n", x)
+#define EPRINT_CHAR(x) eprintf (#x ": '%c' (0x%x)\n", x, x)
+#define EPRINT_INT(x) eprintf (#x ": %d (0x%x)\n", x, x)
+#define EPRINT_BOOL(x) eprintf (#x ": %s\n", x? "true": "false")
+#define EPRINT_PTR(x) eprintf (#x ": %p\n", x)
+
+#define EPRINT_UT64(x) eprintf (#x ": %" PFMT64u " (0x%" PFMT64x ")\n", x, x)
+#define EPRINT_ST64(x) eprintf (#x ": %" PFMT64d " (0x%" PFMT64x ")\n", x, x)
+#define EPRINT_UT32(x) eprintf (#x ": %" PFMT32u " (0x%" PFMT32x ")\n", x, x)
+#define EPRINT_ST32(x) eprintf (#x ": %" PFMT32d " (0x%" PFMT32x ")\n", x, x)
+#define EPRINT_UT16(x) eprintf (#x ": %hu (0x%hx)\n", x, x)
+#define EPRINT_ST16(x) eprintf (#x ": %hd (0x%hx)\n", x, x)
+#define EPRINT_UT8(x) eprintf (#x ": %hhu (0x%hhx)\n", x, x)
+#define EPRINT_ST8(x) eprintf (#x ": %hhd (0x%hhx)\n", x, x)
+#endif
+
 
 #if __APPLE__
 # if __i386__
@@ -506,6 +545,10 @@ static inline void *r_new_copy(int size, void *data) {
 #elif __mips__
 #define R_SYS_ARCH "mips"
 #define R_SYS_BITS R_SYS_BITS_32
+#define R_SYS_ENDIAN 1
+#elif __loongarch__
+#define R_SYS_ARCH "loongarch"
+#define R_SYS_BITS (R_SYS_BITS_32 | R_SYS_BITS_64)
 #define R_SYS_ENDIAN 1
 #elif __EMSCRIPTEN__
 /* we should default to wasm when ready */
@@ -697,6 +740,6 @@ typedef int RRef;
 #define R_REF_TYPE RRef R_REF_NAME
 #define R_REF_FUNCTIONS(s, n) \
 static inline void n##_ref(s *x) { x->R_REF_NAME++; } \
-static inline void n##_unref(s *x) { r_unref (x, n##_free); }
+static inline void n##_unref(s *x) { r_unref(x, n##_free); }
 
 #endif // R2_TYPES_H

@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
 	printf ("Distance: %d\n", rs->distance);
 	r_search_begin (rs);
 	printf ("Searching for '%s' in '%s'\n", "lib", buffer);
-	r_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	r_search_update (rs, 0LL, (ut8 *)buffer, strlen (buffer));
 
 	printf("--\n");
 
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
 	printf ("Distance: %d\n", rs->distance);
 	r_search_begin (rs);
 	printf ("Searching for '%s' in '%s'\n", "lib", buffer);
-	r_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	r_search_update (rs, 0LL, (ut8 *)buffer, strlen (buffer));
 	rs = r_search_free (rs);
 
 	printf("--\n");
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	r_search_set_callback (rs, &hit, buffer);
 	r_search_begin (rs);
 	printf ("Searching for '%s' with binmask 'ff00ff' in '%s'\n", "lib", buffer);
-	r_search_update_i (rs, 0LL, (ut8*)buffer, strlen(buffer));
+	r_search_update (rs, 0LL, (ut8 *)buffer, strlen (buffer));
 	rs = r_search_free (rs);
 	return 0;
 }

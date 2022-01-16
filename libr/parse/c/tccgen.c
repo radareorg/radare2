@@ -530,12 +530,12 @@ ST_FUNC int type_size(CType *type, int *a) {
 			}
 		} else if (!strncmp (tcc_state->arch, "arm", 3)) {
 			/* It was like originally:
-			        #ifdef TCC_ARM_EABI
-			                *a = 8;
-			        #else
-			        *a = 4;
-			        #endif
-			        FIXME: Determine EABI then too
+			#ifdef TCC_ARM_EABI
+				*a = 8;
+			#else
+				*a = 4;
+			#endif
+			FIXME: Determine EABI then too
 			*/
 			*a = 8;
 		} else {
@@ -773,7 +773,7 @@ add_tstr:
 		if (t & VT_ARRAY) {
 			type_to_str (buf, buf_size, &s->type, NULL);
 		} else {
-			pstrcpy (buf1, sizeof(buf1), "*");
+			r_str_ncpy (buf1, "*", sizeof (buf1));
 			if (varstr) {
 				pstrcat (buf1, sizeof(buf1), varstr);
 			}

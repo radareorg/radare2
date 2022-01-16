@@ -401,9 +401,9 @@ Cm 8 wwww @ 0x00000380
 ----
 [{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true}]
 ----
-[{"offset":256,"type":"Cd","name":"","size":3}]
+[{"offset":256,"type":"Cd","name":"_","size":3}]
 ----
-[{"offset":512,"type":"Ch","name":""}]
+[{"offset":512,"type":"Ch","name":"_"}]
 ----
 [{"offset":768,"type":"Cf","name":"x"}]
 ----
@@ -411,7 +411,7 @@ Cm 8 wwww @ 0x00000380
 ----
 [{"offset":896,"type":"Cm","name":"wwww"}]
 ----
-[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true},{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"","size":3},{"offset":512,"type":"Ch","name":""},{"offset":768,"type":"Cf","name":"x"},{"offset":896,"type":"Cm","name":"wwww"}]
+[{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true},{"offset":0,"type":"CCu","name":"Hello!"},{"offset":256,"type":"Cd","name":"_","size":3},{"offset":512,"type":"Ch","name":"_"},{"offset":768,"type":"Cf","name":"x"},{"offset":896,"type":"Cm","name":"wwww"}]
 EOF
 RUN
 

@@ -151,6 +151,7 @@ CPU_MODEL cpu_models[] = {
 			NULL
 		}
 	},
+	//{ .model = NULL },
 };
 
 /// XXX this code is awful
@@ -178,8 +179,11 @@ static CPU_MODEL *__get_cpu_model_recursive(const char *model) {
 
 static CPU_MODEL *get_cpu_model(const char *model) {
 	static CPU_MODEL *cpu = NULL;
+	if (!model) {
+		return NULL;
+	}
 	// cache
-	if (cpu && !r_str_casecmp (model, cpu->model)) {
+	if (cpu && cpu->model && !r_str_casecmp (model, cpu->model)) {
 		return cpu;
 	}
 	return cpu = __get_cpu_model_recursive (model);
@@ -525,7 +529,7 @@ INST_HANDLER (cp) {	// CP Rd, Rr
 	if (len < 2) {
 		return;
 	}
-	const ut32 r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
+	const ut32 r = (buf[0] & 0x0f) | ((buf[1] << 3) & 0x10);
 	const ut32 d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
 	ESIL_A ("r%d,r%d,-,0x80,&,!,!,nf,:=,", r, d);
 	ESIL_A ("r%d,r%d,==,", r, d);
@@ -540,7 +544,7 @@ INST_HANDLER (cpc) {	// CPC Rd, Rr
 	if (len < 2) {
 		return;
 	}
-	const ut32 r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
+	const ut32 r = (buf[0] & 0x0f) | ((buf[1] << 3) & 0x10);
 	const ut32 d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
 
 	ESIL_A ("cf,r%d,+,DUP,r%d,-,0x80,&,!,!,nf,:=,", r, d);		// Rd - Rr - C
@@ -617,10 +621,13 @@ INST_HANDLER (des) {	// DES k
 }
 
 INST_HANDLER (eijmp) {	// EIJMP
-	ut64 z, eind;
+	ut64 z = 0;
+	ut64 eind = 0;
 	// read z and eind for calculating jump address on runtime
-	r_anal_esil_reg_read (anal->esil, "z",    &z,    NULL);
-	r_anal_esil_reg_read (anal->esil, "eind", &eind, NULL);
+	if (anal->esil) {
+		r_anal_esil_reg_read (anal->esil, "z",    &z,    NULL);
+		r_anal_esil_reg_read (anal->esil, "eind", &eind, NULL);
+	}
 	// real target address may change during execution, so this value will
 	// be changing all the time
 	op->jump = ((eind << 16) + z) << 1;
@@ -713,9 +720,11 @@ INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
 }
 
 INST_HANDLER (ijmp) {	// IJMP k
-	ut64 z;
+	ut64 z = 0;
 	// read z for calculating jump address on runtime
-	r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
+	if (anal->esil) {
+		r_anal_esil_reg_read (anal->esil, "z", &z, NULL);
+	}
 	// real target address may change during execution, so this value will
 	// be changing all the time
 	op->jump = z << 1;
@@ -1373,11 +1382,13 @@ INST_HANDLER (sleep) {	// SLEEP
 	ESIL_A ("BREAK");
 }
 
-INST_HANDLER (spm) {	// SPM Z+
-	ut64 spmcsr;
+INST_HANDLER (spm) { // SPM Z+
+	ut64 spmcsr = 0;
 
 	// read SPM Control Register (SPMCR)
-	r_anal_esil_reg_read (anal->esil, "spmcsr", &spmcsr, NULL);
+	if (anal->esil) {
+		r_anal_esil_reg_read (anal->esil, "spmcsr", &spmcsr, NULL);
+	}
 
 	// clear SPMCSR
 	ESIL_A ("0x7c,spmcsr,&=,");
@@ -1678,32 +1689,28 @@ INVALID_OP:
 	return NULL;
 }
 
+//TODO: remove register analysis comment when each avr cpu will be implemented in asm plugin
 static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	CPU_MODEL *cpu;
-	ut64 offset;
-	int size = -1;
 	char mnemonic[32] = {0};
 
 	set_invalid_op (op, addr);
 
-	size = avr_decode (mnemonic, addr, buf, len);
+	int size = avr_anal (anal, mnemonic, sizeof (mnemonic), addr, buf, len);
+
 	if (!strcmp (mnemonic, "invalid") ||
 		!strcmp (mnemonic, "truncated")) {
 		op->eob = true;
-		op->mnemonic = strdup(mnemonic);
-		return -1;
-	}
-
-	if (!op) {
-		return -1;
+		op->mnemonic = strdup (mnemonic);
+		op->size = 2;
+		return -1;//R_MIN (len, 2);
 	}
 
 	// select cpu info
-	cpu = get_cpu_model (anal->cpu);
+	CPU_MODEL *cpu = get_cpu_model (anal->cpu);
 
 	// set memory layout registers
 	if (anal->esil) {
-		offset = 0;
+		ut64 offset = 0;
 		r_anal_esil_reg_write (anal->esil, "_prog", offset);
 
 		offset += (1 << cpu->pc);
@@ -1721,7 +1728,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	// process opcode
 	avr_op_analyze (anal, op, addr, buf, len, cpu);
 
-	op->mnemonic = strdup(mnemonic);
+	op->mnemonic = op->size > 1? strdup (mnemonic): "invalid";
 	op->size = size;
 
 	return size;
@@ -1810,8 +1817,7 @@ static bool avr_custom_spm_page_erase(RAnalEsil *esil) {
 
 // ESIL operation SPM_PAGE_FILL
 static bool avr_custom_spm_page_fill(RAnalEsil *esil) {
-	CPU_MODEL *cpu;
-	ut64 addr, page_size_bits, i;
+	ut64 addr, i;
 	ut8 r0, r1;
 
 	// sanity check
@@ -1835,8 +1841,8 @@ static bool avr_custom_spm_page_fill(RAnalEsil *esil) {
 	r1 = i;
 
 	// get details about current MCU and fix input address
-	cpu = get_cpu_model (esil->anal->cpu);
-	page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
+	CPU_MODEL *cpu = get_cpu_model (esil->anal->cpu);
+	ut64 page_size_bits = const_get_value (const_by_name (cpu, CPU_CONST_PARAM, "page_size"));
 
 	// align and crop base address
 	addr &= (MASK (page_size_bits) ^ 1);
@@ -1887,14 +1893,13 @@ static bool avr_custom_spm_page_write(RAnalEsil *esil) {
 }
 
 static bool esil_avr_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
-	CPU_MODEL *cpu;
-
+	// r_return_val_if_fail (esil && esil->anal, false);
 	if (!esil || !esil->anal) {
 		return false;
 	}
 
 	// select cpu info
-	cpu = get_cpu_model (esil->anal->cpu);
+	CPU_MODEL *cpu = get_cpu_model (esil->anal->cpu);
 
 	// crop registers and force certain values
 	if (!strcmp (name, "pc")) {
@@ -1921,7 +1926,6 @@ static int esil_avr_init(RAnalEsil *esil) {
 	r_anal_esil_set_op (esil, "SPM_PAGE_FILL", avr_custom_spm_page_fill, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
 	r_anal_esil_set_op (esil, "SPM_PAGE_WRITE", avr_custom_spm_page_write, 0, 0, R_ANAL_ESIL_OP_TYPE_CUSTOM);
 	esil->cb.hook_reg_write = esil_avr_hook_reg_write;
-
 	return true;
 }
 
@@ -1930,26 +1934,29 @@ static int esil_avr_fini(RAnalEsil *esil) {
 }
 
 static bool set_reg_profile(RAnal *anal) {
-	const char *p =
+	char *registers_profile = strdup (
 		"=PC	pcl\n"
 		"=SN	r24\n"
 		"=SP	sp\n"
 		"=BP    y\n"
 		"=RS	8\n"
-// explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html
-// and http://www.avrfreaks.net/forum/function-calling-convention-gcc-generated-assembly-file
+
+		// explained in http://www.nongnu.org/avr-libc/user-manual/FAQ.html
+		// and http://www.avrfreaks.net/forum/function-calling-convention-gcc-generated-assembly-file
 		"=A0	r25\n"
 		"=A1	r24\n"
 		"=A2	r23\n"
 		"=A3	r22\n"
 		"=R0	r24\n"
-#if 0
-PC: 16- or 22-bit program counter
-SP: 8- or 16-bit stack pointer
-SREG: 8-bit status register
-RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
-#endif
-// 8bit registers x 32
+
+		/*
+		PC: 16- or 22-bit program counter
+		SP: 8- or 16-bit stack pointer
+		SREG: 8-bit status register
+		RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
+		*/
+
+		// 8bit registers x 32
 		"gpr	r0	.8	0	0\n"
 		"gpr	r1	.8	1	0\n"
 		"gpr	r2	.8	2	0\n"
@@ -1985,8 +1992,9 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r30	.8	30	0\n"
 		"gpr	r31	.8	31	0\n"
 
-// 16 bit overlapped registers for 16 bit math
+		// 16 bit overlapped registers for 16 bit math
 		"gpr	r1_r0	.16	0	0\n"	//this is a hack for mul
+
 		"gpr	r17_r16	.16	16	0\n"
 		"gpr	r19_r18	.16	18	0\n"
 		"gpr	r21_r20	.16	20	0\n"
@@ -1996,21 +2004,24 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r29_r28	.16	28	0\n"
 		"gpr	r31_r30	.16	30	0\n"
 
-// 16 bit overlapped registers for memory addressing
+		// 16 bit overlapped registers for memory addressing
 		"gpr	x	.16	26	0\n"
 		"gpr	y	.16	28	0\n"
 		"gpr	z	.16	30	0\n"
-// program counter
-// NOTE: program counter size in AVR depends on the CPU model. It seems that
-// the PC may range from 16 bits to 22 bits.
+
+		// program counter
+		// NOTE: program counter size in AVR depends on the CPU model. It seems that
+		// the PC may range from 16 bits to 22 bits.
 		"gpr	pc	.32	32	0\n"
 		"gpr	pcl	.16	32	0\n"
 		"gpr	pch	.16	34	0\n"
-// special purpose registers
+
+		// special purpose registers
 		"gpr	sp	.16	36	0\n"
 		"gpr	spl	.8	36	0\n"
 		"gpr	sph	.8	37	0\n"
-// status bit register (SREG)
+
+		// status bit register (SREG)
 		"gpr	sreg	.8	38	0\n"
 		"gpr	cf	.1	38.0	0\n" // Carry. This is a borrow flag on subtracts.
 		"gpr	zf	.1	38.1	0\n" // Zero. Set to 1 when an arithmetic result is zero.
@@ -2026,35 +2037,256 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	rampz	.8	41	0\n"
 		"gpr	rampd	.8	42	0\n"
 		"gpr	eind	.8	43	0\n"
-// memory mapping emulator registers
-//      _prog
-//		the program flash. It has its own address space.
-//	_ram
-//	_io
-//		start of the data addres space. It is the same address of IO,
-//		because IO is the first memory space addressable in the AVR.
-//	_sram
-//		start of the SRAM (this offset depends on IO size, and it is
-//		inside the _ram address space)
-//      _eeprom
-//              this is another address space, outside ram and flash
-//      _page
-//              this is the temporary page used by the SPM instruction. This
-//              memory is not directly addressable and it is used internally by
-//              the CPU when autoflashing.
+
+		// memory mapping emulator registers
+		//      _prog
+		//		the program flash. It has its own address space.
+		//	_ram
+		//	_io
+		//		start of the data addres space. It is the same address of IO,
+		//		because IO is the first memory space addressable in the AVR.
+		//	_sram
+		//		start of the SRAM (this offset depends on IO size, and it is
+		//		inside the _ram address space)
+		//      _eeprom
+		//              this is another address space, outside ram and flash
+		//      _page
+		//              this is the temporary page used by the SPM instruction. This
+		//              memory is not directly addressable and it is used internally by
+		//              the CPU when autoflashing.
 		"gpr	_prog	.32	44	0\n"
 		"gpr    _page   .32     48	0\n"
 		"gpr	_eeprom	.32	52	0\n"
 		"gpr	_ram	.32	56	0\n"
 		"gpr	_io	.32	56	0\n"
 		"gpr	_sram	.32	60	0\n"
-// other important MCU registers
-//	spmcsr/spmcr
-//		Store Program Memory Control and Status Register (SPMCSR)
-		"gpr    spmcsr  .8      64      0\n"
-		;
 
-	return r_reg_set_profile_string (anal->reg, p);
+		// other important MCU registers
+		//	spmcsr/spmcr
+		//		Store Program Memory Control and Status Register (SPMCSR)
+		"gpr    spmcsr  .8      64      0\n"
+	);
+
+	if (!strcmp (r_str_get (anal->cpu), "ATmega328p")) {
+		const char *section_two =
+			"gpr		pinb	.8		65		0\n"
+			"gpr		pinb0	.8		66		0\n"
+			"gpr		pinb1	.8		67		0\n"
+			"gpr		pinb2	.8		68		0\n"
+			"gpr		pinb3	.8		69		0\n"
+			"gpr		pinb4	.8		70		0\n"
+			"gpr		pinb5	.8		71		0\n"
+			"gpr		pinb6	.8		72		0\n"
+			"gpr		pinb7	.8		73		0\n"
+
+			"gpr		pinc	.8		74		0\n"
+			"gpr		pinc0	.1		74		0\n"
+			"gpr		pinc1	.1		74		0\n"
+			"gpr		pinc2	.1		74		0\n"
+			"gpr		pinc3	.1		74		0\n"
+			"gpr		pinc4	.1		74		0\n"
+			"gpr		pinc5	.1		74		0\n"
+			"gpr		pinc6	.1		74		0\n"
+
+
+			"gpr		pind	.8		75		0\n"
+			"gpr		ddrb	.8		76		0\n"
+			"gpr		ddb0	.1		76		0\n"
+			"gpr		ddb1	.1		76		0\n"
+			"gpr		ddb2	.1		76		0\n"
+			"gpr		ddb3	.1		76		0\n"
+			"gpr		ddb4	.1		76		0\n"
+			"gpr		ddb5	.1		76		0\n"
+			"gpr		ddb6	.1		76		0\n"
+			"gpr		ddb7	.1		76		0\n"
+
+
+			"gpr		ddrc	.8		77		0\n"
+			"gpr		ddc0	.1		77		0\n"
+			"gpr		ddc1	.1		77		0\n"
+			"gpr		ddc2	.1		77		0\n"
+			"gpr		ddc3	.1		77		0\n"
+			"gpr		ddc4	.1		77		0\n"
+			"gpr		ddc5	.1		77		0\n"
+			"gpr		ddc6	.1		77		0\n"
+
+
+
+			"gpr		dddd	.8		78		0\n"
+			"gpr		ddd0	.1		78		0\n"
+			"gpr		ddd1	.1		78		0\n"
+			"gpr		ddd2	.1		78		0\n"
+			"gpr		ddd3	.1		78		0\n"
+			"gpr		ddd4	.1		78		0\n"
+			"gpr		ddd5	.1		78		0\n"
+			"gpr		ddd6	.1		78		0\n"
+
+			"gpr		portb	.8		80		0\n"
+			"gpr		portb0	.1		80		0\n"
+			"gpr		portb1	.1		80		0\n"
+			"gpr		portb2	.1		80		0\n"
+			"gpr		portb3	.1		80		0\n"
+			"gpr		portb4	.1		80		0\n"
+			"gpr		portb5	.1		80		0\n"
+			"gpr		portb6	.1		80		0\n"
+			"gpr		portb7	.1		80		0\n"
+
+
+			"gpr		portc	.8		80		0\n"
+			"gpr		portc0	.1		80		0\n"
+			"gpr		portc1	.1		80		0\n"
+			"gpr		portc2	.1		80		0\n"
+			"gpr		portc3	.1		80		0\n"
+			"gpr		portc4	.1		80		0\n"
+			"gpr		portc5	.1		80		0\n"
+			"gpr		portc6	.1		80		0\n"
+			"gpr		portc7	.1		80		0\n"
+
+
+			"gpr		portd	.8		80		0\n"
+			"gpr		portd0	.1		80		0\n"
+			"gpr		portd1	.1		80		0\n"
+			"gpr		portd2	.1		80		0\n"
+			"gpr		portd3	.1		80		0\n"
+			"gpr		portd4	.1		80		0\n"
+			"gpr		portd5	.1		80		0\n"
+			"gpr		portd6	.1		80		0\n"
+			"gpr		portd7	.1		80		0\n"
+
+
+			"gpr		tifr0	.8		82		0\n"
+			"gpr		ocf0a	.1		82		0\n"
+			"gpr		ocf0b	.1		82		0\n"
+
+
+			"gpr		tifr1	.8		83		0\n"
+			/*"gpr		tov1	.8		83		0\n"
+			"gpr		ocf1a	.8		83		0\n"
+			"gpr		ocf1a	.8		83		0\n"
+			"gpr		icf1	.8		83		0\n"*/
+			"gpr		tifr2	.8		84		0\n"
+
+			"gpr		pcifr	.8		85		0\n"
+			"gpr		eifr	.8		86		0\n"
+			"gpr		eimsk	.8		87		0\n"
+			"gpr		gpior0	.8		88		0\n"
+
+
+
+			"gpr		eear	.16		89		0\n"
+			"gpr		eearl	.8		89		0\n"
+			"gpr		eear0	.1		89		0\n"
+			"gpr		eear1	.1		89		0\n"
+			"gpr		eear2	.1		89		0\n"
+			"gpr		eear3	.1		89		0\n"
+			"gpr		eear4	.1		89		0\n"
+			"gpr		eear5	.1		89		0\n"
+			"gpr		eear6	.1		89		0\n"
+			"gpr		eear7	.1		89		0\n"
+
+			"gpr		eearh	.8		89		0\n"
+			"gpr		eear8	.1		89		0\n"
+			"gpr		eear9	.1		89		0\n"
+
+
+			"gpr		eecr	.8		90		0\n"
+			"gpr		eedr	.8		91		0\n"
+			"gpr		eedr0	.1		91		0\n"
+			"gpr		eedr1	.1		91		0\n"
+			"gpr		eedr2	.1		91		0\n"
+			"gpr		eedr3	.1		91		0\n"
+			"gpr		eedr4	.1		91		0\n"
+			"gpr		eedr5	.1		91		0\n"
+			"gpr		eedr6	.1		91		0\n"
+			"gpr		eedr7	.1		91		0\n"
+
+			//TODO: continue from here: https://github.com/vancegroup-mirrors/avr-libc/blob/06cc6ff5e6120b36f1b246871728addee58d3f87/avr-libc/include/avr/iom328p.h#L216
+			//add subregisters?
+
+			"gpr		gtcrr	.8		90		0\n"
+			"gpr		tcnt0	.8		90		0\n"
+			"gpr		ocr0a	.8		90		0\n"
+			"gpr		ocr0b	.8		90		0\n"
+			"gpr		gpior1	.8		90		0\n"
+			"gpr		gpior2	.8		90		0\n"
+			"gpr		spcr	.8		90		0\n"
+			"gpr		spsr	.8		90		0\n"
+			"gpr		spdr	.8		90		0\n"
+			"gpr		acsr	.8		90		0\n"
+			"gpr		smcr	.8		90		0\n"
+			"gpr		mcusr	.8		90		0\n"
+			"gpr		mcucr	.8		90		0\n"
+			"gpr		spmcsr	.8		90		0\n"
+			"gpr		wdtcsr	.8		90		0\n"
+			"gpr		clkpr	.8		90		0\n"
+			"gpr		prr		.8		90		0\n"
+			"gpr		osccal	.8		90		0\n"
+			"gpr		acsr	.8		90		0\n"
+			"gpr		pcicr	.8		90		0\n"
+			"gpr		eicra	.8		90		0\n"
+			"gpr		pcmsk0	.8		90		0\n"
+			"gpr		pcmsk1	.8		90		0\n"
+			"gpr		pcmsk2	.8		90		0\n"
+			"gpr		pcicr	.8		90		0\n"
+			"gpr		timsk0	.8		90		0\n"
+			"gpr		timsk1	.8		90		0\n"
+			"gpr		timsk2	.8		90		0\n"
+			"gpr		pcicr	.8		90		0\n"
+			"gpr		adc		.8		90		0\n"
+			"gpr		adcw	.8		90		0\n"
+			"gpr		adcl	.8		90		0\n"
+			"gpr		adch	.8		90		0\n"
+			"gpr		adcsra	.8		90		0\n"
+			"gpr		adcsrb	.8		90		0\n"
+
+			"gpr		admux	.8		90		0\n"
+			"gpr		didr0	.8		90		0\n"
+			"gpr		didr1	.8		90		0\n"
+			"gpr		tccr1a	.8		90		0\n"
+			"gpr		tccr1b	.8		90		0\n"
+			"gpr		tccr1c	.8		90		0\n"
+			"gpr		tcnt1	.8		90		0\n"
+			"gpr		tcnt1l	.8		90		0\n"
+			"gpr		icr1	.8		90		0\n"
+			"gpr		icr1l	.8		90		0\n"
+			"gpr		icr1h	.8		90		0\n"
+			"gpr		ocr1h	.16		90		0\n"
+			"gpr		ocr1al	.8		90		0\n"
+			"gpr		ocr1ah	.8		90		0\n"
+			"gpr		ocr1al	.8		90		0\n"
+			"gpr		ocr1b	.16		90		0\n"
+			"gpr		ocr1bl	.8		90		0\n"
+			"gpr		ocr1bh	.8		90		0\n"
+			"gpr		tccr2a	.8		90		0\n"
+			"gpr		tccr2b	.8		90		0\n"
+			"gpr		tcnt2	.8		90		0\n"
+			"gpr		ocr2a	.8		90		0\n"
+			"gpr		ocr2b	.8		90		0\n"
+			"gpr		twbr	.8		90		0\n"
+			"gpr		twsr	.8		90		0\n"
+			"gpr		twar	.8		90		0\n"
+			"gpr		twdr	.8		90		0\n"
+			"gpr		twcr	.8		90		0\n"
+			"gpr		twbr	.8		90		0\n"
+			"gpr		twamr	.8		90		0\n"
+			"gpr		ucsr0a	.8		90		0\n"
+			"gpr		ucsr0b	.8		90		0\n"
+			"gpr		ucsr0c	.8		90		0\n"
+			"gpr		ubrr0l	.8		90		0\n"
+			"gpr		ubrr0h	.8		90		0\n"
+			"gpr		udr0	.8		90		0\n"
+			"gpr		ubrr0l	.8		90		0\n"
+			"gpr		ubrr0l	.8		90		0\n"
+			;
+		RStrBuf *sb = r_strbuf_new (registers_profile);
+		r_strbuf_append (sb, section_two);
+		free (registers_profile);
+		registers_profile = r_strbuf_drain (sb);
+	}
+
+	int status = r_reg_set_profile_string (anal->reg, registers_profile);
+	free (registers_profile);
+	return status;
 }
 
 static int archinfo(RAnal *anal, int q) {
@@ -2129,7 +2361,7 @@ RAnalPlugin r_anal_plugin_avr = {
 	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_avr_init,
 	.esil_fini = esil_avr_fini,
-	.anal_mask = anal_mask_avr,
+	.anal_mask = anal_mask_avr
 };
 
 #ifndef R2_PLUGIN_INCORE

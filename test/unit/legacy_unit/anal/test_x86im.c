@@ -4,7 +4,7 @@
 #include <r_types.h>
 #include "x86/x86im/x86im.h"
 
-static int anal_op (char *buf, int bits) {
+static int anal_op(char *buf, int bits) {
 	x86im_instr_object io;
 	ut8 data[1024];
 	int ret;

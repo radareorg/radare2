@@ -10,7 +10,7 @@ extern SdbGperf gperf_cc_arm_16;
 extern SdbGperf gperf_cc_arm_32;
 extern SdbGperf gperf_cc_arm_64;
 extern SdbGperf gperf_cc_avr_8;
-extern SdbGperf gperf_cc_hexagon_32;
+// extern SdbGperf gperf_cc_hexagon_32;
 extern SdbGperf gperf_cc_m68k_32;
 extern SdbGperf gperf_cc_mips_32;
 extern SdbGperf gperf_cc_mips_64;
@@ -23,7 +23,7 @@ extern SdbGperf gperf_cc_v850_32;
 extern SdbGperf gperf_cc_x86_16;
 extern SdbGperf gperf_cc_x86_32;
 extern SdbGperf gperf_cc_x86_64;
-extern SdbGperf gperf_cc_xtensa_32;
+//extern SdbGperf gperf_cc_xtensa_32;
 extern SdbGperf gperf_spec;
 extern SdbGperf gperf_types_16;
 extern SdbGperf gperf_types_32;
@@ -45,7 +45,7 @@ static const SdbGperf *gperfs_cc[] = {
 	&gperf_cc_arm_32,
 	&gperf_cc_arm_64,
 	&gperf_cc_avr_8,
-	&gperf_cc_hexagon_32,
+	// &gperf_cc_hexagon_32,
 	&gperf_cc_m68k_32,
 	&gperf_cc_mips_32,
 	&gperf_cc_mips_64,
@@ -58,7 +58,7 @@ static const SdbGperf *gperfs_cc[] = {
 	&gperf_cc_x86_16,
 	&gperf_cc_x86_32,
 	&gperf_cc_x86_64,
-	&gperf_cc_xtensa_32,
+	// &gperf_cc_xtensa_32,
 	NULL
 };
 static const SdbGperf *gperfs_types[] = {
@@ -79,13 +79,16 @@ static const SdbGperf *gperfs_types[] = {
 
 R_API SdbGperf *r_anal_get_gperf_cc(const char *k) {
 	SdbGperf **gp = (SdbGperf**)gperfs_cc;
+	char *kk = strdup (k);
+	r_str_replace_char (kk, '_', '-');
 	while (*gp) {
 		SdbGperf *g = *gp;
-		if (!strcmp (k, g->name)) {
+		if (!strcmp (kk, g->name)) {
 			return *gp;
 		}
 		gp++;
 	}
+	free (kk);
 	return NULL;
 }
 

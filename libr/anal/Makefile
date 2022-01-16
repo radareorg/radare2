@@ -16,16 +16,14 @@ LDFLAGS+=$(CS_LDFLAGS)
 include $(STOP)/java/deps.mk
 LDFLAGS+=$(LINK)
 
-.PHONY: all plugins libs ${EXTRA_CLEAN}
+.PHONY: all main plugins libs ${EXTRA_CLEAN}
 
-# all: plugins
 main:
 	$(MAKE) -C d
 	$(MAKE) all
 
-
 plugins: ${LIBSO} ${LIBAR}
-	@${MAKE} -C p all
+	@$(MAKE) -C p all
 
 include ${STATIC_ANAL_PLUGINS}
 include ${STATIC_ESIL_PLUGINS}
@@ -36,7 +34,7 @@ OBJLIBS+=cond.o value.o cc.o class.o diff.o type.o type_pdb.o dwarf_process.o
 OBJLIBS+=hint.o anal.o data.o xrefs.o esil.o sign.o esil_plugin.o
 OBJLIBS+=esil_handler.o switch.o cycles.o esil_dfg.o esil_cfg.o
 OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
-OBJLIBS+=pin.o vtable.o rtti.o codemeta.o anplugs.o
+OBJLIBS+=pin.o vtable.o rtti.o codemeta.o anplugs.o global.o
 OBJLIBS+=rtti_msvc.o rtti_itanium.o jmptbl.o function.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-modules.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-isa.o
@@ -44,7 +42,6 @@ ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/elf32-xtensa.o
 
 OBJS=${STATIC_OBJS} ${OBJLIBS} ${ASMOBJS}
 ifeq ($(HAVE_GPERF),1)
-
 OBJS+=d/cc-arm-16.o
 OBJS+=d/cc-arm-32.o
 OBJS+=d/cc-arm-64.o
@@ -83,15 +80,14 @@ endif
 test tests: tests-esil
 
 tests-esil:
-	cd ../../test ; \
-		sh run_tests.sh t.esil
+	cd ../../test && sh run_tests.sh t.esil
 
 .PHONY: do doclean
 
 do:
-	${MAKE} -C d
+	$(MAKE) -C d
 
 doclean:
-	${MAKE} -C d clean
+	$(MAKE) -C d clean
 
 include $(LTOP)/rules.mk

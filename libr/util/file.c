@@ -55,20 +55,26 @@ R_API char *r_file_new(const char *root, ...) {
 	va_list ap;
 	va_start (ap, root);
 	RStrBuf *sb = r_strbuf_new ("");
-	char *home = r_str_home (NULL);
-	const char *arg = va_arg (ap, char *);
-	r_strbuf_append (sb, arg);
-	arg = va_arg (ap, char *);
-	while (arg) {
-		if (!strcmp (arg, "~")) {
-			arg = home;
+	if (!strcmp (root, "~")) {
+		char *h = r_str_home (NULL);
+		if (!h) {
+			va_end (ap);
+			r_strbuf_free (sb);
+			return NULL;
 		}
+		r_strbuf_append (sb, h);
+		free (h);
+	} else {
+		r_strbuf_append (sb, root);
+	}
+	r_strbuf_append (sb, R_SYS_DIR);
+	const char *arg = va_arg (ap, char *);
+	while (arg) {
 		r_strbuf_append (sb, R_SYS_DIR);
 		r_strbuf_append (sb, arg);
 		arg = va_arg (ap, char *);
 	}
 	va_end (ap);
-	free (home);
 	char *path = r_strbuf_drain (sb);
 	char *abs = r_file_abspath (path);
 	free (path);
@@ -88,7 +94,7 @@ R_API bool r_file_truncate(const char *filename, ut64 newsize) {
 	if (fd == -1) {
 		return false;
 	}
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || __WINDOWS__
 	int r = _chsize (fd, newsize);
 #else
 	int r = ftruncate (fd, newsize);
@@ -240,7 +246,8 @@ R_API char *r_file_abspath_rel(const char *cwd, const char *file) {
 				PTCHAR f = r_sys_conv_utf8_to_win (file);
 				int s = GetFullPathName (f, MAX_PATH, abspath, NULL);
 				if (s > MAX_PATH) {
-					R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
+					// R_LOG_ERROR ("r_file_abspath/GetFullPathName: Path to file too long.\n");
+					eprintf ("r_file_abspath/GetFullPathName: Path to file too long.\n");
 				} else if (!s) {
 					r_sys_perror ("r_file_abspath/GetFullPathName");
 				} else {
@@ -900,7 +907,7 @@ err_r_file_mmap_write:
 	const int pagesize = getpagesize ();
 	int mmlen = len + pagesize;
 	int rest = addr % pagesize;
-        ut8 *mmap_buf;
+	ut8 *mmap_buf;
 	if (fd == -1) {
 		return -1;
 	}
@@ -923,7 +930,7 @@ err_r_file_mmap_write:
 #endif
 }
 
-R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
+R_API int r_file_mmap_read(const char *file, ut64 addr, ut8 *buf, int len) {
 #if __WINDOWS__
 	HANDLE fm = NULL, fh = INVALID_HANDLE_VALUE;
 	LPTSTR file_ = NULL;
@@ -1032,7 +1039,7 @@ err_r_file_mmap_windows:
 	return m;
 }
 #else
-static RMmap *file_mmap_other (RMmap *m) {
+static RMmap *file_mmap_other(RMmap *m) {
 	ut8 empty = m->len == 0;
 	m->buf = malloc ((empty? BS: m->len));
 	if (!empty && m->buf) {
@@ -1270,12 +1277,18 @@ R_API char *r_file_tmpdir(void) {
 	}
 #endif
 	if (!r_file_is_directory (path)) {
-		eprintf ("Cannot find dir.tmp '%s'\n", path);
+		free (path);
+		return NULL;
+		//eprintf ("Cannot find dir.tmp '%s'\n", path);
 	}
 	return path;
 }
 
 R_API bool r_file_copy(const char *src, const char *dst) {
+	r_return_val_if_fail (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst), false);
+	if (!strcmp (src, dst)) {
+		return false;
+	}
 	/* TODO: implement in C */
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
 #if HAVE_COPYFILE_H
@@ -1284,7 +1297,6 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 	PTCHAR s = r_sys_conv_utf8_to_win (src);
 	PTCHAR d = r_sys_conv_utf8_to_win (dst);
 	if (!s || !d) {
-		R_LOG_ERROR ("r_file_copy: Failed to allocate memory\n");
 		free (s);
 		free (d);
 		return false;
@@ -1350,6 +1362,23 @@ R_API RList *r_file_lsrf(const char *dir) {
 		return NULL;
 	}
 	return ret;
+}
+
+R_API bool r_file_rm_rf(const char *dir) {
+	RList *files = r_file_lsrf (dir);
+	if (r_file_exists (dir)) {
+		return r_file_rm (dir);
+	}
+	if (!files) {
+		return false;
+	}
+	r_list_sort (files, (RListComparator) strcmp);
+	RListIter *iter;
+	char *f;
+	r_list_foreach_prev (files, iter, f)  {
+		r_file_rm (f);
+	}
+	return r_file_rm (dir);
 }
 
 

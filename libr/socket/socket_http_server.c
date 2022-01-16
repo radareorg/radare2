@@ -9,7 +9,7 @@ R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
 }
 
-R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *so) {
+R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *so) {
 	int content_length = 0, xx, yy;
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
@@ -104,17 +104,19 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, RSocketHTTPOptions *
 			}
 		}
 	}
-	if (content_length>0) {
+	if (content_length > 0) {
 		r_socket_read_block (hr->s, (ut8*)buf, 1); // one missing byte wtf
 		if (ST32_ADD_OVFCHK (content_length, 1)) {
 			r_socket_http_close (hr);
 			eprintf ("Could not allocate hr data\n");
 			return NULL;
 		}
-		hr->data = malloc (content_length+1);
-		hr->data_length = content_length;
-		r_socket_read_block (hr->s, hr->data, hr->data_length);
-		hr->data[content_length] = 0;
+		hr->data = malloc (content_length + 1);
+		if (hr->data) {
+			hr->data_length = content_length;
+			r_socket_read_block (hr->s, hr->data, hr->data_length);
+			hr->data[content_length] = 0;
+		}
 	}
 	return hr;
 }
@@ -165,15 +167,15 @@ R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 			while (*data == 10 || *data == 13) {
 				data++;
 			}
-			end = (const char *)str+len-40;
+			end = (const char *)str + len - 40;
 			while (*end == '-') {
 				end--;
 			}
 			if (*end == 10 || *end == 13) {
 				end--;
 			}
-			datalen = (size_t)(end-data);
-			ret = malloc (datalen+1);
+			datalen = (size_t)(end - data);
+			ret = malloc (datalen + 1);
 			if (!ret) {
 				return NULL;
 			}

@@ -52,7 +52,7 @@ static int _stackptr_range(RDisasmState *ds, ut64 addr, ut64 addr_end, int stack
 			r_anal_op_free (op);
 		}
 		at += sz;
-	} 
+	}
 	return stackptr;
 }
 
@@ -97,7 +97,7 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 	*ostackptr = ds->ostackptr;
 	RAnalFunction *fcn = r_anal_get_fcn_in (ds->core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		RAnalBlock *bb = r_anal_fcn_bbget_in (ds->core->anal, fcn, ds->at);
+		RAnalBlock *bb = r_anal_function_bbget_in (ds->core->anal, fcn, ds->at);
 		if (bb) {
 			return bb->stackptr;
 		} else {

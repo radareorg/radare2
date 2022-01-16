@@ -11,6 +11,14 @@ R_API RSpaces *r_spaces_new(const char *name) {
 	return sp;
 }
 
+static void space_free(void *data) {
+	RSpace *s = (RSpace *)data;
+	if (s) {
+		free (s->name);
+		free (s);
+	}
+}
+
 R_API bool r_spaces_init(RSpaces *sp, const char *name) {
 	r_return_val_if_fail (sp && name, false);
 	sp->name = strdup (name);
@@ -18,7 +26,10 @@ R_API bool r_spaces_init(RSpaces *sp, const char *name) {
 		goto fail;
 	}
 
-	sp->spaces = NULL;
+	sp->spaces = r_crbtree_new (space_free);
+	if (!sp->spaces) {
+		goto fail;
+	}
 	sp->current = NULL;
 	sp->spacestack = r_list_new ();
 	if (!sp->spacestack) {
@@ -42,24 +53,12 @@ R_API void r_spaces_free(RSpaces *sp) {
 	free (sp);
 }
 
-static inline void space_free(RSpace *s) {
-	if (s) {
-		free (s->name);
-		free (s);
-	}
-}
-
-static void space_node_free(RBNode *n, void *user) {
-	RSpace *s = container_of (n, RSpace, rb);
-	space_free (s);
-}
-
 R_API void r_spaces_fini(RSpaces *sp) {
+	r_event_free (sp->event);
 	r_list_free (sp->spacestack);
 	sp->spacestack = NULL;
-	r_rbtree_free (sp->spaces, space_node_free, NULL);
+	r_crbtree_free (sp->spaces);
 	sp->spaces = NULL;
-	r_event_free (sp->event);
 	sp->event = NULL;
 	sp->current = NULL;
 	R_FREE (sp->name);
@@ -68,12 +67,12 @@ R_API void r_spaces_fini(RSpaces *sp) {
 R_API void r_spaces_purge(RSpaces *sp) {
 	sp->current = NULL;
 	r_list_purge (sp->spacestack);
-	r_rbtree_free (sp->spaces, space_node_free, NULL);
+	r_crbtree_free (sp->spaces);
 	sp->spaces = NULL;
 }
 
-static int name_space_cmp(const void *incoming, const RBNode *rb, void *user) {
-	const RSpace *s = container_of (rb, const RSpace, rb);
+static int name_space_cmp(void *incoming, void *in, void *user) {
+	RSpace *s = (RSpace *)in;
 	return strcmp (incoming, s->name);
 }
 
@@ -81,13 +80,12 @@ R_API RSpace *r_spaces_get(RSpaces *sp, const char *name) {
 	if (!name) {
 		return NULL;
 	}
-	RBNode *n = r_rbtree_find (sp->spaces, (void *)name, name_space_cmp, NULL);
-	return n? container_of (n, RSpace, rb): NULL;
+	return r_crbtree_find (sp->spaces, (void *)name, name_space_cmp, NULL);
 }
 
-static int space_cmp(const void *incoming, const RBNode *rb, void *user) {
-	const RSpace *a = (const RSpace *)incoming;
-	const RSpace *b = container_of (rb, const RSpace, rb);
+static int space_cmp(void *incoming, void *in, void *user) {
+	RSpace *a = (RSpace *)incoming;
+	RSpace *b = (RSpace *)in;
 	return strcmp (a->name, b->name);
 }
 
@@ -113,7 +111,7 @@ R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
 		return NULL;
 	}
 
-	r_rbtree_insert (&sp->spaces, s, &s->rb, space_cmp, NULL);
+	r_crbtree_insert (sp->spaces, s, space_cmp, NULL);
 	return s;
 }
 
@@ -133,7 +131,7 @@ static inline bool spaces_unset_single(RSpaces *sp, const char *name) {
 	if (sp->current == space) {
 		sp->current = NULL;
 	}
-	return r_rbtree_delete (&sp->spaces, (void *)name, name_space_cmp, NULL, space_node_free, NULL);
+	return r_crbtree_delete (sp->spaces, (void *)name, name_space_cmp, NULL);
 }
 
 R_API bool r_spaces_unset(RSpaces *sp, const char *name) {
@@ -146,16 +144,16 @@ R_API bool r_spaces_unset(RSpaces *sp, const char *name) {
 		return false;
 	}
 
-	RBIter it;
+	RRBNode *iter;
 	RSpace *s;
-	r_spaces_foreach (sp, it, s) {
+	r_spaces_foreach (sp, iter, s) {
 		r_list_append (names, strdup (s->name));
 	}
 
-	RListIter *lit;
+	RListIter *ator;
 	const char *n;
 	bool res = false;
-	r_list_foreach (names, lit, n) {
+	r_list_foreach (names, ator, n) {
 		res |= spaces_unset_single (sp, n);
 	}
 	r_list_free (names);
@@ -218,10 +216,10 @@ R_API bool r_spaces_rename(RSpaces *sp, const char *oname, const char *nname) {
 	};
 	r_event_send (sp->event, R_SPACE_EVENT_RENAME, &ev);
 
-	r_rbtree_delete (&sp->spaces, (void *)s->name, name_space_cmp, NULL, NULL, NULL);
+	r_crbtree_take (sp->spaces, s->name, name_space_cmp, NULL);
 	free (s->name);
 	s->name = strdup (nname);
-	r_rbtree_insert (&sp->spaces, s, &s->rb, space_cmp, NULL);
+	r_crbtree_insert (sp->spaces, s, space_cmp, NULL);
 
 	return true;
 }

@@ -270,7 +270,7 @@ ARGS=-m 0x100001000
 CMDS=<<EOF
 e io.va
 e asm.sub.rel=false
-e asm.leahints=false
+e asm.hint.lea=false
 e asm.arch=x86
 e asm.bits=64
 e io.va=true
@@ -333,7 +333,7 @@ pd 1
 EOF
 EXPECT=<<EOF
             0x00000000      mov dword [esp + 0x68], 'm0[\x1b'
-            [32m[7m0x00000000[0m      [37mmov dword [0m[[36mesp [0m+[36m[36m [33m0x68[0m][36m[0m,[36m[36m [33m'm0[\x1b'[0m[0m
+            [32m[7m0x00000000[0m      [37mmov dword [0m[[36mesp [0m+[36m[36m [33m0x68[0m][36m[0m,[36m 'm0[0m[[36m\x1b'[0m[0m
 EOF
 RUN
 

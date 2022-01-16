@@ -5,6 +5,48 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=quote grep
+FILE=malloc://1024
+BROKEN=1
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 90cc90cc
+"pd 4"~nop
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000002      90             nop
+EOF
+RUN
+
+NAME=grep and/or
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+wx 90cc90cc
+pd 4~nop
+?e ==
+pd 4~&90,nop
+?e ==
+pd 4~&90,404
+?e ==
+pd 4~90,404
+EOF
+EXPECT=<<EOF
+            0x00000000      90             nop
+            0x00000002      90             nop
+==
+            0x00000000      90             nop
+            0x00000002      90             nop
+==
+==
+            0x00000000      90             nop
+            0x00000002      90             nop
+EOF
+RUN
+
 NAME=?e \~
 FILE=malloc://1024
 CMDS=?e jeje\~jojo
@@ -76,6 +118,7 @@ file     malloc://1024
 humansz  1K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -92,6 +135,7 @@ file     malloc://1024
 humansz  1K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -108,6 +152,7 @@ size     0x400
 humansz  1K
 minopsz  1
 maxopsz  16
+invopsz  1
 mode     rwx
 format   any
 iorw     true
@@ -377,7 +422,6 @@ EOF
 RUN
 
 NAME=escaped chars 2
-BROKEN=1
 CMDS=?e Hello\n\x3bWorld~\;
 EXPECT=<<EOF
 ;World
@@ -392,5 +436,16 @@ EOF
 EXPECT=<<EOF
 Hello World
 4e2420
+EOF
+RUN
+
+NAME=highlight grep with empty string
+ARGS=-escr.highlight.grep=true
+TIMEOUT=2
+CMDS=<<EOF
+i~[0]:0
+EOF
+EXPECT=<<EOF
+fd
 EOF
 RUN

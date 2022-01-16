@@ -1,0 +1,36 @@
+#!/bin/sh
+if [ ! -f config-user.mk ]; then
+  printf "[*] Configuring the build system ... "
+  ./configure || exit 1
+fi
+
+# env setup
+MAKE=make
+gmake --version > /dev/null 2>&1
+[ $? = 0 ] && MAKE=gmake
+
+# checks
+printf "[*] Checking out capstone... "
+rm -rf shlr/capstone
+${MAKE} -C shlr capstone > /dev/null 2>&1 || exit 1
+echo OK
+
+V35WD=libr/asm/arch/arm/v35arm64
+printf "[*] Checking out vector35-arm64... "
+if [ ! -d "${V35WD}/arch-arm64/.git" ]; then
+	rm -rf ${V35WD}/arch-arm64
+	${MAKE} -C ${V35WD} arch-arm64 > /dev/null || exit 1
+fi
+echo OK
+
+printf "[*] Checking out vector35-armv7... "
+if [ ! -d "${V35WD}/arch-armv7/.git" ]; then
+	rm -rf ${V35WD}/arch-armv7
+	${MAKE} -C ${V35WD} arch-armv7 > /dev/null || exit 1
+fi
+echo OK
+if [ `uname` = Linux ]; then
+	./configure  --with-rpath
+else
+	./configure
+fi

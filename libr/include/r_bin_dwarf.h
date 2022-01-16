@@ -61,7 +61,7 @@ extern "C" {
 #define DW_TAG_member                   0x0d
 #define DW_TAG_pointer_type             0x0f
 #define DW_TAG_reference_type           0x10
-#define DW_TAG_compile_unit             0x11 // 
+#define DW_TAG_compile_unit             0x11
 #define DW_TAG_string_type              0x12
 #define DW_TAG_structure_type           0x13
 #define DW_TAG_subroutine_type          0x15
@@ -202,8 +202,8 @@ extern "C" {
 #define DW_AT_description               0x5a
 #define DW_AT_binary_scale              0x5b
 #define DW_AT_decimal_scale             0x5c
-#define DW_AT_small                     0x5d 
-#define DW_AT_decimal_sign              0x5e 
+#define DW_AT_small                     0x5d
+#define DW_AT_decimal_sign              0x5e
 #define DW_AT_digit_count               0x5f
 #define DW_AT_picture_string            0x60
 #define DW_AT_mutable                   0x61
@@ -708,19 +708,19 @@ typedef struct dwarf_attr_kind {
 	ut64 attr_name;
 	ut64 attr_form;
 	RBinDwarfAttrKind kind;
-	/* This is subideal, as dw_form_data can be anything 
-	   we could lose information example: encoding signed 
+	/* This is subideal, as dw_form_data can be anything
+	   we could lose information example: encoding signed
 	   2 byte int into ut64 and then interpreting it as st64 TODO*/
-	union { 
+	union {
 		ut64 address;
-		RBinDwarfBlock block;
 		ut64 uconstant;
 		st64 sconstant;
 		ut8 flag;
 		ut64 reference;
+		RBinDwarfBlock block;
 		struct {
-			const char *content;
 			ut64 offset;
+			const char *content;
 		} string;
 	};
 } RBinDwarfAttrValue;

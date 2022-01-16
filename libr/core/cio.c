@@ -2,7 +2,7 @@
 
 #include "r_core.h"
 
-R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach) {
+R_API int r_core_setup_debugger(RCore *r, const char *debugbackend, bool attach) {
 	int pid, *p = NULL;
 	bool is_gdb = !strcmp (debugbackend, "gdb");
 	RIODesc * fd = r->io->desc;
@@ -19,9 +19,13 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	r_core_cmdf (r, "dL %s", debugbackend);
 	if (!is_gdb) {
 		pid = r_io_desc_get_pid (fd);
-		r_core_cmdf (r, "dp=%d", pid);
-		if (attach) {
-			r_core_cmdf (r, "dpa %d", pid);
+		if (pid >= 0) {
+			r_core_cmdf (r, "dp=%d", pid);
+			if (attach) {
+				r_core_cmdf (r, "dpa %d", pid);
+			}
+		} else {
+			eprintf ("Cannot retrieve pid from io.\n");
 		}
 	}
 	//this makes to attach twice showing warnings in the output
@@ -56,7 +60,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	return true;
 }
 
-R_API int r_core_seek_base (RCore *core, const char *hex) {
+R_API int r_core_seek_base(RCore *core, const char *hex) {
 	ut64 addr = r_num_tail (core->num, core->offset, hex);
 	return r_core_seek (core, addr, true);
 }
@@ -141,15 +145,22 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	int i, j;
 	ut64 len;
 	char *str = NULL;
-	ut8 *buf;
-
-	buf = (ut8 *)malloc (core->blocksize);
+	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	if (!buf) {
 		return NULL;
 	}
+	if (op == 'i') { // "woi"
+		int hbs = core->blocksize / 2;
+		int j = core->blocksize - 1;
+		for (i = 0; i < hbs; i++, j--) {
+			buf[i] = core->block[j];
+			buf[j] = core->block[i];
+		}
+		return buf;
+	}
 	memcpy (buf, core->block, core->blocksize);
 
-	if (op!='e') {
+	if (op != 'e') {
 		// fill key buffer either from arg or from clipboard
 		if (arg) {  // parse arg for key
 			// r_hex_str2bin() is guaranteed to output maximum half the
@@ -177,7 +188,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	}
 
 	// execute the operand
-	if (op=='e') {
+	if (op == 'e') {
 		int wordsize = 1;
 		char *os, *p, *s = strdup (arg);
 		int n = 0, from = 0, to = UT8_MAX, dif = 0, step = 1;
@@ -312,7 +323,7 @@ beach:
 }
 
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
-	ut8 *buf = r_core_transform_op(core, arg, op);
+	ut8 *buf = r_core_transform_op (core, arg, op);
 	if (!buf) {
 		return false;
 	}

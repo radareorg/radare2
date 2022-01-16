@@ -29,6 +29,8 @@ binr/r2agent/r2agent
 binr/r2agent/r2agent.exe
 binr/rvc2/rvc2
 binr/rvc2/rvc2.exe
+binr/ravc2/ravc2
+binr/ravc2/ravc2.exe
 binr/r2r/r2r
 binr/r2r/r2r.exe
 binr/rabin2/rabin2
@@ -51,6 +53,8 @@ binr/rasm2/rasm2
 binr/rasm2/rasm2.exe
 binr/rax2/rax2
 binr/rax2/rax2.exe
+binr/r2pm/r2pm
+binr/r2pm/r2pm.exe
 binr/*/_CodeSignature/*
 build
 build_sdb
@@ -60,6 +64,8 @@ libr/config.h
 libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
+libr/asm/arch/arm/v35arm64/arch-arm64
+libr/asm/arch/arm/v35arm64/arch-armv7
 shlr/capstone/
 shlr/java/out
 shlr/java/out.exe

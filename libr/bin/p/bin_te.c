@@ -139,7 +139,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 buf[2];
 	if (r_buf_read_at (b, 0, buf, 2) == 2) {
 		return !memcmp (buf, "\x56\x5a", 2);

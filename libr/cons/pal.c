@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2013-2020 - pancake, sghctoma, xarkes */
+/* radare - LGPL - Copyright 2013-2021 - pancake, sghctoma, xarkes */
 
 #include <r_cons.h>
 
-#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_singleton ()->context->cpal)) + keys[i].coff)
-#define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_singleton ()->context->pal)) + keys[i].off)
+#define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_context ()->cpal)) + keys[i].coff)
+#define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_context ()->pal)) + keys[i].off)
 
 static struct {
 	const char *name;
@@ -72,10 +72,10 @@ static struct {
 	{ "graph.current", r_offsetof (RConsPrintablePalette, graph_current), r_offsetof (RConsPalette, graph_current) },
 	{ "graph.traced", r_offsetof (RConsPrintablePalette, graph_traced), r_offsetof (RConsPalette, graph_traced) },
 
-        { "graph.diff.unknown", r_offsetof (RConsPrintablePalette, graph_diff_unknown), r_offsetof (RConsPalette, graph_diff_unknown) },
-        { "graph.diff.new", r_offsetof (RConsPrintablePalette, graph_diff_new), r_offsetof (RConsPalette, graph_diff_new) },
-        { "graph.diff.match", r_offsetof (RConsPrintablePalette, graph_diff_match), r_offsetof (RConsPalette, graph_diff_match) },
-        { "graph.diff.unmatch", r_offsetof (RConsPrintablePalette, graph_diff_unmatch), r_offsetof (RConsPalette, graph_diff_unmatch) },
+	{ "graph.diff.unknown", r_offsetof (RConsPrintablePalette, graph_diff_unknown), r_offsetof (RConsPalette, graph_diff_unknown) },
+	{ "graph.diff.new", r_offsetof (RConsPrintablePalette, graph_diff_new), r_offsetof (RConsPalette, graph_diff_new) },
+	{ "graph.diff.match", r_offsetof (RConsPrintablePalette, graph_diff_match), r_offsetof (RConsPalette, graph_diff_match) },
+	{ "graph.diff.unmatch", r_offsetof (RConsPrintablePalette, graph_diff_unmatch), r_offsetof (RConsPalette, graph_diff_unmatch) },
 
 	{ "gui.cflow", r_offsetof (RConsPrintablePalette, gui_cflow), r_offsetof (RConsPalette, gui_cflow) },
 	{ "gui.dataoffset", r_offsetof (RConsPrintablePalette, gui_dataoffset), r_offsetof (RConsPalette, gui_dataoffset) },
@@ -157,14 +157,14 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.b0x7f              = (RColor) RColor_CYAN;
 	ctx->cpal.b0xff              = (RColor) RColor_RED;
 	ctx->cpal.args               = (RColor) RColor_YELLOW;
-	ctx->cpal.bin                = (RColor) RColor_CYAN;
+	ctx->cpal.bin                = (RColor) RColor_YELLOW;
 	ctx->cpal.btext              = (RColor) RColor_YELLOW;
 	ctx->cpal.call               = (RColor) RColor_BGREEN;
 	ctx->cpal.call.attr          = R_CONS_ATTR_BOLD;
 	ctx->cpal.ucall              = (RColor) RColor_GREEN;
 	ctx->cpal.ujmp               = (RColor) RColor_GREEN;
 	ctx->cpal.cjmp               = (RColor) RColor_GREEN;
-	ctx->cpal.cmp                = (RColor) RColor_CYAN;
+	ctx->cpal.cmp                = (RColor) RColor_YELLOW;
 	ctx->cpal.comment            = (RColor) RColor_RED;
 	ctx->cpal.usercomment        = (RColor) RColor_WHITE;
 	ctx->cpal.creg               = (RColor) RColor_CYAN;
@@ -181,13 +181,14 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.jmp                = (RColor) RColor_GREEN;
 	ctx->cpal.label              = (RColor) RColor_CYAN;
 	ctx->cpal.math               = (RColor) RColor_YELLOW;
+	// ctx->cpal.mov                = (RColor) RColor_WHITE;
 	ctx->cpal.mov                = (RColor) RColor_WHITE;
 	ctx->cpal.nop                = (RColor) RColor_BLUE;
 	ctx->cpal.num                = (RColor) RColor_YELLOW;
 	ctx->cpal.offset             = (RColor) RColor_GREEN;
 	ctx->cpal.other              = (RColor) RColor_WHITE;
-	ctx->cpal.pop                = (RColor) RColor_BMAGENTA;
-	ctx->cpal.pop.attr           = R_CONS_ATTR_BOLD;
+	ctx->cpal.pop                = (RColor) RColor_MAGENTA;
+	// ctx->cpal.pop.attr           = R_CONS_ATTR_BOLD;
 	ctx->cpal.prompt             = (RColor) RColor_YELLOW;
 	ctx->cpal.push               = (RColor) RColor_MAGENTA;
 	ctx->cpal.crypto             = (RColor) RColor_BGBLUE;
@@ -236,7 +237,6 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.graph_diff_new     =  (RColor) RColor_RED;
 	ctx->cpal.graph_diff_match   =  (RColor) RColor_GRAY;
 	ctx->cpal.graph_diff_unmatch =  (RColor) RColor_YELLOW;
-
 
 	r_cons_pal_free (ctx);
 	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
@@ -508,7 +508,7 @@ R_API void r_cons_pal_show(void) {
 			colors[i].bgcode,
 			colors[i].name);
 	}
-	switch (r_cons_singleton ()->context->color_mode) {
+	switch (r_cons_context ()->color_mode) {
 	case COLOR_MODE_256: // 256 color palette
 		r_cons_pal_show_gs ();
 		r_cons_pal_show_256 ();
@@ -654,7 +654,7 @@ R_API int r_cons_pal_len(void) {
 }
 
 R_API void r_cons_pal_update_event(void) {
-	__cons_pal_update_event (r_cons_singleton ()->context);
+	__cons_pal_update_event (r_cons_context ());
 }
 
 R_API void r_cons_rainbow_new(RConsContext *ctx, int sz) {

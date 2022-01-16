@@ -22,6 +22,7 @@
 #define _TCC_H
 
 #include "r_types.h"
+#include <r_util/r_str.h>
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -99,6 +100,8 @@ typedef long long int int64_t;
 #define LDOUBLE_ALIGN 4
 #define MAX_ALIGN 8
 #define PTR_SIZE 4
+
+static int decl0(int l, int is_for_loop_init);
 
 #if !defined (__HAIKU__)
 typedef uint64_t addr_t;
@@ -785,7 +788,6 @@ ST_DATA int mem_max_size;
 #define AFF_PREPROCESS      0x0004 /* preprocess file */
 
 /* public functions currently used by the tcc main function */
-PUB_FUNC char *pstrcpy(char *buf, int buf_size, const char *s);
 PUB_FUNC char *pstrcat(char *buf, int buf_size, const char *s);
 PUB_FUNC char *pstrncpy(char *out, const char *in, size_t num);
 PUB_FUNC char *tcc_basename(const char *name);

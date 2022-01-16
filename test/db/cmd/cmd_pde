@@ -3,6 +3,27 @@ FILE=bins/pe/ioli/w32/crackme0x00.exe
 CMDS=<<EOF
 e asm.bytes = false
 e asm.comments = false
+pde
+EOF
+EXPECT=<<EOF
+;-- entry0:
+;-- _mainCRTStartup:
+;-- eip:
+0x00401260      push ebp
+0x00401261      mov ebp, esp
+0x00401263      sub esp, 8
+0x00401266      mov dword [esp], 1
+0x0040126d      call dword [sym.imp.msvcrt.dll___set_app_type]
+;-- reloc.msvcrt.dll___set_app_type:
+0x00006244      invalid
+EOF
+RUN
+
+NAME=pde x86
+FILE=bins/pe/ioli/w32/crackme0x00.exe
+CMDS=<<EOF
+e asm.bytes = false
+e asm.comments = false
 s main
 aei
 aeim
@@ -41,7 +62,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pde arm
+NAME=pdeq arm
 FILE=bins/elf/analysis/hello-arm32
 CMDS=<<EOF
 e asm.bytes = false
@@ -65,6 +86,29 @@ EXPECT=<<EOF
 0x00010194 ldr pc, [lr, 8]!
 0x00000000   cpsr:
 0x00000000 invalid
+EOF
+RUN
+
+NAME=pdeqq arm
+FILE=bins/elf/analysis/hello-arm32
+CMDS=<<EOF
+e asm.bytes = false
+pdeqq
+EOF
+EXPECT=<<EOF
+push {r7, lr}
+add r7, sp, 0
+movw r0, 0x200
+movt r0, 1
+bl sym.imp.puts
+add ip, pc, 0, 12
+add ip, ip, 16, 20
+ldr pc, [ip, 0x118]!
+str lr, [sp, -4]!
+ldr lr, [0x00010198]
+add lr, pc, lr
+ldr pc, [lr, 8]!
+invalid
 EOF
 RUN
 

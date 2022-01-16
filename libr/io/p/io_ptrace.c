@@ -23,7 +23,7 @@ typedef struct {
 #define RIOPTRACE_OPID(x) (((RIOPtrace*)(x)->data)->opid)
 #define RIOPTRACE_PID(x) (((RIOPtrace*)(x)->data)->pid)
 #define RIOPTRACE_FD(x) (((RIOPtrace*)(x)->data)->fd)
-static void open_pidmem (RIOPtrace *iop);
+static void open_pidmem(RIOPtrace *iop);
 
 #undef R_IO_NFDS
 #define R_IO_NFDS 2
@@ -152,7 +152,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return ptrace_write_at (io, RIOPTRACE_PID (fd), buf, len, io->off);
 }
 
-static void open_pidmem (RIOPtrace *iop) {
+static void open_pidmem(RIOPtrace *iop) {
 #if USE_PROC_PID_MEM
 	char pidmem[32];
 	snprintf (pidmem, sizeof (pidmem), "/proc/%d/mem", iop->pid);
@@ -271,25 +271,21 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int __close(RIODesc *desc) {
-	int pid, fd;
+static bool __close(RIODesc *desc) {
 	if (!desc || !desc->data) {
-		return -1;
+		return false;
 	}
-	pid = RIOPTRACE_PID (desc);
-	fd = RIOPTRACE_FD (desc);
+	int pid = RIOPTRACE_PID (desc);
+	int fd = RIOPTRACE_FD (desc);
 	if (fd != -1) {
 		close (fd);
 	}
 	RIOPtrace *riop = desc->data;
 	desc->data = NULL;
-	long ret = r_io_ptrace (desc->io, PTRACE_DETACH, pid, 0, 0);
-	if (errno == ESRCH) {
-		// process does not exist, may have been killed earlier -- continue as normal
-		ret = 0;
-	}
+	(void) r_io_ptrace (desc->io, PTRACE_DETACH, pid, 0, 0);
 	free (riop);
-	return ret;
+	// always return true, even if ptrace fails, otherwise the link is lost and the fd cant be removed
+	return true;
 }
 
 static void show_help(void) {
@@ -336,7 +332,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	return NULL;
 }
 
-static int __getpid (RIODesc *fd) {
+static int __getpid(RIODesc *fd) {
 	RIOPtrace *iop = (RIOPtrace *)fd->data;
 	if (!iop) {
 		return -1;

@@ -3,8 +3,9 @@ include ../config.mk
 NAME=r_main
 
 OBJS+=main.o
-OBJS+=rvc2.o
+OBJS+=ravc2.o
 OBJS+=rax2.o
+OBJS+=r2pm.o
 OBJS+=rasm2.o
 OBJS+=ragg2.o
 OBJS+=rarun2.o

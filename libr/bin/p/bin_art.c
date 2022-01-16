@@ -126,7 +126,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	char tmp[4];
 	int r = r_buf_read_at (buf, 0, (ut8 *)tmp, sizeof (tmp));
 	return r == 4 && !strncmp (tmp, "art\n", 4);

@@ -1,10 +1,8 @@
-/* radare - LGPL - Copyright 2010-2013 - pancake */
-
-// XXX: All this stuff must be linked to the code injection api
+/* radare - LGPL - Copyright 2010-2021 - pancake */
 
 #include <r_debug.h>
 
-R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int off) {
+R_API RDebugDesc *r_debug_desc_new(int fd, const char* path, int perm, int type, int off) {
 	RDebugDesc *desc = R_NEW (RDebugDesc);
 	if (desc) {
 		desc->fd = fd;
@@ -16,20 +14,19 @@ R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int 
 	return desc;
 }
 
-R_API void r_debug_desc_free (RDebugDesc *p) {
+R_API void r_debug_desc_free(RDebugDesc *p) {
 	if (p) {
-		if (p->path) {
-			free (p->path);
-		}
+		free (p->path);
 		free (p);
 	}
 }
 
 R_API int r_debug_desc_open(RDebug *dbg, const char *path) {
+	r_return_val_if_fail (dbg && dbg->h, -1);
 	if (dbg && dbg->h && dbg->h->desc.open) {
 		return dbg->h->desc.open (path);
 	}
-	return false;
+	return -1;
 }
 
 R_API int r_debug_desc_close(RDebug *dbg, int fd) {
@@ -69,17 +66,16 @@ R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len) {
 
 R_API int r_debug_desc_list(RDebug *dbg, int rad) {
 	int count = 0;
-	RList *list;
-	RListIter *iter;
-	RDebugDesc *p;
 
 	if (rad) {
 		if (dbg && dbg->cb_printf) {
-			dbg->cb_printf ("TODO \n");
+			dbg->cb_printf ("TODO: list target process files\n");
 		}
 	} else {
+		RListIter *iter;
+		RDebugDesc *p;
 		if (dbg && dbg->h && dbg->h->desc.list) {
-			list = dbg->h->desc.list (dbg->pid);
+			RList *list = dbg->h->desc.list (dbg->pid);
 			r_list_foreach (list, iter, p) {
 				dbg->cb_printf ("%i 0x%"PFMT64x" %c%c%c %s\n", p->fd, p->off,
 						(p->perm & R_PERM_R)?'r':'-',

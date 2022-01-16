@@ -1,16 +1,20 @@
-
-/* radare - LGPL - Copyright 2021 - Siguza, pancake */
+/* radare - LGPL - Copyright 2021 - Siguza, pancake, hot3eed */
 
 // Context: https://raw.githubusercontent.com/Siguza/misc/master/xref.c
 
 #include <r_core.h>
 
-static void siguza_xrefs(RCore *core, ut64 search, bool all) {
+static void addref(RCore *core, ut64 from, ut64 to, RAnalRefType type) {
+	// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", to, from);
+	r_anal_xrefs_set (core->anal, from, to, type);
+}
+
+static void siguza_xrefs_chunked(RCore *core, ut64 search, int lenbytes) {
 	const ut8 *mem = core->block;
-	const size_t fs = core->blocksize;
-	ut64 addr = core->offset;
 	ut32 *p = (ut32*)((uint8_t*)mem);
-	ut32 *e = (ut32*)(p + (fs / 4));
+	ut32 *e = (ut32*)(p + (lenbytes / 4));
+	ut64 addr = core->offset;
+
 	for (; p < e; p++, addr += 4) {
 		ut32 v = *p;
 		if((v & 0x1f000000) == 0x10000000) // adr and adrp
@@ -21,7 +25,8 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 			int64_t off  = ((int64_t)((((v >> 5) & 0x7ffff) << 2) | ((v >> 29) & 0x3)) << 43) >> (is_adrp ? 31 : 43);
 			ut64 target = base + off;
 			if (search == 0) {
-				r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x" # %s\n", addr, target, is_adrp? "adrp": "adr");
+				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x" # %s\n", target, addr, is_adrp? "adrp": "adr");
+				addref (core, addr, target, R_ANAL_REF_TYPE_DATA); // is_adrp matters?
 			} else if (target == search) {
 				r_cons_printf ("%#"PFMT64x": %s x%u, %#"PFMT64x"\n", addr, is_adrp ? "adrp" : "adr", reg, target);
 			}
@@ -45,9 +50,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 						if (v & 0x400000) {
 							aoff <<= 12;
 						}
-						if (search == 0) {
-							r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr, target + aoff);
-						} else if(target + aoff == search) {
+						if(target + aoff == search) {
 							r_cons_printf ("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff);
 							found = true;
 						} else {
@@ -64,9 +67,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 							if (v & 0x400000) {
 								xoff <<= 12;
 							}
-							if (search == 0) {
-								r_cons_printf("ax 0x%"PFMT64x" 0x%#"PFMT64x" # add\n", addr, target);
-							} else if (target + aoff + xoff == search) {
+							if (target + aoff + xoff == search) {
 								// If we get here, we know the previous add matched
 								r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; add x%u, x%u, %#x\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, v & 0x1f, reg2, xoff);
 							}
@@ -95,10 +96,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 								if((v & 0x1000000) != 0) // unsigned offset
 								{
 									ut64 uoff = ((v >> 10) & 0xfff) << size;
-									if (!search) {
-										r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x" # add\n",
-											addr, target+aoff+uoff);
-									} else if (target + aoff + uoff == search) {
+									if (target + aoff + uoff == search) {
 										if (aoff) // Have add
 										{
 											r_cons_printf("%#"PFMT64x": %s x%u, %#"PFMT64x"; add x%u, x%u, %#x; %s %s%u, [x%u, %#"PFMT64x"]\n", addr, is_adrp ? "adrp" : "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, uoff);
@@ -111,10 +109,7 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 								} else if((v & 0x00200000) == 0) {
 									int64_t soff = ((int64_t)((v >> 12) & 0x1ff) << 55) >> 55;
 									const char *sign = soff < 0 ? "-" : "";
-									if (!search) {
-										ut64 dst = target + aoff + soff;
-										r_cons_printf("ax 0x%"PFMT64x" 0x%"PFMT64x" # add/adrp\n", addr, dst);
-									} else if(target + aoff + soff == search) {
+									if(target + aoff + soff == search) {
 										if((v & 0x400) == 0) {
 											if((v & 0x800) == 0) // unscaled
 											{
@@ -194,7 +189,8 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 		{
 			int64_t off = ((int64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
-				r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr, addr + off);
+				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
+				addref (core, addr, addr + off, R_ANAL_REF_TYPE_DATA); // is_adrp matters?
 			} else if(addr + off == search) {
 				ut32 reg  = v & 0x1f;
 				bool is_ldrsw = (v & 0xff000000) == 0x98000000;
@@ -207,7 +203,8 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 			int64_t off = ((int64_t)(v & 0x3ffffff) << 38) >> 36;
 			bool is_bl = (v & 0x80000000) != 0;
 			if (!search) {
-				r_cons_printf("ax 0x%"PFMT64x" 0x%"PFMT64x" # %s %#"PFMT64x"\n", addr, addr + off, is_bl ? "bl" : "b", addr + off);
+				// r_cons_printf("ax 0x%"PFMT64x" 0x%"PFMT64x" # %s %#"PFMT64x"\n", addr + off, addr, is_bl ? "bl" : "b", addr + off);
+				addref (core, addr, addr + off, is_bl? R_ANAL_REF_TYPE_CODE: R_ANAL_REF_TYPE_CALL);
 			} else if (addr + off == search) {
 				r_cons_printf("%#"PFMT64x": %s %#"PFMT64x"\n", addr, is_bl ? "bl" : "b", search);
 			}
@@ -216,7 +213,8 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 		{
 			int64_t off = ((int64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
-				r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr, addr + off);
+				addref (core, addr, addr + off, R_ANAL_REF_TYPE_CODE);
+				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
 			} else if(addr + off == search) {
 				const char *cond;
 				switch(v & 0xf)
@@ -245,7 +243,8 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 		{
 			int64_t off = ((int64_t)((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
-				r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr, addr + off);
+				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
+				addref (core, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 			} else if(addr + off == search) {
 				ut32 reg  = v & 0x1f;
 				bool is_64bit = (v & 0x80000000) != 0;
@@ -257,7 +256,8 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 		{
 			int64_t off = ((int64_t)((v >> 5) & 0x3fff) << 50) >> 48;
 			if (!search) {
-				r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr, addr + off);
+				// r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", addr + off, addr);
+				addref (core, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 			} else if (addr + off == search) {
 				ut32 reg  = v & 0x1f;
 				ut32 bit  = ((v >> 19) & 0x1f) | ((v >> 26) & 0x20);
@@ -269,22 +269,107 @@ static void siguza_xrefs(RCore *core, ut64 search, bool all) {
 	}
 }
 
+/**
+ * @param search Address to find xrefs to. If 0, all xrefs will be emitted.
+ * @param start Address at which to start looking for xrefs.
+ * @param lenbytes Reach of the search for xrefs, in bytes.
+ */
+static void siguza_xrefs(RCore *core, ut64 search, ut64 start, int lenbytes) {
+	ut64 end = start + lenbytes;
+	ut64 cursor = start;
+	int lenbytes_rem = lenbytes;
+	char target_ref[64];
+
+	if (search == 0) {
+		snprintf (target_ref, sizeof (target_ref), "all xrefs");
+	} else {
+		snprintf (target_ref, sizeof (target_ref), "xrefs to 0x%08"PFMT64x, search);
+	}
+	eprintf ("Finding %s in 0x%08"PFMT64x"-0x%08"PFMT64x"\n", target_ref, start, end);
+
+	do {
+		int lenbytes_to_read = lenbytes_rem >= core->blocksize_max ? core->blocksize_max : end - cursor;
+
+		r_core_seek_size (core, cursor, lenbytes_to_read);
+		siguza_xrefs_chunked (core, search, lenbytes_to_read);
+
+		lenbytes_rem -= lenbytes_to_read;
+		cursor += lenbytes_to_read;
+	} while (lenbytes_rem > core->blocksize_max);
+}
+
 static int r_cmdsixref_call(void *user, const char *input) {
-	if (r_str_startswith (input, "sixref")) {
-		RCore *core = (RCore *)user;
-		const char *arch = r_config_get (core->config, "asm.arch");
-		const int bits = r_config_get_i (core->config, "asm.bits");
-		if (!strstr (arch, "arm") || bits != 64) {
-			eprintf ("This command only works on arm64. Please check your asm.{arch,bits}\n");
-			return true;
-		}
-		ut64 search = r_num_math (core->num, input + 6);
-		// TODO: honor search.in and such
-		eprintf ("Finding xrefs to 0x%08"PFMT64x" in 0x%08"PFMT64x"-0x%08"PFMT64x"\n", search, core->offset, core->offset + core->blocksize);
-		siguza_xrefs (core, search, true);
+	if (!r_str_startswith (input, "sixref")) {
+		return false;
+	}
+	input = r_str_trim_head_ro (input + strlen ("sixref"));
+
+	RCore *core = (RCore *)user;
+	const char *arch = r_config_get (core->config, "asm.arch");
+	const int bits = r_config_get_i (core->config, "asm.bits");
+
+	if (!strstr (arch, "arm") || bits != 64) {
+		eprintf ("This command only works on arm64. Please check your asm.{arch,bits}\n");
 		return true;
 	}
-	return false;
+
+	if (*input == '?') {
+		eprintf ("Usage: sixref [address] [len]   Find x-refs in executable sections (arm64 only. fast!)\n");
+		goto done;
+	}
+
+	ut64 search = 0;
+	int len = 0;
+
+	char *args = strdup (input);
+	char *space = strchr (args, ' ');
+	if (space) {
+		*space++ = 0;
+		len = r_num_math (core->num, space);
+	}
+	search = r_num_math (core->num, args);
+	free (args);
+
+	if (len == 0) {
+		RList *sections = r_bin_get_sections (core->bin);
+		if (!sections) {
+			eprintf ("No executable sections found\n");
+			goto done;
+		}
+
+		RBinSection *s;
+		RListIter *iter;
+
+		r_list_foreach (sections, iter, s) {
+			if (s->is_segment || !(s->perm & R_PERM_X)) {
+				continue;
+			}
+			siguza_xrefs (core, search, s->vaddr, s->vsize);
+		}
+	} else {
+		ut64 offset = core->offset;
+		if (offset & 3) {
+			offset -= offset % 4;
+			eprintf ("Current offset is not 4-byte aligned, using 0x%"PFMT64x" instaed\n", offset);
+		}
+
+		RBinSection *s = r_bin_get_section_at (core->bin->cur->o, offset, true);
+		if (!s || !(s->perm & R_PERM_X)) {
+			eprintf ("Current section is not executable\n");
+			goto done;
+		}
+
+		ut64 sect_end = s->vaddr + s->vsize;
+		if (offset + len > sect_end || offset + len < s->vaddr) {
+			len = sect_end - offset;
+			eprintf ("Length is not within range for this section, using %u instead\n", len);
+		}
+
+		siguza_xrefs (core, search, offset, len);
+	}
+
+done:
+	return true;
 }
 
 RCorePlugin r_core_plugin_sixref = {

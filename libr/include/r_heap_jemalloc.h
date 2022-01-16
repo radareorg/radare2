@@ -5,10 +5,9 @@
 extern "C" {
 #endif
 
-#include "r_jemalloc/internal/jemalloc_internal.h"
+#include "heap/r_jemalloc/internal/jemalloc_internal.h"
 
 #define INC_HEAP32 1
-#include "r_heap_jemalloc.h"
 #undef INC_HEAP32
 
 #undef GH

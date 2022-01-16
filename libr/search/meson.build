@@ -1,10 +1,11 @@
 r_search_sources = [
-  'aes-find.c',
+  'aes_find.c',
   'bytepat.c',
   'keyword.c',
   'regexp.c',
   'uds.c',
-  'privkey-find.c',
+  'privkey_find.c',
+  'rabin_karp.c',
   'search.c',
   'strings.c'
 ]

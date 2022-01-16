@@ -2,7 +2,7 @@
 #define R_BIN_PE64 1
 #include "bin_pe.inc"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= 0x3d) {
 		return false;
@@ -341,7 +341,10 @@ static RList *trycatch(RBinFile *bf) {
 		ut32 savedBeginOff = rfcn.BeginAddress;
 		ut32 savedEndOff = rfcn.EndAddress;
 		while (suc && rfcn.UnwindData & 1) {
-			suc = r_io_read_at_mapped (io, baseAddr + (rfcn.UnwindData & ~1), (ut8 *)&rfcn, sizeof (rfcn));
+			// XXX this ugly (int) cast is needed for MSVC for not to crash
+			int delta = (rfcn.UnwindData & (int)~1);
+			ut64 at = baseAddr + delta;
+			suc = r_io_read_at_mapped (io, at, (ut8 *)&rfcn, sizeof (rfcn));
 		}
 		rfcn.BeginAddress = savedBeginOff;
 		rfcn.EndAddress = savedEndOff;
@@ -370,7 +373,8 @@ static RList *trycatch(RBinFile *bf) {
 					break;
 				}
 				while (suc && (rfcn.UnwindData & 1)) {
-					suc = r_io_read_at_mapped (io, baseAddr + (rfcn.UnwindData & ~1), (ut8 *)&rfcn, sizeof (rfcn));
+					// XXX this ugly (int) cast is needed for MSVC for not to crash
+					suc = r_io_read_at_mapped (io, baseAddr + ((int)rfcn.UnwindData & (int)~1), (ut8 *)&rfcn, sizeof (rfcn));
 				}
 				if (!suc || info.Version != 1) {
 					break;

@@ -180,7 +180,7 @@ SDB_API int sdb_diff_format(char *str, int size, const SdbDiff *diff);
 typedef void (*SdbDiffCallback)(const SdbDiff *diff, void *user);
 
 // Returns true iff the contents of a and b are equal including contained namespaces
-// If cb is non-null, it will be called subsequently with differences. 
+// If cb is non-null, it will be called subsequently with differences.
 SDB_API bool sdb_diff(Sdb *a, Sdb *b, SdbDiffCallback cb, void *cb_user);
 
 // Gets a pointer to the value associated with `key`.

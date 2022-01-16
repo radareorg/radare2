@@ -44,13 +44,13 @@ static int astrcmp(const char *a, const char *b) {
 	}
 }
 
-static inline int cstring_cmp(const void *a, const void *b) { 
+static inline int cstring_cmp(const void *a, const void *b) {
 	const char **va = (const char **)a;
 	const char **vb = (const char **)b;
 	return astrcmp (*va, *vb);
 }
 
-static inline int int_cmp(const void *a, const void *b) { 
+static inline int int_cmp(const void *a, const void *b) {
 	const ut64 va = *(const ut64 *)a;
 	const ut64 vb = *(const ut64 *)b;
 	if (va > vb) {
@@ -60,7 +60,7 @@ static inline int int_cmp(const void *a, const void *b) {
 		return -1;
 	}
 	return 0;
-} 
+}
 
 SDB_API ut64 sdb_array_get_num(Sdb *s, const char *key, int idx, ut32 *cas) {
 	int i;
@@ -151,7 +151,7 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val,
 	// XXX: lstr is wrongly computed in sdb_const_get_with an off-by-one
 	// we can optimize this by caching value len in memory . add
 	// sdb_const_get_size()
-	lstr = strlen (str); 
+	lstr = strlen (str);
 
 	// When removing strlen this conversion should be checked
 	size_t lstr_tmp = lstr;
@@ -602,7 +602,7 @@ SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {
 }
 
 SDB_API char *sdb_array_pop_head(Sdb *s, const char *key, ut32 *cas) {
-	// remove last element in 
+	// remove last element in
 	ut32 kas;
 	char *end, *str = sdb_get (s, key, &kas);
 	if (!str || !*str) {

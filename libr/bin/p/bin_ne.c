@@ -4,7 +4,7 @@
 #include "../i/private.h"
 #include "../format/ne/ne.h"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= 0x3d) {
 		return false;
@@ -33,7 +33,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 	return false;
 }
 
-static void destroy (RBinFile *bf) {
+static void destroy(RBinFile *bf) {
 	r_bin_ne_free (bf->o->bin_obj);
 }
 
@@ -74,7 +74,7 @@ static void header(RBinFile *bf) {
 	rbin->cb_printf ("winver: %d.%d\n", ne->ne_header->expctwinver[1], ne->ne_header->expctwinver[0]);
 }
 
-RBinInfo *info(RBinFile *bf) {
+static RBinInfo *info(RBinFile *bf) {
 	r_bin_ne_obj_t *ne = bf->o->bin_obj;
 	RBinInfo *i = R_NEW0 (RBinInfo);
 	if (i) {
@@ -86,23 +86,23 @@ RBinInfo *info(RBinFile *bf) {
 	return i;
 }
 
-RList *entries(RBinFile *bf) {
+static RList *entries(RBinFile *bf) {
 	return r_bin_ne_get_entrypoints (bf->o->bin_obj);
 }
 
-RList *symbols(RBinFile *bf) {
+static RList *symbols(RBinFile *bf) {
 	return r_bin_ne_get_symbols (bf->o->bin_obj);
 }
 
-RList *imports(RBinFile *bf) {
+static RList *imports(RBinFile *bf) {
 	return r_bin_ne_get_imports (bf->o->bin_obj);
 }
 
-RList *sections(RBinFile *bf) {
+static RList *sections(RBinFile *bf) {
 	return r_bin_ne_get_segments (bf->o->bin_obj);
 }
 
-RList *relocs(RBinFile *bf) {
+static RList *relocs(RBinFile *bf) {
 	return r_bin_ne_get_relocs (bf->o->bin_obj);
 }
 

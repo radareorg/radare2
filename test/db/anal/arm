@@ -212,7 +212,6 @@ RUN
 
 NAME=ARM32 bb 0 size -- a2f
 FILE=malloc://32
-BROKEN=1
 CMDS=<<EOF
 wx ff0000e2010050e30000001affffffea70009de594008de5e4139fe500f09ee5
 e asm.arch=arm

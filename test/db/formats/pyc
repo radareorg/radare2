@@ -15,14 +15,11 @@ dr
 dr=
 EOF
 EXPECT=<<EOF
-sp = 0x00000000
-pc = 0x00000000
-bp = 0x00000000
-     sp 0x00000000            pc 0x00000000            bp 0x00000000
+     a0 0x00000000            a1 0x00000000            a2 0x00000000
+     a3 0x00000000            r0 0x00000000            sp 0x00000000
+     pc 0x00000000            bp 0x00000000       
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc load version38
@@ -33,9 +30,7 @@ EOF
 EXPECT=<<EOF
 machine  Python v3.8.0 VM (rev 5d714034866ce1e9f89dc141fe4cc0b50cf20a8e)
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc load version37
@@ -46,9 +41,7 @@ EOF
 EXPECT=<<EOF
 machine  Python v3.7.0 VM (rev ae1f6af15f3e4110616801e235873e47fd7d1977)
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc load version36
@@ -59,9 +52,7 @@ EOF
 EXPECT=<<EOF
 machine  Python v3.6.0 VM (rev 5c4568a05a0a62b5947c55f68f9f2ecfb90a4f12)
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc load version27
@@ -72,9 +63,7 @@ EOF
 EXPECT=<<EOF
 machine  Python 2.7a2+ VM (rev edfed0e32cedf3b84c6e999052486a750a3f5bee)
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc symbols
@@ -85,9 +74,7 @@ EOF
 EXPECT=<<EOF
 9
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc sections
@@ -104,9 +91,7 @@ EXPECT=<<EOF
 35  0x00002143   0x44 0x00002143   0x44 ---- <module>.Batman.__init__
 36  0x00002235    0x4 0x00002235    0x4 ---- <module>.Batman.sing
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc entry
@@ -117,9 +102,7 @@ EOF
 EXPECT=<<EOF
 vaddr=0x0000002a paddr=0x0000002a haddr=-1 type=program
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc disasm
@@ -144,9 +127,7 @@ EXPECT=<<EOF
         |   0x0000003a      6401           load_const True
         `-> 0x0000003c      0100           pop_top
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc symbols for pyc2.7
@@ -157,9 +138,7 @@ EOF
 EXPECT=<<EOF
 1   0x00000052 0x00000052 NONE FUNC 9        <module>.hello_world
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc disasm for 2.7
@@ -182,9 +161,7 @@ EXPECT=<<EOF
             0x00000032      01             pop_top
             0x00000033      640200         load_const None
 EOF
-EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=pyc function
@@ -210,7 +187,6 @@ EXPECT=<<EOF
 \           0x00000036      53             return_value
 EOF
 EXPECT_ERR=<<EOF
-WARNING: No calling convention defined for this file, analysis may be inaccurate.
 Warning: set your favourite calling convention in `e anal.cc=?`
 EOF
 RUN

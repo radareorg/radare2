@@ -13,7 +13,7 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret", name), 0);
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.argn", name), 0);
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.arg%zu", name, i), 0);
+		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.arg%u", name, (unsigned int)i), 0);
 	}
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.self", name), 0);
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.error", name), 0);

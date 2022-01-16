@@ -21,18 +21,24 @@ if [ ! -d "$WASI_SDK" ]; then
 	)
 fi
 
-export CFLAGS=-D_WASI_EMULATED_SIGNAL
+export CFLAGS="-D_WASI_EMULATED_SIGNAL -O2"
 
 cp dist/plugins-cfg/plugins.wasi.cfg plugins.cfg
 
 # export CC="${WASI_SDK}/bin/clang -D
-./configure --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-libuv --without-gpl
+ERR=0
+./configure --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-libuv --without-gpl
 make -j
 R2V=`./configure -qV`
 D="radare2-$R2V-wasi"
 mkdir -p $D
 for a in rax2 radare2 rasm2 rabin2 rafind2 ; do
 	make -C binr/$a
-	cp -f binr/$a/$a.wasm $D
+	cp -f binr/$a/$a.wasm $D || ERR=1
+done
+for a in $D/*.wasm ; do
+	echo "Optimizing $a ..."
+	wasm-opt -o $a.o3.wasm -O3 $a
 done
 zip -r "$D".zip $D
+exit $ERR

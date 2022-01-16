@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2007-2021 - pancake, alvarofe */
+/* radare - LGPL - Copyright 2007-2022 - pancake, alvarofe */
 // TODO: RRef - reference counting
 
 #include <stdio.h>
 
 #define _R_LIST_C_
 #include "r_util.h"
+#include <set.h>
 
 #define MERGE_LIMIT 24
 
@@ -531,7 +532,7 @@ static RListIter *_merge(RListIter *first, RListIter *second, RListComparator cm
 	return head;
 }
 
-static RListIter * _r_list_half_split(RListIter *head) {
+static RListIter *_r_list_half_split(RListIter *head) {
 	RListIter *tmp;
 	RListIter *fast;
 	RListIter *slow;
@@ -567,7 +568,7 @@ static void list_insertion_sort_iter(RListIter *iter, RListComparator cmp) {
 	}
 }
 
-static RListIter * _merge_sort(RListIter *head, RListComparator cmp) {
+static RListIter *_merge_sort(RListIter *head, RListComparator cmp) {
 	RListIter *second;
 	if (!head || !head->n) {
 		return head;
@@ -629,29 +630,45 @@ R_API void r_list_sort(RList *list, RListComparator cmp) {
 	}
 }
 
-R_API RList *r_list_uniq(const RList *list, RListComparator cmp) {
+R_API RList *r_list_uniq(const RList *list, RListComparatorItem cmp) {
 	RListIter *iter, *iter2;
-	void *item, *item2;
+	void *item;
+	int deleted = 0;
 
-	r_return_val_if_fail (list && cmp, NULL);
-
-	RList *nl = r_list_newf (NULL);
-	if (!nl) {
-		return NULL;
-	}
-	r_list_foreach (list, iter, item) {
-		bool found = false;
-		r_list_foreach (nl, iter2, item2) {
-			if (cmp (item, item2) == 0) {
-				found = true;
-				break;
-			}
-		}
-		if (!found) {
-			r_list_append (nl, item);
+	r_return_val_if_fail (list && cmp, 0);
+	RList *rlist = r_list_newf (list->free);
+	SetU *s = set_u_new ();
+	r_list_foreach_safe (list, iter, iter2, item) {
+		ut64 v = cmp (item);
+		if (set_u_contains (s, v)) {
+			deleted ++;
+		} else {
+			set_u_add (s, v);
+			r_list_append (rlist, item);
 		}
 	}
-	return nl;
+	set_u_free (s);
+	return rlist;
+}
+
+R_API int r_list_uniq_inplace(RList *list, RListComparatorItem cmp) {
+	RListIter *iter, *iter2;
+	void *item;
+	int deleted = 0;
+
+	r_return_val_if_fail (list && cmp, 0);
+	SetU *s = set_u_new ();
+	r_list_foreach_safe (list, iter, iter2, item) {
+		ut64 v = cmp (item);
+		if (set_u_contains (s, v)) {
+			r_list_delete (list, iter);
+			deleted ++;
+		} else {
+			set_u_add (s, v);
+		}
+	}
+	set_u_free (s);
+	return deleted;
 }
 R_API char *r_list_to_str(RList *list, char ch) {
 	RListIter *iter;

@@ -21,7 +21,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 zimghdr[8];
 	if (r_buf_read_at (b, 0, zimghdr, sizeof (zimghdr))) {
 		// Checking ARM zImage kernel

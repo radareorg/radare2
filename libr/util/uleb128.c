@@ -53,7 +53,7 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, const char **e
 	return data;
 }
 
-R_API int r_uleb128_len (const ut8 *data, int size) {
+R_API int r_uleb128_len(const ut8 *data, int size) {
 	int i = 1;
 	ut8 c = *(data++);
 	while (c > 0x7f && i < size) {
@@ -136,7 +136,9 @@ R_API const ut8 *r_leb128(const ut8 *data, int datalen, st64 *v) {
 		}
 	}
 	if ((s < (8 * sizeof (sum))) && (c & 0x40)) {
-		sum |= -((st64)1 << s);
+		if (s >= 0 && s < 63) {
+			sum |= -((st64)1 << s);
+		}
 	}
 beach:
 	if (v) {
@@ -187,7 +189,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	((type)((value) << SHIFT_AMOUNT (type, sign_bit)) >> \
 		SHIFT_AMOUNT (type, sign_bit))
 
-R_API size_t read_u32_leb128 (const ut8* p, const ut8* max, ut32* out_value) {
+R_API size_t read_u32_leb128(const ut8* p, const ut8* max, ut32* out_value) {
 	if (p < max && !(p[0] & 0x80)) {
 		*out_value = LEB128_1 (ut32);
 		return 1;
@@ -212,7 +214,7 @@ R_API size_t read_u32_leb128 (const ut8* p, const ut8* max, ut32* out_value) {
 	}
 }
 
-R_API size_t read_i32_leb128 (const ut8* p, const ut8* max, st32* out_value) {
+R_API size_t read_i32_leb128(const ut8* p, const ut8* max, st32* out_value) {
 	if (p < max && !(p[0] & 0x80)) {
 		ut32 result = LEB128_1 (ut32);
 		*out_value = SIGN_EXTEND (ut32, result, 6);
@@ -245,7 +247,7 @@ R_API size_t read_i32_leb128 (const ut8* p, const ut8* max, st32* out_value) {
 	}
 }
 
-R_API size_t read_u64_leb128 (const ut8* p, const ut8* max, ut64* out_value) {
+R_API size_t read_u64_leb128(const ut8* p, const ut8* max, ut64* out_value) {
 	if (p < max && !(p[0] & 0x80)) {
 		*out_value = LEB128_1 (ut64);
 		return 1;
@@ -283,7 +285,7 @@ R_API size_t read_u64_leb128 (const ut8* p, const ut8* max, ut64* out_value) {
 	}
 }
 
-R_API size_t read_i64_leb128 (const ut8* p, const ut8* max, st64* out_value) {
+R_API size_t read_i64_leb128(const ut8* p, const ut8* max, st64* out_value) {
 	if (p < max && !(p[0] & 0x80)) {
 		ut64 result = LEB128_1 (ut64);
 		*out_value = SIGN_EXTEND (ut64, result, 6);

@@ -962,6 +962,9 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		r_str_replace_char (str, *key, *val);
 		return str;
 	}
+	if (klen == 0) {
+		return str;
+	}
 	if (klen == vlen && !strcmp (key, val)) {
 		return str;
 	}
@@ -1377,6 +1380,24 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool parse_esc_seq, bool
 		p++;
 	}
 out:
+	*q = '\0';
+	return new_buf;
+}
+
+/* hex-escape unprintable characters in a raw buffer (null-safe) */
+R_API char *r_str_escape_raw(const ut8 *buf, int sz) {
+	r_return_val_if_fail (buf, NULL);
+
+	/* Worst case scenario, we convert every byte to a \xhh escape */
+	char *new_buf = malloc (1 + sz * 4);
+	if (!new_buf) {
+		return NULL;
+	}
+	char *q = new_buf;
+	int i;
+	for (i = 0; i < sz; i++) {
+		r_str_byte_escape ((char *)&buf[i], &q, false, false, true);
+	}
 	*q = '\0';
 	return new_buf;
 }
@@ -2045,7 +2066,12 @@ R_API size_t r_wstr_clen(const char *s) {
 	return len + 1;
 }
 
+// TODO: rename to r_str_ansi_at() ? or find better name?
 R_API const char *r_str_ansi_chrn(const char *str, size_t n) {
+#if 0
+	size_t pos = r_str_ansi_nlen (str, at);
+	return str + pos;
+#endif
 	int len, i, li;
 	for (li = i = len = 0; str[i] && (n != len); i++) {
 		size_t chlen = __str_ansi_length (str + i);
@@ -2239,7 +2265,6 @@ R_API bool r_str_char_fullwidth(const char* s, size_t left) {
 		 R_BETWEEN (0xffe0, codepoint, 0xffe6) ||
 		 R_BETWEEN (0x20000, codepoint, 0x2fffd) ||
 		 R_BETWEEN (0x30000, codepoint, 0x3fffd)));
-
 }
 
 /**
@@ -2631,6 +2656,9 @@ R_API const char *r_str_firstbut_escape(const char *s, char ch, const char *but)
 		if (*p == '\\') {
 			p++;
 			if (*p == ch || strchr(but, *p)) {
+				if (!*p) {
+					break;
+				}
 				continue;
 			} else if (!*p) {
 				break;
@@ -3224,7 +3252,7 @@ R_API char *r_str_wrap(const char *str, int w) {
 	return ret;
 }
 
-R_API const char * r_str_tok(const char *str1, const char b, size_t len) {
+R_API const char *r_str_tok(const char *str1, const char b, size_t len) {
 	const char *p = str1;
 	size_t i = 0;
 	if (!p || !*p) {
@@ -3653,6 +3681,10 @@ R_API char *r_str_from_ut64(ut64 val) {
 	if (!str) {
 		return NULL;
 	}
+	while (!*v && i < 8) {
+		v++;
+		i++;
+	}
 	while (i < 8 && *v) {
 		str[i++] = *v++;
 	}
@@ -3662,8 +3694,13 @@ R_API char *r_str_from_ut64(ut64 val) {
 R_API int r_snprintf(char *string, int len, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
-	int ret = vsnprintf (string, len, fmt, ap);
-	string[len - 1] = 0;
+	int ret = 0;
+	if (len > 0) {
+		ret = vsnprintf (string, len, fmt, ap);
+		string[len - 1] = 0;
+	} else {
+		*string = 0;
+	}
 	va_end (ap);
 	return ret;
 }
@@ -3806,11 +3843,11 @@ R_API char *r_str_scale(const char *s, int w, int h) {
 	int curline = -1;
 	char *linetext = (char*)r_str_pad (' ', w);
 	for (i = 0; i < h; i++) {
-		int zoomedline = i * ((float)rows / h);
+		int zoomedline = (int)(i * ((double)rows / h));
 		const char *srcline = r_list_get_n (lines, zoomedline);
 		int cols = strlen (srcline);
 		for (j = 0; j < w; j++) {
-			int zoomedcol = j * ( (float)cols / w);
+			int zoomedcol = (int)(j * ( (double)cols / w));
 			linetext[j] = srcline[zoomedcol];
 		}
 		if (curline != zoomedline) {

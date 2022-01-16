@@ -6,7 +6,7 @@
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;
 
-static bool check_buffer(RBuffer *buf) {
+static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	ut8 tmp[SCGCMAG + 1];
 	int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r > SCGCMAG && !memcmp (tmp, CGCMAG, SCGCMAG) && tmp[4] != 2;

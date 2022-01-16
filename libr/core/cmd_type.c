@@ -176,19 +176,6 @@ static const char *help_msg_tu[] = {
 	NULL
 };
 
-static void cmd_type_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, t);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, t-, t_minus);
-	DEFINE_CMD_DESCRIPTOR (core, tc);
-	DEFINE_CMD_DESCRIPTOR (core, td);
-	DEFINE_CMD_DESCRIPTOR (core, te);
-	DEFINE_CMD_DESCRIPTOR (core, tl);
-	DEFINE_CMD_DESCRIPTOR (core, tn);
-	DEFINE_CMD_DESCRIPTOR (core, ts);
-	DEFINE_CMD_DESCRIPTOR (core, tu);
-	DEFINE_CMD_DESCRIPTOR (core, tt);
-}
-
 static void show_help(RCore *core) {
 	r_core_cmd_help (core, help_msg_t);
 }
@@ -476,6 +463,7 @@ static int print_struct_union_list_json(Sdb *TDB, SdbForeachCallback filter) {
 	return 1;
 }
 
+// Rename to char *RAnal.type_to_c() {}
 static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, const char *arg, bool multiline) {
 	char *name = NULL;
 	SdbKv *kv;
@@ -509,7 +497,7 @@ static void print_struct_union_in_c_format(Sdb *TDB, SdbForeachCallback filter, 
 					int arrnum = atoi (arr);
 					free (arr);
 					if (multiline) {
-						r_cons_printf ("\t%s", val);
+						r_cons_printf ("  %s", val);
 						if (p && p[0] != '\0') {
 							r_cons_printf ("%s%s", strstr (val, " *")? "": " ", p);
 							if (arrnum) {
@@ -731,7 +719,7 @@ static bool stdiftype(void *p, const char *k, const char *v) {
 }
 
 static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
-	r_cons_printf ("tk %s=%s\n", k, v);
+	r_cons_printf ("\"tk %s=%s\"\n", k, v);
 	return true;
 }
 
@@ -868,7 +856,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
-	bool ioCache = r_config_get_i (core->config, "io.cache");
+	bool ioCache = r_config_get_b (core->config, "io.cache");
 	bool stack_set = false;
 	bool resolved = false;
 	const char *varpfx;
@@ -916,7 +904,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		r_core_cmd0 (core, "aeim");
 		stack_set = true;
 	}
-	r_config_set_i (core->config, "io.cache", 1);
+	r_config_set_b (core->config, "io.cache", true);
 	r_config_set_i (core->config, "dbg.follow", 0);
 	ut64 oldoff = core->offset;
 	r_cons_break_push (NULL, NULL);
@@ -1007,7 +995,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	}
 beach:
 	r_core_cmd0 (core, "wc-*"); // drop cache writes
-	r_config_set_i (core->config, "io.cache", ioCache);
+	r_config_set_b (core->config, "io.cache", ioCache);
 	r_config_set_i (core->config, "dbg.follow", dbg_follow);
 	if (stack_set) {
 		r_core_cmd0 (core, "aeim-");
@@ -1136,7 +1124,6 @@ static int cmd_type(void *data, const char *input) {
 				SdbList *l = sdb_foreach_list_filter (TDB, stdifstruct, true);
 				SdbListIter *it;
 				SdbKv *kv;
-
 				ls_foreach (l, it, kv) {
 					showFormat (core, sdbkv_key (kv), 1);
 				}
@@ -1317,7 +1304,7 @@ static int cmd_type(void *data, const char *input) {
 		} else if (!r_sandbox_enable (0)) {
 			if (input[1] == ' ') {
 				const char *dir = r_config_get (core->config, "dir.types");
-				const char *filename = input + 2;
+				const char *filename = r_str_trim_head_ro (input + 2);
 				char *homefile = NULL;
 				if (*filename == '~') {
 					if (filename[1] && filename[2]) {

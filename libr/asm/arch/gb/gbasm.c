@@ -11,13 +11,13 @@ static void str_op(char *c) {
 	}
 }
 
-static int gb_reg_idx (char r) {
+static int gb_reg_idx(char r) {
 	const char *rstr = "bcdehl a";
 	const char *ptr = strchr (rstr, r);
 	return ptr ? (int)(size_t)(ptr - rstr) : -1;
 }
 
-static bool gb_parse_cb1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
+static bool gb_parse_cb1(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 // minlen varries between 4 and 6
 	int i;
 	size_t j;
@@ -42,7 +42,7 @@ static bool gb_parse_cb1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	return false;
 }
 
-static bool gb_parse_cb2 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
+static bool gb_parse_cb2(ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 	ut64 num;
 	int i;
 	char *p, *q;
@@ -146,7 +146,7 @@ static bool gb_parse_ld1(ut8 *buf, const int minlen, char *buf_asm) {
 	return false;
 }
 
-static bool gb_parse_ld2 (ut8 *buf, char *buf_asm) {
+static bool gb_parse_ld2(ut8 *buf, char *buf_asm) {
 	int i;
 	ut64 num;
 	if (strlen (buf_asm) < 6) {
@@ -169,7 +169,7 @@ static bool gb_parse_ld2 (ut8 *buf, char *buf_asm) {
 	return false;
 }
 
-static bool gb_parse_ld3 (ut8 *buf, char *buf_asm) {
+static bool gb_parse_ld3(ut8 *buf, char *buf_asm) {
 	if (strlen (buf_asm) < 7) {
 		return false;
 	}
@@ -557,7 +557,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			}
 		}
 		break;
-	case 0x63616c6c:		//call 
+	case 0x63616c6c:		//call
 		if (strlen(buf_asm) < 6) {
 			return op->size = 0;
 		}

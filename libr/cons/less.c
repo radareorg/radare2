@@ -166,7 +166,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 }
 
 R_API void r_cons_less(void) {
-	(void)r_cons_less_str (r_cons_singleton ()->context->buffer, NULL);
+	(void)r_cons_less_str (r_cons_context ()->buffer, NULL);
 }
 
 #if 0

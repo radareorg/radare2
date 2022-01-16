@@ -21,17 +21,17 @@ static int buf_size = 0;
 static int support_sw_bp = UNKNOWN;
 static int support_hw_bp = UNKNOWN;
 
-static int r_debug_gdb_attach(RDebug *dbg, int pid);
-static void check_connection (RDebug *dbg) {
+static bool r_debug_gdb_attach(RDebug *dbg, int pid);
+static void check_connection(RDebug *dbg) {
 	if (!desc) {
 		r_debug_gdb_attach (dbg, -1);
 	}
 }
 
-static int r_debug_gdb_step(RDebug *dbg) {
+static bool r_debug_gdb_step(RDebug *dbg) {
 	check_connection (dbg);
 	if (!desc) {
-		return R_DEBUG_REASON_UNKNOWN;
+		return false;
 	}
 	gdbr_step (desc, dbg->tid);
 	return true;
@@ -326,10 +326,10 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	return true;
 }
 
-static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
+static bool r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	check_connection (dbg);
 	if (!desc) {
-		return R_DEBUG_REASON_UNKNOWN;
+		return false;
 	}
 	gdbr_continue (desc, pid, -1, sig); // Continue all threads
 	if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
@@ -338,7 +338,8 @@ static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 		//}
 		desc->tid = desc->stop_reason.thread.tid;
 	}
-	return desc->tid;
+	dbg->tid = desc->tid;
+	return true;
 }
 
 static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
@@ -366,11 +367,10 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 	return desc->stop_reason.reason;
 }
 
-static int r_debug_gdb_attach(RDebug *dbg, int pid) {
+static bool r_debug_gdb_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	// TODO: the core must update the dbg.swstep config var when this var is changed
 	dbg->swstep = false;
-	//eprintf ("XWJSTEP TOFALSE\n");
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
@@ -388,8 +388,8 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int r_debug_gdb_detach(RDebug *dbg, int pid) {
-	int ret = 0;
+static bool r_debug_gdb_detach(RDebug *dbg, int pid) {
+	bool ret = false;
 
 	if (pid <= 0 || !desc->stub_features.multiprocess) {
 		ret = gdbr_detach (desc);
@@ -426,13 +426,13 @@ static int r_debug_gdb_set_reg_profile(const char *str) {
 	return false;
 }
 
-static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int r_debug_gdb_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	int ret = 0, bpsize;
 	if (!b) {
 		return false;
 	}
 	bpsize = b->size;
-        // TODO handle conditions
+	// TODO handle conditions
 	switch (b->perm) {
 	case R_BP_PROT_EXEC : {
 		if (set) {
@@ -483,13 +483,18 @@ static bool r_debug_gdb_kill(RDebug *dbg, int pid, int tid, int sig) {
 	return true;
 }
 
-static int r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
+static bool r_debug_gdb_select(RDebug *dbg, int pid, int tid) {
 	if (!desc || !*origriogdb) {
 		desc = NULL;	//TODO hacky fix, please improve. I would suggest using a **desc instead of a *desc, so it is automatically updated
 		return false;
 	}
 
-	return gdbr_select (desc, pid, tid) >= 0;
+	int child = gdbr_select (desc, pid, tid);
+	if (child != -1) {
+		dbg->tid = child;
+		return true;
+	}
+	return false;
 }
 
 static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
@@ -545,11 +550,11 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.step = r_debug_gdb_step,
 	.cont = r_debug_gdb_continue,
 	.attach = &r_debug_gdb_attach,
-	.detach = &r_debug_gdb_detach,
-	.threads = &r_debug_gdb_threads,
-	.pids = &r_debug_gdb_pids,
+	.detach = r_debug_gdb_detach,
+	.threads = r_debug_gdb_threads,
+	.pids = r_debug_gdb_pids,
 	.canstep = 1,
-	.wait = &r_debug_gdb_wait,
+	.wait = r_debug_gdb_wait,
 	.map_get = r_debug_gdb_map_get,
 	.modules_get = r_debug_gdb_modules_get,
 	.breakpoint = &r_debug_gdb_breakpoint,

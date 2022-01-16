@@ -21,8 +21,11 @@
     "pancake <pancake@nopcode.org>"
   ],
   "name": "radare2-git",
-  "version": "5.1.0-git",
+  "version": "5.5.1",
   "bugs": {
     "url": "https://github.com/radareorg/radare2/issues"
+  },
+  "dependencies": {
+    "wasm-pack": "^0.10.1"
   }
 }

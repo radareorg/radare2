@@ -53,12 +53,12 @@ enum operand {OP_NONE,OP_REG,OP_SHIMM,OP_LIMM};
 int arc_get_noshortcut_flag (void);
 
 #define INSERT_FN(fn) \
-static arc_insn fn (arc_insn, long *, const struct arc_operand *, \
+static arc_insn fn(arc_insn, long *, const struct arc_operand *, \
 		    int, const struct arc_operand_value *, long, \
 		    const char **)
 
 #define EXTRACT_FN(fn) \
-static long fn (arc_insn *, const struct arc_operand *, \
+static long fn(arc_insn *, const struct arc_operand *, \
 		int, const struct arc_operand_value **, int *)
 
 INSERT_FN (insert_u8);
@@ -4444,7 +4444,7 @@ arc_opcode_lookup_dis (unsigned int insn)
 }
 
 /* START ARC LOCAL */
-int 
+int
 arc_test_wb (void)
 {
   return addrwb_p;

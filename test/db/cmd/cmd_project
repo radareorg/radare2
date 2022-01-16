@@ -167,8 +167,8 @@ Pc var~blahblah
 rm .tmp/var
 EOF
 EXPECT=<<EOF
-afvb 8 ImageHandle blah @ 0x10002d8d
-afvr edi blahblah typeR @ 0x10002d8d
+"afvb 8 ImageHandle blah"
+"afvr edi blahblah typeR"
 EOF
 RUN
 
@@ -343,9 +343,9 @@ EOF
 EXPECT=<<EOF
  3 * r-x 0x000021da bins/elf/analysis/main
  4 - rw- 0x00000008 null://8
- 3 fd: 3 +0x00000000 0x00001337 - 0x00001a12 r-x fmap.LOAD0
- 2 fd: 3 +0x000006e0 0x00201a17 - 0x00201c46 r-- fmap.LOAD1
- 1 fd: 4 +0x00000000 0x00201c47 - 0x00201c4e rw- mmap.LOAD1
+* 3 fd: 3 +0x00000000 0x00001337 - 0x00001a12 r-x fmap.LOAD0
+- 2 fd: 3 +0x000006e0 0x00201a17 - 0x00201c46 r-- fmap.LOAD1
+- 1 fd: 4 +0x00000000 0x00201c47 - 0x00201c4e rw- mmap.LOAD1
 om 4 0x00201c47 0x00000008 0x00000000 rw- mmap.LOAD1
 om 3 0x00201a17 0x00000230 0x000006e0 r-- fmap.LOAD1
 om 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
@@ -385,13 +385,91 @@ om*~[2]
 EOF
 EXPECT=<<EOF
  3 * r-x 0x000021da bins/elf/analysis/main
- 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x 
+* 1 fd: 3 +0x00000000 0x00001337 - 0x00003510 r-x 
 om 3 0x00001337 0x000021da 0x00000000 r-x
 --
-om 3 0x00001337 0x000021da 0x00000000 r-x
 --
-1
-0x00001337
+0
+EOF
+RUN
+
+NAME=Save PE project with maddr
+FILE=bins/pe/rabin2.exe
+CMDS=<<EOF
+e prj.vc=false
+e dir.projects = .tmp2/
+CC hello world
+pd 4
+o
+om
+om*
+?e --
+Pd hund
+Ps hund > /dev/null
+CC-$$
+e prj.name= # close current project
+Po hund > /dev/null
+pd 4
+om*
+?e --
+om*~?
+om*~[2]
+EOF
+EXPECT=<<EOF
+        :   ;-- entry0:
+        :   0x14001a1d4      4883ec28       sub rsp, 0x28              ; hello world
+        :   0x14001a1d8      e85b050000     call 0x14001a738
+        :   0x14001a1dd      4883c428       add rsp, 0x28
+        `=< 0x14001a1e1      e972feffff     jmp 0x14001a058
+ 3 * r-x 0x0001fe00 bins/pe/rabin2.exe
+ 4 - r-- 0x00000e00 null://3584
+ 5 - rw- 0x00002200 null://8704
+ 6 - r-- 0x00000400 null://1024
+ 7 - r-x 0x00000200 null://512
+* 9 fd: 3 +0x00000400 0x140001000 - 0x14001adff r-x fmap..text
+- 8 fd: 7 +0x00000000 0x14001ae00 - 0x14001afff r-x mmap..text
+- 7 fd: 3 +0x0001a200 0x14001b000 - 0x14001dbff r-- fmap..rdata
+- 6 fd: 6 +0x00000000 0x14001dc00 - 0x14001dfff r-- mmap..rdata
+- 5 fd: 3 +0x0001ce00 0x14001e000 - 0x14001fdff r-- fmap..data
+- 4 fd: 5 +0x00000000 0x14001fe00 - 0x140021fff rw- mmap..data
+- 3 fd: 3 +0x0001ec00 0x140022000 - 0x140022fff r-- fmap..pdata
+- 2 fd: 3 +0x0001fc00 0x140023000 - 0x1400231ff r-- fmap..reloc
+- 1 fd: 4 +0x00000000 0x140023200 - 0x140023fff r-- mmap..reloc
+om 4 0x140023200 0x00000e00 0x00000000 r-- mmap..reloc
+om 3 0x140023000 0x00000200 0x0001fc00 r-- fmap..reloc
+om 3 0x140022000 0x00001000 0x0001ec00 r-- fmap..pdata
+om 5 0x14001fe00 0x00002200 0x00000000 rw- mmap..data
+om 3 0x14001e000 0x00001e00 0x0001ce00 r-- fmap..data
+om 6 0x14001dc00 0x00000400 0x00000000 r-- mmap..rdata
+om 3 0x14001b000 0x00002c00 0x0001a200 r-- fmap..rdata
+om 7 0x14001ae00 0x00000200 0x00000000 r-x mmap..text
+om 3 0x140001000 0x00019e00 0x00000400 r-x fmap..text
+--
+        :   ;-- entry0:
+        :   0x14001a1d4      4883ec28       sub rsp, 0x28              ; hello world
+        :   0x14001a1d8      e85b050000     call 0x14001a738
+        :   0x14001a1dd      4883c428       add rsp, 0x28
+        `=< 0x14001a1e1      e972feffff     jmp 0x14001a058
+om 4 0x140023200 0x00000e00 0x00000000 r-- mmap..reloc
+om 3 0x140023000 0x00000200 0x0001fc00 r-- fmap..reloc
+om 3 0x140022000 0x00001000 0x0001ec00 r-- fmap..pdata
+om 5 0x14001fe00 0x00002200 0x00000000 rw- mmap..data
+om 3 0x14001e000 0x00001e00 0x0001ce00 r-- fmap..data
+om 6 0x14001dc00 0x00000400 0x00000000 r-- mmap..rdata
+om 3 0x14001b000 0x00002c00 0x0001a200 r-- fmap..rdata
+om 7 0x14001ae00 0x00000200 0x00000000 r-x mmap..text
+om 3 0x140001000 0x00019e00 0x00000400 r-x fmap..text
+--
+9
+0x140023200
+0x140023000
+0x140022000
+0x14001fe00
+0x14001e000
+0x14001dc00
+0x14001b000
+0x14001ae00
+0x140001000
 EOF
 RUN
 

@@ -18,7 +18,7 @@ NAME=rasign2 -r
 FILE=-
 CMDS=!!rasign2 -r bins/elf/hello_world~main?
 EXPECT=<<EOF
-7
+9
 EOF
 RUN
 
@@ -26,7 +26,7 @@ NAME=rasign2 -rj
 FILE=-
 CMDS=!!rasign2 -rj bins/elf/hello_world~main?
 EXPECT=<<EOF
-8
+10
 EOF
 RUN
 
@@ -34,7 +34,7 @@ NAME=rasign2 -raa
 FILE=-
 CMDS=!!rasign2 -raa bins/elf/hello_world~main?
 EXPECT=<<EOF
-7
+9
 EOF
 RUN
 
@@ -42,7 +42,7 @@ NAME=rasign2 -aarj
 FILE=-
 CMDS=!!rasign2 -aarj bins/elf/hello_world~main?
 EXPECT=<<EOF
-8
+10
 EOF
 RUN
 
@@ -91,16 +91,24 @@ NAME=rasign2 vars/args
 FILE=-
 CMDS=!!rasign2 -aarj bins/elf/hello_world~^za main v
 EXPECT=<<EOF
-za main v b-32 b-24 b-40 b-36 b-16
+za main v fb-32:src:char *, fb-24:s2:char *, fb-40:var_20h:size_t, fb-36:size:size_t, fb-16:dest:char *
 EOF
 RUN
 
 
 NAME=rasign2 spaces check
 FILE=-
-CMDS=!!rasign2 -s spacename -ar bins/elf/hello_world~spacename:sym.imp.puts n sym.imp.puts
+CMDS=!!rasign2 -s spacename -aj bins/elf/hello_world~{0[zignspace]}
 EXPECT=<<EOF
-za spacename:sym.imp.puts n sym.imp.puts
+spacename
+EOF
+RUN
+
+NAME=rasign2 collision check
+FILE=-
+CMDS=!!rasign2 -cr bins/elf/hello_world~sym.imp.free~ C ?
+EXPECT=<<EOF
+7
 EOF
 RUN
 
@@ -119,5 +127,13 @@ CMDS=!rasign2 -f bins/other/sigs/libc-v10.sig
 EXPECT=<<EOF
 41564155B8........4154554D89C4534889CD4D89CD4881EC900000004885C0:
  0. 16 D2A2 0298 0000:__libc_start_main
+EOF
+RUN
+
+NAME=rasign2 -Ar libc-v10.sig
+FILE=
+CMDS=!!rasign2 -Ar bins/ar/libgdbr.a~ g ?
+EXPECT=<<EOF
+94
 EOF
 RUN

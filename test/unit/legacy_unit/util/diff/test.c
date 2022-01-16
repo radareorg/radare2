@@ -1,7 +1,6 @@
-#include <r_diff.h>
+#include <r_util/r_diff.h>
 
-int cb(struct r_diff_t *d, void *user, struct r_diff_op_t *op)
-{
+int cb(struct r_diff_t *d, void *user, struct r_diff_op_t *op) {
 	int i;
 
 	printf(" 0x%08"PFMT64x"  ", op->a_off);
@@ -14,8 +13,7 @@ int cb(struct r_diff_t *d, void *user, struct r_diff_op_t *op)
 	return 1;
 }
 
-int test_equal()
-{
+int test_equal() {
 	struct r_diff_t *d;
 	char *bufa = "helloworld";
 	char *bufb = "heprswarld";
@@ -28,8 +26,7 @@ int test_equal()
 	return 1;
 }
 
-int test_diff()
-{
+int test_diff() {
 	struct r_diff_t *d;
 	char *bufa = "hello";
 	char *bufb = "hellpworld";
@@ -42,8 +39,7 @@ int test_diff()
 	return 1;
 }
 
-int test_delta()
-{
+int test_delta() {
 	struct r_diff_t *d;
 	char *bufa = "hello";
 	char *bufb = "heprpworld";
@@ -56,8 +52,7 @@ int test_delta()
 	return 1;
 }
 
-int test_distance()
-{
+int test_distance() {
 	char *bufa = "hello";
 	char *bufb = "heprpworld";
 	ut32 distance = 0;
@@ -90,8 +85,7 @@ int test_lines(char *file1, char *file2)
 }
 #endif
 
-int main()
-{
+int main() {
 	test_equal();
 	printf("--\n");
 	test_equal();
@@ -103,7 +97,5 @@ int main()
 	test_distance();
 	printf("--\n");
 //	test_lines("file1", "file2");
-
-
 	return 0;
 }

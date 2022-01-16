@@ -47,7 +47,7 @@ R_API int r_type_kind(Sdb *TDB, const char *name) {
 	return -1;
 }
 
-R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
+R_API RList* r_type_get_enum(Sdb *TDB, const char *name) {
 	char *p, var[130];
 	int n;
 

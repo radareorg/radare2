@@ -134,13 +134,14 @@ Wine-dbg>
 	return count;
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
-	// XXX
-	r_sys_cmdf ("pkill rarun2");
-	return 0;
+#if __UNIX__
+	r_sys_cmdf ("pkill rarun2 2>/dev/null");
+#endif
+	return true;
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
@@ -186,7 +187,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-static void printcmd (RIO *io, const char *cmd) {
+static void printcmd(RIO *io, const char *cmd) {
 	char *res = runcmd (cmd);
 	io->cb_printf ("%s\n", res);
 	free (res);

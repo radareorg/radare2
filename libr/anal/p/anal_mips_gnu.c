@@ -829,7 +829,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 			break;
 		case MIPS_INS_J:
 			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), J_REG (jump));
-		case MIPS_INS_B: 
+		case MIPS_INS_B:
 			// jump to address with conditional
 			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), I_REG (jump));
 			break;
@@ -872,7 +872,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 				I_REG (rs), I_REG (jump));
 			break;
 		case MIPS_INS_BLTZAL:
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_CALL_D ("%s") ",}", 
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1," ES_IS_NEGATIVE ("%s") ",==,$z,?{," ES_CALL_D ("%s") ",}",
 				I_REG (rs), I_REG (jump));
 			break;
 		case MIPS_INS_BLTZ:
@@ -917,7 +917,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 		case MIPS_INS_NEGU:
 			break;
 		/** signed -- sets overflow flag */
-		case MIPS_INS_ADD: 
+		case MIPS_INS_ADD:
 			ES_ADD_CK32_OVERF(R_REG (rs), R_REG (rt), R_REG (rd));
 		break;
 		case MIPS_INS_ADDI:
@@ -947,7 +947,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, gnu_insn*insn) {
 		case MIPS_INS_LUI:
 			r_strbuf_appendf (&op->esil, "%s0000,%s,=",I_REG (imm), I_REG (rt));
 			break;
-		case MIPS_INS_LB: 
+		case MIPS_INS_LB:
 			op->sign = true;	//To load a byte from memory as a signed value
 			/* fallthrough */
 		case MIPS_INS_LBU:
@@ -1372,7 +1372,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 		snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "%"PFMT32d, imm);
 
 		switch (optype) {
-		case 1: 
+		case 1:
 			switch (rt) {
 				case 0: //bltz
 					insn.id = MIPS_INS_BLTZ;
@@ -1677,7 +1677,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len, R
 static bool mips_set_reg_profile(RAnal* anal){
      const char *p =
 #if 0
-          "=PC    pc\n"
+	  "=PC    pc\n"
 	  "=SP    sp\n"
 	  "=A0    a0\n"
 	  "=A1    a1\n"
@@ -1787,7 +1787,7 @@ RAnalPlugin r_anal_plugin_mips_gnu = {
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
-        .type = R_LIB_TYPE_ANAL,
-        .data = &r_anal_plugin_mips_gnu
+	.type = R_LIB_TYPE_ANAL,
+	.data = &r_anal_plugin_mips_gnu
 };
 #endif

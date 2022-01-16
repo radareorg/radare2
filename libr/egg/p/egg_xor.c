@@ -5,7 +5,7 @@
 
 #define DEFAULT_XOR_KEY "0xFF"
 
-static RBuffer *build (REgg *egg) {
+static RBuffer *build(REgg *egg) {
 	RBuffer *buf, *sc;
 	ut8 aux[32], nkey;
 	const char *default_key = DEFAULT_XOR_KEY;

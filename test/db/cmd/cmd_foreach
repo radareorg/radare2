@@ -15,3 +15,73 @@ entry.fini0
 fcn.00005b10
 EOF
 RUN
+
+NAME=foreach iterator on imports at macho
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+?e hello
+ii~?
+?e=1@@@i~?
+?e=1@@@i~?
+?e world
+EOF
+EXPECT=<<EOF
+hello
+87
+73
+73
+world
+EOF
+RUN
+
+NAME=foreach iterator on imports
+FILE=bins/elf/ls
+CMDS=<<EOF
+?e hello
+?e=1@@@i~?
+?e=1@@@i~?
+ir~?
+?e=1@@@R~?
+?e world
+EOF
+EXPECT=<<EOF
+hello
+0
+0
+315
+311
+world
+EOF
+RUN
+
+NAME=foreach iterator for other stuff
+FILE=bins/mach0/mac-ls
+CMDS=<<EOF
+?e hello
+?e=1@@@s~?
+?e=1@@@s~?
+?e=1@@@S~?
+?e=1@@@S~?
+?e=1@@@f~?
+?e=1@@@f~?
+?e=1@@@m~?
+?e=1@@@m~?
+?e=1@@@s~?
+?e=1@@@s~?
+?e world
+EOF
+EXPECT=<<EOF
+hello
+116
+116
+16
+16
+342
+342
+3
+3
+116
+116
+world
+EOF
+RUN

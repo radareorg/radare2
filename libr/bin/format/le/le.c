@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019 - GustavoLCR */
+/* radare - LGPL - Copyright 2019-2021 - GustavoLCR */
 
 #include "le.h"
 #include <r_bin.h>
@@ -366,7 +366,12 @@ RList *r_bin_le_get_sections(r_bin_le_obj_t *bin) {
 
 			int cur_idx = entry->page_tbl_idx + j - 1;
 			ut64 page_entry_off = objpageentrysz * cur_idx + objmaptbloff;
-			r_buf_read_at (bin->buf, page_entry_off, (ut8 *)&page, sizeof (page));
+			int r = r_buf_read_at (bin->buf, page_entry_off, (ut8 *)&page, sizeof (page));
+			if (r < sizeof (page)) {
+				R_LOG_WARN ("Cannot read out of bounds page table entry.");
+				r_bin_section_free (s);
+				break;
+			}
 			if (cur_idx < next_idx) { // If not true rest of pages will be zeroes
 				if (bin->is_le) {
 					// Why is it big endian???

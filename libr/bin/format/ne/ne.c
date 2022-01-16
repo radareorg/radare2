@@ -48,8 +48,11 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
 	return str;
 }
 
-static char *__func_name_from_ord(char *module, ut16 ordinal) {
-	char *path = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), r_sys_prefix (NULL), module);
+static char *__func_name_from_ord(const char *module, ut16 ordinal) {
+	char *lower_module = strdup (module);
+	r_str_case (lower_module, false);
+	char *path = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), r_sys_prefix (NULL), lower_module);
+	free (lower_module);
 	char *ord = r_str_newf ("%d", ordinal);
 	char *name;
 	if (r_file_exists (path)) {
@@ -94,7 +97,7 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 	return segments;
 }
 
-static int __find_symbol_by_paddr (const void *paddr, const void *sym) {
+static int __find_symbol_by_paddr(const void *paddr, const void *sym) {
 	return (int)!(*(ut64 *)paddr == ((RBinSymbol *)sym)->paddr);
 }
 
@@ -240,7 +243,7 @@ static char *__resource_type_str(int type) {
 	case 24:
 		typeName = "MANIFEST";
 		break;
-	default: 
+	default:
 		return r_str_newf ("UNKNOWN (%d)", type);
 	}
 	return strdup (typeName);
@@ -281,7 +284,7 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 			break;
 		} else if (ti.rtTypeID & 0x8000) {
 			res->name = __resource_type_str (ti.rtTypeID & ~0x8000);
-		} else { 
+		} else {
 			// Offset to resident name table
 			res->name = __read_nonnull_str_at (bin->buf, (ut64)resoff + ti.rtTypeID);
 		}

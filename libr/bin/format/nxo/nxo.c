@@ -35,7 +35,7 @@ const char *fileType(const ut8 *buf) {
 	return NULL;
 }
 
-static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
+static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
 	int i, import = 0;
 	RBinSymbol *sym;
 	RBinImport *imp;

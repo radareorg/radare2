@@ -40,12 +40,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		path = NULL;
 	} else {
 		if (core->io->desc && (!path || !*path)) {
-			if (!strcmp (httpui, "p")
-			|| !strcmp (httpui, "m")
-			|| !strcmp (httpui, "enyo")
-			|| !strcmp (httpui, "t")) {
-				path = httpui;
-			}
+			path = httpui;
 		}
 	}
 
@@ -351,6 +346,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 								r_core_cmd0 (core, cmd + 1);
 								out = NULL;
 							} else {
+								RConsContext *ctx = r_cons_context ();
+								ctx->noflush = false;
 								out = r_core_cmd_str_pipe (core, cmd);
 							}
 
@@ -527,7 +524,7 @@ the_end:
 }
 
 #if 0
-static RThreadFunctionRet r_core_rtr_http_thread (RThread *th) {
+static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 	if (!th) {
 		return false;
 	}

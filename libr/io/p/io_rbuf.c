@@ -20,10 +20,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return r_buf_read (b, buf, count);
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	RBuffer *b = fd->data;
 	r_buf_free (b);
-	return 0;
+	return true;
 }
 
 static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {

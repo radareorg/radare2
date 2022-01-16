@@ -47,15 +47,15 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	RIOSparse *riom;
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
 	riom = fd->data;
 	R_FREE (riom->buf);
 	R_FREE (fd->data);
-	return 0;
+	return true;
 }
 
 static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {

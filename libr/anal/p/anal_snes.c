@@ -238,7 +238,7 @@ static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	return op->size;
 }
 
-static int snes_anal_init (void* user) {
+static int snes_anal_init(void* user) {
 	if (!snesflags) {
 		snesflags = malloc (sizeof (struct snes_asm_flags));
 	}
@@ -246,7 +246,7 @@ static int snes_anal_init (void* user) {
 	return 0;
 }
 
-static int snes_anal_fini (void* user) {
+static int snes_anal_fini(void* user) {
 	free(snesflags);
 	snesflags = NULL;
 	return 0;

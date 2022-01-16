@@ -3839,7 +3839,7 @@ R_API RBinJavaAttrInfo *r_bin_java_line_number_table_attr_new(RBinJavaObj *bin, 
 	RList *linenum_list = attr->info.line_number_table_attr.line_number_table;
 	for (i = 0; i < linenum_len; i++) {
 		curpos = buf_offset + offset;
-		// printf ("%llx %llx \n", curpos, sz);
+		// eprintf ("%"PFMT64x" %"PFMT64x"\n", curpos, sz);
 		// XXX if (curpos + 8 >= sz) break;
 		lnattr = R_NEW0 (RBinJavaLineNumberAttribute);
 		if (!lnattr) {

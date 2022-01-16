@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2020 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2021 - condret, pancake, alvaro */
 
 #include <r_io.h>
 #include <sdb.h>
@@ -6,11 +6,8 @@
 
 // shall be used by plugins for creating descs
 R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int perm, int mode, void* data) {
+	r_return_val_if_fail (io && plugin && uri, NULL);
 	ut32 fd32 = 0;
-	// this is required for emscripten builds to work, but should assert
-	if (!io || !plugin || !uri) {
-		return NULL;
-	}
 	if (io->files) {
 		if (!r_id_pool_grab_id (io->files->pool, &fd32)) {
 			return NULL;
@@ -39,8 +36,8 @@ R_API void r_io_desc_free(RIODesc* desc) {
 			r_id_storage_delete (desc->io->files, desc->fd);
 		}
 //		free (desc->plugin);
+		free (desc);
 	}
-	free (desc);
 }
 
 R_API bool r_io_desc_add(RIO* io, RIODesc* desc) {
@@ -55,21 +52,34 @@ R_API bool r_io_desc_add(RIO* io, RIODesc* desc) {
 	return true;
 }
 
-R_API bool r_io_desc_del(RIO* io, int fd) {		//can we pass this a riodesc and check if it belongs to the desc->io ?
+// can we pass this a riodesc and check if it belongs to the desc->io ?
+R_API bool r_io_desc_del(RIO* io, int fd) {
 	r_return_val_if_fail (io && io->files, false);
 	RIODesc* desc = r_id_storage_get (io->files, fd);
-	r_io_desc_free (desc);
 	if (desc == io->desc) {
 		io->desc = NULL;
 	}
-	// remove all dead maps
-	r_io_map_cleanup (io);
+	// remove all related maps
+	r_io_map_del_for_fd (io, desc->fd);
+	r_io_desc_free (desc);
 	return true;
 }
 
 R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 	r_return_val_if_fail (io && io->files, NULL);
 	return (RIODesc*) r_id_storage_get (io->files, fd);
+}
+
+R_API RIODesc *r_io_desc_get_byuri(RIO *io, const char *uri) {
+	r_return_val_if_fail (io && io->files, NULL);
+	RIODesc *d = r_io_desc_get_lowest (io);
+	while (d) {
+		if (!strcmp (d->uri, uri)) {
+			return d;
+		}
+		d = r_io_desc_get_next (io, d);
+	}
+	return NULL;
 }
 
 R_API RIODesc *r_io_desc_get_next(RIO *io, RIODesc *desc) {
@@ -134,8 +144,8 @@ R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
 }
 
 R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri, int perm, int mode) {
-	r_return_val_if_fail (io && io->files && uri, NULL);
-	if (!plugin || !plugin->open || !plugin->check || !plugin->check (io, uri, false)) {
+	r_return_val_if_fail (io && io->files && uri && plugin, NULL);
+	if (!plugin->open || !plugin->check || !plugin->check (io, uri, false)) {
 		return NULL;
 	}
 	RIODesc *desc = plugin->open (io, uri, perm, mode);
@@ -161,18 +171,15 @@ R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri
 
 
 R_API bool r_io_desc_close(RIODesc *desc) {
-	RIO *io;
 	if (!desc || !desc->io || !desc->plugin) {
 		return false;
 	}
-	if (desc->plugin->close && desc->plugin->close (desc)) {
+	RIO *io = desc->io;
+	if (desc->plugin->close && !desc->plugin->close (desc)) {
 		return false;
 	}
-	io = desc->io;
 	// remove entry from idstorage and free the desc-struct
 	r_io_desc_del (io, desc->fd);
-	// remove all dead maps
-	r_io_map_cleanup (io);
 	return true;
 }
 
@@ -192,8 +199,9 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 
 // returns length of read bytes
 R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
+	r_return_val_if_fail (desc && buf, -1);
 	// check pointers and permissions
-	if (!buf || !desc || !desc->plugin || !(desc->perm & R_PERM_R)) {
+	if (!(desc->perm & R_PERM_R)) {
 		return -1;
 	}
 	ut64 seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
@@ -270,14 +278,16 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 		r_io_desc_cache_cleanup (desc);
 		r_io_desc_cache_cleanup (descx);
 	}
-	void **it;
-	r_pvector_foreach (&io->maps, it) {
-		RIOMap *map = *it;
-		if (map->fd == fdx) {
-			map->perm &= (desc->perm | R_PERM_X);
-		} else if (map->fd == fd) {
-			map->perm &= (descx->perm | R_PERM_X);
-		}
+	ut32 map_id;
+	if (r_id_storage_get_lowest (io->maps, &map_id)) {
+		do {
+			RIOMap *map = r_id_storage_get (io->maps, map_id);
+			if (map->fd == fdx) {
+				map->perm &= (desc->perm | R_PERM_X);
+			} else if (map->fd == fd) {
+				map->perm &= (descx->perm | R_PERM_X);
+			}
+		} while (r_id_storage_get_next (io->maps, &map_id));
 	}
 	return true;
 }
@@ -323,7 +333,7 @@ R_API int r_io_desc_get_tid(RIODesc *desc) {
 	return desc->plugin->gettid (desc);
 }
 
-R_API bool r_io_desc_get_base (RIODesc *desc, ut64 *base) {
+R_API bool r_io_desc_get_base(RIODesc *desc, ut64 *base) {
 	if (!base || !desc || !desc->plugin || !desc->plugin->isdbg || !desc->plugin->getbase) {
 		return false;
 	}
@@ -376,8 +386,8 @@ static bool desc_fini_cb(void* user, void* data, ut32 id) {
 }
 
 //closes all descs and frees all descs and io->files
-R_IPI bool r_io_desc_fini(RIO* io) {
-	r_return_val_if_fail (io, NULL);
+R_IPI void r_io_desc_fini(RIO* io) {
+	r_return_if_fail (io);
 	if (io->files) {
 		r_id_storage_foreach (io->files, desc_fini_cb, io);
 		r_id_storage_free (io->files);
@@ -385,5 +395,4 @@ R_IPI bool r_io_desc_fini(RIO* io) {
 	}
 	//no map-cleanup here, to keep it modular useable
 	io->desc = NULL;
-	return true;
 }

@@ -433,7 +433,7 @@ tk a=b
 t*
 EOF
 EXPECT=<<EOF
-tk a=b
+"tk a=b"
 EOF
 RUN
 
@@ -881,9 +881,9 @@ tsc three_elements
 EOF
 EXPECT=<<EOF
 struct three_elements {
-	int32_t x;
-	char y;
-	float z;
+  int32_t x;
+  char y;
+  float z;
 };
 EOF
 RUN
@@ -896,9 +896,9 @@ tsc with_array
 EOF
 EXPECT=<<EOF
 struct with_array {
-	int32_t x;
-	char y[50];
-	float z;
+  int32_t x;
+  char y[50];
+  float z;
 };
 EOF
 RUN
@@ -925,9 +925,9 @@ tuc x
 EOF
 EXPECT=<<EOF
 union x {
-	int32_t x;
-	int32_t y;
-	int32_t z;
+  int32_t x;
+  int32_t y;
+  int32_t z;
 };
 EOF
 RUN
@@ -1592,12 +1592,12 @@ tu* foo
 EOF
 EXPECT=<<EOF
 pf.foo dc a b
-tk foo=union
-tk union.foo=a,b
-tk union.foo.a=int32_t,0,0
-tk union.foo.a.meta=0
-tk union.foo.b=char,0,0
-tk union.foo.b.meta=2
+"tk foo=union"
+"tk union.foo=a,b"
+"tk union.foo.a=int32_t,0,0"
+"tk union.foo.a.meta=0"
+"tk union.foo.b=char,0,0"
+"tk union.foo.b.meta=2"
 pf dc a b
 pf.foo dc a b
 EOF
@@ -1725,7 +1725,7 @@ false
 EOF
 RUN
 
-NAME=types afs [before]
+NAME=types afs [before] 2
 FILE=bins/elf/hello_world
 CMDS=<<EOF
 aaa

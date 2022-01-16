@@ -5,6 +5,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
+#include <r_anal.h> // for RAnalBind
 #define USE_R2 1
 #include <spp/spp.h>
 #include <config.h>
@@ -26,7 +27,8 @@ static void parseHeap(RParse *p, RStrBuf *s) {
 	if (out) {
 		*out = 0;
 		strcpy (out , op_buf_asm);
-	// XXX we shouldn't pad here because we have t orefactor the RParse API to handle boundaries and chunks properly
+		// XXX we shouldn't pad here because we have to refactor
+		// the RParse API to handle boundaries and chunks properly
 		r_parse_parse (p, op_buf_asm, out);
 		r_strbuf_set (s, out);
 		free (out);
@@ -358,23 +360,48 @@ static void load_asm_descriptions(RAsm *a, RAsmPlugin *p) {
 
 // TODO: this can be optimized using r_str_hash()
 R_API bool r_asm_use(RAsm *a, const char *name) {
-	RAsmPlugin *h;
-	RListIter *iter;
-	if (!a || !name) {
+	r_return_val_if_fail (a, false);
+	if (R_STR_ISEMPTY (name)) {
+		// that shouldnt be permitted imho, keep for backward compat
 		return false;
 	}
+	RAsmPlugin *h;
+	RListIter *iter;
 	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, name) && h->arch) {
-			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
-				load_asm_descriptions (a, h);
-				r_asm_set_cpu (a, NULL);
+		if (h->arch) {
+			if (!strcmp (h->name, name)) {
+				if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
+					load_asm_descriptions (a, h);
+					r_asm_set_cpu (a, NULL);
+				}
+				a->cur = h;
+				return true;
 			}
-			a->cur = h;
-			return true;
+		} else {
+			char *vv = strchr (name, '.');
+			if (vv) {
+				if (!strcmp (vv + 1, h->name)) {
+					char *cpu = r_str_ndup (name, vv - name);
+					r_asm_set_cpu (a, cpu);
+					a->cur = h;
+					free (cpu);
+					return true;
+				}
+			} else {
+				if (!strcmp (name, h->name)) {
+					h->arch = name;
+					r_asm_set_cpu (a, NULL);
+					a->cur = h;
+					return true;
+				}
+			}
 		}
 	}
 	sdb_free (a->pair);
 	a->pair = NULL;
+	if (strcmp (name, "null")) {
+		return r_asm_use (a, "null");
+	}
 	return false;
 }
 
@@ -439,7 +466,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return true;
 }
 
-static bool __isInvalid (RAsmOp *op) {
+static bool __isInvalid(RAsmOp *op) {
 	const char *buf_asm = r_strbuf_get (&op->buf_asm);
 	return (buf_asm && *buf_asm && !strcmp (buf_asm, "invalid"));
 }
@@ -475,6 +502,14 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		} else {
 			ret = a->cur->disassemble (a, op, buf, len);
 		}
+	} else if (a->analb.anal) {
+		// disassemble using the analysis plugin if found
+		RAnalOp aop;
+		a->analb.opinit (&aop);
+		ret = a->analb.decode (a->analb.anal, &aop, a->pc, buf, len, R_ANAL_OP_MASK_DISASM);
+		op->size = aop.size;
+		r_strbuf_set (&op->buf_asm, aop.mnemonic);
+		a->analb.opfini (&aop);
 	}
 	if (ret < 0) {
 		ret = 0;
@@ -517,7 +552,7 @@ static bool assemblerMatches(RAsm *a, RAsmPlugin *h) {
 	if (!a || !h->arch || !h->assemble || !has_bits (h, a->bits)) {
 		return false;
 	}
-	return (!strncmp (a->cur->arch, h->arch, strlen (a->cur->arch)));
+	return (a->cur->arch && !strncmp (a->cur->arch, h->arch, strlen (a->cur->arch)));
 }
 
 static Ase findAssembler(RAsm *a, const char *kw) {
@@ -620,6 +655,16 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 				if (!ase) {
 					ase = findAssembler (a, NULL);
 				}
+			}
+			if (!ase && a->analb.anal) {
+				// disassemble using the analysis plugin if found
+				ase = NULL;
+				RAnalOp aop;
+				a->analb.opinit (&aop);
+				ut8 buf[256] = {0};
+				ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
+				r_strbuf_setbin (&op->buf, buf, R_MIN (ret, sizeof (buf)));
+				a->analb.opfini (&aop);
 			}
 		} else {
 			ase = a->cur->assemble;
@@ -836,7 +881,7 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 				continue;
 			}
 			// XXX TODO remove arch-specific hacks
-			if (!strncmp (a->cur->arch, "avr", 3)) {
+			if (a->cur->arch && !strncmp (a->cur->arch, "avr", 3)) {
 				for (ptr_start = buf_token; *ptr_start && isavrseparator (*ptr_start); ptr_start++);
 			} else {
 				for (ptr_start = buf_token; *ptr_start && IS_SEPARATOR (*ptr_start); ptr_start++);
@@ -1191,4 +1236,29 @@ R_API RAsmCode* r_asm_rasm_assemble(RAsm *a, const char *buf, bool use_spp) {
 	acode = r_asm_massemble (a, lbuf);
 	free (lbuf);
 	return acode;
+}
+
+R_API RList *r_asm_cpus(RAsm *a) {
+	RList *list = NULL;
+	RListIter *iter;
+	char *item;
+	// get asm plugin
+	if (a->cur && a->cur->cpus) {
+		list = r_str_split_duplist (a->cur->cpus, ",", 0);
+	} else {
+		list = r_list_newf (free);
+	}
+	// get anal plugin
+	if (a->analb.anal && a->analb.anal->cur && a->analb.anal->cur->cpus) {
+		char *cpus = a->analb.anal->cur->cpus;
+		RList *al = r_str_split_duplist (cpus, ",", 0);
+		r_list_foreach (al, iter, item) {
+			if (!r_list_find (list, item, (RListComparator)strcmp)) {
+				r_list_append (list, strdup (item));
+			}
+		}
+		r_list_free (al);
+	}
+	r_list_sort (list, (RListComparator)strcmp);
+	return list;
 }

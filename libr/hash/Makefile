@@ -1,6 +1,7 @@
 include ../config.mk
 
 NAME=r_hash
+BINDEPS+=r_util
 PCLIBS=@LIBXXHASH@
 # HACK
 ifneq ($(OSTYPE),darwin)

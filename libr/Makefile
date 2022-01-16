@@ -119,12 +119,6 @@ E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/winkd/libr_winkd.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
-#ifeq ($(COMPILER),ios-sdk)
-#E+=../shlr/sdb/src/libsdb.${EXT_AR}
-#endif
-#ifneq ($(OSTYPE),android)
-#E+=../shlr/sdb/src/libsdb.${EXT_AR}
-#endif
 
 ifeq ($(USE_CAPSTONE),1)
 E+=$(CAPSTONE_LDFLAGS)

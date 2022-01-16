@@ -1,6 +1,6 @@
 LIBS0= util
 LIBS1= hash socket
-LIBS2= 
+LIBS2=
 LIBS3= fs #anal bin parse
 LIBS4=
 LIBS5=

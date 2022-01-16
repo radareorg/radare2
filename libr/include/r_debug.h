@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2021 - pancake */
+
 #ifndef R2_DEBUG_H
 #define R2_DEBUG_H
 
@@ -369,23 +371,23 @@ typedef struct r_debug_plugin_t {
 	/* life */
 	RDebugInfo* (*info)(RDebug *dbg, const char *arg);
 	int (*startv)(int argc, char **argv);
-	int (*attach)(RDebug *dbg, int pid);
-	int (*detach)(RDebug *dbg, int pid);
-	int (*select)(RDebug *dbg, int pid, int tid);
+	bool (*attach)(RDebug *dbg, int pid);
+	bool (*detach)(RDebug *dbg, int pid);
+	bool (*select)(RDebug *dbg, int pid, int tid);
 	RList *(*threads)(RDebug *dbg, int pid);
 	RList *(*pids)(RDebug *dbg, int pid);
 	RList *(*tids)(RDebug *dbg, int pid);
 	RFList (*backtrace)(RDebug *dbg, int count);
 	/* flow */
 	int (*stop)(RDebug *dbg);
-	int (*step)(RDebug *dbg);
-	int (*step_over)(RDebug *dbg);
-	int (*cont)(RDebug *dbg, int pid, int tid, int sig);
-	int (*wait)(RDebug *dbg, int pid);
+	bool (*step)(RDebug *dbg);
+	bool (*step_over)(RDebug *dbg);
+	bool (*cont)(RDebug *dbg, int pid, int tid, int sig);
+	RDebugReasonType (*wait)(RDebug *dbg, int pid);
 	bool (*gcore)(RDebug *dbg, RBuffer *dest);
 	bool (*kill)(RDebug *dbg, int pid, int tid, int sig);
 	RList* (*kill_list)(RDebug *dbg);
-	int (*contsc)(RDebug *dbg, int pid, int sc);
+	bool (*contsc)(RDebug *dbg, int pid, int sc);
 	RList* (*frames)(RDebug *dbg, ut64 at);
 	RBreakpointCallback breakpoint;
 // XXX: specify, pid, tid, or RDebug ?
@@ -399,7 +401,7 @@ typedef struct r_debug_plugin_t {
 	RDebugMap* (*map_alloc)(RDebug *dbg, ut64 addr, int size, bool thp);
 	int (*map_dealloc)(RDebug *dbg, ut64 addr, int size);
 	int (*map_protect)(RDebug *dbg, ut64 addr, int size, int perms);
-	int (*init)(RDebug *dbg);
+	bool (*init)(RDebug *dbg);
 	int (*drx)(RDebug *dbg, int n, ut64 addr, int size, int rwx, int g, int api_type);
 	RDebugDescPlugin desc;
 	// TODO: use RList here
@@ -426,9 +428,9 @@ typedef struct r_debug_pid_t {
  */
 #ifdef R_API
 R_API RDebug *r_debug_new(int hard);
-R_API RDebug *r_debug_free(RDebug *dbg);
+R_API void r_debug_free(RDebug *dbg);
 
-R_API int r_debug_attach(RDebug *dbg, int pid);
+R_API bool r_debug_attach(RDebug *dbg, int pid);
 R_API int r_debug_detach(RDebug *dbg, int pid);
 R_API int r_debug_startv(RDebug *dbg, int argc, char **argv);
 R_API int r_debug_start(RDebug *dbg, const char *cmd);
@@ -470,7 +472,7 @@ R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits);
 R_API bool r_debug_use(RDebug *dbg, const char *str);
 
 R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg);
-R_API void r_debug_info_free (RDebugInfo *rdi);
+R_API void r_debug_info_free(RDebugInfo *rdi);
 
 R_API ut64 r_debug_get_baddr(RDebug *dbg, const char *file);
 
@@ -507,8 +509,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input);
 R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, int colors);
 
 /* descriptors */
-R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int off);
-R_API void r_debug_desc_free (RDebugDesc *p);
+R_API RDebugDesc *r_debug_desc_new(int fd, const char *path, int perm, int type, int off);
+R_API void r_debug_desc_free(RDebugDesc *p);
 R_API int r_debug_desc_open(RDebug *dbg, const char *path);
 R_API int r_debug_desc_close(RDebug *dbg, int fd);
 R_API int r_debug_desc_dup(RDebug *dbg, int fd, int newfd);
@@ -574,7 +576,7 @@ R_API void r_debug_esil_watch(RDebug *dbg, int rwx, int dev, const char *expr);
 R_API void r_debug_esil_watch_reset(RDebug *dbg);
 R_API void r_debug_esil_watch_list(RDebug *dbg);
 R_API bool r_debug_esil_watch_empty(RDebug *dbg);
-R_API void r_debug_esil_prestep (RDebug *d, int p);
+R_API void r_debug_esil_prestep(RDebug *d, int p);
 
 /* record & replay */
 // R_API ut8 r_debug_get_byte(RDebug *dbg, ut32 cnum, ut64 addr);
@@ -632,25 +634,5 @@ extern RDebugPlugin r_debug_plugin_null;
 #ifdef __cplusplus
 }
 #endif
-
-#endif
-
-/* regset */
-//R_API struct r_regset_t* r_regset_diff(struct r_regset_t *a, struct r_regset_t *b);
-//R_API int r_regset_set(struct r_regset_t *r, int idx, const char *name, ut64 value);
-//R_API struct r_regset_t *r_regset_new(int size);
-//R_API void r_regset_free(struct r_regset_t *r);
-
-#if 0
-Missing callbacks
-=================
- - alloc
- - dealloc
- - list maps (memory regions)
- - change memory protections
- - touchtrace
- - filedescriptor set/get/mod..
- - get/set signals
- - get regs, set regs
 
 #endif

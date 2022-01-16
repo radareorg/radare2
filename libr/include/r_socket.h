@@ -49,10 +49,11 @@ R_LIB_VERSION_HEADER (r_socket);
 #endif
 
 typedef struct {
-	int child;
 #if __WINDOWS__
 	HANDLE pipe;
+	HANDLE child;
 #else
+	int child;
 	int input[2];
 	int output[2];
 #endif
@@ -86,6 +87,7 @@ typedef struct r_socket_http_options {
 
 #define R_SOCKET_PROTO_TCP IPPROTO_TCP
 #define R_SOCKET_PROTO_UDP IPPROTO_UDP
+#define R_SOCKET_PROTO_CAN 0xc42b05
 #define R_SOCKET_PROTO_UNIX 0x1337
 #define R_SOCKET_PROTO_NONE 0
 #define R_SOCKET_PROTO_DEFAULT R_SOCKET_PROTO_TCP
@@ -227,6 +229,7 @@ typedef struct r_run_profile_t {
 	char *_libpath;
 	char *_preload;
 	int _bits;
+	bool _time;
 	int _pid;
 	char *_pidfile;
 	int _r2preload;

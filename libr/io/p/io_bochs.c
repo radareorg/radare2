@@ -84,18 +84,17 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-static int __close(RIODesc *fd) {
-	lprintf("io_close\n");
+static bool __close(RIODesc *fd) {
 	bochs_close (desc);
 	return true;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-        lprintf ("system command (%s)\n", cmd);
-        if (!strcmp (cmd, "help")) {
-                lprintf ("Usage: =!cmd args\n"
-                        " =!:<bochscmd>      - Send a bochs command.\n"
-                        " =!dobreak          - pause bochs.\n");
+	lprintf ("system command (%s)\n", cmd);
+	if (!strcmp (cmd, "help")) {
+		lprintf ("Usage: =!cmd args\n"
+				" =!:<bochscmd>      - Send a bochs command.\n"
+				" =!dobreak	  - pause bochs.\n");
 		lprintf ("io_system: Enviando commando bochs\n");
 		bochs_send_cmd (desc, &cmd[1], true);
 		io->cb_printf ("%s\n", desc->data);
@@ -103,7 +102,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		bochs_cmd_stop (desc);
 		io->cb_printf ("%s\n", desc->data);
 	}
-        return NULL;
+	return NULL;
 }
 
 RIOPlugin r_io_plugin_bochs = {

@@ -42,6 +42,7 @@ a "eon w0, w13, w20" a001344a
 a "eon x0, x13, x20" a00134ca
 a "eon x0, x13, x20, ror 15" a03df4ca
 a "adrp x5, 0x0" 05000090
+ad "adrp x16, 0x1000" 100000b0
 a "add x0, x1, x2" 2000028b
 a "add x0, xzr, x30" e0031e8b
 a "b 0x0" 00000014
@@ -215,12 +216,9 @@ a "mov w15, 0xacdb0000" 6f9bb552
 dB "mov w15, 0xacdb0000" 6f9bb552
 a "mov w15, 0xffff0000" efffbf52
 dB "mov w15, 0xffff0000" efffbf52
-a "mov x30, 0x884800000000" 1e09d1d2
-dB "mov x30, 0x884800000000" 1e09d1d2
-a "mov x29, 0xffff00000000" fdffdfd2
-dB "mov x29, 0xffff00000000" fdffdfd2
-a "mov x27, 0x3721000000000000" 3be4e6d2
-dB "mov x27, 0x3721000000000000" 3be4e6d2
+ad "mov x30, 0x884800000000" 1e09d1d2
+ad "mov x29, 0xffff00000000" fdffdfd2
+ad "mov x27, 0x3721000000000000" 3be4e6d2
 a "mov x26, 0xffff000000000000" faffffd2
 dB "mov x26, 0xffff000000000000" faffffd2
 a "mov w25, 0xffffcfc7" 19078612
@@ -375,3 +373,9 @@ a "add x0, x0, x1, lsr 12" 0030418b
 a "add x0, x0, x1, asr 1" 0004818b
 a "add x0, x0, x1, asr 2" 0008818b
 a "add x0, x0, x1, asr 12" 0030818b
+a "cmp w26,w26" 5f031a6b
+a "cmp x26,x26" 5f031aeb
+a "cmp w26,0" 5f030071
+a "cmp w26,1" 5f070071
+a "cmp x26,0" 5f0300f1
+a "cmp x26,1" 5f0700f1

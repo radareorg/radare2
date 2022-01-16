@@ -1,9 +1,9 @@
 
-static void r_core_visual_tab_free (RCoreVisualTab *tab) {
+static void r_core_visual_tab_free(RCoreVisualTab *tab) {
 	free (tab);
 }
 
-static int __core_visual_tab_count (RCore *core) {
+static int __core_visual_tab_count(RCore *core) {
 	return core->visual.tabs? r_list_length (core->visual.tabs): 0;
 }
 
@@ -128,7 +128,7 @@ static void r_core_visual_tab_update(RCore *core) {
 	}
 }
 
-static RCoreVisualTab *visual_newtab (RCore *core) {
+static RCoreVisualTab *visual_newtab(RCore *core) {
 	if (!core->visual.tabs) {
 		core->visual.tabs = r_list_newf ((RListFree)r_core_visual_tab_free);
 		if (!core->visual.tabs) {
@@ -146,7 +146,7 @@ static RCoreVisualTab *visual_newtab (RCore *core) {
 	return tab;
 }
 
-static void visual_nthtab (RCore *core, int n) {
+static void visual_nthtab(RCore *core, int n) {
 	if (!core->visual.tabs || n < 0 || n >= r_list_length (core->visual.tabs)) {
 		return;
 	}
@@ -157,7 +157,7 @@ static void visual_nthtab (RCore *core, int n) {
 	}
 }
 
-static void visual_tabname (RCore *core) {
+static void visual_tabname(RCore *core) {
 	if (!core->visual.tabs) {
 		return;
 	}
@@ -169,7 +169,7 @@ static void visual_tabname (RCore *core) {
 	}
 }
 
-static void visual_nexttab (RCore *core) {
+static void visual_nexttab(RCore *core) {
 	if (!core->visual.tabs) {
 		return;
 	}
@@ -183,7 +183,7 @@ static void visual_nexttab (RCore *core) {
 	}
 }
 
-static void visual_prevtab (RCore *core) {
+static void visual_prevtab(RCore *core) {
 	if (!core->visual.tabs) {
 		return;
 	}
@@ -198,7 +198,7 @@ static void visual_prevtab (RCore *core) {
 	}
 }
 
-static void visual_closetab (RCore *core) {
+static void visual_closetab(RCore *core) {
 	if (!core->visual.tabs) {
 		return;
 	}

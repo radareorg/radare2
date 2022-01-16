@@ -11,7 +11,7 @@ static const char *kt_name[] = {
 #include "../format/xbe/kernel.h"
 };
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 magic[4];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) == 4) {
 		return !memcmp (magic, "XBEH", 4);

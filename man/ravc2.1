@@ -1,0 +1,39 @@
+.Dd Jul 26, 2021
+.Dt RAVC2 1
+.Sh NAME
+.Nm ravc2
+.Nd radare version control
+.Sh SYNOPSIS
+.Nm ravc2
+.Op Fl hv
+.Op [expr] ...
+.Sh DESCRIPTION
+This command is part of the radare project.
+.Pp
+Implements a simple version control system that aims to work as frontend for git, as well as its own structure for versioning project changes.
+.Pp
+This command is pretty new and experimental.
+.Sh OPTIONS
+.Bl -tag -width Fl
+.It Fl h
+Show usage help message
+.It Fl v
+Display version
+.El
+.Sh USAGE
+Available variable types are:
+.Pp
+ ravc2 init
+ echo hello world > README.md
+ ravc2 add README.md
+ ravc2 branch
+ ravc2 commit
+.Pp
+.Sh ENVIRONMENT
+ RAVC2_USER  overrides cfg.user, which is based on r_sys_whoami() which is used to define the author for the VC commits.
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1)
+.Sh AUTHORS
+.Pp
+Written by pancake <pancake@nopcode.org>.

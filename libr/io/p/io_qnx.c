@@ -16,7 +16,7 @@ typedef struct {
 static libqnxr_t *desc = NULL;
 static RIODesc *rioqnx = NULL;
 
-static bool __plugin_open (RIO *io, const char *file, bool many) {
+static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return (!strncmp (file, "qnx://", 6));
 }
 
@@ -27,7 +27,7 @@ static ut32 c_size = UT32_MAX;
 static ut8 *c_buff = NULL;
 #define SILLY_CACHE 0
 
-static int debug_qnx_read_at (ut8 *buf, int sz, ut64 addr) {
+static int debug_qnx_read_at(ut8 *buf, int sz, ut64 addr) {
 	ut32 size_max = 500;
 	ut32 packets = sz / size_max;
 	ut32 last = sz % size_max;
@@ -54,7 +54,7 @@ static int debug_qnx_read_at (ut8 *buf, int sz, ut64 addr) {
 	return sz;
 }
 
-static int debug_qnx_write_at (const ut8 *buf, int sz, ut64 addr) {
+static int debug_qnx_write_at(const ut8 *buf, int sz, ut64 addr) {
 	ut32 x, size_max = 500;
 	ut32 packets = sz / size_max;
 	ut32 last = sz % size_max;
@@ -78,7 +78,7 @@ static int debug_qnx_write_at (const ut8 *buf, int sz, ut64 addr) {
 	return sz;
 }
 
-static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
+static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOQnx *rioq;
 	char host[128], *port, *p;
 
@@ -120,7 +120,7 @@ static RIODesc *__open (RIO *io, const char *file, int rw, int mode) {
 	return NULL;
 }
 
-static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	ut64 addr = io->off;
 	if (!desc) {
 		return -1;
@@ -128,11 +128,11 @@ static int __write (RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	return debug_qnx_write_at (buf, count, addr);
 }
 
-static ut64 __lseek (RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
 	if (!desc) {
@@ -141,12 +141,12 @@ static int __read (RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return debug_qnx_read_at (buf, count, addr);
 }
 
-static int __close (RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	// TODO
-	return -1;
+	return true;
 }
 
-static char *__system (RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	return NULL;
 }
 

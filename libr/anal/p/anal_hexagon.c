@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - xvilka */
+/* radare - LGPL - Copyright 2018-2021 - xvilka, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -10,15 +10,20 @@
 #include "hexagon_anal.h"
 
 static int hexagon_v6_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	HexInsn hi = {0};;
-	ut32 data = 0;
-	data = r_read_le32 (buf);
+	if (len < 4) {
+		return 0;
+	}
+	ut32 data = r_read_le32 (buf);
+	HexInsn hi = {0};
 	int size = hexagon_disasm_instruction (data, &hi, (ut32) addr);
+	if (size > 0 && mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = strdup (hi.mnem);
+	}
 	op->size = size;
-	if (size <= 0) {
+	if (size < 1) {
 		return size;
 	}
-
+	op->vliw = hi.op_count;
 	op->addr = addr;
 	return hexagon_anal_instruction (&hi, op);
 }
@@ -96,14 +101,14 @@ RAnalPlugin r_anal_plugin_hexagon = {
 	.arch = "hexagon",
 	.bits = 32,
 	.op = hexagon_v6_op,
-	.esil = true,
+	.esil = false,
 	.set_reg_profile = set_reg_profile,
 };
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_hexagon_v6,
+	.data = &r_anal_plugin_hexagon,
 	.version = R2_VERSION
 };
 #endif

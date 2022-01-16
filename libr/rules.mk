@@ -65,13 +65,14 @@ ifeq (${OSTYPE},solaris)
 LINK+=-lproc
 endif
 
-ifneq ($(EXTRA_PRE),)
+ifeq ($(EXTRA_PRE),)
+all: $(LIBSO) ${LIBAR} ${EXTRA_TARGETS}
+else
 all: $(EXTRA_PRE)
 	$(MAKE) all2
 
-all2: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
-else
-all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
+all2: ${LIBSO} ${LIBAR}
+	$(MAKE) ${EXTRA_TARGETS}
 endif
 ifneq ($(SILENT),)
 	@-if [ -f p/Makefile ]; then ${MAKE} -C p ; fi
@@ -81,8 +82,12 @@ else
 	@-if [ -f d/Makefile ] ; then (echo "DIR ${NAME}/d"; ${MAKE} -C d) ; fi
 endif
 
+prelib-build: $(EXTRA_TARGETS)
+	$(MAKE) $(OBJS)
+
 ifeq ($(WITH_LIBS),1)
-$(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
+
+$(LIBSO): prelib-build ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e "${LIBSO}" ] && do=1 ; \
 	  test "$$a" -nt "${LIBSO}" && do=1 ; \
@@ -99,7 +104,8 @@ $(LIBSO): ;
 endif
 
 ifeq ($(WITH_LIBR),1)
-$(LIBAR): ${OBJS}
+
+$(LIBAR): prelib-build
 	@[ "${SILENT}" = 1 ] && echo "CC_AR $(LIBAR)" || true
 	rm -f $(LIBAR)
 	${CC_AR} ${OBJS} ${SHARED_OBJ}
@@ -134,7 +140,7 @@ mrproper: clean
 	-rm -f *.d
 	@true
 
-.PHONY: all install pkgcfg clean deinstall uninstall echodir
+.PHONY: all install pkgcfg clean deinstall uninstall echodir prelib-build
 
 # autodetect dependencies object
 -include $(OBJS:.o=.d)

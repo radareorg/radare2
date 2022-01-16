@@ -2,6 +2,9 @@
 
 #include "sdb.h"
 #include <fcntl.h>
+#if __UNIX__ || __MINGW32__
+#include <unistd.h>
+#endif
 
 static const char *sdb_journal_filename(Sdb *s) {
 	return (s && s->name)

@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -86,7 +86,7 @@ _zip_cdir_grow(struct zip_cdir *cd, zip_uint64_t nentry, struct zip_error *error
 	_zip_error_set(error, ZIP_ER_MEMORY, 0);
 	return -1;
     }
-    
+
     for (i=cd->nentry_alloc; i<nentry; i++)
 	_zip_entry_init(entry+i);
 
@@ -103,7 +103,7 @@ _zip_cdir_new(zip_uint64_t nentry, struct zip_error *error)
 {
     struct zip_cdir *cd;
     zip_uint64_t i;
-    
+
     if ((cd=(struct zip_cdir *)malloc(sizeof(*cd))) == NULL) {
 	_zip_error_set(error, ZIP_ER_MEMORY, 0);
 	return NULL;
@@ -181,7 +181,7 @@ _zip_cdir_write(struct zip *za, const struct zip_filelist *filelist, zip_uint64_
 	_zip_write4(0, fp);
 	_zip_write8(offset+size, fp);
 	_zip_write4(1, fp);
-		    
+		
     }
 
     /* clearerr(fp); */
@@ -220,7 +220,7 @@ _zip_dirent_clone(const struct zip_dirent *sde)
 	memcpy(tde, sde, sizeof(*sde));
     else
 	_zip_dirent_init(tde);
-    
+
     tde->changed = 0;
     tde->cloned = 1;
 
@@ -311,7 +311,7 @@ _zip_dirent_new(void)
 
    If bufp is non-NULL, data is taken from there and bufp is advanced
    by the amount of data used; otherwise data is read from fp as needed.
-   
+
    if leftp is non-NULL, no more bytes than specified by it are used,
    and *leftp is reduced by the number of bytes used.
 
@@ -375,19 +375,19 @@ _zip_dirent_read(struct zip_dirent *zde, FILE *fp,
     zde->version_needed = _zip_read2(&cur);
     zde->bitflags = _zip_read2(&cur);
     zde->comp_method = _zip_read2(&cur);
-    
+
     /* convert to time_t */
     dostime = _zip_read2(&cur);
     dosdate = _zip_read2(&cur);
     zde->last_mod = _zip_d2u_time(dostime, dosdate);
-    
+
     zde->crc = _zip_read4(&cur);
     zde->comp_size = _zip_read4(&cur);
     zde->uncomp_size = _zip_read4(&cur);
-    
+
     filename_len = _zip_read2(&cur);
     ef_len = _zip_read2(&cur);
-    
+
     if (local) {
 	comment_len = 0;
 	zde->disk_number = 0;
@@ -490,14 +490,14 @@ _zip_dirent_read(struct zip_dirent *zde, FILE *fp,
 		zde->disk_number = _zip_read4(&ef);
 	}
     }
-    
+
     if (!local) {
         if (zde->offset > ZIP_OFF_MAX) {
             _zip_error_set(error, ZIP_ER_SEEK, EFBIG);
             return -1;
         }
     }
-    
+
     zde->extra_fields = _zip_ef_remove_internal(zde->extra_fields);
 
     if (bufp)
@@ -532,7 +532,7 @@ _zip_dirent_process_ef_utf_8(const struct zip_dirent *de, zip_uint16_t id, struc
 	    str = ef_str;
 	}
     }
-    
+
     return str;
 }
 
@@ -605,7 +605,7 @@ _zip_dirent_torrent_normalize(struct zip_dirent *de)
 
 	last_mod = mktime(&torrenttime);
     }
-    
+
     de->version_madeby = 0;
     de->version_needed = 20; /* 2.0 */
     de->bitflags = 2; /* maximum compression */
@@ -704,7 +704,7 @@ _zip_dirent_write(struct zip_dirent *de, FILE *fp, zip_flags_t flags, struct zip
 	is_really_zip64 = _zip_dirent_needs_zip64(de, flags);
     else
 	is_really_zip64 = is_zip64;
-    
+
     if ((flags & ZIP_FL_LOCAL) == 0)
 	_zip_write2(is_really_zip64 ? 45 : de->version_madeby, fp);
     _zip_write2(is_really_zip64 ? 45 : de->version_needed, fp);
@@ -727,7 +727,7 @@ _zip_dirent_write(struct zip_dirent *de, FILE *fp, zip_flags_t flags, struct zip
 
     _zip_write2(_zip_string_length(de->filename), fp);
     _zip_write2(_zip_ef_size(de->extra_fields, flags) + _zip_ef_size(ef, ZIP_EF_BOTH), fp);
-    
+
     if ((flags & ZIP_FL_LOCAL) == 0) {
 	_zip_write2(_zip_string_length(de->comment), fp);
 	_zip_write2((zip_uint16_t)de->disk_number, fp);
@@ -770,10 +770,10 @@ _zip_d2u_time(zip_uint16_t dtime, zip_uint16_t ddate)
     struct tm tm;
 
     memset(&tm, 0, sizeof(tm));
-    
+
     /* let mktime decide if DST is in effect */
     tm.tm_isdst = -1;
-    
+
     tm.tm_year = ((ddate>>9)&127) + 1980 - 1900;
     tm.tm_mon = ((ddate>>5)&15) - 1;
     tm.tm_mday = ddate&31;
@@ -800,7 +800,7 @@ _zip_ef_utf8(zip_uint16_t id, struct zip_string *str, struct zip_error *error)
     if (len+5 > ZIP_UINT16_MAX) {
         /* XXX: error */
     }
-    
+
     if ((data=(zip_uint8_t *)malloc(len+5)) == NULL) {
 	_zip_error_set(error, ZIP_ER_MEMORY, 0);
 	return NULL;
@@ -991,7 +991,7 @@ _zip_write4(zip_uint32_t i, FILE *fp)
     putc((i>>8)&0xff, fp);
     putc((i>>16)&0xff, fp);
     putc((i>>24)&0xff, fp);
-    
+
     return;
 }
 
@@ -1008,7 +1008,7 @@ _zip_write8(zip_uint64_t i, FILE *fp)
     putc((i>>40)&0xff, fp);
     putc((i>>48)&0xff, fp);
     putc((i>>56)&0xff, fp);
-    
+
     return;
 }
 

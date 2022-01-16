@@ -58,8 +58,8 @@ typedef struct _CFValueNULL {
 	RCFValueType type;
 } RCFValueNULL;
 
-R_API RCFValueDict * r_cf_value_dict_parse(RBuffer * file_buf, ut64 offset, ut64 size, int options);
-R_API void r_cf_value_dict_free(RCFValueDict * dict);
-R_API void r_cf_value_print(RCFValue * value);
+R_API RCFValueDict * r_cf_value_dict_parse(RBuffer *file_buf, ut64 offset, ut64 size, int options);
+R_API void r_cf_value_dict_free(RCFValueDict *dict);
+R_API void r_cf_value_print(RCFValue *value);
 
 #endif

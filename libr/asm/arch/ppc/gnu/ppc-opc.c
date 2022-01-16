@@ -38,49 +38,49 @@
 
 /* Local insertion and extraction functions.  */
 
-static unsigned long insert_bat (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bat (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_bba (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bba (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_bdm (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bdm (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_bdp (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bdp (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_bo (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_bo (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_boe (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_boe (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_fxm (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_fxm (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_mbe (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_mbe (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_mb6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_mb6 (unsigned long, ppc_cpu_t, int *);
-static long extract_nb (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_nsi (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_nsi (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_ral (unsigned long, long, ppc_cpu_t, const char **);
-static unsigned long insert_ram (unsigned long, long, ppc_cpu_t, const char **);
-static unsigned long insert_raq (unsigned long, long, ppc_cpu_t, const char **);
-static unsigned long insert_ras (unsigned long, long, ppc_cpu_t, const char **);
-static unsigned long insert_rbs (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_rbs (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_sh6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_sh6 (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_spr (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_spr (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_sprg (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_sprg (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_tbr (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_tbr (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_xt6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_xt6 (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_xa6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_xa6 (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_xb6 (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_xb6 (unsigned long, ppc_cpu_t, int *);
-static unsigned long insert_xb6s (unsigned long, long, ppc_cpu_t, const char **);
-static long extract_xb6s (unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bat(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bat(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bba(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bba(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bdm(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bdm(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bdp(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bdp(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_bo(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_bo(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_boe(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_boe(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_fxm(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_fxm(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_mbe(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_mbe(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_mb6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_mb6(unsigned long, ppc_cpu_t, int *);
+static long extract_nb(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_nsi(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_nsi(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_ral(unsigned long, long, ppc_cpu_t, const char **);
+static unsigned long insert_ram(unsigned long, long, ppc_cpu_t, const char **);
+static unsigned long insert_raq(unsigned long, long, ppc_cpu_t, const char **);
+static unsigned long insert_ras(unsigned long, long, ppc_cpu_t, const char **);
+static unsigned long insert_rbs(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_rbs(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_sh6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_sh6(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_spr(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_spr(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_sprg(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_sprg(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_tbr(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_tbr(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_xt6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_xt6(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_xa6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_xa6(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_xb6(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_xb6(unsigned long, ppc_cpu_t, int *);
+static unsigned long insert_xb6s(unsigned long, long, ppc_cpu_t, const char **);
+static long extract_xb6s(unsigned long, ppc_cpu_t, int *);
 
 /* The operands table.
 
@@ -590,12 +590,12 @@ const struct powerpc_operand powerpc_operands[] =
 #define FCRT_MASK (0x1f << 21)
   { 0x1f, 21, 0, 0, PPC_OPERAND_FCR },
 
-  /* Xilinx FSL related masks and macros */  
+  /* Xilinx FSL related masks and macros */
 #define FSL (FCRT + 1)
 #define FSL_MASK (0x1f << 11)
-  { 0x1f, 11, 0, 0, PPC_OPERAND_FSL },  
+  { 0x1f, 11, 0, 0, PPC_OPERAND_FSL },
 
-  /* Xilinx UDI related masks and macros */  
+  /* Xilinx UDI related masks and macros */
 #define URT (FSL + 1)
   { 0x1f, 21, 0, 0, PPC_OPERAND_UDI },
 
@@ -2349,7 +2349,7 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"vandc",	VX (4,1092),	VX_MASK,     PPCVEC,	{VD, VA, VB}},
 {"vcmpequh.",	VXR(4,	70,1),	VXR_MASK,    PPCVEC,	{VD, VA, VB}},
 {"udi1fcm.",	APU(4, 547,0), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
-{"udi1fcm",	APU(4, 547,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},   
+{"udi1fcm",	APU(4, 547,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
 {"evmwhssf",	VX (4,1095),	VX_MASK,     PPCSPE,	{RS, RA, RB}},
 {"evmwlumi",	VX (4,1096),	VX_MASK,     PPCSPE,	{RS, RA, RB}},
 {"vminfp",	VX (4,1098),	VX_MASK,     PPCVEC,	{VD, VA, VB}},
@@ -2381,7 +2381,7 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"vor",		VX (4,1156),	VX_MASK,     PPCVEC,	{VD, VA, VB}},
 {"vcmpequw.",	VXR(4, 134,1),	VXR_MASK,    PPCVEC,	{VD, VA, VB}},
 {"udi2fcm.",	APU(4, 579,0), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
-{"udi2fcm",	APU(4, 579,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},   
+{"udi2fcm",	APU(4, 579,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
 {"machhwsuo",	XO (4,	76,1,0),XO_MASK, PPC405|PPC440,	{RT, RA, RB}},
 {"machhwsuo.",	XO (4,	76,1,1),XO_MASK, PPC405|PPC440,	{RT, RA, RB}},
 {"ps_merge10",	XOPS(4,592,0),	XOPS_MASK,   PPCPS,	{FRT, FRA, FRB}},
@@ -2395,7 +2395,7 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"evdivws",	VX (4,1222),	VX_MASK,     PPCSPE,	{RS, RA, RB}},
 {"vcmpeqfp.",	VXR(4, 198,1),	VXR_MASK,    PPCVEC,	{VD, VA, VB}},
 {"udi3fcm.",	APU(4, 611,0), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
-{"udi3fcm",	APU(4, 611,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},   
+{"udi3fcm",	APU(4, 611,1), APU_MASK, PPC405|PPC440, {URT, URA, URB}},
 {"evdivwu",	VX (4,1223),	VX_MASK,     PPCSPE,	{RS, RA, RB}},
 {"evaddumiaaw",	VX (4,1224),	VX_MASK,     PPCSPE,	{RS, RA}},
 {"evaddsmiaaw",	VX (4,1225),	VX_MASK,     PPCSPE,	{RS, RA}},
@@ -4898,8 +4898,8 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"dctfix",	XRC(59,290,0),	X_MASK,      POWER6,	{FRT, FRB}},
 {"dctfix.",	XRC(59,290,1),	X_MASK,      POWER6,	{FRT, FRB}},
 
-{"ddedpd",	XRC(59,322,0),	X_MASK,      POWER6,	{SP, FRT, FRB}}, 
-{"ddedpd.",	XRC(59,322,1),	X_MASK,      POWER6,	{SP, FRT, FRB}}, 
+{"ddedpd",	XRC(59,322,0),	X_MASK,      POWER6,	{SP, FRT, FRB}},
+{"ddedpd.",	XRC(59,322,1),	X_MASK,      POWER6,	{SP, FRT, FRB}},
 
 {"dxex",	XRC(59,354,0),	X_MASK,      POWER6,	{FRT, FRB}},
 {"dxex.",	XRC(59,354,1),	X_MASK,      POWER6,	{FRT, FRB}},

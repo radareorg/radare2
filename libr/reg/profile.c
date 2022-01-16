@@ -133,6 +133,9 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	const char *p = str;
 
 	r_return_val_if_fail (reg && str, false);
+	if (R_STR_ISEMPTY (str)) {
+		return true;
+	}
 
 	// Same profile, no need to change
 	if (reg->reg_profile_str && !strcmp (reg->reg_profile_str, str)) {
@@ -262,8 +265,9 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	return true;
 }
 
+// read profile from file
 R_API bool r_reg_set_profile(RReg *reg, const char *profile) {
-	r_return_val_if_fail (reg && profile, NULL);
+	r_return_val_if_fail (reg && profile, false);
 	char *str = r_file_slurp (profile, NULL);
 	if (!str) {
 		char *base = r_sys_getenv (R_LIB_ENV);
@@ -433,11 +437,13 @@ R_API char *r_reg_profile_to_cc(RReg *reg) {
 	const char *a2 = r_reg_get_name_by_type (reg, "A2");
 	const char *a3 = r_reg_get_name_by_type (reg, "A3");
 
-	// it is mandatory to have at least =A0 defined in the reg profile
-	// this will be enforced in reg/profile at parsing time
-	r_return_val_if_fail (a0, NULL);
 	if (!r0) {
 		r0 = a0;
+	}
+	if (!r0) {
+		// it is mandatory to have at least =A0 defined in the reg profile
+		// this will be enforced in reg/profile at parsing time
+		return NULL;
 	}
 	if (a3 && a2 && a1) {
 		return r_str_newf ("%s reg(%s, %s, %s, %s)", r0, a0, a1, a2, a3);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include "r_config.h"
 #include "r_core.h"
@@ -10,8 +10,7 @@ static const char *help_msg_P[] = {
 	"Pc", " [file]", "show project script to console",
 	"Pd", " [file]", "delete project",
 	"Pi", " [file]", "show project information",
-	"Pn", "[j]", "show project notes (Pnj for json)",
-	"Pn", " [base64]", "set notes text",
+	"Pn", "[j]", "manage notes associated with the project",
 	"Pn", " -", "edit notes with cfg.editor",
 	"Po", " [file]", "open project",
 	"Ps", " [file]", "save project",
@@ -27,6 +26,7 @@ static const char *help_msg_Pn[] = {
 	"Usage:", "Pn[j-?] [...]", "Project Notes",
 	"Pn", "", "show project notes",
 	"Pn", " -", "edit notes with cfg.editor",
+	"Pn", " [base64]", "set notes text",
 	"Pn-", "", "delete notes",
 	"Pn-", "str", "delete lines matching /str/ in notes",
 	"Pn+", "str", "append one line to the notes",
@@ -35,11 +35,6 @@ static const char *help_msg_Pn[] = {
 	"Pnx", "", "run project note commands",
 	NULL
 };
-
-static void cmd_project_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, P);
-	DEFINE_CMD_DESCRIPTOR (core, Pn);
-}
 
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *) data;
@@ -83,7 +78,11 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'd': // "Pd"
 	case '-': // "P-"
-		r_core_project_delete (core, file);
+		if (R_STR_ISNOTEMPTY (file)) {
+			r_core_project_delete (core, file);
+		} else {
+			eprintf ("Usage: Pd [prjname]   # Use P or Pl to list the available projects.\n");
+		}
 		break;
 	case 's': // "Ps"
 		if (R_STR_ISEMPTY (file)) {

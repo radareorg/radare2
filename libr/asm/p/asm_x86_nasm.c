@@ -23,8 +23,12 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 	char *asm_buf = r_str_newf ("[BITS %i]\nORG 0x%"PFMT64x"\n%s\n", a->bits, a->pc, buf);
 	if (asm_buf) {
-		(void)write (ifd, asm_buf, strlen (asm_buf));
+		int slen = strlen (asm_buf);
+		int wlen = write (ifd, asm_buf, slen);
 		free (asm_buf);
+		if (slen != wlen) {
+			return -1;
+		}
 	}
 
 	close (ifd);

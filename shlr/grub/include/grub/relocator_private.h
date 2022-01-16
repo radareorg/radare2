@@ -65,19 +65,19 @@ void grub_cpu_relocator_jumper (void *rels, grub_addr_t addr);
 struct grub_relocator_mmap_event
 {
   enum {
-    IN_REG_START = 0, 
-    IN_REG_END = 1, 
-    REG_BEG_START = 2, 
+    IN_REG_START = 0,
+    IN_REG_END = 1,
+    REG_BEG_START = 2,
     REG_BEG_END = REG_BEG_START | 1,
 #if GRUB_RELOCATOR_HAVE_FIRMWARE_REQUESTS
-    REG_FIRMWARE_START = 4, 
+    REG_FIRMWARE_START = 4,
     REG_FIRMWARE_END = REG_FIRMWARE_START | 1,
     /* To track the regions already in heap.  */
-    FIRMWARE_BLOCK_START = 6, 
+    FIRMWARE_BLOCK_START = 6,
     FIRMWARE_BLOCK_END = FIRMWARE_BLOCK_START | 1,
 #endif
 #if GRUB_RELOCATOR_HAVE_LEFTOVERS
-    REG_LEFTOVER_START = 8, 
+    REG_LEFTOVER_START = 8,
     REG_LEFTOVER_END = REG_LEFTOVER_START | 1,
 #endif
     COLLISION_START = 10,
@@ -99,7 +99,7 @@ struct grub_relocator_mmap_event
   };
 };
 
-/* Return 0 on failure, 1 on success. The failure here 
+/* Return 0 on failure, 1 on success. The failure here
    can be very time-expensive, so please make sure fill events is accurate.  */
 #if GRUB_RELOCATOR_HAVE_FIRMWARE_REQUESTS
 int grub_relocator_firmware_alloc_region (grub_phys_addr_t start,

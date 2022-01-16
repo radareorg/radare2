@@ -1,8 +1,7 @@
-/* radare - LGPL - Copyright 2010-2020 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2021 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
-#include <r_diff.h>
 
 R_API RAnalDiff *r_anal_diff_new(void) {
 	RAnalDiff *diff = R_NEW0 (RAnalDiff);
@@ -16,12 +15,11 @@ R_API RAnalDiff *r_anal_diff_new(void) {
 	return diff;
 }
 
-R_API void* r_anal_diff_free(RAnalDiff *diff) {
-	if (diff && diff->name) {
-		R_FREE (diff->name);
+R_API void r_anal_diff_free(RAnalDiff *diff) {
+	if (diff) {
+		free (diff->name);
+		free (diff);
 	}
-	free (diff);
-	return NULL;
 }
 
 /* 0-1 */

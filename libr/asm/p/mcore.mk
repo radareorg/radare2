@@ -10,5 +10,5 @@ ALL_TARGETS+=${TARGET_MCORE}
 
 ${TARGET_MCORE}: ${OBJ_MCORE}
 	${CC} -o ${TARGET_MCORE} ${OBJ_MCORE} \
-		$(call libname,asm_mcore) ${LDFLAGS} ${CFLAGS} 
+		$(call libname,asm_mcore) ${LDFLAGS} ${CFLAGS}
 endif

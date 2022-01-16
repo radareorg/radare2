@@ -239,7 +239,7 @@ struct grub_reiserfs_data
 static enum grub_reiserfs_item_type
 grub_reiserfs_get_key_v2_type (const struct grub_reiserfs_key *key)
 {
-  unsigned long long o = grub_le_to_cpu64 (key->u.v2.offset_type);
+  ut64 o = grub_le_to_cpu64 (key->u.v2.offset_type);
   switch ((int)(o>>60))
     {
     case 0:
@@ -1088,10 +1088,10 @@ grub_reiserfs_read (grub_file_t file, char *buf, grub_size_t len)
   current_position = 0;
   final_position = MIN (len + initial_position, file->size);
   grub_dprintf ("reiserfs",
-		"Reading from %lld to %lld (%lld instead of requested %ld)\n",
-		(unsigned long long) initial_position,
-		(unsigned long long) final_position,
-		(unsigned long long) (final_position - initial_position),
+		"Reading from %"PFMT64d" to %"PFMT64d" (%"PFMT64d" instead of requested %ld)\n",
+		(ut64) initial_position,
+		(ut64) final_position,
+		(ut64) (final_position - initial_position),
 		(unsigned long) len);
   while (current_position < final_position)
     {
@@ -1190,9 +1190,9 @@ grub_reiserfs_read (grub_file_t file, char *buf, grub_size_t len)
     }
 
   grub_dprintf ("reiserfs",
-		"Have successfully read %lld bytes (%ld requested)\n",
-		(unsigned long long) (current_position - initial_position),
-		(unsigned long) len);
+		"Have successfully read %"PFMT64d" bytes (%"PFMT64d" requested)\n",
+		(ut64) (current_position - initial_position),
+		(ut64) len);
   return current_position - initial_position;
 
 #if 0

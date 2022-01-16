@@ -2,7 +2,7 @@
 
 #include <r_util.h>
 
-R_API RQueue *r_queue_new (int n) {
+R_API RQueue *r_queue_new(int n) {
 	if (n <= 0) {
 		return NULL;
 	}

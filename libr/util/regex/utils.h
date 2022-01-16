@@ -47,4 +47,3 @@
 #ifdef USEBCOPY
 #define	memmove(d, s, c)	bcopy(s, d, c)
 #endif
-#define ut8 unsigned char

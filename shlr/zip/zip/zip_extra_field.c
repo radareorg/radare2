@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
- 
+
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -45,16 +45,16 @@ struct zip_extra_field *
 _zip_ef_clone(const struct zip_extra_field *ef, struct zip_error *error)
 {
     struct zip_extra_field *head, *prev, *def;
-    
+
     head = prev = NULL;
-    
+
     while (ef) {
         if ((def=_zip_ef_new(ef->id, ef->size, ef->data, ef->flags)) == NULL) {
             _zip_error_set(error, ZIP_ER_MEMORY, 0);
             _zip_ef_free(head);
             return NULL;
         }
-        
+
         if (head == NULL)
             head = def;
         if (prev)
@@ -63,7 +63,7 @@ _zip_ef_clone(const struct zip_extra_field *ef, struct zip_error *error)
 
 	ef = ef->next;
     }
-    
+
     return head;
 }
 
@@ -93,7 +93,7 @@ _zip_ef_delete_by_id(struct zip_extra_field *ef, zip_uint16_t id, zip_uint16_t i
 			continue;
 		}
 	    }
-	    
+	
 	    i++;
 	    if (i > id_idx)
 		break;
@@ -126,7 +126,7 @@ const zip_uint8_t *
 _zip_ef_get_by_id(const struct zip_extra_field *ef, zip_uint16_t *lenp, zip_uint16_t id, zip_uint16_t id_idx, zip_flags_t flags, struct zip_error *error)
 {
     static const zip_uint8_t empty[1] = { '\0' };
-    
+
     int i;
 
     i = 0;
@@ -267,10 +267,10 @@ _zip_ef_remove_internal(struct zip_extra_field *ef)
 {
     struct zip_extra_field *ef_head;
     struct zip_extra_field *prev, *next;
-    
+
     ef_head = ef;
     prev = NULL;
-    
+
     while (ef) {
         if (ZIP_EF_IS_INTERNAL(ef->id)) {
             next = ef->next;
@@ -287,7 +287,7 @@ _zip_ef_remove_internal(struct zip_extra_field *ef)
             ef = ef->next;
         }
     }
-    
+
     return ef_head;
 }
 
@@ -381,7 +381,7 @@ _zip_read_local_ef(struct zip *za, zip_uint64_t idx)
     }
 
     e->orig->local_extra_fields_read = 1;
-    
+
     if (e->changes && e->changes->local_extra_fields_read == 0) {
 	e->changes->extra_fields = e->orig->extra_fields;
 	e->changes->local_extra_fields_read = 1;

@@ -46,7 +46,7 @@ R_API void r_big_assign(RNumBig *dst, RNumBig *src);
 /* Basic arithmetic operations */
 R_API void r_big_add(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a + b */
 R_API void r_big_sub(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a - b */
-R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a * b */
+R_API void r_big_mul(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a *b */
 R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a / b */
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b); /* c = a % b */
 R_API void r_big_divmod(RNumBig *c, RNumBig *d, RNumBig *a, RNumBig *b); /* c = a/b, d = a%b */

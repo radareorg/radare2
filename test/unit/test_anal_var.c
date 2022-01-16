@@ -147,18 +147,18 @@ bool test_r_anal_var() {
 	mu_assert_eq (r_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, a));
 
-	used_vars = r_anal_function_get_vars_used_at (fcn, 0x130);
+	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0130);
 	mu_assert_eq (r_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, a));
-	used_vars = r_anal_function_get_vars_used_at (fcn, 0x120);
+	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0120);
 	mu_assert_eq (r_pvector_len (used_vars), 2, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, a));
 	mu_assert ("used vars", r_pvector_contains (used_vars, b));
-	stackptr = r_anal_function_get_var_stackptr_at (fcn, -0x10, 0x120);
+	stackptr = r_anal_function_get_var_stackptr_at (fcn, -0x10, 0xffffffffffff0120);
 	mu_assert_eq (stackptr, 123, "stackptr");
-	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0x120);
+	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0xffffffffffff0120);
 	mu_assert_eq (stackptr, 42, "stackptr");
-	used_vars = r_anal_function_get_vars_used_at (fcn, 0x10);
+	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0010);
 	mu_assert_eq (r_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, b));
 
@@ -183,22 +183,22 @@ bool test_r_anal_var() {
 	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0x7ffffffffffffe00);
 	mu_assert_eq (stackptr, 777, "stackptr");
 
-	used_vars = r_anal_function_get_vars_used_at (fcn, 0xffffffffffff0130UL);
+	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000040UL);
 	mu_assert_eq (r_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, a));
-	used_vars = r_anal_function_get_vars_used_at (fcn, 0x123);
+	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000010033);
 	mu_assert_eq (r_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, a));
-	used_vars = r_anal_function_get_vars_used_at (fcn, 0x130);
+	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000040);
 	mu_assert_eq (r_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, a));
-	used_vars = r_anal_function_get_vars_used_at (fcn, 0x120);
+	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000030);
 	mu_assert_eq (r_pvector_len (used_vars), 2, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, a));
 	mu_assert ("used vars", r_pvector_contains (used_vars, b));
-	stackptr = r_anal_function_get_var_stackptr_at (fcn, -0x10, 0x120);
+	stackptr = r_anal_function_get_var_stackptr_at (fcn, -0x10, 0x8000000000000030);
 	mu_assert_eq (stackptr, 123, "stackptr");
-	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0x120);
+	stackptr = r_anal_function_get_var_stackptr_at (fcn, -8, 0x8000000000000030);
 	mu_assert_eq (stackptr, 42, "stackptr");
 
 	assert_sane (anal);
@@ -212,9 +212,53 @@ bool test_r_anal_var() {
 	mu_assert ("used vars count", !used_vars || !r_pvector_len (used_vars));
 	used_vars = r_anal_function_get_vars_used_at (fcn, 0x130);
 	mu_assert ("used vars count", !used_vars || !r_pvector_len (used_vars));
-	used_vars = r_anal_function_get_vars_used_at (fcn, 0x120);
+	used_vars = r_anal_function_get_vars_used_at (fcn, 0x8000000000000030);
 	mu_assert_eq (r_pvector_len (used_vars), 1, "used vars count");
 	mu_assert ("used vars", r_pvector_contains (used_vars, b));
+
+	// serialization / RAnalVarProt
+	RList *vps = r_anal_var_get_prots (fcn);
+	mu_assert ("Failed r_anal_var_get_protos", vps && r_list_length (vps) == 2);
+
+	char *serial = r_anal_var_prot_serialize (vps, true);
+	mu_assert ("serial space", !strcmp (serial, "fs-16:var_b:char *, tr48:arg42:int64_t"));
+	free (serial);
+
+	serial = r_anal_var_prot_serialize (vps, false);
+	mu_assert ("serial no space", !strcmp (serial, "fs-16:var_b:char *,tr48:arg42:int64_t"));
+	free (serial);
+	r_list_free (vps);
+
+	vps = r_anal_var_deserialize ("ts-16:var_name:char **, tr48:var_name_b:size_t");
+	mu_assert ("Failed r_anal_var_deserialize", vps && r_list_length (vps) == 2);
+
+	RAnalVarProt *vp = (RAnalVarProt *)r_list_get_bottom (vps);
+	mu_assert ("Deserialize name[0]", !strcmp (vp->name, "var_name") && !strcmp (vp->type, "char **"));
+	vp = (RAnalVarProt *)r_list_get_top (vps);
+	mu_assert ("Deserialize name[1]", !strcmp (vp->name, "var_name_b") && !strcmp (vp->type, "size_t"));
+
+	mu_assert ("r_anal_function_set_var_prot", r_anal_function_set_var_prot (fcn, vps));
+	mu_assert ("Setting first var from proto", !strcmp (b->name, "var_name") && !strcmp (b->type, "char **"));
+	mu_assert ("Setting second var from proto", !strcmp (c->name, "var_name_b") && !strcmp (c->type, "size_t"));
+
+	r_list_purge (vps);
+	vp = R_NEW0 (RAnalVarProt);
+	vp->name = strdup ("bad_name:`${}~|#@&<>,");
+	vp->type = strdup ("bad_type:`${}~|#@&<>,");
+	r_list_append (vps, vp);
+	vp->kind = 'z';
+	serial = r_anal_var_prot_serialize (vps, false);
+	mu_assert ("Serializtion succeeded despite invalide kind", !serial);
+	free (serial);
+
+	vp->kind = R_ANAL_VAR_KIND_REG;
+	serial = r_anal_var_prot_serialize (vps, false);
+	mu_assert ("Serializtion filtered bad chars", serial && !strcmp ("fr0:bad_name_____________:bad_type:____________", serial));
+	r_list_free (vps);
+	free (serial);
+
+	vps = r_anal_var_deserialize ("ts-16:v,r_name:char **");
+	mu_assert ("No ',' in serialized name", !vps);
 
 	r_anal_var_delete (b);
 	r_anal_var_delete (c);

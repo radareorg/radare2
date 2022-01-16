@@ -23,14 +23,13 @@ static int w32__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return ReadFile (RIOW32_HANDLE (fd), buf, count, &ret, NULL)?ret:-1;
 }
 
-static int w32__close(RIODesc *fd) {
+static bool w32__close(RIODesc *fd) {
 	if (fd->data) {
-		// TODO: handle return value
 		CloseHandle (RIOW32_HANDLE (fd));
 		R_FREE (fd->data);
-		return 0;
+		return true;
 	}
-	return -1;
+	return false;
 }
 
 // TODO: handle filesize and so on

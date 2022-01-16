@@ -196,7 +196,7 @@ e asm.marks=false
 e asm.nbytes=0
 e asm.comments=false
 e asm.flags=false
-e asm.fcnlines=false
+e asm.lines.fcn=false
 e asm.calls=false
 e asm.functions=false
 e scr.color=false
@@ -204,7 +204,7 @@ f-rip
 pd 1
 EOF
 EXPECT=<<EOF
-fcn.00000106 ()
+fcn.00000106  ()
 EOF
 RUN
 
@@ -808,8 +808,8 @@ e asm.sub.names=false
 pd 1 @ 0x0001145f
 EOF
 EXPECT=<<EOF
-            [32m0x0001145f[0m      [37mlea[36m rdi[0m,[36m[36m [0m[36mstr.A_NULL_argv_0__was_passed_through_an_exec_system_call._n[0m[36m[0m[0m
-            [32m0x0001145f[0m      [37mlea[36m rdi[0m,[36m[36m [0m[[36m[36m0x0001b5d8[0m][36m[0m[0m
+            [32m0x0001145f[0m      [37mlea[36m rdi[0m,[36m[36m str.A_NULL_argv_0__was_passed_through_an_exec_system_call._n[0m[0m
+            [32m0x0001145f[0m      [37mlea[36m rdi[0m,[36m[36m [0m[[36m0x0001b5d8[0m][36m[0m[0m
 EOF
 RUN
 
@@ -879,7 +879,7 @@ EXPECT=<<EOF
             0x0040169d      mov esi, str.see_                          ; "see .b.e.e.f\n"
             0x00401693      mov edi, 0x4021ff                          ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:.[33m ......... .[0m\n"
             0x00401693      mov edi, 0x4021ff                          ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:.[33m ... .[0m."
-            0x004016ac      mov edi, 0x40224a                          ; 'J"@' ; u"utf16le> \\u00a2\\u20ac\\U00010348 in green:.[32m ... .[0m."
+            0x004016ac      mov edi, 0x40224a                          ; 'J\"@' ; u"utf16le> \\u00a2\\u20ac\\U00010348 in green:.[32m ... .[0m."
             0x004016ed      mov edi, 0x40258c                          ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:.[36m ... .[0m."
             0x004016f7      mov edi, 0x40266c                          ; U"Mountain range with embedded quad zeros: .A.A.A."
 EOF
@@ -945,7 +945,7 @@ pd 1 @ 0x004016ca
 pd 1 @ 0x004016d4
 EOF
 EXPECT=<<EOF
-            0x004016ac      mov edi, 0x40224a                          ; 'J"@' ; u"utf16le> \\u00a2\\u20ac\\U00010348 in green:\x1b[32m \xa2\u20ac\U00010348 \x1b[0m\n"
+            0x004016ac      mov edi, 0x40224a                          ; 'J\"@' ; u"utf16le> \\u00a2\\u20ac\\U00010348 in green:\x1b[32m \xa2\u20ac\U00010348 \x1b[0m\n"
             0x004016b6      mov edi, str.__e_e_b__                     ; "_%e%e%b% "
             0x004016b6      mov edi, str.__e_e_b__                     ; u"\u255f\u2565\u2565\u2562 is a wall with no embedded zeros\n"
             0x004016c0      mov edi, str.__B_                          ; " %B%"
@@ -1039,7 +1039,7 @@ EXPECT=<<EOF
 guess
 utf8
 utf16le
-            0x004016c0      mov edi, 0x40230c                          ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
+            0x004016c0      mov edi, 0x40230c                          ; str.__B_ ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
 utf32le
             0x004016ed      mov edi, 0x40258c                          ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\x1b[36m \xa2\u20ac\U00010348 \x1b[0m\n"
 
@@ -1182,7 +1182,7 @@ EXPECT=<<EOF
 [0m[36m|[0m           [32m0x004010e8[0m      [35mpush[36m esi[0m[0m
 [36m|[0m           [31m; 0x402004
 [0m[36m|[0m           [31m; DWORD GetCurrentProcessorNumber(void)
-[0m[36m|[0m           [32m0x004010e9[0m      [32mcall dword [sym.imp.KERNEL32.dll_GetCurrentProcessorNumber][0m
+[0m[36m|[0m           [32m0x004010e9[0m      [32mcall dword[36m [0m[[36msym.imp.KERNEL32.dll_GetCurrentProcessorNumber[0m][36m[0m[0m
 EOF
 RUN
 
@@ -1366,9 +1366,9 @@ e asm.cmt.right=1
 pdJ 1 @ 0x080483ec
 EOF
 EXPECT=<<EOF
-[{"offset":134514169,"arrow":134514133,"text":"|       `=< 0x080485f9      72da           if (((unsigned) var) < 0) goto 0x80485d5"}]
-[{"offset":134513644,"text":"            ; sym.imp.__libc_start_main"},{"offset":134513644,"text":"            ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"},{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[],eip,="}]
-[{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[],eip,= ; sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"}]
+[{"offset":134514169,"arrow":134514133,"text":"|       `=< 0x080485f9      72da           if   (((unsigned) var) < 0) goto 0x80485d5"}]
+[{"offset":134513644,"text":"            ; sym.imp.__libc_start_main"},{"offset":134513644,"text":"            ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"},{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,="}]
+[{"offset":134513644,"text":"            0x080483ec      e873ffffff     134513508,eip,4,esp,-=,esp,=[4],eip,= ; sym.imp.__libc_start_main ; int __libc_start_main(func main, int argc, char **ubp_av, func init, func fini, func rtld_fini, void *stack_end)"}]
 EOF
 RUN
 
@@ -1733,17 +1733,17 @@ e emu.str.inv=false
 pd 1 @ 0x161d
 EOF
 EXPECT=<<EOF
-            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m                 [31m; 0x21f7[31m [31m; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str._n__Blue_Pill[0m
-            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m[31m                 [31m; 0x21f7[31m [31m; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str._n__Blue_Pill[0m
+            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m abcdefghi[0m][36m[0m[0m[31m                 [31m; 0x21f7[31m [31m; "abcdefghi"[0m[31m ; [7m"\n  Blue Pill"[27m str._n__Blue_Pill[0m
+            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m abcdefghi[0m][36m[0m[0m[31m                 [31m; 0x21f7[31m [31m; [7m"abcdefghi"[27m[0m[31m ; "\n  Blue Pill" str._n__Blue_Pill[0m
 
             [31m; 0x21f7
             [31m; "abcdefghi"
 [0m[31m[0m               [31m; [7m"\n  Blue Pill"[27m str._n__Blue_Pill
-[0m            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m
+[0m            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m abcdefghi[0m][36m[0m[0m
             [31m; 0x21f7
             [31m; [7m"abcdefghi"[27m
 [0m[31m[0m               [31m; "\n  Blue Pill" str._n__Blue_Pill
-[0m            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m [36mabcdefghi][36m[0m[0m
+[0m            [32m0x0000161d[0m      [37mlea[36m eax[0m,[36m [0m[[36mesi [0m-[36m[36m abcdefghi[0m][36m[0m[0m
 EOF
 RUN
 

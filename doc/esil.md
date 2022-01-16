@@ -43,7 +43,7 @@ Conditionals are expressed with the '?' char at the beginning of the expression.
     cmp eax, 123  ->   123,eax,==,$z,zf,=
     jz eax        ->   zf,?{,eax,eip,=,}
 
-So.. if you want to run more than one expression under a conditional, you'll have to write it 
+So.. if you want to run more than one expression under a conditional, you'll have to write it
 
     zf,?{,eip,esp,=[],eax,eip,=,$r,esp,-=,}
 

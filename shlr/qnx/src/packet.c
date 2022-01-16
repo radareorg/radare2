@@ -1,4 +1,4 @@
-/* libqnxr - GPL - Copyright 2014-2016 - defragger, madprogrammer */
+/* libqnxr - GPL - Copyright 2014-2022 - pancake, defragger, madprogrammer */
 
 #include <errno.h>
 #include "packet.h"
@@ -155,6 +155,10 @@ int qnxr_send_packet (libqnxr_t *g) {
 	p = g->send_buff;
 	*p++ = FRAME_CHAR;
 
+	if (g->send_len >= sizeof (g->tran.data)) {
+		eprintf ("Too large packet %d vs %d\n", (int)g->send_len, (int)sizeof (g->send_len));
+		return false;
+	}
 	for (i = 0; i < g->send_len; i++) {
 		ut8 c = g->tran.data[i];
 		csum += c;

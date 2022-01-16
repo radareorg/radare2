@@ -31,31 +31,31 @@ static unsigned char UDS[] = {
 
 #if 0
 static int is_unique_UDS(unsigned int position) {
-    unsigned int j, flag;
-    flag = 0;
-    for (j = 0; j < UDS_SIZE; j++) {
-        if (firmware[position] == UDS[j]) {
-            flag = 1;
-            break;
-        }
-    }
+	unsigned int j, flag;
+	flag = 0;
+	for (j = 0; j < UDS_SIZE; j++) {
+		if (firmware[position] == UDS[j]) {
+			flag = 1;
+			break;
+		}
+	}
 
-    if (flag == 1) {
-        for (j = position - CANDB_SIZE / 2; j < position + CANDB_SIZE / 2; j++) {
-            if ((firmware[j] == firmware[position]) && (j != position)) {
-                flag = 0;
-                break;
-            }
-        }
-    }
-    return flag;
+	if (flag == 1) {
+		for (j = position - CANDB_SIZE / 2; j < position + CANDB_SIZE / 2; j++) {
+			if ((firmware[j] == firmware[position]) && (j != position)) {
+				flag = 0;
+				break;
+			}
+		}
+	}
+	return flag;
 }
 #endif
 
 R_API RList *r_search_find_uds(RSearch *search, ut64 addr, const ut8 *data, size_t size, bool verbose) {
 	RList *list = r_list_newf (free);
 	if (size < (CANDB_SIZE * 2)) {
-		eprintf ("requires at least 1024 bytes. %zd\n", size);
+		eprintf ("requires at least 1024 bytes. %d\n", (int)size);
 		r_list_free (list);
 		return NULL;
 	}

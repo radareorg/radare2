@@ -6,6 +6,16 @@ fi
 export ANDROID=1
 # make clean > /dev/null 2>&1
 rm -f libr/include/r_version.h
+cp -f dist/plugins-cfg/plugins.termux.cfg plugins.cfg
+# Attempt to update from an existing remote
+UPSTREAM_REMOTE=$(git remote -v | grep 'radareorg/radare2 (fetch)' | cut -f1 | head -n1)
+if [ -n "$UPSTREAM_REMOTE" ]; then
+	git pull "$UPSTREAM_REMOTE" master
+else
+	git pull https://github.com/radareorg/radare2 master
+fi
+./preconfigure
+./configure-plugins
 bash ./configure --with-compiler=termux --prefix=${PREFIX} || exit 1
 make libr/include/r_version.h
 touch -t 19700101 libr/include/r_version.h

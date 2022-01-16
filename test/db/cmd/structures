@@ -10,15 +10,19 @@ afvt s1 S1
 afvb*
 EOF
 EXPECT=<<EOF
-afvb -288 var_120h char ** @ 0x4004a6
-afvb -276 var_114h int64_t @ 0x4004a6
-afvb -272 var_110h int64_t @ 0x4004a6
-afvb -268 var_10ch int64_t @ 0x4004a6
-afvb -264 var_108h int64_t @ 0x4004a6
-afvb -4 var_4h int64_t @ 0x4004a6
-afvb -288 var_120h char ** @ 0x4004a6
-afvb -276 var_114h int64_t @ 0x4004a6
-afvb -272 s1 S1 @ 0x4004a6
+s 0x4004a6
+"afvb -288 var_120h char **"
+"afvb -276 var_114h int64_t"
+"afvb -272 var_110h int64_t"
+"afvb -268 var_10ch int64_t"
+"afvb -264 var_108h int64_t"
+"afvb -4 var_4h int64_t"
+s-
+s 0x4004a6
+"afvb -288 var_120h char **"
+"afvb -276 var_114h int64_t"
+"afvb -272 s1 S1"
+s-
 EOF
 RUN
 

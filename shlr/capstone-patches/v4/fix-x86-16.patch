@@ -5,7 +5,7 @@ index 32e28916..1fdbe1b4 100644
 @@ -641,6 +641,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
  		if (MI->Opcode == X86_CALLpcrel16 || MI->Opcode == X86_JMP_2)
  			imm = imm & 0xffff;
- 
+
 +		if (MI->csh->mode == CS_MODE_16)
 +			imm |= (MI->address >> 16) << 16;
 +
@@ -19,10 +19,10 @@ index aa2c3bd5..c08cafdc 100644
 @@ -858,6 +858,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
  		if (MI->Opcode == X86_CALLpcrel16 || MI->Opcode == X86_JMP_2)
  			imm = imm & 0xffff;
- 
+
 +		if (MI->csh->mode == CS_MODE_16)
 +			imm |= (MI->address >> 16) << 16;
 +
  		printImm(MI, O, imm, true);
- 
+
  		if (MI->csh->detail) {

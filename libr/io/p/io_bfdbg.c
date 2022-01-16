@@ -126,16 +126,15 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-static int __close(RIODesc *fd) {
-	RIOBfdbg *riom;
+static bool __close(RIODesc *fd) {
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
-	riom = fd->data;
+	RIOBfdbg *riom = fd->data;
 	bfvm_free (riom->bfvm);
 	R_FREE (riom->buf);
 	R_FREE (fd->data);
-	return 0;
+	return true;
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
@@ -151,7 +150,7 @@ static bool __plugin_open(RIO *io, const char *pathname, bool many) {
 	return (!strncmp (pathname, "bfdbg://", 8));
 }
 
-static inline int getmalfd (RIOBfdbg *mal) {
+static inline int getmalfd(RIOBfdbg *mal) {
 	return 0xffff & (int)(size_t)mal->buf;
 }
 

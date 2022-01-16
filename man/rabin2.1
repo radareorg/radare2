@@ -1,4 +1,4 @@
-.Dd May 25, 2021
+.Dd Nov 22, 2021
 .Dt RABIN2 1
 .Sh NAME
 .Nm RABIN2
@@ -89,7 +89,7 @@ Output file/folder for write operations (out by default)
 .It Fl O Ar binop
 Perform binary operation on target binary (dump, resize, change sections, ...) see '-O help' for more information
 .It Fl p
-Disable VA. Show physical addresses
+Disable VA. Show always physical addresses (not the same as -B0)
 .It Fl P
 Show debug/pdb information
 .It Fl PP
@@ -150,6 +150,8 @@ RABIN2_DEBASE64 try to decode all strings as base64 if possible
 RABIN2_STRFILTER same as r2 -e bin.str.filter for rabin2
 .Pp
 RABIN2_STRPURGE same as r2 -e bin.str.purge for rabin2
+.Pp
+RABIN2_DEMANGLE_TRYLIB same as r2 -e bin.demangle.trylib=<bool> - try to dynamically load libraries to demangle
 .Sh EXAMPLES
 .Pp
 List symbols of a program

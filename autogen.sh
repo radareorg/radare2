@@ -27,3 +27,6 @@ if [ -n "$1" ]; then
 	echo "./configure $*"
 	./configure $*
 fi
+
+[ -z "$EDITOR" ] && EDITOR=vim
+$EDITOR README.md

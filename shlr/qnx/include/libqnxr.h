@@ -24,13 +24,12 @@ typedef int pid_t;
 #define ARM_32 ARCH_ARM_32
 #define ARM_64 ARCH_ARM_64
 
-typedef struct
-	{
+typedef struct {
 	st32 pid;
 	st64 tid;
 } ptid_t;
 
-/*! 
+/*!
  * Core "object" that saves
  * the instance of the lib
  */
@@ -66,35 +65,35 @@ typedef struct libqnxr_t {
 
 typedef void(pidlist_cb_t)(void *ctx, pid_t pid, char *name);
 
-int qnxr_init (libqnxr_t *g);
-int qnxr_set_architecture (libqnxr_t *g, ut8 architecture);
-int qnxr_cleanup (libqnxr_t *g);
-int qnxr_connect (libqnxr_t *g, const char *server, int port);
-int qnxr_disconnect (libqnxr_t *g);
-void qnxr_pidlist (libqnxr_t *g, void *ctx, pidlist_cb_t *cb);
-int qnxr_select (libqnxr_t *g, pid_t pid, int tid);
-ptid_t qnxr_run (libqnxr_t *g, const char *file, char **args, char **env);
-ptid_t qnxr_attach (libqnxr_t *g, pid_t pid);
-ptid_t qnxr_wait (libqnxr_t *g, pid_t pid);
-int qnxr_stop (libqnxr_t *g);
+int qnxr_init(libqnxr_t *g);
+int qnxr_set_architecture(libqnxr_t *g, ut8 architecture);
+int qnxr_cleanup(libqnxr_t *g);
+int qnxr_connect(libqnxr_t *g, const char *server, int port);
+int qnxr_disconnect(libqnxr_t *g);
+void qnxr_pidlist(libqnxr_t *g, void *ctx, pidlist_cb_t *cb);
+bool qnxr_select(libqnxr_t *g, pid_t pid, int tid);
+ptid_t qnxr_run(libqnxr_t *g, const char *file, char **args, char **env);
+ptid_t qnxr_attach(libqnxr_t *g, pid_t pid);
+ptid_t qnxr_wait(libqnxr_t *g, pid_t pid);
+int qnxr_stop(libqnxr_t *g);
 
 // Commands
-int qnxr_continue (libqnxr_t *g, int thread_id);
-int qnxr_step (libqnxr_t *g, int thread_id);
-int qnxr_read_registers (libqnxr_t *g);
+int qnxr_continue(libqnxr_t *g, int thread_id);
+int qnxr_step(libqnxr_t *g, int thread_id);
+int qnxr_read_registers(libqnxr_t *g);
 
-int qnxr_write_reg (libqnxr_t *g, const char *name, char *value, int len);
-int qnxr_write_register (libqnxr_t *g, int index, char *value, int len);
-int qnxr_read_memory (libqnxr_t *g, ut64 address, ut8 *data, ut64 len);
-int qnxr_write_memory (libqnxr_t *g, ut64 address, const ut8 *data, ut64 len);
+int qnxr_write_reg(libqnxr_t *g, const char *name, char *value, int len);
+int qnxr_write_register(libqnxr_t *g, int index, char *value, int len);
+int qnxr_read_memory(libqnxr_t *g, ut64 address, ut8 *data, ut64 len);
+int qnxr_write_memory(libqnxr_t *g, ut64 address, const ut8 *data, ut64 len);
 
-int qnxr_set_bp (libqnxr_t *g, ut64 address, const char *conditions);
-int qnxr_set_hwbp (libqnxr_t *g, ut64 address, const char *conditions);
-int qnxr_remove_bp (libqnxr_t *g, ut64 address);
-int qnxr_remove_hwbp (libqnxr_t *g, ut64 address);
+int qnxr_set_bp(libqnxr_t *g, ut64 address, const char *conditions);
+int qnxr_set_hwbp(libqnxr_t *g, ut64 address, const char *conditions);
+int qnxr_remove_bp(libqnxr_t *g, ut64 address);
+int qnxr_remove_hwbp(libqnxr_t *g, ut64 address);
 
 // ptid
 extern ptid_t null_ptid;
-int ptid_equal (ptid_t ptid1, ptid_t ptid2);
+int ptid_equal(ptid_t ptid1, ptid_t ptid2);
 
 #endif

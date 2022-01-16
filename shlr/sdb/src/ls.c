@@ -82,7 +82,7 @@ static SdbListIter * _sdb_list_split(SdbListIter *head) {
 	SdbListIter *slow;
 	if (!head || !head->n) {
 		return head;
-	} 
+	}
 	slow = head;
 	fast = head;
 	int count = 0;

@@ -114,49 +114,49 @@ static struct decoded_insn dec_insn;
 
 /* Forward declarations of decoding functions.  */
 
-static void decode_abs PARAMS ((void));
-static void decode_absb PARAMS ((void));
-static void decode_b PARAMS ((void));
-static void decode_bit PARAMS ((void));
-static void decode_bo PARAMS ((void));
-static void decode_bol PARAMS ((void));
-static void decode_brc PARAMS ((void));
-static void decode_brn PARAMS ((void));
-static void decode_brr PARAMS ((void));
-static void decode_rc PARAMS ((void));
-static void decode_rcpw PARAMS ((void));
-static void decode_rcr PARAMS ((void));
-static void decode_rcrr PARAMS ((void));
-static void decode_rcrw PARAMS ((void));
-static void decode_rlc PARAMS ((void));
-static void decode_rr PARAMS ((void));
-static void decode_rr1 PARAMS ((void));
-static void decode_rr2 PARAMS ((void));
-static void decode_rrpw PARAMS ((void));
-static void decode_rrr PARAMS ((void));
-static void decode_rrr1 PARAMS ((void));
-static void decode_rrr2 PARAMS ((void));
-static void decode_rrrr PARAMS ((void));
-static void decode_rrrw PARAMS ((void));
-static void decode_sys PARAMS ((void));
-static void decode_sb PARAMS ((void));
-static void decode_sbc PARAMS ((void));
-static void decode_sbr PARAMS ((void));
-static void decode_sbrn PARAMS ((void));
-static void decode_sc PARAMS ((void));
-static void decode_slr PARAMS ((void));
-static void decode_slro PARAMS ((void));
-static void decode_sr PARAMS ((void));
-static void decode_src PARAMS ((void));
-static void decode_sro PARAMS ((void));
-static void decode_srr PARAMS ((void));
-static void decode_srrs PARAMS ((void));
-static void decode_ssr PARAMS ((void));
-static void decode_ssro PARAMS ((void));
+static void decode_abs PARAMS((void));
+static void decode_absb PARAMS((void));
+static void decode_b PARAMS((void));
+static void decode_bit PARAMS((void));
+static void decode_bo PARAMS((void));
+static void decode_bol PARAMS((void));
+static void decode_brc PARAMS((void));
+static void decode_brn PARAMS((void));
+static void decode_brr PARAMS((void));
+static void decode_rc PARAMS((void));
+static void decode_rcpw PARAMS((void));
+static void decode_rcr PARAMS((void));
+static void decode_rcrr PARAMS((void));
+static void decode_rcrw PARAMS((void));
+static void decode_rlc PARAMS((void));
+static void decode_rr PARAMS((void));
+static void decode_rr1 PARAMS((void));
+static void decode_rr2 PARAMS((void));
+static void decode_rrpw PARAMS((void));
+static void decode_rrr PARAMS((void));
+static void decode_rrr1 PARAMS((void));
+static void decode_rrr2 PARAMS((void));
+static void decode_rrrr PARAMS((void));
+static void decode_rrrw PARAMS((void));
+static void decode_sys PARAMS((void));
+static void decode_sb PARAMS((void));
+static void decode_sbc PARAMS((void));
+static void decode_sbr PARAMS((void));
+static void decode_sbrn PARAMS((void));
+static void decode_sc PARAMS((void));
+static void decode_slr PARAMS((void));
+static void decode_slro PARAMS((void));
+static void decode_sr PARAMS((void));
+static void decode_src PARAMS((void));
+static void decode_sro PARAMS((void));
+static void decode_srr PARAMS((void));
+static void decode_srrs PARAMS((void));
+static void decode_ssr PARAMS((void));
+static void decode_ssro PARAMS((void));
 
 /* Array of function pointers to decoding functions.  */
 
-static void (*decode[]) PARAMS ((void)) =
+static void (*decode[]) PARAMS((void)) =
 {
   /* 32-bit formats.  */
   decode_abs, decode_absb, decode_b, decode_bit, decode_bo, decode_bol,
@@ -173,13 +173,13 @@ static void (*decode[]) PARAMS ((void)) =
 
 /* More forward declarations.  */
 
-static unsigned long extract_off18 PARAMS ((void));
-static void init_hash_tables PARAMS ((void));
-static const char *find_core_reg PARAMS ((unsigned long));
-static void print_decoded_insn PARAMS ((bfd_vma, struct disassemble_info *));
-static int decode_tricore_insn PARAMS ((bfd_vma, unsigned long, int,
+static unsigned long extract_off18 PARAMS((void));
+static void init_hash_tables PARAMS((void));
+static const char *find_core_reg PARAMS((unsigned long));
+static void print_decoded_insn PARAMS((bfd_vma, struct disassemble_info *));
+static int decode_tricore_insn PARAMS((bfd_vma, unsigned long, int,
 					struct disassemble_info *));
-static int decode_pcp_insn PARAMS ((bfd_vma, bfd_byte [4],
+static int decode_pcp_insn PARAMS((bfd_vma, bfd_byte [4],
 				    struct disassemble_info *));
 
 /* Here come the decoding functions.  If you thought that the encoding
@@ -1434,7 +1434,7 @@ print_decoded_insn (memaddr, info)
 	  abs = (dec_insn.cexp[i] << 1) + memaddr;
 	  (*info->print_address_func) (abs, info);
 	  break;
-	  
+	
 	case 'c':
 	  needs_creg = 1;
 	  /* Fall through. */
@@ -1458,7 +1458,7 @@ print_decoded_insn (memaddr, info)
 
 	case '&':
 	  dec_insn.regs[i] = 10;
-	  /* Fall through. */ 
+	  /* Fall through. */
 	case '@':
 		if (dec_insn.regs[i] == 10) {
 			DPRINT (DFILE, "[" REGPREFIX "sp]");
@@ -1524,7 +1524,7 @@ print_decoded_insn (memaddr, info)
 		break;
 
 	case 'S':
-	  DPRINT (DFILE, "["REGPREFIX"a15]"); 
+	  DPRINT (DFILE, "["REGPREFIX"a15]");
 	  need_comma = 0;
 	  break;
 	}
@@ -1577,7 +1577,7 @@ decode_tricore_insn (memaddr, insn, len32, info)
     }
 
   /* Oops -- this isn't a valid TriCore insn!  Since we know that
-     MEMADDR is an even address (otherwise it already would have 
+     MEMADDR is an even address (otherwise it already would have
      been handled by print_insn_tricore below) and that TriCore
      insns can only start at even addresses, we just print the
      lower 16 bits of INSN as a .hword pseudo-opcode and return 2,
@@ -1880,7 +1880,7 @@ decode_pcp_insn (memaddr, buffer, info)
    (or possible) to decode a single instruction or a pseudo-op, i.e.
    1, 2 or 4 bytes.  */
 
-int 
+int
 print_insn_tricore (memaddr, info)
      bfd_vma memaddr;
      struct disassemble_info *info;

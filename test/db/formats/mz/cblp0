@@ -1,0 +1,26 @@
+NAME=MZ: cblp0.exe - afl
+FILE=bins/mz/cblp0.exe
+ARGS=-A
+CMDS=afl
+EXPECT=<<EOF
+0x00000000    1 512          entry0
+EOF
+RUN
+
+NAME=MZ: cblp0.exe - entrypoint and segments
+FILE=bins/mz/cblp0.exe
+CMDS=<<EOF
+ie
+pi 1
+iS*
+EOF
+EXPECT=<<EOF
+[Entrypoints]
+vaddr=0x00000000 paddr=0x00000200 haddr=-1 type=program
+
+1 entrypoints
+xor al, al
+fs sections
+"f section.seg_000 1 0x00000000"
+EOF
+RUN

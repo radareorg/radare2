@@ -36,6 +36,7 @@ typedef enum dwarf_location_kind {
 	LOCATION_SP = 3,
 	LOCATION_REGISTER = 4,
 } VariableLocationKind;
+
 typedef struct dwarf_var_location_t {
 	VariableLocationKind kind;
 	ut64 address;
@@ -163,18 +164,15 @@ static inline char *create_type_name_from_offset(ut64 offset) {
  * @return char* DIEs name or NULL if error
  */
 static char *get_die_name(const RBinDwarfDie *die) {
-	char *name = NULL;
 	st32 name_attr_idx = find_attr_idx (die, DW_AT_name);
 	if (name_attr_idx < 0 || name_attr_idx >= die->count) {
 		return NULL;
 	}
 	RBinDwarfAttrValue *av = &die->attr_values[name_attr_idx];
 	if (av->kind == DW_AT_KIND_STRING && name_attr_idx != -1 && av->string.content) {
-		name = strdup (av->string.content);
-	} else {
-		name = create_type_name_from_offset (die->offset);
+		return strdup (av->string.content);
 	}
-	return name;
+	return create_type_name_from_offset (die->offset);
 }
 
 /**
@@ -207,7 +205,11 @@ static ut64 get_die_size(const RBinDwarfDie *die) {
  * @param strbuf strbuf to store the type into
  * @return st32 -1 if error else 0
  */
-static st32 parse_array_type(Context *ctx, ut64 idx, RStrBuf *strbuf) {
+static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
+	if (idx < 0 || idx >= ctx->count) {
+		// eprintf ("die out of bounds\n");
+		return;
+	}
 	const RBinDwarfDie *die = &ctx->all_dies[idx++];
 
 	if (die->has_children) {
@@ -241,7 +243,6 @@ static st32 parse_array_type(Context *ctx, ut64 idx, RStrBuf *strbuf) {
 			}
 		}
 	}
-	return 0;
 }
 
 /**
@@ -390,7 +391,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
  * @param result ptr to result member to fill up
  * @return RAnalStructMember* ptr to parsed Member
  */
-static RAnalStructMember *parse_struct_member (Context *ctx, ut64 idx, RAnalStructMember *result) {
+static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStructMember *result) {
 	r_return_val_if_fail (result, NULL);
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
@@ -624,12 +625,11 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 				RAnalEnumCase *result = parse_enumerator (ctx, j, &cas);
 				if (!result) {
 					goto cleanup;
-				} else {
-					void *element = r_vector_push (&base_type->enum_data.cases, &cas);
-					if (!element) {
-						enum_type_case_free (result, NULL);
-						goto cleanup;
-					}
+				}
+				void *element = r_vector_push (&base_type->enum_data.cases, &cas);
+				if (!element) {
+					enum_type_case_free (result, NULL);
+					goto cleanup;
 				}
 			}
 			if (child_die->has_children) {
@@ -821,37 +821,37 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, cons
 static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
 	switch (reg_num) {
-		case 0: return "rax";
-		case 1: return "rdx";
-		case 2: return "rcx";
-		case 3: return "rbx";
-		case 4: return "rsi";
-		case 5: return "rdi";
-		case 6:
-			*kind = LOCATION_BP;
-			return "rbp";
-		case 7:
-			*kind = LOCATION_SP;
-			return "rsp";
-		case 8: return "r8";
-		case 9: return "r9";
-		case 10: return "r10";
-		case 11: return "r11";
-		case 12: return "r12";
-		case 13: return "r13";
-		case 14: return "r14";
-		case 15: return "r15";
-		case 17: return "xmm0";
-		case 18: return "xmm1";
-		case 19: return "xmm2";
-		case 20: return "xmm3";
-		case 21: return "xmm4";
-		case 22: return "xmm5";
-		case 23: return "xmm6";
-		case 24: return "xmm7";
-		default:
-			*kind = LOCATION_UNKNOWN;
-			return "unsupported_reg";
+	case 0: return "rax";
+	case 1: return "rdx";
+	case 2: return "rcx";
+	case 3: return "rbx";
+	case 4: return "rsi";
+	case 5: return "rdi";
+	case 6:
+		*kind = LOCATION_BP;
+		return "rbp";
+	case 7:
+		*kind = LOCATION_SP;
+		return "rsp";
+	case 8: return "r8";
+	case 9: return "r9";
+	case 10: return "r10";
+	case 11: return "r11";
+	case 12: return "r12";
+	case 13: return "r13";
+	case 14: return "r14";
+	case 15: return "r15";
+	case 17: return "xmm0";
+	case 18: return "xmm1";
+	case 19: return "xmm2";
+	case 20: return "xmm3";
+	case 21: return "xmm4";
+	case 22: return "xmm5";
+	case 23: return "xmm6";
+	case 24: return "xmm7";
+	default:
+		*kind = LOCATION_UNKNOWN;
+		return "unsupported_reg";
 	}
 }
 
@@ -859,30 +859,30 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKin
 static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
 	switch (reg_num) {
-		case 0: return "eax";
-		case 1: return "edx";
-		case 2: return "ecx";
-		case 3: return "ebx";
-		case 4:
-			*kind = LOCATION_SP;
-			return "esp";
-		case 5:
-			*kind = LOCATION_BP;
-			return "ebp";
-		case 6: return "esi";
-		case 7: return "edi";
-		case 21: return "xmm0";
-		case 22: return "xmm1";
-		case 23: return "xmm2";
-		case 24: return "xmm3";
-		case 25: return "xmm4";
-		case 26: return "xmm5";
-		case 27: return "xmm6";
-		case 28: return "xmm7";
-		default:
-			r_warn_if_reached ();
-			*kind = LOCATION_UNKNOWN;
-			return "unsupported_reg";
+	case 0: return "eax";
+	case 1: return "edx";
+	case 2: return "ecx";
+	case 3: return "ebx";
+	case 4:
+		*kind = LOCATION_SP;
+		return "esp";
+	case 5:
+		*kind = LOCATION_BP;
+		return "ebp";
+	case 6: return "esi";
+	case 7: return "edi";
+	case 21: return "xmm0";
+	case 22: return "xmm1";
+	case 23: return "xmm2";
+	case 24: return "xmm3";
+	case 25: return "xmm4";
+	case 26: return "xmm5";
+	case 27: return "xmm6";
+	case 28: return "xmm7";
+	default:
+		r_warn_if_reached ();
+		*kind = LOCATION_UNKNOWN;
+		return "unsupported_reg";
 	}
 }
 
@@ -890,44 +890,44 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *
 static const char *map_dwarf_reg_to_ppc64_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
 	switch (reg_num) {
-		case 0: return "r0";
-		case 1:
-			*kind = LOCATION_SP;
-			return "r1";
-		case 2: return "r2";
-		case 3: return "r3";
-		case 4: return "r4";
-		case 5: return "r5";
-		case 6: return "r6";
-		case 7: return "r7";
-		case 8: return "r8";
-		case 9: return "r9";
-		case 10: return "r10";
-		case 11: return "r11";
-		case 12: return "r12";
-		case 13: return "r13";
-		case 14: return "r14";
-		case 15: return "r15";
-		case 16: return "r16";
-		case 17: return "r17";
-		case 18: return "r18";
-		case 19: return "r19";
-		case 20: return "r20";
-		case 21: return "r21";
-		case 22: return "r22";
-		case 23: return "r23";
-		case 24: return "r24";
-		case 25: return "r25";
-		case 26: return "r26";
-		case 27: return "r27";
-		case 28: return "r28";
-		case 29: return "r29";
-		case 30: return "r30";
-		case 31: return "r31";
-		default:
-			r_warn_if_reached ();
-			*kind = LOCATION_UNKNOWN;
-			return "unsupported_reg";
+	case 0: return "r0";
+	case 1:
+		*kind = LOCATION_SP;
+		return "r1";
+	case 2: return "r2";
+	case 3: return "r3";
+	case 4: return "r4";
+	case 5: return "r5";
+	case 6: return "r6";
+	case 7: return "r7";
+	case 8: return "r8";
+	case 9: return "r9";
+	case 10: return "r10";
+	case 11: return "r11";
+	case 12: return "r12";
+	case 13: return "r13";
+	case 14: return "r14";
+	case 15: return "r15";
+	case 16: return "r16";
+	case 17: return "r17";
+	case 18: return "r18";
+	case 19: return "r19";
+	case 20: return "r20";
+	case 21: return "r21";
+	case 22: return "r22";
+	case 23: return "r23";
+	case 24: return "r24";
+	case 25: return "r25";
+	case 26: return "r26";
+	case 27: return "r27";
+	case 28: return "r28";
+	case 29: return "r29";
+	case 30: return "r30";
+	case 31: return "r31";
+	default:
+		r_warn_if_reached ();
+		*kind = LOCATION_UNKNOWN;
+		return "unsupported_reg";
 	}
 }
 
@@ -949,7 +949,7 @@ static const char *get_dwarf_reg_name(char *arch, int reg_num, VariableLocationK
 	return "unsupported_reg";
 }
 
-static RBinDwarfLocRange *find_largest_loc_range (RList *loc_list) {
+static RBinDwarfLocRange *find_largest_loc_range(RList *loc_list) {
 	RBinDwarfLocRange *largest = NULL;
 	ut64 max_range_size = 0;
 	RListIter *iter;
@@ -965,7 +965,7 @@ static RBinDwarfLocRange *find_largest_loc_range (RList *loc_list) {
 }
 
 /* TODO move a lot of the parsing here into dwarf.c and do only processing here */
-static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base) {
+static VariableLocation *parse_dwarf_location(Context *ctx, const RBinDwarfAttrValue *loc, const RBinDwarfAttrValue *frame_base) {
 	/* reg5 - val is in register 5
 	fbreg <leb> - offset from frame base
 	regx <leb> - contents is in register X
@@ -1004,13 +1004,18 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 	for (i = 0; i < block.length; i++) {
 		switch (block.data[i]) {
 		case DW_OP_fbreg: {
-		/* TODO sometimes CFA is referenced, but we don't parse that yet
-		   just an offset involving framebase of a function*/
+			/* TODO sometimes CFA is referenced, but we don't parse that yet
+			   just an offset involving framebase of a function*/
 			if (i == block.length - 1) {
 				return NULL;
 			}
-			const ut8 *dump = &block.data[++i];
-			offset = r_sleb128 (&dump, &block.data[loc->block.length]);
+			i++;
+			const ut8 *dump = block.data + i;
+			if (loc->block.length > block.length) {
+				// eprintf ("skip = %d%c", loc->block.length, 10);
+				return NULL;
+			}
+			offset = r_sleb128 (&dump, block.data + loc->block.length);
 			if (frame_base) {
 				/* recursive parsing, but frame_base should be only one, but someone
 				   could make malicious resource exhaustion attack, so a depth counter might be cool? */
@@ -1019,12 +1024,10 @@ static VariableLocation *parse_dwarf_location (Context *ctx, const RBinDwarfAttr
 					location->offset += offset;
 					return location;
 				}
-				return NULL;
 			} else {
 				/* Might happen if frame_base has a frame_base reference? I don't think it can tho */
-				return NULL;
 			}
-			break;
+			return NULL;
 		}
 		case DW_OP_reg0:
 		case DW_OP_reg1:
@@ -1187,15 +1190,16 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		bool get_linkage_name = prefer_linkage_name (ctx->lang);
 		bool has_linkage_name = false;
 		int argNumber = 1;
+		const char *name = NULL;
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			const RBinDwarfDie *child_die = &ctx->all_dies[j];
 			RStrBuf type;
 			r_strbuf_init (&type);
-			const char *name = NULL;
 			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
 				Variable *var = R_NEW0 (Variable);
 				size_t i;
+				name = NULL;
 				for (i = 0; i < child_die->count; i++) {
 					const RBinDwarfAttrValue *val = &child_die->attr_values[i];
 					switch (val->attr_name) {
@@ -1226,10 +1230,10 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 				if (child_die->tag == DW_TAG_formal_parameter && child_depth == 1) {
 					/* arguments sometimes have only type, create generic argX */
 					if (type.len) {
-						if (!name) {
-							var->name = r_str_newf ("arg%d", argNumber);
-						} else {
+						if (name) {
 							var->name = strdup (name);
+						} else {
+							var->name = r_str_newf ("arg%d", argNumber);
 						}
 						r_strbuf_appendf (args, "%s %s,", r_strbuf_get (&type), var->name);
 						var->type = strdup (r_strbuf_get (&type));
@@ -1431,6 +1435,7 @@ static void parse_function(Context *ctx, ut64 idx) {
 			break;
 		}
 	}
+
 	if (!fcn.name || !fcn.addr) { /* we need a name, faddr */
 		goto cleanup;
 	}
@@ -1444,7 +1449,8 @@ static void parse_function(Context *ctx, ut64 idx) {
 		r_strbuf_append (&ret_type, "void");
 	}
 	r_warn_if_fail (ctx->lang);
-	char *new_name = ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false);
+	char *new_name = ctx->anal->binb.demangle
+		? ctx->anal->binb.demangle (NULL, ctx->lang, fcn.name, fcn.addr, false): NULL;
 	fcn.name = new_name ? new_name : strdup (fcn.name);
 	fcn.signature = r_str_newf ("%s %s(%s);", r_strbuf_get (&ret_type), fcn.name, r_strbuf_get (&args));
 	sdb_save_dwarf_function (&fcn, variables, ctx->sdb);
@@ -1568,7 +1574,7 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
  */
 R_API void r_anal_dwarf_process_info(const RAnal *anal, RAnalDwarfContext *ctx) {
 	r_return_if_fail (ctx && anal);
-	Sdb *dwarf_sdb =  sdb_ns (anal->sdb, "dwarf", 1);
+	Sdb *dwarf_sdb = sdb_ns (anal->sdb, "dwarf", 1);
 	size_t i, j;
 	const RBinDwarfDebugInfo *info = ctx->info;
 	for (i = 0; i < info->count; i++) {

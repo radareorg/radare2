@@ -1,11 +1,14 @@
 r_io_sources = [
   'io.c',
   'io_fd.c',
+  'io_bank.c',
   'io_map.c',
   'io_memory.c',
   'io_cache.c',
   'io_desc.c',
   'io_plugin.c',
+  'io_bank.c',
+  'io_submap.c',
   'ioutils.c',
   'undo.c',
   'p_cache.c',
@@ -64,13 +67,10 @@ r_io_deps = [
   pth
 ]
 
-if host_machine.system() == 'windows'
-  r_io_deps += w32dbg_wrap_dep
-endif
-
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
   r_io_sources += [
     'p/io_r2k_linux.c',
+    'p/io_isotp.c',
   ]
   ## only for shm_open
   # r_io_deps += meson.get_compiler('c').find_library('rt')

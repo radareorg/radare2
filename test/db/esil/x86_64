@@ -39,7 +39,73 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul r9
-0x00000000 64,64,r9,~,64,rax,~,*,>>,rdx,=,r9,rax,*=,64,64,rax,~,>>,rdx,-,?{,1,1,}{,0,0,},cf,:=,of,:=
+0x00000000 r9,rax,L*,rax,=,DUP,rdx,=,!,!,DUP,cf,:=,of,:=
+EOF
+RUN
+
+NAME=imul 1 arg pos result
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wa imul edx
+aei; ar eax=4; ar edx=8; aes; ar eax,of,cf
+EOF
+EXPECT=<<EOF
+0x00000020
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=imul 1 arg neg result
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wa imul edx
+aei; ar eax=-4; ar edx=8; aes; ar edx,eax,of,cf
+EOF
+EXPECT=<<EOF
+0xffffffff
+0xffffffe0
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=imul 1 arg overflow result
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wa imul edx
+aei; ar eax=0xfffff; ar edx=0xfffffc; aes; ar edx,eax,of,cf
+EOF
+EXPECT=<<EOF
+0x00000fff
+0xfec00004
+0x00000001
+0x00000001
+EOF
+RUN
+
+NAME=mul 64 bit
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wa mul rdx
+aei; 
+ar rax=0xdfdfdfdfdfdfdfdf; 
+ar rdx=0x0cfcfcfcfcfcfcfc; 
+aes; ar rdx,rax,of,cf
+EOF
+EXPECT=<<EOF
+0xb5bbc1c7cdd3d9d
+0x15c56504a443e384
+0x00000001
+0x00000001
 EOF
 RUN
 
@@ -53,7 +119,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul eax, ecx
-0x00000000 32,eax,~,32,ecx,~,*,DUP,eax,=,eax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
+0x00000000 32,eax,~,32,ecx,~,*,DUP,eax,=,32,eax,~,-,!,!,DUP,cf,:=,of,:=
 EOF
 RUN
 
@@ -67,7 +133,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul rax, r11, 0x33666667
-0x00000000 64,862348903,~,64,r11,~,*,DUP,rax,=,rax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
+0x00000000 64,862348903,~,64,r11,~,*,DUP,rax,=,64,rax,~,-,!,!,DUP,cf,:=,of,:=
 EOF
 RUN
 
@@ -143,7 +209,7 @@ EOF
 EXPECT=<<EOF
 opcode: imul eax, ebx, 0x89
 esilcost: 0
-esil: 32,137,~,32,ebx,~,*,DUP,eax,=,eax,-,?{,1,1,}{,0,0,},cf,:=,of,:=
+esil: 32,137,~,32,ebx,~,*,DUP,eax,=,32,eax,~,-,!,!,DUP,cf,:=,of,:=
 EOF
 RUN
 

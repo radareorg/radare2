@@ -33,7 +33,7 @@ static void wbe32(ut8 *buf4, ut32 val) {
 	buf4[3] = val & 0xFF;
 }
 
-static int des_encrypt (struct des_state *st, const ut8 *input, ut8 *output) {
+static int des_encrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 	if (!st || !input || !output) {
 		return false;
 	}
@@ -56,7 +56,7 @@ static int des_encrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 	return true;
 }
 
-static int des_decrypt (struct des_state *st, const ut8 *input, ut8 *output) {
+static int des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 	if (!st || !input || !output) {
 		return false;
 	}
@@ -77,7 +77,7 @@ static int des_decrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 	return true;
 }
 
-static bool des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
+static bool des_set_key(RCrypto *cry, const ut8 *key, int keylen, int mode, int direction) {
 	ut32 keylo, keyhi, i;
 	if (keylen != DES_KEY_SIZE) {
 		return false;
@@ -100,15 +100,15 @@ static bool des_set_key (RCrypto *cry, const ut8 *key, int keylen, int mode, int
 	return true;
 }
 
-static int des_get_key_size (RCrypto *cry) {
+static int des_get_key_size(RCrypto *cry) {
 	return st.key_size;
 }
 
-static bool des_use (const char *algo) {
+static bool des_use(const char *algo) {
 	return algo && !strcmp (algo, "des-ecb");
 }
 
-static bool update (RCrypto *cry, const ut8 *buf, int len) {
+static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	if (len <= 0) {
 		return false;
 	}
@@ -156,7 +156,7 @@ static bool update (RCrypto *cry, const ut8 *buf, int len) {
 	return 0;
 }
 
-static bool final (RCrypto *cry, const ut8 *buf, int len) {
+static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 

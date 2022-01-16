@@ -95,7 +95,7 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 0x190) {
 		ut8 buf[4];
 		r_buf_read_at (b, 0x100, buf, sizeof (buf));
@@ -105,7 +105,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
-	return check_buffer (b);
+	return check_buffer (bf, b);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -153,7 +153,7 @@ static RList *symbols(RBinFile *bf) {
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	SMD_Header hdr = {0};
+	SMD_Header hdr = {{0}};
 	int left = r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
 	if (left < sizeof (SMD_Header)) {
 		return NULL;

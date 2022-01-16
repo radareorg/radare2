@@ -246,7 +246,8 @@ static const char *help_msg_panels[] = {
 	"u/U",      "undo / redo seek",
 	"w",        "shuffle panels around in window mode",
 	"V",        "go to the graph mode",
-	"xX",       "show xrefs/refs of current function from/to data/code",
+	"x",        "show xrefs/refs of current function from/to data/code",
+	"X",        "close current panel",
 	"z",        "swap current panel with the first one",
 	NULL
 };
@@ -286,7 +287,8 @@ static const char *help_msg_panels_zoom[] = {
 	"p/P",      "seek to next or previous scr.nkey",
 	"s/S",      "step in / step over",
 	"t/T",      "rotate related commands in a panel",
-	"xX",       "show xrefs/refs of current function from/to data/code",
+	"x",        "show xrefs/refs of current function from/to data/code",
+	"X",        "close current panel",
 	"q/Q/Enter","quit zoom mode",
 	NULL
 };
@@ -547,7 +549,7 @@ static bool __check_root_state(RCore *core, RPanelsRootState state) {
 	return core->panels_root->root_state == state;
 }
 
-static bool search_db_check_panel_type (RCore *core, RPanel *panel, const char *ch) {
+static bool search_db_check_panel_type(RCore *core, RPanel *panel, const char *ch) {
 	char *str = __search_db (core, ch);
 	bool ret = str && __check_panel_type (panel, str);
 	free (str);
@@ -1971,7 +1973,7 @@ static RPanels *__get_panels(RPanelsRoot *panels_root, int i) {
 	return panels_root->panels[i];
 }
 
-static void __update_disassembly_or_open (RCore *core) {
+static void __update_disassembly_or_open(RCore *core) {
 	RPanels *panels = core->panels;
 	int i;
 	bool create_new = true;
@@ -2362,7 +2364,7 @@ static RPanels *__panels_new(RCore *core) {
 	return panels;
 }
 
-static void __handle_tab_new_with_cur_panel (RCore *core) {
+static void __handle_tab_new_with_cur_panel(RCore *core) {
 	RPanels *panels = core->panels;
 	if (panels->n_panels <= 1) {
 		return;
@@ -4380,9 +4382,11 @@ static void __print_default_cb(void *user, void *p) {
 	char *cmdstr = __find_cmd_str_cache (core, panel);
 	if (update || !cmdstr) {
 		cmdstr = __handle_cmd_str_cache (core, panel, false);
+#if 0
 		if (panel->model->cache && panel->model->cmdStrCache) {
 			__reset_scroll_pos (panel);
 		}
+#endif
 	}
 	__update_panel_contents (core, panel, cmdstr);
 }
@@ -4420,7 +4424,7 @@ static void __print_decompiler_cb(void *user, void *p) {
 	}
 }
 
-static void __print_disasmsummary_cb (void *user, void *p) {
+static void __print_disasmsummary_cb(void *user, void *p) {
 	RCore *core = (RCore *)user;
 	RPanel *panel = (RPanel *)p;
 	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
@@ -4576,32 +4580,103 @@ static void __print_snow(RPanels *panels) {
 		panels->snows = r_list_newf (free);
 	}
 	RPanel *cur = __get_cur_panel (panels);
-	int i, amount = r_num_rand (4);
+	int i, amount = r_num_rand (8);
 	if (amount > 0) {
 		for (i = 0; i < amount; i++) {
 			RPanelsSnow *snow = R_NEW (RPanelsSnow);
 			snow->x = r_num_rand (cur->view->pos.w) + cur->view->pos.x;
 			snow->y = cur->view->pos.y;
+			snow->stuck = false;
 			r_list_append (panels->snows, snow);
 		}
 	}
 	RListIter *iter, *iter2;
 	RPanelsSnow *snow;
 	r_list_foreach_safe (panels->snows, iter, iter2, snow) {
+		if (r_num_rand (30) == 0) {
+			r_list_delete (panels->snows, iter);
+			continue;
+		}
+		if (snow->stuck) {
+			goto print_this_snow;
+		}
 		int pos = r_num_rand (3) - 1;
 		snow->x += pos;
 		snow->y++;
+#if 0
 		if (snow->x >= cur->view->pos.w + cur->view->pos.x || snow->x <= cur->view->pos.x + 1) {
 			r_list_delete (panels->snows, iter);
 			continue;
 		}
+#endif
+		bool fall = false;
+		{
+			RListIter *it;
+			RPanelsSnow *snw;
+			r_list_foreach (panels->snows, it, snw) {
+				if (snw->stuck) {
+					if (snw->x == snow->x && snw->y == snow->y) {
+						bool is_down_right = (snw->x == snow->x + 1 && snw->y == snow->y);
+						bool is_down_left = (snw->x == snow->x - 1 && snw->y == snow->y);
+						fall = false;
+						if (is_down_right) {
+							if (!is_down_left) {
+								snow->x --;
+								snow->y --;
+								fall = true;
+							}
+						} else {
+							if (is_down_left) {
+								snow->x ++;
+								snow->y --;
+								fall = true;
+							}
+						}
+						if (!fall) {
+							snow->stuck = true;
+							snow->y --;
+						}
+						goto print_this_snow;
+					}
+				}
+			}
+		}
+		if (fall) {
+			snow->stuck = false;
+	//		r_list_delete (panels->snows, iter);
+		}
+		if (snow->y + 1 >= panels->can->h) {
+			snow->stuck = true;
+			snow->y--;
+			//r_list_delete (panels->snows, iter);
+			goto print_this_snow;
+		}
 		if (snow->y >= cur->view->pos.h + cur->view->pos.y - 1) {
-			r_list_delete (panels->snows, iter);
+			snow->stuck = true;
+			snow->y--;
+			// r_list_delete (panels->snows, iter);
+			// continue;
+			goto print_this_snow;
+		}
+		if (snow->x < 0 || snow->x + 3 >= panels->can->w) {
 			continue;
 		}
+print_this_snow:
 		if (r_cons_canvas_gotoxy (panels->can, snow->x, snow->y)) {
+			RConsCanvas *c = panels->can;
+			char *line = c->b[c->y];
+			if (line && c->x < c->w && line [c->x] != ' ') {
+				continue;
+			}
+			if (line && c->x + 1 < c->w && line [c->x + 1] != ' ') {
+				continue;
+			}
 			if (panels->fun == PANEL_FUN_SAKURA) {
-				r_cons_canvas_write (panels->can, Color_BMAGENTA","Color_RESET);
+				if (panels->can->color) {
+					r_cons_canvas_write (panels->can, Color_MAGENTA",");
+				} else {
+					r_cons_canvas_write (panels->can, ",");
+				}
 			} else {
 				r_cons_canvas_write (panels->can, "*");
 			}
@@ -4868,7 +4943,7 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 	__free_menu_item (item);
 }
 
-static void __init_menu_saved_layout (void *_core, const char *parent) {
+static void __init_menu_saved_layout(void *_core, const char *parent) {
 	char *dir_path = __get_panels_config_dir_path ();
 	RList *dir = r_sys_dir (dir_path);
 	if (!dir) {
@@ -5261,7 +5336,7 @@ static int __quit_cb(void *user) {
 	return 0;
 }
 
-static int __open_menu_cb (void *user) {
+static int __open_menu_cb(void *user) {
 	RCore* core = (RCore *)user;
 	RPanelsMenu *menu = core->panels->panels_menu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
@@ -5306,7 +5381,7 @@ static RList *__sorted_list(RCore *core, const char *menu[], int count) {
 	return list;
 }
 
-static void __init_menu_color_settings_layout (void *_core, const char *parent) {
+static void __init_menu_color_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
 	const char *color = core->cons->context->pal.graph_box2;
 	char *now = r_core_cmd_str (core, "eco.");
@@ -5329,7 +5404,7 @@ static void __init_menu_color_settings_layout (void *_core, const char *parent) 
 	r_strbuf_free (buf);
 }
 
-static void __init_menu_disasm_settings_layout (void *_core, const char *parent) {
+static void __init_menu_disasm_settings_layout(void *_core, const char *parent) {
 	RCore *core = (RCore *)_core;
 	int i = 0;
 	RList *list = __sorted_list (core, menus_settings_disassembly, COUNT (menus_settings_disassembly));
@@ -5404,12 +5479,11 @@ static bool __init_panels_menu(RCore *core) {
 
 	__load_config_menu (core);
 
-	int i = 0;
-	while (menus[i]) {
+	int i;
+	for (i = 0; menus[i]; i++) {
 		__add_menu (core, NULL, menus[i], __open_menu_cb);
-		i++;
 	}
-	char *parent = "File";
+	const char *parent = "File";
 	i = 0;
 	while (menus_File[i]) {
 		if (!strcmp (menus_File[i], "Open")) {
@@ -5563,8 +5637,7 @@ static bool __init_panels_menu(RCore *core) {
 		i++;
 	}
 	parent = "Help";
-	i = 0;
-	while (menus_Help[i]) {
+	for (i = 0; menus_Help[i]; i++) {
 		if (!strcmp (menus_Help[i], "License")) {
 			__add_menu (core, parent, menus_Help[i], __license_cb);
 		} else if (!strcmp (menus_Help[i], "Version")) {
@@ -5576,29 +5649,24 @@ static bool __init_panels_menu(RCore *core) {
 		} else {
 			__add_menu (core, parent, menus_Help[i], __help_cb);
 		}
-		i++;
 	}
 
 	parent = "File.ReOpen";
-	i = 0;
-	while (menus_ReOpen[i]) {
+	for (i = 0; menus_ReOpen[i]; i++) {
 		if (!strcmp (menus_ReOpen[i], "In RW")) {
 			__add_menu (core, parent, menus_ReOpen[i], __rw_cb);
 		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
 			__add_menu (core, parent, menus_ReOpen[i], __debugger_cb);
 		}
-		i++;
 	}
 
 	parent = "File.Load Layout";
-	i = 0;
-	while (menus_loadLayout[i]) {
+	for (i = 0; menus_loadLayout[i]; i++) {
 		if (!strcmp (menus_loadLayout[i], "Saved")) {
 			__add_menu (core, parent, menus_loadLayout[i], __open_menu_cb);
 		} else if (!strcmp (menus_loadLayout[i], "Default")) {
 			__add_menu (core, parent, menus_loadLayout[i], __load_layout_default_cb);
 		}
-		i++;
 	}
 
 	__init_menu_saved_layout (core, "File.Load Layout.Saved");
@@ -5622,14 +5690,12 @@ static bool __init_panels_menu(RCore *core) {
 	__init_menu_screen_settings_layout (core, "Settings.Screen");
 
 	parent = "Edit.io.cache";
-	i = 0;
-	while (menus_iocache[i]) {
+	for (i = 0; menus_iocache[i]; i++) {
 		if (!strcmp (menus_iocache[i], "On")) {
 			__add_menu (core, parent, menus_iocache[i], __io_cache_on_cb);
 		} else if (!strcmp (menus_iocache[i], "Off")) {
 			__add_menu (core, parent, menus_iocache[i], __io_cache_off_cb);
 		}
-		i++;
 	}
 
 	panels_menu->history = calloc (8, sizeof (RPanelsMenuItem *));
@@ -5656,7 +5722,7 @@ static bool __init_panels(RCore *core, RPanels *panels) {
 	return true;
 }
 
-static void __refresh_core_offset (RCore *core) {
+static void __refresh_core_offset(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
 	if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
@@ -5671,14 +5737,14 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 		r_str_ansi_filter (s, NULL, NULL, -1);
 		int i, h, w = r_cons_get_size (&h);
 		for (i = 0; i < 40; i+= (1 + (i/30))) {
-			int H = i * ((double)h / 40);
+			int H = (int)(i * ((double)h / 40));
 			char *r = r_str_scale (s, w, H);
 			r_cons_clear00 ();
 			r_cons_gotoxy (0, (h / 2) - (H / 2));
 			r_cons_strcat (r);
 			r_cons_flush ();
 			free (r);
-			r_sys_usleep (3000);
+			r_sys_usleep (5000);
 		}
 		free (s);
 	}
@@ -6900,8 +6966,8 @@ virtualmouse:
 	case '(':
 		if (panels->fun != PANEL_FUN_SNOW && panels->fun != PANEL_FUN_SAKURA) {
 			//TODO: Refactoring the FUN if bored af
-			//panels->fun = PANEL_FUN_SNOW;
-			panels->fun = PANEL_FUN_SAKURA;
+			panels->fun = PANEL_FUN_SNOW;
+			// panels->fun = PANEL_FUN_SAKURA;
 		} else {
 			panels->fun = PANEL_FUN_NOFUN;
 			__reset_snow (panels);

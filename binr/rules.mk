@@ -3,7 +3,16 @@ include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/sdb.mk
 
+# despite libs are pic, some systems/compilers dont
+# like relocatable executables, so here we do the magic
+USE_PIE=0
 ifeq (,$(findstring tcc,${CC}))
+ifeq (,$(findstring vinix,${CC}))
+USE_PIE=1
+endif
+endif
+
+ifeq ($(USE_PIE),1)
 CFLAGS+=-pie
 endif
 CFLAGS:=-I$(LTOP)/include -I$(LTOP)/include/sdb $(CFLAGS)
@@ -65,9 +74,7 @@ EXT_EXE=.bc
 #EXT_EXE=.wasm
 endif
 
-ifeq ($(USE_RPATH),1)
-LDFLAGS+=-Wl,-rpath,"${LIBDIR}"
-endif
+LDFLAGS+=$(LDFLAGS_RPATH)
 
 OBJ+=${BIN}.o
 BEXE=${BIN}${EXT_EXE}

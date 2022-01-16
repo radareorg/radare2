@@ -57,7 +57,14 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 	char buf[64];
 	const char *key = sdb_itoa (addr, buf, 16);
 	if (key) {
-		return sdb_const_get (DB, key, NULL);
+		const char *name = sdb_const_get (DB, key, NULL);
+		// printf ("CALL %llx (%s) (cmd:%s)%c", addr, name, a->pincmd, 10);
+		if (name && a->pincmd) {
+			// printf ("%s %s", a->pincmd, name);
+			a->coreb.cmdf (a->coreb.core, "%s %s", a->pincmd, name);
+			r_cons_flush ();
+		}
+		return name;
 #if 0
 		const char *name;
 		if (name) {
@@ -77,7 +84,8 @@ static bool cb_list(void *user, const char *k, const char *v) {
 	RAnal *a = (RAnal*)user;
 	if (*k == '0') {
 		// bind
-		a->cb_printf ("%s = %s\n", k, v);
+		a->cb_printf ("aep %s @ %s\n", v, k);
+	//	a->cb_printf ("%s = %s\n", k, v);
 	} else {
 		// ptr
 		a->cb_printf ("PIN %s\n", k);

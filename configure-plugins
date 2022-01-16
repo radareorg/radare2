@@ -37,7 +37,7 @@ if [ ! -f "$cfg" ]; then
 fi
 
 load () {
-  if [ -e $cfg ]; then 
+  if [ -e $cfg ]; then
     echo "configure-plugins: Loading $cfg .."
     . $cfg
   else

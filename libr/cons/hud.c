@@ -247,6 +247,7 @@ static void mht_free_kv(HtPPKv *kv) {
 
 #define HUD_CACHE 0
 R_API char *r_cons_hud(RList *list, const char *prompt) {
+	bool demo = r_cons_singleton ()->context->demo;
 	char user_input[HUD_BUF_SIZE + 1];
 	char *selected_entry = NULL;
 	RListIter *iter;
@@ -262,6 +263,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
 	r_cons_enable_mouse (false);
+	r_cons_set_raw (true);
 	r_cons_clear ();
 
 	// Repeat until the user exits the hud
@@ -273,10 +275,20 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			hud->top_entry_n = 0;
 		}
 		selected_entry = NULL;
+		char *p = NULL;
 		if (prompt && *prompt) {
-			r_cons_printf (">> %s\n", prompt);
+			p = r_str_appendf (p, ">> %s\n", prompt);
 		}
-		r_cons_printf ("%d> %s|\n", hud->top_entry_n, user_input);
+		p = r_str_appendf (p, "%d> %s|\n", hud->top_entry_n, user_input);
+		if (p) {
+			if (demo) {
+				char *q = r_str_ss (p, NULL, 0);
+				free (p);
+				p = q;
+			}
+			r_cons_printf ("%s", p);
+			free (p);
+		}
 		char *row;
 		RList *filtered_list = NULL;
 
@@ -344,6 +356,7 @@ R_API char *r_cons_hud_line(RList *list, const char *prompt) {
 	hud->top_entry_n = 0;
 	r_cons_show_cursor (false);
 	r_cons_enable_mouse (false);
+	r_cons_set_raw (true);
 
 	r_cons_reset ();
 	// Repeat until the user exits the hud

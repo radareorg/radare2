@@ -206,7 +206,7 @@ R_API void r_core_print_func_args(RCore *core) {
 	r_anal_op_fini (op);
 }
 
-static void r_anal_fcn_arg_free(RAnalFuncArg *arg) {
+static void r_anal_function_arg_free(RAnalFuncArg *arg) {
 	if (!arg) {
 		return;
 	}
@@ -236,7 +236,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		free (key);
 		return NULL;
 	}
-	RList *list = r_list_newf ((RListFree)r_anal_fcn_arg_free);
+	RList *list = r_list_newf ((RListFree)r_anal_function_arg_free);
 	int i;
 	ut64 spv = r_reg_getv (core->anal->reg, sp);
 	ut64 s_width = (core->anal->bits == 64)? 8: 4;

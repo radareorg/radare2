@@ -1,6 +1,6 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2021 - pancake, nikolai */
 
-#include <r_diff.h>
+#include <r_util/r_diff.h>
 
 // the non-system-diff doesnt work well
 #define USE_SYSTEM_DIFF 1
@@ -13,7 +13,7 @@ R_API RDiff *r_diff_new_from(ut64 off_a, ut64 off_b) {
 		d->user = NULL;
 		d->off_a = off_a;
 		d->off_b = off_b;
-		d->diff_cmd = "diff -u";
+		d->diff_cmd = strdup ("diff -u");
 	}
 	return d;
 }
@@ -22,9 +22,11 @@ R_API RDiff *r_diff_new(void) {
 	return r_diff_new_from (0, 0);
 }
 
-R_API RDiff *r_diff_free(RDiff *d) {
-	free (d);
-	return NULL;
+R_API void r_diff_free(RDiff *d) {
+	if (d) {
+		free (d->diff_cmd);
+		free (d);
+	}
 }
 
 R_API int r_diff_set_callback(RDiff *d, RDiffCallback callback, void *user) {
@@ -223,7 +225,7 @@ R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *
 }
 #endif
 
-#define diffHit(void) { \
+#define diffHit() { \
 	const size_t i_hit = i - hit; \
 	int ra = la - i_hit; \
 	int rb = lb - i_hit; \
@@ -330,7 +332,7 @@ R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, con
 			}
 		}
 		if (verbose && di % 10000 == 0) {
-			eprintf ("\rProcessing dist %" PFMT64d " of max %" PFMT64d "\r", di, m);
+			eprintf ("\rProcessing dist %" PFMT64d " of max %" PFMT64d "\r", (st64)di, (st64)m);
 		}
 	}
 
@@ -467,9 +469,11 @@ R_API RDiffChar *r_diffchar_new(const ut8 *a, const ut8 *b) {
 			const ut8 a_ch = a[col - 1];
 			const ut8 b_ch = b[row - 1];
 			const st16 tl_score = *(align_table + (row - 1) * dim + col - 1)
-			                    + (a_ch == b_ch ?
-			                       (a_ch == '\n' ? match_nl : match) :
-			                       mismatch);
+				+ (a_ch == b_ch
+					? (a_ch == '\n'
+						? match_nl
+						: match)
+					: mismatch);
 			const st16 t_score = *(align_table + (row - 1) * dim + col) + gap;
 			const st16 l_score = *(align_table + row * dim + col - 1) + gap;
 			st16 score;
@@ -627,14 +631,16 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 					printf ("%c", a_ch);
 				}
 			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
-				printf (a_ch == '\n' ?
-				        "%c"Color_HLDELETE :
-				        Color_HLDELETE"%c", a_ch);
+				printf (a_ch == '\n'
+						? "%c" Color_HLDELETE
+						: Color_HLDELETE "%c",
+					a_ch);
 				cur_mode = R2R_DIFF_DELETE;
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
-				printf (b_ch == '\n' ?
-				        "%c"Color_HLINSERT :
-				        Color_HLINSERT"%c", b_ch);
+				printf (b_ch == '\n'
+						? "%c" Color_HLINSERT
+						: Color_HLINSERT "%c",
+					b_ch);
 				cur_mode = R2R_DIFF_INSERT;
 			}
 		} else if (cur_mode == R2R_DIFF_DELETE) {
@@ -645,13 +651,15 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				}
 				cur_mode = R2R_DIFF_MATCH;
 			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
-				printf (a_ch == '\n' ?
-				        Color_RESET"%c"Color_HLDELETE :
-				        "%c", a_ch);
+				printf (a_ch == '\n'
+						? Color_RESET "%c" Color_HLDELETE
+						: "%c",
+					a_ch);
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
-				printf (b_ch == '\n' ?
-				        Color_RESET"%c"Color_HLINSERT :
-				        Color_HLINSERT"%c", b_ch);
+				printf (b_ch == '\n'
+						? Color_RESET "%c" Color_HLINSERT
+						: Color_HLINSERT "%c",
+					b_ch);
 				cur_mode = R2R_DIFF_INSERT;
 			}
 		} else if (cur_mode == R2R_DIFF_INSERT) {
@@ -662,19 +670,21 @@ R_API void r_diffchar_print(RDiffChar *diffchar) {
 				}
 				cur_mode = R2R_DIFF_MATCH;
 			} else if (cur_align == R2R_ALIGN_BOTTOM_GAP) {
-				printf (a_ch == '\n' ?
-				        Color_RESET"%c"Color_HLDELETE :
-				        Color_HLDELETE"%c", a_ch);
+				printf (a_ch == '\n'
+						? Color_RESET "%c" Color_HLDELETE
+						: Color_HLDELETE "%c",
+					a_ch);
 				cur_mode = R2R_DIFF_DELETE;
 			} else if (cur_align == R2R_ALIGN_TOP_GAP) {
-				printf (b_ch == '\n' ?
-				        Color_RESET"%c"Color_HLINSERT :
-				        "%c", b_ch);
+				printf (b_ch == '\n'
+						? Color_RESET "%c" Color_HLINSERT
+						: "%c",
+					b_ch);
 			}
 		}
 		idx_align++;
 	}
-	printf (Color_RESET"\n");
+	printf (Color_RESET "\n");
 }
 
 R_API void r_diffchar_free(RDiffChar *diffchar) {

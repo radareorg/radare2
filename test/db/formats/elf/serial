@@ -2,7 +2,6 @@ NAME=serial subrel
 FILE=bins/elf/analysis/serial
 CMDS=<<EOF
 s 0x00400b35
-e asm.leahints=false
 e asm.bytes=false
 e asm.lines.jmp=false
 e asm.sub.rel=true

@@ -5,7 +5,7 @@
 #define fset(num, shift) ((((num) & (((ut64) 1) << (shift))) == 0) ? 0 : 1)
 
 #if __i386__ || __x86_64__
-static void x86_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
+static void x86_ctrl_reg_pretty_print(RIO *io, struct r2k_control_reg ctrl) {
 	io->cb_printf ("CR0: 0x%"PFMT64x"\n", (ut64) ctrl.cr0);
 	io->cb_printf (" [*] PG:    %d\n"
 		       " [*] CD:    %d\n"
@@ -69,7 +69,7 @@ static void x86_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
 }
 
 #elif __arm__
-static void arm_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
+static void arm_ctrl_reg_pretty_print(RIO *io, struct r2k_control_reg ctrl) {
 	io->cb_printf ("TTBR0: 0x%"PFMT64x"\n", (ut64) ctrl.ttbr0);
 	io->cb_printf (" [*] Translation table base 0:  0x%"PFMT64x"\n"
 		       " [*] UNP/SBZ:                   0x%"PFMT64x"\n"
@@ -133,7 +133,7 @@ static void arm_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
 
 #elif __arm64__ || __aarch64__
 /*ARM Cortex-A57 and ARM Cortex-A72. This might show some wrong values for other processor.*/
-static void arm64_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
+static void arm64_ctrl_reg_pretty_print(RIO *io, struct r2k_control_reg ctrl) {
 	io->cb_printf ("SCTLR_EL1: 0x%"PFMTSZx"\n", ctrl.sctlr_el1);
 	io->cb_printf (" [*] UCI:     %d\n"
 		       " [*] EE:      %d\n"
@@ -200,7 +200,7 @@ static void arm64_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
 }
 #endif
 
-static const char* getargpos (const char *buf, int pos) {
+static const char* getargpos(const char *buf, int pos) {
 	int i;
 	for (i = 0; buf && i < pos; i++) {
 		buf = strchr (buf, ' ');
@@ -212,7 +212,7 @@ static const char* getargpos (const char *buf, int pos) {
 	return buf;
 }
 
-static size_t getvalue (const char *buf, int pos) {
+static size_t getvalue(const char *buf, int pos) {
 	size_t ret;
 	buf = getargpos (buf, pos);
 	if (buf) {

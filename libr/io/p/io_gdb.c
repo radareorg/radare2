@@ -16,7 +16,8 @@ typedef struct {
 
 #define R_GDB_MAGIC r_str_hash ("gdb")
 
-static int __close(RIODesc *fd);
+// XXX kill those globals cmon
+static bool __close(RIODesc *fd);
 static libgdbr_t *desc = NULL;
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
@@ -168,14 +169,14 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return debug_gdb_read_at (buf, count, addr);
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	if (fd) {
 		R_FREE (fd->name);
 	}
 	gdbr_disconnect (desc);
 	gdbr_cleanup (desc);
 	R_FREE (desc);
-	return -1;
+	return true;
 }
 
 static int __getpid(RIODesc *fd) {

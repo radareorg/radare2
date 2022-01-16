@@ -234,7 +234,7 @@ R_API RFlag *r_flag_new(void) {
 	f->tags = sdb_new0 ();
 	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
 	f->by_off = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
-	new_spaces(f);
+	new_spaces (f);
 	return f;
 }
 
@@ -477,7 +477,7 @@ static RFlagItem *evalFlag(RFlag *f, RFlagItem *item) {
 /* return true if flag.* exist at offset. Otherwise, false is returned.
  * For example (f, "sym", 3, 0x1000)*/
 R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off) {
-	r_return_val_if_fail (f && flag_prefix, NULL);
+	r_return_val_if_fail (f && flag_prefix, false);
 	RListIter *iter = NULL;
 	RFlagItem *item = NULL;
 	if (f->mask) {
@@ -726,6 +726,17 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
 	return NULL;
 }
 
+R_API RFlagItem *r_flag_set_inspace(RFlag *f, const char *space, const char *name, ut64 off, ut32 size) {
+	if (space) {
+		r_flag_space_push (f, space);
+	}
+	RFlagItem *fi = r_flag_set (f, name, off, size);
+	if (space) {
+		r_flag_space_pop (f);
+	}
+	return fi;
+}
+
 /* create or modify an existing flag item with the given name and parameters.
  * The realname of the item will be the same as the name.
  * NULL is returned in case of any errors during the process. */
@@ -806,6 +817,12 @@ R_API const char *r_flag_item_set_color(RFlagItem *item, const char *color) {
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	r_return_val_if_fail (f && item && name && *name, false);
 	return update_flag_item_name (f, item, name, false);
+}
+
+R_API void r_flag_item_set_type(RFlagItem *fi, const char *type) {
+	r_return_if_fail (fi && type);
+	free (fi->type);
+	fi->type = strdup (type);
 }
 
 /* unset the given flag item.
@@ -986,7 +1003,7 @@ R_API void r_flag_foreach_glob(RFlag *f, const char *glob, RFlagItemCb cb, void 
 }
 
 R_API void r_flag_foreach_space_glob(RFlag *f, const char *glob, const RSpace *space, RFlagItemCb cb, void *user) {
-        FOREACH_BODY (IS_FI_IN_SPACE (fi, space) && (!glob || r_str_glob (fi->name, glob)));
+	FOREACH_BODY (IS_FI_IN_SPACE (fi, space) && (!glob || r_str_glob (fi->name, glob)));
 }
 
 R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, void *user) {

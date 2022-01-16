@@ -4,8 +4,17 @@
 #include <r_lib.h>
 #include <sys/stat.h>
 
+static char *enbase(const char *p) {
+	char *enc_path = r_base64_encode_dyn (p, -1);
+	char *res = r_str_newf ("base64:%s", enc_path);
+	free (enc_path);
+	return res;
+}
+
 static RFSFile *fs_io_open(RFSRoot *root, const char *path, bool create) {
-	char *cmd = r_str_newf ("m %s", path);
+	char *enc_uri = enbase (path);
+	char *cmd = r_str_newf ("m %s", enc_uri);
+	free (enc_uri);
 	char *res = root->iob.system (root->iob.io, cmd);
 	R_FREE (cmd);
 	if (res) {
@@ -36,8 +45,10 @@ static int fs_io_read(RFSFile *file, ut64 addr, int len) {
 		return -1;
 	}
 	
-	char *cmd = r_str_newf ("mg %s 0x%08"PFMT64x" %d", abs_path, addr, len);
-	R_FREE (abs_path);
+	char *enc_uri = enbase (abs_path);
+	free (abs_path);
+	char *cmd = r_str_newf ("mg %s 0x%08"PFMT64x" %d", enc_uri, addr, len);
+	free (enc_uri);
 	if (!cmd) {
 		return -1;
 	}
@@ -86,7 +97,9 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	if (!list) {
 		return NULL;
 	}
-	char *cmd = r_str_newf ("md %s", path);
+	char *uri_path = enbase (path);
+	char *cmd = r_str_newf ("md %s", uri_path);
+	free (uri_path);
 	char *res = root->iob.system (root->iob.io, cmd);
 	if (res) {
 		size_t i, count = 0;

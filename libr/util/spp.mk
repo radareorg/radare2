@@ -9,7 +9,8 @@ $(SPPPATH)/config.h: $(SPPPATH)/config.def.h
 	$(MAKE) spp_config
 
 spp_config:
-	cp -f $(SPPPATH)/config.def.h $(SPPPATH)/config.h
+	cmp $(SPPPATH)/config.def.h $(SPPPATH)/config.h 2> /dev/null || \
+		cp -f $(SPPPATH)/config.def.h $(SPPPATH)/config.h
 	$(MAKE) spp_build
 
 spp_build: $(SPPOBJS)

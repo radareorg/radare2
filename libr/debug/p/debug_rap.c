@@ -4,7 +4,7 @@
 #include <r_cons.h>
 #include <r_debug.h>
 
-static int __rap_step(RDebug *dbg) {
+static bool __rap_step(RDebug *dbg) {
 	r_io_system (dbg->iob.io, "ds");
 	return true;
 }
@@ -18,17 +18,17 @@ static int __rap_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	return false; // XXX Error check
 }
 
-static int __rap_continue(RDebug *dbg, int pid, int tid, int sig) {
+static bool __rap_continue(RDebug *dbg, int pid, int tid, int sig) {
 	r_io_system (dbg->iob.io, "dc");
 	return true;
 }
 
-static int __rap_wait(RDebug *dbg, int pid) {
+static RDebugReasonType __rap_wait(RDebug *dbg, int pid) {
 	/* do nothing */
 	return true;
 }
 
-static int __rap_attach(RDebug *dbg, int pid) {
+static bool __rap_attach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
 	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name) {
@@ -41,7 +41,7 @@ static int __rap_attach(RDebug *dbg, int pid) {
 	return true;
 }
 
-static int __rap_detach(RDebug *dbg, int pid) {
+static bool __rap_detach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
 //	close (pid);
 	//XXX Maybe we should continue here?
@@ -60,7 +60,7 @@ static char *__rap_reg_profile(RDebug *dbg) {
 	return out;
 }
 
-static int __rap_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static int __rap_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }

@@ -400,7 +400,7 @@ grub_isprint (int c)
 unsigned long
 grub_strtoul (const char *str, char **end, int base)
 {
-  unsigned long long num;
+  ut64 num;
 
   num = grub_strtoull (str, end, base);
   if (num > ~0UL)
@@ -412,10 +412,10 @@ grub_strtoul (const char *str, char **end, int base)
   return (unsigned long) num;
 }
 
-unsigned long long
+ut64
 grub_strtoull (const char *str, char **end, int base)
 {
-  unsigned long long num = 0;
+  ut64 num = 0;
   int found = 0;
 
   /* Skip white spaces.  */
@@ -553,7 +553,7 @@ grub_divmod64 (grub_uint64_t n, grub_uint32_t d, grub_uint32_t *r)
      upper(N * 2^i) = upper((Q * 10 + M) * 2^i), where upper
      represents the high 64 bits in 128-bits space.  */
   unsigned bits = 64;
-  unsigned long long q = 0;
+  ut64 q = 0;
   unsigned m = 0;
 
   /* Skip the slow computation if 32-bit arithmetic is possible.  */
@@ -591,14 +591,14 @@ grub_divmod64 (grub_uint64_t n, grub_uint32_t d, grub_uint32_t *r)
 /* Convert a long long value to a string. This function avoids 64-bit
    modular arithmetic or divisions.  */
 static char *
-grub_lltoa (char *str, int c, unsigned long long n)
+grub_lltoa (char *str, int c, ut64 n)
 {
   unsigned base = (c == 'x') ? 16 : 10;
   char *p;
 
   if ((long long) n < 0 && c == 'd')
     {
-      n = (unsigned long long) (-((long long) n));
+      n = (ut64) (-((long long) n));
       *str++ = '-';
     }
 

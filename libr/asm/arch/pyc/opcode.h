@@ -51,7 +51,7 @@ typedef struct {
 
 typedef struct {
 	char *op_name;
-	const char *(*formatter)(ut32 oparg);
+	char *(*formatter)(ut32 oparg);
 } pyc_arg_fmt;
 
 typedef struct {
@@ -100,16 +100,16 @@ pyc_opcodes *new_pyc_opcodes();
 void free_opcode(pyc_opcodes *opcodes);
 bool pyc_opcodes_equal(pyc_opcodes *op, const char *version);
 
-void add_arg_fmt(pyc_opcodes *ret, char *op_name, const char *(*formatter) (ut32 oparg));
+void add_arg_fmt(pyc_opcodes *ret, char *op_name, char *(*formatter) (ut32 oparg));
 
-const char *format_MAKE_FUNCTION_arg_3x(ut32 oparg);
-const char *format_extended_arg(ut32 oparg);
-const char *format_CALL_FUNCTION_pos_name_encoded(ut32 oparg);
-const char *format_CALL_FUNCTION_KW_36(ut32 oparg);
-const char *format_CALL_FUNCTION_EX_36(ut32 oparg);
-const char *format_MAKE_FUNCTION_arg_36(ut32 oparg);
-const char *format_value_flags_36(ut32 oparg);
-const char *format_extended_arg_36(ut32 oparg);
+char *format_MAKE_FUNCTION_arg_3x(ut32 oparg);
+char *format_extended_arg(ut32 oparg);
+char *format_CALL_FUNCTION_pos_name_encoded(ut32 oparg);
+char *format_CALL_FUNCTION_KW_36(ut32 oparg);
+char *format_CALL_FUNCTION_EX_36(ut32 oparg);
+char *format_MAKE_FUNCTION_arg_36(ut32 oparg);
+char *format_value_flags_36(ut32 oparg);
+char *format_extended_arg_36(ut32 oparg);
 
 struct op_parameter {
 	pyc_opcode_object *op_obj;

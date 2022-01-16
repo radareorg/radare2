@@ -1060,7 +1060,7 @@
 
 /* Define to the prefix of C symbols at the assembler and linker level, either
    an underscore or empty. */
-#define USER_LABEL_PREFIX 
+#define USER_LABEL_PREFIX
 
 /* Version number of package */
 #define VERSION "1.99~beta0"

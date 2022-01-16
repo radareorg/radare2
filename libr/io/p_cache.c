@@ -345,7 +345,7 @@ R_API void r_io_desc_cache_cleanup(RIODesc *desc) {
 	}
 }
 
-static bool __desc_fini_cb (void *user, void *data, ut32 id) {
+static bool __desc_fini_cb(void *user, void *data, ut32 id) {
 	RIODesc *desc = (RIODesc *)data;
 	if (desc->cache) {
 		ht_up_free (desc->cache);

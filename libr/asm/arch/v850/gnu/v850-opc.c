@@ -50,21 +50,21 @@
    containing the string 'out of range' will be ignored unless a
    specific command line option is given to GAS.  */
 
-static const char * not_valid    = N_ ("displacement value is not in range and is not aligned");
-static const char * out_of_range = N_ ("displacement value is out of range");
-static const char * not_aligned  = N_ ("displacement value is not aligned");
+static const char *not_valid    = N_("displacement value is not in range and is not aligned");
+static const char *out_of_range = N_("displacement value is out of range");
+static const char *not_aligned  = N_("displacement value is not aligned");
 
-static const char * immediate_out_of_range = N_ ("immediate value is out of range");
-static const char * branch_out_of_range = N_ ("branch value out of range");
-static const char * branch_out_of_range_and_odd_offset = N_ ("branch value not in range and to odd offset");
-static const char * branch_to_odd_offset = N_ ("branch to odd offset");
-static const char * pos_out_of_range = N_ ("position value is out of range");
-static const char * width_out_of_range = N_ ("width value is out of range");
-static const char * selid_out_of_range = N_ ("SelID is out of range");
-static const char * vector8_out_of_range = N_ ("vector8 is out of range");
-static const char * vector5_out_of_range = N_ ("vector5 is out of range");
-static const char * imm10_out_of_range = N_ ("imm10 is out of range");
-static const char * sr_selid_out_of_range = N_ ("SR/SelID is out of range");
+static const char *immediate_out_of_range = N_("immediate value is out of range");
+static const char *branch_out_of_range = N_("branch value out of range");
+static const char *branch_out_of_range_and_odd_offset = N_("branch value not in range and to odd offset");
+static const char *branch_to_odd_offset = N_("branch to odd offset");
+static const char *pos_out_of_range = N_("position value is out of range");
+static const char *width_out_of_range = N_("width value is out of range");
+static const char *selid_out_of_range = N_("SelID is out of range");
+static const char *vector8_out_of_range = N_("vector8 is out of range");
+static const char *vector5_out_of_range = N_("vector5 is out of range");
+static const char *imm10_out_of_range = N_("imm10 is out of range");
+static const char *sr_selid_out_of_range = N_("SR/SelID is out of range");
 
 int
 v850_msg_is_out_of_range (const char* msg)

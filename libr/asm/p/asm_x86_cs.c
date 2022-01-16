@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include "cs_version.h"
 
-#define USE_ITER_API 0
+#define USE_ITER_API 1
 
 static csh cd = 0;
 static int n = 0;
@@ -25,11 +25,36 @@ static bool the_end(void *p) {
 	return true;
 }
 
-static bool check_features(RAsm *a, cs_insn *insn);
-
 #include "cs_mnemonics.c"
 
 #include "asm_x86_vm.c"
+
+static bool check_features(RAsm *a, cs_insn *insn) {
+	if (!insn || !insn->detail) {
+		return false;
+	}
+	int i;
+	for (i = 0; i < insn->detail->groups_count; i++) {
+		int id = insn->detail->groups[i];
+		if (id < 128) {
+			continue;
+		}
+		if (id == X86_GRP_MODE32) {
+			continue;
+		}
+		if (id == X86_GRP_MODE64) {
+			continue;
+		}
+		const char *name = cs_group_name (cd, id);
+		if (!name) {
+			return true;
+		}
+		if (!strstr (a->features, name)) {
+			return false;
+		}
+	}
+	return true;
+}
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
@@ -78,19 +103,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	op->size = 1;
 	cs_insn *insn = NULL;
 #if USE_ITER_API
-	{
-		size_t size = len;
-		if (!insn || cd < 1) {
-			insn = cs_malloc (cd);
-		}
-		if (!insn) {
-			cs_free (insn, n);
-			return 0;
-		}
-		memset (insn, 0, insn->size);
-		insn->size = 1;
-		n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
-	}
+	cs_insn insnack = {0};
+	cs_detail insnack_detail = {0};
+	insnack.detail = &insnack_detail;
+	size_t size = len;
+	insn = &insnack;
+	n = cs_disasm_iter (cd, (const uint8_t**)&buf, &size, (uint64_t*)&off, insn);
 #else
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
 #endif
@@ -126,26 +144,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			memcpy (buf_asm, "jnz", 3);
 		}
 	}
-#if 0
-	// [eax + ebx*4]  =>  [eax + ebx * 4]
-	char *ast = strchr (op->buf_asm, '*');
-	if (ast && ast > op->buf_asm) {
-		ast--;
-		if (ast[0] != ' ') {
-			char *tmp = strdup (ast + 1);
-			if (tmp) {
-				ast[0] = ' ';
-				if (tmp[0] && tmp[1] && tmp[1] != ' ') {
-					strcpy (ast, " * ");
-					strcpy (ast + 3, tmp + 1);
-				} else {
-					strcpy (ast + 1, tmp);
-				}
-				free (tmp);
-			}
-		}
-	}
-#endif
 #if USE_ITER_API
 	/* do nothing because it should be allocated once and freed in the_end */
 #else
@@ -170,34 +168,6 @@ RAsmPlugin r_asm_plugin_x86_cs = {
 		"f16c,fma,fma4,fsgsbase,hle,mmx,rtm,sha,sse1,sse2,"
 		"sse3,sse41,sse42,sse4a,ssse3,pclmul,xop"
 };
-
-static bool check_features(RAsm *a, cs_insn *insn) {
-	const char *name;
-	int i;
-	if (!insn || !insn->detail) {
-		return true;
-	}
-	for (i = 0; i < insn->detail->groups_count; i++) {
-		int id = insn->detail->groups[i];
-		if (id < 128) {
-			continue;
-		}
-		if (id == X86_GRP_MODE32) {
-			continue;
-		}
-		if (id == X86_GRP_MODE64) {
-			continue;
-		}
-		name = cs_group_name (cd, id);
-		if (!name) {
-			return true;
-		}
-		if (!strstr (a->features, name)) {
-			return false;
-		}
-	}
-	return true;
-}
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct *radare_plugin_function(void) {

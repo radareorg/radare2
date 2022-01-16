@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -119,6 +119,49 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 	case 'A': // "pcA"
 		/* implemented in core because of disasm :( */
 		break;
+	case 'c': // "pcc"
+		{
+			int col = 0;
+			const int max_cols = 60;
+
+			p->cb_printf ("const char cstr[%d] = \"", len);
+			for (i = 0; !r_print_is_interrupted () && i < len; i++) {
+				if (col == 0 || col > max_cols) {
+					p->cb_printf ("\"\\\n  \"");
+					col = 0;
+				}
+				ut8 ch = buf[i];
+				switch (ch) {
+				case '\\':
+					p->cb_printf ("\\\\");
+					break;
+				case '\t':
+					p->cb_printf ("\\t");
+					break;
+				case '\r':
+					p->cb_printf ("\\r");
+					break;
+				case '\n':
+					p->cb_printf ("\\n");
+					break;
+				default:
+					if (IS_PRINTABLE (buf[i])) {
+						if (buf[i] == '"') {
+							p->cb_printf ("\\\"");
+						} else {
+							p->cb_printf ("%c", buf[i]);
+						}
+					} else {
+						p->cb_printf ("\\x%02x", buf[i]);
+						col += 3;
+					}
+					break;
+				}
+				col += 1;
+			}
+			p->cb_printf ("\";\n");
+		}
+		break;
 	case 'a': // "pca"
 		p->cb_printf ("shellcode:");
 		for (i = 0; !r_print_is_interrupted () && i < len; i++) {
@@ -210,7 +253,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		p->cb_printf ("};\n");
 		break;
 	case 'V': // "pcV" // vlang.io
-		p->cb_printf ("data := [ byte(%d),\n  ", buf[0]);
+		p->cb_printf ("const data = [ byte(%d),\n  ", buf[0]);
 		for (i = 1; !r_print_is_interrupted () && i < len; i++) {
 			r_print_cursor (p, i, 1, 1);
 			p->cb_printf ("%d%s", buf[i], (i + 1 < len)? ", ": "");
@@ -265,7 +308,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 		print_c_code (p, addr, buf, len, 8, p->cols / 5); //3);
 		break;
 	default:
-		print_c_code (p, addr, buf, len, 1, p->cols / 1.5); // 12);
+		print_c_code (p, addr, buf, len, 1, (int)(p->cols / 1.5)); // 12);
 		break;
 	}
 }

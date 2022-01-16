@@ -983,7 +983,7 @@ grub_hfsplus_dir (grub_device_t device, const char *path,
 
 
 static grub_err_t
-grub_hfsplus_label (grub_device_t device 
+grub_hfsplus_label (grub_device_t device
 		    , char **label)
 {
   /* XXX: It's not documented how to read a label.  */
@@ -1020,9 +1020,7 @@ grub_hfsplus_uuid (grub_device_t device, char **uuid)
   data = grub_hfsplus_mount (disk);
   if (data)
     {
-      *uuid = grub_xasprintf ("%016"PFMT64x,
-			     (unsigned long long)
-			     grub_be_to_cpu64 (data->volheader.num_serial));
+      *uuid = grub_xasprintf ("%016"PFMT64x, (ut64) grub_be_to_cpu64 (data->volheader.num_serial));
     }
   else
     *uuid = NULL;

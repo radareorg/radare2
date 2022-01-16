@@ -24,22 +24,27 @@ RUN
 NAME=ljmp follow
 FILE=bins/firmware/bios_64k.bin
 CMDS=<<EOF
+e asm.bits
 s $j
 ? $$
+e anal.cs=0xfff0
+? $$~segm
 EOF
 EXPECT=<<EOF
+16
 int32   1048490
 uint32  1048490
 hex     0xfffaa
 octal   03777652
 unit    1023.9K
-segment f000:0faa
+segment f000:ffaa
 string  "\xaa\xff\x0f"
-fvalue: 1048490.0
-float:  0.000000f
-double: 0.000000
+fvalue  1048490.0
+float   0.000000f
+double  0.000000
 binary  0b000011111111111110101010
 ternary 0t1222021020222
+segment fff0:00aa
 EOF
 RUN
 

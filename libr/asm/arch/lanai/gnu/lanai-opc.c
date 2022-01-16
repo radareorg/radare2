@@ -34,7 +34,7 @@
  * Arcadia, CA 91024                                                     *
  *************************************************************************/
  /* initial version released 5/95 */
- /* This file is based upon <> from the Gnu binutils-2.5.2 
+ /* This file is based upon <> from the Gnu binutils-2.5.2
     release, which had the following copyright notice: */
 
 	/* Table of opcodes for the sparc.
@@ -54,7 +54,7 @@
 
 	You should have received a copy of the GNU General Public License
 	along with this software; see the file COPYING.  If not, write to
-	the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, 
+	the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139,
 		USA.	*/
 
 /* FIXME-someday: perhaps the ,a's and such should be embedded in the
@@ -76,7 +76,7 @@ const char *architecture_pname[] = {
 
 /* A pair is the set of all bits that must be high or low as determined
    solely by the opcode.  This macro takes a mask and the set of
-   all bits that must be high and generates the pair.  I do this 
+   all bits that must be high and generates the pair.  I do this
    so the macro definitions below are simpler. */
 
 #define GENERIC_PAIR(mask,high) \
@@ -353,7 +353,7 @@ struct lanai_opcode lanai_opcodes[] = {
   { "ld",	RM_PAIR(0,1,0)			,"o[1],d",   F_RM,0},
   { "ld",	RM_PAIR(0,1,1)			,"o[*1],d",  F_RM,0},
   { "ld",	RM_PAIR(0,0,1)			,"o[1*],d",  F_RM,0},
- 
+
   { "uld",	0x80030004,0x7000fffb		,"[++1],d",  F_ALIAS,0},
   { "uld",	0x80010004,0x7002fffb		,"[1++],d",  F_ALIAS,0},
   { "uld",	0x8003fffc,0x70000003		,"[--1],d",  F_ALIAS,0},
@@ -370,7 +370,7 @@ struct lanai_opcode lanai_opcodes[] = {
   { "uld",      RM_PAIR(0,1,0)			,"o[1],d",   F_ALIAS,0},
   { "uld",	RM_PAIR(0,1,1)			,"o[*1],d",  F_ALIAS,0},
   { "uld",	RM_PAIR(0,0,1)			,"o[1*],d",  F_ALIAS,0},
- 
+
   { "ld.h",	0xf0030c02,0x0000f3fd		,"[++1],d",  F_HALF|F_SPLS,0},
   { "ld.h",	0xf0030402,0x0000fbfd		,"[1++],d",  F_HALF|F_SPLS,0},
   { "ld.h",	0xf0030ffe,0x0000f001		,"[--1],d",  F_HALF|F_SPLS,0},
@@ -386,7 +386,7 @@ struct lanai_opcode lanai_opcodes[] = {
   { "ld.h", SPLS_PAIR(0,L3_SIGNED_HALFWORD,1,0)	,"i[1],d",   F_HALF|F_SPLS,0},
   { "ld.h", SPLS_PAIR(0,L3_SIGNED_HALFWORD,1,1)	,"i[*1],d",  F_HALF|F_SPLS,0},
   { "ld.h", SPLS_PAIR(0,L3_SIGNED_HALFWORD,0,1)	,"i[1*],d",  F_HALF|F_SPLS,0},
- 
+
   { "uld.h",	0xf0031c02,0x0000e3fd		,"[++1],d",  F_HALF|F_SPLS,0},
   { "uld.h",	0xf0031402,0x0000ebfd		,"[1++],d",  F_HALF|F_SPLS,0},
   { "uld.h",	0xf0031ffe,0x0000e001		,"[--1],d",  F_HALF|F_SPLS,0},
@@ -402,7 +402,7 @@ struct lanai_opcode lanai_opcodes[] = {
   { "uld.h",SPLS_PAIR(0,L3_UNSIGNED_HALFWORD,1,0),"i[1],d",  F_HALF|F_SPLS,0},
   { "uld.h",SPLS_PAIR(0,L3_UNSIGNED_HALFWORD,1,1),"i[*1],d", F_HALF|F_SPLS,0},
   { "uld.h",SPLS_PAIR(0,L3_UNSIGNED_HALFWORD,0,1),"i[1*],d", F_HALF|F_SPLS,0},
- 
+
   { "ld.b",	0xf0034c01,0x0000b3fe		,"[++1],d",  F_BYTE|F_SPLS,0},
   { "ld.b",	0xf0034401,0x0000bbfe		,"[1++],d",  F_BYTE|F_SPLS,0},
   { "ld.b",	0xf0034fff,0x0000b000		,"[--1],d",  F_BYTE|F_SPLS,0},
@@ -418,7 +418,7 @@ struct lanai_opcode lanai_opcodes[] = {
   { "ld.b",	SPLS_PAIR(0,L3_SIGNED_BYTE,1,0)	,"i[1],d",   F_BYTE|F_SPLS,0},
   { "ld.b",	SPLS_PAIR(0,L3_SIGNED_BYTE,1,1)	,"i[*1],d",  F_BYTE|F_SPLS,0},
   { "ld.b",	SPLS_PAIR(0,L3_SIGNED_BYTE,0,1)	,"i[1*],d",  F_BYTE|F_SPLS,0},
- 
+
   { "uld.b",	0xf0035c01,0x0000a3fe		,"[++1],d",  F_BYTE|F_SPLS,0},
   { "uld.b",	0xf0035401,0x0000abfe		,"[1++],d",  F_BYTE|F_SPLS,0},
   { "uld.b",	0xf0035fff,0x0000a000		,"[--1],d",  F_BYTE|F_SPLS,0},
@@ -439,7 +439,7 @@ struct lanai_opcode lanai_opcodes[] = {
 
   { "leadz",	LEADZ_PAIR(0)			,"1,d",	     F_LEADZ,0},
   { "leadz.f",	LEADZ_PAIR(1)			,"1,d",	     F_LEADZ,0},
-							     
+							
   /* or */
 
   { "or",	RR_PAIR(0,L3_OR)		,"1,2,d",    F_RR,0},
@@ -449,8 +449,8 @@ struct lanai_opcode lanai_opcodes[] = {
   { "or.f",	RI_PAIR(L3_OR,1,0)		,"1,j,d",    F_RI,0},
   { "or.f",	RI_PAIR(L3_OR,1,1)		,"1,J,d",    F_RI,0},
 
-  /* popc */						     
-							     
+  /* popc */						
+							
   { "popc",	POPC_PAIR(0)			,"1,d",	     F_POPC,0},
   { "popc.f",	POPC_PAIR(1)			,"1,d",	     F_POPC,0},
 
@@ -491,7 +491,7 @@ struct lanai_opcode lanai_opcodes[] = {
   { "st",	RM_PAIR(1,1,0)			,"d,o[1]",   F_RM,0},
   { "st",	RM_PAIR(1,1,1)			,"d,o[*1]",  F_RM,0},
   { "st",	RM_PAIR(1,0,1)			,"d,o[1*]",  F_RM,0},
- 
+
   { "st.h",	0xf0032c02,0x0000d3fd		,"d,[++1]",  F_HALF|F_SPLS,0},
   { "st.h",	0xf0032402,0x0000dbfd		,"d,[1++]",  F_HALF|F_SPLS,0},
   { "st.h",	0xf0032ffe,0x0000d001		,"d,[--1]",  F_HALF|F_SPLS,0},
@@ -507,7 +507,7 @@ struct lanai_opcode lanai_opcodes[] = {
   { "st.h", SPLS_PAIR(1,L3_SIGNED_HALFWORD,1,0)	,"d,i[1]",   F_HALF|F_SPLS,0},
   { "st.h", SPLS_PAIR(1,L3_SIGNED_HALFWORD,1,1)	,"d,i[*1]",  F_HALF|F_SPLS,0},
   { "st.h", SPLS_PAIR(1,L3_SIGNED_HALFWORD,0,1)	,"d,i[1*]",  F_HALF|F_SPLS,0},
- 
+
   { "st.b",	0xf0036c01,0x000093fe		,"d,[++1]",  F_BYTE|F_SPLS,0},
   { "st.b",	0xf0036401,0x00009bfe		,"d,[1++]",  F_BYTE|F_SPLS,0},
   { "st.b",	0xf0036fff,0x00009000		,"d,[--1]",  F_BYTE|F_SPLS,0},

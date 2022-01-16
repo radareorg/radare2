@@ -8,7 +8,7 @@
 
 static int ASN1_STD_FORMAT  = 1;
 
-R_API void asn1_setformat (int fmt) {
+R_API void asn1_setformat(int fmt) {
 	ASN1_STD_FORMAT = fmt;
 }
 
@@ -151,7 +151,7 @@ R_API RASN1Object *r_asn1_create_object(const ut8 *buffer, ut32 length, const ut
 	return object;
 }
 
-R_API RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length) {
+R_API RASN1Binary *r_asn1_create_binary(const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
@@ -170,7 +170,7 @@ R_API RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length) {
 	return bin;
 }
 
-R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size, ut32 depth) {
+R_API void r_asn1_print_hex(RASN1Object *object, char* buffer, ut32 size, ut32 depth) {
 	ut32 i;
 	if (!object || !object->sector) {
 		return;
@@ -218,7 +218,7 @@ static void r_asn1_print_padded(RStrBuf *sb, RASN1Object *object, int depth, con
 }
 #endif
 
-static RASN1String* r_asn1_print_hexdump_padded (RASN1Object *object, ut32 depth) {
+static RASN1String* r_asn1_print_hexdump_padded(RASN1Object *object, ut32 depth) {
 	const char *pad;
 	ut32 i, j;
 	char readable[20] = {0};
@@ -258,7 +258,7 @@ static RASN1String* r_asn1_print_hexdump_padded (RASN1Object *object, ut32 depth
 	return asn1str;
 }
 
-R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
+R_API char *r_asn1_to_string(RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	ut32 i;
 	bool root = false;
 	if (!object) {
@@ -444,7 +444,7 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	return root? r_strbuf_drain (sb): NULL;
 }
 
-R_API void r_asn1_free_object (RASN1Object *object) {
+R_API void r_asn1_free_object(RASN1Object *object) {
 	ut32 i;
 	if (!object) {
 		return;
@@ -462,7 +462,7 @@ R_API void r_asn1_free_object (RASN1Object *object) {
 	free (object);
 }
 
-R_API void r_asn1_free_binary (RASN1Binary* bin) {
+R_API void r_asn1_free_binary(RASN1Binary* bin) {
 	if (bin) {
 		free (bin->binary);
 		free (bin);

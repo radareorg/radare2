@@ -139,13 +139,13 @@ following files:
 
     // architecture-specific debugger code
     libr/debug/p/native/arm.c                       // unused?
-    
+
     // code for handling backtracing
     libr/debug/p/native/bt.c
     libr/debug/p/native/bt/fuzzy-all.c
     libr/debug/p/native/bt/generic-x64.c
     libr/debug/p/native/bt/generic-x86.c
-    
+
     // architecture-specific register handling
     libr/debug/p/native/drx.c                       // x86-specific debug registers
     libr/debug/p/native/reg.c                       // cute include of the files below
@@ -155,11 +155,11 @@ following files:
     libr/debug/p/native/reg/netbsd-x86.h
     libr/debug/p/native/reg/windows-x64.h
     libr/debug/p/native/reg/windows-x86.h
-    
+
     // platform-specific debugger code on Linux
     libr/debug/p/native/linux/linux_debug.c         // main linux-specific debugging code
     libr/debug/p/native/linux/linux_debug.h         // including cute penguin ascii art
-    
+
     // architecture-specific register handling on Linux (?? what is this format??)
     libr/debug/p/native/linux/reg/linux-arm.h
     libr/debug/p/native/linux/reg/linux-arm64.h
@@ -168,13 +168,13 @@ following files:
     libr/debug/p/native/linux/reg/linux-x64.h
     libr/debug/p/native/linux/reg/linux-x64-32.h
     libr/debug/p/native/linux/reg/linux-x86.h
-    
+
     // platform-specific debugger code on Windows
     libr/debug/p/native/w32.c                       // !! not used by anything else
     libr/debug/p/native/maps/windows.c              // platform-specific memory map handling
     libr/debug/p/native/windows/windows_debug.c     // main code for win32 debugger plugin
     libr/debug/p/native/windows/windows_debug.h     // including cute windows ascii art
-    
+
     // platform-specific debugger code on XNU (OSX/iOS/etc)
     libr/debug/p/native/darwin.c                    // !! not used by anything else
     libr/debug/p/native/maps/darwin.c               // platform-specific memory map handling
@@ -185,7 +185,7 @@ following files:
     libr/debug/p/native/xnu/xnu_excthreads.c        // additional XNU thread handling
     libr/debug/p/native/xnu/xnu_threads.c           // XNU thread and register handling
     libr/debug/p/native/xnu/xnu_threads.h
-    
+
     // architecture-specific register handling on XNU (?? what is this format??)
     libr/debug/p/native/xnu/reg/darwin-x86.h
     libr/debug/p/native/xnu/reg/darwin-arm.h

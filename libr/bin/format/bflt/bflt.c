@@ -8,14 +8,14 @@
 #define READ(x, i) r_read_be32 ((x) + (i)); (i) += 4;
 
 RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
-        RBinAddr *addr = R_NEW0 (RBinAddr);
-        if (addr && bin && bin->hdr) {
-        	addr->paddr = bin->hdr->entry;
-        }
-        return addr;
+	RBinAddr *addr = R_NEW0 (RBinAddr);
+	if (addr && bin && bin->hdr) {
+		addr->paddr = bin->hdr->entry;
+	}
+	return addr;
 }
 
-static int bflt_init_hdr (struct r_bin_bflt_obj *bin) {
+static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 	struct bflt_hdr *p_hdr;
 	ut8 bhdr[BFLT_HDR_SIZE] = {0};
 	int len, i = 0;

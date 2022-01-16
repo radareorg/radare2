@@ -1,0 +1,4 @@
+import("r2").then((r2) => {
+	var a = JSON.parse(r2.cmd("aa;aflj"));
+	r2.log(JSON.stringify(a));
+});

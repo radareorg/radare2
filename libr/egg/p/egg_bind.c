@@ -141,7 +141,7 @@ static unsigned char x86_w32_tcp4444[] =
    "\x7e\xe5\x98\xec\xac\x45\x1b\x13";
 
 
-static RBuffer *build (REgg *egg) {
+static RBuffer *build(REgg *egg) {
 	RBuffer *buf = r_buf_new ();
 	const ut8 *sc = NULL;
 	int cd = 0;

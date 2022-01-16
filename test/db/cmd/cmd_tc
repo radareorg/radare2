@@ -60,21 +60,21 @@ FILE=bins/mach0/objc-employee
 CMDS=.ic*;tc
 EXPECT=<<EOF
 struct Employee {
-	struct objc_class *isa;
-	int16_t _shortWord;
-	struct NSString *_username;
-	struct NSString *_firstName;
-	uint64_t _wideWord;
-	void *username;
-	void *firstName;
-	void *shortWord;
-	void *wideWord;
+  struct objc_class *isa;
+  int16_t _shortWord;
+  struct NSString *_username;
+  struct NSString *_firstName;
+  uint64_t _wideWord;
+  void *username;
+  void *firstName;
+  void *shortWord;
+  void *wideWord;
 };
 struct NSString {
-	void *p0;
-	size_t p1;
-	char *str;
-	int len;
+  void *p0;
+  size_t p1;
+  char *str;
+  int len;
 };
 enum mach0_build_platform {
 	MACOS = 1,
@@ -288,21 +288,21 @@ FILE=bins/mach0/objc-employee-ios14-arm64
 CMDS=.ic*;tc
 EXPECT=<<EOF
 struct Employee {
-	struct objc_class *isa;
-	int16_t _shortWord;
-	struct NSString *_username;
-	struct NSString *_firstName;
-	uint64_t _wideWord;
-	void *username;
-	void *firstName;
-	void *shortWord;
-	void *wideWord;
+  struct objc_class *isa;
+  int16_t _shortWord;
+  struct NSString *_username;
+  struct NSString *_firstName;
+  uint64_t _wideWord;
+  void *username;
+  void *firstName;
+  void *shortWord;
+  void *wideWord;
 };
 struct NSString {
-	void *p0;
-	size_t p1;
-	char *str;
-	int len;
+  void *p0;
+  size_t p1;
+  char *str;
+  int len;
 };
 enum mach0_build_platform {
 	MACOS = 1,
@@ -482,6 +482,7 @@ CMDS=ic*
 EXPECT=<<EOF
 fs classes
 "f class.Employee = 0x1000079a8"
+"f super.Employee.NSObject = 0"
 "f method.Employee.sayHello = 0x1000079d8"
 "f method.Employee.helloWorld = 0x100007a08"
 "f method.Employee.p0 = 0x100007a38"
@@ -515,21 +516,21 @@ FILE=bins/mach0/objc-employee-ios14-arm64e
 CMDS=.ic*;tc
 EXPECT=<<EOF
 struct Employee {
-	struct objc_class *isa;
-	int16_t _shortWord;
-	struct NSString *_username;
-	struct NSString *_firstName;
-	uint64_t _wideWord;
-	void *username;
-	void *firstName;
-	void *shortWord;
-	void *wideWord;
+  struct objc_class *isa;
+  int16_t _shortWord;
+  struct NSString *_username;
+  struct NSString *_firstName;
+  uint64_t _wideWord;
+  void *username;
+  void *firstName;
+  void *shortWord;
+  void *wideWord;
 };
 struct NSString {
-	void *p0;
-	size_t p1;
-	char *str;
-	int len;
+  void *p0;
+  size_t p1;
+  char *str;
+  int len;
 };
 enum mach0_build_platform {
 	MACOS = 1,

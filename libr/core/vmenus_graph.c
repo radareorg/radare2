@@ -149,12 +149,12 @@ static void __seek_cursor(RCoreVisualViewGraph *status) {
 	return;
 }
 
-static int cmpaddr (const void *_a, const void *_b) {
+static int cmpaddr(const void *_a, const void *_b) {
 	const RCoreVisualViewGraphItem *a = _a, *b = _b;
 	return a->addr - b->addr;
 }
 
-static int cmpname (const void *_a, const void *_b) {
+static int cmpname(const void *_a, const void *_b) {
 	const RCoreVisualViewGraphItem *a = _a, *b = _b;
 	if (!a || !b || !a->name || !b->name) {
 		return 0;
@@ -162,14 +162,14 @@ static int cmpname (const void *_a, const void *_b) {
 	return (int)strcmp (a->name, b->name);
 }
 
-static void __sort (RCoreVisualViewGraph *status, RList *list) {
+static void __sort(RCoreVisualViewGraph *status, RList *list) {
 	r_return_if_fail (status && list);
 	RListComparator cmp = (status->cur_sort == SORT_ADDRESS)? cmpaddr: cmpname;
 	list->sorted = false;
 	r_list_sort (list, cmp);
 }
 
-static void __toggleSort (RCoreVisualViewGraph *status) {
+static void __toggleSort(RCoreVisualViewGraph *status) {
 	r_return_if_fail (status);
 	status->cur_sort = (status->cur_sort == SORT_ADDRESS)? SORT_NAME: SORT_ADDRESS;
 	__sort (status, status->mainCol);

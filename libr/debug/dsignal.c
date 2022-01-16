@@ -60,7 +60,7 @@ R_API void r_debug_signal_init(RDebug *dbg) {
 	}
 }
 
-static bool siglistcb (void *p, const char *k, const char *v) {
+static bool siglistcb(void *p, const char *k, const char *v) {
 	static char key[32] = "cfg.";
 	RDebug *dbg = (RDebug *)p;
 	int opt, mode = dbg->_mode;

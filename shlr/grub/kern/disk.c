@@ -418,9 +418,7 @@ grub_disk_read (grub_disk_t disk, grub_disk_addr_t sector,
   if (grub_disk_adjust_range (disk, &sector, &offset, size) != GRUB_ERR_NONE)
     {
       grub_error_push ();
-      grub_dprintf ("disk", "Read out of range: sector 0x%llx (%s).\n",
-		    (unsigned long long) sector, grub_errmsg);
-      grub_error_pop ();
+      grub_dprintf ("disk", "Read out of range: sector 0x%"PFMT64x" (%s).\n", (ut64) sector, grub_errmsg); grub_error_pop ();
       return grub_errno;
     }
 

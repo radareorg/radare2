@@ -25,10 +25,10 @@ sdb_version.h:
 	$(MAKE) -C .. src/sdb_version.h
 
 shared: sdb_version.h
-	$(MAKE) libsdb.${SOVER}
+	$(MAKE) libsdb${SOVER}
 
 static: sdb_version.h
-	$(MAKE) libsdb.a
+	$(MAKE) libsdb$(EXT_AR)
 
 sdb_objs: sdb_version.h
 	$(MAKE) ${OBJ}
@@ -36,25 +36,25 @@ sdb_objs: sdb_version.h
 sdb_objs2: sdb_version.h
 	$(MAKE) ${SOBJ}
 
-libsdb.a: sdb_objs
+libsdb.lib libsdb$(EXT_AR): sdb_objs
 ifneq ($(SILENT),)
-	@echo AR libsdb.a
+	@echo AR libsdb$(EXT_AR)
 endif
-	rm -f libsdb.a
-	${AR} q libsdb.a ${OBJ}
-	${RANLIB} libsdb.a
+	rm -f libsdb$(EXT_AR)
+	${AR} q libsdb$(EXT_AR) ${OBJ}
+	${RANLIB} libsdb$(EXT_AR)
 
 ifeq ($(CC),tcc)
-libsdb.${SOVER}:
+libsdb${SOVER}:
 	@echo TCC doesnt support shared libs on macos
 else
-libsdb.${SOVER}: sdb_objs2
+libsdb${SOVER}: sdb_objs2
 endif
 ifneq ($(EXT_SO),${SOVER})
-	ln -fs libsdb.${SOVER} libsdb.${EXT_SO}
+	ln -fs libsdb${SOVER} libsdb${EXT_SO}
 endif
 ifneq ($(SILENT),)
-	@echo LIB libsdb.${SOVER}
+	@echo LIB libsdb${SOVER}
 endif
 	$(CC) ${CFLAGS} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
 
@@ -69,7 +69,7 @@ endif
 
 mrproper clean:
 	rm -rf ${OBJ} ${SOBJ} main.o libsdb.a a.out ${BIN} sdb.dSYM
-	rm -rf *.d *._d json/*.d json/*._d *.sdb *.db *.${EXT_SO} *.${EXT_SO}.*
+	rm -rf *.d *._d json/*.d json/*._d *.sdb *.db *.dylib *.dll *.so *.so.*
 
 # rules #
 .c:

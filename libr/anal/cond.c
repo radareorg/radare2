@@ -28,7 +28,7 @@ R_API RAnalCond *r_anal_cond_new(void) {
 	return R_NEW0 (RAnalCond);
 }
 
-R_API void r_anal_cond_fini (RAnalCond *c) {
+R_API void r_anal_cond_fini(RAnalCond *c) {
 	if (!c) {
 		return;
 	}
@@ -37,7 +37,7 @@ R_API void r_anal_cond_fini (RAnalCond *c) {
 	c->arg[0] = c->arg[1] = NULL;
 }
 
-R_API void r_anal_cond_free (RAnalCond *c) {
+R_API void r_anal_cond_free(RAnalCond *c) {
 	if (!c) {
 		return;
 	}

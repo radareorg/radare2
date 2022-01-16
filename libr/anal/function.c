@@ -39,7 +39,9 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	}
 	RAnalFunction *f = ht_pp_find (anal->ht_name_fun, name, &found);
 	if (f && found) {
-		eprintf ("Invalid function name '%s' at 0x%08"PFMT64x"\n", name, addr);
+		if (f->addr != addr) {
+			eprintf ("Invalid function name '%s' at 0x%08"PFMT64x" (function at 0x%08"PFMT64x")\n", name, addr, f->addr);
+		}
 		return true;
 	}
 	// check if there's a function already in the given address
@@ -95,11 +97,13 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	}
 
 	RAnalBlock *block;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, block) {
-		r_list_delete_data (block->fcns, fcn);
-		r_anal_block_unref (block);
+	RListIter *iter, *iter2;
+	r_list_foreach_safe (fcn->bbs, iter, iter2, block) {
+		r_anal_function_remove_block (fcn, block);
+		// r_list_delete_data (block->fcns, fcn);
+		//r_anal_block_unref (block);
 	}
+	// fcn->bbs->free = r_anal_block_unref;
 	r_list_free (fcn->bbs);
 
 	RAnal *anal = fcn->anal;
@@ -189,17 +193,6 @@ R_API RAnalFunction *r_anal_get_function_at(RAnal *anal, ut64 addr) {
 	return NULL;
 }
 
-typedef struct {
-	HtUP *inst_vars_new;
-	st64 delta;
-} InstVarsRelocateCtx;
-
-static bool inst_vars_relocate_cb(void *user, const ut64 k, const void *v) {
-	InstVarsRelocateCtx *ctx = user;
-	ht_up_insert (ctx->inst_vars_new, k - ctx->delta, (void *)v);
-	return true;
-}
-
 R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 	if (fcn->addr == addr) {
 		return true;
@@ -208,29 +201,6 @@ R_API bool r_anal_function_relocate(RAnalFunction *fcn, ut64 addr) {
 		return false;
 	}
 	ht_up_delete (fcn->anal->ht_addr_fun, fcn->addr);
-
-	// relocate the var accesses (their addrs are relative to the function addr)
-	st64 delta = addr - fcn->addr;
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
-		RAnalVar *var = *it;
-		RAnalVarAccess *acc;
-		r_vector_foreach (&var->accesses, acc) {
-			acc->offset -= (ut64)delta;
-		}
-	}
-	InstVarsRelocateCtx ctx = {
-		.inst_vars_new = ht_up_new (NULL, inst_vars_kv_free, NULL),
-		.delta = delta
-	};
-	if (ctx.inst_vars_new) {
-		ht_up_foreach (fcn->inst_vars, inst_vars_relocate_cb, &ctx);
-		// Do not free the elements of the Ht, because they were moved to ctx.inst_vars_new
-		fcn->inst_vars->opt.freefn = NULL;
-		ht_up_free (fcn->inst_vars);
-		fcn->inst_vars = ctx.inst_vars_new;
-	}
-
 	fcn->addr = addr;
 	ht_up_insert (fcn->anal->ht_addr_fun, addr, fcn);
 	return true;

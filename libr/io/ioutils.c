@@ -3,7 +3,6 @@
 #include <r_io.h>
 #include <r_util.h>
 #include <r_types.h>
-#include "io_private.h"
 
 //This helper function only check if the given vaddr is mapped, it does not account
 //for map perms

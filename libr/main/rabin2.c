@@ -11,7 +11,7 @@
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
-		"              [-o str] [-O str] [-k query] [-D lang symname] file\n");
+		"              [-o str] [-O str] [-k query] [-D lang mangledsymbol] file\n");
 	if (v) {
 		printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
@@ -24,7 +24,7 @@ static int rabin_show_help(int v) {
 		" -C [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -d              show debug/dwarf information\n"
 		" -D lang name    demangle symbol name (-D all for bin.demangle=true)\n"
-		" -e              entrypoint\n"
+		" -e              program entrypoint\n"
 		" -ee             constructor/destructor entrypoints\n"
 		" -E              globally exportable symbols\n"
 		" -f [str]        select sub-bin named str\n"
@@ -46,7 +46,7 @@ static int rabin_show_help(int v) {
 		" -N [min:max]    force min:max number of chars per string (see -z and -zz)\n"
 		" -o [str]        output file/folder for write operations (out by default)\n"
 		" -O [str]        write/extract operations (-O help)\n"
-		" -p              show physical addresses\n"
+		" -p              show always physical addresses\n"
 		" -P              show debug/pdb information\n"
 		" -PP             download pdb file for binary\n"
 		" -q              be quiet, just show fewer data\n"
@@ -81,13 +81,14 @@ static int rabin_show_help(int v) {
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
 		" RABIN2_LANG:      e bin.lang         # assume lang for demangling\n"
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
-		" RABIN2_NOPLUGINS: # do not load shared plugins (speedup loading)\n"
+		" RABIN2_NOPLUGINS: 1|0|               # do not load shared plugins (speedup loading)\n"
 		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
 		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n"
-		" RABIN2_STRFILTER: e bin.str.filter   #  r2 -qc 'e bin.str.filter=?" "?' -\n"
+		" RABIN2_STRFILTER: e bin.str.filter   # r2 -qc 'e bin.str.filter=?" "?' -\n"
 		" RABIN2_STRPURGE:  e bin.str.purge    # try to purge false positives\n"
 		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
-		" R2_CONFIG:        # sdb config file\n");
+		" RABIN2_SWIFTLIB:  1|0|               # load Swift libsto demangle (default: true)\n"
+		);
 	}
 	return 1;
 }
@@ -511,14 +512,27 @@ static int __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
+static void setup_trylib_from_environment(RBin *bin, int type) {
+	bool trylib = false;
+	if (type == R_BIN_NM_SWIFT) {
+		trylib = true;
+		char *swiftlib = r_sys_getenv ("RABIN2_TRYLIB");
+		if (swiftlib) {
+			trylib = r_str_is_true (swiftlib);
+			free (swiftlib);
+		}
+	}
+	bin->demangle_trylib = trylib;
+}
+
 static char *__demangleAs(RBin *bin, int type, const char *file) {
-	bool syscmd = bin? bin->demanglercmd: false;
+	bool syscmd = bin->demangle_usecmd;
 	char *res = NULL;
 	switch (type) {
 	case R_BIN_NM_CXX: res = r_bin_demangle_cxx (NULL, file, 0); break;
 	case R_BIN_NM_JAVA: res = r_bin_demangle_java (file); break;
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, file); break;
-	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file, syscmd); break;
+	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (file, syscmd, bin->demangle_trylib); break;
 	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (file); break;
 	case R_BIN_NM_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
 	default:
@@ -596,7 +610,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_lib_free (l);
 	}
 	free (tmp);
-
+#if 0
 	if ((tmp = r_sys_getenv ("R2_CONFIG"))) {
 		Sdb *config_sdb = sdb_new (NULL, tmp, 0);
 		if (config_sdb) {
@@ -607,6 +621,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		}
 		free (tmp);
 	}
+#endif
 	if ((tmp = r_sys_getenv ("RABIN2_DMNGLRCMD"))) {
 		r_config_set (core.config, "cmd.demangle", tmp);
 		free (tmp);
@@ -839,6 +854,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			break;
 		}
 	}
+	core.io->va = va;
 
 	PJ *pj = NULL;
 	if (rad == R_MODE_JSON) {
@@ -865,12 +881,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 
 	if (do_demangle) {
 		char *res = NULL;
-		int type;
 		if ((argc - opt.ind) < 2) {
 			r_core_fini (&core);
 			return rabin_show_help (0);
 		}
-		type = r_bin_demangle_type (do_demangle);
+		int type = r_bin_demangle_type (do_demangle);
+		setup_trylib_from_environment (bin, type);
 		file = argv[opt.ind + 1];
 		if (!strcmp (file, "-")) {
 			for (;;) {
@@ -1067,8 +1083,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 
-	RBinOptions bo;
-	r_bin_options_init (&bo, fd, baddr, laddr, rawstr);
+	RBinFileOptions bo;
+	r_bin_file_options_init (&bo, fd, baddr, laddr, rawstr);
 	bo.xtr_idx = xtr_idx;
 
 	if (!r_bin_open (bin, file, &bo)) {

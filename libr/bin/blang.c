@@ -44,7 +44,7 @@ static bool check_golang(RBinSymbol *sym) {
 	return !strncmp (sym->name, "go.", 3);
 }
 
-static inline bool is_cxx_symbol (const char *name) {
+static inline bool is_cxx_symbol(const char *name) {
 	r_return_val_if_fail (name, false);
 	if (!strncmp (name, "_Z", 2)) {
 		return true;

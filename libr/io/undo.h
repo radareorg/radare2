@@ -10,7 +10,7 @@ struct undow_t {
 	struct list_head list;
 };
 
-enum { 
+enum {
 	UNDO_WRITE_UNSET = 0,
 	UNDO_WRITE_SET   = 1
 };

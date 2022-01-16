@@ -31,9 +31,9 @@ R_API void r_anal_op_init(RAnalOp *op) {
 	}
 }
 
-R_API bool r_anal_op_fini(RAnalOp *op) {
+R_API void r_anal_op_fini(RAnalOp *op) {
 	if (!op) {
-		return false;
+		return;
 	}
 	r_anal_value_free (op->src[0]);
 	r_anal_value_free (op->src[1]);
@@ -50,7 +50,6 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	r_anal_switch_op_free (op->switch_op);
 	op->switch_op = NULL;
 	R_FREE (op->mnemonic);
-	return true;
 }
 
 R_API void r_anal_op_free(void *_op) {
@@ -86,6 +85,17 @@ static int defaultCycles(RAnalOp *op) {
 	default:
 		return 1;
 	}
+}
+
+R_API int r_anal_opasm(RAnal *anal, ut64 addr, const char *s, ut8 *outbuf, int outlen) {
+	if (anal && outbuf && outlen > 0 && anal->cur && anal->cur->opasm) {
+		// use core binding to set asm.bits correctly based on the addr
+		// this is because of the hassle of arm/thumb
+		int ret = anal->cur->opasm (anal, addr, s, outbuf, outlen);
+		/* consider at least 1 byte to be part of the opcode */
+		return ret;
+	}
+	return 0;
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
@@ -127,7 +137,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		if (anal->verbose) {
 			eprintf ("Warning: unhandled R_ANAL_OP_MASK_DISASM in r_anal_op\n");
 		}
-        }
+	}
 	if (mask & R_ANAL_OP_MASK_HINT) {
 		RAnalHint *hint = r_anal_hint_get (anal, addr);
 		if (hint) {
@@ -344,15 +354,15 @@ repeat:
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
-	case R_ANAL_OP_TYPE_RCALL : return "rcall"; // needs to be changed
-	case R_ANAL_OP_TYPE_ICALL : return "ucall"; // needs to be changed
-	case R_ANAL_OP_TYPE_IRCALL: return "ucall"; // needs to be changed
+	case R_ANAL_OP_TYPE_RCALL : return "rcall";
+	case R_ANAL_OP_TYPE_ICALL : return "icall";
+	case R_ANAL_OP_TYPE_IRCALL: return "ircall";
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
 	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
 	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
-	case R_ANAL_OP_TYPE_RJMP  : return "rjmp"; // needs to be changed
-	case R_ANAL_OP_TYPE_IJMP  : return "ujmp"; // needs to be changed
-	case R_ANAL_OP_TYPE_IRJMP : return "ujmp"; // needs to be changed
+	case R_ANAL_OP_TYPE_RJMP  : return "rjmp";
+	case R_ANAL_OP_TYPE_IJMP  : return "ijmp";
+	case R_ANAL_OP_TYPE_IRJMP : return "irjmp";
 	case R_ANAL_OP_TYPE_UNK   : return "unk";
 	case R_ANAL_OP_TYPE_UPUSH : return "upush";
 	case R_ANAL_OP_TYPE_XCHG  : return "xchg";

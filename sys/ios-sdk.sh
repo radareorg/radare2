@@ -11,7 +11,7 @@ EMBED_BITCODE=1
 CFLAGS="-O2 -miphoneos-version-min=10.0"
 DOSH=0
 ARCHS="" # Will be set by -archs argument. If you want to set it -> e.g. ARCHS="armv7+arm64".
-MERGE_LIBS=1 # Will merge libs if you build for arm and simulator 
+MERGE_LIBS=1 # Will merge libs if you build for arm and simulator
 
 # Environment variables
 export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
@@ -99,7 +99,7 @@ showHelp() {
 
 	echo "    -a, --archs"
 	echo "        Select the archs, you want to build for."
-	echo "        Available archs: armv7, armv7s, arm64, all" 
+	echo "        Available archs: armv7, armv7s, arm64, all"
 	echo "        You can select multiple archs by concatenating"
 	echo "        them with a '+' sign."
 	echo "        Or specify 'all' to build for armv7+armv7s+arm64."
@@ -139,7 +139,7 @@ if [ $# -eq 0 ] && [ "${#ARCHS}" = 0 ] && [ "${USE_SIMULATOR}" = 0 ]; then
 fi
 
 while test $# -gt 0; do
-	case "$1" in 
+	case "$1" in
 	-full|--full|-f)
 		shift
 		ARCHS="armv7s+arm64"

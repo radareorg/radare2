@@ -57,7 +57,6 @@ RUN
 
 NAME=radiff2 gnu unified string comparison
 FILE=-
-BROKEN=1
 CMDS=!!radiff2 -Uz bins/elf/elf_one_symbol_shdr bins/elf/elf_one_symbol_shdr1 | tail -n 2
 EXPECT=<<EOF
 -Hello world!

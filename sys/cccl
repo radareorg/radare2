@@ -122,7 +122,7 @@ EOF
     -O2)
         clopt="${clopt},${slash}O2"
         ;;
-        
+
     -I*)
         path=$(echo "$1" | sed 's,-I,,')
         path=$(cygpath -aw "$path")
@@ -228,7 +228,7 @@ EOF
         ;;
 
     *.cc | *.cxx | *.C)
-        # C++ source file with non .cpp extension, make sure cl understand 
+        # C++ source file with non .cpp extension, make sure cl understand
         # that it is C++
         clopt="${clopt},${slash}Tp$1"
         ;;

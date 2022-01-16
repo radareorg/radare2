@@ -5,7 +5,7 @@
 #include "sfc/sfc_specs.h"
 #include <r_endian.h>
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut16 cksum1, cksum2;
 	ut64 length = r_buf_size (b);
 	// FIXME: this was commented out because it always evaluates to false.
@@ -32,7 +32,7 @@ static bool check_buffer(RBuffer *b) {
 }
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
-	return check_buffer (b);
+	return check_buffer (bf, b);
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -172,7 +172,7 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *mem (RBinFile *bf) {
+static RList *mem(RBinFile *bf) {
 	RList *ret;
 	RBinMem *m;
 	RBinMem *m_bak;

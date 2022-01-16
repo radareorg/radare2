@@ -180,7 +180,7 @@
 #define PC_IDX 16
 
 /* for {bra,bsr} only: (sign-extend 12bit offset)<<1 + PC +4 */
-static ut64 disarm_12bit_offset (RAnalOp *op, unsigned int insoff) {
+static ut64 disarm_12bit_offset(RAnalOp *op, unsigned int insoff) {
 	ut64 off = insoff;
 	/* sign extend if higher bit is 1 (0x0800) */
 	if ((off & 0x0800) == 0x0800)
@@ -191,7 +191,7 @@ static ut64 disarm_12bit_offset (RAnalOp *op, unsigned int insoff) {
 }
 
 /* for bt,bf sign-extended offsets : return PC+4+ (exts.b offset)<<1 */
-static ut64 disarm_8bit_offset (ut64 pc, ut32 offs) {
+static ut64 disarm_8bit_offset(ut64 pc, ut32 offs) {
 		/* pc (really, op->addr) is 64 bits, so we need to sign-extend
 		 * to 64 bits instead of the 32 the actual CPU does */
 		ut64 off = offs;
@@ -1065,7 +1065,7 @@ static int fpu_insn(RAnal* anal, RAnalOp* op, ut16 code) {
 }
 
 /* Table of routines for further analysis based on 1st nibble */
-static int (*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
+static int(*first_nibble_decode[])(RAnal*,RAnalOp*,ut16) = {
 	first_nibble_is_0,
 	movl_reg_rdisp,
 	first_nibble_is_2,

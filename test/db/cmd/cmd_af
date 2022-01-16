@@ -228,7 +228,7 @@ size: 9
 | 0x004017c3      83c108         add ecx, 8
 | 0x004017c6      3d             invalid
 \ 0x004017c7      0010           add byte [eax], dl
-| ----------- true: 0x004017dd  false: 0x004017cd
+| // true: 0x004017dd  false: 0x004017cd
 
 size: 12
 0x004017c0 0x004017cc 00:0000 12 j 0x004017dd f 0x004017cd
@@ -246,7 +246,7 @@ size: 12
 | 0x004017c3      83c108         add ecx, 8
 | 0x004017c6      3d00100000     cmp eax, 0x1000
 | 0x004017cb      72             invalid
-| ----------- true: 0x004017dd  false: 0x004017cd
+| // true: 0x004017dd  false: 0x004017cd
 EOF
 RUN
 
@@ -280,7 +280,6 @@ EOF
 RUN
 
 NAME=float args afli
-BROKEN=1
 FILE=bins/elf/float_point
 CMDS=<<EOF
 aa
@@ -369,10 +368,8 @@ EXPECT=<<EOF
 0x00001337    0 0            func
 EOF
 EXPECT_ERR=<<EOF
-Invalid function name 'func' at 0x00001337
-Cannot add function (duplicated)
-Invalid function name 'func' at 0x00001337
-Cannot add function (duplicated)
+Cannot add function 'func' (duplicated) at 0x00001337
+Cannot add function 'func' (duplicated) at 0x00001337
 EOF
 RUN
 

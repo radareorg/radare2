@@ -10,6 +10,7 @@ typedef struct {
 	ut8 *buf;
 	ut32 size;
 	ut64 offset;
+	bool has_changed;
 } RIOGzip;
 
 static inline ut32 _io_malloc_sz(RIODesc *desc) {
@@ -74,6 +75,8 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		count -= (_io_malloc_off (fd) + count -_io_malloc_sz (fd));
 	}
 	if (count > 0) {
+		RIOGzip *riom = fd->data;
+		riom->has_changed = true;
 		memcpy (_io_malloc_buf (fd) + _io_malloc_off (fd), buf, count);
 		_io_malloc_set_off (fd, _io_malloc_off (fd) + count);
 		return count;
@@ -120,16 +123,17 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-static int __close(RIODesc *fd) {
-	RIOGzip *riom;
+static bool __close(RIODesc *fd) {
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
-	riom = fd->data;
+	RIOGzip *riom = fd->data;
+	if (riom->has_changed) {
+		eprintf ("TODO: Writing changes into gzipped files is not yet supported\n");
+	}
 	R_FREE (riom->buf);
 	R_FREE (fd->data);
-	eprintf ("TODO: Writing changes into gzipped files is not yet supported\n");
-	return 0;
+	return true;
 }
 
 static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {

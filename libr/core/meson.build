@@ -14,7 +14,6 @@ r_core_sources = [
   'cmd.c',
   #'cmd_anal.c',
   'cmd_api.c',
-  'cmd_helps.c',
   #'cmd_cmp.c',
   #'cmd_debug.c',
   #'cmd_egg.c',
@@ -61,22 +60,20 @@ r_core_sources = [
   'task.c',
   'vasm.c',
   'visual.c',
+  'vslides.c',
   'vmarks.c',
   'vmenus.c',
   'vmenus_graph.c',
   'vmenus_zigns.c',
   'yank.c',
-  'p/core_a2f.c',
-  'p/core_sixref.c',
-  'p/core_java.c'
+  join_paths('p','core_a2f.c'),
+  join_paths('p','core_sixref.c'),
+  join_paths('p','core_java.c')
 ]
 
 r_core_inc = []
-if host_machine.system() != 'windows'
-  r_core_inc += ['../../shlr/heap/include']
-else
-	r_core_sources += 'windows_heap.c'
-	r_core_inc += ['../../shlr/heap/include/r_windows']
+if host_machine.system() == 'windows'
+  r_core_sources += 'windows_heap.c'
 endif
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
 
@@ -122,8 +119,7 @@ r_core = library('r_core', r_core_sources,
   soversion: r2_libversion
 )
 
-r_core_dep = declare_dependency(link_with: r_core,
-                                include_directories: r_core_inc)
+r_core_dep = declare_dependency(link_with: r_core, include_directories: r_core_inc)
 
 pkgconfig_mod.generate(
   r_core,

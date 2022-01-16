@@ -1,4 +1,4 @@
-/* MIT pancake <pancake@nopcode.org> (C) 2009-2020 */
+/* MIT pancake <pancake@nopcode.org> (C) 2009-2021 */
 
 #include "spp.h"
 #include "r_api.h"
@@ -70,7 +70,7 @@ static char *spp_run_str(char *buf, int *rv) {
 	return b;
 }
 
-void lbuf_strcat(SppBuf *dst, char *src) {
+S_API void lbuf_strcat(SppBuf *dst, char *src) {
 	int len = strlen (src);
 	char *nbuf;
 	if (!dst->lbuf || (len + dst->lbuf_n) > dst->lbuf_s) {
@@ -85,7 +85,7 @@ void lbuf_strcat(SppBuf *dst, char *src) {
 	dst->lbuf_n += len;
 }
 
-int do_fputs(Output *out, char *str) {
+S_API int do_fputs(Output *out, char *str) {
 	int i;
 	int printed = 0;
 	for (i = 0; i <= proc->state.ifl; i++) {
@@ -334,7 +334,7 @@ S_API void spp_proc_set(SppProc *p, const char *arg, int fail) {
 	}
 }
 
-void out_printf(Output *out, char *str, ...) {
+S_API void out_printf(Output *out, char *str, ...) {
 	va_list ap;
 	va_start (ap, str);
 	if (out->fout) {

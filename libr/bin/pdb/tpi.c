@@ -13,14 +13,14 @@ static bool is_simple_type(int idx) {
         '---------------------------'------'----------'
         |+32                        |+12   |+8        |+0
 	*/
-	return value < base_idx; 
+	return value < base_idx;
 	// return ((value & 0x00000000FFF00) <= 0x700 && (value & 0x00000000000FF) < 0x80);
 }
 
 /**
  * @brief Parses simple type if the idx represents one
- * 
- * @param idx 
+ *
+ * @param idx
  * @return STypeInfo, leaf_type = 0 -> error
  *  This can be made smarter by using the masks
  *  and splitting it on 2 parts, 1 mode, 1 type
@@ -232,18 +232,18 @@ static STypeInfo parse_simple_type(ut32 idx) {
 		simple_type->type = strdup ("uint16_t *");
 		break;
 
-	case eT_LONG: 
+	case eT_LONG:
 	case eT_INT4:
 		simple_type->size = 4;
 		simple_type->type = strdup ("int32_t");
 		break;
-	case eT_PLONG: 
-	case eT_PINT4: 
+	case eT_PLONG:
+	case eT_PINT4:
 		simple_type->size = 2;
 		simple_type->type = strdup ("int32_t *");
 		break;
-	case eT_PFLONG: 
-	case eT_PHLONG: 
+	case eT_PFLONG:
+	case eT_PHLONG:
 	case eT_32PLONG:
 	case eT_32PFLONG:
 	case eT_PFINT4:
@@ -1749,7 +1749,7 @@ static void get_modifier_print_type(void *type, char **name) {
 	r_strbuf_init (&buff);
 	if (modifier->umodifier.bits.const_) {
 		r_strbuf_append (&buff, "const ");
-	} 
+	}
 	if (modifier->umodifier.bits.volatile_) {
 		r_strbuf_append (&buff, "volatile ");
 	}

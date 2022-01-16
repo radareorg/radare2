@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <r_core.h>
+#include "ht_pp.h"
 
 /*!
  * Number of sub-commands to show as options when displaying the help of a
@@ -100,10 +101,77 @@ err:
 	return NULL;
 }
 
+static void alias_freefn(HtPPKv *kv) {
+	char *k = kv->key;
+	RCmdAliasVal *v = kv->value;
+
+	free (v->data);
+	free (k);
+	free (v);
+}
+
+static void *alias_dupkey(const void *k) {
+	return strdup ((const char *)k);
+}
+
+static void *alias_dupvalue(const void *v_void) {
+	RCmdAliasVal *v = (RCmdAliasVal *)v_void;
+	RCmdAliasVal *vcopy = R_NEW (RCmdAliasVal);
+	if (!vcopy) {
+		return NULL;
+	}
+	ut8 *data = malloc (v->sz);
+	if (!data) {
+		free (vcopy);
+		return NULL;
+	}
+	vcopy->is_data = v->is_data;
+	vcopy->is_str = v->is_str;
+	vcopy->sz = v->sz;
+	vcopy->data = data;
+	memcpy (vcopy->data, v->data, v->sz);
+
+	return vcopy;
+}
+
+static ut32 alias_calcsizeK(const void *k) {
+	return strlen ((const char *)k);
+}
+
+static ut32 alias_calcsizeV(const void *v) {
+	return ((RCmdAliasVal *)v)->sz;
+}
+
+static int alias_cmp(const void *k1, const void *k2) {
+	return strcmp ((const char *)k1, (const char *)k2);
+}
+
+static ut32 alias_hashfn(const void *k_in) {
+	/* djb2 algorithm by Dan Bernstein */
+	ut32 hash = 5381;
+	ut8 c;
+	const char *k = k_in;
+
+	while (*k) {
+		c = *k++;
+		/* hash * 33 + c */
+		hash += (hash << 5) + c;
+	}
+
+	return hash;
+}
+
 R_API void r_cmd_alias_init(RCmd *cmd) {
-	cmd->aliases.count = 0;
-	cmd->aliases.keys = NULL;
-	cmd->aliases.values = NULL;
+	HtPPOptions opt = { 0 };
+	opt.cmp = alias_cmp;
+	opt.hashfn = alias_hashfn;
+	opt.dupkey = alias_dupkey;
+	opt.dupvalue = alias_dupvalue;
+	opt.calcsizeK = alias_calcsizeK;
+	opt.calcsizeV = alias_calcsizeV;
+	opt.freefn = alias_freefn;
+
+	cmd->aliases = ht_pp_new_opt (&opt);
 }
 
 R_API RCmd *r_cmd_new(void) {
@@ -185,114 +253,232 @@ out:
 	return res;
 }
 
-R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz) {
-	if (sz) {
-		*sz = cmd->aliases.count;
-	}
-	return cmd->aliases.keys;
+static bool get_keys(void *keylist_in, const void *k, const void *v) {
+	RList *keylist = (RList *) keylist_in;
+	return r_list_append (keylist, (char *) k);
 }
 
-R_API void r_cmd_alias_free (RCmd *cmd) {
-	int i; // find
-	for (i = 0; i < cmd->aliases.count; i++) {
-		free (cmd->aliases.keys[i]);
-		free (cmd->aliases.values[i]);
+R_API RList *r_cmd_alias_keys(RCmd *cmd) {
+	RList *keylist = r_list_new ();
+	if (!keylist) {
+		return NULL;
 	}
-	cmd->aliases.count = 0;
-	R_FREE (cmd->aliases.keys);
-	R_FREE (cmd->aliases.values);
-	free (cmd->aliases.remote);
+
+	ht_pp_foreach (cmd->aliases, get_keys, keylist);
+
+	return keylist;
 }
 
-R_API bool r_cmd_alias_del (RCmd *cmd, const char *k) {
-	int i; // find
-	for (i = 0; i < cmd->aliases.count; i++) {
-		if (!k || !strcmp (k, cmd->aliases.keys[i])) {
-			R_FREE (cmd->aliases.values[i]);
-			cmd->aliases.count--;
-			if (cmd->aliases.count > 0) {
-				if (i > 0) {
-					free (cmd->aliases.keys[i]);
-					cmd->aliases.keys[i] = cmd->aliases.keys[0];
-					free (cmd->aliases.values[i]);
-					cmd->aliases.values[i] = cmd->aliases.values[0];
-				}
-				memmove (cmd->aliases.values,
-					cmd->aliases.values + 1,
-					cmd->aliases.count * sizeof (void*));
-				memmove (cmd->aliases.keys,
-					cmd->aliases.keys + 1,
-					cmd->aliases.count * sizeof (void*));
-			}
-			return true;
+R_API void r_cmd_alias_free(RCmd *cmd) {
+	ht_pp_free (cmd->aliases);
+	cmd->aliases = NULL;
+}
+
+R_API bool r_cmd_alias_del(RCmd *cmd, const char *k) {
+	return ht_pp_delete(cmd->aliases, k);
+}
+
+R_API int r_cmd_alias_set_cmd(RCmd *cmd, const char *k, const char *v) {
+	RCmdAliasVal val;
+	val.data = (ut8 *)v;
+	if (!val.data) {
+		return 1;
+	}
+	val.sz = strlen (v) + 1;
+	val.is_str = true;
+	val.is_data = false;
+
+	return ht_pp_update (cmd->aliases, k, &val);
+}
+
+R_API int r_cmd_alias_set_str(RCmd *cmd, const char *k, const char *v) {
+	RCmdAliasVal val;
+	val.data = (ut8 *)strdup (v);
+	if (!val.data) {
+		return 1;
+	}
+	val.is_str = true;
+	val.is_data = true;
+
+	/* No trailing newline */
+	int len = strlen (v);
+	while (len-- > 0) {
+		if (v[len] == '\r' || v[len] == '\n') {
+			val.data[len] = '\0';
+		} else {
+			break;
 		}
 	}
-	return false;
+	// len is strlen()-1 now
+	val.sz = len + 2;
+
+	int ret = ht_pp_update (cmd->aliases, k, &val);
+	free (val.data);
+	return ret;
 }
 
-// XXX: use a hashtable or any other standard data structure
-R_API int r_cmd_alias_set(RCmd *cmd, const char *k, const char *v, int remote) {
-	void *tofree = NULL;
-	if (!strncmp (v, "base64:", 7)) {
-		ut8 *s = r_base64_decode_dyn (v + 7, -1);
-		if (s) {
-			tofree = s;
-			v = (const char *)s;
-		}
-	}
+R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 	int i;
-	for (i = 0; i < cmd->aliases.count; i++) {
-		int matches = !strcmp (k, cmd->aliases.keys[i]);
-		if (matches) {
-			free (cmd->aliases.values[i]);
-			cmd->aliases.values[i] = strdup (v);
-			free (tofree);
+
+	if (sz < 1) {
+		return 1;
+	}
+
+	RCmdAliasVal val;
+	val.data = malloc (sz);
+	if (!val.data) {
+		return 1;
+	}
+
+	memcpy (val.data, v, sz);
+	val.sz = sz;
+
+	/* If it's a string already, we speed things up later by checking now */
+	const ut8 *firstnull = NULL;
+	bool is_binary = false;
+	for (i = 0; i < sz; i++) {
+		/* \0 before expected -> not string */
+		if (v[i] == '\0') {
+			firstnull = &v[i];
+			break;
+		}
+
+		/* Non-ascii character -> not string */
+		if (!IS_PRINTABLE(v[i]) && !IS_WHITECHAR(v[i])) {
+			is_binary = true;
+			break;
+		}
+	}
+
+	if (firstnull == &v[sz-1] && !is_binary) {
+		/* Data is already a string */
+		val.is_str = true;
+	} else if (!firstnull && !is_binary) {
+		/* Data is an unterminated string */
+		val.sz++;
+		ut8 *data = realloc (val.data, val.sz);
+		if (!data) {
 			return 1;
 		}
+		val.data = data;
+		val.data[val.sz - 1] = '\0';
+		val.is_str = true;
+	} else {
+		/* Data has nulls or non-ascii, not a string */
+		val.is_str = false;
 	}
 
-	i = cmd->aliases.count++;
-	char **K = (char **)realloc (cmd->aliases.keys,
-				     sizeof (char *) * cmd->aliases.count);
-	if (K) {
-		cmd->aliases.keys = K;
-		int *R = (int *)realloc (cmd->aliases.remote,
-				sizeof (int) * cmd->aliases.count);
-		if (R) {
-			cmd->aliases.remote = R;
-			char **V = (char **)realloc (cmd->aliases.values,
-					sizeof (char *) * cmd->aliases.count);
-			if (V) {
-				cmd->aliases.values = V;
-				cmd->aliases.keys[i] = strdup (k);
-				cmd->aliases.values[i] = strdup (v);
-				cmd->aliases.remote[i] = remote;
+	val.is_data = true;
+
+	if (val.is_str) {
+		/* No trailing newline */
+		int len = val.sz - 1;
+		while (len-- > 0) {
+			if (v[len] == '\r' || v[len] == '\n') {
+				val.data[len] = '\0';
+			} else {
+				break;
 			}
 		}
+		// len is strlen()-1 now
+		val.sz = len + 2;
 	}
-	free (tofree);
+
+	int ret = ht_pp_update (cmd->aliases, k, &val);
+	free (val.data);
+	return ret;
+}
+
+R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k) {
+	r_return_val_if_fail (cmd && cmd->aliases && k, NULL);
+
+	return ht_pp_find(cmd->aliases, k, NULL);
+}
+
+static ut8 *alias_append_internal(int *out_szp, const RCmdAliasVal *first, const ut8 *second, int second_sz) {
+	ut8* out;
+	int out_sz;
+
+	/* If appending to a string, always overwrite the trailing \0 */
+	int bytes_from_first = first->is_str
+		? first->sz - 1
+		: first->sz;
+
+	out_sz = bytes_from_first + second_sz;
+	out = malloc (out_sz);
+	if (!out) {
+		return NULL;
+	}
+
+	/* Copy full buffer if raw bytes. Stop before \0 if string. */
+	memcpy (out, first->data, bytes_from_first);
+	/* Always copy all bytes from second, including trailing \0 */
+	memcpy (out+bytes_from_first, second, second_sz);
+
+	if (out_sz) {
+		*out_szp = out_sz;
+	}
+	return out;
+}
+
+R_API int r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a) {
+	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
+	if (v_old) {
+		if (!v_old->is_data) {
+			return 1;
+		}
+
+		int new_len;
+		ut8* new = alias_append_internal (&new_len, v_old, (ut8 *)a, strlen (a) + 1);
+
+		if (!new) {
+			return 1;
+		}
+
+		r_cmd_alias_set_raw (cmd, k, new, new_len);
+		free (new);
+	} else {
+		r_cmd_alias_set_str (cmd, k, a);
+	}
+
 	return 0;
 }
 
-R_API const char *r_cmd_alias_get(RCmd *cmd, const char *k, int remote) {
-	r_return_val_if_fail (cmd && k, NULL);
-	int matches, i;
-	// TODO: use a hashtable
-	for (i = 0; i < cmd->aliases.count; i++) {
-		matches = 0;
-		if (remote) {
-			if (cmd->aliases.remote[i]) {
-				matches = !strncmp (k, cmd->aliases.keys[i],
-					strlen (cmd->aliases.keys[i]));
-			}
-		} else {
-			matches = !strcmp (k, cmd->aliases.keys[i]);
+R_API int r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz) {
+	RCmdAliasVal *v_old = r_cmd_alias_get (cmd, k);
+	if (v_old) {
+		if (!v_old->is_data) {
+			return 1;
 		}
-		if (matches) {
-			return cmd->aliases.values[i];
-		}
+
+		int new_len;
+		ut8 *new = alias_append_internal (&new_len, v_old, a, sz);
+
+		r_cmd_alias_set_raw (cmd, k, new, new_len);
+		free (new);
+	} else {
+		r_cmd_alias_set_raw (cmd, k, a, sz);
 	}
-	return NULL;
+
+	return 0;
+}
+
+/* Returns a new copy of v->data. If !v->is_str, hex escaped */
+R_API char *r_cmd_alias_val_strdup(RCmdAliasVal *v) {
+	if (v->is_str) {
+		return strdup ((char *)v->data);
+	}
+
+	return r_str_escape_raw (v->data, v->sz);
+}
+
+/* Returns a new copy of v->data. If !v->is_str, b64 encoded. */
+R_API char *r_cmd_alias_val_strdup_b64(RCmdAliasVal *v) {
+	if (v->is_str) {
+		return strdup ((char *)v->data);
+	}
+
+	return r_base64_encode_dyn ((char *)v->data, v->sz);
 }
 
 R_API void r_cmd_set_data(RCmd *cmd, void *data) {
@@ -328,15 +514,12 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 		}
 	} else {
 		char *nstr = NULL;
-		const char *ji = r_cmd_alias_get (cmd, input, 1);
-		if (ji) {
-			if (*ji == '$') {
-				r_cons_strcat (ji + 1);
-				return true;
-			} else {
-				nstr = r_str_newf ("=!%s", input);
-				input = nstr;
-			}
+		RCmdAliasVal *v = r_cmd_alias_get (cmd, input);
+		if (v && v->is_data) {
+			char *v_str = r_cmd_alias_val_strdup (v);
+			r_cons_strcat (v_str);
+			free (v_str);
+			return true;
 		}
 		r_list_foreach (cmd->plist, iter, cp) {
 			if (cp->call && cp->call (cmd->data, input)) {
@@ -422,10 +605,6 @@ R_API RCmdStatus r_cmd_call_parsed_args(RCmd *cmd, RCmdParsedArgs *args) {
 	return res;
 }
 
-static size_t strlen0(const char *s) {
-	return s? strlen (s): 0;
-}
-
 static void fill_children_chars(RStrBuf *sb, RCmdDesc *cd) {
 	if (cd->help->options) {
 		r_strbuf_append (sb, cd->help->options);
@@ -503,7 +682,7 @@ static size_t calc_padding_len(RCmdDesc *cd) {
 		r_strbuf_fini (&sb);
 	}
 	if (R_STR_ISNOTEMPTY (cd->help->args_str)) {
-		args_len = strlen0 (cd->help->args_str);
+		args_len = strlen (cd->help->args_str);
 	}
 	return name_len + args_len + children_length;
 }
@@ -654,13 +833,12 @@ R_API RCmdMacroItem *r_cmd_macro_item_new(void) {
 }
 
 R_API void r_cmd_macro_item_free(RCmdMacroItem *item) {
-	if (!item) {
-		return;
+	if (item) {
+		free (item->name);
+		free (item->args);
+		free (item->code);
+		free (item);
 	}
-	free (item->name);
-	free (item->args);
-	free (item->code);
-	free (item);
 }
 
 R_API void r_cmd_macro_init(RCmdMacro *mac) {
@@ -686,7 +864,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	char *name, *args = NULL;
 	//char buf[R_CMD_MAXLEN];
 	RCmdMacroItem *m;
-	int macro_update;
+	bool macro_update = false;
 	RListIter *iter;
 	char *pbody;
 	// char *bufp;
@@ -721,17 +899,17 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	macro = NULL;
 	ptr = strchr (name, ' ');
 	if (ptr) {
-		*ptr='\0';
+		*ptr = '\0';
 		args = ptr +1;
 	}
-	macro_update = 0;
+	macro_update = false;
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (name, m->name)) {
 			macro = m;
 			// keep macro->name
 			free (macro->code);
 			free (macro->args);
-			macro_update = 1;
+			macro_update = true;
 			break;
 		}
 	}
@@ -770,7 +948,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	}
 	strncpy (macro->code, pbody, macro->codelen);
 	macro->code[macro->codelen-1] = 0;
-	if (macro_update == 0) {
+	if (macro_update == false) {
 		r_list_append (mac->macros, macro);
 	}
 	free (name);
@@ -887,11 +1065,11 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 				j++;
 			} else {
 				cmd[i] = ptr[j];
-				cmd[i+1] = '\0';
+				cmd[i + 1] = '\0';
 			}
 		} else {
 			cmd[i] = ptr[j];
-			cmd[i+1] = '\0';
+			cmd[i + 1] = '\0';
 		}
 	}
 	for (pcmd = cmd; *pcmd && (*pcmd == ' ' || *pcmd == '\t'); pcmd++) {
@@ -1118,7 +1296,7 @@ R_API RCmdParsedArgs *r_cmd_parsed_args_new(const char *cmd, int n_args, char **
 	res->has_space_after_cmd = true;
 	res->argc = n_args + 1;
 	res->argv = R_NEWS0 (char *, res->argc);
-	res->argv[0] = strdup(cmd);
+	res->argv[0] = strdup (cmd);
 	int i;
 	for (i = 1; i < res->argc; i++) {
 		res->argv[i] = strdup (args[i - 1]);

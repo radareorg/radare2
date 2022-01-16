@@ -43,7 +43,7 @@ Setup SDK for ARMv6
 
 5) Get the varinclude tarball
 
-      wget lolcathost.org/b/varinclude.tar.gz 
+      wget lolcathost.org/b/varinclude.tar.gz
       tar xzvf varinclude.tar.gz -C /
 
 Compilation
@@ -67,7 +67,7 @@ Building with the ARMv7 SDK
 From coolstar repo we get the ios toolchain
 
 	apt-get coreutils install wget inetutils
-	apt-get install basename git make expat 
+	apt-get install basename git make expat
 	apt-get install org.coolstar.iostoolchain
 
 * Copy crt1.o and dylib1.o from your iOS SDK into /usr/lib
@@ -80,7 +80,7 @@ From coolstar repo we get the ios toolchain
 
 	cd /usr/bin
 	ln -fs clang gcc
- 
+
 Build
 -----
 	export CC=clang

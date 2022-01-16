@@ -10,7 +10,7 @@ ec ujmp rgb:ff3
 ec ret rgb:f00
 ec trap rgb:000 rgb:f00
 ec offset rgb:fff
-ec prompt byellow 
+ec prompt byellow
 ec comment rgb:0cf
 ec usrcmt rgb:ff0 rgb:06f
 ec push rgb:f3f
@@ -18,9 +18,9 @@ ec pop rgb:f3f bold
 ec cmp rgb:ff0 rgb:060
 ec nop rgb:000
 ec b0x00 green
-ec b0x7f cyan 
-ec b0xff red 
-ec btext yellow 
+ec b0x7f cyan
+ec b0xff red
+ec btext yellow
 ec other rgb:666
 ec num rgb:ff0
 ec reg rgb:6f0 rgb:000

@@ -57,3 +57,102 @@ EXPECT=<<EOF
 $foo
 EOF
 RUN
+
+NAME=grep $alias
+FILE=-
+CMDS=<<EOF
+wx 9090909090
+pd 5~?
+pd 5~:..2 >$a
+$a~?
+EOF
+EXPECT=<<EOF
+5
+2
+EOF
+RUN
+
+NAME=cat $alias
+FILE=-
+CMDS=<<EOF
+echo test data >$a
+cat $a
+EOF
+EXPECT=<<EOF
+test data
+EOF
+RUN
+
+NAME=$alias types, setting, and printing
+FILE=-
+CMDS=<<EOF
+wx 4141414100
+ps >$str_redirect_alias
+$str_set_alias=$BBBB
+wx 430043004300
+pr 6 >$bytes_redirect_alias
+$bytes_set_alias=$D\\x00D\\x00D\\x00
+$bytes_decode_alias=base64:RQBFAEUA
+wx 909090
+pr 3 >$bytes_unterminated_alias
+
+$*
+?e -----
+$**
+EOF
+EXPECT=<<EOF
+$str_redirect_alias=AAAA
+$bytes_decode_alias=E\x00E\x00E\x00
+$bytes_unterminated_alias=\x90\x90\x90
+$bytes_redirect_alias=C\x00C\x00C\x00
+$bytes_set_alias=D\x00D\x00D\x00
+$str_set_alias=BBBB
+-----
+$str_redirect_alias=AAAA
+$bytes_decode_alias=base64:RQBFAEUA
+$bytes_unterminated_alias=base64:kJCQ
+$bytes_redirect_alias=base64:QwBDAEMA
+$bytes_set_alias=base64:RABEAEQA
+$str_set_alias=BBBB
+EOF
+RUN
+
+NAME=dont append to cmd $alias
+FILE=-
+CMDS=<<EOF
+$a=af
+$*
+pr >> $a
+$*
+EOF
+EXPECT=<<EOF
+$a=af
+$a=af
+EOF
+RUN
+
+NAME=show commands $aliases
+FILE=-
+CMDS=<<EOF
+$a=pd
+$b=pD
+$c=$text
+$a?
+$b?
+$c?
+EOF
+EXPECT=<<EOF
+pd
+pD
+EOF
+RUN
+
+NAME=fail for alias len 0
+FILE=-
+CMDS=<<EOF
+$=$A
+$*
+EOF
+EXPECT=<<EOF
+EOF
+RUN

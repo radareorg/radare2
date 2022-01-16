@@ -8,7 +8,7 @@
 
 #if __APPLE__ && DEBUGGER
 
-static int __get_pid (RIODesc *desc);
+static int __get_pid(RIODesc *desc);
 #define EXCEPTION_PORT 0
 
 // NOTE: mach/mach_vm is not available for iOS
@@ -464,12 +464,11 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	if (!fd) {
 		return false;
 	}
 	RIOMachData *iodd = fd->data;
-	kern_return_t kr;
 	if (!iodd) {
 		return false;
 	}
@@ -477,7 +476,7 @@ static int __close(RIODesc *fd) {
 		return false;
 	}
 	task_t task = pid_to_task (fd, iodd->pid);
-	kr = mach_port_deallocate (mach_task_self (), task);
+	kern_return_t kr = mach_port_deallocate (mach_task_self (), task);
 	if (kr != KERN_SUCCESS) {
 		perror ("__close io_mach");
 	}
@@ -493,9 +492,6 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (iodd->magic != R_MACH_MAGIC) {
 		return NULL;
 	}
-
-	task_t task = pid_to_task (fd, iodd->tid);
-	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "")) {
 		return NULL;
 	}
@@ -503,6 +499,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		int perm = r_str_rwx (cmd + 4);
 		if (perm) {
 			int pagesize = tsk_pagesize (fd);
+			task_t task = pid_to_task (fd, iodd->tid);
 			tsk_setperm (io, task, io->off, pagesize, perm);
 		} else {
 			eprintf ("Usage: =!perm [rwx]\n");
@@ -512,24 +509,21 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "pid", 3)) {
 		RIOMachData *iodd = fd->data;
 		RIOMach *riom = iodd->data;
-		const char *pidstr = cmd + 3;
-		int pid = -1;
-		if (*pidstr) {
-			pid = __get_pid (fd);
-			//return NULL;
-		} else {
-			eprintf ("%d\n", iodd->pid);
+		const char *pidstr = r_str_trim_head_ro (cmd + 3);
+		if (R_STR_ISEMPTY (pidstr)) {
+			io->cb_printf ("%d\n", iodd->pid);
 			return NULL;
 		}
+		int pid = __get_pid (fd);
 		if (!strcmp (pidstr, "0")) {
 			pid = 0;
 		} else {
 			pid = atoi (pidstr);
-			if (!pid) {
+			if (pid < 1) {
 				pid = -1;
 			}
 		}
-		if (pid != -1) {
+		if (pid >= 0) {
 			task_t task = pid_to_task (fd, pid);
 			if (task != -1) {
 				riom->task = task;
@@ -540,22 +534,21 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		eprintf ("io_mach_system: Invalid pid %d\n", pid);
 	} else {
-		eprintf ("Try: '=!pid' or '=!perm'\n");
+		eprintf ("Try: ':pid' or ':perm'\n");
 	}
 	return NULL;
 }
 
-static int __get_pid (RIODesc *desc) {
+static int __get_pid(RIODesc *desc) {
 	// dupe for ? r_io_desc_get_pid (desc);
-	if (!desc || !desc->data) {
-		return -1;
-	}
-	RIOMachData *iodd = desc->data;
-	if (iodd) {
-		if (iodd->magic != R_MACH_MAGIC) {
-			return -1;
+	if (desc) {
+		RIOMachData *iodd = desc->data;
+		if (iodd) {
+			if (iodd->magic != R_MACH_MAGIC) {
+				return -1;
+			}
+			return iodd->pid;
 		}
-		return iodd->pid;
 	}
 	return -1;
 }

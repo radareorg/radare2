@@ -134,6 +134,8 @@ struct PE_(r_bin_pe_obj_t) {
 	bool is_signed;
 };
 
+#define RBinPEObj struct PE_(r_bin_pe_obj_t)
+R_IPI PE_DWord PE_(va2pa)(RBinPEObj* bin, PE_DWord rva);
 void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin);
 char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin);
 char *PE_(r_bin_pe_get_cc)(struct PE_(r_bin_pe_obj_t)* bin);
@@ -171,4 +173,4 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin);
 struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin);
 struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin);
 bool PE_(r_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms);
-R_API void PE_(bin_pe_parse_resource) (struct PE_(r_bin_pe_obj_t) *bin);
+R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin);

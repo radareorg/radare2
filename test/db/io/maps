@@ -14,10 +14,10 @@ EOF
 EXPECT=<<EOF
 9090
 0000
- 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
- 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
- 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
- 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
+* 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
+- 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rw- 
+- 2 fd: 4 +0x00000000 0x00000000 - 0x000003ff rw- 
 9090
 EOF
 RUN
@@ -65,8 +65,6 @@ NAME=om 0x100;x@0xff
 FILE=-
 CMDS=<<EOF
 e io.va=false
-e file.nowarn=true
-e file.loadmethod=append
 om `o~[0]` 0x100
 w pop @ 1
 p8 4 @ 0x100
@@ -178,13 +176,13 @@ $initial_map |.
 om               # Output must be the same as initial om
 EOF
 EXPECT=<<EOF
- 3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
- 2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
- 1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
+* 3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
+- 2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
+- 1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
 ----
 ----
- 3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
- 2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
- 1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
+* 3 fd: 3 +0x00000000 0x08048000 - 0x08048a67 r-x fmap.LOAD0
+- 2 fd: 3 +0x00000ed4 0x08049ed4 - 0x0804a01f r-- fmap.LOAD1
+- 1 fd: 4 +0x00000000 0x0804a020 - 0x0804a023 rw- mmap.LOAD1
 EOF
 RUN

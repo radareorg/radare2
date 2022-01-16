@@ -7,10 +7,10 @@
 #include "bfvm.c"
 
 typedef struct {
-        int desc;
-        ut8 *buf;
-        ut32 size;
-        BfvmCPU *bfvm;
+	int desc;
+	ut8 *buf;
+	ut32 size;
+	BfvmCPU *bfvm;
 } RIOBdescbg;
 
 struct bfvm_regs {
@@ -38,7 +38,7 @@ static bool is_io_bf(RDebug *dbg) {
 	return false;
 }
 
-static int r_debug_bf_step_over(RDebug *dbg) {
+static bool r_debug_bf_step_over(RDebug *dbg) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	int op, oop = 0;
 	for (;;) {
@@ -55,7 +55,7 @@ static int r_debug_bf_step_over(RDebug *dbg) {
 	return true;
 }
 
-static int r_debug_bf_step(RDebug *dbg) {
+static bool r_debug_bf_step(RDebug *dbg) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_step (o->bfvm, 0);
 	return true;
@@ -108,31 +108,30 @@ static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size)
 	return true;
 }
 
-static int r_debug_bf_continue(RDebug *dbg, int pid, int tid, int sig) {
+static bool r_debug_bf_continue(RDebug *dbg, int pid, int tid, int sig) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_cont (o->bfvm, UT64_MAX);
 	return true;
 }
 
-static int r_debug_bf_continue_syscall(RDebug *dbg, int pid, int num) {
+static bool r_debug_bf_continue_syscall(RDebug *dbg, int pid, int num) {
 	RIOBdescbg *o = dbg->iob.io->desc->data;
 	bfvm_contsc (o->bfvm);
 	return true;
 }
 
-static int r_debug_bf_wait(RDebug *dbg, int pid) {
-	/* do nothing */
-	return true;
+static RDebugReasonType r_debug_bf_wait(RDebug *dbg, int pid) {
+	return R_DEBUG_REASON_NONE;
 }
 
-static int r_debug_bf_attach(RDebug *dbg, int pid) {
+static bool r_debug_bf_attach(RDebug *dbg, int pid) {
 	if (!is_io_bf (dbg)) {
 		return false;
 	}
 	return true;
 }
 
-static int r_debug_bf_detach(RDebug *dbg, int pid) {
+static bool r_debug_bf_detach(RDebug *dbg, int pid) {
 	// reset vm?
 	return true;
 }
@@ -155,7 +154,7 @@ static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	);
 }
 
-static int r_debug_bf_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool set) {
+static int r_debug_bf_breakpoint(struct r_bp_t *bp, RBreakpointItem *b, bool set) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }

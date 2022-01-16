@@ -6,7 +6,7 @@ if [ -z "${MAKE}" ]; then
 	[ $? = 0 ] && MAKE=gmake
 fi
 
-echo "All files related to current and previous installations 
+echo "All files related to current and previous installations
 of r2 (including libraries) will be deleted. Continue? (y/n) "
 read answer
 case "$answer" in

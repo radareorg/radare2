@@ -25,7 +25,7 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA. 
+   Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
 /* This code implements a demangler for the g++ V3 ABI.  The ABI is
@@ -142,7 +142,7 @@ extern char *alloca ();
 #define CP_STATIC_IF_GLIBCPP_V3 static
 
 #define cplus_demangle_fill_name d_fill_name
-static int d_fill_name (struct demangle_component *, const char *, int);
+static int d_fill_name(struct demangle_component *, const char *, int);
 
 #define cplus_demangle_fill_extended_operator d_fill_extended_operator
 static int
@@ -160,20 +160,20 @@ d_fill_dtor (struct demangle_component *, enum gnu_v3_dtor_kinds,
              struct demangle_component *);
 
 #define cplus_demangle_mangled_name d_mangled_name
-static struct demangle_component *d_mangled_name (struct d_info *, int);
+static struct demangle_component *d_mangled_name(struct d_info *, int);
 
 #define cplus_demangle_type d_type
-static struct demangle_component *d_type (struct d_info *);
+static struct demangle_component *d_type(struct d_info *);
 
 #define cplus_demangle_print d_print
-static char *d_print (int, struct demangle_component *, int, size_t *);
+static char *d_print(int, struct demangle_component *, int, size_t *);
 
 #define cplus_demangle_print_callback d_print_callback
-static int d_print_callback (int, struct demangle_component *,
+static int d_print_callback(int, struct demangle_component *,
                              demangle_callbackref, void *);
 
 #define cplus_demangle_init_info d_init_info
-static void d_init_info (const char *, int, size_t, struct d_info *);
+static void d_init_info(const char *, int, size_t, struct d_info *);
 
 #else /* ! defined(IN_GLIBCPP_V3) */
 #define CP_STATIC_IF_GLIBCPP_V3
@@ -368,7 +368,7 @@ struct d_print_info
 };
 
 #ifdef CP_DEMANGLE_DEBUG
-static void d_dump (struct demangle_component *, int);
+static void d_dump(struct demangle_component *, int);
 #endif
 
 static struct demangle_component *
@@ -417,31 +417,31 @@ has_return_type (struct demangle_component *);
 static int
 is_ctor_dtor_or_conversion (struct demangle_component *);
 
-static struct demangle_component *d_encoding (struct d_info *, int);
+static struct demangle_component *d_encoding(struct d_info *, int);
 
-static struct demangle_component *d_name (struct d_info *);
+static struct demangle_component *d_name(struct d_info *);
 
-static struct demangle_component *d_nested_name (struct d_info *);
+static struct demangle_component *d_nested_name(struct d_info *);
 
-static struct demangle_component *d_prefix (struct d_info *);
+static struct demangle_component *d_prefix(struct d_info *);
 
-static struct demangle_component *d_unqualified_name (struct d_info *);
+static struct demangle_component *d_unqualified_name(struct d_info *);
 
-static struct demangle_component *d_source_name (struct d_info *);
+static struct demangle_component *d_source_name(struct d_info *);
 
-static int d_number (struct d_info *);
+static int d_number(struct d_info *);
 
-static struct demangle_component *d_identifier (struct d_info *, int);
+static struct demangle_component *d_identifier(struct d_info *, int);
 
-static struct demangle_component *d_operator_name (struct d_info *);
+static struct demangle_component *d_operator_name(struct d_info *);
 
-static struct demangle_component *d_special_name (struct d_info *);
+static struct demangle_component *d_special_name(struct d_info *);
 
-static struct demangle_component *d_parmlist (struct d_info *);
+static struct demangle_component *d_parmlist(struct d_info *);
 
-static int d_call_offset (struct d_info *, int);
+static int d_call_offset(struct d_info *, int);
 
-static struct demangle_component *d_ctor_dtor_name (struct d_info *);
+static struct demangle_component *d_ctor_dtor_name(struct d_info *);
 
 static struct demangle_component **
 d_cv_qualifiers (struct d_info *, struct demangle_component **, int);
@@ -458,9 +458,9 @@ d_bare_function_type (struct d_info *, int);
 static struct demangle_component *
 d_class_enum_type (struct d_info *);
 
-static struct demangle_component *d_array_type (struct d_info *);
+static struct demangle_component *d_array_type(struct d_info *);
 
-static struct demangle_component *d_vector_type (struct d_info *);
+static struct demangle_component *d_vector_type(struct d_info *);
 
 static struct demangle_component *
 d_pointer_to_member_type (struct d_info *);
@@ -468,23 +468,23 @@ d_pointer_to_member_type (struct d_info *);
 static struct demangle_component *
 d_template_param (struct d_info *);
 
-static struct demangle_component *d_template_args (struct d_info *);
-static struct demangle_component *d_template_args_1 (struct d_info *);
+static struct demangle_component *d_template_args(struct d_info *);
+static struct demangle_component *d_template_args_1(struct d_info *);
 
 static struct demangle_component *
 d_template_arg (struct d_info *);
 
-static struct demangle_component *d_expression (struct d_info *);
+static struct demangle_component *d_expression(struct d_info *);
 
-static struct demangle_component *d_expr_primary (struct d_info *);
+static struct demangle_component *d_expr_primary(struct d_info *);
 
-static struct demangle_component *d_local_name (struct d_info *);
+static struct demangle_component *d_local_name(struct d_info *);
 
-static int d_discriminator (struct d_info *);
+static int d_discriminator(struct d_info *);
 
-static struct demangle_component *d_lambda (struct d_info *);
+static struct demangle_component *d_lambda(struct d_info *);
 
-static struct demangle_component *d_unnamed_type (struct d_info *);
+static struct demangle_component *d_unnamed_type(struct d_info *);
 
 static struct demangle_component *
 d_clone_suffix (struct d_info *, struct demangle_component *);
@@ -492,13 +492,13 @@ d_clone_suffix (struct d_info *, struct demangle_component *);
 static int
 d_add_substitution (struct d_info *, struct demangle_component *);
 
-static struct demangle_component *d_substitution (struct d_info *, int);
+static struct demangle_component *d_substitution(struct d_info *, int);
 
-static void d_checkpoint (struct d_info *, struct d_info_checkpoint *);
+static void d_checkpoint(struct d_info *, struct d_info_checkpoint *);
 
-static void d_backtrack (struct d_info *, struct d_info_checkpoint *);
+static void d_backtrack(struct d_info *, struct d_info_checkpoint *);
 
-static void d_growable_string_init (struct d_growable_string *, size_t);
+static void d_growable_string_init(struct d_growable_string *, size_t);
 
 static inline void
 d_growable_string_resize (struct d_growable_string *, size_t);
@@ -513,20 +513,20 @@ static void
 d_print_init (struct d_print_info *, demangle_callbackref, void *,
 	      const struct demangle_component *);
 
-static inline void d_print_error (struct d_print_info *);
+static inline void d_print_error(struct d_print_info *);
 
-static inline int d_print_saw_error (struct d_print_info *);
+static inline int d_print_saw_error(struct d_print_info *);
 
-static inline void d_print_flush (struct d_print_info *);
+static inline void d_print_flush(struct d_print_info *);
 
-static inline void d_append_char (struct d_print_info *, char);
+static inline void d_append_char(struct d_print_info *, char);
 
-static inline void d_append_buffer (struct d_print_info *,
+static inline void d_append_buffer(struct d_print_info *,
                                     const char *, size_t);
 
-static inline void d_append_string (struct d_print_info *, const char *);
+static inline void d_append_string(struct d_print_info *, const char *);
 
-static inline char d_last_char (struct d_print_info *);
+static inline char d_last_char(struct d_print_info *);
 
 static void
 d_print_comp (struct d_print_info *, int, struct demangle_component *);
@@ -553,14 +553,14 @@ d_print_array_type (struct d_print_info *, int,
 static void
 d_print_expr_op (struct d_print_info *, int, struct demangle_component *);
 
-static void d_print_cast (struct d_print_info *, int,
+static void d_print_cast(struct d_print_info *, int,
 			  struct demangle_component *);
-static void d_print_conversion (struct d_print_info *, int,
+static void d_print_conversion(struct d_print_info *, int,
 				struct demangle_component *);
 
-static int d_demangle_callback (const char *, int,
+static int d_demangle_callback(const char *, int,
                                 demangle_callbackref, void *);
-static char *d_demangle (const char *, int, size_t *);
+static char *d_demangle(const char *, int, size_t *);
 
 #define FNQUAL_COMPONENT_CASE				\
     case DEMANGLE_COMPONENT_RESTRICT_THIS:		\
@@ -1599,7 +1599,7 @@ d_prefix (struct d_info *di)
 /* <unqualified-name> ::= <operator-name>
                       ::= <ctor-dtor-name>
                       ::= <source-name>
-		      ::= <local-source-name> 
+		      ::= <local-source-name>
 
     <local-source-name>	::= L <source-name> <discriminator>
 */
@@ -2611,7 +2611,7 @@ cplus_demangle_type (struct d_info *di)
 	    ret = NULL;
 	  can_subst = 1;
 	  break;
-	  
+	
 	case 'p':
 	  /* Pack expansion.  */
 	  ret = d_make_comp (di, DEMANGLE_COMPONENT_PACK_EXPANSION,
@@ -4410,7 +4410,7 @@ d_find_pack (struct d_print_info *dpi,
 
     case DEMANGLE_COMPONENT_PACK_EXPANSION:
       return NULL;
-      
+
     case DEMANGLE_COMPONENT_LAMBDA:
     case DEMANGLE_COMPONENT_NAME:
     case DEMANGLE_COMPONENT_TAGGED_NAME:
@@ -6472,7 +6472,7 @@ cplus_demangle_v3_callback (const char *mangled, int options,
   return d_demangle_callback (mangled, options, callback, opaque);
 }
 
-/* Demangle a Java symbol.  Java uses a subset of the V3 ABI C++ mangling 
+/* Demangle a Java symbol.  Java uses a subset of the V3 ABI C++ mangling
    conventions, but the output formatting is a little different.
    This instructs the C++ demangler not to emit pointer characters ("*"), to
    use Java's namespace separator symbol ("." instead of "::"), and to output
@@ -6609,7 +6609,7 @@ is_gnu_v3_mangled_dtor (const char *name)
 #include "getopt.h"
 #include "dyn-string.h"
 
-static void print_usage (FILE* fp, int exit_value);
+static void print_usage(FILE* fp, int exit_value);
 
 #define IS_ALPHA(CHAR)                                                  \
   (((CHAR) >= 'a' && (CHAR) <= 'z')                                     \
@@ -6639,7 +6639,7 @@ print_usage (FILE* fp, int exit_value)
 }
 
 /* Option specification for getopt_long.  */
-static const struct option long_options[] = 
+static const struct option long_options[] =
 {
   { "help",	 no_argument, NULL, 'h' },
   { "no-params", no_argument, NULL, 'p' },
@@ -6663,7 +6663,7 @@ main (int argc, char *argv[])
   program_name = argv[0];
 
   /* Parse options.  */
-  do 
+  do
     {
       opt_char = getopt_long (argc, argv, "hpv", long_options, NULL);
       switch (opt_char)
@@ -6687,7 +6687,7 @@ main (int argc, char *argv[])
     }
   while (opt_char != -1);
 
-  if (optind == argc) 
+  if (optind == argc)
     /* No command line arguments were provided.  Filter stdin.  */
     {
       dyn_string_t mangled = dyn_string_new (3);

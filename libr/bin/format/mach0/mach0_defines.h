@@ -1061,11 +1061,11 @@ static inline void SET_LIBRARY_ORDINAL(uint16_t *n_desc, uint8_t ordinal) {
 	*n_desc = (((*n_desc) & 0x00ff) | (((ordinal) & 0xff) << 8));
 }
 
-static inline uint8_t GET_COMM_ALIGN (uint16_t n_desc) {
+static inline uint8_t GET_COMM_ALIGN(uint16_t n_desc) {
 	return (n_desc >> 8u) & 0x0fu;
 }
 
-static inline void SET_COMM_ALIGN (uint16_t *n_desc, uint8_t align) {
+static inline void SET_COMM_ALIGN(uint16_t *n_desc, uint8_t align) {
 	*n_desc = ((*n_desc & 0xf0ffu) | ((align & 0x0fu) << 8u));
 }
 
@@ -1485,8 +1485,10 @@ enum {
 	DYLD_CHAINED_PTR_32          = 3,
 	DYLD_CHAINED_PTR_32_CACHE    = 4,
 	DYLD_CHAINED_PTR_32_FIRMWARE = 5,
+	DYLD_CHAINED_PTR_64_OFFSET = 6,
 	DYLD_CHAINED_PTR_ARM64E_KERNEL = 7,
 	DYLD_CHAINED_PTR_64_KERNEL_CACHE = 8,
+	DYLD_CHAINED_PTR_ARM64E_USERLAND24 = 12,
 };
 
 struct dyld_chained_ptr_arm64e_rebase {
@@ -1542,6 +1544,69 @@ struct dyld_chained_ptr_arm64e_cache_auth_rebase {
 		key : 2,
 		next : 12,
 		auth : 1; // == 1
+};
+
+struct dyld_chained_ptr_64_rebase {
+	uint64_t target : 36,
+		high8 : 8,
+		reserved : 7,
+		next : 12,
+		bind : 1; // == 0
+};
+
+struct dyld_chained_ptr_64_bind {
+	uint64_t ordinal : 24,
+		addend : 8,
+		reserved : 19,
+		next : 12,
+		bind : 1; // == 1
+};
+
+struct dyld_chained_ptr_arm64e_bind24 {
+	uint64_t ordinal : 24,
+		zero : 8,
+		addend : 19,
+		next : 11,
+		bind : 1, // == 1
+		auth : 1; // == 0
+};
+
+struct dyld_chained_ptr_arm64e_auth_bind24 {
+	uint64_t ordinal : 24,
+		zero : 8,
+		diversity : 16,
+		addrDiv : 1,
+		key : 2,
+		next : 11,
+		bind : 1, // == 1
+		auth : 1; // == 1
+};
+
+enum {
+	DYLD_CHAINED_IMPORT          = 1,
+	DYLD_CHAINED_IMPORT_ADDEND   = 2,
+	DYLD_CHAINED_IMPORT_ADDEND64 = 3,
+};
+
+struct dyld_chained_import {
+	uint32_t lib_ordinal : 8,
+		weak_import : 1,
+		name_offset : 23;
+};
+
+struct dyld_chained_import_addend {
+	uint32_t lib_ordinal : 8,
+		weak_import : 1,
+		name_offset : 23;
+	int32_t addend;
+};
+
+struct dyld_chained_import_addend64 {
+	uint64_t lib_ordinal : 16,
+		weak_import : 1,
+		reserved : 15,
+		name_offset : 32;
+	uint64_t addend;
 };
 
 #endif

@@ -1,8 +1,8 @@
-/* Simple libc header for TCC 
- * 
+/* Simple libc header for TCC
+ *
  * Add any function you want from the libc there. This file is here
  * only for your convenience so that you do not need to put the whole
- * glibc include files on your floppy disk 
+ * glibc include files on your floppy disk
  */
 #ifndef _TCCLIB_H
 #define _TCCLIB_H

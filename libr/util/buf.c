@@ -25,6 +25,12 @@ static bool buf_init(RBuffer *b, const void *user) {
 	return b->methods->init? b->methods->init (b, user): true;
 }
 
+static void buf_wholefree(RBuffer *b) {
+	if (!b->methods->get_whole_buf) {
+		R_FREE (b->whole_buf);
+	}
+}
+
 static bool buf_fini(RBuffer *b) {
 	r_return_val_if_fail (b && b->methods, false);
 	return b->methods->fini? b->methods->fini (b): true;
@@ -42,7 +48,7 @@ static st64 buf_read(RBuffer *b, ut8 *buf, size_t len) {
 
 static st64 buf_write(RBuffer *b, const ut8 *buf, size_t len) {
 	r_return_val_if_fail (b && b->methods, -1);
-	R_FREE (b->whole_buf);
+	buf_wholefree (b);
 	return b->methods->write? b->methods->write (b, buf, len): -1;
 }
 
@@ -556,7 +562,7 @@ R_API st64 r_buf_fread(RBuffer *b, ut8 *buf, const char *fmt, int n) {
 R_API st64 r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {
 	r_return_val_if_fail (b && buf && fmt, -1);
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
-	int r = r_buf_seek (b, addr, R_BUF_SET);
+	st64 r = r_buf_seek (b, addr, R_BUF_SET);
 	if (r < 0) {
 		return r;
 	}
@@ -612,13 +618,13 @@ R_API st64 r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, ut64 len) {
 	return r;
 }
 
-R_API bool r_buf_fini(RBuffer *b) {
+R_API void r_buf_fini(RBuffer *b) {
 	if (!b) {
-		return false;
+		return;
 	}
 	if (b->refctr > 0) {
 		b->refctr--;
-		return false;
+		return;
 	}
 
 	// free the whole_buf only if it was initially allocated by the buf types
@@ -627,13 +633,15 @@ R_API bool r_buf_fini(RBuffer *b) {
 			b->methods->free_whole_buf (b);
 		}
 	} else {
-		R_FREE (b->whole_buf);
+		buf_wholefree (b);
 	}
-	return buf_fini (b);
+	buf_fini (b);
 }
 
 R_API void r_buf_free(RBuffer *b) {
-	if (r_buf_fini (b)) {
+	bool unreferenced = b && b->refctr == 0;
+	r_buf_fini (b);
+	if (unreferenced) {
 		free (b);
 	}
 }

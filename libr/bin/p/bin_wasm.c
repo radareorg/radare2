@@ -10,7 +10,7 @@
 #include "wasm/wasm.h"
 #include "../format/wasm/wasm.h"
 
-static bool check_buffer(RBuffer *rbuf) {
+static bool check_buffer(RBinFile *bf, RBuffer *rbuf) {
 	ut8 buf[4] = { 0 };
 	return rbuf && r_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
@@ -25,7 +25,7 @@ static bool find_export(const ut32 *p, const RBinWasmExportEntry *q) {
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	r_return_val_if_fail (bf && buf && r_buf_size (buf) != UT64_MAX, false);
 
-	if (check_buffer (buf)) {
+	if (check_buffer (bf, buf)) {
 		*bin_obj = r_bin_wasm_init (bf, buf);
 		return true;
 	}
@@ -80,7 +80,7 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections (RBinFile *bf) {
+static RList *sections(RBinFile *bf) {
 	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	RList *ret = NULL;
 	RList *secs = NULL;
@@ -224,7 +224,7 @@ bad_alloc:
 	return NULL;
 }
 
-static RList *imports (RBinFile *bf) {
+static RList *imports(RBinFile *bf) {
 	RBinWasmObj *bin = NULL;
 	RList *imports = NULL;
 	RBinImport *ptr = NULL;
@@ -275,11 +275,11 @@ bad_alloc:
 	return NULL;
 }
 
-static RList *libs (RBinFile *bf) {
+static RList *libs(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info (RBinFile *bf) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 
 	if (!(ret = R_NEW0 (RBinInfo))) {
@@ -300,7 +300,7 @@ static RBinInfo *info (RBinFile *bf) {
 	return ret;
 }
 
-static ut64 size (RBinFile *bf) {
+static ut64 size(RBinFile *bf) {
 	if (!bf || !bf->buf) {
 		return 0;
 	}
@@ -308,7 +308,7 @@ static ut64 size (RBinFile *bf) {
 }
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
-static RBuffer *create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
+static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
 #define B(x, y) r_buf_append_bytes (buf, (const ut8 *)(x), y)
 #define D(x) r_buf_append_ut32 (buf, x)
@@ -339,8 +339,8 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	RBinWasmObj *bin = bf->o->bin_obj;
-        switch (type) {
-        case 'f': // fcnidx
+	switch (type) {
+	case 'f': // fcnidx
 		{
 			const char *r = r_bin_wasm_get_function_name (bin, idx);
 			return r? strdup (r): NULL;

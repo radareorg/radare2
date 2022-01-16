@@ -36,7 +36,7 @@ Supported Commands
 - read registers
 
   Reading registers is currently implemented through the <g> packet of the gdb protocol.
-  It returns the whole register profile at once. 
+  It returns the whole register profile at once.
 
 - write registers
 
@@ -51,7 +51,7 @@ Supported Packets:
 
 - `g` : Reads the whole register Profile at once
 - `G` : Writes the whole register Profile at once
-- `m` : Reads memory 
+- `m` : Reads memory
 - `M` : Writes memory
 - `vCont,v` : continues execution of the binary
 - `P` : Write one register
@@ -59,7 +59,7 @@ Supported Packets:
 TODO
 ----
 
-- Implement GDBserver to allow other apps use r2 debugger 
+- Implement GDBserver to allow other apps use r2 debugger
 - Fix that usese the gdb internal stepping version
 - Fix softstep, that it finally recoils correct (it just have to reset the eip/rip)
 - Add Breakpoints (should be an easy add of the function, because its already implemented in the gdb lib)

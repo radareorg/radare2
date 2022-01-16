@@ -16,7 +16,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA. 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * avr_disasm.c - AVR instruction disassembly into disassembledInstruction structure.
  *
@@ -155,8 +155,8 @@ static int lookupInstruction(uint16_t opcode, int offset) {
 		/* We want to mask out all of the operands. We don't count up to
 		 * instructionSet[insidx].numOperands because some instructions,
 		 * such as clr R16, are actually encoded with two operands (so as eor R16,R16),
-		 * and we want to screen out both operands to get the most simplest form of 
-		 * the instruction. */ 
+		 * and we want to screen out both operands to get the most simplest form of
+		 * the instruction. */
 		for (i = 0; i < AVR_MAX_NUM_OPERANDS; i++) {
 			if (instructionSet[insidx].operandTypes[i] == OPERAND_REGISTER_GHOST) {
 				/* Grab the first operand */
@@ -167,7 +167,7 @@ static int lookupInstruction(uint16_t opcode, int offset) {
 							operandTemp)
 						ghostRegisterConfirmed = 0;
 				}
-			} 
+			}
 			opcodeSearch &= ~(instructionSet[insidx].operandMasks[i]);
 		}
 		/* If we encountered a ghost register and were unable confirm that
@@ -176,11 +176,11 @@ static int lookupInstruction(uint16_t opcode, int offset) {
 		if (ghostRegisterConfirmed == 0)
 			continue;
 
-		if (opcodeSearch == instructionSet[insidx].opcodeMask) 
+		if (opcodeSearch == instructionSet[insidx].opcodeMask)
 			break;
 	}
 	/* It's impossible not to find an instruction, because the last instruction ".DW",
-	 * specifies a word of data at the addresses, instead of an instruction. 
+	 * specifies a word of data at the addresses, instead of an instruction.
 	 * Its operand 2 mask, 0x0000, will set opcode search to 0x0000, and this will always
 	 * match with the opcodeMask of 0x0000. */
 	return insidx;
@@ -211,7 +211,7 @@ static int disassembleOperands(disassembledInstruction *dInstruction) {
 			 * by two. */
 			/* Next, we check for the signed bit (MSB), which would indicate a
 			 * negative. If the number is signed, we would reverse the two's
-			 * complement (invert bits, add 1, and then only use the 7 bits that 
+			 * complement (invert bits, add 1, and then only use the 7 bits that
 			 * matter), otherwise, the number represents a positive distance and
 			 * no bit manipulation is necessary. */
 			dInstruction->operands[i] <<= 1;
@@ -238,7 +238,7 @@ static int disassembleOperands(disassembledInstruction *dInstruction) {
 			 * by two. */
 			/* Next, we check for the signed bit (MSB), which would indicate a
 			 * negative. If the number is signed, we would reverse the two's
-			 * complement (invert bits, add 1, and then only use the 12 bits that 
+			 * complement (invert bits, add 1, and then only use the 12 bits that
 			 * matter), otherwise, the number represents a positive distance and
 			 * no bit manipulation is necessary. */
 			dInstruction->operands[i] <<= 1;

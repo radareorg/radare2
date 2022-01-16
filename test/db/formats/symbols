@@ -1,0 +1,8 @@
+NAME=symbols crash because of missing sections
+FILE=bins/mach0/symbols-crash
+CMDS=iI~?switch
+EXPECT=<<EOF
+0
+EOF
+EXPECT_ERR=
+RUN

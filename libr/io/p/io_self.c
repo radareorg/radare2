@@ -239,7 +239,7 @@ static int update_self_regions(RIO *io, int pid) {
 		perm |= mbi.Protect & PAGE_EXECUTE_READ ? R_PERM_RX : 0;
 		perm |= mbi.Protect & PAGE_EXECUTE_READWRITE ? R_PERM_RWX : 0;
 		perm = mbi.Protect & PAGE_NOACCESS ? 0 : perm;
-		if (perm && w32_GetMappedFileName && !w32_GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, name_size)) {
+		if (perm && !r_w32_GetMappedFileName (h, (LPVOID) mbi.BaseAddress, name, name_size)) {
 			name[0] = '\0';
 		}
 		self_sections[self_sections_count].from = (ut64) mbi.BaseAddress;
@@ -312,10 +312,6 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	case SEEK_END: return UT64_MAX;
 	}
 	return offset;
-}
-
-static int __close(RIODesc *fd) {
-	return 0;
 }
 
 static void got_alarm(int sig) {
@@ -495,7 +491,6 @@ RIOPlugin r_io_plugin_self = {
 	.uris = "self://",
 	.license = "LGPL3",
 	.open = __open,
-	.close = __close,
 	.read = __read,
 	.check = __plugin_open,
 	.seek = __lseek,
@@ -514,12 +509,12 @@ R_API RLibStruct radare_plugin = {
 #if __APPLE__
 // mach/mach_vm.h not available for iOS
 kern_return_t mach_vm_region_recurse (
-        vm_map_t target_task,
-        mach_vm_address_t *address,
-        mach_vm_size_t *size,
-        natural_t *depth,
-        vm_region_recurse_info_t info,
-        mach_msg_type_number_t *infoCnt
+	vm_map_t target_task,
+	mach_vm_address_t *address,
+	mach_vm_size_t *size,
+	natural_t *depth,
+	vm_region_recurse_info_t info,
+	mach_msg_type_number_t *infoCnt
 );
 // TODO: unify that implementation in a single reusable place
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max) {

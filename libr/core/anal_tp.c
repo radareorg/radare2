@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2020 - oddcoder, sivaramaaa */
+/* radare - LGPL - Copyright 2016-2021 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
 #include <r_anal.h>
@@ -286,7 +286,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 	RAnal *anal = core->anal;
 	RList *types = NULL;
 	int idx = sdb_num_get (trace, "idx", 0);
-	bool verbose = r_config_get_i (core->config, "anal.types.verbose");
+	bool verbose = r_config_get_b (core->config, "anal.types.verbose");
 	bool stack_rev = false, in_stack = false, format = false;
 
 	if (!fcn_name || !cc) {
@@ -304,7 +304,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		in_stack = true;
 	}
 	if (verbose && !strncmp (fcn_name, "sym.imp.", 8)) {
-		eprintf ("%s missing function definition\n", fcn_name + 8);
+		eprintf ("Warning: Missing function definition for '%s'\n", fcn_name + 8);
 	}
 	if (!max) {
 		if (!in_stack) {
@@ -312,6 +312,10 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		} else {
 			max = DEFAULT_MAX;
 		}
+	}
+	// TODO: if function takes more than 7 args is usually bad analysis
+	if (max > 7) {
+		max = DEFAULT_MAX;
 	}
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev ? (max - 1 - i) : i;
@@ -448,6 +452,55 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
+#define SLOW_STEP 1
+static bool fast_step(RCore *core, RAnalOp *aop) {
+#if SLOW_STEP
+	return r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+#else
+	RAnalEsil *esil = core->anal->esil;
+	const char *e = R_STRBUF_SAFEGET (&aop->esil);
+	if (R_STR_ISEMPTY (e)) {
+		return false;
+	}
+	if (!esil) {
+		r_core_cmd0 (core, "aei");
+		// addr = initializeEsil (core);
+		esil = core->anal->esil;
+		if (!esil) {
+			return false;
+		}
+	} else {
+		esil->trap = 0;
+		//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
+	}
+	// const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	// ut64 addr = r_reg_getv (core->anal->reg, name);
+	int ret = (aop->type == R_ANAL_OP_TYPE_ILL) ? -1: aop->size;
+	// TODO: sometimes this is dupe
+	// if type is JMP then we execute the next N instructions
+	// update the esil pointer because RAnal.op() can change it
+	esil = core->anal->esil;
+	if (aop->size < 1 || ret < 1) {
+		return false;
+	}
+	// r_anal_esil_parse (esil, e);
+#if 1
+	RReg *reg = core->dbg->reg;
+	core->dbg->reg = core->anal->reg;
+	r_anal_esil_set_pc (esil, aop->addr);
+	r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
+	core->dbg->reg = reg;
+#else
+	r_debug_trace_op (core->dbg, aop); // calls esil.parse() internally
+#endif
+	// select next instruction
+	const char *pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	r_reg_setv (core->anal->reg, pcname, aop->addr + aop->size);
+	r_anal_esil_stack_free (esil);
+	return true;
+#endif
+}
+
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
@@ -463,8 +516,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 
 	RAnal *anal = core->anal;
 	Sdb *TDB = anal->sdb_types;
-	bool chk_constraint = r_config_get_i (core->config, "anal.types.constraint");
-	int ret, bsize = R_MAX (64, core->blocksize);
+	bool chk_constraint = r_config_get_b (core->config, "anal.types.constraint");
+	int ret;
 	const int mininstrsz = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	int cur_idx , prev_idx = 0;
@@ -478,12 +531,6 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		anal_emul_restore (core, hc, dt, et);
 		return;
 	}
-	ut8 *buf = malloc (bsize);
-	if (!buf) {
-		anal_emul_restore (core, hc, dt, et);
-		return;
-	}
-
 	// Reserve bigger ht to avoid rehashing
 	Sdb *etracedb = core->anal->esil->trace->db;
 	HtPPOptions opt = etracedb->ht->opt;
@@ -504,40 +551,61 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	char prev_type[256] = {0};
 	const char *prev_dest = NULL;
 	char *ret_reg = NULL;
-	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	if (!pc) {
-        free (buf);
+	const char *_pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+	if (!_pc) {
 		return;
 	}
-	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
-	if (!r) {
-		free (buf);
-		return;
-	}
+	int retries = 2;
+	char *pc = strdup (_pc);
 	r_cons_break_push (NULL, NULL);
+repeat:
+	if (retries < 0) {
+		free (pc);
+		return;
+	}
 	r_list_sort (fcn->bbs, bb_cmpaddr); // TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
+	// TODO: Use ut64
+	size_t bblist_size = r_list_length (fcn->bbs);
+	ut64 *bblist = calloc (sizeof (ut64), bblist_size + 1);
+	int i = 0;
 	r_list_foreach (fcn->bbs, it, bb) {
+		bblist[i++] = bb->addr;
+	}
+	for (i = 0; i < bblist_size; i++) {
+		bb = r_anal_get_block_at (core->anal, bblist[i]);
+		if (!bb) {
+			eprintf ("Warning: basic block at 0x%08"PFMT64x" was removed during analysis.\n", bblist[i]);
+			retries--;
+			free (bblist);
+			goto repeat;
+		}
+		ut64 bb_addr = bb->addr;
+		ut64 bb_size = bb->size;
 		ut64 addr = bb->addr;
+		ut8 *buf = calloc (bb->size + 32, 1);
+		if (!buf) {
+			break;
+		}
+		r_io_read_at (core->io, addr, buf, bb_size);
 		int i = 0;
-		r_reg_set_value (core->dbg->reg, r, addr);
+		r_reg_setv (core->dbg->reg, pc, addr);
 		while (1) {
 			if (r_cons_is_breaked ()) {
 				goto out_function;
 			}
-			if (i >= (bsize - 32)) {
-				i = 0;
-			}
-			ut64 pcval = r_reg_getv (anal->reg, pc);
-			if ((addr >= bb->addr + bb->size) || (addr < bb->addr) || pcval != addr) {
+			if (i >= bb_size) {
 				break;
 			}
-			if (!i) {
-				r_io_read_at (core->io, addr, buf, bsize);
+			ut64 pcval = r_reg_getv (anal->reg, pc);
+			if ((addr >= bb_addr + bb_size) || (addr < bb_addr) || pcval != addr) {
+				// stop emulating this bb if pc is outside the basic block boundaries
+				break;
 			}
-			ret = r_anal_op (anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL);
+			ret = r_anal_op (anal, &aop, addr, buf + i, bb_size - i, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_HINT);
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
+				r_reg_setv (core->dbg->reg, pc, addr);
 				r_anal_op_fini (&aop);
 				continue;
 			}
@@ -548,10 +616,23 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			}
 			sdb_num_set (anal->esil->trace->db, sdb_fmt ("0x%"PFMT64x".count", addr), loop_count + 1, 0);
 			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
-				r_reg_set_value (core->dbg->reg, r, addr + ret);
+				// just analyze statically the instruction if its a call, dont emulate it
+				r_reg_setv (core->dbg->reg, pc, addr + ret);
 			} else {
-				r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				fast_step (core, &aop);
 			}
+
+			// maybe the basic block is gone after the step...
+			if (i < bblist_size) {
+				bb = r_anal_get_block_at (core->anal, bb_addr);
+				if (!bb) {
+					eprintf ("Warning: basic block at 0x%08"PFMT64x" was removed during analysis.\n", bblist[i]);
+					retries--;
+					free (bblist);
+					goto repeat;
+				}
+			}
+
 			bool userfnc = false;
 			Sdb *trace = anal->esil->trace->db;
 			cur_idx = sdb_num_get (trace, "idx", 0);
@@ -689,7 +770,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					bool jmp = false;
 					RAnalOp *jmp_op = {0};
 					ut64 jmp_addr = next_op->jump;
-					RAnalBlock *jmpbb = r_anal_fcn_bbget_in (anal, fcn, jmp_addr);
+					RAnalBlock *jmpbb = r_anal_function_bbget_in (anal, fcn, jmp_addr);
 
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR ; i++) {
@@ -751,9 +832,10 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			addr += ret;
 			r_anal_op_free (next_op);
 			r_anal_op_fini (&aop);
-
 		}
+		free (buf);
 	}
+	R_FREE (bblist);
 	// Type propgation for register based args
 	RList *list = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
 	RAnalVar *rvar;
@@ -775,7 +857,8 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 out_function:
 	R_FREE (ret_reg);
 	R_FREE (ret_type);
-	free (buf);
 	r_cons_break_pop();
+	free (bblist);
 	anal_emul_restore (core, hc, dt, et);
+	free (pc);
 }

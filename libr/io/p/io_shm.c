@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2019 pancake */
+/* radare - LGPL - Copyright 2008-2021 pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -49,23 +49,20 @@ static int shm__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		count = shm->size - io->off;
 	}
 	if (shm->buf) {
-		memcpy (buf, shm->buf+io->off , count);
+		memcpy (buf, shm->buf + io->off , count);
 		return count;
 	}
 	return read (shm->fd, buf, count);
 }
 
-static int shm__close(RIODesc *fd) {
+static bool shm__close(RIODesc *fd) {
 	r_return_val_if_fail (fd && fd->data, -1);
-	int ret;
 	RIOShm *shm = fd->data;
-	if (shm->buf) {
-		ret = shmdt (((RIOShm*)(fd->data))->buf);
-	} else {
-		ret = close (shm->fd);
-	}
+	int ret = (shm->buf)
+		? shmdt (((RIOShm*)(fd->data))->buf)
+		: close (shm->fd);
 	R_FREE (fd->data);
-	return ret;
+	return ret == 0;
 }
 
 static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
@@ -73,24 +70,28 @@ static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	RIOShm *shm = fd->data;
 	switch (whence) {
 	case SEEK_SET:
-		return io->off = offset;
+		io->off = offset;
+		break;
 	case SEEK_CUR:
 		if (io->off + offset > shm->size) {
-			return io->off = shm->size;
+			io->off = shm->size;
+		} else {
+			io->off += offset;
 		}
-		io->off += offset;
-		return io->off;
+		break;
 	case SEEK_END:
-		return 0xffffffff;
+		io->off = ((int)shm->size > 0) ? shm->size : UT64_MAX;
+		io->off += (int)offset;
+		break;
 	}
 	return io->off;
 }
 
 static bool shm__plugin_open(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "shm://", 6));
+	return !strncmp (pathname, "shm://", 6);
 }
 
-static inline int getshmfd (RIOShm *shm) {
+static inline int getshmfd(RIOShm *shm) {
 	return (((int)(size_t)shm->buf) >> 4) & 0xfff;
 }
 
@@ -133,6 +134,7 @@ RIOPlugin r_io_plugin_shm = {
 	.desc = "Shared memory resources plugin",
 	.uris = "shm://",
 	.license = "MIT",
+	.author = "pancake",
 	.open = shm__open,
 	.close = shm__close,
 	.read = shm__read,
@@ -144,7 +146,7 @@ RIOPlugin r_io_plugin_shm = {
 #else
 RIOPlugin r_io_plugin_shm = {
 	.name = "shm",
-	.desc = "shared memory resources (not for w32)",
+	.desc = "shared memory resources (not for this platform)",
 };
 #endif
 

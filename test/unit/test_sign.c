@@ -3,6 +3,23 @@
 
 #include "minunit.h"
 
+static bool check_var_n(RList *vars, int n, RAnalVarProt *ans) {
+	RAnalVarProt *test = r_list_get_n (vars, n);
+	if (strcmp (test->name, ans->name)) {
+		return false;
+	}
+	if (strcmp (test->type, ans->type)) {
+		return false;
+	}
+	if (test->isarg != ans->isarg) {
+		return false;
+	}
+	if (test->kind != ans->kind) {
+		return false;
+	}
+	return true;
+}
+
 static bool test_anal_sign_get_set(void) {
 	RAnal *anal = r_anal_new ();
 
@@ -33,16 +50,9 @@ static bool test_anal_sign_get_set(void) {
 	r_list_append (item->xrefs, strdup ("king"));
 	r_list_append (item->xrefs, strdup ("ganon"));
 
-	item->vars = r_list_newf (free);
-	r_list_append (item->vars, strdup ("r16"));
-	r_list_append (item->vars, strdup ("s42"));
-	r_list_append (item->vars, strdup ("b13"));
+	item->vars = r_anal_var_deserialize ("tr16:arg16:int *,ts42:arg42:int64_t, fb13:var_13:char **");
 
-	item->types = r_list_newf (free);
-	r_list_append (item->types, strdup ("func.sym.mahboi.ret=char *"));
-	r_list_append (item->types, strdup ("func.sym.mahboi.args=2"));
-	r_list_append (item->types, strdup ("func.sym.mahboi.arg.0=\"int,arg0\""));
-	r_list_append (item->types, strdup ("func.sym.mahboi.arg.1=\"uint32_t,die\""));
+	item->types = strdup ("char * sym.mahboi (int arg0, uint32_t die)");
 
 	item->hash = R_NEW0 (RSignHash);
 	item->hash->bbhash = strdup ("7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851");
@@ -81,17 +91,19 @@ static bool test_anal_sign_get_set(void) {
 	mu_assert_eq (r_list_length (item->xrefs), 2, "xrefs count");
 	mu_assert_streq (r_list_get_n (item->xrefs, 0), "king", "xref");
 	mu_assert_streq (r_list_get_n (item->xrefs, 1), "ganon", "xref");
+
+	// vars
+	RAnalVarProt v;
 	mu_assert_notnull (item->vars, "vars");
 	mu_assert_eq (r_list_length (item->vars), 3, "vars count");
-	mu_assert_streq (r_list_get_n (item->vars, 0), "r16", "var");
-	mu_assert_streq (r_list_get_n (item->vars, 1), "s42", "var");
-	mu_assert_streq (r_list_get_n (item->vars, 2), "b13", "var");
-	mu_assert_notnull (item->types, "types");
-	mu_assert_eq (r_list_length (item->types), 4, "types count");
-	mu_assert_streq (r_list_get_n (item->types, 0), "func.sym.mahboi.ret=char *", "type");
-	mu_assert_streq (r_list_get_n (item->types, 1), "func.sym.mahboi.args=2", "type");
-	mu_assert_streq (r_list_get_n (item->types, 2), "func.sym.mahboi.arg.0=\"int,arg0\"", "type");
-	mu_assert_streq (r_list_get_n (item->types, 3), "func.sym.mahboi.arg.1=\"uint32_t,die\"", "type");
+	v = (RAnalVarProt){ .isarg = true, .kind = 'r', .name = "arg16", .type = "int *" };
+	mu_assert ("var[0]", check_var_n (item->vars, 0, &v));
+	v = (RAnalVarProt){ .isarg = true, .kind = 's', .name = "arg42", .type = "int64_t" };
+	mu_assert ("var[1]", check_var_n (item->vars, 1, &v));
+	v = (RAnalVarProt){ .isarg = false, .kind = 'b', .name = "var_13", .type = "char **" };
+	mu_assert ("var[2]", check_var_n (item->vars, 2, &v));
+
+	mu_assert_streq (item->types, "char * sym.mahboi (int arg0, uint32_t die)", "types");
 	mu_assert_notnull (item->hash, "hash");
 	mu_assert_streq (item->hash->bbhash, "7bfa1358c427e26bc03c2384f41de7be6ebc01958a57e9a6deda5bdba9768851", "hash val");
 	r_sign_item_free (item);

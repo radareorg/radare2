@@ -13,16 +13,17 @@ static const char *help_msg_L[] = {
 	"L-", "duk", "unload core plugin by name",
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins",
-	"Ld", "", "list debug plugins (same as dL)",
+	"Ld", "", "list debug plugins (dL)",
 	"LD", "", "list supported decompilers (e cmd.pdc=?)",
 	"Le", "", "list esil plugins",
 	"Lg", "", "list egg plugins",
-	"Lh", "", "list hash plugins (same as ph)",
-	"Li", "", "list bin plugins (same as iL)",
-	"Ll", "", "list lang plugins (same as #!)",
+	"Lh", "", "list hash plugins (ph)",
+	"Li", "", "list bin plugins (iL)",
+	"Lt", "", "list color themes (eco)",
+	"Ll", "", "list lang plugins (#!)",
 	"LL", "", "lock screen",
-	"Lm", "", "list fs plugins (same as mL)",
-	"Lo", "", "list io plugins (same as oL)",
+	"Lm", "", "list fs plugins (mL)",
+	"Lo", "", "list io plugins (oL)",
 	"Lp", "", "list parser plugins (e asm.parser=?)",
 	NULL
 };
@@ -45,12 +46,6 @@ static const char *help_msg_T[] = {
 	"T=&", "", "Start background thread syncing with the remote server",
 	NULL
 };
-
-// TODO #7967 help refactor: move L to another place
-static void cmd_log_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR (core, L);
-	DEFINE_CMD_DESCRIPTOR (core, T);
-}
 
 static void screenlock(RCore *core) {
 	//  char *pass = r_cons_input ("Enter new password: ");
@@ -169,7 +164,7 @@ static int getIndexFromLogString(const char *s) {
 	return -1;
 }
 
-static char *expr2cmd (RCoreLog *log, const char *line) {
+static char *expr2cmd(RCoreLog *log, const char *line) {
 	if (!line || !*line) {
 		return NULL;
 	}
@@ -195,7 +190,7 @@ static char *expr2cmd (RCoreLog *log, const char *line) {
 	return NULL;
 }
 
-static int log_callback_r2 (RCore *core, int count, const char *line) {
+static int log_callback_r2(RCore *core, int count, const char *line) {
 	if (*line == ':') {
 		char *cmd = expr2cmd (core->log, line);
 		if (cmd) {
@@ -207,7 +202,7 @@ static int log_callback_r2 (RCore *core, int count, const char *line) {
 	return 0;
 }
 
-static int log_callback_all (RCore *log, int count, const char *line) {
+static int log_callback_all(RCore *log, int count, const char *line) {
 	r_cons_printf ("%d %s\n", count, line);
 	return 0;
 }
@@ -335,6 +330,9 @@ static int cmd_plugins(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_L);
 		break;
+	case 't': // "Lt"
+		r_core_cmd0 (core, "eco");
+		break;
 	case 'm': // "Lm"
 		r_core_cmdf (core, "mL%s", input + 1);
 		break;
@@ -394,6 +392,9 @@ static int cmd_plugins(void *data, const char *input) {
 			pj_free (pj);
 			break;
 			}
+		case ' ':
+			r_lib_open (core->lib, r_str_trim_head_ro (input + 2));
+			break;
 		case 0:
 			r_lib_list (core->lib);
 			r_list_foreach (core->rcmd->plist, iter, cp) {
@@ -401,7 +402,7 @@ static int cmd_plugins(void *data, const char *input) {
 			}
 			break;
 		default:
-			eprintf ("oops\n");
+			r_core_cmd_help (core, help_msg_L);
 			break;
 		}
 		}

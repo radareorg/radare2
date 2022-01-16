@@ -1192,7 +1192,7 @@ JsonTest tests[] = {
 	}
 };
 
-static int test_json(int test_number, char *input, int (*check)(RJson *j)) {
+static int test_json(int test_number, char *input, int(*check)(RJson *j)) {
 	RJson *json = r_json_parse (input);
 	if (!check) {
 		mu_assert_null (json, "parse failure expected");

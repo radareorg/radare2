@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2019 - pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2015-2021 - pancake, alvaro_fe */
 
 #include <r_userconf.h>
 #if DEBUGGER
@@ -65,7 +65,7 @@ typedef struct {
 } DyldImageInfo64;
 
 /* XXX: right now it just returns the first thread, not the one selected in dbg->tid */
-static thread_t getcurthread (RDebug *dbg) {
+static thread_t getcurthread(RDebug *dbg) {
 	thread_t th;
 	thread_array_t threads = NULL;
 	unsigned int n_threads = 0;
@@ -124,8 +124,8 @@ static task_t task_for_pid_workaround(int Pid) {
 	}
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
-		//mach_error ("host_processor_set_priv",kr);
+		eprintf ("host_processor_set_priv failed for pid %d with error 0x%x\n", Pid, kr);
+		// mach_error ("host_processor_set_priv",kr);
 		return -1;
 	}
 
@@ -197,29 +197,31 @@ bool xnu_step(RDebug *dbg) {
 #endif
 }
 
-int xnu_attach(RDebug *dbg, int pid) {
+bool xnu_attach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
-  #if PT_ATTACHEXC
-	if (r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0) == -1) {
-  #else
-	if (r_debug_ptrace (dbg, PT_ATTACH, pid, 0, 0) == -1) {
-  #endif
+# if PT_ATTACHEXC
+#  define MY_ATTACH PT_ATTACHEXC
+# else
+#  define MY_ATTACH PT_ATTACH
+# endif
+	if (r_debug_ptrace (dbg, MY_ATTACH, pid, 0, 0) == -1) {
 		perror ("ptrace (PT_ATTACH)");
-		return -1;
+		return false;
 	}
-	return pid;
 #else
-	dbg->pid = pid;
-	if (!xnu_create_exception_thread (dbg)) {
+	if (!xnu_create_exception_thread (dbg, pid)) {
 		eprintf ("error setting up exception thread\n");
-		return -1;
+		return false;
 	}
+	dbg->pid = pid;
+	dbg->tid = getcurthread (dbg);
 	xnu_stop (dbg, pid);
-	return pid;
 #endif
+	dbg->pid = pid;
+	return true;
 }
 
-int xnu_detach(RDebug *dbg, int pid) {
+bool xnu_detach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
 	return r_debug_ptrace (dbg, PT_DETACH, pid, NULL, 0);
 #else
@@ -252,7 +254,7 @@ static int task_suspend_count(task_t task) {
 	return info.suspend_count;
 }
 
-int xnu_stop(RDebug *dbg, int pid) {
+bool xnu_stop(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
 	eprintf ("xnu_stop: not implemented\n");
 	return false;
@@ -290,7 +292,7 @@ int xnu_stop(RDebug *dbg, int pid) {
 #endif
 }
 
-int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
+bool xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if XNU_USE_PTRACE
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	task_resume (pid_to_task (pid));
@@ -345,7 +347,6 @@ char *xnu_reg_profile(RDebug *dbg) {
 #endif
 }
 
-//r_debug_select
 //using getcurthread has some drawbacks. You lose the ability to select
 //the thread you want to write or read from. but how that feature
 //is not implemented yet i don't care so much
@@ -451,7 +452,7 @@ int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	return true;
 }
 
-static int xnu_get_kinfo_proc (int pid, struct kinfo_proc *kp) {
+static int xnu_get_kinfo_proc(int pid, struct kinfo_proc *kp) {
 	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, 0 };
 	int len = 4;
 	size_t kpl = sizeof (struct kinfo_proc);
@@ -467,7 +468,7 @@ static int xnu_get_kinfo_proc (int pid, struct kinfo_proc *kp) {
 	return 0;
 }
 
-RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
+RDebugInfo *xnu_info(RDebug *dbg, const char *arg) {
 	struct kinfo_proc kp; // XXX This need to be freed?
 	int kinfo_proc_error = 0;
 	RDebugInfo *rdi = R_NEW0 (RDebugInfo);
@@ -508,7 +509,7 @@ RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
 }
 
 /*
-static void xnu_free_threads_ports (RDebugPid *p) {
+static void xnu_free_threads_ports(RDebugPid *p) {
 	kern_return_t kr;
 	if (!p) return;
 	free (p->path);
@@ -522,7 +523,7 @@ static void xnu_free_threads_ports (RDebugPid *p) {
 }
 */
 
-RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
+RList *xnu_thread_list(RDebug *dbg, int pid, RList *list) {
 #if __arm__ || __arm64__ || __aarch_64__
 	#define CPU_PC (dbg->bits == R_SYS_BITS_64) ? \
 		state.ts_64.__pc : state.ts_32.__pc
@@ -571,12 +572,12 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 	return true;
 }
 
-task_t pid_to_task (int pid) {
+task_t pid_to_task(int pid) {
 	static int old_pid = -1;
 	kern_return_t kr;
 	task_t task = -1;
 	int err;
-	/* it means that we are done with the task*/
+
 	if (task_dbg != 0 && old_pid == pid) {
 		return task_dbg;
 	}
@@ -590,6 +591,9 @@ task_t pid_to_task (int pid) {
 			//return 0;
 		}
 
+	}
+	if (pid == -1) {
+		pid = old_pid;
 	}
 	err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
 	if ((err != KERN_SUCCESS) || !MACH_PORT_VALID (task)) {
@@ -610,12 +614,14 @@ task_t pid_to_task (int pid) {
 			}
 		}
 	}
-	old_pid = pid;
+	if (pid != -1) {
+		old_pid = pid;
+	}
 	task_dbg = task;
 	return task;
 }
 
-int xnu_get_vmmap_entries_for_pid (pid_t pid) {
+int xnu_get_vmmap_entries_for_pid(pid_t pid) {
 	task_t task = pid_to_task (pid);
 	kern_return_t kr = KERN_SUCCESS;
 	vm_address_t address = 0;
@@ -640,7 +646,7 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 		if (info.is_submap) {
 			nesting_depth++;
 		} else {
-			address += size; 
+			address += size;
 			n++;
 		}
 	}
@@ -654,14 +660,14 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 	segment_count * segment_command_sz + thread_count * \
 	sizeof (struct thread_command) + tstate_size * thread_count
 
-static void get_mach_header_sizes(size_t *mach_header_sz, 
+static void get_mach_header_sizes(size_t *mach_header_sz,
 									size_t *segment_command_sz) {
 #if __ppc64__ || __x86_64__
-	*mach_header_sz = sizeof(struct mach_header_64);
-	*segment_command_sz = sizeof(struct segment_command_64);
+	*mach_header_sz = sizeof (struct mach_header_64);
+	*segment_command_sz = sizeof (struct segment_command_64);
 #elif __i386__ || __ppc__ || __POWERPC__
-	*mach_header_sz = sizeof(struct mach_header);
-	*segment_command_sz = sizeof(struct segment_command);
+	*mach_header_sz = sizeof (struct mach_header);
+	*segment_command_sz = sizeof (struct segment_command);
 #else
 #endif
 // XXX: What about arm?
@@ -688,7 +694,7 @@ static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 	return -1;
 }
 
-static cpu_subtype_t xnu_get_cpu_subtype (void) {
+static cpu_subtype_t xnu_get_cpu_subtype(void) {
 	size_t size;
 	cpu_subtype_t subtype;
 
@@ -705,11 +711,11 @@ static void xnu_build_corefile_header(vm_offset_t header, int segment_count, int
 	mh64 = (struct mach_header_64 *)header;
 	mh64->magic = MH_MAGIC_64;
 	mh64->cputype = xnu_get_cpu_type (pid);
-	mh64->cpusubtype = xnu_get_cpu_subtype (); 
+	mh64->cpusubtype = xnu_get_cpu_subtype ();
 	mh64->filetype = MH_CORE;
 	mh64->ncmds = segment_count + thread_count;
 	mh64->sizeofcmds = command_size;
-	mh64->reserved = 0; // 8-byte alignment 
+	mh64->reserved = 0; // 8-byte alignment
 #elif __i386__ || __ppc__ || __POWERPC__
 	struct mach_header *mh;
 	mh = (struct mach_header *)header;
@@ -724,7 +730,7 @@ static void xnu_build_corefile_header(vm_offset_t header, int segment_count, int
 #endif
 }
 
-static int xnu_dealloc_threads (RList *threads) {
+static int xnu_dealloc_threads(RList *threads) {
 	RListIter *iter, *iter2;
 	xnu_thread_t *thread;
 	mach_msg_type_number_t thread_count;
@@ -749,7 +755,7 @@ static int xnu_dealloc_threads (RList *threads) {
 /* XXX which follow the header. */
 /* XXX Maybe this function needs refactoring, but I haven't come up with */
 /* XXX a better way to do it yet. */
-static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int start_offset,
+static int xnu_write_mem_maps_to_buffer(RBuffer *buffer, RList *mem_maps, int start_offset,
 	vm_offset_t header, int header_end, int segment_command_sz, int *hoffset_out) {
 	RListIter *iter, *iter2;
 	RDebugMap *curr_map;
@@ -766,7 +772,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 	struct segment_command *sc;
 #endif
 	r_list_foreach_safe (mem_maps, iter, iter2, curr_map) {
-		eprintf ("Writing section from 0x%"PFMT64x" to 0x%"PFMT64x" (%"PFMT64d")\n", 
+		eprintf ("Writing section from 0x%"PFMT64x" to 0x%"PFMT64x" (%"PFMT64d")\n",
 			curr_map->addr, curr_map->addr_end, curr_map->size);
 
 		vm_map_offset_t vmoffset = curr_map->addr;
@@ -853,12 +859,12 @@ cleanup:
 	return error;
 }
 
-static int xnu_get_thread_status (register thread_t thread, int flavor, 
+static int xnu_get_thread_status(register thread_t thread, int flavor,
 	thread_state_t tstate, mach_msg_type_number_t *count) {
 	return thread_get_state (thread, flavor, tstate, count);
 }
 
-static void xnu_collect_thread_state (thread_t port, void *tirp) {
+static void xnu_collect_thread_state(thread_t port, void *tirp) {
 	coredump_thread_state_flavor_t *flavors;
 	tir_t *tir = (tir_t *)tirp;
 	struct thread_command *tc;
@@ -908,6 +914,23 @@ static uid_t uidFromPid(pid_t pid) {
 	return uid;
 }
 
+static uid_t ppidFromPid(pid_t pid) {
+	uid_t ppid = -1;
+
+	struct kinfo_proc process;
+	size_t procBufferSize = sizeof (process);
+
+	// Compose search path for sysctl. Here you can specify PID directly.
+	int path[] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+	const int pathLenth = (sizeof (path) / sizeof (int));
+	int sysctlResult = sysctl (path, pathLenth, &process, &procBufferSize, NULL, 0);
+	// If sysctl did not fail and process with PID available - take UID.
+	if ((sysctlResult == 0) && (procBufferSize != 0)) {
+		ppid = process.kp_eproc.e_ppid;
+	}
+	return ppid;
+}
+
 bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	int error = 0, i;
 	int tstate_size;
@@ -946,7 +969,7 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 			(flavors[i].count * sizeof(int));
 	}
 
-	command_size = COMMAND_SIZE (segment_count,segment_command_sz, 
+	command_size = COMMAND_SIZE (segment_count,segment_command_sz,
 		r_list_length (threads_list), tstate_size);
 	header_size = command_size + mach_header_sz; // XXX: Add here the round_page() ?
 	header = (vm_offset_t)calloc (1, header_size);
@@ -1090,7 +1113,9 @@ RDebugPid *xnu_get_pid (int pid) {
 		return NULL;
 	}
 #endif
-	return r_debug_pid_new (psname, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
+	RDebugPid *p = r_debug_pid_new (psname, pid, uid, 's', 0); // XXX 's' ??, 0?? must set correct values
+	p->ppid = ppidFromPid (pid);
+	return p;
 }
 
 kern_return_t mach_vm_region_recurse (
@@ -1102,7 +1127,7 @@ kern_return_t mach_vm_region_recurse (
 	mach_msg_type_number_t *infoCnt
 );
 
-static const char * unparse_inheritance (vm_inherit_t i) {
+static const char *unparse_inheritance(vm_inherit_t i) {
 	switch (i) {
 	case VM_INHERIT_SHARE: return "share";
 	case VM_INHERIT_COPY: return "copy";
@@ -1167,7 +1192,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 }
 
 // TODO: Implement mach0 size.. maybe copypasta from rbin?
-static int mach0_size (RDebug *dbg, ut64 addr) {
+static int mach0_size(RDebug *dbg, ut64 addr) {
 	return 4096;
 }
 
@@ -1283,7 +1308,7 @@ static RDebugMap *moduleAt(RList *list, ut64 addr) {
 	return NULL;
 }
 
-static int cmp (const void *_a, const void *_b) {
+static int cmp(const void *_a, const void *_b) {
 	const RDebugMap *a = _a;
 	const RDebugMap *b = _b;
 	if (a->addr > b->addr) {
@@ -1295,7 +1320,7 @@ static int cmp (const void *_a, const void *_b) {
 	return 0;
 }
 
-static RDebugMap *r_debug_map_clone (RDebugMap *m) {
+static RDebugMap *r_debug_map_clone(RDebugMap *m) {
 	RDebugMap *map = R_NEWCOPY (RDebugMap, m);
 	// memcpy (map, m, sizeof (RDebugMap));
 	if (m->name) {

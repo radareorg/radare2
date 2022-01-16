@@ -122,13 +122,13 @@ beach:
 	return rescount;
 }
 
-static int __close(RIODesc *fd) {
+static bool __close(RIODesc *fd) {
 	if (!fd || !fd->data) {
-		return -1;
+		return false;
 	}
 	r2pipe_close (fd->data);
 	fd->data = NULL;
-	return 0;
+	return true;
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {

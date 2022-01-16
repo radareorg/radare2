@@ -21,6 +21,22 @@
 #define MUSTSEEJSON (mode & R_PRINT_JSON && mode & R_PRINT_ISFIELD)
 #define MUSTSEESTRUCT (mode & R_PRINT_STRUCT)
 
+// FOR MINGW only
+#if __MINGW32__
+// gmtime_r can be defined by mingw
+#ifndef gmtime_r
+static struct tm* gmtime_r(const time_t* t, struct tm* r) {
+	// gmtime is threadsafe in windows because it uses TLS
+	struct tm *theTm = gmtime(t);
+	if (theTm) {
+		*r = *theTm;
+		return r;
+	}
+	return 0;
+}
+#endif // gmtime_r
+#endif
+
 //this define is used as a way to acknowledge when updateAddr should take len
 //as real len of the buffer
 #define THRESHOLD (-4444)
@@ -1278,15 +1294,18 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		ut64 addr = seeki;
 		RIOMap *map;
 		while (total_map_left < len
-		       && (map = p->iob.io->va
-		           ? p->iob.map_get_at (p->iob.io, addr)
-		           : p->iob.map_get_paddr (p->iob.io, addr))
-		       && map->perm & R_PERM_R) {
-			if (!r_io_map_size(map)) {
-				total_map_left = addr == 0 ? UT64_MAX : UT64_MAX - addr + 1;
+				&& (map = p->iob.io->va
+					? p->iob.map_get_at (p->iob.io, addr)
+					: p->iob.map_get_paddr (p->iob.io, addr))
+				&& map->perm & R_PERM_R) {
+			if (!r_io_map_size (map)) {
+				total_map_left = addr == 0
+					? UT64_MAX
+					: UT64_MAX - addr + 1;
 				break;
 			}
-			total_map_left += r_io_map_size (map) - (addr - (p->iob.io->va ? r_io_map_begin (map) : map->delta));
+			total_map_left += r_io_map_size (map) - (addr
+				- (p->iob.io->va ? r_io_map_begin (map) : map->delta));
 			addr += total_map_left;
 		}
 		if (total_map_left < len) {
@@ -1599,17 +1618,22 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0, times = 1;
 	bool tabsize_set = false;
+	bool free_fmt2 = true;
 	if (!f) {
 		return -1;
 	}
 	if (n >= 5) {  // This is the nesting level, is this not a bit arbitrary?!
 		return 0;
 	}
-	const char *fmt2 = sdb_get (p->formats, f, NULL);
+	const char *fmt2 = p? sdb_get (p->formats, f, NULL): NULL;
 	if (!fmt2) {
 		fmt2 = f;
+		free_fmt2 = false;
 	}
 	char *o = strdup (fmt2);
+	if (free_fmt2) {
+		R_FREE (fmt2);
+	}
 	if (!o) {
 		return -1;
 	}
@@ -1646,6 +1670,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 		mode &= ~R_PRINT_UNIONMODE;
 	}
 
+	int p_bits = p? p->bits: 32;
 	int words = r_str_word_set0_stack (args);
 	fmt_len = strlen (fmt);
 	for (; i < fmt_len; i++) {
@@ -1702,7 +1727,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			size += tabsize;
 			break;
 		case '*':
-			size += tabsize * (p->bits / 8);
+			size += tabsize * (p_bits / 8);
 			i++;
 			idx--;	//no need to go ahead for args
 			break;
@@ -1722,6 +1747,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			{
 			const char *wordAtIndex = NULL;
 			const char *format = NULL;
+			bool format_owned = false; /* We may or may not free format */
 			char *endname = NULL, *structname = NULL;
 			char tmp = 0;
 			if (words < idx) {
@@ -1750,8 +1776,9 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 					tmp = *format;
 				}
 			} else {
-				format = sdb_get (p->formats, structname + 1, NULL);
+				format = p? sdb_get (p->formats, structname + 1, NULL): NULL;
 				if (format && !strncmp (format, f, strlen (format) - 1)) { // Avoid recursion here
+					R_FREE (format);
 					free (o);
 					free (structname);
 					return -1;
@@ -1759,6 +1786,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 				if (!format) { // Fetch format from types db
 					format = r_type_format (p->sdb_types, structname + 1);
 				}
+				format_owned = true;
 			}
 			if (!format) {
 				eprintf ("Cannot find format for struct `%s'\n", structname + 1);
@@ -1777,6 +1805,9 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 				size += tabsize * newsize;
 			}
 			free (structname);
+			if (format_owned) {
+				R_FREE (format);
+			}
 			}
 			break;
 		case '{':
@@ -1807,7 +1838,7 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			} else if (fmt[i+1] == '8') {
 				size += tabsize * 8;
 			} else {
-				size += tabsize * (p->bits / 8);
+				size += tabsize * (p_bits / 8);
 				break;
 			}
 			i++;
@@ -1857,7 +1888,10 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, const char *name,
 		int slide, int mode, const char *setval, char *field, int anon) {
 	const char *fmt;
+	bool fmt_owned = false;
 	char namefmt[128];
+	int ret;
+
 	slide++;
 	if ((slide % STRUCTPTR) > NESTDEPTH || (slide % STRUCTFLAG)/STRUCTPTR > NESTDEPTH) {
 		eprintf ("Too much nested struct, recursion too deep...\n");
@@ -1870,6 +1904,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 		if (!fmt) { // Fetch struct info from types DB
 			fmt = r_type_format (p->sdb_types, name);
 		}
+		fmt_owned = true;
 	}
 	if (!fmt || !*fmt) {
 		eprintf ("Undefined struct '%s'.\n", name);
@@ -1885,7 +1920,11 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 		p->cb_printf ("<%s>\n", name);
 	}
 	r_print_format (p, seek, b, len, fmt, mode, setval, field);
-	return r_print_format_struct_size (p, fmt, mode, 0);
+	ret = r_print_format_struct_size (p, fmt, mode, 0);
+	if (fmt_owned) {
+		R_FREE (fmt);
+	}
+	return ret;
 }
 
 static char *get_args_offset(const char *arg) {
@@ -1979,13 +2018,14 @@ static char *get_format_type(const char fmt, const char arg) {
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		const char *formatname, int mode, const char *setval, char *ofield) {
 	int nargs, i, j, invalid, nexti, idx, times, otimes, endian, isptr = 0;
-	const int old_bits = p->bits;
+	const int old_bits = p? p->bits: 32;
 	char *args = NULL, *bracket, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
 	static int slide = 0, oldslide = 0, ident = 4;
 	char namefmt[32], *field = NULL;
 	const char *arg = NULL;
 	const char *fmt = NULL;
+	bool fmt_owned = false;
 	const char *argend;
 	int viewflags = 0;
 	char *oarg = NULL;
@@ -1996,10 +2036,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		return 0;
 	}
 	fmt = sdb_get (p->formats, formatname, NULL);
-	if (!fmt) {
+	if (fmt) {
+		fmt_owned = true;
+	} else {
 		fmt = formatname;
 	}
 	internal_format = strdup (fmt);
+	if (fmt_owned) {
+		R_FREE (fmt);
+	}
 	fmt = internal_format;
 	while (*fmt && IS_WHITECHAR (*fmt)) {
 		fmt++;

@@ -70,8 +70,7 @@ static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
 static unsigned char bytes[8];
 
-static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr,
-                                  unsigned int length, struct disassemble_info *info) {
+static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta < 0) {
 		return -1;      // disable backward reads
@@ -190,9 +189,9 @@ cpucode = 66471;
 		op->size = print_insn_aarch64 ((bfd_vma) Offset, &obj);
 	} else {
 		obj.disassembler_options = options;
-		op->size = (obj.endian == BFD_ENDIAN_LITTLE)?
-		           print_insn_little_arm ((bfd_vma) Offset, &obj):
-		           print_insn_big_arm ((bfd_vma) Offset, &obj);
+		op->size = (obj.endian == BFD_ENDIAN_LITTLE)
+			? print_insn_little_arm ((bfd_vma) Offset, &obj)
+			: print_insn_big_arm ((bfd_vma) Offset, &obj);
 	}
 	opsize = op->size;
 	if (op->size == -1) {
@@ -212,7 +211,7 @@ RAsmPlugin r_asm_plugin_arm_gnu = {
 	.cpus = "v2,v2a,v3M,v4,v5,v5t,v5te,v5j,XScale,ep9312,iWMMXt,iWMMXt2",
 	.bits = 16 | 32 | 64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.desc = "Acorn RISC Machine CPU",
+	.desc = "GNU Disassembler for ARM, Thumb and Aarch64",
 	.disassemble = &disassemble,
 	.license = "GPL3"
 };

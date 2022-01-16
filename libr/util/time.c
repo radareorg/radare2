@@ -12,7 +12,11 @@
 R_API ut64 r_time_now(void) {
 	ut64 ret;
 	struct timeval now;
+#if __MINGW32__
+	mingw_gettimeofday (&now, NULL);
+#else
 	gettimeofday (&now, NULL);
+#endif
 	ret = now.tv_sec * R_USEC_PER_SEC;
 	ret += now.tv_usec;
 	return ret;
@@ -47,7 +51,7 @@ R_API ut64 r_time_now_mono(void) {
 }
 
 R_API char *r_time_stamp_to_str(ut32 timeStamp) {
-#ifdef _MSC_VER
+#if __WINDOWS__
 	time_t rawtime;
 	struct tm *tminfo;
 	rawtime = (time_t)timeStamp;
@@ -165,10 +169,10 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 
 R_API int r_print_date_get_now(RPrint *p, char *str) {
 	int ret = 0;
-        time_t l;
+	time_t l;
 
-        *str = 0;
-        l = time(0);
+	*str = 0;
+	l = time (0);
 
 	str = r_time_stamp_to_str (l);
 	p->cb_printf ("%s\n", str);
@@ -195,9 +199,8 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API const char *r_time_to_string (ut64 ts) {
-	time_t l;
-	l = ts >> 20;
+R_API const char *r_time_to_string(ut64 ts) {
+	time_t l = ts >> 20;
 	return r_time_stamp_to_str (l);
 }
 

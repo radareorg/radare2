@@ -81,13 +81,13 @@ Everything up-to-date.
 Sharing your latest session to Facebook ...
 This should be documented, since it's not that obvious.
 It's working! Look at the door!
-This is an unacceptable milion year dungeon.
+This is an unacceptable million year dungeon.
 The Hard ROP Cafe
 Wait a minute! I found a bug, self-fixing ... OK
 Hold on, this should never happen!
 Well this is embarrasing ...
 THIS IS NOT FUNNY
-♥ --
+♥  --
 Can you stand on your head?
 May the segfault be with you.
 I script in C, because I can.
@@ -172,7 +172,7 @@ Are you a wizard?
 Learn pancake as if you were radare!
 r2 is a great OS, but a terrible hex editor
 THE CAKE IS A PIE
-radare2 0.9.7 is so old, my grandfarther was using it with his enigma in WWII
+radare2 0.9.7 is so old, my grandfather was using it with his enigma in WWII
 Have you seen the latest radare2 TV spot?
 scp ~/.idapro/ida.key radare.org:/var/www/radare.org/pub/losers/
 Too bad there is no gif support in r2. Yet. -- @r2gif
@@ -293,3 +293,11 @@ Please insert disc 2 and press any key to continue...
 DOOM all the things!
 Put some sugar before the release, attracts the bugs and makes it easier to squash them
 Stay indoors and await further instructions
+radare2 works best, when pirated.
+I could go up there about 11 at night, stay till 4 in the morning, and get all the computer runs I ever wanted.
+Safety third
+You should try our sister project, radar3!
+This pancake guy sure does know his way around r2.
+make: r2: Command not found
+rip and tear until it compiles
+The r emblem on the front is the legendary symbol for invincibility!

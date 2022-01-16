@@ -91,9 +91,9 @@
 # the assumption that 65-72 will all be ASCII (0x20-0x7F), that 73 will
 # have bits 1 (changed), 2 (busy), 3 (bozo), and 6 (invisible) unset,
 # and that 74 will be 0.  So something like
-# 
+#
 # 71 	belong&0x80804EFF 0x00000000 	Macintosh MacBinary data
-# 
+#
 # >73	byte&0x01	0x01		\b, inited
 # >73	byte&0x02	0x02		\b, changed
 # >73	byte&0x04	0x04		\b, busy
@@ -236,7 +236,7 @@
 >0x9C   string          INDEX           data file index
 >0x9C   string          VIEW            data view
 
-# spss magic for SPSS system and portable files, 
+# spss magic for SPSS system and portable files,
 #	 from Bruce Foster (bef@nwu.edu).
 
 0	long		0xc1e2c3c9	SPSS Portable File
@@ -255,7 +255,7 @@
 # entries depend on the data arithmetic added after v.35
 # There's also some Pascal strings in here, ditto...
 
-# The boot block signature, according to IM:Files, is 
+# The boot block signature, according to IM:Files, is
 # "for HFS volumes, this field always contains the value 0x4C4B."
 # But if this is true for MFS or HFS+ volumes, I don't know.
 # Alternatively, the boot block is supposed to be zeroed if it's
@@ -305,15 +305,15 @@
 #>&42	belong			x		number of blocks: %d,
 #>&46	belong			x		free blocks: %d
 
-# I don't think this is really necessary since it doesn't do much and 
+# I don't think this is really necessary since it doesn't do much and
 # anything with a valid driver descriptor will also have a valid
 # partition map
 #0		beshort		0x4552		Apple Device Driver data
 #>&24		beshort		=1		\b, MacOS
 
-# Is that the partition type a cstring or a pstring? Well, IM says "strings 
-# shorter than 32 bytes must be terminated with NULL" so I'll treat it as a 
-# cstring. Of course, partitions can contain more than four entries, but 
+# Is that the partition type a cstring or a pstring? Well, IM says "strings
+# shorter than 32 bytes must be terminated with NULL" so I'll treat it as a
+# cstring. Of course, partitions can contain more than four entries, but
 # what're you gonna do?
 # GRR: This magic is too weak, it is just "PM"
 #0x200		beshort		0x504D		Apple Partition data

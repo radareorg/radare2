@@ -98,11 +98,11 @@ static int check_format(RMagic *, struct r_magic *);
 static int get_op(char);
 
 static size_t maxmagic = 0;
-static size_t magicsize = sizeof (struct r_magic);
+static size_t magicsize = sizeof(struct r_magic);
 
 static const char usg_hdr[] = "cont\toffset\ttype\topcode\tmask\tvalue\tdesc";
 static const char mime_marker[] = "!:mime";
-static const size_t mime_marker_len = sizeof (mime_marker) - 1;
+static const size_t mime_marker_len = sizeof(mime_marker) - 1;
 
 static const struct type_tbl_s {
 	const char name[16];
@@ -1627,7 +1627,7 @@ static int getvalue(RMagic *ms, struct r_magic *m, const char **p, int action) {
  * Copy the converted version to "p", returning its length in *slen.
  * Return updated scan pointer as function result.
  */
-static const char * getstr(RMagic *ms, const char *s, char *p, int plen, int *slen, int action) {
+static const char *getstr(RMagic *ms, const char *s, char *p, int plen, int *slen, int action) {
 	const char *origs = s;
 	char *origp = p;
 	char *pmax = p + plen - 1;
@@ -1989,6 +1989,9 @@ static char *mkdbname(const char *fn, int strip) {
 	}
 	fnlen = strlen (fn);
 	extlen = strlen (ext);
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 256
+#endif
 	if (fnlen + extlen + 1 > MAXPATHLEN) {
 		return NULL;
 	}

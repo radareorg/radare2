@@ -49,8 +49,9 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 		// map the file in for IO operations.
 		if (yankdesc && load_align) {
 			yank_file_sz = r_io_size (core->io);
-			ut64 addr = r_io_map_next_available (core->io, 0, yank_file_sz, load_align);
-        		map = r_io_map_new (core->io, yankdesc->fd, R_PERM_R, 0, addr, yank_file_sz);
+			ut64 addr = 0;
+			r_io_map_locate (core->io, &addr, yank_file_sz, load_align);
+			map = r_io_map_add (core->io, yankdesc->fd, R_PERM_R, 0, addr, yank_file_sz);
 			loadaddr = map? r_io_map_begin (map): -1;
 			if (yankdesc && map && loadaddr != -1) {
 				// ***NOTE*** this is important, we need to

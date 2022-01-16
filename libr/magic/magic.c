@@ -24,17 +24,17 @@ R_LIB_VERSION (r_magic);
 #undef R_API
 #define R_API
 
-R_API RMagic* r_magic_new(int flags) { return magic_open (flags); }
-R_API void r_magic_free(RMagic* m) { if (m) { magic_close (m); } }
-R_API const char *r_magic_file(RMagic* m, const char * f) { return magic_file (m, f); } 
-R_API const char *r_magic_descriptor(RMagic* m, int fd) { return magic_descriptor (m, fd); }
-R_API const char *r_magic_buffer(RMagic* m, const void *b, size_t s) { return magic_buffer (m, b, s); }
-R_API const char *r_magic_error(RMagic* m) { return magic_error (m); }
-R_API void r_magic_setflags(RMagic* m, int f) { magic_setflags (m, f); }
-R_API bool r_magic_load(RMagic* m, const char *f) { return magic_load (m, f) != -1; }
-R_API bool r_magic_compile(RMagic* m, const char *x) { return magic_compile (m, x) != -1; }
-R_API bool r_magic_check(RMagic* m, const char *x) { return magic_check (m, x) != -1; }
-R_API int r_magic_errno(RMagic* m) { return magic_errno (m); }
+R_API RMagic* r_magic_new(int flags) { return magic_open(flags); }
+R_API void r_magic_free(RMagic* m) { if(m) { magic_close(m); } }
+R_API const char *r_magic_file(RMagic* m, const char *f) { return magic_file(m, f); }
+R_API const char *r_magic_descriptor(RMagic* m, int fd) { return magic_descriptor(m, fd); }
+R_API const char *r_magic_buffer(RMagic* m, const void *b, size_t s) { return magic_buffer(m, b, s); }
+R_API const char *r_magic_error(RMagic* m) { return magic_error(m); }
+R_API void r_magic_setflags(RMagic* m, int f) { magic_setflags(m, f); }
+R_API bool r_magic_load(RMagic* m, const char *f) { return magic_load(m, f) != -1; }
+R_API bool r_magic_compile(RMagic* m, const char *x) { return magic_compile(m, x) != -1; }
+R_API bool r_magic_check(RMagic* m, const char *x) { return magic_check(m, x) != -1; }
+R_API int r_magic_errno(RMagic* m) { return magic_errno(m); }
 
 #else
 
@@ -42,7 +42,7 @@ R_API int r_magic_errno(RMagic* m) { return magic_errno (m); }
 
 #include "file.h"
 
-#ifndef PIPE_BUF 
+#ifndef PIPE_BUF
 /* Get the PIPE_BUF from pathconf */
 #ifdef _PC_PIPE_BUF
 #define PIPE_BUF pathconf(".", _PC_PIPE_BUF)
@@ -89,7 +89,7 @@ static int info_from_stat(RMagic *ms, unsigned short md) {
 	return 0;
 }
 
-static void close_and_restore (const RMagic *ms, const char *name, int fd, const struct stat *sb) {
+static void close_and_restore(const RMagic *ms, const char *name, int fd, const struct stat *sb) {
 	if (fd >= 0) {
 		close (fd);
 	}
@@ -268,11 +268,11 @@ R_API const char* r_magic_descriptor(RMagic *ms, int fd) {
 	return file_or_fd (ms, NULL, fd);
 }
 
-R_API const char * r_magic_file(RMagic *ms, const char *inname) {
+R_API const char *r_magic_file(RMagic *ms, const char *inname) {
 	return file_or_fd (ms, inname, 0); // 0 = stdin
 }
 
-R_API const char * r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {
+R_API const char *r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {
 	if (file_reset (ms) == -1) {
 		return NULL;
 	}

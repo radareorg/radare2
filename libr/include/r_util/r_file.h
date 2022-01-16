@@ -38,10 +38,10 @@ R_API char *r_file_dirname(const char *path);
 R_API char *r_file_abspath_rel(const char *cwd, const char *file);
 R_API char *r_file_abspath(const char *file);
 R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
+R_API ut8 *r_inflate_raw(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen);
 R_API ut8 *r_file_gzslurp(const char *str, int *outlen, int origonfail);
 R_API char *r_stdin_slurp(int *sz);
 R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz);
-//R_API char *r_file_slurp_range(const char *str, ut64 off, ut64 sz);
 R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz);
 R_API char *r_file_slurp_random_line(const char *file);
 R_API char *r_file_slurp_random_line_count(const char *file, int *linecount);
@@ -63,6 +63,7 @@ R_API bool r_file_move(const char *src, const char *dst);
 R_API RList* r_file_glob(const char *globbed_path, int maxdepth);
 R_API RMmap *r_file_mmap_arch(RMmap *map, const char *filename, int fd);
 R_API RList *r_file_lsrf(const char *dir);
+R_API bool r_file_rm_rf(const char *dir);
 #ifdef __cplusplus
 }
 #endif

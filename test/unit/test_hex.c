@@ -153,11 +153,58 @@ bool test_r_hex_no_code() {
 	mu_end;
 }
 
+bool test_str2bin_alloc () {
+	ut8 *buf = NULL;
+	int len;
+	// bad strings
+	len = r_hex_str2bin_until_new ("4", &buf);
+	mu_assert_eq (len, 0, "r_hex_str2bin_until_new invalid str 1");
+	mu_assert_null (buf, "r_hex_str2bin_until_new invalid str 1");
+
+	len = r_hex_str2bin_until_new ("444:", &buf);
+	mu_assert_eq (len, 0, "r_hex_str2bin_until_new invalid str 2");
+	mu_assert_null (buf, "r_hex_str2bin_until_new invalid str 2");
+
+	len = r_hex_str2bin_until_new (" 4444", &buf);
+	mu_assert_eq (len, 0, "r_hex_str2bin_until_new invalid str 3");
+	mu_assert_null (buf, "r_hex_str2bin_until_new invalid str 3");
+
+	len = r_hex_str2bin_until_new ("", &buf);
+	mu_assert_eq (len, 0, "r_hex_str2bin_until_new invalid str 4");
+	mu_assert_null (buf, "r_hex_str2bin_until_new invalid str 4");
+
+	// bad bufs
+	ut8 buf2[3];
+	len = r_hex_str2bin_until_new ("44", (ut8 **)&buf2);
+	mu_assert_eq (len, 1, "r_hex_str2bin_until_new accepted non-null **");
+
+	len = r_hex_str2bin_until_new ("4142", NULL);
+	mu_assert_eq (len, -1, "r_hex_str2bin_until_new NULL *");
+
+	// valid input
+	buf = NULL;
+	len = r_hex_str2bin_until_new ("4142", &buf);
+	mu_assert_eq (len, 2, "r_hex_str2bin_until_new simple example");
+	mu_assert_notnull (buf, "r_hex_str2bin_until_new simple example");
+	mu_assert_memeq (buf, (ut8 *)"\x41\x42", len, "r_hex_str2bin_until_new simple example");
+	free (buf);
+
+	buf = NULL;
+	len = r_hex_str2bin_until_new ("414243:NOT_HEX", &buf);
+	mu_assert_eq (len, 3, "r_hex_str2bin_until_new \"414243:NOT_HEX\" returns 3 bytes");
+	mu_assert_notnull (buf, "r_hex_str2bin_until_new \"414243:NOT_HEX\" returns 3 bytes");
+	mu_assert_memeq (buf, (ut8 *)"\x41\x42\x43", len, "r_hex_str2bin_until_new \"414243:NOT_HEX\" returns 3 bytes");
+	free (buf);
+
+	mu_end;
+}
+
 bool all_tests() {
 	mu_run_test (test_r_hex_from_c);
 	mu_run_test (test_r_hex_from_py);
 	mu_run_test (test_r_hex_from_code);
 	mu_run_test (test_r_hex_no_code);
+	mu_run_test (test_str2bin_alloc);
 	return tests_passed != tests_run;
 }
 

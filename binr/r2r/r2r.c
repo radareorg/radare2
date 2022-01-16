@@ -82,8 +82,8 @@ static int help(bool verbose) {
 		"\n"
 		"R2R_SKIP_ARCHOS=1  # do not run the arch-os-specific tests\n"
 		"R2R_SKIP_JSON=1    # do not run the JSON tests\n"
-		"R2R_SKIP_FUZZ=1     # do not run the rasm2 tests\n"
-		"R2R_SKIP_UNIT=1     # do not run the rasm2 tests\n"
+		"R2R_SKIP_FUZZ=1    # do not run the rasm2 tests\n"
+		"R2R_SKIP_UNIT=1    # do not run the rasm2 tests\n"
 		"R2R_SKIP_CMD=1     # do not run the rasm2 tests\n"
 		"R2R_SKIP_ASM=1     # do not run the rasm2 tests\n"
 		"\n"
@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
 		for (i = 0; i < R_ARRAY_SIZE (streams); i++) {
 			GetConsoleMode (streams[i], &mode);
 			SetConsoleMode (streams[i],
-			                mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+					mode | ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 		}
 	}
 #endif
@@ -230,8 +230,10 @@ int main(int argc, char **argv) {
 				printf (R2_VERSION "\n");
 			} else {
 				char *s = r_str_version ("r2r");
-				printf ("%s\n", s);
-				free (s);
+				if (s) {
+					printf ("%s\n", s);
+					free (s);
+				}
 			}
 			return 0;
 		case 'V':
@@ -331,6 +333,9 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
+	r_sys_setenv ("RABIN2_TRYLIB", "0");
+	r_sys_setenv ("R2_DEBUG_ASSERT", "1");
+	r_sys_setenv ("TZ", "UTC");
 	ut64 time_start = r_time_now_mono ();
 	R2RState state = {{0}};
 	state.run_config.r2_cmd = radare2_cmd ? radare2_cmd : RADARE2_CMD_DEFAULT;
@@ -463,6 +468,7 @@ int main(int argc, char **argv) {
 		RThread *th = r_th_new (worker_th, &state, 0);
 		if (!th) {
 			eprintf ("Failed to start thread.\n");
+			r_th_lock_leave (state.lock);
 			exit (-1);
 		}
 		r_pvector_push (&workers, th);
@@ -551,7 +557,9 @@ static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD:
 		pj_s (pj, "cmd");
-		pj_ks (pj, "name", test->cmd_test->name.value);
+		if (test->cmd_test->name.value) {
+			pj_ks (pj, "name", test->cmd_test->name.value);
+		}
 		break;
 	case R2R_TEST_TYPE_ASM:
 		pj_s (pj, "asm");
@@ -655,7 +663,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
 	char *uni = r_diff_buffers_to_string (d, (const ut8 *)expected, (int)strlen (expected),
-	                                      (const ut8 *)output, (int)strlen (output));
+			(const ut8 *)output, (int)strlen (output));
 	r_diff_free (d);
 
 	RList *lines = r_str_split_duplist (uni, "\n", false);
@@ -873,13 +881,19 @@ static void interact(R2RState *state) {
 		goto beach;
 	}
 
+	bool use_fancy_stuff = !r_cons_is_windows ();
 #if __WINDOWS__
+	// XXX move to rcons
 	(void)SetConsoleOutputCP (65001); // UTF-8
 #endif
 	printf ("\n");
 	printf ("#####################\n");
-	printf (" %"PFMT64u" failed test(s) "R_UTF8_POLICE_CARS_REVOLVING_LIGHT"\n",
-	        (ut64)r_pvector_len (&failed_results));
+	if (use_fancy_stuff) {
+		printf (" %"PFMT64u" failed test(s)"R_UTF8_POLICE_CARS_REVOLVING_LIGHT"\n",
+			(ut64)r_pvector_len (&failed_results));
+	} else {
+		printf (" %"PFMT64u" failed test(s)\n", (ut64)r_pvector_len (&failed_results));
+	}
 
 	r_pvector_foreach (&failed_results, it) {
 		R2RTestResultInfo *result = *it;
@@ -891,13 +905,17 @@ static void interact(R2RState *state) {
 		printf ("#####################\n\n");
 		print_result_diff (&state->run_config, result);
 menu:
-		printf ("Wat do?    "
-				"(f)ix "R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
-				"(i)gnore "R_UTF8_SEE_NO_EVIL_MONKEY"    "
-				"(b)roken "R_UTF8_SKULL_AND_CROSSBONES R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
-				"(c)ommands "R_UTF8_KEYBOARD R_UTF8_VS16"    "
-				"(d)iffchar "R_UTF8_LEFT_POINTING_MAGNIFYING_GLASS"    "
-				"(q)uit "R_UTF8_DOOR"\n");
+		if (use_fancy_stuff) {
+			printf ("Wat do?    "
+					"(f)ix "R_UTF8_WHITE_HEAVY_CHECK_MARK R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
+					"(i)gnore "R_UTF8_SEE_NO_EVIL_MONKEY"    "
+					"(b)roken "R_UTF8_SKULL_AND_CROSSBONES R_UTF8_VS16 R_UTF8_VS16 R_UTF8_VS16"    "
+					"(c)ommands "R_UTF8_KEYBOARD R_UTF8_VS16"    "
+					"(d)iffchar "R_UTF8_LEFT_POINTING_MAGNIFYING_GLASS"    "
+					"(q)uit "R_UTF8_DOOR"\n");
+		} else {
+			printf ("Wat do?    (f)ix     (i)gnore     (b)roken     (c)ommands     (d)iffchar     (q)uit\n");
+		}
 		printf ("> ");
 		char buf[0x30];
 		if (!fgets (buf, sizeof (buf), stdin)) {

@@ -1,8 +1,3 @@
-# Usage
-
-All r2 tools and commands support printing the output in different formats
-by appending a char at the end or using the `-r`(\*r2) and `-j`(json) flags.
-
 ```
  ___  __  ___  __ ___  ___   ____
 | _ \/  \|   \/  \ _ \/ _ \ (__  \
@@ -14,41 +9,47 @@ by appending a char at the end or using the `-r`(\*r2) and `-j`(json) flags.
                         --pancake
 ```
 
+# Usage
+
+All r2 tools and commands support printing the output in different formats by
+appending a character at the end or using the `-r` (\*r2) and `-j` (json)
+flags.
+
 ### radare2
 
 ```
-r2 -          # same as r2 malloc://4096 the playground
-r2 /bin/ls    # standard way to run r2
-r2 -w ls      # open in read-write
-r2 -d ls      # start debugging the ls in PATH
+r2 -       # same as r2 malloc://4096; "the playground"
+r2 /bin/ls # standard way to run r2
+r2 -w ls   # open in read-write
+r2 -d ls   # start debugging the ls in PATH
 ```
 
 ### rasm2
 
 ```
-rasm2 -L       # list all supported assembler/disassembler/emulator plugins
-rasm2 -L       # list all supported assembler/disassembler/emulator plugins
-rasm2 -a arm -b 64 'nop'
-rasm2 -d 90    # disassembles a nop asuming local x86
+rasm2 -L                 # list all supported assembler/disassembler/emulator plugins
+rasm2 -a arm -b 64 'nop' # assemble a nop in 64-bit ARM
+rasm2 -d 90              # disassemble 0x90; nop, if you're using x86
 ```
 
 ### rabin2
 
 ```
-rabin2 -s /bin/ls  # list symbols of binary
-rabin2 -z /bin/ls  # find strings
+rabin2 -s /bin/ls # list symbols in a binary
+rabin2 -z /bin/ls # find strings
 ```
 
 ### rax2
 ```
-rax2 '10+0x20'     # compute the result
-rax2 -k 10+32      # keep the same base as input (10)
-rax2 -h            # convert between (hex, octal, decimal.. bases)
+rax2 '10+0x20' # compute the result
+rax2 -k 10+32  # keep the same base as input (10)
+rax2 -h        # convert between (hex, octal, decimal.. bases)
 ```
 
-### Other tools...
+### Other tools
 
-Checkout the [manpages](https://github.com/radareorg/radare2/blob/master/man) and help messages for more details
+Check out the [manpages](https://github.com/radareorg/radare2/blob/master/man)
+and help messages for more information.
 
 ## Scripting
 

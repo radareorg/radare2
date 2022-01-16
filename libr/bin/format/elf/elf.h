@@ -66,7 +66,7 @@ typedef struct r_bin_elf_symbol_t {
 typedef struct r_bin_elf_reloc_t {
 	int sym;
 	int type;
-	Elf_(Xword) rel_mode;
+	Elf_(Xword) mode;
 	st64 addend;
 	ut64 offset;
 	ut64 rva;
@@ -187,7 +187,7 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin); //yin
 char* Elf_(r_bin_elf_get_abi)(ELFOBJ *bin);
-char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin); 
+char* Elf_(r_bin_elf_get_cpu)(ELFOBJ *bin);
 char* Elf_(r_bin_elf_get_file_type)(struct Elf_(r_bin_elf_obj_t) *bin);
 char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin);
@@ -210,6 +210,7 @@ bool Elf_(r_bin_elf_section_perms)(RBinFile *bf, const char *name, int perms);
 bool Elf_(r_bin_elf_entry_write)(RBinFile *bf, ut64 addr);
 bool Elf_(r_bin_elf_del_rpath)(RBinFile *bf);
 
+ut64 Elf_(r_bin_elf_get_phnum)(ELFOBJ *bin);
 bool Elf_(r_bin_elf_is_executable)(ELFOBJ *bin);
 int Elf_(r_bin_elf_has_relro)(struct Elf_(r_bin_elf_obj_t) *bin);
 int Elf_(r_bin_elf_has_nx)(struct Elf_(r_bin_elf_obj_t) *bin);

@@ -9,7 +9,7 @@ NAME=1: PE: nosectionW7 - entrypoint
 FILE=bins/pe/nosectionW7.exe
 CMDS=om
 EXPECT=<<EOF
- 1 fd: 3 +0x00000138 0x00400138 - 0x0040023f r-x fmap.blob
+* 1 fd: 3 +0x00000138 0x00400138 - 0x0040023f r-x fmap.blob
 EOF
 RUN
 

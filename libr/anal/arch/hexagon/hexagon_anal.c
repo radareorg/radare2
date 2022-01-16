@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2018-2021 - xvilka, pancake */
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <r_types.h>
@@ -8,6 +10,7 @@
 #include "hexagon_insn.h"
 
 int hexagon_anal_instruction(HexInsn *hi, RAnalOp *op) {
+	op->vliw = hi->op_count;
 	switch (hi->instruction) {
 	case HEX_INS_CALL__R22_2: {
 		// call #r22:2

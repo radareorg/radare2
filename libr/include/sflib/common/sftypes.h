@@ -84,7 +84,7 @@ struct utsname {};
 struct ustat {};
 struct stat {};
 struct sched_param {};
-struct timeval 
+struct timeval
 {
 	long    tv_sec;         /* seconds */
 	long    tv_usec;        /* microseconds */
@@ -3566,7 +3566,7 @@ struct bsd_dirent {
            uint16_t       d_reclen;
            uint8_t        d_type;
            uint8_t        d_namlen;
-           char           d_name[MAXNAMLEN + 1]; 
+           char           d_name[MAXNAMLEN + 1];
 };
 
 /* semop system calls takes an array of these. */

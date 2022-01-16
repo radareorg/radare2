@@ -6,8 +6,8 @@
 #define BIT(x,n) (((x)>>(n))&1)
 
 #define BITSWAP8(val,B7,B6,B5,B4,B3,B2,B1,B0) \
-        ((BIT(val,B7) << 7) | (BIT(val,B6) << 6) | (BIT(val,B5) << 5) | (BIT(val,B4) << 4) | \
-	(BIT(val,B3) << 3) | (BIT(val,B2) << 2) | (BIT(val,B1) << 1) | (BIT(val,B0) << 0))
+	((BIT(val,B7) << 7) | (BIT(val,B6) << 6) | (BIT(val,B5) << 5) | (BIT(val,B4) << 4) \
+	| (BIT(val,B3) << 3) | (BIT(val,B2) << 2) | (BIT(val,B1) << 1) | (BIT(val,B0) << 0))
 
 #include <r_lib.h>
 #include <r_crypto.h>

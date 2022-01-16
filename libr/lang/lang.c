@@ -22,7 +22,7 @@ R_LIB_VERSION(r_lang);
 
 static RLang *__lang = NULL;
 
-R_API void r_lang_plugin_free (RLangPlugin *p) {
+R_API void r_lang_plugin_free(RLangPlugin *p) {
 	if (p && p->fini) {
 		p->fini (__lang);
 	}
@@ -104,7 +104,7 @@ R_API bool r_lang_define(RLang *lang, const char *type, const char *name, void *
 	return true;
 }
 
-R_API void r_lang_def_free (RLangDef *def) {
+R_API void r_lang_def_free(RLangDef *def) {
 	free (def->name);
 	free (def->type);
 	free (def);
@@ -161,7 +161,7 @@ R_API bool r_lang_list(RLang *lang) {
 	return true;
 }
 
-R_API RLangPlugin *r_lang_get_by_extension (RLang *lang, const char *ext) {
+R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext) {
 	RListIter *iter;
 	RLangPlugin *h;
 	const char *p = r_str_lchr (ext, '.');
@@ -176,7 +176,7 @@ R_API RLangPlugin *r_lang_get_by_extension (RLang *lang, const char *ext) {
 	return NULL;
 }
 
-R_API RLangPlugin *r_lang_get_by_name (RLang *lang, const char *name) {
+R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
 	r_list_foreach (lang->langs, iter, h) {
@@ -311,11 +311,11 @@ R_API bool r_lang_prompt(RLang *lang) {
 		if (!strcmp (buf, "?")) {
 			RLangDef *def;
 			RListIter *iter;
-			eprintf("  ?        - show this help message\n"
-				"  !        - run $EDITOR\n"
-				"  !command - run system command\n"
-				"  . file   - interpret file\n"
-				"  q        - quit prompt\n");
+			eprintf("  ?	- show this help message\n"
+					"  !	- run $EDITOR\n"
+					"  !command - run system command\n"
+					"  . file   - interpret file\n"
+					"  q	- quit prompt\n");
 			eprintf ("%s example:\n", lang->cur->name);
 			if (lang->cur->help) {
 				eprintf ("%s", *lang->cur->help);

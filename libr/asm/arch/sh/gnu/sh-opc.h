@@ -568,7 +568,7 @@ sh_opcode_info sh_table[] = {
 
 /* 1111nn0111111101 ftrv XMTRX_M4,<V_REG_n>*/{"ftrv",{XMTRX_M4,V_REG_N},{HEX_F,REG_NM,HEX_F,HEX_D}},
 
-{ 0 } 
+{ 0 }
 };
 
 #endif

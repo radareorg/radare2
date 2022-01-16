@@ -101,16 +101,16 @@ SDB_API const char *sdb_itoca(ut64 n) {
 
 // assert (sizeof (s)>64)
 // if s is null, the returned pointer must be freed!!
-SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
+SDB_API char *sdb_itoa(ut64 n, char *os, int base) {
 	static const char* lookup = "0123456789abcdef";
-	char tmpbuf[64], *os = NULL;
+	char tmpbuf[64], *s = NULL;
 	const int imax = 62;
 	int i = imax, copy_string = 1;
-	if (s) {
-		*s = 0;
-		os = NULL;
+	if (os) {
+		*os = 0;
+		s = os;
 	} else {
-		os = s = tmpbuf;
+		s = tmpbuf;
 	}
 	if (base < 0) {
 		copy_string = 0;
@@ -120,11 +120,11 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 		return NULL;
 	}
 	if (!n) {
-		if (os) {
+		if (!os) {
 			return strdup ("0");
 		}
-		strcpy (s, "0");
-		return s;
+		strcpy (os, "0");
+		return os;
 	}
 	s[imax + 1] = '\0';
 	if (base <= 10) {
@@ -140,16 +140,16 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 		}
 		s[i--] = '0';
 	}
-	if (os) {
+	if (!os) {
 		return strdup (s + i + 1);
 	}
 	if (copy_string) {
 		// unnecessary memmove in case we use the return value
 		// return s + i + 1;
-		memmove (s, s + i + 1, strlen (s + i + 1) + 1);
-		return s;
+		memmove (os, s + i + 1, strlen (s + i + 1) + 1);
+		return os;
 	}
-	return s + i + 1;
+	return os + i + 1;
 }
 
 SDB_API ut64 sdb_atoi(const char *s) {

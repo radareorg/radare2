@@ -1,10 +1,109 @@
-/* radare - LGPL - Copyright 2009-2020 - pancake */
+/* radare - LGPL - Copyright 2009-2021 - pancake */
 
 #include <stddef.h>
 #include <math.h> // required for signbit
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_util.h"
+
+static const char *help_msg_at[] = {
+	"Usage: [.][#]<cmd>[*] [`cmd`] [@ addr] [~grep] [|syscmd] [>[>]file]", "", "",
+	"0", "", "alias for 's 0'",
+	"0x", "addr", "alias for 's 0x..'",
+	"#", "cmd", "if # is a number repeat the command # times",
+	"/*", "", "start multiline comment",
+	"*/", "", "end multiline comment",
+	".", "cmd", "execute output of command as r2 script",
+	".:", "8080", "wait for commands on port 8080",
+	".!", "rabin2 -re $FILE", "run command output as r2 script",
+	"*", "", "output of command in r2 script format (CC*)",
+	"j", "", "output of command in JSON format (pdj)",
+	"~", "?", "count number of lines (like wc -l)",
+	"~", "??", "show internal grep help",
+	"~", "..", "internal less",
+	"~", "{}", "json indent",
+	"~", "{}..", "json indent and less",
+	"~", "word", "grep for lines matching word",
+	"~", "!word", "grep for lines NOT matching word",
+	"~", "word[2]", "grep 3rd column of lines matching word",
+	"~", "word:3[0]", "grep 1st column from the 4th line matching word",
+	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
+	"@", " [addr]!blocksize", "temporary set a new blocksize",
+	"@..", "addr", "temporary partial address seek (see s..)",
+	"@!", "blocksize", "temporary change the block size (p8@3!3)",
+	"@{", "from to}", "temporary set from and to for commands supporting ranges",
+	"@a:", "arch[:bits]", "temporary set arch and bits",
+	"@b:", "bits", "temporary set asm.bits",
+	"@B:", "nth", "temporary seek to nth instruction in current bb (negative numbers too)",
+	"@e:", "k=v,k=v", "temporary change eval vars",
+	"@f:", "file", "temporary replace block with file contents",
+	"@F:", "flagspace", "temporary change flag space",
+	"@i:", "nth.op", "temporary seek to the Nth relative instruction",
+	"@k:", "k", "temporary seek at value of sdb key `k`",
+	"@o:", "fd", "temporary switch to another fd",
+	"@r:", "reg", "tmp seek to reg value (f.ex pd@r:PC)",
+	"@s:", "string", "same as above but from a string",
+	"@v:", "value", "modify the current offset to a custom value",
+	"@x:", "909192", "from hex pairs string",
+	"@@=", "1 2 3", "run the previous command at offsets 1, 2 and 3",
+	"@@==", "foo bar", "run the previous command appending a word on each iteration",
+	"@@", " hit*", "run the command on every flag matching 'hit*'",
+	"@@", "[?][ktfb..]", "show help for the iterator operator",
+	"@@@", "[?] [type]", "run a command on every [type] (see @@@? for help)",
+	">", "file", "pipe output of command to file",
+	">>", "file", "append to file",
+	"H>", "file", "pipe output of command to file in HTML",
+	"H>>", "file", "append to file with the output of command in HTML",
+	"`", "pdi~push:0[0]`", "replace output of command inside the line",
+	"|", "cmd", "pipe output to command (pd|less) (.dr*)",
+	NULL
+};
+
+static const char *help_msg_at_at[] = {
+	"@@", "", " # foreach iterator command:",
+	"x", " @@ sym.*", "run 'x' over all flags matching 'sym.' in current flagspace",
+	"x", " @@.file", "run 'x' over the offsets specified in the file (one offset per line)",
+	"x", " @@/x 9090", "temporary set cmd.hit to run a command on each search result",
+	"x", " @@=`pdf~call[0]`", "run 'x' at every call offset of the current function",
+	"x", " @@=off1 off2 ..", "manual list of offsets",
+	"x", " @@b", "run 'x' on all basic blocks of current function (see afb)",
+	"x", " @@c:cmd", "the same as @@=`` without the backticks",
+	"x", " @@dbt[abs]", "run 'x' command on every backtrace address, bp or sp",
+	"x", " @@f", "run 'x' on all functions (see aflq)",
+	"x", " @@f:write", "run 'x' on all functions matching write in the name",
+	"x", " @@i", "run 'x' on all instructions of the current function (see pdr)",
+	"x", " @@iS", "run 'x' on all sections adjusting blocksize",
+	"x", " @@k sdbquery", "run 'x' on all offsets returned by that sdbquery",
+	"x", " @@s:from to step", "run 'x' on all offsets from, to incrementing by step",
+	"x", " @@t", "run 'x' on all threads (see dp)",
+	// TODO: Add @@k sdb-query-expression-here
+	NULL
+};
+
+static const char *help_msg_at_at_at[] = {
+	"@@@", "", " # foreach offset+size iterator command:",
+	"x", " @@@=", "[addr] [size] ([addr] [size] ...)",
+	"x", " @@@C:cmd", "comments matching",
+	"x", " @@@E", "exports",
+	"x", " @@@F", "functions (set fcn size which may be incorrect if not linear)",
+	"x", " @@@F:glob", "functions matching glob expression",
+	"x", " @@@M", "dbg.maps (See ?$?~size)",
+	"x", " @@@S", "sections",
+	"x", " @@@b", "basic blocks of current function",
+	"x", " @@@c:cmd", "Same as @@@=`cmd`, without the backticks",
+	"x", " @@@e", "entries",
+	"x", " @@@f", "flags",
+	"x", " @@@f:hit*", "flags matching glob expression",
+	"x", " @@@i", "imports",
+	"x", " @@@m", "io.maps",
+	"x", " @@@r", "registers",
+	"x", " @@@R", "relocs",
+	"x", " @@@s", "symbols",
+	"x", " @@@t", "threads",
+	"x", " @@@z", "ztrings",
+	// TODO: Add @@k sdb-query-expression-here
+	NULL
+};
 
 static ut32 vernum(const char *s) {
 	// XXX this is known to be buggy, only works for strings like "x.x.x"
@@ -93,7 +192,7 @@ static const char *help_msg_root[] = {
 	"g","[?] [arg]", "generate shellcodes with r_egg",
 	"i","[?] [file]", "get info about opened file from r_bin",
 	"k","[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
-	"l"," [filepattern]", "list files and directories",
+	"l","[?] [filepattern]", "list files and directories",
 	"L","[?] [-] [plugin]", "list, unload load r2 plugins",
 	"m","[?]", "mountpoints commands",
 	"o","[?] [file] ([offset])", "open file at optional address",
@@ -123,9 +222,11 @@ static const char *help_msg_question_e[] = {
 	"Usage: ?e[=bdgnpst] arg", "print/echo things", "",
 	"?e", "", "echo message with newline",
 	"?e=", " 32", "progress bar at 32 percentage",
+	"?ea", " text", "ascii art echo (seven segment text, same as ~?ea",
 	"?eb", " 10 20 30", "proportional segments bar",
 	"?ed", " 1", "draw a 3D ascii donut at the given animation frame",
 	"?eg", " 10 20", "move cursor to column 10, row 20",
+	"?ef", " text", "echo text with thin ascii art frame around",
 	"?en", " nonl", "echo message without ending newline",
 	"?ep", " 10 20 30", "draw a pie char with given portion sizes",
 	"?es", " msg", "speak message using the text-to-speech program (e cfg.tts)",
@@ -280,12 +381,6 @@ static void cmd_help_exclamation(RCore *core) {
 static void cmd_help_percent(RCore *core) {
 	r_core_cmd_help (core, help_msg_percent);
 	r_core_cmd_help (core, help_msg_env);
-}
-
-static void cmd_help_init(RCore *core, RCmdDesc *parent) {
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V);
 }
 
 static const char* findBreakChar(const char *s) {
@@ -550,7 +645,7 @@ static int cmd_help(void *data, const char *input) {
 				eprintf ("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 			}
 		} else {
-			n = r_num_get (core->num, input+1);
+			n = r_num_math (core->num, input + 1);
 			r_num_to_bits (out, n);
 			r_cons_printf ("%sb\n", out);
 		}
@@ -620,8 +715,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'j': // "?j"
 	case ' ': // "? "
 		{
-			char *asnum, unit[8];
-			ut32 s, a;
+			char unit[8];
 			double d;
 			float f;
 			char * const inputs = strdup (input + 1);
@@ -629,7 +723,7 @@ static int cmd_help(void *data, const char *input) {
 			const int list_len = r_list_length (list);
 			PJ *pj = NULL;
 			if (*input ==  'j') {
-				pj = pj_new ();
+				pj = r_core_pj_new (core);
 				pj_o (pj);
 			}
 			for (i = 0; i < list_len; i++) {
@@ -641,10 +735,10 @@ static int cmd_help(void *data, const char *input) {
 				if (core->num->dbz) {
 					eprintf ("RNum ERROR: Division by Zero\n");
 				}
-				asnum  = r_num_as_string (NULL, n, false);
-				/* decimal, hexa, octal */
-				s = n >> 16 << 12;
-				a = n & 0x0fff;
+				char *asnum  = r_num_as_string (NULL, n, false);
+
+				ut32 s = 0, a = 0;
+				r_num_segaddr (n, core->print->segbas, core->print->seggrn, &s, &a);
 				r_num_units (unit, sizeof (unit), n);
 				if (*input ==  'j') {
 					pj_ks (pj, "int32", sdb_fmt ("%d", (st32)(n & UT32_MAX)));
@@ -694,9 +788,9 @@ static int cmd_help(void *data, const char *input) {
 					r_num_to_ternary (out, n);
 					pj_ks (pj, "ternary", sdb_fmt ("0t%s", out));
 				} else {
-					r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
-					r_cons_printf ("float:  %ff\n", f);
-					r_cons_printf ("double: %lf\n", d);
+					r_cons_printf ("fvalue  %.1lf\n", core->num->fvalue);
+					r_cons_printf ("float   %ff\n", f);
+					r_cons_printf ("double  %lf\n", d);
 					r_cons_printf ("binary  0b%s\n", out);
 					r_num_to_ternary (out, n);
 					r_cons_printf ("ternary 0t%s\n", out);
@@ -993,6 +1087,13 @@ static int cmd_help(void *data, const char *input) {
 		r_str_trim_args ((char *)input);
 
 		switch (input[1]) {
+		case 'a': // "?ea hello world
+			{
+				char *s = r_str_ss (r_str_trim_head_ro (input + 2), NULL, 0);
+				r_cons_println (s);
+				free (s);
+			}
+			break;
 		case 't': // "?e=t newtitle"
 			r_cons_set_title (r_str_trim_head_ro (input + 2));
 			break;
@@ -1042,6 +1143,25 @@ static int cmd_help(void *data, const char *input) {
 			free (newmsg);
 			break;
 		}
+		case 'f': // "?ef"
+			{
+				const char *text = r_str_trim_head_ro (input + 2);
+				int len = strlen (text) + 2;
+				RStrBuf *b = r_strbuf_new ("");
+				r_strbuf_append (b, ".");
+				r_strbuf_append (b, r_str_pad('-', len));
+				r_strbuf_append (b, ".\n");
+				r_strbuf_append (b, "| ");
+				r_strbuf_append (b, text);
+				r_strbuf_append (b, " |\n");
+				r_strbuf_append (b, "'");
+				r_strbuf_append (b, r_str_pad('-', len));
+				r_strbuf_append (b, "'\n");
+				char * s = r_strbuf_drain (b);
+				r_cons_print (s);
+				free (s);
+			}
+			break;
 		case 'd': // "?ed"
 			  if (input[2] == 'd') {
 				  int i,j;
@@ -1254,3 +1374,4 @@ static int cmd_help(void *data, const char *input) {
 	}
 	return 0;
 }
+

@@ -65,6 +65,7 @@ static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	return block;
 }
 
+#if 0
 static void block_free(RAnalBlock *block) {
 	if (!block) {
 		return;
@@ -79,10 +80,19 @@ static void block_free(RAnalBlock *block) {
 	free (block->parent_reg_arena);
 	free (block);
 }
+#endif
 
 void __block_free_rb(RBNode *node, void *user) {
 	RAnalBlock *block = unwrap (node);
-	block_free (block);
+	r_anal_block_unref (block);
+	//block_free (block);
+}
+
+R_API void r_anal_block_reset(RAnal *a) {
+	if (a->bb_tree) {
+		 r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
+		a->bb_tree = NULL;
+	}
 }
 
 R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
@@ -181,11 +191,23 @@ R_API RAnalBlock *r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
 	return block;
 }
 
+R_API void r_anal_delete_block_at(RAnal *anal, ut64 addr) {
+	RAnalBlock *bb = r_anal_get_block_at (anal, addr);
+	if (bb) {
+		r_anal_delete_block (bb);
+	}
+}
+
 R_API void r_anal_delete_block(RAnalBlock *bb) {
 	r_anal_block_ref (bb);
 	while (!r_list_empty (bb->fcns)) {
-		r_anal_function_remove_block (r_list_first (bb->fcns), bb);
+		RListIter *iter, *iter2;
+		RAnalFunction *fcn;
+		r_list_foreach_safe (bb->fcns, iter, iter2, fcn) {
+			r_anal_function_remove_block (fcn, bb);
+		}
 	}
+	r_rbtree_aug_delete (&bb->anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
 	r_anal_block_unref (bb);
 }
 
@@ -371,13 +393,16 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 	if (!bb) {
 		return;
 	}
+	if (bb->ref < 1) {
+		return;
+	}
 	r_return_if_fail (bb->ref > 0);
 	bb->ref--;
-	r_return_if_fail (bb->ref >= r_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
+	// r_return_if_fail (bb->ref >= r_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
 	if (bb->ref < 1) {
 		RAnal *anal = bb->anal;
-		r_return_if_fail (!bb->fcns || r_list_empty (bb->fcns));
 		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
+	//	r_return_if_fail (r_list_empty (bb->fcns));
 	}
 }
 
@@ -490,6 +515,9 @@ typedef struct {
 
 R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, R_NULLABLE RAnalBlockCb on_exit, void *user) {
 	bool breaked = false;
+	if (!block) {
+		return false;
+	}
 	HtUP *visited = ht_up_new0 ();
 	if (!visited) {
 		goto beach;

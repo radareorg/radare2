@@ -10,7 +10,9 @@
 #include "io_r2k_windows.h"
 #elif defined (__linux__) && !defined (__GNU__)
 #include "io_r2k_linux.h"
-struct io_r2k_linux r2k_struct;		//TODO: move this into desc->data
+struct io_r2k_linux r2k_struct; // TODO: move this into desc->data
+#else
+int r2k_struct; // dummy
 #endif
 
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
@@ -58,7 +60,7 @@ static int r2k__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 #endif
 }
 
-static int r2k__close(RIODesc *fd) {
+static bool r2k__close(RIODesc *fd) {
 #if __WINDOWS__
 	if (gHandleDriver) {
 		CloseHandle (gHandleDriver);
@@ -71,7 +73,7 @@ static int r2k__close(RIODesc *fd) {
 #else
 	eprintf ("TODO: r2k not implemented for this plataform.\n");
 #endif
-	return 0;
+	return true;
 }
 
 static ut64 r2k__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {

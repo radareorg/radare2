@@ -184,7 +184,7 @@ grub_strncasecmp (const char *s1, const char *s2, grub_size_t n)
 }
 
 unsigned long grub_strtoul (const char *str, char **end, int base);
-unsigned long long grub_strtoull (const char *str, char **end, int base);
+ut64 grub_strtoull (const char *str, char **end, int base);
 
 static inline long
 grub_strtol (const char *str, char **end, int base)

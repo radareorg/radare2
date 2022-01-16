@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2019 - qnix */
+/* radare - LGPL - Copyright 2015-2021 - qnix */
 
 #include <string.h>
 #include <r_types.h>
@@ -13,8 +13,8 @@
 #define RISCVARGN(x) ((x)->arg[(x)->num++])
 
 static bool init = false;
-static const char * const *riscv_gpr_names = riscv_gpr_names_abi;
-static const char * const *riscv_fpr_names = riscv_fpr_names_abi;
+static const char *const *riscv_gpr_names = riscv_gpr_names_abi;
+static const char *const *riscv_fpr_names = riscv_fpr_names_abi;
 
 typedef struct riscv_args {
 	int num;
@@ -53,10 +53,10 @@ static struct riscv_opcode *get_opcode(insn_t word) {
 
 	if (!init) {
 		size_t i;
-		for (i=0;i<OP_MASK_OP+1; i++) {
+		for (i = 0; i < OP_MASK_OP + 1; i++) {
 			riscv_hash[i] = 0;
 		}
-		for (op=riscv_opcodes; op <= &riscv_opcodes[NUMOPCODES - 1]; op++) {
+		for (op = riscv_opcodes; op <= &riscv_opcodes[NUMOPCODES - 1]; op++) {
 			if (!riscv_hash[OP_HASH_IDX (op->match)]) {
 				riscv_hash[OP_HASH_IDX (op->match)] = op;
 			}
@@ -67,113 +67,115 @@ static struct riscv_opcode *get_opcode(insn_t word) {
 }
 
 /* Print insn arguments for 32/64-bit code.  */
-static void get_insn_args(riscv_args_t *args, const char *d, insn_t l, uint64_t pc) {
+static void get_insn_args(riscv_args_t *args, const char *d, insn_t _l, ut64 pc) {
+	int l = _l;
 	int rs1 = (l >> OP_SH_RS1) & OP_MASK_RS1;
 	int rd = (l >> OP_SH_RD) & OP_MASK_RD;
-	uint64_t target;
+	ut64 target;
 	args->num = 0;
 
 	for (; *d != '\0' && args->num < RISCVARGSMAX; d++) {
 		switch (*d) {
-			/* Xcustom */
+		/* Xcustom */
 		case '^':
-			switch (*++d) {
+			d++;
+			switch (*d) {
 			case 'd':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", rd);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", rd);
 				break;
 			case 's':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", rs1);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", rs1);
 				break;
 			case 't':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int) EXTRACT_OPERAND (RS2, l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int) EXTRACT_OPERAND (RS2, l));
 				break;
 			case 'j':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int) EXTRACT_OPERAND (CUSTOM_IMM, l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int) EXTRACT_OPERAND (CUSTOM_IMM, l));
 				break;
 			}
 			break;
 
 		case 'C': /* RVC */
-			switch (*++d) {
+			d++;
+			switch (*d) {
 			case 's': /* RS1 x8-x15 */
 			case 'w': /* RS1 x8-x15 */
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
-				  riscv_gpr_names[EXTRACT_OPERAND (CRS1S, l) + 8]);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
+						riscv_gpr_names[EXTRACT_OPERAND (CRS1S, l) + 8]);
 				break;
 			case 't': /* RS2 x8-x15 */
 			case 'x': /* RS2 x8-x15 */
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
-				  riscv_gpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
+						riscv_gpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
 				break;
 			case 'U': /* RS1, constrained to equal RD in CI format*/
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
 				break;
 			case 'c': /* RS1, constrained to equal sp */
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[X_SP]);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[X_SP]);
 				break;
 			case 'V': /* RS2 */
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
-				  riscv_gpr_names[EXTRACT_OPERAND (CRS2, l)]);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
+						riscv_gpr_names[EXTRACT_OPERAND (CRS2, l)]);
 				break;
 			case 'i':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SIMM3 (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SIMM3 (l));
 				break;
 			case 'j':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_IMM (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_IMM (l));
 				break;
 			case 'k':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LW_IMM (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LW_IMM (l));
 				break;
 			case 'l':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LD_IMM (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LD_IMM (l));
 				break;
 			case 'm':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LWSP_IMM (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LWSP_IMM (l));
 				break;
 			case 'n':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LDSP_IMM (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_LDSP_IMM (l));
 				break;
 			case 'K':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_ADDI4SPN_IMM (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_ADDI4SPN_IMM (l));
 				break;
 			case 'L':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_ADDI16SP_IMM (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_ADDI16SP_IMM (l));
 				break;
 			case 'M':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SWSP_IMM (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SWSP_IMM (l));
 				break;
 			case 'N':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SDSP_IMM (l));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int)EXTRACT_RVC_SDSP_IMM (l));
 				break;
 			case 'p':
 				target = EXTRACT_RVC_B_IMM (l) + pc;
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%"PFMT64x, (ut64) target);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%"PFMT64x, (ut64) target);
 				break;
 			case 'a':
 				target = EXTRACT_RVC_J_IMM (l) + pc;
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
 				break;
 			case 'u':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x",
-				  (int) (EXTRACT_RVC_IMM (l) & (RISCV_BIGIMM_REACH-1)));
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x",
+						(int) (EXTRACT_RVC_IMM (l) & (RISCV_BIGIMM_REACH-1)));
 				break;
 			case '>':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", (int) EXTRACT_RVC_IMM (l) & 0x3f);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", (int) EXTRACT_RVC_IMM (l) & 0x3f);
 				break;
 			case '<':
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", (int) EXTRACT_RVC_IMM (l) & 0x1f);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", (int) EXTRACT_RVC_IMM (l) & 0x1f);
 				break;
 			case 'T': /* floating-point RS2 */
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
-				  riscv_fpr_names[EXTRACT_OPERAND (CRS2, l)]);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
+						riscv_fpr_names[EXTRACT_OPERAND (CRS2, l)]);
 				break;
 			case 'D': /* floating-point RS2 x8-x15 */
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
-				  riscv_fpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
+						riscv_fpr_names[EXTRACT_OPERAND (CRS2S, l) + 8]);
 				break;
 			}
 			break;
-
 		case ',':
 		case '(':
 		case ')':
@@ -183,103 +185,99 @@ static void get_insn_args(riscv_args_t *args, const char *d, insn_t l, uint64_t 
 		case '0':
 			/* Only print constant 0 if it is the last argument */
 			if (!d[1]) {
-				snprintf (RISCVARGN(args), RISCVARGSIZE , "0");
+				snprintf (RISCVARGN (args), RISCVARGSIZE , "0");
 			}
 			break;
-
 		case 'b':
 		case 's':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[rs1]);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[rs1]);
 			break;
-
 		case 't':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s",
-			  riscv_gpr_names[EXTRACT_OPERAND (RS2, l)]);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s",
+					riscv_gpr_names[EXTRACT_OPERAND (RS2, l)]);
 			break;
-
 		case 'u':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x",
-			  (unsigned) EXTRACT_UTYPE_IMM (l) >> RISCV_IMM_BITS);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x",
+					(unsigned) EXTRACT_UTYPE_IMM (l) >> RISCV_IMM_BITS);
 			break;
 
 		case 'm':
-			arg_p2 (RISCVARGN(args), EXTRACT_OPERAND (RM, l),
-			  riscv_rm, ARRAY_SIZE (riscv_rm));
+			arg_p2 (RISCVARGN (args), EXTRACT_OPERAND (RM, l),
+					riscv_rm, ARRAY_SIZE (riscv_rm));
 			break;
 
 		case 'P':
-			arg_p2 (RISCVARGN(args), EXTRACT_OPERAND (PRED, l),
-			  riscv_pred_succ, ARRAY_SIZE (riscv_pred_succ));
+			arg_p2 (RISCVARGN (args), EXTRACT_OPERAND (PRED, l),
+					riscv_pred_succ, ARRAY_SIZE (riscv_pred_succ));
 			break;
 
 		case 'Q':
-			arg_p2 (RISCVARGN(args), EXTRACT_OPERAND (SUCC, l),
-			  riscv_pred_succ, ARRAY_SIZE (riscv_pred_succ));
+			arg_p2 (RISCVARGN (args), EXTRACT_OPERAND (SUCC, l),
+					riscv_pred_succ, ARRAY_SIZE (riscv_pred_succ));
 			break;
 		case 'o':
 		case 'j':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int) EXTRACT_ITYPE_IMM (l));
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int) EXTRACT_ITYPE_IMM (l));
 			break;
 		case 'q':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", (int) EXTRACT_STYPE_IMM (l));
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", (int) EXTRACT_STYPE_IMM (l));
 			break;
 		case 'a':
 			target = EXTRACT_UJTYPE_IMM (l) + pc;
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
 			break;
 		case 'p':
 			target = EXTRACT_SBTYPE_IMM (l) + pc;
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%"PFMT64x, (ut64)target);
 			break;
 		case 'd':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[rd]);
 			break;
 		case 'z':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_gpr_names[0]);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_gpr_names[0]);
 			break;
 		case '>':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", (int) EXTRACT_OPERAND (SHAMT, l));
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", (int) EXTRACT_OPERAND (SHAMT, l));
 			break;
 		case '<':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", (int) EXTRACT_OPERAND (SHAMTW, l));
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", (int) EXTRACT_OPERAND (SHAMTW, l));
 			break;
 		case 'S':
 		case 'U':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_fpr_names[rs1]);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_fpr_names[rs1]);
 			break;
 		case 'T':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_fpr_names[EXTRACT_OPERAND (RS2, l)]);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_fpr_names[EXTRACT_OPERAND (RS2, l)]);
 			break;
 		case 'D':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_fpr_names[rd]);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_fpr_names[rd]);
 			break;
 		case 'R':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", riscv_fpr_names[EXTRACT_OPERAND (RS3, l)]);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", riscv_fpr_names[EXTRACT_OPERAND (RS3, l)]);
 			break;
 		case 'E':
 			{
 				const char* csr_name = NULL;
 				unsigned int csr = EXTRACT_OPERAND (CSR, l);
-				switch (csr)
-				 {
+				switch (csr) {
 #define DECLARE_CSR(name, num) case num: csr_name = #name; break;
 #include "../../asm/arch/riscv/riscv-opc.h"
 #undef DECLARE_CSR
-				 }
+				}
 				if (csr_name) {
-					snprintf (RISCVARGN(args), RISCVARGSIZE , "%s", csr_name);
+					snprintf (RISCVARGN (args), RISCVARGSIZE , "%s", csr_name);
 				} else {
-					snprintf (RISCVARGN(args), RISCVARGSIZE , "0x%x", csr);
+					snprintf (RISCVARGN (args), RISCVARGSIZE , "0x%x", csr);
 				}
 				break;
 			}
 		case 'Z':
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "%d", rs1);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "%d", rs1);
 			break;
 		default:
 			/* xgettext:c-format */
-			snprintf (RISCVARGN(args), RISCVARGSIZE , "# internal error, undefined modifier (%c)",
-			  *d);
+			snprintf (RISCVARGN (args), RISCVARGSIZE , "# internal error, undefined modifier (%c)",
+					*d);
 			return;
 		}
 	}
@@ -363,7 +361,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			r_strbuf_appendf (&op->esil, "+,%s,=,", ARG (0));
 			r_strbuf_appendf (&op->esil, "32,%s,~=", ARG (0));
 			if (!strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
-				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
+					!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = r_num_math (NULL, ARG (2));
 			}
@@ -375,7 +373,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "add", 3)) {
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
-				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
+					!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = -(signed)r_num_math (NULL, ARG (2));
 			}
@@ -387,7 +385,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "sub", 3)) {
 			esilprintf (op, "%s,%s,-,%s,=", ARG (2), ARG (1), ARG (0));
 			if (name[3] == 'i' && !strcmp (ARG (0), riscv_gpr_names[X_SP]) &&
-				!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
+					!strcmp (ARG (1), riscv_gpr_names[X_SP])) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = r_num_math (NULL, ARG (2));
 			}
@@ -447,7 +445,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		} else if (!strncmp (name, "csrrc", 5)) {
 			// Ands the inverse of rs1 with CSR, places old value in rd
 			esilprintf (op, "%s,0,+,%s,1,+,0,-,%s,&=,%s,=", ARG (1), ARG (1), ARG (2), ARG (0));
-		} 
+		}
 		// stores
 		else if (!strcmp (name, "sd") || !strcmp (name, "sdsp")) {
 			esilprintf (op, "%s,%s,%s,+,=[8]", ARG (0), ARG (2), ARG (1));
@@ -569,7 +567,7 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 #undef ARG
 	}
 
-// branch/jumps/calls/rets
+	// branch/jumps/calls/rets
 	if (is_any ("jal")) {
 		// decide whether it's jump or call
 		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
@@ -596,8 +594,8 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	} else if (is_any ("c.jr")) {
 		op->type = R_ANAL_OP_TYPE_RET;
 	} else if (is_any ("beqz", "beq", "blez", "bgez", "ble",
-			   "bleu", "bge", "bgeu", "bltz", "bgtz", "blt", "bltu",
-			   "bgt", "bgtu", "bnez", "bne")) {
+				"bleu", "bge", "bgeu", "bltz", "bgtz", "blt", "bltu",
+				"bgt", "bgtu", "bnez", "bne")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
 		op->fail = addr + op->size;
@@ -605,9 +603,9 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = EXTRACT_RVC_B_IMM (word) + addr;
 		op->fail = addr + op->size;
-// math
+		// math
 	} else if (is_any ("addi", "addw", "addiw", "add", "auipc", "c.addi",
-			   "c.addw", "c.add", "c.addiw", "c.addi4spn", "c.addi16sp")) {
+				"c.addw", "c.add", "c.addiw", "c.addi4spn", "c.addi16sp")) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 	} else if (is_any ("c.mv", "csrrw", "csrrc", "csrrs")) {
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -633,13 +631,13 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_SHR;
 	} else if (is_any ("sra", "sra", "srai", "sraiw", "c.srai")) {
 		op->type = R_ANAL_OP_TYPE_SAR;
-// memory
+		// memory
 	} else if (is_any ("sd", "sb", "sh", "sw", "c.sd", "c.sw",
-			   "c.swsp", "c.sdsp")) {
+				"c.swsp", "c.sdsp")) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 	} else if (is_any ("ld", "lw", "lwu", "lui", "li",
-			   "lb", "lbu", "lh", "lhu", "la", "lla", "c.ld",
-			   "c.lw", "c.lwsp", "c.li", "c.lui")) {
+				"lb", "lbu", "lh", "lhu", "la", "lla", "c.ld",
+				"c.lw", "c.lwsp", "c.li", "c.lui")) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	}
 	if (mask & R_ANAL_OP_MASK_VAL && args.num) {
@@ -677,195 +675,195 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 static char *get_reg_profile(RAnal *anal) {
 	const char *p = NULL;
 	switch (anal->bits) {
-	case 32: p =
-		"=PC	pc\n"
-		"=A0	a0\n"
-		"=A1	a1\n"
-		"=A2	a2\n"
-		"=A3	a3\n"
-		"=A4	a4\n"
-		"=A5	a5\n"
-		"=A6	a6\n"
-		"=A7	a7\n"
-		"=R0	a0\n"
-		"=R1	a1\n"
-		"=SP	sp\n" // ABI: stack pointer
-		"=LR	ra\n" // ABI: return address
-		"=BP	s0\n" // ABI: frame pointer
-		"=SN	a7\n" // ABI: syscall numer
-		"gpr	pc	.32	0	0\n"
-		// RV32I regs (ABI names)
-		// From user-Level ISA Specification, section 2.1
-		// "zero" has been left out as it ignores writes and always reads as zero
-		"gpr	ra	.32	4	0\n" // =x1
-		"gpr	sp	.32	8	0\n" // =x2
-		"gpr	gp	.32	12	0\n" // =x3
-		"gpr	tp	.32	16	0\n" // =x4
-		"gpr	t0	.32	20	0\n" // =x5
-		"gpr	t1	.32	24	0\n" // =x6
-		"gpr	t2	.32	28	0\n" // =x7
-		"gpr	s0	.32	32	0\n" // =x8
-		"gpr	s1	.32	36	0\n" // =x9
-		"gpr	a0	.32	40	0\n" // =x10
-		"gpr	a1	.32	44	0\n" // =x11
-		"gpr	a2	.32	48	0\n" // =x12
-		"gpr	a3	.32	52	0\n" // =x13
-		"gpr	a4	.32	56	0\n" // =x14
-		"gpr	a5	.32	60	0\n" // =x15
-		"gpr	a6	.32	64	0\n" // =x16
-		"gpr	a7	.32	68	0\n" // =x17
-		"gpr	s2	.32	72	0\n" // =x18
-		"gpr	s3	.32	76	0\n" // =x19
-		"gpr	s4	.32	80	0\n" // =x20
-		"gpr	s5	.32	84	0\n" // =x21
-		"gpr	s6	.32	88	0\n" // =x22
-		"gpr	s7	.32	92	0\n" // =x23
-		"gpr	s8	.32	96	0\n" // =x24
-		"gpr	s9	.32	100	0\n" // =x25
-		"gpr	s10	.32	104	0\n" // =x26
-		"gpr	s11	.32	108	0\n" // =x27
-		"gpr	t3	.32	112	0\n" // =x28
-		"gpr	t4	.32	116	0\n" // =x29
-		"gpr	t5	.32	120	0\n" // =x30
-		"gpr	t6	.32	124	0\n" // =x31
-		// RV32F/D regs (ABI names)
-		// From user-Level ISA Specification, section 8.1 and 9.1
-		"fpu	ft0	.64	128	0\n" // =f0
-		"fpu	ft1	.64	136	0\n" // =f1
-		"fpu	ft2	.64	144	0\n" // =f2
-		"fpu	ft3	.64	152	0\n" // =f3
-		"fpu	ft4	.64	160	0\n" // =f4
-		"fpu	ft5	.64	168	0\n" // =f5
-		"fpu	ft6	.64	176	0\n" // =f6
-		"fpu	ft7	.64	184	0\n" // =f7
-		"fpu	fs0	.64	192	0\n" // =f8
-		"fpu	fs1	.64	200	0\n" // =f9
-		"fpu	fa0	.64	208	0\n" // =f10
-		"fpu	fa1	.64	216	0\n" // =f11
-		"fpu	fa2	.64	224	0\n" // =f12
-		"fpu	fa3	.64	232	0\n" // =f13
-		"fpu	fa4	.64	240	0\n" // =f14
-		"fpu	fa5	.64	248	0\n" // =f15
-		"fpu	fa6	.64	256	0\n" // =f16
-		"fpu	fa7	.64	264	0\n" // =f17
-		"fpu	fs2	.64	272	0\n" // =f18
-		"fpu	fs3	.64	280	0\n" // =f19
-		"fpu	fs4	.64	288	0\n" // =f20
-		"fpu	fs5	.64	296	0\n" // =f21
-		"fpu	fs6	.64	304	0\n" // =f22
-		"fpu	fs7	.64	312	0\n" // =f23
-		"fpu	fs8	.64	320	0\n" // =f24
-		"fpu	fs9	.64	328	0\n" // =f25
-		"fpu	fs10	.64	336	0\n" // =f26
-		"fpu	fs11	.64	344	0\n" // =f27
-		"fpu	ft8	.64	352	0\n" // =f28
-		"fpu	ft9	.64	360	0\n" // =f29
-		"fpu	ft10	.64	368	0\n" // =f30
-		"fpu	ft11	.64	376	0\n" // =f31
-		"fpu	fcsr	.32	384	0\n"
-		"flg	nx	.1	3072	0\n"
-		"flg	uf	.1	3073	0\n"
-		"flg	of	.1	3074	0\n"
-		"flg	dz	.1	3075	0\n"
-		"flg	nv	.1	3076	0\n"
-		"flg	frm	.3	3077	0\n"
-		;
+		case 32: p =
+			 "=PC	pc\n"
+				 "=A0	a0\n"
+				 "=A1	a1\n"
+				 "=A2	a2\n"
+				 "=A3	a3\n"
+				 "=A4	a4\n"
+				 "=A5	a5\n"
+				 "=A6	a6\n"
+				 "=A7	a7\n"
+				 "=R0	a0\n"
+				 "=R1	a1\n"
+				 "=SP	sp\n" // ABI: stack pointer
+				 "=LR	ra\n" // ABI: return address
+				 "=BP	s0\n" // ABI: frame pointer
+				 "=SN	a7\n" // ABI: syscall numer
+				 "gpr	pc	.32	0	0\n"
+				 // RV32I regs (ABI names)
+				 // From user-Level ISA Specification, section 2.1
+				 // "zero" has been left out as it ignores writes and always reads as zero
+				 "gpr	ra	.32	4	0\n" // =x1
+				 "gpr	sp	.32	8	0\n" // =x2
+				 "gpr	gp	.32	12	0\n" // =x3
+				 "gpr	tp	.32	16	0\n" // =x4
+				 "gpr	t0	.32	20	0\n" // =x5
+				 "gpr	t1	.32	24	0\n" // =x6
+				 "gpr	t2	.32	28	0\n" // =x7
+				 "gpr	s0	.32	32	0\n" // =x8
+				 "gpr	s1	.32	36	0\n" // =x9
+				 "gpr	a0	.32	40	0\n" // =x10
+				 "gpr	a1	.32	44	0\n" // =x11
+				 "gpr	a2	.32	48	0\n" // =x12
+				 "gpr	a3	.32	52	0\n" // =x13
+				 "gpr	a4	.32	56	0\n" // =x14
+				 "gpr	a5	.32	60	0\n" // =x15
+				 "gpr	a6	.32	64	0\n" // =x16
+				 "gpr	a7	.32	68	0\n" // =x17
+				 "gpr	s2	.32	72	0\n" // =x18
+				 "gpr	s3	.32	76	0\n" // =x19
+				 "gpr	s4	.32	80	0\n" // =x20
+				 "gpr	s5	.32	84	0\n" // =x21
+				 "gpr	s6	.32	88	0\n" // =x22
+				 "gpr	s7	.32	92	0\n" // =x23
+				 "gpr	s8	.32	96	0\n" // =x24
+				 "gpr	s9	.32	100	0\n" // =x25
+				 "gpr	s10	.32	104	0\n" // =x26
+				 "gpr	s11	.32	108	0\n" // =x27
+				 "gpr	t3	.32	112	0\n" // =x28
+				 "gpr	t4	.32	116	0\n" // =x29
+				 "gpr	t5	.32	120	0\n" // =x30
+				 "gpr	t6	.32	124	0\n" // =x31
+				 // RV32F/D regs (ABI names)
+				 // From user-Level ISA Specification, section 8.1 and 9.1
+				 "fpu	ft0	.64	128	0\n" // =f0
+				 "fpu	ft1	.64	136	0\n" // =f1
+				 "fpu	ft2	.64	144	0\n" // =f2
+				 "fpu	ft3	.64	152	0\n" // =f3
+				 "fpu	ft4	.64	160	0\n" // =f4
+				 "fpu	ft5	.64	168	0\n" // =f5
+				 "fpu	ft6	.64	176	0\n" // =f6
+				 "fpu	ft7	.64	184	0\n" // =f7
+				 "fpu	fs0	.64	192	0\n" // =f8
+				 "fpu	fs1	.64	200	0\n" // =f9
+				 "fpu	fa0	.64	208	0\n" // =f10
+				 "fpu	fa1	.64	216	0\n" // =f11
+				 "fpu	fa2	.64	224	0\n" // =f12
+				 "fpu	fa3	.64	232	0\n" // =f13
+				 "fpu	fa4	.64	240	0\n" // =f14
+				 "fpu	fa5	.64	248	0\n" // =f15
+				 "fpu	fa6	.64	256	0\n" // =f16
+				 "fpu	fa7	.64	264	0\n" // =f17
+				 "fpu	fs2	.64	272	0\n" // =f18
+				 "fpu	fs3	.64	280	0\n" // =f19
+				 "fpu	fs4	.64	288	0\n" // =f20
+				 "fpu	fs5	.64	296	0\n" // =f21
+				 "fpu	fs6	.64	304	0\n" // =f22
+				 "fpu	fs7	.64	312	0\n" // =f23
+				 "fpu	fs8	.64	320	0\n" // =f24
+				 "fpu	fs9	.64	328	0\n" // =f25
+				 "fpu	fs10	.64	336	0\n" // =f26
+				 "fpu	fs11	.64	344	0\n" // =f27
+				 "fpu	ft8	.64	352	0\n" // =f28
+				 "fpu	ft9	.64	360	0\n" // =f29
+				 "fpu	ft10	.64	368	0\n" // =f30
+				 "fpu	ft11	.64	376	0\n" // =f31
+				 "fpu	fcsr	.32	384	0\n"
+				 "flg	nx	.1	3072	0\n"
+				 "flg	uf	.1	3073	0\n"
+				 "flg	of	.1	3074	0\n"
+				 "flg	dz	.1	3075	0\n"
+				 "flg	nv	.1	3076	0\n"
+				 "flg	frm	.3	3077	0\n"
+				 ;
 
-		break;
-	case 64: p =
-		"=PC	pc\n"
-		"=SP	sp\n" // ABI: stack pointer
-		"=LR	ra\n" // ABI: return address
-		"=BP	s0\n" // ABI: frame pointer
-		"=A0	a0\n"
-		"=A1	a1\n"
-		"=A2	a2\n"
-		"=A3	a3\n"
-		"=A4	a4\n"
-		"=A5	a5\n"
-		"=A6	a6\n"
-		"=A7	a7\n"
-		"=R0	a0\n"
-		"=R1	a1\n"
-		"=SN	a7\n" // ABI: syscall numer
-		"gpr	pc	.64	0	0\n"
-		// RV64I regs (ABI names)
-		// From user-Level ISA Specification, section 2.1 and 4.1
-		// "zero" has been left out as it ignores writes and always reads as zero
-		"gpr	ra	.64	8	0\n" // =x1
-		"gpr	sp	.64	16	0\n" // =x2
-		"gpr	gp	.64	24	0\n" // =x3
-		"gpr	tp	.64	32	0\n" // =x4
-		"gpr	t0	.64	40	0\n" // =x5
-		"gpr	t1	.64	48	0\n" // =x6
-		"gpr	t2	.64	56	0\n" // =x7
-		"gpr	s0	.64	64	0\n" // =x8
-		"gpr	s1	.64	72	0\n" // =x9
-		"gpr	a0	.64	80	0\n" // =x10
-		"gpr	a1	.64	88	0\n" // =x11
-		"gpr	a2	.64	96	0\n" // =x12
-		"gpr	a3	.64	104	0\n" // =x13
-		"gpr	a4	.64	112	0\n" // =x14
-		"gpr	a5	.64	120	0\n" // =x15
-		"gpr	a6	.64	128	0\n" // =x16
-		"gpr	a7	.64	136	0\n" // =x17
-		"gpr	s2	.64	144	0\n" // =x18
-		"gpr	s3	.64	152	0\n" // =x19
-		"gpr	s4	.64	160	0\n" // =x20
-		"gpr	s5	.64	168	0\n" // =x21
-		"gpr	s6	.64	176	0\n" // =x22
-		"gpr	s7	.64	184	0\n" // =x23
-		"gpr	s8	.64	192	0\n" // =x24
-		"gpr	s9	.64	200	0\n" // =x25
-		"gpr	s10	.64	208	0\n" // =x26
-		"gpr	s11	.64	216	0\n" // =x27
-		"gpr	t3	.64	224	0\n" // =x28
-		"gpr	t4	.64	232	0\n" // =x29
-		"gpr	t5	.64	240	0\n" // =x30
-		"gpr	t6	.64	248	0\n" // =x31
-		// RV64F/D regs (ABI names)
-		"fpu	ft0	.64	256	0\n" // =f0
-		"fpu	ft1	.64	264	0\n" // =f1
-		"fpu	ft2	.64	272	0\n" // =f2
-		"fpu	ft3	.64	280	0\n" // =f3
-		"fpu	ft4	.64	288	0\n" // =f4
-		"fpu	ft5	.64	296	0\n" // =f5
-		"fpu	ft6	.64	304	0\n" // =f6
-		"fpu	ft7	.64	312	0\n" // =f7
-		"fpu	fs0	.64	320	0\n" // =f8
-		"fpu	fs1	.64	328	0\n" // =f9
-		"fpu	fa0	.64	336	0\n" // =f10
-		"fpu	fa1	.64	344	0\n" // =f11
-		"fpu	fa2	.64	352	0\n" // =f12
-		"fpu	fa3	.64	360	0\n" // =f13
-		"fpu	fa4	.64	368	0\n" // =f14
-		"fpu	fa5	.64	376	0\n" // =f15
-		"fpu	fa6	.64	384	0\n" // =f16
-		"fpu	fa7	.64	392	0\n" // =f17
-		"fpu	fs2	.64	400	0\n" // =f18
-		"fpu	fs3	.64	408	0\n" // =f19
-		"fpu	fs4	.64	416	0\n" // =f20
-		"fpu	fs5	.64	424	0\n" // =f21
-		"fpu	fs6	.64	432	0\n" // =f22
-		"fpu	fs7	.64	440	0\n" // =f23
-		"fpu	fs8	.64	448	0\n" // =f24
-		"fpu	fs9	.64	456	0\n" // =f25
-		"fpu	fs10	.64	464	0\n" // =f26
-		"fpu	fs11	.64	472	0\n" // =f27
-		"fpu	ft8	.64	480	0\n" // =f28
-		"fpu	ft9	.64	488	0\n" // =f29
-		"fpu	ft10	.64	496	0\n" // =f30
-		"fpu	ft11	.64	504	0\n" // =f31
-		"fpu	fcsr	.32	512	0\n"
-		"flg	nx	.1	4096	0\n"
-		"flg	uf	.1	4097	0\n"
-		"flg	of	.1	4098	0\n"
-		"flg	dz	.1	4099	0\n"
-		"flg	nv	.1	4100	0\n"
-		"flg	frm	.3	4101	0\n"
-		;
+			 break;
+		case 64: p =
+			 "=PC	pc\n"
+				 "=SP	sp\n" // ABI: stack pointer
+				 "=LR	ra\n" // ABI: return address
+				 "=BP	s0\n" // ABI: frame pointer
+				 "=A0	a0\n"
+				 "=A1	a1\n"
+				 "=A2	a2\n"
+				 "=A3	a3\n"
+				 "=A4	a4\n"
+				 "=A5	a5\n"
+				 "=A6	a6\n"
+				 "=A7	a7\n"
+				 "=R0	a0\n"
+				 "=R1	a1\n"
+				 "=SN	a7\n" // ABI: syscall numer
+				 "gpr	pc	.64	0	0\n"
+				 // RV64I regs (ABI names)
+				 // From user-Level ISA Specification, section 2.1 and 4.1
+				 // "zero" has been left out as it ignores writes and always reads as zero
+				 "gpr	ra	.64	8	0\n" // =x1
+				 "gpr	sp	.64	16	0\n" // =x2
+				 "gpr	gp	.64	24	0\n" // =x3
+				 "gpr	tp	.64	32	0\n" // =x4
+				 "gpr	t0	.64	40	0\n" // =x5
+				 "gpr	t1	.64	48	0\n" // =x6
+				 "gpr	t2	.64	56	0\n" // =x7
+				 "gpr	s0	.64	64	0\n" // =x8
+				 "gpr	s1	.64	72	0\n" // =x9
+				 "gpr	a0	.64	80	0\n" // =x10
+				 "gpr	a1	.64	88	0\n" // =x11
+				 "gpr	a2	.64	96	0\n" // =x12
+				 "gpr	a3	.64	104	0\n" // =x13
+				 "gpr	a4	.64	112	0\n" // =x14
+				 "gpr	a5	.64	120	0\n" // =x15
+				 "gpr	a6	.64	128	0\n" // =x16
+				 "gpr	a7	.64	136	0\n" // =x17
+				 "gpr	s2	.64	144	0\n" // =x18
+				 "gpr	s3	.64	152	0\n" // =x19
+				 "gpr	s4	.64	160	0\n" // =x20
+				 "gpr	s5	.64	168	0\n" // =x21
+				 "gpr	s6	.64	176	0\n" // =x22
+				 "gpr	s7	.64	184	0\n" // =x23
+				 "gpr	s8	.64	192	0\n" // =x24
+				 "gpr	s9	.64	200	0\n" // =x25
+				 "gpr	s10	.64	208	0\n" // =x26
+				 "gpr	s11	.64	216	0\n" // =x27
+				 "gpr	t3	.64	224	0\n" // =x28
+				 "gpr	t4	.64	232	0\n" // =x29
+				 "gpr	t5	.64	240	0\n" // =x30
+				 "gpr	t6	.64	248	0\n" // =x31
+				 // RV64F/D regs (ABI names)
+				 "fpu	ft0	.64	256	0\n" // =f0
+				 "fpu	ft1	.64	264	0\n" // =f1
+				 "fpu	ft2	.64	272	0\n" // =f2
+				 "fpu	ft3	.64	280	0\n" // =f3
+				 "fpu	ft4	.64	288	0\n" // =f4
+				 "fpu	ft5	.64	296	0\n" // =f5
+				 "fpu	ft6	.64	304	0\n" // =f6
+				 "fpu	ft7	.64	312	0\n" // =f7
+				 "fpu	fs0	.64	320	0\n" // =f8
+				 "fpu	fs1	.64	328	0\n" // =f9
+				 "fpu	fa0	.64	336	0\n" // =f10
+				 "fpu	fa1	.64	344	0\n" // =f11
+				 "fpu	fa2	.64	352	0\n" // =f12
+				 "fpu	fa3	.64	360	0\n" // =f13
+				 "fpu	fa4	.64	368	0\n" // =f14
+				 "fpu	fa5	.64	376	0\n" // =f15
+				 "fpu	fa6	.64	384	0\n" // =f16
+				 "fpu	fa7	.64	392	0\n" // =f17
+				 "fpu	fs2	.64	400	0\n" // =f18
+				 "fpu	fs3	.64	408	0\n" // =f19
+				 "fpu	fs4	.64	416	0\n" // =f20
+				 "fpu	fs5	.64	424	0\n" // =f21
+				 "fpu	fs6	.64	432	0\n" // =f22
+				 "fpu	fs7	.64	440	0\n" // =f23
+				 "fpu	fs8	.64	448	0\n" // =f24
+				 "fpu	fs9	.64	456	0\n" // =f25
+				 "fpu	fs10	.64	464	0\n" // =f26
+				 "fpu	fs11	.64	472	0\n" // =f27
+				 "fpu	ft8	.64	480	0\n" // =f28
+				 "fpu	ft9	.64	488	0\n" // =f29
+				 "fpu	ft10	.64	496	0\n" // =f30
+				 "fpu	ft11	.64	504	0\n" // =f31
+				 "fpu	fcsr	.32	512	0\n"
+				 "flg	nx	.1	4096	0\n"
+				 "flg	uf	.1	4097	0\n"
+				 "flg	of	.1	4098	0\n"
+				 "flg	dz	.1	4099	0\n"
+				 "flg	nv	.1	4100	0\n"
+				 "flg	frm	.3	4101	0\n"
+				 ;
 
-		break;
+			 break;
 	}
 	return (p && *p)? strdup (p): NULL;
 }

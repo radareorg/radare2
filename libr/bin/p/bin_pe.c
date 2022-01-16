@@ -2,7 +2,7 @@
 
 #include "bin_pe.inc"
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut64 length = r_buf_size (b);
 	if (length <= 0x3d) {
 		return false;
@@ -95,7 +95,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D (0); // NumberOfRvaAndSizes (Unused)
 	B (code, codelen);
 
-	if (data && datalen>0) {
+	if (data && datalen > 0) {
 		//ut32 data_section = buf->length;
 		eprintf ("Warning: DATA section not support for PE yet\n");
 		B (data, datalen);
@@ -103,10 +103,8 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static char *signature (RBinFile *bf, bool json) {
-	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return NULL;
-	}
+static char *signature(RBinFile *bf, bool json) {
+	r_return_val_if_fail (bf && bf->o && bf->o->bin_obj, NULL);
 	struct PE_ (r_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	if (json) {
 		PJ *pj = r_pkcs7_cms_json (bin->cms);

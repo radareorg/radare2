@@ -41,6 +41,9 @@ olly-extras: bins
 dwarf: bins
 	${RUNTEST} db/extras/asm/dwarf
 
+vc4: bins
+	${RUNTEST} db/extras/asm/vc4
+
 yara: bins
 	${RUNTEST} db/extras/cmd/yara
 

@@ -26,3 +26,45 @@ ffd0
 1021
 EOF
 RUN
+
+NAME=Invalid x86 out assembly
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+pa out 256,AL
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+Cannot assemble 'out 256,AL' at line 3
+EOF
+RUN
+
+NAME=Invalid x86 32bit push assembly
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+pa push 0x3311223311222222
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+Cannot assemble 'push 0x3311223311222222' at line 3
+EOF
+RUN
+
+NAME=Invalid x86 32bit mov assembly
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+pa mov eax, 0x3311223311222222
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+Cannot assemble 'mov eax, 0x3311223311222222' at line 3
+EOF
+RUN

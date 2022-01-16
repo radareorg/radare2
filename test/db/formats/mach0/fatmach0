@@ -15,7 +15,7 @@ RUN
 
 NAME=fatmach0 string location dylib 64
 FILE=bins/mach0/libexpat.1.dylib
-ARGS=-b64
+ARGS=-ax86 -b64
 CMDS=<<EOF
 s str.parsing_finished
 x 16
@@ -272,13 +272,13 @@ FILE=bins/mach0/modernobjc-noarm64
 ARGS=-a arm
 CMDS=ic
 EXPECT=<<EOF
-0x100009298 [0x100001e90 - 0x100001e90]      0 class 0 ViewController
+0x100009298 [0x100001e90 - 0x100001e90]      0 class 0 ViewController :: UIViewController
 0x100001e90 method 0      viewDidLoad
-0x1000092c0 [0x100001ee4 - 0x1000020a4]    448 class 0 AppDelegate
+0x1000092c0 [0x100001ee4 - 0x1000020a4]    448 class 0 AppDelegate :: UIResponder
 0x100001ee4 method 0      application:didFinishLaunchingWithOptions:
 0x100001f74 method 1      application:configurationForConnectingSceneSession:options:
 0x1000020a4 method 2      application:didDiscardSceneSessions:
-0x100009310 [0x1000021d0 - 0x100002494]    708 class 0 SceneDelegate
+0x100009310 [0x1000021d0 - 0x100002494]    708 class 0 SceneDelegate :: UIResponder
 0x1000021d0 method 0      scene:willConnectToSession:options:
 0x100002280 method 1      sceneDidDisconnect:
 0x1000022d4 method 2      sceneDidBecomeActive:

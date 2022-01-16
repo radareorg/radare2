@@ -88,7 +88,7 @@ static const char *i4004_f[16] = {
 	"invalid"
 };
 
-static int i4004_get_ins_len (ut8 hex) {
+static int i4004_get_ins_len(ut8 hex) {
 	ut8 high = (hex & 0xf0)>>4;
 	int ret = i4004_ins_len[high];
 	if (ret == 3) {

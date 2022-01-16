@@ -350,16 +350,16 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 				}
 				if (rad) {
 					if (!strcmp (type, "CCu")) {
-						a->cb_printf ("%s base64:%s @ 0x%08"PFMT64x"\n",
-							type, s, start);
+						a->cb_printf ("%s base64:%s @ 0x%08" PFMT64x "\n",
+								type, s, start);
 					} else {
-						a->cb_printf ("%s %s @ 0x%08"PFMT64x"\n",
-							type, pstr, start);
+						a->cb_printf ("%s %s @ 0x%08" PFMT64x "\n",
+								type, pstr, start);
 					}
 				} else {
 					if (!strcmp (type, "CCu")) {
 						char *mys = r_str_escape (pstr);
-						a->cb_printf ("0x%08"PFMT64x" %s \"%s\"\n",
+						a->cb_printf ("0x%08" PFMT64x " %s \"%s\"\n",
 								start, type, mys);
 						free (mys);
 					} else {
@@ -381,7 +381,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 					default:
 						cmd[2] = 0;
 					}
-					a->cb_printf ("%s %"PFMT64u" @ 0x%08"PFMT64x" # %s\n",
+					a->cb_printf ("%s %" PFMT64u " @ 0x%08" PFMT64x " # %s\n",
 							cmd, size, start, pstr);
 				} else {
 					const char *enc;
@@ -390,56 +390,57 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 						enc = "utf8";
 						break;
 					default:
-						enc = r_str_is_ascii (d->str) ? "ascii" : "latin1";
+						enc = r_str_is_ascii (d->str)? "ascii": "latin1";
 					}
 					if (show_full) {
-						a->cb_printf ("0x%08"PFMT64x" %s[%"PFMT64u"] \"%s\"\n",
-						              start, enc, size, pstr);
+						a->cb_printf ("0x%08" PFMT64x " %s[%" PFMT64u "] \"%s\"\n",
+								start, enc, size, pstr);
 					} else {
-						a->cb_printf ("%s[%"PFMT64u"] \"%s\"\n",
-						              enc, size, pstr);
+						a->cb_printf ("%s[%" PFMT64u "] \"%s\"\n",
+								enc, size, pstr);
 					}
 				}
 				break;
 			case R_META_TYPE_HIDE:
 			case R_META_TYPE_DATA:
 				if (rad) {
-					a->cb_printf ("%s %"PFMT64u" @ 0x%08"PFMT64x"\n",
+					a->cb_printf ("%s %" PFMT64u " @ 0x%08" PFMT64x "\n",
 							r_meta_type_to_string (d->type),
 							size, start);
 				} else {
 					if (show_full) {
-						const char *dtype = d->type == 'h' ? "hidden" : "data";
+						const char *dtype = d->type == 'h'? "hidden": "data";
 						a->cb_printf ("0x%08" PFMT64x " %s %s %"PFMT64u"\n",
-						              start, dtype,
-						              r_meta_type_to_string (d->type), size);
+								start, dtype,
+								r_meta_type_to_string (d->type),
+								size);
 					} else {
-						a->cb_printf ("%"PFMT64u"\n", size);
+						a->cb_printf ("%" PFMT64u "\n", size);
 					}
 				}
 				break;
 			case R_META_TYPE_MAGIC:
 			case R_META_TYPE_FORMAT:
 				if (rad) {
-					a->cb_printf ("%s %"PFMT64u" %s @ 0x%08"PFMT64x"\n",
+					a->cb_printf ("%s %" PFMT64u " %s @ 0x%08" PFMT64x "\n",
 							r_meta_type_to_string (d->type),
 							size, pstr, start);
 				} else {
 					if (show_full) {
-						const char *dtype = d->type == 'm' ? "magic" : "format";
-						a->cb_printf ("0x%08" PFMT64x " %s %"PFMT64u" %s\n",
-						              start, dtype, size, pstr);
+						const char *dtype = d->type == 'm'? "magic": "format";
+						a->cb_printf ("0x%08" PFMT64x " %s %" PFMT64u " %s\n",
+								start, dtype, size, pstr);
 					} else {
-						a->cb_printf ("%"PFMT64u" %s\n", size, pstr);
+						a->cb_printf ("%" PFMT64u " %s\n", size, pstr);
 					}
 				}
 				break;
 			case R_META_TYPE_VARTYPE:
 				if (rad) {
-					a->cb_printf ("%s %s @ 0x%08"PFMT64x"\n",
-						r_meta_type_to_string (d->type), pstr, start);
+					a->cb_printf ("%s %s @ 0x%08" PFMT64x "\n",
+							r_meta_type_to_string (d->type), pstr, start);
 				} else {
-					a->cb_printf ("0x%08"PFMT64x" %s\n", start, pstr);
+					a->cb_printf ("0x%08" PFMT64x " %s\n", start, pstr);
 				}
 				break;
 			case R_META_TYPE_HIGHLIGHT:
@@ -447,19 +448,19 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 					ut8 r = 0, g = 0, b = 0, A = 0;
 					const char *esc = strchr (d->str, '\x1b');
 					r_cons_rgb_parse (esc, &r, &g, &b, &A);
-					a->cb_printf ("%s rgb:%02x%02x%02x @ 0x%08"PFMT64x"\n",
+					a->cb_printf ("%s rgb:%02x%02x%02x @ 0x%08" PFMT64x "\n",
 						r_meta_type_to_string (d->type), r, g, b, start);
 					// TODO: d->size
 				}
 				break;
 			default:
 				if (rad) {
-					a->cb_printf ("%s %"PFMT64u" 0x%08"PFMT64x" # %s\n",
+					a->cb_printf ("%s %" PFMT64u " 0x%08" PFMT64x " # %s\n",
 						r_meta_type_to_string (d->type),
 						size, start, pstr);
 				} else {
 					// TODO: use b64 here
-					a->cb_printf ("0x%08"PFMT64x" array[%"PFMT64u"] %s %s\n",
+					a->cb_printf ("0x%08" PFMT64x " array[%" PFMT64u "] %s %s\n",
 						start, size,
 						r_meta_type_to_string (d->type), pstr);
 				}

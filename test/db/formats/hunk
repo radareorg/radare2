@@ -1,0 +1,78 @@
+NAME=hunk
+FILE=bins/other/amiga-hunk-mc0201
+CMDS=<<EOF
+i
+af
+agf
+EOF
+EXPECT=<<EOF
+fd       3
+file     bins/other/amiga-hunk-mc0201
+size     0xcc
+humansz  204
+mode     r-x
+format   hunk
+iorw     false
+block    0x100
+type     ROM
+arch     m68k
+cpu      68040
+baddr    0x0
+binsz    204
+bits     8
+canary   false
+retguard false
+crypto   false
+endian   little
+havecode true
+laddr    0x0
+linenum  false
+lsyms    false
+machine  Amiga
+nx       false
+os       Workbench
+pic      false
+relocs   false
+sanitize false
+static   true
+stripped false
+va       true
+[0x00000024]>  # entry0 ();
+ .------------------------------.
+ |  0x24                        |
+ | 76: entry0 ();               |
+ | move.w 0x1a0, 0xdff096.l     |
+ | lea.l 0x4c.l, a1             |
+ | move.l a1, 0xdff080.l        |
+ | move.w 0x8080, 0xdff096.l    |
+ `------------------------------'
+     v
+     |
+     '-----------.
+                 |
+                 |
+                 |
+         .-------'
+-----------.
+         | |
+   .---------------------------.
+   |  0x40                     |
+   | btst.b 0x6, 0xbfe001.l    |
+   | bne.w 0x40                |
+   `---------------------------'
+           f t
+           | |
+-------------'
+    .------'
+    |
+.--------------------------------.
+|  0x4c                          |
+| move.w 0x80, 0xdff096.l        |
+| movea.l 0x4.l, a6              |
+| movea.l 0x9c(a6), a1           |
+| move.l 0x26(a1), 0xdff080.l    |
+| move.w 0x81a0, 0xdff096.l      |
+| rts                            |
+`--------------------------------'
+EOF
+RUN

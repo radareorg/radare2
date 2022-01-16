@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 5.4.0-git
+VERSION 5.5.5
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -12,6 +12,7 @@ USE_DL
 USE_PKGCONFIG
 
 CHKPRG! PATCH patch
+CHKPRG! AR ar
 CHKPRG GIT git
 CHKPRG GPERF gperf
 CHKLIB magic
@@ -147,7 +148,7 @@ ARG_WITH USE_RPATH rpath use rpath to build ;
 
 (( rules for the compiler ))
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
-ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin haiku ) ;
+ARG_WITH USEROSTYPE=auto ostype Choose OS ( android windows wsl mingw32 bsd solaris gnulinux darwin haiku ) ;
 
 (( TODO: throw error if unknown ostype ))
 (( TODO: handle BSD os as different ostype? ))

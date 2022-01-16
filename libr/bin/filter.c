@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2021 - pancake */
 
 #include <r_bin.h>
 #include "i/private.h"
@@ -29,20 +29,37 @@ static char *__hashify(char *s, ut64 vaddr) {
 }
 
 // - name should be allocated on the heap
-R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
+R_API char *r_bin_filter_name(RBinFile *bf, HtPU *db, ut64 vaddr, char *name) {
 	r_return_val_if_fail (db && name, NULL);
 
 	char *resname = name;
-	const char *uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, resname);
-	ut32 vhash = sdb_hash (uname); // vaddr hash - unique
-	ut32 hash = sdb_hash (resname); // name hash - if dupped and not in unique hash must insert
-	int count = sdb_num_inc (db, sdb_fmt ("%x", hash), 1, 0);
+	int count = 0;
 
-	if (sdb_exists (db, sdb_fmt ("%x", vhash))) {
-		// TODO: symbol is dupped, so symbol can be removed!
-		return resname;
+	HtPUKv *kv = ht_pu_find_kv (db, name, NULL);
+	if (kv) {
+		kv->value++;
+		count = kv->value;
+	} else {
+		count = 1;
+		ht_pu_insert (db, name, 1ULL);
 	}
-	sdb_num_set (db, sdb_fmt ("%x", vhash), 1, 0);
+
+	// check if there's another symbol with the same name and address);
+	char *uname = r_str_newf ("%" PFMT64x ".%s", vaddr, name);
+	bool found = false;
+	ht_pu_find (db, uname, &found);
+	if (found) {
+		// TODO: symbol is dupped, so symbol can be removed!
+		free (uname);
+		return NULL; // r_str_newf ("%s_%d", name, count);
+	}
+	HtPUKv tmp = {
+		.key = uname,
+		.key_len = strlen (uname),
+		.value = count,
+		.value_len = sizeof (ut64)
+	};
+	ht_pu_insert_kv (db, &tmp, false);
 	if (vaddr) {
 		char *p = __hashify (resname, vaddr);
 		if (p) {
@@ -54,9 +71,8 @@ R_API char *r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name) {
 		if (p) {
 			resname = p;
 		}
-
 		// two symbols at different addresses and same name wtf
-		//	eprintf ("Symbol '%s' dupped!\n", sym->name);
+		// eprintf ("Symbol '%s' dupped!\n", sym->name);
 	}
 	return resname;
 }
@@ -129,7 +145,7 @@ R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	RBinSection *sec;
-	Sdb *db = sdb_new0 ();
+	HtPU *db = ht_pu_new0 ();
 	RListIter *iter;
 	r_list_foreach (list, iter, sec) {
 		char *p = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
@@ -137,7 +153,7 @@ R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 			sec->name = p;
 		}
 	}
-	sdb_free (db);
+	ht_pu_free (db);
 }
 
 static bool false_positive(const char *str) {
@@ -317,7 +333,7 @@ loop_end:
 			return false;
 		}
 		break;
-        case 'i': //IPV4
+	case 'i': //IPV4
 		{
 			int segment = 0;
 			int segmentsum = 0;

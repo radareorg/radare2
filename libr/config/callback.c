@@ -45,7 +45,7 @@ R_API bool r_config_set_setter_i(RConfig *cfg, const char *name, int *ptr) {
 	return false;
 }
 
-R_API bool r_config_set_setter_s(RConfig *cfg, const char *name, char * *ptr) {
+R_API bool r_config_set_setter_s(RConfig *cfg, const char *name, char **ptr) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		node->cb_ptr_s = ptr;

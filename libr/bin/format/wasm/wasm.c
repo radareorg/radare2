@@ -55,7 +55,7 @@ static size_t consume_u7_r(RBuffer *b, ut64 max, ut8 *out) {
 }
 
 static size_t consume_s7_r(RBuffer *b, ut64 max, st8 *out) {
-	size_t n;
+	size_t n = 0;
 	ut32 tmp = consume_r (b, max, &n, (ConsumeFcn)read_i32_leb128);
 	if (out) {
 		*out = (st8) (((tmp & 0x10000000) << 7) | (tmp & 0x7f));
@@ -152,7 +152,8 @@ static size_t consume_limits_r(RBuffer *b, ut64 max, struct r_bin_wasm_resizable
 	if (out->flags && (!(consume_u32_r (b, max, &out->maximum)))) {
 		return 0;
 	}
-	return (size_t)R_ABS (r_buf_tell (b) - i);
+	int delta = r_buf_tell (b) - i;
+	return (delta > 0)? delta: 0;
 }
 
 // Utils
@@ -457,7 +458,7 @@ static bool parse_namemap(RBuffer *b, ut64 max, RIDStorage *map, ut32 *count) {
 
 		ut32 idx;
 		if (!(consume_u32_r (b, max, &idx))) {
-            		R_FREE (name);
+			R_FREE (name);
 			return false;
 		}
 
@@ -791,18 +792,14 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 }
 
 void r_bin_wasm_destroy(RBinFile *bf) {
-	RBinWasmObj *bin;
-
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return;
 	}
-
-	bin = bf->o->bin_obj;
+	RBinWasmObj *bin = bf->o->bin_obj;
 	r_buf_free (bin->buf);
 
 	r_list_free (bin->g_sections);
 	r_list_free (bin->g_types);
-
 	r_list_free (bin->g_imports);
 	r_list_free (bin->g_exports);
 	r_list_free (bin->g_tables);

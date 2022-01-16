@@ -1,51 +1,36 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake, fedor.sakharov */
+/* radare - LGPL - Copyright 2012-2021 - pancake, fedor.sakharov */
 
 #include <string.h>
 #include <r_types.h>
 #include <r_lib.h>
-#include <r_asm.h>
 #include <r_anal.h>
-
-#include <ebc_disas.h>
+#include "../arch/ebc/ebc_disas.h"
 
 static void ebc_anal_jmp8(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	int jmpadr = (int8_t)buf[1];
-	op->jump = addr + 2 + (jmpadr * 2);
 	op->addr = addr;
 	op->fail = addr + 2;
-
-	if (TEST_BIT(buf[0], 7)) {
-		op->type = R_ANAL_OP_TYPE_CJMP;
-	} else {
-		op->type = R_ANAL_OP_TYPE_JMP;
-	}
+	op->jump = op->fail + (jmpadr * 2);
+	op->type = TEST_BIT (buf[0], 7) ? R_ANAL_OP_TYPE_CJMP: R_ANAL_OP_TYPE_JMP;
 }
 
 static void ebc_anal_jmp(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->fail = addr + 6;
-	op->jump = (ut64)*(int32_t*)(buf + 2);
+	op->jump = r_read_le32 (buf + 2);
 	if (TEST_BIT (buf[1], 4)) {
 		op->jump += addr + 6;
 	}
 	if (buf[1] & 0x7) {
 		op->type = R_ANAL_OP_TYPE_UJMP;
 	} else {
-		if (TEST_BIT(buf[1], 7)) {
-			op->type = R_ANAL_OP_TYPE_CJMP;
-		} else {
-			op->type = R_ANAL_OP_TYPE_JMP;
-		}
+		op->type = (TEST_BIT (buf[1], 7)) ? R_ANAL_OP_TYPE_CJMP: R_ANAL_OP_TYPE_JMP;
 	}
 }
 
 static void ebc_anal_call(RAnalOp *op, ut64 addr, const ut8 *buf) {
-	int32_t addr_call;
-
 	op->fail = addr + 6;
-	if ((buf[1] & 0x7) == 0 && TEST_BIT(buf[0], 6) == 0
-			&& TEST_BIT(buf[0], 7)) {
-		addr_call = *(int32_t*)(buf + 2);
-
+	if ((buf[1] & 0x7) == 0 && TEST_BIT (buf[0], 6) == 0 && TEST_BIT (buf[0], 7)) {
+		int addr_call = r_read_le32 (buf + 2);
 		if (TEST_BIT(buf[1], 4)) {
 			op->jump = (addr + 6 + addr_call);
 		} else {
@@ -58,28 +43,34 @@ static void ebc_anal_call(RAnalOp *op, ut64 addr, const ut8 *buf) {
 }
 
 static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	int ret;
 	ebc_command_t cmd;
 	ut8 opcode = buf[0] & EBC_OPCODE_MASK;
 
 	if (!op) {
 		return 2;
 	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		op->mnemonic = strdup ("invalid");
+	}
 
 	op->addr = addr;
 
-	ret = op->size = ebc_decode_command(buf, &cmd);
-
+	int ret = op->size = ebc_decode_command (buf, &cmd);
 	if (ret < 0) {
-		return ret;
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return -1;
+	}
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		char *inststr = (cmd.operands[0]) ? r_str_newf ("%s %s", cmd.instr, cmd.operands): strdup (cmd.instr);
+		op->mnemonic = inststr;
 	}
 
 	switch (opcode) {
 	case EBC_JMP8:
-		ebc_anal_jmp8(op, addr, buf);
+		ebc_anal_jmp8 (op, addr, buf);
 		break;
 	case EBC_JMP:
-		ebc_anal_jmp(op, addr, buf);
+		ebc_anal_jmp (op, addr, buf);
 		break;
 	case EBC_MOVBW:
 	case EBC_MOVWW:
@@ -157,16 +148,24 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		op->type = R_ANAL_OP_TYPE_UNK;
 		break;
 	}
-
 	return ret;
+}
+
+static int archinfo(RAnal *anal, int q) {
+	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
+		return 18;
+	}
+	return 1;
 }
 
 RAnalPlugin r_anal_plugin_ebc = {
 	.name = "ebc",
-	.desc = "EBC code analysis plugin",
+	.desc = "EFI Bytecode architecture",
 	.license = "LGPL3",
+	.author = "Fedor Sakharov",
+	.archinfo = archinfo,
 	.arch = "ebc",
-	.bits = 64,
+	.bits = 32 | 64,
 	.op = &ebc_op,
 };
 

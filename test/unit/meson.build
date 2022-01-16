@@ -16,13 +16,11 @@ if get_option('enable_tests')
     'base64',
     'big',
     'bin',
-    'binheap',
     'bitmap',
     'buf',
     'cmd',
     'cmd_str',
     'cons',
-    'contrbtree',
     'debruijn',
     'debug',
     'debug_session',
@@ -44,7 +42,6 @@ if get_option('enable_tests')
     'json',
     'list',
     'ovf',
-    'parse_ctype',
     'pdb',
     'pj',
     'queue',
@@ -65,7 +62,8 @@ if get_option('enable_tests')
     'uleb128',
     'unum',
     'util',
-    'vector'
+    'vector',
+    'crbtree'
   ]
 
   foreach test : tests

@@ -300,18 +300,22 @@ static RList *sections(RBinFile *bf) {
 	r_return_val_if_fail (res && bf->o && bf->o->bin_obj, res);
 	RCoreSymCacheElement *element = bf->o->bin_obj;
 	size_t i;
-	for (i = 0; i < element->hdr->n_segments; i++) {
-		RCoreSymCacheElementSegment *seg = &element->segments[i];
-		RBinSection *s = bin_section_from_segment (seg);
-		if (s) {
-			r_list_append (res, s);
+	if (element->segments) {
+		for (i = 0; i < element->hdr->n_segments; i++) {
+			RCoreSymCacheElementSegment *seg = &element->segments[i];
+			RBinSection *s = bin_section_from_segment (seg);
+			if (s) {
+				r_list_append (res, s);
+			}
 		}
 	}
-	for (i = 0; i < element->hdr->n_sections; i++) {
-		RCoreSymCacheElementSection *sect = &element->sections[i];
-		RBinSection *s = bin_section_from_section (sect);
-		if (s) {
-			r_list_append (res, s);
+	if (element->sections) {
+		for (i = 0; i < element->hdr->n_sections; i++) {
+			RCoreSymCacheElementSection *sect = &element->sections[i];
+			RBinSection *s = bin_section_from_section (sect);
+			if (s) {
+				r_list_append (res, s);
+			}
 		}
 	}
 	return res;
@@ -339,7 +343,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool check_buffer(RBuffer *b) {
+static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	ut8 buf[4];
 	r_buf_read_at (b, 0, buf, sizeof (buf));
 	return !memcmp (buf, "\x02\xff\x01\xff", 4);
@@ -367,15 +371,17 @@ static RList *symbols(RBinFile *bf) {
 			ht_uu_insert (hash, sym->paddr, 1);
 		}
 	}
-	for (i = 0; i < element->hdr->n_symbols; i++) {
-		RCoreSymCacheElementSymbol *sym = &element->symbols[i];
-		ht_uu_find (hash, sym->paddr, &found);
-		if (found) {
-			continue;
-		}
-		RBinSymbol *s = bin_symbol_from_symbol (element, sym);
-		if (s) {
-			r_list_append (res, s);
+	if (element->symbols) {
+		for (i = 0; i < element->hdr->n_symbols; i++) {
+			RCoreSymCacheElementSymbol *sym = &element->symbols[i];
+			ht_uu_find (hash, sym->paddr, &found);
+			if (found) {
+				continue;
+			}
+			RBinSymbol *s = bin_symbol_from_symbol (element, sym);
+			if (s) {
+				r_list_append (res, s);
+			}
 		}
 	}
 	ht_uu_free (hash);

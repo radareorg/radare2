@@ -932,7 +932,7 @@ static bool set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
-static int esil_6502_init (RAnalEsil *esil) {
+static int esil_6502_init(RAnalEsil *esil) {
 	if (esil->anal && esil->anal->reg) {		//initial values
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "pc", -1), 0x0000);
 		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "sp", -1), 0xff);
@@ -944,7 +944,7 @@ static int esil_6502_init (RAnalEsil *esil) {
 	return true;
 }
 
-static int esil_6502_fini (RAnalEsil *esil) {
+static int esil_6502_fini(RAnalEsil *esil) {
 	return true;
 }
 

@@ -8,12 +8,6 @@
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
 #endif
 
-#ifdef _MSC_VER
-void out_printf(Output *out, char *str, ...);
-#else
-void out_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
-#endif
-
 #if USE_R2
 #include <r_util.h>
 #else
@@ -28,6 +22,12 @@ void r_strbuf_init(SStrBuf *sb);
 int r_sys_setenv(const char *key, const char *value);
 char *r_sys_getenv(const char *key);
 int r_sys_getpid(void);
+#endif
+
+#ifdef _MSC_VER
+S_API void out_printf(Output *out, char *str, ...);
+#else
+S_API void out_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
 #endif
 
 #endif

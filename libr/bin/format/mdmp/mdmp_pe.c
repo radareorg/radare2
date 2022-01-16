@@ -5,7 +5,7 @@
 
 #include "mdmp_pe.h"
 
-static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) * bin, RList *list) {
+static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) *bin, RList *list) {
 	char *key;
 	int count = 0;
 	PE_DWord haddr, paddr, vaddr;
