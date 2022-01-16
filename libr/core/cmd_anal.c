@@ -2435,6 +2435,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_anal_hint_free (hint);
 		r_anal_op_fini (&op);
 	}
+	r_asm_op_fini (&asmop);
 	r_anal_op_fini (&op);
 	if (fmt == 's') {
 		r_cons_printf ("%d\n", totalsize);
