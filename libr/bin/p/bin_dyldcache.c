@@ -1141,6 +1141,7 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 		}
 		cursor += cmdsize;
 	}
+	return 0;
 }
 
 static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
