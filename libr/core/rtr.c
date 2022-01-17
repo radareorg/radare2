@@ -1037,7 +1037,8 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			return;
 		}
 		r_socket_close (s);
-		if (!r_socket_connect (s, rh->host, sdb_fmt ("%d", rh->port), R_SOCKET_PROTO_TCP, 0)) {
+		r_strf_var (portstr, 32, "%d", rh->port);
+		if (!r_socket_connect (s, rh->host, portstr, R_SOCKET_PROTO_TCP, 0)) {
 			eprintf ("Error: Cannot connect to '%s' (%d)\n", rh->host, rh->port);
 			r_socket_free (s);
 			return;

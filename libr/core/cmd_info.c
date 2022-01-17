@@ -272,8 +272,9 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 		}
 		pj_end (pj);
 	} else if (desc && mode != R_MODE_SIMPLE) {
+		r_strf_buffer (32);
 		if (desc) {
-			pair ("fd", sdb_fmt ("%d", desc->fd));
+			pair ("fd", r_strf ("%d", desc->fd));
 		}
 		if (fn || (desc && desc->uri)) {
 			char *escaped = r_str_escape_utf8_keep_printable (fn? fn: desc->uri, false, false);
@@ -293,19 +294,19 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 		}
 		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 		if (v > 0) {
-			pair ("minopsz", sdb_fmt ("%d", v));
+			pair ("minopsz", r_strf ("%d", v));
 		}
 		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 		if (v > 0) {
-			pair ("maxopsz", sdb_fmt ("%d", v));
+			pair ("maxopsz", r_strf ("%d", v));
 		}
 		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_INV_OP_SIZE);
 		if (v > 0) {
-			pair ("invopsz", sdb_fmt ("%d", v));
+			pair ("invopsz", r_strf ("%d", v));
 		}
 		v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 		if (v > 0) {
-			pair ("pcalign", sdb_fmt ("%d", v));
+			pair ("pcalign", r_strf ("%d", v));
 		}
 		if (desc) {
 			pair ("mode", r_str_rwx_i (desc->perm & R_PERM_RWX));
@@ -316,7 +317,7 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 		if (desc) {
 			pair ("iorw", r_str_bool (io_cache || desc->perm & R_PERM_W));
 		}
-		pair ("block", sdb_fmt ("0x%x", core->blocksize));
+		pair ("block", r_strf ("0x%x", core->blocksize));
 
 		if (binfile && binfile->curxtr) {
 			pair ("packet", binfile->curxtr->name);

@@ -182,14 +182,12 @@ PicBaselineOpcode pic_baseline_get_opcode(ut16 instr) {
 	}
 }
 
-
 const PicBaselineOpInfo *pic_baseline_get_op_info(PicBaselineOpcode opcode) {
 	if (opcode >= PIC_BASELINE_OPCODE_INVALID) {
 		return NULL;
 	}
 	return &pic_baseline_op_info[opcode];
 }
-
 
 int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 #define EMIT_INVALID { \
@@ -217,35 +215,36 @@ int pic_baseline_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 	op->size = 2;
 
 	const char *buf_asm = "invalid";
+	r_strf_buffer (64);
 	switch (op_info->args) {
 	case PIC_BASELINE_OP_ARGS_NONE:
 		buf_asm = op_info->mnemonic;
 		break;
 	case PIC_BASELINE_OP_ARGS_2F:
-		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_2F_MASK_F);
+		buf_asm = r_strf ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_2F_MASK_F);
 		break;
 	case PIC_BASELINE_OP_ARGS_3F:
-		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3F_MASK_F);
+		buf_asm = r_strf ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3F_MASK_F);
 		break;
 	case PIC_BASELINE_OP_ARGS_3K:
-		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3K_MASK_K);
+		buf_asm = r_strf ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3K_MASK_K);
 		break;
 	case PIC_BASELINE_OP_ARGS_1D_5F:
-		buf_asm = sdb_fmt ("%s 0x%x, %c", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_F,
+		buf_asm = r_strf ("%s 0x%x, %c", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_F,
 				  (instr & PIC_BASELINE_OP_ARGS_1D_5F_MASK_D) >> 5 ? 'f' : 'w');
 		break;
 	case PIC_BASELINE_OP_ARGS_5F:
-		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_5F_MASK_F);
+		buf_asm = r_strf ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_5F_MASK_F);
 		break;
 	case PIC_BASELINE_OP_ARGS_3B_5F:
-		buf_asm = sdb_fmt ("%s 0x%x, 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_F,
+		buf_asm = r_strf ("%s 0x%x, 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_F,
 				  (instr & PIC_BASELINE_OP_ARGS_3B_5F_MASK_B) >> 5);
 		break;
 	case PIC_BASELINE_OP_ARGS_8K:
-		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_8K_MASK_K);
+		buf_asm = r_strf ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_8K_MASK_K);
 		break;
 	case PIC_BASELINE_OP_ARGS_9K:
-		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_9K_MASK_K);
+		buf_asm = r_strf ("%s 0x%x", op_info->mnemonic, instr & PIC_BASELINE_OP_ARGS_9K_MASK_K);
 		break;
 	}
 	strcpy (opbuf, buf_asm);

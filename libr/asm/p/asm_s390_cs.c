@@ -40,7 +40,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (n > 0) {
 		if (insn->size > 0) {
 			op->size = insn->size;
-			char *buf_asm = sdb_fmt ("%s%s%s",
+			char *buf_asm = r_str_newf ("%s%s%s",
 					insn->mnemonic, insn->op_str[0]?" ": "",
 					insn->op_str);
 			char *ptrstr = strstr (buf_asm, "ptr ");
@@ -48,6 +48,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 				memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
 			}
 			r_asm_op_set_asm (op, buf_asm);
+			free (buf_asm);
 		}
 		cs_free (insn, n);
 	}

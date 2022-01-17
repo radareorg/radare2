@@ -58,7 +58,7 @@ static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) 
 		goto beach;
 	}
 	op->size = insn->size;
-	char *buf_asm = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+	r_strf_var (buf_asm, 256, "%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 	r_str_replace_char (buf_asm, '%', 0);
 	r_str_case (buf_asm, false);
 	r_asm_op_set_asm (op, buf_asm);

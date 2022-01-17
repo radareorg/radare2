@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2022 - nibble, pancake, alvarofe */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -55,6 +55,7 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 }
 
 static void add_tls_callbacks(RBinFile *bf, RList* list) {
+	r_strf_buffer (64);
 	PE_DWord paddr, vaddr, haddr;
 	int count = 0;
 	RBinAddr *ptr = NULL;
@@ -62,19 +63,19 @@ static void add_tls_callbacks(RBinFile *bf, RList* list) {
 	char *key;
 
 	do {
-		key =  sdb_fmt ("pe.tls_callback%d_paddr", count);
+		key =  r_strf ("pe.tls_callback%d_paddr", count);
 		paddr = sdb_num_get (bin->kv, key, 0);
 		if (!paddr) {
 			break;
 		}
 
-		key =  sdb_fmt ("pe.tls_callback%d_vaddr", count);
+		key =  r_strf ("pe.tls_callback%d_vaddr", count);
 		vaddr = sdb_num_get (bin->kv, key, 0);
 		if (!vaddr) {
 			break;
 		}
 
-		key =  sdb_fmt ("pe.tls_callback%d_haddr", count);
+		key =  r_strf ("pe.tls_callback%d_haddr", count);
 		haddr = sdb_num_get (bin->kv, key, 0);
 		if (!haddr) {
 			break;
@@ -575,8 +576,8 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->has_canary = has_canary (bf);
 	ret->has_nx = haschr (bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr (bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
-	ret->claimed_checksum = strdup (sdb_fmt ("0x%08x", claimed_checksum));
-	ret->actual_checksum  = strdup (sdb_fmt ("0x%08x", actual_checksum));
+	ret->claimed_checksum = r_str_newf ("0x%08x", claimed_checksum);
+	ret->actual_checksum = r_str_newf ("0x%08x", actual_checksum);
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 	ret->file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);

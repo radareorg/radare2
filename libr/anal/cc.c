@@ -50,7 +50,8 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 		return false;
 	}
 	sdb_set (DB, ccname, "cc", 0);
-	sdb_set (DB, sdb_fmt ("cc.%s.ret", ccname), e, 0);
+	r_strf_buffer (64);
+	sdb_set (DB, r_strf ("cc.%s.ret", ccname), e, 0);
 
 	RList *ccArgs = r_str_split_list (args, ",", 0);
 	RListIter *iter;
@@ -58,9 +59,9 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	int n = 0;
 	r_list_foreach (ccArgs, iter, arg) {
 		if (!strcmp (arg, "stack")) {
-			sdb_set (DB, sdb_fmt ("cc.%s.argn", ccname), arg, 0);
+			sdb_set (DB, r_strf ("cc.%s.argn", ccname), arg, 0);
 		} else {
-			sdb_set (DB, sdb_fmt ("cc.%s.arg%d", ccname, n), arg, 0);
+			sdb_set (DB, r_strf ("cc.%s.arg%d", ccname, n), arg, 0);
 			n++;
 		}
 	}
@@ -76,12 +77,13 @@ R_API bool r_anal_cc_once(RAnal *anal) {
 
 R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 	r_return_if_fail (anal && pj && name);
+	r_strf_buffer (64);
 	int i;
 	// get cc by name and print the expr
 	if (r_str_cmp (sdb_const_get (DB, name, 0), "cc", -1)) {
 		return;
 	}
-	const char *ret = sdb_const_get (DB, sdb_fmt ("cc.%s.ret", name), 0);
+	const char *ret = sdb_const_get (DB, r_strf ("cc.%s.ret", name), 0);
 	if (!ret) {
 		return;
 	}
@@ -91,7 +93,7 @@ R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 	free (sig);
 	pj_ka (pj, "args");
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		const char *k = sdb_fmt ("cc.%s.arg%d", name, i);
+		const char *k = r_strf ("cc.%s.arg%d", name, i);
 		const char *arg = sdb_const_get (DB, k, 0);
 		if (!arg) {
 			break;
@@ -99,7 +101,7 @@ R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 		pj_s (pj, arg);
 	}
 	pj_end (pj);
-	const char *argn = sdb_const_get (DB, sdb_fmt ("cc.%s.argn", name), 0);
+	const char *argn = sdb_const_get (DB, r_strf ("cc.%s.argn", name), 0);
 	if (argn) {
 		pj_ks (pj, "argn", argn);
 	}
@@ -117,7 +119,8 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 		eprintf ("This is not a valid calling convention name (%s)\n", name);
 		return NULL;
 	}
-	const char *ret = sdb_const_get (DB, sdb_fmt ("cc.%s.ret", name), 0);
+	r_strf_var (ccret, 128, "cc.%s.ret", name);
+	const char *ret = sdb_const_get (DB, ccret, 0);
 	if (!ret) {
 		eprintf ("Cannot find return type for %s\n", name);
 		return NULL;
@@ -127,7 +130,7 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	r_strbuf_appendf (sb, "%s %s%s%s (", ret, r_str_get (self), self? ".": "", name);
 	bool isFirst = true;
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		const char *k = sdb_fmt ("cc.%s.arg%d", name, i);
+		r_strf_var (k, 128, "cc.%s.arg%d", name, i);
 		const char *arg = sdb_const_get (DB, k, 0);
 		if (!arg) {
 			break;
@@ -135,7 +138,8 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", arg);
 		isFirst = false;
 	}
-	const char *argn = sdb_const_get (DB, sdb_fmt ("cc.%s.argn", name), 0);
+	r_strf_var (rename, 128, "cc.%s.argn", name);
+	const char *argn = sdb_const_get (DB, rename, 0);
 	if (argn) {
 		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", argn);
 	}
@@ -163,10 +167,11 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 		return NULL;
 	}
 
-	const char *query = sdb_fmt ("cc.%s.arg%d", convention, n);
+	r_strf_buffer (64);
+	char *query = r_strf ("cc.%s.arg%d", convention, n);
 	const char *ret = sdb_const_get (DB, query, 0);
 	if (!ret) {
-		query = sdb_fmt ("cc.%s.argn", convention);
+		query = r_strf ("cc.%s.argn", convention);
 		ret = sdb_const_get (DB, query, 0);
 	}
 	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
@@ -174,7 +179,7 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 
 R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
-	const char *query = sdb_fmt ("cc.%s.self", convention);
+	r_strf_var (query, 64, "cc.%s.self", convention);
 	const char *self = sdb_const_get (DB, query, 0);
 	return self? r_str_constpool_get (&anal->constpool, self): NULL;
 }
@@ -191,7 +196,7 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 
 R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
-	const char *query = sdb_fmt ("cc.%s.error", convention);
+	r_strf_var (query, 64, "cc.%s.error", convention);
 	const char *error = sdb_const_get (DB, query, 0);
 	return error? r_str_constpool_get (&anal->constpool, error): NULL;
 }
@@ -219,7 +224,7 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	free (oldCC);
 	oldCC = strdup (cc);
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		const char *query = sdb_fmt ("cc.%s.arg%d", cc, i);
+		r_strf_var (query, 64, "cc.%s.arg%d", cc, i);
 		const char *res = sdb_const_get (DB, query, 0);
 		if (!res) {
 			break;
@@ -231,7 +236,7 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention) {
 	r_return_val_if_fail (anal && convention, NULL);
-	char *query = sdb_fmt ("cc.%s.ret", convention);
+	r_strf_var (query, 64, "cc.%s.ret", convention);
 	return sdb_const_get (DB, query, 0);
 }
 
@@ -257,7 +262,7 @@ R_API void r_anal_set_syscc_default(RAnal *anal, const char *cc) {
 
 R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {
 	r_return_val_if_fail (anal && func_name, NULL);
-	const char *query = sdb_fmt ("func.%s.cc", func_name);
+	r_strf_var (query, 64, "func.%s.cc", func_name);
 	const char *cc = sdb_const_get (anal->sdb_types, query, 0);
 	return cc ? cc : r_anal_cc_default (anal);
 }

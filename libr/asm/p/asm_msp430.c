@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2015 - fedor.sakharov */
+/* radare - LGPL - Copyright 2014-2022 - fedor.sakharov */
 
 #include <stdio.h>
 #include <string.h>
@@ -12,10 +12,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct msp430_cmd cmd;
 	int ret = msp430_decode_command (buf, len, &cmd);
 	if (ret > 0) {
+		r_strf_buffer (128);
 		if (cmd.operands[0]) {
-			r_strbuf_set (&op->buf_asm, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
+			r_strbuf_set (&op->buf_asm, r_strf ("%s %s", cmd.instr, cmd.operands));
 		} else {
-			r_strbuf_set (&op->buf_asm, sdb_fmt ("%s", cmd.instr));
+			r_strbuf_set (&op->buf_asm, r_strf ("%s", cmd.instr));
 		}
 	}
 	if (a->syntax != R_ASM_SYNTAX_ATT) {

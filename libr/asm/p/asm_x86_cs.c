@@ -123,7 +123,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	if (op->size == 0 && n > 0 && insn->size > 0) {
 		op->size = insn->size;
-		char *buf_asm = sdb_fmt ("%s%s%s",
+		char *buf_asm = r_str_newf ("%s%s%s",
 				insn->mnemonic, insn->op_str[0]?" ":"",
 				insn->op_str);
 		if (a->syntax != R_ASM_SYNTAX_MASM) {
@@ -133,6 +133,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			}
 		}
 		r_asm_op_set_asm (op, buf_asm);
+		free (buf_asm);
 	} else {
 		decompile_vm (a, op, buf, len);
 	}

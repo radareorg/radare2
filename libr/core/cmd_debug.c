@@ -2283,16 +2283,16 @@ static void __tableRegList(RCore *core, RReg *reg, const char *str) {
 	r_table_add_column (t, typeString, "flags", 0);
 	r_table_add_column (t, typeString, "comment", 0);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		r_strf_var (s_off, 32, "%d", e->offset);
+		r_strf_var (s_siz, 32, "%d", e->size);
+		r_strf_var (s_psz, 32, "%d", e->packed_size);
+		r_strf_var (s_idx, 32, "%d", e->index);
+		r_strf_var (s_iii, 32, "%d", i);
 		RList *list = r_reg_get_list (reg, i);
 		RListIter *iter;
 		r_list_foreach (list, iter, e) {
-			// sdb_fmt is not thread safe
 			r_table_add_row (t,
-					sdb_fmt ("%d", e->offset),
-					sdb_fmt ("%d", e->size),
-					sdb_fmt ("%d", e->packed_size),
-					sdb_fmt ("%d", e->index),
-					sdb_fmt ("%d", i),
+					s_off, s_siz, s_psz, s_idx, s_iii,
 					r_str_bool (e->is_float),
 					r_str_get (e->name),
 					r_str_get (e->flags),
@@ -5399,7 +5399,9 @@ static int cmd_debug(void *data, const char *input) {
 		case 'o': // "doo" : reopen in debug mode
 			if (input[2] == 'f') { // "doof" : reopen in debug mode from the given file
 				r_config_set_i (core->config, "cfg.debug", true);
-				r_core_cmd0 (core, sdb_fmt ("oodf %s", input + 3));
+				char *s = r_str_newf ("oodf %s", input + 3);
+				r_core_cmd0 (core, s);
+				free (s);
 			} else {
 				r_core_file_reopen_debug (core, input + 2);
 			}
@@ -5538,7 +5540,9 @@ static int cmd_debug(void *data, const char *input) {
 			if (input[2]) {
 				char *str;
 				r_cons_push ();
-				str = r_core_cmd_str (core, sdb_fmt ("gs %s", input + 2));
+				char *cmd = r_str_newf ("gs %s", input + 2);
+				str = r_core_cmd_str (core, cmd);
+				free (cmd);
 				r_cons_pop ();
 				r_core_cmdf (core, "dx %s", str); //`gs %s`", input + 2);
 				free (str);

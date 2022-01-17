@@ -136,17 +136,18 @@ static struct {
 
 static int _6502Disass(ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int i;
-	for (i=0; ops[i].name != NULL; i++) {
+	r_strf_buffer (64);
+	for (i = 0; ops[i].name != NULL; i++) {
 		if (ops[i].op == buf[0]) {
 			const char *buf_asm = "invalid";
 			int len = ops[i].len;
 			switch (ops[i].len) {
 			case 1:
-				buf_asm = sdb_fmt ("%s", ops[i].name);
+				buf_asm = r_strf ("%s", ops[i].name);
 				break;
 			case 2:
 				if (len > 1) {
-					buf_asm = sdb_fmt (ops[i].name, buf[1]);
+					buf_asm = r_strf (ops[i].name, buf[1]);
 				} else {
 					buf_asm = "truncated";
 					len = -1;
@@ -154,7 +155,7 @@ static int _6502Disass(ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 				break;
 			case 3:
 				if (len > 2) {
-					buf_asm = sdb_fmt (ops[i].name, buf[1] + 0x100 * buf[2]);
+					buf_asm = r_strf (ops[i].name, buf[1] + 0x100 * buf[2]);
 				} else {
 					buf_asm = "truncated";
 					len = -1;
@@ -162,7 +163,7 @@ static int _6502Disass(ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 				break;
 			case 4:
 				if (len > 3) {
-					buf_asm = sdb_fmt (ops[i].name, buf[1]+0x100*buf[2]+0x10000*buf[3]);
+					buf_asm = r_strf (ops[i].name, buf[1]+0x100*buf[2]+0x10000*buf[3]);
 				} else {
 					buf_asm = "truncated";
 					len = -1;

@@ -474,10 +474,11 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 static bool __nonreturn_print_commands(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
-		char *query = sdb_fmt ("func.%s.noreturn", k);
+		char *query = r_str_newf ("func.%s.noreturn", k);
 		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
 			anal->cb_printf ("tnn %s\n", k);
 		}
+		free (query);
 	}
 	if (!strncmp (k, "addr.", 5)) {
 		anal->cb_printf ("tna 0x%s %s\n", k + 5, v);
@@ -524,10 +525,11 @@ R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
 	}
 }
 
-#define K_NORET_ADDR(x) sdb_fmt ("addr.%"PFMT64x".noreturn", x)
-#define K_NORET_FUNC(x) sdb_fmt ("func.%s.noreturn", x)
+#define K_NORET_ADDR(x) r_strf ("addr.%"PFMT64x".noreturn", x)
+#define K_NORET_FUNC(x) r_strf ("func.%s.noreturn", x)
 
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
+	r_strf_buffer (128);
 	const char *tmp_name = NULL;
 	Sdb *TDB = anal->sdb_types;
 	char *fnl_name = NULL;
@@ -576,6 +578,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 }
 
 R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr) {
+	r_strf_buffer (64);
 	Sdb *TDB = anal->sdb_types;
 	expr = r_str_trim_head_ro (expr);
 	const char *fcnname = NULL;
@@ -609,7 +612,8 @@ R_API bool r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 }
 
 static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
-	if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC(name), NULL)) {
+	r_strf_buffer (128);
+	if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC (name), NULL)) {
 		return true;
 	}
 	char *tmp = r_type_func_guess (anal->sdb_types, (char *)name);
@@ -627,6 +631,7 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 }
 
 R_API bool r_anal_noreturn_at_addr(RAnal *anal, ut64 addr) {
+	r_strf_buffer (64);
 	return sdb_bool_get (anal->sdb_types, K_NORET_ADDR (addr), NULL);
 }
 

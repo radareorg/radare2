@@ -526,12 +526,13 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	if (op->size < 1 || __isInvalid (op)) {
 		if (a->invhex) {
+			r_strf_buffer (32);
 			if (a->bits == 16) {
 				ut16 b = r_read_le16 (buf);
-				r_strbuf_set (&op->buf_asm, sdb_fmt (".word 0x%04x", b));
+				r_strbuf_set (&op->buf_asm, r_strf (".word 0x%04x", b));
 			} else {
 				ut32 b = r_read_le32 (buf);
-				r_strbuf_set (&op->buf_asm, sdb_fmt (".dword 0x%08x", b));
+				r_strbuf_set (&op->buf_asm, r_strf (".dword 0x%08x", b));
 			}
 			// TODO: something for 64bits too?
 		} else {

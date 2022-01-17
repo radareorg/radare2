@@ -56,7 +56,7 @@ static RBinInfo *info(RBinFile *bf) {
 	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	ret->big_endian = obj->endian;
-	ret->claimed_checksum = strdup (sdb_fmt ("0x%08x", obj->hdr->check_sum));  // FIXME: Leaks
+	ret->claimed_checksum = r_str_newf ("0x%08x", obj->hdr->check_sum);  // FIXME: Leaks
 	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->has_va = true;
 	ret->rclass = strdup ("mdmp");
@@ -66,7 +66,8 @@ static RBinInfo *info(RBinFile *bf) {
 	// FIXME: Needed to fix issue with PLT resolving. Can we get away with setting this for all children bins?
 	ret->has_lit = true;
 
-	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt ("0x%08"PFMT64x, obj->hdr->flags), 0);
+	r_strf_var (k, 32, "0x%08"PFMT64x, obj->hdr->flags);
+	sdb_set (bf->sdb, "mdmp.flags", k, 0);
 	sdb_num_set (bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 
 	if (obj->streams.system_info) {
@@ -338,9 +339,9 @@ static RList *mem(RBinFile *bf) {
 			a_protect = mem_info->allocation_protect;
 		}
 		location = &(module->memory);
-		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT32x" state=0x%08"PFMT64x
+		ptr->name = r_str_newf ("paddr=0x%08"PFMT32x" state=0x%08"PFMT64x
 					" type=0x%08"PFMT64x" allocation_protect=0x%08"PFMT64x" Memory_Section",
-					location->rva, state, type, a_protect));
+					location->rva, state, type, a_protect);
 
 		r_list_append (ret, ptr);
 	}
@@ -361,9 +362,9 @@ static RList *mem(RBinFile *bf) {
 			type = mem_info->type;
 			a_protect = mem_info->allocation_protect;
 		}
-		ptr->name = strdup (sdb_fmt ("paddr=0x%08"PFMT64x" state=0x%08"PFMT64x
+		ptr->name = r_str_newf ("paddr=0x%08"PFMT64x" state=0x%08"PFMT64x
 					" type=0x%08"PFMT64x" allocation_protect=0x%08"PFMT64x" Memory_Section",
-					index, state, type, a_protect));
+					index, state, type, a_protect);
 
 		index += module64->data_size;
 

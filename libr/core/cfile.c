@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
 #include <stdlib.h>
@@ -237,10 +237,11 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 		r_sys_setenv ("R2_BYTES", s);
 		free (s);
 	}
+	r_strf_buffer (64);
 	r_sys_setenv ("RABIN2_PDBSERVER", r_config_get (core->config, "pdb.server"));
 	if (desc && desc->name) {
 		r_sys_setenv ("R2_FILE", desc->name);
-		r_sys_setenv ("R2_SIZE", sdb_fmt ("%"PFMT64d, r_io_desc_size (desc)));
+		r_sys_setenv ("R2_SIZE", r_strf ("%"PFMT64d, r_io_desc_size (desc)));
 		if (cmd && strstr (cmd, "R2_BLOCK")) {
 			// replace BLOCK in RET string
 			if ((f = r_file_temp ("r2block"))) {
@@ -251,10 +252,10 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 			}
 		}
 	}
-	r_sys_setenv ("R2_OFFSET", sdb_fmt ("%"PFMT64d, core->offset));
-	r_sys_setenv ("R2_XOFFSET", sdb_fmt ("0x%08"PFMT64x, core->offset));
+	r_sys_setenv ("R2_OFFSET", r_strf ("%"PFMT64d, core->offset));
+	r_sys_setenv ("R2_XOFFSET", r_strf ("0x%08"PFMT64x, core->offset));
 	r_sys_setenv ("R2_ENDIAN", core->rasm->big_endian? "big": "little");
-	r_sys_setenv ("R2_BSIZE", sdb_fmt ("%d", core->blocksize));
+	r_sys_setenv ("R2_BSIZE", r_strf ("%d", core->blocksize));
 #if 0
 	// dump current config file so other r2 tools can use the same options
 	char *config_sdb_path = NULL;
@@ -271,7 +272,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	r_sys_setenv ("RABIN2_LANG", r_config_get (core->config, "bin.lang"));
 	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
 	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
-	r_sys_setenv ("R2_BITS", sdb_fmt ("%"PFMT64u, r_config_get_i (core->config, "asm.bits")));
+	r_sys_setenv ("R2_BITS", r_strf ("%"PFMT64u, r_config_get_i (core->config, "asm.bits")));
 	char *s = sdb_itoa (r_config_get_i (core->config, "scr.color"), NULL, 10);
 	r_sys_setenv ("R2_COLOR", s);
 	free (s);
@@ -731,7 +732,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		const RList *imports = r_bin_get_imports (r->bin);
 		r_list_foreach (imports, iter, imp) {
 			// PLT finding
-			RFlagItem *impsym = r_flag_get (r->flags, sdb_fmt ("sym.imp.%s", imp->name));
+			char *flagname = r_str_newf ("sym.imp.%s", imp->name);
+			RFlagItem *impsym = r_flag_get (r->flags, flagname);
+			free (flagname);
 			if (!impsym) {
 				//eprintf ("Cannot find '%s' import in the PLT\n", imp->name);
 				continue;

@@ -1866,13 +1866,14 @@ static void cmd_anal_trampoline(RCore *core, const char *input) {
 	}
 }
 
-static const char *syscallNumber(int n) {
-	return sdb_fmt (n > 1000 ? "0x%x" : "%d", n);
+static const char *syscallNumber(char *snstr, int n) {
+	snprintf (snstr, 32, (n>1000)?"0x%x": "%d", n);
+	return snstr;
 }
 
 R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	int i;
-	char str[64];
+	char str[64], snstr[32];
 	st64 N = n;
 	int defVector = r_syscall_get_swi (core->anal->syscall);
 	if (defVector > 0) {
@@ -1890,9 +1891,9 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 		item =  r_syscall_get (core->anal->syscall, N, -1);
 	}
 	if (!item) {
-		return r_str_newf ("%s = unknown ()", syscallNumber (n));
+		return r_str_newf ("%s = unknown ()", syscallNumber (snstr, n));
 	}
-	char *res = r_str_newf ("%s = %s (", syscallNumber (item->num), item->name);
+	char *res = r_str_newf ("%s = %s (", syscallNumber (snstr, item->num), item->name);
 	// TODO: move this to r_syscall
 	const char *cc = r_anal_syscc_default (core->anal);
 	//TODO replace the hardcoded CC with the sdb ones
@@ -3627,7 +3628,8 @@ R_API char *fcnshowr(RAnalFunction *function) {
 		char *comma = strchr (type, ',');
 		if (comma) {
 			*comma = 0;
-			const char *cc_arg = r_reg_get_name (a->reg, r_reg_get_name_idx (sdb_fmt ("A%d", i)));
+			r_strf_var (regname, 32, "A%d", i);
+			const char *cc_arg = r_reg_get_name (a->reg, r_reg_get_name_idx (regname));
 			r_strbuf_appendf (sb, "afvr %s %s %s\n", cc_arg, comma + 1, type);
 		}
 		free (type);
@@ -4938,7 +4940,8 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			int nargs = 4;
 			RReg *reg = core->anal->reg;
 			for (i = 0; i < nargs; i++) {
-				const char *name = r_reg_get_name (reg, r_reg_get_name_idx (sdb_fmt ("A%d", i)));
+				r_strf_var (regname, 32, "A%d", i);
+				const char *name = r_reg_get_name (reg, r_reg_get_name_idx (regname));
 				ut64 off = r_reg_getv (core->anal->reg, name);
 				r_cons_printf ("0x%08"PFMT64x" ", off);
 				// XXX very ugly hack
@@ -6451,7 +6454,7 @@ static void __core_anal_appcall(RCore *core, const char *input) {
 	RList *args = r_str_split_list (inp, " ", 0);
 	int i = 0;
 	r_list_foreach (args, iter, arg) {
-		const char *alias = sdb_fmt ("A%d", i);
+		r_strf_var (alias, 32, "A%d", i);
 		r_reg_setv (core->anal->reg, alias, r_num_math (core->num, arg));
 		i++;
 	}
@@ -7869,6 +7872,7 @@ static void cmd_sdbk(Sdb *db, const char *input) {
 }
 
 static void cmd_anal_syscall(RCore *core, const char *input) {
+	char snstr[32];
 	PJ *pj = NULL;
 	RSyscallItem *si;
 	RListIter *iter;
@@ -7882,14 +7886,14 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 				if (!isalpha ((ut8)input[3]) && (n = r_num_math (core->num, input + 3)) >= 0 ) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
-						r_cons_printf (".equ SYS_%s %s\n", si->name, syscallNumber (n));
+						r_cons_printf (".equ SYS_%s %s\n", si->name, syscallNumber (snstr, n));
 						r_syscall_item_free (si);
 					}
 					else eprintf ("Unknown syscall number\n");
 				} else {
 					n = r_syscall_get_num (core->anal->syscall, input + 3);
 					if (n != -1) {
-						r_cons_printf (".equ SYS_%s %s\n", input + 3, syscallNumber (n));
+						r_cons_printf (".equ SYS_%s %s\n", input + 3, syscallNumber (snstr, n));
 					} else {
 						eprintf ("Unknown syscall name\n");
 					}
@@ -7897,8 +7901,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			} else {
 				list = r_syscall_list (core->anal->syscall);
 				r_list_foreach (list, iter, si) {
-					r_cons_printf (".equ SYS_%s %s\n",
-						si->name, syscallNumber (si->num));
+					r_cons_printf (".equ SYS_%s %s\n", si->name, syscallNumber (snstr, si->num));
 				}
 				r_list_free (list);
 			}
@@ -7907,14 +7910,14 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 				if (!isalpha ((ut8)input[2]) && (n = r_num_math (core->num, input + 2)) >= 0) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
 					if (si) {
-						r_cons_printf ("#define SYS_%s %s\n", si->name, syscallNumber (n));
+						r_cons_printf ("#define SYS_%s %s\n", si->name, syscallNumber (snstr, n));
 						r_syscall_item_free (si);
 					}
 					else eprintf ("Unknown syscall number\n");
 				} else {
 					n = r_syscall_get_num (core->anal->syscall, input + 2);
 					if (n != -1) {
-						r_cons_printf ("#define SYS_%s %s\n", input + 2, syscallNumber (n));
+						r_cons_printf ("#define SYS_%s %s\n", input + 2, syscallNumber (snstr, n));
 					} else {
 						eprintf ("Unknown syscall name\n");
 					}
@@ -7923,7 +7926,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 				list = r_syscall_list (core->anal->syscall);
 				r_list_foreach (list, iter, si) {
 					r_cons_printf ("#define SYS_%s %s\n",
-						si->name, syscallNumber (si->num));
+						si->name, syscallNumber (snstr, si->num));
 				}
 				r_list_free (list);
 			}
@@ -7937,7 +7940,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			const char *sc_name = r_str_trim_head_ro (input + 2);
 			int sc_number = r_syscall_get_num (core->anal->syscall, sc_name);
 			if (sc_number != 0) {
-				r_cons_printf ("%s\n", syscallNumber (sc_number));
+				r_cons_printf ("%s\n", syscallNumber (snstr, sc_number));
 			} else {
 				sc_number = r_num_math (core->num, sc_name);
 				si = r_syscall_get (core->anal->syscall, sc_number, -1);
@@ -7955,7 +7958,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			list = r_syscall_list (core->anal->syscall);
 			r_list_foreach (list, iter, si) {
 				r_cons_printf ("%s = 0x%02x.%s\n",
-					si->name, si->swi, syscallNumber (si->num));
+					si->name, si->swi, syscallNumber (snstr, si->num));
 			}
 			r_list_free (list);
 		}
@@ -8255,9 +8258,6 @@ static void axtm(RCore *core) {
 static void axfm(RCore *core) {
 	ht_up_foreach (core->anal->dict_xrefs, axtm_cb, core);
 }
-
-#define var_ref_list(a,d,t) sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",\
-		a, 1, d, (t == 'R')?"reads":"writes");
 
 static bool cmd_anal_refs(RCore *core, const char *input) {
 	ut64 addr = core->offset;
@@ -9237,7 +9237,7 @@ static void agraph_print_edge_dot(RANode *from, RANode *to, void *user) {
 	RCore *core = (RCore *)user;
 	ut64 a = r_num_math (NULL, from->title);
 	ut64 b = r_num_math (NULL, to->title);
-	const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
+	r_strf_var (k, 64, "agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	if (sdb_exists (core->sdb, k)) {
 		r_cons_printf ("\"%s\" -> \"%s\" [color=cyan]\n", from->title, to->title);
 	} else {
@@ -9335,7 +9335,7 @@ static bool cmd_ageh(RCore *core, const char *input) {
 	ut64 a = r_num_math (core->num, arg);
 	ut64 b = r_num_math (core->num, sp);
 
-	const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
+	r_strf_var (k, 64, "agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", a, b);
 	sdb_set (core->sdb, k, add? "true": "", 0);
 	free(arg);
 	return true;
@@ -10350,8 +10350,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			oldstr = r_print_rowlog (core->print, sdb_fmt ("... from 0x%"PFMT64x" to 0x%"PFMT64x"", r_io_map_begin (map),
-				r_io_map_end (map)));
+			r_strf_var (msg, 128, "... from 0x%"PFMT64x" to 0x%"PFMT64x"", r_io_map_begin (map), r_io_map_end (map));
+			oldstr = r_print_rowlog (core->print, msg);
 			r_print_rowlog_done (core->print, oldstr);
 			(void)r_core_search_value_in_range (core, map->itv,
 				r_io_map_begin (map), r_io_map_end (map), vsize, _CbInRangeAav, (void *)(size_t)asterisk);
@@ -10374,7 +10374,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			//TODO: Reduce multiple hits for same addr
 			from = r_itv_begin (map2->itv);
 			to = r_itv_end (map2->itv);
-			oldstr = r_print_rowlog (core->print, sdb_fmt ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
+			r_strf_var (msg, 128, "... from 0x%"PFMT64x" to 0x%"PFMT64x"", from, to);
+			oldstr = r_print_rowlog (core->print, msg);
 			if ((to - from) > MAX_SCAN_SIZE) {
 				eprintf ("Warning: Skipping large region\n");
 				continue;
@@ -10391,7 +10392,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					r_print_rowlog_done (core->print, oldstr);
 					continue;
 				}
-				oldstr = r_print_rowlog (core->print, sdb_fmt ("0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x" (aav)", from, to, begin, end));
+				r_strf_var (msg2, 128, "0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x" (aav)", from, to, begin, end);
+				oldstr = r_print_rowlog (core->print, msg2);
 				r_print_rowlog_done (core->print, oldstr);
 				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, _CbInRangeAav, (void *)(size_t)asterisk);
 			}

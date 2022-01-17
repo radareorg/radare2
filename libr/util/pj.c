@@ -278,48 +278,61 @@ R_API PJ *pj_j(PJ *j, const char *k) {
 R_API PJ *pj_n(PJ *j, ut64 n) {
 	r_return_val_if_fail (j, j);
 	pj_comma (j);
-	pj_raw (j, sdb_fmt ("%" PFMT64u, n));
+	char numstr[32];
+	snprintf (numstr, sizeof (numstr), "%" PFMT64u, n);
+	pj_raw (j, numstr);
 	return j;
 }
 
 R_API PJ *pj_ne(PJ *j, ut64 n) {
+	char numstr[32];
 	r_return_val_if_fail (j, j);
 	pj_comma (j);
 	if (j->num_encoding == PJ_ENCODING_NUM_STR) {
-		pj_raw (j, sdb_fmt ("\"%" PFMT64u "\"", n));
+		snprintf (numstr, sizeof (numstr), "\"%" PFMT64u "\"", n);
+		pj_raw (j, numstr);
 	} else if (j->num_encoding == PJ_ENCODING_NUM_HEX) {
-		pj_raw (j, sdb_fmt ("\"0x%" PFMT64x "\"", n));
+		snprintf (numstr, sizeof (numstr), "\"0x%" PFMT64x "\"", n);
+		pj_raw (j, numstr);
 	} else {
-		pj_n(j, n);
+		pj_n (j, n);
 	}
 	return j;
 }
 
 R_API PJ *pj_N(PJ *j, st64 n) {
+	char numstr[64];
 	r_return_val_if_fail (j, NULL);
+	snprintf (numstr, sizeof (numstr), "%"PFMT64d, n);
 	pj_comma (j);
-	pj_raw (j, sdb_fmt ("%"PFMT64d, n));
+	pj_raw (j, numstr);
 	return j;
 }
 
 R_API PJ *pj_f(PJ *j, float f) {
 	r_return_val_if_fail (j, NULL);
+	char numstr[64];
+	snprintf (numstr, sizeof (numstr), "%f", f);
 	pj_comma (j);
-	pj_raw (j, sdb_fmt ("%f", f));
+	pj_raw (j, numstr);
 	return j;
 }
 
 R_API PJ *pj_d(PJ *j, double d) {
 	r_return_val_if_fail (j, NULL);
+	char numstr[64];
+	snprintf (numstr, sizeof (numstr), "%lf", d);
 	pj_comma (j);
-	pj_raw (j, sdb_fmt ("%lf", d));
+	pj_raw (j, numstr);
 	return j;
 }
 
 R_API PJ *pj_i(PJ *j, int i) {
 	if (j) {
+		char numstr[64];
 		pj_comma (j);
-		pj_raw (j, sdb_fmt ("%d", i));
+		snprintf (numstr, sizeof (numstr), "%d", i);
+		pj_raw (j, numstr);
 	}
 	return j;
 }

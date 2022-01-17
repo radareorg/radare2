@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - pancake, defragger */
+/* radare - LGPL - Copyright 2017-2022 - pancake, defragger */
 
 #include <r_core.h>
 
@@ -245,13 +245,13 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	}
 }
 
-#define Fhandled(x) sdb_fmt("handled.%"PFMT64x"", x)
+#define Fhandled(x) r_strf ("handled.%"PFMT64x"", x)
 R_API bool core_anal_bbs(RCore *core, const char* input) {
 	if (!r_io_is_valid_offset (core->io, core->offset, false)) {
 		eprintf ("No valid offset given to analyze\n");
 		return false;
 	}
-
+	r_strf_buffer (64);
 	Sdb *sdb = NULL;
 	const ut64 start = core->offset;
 	ut64 size = input[0] ? r_num_math (core->num, input + 1) : core->blocksize;
@@ -438,8 +438,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 				}
 			}
 		}
-
-		sdb_ptr_set (sdb, sdb_fmt ("bb.0x%08"PFMT64x, block->start), block, 0);
+		sdb_ptr_set (sdb, r_strf ("bb.0x%08"PFMT64x, block->start), block, 0);
 		r_list_append (result, block);
 	}
 
@@ -470,7 +469,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 				if (!cur) {
 					continue;
 				}
-				sdb_num_set (sdb, Fhandled(cur->start), 1, 0);
+				sdb_num_set (sdb, Fhandled (cur->start), 1, 0);
 				if (cur->score < 0) {
 					fcnFree (current_function);
 					current_function = NULL;
@@ -483,8 +482,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 
 				fcnAddBB (current_function, cur);
 
-				if (cur->jump < UT64_MAX && !sdb_num_get (sdb, Fhandled(cur->jump), NULL)) {
-					jump = sdb_ptr_get (sdb, sdb_fmt ("bb.0x%08"PFMT64x, cur->jump), NULL);
+				if (cur->jump < UT64_MAX && !sdb_num_get (sdb, Fhandled (cur->jump), NULL)) {
+					jump = sdb_ptr_get (sdb, r_strf ("bb.0x%08"PFMT64x, cur->jump), NULL);
 					if (!jump) {
 						eprintf ("Failed to get jump block at 0x%"PFMT64x"\n", cur->jump);
 						continue;
@@ -494,8 +493,8 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 					}
 				}
 
-				if (cur->fail < UT64_MAX && !sdb_num_get (sdb, Fhandled(cur->fail), NULL)) {
-					fail = sdb_ptr_get (sdb, sdb_fmt ("bb.0x%08" PFMT64x, cur->fail), NULL);
+				if (cur->fail < UT64_MAX && !sdb_num_get (sdb, Fhandled (cur->fail), NULL)) {
+					fail = sdb_ptr_get (sdb, r_strf ("bb.0x%08" PFMT64x, cur->fail), NULL);
 					if (!fail) {
 						eprintf ("Failed to get fail block at 0x%"PFMT64x"\n", cur->fail);
 						continue;
@@ -533,7 +532,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 		eprintf ("No valid offset given to analyze\n");
 		return false;
 	}
-
+	r_strf_buffer (64);
 	Sdb *sdb = NULL;
 	ut64 cur = 0;
 	ut64 start = core->offset;
@@ -727,7 +726,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 			}
 		}
 
-		sdb_ptr_set (sdb, sdb_fmt ("bb.0x%08"PFMT64x, block->start), block, 0);
+		sdb_ptr_set (sdb, r_strf ("bb.0x%08"PFMT64x, block->start), block, 0);
 		r_list_append (result, block);
 	}
 
@@ -772,7 +771,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 				fcnAddBB (current_function, cur);
 
 				if (cur->jump < UT64_MAX && !sdb_num_get (sdb, Fhandled (cur->jump), NULL)) {
-					jump = sdb_ptr_get (sdb, sdb_fmt ("bb.0x%08"PFMT64x, cur->jump), NULL);
+					jump = sdb_ptr_get (sdb, r_strf ("bb.0x%08"PFMT64x, cur->jump), NULL);
 					if (!jump) {
 						eprintf ("Failed to get jump block at 0x%"PFMT64x"\n", cur->jump);
 						continue;
@@ -783,7 +782,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 				}
 
 				if (cur->fail < UT64_MAX && !sdb_num_get (sdb, Fhandled (cur->fail), NULL)) {
-					fail = sdb_ptr_get (sdb, sdb_fmt ("bb.0x%08" PFMT64x, cur->fail), NULL);
+					fail = sdb_ptr_get (sdb, r_strf ("bb.0x%08" PFMT64x, cur->fail), NULL);
 					if (!fail) {
 						eprintf ("Failed to get fail block at 0x%"PFMT64x"\n", cur->fail);
 						continue;

@@ -100,9 +100,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			}
 		}
 	}
+	r_strf_buffer (256);
 	if (op && !op->size) {
 		op->size = insn->size;
-		buf_asm = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0]?" ":"", insn->op_str);
+		buf_asm = r_strf ("%s%s%s", insn->mnemonic, insn->op_str[0]?" ":"", insn->op_str);
 	}
 	if (op && buf_asm) {
 		char *p = r_str_replace (strdup (buf_asm), "$", "0x", true);

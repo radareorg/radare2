@@ -46,11 +46,19 @@ static const char *mousemodes[] = {
 
 #define NORMALIZE_MOV(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
 
-#define hash_set(sdb, k, v) (sdb_num_set (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) (k)), (ut64) (size_t) (v), 0))
-#define hash_get(sdb, k) (sdb_num_get (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) (k)), NULL))
+static void hash_set(Sdb *db, const void *k, ut64 v) {
+	r_strf_var (ks, 32, "%"PFMT64u, (ut64) (size_t) (k));
+	sdb_num_set (db, ks, (ut64) (size_t) (v), 0);
+}
+
+static ut64 hash_get(Sdb *db, const void *k) {
+	r_strf_var (ks, 32, "%"PFMT64u, (ut64) (size_t) (k));
+	return sdb_num_get (db, ks, NULL);
+}
+
 #define hash_get_rnode(sdb, k) ((RGraphNode *) (size_t) hash_get (sdb, k))
 #define hash_get_rlist(sdb, k) ((RList *) (size_t) hash_get (sdb, k))
-#define hash_get_int(sdb, k) ((int) hash_get (sdb, k))
+#define hash_get_int(sdb, k) ((int) (size_t)hash_get (sdb, k))
 /* don't use macros for this */
 #define get_anode(gn) ((gn)? (RANode *) (gn)->data: NULL)
 
@@ -244,16 +252,22 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 }
 
 static void append_shortcut(const RAGraph *g, char *title, char *nodetitle, int left) {
-	const char *shortcut = sdb_const_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", nodetitle), 0);
+	char *k = r_str_newf ("agraph.nodes.%s.shortcut", nodetitle);
+	const char *shortcut = sdb_const_get (g->db, k, 0);
 	if (shortcut) {
 		size_t n = strlen (title);
 		if (g->can->color) {
 			// XXX: do not hardcode color here
-			snprintf (title + n, left, "%s", sdb_fmt (Color_YELLOW"[o%s]"Color_RESET,  shortcut));
+			free (k);
+			k = r_str_newf (Color_YELLOW"[o%s]"Color_RESET, shortcut);
+			snprintf (title + n, left, "%s", k);
 		} else {
-			snprintf (title + n, left, "%s", sdb_fmt ("[o%s]", shortcut));
+			free (k);
+			k = r_str_newf ("[o%s]", shortcut);
+			snprintf (title + n, left, "%s", k);
 		}
 	}
+	free (k);
 }
 
 static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool details) {
@@ -932,7 +946,7 @@ static Sdb *compute_vertical_nodes(const RAGraph *g) {
 
 			if (!Ln) {
 				RList *vert = r_list_new ();
-				hash_set (res, gn, vert);
+				hash_set (res, gn, (size_t) vert);
 				if (an->is_dummy) {
 					RGraphNode *next = gn;
 					const RANode *anext = get_anode (next);
@@ -1082,7 +1096,6 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 			r_list_sort (heap, (RListComparator) cmp_dist);
 			dist = (int) (size_t) r_list_get_n (heap, len / 2);
 		}
-
 		r_list_free (heap);
 	}
 
@@ -2221,7 +2234,9 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (shortcuts) {
 			shortcut = r_core_add_asmqjmp (core, bb->addr);
 			if (shortcut) {
-				sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", title), shortcut, 0);
+				char *k = r_str_newf ("agraph.nodes.%s.shortcut", title);
+				sdb_set (g->db, k, shortcut, 0);
+				free (k);
 				free (shortcut);
 			}
 		}
@@ -2381,7 +2396,9 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		if (shortcuts) {
 			shortcut = r_core_add_asmqjmp (core, bb->addr);
 			if (shortcut) {
-				sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", title), shortcut, 0);
+				char *k = r_str_newf ("agraph.nodes.%s.shortcut", title);
+				sdb_set (g->db, k, shortcut, 0);
+				free (k);
 				free (shortcut);
 			}
 		}
@@ -2712,15 +2729,18 @@ static void agraph_set_layout(RAGraph *g) {
 		if (a->is_dummy) {
 			continue;
 		}
-		const char *k;
-		k = sdb_fmt ("agraph.nodes.%s.x", a->title);
+		char *k = r_str_newf ("agraph.nodes.%s.x", a->title);
 		sdb_num_set (g->db, k, rebase (g, a->x), 0);
-		k = sdb_fmt ("agraph.nodes.%s.y", a->title);
+		free (k);
+		k = r_str_newf ("agraph.nodes.%s.y", a->title);
 		sdb_num_set (g->db, k, rebase (g, a->y), 0);
-		k = sdb_fmt ("agraph.nodes.%s.w", a->title);
+		free (k);
+		k = r_str_newf ("agraph.nodes.%s.w", a->title);
 		sdb_num_set (g->db, k, a->w, 0);
-		k = sdb_fmt ("agraph.nodes.%s.h", a->title);
+		free (k);
+		k = r_str_newf ("agraph.nodes.%s.h", a->title);
 		sdb_num_set (g->db, k, a->h, 0);
+		free (k);
 	}
 }
 
@@ -2956,7 +2976,7 @@ static void agraph_print_edges(RAGraph *g) {
 			if (!R_STR_ISEMPTY (a->title) && !R_STR_ISEMPTY (b->title)) {
 				ut64 aa = r_num_get (NULL, a->title);
 				ut64 bb = r_num_get (NULL, b->title);
-				const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", aa, bb);
+				r_strf_var (k, 64, "agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", aa, bb);
 				if (sdb_exists (g->db, k)) {
 					style.ansicolor = Color_BYELLOW; // it's CYAN for graphviz
 				} else {
@@ -3746,16 +3766,18 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 			b[len - 1] = '\0';
 		}
 		estr = sdb_encode ((const void *) b, -1);
-		//s = sdb_fmt ("base64:%s", estr);
 		s = r_str_newf ("base64:%s", estr);
 		free (estr);
 		free (b);
-		sdb_set_owned (g->db, sdb_fmt ("agraph.nodes.%s.body", res->title), s, 0);
+		char *k = r_str_newf ("agraph.nodes.%s.body", res->title);
+		sdb_set_owned (g->db, k, s, 0);
+		free (k);
 	}
 	return res;
 }
 
 R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
+	r_strf_buffer (128);
 	char *title_trunc = r_str_trunc_ellipsis (title, 255);
 	RANode *an, *res = r_agraph_get_node (g, title_trunc);
 	free (title_trunc);
@@ -3767,17 +3789,17 @@ R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
 	}
 	sdb_set (g->nodes, res->title, NULL, 0);
 	sdb_array_remove (g->db, "agraph.nodes", res->title, 0);
-	sdb_set (g->db, sdb_fmt ("agraph.nodes.%s", res->title), NULL, 0);
-	sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.body", res->title), 0, 0);
-	sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.x", res->title), NULL, 0);
-	sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.y", res->title), NULL, 0);
-	sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.w", res->title), NULL, 0);
-	sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.h", res->title), NULL, 0);
-	sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.neighbours", res->title), NULL, 0);
+	sdb_set (g->db, r_strf ("agraph.nodes.%s", res->title), NULL, 0);
+	sdb_set (g->db, r_strf ("agraph.nodes.%s.body", res->title), 0, 0);
+	sdb_set (g->db, r_strf ("agraph.nodes.%s.x", res->title), NULL, 0);
+	sdb_set (g->db, r_strf ("agraph.nodes.%s.y", res->title), NULL, 0);
+	sdb_set (g->db, r_strf ("agraph.nodes.%s.w", res->title), NULL, 0);
+	sdb_set (g->db, r_strf ("agraph.nodes.%s.h", res->title), NULL, 0);
+	sdb_set (g->db, r_strf ("agraph.nodes.%s.neighbours", res->title), NULL, 0);
 
 	const RList *innodes = r_graph_innodes (g->graph, res->gnode);
 	graph_foreach_anode (innodes, it, gn, an) {
-		const char *key = sdb_fmt ("agraph.nodes.%s.neighbours", an->title);
+		const char *key = r_strf ("agraph.nodes.%s.neighbours", an->title);
 		sdb_array_remove (g->db, key, res->title, 0);
 	}
 
@@ -3852,20 +3874,22 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b, bool highli
 	if (highlight) {
 		ut64 aa = r_num_get (NULL, a->title);
 		ut64 bb = r_num_get (NULL, b->title);
-		const char *k = sdb_fmt ("agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", aa, bb);
+		r_strf_var (k, 64, "agraph.edge.0x%"PFMT64x"_0x%"PFMT64x".highlight", aa, bb);
 		sdb_set (g->db, k, "true", 0);
 	}
 	if (a->title && b->title) {
-		const char *k = sdb_fmt ("agraph.nodes.%s.neighbours", a->title);
+		char *k = r_str_newf ("agraph.nodes.%s.neighbours", a->title);
 		sdb_array_add (g->db, k, b->title, 0);
+		free (k);
 	}
 }
 
 R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	r_return_if_fail (g && a && b);
 	if (a->title && b->title) {
-		const char *k = sdb_fmt ("agraph.nodes.%s.neighbours", a->title);
+		char *k = r_str_newf ("agraph.nodes.%s.neighbours", a->title);
 		sdb_array_insert (g->db, k, nth, b->title, 0);
+		free (k);
 	}
 	r_graph_add_edge_at (g->graph, a->gnode, b->gnode, nth);
 }
@@ -3873,8 +3897,9 @@ R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth)
 R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b) {
 	r_return_if_fail (g && a && b);
 	if (a->title && b->title) {
-		const char *k = sdb_fmt ("agraph.nodes.%s.neighbours", a->title);
+		char *k = r_str_newf ("agraph.nodes.%s.neighbours", a->title);
 		sdb_array_remove (g->db, k, b->title, 0);
+		free (k);
 	}
 	r_graph_del_edge (g->graph, a->gnode, b->gnode);
 }

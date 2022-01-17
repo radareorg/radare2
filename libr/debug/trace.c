@@ -200,8 +200,8 @@ R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
 
 R_API RDebugTracepoint *r_debug_trace_get(RDebug *dbg, ut64 addr) {
 	int tag = dbg->trace->tag;
-	return ht_pp_find (dbg->trace->ht,
-		sdb_fmt ("trace.%d.%"PFMT64x, tag, addr), NULL);
+	r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
+	return ht_pp_find (dbg->trace->ht, key, NULL);
 }
 
 static int cmpaddr(const void *_a, const void *_b) {
@@ -292,8 +292,8 @@ R_API RDebugTracepoint *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) {
 	tp->count = ++dbg->trace->count;
 	tp->times = 1;
 	r_list_append (dbg->trace->traces, tp);
-	ht_pp_update (dbg->trace->ht,
-		sdb_fmt ("trace.%d.%"PFMT64x, tag, addr), tp);
+	r_strf_var (key, 64, "trace.%d.%"PFMT64x, tag, addr);
+	ht_pp_update (dbg->trace->ht, key, tp);
 	return tp;
 }
 

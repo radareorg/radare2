@@ -663,7 +663,6 @@ R_API void r_bin_string_free(void *_str);
 #ifdef R_API
 
 R_API RBinImport *r_bin_import_clone(RBinImport *o);
-R_API const char *r_bin_symbol_name(RBinSymbol *s);
 typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 
 // options functions

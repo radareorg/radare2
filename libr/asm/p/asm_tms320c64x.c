@@ -47,9 +47,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	r_asm_op_set_asm (op, sdb_fmt ("%s%s%s",
+	r_strf_var (opstr, 256, "%s%s%s",
 		insn->mnemonic, insn->op_str[0]? " ": "",
-		insn->op_str));
+		insn->op_str);
+	r_asm_op_set_asm (op, opstr);
 	r_str_replace_char (r_strbuf_get (&op->buf_asm), '%', 0);
 	r_str_case (r_strbuf_get (&op->buf_asm), false);
 	cs_free (insn, n);

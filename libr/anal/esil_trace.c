@@ -3,9 +3,9 @@
 #include <r_anal.h>
 
 #define DB esil->trace->db
-#define KEY(x) sdb_fmt ("%d."x, esil->trace->idx)
-#define KEYAT(x,y) sdb_fmt ("%d."x".0x%"PFMT64x, esil->trace->idx, y)
-#define KEYREG(x,y) sdb_fmt ("%d."x".%s", esil->trace->idx, y)
+#define KEY(x) r_strf ("%d."x, esil->trace->idx)
+#define KEYAT(x,y) r_strf ("%d."x".0x%"PFMT64x, esil->trace->idx, y)
+#define KEYREG(x,y) r_strf ("%d."x".%s", esil->trace->idx, y)
 #define CMP_REG_CHANGE(x, y) ((x) - ((RAnalEsilRegChange *)y)->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((RAnalEsilMemChange *)y)->idx)
 
@@ -110,6 +110,7 @@ static void add_mem_change(RAnalEsilTrace *trace, int idx, ut64 addr, ut8 data) 
 
 static bool trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int *size) {
 	r_return_val_if_fail (esil && name && res, -1);
+	r_strf_buffer (128);
 	bool ret = false;
 	if (*name == '0') {
 		//eprintf ("Register not found in profile\n");
@@ -134,6 +135,7 @@ static bool trace_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, in
 }
 
 static bool trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
+	r_strf_buffer (128);
 	bool ret = false;
 	//eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
 	RRegItem *ri = r_reg_get (esil->anal->reg, name, -1);
@@ -153,6 +155,7 @@ static bool trace_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 
 static bool trace_hook_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	char *hexbuf = calloc ((1 + len), 4);
+	r_strf_buffer (128);
 	int ret = 0;
 	if (esil->cb.mem_read) {
 		ret = esil->cb.mem_read (esil, addr, buf, len);
@@ -176,6 +179,10 @@ static bool trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 	size_t i;
 	int ret = 0;
 	char *hexbuf = malloc ((1 + len) * 3);
+	if (!hexbuf) {
+		return false;
+	}
+	r_strf_buffer (128);
 	sdb_array_add_num (DB, KEY ("mem.write"), addr, 0);
 	r_hex_bin2str (buf, len, hexbuf);
 	sdb_set (DB, KEYAT ("mem.write.data", addr), hexbuf, 0);
@@ -196,6 +203,7 @@ static bool trace_hook_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int
 
 R_API void r_anal_esil_trace_op(RAnalEsil *esil, RAnalOp *op) {
 	r_return_if_fail (esil && op);
+	r_strf_buffer (128);
 	const char *expr = r_strbuf_get (&op->esil);
 	if (R_STR_ISEMPTY (expr)) {
 		// do nothing
@@ -364,6 +372,7 @@ R_API void r_anal_esil_trace_list(RAnalEsil *esil) {
 }
 
 R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
+	r_strf_buffer (128);
 	PrintfCallback p = esil->anal->cb_printf;
 	const char *str2;
 	const char *str;
@@ -383,8 +392,8 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 		if (ptr && *ptr) {
 			do {
 				next = sdb_const_anext (ptr);
-				int len = next? (int)(size_t)(next-ptr)-1 : strlen (ptr);
-				if (len <sizeof(regname)) {
+				int len = next? (int)(size_t)(next - ptr) - 1 : strlen (ptr);
+				if (len < sizeof (regname)) {
 					memcpy (regname, ptr, len);
 					regname[len] = 0;
 					str2 = sdb_const_get (DB, KEYREG ("reg.read", regname), 0);
@@ -405,7 +414,7 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 			do {
 				next = sdb_const_anext (ptr);
 				int len = next? (int)(size_t)(next-ptr)-1 : strlen (ptr);
-				if (len <sizeof(addr)) {
+				if (len < sizeof (addr)) {
 					memcpy (addr, ptr, len);
 					addr[len] = 0;
 					str2 = sdb_const_get (DB, KEYAT ("mem.read.data",
