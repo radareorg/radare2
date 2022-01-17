@@ -148,9 +148,8 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
-	int bits = p->analb.anal->bits;
-	int seggrn = p->analb.anal->seggrn;
-	int segoff = 0;//r_config_get_i(p->analb.anal->coreb.core, "asm.segoff"); //TODO: respect segoff
+	const int bits = p->analb.anal->bits;
+	const int seggrn = p->analb.anal->seggrn;
 	bool x86 = false;
 	bool arm = false;
 	if (p && p->cur && p->cur->name) {
@@ -192,14 +191,14 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				;
 			}
 		}
-		char* colon = strstr(ptr, ":");
-		if(x86 && bits == 16 && colon){
+		char* colon = strstr (ptr, ":");
+		if (x86 && bits == 16 && colon) {
 			*colon = '\0';
 			ut64 s = r_num_math (NULL, ptr);
-			ut64 o = r_num_math (NULL, colon+1);
-			off = (s<<seggrn) + o;
+			ut64 o = r_num_math (NULL, colon + 1);
+			off = (s << seggrn) + o;
 			*colon = ':';
-		}else{
+		} else {
 			off = r_num_math (NULL, ptr);
 		}
 		if (off >= p->minval) {
@@ -413,7 +412,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 				}
 				break;
 			}
-			if(bits==16&&x86&&*pnum==':'){
+			if (bits == 16 && x86 && *pnum == ':') {
 				pnum++;
 				is_hex = false;
 				if (!strncmp (pnum, "0x", 2)) {
