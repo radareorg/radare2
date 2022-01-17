@@ -236,7 +236,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 			st32 jmpdelta = (st32)jmpptr;
 			// jump tables where sign extended movs are used
 			jmpptr = jmptbl_off + jmpdelta;
-                }
+		}
 		if (anal->limit) {
 			if (jmpptr < anal->limit->from || jmpptr > anal->limit->to) {
 				break;
