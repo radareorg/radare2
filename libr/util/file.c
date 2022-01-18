@@ -1183,28 +1183,31 @@ err_r_file_mkstemp:
 	free (path_);
 	free (prefix_);
 #else
-	char pfxx[1024];
-	const char *suffix = strchr (prefix, '*');
-
-	if (suffix) {
-		suffix++;
-		r_str_ncpy (pfxx, prefix, (size_t)(suffix - prefix));
-		prefix = pfxx;
-	} else {
-		suffix = "";
+	char *name = NULL;
+	char *dup = strdup (prefix);
+	int suflen = 0;
+	if (dup) {
+		RList *splt = r_str_split_list (dup, "*", 2);
+		if (splt && r_list_length (splt)) {
+			char *pref = r_list_pop_head (splt);
+			char *suf = r_list_pop_head (splt);
+			suf = suf? suf: "";
+			suflen = strlen (suf);
+			name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, pref, suf);
+		}
+		r_list_free (splt);
+		free (dup);
 	}
-
-	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 #if __wasi__
 	// nothing to do
 #else
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
-	if (suffix && *suffix) {
+	if (suflen) {
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && 2 <= __GLIBC__ && 19 <= __GLIBC__MINOR__
-		h = mkstemps (name, strlen (suffix));
+		h = mkstemps (name, suflen);
 #else
 		char *const xpos = strrchr (name, 'X');
-		const char c = (char)(NULL != xpos ? *(xpos + 1) : 0);
+		const char c = (char)(NULL != xpos? *(xpos + 1): 0);
 		if (0 != c) {
 			xpos[1] = 0;
 			h = mkstemp (name);
@@ -1219,9 +1222,10 @@ err_r_file_mkstemp:
 	umask (mask);
 #endif
 	if (oname) {
-		*oname = (h!=-1)? strdup (name): NULL;
+		*oname = (h != -1)? name: NULL;
+	} else {
+		free (name);
 	}
-	free (name);
 #endif
 	free (path);
 	return h;
