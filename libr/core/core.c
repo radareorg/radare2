@@ -3777,6 +3777,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		return NULL;
 	}
 	bool readonly = false;
+	bool tempfile = false;
 	if (file && *file != '*') {
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
@@ -3788,6 +3789,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 			}
 		}
 	} else {
+		tempfile = true;
 		fd = r_file_mkstemp (file, &name);
 	}
 	if (fd == -1) {
@@ -3827,7 +3829,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		if (len && ret[len - 1] == '\n') {
 			ret[len - 1] = 0; // chop
 		}
-		if (!file) {
+		if (tempfile) {
 			r_file_rm (name);
 		}
 	}
