@@ -1168,7 +1168,6 @@ static inline char *file_fmt_split(const char *fmt) {
 	}
 	char *name = NULL;
 	char *dup = strdup (fmt);
-	int suflen = 0;
 	if (dup) {
 		RList *splt = r_str_split_list (dup, "*", 2);
 		if (splt && r_list_length (splt)) {
