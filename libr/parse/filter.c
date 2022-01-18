@@ -150,12 +150,6 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	ut64 off;
 	int bits = p->analb.anal->bits;
 	int seggrn = p->analb.anal->seggrn;
-	#if 1
-	int segoff = 0;
-	#else
-	//TODO: respect segoff
-	int segoff = r_config_get_i (p->analb.anal->coreb.core, "asm.segoff");
-	#endif
 	bool x86 = false;
 	bool arm = false;
 	if (p && p->cur && p->cur->name) {
