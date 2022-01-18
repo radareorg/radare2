@@ -8,19 +8,18 @@
 static int getpid(void) { return 0; }
 #endif
 
-SDB_API const char *sdb_lock_file(const char *f) {
-	static char buf[128];
+SDB_API bool sdb_lock_file(const char *f, char *buf, size_t buf_size) {
 	size_t len;
-	if (!f || !*f) {
-		return NULL;
+	if (!f || !*f || !buf || !buf_size) {
+		return false;
 	}
 	len = strlen (f);
-	if (len + 10 > sizeof buf) {
-		return NULL;
+	if (len + 10 > buf_size) {
+		return false;
 	}
 	memcpy (buf, f, len);
 	strcpy (buf + len, ".lock");
-	return buf;
+	return true;
 }
 
 SDB_API bool sdb_lock(const char *s) {

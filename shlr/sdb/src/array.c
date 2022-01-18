@@ -44,13 +44,13 @@ static int astrcmp(const char *a, const char *b) {
 	}
 }
 
-static inline int cstring_cmp(const void *a, const void *b) {
+static inline int cstring_cmp(const void *a, const void *b) { 
 	const char **va = (const char **)a;
 	const char **vb = (const char **)b;
 	return astrcmp (*va, *vb);
 }
 
-static inline int int_cmp(const void *a, const void *b) {
+static inline int int_cmp(const void *a, const void *b) { 
 	const ut64 va = *(const ut64 *)a;
 	const ut64 vb = *(const ut64 *)b;
 	if (va > vb) {
@@ -60,7 +60,7 @@ static inline int int_cmp(const void *a, const void *b) {
 		return -1;
 	}
 	return 0;
-}
+} 
 
 SDB_API ut64 sdb_array_get_num(Sdb *s, const char *key, int idx, ut32 *cas) {
 	int i;
@@ -132,8 +132,7 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 SDB_API int sdb_array_insert_num(Sdb *s, const char *key, int idx, ut64 val,
 				  ut32 cas) {
 	char valstr[64];
-	return sdb_array_insert (s, key, idx,
-				 sdb_itoa (val, valstr, SDB_NUM_BASE), cas);
+	return sdb_array_insert (s, key, idx, sdb_itoa (val, valstr, SDB_NUM_BASE), cas);
 }
 
 // TODO: done, but there's room for improvement
@@ -151,7 +150,7 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val,
 	// XXX: lstr is wrongly computed in sdb_const_get_with an off-by-one
 	// we can optimize this by caching value len in memory . add
 	// sdb_const_get_size()
-	lstr = strlen (str);
+	lstr = strlen (str); 
 
 	// When removing strlen this conversion should be checked
 	size_t lstr_tmp = lstr;
@@ -202,11 +201,9 @@ SDB_API int sdb_array_insert(Sdb *s, const char *key, int idx, const char *val,
 	return sdb_set_owned (s, key, x, cas);
 }
 
-SDB_API int sdb_array_set_num(Sdb *s, const char *key, int idx, ut64 val,
-			       ut32 cas) {
+SDB_API int sdb_array_set_num(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 	char valstr[SDB_NUM_BUFSZ];
-	return sdb_array_set (s, key, idx, sdb_itoa (val, valstr, SDB_NUM_BASE),
-			      cas);
+	return sdb_array_set (s, key, idx, sdb_itoa (val, valstr, SDB_NUM_BASE), cas);
 }
 
 SDB_API int sdb_array_add_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
@@ -391,7 +388,9 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val,
 			ptr[lval] = SDB_RS;
 			strcpy (ptr + lval + 1, usr);
 		}
-		return sdb_set_owned (s, key, nstr, 0);
+		int ret = sdb_set (s, key, nstr, cas);
+		free (nstr);
+		return ret;
 	}
 	return 0;
 }
@@ -481,8 +480,9 @@ SDB_API int sdb_array_delete(Sdb *s, const char *key, int idx, ut32 cas) {
 	if (n) {
 		memmove (p, n + 1, strlen (n));
 	} else {
-		if (p != str)
+		if (p != str) {
 			p--; // remove tailing SDB_RS
+		}
 		*p = 0;
 		p[1] = 0;
 	}
@@ -602,7 +602,7 @@ SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {
 }
 
 SDB_API char *sdb_array_pop_head(Sdb *s, const char *key, ut32 *cas) {
-	// remove last element in
+	// remove last element in 
 	ut32 kas;
 	char *end, *str = sdb_get (s, key, &kas);
 	if (!str || !*str) {

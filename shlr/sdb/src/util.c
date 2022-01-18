@@ -95,14 +95,10 @@ SDB_API ut8 sdb_hash_byte(const char *s) {
 	return h[0] ^ h[1] ^ h[2] ^ h[3];
 }
 
-SDB_API const char *sdb_itoca(ut64 n) {
-	return sdb_itoa (n, sdb_fmt (NULL), 16);
-}
-
 // assert (sizeof (s)>64)
 // if s is null, the returned pointer must be freed!!
 SDB_API char *sdb_itoa(ut64 n, char *os, int base) {
-	static const char* lookup = "0123456789abcdef";
+	static const char *const lookup = "0123456789abcdef";
 	char tmpbuf[64], *s = NULL;
 	const int imax = 62;
 	int i = imax, copy_string = 1;

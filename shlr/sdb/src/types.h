@@ -9,9 +9,8 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#ifndef eprintf
-#define eprintf(...) fprintf (stderr, __VA_ARGS__)
-#endif
+#undef eprintf
+#define eprintf(...) fprintf(stderr,__VA_ARGS__)
 
 // Copied from https://gcc.gnu.org/wiki/Visibility
 #ifndef SDB_API

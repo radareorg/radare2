@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2021 - pancake */
+/* sdb - MIT - Copyright 2011-2022 - pancake */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -31,20 +31,11 @@ static inline SdbKv *next_kv(HtPP *ht, SdbKv *kv) {
 		     (j) < (bt)->count;					\
 		     (j) = (count) == (ht)->count? j + 1: j, (kv) = (count) == (ht)->count? next_kv (ht, kv): kv, (count) = (ht)->count)
 
-static inline int nextcas(void) {
-	static ut32 cas = 1;
-	if (!cas) {
-		cas++;
+static inline int nextcas(SdbKv const *kv) {
+	if (!kv->cas) {
+		return 1;
 	}
-	return cas++;
-}
-
-static SdbHook global_hook = NULL;
-static void* global_user = NULL;
-
-SDB_API void sdb_global_hook(SdbHook hook, void *user) {
-	global_hook = hook;
-	global_user = user;
+	return kv->cas + 1;
 }
 
 // TODO: use mmap instead of read.. much faster!
@@ -65,6 +56,8 @@ SDB_API Sdb* sdb_new(const char *path, const char *name, int lock) {
 		path = NULL;
 	}
 	if (name && *name && strcmp (name, "-")) {
+		char buf[SDB_MAX_PATH];
+
 		if (path && *path) {
 			size_t plen = strlen (path);
 			size_t nlen = strlen (name);
@@ -82,12 +75,18 @@ SDB_API Sdb* sdb_new(const char *path, const char *name, int lock) {
 		}
 		switch (lock) {
 		case 1:
-			if (!sdb_lock (sdb_lock_file (s->dir))) {
+			if (!sdb_lock_file (s->dir, buf, sizeof (buf))) {
+				goto fail;
+			}
+			if (!sdb_lock (buf)) {
 				goto fail;
 			}
 			break;
 		case 2:
-			if (!sdb_lock_wait (sdb_lock_file (s->dir))) {
+			if (!sdb_lock_file (s->dir, buf, sizeof (buf))) {
+				goto fail;
+			}
+			if (!sdb_lock_wait (buf)) {
 				goto fail;
 			}
 			break;
@@ -114,10 +113,6 @@ SDB_API Sdb* sdb_new(const char *path, const char *name, int lock) {
 		goto fail;
 	}
 	s->lock = lock;
-	// if open fails ignore
-	if (global_hook) {
-		sdb_hook (s, global_hook, global_user);
-	}
 	cdb_init (&s->db, s->fd);
 	return s;
 fail:
@@ -134,13 +129,16 @@ fail:
 
 // XXX: this is wrong. stuff not stored in memory is lost
 SDB_API void sdb_file(Sdb* s, const char *dir) {
+	char buf[SDB_MAX_PATH];
 	if (s->lock) {
-		sdb_unlock (sdb_lock_file (s->dir));
+		sdb_lock_file (s->dir, buf, sizeof (buf));
+		sdb_unlock (buf);
 	}
 	free (s->dir);
 	s->dir = (dir && *dir)? strdup (dir): NULL;
 	if (s->lock) {
-		sdb_lock (sdb_lock_file (s->dir));
+		sdb_lock_file (s->dir, buf, sizeof (buf));
+		sdb_lock (buf);
 	}
 }
 
@@ -185,13 +183,15 @@ SDB_API int sdb_count(Sdb *s) {
 }
 
 static void sdb_fini(Sdb* s, bool donull) {
+	char buf[SDB_MAX_PATH];
 	if (!s) {
 		return;
 	}
 	sdb_hook_free (s);
 	cdb_free (&s->db);
 	if (s->lock) {
-		sdb_unlock (sdb_lock_file (s->dir));
+		sdb_lock_file (s->dir, buf, sizeof (buf));
+		sdb_unlock (buf);
 	}
 	sdb_ns_free (s);
 	s->refs = 0;
@@ -558,7 +558,7 @@ SDB_API SdbKv* sdbkv_new2(const char *k, int kl, const char *v, int vl) {
 		kv->base.value = NULL;
 		kv->base.value_len = 0;
 	}
-	kv->cas = nextcas ();
+	kv->cas = nextcas (kv);
 	kv->expire = 0LL;
 	return kv;
 }
@@ -611,7 +611,7 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, bool owned, ut3
 				sdb_hook_call (s, key, val);
 				return kv->cas;
 			}
-			kv->cas = cas = nextcas ();
+			kv->cas = cas = nextcas (kv);
 			if (owned) {
 				kv->base.value_len = vlen;
 				free (kv->base.value);
@@ -642,7 +642,7 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, bool owned, ut3
 		kv = sdbkv_new2 (key, klen, val, vlen);
 	}
 	if (kv) {
-		ut32 cas = kv->cas = nextcas ();
+		ut32 cas = kv->cas = nextcas (kv);
 		sdb_ht_insert_kvp (s->ht, kv, true /*update*/);
 		free (kv);
 		sdb_hook_call (s, key, val);

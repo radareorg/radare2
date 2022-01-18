@@ -207,12 +207,14 @@ repeat:
 	quot = NULL;
 	json = NULL;
 	if (*p == '#') {
+		char buffer[16];
 		p++;
 		next = strchr (p, ';');
 		if (next) {
 			*next = 0;
 		}
-		out_concat (sdb_fmt ("0x%08x\n", sdb_hash (p)));
+		(void)snprintf (buffer, sizeof (buffer), "0x%08x\n", sdb_hash (p));
+		strbuf_append (out, buffer, 1);
 		if (next) {
 			*next = ';';
 		}
