@@ -47,11 +47,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		break;
 	}
 
+	char buf_asm_local[256];
 	if (rep > 1) {
-		/* Note: snprintf's source and destination buffers may not
-		* overlap. */
+		/* Note: snprintf's source and destination buffers may not overlap. */
 		const char *fmt = strchr (buf_asm, ' ')? "%s, %d": "%s %d";
-		buf_asm = sdb_fmt (fmt, buf_asm, rep);
+		snprintf (buf_asm_local, sizeof (buf_asm_local), fmt, buf_asm, rep);
+		buf_asm = buf_asm_local;
 	}
 	r_strbuf_set (&op->buf_asm, buf_asm);
 	op->size = rep;

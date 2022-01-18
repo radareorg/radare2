@@ -457,8 +457,9 @@ static bool __tableItemCallback(RFlagItem *flag, void *user) {
 	if (!R_STR_ISEMPTY (flag->name)) {
 		RTable *t = ftd->t;
 		const char *spaceName = (flag->space && flag->space->name)? flag->space->name: "";
-		const char *addr = sdb_fmt ("0x%08"PFMT64x, flag->offset);
-		r_table_add_row (t, addr, sdb_fmt ("%"PFMT64d, flag->size), spaceName, flag->name, NULL);
+		r_strf_var (addr, 32, "0x%08"PFMT64x, flag->offset);
+		r_strf_var (size, 32, "%"PFMT64d, flag->size);
+		r_table_add_row (t, addr, size, spaceName, flag->name, NULL);
 	}
 	return true;
 }
@@ -528,7 +529,8 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		const char *tag;
 		RList *list = r_flag_tags_list (core->flags, NULL);
 		r_list_foreach (list, iter, tag) {
-			const char *flags = sdb_get (core->flags->tags, sdb_fmt ("tag.%s", tag), NULL);
+			r_strf_var (key, 128, "tag.%s", tag);
+			const char *flags = sdb_get (core->flags->tags, key, NULL);
 			r_cons_printf ("ft %s %s\n", tag, flags);
 		}
 		r_list_free (list);

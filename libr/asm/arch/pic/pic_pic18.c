@@ -118,6 +118,7 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 	}
 	ut16 instr = 0 ; // instruction
 	memcpy (&instr, b, sizeof (instr));
+	r_strf_buffer (64);
 	// if still redundan code is reported think of this of instr=0x2
 	const char *buf_asm = "invalid";
 	strcpy (opbuf, buf_asm);
@@ -137,19 +138,19 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		break;
 	case N_T:
 	case K_T:
-		buf_asm = sdb_fmt ("%s 0x%x", ops[i].name, instr & 0xff);
+		buf_asm = r_strf ("%s 0x%x", ops[i].name, instr & 0xff);
 		break;
 	case DAF_T:
-		buf_asm = sdb_fmt ("%s 0x%x, %d, %d", ops[i].name, instr & 0xff, (instr >> 9) & 1, (instr >> 8) & 1);
+		buf_asm = r_strf ("%s 0x%x, %d, %d", ops[i].name, instr & 0xff, (instr >> 9) & 1, (instr >> 8) & 1);
 		break;
 	case AF_T:
-		buf_asm = sdb_fmt ("%s 0x%x, %d", ops[i].name, instr & 0xff, (instr >> 8) & 1);
+		buf_asm = r_strf ("%s 0x%x, %d", ops[i].name, instr & 0xff, (instr >> 8) & 1);
 		break;
 	case BAF_T:
-		buf_asm = sdb_fmt ("%s 0x%x, %d, %d", ops[i].name, instr & 0xff, (instr >> 9) & 0x7, (instr >> 8) & 0x1);
+		buf_asm = r_strf ("%s 0x%x, %d, %d", ops[i].name, instr & 0xff, (instr >> 9) & 0x7, (instr >> 8) & 0x1);
 		break;
 	case NEX_T:
-		buf_asm = sdb_fmt ("%s 0x%x", ops[i].name, instr & 0x7ff);
+		buf_asm = r_strf ("%s 0x%x", ops[i].name, instr & 0x7ff);
 		break;
 	case CALL_T:
 		if (blen < 4) {
@@ -163,7 +164,7 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		if (dword_instr >> 28 != 0xf) {
 			return -1;
 		}
-		buf_asm = sdb_fmt ("%s 0x%x, %d", ops[i].name,
+		buf_asm = r_strf ("%s 0x%x, %d", ops[i].name,
 			  (dword_instr & 0xff) | (dword_instr >> 8 & 0xfff00), (dword_instr >> 8) & 0x1);
 		}
 		break;
@@ -177,7 +178,7 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		if (dword_instr >> 28 != 0xf) {
 			return -1;
 		}
-		buf_asm = sdb_fmt ("%s 0x%x", ops[i].name,
+		buf_asm = r_strf ("%s 0x%x", ops[i].name,
 			  ((dword_instr & 0xff) | ((dword_instr &  0xfff0000) >>8) )*2);
 		}
 		break;
@@ -191,15 +192,15 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 		if (dword_instr >> 28 != 0xf) {
 			return -1;
 		}
-		buf_asm = sdb_fmt ("%s 0x%x, 0x%x", ops[i].name,
+		buf_asm = r_strf ("%s 0x%x, 0x%x", ops[i].name,
 			  dword_instr & 0xfff, (dword_instr >> 16) & 0xfff);
 		}
 		break;
 	case SHK_T:
-		buf_asm = sdb_fmt ("%s 0x%x", ops[i].name, instr & 0xf);
+		buf_asm = r_strf ("%s 0x%x", ops[i].name, instr & 0xf);
 		break;
 	case S_T:
-		buf_asm = sdb_fmt ("%s %d", ops[i].name, instr & 0x1);
+		buf_asm = r_strf ("%s %d", ops[i].name, instr & 0x1);
 		break;
 	case LFSR_T: {
 		op->size = 4;
@@ -208,7 +209,7 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 			return -1;
 		}
 		ut8 reg_n = (dword_instr >> 4) & 0x3;
-		buf_asm = sdb_fmt ("%s %s, %d", ops[i].name, fsr[reg_n],
+		buf_asm = r_strf ("%s %s, %d", ops[i].name, fsr[reg_n],
 			(dword_instr & 0xf) << 8 | ((dword_instr >> 16) & 0xff));
 		break;
 	}

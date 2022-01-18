@@ -175,13 +175,6 @@ R_API void r_bin_import_free(RBinImport *imp) {
 	}
 }
 
-R_API const char *r_bin_symbol_name(RBinSymbol *s) {
-	if (s->dup_count) {
-		return sdb_fmt ("%s_%d", s->name, s->dup_count);
-	}
-	return s->name;
-}
-
 R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (sym) {
@@ -1069,9 +1062,11 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 			pj_end (pj);
 			break;
 		default:
-			str_fmt = h_flag && strcmp (h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
-				: sdb_fmt ("%s_%i", arch, bits);
+			str_fmt = h_flag && strcmp (h_flag, "unknown_flag")
+				? r_str_newf ("%s_%i %s", arch, bits, h_flag) \
+				: r_str_newf ("%s_%i", arch, bits);
 			r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, machine);
+			free (str_fmt);
 			bin->cb_printf ("%s", r_table_tostring (table));
 		}
 		snprintf (archline, sizeof (archline) - 1,
@@ -1101,9 +1096,11 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, int mode) {
 				pj_end (pj);
 				break;
 			default:
-				str_fmt = h_flag && strcmp (h_flag, "unknown_flag")? sdb_fmt ("%s_%i %s", arch, bits, h_flag) \
-					: sdb_fmt ("%s_%i", arch, bits);
+				str_fmt = h_flag && strcmp (h_flag, "unknown_flag")
+					? r_str_newf ("%s_%i %s", arch, bits, h_flag)
+					: r_str_newf ("%s_%i", arch, bits);
 				r_table_add_rowf (table, fmt, 0, boffset, obj_size, str_fmt, "");
+				free (str_fmt);
 				bin->cb_printf ("%s", r_table_tostring (table));
 			}
 			snprintf (archline, sizeof (archline),

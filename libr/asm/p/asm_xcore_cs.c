@@ -28,7 +28,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	r_asm_op_set_asm (op, sdb_fmt ("%s%s%s",
+	r_strf_buffer (256);
+	r_asm_op_set_asm (op, r_strf ("%s%s%s",
 		insn->mnemonic, insn->op_str[0]? " ": "",
 		insn->op_str));
 	// TODO: remove the '$'<registername> in the string

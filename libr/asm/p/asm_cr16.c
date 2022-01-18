@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2018 - fedor.sakharov */
+/* radare - LGPL - Copyright 2014-2022 - fedor.sakharov */
 
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +10,8 @@
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct cr16_cmd cmd;
 	int ret = cr16_decode_command (buf, &cmd, len);
-	r_strbuf_set (&op->buf_asm, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
+	r_strf_var (opstr, 256, "%s %s", cmd.instr, cmd.operands);
+	r_strbuf_set (&op->buf_asm, opstr);
 	return op->size = ret;
 }
 

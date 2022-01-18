@@ -28,12 +28,13 @@
 #define VPCEXT2(y,x) ((y)[2]==(x))
 
 void decompile_vm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	r_strf_buffer (64);
 	const char *buf_asm = "invalid";
 	if (len > 3 && buf[0] == 0x0F && buf[1] == 0x3F && (VPCEXT2 (buf, 0x01) || VPCEXT2 (buf, 0x05) || VPCEXT2 (buf, 0x07) || VPCEXT2 (buf, 0x0D) || VPCEXT2 (buf, 0x10))) {
 		if (a->syntax == R_ASM_SYNTAX_ATT) {
-			buf_asm = sdb_fmt ("vpcext $0x%x, $0x%x", buf[3], buf[2]);
+			buf_asm = r_strf ("vpcext $0x%x, $0x%x", buf[3], buf[2]);
 		} else {
-			buf_asm = sdb_fmt ("vpcext %xh, %xh", buf[2], buf[3]);
+			buf_asm = r_strf ("vpcext %xh, %xh", buf[2], buf[3]);
 		}
 		op->size = 4;
 	} else if (len > 4 && buf[0] == 0x0F && buf[1] == 0xC6 && buf[2] == 0x28 && buf[3] == 0x00 && buf[4] == 0x00) {

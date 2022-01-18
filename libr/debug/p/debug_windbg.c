@@ -432,6 +432,7 @@ static RList *windbg_map_get(RDebug *dbg) {
 		if (!perm) {
 			continue;
 		}
+		char *nameheap = NULL;
 		char *name = "";
 		if (mbi.Type == MEM_IMAGE) {
 			i = 0;
@@ -447,7 +448,8 @@ static RList *windbg_map_get(RDebug *dbg) {
 					ut64 sect_vaddr = mod->addr + s[i][j].VirtualAddress;
 					ut64 sect_vsize = (((ut64)s[i][j].Misc.VirtualSize) + p_mask) & ~p_mask;
 					if (mbi.BaseAddress >= sect_vaddr && mbi.BaseAddress < sect_vaddr + sect_vsize) {
-						name = sdb_fmt ("%s | %.8s", mod->name, s[i][j].Name);
+						name = r_str_newf ("%s | %.8s", mod->name, s[i][j].Name);
+						nameheap = name;
 						break;
 					}
 				}
@@ -458,6 +460,7 @@ static RList *windbg_map_get(RDebug *dbg) {
 		}
 		RDebugMap *map = r_debug_map_new (name, mbi.BaseAddress, to, perm, 0);
 		r_list_append (map_list, map);
+		R_FREE (nameheap);
 	}
 	for (i = 0; i < mod_cnt; i++) {
 		free (s[i]);

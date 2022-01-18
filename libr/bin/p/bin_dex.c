@@ -70,7 +70,8 @@ static ut64 get_method_flags(ut64 MA) {
 static ut64 offset_of_method_idx(RBinFile *bf, int idx) {
 	// RBinDexObj *dex = bf->o->bin_obj;
 	// ut64 off = dex->header.method_offset + idx;
-	return sdb_num_get (mdb, sdb_fmt ("method.%d", idx), 0);
+	r_strf_var (key, 64, "method.%d", idx);
+	return sdb_num_get (mdb, key, 0);
 }
 
 static ut64 dex_field_offset(RBinDexObj *bin, int fid) {
@@ -1407,7 +1408,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				if (!mdb) {
 					mdb = sdb_new0 ();
 				}
-				sdb_num_set (mdb, sdb_fmt ("method.%"PFMT64d, MI), sym->paddr, 0);
+				r_strf_var (methvar, 64, "method.%"PFMT64d, MI);
+				sdb_num_set (mdb, methvar, sym->paddr, 0);
 				// -----------------
 				// WORK IN PROGRESS
 				// -----------------
@@ -1417,7 +1419,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 						if (!cdb) {
 							cdb = sdb_new0 ();
 						}
-						sdb_num_set (cdb, sdb_fmt ("%d", c->class_id), sym->paddr, 0);
+						sdb_num_set (cdb, r_strf ("%d", c->class_id), sym->paddr, 0);
 					}
 				}
 #endif
@@ -1724,7 +1726,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym->paddr = sym->vaddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
 				r_list_append (dex->methods_list, sym);
-				const char *mname = sdb_fmt ("method.%"PFMT64d, (ut64)i);
+				r_strf_var (mname, 64, "method.%"PFMT64d, (ut64)i);
 				sdb_num_set (mdb, mname, sym->paddr, 0);
 			}
 			free ((void *)signature);
@@ -2081,8 +2083,9 @@ static RList *dex_fields(RBinFile *bf) {
 	ret->free = free;
 	ut64 addr = 0;
 
+	r_strf_buffer (32);
 #define ROW(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08"PFMT64x, (ut64)val), fmt, false)); \
+	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%08"PFMT64x, (ut64)val), fmt, false)); \
 	addr += siz;
 
 	r_buf_seek (bf->buf, 0, R_BUF_SET);

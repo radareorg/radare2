@@ -1819,14 +1819,17 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	for (i = 0; i < argc; i++) {
 		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
 		char *arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
-		if (!arg_i) continue;
+		if (!arg_i) {
+			continue;
+		}
 		pj_o (pj);
 		char *comma = strchr (arg_i, ',');
 		if (comma) {
 			*comma = 0;
 			pj_ks (pj, "name", comma + 1);
 			pj_ks (pj, "type", arg_i);
-			const char *cc_arg = r_reg_get_name (a->reg, r_reg_get_name_idx (sdb_fmt ("A%d", i)));
+			r_strf_var (regname, 32, "A%d", i);
+			const char *cc_arg = r_reg_get_name (a->reg, r_reg_get_name_idx (regname));
 			if (cc_arg) {
 				pj_ks (pj, "cc", cc_arg);
 			}

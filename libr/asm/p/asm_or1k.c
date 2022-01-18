@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019 - v3l0c1r4pt0r */
+/* radare2 - LGPL - Copyright 2019-2022 - v3l0c1r4pt0r */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -27,79 +27,78 @@ static int insn_to_str(RAsm *a, char **line, insn_t *descr, insn_extra_t *extra,
 		type_descr = &types[type];
 	}
 
-	o.rd = get_operand_value(insn, type_descr, INSN_OPER_D);
-	o.ra = get_operand_value(insn, type_descr, INSN_OPER_A);
-	o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
-	o.k1 = get_operand_value(insn, type_descr, INSN_OPER_K1);
-	o.k2 = get_operand_value(insn, type_descr, INSN_OPER_K2);
-	o.n = get_operand_value(insn, type_descr, INSN_OPER_N);
-	o.k = get_operand_value(insn, type_descr, INSN_OPER_K);
-	o.i = get_operand_value(insn, type_descr, INSN_OPER_I);
-	o.l = get_operand_value(insn, type_descr, INSN_OPER_L);
+	o.rd = get_operand_value (insn, type_descr, INSN_OPER_D);
+	o.ra = get_operand_value (insn, type_descr, INSN_OPER_A);
+	o.rb = get_operand_value (insn, type_descr, INSN_OPER_B);
+	o.k1 = get_operand_value (insn, type_descr, INSN_OPER_K1);
+	o.k2 = get_operand_value (insn, type_descr, INSN_OPER_K2);
+	o.n = get_operand_value (insn, type_descr, INSN_OPER_N);
+	o.k = get_operand_value (insn, type_descr, INSN_OPER_K);
+	o.i = get_operand_value (insn, type_descr, INSN_OPER_I);
+	o.l = get_operand_value (insn, type_descr, INSN_OPER_L);
 
 	name = extra? extra->name: descr->name;
-
 	if (!name || !type_descr->format) {
 		/* this should not happen, give up */
-		*line = sdb_fmt("invalid");
+		*line = strdup ("invalid");
 		return 4;
 	}
 
 	switch (type) {
 	case INSN_X:
-		*line = sdb_fmt(type_descr->format, name);
+		*line = r_str_newf (type_descr->format, name);
 		break;
 	case INSN_N:
-		*line = sdb_fmt(type_descr->format, name,
+		*line = r_str_newf (type_descr->format, name,
 				(sign_extend(o.n, get_operand_mask(type_descr, INSN_OPER_N)) << 2) +
 				a->pc);
 		break;
 	case INSN_K:
-		*line = sdb_fmt(type_descr->format, name, o.k);
+		*line = r_str_newf (type_descr->format, name, o.k);
 		break;
 	case INSN_DK:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.k);
+		*line = r_str_newf (type_descr->format, name, o.rd, o.k);
 		break;
 	case INSN_DN:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.n << 13);
+		*line = r_str_newf (type_descr->format, name, o.rd, o.n << 13);
 		break;
 	case INSN_B:
-		*line = sdb_fmt(type_descr->format, name, o.rb);
+		*line = r_str_newf (type_descr->format, name, o.rb);
 		break;
 	case INSN_D:
-		*line = sdb_fmt(type_descr->format, name, o.rd);
+		*line = r_str_newf (type_descr->format, name, o.rd);
 		break;
 	case INSN_AI:
-		*line = sdb_fmt(type_descr->format, name, o.ra, o.i);
+		*line = r_str_newf (type_descr->format, name, o.ra, o.i);
 		break;
 	case INSN_DAI:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra, o.i);
+		*line = r_str_newf (type_descr->format, name, o.rd, o.ra, o.i);
 		break;
 	case INSN_DAK:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra, o.i);
+		*line = r_str_newf (type_descr->format, name, o.rd, o.ra, o.i);
 		break;
 	case INSN_DAL:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra, o.l);
+		*line = r_str_newf (type_descr->format, name, o.rd, o.ra, o.l);
 		break;
 	case INSN_DA:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra);
+		*line = r_str_newf (type_descr->format, name, o.rd, o.ra);
 		break;
 	case INSN_DAB:
-		*line = sdb_fmt(type_descr->format, name, o.rd, o.ra, o.rb);
+		*line = r_str_newf (type_descr->format, name, o.rd, o.ra, o.rb);
 		break;
 	case INSN_AB:
-		*line = sdb_fmt(type_descr->format, name, o.ra, o.rb);
+		*line = r_str_newf (type_descr->format, name, o.ra, o.rb);
 		break;
 	case INSN_IABI:
-		*line = sdb_fmt(type_descr->format, name,
+		*line = r_str_newf (type_descr->format, name,
 				o.ra, o.rb, (o.k1 << 11) | o.k2);
 		break;
 	case INSN_KABK:
-		*line = sdb_fmt(type_descr->format, name,
+		*line = r_str_newf (type_descr->format, name,
 				o.ra, o.rb, (o.k1 << 11) | o.k2);
 		break;
 	default:
-		*line = sdb_fmt("invalid");
+		*line = strdup ("invalid");
 	}
 	return 4;
 }
@@ -114,7 +113,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	op->size = -1;
 
 	if (len < 4) {
-		line = sdb_fmt("invalid");
+		line = "invalid";
 		r_strbuf_set (&op->buf_asm, line);
 		return op->size;
 	}
@@ -127,7 +126,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	/* make sure instruction descriptor table is not overflowed */
 	if (opcode_idx >= insns_count) {
-		line = sdb_fmt("invalid");
+		line = "invalid";
 		r_strbuf_set (&op->buf_asm, line);
 		return op->size;
 	}
@@ -135,7 +134,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	/* if instruction is marked as invalid finish processing now */
 	insn_descr = &or1k_insns[opcode_idx];
 	if (insn_descr->type == INSN_INVAL) {
-		line = sdb_fmt("invalid");
+		line = "invalid";
 		r_strbuf_set (&op->buf_asm, line);
 		return op->size;
 	}
@@ -146,14 +145,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if ((extra_descr = find_extra_descriptor(insn_descr->extra, insn)) != NULL) {
 			insn_to_str (a, &line, insn_descr, extra_descr, insn);
 		} else {
-			line = "invalid";
+			line = strdup ("invalid");
 		}
-		r_strbuf_set (&op->buf_asm, line);
 	} else {
 		/* otherwise basic descriptor is enough */
-		insn_to_str(a, &line, insn_descr, NULL, insn);
-		r_strbuf_set (&op->buf_asm, line);
+		insn_to_str (a, &line, insn_descr, NULL, insn);
 	}
+	r_strbuf_set (&op->buf_asm, line);
+	free (line);
 	return op->size;
 }
 

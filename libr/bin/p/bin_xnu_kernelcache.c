@@ -1169,7 +1169,7 @@ static RList *symbols(RBinFile *bf) {
 	RBinSymbol *sym;
 	ut64 enosys_addr = 0;
 	r_list_foreach (ret, iter, sym) {
-		const char *key = sdb_fmt ("%"PFMT64x, sym->vaddr);
+		r_strf_var (key, 64, "%"PFMT64x, sym->vaddr);
 		sdb_ht_insert (kernel_syms_by_addr, key, sym->dname ? sym->dname : sym->name);
 		if (!enosys_addr && strstr (sym->name, "enosys")) {
 			enosys_addr = sym->vaddr;
@@ -1179,7 +1179,7 @@ static RList *symbols(RBinFile *bf) {
 	RList *syscalls = resolve_syscalls (obj, enosys_addr);
 	if (syscalls) {
 		r_list_foreach (syscalls, iter, sym) {
-			const char *key = sdb_fmt ("%"PFMT64x, sym->vaddr);
+			r_strf_var (key, 32, "%"PFMT64x, sym->vaddr);
 			sdb_ht_insert (kernel_syms_by_addr, key, sym->name);
 			r_list_append (ret, sym);
 		}
@@ -1190,7 +1190,7 @@ static RList *symbols(RBinFile *bf) {
 	RList *subsystem = resolve_mig_subsystem (obj);
 	if (subsystem) {
 		r_list_foreach (subsystem, iter, sym) {
-			const char *key = sdb_fmt ("%"PFMT64x, sym->vaddr);
+			r_strf_var (key, 64, "%"PFMT64x, sym->vaddr);
 			sdb_ht_insert (kernel_syms_by_addr, key, sym->name);
 			r_list_append (ret, sym);
 		}
@@ -1552,7 +1552,7 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 
 				int num = idx + subs_min_idx;
 				bool found = false;
-				const char *key = sdb_fmt ("%d", num);
+				r_strf_var (key, 32, "%d", num);
 				const char *name = sdb_ht_find (mig_hash, key, &found);
 				if (found && name && *name) {
 					sym->name = r_str_newf ("mig.%d.%s", num, name);
@@ -1640,7 +1640,7 @@ static void symbols_from_stubs(RList *ret, HtPP *kernel_syms_by_addr, RKernelCac
 				target_addr = addr;
 			}
 
-			const char *key = sdb_fmt ("%"PFMT64x, addr);
+			r_strf_var (key, 32, "%"PFMT64x, addr);
 			const char *name = sdb_ht_find (kernel_syms_by_addr, key, &found);
 
 			if (found) {

@@ -30,6 +30,7 @@ static void __appendString(const char *msg, char **s) {
 }
 
 static bool __typeLoad(void *p, const char *k, const char *v) {
+	r_strf_buffer (128);
 	if (!p) {
 		return false;
 	}
@@ -43,7 +44,7 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 		const char *typename = k;
 		int typesize = 0;
 		// TODO: Add typesize here
-		char* query = sdb_fmt ("struct.%s", k);
+		char* query = r_strf ("struct.%s", k);
 		char *members = sdb_get (anal->sdb_types, query, 0);
 		char *next, *ptr = members;
 		if (members) {
@@ -52,7 +53,7 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 				if (!name) {
 					break;
 				}
-				query = sdb_fmt ("struct.%s.%s", k, name);
+				query = r_strf ("struct.%s.%s", k, name);
 				char *subtype = sdb_get (anal->sdb_types, query, 0);
 				if (!subtype) {
 					break;
@@ -66,7 +67,7 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 					}
 					char *subname = tmp;
 					// TODO: Go recurse here
-					query = sdb_fmt ("struct.%s.%s.meta", subtype, subname);
+					query = r_strf ("struct.%s.%s.meta", subtype, subname);
 					btype = sdb_num_get (anal->sdb_types, query, 0);
 					tcc_sym_push (subtype, 0, btype);
 				}

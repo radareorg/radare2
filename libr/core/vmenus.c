@@ -57,8 +57,8 @@ static char *prompt(const char *str, const char *txt) {
 }
 
 static inline char *getformat(RCoreVisualTypes *vt, const char *k) {
-	return sdb_get (vt->core->anal->sdb_types,
-		sdb_fmt ("type.%s", k), 0);
+	r_strf_var (key, 64, "type.%s", k);
+	return sdb_get (vt->core->anal->sdb_types, key, 0);
 }
 
 static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, ut64 addr) {
@@ -4043,7 +4043,8 @@ onemoretime:
 			RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);
 			if (var) {
 	//			q = r_str_newf ("?i Rename variable %s to;afvn %s `yp`", op.var->name, op.var->name);
-				char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
+				r_strf_var (prompt, 128, "New variable name for '%s': ", var->name);
+				char *newname = r_cons_input (prompt);
 				if (newname && *newname) {
 					r_anal_var_rename (var, newname, true);
 					free (newname);
@@ -4318,7 +4319,8 @@ onemoretime:
 		}
 
 		if (var) {
-			char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", var->name));
+			r_strf_var (promptstr, 128, "New variable name for '%s': ", var->name);
+			char *newname = r_cons_input (promptstr);
 			if (newname && *newname) {
 				r_anal_var_rename (var, newname, true);
 				free (newname);

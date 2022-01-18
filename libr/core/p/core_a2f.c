@@ -1,4 +1,4 @@
-/* radare - Copyright 2014-2021 pancake, defragger */
+/* radare - Copyright 2014-2022 pancake, defragger */
 
 #include <r_types.h>
 #include <r_core.h>
@@ -6,11 +6,12 @@
 
 #define MAXFCNSIZE 4096
 
-#define Fbb(x) sdb_fmt("bb.%"PFMT64x,x)
-#define Fhandled(x) sdb_fmt("handled.%"PFMT64x,x)
-#define FbbTo(x) sdb_fmt("bb.%"PFMT64x".to",x)
+#define Fbb(x) r_strf("bb.%"PFMT64x,x)
+#define Fhandled(x) r_strf("handled.%"PFMT64x,x)
+#define FbbTo(x) r_strf("bb.%"PFMT64x".to",x)
 
 static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
+	r_strf_buffer (64);
 	ut64 block_start, block_end;
 	ut64 nearest_start = UT64_MAX;
 	const char *s = sdb_const_get (db, key, NULL);
@@ -53,6 +54,7 @@ static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
 */
 
 static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
+	r_strf_buffer (64);
 	ut64 block_start = getCrossingBlock (db, "bbs", from, to);
 	bool add = true;
 	if (block_start == UT64_MAX) {
@@ -73,10 +75,12 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 		if (from > block_start) {
 			// from inside
 			// RESIZE this
-			sdb_num_set (db, Fbb (block_start), from, 0);
-			sdb_num_set (db, FbbTo (block_start), from, 0);
-			sdb_array_set_num (db, FbbTo (block_start), 0, from, 0);
-			sdb_array_set_num (db, FbbTo (block_start), 1, UT64_MAX, 0);
+			r_strf_var (bbst, 64, "bb.%"PFMT64x, block_start);
+			r_strf_var (bben, 64, "bb.%"PFMT64x".to", block_start);
+			sdb_num_set (db, bbst, from, 0);
+			sdb_num_set (db, bben, from, 0);
+			sdb_array_set_num (db, bben, 0, from, 0);
+			sdb_array_set_num (db, bben, 1, UT64_MAX, 0);
 		} else {
 			// < the current runs into a known block
 			to = block_start;
@@ -96,6 +100,7 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 }
 
 void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
+	r_strf_buffer (64);
 	if (sdb_num_get (db, Fhandled (addr), NULL)) {
 		// already set
 		return;
@@ -120,7 +125,8 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 #define addUjmp(x) sdb_array_add_num (db, "ujmps", x, 0);
 #define addCjmp(x) sdb_array_add_num (db, "cjmps", x, 0);
 #define addRet(x) sdb_array_add_num (db, "rets", x, 0);
-#define bbAddOpcode(x) sdb_array_insert_num (db, sdb_fmt ("bb.%"PFMT64x, addr+cur), -1, x, 0);
+#define bbAddOpcode(x) sdb_array_insert_num (db, r_strf ("bb.%"PFMT64x, addr+cur), -1, x, 0);
+	r_strf_buffer (32);
 	ut64 oaddr = addr;
 	ut64 *value = NULL;
 	RAnalOp *op;
@@ -255,6 +261,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 }
 
 static ut64 getFunctionSize(Sdb *db) {
+	r_strf_buffer (64);
 	ut64 min = UT64_MAX, max = 0;
 	char *c, *bbs = sdb_get (db, "bbs", NULL);
 	bool first = true;
@@ -280,6 +287,7 @@ static ut64 getFunctionSize(Sdb *db) {
 }
 
 static bool analyzeFunction(RCore *core, ut64 addr) {
+	r_strf_buffer (64);
 	Sdb *db = sdb_new0 ();
 	RFlagItem *fi;
 	RListIter *iter;

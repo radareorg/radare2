@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
 
@@ -20,9 +20,10 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	} else {
 		arg->c_type = arg->orig_c_type;
 	}
-	const char *query = sdb_fmt ("type.%s", arg->c_type);
+	r_strf_buffer (256);
+	const char *query = r_strf ("type.%s", arg->c_type);
 	arg->fmt = sdb_const_get (TDB, query, 0);
-	const char *t_query = sdb_fmt ("type.%s.size", arg->c_type);
+	const char *t_query = r_strf ("type.%s.size", arg->c_type);
 	arg->size = sdb_num_get (TDB, t_query, 0) / 8;
 	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num);
 }

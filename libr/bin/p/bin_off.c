@@ -61,9 +61,10 @@ static RList *off_fields(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
+	r_strf_buffer (32);
 	ut64 addr = 0;
 #define ROW(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%04"PFMT32x, (ut32)val), fmt, false)); \
+	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, r_strf ("0x%04"PFMT32x, (ut32)val), fmt, false)); \
 	addr += siz;
 	ut32 magic = r_buf_read_le32 (bf->buf);
 	ut32 numlumps = r_buf_read_le32 (bf->buf);

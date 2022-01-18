@@ -77,49 +77,50 @@ FUNC_ATTR_USED static int z80Disass (RAsmOp *op, const ut8 *buf, int len) {
 		return ret;
 	}
 	z_op = z80_op;
+	r_strf_buffer (64);
 	const char *buf_asm = "invalid";
 	switch (z_op[buf[0]].type) {
 	case Z80_OP8:
-		buf_asm = sdb_fmt ("%s", z_op[buf[0]].name);
+		buf_asm = r_strf ("%s", z_op[buf[0]].name);
 		break;
 	case Z80_OP8^Z80_ARG8:
-		buf_asm = sdb_fmt (z_op[buf[0]].name, buf[1]);
+		buf_asm = r_strf (z_op[buf[0]].name, buf[1]);
 		break;
 	case Z80_OP8^Z80_ARG16:
-		buf_asm = sdb_fmt (z_op[buf[0]].name, buf[1]+(buf[2]<<8));
+		buf_asm = r_strf (z_op[buf[0]].name, buf[1]+(buf[2]<<8));
 		break;
 	case Z80_OP16:
 		cb_tab = (const char **) z_op[buf[0]].op_moar;
-		buf_asm = sdb_fmt ("%s", cb_tab[buf[1]]);
+		buf_asm = r_strf ("%s", cb_tab[buf[1]]);
 		break;
 	case Z80_OP_UNK ^ Z80_ENC1:
 		z_op = (const z80_opcode *)z_op[buf[0]].op_moar;
 		res = z80_ed_branch_index_res (buf[1]);
 		if (z_op[res].type == Z80_OP16) {
-			buf_asm = sdb_fmt ("%s", z_op[res].name);
+			buf_asm = r_strf ("%s", z_op[res].name);
 		}
 		if (z_op[res].type == (Z80_OP16^Z80_ARG16)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2]+(buf[3]<<8));
+			buf_asm = r_strf (z_op[res].name, buf[2]+(buf[3]<<8));
 		}
 		break;
 	case Z80_OP_UNK ^ Z80_ENC0:
 		z_op = (const z80_opcode *)z_op[buf[0]].op_moar;
 		res = z80_fddd_branch_index_res (buf[1]);
 		if (z_op[res].type == Z80_OP16) {
-			buf_asm = sdb_fmt ("%s", z_op[res].name);
+			buf_asm = r_strf ("%s", z_op[res].name);
 		}
 		if (z_op[res].type == (Z80_OP16^Z80_ARG16)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2]+(buf[3]<<8));
+			buf_asm = r_strf (z_op[res].name, buf[2]+(buf[3]<<8));
 		}
 		if (z_op[res].type == (Z80_OP16^Z80_ARG8)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2]);
+			buf_asm = r_strf (z_op[res].name, buf[2]);
 		}
 		if (z_op[res].type == (Z80_OP24 ^ Z80_ARG8)) {
 			cb_tab = (const char **) z_op[res].op_moar;
-			buf_asm = sdb_fmt (cb_tab[z80_op_24_branch_index_res (buf[3])], buf[2]);
+			buf_asm = r_strf (cb_tab[z80_op_24_branch_index_res (buf[3])], buf[2]);
 		}
 		if (z_op[res].type == (Z80_OP16 ^ Z80_ARG8 ^ Z80_ARG16)) {
-			buf_asm = sdb_fmt (z_op[res].name, buf[2], buf[3]);
+			buf_asm = r_strf (z_op[res].name, buf[2], buf[3]);
 		}
 		break;
 	}

@@ -421,8 +421,9 @@ static bool stdifstruct(void *user, const char *k, const char *v) {
 		return true;
 	}
 	if (!strcmp (v, "typedef")) {
-		const char *typedef_key = sdb_fmt ("typedef.%s", k);
+		char *typedef_key = r_str_newf ("typedef.%s", k);
 		const char *type = sdb_const_get (TDB_, typedef_key, NULL);
+		free (typedef_key);
 		if (type && r_str_startswith (type, "struct")) {
 			return true;
 		}
@@ -582,10 +583,11 @@ static bool printkey_cb(void *user, const char *k, const char *v) {
 // maybe dupe?. should return char *instead of print for reusability
 static void printFunctionTypeC(RCore *core, const char *input) {
 	Sdb *TDB = core->anal->sdb_types;
-	char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("func.%s.args", input));
+	r_strf_buffer (256);
+	char *res = sdb_querys (TDB, NULL, -1, r_strf ("func.%s.args", input));
 	const char *name = r_str_trim_head_ro (input);
-	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
-	const char *ret = sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0);
+	int i, args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
+	const char *ret = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
 	if (!ret) {
 		ret = "void";
 	}
@@ -596,12 +598,12 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 
 	r_cons_printf ("%s %s (", ret, name);
 	for (i = 0; i < args; i++) {
-		char *type = sdb_get (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
+		char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
 		char *name = strchr (type, ',');
 		if (name) {
 			*name++ = 0;
 		}
-		r_cons_printf ("%s%s %s", i==0? "": ", ", type, name);
+		r_cons_printf ("%s%s %s", (i == 0)? "": ", ", type, name);
 	}
 	r_cons_printf (");\n");
 	free (res);
@@ -614,16 +616,17 @@ static void printFunctionType(RCore *core, const char *input) {
 		return;
 	}
 	pj_o (pj);
-	char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("func.%s.args", input));
+	r_strf_buffer (64);
+	char *res = sdb_querys (TDB, NULL, -1, r_strf ("func.%s.args", input));
 	const char *name = r_str_trim_head_ro (input);
-	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
+	int i, args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
 	pj_ks (pj, "name", name);
-	const char *ret_type = sdb_const_get (TDB, sdb_fmt ("func.%s.ret", name), 0);
+	const char *ret_type = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
 	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
 	pj_k (pj, "args");
 	pj_a (pj);
 	for (i = 0; i < args; i++) {
-		char *type = sdb_get (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
+		char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
 		if (!type) {
 			continue;
 		}
@@ -792,10 +795,11 @@ static void set_offset_hint(RCore *core, RAnalOp *op, const char *type, ut64 lad
 	const char *cmt = ((offimm == 0) && res)? res: type;
 	if (offimm > 0) {
 		// set hint only if link is present
-		char* query = sdb_fmt ("link.%08"PFMT64x, laddr);
+		char* query = r_str_newf ("link.%08"PFMT64x, laddr);
 		if (res && sdb_const_get (core->anal->sdb_types, query, 0)) {
 			r_anal_hint_set_offset (core->anal, at, res);
 		}
+		free (query);
 	} else if (cmt && r_anal_op_ismemref (op->type)) {
 		r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, at, cmt);
 	}
@@ -1569,12 +1573,13 @@ static int cmd_type(void *data, const char *input) {
 		case 's': {
 			char *ptr = r_str_trim_dup (input + 2);
 			ut64 addr = r_num_math (NULL, ptr);
-			const char *query = sdb_fmt ("link.%08" PFMT64x, addr);
+			char *query = r_str_newf ("link.%08" PFMT64x, addr);
 			const char *link = sdb_const_get (TDB, query, 0);
 			if (link) {
 				print_link_readable_cb (core, query, link);
 			}
 			free (ptr);
+			free (query);
 			break;
 		}
 		case '-':
@@ -1712,7 +1717,9 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case ' ': {
-			char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("~~func.%s", input + 2));
+			char *k = r_str_newf ("~~func.%s", input + 2);
+			char *res = sdb_querys (TDB, NULL, -1, k);
+			free (k);
 			if (res) {
 				r_cons_printf ("%s", res);
 				free (res);
@@ -1743,9 +1750,10 @@ static int cmd_type(void *data, const char *input) {
 						if (!input[1]) {
 							r_cons_println (name);
 						} else {
-							const char *q = sdb_fmt ("typedef.%s", name);
+							char *q = r_str_newf ("typedef.%s", name);
 							const char *res = sdb_const_get (TDB, q, 0);
 							pj_ks (pj, name, res);
+							free (q);
 						}
 					}
 				}
@@ -1780,8 +1788,9 @@ static int cmd_type(void *data, const char *input) {
 								continue;
 							}
 						}
-						const char *q = sdb_fmt ("typedef.%s", name);
+						char *q = r_str_newf ("typedef.%s", name);
 						const char *res = sdb_const_get (TDB, q, 0);
+						free (q);
 						if (res) {
 							r_cons_printf ("%s %s %s;\n", sdbkv_value (kv), res, name);
 						}
@@ -1803,11 +1812,12 @@ static int cmd_type(void *data, const char *input) {
 		const char *istypedef;
 		istypedef = sdb_const_get (TDB, s, 0);
 		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
-			const char *q = sdb_fmt ("typedef.%s", s);
+			char *q = r_str_newf ("typedef.%s", s);
 			const char *res = sdb_const_get (TDB, q, 0);
 			if (res) {
 				r_cons_println (res);
 			}
+			free (q);
 		} else {
 			eprintf ("This is not a typedef\n");
 		}

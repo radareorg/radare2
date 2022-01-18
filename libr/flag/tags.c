@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2018 - pancake */
+/* radare - LGPL - Copyright 2018-2022 - pancake */
 
 #include <r_flag.h>
 
 R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words) {
 	r_return_val_if_fail (f && name && words, NULL);
-	const char *k = sdb_fmt ("tag.%s", name);
+	r_strf_var (k, 64, "tag.%s", name);
 	sdb_set (f->tags, k, words, -1);
 	return NULL;
 }
@@ -12,7 +12,7 @@ R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words) {
 R_API RList *r_flag_tags_list(RFlag *f, const char *name) {
 	r_return_val_if_fail (f, NULL);
 	if (name) {
-		const char *k = sdb_fmt ("tag.%s", name);
+		r_strf_var (k, 64, "tag.%s", name);
 		char *words = sdb_get (f->tags, k, NULL);
 		return r_str_split_list (words, " ", 0);
 	}
@@ -57,7 +57,7 @@ static bool iter_glob_flag(RFlagItem *fi, void *user) {
 
 R_API RList *r_flag_tags_get(RFlag *f, const char *name) {
 	r_return_val_if_fail (f && name, NULL);
-	const char *k = sdb_fmt ("tag.%s", name);
+	r_strf_var (k, 64, "tag.%s", name);
 	RList *res = r_list_newf (NULL);
 	char *words = sdb_get (f->tags, k, NULL);
 	if (words) {

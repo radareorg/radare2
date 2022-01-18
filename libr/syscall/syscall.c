@@ -292,6 +292,6 @@ R_API const char *r_syscall_get_io(RSyscall *s, int ioport) {
 
 R_API const char* r_syscall_sysreg(RSyscall *s, const char *type, ut64 num) {
 	r_return_val_if_fail (s && s->db, NULL);
-	const char *key = sdb_fmt ("%s,%"PFMT64d, type, num);
+	r_strf_var (key, 64, "%s,%"PFMT64d, type, num);
 	return sdb_const_get (s->db, key, 0);
 }

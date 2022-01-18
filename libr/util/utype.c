@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2020 - pancake, oddcoder, sivaramaaa */
+/* radare - LGPL - Copyright 2013-2022 - pancake, oddcoder, sivaramaaa */
 
 #include <r_util.h>
 
@@ -82,14 +82,16 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
-	const char *q = member
-		? sdb_fmt ("enum.%s.%s", name, member)
-		: sdb_fmt ("enum.%s.0x%"PFMT64x, name, val);
-	return sdb_get (TDB, q, 0);
+	char *q = member
+		? r_str_newf ("enum.%s.%s", name, member)
+		: r_str_newf ("enum.%s.0x%"PFMT64x, name, val);
+	char *res = sdb_get (TDB, q, 0);
+	free (q);
+	return res;
 }
 
 R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
-	char *q, *ret = NULL;
+	char *ret = NULL;
 	const char *res;
 	int i;
 
@@ -103,8 +105,9 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 		if (!(val & n)) {
 			continue;
 		}
-		q = sdb_fmt ("enum.%s.0x%x", name, n);
+		char *q = r_str_newf ("enum.%s.0x%x", name, n);
 		res = sdb_const_get (TDB, q, 0);
+		free (q);
 		if (isFirst) {
 			isFirst = false;
 		} else {
@@ -120,7 +123,6 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 }
 
 R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
-	char *query;
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
 	const char *tmptype;
 	if (!strncmp (type, "struct ", 7)) {
@@ -142,14 +144,15 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 		return 0;
 	}
 	if (!strcmp (t, "type")){
-		query = r_str_newf ("type.%s.size", tmptype);
+		char *query = r_str_newf ("type.%s.size", tmptype);
 		ut64 r = sdb_num_get (TDB, query, 0); // returns size in bits
 		free (query);
 		return r;
 	}
 	if (!strcmp (t, "struct") || !strcmp (t, "union")) {
-		query = r_str_newf ("%s.%s", t, tmptype);
+		char *query = r_str_newf ("%s.%s", t, tmptype);
 		char *members = sdb_get (TDB, query, 0);
+		free (query);
 		char *next, *ptr = members;
 		ut64 ret = 0;
 		if (members) {
@@ -158,10 +161,9 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 				if (!name) {
 					break;
 				}
-				free (query);
-				query = r_str_newf ("%s.%s.%s", t, tmptype, name);
+				char *query = r_str_newf ("%s.%s.%s", t, tmptype, name);
 				char *subtype = sdb_get (TDB, query, 0);
-				R_FREE (query);
+				free (query);
 				if (!subtype) {
 					break;
 				}
@@ -188,7 +190,6 @@ R_API ut64 r_type_get_bitsize(Sdb *TDB, const char *type) {
 			} while (next);
 			free (members);
 		}
-		free (query);
 		return ret;
 	}
 	return 0;
@@ -201,8 +202,9 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 	if (offset < 0) {
 		return NULL;
 	}
-	char* query = sdb_fmt ("struct.%s", type);
+	char* query = r_str_newf ("struct.%s", type);
 	char *members = sdb_get (TDB, query, 0);
+	free (query);
 	if (!members) {
 		//eprintf ("%s is not a struct\n", type);
 		return NULL;
@@ -213,8 +215,9 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 		if (!name) {
 			break;
 		}
-		query = sdb_fmt ("struct.%s.%s", type, name);
+		char *query = r_str_newf ("struct.%s.%s", type, name);
 		char *subtype = sdb_get (TDB, query, 0);
+		free (query);
 		if (!subtype) {
 			break;
 		}
@@ -307,7 +310,7 @@ static RList *types_range_list(Sdb *db, ut64 addr) {
 
 static void types_range_del(Sdb *db, ut64 addr) {
 	ut64 base = TYPE_RANGE_BASE (addr);
-	const char *k = sdb_fmt ("range.%"PFMT64x, base);
+	r_strf_var (k, 64, "range.%"PFMT64x, base);
 	char valstr[SDB_NUM_BUFSZ];
 	const char *v = sdb_itoa (addr, valstr, SDB_NUM_BASE);
 	sdb_array_remove (db, k, v, 0);
@@ -315,7 +318,7 @@ static void types_range_del(Sdb *db, ut64 addr) {
 
 static void types_range_add(Sdb *db, ut64 addr) {
 	ut64 base = TYPE_RANGE_BASE (addr);
-	const char *k = sdb_fmt ("range.%"PFMT64x, base);
+	r_strf_var (k, 64, "range.%"PFMT64x, base);
 	(void)sdb_array_add_num (db, k, addr, 0);
 }
 
@@ -323,8 +326,9 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	const char *query = sdb_fmt ("link.%08"PFMT64x, addr);
+	char *query = r_str_newf ("link.%08"PFMT64x, addr);
 	char *res = sdb_get (TDB, query, 0);
+	free (query);
 	if (!res) { // resolve struct memb if possible for given addr
 		RList *list = types_range_list (TDB, addr);
 		RListIter *iter;
@@ -333,8 +337,9 @@ R_API char *r_type_link_at(Sdb *TDB, ut64 addr) {
 			ut64 laddr = r_num_get (NULL, s);
 			if (addr > laddr) {
 				int delta = addr - laddr;
-				const char *lk = sdb_fmt ("link.%08"PFMT64x, laddr);
+				char *lk = r_str_newf ("link.%08"PFMT64x, laddr);
 				char *k = sdb_get (TDB, lk, 0);
+				free (lk);
 				res = r_type_get_struct_memb (TDB, k, delta);
 				if (res) {
 					break;
@@ -368,8 +373,9 @@ R_API int r_type_link_offset(Sdb *TDB, const char *type, ut64 addr) {
 }
 
 R_API int r_type_unlink(Sdb *TDB, ut64 addr) {
-	char *laddr = sdb_fmt ("link.%08"PFMT64x, addr);
+	char *laddr = r_str_newf ("link.%08"PFMT64x, addr);
 	sdb_unset (TDB, laddr, 0);
+	free (laddr);
 	types_range_del (TDB, addr);
 	return true;
 }
@@ -486,43 +492,48 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 }
 
 R_API void r_type_del(Sdb *TDB, const char *name) {
+	r_strf_buffer (64);
 	const char *kind = sdb_const_get (TDB, name, 0);
 	if (!kind) {
 		return;
 	}
 	if (!strcmp (kind, "type")) {
-		sdb_unset (TDB, sdb_fmt ("type.%s", name), 0);
-		sdb_unset (TDB, sdb_fmt ("type.%s.size", name), 0);
-		sdb_unset (TDB, sdb_fmt ("type.%s.meta", name), 0);
+		sdb_unset (TDB, r_strf ("type.%s", name), 0);
+		sdb_unset (TDB, r_strf ("type.%s.size", name), 0);
+		sdb_unset (TDB, r_strf ("type.%s.meta", name), 0);
 		sdb_unset (TDB, name, 0);
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
-		int i, n = sdb_array_length(TDB, sdb_fmt ("%s.%s", kind, name));
+		int i, n = sdb_array_length (TDB, r_strf ("%s.%s", kind, name));
 		char *elements_key = r_str_newf ("%s.%s", kind, name);
 		for (i = 0; i< n; i++) {
 			char *p = sdb_array_get (TDB, elements_key, i, NULL);
-			sdb_unset (TDB, sdb_fmt ("%s.%s", elements_key, p), 0);
+			sdb_unset (TDB, r_strf ("%s.%s", elements_key, p), 0);
 			free (p);
 		}
 		sdb_unset (TDB, elements_key, 0);
 		sdb_unset (TDB, name, 0);
 		free (elements_key);
 	} else if (!strcmp (kind, "func")) {
-		int i, n = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
+		int i, n = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
 		for (i = 0; i < n; i++) {
-			sdb_unset (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
+			sdb_unset (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
 		}
-		sdb_unset (TDB, sdb_fmt ("func.%s.ret", name), 0);
-		sdb_unset (TDB, sdb_fmt ("func.%s.cc", name), 0);
-		sdb_unset (TDB, sdb_fmt ("func.%s.noreturn", name), 0);
-		sdb_unset (TDB, sdb_fmt ("func.%s.args", name), 0);
+		sdb_unset (TDB, r_strf ("func.%s.ret", name), 0);
+		sdb_unset (TDB, r_strf ("func.%s.cc", name), 0);
+		sdb_unset (TDB, r_strf ("func.%s.noreturn", name), 0);
+		sdb_unset (TDB, r_strf ("func.%s.args", name), 0);
 		sdb_unset (TDB, name, 0);
 	} else if (!strcmp (kind, "enum")) {
 		RList *list = r_type_get_enum (TDB, name);
 		RTypeEnum *member;
 		RListIter *iter;
 		r_list_foreach (list, iter, member) {
-			sdb_unset (TDB, sdb_fmt ("enum.%s.%s", name, member->name), 0);
-			sdb_unset (TDB, sdb_fmt ("enum.%s.%s", name, member->val), 0);
+			char *k = r_str_newf ("enum.%s.%s", name, member->name);
+			sdb_unset (TDB, k, 0);
+			free (k);
+			k = r_str_newf ("enum.%s.%s", name, member->val);
+			sdb_unset (TDB, k, 0);
+			free (k);
 		}
 		sdb_unset (TDB, name, 0);
 		r_list_free (list);
@@ -545,18 +556,19 @@ R_API int r_type_func_exist(Sdb *TDB, const char *func_name) {
 }
 
 R_API const char *r_type_func_ret(Sdb *TDB, const char *func_name){
-	const char *query = sdb_fmt ("func.%s.ret", func_name);
+	r_strf_var (query, 64, "func.%s.ret", func_name);
 	return sdb_const_get (TDB, query, 0);
 }
 
 R_API int r_type_func_args_count(Sdb *TDB, const char *func_name) {
-	const char *query = sdb_fmt ("func.%s.args", func_name);
+	r_strf_var (query, 64, "func.%s.args", func_name);
 	return sdb_num_get (TDB, query, 0);
 }
 
 R_API R_OWN char *r_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_name, int i) {
-	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
+	char *query = r_str_newf ("func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get (TDB, query, 0);
+	free (query);
 	if (ret) {
 		char *comma = strchr (ret, ',');
 		if (comma) {
@@ -569,8 +581,9 @@ R_API R_OWN char *r_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_nam
 }
 
 R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_name, int i) {
-	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
+	char *query = r_str_newf ("func.%s.arg.%d", func_name, i);
 	const char *get = sdb_const_get (TDB, query, 0);
+	free (query);
 	if (get) {
 		char *ret = strchr (get, ',');
 		return ret == 0 ? ret : ret + 1;

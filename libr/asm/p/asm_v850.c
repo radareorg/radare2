@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2018 - pancake */
+/* radare - LGPL - Copyright 2012-2022 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -19,7 +19,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	int ret = v850_decode_command (buf, len, &cmd);
 	if (ret > 0) {
-		r_asm_op_set_asm (op, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
+		r_strf_buffer (128);
+		r_asm_op_set_asm (op, r_strf ("%s %s", cmd.instr, cmd.operands));
 	}
 	return op->size = ret;
 }
