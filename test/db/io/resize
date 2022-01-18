@@ -12,7 +12,7 @@ i~^size[1]
 !rm ${R2_FILE}
 EOF
 EXPECT=<<EOF
-0
+0x0
 0xa
 0x4
 0xa
@@ -33,7 +33,7 @@ psz
 !rm ${R2_FILE}
 EOF
 EXPECT=<<EOF
-0
+0x0
 0x3
 0xb
 hello world
