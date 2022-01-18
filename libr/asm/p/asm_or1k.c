@@ -145,7 +145,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if ((extra_descr = find_extra_descriptor(insn_descr->extra, insn)) != NULL) {
 			insn_to_str (a, &line, insn_descr, extra_descr, insn);
 		} else {
-			line = "invalid";
+			line = strdup ("invalid");
 		}
 	} else {
 		/* otherwise basic descriptor is enough */
