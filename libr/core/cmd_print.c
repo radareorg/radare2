@@ -5356,7 +5356,6 @@ static int cmd_print(void *data, const char *input) {
 	case 'D': // "pD"
 	case 'd': // "pd"
 	{
-		bool segoff = r_config_get_i (core->config, "asm.segoff");
 		ut64 use_blocksize = core->blocksize;
 		ut8 bw_disassemble = false;
 		ut32 pd_result = false, processed_cmd = false;
@@ -5836,7 +5835,6 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_newline ();
 			}
 		}
-		r_config_set_i (core->config, "asm.segoff", segoff);
 		if (processed_cmd) {
 			ret = pd_result;
 			goto beach;
