@@ -2283,14 +2283,14 @@ static void __tableRegList(RCore *core, RReg *reg, const char *str) {
 	r_table_add_column (t, typeString, "flags", 0);
 	r_table_add_column (t, typeString, "comment", 0);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		r_strf_var (s_off, 32, "%d", e->offset);
-		r_strf_var (s_siz, 32, "%d", e->size);
-		r_strf_var (s_psz, 32, "%d", e->packed_size);
-		r_strf_var (s_idx, 32, "%d", e->index);
-		r_strf_var (s_iii, 32, "%d", i);
 		RList *list = r_reg_get_list (reg, i);
 		RListIter *iter;
 		r_list_foreach (list, iter, e) {
+			r_strf_var (s_off, 32, "%d", e->offset);
+			r_strf_var (s_siz, 32, "%d", e->size);
+			r_strf_var (s_psz, 32, "%d", e->packed_size);
+			r_strf_var (s_idx, 32, "%d", e->index);
+			r_strf_var (s_iii, 32, "%d", i);
 			r_table_add_row (t,
 					s_off, s_siz, s_psz, s_idx, s_iii,
 					r_str_bool (e->is_float),
