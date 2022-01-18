@@ -6,7 +6,7 @@ INCDIR=${PREFIX}/include
 VAPIDIR=${DATADIR}/vala/vapi/
 MANDIR=${DATADIR}/man/man1
 
-SDBVER=1.8.3
+SDBVER=1.8.4
 
 BUILD_MEMCACHE=0
 
@@ -123,7 +123,7 @@ CFLAGS+=-DMINGW32=1
     else
 CFLAGS+=-fPIC
 SOVERSION=0
-LDFLAGS_SHARED?=-fPIC
+LDFLAGS_SHARED?=-fPIC 
     endif
   endif
 LDFLAGS_SHARED+=-Wl,-soname,libsdb.so.$(SOVERSION)

@@ -83,7 +83,7 @@ w32dist:
 	rm -rf sdb-${SDBVER}
 
 install-dirs:
-	$(INSTALL_DIR) ${DESTDIR}${MANDIR} ${DESTDIR}${LIBDIR}/pkgconfig ${DESTDIR}${BINDIR}
+	$(INSTALL_DIR) ${DESTDIR}${MANDIR} ${DESTDIR}${LIBDIR}/pkgconfig ${DESTDIR}${BINDIR} 
 	$(INSTALL_DIR) ${DESTDIR}${DATADIR}/vala/vapi ${DESTDIR}${INCDIR}/sdb
 
 INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht_uu.h src/ht_up.h src/ht_pp.h src/types.h
