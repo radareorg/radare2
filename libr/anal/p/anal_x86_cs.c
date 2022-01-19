@@ -1067,21 +1067,17 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		}
 		break;
 	case X86_INS_LES:
-		{
-			if (a->bits == 16) {
-				src = getarg (&gop, 1, 2, NULL, SRC_AR, NULL);
-				dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
-				esilprintf (op, "%s,%s", src, dst);
-			}
+		if (a->bits == 16) {
+			src = getarg (&gop, 1, 2, NULL, SRC_AR, NULL);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
+			esilprintf (op, "%s,%s", src, dst);
 		}
 		break;
 	case X86_INS_LDS:
-		{
-			if (a->bits == 16) {
-				src = getarg (&gop, 1, 2, NULL, SRC_AR, NULL);
-				dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
-				esilprintf (op, "%s,%s", src, dst);
-			}
+		if (a->bits == 16) {
+			src = getarg (&gop, 1, 2, NULL, SRC_AR, NULL);
+			dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
+			esilprintf (op, "%s,%s", src, dst);
 		}
 		break;
 	case X86_INS_PUSHAW:

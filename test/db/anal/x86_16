@@ -119,3 +119,25 @@ jump: 0x000f008e
 EOF
 RUN
 
+NAME=x86-16 les,lds arg anal
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+wx 558becc57606c47e0a5dc3
+af
+pdf
+EOF:
+EXPECT=<<EOF
+/ 10: fcn.00000000 (int16_t arg_6h, int16_t arg_ah);
+|           ; arg int16_t arg_6h @ bp+0x6
+|           ; arg int16_t arg_ah @ bp+0xa
+|           0000:0000     55             push bp
+|           0000:0001     8bec           mov bp, sp
+|           0000:0003     c57606         lds si, [arg_6h]
+|           0000:0006     c47e0a         les di, [arg_ah]
+|           0000:0009     5d             pop bp
+\           0000:000a     c3             ret
+EOF
+RUN
+

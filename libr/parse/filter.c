@@ -148,8 +148,8 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 	RAnalFunction *fcn;
 	RFlagItem *flag;
 	ut64 off;
-	int bits = p->analb.anal->bits;
-	int seggrn = p->analb.anal->seggrn;
+	const int bits = p->analb.anal->bits;
+	const int seggrn = p->analb.anal->seggrn;
 	bool x86 = false;
 	bool arm = false;
 	if (p && p->cur && p->cur->name) {
@@ -195,7 +195,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 		if (x86 && bits == 16 && colon) {
 			*colon = '\0';
 			ut64 s = r_num_math (NULL, ptr);
-			ut64 o = r_num_math (NULL, colon+1);
+			ut64 o = r_num_math (NULL, colon + 1);
 			off = (s << seggrn) + o;
 			*colon = ':';
 		} else {
