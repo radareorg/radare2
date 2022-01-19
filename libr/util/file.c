@@ -1164,7 +1164,7 @@ R_API char *r_file_temp_ex(R_NULLABLE const char *prefix, R_NULLABLE const char 
 
 static inline char *file_fmt_split(const char *fmt) {
 	if (R_STR_ISEMPTY (fmt)) {
-		return r_file_temp_suf (NULL, NULL);
+		return r_file_temp_ex (NULL, NULL);
 	}
 	char *name = NULL;
 	char *dup = strdup (fmt);
