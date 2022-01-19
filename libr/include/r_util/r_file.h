@@ -55,6 +55,7 @@ R_API bool r_file_fexists(const char *fmt, ...) R_PRINTF_CHECK(1, 2);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API char *r_file_slurp_lines(const char *file, int line, int count);
 R_API char *r_file_slurp_lines_from_bottom(const char *file, int line);
+R_API char *r_file_temp_ex(R_NULLABLE const char *prefix, R_NULLABLE const char *ex);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir(void);
 R_API char *r_file_readlink(const char *path);

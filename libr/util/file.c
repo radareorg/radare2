@@ -1149,15 +1149,51 @@ R_API char *r_file_temp(const char *prefix) {
 	return res;
 }
 
+R_API char *r_file_temp_ex(R_NULLABLE const char *prefix, R_NULLABLE const char *ex) {
+	prefix = R_STR_ISEMPTY (prefix)? "r2": prefix;
+	ex = R_STR_ISEMPTY (ex)? "": ex;
+	char *path = r_file_tmpdir ();
+	char *res = NULL;
+	if (path) {
+		ut64 t = r_time_now ();
+		res = r_str_newf ("%s/%s.%" PFMT64x "%s", path, prefix, t, ex);
+		free (path);
+	}
+	return res;
+}
+
+static inline char *file_fmt_split(const char *fmt) {
+	if (R_STR_ISEMPTY (fmt)) {
+		return r_file_temp_ex (NULL, NULL);
+	}
+	char *name = NULL;
+	char *dup = strdup (fmt);
+	if (dup) {
+		RList *splt = r_str_split_list (dup, "*", 2);
+		if (splt && r_list_length (splt)) {
+			char *pref = r_list_pop_head (splt);
+			char *ex = r_list_pop_head (splt);
+			name = r_file_temp_ex (pref, ex);
+		}
+		r_list_free (splt);
+		free (dup);
+	}
+	return name;
+}
+
 R_API int r_file_mkstemp(R_NULLABLE const char *prefix, char **oname) {
 	int h = -1;
-	char *path = r_file_tmpdir ();
 	if (!prefix) {
 		prefix = "r2";
 	}
 #if __WINDOWS__
 	LPTSTR name = NULL;
+	char *path = r_file_tmpdir ();
+	if (!path) {
+		return -1;
+	}
 	LPTSTR path_ = r_sys_conv_utf8_to_win (path);
+	free (path);
 	LPTSTR prefix_ = r_sys_conv_utf8_to_win (prefix);
 
 	name = (LPTSTR)malloc (sizeof (TCHAR) * (MAX_PATH + 1));
@@ -1182,48 +1218,20 @@ err_r_file_mkstemp:
 	free (name);
 	free (path_);
 	free (prefix_);
+#elif __wasi__
+	// nothing to do for wasm, drops to return -1
 #else
-	char pfxx[1024];
-	const char *suffix = strchr (prefix, '*');
-
-	if (suffix) {
-		suffix++;
-		r_str_ncpy (pfxx, prefix, (size_t)(suffix - prefix));
-		prefix = pfxx;
-	} else {
-		suffix = "";
-	}
-
-	char *name = r_str_newf ("%s/r2.%s.XXXXXX%s", path, prefix, suffix);
-#if __wasi__
-	// nothing to do
-#else
-	mode_t mask = umask (S_IWGRP | S_IWOTH);
-	if (suffix && *suffix) {
-#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && 2 <= __GLIBC__ && 19 <= __GLIBC__MINOR__
-		h = mkstemps (name, strlen (suffix));
-#else
-		char *const xpos = strrchr (name, 'X');
-		const char c = (char)(NULL != xpos ? *(xpos + 1) : 0);
-		if (0 != c) {
-			xpos[1] = 0;
-			h = mkstemp (name);
-			xpos[1] = c;
+	char *name = file_fmt_split (prefix);
+	if (name) {
+		int perm = RDWR_FLAGS | O_CREAT | O_EXCL | O_BINARY;
+		h = r_sandbox_open (name, perm, 0644);
+		if (h != -1) {
+			*oname = name;
 		} else {
-			h = -1;
+			free (name);
 		}
-#endif
-	} else {
-		h = mkstemp (name);
 	}
-	umask (mask);
 #endif
-	if (oname) {
-		*oname = (h!=-1)? strdup (name): NULL;
-	}
-	free (name);
-#endif
-	free (path);
 	return h;
 }
 
