@@ -1149,7 +1149,7 @@ R_API char *r_file_temp(const char *prefix) {
 	return res;
 }
 
-R_API char *r_file_temp_suf(R_NULLABLE const char *prefix, R_NULLABLE const char *suf) {
+R_API char *r_file_temp_ex(R_NULLABLE const char *prefix, R_NULLABLE const char *ex) {
 	prefix = R_STR_ISEMPTY (prefix)? "r2": prefix;
 	suf = R_STR_ISEMPTY (suf)? "": suf;
 	char *path = r_file_tmpdir ();
