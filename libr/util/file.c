@@ -1172,8 +1172,8 @@ static inline char *file_fmt_split(const char *fmt) {
 		RList *splt = r_str_split_list (dup, "*", 2);
 		if (splt && r_list_length (splt)) {
 			char *pref = r_list_pop_head (splt);
-			char *suf = r_list_pop_head (splt);
-			name = r_file_temp_suf (pref, suf);
+			char *ex = r_list_pop_head (splt);
+			name = r_file_temp_ex (pref, ex);
 		}
 		r_list_free (splt);
 		free (dup);
