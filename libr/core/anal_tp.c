@@ -38,16 +38,20 @@ static void anal_emul_restore(RCore *core, RConfigHold *hc, RDebugTrace *dt, RAn
 	core->dbg->trace = dt;
 }
 
-#define SDB_CONTAINS(i,s) sdb_array_contains (trace, sdb_fmt ("%d.reg.write", i), s, 0)
+static bool regwrite_contains(Sdb *trace, int i, const char *place) {
+	r_strf_var (rwv, 32, "%d.reg.write", i);
+	return sdb_array_contains (trace, rwv, place, 0);
+}
 
 static bool type_pos_hit(RAnal *anal, Sdb *trace, bool in_stack, int idx, int size, const char *place) {
 	if (in_stack) {
 		const char *sp_name = r_reg_get_name (anal->reg, R_REG_NAME_SP);
 		ut64 sp = r_reg_getv (anal->reg, sp_name);
-		ut64 write_addr = sdb_num_get (trace, sdb_fmt ("%d.mem.write", idx), 0);
+		r_strf_var (k, 32, "%d.mem.write", idx);
+		ut64 write_addr = sdb_num_get (trace, k, 0);
 		return (write_addr == sp + size);
 	}
-	return SDB_CONTAINS (idx, place);
+	return regwrite_contains (trace, idx, place);
 }
 
 static void __var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
@@ -174,7 +178,7 @@ static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 	if (!regname || !*regname) {
 		return UT64_MAX;
 	}
-	const char *query = sdb_fmt ("%d.reg.read.%s", idx, regname);
+	r_strf_var (query, 64, "%d.reg.read.%s", idx, regname);
 	return r_num_math (NULL, sdb_const_get (trace, query, 0));
 }
 
@@ -224,7 +228,7 @@ static RList *parse_format(RCore *core, char *fmt) {
 			tmp++;
 		}
 		*tmp = '\0';
-		const char *query = sdb_fmt ("spec.%s.%s", spec, arr);
+		r_strf_var (query, 128, "spec.%s.%s", spec, arr);
 		char *type = (char *) sdb_const_get (s, query, 0);
 		if (type) {
 			r_list_append (ret, type);
@@ -347,7 +351,8 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 		bool res = false;
 		// Backtrace instruction from source sink to prev source sink
 		for (j = idx; j >= prev_idx; j--) {
-			ut64 instr_addr = sdb_num_get (trace, sdb_fmt ("%d.addr", j), 0);
+			r_strf_var (k, 32, "%d.addr", j);
+			ut64 instr_addr = sdb_num_get (trace, k, 0);
 			if (instr_addr < baddr) {
 				break;
 			}
@@ -364,15 +369,16 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 				break;
 			}
 			RAnalVar *var = r_anal_get_used_function_var (anal, op->addr);
-			const char *query = sdb_fmt ("%d.mem.read", j);
+			r_strf_var (query, 32, "%d.mem.read", j);
 			if (op->type == R_ANAL_OP_TYPE_MOV && sdb_const_get (trace, query, 0)) {
 				memref = ! (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG));
 			}
 			// Match type from function param to instr
 			if (type_pos_hit (anal, trace, in_stack, j, size, place)) {
 				if (!cmt_set && type && name) {
-					r_meta_set_string (anal, R_META_TYPE_VARTYPE, instr_addr,
-							sdb_fmt ("%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name));
+					char *ms = r_str_newf ("%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name);
+					r_meta_set_string (anal, R_META_TYPE_VARTYPE, instr_addr, ms);
+					free (ms);
 					cmt_set = true;
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
 						RFlagItem *f = r_flag_get_by_spaces (core->flags, op->ptr, R_FLAGS_FS_STRINGS, NULL);
@@ -405,7 +411,7 @@ static void type_match(RCore *core, char *fcn_name, ut64 addr, ut64 baddr, const
 				}
 			}
 			// Type propagate by following source reg
-			if (!res && *regname && SDB_CONTAINS (j, regname)) {
+			if (!res && *regname && regwrite_contains (trace, j, regname)) {
 				if (var) {
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
@@ -609,12 +615,13 @@ repeat:
 				r_anal_op_fini (&aop);
 				continue;
 			}
-			int loop_count = sdb_num_get (anal->esil->trace->db, sdb_fmt ("0x%"PFMT64x".count", addr), 0);
+			r_strf_var (addr_count, 32, "0x%"PFMT64x".count", addr);
+			int loop_count = sdb_num_get (anal->esil->trace->db, addr_count, 0);
 			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
 				r_anal_op_fini (&aop);
 				break;
 			}
-			sdb_num_set (anal->esil->trace->db, sdb_fmt ("0x%"PFMT64x".count", addr), loop_count + 1, 0);
+			sdb_num_set (anal->esil->trace->db, addr_count, loop_count + 1, 0);
 			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
 				// just analyze statically the instruction if its a call, dont emulate it
 				r_reg_setv (core->dbg->reg, pc, addr + ret);
@@ -684,7 +691,7 @@ repeat:
 						free (cc);
 					}
 					if (!strcmp (fcn_name, "__stack_chk_fail")) {
-						const char *query = sdb_fmt ("%d.addr", cur_idx - 1);
+						r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						ut64 mov_addr = sdb_num_get (trace, query, 0);
 						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_BASIC);
 						if (mop) {
@@ -701,7 +708,7 @@ repeat:
 			} else if (!resolved && ret_type && ret_reg) {
 				// Forward propgation of function return type
 				char src[REGNAME_SIZE] = {0};
-				const char *query = sdb_fmt ("%d.reg.write", cur_idx);
+				r_strf_var (query, 32, "%d.reg.write", cur_idx);
 				const char *cur_dest = sdb_const_get (trace, query, 0);
 				get_src_regname (core, aop.addr, src, sizeof (src));
 				if (ret_reg && *src && strstr (ret_reg, src)) {
@@ -821,7 +828,7 @@ repeat:
 				if (var && str_flag) {
 					__var_retype (anal, var, NULL, "const char *", false, false);
 				}
-				const char *query = sdb_fmt ("%d.reg.write", cur_idx);
+				r_strf_var (query, 32, "%d.reg.write", cur_idx);
 				prev_dest = sdb_const_get (trace, query, 0);
 				if (var) {
 					strncpy (prev_type, var->type, sizeof (prev_type) - 1);

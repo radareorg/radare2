@@ -1010,7 +1010,8 @@ bool w32_step(RDebug *dbg) {
 bool w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 	if (tid != dbg->tid) {
 		if (w32_select (dbg, pid, tid)) {
-			r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+			r_strf_var (cmd, 32, "pid %d", dbg->tid);
+			r_io_system (dbg->iob.io, cmd);
 		}
 	}
 	// Don't continue with a thread that wasn't requested

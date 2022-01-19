@@ -64,33 +64,34 @@ static int i4004dis(RAsmOp *op, const ut8 *buf, int len) {
 	if (rlen > len)	{
 		return op->size = 0;
 	}
+	r_strf_buffer (64);
 	switch (high) {
 	case 0: buf_asm = low? "invalid": "nop"; break;
-	case 1: buf_asm = sdb_fmt ("jcn %d 0x%02x", low, buf[1]); break;
+	case 1: buf_asm = r_strf ("jcn %d 0x%02x", low, buf[1]); break;
 	case 2:
 		if (rlen == 1) {
-			buf_asm = sdb_fmt ("src r%d", (low & 0xe));
+			buf_asm = r_strf ("src r%d", (low & 0xe));
 		} else {
-			buf_asm = sdb_fmt ("fim r%d, 0x%02x", (low & 0xe), buf[1]);
+			buf_asm = r_strf ("fim r%d, 0x%02x", (low & 0xe), buf[1]);
 		}
 		break;
 	case 3:
 		if ((low & 1) == 1) {
-			buf_asm = sdb_fmt ("jin r%d", (low & 0xe));
+			buf_asm = r_strf ("jin r%d", (low & 0xe));
 		} else {
-			buf_asm = sdb_fmt ("fin r%d", (low & 0xe));
+			buf_asm = r_strf ("fin r%d", (low & 0xe));
 		}
 		break;
-	case 4: buf_asm = sdb_fmt ("jun 0x%03x", ((ut16)(low<<8) | buf[1])); break;
-	case 5: buf_asm = sdb_fmt ("jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
-	case 6: buf_asm = sdb_fmt ("inc r%d", low); break;
-	case 7: buf_asm = sdb_fmt ("isz r%d, 0x%02x", low, buf[1]); break;
-	case 8: buf_asm = sdb_fmt ("add r%d", low); break;
-	case 9: buf_asm = sdb_fmt ("sub r%d", low); break;
-	case 10: buf_asm = sdb_fmt ("ld r%d", low); break;
-	case 11: buf_asm = sdb_fmt ("xch r%d", low); break;
-	case 12: buf_asm = sdb_fmt ("bbl %d", low); break;
-	case 13: buf_asm = sdb_fmt ("ldm %d", low); break;
+	case 4: buf_asm = r_strf ("jun 0x%03x", ((ut16)(low<<8) | buf[1])); break;
+	case 5: buf_asm = r_strf ("jms 0x%03x", ((ut16)(low<<8) | buf[1])); break;
+	case 6: buf_asm = r_strf ("inc r%d", low); break;
+	case 7: buf_asm = r_strf ("isz r%d, 0x%02x", low, buf[1]); break;
+	case 8: buf_asm = r_strf ("add r%d", low); break;
+	case 9: buf_asm = r_strf ("sub r%d", low); break;
+	case 10: buf_asm = r_strf ("ld r%d", low); break;
+	case 11: buf_asm = r_strf ("xch r%d", low); break;
+	case 12: buf_asm = r_strf ("bbl %d", low); break;
+	case 13: buf_asm = r_strf ("ldm %d", low); break;
 	case 14: buf_asm = i4004_e[low]; break;
 	case 15: buf_asm = i4004_f[low]; break;
 	}

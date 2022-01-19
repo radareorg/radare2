@@ -550,7 +550,7 @@ static void set_default_value_dynamic_info(ELFOBJ *bin) {
 	bin->dyn_info.dt_flags_1 = R_BIN_ELF_XWORD_MAX;
 	bin->dyn_info.dt_rpath = R_BIN_ELF_XWORD_MAX;
 	bin->dyn_info.dt_runpath = R_BIN_ELF_XWORD_MAX;
-	r_vector_init(&bin->dyn_info.dt_needed, sizeof(Elf_(Off)), NULL, NULL);
+	r_vector_init(&bin->dyn_info.dt_needed, sizeof (Elf_(Off)), NULL, NULL);
 }
 
 static size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
@@ -837,7 +837,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 				break;
 			default:
 				free (tmp_val);
-				tmp_val = strdup (sdb_fmt ("%x ", data[i+j] & 0x7FFF));
+				tmp_val = r_str_newf ("%x ", data[i+j] & 0x7FFF);
 				check_def = true;
 				if (bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
 					Elf_(Verneed) vn;
@@ -882,7 +882,9 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 							if (vna.vna_name > bin->strtab_size) {
 								goto beach;
 							}
-							sdb_set (sdb, key, sdb_fmt ("%s(%s)", tmp_val, bin->strtab + vna.vna_name), 0);
+							char *val = r_str_newf ("%s(%s)", tmp_val, bin->strtab + vna.vna_name);
+							sdb_set (sdb, key, val, 0);
+							free (val);
 							check_def = false;
 							break;
 						}
@@ -933,8 +935,9 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 						}
 						const char *name = bin->strtab + vda.vda_name;
 						if (name) {
-							const char *fname = sdb_fmt ("%s(%s%-*s)", tmp_val, name, (int)(12 - strlen (name)),")");
+							char *fname = r_str_newf ("%s(%s%-*s)", tmp_val, name, (int)(12 - strlen (name)),")");
 							sdb_set (sdb, key, fname, 0);
+							free (fname);
 						}
 					}
 				}
@@ -1210,7 +1213,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 			if (aux->vna_name > 0 && aux->vna_name + 8 < bin->dynstr_size) {
 				char name [16];
 				strncpy (name, &bin->dynstr[aux->vna_name], sizeof (name)-1);
-				name[sizeof(name)-1] = 0;
+				name[sizeof (name)-1] = 0;
 				sdb_set (sdb_vernaux, "name", name, 0);
 			}
 			sdb_set (sdb_vernaux, "flags", get_ver_flags (aux->vna_flags), 0);
@@ -1269,7 +1272,7 @@ static Sdb *store_versioninfo(ELFOBJ *bin) {
 		int size = bin->shdr[i].sh_size;
 
 		if (size - (i * sizeof (Elf_(Shdr)) > bin->size)) {
-			size = bin->size - (i*sizeof(Elf_(Shdr)));
+			size = bin->size - (i*sizeof (Elf_(Shdr)));
 		}
 		int left = size - (i * sizeof (Elf_(Shdr)));
 		left = R_MIN (left, bin->shdr[i].sh_size);
@@ -3617,7 +3620,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				continue;
 			}
 			// hack to avoid asan cry
-			if ((bin->shdr[i].sh_link * sizeof(Elf_(Shdr))) >= shdr_size) {
+			if ((bin->shdr[i].sh_link * sizeof (Elf_(Shdr))) >= shdr_size) {
 				/* oops. fix out of range pointers */
 				continue;
 			}

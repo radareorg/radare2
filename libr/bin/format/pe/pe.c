@@ -425,7 +425,8 @@ static PE_DWord bin_pe_va_to_rva(RBinPEObj* bin, PE_DWord va) {
 
 static char* resolveModuleOrdinal(Sdb* sdb, const char* module, int ordinal) {
 	Sdb* db = sdb;
-	char* foo = sdb_get (db, sdb_fmt ("%d", ordinal), 0);
+	r_strf_var (key, 32, "%d", ordinal);
+	char* foo = sdb_get (db, key, 0);
 	if (foo && *foo) {
 		return foo;
 	} else {
@@ -447,7 +448,6 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 	Sdb* db = NULL;
 	char* sdb_module = NULL;
 	char* symname = NULL;
-	char* filename = NULL;
 	char* symdllname = NULL;
 
 	if (!dll_name || !*dll_name || *dll_name == '0') {
@@ -462,7 +462,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 		if (import_ordinal >= UT16_MAX) {
 			break;
 		}
-		if (off + i * sizeof(PE_DWord) > bin->size) {
+		if (off + i * sizeof (PE_DWord) > bin->size) {
 			break;
 		}
 		import_table = R_BUF_READ_PE_DWORD_AT (bin->b, off + i * sizeof (PE_DWord));
@@ -476,7 +476,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 				snprintf (import_name, PE_NAME_LENGTH, "Ordinal_%i", import_ordinal);
 				free (symdllname);
 				strncpy (name, dll_name, sizeof (name) - 1);
-				name[sizeof(name) - 1] = 0;
+				name[sizeof (name) - 1] = 0;
 				symdllname = strdup (name);
 
 				// remove the trailling ".dll"
@@ -485,19 +485,20 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 				len = len < 4? 0: len - 4;
 				symdllname[len] = 0;
 
+				char* filename = NULL;
 				if (!sdb_module || strcmp (symdllname, sdb_module)) {
 					sdb_free (db);
 					db = NULL;
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
-					filename = sdb_fmt ("%s.sdb", symdllname);
+					filename = r_str_newf ("%s.sdb", symdllname);
 					if (filename && r_file_exists (filename)) {
 						db = sdb_new (NULL, filename, 0);
 					} else {
 						const char *dirPrefix = r_sys_prefix (NULL);
 						char *lower_symdllname = strdup (symdllname);
 						r_str_case (lower_symdllname, false);
-						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+						filename = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
 							dirPrefix, lower_symdllname);
 						free (lower_symdllname);
 						if (r_file_exists (filename)) {
@@ -513,8 +514,8 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					}
 				} else {
 					bprintf ("Cannot find %s\n", filename);
-
 				}
+				free (filename);
 			} else {
 				import_ordinal++;
 				const ut64 off = PE_(va2pa) (bin, import_table);
@@ -528,7 +529,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					goto error;
 				}
 				name[0] = '\0';
-				len = r_buf_read_at (bin->b, off + sizeof(PE_Word), (ut8*) name, PE_NAME_LENGTH);
+				len = r_buf_read_at (bin->b, off + sizeof (PE_Word), (ut8*) name, PE_NAME_LENGTH);
 				if (len < 1) {
 					bprintf ("Warning: read (import name)\n");
 					goto error;
@@ -552,7 +553,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 			memcpy ((*importp)[*nimp].libname, dll_name, PE_NAME_LENGTH);
 			(*importp)[*nimp].libname[PE_NAME_LENGTH] = '\0';
 			(*importp)[*nimp].vaddr = bin_pe_rva_to_va (bin, FirstThunk + i * sizeof (PE_DWord));
-			(*importp)[*nimp].paddr = PE_(va2pa) (bin, FirstThunk) + i * sizeof(PE_DWord);
+			(*importp)[*nimp].paddr = PE_(va2pa) (bin, FirstThunk) + i * sizeof (PE_DWord);
 			(*importp)[*nimp].hint = import_hint;
 			(*importp)[*nimp].ordinal = import_ordinal;
 			(*importp)[*nimp].last = 0;
@@ -680,7 +681,7 @@ int PE_(read_nt_headers)(RBuffer *b, ut64 addr, PE_(image_nt_headers) *headers) 
 }
 
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
-	if (!(bin->dos_header = malloc (sizeof(PE_(image_dos_header))))) {
+	if (!(bin->dos_header = malloc (sizeof (PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
 		return false;
 	}
@@ -857,7 +858,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 						ut32 idx = r_read_le32 (buf + i + 4);
 						if (r_buf_read_at (bin->b, sym_tbl_off + idx + shsz, (ut8*) name, 128)) { // == 128) {
 							longname = name;
-							name[sizeof(name) - 1] = 0;
+							name[sizeof (name) - 1] = 0;
 							strncpy ((char*) exp[symctr].name, longname, PE_NAME_LENGTH - 1);
 						} else {
 							sprintf ((char*) exp[symctr].name, "unk_%d", symctr);
@@ -1016,7 +1017,7 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 		free (buf);
 		return 0;
 	}
-	checksum_offset = bin->nt_header_offset + 4 + sizeof(PE_(image_file_header)) + 0x40;
+	checksum_offset = bin->nt_header_offset + 4 + sizeof (PE_(image_file_header)) + 0x40;
 	for (i = 0, j = 0; i < bin->size / 4; i++) {
 		cur = r_read_at_ble32 (buf, j * 4, bin->endian);
 		j++;
@@ -1146,7 +1147,7 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 
 	if (bin->optional_header) {
 		computeOverlayOffset (
-				bin->nt_header_offset+4+sizeof(bin->nt_headers->file_header),
+				bin->nt_header_offset+4+sizeof (bin->nt_headers->file_header),
 				bin->nt_headers->file_header.SizeOfOptionalHeader,
 				bin->size,
 				&largest_offset,
@@ -1438,8 +1439,8 @@ static int bin_pe_init_imports(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_delay_import_directory) * new_delay_import_dir = NULL;
 	PE_(image_delay_import_directory) * curr_delay_import_dir = NULL;
 
-	int dir_size = sizeof(PE_(image_import_directory));
-	int delay_import_size = sizeof(PE_(image_delay_import_directory));
+	int dir_size = sizeof (PE_(image_import_directory));
+	int delay_import_size = sizeof (PE_(image_delay_import_directory));
 	int indx = 0;
 	int rr, count = 0;
 	int import_dir_size = data_dir_import->Size;
@@ -1569,7 +1570,7 @@ static int bin_pe_init_exports(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 	// sdb_setn (DB, "hdr.exports_directory", export_dir_paddr);
 	// bprintf ("Pexports paddr at 0x%"PFMT64x"\n", export_dir_paddr);
-	if (!(bin->export_directory = malloc (sizeof(PE_(image_export_directory))))) {
+	if (!(bin->export_directory = malloc (sizeof (PE_(image_export_directory))))) {
 		r_sys_perror ("malloc (export directory)");
 		return false;
 	}
@@ -1618,7 +1619,7 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin->resources) {
 		return false;
 	}
-	if (!(bin->resource_directory = malloc (sizeof(*bin->resource_directory)))) {
+	if (!(bin->resource_directory = malloc (sizeof (*bin->resource_directory)))) {
 		r_sys_perror ("malloc (resource directory)");
 		return false;
 	}
@@ -1632,6 +1633,7 @@ static int bin_pe_init_resource(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord callbacks) {
+	r_strf_buffer (64);
 	PE_DWord paddr, haddr;
 	int count = 0;
 	PE_DWord addressOfTLSCallback = 1;
@@ -1652,12 +1654,12 @@ static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord
 				break;
 			}
 		}
-		key = sdb_fmt ("pe.tls_callback%d_vaddr", count);
+		key = r_strf ("pe.tls_callback%d_vaddr", count);
 		sdb_num_set (bin->kv, key, addressOfTLSCallback, 0);
-		key = sdb_fmt ("pe.tls_callback%d_paddr", count);
+		key = r_strf ("pe.tls_callback%d_paddr", count);
 		paddr = PE_(va2pa) (bin, bin_pe_va_to_rva (bin, (PE_DWord) addressOfTLSCallback));
 		sdb_num_set (bin->kv, key, paddr,                0);
-		key = sdb_fmt ("pe.tls_callback%d_haddr", count);
+		key = r_strf ("pe.tls_callback%d_haddr", count);
 		haddr = callbacks;
 		sdb_num_set (bin->kv, key, haddr,                0);
 		count++;
@@ -1779,7 +1781,7 @@ void PE_(free_VS_VERSIONINFO)(PE_VS_VERSIONINFO * vs_VersionInfo) {
 }
 
 static Var* Pe_r_bin_pe_parse_var(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord* curAddr) {
-	Var* var = calloc (1, sizeof(*var));
+	Var* var = calloc (1, sizeof (*var));
 	if (!var) {
 		bprintf ("Warning: calloc (Var)\n");
 		return NULL;
@@ -1789,19 +1791,19 @@ static Var* Pe_r_bin_pe_parse_var(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord* cur
 		free_Var (var);
 		return NULL;
 	}
-	*curAddr += sizeof(var->wLength);
+	*curAddr += sizeof (var->wLength);
 	if ((var->wValueLength = r_buf_read_le16_at (bin->b, *curAddr)) == UT16_MAX) {
 		bprintf ("Warning: read (Var wValueLength)\n");
 		free_Var (var);
 		return NULL;
 	}
-	*curAddr += sizeof(var->wValueLength);
+	*curAddr += sizeof (var->wValueLength);
 	if ((var->wType = r_buf_read_le16_at (bin->b, *curAddr)) == UT16_MAX) {
 		bprintf ("Warning: read (Var wType)\n");
 		free_Var (var);
 		return NULL;
 	}
-	*curAddr += sizeof(var->wType);
+	*curAddr += sizeof (var->wType);
 	if (var->wType != 0 && var->wType != 1) {
 		bprintf ("Warning: check (Var wType)\n");
 		free_Var (var);
@@ -1848,7 +1850,7 @@ static Var* Pe_r_bin_pe_parse_var(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord* cur
 }
 
 static VarFileInfo* Pe_r_bin_pe_parse_var_file_info(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord* curAddr) {
-	VarFileInfo* varFileInfo = calloc (1, sizeof(*varFileInfo));
+	VarFileInfo* varFileInfo = calloc (1, sizeof (*varFileInfo));
 	if (!varFileInfo) {
 		bprintf ("Warning: calloc (VarFileInfo)\n");
 		return NULL;
@@ -1859,14 +1861,14 @@ static VarFileInfo* Pe_r_bin_pe_parse_var_file_info(struct PE_(r_bin_pe_obj_t)* 
 		free_VarFileInfo (varFileInfo);
 		return NULL;
 	}
-	*curAddr += sizeof(varFileInfo->wLength);
+	*curAddr += sizeof (varFileInfo->wLength);
 
 	if ((varFileInfo->wValueLength = r_buf_read_le16_at (bin->b, *curAddr)) == UT16_MAX) {
 		bprintf ("Warning: read (VarFileInfo wValueLength)\n");
 		free_VarFileInfo (varFileInfo);
 		return NULL;
 	}
-	*curAddr += sizeof(varFileInfo->wValueLength);
+	*curAddr += sizeof (varFileInfo->wValueLength);
 
 	if (varFileInfo->wValueLength != 0) {
 		bprintf ("Warning: check (VarFileInfo wValueLength)\n");
@@ -1879,7 +1881,7 @@ static VarFileInfo* Pe_r_bin_pe_parse_var_file_info(struct PE_(r_bin_pe_obj_t)* 
 		free_VarFileInfo (varFileInfo);
 		return NULL;
 	}
-	*curAddr += sizeof(varFileInfo->wType);
+	*curAddr += sizeof (varFileInfo->wType);
 	if (varFileInfo->wType && varFileInfo->wType != 1) {
 		bprintf ("Warning: check (VarFileInfo wType)\n");
 		free_VarFileInfo (varFileInfo);
@@ -1907,7 +1909,7 @@ static VarFileInfo* Pe_r_bin_pe_parse_var_file_info(struct PE_(r_bin_pe_obj_t)* 
 	}
 	align32 (*curAddr);
 	while (startAddr + varFileInfo->wLength > *curAddr) {
-		Var** tmp = (Var**) realloc (varFileInfo->Children, (varFileInfo->numOfChildren + 1) * sizeof(*varFileInfo->Children));
+		Var** tmp = (Var**) realloc (varFileInfo->Children, (varFileInfo->numOfChildren + 1) * sizeof (*varFileInfo->Children));
 		if (!tmp) {
 			bprintf ("Warning: realloc (VarFileInfo Children)\n");
 			free_VarFileInfo (varFileInfo);
@@ -1926,7 +1928,7 @@ static VarFileInfo* Pe_r_bin_pe_parse_var_file_info(struct PE_(r_bin_pe_obj_t)* 
 }
 
 static String* Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord* curAddr) {
-	String* string = calloc (1, sizeof(*string));
+	String* string = calloc (1, sizeof (*string));
 	PE_DWord begAddr = *curAddr;
 	int len_value = 0;
 	int i = 0;
@@ -1934,7 +1936,7 @@ static String* Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 		bprintf ("Warning: calloc (String)\n");
 		return NULL;
 	}
-	if (begAddr > bin->size || begAddr + sizeof(string->wLength) > bin->size) {
+	if (begAddr > bin->size || begAddr + sizeof (string->wLength) > bin->size) {
 		free_String (string);
 		return NULL;
 	}
@@ -1942,24 +1944,24 @@ static String* Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 		bprintf ("Warning: read (String wLength)\n");
 		goto out_error;
 	}
-	*curAddr += sizeof(string->wLength);
-	if (*curAddr > bin->size || *curAddr + sizeof(string->wValueLength) > bin->size) {
+	*curAddr += sizeof (string->wLength);
+	if (*curAddr > bin->size || *curAddr + sizeof (string->wValueLength) > bin->size) {
 		goto out_error;
 	}
 	if ((string->wValueLength = r_buf_read_le16_at (bin->b, *curAddr)) == UT16_MAX) {
 		bprintf ("Warning: read (String wValueLength)\n");
 		goto out_error;
 	}
-	*curAddr += sizeof(string->wValueLength);
+	*curAddr += sizeof (string->wValueLength);
 
-	if (*curAddr > bin->size || *curAddr + sizeof(string->wType) > bin->size) {
+	if (*curAddr > bin->size || *curAddr + sizeof (string->wType) > bin->size) {
 		goto out_error;
 	}
 	if ((string->wType = r_buf_read_le16_at (bin->b, *curAddr)) == UT16_MAX) {
 		bprintf ("Warning: read (String wType)\n");
 		goto out_error;
 	}
-	*curAddr += sizeof(string->wType);
+	*curAddr += sizeof (string->wType);
 	if (string->wType != 0 && string->wType != 1) {
 		bprintf ("Warning: check (String wType)\n");
 		goto out_error;
@@ -2014,7 +2016,7 @@ out_error:
 }
 
 static StringTable* Pe_r_bin_pe_parse_string_table(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord* curAddr) {
-	StringTable* stringTable = calloc (1, sizeof(*stringTable));
+	StringTable* stringTable = calloc (1, sizeof (*stringTable));
 	if (!stringTable) {
 		bprintf ("Warning: calloc (stringTable)\n");
 		return NULL;
@@ -2026,14 +2028,14 @@ static StringTable* Pe_r_bin_pe_parse_string_table(struct PE_(r_bin_pe_obj_t)* b
 		free_StringTable (stringTable);
 		return NULL;
 	}
-	*curAddr += sizeof(stringTable->wLength);
+	*curAddr += sizeof (stringTable->wLength);
 
 	if ((stringTable->wValueLength = r_buf_read_le16_at (bin->b, *curAddr)) == UT16_MAX) {
 		bprintf ("Warning: read (StringTable wValueLength)\n");
 		free_StringTable (stringTable);
 		return NULL;
 	}
-	*curAddr += sizeof(stringTable->wValueLength);
+	*curAddr += sizeof (stringTable->wValueLength);
 
 	if (stringTable->wValueLength) {
 		bprintf ("Warning: check (StringTable wValueLength)\n");
@@ -2046,7 +2048,7 @@ static StringTable* Pe_r_bin_pe_parse_string_table(struct PE_(r_bin_pe_obj_t)* b
 		free_StringTable (stringTable);
 		return NULL;
 	}
-	*curAddr += sizeof(stringTable->wType);
+	*curAddr += sizeof (stringTable->wType);
 	if (stringTable->wType && stringTable->wType != 1) {
 		bprintf ("Warning: check (StringTable wType)\n");
 		free_StringTable (stringTable);
@@ -2067,7 +2069,7 @@ static StringTable* Pe_r_bin_pe_parse_string_table(struct PE_(r_bin_pe_obj_t)* b
 	*curAddr += EIGHT_HEX_DIG_UTF_16_LEN;
 	align32 (*curAddr);
 	while (startAddr + stringTable->wLength > *curAddr) {
-		String** tmp = (String**) realloc (stringTable->Children, (stringTable->numOfChildren + 1) * sizeof(*stringTable->Children));
+		String** tmp = (String**) realloc (stringTable->Children, (stringTable->numOfChildren + 1) * sizeof (*stringTable->Children));
 		if (!tmp) {
 			bprintf ("Warning: realloc (StringTable Children)\n");
 			free_StringTable (stringTable);
@@ -2093,7 +2095,7 @@ static StringTable* Pe_r_bin_pe_parse_string_table(struct PE_(r_bin_pe_obj_t)* b
 }
 
 static StringFileInfo* Pe_r_bin_pe_parse_string_file_info(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord* curAddr) {
-	StringFileInfo* stringFileInfo = calloc (1, sizeof(*stringFileInfo));
+	StringFileInfo* stringFileInfo = calloc (1, sizeof (*stringFileInfo));
 	if (!stringFileInfo) {
 		bprintf ("Warning: calloc (StringFileInfo)\n");
 		return NULL;
@@ -2106,14 +2108,14 @@ static StringFileInfo* Pe_r_bin_pe_parse_string_file_info(struct PE_(r_bin_pe_ob
 		free_StringFileInfo (stringFileInfo);
 		return NULL;
 	}
-	*curAddr += sizeof(stringFileInfo->wLength);
+	*curAddr += sizeof (stringFileInfo->wLength);
 
 	if ((stringFileInfo->wValueLength = r_buf_read_le16_at (bin->b, *curAddr)) == UT16_MAX) {
 		bprintf ("Warning: read (StringFileInfo wValueLength)\n");
 		free_StringFileInfo (stringFileInfo);
 		return NULL;
 	}
-	*curAddr += sizeof(stringFileInfo->wValueLength);
+	*curAddr += sizeof (stringFileInfo->wValueLength);
 
 	if (stringFileInfo->wValueLength) {
 		bprintf ("Warning: check (StringFileInfo wValueLength)\n");
@@ -2126,7 +2128,7 @@ static StringFileInfo* Pe_r_bin_pe_parse_string_file_info(struct PE_(r_bin_pe_ob
 		free_StringFileInfo (stringFileInfo);
 		return NULL;
 	}
-	*curAddr += sizeof(stringFileInfo->wType);
+	*curAddr += sizeof (stringFileInfo->wType);
 
 	if (stringFileInfo->wType && stringFileInfo->wType != 1) {
 		bprintf ("Warning: check (StringFileInfo wType)\n");
@@ -2157,7 +2159,7 @@ static StringFileInfo* Pe_r_bin_pe_parse_string_file_info(struct PE_(r_bin_pe_ob
 	align32 (*curAddr);
 
 	while (startAddr + stringFileInfo->wLength > *curAddr) {
-		StringTable** tmp = (StringTable**) realloc (stringFileInfo->Children, (stringFileInfo->numOfChildren + 1) * sizeof(*stringFileInfo->Children));
+		StringTable** tmp = (StringTable**) realloc (stringFileInfo->Children, (stringFileInfo->numOfChildren + 1) * sizeof (*stringFileInfo->Children));
 		if (!tmp) {
 			bprintf ("Warning: realloc (StringFileInfo Children)\n");
 			free_StringFileInfo (stringFileInfo);
@@ -2187,7 +2189,7 @@ static StringFileInfo* Pe_r_bin_pe_parse_string_file_info(struct PE_(r_bin_pe_ob
 		goto out_error; }
 static PE_VS_VERSIONINFO* Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord version_info_paddr) {
 	ut32 sz;
-	PE_VS_VERSIONINFO* vs_VersionInfo = calloc (1, sizeof(PE_VS_VERSIONINFO));
+	PE_VS_VERSIONINFO* vs_VersionInfo = calloc (1, sizeof (PE_VS_VERSIONINFO));
 	if (!vs_VersionInfo) {
 		return NULL;
 	}
@@ -2198,7 +2200,7 @@ static PE_VS_VERSIONINFO* Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj
 	//This length does not include any padding that aligns any subsequent
 	//version resource data on a 32-bit boundary.
 	//Mb we are in subsequent version resource data and not aligned.
-	sz = sizeof(ut16);
+	sz = sizeof (ut16);
 	EXIT_ON_OVERFLOW (sz);
 	if ((vs_VersionInfo->wLength = r_buf_read_le16_at (bin->b, curAddr)) == UT16_MAX) {
 		bprintf ("Warning: read (VS_VERSIONINFO wLength)\n");
@@ -2244,12 +2246,12 @@ static PE_VS_VERSIONINFO* Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj
 			goto out_error;
 		}
 
-		vs_VersionInfo->Value = (PE_VS_FIXEDFILEINFO*) malloc (sizeof(*vs_VersionInfo->Value));
+		vs_VersionInfo->Value = (PE_VS_FIXEDFILEINFO*) malloc (sizeof (*vs_VersionInfo->Value));
 		if (!vs_VersionInfo->Value) {
 			bprintf ("Warning: malloc (VS_VERSIONINFO Value)\n");
 			goto out_error;
 		}
-		sz = sizeof(PE_VS_FIXEDFILEINFO);
+		sz = sizeof (PE_VS_FIXEDFILEINFO);
 		EXIT_ON_OVERFLOW (sz);
 		if (r_buf_read_at (bin->b, curAddr, (ut8*) vs_VersionInfo->Value, sz) != sz) {
 			bprintf ("Warning: read (VS_VERSIONINFO Value)\n");
@@ -2266,10 +2268,10 @@ static PE_VS_VERSIONINFO* Pe_r_bin_pe_parse_version_info(struct PE_(r_bin_pe_obj
 
 	if (startAddr + vs_VersionInfo->wLength > curAddr) {
 		char t = '\0';
-		if (curAddr + 3 * sizeof(ut16) > bin->size || curAddr + 3 + sizeof(ut64) + 1 > bin->size) {
+		if (curAddr + 3 * sizeof (ut16) > bin->size || curAddr + 3 + sizeof (ut64) + 1 > bin->size) {
 			goto out_error;
 		}
-		if (r_buf_read_at (bin->b, curAddr + 3 * sizeof(ut16), (ut8*) &t, 1) != 1) {
+		if (r_buf_read_at (bin->b, curAddr + 3 * sizeof (ut16), (ut8*) &t, 1) != 1) {
 			bprintf ("Warning: read (VS_VERSIONINFO Children V or S)\n");
 			goto out_error;
 		}
@@ -2961,7 +2963,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 	}
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry entry;
-		off = rsrc_base + offDir + sizeof(*dir) + index * sizeof(entry);
+		off = rsrc_base + offDir + sizeof (*dir) + index * sizeof (entry);
 		if (ht_uu_find (dirs, off, NULL)) {
 			break;
 		}
@@ -3088,6 +3090,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 }
 
 static void _store_resource_sdb(struct PE_(r_bin_pe_obj_t) *bin) {
+	r_strf_buffer (64);
 	RListIter *iter;
 	r_pe_resource *rs;
 	int index = 0;
@@ -3098,18 +3101,18 @@ static void _store_resource_sdb(struct PE_(r_bin_pe_obj_t) *bin) {
 		return;
 	}
 	r_list_foreach (bin->resources, iter, rs) {
-		key = sdb_fmt ("resource.%d.timestr", index);
+		key = r_strf ("resource.%d.timestr", index);
 		sdb_set (sdb, key, rs->timestr, 0);
-		key = sdb_fmt ("resource.%d.vaddr", index);
+		key = r_strf ("resource.%d.vaddr", index);
 		vaddr = bin_pe_rva_to_va (bin, rs->data->OffsetToData);
 		sdb_num_set (sdb, key, vaddr, 0);
-		key = sdb_fmt ("resource.%d.name", index);
+		key = r_strf ("resource.%d.name", index);
 		sdb_set (sdb, key, rs->name, 0);
-		key = sdb_fmt ("resource.%d.size", index);
+		key = r_strf ("resource.%d.size", index);
 		sdb_num_set (sdb, key, rs->data->Size, 0);
-		key = sdb_fmt ("resource.%d.type", index);
+		key = r_strf ("resource.%d.type", index);
 		sdb_set (sdb, key, rs->type, 0);
-		key = sdb_fmt ("resource.%d.language", index);
+		key = r_strf ("resource.%d.language", index);
 		sdb_set (sdb, key, rs->language, 0);
 		index++;
 	}
@@ -3143,7 +3146,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 		Pe_image_resource_directory_entry typeEntry;
 		off = rsrc_base + sizeof (*rs_directory) + index * sizeof (typeEntry);
 		ht_uu_insert (dirs, off, 1);
-		if (off > bin->size || off + sizeof(typeEntry) > bin->size) {
+		if (off > bin->size || off + sizeof (typeEntry) > bin->size) {
 			break;
 		}
 		if (read_image_resource_directory_entry (bin->b, off, &typeEntry) < 0) {
@@ -3188,7 +3191,7 @@ static int bin_pe_init_security(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	PE_DWord offset = paddr;
 	while (offset < paddr + size) {
-		Pe_certificate **tmp = (Pe_certificate **)realloc (security_directory->certificates, (security_directory->length + 1) * sizeof(Pe_certificate *));
+		Pe_certificate **tmp = (Pe_certificate **)realloc (security_directory->certificates, (security_directory->length + 1) * sizeof (Pe_certificate *));
 		if (!tmp) {
 			return false;
 		}
@@ -3741,7 +3744,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 	if (off < bin->size && off > 0) {
 		ut64 last;
 		int idi = 0;
-		if (off + sizeof(PE_(image_import_directory)) > bin->size) {
+		if (off + sizeof (PE_(image_import_directory)) > bin->size) {
 			return NULL;
 		}
 		int r = read_image_import_directory (bin->b, bin->import_directory_offset +
@@ -3834,7 +3837,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 	}
 beach:
 	if (nimp) {
-		imps = realloc (imports, (nimp + 1) * sizeof(struct r_bin_pe_import_t));
+		imps = realloc (imports, (nimp + 1) * sizeof (struct r_bin_pe_import_t));
 		if (!imps) {
 			r_sys_perror ("realloc (import)");
 			free (imports);
@@ -3860,7 +3863,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 	int index = 0;
 	int len = 0;
 	int max_libs = 20;
-	libs = calloc (max_libs + 1, sizeof(struct r_bin_pe_lib_t));
+	libs = calloc (max_libs + 1, sizeof (struct r_bin_pe_lib_t));
 	if (!libs) {
 		r_sys_perror ("malloc (libs)");
 		return NULL;
@@ -3920,7 +3923,7 @@ next:
 	off = bin->delay_import_directory_offset;
 	if (off < bin->size && off > 0) {
 		ut64 did = 0;
-		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size) {
+		if (off + sizeof (PE_(image_delay_import_directory)) > bin->size) {
 			goto out_error;
 		}
 		int r = read_image_delay_import_directory (bin->b, off, &curr_delay_import_dir);
@@ -4185,7 +4188,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 		}
 	}
 	//we need to create another section in order to load the entrypoint
-	void *ss = realloc (sections, (bin->num_sections + 2) * sizeof(struct r_bin_pe_section_t));
+	void *ss = realloc (sections, (bin->num_sections + 2) * sizeof (struct r_bin_pe_section_t));
 	if (!ss) {
 		goto out_function;
 	}

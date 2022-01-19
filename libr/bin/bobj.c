@@ -177,7 +177,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 		// bf->sdb = o->kv;
 		// bf->sdb_info = o->kv;
 		// sdb_ns_set (bf->sdb, "info", o->kv);
-		//sdb_ns (sdb, sdb_fmt ("fd.%d", bf->fd), 1);
+		//sdb_ns (sdb, r_strf ("fd.%d", bf->fd), 1);
 		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */
 		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all
@@ -188,7 +188,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	//	bf->sdb_addrinfo = sdb_ns (bf->sdb, "addrinfo", 1);
 	//	bf->sdb_addrinfo->refs++;
 		sdb_ns_set (sdb, "cur", bdb); // bf->sdb);
-		const char *fdns = sdb_fmt ("fd.%d", bf->fd);
+		r_strf_var (fdns, 32, "fd.%d", bf->fd);
 		sdb_ns_set (sdb, fdns, bdb); // bf->sdb);
 		bf->sdb->refs++;
 	}
@@ -256,8 +256,9 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *o) {
 			ht_pp_insert (o->classes_ht, klass->name, klass);
 
 			r_list_foreach (klass->methods, it2, method) {
-				const char *name = sdb_fmt ("%s::%s", klass->name, method->name);
+				char *name = r_str_newf ("%s::%s", klass->name, method->name);
 				ht_pp_insert (o->methods_ht, name, method);
+				free (name);
 			}
 		}
 	}

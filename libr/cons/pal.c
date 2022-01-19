@@ -134,8 +134,9 @@ static void __cons_pal_update_event(RConsContext *ctx) {
 		// Color is dynamically allocated, needs to be freed
 		R_FREE (*color);
 		*color = r_cons_rgb_str_mode (ctx->color_mode, NULL, 0, rcolor);
-		const char *rgb = sdb_fmt ("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
-		sdb_set (db, rgb, "1", 0);
+		char rgbstr[16];
+		snprintf (rgbstr, sizeof (rgbstr), "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
+		sdb_set (db, rgbstr, "1", 0);
 	}
 	SdbList *list = sdb_foreach_list (db, true);
 	SdbListIter *iter;

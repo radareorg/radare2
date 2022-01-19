@@ -180,7 +180,7 @@ SDB_API int sdb_diff_format(char *str, int size, const SdbDiff *diff);
 typedef void (*SdbDiffCallback)(const SdbDiff *diff, void *user);
 
 // Returns true iff the contents of a and b are equal including contained namespaces
-// If cb is non-null, it will be called subsequently with differences.
+// If cb is non-null, it will be called subsequently with differences. 
 SDB_API bool sdb_diff(Sdb *a, Sdb *b, SdbDiffCallback cb, void *cb_user);
 
 // Gets a pointer to the value associated with `key`.
@@ -248,11 +248,10 @@ SDB_API bool sdb_journal_unlink(Sdb *s);
 /* numeric */
 SDB_API char *sdb_itoa(ut64 n, char *s, int base);
 SDB_API ut64  sdb_atoi(const char *s);
-SDB_API const char *sdb_itoca(ut64 n);
 
 /* locking */
 SDB_API bool sdb_lock(const char *s);
-SDB_API const char *sdb_lock_file(const char *f);
+SDB_API bool sdb_lock_file(const char *f, char *buf, size_t buf_size);
 SDB_API void sdb_unlock(const char *s);
 SDB_API bool sdb_unlink(Sdb* s);
 SDB_API int sdb_lock_wait(const char *s UNUSED);
@@ -368,7 +367,6 @@ SDB_API char *sdb_array_pop_tail(Sdb *s, const char *key, ut32 *cas);
 
 typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
 
-SDB_API void sdb_global_hook(SdbHook hook, void *user);
 SDB_API bool sdb_hook(Sdb* s, SdbHook cb, void* user);
 SDB_API bool sdb_unhook(Sdb* s, SdbHook h);
 SDB_API int sdb_hook_call(Sdb *s, const char *k, const char *v);
@@ -389,7 +387,6 @@ SDB_API void sdb_encode_raw(char *bout, const ut8 *bin, int len);
 SDB_API int sdb_decode_raw(ut8 *bout, const char *bin, int len);
 
 // binfmt
-SDB_API char *sdb_fmt(const char *fmt, ...) SDB_PRINTF_CHECK(1, 2);
 SDB_API int sdb_fmt_init(void *p, const char *fmt);
 SDB_API void sdb_fmt_free(void *p, const char *fmt);
 SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru);

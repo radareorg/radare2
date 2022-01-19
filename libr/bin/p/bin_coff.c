@@ -113,7 +113,10 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		}
 		break;
 	default:
-		ptr->type = r_str_constpool_get (&rbin->constpool, sdb_fmt ("%i", s->n_sclass));
+		{
+			r_strf_var (ivar, 32, "%i", s->n_sclass);
+			ptr->type = r_str_constpool_get (&rbin->constpool, ivar);
+		}
 		break;
 	}
 	ptr->size = 4;

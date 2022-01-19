@@ -107,14 +107,14 @@ R_API void r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 		}
 	}
 
-	const char *uname = sdb_fmt ("%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
+	r_strf_var (uname, 256, "%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
 	bool res = ht_pp_insert (ht, uname, sym);
 	if (!res) {
 		return;
 	}
 	sym->dup_count = 0;
 
-	const char *oname = sdb_fmt ("o.0.%c.%s", sym->is_imported ? 'i' : 's', name);
+	r_strf_var (oname, 256, "o.0.%c.%s", sym->is_imported ? 'i' : 's', name);
 	RBinSymbol *prev_sym = ht_pp_find (ht, oname, NULL);
 	if (!prev_sym) {
 		if (!ht_pp_insert (ht, oname, sym)) {

@@ -22,6 +22,10 @@ typedef enum {
 
 typedef int (*RStrRangeCallback) (void *, int);
 
+#define r_strf_buffer(s) char strbuf[s]
+#define r_strf_var(n,s, f, ...) char n[s]; snprintf (n, s, f, __VA_ARGS__);
+#define r_strf(s,...) (snprintf (strbuf, sizeof(strbuf), s, __VA_ARGS__)?strbuf: strbuf)
+
 typedef struct r_charset_rune_t {
 	ut8 *ch;
 	ut8 *hx;

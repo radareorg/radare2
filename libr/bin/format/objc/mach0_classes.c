@@ -1098,12 +1098,14 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 			}
 		}
 		//eprintf ("0x%x  %s\n", s, klass->name);
-		sdb_num_set (bin->kv, sdb_fmt ("objc_class_%s.offset", klass->name), s, 0);
+		char *k = r_str_newf ("objc_class_%s.offset", klass->name);
+		sdb_num_set (bin->kv, k, s, 0);
+		free (k);
 	}
 #ifdef R_BIN_MACH064
-	sdb_set (bin->kv, sdb_fmt ("objc_class.format"), "lllll isa super cache vtable data", 0);
+	sdb_set (bin->kv, "objc_class.format", "lllll isa super cache vtable data", 0);
 #else
-	sdb_set (bin->kv, sdb_fmt ("objc_class.format"), "xxxxx isa super cache vtable data", 0);
+	sdb_set (bin->kv, "objc_class.format", "xxxxx isa super cache vtable data", 0);
 #endif
 
 	if (cro.baseMethods > 0) {

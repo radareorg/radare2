@@ -79,6 +79,7 @@ static char *prpsinfo_get_psargs(char *buffer, int len) {
 
 static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data) {
 	const char *prog_states = "RSDTZW"; /* fs/binfmt_elf.c from kernel */
+	r_strf_buffer (64);
 	const char *basename = NULL;
 	char *buffer, *pfname = NULL, *ppsargs = NULL, *file = NULL;
 	prpsinfo_t *p;
@@ -93,7 +94,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 
 	p->pr_pid = mypid = dbg->pid;
 	/* Start filling pr_fname and pr_psargs */
-	file = sdb_fmt ("/proc/%d/cmdline", mypid);
+	file = r_strf ("/proc/%d/cmdline", mypid);
 	buffer = r_file_slurp (file, &len);
 	if (!buffer) {
 		eprintf ("buffer NULL\n");
@@ -137,7 +138,8 @@ error:
 static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 	char *temp_p_sigpend, *temp_p_sighold, *p_sigpend, *p_sighold;
 	size_t size;
-	const char * file = sdb_fmt ("/proc/%d/task/%d/stat", pid, tid);
+	r_strf_buffer (64);
+	const char * file = r_strf ("/proc/%d/task/%d/stat", pid, tid);
 
 	char *buff = r_file_slurp (file, &size);
 	if (!buff) {
@@ -164,7 +166,7 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 	}
 
 	/* /proc/[pid]/status for uid, gid, sigpend and sighold */
-	file = sdb_fmt ("/proc/%d/task/%d/status", pid, tid);
+	file = r_strf ("/proc/%d/task/%d/status", pid, tid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		free (t);
@@ -566,7 +568,7 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg) {
 	int auxv_entries;
 	size_t size;
 
-	const char *file = sdb_fmt ("/proc/%d/auxv", dbg->pid);
+	r_strf_var (file, 32, "/proc/%d/auxv", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		return NULL;
@@ -785,10 +787,11 @@ static bool dump_elf_map_content(RDebug *dbg, RBuffer *dest, linux_map_entry_t *
 
 static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 	proc_per_process_t *p;
+	r_strf_buffer (32);
 	char *temp_p_uid, *temp_p_gid, *p_uid, *p_gid;
 	ut16 filter_flags, default_filter_flags = 0x33;
 	char *buff;
-	const char *file = sdb_fmt ("/proc/%d/stat", dbg->pid);
+	const char *file = r_strf ("/proc/%d/stat", dbg->pid);
 	size_t size;
 
 	buff = r_file_slurp (file, &size);
@@ -822,7 +825,7 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 		eprintf ("Warning: number of threads is < 1\n");
 		return NULL;
 	}
-	file = sdb_fmt ("/proc/%d/status", dbg->pid);
+	file = r_strf ("/proc/%d/status", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		free (p);
@@ -862,7 +865,7 @@ static proc_per_process_t *get_proc_process_content(RDebug *dbg) {
 
 	free (buff);
 	/* Check the coredump_filter value if we have*/
-	file = sdb_fmt ("/proc/%d/coredump_filter", dbg->pid);
+	file = r_strf ("/proc/%d/coredump_filter", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (buff) {
 		sscanf (buff, "%hx", &filter_flags);

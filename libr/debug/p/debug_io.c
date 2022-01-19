@@ -130,7 +130,7 @@ static bool __io_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 // "dk" send kill signal
 static bool __io_kill(RDebug *dbg, int pid, int tid, int sig) {
-	const char *cmd = sdb_fmt ("dk %d", sig);
+	r_strf_var (cmd, 32, "dk %d", sig);
 	dbg->iob.system (dbg->iob.io, cmd);
 	r_cons_flush ();
 	return true;

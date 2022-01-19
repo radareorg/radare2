@@ -124,8 +124,9 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 		}
 		{
 			const char *searchprefix = r_config_get (core->config, "search.prefix");
-			const char *flag = sdb_fmt ("%s%d_%d", searchprefix, 0, kw_count++);
+			char *flag = r_str_newf ("%s%d_%d", searchprefix, 0, kw_count++);
 			r_flag_set (core->flags, flag, addr + adelta, 1);
+			free (flag);
 		}
 		// TODO: This must be a callback .. move this into RSearch?
 		if (!pj) {

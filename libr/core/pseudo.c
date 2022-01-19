@@ -172,9 +172,9 @@ static const char *help_msg_pdc[] = {
 };
 
 #define I_TAB 2
-#define K_MARK(x) sdb_fmt("mark.%"PFMT64x,x)
-#define K_ELSE(x) sdb_fmt("else.%"PFMT64x,x)
-#define K_INDENT(x) sdb_fmt("loc.%"PFMT64x,x)
+#define K_MARK(x) r_strf ("mark.%"PFMT64x,x)
+#define K_ELSE(x) r_strf ("else.%"PFMT64x,x)
+#define K_INDENT(x) r_strf ("loc.%"PFMT64x,x)
 #define SET_INDENT(x) { (x) = (x)>0?(x):0; memset (indentstr, ' ', sizeof(indentstr)); indentstr [((x) * I_TAB)] = 0; }
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	bool show_c_headers = *input == 'c';
@@ -259,6 +259,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		pj = r_core_pj_new (core);
 	}
 
+	r_strf_buffer (64);
 	RStrBuf *codestr = r_strbuf_new ("");
 	db = sdb_new0 ();
 	// walk all basic blocks
@@ -306,7 +307,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_cons_push ();
 		bool html = r_config_get_b (core->config, "scr.html");
 		r_config_set_b (core->config, "scr.html", false);
-		char *code = r_core_cmd_str (core, sdb_fmt ("pD %"PFMT64d" @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
+		char *code = r_core_cmd_str (core, r_strf ("pD %"PFMT64d" @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
 		r_cons_pop ();
 		r_config_set_b (core->config, "scr.html", html);
 		indent = 2;

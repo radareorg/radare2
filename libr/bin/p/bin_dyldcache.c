@@ -88,7 +88,6 @@ typedef struct _r_dyldcache {
 
 	cache_hdr_t *hdr;
 	ut64 *hdr_offset;
-	ut64 symbols_off_base;
 	ut32 *maps_index;
 	ut32 n_hdr;
 	cache_map_t *maps;
@@ -1025,6 +1024,21 @@ static HtPU *create_path_to_index(RBuffer *cache_buf, cache_img_t *img, cache_hd
 		}
 		file[sizeof (file) - 1] = 0;
 		ht_pu_insert (path_to_idx, file, (ut64)i);
+
+		const char versions_pattern[] = ".framework/Versions/";
+		char *versions = strstr (file, versions_pattern);
+		if (versions) {
+			char *next_slash = strchr (versions + 20, '/');
+			if (next_slash) {
+				char *tail = strdup (next_slash);
+				if (!tail) {
+					break;
+				}
+				strcpy (versions + 10, tail);
+				free (tail);
+				ht_pu_insert (path_to_idx, file, (ut64)i);
+			}
+		}
 	}
 	return path_to_idx;
 }
@@ -1078,6 +1092,58 @@ beach:
 	free (cmds);
 }
 
+static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
+	struct MACH0_(mach_header) mh;
+	if (r_buf_fread_at (cache->buf, pa, (ut8*) &mh, "8i", 1) != sizeof (struct MACH0_(mach_header))) {
+		return 0;
+	}
+	if (mh.magic != MH_MAGIC_64 || mh.sizeofcmds == 0) {
+		return 0;
+	}
+	ut64 cmds_at = pa + sizeof (struct MACH0_(mach_header));
+	ut64 cursor = cmds_at;
+	ut64 end = cursor + mh.sizeofcmds;
+	while (cursor < end) {
+		ut32 cmd = r_buf_read_le32_at (cache->buf, cursor);
+		if (cmd == UT32_MAX) {
+			return 0;
+		}
+		ut32 cmdsize = r_buf_read_le32_at (cache->buf, cursor + sizeof (ut32));
+		if (cmdsize == UT32_MAX) {
+			return 0;
+		}
+		if (cmd == LC_SEGMENT || cmd == LC_SEGMENT_64) {
+			char segname[17];
+			segname[16] = 0;
+			if (r_buf_read_at (cache->buf, cursor + 2 * sizeof (ut32), (ut8 *)segname, 16) != 16) {
+				return 0;
+			}
+			if (!strncmp (segname, "__LINKEDIT", 16)) {
+				ut64 vmaddr = r_buf_read_le64_at (cache->buf, cursor + 2 * sizeof (ut32) + 16);
+				if (vmaddr == UT64_MAX) {
+					return 0;
+				}
+
+				ut32 i,j;
+				for (i = 0; i < cache->n_hdr; i++) {
+					cache_hdr_t *hdr = &cache->hdr[i];
+					ut64 hdr_offset = cache->hdr_offset[i];
+					ut32 maps_index = cache->maps_index[i];
+					for (j = 0; j < hdr->mappingCount; j++) {
+						ut64 map_start = cache->maps[maps_index + j].address;
+						ut64 map_end = map_start + cache->maps[maps_index + j].size;
+						if (vmaddr >= map_start && vmaddr < map_end) {
+							return hdr_offset;
+						}
+					}
+				}
+			}
+		}
+		cursor += cmdsize;
+	}
+	return 0;
+}
+
 static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	RList *bins = r_list_newf ((RListFree)free_bin);
 	if (!bins) {
@@ -1106,7 +1172,6 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		ut64 hdr_offset = cache->hdr_offset[i];
-		ut64 symbols_off = cache->symbols_off_base - hdr_offset;
 		ut32 maps_index = cache->maps_index[i];
 		cache_img_t *img = read_cache_images (cache->buf, hdr, hdr_offset);
 		if (!img) {
@@ -1201,7 +1266,7 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 				}
 				bin->header_at = pa;
 				bin->hdr_offset = hdr_offset;
-				bin->symbols_off = symbols_off;
+				bin->symbols_off = resolve_symbols_off (cache, pa);
 				bin->va = img[j].address;
 				if (r_buf_read_at (cache->buf, img[j].pathFileOffset, (ut8*) &file, sizeof (file)) == sizeof (file)) {
 					file[255] = 0;
@@ -1647,8 +1712,6 @@ static void populate_cache_maps(RDyldCache *cache) {
 	}
 
 	ut32 next_map = 0;
-	ut32 last_idx = UT32_MAX;
-	ut64 max_address = 0;
 	for (i = 0; i < cache->n_hdr; i++) {
 		cache_hdr_t *hdr = &cache->hdr[i];
 		cache->maps_index[i] = next_map;
@@ -1665,21 +1728,12 @@ static void populate_cache_maps(RDyldCache *cache) {
 		for (j = 0; j < hdr->mappingCount; j++) {
 			cache_map_t *map = &maps[next_map + j];
 			map->fileOffset += hdr_offset;
-			if (map->address > max_address) {
-				last_idx = i;
-				max_address = map->address;
-			}
 		}
 		next_map += hdr->mappingCount;
 	}
 
 	cache->maps = maps;
 	cache->n_maps = next_map;
-	if (last_idx == UT32_MAX) {
-		cache->symbols_off_base = 0;
-	} else {
-		cache->symbols_off_base = cache->hdr_offset[last_idx];
-	}
 }
 
 static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps) {
@@ -1743,6 +1797,9 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 		int i;
 		ut64 scoffs_offset = 0;
 		ut64 scoffs_size = 0;
+		ut64 selrefs_offset = 0;
+		ut64 selrefs_size = 0;
+		ut8 remaining = 2;
 		ut64 slide = rebase_infos_get_slide (cache);
 		for (i = 0; !sections[i].last; i++) {
 			if (sections[i].size == 0) {
@@ -1751,28 +1808,71 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 			if (strstr (sections[i].name, "__objc_scoffs")) {
 				scoffs_offset = va2pa (sections[i].addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
 				scoffs_size = sections[i].size;
-				break;
+				remaining--;
+				if (remaining == 0) {
+					break;
+				}
+			}
+			if (strstr (sections[i].name, "__DATA.__objc_selrefs")) {
+				selrefs_offset = va2pa (sections[i].addr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+				selrefs_size = sections[i].size;
+				remaining--;
+				if (remaining == 0) {
+					break;
+				}
 			}
 		}
 
 		MACH0_(mach0_free) (mach0);
 		R_FREE (sections);
 
+		ut64 sel_string_base = 0;
 		if (!scoffs_offset || scoffs_size < 40) {
-			break;
+			if (!selrefs_offset || !selrefs_size || cache->n_hdr == 1) {
+				break;
+			}
+			ut64 cursor = selrefs_offset;
+			ut64 end = cursor + selrefs_size;
+			while (cursor < end) {
+				ut64 sel_ptr = r_buf_read_le64_at (cache->buf, cursor);
+				if (sel_ptr == UT64_MAX) {
+					break;
+				}
+
+				ut64 sel_offset = va2pa (sel_ptr, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
+				char * selector = r_buf_get_string (cache->buf, sel_offset);
+				if (!selector) {
+					break;
+				}
+
+				bool is_magic_selector = !strncmp (selector, "\xf0\x9f\xa4\xaf", 4);
+				free (selector);
+
+				if (is_magic_selector) {
+					sel_string_base = sel_ptr;
+					break;
+				}
+
+				cursor += 8;
+			}
+			if (sel_string_base == 0) {
+				break;
+			}
+		} else {
+			ut64 check = r_buf_read_le64_at (cache->buf, scoffs_offset);
+			if (check != 2) {
+				break;
+			}
+			sel_string_base = r_buf_read_le64_at (cache->buf, scoffs_offset + 8);
+			if (sel_string_base == UT64_MAX) {
+				break;
+			}
+			ut64 sel_string_end = r_buf_read_le64_at (cache->buf, scoffs_offset + 16);
+			if (sel_string_end == sel_string_base || sel_string_end == UT64_MAX) {
+				break;
+			}
 		}
-		ut64 check = r_buf_read_le64_at (cache->buf, scoffs_offset);
-		if (check != 2) {
-			break;
-		}
-		ut64 sel_string_base = r_buf_read_le64_at (cache->buf, scoffs_offset + 8);
-		if (sel_string_base == UT64_MAX) {
-			break;
-		}
-		ut64 sel_string_end = r_buf_read_le64_at (cache->buf, scoffs_offset + 16);
-		if (sel_string_end == sel_string_base || sel_string_end == UT64_MAX) {
-			break;
-		}
+
 		result = R_NEW0 (objc_cache_opt_info);
 		if (!result) {
 			break;

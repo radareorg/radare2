@@ -679,8 +679,9 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 		}
 	}
 	if (searchflags && kw) {
-		const char *flag = sdb_fmt ("%s%d_%d", searchprefix, kw->kwidx, kw->count);
+		char *flag = r_str_newf ("%s%d_%d", searchprefix, kw->kwidx, kw->count);
 		r_flag_set (core->flags, flag, base_addr + addr, klen);
+		free (flag);
 	}
 	if (*param->cmd_hit) {
 		ut64 here = core->offset;
@@ -1321,7 +1322,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
 			// r_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = sdb_fmt ("0x%08"PFMT64x, addr);
+			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
 		}
 		if (hit) {
@@ -1361,7 +1362,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
 			// r_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = sdb_fmt ("0x%08"PFMT64x, addr);
+			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
 		}
 		break;
@@ -1415,7 +1416,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
 			// r_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = sdb_fmt ("0x%08"PFMT64x, addr);
+			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
 		}
 	}

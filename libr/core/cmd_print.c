@@ -1713,8 +1713,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		goto err_bytes;
 	}
 #if 1
-	int addrpadlen = strlen (sdb_fmt ("%08"PFMT64x, addr)) - 8;
 	char addrpad[32];
+	int addrpadlen = snprintf (addrpad, 0, "%08"PFMT64x, addr) - 8;
 	if (addrpadlen > 0) {
 		memset (addrpad, ' ', addrpadlen);
 		addrpad[addrpadlen] = 0;
@@ -3362,7 +3362,8 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 				|| (as->block[p].comments)
 				|| (as->block[p].symbols)
 				|| (as->block[p].strings)) {
-				r_table_add_rowf (t, "sddddd", sdb_fmt ("0x%09"PFMT64x"", at), as->block[p].flags,
+				r_strf_var (atstr, 32, "0x%09"PFMT64x"", at);
+				r_table_add_rowf (t, "sddddd", atstr, as->block[p].flags,
 						  as->block[p].functions, as->block[p].comments, as->block[p].symbols,  as->block[p].strings);
 			}
 			break;
@@ -5319,7 +5320,8 @@ static int cmd_print(void *data, const char *input) {
 				if (input[2]) {
 					cmd_pDj (core, input + 2);
 				} else {
-					cmd_pDj (core, sdb_fmt ("%d", core->blocksize));
+					r_strf_var (numstr, 32, "%d", core->blocksize);
+					cmd_pDj (core, numstr);
 				}
 			}
 			break;

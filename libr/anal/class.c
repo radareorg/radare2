@@ -18,19 +18,19 @@ static const char *key_class(const char *name) {
 }
 
 static char *key_attr_types(const char *name) {
-	return sdb_fmt ("attrtypes.%s", name);
+	return r_str_newf ("attrtypes.%s", name);
 }
 
 static char *key_attr_type_attrs(const char *class_name, const char *attr_type) {
-	return sdb_fmt ("attr.%s.%s", class_name, attr_type);
+	return r_str_newf ("attr.%s.%s", class_name, attr_type);
 }
 
 static char *key_attr_content(const char *class_name, const char *attr_type, const char *attr_id) {
-	return sdb_fmt ("attr.%s.%s.%s", class_name, attr_type, attr_id);
+	return r_str_newf ("attr.%s.%s.%s", class_name, attr_type, attr_id);
 }
 
 static char *key_attr_content_specific(const char *class_name, const char *attr_type, const char *attr_id) {
-	return sdb_fmt ("attr.%s.%s.%s.specific", class_name, attr_type, attr_id);
+	return r_str_newf ("attr.%s.%s.%s.specific", class_name, attr_type, attr_id);
 }
 
 typedef enum {
@@ -413,7 +413,7 @@ static char *flagname_attr(const char *attr_type, const char *class_name, const 
 		free (class_name_sanitized);
 		return NULL;
 	}
-	char *r = sdb_fmt ("%s.%s.%s", attr_type, class_name, attr_id);
+	char *r = r_str_newf ("%s.%s.%s", attr_type, class_name, attr_id);
 	free (class_name_sanitized);
 	free (attr_id_sanitized);
 	return r;
@@ -556,8 +556,9 @@ R_API RVector/*<RAnalMethod>*/ *r_anal_class_method_get_all(RAnal *anal, const c
 }
 
 R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name, RAnalMethod *meth) {
-	char *content = sdb_fmt ("%"PFMT64u"%c%"PFMT64d, meth->addr, SDB_RS, meth->vtable_offset);
+	char *content = r_str_newf ("%"PFMT64u"%c%"PFMT64d, meth->addr, SDB_RS, meth->vtable_offset);
 	RAnalClassErr err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, meth->name, content);
+	free (content);
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
 		return err;
 	}
@@ -703,7 +704,7 @@ R_API RVector/*<RAnalBaseClass>*/ *r_anal_class_base_get_all(RAnal *anal, const 
 }
 
 static RAnalClassErr r_anal_class_base_set_raw(RAnal *anal, const char *class_name, RAnalBaseClass *base, const char *base_class_name_sanitized) {
-	char *content = sdb_fmt ("%s" SDB_SS "%"PFMT64u, base_class_name_sanitized, base->offset);
+	char *content = r_str_newf ("%s" SDB_SS "%"PFMT64u, base_class_name_sanitized, base->offset);
 	RAnalClassErr err;
 	if (base->id) {
 		err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_BASE, base->id, content);
@@ -715,6 +716,7 @@ static RAnalClassErr r_anal_class_base_set_raw(RAnal *anal, const char *class_na
 			err = R_ANAL_CLASS_ERR_OTHER;
 		}
 	}
+	free (content);
 	return err;
 }
 
@@ -900,15 +902,18 @@ R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name,
 	if (vtable_exists_at (anal, class_name, vtable->addr)) {
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
-	char *content = sdb_fmt ("0x%"PFMT64x SDB_SS "%"PFMT64u SDB_SS "%"PFMT64u, vtable->addr, vtable->offset, vtable->size);
+	char *content = r_str_newf ("0x%"PFMT64x SDB_SS "%"PFMT64u SDB_SS "%"PFMT64u, vtable->addr, vtable->offset, vtable->size);
 	if (vtable->id) {
-		return r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
+		RAnalClassErr err = r_anal_class_set_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, vtable->id, content);
+		free (content);
+		return err;
 	}
-	vtable->id = malloc(16);
+	vtable->id = malloc (16);
 	if (!vtable->id) {
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
 	RAnalClassErr err = r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);
+	free (content);
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
 		return err;
 	}

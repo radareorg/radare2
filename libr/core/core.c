@@ -2700,12 +2700,16 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 		return;
 	}
 	REventMeta *rems = data;
+	r_strf_buffer (64);
+	char *pstr;
 	char *str = r_base64_encode_dyn (rems->string, -1);
 	switch (event_type) {
 	case R_EVENT_META_SET:
 		switch (rems->type) {
 		case 'C':
-			r_core_log_add (ev->user, sdb_fmt (":add-comment 0x%08"PFMT64x" %s\n", rems->addr, r_str_get (str)));
+			pstr = r_str_newf (":add-comment 0x%08"PFMT64x" %s\n", rems->addr, r_str_get (str));
+			r_core_log_add (ev->user, pstr);
+			free (pstr);
 			break;
 		default:
 			break;
@@ -2714,20 +2718,20 @@ static void cb_event_handler(REvent *ev, int event_type, void *user, void *data)
 	case R_EVENT_META_DEL:
 		switch (rems->type) {
 		case 'C':
-			r_core_log_add (ev->user, sdb_fmt (":del-comment 0x%08"PFMT64x, rems->addr));
+			r_core_log_add (ev->user, r_strf (":del-comment 0x%08"PFMT64x, rems->addr));
 			break;
 		default:
-			r_core_log_add (ev->user, sdb_fmt (":del-comment 0x%08"PFMT64x, rems->addr));
+			r_core_log_add (ev->user, r_strf (":del-comment 0x%08"PFMT64x, rems->addr));
 			break;
 		}
 		break;
 	case R_EVENT_META_CLEAR:
 		switch (rems->type) {
 		case 'C':
-			r_core_log_add (ev->user, sdb_fmt (":clear-comments 0x%08"PFMT64x, rems->addr));
+			r_core_log_add (ev->user, r_strf (":clear-comments 0x%08"PFMT64x, rems->addr));
 			break;
 		default:
-			r_core_log_add (ev->user, sdb_fmt (":clear-comments 0x%08"PFMT64x, rems->addr));
+			r_core_log_add (ev->user, r_strf (":clear-comments 0x%08"PFMT64x, rems->addr));
 			break;
 		}
 		break;
@@ -3773,6 +3777,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		return NULL;
 	}
 	bool readonly = false;
+	bool tempfile = false;
 	if (file && *file != '*') {
 		name = strdup (file);
 		fd = r_sandbox_open (file, O_RDWR, 0644);
@@ -3784,6 +3789,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 			}
 		}
 	} else {
+		tempfile = true;
 		fd = r_file_mkstemp (file, &name);
 	}
 	if (fd == -1) {
@@ -3823,7 +3829,7 @@ R_API char *r_core_editor(const RCore *core, const char *file, const char *str) 
 		if (len && ret[len - 1] == '\n') {
 			ret[len - 1] = 0; // chop
 		}
-		if (!file) {
+		if (tempfile) {
 			r_file_rm (name);
 		}
 	}

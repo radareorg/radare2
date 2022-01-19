@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2021 - pancake */
+/* radare2 - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -97,8 +97,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	n = cs_disasm (handle, (const ut8*) buf, len, off, 1, &insn);
 	op->size = 4;
 	if (n > 0 && insn->size > 0) {
-		const char *opstr = sdb_fmt ("%s%s%s", insn->mnemonic,
-			insn->op_str[0] ? " " : "", insn->op_str);
+		r_strf_var (opstr, 256, "%s%s%s", insn->mnemonic, insn->op_str[0] ? " " : "", insn->op_str);
 		r_asm_op_set_asm (op, opstr);
 		cs_free (insn, n);
 		return op->size;

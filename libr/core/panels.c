@@ -4892,7 +4892,8 @@ static void __update_menu(RCore *core, const char *parent, R_NULLABLE RPanelMenu
 	int i;
 	for (i = 0; i < p_item->n_sub; i++) {
 		RPanelsMenuItem *sub = p_item->sub[i];
-		ht_pp_delete (core->panels->mht, sdb_fmt ("%s.%s", parent, sub->name));
+		r_strf_var (key, 128, "%s.%s", parent, sub->name);
+		ht_pp_delete (core->panels->mht, key);
 	}
 	p_item->sub = NULL;
 	p_item->n_sub = 0;
@@ -4913,13 +4914,14 @@ static void __add_menu(RCore *core, const char *parent, const char *name, RPanel
 	if (!item) {
 		return;
 	}
+	r_strf_buffer (128);
 	if (parent) {
 		void *addr = ht_pp_find (panels->mht, parent, NULL);
 		p_item = (RPanelsMenuItem *)addr;
-		ht_pp_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), item);
+		ht_pp_insert (panels->mht, r_strf ("%s.%s", parent, name), item);
 	} else {
 		p_item = panels->panels_menu->root;
-		ht_pp_insert (panels->mht, sdb_fmt ("%s", name), item);
+		ht_pp_insert (panels->mht, r_strf ("%s", name), item);
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;

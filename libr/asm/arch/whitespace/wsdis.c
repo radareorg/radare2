@@ -104,6 +104,7 @@ WS_API int test_ws_token_exist(const ut8 *buf, ut8 token, int len) {
 }
 
 WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
+	r_strf_buffer (64);
 	const char *buf_asm = NULL;
 	const ut8 *ptr = buf;
 	switch (get_ws_optype (buf, len)) {
@@ -123,7 +124,7 @@ WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
 				return op->size = 0;
 			}
 			int n = test_ws_token_exist (ptr - 1, 10, len);
-			r_strbuf_set (&op->buf_asm, sdb_fmt ("push %d", n));
+			r_strbuf_set (&op->buf_asm, r_strf ("push %d", n));
 			return op->size = n;
 		case 10:
 			ptr = get_ws_next_token (ptr, len - 1) + 1;
@@ -166,7 +167,7 @@ WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
 				return op->size = 0;
 			}
 			if (r_strbuf_length (&op->buf_asm) < 6) {
-				r_strbuf_append (&op->buf_asm, sdb_fmt (" %d", get_ws_val (ptr, len - (ptr - buf) - 1)));
+				r_strbuf_append (&op->buf_asm, r_strf (" %d", get_ws_val (ptr, len - (ptr - buf) - 1)));
 			}
 			return op->size = test_ws_token_exist (ptr, 10, len - (ptr - buf) - 1) + ptr - buf + 1; // +1?
 		}
@@ -308,7 +309,7 @@ WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
 				return op->size = 0;
 			}
 			if (r_strbuf_length (&op->buf_asm) == 2) {
-				r_strbuf_append (&op->buf_asm, sdb_fmt (" %d", get_ws_val (ptr, len - (ptr - buf) - 1)));
+				r_strbuf_append (&op->buf_asm, r_strf (" %d", get_ws_val (ptr, len - (ptr - buf) - 1)));
 			}
 			return op->size = ptr - buf + test_ws_token_exist (ptr, 10, len - (ptr - buf)) + 1;
 		case ' ':
@@ -330,7 +331,7 @@ WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
 			if (buf_asm) {
 				r_strbuf_set (&op->buf_asm, buf_asm);
 			}
-			r_strbuf_append (&op->buf_asm, sdb_fmt (" %d", get_ws_val (ptr, len - (ptr - buf) - 1)));
+			r_strbuf_append (&op->buf_asm, r_strf (" %d", get_ws_val (ptr, len - (ptr - buf) - 1)));
 			return op->size = ptr - buf + test_ws_token_exist (ptr, 10, len - (ptr - buf)) + 1;
 		}
 	}

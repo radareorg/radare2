@@ -558,6 +558,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 }
 
 static int cmd_help(void *data, const char *input) {
+	r_strf_buffer (256);
 	RCore *core = (RCore *)data;
 	RIOMap *map;
 	const char *k;
@@ -741,14 +742,14 @@ static int cmd_help(void *data, const char *input) {
 				r_num_segaddr (n, core->print->segbas, core->print->seggrn, &s, &a);
 				r_num_units (unit, sizeof (unit), n);
 				if (*input ==  'j') {
-					pj_ks (pj, "int32", sdb_fmt ("%d", (st32)(n & UT32_MAX)));
-					pj_ks (pj, "uint32", sdb_fmt ("%u", (ut32)n));
-					pj_ks (pj, "int64", sdb_fmt ("%"PFMT64d, (st64)n));
-					pj_ks (pj, "uint64", sdb_fmt ("%"PFMT64u, (ut64)n));
-					pj_ks (pj, "hex", sdb_fmt ("0x%08"PFMT64x, n));
-					pj_ks (pj, "octal", sdb_fmt ("0%"PFMT64o, n));
+					pj_ks (pj, "int32", r_strf ("%d", (st32)(n & UT32_MAX)));
+					pj_ks (pj, "uint32", r_strf ("%u", (ut32)n));
+					pj_ks (pj, "int64", r_strf ("%"PFMT64d, (st64)n));
+					pj_ks (pj, "uint64", r_strf ("%"PFMT64u, (ut64)n));
+					pj_ks (pj, "hex", r_strf ("0x%08"PFMT64x, n));
+					pj_ks (pj, "octal", r_strf ("0%"PFMT64o, n));
 					pj_ks (pj, "unit", unit);
-					pj_ks (pj, "segment", sdb_fmt ("%04x:%04x", s, a));
+					pj_ks (pj, "segment", r_strf ("%04x:%04x", s, a));
 
 				} else {
 					if (n >> 32) {
@@ -781,12 +782,12 @@ static int cmd_help(void *data, const char *input) {
 					d = -d;
 				}
 				if (*input ==  'j') {
-					pj_ks (pj, "fvalue", sdb_fmt ("%.1lf", core->num->fvalue));
-					pj_ks (pj, "float", sdb_fmt ("%ff", f));
-					pj_ks (pj, "double", sdb_fmt ("%lf", d));
-					pj_ks (pj, "binary", sdb_fmt ("0b%s", out));
+					pj_ks (pj, "fvalue", r_strf ("%.1lf", core->num->fvalue));
+					pj_ks (pj, "float", r_strf ("%ff", f));
+					pj_ks (pj, "double", r_strf ("%lf", d));
+					pj_ks (pj, "binary", r_strf ("0b%s", out));
 					r_num_to_ternary (out, n);
-					pj_ks (pj, "ternary", sdb_fmt ("0t%s", out));
+					pj_ks (pj, "ternary", r_strf ("0t%s", out));
 				} else {
 					r_cons_printf ("fvalue  %.1lf\n", core->num->fvalue);
 					r_cons_printf ("float   %ff\n", f);

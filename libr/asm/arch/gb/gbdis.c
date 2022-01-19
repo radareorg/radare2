@@ -202,6 +202,7 @@ static void gb_hardware_register_name(char *reg, ut8 offset) {
 
 #ifndef GB_DIS_LEN_ONLY
 static int gbDisass(RAsmOp *op, const ut8 *buf, int len){
+	r_strf_buffer (64);
 	int foo = gbOpLength (gb_op[buf[0]].type);
 	if (len < foo) {
 		return 0;
@@ -211,20 +212,20 @@ static int gbDisass(RAsmOp *op, const ut8 *buf, int len){
 	memset (reg, '\0', sizeof (reg));
 	switch (gb_op[buf[0]].type) {
 	case GB_8BIT:
-		buf_asm = sdb_fmt ("%s", gb_op[buf[0]].name);
+		buf_asm = r_strf ("%s", gb_op[buf[0]].name);
 		break;
 	case GB_16BIT:
-		buf_asm = sdb_fmt ("%s %s", cb_ops[buf[1] >> 3u], cb_regs[buf[1] & 7u]);
+		buf_asm = r_strf ("%s %s", cb_ops[buf[1] >> 3u], cb_regs[buf[1] & 7u]);
 		break;
 	case GB_8BIT + ARG_8:
-		buf_asm = sdb_fmt (gb_op[buf[0]].name, buf[1]);
+		buf_asm = r_strf (gb_op[buf[0]].name, buf[1]);
 		break;
 	case GB_8BIT + ARG_16:
-		buf_asm = sdb_fmt (gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
+		buf_asm = r_strf (gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
 		break;
 	case GB_8BIT + ARG_8 + GB_IO:
 		gb_hardware_register_name(reg, buf[1]);
-		buf_asm = sdb_fmt (gb_op[buf[0]].name, reg);
+		buf_asm = r_strf (gb_op[buf[0]].name, reg);
 		break;
 	}
 	r_strbuf_set (&op->buf_asm, buf_asm);

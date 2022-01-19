@@ -20,23 +20,6 @@
 	} \
 }
 
-SDB_API char *sdb_fmt(const char *fmt, ...) {
-#define KL 256
-#define KN 16
-	static char Key[KN][KL];
-	static int n = 0;
-	va_list ap;
-	va_start (ap, fmt);
-	n = (n + 1) % KN;
-	if (fmt) {
-		*Key[n] = 0;
-		vsnprintf (Key[n], KL - 1, fmt, ap);
-		Key[n][KL - 1] = 0;
-	}
-	va_end (ap);
-	return Key[n];
-}
-
 SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 	char buf[128], *e_str, *out = NULL;
 	int n, len = 0;

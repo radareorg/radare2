@@ -263,7 +263,8 @@ static RList *symbols(RBinFile *bf) {
 		}
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp (ptr->name, "radr://", 7)? 0: 1;
-		sdb_set (symcache, sdb_fmt ("sym0x%"PFMT64x, ptr->vaddr), "found", 0);
+		r_strf_var (k, 32, "sym0x%"PFMT64x, ptr->vaddr);
+		sdb_set (symcache, k, "found", 0);
 #if 0
 		if (!strncmp (ptr->name, "__Z", 3)) {
 			lang = "c++";

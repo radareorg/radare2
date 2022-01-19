@@ -886,7 +886,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (!esil_buf) {
 			return;
 		}
-		char *ptr_end = strstr (esil_buf, sdb_fmt (",%s,%s,", reg, sign));
+		r_strf_var (esilexpr, 64, ",%s,%s,", reg, sign);
+		char *ptr_end = strstr (esil_buf, esilexpr);
 		if (!ptr_end) {
 			free (esil_buf);
 			return;

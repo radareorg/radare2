@@ -410,7 +410,8 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			dbg->pid = -1;
 			reason = R_DEBUG_REASON_DEAD;
 		} else {
-			r_io_system (dbg->iob.io, sdb_fmt ("pid %d", dbg->tid));
+			r_strf_var (pidcmd, 32, "pid %d", dbg->tid);
+			r_io_system (dbg->iob.io, pidcmd);
 			if (dbg->tid != orig_tid) {
 				reason = R_DEBUG_REASON_UNKNOWN;
 			}
@@ -1033,7 +1034,9 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 #endif
 	fd = r_sandbox_fopen (path, "r");
 	if (!fd) {
-		perror (sdb_fmt ("Cannot open '%s'", path));
+		char *errstr = r_str_newf ("Cannot open '%s'", path);
+		perror (errstr);
+		free (errstr);
 		return NULL;
 	}
 
