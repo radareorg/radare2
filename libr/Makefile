@@ -119,6 +119,8 @@ E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/winkd/libr_winkd.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
+E+=../libr/asm/arch/arm/v35arm64/arm64dis.${EXT_AR}
+E+=../libr/asm/arch/arm/v35arm64/armv7dis.${EXT_AR}
 
 ifeq ($(USE_CAPSTONE),1)
 E+=$(CAPSTONE_LDFLAGS)

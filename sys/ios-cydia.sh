@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 set -x
 STOW=0
 fromscratch=1 # 1

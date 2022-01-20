@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
+export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:${PATH}
 export PATH=$(pwd)/sys:${PATH}
 export CC=$(pwd)/sys/ios-sdk-gcc
 # set only for arm64, otherwise it is armv7
@@ -8,4 +8,3 @@ export CC=$(pwd)/sys/ios-sdk-gcc
 export IOSVER=11.0
 export IOSINC=$(pwd)/sys/ios-include
 export CFLAGS=-O2
-

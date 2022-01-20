@@ -29,7 +29,7 @@
 #if HAVE_PTY
 #include <sys/ioctl.h>
 #include <termios.h>
-#else
+#elif __linux__
 #include <stropts.h>
 #endif
 

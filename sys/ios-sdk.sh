@@ -14,11 +14,7 @@ ARCHS="" # Will be set by -archs argument. If you want to set it -> e.g. ARCHS="
 MERGE_LIBS=1 # Will merge libs if you build for arm and simulator
 
 # Environment variables
-export PATH=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin:$PATH
-export PATH=`pwd`/sys:${PATH}
-export CC=`pwd`/sys/ios-sdk-gcc
-export IOSVER=9.0
-export IOSINC=`pwd`/sys/ios-include
+. sys/ios-env.sh
 export USE_IOS_STATIC=0
 
 echo "If xcrun --sdk iphoneos cant find the profile use this line:"
@@ -33,7 +29,7 @@ if [ "${EMBED_BITCODE}" = 1 ]; then
 fi
 
 iosConfigure() {
-	cp -f ${PLUGINS_CFG} plugins.cfg
+	cp -f dist/plugins-cfg/${PLUGINS_CFG} plugins.cfg
 	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
 		--disable-debugger --without-gpl \
 		--without-fork --without-libuv --with-compiler=ios-sdk \
