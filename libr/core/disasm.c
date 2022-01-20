@@ -5349,9 +5349,22 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 		ptr = str;
 		while ((nptr = _find_next_number (ptr))) {
 			ptr = nptr;
-			numval = r_num_get (NULL, ptr);
+			const char* arch = r_config_get (ds->core->config, "asm.arch");
+			const bool x86 = !strncmp (arch, "x86", 3);
+			const int bits = r_config_get_i (ds->core->config, "asm.bits");
+			const int seggrn = r_config_get_i (ds->core->config, "asm.seggrn");
+			char* colon = strchr (ptr, ':');
+			if (x86 && bits == 16 && colon) {
+				*colon = '\0';
+				ut64 seg = r_num_get (NULL, ptr);
+				ut64 off = r_num_get (NULL, colon + 1);
+				*colon = ':';
+				numval = (seg << seggrn) + off;
+			} else {
+				numval = r_num_get (NULL, ptr);
+			}
 			if (numval == addr) {
-				while (*nptr && !IS_SEPARATOR (*nptr) && *nptr != 0x1b) {
+				while ((*nptr && !IS_SEPARATOR (*nptr) && *nptr != 0x1b) || (x86 && bits == 16 && colon && *nptr == ':')) {
 					nptr++;
 				}
 				char *kwname = r_str_newf ("%s%s", kw, name);
