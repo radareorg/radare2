@@ -193,7 +193,7 @@ R_API bool try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *b
 	}
 	bool is_arm = anal->cur->arch && !strncmp (anal->cur->arch, "arm", 3);
 	bool is_x86 = anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
-	const bool is_v850 = !is_arm && ((anal->cur->arch && !strncmp (anal->cur->arch, "v850", 4)) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4));
+	const bool is_v850 = !is_arm && !is_x86 && ((anal->cur->arch && !strncmp (anal->cur->arch, "v850", 4)) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4));
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptblsz);
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
