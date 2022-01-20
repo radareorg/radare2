@@ -709,7 +709,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "add", OP (0x12), OP_MASK, IF2, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "$0,$1,+=" },
 	{ "addi", OP (0x30), OP_MASK, IF6, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "$0,$1,+,$2,=" },
 	{ "adf", two (0x07e0, 0x03a0), two (0x07e0, 0x07e1), {CCCC_NOTSA, R1, R2, R3}, 0, V850_CPU_E2_UP },
-	{ "and", OP (0x0a), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "$0,$1,&,$1,=,$o=0,1<<$1,?{$s=1},$s=0,$1,?{$z=1},$z=0" },
+	{ "and", OP (0x0a), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "$0,$1,&,$1,=,0,$o,=,1,$1,<<,?{1,$s,=},0,$s,=,$1,?{1,$z,=},0,$z,=" },
 	{ "andi", OP (0x36), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "$0,$1,&,$1,=,$o=0,$s,$z" },
 	/* Signed integer. */
 	{ "bge", BOP (0xe), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
@@ -1055,7 +1055,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "tst1", two (0xc7c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP },
 	{ "tst1", two (0x07e0, 0x00e6), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_CMP },
 	{ "xor", OP (0x09), OP_MASK, IF1, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "$0,$1,^,$1,=" },
-	{ "xori", OP (0x35), OP_MASK, IF6U, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR "$0,$1,^,$2,="},
+	{ "xori", OP (0x35), OP_MASK, IF6U, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "$0,$1,^,$2,="},
 	{ "zxb", one (0x0080), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV },
 	{ "zxh", one (0x00c0), one (0xffe0), {R1}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_MOV },
 
