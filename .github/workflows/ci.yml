@@ -378,12 +378,15 @@ jobs:
       run: brew install pkg-config ldid
     - name: Create cydia32 package
       run: ./sys/ios-cydia32.sh
+    - name: Extract r2 version
+      run: echo "##[set-output name=branch;]$( python sys/version.py )"
+      id: r2v
     - name: List sys/cydia
       run: ls -lahR ./dist/cydia
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm
-        path: ./dist/cydia/radare2/radare2-arm32_${{ steps.extract_version.outputs.branch }}_iphoneos-arm.deb
+        name: radare2-arm32_${{ steps.r2v.outputs.branch }}_iphoneos-arm
+        path: ./dist/cydia/radare2/radare2-arm32_${{ steps.r2v.outputs.branch }}_iphoneos-arm.deb
   ios-cydia:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
