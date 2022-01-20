@@ -129,7 +129,7 @@ af
 pdf
 EOF:
 EXPECT=<<EOF
-/ 10: fcn.00000000 (int16_t arg_6h, int16_t arg_ah);
+/ 11: fcn.00000000 (int16_t arg_6h, int16_t arg_ah);
 |           ; arg int16_t arg_6h @ bp+0x6
 |           ; arg int16_t arg_ah @ bp+0xa
 |           0000:0000     55             push bp
@@ -140,4 +140,23 @@ EXPECT=<<EOF
 \           0000:000a     c3             ret
 EOF
 RUN
+
+NAME=x86-16 seg:off call addr replace with analysed func name
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+wx 9090558bec9a0d0000005dc390558bec5dc3
+af funcA @ 0xd
+af funcB @ 0x2
+pdf @ 0x2
+EOF
+EXPECT=<<EOF
+/ 10: funcB ();
+|           0000:0002      55             push bp
+|           0000:0003      8bec           mov bp, sp
+|           0000:0005      9a0d000000     lcall funcA
+|           0000:000a      5d             pop bp
+\           0000:000b      c3             ret
+EOF
 
