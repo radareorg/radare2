@@ -3037,7 +3037,7 @@ err_r_w32_cmd_pipe:
 #endif
 
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
-#if __UNIX__ && !__wasi__
+#if __UNIX__ && !__wasi__ && HAVE_FORK
 	int stdout_fd, fds[2];
 	int child;
 #endif
