@@ -24,6 +24,52 @@ peeks and pokes, spawning a syscall, etc.
 
     [0x00000000]> e asm.esil = true
 
+Running ESIL
+============
+
+In visual mode, `V`, one can iterate through the instructions via the `s` (step) key
+and see how registers are changing interactively as `;-- pc` (program counter) advances,
+just like in r2's debug facilities:
+
+[0x00100004 [xaDvc]0 2% 395 bin/ired_v850]> diq;?t0;f .. @ entry0+4 # 0x100004
+dead at 0x00000000
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00200000  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x00200010  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x00200020  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+0x00200030  ffff ffff ffff ffff ffff ffff ffff ffff  ................
+   zero 0x00000000       r0 0x00000000       r1 0x00000000       r2 0x00000000
+     r3 0x00200000       sp 0x00200000       r4 0x00116eb8       gp 0x00116eb8
+     r5 0x00000000       tp 0x00000000       r6 0x0010ef0a       r7 0x0010ef34
+     r8 0x00000000       r9 0x00000000      r10 0x00000000      r11 0x00000000
+    r12 0x00000000      r13 0x00000000      r14 0x00000000      r15 0x00000000
+    r16 0x00000000      r17 0x00000000      r18 0x00000000      r19 0x00000000
+    r20 0x000000ff      r21 0x0000ffff      r22 0x00000000      r23 0x00000000
+    r24 0x00000000      r25 0x00000000      r26 0x00000000      r27 0x00000000
+    r28 0x00000000      r29 0x00000000      r30 0x0010eeb8       ep 0x0010eeb8
+    r31 0x00000000       lp 0x00000000       pc 0x00100032      psw 0x00000000
+s:0 z:0 c:0 o:0 p:0
+            0x00100004      00a8           mov r0,  r21                ; r0,r21,=
+            0x00100006      80aeffff       ori 65535,  r0,  r21        ; 65535,r0,|,r21,=
+            0x0010000a      401e2000       movhi 32,  r0,  sp          ; 16,32,<<,r0,+,sp,=
+            0x0010000e      231e0000       movea 0,  sp,  sp           ; 0,sp,+,sp,=
+            0x00100012      40f61100       movhi 17,  r0,  ep          ; 16,17,<<,r0,+,ep,=
+            0x00100016      3ef6b8ee       movea -4424,  ep,  ep       ; -4424,ep,+,ep,=
+            0x0010001a      40261100       movhi 17,  r0,  gp          ; 16,17,<<,r0,+,gp,=
+            0x0010001e      2426b86e       movea 28344,  gp,  gp       ; 28344,gp,+,gp,=
+            0x00100022      40361100       movhi 17,  r0,  r6          ; 16,17,<<,r0,+,r6,=
+            0x00100026      2636c0ee       movea -4416,  r6,  r6       ; -4416,r6,+,r6,=
+            0x0010002a      403e1100       movhi 17,  r0,  r7          ; 16,17,<<,r0,+,r7,=
+            0x0010002e      273e34ef       movea -4300,  r7,  r7       ; -4300,r7,+,r7,=
+            ;-- pc:
+        ┌─> 0x00100032      46070000       st.b r0,  0[r6]             ; r0,0,r6,+,=[4]
+        ╎   0x00100036      06360100       addi 1,  r6,  r6            ; 1,r6,+,r6,=
+        ╎   0x0010003a      e731           cmp r7,  r6                 ; r7,r6,==,$z,z,:=,$s,s,:=,$c,c,:=
+        └─< 0x0010003c      b1fd           bl 0x100032                 ; 0x100032,PC,=
+            0x0010003e      80ff666f       jarl sym.___main,  lp       ;[1] ; PC,lp,=,0x106fa4,PC,=
+            0x00100042      031ef0ff       addi -16,  sp,  sp          ; -16,sp,+,sp,=
+
+
 Syntax
 ======
 An opcode is translated into a comma separated list of ESIL expressions.
