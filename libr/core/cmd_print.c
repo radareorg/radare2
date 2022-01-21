@@ -1119,18 +1119,21 @@ static int cmd_pdu(RCore *core, const char *input) {
 	if (buf) {
 		r_io_read_at (core->io, core->offset, buf, len);
 	} else {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		eprintf ("Cannot allocate %d byte(s)\n", len);
 		return 1;
 	}
 
 	switch (*input) {
 	case 'a': // "pdua"
+		{
+		ut64 to;
+
 		if (input[1] == '?' || !arg) {
 			pdu_help (core, 'a');
 			return 0;
 		}
 
-		to = r_num_math (core->num, arg);
+		to = r_num_get (core->num, arg);
 
 		if (!to) {
 			eprintf ("Couldn't parse address \"%s\"\n", arg);
@@ -1148,6 +1151,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		//r_core_cmdf (core, "pD %" PFMT64u " @0x%" PFMT64x, count, core->offset);
 		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
 				"address", &to, input[1] == 'j', NULL, NULL);
+		}
 		break;
 	case 'c': // "pduc"
 		if (input[1] == '?') {
