@@ -23,6 +23,7 @@ struct r2r_subprocess_t {
 	int ret;
 	RStrBuf out;
 	RStrBuf err;
+	RThreadLock *lock;
 };
 
 static volatile long pipe_id = 0;
@@ -169,6 +170,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		goto error;
 	}
 	proc->ret = -1;
+	proc->lock = r_th_lock_new (false);
 
 	SECURITY_ATTRIBUTES sattrs;
 	sattrs.nLength = sizeof (sattrs);
@@ -403,6 +405,7 @@ struct r2r_subprocess_t {
 	int ret;
 	RStrBuf out;
 	RStrBuf err;
+	RThreadLock *lock;
 };
 
 static RPVector subprocs;
@@ -451,17 +454,19 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			 	r_th_lock_leave (subprocs_mutex);
 				continue;
 			}
+			r_th_lock_enter (proc->lock);
 			if (WIFEXITED (wstat)) {
 				proc->ret = WEXITSTATUS (wstat);
 			} else {
 				proc->ret = -1;
 			}
 			ut8 r = 0;
-			if (write (proc->killpipe[1], &r, 1) != 1) {
-				r_th_lock_leave (subprocs_mutex);
+			int ret = write (proc->killpipe[1], &r, 1);
+			r_th_lock_leave (proc->lock);
+			r_th_lock_leave (subprocs_mutex);
+			if (ret != 1) {
 				break;
 			}
-			r_th_lock_leave (subprocs_mutex);
 		}
 	}
 	return R_TH_STOP;
@@ -525,6 +530,7 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 	proc->killpipe[0] = proc->killpipe[1] = -1;
 	proc->ret = -1;
+	proc->lock = r_th_lock_new (false);
 	r_strbuf_init (&proc->out);
 	r_strbuf_init (&proc->err);
 
@@ -985,8 +991,11 @@ R_API bool r2r_check_jq_available(void) {
 		r2r_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));
 		r2r_subprocess_wait (proc, UT64_MAX);
 	}
+	r_th_lock_enter (proc->lock);
 	bool invalid_detected = proc && proc->ret != 0;
+	r_th_lock_leave (proc->lock);
 	r2r_subprocess_free (proc);
+	proc = NULL;
 
 	const char *valid_json = "{\"this is\":\"valid json\",\"lol\":true}";
 	proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
@@ -994,7 +1003,9 @@ R_API bool r2r_check_jq_available(void) {
 		r2r_subprocess_stdin_write (proc, (const ut8 *)valid_json, strlen (valid_json));
 		r2r_subprocess_wait (proc, UT64_MAX);
 	}
+	r_th_lock_enter (proc->lock);
 	bool valid_detected = proc && proc->ret == 0;
+	r_th_lock_leave (proc->lock);
 	r2r_subprocess_free (proc);
 
 	return invalid_detected && valid_detected;
