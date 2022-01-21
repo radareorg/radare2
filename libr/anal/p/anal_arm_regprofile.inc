@@ -504,7 +504,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"flg	vf	.1	.540	0	overflow\n" // +28
 		"flg	cf	.1	.541	0	carry\n" // +29
 		"flg	zf	.1	.542	0	zero\n" // +30
-		"flg	nf	.1	.543	0	negative\n" // +31
+		"flg	nf	.1	.543	0	sign\n" // +31 - also known as negative
 
 		/* NEON and VFP registers */
 		/* 32bit float sub-registers */

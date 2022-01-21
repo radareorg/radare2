@@ -143,10 +143,10 @@ static char *get_reg_profile(RAnal *anal) {
 		"gpr	epi  .1 132.17 0\n" // exception processing interrupt
 		"gpr	id   .1 132.18 0\n" // :? should be id
 		"gpr	sat  .1 132.19 0\n" // saturation detection
-		"flg	cy  .1 132.28 0\n" // carry or borrow
-		"flg	ov  .1 132.29 0\n" // overflow
-		"flg	s   .1 132.30 0\n" // signed result
-		"flg	z   .1 132.31 0\n"; // zero result
+		"flg	cy  .1 132.28 0 carry\n" // carry or borrow
+		"flg	ov  .1 132.29 0 overflow\n" // overflow
+		"flg	s   .1 132.30 0 sign\n" // signed result
+		"flg	z   .1 132.31 0 zero\n"; // zero result
 	return strdup (p);
 }
 
