@@ -199,14 +199,22 @@ static void task_free(RCoreTask *task) {
 	if (!task) {
 		return;
 	}
+	// TASK_SIGSET_T old_sigset;
+	//tasks_lock_enter (scheduler, &old_sigset);
+
+	RThread *thread = task->thread;
+	RThreadLock *lock = task->dispatch_lock;
+	r_th_lock_enter (lock);
 	free (task->cmd);
 	free (task->res);
-	r_th_free (task->thread);
+	r_th_free (thread);
 	r_th_sem_free (task->running_sem);
 	r_th_cond_free (task->dispatch_cond);
-	r_th_lock_free (task->dispatch_lock);
 	r_cons_context_free (task->cons_context);
+	r_th_lock_leave (lock);
+	r_th_lock_free (lock); // task->dispatch_lock);
 	free (task);
+	//tasks_lock_leave (scheduler, &old_sigset);
 }
 
 R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
@@ -214,7 +222,6 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 	if (!task) {
 		goto hell;
 	}
-
 	task->thread = NULL;
 	task->cmd = cmd ? strdup (cmd) : NULL;
 	task->cmd_log = false;
@@ -279,14 +286,14 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	RCoreTaskScheduler *scheduler = &core->tasks;
 	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
 
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (scheduler, &old_sigset);
 	if (scheduler->oneshot_running || (!stop && scheduler->tasks_running == 1 && scheduler->oneshots_enqueued == 0)) {
+		tasks_lock_leave (scheduler, &old_sigset);
 		return;
 	}
 
 	scheduler->current_task = NULL;
-
-	TASK_SIGSET_T old_sigset;
-	tasks_lock_enter (scheduler, &old_sigset);
 
 	current->state = next_state;
 
@@ -475,6 +482,7 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	}
 	r_list_append (scheduler->tasks, task);
 	task->thread = r_th_new (task_run_thread, task, 0);
+
 	tasks_lock_leave (scheduler, &old_sigset);
 }
 

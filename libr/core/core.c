@@ -12,8 +12,9 @@
 #define DB core->sdb
 
 extern void r_core_echo(RCore *core, const char *input);
+extern bool r_core_is_project (RCore *core, const char *name);
 
-R_LIB_VERSION(r_core);
+R_LIB_VERSION (r_core);
 
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
@@ -21,8 +22,6 @@ static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
 	R_CORE_ASMQJMPS_LETTERS
 };
-
-extern bool r_core_is_project (RCore *core, const char *name);
 
 static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
