@@ -5,7 +5,7 @@
 #include "r_lang.h"
 #define USE_R2 1
 
-static RLang *Glang = NULL;
+static R_TH_LOCAL RLang *Glang = NULL;
 #undef S_API
 // #include "../../../shlr/spp/spp.c"
 #include "../../../shlr/spp/spp.h"

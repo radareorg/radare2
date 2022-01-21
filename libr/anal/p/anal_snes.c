@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - condret */
+/* radare - LGPL - Copyright 2015-2022 - condret */
 
 #include <string.h>
 #include <r_types.h>
@@ -8,7 +8,7 @@
 #include "../../asm/arch/snes/snes_op_table.h"
 #include "../../asm/p/asm_snes.h"
 
-static struct snes_asm_flags* snesflags = NULL;
+static R_TH_LOCAL struct snes_asm_flags* snesflags = NULL;
 
 static int snes_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, RAnalOpMask mask) {
 	op->size = snes_op_get_size(snesflags->M, snesflags->X, &snes_op[data[0]]);

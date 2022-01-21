@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2021 - pancake */
+/* radare2 - LGPL - Copyright 2013-2022 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -62,8 +62,8 @@
 #define ISPREINDEX64() (((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64())))
 #define ISPOSTINDEX64() (((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64())) || ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64())))
 
-static HtUU *ht_itblock = NULL;
-static HtUU *ht_it = NULL;
+static R_TH_LOCAL HtUU *ht_itblock = NULL;
+static R_TH_LOCAL HtUU *ht_it = NULL;
 
 #define BITMASK_BY_WIDTH_COUNT 64
 static const ut64 bitmask_by_width[BITMASK_BY_WIDTH_COUNT] = {

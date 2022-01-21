@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2021 - pancake, keegan */
+/* radare2 - LGPL - Copyright 2018-2022 - pancake, mrmacete, keegan */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -113,9 +113,29 @@ typedef struct _r_bin_image {
 	ut32 nlist_count;
 } RDyldBinImage;
 
-static RList *pending_bin_files = NULL;
+static R_TH_LOCAL RList *pending_bin_files = NULL;
 
-static ut64 va2pa(uint64_t addr, ut32 n_maps, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left);
+static ut64 va2pa(uint64_t addr, ut32 n_maps, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left) {
+	ut64 res = UT64_MAX;
+	ut32 i;
+
+	addr -= slide;
+
+	for (i = 0; i < n_maps; i++) {
+		if (addr >= maps[i].address && addr < maps[i].address + maps[i].size) {
+			res = maps[i].fileOffset + addr - maps[i].address;
+			if (offset) {
+				*offset = addr - maps[i].address;
+			}
+			if (left) {
+				*left = maps[i].size - (addr - maps[i].address);
+			}
+			break;
+		}
+	}
+
+	return res;
+}
 
 static void free_bin(RDyldBinImage *bin) {
 	if (!bin) {
@@ -424,28 +444,6 @@ static void r_dyldcache_free(RDyldCache *cache) {
 	R_FREE (cache->locsym);
 	R_FREE (cache->oi);
 	R_FREE (cache);
-}
-
-static ut64 va2pa(uint64_t addr, ut32 n_maps, cache_map_t *maps, RBuffer *cache_buf, ut64 slide, ut32 *offset, ut32 *left) {
-	ut64 res = UT64_MAX;
-	ut32 i;
-
-	addr -= slide;
-
-	for (i = 0; i < n_maps; i++) {
-		if (addr >= maps[i].address && addr < maps[i].address + maps[i].size) {
-			res = maps[i].fileOffset + addr - maps[i].address;
-			if (offset) {
-				*offset = addr - maps[i].address;
-			}
-			if (left) {
-				*left = maps[i].size - (addr - maps[i].address);
-			}
-			break;
-		}
-	}
-
-	return res;
 }
 
 static ut64 bin_obj_va2pa(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf) {

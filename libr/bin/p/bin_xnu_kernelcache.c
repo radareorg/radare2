@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2019-2021 - mrmacete */
+/* radare2 - LGPL - Copyright 2019-2022 - mrmacete */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -174,7 +174,7 @@ static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf);
 
 static void r_kernel_cache_free(RKernelCacheObj *obj);
 
-static RList *pending_bin_files = NULL;
+static R_TH_LOCAL RList *pending_bin_files = NULL;
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	RBuffer *fbuf = r_buf_ref (buf);

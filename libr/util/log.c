@@ -1,18 +1,18 @@
-/* radare - LGPL - Copyright 2007-2018 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2007-2022 - pancake, ret2libc */
 
-#define LOG_CONFIGSTR_SIZE 512
+#define LOG_CONFIGSTR_SIZE 128
 #define LOG_OUTPUTBUF_SIZE 512
 
 #include <r_core.h>
 #include <stdarg.h>
 
 // TODO: Use thread-local storage to make these variables thread-safe
-static RList *log_cbs = NULL; // Functions to call when outputting log string
-static int cfg_loglvl = R_LOGLVL_ERROR; // Log level output
-static int cfg_logtraplvl = R_LOGLVL_FATAL; // Log trap level
-static bool cfg_logsrcinfo = false; // Print out debug source info with the output
-static bool cfg_logcolors = false; // Output colored log text based on level
-static char cfg_logfile[LOG_CONFIGSTR_SIZE] = ""; // Output text to filename
+static R_TH_LOCAL RList *log_cbs = NULL; // Functions to call when outputting log string
+static R_TH_LOCAL int cfg_loglvl = R_LOGLVL_ERROR; // Log level output
+static R_TH_LOCAL int cfg_logtraplvl = R_LOGLVL_FATAL; // Log trap level
+static R_TH_LOCAL bool cfg_logsrcinfo = false; // Print out debug source info with the output
+static R_TH_LOCAL bool cfg_logcolors = false; // Output colored log text based on level
+static R_TH_LOCAL char cfg_logfile[LOG_CONFIGSTR_SIZE] = ""; // Output text to filename
 static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOGLVL_SILLY]     = "SILLY",
 	[R_LOGLVL_VERBOSE]   = "VERBOSE",
