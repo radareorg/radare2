@@ -115,6 +115,14 @@ static const char *help_msg_aaf[] = {
 	NULL
 };
 
+static const char *help_msg_aaa[] = {
+	"Usage:", "aa[a[a[a]]]", " # automatically analyze the whole program",
+	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'",
+	"aaa", "", "perform deeper analysis, most common use",
+	"aaaa", "", "same as aaa but adds a bunch of experimental iterations",
+	NULL
+};
+
 static const char *help_msg_aa[] = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
@@ -10632,8 +10640,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case '\0': // "aa"
 	case 'a':
-		if (input[0] && (input[1] == '?' || (input[1] && input[2] == '?'))) {
-			r_cons_println ("Usage: See aa? for more help");
+		if (strchr (input, '?')) {
+			r_core_cmd_help (core, help_msg_aaa);
 		} else {
 			bool didAap = false;
 			char *dh_orig = NULL;
@@ -10665,7 +10673,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			}
 			r_cons_clear_line (1);
 			bool cfg_debug = r_config_get_b (core->config, "cfg.debug");
-			if (*input == 'a') { // "aaa"
+			if (*input == 'a') { // "aaa" .. which is checked just in the case above
 				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
 					oldstr = r_print_rowlog (core->print, "Find function and symbol names from golang binaries (aang)");
 					r_print_rowlog_done (core->print, oldstr);
