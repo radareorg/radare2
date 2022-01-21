@@ -57,6 +57,14 @@ static const char *help_msg_afu[] = {
 	NULL
 };
 
+static const char *help_msg_aan[] = {
+	"Usage:", "aan", "[rg]   # automatically name functions.",
+	"aan", "", "autoname all functions",
+	"aang", "", "autoname all golang functions",
+	"aanr", "", "auto-noreturn propagation",
+	NULL
+};
+
 static const char *help_msg_afm[] = {
 	"Usage:", "afm", "[name]   # merge two functions.",
 	"afm", " sym.func.100003d74", "Merge current function into 0x100003d74",
@@ -133,11 +141,11 @@ static const char *help_msg_aa[] = {
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaef", "", "analyze references with ESIL in all functions",
-	"aaf", "[efrt?] ", "analyze all functions relationships with flags, type matching and consecutive",
+	"aaf", "[?][efrt] ", "analyze all functions relationships with flags, type matching and consecutive",
 	"aaF", " [sym*]", "set anal.in=block for all the spaces between flags matching glob",
 	"aaFa", " [sym*]", "same as aaF but uses af/a2f instead of af+/afb+ (slower but more accurate)",
 	"aai", "[j]", "show info of all analysis parameters",
-	"aan", "[gr?]", "autoname functions (aang = golang, aanr = noreturn propagation)",
+	"aan", "[?][gr]", "autoname functions (aang = golang, aanr = noreturn propagation)",
 	"aao", "", "analyze all objc references",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
@@ -243,6 +251,19 @@ static const char *help_msg_ad[] = {
 	NULL
 };
 
+static const char *help_msg_aes[] = {
+	"Usage:", "aes[pbosu]", "esil stepping utilities",
+	"aesp", " [X] [N]", "evaluate N instr from offset X",
+	"aesb", "", "step back",
+	"aeso", " ", "step over",
+	"aesou", " [addr]", "step over until given address",
+	"aess", " ", "step skip (in case of CALL, just skip, instead of step into)",
+	"aesu", " [addr]", "step until given address",
+	"aesue", " [esil]", "step until esil expression match",
+	"aesuo", " [optype]", "step until given opcode type",
+	NULL
+};
+
 static const char *help_msg_aei[] = {
 	"Usage:", "aei", "[smp] [...]",
 	"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
@@ -261,33 +282,20 @@ static const char *help_msg_ae[] = {
 	"aeA", "[f] [count]", "analyse n bytes for their esil accesses (regs, mem..)",
 	"aeC", "[arg0 arg1..] @ addr", "appcall in esil",
 	"aec", "[?]", "continue until ^C",
-	"aecs", "", "continue until syscall",
-	"aecc", "", "continue until call",
-	"aecu", " [addr]", "continue until address",
-	"aecue", " [esil]", "continue until esil expression match",
 	"aef", " [addr]", "emulate function",
 	"aefa", " [addr]", "emulate function to find out args in given or current offset",
 	"aeg", " [expr]", "esil data flow graph",
 	"aegf", " [expr] [register]", "esil data flow graph filter",
-	"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
-	"aeis", " argc [argv] [envp]", "initialize entrypoint stack environment",
-	"aeim", " [addr] [size] [name]", "initialize ESIL VM stack (aeim- remove)",
-	"aeip", "", "initialize ESIL program counter to curseek",
+	"aei", "[?]", "initialize ESIL VM state (aei- to deinitialize)",
 	"aek", " [query]", "perform sdb query on ESIL.info",
 	"aek-", "", "resets the ESIL.info sdb instance",
 	"aeL", "", "list ESIL plugins",
 	"aep", "[?] [addr]", "manage esil pin hooks (see 'e cmd.esil.pin')",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
-	"aes", "", "perform emulated debugger step",
-	"aesp", " [X] [N]", "evaluate N instr from offset X",
-	"aesb", "", "step back",
-	"aeso", " ", "step over",
-	"aesou", " [addr]", "step over until given address",
-	"aess", " ", "step skip (in case of CALL, just skip, instead of step into)",
-	"aesu", " [addr]", "step until given address",
-	"aesue", " [esil]", "step until esil expression match",
-	"aesuo", " [optype]", "step until given opcode type",
+	"aes", "[?]", "perform emulated debugger step",
+#if 0
+#endif
 	"aets", "[?]", "ESIL Trace session",
 	"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
 	"aex", " [hex]", "evaluate opcode expression",
@@ -6839,7 +6847,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		// aesue -> until esil expression
 		switch (input[1]) {
 		case '?':
-			r_core_cmd0 (core, "ae?~aes");
+			r_core_cmd_help (core, help_msg_aes);
 			break;
 		case 'l': // "aesl"
 		{
@@ -6885,7 +6893,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			until_expr = NULL;
 			until_addr = UT64_MAX;
 			if (r_str_endswith (input, "?")) {
-				r_core_cmd0 (core, "ae?~aesu");
+				r_core_cmd0 (core, "aes?~aesu");
 			} else switch (input[2]) {
 			case 'e': // "aesue"
 				until_expr = input + 3;
@@ -6897,7 +6905,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				step_until_optype (core, r_str_trim_head_ro (input + 3));
 				break;
 			default:
-				r_core_cmd0 (core, "ae?~aesu");
+				r_core_cmd0 (core, "aes?~aesu");
 				break;
 			}
 			if (until_expr || until_addr != UT64_MAX) {
@@ -10621,10 +10629,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_anal_autoname_all_golang_fcns (core);
 			break;
 		case '?':
-			eprintf ("Usage: aan[rg]\n");
-			eprintf ("aan  : autoname all functions\n");
-			eprintf ("aang : autoname all golang functions\n");
-			eprintf ("aanr : auto-noreturn propagation\n");
+			r_core_cmd_help (core, help_msg_aan);
 			break;
 		default: // "aan"
 			r_core_anal_autoname_all_fcns (core);
