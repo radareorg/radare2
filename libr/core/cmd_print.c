@@ -1149,8 +1149,8 @@ static int cmd_pdu(RCore *core, const char *input) {
 		//count = to - core->offset;
 		// pD <count> @<offset>
 		//r_core_cmdf (core, "pD %" PFMT64u " @0x%" PFMT64x, count, core->offset);
-		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
-				"address", &to, input[1] == 'j', NULL, NULL);
+		ret = r_core_print_disasm_until (core, addr, buf, len, "address", &to,
+				input[1] == 'j', NULL, NULL);
 		}
 		break;
 	case 'c': // "pduc"
@@ -1159,8 +1159,8 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
-				"opcode", "call", input[1] == 'j', NULL, NULL;);
+		ret = r_core_print_disasm_until (core, addr, buf, len, "opcode", "call",
+				input[1] == 'j', NULL, NULL;);
 		break;
 	case 'e': // "pdue"
 		if (input[1] == '?' || !arg) {
@@ -1168,8 +1168,8 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM, "esil",
-				arg, input[1] == 'j', NULL, NULL);
+		ret = r_core_print_disasm_until (core, addr, buf, len, "esil", arg,
+				input[1] == 'j', NULL, NULL);
 		break;
 	case 'i': // "pdui"
 		if (input[1] == '?' || !arg) {
@@ -1177,8 +1177,8 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
-				"instruction", arg, input[1] == 'j', NULL, NULL);
+		ret = r_core_print_disasm_until (core, addr, buf, len, "instruction", arg,
+				input[1] == 'j', NULL, NULL);
 		break;
 	case 'o': // "pduo"
 		if (input[1] == '?' || !arg) {
@@ -1186,8 +1186,8 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
-				"opcode", arg, input[1] == 'j', NULL, NULL);
+		ret = r_core_print_disasm_until (core, addr, buf, len, "opcode", arg,
+				input[1] == 'j', NULL, NULL);
 		break;
 	case 's': // "pdus"
 		if (input[1] == '?') {
@@ -1195,8 +1195,8 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, R_CORE_MAX_DISASM,
-				"opcode", "syscall", input[1] == 'j', NULL, NULL);
+		ret = r_core_print_disasm_until (core, addr, buf, len, "opcode", "syscall",
+				input[1] == 'j', NULL, NULL);
 		break;
 	case '?': // "pdu?"
 	default:

@@ -667,6 +667,15 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, in
 R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, ut8 *buf, int nb_bytes, int nb_opcodes);
 R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opcodes);
 R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode);
+
+typedef enum {
+	address,
+	esil,
+	instruction,
+	opcode
+} PDU_CONDITION;
+R_API int r_core_print_disasm_until(RCore *core, ut64 addr, ut8 *buf, int len, PDU_CONDITION condition_type, const void *condition, bool json, PJ *pj, RAnalFunction *pdf);
+
 R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 nb_opcodes, ut32 nb_bytes, int fmt);
 R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt);
 R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode);

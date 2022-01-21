@@ -5408,7 +5408,7 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 /**
  * \brief Disassemble instructions until a condition is met
  */
-R_API int r_core_print_disasm_until(RCore *core, ut64 addr, ut8 *buf, int len, int max_disasm, const char *condition_type_str, const void *condition, bool json, PJ *pj, RAnalFunction *pdf) {
+R_API int r_core_print_disasm_until(RCore *core, ut64 addr, ut8 *buf, int len, PDU_CONDITION condition_type, const void *condition, bool json, PJ *pj, RAnalFunction *pdf) {
 	enum {
 		address,
 		esil,
@@ -5416,11 +5416,10 @@ R_API int r_core_print_disasm_until(RCore *core, ut64 addr, ut8 *buf, int len, i
 		opcode
 	} pdu_condition;
 
-	pdu_condition condition_type;
-	ut8 address_condition;
-	const char *esil_condition;
-	const char *instruction_condition;
-	const char *opcode_condition;
+	ut64 address_condition = 0;
+	const char *esil_condition = NULL;
+	const char *instruction_condition = NULL;
+	const char *opcode_condition = NULL;
 
 	RPrint *p = core->print;
 	RAnalFunction *of = NULL;
@@ -5430,17 +5429,13 @@ R_API int r_core_print_disasm_until(RCore *core, ut64 addr, ut8 *buf, int len, i
 	ut8 *nbuf = NULL;
 	const int max_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 
-	if (!strcmp (condition_type_str, "address")) {
-		condition_type = address;
+	if (condition_type == address) {
 		address_condition = *(ut8 *)condition;
-	} else if (!strcmp (condition_type_str, "esil")) {
-		condition_type = esil;
-		esil_condition = (char *)condition;
-	} else if (!strcmp (condition_type_str, "instruction")) {
-		condition_type = instruction;
-		instruction_condition = (char *)condition;
-	} else if (!strcmp (condition_type_str, "opcode")) {
-		condition_type = opcode;
+	} else if (condition_type == esil) {
+		esil_condition = (const char *)condition;
+	} else if (condition_type == instruction) {
+		instruction_condition = (const char *)condition;
+	} else if (condition_type == opcode) {
 		opcode_condition = (char *)condition;
 	}
 
