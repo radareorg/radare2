@@ -1569,8 +1569,8 @@ static char *construct_reloc_name(R_NONNULL RBinReloc *reloc, R_NULLABLE const c
 }
 
 static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char **sdb_module) {
-	int bin_demangle = r_config_get_i (r->config, "bin.demangle");
-	bool keep_lib = r_config_get_i (r->config, "bin.demangle.libs");
+	bool bin_demangle = r_config_get_b (r->config, "bin.demangle");
+	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
 	const char *lang = r_config_get (r->config, "bin.lang");
 	bool is_pe = true;
 	int is_sandbox = r_sandbox_enable (0);
@@ -1579,7 +1579,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 	if (is_pe && !is_sandbox && reloc->import
 			&& reloc->import->name && reloc->import->libname
 			&& r_str_startswith (reloc->import->name, "Ordinal_")) {
-		char *module = reloc->import->libname;
+		char *module = strdup (reloc->import->libname);
 		r_str_case (module, false);
 
 		// strip trailing ".dll"
@@ -1626,6 +1626,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		}
 		r_anal_hint_set_size (r->anal, reloc->vaddr, 4);
 		r_meta_set (r->anal, R_META_TYPE_DATA, reloc->vaddr, 4, NULL);
+		free (module);
 	}
 
 	char flagname[R_FLAG_NAME_SIZE];
