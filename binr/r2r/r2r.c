@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2021 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2022 - pancake, thestr4ng3r */
 
 #include "r2r.h"
 
@@ -6,7 +6,8 @@
 #define RADARE2_CMD_DEFAULT    "radare2"
 #define RASM2_CMD_DEFAULT      "rasm2"
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
-#define TIMEOUT_DEFAULT        960
+// 30 seconds is the maximum time a test can run
+#define TIMEOUT_DEFAULT        (30*60)
 
 #define STRV(x) #x
 #define STR(x) STRV(x)
