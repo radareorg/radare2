@@ -3061,7 +3061,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *obuf, int ib, int si
 	if (ds->asm_hint_imm) { // thats not really an imm.. but well dont add more hints for now
 		(void) ds_print_shortcut (ds, n, ds->asm_hint_pos);
 	}
-	if (r_config_get_i (core->config, "asm.marks")) {
+	if (r_config_get_b (core->config, "asm.marks")) {
 		r_cons_printf ("  ");
 		int q = core->print->cur_enabled &&
 			ds->cursor >= ds->index &&
@@ -3243,6 +3243,11 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			int size = mi_size;
 			ut8 *b = malloc (mi_size);
 			if (b) {
+				int delta = ds->at - node->start;
+				if (delta > 0) {
+					ds->at -= delta;
+					r_cons_printf ("-%d ", delta);
+				}
 				r_io_read_at (core->io, ds->at, b, mi_size);
 				if (size > 0 && !ds_print_data_type (ds, b, ds->hint? ds->hint->immbase: 0, mi_size)) {
 					if (size > delta) {

@@ -1,3 +1,18 @@
+NAME=Cd4middle
+FILE=-
+CMDS=<<EOF
+wx 01002143547601020304
+Cd 4 4 @ 4
+pd 4
+EOF
+EXPECT=<<EOF
+            0x00000000      0100           add dword [rax], eax
+            0x00000002      214354         and dword [rbx + 0x54], eax
+        ,=< 0x00000005 -1      .dword 0x02017654
+        `-> 0x00000008      .dword 0x00000403
+EOF
+RUN
+
 NAME=Cd999
 FILE=-
 CMDS=<<EOF
