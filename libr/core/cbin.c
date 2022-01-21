@@ -3762,7 +3762,9 @@ static void bin_pe_versioninfo(RCore *r, PJ *pj, int mode) {
 	}
 	do {
 		char *path_version = r_str_newf (format_version, num_version);
-		if (!(sdb = sdb_ns_path (r->sdb, path_version, 0))) {
+		sdb = sdb_ns_path (r->sdb, path_version, 0);
+		free (path_version);
+		if (!sdb) {
 			break;
 		}
 		if (IS_MODE_JSON (mode)) {
@@ -3771,13 +3773,14 @@ static void bin_pe_versioninfo(RCore *r, PJ *pj, int mode) {
 			r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
 		}
 		char *path_fixedfileinfo = r_str_newf ("%s/fixed_file_info", path_version);
-		if (!(sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0))) {
+		sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0);
+		free (path_fixedfileinfo);
+		if (!sdb) {
 			if (IS_MODE_JSON (mode)) {
 				pj_end (pj);
 			}
 			break;
 		}
-		free (path_fixedfileinfo);
 		ut32 file_version_ms = sdb_num_get (sdb, "FileVersionMS", 0);
 		ut32 file_version_ls = sdb_num_get (sdb, "FileVersionLS", 0);
 		char *file_version = r_str_newf ("%u.%u.%u.%u", file_version_ms >> 16, file_version_ms & 0xFFFF,

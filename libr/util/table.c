@@ -1231,23 +1231,19 @@ R_API void r_table_visual_list(RTable *table, RList *list, ut64 seek, ut64 len, 
 					? block: h_line;
 				r_strbuf_append (buf, arg);
 			}
-			r_strf_var (a0, 64, "%d%c", i, (va? r_itv_contain (info->vitv, seek): r_itv_contain (info->pitv, seek))? '*' : ' ');
-			r_strf_var (a1, 64, "0x%08"PFMT64x, va? info->vitv.addr: info->pitv.addr);
-			r_strf_var (a2, 64, "0x%08"PFMT64x, va? r_itv_end (info->vitv): r_itv_end (info->pitv));
+			r_strf_var (a0, 64, "%d%c", i, (va
+				? r_itv_contain (info->vitv, seek)
+				: r_itv_contain (info->pitv, seek))? '*' : ' ');
+			r_strf_var (a1, 64, "0x%08"PFMT64x, va
+				? info->vitv.addr: info->pitv.addr);
+			r_strf_var (a2, 64, "0x%08"PFMT64x, va
+				? r_itv_end (info->vitv): r_itv_end (info->pitv));
 			char *b = r_strbuf_drain (buf);
-			if (va) {
-				r_table_add_rowf (table, "sssssss",
-					a0, a1, b, a2,
-					(info->perm != -1)? r_str_rwx_i (info->perm) : "",
-					(info->extra)?info->extra : "",
-					(info->name)?info->name :"");
-			} else {
-				r_table_add_rowf (table, "sssssss",
-					a0, a1, b, a2,
-					(info->perm != -1)? r_str_rwx_i (info->perm) : "",
-					(info->extra)?info->extra : "",
-					(info->name)?info->name : "");
-			}
+			r_table_add_rowf (table, "sssssss",
+				a0, a1, b, a2,
+				(info->perm != -1)? r_str_rwx_i (info->perm) : "",
+				(info->extra)?info->extra : "",
+				(info->name)?info->name :"");
 			free (b);
 			i++;
 		}

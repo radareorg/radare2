@@ -910,6 +910,7 @@ R_API RAnalClassErr r_anal_class_vtable_set(RAnal *anal, const char *class_name,
 	}
 	vtable->id = malloc (16);
 	if (!vtable->id) {
+		free (content);
 		return R_ANAL_CLASS_ERR_OTHER;
 	}
 	RAnalClassErr err = r_anal_class_add_attr_unique (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_VTABLE, content, vtable->id, 16);

@@ -244,7 +244,7 @@ static bool filter(RParse *p, ut64 addr, RFlag *f, RAnalHint *hint, char *data, 
 						if (p->flagspace == flag->space) {
 							continue;
 						}
-					} else if (p->flagspace && (p->flagspace != flag->space)) {
+					} else if (p->flagspace && flag && (p->flagspace != flag->space)) {
 						ptr = ptr2;
 						continue;
 					}
