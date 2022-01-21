@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2013-2021 - pancake, sghctoma, xarkes */
+/* radare - LGPL - Copyright 2013-2022 - pancake, sghctoma, xarkes */
 
 #include <r_cons.h>
+#include <r_th.h>
 
 #define RCOLOR_AT(i) (RColor *) (((ut8 *) &(r_cons_context ()->cpal)) + keys[i].coff)
 #define COLOR_AT(i) (char **) (((ut8 *) &(r_cons_context ()->pal)) + keys[i].off)
@@ -151,8 +152,20 @@ static void __cons_pal_update_event(RConsContext *ctx) {
 	sdb_free (db);
 }
 
+static R_TH_LOCAL RThreadLock *lock = NULL;
+
 R_API void r_cons_pal_init(RConsContext *ctx) {
+	if (!lock) {
+		lock = r_th_lock_new (false);
+	}
+	r_th_lock_enter (lock);
 	memset (&ctx->cpal, 0, sizeof (ctx->cpal));
+//	r_cons_pal_free (ctx);
+	size_t i;
+	for (i = 0; keys[i].name; i++) {
+		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
+		*color = NULL;
+	}
 
 	ctx->cpal.b0x00              = (RColor) RColor_GREEN;
 	ctx->cpal.b0x7f              = (RColor) RColor_CYAN;
@@ -238,14 +251,13 @@ R_API void r_cons_pal_init(RConsContext *ctx) {
 	ctx->cpal.graph_diff_new     =  (RColor) RColor_RED;
 	ctx->cpal.graph_diff_match   =  (RColor) RColor_GRAY;
 	ctx->cpal.graph_diff_unmatch =  (RColor) RColor_YELLOW;
-
-	r_cons_pal_free (ctx);
 	ctx->pal.reset = Color_RESET; // reset is not user accessible, const char* is ok
 	__cons_pal_update_event (ctx);
+	r_th_lock_leave (lock);
 }
 
 R_API void r_cons_pal_free(RConsContext *ctx) {
-	int i;
+	size_t i;
 	for (i = 0; keys[i].name; i++) {
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
 		if (color && *color) {
@@ -502,7 +514,7 @@ static void r_cons_pal_show_rgb(void) {
 }
 
 R_API void r_cons_pal_show(void) {
-	int i;
+	size_t i;
 	for (i = 0; colors[i].name; i++) {
 		r_cons_printf ("%s%s__"Color_RESET" %s\n",
 			colors[i].code,
@@ -613,7 +625,7 @@ R_API void r_cons_pal_list(int rad, const char *arg) {
  * r_cons_pal_update_event () must be called after this function
  * so the changes take effect. */
 R_API int r_cons_pal_set(const char *key, const char *val) {
-	int i;
+	size_t i;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
@@ -629,7 +641,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 
 /* Get the named RColor */
 R_API RColor r_cons_pal_get(const char *key) {
-	int i;
+	size_t i;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
 		if (!strcmp (key, keys[i].name)) {
