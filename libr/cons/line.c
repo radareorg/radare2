@@ -3,7 +3,7 @@
 #include <r_util.h>
 #include <r_cons.h>
 
-static RLine r_line_instance;
+static R_TH_LOCAL RLine r_line_instance;
 #define I r_line_instance
 
 R_API RLine *r_line_singleton(void) {
