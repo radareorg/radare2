@@ -2252,6 +2252,7 @@ extern RAnalPlugin r_anal_plugin_xtensa;
 extern RAnalPlugin r_anal_plugin_arm_v35;
 extern RAnalPlugin r_anal_plugin_z80;
 extern RAnalPlugin r_anal_plugin_pyc;
+extern RAnalPlugin r_anal_plugin_evm_cs;
 extern RAnalEsilPlugin r_esil_plugin_dummy;
 
 #ifdef __cplusplus
