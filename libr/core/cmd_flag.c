@@ -72,9 +72,15 @@ static const char *help_msg_f[] = {
 
 static const char *help_msg_fc[] = {
 	"Usage: fc", "<flagname> [color]", " # List colors with 'ecs'",
-	"fc", " flagname", "Get current color for given flagname",
-	"fc", " flagname color", "Set color to a flag",
-	"fc.", " color", "Set color to all flags in current offset",
+	"fc", "", "Same as fc.",
+	"fc", " color", "Set color to all flags in current offset",
+	"fc", " flag=color", "Set color to given flag. Same as 'fc color@flag'",
+	"fc.", "", "Get color of all flags in current offset",
+	"fc-", "", "Remove color from current offset",
+	"fc-", "flagname", "Remove color from given flag",
+	"fc-*", "", "Reset all color flags",
+	"fc*", "", "List all flags colors in r2 commands",
+	"fc.*", "", "Set color to all flags in current offset",
 	NULL
 };
 
@@ -1271,29 +1277,69 @@ rep:
 		}
 		break;
 	case 'c': // "fc"
-		if (input[1] == '.') {
-			const char *color = r_str_trim_head_ro (input + 2);
-			const RList *list = r_flag_get_list (core->flags, core->offset);
+		if (input[1] == 0 || input[1] == '.') {
+			const RList *list = input[1]? r_flag_get_list (core->flags, core->offset): r_flag_all_list (core->flags, false);
 			RListIter *iter;
 			RFlagItem *fi;
 			r_list_foreach (list, iter, fi) {
-				r_flag_item_set_color (fi, color);
+				if (fi->color) {
+					if (input[2] == '*') {
+						r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
+					} else {
+						const char *pad = r_str_pad (' ', 10- strlen (fi->name));
+						r_cons_printf ("0x%08"PFMT64x"  %s%s%s\n", fi->offset, fi->name, pad, fi->color);
+					}
+				}
+			}
+		} else if (input[1] == '-') {
+			RListIter *iter;
+			RFlagItem *fi;
+			ut64 addr = (input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->offset;
+			const RList *list = (input[2]=='*')?
+				r_flag_all_list (core->flags, false)
+				: r_flag_get_list (core->flags, addr);
+			r_list_foreach (list, iter, fi) {
+				if (fi->color) {
+					R_FREE (fi->color);
+				}
+			}
+		} else if (input[1] == '*') {
+			RListIter *iter;
+			RFlagItem *fi;
+			const RList *list = r_flag_all_list (core->flags, false);
+			r_list_foreach (list, iter, fi) {
+				if (fi->color) {
+					r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
+				}
 			}
 		} else if (input[1] == ' ') {
-			RFlagItem *fi;
 			const char *ret;
 			char *arg = r_str_trim_dup (input + 2);
-			char *color = strchr (arg, ' ');
-			if (color && color[1]) {
+			char *color = strchr (arg, '=');
+			if (color) {
 				*color++ = 0;
-			}
-			fi = r_flag_get (core->flags, arg);
-			if (fi) {
-				ret = r_flag_item_set_color (fi, color);
-				if (!color && ret)
-					r_cons_println (ret);
+				RFlagItem *fi = r_flag_get (core->flags, arg);
+				if (fi) {
+					if (*color) {
+						ret = r_flag_item_set_color (fi, color);
+						if (!color && ret) {
+							r_cons_println (ret);
+						}
+					} else {
+						r_flag_item_set_color (fi, NULL);
+					}
+				} else {
+					eprintf ("Unknown flag '%s'\n", arg);
+				}
 			} else {
-				eprintf ("Unknown flag '%s'\n", arg);
+				const RList *list = r_flag_get_list (core->flags, core->offset);
+				char *color = r_str_trim_dup (input + 2);
+				RListIter *iter;
+				RFlagItem *fi;
+				r_list_foreach (list, iter, fi) {
+					r_flag_item_set_color (fi, color);
+				}
+				free (color);
 			}
 			free (arg);
 		} else {
@@ -1332,7 +1378,9 @@ rep:
 				}
 			}
 			free (p);
-		} else eprintf ("Usage: fC [name] [comment]\n");
+		} else {
+			eprintf ("Usage: fC [name] [comment]\n");
+		}
 		break;
 	case 'o': // "fo"
 		r_core_fortune_print_random (core);
