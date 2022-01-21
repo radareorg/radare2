@@ -703,14 +703,16 @@ const struct v850_operand v850_operands[] = {
 
 
 // this array can be used for the assembler, not just the disassembler
+// flag registers are: s, z, ov and cy (for sign, zero, overflow and carry
+
 const struct v850_opcode v850_opcodes[] = {
 	/* Standard instructions. */
 	{ "add", OP (0x0e), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "#0,#1,+="},
 	{ "add", OP (0x12), OP_MASK, IF2, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "#0,#1,+=" },
 	{ "addi", OP (0x30), OP_MASK, IF6, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_ADD, "#0,#1,+,#2,=" },
 	{ "adf", two (0x07e0, 0x03a0), two (0x07e0, 0x07e1), {CCCC_NOTSA, R1, R2, R3}, 0, V850_CPU_E2_UP },
-	{ "and", OP (0x0a), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&,#1,=,1,#1,<<,?{1,$s,:=},0,$s,:=,0,$o,:=,#1,?{1,$z,:=},0,$z,:=" },
-	{ "andi", OP (0x36), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&,#1,=,$o=0,$s,$z" },
+	{ "and", OP (0x0a), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&,#1,=,0,o,:=,$s,s,:=,$z,z,:=" },
+	{ "andi", OP (0x36), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&,#1,=,0,o,:=,$s,s,:=,$z,z,:=" },
 	/* Signed integer. */
 	{ "bge", BOP (0xe), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "bgt", BOP (0xf), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
@@ -722,8 +724,8 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "bnh", BOP (0x3), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "bnl", BOP (0x9), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	/* Common. */
-	{ "be", BOP (0x2), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "$z,!,?{,#0,PC,=,}" }, // TODO: shouldn't those two be flipped?
-	{ "bne", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "$z,?{,#0,PC,=,}" },
+	{ "be", BOP (0x2), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "z,?{,#0,PC,=,}" }, // TODO: shouldn't those two be flipped?
+	{ "bne", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "z,!,?{,#0,PC,=,}" },
 	/* Others. */
 	{ "bc", BOP (0x1), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "bf", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
@@ -809,8 +811,8 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "clr1", two (0x07e0, 0x00e4), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0 },
 	{ "cmov", two (0x07e0, 0x0320), two (0x07e0, 0x07e1), {MOVCC, R1, R2, R3}, 0, V850_CPU_NON0 },
 	{ "cmov", two (0x07e0, 0x0300), two (0x07e0, 0x07e1), {MOVCC, I5, R2, R3}, 0, V850_CPU_NON0 },
-	{ "cmp", OP (0x0f), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#0,#1,==,$z,z,:=,$s,s,:=,$c,c,:=" },
-	{ "cmp", OP (0x13), OP_MASK, IF2, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#0,#1,==,$z,z,:=,$s,s,:=,$c,c,:=" },
+	{ "cmp", OP (0x0f), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#0,#1,==,$z,z,:=,$s,s,:=,$c,cy,:=" },
+	{ "cmp", OP (0x13), OP_MASK, IF2, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#0,#1,==,$z,z,:=,$s,s,:=,$c,cy,:=" },
 	{ "ctret", two (0x07e0, 0x0144), two (0xffff, 0xffff), {0}, 0, V850_CPU_NON0 },
 	{ "dbcp", one (0xe840), one (0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "dbhvtrap", one (0xe040), one (0xffff), {0}, 0, V850_CPU_E3V5_UP },
@@ -872,12 +874,12 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "jmp32", one (0x06e0), one (0xffe0), {D32_31, R1}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS },
 	{ "jmpw", one (0x06e0), one (0xffe0), {D32_31, R1}, 2, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS },
 
-	{ "jr", two (0x0780, 0x0000), two (0xffc0, 0x0001), {D22}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_JMP },
-	{ "jr", one (0x02e0), one (0xffff), {D32_31_PCREL}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_JMP },
+	{ "jr", two (0x0780, 0x0000), two (0xffc0, 0x0001), {D22}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_JMP, "#0,PC,:=" },
+	{ "jr", one (0x02e0), one (0xffff), {D32_31_PCREL}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_JMP, "#0,PC,:=" },
 	/* Gas local alias of mov imm22(not defined in spec). */
-	{ "jr22", two (0x0780, 0x0000), two (0xffc0, 0x0001), {D22}, 0, V850_CPU_ALL | V850_CPU_OPTION_ALIAS },
+	{ "jr22", two (0x0780, 0x0000), two (0xffc0, 0x0001), {D22}, 0, V850_CPU_ALL | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_JMP, "#0,PC,:=" },
 	/* Gas local alias of mov imm32(not defined in spec). */
-	{ "jr32", one (0x02e0), one (0xffff), {D32_31_PCREL}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS },
+	{ "jr32", one (0x02e0), one (0xffff), {D32_31_PCREL}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS, R_ANAL_OP_TYPE_JMP, "#0,PC,:=" },
 
 	/* Alias of bcond (same as CA850). */
 	{ "jgt", BOP (0xf), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
@@ -890,17 +892,17 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "jl", BOP (0x1), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "jnl", BOP (0x9), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	/* Common. */
-	{ "je", BOP (0x2), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
-	{ "jne", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
+	{ "je", BOP (0x2), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "z,?{,#0,PC,:=,}" },
+	{ "jne", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "z,!,?{,#0,PC,:=,}" },
 	/* Others. */
 	{ "jv", BOP (0x0), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "jnv", BOP (0x8), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "jn", BOP (0x4), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "jp", BOP (0xc), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
-	{ "jc", BOP (0x1), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
-	{ "jnc", BOP (0x9), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
-	{ "jz", BOP (0x2), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
-	{ "jnz", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
+	{ "jc", BOP (0x1), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "cy,?{,#0,PC,:=,}" },
+	{ "jnc", BOP (0x9), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "cy,!,?{,#0,PC,:=,}" },
+	{ "jz", BOP (0x2), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP , "z,?{,#0,PC,:=,}" },
+	{ "jnz", BOP (0xa), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "z,!,?{,#0,PC,:=,}" },
 	{ "jbr", BOP (0x5), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "ldacc", two (0x07e0, 0x0bc4), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION, R_ANAL_OP_TYPE_LOAD },
 	{ "ld.b", two (0x0700, 0x0000), two (0x07e0, 0x0000), {D16, R1, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,[1],#1,=" },
