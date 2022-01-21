@@ -8,9 +8,10 @@
 #include "./asm_arm_hacks.inc"
 
 bool arm64ass(const char *str, ut64 addr, ut32 *op);
-static csh cd = 0;
-static HtUU *ht_itblock = NULL;
-static HtUU *ht_it = NULL;
+// XXX kill globals
+static R_TH_LOCAL csh cd = 0;
+static R_TH_LOCAL HtUU *ht_itblock = NULL;
+static R_TH_LOCAL HtUU *ht_it = NULL;
 
 #include "cs_mnemonics.c"
 

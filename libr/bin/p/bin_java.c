@@ -10,7 +10,8 @@
 
 #define IFDBG_BIN_JAVA if (0)
 
-static Sdb *DB = NULL;
+static R_TH_LOCAL Sdb *DB = NULL;
+
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 

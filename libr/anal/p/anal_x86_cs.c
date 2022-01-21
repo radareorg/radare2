@@ -59,7 +59,7 @@ struct Getarg {
 	int bits;
 };
 
-static csh handle = 0;
+static R_TH_LOCAL csh handle = 0;
 
 static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	unsigned int id = insn->id;
@@ -3328,7 +3328,7 @@ static int cs_len_prefix_opcode(uint8_t *item) {
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	static int omode = 0;
+	static R_TH_LOCAL int omode = 0;
 	cs_insn *insn = NULL;
 	int mode = (a->bits==64)? CS_MODE_64:
 		(a->bits==32)? CS_MODE_32:

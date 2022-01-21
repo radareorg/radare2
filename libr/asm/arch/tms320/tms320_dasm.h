@@ -239,7 +239,7 @@ typedef struct {
 
 extern int tms320_dasm(tms320_dasm_t *, const ut8 *, int);
 
-extern int tms320_dasm_init(tms320_dasm_t *);
+extern bool tms320_dasm_init(tms320_dasm_t *);
 extern int tms320_dasm_fini(tms320_dasm_t *);
 
 #endif /* __TMS320_DASM_H__ */
