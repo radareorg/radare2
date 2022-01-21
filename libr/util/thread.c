@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_th.h>
 #include <r_util.h>
@@ -32,15 +32,13 @@ static void *_r_th_launcher(void *_th) {
 	}
 	r_th_lock_enter (th->lock);
 	do {
-		r_th_lock_leave (th->lock);
-		th->running = true;
+		r_th_set_running (th, true);
 		ret = th->fun (th);
 		if (ret < 0) {
 			// th has been freed
 			return 0;
 		}
-		th->running = false;
-		r_th_lock_enter (th->lock);
+		r_th_set_running (th, false);
 	} while (ret);
 	r_th_lock_leave (th->lock);
 #if HAVE_PTHREAD
@@ -49,7 +47,20 @@ static void *_r_th_launcher(void *_th) {
 	return 0;
 }
 
-R_API int r_th_push_task(struct r_th_t *th, void *user) {
+R_API bool r_th_is_running(RThread *th) {
+	r_th_lock_enter (th->lock);
+	bool res = th->running;
+	r_th_lock_leave (th->lock);
+	return res;
+}
+
+R_API void r_th_set_running(RThread *th, bool b) {
+	r_th_lock_enter (th->lock);
+	th->running = b;
+	r_th_lock_leave (th->lock);
+}
+
+R_API int r_th_push_task(RThread *th, void *user) {
 	int ret = true;
 	th->user = user;
 	r_th_lock_leave (th->lock);
@@ -192,10 +203,10 @@ R_API bool r_th_setaffinity(RThread *th, int cpuid) {
 	return true;
 }
 
-R_API RThread *r_th_new(R_TH_FUNCTION(fun), void *user, int delay) {
+R_API RThread *r_th_new(RThreadFunction fun, void *user, int delay) {
 	RThread *th = R_NEW0 (RThread);
 	if (th) {
-		th->lock = r_th_lock_new (false);
+		th->lock = r_th_lock_new (true);
 		th->running = false;
 		th->fun = fun;
 		th->user = user;
@@ -237,7 +248,7 @@ R_API bool r_th_kill(RThread *th, bool force) {
 R_API bool r_th_start(RThread *th, int enable) {
 	bool ret = true;
 	if (enable) {
-		if (!th->running) {
+		if (!r_th_is_running (th)) {
 			// start thread
 			while (!th->ready) {
 				/* spinlock */
@@ -245,13 +256,13 @@ R_API bool r_th_start(RThread *th, int enable) {
 			r_th_lock_leave (th->lock);
 		}
 	} else {
-		if (th->running) {
+		if (r_th_is_running (th)) {
 			// stop thread
 			//r_th_kill (th, 0);
 			r_th_lock_enter (th->lock); // deadlock?
 		}
 	}
-	th->running = enable;
+	r_th_set_running (th, enable);
 	return ret;
 }
 
@@ -264,7 +275,7 @@ R_API int r_th_wait(struct r_th_t *th) {
 #elif __WINDOWS__
 		ret = WaitForSingleObject (th->tid, INFINITE);
 #endif
-		th->running = false;
+		r_th_set_running (th, false);
 	}
 	return ret;
 }

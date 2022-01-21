@@ -109,66 +109,6 @@ a_name##tsd_get(bool init);						\
 a_attr void								\
 a_name##tsd_set(a_type *val);
 
-/* malloc_tsd_externs(). */
-#ifdef JEMALLOC_MALLOC_THREAD_CLEANUP
-#define	malloc_tsd_externs(a_name, a_type)				\
-extern __thread a_type	a_name##tsd_tls;				\
-extern __thread bool	a_name##tsd_initialized;			\
-extern bool		a_name##tsd_booted;
-#elif (defined(JEMALLOC_TLS))
-#define	malloc_tsd_externs(a_name, a_type)				\
-extern __thread a_type	a_name##tsd_tls;				\
-extern pthread_key_t	a_name##tsd_tsd;				\
-extern bool		a_name##tsd_booted;
-#elif (defined(_WIN32))
-#define	malloc_tsd_externs(a_name, a_type)				\
-extern DWORD		a_name##tsd_tsd;				\
-extern a_name##tsd_wrapper_t	a_name##tsd_boot_wrapper;		\
-extern bool		a_name##tsd_booted;
-#else
-#define	malloc_tsd_externs(a_name, a_type)				\
-extern pthread_key_t	a_name##tsd_tsd;				\
-extern tsd_init_head_t	a_name##tsd_init_head;				\
-extern a_name##tsd_wrapper_t	a_name##tsd_boot_wrapper;		\
-extern bool		a_name##tsd_booted;
-#endif
-
-/* malloc_tsd_data(). */
-#ifdef JEMALLOC_MALLOC_THREAD_CLEANUP
-#define	malloc_tsd_data(a_attr, a_name, a_type, a_initializer)		\
-a_attr __thread a_type JEMALLOC_TLS_MODEL				\
-    a_name##tsd_tls = a_initializer;					\
-a_attr __thread bool JEMALLOC_TLS_MODEL					\
-    a_name##tsd_initialized = false;					\
-a_attr bool		a_name##tsd_booted = false;
-#elif (defined(JEMALLOC_TLS))
-#define	malloc_tsd_data(a_attr, a_name, a_type, a_initializer)		\
-a_attr __thread a_type JEMALLOC_TLS_MODEL				\
-    a_name##tsd_tls = a_initializer;					\
-a_attr pthread_key_t	a_name##tsd_tsd;				\
-a_attr bool		a_name##tsd_booted = false;
-#elif (defined(_WIN32))
-#define	malloc_tsd_data(a_attr, a_name, a_type, a_initializer)		\
-a_attr DWORD		a_name##tsd_tsd;				\
-a_attr a_name##tsd_wrapper_t a_name##tsd_boot_wrapper = {		\
-	false,								\
-	a_initializer							\
-};									\
-a_attr bool		a_name##tsd_booted = false;
-#else
-#define	malloc_tsd_data(a_attr, a_name, a_type, a_initializer)		\
-a_attr pthread_key_t	a_name##tsd_tsd;				\
-a_attr tsd_init_head_t	a_name##tsd_init_head = {			\
-	ql_head_initializer(blocks),					\
-	MALLOC_MUTEX_INITIALIZER					\
-};									\
-a_attr a_name##tsd_wrapper_t a_name##tsd_boot_wrapper = {		\
-	false,								\
-	a_initializer							\
-};									\
-a_attr bool		a_name##tsd_booted = false;
-#endif
-
 /* malloc_tsd_funcs(). */
 #ifdef JEMALLOC_MALLOC_THREAD_CLEANUP
 #define	malloc_tsd_funcs(a_attr, a_name, a_type, a_initializer,		\

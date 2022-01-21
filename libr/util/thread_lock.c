@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_th.h>
 
@@ -18,11 +18,16 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 #endif
 			pthread_mutex_init (&thl->lock, &attr);
 		} else {
-			pthread_mutex_init (&thl->lock, NULL);
+			pthread_mutexattr_t attr;
+			pthread_mutexattr_init (&attr);
+			pthread_mutex_init (&thl->lock, &attr);
 		}
 #elif __WINDOWS__
 		// TODO: obey `recursive` (currently it is always recursive)
 		InitializeCriticalSection (&thl->lock);
+#else
+#warning Unsupported mutex
+		R_FREE (thl);
 #endif
 	}
 	return thl;
@@ -34,7 +39,11 @@ R_API int r_th_lock_wait(RThreadLock *thl) {
 	return 0;
 }
 
+// TODO: return bool
 R_API int r_th_lock_enter(RThreadLock *thl) {
+	if (!thl) {
+		return -1;
+	}
 #if HAVE_PTHREAD
 	return pthread_mutex_lock (&thl->lock);
 #elif __WINDOWS__
@@ -56,6 +65,9 @@ R_API int r_th_lock_tryenter(RThreadLock *thl) {
 }
 
 R_API int r_th_lock_leave(RThreadLock *thl) {
+	if (!thl) {
+		return -1;
+	}
 #if HAVE_PTHREAD
 	return pthread_mutex_unlock (&thl->lock);
 #elif __WINDOWS__
