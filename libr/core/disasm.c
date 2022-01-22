@@ -5419,7 +5419,7 @@ R_API int r_core_print_disasm_until(RCore *core, ut64 addr, ut8 *buf, int len, e
 	bool pdu_condition_met = false;
 	char *opstr_nocolor = NULL;
 
-	int opcode_len;
+	int opcode_len = -1;
 	if (condition_type == opcode) {
 		opcode_len = strlen (condition);
 	}
