@@ -288,13 +288,13 @@ static const char *help_msg_pds[] = {
 };
 
 static const char *help_msg_pdu[] = {
-	"Usage:", "pdu[aceios]", "Disassemble instructions until condition",
-	"pdua", " [addr]", "disassemble until address",
-	"pduc", "", "disassemble until call",
-	"pdue", " [expr]", "disassemble until esil expression",
-	"pdui", " [inst]", "disassemble until instruction (e.g.: add esp, 0x20)",
-	"pduo", " [opcode]", "disassemble until opcode (e.g.: mul)",
-	"pdus", "", "disassemble until syscall",
+	"Usage:", "pdu[aceios][j]", "Disassemble instructions until condition",
+	"pdua", "[j] [addr]", "disassemble until address",
+	"pduc", "[j]", "disassemble until call",
+	"pdue", "[j] [expr]", "disassemble until esil expression",
+	"pdui", "[j] [inst]", "disassemble until instruction (e.g.: add esp, 0x20)",
+	"pduo", "[j] [opcode]", "disassemble until opcode (e.g.: mul)",
+	"pdus", "[j]", "disassemble until syscall",
 	NULL
 };
 
@@ -1103,7 +1103,6 @@ static void pdu_help(RCore *core, char spec) {
 	r_config_set_b (core->config, "scr.color.grep", c);
 }
 
-// TODO: json support
 static int cmd_pdu(RCore *core, const char *input) {
 	int ret = 0;
 	const char *sep = strchr (input, ' ');
@@ -1145,7 +1144,11 @@ static int cmd_pdu(RCore *core, const char *input) {
 
 		// pD <count>
 		count = to - core->offset;
-		r_core_cmdf (core, "pD %" PFMT64u, count);
+		if (input[1] == 'j') {
+			r_core_cmdf (core, "pDJ %" PFMT64u, count);
+		} else {
+			r_core_cmdf (core, "pD %" PFMT64u, count);
+		}
 		}
 		break;
 	case 'c': // "pduc"
