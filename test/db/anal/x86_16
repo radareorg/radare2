@@ -142,6 +142,7 @@ EOF
 RUN
 
 NAME=x86-16 seg:off call addr replace with analysed func name
+BROKEN=1
 FILE=-
 CMDS=<<EOF
 e asm.arch=x86
@@ -153,10 +154,10 @@ pdf @ 0x2
 EOF
 EXPECT=<<EOF
 / 10: funcB ();
-|           0000:0002      55             push bp
-|           0000:0003      8bec           mov bp, sp
-|           0000:0005      9a0d000000     lcall funcA
-|           0000:000a      5d             pop bp
-\           0000:000b      c3             ret
+|           0000:0002     55             push bp
+|           0000:0003     8bec           mov bp, sp
+|           0000:0005     9a0d000000     lcall funcA
+|           0000:000a     5d             pop bp
+\           0000:000b     c3             ret
 EOF
-
+RUN
