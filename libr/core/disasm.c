@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - nibble, pancake, dso, lazula */
+/* radare - LGPL - Copyright 2009-2022 - nibble, pancake, dso, lazula */
 
 #include "r_core.h"
 
@@ -5408,19 +5408,7 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 /**
  * \brief Disassemble instructions until a condition is met
  */
-R_API int r_core_print_disasm_until(RCore *core, ut64 addr, ut8 *buf, int len, PDU_CONDITION condition_type, const void *condition, bool json, PJ *pj, RAnalFunction *pdf) {
-	enum {
-		address,
-		esil,
-		instruction,
-		opcode
-	} pdu_condition;
-
-	ut64 address_condition = 0;
-	const char *esil_condition = NULL;
-	const char *instruction_condition = NULL;
-	const char *opcode_condition = NULL;
-
+R_API int r_core_print_disasm_until(RCore *core, ut64 addr, ut8 *buf, int len, enum pdu_condition condition_type, const char *condition, bool json, PJ *pj, RAnalFunction *pdf) {
 	RPrint *p = core->print;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
@@ -5428,22 +5416,19 @@ R_API int r_core_print_disasm_until(RCore *core, ut64 addr, ut8 *buf, int len, P
 	int skip_bytes_flag = 0, skip_bytes_bb = 0;
 	ut8 *nbuf = NULL;
 	const int max_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+	bool pdu_condition_met = false;
+	char *opstr_nocolor = NULL;
 
-	if (condition_type == address) {
-		address_condition = *(ut8 *)condition;
-	} else if (condition_type == esil) {
-		esil_condition = (const char *)condition;
-	} else if (condition_type == instruction) {
-		instruction_condition = (const char *)condition;
-	} else if (condition_type == opcode) {
-		opcode_condition = (char *)condition;
+	int opcode_len;
+	if (condition_type == opcode) {
+		opcode_len = strlen (condition);
 	}
 
 	// TODO: All those ds must be print flags
 	RDisasmState *ds = ds_init (core);
 	ds->count_bytes = false;
 	ds->print = p;
-	ds->count = max_disasm;
+	ds->count = INT_MAX;
 	ds->buf = buf;
 	ds->len = len;
 	ds->addr = addr;
@@ -5520,8 +5505,7 @@ toro:
 
 	int inc = 0;
 	int ret = 0;
-	for (ds->index = 0; ds_left (ds) > 0 && ds->lines < ds->count;
-			ds->index += inc, ds->lines++) {
+	for (ds->index = 0; ds_left (ds) > 0 && !pdu_condition_met; ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + ds->index;
 		ds->vat = r_core_pava (core, ds->at);
 
@@ -5612,9 +5596,6 @@ toro:
 				ds->index = 0;
 				of = f;
 				r_anal_op_fini (&ds->analop);
-				if (count_bytes) {
-					break;
-				}
 			} else {
 				ds->lines--;
 				ds->addr++;
@@ -5627,7 +5608,7 @@ toro:
 		}
 		ds_show_comments_right (ds);
 		// TRY adding here
-		char *link_key = sdb_fmt ("link.%08" PFMT64x, ds->addr + ds->index);
+		r_strf_var (link_key, 32, "link.%08" PFMT64x, ds->addr + ds->index);
 		const char *link_type = sdb_const_get (core->anal->sdb_types, link_key, 0);
 		if (link_type) {
 			char *fmt = r_type_format (core->anal->sdb_types, link_type);
@@ -5649,7 +5630,7 @@ toro:
 			eprintf ("ds->index=%#x len=%#x left=%#x\n", ds->index, len, left);
 			eprintf ("ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->count, ds->lines);
 #endif
-			if (left < max_op_size && !count_bytes) {
+			if (left < max_op_size) {
 #if DEBUG_DISASM
 				eprintf ("Not enough bytes to disassemble, going to retry.\n");
 #endif
@@ -5662,7 +5643,6 @@ toro:
 			eprintf ("ret=%d len=%#x left=%#x ", ret, len, left);
 			eprintf ("ds->addr=%#" PFMT64x " ds->at=%#" PFMT64x " ds->count=%#x ds->lines=%#x\n", ds->addr, ds->at, ds->count, ds->lines);
 #endif
-			eprintf ("ds->asm_str: %s\n", ds->asm_str);
 			if (ret == -31337) {
 				inc = ds->oplen; // minopsz maybe? or we should add invopsz
 				r_anal_op_fini (&ds->analop);
@@ -5890,6 +5870,31 @@ toro:
 			R_FREE (ds->refline2);
 			R_FREE (ds->prev_line_col);
 		}
+		// we can't strcmp with color codes interfering
+		opstr_nocolor = ds->opstr;
+		r_str_ansi_filter (opstr_nocolor, &ds->opstr, NULL, strlen (opstr_nocolor));
+		switch (condition_type) {
+		case esil:
+			// TODO
+			pdu_condition_met = true;
+			break;
+		case opcode:
+			// opcode must be followed by space
+			if (!strncmp (condition, opstr_nocolor, opcode_len)
+					&& (opstr_nocolor[opcode_len] == ' '
+						|| opstr_nocolor[opcode_len] == '\0')) {
+				pdu_condition_met = true;
+			}
+			break;
+		case instruction:
+			// match full instruction
+			if (!strcmp (condition, opstr_nocolor)) {
+				pdu_condition_met = true;
+			}
+			break;
+		}
+
+		free (opstr_nocolor);
 		R_FREE (ds->opstr);
 		inc = ds->oplen;
 
@@ -5900,12 +5905,6 @@ toro:
 			inc = skip_bytes_bb;
 		}
 		inc += ds->asmop.payload + (ds->asmop.payload % ds->core->rasm->dataalign);
-
-
-		// TODO check conditions here!
-		switch (condition_type) {
-			
-		}
 	}
 	r_anal_op_fini (&ds->analop);
 
@@ -5913,7 +5912,7 @@ toro:
 	r_cons_break_pop ();
 
 #if HASRETRY
-	if (!ds->count_bytes && ds->lines < ds->count) {
+	if (!pdu_condition_met) {
 		ds->at = ds->addr = ds->at + inc;
 		ds->index = 0;
 	retry:
@@ -5923,31 +5922,24 @@ toro:
 		if (len < max_op_size) {
 			ds->len = len = max_op_size + 32;
 		}
-		free (nbuf);
+		R_FREE (nbuf);
 		ds->buf = buf = nbuf = malloc (len);
 		if (!buf) {
 			eprintf ("Cannot allocate %d bytes%c", len, 10);
 		}
 
-		// enough bytes?
-		if (ds->lines < ds->count && !count_bytes) {
+		// condition met?
+		if (!pdu_condition_met) {
 			ds->addr += ds->index;
 #if DEBUG_DISASM
 			eprintf ("len=%d\n", len);
 #endif
 			r_io_read_at (core->io, ds->addr, buf, len);
-			if (count_bytes) {
-				goto toro;
-			} else {
-				inc = 0;
-			}
+			inc = 0;
+
 		}
 
-		// always reloop if counting by instructions
-		if (!count_bytes) {
-			goto toro;
-		}
-
+		goto toro;
 		R_FREE (nbuf);
 	}
 #endif

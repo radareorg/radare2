@@ -1114,10 +1114,11 @@ static int cmd_pdu(RCore *core, const char *input) {
 	const char *sep = strchr (input, ' ');
 	const char *arg = sep? sep+1: NULL;
 
-	ut64 len = core->blocksize;
+	ut64 addr = core->offset;
+	int len = core->blocksize;
 	ut8 *buf = malloc (len);
 	if (buf) {
-		r_io_read_at (core->io, core->offset, buf, len);
+		r_io_read_at (core->io, addr, buf, len);
 	} else {
 		eprintf ("Cannot allocate %d byte(s)\n", len);
 		return 1;
@@ -1127,6 +1128,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 	case 'a': // "pdua"
 		{
 		ut64 to;
+		ut64 count;
 
 		if (input[1] == '?' || !arg) {
 			pdu_help (core, 'a');
@@ -1138,19 +1140,17 @@ static int cmd_pdu(RCore *core, const char *input) {
 		if (!to) {
 			eprintf ("Couldn't parse address \"%s\"\n", arg);
 			return 1;
-		} else if (to < core->offset) {
+		} else if (to < addr) {
 			eprintf ("Can't print until an earlier address\n");
 			return 2;
-		} else if (to == core->offset) {
+		} else if (to == addr) {
 			eprintf ("Can't print until the start address\n");
 			return 2;
 		}
 
-		//count = to - core->offset;
-		// pD <count> @<offset>
-		//r_core_cmdf (core, "pD %" PFMT64u " @0x%" PFMT64x, count, core->offset);
-		ret = r_core_print_disasm_until (core, addr, buf, len, "address", &to,
-				input[1] == 'j', NULL, NULL);
+		// pD <count>
+		count = to - core->offset;
+		r_core_cmdf (core, "pD %" PFMT64u, count);
 		}
 		break;
 	case 'c': // "pduc"
@@ -1159,8 +1159,8 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, "opcode", "call",
-				input[1] == 'j', NULL, NULL;);
+		ret = r_core_print_disasm_until (core, addr, buf, len, opcode, "call",
+				input[1] == 'j', NULL, NULL);
 		break;
 	case 'e': // "pdue"
 		if (input[1] == '?' || !arg) {
@@ -1168,7 +1168,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, "esil", arg,
+		ret = r_core_print_disasm_until (core, addr, buf, len, esil, arg,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 'i': // "pdui"
@@ -1177,7 +1177,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, "instruction", arg,
+		ret = r_core_print_disasm_until (core, addr, buf, len, instruction, arg,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 'o': // "pduo"
@@ -1186,7 +1186,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, "opcode", arg,
+		ret = r_core_print_disasm_until (core, addr, buf, len, opcode, arg,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 's': // "pdus"
@@ -1195,7 +1195,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			return 0;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, "opcode", "syscall",
+		ret = r_core_print_disasm_until (core, addr, buf, len, instruction, "syscall",
 				input[1] == 'j', NULL, NULL);
 		break;
 	case '?': // "pdu?"
