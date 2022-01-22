@@ -22,17 +22,17 @@ pduo?
 pdus?
 EOF
 EXPECT=<<EOF
-| pdua [addr]    disassemble until address
+| pdua[j] [addr]    disassemble until address
 ---
-| pduc           disassemble until call
+| pduc[j]           disassemble until call
 ---
-| pdue [expr]    disassemble until esil expression
+| pdue[j] [expr]    disassemble until esil expression
 ---
-| pdui [inst]    disassemble until instruction (e.g.: add esp, 0x20)
+| pdui[j] [inst]    disassemble until instruction (e.g.: add esp, 0x20)
 ---
-| pduo [opcode]  disassemble until opcode (e.g.: mul)
+| pduo[j] [opcode]  disassemble until opcode (e.g.: mul)
 ---
-| pdus           disassemble until syscall
+| pdus[j]           disassemble until syscall
 EOF
 RUN
 
@@ -98,6 +98,7 @@ EOF
 RUN
 
 NAME=pdue
+BROKEN=1
 CMDS=<<EOF
 pdue
 EOF
