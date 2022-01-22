@@ -10,11 +10,6 @@
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
-#define DPRINTstr(x) eprintf (#x"=%s\n", x)
-#define DPRINTd(x) eprintf (#x"=%d\n", x)
-#define DPRINTut64(x) eprintf (#x"=%" PFMT64u " (0x%" PFMT64x ")\n", x, x)
-#define DPRINTst64(x) eprintf (#x"=%" PFMT64d "\n", x)
-
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
