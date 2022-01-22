@@ -1085,8 +1085,8 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 	r_config_set_i (core->config, "asm.segoff", segoff);
 }
 
+/* TODO replace with help_match */
 static void pdu_help(RCore *core, char spec) {
-	/* XXX better "temp color" functionality? */
 	const bool c = r_config_get_b (core->config, "scr.color.grep");
 	r_config_set_b (core->config, "scr.color.grep", true);
 
