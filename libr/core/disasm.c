@@ -5870,31 +5870,39 @@ toro:
 			R_FREE (ds->refline2);
 			R_FREE (ds->prev_line_col);
 		}
-		// we can't strcmp with color codes interfering
-		opstr_nocolor = ds->opstr;
-		r_str_ansi_filter (opstr_nocolor, &ds->opstr, NULL, strlen (opstr_nocolor));
-		switch (condition_type) {
-		case esil:
-			// TODO
+		// did we run out of bytes to read?
+		if (ds->opstr) {
+			opstr_nocolor = ds->opstr;
+			// we can't strcmp with color codes interfering
+			r_str_ansi_filter (opstr_nocolor, &ds->opstr, NULL, strlen (opstr_nocolor));
+			switch (condition_type) {
+			case esil:
+				// TODO
+				pdu_condition_met = true;
+				break;
+			case opcode:
+				// opcode must be followed by space
+				if (!strncmp (condition, opstr_nocolor, opcode_len)
+						&& (opstr_nocolor[opcode_len] == ' '
+							|| opstr_nocolor[opcode_len] == '\0')) {
+					pdu_condition_met = true;
+				}
+				break;
+			case instruction:
+				// match full instruction
+				if (!strcmp (condition, opstr_nocolor)) {
+					pdu_condition_met = true;
+				}
+				break;
+			}
+		} else {
+			// no more bytes - give up
+			r_cons_reset ();
+			r_cons_printf ("Failed to find instruction meeting pdu condition.\n");
 			pdu_condition_met = true;
-			break;
-		case opcode:
-			// opcode must be followed by space
-			if (!strncmp (condition, opstr_nocolor, opcode_len)
-					&& (opstr_nocolor[opcode_len] == ' '
-						|| opstr_nocolor[opcode_len] == '\0')) {
-				pdu_condition_met = true;
-			}
-			break;
-		case instruction:
-			// match full instruction
-			if (!strcmp (condition, opstr_nocolor)) {
-				pdu_condition_met = true;
-			}
-			break;
 		}
 
-		free (opstr_nocolor);
+		R_FREE (opstr_nocolor);
 		R_FREE (ds->opstr);
 		inc = ds->oplen;
 
