@@ -31,6 +31,7 @@ In visual mode, `V`, one can iterate through the instructions via the `s` (step)
 and see how registers are changing interactively as `;-- pc` (program counter) advances,
 just like in r2's debug facilities:
 
+```
 [0x00100004 [xaDvc]0 2% 395 bin/ired_v850]> diq;?t0;f .. @ entry0+4 # 0x100004
 dead at 0x00000000
 - offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -68,7 +69,7 @@ s:0 z:0 c:0 o:0 p:0
         └─< 0x0010003c      b1fd           bl 0x100032                 ; 0x100032,PC,=
             0x0010003e      80ff666f       jarl sym.___main,  lp       ;[1] ; PC,lp,=,0x106fa4,PC,=
             0x00100042      031ef0ff       addi -16,  sp,  sp          ; -16,sp,+,sp,=
-
+```
 
 Syntax
 ======
