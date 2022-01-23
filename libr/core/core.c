@@ -2506,14 +2506,21 @@ R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
 }
 
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose) {
-	ut64 type;
 	if (!(core->print->flags & R_PRINT_FLAGS_COLOR)) {
 		return NULL;
 	}
 	if (!r_config_get_i (core->config, "scr.color")) {
 		return NULL;
 	}
-	type = r_core_anal_address (core, addr);
+#if 0
+	// check for flag colors
+	RFlagItem *fi = r_flag_get_i (core->flags, addr);
+	if (fi && fi->color) {
+		return r_cons_pal_parse (fi->color, NULL);
+		//return fi->color;
+	}
+#endif
+	ut64 type = r_core_anal_address (core, addr);
 	if (type & R_ANAL_ADDR_TYPE_EXEC) {
 		return core->cons->context->pal.ai_exec; //Color_RED;
 	}

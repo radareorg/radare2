@@ -1708,7 +1708,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	if (!note) {
 		goto err_note;
 	}
-	bytes = calloc (nb_cons_cols * 40, sizeof (char));
+	bytes = calloc (64 + nb_cons_cols * 40, sizeof (char));
 	if (!bytes) {
 		goto err_bytes;
 	}
@@ -1731,7 +1731,9 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		sprintf (bytes + j, format, (i & 0xf), (i + 1) & 0xf);
 		j += step;
 	}
-	j--;
+	if (!compact) {
+		j--;
+	}
 	strcpy (bytes + j, "     ");
 	j += 2;
 	for (i = 0; i < nb_cols; i++) {
@@ -2009,7 +2011,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					int notej_len = strlen (note[j]);
 					int sz = R_MIN (notej_len, nb_cons_cols - off);
 					if (compact) {
-						off -= (j/2);
+						off -= (j / 2);
 					} else {
 						if (j % 2) {
 							off--;
