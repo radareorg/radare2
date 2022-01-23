@@ -1904,7 +1904,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			hascolor = false;
 			if (usecolor) {
 				if (!setcolor) {
-					const char *bytecolor = r_print_byte_color (core->print, ch);
+					const char *bytecolor = r_print_byte_color (core->print, addr + j, ch);
 					if (bytecolor) {
 						append (ebytes, bytecolor);
 						append (echars, bytecolor);
@@ -6608,7 +6608,7 @@ static int cmd_print(void *data, const char *input) {
 					RFlagItem *f;
 					ut32 v = r_read_ble32 (core->block + i, core->print->big_endian);
 					if (p && p->colorfor) {
-						a = p->colorfor (p->user, v, true);
+						a = p->colorfor (p->user, core->offset + i, v, true);
 						if (a && *a) {
 							b = Color_RESET;
 						} else {
@@ -6688,7 +6688,7 @@ static int cmd_print(void *data, const char *input) {
 					RFlagItem *f;
 					ut64 v = (ut64) r_read_ble16 (core->block + i, p->big_endian);
 					if (p && p->colorfor) {
-						a = p->colorfor (p->user, v, true);
+						a = p->colorfor (p->user, core->offset + i, v, true);
 						if (a && *a) {
 							b = Color_RESET;
 						} else {
@@ -6736,7 +6736,7 @@ static int cmd_print(void *data, const char *input) {
 					RFlagItem *f;
 					ut64 v = r_read_ble64 (core->block + i, p->big_endian);
 					if (p && p->colorfor) {
-						a = p->colorfor (p->user, v, true);
+						a = p->colorfor (p->user, core->offset + i, v, true);
 						if (a && *a) {
 							b = Color_RESET;
 						} else {
@@ -6861,7 +6861,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_print (" ");
 					for (j = i; j < len && j < i + cols; j += 1) {
 						ut8 *p = (ut8 *) core->block + j;
-						r_print_byte (core->print, "%c", j, *p);
+						r_print_byte (core->print, core->offset + j, "%c", j, *p);
 					}
 					r_cons_newline ();
 				}
