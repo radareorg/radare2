@@ -110,6 +110,9 @@ static inline bool is_special_char(char n) {
 }
 
 R_API const char *r_name_filter_ro(const char *a) {
+	if (!a) {
+		return NULL;
+	}
 	while (*a++ == '_');
 	return a - 1;
 }
