@@ -226,6 +226,7 @@ static const char *help_msg_panels[] = {
 	"d",        "define in the current address. Same as Vd",
 	"D",        "show disassembly in the current panel",
 	"e",        "change title and command of current panel",
+	"E",        "edit color theme",
 	"f",        "set/add filter keywords",
 	"F",        "remove all the filters",
 	"g",        "go/seek to given offset",
@@ -3321,6 +3322,9 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		break;
 	case 'Z': // shift-tab
 		__handle_tab_key (core, true);
+		break;
+	case 'E':
+		r_core_visual_colors (core);
 		break;
 	case 'e':
 	{
