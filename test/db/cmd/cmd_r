@@ -1,3 +1,25 @@
+NAME=r-+
+FILE=malloc://512
+CMDS=<<EOF
+r
+r-3
+r
+r+3
+r
+r -3
+r
+r +3
+r
+EOF
+EXPECT=<<EOF
+512
+509
+512
+509
+512
+EOF
+RUN
+
 NAME=r
 FILE=malloc://512
 CMDS=r

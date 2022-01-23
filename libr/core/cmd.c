@@ -2390,13 +2390,21 @@ static int cmd_resize(void *data, const char *input) {
 		delta = (st64)r_num_math (core->num, input);
 		newsize = oldsize + delta;
 		break;
-	case ' ': // "r "
-		newsize = r_num_math (core->num, input + 1);
-		if (newsize == 0) {
-			if (input[1] == '0') {
-				eprintf ("Invalid size\n");
+	case ' ': // "r " "r +" "r -"
+		{
+			const char *arg = r_str_trim_head_ro (input + 1);
+			if (*arg == '-' || *arg == '+') {
+				delta = (st64)r_num_math (core->num, input);
+				newsize = oldsize + delta;
+			} else {
+				newsize = r_num_math (core->num, arg);
+				if (newsize == 0) {
+					if (arg[1] == '0') {
+						eprintf ("Invalid size\n");
+					}
+					return false;
+				}
 			}
-			return false;
 		}
 		break;
 	case 'e':
