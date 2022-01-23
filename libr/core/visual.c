@@ -79,6 +79,9 @@ R_API void r_core_visual_applyHexMode(RCore *core, int hexMode) {
 		r_config_set (core->config, "hex.comments", "true");
 		break;
 	case 1: /* pxa */
+		r_config_set (core->config, "hex.compact", "false");
+		r_config_set (core->config, "hex.comments", "true");
+		break;
 	case 4: /* pxb */
 	case 7: /* pxq */
 		r_config_set (core->config, "hex.compact", "true");

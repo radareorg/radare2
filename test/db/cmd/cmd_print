@@ -862,6 +862,30 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pxa test
+FILE=bins/other/cows128.data
+CMDS=<<EOF
+f test=$$
+f win=$$+7
+f oops=$$+22
+pxa 32
+e hex.compact=true
+pxa 32
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+            /test            /win                                  
+0x00000000  3758 8634 5586 2c4f 8029 4c7e 2d4b 7f3c  7X.4U.,O.)L~-K.<
+                           /oops                                   
+0x00000010  4c7f 4d51 8156 5e8a 5261 8d4f 6a91 6884  L.MQ.V^.Ra.Oj.h.
+- offset -   0 1 2 3 4 5 6 7 8 9 A B C D E F  0123456789ABCDEF
+            /test          /win                                    
+0x00000000  3758863455862c4f80294c7e2d4b7f3c  7X.4U.,O.)L~-K.<
+                        /oops                                      
+0x00000010  4c7f4d5181565e8a52618d4f6a916884  L.MQ.V^.Ra.Oj.h.
+EOF
+RUN
+
 NAME=prc text color
 FILE=-
 CMDS=<<EOF
