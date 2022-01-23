@@ -5287,8 +5287,9 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 'j': // "dij"
 				P ("{");
-				P ("\"stopreason\":\"%s\"}\n", r_debug_reason_to_string (stop));
+				P ("\"stopreason\":\"%s\"", r_debug_reason_to_string (stop));
 				if (rdi) {
+					P (",");
 					const char *s = r_signal_to_string (core->dbg->reason.signum);
 					P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
 					P ("\"signal\":\"%s\",", r_str_get_fail (s, "none"));
@@ -5302,20 +5303,21 @@ static int cmd_debug(void *data, const char *input) {
 					P ("\"pid\":%d,", rdi->pid);
 					P ("\"tid\":%d,", rdi->tid);
 					P ("\"uid\":%d,", rdi->uid);
-					P ("\"gid\":%d,", rdi->gid);
+					P ("\"gid\":%d", rdi->gid);
 					if (rdi->usr) {
-						PS("\"usr\":\"%s\",", rdi->usr);
+						PS(",\"usr\":\"%s\"", rdi->usr);
 					}
 					if (rdi->exe) {
-						PS("\"exe\":\"%s\",", rdi->exe);
+						PS(",\"exe\":\"%s\"", rdi->exe);
 					}
 					if (rdi->cmdline) {
-						PS ("\"cmdline\":\"%s\",", rdi->cmdline);
+						PS (",\"cmdline\":\"%s\"", rdi->cmdline);
 					}
 					if (rdi->cwd) {
-						PS ("\"cwd\":\"%s\",", rdi->cwd);
+						PS (",\"cwd\":\"%s\"", rdi->cwd);
 					}
 				}
+				P ("}");
 				break;
 #undef P
 #undef PS
