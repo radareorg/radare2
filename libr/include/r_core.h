@@ -842,6 +842,8 @@ R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintI
 R_API PJ *r_core_pj_new(RCore *core);
 /* help */
 R_API void r_core_cmd_help(const RCore *core, const char *help[]);
+R_API void r_core_cmd_help_match(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd, bool exact);
+R_API void r_core_cmd_help_match_spec(const RCore *core, const char *help[], R_BORROW R_NONNULL char *cmd, char spec, bool exact);
 
 /* anal stats */
 
