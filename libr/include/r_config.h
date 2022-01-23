@@ -51,7 +51,7 @@ typedef struct r_config_t {
 	HtPP *ht;
 	bool lock;
 	/*was the struct modified after the last project save*/
-	bool is_dirty;
+	R_DIRTY_VAR;
 } RConfig;
 
 typedef struct r_config_hold_t {

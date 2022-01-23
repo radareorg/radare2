@@ -1501,7 +1501,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 
 				const char *prj = r_config_get (r->config, "prj.name");
 				if (R_STR_ISNOTEMPTY (prj)) {
-					if (r_core_project_is_saved (r) && !r_config_get_b(r->config, "prj.alwaysprompt")) {
+					if (r_core_project_is_saved (r) && !r_config_get_b (r->config, "prj.alwaysprompt")) {
 						break;
 					}
 					if (no_question_save) {

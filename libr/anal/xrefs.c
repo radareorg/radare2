@@ -111,7 +111,7 @@ R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 	}
 	setxref (anal->dict_xrefs, to, from, type);
 	setxref (anal->dict_refs, from, to, type);
-	R_DIRTY(anal);
+	R_DIRTY (anal);
 	return true;
 }
 
@@ -142,7 +142,7 @@ R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
 	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_CALL);
 	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_DATA);
 	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_STRING);
-	R_DIRTY(anal);
+	R_DIRTY (anal);
 	return res;
 }
 

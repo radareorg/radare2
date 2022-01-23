@@ -59,7 +59,7 @@ typedef struct r_flag_t {
 	PrintfCallback cb_printf;
 	RList *zones;
 	ut64 mask;
-	bool is_dirty; /*did struct change after the last project save?*/
+	R_DIRTY_VAR;
 } RFlag;
 
 /* compile time dependency */

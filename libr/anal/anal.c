@@ -139,7 +139,7 @@ R_API RAnal *r_anal_new(void) {
 			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
-	R_DIRTY(anal);
+	R_DIRTY (anal);
 	return anal;
 }
 
@@ -397,7 +397,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 			}
 		}
 	}
-	R_DIRTY(anal);
+	R_DIRTY (anal);
 }
 
 R_API RList* r_anal_get_fcns(RAnal *anal) {
@@ -749,7 +749,7 @@ R_API void r_anal_add_import(RAnal *anal, const char *imp) {
 	if (!cimp) {
 		return;
 	}
-	R_DIRTY(anal);
+	R_DIRTY (anal);
 	r_list_push (anal->imports, cimp);
 }
 
@@ -758,7 +758,7 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 	const char *eimp;
 	r_list_foreach (anal->imports, it, eimp) {
 		if (!strcmp (eimp, imp)) {
-			R_DIRTY(anal);
+			R_DIRTY (anal);
 			r_list_delete (anal->imports, it);
 			return;
 		}
