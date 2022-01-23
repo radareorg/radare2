@@ -65,7 +65,6 @@ static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	return block;
 }
 
-#if 0
 static void block_free(RAnalBlock *block) {
 	if (!block) {
 		return;
@@ -80,12 +79,11 @@ static void block_free(RAnalBlock *block) {
 	free (block->parent_reg_arena);
 	free (block);
 }
-#endif
 
 void __block_free_rb(RBNode *node, void *user) {
 	RAnalBlock *block = unwrap (node);
 	r_anal_block_unref (block);
-	//block_free (block);
+	// block_free (block);
 }
 
 R_API void r_anal_block_reset(RAnal *a) {
@@ -402,6 +400,7 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 	if (bb->ref < 1) {
 		RAnal *anal = bb->anal;
 		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
+		block_free (bb);
 	//	r_return_if_fail (r_list_empty (bb->fcns));
 	}
 }
