@@ -1675,7 +1675,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		colors[i] = r_cons_rainbow_get (i, 10, false);
 	}
 	const int col = core->print->col;
-	RFlagItem *flag, *current_flag = NULL;
+	RFlagItem *curflag = NULL;
 	char **note;
 	int html = r_config_get_i (core->config, "scr.html");
 	int nb_cons_cols;
@@ -1752,7 +1752,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		chars[0] = '\0';
 		ebytes = bytes;
 		echars = chars;
-		hascolor = false;
+//		hascolor = false;
 		ut64 ea = addr;
 		if (core->print->pava) {
 			ut64 va = r_io_p2v (core->io, addr);
@@ -1802,26 +1802,85 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				note[j] = r_str_newf (";%s", comment);
 				marks = true;
 			}
-
-			// collect flags
-			flag = r_flag_get_i (core->flags, addr + j);
-			if (flag) { // Beginning of a flag
-				if (flagsz) {
-					fend = addr + flagsz; // core->blocksize;
-				} else {
-					fend = addr + j + flag->size;
+			const RList *list = r_flag_get_list (core->flags, addr + j);
+			RListIter *iter;
+			RFlagItem *fi;
+			ut64 flagsize = 0;
+			ut64 flagaddr = 0;
+			bool found = false;
+			char *flagname = NULL;
+			ut64 at = addr + j;
+			if (r_list_empty (list)) {
+				// get flag fnear and check for size
+				RFlagItem *fnear = r_flag_get_at (core->flags, at, true);
+				if (fnear) {
+					if (fnear->offset <= at) {
+						if (fnear->offset + fnear->size >= at) {
+							found = true;
+						}
+					}
+					if (found) {
+						flagaddr = fnear->offset;
+						if (fnear->offset == at) {
+							free (flagname);
+							flagname = fnear->name;
+						}
+						if (fnear->color) {
+							curflag = fnear;
+						}
+						if (!curflag) {
+							curflag = fnear;
+						}
+						hascolor = false;
+					}
 				}
-				free (note[j]);
-				const char *name = r_name_filter_ro (flag->name);
-				note[j] = r_str_prepend (strdup (name), "/");
+			} else {
+				r_list_foreach (list, iter, fi) {
+					flagsize = R_MAX (flagsize, fi->size);
+					if (fi->color) {
+						curflag = fi;
+					}
+					if (!flagaddr || fi->color) {
+						flagaddr = fi->offset;
+						if (fi->offset == at) {
+							free (flagname);
+							flagname = strdup (fi->name);
+						}
+						if (!fi->color) {
+							curflag = fi;
+						}
+					}
+				}
+				if (curflag) {
+					hascolor = false;
+					found = true;
+				}
+			}
+			// collect flags
+			if (found) {
+				if (flagsz) {
+					flagsize = flagsz;
+				}
+				if (flagsize) {
+					fend = addr + flagsize;
+				} else {
+					fend = addr + j + flagsize;
+				}
+				const char *name = r_name_filter_ro (flagname);
+				if (name) {
+					free (note[j]);
+					note[j] = r_str_prepend (strdup (name), "/");
+				} else {
+					free (note[j]);
+					note[j] = NULL;
+				}
 				marks = true;
 				color_idx++;
 				color_idx %= 10;
-				current_flag = flag;
 				if (showSection) {
 					r_cons_printf ("%20s ", "");
 				}
-				if (flag->offset == addr + j) {
+				if (flagaddr == addr + j) {
 					if (usecolor) {
 						append (ebytes, Color_INVERT);
 						append (echars, Color_INVERT);
@@ -1830,15 +1889,17 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				}
 			} else {
 				// Are we past the current flag?
-				if (current_flag && addr + j > (current_flag->offset + current_flag->size)) {
+				if (curflag && addr + j > (curflag->offset + curflag->size)) {
 					setcolor = false;
-					current_flag = NULL;
+					curflag = NULL;
 				}
 				// Turn colour off if we're at the end of the current flag
 				if (fend == UT64_MAX || fend <= addr + j) {
 					setcolor = false;
 				}
 			}
+			R_FREE (flagname);
+			hascolor = false;
 			if (usecolor) {
 				if (!setcolor) {
 					const char *bytecolor = r_print_byte_color (core->print, ch);
@@ -1849,8 +1910,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					}
 				} else if (!hascolor) {
 					hascolor = true;
-					if (current_flag && current_flag->color) {
-						char *ansicolor = r_cons_pal_parse (current_flag->color, NULL);
+					if (curflag && curflag->color) {
+						char *ansicolor = r_cons_pal_parse (curflag->color, NULL);
 						if (ansicolor) {
 							append (ebytes, ansicolor);
 							append (echars, ansicolor);
@@ -1995,7 +2056,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	free (chars);
  err_chars:
 	for (i = 0; i < R_ARRAY_SIZE (colors); i++) {
-		free (colors[i]);
+		R_FREE (colors[i]);
 	}
 }
 
