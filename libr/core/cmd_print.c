@@ -2546,8 +2546,9 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 
 static void cmd_print_op(RCore *core, const char *input) {
 	ut8 *buf;
-	if (!input[0])
+	if (!input[0]) {
 		return;
+	}
 	switch (input[1]) {
 	case 'a':
 	case 's':
@@ -2576,8 +2577,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 		return;
 	}
 	if (buf) {
-		r_print_hexdump(core->print, core->offset, buf,
-			core->blocksize, 16, 1, 1);
+		r_print_hexdump (core->print, core->offset, buf, core->blocksize, 16, 1, 1);
 		free (buf);
 	}
 }

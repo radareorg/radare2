@@ -2507,9 +2507,41 @@ R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
 
 static R_TH_LOCAL char *const_color = NULL;
 
+R_API const char *colorforop(RCore *core, ut64 addr) {
+	RList *fcns = r_anal_get_functions_in (core->anal, addr);
+	if (r_list_empty (fcns)) {
+		r_list_free (fcns);
+		return NULL;
+	}
+	RAnalFunction *fcn = r_list_pop (fcns);
+	r_list_free (fcns);
+	if (!fcn) {
+		return NULL;
+	}
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (addr >= bb->addr && addr < (bb->addr + bb->size)) {
+			ut64 opat = r_anal_bb_opaddr_at (bb, addr);
+			RAnalOp *op = r_core_anal_op (core, opat, 0);
+			if (op) {
+				const char* res = r_print_color_op_type (core->print, op->type);
+				r_anal_op_free (op);
+				return res;
+			}
+			break;
+		}
+	}
+	return NULL;
+}
+
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bool verbose) {
 	if (!(core->print->flags & R_PRINT_FLAGS_COLOR)) {
 		return NULL;
+	}
+	if (!verbose && (core->print->flags & R_PRINT_FLAGS_COLOROP)) {
+		// if function in place check optype for given offset
+		return colorforop (core, addr);
 	}
 	if (!r_config_get_i (core->config, "scr.color")) {
 		return NULL;

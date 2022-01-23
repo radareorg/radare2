@@ -1583,6 +1583,17 @@ static bool cb_scrnull(void *user, void *data) {
 	return true;
 }
 
+static bool cb_scr_color_ophex(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_COLOROP;
+	} else {
+		core->print->flags &= (~R_PRINT_FLAGS_COLOROP);
+	}
+	return true;
+}
+
 static bool cb_color(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -4073,6 +4084,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETBPREF ("scr.color.pipe", "false", "Enable colors when using pipes");
 	SETBPREF ("scr.color.ops", "true", "Colorize numbers and registers in opcodes");
+	SETCB ("scr.color.ophex", "false", &cb_scr_color_ophex, "Colorize in hexdump depending on opcode type (px)");
 	SETBPREF ("scr.color.args", "true", "Colorize arguments and variables of functions");
 	SETBPREF ("scr.color.bytes", "true", "Colorize bytes that represent the opcodes of the instruction");
 	SETCB ("scr.null", "false", &cb_scrnull, "Show no output");
