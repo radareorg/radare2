@@ -1043,7 +1043,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "stvc.sr", two (0x07e0, 0x0054), two (0x07e0, 0x07ff), {SR1, R2, SELID}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_STORE },
 	{ "stvc.sr", two (0x07e0, 0x0054), two (0x07e0, 0x07ff), {SR1, R2}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_STORE },
 	{ "sub", OP (0x0d), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "#0,#1,-,="},
-	{ "subr", OP (0x0c), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "#0,#1,-,="  },
+	{ "subr", OP (0x0c), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SUB, "#1,#0,-,="  },
 	{ "switch", one (0x0040), one (0xffe0), {R1_NOTR0}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_RJMP },
 	{ "sxb", one (0x00a0), one (0xffe0), {R1}, 0, V850_CPU_NON0 },
 	{ "sxh", one (0x00e0), one (0xffe0), {R1}, 0, V850_CPU_NON0 },
