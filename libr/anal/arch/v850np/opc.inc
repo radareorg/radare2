@@ -865,8 +865,8 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "jarl32", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS },
 	{ "jarlw", one (0x02e0), one (0xffe0), {D32_31_PCREL, R1_NOTR0}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_ALIAS },
 
-	{ "jmp", two (0x06e0, 0x0000), two (0xffe0, 0x0001), {D32_31, R1}, 2, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_MJMP, "[#1], PC, :=" },
-	{ "jmp", one (0x06e0), one (0xffe0), {D32_31, R1}, 2, V850_CPU_E2 | V850_CPU_E2V3, R_ANAL_OP_TYPE_MJMP, "[#1], PC, :=" },
+	{ "jmp", two (0x06e0, 0x0000), two (0xffe0, 0x0001), {D32_31, R1}, 2, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_MJMP, "#1,[4],PC,:=" },
+	{ "jmp", one (0x06e0), one (0xffe0), {D32_31, R1}, 2, V850_CPU_E2 | V850_CPU_E2V3, R_ANAL_OP_TYPE_MJMP, "#1,[4],PC,:=" },
 	{ "jmp", one (0x0060), one (0xffe0), {R1}, 1, V850_CPU_ALL, R_ANAL_OP_TYPE_RJMP, "#1,[4],PC,:=" },
 	/* Gas local alias of jmp disp22(not defined in spec). */
 	{ "jmp22", one (0x0060), one (0xffe0), {R1}, 1, V850_CPU_ALL | V850_CPU_OPTION_ALIAS },
