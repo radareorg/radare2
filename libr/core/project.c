@@ -706,7 +706,6 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	free (script_path);
 	r_config_set (core->config, "prj.name", prj_name);
-	printf("cfg: %d, anal: %d, flags: %d", core->config->is_dirty, core->anal->is_dirty, core->flags->is_dirty);
 	undirty(core);
 	return ret;
 }
