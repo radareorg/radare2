@@ -33,7 +33,7 @@ while : ; do
 		continue
 		;;
 	-*)
-		# penguin face just for flags
+		# just for the penguin face case
 		ARGS="${ARGS} $1"
 		;;
 	*)
@@ -116,6 +116,11 @@ else
 		SHELL=/bin/sh
 		echo IS ASH
 	fi
+fi
+
+pkg-config --cflags capstone 2>&1 > /dev/null
+if [ $? = 0 ]; then
+	export CFGARG="--with-syscapstone"
 fi
 
 if [ ! -d shlr/capstone ]; then

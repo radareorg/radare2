@@ -100,10 +100,11 @@ update_capstone_git() {
 
 ### MAIN ###
 
-pkg-config --cflags capstone
+pkg-config --cflags capstone > /dev/null 2>&1
 if [ $? = 0 ]; then
-	echo "Use ./configure --with-syscapstone"
-	exit 0
+	echo "Warning: You have system-wide capstone installation, but im gonna clone a new copy of it"
+	echo "Warning: Use ./configure --with-syscapstone # in case you prefer to use system one"
+#	exit 0
 fi
 
 if [ -n "${CS_ARCHIVE}" ]; then
