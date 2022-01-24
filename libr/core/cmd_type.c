@@ -1371,7 +1371,6 @@ static int cmd_type(void *data, const char *input) {
 					if (out) {
 						// remove previous types and save new edited types
 						sdb_reset (TDB);
-						r_parse_c_reset (core->parser);
 						r_anal_save_parsed_type (core->anal, out);
 						free (out);
 					}
@@ -1687,7 +1686,6 @@ static int cmd_type(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_t_minus);
 		} else if (input[1] == '*') {
 			sdb_reset (TDB);
-			r_parse_c_reset (core->parser);
 		} else {
 			const char *name = r_str_trim_head_ro (input + 1);
 			if (*name) {

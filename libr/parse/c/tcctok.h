@@ -147,7 +147,7 @@ DEF(TOK_pack, "pack")
 /* already defined for assembler */
 DEF(TOK_ASM_push, "push")
 DEF(TOK_ASM_pop, "pop")
-
+#if 0
 /* builtin functions or variables */
 DEF(TOK___aeabi_memcpy, "__aeabi_memcpy")
 DEF(TOK___aeabi_memcpy4, "__aeabi_memcpy4")
@@ -227,3 +227,4 @@ DEF(TOK_memmove, "memmove")
 DEF(TOK_strlen, "strlen")
 DEF(TOK_strcpy, "strcpy")
 DEF(TOK_alloca, "alloca")
+#endif

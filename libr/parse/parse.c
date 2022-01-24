@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2021 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2022 - nibble, pancake, maijin */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -40,10 +40,7 @@ R_API void r_parse_free(RParse *p) {
 }
 
 R_API bool r_parse_add(RParse *p, RParsePlugin *foo) {
-	bool itsFine = true;
-	if (foo->init) {
-		itsFine = foo->init (p, p->user);
-	}
+	bool itsFine = foo->init? foo->init (p, p->user): true;
 	if (itsFine) {
 		r_list_append (p->parsers, foo);
 	}
@@ -60,9 +57,10 @@ static char *predotname(const char *name) {
 }
 
 R_API bool r_parse_use(RParse *p, const char *name) {
+	r_return_val_if_fail (p && name, false);
+
 	RListIter *iter;
 	RParsePlugin *h;
-	r_return_val_if_fail (p && name, false);
 	r_list_foreach (p->parsers, iter, h) {
 		if (!strcmp (h->name, name)) {
 			p->cur = h;
