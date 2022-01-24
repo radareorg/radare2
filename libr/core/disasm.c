@@ -5941,8 +5941,9 @@ toro:
 	r_cons_break_pop ();
 
 #if HASRETRY
-	if (!ds->count_bytes && ds->lines < ds->count
-			&& pdu_condition? !pdu_condition_met: false) {
+	// if we come here without goto, never retry with count_bytes
+	if (!count_bytes && ds->lines < ds->count
+			&& (pdu_condition? !pdu_condition_met: true)) {
 		ds->at = ds->addr = ds->at + inc;
 		ds->index = 0;
 	retry:
@@ -5955,18 +5956,14 @@ toro:
 		R_FREE (nbuf);
 		ds->buf = buf = nbuf = malloc (len);
 		if (!buf) {
-			eprintf ("Cannot allocate %d bytes%c", len, 10);
+			eprintf ("Cannot allocate %d bytes\n", len);
 		}
 
-		// enough bytes left? (if counting instructions)
+		// only try again if we still need more lines
 		if (!count_bytes && ds->lines < ds->count) {
 			ds->addr += ds->index;
 			r_io_read_at (core->io, ds->addr, buf, len);
-			inc = 0;
-		}
 
-		// always reloop if counting instructions
-		if (!count_bytes) {
 			goto toro;
 		}
 	}
