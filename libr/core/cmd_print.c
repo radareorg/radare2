@@ -1108,35 +1108,38 @@ static int cmd_pdu(RCore *core, const char *input) {
 
 		if (input[1] == '?' || input[2] == '?' || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdua", true);
-			return 0;
+			break;
 		}
 
 		to = r_num_get (core->num, arg);
 
 		if (!to) {
 			eprintf ("Couldn't parse address \"%s\"\n", arg);
-			return 1;
+			ret = 1;
+			break;
 		} else if (to < addr) {
 			eprintf ("Can't print until an earlier address\n");
-			return 2;
+			ret = 2;
+			break;
 		} else if (to == addr) {
 			eprintf ("Can't print until the start address\n");
-			return 2;
+			ret = 2;
+			break;
 		}
 
 		// pD <count>
 		count = to - core->offset;
 		if (input[1] == 'j') {
-			r_core_cmdf (core, "pDJ %" PFMT64u, count);
+			ret = r_core_cmdf (core, "pDJ %" PFMT64u, count);
 		} else {
-			r_core_cmdf (core, "pD %" PFMT64u, count);
+			ret = r_core_cmdf (core, "pD %" PFMT64u, count);
 		}
 		}
 		break;
 	case 'c': // "pduc"
 		if (input[1] == '?' || input[2] == '?') {
 			r_core_cmd_help_match (core, help_msg_pdu, "pduc", true);
-			return 0;
+			break;
 		}
 
 		ret = r_core_print_disasm_until (core, addr, buf, len, opcode, "call",
@@ -1145,7 +1148,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 	case 'e': // "pdue"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdue", true);
-			return 0;
+			break;
 		}
 
 		ret = r_core_print_disasm_until (core, addr, buf, len, esil, arg,
@@ -1154,7 +1157,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 	case 'i': // "pdui"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdui", true);
-			return 0;
+			break;
 		}
 
 		ret = r_core_print_disasm_until (core, addr, buf, len, instruction, arg,
@@ -1163,7 +1166,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 	case 'o': // "pduo"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pduo", true);
-			return 0;
+			break;
 		}
 
 		ret = r_core_print_disasm_until (core, addr, buf, len, opcode, arg,
@@ -1172,7 +1175,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 	case 's': // "pdus"
 		if (input[1] == '?' || input[2] == '?') {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdus", true);
-			return 0;
+			break;
 		}
 
 		ret = r_core_print_disasm_until (core, addr, buf, len, instruction, "syscall",
