@@ -139,6 +139,12 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
+inline static void undirty(RCore *core) {
+	core->config->is_dirty = false;
+	core->anal->is_dirty = false;
+	core->flags->is_dirty = false;
+}
+
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
@@ -377,6 +383,9 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	ret = r_core_project_load (core, prj_name, prj_script);
 	free (prj_name);
 	free (prj_script);
+	if (ret)  {
+		undirty(core);
+	}
 	return ret;
 }
 
@@ -697,9 +706,8 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	free (script_path);
 	r_config_set (core->config, "prj.name", prj_name);
-	core->config->is_dirty = false;
-	core->anal->is_dirty = false;
-	core->flags->is_dirty = false;
+	printf("cfg: %d, anal: %d, flags: %d", core->config->is_dirty, core->anal->is_dirty, core->flags->is_dirty);
+	undirty(core);
 	return ret;
 }
 
