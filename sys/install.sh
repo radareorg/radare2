@@ -120,7 +120,12 @@ fi
 
 pkg-config --cflags capstone 2>&1 > /dev/null
 if [ $? = 0 ]; then
-	export CFGARG="--with-syscapstone"
+	pkg-config --atleast-version=5.0.0 capstone
+	if [ $? = 0 ]; then
+		export CFGARG="--with-syscapstone"
+	else
+		echo "Warning: Your system-wide capstone is too old for me"
+	fi
 fi
 
 if [ ! -d shlr/capstone ]; then
