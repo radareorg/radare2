@@ -220,7 +220,7 @@ ifeq ($(CS_RELEASE),1)
 capstone-sync: capstone
 
 capstone-clean:
-	cd capstone ; $(MAKE) clean
+	-$(MAKE) -C capstone clean
 
 capstone: capstone-$(CS_VER).tar.gz
 	tar xzvf capstone-$(CS_VER).tar.gz
@@ -231,11 +231,11 @@ capstone: capstone-$(CS_VER).tar.gz
 # already implemented in capstone.sh
 patch-capstone capstone-patch:
 ifeq ($(CS_PATCHES),1)
-	if [ -d capstone/.git ]; then \
+	if [ -d capstone -a -d capstone/.git ]; then \
 ifeq ($(USE_CS4),1)
-		cd capstone ; for PATCH in ../capstone-patches/v4/* ; do patch -p1 < $$PATCH ; done ; \
+		cd capstone && for PATCH in ../capstone-patches/v4/* ; do patch -p1 < $$PATCH ; done ; \
 else
-		cd capstone ; for PATCH in ../capstone-patches/v5/* ; do patch -p1 < $$PATCH ; done ; \
+		cd capstone && for PATCH in ../capstone-patches/v5/* ; do patch -p1 < $$PATCH ; done ; \
 endif
 	fi
 endif
@@ -267,12 +267,15 @@ all:
 endif
 
 capstone-build: capstone
+ifeq ($(CAPSTONE_CFLAGS),)
 	cd capstone && CFLAGS="${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) $(CAPSTONE_MAKEFLAGS) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 CAPSTONE_STATIC=yes CAPSTONE_SHARED=no \
 		RANLIB="$(RANLIB)" LIBARCHS="" AR="$(AR)" IS_MINGW=0 libcapstone.a
 ifneq (${EXT_AR},a)
 	-cp -f capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif
+endif
+
 endif
 endif
 
