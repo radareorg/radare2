@@ -706,7 +706,7 @@ R_API bool r_core_project_save_script(RCore *core, const char *file, int opts);
 R_API bool r_core_project_save(RCore *core, const char *file);
 R_API char *r_core_project_name(RCore *core, const char *file);
 R_API char *r_core_project_notes_file(RCore *core, const char *file);
-
+R_API void r_core_project_undirty(RCore *core);
 R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
 R_API void r_core_sysenv_end(RCore *core, const char *cmd);
 

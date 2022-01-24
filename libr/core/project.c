@@ -139,7 +139,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
-inline static void undirty(RCore *core) {
+R_API void r_core_project_undirty(RCore *core) {
 	core->config->is_dirty = false;
 	core->anal->is_dirty = false;
 	core->flags->is_dirty = false;
@@ -384,7 +384,7 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	free (prj_name);
 	free (prj_script);
 	if (ret)  {
-		undirty(core);
+		r_core_project_undirty(core);
 	}
 	return ret;
 }
@@ -706,7 +706,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	free (script_path);
 	r_config_set (core->config, "prj.name", prj_name);
-	undirty(core);
+	r_core_project_undirty(core);
 	return ret;
 }
 

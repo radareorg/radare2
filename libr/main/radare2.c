@@ -1458,6 +1458,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				r_core_cmd0 (r, "aeip");
 			}
 		}
+		r_core_project_undirty(r);
 		for (;;) {
 			if (!r_core_prompt_loop (r)) {
 				quietLeak = true;
