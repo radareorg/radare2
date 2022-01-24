@@ -1085,24 +1085,6 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 	r_config_set_i (core->config, "asm.segoff", segoff);
 }
 
-/* TODO replace with help_match */
-static void pdu_help(RCore *core, char spec) {
-	const bool c = r_config_get_b (core->config, "scr.color.grep");
-	r_config_set_b (core->config, "scr.color.grep", true);
-
-	/* only show relevant subcmd line if applicable */
-	char *help = r_core_cmd_strf (core, "pdu?~pdu%c", spec);
-	if (help && *help) { // strlen (help) > 0
-		r_cons_printf ("%s", help);
-	} else {
-		r_core_cmd0 (core, "pdu?");
-	}
-	free (help);
-
-	r_cons_flush ();
-	r_config_set_b (core->config, "scr.color.grep", c);
-}
-
 static int cmd_pdu(RCore *core, const char *input) {
 	int ret = 0;
 	const char *sep = strchr (input, ' ');
@@ -1125,7 +1107,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		ut64 count;
 
 		if (input[1] == '?' || input[2] == '?' || !arg) {
-			pdu_help (core, 'a');
+			r_core_cmd_help_match (core, help_msg_pdu, "pdua", true);
 			return 0;
 		}
 
@@ -1153,7 +1135,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		break;
 	case 'c': // "pduc"
 		if (input[1] == '?' || input[2] == '?') {
-			pdu_help (core, 'c');
+			r_core_cmd_help_match (core, help_msg_pdu, "pduc", true);
 			return 0;
 		}
 
@@ -1162,7 +1144,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		break;
 	case 'e': // "pdue"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
-			pdu_help (core, 'e');
+			r_core_cmd_help_match (core, help_msg_pdu, "pdue", true);
 			return 0;
 		}
 
@@ -1171,7 +1153,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		break;
 	case 'i': // "pdui"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
-			pdu_help (core, 'i');
+			r_core_cmd_help_match (core, help_msg_pdu, "pdui", true);
 			return 0;
 		}
 
@@ -1180,7 +1162,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		break;
 	case 'o': // "pduo"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
-			pdu_help (core, 'o');
+			r_core_cmd_help_match (core, help_msg_pdu, "pduo", true);
 			return 0;
 		}
 
@@ -1189,7 +1171,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		break;
 	case 's': // "pdus"
 		if (input[1] == '?' || input[2] == '?') {
-			pdu_help (core, 's');
+			r_core_cmd_help_match (core, help_msg_pdu, "pdus", true);
 			return 0;
 		}
 
