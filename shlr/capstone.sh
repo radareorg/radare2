@@ -100,6 +100,12 @@ update_capstone_git() {
 
 ### MAIN ###
 
+pkg-config --cflags capstone
+if [ $? = 0 ]; then
+	echo "Use ./configure --with-syscapstone"
+	exit 0
+fi
+
 if [ -n "${CS_ARCHIVE}" ]; then
 	echo "CS_ARCHIVE=${CS_ARCHIVE}"
 else
