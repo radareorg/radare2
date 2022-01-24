@@ -10,29 +10,57 @@ RUN
 NAME=pduX help
 CMDS=<<EOF
 pdua?
+pduaj?
+pdua
+pduaj
 ?e ---
 pduc?
+pducj?
 ?e ---
 pdue?
+pduej?
+pdue
+pduej
 ?e ---
 pdui?
+pduij?
+pdui
+pduij
 ?e ---
 pduo?
+pduoj?
+pduo
+pduoj
 ?e ---
 pdus?
+pdusj?
 EOF
 EXPECT=<<EOF
-| pdua[j] [addr]    disassemble until address
+| pdua[j] [addr]  disassemble until address
+| pdua[j] [addr]  disassemble until address
+| pdua[j] [addr]  disassemble until address
+| pdua[j] [addr]  disassemble until address
 ---
-| pduc[j]           disassemble until call
+| pduc[j]  disassemble until call
+| pduc[j]  disassemble until call
 ---
-| pdue[j] [expr]    disassemble until esil expression
+| pdue[j] [expr]  disassemble until esil expression
+| pdue[j] [expr]  disassemble until esil expression
+| pdue[j] [expr]  disassemble until esil expression
+| pdue[j] [expr]  disassemble until esil expression
 ---
-| pdui[j] [inst]    disassemble until instruction (e.g.: add esp, 0x20)
+| pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
+| pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
+| pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
+| pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
 ---
 | pduo[j] [opcode]  disassemble until opcode (e.g.: mul)
+| pduo[j] [opcode]  disassemble until opcode (e.g.: mul)
+| pduo[j] [opcode]  disassemble until opcode (e.g.: mul)
+| pduo[j] [opcode]  disassemble until opcode (e.g.: mul)
 ---
-| pdus[j]           disassemble until syscall
+| pdus[j]  disassemble until syscall
+| pdus[j]  disassemble until syscall
 EOF
 RUN
 

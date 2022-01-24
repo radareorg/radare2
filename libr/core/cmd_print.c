@@ -1142,7 +1142,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			break;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, opcode, "call",
+		ret = r_core_print_disasm (core, addr, buf, len, 0, opcode, "call", false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 'e': // "pdue"
@@ -1151,7 +1151,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			break;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, esil, arg,
+		ret = r_core_print_disasm (core, addr, buf, len, 0, esil, arg, false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 'i': // "pdui"
@@ -1160,7 +1160,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			break;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, instruction, arg,
+		ret = r_core_print_disasm (core, addr, buf, len, 0, instruction, arg, false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 'o': // "pduo"
@@ -1169,7 +1169,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			break;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, opcode, arg,
+		ret = r_core_print_disasm (core, addr, buf, len, 0, opcode, arg, false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 's': // "pdus"
@@ -1178,7 +1178,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 			break;
 		}
 
-		ret = r_core_print_disasm_until (core, addr, buf, len, instruction, "syscall",
+		ret = r_core_print_disasm (core, addr, buf, len, 0, instruction, "syscall", false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case '?': // "pdu?"
@@ -5744,7 +5744,7 @@ static int cmd_print(void *data, const char *input) {
 						} else {
 							core->num->value = r_core_print_disasm (
 								core, b->addr, block,
-								b->size, b->size, true,
+								b->size, b->size, 0, NULL, true,
 								input[2] == 'J', NULL, NULL);
 						}
 						free (block);
@@ -5838,7 +5838,7 @@ static int cmd_print(void *data, const char *input) {
 						ut8 *buf = calloc (sz, 1);
 						if (buf) {
 							(void)r_io_read_at (core->io, at, buf, sz);
-							core->num->value = r_core_print_disasm (core, at, buf, sz, sz, true, false, NULL, f);
+							core->num->value = r_core_print_disasm (core, at, buf, sz, sz, 0, NULL, true, false, NULL, f);
 							free (buf);
 							// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_function_realsize (f), f->addr);
 						}
@@ -5953,7 +5953,7 @@ static int cmd_print(void *data, const char *input) {
 							break;
 						}
 						r_io_read_at (core->io, addr - l, block1, l); // core->blocksize);
-						core->num->value = r_core_print_disasm (core, addr - l, block1, l, l, true, formatted_json, NULL, NULL);
+						core->num->value = r_core_print_disasm (core, addr - l, block1, l, l, 0, NULL, true, formatted_json, NULL, NULL);
 					} else { // pd
 						int instr_len;
 						if (!r_core_prevop_addr (core, core->offset, l, &start)) {
@@ -5981,8 +5981,9 @@ static int cmd_print(void *data, const char *input) {
 						}
 						core->num->value = r_core_print_disasm (core,
 								core->offset, block1,
-								R_MAX (bs, bs1), l, false,
-								formatted_json, NULL, NULL);
+								R_MAX (bs, bs1), l, 0, NULL,
+								false, formatted_json, NULL,
+								NULL);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
@@ -5999,7 +6000,8 @@ static int cmd_print(void *data, const char *input) {
 						r_io_read_at (core->io, addr, block1, addrbytes * l);
 						core->num->value = r_core_print_disasm (core,
 								addr, block1, addrbytes * l, l,
-								true, formatted_json, NULL, NULL);
+								0, NULL, true, formatted_json,
+								NULL, NULL);
 					} else {
 						eprintf ("Cannot allocate %" PFMT64d " byte(s)\n", addrbytes * l);
 					}
@@ -6014,8 +6016,8 @@ static int cmd_print(void *data, const char *input) {
 							}
 						}
 						core->num->value = r_core_print_disasm (core,
-								addr, buf, buf_size, l,	false,
-								formatted_json, NULL, NULL);
+								addr, buf, buf_size, l,	0, NULL,
+								false, formatted_json, NULL, NULL);
 					}
 				}
 			}
