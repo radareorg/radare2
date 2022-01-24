@@ -714,10 +714,10 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "and", OP (0x0a), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&,#1,=,0,o,:=,$s,s,:=,$z,z,:=" },
 	{ "andi", OP (0x36), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&,#1,=,0,o,:=,$s,s,:=,$z,z,:=" },
 	/* Signed integer. */
-	{ "bge", BOP (0xe), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "s,^,o,!,?{,#0,PC,=,}"},
+	{ "bge", BOP (0xe), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "s,o,^,!,?{,#0,PC,=,}"},
 	{ "bgt", BOP (0xf), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "ble", BOP (0x7), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
-	{ "blt", BOP (0x6), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "s,^,o,?{,#0,PC,=,}" },
+	{ "blt", BOP (0x6), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "s,o,^,?{,#0,PC,=,}" },
 	/* Unsigned integer. */
 	{ "bh", BOP (0xb), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "bl", BOP (0x1), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "c,?{,#0,PC,=,}" },
@@ -1053,7 +1053,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "tlbvi", two (0x87e0, 0x8160), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "tlbw", two (0x87e0, 0xe160), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
 	{ "trap", two (0x07e0, 0x0100), two (0xffe0, 0xffff), {I5U}, 0, V850_CPU_ALL },
-	{ "tst", OP (0x0b), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP },
+	{ "tst", OP (0x0b), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP, "#1,#0,&,0,ov,:=,$s,s,:=,$z,z,:=" },
 	{ "tst1", two (0xc7c0, 0x0000), two (0xc7e0, 0x0000), {B3, D16, R1}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_CMP },
 	{ "tst1", two (0x07e0, 0x00e6), two (0x07e0, 0xffff), {R2, R1}, 3, V850_CPU_NON0, R_ANAL_OP_TYPE_CMP },
 	{ "xor", OP (0x09), OP_MASK, IF1, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_XOR, "#0,#1,^,#1,=" },
