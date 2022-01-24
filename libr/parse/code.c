@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2021 - pancake */
+/* radare - LGPL - Copyright 2013-2022 - pancake */
 
 #include "r_util.h"
 #include "r_types.h"
@@ -9,7 +9,8 @@
 #include "c/tccpp.c"
 #include "c/libtcc.c"
 
-extern int tcc_sym_push(char *typename, int typesize, int meta);
+static R_TH_LOCAL TCCState *s1 = NULL;
+extern int tcc_sym_push(TCCState *s1, char *typename, int typesize, int meta);
 
 /* parse C code and return it in key-value form */
 
@@ -36,6 +37,7 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 	}
 	int btype = 0;
 	RAnal *anal = (RAnal*)p;
+	// TCCState *s1 = NULL; // XXX THIS WILL MAKE IT CRASH
 	//r_cons_printf ("tk %s=%s\n", k, v);
 	// TODO: Add unions support
 	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
@@ -69,14 +71,14 @@ static bool __typeLoad(void *p, const char *k, const char *v) {
 					// TODO: Go recurse here
 					query = r_strf ("struct.%s.%s.meta", subtype, subname);
 					btype = sdb_num_get (anal->sdb_types, query, 0);
-					tcc_sym_push (subtype, 0, btype);
+					tcc_sym_push (s1, subtype, 0, btype);
 				}
 				free (subtype);
 				ptr = next;
 			} while (next);
 			free (members);
 		}
-		tcc_sym_push ((char *)typename, typesize, btype);
+		tcc_sym_push (s1, (char *)typename, typesize, btype);
 	}
 	return true;
 }
@@ -104,6 +106,7 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 	if (!T) {
 		return NULL;
 	}
+	s1 = T; // XXX delete global
 	tcc_set_callback (T, &__appendString, &str);
 	tcc_set_error_func (T, (void *)error_msg, __errorFunc);
 	sdb_foreach (anal->sdb_types, __typeLoad, anal); // why is this needed??
@@ -133,6 +136,7 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	if (!T) {
 		return NULL;
 	}
+	s1 = T; // XXX delete global
 	tcc_set_callback (T, &__appendString, &str);
 	tcc_set_error_func (T, (void *)error_msg, __errorFunc);
 	sdb_foreach (anal->sdb_types, __typeLoad, NULL);
@@ -141,9 +145,4 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	}
 	tcc_delete (T);
 	return str;
-}
-
-// XXX do not use globals
-R_API void r_parse_c_reset(RParse *p) {
-	anon_sym = SYM_FIRST_ANOM;
 }
