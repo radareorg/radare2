@@ -2240,8 +2240,8 @@ R_API void r_cons_thready(void) {
 	}
 	r_th_lock_enter (r_cons_lock);
 	r_cons_instance = R_NEW0 (RCons);
-	r_th_lock_leave (r_cons_lock);
 	C->unbreakable = true;
 	// memset (r_cons_instance, 0, sizeof (r_cons_instance));
 	// memset (r_cons_instance.context, 0, sizeof (r_cons_instance.context));
+	r_th_lock_leave (r_cons_lock);
 }
