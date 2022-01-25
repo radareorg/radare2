@@ -714,13 +714,13 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "and", OP (0x0a), OP_MASK, IF1, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&,#1,=,0,o,:=,$s,s,:=,$z,z,:=" },
 	{ "andi", OP (0x36), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_AND, "#0,#1,&,#1,=,0,o,:=,$s,s,:=,$z,z,:=" },
 	/* Signed integer. */
-	{ "bge", BOP (0xe), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "s,o,^,!,?{,#0,PC,=,}"},
+	{ "bge", BOP (0xe), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "s,o,^,!,?{,#0,PC,:=,}"},
 	{ "bgt", BOP (0xf), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "ble", BOP (0x7), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
-	{ "blt", BOP (0x6), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "s,o,^,?{,#0,PC,=,}" },
+	{ "blt", BOP (0x6), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "s,o,^,?{,#0,PC,:=,}" },
 	/* Unsigned integer. */
 	{ "bh", BOP (0xb), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
-	{ "bl", BOP (0x1), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "c,?{,#0,PC,=,}" },
+	{ "bl", BOP (0x1), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP, "c,?{,#0,PC,:=,}" },
 	{ "bnh", BOP (0x3), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	{ "bnl", BOP (0x9), BOP_MASK, IF3, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_CJMP },
 	/* Common. */
