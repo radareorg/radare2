@@ -665,7 +665,7 @@ R_API ut32 r_core_asm_bwdis_len(RCore* core, int* len, ut64* start_addr, ut32 l)
 
 
 enum pdu_condition {
-	esil,
+	//esil,
 	instruction,
 	opcode
 };

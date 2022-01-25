@@ -7,7 +7,7 @@ Usage:
 EOF
 RUN
 
-NAME=pduX help
+NAME=pdu subcommand help
 CMDS=<<EOF
 pdua?
 pduaj?
@@ -16,11 +16,6 @@ pduaj
 ?e ---
 pduc?
 pducj?
-?e ---
-pdue?
-pduej?
-pdue
-pduej
 ?e ---
 pdui?
 pduij?
@@ -43,11 +38,6 @@ EXPECT=<<EOF
 ---
 | pduc[j]  disassemble until call
 | pduc[j]  disassemble until call
----
-| pdue[j] [expr]  disassemble until esil expression
-| pdue[j] [expr]  disassemble until esil expression
-| pdue[j] [expr]  disassemble until esil expression
-| pdue[j] [expr]  disassemble until esil expression
 ---
 | pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
 | pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
@@ -122,16 +112,6 @@ EXPECT=<<EOF
             0x00000001      4889e2         mov rdx, rsp
             0x00000004      4883e4f0       and rsp, 0xfffffffffffffff0
             0x00000008      50             push rax
-EOF
-RUN
-
-NAME=pdue
-BROKEN=1
-CMDS=<<EOF
-pdue
-EOF
-EXPECT=<<EOF
-unimplemented
 EOF
 RUN
 

@@ -5422,7 +5422,7 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	bool pdu_condition_met = false;
 	char *opstr_nocolor = NULL;
 	int opcode_len = -1;
-	const char *pdu_condition_esil = NULL;
+	//const char *pdu_condition_esil = NULL;
 	const char *pdu_condition_instruction = NULL;
 	const char *pdu_condition_opcode = NULL;
 
@@ -5442,9 +5442,10 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 		ds->count_bytes = false;
 		ds->count = INT_MAX;
 
-		if (pdu_condition_type == esil) {
+		/*if (pdu_condition_type == esil) {
 			pdu_condition_esil = (const char *)pdu_condition;
-		} else if (pdu_condition_type == instruction) {
+		} else*/
+		if (pdu_condition_type == instruction) {
 			pdu_condition_instruction = (const char *)pdu_condition;
 		} else if (pdu_condition_type == opcode) {
 			pdu_condition_opcode = (const char *)pdu_condition;
@@ -5897,10 +5898,9 @@ toro:
 				// we can't strcmp with color codes interfering
 				r_str_ansi_filter (opstr_nocolor, &ds->opstr, NULL, -1);
 				switch (pdu_condition_type) {
-				case esil:
-					// TODO
+				/*case esil:
 					pdu_condition_met = true;
-					break;
+					break;*/
 				case instruction:
 					// match full instruction
 					if (!strcmp (pdu_condition_instruction, opstr_nocolor)) {

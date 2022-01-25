@@ -291,7 +291,7 @@ static const char *help_msg_pdu[] = {
 	"Usage:", "pdu[aceios][j]", "Disassemble instructions until condition",
 	"pdua", "[j] [addr]", "disassemble until address",
 	"pduc", "[j]", "disassemble until call",
-	"pdue", "[j] [expr]", "disassemble until esil expression",
+	//"pdue", "[j] [expr]", "disassemble until esil expression",
 	"pdui", "[j] [inst]", "disassemble until instruction (e.g.: add esp, 0x20)",
 	"pduo", "[j] [opcode]", "disassemble until opcode (e.g.: mul)",
 	"pdus", "[j]", "disassemble until syscall",
@@ -1145,7 +1145,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		ret = r_core_print_disasm (core, addr, buf, len, 0, opcode, "call", false,
 				input[1] == 'j', NULL, NULL);
 		break;
-	case 'e': // "pdue"
+	/*case 'e': // "pdue"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdue", true);
 			break;
@@ -1153,7 +1153,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 
 		ret = r_core_print_disasm (core, addr, buf, len, 0, esil, arg, false,
 				input[1] == 'j', NULL, NULL);
-		break;
+		break;*/
 	case 'i': // "pdui"
 		if (input[1] == '?' || input[2] == '?' || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdui", true);
