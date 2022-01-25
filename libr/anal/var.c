@@ -682,7 +682,7 @@ R_API void r_anal_var_remove_access_at(RAnalVar *var, ut64 address) {
 		RPVector *inst_accesses = ht_up_find (var->fcn->inst_vars, (ut64)offset, NULL);
 		r_pvector_remove_data (inst_accesses, var);
 	}
-	R_DIRTY(var->fcn->anal);
+	R_DIRTY (var->fcn->anal);
 }
 
 R_API void r_anal_var_clear_accesses(RAnalVar *var) {
