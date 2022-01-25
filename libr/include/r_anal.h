@@ -684,6 +684,7 @@ typedef struct r_anal_t {
 	RStrConstPool constpool;
 	RList *leaddrs;
 	char *pincmd;
+	R_DIRTY_VAR;
 } RAnal;
 
 typedef enum r_anal_addr_hint_type_t {
@@ -2187,7 +2188,8 @@ R_API bool r_anal_global_del(RAnal *anal, ut64 addr);
 R_API bool r_anal_global_retype(RAnal *anal, ut64 addr, const char *new_type);
 R_API bool r_anal_global_rename(RAnal *anal, ut64 addr, const char *new_name);
 R_API const char *r_anal_global_get_type(RAnal *anal, ut64 addr);
-
+/*return anal->is_dirty and sets it to false*/
+R_API bool r_anal_is_dirty(RAnal *anal);
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;

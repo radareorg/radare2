@@ -139,6 +139,12 @@ R_API int r_core_project_list(RCore *core, int mode) {
 	return 0;
 }
 
+R_API void r_core_project_undirty(RCore *core) {
+	core->config->is_dirty = false;
+	core->anal->is_dirty = false;
+	core->flags->is_dirty = false;
+}
+
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
@@ -377,6 +383,9 @@ R_API bool r_core_project_open(RCore *core, const char *prj_path) {
 	ret = r_core_project_load (core, prj_name, prj_script);
 	free (prj_name);
 	free (prj_script);
+	if (ret)  {
+		r_core_project_undirty(core);
+	}
 	return ret;
 }
 
@@ -697,6 +706,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 	}
 	free (script_path);
 	r_config_set (core->config, "prj.name", prj_name);
+	r_core_project_undirty(core);
 	return ret;
 }
 
@@ -709,42 +719,7 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 }
 
 R_API bool r_core_project_is_saved(RCore *core) {
-	bool ret;
-	char *saved_dat, *tmp_dat;
-	char *pd = r_str_newf ("%s" R_SYS_DIR "%s",
-		r_config_get (core->config, "dir.projects"),
-		r_config_get (core->config, "prj.name"));
-	if (!pd) {
-		return false;
-	}
-	char *sp = r_str_newf ("%s" R_SYS_DIR "%s", pd, "rc.r2");
-	if (!sp) {
-		free (pd);
-		return false;
-	}
-	char *tsp = r_str_newf ("%s" R_SYS_DIR "tmp", pd);
-	//horrible code follows:
-	free (pd);
-	if (!tsp) {
-		free (sp);
-		return false;
-	}
-	r_core_project_save_script (core, tsp, R_CORE_PRJ_ALL);
-	saved_dat = r_file_slurp (sp, 0);
-	free (sp);
-	if (!saved_dat) {
-		free (tsp);
-		return false;
-	}
-	//Would be better if I knew how to map files in mem in windows
-	tmp_dat = r_file_slurp (tsp, 0);
-	r_file_rm (tsp);
-	free (tsp);
-	if (!tmp_dat) {
-		return false;
-	}
-	ret = !strcmp (tmp_dat, saved_dat);
-	free (tmp_dat);
-	free (saved_dat);
-	return ret;
+	return !R_IS_DIRTY (core->config)
+		&& !R_IS_DIRTY (core->anal)
+		&& !R_IS_DIRTY (core->flags);
 }

@@ -397,7 +397,6 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 	RConfigNode *node = NULL;
 	char *ov = NULL;
 	ut64 oi;
-
 	r_return_val_if_fail (cfg && cfg->ht, NULL);
 	r_return_val_if_fail (!IS_NULLSTR (name), NULL);
 
@@ -416,6 +415,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 		} else {
 			node->value = strdup ("");
 		}
+		R_DIRTY (cfg);
 		if (r_config_node_is_bool (node)) {
 			bool b = r_str_is_true (value);
 			node->i_value = b;
@@ -504,6 +504,7 @@ R_API RConfigNode* r_config_node_desc(RConfigNode *node, const char *desc) {
 R_API bool r_config_rm(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
+		R_DIRTY (cfg);
 		ht_pp_delete (cfg->ht, node->name);
 		r_list_delete_data (cfg->nodes, node);
 		return true;
@@ -535,6 +536,7 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 	char buf[128], *ov = NULL;
 	r_return_val_if_fail (cfg && name, NULL);
 	RConfigNode *node = r_config_node_get (cfg, name);
+	R_DIRTY (cfg);
 	if (node) {
 		if (r_config_node_is_ro (node)) {
 			node = NULL;
@@ -674,6 +676,7 @@ R_API RConfig* r_config_new(void *user) {
 	cfg->num = NULL;
 	cfg->lock = false;
 	cfg->cb_printf = (void *) printf;
+	R_DIRTY (cfg);
 	return cfg;
 }
 
@@ -691,6 +694,7 @@ R_API RConfig* r_config_clone(RConfig *cfg) {
 	}
 	c->lock = cfg->lock;
 	c->cb_printf = cfg->cb_printf;
+	R_DIRTY (c);
 	return c;
 }
 

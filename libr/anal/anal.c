@@ -139,6 +139,7 @@ R_API RAnal *r_anal_new(void) {
 			r_anal_add (anal, anal_static_plugins[i]);
 		}
 	}
+	R_DIRTY (anal);
 	return anal;
 }
 
@@ -380,7 +381,6 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	}
 
 	r_anal_op_free (op);
-
 	return ret;
 }
 
@@ -397,6 +397,7 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 			}
 		}
 	}
+	R_DIRTY (anal);
 }
 
 R_API RList* r_anal_get_fcns(RAnal *anal) {
@@ -553,7 +554,10 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
 		if (fcn) {
-			fcn->is_noreturn = true;
+			if (!fcn->is_noreturn) {
+  				fcn->is_noreturn = true;
+				R_DIRTY (anal);
+			}
 		}
 	}
 	if (r_type_func_exist (TDB, tmp_name)) {
@@ -745,6 +749,7 @@ R_API void r_anal_add_import(RAnal *anal, const char *imp) {
 	if (!cimp) {
 		return;
 	}
+	R_DIRTY (anal);
 	r_list_push (anal->imports, cimp);
 }
 
@@ -753,6 +758,7 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 	const char *eimp;
 	r_list_foreach (anal->imports, it, eimp) {
 		if (!strcmp (eimp, imp)) {
+			R_DIRTY (anal);
 			r_list_delete (anal->imports, it);
 			return;
 		}
@@ -760,5 +766,6 @@ R_API void r_anal_remove_import(RAnal *anal, const char *imp) {
 }
 
 R_API void r_anal_purge_imports(RAnal *anal) {
+	R_DIRTY(anal);
 	r_list_purge (anal->imports);
 }

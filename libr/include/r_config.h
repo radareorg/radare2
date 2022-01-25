@@ -50,6 +50,8 @@ typedef struct r_config_t {
 	RList *nodes;
 	HtPP *ht;
 	bool lock;
+	/*was the struct modified after the last project save*/
+	R_DIRTY_VAR;
 } RConfig;
 
 typedef struct r_config_hold_t {
