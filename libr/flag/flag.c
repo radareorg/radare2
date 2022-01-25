@@ -739,7 +739,7 @@ R_API RFlagItem *r_flag_set_inspace(RFlag *f, const char *space, const char *nam
 	if (space) {
 		r_flag_space_pop (f);
 	}
-	R_DIRTY(f);
+	R_DIRTY (f);
 	return fi;
 }
 
