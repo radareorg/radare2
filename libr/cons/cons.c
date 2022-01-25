@@ -342,8 +342,10 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 	}
 	if (r_stack_is_empty (context->break_stack)) {
 #if __UNIX__
-		if (sig && r_cons_context_is_main ()) {
-			r_sys_signal (SIGINT, __break_signal);
+		if (!C->unbreakable) {
+			if (sig && r_cons_context_is_main ()) {
+				r_sys_signal (SIGINT, __break_signal);
+			}
 		}
 #endif
 		context->breaked = false;
@@ -372,7 +374,9 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		//there is not more elements in the stack
 #if __UNIX__ && !__wasi__
 		if (sig && r_cons_context_is_main ()) {
-			r_sys_signal (SIGINT, SIG_IGN);
+			if (!C->unbreakable) {
+				r_sys_signal (SIGINT, SIG_IGN);
+			}
 		}
 #endif
 		C->was_breaked = C->breaked;
@@ -472,7 +476,9 @@ R_API void r_cons_break_end(void) {
 	C->breaked = false;
 	I->timeout = 0;
 #if __UNIX__ && !__wasi__
-	r_sys_signal (SIGINT, SIG_IGN);
+	if (!C->unbreakable) {
+		r_sys_signal (SIGINT, SIG_IGN);
+	}
 #endif
 	if (!r_stack_is_empty (C->break_stack)) {
 		// free all the stack
@@ -2234,7 +2240,8 @@ R_API void r_cons_thready(void) {
 	}
 	r_th_lock_enter (r_cons_lock);
 	r_cons_instance = R_NEW0 (RCons);
-	r_th_lock_leave (r_cons_lock);
+	C->unbreakable = true;
 	// memset (r_cons_instance, 0, sizeof (r_cons_instance));
 	// memset (r_cons_instance.context, 0, sizeof (r_cons_instance.context));
+	r_th_lock_leave (r_cons_lock);
 }

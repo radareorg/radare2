@@ -391,6 +391,7 @@ typedef struct r_cons_context_t {
 	int errmode;
 	bool breaked;
 	bool was_breaked;
+	bool unbreakable;
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
