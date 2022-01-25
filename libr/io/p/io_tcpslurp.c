@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2021 - pancake */
+/* radare - LGPL - Copyright 2016-2022 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -13,9 +13,6 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 static ut8 *tcpme(const char *pathname, int *code, int *len) {
 	pathname += strlen ("tcp-slurp://");
 	*code = 404;
-#if __UNIX__ && !__wasi__
-	r_sys_signal (SIGINT, SIG_IGN);
-#endif
 	if (*pathname == '?') {
 		eprintf ("Usage: $ nc -l -p 9999 < /bin/ls ; r2 tcp-slurp://localhost:9999\n");
 		eprintf ("   or: $ nc localhost 9999 < /bin/ls ; r2 tcp-slurp://:9999\n");
