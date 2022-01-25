@@ -130,7 +130,7 @@ R_API bool r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType
 		ht_up_delete (d, from);
 	}
 #endif
-	R_DIRTY(anal);
+	R_DIRTY (anal);
 	return true;
 }
 
