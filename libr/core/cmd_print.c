@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include "r_asm.h"
 #include "r_core.h"
@@ -241,6 +241,7 @@ static const char *help_msg_pd[] = {
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
 	"pds", "[?]", "disassemble summary (strings, calls, jumps, refs) (see pdsf and pdfs)",
+	"pdu", "[aceios?]", "disassemble instructions until condition",
 	"pd,", " [n] [query]", "disassemble N instructions in a table (see dtd for debug traces)",
 	"pdx", " [hex]", "alias for pad or pix",
 	NULL
@@ -283,6 +284,17 @@ static const char *help_msg_pds[] = {
 	"Usage:", "pds[bf]", "Summarize N bytes or function",
 	"pdsf", "", "Summarize the current function",
 	"pdsb", "", "Summarize N bytes",
+	NULL
+};
+
+static const char *help_msg_pdu[] = {
+	"Usage:", "pdu[aceios][j]", "Disassemble instructions until condition",
+	"pdua", "[j] [addr]", "disassemble until address",
+	"pduc", "[j]", "disassemble until call",
+	//"pdue", "[j] [expr]", "disassemble until esil expression",
+	"pdui", "[j] [inst]", "disassemble until instruction (e.g.: add esp, 0x20)",
+	"pduo", "[j] [opcode]", "disassemble until opcode (e.g.: mul)",
+	"pdus", "[j]", "disassemble until syscall",
 	NULL
 };
 
@@ -1071,6 +1083,112 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 	// XXX - this needs to be done here, because
 	// if arch == x86 and bits == 16, segoff automatically changes
 	r_config_set_i (core->config, "asm.segoff", segoff);
+}
+
+static int cmd_pdu(RCore *core, const char *input) {
+	int ret = 0;
+	const char *sep = strchr (input, ' ');
+	const char *arg = sep? sep+1: NULL;
+
+	ut64 addr = core->offset;
+	int len = core->blocksize;
+	ut8 *buf = malloc (len);
+	if (buf) {
+		r_io_read_at (core->io, addr, buf, len);
+	} else {
+		eprintf ("Cannot allocate %d byte(s)\n", len);
+		return 1;
+	}
+
+	switch (*input) {
+	case 'a': // "pdua"
+		{
+		ut64 to;
+		ut64 count;
+
+		if (input[1] == '?' || input[2] == '?' || !arg) {
+			r_core_cmd_help_match (core, help_msg_pdu, "pdua", true);
+			break;
+		}
+
+		to = r_num_get (core->num, arg);
+
+		if (!to) {
+			eprintf ("Couldn't parse address \"%s\"\n", arg);
+			ret = 1;
+			break;
+		} else if (to < addr) {
+			eprintf ("Can't print until an earlier address\n");
+			ret = 2;
+			break;
+		} else if (to == addr) {
+			eprintf ("Can't print until the start address\n");
+			ret = 2;
+			break;
+		}
+
+		// pD <count>
+		count = to - core->offset;
+		if (input[1] == 'j') {
+			ret = r_core_cmdf (core, "pDJ %" PFMT64u, count);
+		} else {
+			ret = r_core_cmdf (core, "pD %" PFMT64u, count);
+		}
+		}
+		break;
+	case 'c': // "pduc"
+		if (input[1] == '?' || input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_pdu, "pduc", true);
+			break;
+		}
+
+		ret = r_core_print_disasm (core, addr, buf, len, 0, opcode, "call", false,
+				input[1] == 'j', NULL, NULL);
+		break;
+	/*case 'e': // "pdue"
+		if (input[1] == '?' || input[2] == '?' || !arg) {
+			r_core_cmd_help_match (core, help_msg_pdu, "pdue", true);
+			break;
+		}
+
+		ret = r_core_print_disasm (core, addr, buf, len, 0, esil, arg, false,
+				input[1] == 'j', NULL, NULL);
+		break;*/
+	case 'i': // "pdui"
+		if (input[1] == '?' || input[2] == '?' || !arg) {
+			r_core_cmd_help_match (core, help_msg_pdu, "pdui", true);
+			break;
+		}
+
+		ret = r_core_print_disasm (core, addr, buf, len, 0, instruction, arg, false,
+				input[1] == 'j', NULL, NULL);
+		break;
+	case 'o': // "pduo"
+		if (input[1] == '?' || input[2] == '?' || !arg) {
+			r_core_cmd_help_match (core, help_msg_pdu, "pduo", true);
+			break;
+		}
+
+		ret = r_core_print_disasm (core, addr, buf, len, 0, opcode, arg, false,
+				input[1] == 'j', NULL, NULL);
+		break;
+	case 's': // "pdus"
+		if (input[1] == '?' || input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_pdu, "pdus", true);
+			break;
+		}
+
+		ret = r_core_print_disasm (core, addr, buf, len, 0, instruction, "syscall", false,
+				input[1] == 'j', NULL, NULL);
+		break;
+	case '?': // "pdu?"
+	default:
+		r_core_cmd_help (core, help_msg_pdu);
+		break;
+	}
+
+	free (buf);
+	return ret;
 }
 
 static void cmd_pDj(RCore *core, const char *arg) {
@@ -5042,6 +5160,12 @@ static int cmd_print(void *data, const char *input) {
 	n = off = from = to = at = ate = piece = 0;
 	PJ *pj = NULL;
 
+	/* !strncmp (input, "du", 2) */
+	if (input[0] == 'd' && input[1] == 'u') { // "pdu"
+		/* hijack here for now, idk how to more cleanly integrate it */
+		return cmd_pdu (core, input+2);
+	}
+
 	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
 	l = len = core->blocksize;
@@ -5620,7 +5744,7 @@ static int cmd_print(void *data, const char *input) {
 						} else {
 							core->num->value = r_core_print_disasm (
 								core, b->addr, block,
-								b->size, b->size, true,
+								b->size, b->size, 0, NULL, true,
 								input[2] == 'J', NULL, NULL);
 						}
 						free (block);
@@ -5714,7 +5838,7 @@ static int cmd_print(void *data, const char *input) {
 						ut8 *buf = calloc (sz, 1);
 						if (buf) {
 							(void)r_io_read_at (core->io, at, buf, sz);
-							core->num->value = r_core_print_disasm (core, at, buf, sz, sz, true, false, NULL, f);
+							core->num->value = r_core_print_disasm (core, at, buf, sz, sz, 0, NULL, true, false, NULL, f);
 							free (buf);
 							// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_function_realsize (f), f->addr);
 						}
@@ -5829,7 +5953,7 @@ static int cmd_print(void *data, const char *input) {
 							break;
 						}
 						r_io_read_at (core->io, addr - l, block1, l); // core->blocksize);
-						core->num->value = r_core_print_disasm (core, addr - l, block1, l, l, true, formatted_json, NULL, NULL);
+						core->num->value = r_core_print_disasm (core, addr - l, block1, l, l, 0, NULL, true, formatted_json, NULL, NULL);
 					} else { // pd
 						int instr_len;
 						if (!r_core_prevop_addr (core, core->offset, l, &start)) {
@@ -5857,8 +5981,9 @@ static int cmd_print(void *data, const char *input) {
 						}
 						core->num->value = r_core_print_disasm (core,
 								core->offset, block1,
-								R_MAX (bs, bs1), l, false,
-								formatted_json, NULL, NULL);
+								R_MAX (bs, bs1), l, 0, NULL,
+								false, formatted_json, NULL,
+								NULL);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
@@ -5875,7 +6000,8 @@ static int cmd_print(void *data, const char *input) {
 						r_io_read_at (core->io, addr, block1, addrbytes * l);
 						core->num->value = r_core_print_disasm (core,
 								addr, block1, addrbytes * l, l,
-								true, formatted_json, NULL, NULL);
+								0, NULL, true, formatted_json,
+								NULL, NULL);
 					} else {
 						eprintf ("Cannot allocate %" PFMT64d " byte(s)\n", addrbytes * l);
 					}
@@ -5890,8 +6016,8 @@ static int cmd_print(void *data, const char *input) {
 							}
 						}
 						core->num->value = r_core_print_disasm (core,
-								addr, buf, buf_size, l,	false,
-								formatted_json, NULL, NULL);
+								addr, buf, buf_size, l,	0, NULL,
+								false, formatted_json, NULL, NULL);
 					}
 				}
 			}

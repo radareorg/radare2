@@ -1,0 +1,129 @@
+NAME=pdu prints help
+CMDS=<<EOF
+pdu~[0]:0
+EOF
+EXPECT=<<EOF
+Usage:
+EOF
+RUN
+
+NAME=pdu subcommand help
+CMDS=<<EOF
+pdua?
+pduaj?
+pdua
+pduaj
+?e ---
+pduc?
+pducj?
+?e ---
+pdui?
+pduij?
+pdui
+pduij
+?e ---
+pduo?
+pduoj?
+pduo
+pduoj
+?e ---
+pdus?
+pdusj?
+EOF
+EXPECT=<<EOF
+| pdua[j] [addr]  disassemble until address
+| pdua[j] [addr]  disassemble until address
+| pdua[j] [addr]  disassemble until address
+| pdua[j] [addr]  disassemble until address
+---
+| pduc[j]  disassemble until call
+| pduc[j]  disassemble until call
+---
+| pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
+| pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
+| pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
+| pdui[j] [inst]  disassemble until instruction (e.g.: add esp, 0x20)
+---
+| pduo[j] [opcode]  disassemble until opcode (e.g.: mul)
+| pduo[j] [opcode]  disassemble until opcode (e.g.: mul)
+| pduo[j] [opcode]  disassemble until opcode (e.g.: mul)
+| pduo[j] [opcode]  disassemble until opcode (e.g.: mul)
+---
+| pdus[j]  disassemble until syscall
+| pdus[j]  disassemble until syscall
+EOF
+RUN
+
+NAME=pdua
+CMDS=<<EOF
+wx 5e4889e24883e4f05054
+pdua 10
+?e ----
+s 4
+pdua 10
+EOF
+EXPECT=<<EOF
+            0x00000000      5e             pop rsi
+            0x00000001      4889e2         mov rdx, rsp
+            0x00000004      4883e4f0       and rsp, 0xfffffffffffffff0
+            0x00000008      50             push rax
+            0x00000009      54             push rsp
+----
+            0x00000004      4883e4f0       and rsp, 0xfffffffffffffff0
+            0x00000008      50             push rax
+            0x00000009      54             push rsp
+EOF
+RUN
+
+NAME=pduc
+CMDS=<<EOF
+wx 5e4889e24883e4f0e841424344
+pduc
+EOF
+EXPECT=<<EOF
+            0x00000000      5e             pop rsi
+            0x00000001      4889e2         mov rdx, rsp
+            0x00000004      4883e4f0       and rsp, 0xfffffffffffffff0
+            0x00000008      e841424344     call 0x4443424e
+EOF
+RUN
+
+NAME=pdui
+CMDS=<<EOF
+wx 5e4889e24883e4f05054
+pdui push rsp
+EOF
+EXPECT=<<EOF
+            0x00000000      5e             pop rsi
+            0x00000001      4889e2         mov rdx, rsp
+            0x00000004      4883e4f0       and rsp, 0xfffffffffffffff0
+            0x00000008      50             push rax
+            0x00000009      54             push rsp
+EOF
+RUN
+
+NAME=pduo
+CMDS=<<EOF
+wx 5e4889e24883e4f05054
+pduo push
+EOF
+EXPECT=<<EOF
+            0x00000000      5e             pop rsi
+            0x00000001      4889e2         mov rdx, rsp
+            0x00000004      4883e4f0       and rsp, 0xfffffffffffffff0
+            0x00000008      50             push rax
+EOF
+RUN
+
+NAME=pdus
+CMDS=<<EOF
+wx 5e4889e24883e4f00f05
+pdus
+EOF
+EXPECT=<<EOF
+            0x00000000      5e             pop rsi
+            0x00000001      4889e2         mov rdx, rsp
+            0x00000004      4883e4f0       and rsp, 0xfffffffffffffff0
+            0x00000008      0f05           syscall
+EOF
+RUN

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - nibble, pancake, dso, lazula */
+/* radare - LGPL - Copyright 2009-2022 - nibble, pancake, dso, lazula */
 
 #include "r_core.h"
 
@@ -5405,10 +5405,11 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 	}
 }
 
-/**
- * \brief Disassemble `count` instructions, or bytes if `count_bytes` is enabled
+/* Disassemble `count` instructions, or bytes if `count_bytes` is enabled
+ *
+ * pdu_condition_type is only used if pdu_condition is not NULL
  */
-R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf) {
+R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int count, enum pdu_condition pdu_condition_type, const void *pdu_condition, bool count_bytes, bool json, PJ *pj, RAnalFunction *pdf) {
 	RPrint *p = core->print;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
@@ -5416,6 +5417,14 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	int skip_bytes_flag = 0, skip_bytes_bb = 0;
 	ut8 *nbuf = NULL;
 	const int max_op_size = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+
+	/* pdu vars */
+	bool pdu_condition_met = false;
+	char *opstr_nocolor = NULL;
+	int opcode_len = -1;
+	//const char *pdu_condition_esil = NULL;
+	const char *pdu_condition_instruction = NULL;
+	const char *pdu_condition_opcode = NULL;
 
 	// TODO: All those ds must be print flags
 	RDisasmState *ds = ds_init (core);
@@ -5428,6 +5437,21 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	ds->hint = NULL;
 	ds->buf_line_begin = 0;
 	ds->pdf = pdf;
+
+	if (pdu_condition) {
+		ds->count_bytes = false;
+		ds->count = INT_MAX;
+
+		/*if (pdu_condition_type == esil) {
+			pdu_condition_esil = (const char *)pdu_condition;
+		} else*/
+		if (pdu_condition_type == instruction) {
+			pdu_condition_instruction = (const char *)pdu_condition;
+		} else if (pdu_condition_type == opcode) {
+			pdu_condition_opcode = (const char *)pdu_condition;
+			opcode_len = strlen (pdu_condition_opcode);
+		}
+	}
 
 	if (json) {
 		ds->pj = pj? pj: r_core_pj_new (core);
@@ -5498,7 +5522,8 @@ toro:
 
 	int inc = 0;
 	int ret = 0;
-	for (ds->index = 0; ds_left (ds) > 0 && ds->lines < ds->count;
+	for (ds->index = 0; ds_left (ds) > 0 && ds->lines < ds->count
+				&& (pdu_condition? !pdu_condition_met: true);
 			ds->index += inc, count_bytes? ds->lines += inc: ds->lines++) {
 		ds->at = ds->addr + ds->index;
 		ds->vat = r_core_pava (core, ds->at);
@@ -5867,6 +5892,38 @@ toro:
 			R_FREE (ds->refline2);
 			R_FREE (ds->prev_line_col);
 		}
+		if (pdu_condition) {
+			if (ds->opstr) {
+				opstr_nocolor = ds->opstr;
+				// we can't strcmp with color codes interfering
+				r_str_ansi_filter (opstr_nocolor, &ds->opstr, NULL, -1);
+				switch (pdu_condition_type) {
+				/*case esil:
+					pdu_condition_met = true;
+					break;*/
+				case instruction:
+					// match full instruction
+					if (!strcmp (pdu_condition_instruction, opstr_nocolor)) {
+						pdu_condition_met = true;
+					}
+					break;
+				case opcode:
+					// opcode must be followed by space or end of string
+					if (!strncmp (pdu_condition_opcode, opstr_nocolor, opcode_len)
+							&& (opstr_nocolor[opcode_len] == ' '
+								|| !opstr_nocolor[opcode_len])) {
+						pdu_condition_met = true;
+					}
+				}
+			} else {
+				// no more bytes - give up
+				r_cons_reset ();
+				r_cons_printf ("Failed to find instruction meeting pdu condition.\n");
+				pdu_condition_met = true;
+			}
+		}
+
+		R_FREE (opstr_nocolor);
 		R_FREE (ds->opstr);
 		inc = ds->oplen;
 
@@ -5884,7 +5941,9 @@ toro:
 	r_cons_break_pop ();
 
 #if HASRETRY
-	if (!ds->count_bytes && ds->lines < ds->count) {
+	// if we come here without goto, never retry with count_bytes
+	if (!count_bytes && ds->lines < ds->count
+			&& (pdu_condition? !pdu_condition_met: true)) {
 		ds->at = ds->addr = ds->at + inc;
 		ds->index = 0;
 	retry:
@@ -5894,32 +5953,19 @@ toro:
 		if (len < max_op_size) {
 			ds->len = len = max_op_size + 32;
 		}
-		free (nbuf);
+		R_FREE (nbuf);
 		ds->buf = buf = nbuf = malloc (len);
 		if (!buf) {
-			eprintf ("Cannot allocate %d bytes%c", len, 10);
+			eprintf ("Cannot allocate %d bytes\n", len);
 		}
 
-		// enough bytes?
-		if (ds->lines < ds->count && !count_bytes) {
+		// only try again if we still need more lines
+		if (!count_bytes && ds->lines < ds->count) {
 			ds->addr += ds->index;
-#if DEBUG_DISASM
-			eprintf ("len=%d\n", len);
-#endif
 			r_io_read_at (core->io, ds->addr, buf, len);
-			if (count_bytes) {
-				goto toro;
-			} else {
-				inc = 0;
-			}
-		}
 
-		// always reloop if counting by instructions
-		if (!count_bytes) {
 			goto toro;
 		}
-
-		R_FREE (nbuf);
 	}
 #endif
 	if (ds->pj) {
@@ -7030,7 +7076,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 					break;
 				default:
 					// ok
-					r_core_print_disasm (core, block_start, buf, block_sz, block_instr, false, false, NULL, NULL);
+					r_core_print_disasm (core, block_start, buf, block_sz, block_instr, 0, NULL, false, false, NULL, NULL);
 					break;
 				}
 			}
