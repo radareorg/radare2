@@ -97,7 +97,7 @@ jobs:
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
         sys/install.sh
     - name: Checking if capstone was cloned
-      run: ls -l shlr ; test -d shlr/capstone ; if [ $? = 0 ]; then exit 1 ; else exit 0 ; fi
+      run: if [ -d shlr/capstone ]; then echo "Capstone wasnt supposed to be cloned"; return 1; fi
   build-resymlink:
     name: linux-acr-resymlink
     runs-on: ubuntu-20.04
