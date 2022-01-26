@@ -3658,8 +3658,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETBPREF ("prj.zip", "false", "Use ZIP format for project files");
 	SETBPREF ("prj.gpg", "false", "TODO: Encrypt project with GnuPGv2");
 	SETBPREF ("prj.sandbox", "false", "Sandbox r2 while loading project files");
-	SETBPREF ("prj.alwasyprompt", "false", "Even when the project is already\
-			saved, ask the user to save the project when qutting");
 
 	/* cfg */
 	n = SETCB ("cfg.charset", "", &cb_cfgcharset, "Specify encoding to use when printing strings");
