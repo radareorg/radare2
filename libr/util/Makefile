@@ -21,6 +21,7 @@ ifeq (${HAVE_GPERF},1)
 OBJS+=d/ascii.o
 OBJS+=d/pokered.o
 OBJS+=d/ebcdic37.o
+OBJS+=d/iso8859_1.o
 endif
 
 ifeq (${HAVE_LIB_GMP},1)

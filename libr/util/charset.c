@@ -9,11 +9,13 @@
 extern SdbGperf gperf_ascii;
 extern SdbGperf gperf_pokered;
 extern SdbGperf gperf_ebcdic37;
+extern SdbGperf gperf_iso8859_1;
 
 static const SdbGperf *gperfs[] = {
 	&gperf_ascii,
 	&gperf_pokered,
 	&gperf_ebcdic37,
+	&gperf_iso8859_1,
 	NULL
 };
 

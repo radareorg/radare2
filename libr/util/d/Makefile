@@ -1,4 +1,4 @@
-FILES=pokered ascii ebcdic37
+FILES=pokered ascii ebcdic37 iso8859_1
 F_SDB=$(addsuffix .sdb,$(FILES))
 SDB=../../../shlr/sdb/sdb
 

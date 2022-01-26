@@ -1,7 +1,8 @@
 sdb_files = [
   'pokered',
   'ebcdic37',
-  'ascii'
+  'ascii',
+  'iso8859_1'
 ]
 
 r_util_d_sources = []
