@@ -91,7 +91,7 @@ jobs:
     - name: Installing capstone
       run: |
         git clone --branch next --single-branch --depth=1 https://github.com/capstone-engine/capstone
-        cd capstone && ( git log | head ) && mkdir p && cd p && bash ../cmake.sh && sudo make install
+        cd capstone && ( git log | head ) && sh make.sh && sudo make install
     - name: Installing r2 with sys-capstone
       run: |
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
