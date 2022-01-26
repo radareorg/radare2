@@ -118,13 +118,30 @@ else
 	fi
 fi
 
+NEED_CAPSTONE=1
 pkg-config --cflags capstone 2>&1 > /dev/null
 if [ $? = 0 ]; then
-	export CFGARG="--with-syscapstone"
+	pkg-config --atleast-version=5.0.0 capstone 2>/dev/null
+	if [ $? = 0 ]; then
+		pkg-config --variable=archs capstone 2> /dev/null | grep -q riscv
+		if [ $? = 0 ]; then
+			export CFGARG="--with-syscapstone"
+			NEED_CAPSTONE=0
+			echo "Note: Using system-wide-capstone"
+		else
+			echo "Warning: Your system-wide capstone dont have enough archs"
+		fi
+	else
+		echo "Warning: Your system-wide capstone is too old for me"
+	fi
+else
+	echo "Warning: Cannot find system wide capstone"
 fi
 
-if [ ! -d shlr/capstone ]; then
-	./preconfigure
+if [ "$NEED_CAPSTONE" = 1 ]; then
+	if [ ! -d shlr/capstone ]; then
+		./preconfigure
+	fi
 fi
 
 if [ "${M32}" = 1 ]; then

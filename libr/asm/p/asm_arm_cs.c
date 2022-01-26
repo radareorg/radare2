@@ -115,11 +115,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int obits = 32;
 	bool disp_hash = a->immdisp;
 	cs_insn* insn = NULL;
-	cs_mode mode = 0;
 	int ret, n = 0;
 	bool found = false;
 	ut64 itcond;
 
+	cs_mode mode = 0;
 	mode |= (a->bits == 16)? CS_MODE_THUMB: CS_MODE_ARM;
 	mode |= (a->big_endian)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (mode != omode || a->bits != obits) {
@@ -133,10 +133,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (strstr (a->cpu, "cortex")) {
 			mode |= CS_MODE_MCLASS;
 		}
-		if (a->bits != 64) {
-			if (strstr (a->cpu, "v8")) {
-				mode |= CS_MODE_V8;
-			}
+		if (a->bits != 64 && strstr (a->cpu, "v8")) {
+			mode |= CS_MODE_V8;
 		}
 	}
 	if (a->features && a->bits != 64) {
@@ -227,7 +225,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	const bool is_thumb = (a->bits == 16);
 	int opsize;
-	ut32 opcode;
+	ut32 opcode = UT32_MAX;
 	if (a->bits == 64) {
 		if (!arm64ass (buf, a->pc, &opcode)) {
 			return -1;
