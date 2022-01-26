@@ -25,6 +25,17 @@ typedef ut8 *(*RBufferGetWholeBuf)(RBuffer *b, ut64 *sz);
 typedef void (*RBufferFreeWholeBuf)(RBuffer *b);
 typedef RList *(*RBufferNonEmptyList)(RBuffer *b);
 
+typedef st64 (*RBufferReadHookFunc)(RBuffer *b, ut8 *buf, ut64 off, ut64 len, void *ctx);
+
+typedef struct r_buffer_read_hook_t {
+	void *ctx;
+	RBufferReadHookFunc func;
+} RBufferReadHook;
+
+typedef struct r_buffer_hooks_t {
+	RList *read;
+} RBufferHooks;
+
 typedef struct r_buffer_methods_t {
 	RBufferInit init;
 	RBufferFini fini;
@@ -40,6 +51,7 @@ typedef struct r_buffer_methods_t {
 
 struct r_buf_t {
 	const RBufferMethods *methods;
+	RBufferHooks *hooks;
 	void *priv;
 	ut8 *whole_buf;
 	bool readonly;
@@ -109,6 +121,8 @@ R_API RBuffer *r_buf_ref(RBuffer *b);
 R_API void r_buf_free(RBuffer *b);
 R_API void r_buf_fini(RBuffer *b);
 R_API RList *r_buf_nonempty_list(RBuffer *b);
+R_API RBufferReadHook *r_buf_add_read_hook(RBuffer *b, RBufferReadHookFunc func, void *ctx);
+R_API void r_buf_remove_read_hook(RBuffer *b, RBufferReadHook *hook);
 
 static inline ut16 r_buf_read_be16(RBuffer *b) {
 	ut8 buf[sizeof (ut16)];

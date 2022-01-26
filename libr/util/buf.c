@@ -442,6 +442,13 @@ R_API ut8 *r_buf_read_all(RBuffer *b, int *blen) {
 	ut8 *buf = malloc (buflen + 1);
 	buf_seek (b, 0, R_BUF_SET);
 	buf_read (b, buf, buflen);
+	if (b->hooks && b->hooks->read) {
+		RListIter *iter;
+		RBufferReadHook *hook;
+		r_list_foreach (b->hooks->read, iter, hook) {
+			hook->func (b, buf, 0, (ut64) buflen, hook->ctx);
+		}
+	}
 	if (blen) {
 		*blen = buflen;
 	}
@@ -450,7 +457,18 @@ R_API ut8 *r_buf_read_all(RBuffer *b, int *blen) {
 
 R_API st64 r_buf_read(RBuffer *b, ut8 *buf, ut64 len) {
 	r_return_val_if_fail (b && buf, -1);
+	st64 off = r_buf_seek (b, 0, R_BUF_CUR);
 	st64 r = buf_read (b, buf, len);
+	if (b->hooks && b->hooks->read && r >=0 && r <= len && off >= 0) {
+		RListIter *iter;
+		RBufferReadHook *hook;
+		r_list_foreach (b->hooks->read, iter, hook) {
+			r = hook->func (b, buf, (ut64) off, (ut64) r, hook->ctx);
+			if (r < 0) {
+				break;
+			}
+		}
+	}
 	if (r >= 0 && r < len) {
 		memset (buf + r, b->Oxff_priv, len - r);
 	}
@@ -718,4 +736,39 @@ R_API st64 r_buf_sleb128(RBuffer *b, st64 *v) {
 		*v = result;
 	}
 	return offset / 7;
+}
+
+R_API RBufferReadHook *r_buf_add_read_hook(RBuffer *b, RBufferReadHookFunc func, void *ctx) {
+	r_return_val_if_fail (b && func, NULL);
+	RBufferReadHook *hook = R_NEW0 (RBufferReadHook);
+	if (!hook) {
+		return NULL;
+	}
+	hook->func = func;
+	hook->ctx = ctx;
+	if (!b->hooks) {
+		b->hooks = R_NEW0 (RBufferHooks);
+		if (!b->hooks) {
+			goto beach;
+		}
+	}
+	if (!b->hooks->read) {
+		b->hooks->read = r_list_newf ((RListFree)free);
+		if (!b->hooks->read) {
+			goto beach;
+		}
+	}
+	r_list_append (b->hooks->read, hook);
+	return hook;
+beach:
+	free (hook);
+	return NULL;
+}
+
+R_API void r_buf_remove_read_hook(RBuffer *b, RBufferReadHook *hook) {
+	r_return_if_fail (b);
+	if (!hook || !b->hooks || !b->hooks->read) {
+		return;
+	}
+	r_list_delete_data (b->hooks->read, hook);
 }
