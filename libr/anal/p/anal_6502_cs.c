@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - pancake */
+/* radare - LGPL - Copyright 2018-2022 - pancake, Sylvain Pelissier */
 
 #include <string.h>
 #include <r_types.h>
@@ -7,7 +7,7 @@
 #include <r_anal.h>
 #include <capstone.h>
 
-#if CS_API_MAJOR >= 4 && CS_API_MINOR >= 1
+#if CS_API_MAJOR >= 5 || (CS_API_MAJOR >= 4 && CS_API_MINOR >= 1)
 #define CAPSTONE_HAS_MOS65XX 1
 #else
 #define CAPSTONE_HAS_MOS65XX 0
@@ -56,8 +56,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif
 	if (n < 1) {
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invalid");
+		}
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+			op->mnemonic = str;
+		}
 		op->nopcode = 1;
 		op->size = insn->size;
 		op->id = insn->id;
@@ -91,13 +98,16 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case MOS65XX_INS_BVC:
 		case MOS65XX_INS_BVS:
+			op->type = R_ANAL_OP_TYPE_RCJMP;
+			break;
 		case MOS65XX_INS_CLC:
 		case MOS65XX_INS_CLD:
 		case MOS65XX_INS_CLI:
 		case MOS65XX_INS_CLV:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			break;
 		case MOS65XX_INS_CPX:
 		case MOS65XX_INS_CPY:
-			break;
 		case MOS65XX_INS_CMP:
 			op->type = R_ANAL_OP_TYPE_CMP;
 			break;
@@ -136,6 +146,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		case MOS65XX_INS_PLA:
 		case MOS65XX_INS_PHP:
 		case MOS65XX_INS_PLP:
+			op->type = R_ANAL_OP_TYPE_PUSH;
 			break;
 		case MOS65XX_INS_ROL:
 			op->type = R_ANAL_OP_TYPE_SHR;
@@ -145,19 +156,28 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			break;
 		case MOS65XX_INS_RTI:
 		case MOS65XX_INS_RTS:
+			op->type = R_ANAL_OP_TYPE_RET;
+			break;
 		case MOS65XX_INS_SBC:
+			op->type = R_ANAL_OP_TYPE_SUB;
+			break;
 		case MOS65XX_INS_SEC:
 		case MOS65XX_INS_SED:
 		case MOS65XX_INS_SEI:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			break;
 		case MOS65XX_INS_STA:
 		case MOS65XX_INS_STX:
 		case MOS65XX_INS_STY:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			break;
 		case MOS65XX_INS_TAX:
 		case MOS65XX_INS_TAY:
 		case MOS65XX_INS_TSX:
 		case MOS65XX_INS_TXA:
 		case MOS65XX_INS_TXS:
 		case MOS65XX_INS_TYA:
+			op->type = R_ANAL_OP_TYPE_MOV;
 			break;
 		}
 	}
