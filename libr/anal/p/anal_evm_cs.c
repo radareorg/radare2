@@ -43,7 +43,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		obits = anal->bits;
 	}
 	op->addr = addr;
-	if (len < 4) {
+	if (len < 1) {
 		return -1;
 	}
 	op->size = 4;
