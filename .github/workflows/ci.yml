@@ -78,26 +78,10 @@ jobs:
         sudo apt install gperf
     - name: Installing with symlinks
       run: |
-        export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
         sys/install.sh
     - name: Running tests
       run: r2r test/db/cmd
-  build-syscapstone:
-    name: linux-sys-capstone
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Installing capstone
-      run: |
-        git clone --branch next --single-branch --depth=1 https://github.com/capstone-engine/capstone
-        cd capstone && ( git log | head ) && sh make.sh && sudo make install
-    - name: Installing r2 with sys-capstone
-      run: |
-        export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
-        sys/install.sh
-    - name: Checking if capstone was cloned
-      run: if [ -d shlr/capstone ]; then echo "Capstone wasnt supposed to be cloned"; return 1; fi
   build-resymlink:
     name: linux-acr-resymlink
     runs-on: ubuntu-20.04
@@ -106,7 +90,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Installing with symlinks
       run: |
-        export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
         sys/install.sh
     - name: Uninstalling
       run: sudo make uninstall
@@ -176,7 +160,7 @@ jobs:
         git config --global pull.rebase false
         git clone --depth 1 . "spa ces"
         cd "spa ces"
-        export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
+        export CFLAGS="-O2 -Werror -Wno-unused-result -Wno-stringop-truncation"
         meson --prefix="/tmp/r 2" build
         ninja -C build
         ninja -C build install
