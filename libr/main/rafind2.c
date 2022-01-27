@@ -375,12 +375,14 @@ static int rafind_open(RafindOptions *ro, const char *file) {
 }
 
 R_API int r_main_rafind2(int argc, const char **argv) {
+	int c;
+	const char *file = NULL;
 	RafindOptions ro;
 	rafind_options_init (&ro);
 
-	int c;
-	const char *file = NULL;
-
+	if (argc < 1) {
+		return show_help (argv[0], 0);
+	}
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "a:ie:b:cjmM:s:S:x:Xzf:F:t:E:rqnhvZL");
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -483,7 +485,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		case 'v':
 			return r_main_version_print ("rafind2");
 		case 'h':
-			return show_help(argv[0], 0);
+			return show_help (argv[0], 0);
 		case 'z':
 			ro.mode = R_SEARCH_STRING;
 			break;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2020 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include <r_main.h>
 #include <r_util.h>
@@ -107,6 +107,10 @@ static void print_ascii_table(void) {
 	printf ("%s", ret_ascii_table());
 }
 
+static void help_usage(void) {
+	printf ("Usage: rax2 [-h|...] [- | expr ...] # convert between numeric bases\n");
+}
+
 static int help(void) {
 	printf (
 		"  =[base]                      ;  rax2 =10 0x46 -> output in base 10\n"
@@ -128,7 +132,6 @@ static int help(void) {
 		"  hex     ->  ternary          ;  rax2 Tx23\n"
 		"  raw     ->  hex              ;  rax2 -S < /binfile\n"
 		"  hex     ->  raw              ;  rax2 -s 414141\n"
-		"  -l                           ;  append newline to output (for -E/-D/-r/..\n"
 		"  -a      show ascii table     ;  rax2 -a\n"
 		"  -b      bin -> str           ;  rax2 -b 01000101 01110110\n"
 		"  -B      str -> bin           ;  rax2 -B hello\n"
@@ -143,18 +146,20 @@ static int help(void) {
 		"  -I      IP address <-> LONG  ;  rax2 -I 3530468537\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
+		"  -l                           ;  append newline to output (for -E/-D/-r/..\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
 		"  -n      binary number        ;  rax2 -n 0x1234 # 34120000\n"
-		"  -o      octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
 		"  -N      binary number        ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
+		"  -o      octalstr -> raw      ;  rax2 -o \\162 \\62 # r2\n"
 		"  -r      r2 style output      ;  rax2 -r 0x1234\n"
 		"  -s      hexstr -> raw        ;  rax2 -s 43 4a 50\n"
 		"  -S      raw -> hexstr        ;  rax2 -S < /bin/ls > ls.hex\n"
 		"  -t      tstamp -> str        ;  rax2 -t 1234567890\n"
-		"  -x      hash string          ;  rax2 -x linux osx\n"
 		"  -u      units                ;  rax2 -u 389289238 # 317.0M\n"
+		"  -v      version              ;  rax2 -v\n"
 		"  -w      signed word          ;  rax2 -w 16 0xffff\n"
-		"  -v      version              ;  rax2 -v\n");
+		"  -x      hash string          ;  rax2 -x linux osx\n"
+	);
 	return true;
 }
 
@@ -226,7 +231,7 @@ static int rax(RNum *num, char *str, int len, int last, ut64 *_flags, int *fm) {
 					}
 					return format_output (num, out_mode, str, *fm, flags);
 				}
-				printf ("Usage: rax2 [options] [expr ...]\n");
+				help_usage ();
 				return help ();
 			}
 			str++;
@@ -632,10 +637,11 @@ dotherax:
 
 R_API int r_main_rax2(int argc, const char **argv) {
 	int i, fm = 0;
-	RNum *num = r_num_new (NULL, NULL, NULL);
-	if (argc == 1) {
-		use_stdin (num, 0, &fm);
+	if (argc < 2) {
+		help_usage ();
+		// use_stdin (num, NULL, &fm);
 	} else {
+		RNum *num = r_num_new (NULL, NULL, NULL);
 		ut64 flags = 0;
 		for (i = 1; i < argc; i++) {
 			char *argv_i = strdup (argv[i]);
@@ -643,8 +649,7 @@ R_API int r_main_rax2(int argc, const char **argv) {
 			rax (num, argv_i, 0, i == argc - 1, &flags, &fm);
 			free (argv_i);
 		}
+		r_num_free (num);
 	}
-	r_num_free (num);
-	num = NULL;
 	return 0;
 }

@@ -1,42 +1,73 @@
-/* radare - LGPL - Copyright 2021 - pancake */
+/* radare - LGPL - Copyright 2022 - pancake, rhl120 */
+
 #include <rvc.h>
 
-static void ravc2_show_help(void) {
-	printf ("Usage: ravc2 [action] [file ...]\n"
-		" init            initialize repository in current directory\n"
-		" add [file ..]   add files to the current repository\n"
-		" checkout [name] checkout given branch name\n"
-		" log             list commits in current branch\n"
-		" branch          list all available branches\n"
-		" commit [a] [m] [f] perform a commit with the added files\n"
-		" branch [name]   change to another branch\n"
+static void usage(void) {
+	printf ("Usage: ravc2 [-ghqv] [action] [args ...]\n");
+}
+
+static void help(void) {
+	usage ();
+	printf (
+		"Flags:\n"
+		" -g                 Use git instead of rvc\n"
+		" -h                 Show this help\n"
+		" -q                 Be quiet\n"
+		" -v                 Show version\n"
+		" RAVC2_USER=[n]     Override cfg.user value to author commit.\n"
+		" init               Initialize repository in current directory\n"
+		" add [file ..]      Add files to the current repository\n"
+		" checkout [name]    Checkout given branch name\n"
+		" log                List commits in current branch\n"
+		" branch             List all available branches\n"
+		" commit [a] [m] [f] Perform a commit with the added files\n"
+		" branch [name]      Change to another branch\n"
 		"Environment:\n"
-		" RAVC2_USER=[name] Override cfg.user value to author commit.\n"
+		" RAVC2_USER=[n]     Override cfg.user value to author commit.\n"
 		"Examples:\n"
 		"  ravc2 init\n"
-		"  man ravc2\n");
+		"  man ravc2\n"
+	);
 }
 
 R_API int r_main_ravc2(int argc, const char **argv) {
 	RGetopt opt;
 	int c;
 	bool git = false;
+	bool quiet = false;
+	bool version = false;
 
-	r_getopt_init (&opt, argc, argv, "gvh");
+	if (argc < 2) {
+		usage ();
+		return 1;
+	}
+	r_getopt_init (&opt, argc, argv, "gqvh");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'g':
 			git = true;
 			break;
+		case 'q':
+			quiet = true;
+			break;
 		case 'v':
-			return r_main_version_print ("ravc2");
+			version = true;
+			break;
 		case 'h':
-			ravc2_show_help ();
+			help ();
 			return 0;
 		default:
-			ravc2_show_help ();
+			usage ();
 			return 1;
 		}
+	}
+
+	if (version) {
+		if (quiet) {
+			printf ("%s\n", R2_VERSION);
+			return 0;
+		}
+		return r_main_version_print ("ravc2");
 	}
 
 	if (git) {
