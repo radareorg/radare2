@@ -2043,7 +2043,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			r_strbuf_appendf (&op->esil, ",%s,--=,0,GOTO", counter);
 		}
 	}
-	if (op->prefix & R_ANAL_OP_PREFIX_REPNE) {
+	// Intel MPX changes the REPNE prefix to mean BND for jmps, etc
+	// its barely used anymore so the best thing to do is ignore
+	if (op->prefix & R_ANAL_OP_PREFIX_REPNE && !(op->type & 
+		(R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_CALL | R_ANAL_OP_TYPE_RET))) {
+
 		r_strbuf_prepend (&op->esil, ",!,?{,BREAK,},");
 		r_strbuf_prepend (&op->esil, counter);
 		r_strbuf_appendf (&op->esil, ",%s,--=,zf,?{,BREAK,},0,GOTO", counter);
