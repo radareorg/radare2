@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2021 - pancake */
+/* radare2 - LGPL - Copyright 2013-2022 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -17,8 +17,6 @@ call = 4
 #define CYCLE_REG 0
 #define CYCLE_MEM 1
 #define CYCLE_JMP 2
-
-// TODO: when capstone-4 is released, add proper check here
 
 #if CS_NEXT_VERSION > 0
 #define HAVE_CSGRP_PRIVILEGE 1
@@ -60,6 +58,7 @@ struct Getarg {
 };
 
 static R_TH_LOCAL csh handle = 0;
+static R_TH_LOCAL int omode = 0;
 
 static void hidden_op(cs_insn *insn, cs_x86 *x, int mode) {
 	unsigned int id = insn->id;
@@ -1725,7 +1724,6 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 					const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
 					const char *r_nume = (width==1)?"ax": r_quot;
 
-
 					esilprintf (op, "%d,%s,~,%d,%s,<<,%s,+,~%%,%d,%s,~,%d,%s,<<,%s,+,~/,%s,=,%s,=",
 							width*8, arg0, width*8, r_rema, r_nume, width*8, arg0, width*8, r_rema, r_nume, r_quot, r_rema);
 				}
@@ -2045,9 +2043,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 	// Intel MPX changes the REPNE prefix to mean BND for jmps, etc
 	// its barely used anymore so the best thing to do is ignore
-	if (op->prefix & R_ANAL_OP_PREFIX_REPNE && !(op->type & 
-		(R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_CALL | R_ANAL_OP_TYPE_RET))) {
-
+	if (op->prefix & R_ANAL_OP_PREFIX_REPNE && !(op->type & (R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_CALL | R_ANAL_OP_TYPE_RET))) {
 		r_strbuf_prepend (&op->esil, ",!,?{,BREAK,},");
 		r_strbuf_prepend (&op->esil, counter);
 		r_strbuf_appendf (&op->esil, ",%s,--=,zf,?{,BREAK,},0,GOTO", counter);
@@ -3332,7 +3328,6 @@ static int cs_len_prefix_opcode(uint8_t *item) {
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
-	static R_TH_LOCAL int omode = 0;
 	cs_insn *insn = NULL;
 	int mode = (a->bits==64)? CS_MODE_64:
 		(a->bits==32)? CS_MODE_32:
@@ -3490,7 +3485,6 @@ static int init(void *p) {
 
 static int fini(void *p) {
 	if (handle != 0) {
-		// SEGFAULTS RANDOMLY, better leak on exit.. lets try it out again
 		cs_close (&handle);
 		handle = 0;
 	}
@@ -3863,72 +3857,6 @@ static char *get_reg_profile(RAnal *anal) {
 		 "fpu    x64   .64 288  0\n");
 		return prof;
 	}
-#if 0
-	default: p= /* XXX */
-		 "=PC	rip\n"
-		 "=SP	rsp\n"
-		 "=BP	rbp\n"
-		 "=A0	rax\n"
-		 "=A1	rbx\n"
-		 "=A2	rcx\n"
-		 "=A3	rdx\n"
-		 "# no profile defined for x86-64\n"
-		 "gpr	r15	.64	0	0\n"
-		 "gpr	r14	.64	8	0\n"
-		 "gpr	r13	.64	16	0\n"
-		 "gpr	r12	.64	24	0\n"
-		 "gpr	rbp	.64	32	0\n"
-		 "gpr	ebp	.32	32	0\n"
-		 "gpr	rbx	.64	40	0\n"
-		 "gpr	ebx	.32	40	0\n"
-		 "gpr	bx	.16	40	0\n"
-		 "gpr	bh	.8	41	0\n"
-		 "gpr	bl	.8	40	0\n"
-		 "gpr	r11	.64	48	0\n"
-		 "gpr	r10	.64	56	0\n"
-		 "gpr	r9	.64	64	0\n"
-		 "gpr	r8	.64	72	0\n"
-		 "gpr	rax	.64	80	0\n"
-		 "gpr	eax	.32	80	0\n"
-		 "gpr	rcx	.64	88	0\n"
-		 "gpr	ecx	.32	88	0\n"
-		 "gpr	rdx	.64	96	0\n"
-		 "gpr	edx	.32	96	0\n"
-		 "gpr	rsi	.64	104	0\n"
-		 "gpr	esi	.32	104	0\n"
-		 "gpr	rdi	.64	112	0\n"
-		 "gpr	edi	.32	112	0\n"
-		 "gpr	oeax	.64	120	0\n"
-		 "gpr	rip	.64	128	0\n"
-		 "seg	cs	.64	136	0\n"
-		 //"flg	eflags	.64	144	0\n"
-		 "gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
-		 "flg	cf	.1	.1152	0\n"
-		 "flg	pf	.1	.1153	0\n"
-		 "flg	af	.1	.1154	0\n"
-		 "flg	zf	.1	.1155	0\n"
-		 "flg	sf	.1	.1156	0\n"
-		 "flg	tf	.1	.1157	0\n"
-		 "flg	if	.1	.1158	0\n"
-		 "flg	df	.1	.1159	0\n"
-		 "flg	of	.1	.1160	0\n"
-		 "flg	rf	.1	.1161	0\n"
-		 "gpr	rsp	.64	152	0\n"
-		 "seg	ss	.64	160	0\n"
-		 "seg	fs_base	.64	168	0\n"
-		 "seg	gs_base	.64	176	0\n"
-		 "seg	ds	.64	184	0\n"
-		 "seg	es	.64	192	0\n"
-		 "seg	fs	.64	200	0\n"
-		 "seg	gs	.64	208	0\n"
-		 "drx	dr0	.32	0	0\n"
-		 "drx	dr1	.32	4	0\n"
-		 "drx	dr2	.32	8	0\n"
-		 "drx	dr3	.32	12	0\n"
-		 "drx	dr6	.32	24	0\n"
-		 "drx	dr7	.32	28	0\n";
-		 break;
-#endif
 	}
 	return (p && *p)? strdup (p): NULL;
 }
@@ -3976,7 +3904,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.esil = true,
 	.license = "BSD",
 	.arch = "x86",
-	.bits = 16|32|64,
+	.bits = 16 | 32 | 64,
 	.op = &analop,
 	.preludes = anal_preludes,
 	.archinfo = archinfo,
