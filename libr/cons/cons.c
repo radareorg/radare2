@@ -16,7 +16,7 @@ R_LIB_VERSION (r_cons);
 static R_TH_LOCAL RConsContext r_cons_context_default = {{{{0}}}};
 static R_TH_LOCAL RCons g_cons_instance = {0};
 static R_TH_LOCAL RCons *r_cons_instance = NULL;
-static R_TH_LOCAL RThreadLock *r_cons_lock = NULL;
+static R_TH_LOCAL RThreadLock r_cons_lock = R_THREAD_LOCK_INIT;
 #define I (r_cons_instance)
 #define C (getctx())
 
@@ -111,7 +111,6 @@ static void cons_grep_reset(RConsGrep *grep) {
 }
 
 static void cons_context_init(RConsContext *context, R_NULLABLE RConsContext *parent) {
-	r_cons_lock = r_th_lock_new (false);
 	context->breaked = false;
 	context->cmd_depth = R_CONS_CMD_DEPTH + 1;
 	context->error = r_strbuf_new ("");
@@ -1390,13 +1389,13 @@ R_API int r_cons_write(const char *str, int len) {
 		}
 	}
 	if (str && len > 0 && !I->null) {
-		r_th_lock_enter (r_cons_lock);
+		r_th_lock_enter (&r_cons_lock);
 		if (palloc (len + 1)) {
 			memcpy (C->buffer + C->buffer_len, str, len);
 			C->buffer_len += len;
 			C->buffer[C->buffer_len] = 0;
 		}
-		r_th_lock_leave (r_cons_lock);
+		r_th_lock_leave (&r_cons_lock);
 	}
 	if (C->flush) {
 		r_cons_flush ();
@@ -2235,13 +2234,7 @@ R_API void r_cons_clear_buffer(void) {
 }
 
 R_API void r_cons_thready(void) {
-	if (!r_cons_lock) {
-		r_cons_lock = r_th_lock_new (false);
-	}
-	r_th_lock_enter (r_cons_lock);
-	r_cons_instance = R_NEW0 (RCons);
+	r_th_lock_enter (&r_cons_lock);
 	C->unbreakable = true;
-	// memset (r_cons_instance, 0, sizeof (r_cons_instance));
-	// memset (r_cons_instance.context, 0, sizeof (r_cons_instance.context));
-	r_th_lock_leave (r_cons_lock);
+	r_th_lock_leave (&r_cons_lock);
 }
