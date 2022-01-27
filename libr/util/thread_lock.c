@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2022 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake, keegan */
 
 #include <r_th.h>
 
@@ -30,6 +30,39 @@ static bool lock_init(RThreadLock *thl, bool recursive) {
 	return true;
 }
 
+static bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
+#if HAVE_STDATOMIC_H
+	return atomic_exchange_explicit (data, v, memory_order_acquire);
+#elif __GNUC__
+	int orig;
+	int conv = (int)v;
+	__atomic_exchange (data, &conv, &orig, __ATOMIC_ACQUIRE);
+	return orig;
+#elif _MSC_VER
+	int conv = (int)v;
+	return InterlockedExchange (data, conv);
+#else
+	bool orig = *data;
+	*data = v;
+	return orig;
+#endif
+}
+
+static void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v) {
+#if HAVE_STDATOMIC_H
+	atomic_store_explicit (data, v, memory_order_release);
+#elif __GNUC__
+	int conv = (int)v;
+	__atomic_store (data, &conv, __ATOMIC_RELEASE);
+#elif _MSC_VER
+	int conv = (int)v;
+	while (InterlockedExchange (data, conv) != conv)
+		;
+#else
+	*data = v;
+#endif
+}
+
 R_API RThreadLock *r_th_lock_new(bool recursive) {
 	RThreadLock *thl = R_NEW0 (RThreadLock);
 	if (!thl) {
@@ -42,9 +75,7 @@ R_API RThreadLock *r_th_lock_new(bool recursive) {
 
 	thl->type = R_TH_LOCK_TYPE_HEAP;
 	thl->active = 1;
-#ifdef HAVE_STDATOMIC_H
 	thl->activating = 0;
-#endif
 	return thl;
 }
 
@@ -62,19 +93,17 @@ R_API int r_th_lock_enter(RThreadLock *thl) {
 
 	// initialize static locks on acquisition
 	if (thl->type == R_TH_LOCK_TYPE_STATIC) {
-#ifdef HAVE_STDATOMIC_H
-		while (atomic_exchange_explicit (&thl->activating, true, memory_order_acquire))
+		// start spinning
+		while (r_atomic_exchange (&thl->activating, true))
 			;
-#endif /* HAVE_STDATOMIC_H */
 
 		if (!thl->active) {
 			lock_init (thl, false);
 			thl->active = 1;
 		}
 
-#ifdef HAVE_STDATOMIC_H
-		atomic_store_explicit (&thl->activating, false, memory_order_release);
-#endif /* HAVE_STDATOMIC_H */
+		// finish spinning
+		r_atomic_store (&thl->activating, false);
 	}
 #if HAVE_PTHREAD
 	return pthread_mutex_lock (&thl->lock);
