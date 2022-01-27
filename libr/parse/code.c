@@ -9,6 +9,7 @@
 #include "c/tccpp.c"
 #include "c/libtcc.c"
 
+static R_TH_LOCAL RThreadLock r_tcc_lock = R_THREAD_LOCK_INIT;
 static R_TH_LOCAL TCCState *s1 = NULL;
 extern int tcc_sym_push(TCCState *s1, char *typename, int typesize, int meta);
 
@@ -30,6 +31,7 @@ static void __appendString(const char *msg, char **s) {
 	}
 }
 
+// NOTE: must hold r_tcc_lock
 static bool __typeLoad(void *p, const char *k, const char *v) {
 	r_strf_buffer (128);
 	if (!p) {
@@ -102,8 +104,10 @@ static void __errorFunc(void *opaque, const char *msg) {
 
 R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char **error_msg) {
 	char *str = NULL;
+	r_th_lock_enter (&r_tcc_lock);
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
 	if (!T) {
+		r_th_lock_leave (&r_tcc_lock);
 		return NULL;
 	}
 	s1 = T; // XXX delete global
@@ -127,13 +131,16 @@ R_API char *r_parse_c_file(RAnal *anal, const char *path, const char *dir, char 
 	r_list_free (dirs);
 	free (d);
 	tcc_delete (T);
+	r_th_lock_leave (&r_tcc_lock);
 	return str;
 }
 
 R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 	char *str = NULL;
+	r_th_lock_enter (&r_tcc_lock);
 	TCCState *T = tcc_new (anal->cpu, anal->bits, anal->os);
 	if (!T) {
+		r_th_lock_leave (&r_tcc_lock);
 		return NULL;
 	}
 	s1 = T; // XXX delete global
@@ -144,5 +151,6 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code, char **error_msg) {
 		R_FREE (str);
 	}
 	tcc_delete (T);
+	r_th_lock_leave (&r_tcc_lock);
 	return str;
 }
