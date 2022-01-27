@@ -32,12 +32,9 @@
 # define R_TH_LOCAL
 #endif
 
-#if HAVE_TH_LOCAL
-// #warning HAVE TLS
-// #include <threads.h>
-// #include <stdatomic.h>
-#else
-// #warning LACK TLS
+#if __STDC_VERSION__ >= 201112L && !defined (_MSC_VER)
+# define HAVE_STDATOMIC_H 1
+# include <stdatomic.h>
 #endif
 
 #if WANT_THREADS
@@ -104,9 +101,23 @@ typedef struct r_th_sem_t {
 	R_TH_SEM_T sem;
 } RThreadSemaphore;
 
+typedef enum r_th_lock_type_t {
+	R_TH_LOCK_TYPE_STATIC = 0,
+	R_TH_LOCK_TYPE_HEAP,
+} RThreadLockType;
+
 typedef struct r_th_lock_t {
+#ifdef HAVE_STDATOMIC_H
+	atomic_bool activating;
+#endif
+	struct {
+		ut8 active : 1;
+		RThreadLockType type : 7;
+	};
 	R_TH_LOCK_T lock;
 } RThreadLock;
+
+#define R_THREAD_LOCK_INIT {0}
 
 typedef struct r_th_cond_t {
 	R_TH_COND_T cond;
