@@ -83,7 +83,7 @@ extern char **environ;
 #endif
 #endif
 
-R_LIB_VERSION(r_util);
+R_LIB_VERSION (r_util);
 
 #ifdef __x86_64__
 # ifdef _MSC_VER
