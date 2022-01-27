@@ -161,7 +161,7 @@ static int print_cacheop(RStrBuf *sb, int value) {
 	return V850_ARG_TYPE_NUMBER;
 }
 
-static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_operand *operand) {
+static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_operand *operand, long value) {
 	static const int list12_regs[32]  = {
 		30, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0, 0, 0, 0, 31, 29, 28, 23, 22, 21, 20, 27, 26, 25, 24
@@ -179,7 +179,6 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 		return false;
 	}
 
-	const long value = inst->value;
 	for (i = 0; i < 32; i++) {
 		if (value & (1u << i)) {
 			switch (regs[i]) {
@@ -199,7 +198,6 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 	}
 
 	r_strbuf_append (sb, "{");
-
 	if (mask) {
 		ut32 bit;
 		const char *comma = "";
@@ -218,7 +216,10 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 				ut32 last = bit;
 
 				if (last > first + 1) {
-					r_strbuf_appendf (sb, " - %s", get_v850_reg_name (last - 1));
+					for (i = first + 1; i < last ; i++) {
+						r_strbuf_appendf (sb, ", %s", get_v850_reg_name (i)); // last - 1));
+					}
+					//r_strbuf_appendf (sb, " - %s", get_v850_reg_name (last - 1));
 				}
 			}
 		}
@@ -234,11 +235,39 @@ char *distillate(v850np_inst *inst, const char *esilfmt) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RList *args = NULL;
 	char *arg = strchr (inst->text, ' ');
+	char *p = inst->text;
+	bool in_list = false;
+	while (*p) {
+		if (*p == '{') {
+			in_list = true;
+		} else if (*p == '}') {
+			in_list = false;
+		} else if (in_list) {
+			if (*p == ',') {
+				*p = ';';
+			}
+		}
+		p++;
+	}
 	if (arg) {
 		arg = strdup (arg + 1);
+		arg = r_str_replace (arg, "{", "", true);
+		arg = r_str_replace (arg, "}", "", true);
 		arg = r_str_replace (arg, "[", ",", true);
 		arg = r_str_replace (arg, "]", "", true);
 		args = r_str_split_list (arg, ",", 0);
+		RListIter *iter;
+		r_list_foreach (args, iter, arg) {
+			r_str_replace_ch (arg, ';', ',', true);
+			r_str_replace_ch (arg, ' ', 0, true);
+		}
+	}
+	p = inst->text;
+	while (*p) {
+		if (*p == ';') {
+			*p = ',';
+		}
+		p++;
 	}
 	while (*esilfmt) {
 		char ch = *esilfmt;
@@ -396,7 +425,7 @@ static bool v850np_disassemble(v850np_inst *inst, int cpumodel, ut64 memaddr, co
 				r_strbuf_append (sb, get_v850_sreg_name (value));
 				break;
 			case V850E_OPERAND_REG_LIST:
-				if (!print_reglist (sb, inst, operand)) {
+				if (!print_reglist (sb, inst, operand, value)) {
 					goto fail;
 				}
 				break;

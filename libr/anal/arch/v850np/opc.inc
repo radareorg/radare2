@@ -1,4 +1,4 @@
-/* Assemble V850 instructions. -- 2021 - pancake
+/* Assemble V850 instructions. -- 2021-2022 - pancake
    Based on the GNU disassembler from binutils
 */
 
@@ -821,8 +821,8 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "dbtag", two (0xcfe0, 0x0160), two (0xffe0, 0x07ff), {IMM10U}, 0, V850_CPU_E3V5_UP },
 	{ "dbtrap", one (0xf840), one (0xffff), {0}, 0, V850_CPU_NON0 },
 	{ "di", two (0x07e0, 0x0160), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL },
-	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x0000), {IMM5, LIST12, R2_DISPOSE},3, V850_CPU_NON0 },
-	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x001f), {IMM5, LIST12}, 0, V850_CPU_NON0 },
+	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x0000), {IMM5, LIST12, R2_DISPOSE},3, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "" },
+	{ "dispose", two (0x0640, 0x0000), two (0xffc0, 0x001f), {IMM5, LIST12}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_POP, "" },
 	{ "div", two (0x07e0, 0x02c0), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_DIV, "#2,#1,/,#2,=,#2,#1,%,#3,=" },
 	{ "divh", two (0x07e0, 0x0280), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_NON0 },
 	{ "divh", OP (0x02), OP_MASK, {R1_NOTR0, R2_NOTR0}, 0, V850_CPU_ALL },
@@ -960,11 +960,11 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "ori", OP (0x34), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_OR, "#0,#1,|,#2,=" },
 	{ "popsp", two (0x67e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3}, 0, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_POP },
 	{ "pref", two (0xdfe0, 0x0160), two (0xffe0, 0x07ff), {PREFOP, R1}, 2, V850_CPU_E3V5_UP },
-	{ "prepare", two (0x0780, 0x0003), two (0xffc0, 0x001f), {LIST12, IMM5, SP}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH }, // TODO: How do we pass a variable list of regs here? #@?
-	{ "prepare", two (0x0780, 0x000b), two (0xffc0, 0x001f), {LIST12, IMM5, IMM16LO},0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH },
-	{ "prepare", two (0x0780, 0x0013), two (0xffc0, 0x001f), {LIST12, IMM5, IMM16HI},0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH },
-	{ "prepare", two (0x0780, 0x001b), two (0xffc0, 0x001f), {LIST12, IMM5, IMM32}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH },
-	{ "prepare", two (0x0780, 0x0001), two (0xffc0, 0x001f), {LIST12, IMM5}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH },
+	{ "prepare", two (0x0780, 0x0003), two (0xffc0, 0x001f), {LIST12, IMM5, SP}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" }, // #0 contains the comma separated list of registers, #1 the im5 and #2 the sp
+	{ "prepare", two (0x0780, 0x000b), two (0xffc0, 0x001f), {LIST12, IMM5, IMM16LO},0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" },
+	{ "prepare", two (0x0780, 0x0013), two (0xffc0, 0x001f), {LIST12, IMM5, IMM16HI},0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" },
+	{ "prepare", two (0x0780, 0x001b), two (0xffc0, 0x001f), {LIST12, IMM5, IMM32}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" },
+	{ "prepare", two (0x0780, 0x0001), two (0xffc0, 0x001f), {LIST12, IMM5}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" },
 	{ "pushsp", two (0x47e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_PUSH },
 	{ "rotl", two (0x07e0, 0x00c6), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_ROL },
 	{ "rotl", two (0x07e0, 0x00c4), two (0x07e0, 0x07ff), {I5U, R2, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_ROL },
