@@ -19,22 +19,30 @@
 # define HAVE_TH_LOCAL 1
 # define R_TH_LOCAL __thread
 
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
+
 #elif _MSC_VER
 # define HAVE_TH_LOCAL 1
 # define R_TH_LOCAL __declspec( thread )
+
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
 
 #elif __STDC_VERSION__ >= 201112L
 # define HAVE_TH_LOCAL 1
 # define R_TH_LOCAL _Thread_local
 
+# define HAVE_STDATOMIC_H 1
+# include <stdatomic.h>
+# define R_ATOMIC_BOOL atomic_bool
+
 #else
 # define HAVE_TH_LOCAL 0
 # define R_TH_LOCAL
-#endif
 
-#if __STDC_VERSION__ >= 201112L && !defined (_MSC_VER)
-# define HAVE_STDATOMIC_H 1
-# include <stdatomic.h>
+# define HAVE_STDATOMIC_H 0
+# define R_ATOMIC_BOOL int
 #endif
 
 #if WANT_THREADS
@@ -107,9 +115,7 @@ typedef enum r_th_lock_type_t {
 } RThreadLockType;
 
 typedef struct r_th_lock_t {
-#ifdef HAVE_STDATOMIC_H
-	atomic_bool activating;
-#endif
+	R_ATOMIC_BOOL activating;
 	struct {
 		ut8 active : 1;
 		RThreadLockType type : 7;
