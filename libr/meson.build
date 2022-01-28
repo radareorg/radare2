@@ -200,7 +200,6 @@ asm_plugins += [
   'mcore',
   'mcs96',
   'mips_cs',
-  'msp430',
   'nios2',
   'or1k',
   'pic',
