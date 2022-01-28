@@ -36,6 +36,7 @@ static void *_r_th_launcher(void *_th) {
 		ret = th->fun (th);
 		if (ret < 0) {
 			// th has been freed
+			r_th_lock_leave (th->lock);
 			return 0;
 		}
 		r_th_set_running (th, false);

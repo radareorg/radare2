@@ -1872,7 +1872,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		chars[0] = '\0';
 		ebytes = bytes;
 		echars = chars;
-//		hascolor = false;
 		ut64 ea = addr;
 		if (core->print->pava) {
 			ut64 va = r_io_p2v (core->io, addr);
