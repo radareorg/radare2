@@ -167,7 +167,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	static csh handle = 0;
 	static int omode = -1;
 	static int obits = 32;
-	cs_insn* insn;
+	cs_insn* insn = NULL;
 	cs_m68k *m68k;
 	cs_detail *detail;
 
@@ -209,6 +209,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	int on = n;
 	if (!strncmp (insn->mnemonic, "dc.w", 4)) {
 		if (mask & R_ANAL_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invlad");
@@ -718,7 +719,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op_fillval (op, handle, insn);
 	}
 beach:
-	cs_free (insn, n);
+	cs_free (insn, on);
 	//cs_close (&handle);
 fin:
 	return opsize;
