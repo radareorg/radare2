@@ -1,12 +1,11 @@
-OBJ_msp430=anal_msp430.o
-CFLAGS+=-I../asm/arch/msp430/
+OBJ_MSP430=anal_msp430.o
 
-STATIC_OBJ+=${OBJ_msp430}
-OBJ_msp430+=../../asm/arch/msp430/msp430_disas.o
-TARGET_msp430=anal_msp430.${EXT_SO}
+STATIC_OBJ+=${OBJ_MSP430}
+OBJ_MSP430+=../arch/msp430/msp430_disas.o
+TARGET_MSP430=anal_msp430.${EXT_SO}
 
-ALL_TARGETS+=${TARGET_msp430}
+ALL_TARGETS+=${TARGET_MSP430}
 
-${TARGET_msp430}: ${OBJ_msp430} ${SHARED_OBJ}
+${TARGET_MSP430}: ${OBJ_MSP430} ${SHARED_OBJ}
 	${CC} $(call libname,anal_msp430) ${CFLAGS} \
-		-o ${TARGET_msp430} ${OBJ_msp430}
+		-o ${TARGET_MSP430} ${OBJ_MSP430}
