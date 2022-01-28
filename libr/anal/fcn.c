@@ -533,6 +533,14 @@ static inline bool does_arch_destroys_dst(const char *arch) {
 	return arch && (!strncmp (arch, "arm", 3) || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
 }
 
+static inline bool has_vars(RAnal *anal, ut64 addr) {
+	RAnalFunction *tmp_fcn = r_anal_get_fcn_in (anal, addr, 0);
+	if (tmp_fcn) {
+		return r_anal_var_count_all (tmp_fcn) > 0;
+	}
+	return false;
+}
+
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	if (depth < 1) {
 		if (anal->verbose) {
@@ -553,7 +561,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	size_t lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
 	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
-	bool varset = false;
 	struct {
 		int cnt;
 		int idx;
@@ -640,15 +647,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	if (anal->limit && addr + idx < anal->limit->from) {
 		gotoBeach (R_ANAL_RET_END);
 	}
-	RAnalFunction *tmp_fcn = r_anal_get_fcn_in (anal, addr, 0);
-	if (tmp_fcn) {
-		// Checks if var is already analyzed at given addr
-		RList *list = r_anal_var_all_list (anal, tmp_fcn);
-		if (!r_list_empty (list)) {
-			varset = true;
-		}
-		r_list_free (list);
-	}
+
+	bool varset = has_vars (anal, addr); // Checks if var is already analyzed at given addr
+
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov Reg,[Reg*Scale+Disp]"
 	ut64 movscale = 0;
 	int maxlen = len * addrbytes;
