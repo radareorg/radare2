@@ -182,7 +182,7 @@ static const char *help_msg_wx[] = {
 	"Usage:", "wx[f] [arg]", "",
 	"wx", " 9090", "write two intel nops",
 	"wxf", " -|file", "write contents of hexpairs file here",
-	"wxs", " 9090", "write hexpairs and seek at the end",
+	"wx+", " 9090", "write hexpairs and seek forward",
 	NULL
 };
 
@@ -1742,6 +1742,9 @@ static int wx_handler_old(void *data, const char *input) {
 		}
 		break;
 	case 's': // "wxs"
+		eprintf ("Warning: wxs has been renamed to wx+\n");
+		// fallthrough
+	case '+': // "wx+"
 		{
 			int len = cmd_write_hexpair (core, input + 1);
 			if (len > 0) {

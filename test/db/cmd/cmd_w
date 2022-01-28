@@ -301,7 +301,7 @@ CMDS=<<EOF
 wx 553344
 p8 3
 s
-wxs 1111
+wx+1111
 s
 p8 2 @ -2
 EOF
