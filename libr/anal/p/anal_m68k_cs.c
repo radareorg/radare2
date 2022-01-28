@@ -32,17 +32,17 @@ static inline ut64 make_64bits_address(ut64 address) {
 
 static inline void handle_branch_instruction(RAnalOp *op, ut64 addr, cs_m68k *m68k, ut32 type, int index) {
 #if CS_API_MAJOR >= 4
-		if (m68k->operands[index].type == M68K_OP_BR_DISP) {
-			op->type = type;
-			// TODO: disp_size is ignored
-			op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
-			op->fail = make_64bits_address (addr + op->size);
-		}
-#else
+	if (m68k->operands[index].type == M68K_OP_BR_DISP) {
 		op->type = type;
 		// TODO: disp_size is ignored
 		op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
 		op->fail = make_64bits_address (addr + op->size);
+	}
+#else
+	op->type = type;
+	// TODO: disp_size is ignored
+	op->jump = make_64bits_address (addr + m68k->operands[index].br_disp.disp + 2);
+	op->fail = make_64bits_address (addr + op->size);
 #endif
 }
 
@@ -209,13 +209,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
-	if (mask & R_ANAL_OP_MASK_DISASM) {
+	if (!strncmp (insn->mnemonic, "dc.w", 4)) {
+		if (mask & R_ANAL_OP_MASK_DISASM) {
+			op->mnemonic = strdup ("invlad");
+		}
+		n = -1;
+	} else if (mask & R_ANAL_OP_MASK_DISASM) {
 		char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		if (str) {
-			char *p = r_str_replace (strdup (str), "$", "0x", true);
+			char *p = r_str_replace (str, "$", "0x", true);
 			if (p) {
 				r_str_replace_char (p, '#', 0);
 				op->mnemonic = p;
+			} else {
 				free (str);
 			}
 		}
@@ -723,6 +729,7 @@ static bool set_reg_profile(RAnal *anal) {
 		"=PC    pc\n"
 		"=SP    a7\n"
 		"=BP    a6\n"
+		"=R0    a0\n"
 		"=A0    a0\n"
 		"=A1    a1\n"
 		"=A2    a2\n"
