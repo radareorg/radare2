@@ -195,7 +195,6 @@ asm_plugins += [
   'java',
   'lh5801',
   'lm32',
-  'm68k_cs',
   'm680x_cs',
   'malbolge',
   'mcore',

@@ -1,0 +1,14 @@
+d "ori.b 0xaa, (a1)" 0011
+d "bchg.b 0x18, 0x1234.w" 087800181234
+d "move.b d1, (a5)" 1a81
+d "move.w 0x30(a0, d3.w), d0" 30303030
+d "lea.l 0x80095022.l, a0" 41f980095022
+d "tst.l (a0)" 4a90
+d "reset" 4e70
+d "nop" 4e71
+d "addq.l 0x5, d1" 5a81
+d "bra.w 0xffffff5a" 6000ff58
+d "beq.b 0x18" 6716
+d "moveq 0xf7, d2" 74f7
+d "eor.b d0, (a3)" b113
+d "ror.b 0x1, d4" e21c
