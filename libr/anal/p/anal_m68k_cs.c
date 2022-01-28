@@ -212,9 +212,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	int on = n;
 	if (!strncmp (insn->mnemonic, "dc.w", 4)) {
 		if (mask & R_ANAL_OP_MASK_DISASM) {
-			op->mnemonic = strdup ("invlad");
+			op->mnemonic = strdup ("invalid");
 		}
-		n = -1;
+		n = 2;
 	} else if (mask & R_ANAL_OP_MASK_DISASM) {
 		char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		if (str) {
