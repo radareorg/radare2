@@ -2495,28 +2495,25 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 
 	size_t count = 0;
 	ut8 *p = NULL;
-	ut8 * trie = NULL;
-	RList * states = NULL;
 	ut64 size = bin->dyld_info->export_size;
-	if (!size) {
-		return count;
+	if (!size || size >= SIZE_MAX) {
+		return 0;
 	}
-	trie = calloc (size + 1, 1);
+	ut8 *trie = calloc (size + 1, 1);
 	if (!trie) {
-		return count;
+		return 0;
 	}
-	ut8 * end = trie + size;
-
+	ut8 *end = trie + size;
 	if (r_buf_read_at (bin->b, bin->dyld_info->export_off, trie, bin->dyld_info->export_size) != size) {
 		goto beach;
 	}
 
-	states = r_list_newf ((RListFree)free);
+	RList *states = r_list_newf ((RListFree)free);
 	if (!states) {
 		goto beach;
 	}
 
-	RTrieState * root = R_NEW0 (RTrieState);
+	RTrieState *root = R_NEW0 (RTrieState);
 	if (!root) {
 		goto beach;
 	}
@@ -2613,11 +2610,11 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 			goto beach;
 		}
 		ut64 tr = read_uleb128 (&p, end);
-		if (tr == UT64_MAX) {
+		if (tr == UT64_MAX || tr >= size) {
 			R_FREE (next);
 			goto beach;
 		}
-		next->node = tr + trie;
+		next->node = trie + (size_t)tr;
 		if (next->node >= end) {
 			bprintf ("malformed export trie %d\n", __LINE__);
 			R_FREE (next);

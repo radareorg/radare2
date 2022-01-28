@@ -5,6 +5,10 @@ EXPECT=<<EOF
 file     bins/smd/LiquidSpaceDodgerV3.bin
 size     0x272f8
 humansz  156.7K
+minopsz  2
+maxopsz  6
+invopsz  2
+pcalign  2
 mode     r-x
 format   smd
 iorw     false

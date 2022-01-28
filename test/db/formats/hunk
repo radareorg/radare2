@@ -10,6 +10,10 @@ fd       3
 file     bins/other/amiga-hunk-mc0201
 size     0xcc
 humansz  204
+minopsz  2
+maxopsz  6
+invopsz  2
+pcalign  2
 mode     r-x
 format   hunk
 iorw     false
