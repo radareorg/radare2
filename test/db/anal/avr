@@ -186,15 +186,15 @@ RUN
 NAME=avr rjmp - relative jump forward
 FILE=malloc://8192
 CMDS=<<EOF
-wxs 00c0 01c0 02c0 03c0 7ec0 7fc0 80c0 81c0
-wxs fec0 ffc0 00c1 01c1 7ec1 7fc1 80c1 81c1
-wxs fec1 ffc1 00c2 01c2 7ec2 7fc2 80c2 81c2
-wxs fec2 ffc2 00c3 01c3 7ec3 7fc3 80c3 81c3
-wxs fec3 ffc3 00c4 01c4 7ec4 7fc4 80c4 81c4
-wxs fec4 ffc4 00c5 01c5 7ec5 7fc5 80c5 81c5
-wxs fec5 ffc5 00c6 01c6 7ec6 7fc6 80c6 81c6
-wxs fec6 ffc6 00c7 01c7 7ec7 7fc7 80c7 81c7
-wxs fec7 ffc7
+wx+ 00c0 01c0 02c0 03c0 7ec0 7fc0 80c0 81c0
+wx+ fec0 ffc0 00c1 01c1 7ec1 7fc1 80c1 81c1
+wx+ fec1 ffc1 00c2 01c2 7ec2 7fc2 80c2 81c2
+wx+ fec2 ffc2 00c3 01c3 7ec3 7fc3 80c3 81c3
+wx+ fec3 ffc3 00c4 01c4 7ec4 7fc4 80c4 81c4
+wx+ fec4 ffc4 00c5 01c5 7ec5 7fc5 80c5 81c5
+wx+ fec5 ffc5 00c6 01c6 7ec6 7fc6 80c6 81c6
+wx+ fec6 ffc6 00c7 01c7 7ec7 7fc7 80c7 81c7
+wx+ fec7 ffc7
 e asm.arch=avr
 e asm.cpu=ATmega640
 aoe 66 @ 0
