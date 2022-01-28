@@ -1239,8 +1239,8 @@ R_API void r_sys_set_environ(char **e) {
 }
 
 R_API char *r_sys_whoami(void) {
-	char buf[32];
 #if __WINDOWS__
+	char buf[32];
 	DWORD buf_sz = sizeof (buf);
 	if (!GetUserName ((LPWSTR)buf, (LPDWORD)&buf_sz) ) {
 		return strdup ("?");
@@ -1251,6 +1251,7 @@ R_API char *r_sys_whoami(void) {
 	char *user = r_sys_getenv ("USER");
 	return user? user: r_str_newf ("uid%d", getuid ());
 #else
+	char buf[32];
 	// XXX this is not thread safe and getpwuid_r is not available
 	struct passwd *pw = getpwuid (getuid ());
 	if (pw) {
