@@ -1016,7 +1016,10 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 			pe32_bin->vaddr = module->base_of_image;
 			pe32_bin->paddr = paddr;
 			pe32_bin->bin = Pe32_r_bin_pe_new_buf (buf, 0);
-
+			if (!pe32_bin->bin) {
+				free (pe32_bin);
+				continue;
+			}
 			r_list_append (obj->pe32_bins, pe32_bin);
 		} else if (check_pe64_buf (buf, module->size_of_image)) {
 			r_list_foreach(obj->pe64_bins, it_dup, pe64_dup) {
