@@ -52,6 +52,7 @@
 #define OPCOUNT() insn->detail->arm.op_count
 #define OPCOUNT64() insn->detail->arm64.op_count
 #define ISSHIFTED(x) (insn->detail->arm.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm.operands[x].shift.value != 0)
+#define ISSHIFTED64(x) (insn->detail->arm64.operands[x].shift.type != ARM_SFT_INVALID && insn->detail->arm64.operands[x].shift.value != 0)
 #define SHIFTTYPE(x) insn->detail->arm.operands[x].shift.type
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
@@ -1118,9 +1119,9 @@ static ut64 shifted_imm64(csh *handle, cs_insn *insn, int n, int sz) {
 	}
 }
 
-#define ARG64_APPEND(sb, n) arg64_append(sb, handle, insn, n, -1, 0)
-#define ARG64_SIGN_APPEND(sb, n, s) arg64_append(sb, handle, insn, n, -1, s)
-#define VECARG64_APPEND(sb, n, i, s) arg64_append(sb, handle, insn, n, i, s)
+#define ARG64_APPEND(sb, n) arg64_append (sb, handle, insn, n, -1, 0)
+#define ARG64_SIGN_APPEND(sb, n, s) arg64_append (sb, handle, insn, n, -1, s)
+#define VECARG64_APPEND(sb, n, i, s) arg64_append (sb, handle, insn, n, i, s)
 #define COMMA(sb) r_strbuf_appendf (sb, ",")
 
 static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, int sign) {
@@ -1132,9 +1133,11 @@ static void arg64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i, 
 	}
 
 	if (ISIMM64 (n)) {
-		ut64 imm = SHIFTED_IMM64 (n, size);
-		r_strbuf_appendf (sb, "0x%"PFMT64x, imm);
-		return;
+		if (!ISSHIFTED64 (n)) {
+			ut64 imm = SHIFTED_IMM64 (n, size);
+			r_strbuf_appendf (sb, "0x%"PFMT64x, imm);
+			return;
+		}
 	}
 	const char *rn = (ISMEM64 (n) && HASMEMINDEX64 (n))
 		? MEMINDEX64 (n): REG64 (n);
@@ -1735,7 +1738,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 				if (LSHIFT2_64 (1) || EXT64 (1)) {
 					ARG64_APPEND (&op->esil, 1);
 					r_strbuf_appendf (&op->esil, ",%s,+,[%d],%s,=",
-						MEMBASE64 (1), size, REG64 (0));
+							MEMBASE64 (1), size, REG64 (0));
 				} else {
 					r_strbuf_appendf (&op->esil, "%s,%s,+,[%d],%s,=",
 							MEMBASE64 (1), MEMINDEX64 (1), size, REG64 (0));
@@ -1751,7 +1754,6 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 					r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,+",
 							MEMDISP64 (1), MEMBASE64 (1));
 				}
-
 				r_strbuf_append (&op->esil, ",DUP,tmp,=");
 
 				// I assume the DUPs here previously were to handle preindexing
