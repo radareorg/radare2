@@ -2488,6 +2488,7 @@ static char *get_name(struct MACH0_(obj_t) *mo, ut32 stridx, bool filter) {
 }
 
 static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, void *ctx) {
+	RList *states = NULL;
 	r_return_val_if_fail (bin, 0);
 	if (!bin->dyld_info) {
 		return 0;
@@ -2508,7 +2509,7 @@ static int walk_exports(struct MACH0_(obj_t) *bin, RExportsIterator iterator, vo
 		goto beach;
 	}
 
-	RList *states = r_list_newf ((RListFree)free);
+	states = r_list_newf ((RListFree)free);
 	if (!states) {
 		goto beach;
 	}

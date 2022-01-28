@@ -59,6 +59,7 @@ jobs:
         call configure
         call make
     - name: Test executable
+      continue-on-error: true
       shell: cmd
       run: |
         cd prefix\bin
