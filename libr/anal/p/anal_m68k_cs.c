@@ -210,11 +210,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	}
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
 	int on = n;
-	if (!strncmp (insn->mnemonic, "dc.w", 4)) {
+	if (!insn || !strncmp (insn->mnemonic, "dc.w", 4)) {
 		if (mask & R_ANAL_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
+			n = 2;
+		} else {
+			n = -1;
 		}
-		n = 2;
+		op->type = R_ANAL_OP_TYPE_ILL;
+		op->size = 2;
+		opsize = 2;
+		goto beach;
 	} else if (mask & R_ANAL_OP_MASK_DISASM) {
 		char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
 		if (str) {
@@ -784,12 +790,27 @@ static bool set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 2;
+	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
+		return 6;
+	case R_ANAL_ARCHINFO_INV_OP_SIZE:
+		return 2;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
+		return 2;
+	}
+	return 2;
+}
+
 RAnalPlugin r_anal_plugin_m68k_cs = {
 	.name = "m68k",
 	.desc = "Capstone M68K analyzer",
 	.license = "BSD",
 	.esil = false,
 	.arch = "m68k",
+	.archinfo = archinfo,
 	.set_reg_profile = &set_reg_profile,
 	.bits = 32,
 	.op = &analop,
