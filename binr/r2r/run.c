@@ -987,10 +987,12 @@ R_API bool r2r_check_jq_available(void) {
 	const char *args[] = {"."};
 	const char *invalid_json = "this is not json lol";
 	R2RSubprocess *proc = r2r_subprocess_start (JQ_CMD, args, 1, NULL, NULL, 0);
-	if (proc) {
-		r2r_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));
-		r2r_subprocess_wait (proc, UT64_MAX);
+	if (!proc) {
+		eprintf ("Cnnot start subprocess\n");
+		return false;
 	}
+	r2r_subprocess_stdin_write (proc, (const ut8 *)invalid_json, strlen (invalid_json));
+	r2r_subprocess_wait (proc, UT64_MAX);
 	r_th_lock_enter (proc->lock);
 	bool invalid_detected = proc && proc->ret != 0;
 	r_th_lock_leave (proc->lock);

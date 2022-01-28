@@ -1246,7 +1246,7 @@ R_API char *r_sys_whoami(void) {
 		return strdup ("?");
 	}
 #elif __wasi__
-	strcpy (buf, "user");
+	return strdup ("user");
 #elif HAVE_TH_LOCAL
 	char *user = r_sys_getenv ("USER");
 	return user? user: r_str_newf ("uid%d", getuid ());
@@ -1258,8 +1258,8 @@ R_API char *r_sys_whoami(void) {
 	}
 	int uid = getuid ();
 	snprintf (buf, sizeof (buf), "uid%d", uid);
-#endif
 	return strdup (buf);
+#endif
 }
 
 R_API int r_sys_uid(void) {

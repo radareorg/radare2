@@ -2649,6 +2649,9 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 		}
 		s = type->ref;
 		f = s->next;
+		if (!f) {
+			TCC_ERR ("missing next entry");
+		}
 		array_length = 0;
 		index = 0;
 		n = s->c;

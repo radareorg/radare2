@@ -1322,7 +1322,7 @@ rep:
 				if (fi) {
 					if (*color) {
 						ret = r_flag_item_set_color (fi, color);
-						if (!color && ret) {
+						if (ret) {
 							r_cons_println (ret);
 						}
 					} else {

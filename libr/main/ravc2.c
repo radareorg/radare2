@@ -74,7 +74,7 @@ R_API int r_main_ravc2(int argc, const char **argv) {
 		eprintf ("TODO: r_vc_git APIs should be called from r_vc\n");
 		eprintf ("TODO: r_vc_new should accept options argument\n");
 	}
-	const char *action = (argc >= 2)? opt.argv[opt.ind] : NULL;
+	const char *action = opt.argv[opt.ind];
 	if (!action) {
 		return 1;
 	}

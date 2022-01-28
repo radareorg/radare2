@@ -611,7 +611,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 static char colorbuffer[64];
 #define P(x) (p->cons && p->cons->context->pal.x)? p->cons->context->pal.x
 R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
-	if (p->flags & R_PRINT_FLAGS_RAINBOW) {
+	if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
 		// EXPERIMENTAL
 		int bg = (p->flags & R_PRINT_FLAGS_NONHEX)? 48: 38;
 		snprintf (colorbuffer, sizeof (colorbuffer), "\033[%d;5;%dm", bg, ch);
@@ -624,7 +624,7 @@ R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
 			return r;
 		}
 	}
-	const bool use_color = p->flags & R_PRINT_FLAGS_COLOR;
+	const bool use_color = (p && p->flags & R_PRINT_FLAGS_COLOR);
 	if (!use_color) {
 		return NULL;
 	}
