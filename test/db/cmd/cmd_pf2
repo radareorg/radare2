@@ -245,11 +245,11 @@ e asm.bits=64
 wz root @ 0x0000000100000faf
 pf z @ 0x0000000100000faf
 e cfg.bigendian=false
-16wxs cc @ 0x200
+16wx+cc @ 0x200
 wv8 0x0000000100000faf @ 0x204
 pf *z @ 0x204
 e cfg.bigendian=true
-16wxs cc @ 0x200
+16wx+cc @ 0x200
 wv8 0x0000000100000faf @ 0x204
 pf *z @ 0x204
 EOF

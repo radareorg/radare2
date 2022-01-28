@@ -410,12 +410,12 @@ EXPECT=<<EOF
 EOF
 RUN
 
-## wxs: write hex and seek
+## wx+: write hex and seek
 
 FILE=malloc://1024
-NAME=data written after multiple wxs
+NAME=data written after multiple wx+
 CMDS=<<EOF
-2 wxs 9090 @ 8
+2 wx+ 9090 @ 8
 x 16 @ 0
 EOF
 EXPECT=<<EOF
@@ -425,9 +425,9 @@ EOF
 RUN
 
 FILE=malloc://1024
-NAME=address after wxs at tmpseek
+NAME=address after wx+ at tmpseek
 CMDS=<<EOF
-2 wxs 9090 @ 8
+2 wx+ 9090 @ 8
 ?vi $$
 EOF
 EXPECT=<<EOF
