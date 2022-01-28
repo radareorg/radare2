@@ -209,6 +209,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	if (mask & R_ANAL_OP_MASK_DISASM) {
+		char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+		if (str) {
+			char *p = r_str_replace (strdup (str), "$", "0x", true);
+			if (p) {
+				r_str_replace_char (p, '#', 0);
+				op->mnemonic = p;
+				free (str);
+			}
+		}
+	}
 	if (n < 1 || insn->size < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
