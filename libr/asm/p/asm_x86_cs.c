@@ -112,6 +112,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 #else
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
 #endif
+        //XXX: capstone lcall seg:off workaround, remove when capstone will be fixed
+        if (n>=1 && !strncmp (insn->mnemonic, "lcall", 5)) {
+                char* col = strchr (insn->op_str, ',');
+                if (col) *col++ = ':';
+                for (; col && *col; col++) *col = *(col + 1);
+        }
 	if (op) {
 		op->size = 0;
 	}
