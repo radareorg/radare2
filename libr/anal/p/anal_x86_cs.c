@@ -3363,6 +3363,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 #else
 	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 #endif
+	//XXX: capstone lcall seg:off workaround, remove when capstone will be fixed
+	if (n >= 1 && mode == CS_MODE_16 && !strncmp (insn->mnemonic, "lcall", 5)) {
+		(void) r_str_replace (insn->op_str, ", ", ":", 0);
+	}
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ANAL_OP_MASK_DISASM) {

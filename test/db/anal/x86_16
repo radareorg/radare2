@@ -161,3 +161,108 @@ EXPECT=<<EOF
 \           0000:000b     c3             ret
 EOF
 RUN
+
+
+NAME=x86-16 seg:off lcall addr replace with non-analysed func
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+wx 9090558bec9a0d0000005dc390558bec5dc3
+pd 1 @ 0x5
+EOF
+EXPECT=<<EOF
+            0000:0005     9a0d000000     lcall 0:0xd
+EOF
+RUN
+
+NAME=x86-16 seg:off ljmp addr replace with non-analysed func
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+wx 9090558becea0d0000005dc390558bec5dc3
+pd 1 @ 0x5
+EOF
+EXPECT=<<EOF
+        ,=< 0000:0005     ea0d000000     ljmp 0:0xd
+EOF
+RUN
+
+NAME=x86-16 seg:off ljmp addr replace with analysed func
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+wx 9090558becea0d0000005dc390558bec5dc3
+af funcA @ 0xd
+pd 1 @ 0x5
+EOF
+EXPECT=<<EOF
+        ,=< 0000:0005     ea0d000000     ljmp funcA
+EOF
+RUN
+
+NAME=x86-16 seg:off ljmp addr replace with non-analysed func higher segment
+FILE=malloc://2048
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+e asm.seggrn=8
+s 0x400
+wx 9090558becea000004005dc3
+pd 1 @ 0x405
+EOF
+EXPECT=<<EOF
+        `=< 0000:0405     ea00000400     ljmp 4:0
+EOF
+RUN
+
+NAME=x86-16 seg:off ljmp addr replace with analysed func higher segment
+FILE=malloc://2048
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+e asm.seggrn=8
+s 0x400
+wx 558becea000004005dc3
+af funcA @ 0x400
+pd 1 @ 0x403
+EOF
+EXPECT=<<EOF
+\       `=< 0000:0403     ea00000400     ljmp funcA
+EOF
+RUN
+
+NAME=x86-16 seg:off lcall addr replace with non-analysed func higher segment
+FILE=malloc://2048
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+e asm.seggrn=8
+s 0x400
+wx 9090558bec9a000004005dc3
+pd 1 @ 0x405
+EOF
+EXPECT=<<EOF
+            0000:0405     9a00000400     lcall 4:0
+EOF
+RUN
+
+NAME=x86-16 seg:off lcall addr replace with analysed func higher segment
+FILE=malloc://2048
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=16
+e asm.seggrn=8
+s 0x400
+wx 558bec9a000004005dc3
+af funcA @ 0x400
+pd 1 @ 0x403
+EOF
+EXPECT=<<EOF
+|           0000:0403     9a00000400     lcall funcA
+EOF
+RUN
+
+
