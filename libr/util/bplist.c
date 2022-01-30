@@ -32,14 +32,14 @@
 #define BPLIST_VERSION          ((ut8*)"00")
 #define BPLIST_VERSION_SIZE     2
 
-typedef struct __attribute__((packed)) {
+R_PACKED (typedef struct {
 	ut8 unused[6];
 	ut8 offset_size;
 	ut8 ref_size;
 	ut64 num_objects;
 	ut64 root_object_index;
 	ut64 offset_table_offset;
-} bplist_trailer_t;
+}) BPlistTrailer;
 
 enum {
 	BPLIST_NULL = 0x00,
@@ -489,7 +489,7 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 		return false;
 	}
 
-	if (data_len < BPLIST_MAGIC_SIZE + BPLIST_VERSION_SIZE + sizeof (bplist_trailer_t)) {
+	if (data_len < BPLIST_MAGIC_SIZE + BPLIST_VERSION_SIZE + sizeof (BPlistTrailer)) {
 		eprintf ("plist data is to small to hold a binary plist\n");
 		return false;
 	}
@@ -500,10 +500,10 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 	}
 
 	const ut8 *start_data = data + BPLIST_MAGIC_SIZE + BPLIST_VERSION_SIZE;
-	const ut8 *end_data = data + data_len - sizeof (bplist_trailer_t);
+	const ut8 *end_data = data + data_len - sizeof (BPlistTrailer);
 
 	// now parse trailer
-	bplist_trailer_t *trailer = (bplist_trailer_t*)end_data;
+	BPlistTrailer *trailer = (BPlistTrailer*)end_data;
 
 	ut8 offset_size = trailer->offset_size;
 	ut8 ref_size = trailer->ref_size;
