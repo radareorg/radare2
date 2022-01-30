@@ -1,3 +1,4 @@
+/* radare - LGPL - Copyright 2022 - pancake */
 /*
  * bplist.c
  * Binary plist implementation
@@ -60,22 +61,6 @@ enum {
 	BPLIST_MASK = 0xF0
 };
 
-union _uintptr {
-	const void *src;
-	ut8 *u8ptr;
-	ut16 *u16ptr;
-	ut32 *u32ptr;
-	ut64 *u64ptr;
-};
-
-#define get_unaligned(ptr)			  \
-	({                                              \
-	 struct __attribute__((packed)) {		  \
-	 typeof(*(ptr)) __v;			  \
-	 } *__p = (void *) (ptr);			  \
-	 __p->__v;					  \
-	 })
-
 #ifndef bswap32
 #define bswap32(x)   ((((x) & 0xFF000000) >> 24) \
 		| (((x) & 0x00FF0000) >>  8) \
@@ -98,7 +83,7 @@ union _uintptr {
 #ifdef __BIG_ENDIAN__
 #define be64toh(x) (x)
 #else
-#define be64toh(x) bswap64(x)
+#define be64toh(x) bswap64 (x)
 #endif
 #endif
 
@@ -116,12 +101,8 @@ static ut64 UINT_TO_HOST(const char *data, int n) {
 	return 0;
 }
 
-#define get_real_bytes(x) ((x) == (float) (x) ? sizeof(float) : sizeof(double))
-
-#if (defined(__LITTLE_ENDIAN__) \
-		&& !defined(__FLOAT_WORD_ORDER__)) \
-		|| (defined(__FLOAT_WORD_ORDER__) \
-				&& __FLOAT_WORD_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#if (defined(__LITTLE_ENDIAN__) && !defined(__FLOAT_WORD_ORDER__)) \
+	|| (defined(__FLOAT_WORD_ORDER__) && __FLOAT_WORD_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #define float_bswap64(x) bswap64(x)
 #define float_bswap32(x) bswap32(x)
 #else
@@ -159,15 +140,16 @@ static bool parse_uint_node(RBPlist *bplist, const char **bnode, ut8 size) {
 
 static double parse_real(const char **bnode, ut8 size) {
 	double realval = 0.0;
-	ut8 buf[8];
-
+	ut64 data = 0;
+	ut8 buf[8] = {0};
+	memcpy (&data, *bnode, sizeof (buf));
 	switch (1 << size) {
 	case sizeof(ut32):
-		*(ut32*)buf = float_bswap32 (get_unaligned((ut32*)*bnode));
+		*(ut32*)buf = float_bswap32 (data);
 		realval = *(float *) buf;
 		break;
 	case sizeof(ut64):
-		*(ut64*)buf = float_bswap64 (get_unaligned((uint64_t*)*bnode));
+		*(ut64*)buf = float_bswap64 (data);
 		realval = *(double *) buf;
 		break;
 	default:
@@ -482,9 +464,9 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 	BPlistTrailer *trailer = (BPlistTrailer*)end_data;
 	ut8 offset_size = trailer->offset_size;
 	ut8 ref_size = trailer->ref_size;
-	ut64 num_objects = be64toh(trailer->num_objects);
-	ut64 root_object = be64toh(trailer->root_object_index);
-	const ut8 *offset_table = (ut8 *)(data + be64toh(trailer->offset_table_offset));
+	ut64 num_objects = be64toh (trailer->num_objects);
+	ut64 root_object = be64toh (trailer->root_object_index);
+	const ut8 *offset_table = (ut8 *)(data + be64toh (trailer->offset_table_offset));
 
 	if (num_objects == 0) {
 		eprintf ("number of objects must be larger than 0\n");
