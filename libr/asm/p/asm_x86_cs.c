@@ -117,7 +117,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		char *tmp = r_str_replace (insn->op_str, ", ", ":", 0);
 		if (tmp != insn->op_str) {
 			strncpy (insn->op_str, tmp, strlen (insn->op_str));
-			free (tmp);
 		}
 	}
 	if (op) {

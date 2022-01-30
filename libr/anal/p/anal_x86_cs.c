@@ -3368,7 +3368,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		char *tmp = r_str_replace (insn->op_str, ", ", ":", 0);
 		if (tmp != insn->op_str) {
 			strncpy (insn->op_str, tmp, strlen (insn->op_str));
-			free (tmp);
 		}
 	}
 	if (n < 1) {
