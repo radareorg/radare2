@@ -113,7 +113,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
 #endif
         //XXX: capstone lcall seg:off workaround, remove when capstone will be fixed
-        if (n>=1 && mode == CS_MODE_16 && !strncmp (insn->mnemonic, "lcall", 5)) {
+        if (n >= 1 && mode == CS_MODE_16 && !strncmp (insn->mnemonic, "lcall", 5)) {
 		r_str_replace (insn->op_str, ", ", ":", 0);
         }
 	if (op) {
