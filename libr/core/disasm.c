@@ -5040,9 +5040,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
 					// @TODO: fcn->nargs should be updated somewhere and used here instead
-					nargs = r_anal_var_count (core->anal, fcn, 's', 1) +
-							r_anal_var_count (core->anal, fcn, 'b', 1) +
-							r_anal_var_count (core->anal, fcn, 'r', 1);
+					nargs = r_anal_var_count_args (fcn);
 				}
 				if (nargs > 0) {
 					ds_comment_esil (ds, true, false, "%s", ds->show_color? ds->pal_comment : "");

@@ -1686,6 +1686,9 @@ R_API void r_anal_function_update_analysis(RAnalFunction *fcn);
 R_API int r_anal_function_var_del_byindex(RAnal *a, ut64 fna, const char kind, int scope, ut32 idx);
 /* args */
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
+R_API int r_anal_var_count_all(RAnalFunction *fcn);
+R_API int r_anal_var_count_args(RAnalFunction *fcn);
+R_API int r_anal_var_count_locals(RAnalFunction *fcn);
 
 /* vars // globals. not here  */
 R_API bool r_anal_var_display(RAnal *anal, RAnalVar *var);

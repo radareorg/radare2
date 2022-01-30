@@ -1879,14 +1879,8 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts, PJ *
 		free (fcn_name_escaped);
 		pj_kn (pj, "offset", fcn->addr);
 		pj_ki (pj, "ninstr", fcn->ninstr);
-		pj_ki (pj, "nargs",
-			r_anal_var_count (core->anal, fcn, 'r', 1) +
-			r_anal_var_count (core->anal, fcn, 's', 1) +
-			r_anal_var_count (core->anal, fcn, 'b', 1));
-		pj_ki (pj, "nlocals",
-			r_anal_var_count (core->anal, fcn, 'r', 0) +
-			r_anal_var_count (core->anal, fcn, 's', 0) +
-			r_anal_var_count (core->anal, fcn, 'b', 0));
+		pj_ki (pj, "nargs", r_anal_var_count_args (fcn));
+		pj_ki (pj, "nlocals", r_anal_var_count_locals (fcn));
 		pj_kn (pj, "size", r_anal_function_linear_size (fcn));
 		pj_ki (pj, "stack", fcn->maxstack);
 		pj_ks (pj, "type", r_anal_functiontype_tostring (fcn->type));
@@ -2693,12 +2687,8 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 			r_anal_function_linear_size (fcn),
 			addrwidth, r_anal_function_max_addr (fcn),
 			fcn->meta.numcallrefs,
-			r_anal_var_count (core->anal, fcn, 's', 0) +
-			r_anal_var_count (core->anal, fcn, 'b', 0) +
-			r_anal_var_count (core->anal, fcn, 'r', 0),
-			r_anal_var_count (core->anal, fcn, 's', 1) +
-			r_anal_var_count (core->anal, fcn, 'b', 1) +
-			r_anal_var_count (core->anal, fcn, 'r', 1),
+			r_anal_var_count_locals (fcn),
+			r_anal_var_count_args (fcn),
 			fcn->meta.numrefs,
 			fcn->maxstack,
 			name,
@@ -2982,13 +2972,8 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	pj_ki (pj, "outdegree", outdegree);
 
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
-		pj_ki (pj, "nlocals", r_anal_var_count (core->anal, fcn, 'b', 0) +
-				r_anal_var_count (core->anal, fcn, 'r', 0) +
-				r_anal_var_count (core->anal, fcn, 's', 0));
-		pj_ki (pj, "nargs", r_anal_var_count (core->anal, fcn, 'b', 1) +
-				r_anal_var_count (core->anal, fcn, 'r', 1) +
-				r_anal_var_count (core->anal, fcn, 's', 1));
-
+		pj_ki (pj, "nlocals", r_anal_var_count_locals (fcn));
+		pj_ki (pj, "nargs", r_anal_var_count_args (fcn));
 		pj_k (pj, "bpvars");
 		r_anal_var_list_show (core->anal, fcn, 'b', 'j', pj);
 		pj_k (pj, "spvars");
@@ -3188,12 +3173,8 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_list_free (xrefs);
 
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
-		int args_count = r_anal_var_count (core->anal, fcn, 'b', 1);
-		args_count += r_anal_var_count (core->anal, fcn, 's', 1);
-		args_count += r_anal_var_count (core->anal, fcn, 'r', 1);
-		int var_count = r_anal_var_count (core->anal, fcn, 'b', 0);
-		var_count += r_anal_var_count (core->anal, fcn, 's', 0);
-		var_count += r_anal_var_count (core->anal, fcn, 'r', 0);
+		int args_count = r_anal_var_count_args (fcn);
+		int var_count = r_anal_var_count_locals (fcn);
 
 		r_cons_printf ("\nlocals: %d\nargs: %d\n", var_count, args_count);
 		r_anal_var_list_show (core->anal, fcn, 'b', 0, NULL);
