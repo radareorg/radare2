@@ -76,11 +76,6 @@ union _uintptr {
 	 __p->__v;					  \
 	 })
 
-
-#ifndef bswap16
-#define bswap16(x)   ((((x) & 0xFF00) >> 8) | (((x) & 0x00FF) << 8))
-#endif
-
 #ifndef bswap32
 #define bswap32(x)   ((((x) & 0xFF000000) >> 24) \
 		| (((x) & 0x00FF0000) >>  8) \
@@ -99,22 +94,6 @@ union _uintptr {
 		| (((x) & 0x00000000000000FFull) << 56))
 #endif
 
-#ifndef be16toh
-#ifdef __BIG_ENDIAN__
-#define be16toh(x) (x)
-#else
-#define be16toh(x) bswap16(x)
-#endif
-#endif
-
-#ifndef be32toh
-#ifdef __BIG_ENDIAN__
-#define be32toh(x) (x)
-#else
-#define be32toh(x) bswap32(x)
-#endif
-#endif
-
 #ifndef be64toh
 #ifdef __BIG_ENDIAN__
 #define be64toh(x) (x)
@@ -123,23 +102,19 @@ union _uintptr {
 #endif
 #endif
 
-#ifdef __BIG_ENDIAN__
-#define beNtoh(x,n) (x >> ((8-n) << 3))
-#else
-#define beNtoh(x,n) be64toh((x) << ((8-(n)) << 3))
-#endif
-
-#define UINT_TO_HOST(x, n) \
-	({ \
-	 union _uintptr __up; \
-	 __up.src = ((n) > 8) ? (x) + ((n) - 8) : (x); \
-	 ((n) >= 8 ? be64toh( get_unaligned(__up.u64ptr) ) : \
-	  ((n) == 4 ? be32toh( get_unaligned(__up.u32ptr) ) : \
-	   ((n) == 2 ? be16toh( get_unaligned(__up.u16ptr) ) : \
-	    ((n) == 1 ? *__up.u8ptr : \
-	     beNtoh( get_unaligned(__up.u64ptr), n) \
-	     )))); \
-	     })
+static ut64 UINT_TO_HOST(const char *data, int n) {
+	switch (n) {
+	case 1:
+		return r_read_be8 (data);
+	case 2:
+		return r_read_be16 (data);
+	case 4:
+		return r_read_be32 (data);
+	default:
+		return r_read_be64 (data);
+	}
+	return 0;
+}
 
 #define get_real_bytes(x) ((x) == (float) (x) ? sizeof(float) : sizeof(double))
 
@@ -225,6 +200,7 @@ static bool parse_unicode_node(RBPlist *bplist, const char **bnode, ut64 size) {
 	}
 	const ut8 *src = (const ut8*)*bnode;
  	if (!r_str_utf16_to_utf8 (dst, size, src, size, false)) {
+		free (dst);
 		return false;
 	}
 	//char *tmpstr = plist_utf16be_to_utf8 ((ut16*)(*bnode), size, &items_read, &items_written);
@@ -504,7 +480,6 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 
 	// now parse trailer
 	BPlistTrailer *trailer = (BPlistTrailer*)end_data;
-
 	ut8 offset_size = trailer->offset_size;
 	ut8 ref_size = trailer->ref_size;
 	ut64 num_objects = be64toh(trailer->num_objects);
