@@ -700,7 +700,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		bool timedout = true;
 		if (FD_ISSET (proc->stdout_fd, &rfds)) {
 			timedout = false;
-			char buf[0x500];
+			char buf[4096];
 			ssize_t sz = read (proc->stdout_fd, buf, sizeof (buf));
 			if (sz < 0) {
 				perror ("read");
@@ -712,7 +712,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		}
 		if (FD_ISSET (proc->stderr_fd, &rfds)) {
 			timedout = false;
-			char buf[0x500];
+			char buf[4096];
 			ssize_t sz = read (proc->stderr_fd, buf, sizeof (buf));
 			if (sz < 0) {
 				perror ("read");
