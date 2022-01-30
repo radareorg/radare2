@@ -769,6 +769,7 @@ R_API char *r_anal_var_get_constraints_readable(RAnalVar *var) {
 }
 
 R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
+	r_return_val_if_fail (fcn && a && type >= 0 && type <= 1, -1);
 	// type { local: 0, arg: 1 };
 	RList *list = r_anal_var_list (a, fcn, kind);
 	RAnalVar *var;
@@ -785,6 +786,30 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 	}
 	r_list_free (list);
 	return count[type];
+}
+
+R_API int r_anal_var_count_all(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, 0);
+	return r_pvector_len (&fcn->vars);
+}
+
+R_API int r_anal_var_count_args(RAnalFunction *fcn) {
+	r_return_val_if_fail (fcn, 0); // No function implies no variables, but probably mistake
+	int args = 0;
+	void **it;
+	r_pvector_foreach (&fcn->vars, it) {
+		RAnalVar *var = *it;
+		if (var->isarg) {
+			args++;
+		}
+	}
+	return args;
+}
+
+R_API int r_anal_var_count_locals(RAnalFunction *fcn) {
+	// if it's not an arg then it's local
+	int args = r_anal_var_count_args (fcn);
+	return r_anal_var_count_all (fcn) - args;
 }
 
 static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list) {
