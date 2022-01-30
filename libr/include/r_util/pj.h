@@ -27,6 +27,7 @@ typedef struct pj_t {
 	RStrBuf sb;
 	bool is_first;
 	bool is_key;
+	const char *comma;
 	char braces[R_PRINT_JSON_DEPTH_LIMIT];
 	int level;
 	PJEncodingStr str_encoding;
@@ -48,6 +49,7 @@ R_API const char *pj_string(PJ *pj);
 /* close the current json list or array */
 R_API PJ *pj_end(PJ *j);
 R_API void pj_raw(PJ *j, const char *k);
+R_API void pj_kraw(PJ *j);
 
 /* object, array */
 /* open new json list { */

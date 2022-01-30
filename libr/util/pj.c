@@ -10,11 +10,16 @@ R_API void pj_raw(PJ *j, const char *msg) {
 	}
 }
 
+R_API void pj_kraw(PJ *j) {
+	j->comma = ":";
+}
+
 static void pj_comma(PJ *j) {
 	r_return_if_fail (j);
 	if (!j->is_key) {
 		if (!j->is_first) {
-			pj_raw (j, ",");
+			pj_raw (j, j->comma);
+			j->comma = ",";
 		}
 	}
 	j->is_first = false;
@@ -26,6 +31,7 @@ R_API PJ *pj_new(void) {
 	if (j) {
 		r_strbuf_init (&j->sb);
 		j->is_first = true;
+		j->comma = ",";
 		j->str_encoding = PJ_ENCODING_STR_DEFAULT;
 		j->num_encoding = PJ_ENCODING_NUM_DEFAULT;
 	}
