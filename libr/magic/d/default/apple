@@ -375,3 +375,5 @@
 >8		lelong		-1		XCode Symbols file
 
 0		string		BCSymbolMap	BitCode symbol map file
+
+0		string		bplist00	Binary PLIST data stream

@@ -86,6 +86,7 @@ static const char *help_msg_pF[] = {
 	"pFx", "[len]", "Same with X509",
 	"pFX", "[len]", "print decompressed xz block",
 	"pFA", "[len]", "decode Android Binary XML from current block",
+	"pFB", "[j] [len]", "decode iOS Binary PLIST from current block",
 	NULL
 };
 
@@ -1334,6 +1335,25 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 			} else {
 				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 			}
+		}
+		break;
+	case 'B': // "pFB"
+		if (input[1] == '?') {
+			eprintf ("Usage: pFB[j] - parse binary plist format, check 'b'lock size on errors, pFBj for json output\n");
+		} else {
+			PJ *pj = r_core_pj_new (core);
+			if (!r_bplist_parse (pj, data, size)) {
+				eprintf ("Parse error\n");
+			}
+			char *s = pj_drain (pj);
+			if (input[1] == 'j') {
+				r_cons_printf ("%s\n", s);
+			} else {
+				char *r = r_print_json_human (s);
+				r_cons_printf ("%s\n", r);
+				free (r);
+			}
+			free (s);
 		}
 		break;
 	default:

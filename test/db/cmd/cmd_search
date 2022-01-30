@@ -1075,3 +1075,13 @@ EXPECT=<<EOF
 0x00000004 hit0_0 "ZZZZAAABAAA"
 EOF
 RUN
+
+NAME=/m on Info
+FILE=bins/other/Info.plist
+CMDS=<<EOF
+/m
+EOF
+EXPECT=<<EOF
+0x00000000 1 Binary PLIST data stream
+EOF
+RUN
