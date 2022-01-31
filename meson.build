@@ -1,3 +1,4 @@
+# jeje
 project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.49', version : '5.5.5')
 
 py3_exe = import('python').find_installation('python3')
