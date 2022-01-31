@@ -36,7 +36,7 @@ jobs:
       with:
         path: radare2*.zip
   w64-make:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -66,7 +66,7 @@ jobs:
         radare2 -v
   w32-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -83,7 +83,6 @@ jobs:
       run: |
         .github\vsdevenv.ps1
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w32 build
-        ninja -C build -j 2
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
@@ -106,7 +105,7 @@ jobs:
 #        name: radare2-w32-installer-git.exe
 #        path: radare2-win-installer\Output\radare2.exe
   w64-meson:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
     - name: Checkout
       uses: actions/checkout@v2
