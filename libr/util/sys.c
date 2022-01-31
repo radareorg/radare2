@@ -1240,11 +1240,12 @@ R_API void r_sys_set_environ(char **e) {
 
 R_API char *r_sys_whoami(void) {
 #if __WINDOWS__
-	char buf[32];
+	char buf[256];
 	DWORD buf_sz = sizeof (buf);
 	if (!GetUserName ((LPWSTR)buf, (LPDWORD)&buf_sz) ) {
 		return strdup ("?");
 	}
+	return strdup (buf);
 #elif __wasi__
 	return strdup ("user");
 #elif HAVE_TH_LOCAL

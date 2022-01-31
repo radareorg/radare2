@@ -113,7 +113,8 @@ if get_option('wasan')
   add_project_arguments('/DEBUG', language: 'c')
   add_project_arguments('/MD', language: 'c')
   add_project_arguments('/fsanitize=address', language: 'c')
-  add_project_arguments('/Z7', language: 'c')
+  # add_project_arguments('/Zi', language: 'c') # generate .pdb iirc
+  # add_project_arguments('/Z7', language: 'c') # generate .symbols instead of .pdb
   # add_project_arguments('/guard:cf', language: 'c')
 endif
 if cc.get_id() == 'clang-cl'
