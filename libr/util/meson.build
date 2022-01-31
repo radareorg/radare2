@@ -87,9 +87,9 @@ r_util_sources = [
   'sys_w32.c',
   'zip.c',
   'protobuf.c',
-  join_paths('regex','regcomp.c'),
-  join_paths('regex','regexec.c'),
-  join_paths('regex','regerror.c')
+  'regex/regcomp.c',
+  'regex/regexec.c',
+  'regex/regerror.c'
 ]
 
 if get_option('sdb_cgen')
@@ -120,8 +120,8 @@ r_util = library('r_util', r_util_sources,
 )
 
 r_util_dep = declare_dependency(link_with: r_util,
-                                include_directories: platform_inc,
-                                dependencies: r_util_deps)
+  include_directories: platform_inc,
+  dependencies: r_util_deps)
 
 pkgconfig_mod.generate(r_util,
   subdirs: ['libr', 'libr/sdb'],
