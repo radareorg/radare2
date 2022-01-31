@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022 - pancake */
+/* radare2 - LGPL - Copyright 2022 - pancake, Sylvain Pelissier */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -35,6 +35,8 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
+	char *str;
+
 	int mode = 0;
 	if (mode != omode || anal->bits != obits) {
 		cs_close (&hndl);
@@ -64,19 +66,45 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		goto beach;
 	}
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+		if (!r_str_cmp(insn->op_str, "0x", 2)) {
+			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+		} else {
+			str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " 0x": "", insn->op_str);
+		}
 		op->mnemonic = str;
 	}
-	op->id = insn->id;
 	opsize = op->size = insn->size;
+	op->id = insn->id;
 	switch (insn->id) {
+	case EVM_INS_SUB:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		break;
+	case EVM_INS_MOD:
+	case EVM_INS_SMOD:
+		op->type = R_ANAL_OP_TYPE_MOD;
+		break;
+	case EVM_INS_JUMP:
+		op->type = R_ANAL_OP_TYPE_JMP;
+		esilprintf (op, "32,sp,-=,sp,[1],pc,:=");
+		break;
+	case EVM_INS_JUMPI:
+		op->fail = op->addr + 1;
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		break;
+	case EVM_INS_MLOAD:
 	case EVM_INS_SLOAD:
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		break;
+	case EVM_INS_MSTORE:
 	case EVM_INS_MSTORE8:
 	case EVM_INS_SSTORE:
 		op->type = R_ANAL_OP_TYPE_STORE;
 		break;
+	case EVM_INS_LT:
+	case EVM_INS_GT:
+	case EVM_INS_SLT:
+	case EVM_INS_SGT:
+	case EVM_INS_EQ:
 	case EVM_INS_ISZERO:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
@@ -93,6 +121,8 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_GAS:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
+	case EVM_INS_MUL:
+	case EVM_INS_EXP:
 	case EVM_INS_MULMOD:
 		op->type = R_ANAL_OP_TYPE_MUL;
 		break;
@@ -105,6 +135,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_CALLDATALOAD:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
+	case EVM_INS_DIV:
 	case EVM_INS_SDIV:
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
@@ -127,7 +158,12 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_DUP14:
 	case EVM_INS_DUP15:
 	case EVM_INS_DUP16:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		break;
 	case EVM_INS_PUSH1:
+		esilprintf (op, "0x%s,sp,=[1],32,sp,+=", insn->op_str);
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		break;
 	case EVM_INS_PUSH2:
 	case EVM_INS_PUSH3:
 	case EVM_INS_PUSH4:
@@ -135,11 +171,60 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case EVM_INS_PUSH6:
 	case EVM_INS_PUSH9:
 	case EVM_INS_PUSH10:
-	case EVM_INS_PUSH26:
-	case EVM_INS_PUSH32:
+	case EVM_INS_PUSH11:
+	case EVM_INS_PUSH12:
+	case EVM_INS_PUSH13:
+	case EVM_INS_PUSH14:
+	case EVM_INS_PUSH15:
+	case EVM_INS_PUSH16:
+	case EVM_INS_PUSH17:
+	case EVM_INS_PUSH18:
+	case EVM_INS_PUSH19:
+	case EVM_INS_PUSH20:
+	case EVM_INS_PUSH21:
+	case EVM_INS_PUSH22:
+	case EVM_INS_PUSH23:
 		op->type = R_ANAL_OP_TYPE_PUSH;
 		break;
+	// Handle https://github.com/capstone-engine/capstone/pull/1231. Can be removed when merged.
+	case EVM_INS_PUSH24:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		opsize = op->size = 25;
+		break;
+	case EVM_INS_PUSH25:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		opsize = op->size = 26;
+		break;
+	case EVM_INS_PUSH26:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		opsize = op->size = 27;
+		break;
+	case EVM_INS_PUSH27:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		opsize = op->size = 28;
+		break;
+	case EVM_INS_PUSH28:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		opsize = op->size = 29;
+		break;
+	case EVM_INS_PUSH29:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		opsize = op->size = 30;
+		break;
+	case EVM_INS_PUSH30:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		opsize = op->size = 31;
+		break;
+	case EVM_INS_PUSH31:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		opsize = op->size = 32;
+		break;
+	case EVM_INS_PUSH32:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		opsize = op->size = 33;
+		break;
 	case EVM_INS_ADD:
+	case EVM_INS_ADDMOD:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		break;
 	case EVM_INS_POP:
@@ -184,12 +269,14 @@ static char *get_reg_profile(RAnal *anal) {
 
 static int archinfo(RAnal *anal, int q) {
 	switch (q) {
+	case R_ANAL_ARCHINFO_ALIGN:
+		return 0;
 	case R_ANAL_ARCHINFO_MAX_OP_SIZE:
-		return 4;
-	default:
+		return 33;
+	case R_ANAL_ARCHINFO_MIN_OP_SIZE:
 		return 1;
 	}
-	return 1;
+	return 0;
 }
 
 RAnalPlugin r_anal_plugin_evm_cs = {
