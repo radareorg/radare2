@@ -594,14 +594,13 @@ if get_option('local') and get_option('default_library') == 'shared'
   rpath_lib = '$ORIGIN'
 endif
 
-subdir('libr/util')
+subdir('shlr')
+subdir(join_paths('libr','util'))
+subdir(join_paths('libr','io'))
 subdir('libr/socket')
 subdir('libr/hash')
 subdir('libr/crypto')
-subdir('shlr')
 subdir('libr/cons')
-subdir('shlr/gdb')
-subdir('libr/io')
 subdir('libr/bp')
 subdir('libr/syscall')
 subdir('libr/search')

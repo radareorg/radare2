@@ -123,7 +123,7 @@ r_util_dep = declare_dependency(link_with: r_util,
                                 dependencies: r_util_deps)
 
 pkgconfig_mod.generate(r_util,
-  subdirs: ['libr', 'libr/sdb'],
+  subdirs: ['libr', join_paths('libr','sdb')],
   version: r2_version,
   libraries: pkgcfg_sanitize_libs,
   name: 'r_util',

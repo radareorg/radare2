@@ -1,3 +1,4 @@
+subdir('gdb')
 # handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
