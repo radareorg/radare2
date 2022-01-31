@@ -4,6 +4,7 @@ if "%*" == "clean" (
   wsl rm -rf b vs
   exit /b 0
 )
+
 call ninja.exe --version > NUL 2> NUL && (
   if EXIST b (
     REM meson compile -C b

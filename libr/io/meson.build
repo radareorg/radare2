@@ -82,6 +82,7 @@ endif
 
 r_io = library('r_io', r_io_sources,
   include_directories: platform_inc,
+  link_with: [r_util, r_socket],
   dependencies: r_io_deps,
   c_args: library_cflags,
   install: true,

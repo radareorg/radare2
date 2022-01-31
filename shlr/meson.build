@@ -69,42 +69,42 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
   endif
 
   rel_cs_files = [
-    join_paths('arch','AArch64','AArch64BaseInfo.c'),
-    join_paths('arch','AArch64','AArch64Disassembler.c'),
-    join_paths('arch','AArch64','AArch64InstPrinter.c'),
-    join_paths('arch','AArch64','AArch64Mapping.c'),
-    join_paths('arch','AArch64','AArch64Module.c'),
-    join_paths('arch','ARM','ARMDisassembler.c'),
-    join_paths('arch','ARM','ARMInstPrinter.c'),
-    join_paths('arch','ARM','ARMMapping.c'),
-    join_paths('arch','ARM','ARMModule.c'),
-    join_paths('arch','Mips','MipsDisassembler.c'),
-    join_paths('arch','Mips','MipsInstPrinter.c'),
-    join_paths('arch','Mips','MipsMapping.c'),
-    join_paths('arch','Mips','MipsModule.c'),
-    join_paths('arch','PowerPC','PPCDisassembler.c'),
-    join_paths('arch','PowerPC','PPCInstPrinter.c'),
-    join_paths('arch','PowerPC','PPCMapping.c'),
-    join_paths('arch','PowerPC','PPCModule.c'),
-    join_paths('arch','Sparc','SparcDisassembler.c'),
-    join_paths('arch','Sparc','SparcInstPrinter.c'),
-    join_paths('arch','Sparc','SparcMapping.c'),
-    join_paths('arch','Sparc','SparcModule.c'),
-    join_paths('arch','SystemZ','SystemZDisassembler.c'),
-    join_paths('arch','SystemZ','SystemZInstPrinter.c'),
-    join_paths('arch','SystemZ','SystemZMapping.c'),
-    join_paths('arch','SystemZ','SystemZMCTargetDesc.c'),
-    join_paths('arch','SystemZ','SystemZModule.c'),
-    join_paths('arch','X86','X86ATTInstPrinter.c'),
-    join_paths('arch','X86','X86Disassembler.c'),
-    join_paths('arch','X86','X86DisassemblerDecoder.c'),
-    join_paths('arch','X86','X86IntelInstPrinter.c'),
-    join_paths('arch','X86','X86Mapping.c'),
-    join_paths('arch','X86','X86Module.c'),
-    join_paths('arch','XCore','XCoreDisassembler.c'),
-    join_paths('arch','XCore','XCoreInstPrinter.c'),
-    join_paths('arch','XCore','XCoreMapping.c'),
-    join_paths('arch','XCore','XCoreModule.c'),
+    'arch/AArch64/AArch64BaseInfo.c',
+    'arch/AArch64/AArch64Disassembler.c',
+    'arch/AArch64/AArch64InstPrinter.c',
+    'arch/AArch64/AArch64Mapping.c',
+    'arch/AArch64/AArch64Module.c',
+    'arch/ARM/ARMDisassembler.c',
+    'arch/ARM/ARMInstPrinter.c',
+    'arch/ARM/ARMMapping.c',
+    'arch/ARM/ARMModule.c',
+    'arch/Mips/MipsDisassembler.c',
+    'arch/Mips/MipsInstPrinter.c',
+    'arch/Mips/MipsMapping.c',
+    'arch/Mips/MipsModule.c',
+    'arch/PowerPC/PPCDisassembler.c',
+    'arch/PowerPC/PPCInstPrinter.c',
+    'arch/PowerPC/PPCMapping.c',
+    'arch/PowerPC/PPCModule.c',
+    'arch/Sparc/SparcDisassembler.c',
+    'arch/Sparc/SparcInstPrinter.c',
+    'arch/Sparc/SparcMapping.c',
+    'arch/Sparc/SparcModule.c',
+    'arch/SystemZ/SystemZDisassembler.c',
+    'arch/SystemZ/SystemZInstPrinter.c',
+    'arch/SystemZ/SystemZMapping.c',
+    'arch/SystemZ/SystemZMCTargetDesc.c',
+    'arch/SystemZ/SystemZModule.c',
+    'arch/X86/X86ATTInstPrinter.c',
+    'arch/X86/X86Disassembler.c',
+    'arch/X86/X86DisassemblerDecoder.c',
+    'arch/X86/X86IntelInstPrinter.c',
+    'arch/X86/X86Mapping.c',
+    'arch/X86/X86Module.c',
+    'arch/XCore/XCoreDisassembler.c',
+    'arch/XCore/XCoreInstPrinter.c',
+    'arch/XCore/XCoreMapping.c',
+    'arch/XCore/XCoreModule.c',
     'cs.c',
     'MCInst.c',
     'MCInstrDesc.c',
@@ -113,24 +113,24 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'utils.c',
   ]
   rel_cs4_files = [
-    join_paths('arch','M680X','M680XDisassembler.c'),
-    join_paths('arch','M680X','M680XInstPrinter.c'),
-    join_paths('arch','M680X','M680XModule.c'),
-    join_paths('arch','M68K','M68KDisassembler.c'),
-    join_paths('arch','M68K','M68KInstPrinter.c'),
-    join_paths('arch','M68K','M68KModule.c'),
-    join_paths('arch','TMS320C64x','TMS320C64xDisassembler.c'),
-    join_paths('arch','TMS320C64x','TMS320C64xInstPrinter.c'),
-    join_paths('arch','TMS320C64x','TMS320C64xMapping.c'),
-    join_paths('arch','TMS320C64x','TMS320C64xModule.c'),
+    'arch/M680X/M680XDisassembler.c',
+    'arch/M680X/M680XInstPrinter.c',
+    'arch/M680X/M680XModule.c',
+    'arch/M68K/M68KDisassembler.c',
+    'arch/M68K/M68KInstPrinter.c',
+    'arch/M68K/M68KModule.c',
+    'arch/TMS320C64x/TMS320C64xDisassembler.c',
+    'arch/TMS320C64x/TMS320C64xInstPrinter.c',
+    'arch/TMS320C64x/TMS320C64xMapping.c',
+    'arch/TMS320C64x/TMS320C64xModule.c',
   ]
   rel_cs5_files = [
-    join_paths('arch','X86','X86InstPrinterCommon.c'),
+    'arch/X86/X86InstPrinterCommon.c',
     # Add riscv files
-    join_paths('arch','RISCV','RISCVMapping.c'),
-    join_paths('arch','RISCV','RISCVModule.c'),
-    join_paths('arch','RISCV','RISCVInstPrinter.c'),
-    join_paths('arch','RISCV','RISCVDisassembler.c')
+    'arch/RISCV/RISCVMapping.c',
+    'arch/RISCV/RISCVModule.c',
+    'arch/RISCV/RISCVInstPrinter.c',
+    'arch/RISCV/RISCVDisassembler.c'
   ]
 
   user_plugins = get_option('plugins').split(',')
@@ -230,10 +230,10 @@ bochs_dep = declare_dependency(
 
 # handle java dependency
 java_files = [
-  join_paths('java','class.c'),
-  join_paths('java','code.c'),
-  join_paths('java','dsojson.c'),
-  join_paths('java','ops.c'),
+  'java/class.c',
+  'java/code.c',
+  'java/dsojson.c',
+  'java/ops.c',
   #'java/main.c',
 ]
 
@@ -253,14 +253,14 @@ java_dep = declare_dependency(
 
 # handle qnx dependency
 qnx_files = [
-  join_paths('qnx','src','core.c'),
-  join_paths('qnx','src','libqnxr.c'),
-  join_paths('qnx','src','packet.c'),
-  join_paths('qnx','src','sigutil.c'),
-  join_paths('qnx','src','utils.c'),
+  'qnx/src/core.c',
+  'qnx/src/libqnxr.c',
+  'qnx/src/packet.c',
+  'qnx/src/sigutil.c',
+  'qnx/src/utils.c',
 ]
 
-qnx_inc = [platform_inc, include_directories(join_paths('qnx','include'))]
+qnx_inc = [platform_inc, include_directories('qnx/include')]
 
 libr2qnx = static_library('r2qnx', qnx_files,
   dependencies: [r_socket_dep],
@@ -272,7 +272,6 @@ qnx_dep = declare_dependency(
   link_with: libr2qnx,
   include_directories: qnx_inc
 )
-
 
 # handle lz4 dependency (unused?)
 lz4_dep = dependency('liblz4', required: false)
@@ -298,112 +297,6 @@ else
 endif
 
 
-# handle zip dependency
-zip_dep = dependency('libzip', required: false)
-if not zip_dep.found() or not get_option('use_sys_zip')
-  message('Use bundled zip')
-
-  zip_files = [
-    join_paths('zip','zip','zip_add.c'),
-    join_paths('zip','zip','zip_add_dir.c'),
-    join_paths('zip','zip','zip_add_entry.c'),
-    join_paths('zip','zip','zip_close.c'),
-    join_paths('zip','zip','zip_delete.c'),
-    join_paths('zip','zip','zip_dir_add.c'),
-    join_paths('zip','zip','zip_dirent.c'),
-    join_paths('zip','zip','zip_discard.c'),
-    join_paths('zip','zip','zip_entry.c'),
-    join_paths('zip','zip','zip_err_str.c'),
-    join_paths('zip','zip','zip_error.c'),
-    #join_paths('zip','zip','zip_error_clear.c'),
-    join_paths('zip','zip','zip_error_get.c'),
-    join_paths('zip','zip','zip_error_get_sys_type.c'),
-    join_paths('zip','zip','zip_error_strerror.c'),
-    join_paths('zip','zip','zip_error_to_str.c'),
-    join_paths('zip','zip','zip_extra_field.c'),
-    join_paths('zip','zip','zip_extra_field_api.c'),
-    join_paths('zip','zip','zip_fclose.c'),
-    join_paths('zip','zip','zip_fdopen.c'),
-    join_paths('zip','zip','zip_file_add.c'),
-    #join_paths('zip','zip','zip_file_error_clear.c'),
-    join_paths('zip','zip','zip_file_error_get.c'),
-    join_paths('zip','zip','zip_file_get_comment.c'),
-    join_paths('zip','zip','zip_file_get_offset.c'),
-    join_paths('zip','zip','zip_file_rename.c'),
-    join_paths('zip','zip','zip_file_replace.c'),
-    join_paths('zip','zip','zip_file_set_comment.c'),
-    join_paths('zip','zip','zip_file_strerror.c'),
-    join_paths('zip','zip','zip_filerange_crc.c'),
-    join_paths('zip','zip','zip_fopen.c'),
-    join_paths('zip','zip','zip_fopen_encrypted.c'),
-    join_paths('zip','zip','zip_fopen_index.c'),
-    join_paths('zip','zip','zip_fopen_index_encrypted.c'),
-    join_paths('zip','zip','zip_fread.c'),
-    join_paths('zip','zip','zip_get_archive_comment.c'),
-    join_paths('zip','zip','zip_get_archive_flag.c'),
-    join_paths('zip','zip','zip_get_compression_implementation.c'),
-    join_paths('zip','zip','zip_get_encryption_implementation.c'),
-    join_paths('zip','zip','zip_get_file_comment.c'),
-    join_paths('zip','zip','zip_get_name.c'),
-    join_paths('zip','zip','zip_get_num_entries.c'),
-    join_paths('zip','zip','zip_get_num_files.c'),
-    join_paths('zip','zip','zip_name_locate.c'),
-    join_paths('zip','zip','zip_new.c'),
-    join_paths('zip','zip','zip_open.c'),
-    join_paths('zip','zip','zip_rename.c'),
-    join_paths('zip','zip','zip_replace.c'),
-    join_paths('zip','zip','zip_set_archive_comment.c'),
-    join_paths('zip','zip','zip_set_archive_flag.c'),
-    join_paths('zip','zip','zip_set_default_password.c'),
-    join_paths('zip','zip','zip_set_file_comment.c'),
-    join_paths('zip','zip','zip_set_file_compression.c'),
-    join_paths('zip','zip','zip_set_name.c'),
-    join_paths('zip','zip','zip_source_buffer.c'),
-    join_paths('zip','zip','zip_source_close.c'),
-    join_paths('zip','zip','zip_source_crc.c'),
-    join_paths('zip','zip','zip_source_deflate.c'),
-    join_paths('zip','zip','zip_source_error.c'),
-    join_paths('zip','zip','zip_source_file.c'),
-    join_paths('zip','zip','zip_source_filep.c'),
-    join_paths('zip','zip','zip_source_free.c'),
-    join_paths('zip','zip','zip_source_function.c'),
-    join_paths('zip','zip','zip_source_layered.c'),
-    join_paths('zip','zip','zip_source_open.c'),
-    join_paths('zip','zip','zip_source_pkware.c'),
-    join_paths('zip','zip','zip_source_pop.c'),
-    join_paths('zip','zip','zip_source_read.c'),
-    join_paths('zip','zip','zip_source_stat.c'),
-    join_paths('zip','zip','zip_source_window.c'),
-    join_paths('zip','zip','zip_source_zip.c'),
-    join_paths('zip','zip','zip_source_zip_new.c'),
-    join_paths('zip','zip','zip_stat.c'),
-    join_paths('zip','zip','zip_stat_index.c'),
-    join_paths('zip','zip','zip_stat_init.c'),
-    join_paths('zip','zip','zip_strerror.c'),
-    join_paths('zip','zip','zip_string.c'),
-    join_paths('zip','zip','zip_unchange.c'),
-    join_paths('zip','zip','zip_unchange_all.c'),
-    join_paths('zip','zip','zip_unchange_archive.c'),
-    join_paths('zip','zip','zip_unchange_data.c'),
-    join_paths('zip','zip','zip_utf-8.c')
-  ]
-
-  zip_inc = [platform_inc, include_directories('zip/include')]
-
-  libr2zip = static_library('r2zip', zip_files,
-    include_directories: zip_inc,
-    implicit_include_directories: false,
-    dependencies: zlib_dep
-  )
-
-  zip_dep = declare_dependency(
-    link_with: libr2zip,
-    include_directories: zip_inc
-  )
-else
-  message('Use system-provided zip library')
-endif
-
 
 # handle grub dependency
 grub_files = [
@@ -413,52 +306,52 @@ grub_files = [
   #'grub/fs/befs.c',
   #'grub/fs/befs_be.c',
   #'grub/fs/btrfs.c',
-  join_paths('grub','fs','cpio.c'),
-  join_paths('grub','fs','ext2.c'),
-  join_paths('grub','fs','fat.c'),
-  join_paths('grub','fs','fb.c'),
-  join_paths('grub','fs','fshelp.c'),
-  join_paths('grub','fs','hfs.c'),
-  join_paths('grub','fs','hfsplus.c'),
-  join_paths('grub','fs','iso9660.c'),
-  join_paths('grub','fs','jfs.c'),
-  join_paths('grub','fs','minix.c'),
-  #join_paths('grub','fs','minix2.c'),
-  #join_paths('grub','fs','nilfs2.c'),
-  join_paths('grub','fs','ntfs.c'),
-  join_paths('grub','fs','ntfscomp.c'),
-  join_paths('grub','fs','reiserfs.c'),
-  join_paths('grub','fs','sfs.c'),
-  join_paths('grub','fs','tar.c'),
-  join_paths('grub','fs','udf.c'),
-  join_paths('grub','fs','ufs.c'),
-  join_paths('grub','fs','ufs2.c'),
-  join_paths('grub','fs','xfs.c'),
-  join_paths('grub','grubfs.c'),
-  join_paths('grub','kern','device.c'),
-  join_paths('grub','kern','disk.c'),
-  join_paths('grub','kern','env.c'),
-  join_paths('grub','kern','err.c'),
-  join_paths('grub','kern','file.c'),
-  join_paths('grub','kern','fs.c'),
-  join_paths('grub','kern','list.c'),
-  join_paths('grub','kern','misc.c'),
-  join_paths('grub','kern','mm.c'),
-  join_paths('grub','kern','partition.c'),
-  join_paths('grub','kern','term.c'),
-  join_paths('grub','kern','time.c'),
-  #join_paths('grub','main.c'),
-  #join_paths('grub','partmap','acorn.c'),
-  join_paths('grub','partmap','amiga.c'),
-  join_paths('grub','partmap','apple.c'),
-  join_paths('grub','partmap','bsdlabel.c'),
-  join_paths('grub','partmap','gpt.c'),
-  join_paths('grub','partmap','msdos.c'),
-  join_paths('grub','partmap','sun.c'),
-  join_paths('grub','partmap','sunpc.c'),
+  'grub/fs/cpio.c',
+  'grub/fs/ext2.c',
+  'grub/fs/fat.c',
+  'grub/fs/fb.c',
+  'grub/fs/fshelp.c',
+  'grub/fs/hfs.c',
+  'grub/fs/hfsplus.c',
+  'grub/fs/iso9660.c',
+  'grub/fs/jfs.c',
+  'grub/fs/minix.c',
+  #'grub/fs/minix2.c',
+  #'grub/fs/nilfs2.c',
+  'grub/fs/ntfs.c',
+  'grub/fs/ntfscomp.c',
+  'grub/fs/reiserfs.c',
+  'grub/fs/sfs.c',
+  'grub/fs/tar.c',
+  'grub/fs/udf.c',
+  'grub/fs/ufs.c',
+  'grub/fs/ufs2.c',
+  'grub/fs/xfs.c',
+  'grub/grubfs.c',
+  'grub/kern/device.c',
+  'grub/kern/disk.c',
+  'grub/kern/env.c',
+  'grub/kern/err.c',
+  'grub/kern/file.c',
+  'grub/kern/fs.c',
+  'grub/kern/list.c',
+  'grub/kern/misc.c',
+  'grub/kern/mm.c',
+  'grub/kern/partition.c',
+  'grub/kern/term.c',
+  'grub/kern/time.c',
+  #'grub/main.c',
+  #'grub/partmap/acorn.c',
+  'grub/partmap/amiga.c',
+  'grub/partmap/apple.c',
+  'grub/partmap/bsdlabel.c',
+  'grub/partmap/gpt.c',
+  'grub/partmap/msdos.c',
+  'grub/partmap/sun.c',
+  'grub/partmap/sunpc.c',
 ]
 
-grub_inc = [platform_inc, include_directories('grub', join_paths('grub','include'))]
+grub_inc = [platform_inc, include_directories('grub', 'grub/include')]
 
 libr2grub = static_library('r2grub', grub_files,
   dependencies: [r_util_dep],
@@ -473,11 +366,11 @@ grub_dep = declare_dependency(
 
 # handle winkd dependency
 winkd_files = [
-  join_paths('winkd','iob_pipe.c'),
-  join_paths('winkd','iob_net.c'),
-  join_paths('winkd','kd.c'),
-  join_paths('winkd','transport.c'),
-  join_paths('winkd','winkd.c'),
+  'winkd/iob_pipe.c',
+  'winkd/iob_net.c',
+  'winkd/kd.c',
+  'winkd/transport.c',
+  'winkd/winkd.c',
 ]
 
 winkd_inc = [platform_inc, include_directories('winkd')]
@@ -514,7 +407,7 @@ ar_dep = declare_dependency(
 
 # handle mpc dependency
 mpc_files = [
-  join_paths('mpc','mpc.c')
+  'mpc/mpc.c'
 ]
 
 mpc_inc = [platform_inc, include_directories(['mpc'])]
@@ -531,7 +424,7 @@ mpc_dep = declare_dependency(
 
 # handle yxml dependency
 yxml_files = [
-  join_paths('yxml','yxml.c')
+  'yxml/yxml.c'
 ]
 
 yxml_inc = [platform_inc, include_directories(['yxml'])]

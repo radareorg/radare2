@@ -41,6 +41,8 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - uses: actions/setup-python@v2
+#      with:
+#        python-version: '3.7'
     - name: Preparing nmake
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -48,7 +50,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install meson ninja r2pipe wget
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+        pip install ninja r2pipe wget
     - name: Extract r2 version
       run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
       id: r2v
@@ -59,7 +62,7 @@ jobs:
         call configure
         call make
     - name: Test executable
-      continue-on-error: true
+#      continue-on-error: true
       shell: cmd
       run: |
         cd prefix\bin
@@ -71,10 +74,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - uses: actions/setup-python@v2
+#      with:
+#        python-version: '3.7'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install meson ninja r2pipe wget
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+        pip install ninja r2pipe wget
     - name: Extract r2 version
       run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
       id: r2v
@@ -110,6 +116,8 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - uses: actions/setup-python@v2
+#      with:
+#        python-version: '3.7'
     - name: Preparing nmake
       uses: ilammy/msvc-dev-cmd@v1
       with:
@@ -117,7 +125,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install meson ninja r2pipe wget
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+        pip install ninja r2pipe wget
     - name: Extract r2 version
       run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
       id: r2v

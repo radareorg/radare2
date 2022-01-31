@@ -25,6 +25,7 @@ r_crypto_sources = [
 r_crypto = library('r_crypto', r_crypto_sources,
   include_directories: [platform_inc],
   dependencies: [r_util_dep],
+  link_with: [r_util],
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
