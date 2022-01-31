@@ -539,6 +539,7 @@ r_util_files = [
   join_paths('include','r_util','r_diff.h'),
   join_paths('include','r_util','r_file.h'),
   join_paths('include','r_util','r_graph.h'),
+  join_paths('include','r_util','bplist.h'),
   join_paths('include','r_util','r_graph_drawable.h'),
   join_paths('include','r_util','r_hex.h'),
   join_paths('include','r_util','r_idpool.h'),
