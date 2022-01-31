@@ -237,7 +237,7 @@ R_API void r_io_wundo_list(RIO *io) {
 
 	if (io->undo.w_init) {
 		r_list_foreach (io->undo.w_list, iter, u) {
-			io->cb_printf ("%02d %c %zu %08" PFMT64x ": ", i, u->set ? '+' : '-', u->len, u->off);
+			io->cb_printf ("%02d %c %u %08" PFMT64x ": ", i, u->set ? '+' : '-', (int)u->len, u->off);
 			len = (u->len > BW) ? BW : u->len;
 			for (j = 0; j < len; j++) {
 				io->cb_printf ("%02x ", u->o[j]);

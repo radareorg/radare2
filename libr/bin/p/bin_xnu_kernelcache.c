@@ -242,9 +242,6 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 
 beach:
 	r_buf_free (fbuf);
-	if (obj) {
-		obj->cache_buf = NULL;
-	}
 	MACH0_(mach0_free) (main_mach0);
 	return false;
 }
