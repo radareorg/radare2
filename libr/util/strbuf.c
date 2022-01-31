@@ -235,7 +235,8 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 		sb->buf[sb->len + l] = 0;
 		R_FREE (sb->ptr);
 	} else {
-		int newlen = sb->len + l + 4096;
+		int ll = (l < 256)? 256: (l * 2);
+		int newlen = sb->len + ll;
 		char *p = sb->ptr;
 		bool allocated = true;
 		if (!sb->ptr) {
