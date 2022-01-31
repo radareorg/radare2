@@ -10,15 +10,16 @@ r_socket_sources = [
   'run.c',
 ]
 
-dependencies = [utl, r_util_dep, platform_deps]
+r_util_deps = [utl, r_util_dep, platform_deps]
 
 if use_sys_openssl
-  dependencies += [sys_openssl]
+  r_util_deps += [sys_openssl]
 endif
 
 r_socket = library('r_socket', r_socket_sources,
   include_directories: [platform_inc],
-  dependencies: dependencies,
+  dependencies: r_util_deps,
+  link_with: [r_util],
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
