@@ -225,7 +225,6 @@ const char *file_fmttime(ut32 v, int local, char *pp) {
 	}
 	// TODO i dont like string spoons
 	pp[strcspn (pp, "\n")] = '\0';
-	struct tm timestruct;
 	return pp;
 }
 #endif
