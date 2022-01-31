@@ -594,24 +594,26 @@ if get_option('local') and get_option('default_library') == 'shared'
   rpath_lib = '$ORIGIN'
 endif
 
+
+subdir(join_paths('libr','util'))
 subdir('libr/socket')
-
-subdir('libr/cons/d')
-subdir('libr/magic/d')
-subdir('libr/flag/d')
-
-subdir('libr/main')
 subdir('libr/hash')
 subdir('libr/crypto')
+subdir('shlr')
+subdir(join_paths('libr', 'cons', 'd'))
+subdir('libr/magic/d')
+subdir('libr/flag/d')
 subdir('libr/cons')
+subdir('libr/config')
 subdir('libr/bp')
 subdir('libr/syscall')
 subdir('libr/search')
 subdir('libr/magic')
 subdir('libr/flag')
 subdir('libr/reg')
+subdir(join_paths('shlr','gdb'))
+subdir(join_paths('libr','io'))
 subdir('libr/bin')
-subdir('libr/config')
 subdir('libr/parse')
 subdir('libr/lang')
 subdir('libr/asm')
@@ -621,11 +623,8 @@ subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
 
-subdir(join_paths('libr','util'))
+subdir('libr/main')
 
-subdir('shlr')
-subdir(join_paths('shlr','gdb'))
-subdir(join_paths('libr','io'))
 
 # subdir(join_paths('libr','anal','d'))
 # subdir(join_paths('libr','asm','d'))
