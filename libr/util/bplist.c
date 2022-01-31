@@ -278,7 +278,7 @@ static bool parse_uid_node(RBPlist *bplist, const char **bnode, ut8 size) {
 	long long intval = UINT_TO_HOST (*bnode, size);
 	if (intval > UINT32_MAX) {
 		eprintf ("%s: value %" PRIu64 " too large for UID node (must be <= %u)\n", __func__, (ut64)intval, UINT32_MAX);
-		return NULL;
+		return false;
 	}
 
 	(*bnode) += size;
