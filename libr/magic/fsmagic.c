@@ -58,6 +58,7 @@
 #endif
 #undef HAVE_MAJOR
 
+#ifdef	S_IFLNK
 static int bad_link(RMagic *ms, int err, char *buf) {
 #ifdef ELOOP
 	const char *errfmt = (err == ELOOP)?
@@ -70,10 +71,12 @@ static int bad_link(RMagic *ms, int err, char *buf) {
 		file_error (ms, err, errfmt, buf);
 		return -1;
 	}
-	if (file_printf (ms, errfmt, buf) == -1)
+	if (file_printf (ms, errfmt, buf) == -1) {
 		return -1;
+	}
 	return 1;
 }
+#endif
 
 int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 	int ret = 0;
@@ -234,15 +237,17 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 						file_error (ms, 0, "path too long: `%s'", buf);
 						return -1;
 					}
-					if (file_printf (ms, "path too long: `%s'", fn) == -1)
+					if (file_printf (ms, "path too long: `%s'", fn) == -1) {
 						return -1;
+					}
 					return 1;
 				}
 				snprintf (buf2, sizeof (buf2), "%s%s", fn, buf);
 				tmp = buf2;
 			}
-			if (stat (tmp, &tstatbuf) < 0)
+			if (stat (tmp, &tstatbuf) < 0) {
 				return bad_link(ms, errno, buf);
+			}
 		}
 
 		/* Otherwise, handle it. */
