@@ -50,7 +50,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install meson==0.59.0 ninja==1.9.0 r2pipe wget
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+        pip install ninja r2pipe wget
     - name: Extract r2 version
       run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
       id: r2v
@@ -78,7 +79,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install meson==0.59.0 ninja==1.9.0 r2pipe wget
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+        pip install ninja r2pipe wget
     - name: Extract r2 version
       run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
       id: r2v
@@ -123,7 +125,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install meson==0.59.0 ninja==1.9.0 r2pipe wget
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+        pip install ninja r2pipe wget
     - name: Extract r2 version
       run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
       id: r2v
