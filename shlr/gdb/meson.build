@@ -24,7 +24,7 @@ gdb_inc = [
 
 libr2gdb = static_library('r2gdb', gdb_files,
   include_directories: gdb_inc,
-  dependencies: [r_util_dep, r_cons_dep],
+#   dependencies: [r_cons_dep],
   implicit_include_directories: false
 )
 

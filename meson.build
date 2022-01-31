@@ -594,10 +594,13 @@ if get_option('local') and get_option('default_library') == 'shared'
   rpath_lib = '$ORIGIN'
 endif
 
-subdir('shlr')
-subdir(join_paths('libr','util'))
-subdir(join_paths('libr','io'))
 subdir('libr/socket')
+
+subdir('libr/cons/d')
+subdir('libr/magic/d')
+subdir('libr/flag/d')
+
+subdir('libr/main')
 subdir('libr/hash')
 subdir('libr/crypto')
 subdir('libr/cons')
@@ -618,14 +621,16 @@ subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
 
+subdir(join_paths('libr','util'))
+
+subdir('shlr')
+subdir(join_paths('shlr','gdb'))
+subdir(join_paths('libr','io'))
+
 # subdir(join_paths('libr','anal','d'))
 # subdir(join_paths('libr','asm','d'))
 #subdir(join_paths('libr','bin','d'))
 # subdir(join_paths('libr','syscall','d'))
-subdir('libr/cons/d')
-subdir('libr/magic/d')
-subdir('libr/flag/d')
-subdir('libr/main')
 
 cli_option = get_option('cli')
 if cli_option.auto()
