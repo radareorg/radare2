@@ -352,17 +352,17 @@ static const char *r_cmd_java_strtok(const char *str1, const char b, size_t len)
 	if (len == (size_t)-1) {
 		len = strlen (str1);
 	}
-	IFDBG r_cons_printf ("Looking for char (%c) in (%s) up to %zu\n", b, p, len);
+	IFDBG r_cons_printf ("Looking for char (%c) in (%s) up to %u\n", b, p, (unsigned int)len);
 	for (; i < len; i++, p++) {
 		if (*p == b) {
-			IFDBG r_cons_printf ("Found? for char (%c) @ %zu: (%s)\n", b, i, p);
+			IFDBG r_cons_printf ("Found? for char (%c) @ %u: (%s)\n", b, (unsigned int)i, p);
 			break;
 		}
 	}
 	if (i == len) {
 		p = NULL;
 	}
-	IFDBG r_cons_printf ("Found? for char (%c) @ %zu: (%s)\n", b, len, p);
+	IFDBG r_cons_printf ("Found? for char (%c) @ %u: (%s)\n", b, (unsigned int)len, p);
 	return p;
 }
 
@@ -475,7 +475,7 @@ static RList *cpfind_str(RBinJavaObj *obj, const char *cmd) {
 	if (!cmd) {
 		return r_list_new ();
 	}
-	IFDBG r_cons_printf ("Looking for str: %s (%zu)\n", cmd, strlen (cmd));
+	IFDBG r_cons_printf ("Looking for str: %s (%u)\n", cmd, (unsigned int)strlen (cmd));
 	return r_bin_java_find_cp_const_by_val (obj, (const ut8 *)cmd, strlen (cmd), R_BIN_JAVA_CP_UTF8);
 }
 

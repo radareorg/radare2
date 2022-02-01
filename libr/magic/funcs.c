@@ -152,7 +152,7 @@ void file_magerror(RMagic *ms, const char *f, ...) {
 }
 
 void file_oomem(RMagic *ms, size_t len) {
-	file_error (ms, errno, "cannot allocate %zu bytes", len);
+	file_error (ms, errno, "cannot allocate %u bytes", (unsigned int)len);
 }
 
 void file_badseek(RMagic *ms) {
