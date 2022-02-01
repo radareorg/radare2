@@ -2021,7 +2021,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	const int old_bits = p? p->bits: 32;
 	char *args = NULL, *bracket, tmp, last = 0;
 	ut64 addr = 0, addr64 = 0, seeki = 0;
-	static int slide = 0, oldslide = 0, ident = 4;
+	// XXX delete global
+	static R_TH_LOCAL int slide = 0, oldslide = 0, ident = 4;
 	char namefmt[32], *field = NULL;
 	const char *arg = NULL;
 	const char *fmt = NULL;
