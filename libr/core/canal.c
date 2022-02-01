@@ -1320,17 +1320,12 @@ bool print_bits_hint_cb(ut64 addr, int bits, void *user) {
 }
 
 static void print_hint_tree(RBTree tree, int mode) {
+#define END_ADDR if (mode == 'j') { pj_end (pj); } else if (mode != '*') { r_cons_newline (); }
 	PJ *pj = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
 		pj_a (pj);
 	}
-#define END_ADDR \
-		if (pj) { \
-			pj_end (pj); \
-		} else if (mode != '*') { \
-			r_cons_newline (); \
-		}
 	RBIter it;
 	HintNode *node;
 	ut64 last_addr = 0;
@@ -1354,13 +1349,12 @@ static void print_hint_tree(RBTree tree, int mode) {
 	if (in_addr) {
 		END_ADDR
 	}
-#undef BEGIN_ADDR
-#undef END_ADDR
 	if (pj) {
 		pj_end (pj);
 		r_cons_printf ("%s\n", pj_string (pj));
 		pj_free (pj);
 	}
+#undef END_ADDR
 }
 
 R_API void r_core_anal_hint_list(RAnal *a, int mode) {
@@ -2748,14 +2742,12 @@ static void __fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
 		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 	} else {
-		char *msg, *name = r_core_anal_fcn_name (core, fcn);
+		char *name = r_core_anal_fcn_name (core, fcn);
 		ut64 realsize = r_anal_function_realsize (fcn);
 		ut64 size = r_anal_function_linear_size (fcn);
-		if (realsize == size) {
-			msg = r_str_newf ("%-12"PFMT64u, size);
-		} else {
-			msg = r_str_newf ("%-4"PFMT64u" -> %-4"PFMT64u, size, realsize);
-		}
+		char *msg = (realsize == size)
+			? r_str_newf ("%-12"PFMT64u, size)
+			: r_str_newf ("%-4"PFMT64u" -> %-4"PFMT64u, size, realsize);
 		r_cons_printf ("0x%08"PFMT64x" %4d %4s %s\n",
 				fcn->addr, r_list_length (fcn->bbs), msg, name);
 		free (name);

@@ -1059,9 +1059,10 @@ static void __set_curnode(RCore *core, int idx) {
 		idx = panels->n_panels - 1;
 	}
 	panels->curnode = idx;
-
 	RPanel *cur = __get_cur_panel (panels);
-	cur->view->curpos = cur->view->sy;
+	if (cur) {
+		cur->view->curpos = cur->view->sy;
+	}
 }
 
 static bool __check_panel_num(RCore *core) {
@@ -3543,6 +3544,7 @@ static bool __handle_cursor_mode(RCore *core, const int key) {
 	RPanel *cur = __get_cur_panel (core->panels);
 	RPrint *print = core->print;
 	char *db_val;
+			core->print->cur++;
 	switch (key) {
 	case ':':
 	case ';':
@@ -6013,21 +6015,17 @@ static void __handle_menu(RCore *core, const int key) {
 		}
 		break;
 	case 'l':
-		{
-			if (menu->depth == 1) {
-				menu->root->selectedIndex++;
-				menu->root->selectedIndex %= menu->root->n_sub;
-				break;
-			}
-			if (parent->sub[parent->selectedIndex]->sub) {
-				(void)(parent->sub[parent->selectedIndex]->cb (core));
-			} else {
-				menu->n_refresh = 0;
-				menu->root->selectedIndex++;
-				menu->root->selectedIndex %= menu->root->n_sub;
-				menu->depth = 1;
-				(void)(menu->root->sub[menu->root->selectedIndex]->cb (core));
-			}
+		if (menu->depth == 1) {
+			menu->root->selectedIndex++;
+			menu->root->selectedIndex %= menu->root->n_sub;
+		} else if (parent->sub[parent->selectedIndex]->sub) {
+			(void)(parent->sub[parent->selectedIndex]->cb (core));
+		} else {
+			menu->n_refresh = 0;
+			menu->root->selectedIndex++;
+			menu->root->selectedIndex %= menu->root->n_sub;
+			menu->depth = 1;
+			(void)(menu->root->sub[menu->root->selectedIndex]->cb (core));
 		}
 		break;
 	case 'm':
@@ -6373,7 +6371,11 @@ static void prevOpcode(RCore *core) {
 	ut64 addr, oaddr = core->offset + core->print->cur;
 	if (r_core_prevop_addr (core, oaddr, 1, &addr)) {
 		const int delta = oaddr - addr;
-		p->cur -= delta;
+		if (delta < 1) {
+			p->cur -= 4;
+		} else {
+			p->cur -= delta;
+		}
 	} else {
 		p->cur -= 4;
 	}
@@ -6622,29 +6624,47 @@ virtualmouse:
 	case 'j':
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y++;
+			core->print->cur++;
+		} else if (core->print->cur_enabled) {
+			RPanel *cp = __get_cur_panel (core->panels);
+			if (cp) {
+				cp->view->curpos++;
+				core->print->cur++;
+			}
+			nextOpcode (core);
 		} else {
-			if (core->print->cur_enabled) {
-				nextOpcode (core);
-			} else {
+			if (cur->model->directionCb) {
 				r_cons_switchbuf (false);
-				if (cur->model->directionCb) {
-					cur->model->directionCb (core, (int)DOWN);
-				}
+				cur->model->directionCb (core, (int)DOWN);
 			}
 		}
 		break;
 	case 'k':
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y--;
-		} else {
-			if (core->print->cur_enabled) {
-				prevOpcode (core);
-			} else {
-				r_cons_switchbuf (false);
-				if (cur->model->directionCb) {
-					cur->model->directionCb (core, (int)UP);
+		} else if (core->print->cur_enabled) {
+			RPanel *cp = __get_cur_panel (core->panels);
+			if (cp) {
+				if (strstr (cp->model->cmd, "pd")) {
+					int op = cp->view->curpos;
+					prevOpcode (core);
+					if (op == cp->view->curpos) {
+						cp->view->curpos--;
+						prevOpcode (core);
+					}
+				} else {
+					if (cp->view->curpos > 0) {
+						cp->view->curpos--;
+					}
+					if (core->print->cur > 0) {
+						core->print->cur--;
+					}
 				}
 			}
+		} else if (cur->model->directionCb) {
+			prevOpcode (core);
+			r_cons_switchbuf (false);
+			cur->model->directionCb (core, (int)UP);
 		}
 		break;
 	case 'K':
@@ -6799,29 +6819,29 @@ virtualmouse:
 	case 'h':
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x--;
-		} else {
-			if (core->print->cur_enabled) {
+			core->print->cur--;
+		} else if (core->print->cur_enabled) {
+			core->print->cur--;
+			RPanel *cp = __get_cur_panel (core->panels);
+			if (cp) {
+				core->cons->cpos.x--;
 				core->print->cur--;
-			} else {
-				r_cons_switchbuf (false);
-				if (cur->model->directionCb) {
-					cur->model->directionCb (core, (int)LEFT);
-				}
+				cp->view->curpos--;
 			}
+		} else if (cur->model->directionCb) {
+			r_cons_switchbuf (false);
+			cur->model->directionCb (core, (int)LEFT);
 		}
 		break;
 	case 'l':
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x++;
-		} else {
-			if (core->print->cur_enabled) {
-				core->print->cur++;
-			} else {
-				r_cons_switchbuf (false);
-				if (cur->model->directionCb) {
-					cur->model->directionCb (core, (int)RIGHT);
-				}
-			}
+		} else if (cur->model->directionCb) {
+			cur->model->directionCb (core, (int)RIGHT);
+			r_cons_switchbuf (false);
+			core->print->cur++;
+		} else if (core->print->cur_enabled) {
+			core->print->cur++;
 		}
 		break;
 	case 'V':
