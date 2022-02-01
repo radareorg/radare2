@@ -1945,34 +1945,6 @@ static bool esil_subeq(RAnalEsil *esil) {
 
 #endif
 
-static bool esil_mem_addeq_n(RAnalEsil *esil, int bits) {
-	bool ret = false;
-	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src0 = r_anal_esil_pop (esil);
-	char *src1 = NULL;
-	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
-		r_anal_esil_push (esil, dst);
-		ret = (!!esil_peek_n (esil, bits));
-		src1 = r_anal_esil_pop (esil);
-		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
-			d += s;
-			r_anal_esil_pushnum (esil, d);
-			r_anal_esil_push (esil, dst);
-			ret &= (!!esil_poke_n (esil, bits));
-		} else {
-			ret = false;
-		}
-	}
-	if (!ret) {
-		ERR ("esil_mem_addeq_n: invalid parameters");
-	}
-	free (dst);
-	free (src0);
-	free (src1);
-	return ret;
-}
-
 static bool esil_sub(RAnalEsil *esil) {
 	bool ret = false;
 	ut64 s, d;
@@ -2272,7 +2244,7 @@ static bool esil_mem_oreq_n(RAnalEsil *esil, int bits) {
 	char *src1 = NULL;
 	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) { 	//get the src
 		r_anal_esil_push (esil, dst);			//push the dst-addr
-		ret = (!!esil_peek_n (esil, bits));		//read
+		ret = !!esil_peek_n (esil, bits);		//read
 		src1 = r_anal_esil_pop (esil);			//get the old dst-value
 		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) { //get the old dst-value
 			d |= s;					//calculate the new dst-value
@@ -2315,7 +2287,7 @@ static bool esil_mem_xoreq_n(RAnalEsil *esil, int bits) {
 	char *src1 = NULL;
 	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
 		r_anal_esil_push (esil, dst);
-		ret = (!!esil_peek_n (esil, bits));
+		ret = !!esil_peek_n (esil, bits);
 		src1 = r_anal_esil_pop (esil);
 		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
 			d ^= s;
@@ -2393,6 +2365,34 @@ static bool esil_mem_andeq8(RAnalEsil *esil) {
 
 /* ADDEQ */
 
+static bool esil_mem_addeq_n(RAnalEsil *esil, int bits) {
+	bool ret = false;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src0 = r_anal_esil_pop (esil);
+	char *src1 = NULL;
+	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
+		r_anal_esil_push (esil, dst);
+		ret = !!esil_peek_n (esil, bits);
+		src1 = r_anal_esil_pop (esil);
+		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
+			d += s;
+			r_anal_esil_pushnum (esil, d);
+			r_anal_esil_push (esil, dst);
+			ret &= (!!esil_poke_n (esil, bits));
+		} else {
+			ret = false;
+		}
+	}
+	if (!ret) {
+		ERR ("esil_mem_addeq_n: invalid parameters");
+	}
+	free (dst);
+	free (src0);
+	free (src1);
+	return ret;
+}
+
 static bool esil_mem_addeq1(RAnalEsil *esil) {
 	return esil_mem_addeq_n (esil, 8);
 }
@@ -2416,13 +2416,13 @@ static bool esil_mem_subeq_n(RAnalEsil *esil, int bits) {
 	char *src1 = NULL;
 	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
 		r_anal_esil_push (esil, dst);
-		ret = (!!esil_peek_n (esil, bits));
+		ret = !!esil_peek_n (esil, bits);
 		src1 = r_anal_esil_pop (esil);
 		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
 			d -= s;
 			r_anal_esil_pushnum (esil, d);
 			r_anal_esil_push (esil, dst);
-			ret &= (!!esil_poke_n (esil, bits));
+			ret &= !!esil_poke_n (esil, bits);
 		} else {
 			ret = false;
 		}
@@ -2464,7 +2464,7 @@ static bool esil_mem_modeq_n(RAnalEsil *esil, int bits) {
 			esil->trap_code = 0;
 		} else {
 			r_anal_esil_push (esil, dst);
-			ret = (!!esil_peek_n (esil, bits));
+			ret = !!esil_peek_n (esil, bits);
 			src1 = r_anal_esil_pop (esil);
 			if (src1 && r_anal_esil_get_parm (esil, src1, &d) && s >= 1) {
 				r_anal_esil_pushnum (esil, d % s);
@@ -2514,7 +2514,7 @@ static bool esil_mem_diveq_n(RAnalEsil *esil, int bits) {
 			esil->trap_code = 0;
 		} else {
 			r_anal_esil_push (esil, dst);
-			ret = (!!esil_peek_n (esil, bits));
+			ret = !!esil_peek_n (esil, bits);
 			src1 = r_anal_esil_pop (esil);
 			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
 				d = d / s;
@@ -2558,7 +2558,7 @@ static bool esil_mem_muleq_n(RAnalEsil *esil, int bits, ut64 bitmask) {
 	char *src1 = NULL;
 	if (src0 && r_anal_esil_get_parm (esil, src0, &s)) {
 		r_anal_esil_push (esil, dst);
-		ret = (!!esil_peek_n (esil, bits));
+		ret = !!esil_peek_n (esil, bits);
 		src1 = r_anal_esil_pop (esil);
 		if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
 			d *= s;
@@ -2600,7 +2600,7 @@ static bool esil_mem_inceq_n(RAnalEsil *esil, int bits) {
 	char *src = NULL;
 	if (off) {
 		r_anal_esil_push (esil, off);
-		ret = (!!esil_peek_n (esil, bits));
+		ret = !!esil_peek_n (esil, bits);
 		src = r_anal_esil_pop (esil);
 		if (src && r_anal_esil_get_parm (esil, src, &s)) {
 			esil->old = s;
@@ -2644,7 +2644,7 @@ static bool esil_mem_deceq_n(RAnalEsil *esil, int bits) {
 	char *src = NULL;
 	if (off) {
 		r_anal_esil_push (esil, off);
-		ret = (!!esil_peek_n (esil, bits));
+		ret = !!esil_peek_n (esil, bits);
 		src = r_anal_esil_pop (esil);
 		if (src && r_anal_esil_get_parm (esil, src, &s)) {
 			s--;
@@ -2689,7 +2689,7 @@ static bool esil_mem_lsleq_n(RAnalEsil *esil, int bits) {
 			ERR ("esil_mem_lsleq_n: shift is too big");
 		} else {
 			r_anal_esil_push (esil, dst);
-			ret = (!!esil_peek_n (esil, bits));
+			ret = !!esil_peek_n (esil, bits);
 			src1 = r_anal_esil_pop (esil);
 			if (src1 && r_anal_esil_get_parm (esil, src1, &d)) {
 				if (s > 63) {
