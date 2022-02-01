@@ -101,7 +101,7 @@ jobs:
       run: |
         .github\vsdevenv.ps1
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w32 build
-        ninja -C build install
+        ninja -C build -j2 install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
     - uses: actions/upload-artifact@v2
