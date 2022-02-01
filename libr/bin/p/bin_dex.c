@@ -1099,8 +1099,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		if (dexdump) {
 			char *accessStr = createAccessFlagStr (
 				accessFlags, kAccessForField);
-			bin->cb_printf ("    #%zu              : (in %s;)\n", i,
-					 cls->name);
+			bin->cb_printf ("    #%u              : (in %s;)\n", (unsigned int)i, cls->name);
 			bin->cb_printf ("      name          : '%s'\n", fieldName);
 			bin->cb_printf ("      type          : '%s'\n", type_str);
 			bin->cb_printf ("      access        : 0x%04x (%s)\n",
@@ -1652,7 +1651,7 @@ static bool dex_loadcode(RBinFile *bf) {
 		for (i = 0; i < dex->header.class_size; i++) {
 			struct dex_class_t *c = &dex->classes[i];
 			if (dexdump) {
-				cb_printf ("Class #%zu            -\n", i);
+				cb_printf ("Class #%u            -\n", (unsigned int)i);
 			}
 			parse_class (bf, c, i, methods, &sym_count);
 		}

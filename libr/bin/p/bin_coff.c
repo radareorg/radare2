@@ -189,7 +189,7 @@ static RList *sections(RBinFile *bf) {
 				free (tmp);
 				return ret;
 			}
-			ptr->name = r_str_newf ("%s-%zu", tmp, i);
+			ptr->name = r_str_newf ("%s-%u", tmp, (unsigned int)i);
 			free (tmp);
 			if (strstr (ptr->name, "data")) {
 				ptr->is_data = true;
