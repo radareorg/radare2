@@ -13,7 +13,7 @@ jobs:
     steps:
     - name: Checkout TinyCC repository
       run: |
-          git clone https://repo.or.cz/tinycc.git
+          git clone https://github.com/mirror/tinycc.git
           cd tinycc
           git checkout mob
 
