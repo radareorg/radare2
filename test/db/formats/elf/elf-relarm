@@ -116,8 +116,8 @@ EXPECT=<<EOF
             0x00126510      .qword 0x0000000000005a6c ; sym..datadiv_decode9958896245423089702 ; [13] -rw- section size 728 named .init_array
             0x00126518      .qword 0x0000000000005a80 ; sym..datadiv_decode10476194973746341988
             0x00126520      .qword 0x00000000000efddc ; sym..datadiv_decode16323044921667855934
-            0x00126528      .qword 0x00000000001bd998
-            0x00126530      .qword 0x000000000022c634
+            0x00126528      .qword 0x0000000000009080 ; entry.init0
+            0x00126530      .qword 0x0000000000077d14 ; entry.init1
             0x00126538      .qword 0x00000000000f22e0 ; sym..datadiv_decode667225052219618748
             0x00126540      .qword 0x00000000000f22e4 ; sym..datadiv_decode8132880250332170398
             0x00126548      .qword 0x00000000000f22e8 ; sym..datadiv_decode3655886617018729963

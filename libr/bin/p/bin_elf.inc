@@ -13,8 +13,6 @@
 
 static RBinInfo* info(RBinFile *bf);
 
-//TODO: implement r_bin_symbol_dup() and r_bin_symbol_free ?
-
 static int get_file_type(RBinFile *bf) {
 	ELFOBJ *obj = bf->o->bin_obj;
 	char *type = Elf_(r_bin_elf_get_file_type (obj));
@@ -909,11 +907,12 @@ static RList* relocs(RBinFile *bf) {
 	return ret;
 }
 
-static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+// static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
+static void _patch_reloc(RBinObject *binobj, struct Elf_(r_bin_elf_obj_t) *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 S, ut64 B, ut64 L) {
 	ut64 V = 0;
 	ut64 A = rel->addend;
 	ut64 P = rel->rva;
-	ut8 buf[8];
+	ut8 buf[8] = {0};
 	switch (e_machine) {
 	case EM_ARM:
 		if (!rel->sym && rel->mode == DT_REL) {
@@ -927,8 +926,22 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 		break;
 	case EM_AARCH64:
 		V = S + A;
+#if 0
 		r_write_le64 (buf, V);
 		iob->write_at (iob->io, rel->rva, buf, 8);
+#else
+		iob->read_at (iob->io, rel->rva, buf, 8);
+		// only patch the relocs that are initialized with zeroes
+		// if the destination contains a different value it's a constant useful for static analysis
+		ut64 addr = r_read_le64 (buf);
+		if (addr) {
+			r_write_le64 (buf, A);
+			iob->write_at (iob->io, rel->rva, buf, 8);
+		} else {
+			r_write_le64 (buf, S);
+			iob->write_at (iob->io, rel->rva, buf, 8);
+		}
+#endif
 		break;
 	case EM_PPC64: {
 		int low = 0, word = 0;
@@ -1173,7 +1186,7 @@ static RList* patch_relocs(RBin *b) {
 		}
 		//ut64 raddr = sym_addr? sym_addr: vaddr;
 		ut64 raddr = (sym_addr && sym_addr != UT64_MAX)? sym_addr: vaddr;
-		_patch_reloc (bin, bin->ehdr.e_machine, &b->iob, &relcs[i], raddr, 0, plt_entry_addr);
+		_patch_reloc (obj, bin, bin->ehdr.e_machine, &b->iob, &relcs[i], raddr, 0, plt_entry_addr);
 		if (!(ptr = reloc_convert (bin, &relcs[i], n_vaddr))) {
 			continue;
 		}
