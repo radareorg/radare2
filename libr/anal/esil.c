@@ -14,7 +14,7 @@
 #include <float.h>
 #include <fenv.h>
 
-#define ESIL_MACRO 1
+#define ESIL_MACRO 0
 #define IFDBG if (esil && esil->verbose > 1)
 #define IFVBS if (esil && esil->verbose > 0)
 #define FLG(x) R_ANAL_ESIL_FLAG_##x
@@ -64,8 +64,7 @@ static bool r_anal_esil_runpending(RAnalEsil *esil, char *pending) {
 	} else if (esil->pending) {
 		char *expr = esil->pending;
 		esil->pending = NULL;
-		RAnalEsil e = *esil;
-		r_anal_esil_parse (&e, expr);
+		r_anal_esil_parse (esil, expr);
 		free (expr);
 		return true;
 	}
