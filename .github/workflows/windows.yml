@@ -38,6 +38,12 @@ jobs:
   w64-make:
     runs-on: windows-2019
     steps:
+    - name: Win configure Pagefile
+      uses: al-cheb/configure-pagefile-action@v1.2
+      with:
+          minimum-size: 16GB
+          maximum-size: 16GB
+          disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -62,7 +68,7 @@ jobs:
         call configure
         call make
     - name: Test executable
-#      continue-on-error: true
+      # continue-on-error: true
       shell: cmd
       run: |
         cd prefix\bin
@@ -71,6 +77,12 @@ jobs:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-2019
     steps:
+    - name: Win configure Pagefile
+      uses: al-cheb/configure-pagefile-action@v1.2
+      with:
+          minimum-size: 16GB
+          maximum-size: 16GB
+          disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -113,6 +125,12 @@ jobs:
   w64-meson:
     runs-on: windows-2019
     steps:
+    - name: Win configure Pagefile
+      uses: al-cheb/configure-pagefile-action@v1.2
+      with:
+          minimum-size: 16GB
+          maximum-size: 16GB
+          disk-root: "C:"
     - name: Checkout
       uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -156,4 +174,4 @@ jobs:
 #      with:
 #        name: radare2-w64-installer-git.zip
 #        path: radare2-win-installer\Output\radare2.exe
-  # LINUX
+# LINUX
