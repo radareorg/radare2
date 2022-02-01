@@ -211,6 +211,8 @@ symstall install-symlink:
 		"${DESTDIR}${LIBDIR}/libr_$(lib).${EXT_SO}" ; \
 	  ln -fs "${PWD}/$(lib)/libr_$(lib).${EXT_SO}" \
 		"${DESTDIR}${LIBDIR}/$(call libname-version,libr_$(lib).${EXT_SO},${LIBVERSION})" ; \
+	  ln -fs "${PWD}/$(lib)/libr_$(lib).${EXT_SO}" \
+		"${DESTDIR}${LIBDIR}/$(call libname-version,libr_$(lib).${EXT_SO},${ABIVERSION})" ; \
 	  ln -fs "${PWD}/$(lib)/libr_$(lib).${EXT_AR}" "${DESTDIR}${LIBDIR}/libr_$(lib).${EXT_AR}" ; \
 	  $(foreach module,$(wildcard $(lib)/p/*.${EXT_SO}), \
 	    ln -fs "${PWD}/$(module)" "${DESTDIR}${LIBDIR}/radare2/${VERSION}/" ; \
@@ -223,10 +225,12 @@ install: install-includes install-pkgconfig
 	# libraries
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}"
 	@$(foreach lib,$(shell find * -type f -iname "*.${EXT_SO}" | grep -vE '^libr\.${EXT_SO}$$' | grep -v '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
-	  echo " ${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
+	  echo " ${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION}) -> $(call libpath-to-name-version,$(lib),${ABIVERSION}) -> $(lib)"; \
 	  rm -f "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
+	  rm -f "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${ABIVERSION})"; \
 	  ${INSTALL_LIB} "$(lib)" "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
-	  ( cd "${DESTDIR}${LIBDIR}" ; ln -fs "$(call libpath-to-name-version,$(lib),${LIBVERSION})" "$(call libpath-to-name,$(lib))" ) ; \
+	  ( cd "${DESTDIR}${LIBDIR}" ; ln -fs "$(call libpath-to-name-version,$(lib),${LIBVERSION})" "$(call libpath-to-name-version,$(lib),${ABIVERSION})" ) ; \
+	  ( cd "${DESTDIR}${LIBDIR}" ; ln -fs "$(call libpath-to-name-version,$(lib),${ABIVERSION})" "$(call libpath-to-name,$(lib))" ) ; \
 	)
 	lib=libr.$(EXT_SO) ; if [ -f "$$lib" ]; then \
 	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib"; \
@@ -272,6 +276,7 @@ deinstall uninstall:
 	# TODO: use for FILE in LIBS (like in binr/Makefile)
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr"
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.so.${LIBVERSION}"
+	rm -rf "${DESTDIR}${LIBDIR}/libr_*.so.${ABIVERSION}"
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.so.0"
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.so"
 	rm -rf "${DESTDIR}${LIBDIR}/libr_*.${EXT_AR}"

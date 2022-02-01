@@ -47,6 +47,7 @@ R2_VERSION_MINOR=@VERSION_MINOR@
 R2_VERSION_PATCH=@VERSION_PATCH@
 R2_VERSION_NUMBER=@VERSION_NUMBER@
 LIBVERSION=@LIBVERSION@
+ABIVERSION=$(shell echo @LIBVERSION@ | awk -F . '{print $$1"."$$2}')
 
 # ./configure --with-ostype=[linux,osx,solaris,windows] # TODO: rename to w32, w64?
 OSTYPE=@USEROSTYPE@
