@@ -760,7 +760,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 					io->cb_printf ("  %s\n", (char*)&(proc_data.vmareastruct[i + 7]));
 					i = nextstart;
 				}
-				io->cb_printf ("STACK BASE ADDRESS = 0x%p\n", proc_data.stack);
+				io->cb_printf ("STACK BASE ADDRESS = 0x%p\n", (void*)proc_data.stack);
 			}
 		}
 		break;
