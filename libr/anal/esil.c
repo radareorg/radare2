@@ -1816,26 +1816,6 @@ static bool esil_add(RAnalEsil *esil) {
 	return ret;
 }
 
-static bool esil_addeq(RAnalEsil *esil) {
-	bool ret = false;
-	ut64 s, d;
-	char *dst = r_anal_esil_pop (esil);
-	char *src = r_anal_esil_pop (esil);
-	if (src && r_anal_esil_get_parm (esil, src, &s)) {
-		if (dst && r_anal_esil_reg_read (esil, dst, &d, NULL)) {
-			esil->old = d;
-			esil->cur = d + s;
-			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-			ret = r_anal_esil_reg_write (esil, dst, s + d);
-		}
-	} else {
-		ERR ("esil_addeq: invalid parameters");
-	}
-	free (src);
-	free (dst);
-	return ret;
-}
-
 #if ESIL_MACRO
 static bool esil_inc_macro(RAnalEsil *esil) {
 	bool ret = false;
@@ -1922,6 +1902,27 @@ static bool esil_inceq(RAnalEsil *esil) {
 	free (src_dst);
 	return ret;
 }
+
+static bool esil_addeq(RAnalEsil *esil) {
+	bool ret = false;
+	ut64 s, d;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (src && r_anal_esil_get_parm (esil, src, &s)) {
+		if (dst && r_anal_esil_reg_read (esil, dst, &d, NULL)) {
+			esil->old = d;
+			esil->cur = d + s;
+			esil->lastsz = esil_internal_sizeof_reg (esil, dst);
+			ret = r_anal_esil_reg_write (esil, dst, s + d);
+		}
+	} else {
+		ERR ("esil_addeq: invalid parameters");
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
 static bool esil_subeq(RAnalEsil *esil) {
 	bool ret = false;
 	ut64 s, d;
@@ -1941,6 +1942,8 @@ static bool esil_subeq(RAnalEsil *esil) {
 	free (dst);
 	return ret;
 }
+
+#endif
 
 static bool esil_mem_addeq_n(RAnalEsil *esil, int bits) {
 	bool ret = false;
@@ -1969,8 +1972,6 @@ static bool esil_mem_addeq_n(RAnalEsil *esil, int bits) {
 	free (src1);
 	return ret;
 }
-
-#endif
 
 static bool esil_sub(RAnalEsil *esil) {
 	bool ret = false;
