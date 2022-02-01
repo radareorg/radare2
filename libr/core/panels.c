@@ -5494,8 +5494,7 @@ static bool __init_panels_menu(RCore *core) {
 		__add_menu (core, NULL, menus[i], __open_menu_cb);
 	}
 	const char *parent = "File";
-	i = 0;
-	while (menus_File[i]) {
+	for (i = 0; menus_File[i]; i++) {
 		if (!strcmp (menus_File[i], "Open")) {
 			__add_menu (core, parent, menus_File[i], __open_file_cb);
 		} else if (!strcmp (menus_File[i], "ReOpen")) {
@@ -5513,18 +5512,15 @@ static bool __init_panels_menu(RCore *core) {
 		} else {
 			__add_menu (core, parent, menus_File[i], __add_cmd_panel);
 		}
-		i++;
 	}
 
 	parent = "Settings";
-	i = 0;
-	while (menus_Settings[i]) {
-		__add_menu (core, parent, menus_Settings[i++], __open_menu_cb);
+	for (i = 0; menus_Settings[i]; i++) {
+		__add_menu (core, parent, menus_Settings[i], __open_menu_cb);
 	}
 
 	parent = "Edit";
-	i = 0;
-	while (menus_Edit[i]) {
+	for (i = 0; menus_Edit[i]; i++) {
 		if (!strcmp (menus_Edit[i], "Copy")) {
 			__add_menu (core, parent, menus_Edit[i], __copy_cb);
 		} else if (!strcmp (menus_Edit[i], "Paste")) {
@@ -5544,7 +5540,6 @@ static bool __init_panels_menu(RCore *core) {
 		} else {
 			__add_menu (core, parent, menus_Edit[i], __add_cmd_panel);
 		}
-		i++;
 	}
 
 	{
@@ -5562,8 +5557,7 @@ static bool __init_panels_menu(RCore *core) {
 	}
 
 	parent = "Tools";
-	i = 0;
-	while (menus_Tools[i]) {
+	for (i = 0; menus_Tools[i]; i++) {
 		if (!strcmp (menus_Tools[i], "Calculator")) {
 			__add_menu (core, parent, menus_Tools[i], __calculator_cb);
 		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
@@ -5571,12 +5565,10 @@ static bool __init_panels_menu(RCore *core) {
 		} else if (!strcmp (menus_Tools[i], "System Shell")) {
 			__add_menu (core, parent, menus_Tools[i], __system_shell_cb);
 		}
-		i++;
 	}
 
 	parent = "Search";
-	i = 0;
-	while (menus_Search[i]) {
+	for (i = 0; menus_Search[i]; i++) {
 		if (!strcmp (menus_Search[i], "String (Whole Bin)")) {
 			__add_menu (core, parent, menus_Search[i], __string_whole_bin_cb);
 		} else if (!strcmp (menus_Search[i], "String (Data Sections)")) {
@@ -5588,12 +5580,10 @@ static bool __init_panels_menu(RCore *core) {
 		} else if (!strcmp (menus_Search[i], "Hexpairs")) {
 			__add_menu (core, parent, menus_Search[i], __hexpairs_cb);
 		}
-		i++;
 	}
 
 	parent = "Emulate";
-	i = 0;
-	while (menus_Emulate[i]) {
+	for (i = 0; menus_Emulate[i]; i++) {
 		if (!strcmp (menus_Emulate[i], "Step From")) {
 			__add_menu (core, parent, menus_Emulate[i], __esil_init_cb);
 		} else if (!strcmp (menus_Emulate[i], "Step To")) {
@@ -5601,9 +5591,7 @@ static bool __init_panels_menu(RCore *core) {
 		} else if (!strcmp (menus_Emulate[i], "Step Range")) {
 			__add_menu (core, parent, menus_Emulate[i], __esil_step_range_cb);
 		}
-		i++;
 	}
-
 	{
 		parent = "Debug";
 		RList *list = __sorted_list (core, menus_Debug, COUNT (menus_Debug));
@@ -5629,8 +5617,7 @@ static bool __init_panels_menu(RCore *core) {
 	}
 
 	parent = "Analyze";
-	i = 0;
-	while (menus_Analyze[i]) {
+	for (i = 0; menus_Analyze[i]; i++) {
 		if (!strcmp (menus_Analyze[i], "Function")) {
 			__add_menu (core, parent, menus_Analyze[i], __function_cb);
 		} else if (!strcmp (menus_Analyze[i], "Symbols")) {
@@ -5644,7 +5631,6 @@ static bool __init_panels_menu(RCore *core) {
 		} else if (!strcmp (menus_Analyze[i], "References")) {
 			__add_menu (core, parent, menus_Analyze[i], __references_cb);
 		}
-		i++;
 	}
 	parent = "Help";
 	for (i = 0; menus_Help[i]; i++) {
@@ -6634,7 +6620,7 @@ virtualmouse:
 		__replace_cmd (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		break;
 	case 'j':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y++;
 		} else {
 			if (core->print->cur_enabled) {
