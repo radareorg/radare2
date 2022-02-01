@@ -2488,7 +2488,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 #endif
 		case 0x0d: // "enter" "\\n" "newline"
-			if (r_config_get_i (core->config, "scr.cursor")) {
+			if (r_config_get_b (core->config, "scr.cursor")) {
 				r_cons_set_click (core->cons->cpos.x, core->cons->cpos.y);
 				char buf[10];
 				int ch = process_get_click (core, 0);
@@ -2986,7 +2986,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'h':
 		case 'l':
-			if (r_config_get_i (core->config, "scr.cursor")) {
+			if (r_config_get_b (core->config, "scr.cursor")) {
 				core->cons->cpos.x += ch == 'h'? -1: 1;
 				if (core->cons->cpos.x < 1) {
 					core->cons->cpos.x = 0;
@@ -3017,7 +3017,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'L':
 		case 'H':
-			if (r_config_get_i (core->config, "scr.cursor")) {
+			if (r_config_get_b (core->config, "scr.cursor")) {
 				int distance = 8; // numbuf_pull ();
 				core->cons->cpos.x += (ch == 'h' || ch == 'H')? -distance: distance;
 				if (core->cons->cpos.x < 1) {
@@ -3048,7 +3048,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'j':
-			if (r_config_get_i (core->config, "scr.cursor")) {
+			if (r_config_get_b (core->config, "scr.cursor")) {
 				core->cons->cpos.y++;
 				int h;
 				(void)r_cons_get_size (&h);
@@ -3098,7 +3098,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'J':
-			if (r_config_get_i (core->config, "scr.cursor")) {
+			if (r_config_get_b (core->config, "scr.cursor")) {
 				int distance = 4;// numbuf_pull ();
 				core->cons->cpos.y += distance;
 				int h;
@@ -3138,7 +3138,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'k':
-			if (r_config_get_i (core->config, "scr.cursor")) {
+			if (r_config_get_b (core->config, "scr.cursor")) {
 				core->cons->cpos.y--;
 				if (core->cons->cpos.y < 1) {
 					core->cons->cpos.y = 0;
@@ -3178,7 +3178,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case 'K':
-			if (r_config_get_i (core->config, "scr.cursor")) {
+			if (r_config_get_b (core->config, "scr.cursor")) {
 				int distance = 4;// numbuf_pull ();
 				core->cons->cpos.y -= distance;
 				if (core->cons->cpos.y < 1) {
@@ -4106,7 +4106,7 @@ R_API void r_core_print_scrollbar_bottom(RCore *core) {
 }
 
 static void show_cursor(RCore *core) {
-	const bool keyCursor = r_config_get_i (core->config, "scr.cursor");
+	const bool keyCursor = r_config_get_b (core->config, "scr.cursor");
 	if (keyCursor) {
 		r_cons_gotoxy (core->cons->cpos.x, core->cons->cpos.y);
 		r_cons_show_cursor (1);

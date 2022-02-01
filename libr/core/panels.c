@@ -1310,7 +1310,7 @@ static void __fix_layout(RCore *core) {
 }
 
 static void show_cursor(RCore *core) {
-	const bool keyCursor = r_config_get_i (core->config, "scr.cursor");
+	const bool keyCursor = r_config_get_b (core->config, "scr.cursor");
 	if (keyCursor) {
 		r_cons_gotoxy (core->cons->cpos.x, core->cons->cpos.y);
 		r_cons_show_cursor (1);
@@ -3338,7 +3338,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 	}
 		break;
 	case 'h':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x--;
 		} else {
 			(void)__move_to_direction (core, LEFT);
@@ -3348,7 +3348,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		}
 		break;
 	case 'j':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y++;
 		} else {
 			(void)__move_to_direction (core, DOWN);
@@ -3358,7 +3358,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		}
 		break;
 	case 'k':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y--;
 		} else {
 			(void)__move_to_direction (core, UP);
@@ -3368,7 +3368,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		}
 		break;
 	case 'l':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x++;
 		} else {
 			(void)__move_to_direction (core, RIGHT);
@@ -3378,7 +3378,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		}
 		break;
 	case 'H':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x += 5;
 		} else {
 			r_cons_switchbuf (false);
@@ -3386,7 +3386,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		}
 		break;
 	case 'L':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x += 5;
 		} else {
 			r_cons_switchbuf (false);
@@ -3394,7 +3394,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		}
 		break;
 	case 'J':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y += 5;
 		} else {
 			r_cons_switchbuf (false);
@@ -3402,7 +3402,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		}
 		break;
 	case 'K':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y -= 5;
 		} else {
 			r_cons_switchbuf (false);
@@ -5987,7 +5987,7 @@ static void __handle_menu(RCore *core, const int key) {
 		}
 		break;
 	case 'j':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y++;
 		} else {
 			if (menu->depth == 1) {
@@ -5999,7 +5999,7 @@ static void __handle_menu(RCore *core, const int key) {
 		}
 		break;
 	case 'k':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y--;
 		} else {
 			if (menu->depth < 2) {
@@ -6634,7 +6634,7 @@ virtualmouse:
 		}
 		break;
 	case 'k':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y--;
 		} else {
 			if (core->print->cur_enabled) {
@@ -6648,7 +6648,7 @@ virtualmouse:
 		}
 		break;
 	case 'K':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y -= 5;
 		} else {
 			if (core->print->cur_enabled) {
@@ -6667,7 +6667,7 @@ virtualmouse:
 		}
 		break;
 	case 'J':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y += 5;
 		} else {
 			if (core->print->cur_enabled) {
@@ -6686,7 +6686,7 @@ virtualmouse:
 		}
 		break;
 	case 'H':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x -= 5;
 		} else {
 			r_cons_switchbuf (false);
@@ -6698,7 +6698,7 @@ virtualmouse:
 		}
 		break;
 	case 'L':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x += 5;
 		} else {
 			r_cons_switchbuf (false);
@@ -6797,7 +6797,7 @@ virtualmouse:
 		}
 		break;
 	case 'h':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x--;
 		} else {
 			if (core->print->cur_enabled) {
@@ -6811,7 +6811,7 @@ virtualmouse:
 		}
 		break;
 	case 'l':
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x++;
 		} else {
 			if (core->print->cur_enabled) {
@@ -6928,7 +6928,7 @@ virtualmouse:
 		__move_panel_to_dir (core, cur, panels->curnode);
 		break;
 	case 0x0d: // "\\n"
-		if (r_config_get_i (core->config, "scr.cursor")) {
+		if (r_config_get_b (core->config, "scr.cursor")) {
 			key = 0;
 			r_cons_set_click (core->cons->cpos.x, core->cons->cpos.y);
 			goto virtualmouse;
