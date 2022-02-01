@@ -1635,7 +1635,7 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 	char *type_fcn_name = r_type_func_guess (TDB, fcn_name);
 	if (type_fcn_name && r_type_func_exist (TDB, type_fcn_name)) {
 		const char *fcn_type = r_type_func_ret (anal->sdb_types, type_fcn_name);
-		if (fcn_type) {
+		if (R_STR_ISNOTEMPTY (fcn_type)) {
 			const char *sp = " ";
 			if (*fcn_type && (fcn_type[strlen (fcn_type) - 1] == '*')) {
 				sp = "";
@@ -1661,7 +1661,7 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 		for (i = 0; i < argc; i++) {
 			char *type = r_type_func_args_type (TDB, type_fcn_name, i);
 			const char *name = r_type_func_args_name (TDB, type_fcn_name, i);
-			if (!type || !name) {
+			if (!type || !*type || !name) {
 				eprintf ("Missing type for %s\n", type_fcn_name);
 				goto beach;
 			}
@@ -1701,9 +1701,11 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			break;
 		}
 		tmp_len = strlen (var->type);
-		r_strbuf_appendf (buf, "%s%s%s%s", var->type,
-			tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
-			var->name, iter->n ? ", " : "");
+		if (tmp_len > 0) {
+			r_strbuf_appendf (buf, "%s%s%s%s", var->type,
+				tmp_len && var->type[tmp_len - 1] == '*' ? "" : " ",
+				var->name, iter->n ? ", " : "");
+		}
 	}
 
 	r_list_foreach (cache->bvars, iter, var) {
@@ -1714,9 +1716,11 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			}
 			arg_bp = true;
 			tmp_len = strlen (var->type);
-			r_strbuf_appendf (buf, "%s%s%s%s", var->type,
-				tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
-				var->name, iter->n ? ", " : "");
+			if (tmp_len > 0) {
+				r_strbuf_appendf (buf, "%s%s%s%s", var->type,
+						tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
+						var->name, iter->n ? ", " : "");
+			}
 		}
 	}
 
@@ -1734,9 +1738,11 @@ R_API char *r_anal_function_format_sig(R_NONNULL RAnal *anal, R_NONNULL RAnalFun
 			} else {
 				maybe_comma = "";
 			}
-			r_strbuf_appendf (buf, "%s%s%s%s", var->type,
-				tmp_len && var->type[tmp_len - 1] =='*' ? "" : " ",
-				var->name, maybe_comma);
+			if (tmp_len > 0) {
+				r_strbuf_appendf (buf, "%s%s%s%s", var->type,
+					tmp_len && var->type[tmp_len - 1] == '*'? "": " ",
+					var->name, maybe_comma);
+			}
 		}
 	}
 
