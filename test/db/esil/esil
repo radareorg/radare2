@@ -379,3 +379,21 @@ EXPECT=<<EOF
 0x4004924924924924
 EOF
 RUN
+
+NAME=inc/dec
+FILE=-
+CMDS=<<EOF
+ae 0xffffffffffffffff,++ # 0
+ae 1,2,+,3,++,+ # should be 3 + 4
+ae 1,3,--,+ # should be 3
+ae 1,3,--,- # should be 1
+ae 0,++
+EOF
+EXPECT=<<EOF
+0
+0x7
+0x3
+0x1
+0x1
+EOF
+RUN
