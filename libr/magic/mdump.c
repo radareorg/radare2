@@ -190,7 +190,6 @@ void file_magwarn(struct r_magic_set *ms, const char *f, ...) {
 
 const char *file_fmttime(ut32 v, int local, char *pp) {
 	time_t t = (time_t)v;
-	struct tm timestruct;
 
 	if (local) {
 		r_ctime_r (&t, pp);
@@ -216,13 +215,15 @@ const char *file_fmttime(ut32 v, int local, char *pp) {
 #if __MINGW32__
 		// nothing
 #else
+		struct tm timestruct;
 		struct tm *tm = gmtime_r (&t, &timestruct);
-		if (!tm)
+		if (!tm) {
 			return "*Invalid time*";
+		}
 		r_asctime_r (tm, pp);
 #endif
 	}
-
+	// TODO i dont like string spoons
 	pp[strcspn (pp, "\n")] = '\0';
 	return pp;
 }
