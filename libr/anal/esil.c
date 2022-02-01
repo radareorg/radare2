@@ -1858,12 +1858,13 @@ static bool esil_inceq_macro(RAnalEsil *esil) {
 	return ret;
 }
 
+#if 0
 static bool esil_addeq_macro(RAnalEsil *esil) {
 	bool ret = false;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst)) {
-		r_anal_esil_runpending (esil, r_str_newf ("%s,%s,+,%s,:=", src, dst, dst));
+		r_anal_esil_runpending (esil, r_str_newf ("%s,%s,+,%s,=", src, dst, dst));
 		ret = true;
 	} else {
 		ERR ("esil_addeq_macro: invalid parameters");
@@ -1878,7 +1879,7 @@ static bool esil_subeq_macro(RAnalEsil *esil) {
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst)) {
-		r_anal_esil_runpending (esil, r_str_newf ("%s,%s,-,%s,:=", src, dst, dst));
+		r_anal_esil_runpending (esil, r_str_newf ("%s,%s,-,%s,=", src, dst, dst));
 		ret = true;
 	} else {
 		ERR ("esil_subeq_macro: invalid parameters");
@@ -1887,6 +1888,7 @@ static bool esil_subeq_macro(RAnalEsil *esil) {
 	free (dst);
 	return ret;
 }
+#endif
 #else
 static bool esil_inc(RAnalEsil *esil) {
 	bool ret = false;
@@ -1919,6 +1921,8 @@ static bool esil_inceq(RAnalEsil *esil) {
 	free (src_dst);
 	return ret;
 }
+
+#endif
 
 static bool esil_addeq(RAnalEsil *esil) {
 	bool ret = false;
@@ -1960,7 +1964,6 @@ static bool esil_subeq(RAnalEsil *esil) {
 	return ret;
 }
 
-#endif
 
 static bool esil_sub(RAnalEsil *esil) {
 	bool ret = false;
@@ -3766,8 +3769,10 @@ R_API void r_anal_esil_setup_macros(RAnalEsil *esil) {
 #if ESIL_MACRO
 	OP ("++", esil_inc_macro, 1, 1, OT_MATH);
 	OP ("++=", esil_inceq_macro, 1, 1, OT_MATH);
-	OP ("+=", esil_addeq_macro, 0, 2, OT_MATH | OT_REGW);
-	OP ("-=", esil_subeq_macro, 0, 2, OT_MATH | OT_REGW);
+	// OP ("+=", esil_addeq_macro, 0, 2, OT_MATH | OT_REGW);
+	// OP ("-=", esil_subeq_macro, 0, 2, OT_MATH | OT_REGW);
+	OP ("+=", esil_addeq, 0, 2, OT_MATH | OT_REGW);
+	OP ("-=", esil_subeq, 0, 2, OT_MATH | OT_REGW);
 #else
 	OP ("++", esil_inc, 0, 1, OT_MATH | OT_REGW);
 	OP ("++=", esil_inceq, 0, 1, OT_MATH | OT_REGW);
