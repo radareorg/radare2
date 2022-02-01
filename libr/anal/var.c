@@ -1182,7 +1182,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				: r_anal_var_count (anal, f, R_ANAL_VAR_KIND_REG, 1);
 			callee_rargs_l = r_anal_var_list (anal, f, R_ANAL_VAR_KIND_REG);
 		}
-		size_t i;
+		int i;
 		for (i = 0; i < callee_rargs; i++) {
 			if (reg_set[i]) {
 				continue;

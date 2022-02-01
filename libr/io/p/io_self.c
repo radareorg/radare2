@@ -706,11 +706,11 @@ exit:
 			perm |= R_PERM_X;
 		}
 
-		io->cb_printf (" %p - %p %s [off. %zu]\n",
+		io->cb_printf (" %p - %p %s [off. %" PFMT64u "]\n",
 				(void *)entry.kve_start,
 				(void *)entry.kve_end,
 				r_str_rwx_i (perm),
-				entry.kve_offset);
+				(ut64)entry.kve_offset);
 
 		self_sections[self_sections_count].from = entry.kve_start;
 		self_sections[self_sections_count].to = entry.kve_end;
@@ -821,11 +821,11 @@ exit:
 			perm |= R_PERM_X;
 		}
 
-		io->cb_printf (" %p - %p %s [off. %zu]\n",
+		io->cb_printf (" %p - %p %s [off. %" PFMT64u "]\n",
 				(void *)entry.ba.start,
 				(void *)entry.ba.end,
 				r_str_rwx_i (perm),
-				entry.ba.offset);
+				(ut64)entry.ba.offset);
 
 		self_sections[self_sections_count].from = entry.ba.start;
 		self_sections[self_sections_count].to = entry.ba.end;
