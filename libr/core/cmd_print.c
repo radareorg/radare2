@@ -6541,7 +6541,7 @@ static int cmd_print(void *data, const char *input) {
 		r_cons_break_push (NULL, NULL);
 		switch (input[1]) {
 		case 'j': // "pxj"
-			r_print_jsondump (core->print, core->block, core->num->value, 8);
+			r_print_jsondump (core->print, core->block, len, 8);
 			break;
 		case '/': // "px/"
 			r_core_print_examine (core, input + 2);
