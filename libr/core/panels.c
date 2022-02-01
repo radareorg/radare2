@@ -50,7 +50,7 @@ static void __panels_refresh(RCore *core);
 #define PANEL_CMD_GRAPH              "agf"
 #define PANEL_CMD_TINYGRAPH          "agft"
 #define PANEL_CMD_HEXDUMP            "xc"
-#define PANEL_CMD_CONSOLE            "$console"
+#define PANEL_CMD_CONSOLE            "cat $console"
 
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
@@ -1172,6 +1172,7 @@ static int __add_cmd_panel(void *user) {
 	__set_curnode (core, 0);
 	__set_mode (core, PANEL_MODE_DEFAULT);
 	free (cmd);
+	menu->n_refresh = 0; // close the menu bar
 	return 0;
 }
 
@@ -1835,7 +1836,7 @@ static void __init_sdb(RCore *core) {
 	sdb_set (db, "Tiny Graph", "agft", 0);
 	sdb_set (db, "Info", "i", 0);
 	sdb_set (db, "Database", "k ***", 0);
-	sdb_set (db, "Console", "$console", 0);
+	sdb_set (db, "Console", "cat $console", 0);
 	sdb_set (db, "Hexdump", "xc $r*16", 0);
 	sdb_set (db, "Xrefs", "ax", 0);
 	sdb_set (db, "Xrefs Here", "ax.", 0);
@@ -1929,6 +1930,7 @@ static void __create_panel_db(void *user, RPanel *panel, const RPanelLayout dir,
 		return;
 	}
 	__create_panel (core, panel, dir, title, cmd);
+
 }
 
 static void __create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
@@ -3919,7 +3921,9 @@ static void __exec_modal(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db
 	ls_foreach (l, iter, kv) {
 		if (i++ == modal->idx) {
 			RPanelAlmightyCallback cb = sdb_ptr_get (menu_db, sdbkv_key (kv), 0);
-			cb (core, panel, dir, sdbkv_key (kv));
+			if (cb) {
+				cb (core, panel, dir, sdbkv_key (kv));
+			}
 			break;
 		}
 	}
@@ -3974,9 +3978,9 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 				} else {
 					word = __get_word_from_canvas_for_menu (core, core->panels, cx, cy);
 					if (word) {
-						void *cb = sdb_ptr_get (menu_db, word, 0);
+						RPanelAlmightyCallback cb = sdb_ptr_get (menu_db, word, 0);
 						if (cb) {
-							((RPanelAlmightyCallback)cb) (core, panel, PANEL_LAYOUT_NONE, word);
+							cb (core, panel, PANEL_LAYOUT_NONE, word);
 							__free_modal (&modal);
 							free (word);
 							break;
