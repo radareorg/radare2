@@ -57,6 +57,21 @@ static bool isnum(RAnalEsil *esil, const char *str, ut64 *num) {
 	return false;
 }
 
+static bool r_anal_esil_runpending(RAnalEsil *esil, char *pending) {
+	if (pending) {
+		free (esil->pending);
+		esil->pending = pending;
+	} else if (esil->pending) {
+		char *expr = esil->pending;
+		esil->pending = NULL;
+		RAnalEsil e = *esil;
+		r_anal_esil_parse (&e, expr);
+		free (expr);
+		return true;
+	}
+	return false;
+}
+
 static bool ispackedreg(RAnalEsil *esil, const char *str) {
 	RRegItem *ri = r_reg_get (esil->anal->reg, str, -1);
 	return ri? ri->packed_size > 0: false;
@@ -1821,7 +1836,7 @@ static bool esil_inc_macro(RAnalEsil *esil) {
 	bool ret = false;
 	char *src = r_anal_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src)) {
-		esil->pending = r_str_newf ("1,%s,+", src);
+		r_anal_esil_runpending (esil, r_str_newf ("1,%s,+", src));
 		ret = true;
 	} else {
 		ERR ("esil_inc: invalid parameters");
@@ -1834,7 +1849,7 @@ static bool esil_inceq_macro(RAnalEsil *esil) {
 	bool ret = false;
 	char *src = r_anal_esil_pop (esil);
 	if (R_STR_ISNOTEMPTY (src)) {
-		esil->pending = r_str_newf ("1,%s,+,%s,=", src, src);
+		r_anal_esil_runpending (esil, r_str_newf ("1,%s,+,%s,=", src, src));
 		ret = true;
 	} else {
 		ERR ("esil_inceq_macro: invalid parameters");
@@ -1847,13 +1862,14 @@ static bool esil_addeq_macro(RAnalEsil *esil) {
 	bool ret = false;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (R_STR_ISNOTEMPTY (src)) {
-		esil->pending = r_str_newf ("%s,%s,+,%s,=", src, dst, dst);
+	if (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst)) {
+		r_anal_esil_runpending (esil, r_str_newf ("%s,%s,+,%s,:=", src, dst, dst));
 		ret = true;
 	} else {
 		ERR ("esil_addeq_macro: invalid parameters");
 	}
 	free (src);
+	free (dst);
 	return ret;
 }
 
@@ -1861,13 +1877,14 @@ static bool esil_subeq_macro(RAnalEsil *esil) {
 	bool ret = false;
 	char *dst = r_anal_esil_pop (esil);
 	char *src = r_anal_esil_pop (esil);
-	if (R_STR_ISNOTEMPTY (src)) {
-		esil->pending = r_str_newf ("%s,%s,-,%s,=", src, dst, dst);
+	if (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst)) {
+		r_anal_esil_runpending (esil, r_str_newf ("%s,%s,-,%s,:=", src, dst, dst));
 		ret = true;
 	} else {
-		ERR ("esil_addeq_macro: invalid parameters");
+		ERR ("esil_subeq_macro: invalid parameters");
 	}
 	free (src);
+	free (dst);
 	return ret;
 }
 #else
@@ -3619,11 +3636,7 @@ loop:
 repeat:
 	wordi = 0;
 	while (*str) {
-		if (esil->pending) {
-			char *expr = esil->pending;
-			esil->pending = NULL;
-			r_anal_esil_parse (esil, expr);
-			free (expr);
+		if (r_anal_esil_runpending (esil, NULL)) {
 			continue;
 		}
 		if (str == hashbang) {
@@ -3673,11 +3686,7 @@ repeat:
 	}
 	word[wordi] = 0;
 	if (*word) {
-		if (esil->pending) {
-			char *expr = esil->pending;
-			esil->pending = NULL;
-			r_anal_esil_parse (esil, expr);
-			free (expr);
+		if (r_anal_esil_runpending (esil, NULL)) {
 			goto step_out;
 		}
 		if (!runword (esil, word)) {
@@ -3689,21 +3698,11 @@ repeat:
 		case 2: goto repeat;
 		}
 	}
-	if (esil->pending) {
-		char *expr = esil->pending;
-		esil->pending = NULL;
-		r_anal_esil_parse (esil, expr);
-		free (expr);
-	}
+	r_anal_esil_runpending (esil, NULL);
 	__stepOut (esil, esil->cmd_step_out);
 	return 1;
 step_out:
-	if (esil->pending) {
-		char *expr = esil->pending;
-		esil->pending = NULL;
-		r_anal_esil_parse (esil, expr);
-		free (expr);
-	}
+	r_anal_esil_runpending (esil, NULL);
 	__stepOut (esil, esil->cmd_step_out);
 	return 0;
 }
@@ -3767,8 +3766,8 @@ R_API void r_anal_esil_setup_macros(RAnalEsil *esil) {
 #if ESIL_MACRO
 	OP ("++", esil_inc_macro, 1, 1, OT_MATH);
 	OP ("++=", esil_inceq_macro, 1, 1, OT_MATH);
-	OP ("+=", esil_addeq_macro, 0, 2, OT_MATH);
-	OP ("-=", esil_subeq_macro, 0, 2, OT_MATH);
+	OP ("+=", esil_addeq_macro, 0, 2, OT_MATH | OT_REGW);
+	OP ("-=", esil_subeq_macro, 0, 2, OT_MATH | OT_REGW);
 #else
 	OP ("++", esil_inc, 0, 1, OT_MATH | OT_REGW);
 	OP ("++=", esil_inceq, 0, 1, OT_MATH | OT_REGW);
