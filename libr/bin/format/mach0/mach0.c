@@ -340,9 +340,9 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 
 	char *segment_flagname = NULL;
 #if R_BIN_MACH064
-	segment_flagname = r_str_newf ("mach0_segment64_%zu.offset", j);
+	segment_flagname = r_str_newf ("mach0_segment64_%u.offset", (ut32)j);
 #else
-	segment_flagname = r_str_newf ("mach0_segment_%zu.offset", j);
+	segment_flagname = r_str_newf ("mach0_segment_%u.offset", (ut32)j);
 #endif
 	sdb_num_set (bin->kv, segment_flagname, off, 0);
 	free (segment_flagname);
@@ -2297,7 +2297,7 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 				}
 			}
 			char *section_name = r_str_ndup (bin->sects[i].sectname, 16);
-			char *segment_name = r_str_newf ("%zu.%s", i, bin->segs[segment_index].segname);
+			char *segment_name = r_str_newf ("%u.%s", (ut32)i, bin->segs[segment_index].segname);
 			s->name = r_str_newf ("%s.%s", segment_name, section_name);
 			s->is_data = __isDataSection (s);
 			if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
@@ -2764,7 +2764,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 					}
 				}
 			} else {
-				sym->name = r_str_newf ("unk%zu", i);
+				sym->name = r_str_newf ("unk%u", (ut32)i);
 			}
 			if (!inSymtab (hash, sym->name, sym->vaddr)) {
 				r_list_append (list, sym);
@@ -2787,7 +2787,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 			sym->paddr = symbol.offset;
 			sym->name = symbol.name;
 			if (!sym->name) {
-				sym->name = r_str_newf ("unk%zu", i);
+				sym->name = r_str_newf ("unk%u", (ut32)i);
 			}
 			sym->is_imported = symbol.is_imported;
 			r_list_append (list, sym);
@@ -2829,7 +2829,7 @@ const RList *MACH0_(get_symbols_list)(struct MACH0_(obj_t) *bin) {
 					}
 				}
 			} else {
-				sym->name = r_str_newf ("unk%zu", i);
+				sym->name = r_str_newf ("unk%u", (ut32)i);
 			}
 			r_list_append (list, sym);
 			j++;
@@ -4471,7 +4471,7 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 			char section_flagname[128];
 			for (i = 0; i < nsects && (addr + off) < length && off < lcSize; i++) {
 				const char *sname = is64? "mach0_section64": "mach0_section";
-				snprintf (section_flagname, sizeof (section_flagname), "section_%zu", j++);
+				snprintf (section_flagname, sizeof (section_flagname), "section_%u", (ut32)j++);
 				RBinField *f = r_bin_field_new (addr + off, addr + off, 1, section_flagname, sname, sname, true);
 				r_list_append (ret, f);
 				off += is64? 80: 68;

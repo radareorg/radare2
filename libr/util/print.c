@@ -304,7 +304,7 @@ R_API RPrint* r_print_new(void) {
 	if (!p) {
 		return NULL;
 	}
-	strcpy (p->datefmt, "%Y-%m-%d %H:%M:%S %z");
+	strcpy (p->datefmt, "%Y-%m-%d %H:%M:%S %u");
 	r_io_bind_init (p->iob);
 	p->pairs = true;
 	p->resetbg = true;

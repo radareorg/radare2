@@ -3666,7 +3666,7 @@ R_API int r_core_config_init(RCore *core) {
 	update_cfgcharsets_options (core, n);
 	SETBPREF ("cfg.r2wars", "false", "Enable some tweaks for the r2wars game");
 	SETBPREF ("cfg.plugins", "true", "Load plugins at startup");
-	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
+	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %u", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %u)");
 	SETICB ("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
 	SETCB ("cfg.corelog", "false", &cb_cfgcorelog, "Log changes using the T api needed for realtime syncing");
 	SETBPREF ("cfg.newtab", "false", "Show descriptions in command completion");

@@ -64,7 +64,7 @@ static void x86_ctrl_reg_pretty_print(RIO *io, struct r2k_control_reg ctrl) {
 
 #if __x86_64__
 	io->cb_printf ("CR8: 0x%"PFMT64x"\n", (ut64) ctrl.cr8);
-	io->cb_printf (" [*] TPL:    %zu\n", ctrl.cr8 & 0xf);
+	io->cb_printf (" [*] TPL:    %u\n", (ut32)(ctrl.cr8 & 0xf));
 #endif
 }
 
@@ -760,14 +760,13 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 					io->cb_printf ("  %s\n", (char*)&(proc_data.vmareastruct[i + 7]));
 					i = nextstart;
 				}
-				io->cb_printf ("STACK BASE ADDRESS = 0x%zx\n", proc_data.stack);
+				io->cb_printf ("STACK BASE ADDRESS = 0x%p\n", proc_data.stack);
 			}
 		}
 		break;
 	default:
-		{
-			print_help (io, NULL, 1);
-		}
+		print_help (io, NULL, 1);
+		break;
 	}
  end:
 	free (databuf);
