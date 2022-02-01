@@ -1857,7 +1857,35 @@ static bool esil_inceq_macro(RAnalEsil *esil) {
 		esil->pending = r_str_newf ("1,%s,+,%s,=", src, src);
 		ret = true;
 	} else {
-		ERR ("esil_inc: invalid parameters");
+		ERR ("esil_inceq_macro: invalid parameters");
+	}
+	free (src);
+	return ret;
+}
+
+static bool esil_addeq_macro(RAnalEsil *esil) {
+	bool ret = false;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (R_STR_ISNOTEMPTY (src)) {
+		esil->pending = r_str_newf ("%s,%s,+,%s,=", src, dst, dst);
+		ret = true;
+	} else {
+		ERR ("esil_addeq_macro: invalid parameters");
+	}
+	free (src);
+	return ret;
+}
+
+static bool esil_subeq_macro(RAnalEsil *esil) {
+	bool ret = false;
+	char *dst = r_anal_esil_pop (esil);
+	char *src = r_anal_esil_pop (esil);
+	if (R_STR_ISNOTEMPTY (src)) {
+		esil->pending = r_str_newf ("%s,%s,-,%s,=", src, dst, dst);
+		ret = true;
+	} else {
+		ERR ("esil_addeq_macro: invalid parameters");
 	}
 	free (src);
 	return ret;
@@ -3738,15 +3766,19 @@ R_API void r_anal_esil_setup_macros(RAnalEsil *esil) {
 #if ESIL_MACRO
 	OP ("++", esil_inc_macro, 1, 1, OT_MATH);
 	OP ("++=", esil_inceq_macro, 1, 1, OT_MATH);
+	OP ("+=", esil_addeq_macro, 0, 2, OT_MATH);
+	OP ("-=", esil_subeq_macro, 0, 2, OT_MATH);
 #else
 	OP ("++", esil_inc, 0, 1, OT_MATH | OT_REGW);
 	OP ("++=", esil_inceq, 0, 1, OT_MATH | OT_REGW);
+	OP ("+=", esil_addeq, 0, 2, OT_MATH | OT_REGW);
+	OP ("-=", esil_subeq, 0, 2, OT_MATH | OT_REGW);
 #endif
 }
 
 R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
-	OP ("$", esil_interrupt, 0, 1, OT_UNK);		//hm, type seems a bit wrong
-	OP ("()", esil_syscall, 0, 1, OT_UNK);		//same
+	OP ("$", esil_interrupt, 0, 1, OT_UNK); // hm, type seems a bit wrong
+	OP ("()", esil_syscall, 0, 1, OT_UNK);  // same
 	OP ("$z", esil_zf, 1, 0, OT_UNK);
 	OP ("$c", esil_cf, 1, 1, OT_UNK);
 	OP ("$b", esil_bf, 1, 1, OT_UNK);
@@ -3790,9 +3822,7 @@ R_API void r_anal_esil_setup_ops(RAnalEsil *esil) {
 	OP ("^", esil_xor, 1, 2, OT_MATH);
 	OP ("^=", esil_xoreq, 0, 2, OT_MATH | OT_REGW);
 	OP ("+", esil_add, 1, 2, OT_MATH);
-	OP ("+=", esil_addeq, 0, 2, OT_MATH | OT_REGW);
 	OP ("-", esil_sub, 1, 2, OT_MATH);
-	OP ("-=", esil_subeq, 0, 2, OT_MATH | OT_REGW);
 	OP ("--", esil_dec, 1, 1, OT_MATH);
 	OP ("--=", esil_deceq, 0, 1, OT_MATH | OT_REGW);
 	OP ("/", esil_div, 1, 2, OT_MATH);
