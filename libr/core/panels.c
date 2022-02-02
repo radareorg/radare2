@@ -6636,8 +6636,7 @@ virtualmouse:
 		} else if (core->print->cur_enabled) {
 			RPanel *cp = __get_cur_panel (core->panels);
 			if (cp) {
-				cp->view->curpos++;
-				core->print->cur++;
+				__direction_panels_cursor_cb (core, DOWN);
 			}
 			nextOpcode (core);
 		} else {
@@ -6661,12 +6660,7 @@ virtualmouse:
 						prevOpcode (core);
 					}
 				} else {
-					if (cp->view->curpos > 0) {
-						cp->view->curpos--;
-					}
-					if (core->print->cur > 0) {
-						core->print->cur--;
-					}
+					__direction_panels_cursor_cb (core, UP);
 				}
 			}
 		} else if (cur->model->directionCb) {
@@ -6679,16 +6673,16 @@ virtualmouse:
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y -= 5;
 		} else {
-			if (core->print->cur_enabled) {
-				size_t i;
-				for (i = 0; i < 4; i++) {
-					prevOpcode (core);
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)UP);
 				}
 			} else {
-				r_cons_switchbuf (false);
-				if (cur->model->directionCb) {
-					for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-						cur->model->directionCb (core, (int)UP);
+				if (core->print->cur_enabled) {
+					size_t i;
+					for (i = 0; i < 4; i++) {
+						prevOpcode (core);
 					}
 				}
 			}
@@ -6698,16 +6692,16 @@ virtualmouse:
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y += 5;
 		} else {
-			if (core->print->cur_enabled) {
-				size_t i;
-				for (i = 0; i < 4; i++) {
-					nextOpcode (core);
+			r_cons_switchbuf (false);
+			if (cur->model->directionCb) {
+				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
+					cur->model->directionCb (core, (int)DOWN);
 				}
 			} else {
-				r_cons_switchbuf (false);
-				if (cur->model->directionCb) {
-					for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-						cur->model->directionCb (core, (int)DOWN);
+				if (core->print->cur_enabled) {
+					size_t i;
+					for (i = 0; i < 4; i++) {
+						nextOpcode (core);
 					}
 				}
 			}
