@@ -5,8 +5,8 @@
 [![Latest packaged version](https://repology.org/badge/latest-versions/radare2.svg)](https://repology.org/project/radare2/versions) [![Tests Status](https://github.com/radareorg/radare2/workflows/CI/badge.svg?branch=master)](https://github.com/radareorg/radare2/actions/workflows/ci.yml?query=branch%3Amaster) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) [![Total alerts](https://img.shields.io/lgtm/alerts/g/radareorg/radare2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/radareorg/radare2/alerts/)
 
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
-binary downloads. The current git `master` branch is `5.5.5`, and the next
-release will be `5.6.0`.
+binary downloads. The current git `master` branch is `5.6.1`, and the next
+major release will be `5.7.0`.
 
 r2 is a complete rewrite of radare. It provides a set of libraries, tools and
 plugins to ease reverse engineering tasks.
