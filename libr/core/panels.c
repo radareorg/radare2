@@ -5275,6 +5275,10 @@ static int __symbols_cb(void *user) {
 
 static int __program_cb(void *user) {
 	RCore *core = (RCore *)user;
+	__del_menu (core);
+	__panels_refresh (core);
+	r_cons_gotoxy (0, 3);
+	r_cons_flush ();
 	r_core_cmdf (core, "aaa");
 	return 0;
 }
