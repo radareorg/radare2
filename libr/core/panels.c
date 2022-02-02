@@ -453,6 +453,9 @@ static void __shrink_panels_backward(RCore *core, int target) {
 
 static void __cache_white_list(RCore *core, RPanel *panel) {
 	int i = 0;
+	if (!core || !panel) {
+		return;
+	}
 	for (; i < COUNT (cache_white_list_cmds); i++) {
 		if (!strcmp (panel->model->cmd, cache_white_list_cmds[i])) {
 			panel->model->cache = true;
@@ -879,9 +882,13 @@ static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache
 		if (b) {
 			core->print->cur_enabled = false;
 		}
+
+		bool o_interactive = r_cons_is_interactive ();
+		r_cons_set_interactive (false);
 		out = (*cmd == '.')
 			? r_core_cmd_str_pipe (core, cmd)
 			: r_core_cmd_str (core, cmd);
+		r_cons_set_interactive (o_interactive);
 		if (force_cache) {
 			panel->model->cache = true;
 		}
@@ -1931,7 +1938,8 @@ static void __create_panel_db(void *user, RPanel *panel, const RPanelLayout dir,
 		return;
 	}
 	__create_panel (core, panel, dir, title, cmd);
-
+	RPanel *p = __get_cur_panel (core->panels);
+	__cache_white_list (core, p);
 }
 
 static void __create_panel_input(void *user, RPanel *panel, const RPanelLayout dir, R_NULLABLE const char *title) {
@@ -6748,7 +6756,11 @@ virtualmouse:
 			goto exit;
 		}
 		// all panels containing decompiler data should be cached
-		cur->model->cache = strstr (cur->model->title, "Decomp") != NULL;
+		RPanel *p = __get_cur_panel (core->panels);
+		__cache_white_list (core, p);
+		if (strstr (cur->model->title, "Decomp")) {
+			cur->model->cache = true;
+		}
 		break;
 	case 'O':
 		__handle_print_rotate (core);
