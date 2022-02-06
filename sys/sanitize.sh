@@ -2,8 +2,8 @@
 # SANITIZE="address leak memory undefined"
 # SANITIZE="address signed-integer-overflow"  # Faster build
 # default:
-SANITIZE=${SANITIZE:="address undefined signed-integer-overflow"}
-# SANITIZE=${SANITIZE:="thread undefined signed-integer-overflow"}
+# SANITIZE=${SANITIZE:="address undefined signed-integer-overflow"}
+SANITIZE=${SANITIZE:="thread"}
 
 printf "\033[32m"
 echo "========================================================================="
