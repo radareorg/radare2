@@ -137,7 +137,7 @@ R_API bool r_th_getname(RThread *th, char *name, size_t len) {
 }
 
 R_API bool r_th_setaffinity(RThread *th, int cpuid) {
-#if defined(__wasi__) || defined(_WASI_EMULATED_SIGNAL)
+#if !WANT_THREADS || defined(__wasi__) || defined(_WASI_EMULATED_SIGNAL)
 	return true;
 #elif __linux__
 #if defined(__GLIBC__) && defined (__GLIBC_MINOR__) && (__GLIBC__ <= 2) && (__GLIBC_MINOR__ <= 2)

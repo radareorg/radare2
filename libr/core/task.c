@@ -511,6 +511,7 @@ R_API void r_core_task_enqueue_oneshot(RCoreTaskScheduler *scheduler, RCoreTaskO
 }
 
 R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
+	r_return_val_if_fail (scheduler && task, -1);
 	task->thread = NULL;
 	return task_run (task);
 }
@@ -518,6 +519,9 @@ R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 /* begin running stuff synchronously on the main task */
 R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler) {
 	RCoreTask *task = scheduler->main_task;
+	if (!task) {
+		return;
+	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 	task->thread = NULL;
@@ -530,16 +534,19 @@ R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler) {
 
 /* end running stuff synchronously, initially started with r_core_task_sync_begin() */
 R_API void r_core_task_sync_end(RCoreTaskScheduler *scheduler) {
+	r_return_if_fail (scheduler);
 	task_end (scheduler->main_task);
 }
 
 /* To be called from within a task.
  * Begin sleeping and schedule other tasks until r_core_task_sleep_end() is called. */
 R_API void r_core_task_sleep_begin(RCoreTask *task) {
+	r_return_if_fail (task);
 	r_core_task_schedule (task, R_CORE_TASK_STATE_SLEEPING);
 }
 
 R_API void r_core_task_sleep_end(RCoreTask *task) {
+	r_return_if_fail (task);
 	task_wakeup (task);
 }
 

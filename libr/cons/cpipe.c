@@ -13,6 +13,9 @@ static int backup_fdn = 1;
 #endif
 
 static bool __dupDescriptor(int fd, int fdn) {
+	if (fd == fdn) {
+		return false;
+	}
 #if __wasi__
 	return false;
 #elif __WINDOWS__

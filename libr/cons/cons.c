@@ -490,6 +490,9 @@ R_API void r_cons_break_end(void) {
 }
 
 R_API void *r_cons_sleep_begin(void) {
+	if (!r_cons_instance) {
+		r_cons_thready ();
+	}
 	if (!I->cb_sleep_begin) {
 		return NULL;
 	}
@@ -497,6 +500,9 @@ R_API void *r_cons_sleep_begin(void) {
 }
 
 R_API void r_cons_sleep_end(void *user) {
+	if (!r_cons_instance) {
+		r_cons_thready ();
+	}
 	if (I->cb_sleep_end) {
 		I->cb_sleep_end (I->user, user);
 	}
@@ -2235,6 +2241,9 @@ R_API void r_cons_clear_buffer(void) {
 
 R_API void r_cons_thready(void) {
 	r_th_lock_enter (&r_cons_lock);
+	if (!r_cons_instance) {
+		r_cons_new ();
+	}
 	C->unbreakable = true;
 	r_th_lock_leave (&r_cons_lock);
 }
