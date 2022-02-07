@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2021 - Matthieu (c0riolis) Tardy - l0stb1t*/
+/* radare - LGPL3 - Copyright 2016-2022 - Matthieu (c0riolis) Tardy - l0stb1t */
 
 #include <r_io.h>
 #include <r_bin.h>
@@ -9,9 +9,9 @@
 #define if_true_return(cond,ret) if(cond){return(ret);}
 
 // TODO: kill globals
-static ut32 magic_int;
-static ut32 symbols_ordinal = 0;
-static RList *refs = NULL; // If you don't have a good reason, do not change this. And also checkout !refs in get_code_object()
+static R_TH_LOCAL ut32 magic_int;
+static R_TH_LOCAL ut32 symbols_ordinal = 0;
+static R_TH_LOCAL RList *refs = NULL; // If you don't have a good reason, do not change this. And also checkout !refs in get_code_object()
 
 /* interned_table is used to handle TYPE_INTERNED object */
 extern RList *interned_table;
@@ -500,13 +500,9 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 	}
 	for (i = 0; i < size; i++) {
 		tmp = get_object (buffer);
-		if (!tmp) {
-			r_list_free (ret->data);
-			R_FREE (ret);
-			return NULL;
-		}
-		if (!r_list_append (ret->data, tmp)) {
+		if (!tmp || !r_list_append (ret->data, tmp)) {
 			free_object (tmp);
+			((RList*)ret->data)->free = NULL;
 			r_list_free (ret->data);
 			free (ret);
 			return NULL;
@@ -516,7 +512,6 @@ static pyc_object *get_array_object_generic(RBuffer *buffer, ut32 size) {
 }
 
 /* small TYPE_SMALL_TUPLE doesn't exist in python2 */
-/* */
 static pyc_object *get_small_tuple_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
@@ -535,11 +530,8 @@ static pyc_object *get_small_tuple_object(RBuffer *buffer) {
 }
 
 static pyc_object *get_tuple_object(RBuffer *buffer) {
-	pyc_object *ret = NULL;
 	bool error = false;
-	ut32 n = 0;
-
-	n = get_ut32 (buffer, &error);
+	ut32 n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (tuple size out of range)\n");
 		return NULL;
@@ -547,20 +539,17 @@ static pyc_object *get_tuple_object(RBuffer *buffer) {
 	if (error) {
 		return NULL;
 	}
-	ret = get_array_object_generic (buffer, n);
+	pyc_object *ret = get_array_object_generic (buffer, n);
 	if (ret) {
 		ret->type = TYPE_TUPLE;
-		return ret;
 	}
-	return NULL;
+	return ret;
 }
 
 static pyc_object *get_list_object(RBuffer *buffer) {
 	pyc_object *ret = NULL;
 	bool error = false;
-	ut32 n = 0;
-
-	n = get_ut32 (buffer, &error);
+	ut32 n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
 		eprintf ("bad marshal data (list size out of range)\n");
 		return NULL;
@@ -616,7 +605,6 @@ static pyc_object *get_dict_object(RBuffer *buffer) {
 }
 
 static pyc_object *get_set_object(RBuffer *buffer) {
-	pyc_object *ret = NULL;
 	bool error = false;
 	ut32 n = get_ut32 (buffer, &error);
 	if (n > ST32_MAX) {
@@ -626,11 +614,10 @@ static pyc_object *get_set_object(RBuffer *buffer) {
 	if (error) {
 		return NULL;
 	}
-	ret = get_array_object_generic (buffer, n);
-	if (!ret) {
-		return NULL;
+	pyc_object *ret = get_array_object_generic (buffer, n);
+	if (ret) {
+		ret->type = TYPE_SET;
 	}
-	ret->type = TYPE_SET;
 	return ret;
 }
 
