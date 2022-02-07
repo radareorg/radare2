@@ -1015,7 +1015,7 @@ static const char *arg(RAnal *a, csh *handle, cs_insn *insn, char *buf, int n) {
 
 #define VEC64(n) insn->detail->arm64.operands[n].vess
 #define VEC64_APPEND(sb, n, i) vector64_append(sb, handle, insn, n, i)
-#define VEC64_MASK(sh, sz) (bitmask_by_width[63]^(bitmask_by_width[sz-1]<<sh))
+#define VEC64_MASK(sh, sz) (bitmask_by_width[63]^(bitmask_by_width[sz>0?sz-1:0]<<sh))
 
 static void vector64_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, int i) {
 	cs_arm64_op op = INSOP64 (n);
@@ -1079,7 +1079,6 @@ static void vector64_dst_append(RStrBuf *sb, csh *handle, cs_insn *insn, int n, 
 			shift -= 64;
 			regc = "h";
 		}
-
 		if (shift > 0 && shift < 64) {
 			r_strbuf_appendf (sb, "%d,SWAP,0x%"PFMT64x",&,<<,%s%s,0x%"PFMT64x",&,|,%s%s",
 				shift, mask, REG64 (n), regc, VEC64_MASK (shift, size), REG64 (n), regc);
