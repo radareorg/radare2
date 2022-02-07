@@ -1098,7 +1098,7 @@ static pyc_object *get_object(RBuffer *buffer) {
 		break;
 	case TYPE_UNKNOWN:
 		eprintf ("Get not implemented for type 0x%x\n", type);
-		r_list_pop (refs);
+		// r_list_pop (refs);
 		free_object (ret);
 		return NULL;
 	case 0:
