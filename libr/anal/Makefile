@@ -85,6 +85,7 @@ tests-esil:
 .PHONY: do doclean
 
 do:
+	$(MAKE) -C ../asm/arch/arm/v35arm64
 	$(MAKE) -C d
 
 doclean:
