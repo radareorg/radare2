@@ -18,13 +18,13 @@ Rebuild() {
 	cd "$1" || exit 1
 	$MAKE clean
 	$MAKE -j8 || exit 1
-	cd -
+	cd - > /dev/null
 }
 
 Build() {
 	cd "$1" || exit 1
 	$MAKE -j8 || exit 1
-	cd -
+	cd - > /dev/null
 }
 
 RebuildIOSDebug() {
@@ -48,9 +48,9 @@ RebuildSpp() {
 
 RebuildJava() {
 	Rebuild shlr/java
+	Rebuild libr/bin
 	Rebuild libr/asm
 	Rebuild libr/anal
-	Rebuild libr/bin
 	Rebuild libr/core
 }
 
