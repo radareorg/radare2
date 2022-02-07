@@ -4803,6 +4803,7 @@ static int __settings_decompiler_cb(void *user) {
 	RCore *core = (RCore *)user;
 	RPanelsRoot *root = core->panels_root;
 	RPanelsMenu *menu = core->panels->panels_menu;
+	menu->n_refresh = 0; // close the menubar
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	const char *pdc_next = child->name;
