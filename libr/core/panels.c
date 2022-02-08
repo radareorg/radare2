@@ -14,7 +14,7 @@ static void __set_pcb(RPanel *p);
 static void __panels_refresh(RCore *core);
 
 #define MENU_Y 1
-#define PANEL_NUM_LIMIT 9
+#define PANEL_NUM_LIMIT 16
 
 #define PANEL_TITLE_SYMBOLS          "Symbols"
 #define PANEL_TITLE_STACK            "Stack"
@@ -723,18 +723,27 @@ static void __update_help_title(RCore *core, RPanel *panel) {
 	if (__check_if_cur_panel (core, panel)) {
 		r_strbuf_setf (title, "%s[X] %s"Color_RESET,
 				core->cons->context->pal.graph_box2, panel->model->title);
-		r_strbuf_setf (cache_title, "%s[Cache] N/A"Color_RESET,
-				core->cons->context->pal.graph_box2);
+		if (panel->view->pos.w > 16) {
+			// r_strbuf_setf (cache_title, "%s[Cache] N/A"Color_RESET, core->cons->context->pal.graph_box2);
+			r_strbuf_setf (cache_title, "%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
+		}
 	} else {
 		r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
-		r_strbuf_setf (cache_title, "[Cache] N/A");
+		if (panel->view->pos.w > 24) {
+			r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
+			// r_strbuf_setf (cache_title, "[Cache] N/A");
+		}
+	}
+	if (panel->view->pos.w > 16) {
+		if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w
+					- r_str_ansi_len (r_strbuf_get (cache_title)) - 2, panel->view->pos.y + 1)) {
+			r_cons_canvas_write (can, r_strbuf_get (cache_title));
+		}
 	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, r_strbuf_get (title));
-	}
-	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w
-				- r_str_ansi_len (r_strbuf_get (cache_title)) - 2, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, r_strbuf_get (cache_title));
+		char *s = r_str_ndup (r_strbuf_get (title), panel->view->pos.w - 1);
+		r_cons_canvas_write (can, s);
+		free (s);
 	}
 	r_strbuf_free (cache_title);
 	r_strbuf_free (title);
@@ -803,31 +812,50 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 	RStrBuf *cache_title = r_strbuf_new (NULL);
 	char *cmd_title  = __apply_filter_cmd (core, panel);
 	if (cmd_title) {
+#if 1
+		char *tit = r_str_ndup (panel->model->title, panel->view->pos.w - 6);
+		if (!tit) {
+			tit = strdup ("");
+		}
 		if (__check_if_cur_panel (core, panel)) {
 			if (!strcmp (panel->model->title, cmd_title)) {
-				r_strbuf_setf (title, "%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title);
+				r_strbuf_setf (title, "%s[X] "Color_RESET, core->cons->context->pal.graph_box2);
 			}  else {
-				r_strbuf_setf (title, "%s[X] %s (%s)"Color_RESET, core->cons->context->pal.graph_box2, panel->model->title, cmd_title);
+				r_strbuf_setf (title, "%s[X] "Color_RESET, core->cons->context->pal.graph_box2);
 			}
-			r_strbuf_setf (cache_title, "%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
-		} else {
-			if (!strcmp (panel->model->title, cmd_title)) {
-				r_strbuf_setf (title, "[X]   %s   ", panel->model->title);
+			if (panel->view->pos.w > 4) {
+				r_strbuf_appendf (title, "%s"Color_RESET, tit?tit:"");
 			} else {
-				r_strbuf_setf (title, "[X]   %s (%s)  ", panel->model->title, cmd_title);
+				r_strbuf_appendf (title, "%s (%s)"Color_RESET, tit?tit:"", cmd_title);
 			}
-			r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
+			if (panel->view->pos.w > 24) {
+				r_strbuf_setf (cache_title, "%s[Cache] %s"Color_RESET, core->cons->context->pal.graph_box2, panel->model->cache ? "On" : "Off");
+			}
+		} else {
+			if (cmd_title && !strcmp (panel->model->title, cmd_title)) {
+				r_strbuf_setf (title, "[X]   %s   ", tit);
+			} else {
+				r_strbuf_setf (title, "[X]   %s (%s)  ", panel->model->title, tit);
+			}
+			if (panel->view->pos.w > 24) {
+				r_strbuf_setf (cache_title, "[Cache] %s", panel->model->cache ? "On" : "Off");
+			}
 		}
+		free (tit);
+#else
+// TODO: should work as a replacement as it seems copypasta
+		__update_help_title (core, panel);
+#endif
 	} else {
 		r_strbuf_setf (cache_title, "%s[X] %s"Color_RESET, core->cons->context->pal.graph_box2, "");
 	}
 	r_strbuf_slice (title, 0, panel->view->pos.w);
 	r_strbuf_slice (cache_title, 0, panel->view->pos.w);
-	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
-		r_cons_canvas_write (can, r_strbuf_get (title));
-	}
 	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + panel->view->pos.w - r_str_ansi_len (r_strbuf_get (cache_title)) - 2, panel->view->pos.y + 1)) {
 		r_cons_canvas_write (can, r_strbuf_get (cache_title));
+	}
+	if (r_cons_canvas_gotoxy (can, panel->view->pos.x + 1, panel->view->pos.y + 1)) {
+		r_cons_canvas_write (can, r_strbuf_get (title));
 	}
 	r_strbuf_free (title);
 	r_strbuf_free (cache_title);
@@ -7207,7 +7235,7 @@ R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root) {
 		}
 	}
 	if (fromVisual) {
-		r_core_visual(core, "");
+		r_core_visual (core, "");
 	} else {
 		r_cons_enable_mouse (false);
 	}
