@@ -200,23 +200,27 @@ static void readAnnotation(RBinDexObj *dex, bool readVisibility) {
 	}
 }
 
-static void readAnnotationSet(RBinDexObj *dex, ut64 addr) {
-	r_buf_seek (dex->b, addr, R_BUF_SET);
+static bool readAnnotationSet(RBinDexObj *dex, ut64 addr) {
+	if (r_buf_seek (dex->b, addr, R_BUF_SET) < 1) {
+		return false;
+	}
 	ut32 i, size = r_buf_read_le32 (dex->b);
 	addr += sizeof (ut32);
 	if (size == UT32_MAX) {
-		return;
+		return false;
 	}
 	bprintf ("            set-size: %d\n", size);
 	for (i = 0; i < size; i++) {
-		r_buf_seek (dex->b, addr + (i * sizeof (ut32)), R_BUF_SET);
+		if (r_buf_seek (dex->b, addr + (i * sizeof (ut32)), R_BUF_SET) < 1) {
+			break;
+		}
 		ut32 at = r_buf_read_le32 (dex->b);
 		if (at == UT32_MAX || r_buf_seek (dex->b, at, R_BUF_SET) < 1) {
 			break;
 		}
 		readAnnotation (dex, true);
 	}
-	r_buf_seek (dex->b, addr + (i * sizeof (ut32)), R_BUF_SET);
+	return r_buf_seek (dex->b, addr + (i * sizeof (ut32)), R_BUF_SET) >= 0;
 }
 
 static void r_bin_dex_obj_free(RBinDexObj *dex) {
@@ -477,8 +481,13 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			continue;
 		}
 		if (classAnnotationsOffset > 0) {
-			ut64 cur = r_buf_seek (dex->b, 0, R_BUF_CUR);
-			readAnnotationSet (dex, classAnnotationsOffset);
+			st64 cur = r_buf_seek (dex->b, 0, R_BUF_CUR);
+			if (cur < 1) {
+				break;
+			}
+			if (!readAnnotationSet (dex, classAnnotationsOffset)) {
+				break;
+			}
 			r_buf_seek (dex->b, cur, R_BUF_SET);
 		}
 		for (j = 0; j < fieldsCount; j++) {
@@ -489,8 +498,12 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			ut32 annotationsOffset = r_buf_read_le32 (dex->b);
 			ut64 cur = r_buf_seek (dex->b, 0, R_BUF_CUR);
 			bprintf ("        Annotations for fieldId %d:\n", fieldId);
-			readAnnotationSet (dex, annotationsOffset);
-			r_buf_seek (dex->b, cur, R_BUF_SET);
+			if (!readAnnotationSet (dex, annotationsOffset)) {
+				break;
+			}
+			if (r_buf_seek (dex->b, cur, R_BUF_SET) < 1) {
+				break;
+			}
 		}
 		for (j = 0; j < annotatedMethodsCount ; j++) {
 			ut32 methodId = r_buf_read_le32 (dex->b);
@@ -500,8 +513,12 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			}
 			ut64 cur = r_buf_seek (dex->b, 0, R_BUF_CUR);
 			bprintf ("        Annotations for methodId %d:\n", methodId);
-			readAnnotationSet (dex, annotationsOffset);
-			r_buf_seek (dex->b, cur, R_BUF_SET);
+			if (!readAnnotationSet (dex, annotationsOffset)) {
+				break;
+			}
+			if (r_buf_seek (dex->b, cur, R_BUF_SET) < 1) {
+				break;
+			}
 		}
 #if 0
 		for (j = 0; j < annotatedParametersCount ; j++) {
