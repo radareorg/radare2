@@ -19,7 +19,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.  */
 
 /* This is needed to pick up the NAN macro on some systems.  */
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
