@@ -13,7 +13,7 @@
 #include "class.h"
 #include "dsojson.h"
 
-static PrintfCallback Eprintf =(PrintfCallback) printf;
+static R_TH_LOCAL PrintfCallback Eprintf =(PrintfCallback) printf;
 #ifdef IFDBG
 #undef IFDBG
 #endif
@@ -301,10 +301,10 @@ R_API ut32 U(r_bin_java_swap_uint)(ut32 x) {
 	return (Byte0 << 24) | (Byte1 << 8) | (Byte2 >> 8) | (Byte3 >> 24);
 }
 
-static bool R_BIN_JAVA_NULL_TYPE_INITTED = false;
+static R_TH_LOCAL bool R_BIN_JAVA_NULL_TYPE_INITTED = false;
 // XXX - this is a global variable used while parsing the class file
 // this variable should DIE.
-static RBinJavaObj *R_BIN_JAVA_GLOBAL_BIN = NULL;
+static R_TH_LOCAL RBinJavaObj *R_BIN_JAVA_GLOBAL_BIN = NULL;
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
 	{ "public", R_BIN_JAVA_FIELD_ACC_PUBLIC, 6 },
 	{ "private", R_BIN_JAVA_FIELD_ACC_PRIVATE, 7 },
