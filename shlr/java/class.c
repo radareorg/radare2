@@ -3627,6 +3627,9 @@ R_API ut64 r_bin_java_signature_attr_calc_size(RBinJavaAttrInfo *attr) {
 
 R_API RBinJavaAttrInfo *r_bin_java_enclosing_methods_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 6;
+	if (sz < 8) {
+		return NULL;
+	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	if (!attr || sz < 10) {
 		free (attr);
@@ -3715,27 +3718,24 @@ R_API ut64 r_bin_java_exceptions_attr_calc_size(RBinJavaAttrInfo *attr) {
 
 R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	RBinJavaClassesAttribute *icattr;
-	RBinJavaAttrInfo *attr = NULL;
 	RBinJavaCPTypeObj *obj;
 	ut32 i = 0;
 	ut64 offset = 0, curpos;
-	attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
-	offset += 6;
-	if (buf_offset + offset + 8 > sz) {
-		eprintf ("Invalid amount of inner classes\n");
+	if (sz < 8) {
 		return NULL;
 	}
-	if (attr == NULL) {
-		// TODO eprintf
-		return attr;
+	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
+	if (!attr) {
+		return NULL;
 	}
+	offset += 6;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_INNER_CLASSES_ATTR;
 	attr->info.inner_classes_attr.number_of_classes = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.inner_classes_attr.classes = r_list_newf (r_bin_java_inner_classes_attr_entry_free);
 	for (i = 0; i < attr->info.inner_classes_attr.number_of_classes; i++) {
 		curpos = buf_offset + offset;
-		if (buf_offset + offset + 8 > sz) {
+		if (offset + 8 > sz) {
 			eprintf ("Invalid amount of inner classes\n");
 			break;
 		}
@@ -3873,6 +3873,9 @@ R_API ut64 r_bin_java_line_number_table_attr_calc_size(RBinJavaAttrInfo *attr) {
 
 R_API RBinJavaAttrInfo *r_bin_java_source_debug_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 6;
+	if (sz < 8) {
+		return NULL;
+	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	if (!attr) {
 		return NULL;
@@ -3940,12 +3943,11 @@ R_API ut64 r_bin_java_local_variable_table_attr_calc_size(RBinJavaAttrInfo *attr
 R_API RBinJavaAttrInfo *r_bin_java_local_variable_table_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	RBinJavaLocalVariableAttribute *lvattr;
 	ut64 curpos = 0, offset = 6;
-	RBinJavaAttrInfo *attr;
 	ut32 i = 0;
-	if (!buffer || sz < 1) {
+	if (!bin || !buffer || sz < 8) {
 		return NULL;
 	}
-	attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
+	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	if (!attr) {
 		return NULL;
 	}
@@ -4019,6 +4021,9 @@ R_API ut64 r_bin_java_local_variable_type_table_attr_calc_size(RBinJavaAttrInfo 
 }
 
 R_API RBinJavaAttrInfo *r_bin_java_local_variable_type_table_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
+	if (sz < 8) {
+		return NULL;
+	}
 	RBinJavaLocalVariableTypeAttribute *lvattr;
 	ut64 offset = 6;
 	ut32 i = 0;
@@ -4072,21 +4077,25 @@ R_API RBinJavaAttrInfo *r_bin_java_local_variable_type_table_attr_new(RBinJavaOb
 }
 
 R_API RBinJavaAttrInfo *r_bin_java_source_code_file_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	if (!sz) {
+	if (!sz || sz == UT64_MAX) {
 		return NULL;
 	}
+#if 0
+	/// XXX this breaks tests
+	if (sz < 8) {
+		return NULL;
+	}
+#endif
 	ut64 offset = 0;
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	offset += 6;
-	if (!attr) {
-		return NULL;
+	if (attr) {
+		attr->type = R_BIN_JAVA_ATTR_TYPE_SOURCE_FILE_ATTR;
+		attr->info.source_file_attr.sourcefile_idx = R_BIN_JAVA_USHORT (buffer, offset);
+		offset += 2;
+		attr->size = offset;
+		// IFDBG r_bin_java_print_source_code_file_attr_summary(attr);
 	}
-	attr->type = R_BIN_JAVA_ATTR_TYPE_SOURCE_FILE_ATTR;
-	// if (buffer + offset > buffer + sz) return NULL;
-	attr->info.source_file_attr.sourcefile_idx = R_BIN_JAVA_USHORT (buffer, offset);
-	offset += 2;
-	attr->size = offset;
-	// IFDBG r_bin_java_print_source_code_file_attr_summary(attr);
 	return attr;
 }
 
@@ -4095,14 +4104,15 @@ R_API ut64 r_bin_java_source_code_file_attr_calc_size(RBinJavaAttrInfo *attr) {
 }
 
 R_API RBinJavaAttrInfo *r_bin_java_synthetic_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	ut64 offset = 0;
+	if (sz < 8) {
+		return NULL;
+	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	if (!attr) {
 		return NULL;
 	}
-	offset += 6;
 	attr->type = R_BIN_JAVA_ATTR_TYPE_SYNTHETIC_ATTR;
-	attr->size = offset;
+	attr->size = 6;
 	return attr;
 }
 
@@ -4133,24 +4143,21 @@ R_API RBinJavaInterfaceInfo *r_bin_java_interface_new(RBinJavaObj *bin, const ut
 
 R_API RBinJavaVerificationObj *r_bin_java_verification_info_from_type(RBinJavaObj *bin, R_BIN_JAVA_STACKMAP_TYPE type, ut32 value) {
 	RBinJavaVerificationObj *se = R_NEW0 (RBinJavaVerificationObj);
-	if (!se) {
-		return NULL;
-	}
-	se->tag = type;
-	if (se->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
-		se->info.obj_val_cp_idx = (ut16) value;
-	} else if (se->tag == R_BIN_JAVA_STACKMAP_UNINIT) {
-		/*if (bin->offset_sz == 4) {
-		se->info.uninit_offset = value;
-		} else {
-		se->info.uninit_offset = (ut16) value;
-		}*/
-		se->info.uninit_offset = (ut16) value;
+	if (se) {
+		se->tag = type;
+		if (se->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
+			se->info.obj_val_cp_idx = (ut16) value;
+		} else if (se->tag == R_BIN_JAVA_STACKMAP_UNINIT) {
+			se->info.uninit_offset = (ut16) value;
+		}
 	}
 	return se;
 }
 
 R_API RBinJavaVerificationObj *r_bin_java_read_from_buffer_verification_info_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
+	if (sz < 8) {
+		return NULL;
+	}
 	ut64 offset = 0;
 	RBinJavaVerificationObj *se = R_NEW0 (RBinJavaVerificationObj);
 	if (!se) {
@@ -4270,6 +4277,9 @@ R_API ut64 r_bin_java_stack_map_frame_calc_size(RBinJavaStackMapFrame *sf) {
 }
 
 R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz, RBinJavaStackMapFrame *p_frame, ut64 buf_offset) {
+	if (sz < 8) {
+		return NULL;
+	}
 	RBinJavaStackMapFrame *stack_frame = r_bin_java_default_stack_frame ();
 	RBinJavaVerificationObj *se = NULL;
 	ut64 offset = 0;
@@ -4573,13 +4583,16 @@ R_API ut64 r_bin_java_stack_map_table_attr_calc_size(RBinJavaAttrInfo *attr) {
 R_API RBinJavaAttrInfo *r_bin_java_stack_map_table_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut32 i = 0;
 	ut64 offset = 0;
+	if (sz < 8) {
+		return NULL;
+	}
 	RBinJavaStackMapFrame *stack_frame = NULL, *new_stack_frame = NULL;
 	if (sz < 10) {
 		return NULL;
 	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	offset += 6;
-	IFDBG eprintf("r_bin_java_stack_map_table_attr_new: New stack map allocated.\n");
+	IFDBG eprintf ("r_bin_java_stack_map_table_attr_new: New stack map allocated.\n");
 	if (!attr) {
 		return NULL;
 	}
@@ -6354,8 +6367,10 @@ R_API ut64 r_bin_java_annotation_default_attr_calc_size(RBinJavaAttrInfo *attr) 
 
 R_API RBinJavaAttrInfo *r_bin_java_annotation_default_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 0;
-	RBinJavaAttrInfo *attr = NULL;
-	attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
+	if (sz < 8) {
+		return NULL;
+	}
+	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	offset += 6;
 	if (attr && sz >= offset) {
 		attr->type = R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR;
@@ -6435,10 +6450,12 @@ R_API void r_bin_java_annotation_default_attr_free(void /*RBinJavaAttrInfo*/ *a)
 
 R_API RBinJavaAnnotation *r_bin_java_annotation_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut32 i = 0;
-	RBinJavaAnnotation *annotation = NULL;
 	RBinJavaElementValuePair *evps = NULL;
 	ut64 offset = 0;
-	annotation = R_NEW0 (RBinJavaAnnotation);
+	if (sz < 8) {
+		return NULL;
+	}
+	RBinJavaAnnotation *annotation = R_NEW0 (RBinJavaAnnotation);
 	if (!annotation) {
 		return NULL;
 	}
@@ -6510,14 +6527,10 @@ R_API void r_bin_java_print_annotation_summary(RBinJavaAnnotation *annotation) {
 }
 
 R_API ut64 r_bin_java_element_pair_calc_size(RBinJavaElementValuePair *evp) {
-	ut64 sz = 0;
-	if (evp == NULL) {
-		return sz;
-	}
-	// evp->element_name_idx = r_bin_java_read_short(bin, bin->b->cur);
-	sz += 2;
-	// evp->value = r_bin_java_element_value_new (bin, offset+2);
-	if (evp->value) {
+	ut64 sz = 2;
+	if (evp && evp->value) {
+		// evp->element_name_idx = r_bin_java_read_short(bin, bin->b->cur);
+		// evp->value = r_bin_java_element_value_new (bin, offset+2);
 		sz += r_bin_java_element_value_calc_size (evp->value);
 	}
 	return sz;
@@ -6596,6 +6609,9 @@ R_API ut64 r_bin_java_element_value_calc_size(RBinJavaElementValue *element_valu
 R_API RBinJavaElementValue *r_bin_java_element_value_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut32 i = 0;
 	ut64 offset = 0;
+	if (sz < 8) {
+		return NULL;
+	}
 	RBinJavaElementValue *element_value = R_NEW0 (RBinJavaElementValue);
 	if (!element_value) {
 		return NULL;
@@ -7011,7 +7027,7 @@ R_API RBinJavaAnnotationsArray *r_bin_java_annotation_array_new(ut8 *buffer, ut6
 R_API RBinJavaAttrInfo *r_bin_java_rtv_annotations_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut32 i = 0;
 	ut64 offset = 0;
-	if (buf_offset + 8 > sz) {
+	if (sz < 8) {
 		return NULL;
 	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
