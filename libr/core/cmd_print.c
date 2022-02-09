@@ -7,6 +7,12 @@
 #include "r_types.h"
 #include <limits.h>
 
+#ifdef R_MESON_VERSION
+#include <lz4.h>
+#else
+#include "../../../shlr/lz4/lz4.c"
+#endif
+
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
@@ -103,8 +109,9 @@ static const char* help_msg_pr[] = {
 };
 
 static const char *help_msg_prg[] = {
-	"Usage: prg[io]", "", "print raw GUNZIPped block",
+	"Usage: prg[4io]", "", "print raw GUNZIPped block",
 	"prg", "", "print gunzipped data of current block",
+	"prgl", "", "decompress current block using LZ4 (adjust blocksize)",
 	"prgi", "", "show consumed bytes when inflating",
 	"prgo", "", "show output bytes after inflating",
 	NULL
@@ -6422,8 +6429,29 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'g': // "prg" // gunzip
 			switch (input[2]) {
+			default:
 			case '?':
 				r_core_cmd_help (core, help_msg_prg);
+				break;
+			case 'l': // "prgl" // lz4
+				{
+					ut8 *dst = calloc (len, 4);
+					if (dst) {
+						// TODO. hack into lz4 to make it work without knowing the input
+						int olen = LZ4_decompress_safe (core->block, dst, len, len * 4);
+						if (olen > 0) {
+							eprintf ("Decompressed output = %d%c", olen, 10);
+							for (i = 0; i < olen; i += 32) {
+								int left = R_MIN (olen - i, 32);
+								r_cons_printf ("wx+");
+								r_print_bytes (core->print, dst + i, left, "%02x");
+							}
+						} else {
+							eprintf ("Invalid input size %d\n", olen);
+						}
+						free (dst);
+					}
+				}
 				break;
 			case 'i': // "prgi"
 			{
@@ -6444,7 +6472,8 @@ static int cmd_print(void *data, const char *input) {
 				free (out);
 			}
 			break;
-			default:
+			case 0:
+			case ' ':
 			{
 				int outlen = 0;
 				ut8 *out;
