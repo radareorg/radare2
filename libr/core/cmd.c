@@ -243,6 +243,13 @@ static const char *help_msg_r[] = {
 	"r", " size", "expand or truncate file to given size",
 	"r-", "num", "remove num bytes, move following data down",
 	"r+", "num", "insert num bytes, move following data up",
+	"rabin2", " [...]", "run rabin2's main",
+	"radare2", " [...]", "run radare2's main",
+	"radiff2", " [...]", "run radiff2's main",
+	"rafind2", " [...]", "run rafind2's main",
+	"rahash2", " [...]", "run rahash2's main",
+	"rasm2", " [...]", "run rasm2's main",
+	"rax2", " [...]", "run rax2's main",
 	"rb", "oldbase @ newbase", "rebase all flags, bin.info, breakpoints and analysis",
 	"rm" ," [file]", "remove file",
 	"rh" ,"", "show size in human format",
@@ -2333,11 +2340,6 @@ static int cmd_resize(void *data, const char *input) {
 
 	ut64 oldsize = (core->io->desc) ? r_io_fd_size (core->io, core->io->desc->fd): 0;
 	switch (*input) {
-	case 'a': // "r..."
-		if (r_str_startswith (input, "adare2")) {
-			__runMain (core->r_main_radare2, input - 1);
-		}
-		return true;
 	case 'b': // "rb" rebase
 		return cmd_rebase (core, input + 1);
 	case '2': // "r2" // XXX should be handled already in cmd_r2cmd()
@@ -2397,6 +2399,13 @@ static int cmd_resize(void *data, const char *input) {
 	case '-': // "r-"
 		delta = (st64)r_num_math (core->num, input);
 		newsize = oldsize + delta;
+		break;
+	case '0':
+		if (input[1] == 'x') {
+			newsize = r_num_math (core->num, input);
+		} else {
+			r_core_cmd_help (core, help_msg_r);
+		}
 		break;
 	case ' ': // "r " "r +" "r -"
 		{
