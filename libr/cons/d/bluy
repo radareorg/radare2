@@ -15,12 +15,12 @@ ec other rgb:0099ff
 ec b0x00 rgb:999cab
 ec b0x7f rgb:09f
 ec b0xff rgb:555
-ec btext rgb:33ccff
+ec btext rgb:3cf
 ec math rgb:0099ff
 ec bin rgb:99a
 ec push rgb:09f
 ec pop rgb:09f
-ec crypto rgb:f5f5f6
+ec crypto rgb:fff
 ec jmp rgb:e07010
 ec cjmp rgb:e07010
 ec call rgb:fc1 rgb:333
@@ -33,13 +33,14 @@ ec reg rgb:33ccff
 ec creg rgb:09f
 ec num rgb:fc1
 ec mov rgb:99a
-ec ai.read rgb:e34
-ec ai.write rgb:234
-ec ai.exec rgb:213
+ec ai.read rgb:e33
+ec ai.write rgb:33e
+ec ai.exec rgb:3cf
 ec ai.seq rgb:09f
 ec ai.ascii rgb:fff
 ec gui.cflow rgb:09f
 ec gui.dataoffset rgb:99a
 ec gui.background rgb:7c5
 ec gui.alt_background rgb:e34
-ec gui.border rgb:234
+ec gui.border rgb:23f
+ec graph.current rgb:aaf
