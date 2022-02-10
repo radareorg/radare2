@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2014-2015 - pancake */
+/* radare - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_util.h>
 #include <zlib.h>
-
+#include "../../../shlr/lz4/lz4.h"
 
 // set a maximum output buffer of 50MB
 #define MAXOUT 50000000
@@ -80,6 +80,40 @@ static ut8 *r_inflatew(const ut8 *src, int srcLen, int *consumed, int *dstLen, i
 	err_exit:
 	inflateEnd (&stream);
 	free (dst);
+	return NULL;
+}
+
+R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int *consumed, int *dstLen) {
+	ut32 osz = srcLen * 5;
+	ut8 *obuf = calloc (srcLen, 5);
+	if (!obuf) {
+		return NULL;
+	}
+	int res = LZ4_decompress_safe ((const char*)src, (char*)obuf, (uint32_t) srcLen, (uint32_t) osz);
+	if (res < 1) {
+		int mul = srcLen / -res;
+		int nosz = osz * (5 * (mul + 1));
+		if (nosz < osz) {
+			free (obuf);
+			return NULL;
+		}
+		ut8 *nbuf = realloc (obuf, nosz);
+		if (!nbuf) {
+			free (obuf);
+			return NULL;
+		}
+		obuf = nbuf;
+		osz = nosz;
+	}
+	res = LZ4_decompress_safe ((const char*)src, (char*)obuf, (uint32_t) srcLen, (uint32_t) osz);
+	if (res > 0) {
+		*dstLen = res;
+		*consumed = srcLen;
+		return obuf;
+	}
+	*dstLen = 0;
+	*consumed = 0;
+	free (obuf);
 	return NULL;
 }
 
