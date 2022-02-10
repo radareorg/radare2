@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - ret2libc, pancake */
+/* radare - LGPL - Copyright 2009-2022 - ret2libc, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -298,7 +298,6 @@ R_API bool r_buf_append_bytes(RBuffer *b, const ut8 *buf, ut64 length) {
 	if (r_buf_seek (b, 0, R_BUF_END) < 0) {
 		return false;
 	}
-
 	return r_buf_write (b, buf, length) >= 0;
 }
 

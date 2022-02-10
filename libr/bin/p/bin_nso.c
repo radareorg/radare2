@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2018 - rkx1209 */
+/* radare2 - LGPL - Copyright 2017-2022 - rkx1209 */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,11 +7,6 @@
 #include <r_io.h>
 #include <r_cons.h>
 #include "nxo/nxo.h"
-#ifdef R_MESON_VERSION
-#include <lz4.h>
-#else
-#include "../../../shlr/lz4/lz4.c"
-#endif
 
 #define NSO_OFF(x) r_offsetof (NSOHeader, x)
 #define NSO_OFFSET_MODMEMOFF r_offsetof (NXOStart, mod_memoffset)
@@ -40,7 +35,15 @@ static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t us
 	if (csize < 0 || usize < 0 || !cbuf || !obuf) {
 		return -1;
 	}
-	return LZ4_decompress_safe ((const char*)cbuf, (char*)obuf, (uint32_t) csize, (uint32_t) usize);
+	int consumed, osize;
+	ut8 *out = r_inflate_lz4 (cbuf, (int)csize, &consumed, &osize);
+	if (out) {
+		// osize should be the same as usize
+		memcpy (obuf, out, R_MIN (usize, osize));
+		free (out);
+		return usize;
+	}
+	return 0;
 }
 
 static ut64 baddr(RBinFile *bf) {
