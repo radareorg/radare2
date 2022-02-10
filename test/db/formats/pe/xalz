@@ -1,0 +1,171 @@
+NAME=XAMARIN mscorlib
+FILE=bins/pe/mscorlib.dll
+CMDS=iV
+EXPECT=<<EOF
+=== VS_VERSIONINFO ===
+
+# VS_FIXEDFILEINFO
+
+  Signature: 0xfeef04bd
+  StrucVersion: 0x10000
+  FileVersion: 4.0.50524.0
+  ProductVersion: 4.0.50524.0
+  FileFlagsMask: 0x3f
+  FileFlags: 0x0
+  FileOS: 0x4
+  FileType: 0x2
+  FileSubType: 0x0
+
+# StringTable
+
+  Comments: mscorlib.dll
+  CompanyName: Mono development team
+  FileDescription: mscorlib.dll
+  FileVersion: 4.0.50524.0
+  InternalName: mscorlib.dll
+  LegalCopyright: (c) Various Mono authors
+  OriginalFilename: mscorlib.dll
+  ProductName: Mono Common Language Infrastructure
+  ProductVersion: 4.0.50524.0
+  Assembly Version: 2.0.5.0
+EOF
+RUN
+
+NAME=XALZ mscorlib
+FILE=bins/pe/mscorlib.xalz
+CMDS=iV
+EXPECT=<<EOF
+=== VS_VERSIONINFO ===
+
+# VS_FIXEDFILEINFO
+
+  Signature: 0xfeef04bd
+  StrucVersion: 0x10000
+  FileVersion: 4.0.50524.0
+  ProductVersion: 4.0.50524.0
+  FileFlagsMask: 0x3f
+  FileFlags: 0x0
+  FileOS: 0x4
+  FileType: 0x2
+  FileSubType: 0x0
+
+# StringTable
+
+  Comments: mscorlib.dll
+  CompanyName: Mono development team
+  FileDescription: mscorlib.dll
+  FileVersion: 4.0.50524.0
+  InternalName: mscorlib.dll
+  LegalCopyright: (c) Various Mono authors
+  OriginalFilename: mscorlib.dll
+  ProductName: Mono Common Language Infrastructure
+  ProductVersion: 4.0.50524.0
+  Assembly Version: 2.0.5.0
+EOF
+RUN
+
+## bin.sdb tests
+
+NAME=XAMARIN sdb
+FILE=bins/pe/mscorlib.dll
+CMDS=<<EOF
+k bin/cur/**
+k bin/cur/pe/**
+k bin/cur/info/**
+?e --
+k bin/cur/*
+k bin/cur/pe/*
+k bin/cur/info/*
+EOF
+EXPECT=<<EOF
+info
+pe
+addrinfo
+vs_version_info
+pe_resource
+--
+archs=0:0:x86:32
+actual_checksum=0x00223928
+appcontainer=false
+aslr=true
+bind=true
+bits=0x20
+canary=true
+claimed_checksum=0x00000000
+forceintegrity=false
+guardcf=false
+highva=false
+is_authhash_valid=false
+isolation=true
+nx=true
+seh=false
+terminalserveraware=true
+wdmdriver=false
+image_file_header.TimeDateStamp=0x8d156fb9
+image_file_header.TimeDateStamp_string=Mon Jan  2 17:51:53 2045
+pe_characteristics.cparse=enum pe_characteristics {  IMAGE_FILE_RELOCS_STRIPPED=0x0001, IMAGE_FILE_EXECUTABLE_IMAGE=0x0002, IMAGE_FILE_LINE_NUMS_STRIPPED=0x0004,  IMAGE_FILE_LOCAL_SYMS_STRIPPED=0x0008, IMAGE_FILE_AGGRESIVE_WS_TRIM=0x0010, IMAGE_FILE_LARGE_ADDRESS_AWARE=0x0020,  IMAGE_FILE_BYTES_REVERSED_LO=0x0080, IMAGE_FILE_32BIT_MACHINE=0x0100, IMAGE_FILE_DEBUG_STRIPPED=0x0200,  IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP=0x0400, IMAGE_FILE_NET_RUN_FROM_SWAP=0x0800, IMAGE_FILE_SYSTEM=0x1000,  IMAGE_FILE_DLL=0x2000, IMAGE_FILE_UP_SYSTEM_ONLY=0x4000, IMAGE_FILE_BYTES_REVERSED_HI=0x8000 };
+pe_dllcharacteristics.cparse=enum pe_dllcharacteristics { IMAGE_LIBRARY_PROCESS_INIT=0x0001, IMAGE_LIBRARY_PROCESS_TERM=0x0002,  IMAGE_LIBRARY_THREAD_INIT=0x0004, IMAGE_LIBRARY_THREAD_TERM=0x0008, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA=0x0020,  IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE=0x0040, IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY=0x0080,  IMAGE_DLLCHARACTERISTICS_NX_COMPAT=0x0100, IMAGE_DLLCHARACTERISTICS_NO_ISOLATION=0x0200,IMAGE_DLLCHARACTERISTICS_NO_SEH=0x0400,  IMAGE_DLLCHARACTERISTICS_NO_BIND=0x0800, IMAGE_DLLCHARACTERISTICS_APPCONTAINER=0x1000, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER=0x2000,  IMAGE_DLLCHARACTERISTICS_GUARD_CF=0x4000, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE=0x8000};
+pe_dos_header.format=[2]zwwwwwwwwwwwww[4]www[10]wx e_magic e_cblp e_cp e_crlc e_cparhdr e_minalloc e_maxalloc e_ss e_sp e_csum e_ip e_cs e_lfarlc e_ovno e_res e_oemid e_oeminfo e_res2 e_lfanew
+pe_dos_header.offset=0
+pe_image_data_directory.format=xx virtualAddress size
+pe_image_file_header.format=[2]Ewtxxw[2]B (pe_machine)machine numberOfSections timeDateStamp pointerToSymbolTable numberOfSymbols sizeOfOptionalHeader (pe_characteristics)characteristics
+pe_image_optional_header32.format=[2]Ebbxxxxxxxxxwwwwwwxxxx[2]E[2]Bxxxxxx[16]? (pe_magic)magic majorLinkerVersion minorLinkerVersion sizeOfCode sizeOfInitializedData sizeOfUninitializedData addressOfEntryPoint baseOfCode baseOfData imageBase sectionAlignment fileAlignment majorOperatingSystemVersion minorOperatingSystemVersion majorImageVersion minorImageVersion majorSubsystemVersion minorSubsystemVersion win32VersionValue sizeOfImage sizeOfHeaders checkSum (pe_subsystem)subsystem (pe_dllcharacteristics)dllCharacteristics sizeOfStackReserve sizeOfStackCommit sizeOfHeapReserve sizeOfHeapCommit loaderFlags numberOfRvaAndSizes (pe_image_data_directory)dataDirectory
+pe_machine.cparse=enum pe_machine { IMAGE_FILE_MACHINE_I386=0x014c, IMAGE_FILE_MACHINE_IA64=0x0200, IMAGE_FILE_MACHINE_AMD64=0x8664 };
+pe_magic.cparse=enum pe_magic { IMAGE_NT_OPTIONAL_HDR32_MAGIC=0x10b, IMAGE_NT_OPTIONAL_HDR64_MAGIC=0x20b, IMAGE_ROM_OPTIONAL_HDR_MAGIC=0x107 };
+pe_nt_image_headers32.format=[4]z?? signature (pe_image_file_header)fileHeader (pe_image_optional_header32)optionalHeader
+pe_nt_image_headers32.offset=0x80
+pe_subsystem.cparse=enum pe_subsystem { IMAGE_SUBSYSTEM_UNKNOWN=0, IMAGE_SUBSYSTEM_NATIVE=1, IMAGE_SUBSYSTEM_WINDOWS_GUI=2,  IMAGE_SUBSYSTEM_WINDOWS_CUI=3, IMAGE_SUBSYSTEM_OS2_CUI=5, IMAGE_SUBSYSTEM_POSIX_CUI=7, IMAGE_SUBSYSTEM_WINDOWS_CE_GUI=9,  IMAGE_SUBSYSTEM_EFI_APPLICATION=10, IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER=11, IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER=12,  IMAGE_SUBSYSTEM_EFI_ROM=13, IMAGE_SUBSYSTEM_XBOX=14, IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION=16 };
+EOF
+RUN
+
+NAME=XALZ sdb
+FILE=bins/pe/mscorlib.xalz
+CMDS=<<EOF
+k bin/cur/**
+k bin/cur/pe/**
+k bin/cur/info/**
+?e --
+k bin/cur/*
+k bin/cur/pe/*
+k bin/cur/info/*
+EOF
+EXPECT=<<EOF
+info
+pe
+addrinfo
+vs_version_info
+pe_resource
+--
+archs=0:0:x86:32
+actual_checksum=0x00223928
+appcontainer=false
+aslr=true
+bind=true
+bits=0x20
+canary=true
+claimed_checksum=0x00000000
+forceintegrity=false
+guardcf=false
+highva=false
+is_authhash_valid=false
+isolation=true
+nx=true
+seh=false
+terminalserveraware=true
+wdmdriver=false
+image_file_header.TimeDateStamp=0x8d156fb9
+image_file_header.TimeDateStamp_string=Mon Jan  2 17:51:53 2045
+pe_characteristics.cparse=enum pe_characteristics {  IMAGE_FILE_RELOCS_STRIPPED=0x0001, IMAGE_FILE_EXECUTABLE_IMAGE=0x0002, IMAGE_FILE_LINE_NUMS_STRIPPED=0x0004,  IMAGE_FILE_LOCAL_SYMS_STRIPPED=0x0008, IMAGE_FILE_AGGRESIVE_WS_TRIM=0x0010, IMAGE_FILE_LARGE_ADDRESS_AWARE=0x0020,  IMAGE_FILE_BYTES_REVERSED_LO=0x0080, IMAGE_FILE_32BIT_MACHINE=0x0100, IMAGE_FILE_DEBUG_STRIPPED=0x0200,  IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP=0x0400, IMAGE_FILE_NET_RUN_FROM_SWAP=0x0800, IMAGE_FILE_SYSTEM=0x1000,  IMAGE_FILE_DLL=0x2000, IMAGE_FILE_UP_SYSTEM_ONLY=0x4000, IMAGE_FILE_BYTES_REVERSED_HI=0x8000 };
+pe_dllcharacteristics.cparse=enum pe_dllcharacteristics { IMAGE_LIBRARY_PROCESS_INIT=0x0001, IMAGE_LIBRARY_PROCESS_TERM=0x0002,  IMAGE_LIBRARY_THREAD_INIT=0x0004, IMAGE_LIBRARY_THREAD_TERM=0x0008, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA=0x0020,  IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE=0x0040, IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY=0x0080,  IMAGE_DLLCHARACTERISTICS_NX_COMPAT=0x0100, IMAGE_DLLCHARACTERISTICS_NO_ISOLATION=0x0200,IMAGE_DLLCHARACTERISTICS_NO_SEH=0x0400,  IMAGE_DLLCHARACTERISTICS_NO_BIND=0x0800, IMAGE_DLLCHARACTERISTICS_APPCONTAINER=0x1000, IMAGE_DLLCHARACTERISTICS_WDM_DRIVER=0x2000,  IMAGE_DLLCHARACTERISTICS_GUARD_CF=0x4000, IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE=0x8000};
+pe_dos_header.format=[2]zwwwwwwwwwwwww[4]www[10]wx e_magic e_cblp e_cp e_crlc e_cparhdr e_minalloc e_maxalloc e_ss e_sp e_csum e_ip e_cs e_lfarlc e_ovno e_res e_oemid e_oeminfo e_res2 e_lfanew
+pe_dos_header.offset=0
+pe_image_data_directory.format=xx virtualAddress size
+pe_image_file_header.format=[2]Ewtxxw[2]B (pe_machine)machine numberOfSections timeDateStamp pointerToSymbolTable numberOfSymbols sizeOfOptionalHeader (pe_characteristics)characteristics
+pe_image_optional_header32.format=[2]Ebbxxxxxxxxxwwwwwwxxxx[2]E[2]Bxxxxxx[16]? (pe_magic)magic majorLinkerVersion minorLinkerVersion sizeOfCode sizeOfInitializedData sizeOfUninitializedData addressOfEntryPoint baseOfCode baseOfData imageBase sectionAlignment fileAlignment majorOperatingSystemVersion minorOperatingSystemVersion majorImageVersion minorImageVersion majorSubsystemVersion minorSubsystemVersion win32VersionValue sizeOfImage sizeOfHeaders checkSum (pe_subsystem)subsystem (pe_dllcharacteristics)dllCharacteristics sizeOfStackReserve sizeOfStackCommit sizeOfHeapReserve sizeOfHeapCommit loaderFlags numberOfRvaAndSizes (pe_image_data_directory)dataDirectory
+pe_machine.cparse=enum pe_machine { IMAGE_FILE_MACHINE_I386=0x014c, IMAGE_FILE_MACHINE_IA64=0x0200, IMAGE_FILE_MACHINE_AMD64=0x8664 };
+pe_magic.cparse=enum pe_magic { IMAGE_NT_OPTIONAL_HDR32_MAGIC=0x10b, IMAGE_NT_OPTIONAL_HDR64_MAGIC=0x20b, IMAGE_ROM_OPTIONAL_HDR_MAGIC=0x107 };
+pe_nt_image_headers32.format=[4]z?? signature (pe_image_file_header)fileHeader (pe_image_optional_header32)optionalHeader
+pe_nt_image_headers32.offset=0x80
+pe_subsystem.cparse=enum pe_subsystem { IMAGE_SUBSYSTEM_UNKNOWN=0, IMAGE_SUBSYSTEM_NATIVE=1, IMAGE_SUBSYSTEM_WINDOWS_GUI=2,  IMAGE_SUBSYSTEM_WINDOWS_CUI=3, IMAGE_SUBSYSTEM_OS2_CUI=5, IMAGE_SUBSYSTEM_POSIX_CUI=7, IMAGE_SUBSYSTEM_WINDOWS_CE_GUI=9,  IMAGE_SUBSYSTEM_EFI_APPLICATION=10, IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER=11, IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER=12,  IMAGE_SUBSYSTEM_EFI_ROM=13, IMAGE_SUBSYSTEM_XBOX=14, IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION=16 };
+EOF
+RUN

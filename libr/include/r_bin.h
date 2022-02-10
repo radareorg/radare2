@@ -299,6 +299,7 @@ typedef struct r_bin_file_t {
 	// struct r_bin_plugin_t *curplugin; // use o->plugin
 	RList *xtr_data;
 	Sdb *sdb;
+// #warning RBinFile.sdb_info will be removed in r2-5.7.0
 	Sdb *sdb_info;
 	Sdb *sdb_addrinfo;
 	struct r_bin_t *rbin;
@@ -879,6 +880,7 @@ extern RBinPlugin r_bin_plugin_pyc;
 extern RBinPlugin r_bin_plugin_off;
 extern RBinPlugin r_bin_plugin_tic;
 extern RBinPlugin r_bin_plugin_hunk;
+extern RBinPlugin r_bin_plugin_xalz;
 
 #ifdef __cplusplus
 }
