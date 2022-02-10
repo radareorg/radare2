@@ -89,6 +89,12 @@ all: lib
 all32: CFLAGS+=-m32
 all32: all
 
+sync:
+	rm -f lz4.c
+	wget https://raw.githubusercontent.com/lz4/lz4/dev/lib/lz4.c
+	rm -f lz4.h
+	wget https://raw.githubusercontent.com/lz4/lz4/dev/lib/lz4.h
+
 liblz4.$(EXT_AR): $(SRCFILES)
 ifeq ($(BUILD_STATIC),yes)  # can be disabled on command line
 	@echo compiling static library
