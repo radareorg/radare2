@@ -75,7 +75,7 @@ static void add_tls_callbacks(RBinFile *bf, RList* list) {
 			break;
 		}
 
-		key =  r_strf ("pe.tls_callback%d_haddr", count);
+		key = r_strf ("pe.tls_callback%d_haddr", count);
 		haddr = sdb_num_get (bin->kv, key, 0);
 		if (!haddr) {
 			break;
@@ -388,8 +388,11 @@ static int is_vb6(RBinFile *bf) {
 static bool check_inlined_canary(RBinFile *bf) {
 	ut8 buf[64];
 	struct r_bin_pe_addr_t *entry = PE_(r_bin_pe_get_entrypoint) (bf->o->bin_obj);
+	if (!entry) {
+		return false;
+	}
 	// check for 32bit canary
-	ut64 addr = entry->paddr;;
+	ut64 addr = entry->paddr;
 	if (addr == UT64_MAX || !addr) {
 		goto out_fail;
 	}

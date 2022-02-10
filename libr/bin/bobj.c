@@ -171,13 +171,11 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	sdb = bf->rbin->sdb;
 	if (sdb) {
 		Sdb *bdb = bf->sdb; // sdb_new0 ();
-		sdb_ns_set (bdb, "info", o->kv);
+		if (!sdb_ns (bdb, "info", 0)) {
+			sdb_ns_set (bdb, "info", o->kv);
+		}
 		sdb_ns_set (bdb, "addrinfo", bf->sdb_addrinfo);
 		o->kv = bdb;
-		// bf->sdb = o->kv;
-		// bf->sdb_info = o->kv;
-		// sdb_ns_set (bf->sdb, "info", o->kv);
-		//sdb_ns (sdb, r_strf ("fd.%d", bf->fd), 1);
 		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */
 		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all

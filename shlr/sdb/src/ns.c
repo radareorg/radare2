@@ -126,7 +126,7 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 	return ns;
 }
 
-SDB_API bool sdb_ns_unset (Sdb *s, const char *name, Sdb *r) {
+SDB_API bool sdb_ns_unset(Sdb *s, const char *name, Sdb *r) {
 	SdbNs *ns;
 	SdbListIter *it;
 	if (s && (name || r)) {
