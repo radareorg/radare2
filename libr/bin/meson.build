@@ -13,6 +13,7 @@ r_bin_sources = [
 
   join_paths('p','bin_any.c'),
   join_paths('p','bin_art.c'),
+  join_paths('p','bin_xalz.c'),
   join_paths('p','bin_avr.c'),
   join_paths('p','bin_bf.c'),
   join_paths('p','bin_bflt.c'),

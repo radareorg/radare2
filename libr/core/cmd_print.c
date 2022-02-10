@@ -7,12 +7,6 @@
 #include "r_types.h"
 #include <limits.h>
 
-#ifdef R_MESON_VERSION
-#include <lz4.h>
-#else
-#include "../../../shlr/lz4/lz4.c"
-#endif
-
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
