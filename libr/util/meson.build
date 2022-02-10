@@ -1,6 +1,7 @@
 subdir('d')
 
 r_util_sources = [
+  '../../shlr/lz4/lz4.c',
   'ascii_table.c',
   'assert.c',
   'w32.c',
