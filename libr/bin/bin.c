@@ -1299,8 +1299,8 @@ R_API RBinFile *r_bin_cur(RBin *bin) {
 
 R_API RBinObject *r_bin_cur_object(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
-	RBinFile *binfile = r_bin_cur (bin);
-	return binfile ? binfile->o : NULL;
+	RBinFile *bf = r_bin_cur (bin);
+	return bf ? bf->o : NULL;
 }
 
 R_API void r_bin_force_plugin(RBin *bin, const char *name) {
