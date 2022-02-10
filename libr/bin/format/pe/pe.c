@@ -1124,7 +1124,7 @@ const char* PE_(bin_pe_get_authentihash)(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 int PE_(bin_pe_is_authhash_valid)(struct PE_(r_bin_pe_obj_t)* bin) {
-	return bin->is_authhash_valid;
+	return bin? bin->is_authhash_valid: false;
 }
 
 static void computeOverlayOffset(ut64 offset, ut64 size, ut64 file_size, ut64* largest_offset, ut64* largest_size) {
@@ -2450,11 +2450,10 @@ static Sdb* Pe_r_bin_store_fixed_file_info(PE_VS_FIXEDFILEINFO* vs_fixedFileInfo
 }
 
 static Sdb* Pe_r_bin_store_resource_version_info(PE_VS_VERSIONINFO* vs_VersionInfo) {
-	Sdb* sdb = NULL;
 	if (!vs_VersionInfo) {
 		return NULL;
 	}
-	sdb = sdb_new0 ();
+	Sdb *sdb = sdb_new0 ();
 	if (!sdb) {
 		return NULL;
 	}
@@ -3050,12 +3049,11 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			}
 			while (cur_paddr < (data_paddr + data->Size) && cur_paddr < bin->size) {
 				PE_VS_VERSIONINFO* vs_VersionInfo = Pe_r_bin_pe_parse_version_info (bin, cur_paddr);
-				if (vs_VersionInfo) {
-					snprintf (key, 30, "VS_VERSIONINFO%d", counter++);
-					sdb_ns_set (sdb, key, Pe_r_bin_store_resource_version_info (vs_VersionInfo));
-				} else {
+				if (!vs_VersionInfo) {
 					break;
 				}
+				snprintf (key, 30, "VS_VERSIONINFO%d", counter++);
+				sdb_ns_set (sdb, key, Pe_r_bin_store_resource_version_info (vs_VersionInfo));
 				if (vs_VersionInfo->wLength < 1) {
 					// Invalid version length
 					break;
