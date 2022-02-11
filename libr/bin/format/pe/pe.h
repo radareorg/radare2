@@ -1,7 +1,3 @@
-/* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
-
-#include <r_types.h>
-#include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 
@@ -82,8 +78,9 @@ typedef struct SDebugInfo {
 	char file_name[DBG_FILE_NAME_LEN];
 } SDebugInfo;
 
-#endif
+// typedef struct PE_(r_bin_pe_obj_t) RBinPEObj;
 
+#endif
 struct PE_(r_bin_pe_obj_t) {
 	// these pointers contain a copy of the headers and sections!
 	PE_(image_dos_header) * dos_header;
@@ -134,43 +131,47 @@ struct PE_(r_bin_pe_obj_t) {
 	bool is_signed;
 };
 
+#undef RBinPEObj
 #define RBinPEObj struct PE_(r_bin_pe_obj_t)
-R_IPI PE_DWord PE_(va2pa)(RBinPEObj* bin, PE_DWord rva);
-void PE_(r_bin_store_all_resource_version_info)(struct PE_(r_bin_pe_obj_t)* bin);
-char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin);
-char *PE_(r_bin_pe_get_cc)(struct PE_(r_bin_pe_obj_t)* bin);
-struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin);
-struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t)* bin);
-struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* bin); // TODO
-int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin);
-ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin);
-struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* bin); // TODO
-struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(r_bin_pe_get_image_size)(struct PE_(r_bin_pe_obj_t)* bin);
-char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin);
-char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin);
-char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin);
-char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(r_bin_pe_is_big_endian)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(r_bin_pe_is_stripped_relocs)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(r_bin_pe_is_stripped_line_nums)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(r_bin_pe_is_stripped_local_syms)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin);
-void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin);
-struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file, bool verbose);
-struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(RBuffer* buf, bool verbose);
-int PE_(r_bin_pe_get_debug_data)(struct PE_(r_bin_pe_obj_t)* bin, struct SDebugInfo* res);
-int PE_(bin_pe_get_claimed_checksum)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin);
-const char* PE_(bin_pe_compute_authentihash)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(bin_pe_is_authhash_valid)(struct PE_(r_bin_pe_obj_t)* bin);
-int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size);
-void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_section_t** sects);
-struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin);
-struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin);
-struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin);
-bool PE_(r_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms);
-R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin);
+
+// #define RBinPEObj struct PE_(r_bin_pe_obj_t)
+R_API PE_DWord PE_(va2pa)(RBinPEObj* bin, PE_DWord rva);
+R_API void PE_(r_bin_store_all_resource_version_info)(RBinPEObj* bin);
+R_API char* PE_(r_bin_pe_get_arch)(RBinPEObj* bin);
+R_API char *PE_(r_bin_pe_get_cc)(RBinPEObj* bin);
+R_API struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(RBinPEObj* bin);
+R_API struct r_bin_pe_addr_t* PE_(r_bin_pe_get_main_vaddr)(RBinPEObj* bin);
+R_API struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(RBinPEObj* bin); // TODO
+R_API int PE_(r_bin_pe_get_file_alignment)(RBinPEObj* bin);
+R_API ut64 PE_(r_bin_pe_get_image_base)(RBinPEObj* bin);
+R_API struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(RBinPEObj* bin); // TODO
+R_API struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(RBinPEObj* bin);
+R_API int PE_(r_bin_pe_get_image_size)(RBinPEObj* bin);
+R_API char* PE_(r_bin_pe_get_machine)(RBinPEObj* bin);
+R_API char* PE_(r_bin_pe_get_os)(RBinPEObj* bin);
+R_API char* PE_(r_bin_pe_get_class)(RBinPEObj* bin);
+R_API int PE_(r_bin_pe_get_bits)(RBinPEObj* bin);
+R_API int PE_(r_bin_pe_get_section_alignment)(RBinPEObj* bin);
+R_API char* PE_(r_bin_pe_get_subsystem)(RBinPEObj* bin);
+R_API int PE_(r_bin_pe_is_dll)(RBinPEObj* bin);
+R_API int PE_(r_bin_pe_is_big_endian)(RBinPEObj* bin);
+R_API int PE_(r_bin_pe_is_stripped_relocs)(RBinPEObj* bin);
+R_API int PE_(r_bin_pe_is_stripped_line_nums)(RBinPEObj* bin);
+R_API int PE_(r_bin_pe_is_stripped_local_syms)(RBinPEObj* bin);
+R_API int PE_(r_bin_pe_is_stripped_debug)(RBinPEObj* bin);
+R_API void* PE_(r_bin_pe_free)(RBinPEObj* bin);
+R_API RBinPEObj* PE_(r_bin_pe_new)(const char* file, bool verbose);
+R_API RBinPEObj* PE_(r_bin_pe_new_buf)(RBuffer* buf, bool verbose);
+R_API int PE_(r_bin_pe_get_debug_data)(RBinPEObj* bin, struct SDebugInfo* res);
+R_API int PE_(bin_pe_get_claimed_checksum)(RBinPEObj* bin);
+R_API int PE_(bin_pe_get_actual_checksum)(RBinPEObj* bin);
+R_API const char* PE_(bin_pe_compute_authentihash)(RBinPEObj* bin);
+R_API int PE_(bin_pe_is_authhash_valid)(RBinPEObj* bin);
+R_API int PE_(bin_pe_get_overlay)(RBinPEObj* bin, ut64* size);
+R_API void PE_(r_bin_pe_check_sections)(RBinPEObj* bin, struct r_bin_pe_section_t** sects);
+R_API struct r_bin_pe_addr_t *PE_(check_unknow) (RBinPEObj *bin);
+R_API struct r_bin_pe_addr_t *PE_(check_msvcseh) (RBinPEObj *bin);
+R_API struct r_bin_pe_addr_t *PE_(check_mingw) (RBinPEObj *bin);
+R_API bool PE_(r_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms);
+R_API void PE_(bin_pe_parse_resource)(RBinPEObj *bin);
+R_API RBinPEObj* PE_(get)(RBinFile *bf);

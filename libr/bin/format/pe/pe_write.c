@@ -1,19 +1,18 @@
-/* radare - LGPL - Copyright 2010-2019 pancake, nibble */
+/* radare - LGPL - Copyright 2010-2022 pancake, nibble */
 
-#include <r_types.h>
 #include <r_util.h>
 #include "pe.h"
 
-// bool PE_(r_bin_pe_section_perms)(struct PE_(r_bin_pe_obj_t) *bin, const char *name, int perms) {
 bool PE_(r_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms) {
-	struct PE_(r_bin_pe_obj_t) *pe = bf->o->bin_obj;
+	RBinPEObj *pe = PE_(get)(bf);
+	if (!pe) {
+		return false;
+	}
 	PE_(image_section_header) *shdr = pe->section_header;
-	int i;
-
 	if (!shdr) {
 		return false;
 	}
-
+	int i;
 	for (i = 0; i < pe->num_sections; i++) {
 		const char *sname = (const char*) shdr[i].Name;
 		if (!strncmp (name, sname, PE_IMAGE_SIZEOF_SHORT_NAME)) {
