@@ -348,7 +348,6 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 	}
 	// Handle second color (bgcolor)
 	if (bgcolor && !strncmp (bgcolor, "rgb:", 4)) { // "rgb:123" rgb format
-		size_t len = strlen (out);
 		rcolor.a |= ALPHA_BG;
 		if (strlen (bgcolor + 4) == 3) {
 			rcolor.r2 = rgbnum (bgcolor[4], '0');
@@ -360,6 +359,7 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			rcolor.b2 = rgbnum (bgcolor[8], bgcolor[9]);
 		}
 		if (!outcol) {
+			size_t len = strlen (out);
 			r_cons_rgb_str (out + len, sizeof (out) - len, &rcolor);
 		}
 	}
