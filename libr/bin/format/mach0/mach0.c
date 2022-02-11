@@ -3421,7 +3421,15 @@ RSkipList *MACH0_(get_relocs)(struct MACH0_(obj_t) *bin) {
 			size_t j, count, skip;
 			st64 addend = 0;
 			ut64 addr = bin->segs[0].vmaddr;
-			ut64 segment_end_addr = addr + bin->segs[0].vmsize;
+			ut64 segment_size = bin->segs[0].filesize;
+			if (bin->segs[0].filesize != bin->segs[0].vmsize) {
+				// is probably invalid and we should warn the user
+			}
+			if (segment_size > bin->size) {
+				// is probably invalid and we should warn the user
+				segment_size = bin->size;
+			}
+			ut64 segment_end_addr = addr + segment_size;
 
 			ut8 *p = opcodes + opcodes_offset;
 			ut8 *end = p + partition_size;
