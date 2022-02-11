@@ -7,29 +7,24 @@ on:
   pull_request:
 
 jobs:
-  testfreebsd:
+  freebsd:
     runs-on: macos-10.15
     name: freebsd-acr
     steps:
     - uses: actions/checkout@v2
     - name: Test in FreeBSD
-      id: test
-      uses: vmactions/freebsd-vm@v0.1.5
+      id: build
+      uses: vmactions/freebsd-vm@v0.1.6
       with:
         usesh: true
         prepare: pkg install -y curl
         run: |
+          cd work || true
           pwd
           ls -lah
           whoami
           env
           freebsd-version
-    - name: Build r2
-      id: build
-      uses: vmactions/freebsd-vm@v0.1.5
-      with:
-        usesh: true
-        run: |
           git clone --depth=1 https://github.com/radareorg/radare2
           cd radare2
           sys/install.sh
