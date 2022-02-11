@@ -27,7 +27,7 @@ jobs:
           freebsd-version
           echo DATE: ; date
           sys/install.sh
-          make install DESTDIR=/tmp/prefix
+          gmake install DESTDIR=/tmp/prefix
           (cd /tmp/prefix ; tar czvf /tmp/radare2-freebsd.tgz *)
           rm -rf *
           cp /tmp/radare2-freebsd.tgz .
