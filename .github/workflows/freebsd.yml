@@ -25,4 +25,6 @@ jobs:
           whoami
           env
           freebsd-version
+          echo DATE: ; date
           sys/install.sh
+          echo DATE: ; date
