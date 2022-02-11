@@ -1,35 +1,34 @@
-/* radare - LGPL - Copyright 2018 - JohnPeng47 */
+/* radare - LGPL - Copyright 2018-2022 - JohnPeng47 */
 
-#include <stdio.h>
 #include "pemixed.h"
 
 static bool check_il_only(ut32 flags);
 
-static int r_bin_pemixed_init(struct r_bin_pemixed_obj_t* bin, struct PE_(r_bin_pe_obj_t)* pe_bin) {
+static int r_bin_pemixed_init(struct r_bin_pemixed_obj_t* bin, RBinPEObj *pe) {
 	struct PE_(r_bin_pe_obj_t)* sub_bin_dos;
 	struct PE_(r_bin_pe_obj_t)* sub_bin_native;
 	struct PE_(r_bin_pe_obj_t)* sub_bin_net;
 
-	sub_bin_dos = r_bin_pemixed_init_dos (pe_bin);
+	sub_bin_dos = r_bin_pemixed_init_dos (pe);
 	if (sub_bin_dos) {
 		bin->sub_bin_dos = sub_bin_dos;
 	}
 
-	sub_bin_native = r_bin_pemixed_init_native (pe_bin);
+	sub_bin_native = r_bin_pemixed_init_native (pe);
 	if (sub_bin_native) {
 		bin->sub_bin_native = sub_bin_native;
 	}
-	sub_bin_net = pe_bin;
+	sub_bin_net = pe;
 	bin->sub_bin_net = sub_bin_net;
 	return true;
 }
 
 //carves out dos from original pe
 //TODO: return mz file instead pe
-struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_dos(struct PE_(r_bin_pe_obj_t)* pe_bin) {
+struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_dos(RBinPEObj* pe) {
 	ut8 * tmp_buf;
 
-	ut64 pe_hdr_off = pe_bin->dos_header->e_lfanew;
+	ut64 pe_hdr_off = pe->dos_header->e_lfanew;
 
 	//idk if this is the most efficient way but could not find a function to read
 	//RBuffer into another RBuffer
@@ -37,7 +36,7 @@ struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_dos(struct PE_(r_bin_pe_obj_t)* p
 		return NULL;
 	}
 
-	if ((r_buf_read_at (pe_bin->b, 0, tmp_buf, pe_hdr_off)) == -1) {
+	if ((r_buf_read_at (pe->b, 0, tmp_buf, pe_hdr_off)) == -1) {
 		eprintf ("Error reading to buffer\n");
 		return NULL;
 	}
@@ -49,42 +48,42 @@ struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_dos(struct PE_(r_bin_pe_obj_t)* p
 	}
 
 	sub_bin_dos->size = pe_hdr_off;
-	sub_bin_dos->dos_header = pe_bin->dos_header;
+	sub_bin_dos->dos_header = pe->dos_header;
 
 	free (tmp_buf);
 	return sub_bin_dos;
 }
 
-struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_native(struct PE_(r_bin_pe_obj_t)* pe_bin) {
+RBinPEObj *r_bin_pemixed_init_native(RBinPEObj *pe) {
 	ut8* zero_out;
 
 	struct PE_(r_bin_pe_obj_t)* sub_bin_native = R_NEW0 (struct PE_(r_bin_pe_obj_t));
-	memcpy (sub_bin_native, pe_bin, sizeof(struct PE_(r_bin_pe_obj_t)));
+	memcpy (sub_bin_native, pe, sizeof(struct PE_(r_bin_pe_obj_t)));
 
-	//copy pe_bin->b and assign to sub_bin_native
+	//copy pe->b and assign to sub_bin_native
 
 	// if (!(tmp_buf = malloc (b_size))) {
 	// 	eprintf("wtf malloc\n");
 	// };
 
-	// if (!(r_buf_read_at (pe_bin->b, 0, tmp_buf, b_size))) {
+	// if (!(r_buf_read_at (pe->b, 0, tmp_buf, b_size))) {
 	// 	free (sub_bin_native);
 	// 	return NULL;
 	// }
 
-	if (!(sub_bin_native->b = r_buf_new_with_buf(pe_bin->b))) {
+	if (!(sub_bin_native->b = r_buf_new_with_buf(pe->b))) {
 		free (sub_bin_native);
 		eprintf ("failed\n");
 		return NULL;
 	}
 
 	//calculate the dotnet data directory offset
-	int dotnet_offset = pe_bin->dos_header->e_lfanew;
+	int dotnet_offset = pe->dos_header->e_lfanew;
 	dotnet_offset += sizeof (PE_(image_nt_headers));
 	dotnet_offset -= sizeof (PE_(image_data_directory)) * 2;
 
 	if (!(zero_out = (ut8*) calloc (2, 4 * sizeof (ut8)))) {
-		// can't call PE_(r_bin_pe_free) since this will free the underlying pe_bin
+		// can't call PE_(r_bin_pe_free) since this will free the underlying pe
 		// object which we may need for later
 		// PE_(r_bin_pe_free) (sub_bin_native);
 		r_buf_free (sub_bin_native->b);
@@ -105,8 +104,8 @@ struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_native(struct PE_(r_bin_pe_obj_t)
 }
 
 //this method should just return the original pe file
-// struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_net(struct PE_(r_bin_pe_obj_t)* pe_bin) {
-//		return pe_bin;
+// struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_net(struct PE_(r_bin_pe_obj_t)* pe) {
+//		return pe;
 // }
 
 //not sure if this function is nessescary
@@ -114,7 +113,6 @@ struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_extract(struct r_bin_pemixed_obj_t* bi
 	if (!bin) {
 		return NULL;
 	}
-
 	switch (sub_bin) {
 	case SUB_BIN_DOS:
 		return bin->sub_bin_dos;
@@ -155,7 +153,6 @@ void* r_bin_pemixed_free(struct r_bin_pemixed_obj_t* bin) {
 
 struct r_bin_pemixed_obj_t * r_bin_pemixed_from_bytes_new(const ut8* buf, ut64 size) {
 	struct r_bin_pemixed_obj_t* bin = R_NEW0 (struct r_bin_pemixed_obj_t);
-	struct PE_(r_bin_pe_obj_t)* pe_bin;
 	if (!bin || !buf) {
 		return r_bin_pemixed_free (bin);
 	}
@@ -164,24 +161,24 @@ struct r_bin_pemixed_obj_t * r_bin_pemixed_from_bytes_new(const ut8* buf, ut64 s
 		return r_bin_pemixed_free (bin);
 	}
 	bin->size = size;
-	pe_bin = PE_(r_bin_pe_new_buf) (bin->b, true);
-	if (!pe_bin) {
-		PE_(r_bin_pe_free)(pe_bin);
+	struct PE_(r_bin_pe_obj_t)* pe = PE_(r_bin_pe_new_buf) (bin->b, true);
+	if (!pe) {
+		PE_(r_bin_pe_free)(pe);
 		return r_bin_pemixed_free (bin);
 	}
-	if (!pe_bin->clr_hdr) {
-		PE_(r_bin_pe_free) (pe_bin);
+	if (!pe->clr_hdr) {
+		PE_(r_bin_pe_free) (pe);
 		return r_bin_pemixed_free (bin);
 	}
 	//check if binary only contains managed code
 	//check implemented here cuz we need to intialize
 	//the pe header to access the clr hdr
-	if (check_il_only(pe_bin->clr_hdr->Flags)) {
-		PE_(r_bin_pe_free) (pe_bin);
+	if (check_il_only (pe->clr_hdr->Flags)) {
+		PE_(r_bin_pe_free) (pe);
 		return r_bin_pemixed_free (bin);
 	}
-	if (!r_bin_pemixed_init (bin, pe_bin)) {
-		PE_(r_bin_pe_free) (pe_bin);
+	if (!r_bin_pemixed_init (bin, pe)) {
+		PE_(r_bin_pe_free) (pe);
 		return r_bin_pemixed_free (bin);
 	}
 	return bin;
