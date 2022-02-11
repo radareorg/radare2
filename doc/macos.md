@@ -18,6 +18,20 @@ To install bindings you will need to install r2, valac, valabind and swig. The w
 
 	$ r2pm -s python
 
+Common Issues
+-------------
+
+If you want to use the debugger via ssh or the sdk was not properly setup you must run:
+
+	$ sudo DevToolsSecurity -enable
+
+You cannot debug binaries located outside your home, if you want to do that you should disable SIP:
+
+* Reboot your mac while pressing CMD+R to enter recovery mode
+* Open the terminal in the Utilities menu and type:
+
+	$ csrutil disable
+
 Code Signing
 ------------
 
@@ -72,8 +86,6 @@ Additionally, you can run the following command to add the non-privileged user (
 After doing it you should be able to debug on macOS without root permissions!
 
 	$ r2 -d mybin
-
-Note: Apple-signed binaries cannot be debugged, since Apple's SIP (System Integrity Protection) prevents attaching to an Apple-signed binary. If you want to debug an Apple-signed binary, either remove its certificate (https://github.com/steakknife/unsign; WARNING: this cannot be reversed!) or disable SIP (`csrutil enable --without debug`).
 
 Note: if you already have a valid certificate for code signing, you can specify its name by setting the env var CERTID.
 
