@@ -558,3 +558,32 @@ EXPECT=<<EOF
 85  0x0000579e 0x0040659e 61  62   .rdata  ascii   ?sputc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@QAEHD@Z
 EOF
 RUN
+
+NAME=mapaddr strings
+FILE=bins/other/hello.txt
+CMDS=<<EOF
+izzq
+x 32 @ 0
+EOF
+EXPECT=<<EOF
+0x0 24 24 hello world\nSecond Line\n
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  6865 6c6c 6f20 776f 726c 640a 5365 636f  hello world.Seco
+0x00000010  6e64 204c 696e 650a ffff ffff ffff ffff  nd Line.........
+EOF
+RUN
+
+NAME=mapaddr strings
+ARGS=-m 0x1000
+FILE=bins/other/hello.txt
+CMDS=<<EOF
+izzq
+x 32 @ 0x1000
+EOF
+EXPECT=<<EOF
+0x0 24 24 hello world\nSecond Line\n
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00001000  6865 6c6c 6f20 776f 726c 640a 5365 636f  hello world.Seco
+0x00001010  6e64 204c 696e 650a ffff ffff ffff ffff  nd Line.........
+EOF
+RUN
