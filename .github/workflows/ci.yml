@@ -148,6 +148,7 @@ jobs:
         /tmp/bin/r2 -v
         /tmp/bin/rabin2 -l /tmp/bin/r2
   build-spaces:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: linux-meson-spaces
     runs-on: ubuntu-20.04
     steps:
@@ -184,6 +185,7 @@ jobs:
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
   linux-static:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
@@ -213,6 +215,7 @@ jobs:
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
   linux-acr-deb-64:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
@@ -387,6 +390,7 @@ jobs:
 
   # Mobile
   ios-cydia32:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
