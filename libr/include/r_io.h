@@ -16,16 +16,17 @@
 
 #define R_IO_UNDOS 64
 
-#define r_io_map_begin(map) r_itv_begin (map->itv)
-#define r_io_map_to(map) ( r_itv_end (map->itv) - 1 )
+#define r_io_map_begin(map) ((map)?r_itv_begin ((map)->itv): UT64_MAX)
+// #define r_io_map_to(map) ( (map)? r_itv_end ((map)->itv) - 1: UT64_MAX )
+#define r_io_map_to(map) ( r_itv_end ((map)->itv) - 1)
 #define r_io_map_from r_io_map_begin
-#define r_io_submap_from(sm) (r_io_map_begin (sm))
+#define r_io_submap_from(sm) (r_io_map_begin ((sm)))
 #define r_io_submap_to(sm) (r_io_map_to (sm))
-#define r_io_map_end(map) r_itv_end (map->itv)
-#define r_io_map_size(map) r_itv_size (map->itv)
-#define r_io_map_contain(map, addr) r_itv_contain (map->itv, addr)
-#define r_io_submap_contain(sm, addr) r_io_map_contain (sm, addr)
-#define r_io_submap_overlap(bd, sm) r_itv_overlap(bd->itv, sm->itv)
+#define r_io_map_end(map) (map? r_itv_end ((map)->itv): UT64_MAX)
+#define r_io_map_size(map) (map? r_itv_size ((map)->itv): UT64_MAX)
+#define r_io_map_contain(map, addr) (map? r_itv_contain ((map)->itv, addr): false)
+#define r_io_submap_contain(sm, addr) r_io_map_contain ((sm), addr)
+#define r_io_submap_overlap(bd, sm) r_itv_overlap((bd)->itv, (sm)->itv)
 
 #define r_io_map_set_begin(map, new_addr)	\
 	do {					\

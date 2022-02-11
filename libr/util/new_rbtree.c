@@ -372,7 +372,10 @@ R_API void *r_crbtree_take(RRBTree *tree, void *data, RRBComparator cmp, void *u
 }
 
 R_API bool r_crbtree_delete(RRBTree *tree, void *data, RRBComparator cmp, void *user) {
-	r_return_val_if_fail (tree && data && tree->size && tree->root && cmp, false);
+	if (!tree || !data) {
+		return false;
+	}
+	r_return_val_if_fail (tree->size && tree->root && cmp, false);
 	data = r_crbtree_take (tree, data, cmp, user);
 	if (tree->free) {
 		tree->free (data);
