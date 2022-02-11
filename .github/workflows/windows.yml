@@ -8,6 +8,7 @@ on:
 
 jobs:
   w32-mingw:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: w32-mingw
     runs-on: ubuntu-20.04
     steps:
@@ -74,7 +75,7 @@ jobs:
         cd prefix\bin
         radare2 -v
   w32-meson:
-#    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-2019
     steps:
     - name: Win configure Pagefile
@@ -101,7 +102,7 @@ jobs:
       run: |
         .github\vsdevenv.ps1
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w32 build
-        ninja -C build -j2 install
+        ninja -C build -j1 install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w32.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w32
     - uses: actions/upload-artifact@v2
@@ -155,7 +156,7 @@ jobs:
         bash sys/source_bat.bash 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat' "x86_64"
         # meson_options: --default-library=shared|static -Dstatic_runtime=true --backend vs2019
         meson --buildtype=release --prefix=$PWD\radare2-${{ steps.r2v.outputs.branch }}-w64 build
-        ninja -C build -j 2
+        ninja -C build -j 1
         ninja -C build install
     - name: Create zip artifact
       run: 7z a radare2-${{ steps.r2v.outputs.branch }}-w64.zip $PWD\radare2-${{ steps.r2v.outputs.branch }}-w64
