@@ -12,7 +12,7 @@
 #include "mdmp_pe.h"
 #include "mdmp_pe64.h"
 
-struct r_bin_mdmp_obj {
+typedef struct r_bin_mdmp_obj {
 	struct minidump_header *hdr;
 
 	/* Encountered streams */
@@ -54,12 +54,13 @@ struct r_bin_mdmp_obj {
 	size_t size;
 	ut8 endian;
 	Sdb *kv;
-};
+} RBinMdmpObj;
 
-struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf);
-void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj);
-ut64 r_bin_mdmp_get_paddr(struct r_bin_mdmp_obj *obj, ut64 vaddr);
-ut32 r_bin_mdmp_get_perm(struct r_bin_mdmp_obj *obj, ut64 vaddr);
-struct minidump_memory_info *r_bin_mdmp_get_mem_info(struct r_bin_mdmp_obj *obj, ut64 vaddr);
+
+RBinMdmpObj *r_bin_mdmp_new_buf(RBuffer *buf);
+void r_bin_mdmp_free(RBinMdmpObj *obj);
+ut64 r_bin_mdmp_get_paddr(RBinMdmpObj *obj, ut64 vaddr);
+ut32 r_bin_mdmp_get_perm(RBinMdmpObj *obj, ut64 vaddr);
+struct minidump_memory_info *r_bin_mdmp_get_mem_info(RBinMdmpObj *obj, ut64 vaddr);
 
 #endif /* MDMP_H */
