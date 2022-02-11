@@ -9,10 +9,7 @@ on:
 jobs:
   testfreebsd:
     runs-on: macos-10.15
-    name: A job to run test FreeBSD
-    env:
-      MYTOKEN : ${{ secrets.MYTOKEN }}
-      MYTOKEN2: "value2"
+    name: freebsd-acr
     steps:
     - uses: actions/checkout@v2
     - name: Test in FreeBSD
