@@ -1,0 +1,30 @@
+name: freebsd
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  freebsd:
+    runs-on: macos-10.15
+    name: freebsd-acr
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build r2 in FreeBSD
+      id: build
+      uses: vmactions/freebsd-vm@v0.1.6
+      with:
+        usesh: true
+        prepare: pkg install -y curl gmake patch git
+        run: |
+          cd work || true
+          pwd
+          ls -lah
+          whoami
+          env
+          freebsd-version
+          echo DATE: ; date
+          sys/install.sh
+          echo DATE: ; date
