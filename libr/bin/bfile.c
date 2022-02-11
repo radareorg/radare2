@@ -26,8 +26,8 @@ static RBinString *__stringAt(RBinFile *bf, RList *ret, ut64 addr) {
 	return NULL;
 }
 
-static ut64 binobj_a2b(RBinObject *o, ut64 addr) {
-	return o ? addr + o->baddr_shift : addr;
+static ut64 binobj_a2b(RBinObject *bo, ut64 addr) {
+	return addr + (bo ? bo->baddr_shift : 0);
 }
 
 static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
@@ -384,8 +384,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 					pdelta = s->paddr;
 				}
 			}
-			bs->paddr = str_start;
-			bs->vaddr = str_start - pdelta + vdelta;
+			ut64 baddr = bf->loadaddr && bf->o? bf->o->baddr: bf->loadaddr;
+			bs->paddr = str_start + baddr;
+			bs->vaddr = str_start - pdelta + vdelta + baddr;
 			bs->string = r_str_ndup ((const char *)tmp, i);
 			if (list) {
 				r_list_append (list, bs);
