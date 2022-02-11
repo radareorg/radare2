@@ -5172,6 +5172,7 @@ static int cmd_print(void *data, const char *input) {
 	st64 l;
 	int i, len, ret;
 	ut8* block = NULL;
+	bool myblock = false;
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
@@ -5222,7 +5223,6 @@ static int cmd_print(void *data, const char *input) {
 		}
 	}
 
-	bool myblock = false;
 	if (len > core->blocksize) {
 		block = calloc (1, len);
 		if (block) {
