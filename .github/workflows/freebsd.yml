@@ -27,4 +27,11 @@ jobs:
           freebsd-version
           echo DATE: ; date
           sys/install.sh
+          make install DESTDIR=/tmp/prefix
+          (cd /tmp/prefix ; tar czvf /tmp/radare2-freebsd.tgz *)
+          rm -rf *
+          cp /tmp/radare2-freebsd.tgz .
           echo DATE: ; date
+    - uses: actions/upload-artifact@v2
+      with:
+        path: radare2-freebsd.tgz
