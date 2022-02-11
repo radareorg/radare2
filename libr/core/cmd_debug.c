@@ -5192,11 +5192,9 @@ static int cmd_debug(void *data, const char *input) {
 		} else {
 			RDebugInfo *rdi = r_debug_info (core->dbg, input + 2);
 			RDebugReasonType stop = r_debug_stop_reason (core->dbg);
-			char *escaped_str;
 			switch (input[1]) {
 			case '\0': // "di"
 #define P r_cons_printf
-#define PS(X, Y) {escaped_str = r_str_escape (Y);r_cons_printf(X, escaped_str);free(escaped_str);}
 				if (stop != -1) {
 					if (core->dbg->reason.type == R_DEBUG_REASON_SIGNAL) {
 						P ("signalstr=%s\n", r_signal_to_human (core->dbg->reason.signum));
@@ -5286,35 +5284,42 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				break;
 			case 'j': // "dij"
-				P ("{");
-				P ("\"stopreason\":\"%s\"}\n", r_debug_reason_to_string (stop));
+				{
+					PJ *pj = r_core_pj_new (core);
+					pj_o (pj);
+					pj_ks (pj, "stopreason", r_debug_reason_to_string (stop));
 				if (rdi) {
 					const char *s = r_signal_to_string (core->dbg->reason.signum);
-					P ("\"type\":\"%s\",", r_debug_reason_to_string (core->dbg->reason.type));
-					P ("\"signal\":\"%s\",", r_str_get_fail (s, "none"));
-					P ("\"signum\":%d,", core->dbg->reason.signum);
-					P ("\"sigstr\":\"%s\",", r_signal_to_human (core->dbg->reason.signum));
-					P ("\"sigpid\":%d,", core->dbg->reason.tid);
-					P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
-					P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
-					P ("\"baddr\":%"PFMT64d",", r_debug_get_baddr (core->dbg, NULL));
-					P ("\"stopaddr\":%"PFMT64d",", core->dbg->stopaddr);
-					P ("\"pid\":%d,", rdi->pid);
-					P ("\"tid\":%d,", rdi->tid);
-					P ("\"uid\":%d,", rdi->uid);
-					P ("\"gid\":%d,", rdi->gid);
+					pj_ks (pj, "type", r_debug_reason_to_string (core->dbg->reason.type));
+					pj_ks (pj, "signal", r_str_get_fail (s, "none"));
+					pj_kn (pj, "signum", core->dbg->reason.signum);
+					pj_ks (pj, "sigstr", r_signal_to_human (core->dbg->reason.signum));
+					pj_kn (pj, "sigpid", core->dbg->reason.tid);
+					pj_kn (pj, "addr", core->dbg->reason.addr);
+					pj_kn (pj, "inbp", core->dbg->reason.bp_addr);
+					pj_kn (pj, "baddr", r_debug_get_baddr (core->dbg, NULL));
+					pj_kn (pj, "stopaddr", core->dbg->stopaddr);
+					pj_kn (pj, "pid", rdi->pid);
+					pj_kn (pj, "tid", rdi->tid);
+					pj_kn (pj, "uid", rdi->uid);
+					pj_kn (pj, "gid", rdi->gid);
 					if (rdi->usr) {
-						PS("\"usr\":\"%s\",", rdi->usr);
+						pj_ks (pj, "usr", rdi->usr);
 					}
 					if (rdi->exe) {
-						PS("\"exe\":\"%s\",", rdi->exe);
+						pj_ks (pj, "exe", rdi->exe);
 					}
 					if (rdi->cmdline) {
-						PS ("\"cmdline\":\"%s\",", rdi->cmdline);
+						pj_ks (pj, "cmdline", rdi->cmdline);
 					}
 					if (rdi->cwd) {
-						PS ("\"cwd\":\"%s\",", rdi->cwd);
+						pj_ks (pj, "cwd", rdi->cwd);
 					}
+				}
+				pj_end (pj);
+				char *s = pj_drain (pj);
+				P("%s", s);
+				free (s);
 				}
 				break;
 #undef P
