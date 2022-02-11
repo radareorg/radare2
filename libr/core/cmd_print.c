@@ -1793,8 +1793,11 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 /* In this function, most of the buffers have 4 times
  * the required length. This is because we supports colours,
  * that are 4 chars long. */
-#define append(x, y) { strcat (x, y); x += strlen (y); }
+#define append(x, y) if (x && y) { strcat (x, y); x += strlen (y); }
 static void annotated_hexdump(RCore *core, const char *str, int len) {
+	if (!core || !str || len < 1) {
+		return;
+	}
 	const int usecolor = r_config_get_i (core->config, "scr.color");
 	int nb_cols = r_config_get_i (core->config, "hex.cols");
 	core->print->use_comments = r_config_get_i (core->config, "hex.comments");

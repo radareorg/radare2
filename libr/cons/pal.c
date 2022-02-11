@@ -289,23 +289,20 @@ R_API void r_cons_pal_random(void) {
 	r_cons_pal_update_event ();
 }
 
-/* Return NULL if outcol is given */
-R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
-	int i;
+R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
+	r_return_val_if_fail (str, NULL);
 	RColor rcolor = (RColor) RColor_BLACK;
 	rcolor.id16 = -1;
-	char *fgcolor;
-	char *bgcolor;
 	char *attr = NULL;
 	char out[128];
 	if (!str) {
 		return NULL;
 	}
-	fgcolor = strdup (str);
+	char *fgcolor = strdup (str);
 	if (!fgcolor) {
 		return NULL;
 	}
-	bgcolor = strchr (fgcolor + 1, ' ');
+	char *bgcolor = strchr (fgcolor + 1, ' ');
 	out[0] = 0;
 	if (bgcolor) {
 		*bgcolor++ = '\0';
@@ -314,7 +311,6 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			*attr++ = '\0';
 		}
 	}
-
 	// Handle first color (fgcolor)
 	if (!strcmp (fgcolor, "random")) {
 		rcolor = r_cons_color_random (ALPHA_FG);
@@ -322,11 +318,11 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			r_cons_rgb_str (out, sizeof (out), &rcolor);
 		}
 	} else if (!strncmp (fgcolor, "#", 1)) { // "#00ff00" HTML format
-		if (strlen (fgcolor) == 7) {
-			i = sscanf (fgcolor + 1, "%02hhx%02hhx%02hhx", &rcolor.r, &rcolor.g, &rcolor.b);
-			if (i != 3) {
-				eprintf ("Error while parsing HTML color: %s\n", fgcolor);
-			}
+		if (strlen (fgcolor + 1) == 6) {
+			const char *kule = fgcolor + 1;
+			rcolor.r = rgbnum (kule[0], kule[1]);
+			rcolor.g = rgbnum (kule[2], kule[3]);
+			rcolor.b = rgbnum (kule[4], kule[5]);
 			if (!outcol) {
 				r_cons_rgb_str (out, sizeof (out), &rcolor);
 			}
@@ -334,14 +330,14 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			eprintf ("Invalid html color code\n");
 		}
 	} else if (!strncmp (fgcolor, "rgb:", 4)) { // "rgb:123" rgb format
-		if (strlen (fgcolor) == 7) {
+		if (strlen (fgcolor + 4) == 3) { // "rgb:RGB"
 			rcolor.r = rgbnum (fgcolor[4], '0');
 			rcolor.g = rgbnum (fgcolor[5], '0');
 			rcolor.b = rgbnum (fgcolor[6], '0');
 			if (!outcol) {
 				r_cons_rgb_str (out, sizeof (out), &rcolor);
 			}
-		} else if (strlen (fgcolor) == 10) {
+		} else if (strlen (fgcolor + 4) == 6) { // rgb:RRGGBB
 			rcolor.r = rgbnum (fgcolor[4], fgcolor[5]);
 			rcolor.g = rgbnum (fgcolor[6], fgcolor[7]);
 			rcolor.b = rgbnum (fgcolor[8], fgcolor[9]);
@@ -352,27 +348,23 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 	}
 	// Handle second color (bgcolor)
 	if (bgcolor && !strncmp (bgcolor, "rgb:", 4)) { // "rgb:123" rgb format
-		if (strlen (bgcolor) == 7) {
-			rcolor.a |= ALPHA_BG;
+		rcolor.a |= ALPHA_BG;
+		if (strlen (bgcolor + 4) == 3) {
 			rcolor.r2 = rgbnum (bgcolor[4], '0');
 			rcolor.g2 = rgbnum (bgcolor[5], '0');
 			rcolor.b2 = rgbnum (bgcolor[6], '0');
-			if (!outcol) {
-				size_t len = strlen (out);
-				r_cons_rgb_str (out + len, sizeof (out) - len, &rcolor);
-			}
-		} else if (strlen (bgcolor) == 10) {
-			rcolor.a |= ALPHA_BG;
+		} else if (strlen (bgcolor + 4) == 6) {
 			rcolor.r2 = rgbnum (bgcolor[4], bgcolor[5]);
 			rcolor.g2 = rgbnum (bgcolor[6], bgcolor[7]);
 			rcolor.b2 = rgbnum (bgcolor[8], bgcolor[9]);
-			if (!outcol) {
-				size_t len = strlen (out);
-				r_cons_rgb_str (out + len, sizeof (out) - len, &rcolor);
-			}
+		}
+		if (!outcol) {
+			size_t len = strlen (out);
+			r_cons_rgb_str (out + len, sizeof (out) - len, &rcolor);
 		}
 	}
 	// No suitable format, checking if colors are named
+	int i;
 	for (i = 0; colors[i].name; i++) {
 		if (!strcmp (fgcolor, colors[i].name)) {
 			rcolor.r = colors[i].rcolor.r;
