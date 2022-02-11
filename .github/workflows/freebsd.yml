@@ -25,4 +25,4 @@ jobs:
           whoami
           env
           freebsd-version
-          sys/install.sh
+          ./configure && gmake && gmake install
