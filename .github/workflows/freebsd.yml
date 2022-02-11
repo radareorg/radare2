@@ -1,0 +1,36 @@
+name: freebsd
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  testfreebsd:
+    runs-on: macos-10.15
+    name: A job to run test FreeBSD
+    env:
+      MYTOKEN : ${{ secrets.MYTOKEN }}
+      MYTOKEN2: "value2"
+    steps:
+    - uses: actions/checkout@v2
+    - name: Test in FreeBSD
+      id: test
+      uses: vmactions/freebsd-vm@v0.1.5
+      with:
+        usesh: true
+        prepare: pkg install -y curl
+        run: |
+          pwd
+          ls -lah
+          whoami
+          env
+          freebsd-version
+    - name: Build r2
+      id: build
+      uses: vmactions/freebsd-vm@v0.1.5
+      with:
+        usesh: true
+        run: |
+          sys/install.sh
