@@ -12,7 +12,7 @@ jobs:
     name: freebsd-acr
     steps:
     - uses: actions/checkout@v2
-    - name: Test in FreeBSD
+    - name: Build r2 in FreeBSD
       id: build
       uses: vmactions/freebsd-vm@v0.1.6
       with:
@@ -25,6 +25,4 @@ jobs:
           whoami
           env
           freebsd-version
-          git clone --depth=1 https://github.com/radareorg/radare2
-          cd radare2
           sys/install.sh
