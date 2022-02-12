@@ -818,11 +818,7 @@ static void __update_panel_title(RCore *core, RPanel *panel) {
 			tit = strdup ("");
 		}
 		if (__check_if_cur_panel (core, panel)) {
-			if (!strcmp (panel->model->title, cmd_title)) {
-				r_strbuf_setf (title, "%s[X] "Color_RESET, core->cons->context->pal.graph_box2);
-			}  else {
-				r_strbuf_setf (title, "%s[X] "Color_RESET, core->cons->context->pal.graph_box2);
-			}
+			r_strbuf_setf (title, "%s[X] "Color_RESET, core->cons->context->pal.graph_box2);
 			if (panel->view->pos.w > 4) {
 				r_strbuf_appendf (title, "%s"Color_RESET, tit?tit:"");
 			} else {
