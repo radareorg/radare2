@@ -1160,9 +1160,19 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			case X86_OP_MEM:
 				{
 					dst = getarg (&gop, 0, 1, NULL, DST_AR, NULL);
+					// It is important that we calculate the address
+					// of the destination operand AFTER we increased
+					// the stack pointer.
+					//
+					// Qouting the Intel manual:
+					//
+					// If the ESP register is used as a base register
+					// for addressing a destination operand in memory,
+					// the POP instruction computes the effective address
+					// of the operand after it increments the ESP register.
 					esilprintf (op,
-						"%s,[%d],%s,%d,%s,+=",
-						sp, rs, dst, rs, sp);
+						"%s,[%d],%d,%s,+=,%s",
+						sp, rs, rs, sp, dst);
 					break;
 				}
 			case X86_OP_REG:
