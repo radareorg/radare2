@@ -556,3 +556,16 @@ EXPECT=<<EOF
 0x00000001
 EOF
 RUN
+
+NAME=pop mem rsp
+FILE=-
+CMDS=<<EOF
+aei; aeim
+"wa push 0x41414141; push 0x42424242; pop [rsp]"
+3.aes
+pv4 @ rsp
+EOF
+EXPECT=<<EOF
+0x42424242
+EOF
+RUN
