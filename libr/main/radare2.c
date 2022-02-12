@@ -1016,39 +1016,41 @@ R_API int r_main_radare2(int argc, const char **argv) {
 					iod = (r->io && fh) ? r_io_desc_get (r->io, fh->fd) : NULL;
 					if (!strcmp (debugbackend, "gdb")) {
 						const char *filepath = r_config_get (r->config, "dbg.exe.path");
-						ut64 addr = baddr;
-						if (addr == UINT64_MAX) {
-							addr = r_config_get_i (r->config, "bin.baddr");
-						}
-						if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
-							char *newpath = r_file_abspath (filepath);
-							if (newpath) {
-								if (iod) {
-									free (iod->name);
-									iod->name = newpath;
-								}
-								if (addr == UINT64_MAX) {
-									addr = r_debug_get_baddr (r->dbg, newpath);
-								}
-								r_core_bin_load (r, NULL, addr);
+						if (!R_STR_ISEMPTY (filepath)) {
+							ut64 addr = baddr;
+							if (addr == UINT64_MAX) {
+								addr = r_config_get_i (r->config, "bin.baddr");
 							}
-						} else if (is_valid_gdb_file (fh)) {
-							filepath = iod->name;
 							if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
-								if (addr == UINT64_MAX) {
-									addr = r_debug_get_baddr (r->dbg, filepath);
+								char *newpath = r_file_abspath (filepath);
+								if (newpath) {
+									if (iod) {
+										free (iod->name);
+										iod->name = newpath;
+									}
+									if (addr == UINT64_MAX) {
+										addr = r_debug_get_baddr (r->dbg, newpath);
+									}
+									r_core_bin_load (r, NULL, addr);
 								}
-								r_core_bin_load (r, filepath, addr);
-							} else if ((filepath = get_file_in_cur_dir (filepath))) {
-								// Present in local directory
-								if (iod) {
-									free (iod->name);
-									iod->name = (char*) filepath;
+							} else if (is_valid_gdb_file (fh)) {
+								filepath = iod->name;
+								if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
+									if (addr == UINT64_MAX) {
+										addr = r_debug_get_baddr (r->dbg, filepath);
+									}
+									r_core_bin_load (r, filepath, addr);
+								} else if ((filepath = get_file_in_cur_dir (filepath))) {
+									// Present in local directory
+									if (iod) {
+										free (iod->name);
+										iod->name = (char*) filepath;
+									}
+									if (addr == UINT64_MAX) {
+										addr = r_debug_get_baddr (r->dbg, filepath);
+									}
+									r_core_bin_load (r, NULL, addr);
 								}
-								if (addr == UINT64_MAX) {
-									addr = r_debug_get_baddr (r->dbg, filepath);
-								}
-								r_core_bin_load (r, NULL, addr);
 							}
 						}
 					}
