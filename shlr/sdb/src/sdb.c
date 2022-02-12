@@ -50,6 +50,7 @@ SDB_API Sdb* sdb_new(const char *path, const char *name, int lock) {
 	}
 	s->db.fd = -1;
 	s->fd = -1;
+	s->journal = -1;
 	s->refs = 1;
 	s->ht = sdb_ht_new ();
 	if (path && !*path) {
