@@ -101,6 +101,11 @@ R_API bool r_charset_use(RCharset *c, const char *cf) {
 		if (r_file_exists (syscs)) {
 			rc = r_charset_open (c, syscs);
 			r_sys_setenv ("RABIN2_CHARSET", cf);
+		} else {
+			if (r_file_exists (cf)) {
+				rc = r_charset_open (c, cf);
+				r_sys_setenv ("RABIN2_CHARSET", cf);
+			}
 		}
 		free (syscs);
 	}

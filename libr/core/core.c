@@ -1827,7 +1827,7 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 		autocomplete_macro (core, completion, p);
 		break;
 	case R_CORE_AUTOCMPLT_MS:
-		autocomplete_ms_file(core, completion, p);
+		autocomplete_ms_file (core, completion, p);
 		break;
 	case R_CORE_AUTOCMPLT_FILE:
 		autocomplete_file (completion, p);

@@ -228,7 +228,7 @@ SDB_API Sdb *sdb_ns_path(Sdb *s, const char *path, int create) {
 	return s;
 }
 
-static void ns_sync (Sdb *s, SdbList *list) {
+static void ns_sync(Sdb *s, SdbList *list) {
 	SdbNs *ns;
 	SdbListIter *it;
 	ls_foreach (s->ns, it, ns) {
@@ -242,7 +242,7 @@ static void ns_sync (Sdb *s, SdbList *list) {
 	sdb_sync (s);
 }
 
-SDB_API void sdb_ns_sync (Sdb *s) {
+SDB_API void sdb_ns_sync(Sdb *s) {
 	SdbList *list = ls_new ();
 	ns_sync (s, list);
 	list->free = NULL;
