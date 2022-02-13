@@ -73,7 +73,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: dist/artifacts/radare2-${{ steps.r2v.outputs.branch }}-w32.zip/radare2-${{ steps.r2v.outputs.branch }}-w32.zip
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-mingw32.zip
+          asset_name: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
           asset_content_type: application/zip
       - name: Upload asset for macOS
         uses: actions/upload-release-asset@v1
