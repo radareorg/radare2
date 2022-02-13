@@ -170,7 +170,7 @@ R_API bool r_print_mute(RPrint *p, int x) {
 }
 
 static int r_print_stereogram_private(const char *bump, int w, int h, char *out, int size) {
-	static char data[32768]; // ???
+	static R_TH_LOCAL char data[32768]; // ???
 	const char *string = "Az+|.-=/^@_pT";
 	const int string_len = strlen (string);
 
@@ -484,7 +484,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
 				// pre = r_cons_rgb_str_off (rgbstr, addr);
 				if (p->cons && p->cons->rgbstr) {
-					static char rgbstr[32];
+					static R_TH_LOCAL char rgbstr[32];
 					pre = p->cons->rgbstr (rgbstr, sizeof (rgbstr), addr);
 				}
 			}
@@ -1618,7 +1618,7 @@ R_API void r_print_c(RPrint *p, const ut8 *str, int len) {
 }
 
 // HACK :D
-static RPrint staticp = {
+static R_TH_LOCAL RPrint staticp = {
 	.cb_printf = libc_printf
 };
 
@@ -1726,7 +1726,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 }
 
 R_API void r_print_zoom_buf(RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
-	static int mode = -1;
+	static R_TH_LOCAL int mode = -1;
 	ut8 *bufz = NULL, *bufz2 = NULL;
 	int i, j = 0;
 	ut64 size = (to - from);

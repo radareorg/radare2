@@ -57,12 +57,12 @@ R_API void r_log_add_callback(RLogCallback cb);
 R_API void r_log_del_callback(RLogCallback cb);
 
 #if R_LOG_DISABLE
-#define R_LOG(f,...) do {}
-#define R_LOG_FATAL(f,...) do {}
-#define R_LOG_ERROR(f,...) do {}
-#define R_LOG_INFO(f,...) do {}
-#define R_LOG_WARN(f,...) do {}
-#define R_LOG_DEBUG(f,...) do {}
+#define R_LOG(f,...) do {} while(0)
+#define R_LOG_FATAL(f,...) do {} while(0)
+#define R_LOG_ERROR(f,...) do {} while(0)
+#define R_LOG_INFO(f,...) do {} while(0)
+#define R_LOG_WARN(f,...) do {} while(0)
+#define R_LOG_DEBUG(f,...) do {} while(0)
 #else
 #define R_LOG(f,...) if (r_log_match(R_LOGLVL_INFO, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_INFO, R_LOG_ORIGIN, f, ##__VA_ARGS__);}
 #define R_LOG_FATAL(f,...) if (r_log_match(R_LOGLVL_FATAL, R_LOG_ORIGIN)) {r_log_message(R_LOGLVL_FATAL, R_LOG_ORIGIN, f, ##__VA_ARGS__);}

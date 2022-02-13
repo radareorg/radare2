@@ -1029,6 +1029,14 @@ static int cmd_rap(void *data, const char *input) {
 
 static int cmd_rap_run(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	if (input[0] == ':') {
+		char *s = r_core_cmd_str_r (core, r_str_trim_head_ro (input + 1));
+		if (s) {
+			r_cons_printf ("%s", s);
+			free (s);
+		}
+		return 0;
+	}
 	char *res = r_io_system (core->io, input);
 	if (res) {
 		int ret = atoi (res);

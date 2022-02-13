@@ -74,6 +74,7 @@ r_util_sources = [
   'thread_sem.c',
   'thread_lock.c',
   'thread_cond.c',
+  'thread_chan.c',
   'thread_pipe.c',
   'time.c',
   'tree.c',
