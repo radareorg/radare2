@@ -607,9 +607,8 @@ R_API bool r_anal_esil_signext(RAnalEsil *esil, bool assign) {
 		free (p_src);
 		free (p_dst);
 		return false;
-	} else {
-		free (p_dst);
 	}
+	free (p_dst);
 	
 	//Make sure the other bits are 0
 	src &= UT64_MAX >> (64 - dst);
