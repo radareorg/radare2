@@ -19,6 +19,8 @@ OBJS+=ascii_table.o protobuf.o graph_drawable.o axml.o sstext.o new_rbtree.o
 ifeq (${HAVE_GPERF},1)
 OBJS+=d/ascii.o
 OBJS+=d/pokered.o
+OBJS+=d/katakana.o
+OBJS+=d/hiragana.o
 OBJS+=d/ebcdic37.o
 OBJS+=d/iso8859_1.o
 endif
