@@ -1,17 +1,14 @@
-<!-- Please read the contributing guidelines:
-* https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md
-In short:
+<!--
+Read https://github.com/radareorg/radare2/blob/master/DEVELOPERS.md
 * PR title must be capitalized, concise and use ##tags
+* If the PR is fixing a ticket use 'Fix #1234 - ..' in the commit message
 * Follow the coding style, add tests and documentation if necessary
 -->
 
-**Checklist**
-
-- [ ] Closing issues: #issue
 - [ ] Mark this if you consider it ready to merge
 - [ ] I've added tests (optional)
-- [ ] I wrote some lines in the [radare2book](https://github.com/radareorg/radare2book)
+- [ ] I wrote some lines in the [book](https://github.com/radareorg/radare2book) (optional)
 
 **Description**
 
-<!-- Explain the **details** to understand the purpose of this contribution, with enough information to help us understand better the changes. -->
+<!-- explain your changes if necessary -->
