@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake, fenugrec */
+/* radare - LGPL - Copyright 2013-2022 - pancake, fenugrec */
 
 /*
 *** .hex format description : every line follows this pattern
@@ -25,13 +25,7 @@ KK = 0 - (sum of all bytes)
 
 */
 
-#include "r_io.h"
-#include "r_lib.h"
-#include "r_util.h"
-#include <limits.h>	//for INT_MAX
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
+#include <r_io.h>
 
 //struct Rihex : holds sparse buffer + its own fd, for internal management
 typedef struct {
@@ -181,7 +175,6 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 static int fw04b(FILE *fd, ut16 eaddr) {
 	ut8 cks = 0 - (6 + (eaddr >> 8) + (eaddr & 0xff));
 	return fprintf (fd, ":02000004%04X%02X\n", eaddr, cks);
-
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
@@ -251,6 +244,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 		bc &= 0xff;
 		addr_tmp &= 0xffff;
 		type &= 0xff;
+		ut64 at = (!sec_start && sec_start == addr_tmp)? addr_tmp? addr_tmp:sec_start: sec_start + addr_tmp;
 
 		switch (type) {
 		case 0: // DATA
@@ -259,40 +253,48 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 				*eol = 0;
 			}
 			cksum = bc;
-			cksum += addr_tmp>>8;
+			cksum += addr_tmp >> 8;
 			cksum += addr_tmp;
 			cksum += type;
 
-			if ((next_addr != addr_tmp) || ((sec_size + bc) > SEC_MAX)) {
+			for (i = 0; i < bc; i++) {
+				if (sscanf (str + 9 + (i * 2), "%02x", &byte) != 1) {
+					eprintf ("unparsable data (%s)!\n", str);
+					goto fail;
+				}
+// eprintf ("SEC(%02x)", byte);
+				if (sec_size + i < sec_count) {
+					sec_tmp[i] = (ut8) byte & 0xff;
+				}
+				cksum += byte;
+			}
+			if (1) { //  || (next_addr != addr_tmp) || ((sec_size + bc) > SEC_MAX)) {
 				//previous block is not contiguous, or
 				//section buffer is full => write a sparse chunk
-				if (sec_size && sec_size < UT16_MAX) {
-					if (r_buf_write_at (rbuf, sec_start, sec_tmp, (int) sec_size) != sec_size) {
-						eprintf ("sparse buffer problem, giving up\n");
-						goto fail;
-					}
+				//if (sec_size && sec_size < UT16_MAX) {
+				sec_size = bc;
+				ut32 tmp = 0;
+				r_buf_read_at (rbuf, at, (ut8*)&tmp, 4);
+				if (tmp && tmp != UT32_MAX) {
+					eprintf ("Cannot write%c", 10);
+					return true;
 				}
+				if (r_buf_write_at (rbuf, at, sec_tmp, sec_size) != sec_size) {
+					eprintf ("sparse buffer problem, giving up\n");
+					goto fail;
+				}
+				//}
 				//advance cursor, reset section
-				sec_start = segreg + addr_tmp;
+			//	sec_start = segreg + addr_tmp;
 				next_addr = addr_tmp;
 				sec_size = 0;
 			}
 
-			for (i = 0; i < bc; i++) {
-				if (sscanf (str + 9+ (i*2), "%02x", &byte) !=1) {
-					eprintf ("unparsable data !\n");
-					goto fail;
-				}
-				if (sec_size + i < sec_count) {
-					sec_tmp[sec_size + i] = (ut8) byte & 0xff;
-				}
-				cksum += byte;
-			}
 			sec_size += bc;
 			next_addr += bc;
 			if (eol) {
 				// checksum
-				if (sscanf(str+9+(i*2), "%02x", &byte) !=1) {
+				if (sscanf (str + 9 + (i * 2), "%02x", &byte) !=1) {
 					eprintf("unparsable data !\n");
 					goto fail;
 				}
@@ -308,8 +310,8 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			str = eol;
 			break;
 		case 1: // EOF. we don't validate checksum here
-			if (sec_size) {
-				if (r_buf_write_at(rbuf, sec_start, sec_tmp, sec_size) != sec_size) {
+			if (at && sec_size) {
+				if (r_buf_write_at (rbuf, at, sec_tmp, sec_size) != sec_size) {
 					eprintf ("sparse buffer problem, giving up. ssiz=%X, sstart=%X\n", sec_size, sec_start);
 					goto fail;
 				}
@@ -321,9 +323,9 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			//both rec types are handled the same except :
 			//	new address = seg_reg <<4 for type 02; new address = lin_addr <<16 for type 04.
 			//write current section
-			if (sec_size) {
-				if (r_buf_write_at(rbuf, sec_start, sec_tmp, sec_size) != sec_size) {
-					eprintf("sparse buffer problem, giving up\n");
+			if (sec_size && at) {
+				if (r_buf_write_at (rbuf, at, sec_tmp, sec_size) != sec_size) {
+					eprintf ("sparse buffer problem, giving up\n");
 					goto fail;
 				}
 			}
@@ -350,10 +352,10 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			extL &= 0xff;
 			cksum += extH + extL;
 
-			segreg = extH <<8 | extL;
+			segreg = (extH << 8) | extL;
 
 			//segment rec(02) gives bits 4..19; linear rec(04) is bits 16..31
-			segreg = segreg << ((type==2)? 4: 16);
+			segreg = segreg << ((type == 2)? 4: 16);
 			next_addr = 0;
 			sec_start = segreg;
 
@@ -401,6 +403,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		mal->rbuf = r_buf_new_sparse (io->Oxff);
+		// mal->rbuf = r_buf_new_empty (1024 * 1024 * 8);
 		if (!mal->rbuf) {
 			free (str);
 			free (mal);
