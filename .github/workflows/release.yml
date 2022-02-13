@@ -57,16 +57,16 @@ jobs:
           asset_path: dist/artifacts/radare2_${{ steps.r2v.outputs.branch }}-debian_i386.zip/radare2/radare2_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_name: radare2_${{ steps.r2v.outputs.branch }}_i386.deb
           asset_content_type: application/vnd.debian.binary-package
-      - name: Upload asset for Windows (mingw64)
+      - name: Upload asset for Windows (w64)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/artifact/radare2-${{ steps.r2v.outputs.branch }}-mingw64.zip
-          asset_name: radare2-${{ steps.r2v.outputs.branch }}-mingw64.zip
+          asset_path: dist/artifacts/artifact/radare2-${{ steps.r2v.outputs.branch }}-w64.zip
+          asset_name: radare2-${{ steps.r2v.outputs.branch }}-w64.zip
           asset_content_type: application/zip
-      - name: Upload asset for Windows (mingw32)
+      - name: Upload asset for Windows (w32)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
