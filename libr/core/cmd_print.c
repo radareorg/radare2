@@ -5225,7 +5225,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}
 	}
-
+	if (len < 0) {
+		len = -len;
+	}
 	if (len > core->blocksize) {
 		block = calloc (1, len);
 		if (block) {
