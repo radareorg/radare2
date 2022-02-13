@@ -549,6 +549,14 @@ static RBinInfo *info(RBinFile *bf) {
 	}
 
 	switch (obj->hdr.f_magic) {
+	case COFF_FILE_MACHINE_R4000:
+ 	case COFF_FILE_MACHINE_MIPS16:
+ 	case COFF_FILE_MACHINE_MIPSFPU:
+ 	case COFF_FILE_MACHINE_MIPSFPU16:
+ 		ret->machine = strdup ("mips");
+ 		ret->arch = strdup ("mips");
+ 		ret->bits = 32;
+ 		break;
 	case COFF_FILE_MACHINE_I386:
 		ret->machine = strdup ("i386");
 		ret->arch = strdup ("x86");
@@ -559,6 +567,11 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->arch = strdup ("arm");
 		ret->bits = 64;
 		break;
+	case COFF_FILE_MACHINE_THUMB:
+ 		ret->machine = strdup ("arm");
+ 		ret->arch = strdup ("arm");
+ 		ret->bits = 16;
+ 		break;
 	case COFF_FILE_MACHINE_ARM:
 		ret->machine = strdup ("ARM");
 		ret->arch = strdup ("arm");
@@ -586,6 +599,14 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->arch = strdup ("arm");
 		ret->bits = 32;
 		break;
+	case COFF_FILE_MACHINE_SH3:
+ 	case COFF_FILE_MACHINE_SH3DSP:
+ 	case COFF_FILE_MACHINE_SH4:
+ 	case COFF_FILE_MACHINE_SH5:
+ 		ret->machine = strdup ("sh");
+ 		ret->arch = strdup ("sh");
+ 		ret->bits = 32;
+ 		break;
 	case COFF_FILE_TI_COFF:
 		switch (obj->target_id) {
 		case COFF_FILE_MACHINE_TMS320C54:
