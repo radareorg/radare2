@@ -10,6 +10,7 @@ static const char *help_msg_w[] = {
 	"Usage:","w[x] [str] [<file] [<<EOF] [@addr]","",
 	"w","[1248][+-][n]","increment/decrement byte,word..",
 	"w"," foobar","write string 'foobar'",
+	"w+","string","write string and seek at the end of it",
 	"w0"," [len]","write 'len' bytes with value 0x00",
 	"w6","[de] base64/hex","write base64 [d]ecoded or [e]ncoded string",
 	"wa","[?] push ebp","write opcode, separated by ';' (use '\"' around the command)",
@@ -1406,22 +1407,19 @@ static int wc_handler_old(void *data, const char *input) {
 	return 0;
 }
 
-static void w_handler_common(RCore *core, const char *input) {
+static int w_handler(RCore *core, const char *input) {
 	int wseek = r_config_get_i (core->config, "cfg.wseek");
 	char *str = strdup (input);
 	/* write string */
 	int len = r_str_unescape (str);
+	// handle charset logic here
 	if (!r_core_write_at (core, core->offset, (const ut8 *)str, len)) {
 		cmd_write_fail (core);
 	}
 	free (str);
 	WSEEK (core, len);
 	r_core_block_read (core);
-}
-
-static int w_handler_old(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	w_handler_common (core, input);
+	core->num->value = len;
 	return 0;
 }
 
@@ -2135,6 +2133,7 @@ static int cmd_write(void *data, const char *input) {
 		wA_handler_old (core, input + 1);
 		break;
 	case ' ': // "w"
+	case '+': // "w+"
 	{
 		size_t len = core->blocksize;
 		const char *curcs = r_config_get (core->config, "cfg.charset");
@@ -2143,23 +2142,31 @@ static int cmd_write(void *data, const char *input) {
 		r_str_trim_args (str);
 		r_str_trim_tail (str);
 
+		ut64 addr = core->offset;
 		if (R_STR_ISEMPTY (curcs)) {
-			w_handler_old (core, str + 1);
+			core->num->value = 0;
+			w_handler (core, str + 1);
+			addr += core->num->value;
 		} else {
 			if (len > 0) {
 				size_t in_len = strlen (str + 1);
 				int max = core->print->charset->encode_maxkeylen;
 				int out_len = in_len * max;
+				int new_len = 0;
 				ut8 *out = malloc (in_len * max); //suppose in len = out len TODO: change it
 				if (out) {
 					*out = 0;
-					r_charset_decode_str (core->print->charset, out, out_len, (const ut8*) str + 1, in_len);
-					w_handler_old (core, (const char *)out);
+					new_len = r_charset_decode_str (core->print->charset, out, out_len, (const ut8*) str + 1, in_len);
+					w_handler (core, (const char *)out);
 					free (out);
 				}
+				addr += new_len;
 			}
 		}
 		free (str);
+		if (*input == '+') {
+			r_core_seek (core, addr, true);
+		}
 		break;
 	}
 	case 'z': // "wz"
