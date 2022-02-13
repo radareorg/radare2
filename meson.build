@@ -72,7 +72,11 @@ endif
 if host_machine.system() == 'windows'
   r2birth = run_command('cmd', '/c', 'echo %date%__%time%')
 else
-  r2birth = run_command('date', '+%Y-%m-%d__%H:%M:%S')
+  source_date_epoch = run_command('sh', '-c', 'echo $SOURCE_DATE_EPOCH').stdout().strip()
+  if source_date_epoch == ''
+     source_date_epoch = run_command('date', '+%s').stdout().strip()
+  endif
+  r2birth = run_command('date', '-u', '-d', '@' + source_date_epoch, '+%Y-%m-%d__%H:%M:%S')
 endif
 if r2birth.returncode() != 0
   r2birth = ''
