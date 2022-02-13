@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2021 - gogo, pancake */
+/* radare - LGPL - Copyright 2020-2022 - gogo, pancake */
 
 #include <r_util.h>
 #include <config.h>
@@ -7,15 +7,19 @@
 
 #if HAVE_GPERF
 extern SdbGperf gperf_ascii;
-extern SdbGperf gperf_pokered;
 extern SdbGperf gperf_ebcdic37;
+extern SdbGperf gperf_hiragana;
 extern SdbGperf gperf_iso8859_1;
+extern SdbGperf gperf_katakana;
+extern SdbGperf gperf_pokered;
 
 static const SdbGperf *gperfs[] = {
 	&gperf_ascii,
-	&gperf_pokered,
 	&gperf_ebcdic37,
+	&gperf_hiragana,
 	&gperf_iso8859_1,
+	&gperf_katakana,
+	&gperf_pokered,
 	NULL
 };
 
@@ -223,6 +227,7 @@ R_API size_t r_charset_encode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 			}
 			fine = true;
 			r_str_unescape (res);
+		//	memcpy (o, res, out_len - i);
 			r_str_ncpy (o, res, out_len - i);
 			free (res);
 		}
@@ -250,33 +255,71 @@ R_API size_t r_charset_decode_str(RCharset *rc, ut8 *out, size_t out_len, const 
 		if (!str) {
 			break;
 		}
-		r_str_ncpy (str, (char *)in + cur, toread);
+		memcpy (str, in + cur, toread);
 		bool found = false;
 		for (j = toread; cur < in_len && j > 0; j--) {
 			left = in_len - cur + 1;
 			toread = R_MIN (left, maxkeylen);
-			//zero terminate the string
-			str[j] = '\0';
-
+			str[j] = 0;
 			const char *v = sdb_const_get (rc->db_char_to_hex, (char *) str, 0);
 			if (v) {
+				int repeat = !strncmp (v, "0x", 2)? strlen (v + 2) / 2: 1;
+				ut64 nv = r_num_get (NULL, v);
+				if (!nv) {
+					int i;
+					// write 0x00 N times (
+					for (i = 0; i < repeat; i++) {
+						// write null byte
+						memcpy (o, "\x00", 2);
+						o++;
+					}
+					o--;
+					found = true;
+					break;
+				}
 				//convert to ascii
 				char *str_hx = malloc (1 + maxkeylen);
 				if (!str_hx) {
 					break;
 				}
-				//in the future handle multiple chars output
-				snprintf (str_hx, maxkeylen + 1, "%c", (char) strtol (v, 0, 16));
-				const char *ret = r_str_get_fail (str_hx, "?");
-
-				// concatenate
-				const size_t ll = R_MIN (left, strlen (ret) + 1);
-				if (ll > 0) {
-					r_str_ncpy (o, ret, ll);
-					o += ll - 1;
+				if (nv > 0xff) {
+					ut64 d  = 0;
+					r_mem_swapendian ((ut8*)&d, (const ut8*)&nv, 8);
+					nv = d;
 				}
-				found = true;
-				cur += j - 1;
+				int i;
+				bool skip = true;
+				int chcount = 0;
+				for (i = 0; i < 8; i++) {
+					ut8 bv = nv & 0xff;
+					// skip until we found one byet
+					if (bv & 0xff) {
+						skip = false;
+					}
+					if (skip) {
+						nv >>= 8;
+						continue;
+					} else if (!bv) {
+						break;
+					}
+					// eprintf ("-> 0x%02x\n", nv & 0xff);
+					//in the future handle multiple chars output
+					str_hx[0] = bv;
+					str_hx[1] = 0;
+					const char *ret = r_str_get_fail (str_hx, "?");
+
+					// concatenate
+					const size_t ll = R_MIN (left, strlen (ret) + 1);
+					if (ll > 0) {
+						memcpy (o, ret, ll);
+						o[ll] = 0;
+						o += ll - 1;
+						chcount++;
+					}
+					found = true;
+					nv >>= 8;
+				}
+				cur += (chcount>1)?chcount - 2:j-1;
 				free (str_hx);
 				break;
 			}
