@@ -1015,7 +1015,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "sld.hu", one (0x0070), one (0x07f0), {D5_4U,EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD },
 	{ "sld.w", one (0x0500), one (0x0781), {D8_6U,EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD },
 	{ "snooze", two (0x0fe0, 0x0120), two (0xffff, 0xffff), {0}, 0, V850_CPU_E3V5_UP },
-	{ "sst.b", one (0x0380), one (0x0780), {R2, D7U, EP}, 3, V850_CPU_ALL, "#0,[7],ep,~="},
+	{ "sst.b", one (0x0380), one (0x0780), {R2, D7U, EP}, 3, V850_CPU_ALL, R_ANAL_OP_TYPE_STORE, "#0,[7],ep,~="},
 	{ "sst.h", one (0x0480), one (0x0780), {R2, D8_7U,EP}, 3, V850_CPU_ALL },
 	{ "sst.w", one (0x0501), one (0x0781), {R2, D8_6U,EP}, 3, V850_CPU_ALL },
 	{ "stacch", two (0x07e0, 0x0bca), two (0x07ff, 0xffff), {R2}, 0, V850_CPU_E2_UP | V850_CPU_OPTION_EXTENSION },
