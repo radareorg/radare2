@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2021 - nibble, pancake, keegan */
+/* radare2 - LGPL - Copyright 2009-2022 - nibble, pancake, keegan */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,7 +6,8 @@
 #include <r_bin.h>
 #include "../format/p9/p9bin.h"
 
-#define ALIGN(address, align) (((address) + (align - 1)) & ~(align - 1))
+#undef P9_ALIGN
+#define P9_ALIGN(address, align) (((address) + (align - 1)) & ~(align - 1))
 
 static bool check_buffer(RBinFile *bf, RBuffer *buf) {
 	RSysArch arch;
@@ -128,7 +129,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("text");
 	ptr->size = header->text;
-	ptr->vsize = ALIGN(header->text, align);
+	ptr->vsize = P9_ALIGN (header->text, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf);
 	ptr->perm = R_PERM_RX; // r-x
@@ -152,7 +153,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("data");
 	ptr->size = header->data;
-	ptr->vsize = ALIGN(header->data, align);
+	ptr->vsize = P9_ALIGN (header->data, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_RW;
@@ -167,7 +168,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("bss");
 	ptr->size = 0;
-	ptr->vsize = ALIGN (header->bss, align);
+	ptr->vsize = P9_ALIGN (header->bss, align);
 	ptr->paddr = 0;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_RW;
@@ -182,7 +183,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("syms");
 	ptr->size = header->syms;
-	ptr->vsize = ALIGN(header->syms, align);
+	ptr->vsize = P9_ALIGN (header->syms, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
@@ -197,7 +198,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("spsz");
 	ptr->size = header->spsz;
-	ptr->vsize = ALIGN(header->spsz, align);
+	ptr->vsize = P9_ALIGN (header->spsz, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
@@ -212,7 +213,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	ptr->name = strdup ("pcsz");
 	ptr->size = header->pcsz;
-	ptr->vsize = ALIGN(header->pcsz, align);
+	ptr->vsize = P9_ALIGN (header->pcsz, align);
 	ptr->paddr = phys;
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
