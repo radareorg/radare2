@@ -1108,7 +1108,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		ut64 to;
 		ut64 count;
 
-		if (input[1] == '?' || input[2] == '?' || !arg) {
+		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdua", true);
 			break;
 		}
@@ -1139,7 +1139,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 		}
 		break;
 	case 'c': // "pduc"
-		if (input[1] == '?' || input[2] == '?') {
+		if (input[1] == '?' || (input[1] && input[2] == '?')) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pduc", true);
 			break;
 		}
@@ -1157,29 +1157,26 @@ static int cmd_pdu(RCore *core, const char *input) {
 				input[1] == 'j', NULL, NULL);
 		break;*/
 	case 'i': // "pdui"
-		if (input[1] == '?' || input[2] == '?' || !arg) {
+		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdui", true);
 			break;
 		}
-
 		ret = r_core_print_disasm (core, addr, buf, len, 0, instruction, arg, false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 'o': // "pduo"
-		if (input[1] == '?' || input[2] == '?' || !arg) {
+		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pduo", true);
 			break;
 		}
-
 		ret = r_core_print_disasm (core, addr, buf, len, 0, opcode, arg, false,
 				input[1] == 'j', NULL, NULL);
 		break;
 	case 's': // "pdus"
-		if (input[1] == '?' || input[2] == '?') {
+		if (input[1] == '?' || (input[1] && input[2] == '?')) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdus", true);
 			break;
 		}
-
 		ret = r_core_print_disasm (core, addr, buf, len, 0, instruction, "syscall", false,
 				input[1] == 'j', NULL, NULL);
 		break;
