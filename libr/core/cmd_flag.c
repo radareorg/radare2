@@ -1283,7 +1283,7 @@ rep:
 			RFlagItem *fi;
 			r_list_foreach (list, iter, fi) {
 				if (fi->color) {
-					if (input[2] == '*') {
+					if (input[1] && input[2] == '*') {
 						r_cons_printf ("fc %s=%s\n", fi->name, fi->color);
 					} else {
 						const char *pad = r_str_pad (' ', 10- strlen (fi->name));
@@ -1294,8 +1294,8 @@ rep:
 		} else if (input[1] == '-') {
 			RListIter *iter;
 			RFlagItem *fi;
-			ut64 addr = (input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->offset;
-			const RList *list = (input[2]=='*')?
+			ut64 addr = (input[1] && input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->offset;
+			const RList *list = (input[1] && input[2]=='*')?
 				r_flag_all_list (core->flags, false)
 				: r_flag_get_list (core->flags, addr);
 			r_list_foreach (list, iter, fi) {
