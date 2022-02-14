@@ -100,3 +100,64 @@ EXPECT=<<EOF
 0x0800009f      e800000000     call printk
 EOF
 RUN
+
+NAME=x86 32bit relocs in kernel module
+FILE=bins/elf/linux-example-x86-32.ko
+ARGS=-e bin.cache=true
+CMDS=<<EOF
+s 0x0800007c
+pi 15
+px 0x26
+EOF
+EXPECT=<<EOF
+call __fentry__
+push ebp
+mov ebp, esp
+push reloc..rodata.str1.1
+call printk
+xor eax, eax
+leave
+ret
+push ebp
+mov ebp, esp
+push str.Ulu_mulu_n
+call printk
+pop eax
+leave
+ret
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800007c  e8cc c802 0055 89e5 68a2 0000 08e8 c3c8  .....U..h.......
+0x0800008c  0200 31c0 c9c3 5589 e568 b100 0008 e8b2  ..1...U..h......
+0x0800009c  c802 0058 c9c3                           ...X..
+EOF
+RUN
+
+NAME=x86 32bit relocs in kernel module (bin.cache=false)
+FILE=bins/elf/linux-example-x86-32.ko
+CMDS=<<EOF
+s 0x0800007c
+pi 15
+px 0x26
+EOF
+EXPECT=<<EOF
+call __fentry__
+push ebp
+mov ebp, esp
+push 0
+call printk
+xor eax, eax
+leave
+ret
+push ebp
+mov ebp, esp
+push 0xf
+call printk
+pop eax
+leave
+ret
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x0800007c  e8fc ffff ff55 89e5 6800 0000 00e8 fcff  .....U..h.......
+0x0800008c  ffff 31c0 c9c3 5589 e568 0f00 0000 e8fc  ..1...U..h......
+0x0800009c  ffff ff58 c9c3                           ...X..
+EOF
+RUN
