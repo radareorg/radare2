@@ -131,9 +131,9 @@ static ArmOp ops[] = {
 
 	{ "cmp", 0x5001, TYPE_TST },
 	{ "swp", 0xe1, TYPE_SWP },
-	{ "cmn", 0x0, TYPE_TST },
-	{ "teq", 0x0, TYPE_TST },
-	{ "tst", 0xe1, TYPE_TST },
+	{ "cmn", 0x7001, TYPE_TST },
+	{ "teq", 0x3001, TYPE_TST },
+	{ "tst", 0x1001, TYPE_TST },
 
 	{"lsr", 0x3000a0e1, TYPE_SHFT},
 	{"asr", 0x5000a0e1, TYPE_SHFT},
@@ -6415,7 +6415,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						ao->o |= (y << 24);
 						ao->o |= (z << 16);
 					} else {
-						eprintf ("Parameter %d out0x3000a0e1 of range (0-255)\n", (int)b);
+						eprintf ("Parameter %d out of range (0-255)\n", (int)b);
 						return 0;
 					}
 				} else {
