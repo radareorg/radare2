@@ -838,6 +838,23 @@ static void _patch_reloc(struct Elf_(r_bin_elf_obj_t) *bo, ut16 e_machine, RIOBi
 		}
 		break;
 	}
+	case EM_386:
+ 		switch (rel->type) {
+ 		case R_386_32:
+ 		case R_386_PC32:
+			{
+ 			r_io_read_at (iob->io, rel->rva, buf, 4);
+ 			ut32 v = r_read_le32 (buf) + S + A;
+ 			if (rel->type == R_386_PC32) {
+ 				v -= P;
+ 			}
+ 			r_write_le32 (buf, v);
+ 			r_io_write_at (iob->io, rel->rva, buf, 4);
+			}
+ 		default:
+ 			break;
+ 		}
+ 		break;
 	case EM_X86_64: {
 		int word = 0;
 		switch (rel->type) {
