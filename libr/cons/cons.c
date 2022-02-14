@@ -562,8 +562,8 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 #endif
 		const char *click = enable
 			? "\x1b[?1000;1006;1015h"
-			: "\x1b[?1001r"
-			  "\x1b[?1000l";
+			: "\x1b[?1000;1006;1015l";
+			// : "\x1b[?1001r\x1b[?1000l";
 		// : "\x1b[?1000;1006;1015l";
 		// const char *old = enable ? "\x1b[?1001s" "\x1b[?1000h" : "\x1b[?1001r" "\x1b[?1000l";
 		bool enabled = I->mouse;
