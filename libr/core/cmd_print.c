@@ -6582,7 +6582,17 @@ static int cmd_print(void *data, const char *input) {
 		r_cons_break_push (NULL, NULL);
 		switch (input[1]) {
 		case 'j': // "pxj"
-			r_print_jsondump (core->print, block, len, 8);
+			if (len < core->blocksize) {
+				r_print_jsondump (core->print, core->block, R_MIN (core->blocksize, len), 8);
+			} else {
+				ut8 *data = malloc (len + 1);
+				if (data) {
+					memset (data, core->io->Oxff, len + 1);
+					r_io_read_at (core->io, core->offset, data, len);
+					r_print_jsondump (core->print, data, len, 8);
+					free (data);
+				}
+			}
 			break;
 		case '/': // "px/"
 			r_core_print_examine (core, input + 2);
