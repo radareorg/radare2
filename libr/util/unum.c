@@ -161,7 +161,7 @@ static ut64 r_num_from_binary(const char *str) {
 	ut64 ret = 0;
 	for (j = 0, i = strlen (str) - 1; i > 0; i--, j++) {
 		if (str[i] == '1') {
-			ret |= (1 << j);
+			ret |= (ut64) (1ULL << j);
 		} else if (str[i] != '0') {
 			break;
 		}

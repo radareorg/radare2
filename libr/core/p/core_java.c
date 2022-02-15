@@ -582,7 +582,7 @@ static int r_cmd_java_get_cp_bytes_and_write(RCore *core, RBinJavaObj *obj, ut16
 		bin_buffer = n_file_sz > 0? malloc (n_file_sz): NULL;
 		if (bin_buffer) {
 			memset (bin_buffer, 0, n_file_sz);
-			res = n_file_sz == r_io_read_at (core->io, obj->loadaddr, bin_buffer, n_file_sz)? true: false;
+			res = (n_file_sz == r_io_read_at (core->io, obj->loadaddr, bin_buffer, n_file_sz))? true: false;
 			if (res == true) {
 				res = r_cmd_java_reload_bin_from_buf (
 					core, obj, bin_buffer, n_file_sz);

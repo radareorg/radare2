@@ -295,9 +295,6 @@ R_API char *r_cons_pal_parse(const char *str, R_NULLABLE RColor *outcol) {
 	rcolor.id16 = -1;
 	char *attr = NULL;
 	char out[128];
-	if (!str) {
-		return NULL;
-	}
 	char *fgcolor = strdup (str);
 	if (!fgcolor) {
 		return NULL;

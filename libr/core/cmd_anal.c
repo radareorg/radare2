@@ -8664,7 +8664,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					char str[512];
 					int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 					r_list_foreach (list, iter, ref) {
-						ut8 buf[16];
+						ut8 buf[16] = {0};
 						char *desc;
 						char *desc_to_free = NULL;
 						RFlagItem *flag = r_flag_get_at (core->flags, ref->addr, false);
@@ -8690,7 +8690,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 
 						if (ref->type == R_ANAL_REF_TYPE_CALL) {
 							RAnalOp aop;
-							r_anal_op (core->anal, &aop, ref->addr, buf, sizeof(buf), R_ANAL_OP_MASK_BASIC);
+							r_anal_op (core->anal, &aop, ref->addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
 							if (aop.type == R_ANAL_OP_TYPE_UCALL) {
 								cmd_anal_ucall_ref (core, ref->addr);
 							}

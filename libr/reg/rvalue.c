@@ -143,7 +143,7 @@ R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {
 R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	r_return_val_if_fail (reg && item, false);
 
-	ut8 bytes[12];
+	ut8 bytes[12] = {0};
 	ut8 *src = bytes;
 
 	if (r_reg_is_readonly (reg, item)) {

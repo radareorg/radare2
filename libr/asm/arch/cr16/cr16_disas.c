@@ -1,6 +1,6 @@
-#include <r_types.h>
-#include <r_util.h>
+/* radare - LGPL - Copyright 2014-2022 - fedor.sakharov */
 
+#include <r_util.h>
 #include "cr16_disas.h"
 
 #define GET_BIT(x, n) 	((((x)) >> ((n))) & 1)
@@ -63,6 +63,7 @@ static const char *cr16_conds[] = {
 	[CR16_COND_FS] = "fs",
 	[CR16_COND_FC] = "fc",
 	[CR16_COND_LT] = "lt",
+	[CR16_COND_UC] = "uc",
 };
 
 static const char *ld_sw[] = {
@@ -110,8 +111,7 @@ static inline ut8 cr16_get_short_imm(const ut16 instr)
 	return instr & 0x1F;
 }
 
-static inline ut8 cr16_get_dstreg(const ut16 instr)
-{
+static inline ut8 cr16_get_dstreg(const ut16 instr) {
 	return (instr >> 5) & 0xF;
 }
 
@@ -820,7 +820,7 @@ static int cr16_decode_bcond_br(const ut8 *instr, struct cr16_cmd *cmd, int len)
 				} else {
 					cmd->reladdr = disp32;
 				}
-				snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1, "0x%08x", disp32);
+				snprintf (cmd->operands, sizeof (cmd->operands) - 1, "0x%08x", disp32);
 			} else {
 				disp = (c & 0x1F) | ((c >> 4) & 0x1E0);
 
@@ -830,14 +830,13 @@ static int cr16_decode_bcond_br(const ut8 *instr, struct cr16_cmd *cmd, int len)
 				} else {
 					cmd->reladdr = disp;
 				}
-
-				snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1, "0x%04x", disp);
+				snprintf (cmd->operands, sizeof (cmd->operands) - 1, "0x%04x", disp);
 			}
 		}
 		cmd->type = CR16_TYPE_JUMP;
 	} else {
-		snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "b%s",
-				cr16_conds[cr16_get_cond(c)]);
+		snprintf (cmd->instr, CR16_INSTR_MAXLEN - 1, "b%s",
+				cr16_conds[cr16_get_cond (c)]);
 		if (c & 0x1) {
 			return -1;
 		}
@@ -1128,32 +1127,23 @@ int cr16_decode_muls(const ut8 *instr, struct cr16_cmd *cmd, int len)
 	return ret;
 }
 
-int cr16_decode_scond(const ut8 *instr, struct cr16_cmd *cmd, int len)
-{
-	int ret = 2;
-	ut16 c;
-
+static int cr16_decode_scond(const ut8 *instr, struct cr16_cmd *cmd, int len) {
 	if (len < 2) {
 		return -1;
 	}
-	c = r_read_le16 (instr);
-
+	ut16 c = r_read_le16 (instr);
 	if (c & 1) {
 		return -1;
 	}
-
-	snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "s%s",
-			cr16_conds[cr16_get_dstreg(c)]);
-	snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1, "%s",
-			cr16_regs_names[cr16_get_srcreg(c)]);
-
+	snprintf (cmd->instr, sizeof (cmd->instr) - 1, "s%s",
+			cr16_conds[cr16_get_dstreg (c)]);
+	snprintf(cmd->operands, sizeof (cmd->operands) - 1, "%s",
+			cr16_regs_names[cr16_get_srcreg (c)]);
 	cmd->type = CR16_TYPE_SCOND;
-
-	return ret;
+	return 2;
 }
 
-int cr16_decode_biti(const ut8 *instr, struct cr16_cmd *cmd, int len)
-{
+static int cr16_decode_biti(const ut8 *instr, struct cr16_cmd *cmd, int len) {
 	int ret = 2;
 	ut32 abs18;
 	ut16 c, disp16;

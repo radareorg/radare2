@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2021 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -20,16 +20,15 @@ static int r_line_readchar_win(ut8 *s, int slen);
 #define USE_UTF8 1
 #endif
 
-static char *r_line_nullstr = "";
 static const char word_break_characters[] = "\t\n ~`!@#$%^&*()-_=+[]{}\\|;:\"'<>,./";
 
+// TODO: remove global variables
+static R_TH_LOCAL bool enable_yank_pop = false;
 
 typedef enum {
 	MINOR_BREAK,
 	MAJOR_BREAK
 } BreakMode;
-
-bool enable_yank_pop = false;
 
 static inline bool is_word_break_char(char ch, bool mode) {
 	int i;
@@ -1377,7 +1376,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		if (!fgets (I.buffer.data, R_LINE_BUFSIZE, stdin)) {
 			return NULL;
 		}
-		return (*I.buffer.data)? I.buffer.data: r_line_nullstr;
+		return (*I.buffer.data)? I.buffer.data: "";
 	}
 
 	memset (&buf, 0, sizeof buf);
@@ -2067,7 +2066,7 @@ _end:
 	if (!memcmp (I.buffer.data, "!history", 8)) {
 		// if (I.buffer.data[0]=='!' && I.buffer.data[1]=='\0') {
 		r_line_hist_list ();
-		return r_line_nullstr;
+		return "";
 	}
-	return I.buffer.data[0] != '\0'? I.buffer.data: r_line_nullstr;
+	return I.buffer.data[0] != '\0'? I.buffer.data: "";
 }
