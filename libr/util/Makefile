@@ -23,7 +23,12 @@ OBJS+=d/ebcdic37.o
 OBJS+=d/iso8859_1.o
 endif
 
+ifeq ($(USE_SYSLZ4),1)
+CFLAGS+=@LZ4_CFLAGS@
+PCLIBS+=@LZ4_LDFLAGS@
+else
 OBJS+=$(SHLR)/lz4/lz4.o
+endif
 
 ifeq (${HAVE_LIB_GMP},1)
   OBJS+=big_gmp.o
