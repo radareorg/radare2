@@ -227,7 +227,7 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 		entry = r_rbnode_next (entry);
 	}
 	ut64 smto = r_io_submap_to (sm);
-	ut64 ento = r_io_submap_to (((RIOSubMap*)entry->data));
+	ut64 ento = entry? r_io_submap_to (((RIOSubMap*)entry->data)): 0;
 	while (entry && ento <= smto) {
 		//delete all submaps that are completly included in sm
 		RRBNode *next = r_rbnode_next (entry);
