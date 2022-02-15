@@ -900,7 +900,7 @@ err_r_file_mmap_write:
 		CloseHandle (fh);
 	}
 	return ret;
-#elif __wasi__
+#elif __wasi__ || EMSCRIPTEN
 	return -1;
 #elif __UNIX__
 	int fd = r_sandbox_open (file, RDWR_FLAGS, 0644);
@@ -965,7 +965,7 @@ err_r_file_mmap_read:
 	}
 	free (file_);
 	return ret;
-#elif __wasi__
+#elif __wasi__ || EMSCRIPTEN
 	return 0;
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDONLY, 0644);
@@ -989,7 +989,7 @@ err_r_file_mmap_read:
 #endif
 }
 
-#if __wasi__
+#if __wasi__ || EMSCRIPTEN
 static RMmap *r_file_mmap_unix(RMmap *m, int fd) {
 	return NULL;
 }
