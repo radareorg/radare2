@@ -267,8 +267,12 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	}
 	size_t typeidx_bufsize = (list_size * sizeof (ut16));
 	if (params_off + typeidx_bufsize > bin->size) {
+		eprintf ("Warning: truncated typeidx buffer from %d to %d\n",
+			params_off + typeidx_bufsize, bin->size - params_off);
 		typeidx_bufsize = bin->size - params_off;
-		eprintf ("Warning: truncated typeidx buffer\n");
+		// early return as this may result on so many trashy symbols that take too much time to load
+		// this is only happening when there's a corrupted dex.
+		return NULL;
 	}
 	RStrBuf *sig = r_strbuf_new ("(");
 	if (typeidx_bufsize > 0) {
