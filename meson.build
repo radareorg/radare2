@@ -567,6 +567,7 @@ if get_option('local') and get_option('default_library') == 'shared'
   rpath_lib = '$ORIGIN'
 endif
 
+subdir('shlr/lz4')
 subdir('libr/util')
 subdir('libr/socket')
 subdir('libr/hash')

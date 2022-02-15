@@ -1,7 +1,6 @@
 subdir('d')
 
 r_util_sources = [
-  '../../shlr/lz4/lz4.c',
   'ascii_table.c',
   'assert.c',
   'w32.c',
@@ -95,6 +94,16 @@ r_util_sources = [
 
 if get_option('sdb_cgen')
   r_util_sources += r_util_d_sources
+endif
+
+if lz4_dep.found() and get_option('use_sys_lz4')
+  # r_util_deps += lz4_dep
+  r_util_deps += declare_dependency(
+    link_with: libr2lz4,
+    include_directories: lz4_inc
+  )
+else
+  r_util_sources += '../../shlr/lz4/lz4.c'
 endif
 
 r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]

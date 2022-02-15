@@ -273,30 +273,6 @@ qnx_dep = declare_dependency(
   include_directories: qnx_inc
 )
 
-# handle lz4 dependency (unused?)
-lz4_dep = dependency('liblz4', required: false)
-if not lz4_dep.found() or not get_option('use_sys_lz4')
-  message('Use bundled lz4')
-  lz4_files = [
-    'lz4/lz4.c',
-  ]
-
-  lz4_inc = [platform_inc, include_directories('lz4')]
-
-  libr2lz4 = static_library('r2lz4', lz4_files,
-    include_directories: lz4_inc,
-    implicit_include_directories: false
-  )
-
-  lz4_dep = declare_dependency(
-    link_with: libr2lz4,
-    include_directories: lz4_inc
-  )
-else
-  message('Use system-provided lz4 library')
-endif
-
-
 
 # handle grub dependency
 grub_files = [
