@@ -182,8 +182,8 @@ static const char *help_msg_wv[] = {
 static const char *help_msg_wx[] = {
 	"Usage:", "wx[f] [arg]", "",
 	"wx", " 9090", "write two intel nops",
-	"wxf", " -|file", "write contents of hexpairs file here",
 	"wx+", " 9090", "write hexpairs and seek forward",
+	"wxf", " -|file", "write contents of hexpairs file here",
 	NULL
 };
 
