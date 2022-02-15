@@ -1,0 +1,15 @@
+[package]
+name = "pancake/rax2"
+version = "5.6.2"
+description = "Unix-Like Reverse Engineering Framework"
+readme = "README.md"
+license = "LGPL3"
+
+[[module]]
+name = "rax2"
+abi = "wasi"
+source = "rax2.wasm"
+
+[[command]]
+name = "rax2"
+module = "rax2"

@@ -1,0 +1,18 @@
+[package]
+name = "pancake/rasm2"
+version = "5.6.2"
+description = "Unix-Like Reverse Engineering Framework"
+license = "LGPL3"
+readme = "README.md"
+
+[dependencies]
+"pancake/rasm2" = "5.6.2"
+
+[[module]]
+name = "rasm2"
+source = "rasm2.wasm"
+abi = "wasi"
+
+[[command]]
+name = "rasm2"
+module = "rasm2"
