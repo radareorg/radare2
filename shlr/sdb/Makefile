@@ -28,7 +28,7 @@ include wasi.mk
 
 wasi wasm: $(WASI_SDK)
 	${MAKE} src/sdb_version.h
-	CC=$(WASI_CC) CFLAGS="$(WASI_CFLAGS)" $(MAKE) -C src all WITHPIC=0
+	CC=$(WASI_CC) CFLAGS="$(WASI_CFLAGS)" $(MAKE) CC=$(WASI_CC) -C src all WITHPIC=0
 	mv src/sdb src/sdb.wasm
 	file src/sdb.wasm
 

@@ -284,6 +284,9 @@ typedef unsigned szind_t;
 #  ifdef __tile__
 #    define LG_QUANTUM		4
 #  endif
+#  ifdef EMSCRIPTEN
+#    define LG_QUANTUM		4
+#  endif
 #  ifdef __WASM__
 #    define LG_QUANTUM		4
 #  endif

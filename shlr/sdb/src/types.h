@@ -63,7 +63,7 @@
 #define ULLFMT "ll"
 #endif
 
-#if __wasi__
+#if __wasi__ || EMSCRIPTEN
 #undef HAVE_MMAN
 #define HAVE_MMAN 0
 #endif

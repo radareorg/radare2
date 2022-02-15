@@ -5,7 +5,7 @@
 #include <r_util.h>
 #include <r_bind.h>
 
-#ifdef __wasi__
+#if __wasi__ || EMSCRIPTEN
 #define FE_OVERFLOW 0
 #define feclearexcept(x)
 #endif

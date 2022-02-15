@@ -440,7 +440,11 @@ static void signal_handler(int signum) {
 	if (!crash_handler_cmd) {
 		return;
 	}
+#if __wasi__ || EMSCRIPTEN
+	char *cmd = r_str_newf ("%s %d", crash_handler_cmd, 0);
+#else
 	char *cmd = r_str_newf ("%s %d", crash_handler_cmd, r_sys_getpid ());
+#endif
 	int rc = 1;
 	if (cmd) {
 		r_sys_backtrace ();
