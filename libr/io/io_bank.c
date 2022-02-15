@@ -227,20 +227,20 @@ R_API bool r_io_bank_map_add_top(RIO *io, const ut32 bankid, const ut32 mapid) {
 		entry = r_rbnode_next (entry);
 	}
 	ut64 smto = r_io_submap_to (sm);
-	while (entry && r_io_submap_to (((RIOSubMap *)entry->data)) <= smto) {
-		//delete all submaps that are completly included in sm
-		RRBNode *next = r_rbnode_next (entry);
-		// this can be optimized, there is no need to do search here
-		// XXX this is a workaround to avoid an UAF in Reproducer: iobank-crash
-		void *smfree = bank->submaps->free;
-		bank->submaps->free = NULL;
-		bool a = r_crbtree_delete (bank->submaps, entry->data, _find_sm_by_from_vaddr_cb, NULL);
-		bank->submaps->free = smfree;
-		if (!a) {
-			entry = NULL;
-			break;
+	if (entry) {
+		ut64 ento = r_io_submap_to (((RIOSubMap*)entry->data));
+		while (entry && ento <= smto) {
+			//delete all submaps that are completly included in sm
+			RRBNode *next = r_rbnode_next (entry);
+			// this can be optimized, there is no need to do search here
+			// XXX this is a workaround to avoid an UAF in Reproducer: iobank-crash
+			ento = r_io_submap_to (((RIOSubMap*)entry->data));
+			bool a = r_crbtree_delete (bank->submaps, entry->data, _find_sm_by_from_vaddr_cb, NULL);
+			if (!a) {
+				next = NULL;
+			}
+			entry = next;
 		}
-		entry = next;
 	}
 	if (entry && r_io_submap_from (((RIOSubMap *)entry->data)) <= r_io_submap_to (sm)) {
 		bd = (RIOSubMap *)entry->data;
