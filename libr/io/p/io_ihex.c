@@ -244,7 +244,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 		bc &= 0xff;
 		addr_tmp &= 0xffff;
 		type &= 0xff;
-		ut64 at = (!sec_start && sec_start == addr_tmp)? addr_tmp? addr_tmp:sec_start: sec_start + addr_tmp;
+		ut64 at = (!sec_start && sec_start == addr_tmp)? addr_tmp? addr_tmp: sec_start: sec_start + addr_tmp;
 
 		switch (type) {
 		case 0: // DATA

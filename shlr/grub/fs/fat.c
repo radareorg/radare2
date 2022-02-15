@@ -378,7 +378,7 @@ grub_fat_read_data (grub_disk_t disk, struct grub_fat_data *data,
 			  + data->logical_sector_bits
 			  + GRUB_DISK_SECTOR_BITS);
   logical_cluster = offset >> logical_cluster_bits;
-  offset &= (1 << logical_cluster_bits) - 1;
+  offset &= (1ULL << logical_cluster_bits) - 1;
 
   if (logical_cluster < data->cur_cluster_num)
     {

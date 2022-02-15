@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2021 - pancake */
+/* sdb - MIT - Copyright 2011-2022 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -163,7 +163,7 @@ SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	bool bufset = false;
 	int i, d, ok, w, alength, is_ref = 0, encode = 0;
 	const char *p, *q, *val = NULL;
-	char *eq, *tmp, *json, *next, *quot, *slash, *cmd;
+	char *eq, *tmp, *json, *next, *quot, *slash, *cmd = NULL;
 	char *newcmd = NULL, *original_cmd = NULL;
 	char *res = NULL;
 	Sdb *s = r;

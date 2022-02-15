@@ -1696,7 +1696,7 @@ int LZ4_saveDict (LZ4_stream_t* LZ4_dict, char* safeBuffer, int dictSize)
     if ((U32)dictSize > 64 KB) { dictSize = 64 KB; } /* useless to define a dictionary > 64 KB */
     if ((U32)dictSize > dict->dictSize) { dictSize = (int)dict->dictSize; }
 
-    if (safeBuffer == NULL) assert(dictSize == 0);
+    if (safeBuffer == NULL) return 0;
     if (dictSize > 0) {
         const BYTE* const previousDictEnd = dict->dictionary + dict->dictSize;
         assert(dict->dictionary);
