@@ -2,7 +2,7 @@
 
 set -e
 
-WORKFLOWS="ci.yml windows.yml freebsd.yml"
+WORKFLOWS="linux apple android windows freebsd"
 DESTDIR="dist/artifacts"
 LIMIT=100
 
