@@ -139,3 +139,5 @@ libr/include/sdb
 **/d/*.gperf
 **/d/*.out
 **/d/*.inc
+# Artifacts
+/dist/artifacts

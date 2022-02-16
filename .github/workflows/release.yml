@@ -16,18 +16,9 @@ jobs:
         run: ./sys/release-notes.sh | tee ./RELEASE_NOTES.md
       - name: Download artifacts
         env:
-          REPO: ${{ github.repository }}
-          COMMIT: ${{ github.sha }}
-          DESTDIR: dist/artifacts
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RUN_ID=`gh run --repo "${REPO}" list --workflow "ci.yml" --json "databaseId,status,headSha" --jq '.[] | select(.status=="completed" and .headSha=="'"${COMMIT}"'") | .databaseId'`
-          gh run --repo "${REPO}" download "${RUN_ID}" --dir "${DESTDIR}"
-          RUN_ID=`gh run --repo "${REPO}" list --workflow "windows.yml" --json "databaseId,status,headSha" --jq '.[] | select(.status=="completed" and .headSha=="'"${COMMIT}"'") | .databaseId'`
-          gh run --repo "${REPO}" download "${RUN_ID}" --dir "${DESTDIR}"
-          RUN_ID=`gh run --repo "${REPO}" list --workflow "freebsd.yml" --json "databaseId,status,headSha" --jq '.[] | select(.status=="completed" and .headSha=="'"${COMMIT}"'") | .databaseId'`
-          gh run --repo "${REPO}" download "${RUN_ID}" --dir "${DESTDIR}"
-          find "${DESTDIR}" -type f
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./sys/download-artifacts.sh ${{ github.sha }}
       - name: Create GitHub release
         id: create_release
         uses: actions/create-release@v1
