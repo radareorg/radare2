@@ -29,10 +29,10 @@ jobs:
           sys/install.sh
           gmake install DESTDIR=/tmp/prefix
           (cd /tmp/prefix ; tar czvf /tmp/radare2-freebsd.tgz *)
+          r2r test/db/cmd
           rm -rf *
           cp /tmp/radare2-freebsd.tgz .
           echo DATE: ; date
-          r2r test/db/cmd
     - uses: actions/upload-artifact@v2
       with:
         path: radare2-freebsd.tgz
