@@ -5357,6 +5357,7 @@ static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
 }
 
 static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
+	// len is block_len
 	char ch = input[1];
 	if (ch == '+' || ch == '-' || IS_DIGIT (ch)) {
 		ch = ' ';
@@ -6282,12 +6283,9 @@ static int cmd_print(void *data, const char *input) {
 			return 0;
 		}
 
-		const char *sp = NULL;
-		if (input[1] == '.' || input[1] == '+') {
-			sp = input + 2;
-		} else {
-			sp = strchr (input + 1, ' ');
-		}
+		const char *sp = (input[1] == '.' || input[1] == '+')
+			? input + 2: strchr (input + 1, ' ');
+
 		if (IS_DIGIT (input[1])) {
 			sp = input + 1;
 		} else if (!sp && input[1] == '-') {
@@ -6314,12 +6312,15 @@ static int cmd_print(void *data, const char *input) {
 			l = use_blocksize;
 		}
 		// may be unnecessary, fixes 'pd 1;pdj 100;pd 1' bug
+#if 1
+		core->offset = at; // "pd" doesnt know about the current offset for pd -X
 		r_core_block_read (core);
+#endif
 
 		switch (input[1]) {
 		case 'C': // "pdC"
 			r_core_disasm_pdi (core, l, 0, 'C');
-			pd_result = 0;
+			pd_result = false;
 			processed_cmd = true;
 			break;
 		case 'v': // "pdv" // east decompiler
@@ -6340,7 +6341,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'c': // "pdc" // "pDc"
 			r_core_pseudo_code (core, input + 2);
-			pd_result = 0;
+			pd_result = false;
 			processed_cmd = true;
 			break;
 		case ',': // "pd,"
@@ -6489,7 +6490,7 @@ static int cmd_print(void *data, const char *input) {
 							r_core_return_value (core, dislen);
 						}
 						free (block);
-						pd_result = 0;
+						pd_result = false;
 					}
 				} else {
 					R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->offset);
@@ -6566,7 +6567,7 @@ static int cmd_print(void *data, const char *input) {
 					pj_end (pj);
 					r_cons_printf ("%s\n", pj_string (pj));
 					pj_free (pj);
-					pd_result = 0;
+					pd_result = false;
 					r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
 				} else if (f) {
 					ut64 linearsz = r_anal_function_linear_size (f);
@@ -6585,7 +6586,7 @@ static int cmd_print(void *data, const char *input) {
 							// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_function_realsize (f), f->addr);
 						}
 					}
-					pd_result = 0;
+					pd_result = false;
 				} else {
 					R_LOG_ERROR ("pdf: Cannot find function at 0x%08"PFMT64x, core->offset);
 					processed_cmd = true;
@@ -6627,17 +6628,17 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 				r_cons_break_pop ();
-				pd_result = 0;
+				pd_result = false;
 			}
 			break;
-		case 'j': // pdj
+		case 'j': // "pdj"
 			processed_cmd = true;
 			if (*input == 'D') {
 				cmd_pDj (core, input + 2);
 			} else {
 				cmd_pdj (core, input + 2, block);
 			}
-			pd_result = 0;
+			pd_result = false;
 			break;
 		case 'J': // pdJ
 			formatted_json = true;
@@ -6651,7 +6652,7 @@ static int cmd_print(void *data, const char *input) {
 		case '?': // "pd?"
 			processed_cmd = true;
 			r_core_cmd_help (core, help_msg_pd);
-			pd_result = 0;
+			pd_result = false;
 		case '.':
 		case '-':
 		case '+':
@@ -8366,10 +8367,8 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	}
 beach:
-	if (myblock) {
-		free (block);
-	}
-	if (tmpseek != UT64_MAX) {
+	free (block);
+	if (tmpseek != UT64_MAX && tmpseek != core->offset) {
 		r_core_seek (core, tmpseek, SEEK_SET);
 		r_core_block_read (core);
 	}
