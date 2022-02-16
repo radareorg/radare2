@@ -58,12 +58,9 @@ jobs:
     - name: Installing with symlinks
       run: |
         sys/wasi.sh
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
-      id: r2v
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
+        name: build-wasi
         path: radare2-*-wasi.zip
   build-acr-gperf:
     name: linux-acr-gperf
@@ -200,13 +197,10 @@ jobs:
         # NOLTO=1 sys/static.sh
         make -C binr/blob
         tar cJvf r2-static.tar.xz r2-static
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
-      id: r2v
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: radare2-${{ steps.r2v.outputs.branch }}-static.tar.xz
+        name: linux-static
         path: r2-static.tar.xz
     - name: Static r2 build with meson
       run: |
@@ -222,13 +216,10 @@ jobs:
       uses: actions/checkout@v2
     - name: Packaging for Debian
       run: sys/debian.sh
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
-      id: r2v
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: radare2_${{ steps.r2v.outputs.branch }}-debian_amd64.zip
+        name: linux-acr-deb-64
         path: dist/debian/*/*.deb
   linux-acr-deb-32:
     runs-on: ubuntu-18.04
@@ -242,13 +233,10 @@ jobs:
         export LDFLAGS=-m32
         export ARCH=i386
         sys/debian.sh
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
-      id: r2v
     - name: Pub
       uses: actions/upload-artifact@v2
       with:
-        name: radare2_${{ steps.r2v.outputs.branch }}-debian_i386.zip
+        name: linux-acr-deb-32
         path: dist/debian/*/*.deb
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
@@ -267,6 +255,7 @@ jobs:
 #    - name: Pub
 #      uses: actions/upload-artifact@v2
 #      with:
+#        name: linux-meson-rpm
 #        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
 #  centos-meson-rpm:
 #    runs-on: ubuntu:18.04
@@ -295,6 +284,7 @@ jobs:
 #    - name: Pub
 #      uses: actions/upload-artifact@v2
 #      with:
+#        name: centos-meson-rpm
 #        path: rpmbuild/RPMS/*/*.rpm
   linux-asan-fuzz:
     runs-on: ubuntu-20.04
@@ -346,9 +336,6 @@ jobs:
       uses: actions/checkout@v2
     - name: Packaging
       run: dist/macos/build-pkg.sh
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( python sys/version.py )"
-      id: r2v
 #    - name: Building Radare2
 #      run: |
 #        export CFLAGS="-O2" # -Werror -Wno-unused-result -Wno-unicode -Wno-unneeded-internal-declaration"
@@ -357,7 +344,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         path: dist/macos/*.pkg
-        name: radare2-${{ steps.r2v.outputs.branch }}_macos.pkg
+        name: macos-acr
 #   macos-acr-m1:
 #     runs-on: macos-latest
 #     steps:
@@ -365,14 +352,11 @@ jobs:
 #       uses: actions/checkout@v2
 #     - name: Packaging
 #       run: export CC="xcrun --sdk macosx11.1 gcc -arch arm64" ; dist/macos/build-pkg.sh
-#     - name: Extract r2 version
-#       run: echo "##[set-output name=branch;]$( python sys/version.py )"
-#       id: r2v
 #     - name: Pub
 #       uses: actions/upload-artifact@v2
 #       with:
 #         path: dist/macos/*.pkg
-#         name: radare2-${{ steps.r2v.outputs.branch }}_macos_m1.pkg
+#         name: macos-acr-m1
   macos-test:
     runs-on: macos-latest
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -398,15 +382,12 @@ jobs:
       run: brew install pkg-config ldid
     - name: Create cydia32 package
       run: ./sys/ios-cydia32.sh
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( python sys/version.py )"
-      id: r2v
     - name: List sys/cydia
       run: ls -lahR ./dist/cydia
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2-arm32_${{ steps.r2v.outputs.branch }}_iphoneos-arm
-        path: ./dist/cydia/radare2/radare2-arm32_${{ steps.r2v.outputs.branch }}_iphoneos-arm.deb
+        name: ios-cydia32
+        path: ./dist/cydia/radare2/radare2-arm32_*_iphoneos-arm.deb
   ios-cydia:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
@@ -423,17 +404,12 @@ jobs:
         zip -r /tmp/r2ios-sdk.zip *
         popd
         mv /tmp/r2ios-sdk.zip .
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( python sys/version.py )"
-      id: r2v
     - uses: actions/upload-artifact@v2
       with:
-        name: r2ios_sdk-${{ steps.r2v.outputs.branch }}.zip
-        path: ./r2ios-sdk.zip
-    - uses: actions/upload-artifact@v2
-      with:
-        name: radare2-${{ steps.r2v.outputs.branch }}_iphoneos-arm64.zip
-        path: ./dist/cydia/radare2*/*.deb
+        name: ios-cydia
+        path: |
+          ./r2ios-sdk.zip
+          ./dist/cydia/radare2*/*.deb
 
   android-acr-aarch64:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -449,12 +425,9 @@ jobs:
         sys/android-ndk-install.sh
         sys/android-build.sh arm64
         ls -l
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
-      id: r2v
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2-${{ steps.r2v.outputs.branch }}-android-aarch64.tar.gz
+        name: android-acr-aarch64
         path: radare2*android*aarch64.tar.gz
 
   android-acr-arm:
@@ -471,12 +444,9 @@ jobs:
         sys/android-ndk-install.sh 16 arm
         sys/android-build.sh arm
         ls -l
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
-      id: r2v
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2-${{ steps.r2v.outputs.branch }}-android-arm.tar.gz
+        name: android-acr-arm
         path: radare2*android*arm.tar.gz
 
   android-meson:
@@ -501,10 +471,7 @@ jobs:
         cd /tmp
         rm -rf android-dir/include android-dir/lib
         tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -cvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys;python version.py )"
-      id: r2v
     - uses: actions/upload-artifact@v2
       with:
-        name: radare2-${{ steps.r2v.outputs.branch }}-android-${{ matrix.name }}.tar.gz
+        name: android-meson
         path: /tmp/radare2-android-${{ matrix.name }}.tar.gz
