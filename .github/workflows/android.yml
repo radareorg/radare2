@@ -1,0 +1,73 @@
+name: android
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  android-acr-aarch64:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Compile with acr
+      run: |
+        sys/android-ndk-install.sh
+        sys/android-build.sh arm64
+        ls -l
+    - uses: actions/upload-artifact@v2
+      with:
+        name: android-acr-aarch64
+        path: radare2*android*aarch64.tar.gz
+
+  android-acr-arm:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Compile with acr
+      run: |
+        sys/android-ndk-install.sh 16 arm
+        sys/android-build.sh arm
+        ls -l
+    - uses: actions/upload-artifact@v2
+      with:
+        name: android-acr-arm
+        path: radare2*android*arm.tar.gz
+
+  android-meson:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+      #  name: [x86_64, arm, aarch64]
+        name: [x86_64]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+    - name: Compile with meson
+      run: |
+        export PATH=${HOME}/.local/bin:${PATH}
+        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
+        ninja -C build && ninja -C build install
+    - name: Create radare2-android-${{ matrix.name }}.tar.gz
+      run: |
+        cd /tmp
+        rm -rf android-dir/include android-dir/lib
+        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -cvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
+    - uses: actions/upload-artifact@v2
+      with:
+        name: android-meson
+        path: /tmp/radare2-android-${{ matrix.name }}.tar.gz

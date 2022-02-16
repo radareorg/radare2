@@ -8,7 +8,6 @@ on:
 #  schedule:
 #    - cron: '0 0 * * 1'
 
-
 jobs:
   build-offline:
     name: linux-offline
@@ -49,19 +48,6 @@ jobs:
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --without-capstone && make -j
-  build-wasi:
-    name: linux-wasi
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Installing with symlinks
-      run: |
-        sys/wasi.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: build-wasi
-        path: radare2-*-wasi.zip
   build-acr-gperf:
     name: linux-acr-gperf
     runs-on: ubuntu-20.04
@@ -181,111 +167,6 @@ jobs:
         cd ..
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
-  linux-static:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Installing the musl runtime
-      run: |
-        sudo apt install musl-tools
-    - name: Building static r2 with acr
-      run: |
-        cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
-        NOLTO=1 sys/static.sh
-        # NOLTO=1 sys/static.sh
-        make -C binr/blob
-        tar cJvf r2-static.tar.xz r2-static
-    - name: Pub
-      uses: actions/upload-artifact@v2
-      with:
-        name: linux-static
-        path: r2-static.tar.xz
-    - name: Static r2 build with meson
-      run: |
-        sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
-        sudo pip3 install meson ninja
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
-        ninja -C build && ninja -C build install
-  linux-acr-deb-64:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Packaging for Debian
-      run: sys/debian.sh
-    - name: Pub
-      uses: actions/upload-artifact@v2
-      with:
-        name: linux-acr-deb-64
-        path: dist/debian/*/*.deb
-  linux-acr-deb-32:
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Packaging for 32bit Debian
-      run: |
-        sudo apt install gcc-multilib gperf
-        export CFLAGS=-m32
-        export LDFLAGS=-m32
-        export ARCH=i386
-        sys/debian.sh
-    - name: Pub
-      uses: actions/upload-artifact@v2
-      with:
-        name: linux-acr-deb-32
-        path: dist/debian/*/*.deb
-## RPM PACKAGES DISABLED
-#  linux-meson-rpm:
-#    runs-on: ubuntu:18.04
-#    container: centos:8
-#    steps:
-#    - name: Checkout
-#      uses: actions/checkout@v2
-#    - name: Prepare Skeleton
-#      run: |
-#        mkdir -p SOURCES SPECS
-#        cp -f dist/rpm/*spec SPECS
-#        wget -O https://github.com/radareorg/radare2/archive/master/radare2-5.1.0-git.tar.gz
-#    - name: rpmbuild
-#      uses: robertdebock/rpmbuild-action@1.1.1
-#    - name: Pub
-#      uses: actions/upload-artifact@v2
-#      with:
-#        name: linux-meson-rpm
-#        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
-#  centos-meson-rpm:
-#    runs-on: ubuntu:18.04
-#    container: centos:8
-#    steps:
-#    - name: Checkout
-#      uses: actions/checkout@v2
-#    - name: Install tools for CentOS:8
-#      run: |
-#        yum install -y patch unzip git gcc make python38 python38-pip rpm-build rpmdevtools wget
-#        pip3.8 install meson ninja r2pipe
-#    - name: Building with Meson
-#      run: |
-#        meson build
-#        ninja -C build
-#        ninja -C build install
-#    - name: RPM Packaging
-#      run: |
-#        cp -f dist/rpm/radare2.spec .
-#        rpmdev-setuptree
-#        mkdir -p rpmbuild/SOURCES
-#        cd rpmbuild/SOURCES
-#        wget https://github.com/radareorg/radare2/archive/5860c3efc12d4b75e72bdce4b1d3834599620913/radare2-5.1.0-git.tar.gz
-#        cd -
-#        rpmbuild -ba radare2.spec
-#    - name: Pub
-#      uses: actions/upload-artifact@v2
-#      with:
-#        name: centos-meson-rpm
-#        path: rpmbuild/RPMS/*/*.rpm
   linux-asan-fuzz:
     runs-on: ubuntu-20.04
     continue-on-error: true
@@ -327,36 +208,6 @@ jobs:
       run: |
         export LD_LIBRARY_PATH=/usr/local/lib
         make tests
-
-  # Apple
-  macos-acr:
-    runs-on: macos-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Packaging
-      run: dist/macos/build-pkg.sh
-#    - name: Building Radare2
-#      run: |
-#        export CFLAGS="-O2" # -Werror -Wno-unused-result -Wno-unicode -Wno-unneeded-internal-declaration"
-#        sys/install.sh && make -C dist/macos
-    - name: Pub
-      uses: actions/upload-artifact@v2
-      with:
-        path: dist/macos/*.pkg
-        name: macos-acr
-#   macos-acr-m1:
-#     runs-on: macos-latest
-#     steps:
-#     - name: Checkout
-#       uses: actions/checkout@v2
-#     - name: Packaging
-#       run: export CC="xcrun --sdk macosx11.1 gcc -arch arm64" ; dist/macos/build-pkg.sh
-#     - name: Pub
-#       uses: actions/upload-artifact@v2
-#       with:
-#         path: dist/macos/*.pkg
-#         name: macos-acr-m1
   macos-test:
     runs-on: macos-latest
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -371,107 +222,3 @@ jobs:
       run: export CFLAGS="-O2"; sys/install.sh
     - name: Running tests
       run: pip3 install r2pipe; make tests
-
-  # Mobile
-  ios-cydia32:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install pkg-config/ldid2 with Homebrew
-      run: brew install pkg-config ldid
-    - name: Create cydia32 package
-      run: ./sys/ios-cydia32.sh
-    - name: List sys/cydia
-      run: ls -lahR ./dist/cydia
-    - uses: actions/upload-artifact@v2
-      with:
-        name: ios-cydia32
-        path: ./dist/cydia/radare2/radare2-arm32_*_iphoneos-arm.deb
-  ios-cydia:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install pkg-config/ldid2 with Homebrew
-      run: brew install pkg-config ldid
-    - name: Create cydia package
-      run: ./sys/ios-cydia.sh
-    - name: Create iOS SDK
-      run: |
-        ./sys/ios-sdk.sh
-        pushd /tmp/r2ios
-        zip -r /tmp/r2ios-sdk.zip *
-        popd
-        mv /tmp/r2ios-sdk.zip .
-    - uses: actions/upload-artifact@v2
-      with:
-        name: ios-cydia
-        path: |
-          ./r2ios-sdk.zip
-          ./dist/cydia/radare2*/*.deb
-
-  android-acr-aarch64:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
-    - name: Compile with acr
-      run: |
-        sys/android-ndk-install.sh
-        sys/android-build.sh arm64
-        ls -l
-    - uses: actions/upload-artifact@v2
-      with:
-        name: android-acr-aarch64
-        path: radare2*android*aarch64.tar.gz
-
-  android-acr-arm:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
-    - name: Compile with acr
-      run: |
-        sys/android-ndk-install.sh 16 arm
-        sys/android-build.sh arm
-        ls -l
-    - uses: actions/upload-artifact@v2
-      with:
-        name: android-acr-arm
-        path: radare2*android*arm.tar.gz
-
-  android-meson:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-      #  name: [x86_64, arm, aarch64]
-        name: [x86_64]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
-    - name: Compile with meson
-      run: |
-        export PATH=${HOME}/.local/bin:${PATH}
-        CFLAGS="-static" LDFLAGS="-static" meson --buildtype release --default-library static --prefix=/tmp/android-dir -Dblob=true build --cross-file .github/meson-android-${{ matrix.name }}.ini
-        ninja -C build && ninja -C build install
-    - name: Create radare2-android-${{ matrix.name }}.tar.gz
-      run: |
-        cd /tmp
-        rm -rf android-dir/include android-dir/lib
-        tar --transform 's/android-dir/data\/data\/org.radareorg.radare2installer/g' -cvf radare2-android-${{ matrix.name }}.tar.gz android-dir/
-    - uses: actions/upload-artifact@v2
-      with:
-        name: android-meson
-        path: /tmp/radare2-android-${{ matrix.name }}.tar.gz

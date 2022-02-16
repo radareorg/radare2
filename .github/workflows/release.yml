@@ -162,7 +162,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/build-wasi/radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
+          asset_path: dist/artifacts/linux-wasi/radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-wasi.zip
           asset_content_type: application/zip
       - name: Upload asset for FreeBSD
