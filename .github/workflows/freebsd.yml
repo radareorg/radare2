@@ -37,3 +37,4 @@ jobs:
       with:
         name: freebsd
         path: radare2-freebsd.tgz
+        retention-days: 30

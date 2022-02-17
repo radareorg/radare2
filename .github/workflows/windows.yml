@@ -23,6 +23,7 @@ jobs:
       with:
         name: w32-mingw
         path: radare2*.zip
+        retention-days: 30
   w64-mingw:
     name: w64-mingw
     runs-on: ubuntu-20.04
@@ -38,6 +39,7 @@ jobs:
       with:
         name: w64-mingw
         path: radare2*.zip
+        retention-days: 30
   w64-make:
     runs-on: windows-2019
     steps:
@@ -123,6 +125,7 @@ jobs:
         path: |
           radare2-${{ steps.r2v.outputs.branch }}-w32.zip
 #          radare2-win-installer\Output\radare2.exe
+        retention-days: 30
   w64-meson:
     runs-on: windows-2019
     steps:
@@ -173,4 +176,4 @@ jobs:
         path: |
           radare2-${{ steps.r2v.outputs.branch }}-w64.zip
 #          radare2-win-installer\Output\radare2.exe
-# LINUX
+        retention-days: 30

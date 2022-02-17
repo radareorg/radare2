@@ -25,6 +25,7 @@ jobs:
       with:
         name: android-acr-aarch64
         path: radare2*android*aarch64.tar.gz
+        retention-days: 30
 
   android-acr-arm:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -44,6 +45,7 @@ jobs:
       with:
         name: android-acr-arm
         path: radare2*android*arm.tar.gz
+        retention-days: 30
 
   android-meson:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -71,3 +73,4 @@ jobs:
       with:
         name: android-meson
         path: /tmp/radare2-android-${{ matrix.name }}.tar.gz
+        retention-days: 30
