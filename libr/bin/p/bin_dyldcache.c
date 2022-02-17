@@ -1144,6 +1144,8 @@ static ut64 resolve_symbols_off(RDyldCache *cache, ut64 pa) {
 
 static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 	RList *bins = r_list_newf ((RListFree)free_bin);
+	ut16 *depArray = NULL;
+	cache_imgxtr_t *extras = NULL;
 	if (!bins) {
 		return NULL;
 	}
@@ -1177,8 +1179,6 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 		}
 
 		ut32 j;
-		ut16 *depArray = NULL;
-		cache_imgxtr_t *extras = NULL;
 		if (target_libs) {
 			HtPU *path_to_idx = NULL;
 			if (cache->accel) {
@@ -1734,12 +1734,12 @@ static void populate_cache_maps(RDyldCache *cache) {
 	cache->n_maps = next_map;
 }
 
-static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps) {
+static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cache_map_t *maps, int n_maps) {
 	if (!cache_buf || !hdr || !hdr->accelerateInfoSize || !hdr->accelerateInfoAddr) {
 		return NULL;
 	}
-
-	ut64 offset = va2pa (hdr->accelerateInfoAddr, hdr->mappingCount, maps, cache_buf, 0, NULL, NULL);
+	size_t mc = R_MIN (hdr->mappingCount, n_maps);
+	ut64 offset = va2pa (hdr->accelerateInfoAddr, mc, maps, cache_buf, 0, NULL, NULL);
 	if (!offset) {
 		return NULL;
 	}
@@ -1895,7 +1895,7 @@ static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *buf, ut64 loadadd
 		r_dyldcache_free (cache);
 		return false;
 	}
-	cache->accel = read_cache_accel (cache->buf, cache->hdr, cache->maps);
+	cache->accel = read_cache_accel (cache->buf, cache->hdr, cache->maps, cache->n_maps);
 	cache->bins = create_cache_bins (bf, cache);
 	if (!cache->bins) {
 		r_dyldcache_free (cache);
