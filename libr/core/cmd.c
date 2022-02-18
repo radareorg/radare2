@@ -4428,6 +4428,7 @@ next_arroba:
 		}
 		*ptr = '@';
 		rc = ret;
+		free (tmpbits);
 		goto beach;
 	}
 fuji:
