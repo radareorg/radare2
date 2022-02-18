@@ -955,10 +955,10 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 	    (*out)[2] = src_imm & 0x00ff;
 	    *out += 3;
 	    return true;
-	} else if (!r_str_casecmp (arg[0], "@r0") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	} else if ((!r_str_casecmp (arg[0], "@r0") && resolve_immediate (arg[1] + 1, &src_imm)) || (!r_str_casecmp (arg[0], "[r0]") && resolve_immediate (arg[1] + 1, &src_imm))) {
 		singlearg_immediate (0x76, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "@r1") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	} else if ((!r_str_casecmp (arg[0], "@r1") && resolve_immediate (arg[1] + 1, &src_imm))  || (!r_str_casecmp (arg[0], "[r1]") && resolve_immediate (arg[1] + 1, &src_imm))) {
 		singlearg_immediate (0x77, arg[1], out);
 		return true;
 	} else if (!r_str_casecmp (arg[0], "r0") && resolve_immediate (arg[1] + 1, &src_imm)) {
@@ -996,10 +996,10 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 		(*out)[1] = src_addr;
 		(*out)[2] = dst_addr;
 		*out += 3;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "@r0")) {
+	} else if ((is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "@r0")) || (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "[r0]"))) {
 		singlearg_direct (0x86, arg[0], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "@r1")) {
+	} else if ((is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "@r1"))  || (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "[r1]"))) {
 		singlearg_direct (0x87, arg[0], out);
 		return true;
 	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r0")) {
@@ -1324,13 +1324,18 @@ static bool mnem_swap(char const*const*arg, ut16 pc, ut8**out) {
 
 static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 	ut8 dest_addr;
+	ut16 dest_hexadecimal;
 	if (address_direct (arg[0], &dest_addr)) {
 		if (!r_str_casecmp (arg[1], "a")) {
 			return singlearg_direct (0x62, arg[0], out);
 		} else if (arg[1][0] == '#') {
 			(*out)[0] = 0x63;
-			(*out)[1] = arg[1][1];
-		    (*out)[2] = arg[2][1] & 0x00ff;
+			parse_hexadecimal (arg[0], &dest_hexadecimal);
+			(*out)[1] = dest_hexadecimal;
+			parse_hexadecimal (arg[1] + 1, &dest_hexadecimal);
+		    (*out)[2] = dest_hexadecimal;
+		    *out += 3;
+		    return true;
 		}
 	} else if (!r_str_casecmp (arg[0], "a")) {
 		if (arg[1][0] == '#') {
@@ -1345,7 +1350,7 @@ static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 		if (!r_str_casecmp (arg[1], "@r1") || !r_str_casecmp (arg[1], "[r1]")) {
 			return singlearg_register (0x67, arg[1], out);
 		}
-		if (is_reg (arg[1])) {
+		if (is_reg (arg[1])) { // todo specify each case
 			return singlearg_register (0x68, arg[1], out);
 		}
 	}
