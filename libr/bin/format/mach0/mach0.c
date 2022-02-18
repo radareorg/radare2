@@ -3151,6 +3151,13 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList *relocs, 
 	}
 
 	ut64 total_size = num * sizeof (struct relocation_info);
+	if (offset > bin->size) {
+		return;
+	}
+	if (total_size > bin->size) {
+		total_size = bin->size - offset;
+		num = total_size /= sizeof (struct relocation_info);
+	}
 	struct relocation_info *info = calloc (num, sizeof (struct relocation_info));
 	if (!info) {
 		return;
