@@ -447,20 +447,9 @@ static bool parse_register(char const* register_input, ut8* hex_out) {
   */
 static bool address_direct(char const* addr_str, ut8* addr_out) {
 	ut16 addr_big;
-	//ut8 addr_short;
 	// rasm2 resolves symbols, so does this really only need to parse hex?
 	// maybe TODO: check address bounds?
 	bool found = parse_hexadecimal (addr_str, &addr_big) || (0xFF < addr_big);
-
-	/* need opinion in order to remove this comment
-	 *
-	  if (!found) {
-		if ( !parse_register (addr_str, &addr_short)) {
-			return false;
-		}
-		*addr_out = addr_short;
-		return true;
-	}*/
 
 	*addr_out = addr_big;
 	return found;
@@ -572,12 +561,11 @@ static bool singlearg_reladdr(ut8 const firstbyte, char const* arg
 	return true;
 }
 
-static bool singlearg_direct(ut8 const firstbyte, char const* arg
-	, ut8 **out)
+static bool singlearg_direct(ut8 const firstbyte, char const* arg, ut8 **out)
 {
 	bool ret = true;
 	ut8 address = 0x00;
-	if (!parse_register (arg, &address)) {
+	if (!address_direct (arg, &address)) {
 		return false;
 	}
 
@@ -586,30 +574,6 @@ static bool singlearg_direct(ut8 const firstbyte, char const* arg
 	*out += 2;
 	return ret;
 }
-
-/*static bool singlearg_direct_or_register(ut8 const first_byte, char const* arg, ut8**out) {
-	ut16 addr_big;
-	ut8 addr_short;
-
-	bool found = (parse_hexadecimal (arg, &addr_big) || (0xFF < addr_big));
-
-	if (!found) {
-		if ( !parse_register (arg, &addr_short)) {
-			return false;
-		}
-
-		(*out)[0] = first_byte;
-		(*out)[1] = addr_short;
-		*out += 2;
-
-		return true;
-	}
-
-	(*out)[0] = first_byte;
-	(*out)[1] = addr_big;
-	*out += 2;
-	return found;
-}*/
 
 static bool singlearg_immediate(ut8 firstbyte, char const* imm_str, ut8**out) {
 	ut16 imm;
@@ -1359,36 +1323,32 @@ static bool mnem_swap(char const*const*arg, ut16 pc, ut8**out) {
 }
 
 static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
-	if (!r_str_casecmp (arg[0], "a")) {
-		if (is_indirect_reg (arg[1])) {
-			return singlearg_register (0x66, arg[1], out);
+	ut8 dest_addr;
+	if (address_direct (arg[0], &dest_addr)) {
+		if (!r_str_casecmp (arg[1], "a")) {
+			return singlearg_direct (0x62, arg[0], out);
+		} else if (arg[1][0] == '#') {
+			(*out)[0] = 0x63;
+			(*out)[1] = arg[1][1];
+		    (*out)[2] = arg[2][1] & 0x00ff;
 		}
+	} else if (!r_str_casecmp (arg[0], "a")) {
 		if (arg[1][0] == '#') {
 			return singlearg_immediate (0x64, arg[1], out);
+		}
+		if (address_direct (arg[1], &dest_addr)) {
+			return singlearg_direct (0x65, arg[1], out);
+		}
+		if (!r_str_casecmp (arg[1], "@r0") || !r_str_casecmp (arg[1], "[r0]")) {
+			return singlearg_register (0x66, arg[1], out);
+		}
+		if (!r_str_casecmp (arg[1], "@r1") || !r_str_casecmp (arg[1], "[r1]")) {
+			return singlearg_register (0x67, arg[1], out);
 		}
 		if (is_reg (arg[1])) {
 			return singlearg_register (0x68, arg[1], out);
 		}
-		return singlearg_direct (0x65, arg[1], out);
 	}
-	if (arg[1][0] != '#') {
-		if (r_str_casecmp (arg[1], "a")) {
-			return false;
-		}
-		return singlearg_direct (0x62, arg[0], out);
-	}
-	ut8 dest_addr;
-	if (!address_direct (arg[0], &dest_addr)) {
-		return false;
-	}
-	ut16 imm;
-	if (!resolve_immediate (arg[1] + 1, &imm)) {
-		return false;
-	}
-	(*out)[0] = 0x63;
-	(*out)[1] = dest_addr;
-	(*out)[2] = imm & 0x00FF;
-	*out += 3;
 	return true;
 }
 
