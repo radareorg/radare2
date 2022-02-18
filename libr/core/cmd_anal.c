@@ -1051,13 +1051,12 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 				free (ks);
 				free (v);
 			} else {
-				char *name = db_name ? db_name: var->name;
-				char *type = db_type? db_type: strdup (var->type);
+				char *name = db_name? db_name: var->name;
+				char *type = strdup (db_type? db_type: var->type);
 				// eprintf ("VARTYPE1 %s %s %c", var->type,db_type, 10);
 				if (var->name && !strstr (var->name, "arg_")) {
 					o = NULL;
 				}
-				type = strdup (var->type);
 #if 0
 				if (name != var->name) {
 					o = NULL;
@@ -1073,7 +1072,9 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 					if (!strstr (var->name, ",arg_")) {
 						free (var->name);
 						var->name = s;
-					} else free (s);
+					} else {
+						free (s);
+					}
 					// sdb_set (core->anal->sdb_types, k, v, 0);
 					free (v2);
 				} else {
@@ -1082,6 +1083,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 					sdb_set (core->anal->sdb_types, k, v, 0);
 				}
 				free (v);
+				free (type);
 				// #endif
 			}
 			free (db_name);
