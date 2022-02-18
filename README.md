@@ -7,7 +7,7 @@
 
 See the [Releases](https://github.com/radareorg/radare2/releases) page for
 binary downloads. The current git `master` branch is `5.6.3`, and the next
-major release will be `5.7.0`.
+release will be `5.6.4`.
 
 r2 is a complete rewrite of radare. It provides a set of libraries, tools and
 plugins to ease reverse engineering tasks.
