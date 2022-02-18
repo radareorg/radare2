@@ -449,7 +449,7 @@ static bool address_direct(char const* addr_str, ut8* addr_out) {
 	ut16 addr_big;
 	// rasm2 resolves symbols, so does this really only need to parse hex?
 	// maybe TODO: check address bounds?
-	bool found = parse_hexadecimal (addr_str, &addr_big) || (0xFF < addr_big);
+	bool found = parse_hexadecimal (addr_str, &addr_big);// && (addr_big < 0xFF);
 
 	*addr_out = addr_big;
 	return found;
@@ -561,8 +561,7 @@ static bool singlearg_reladdr(ut8 const firstbyte, char const* arg
 	return true;
 }
 
-static bool singlearg_direct(ut8 const firstbyte, char const* arg, ut8 **out)
-{
+static bool singlearg_direct(ut8 const firstbyte, char const* arg, ut8 **out) {
 	bool ret = true;
 	ut8 address = 0x00;
 	if (!address_direct (arg, &address)) {
@@ -946,46 +945,54 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 	ut8 src_addr, dst_addr;
 
 	if (!r_str_casecmp (arg[0], "a") && resolve_immediate (arg[1] + 1, &src_imm)) {
-		singlearg_immediate (0x74, arg[1], out);
-		return true;
-	} else if (parse_hexadecimal (arg[0], &dst_imm) && resolve_immediate (arg[1] + 1, &src_imm)) { //TODO: write doublearg_direct_register for 3 bytes instructions
+		return singlearg_immediate (0x74, arg[1], out);
+	}
+	if (parse_hexadecimal (arg[0], &dst_imm) && resolve_immediate (arg[1] + 1, &src_imm)) { //TODO: write doublearg_direct_register for 3 bytes instructions
 		//use : "arg[1][0] == '#'" ?
 		(*out)[0] = 0x75;
 	    (*out)[1] = dst_imm;
 	    (*out)[2] = src_imm & 0x00ff;
 	    *out += 3;
 	    return true;
-	} else if ((!r_str_casecmp (arg[0], "@r0") && resolve_immediate (arg[1] + 1, &src_imm)) || (!r_str_casecmp (arg[0], "[r0]") && resolve_immediate (arg[1] + 1, &src_imm))) {
-		singlearg_immediate (0x76, arg[1], out);
-		return true;
-	} else if ((!r_str_casecmp (arg[0], "@r1") && resolve_immediate (arg[1] + 1, &src_imm))  || (!r_str_casecmp (arg[0], "[r1]") && resolve_immediate (arg[1] + 1, &src_imm))) {
-		singlearg_immediate (0x77, arg[1], out);
-		return true;
-	} else if (!r_str_casecmp (arg[0], "r0") && resolve_immediate (arg[1] + 1, &src_imm)) {
-		singlearg_immediate (0x78, arg[1], out);
-		return true;
-	} else if (!r_str_casecmp (arg[0], "r1") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	}
+	if ((!r_str_casecmp (arg[0], "@r0") && resolve_immediate (arg[1] + 1, &src_imm)) || (!r_str_casecmp (arg[0], "[r0]") && resolve_immediate (arg[1] + 1, &src_imm))) {
+		return singlearg_immediate (0x76, arg[1], out);
+	}
+	if ((!r_str_casecmp (arg[0], "@r1") && resolve_immediate (arg[1] + 1, &src_imm))  || (!r_str_casecmp (arg[0], "[r1]") && resolve_immediate (arg[1] + 1, &src_imm))) {
+		return singlearg_immediate (0x77, arg[1], out);
+	}
+	if (!r_str_casecmp (arg[0], "r0") && resolve_immediate (arg[1] + 1, &src_imm)) {
+		return singlearg_immediate (0x78, arg[1], out);
+	}
+	if (!r_str_casecmp (arg[0], "r1") && resolve_immediate (arg[1] + 1, &src_imm)) {
 		singlearg_immediate (0x79, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r2") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	}
+	if (!r_str_casecmp (arg[0], "r2") && resolve_immediate (arg[1] + 1, &src_imm)) {
 		singlearg_immediate (0x7a, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r3") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	}
+	if (!r_str_casecmp (arg[0], "r3") && resolve_immediate (arg[1] + 1, &src_imm)) {
 		singlearg_immediate (0x7b, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r4") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	}
+	if (!r_str_casecmp (arg[0], "r4") && resolve_immediate (arg[1] + 1, &src_imm)) {
 		singlearg_immediate (0x7c, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r5") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	}
+	if (!r_str_casecmp (arg[0], "r5") && resolve_immediate (arg[1] + 1, &src_imm)) {
 		singlearg_immediate (0x7d, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r6") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	}
+	if (!r_str_casecmp (arg[0], "r6") && resolve_immediate (arg[1] + 1, &src_imm)) {
 		singlearg_immediate (0x7e, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r7") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	}
+	if (!r_str_casecmp (arg[0], "r7") && resolve_immediate (arg[1] + 1, &src_imm)) {
 		singlearg_immediate (0x7f, arg[1], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && is_indirect_reg (arg[1])) { //TODO: write doublearg_direct_register for 3 bytes instructions
+	}
+	if (is_indirect_reg (arg[0]) && is_indirect_reg (arg[1])) { //TODO: write doublearg_direct_register for 3 bytes instructions
 		if (!address_direct (arg[0], &dst_addr)) {
 			return false;
 		}
@@ -996,147 +1003,190 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 		(*out)[1] = src_addr;
 		(*out)[2] = dst_addr;
 		*out += 3;
-	} else if ((is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "@r0")) || (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "[r0]"))) {
+	}
+	if ((is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "@r0")) || (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "[r0]"))) {
 		singlearg_direct (0x86, arg[0], out);
 		return true;
-	} else if ((is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "@r1"))  || (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "[r1]"))) {
+	}
+	if ((is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "@r1"))  || (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "[r1]"))) {
 		singlearg_direct (0x87, arg[0], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r0")) {
+	}
+	if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r0")) {
 		singlearg_direct (0x88, arg[0], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r1")) {
+	}
+	if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r1")) {
 		singlearg_direct (0x89, arg[0], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r2")) {
+	}
+	if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r2")) {
 		singlearg_direct (0x8a, arg[0], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r3")) {
+	}
+	if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r3")) {
 		singlearg_direct (0x8b, arg[0], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r4")) {
+	}
+	if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r4")) {
 		singlearg_direct (0x8c, arg[0], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r5")) {
+	}
+	if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r5")) {
 		singlearg_direct (0x8d, arg[0], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r6")) {
+	}
+	if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r6")) {
 		singlearg_direct (0x8e, arg[0], out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r7")) {
+	}
+	if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "r7")) {
 		singlearg_direct (0x8f, arg[0], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "dptr") && resolve_immediate (arg[1] + 1, &src_imm)) {
+	}
+	if (!r_str_casecmp (arg[0], "dptr") && resolve_immediate (arg[1] + 1, &src_imm)) {
 		parse_register ("dptr", &dst_addr);
 		(*out)[0] = 0x90;
 		(*out)[1] = src_imm >> 8;
 		(*out)[2] = src_imm & 0xff;
 		*out += 3;
 		return true;
-	} else if (address_bit (arg[0], &src_addr) && !r_str_casecmp (arg[1], "c")) {
+	}
+	if (address_bit (arg[0], &src_addr) && !r_str_casecmp (arg[1], "c")) {
 		singlearg_bit (0x92, arg[0], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "c") && address_bit (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "c") && address_bit (arg[1], &src_addr)) {
 		singlearg_bit (0xa2, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "@r0") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "@r0") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xa6, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "@r1") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "@r1") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xa7, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r0") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "r0") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xa8, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r1") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "r1") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xa9, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r2") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "r2") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xaa, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r3") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "r3") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xab, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r4") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "r4") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xac, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r5") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "r5") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xad, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r6") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "r6") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xae, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r7") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "r7") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xaf, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && address_direct (arg[1], &src_addr)) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && address_direct (arg[1], &src_addr)) {
 		singlearg_direct (0xe5, arg[1], out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "@r0")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "@r0")) {
 		single_byte_instr (0xe6, out);
 		return true;
-	}  else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "@r1")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "@r1")) {
 		single_byte_instr (0xe7, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r0")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r0")) {
 		single_byte_instr (0xe8, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r1")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r1")) {
 		single_byte_instr (0xe9, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r2")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r2")) {
 		single_byte_instr (0xea, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r3")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r3")) {
 		single_byte_instr (0xeb, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r4")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r4")) {
 		single_byte_instr (0xec, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r5")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r5")) {
 		single_byte_instr (0xed, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r6")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r6")) {
 		single_byte_instr (0xee, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r7")) {
+	}
+	if (!r_str_casecmp (arg[0], "a") && !r_str_casecmp (arg[1], "r7")) {
 		single_byte_instr (0xef, out);
 		return true;
-	} else if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (is_indirect_reg (arg[0]) && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xf5, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "@r0") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "@r0") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xf6, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "@r1") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "@r1") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xf7, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r0") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "r0") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xf8, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r1") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "r1") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xf9, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r2") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "r2") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xfa, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r3") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "r3") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xfb, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r4") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "r4") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xfc, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r5") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "r5") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xfd, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r6") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "r6") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xfe, out);
 		return true;
-	} else if (!r_str_casecmp (arg[0], "r7") && !r_str_casecmp (arg[1], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "r7") && !r_str_casecmp (arg[1], "a")) {
 		single_byte_instr (0xff, out);
 		return true;
-	} else {
-		return false;
 	}
 
 	return false;
@@ -1328,7 +1378,8 @@ static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 	if (address_direct (arg[0], &dest_addr)) {
 		if (!r_str_casecmp (arg[1], "a")) {
 			return singlearg_direct (0x62, arg[0], out);
-		} else if (arg[1][0] == '#') {
+		}
+		if (arg[1][0] == '#') {
 			(*out)[0] = 0x63;
 			parse_hexadecimal (arg[0], &dest_hexadecimal);
 			(*out)[1] = dest_hexadecimal;
@@ -1337,7 +1388,8 @@ static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 		    *out += 3;
 		    return true;
 		}
-	} else if (!r_str_casecmp (arg[0], "a")) {
+	}
+	if (!r_str_casecmp (arg[0], "a")) {
 		if (arg[1][0] == '#') {
 			return singlearg_immediate (0x64, arg[1], out);
 		}
