@@ -1619,11 +1619,16 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		FPOPCALL ("/");
 		break;
 	case ARM64_INS_SDIV:
-		OPCALL_SIGN ("/", REGBITS64 (1));
+		r_strbuf_setf (&op->esil, "%s,!,?{,0,%s,=,}{,", REG64 (2), REG64 (0));
+		OPCALL_SIGN ("~/", REGBITS64 (1));
+		r_strbuf_appendf (&op->esil, ",}");
 		break;
 	case ARM64_INS_UDIV:
 		/* TODO: support WZR XZR to specify 32, 64bit op */
-		OPCALL ("/");
+		// arm64 does not have a div-by-zero exception, just quietly sets R0 to 0
+		r_strbuf_setf (&op->esil, "%s,!,?{,0,%s,=,}{,", REG64 (2), REG64 (0));
+		OPCALL("/");
+		r_strbuf_appendf (&op->esil, ",}");
 		break;
 #if CS_API_MAJOR > 4
 	case ARM64_INS_BRAA:

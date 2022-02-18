@@ -999,8 +999,14 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_CWDE:
 		esilprintf (op, "ax,eax,=,15,eax,>>,?{,0xffff0000,eax,|=,}");
 		break;
+	case X86_INS_CWD:
+		esilprintf (op, "0,dx,=,15,ax,>>,?{,0xffff,dx,=,}");
+		break;
 	case X86_INS_CDQ:
 		esilprintf (op, "0,edx,=,31,eax,>>,?{,0xffffffff,edx,=,}");
+		break;
+	case X86_INS_CQO:
+		esilprintf (op, "0,rdx,=,63,rax,>>,?{,-1,rdx,=,}");
 		break;
 	case X86_INS_CDQE:
 		esilprintf (op, "eax,rax,=,31,rax,>>,?{,0xffffffff00000000,rax,|=,}");
