@@ -1580,11 +1580,17 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		FPOPCALL("/");
 		break;
 	case ARM64_SDIV:
-		OPCALL_SIGN("/", REGBITS64 (1));
+		// arm64 does not have a div-by-zero exception, just quietly sets R0 to 0
+		r_strbuf_setf (&op->esil, "%s,!,?{,0,%s,=,}{,", REG64 (2), REG64 (0));
+		OPCALL_SIGN ("~/", REGBITS64 (1));
+		r_strbuf_appendf (&op->esil, ",}");
 		break;
 	case ARM64_UDIV:
 		/* TODO: support WZR XZR to specify 32, 64bit op */
+		// arm64 does not have a div-by-zero exception, just quietly sets R0 to 0
+		r_strbuf_setf (&op->esil, "%s,!,?{,0,%s,=,}{,", REG64 (2), REG64 (0));
 		OPCALL("/");
+		r_strbuf_appendf (&op->esil, ",}");
 		break;
 	// TODO actually implement some kind of fake PAC or at least clear the bits
 	// PAC B* instructions will not work without clearing PAC bits
