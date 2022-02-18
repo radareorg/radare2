@@ -990,7 +990,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	size_t shsize = shdr->sh_size;
 	if (shdr->sh_size > bin->size) {
 		if (bin->verbose) {
-			eprintf ("Truncating shsize from %d to %d\n", shdr->sh_size, bin->size);
+			eprintf ("Truncating shsize from %d to %d\n", (int)shdr->sh_size, (int)bin->size);
 		}
 		if (bin->size > shdr->sh_offset) {
 			shsize = bin->size - shdr->sh_offset;
