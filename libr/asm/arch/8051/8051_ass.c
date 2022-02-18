@@ -1350,8 +1350,29 @@ static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 		if (!r_str_casecmp (arg[1], "@r1") || !r_str_casecmp (arg[1], "[r1]")) {
 			return singlearg_register (0x67, arg[1], out);
 		}
-		if (is_reg (arg[1])) { // todo specify each case
-			return singlearg_register (0x68, arg[1], out);
+		if (!r_str_casecmp (arg[1], "r0")) {
+			return single_byte_instr (0x68, out);
+		}
+		if (!r_str_casecmp (arg[1], "r1")) {
+			return single_byte_instr (0x69, out);
+		}
+		if (!r_str_casecmp (arg[1], "r2")) {
+			return single_byte_instr (0x6a, out);
+		}
+		if (!r_str_casecmp (arg[1], "r3")) {
+			return single_byte_instr (0x6b, out);
+		}
+		if (!r_str_casecmp (arg[1], "r4")) {
+			return single_byte_instr (0x6c, out);
+		}
+		if (!r_str_casecmp (arg[1], "r5")) {
+			return single_byte_instr (0x6d, out);
+		}
+		if (!r_str_casecmp (arg[1], "r6")) {
+			return single_byte_instr (0x6e, out);
+		}
+		if (!r_str_casecmp (arg[1], "r7")) {
+			return single_byte_instr (0x6f, out);
 		}
 	}
 	return true;
