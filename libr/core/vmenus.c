@@ -3301,7 +3301,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 		//int rows = r_cons_get_size (NULL);
 		r_core_cmdf (core, "dtd %d", delta);
 		r_cons_visual_flush ();
-		char ch ;
+		signed char ch ;
 		if (input && *input) {
 			ch = *input;
 			input++;
