@@ -155,16 +155,17 @@ static void __cons_pal_update_event(RConsContext *ctx) {
 static R_TH_LOCAL RThreadLock *lock = NULL;
 
 R_API void r_cons_pal_init(RConsContext *ctx) {
+	size_t i;
 	if (!lock) {
 		lock = r_th_lock_new (false);
 	}
 	r_th_lock_enter (lock);
 	memset (&ctx->cpal, 0, sizeof (ctx->cpal));
-//	r_cons_pal_free (ctx);
-	size_t i;
 	for (i = 0; keys[i].name; i++) {
 		char **color = (char **) (((ut8 *) &(ctx->pal)) + keys[i].off);
-		*color = NULL;
+		if (color && *color) {
+			R_FREE (*color);
+		}
 	}
 
 	ctx->cpal.b0x00              = (RColor) RColor_GREEN;
