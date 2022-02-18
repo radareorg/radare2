@@ -9724,20 +9724,20 @@ static bool cmd_graph_mermaid(RCore *core) {
 	r_list_foreach (fcn->bbs, iter, b) {
 		// node names start with _0x b/c 0x makes mermaids mad somehow
 		if (b->addr != fcn->addr) {
-			ret &= r_strbuf_appendf (nodes, "\tstate \"0x%"PFMT64x"\" as _0x%"PFMT64x"\n", b->addr, b->addr);
+			ret &= r_strbuf_appendf (nodes, "\tstate \"0x%" PFMT64x "\" as _0x%" PFMT64x "\n", b->addr, b->addr);
 		} else {
-			ret &= r_strbuf_appendf (nodes, "\tstate \"ENTRY: 0x%"PFMT64x"\" as _0x%"PFMT64x"\n", b->addr, b->addr);
+			ret &= r_strbuf_appendf (nodes, "\tstate \"ENTRY: 0x%" PFMT64x "\" as _0x%" PFMT64x "\n", b->addr, b->addr);
 		}
-		 // TODO: make body contain assembly, this needs to be done with some care so characters are not misinterpreted
+		// TODO: make body contain assembly, this needs to be done with some care so characters are not misinterpreted
 		if (b->jump != UT64_MAX) {
 			if (b->fail != UT64_MAX) {
-				ret &= r_strbuf_appendf (edges, "\t_0x%"PFMT64x" --> _0x%"PFMT64x": true\n", b->addr, b->jump);
-				ret &= r_strbuf_appendf (edges, "\t_0x%"PFMT64x" --> _0x%"PFMT64x": false\n", b->addr, b->fail);
+				ret &= r_strbuf_appendf (edges, "\t_0x%" PFMT64x " --> _0x%" PFMT64x ": true\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "\t_0x%" PFMT64x " --> _0x%" PFMT64x ": false\n", b->addr, b->fail);
 			} else {
-				ret &= r_strbuf_appendf (edges, "\t_0x%"PFMT64x" --> _0x%"PFMT64x"\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "\t_0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
 			}
 		} else if (b->fail != UT64_MAX) {
-			ret &= r_strbuf_appendf (edges, "\t_0x%"PFMT64x" --> _0x%"PFMT64x"\n", b->addr, b->fail);
+			ret &= r_strbuf_appendf (edges, "\t_0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
 		}
 		if (!ret) {
 			break;
