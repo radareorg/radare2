@@ -9703,6 +9703,62 @@ R_API void cmd_agfb2(RCore *core, const char *s) {
 	free (pix);
 }
 
+static bool cmd_graph_mermaid(RCore *core) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	if (!fcn || !fcn->bbs) {
+		return false;
+	}
+
+	bool ret = true;
+
+	// for info on mermaid syntax: https://mermaid-js.github.io/mermaid/#/stateDiagram
+	RStrBuf *nodes = r_strbuf_new ("stateDiagram-v2\n");
+	RStrBuf *edges = r_strbuf_new ("");
+
+	// TODO: add themeing to nodes buff here -> https://mermaid-js.github.io/mermaid/#/theming
+
+	RAnalBlock *b;
+	RListIter *iter;
+
+	r_list_sort (fcn->bbs, bb_cmp);
+	r_list_foreach (fcn->bbs, iter, b) {
+		// node names start with _0x b/c 0x makes mermaids mad somehow
+		if (b->addr != fcn->addr) {
+			ret &= r_strbuf_appendf (nodes, "\tstate \"0x%"PFMT64x"\" as _0x%"PFMT64x"\n", b->addr, b->addr);
+		} else {
+			ret &= r_strbuf_appendf (nodes, "\tstate \"ENTRY: 0x%"PFMT64x"\" as _0x%"PFMT64x"\n", b->addr, b->addr);
+		}
+		 // TODO: make body contain assembly, this needs to be done with some care so characters are not misinterpreted
+		if (b->jump != UT64_MAX) {
+			if (b->fail != UT64_MAX) {
+				ret &= r_strbuf_appendf (edges, "\t_0x%"PFMT64x" --> _0x%"PFMT64x": true\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "\t_0x%"PFMT64x" --> _0x%"PFMT64x": false\n", b->addr, b->fail);
+			} else {
+				ret &= r_strbuf_appendf (edges, "\t_0x%"PFMT64x" --> _0x%"PFMT64x"\n", b->addr, b->jump);
+			}
+		} else if (b->fail != UT64_MAX) {
+			ret &= r_strbuf_appendf (edges, "\t_0x%"PFMT64x" --> _0x%"PFMT64x"\n", b->addr, b->fail);
+		}
+		if (!ret) {
+			break;
+		}
+	}
+
+	if (ret) {
+		char *n = r_strbuf_drain_nofree (nodes);
+		char *e = r_strbuf_drain_nofree (edges);
+		if (n && e) {
+			r_cons_print (n);
+			r_cons_print (e);
+		}
+		free (n);
+		free (e);
+	}
+	r_strbuf_free (nodes);
+	r_strbuf_free (edges);
+	return ret;
+}
+
 static void cmd_anal_graph(RCore *core, const char *input) {
 	core->graph->show_node_titles = r_config_get_i (core->config, "graph.ntitles");
 	r_cons_enable_highlight (false);
@@ -9714,6 +9770,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		case 'b': // "agfb" // braile
 			cmd_agfb (core);
+			break;
+		case 'm': /// "agfm" // mermaid
+			cmd_graph_mermaid (core);
 			break;
 		case ' ': { // "agf "
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
