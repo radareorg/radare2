@@ -803,6 +803,8 @@ static R2RProcessOutput *subprocess_runner(const char *file, const char *args[],
 	if (out) {
 		out->timeout = timeout;
 	}
+	r_th_lock_leave (proc->lock);
+	r_th_lock_free (proc->lock);
 	r2r_subprocess_free (proc);
 	return out;
 }
@@ -996,6 +998,7 @@ R_API bool r2r_check_jq_available(void) {
 	r_th_lock_enter (proc->lock);
 	bool invalid_detected = proc && proc->ret != 0;
 	r_th_lock_leave (proc->lock);
+	r_th_lock_free (proc->lock);
 	r2r_subprocess_free (proc);
 	proc = NULL;
 
@@ -1008,6 +1011,7 @@ R_API bool r2r_check_jq_available(void) {
 	r_th_lock_enter (proc->lock);
 	bool valid_detected = proc && proc->ret == 0;
 	r_th_lock_leave (proc->lock);
+	r_th_lock_free (proc->lock);
 	r2r_subprocess_free (proc);
 
 	return invalid_detected && valid_detected;
