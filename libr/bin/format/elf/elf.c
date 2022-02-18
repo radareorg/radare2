@@ -956,7 +956,6 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	const char *link_section_name = "";
 	char *end = NULL;
 	ut8 dfs[sizeof (Elf_(Verdef))] = { 0 };
-	Sdb *sdb;
 	ut32 cnt;
 	size_t i;
 	if (shdr->sh_link >= bin->ehdr.e_shnum) {
@@ -984,8 +983,22 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	if (link_shdr && bin->shstrtab && link_shdr->sh_name < bin->shstrtab_size) {
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
 	}
-	sdb = sdb_new0 ();
-	end = (char *)defs + shdr->sh_size;
+	Sdb *sdb = sdb_new0 ();
+	if (!sdb) {
+		return false;
+	}
+	size_t shsize = shdr->sh_size;
+	if (shdr->sh_size > bin->size) {
+		if (bin->verbose) {
+			eprintf ("Truncating shsize from %d to %d\n", (int)shdr->sh_size, (int)bin->size);
+		}
+		if (bin->size > shdr->sh_offset) {
+			shsize = bin->size - shdr->sh_offset;
+		} else {
+			shsize = bin->size;
+		}
+	}
+	end = (char *)defs + shsize; //& shdr->sh_size;
 	sdb_set (sdb, "section_name", section_name, 0);
 	sdb_num_set (sdb, "entries", shdr->sh_info, 0);
 	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
