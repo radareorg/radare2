@@ -9739,6 +9739,20 @@ static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes
 	return ret;
 }
 
+static inline bool fcn_siwtch_mermaid(RAnalBlock *b, RStrBuf *buf) {
+	if (b->switch_op) {
+		r_return_val_if_fail (b->switch_op->cases, false);
+		RListIter *itt;
+		RAnalCaseOp *c;
+		r_list_foreach (b->switch_op->cases, itt, c) {
+			if (!r_strbuf_appendf (buf, "  _0x%" PFMT64x " --> _0x%" PFMT64x ": Case %" PFMT64d "\n", b->addr, c->addr, c->value)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn || !fcn->bbs) {
@@ -9758,7 +9772,6 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
-		// node names start with _0x b/c 0x makes mermaids mad somehow
 		ret &= r_strbuf_appendf (nodes, "  state \"[0x%" PFMT64x "]", b->addr);
 		if (b->addr == fcn->addr) {
 			ret &= r_strbuf_appendf (nodes, " %s", fcn->name);
@@ -9767,6 +9780,7 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 			ret &= mermaid_add_node_asm (core->anal, b, nodes);
 		}
 		// ending of nodes string `... " as _0xfffff`
+		// node names start with _0x b/c 0x makes mermaids mad somehow
 		ret &= r_strbuf_appendf (nodes, "\" as _0x%" PFMT64x "\n", b->addr);
 
 		if (b->jump != UT64_MAX) {
@@ -9779,6 +9793,7 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 		} else if (b->fail != UT64_MAX) {
 			ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
 		}
+		ret &= fcn_siwtch_mermaid (b, edges);
 		if (!ret) {
 			break;
 		}
