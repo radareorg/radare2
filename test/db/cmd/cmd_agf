@@ -155,3 +155,44 @@ stateDiagram-v2
   _0x15dda --> _0x15de3: false
 EOF
 RUN
+
+NAME=agfm on jump table
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+s 0x100
+wx 42000000000000004e000000000000005a00000000000000660000000000000072000000000000007e00000000000000
+s 0x10
+wx 554889e5897dfcc745f8000000008b45fc89c14889ca4883ea0548894df00f8756000000488b45f0488b0cc500010000ffe1c745f800000000e943000000c745f801000000e937000000c745f802000000e92b000000c745f803000000e91f000000c745f804000000e913000000c745f805000000e907000000c745f8ffffffff8b45f85dc3
+af
+agfm
+EOF
+EXPECT=<<EOF
+stateDiagram-v2
+  state "[0x10] fcn.00000010" as _0x10
+  state "[0x34]" as _0x34
+  state "[0x42]" as _0x42
+  state "[0x4e]" as _0x4e
+  state "[0x5a]" as _0x5a
+  state "[0x66]" as _0x66
+  state "[0x72]" as _0x72
+  state "[0x7e]" as _0x7e
+  state "[0x8a]" as _0x8a
+  state "[0x91]" as _0x91
+  _0x10 --> _0x8a: true
+  _0x10 --> _0x34: false
+  _0x34 --> _0x42: Case 0
+  _0x34 --> _0x4e: Case 1
+  _0x34 --> _0x5a: Case 2
+  _0x34 --> _0x66: Case 3
+  _0x34 --> _0x72: Case 4
+  _0x34 --> _0x7e: Case 5
+  _0x42 --> _0x91
+  _0x4e --> _0x91
+  _0x5a --> _0x91
+  _0x66 --> _0x91
+  _0x72 --> _0x91
+  _0x7e --> _0x91
+  _0x8a --> _0x91
+EOF
+RUN
