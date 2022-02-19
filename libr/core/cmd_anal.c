@@ -9703,7 +9703,43 @@ R_API void cmd_agfb2(RCore *core, const char *s) {
 	free (pix);
 }
 
-static bool cmd_graph_mermaid(RCore *core) {
+static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes) {
+	ut8 *bb_buf = calloc (1, bb->size);
+	if (!bb_buf) {
+		return false;
+	}
+	if (!a->iob.read_at (a->iob.io, bb->addr, (ut8 *)bb_buf, bb->size)) {
+		return false;
+	}
+	RAnalOpMask mask = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM | R_ANAL_OP_HINT_MASK;
+	RAnalOp op = { 0 };
+
+	// escaped newline to get out of title line
+	bool ret = r_strbuf_append (nodes, "\\n");
+	int i;
+	for (i = 0; i < bb->ninstr; i++) {
+		const ut64 prev_pos = r_anal_bb_offset_inst (bb, i);
+		const ut64 op_addr = r_anal_bb_opaddr_i (bb, i);
+		if (prev_pos >= bb->size) {
+			continue;
+		}
+		int buflen = bb->size - prev_pos;
+		ut8 *loc = bb_buf + prev_pos;
+		if (r_anal_op (a, &op, op_addr, loc, buflen, mask) > 0) {
+			ret &= r_strbuf_appendf (nodes, "%s\\n", op.mnemonic);
+		} else {
+			ret &= r_strbuf_append (nodes, "...\\n");
+		}
+		if (!ret) {
+			break;
+		}
+		r_anal_op_fini (&op);
+	}
+	free (bb_buf);
+	return ret;
+}
+
+static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 	if (!fcn || !fcn->bbs) {
 		return false;
@@ -9722,22 +9758,24 @@ static bool cmd_graph_mermaid(RCore *core) {
 
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
+		const char *entry = b->addr == fcn->addr? " ENTRY": "";
 		// node names start with _0x b/c 0x makes mermaids mad somehow
-		if (b->addr != fcn->addr) {
-			ret &= r_strbuf_appendf (nodes, "\tstate \"0x%" PFMT64x "\" as _0x%" PFMT64x "\n", b->addr, b->addr);
-		} else {
-			ret &= r_strbuf_appendf (nodes, "\tstate \"ENTRY: 0x%" PFMT64x "\" as _0x%" PFMT64x "\n", b->addr, b->addr);
+		ret &= r_strbuf_appendf (nodes, "  state \"[0x%" PFMT64x "]%s", b->addr, entry);
+		if (add_asm) {
+			ret &= mermaid_add_node_asm (core->anal, b, nodes);
 		}
-		// TODO: make body contain assembly, this needs to be done with some care so characters are not misinterpreted
+		// ending of nodes string `... " as _0xfffff`
+		ret &= r_strbuf_appendf (nodes, "\" as _0x%" PFMT64x "\n", b->addr);
+
 		if (b->jump != UT64_MAX) {
 			if (b->fail != UT64_MAX) {
-				ret &= r_strbuf_appendf (edges, "\t_0x%" PFMT64x " --> _0x%" PFMT64x ": true\n", b->addr, b->jump);
-				ret &= r_strbuf_appendf (edges, "\t_0x%" PFMT64x " --> _0x%" PFMT64x ": false\n", b->addr, b->fail);
+				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x ": true\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x ": false\n", b->addr, b->fail);
 			} else {
-				ret &= r_strbuf_appendf (edges, "\t_0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
 			}
 		} else if (b->fail != UT64_MAX) {
-			ret &= r_strbuf_appendf (edges, "\t_0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
+			ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
 		}
 		if (!ret) {
 			break;
@@ -9772,8 +9810,10 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			cmd_agfb (core);
 			break;
 		case 'm': /// "agfm" // mermaid
-			cmd_graph_mermaid (core);
-			break;
+		{
+			bool add_asm = input[2] == 'a'? true: false;
+			cmd_graph_mermaid (core, add_asm);
+		} break;
 		case ' ': { // "agf "
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			r_core_visual_graph (core, NULL, fcn, false);
