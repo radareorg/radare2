@@ -447,9 +447,18 @@ static bool parse_register(char const* register_input, ut8* hex_out) {
   */
 static bool address_direct(char const* addr_str, ut8* addr_out) {
 	ut16 addr_big;
+	ut8 addr_short;
 	// rasm2 resolves symbols, so does this really only need to parse hex?
 	// maybe TODO: check address bounds?
 	bool found = parse_hexadecimal (addr_str, &addr_big);// && (addr_big < 0xFF);
+
+	if (!found) {
+		if (!parse_register (addr_str, &addr_short)) {
+			return false;
+		}
+		*addr_out = addr_short;
+		return true;
+	}
 
 	*addr_out = addr_big;
 	return found;
