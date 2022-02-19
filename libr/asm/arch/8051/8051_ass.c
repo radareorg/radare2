@@ -1014,8 +1014,8 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 		}
 	}
 
-	if (address_direct (arg[0], &dst_addr)) {
-		if (address_direct (arg[1], &src_addr)) {
+	if (parse_hexadecimal (arg[0], &dst_addr)) {
+		if (parse_hexadecimal (arg[1], &src_addr)) {
 			(*out)[0] = 0x85;
 			(*out)[1] = src_addr;
 			(*out)[2] = dst_addr;
@@ -1411,7 +1411,7 @@ static bool mnem_swap(char const*const*arg, ut16 pc, ut8**out) {
 static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 	ut8 dest_addr;
 	ut16 dest_hexadecimal;
-	if (address_direct (arg[0], &dest_addr)) {
+	if (parse_hexadecimal (arg[0], &dest_hexadecimal)) {
 		if (!r_str_casecmp (arg[1], "a")) {
 			return singlearg_direct (0x62, arg[0], out);
 		}
@@ -1429,7 +1429,7 @@ static bool mnem_xrl(char const*const*arg, ut16 pc, ut8**out) {
 		if (arg[1][0] == '#') {
 			return singlearg_immediate (0x64, arg[1], out);
 		}
-		if (address_direct (arg[1], &dest_addr)) {
+		if (parse_hexadecimal (arg[1], &dest_hexadecimal)) {
 			return singlearg_direct (0x65, arg[1], out);
 		}
 		if (!r_str_casecmp (arg[1], "@r0") || !r_str_casecmp (arg[1], "[r0]")) {
