@@ -862,13 +862,8 @@ static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	}
 
 	ut16 jmp_addr;
-	if (!to_address (arg[1], &jmp_addr)) {
+	if (!to_address (arg[1], &jmp_addr) && !relative_address (pc + 1, jmp_addr, (*out) + 2)) {
 		eprintf ("error during the assembly: address not found\n");
-		return false;
-	}
-
-	if (!relative_address (pc + 1, jmp_addr, (*out) + 2)) {
-		eprintf ("error during the assembly: not a relative address. It is not possible to assemble a single instruction with no context. Did you provide full code?\n");
 		return false;
 	}
 
