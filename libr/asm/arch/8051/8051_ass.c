@@ -1021,11 +1021,11 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 		}
 	}
 
-	if (address_direct (arg[0], &dst_imm)) {
-		if (parse_hexadecimal (arg[1], &src_imm)) {
+	if (address_direct (arg[0], &dst_addr)) {
+		if (parse_hexadecimal (arg[1], &src_addr)) {
 			(*out)[0] = 0x85;
-			(*out)[1] = src_imm;
-			(*out)[2] = dst_imm;
+			(*out)[1] = src_addr;
+			(*out)[2] = dst_addr;
 			*out += 3;
 			return true;
 		}
