@@ -869,7 +869,6 @@ static bool mnem_jb(char const*const*arg, ut16 pc, ut8**out) {
 }
 
 static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
-
 	ut8 cmp_addr;
 	if (!address_bit (arg[0], &cmp_addr)) {
 		eprintf ("error during the assembly: address bit not found\n");
@@ -877,9 +876,11 @@ static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	}
 
 	ut16 jmp_addr;
-	if (!to_address (arg[1], &jmp_addr) && !relative_address (pc + 1, jmp_addr, (*out) + 2)) {
-		eprintf ("error during the assembly: address not found\n");
-		return false;
+	to_address (arg[1], &jmp_addr);
+
+	if (!relative_address (pc + 1, jmp_addr, (*out) + 2)) {
+	    eprintf ("error during the assembly: address not found\n");
+    	return false;
 	}
 
 	(*out)[0] = 0x10;
@@ -1023,8 +1024,8 @@ static bool mnem_mov(char const*const*arg, ut16 pc, ut8**out) {
 	if (parse_hexadecimal (arg[0], &dst_imm)) {
 		if (parse_hexadecimal (arg[1], &src_imm)) {
 			(*out)[0] = 0x85;
-			(*out)[1] = src_addr;
-			(*out)[2] = dst_addr;
+			(*out)[1] = src_imm;
+			(*out)[2] = dst_imm;
 			*out += 3;
 			return true;
 		}
