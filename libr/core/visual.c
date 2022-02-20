@@ -2111,9 +2111,19 @@ static bool insert_mode_enabled(RCore *core) {
 	}
 	if (core->print->col == 2) {
 		/* ascii column */
-		if (IS_PRINTABLE (ch)) {
-			r_core_cmdf (core, "\"w %c\" @ $$+%d", ch, core->print->cur);
+		switch (ch) {
+		case 0x1b: // ESC
+			core->print->col = 0;
+			break;
+		case ' ':
+			r_core_cmdf (core, "wx 20 @ $$+%d", core->print->cur);
 			core->print->cur++;
+			break;
+		default:
+			if (IS_PRINTABLE (ch)) {
+				r_core_cmdf (core, "\"w %c\" @ $$+%d", ch, core->print->cur);
+				core->print->cur++;
+			}
 		}
 		return true;
 	} else {
