@@ -9758,9 +9758,11 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
-		const char *entry = b->addr == fcn->addr? " ENTRY": "";
 		// node names start with _0x b/c 0x makes mermaids mad somehow
-		ret &= r_strbuf_appendf (nodes, "  state \"[0x%" PFMT64x "]%s", b->addr, entry);
+		ret &= r_strbuf_appendf (nodes, "  state \"[0x%" PFMT64x "]", b->addr);
+		if (b->addr == fcn->addr) {
+			ret &= r_strbuf_appendf (nodes, " %s", fcn->name);
+		}
 		if (add_asm) {
 			ret &= mermaid_add_node_asm (core->anal, b, nodes);
 		}

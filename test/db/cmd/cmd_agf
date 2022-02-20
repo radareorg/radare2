@@ -71,7 +71,7 @@ agfm
 EOF
 EXPECT=<<EOF
 stateDiagram-v2
-  state "[0x15cc0] ENTRY" as _0x15cc0
+  state "[0x15cc0] sym._obstack_newchunk" as _0x15cc0
   state "[0x15d06]" as _0x15d06
   state "[0x15d12]" as _0x15d12
   state "[0x15d29]" as _0x15d29
@@ -118,7 +118,7 @@ agfma
 EOF
 EXPECT=<<EOF
 stateDiagram-v2
-  state "[0x15cc0] ENTRY\npush r14\nxor eax, eax\npush r13\npush r12\npush rbp\npush rbx\nmov r13, qword ptr [rdi + 0x18]\nsub r13, qword ptr [rdi + 0x10]\nmov rbp, qword ptr [rdi + 8]\nadd rsi, r13\nmov rdx, r13\nsetb al\nadd rsi, qword ptr [rdi + 0x30]\nsetb cl\nshr rdx, 3\ncmp qword ptr [rdi], rsi\nlea rbx, [rsi + rdx + 0x64]\ncmovae rsi, qword ptr [rdi]\ncmp rsi, rbx\ncmovae rbx, rsi\ntest rax, rax\njne 0x15db5\n" as _0x15cc0
+  state "[0x15cc0] sym._obstack_newchunk\npush r14\nxor eax, eax\npush r13\npush r12\npush rbp\npush rbx\nmov r13, qword ptr [rdi + 0x18]\nsub r13, qword ptr [rdi + 0x10]\nmov rbp, qword ptr [rdi + 8]\nadd rsi, r13\nmov rdx, r13\nsetb al\nadd rsi, qword ptr [rdi + 0x30]\nsetb cl\nshr rdx, 3\ncmp qword ptr [rdi], rsi\nlea rbx, [rsi + rdx + 0x64]\ncmovae rsi, qword ptr [rdi]\ncmp rsi, rbx\ncmovae rbx, rsi\ntest rax, rax\njne 0x15db5\n" as _0x15cc0
   state "[0x15d06]\nmovzx ecx, cl\ntest rcx, rcx\njne 0x15db5\n" as _0x15d06
   state "[0x15d12]\nmov rsi, rbx\nmov r12, rdi\ncall 0x15bb0\nmov r14, rax\ntest rax, rax\nje 0x15db5\n" as _0x15d12
   state "[0x15d29]\nlea rsi, [rax + rbx]\nmov qword ptr [r12 + 8], rax\nmov rdx, r13\nmov qword ptr [rax + 8], rbp\nmov qword ptr [r12 + 0x20], rsi\nmov qword ptr [rax], rsi\nmov rax, qword ptr [r12 + 0x30]\nmov rsi, qword ptr [r12 + 0x10]\nlea rbx, [r14 + rax + 0x10]\nnot rax\nand rbx, rax\nmov rdi, rbx\ncall qword ptr [rip + 0xc119]\ntest byte ptr [r12 + 0x50], 2\njne 0x15d7e\n" as _0x15d29
