@@ -987,7 +987,7 @@ repeat:
 				ut64 casetbl_addr = op->ptr;
 				if (is_delta_pointer_table (anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, jmp_aop)) {
 					ut64 table_size, default_case = 0;
-					st64 case_shift;
+					st64 case_shift = 0;
 					// we require both checks here since try_get_jmptbl_info uses
 					// BB info of the final jmptbl jump, which is no present with
 					// is_delta_pointer_table just scanning ahead
@@ -1228,7 +1228,7 @@ repeat:
 				// op->ireg is 0 for rip relative, "rax", etc otherwise
 				if (op->ptr != UT64_MAX && op->ireg) { // direct jump
 					ut64 table_size, default_case;
-					st64 case_shift;
+					st64 case_shift = 0;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
 						bool case_table = false;
 						RAnalOp *prev_op = r_anal_op_new ();
@@ -1253,12 +1253,12 @@ repeat:
 					}
 				} else if (op->ptr != UT64_MAX && op->reg) { // direct jump
 					ut64 table_size, default_case;
-					st64 case_shift;
+					st64 case_shift = 0;
 					if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
 						ret = try_walkthrough_jmptbl (anal, fcn, bb, depth - 1, op->addr, case_shift, op->ptr, op->ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
 				} else if (movdisp != UT64_MAX) {
-					st64 case_shift;
+					st64 case_shift = 0;
 					ut64 table_size, default_case;
 					ut64 jmptbl_base = 0; //UT64_MAX;
 					ut64 lea_op_off = UT64_MAX;
