@@ -340,8 +340,7 @@ static bool is_indirect_reg(char const*str)
 	return false;
 }
 
-static bool is_direct(char const*str)
-{
+static bool is_direct(char const*str) {
 	ut16 useless;
 	return parse_hexadecimal (str, &useless);
 }
@@ -349,8 +348,7 @@ static bool is_direct(char const*str)
 /**
  * returns true if the given string denotes an 'r'-register
  */
-static bool is_reg(char const*str)
-{
+static bool is_reg(char const *str) {
 	return str && tolower ((unsigned char)str[0]) == 'r' && r_str_ansi_nlen (str, 3) == 2
 		&& '0' <= str[1] && str[1] <= '7';
 }
@@ -879,8 +877,8 @@ static bool mnem_jbc(char const*const*arg, ut16 pc, ut8**out) {
 	to_address (arg[1], &jmp_addr);
 
 	if (!relative_address (pc + 1, jmp_addr, (*out) + 2)) {
-	    eprintf ("error during the assembly: address not found\n");
-    	return false;
+		eprintf ("error during the assembly: address not found\n");
+		return false;
 	}
 
 	(*out)[0] = 0x10;
