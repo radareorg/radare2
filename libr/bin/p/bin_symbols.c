@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018 - pancake */
+/* radare - LGPL - Copyright 2018-2022 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -361,6 +361,9 @@ static RList *symbols(RBinFile *bf) {
 	bool found = false;
 	for (i = 0; i < element->hdr->n_lined_symbols; i++) {
 		RCoreSymCacheElementSymbol *sym = (RCoreSymCacheElementSymbol *)&element->lined_symbols[i];
+		if (!sym) {
+			break;
+		}
 		ht_uu_find (hash, sym->paddr, &found);
 		if (found) {
 			continue;
