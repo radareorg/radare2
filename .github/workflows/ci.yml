@@ -95,6 +95,35 @@ jobs:
       run: sudo make uninstall
     - name: Reinstalling without symlinks
       run: sudo make install
+  linux-test:
+    runs-on: ubuntu-20.04
+#    if: contains(github.ref, 'ci-')
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Building Radare2
+      run: |
+        pip install r2pipe wheel
+        export CFLAGS="-O2 -Wno-unused-result"
+        sys/install.sh
+    - name: Running tests
+      run: |
+        export LD_LIBRARY_PATH=/usr/local/lib
+        make tests
+  macos-test:
+    runs-on: macos-latest
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install r2pipe
+    - name: Building Radare2
+      run: export CFLAGS="-O2"; sys/install.sh
+    - name: Running tests
+      run: pip3 install r2pipe; make tests
   build-rpath-linux:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     name: linux-rpath
@@ -193,32 +222,3 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests
-  linux-test:
-    runs-on: ubuntu-20.04
-#    if: contains(github.ref, 'ci-')
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Building Radare2
-      run: |
-        pip install r2pipe wheel
-        export CFLAGS="-O2 -Wno-unused-result"
-        sys/install.sh
-    - name: Running tests
-      run: |
-        export LD_LIBRARY_PATH=/usr/local/lib
-        make tests
-  macos-test:
-    runs-on: macos-latest
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install r2pipe
-    - name: Building Radare2
-      run: export CFLAGS="-O2"; sys/install.sh
-    - name: Running tests
-      run: pip3 install r2pipe; make tests
