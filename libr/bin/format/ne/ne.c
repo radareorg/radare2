@@ -49,6 +49,9 @@ static char *__read_nonnull_str_at(RBuffer *buf, ut64 offset) {
 }
 
 static char *__func_name_from_ord(const char *module, ut16 ordinal) {
+	if (!module) {
+		return NULL;
+	}
 	char *lower_module = strdup (module);
 	r_str_case (lower_module, false);
 	char *path = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), r_sys_prefix (NULL), lower_module);
