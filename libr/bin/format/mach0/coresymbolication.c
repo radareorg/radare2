@@ -222,7 +222,7 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 		}
 		size_t i;
 		ut8 *cursor = b + R_CS_EL_OFF_SEGS;
-		for (i = 0; i < hdr->n_segments && cursor < end; i++) {
+		for (i = 0; i < hdr->n_segments && cursor + sizeof (RCoreSymCacheElementSegment) < end; i++) {
 			RCoreSymCacheElementSegment *seg = &result->segments[i];
 			seg->paddr = seg->vaddr = r_read_le64 (cursor);
 			cursor += 8;
