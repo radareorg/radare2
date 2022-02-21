@@ -27,7 +27,7 @@ s 0x08049600
 psj 4
 EOF
 EXPECT=<<EOF
-{"string":"\u000b\u0000\u0000\u0000","offset":134518272,"section":".dynamic","length":4,"type":"wide"}
+{"string":"\u000b","offset":134518272,"section":".dynamic","length":1,"type":"wide"}
 EOF
 RUN
 

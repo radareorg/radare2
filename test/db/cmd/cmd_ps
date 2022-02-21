@@ -102,3 +102,16 @@ EXPECT_ERR=<<EOF
 Error: bitness of 16 not supported
 EOF
 RUN
+
+NAME=pswj
+FILE=-
+CMDS=<<EOF
+wx 680065006c006c006f000000
+psw
+pswj
+EOF
+EXPECT=<<EOF
+hello
+{"string":"hello","offset":0,"section":"unknown","length":5,"type":"wide"}
+EOF
+RUN
