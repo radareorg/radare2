@@ -449,7 +449,7 @@ static bool parse_register(char const* register_input, ut8* hex_out) {
   /*
   * attempts to parse the given string as an 8bit-wide address
   */
-static bool address_direct(char const* addr_str, ut8* addr_out) {
+static bool parse_address_direct(char const* addr_str, ut8* addr_out) {
 	ut16 addr_big;
 	ut8 addr_short;
 	// rasm2 resolves symbols, so does this really only need to parse hex?
@@ -500,7 +500,7 @@ static bool address_bit(char const* addr_str, ut8* addr_out) {
 
 	ut8 addr_bytepart = 0x00;
     if (!parse_register(bytepart, &addr_bytepart)) {
-		if (!address_direct (bytepart, &byte)) {
+		if (!parse_address_direct (bytepart, &byte)) {
 			ret = false;
 			goto end;
 		}
@@ -577,7 +577,7 @@ static bool singlearg_reladdr(ut8 const firstbyte, char const* arg
 static bool singlearg_direct(ut8 const firstbyte, char const* arg, ut8 **out) {
 	bool ret = true;
 	ut8 address = 0x00;
-	if (!address_direct (arg, &address)) {
+	if (!parse_address_direct (arg, &address)) {
 		return false;
 	}
 
@@ -693,7 +693,7 @@ static bool mnem_anl(char const*const*arg, ut16 pc, ut8**out) {
 	}
 
 	ut8 address;
-	if (!address_direct (arg[0], &address)) {
+	if (!parse_address_direct (arg[0], &address)) {
 		return false;
 	}
 	if (!r_str_casecmp (arg[1], "a")) {
@@ -729,7 +729,7 @@ static bool mnem_cjne(char const*const*arg, ut16 pc, ut8**out) {
 			return true;
 		}
 		ut8 address;
-		if (!address_direct (arg[1], &address)) {
+		if (!parse_address_direct (arg[1], &address)) {
 			return false;
 		}
 		(*out)[0] = 0xb5;
@@ -823,7 +823,7 @@ static bool mnem_djnz(char const*const*arg, ut16 pc, ut8**out) {
 		return true;
 	}
 	ut8 dec_address;
-	if (!address_direct (arg[0], &dec_address))  {
+	if (!parse_address_direct (arg[0], &dec_address))  {
 		return false;
 	}
 	(*out)[0] = 0xd5;
@@ -1302,7 +1302,7 @@ static bool mnem_orl(char const*const*arg, ut16 pc, ut8**out) {
 	}
 
 	ut8 dest_addr;
-	if (!address_direct (arg[0], &dest_addr)) {
+	if (!parse_address_direct (arg[0], &dest_addr)) {
 		return false;
 	}
 	ut16 imm;
