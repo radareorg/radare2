@@ -4700,7 +4700,7 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 		}
 	}
 	bool is_wide = !strcmp (type, "wide");
-	size_t slen = strlen (block);
+	size_t slen = r_str_nlen (block, len);
 	char *tblock = (char *)block;
 	if (is_wide) {
 		int i;
