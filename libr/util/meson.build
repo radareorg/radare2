@@ -96,6 +96,7 @@ if get_option('sdb_cgen')
   r_util_sources += r_util_d_sources
 endif
 
+r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]
 if lz4_dep.found() and get_option('use_sys_lz4')
   # r_util_deps += lz4_dep
   r_util_deps += declare_dependency(
@@ -105,8 +106,6 @@ if lz4_dep.found() and get_option('use_sys_lz4')
 else
   r_util_sources += '../../shlr/lz4/lz4.c'
 endif
-
-r_util_deps = [ldl, mth, spp_dep, pth, utl, sdb_dep, zlib_dep, platform_deps]
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd') or host_machine.system().startswith('haiku')
   # backtrace_symbols_fd requires -lexecinfo
   r_util_deps += [cc.find_library('execinfo')]
