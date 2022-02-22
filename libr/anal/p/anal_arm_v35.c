@@ -248,6 +248,16 @@ static const char *decode_shift_64(ShiftType shift) {
 	case ShiftType_LSR:
 		return E_OP_SR;
 
+	// need to include these "shifts"
+	case ShiftType_SXTB:
+	case ShiftType_SXTW:
+	case ShiftType_SXTH:
+	case ShiftType_SXTX:
+	case ShiftType_UXTB:
+	case ShiftType_UXTW:
+	case ShiftType_UXTH:
+	case ShiftType_UXTX:
+
 	case ShiftType_LSL:
 	case ShiftType_MSL:
 		return E_OP_SL;
@@ -621,6 +631,12 @@ static void arg64_append(RStrBuf *sb, Instruction *insn, int n, int i, int sign)
 
 	int shift = LSHIFT2_64 (n);
 	int signext = EXT64 (n);
+	if (!signext) {
+		// this is weird but signext+shift is all in shiftType?
+		// not extend. why even have an extend field?
+		// why not just shiftType = sx* with a shiftValue of 0? 
+		signext = decode_sign_ext64 (op.shiftType);
+	}
 	if (sign && !signext) {
 		signext = size;
 	}
