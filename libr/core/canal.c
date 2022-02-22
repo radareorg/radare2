@@ -5235,7 +5235,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 	r_reg_arena_push (core->anal->reg);
 
-	IterCtx ictx = { start, end, fcn, NULL};
+	IterCtx ictx = { start, end, fcn, NULL };
 	size_t i = addr - start;
 	size_t i_old = 0;
 	do {
@@ -5537,6 +5537,9 @@ repeat:
 			break;
 		}
 	} while (get_next_i (&ictx, &i));
+	r_list_free (ictx.bbl);
+	r_list_free (ictx.path);
+	r_list_free (ictx.switch_path);
 	free (buf);
 	ESIL->cb.hook_mem_read = NULL;
 	ESIL->cb.hook_mem_write = NULL;
