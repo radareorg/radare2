@@ -164,11 +164,12 @@ static char *r_8051_disas(ut64 pc, const ut8 *buf, int len, int *olen) {
 
 		// substitute direct addresses with register name
 		*olen = oplen;
-		if (disasm) {
+		/*if (disasm) {
 			disasm = _replace_register (disasm, arg1, val1);
 			disasm = _replace_register (disasm, arg2, val2);
 			return disasm;
-		}
+		}*/
+		return disasm;
 		return NULL;
 	}
 
