@@ -1698,7 +1698,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	int size = avr_anal (anal, mnemonic, sizeof (mnemonic), addr, buf, len);
 
 	if (!strcmp (mnemonic, "invalid") ||
-		!strcmp (mnemonic, "truncated")) {
+			!strcmp (mnemonic, "truncated")) {
 		op->eob = true;
 		op->mnemonic = strdup (mnemonic);
 		op->size = 2;
@@ -1728,6 +1728,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	// process opcode
 	avr_op_analyze (anal, op, addr, buf, len, cpu);
 
+	free (op->mnemonic);
 	op->mnemonic = op->size > 1? strdup (mnemonic): "invalid";
 	op->size = size;
 
