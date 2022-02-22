@@ -1245,7 +1245,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		nb_instr++;
 	}
 ret:
-	free (aop.mnemonic);
+	r_anal_op_fini (&aop);
 	free (grep_str);
 	if (regex && rx) {
 		r_list_free (hitlist);
