@@ -5065,6 +5065,9 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				r_list_free (ctx->path);
 				r_list_free (ctx->switch_path);
 				r_list_free (ctx->bbl);
+				ctx->path = NULL;
+				ctx->switch_path = NULL;
+				ctx->bbl = NULL;
 				return false;
 			}
 			if (!bbit->data) {
