@@ -4,6 +4,10 @@
 #include "ht_pp.h"
 #include "ht_up.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef HtPP SetP;
 typedef bool (*set_p_foreach_cb)(void *userdata, const void *p);
 typedef bool (*set_u_foreach_cb)(void *userdata, const ut64 u);
@@ -24,5 +28,9 @@ SDB_API void set_u_delete(SetU *s, ut64 u);
 SDB_API void set_u_free(SetU *p);
 
 SDB_API void set_u_foreach(SetU *s, set_u_foreach_cb cb, void *u);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

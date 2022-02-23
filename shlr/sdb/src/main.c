@@ -1,8 +1,6 @@
-/* sdb - MIT - Copyright 2011-2021 - pancake */
+/* sdb - MIT - Copyright 2011-2022 - pancake */
 
 #include <signal.h>
-#include <stdio.h>
-#include <string.h>
 #include <fcntl.h>
 #ifndef HAVE_SYSTEM
 #define HAVE_SYSTEM 1
@@ -84,7 +82,7 @@ static char *slurp(FILE *f, size_t *sz) {
 		/* run test/add10k.sh script to benchmark */
 		const int buf_size = 96096;
 
-		buf = calloc (1, buf_size);
+		buf = (char *)calloc (1, buf_size);
 		if (!buf) {
 			return NULL;
 		}
@@ -103,7 +101,7 @@ static char *slurp(FILE *f, size_t *sz) {
 			buf[buf_len - 1] = '\0';
 		}
 
-		char *newbuf = realloc (buf, buf_len + 1);
+		char *newbuf = (char *)realloc (buf, buf_len + 1);
 		// realloc behaves like free if buf_len is 0
 		if (!newbuf) {
 			return buf;
@@ -111,7 +109,7 @@ static char *slurp(FILE *f, size_t *sz) {
 		return newbuf;
 	}
 #endif
-	buf = calloc (BS + 1, 1);
+	buf = (char *)calloc (BS + 1, 1);
 	if (!buf) {
 		return NULL;
 	}
@@ -149,7 +147,7 @@ static char *slurp(FILE *f, size_t *sz) {
 				int nlen = nl - buf;
 				nextlen = len - nlen;
 				if (nextlen > 0) {
-					next = malloc (nextlen + blocksize + 1);
+					next = (char *)malloc (nextlen + blocksize + 1);
 					if (!next) {
 						eprintf ("Cannot malloc %d\n", nextlen);
 						break;
@@ -169,7 +167,7 @@ static char *slurp(FILE *f, size_t *sz) {
 		}
 #endif
 		bufsize += blocksize;
-		tmp = realloc (buf, bufsize + 1);
+		tmp = (char *)realloc (buf, bufsize + 1);
 		if (!tmp) {
 			bufsize -= blocksize;
 			break;
@@ -239,7 +237,7 @@ static char* get_cname(const char*name) {
 	}
 	char *n = strdup (name);
 	char *v, *d = n;
-	for (v=(char*)n; *v; v++) {
+	for (v = (char*)n; *v; v++) {
 		if (*v == '/' || *v == '-') {
 			*d++ = '_';
 			continue;
@@ -254,7 +252,7 @@ static char* get_cname(const char*name) {
 }
 
 static char *escape(const char *b, int ch) {
-	char *a = calloc ((1 + strlen (b)), 4);
+	char *a = (char *)calloc ((1 + strlen (b)), 4);
 	char *c = a;
 	while (*b) {
 		if (*b == ch) {
@@ -293,7 +291,7 @@ static void sdb_dump_cb(MainOptions *mo, const char *k, const char *v, const cha
 		if (!strcmp (v, "true") || !strcmp (v, "false")) {
 			printf ("%s\"%s\":%s", comma, k, v);
 		} else if (sdb_isnum (v)) {
-			printf ("%s\"%s\":%"ULLFMT"u", comma, k, sdb_atoi (v));
+			printf ("%s\"%s\":%" ULLFMT "u", comma, k, sdb_atoi (v));
 		} else if (*v == '{' || *v == '[') {
 			printf ("%s\"%s\":%s", comma, k, v);
 		} else {
@@ -325,7 +323,7 @@ static void sdb_dump_cb(MainOptions *mo, const char *k, const char *v, const cha
 
 static void cgen_header(MainOptions *mo, const char *cname) {
 	if (mo->textmode) {
-		printf ("// SDB-CGEN V"SDB_VERSION"\n");
+		printf ("// SDB-CGEN V" SDB_VERSION "\n");
 		printf ("// gcc -DMAIN=1 %s.c ; ./a.out > %s.h\n", cname, cname);
 		printf ("#include <ctype.h>\n");
 		printf ("#include <stdio.h>\n");
@@ -391,7 +389,7 @@ static void cgen_footer(MainOptions *mo, const char *name, const char *cname) {
 		return;
 	}
 	printf ("%%%%\n");
-	printf ("// SDB-CGEN V"SDB_VERSION"\n");
+	printf ("// SDB-CGEN V" SDB_VERSION "\n");
 	printf ("// %p\n", cname);
 	printf ("typedef int (*GperfForeachCallback)(void *user, const char *k, const char *v);\n");
 	printf ("int gperf_%s_foreach(GperfForeachCallback cb, void *user) {\n", cname);
@@ -491,7 +489,7 @@ static int sdb_dump(MainOptions *mo) {
 		}
 		SdbKv *kv;
 		SdbListIter *it;
-		ls_foreach (l, it, kv) {
+		ls_foreach_cast (l, it, SdbKv*, kv) {
 			const char *k = sdbkv_key (kv);
 			const char *v = sdbkv_value (kv);
 			if (v && *v && grep && !strstr (k, expgrep) && !strstr (v, expgrep)) {
@@ -620,7 +618,7 @@ static int showusage(int o) {
 }
 
 static int showversion(void) {
-	printf ("sdb "SDB_VERSION "\n");
+	printf ("sdb " SDB_VERSION "\n");
 	fflush (stdout);
 	return 0;
 }
@@ -687,7 +685,7 @@ static void dbdiff_cb(const SdbDiff *diff, void *user) {
 	char *buf = sbuf;
 	char *hbuf = NULL;
 	if ((size_t)r >= sizeof (sbuf)) {
-		hbuf = malloc (r + 1);
+		hbuf = (char *)malloc (r + 1);
 		if (!hbuf) {
 			return;
 		}
@@ -741,12 +739,12 @@ static int sdb_system(const char *cmd) {
 
 static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 	const size_t buf_size = 4096;
-	char *buf = malloc (buf_size);
+	char *buf = (char *)malloc (buf_size);
 	if (!buf) {
 		return -1;
 	}
 	size_t out_size = strlen (file) + 32;
-	char *out = malloc (out_size);
+	char *out = (char *)malloc (out_size);
 	if (!out) {
 		free (buf);
 		return -1;

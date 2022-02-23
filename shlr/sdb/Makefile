@@ -26,6 +26,13 @@ endif
 
 include wasi.mk
 
+x xxx cxx:
+	# $(MAKE) CC="gcc -x c++ -Wall -fpermissive"
+	$(MAKE) CC=g++ CFLAGS="-fPIC -x c++ -Wall -fpermissive"
+
+o xo xoxo ox:
+	g++ -o sdb src/*.c  -I src/
+
 wasi wasm: $(WASI_SDK)
 	${MAKE} src/sdb_version.h
 	CC=$(WASI_CC) CFLAGS="$(WASI_CFLAGS)" $(MAKE) CC=$(WASI_CC) -C src all WITHPIC=0
@@ -40,7 +47,7 @@ asantest:
 
 asan:
 	${MAKE} src/sdb_version.h
-	CC=gcc CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C src all
+	CC=gcc LDFLAGS="$(CFLAGS_ASAN)" CFLAGS="$(CFLAGS_ASAN)" ${MAKE} -C src all
 
 pkgconfig:
 	[ -d pkgconfig ] && ${MAKE} -C pkgconfig || true

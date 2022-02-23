@@ -1,10 +1,7 @@
 /* sdb - MIT - Copyright 2011-2022 - pancake */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <ctype.h>
 #include "sdb.h"
 
@@ -15,7 +12,7 @@ typedef struct {
 } StrBuf;
 
 static StrBuf* strbuf_new(void) {
-	return calloc (sizeof (StrBuf), 1);
+	return (StrBuf*) calloc (sizeof (StrBuf), 1);
 }
 
 #define NEWLINE_AFTER_QUERY 1
@@ -27,7 +24,7 @@ static StrBuf* strbuf_append(StrBuf *sb, const char *str, const int nl) {
 	int len = strlen (str);
 	if ((sb->len + len + 2) >= sb->size) {
 		int newsize = sb->size + len + 256;
-		char *b = realloc (sb->buf, newsize);
+		char *b = (char *)realloc (sb->buf, newsize);
 		/// TODO perform free and force all callers to update the ref?
 		if (!b) {
 			return NULL;
@@ -90,8 +87,9 @@ typedef struct {
 } ForeachListUser;
 
 static bool foreach_list_cb(void *user, const char *k, const char *v) {
-	ForeachListUser *rlu = user;
-	char *line, *root;
+	ForeachListUser *rlu = (ForeachListUser*)user;
+	char *line = NULL;
+	char *root = NULL;
 	int rlen, klen, vlen;
 	ut8 *v2 = NULL;
 	if (!rlu) {
@@ -108,7 +106,7 @@ static bool foreach_list_cb(void *user, const char *k, const char *v) {
 	vlen = strlen (v);
 	if (root) {
 		rlen = strlen (root);
-		line = malloc (klen + vlen + rlen + 3);
+		line = (char *)malloc (klen + vlen + rlen + 3);
 		if (!line) {
 			free (v2);
 			return false;
@@ -119,7 +117,7 @@ static bool foreach_list_cb(void *user, const char *k, const char *v) {
 		line[rlen + klen + 1] = '=';
 		memcpy (line + rlen + klen + 2, v, vlen + 1);
 	} else {
-		line = malloc (klen + vlen + 2);
+		line = (char *)malloc (klen + vlen + 2);
 		if (!line) {
 			free (v2);
 			return false;
@@ -147,7 +145,7 @@ static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns,
 	sdb_foreach (ns->sdb, foreach_list_cb, &user);
 
 	/*Pick "sub"-ns*/
-	ls_foreach (ns->sdb->ns, it, n) {
+	ls_foreach_cast (ns->sdb->ns, it, SdbNs*, n) {
 		len = strlen (n->name);
 		p[0] = '/';
 		if (len + 2 < left) {
@@ -174,7 +172,7 @@ SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	StrBuf *out = strbuf_new ();
 	if ((int)len < 1 || !buf) {
 		bufset = true;
-		buf = malloc ((len = 64));
+		buf = (char *)malloc ((len = 64));
 		if (!buf) {
 			strbuf_free (out);
 			return NULL;
@@ -209,7 +207,7 @@ repeat:
 	if (*p == '#') {
 		char buffer[16];
 		p++;
-		next = strchr (p, ';');
+		next = (char *)strchr (p, ';');
 		if (next) {
 			*next = 0;
 		}
@@ -226,12 +224,12 @@ repeat:
 		p++;
 	}
 	if (next) *next = ';';
-	eq = strchr (p, '=');
+	eq = (char *)strchr (p, '=');
 	if (eq) {
 		d = 1;
 		*eq++ = 0;
 		if (*eq == '$') {
-			next = strchr (eq + 1, ';');
+			next = (char *)strchr (eq + 1, ';');
 			if (next) *next = 0;
 			val = sdb_const_get (s, eq + 1, 0);
 			if (!val) {
@@ -248,7 +246,7 @@ repeat:
 		d = 0;
 	}
 	if (!is_ref) {
-		next = strchr (val? val: cmd, ';');
+		next = (char *)strchr (val? val: cmd, ';');
 	}
 	//if (!val) val = eq;
 	if (!is_ref && val && *val == '"') {
@@ -256,7 +254,7 @@ repeat:
 		// TODO: escape \" too
 		quot = (char*)val;
 next_quote:
-		quot = strchr (quot, '"');
+		quot = (char *)strchr (quot, '"');
 		if (quot) {
 			if (*(quot - 1) == '\\') {
 				memmove (quot - 1, quot, strlen (quot) + 1);
@@ -298,7 +296,7 @@ next_quote:
 			char root[1024]; // limit namespace length?
 			SdbListIter *it;
 			SdbNs *ns;
-			ls_foreach (s->ns, it, ns) {
+			ls_foreach_cast (s->ns, it, SdbNs*, ns) {
 				int name_len = strlen (ns->name);
 				if (name_len < (long)sizeof (root)) {
 					memcpy (root, ns->name, name_len + 1);
@@ -314,7 +312,7 @@ next_quote:
 		if (!strcmp (cmd, "**")) {
 			SdbListIter *it;
 			SdbNs *ns;
-			ls_foreach (s->ns, it, ns) {
+			ls_foreach_cast (s->ns, it, SdbNs*, ns) {
 				out_concat (ns->name);
 			}
 			goto fail;
@@ -324,7 +322,7 @@ next_quote:
 			SdbList *list = sdb_foreach_list (s, true);
 			SdbListIter *iter;
 			SdbKv *kv;
-			ls_foreach (list, iter, kv) {
+			ls_foreach_cast (list, iter, SdbKv*, kv) {
 				foreach_list_cb (&user, sdbkv_key (kv), sdbkv_value (kv));
 			}
 			ls_free (list);
@@ -364,7 +362,7 @@ next_quote:
 			SdbKv *kv;
 			SdbListIter *li;
 			SdbList *l = sdb_foreach_match (s, cmd + 2, false);
-			ls_foreach (l, li, kv) {
+			ls_foreach_cast (l, li, SdbKv*, kv) {
 				strbuf_append (out, sdbkv_key (kv), 0);
 				strbuf_append (out, "=", 0);
 				strbuf_append (out, sdbkv_value (kv), 1);
@@ -378,7 +376,7 @@ next_quote:
 	} else if (*cmd == '+' || *cmd == '-') {
 		d = 1;
 		if (!buf) {
-			buf = calloc (1, len);
+			buf = (char *)calloc (1, len);
 			if (!buf) {
 				goto fail;
 			}
@@ -467,30 +465,30 @@ next_quote:
 			}
 			// keep base
 			if (base == 16) {
-				w = snprintf (buf, len - 1, "0x%"ULLFMT"x", n);
+				w = snprintf (buf, len - 1, "0x%" ULLFMT "x", n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
 						free (buf);
-						buf = malloc (len = 0xff);
+						buf = (char *)malloc (len = 0xff);
 						if (!buf) {
 							goto fail;
 						}
 					}
 					bufset = true;
-					snprintf (buf, 0xff, "0x%"ULLFMT"x", n);
+					snprintf (buf, 0xff, "0x%" ULLFMT "x", n);
 				}
 			} else {
-				w = snprintf (buf, len-1, "%"ULLFMT"d", n);
+				w = snprintf (buf, len-1, "%" ULLFMT "d", n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
 						free (buf);
-						buf = malloc (len = 0xff);
+						buf = (char *)malloc (len = 0xff);
 						if (!buf) {
 							goto fail;
 						}
 					}
 					bufset = true;
-					snprintf (buf, 0xff, "%"ULLFMT"d", n);
+					snprintf (buf, 0xff, "%" ULLFMT "d", n);
 				}
 			}
 		}
@@ -501,7 +499,7 @@ next_quote:
 			// if (!eq) ...
 			alength = sdb_array_length (s, p);
 			if (!buf) {
-				buf = malloc (++len);
+				buf = (char *)malloc (++len);
 				if (!buf) {
 					goto fail;
 				}
@@ -512,7 +510,7 @@ next_quote:
 				if (bufset) {
 					free (buf);
 				}
-				buf = malloc (len = 32);
+				buf = (char *)malloc (len = 32);
 				bufset = 1;
 				snprintf (buf, 31, "%d", alength);
 			}
@@ -602,7 +600,7 @@ next_quote:
 						char *tmp = sdb_array_get (s, p, -i, NULL);
 						if (tmp) {
 							if (encode) {
-								char *newtmp = (void*)sdb_decode (tmp, NULL);
+								char *newtmp = (char*)sdb_decode (tmp, NULL);
 								if (!newtmp) {
 									goto fail;
 								}
@@ -691,7 +689,7 @@ next_quote:
 						len = strlen (buf) + 1;
 					}
 					if (encode) {
-						char *newbuf = (void*)sdb_decode (buf, NULL);
+						char *newbuf = (char*)sdb_decode (buf, NULL);
 						if (newbuf) {
 							free (buf);
 							buf = newbuf;
@@ -705,7 +703,7 @@ next_quote:
 					}
 					wl = strlen (sval);
 					if (!buf || wl >= len) {
-						buf = malloc (wl + 2);
+						buf = (char *)malloc (wl + 2);
 						if (!buf) {
 							free (out->buf);
 							out->buf = NULL;
@@ -724,7 +722,7 @@ next_quote:
 					}
 					buf[i] = 0;
 					if (encode) {
-						char *newbuf = (void*)sdb_decode (buf, NULL);
+						char *newbuf = (char*)sdb_decode (buf, NULL);
 						if (newbuf) {
 							if (bufset) {
 								free (buf);
@@ -778,7 +776,7 @@ next_quote:
 					// TODO: not optimized to reuse 'buf'
 					if ((tmp = sdb_json_get (s, cmd, json, 0))) {
 						if (encode) {
-							char *newtmp = (void*)sdb_decode (tmp, NULL);
+							char *newtmp = (char*)sdb_decode (tmp, NULL);
 							if (!newtmp)
 								goto fail;
 							free (tmp);
@@ -797,7 +795,7 @@ next_quote:
 				// sdbget
 				if ((q = sdb_const_get (s, cmd, 0))) {
 					if (encode) {
-						q = (void*)sdb_decode (q, NULL);
+						q = (char*)sdb_decode (q, NULL);
 					}
 					out_concat (q);
 					if (encode) {
@@ -890,7 +888,7 @@ static char *slurp(const char *file) {
 		return NULL;
 	}
 	lseek (fd, 0, SEEK_SET);
-	char *text = malloc (sz + 1);
+	char *text = (char *)malloc (sz + 1);
 	if (!text) {
 		close (fd);
 		return NULL;

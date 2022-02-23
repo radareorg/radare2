@@ -1,8 +1,5 @@
-/* base64 enc/dec - MIT - Copyright 2011-2016 - pancake */
+/* base64 enc/dec - MIT - Copyright 2011-2022 - pancake */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "sdb.h"
 
 #define SZ 1024
@@ -71,7 +68,7 @@ SDB_API char *sdb_encode(const ut8 *bin, int len) {
 	if (!len) {
 		return strdup ("");
 	}
-	out = calloc (8 + (len * 2), sizeof (char));
+	out = (char *)calloc (8 + (len * 2), sizeof (char));
 	if (!out) {
 		return NULL;
 	}
@@ -79,7 +76,7 @@ SDB_API char *sdb_encode(const ut8 *bin, int len) {
 	return out;
 }
 
-SDB_API ut8 *sdb_decode (const char *in, int *len) {
+SDB_API ut8 *sdb_decode(const char *in, int *len) {
 	ut8 *out;
 	ut32 size;
 	int olen, ilen;
@@ -89,7 +86,7 @@ SDB_API ut8 *sdb_decode (const char *in, int *len) {
 	if (!in) {
 		return NULL;
 	}
-	ilen = strlen (in);
+	ilen = (int)strlen (in);
 	if (!ilen) {
 		return NULL;
 	}
@@ -97,7 +94,7 @@ SDB_API ut8 *sdb_decode (const char *in, int *len) {
 	if (size < (ut32)ilen) {
 		return NULL;
 	}
-	out = calloc (1, size);
+	out = (ut8 *)calloc (1, size);
 	if (!out) {
 		return NULL;
 	}

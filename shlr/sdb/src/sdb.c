@@ -1,10 +1,7 @@
 /* sdb - MIT - Copyright 2011-2022 - pancake */
 
-#include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <string.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include "sdb.h"
 
@@ -62,7 +59,7 @@ SDB_API Sdb* sdb_new(const char *path, const char *name, int lock) {
 		if (path && *path) {
 			size_t plen = strlen (path);
 			size_t nlen = strlen (name);
-			s->dir = malloc (plen + nlen + 2);
+			s->dir = (char *)malloc (plen + nlen + 2);
 			if (!s->dir) {
 				free (s);
 				return NULL;
@@ -144,7 +141,7 @@ SDB_API void sdb_file(Sdb* s, const char *dir) {
 }
 
 static bool sdb_merge_cb(void *user, const char *k, const char *v) {
-	sdb_set (user, k, v, 0);
+	sdb_set ((Sdb*)user, k, v, 0);
 	return true;
 }
 
@@ -355,7 +352,7 @@ SDB_API int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas) {
 		return sdb_set (s, key, value, cas);
 	}
 	vl = strlen (value);
-	o = malloc (kl + vl + 1);
+	o = (char *)malloc (kl + vl + 1);
 	if (o) {
 		memcpy (o, p, kl);
 		memcpy (o + kl, value, vl + 1);
@@ -583,7 +580,7 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, bool owned, ut3
 		if (owned) {
 			val = strdup ("");
 		} else {
-			val = "";
+			val = (char *)"";
 		}
 	}
 	// XXX strlen computed twice.. because of check_*()
@@ -672,7 +669,8 @@ static bool sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 }
 
 static int __cmp_asc(const void *a, const void *b) {
-	const SdbKv *ka = a, *kb = b;
+	const SdbKv *ka = (SdbKv *)a;
+	const SdbKv *kb = (SdbKv *)b;
 	return strcmp (sdbkv_key (ka), sdbkv_key (kb));
 }
 
@@ -737,7 +735,9 @@ typedef struct {
 
 static bool sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 	_match_sdb_user *o = (_match_sdb_user*)user;
-	SdbKv tkv = { .base.key = (char*)k, .base.value = (char*)v };
+	SdbKv tkv = {0};
+	tkv.base.key = (char *)k;
+	tkv.base.value = (char *)v;
 	if (sdbkv_match (&tkv, o->expr)) {
 		SdbKv *kv = R_NEW0 (SdbKv);
 		kv->base.key = strdup (k);
@@ -966,7 +966,7 @@ SDB_API bool sdb_dump_dupnext(Sdb* s, char *key, char **value, int *_vlen) {
 	if (value) {
 		*value = 0;
 		if (vlen < SDB_MAX_VALUE) {
-			*value = malloc (vlen + 10);
+			*value = (char *)malloc (vlen + 10);
 			if (!*value) {
 				return false;
 			}
@@ -1021,7 +1021,7 @@ SDB_API bool sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas) {
 	if (len < 1 || len >= INT32_MAX) {
 		return false;
 	}
-	if (!(buf = calloc (1, len + 1))) {
+	if (!(buf = (char *)calloc (1, len + 1))) {
 		return false;
 	}
 	cdb_read (&s->db, buf, len, pos);
@@ -1047,7 +1047,7 @@ SDB_API bool sdb_hook(Sdb* s, SdbHook cb, void* user) {
 	SdbHook hook;
 	SdbListIter *iter;
 	if (s->hooks) {
-		ls_foreach (s->hooks, iter, hook) {
+		ls_foreach_cast (s->hooks, iter, SdbHook, hook) {
 			if (!(i % 2) && (hook == cb)) {
 				return false;
 			}
@@ -1066,7 +1066,7 @@ SDB_API bool sdb_unhook(Sdb* s, SdbHook h) {
 	int i = 0;
 	SdbHook hook;
 	SdbListIter *iter, *iter2;
-	ls_foreach (s->hooks, iter, hook) {
+	ls_foreach_cast (s->hooks, iter, SdbHook, hook) {
 		if (!(i % 2) && (hook == h)) {
 			iter2 = iter->n;
 			ls_delete (s->hooks, iter);
@@ -1085,7 +1085,7 @@ SDB_API int sdb_hook_call(Sdb *s, const char *k, const char *v) {
 	if (s->timestamped && s->last) {
 		s->last = sdb_now ();
 	}
-	ls_foreach (s->hooks, iter, hook) {
+	ls_foreach_cast (s->hooks, iter, SdbHook, hook) {
 		if (!(i % 2) && k && iter->n) {
 			void *u = iter->n->data;
 			hook (s, u, k, v);
@@ -1138,7 +1138,7 @@ SDB_API void sdb_drain(Sdb *s, Sdb *f) {
 }
 
 static bool copy_foreach_cb(void *user, const char *k, const char *v) {
-	Sdb *dst = user;
+	Sdb *dst = (Sdb *)user;
 	sdb_set (dst, k, v, 0);
 	return true;
 }
@@ -1147,7 +1147,7 @@ SDB_API void sdb_copy(Sdb *src, Sdb *dst) {
 	sdb_foreach (src, copy_foreach_cb, dst);
 	SdbListIter *it;
 	SdbNs *ns;
-	ls_foreach (src->ns, it, ns) {
+	ls_foreach_cast (src->ns, it, SdbNs*, ns) {
 		sdb_copy (ns->sdb, sdb_ns (dst, ns->name, true));
 	}
 }
@@ -1158,7 +1158,7 @@ typedef struct {
 } UnsetCallbackData;
 
 static bool unset_cb(void *user, const char *k, const char *v) {
-	UnsetCallbackData *ucd = user;
+	UnsetCallbackData *ucd = (UnsetCallbackData *)user;
 	if (sdb_match (k, ucd->key)) {
 		sdb_unset (ucd->sdb, k, 0);
 	}
@@ -1181,7 +1181,7 @@ typedef struct {
 } LikeCallbackData;
 
 static bool like_cb(void *user, const char *k, const char *v) {
-	LikeCallbackData *lcd = user;
+	LikeCallbackData *lcd = (LikeCallbackData *)user;
 	if (!user) {
 		return false;
 	}
@@ -1227,7 +1227,7 @@ SDB_API char** sdb_like(Sdb *s, const char *k, const char *v, SdbForeachCallback
 		lcd.val = NULL;
 	}
 	lcd.array_size = sizeof (char*) * 2;
-	lcd.array = calloc (lcd.array_size, 1);
+	lcd.array = (const char **)calloc (lcd.array_size, 1); // XXX shouldnt be const
 	if (!lcd.array) {
 		return NULL;
 	}

@@ -12,7 +12,7 @@
 #undef eprintf
 #define eprintf(...) fprintf(stderr,__VA_ARGS__)
 
-// Copied from https://gcc.gnu.org/wiki/Visibility
+// Inspired in https://gcc.gnu.org/wiki/Visibility
 #ifndef SDB_API
 	#undef SDB_IPI
 	#if defined _WIN32 || defined __CYGWIN__

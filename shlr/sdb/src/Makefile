@@ -56,7 +56,7 @@ endif
 ifneq ($(SILENT),)
 	@echo LIB libsdb${SOVER}
 endif
-	$(CC) ${CFLAGS} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
+	$(CC) ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
 
 bin_deps: sdb_version.h
 	$(MAKE) libsdb.a main.o
@@ -65,7 +65,7 @@ bin $(BIN): bin_deps
 ifneq ($(SILENT),)
 	@echo BIN ${BIN}
 endif
-	$(CC) ${CFLAGS} ${LDFLAGS} -o ${BIN} main.o ${OBJ}
+	$(CC) ${LDFLAGS} -o ${BIN} main.o ${OBJ}
 
 mrproper clean:
 	rm -rf ${OBJ} ${SOBJ} main.o libsdb.a a.out ${BIN} sdb.dSYM

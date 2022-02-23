@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2012-2017 - pancake */
+/* sdb - MIT - Copyright 2012-2021 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,7 @@ SDB_IPI void json_path_first(Rangstr *s) {
 	if (!s->p) {
 		return;
 	}
-	p = strchr (s->p, '.');
+	p = (char *)strchr (s->p, '.');
 	s->f = 0;
 	s->t = p? (size_t)(p - s->p): strlen (s->p);
 }
@@ -123,7 +123,7 @@ SDB_IPI Rangstr json_find (const char *s, Rangstr *rs) {
 
 	len = strlen (s);
 	if (len > RESFIXSZ) {
-		res = calloc (len + 1, sizeof (RangstrType));
+		res = (RangstrType *)calloc (len + 1, sizeof (RangstrType));
 		if (!res) {
 			eprintf ("Cannot allocate %d byte%s\n",
 				len + 1, (len > 1)? "s": "");

@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef int (*BufferOp)(int, const char *, int);
 
 typedef struct buffer {
@@ -17,12 +21,12 @@ typedef struct buffer {
 #define BUFFER_INSIZE 8192
 #define BUFFER_OUTSIZE 8192
 
-extern void buffer_init(buffer *,BufferOp,int,char *,unsigned int);
+void buffer_init(buffer *,BufferOp,int,char *,unsigned int);
 
-extern int buffer_flush(buffer *);
-extern int buffer_put(buffer *,const char *,unsigned int);
-extern int buffer_putalign(buffer *,const char *,unsigned int);
-extern int buffer_putflush(buffer *,const char *,unsigned int);
+int buffer_flush(buffer *);
+int buffer_put(buffer *,const char *,unsigned int);
+int buffer_putalign(buffer *,const char *,unsigned int);
+int buffer_putflush(buffer *,const char *,unsigned int);
 
 #define buffer_PUTC(s,c) \
   ( ((s)->n != (s)->p) \
@@ -30,12 +34,12 @@ extern int buffer_putflush(buffer *,const char *,unsigned int);
     : buffer_put((s),&(c),1) \
   )
 
-extern int buffer_get(buffer *,char *,unsigned int);
-extern int buffer_bget(buffer *,char *,unsigned int);
-extern int buffer_feed(buffer *);
+int buffer_get(buffer *,char *,unsigned int);
+int buffer_bget(buffer *,char *,unsigned int);
+int buffer_feed(buffer *);
 
-extern char *buffer_peek(buffer *);
-extern void buffer_seek(buffer *,unsigned int);
+char *buffer_peek(buffer *);
+void buffer_seek(buffer *,unsigned int);
 
 #define buffer_PEEK(s) ( (s)->x + (s)->n )
 #define buffer_SEEK(s,len) ( ( (s)->p -= (len) ) , ( (s)->n += (len) ) )
@@ -46,12 +50,19 @@ extern void buffer_seek(buffer *,unsigned int);
     : buffer_get((s),(c),1) \
   )
 
-extern int buffer_copy(buffer *,buffer *);
+int buffer_copy(buffer *,buffer *);
 
+// WTF GLOBALS
+#if 0
 extern buffer *buffer_0;
 extern buffer *buffer_0small;
 extern buffer *buffer_1;
 extern buffer *buffer_1small;
 extern buffer *buffer_2;
+#endif
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

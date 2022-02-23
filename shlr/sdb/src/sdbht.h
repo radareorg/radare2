@@ -3,6 +3,10 @@
 
 #include "ht_pp.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** keyvalue pair **/
 typedef struct sdb_kv {
 	//sub of HtPPKv so we can cast safely
@@ -48,5 +52,9 @@ SDB_API bool sdb_ht_delete(HtPP* ht, const char* key);
 SDB_API char* sdb_ht_find(HtPP* ht, const char* key, bool* found);
 // Find the KeyValuePair corresponding to the matching key.
 SDB_API SdbKv* sdb_ht_find_kvp(HtPP* ht, const char* key, bool* found);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // __SDB_HT_H

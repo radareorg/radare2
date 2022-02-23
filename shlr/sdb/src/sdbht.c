@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2020 - pancake */
+/* sdb - MIT - Copyright 2011-2022 - pancake */
 
 #include "sdbht.h"
 
@@ -20,16 +20,16 @@ static bool sdb_ht_internal_insert(HtPP* ht, const char* key, const char* value,
 		return false;
 	}
 	SdbKv kvp = {{ 0 }};
-	kvp.base.key = strdup ((void *)key);
+	kvp.base.key = strdup (key);
 	if (!kvp.base.key) {
 		goto err;
 	}
-	kvp.base.value = strdup ((void *)value);
+	kvp.base.value = strdup (value);
 	if (!kvp.base.value) {
 		goto err;
 	}
-	kvp.base.key_len = strlen (kvp.base.key);
-	kvp.base.value_len = strlen (kvp.base.value);
+	kvp.base.key_len = strlen ((const char *)kvp.base.key);
+	kvp.base.value_len = strlen ((const char *)kvp.base.value);
 	kvp.expire = 0;
 	return ht_pp_insert_kv (ht, (HtPPKv*)&kvp, update);
 

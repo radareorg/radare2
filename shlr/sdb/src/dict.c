@@ -1,12 +1,9 @@
-/* sdb - MIT - Copyright 2017 - pancake */
+/* sdb - MIT - Copyright 2017-2022 - pancake */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdbool.h>
 #include "sdb.h"
 
 SDB_API dict *dict_new (ut32 size, dict_freecb f) {
-	dict *m = calloc (1, sizeof (dict));
+	dict *m = (dict *)calloc (1, sizeof (dict));
 	if (!dict_init (m, R_MAX (size, 1), f)) {
 		free (m);
 		m = NULL;
@@ -26,7 +23,7 @@ SDB_API bool dict_init (dict *m, ut32 size, dict_freecb f) {
 	if (m) {
 		memset (m, 0, sizeof (dict));
 		if (size > 0) {
-			m->table = calloc (size, sizeof (dictkv));
+			m->table = (void **)calloc (size, sizeof (dictkv));
 			if (!m->table) {
 				return false;
 			}
@@ -42,7 +39,7 @@ SDB_API void dict_fini (dict *m) {
 	if (m) {
 		if (m->f) {
 			for (i = 0; i < m->size; i++) {
-				dictkv *kv = m->table[i];
+				dictkv *kv = (dictkv *)m->table[i];
 				if (kv) {
 					while (kv->k != MHTNO) {
 						m->f (kv->u);
@@ -76,9 +73,9 @@ SDB_API bool dict_set (dict *m, dicti k, dicti v, void *u) {
 		return false;
 	}
 	const int bucket = dict_bucket (m, k);
-	dictkv *kv = m->table[bucket];
+	dictkv *kv = (dictkv *)m->table[bucket];
 	if (!kv) {
-		kv = calloc (sizeof (dictkv), 2);
+		kv = (dictkv *)calloc (sizeof (dictkv), 2);
 		if (kv) {
 			m->table[bucket] = kv;
 			kv->k = MHTNO;
@@ -98,9 +95,10 @@ SDB_API bool dict_set (dict *m, dicti k, dicti v, void *u) {
 		kv++;
 	}
 	int curln = (kv - tmp);
-	dictkv *newkv = realloc (tmp, (curln + 2) * sizeof (dictkv));
+	dictkv *newkv = (dictkv *)realloc (tmp, (curln + 2) * sizeof (dictkv));
 	if (newkv) {
-		kv = m->table[bucket] = newkv;
+		kv = newkv;
+		m->table[bucket] = newkv;
 		kv += curln;
 		kv->k = k;
 		kv->v = v;
@@ -119,7 +117,7 @@ SDB_API void dict_stats (dict *m) {
 	for (i = 0; i < m->size; i++) {
 		printf ("%d: ", i);
 		j = 0;
-		dictkv *kv = m->table[i];
+		dictkv *kv = (dictkv *)m->table[i];
 		if (kv) {
 			while (kv->k != MHTNO) {
 				j++;
@@ -135,7 +133,7 @@ SDB_API dictkv *dict_getr (dict *m, dicti k) {
 		return NULL;
 	}
 	int bucket = dict_bucket (m, k);
-	dictkv *kv = m->table[bucket];
+	dictkv *kv = (dictkv *)m->table[bucket];
 	if (kv) {
 		while (kv->k != MHTNO) {
 			if (kv->k == k) {
@@ -168,14 +166,14 @@ SDB_API bool dict_del (dict *m, dicti k) {
 	if (k == MHTNO) {
 		return false;
 	}
-	dictkv *kv = m->table[bucket];
+	dictkv *kv = (dictkv *)m->table[bucket];
 	if (kv) {
 		while (kv->k != MHTNO) {
 			if (kv->k == k) {
 				if (m->f) {
 					m->f (kv->u);
 				}
-				dictkv *n = kv + 1;
+				dictkv *n = (dictkv *)(kv + 1);
 				while (n->k != MHTNO) {
 					*kv++ = *n++;
 				}
@@ -198,7 +196,7 @@ SDB_API void dict_foreach (dict *m, dictkv_cb cb, void *u) {
 	ut32 i;
 
 	for (i = 0; i < m->size && iterate; i++) {
-		dictkv *kv = m->table[i];
+		dictkv *kv = (dictkv *)m->table[i];
 		if (kv) {
 			while (kv->k != MHTNO) {
 				int res = cb (kv, u);
@@ -211,55 +209,3 @@ SDB_API void dict_foreach (dict *m, dictkv_cb cb, void *u) {
 		}
 	}
 }
-
-#if 0
-static char *dict_str(dict *m, dicti k) {
-	// walk all buckets and print the data..... we need a printer for kv->u
-	char *res = malloc (1024);
-	int bucket = k % m->size;
-	dicti *kv = m->table[bucket];
-	char *p = res;
-	for (i = 0; i < 1024; i++) {
-		sprintf (p, "%s%lld", comma, kv->v);
-		p += strlen (p);
-		kv++;
-	}
-	return res;
-}
-
-static char *dict_str(dict *m) {
-	char *res = malloc (1024);
-	int bucket = k % m->size;
-	dicti *kv = m->table[bucket];
-	int i;
-	char *p = res;
-	for (i = 0; i < m->size; i++) {
-		sprintf (p, "%s%lld", comma, kv->v);
-		p += strlen (p);
-		kv++;
-	}
-	return res;
-}
-
-int main() {
-	dict m;
-	dict_init (&m, 2, free);
-	dict_set (&m, 0x100, 1, NULL);
-	dict_set (&m, 0x200, 2, NULL);
-	dict_set (&m, 0x300, 3, NULL);
-	dict_set (&m, 0x400, 4, NULL);
-printf ("%d %d\n", (int)dict_get(&m, 0x100), (int)dict_get(&m, 0x200));
-printf ("%d %d\n", (int)dict_get(&m, 0x300), (int)dict_get(&m, 0x400));
-dict_stats(&m);
-
-#if 0
-	dict_set(&m, dict_hash("username"), 1024, NULL);
-	dict_set(&m, 32, 212, strdup("test"));
-	dict_del(&m, dict_hash("username"));
-	printf ("%d\n", (int)dict_get(&m, dict_hash("username")));
-	printf ("%s\n", dict_getu(&m, 32)); //dict_hash("username")));
-#endif
-	dict_fini(&m);
-	return 0;
-}
-#endif

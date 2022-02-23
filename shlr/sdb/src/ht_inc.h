@@ -1,4 +1,8 @@
-/* radare2 - BSD 3 Clause License - 2016-2021 - crowell */
+/* radare2 - BSD 3 Clause License - 2016-2022 - crowell, pancake */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef HT_TYPE
 #error HT_TYPE should be defined before including this header
@@ -114,5 +118,9 @@ SDB_API void Ht_(foreach)(HtName_(Ht) *ht, HT_(ForeachCallback) cb, void *user);
 
 SDB_API HT_(Kv)* Ht_(find_kv)(HtName_(Ht)* ht, const KEY_TYPE key, bool* found);
 SDB_API bool Ht_(insert_kv)(HtName_(Ht) *ht, HT_(Kv) *kv, bool update);
+
+#ifdef __cplusplus
+}
+#endif
 
 #undef HT_TYPE

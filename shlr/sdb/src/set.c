@@ -15,7 +15,9 @@ static bool u_foreach_cb(void *user, const ut64 k, const void *nada) {
 }
 
 SDB_API void set_u_foreach(SetU *s, set_u_foreach_cb cb, void *userdata) {
-	SetData sd = {cb, userdata};
+	SetData sd;
+	sd.cbptr = (void *)cb;
+	sd.userdata = (void *)userdata;
 	ht_up_foreach (s, u_foreach_cb, &sd);
 }
 
@@ -26,7 +28,9 @@ static bool p_foreach_cb(void *user, const void *k, const void *nada) {
 }
 
 SDB_API void set_p_foreach(SetP *s, set_p_foreach_cb cb, void *userdata) {
-	SetData sd = {cb, userdata};
+	SetData sd;
+	sd.cbptr = (void *)cb;
+	sd.userdata = (void *)userdata;
 	ht_pp_foreach (s, p_foreach_cb, &sd);
 }
 ////

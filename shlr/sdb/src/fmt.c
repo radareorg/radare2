@@ -1,22 +1,21 @@
-/* sdb - MIT - Copyright 2014-2018 - pancake */
+/* sdb - MIT - Copyright 2014-2022 - pancake */
 
 #include "sdb.h"
-#include <stdarg.h>
-#include <string.h>
 
 // TODO: convert into a function
 // TODO: Add 'a' format for array of pointers null terminated??
 // XXX SLOW CONCAT
 #define concat(x) if (x) { \
-	int size = 2+strlen(x?x:"")+(out?strlen(out)+4:0); \
-	if (out) { char *o = realloc (out, size); \
-		if (o) {\
-			strcat (o, ",");\
-			strcat (o, x);\
-			out = o;\
+	int size = 2 + strlen (x? x: "")+(out? strlen (out) + 4: 0); \
+	if (out) { \
+		char *o = (char *)realloc (out, size); \
+		if (o) { \
+			strcat (o, ","); \
+			strcat (o, x); \
+			out = o; \
 		} \
-	} else {\
-		out = strdup (x);\
+	} else { \
+		out = strdup (x); \
 	} \
 }
 
@@ -145,12 +144,8 @@ SDB_API int sdb_fmt_init (void *p, const char *fmt) {
 }
 
 static const char *sdb_anext2(const char *str, const char **next) {
-	char *nxt, *p = strchr (str, SDB_RS);
-	if (p) {
-		nxt = p + 1;
-	} else {
-		nxt = NULL;
-	}
+	const char *p = strchr (str, SDB_RS);
+	const char *nxt = (p) ?  p + 1: NULL;
 	if (next) {
 		*next = nxt;
 	}

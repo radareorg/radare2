@@ -3,6 +3,10 @@
 #ifndef CDB_H
 #define CDB_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <string.h>
 #include "types.h"
 
@@ -35,5 +39,9 @@ int cdb_findnext(struct cdb *, ut32 u, const char *, ut32);
 
 #define cdb_datapos(c) ((c)->dpos)
 #define cdb_datalen(c) ((c)->dlen)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
