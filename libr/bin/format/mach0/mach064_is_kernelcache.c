@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2019-2022 - pancake, nibble */
+
 #include "mach0_defines.h"
 
 static bool is_kernelcache_buffer(RBuffer *b) {
@@ -24,8 +26,7 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 	bool has_kext = false;
 
 	ut32 cursor = sizeof (struct MACH0_(mach_header));
-	for (i = 0; i < ncmds && cursor < length; i++) {
-
+	for (i = 0; i < ncmds && cursor + 8 < length; i++) {
 		ut32 cmdtype = r_buf_read_le32_at (b, cursor);
 		ut32 cmdsize = r_buf_read_le32_at (b, cursor + 4);
 
@@ -52,7 +53,6 @@ static bool is_kernelcache_buffer(RBuffer *b) {
 			}
 			break;
 		}
-
 		cursor += cmdsize;
 	}
 
