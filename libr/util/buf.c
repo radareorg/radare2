@@ -516,10 +516,9 @@ static st64 buf_format(RBuffer *dst, RBuffer *src, const char *fmt, int n) {
 				ut32 d3;
 				ut64 d4;
 				st64 r = r_buf_read (src, tmp, tsize);
-				if (r < tsize) {
+				if (r != tsize) {
 					return -1;
 				}
-
 				switch (tsize) {
 				case 1:
 					d1 = r_read_ble8 (tmp);
@@ -566,7 +565,7 @@ R_API st64 r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		return r;
 	}
 	r = r_buf_fread (b, buf, fmt, n);
-	r_buf_seek (b, o_addr, R_BUF_SET);
+	(void)r_buf_seek (b, o_addr, R_BUF_SET);
 	return r;
 }
 
@@ -598,7 +597,6 @@ R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 	if (r < 0) {
 		return r;
 	}
-
 	r = r_buf_read (b, buf, len);
 	r_buf_seek (b, o_addr, R_BUF_SET);
 	return r;

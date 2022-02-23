@@ -57,7 +57,7 @@ static RList* sections(RBinFile* bf) {
 		return NULL;
 	}
 
-	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
+	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) != sizeof (psxexe_header)) {
 		eprintf ("Truncated Header\n");
 		free (sect);
 		r_list_free (ret);
@@ -93,7 +93,7 @@ static RList* entries(RBinFile* bf) {
 		return NULL;
 	}
 
-	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) < sizeof (psxexe_header)) {
+	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) != sizeof (psxexe_header)) {
 		eprintf ("PSXEXE Header truncated\n");
 		r_list_free (ret);
 		free (addr);
