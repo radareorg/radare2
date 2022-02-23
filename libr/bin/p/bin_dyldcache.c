@@ -587,7 +587,7 @@ static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask, ut6
 		int n_classes = classlist_sample_size / 8;
 		ut64 sect_offset = sections[classlist_idx].offset + bin->hdr_offset;
 
-		if (r_buf_fread_at (cache->buf, sect_offset, (ut8*) classlist, "l", n_classes) < classlist_sample_size) {
+		if (r_buf_fread_at (cache->buf, sect_offset, (ut8*) classlist, "l", n_classes) != classlist_sample_size) {
 			goto next_bin;
 		}
 
