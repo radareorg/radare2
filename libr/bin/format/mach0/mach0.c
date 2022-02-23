@@ -1523,7 +1523,8 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) *bin, ut32 offset, ut32 si
 	bin->fixups_size = size;
 	size_t i;
 	ut64 cursor = starts_at + sizeof (ut32);
-	for (i = 0; i < segs_count; i++) {
+	ut64 bsize = r_buf_size (bin->b);
+	for (i = 0; i < segs_count && cursor + 4 < bsize; i++) {
 		ut32 seg_off;
 		if ((seg_off = r_buf_read_le32_at (bin->b, cursor)) == UT32_MAX || !seg_off) {
 			cursor += sizeof (ut32);
