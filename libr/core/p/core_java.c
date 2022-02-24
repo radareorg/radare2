@@ -1579,6 +1579,7 @@ static int r_cmd_java_print_class_definitions(RBinJavaObj *obj) {
 			ut64 *addr = r_list_get_n (the_moffsets, idx);
 			str = r_list_get_n (the_methods, idx);
 			r_cons_printf ("  %s; // @0x%04" PFMT64x "\n", str, *addr);
+			free (str);
 			idx++;
 		}
 	}
