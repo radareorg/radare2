@@ -12,6 +12,8 @@
 #define HAVE_COMPUTED_GOTOS 0
 #elif __EMSCRIPTEN__
 #define HAVE_COMPUTED_GOTOS 0
+#elif __cplusplus
+#define HAVE_COMPUTED_GOTOS 0
 #else
 #define HAVE_COMPUTED_GOTOS 1
 #endif

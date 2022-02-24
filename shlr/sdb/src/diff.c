@@ -24,7 +24,7 @@ SDB_API int sdb_diff_format(char *str, int size, const SdbDiff *diff) {
 
 	SdbListIter *it;
 	const char *component;
-	ls_foreach (diff->path, it, component) {
+	ls_foreach_cast (diff->path, it, const char *, component) {
 		APPENDF ("%s/", component);
 	}
 
@@ -74,7 +74,7 @@ typedef struct sdb_diff_kv_cb_ctx {
 } SdbDiffKVCbCtx;
 
 static bool sdb_diff_report_kv_cb(void *user, const char *k, const char *v) {
-	const SdbDiffKVCbCtx *ctx = user;
+	const SdbDiffKVCbCtx *ctx = (const SdbDiffKVCbCtx *)user;
 	sdb_diff_report_kv (ctx->ctx, k, v, ctx->add);
 	return true;
 }
@@ -85,7 +85,7 @@ static bool sdb_diff_report_kv_cb(void *user, const char *k, const char *v) {
 static void sdb_diff_report(SdbDiffCtx *ctx, Sdb *sdb, bool add) {
 	SdbListIter *it;
 	SdbNs *ns;
-	ls_foreach (sdb->ns, it, ns) {
+	ls_foreach_cast (sdb->ns, it, SdbNs*, ns) {
 		sdb_diff_report_ns (ctx, ns, add);
 		ls_push (ctx->path, ns->name);
 		sdb_diff_report (ctx, ns->sdb, add);
@@ -96,7 +96,7 @@ static void sdb_diff_report(SdbDiffCtx *ctx, Sdb *sdb, bool add) {
 }
 
 static bool sdb_diff_kv_cb(void *user, const char *k, const char *v) {
-	const SdbDiffKVCbCtx *ctx = user;
+	const SdbDiffKVCbCtx *ctx = (SdbDiffKVCbCtx *)user;
 	Sdb *other = ctx->add ? ctx->ctx->a : ctx->ctx->b;
 	const char *other_val = sdb_const_get (other, k, NULL);
 	if (!other_val || !*other_val) {
@@ -115,7 +115,7 @@ static bool sdb_diff_kv_cb(void *user, const char *k, const char *v) {
 static void sdb_diff_ctx(SdbDiffCtx *ctx) {
 	SdbListIter *it;
 	SdbNs *ns;
-	ls_foreach (ctx->a->ns, it, ns) {
+	ls_foreach_cast (ctx->a->ns, it, SdbNs*, ns) {
 		Sdb *b_ns = sdb_ns (ctx->b, ns->name, false);
 		if (!b_ns) {
 			DIFF (ctx,
@@ -136,7 +136,7 @@ static void sdb_diff_ctx(SdbDiffCtx *ctx) {
 		ctx->a = a;
 		ctx->b = b;
 	}
-	ls_foreach (ctx->b->ns, it, ns) {
+	ls_foreach_cast (ctx->b->ns, it, SdbNs*, ns) {
 		if (!sdb_ns (ctx->a, ns->name, false)) {
 			DIFF (ctx,
 				sdb_diff_report_ns (ctx, ns, true);

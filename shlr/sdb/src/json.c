@@ -120,7 +120,7 @@ SDB_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, u
 	if (!js) {
 		const int v_len = strlen (v);
 		const int p_len = strlen (p);
-		b = malloc (p_len + v_len + 8);
+		b = (char *)malloc (p_len + v_len + 8);
 		if (b) {
 			int is_str = isstring (v);
 			const char *q = is_str? "\"": "";
@@ -146,7 +146,7 @@ SDB_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, u
 		// ensured to be positive by sdb_const_get_len
 		// 7 corresponds to the length of '{"":"",'
 		size_t buf_len = jslen + strlen (p) + strlen (v) + 7;
-		char *buf = malloc (buf_len);
+		char *buf = (char *)malloc (buf_len);
 		if (buf) {
 			int curlen, is_str = isstring (v);
 			const char *quote = is_str ? "\"" : "";
@@ -188,7 +188,7 @@ SDB_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, u
 		if (msz < 1) {
 			return false;
 		}
-		str = malloc (msz);
+		str = (char *)malloc (msz);
 		if (!str) {
 			return false;
 		}
@@ -242,7 +242,7 @@ SDB_API bool sdb_json_set(Sdb *s, const char *k, const char *p, const char *v, u
 			len[2]--;
 		}
 
-		str = malloc (len[0] + len[2] + 1);
+		str = (char *)malloc (len[0] + len[2] + 1);
 		if (!str) {
 			return false;
 		}
@@ -264,7 +264,7 @@ SDB_API const char *sdb_json_format(SdbJsonString *s, const char *fmt, ...) {
 #define JSONSTR_ALLOCATE(y)\
 	if (s->len + y > s->blen) {\
 		s->blen *= 2;\
-		x = realloc (s->buf, s->blen);\
+		x = (char *)realloc (s->buf, s->blen);\
 		if (!x) {\
 			va_end (ap);\
 			return NULL;\
@@ -276,7 +276,7 @@ SDB_API const char *sdb_json_format(SdbJsonString *s, const char *fmt, ...) {
 	}
 	if (!s->buf) {
 		s->blen = 1024;
-		s->buf = malloc (s->blen);
+		s->buf = (char *)malloc (s->blen);
 		if (!s->buf) {
 			return NULL;
 		}
@@ -307,7 +307,7 @@ SDB_API const char *sdb_json_format(SdbJsonString *s, const char *fmt, ...) {
 			case 'l':
 				JSONSTR_ALLOCATE (32);
 				arg_l = va_arg (ap, ut64);
-				snprintf (tmp, sizeof (tmp), "0x%"ULLFMT "x", arg_l);
+				snprintf (tmp, sizeof (tmp), "0x%" ULLFMT "x", arg_l);
 				memcpy (s->buf + s->len, tmp, strlen (tmp));
 				s->len += strlen (tmp);
 				break;

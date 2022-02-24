@@ -62,7 +62,7 @@ SDB_API int sdb_journal_load(Sdb *s) {
 		return 0;
 	}
 	lseek (fd, 0, SEEK_SET);
-	str = malloc (sz + 1);
+	str = (char *)malloc (sz + 1);
 	if (!str) {
 		return 0;
 	}

@@ -8,7 +8,15 @@
 #define HT_TYPE 4
 #include "ht_inc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 SDB_API HtName_(Ht)* Ht_(new0)(void);
 #undef HT_TYPE
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -10,6 +10,14 @@
 #include "ht_inc.h"
 #include "sdbht.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 SDB_API HtName_(Ht)* Ht_(new0)(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

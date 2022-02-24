@@ -246,7 +246,9 @@ SDB_API int sdb_alen_ignore_empty(const char *str) {
 		}
 		len++;
 	}
-	if (*p) len++;
+	if (*p) {
+		len++;
+	}
 	return len;
 }
 

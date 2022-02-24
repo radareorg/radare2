@@ -99,14 +99,14 @@ static inline HT_(Kv) *next_kv(HtName_(Ht) *ht, HT_(Kv) *kv) {
 // pair_free - function for freeing a keyvaluepair - if NULL just does free.
 // calcsize - function to calculate the size of a value. if NULL, just stores 0.
 static HtName_(Ht)* internal_ht_new(ut32 size, ut32 prime_idx, HT_(Options) *opt) {
-	HtName_(Ht)* ht = calloc (1, sizeof (*ht));
+	HtName_(Ht)* ht = (HtName_(Ht)*)calloc (1, sizeof (*ht));
 	if (!ht) {
 		return NULL;
 	}
 	ht->size = size;
 	ht->count = 0;
 	ht->prime_idx = prime_idx;
-	ht->table = calloc (ht->size, sizeof (*ht->table));
+	ht->table = (HT_(Bucket)*)calloc (ht->size, sizeof (*ht->table));
 	if (!ht->table) {
 		free (ht);
 		return NULL;
@@ -201,7 +201,7 @@ static HT_(Kv) *reserve_kv(HtName_(Ht) *ht, const KEY_TYPE key, const int key_le
 		}
 	}
 
-	HT_(Kv) *newkvarr = realloc (bt->arr, (bt->count + 1) * ht->opt.elem_size);
+	HT_(Kv) *newkvarr = (HT_(Kv)*)realloc (bt->arr, (bt->count + 1) * ht->opt.elem_size);
 	if (!newkvarr) {
 		return NULL;
 	}

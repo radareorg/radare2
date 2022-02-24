@@ -35,7 +35,7 @@ char *api_json_set (const char *s, const char *k, const char *v) {
 	end[2] = s + strlen (s);
 	len[2] = WLEN (2);
 
-	str = malloc (len[0]+len[1]+len[2]+1);
+	str = (char *)malloc (len[0]+len[1]+len[2]+1);
 	if (!str) {
 		return NULL;
 	}

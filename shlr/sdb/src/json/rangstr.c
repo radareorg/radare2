@@ -1,4 +1,4 @@
-/* Copyleft 2012-2017 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+/* Copyleft 2012-2022 - sdb - pancake */
 
 #ifndef RANGSTR_C
 #define RANGSTR_C
@@ -8,21 +8,12 @@
 #include <stdlib.h>
 #include "rangstr.h"
 
-#if 0
-SDB_IPI void rangstr_print (Rangstr *s) {
-	if (s && s->p) {
-		(void) fwrite (s->p+s->f,
-			s->t-s->f, 1, stdout);
-	}
-}
-#endif
-
 SDB_IPI Rangstr rangstr_null(void) {
 	Rangstr rs = {0, 0, 0, 0, 0};
 	return rs;
 }
 
-SDB_IPI Rangstr rangstr_new (const char *s) {
+SDB_IPI Rangstr rangstr_new(const char *s) {
 	Rangstr rs;
 	if (!s) {
 		return rangstr_null ();
@@ -35,14 +26,14 @@ SDB_IPI Rangstr rangstr_new (const char *s) {
 	return rs;
 }
 
-SDB_IPI int rangstr_length (Rangstr* rs) {
+SDB_IPI int rangstr_length(Rangstr* rs) {
 	if (rs->t > rs->f) {
 		return rs->t - rs->f;
 	}
 	return 0;
 }
 
-SDB_IPI int rangstr_int (Rangstr *s) {
+SDB_IPI int rangstr_int(Rangstr *s) {
 	if (!s || !s->p) {
 		return 0;
 	}
@@ -70,12 +61,12 @@ SDB_IPI int rangstr_int (Rangstr *s) {
 	return n * mul;
 }
 
-SDB_IPI char *rangstr_dup (Rangstr *rs) {
+SDB_IPI char *rangstr_dup(Rangstr *rs) {
 	if (!rs->p) {
 		return NULL;
 	}
 	int len = rangstr_length (rs);
-	char *p = malloc (len + 1);
+	char *p = (char *)malloc (len + 1);
 	if (p) {
 		memcpy (p, rs->p + rs->f, len);
 		p[len] = 0;
@@ -83,7 +74,7 @@ SDB_IPI char *rangstr_dup (Rangstr *rs) {
 	return p;
 }
 
-SDB_IPI Rangstr rangstr_news (const char *s, RangstrType *res, int i) {
+SDB_IPI Rangstr rangstr_news(const char *s, RangstrType *res, int i) {
 	Rangstr rs;
 	rs.next = 1;
 	rs.f = res[i];
@@ -93,7 +84,7 @@ SDB_IPI Rangstr rangstr_news (const char *s, RangstrType *res, int i) {
 	return rs;
 }
 
-SDB_IPI int rangstr_cmp (Rangstr *a, Rangstr *b) {
+SDB_IPI int rangstr_cmp(Rangstr *a, Rangstr *b) {
 	int la = a->t - a->f;
 	int lb = b->t - b->f;
 	int lbz = strlen (b->p + b->f);
@@ -106,13 +97,13 @@ SDB_IPI int rangstr_cmp (Rangstr *a, Rangstr *b) {
 	return memcmp (a->p + a->f, b->p + b->f, la);
 }
 
-SDB_IPI int rangstr_find (Rangstr* a, char ch) {
+SDB_IPI int rangstr_find(Rangstr* a, char ch) {
 	size_t i = a->f;
 	while (i < a->t && a->p[i] && a->p[i] != ch) i++;
 	return (i < a->t && a->p[i]) ? (int) i: -1;
 }
 
-SDB_IPI  const char *rangstr_str (Rangstr* rs) {
+SDB_IPI const char *rangstr_str(Rangstr* rs) {
 	return rs->p + rs->f;
 }
 
