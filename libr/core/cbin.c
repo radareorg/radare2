@@ -243,6 +243,9 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			int fmtsize = r_print_format_struct_size (core->print, v, 0, 0);
 			char *offset_key = r_str_newf ("%s.offset", flagname);
 			const char *off = sdb_const_get (db, offset_key, 0);
+			if (fmtsize < 1) {
+				continue;
+			}
 			free (offset_key);
 			if (off) {
 				if (IS_MODE_RAD (mode)) {
