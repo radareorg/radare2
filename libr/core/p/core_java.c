@@ -1534,6 +1534,7 @@ static int r_cmd_java_print_all_definitions(RAnal *anal) {
 	r_list_foreach (obj_list, iter, obj) {
 		r_cmd_java_print_class_definitions (obj);
 	}
+	r_list_free (obj_list);
 	return true;
 }
 
