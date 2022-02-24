@@ -8262,6 +8262,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	} else {
 		buf_asm = r_str_new (str);
 	}
+	r_strbuf_fini (&asmop.buf_asm);
 	return buf_asm;
 }
 
