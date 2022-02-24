@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2021 - pancake */
+/* radare2 - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -3319,6 +3319,7 @@ R_API void r_core_cmd_queue_wait(RCore *core) {
 		if (cmd) {
 			r_core_cmd0 (core, cmd);
 			r_cons_flush ();
+			free (cmd);
 		}
 		r_sys_usleep (100);
 	}
@@ -3367,6 +3368,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 			break;
 		}
 		ret = r_core_cmd (r, cmd, true);
+		free (cmd);
 		if (ret < 0) {
 			if (r->cons && r->cons->line && r->cons->line->zerosep) {
 				r_cons_zero ();
@@ -3376,7 +3378,6 @@ R_API int r_core_prompt_exec(RCore *r) {
 		}
 		r->rc = r->num->value;
 		// int ret = r_core_cmd (r, cmd, true);
-		free (cmd);
 		if (r->cons && r->cons->context->use_tts) {
 			const char *buf = r_cons_get_buffer ();
 			if (buf && *buf) {
