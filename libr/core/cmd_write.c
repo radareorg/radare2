@@ -1437,11 +1437,9 @@ static int wz_handler_old(void *data, const char *input) {
 	} else {
 		core->num->value = 0;
 	}
-#if 0
-		r_io_use_desc (core->io, core->file->desc);
-#endif
 	WSEEK (core, len + 1);
 	r_core_block_read (core);
+	free (str);
 	return 0;
 }
 
