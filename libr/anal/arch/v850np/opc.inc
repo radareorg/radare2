@@ -960,7 +960,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "ori", OP (0x34), OP_MASK, IF6U, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_OR, "#0,#1,|,#2,=" },
 	{ "popsp", two (0x67e0, 0x0160), two (0xffe0, 0x07ff), {R1, R3}, 0, V850_CPU_E3V5_UP , R_ANAL_OP_TYPE_POP },
 	{ "pref", two (0xdfe0, 0x0160), two (0xffe0, 0x07ff), {PREFOP, R1}, 2, V850_CPU_E3V5_UP },
-	{ "prepare", two (0x0780, 0x0003), two (0xffc0, 0x001f), {LIST12, IMM5, SP}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" },
+	{ "prepare", two (0x0780, 0x0003), two (0xffc0, 0x001f), {LIST12, IMM5, SP}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" }, // #0 contains the comma separated list of registers, #1 the im5 and #2 the sp
 	{ "prepare", two (0x0780, 0x000b), two (0xffc0, 0x001f), {LIST12, IMM5, IMM16LO},0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" },
 	{ "prepare", two (0x0780, 0x0013), two (0xffc0, 0x001f), {LIST12, IMM5, IMM16HI},0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" },
 	{ "prepare", two (0x0780, 0x001b), two (0xffc0, 0x001f), {LIST12, IMM5, IMM32}, 0, V850_CPU_NON0, R_ANAL_OP_TYPE_PUSH, "#0" },
