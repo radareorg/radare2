@@ -4710,7 +4710,7 @@ static void print_json_string(RCore *core, const char* block, int len, const cha
 		tblock = r_mem_dup (block, len);
 		for (i = 0; i < len; i++) {
 			if (tblock[i] && !tblock[i + 1]) {
-				memmove (tblock + i + 1, tblock + i + 2, len - i - 1);
+				memmove (tblock + i + 1, tblock + i + 2, len - i - 2);
 			} else {
 				tblock[i] = 0;
 				break;
