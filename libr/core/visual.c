@@ -775,11 +775,18 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	r_cons_show_cursor (true);
 	core->vmode = false;
 
+	int curbs = core->blocksize;
+	if (autoblocksize) {
+		r_core_block_size (core, obs);
+	}
 	backup_current_addr (core, &addr, &bsze, &newaddr);
 	do {
 		ret = r_core_visual_prompt (core);
 	} while (ret);
 	restore_current_addr (core, addr, bsze, newaddr);
+	if (autoblocksize) {
+		r_core_block_size (core, curbs);
+	}
 
 	r_cons_show_cursor (false);
 	core->vmode = true;
