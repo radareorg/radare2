@@ -1010,7 +1010,7 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "shr", OP (0x14), OP_MASK, {I5U, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SHR, "#0,#1,>>,#1,=" },
 	{ "shr", two (0x07e0, 0x0080), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SHR, "#0,#1,>>,#1,=" },
 
-	{ "sld.b", one (0x0300), one (0x0780), {D7U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "#0,1,>>,#1,=,[ep],4,#1,=" },
+	{ "sld.b", one (0x0300), one (0x0780), {D7U, EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD, "1,#0,>>,#1,ep,+,[1],4,#1,=" },
 	{ "sld.bu", one (0x0060), one (0x07f0), {D4U, EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD },
 	{ "sld.h", one (0x0400), one (0x0780), {D8_7U,EP, R2}, 2, V850_CPU_ALL, R_ANAL_OP_TYPE_LOAD },
 	{ "sld.hu", one (0x0070), one (0x07f0), {D5_4U,EP, R2_NOTR0}, 2, V850_CPU_NON0, R_ANAL_OP_TYPE_LOAD },
