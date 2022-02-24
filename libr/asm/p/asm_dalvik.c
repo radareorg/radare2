@@ -15,7 +15,7 @@ static int dalvik_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int vA, vB, vC, vD, vE, vF, vG, vH, payload = 0, i = (int) buf[0];
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm = NULL;
-	const char *flag_str;
+	const char *flag_str = NULL;
 	r_strf_buffer (256);
 	ut64 offset;
 	a->dataalign = 2;
@@ -525,6 +525,7 @@ static int dalvik_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = size + op->payload;
 	}
 	free (strasm);
+	R_FREE (flag_str);
 	return size;
 }
 
