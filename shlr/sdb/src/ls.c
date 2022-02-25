@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2007-2021 - pancake, alvaro */
+/* sdb - MIT - Copyright 2007-2022 - pancake, alvaro */
 
 #include <string.h>
 #include "ls.h"

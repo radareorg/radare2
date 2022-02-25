@@ -291,7 +291,7 @@ static void sdb_dump_cb(MainOptions *mo, const char *k, const char *v, const cha
 		if (!strcmp (v, "true") || !strcmp (v, "false")) {
 			printf ("%s\"%s\":%s", comma, k, v);
 		} else if (sdb_isnum (v)) {
-			printf ("%s\"%s\":%" ULLFMT "u", comma, k, sdb_atoi (v));
+			printf ("%s\"%s\":%" PRIu64, comma, k, sdb_atoi (v));
 		} else if (*v == '{' || *v == '[') {
 			printf ("%s\"%s\":%s", comma, k, v);
 		} else {
@@ -758,7 +758,10 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 	if (wd == -1) {
 		wd = open (out, O_RDWR | O_CREAT, 0644);
 	} else {
-		ftruncate (wd, 0);
+		if (ftruncate (wd, 0) == -1) {
+			close (wd);
+			return -1;
+		}
 	}
 	int rc = -1;
 	if (wd != -1) {
@@ -781,6 +784,9 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 	} else {
 		if (rc == 0) {
 			char *cname = get_cname (name);
+			if (!cname) {
+				return -1;
+			}
 			snprintf (buf, buf_size, "gperf -aclEDCIG --null-strings -H sdb_hash_c_%s"
 					" -N sdb_get_c_%s -t %s.gperf > %s.c\n", cname, cname, name, name);
 			free (cname);
@@ -792,8 +798,7 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 					eprintf ("Generated %s.c and %s.h\n", name, name);
 				}
 			} else {
-				eprintf ("Cannot run gperf\n");
-				eprintf ("%s\n", buf);
+				eprintf ("Cannot run gperf: %s\n", buf);
 			}
 		} else {
 			eprintf ("Outdated sdb binary in PATH?\n");

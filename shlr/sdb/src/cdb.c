@@ -54,7 +54,7 @@ bool cdb_init(struct cdb *c, int fd) {
 #if USE_MMAN
 		char *x = (char *)mmap (0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 		if (x == MAP_FAILED) {
-			eprintf ("Cannot mmap %d\n", (int)st.st_size);
+			// eprintf ("Cannot mmap %d\n", (int)st.st_size);
 			return false;
 		}
 		if (c->map) {
@@ -63,7 +63,7 @@ bool cdb_init(struct cdb *c, int fd) {
 #else
 		char *x = calloc (1, st.st_size);
 		if (!x) {
-			eprintf ("Cannot malloc %d\n", (int)st.st_size);
+			// eprintf ("Cannot malloc %d\n", (int)st.st_size);
 			return false;
 		}
 		/* TODO: read by chunks instead of a big huge syscall */
