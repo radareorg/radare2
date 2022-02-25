@@ -1,6 +1,22 @@
 NAME=pia20
 FILE=bins/mach0/BatteryLife
 ARGS=-a arm -b 64
+CMDS=<<EOF
+s+1
+pia 20
+EOF
+EXPECT=<<EOF
+stp x20, x19, [sp, 0x10]
+stp x29, x30, [sp, 0x20]
+add x29, sp, 0x20
+mov x19, x1
+invalid
+EOF
+RUN
+
+NAME=pia20
+FILE=bins/mach0/BatteryLife
+ARGS=-a arm -b 64
 CMDS=pia 20
 EXPECT=<<EOF
 stp x22, x21, [sp, -0x30]!
