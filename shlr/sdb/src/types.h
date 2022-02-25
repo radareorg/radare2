@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -46,7 +47,7 @@
 #include <windows.h>
 #include <io.h>
 #if __MINGW32__
-#define ULLFMT "ll"
+#define ULLFMT PRIx64
 #else
 #define ULLFMT "I64"
 #endif
@@ -60,7 +61,7 @@
 #include <unistd.h>
 #undef HAVE_MMAN
 #define HAVE_MMAN 1
-#define ULLFMT "ll"
+#define ULLFMT PRIx64
 #endif
 
 #if __wasi__ || EMSCRIPTEN
@@ -83,11 +84,11 @@
 #endif
 
 #ifndef ut8
-#define ut8 unsigned char
-#define ut32 unsigned int
-#define ut64 unsigned long long
-#define st64 long long
-#define boolt int
+#define ut8 uint8_t
+#define ut32 uint32_t
+#define ut64 uint64_t
+#define st64 int64_t
+
 // TODO: deprecate R_NEW
 #ifndef R_NEW
 //it means we are within sdb

@@ -9,7 +9,7 @@
 char *cdb_alloc(ut32 n) {
 #if __APPLE__ && !__POWERPC__
 	void *ret = NULL;
-	return (char *)posix_memalign (&ret, ALIGNMENT, n)? NULL: ret;
+	return (char *)(posix_memalign (&ret, ALIGNMENT, n)? NULL: ret);
 #elif __SDB_WINDOWS__ && !__CYGWIN__
 	return (char *)_aligned_malloc (n, ALIGNMENT);
 #else
