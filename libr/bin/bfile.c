@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2021 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2022 - pancake, nibble, dso */
 
 #include <r_bin.h>
 #include <r_hash.h>
@@ -34,12 +34,10 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	r_return_if_fail (bf && string);
 
 	int mode = bf->strmode;
-	ut64 addr, vaddr;
 	RBin *bin = bf->rbin;
 	if (!bin) {
 		return;
 	}
-	const char *section_name, *type_string;
 	RIO *io = bin->iob.io;
 	if (!io) {
 		return;
@@ -48,9 +46,10 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	if (s) {
 		string->vaddr = s->vaddr + (string->paddr - s->paddr);
 	}
-	section_name = s ? s->name : "";
-	type_string = r_bin_string_type (string->type);
-	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
+	const char *section_name = s ? s->name : "";
+	const char *type_string = r_bin_string_type (string->type);
+	ut64 vaddr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
+	ut64 addr = vaddr;
 
 	// If raw string dump mode, use printf to dump directly to stdout.
 	//  PrintfCallback temp = io->cb_printf;
@@ -129,7 +128,11 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		eprintf ("Invalid range to find strings 0x%"PFMT64x" .. 0x%"PFMT64x"\n", from, to);
 		return -1;
 	}
-	int len = to - from;
+	st64 len = (st64)(to - from);
+	if (len > ST32_MAX) {
+		eprintf ("String scan range is too large\n");
+		return -1;
+	}
 	ut8 *buf = calloc (len, 1);
 	if (!buf || !min) {
 		free (buf);
@@ -163,11 +166,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				}
 				len = res;
 				free (buf);
-#if 1
 				buf = out;
-#else
-				// buf = realloc (out, len + 1);
-#endif
 			} else {
 				eprintf ("Cannot allocate\n");
 			}
@@ -184,23 +183,47 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 				break;
 			}
 		}
+		// smol optimization
+		ut32 n1 = r_read_le32 (buf+needle-from);
+		if (!n1) {
+			needle += 4;
+			continue;
+		}
 		rc = r_utf8_decode (buf + needle - from, to - needle, NULL);
 		if (!rc) {
 			needle++;
 			continue;
 		}
+		bool addr_aligned = !(needle % 4);
+
 		if (type == R_STRING_TYPE_DETECT) {
 			char *w = (char *)buf + needle + rc - from;
-			if ((to - needle) > 5 + rc) {
-				bool is_wide32 = (needle + rc + 2 < to) && (!w[0] && !w[1] && !w[2] && w[3] && !w[4]);
-				if (is_wide32) {
-					str_type = R_STRING_TYPE_WIDE32;
+			if (((to - needle) > 8 + rc)) {
+				// TODO: support le and be
+				bool is_wide32le = (needle + rc + 2 < to) && (!w[0] && !w[1] && !w[2] && w[3] && !w[4]);
+				// reduce false positives
+				if (is_wide32le) {
+					if (!w[5] && !w[6] && w[7] && w[8]) {
+						is_wide32le = false;
+					}
+				}
+				if (!addr_aligned) {
+					is_wide32le = false;
+				}
+				///is_wide32be &= (n1 < 0xff && n11 < 0xff); // false; // n11 < 0xff;
+				if (is_wide32le  && addr_aligned) {
+					str_type = R_STRING_TYPE_WIDE32; // asume big endian,is there little endian w32?
 				} else {
+					// bool is_wide = (n1 && n2 && n1 < 0xff && (!n2 || n2 < 0xff));
 					bool is_wide = needle + rc + 4 < to && !w[0] && w[1] && !w[2] && w[3] && !w[4];
 					str_type = is_wide? R_STRING_TYPE_WIDE: R_STRING_TYPE_ASCII;
 				}
 			} else {
-				str_type = R_STRING_TYPE_ASCII;
+				if (rc > 1) {
+					str_type = R_STRING_TYPE_UTF8; // could be charset if set :?
+				} else {
+					str_type = R_STRING_TYPE_ASCII;
+				}
 			}
 		} else if (type == R_STRING_TYPE_UTF8) {
 			str_type = R_STRING_TYPE_ASCII; // initial assumption
@@ -213,7 +236,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		/* Eat a whole C string */
 		for (i = 0; i < sizeof (tmp) - 4 && needle < to; i += rc) {
 			RRune r = {0};
-
 			if (str_type == R_STRING_TYPE_WIDE32) {
 				rc = r_utf32le_decode (buf + needle - from, to - needle, &r);
 				if (rc) {
