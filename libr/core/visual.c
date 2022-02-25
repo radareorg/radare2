@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
-#include <r_cons.h>
 
 #define NPF 5
 #define PIDX (R_ABS (core->printidx % NPF))
@@ -785,6 +784,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	} while (ret);
 	restore_current_addr (core, addr, bsze, newaddr);
 	if (autoblocksize) {
+		obs = core->blocksize;
 		r_core_block_size (core, curbs);
 	}
 
