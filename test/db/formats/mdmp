@@ -231,7 +231,7 @@ NAME=: 32bit - strings count
 FILE=bins/mdmp/hello.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-10277
+10261
 EOF
 RUN
 
@@ -359,9 +359,240 @@ RUN
 
 NAME=: 64bit - strings count
 FILE=bins/mdmp/hello64.dmp
-CMDS=iz~?
+CMDS=<<EOF
+iz~?
+izq~Alpc
+izq~Timer
+EOF
 EXPECT=<<EOF
-22901
+22884
+0x77820352 10 4 Alpc
+0x77825ffd 41 40 AlpcAdjustCompletionListConcurrencyCount
+0x77826026 30 29 AlpcFreeCompletionListMessage
+0x77826044 44 43 AlpcGetCompletionListLastMessageInformation
+0x77826070 39 38 AlpcGetCompletionListMessageAttributes
+0x77826097 18 17 AlpcGetHeaderSize
+0x778260a9 24 23 AlpcGetMessageAttribute
+0x778260c1 33 32 AlpcGetMessageFromCompletionList
+0x778260e2 45 44 AlpcGetOutstandingCompletionListMessageCount
+0x7782610f 31 30 AlpcInitializeMessageAttribute
+0x7782612e 28 27 AlpcMaxAllowedMessageLength
+0x7782614a 27 26 AlpcRegisterCompletionList
+0x77826165 39 38 AlpcRegisterCompletionListWorkerThread
+0x7782618c 26 25 AlpcRundownCompletionList
+0x778261a6 29 28 AlpcUnregisterCompletionList
+0x778261c3 41 40 AlpcUnregisterCompletionListWorkerThread
+0x778270f7 24 23 NtAlpcAcceptConnectPort
+0x7782710f 20 19 NtAlpcCancelMessage
+0x77827123 18 17 NtAlpcConnectPort
+0x77827135 17 16 NtAlpcCreatePort
+0x77827146 24 23 NtAlpcCreatePortSection
+0x7782715e 28 27 NtAlpcCreateResourceReserve
+0x7782717a 24 23 NtAlpcCreateSectionView
+0x77827192 28 27 NtAlpcCreateSecurityContext
+0x778271ae 24 23 NtAlpcDeletePortSection
+0x778271c6 28 27 NtAlpcDeleteResourceReserve
+0x778271e2 24 23 NtAlpcDeleteSectionView
+0x778271fa 28 27 NtAlpcDeleteSecurityContext
+0x77827216 21 20 NtAlpcDisconnectPort
+0x7782722b 30 29 NtAlpcImpersonateClientOfPort
+0x77827249 24 23 NtAlpcOpenSenderProcess
+0x77827261 23 22 NtAlpcOpenSenderThread
+0x77827278 23 22 NtAlpcQueryInformation
+0x7782728f 30 29 NtAlpcQueryInformationMessage
+0x778272ad 28 27 NtAlpcRevokeSecurityContext
+0x778272c9 26 25 NtAlpcSendWaitReceivePort
+0x778272e3 21 20 NtAlpcSetInformation
+0x7782d6f8 22 21 TpAllocAlpcCompletion
+0x7782d70e 24 23 TpAllocAlpcCompletionEx
+0x7782d77f 29 28 TpAlpcRegisterCompletionList
+0x7782d79c 31 30 TpAlpcUnregisterCompletionList
+0x7782d967 24 23 TpReleaseAlpcCompletion
+0x7782dabc 24 23 TpWaitForAlpcCompletion
+0x7782df9d 24 23 ZwAlpcAcceptConnectPort
+0x7782dfb5 20 19 ZwAlpcCancelMessage
+0x7782dfc9 18 17 ZwAlpcConnectPort
+0x7782dfdb 17 16 ZwAlpcCreatePort
+0x7782dfec 24 23 ZwAlpcCreatePortSection
+0x7782e004 28 27 ZwAlpcCreateResourceReserve
+0x7782e020 24 23 ZwAlpcCreateSectionView
+0x7782e038 28 27 ZwAlpcCreateSecurityContext
+0x7782e054 24 23 ZwAlpcDeletePortSection
+0x7782e06c 28 27 ZwAlpcDeleteResourceReserve
+0x7782e088 24 23 ZwAlpcDeleteSectionView
+0x7782e0a0 28 27 ZwAlpcDeleteSecurityContext
+0x7782e0bc 21 20 ZwAlpcDisconnectPort
+0x7782e0d1 30 29 ZwAlpcImpersonateClientOfPort
+0x7782e0ef 24 23 ZwAlpcOpenSenderProcess
+0x7782e107 23 22 ZwAlpcOpenSenderThread
+0x7782e11e 23 22 ZwAlpcQueryInformation
+0x7782e135 30 29 ZwAlpcQueryInformationMessage
+0x7782e153 28 27 ZwAlpcRevokeSecurityContext
+0x7782e16f 26 25 ZwAlpcSendWaitReceivePort
+0x7782e189 21 20 ZwAlpcSetInformation
+0x778348f8 37 36 Alpc = %p, ValidateForRelease = %hs\n
+0x77834920 21 20 TppAlpcpValidateAlpc
+0x77834978 26 25 Instance = %p, Alpc = %p\n
+0x77834998 24 23 TppAlpcpExecuteCallback
+0x778349b0 41 40 Unable to reference Alpc %p's dll at %p\n
+0x778349e0 40 39 Executing Alpc callback %p(%p, %p, %p)\n
+0x77834a10 83 82 AlpcReturn = %p, AlpcPort = %p, Callback = %p, Context = %p, CallbackEnviron = %p\n
+0x77834a68 23 22 TppAllocAlpcCompletion
+0x77834a98 11 10 Alpc = %p\n
+0x77834aa8 24 23 TpWaitForAlpcCompletion
+0x77834ac0 24 23 TpReleaseAlpcCompletion
+0x77834ad8 13 12 TppAlpcpFree
+0x77834ae8 23 22 TppAlpcpCallbackEpilog
+0x77834b00 29 28 TpAlpcRegisterCompletionList
+0x77834b20 31 30 TpAlpcUnregisterCompletionList
+0x778351e8 39 38 AlpcPort = %x, Direct = %p, Pool = %p\n
+0x77835210 19 18 TpBindAlpcToDirect
+0x7781e298 23 22 Processing Timer = %p\n
+0x7781ecc0 40 39 Processing TimerQueue->TransitionQueue\n
+0x7781ecf0 195 194 Got stable data for Timer = %p : \n   CapturedTimerSet = %hs\n CapturedIsAbsolute = %hs\n    CapturedDueTime = 0x%016I64x\n     CapturedPeriod = %d\n     CapturedWindow = %d\n          NextTimer = %p\n
+0x77820366 12 5 Timer
+0x77820372 24 11 Timer Queue
+0x7782738c 14 13 NtCancelTimer
+0x7782765d 14 13 NtCreateTimer
+0x77827edd 12 11 NtOpenTimer
+0x77828476 13 12 NtQueryTimer
+0x77828483 23 22 NtQueryTimerResolution
+0x77828bdd 11 10 NtSetTimer
+0x77828be8 13 12 NtSetTimerEx
+0x77828bf5 21 20 NtSetTimerResolution
+0x7782956e 15 14 RtlCancelTimer
+0x77829bc4 15 14 RtlCreateTimer
+0x77829bd3 20 19 RtlCreateTimerQueue
+0x77829f3f 15 14 RtlDeleteTimer
+0x77829f4e 20 19 RtlDeleteTimerQueue
+0x77829f62 22 21 RtlDeleteTimerQueueEx
+0x7782c8be 12 11 RtlSetTimer
+0x7782cf6e 15 14 RtlUpdateTimer
+0x7782d75a 13 12 TpAllocTimer
+0x7782d933 13 12 TpIsTimerSet
+0x7782d9d6 15 14 TpReleaseTimer
+0x7782da7f 11 10 TpSetTimer
+0x7782daea 15 14 TpWaitForTimer
+0x7782e232 14 13 ZwCancelTimer
+0x7782e503 14 13 ZwCreateTimer
+0x7782ed74 12 11 ZwOpenTimer
+0x7782f30d 13 12 ZwQueryTimer
+0x7782f31a 23 22 ZwQueryTimerResolution
+0x7782fa74 11 10 ZwSetTimer
+0x7782fa7f 13 12 ZwSetTimerEx
+0x7782fa8c 21 20 ZwSetTimerResolution
+0x77835228 38 37 Timer = %p, ValidateForRelease = %hs\n
+0x77835250 23 22 TppTimerpValidateTimer
+0x77835298 34 33 TimerQueueQueue = %p, Timer = %p\n
+0x778352c0 22 21 TppTimerpDequeueTimer
+0x778352d8 19 18 Dequeued Timer %p\n
+0x778352f0 66 65 TimerQueueQueue = %p, Timer = %p, DueTime = 0x%I64x, Window = %d\n
+0x77835338 22 21 TppTimerpEnqueueTimer
+0x77835350 12 11 Timer = %p\n
+0x77835360 16 15 TppTimerpExpire
+0x77835390 39 38 TimerQueue = %p, DoAbsoluteQueue = %s\n
+0x778353b8 26 25 TppTimerpExpireTimerQueue
+0x77835480 116 115 KTimer was set for 0x%016I64x:\n\tNow is 0x%016I64x\n\tEarliest timer is 0x%016I64x\n\tSetting KTimer to 0x%016I64x (%s)\n
+0x778354f8 43 42 KTimer already set for due time = 0x%016x\n
+0x77835528 17 16 TimerQueue = %p\n
+0x77835540 16 15 TppTimerpUpdate
+0x77835550 41 40 TimerQueue->Lock held by another thread\n
+0x77835580 22 21 TimerQueueQueue = %p\n
+0x77835598 22 21 TppTimerpTimerExpired
+0x778355b0 35 34 Timer queue %p has no references.\n
+0x778355d8 29 28 TppTimerpInitTimerQueueQueue
+0x778355f8 32 31 TppTimerpDestroyTimerQueueQueue
+0x77835618 23 22 TimerQueueReturn = %p\n
+0x77835630 25 24 TppTimerpAllocTimerQueue
+0x77835670 24 23 TppTimerpFreeTimerQueue
+0x778356d8 14 13 TppTimerAlloc
+0x77835738 13 12 TpAllocTimer
+0x77835750 66 65 Timer = %p, DueTime = 0x%016I64x, Period = %d, WindowLength = %d\n
+0x77835798 13 12 TppTimerpSet
+0x77835858 13 12 TpIsTimerSet
+0x77835868 24 23 Timer %p was not valid\n
+0x77835890 11 10 TpSetTimer
+0x778358a0 32 31 TpTimerOutstandingCallbackCount
+0x778358c0 42 41 Timer = %p, CancelPendingCallbacks = %hs\n
+0x778358f0 15 14 TpWaitForTimer
+0x77835900 15 14 TpReleaseTimer
+0x77835910 14 13 TppTimerpFree
+0x77835920 25 24 TppTimerpExecuteCallback
+0x77835940 41 40 Executing Timer callback %p(%p, %p, %p)\n
+0x778359a0 32 31 TppTimerpStopCallbackGeneration
+0x778369d0 27 26 TppWaiterpWaitTimerExpired
+0x775a3cd3 22 21 CancelTimerQueueTimer
+0x775a3ce9 20 19 CancelWaitableTimer
+0x775a3cfd 22 21 ChangeTimerQueueTimer
+0x775a3e68 21 20 CloseThreadpoolTimer
+0x775a4577 22 21 CreateThreadpoolTimer
+0x775a45b7 17 16 CreateTimerQueue
+0x775a45c8 22 21 CreateTimerQueueTimer
+0x775a4626 21 20 CreateWaitableTimerA
+0x775a463b 23 22 CreateWaitableTimerExA
+0x775a4652 23 22 CreateWaitableTimerExW
+0x775a4669 21 20 CreateWaitableTimerW
+0x775a47fd 17 16 DeleteTimerQueue
+0x775a480e 19 18 DeleteTimerQueueEx
+0x775a4821 22 21 DeleteTimerQueueTimer
+0x775a7475 21 20 IsThreadpoolTimerSet
+0x775a7ced 19 18 OpenWaitableTimerA
+0x775a7d00 19 18 OpenWaitableTimerW
+0x775a9455 19 18 SetThreadpoolTimer
+0x775a9491 19 18 SetTimerQueueTimer
+0x775a9548 17 16 SetWaitableTimer
+0x775a9559 19 18 SetWaitableTimerEx
+0x775a9b6c 32 31 WaitForThreadpoolTimerCallbacks
+0x775aa339 21 20 NTDLL.TpReleaseTimer
+0x775aa782 19 18 NTDLL.TpIsTimerSet
+0x775aaa90 17 16 NTDLL.TpSetTimer
+0x775aaab1 53 52 api-ms-win-core-threadpool-l1-1-0.SetWaitableTimerEx
+0x775aac4b 21 20 NTDLL.TpWaitForTimer
+0x775b1f30 21 20 HTTP2TimerReschedule
+0x775dc968 22 21 MFGetTimerPeriodicity
+0x775ed780 14 13 SqmTimerStart
+0x775ed790 15 14 SqmTimerRecord
+0x775ed7a0 21 20 SqmTimerAddToAverage
+0x775ed7b8 19 18 SqmTimerAccumulate
+0x775faeea 13 12 TpAllocTimer
+0x775fe50c 17 16 SetWaitableTimer
+0x775fe55a 20 19 CancelWaitableTimer
+0x775fe5ee 23 22 CreateWaitableTimerExW
+0x775fe6ac 19 18 OpenWaitableTimerW
+0x775feca0 22 21 ChangeTimerQueueTimer
+0x775fecb8 17 16 CreateTimerQueue
+0x775feccc 22 21 CreateTimerQueueTimer
+0x775fece4 22 21 DeleteTimerQueueTimer
+0x775fed10 19 18 DeleteTimerQueueEx
+0x7fefd4ec99c 20 19 CancelWaitableTimer
+0x7fefd4ec9b0 22 21 ChangeTimerQueueTimer
+0x7fefd4eca60 21 20 CloseThreadpoolTimer
+0x7fefd4ecd5b 22 21 CreateThreadpoolTimer
+0x7fefd4ecd9b 17 16 CreateTimerQueue
+0x7fefd4ecdac 22 21 CreateTimerQueueTimer
+0x7fefd4ecdc2 23 22 CreateWaitableTimerExW
+0x7fefd4ece80 19 18 DeleteTimerQueueEx
+0x7fefd4ece93 22 21 DeleteTimerQueueTimer
+0x7fefd4ee404 21 20 IsThreadpoolTimerSet
+0x7fefd4ee8fb 19 18 OpenWaitableTimerW
+0x7fefd4ef00b 19 18 SetThreadpoolTimer
+0x7fefd4ef044 17 16 SetWaitableTimer
+0x7fefd4ef055 19 18 SetWaitableTimerEx
+0x7fefd4ef38d 32 31 WaitForThreadpoolTimerCallbacks
+0x7fefd4ef5ff 21 20 NTDLL.TpReleaseTimer
+0x7fefd4ef8a9 19 18 NTDLL.TpIsTimerSet
+0x7fefd4efa7c 17 16 NTDLL.TpSetTimer
+0x7fefd4efb4e 21 20 NTDLL.TpWaitForTimer
+0x7fefd4f6746 20 19 RtlCreateTimerQueue
+0x7fefd4f6770 15 14 RtlCreateTimer
+0x7fefd4f6782 15 14 RtlUpdateTimer
+0x7fefd4f6794 15 14 RtlDeleteTimer
+0x7fefd4f67a6 22 21 RtlDeleteTimerQueueEx
+0x7fefd4f6fd2 14 13 NtCreateTimer
+0x7fefd4f6fe2 12 11 NtOpenTimer
+0x7fefd4f6ff0 13 12 NtSetTimerEx
+0x7fefd4f7000 14 13 NtCancelTimer
+0x7fefd4f871c 13 12 TpAllocTimer
 EOF
 RUN
 

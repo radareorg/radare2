@@ -1,0 +1,560 @@
+NAME=iz (file x86)
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=iz
+EXPECT=<<EOF
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+EOF
+RUN
+
+NAME=iz (file x86) 2
+FILE=bins/elf/analysis/x86-helloworld-gcc
+CMDS=<<EOF
+?e -- default --
+iz
+?e -- geq 12 --
+e bin.minstr=12
+iz
+?e -- geq 13 --
+e bin.minstr=13
+iz
+?e -- geq 0 --
+e bin.minstr=0
+iz
+?e -- leq 12 --
+e bin.maxstr=12
+iz
+?e -- leq 11 --
+e bin.maxstr=11
+iz
+?e -- no limit --
+e bin.maxstr=0
+iz
+EOF
+EXPECT=<<EOF
+-- default --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- geq 12 --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- geq 13 --
+[Strings]
+nth paddr vaddr len size section type string
+--------------------------------------------
+-- geq 0 --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- leq 12 --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+-- leq 11 --
+[Strings]
+nth paddr vaddr len size section type string
+--------------------------------------------
+-- no limit --
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+EOF
+RUN
+
+NAME=iz (file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=iz
+EXPECT=<<EOF
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x000005c4 0x004005c4 11  12   .rodata ascii Hello World
+EOF
+RUN
+
+NAME=izq (file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=izq
+EXPECT=<<EOF
+0x4005c4 12 11 Hello World
+EOF
+RUN
+
+NAME=izqq (file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=izqq
+EXPECT=<<EOF
+Hello World
+EOF
+RUN
+
+NAME=izzq (file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=izzq~puts
+EXPECT=<<EOF
+0x4002fa 5 4 puts
+0x15b 18 17 puts@@GLIBC_2.2.5
+EOF
+RUN
+
+NAME=izzqq (file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=izzqq~puts
+EXPECT=<<EOF
+puts
+puts@@GLIBC_2.2.5
+EOF
+RUN
+
+NAME=izzqq malloc://512
+FILE=malloc://512
+CMDS=<<EOF
+wx 6a0b58995266682d6389e7682f736800682f62696e89e352e8390000006563686f202222203e202f6574632f736861646f77203b206563686f202222203e202f6574632f706173737764203b20726d202d5266202f00575389e1cd80
+izzqq
+EOF
+EXPECT=<<EOF
+Rfh-c
+h/sh
+h/bin
+echo "" > /etc/shadow ; echo "" > /etc/passwd ; rm -Rf /
+EOF
+RUN
+
+NAME=izzz (file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=izzz~?
+EXPECT=<<EOF
+82
+EOF
+RUN
+
+NAME=izzzq (file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=izzzq~puts
+EXPECT=<<EOF
+0x004002fa puts
+0x0000015b puts@@GLIBC_2.2.5
+EOF
+RUN
+
+NAME=izzz* (file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+izzz*~:0
+izzz*~:1
+EOF
+EXPECT=<<EOF
+f str._8_b_ 10 @ 0x00000034
+Cs 10 @ 0x00000034
+EOF
+RUN
+
+NAME=izz (no rbin - file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+ARGS=-n
+CMDS=izz~puts
+EXPECT=<<EOF
+4   0x000002fa 0x000002fa 4   5            ascii   puts
+65  0x00001953 0x00001953 17  18           ascii   puts@@GLIBC_2.2.5
+EOF
+RUN
+
+NAME=izzj (no rbin - file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+ARGS=-n
+CMDS=<<EOF
+e bin.str.purge=all,!0x2fa,!0x1953
+izzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":762,"paddr":762,"ordinal":4,"size":5,"length":4,"section":"","type":"ascii","string":"puts"},{"vaddr":6483,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":"","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+EOF
+RUN
+
+NAME=izzj 2 (no rbin - file x86_64)
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+e bin.str.purge=all,!0x4002fa,!0x15b
+izzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":4195066,"paddr":762,"ordinal":4,"size":5,"length":4,"section":".dynstr","type":"ascii","string":"puts"},{"vaddr":347,"paddr":6483,"ordinal":65,"size":18,"length":17,"section":".strtab","type":"ascii","string":"puts@@GLIBC_2.2.5"}]
+EOF
+RUN
+
+NAME=izzzj
+FILE=-
+CMDS=<<EOF
+w abcd\00012345\0efghi\0
+izzzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":0,"paddr":0,"ordinal":0,"size":5,"length":4,"section":"","type":"ascii","string":"abcd"},{"vaddr":5,"paddr":5,"ordinal":1,"size":6,"length":5,"section":"","type":"ascii","string":"12345"},{"vaddr":11,"paddr":11,"ordinal":2,"size":6,"length":5,"section":"","type":"ascii","string":"efghi"}]
+EOF
+RUN
+
+NAME=iz utf16le
+BROKEN=1
+FILE=bins/elf/strenc
+CMDS=<<EOF
+e str.escbslash=true
+iz~green
+iz~wall
+EOF
+EXPECT=<<EOF
+005 0x00002248 0x00402248  57 118 (.rodata) utf16le \nutf16le> \\u00a2\\u20ac\\U00010348 in green:\e[32m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+007 0x000022c8 0x004022c8  33  68 (.rodata) utf16le is a wall with no embedded zeros\n
+EOF
+RUN
+
+NAME=iz/izz utf32le
+FILE=bins/elf/strenc
+CMDS=<<EOF
+e str.escbslash=true
+iz~cyan
+iz~Mountain
+izz~Linux_wide
+EOF
+EXPECT=<<EOF
+17  0x0000258c 0x0040258c 55  224  .rodata utf32le utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\e[36m ¢€𐍈 \e[0m\n blocks=Basic Latin,Latin-1 Supplement,Currency Symbols,Gothic
+18  0x0000266c 0x0040266c 48  196  .rodata utf32le Mountain range with embedded quad zeros: 𐌀A𐌀A𐌀A\n blocks=Basic Latin,Old Italic
+136 0x00002528 0x00402528 24  100  .rodata            utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+EOF
+RUN
+
+NAME=str.escbslash and iz
+FILE=bins/elf/strenc
+CMDS=<<EOF
+e str.escbslash=true
+iz~Linux_wide
+e str.escbslash=false
+iz~Linux_wide
+EOF
+EXPECT=<<EOF
+16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+16  0x00002528 0x00402528 24  100  .rodata utf32le \tLinux_wide\esc: \e[0m¡\r\n blocks=Basic Latin,Latin-1 Supplement
+EOF
+RUN
+
+NAME=iz utf32le partial
+FILE=bins/elf/strenc-guess-utf32le
+CMDS=<<EOF
+iz~ABCDEF
+iz~abcdef
+iz~123456
+EOF
+EXPECT=<<EOF
+1   0x0000060c 0x0040060c 6   28   .rodata utf32le ABCDEF
+2   0x00000650 0x00400650 10  44   .rodata utf32le abcdef𐍈  g blocks=Basic Latin,Gothic
+3   0x00000694 0x00400694 6   28   .rodata utf32le 123456
+EOF
+RUN
+
+NAME=izz escaping backslash
+FILE=-
+CMDS=<<EOF
+wz QUVWXWYZ[\\]^_R
+px 16
+?e
+e str.escbslash=false  # default
+izz
+?e
+e str.escbslash=true
+izz
+EOF
+EXPECT=<<EOF
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x00000000  5155 5657 5857 595a 5b5c 5d5e 5f52 0000  QUVWXWYZ[\]^_R..
+
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\]^_R
+
+[Strings]
+nth paddr      vaddr      len size section type  string
+-------------------------------------------------------
+0   0x00000000 0x00000000 14  15           ascii QUVWXWYZ[\\]^_R
+EOF
+RUN
+
+NAME=izz and bin.str.enc
+FILE=-
+CMDS=<<EOF
+wz k\0i\0abcdefgh
+(izzenc enc; e bin.str.enc=$0; izz~:3..)
+.(izzenc guess)
+.(izzenc ascii)
+.(izzenc utf8)
+.(izzenc utf16le)
+?e
+wx 00250025002500250000
+.(izzenc guess)
+.(izzenc utf16le)
+?e
+wx 26252625262526250000
+.(izzenc guess)
+.(izzenc utf16le)
+EOF
+EXPECT=<<EOF
+0   0x00000004 0x00000004 8   9            ascii abcdefgh
+0   0x00000004 0x00000004 8   9            ascii abcdefgh
+0   0x00000004 0x00000004 8   9            ascii abcdefgh
+0   0x00000000 0x00000000 6   14           utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+
+0   0x00000001 0x00000001 4   9            utf16le %%%%
+0   0x00000000 0x00000000 4   10           utf16le ──── blocks=Box Drawing
+
+0   0x00000000 0x00000000 8   9            ascii &%&%&%&%
+0   0x00000000 0x00000000 4   10           utf16le ┦┦┦┦ blocks=Box Drawing
+EOF
+RUN
+
+NAME=bin.str.enc string reset
+FILE=--
+CMDS=<<EOF
+mkdir .tmp
+cp bins/elf/analysis/x86-helloworld-gcc .tmp/strenc-bin
+o+ .tmp/strenc-bin
+iz~:3..
+s 0x080484b0
+wz k\0i\0abcdefgh
+(izenc enc; e bin.str.enc=$0; iz~:3..)
+.(izenc guess)
+.(izenc utf8)
+.(izenc utf16le)
+o-*
+rm .tmp/strenc-bin
+EOF
+EXPECT=<<EOF
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
+0   0x000004b4 0x080484b4 8   9    .rodata ascii abcdefgh
+0   0x000004b0 0x080484b0 6   13   .rodata utf16le ki扡摣晥桧 blocks=Basic Latin,CJK Unified Ideographs
+EOF
+RUN
+
+NAME=izj unicode blocks
+FILE=bins/elf/strenc
+CMDS=<<EOF
+e bin.str.purge=all,!4202996,!4203007,!4203208
+izj
+EOF
+EXPECT=<<EOF
+[{"vaddr":4202996,"paddr":8692,"ordinal":2,"size":11,"length":10,"section":".rodata","type":"ascii","string":"en_US.utf8"},{"vaddr":4203007,"paddr":8703,"ordinal":3,"size":61,"length":54,"section":".rodata","type":"utf8","string":"utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m ¢€𐍈 \\e[0m\\n","blocks":["Basic Latin","Latin-1 Supplement","Currency Symbols","Gothic"]},{"vaddr":4203208,"paddr":8904,"ordinal":8,"size":68,"length":33,"section":".rodata","type":"utf16le","string":"is a wall with no embedded zeros\\n"}]
+EOF
+RUN
+
+NAME=izzj unicode blocks
+FILE=bins/elf/strenc-guess-utf32le
+CMDS=<<EOF
+e bin.str.purge=all,!4195920
+izzj
+EOF
+EXPECT=<<EOF
+[{"vaddr":4195920,"paddr":1616,"ordinal":13,"size":44,"length":10,"section":".rodata","type":"utf32le","string":"abcdef𐍈  g","blocks":["Basic Latin","Gothic"]}]
+EOF
+RUN
+
+NAME=iz/izz bin.str.purge
+FILE=bins/elf/analysis/ls2
+CMDS=<<EOF
+?e --1--
+e bin.str.purge=false
+izz~0x00412420
+?e --2--
+e bin.str.purge=true
+izz~0x00412420  # Should print nothing
+?e --3--
+(test_iz;iz~0x004131d8;iz~0x00413228;iz~0x00413233;iz~0x0041323a)
+e bin.str.purge=false
+.(test_iz)
+?e --4--
+e bin.str.purge=true
+.(test_iz)
+?e --5--
+e bin.str.purge=0x004131d8,0x00413228,0x0041323a
+.(test_iz)
+?e --6--
+e bin.str.purge=true,0x00413228
+.(test_iz)
+?e --7--
+e bin.str.purge=0x4131d8-0x413233
+.(test_iz)
+?e --8--
+e bin.str.purge=0x413230-0x413240,0x4131d8
+.(test_iz)
+?e --9--
+e bin.str.purge=true,0x413228-0x413228
+.(test_iz)
+?e --10--
+e bin.str.purge=0x413100-0x413300,!0x413233
+.(test_iz)
+?e --11--
+e bin.str.purge=true,!0x41323a
+.(test_iz)
+?e --12--
+e bin.str.purge=true,!0x41323a,0x41323a
+.(test_iz)
+?e --13--
+e bin.str.purge=true,0x4131d8,!0x4131d8
+.(test_iz)
+?e --14--
+e bin.str.purge=all,!0x413220-0x413235
+.(test_iz)
+EOF
+EXPECT=<<EOF
+--1--
+1055 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
+--2--
+--3--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+2   0x00013233 0x00413233 6   7    .rodata ascii posix-
+3   0x0001323a 0x0041323a 4   5    .rodata ascii main
+--4--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+--5--
+2   0x00013233 0x00413233 6   7    .rodata ascii posix-
+--6--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+--7--
+3   0x0001323a 0x0041323a 4   5    .rodata ascii main
+--8--
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+--9--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+--10--
+2   0x00013233 0x00413233 6   7    .rodata ascii posix-
+--11--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+3   0x0001323a 0x0041323a 4   5    .rodata ascii main
+--12--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+--13--
+0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+--14--
+1   0x00013228 0x00413228 10  11   .rodata ascii sort_files
+2   0x00013233 0x00413233 6   7    .rodata ascii posix-
+EOF
+RUN
+
+NAME=iz-
+FILE=-
+CMDS=<<EOF
+iz- @ 0x412420
+e bin.str.purge
+iz- @ 0x4028a0
+e bin.str.purge
+iz- 0x414fbf
+e bin.str.purge
+EOF
+EXPECT=<<EOF
+0x412420
+0x412420,0x4028a0
+0x412420,0x4028a0,0x414fbf
+EOF
+RUN
+
+NAME=regression for #9370
+FILE=bins/elf/analysis/hello-arm32
+ARGS=-m 0x10000
+CMDS=izz~Hello
+EXPECT=<<EOF
+6   0x00000200 0x00010200 11  12   .rodata         ascii   Hello World
+EOF
+RUN
+
+
+
+NAME=izjencoding
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+e cfg.json.str = base64
+izj~{[0].section}
+EOF
+EXPECT=<<EOF
+LnJvZGF0YQ==
+EOF
+RUN
+
+NAME=izjencodinghex
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+e cfg.json.str = hex
+izj~{[0].string}
+EOF
+EXPECT=<<EOF
+48656C6C6F20576F726C64
+EOF
+RUN
+
+NAME=izjencodingarray
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+e cfg.json.str = array
+izj~{[0].type}
+EOF
+EXPECT=<<EOF
+[117,116,102,049,054,108,101]
+EOF
+RUN
+
+NAME=izz libcap (#298)
+FILE=-
+CMDS=<<EOF
+wx 7500 6900 3d25 7325 7325 7300 2573 2c00 2b25 7325 7325 7300 2d25 7325 7325 7300 6361 705f 6368 6f77 6e00 6361 705f 6461
+izz~^0
+EOF
+EXPECT=<<EOF
+0   0x00000004 0x00000004 7   8            ascii =%s%s%s
+EOF
+RUN
+
+NAME=ascii substring detection (#14499)
+FILE=bins/pe/Reborn_Stub-strings.exe
+CMDS=izz~pomf
+EXPECT=<<EOF
+7130 0x00087f8a 0x00489d8a 26  53   .text   utf16le http://pomf.cat/upload.php
+7135 0x000880dd 0x00489edd 19  39   .text   utf16le https://a.pomf.cat/
+7298 0x00089bed 0x0048b9ed 26  53   .text   utf16le http://pomf.cat/upload.php
+7299 0x00089c22 0x0048ba22 19  40   .text   utf16le https://a.pomf.cat/
+EOF
+RUN
+
+NAME=izzz*
+FILE=bins/mach0/fatmach0-3true
+CMDS=izzz*~appleca
+EXPECT=<<EOF
+f str._http:__www.apple.com_appleca_root.crl0_r 41 @ 0x00002562
+f str.https:__www.apple.com_appleca_0 32 @ 0x00002963
+f str.http:__www.apple.com_appleca_0 31 @ 0x00002e47
+f str._http:__www.apple.com_appleca_codesigning.crl0_r 48 @ 0x00002f3c
+EOF
+RUN
+
+NAME=izwide32bug
+FILE=bins/pe/rev.exe
+CMDS=<<EOF
+iz~utc
+s str.utc
+axt
+EOF
+EXPECT=<<EOF
+12  0x00004614 0x00405414 4   5    .rdata  ascii   utc{
+85  0x0000579e 0x0040659e 61  62   .rdata  ascii   ?sputc@?$basic_streambuf@DU?$char_traits@D@std@@@std@@QAEHD@Z
+EOF
+RUN
