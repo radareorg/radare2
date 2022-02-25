@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2012-2021 - pancake */
+/* sdb - MIT - Copyright 2012-2022 - pancake */
 
 #include <stdarg.h>
 #include "sdb.h"
@@ -307,7 +307,7 @@ SDB_API const char *sdb_json_format(SdbJsonString *s, const char *fmt, ...) {
 			case 'l':
 				JSONSTR_ALLOCATE (32);
 				arg_l = va_arg (ap, ut64);
-				snprintf (tmp, sizeof (tmp), "0x%" ULLFMT "x", arg_l);
+				snprintf (tmp, sizeof (tmp), "0x%" PRIx64, arg_l);
 				memcpy (s->buf + s->len, tmp, strlen (tmp));
 				s->len += strlen (tmp);
 				break;

@@ -159,7 +159,8 @@ static void walk_namespace(StrBuf *sb, char *root, int left, char *p, SdbNs *ns,
 
 SDB_API char *sdb_querys(Sdb *r, char *buf, size_t len, const char *_cmd) {
 	bool bufset = false;
-	int i, d, ok, w, alength, is_ref = 0, encode = 0;
+	bool is_ref = false;
+	int i, d, ok, w, alength, encode = 0;
 	const char *p, *q, *val = NULL;
 	char *eq, *tmp, *json, *next, *quot, *slash, *cmd = NULL;
 	char *newcmd = NULL, *original_cmd = NULL;
@@ -201,7 +202,7 @@ repeat:
 	p = cmd;
 	eq = NULL;
 	encode = 0;
-	is_ref = 0;
+	is_ref = false;
 	quot = NULL;
 	json = NULL;
 	if (*p == '#') {
@@ -233,11 +234,13 @@ repeat:
 			if (next) *next = 0;
 			val = sdb_const_get (s, eq + 1, 0);
 			if (!val) {
-				eprintf ("No value for '%s'\n", eq + 1);
+				// eprintf ("No value for '%s'\n", eq + 1);
 				goto fail;
 			}
-			if (next) *next = ';';
-			is_ref = 1; // protect readonly buffer from being processed
+			if (next) {
+				*next = ';';
+			}
+			is_ref = true; // protect readonly buffer from being processed
 		} else {
 			val = eq;
 		}
@@ -248,7 +251,6 @@ repeat:
 	if (!is_ref) {
 		next = (char *)strchr (val? val: cmd, ';');
 	}
-	//if (!val) val = eq;
 	if (!is_ref && val && *val == '"') {
 		val++;
 		// TODO: escape \" too
@@ -262,7 +264,7 @@ next_quote:
 			}
 			*quot++ = 0; // crash on read only mem!!
 		} else {
-			eprintf ("Missing quote\n");
+		//	eprintf ("Missing quote\n");
 			*eq++ = 0;
 			out = strbuf_free (out);
 			goto fail;
@@ -279,19 +281,18 @@ next_quote:
 		*slash = 0;
 		s = sdb_ns (s, cmd, eq? 1: 0);
 		if (!s) {
-			eprintf ("Cant find namespace %s\n", cmd);
+			// eprintf ("Cant find namespace %s\n", cmd);
 			out = strbuf_free (out);
 			goto fail;
 		}
 		cmd = slash + 1;
 		slash = strchr (cmd, '/');
 	}
-	if (*cmd=='?') {
+	if (*cmd == '?') {
 		const char *val = sdb_const_get (s, cmd+1, 0);
 		const char *type = sdb_type (val);
 		out_concat (type);
-	} else
-	if (*cmd == '*') {
+	} else if (*cmd == '*') {
 		if (!strcmp (cmd, "***")) {
 			char root[1024]; // limit namespace length?
 			SdbListIter *it;
@@ -304,7 +305,7 @@ next_quote:
 						sizeof (root) - name_len,
 						root + name_len, ns, encode);
 				} else {
-					eprintf ("TODO: Namespace too long\n");
+					// eprintf ("TODO: Namespace too long\n");
 				}
 			}
 			goto fail;
@@ -333,7 +334,7 @@ next_quote:
 	if (*cmd == '[') {
 		char *tp = strchr (cmd, ']');
 		if (!tp) {
-			eprintf ("Missing ']'.\n");
+			// eprintf ("Missing ']'.\n");
 			goto fail;
 		}
 		*tp++ = 0;
@@ -351,12 +352,11 @@ next_quote:
 	if (*cmd == '.') {
 		if (s->options & SDB_OPTION_FS) {
 			if (!sdb_query_file (s, cmd + 1)) {
-				eprintf ("sdb: cannot open '%s'\n", cmd+1);
+				// eprintf ("sdb: cannot open '%s'\n", cmd+1);
 				goto fail;
 			}
-		} else {
-			eprintf ("sdb: filesystem access disabled in config\n");
 		}
+		// else eprintf ("sdb: filesystem access disabled in config\n");
 	} else if (*cmd == '~') { // delete
 		if (cmd[1] == '~') { // grep
 			SdbKv *kv;
@@ -386,7 +386,7 @@ next_quote:
 		if (cmd[1]=='[') {
 			const char *eb = strchr (cmd, ']');
 			if (!eb) {
-				eprintf ("Missing ']'.\n");
+				// eprintf ("Missing ']'.\n");
 				goto fail;
 			}
 			int idx = sdb_atoi (cmd + 2);
@@ -465,7 +465,7 @@ next_quote:
 			}
 			// keep base
 			if (base == 16) {
-				w = snprintf (buf, len - 1, "0x%" ULLFMT "x", n);
+				w = snprintf (buf, len - 1, "0x%" PRIx64, n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
 						free (buf);
@@ -475,10 +475,10 @@ next_quote:
 						}
 					}
 					bufset = true;
-					snprintf (buf, 0xff, "0x%" ULLFMT "x", n);
+					snprintf (buf, 0xff, "0x%" PRIx64, n);
 				}
 			} else {
-				w = snprintf (buf, len-1, "%" ULLFMT "d", n);
+				w = snprintf (buf, len-1, "%" PRId64, n);
 				if (w < 0 || (size_t)w > len) {
 					if (bufset && len < 0xff) {
 						free (buf);
@@ -488,7 +488,7 @@ next_quote:
 						}
 					}
 					bufset = true;
-					snprintf (buf, 0xff, "%" ULLFMT "d", n);
+					snprintf (buf, 0xff, "%" PRId64, n);
 				}
 			}
 		}
@@ -633,7 +633,7 @@ next_quote:
 						if (cmd[1]=='-') {
 							sdb_array_remove (s, p, cmd+2, 0);
 						} else {
-							eprintf ("TODO: [b]foo -> get index of b key inside foo array\n");
+							// eprintf ("TODO: [b]foo -> get index of b key inside foo array\n");
 						//	sdb_array_dels (s, p, cmd+1, 0);
 						}
 					} else if (i<0) {
@@ -835,9 +835,10 @@ fail:
 	return res;
 }
 
-SDB_API int sdb_query(Sdb *s, const char *cmd) {
+// TODO: should return a string instead, the must_save can be moved outside
+SDB_API bool sdb_query(Sdb *s, const char *cmd) {
 	char buf[128];
-	int must_save = ((*cmd == '~') || strchr (cmd, '='));
+	bool must_save = ((*cmd == '~') || strchr (cmd, '='));
 	char *out = sdb_querys (s, buf, sizeof (buf) - 1, cmd);
 	if (out) {
 		if (*out) {

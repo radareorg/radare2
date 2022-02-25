@@ -33,7 +33,6 @@ static wchar_t *r_utf8_to_utf16_l (const char *cstring, int len) {
 static bool r_sys_mkdir(const char *path) {
 	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
 	bool ret = CreateDirectory (path_, NULL);
-
 	free (path_);
 	return ret;
 }
@@ -50,8 +49,7 @@ static bool r_sys_mkdir(const char *path) {
 #define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
 
-static inline int r_sys_mkdirp(char *dir) {
-	int ret = 1;
+static inline bool mkdirp(char *dir) {
 	const char slash = DIRSEP;
 	char *path = dir;
 	char *ptr = path;
@@ -67,14 +65,14 @@ static inline int r_sys_mkdirp(char *dir) {
 	while ((ptr = strchr (ptr, slash))) {
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-			// eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
+			// eprintf ("cannot make directory r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
 			*ptr = slash;
-			return 0;
+			return false;
 		}
 		*ptr = slash;
 		ptr++;
 	}
-	return ret;
+	return true;
 }
 
 SDB_API bool sdb_disk_create(Sdb* s) {
@@ -95,7 +93,7 @@ SDB_API bool sdb_disk_create(Sdb* s) {
 		return false;
 	}
 	memcpy (str, dir, nlen + 1);
-	r_sys_mkdirp (str);
+	mkdirp (str);
 	memcpy (str + nlen, ".tmp", 5);
 	if (s->fdump != -1) {
 		close (s->fdump);

@@ -432,7 +432,7 @@ SDB_API int sdb_open(Sdb *s, const char *file) {
 	s->last = 0LL;
 	if (s->fd != -1 && fstat (s->fd, &st) != -1) {
 		if ((S_IFREG & st.st_mode) != S_IFREG) {
-			eprintf ("Database must be a file\n");
+			// eprintf ("Database must be a file\n");
 			close (s->fd);
 			s->fd = -1;
 			return -1;
