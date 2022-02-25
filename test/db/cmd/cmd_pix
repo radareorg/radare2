@@ -1,3 +1,34 @@
+NAME=pia20
+FILE=bins/mach0/BatteryLife
+ARGS=-a arm -b 64
+CMDS=pia 20
+EXPECT=<<EOF
+stp x22, x21, [sp, -0x30]!
+stp x20, x19, [sp, 0x10]
+stp x29, x30, [sp, 0x20]
+add x29, sp, 0x20
+mov x19, x1
+EOF
+RUN
+
+NAME=pia20
+FILE=bins/mach0/BatteryLife
+ARGS=-a arm -b 16
+CMDS=pia 20
+EXPECT=<<EOF
+push {r4, r5, r6, r7, lr}
+add r7, sp, 0xc
+str r8, [sp, -0x4]!
+ldrh r4, [r0, 0x28]
+mov r5, r1
+mov r6, r0
+blx 
+vsubhn.i32 d4, q13, q0
+mov r8, r0
+invalid
+EOF
+RUN
+
 NAME=pix medium size instructions
 FILE=-
 ARGS=-a x86 -b 32
