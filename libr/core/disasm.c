@@ -6606,9 +6606,17 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		pj_a (pj);
 	}
 	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	r_cons_break_push (NULL, NULL);
-	for (i = 0; i < l; i+= minopsz) {
+	for (i = 0; i < l; i += minopsz) {
 		ds->at = addr + i;
+		if (opalign > 1) {
+			// skip unaligned addresses
+			if ((ds->at % opalign)) {
+				i += (ds->at % opalign) - minopsz;
+				continue;
+			}
+		}
 		ds->vat = r_core_pava (core, ds->at);
 		r_asm_set_pc (core->rasm, ds->vat);
 		if (r_cons_is_breaked ()) {
