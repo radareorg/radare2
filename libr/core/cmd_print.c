@@ -4993,8 +4993,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 		break;
 	case 'a': // "pia" is like "pda", but with "pi" output
 		if (l != 0) {
-			r_core_print_disasm_all (core, core->offset,
-					l, len, 'i');
+			r_core_print_disasm_all (core, core->offset, l, len, 'i');
 		}
 		break;
 	case 'j': // pij is the same as pdj

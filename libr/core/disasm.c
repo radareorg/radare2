@@ -6605,8 +6605,9 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		pj_a (pj);
 	}
+	int minopsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	r_cons_break_push (NULL, NULL);
-	for (i = 0; i < l; i++) {
+	for (i = 0; i < l; i+= minopsz) {
 		ds->at = addr + i;
 		ds->vat = r_core_pava (core, ds->at);
 		r_asm_set_pc (core->rasm, ds->vat);
