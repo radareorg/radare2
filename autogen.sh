@@ -30,3 +30,4 @@ fi
 
 [ -z "$EDITOR" ] && EDITOR=vim
 $EDITOR README.md
+$EDITOR dist/npm/package.json
