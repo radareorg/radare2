@@ -492,6 +492,8 @@ EXPECT=<<EOF
 0x8060b570      000080a0   sb zero, (a0)
 0x8060b574      00000000   nop
 (fcn) fcn.8060b578 20
+; arg int32_t arg1 @ a0
+; arg int32_t arg2 @ a1
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal fcn.8060b550
 0x8060b580      00000000   nop
@@ -627,6 +629,8 @@ EXPECT=<<EOF
 0x8060b570      000080a0   sb zero, (a0)
 0x8060b574      00000000   nop
 (fcn) fcn.8060b578 20
+; arg int32_t arg1 @ a0
+; arg int32_t arg2 @ a1
 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 0x8060b57c      542d180c   jal fcn.8060b550
 0x8060b580      00000000   nop
@@ -697,6 +701,8 @@ EXPECT=<<EOF
 \ 0x8060b570      000080a0   sb zero, (a0)
   0x8060b574      00000000   nop
 / (fcn) fcn.8060b578 20
+| ; arg int32_t arg1 @ a0
+| ; arg int32_t arg2 @ a1
 | 0x8060b578      e0ffbd27   addiu sp, sp, -0x20
 | 0x8060b57c      542d180c   jal fcn.8060b550
 | 0x8060b580      00000000   nop
