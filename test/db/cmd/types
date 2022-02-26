@@ -125,7 +125,7 @@ EOF
 EXPECT=<<EOF
 | ; var struct JNINativeInterface @ sp+0x12c
 | 0x00000f74      4b93           str r3, [JNINativeInterface]
-| 0x00000f76      039b           ldr r3, [NULL]                        ; JNINativeInterface.reserved0
+| 0x00000f76      039b           ldr r3, [var_134h]                    ; JNINativeInterface.reserved0
 | 0x00000f7e      d358           ldr r3, [r2, r3]                      ; JNINativeInterface.GetStringUTFChars
 | 0x00000f82      019a           ldr r2, [var_13ch]                    ; JNINativeInterface.reserved0
 | 0x0000100e      d358           ldr r3, [r2, r3]                      ; JNINativeInterface.GetStringLength

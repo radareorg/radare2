@@ -14,3 +14,20 @@ EXPECT=<<EOF
 size: 99
 EOF
 RUN
+
+
+NAME=ELF: IOLI - crackme7 - Local variables analysis
+FILE=bins/elf/ioli/crackme0x07
+ARGS=-A
+CMDS=afv @ fcn.080485b9
+EXPECT=<<EOF
+var char * format @ esp+0x4
+var int32_t var_sp_8h @ esp+0x8
+var char * var_dh @ ebp-0xd
+var signed int var_ch @ ebp-0xc
+var uint32_t var_8h @ ebp-0x8
+var int32_t var_bp_4h @ ebp-0x4
+arg char * s @ ebp+0x8
+arg int32_t arg_ch @ ebp+0xc
+EOF
+RUN
