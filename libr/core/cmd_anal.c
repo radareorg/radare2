@@ -10935,6 +10935,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_anal_all (core);
 			r_print_rowlog_done (core->print, oldstr);
 			r_core_task_yield (&core->tasks);
+
+			// Run afvn in all fcns
+			if (r_config_get_b (core->config, "anal.vars")) {
+				oldstr = r_print_rowlog (core->print, "Analyze all functions arguments/locals");
+				r_core_cmd0 (core, "afva@@f");
+				r_print_rowlog_done (core->print, oldstr);
+			}
+
 			// Run pending analysis immediately after analysis
 			// Usefull when running commands with ";" or via r2 -c,-i
 			dh_orig = core->dbg->h
