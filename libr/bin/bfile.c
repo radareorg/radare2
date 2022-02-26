@@ -184,10 +184,12 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 			}
 		}
 		// smol optimization
-		ut32 n1 = r_read_le32 (buf+needle-from);
-		if (!n1) {
-			needle += 4;
-			continue;
+		if (needle + 4 < to) {
+			ut32 n1 = r_read_le32 (buf + needle - from);
+			if (!n1) {
+				needle += 4;
+				continue;
+			}
 		}
 		rc = r_utf8_decode (buf + needle - from, to - needle, NULL);
 		if (!rc) {
