@@ -21,7 +21,7 @@
 #define IFDBG  if (DO_THE_DBG)
 #define IFINT  if (0)
 
-#define MAX_CPITEMS 8192
+#define MAX_CPITEMS 16
 
 R_API char *U(r_bin_java_unmangle_method)(const char *flags, const char *name, const char *params, const char *r_value);
 R_API int r_bin_java_is_fm_type_private(RBinJavaField *fm_type);
@@ -1734,7 +1734,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, 
 R_API char *r_bin_java_get_item_name_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj) {
 	char *res = NULL;
 	/*
-	Given a constant poool object Class, FieldRef, MethodRef, or InterfaceMethodRef
+	Given a constant pool object Class, FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
 	@param cp_list: RList of RBinJavaCPTypeObj *
 	@param obj object to look up the name for
@@ -1749,7 +1749,7 @@ R_API char *r_bin_java_get_item_name_from_bin_cp_list(RBinJavaObj *bin, RBinJava
 
 R_API char *r_bin_java_get_item_desc_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj) {
 	/*
-	Given a constant poool object Class, FieldRef, MethodRef, or InterfaceMethodRef
+	Given a constant pool object Class, FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
 	@param cp_list: RList of RBinJavaCPTypeObj *
 	@param obj object to look up the name for
@@ -1827,7 +1827,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_get_item_from_cp_item_list(RList *cp_list, u
 
 R_API char *r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
 	/*
-	Given a constant poool object Class, FieldRef, MethodRef, or InterfaceMethodRef
+	Given a constant pool object Class, FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
 	@param cp_list: RList of RBinJavaCPTypeObj *
 	@param obj object to look up the name for
@@ -1862,7 +1862,7 @@ R_API char *r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaC
 
 R_API char *r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx) {
 	/*
-	Given a constant poool object Class, FieldRef, MethodRef, or InterfaceMethodRef
+	Given a constant pool object Class, FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
 	@param cp_list: RList of RBinJavaCPTypeObj *
 	@param obj object to look up the name for
@@ -1879,7 +1879,7 @@ R_API char *r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx) {
 
 R_API char *r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj, int depth) {
 	/*
-	Given a constant poool object FieldRef, MethodRef, or InterfaceMethodRef
+	Given a constant pool object FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
 	@rvalue ut8* (user frees) or NULL
 	*/
@@ -1906,7 +1906,7 @@ R_API char *r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaC
 
 R_API char *r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx) {
 	/*
-	Given a constant poool object FieldRef, MethodRef, or InterfaceMethodRef
+	Given a constant pool object FieldRef, MethodRef, or InterfaceMethodRef
 	return the actual descriptor string.
 	@rvalue ut8* (user frees) or NULL
 	*/
