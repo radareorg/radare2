@@ -985,6 +985,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	}
 	Sdb *sdb = sdb_new0 ();
 	if (!sdb) {
+		free (defs);
 		return false;
 	}
 	size_t shsize = shdr->sh_size;
