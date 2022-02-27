@@ -4302,7 +4302,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->is_interactive = is_interactive;
 	bool asm_comments = r_config_get_i (core->config, "asm.comments");
 	r_config_set (core->config, "asm.comments",
-		r_str_bool (r_config_get_i (core->config, "graph.comments")));
+			r_str_bool (r_config_get_i (core->config, "graph.comments")));
 
 	/* we want letters as shortcuts for call/jmps */
 	core->is_asmqjmps_letter = true;
