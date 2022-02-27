@@ -4814,10 +4814,10 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 				anal_calls = r_config_get_i (core->config, "anal.calls");
 			}
 			ut64 addr = core->offset;
-			char *name = NULL;
+			const char *name = NULL;
 			// first undefine
 			if (input[0] && input[1] == ' ') {
-				name = strdup (r_str_trim_head_ro (input + 2));
+				name = r_str_trim_head_ro (input + 2);
 				char *uaddr = strchr (name, ' ');
 				if (uaddr) {
 					*uaddr++ = 0;
