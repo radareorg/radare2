@@ -542,6 +542,7 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 					eprintf ("ap: Unsupported asm.arch and asm.bits\n");
 				}
 			}
+			r_list_free (preds);
 		}
 		if (log) {
 			eprintf ("done\n");
