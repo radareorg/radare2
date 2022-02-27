@@ -2035,7 +2035,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	const char *opexstr;
 	RAnalHint *hint;
 	RAnalEsil *esil = NULL;
-	RAsmOp asmop;
+	RAsmOp asmop = {0};
 	RAnalOp op = {0};
 	ut64 addr;
 	PJ *pj = NULL;
