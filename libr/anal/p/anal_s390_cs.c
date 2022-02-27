@@ -66,6 +66,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
 		if (n < 1) {
 			op->type = R_ANAL_OP_TYPE_ILL;
+			cs_close (&handle);
 			return -1;
 		} else {
 			if (mask & R_ANAL_OP_MASK_OPEX) {
