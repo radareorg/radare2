@@ -1726,6 +1726,7 @@ static void fix_back_edge_dummy_nodes(RAGraph *g, RANode *from, RANode *to) {
 			g->layers[v->layer].n_nodes -= 1;
 
 			r_graph_del_node (g->graph, v->gnode);
+			ranode_free (v);
 		}
 	}
 }
