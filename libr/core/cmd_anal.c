@@ -776,6 +776,13 @@ static const char *help_msg_aht[] = {
 	NULL
 };
 
+static const char *help_msg_aot[] = {
+	"Usage:", "aot[l]", "list opcode types",
+	"aot", "", "show type of the current instruction",
+	"aotl", "", "list all possible opcode types (See /atl)",
+	NULL
+};
+
 static const char *help_msg_aom[] = {
 	"Usage:", "aom[ljd] [arg]", "List opcode mnemonics",
 	"aom", "", "show instruction mnemonic",
@@ -797,6 +804,7 @@ static const char *help_msg_ao[] = {
 	"aod", " [mnemonic]", "describe opcode for asm.arch",
 	"aoda", "", "show all mnemonic descriptions",
 	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
+	"aot", "[?]", "list all opcode types",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
 	NULL
@@ -7444,6 +7452,15 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		if (obs != core->blocksize) {
 			r_core_block_size (core, obs);
 		}
+		}
+		break;
+	case 't': // "aot"
+		if (input[1] == 'l') {
+			r_core_cmd0 (core, "/atl");
+		} else if (input[1] == '\0') {
+			r_core_cmd0 (core, "ao~^type[1]");
+		} else {
+			r_core_cmd_help (core, help_msg_aot);
 		}
 		break;
 	case 'm': // "aom"
