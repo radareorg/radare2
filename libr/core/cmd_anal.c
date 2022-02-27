@@ -1340,6 +1340,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 			}
 		}
 		r_core_seek (core, oaddr, 0);
+		r_list_free (list);
 		return;
 	}
 	if (type == '*') {
@@ -1349,9 +1350,11 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 			r_cons_printf ("f fcnvar.%s @ %s%s%d\n", var->name, bp,
 				var->delta>=0? "+":"", var->delta);
 		}
+		r_list_free (list);
 		return;
 	}
 	if (type != 'W' && type != 'R') {
+		r_list_free (list);
 		return;
 	}
 	int access_type = type == 'R' ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
@@ -1371,6 +1374,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 	if (pj) {
 		pj_end (pj);
 	}
+	r_list_free (list);
 }
 
 static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
@@ -1580,6 +1584,7 @@ static int var_cmd(RCore *core, const char *str) {
 		} else {
 			eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		}
+		free (ostr);
 		return true;
 	case 'R': // "afvR"
 	case 'W': // "afvW"
@@ -1602,9 +1607,11 @@ static int var_cmd(RCore *core, const char *str) {
 				r_cons_println (pj_string (pj));
 				pj_free (pj);
 			}
+			free (ostr);
 			return true;
 		} else {
 			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			free (ostr);
 			return false;
 		}
 	case 'a': // "afva"
