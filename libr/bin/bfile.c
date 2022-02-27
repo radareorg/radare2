@@ -766,10 +766,6 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		sdb_free (bf->sdb_addrinfo);
 		bf->sdb_addrinfo = NULL;
 	}
-	if (bf->sdb) {
-		sdb_free (bf->sdb);
-		bf->sdb = NULL;
-	}
 	free (bf->file);
 	r_bin_object_free (bf->o);
 	r_list_free (bf->xtr_data);
