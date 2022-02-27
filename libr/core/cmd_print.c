@@ -2986,6 +2986,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 						r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 					}
 					if (r_str_startswith (comment, "switch table")) {
+						free (switchcmp);
 						switchcmp = strdup (comment);
 					}
 					R_FREE (comment);
