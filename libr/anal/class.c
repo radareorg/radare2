@@ -97,8 +97,7 @@ R_API void r_anal_class_delete(RAnal *anal, const char *name) {
 			sdb_aforeach (attr_id, attr_id_array) {
 				key = key_attr_content (class_name_sanitized, attr_type, attr_id);
 				sdb_remove (anal->sdb_classes_attrs, key, 0);
-				key = key_attr_content_specific (class_name_sanitized, attr_type,
-						attr_id);
+				key = key_attr_content_specific (class_name_sanitized, attr_type, attr_id);
 				sdb_remove (anal->sdb_classes_attrs, key, 0);
 				sdb_aforeach_next (attr_id);
 			}
@@ -594,14 +593,12 @@ R_API RAnalClassErr r_anal_class_method_set(RAnal *anal, const char *class_name,
 
 R_API RAnalClassErr r_anal_class_method_rename(RAnal *anal, const char *class_name, const char *old_meth_name, const char *new_meth_name) {
 	RAnalClassErr err = r_anal_class_rename_attr (anal, class_name, R_ANAL_CLASS_ATTR_TYPE_METHOD, old_meth_name, new_meth_name);
-	char *old, *new;
-
 	if (err != R_ANAL_CLASS_ERR_SUCCESS) {
 		return err;
 	}
 
-	old = flagname_method (class_name, old_meth_name);
-	new = flagname_method (class_name, new_meth_name);
+	char *old = flagname_method (class_name, old_meth_name);
+	char *new = flagname_method (class_name, new_meth_name);
 
 	r_anal_class_rename_flag (anal, old, new);
 
@@ -618,15 +615,11 @@ static void r_anal_class_method_rename_class(RAnal *anal, const char *old_class_
 
 	char *cur;
 	sdb_aforeach (cur, array) {
-		char *old, *new;
-		old = flagname_method (old_class_name, cur);
-		new = flagname_method (new_class_name, cur);
-
+		char *old = flagname_method (old_class_name, cur);
+		char *new = flagname_method (new_class_name, cur);
 		r_anal_class_rename_flag (anal, old, new);
-
 		free (old);
 		free (new);
-
 		sdb_aforeach_next (cur);
 	}
 	free (array);
