@@ -3575,6 +3575,7 @@ static RBinElfSymbol* parse_gnu_debugdata(ELFOBJ *bin, size_t *ret_size) {
 					if (ret_size) {
 						*ret_size = i;
 					}
+					free (data);
 					return symbol;
 				}
 				free (data);
