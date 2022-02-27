@@ -11746,6 +11746,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 		r_list_free (list);
 		r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
 	}
+	r_anal_op_free (op);
 	char *s = r_strbuf_drain (sb);
 	if (is_aCer) {
 		char *u = r_base64_encode_dyn (s, -1);
