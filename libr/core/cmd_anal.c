@@ -776,6 +776,16 @@ static const char *help_msg_aht[] = {
 	NULL
 };
 
+static const char *help_msg_aom[] = {
+	"Usage:", "aom[ljd] [arg]", "List opcode mnemonics",
+	"aom", "", "show instruction mnemonic",
+	"aom.", "", "show instruction mnemonic in current address",
+	"aoml", "", "list all mnemonics",
+	"aomj", "", "list in json format (TODO: add instruction description too?)",
+	"aomd", "", "verbose mnemonic listing with instruction description",
+	NULL
+};
+
 static const char *help_msg_ao[] = {
 	"Usage:", "ao[e?] [len]", "Analyze Opcodes",
 	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
@@ -783,7 +793,7 @@ static const char *help_msg_ao[] = {
 	"aoeq", " N", "display only the esil expression of N opcodes",
 	"aoef", " expr", "filter esil expression of opcode by given output",
 	"aos", " N", "display size of N opcodes",
-	"aom", " [id]", "list current or all mnemonics for current arch",
+	"aom", "[?] [id]", "list current or all mnemonics for current arch",
 	"aod", " [mnemonic]", "describe opcode for asm.arch",
 	"aoda", "", "show all mnemonic descriptions",
 	"aoc", " [cycles]", "analyze which op could be executed in [cycles]",
@@ -7438,8 +7448,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 	case 'm': // "aom"
 		if (input[1] == '?') {
-			r_cons_printf ("Usage: aom[ljd] [arg] .. list mnemonics for asm.arch\n");
-			r_cons_printf (". = current, l = list, d = describe, j=json)\n");
+			r_core_cmd_help (core, help_msg_aom);
 		} else if (input[1] == 'd') {
 			const int id = (input[2]==' ')
 				?(int)r_num_math (core->num, input + 2): -1;
