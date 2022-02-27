@@ -525,7 +525,7 @@ static int dalvik_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = size + op->payload;
 	}
 	free (strasm);
-	R_FREE (flag_str);
+	free ((char *)flag_str);
 	return size;
 }
 
