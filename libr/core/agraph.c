@@ -649,7 +649,7 @@ static void remove_cycles(RAGraph *g) {
 	const RGraphEdge *e;
 	const RListIter *it;
 
-	g->back_edges = r_list_new ();
+	g->back_edges = r_list_newf (free);
 	cyclic_vis.back_edge = (RGraphEdgeCallback) view_cyclic_edge;
 	cyclic_vis.data = g;
 	r_graph_dfs (g->graph, &cyclic_vis);
