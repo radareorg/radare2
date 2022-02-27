@@ -2838,6 +2838,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				} else {
 					r_cons_printf ("    %s\n", dst);
 				}
+				free (dst);
 			}
 			if (pj) {
 				pj_end (pj); // close list of calls
@@ -2846,6 +2847,8 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				r_cons_newline();
 			}
 		}
+
+		r_list_free (refs);
 	}
 
 	if (mode == 'j') {
