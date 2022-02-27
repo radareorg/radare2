@@ -542,6 +542,7 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 					eprintf ("ap: Unsupported asm.arch and asm.bits\n");
 				}
 			}
+			r_list_free (preds);
 		}
 		if (log) {
 			eprintf ("done\n");
@@ -1242,10 +1243,11 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		}
 		free (opst);
 		aop.mnemonic = NULL;
+		r_strbuf_fini (&aop.esil);
 		nb_instr++;
 	}
 ret:
-	free (aop.mnemonic);
+	r_anal_op_fini (&aop);
 	free (grep_str);
 	if (regex && rx) {
 		r_list_free (hitlist);
@@ -1394,24 +1396,25 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
-					r_cons_printf ("  0x%08"PFMT64x " %18s%s  %s%s ; %s\n",
+					r_cons_printf ("  0x%08" PFMT64x " %18s%s  %s%s ; %s\n",
 						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET, comment);
 				} else {
-					r_cons_printf ("  0x%08"PFMT64x " %18s%s  %s%s\n",
+					r_cons_printf ("  0x%08" PFMT64x " %18s%s  %s%s\n",
 						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET);
 				}
 				free (buf_asm);
 			} else {
 				if (comment) {
-					r_cons_printf ("  0x%08"PFMT64x " %18s  %s ; %s\n",
+					r_cons_printf ("  0x%08" PFMT64x " %18s  %s ; %s\n",
 						hit->addr, asm_op_hex, r_asm_op_get_asm (&asmop), comment);
 				} else {
-					r_cons_printf ("  0x%08"PFMT64x " %18s  %s\n",
+					r_cons_printf ("  0x%08" PFMT64x " %18s  %s\n",
 						hit->addr, asm_op_hex, r_asm_op_get_asm (&asmop));
 				}
 			}
 			free (asm_op_hex);
 			free (buf);
+			r_anal_op_fini (&analop);
 		}
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;

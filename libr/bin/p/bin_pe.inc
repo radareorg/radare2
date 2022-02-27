@@ -565,7 +565,7 @@ static RBinInfo* info(RBinFile *bf) {
 	if (is_vb6 (bf)) {
 		ret->lang = "vb";
 	}
-	const char *typestr = PE_(r_bin_pe_is_dll) (pe) ? "DLL (Dynamic Link Library)": "EXEC (Executable file)";
+	const char *typestr = PE_(r_bin_pe_is_dll) (pe)? "DLL (Dynamic Link Library)": "EXEC (Executable file)";
 	ret->type = strdup (typestr);
 
 	ut32 claimed_checksum = PE_(bin_pe_get_claimed_checksum) (pe);
@@ -582,8 +582,8 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->claimed_checksum = r_str_newf ("0x%08x", claimed_checksum);
 	ret->actual_checksum = r_str_newf ("0x%08x", actual_checksum);
 	ret->pe_overlay = pe_overlay > 0;
-	ret->signature = pe ? pe->is_signed : false;
-	ret->file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
+	ret->signature = pe? pe->is_signed: false;
+	ret->file_hashes = r_list_newf ((RListFree)r_bin_file_hash_free);
 	Sdb *db = sdb_ns (bf->sdb, "pe", true);
 	sdb_bool_set (db, "canary", has_canary (bf), 0);
 	sdb_bool_set (db, "highva", haschr (bf, IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA), 0);

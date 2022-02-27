@@ -2838,6 +2838,7 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				} else {
 					r_cons_printf ("    %s\n", dst);
 				}
+				free (dst);
 			}
 			if (pj) {
 				pj_end (pj); // close list of calls
@@ -2846,6 +2847,8 @@ static int fcn_print_makestyle(RCore *core, RList *fcns, char mode) {
 				r_cons_newline();
 			}
 		}
+
+		r_list_free (refs);
 	}
 
 	if (mode == 'j') {
@@ -5065,6 +5068,9 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 				r_list_free (ctx->path);
 				r_list_free (ctx->switch_path);
 				r_list_free (ctx->bbl);
+				ctx->path = NULL;
+				ctx->switch_path = NULL;
+				ctx->bbl = NULL;
 				return false;
 			}
 			if (!bbit->data) {
@@ -5235,7 +5241,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 	r_reg_arena_push (core->anal->reg);
 
-	IterCtx ictx = { start, end, fcn, NULL};
+	IterCtx ictx = { start, end, fcn, NULL };
 	size_t i = addr - start;
 	size_t i_old = 0;
 	do {
@@ -5360,6 +5366,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				r_flag_set_next (core->flags, r_strf ("syscall.%d", snv), cur, 1);
 			}
 			r_flag_space_set (core->flags, NULL);
+			r_syscall_item_free (si);
 		}
 		const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 		i += op.size - 1;
@@ -5537,6 +5544,9 @@ repeat:
 			break;
 		}
 	} while (get_next_i (&ictx, &i));
+	r_list_free (ictx.bbl);
+	r_list_free (ictx.path);
+	r_list_free (ictx.switch_path);
 	free (buf);
 	ESIL->cb.hook_mem_read = NULL;
 	ESIL->cb.hook_mem_write = NULL;

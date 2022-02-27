@@ -4198,10 +4198,11 @@ jmp $$ + 4 + ( [delta] * 2 )
 	if (found) {
 		insn->detail->arm.cc = itcond;
 		insn->detail->arm.update_flags = 0;
+		free (op->mnemonic);
 		op->mnemonic = r_str_newf ("%s%s%s%s",
 			r_anal_optype_to_string (op->type),
 			cc_name (itcond),
-			insn->op_str[0]?" ":"",
+			insn->op_str[0]? " ": "",
 			insn->op_str);
 		op->cond = itcond;
 	}
@@ -4461,7 +4462,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		if (mask & R_ANAL_OP_MASK_DISASM) {
 			op->mnemonic = r_str_newf ("%s%s%s",
 				insn->mnemonic,
-				insn->op_str[0]?" ":"",
+				insn->op_str[0]? " ": "",
 				insn->op_str);
 		}
 		//bool thumb = cs_insn_group (handle, insn, ARM_GRP_THUMB);

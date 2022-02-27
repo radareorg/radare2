@@ -2986,6 +2986,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 						r_cons_printf ("%s%s\n", use_color? pal->comment: "", comment);
 					}
 					if (r_str_startswith (comment, "switch table")) {
+						free (switchcmp);
 						switchcmp = strdup (comment);
 					}
 					R_FREE (comment);
@@ -5087,13 +5088,14 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 					} else {
 						char *s = r_core_cmd_strf (core, "pdi %i @ 0x%08"PFMT64x, 1, refi->at);
 						r_cons_printf ("%s", s);
+						free (s);
 					}
 				}
 
 				// restore saved configuration
 				r_config_hold_restore (hc);
 				r_config_hold_free (hc);
-				R_FREE (refs);
+				r_list_free (refs);
 			}
 			// print json object
 			if (pj) {

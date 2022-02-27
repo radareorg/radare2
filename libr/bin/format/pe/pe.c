@@ -500,6 +500,7 @@ static int bin_pe_parse_imports(RBinPEObj* pe,
 						const char *dirPrefix = r_sys_prefix (NULL);
 						char *lower_symdllname = strdup (symdllname);
 						r_str_case (lower_symdllname, false);
+						free (filename);
 						filename = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
 							dirPrefix, lower_symdllname);
 						free (lower_symdllname);

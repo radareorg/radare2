@@ -405,12 +405,18 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 			*ch = 0;
 			char *sp = strchr (row, ' ');
 			if (sp) {
+				bool key_found = false;
 				char *k = strdup (sp + 1);
 				r_str_ansi_filter (k, NULL, NULL, -1);
 				if (strcmp (cmd_prefix, k)) {
 					if (!r_list_find (pending, k, (RListComparator)strcmp)) {
 						r_list_append (pending, k);
+						key_found = true;
 					}
+				}
+
+				if (!key_found) {
+					free (k);
 				}
 			}
 		}
@@ -4428,6 +4434,7 @@ next_arroba:
 		}
 		*ptr = '@';
 		rc = ret;
+		free (tmpbits);
 		goto beach;
 	}
 fuji:

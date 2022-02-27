@@ -1051,13 +1051,12 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 				free (ks);
 				free (v);
 			} else {
-				char *name = db_name ? db_name: var->name;
-				char *type = db_type? db_type: strdup (var->type);
+				char *name = db_name? db_name: var->name;
+				char *type = strdup (db_type? db_type: var->type);
 				// eprintf ("VARTYPE1 %s %s %c", var->type,db_type, 10);
 				if (var->name && !strstr (var->name, "arg_")) {
 					o = NULL;
 				}
-				type = strdup (var->type);
 #if 0
 				if (name != var->name) {
 					o = NULL;
@@ -1073,7 +1072,9 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 					if (!strstr (var->name, ",arg_")) {
 						free (var->name);
 						var->name = s;
-					} else free (s);
+					} else {
+						free (s);
+					}
 					// sdb_set (core->anal->sdb_types, k, v, 0);
 					free (v2);
 				} else {
@@ -1082,6 +1083,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 					sdb_set (core->anal->sdb_types, k, v, 0);
 				}
 				free (v);
+				free (type);
 				// #endif
 			}
 			free (db_name);
@@ -1338,6 +1340,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 			}
 		}
 		r_core_seek (core, oaddr, 0);
+		r_list_free (list);
 		return;
 	}
 	if (type == '*') {
@@ -1347,9 +1350,11 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 			r_cons_printf ("f fcnvar.%s @ %s%s%d\n", var->name, bp,
 				var->delta>=0? "+":"", var->delta);
 		}
+		r_list_free (list);
 		return;
 	}
 	if (type != 'W' && type != 'R') {
+		r_list_free (list);
 		return;
 	}
 	int access_type = type == 'R' ? R_ANAL_VAR_ACCESS_TYPE_READ : R_ANAL_VAR_ACCESS_TYPE_WRITE;
@@ -1369,6 +1374,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 	if (pj) {
 		pj_end (pj);
 	}
+	r_list_free (list);
 }
 
 static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
@@ -1578,6 +1584,7 @@ static int var_cmd(RCore *core, const char *str) {
 		} else {
 			eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		}
+		free (ostr);
 		return true;
 	case 'R': // "afvR"
 	case 'W': // "afvW"
@@ -1600,9 +1607,11 @@ static int var_cmd(RCore *core, const char *str) {
 				r_cons_println (pj_string (pj));
 				pj_free (pj);
 			}
+			free (ostr);
 			return true;
 		} else {
 			eprintf ("afv: Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+			free (ostr);
 			return false;
 		}
 	case 'a': // "afva"
@@ -1680,7 +1689,6 @@ static int var_cmd(RCore *core, const char *str) {
 				return false;
 			}
 			r_anal_var_display (core->anal, v1);
-			free (ostr);
 		} else {
 			RListIter *iter;
 			RAnalVar *p;
@@ -1691,11 +1699,12 @@ static int var_cmd(RCore *core, const char *str) {
 					free (a);
 					a = strdup ("\n");
 				}
-				r_cons_printf ("%s %s = %s", p->isarg ? "arg": "var", p->name, a);
+				r_cons_printf ("%s %s = %s", p->isarg? "arg": "var", p->name, a);
 				free (a);
 			}
 			r_list_free (list);
 		}
+		free (ostr);
 		return true;
 	case 'f': // "afvf"
 		__cmd_afvf (core, ostr);
@@ -2026,7 +2035,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	const char *opexstr;
 	RAnalHint *hint;
 	RAnalEsil *esil = NULL;
-	RAsmOp asmop;
+	RAsmOp asmop = {0};
 	RAnalOp op = {0};
 	ut64 addr;
 	PJ *pj = NULL;
@@ -2435,6 +2444,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		r_anal_hint_free (hint);
 		r_anal_op_fini (&op);
 	}
+	r_asm_op_fini (&asmop);
 	r_anal_op_fini (&op);
 	if (fmt == 's') {
 		r_cons_printf ("%d\n", totalsize);
@@ -4811,10 +4821,10 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 				anal_calls = r_config_get_i (core->config, "anal.calls");
 			}
 			ut64 addr = core->offset;
-			char *name = NULL;
+			const char *name = NULL;
 			// first undefine
 			if (input[0] && input[1] == ' ') {
-				name = strdup (r_str_trim_head_ro (input + 2));
+				name = r_str_trim_head_ro (input + 2);
 				char *uaddr = strchr (name, ' ');
 				if (uaddr) {
 					*uaddr++ = 0;
@@ -5476,6 +5486,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
 					r_reg_setv (core->dbg->reg, "PC", op.addr + op.size);
 				}
+				r_anal_op_fini(&op);
 				return 1;
 			}
 		}
@@ -8259,6 +8270,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	} else {
 		buf_asm = r_str_new (str);
 	}
+	r_strbuf_fini (&asmop.buf_asm);
 	return buf_asm;
 }
 
@@ -11666,6 +11678,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 			} else {
 				eprintf ("Cannot find any function type..lets just use some standards?\n");
 			}
+			free (key);
 		} else {
 			if (is_aCer) {
 				show_reg_args (core, -1, sb);
@@ -11731,8 +11744,10 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 				r_strbuf_appendf (sb, ")");
 			}
 		}
+		r_list_free (list);
 		r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
 	}
+	r_anal_op_free (op);
 	char *s = r_strbuf_drain (sb);
 	if (is_aCer) {
 		char *u = r_base64_encode_dyn (s, -1);

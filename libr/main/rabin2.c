@@ -707,7 +707,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			if (is_active (R_BIN_REQ_CLASSES)) {
 				rad = R_MODE_CLASSDUMP;
 			} else {
-			  	set_action (R_BIN_REQ_CLASSES);
+				set_action (R_BIN_REQ_CLASSES);
 			}
 			break;
 		case 'f': arch_name = strdup (opt.arg); break;

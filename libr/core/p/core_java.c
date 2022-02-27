@@ -1534,6 +1534,7 @@ static int r_cmd_java_print_all_definitions(RAnal *anal) {
 	r_list_foreach (obj_list, iter, obj) {
 		r_cmd_java_print_class_definitions (obj);
 	}
+	r_list_free (obj_list);
 	return true;
 }
 
@@ -1578,6 +1579,7 @@ static int r_cmd_java_print_class_definitions(RBinJavaObj *obj) {
 			ut64 *addr = r_list_get_n (the_moffsets, idx);
 			str = r_list_get_n (the_methods, idx);
 			r_cons_printf ("  %s; // @0x%04" PFMT64x "\n", str, *addr);
+			free (str);
 			idx++;
 		}
 	}

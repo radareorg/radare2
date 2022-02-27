@@ -195,6 +195,7 @@ static void readAnnotation(RBinDexObj *dex, bool readVisibility) {
 			r_buf_seek (dex->b, at, R_BUF_SET);
 			parseValue (dex);
 		}
+		free ((char *)typeString);
 	} else {
 		bprintf ("      TypeSize: %d %d (?)\n", (int)typeIndex, (int)typeSize);
 	}
@@ -476,6 +477,8 @@ RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		bprintf ("            fieldsCount %d\n", fieldsCount);
 		bprintf ("            annotatedMethodCount  %d\n", annotatedMethodsCount);
 		bprintf ("            annotatedParametersCount  %d\n", annotatedParametersCount);
+
+		free ((char *)cn);
 
 		if (fieldsCount == UT32_MAX || annotatedMethodsCount == UT32_MAX || annotatedParametersCount == UT32_MAX || classAnnotationsOffset == UT32_MAX) {
 			continue;

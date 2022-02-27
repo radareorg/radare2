@@ -378,6 +378,7 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 	}
 	if (root) {
 		set_u_free (*visited);
+		free (visited);
 	}
 	return (st32)die->tag;
 }

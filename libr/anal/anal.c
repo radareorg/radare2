@@ -378,6 +378,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 		}
 		idx += oplen;
 		at += oplen;
+		R_FREE (op->mnemonic);
 	}
 
 	r_anal_op_free (op);

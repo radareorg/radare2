@@ -520,7 +520,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 	mach0_ut r;
 	ut32 offset, left, i;
 	char *name = NULL;
-  	char *rtype = NULL;
+	char *rtype = NULL;
 	int len;
 	bool bigendian;
 	ut8 sml[sizeof (struct MACH0_(SMethodList))] = {0};
@@ -687,7 +687,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 				}
 				rtype[left] = 0;
 			}
-      			method->rtype = strdup (rtype);
+			method->rtype = strdup (rtype);
 			R_FREE (rtype);
 		}
 

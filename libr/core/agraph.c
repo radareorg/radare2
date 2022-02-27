@@ -649,7 +649,7 @@ static void remove_cycles(RAGraph *g) {
 	const RGraphEdge *e;
 	const RListIter *it;
 
-	g->back_edges = r_list_new ();
+	g->back_edges = r_list_newf (free);
 	cyclic_vis.back_edge = (RGraphEdgeCallback) view_cyclic_edge;
 	cyclic_vis.data = g;
 	r_graph_dfs (g->graph, &cyclic_vis);
@@ -1624,6 +1624,12 @@ static void place_original(RAGraph *g) {
 	sdb_free (D);
 }
 
+static void aedge_free(AEdge *e) {
+	r_list_free (e->x);
+	r_list_free (e->y);
+	free (e);
+}
+
 static void ranode_free(RANode *n) {
 	free (n->title);
 	free (n->body);
@@ -1720,6 +1726,7 @@ static void fix_back_edge_dummy_nodes(RAGraph *g, RANode *from, RANode *to) {
 			g->layers[v->layer].n_nodes -= 1;
 
 			r_graph_del_node (g->graph, v->gnode);
+			ranode_free (v);
 		}
 	}
 }
@@ -1881,7 +1888,7 @@ static void backedge_info(RAGraph *g) {
 					r_list_append ((g->layout == 0 ? e->x : e->y), (void *) (size_t) (min - 1));
 				}
 
-				r_list_append(g->edges, e);
+				r_list_append (g->edges, e);
 			}
 		}
 	}
@@ -1944,7 +1951,7 @@ static void set_layout(RAGraph *g) {
 	int i, j, k;
 
 	r_list_free (g->edges);
-	g->edges = r_list_new ();
+	g->edges = r_list_newf ((RListFree)aedge_free);
 
 	remove_cycles (g);
 	assign_layers (g);
@@ -3770,7 +3777,8 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 		free (estr);
 		free (b);
 		char *k = r_str_newf ("agraph.nodes.%s.body", res->title);
-		sdb_set_owned (g->db, k, s, 0);
+		sdb_set (g->db, k, s, 0);
+		free (s);
 		free (k);
 	}
 	return res;
@@ -4302,7 +4310,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->is_interactive = is_interactive;
 	bool asm_comments = r_config_get_i (core->config, "asm.comments");
 	r_config_set (core->config, "asm.comments",
-		r_str_bool (r_config_get_i (core->config, "graph.comments")));
+			r_str_bool (r_config_get_i (core->config, "graph.comments")));
 
 	/* we want letters as shortcuts for call/jmps */
 	core->is_asmqjmps_letter = true;

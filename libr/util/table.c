@@ -1162,7 +1162,7 @@ R_API bool r_table_query(RTable *t, const char *q) {
 		} else if (!strcmp (operation, "cols")) {
 			char *op = strdup (r_str_get (operand));
 			RList *list = r_str_split_list (op, "/", 0);
-			r_list_prepend (list, strdup (columnName));
+			r_list_prepend (list, (char *)columnName);
 			r_table_columns (t, list); // select/reorder columns
 			r_list_free (list);
 			free (op);
