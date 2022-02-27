@@ -5363,6 +5363,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				r_flag_set_next (core->flags, r_strf ("syscall.%d", snv), cur, 1);
 			}
 			r_flag_space_set (core->flags, NULL);
+			r_syscall_item_free (si);
 		}
 		const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
 		i += op.size - 1;
