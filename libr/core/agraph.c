@@ -1624,6 +1624,12 @@ static void place_original(RAGraph *g) {
 	sdb_free (D);
 }
 
+static void aedge_free(AEdge *e) {
+	r_list_free (e->x);
+	r_list_free (e->y);
+	free (e);
+}
+
 static void ranode_free(RANode *n) {
 	free (n->title);
 	free (n->body);
@@ -1881,7 +1887,7 @@ static void backedge_info(RAGraph *g) {
 					r_list_append ((g->layout == 0 ? e->x : e->y), (void *) (size_t) (min - 1));
 				}
 
-				r_list_append(g->edges, e);
+				r_list_append (g->edges, e);
 			}
 		}
 	}
@@ -1944,7 +1950,7 @@ static void set_layout(RAGraph *g) {
 	int i, j, k;
 
 	r_list_free (g->edges);
-	g->edges = r_list_new ();
+	g->edges = r_list_newf ((RListFree)aedge_free);
 
 	remove_cycles (g);
 	assign_layers (g);
