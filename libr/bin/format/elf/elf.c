@@ -3944,6 +3944,7 @@ void Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	R_FREE (bin->g_relocs);
 	ht_up_free (bin->rel_cache);
 	bin->rel_cache = NULL;
+	sdb_free (bin->kv);
 	free (bin);
 }
 
