@@ -11742,6 +11742,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 				r_strbuf_appendf (sb, ")");
 			}
 		}
+		r_list_free (list);
 		r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
 	}
 	char *s = r_strbuf_drain (sb);
