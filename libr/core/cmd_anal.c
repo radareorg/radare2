@@ -11677,6 +11677,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 			} else {
 				eprintf ("Cannot find any function type..lets just use some standards?\n");
 			}
+			free (key);
 		} else {
 			if (is_aCer) {
 				show_reg_args (core, -1, sb);
