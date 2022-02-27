@@ -5486,6 +5486,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
 					r_reg_setv (core->dbg->reg, "PC", op.addr + op.size);
 				}
+				r_anal_op_fini(&op);
 				return 1;
 			}
 		}
