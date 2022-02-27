@@ -1689,7 +1689,6 @@ static int var_cmd(RCore *core, const char *str) {
 				return false;
 			}
 			r_anal_var_display (core->anal, v1);
-			free (ostr);
 		} else {
 			RListIter *iter;
 			RAnalVar *p;
@@ -1700,11 +1699,12 @@ static int var_cmd(RCore *core, const char *str) {
 					free (a);
 					a = strdup ("\n");
 				}
-				r_cons_printf ("%s %s = %s", p->isarg ? "arg": "var", p->name, a);
+				r_cons_printf ("%s %s = %s", p->isarg? "arg": "var", p->name, a);
 				free (a);
 			}
 			r_list_free (list);
 		}
+		free (ostr);
 		return true;
 	case 'f': // "afvf"
 		__cmd_afvf (core, ostr);
