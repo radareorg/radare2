@@ -1,5 +1,7 @@
 lz4_dep = dependency('liblz4', required: false)
-if not lz4_dep.found() or not get_option('use_sys_lz4')
+if lz4_dep.found() and get_option('use_sys_lz4')
+  message('Using system-provided lz4 library')
+else
   message('Using bundled lz4')
   lz4_files = [
     'lz4.c',
@@ -16,6 +18,4 @@ if not lz4_dep.found() or not get_option('use_sys_lz4')
     link_with: libr2lz4,
     include_directories: lz4_inc
   )
-else
-  message('Using system-provided lz4 library')
 endif
