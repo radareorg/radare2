@@ -3777,7 +3777,8 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 		free (estr);
 		free (b);
 		char *k = r_str_newf ("agraph.nodes.%s.body", res->title);
-		sdb_set_owned (g->db, k, s, 0);
+		sdb_set (g->db, k, s, 0);
+		free (s);
 		free (k);
 	}
 	return res;
