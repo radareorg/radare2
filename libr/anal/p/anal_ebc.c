@@ -49,9 +49,6 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	if (!op) {
 		return 2;
 	}
-	if (mask & R_ANAL_OP_MASK_DISASM) {
-		op->mnemonic = strdup ("invalid");
-	}
 
 	op->addr = addr;
 
@@ -61,7 +58,9 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 		return -1;
 	}
 	if (mask & R_ANAL_OP_MASK_DISASM) {
-		char *inststr = (cmd.operands[0]) ? r_str_newf ("%s %s", cmd.instr, cmd.operands): strdup (cmd.instr);
+		char *inststr = cmd.operands[0]
+			? r_str_newf ("%s %s", cmd.instr, cmd.operands)
+			: strdup (cmd.instr);
 		op->mnemonic = inststr;
 	}
 
