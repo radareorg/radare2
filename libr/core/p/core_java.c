@@ -11,7 +11,6 @@
 #include "../../../shlr/java/ops.h"
 #include "../../../shlr/java/class.h"
 #include "../../../shlr/java/code.h"
-#include "../../../shlr/java/dsojson.h"
 
 #define DO_THE_DBG 0
 #undef IFDBG
@@ -1539,10 +1538,9 @@ static int r_cmd_java_print_all_definitions(RAnal *anal) {
 }
 
 static int r_cmd_java_print_json_definitions(RBinJavaObj *obj) {
-	DsoJsonObj *json_obj = r_bin_java_get_bin_obj_json (obj);
-	char *str = dso_json_obj_to_str (json_obj);
-	dso_json_obj_del (json_obj); // XXX memleak
-	r_cons_println (str);
+	char *s = r_bin_java_get_bin_obj_json (obj);
+	r_cons_println (s);
+	free (s);
 	return true;
 }
 

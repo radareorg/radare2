@@ -27,7 +27,7 @@ endif
 
 CFLAGS:=-I../../libr/include -I../../libr/include/sdb $(CFLAGS)
 LDFLAGS+=-L../../libr/util
-OBJS=code.o class.o ops.o dsojson.o
+OBJS=code.o class.o ops.o
 
 include ../../shlr/sdb.mk
 
