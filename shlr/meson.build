@@ -232,7 +232,6 @@ bochs_dep = declare_dependency(
 java_files = [
   'java/class.c',
   'java/code.c',
-  'java/dsojson.c',
   'java/ops.c',
   #'java/main.c',
 ]
