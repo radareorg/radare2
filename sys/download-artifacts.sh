@@ -2,12 +2,11 @@
 
 set -e
 
-WORKFLOWS="linux apple android windows freebsd ci"
+WORKFLOWS="build ci"
 DESTDIR="dist/artifacts"
 LIMIT=100
 
-gh version
-if [ $? != 0 ]; then
+if ! command -v gh &> /dev/null; then
     echo "GitHub CLI (gh command) could not be found"
     exit 1
 fi
