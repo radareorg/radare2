@@ -389,11 +389,12 @@ jobs:
           env
           freebsd-version
           echo DATE: ; date
+          pip install r2pipe
           sys/install.sh
           gmake install DESTDIR=/tmp/prefix
           (cd /tmp/prefix ; tar czvf /tmp/radare2-freebsd.tgz *)
           r2r test/db/cmd
-          rm -rf *
+          rm -rf * .git*
           cp /tmp/radare2-freebsd.tgz .
           echo DATE: ; date
     - uses: actions/upload-artifact@v2
