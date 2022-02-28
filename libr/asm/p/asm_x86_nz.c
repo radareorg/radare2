@@ -5058,7 +5058,7 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 		op += 4;
 	}
 	char *args = strchr (op, ' ');
-	out->mnemonic = args ? r_str_ndup (op, args - op) : strdup (op);
+	out->mnemonic = args? r_str_ndup (op, args - op): strdup (op);
 	out->operands[0].type = out->operands[1].type = 0;
 	out->operands[0].extended = out->operands[1].extended = false;
 	out->operands[0].reg = out->operands[0].regs[0] = out->operands[0].regs[1] = X86R_UNDEFINED;
@@ -5148,6 +5148,7 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 					if (instr.has_bnd) {
 						retval++;
 					}
+					free (instr.mnemonic);
 					return l + retval;
 				}
 				break;
