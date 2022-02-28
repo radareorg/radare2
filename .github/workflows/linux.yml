@@ -19,7 +19,6 @@ jobs:
       with:
         name: linux-wasi
         path: radare2-*-wasi.zip
-        retention-days: 30
   linux-static:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-20.04
@@ -42,12 +41,6 @@ jobs:
         name: linux-static
         path: r2-static.tar.xz
         retention-days: 30
-    - name: Static r2 build with meson
-      run: |
-        sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
-        sudo pip3 install meson ninja
-        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
-        ninja -C build && ninja -C build install
   linux-acr-deb-64:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-18.04
@@ -61,7 +54,6 @@ jobs:
       with:
         name: linux-acr-deb-64
         path: dist/debian/*/*.deb
-        retention-days: 30
   linux-acr-deb-32:
     runs-on: ubuntu-18.04
     steps:
@@ -79,7 +71,6 @@ jobs:
       with:
         name: linux-acr-deb-32
         path: dist/debian/*/*.deb
-        retention-days: 30
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:
 #    runs-on: ubuntu:18.04
@@ -99,7 +90,6 @@ jobs:
 #      with:
 #        name: linux-meson-rpm
 #        path: RPMS/*/*.rpm *.rpm dist/rpm/*.rpm
-#        retention-days: 30
 #  centos-meson-rpm:
 #    runs-on: ubuntu:18.04
 #    container: centos:8
@@ -129,4 +119,3 @@ jobs:
 #      with:
 #        name: centos-meson-rpm
 #        path: rpmbuild/RPMS/*/*.rpm
-#        retention-days: 30

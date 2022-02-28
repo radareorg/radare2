@@ -2,7 +2,7 @@
 
 set -e
 
-WORKFLOWS="linux apple android windows freebsd"
+WORKFLOWS="linux apple android windows freebsd ci"
 DESTDIR="dist/artifacts"
 LIMIT=100
 

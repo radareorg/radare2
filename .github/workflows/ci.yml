@@ -110,6 +110,21 @@ jobs:
       run: |
         export LD_LIBRARY_PATH=/usr/local/lib
         make tests
+  linux-static-meson:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Installing the musl runtime
+      run: |
+        sudo apt install musl-tools
+    - name: Static r2 build with meson
+      run: |
+        sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
+        sudo pip3 install meson ninja
+        CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
+        ninja -C build && ninja -C build install
   macos-test:
     runs-on: macos-latest
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
@@ -222,3 +237,70 @@ jobs:
         export R2R_SKIP_ARCHOS=1
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests
+
+  w64-make:
+    runs-on: windows-2019
+    steps:
+    - name: Win configure Pagefile
+      uses: al-cheb/configure-pagefile-action@v1.2
+      with:
+          minimum-size: 16GB
+          maximum-size: 16GB
+          disk-root: "C:"
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+#      with:
+#        python-version: '3.7'
+    - name: Preparing nmake
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+        pip install ninja r2pipe wget
+    - name: Build with meson + ninja
+      shell: cmd
+      run: |
+        REM preconfigure
+        call configure
+        call make
+    - name: Test executable
+      # continue-on-error: true
+      shell: cmd
+      run: |
+        cd prefix\bin
+        radare2 -v
+  w32-mingw:
+    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    name: w32-mingw
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Compiling
+      run: |
+        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
+        sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
+        sys/mingw32.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: w32-mingw
+        path: radare2*.zip
+  w64-mingw:
+    name: w64-mingw
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Compiling
+      run: |
+        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
+        sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
+        sys/mingw64.sh
+    - uses: actions/upload-artifact@v2
+      with:
+        name: w64-mingw
+        path: radare2*.zip
