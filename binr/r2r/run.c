@@ -1103,6 +1103,8 @@ R_API R2RAsmTestOutput *r2r_run_asm_test(R2RRunConfig *config, R2RAsmTest *test)
 		out->bytes_size = (size_t)byteslen;
 rip:
 		r_pvector_pop (&args);
+		r_th_lock_leave (proc->lock);
+		r_th_lock_free (proc->lock);
 		r2r_subprocess_free (proc);
 	}
 	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
@@ -1128,6 +1130,8 @@ ship:
 		free (hex);
 		r_pvector_pop (&args);
 		r_pvector_pop (&args);
+		r_th_lock_leave (proc->lock);
+		r_th_lock_free (proc->lock);
 		r2r_subprocess_free (proc);
 	}
 
