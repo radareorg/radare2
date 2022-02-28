@@ -19,9 +19,6 @@ jobs:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
-          apt-add-repository -u https://cli.github.com/packages
-          apt update
           apt install gh
           ./sys/download-artifacts.sh ${{ github.sha }}
       - name: Create GitHub release
