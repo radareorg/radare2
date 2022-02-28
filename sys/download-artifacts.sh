@@ -6,7 +6,8 @@ WORKFLOWS="linux apple android windows freebsd"
 DESTDIR="dist/artifacts"
 LIMIT=100
 
-if ! command -v gh &> /dev/null; then
+gh version
+if [ $? != 0 ]; then
     echo "GitHub CLI (gh command) could not be found"
     exit 1
 fi

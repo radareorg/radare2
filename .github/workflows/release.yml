@@ -18,7 +18,9 @@ jobs:
         env:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./sys/download-artifacts.sh ${{ github.sha }}
+        run: |
+          sudo apt install gh
+          ./sys/download-artifacts.sh ${{ github.sha }}
       - name: Create GitHub release
         id: create_release
         uses: actions/create-release@v1
