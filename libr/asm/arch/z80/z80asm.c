@@ -785,9 +785,9 @@ static int assemble(const char *str, unsigned char *_obuf) {
 	obuflen = 0;
 	obuf = _obuf;
 	int cmd, cont = 1;
-	// XXX: must free
 	z80buffer = strdup (str);
 	if (!cont) {
+		free (z80buffer);
 		return obuflen;
 	}
 	// if (havelist)
@@ -804,6 +804,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 	++stack[sp].line;
 	ptr = delspc (ptr);
 	if (!*ptr) {
+		free (z80buffer);
 		return obuflen;
 	}
 	if (!define_macro) {
@@ -813,6 +814,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 	}
 	ptr = delspc (ptr);
 	if (!*ptr) {
+		free (z80buffer);
 		return obuflen;
 	}
 	comma = 0;
@@ -1512,9 +1514,11 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			break;
 		default:
 			// eprintf ("command or comment expected (was %s)\n", ptr);
+			free (z80buffer);
 			return 0;
 	}
 
+	free (z80buffer);
 	return obuflen;
 }
 
