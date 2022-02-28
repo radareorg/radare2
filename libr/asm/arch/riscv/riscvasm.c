@@ -187,27 +187,25 @@ R_IPI int riscv_assemble(const char *str, ut64 pc, ut8 *out) {
 				}
 				switch (ops[i].type) {
 				case 'I': {
-					bool invalid = false;
 					int op = 0, rs = 0, rt = 0, imm = 0;
 					switch (ops[i].args) {
 					case 2: // lui x0, 33
 						rt = getreg (w1);
 						imm = getreg (w2);
+						free (s);
 						return riscv_ri (out, ops[i].op, rt, imm);
 						break;
 					case 3: // addi x1, x2, 3
 						rs = getreg (w2);
 						rt = getreg (w1);
 						imm = getreg (w3);
+						free (s);
 						return riscv_rri (out, ops[i].op, rs, rt, imm);
 						break;
 					default:
-						invalid = true;
-						break;
-					}
-					if (invalid) {
-						free (s);
+						// invalid
 						op = ops[i].op;
+						free (s);
 						return riscv_ri (out, op, rs, imm);
 					}
 					break;
