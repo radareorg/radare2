@@ -208,8 +208,8 @@ EOF
 EXPECT=<<EOF
 afvR
    var_10h  0x8,0xc
-   var_20h
-    var_8h
+   var_20h  0x14
+    var_8h  0xc
 afvW
    var_10h  0x4
    var_20h  0x0
