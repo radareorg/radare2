@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_bin.h>
 #include <r_debug.h>
@@ -2183,10 +2183,9 @@ static int cmd_open(void *data, const char *input) {
 			if ((fdx == -1) || (fd == -1) || (fdx == fd)) {
 				free (inp);
 				break;
-			} else {
-				free (inp);
 			}
 			r_io_desc_exchange (core->io, fd, fdx);
+			free (inp);
 			r_core_block_read (core);
 		} else {
 			eprintf ("Usage: ox [fd] [fdx] - exchange two file descriptors\n");
