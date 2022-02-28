@@ -7,77 +7,6 @@ on:
   pull_request:
 
 jobs:
-  w32-mingw:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
-    name: w32-mingw
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Compiling
-      run: |
-        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
-        sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
-        sys/mingw32.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: w32-mingw
-        path: radare2*.zip
-        retention-days: 30
-  w64-mingw:
-    name: w64-mingw
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Compiling
-      run: |
-        export PATH=${HOME}/.local/bin:${HOME}/Library/Python/3.9/bin:${PATH}
-        sudo apt-get --assume-yes install python3-wheel gperf python3-setuptools cabextract gperf gcc-mingw-w64
-        sys/mingw64.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: w64-mingw
-        path: radare2*.zip
-        retention-days: 30
-  w64-make:
-    runs-on: windows-2019
-    steps:
-    - name: Win configure Pagefile
-      uses: al-cheb/configure-pagefile-action@v1.2
-      with:
-          minimum-size: 16GB
-          maximum-size: 16GB
-          disk-root: "C:"
-    - name: Checkout
-      uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-#      with:
-#        python-version: '3.7'
-    - name: Preparing nmake
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
-        pip install ninja r2pipe wget
-    - name: Extract r2 version
-      run: echo "##[set-output name=branch;]$( cd sys; python version.py )"
-      id: r2v
-    - name: Build with meson + ninja
-      shell: cmd
-      run: |
-        REM preconfigure
-        call configure
-        call make
-    - name: Test executable
-      # continue-on-error: true
-      shell: cmd
-      run: |
-        cd prefix\bin
-        radare2 -v
   w32-meson:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: windows-2019
@@ -125,7 +54,6 @@ jobs:
         path: |
           radare2-${{ steps.r2v.outputs.branch }}-w32.zip
 #          radare2-win-installer\Output\radare2.exe
-        retention-days: 30
   w64-meson:
     runs-on: windows-2019
     steps:
@@ -176,4 +104,3 @@ jobs:
         path: |
           radare2-${{ steps.r2v.outputs.branch }}-w64.zip
 #          radare2-win-installer\Output\radare2.exe
-        retention-days: 30

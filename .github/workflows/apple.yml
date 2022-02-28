@@ -24,7 +24,6 @@ jobs:
       with:
         path: dist/macos/*.pkg
         name: macos-acr
-        retention-days: 30
 #   macos-acr-m1:
 #     runs-on: macos-latest
 #     steps:
@@ -37,7 +36,6 @@ jobs:
 #       with:
 #         path: dist/macos/*.pkg
 #         name: macos-acr-m1
-#         retention-days: 30
 
   # Mobile
   ios-cydia32:
@@ -55,7 +53,6 @@ jobs:
       with:
         name: ios-cydia32
         path: ./dist/cydia/radare2/radare2-arm32_*_iphoneos-arm.deb
-        retention-days: 30
   ios-cydia:
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: macos-latest
@@ -78,4 +75,3 @@ jobs:
         path: |
           ./r2ios-sdk.zip
           ./dist/cydia/radare2*/*.deb
-        retention-days: 30
