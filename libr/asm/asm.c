@@ -1085,6 +1085,9 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 						continue;
 					}
 					ret = r_asm_assemble (a, &op, ptr_start);
+					// XXX This fixes a leak, unsure
+					// why op_fini below doesn't catch it
+					r_strbuf_fini (&op.buf_asm);
 				}
 			}
 			if (stage == STAGES - 1) {
@@ -1114,10 +1117,12 @@ R_API RAsmCode *r_asm_massemble(RAsm *a, const char *assembly) {
 	}
 	free (lbuf);
 	free (tokens);
+	r_asm_op_fini (&op);
 	return acode;
 fail:
 	free (lbuf);
 	free (tokens);
+	r_asm_op_fini (&op);
 	return r_asm_code_free (acode);
 }
 
