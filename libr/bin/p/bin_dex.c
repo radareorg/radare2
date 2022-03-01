@@ -1231,7 +1231,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		if (dexdump) {
 			char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
-			cb_printf ("    #%d              : (in %s;)\n", i, cls->name);
+			cb_printf ("    #%" PFMT64d "              : (in %s;)\n", i, cls->name);
 			cb_printf ("      name          : '%s'\n", method_name);
 			cb_printf ("      type          : '%s'\n", signature);
 			cb_printf ("      access        : 0x%04x (%s)\n", (ut32)MA, accessStr);
