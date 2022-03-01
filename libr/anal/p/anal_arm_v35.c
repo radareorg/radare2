@@ -2038,12 +2038,23 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM64_STXRB:
 	case ARM64_STXRH:
 	case ARM64_STXR:
+	case ARM64_STLXR:
+	case ARM64_STLXRH:
+	case ARM64_STLXRB:
 	{
 		int size = REGSIZE64 (1);
-		if (insn->operation == ARM64_STXRB) {
-		    size = 1;
-		} else if (insn->operation == ARM64_STXRH) {
-		    size = 2;
+		switch (insn->operation) {
+			case ARM64_STLXRB:
+			case ARM64_STXRB:
+				size = 1;
+				break;
+			case ARM64_STLXRH:
+			case ARM64_STXRH:
+				size = 2;
+				break;
+			default:
+				size = 8;
+				break;
 		}
 		r_strbuf_setf (&op->esil, "0,%s,=,%s,%s,%"PFMT64u",+,=[%d]",
 			REG64 (0), REG64 (1), MEMBASE64 (1), MEMDISP64 (1), size);
