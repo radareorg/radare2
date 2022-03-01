@@ -24,7 +24,7 @@ rm -Rf "${DESTDIR}"
 
 for WORKFLOW in $WORKFLOWS; do
   echo "Looking for ${COMMIT} in ${WORKFLOW} last ${LIMIT} executions..."
-  RUN_ID=`gh run list --workflow "${WORKFLOW}" --limit "${LIMIT}" --json "databaseId,status,headSha" --jq '.[] | select(.status=="completed" and .headSha=="'"${COMMIT}"'") | .databaseId'`
+  RUN_ID=`gh run list --workflow "${WORKFLOW}" --limit "${LIMIT}" --json "databaseId,headSha" --jq '.[] | select(.headSha=="'"${COMMIT}"'") | .databaseId'`
   if [ -n "${RUN_ID}" ]; then
     echo "Found run id ${RUN_ID} for ${WORKFLOW} workflow."
     echo "Downloading all artifacts..."
