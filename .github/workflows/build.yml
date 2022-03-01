@@ -405,7 +405,7 @@ jobs:
 
   # Release creation
   check_release:
-    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     outputs:
       is_release: ${{ steps.release.outputs.is }}
       tag_name: ${{ steps.release.outputs.tag }}
@@ -426,6 +426,7 @@ jobs:
       - linux-acr-deb-32
       - linux-wasi
       - freebsd
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
