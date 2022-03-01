@@ -211,6 +211,32 @@ jobs:
         cd ..
         find "/tmp/r 2"
         LD_LIBRARY_PATH="/tmp/r 2/lib/x86_64-linux-gnu/" "/tmp/r 2/bin/r2" -v
+  linux-tinyasan-fuzz:
+    runs-on: ubuntu-20.04
+    continue-on-error: true
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Building Radare2
+      run: |
+        pip install r2pipe
+        export SANITIZE=address
+        sys/sanitize.sh
+    - name: Installing tools for the testsuite
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools cabextract gperf
+    - name: Running tests
+      run: |
+        export ASAN_OPTIONS=detect_leaks=0
+        export R2R_SKIP_ARCHOS=1
+        export LD_LIBRARY_PATH=/usr/local/lib
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        r2r test/db/cmd
+    - name: Run fuzz tests
+      run: |
+        export ASAN_OPTIONS=detect_leaks=0
+        export R2R_SKIP_ARCHOS=1
+        export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
+        make -C test fuzz-tests
   linux-asan-fuzz:
     runs-on: ubuntu-20.04
     continue-on-error: true
