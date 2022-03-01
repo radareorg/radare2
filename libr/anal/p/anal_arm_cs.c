@@ -1953,11 +1953,11 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		switch (insn->id) {
 			case ARM64_INS_STLXRB:
 			case ARM64_INS_STXRB:
-		    	size = 1;
+				size = 1;
 				break;
 			case ARM64_INS_STLXRH:
 			case ARM64_INS_STXRH:
-		    	size = 2;
+				size = 2;
 				break;
 			default:
 				size = 8;
