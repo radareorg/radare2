@@ -2,7 +2,7 @@
 
 set -e
 
-WORKFLOWS="build ci"
+WORKFLOWS="build.yml ci.yml"
 DESTDIR="dist/artifacts"
 LIMIT=100
 
