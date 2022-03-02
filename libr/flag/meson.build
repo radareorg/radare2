@@ -19,6 +19,20 @@ r_flag = library('r_flag', r_flag_sources,
 r_flag_dep = declare_dependency(link_with: r_flag,
                                 include_directories: [platform_inc])
 
+r_flag_static = static_library('r_flag_static', r_flag_sources,
+  include_directories: [platform_inc],
+  c_args: library_cflags,
+  dependencies: [
+    r_util_static_dep
+  ],
+  install: true,
+  implicit_include_directories: false,
+  install_rpath: rpath_lib,
+)
+
+r_flag_static_dep = declare_dependency(link_with: r_flag_static,
+                                include_directories: [platform_inc])
+
 pkgconfig_mod.generate(r_flag,
   subdirs: 'libr',
   version: r2_version,

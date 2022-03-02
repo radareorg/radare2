@@ -169,6 +169,28 @@ r_bin = library('r_bin', r_bin_sources,
 r_bin_dep = declare_dependency(link_with: r_bin,
                                include_directories: r_bin_inc)
 
+r_bin_static = static_library('r_bin_static', r_bin_sources,
+  include_directories: r_bin_inc,
+  c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
+  dependencies: [
+    r_util_static_dep,
+    r_cons_static_dep,
+    r_io_static_dep,
+    r_hash_static_dep,
+    r_magic_static_dep,
+    r_socket_static_dep,
+    r_syscall_static_dep,
+    java_dep,
+    lz4_dep,
+    yxml_dep
+  ],
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_bin_static_dep = declare_dependency(link_with: r_bin_static,
+  include_directories: r_bin_inc)
+
 pkgconfig_mod.generate(r_bin,
   subdirs: 'libr',
   version: r2_version,

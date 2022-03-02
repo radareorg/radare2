@@ -105,6 +105,34 @@ r_core_deps = [
   lrt
 ]
 
+r_core_static_deps = [
+  r_util_static_dep,
+  r_reg_static_dep,
+  r_syscall_static_dep,
+  r_search_static_dep,
+  r_cons_static_dep,
+  r_anal_static_dep,
+  r_socket_static_dep,
+  r_io_static_dep,
+  r_fs_static_dep,
+  r_lang_static_dep,
+  r_magic_static_dep,
+  r_hash_static_dep,
+  r_flag_static_dep,
+  r_parse_static_dep,
+  r_egg_static_dep,
+  r_debug_static_dep,
+  r_crypto_static_dep,
+  r_config_static_dep,
+  r_bin_static_dep,
+  r_asm_static_dep,
+  r_bp_static_dep,
+  platform_deps,
+  gdb_dep,
+  java_dep,
+  lrt
+]
+
 if use_libuv
   r_core_deps += libuv_dep
 endif
@@ -120,6 +148,17 @@ r_core = library('r_core', r_core_sources,
 )
 
 r_core_dep = declare_dependency(link_with: r_core, include_directories: r_core_inc)
+
+r_core_static = static_library('r_core_static', r_core_sources,
+  include_directories: r_core_inc,
+  c_args: library_cflags,
+  dependencies: r_core_static_deps,
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_core_static_dep = declare_dependency(link_with: r_core_static,
+  include_directories: r_core_inc)
 
 pkgconfig_mod.generate(
   r_core,

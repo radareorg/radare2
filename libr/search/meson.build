@@ -21,7 +21,18 @@ r_search = library('r_search', r_search_sources,
 )
 
 r_search_dep = declare_dependency(link_with: r_search,
-                                  include_directories: [platform_inc])
+  include_directories: [platform_inc])
+
+r_search_static = static_library('r_search_static', r_search_sources,
+  include_directories: [platform_inc],
+  c_args: library_cflags,
+  dependencies: [r_util_static_dep],
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_search_static_dep = declare_dependency(link_with: r_search_static,
+  include_directories: [platform_inc])
 
 pkgconfig_mod.generate(r_search,
   subdirs: 'libr',

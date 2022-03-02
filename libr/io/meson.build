@@ -67,6 +67,17 @@ r_io_deps = [
   pth
 ]
 
+r_io_static_deps = [
+  r_util_static_dep,
+  r_socket_static_dep,
+  winkd_static_dep,
+  bochs_dep,
+  gdb_dep,
+  qnx_dep,
+  zip_dep,
+  ar_dep,
+  pth
+]
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
   r_io_sources += [
     'p/io_r2k_linux.c',
@@ -92,7 +103,19 @@ r_io = library('r_io', r_io_sources,
 )
 
 r_io_dep = declare_dependency(link_with: r_io,
-                              include_directories: platform_inc)
+  include_directories: platform_inc)
+
+r_io_static = static_library('r_io_static', r_io_sources,
+  include_directories: platform_inc,
+  link_with: [r_util_static, r_socket_static],
+  dependencies: r_io_static_deps,
+  c_args: library_cflags,
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_io_static_dep = declare_dependency(link_with: r_io_static,
+  include_directories: platform_inc)
 
 pkgconfig_mod.generate(r_io,
   subdirs: 'libr',

@@ -34,7 +34,19 @@ r_crypto = library('r_crypto', r_crypto_sources,
 )
 
 r_crypto_dep = declare_dependency(link_with: r_crypto,
-                                  include_directories: [platform_inc])
+  include_directories: [platform_inc])
+
+r_crypto_static = static_library('r_crypto_static', r_crypto_sources,
+  include_directories: [platform_inc],
+  dependencies: [r_util_static_dep],
+  link_with: [r_util_static],
+  c_args: library_cflags,
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_crypto_static_dep = declare_dependency(link_with: r_crypto_static,
+  include_directories: [platform_inc])
 
 pkgconfig_mod.generate(r_crypto,
   subdirs: 'libr',

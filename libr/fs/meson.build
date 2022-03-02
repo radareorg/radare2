@@ -53,7 +53,18 @@ r_fs = library('r_fs', r_fs_sources,
 )
 
 r_fs_dep = declare_dependency(link_with: r_fs,
-                              include_directories: platform_inc)
+  include_directories: platform_inc)
+
+r_fs_static = static_library('r_fs_static', r_fs_sources,
+  include_directories: platform_inc,
+  c_args: r_fs_cflags,
+  dependencies: r_fs_deps,
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_fs_static_dep = declare_dependency(link_with: r_fs_static,
+  include_directories: platform_inc)
 
 pkgconfig_mod.generate(r_fs,
   subdirs: 'libr',

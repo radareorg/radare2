@@ -30,7 +30,23 @@ r_egg = library('r_egg', r_egg_sources,
 )
 
 r_egg_dep = declare_dependency(link_with: r_egg,
-                               include_directories: [platform_inc])
+  include_directories: [platform_inc])
+
+r_egg_static = static_library('r_egg_static', r_egg_sources,
+  include_directories: [platform_inc],
+  c_args: library_cflags,
+  dependencies: [
+    r_util_static_dep,
+    r_asm_static_dep,
+    r_syscall_static_dep,
+    mpc_dep
+  ],
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_egg_static_dep = declare_dependency(link_with: r_egg_static,
+  include_directories: [platform_inc])
 
 pkgconfig_mod.generate(r_egg,
   subdirs: 'libr',
