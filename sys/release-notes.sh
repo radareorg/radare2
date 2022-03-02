@@ -32,7 +32,13 @@ fi
 [ -n "$2" ] && VERS="$2"
 
 git log ${PREV}..${VERS} > .l
-cat .l | grep ^Author | cut -d : -f 2- | sed -e 's,radare,pancake,' | sort -u > .A
+# When HEAD contains a tag do this magic
+if [ ! -s .l ]; then
+  VERS=$PREV
+  PREV=`git tag --sort=committerdate | grep -v conti | tail -n 2 | head -n1`
+  git log ${PREV}..${VERS} > .l
+fi
+grep ^Author .l | cut -d : -f 2- | sed -e 's,radare,pancake,' | sort -u > .A
 
 echo "Release Notes"
 echo "-------------"
@@ -40,7 +46,7 @@ echo
 echo "Version: ${VERS}"
 echo "Previous: ${PREV}"
 printf "Commits: "
-cat .l |grep ^commit |wc -l |xargs echo
+grep ^commit .l | wc -l | xargs echo
 echo "Contributors: `wc -l .A | awk '{print $1}'`"
 echo
 echo "Highlights"
