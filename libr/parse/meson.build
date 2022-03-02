@@ -61,6 +61,25 @@ r_parse = library('r_parse', r_parse_sources,
 r_parse_dep = declare_dependency(link_with: r_parse,
                                  include_directories: platform_inc)
 
+r_parse_static = static_library('r_parse_static', r_parse_sources,
+  include_directories: platform_inc,
+  c_args: library_cflags,
+  dependencies: [
+    r_util_static_dep,
+    r_flag_static_dep,
+    r_syscall_static_dep,
+    r_reg_static_dep,
+    r_cons_static_dep,
+    tcc_dep
+  ],
+  install: true,
+  implicit_include_directories: false,
+  install_rpath: rpath_lib,
+)
+
+r_parse_static_dep = declare_dependency(link_with: r_parse_static,
+                                 include_directories: platform_inc)
+
 pkgconfig_mod.generate(r_parse,
   subdirs: 'libr',
   version: r2_version,

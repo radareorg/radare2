@@ -25,6 +25,17 @@ r_bp = library('r_bp', r_bp_sources,
 r_bp_dep = declare_dependency(link_with: r_bp,
                               include_directories: [platform_inc])
 
+r_bp_static = static_library('r_bp_static', r_bp_sources,
+  include_directories: [platform_inc],
+  c_args: library_cflags,
+  dependencies: [r_util_static_dep],
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_bp_static_dep = declare_dependency(link_with: r_bp_static,
+  include_directories: [platform_inc])
+
 pkgconfig_mod.generate(r_bp,
   subdirs: 'libr',
   version: r2_version,

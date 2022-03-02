@@ -26,6 +26,17 @@ r_lang = library('r_lang', r_lang_sources,
 r_lang_dep = declare_dependency(link_with: r_lang,
                                 include_directories: [platform_inc])
 
+r_lang_static = static_library('r_lang_static', r_lang_sources,
+  include_directories: [platform_inc, spp_inc],
+  c_args: library_cflags,
+  dependencies: [r_util_static_dep, r_cons_static_dep],
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_lang_static_dep = declare_dependency(link_with: r_lang_static,
+  include_directories: [platform_inc])
+
 pkgconfig_mod.generate(r_lang,
   subdirs: 'libr',
   version: r2_version,

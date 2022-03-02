@@ -32,6 +32,19 @@ r_magic_dep = declare_dependency(
   include_directories: platform_inc
 )
 
+r_magic_static = static_library('r_magic_static', r_magic_sources,
+  include_directories: platform_inc,
+  c_args: library_cflags,
+  dependencies: r_magic_deps,
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_magic_static_dep = declare_dependency(
+  link_with: r_magic_static,
+  include_directories: platform_inc
+)
+
 pkgconfig_mod.generate(r_magic,
   subdirs: 'libr',
   version: r2_version,

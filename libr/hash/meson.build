@@ -36,7 +36,18 @@ r_hash = library('r_hash', r_hash_sources,
 )
 
 r_hash_dep = declare_dependency(link_with: r_hash,
-                                include_directories: [platform_inc])
+  include_directories: [platform_inc])
+
+r_hash_static = static_library('r_hash_static', r_hash_sources,
+  include_directories: [platform_inc],
+  c_args: library_cflags,
+  dependencies: [ mth, r_util_static_dep ],
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_hash_static_dep = declare_dependency(link_with: r_hash_static,
+  include_directories: [platform_inc])
 
 pkgconfig_mod.generate(r_hash,
   subdirs: 'libr',

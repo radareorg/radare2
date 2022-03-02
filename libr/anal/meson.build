@@ -203,7 +203,31 @@ r_anal = library('r_anal', r_anal_sources,
 )
 
 r_anal_dep = declare_dependency(link_with: r_anal,
-                                include_directories: r_anal_inc)
+  include_directories: r_anal_inc)
+
+r_anal_static = static_library('r_anal_static', r_anal_sources,
+  include_directories: r_anal_inc,
+  c_args: library_cflags,
+  dependencies: [
+    r_util_static_dep,
+    r_reg_static_dep,
+    r_asm_static_dep,
+    r_crypto_static_dep,
+    r_search_static_dep,
+    r_cons_static_dep,
+    r_parse_static_dep,
+    r_syscall_static_dep,
+    r_flag_static_dep,
+    r_hash_static_dep,
+    java_dep,
+    capstone_dep
+  ],
+  install: true,
+  implicit_include_directories: false,
+)
+
+r_anal_static_dep = declare_dependency(link_with: r_anal_static,
+  include_directories: r_anal_inc)
 
 pkgconfig_mod.generate(r_anal,
   subdirs: 'libr',

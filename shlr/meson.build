@@ -361,6 +361,16 @@ winkd_dep = declare_dependency(
   include_directories: winkd_inc
 )
 
+libr2winkd_static = static_library('r2winkd_static', winkd_files,
+  dependencies: [r_hash_static_dep, r_crypto_static_dep, r_socket_static_dep, r_util_static_dep],
+  include_directories: winkd_inc,
+  implicit_include_directories: false
+)
+
+winkd_static_dep = declare_dependency(
+  link_with: libr2winkd_static,
+  include_directories: winkd_inc
+)
 
 # handle ar dependency
 ar_files = [
