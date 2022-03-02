@@ -1130,7 +1130,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	RBinDexObj *dex = bf->o->bin_obj;
 	bool bin_dbginfo = bf->rbin->want_dbginfo;
-	int i;
 	ut64 omi = 0;
 	bool catchAll;
 	ut16 regsz = 0, ins_size = 0, outs_size = 0, tries_size = 0;
@@ -1145,6 +1144,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	ut64 encoded_method_addr;
 	bool err = false;
 	ut64 MI, MA, MC;
+	ut64 i;
 	for (i = 0; i < DM; i++) {
 		err = false;
 		skip = 0;
@@ -1174,10 +1174,11 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			}
 		}
 		const char *method_name = dex_method_name (dex, MI);
-		char *signature = dex_method_signature (dex, MI);
 		if (!method_name) {
-			method_name = strdup ("unknown");
+			// method_name = strdup ("unknown");
+			continue;
 		}
+		char *signature = dex_method_signature (dex, MI);
 		char *flag_name = r_str_newf ("%s.method.%s%s", cls->name, method_name, signature);
 		if (!flag_name || !*flag_name) {
 			R_FREE (flag_name);
@@ -1230,7 +1231,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		if (dexdump) {
 			char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
-			cb_printf ("    #%d              : (in %s;)\n", i, cls->name);
+			cb_printf ("    #%" PFMT64d "              : (in %s;)\n", i, cls->name);
 			cb_printf ("      name          : '%s'\n", method_name);
 			cb_printf ("      type          : '%s'\n", signature);
 			cb_printf ("      access        : 0x%04x (%s)\n", (ut32)MA, accessStr);
