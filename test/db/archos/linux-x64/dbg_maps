@@ -68,7 +68,7 @@ dm~?
 db sym.imp.puts
 dc~?
 dmi libc~?
-dmi libc~libc|wc -l
+dmi libc~libc~?
 EOF
 EXPECT=<<EOF
 7
@@ -88,9 +88,9 @@ dm~?
 db sym.imp.puts
 dc~?
 dmS libc~?
-dmS libc~libc|wc -l
+dmS libc~libc~?
 dmS* libc~?
-dmS* libc~libc|wc -l
+dmS* libc~libc~?
 EOF
 EXPECT=<<EOF
 7
@@ -113,13 +113,13 @@ dm~?
 db sym.imp.puts
 dc~?
 dmS libc~?
-dmS libc~libc|wc -l
+dmS libc~libc~?
 dmS* libc~?
-dmS* libc~libc|wc -l
+dmS* libc~libc~?
 dmS~?
 dmS*~?
-dmS~libc|wc -l
-dmS*~libc|wc -l
+dmS~libc~?
+dmS*~libc~?
 EOF
 EXPECT=<<EOF
 7
@@ -145,11 +145,11 @@ dmm~?
 db sym.imp.puts
 dc~?
 dmm~?
-S~.text|wc -l
-dmS hello~.text|wc -l
-dmS~x86-helloworld-gcc..text|wc -l
-dmS~libc-2.19.so..text|wc -l
-dmS~ld-2.19.so..text|wc -l
+S~.text~?
+dmS hello~.text~?
+dmS~x86-helloworld-gcc..text~?
+dmS~libc-2.19.so..text~?
+dmS~ld-2.19.so..text~?
 EOF
 EXPECT=<<EOF
 2
@@ -176,7 +176,7 @@ dmm~?
 s map._lib_i386_linux_gnu_ld_2.19.so._r_x
 S.~?
 .dmS*~?
-S.~libc-2.19.so..text|wc -l
+S.~libc-2.19.so..text~?
 EOF
 EXPECT=<<EOF
 2
