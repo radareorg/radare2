@@ -90,7 +90,7 @@ typedef struct {
 	bool hasMidflag;
 	bool hasMidbb;
 	int atabs;
-	int atabsonce;
+	bool atabsonce;
 	int atabsoff;
 	int decode;
 	bool pseudo;
@@ -663,7 +663,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
 	ds->capitalize = r_config_get_i (core->config, "asm.capitalize");
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
-	ds->atabsonce = r_config_get_i (core->config, "asm.tabs.once");
+	ds->atabsonce = r_config_get_b (core->config, "asm.tabs.once");
 	ds->atabsoff = r_config_get_i (core->config, "asm.tabs.off");
 	ds->midflags = r_config_get_i (core->config, "asm.flags.middle");
 	ds->midbb = r_config_get_i (core->config, "asm.bbmiddle");
@@ -1516,9 +1516,12 @@ static void ds_show_xrefs(RDisasmState *ds) {
 }
 
 static void ds_atabs_option(RDisasmState *ds) {
-	int n, i = 0, comma = 0, word = 0;
+	r_return_if_fail (ds);
+	int n, i = 0, word = 0;
+	bool comma = false;
 	int brackets = 0;
-	if (!ds || !ds->atabs) {
+
+	if (!ds->atabs) {
 		return;
 	}
 	size_t bufasm_len = r_strbuf_length (&ds->asmop.buf_asm);
@@ -1537,18 +1540,18 @@ static void ds_atabs_option(RDisasmState *ds) {
 			brackets--;
 		}
 		if (*b == ',') {
-			comma = 1;
+			comma = true;
 		}
 		if (*b != ' ') {
 			continue;
 		}
 		if (word > 0 && !comma) {
-			continue; //&& b[1]=='[') continue;
+			continue;
 		}
 		if (brackets > 0) {
 			continue;
 		}
-		comma = 0;
+		comma = false;
 		brackets = 0;
 		n = (ds->atabs - i);
 		if (n < 1) {
@@ -1559,6 +1562,7 @@ static void ds_atabs_option(RDisasmState *ds) {
 		i = 0;
 		word++;
 		if (ds->atabsonce) {
+			r_strbuf_append (sb, b + 1);
 			break;
 		}
 	}
