@@ -102,31 +102,31 @@ RUN
 
 NAME=rabin2 -s file pe
 FILE=bins/pe/a.exe
-CMDS=!rabin2 -s ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rabin2 -s ${R2_FILE}~?
 EXPECT=<<EOF
-24
+23
 EOF
 RUN
 
 NAME=rabin2 -s file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rabin2 -s ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rabin2 -s ${R2_FILE}~?
 EXPECT=<<EOF
-69
+68
 EOF
 RUN
 
 NAME=rabin2 -S, -SS, -rS and -rSS file elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-!rabin2 -S ${R2_FILE}|wc -l|awk "{print \$1}"
-!rabin2 -SS ${R2_FILE}|wc -l|awk "{print \$1}"
+!!rabin2 -S ${R2_FILE}~?
+!!rabin2 -SS ${R2_FILE}~?
 !env RABIN2_PREFIX=prixfixe rabin2 -S ${R2_FILE}
 !env RABIN2_PREFIX=prixfixe rabin2 -SS ${R2_FILE}
 EOF
 EXPECT=<<EOF
-35
-14
+33
+12
 [Sections]
 
 nth paddr        size vaddr       vsize perm name
@@ -181,15 +181,15 @@ RUN
 
 NAME=rabin2 -SSS
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rabin2 -SSS ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rabin2 -SSS ${R2_FILE}~?
 EXPECT=<<EOF
-13
+12
 EOF
 RUN
 
 NAME=rabin2 -z pe
 FILE=bins/pe/a.exe
-CMDS=!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rabin2 -z ${R2_FILE}~?
 EXPECT=<<EOF
 7
 EOF
@@ -245,7 +245,7 @@ RUN
 
 NAME=rabin2 -z elf
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS=!rabin2 -z ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rabin2 -z ${R2_FILE}~?
 EXPECT=<<EOF
 4
 EOF
@@ -253,7 +253,7 @@ RUN
 
 NAME=rabin2 -G 0x1000 -rs fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rabin2 -G 0x1000 -rs ${R2_FILE}|grep "f " | wc -l|awk "{print \$1}"
+CMDS=!!rabin2 -G 0x1000 -rs ${R2_FILE}~f ~?
 EXPECT=<<EOF
 3
 EOF
@@ -261,7 +261,7 @@ RUN
 
 NAME=rabin2 -G 0x1300 -rs fatmach0
 FILE=bins/mach0/fatmach0-3true
-CMDS=!rabin2 -G 0x1300 -rs ${R2_FILE}|wc -l|awk "{print \$1}"
+CMDS=!!rabin2 -G 0x1300 -rs ${R2_FILE}~?
 EXPECT=<<EOF
 1
 EOF

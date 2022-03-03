@@ -2,9 +2,9 @@ NAME="pb>x;!wc -c x"
 FILE=malloc://1024
 CMDS=<<EOF
 p8 10 > dump
-!wc -c dump|awk "{print \$1}"
+cat dump~?.
 p8 12800 > dump
-!wc -c dump|awk "{print \$1}"
+cat dump~?.
 !rm -f dump
 EOF
 EXPECT=<<EOF
