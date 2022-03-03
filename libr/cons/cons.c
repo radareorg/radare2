@@ -2224,7 +2224,7 @@ R_API void r_cons_cmd_help_match(const char *help[], bool use_color, R_BORROW R_
 				break;
 			}
 		} else {
-			if (!strstr (help[i], cmd)) {
+			if (strstr (help[i], cmd)) {
 				print_match (&help[i], use_color);
 				/* Don't break - can have multiple results */
 			}
