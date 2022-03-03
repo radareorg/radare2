@@ -15,17 +15,20 @@ CCu base64:U29tZSB0ZXN0 @ 0x00404890
 EOF
 RUN
 
-NAME=Import project with overwriting
+NAME=Import project with overwriting 1
 FILE=malloc://512
 CMDS=<<EOF
 e prj.vc=false
 e asm.bits=64
 e asm.arch = x86
 e anal.arch = x86
-e dir.projects = ../bin/
+mkdir .tmp
+e dir.projects = .tmp/
 CC Some test @ 0x00404890
-Ps import2
-Po import2 > /dev/null
+Ps import1
+Po import1 > /dev/null
+Pd import1
+rm .tmp
 CC*
 EOF
 EXPECT=<<EOF
@@ -33,22 +36,24 @@ CCu base64:U29tZSB0ZXN0 @ 0x00404890
 EOF
 RUN
 
-NAME=Import project with overwriting
+NAME=Import project with overwriting 2
 FILE=malloc://512
 CMDS=<<EOF
 e prj.vc=false
 t-*
 e asm.arch = x86
 e anal.arch = x86
+mkdir .tmp
 e dir.projects = .tmp/
 e asm.bits=64
 wx 31ed4989d15e4889e24883e4f0505449c7c09024410048c7c12024410048c7c7a0284000e857dcfffff4
 af test
 afF @ test
 pdf
-Ps testw > /dev/null
-Pc testw~afF
-rm .tmp/testw
+Ps import2 > /dev/null
+Pc import2~afF
+Pd import2
+rm .tmp
 EOF
 EXPECT=<<EOF
 / (fcn) test
@@ -61,6 +66,7 @@ NAME=Export project
 FILE=malloc://512
 CMDS=<<EOF
 e prj.vc=false
+mkdir .tmp
 e dir.projects = .tmp/
 CC "Some other test" @ 0x00404890
 Ps testexp > /dev/null
@@ -397,7 +403,7 @@ NAME=Save PE project with maddr
 FILE=bins/pe/rabin2.exe
 CMDS=<<EOF
 e prj.vc=false
-e dir.projects = .tmp2/
+e dir.projects = .tmp/
 CC hello world
 pd 4
 o
@@ -414,6 +420,8 @@ om*
 ?e --
 om*~?
 om*~[2]
+Pd hund
+rm .tmp
 EOF
 EXPECT=<<EOF
         :   ;-- entry0:
