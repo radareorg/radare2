@@ -282,6 +282,9 @@ R_API void r_core_task_decref(RCoreTask *task) {
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
+	if (!current) {
+		return;
+	}
 	RCore *core = current->core;
 	RCoreTaskScheduler *scheduler = &core->tasks;
 	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
@@ -347,6 +350,9 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 }
 
 static void task_wakeup(RCoreTask *current) {
+	if (!current) {
+		return;
+	}
 	RCore *core = current->core;
 	RCoreTaskScheduler *scheduler = &core->tasks;
 
@@ -400,6 +406,9 @@ static void task_end(RCoreTask *t) {
 }
 
 static RThreadFunctionRet task_run(RCoreTask *task) {
+	if (!task) {
+		return 0;
+	}
 	RCore *core = task->core;
 	RCoreTaskScheduler *scheduler = &task->core->tasks;
 
@@ -461,6 +470,9 @@ stillbirth:
 }
 
 static RThreadFunctionRet task_run_thread(RThread *th) {
+	if (!th) {
+		return 0;
+	}
 	RCoreTask *task = (RCoreTask *)th->user;
 	return task_run (task);
 }
@@ -518,6 +530,9 @@ R_API int r_core_task_run_sync(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 
 /* begin running stuff synchronously on the main task */
 R_API void r_core_task_sync_begin(RCoreTaskScheduler *scheduler) {
+	if (!scheduler) {
+		return;
+	}
 	RCoreTask *task = scheduler->main_task;
 	if (!task) {
 		return;
@@ -551,6 +566,9 @@ R_API void r_core_task_sleep_end(RCoreTask *task) {
 }
 
 R_API const char *r_core_task_status(RCoreTask *task) {
+	if (!task) {
+		return NULL;
+	}
 	switch (task->state) {
 	case R_CORE_TASK_STATE_RUNNING:
 		return "running";
@@ -566,10 +584,16 @@ R_API const char *r_core_task_status(RCoreTask *task) {
 }
 
 R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler) {
+	if (!scheduler) {
+		return NULL;
+	}
 	return scheduler->current_task ? scheduler->current_task : scheduler->main_task;
 }
 
 static RCoreTask *task_get(RCoreTaskScheduler *scheduler, int id) {
+	if (!scheduler) {
+		return NULL;
+	}
 	RCoreTask *task;
 	RListIter *iter;
 	r_list_foreach (scheduler->tasks, iter, task) {
@@ -581,6 +605,9 @@ static RCoreTask *task_get(RCoreTaskScheduler *scheduler, int id) {
 }
 
 R_API RCoreTask *r_core_task_get_incref(RCoreTaskScheduler *scheduler, int id) {
+	if (!scheduler) {
+		return NULL;
+	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 	RCoreTask *task = task_get (scheduler, id);
@@ -592,6 +619,9 @@ R_API RCoreTask *r_core_task_get_incref(RCoreTaskScheduler *scheduler, int id) {
 }
 
 R_API void r_core_task_break(RCoreTaskScheduler *scheduler, int id) {
+	if (!scheduler) {
+		return;
+	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 	RCoreTask *task = task_get (scheduler, id);
@@ -606,6 +636,9 @@ R_API void r_core_task_break(RCoreTaskScheduler *scheduler, int id) {
 }
 
 R_API void r_core_task_break_all(RCoreTaskScheduler *scheduler) {
+	if (!scheduler) {
+		return;
+	}
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 	RCoreTask *task;
@@ -619,6 +652,9 @@ R_API void r_core_task_break_all(RCoreTaskScheduler *scheduler) {
 }
 
 R_API int r_core_task_del(RCoreTaskScheduler *scheduler, int id) {
+	if (!scheduler) {
+		return 0;
+	}
 	RCoreTask *task;
 	RListIter *iter;
 	bool ret = false;
@@ -643,6 +679,9 @@ R_API int r_core_task_del(RCoreTaskScheduler *scheduler, int id) {
 }
 
 R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler) {
+	if (!scheduler) {
+		return;
+	}
 	RCoreTask *task;
 	RListIter *iter, *iter2;
 	r_list_foreach_safe (scheduler->tasks, iter, iter2, task) {
