@@ -754,7 +754,7 @@ static int cmd_cmp(void *data, const char *input) {
 
 	switch (*input) {
 	case 'p':
-		return cmd_cp (data, input+1);
+		return cmd_cp (data, input + 1);
 		break;
 	case 'a': // "cat"
 		if (input[1] == 't') {
