@@ -239,3 +239,51 @@ EXPECT=<<EOF
             0x1000013d8      55             push rbp
 EOF
 RUN
+
+NAME=asm.tabs.once
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+e asm.tabs=8
+e asm.tabs.once=true
+e asm.bytes=false
+e asm.lines=false
+pd 5
+pdJ 3~{}
+EOF
+EXPECT=<<EOF
+;-- main:
+;-- entry0:
+;-- func.1000013d8:
+0x1000013d8      push     rbp
+0x1000013d9      mov      rbp, rsp
+0x1000013dc      push     r15
+0x1000013de      push     r14
+0x1000013e0      push     r13
+[
+  {
+    "offset": 4294972376,
+    "text": ";-- main:"
+  },
+  {
+    "offset": 4294972376,
+    "text": ";-- entry0:"
+  },
+  {
+    "offset": 4294972376,
+    "text": ";-- func.1000013d8:"
+  },
+  {
+    "offset": 4294972376,
+    "text": "0x1000013d8      push     rbp"
+  },
+  {
+    "offset": 4294972377,
+    "text": "0x1000013d9      mov      rbp, rsp"
+  },
+  {
+    "offset": 4294972380,
+    "text": "0x1000013dc      push     r15"
+  }
+]
+EOF
+RUN
