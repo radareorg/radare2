@@ -30,7 +30,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Installing the musl runtime
       run: |
-        sudo apt install musl-tools
+        sudo apt-get --assume-yes update
+        sudo apt install --assume-yes musl-tools
     - name: Building static r2 with acr
       run: |
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
@@ -65,6 +66,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Packaging for 32bit Debian
       run: |
+        sudo apt --assume-yes update
         sudo apt install gcc-multilib gperf
         export CFLAGS=-m32
         export LDFLAGS=-m32
@@ -211,7 +213,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+      run: |
+        sudo apt-get --assume-yes update
+        sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with acr
       run: |
         sys/android-ndk-install.sh
@@ -230,7 +234,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+      run: |
+        sudo apt-get --assume-yes update
+        sudo apt-get --assume-yes install pax wget gperf cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with acr
       run: |
         sys/android-ndk-install.sh 16 arm
@@ -252,7 +258,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
+      run: |
+        sudo apt-get --assume-yes update
+        sudo apt-get --assume-yes install pax wget cabextract unzip python3-wheel python3-setuptools python3-pip && pip3 install --user meson ninja
     - name: Compile with meson
       run: |
         export PATH=${HOME}/.local/bin:${PATH}
