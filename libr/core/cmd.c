@@ -1077,18 +1077,30 @@ static int cmd_yank(void *data, const char *input) {
 	case 's': // "ys"
 		r_core_yank_cat_string (core, r_num_math (core->num, input + 1));
 		break;
-	case 't': // "wt"
-		if (input[1] == 'f') { // "wtf"
+	case 't': // "yt"
+		if (input[1] == 'f') { // "ytf"
 			ut64 tmpsz;
 			const char *file = r_str_trim_head_ro (input + 2);
 			const ut8 *tmp = r_buf_data (core->yank_buf, &tmpsz);
-			if (!r_file_dump (file, tmp, tmpsz, false)) {
-				eprintf ("Cannot dump to '%s'\n", file);
+
+			if (!tmpsz) {
+				eprintf ("No buffer yanked already\n");
+				break;
+			}
+
+			if (*file == '$') {
+				r_cmd_alias_set_raw (core->rcmd, file+1, tmp, tmpsz);
+			} else if (*file == '?' || !*file) {
+				r_core_cmd_help_match (core, help_msg_y, "ytf", true);
+			} else {
+				if (!r_file_dump (file, tmp, tmpsz, false)) {
+					eprintf ("Cannot dump to '%s'\n", file);
+				}
 			}
 		} else if (input[1] == ' ') {
 			r_core_yank_to (core, input + 1);
 		} else {
-			eprintf ("Usage: wt[f] [arg] ..\n");
+			r_core_cmd_help_match (core, help_msg_y, "yt", false);
 		}
 		break;
 	case 'f': // "yf"
