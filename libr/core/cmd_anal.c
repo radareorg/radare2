@@ -78,8 +78,9 @@ static const char *help_msg_aF[] = {
 };
 
 static const char *help_msg_an[] = {
-	"Usage:", "an", " # show flag/function/name at current address",
-	"an", "", "ShowCheck af? for more options and information.",
+	"Usage:", "an", " # analyze name for the current address",
+	"an", "", "Show flag/function/symbol name",
+	"an*", "", "Same as above but in r2 commands",
 	"anj", "", "Same as above but in json",
 	NULL
 };
@@ -1407,29 +1408,27 @@ static void cmd_afvx(RCore *core, RAnalFunction *fcn, bool json) {
 	}
 }
 
-static int cmd_an(RCore *core, bool use_json, const char *name) {
+static int cmd_an(RCore *core, const char *name, int mode) {
 	int ret = 0;
-	ut64 off = core->offset;
-	RAnalOp op;
+	RAnalOp op = {0};
 	PJ *pj = NULL;
-	ut64 tgt_addr = UT64_MAX;
 
-	if (use_json) {
+	if (mode == 'j') {
 		pj = pj_new ();
 		pj_a (pj);
 	}
-
-	r_anal_op (core->anal, &op, off,
-			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
+	if (r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC) < 1) {
+		goto failure;
+	}
 	RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);
 
-	tgt_addr = op.jump != UT64_MAX? op.jump: op.ptr;
+	ut64 tgt_addr = op.jump != UT64_MAX? op.jump: op.ptr;
 	if (var) {
 		if (name) {
-			ret = r_anal_var_rename (var, name, true)
-				? 0
-				: -1;
-		} else if (use_json) {
+			ret = r_anal_var_rename (var, name, true) ? 0 : -1;
+		} else if (mode == '*') {
+			r_cons_printf ("f %s=0x%" PFMT64x "\n", var->name, tgt_addr);
+		} else if (mode == 'j') {
 			pj_o (pj);
 			pj_ks (pj, "name", var->name);
 			pj_ks (pj, "type", "var");
@@ -1438,27 +1437,37 @@ static int cmd_an(RCore *core, bool use_json, const char *name) {
 		} else {
 			r_cons_println (var->name);
 		}
-	} else if (tgt_addr != UT64_MAX) {
+	} else {
+		if (tgt_addr == UT64_MAX) {
+			tgt_addr = core->offset;
+		}
+		RFlagItem *f = r_flag_get_by_spaces (core->flags, tgt_addr, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
+		if (!f) {
+			f = r_flag_get_i (core->flags, tgt_addr);
+		}
 		RAnalFunction *fcn = r_anal_get_function_at (core->anal, tgt_addr);
-		RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
 		if (fcn) {
 			if (name) {
 				ret = r_anal_function_rename (fcn, name)? 0: -1;
-			} else if (!use_json) {
-				r_cons_println (fcn->name);
-			} else {
+			}
+			if (mode == '*') {
+				r_cons_printf ("f %s=0x%" PFMT64x "\n", fcn->name, core->offset);
+			} else if (mode == 'j') {
 				pj_o (pj);
 				pj_ks (pj, "name", fcn->name);
 				pj_ks (pj, "type", "function");
 				pj_kn (pj, "offset", tgt_addr);
 				pj_end (pj);
+			} else {
+				r_cons_println (fcn->name);
 			}
 		} else if (f) {
 			if (name) {
 				ret = r_flag_rename (core->flags, f, name)? 0: -1;
-			} else if (!use_json) {
-				r_cons_println (f->name);
-			} else {
+			}
+			if (mode == '*') {
+				r_cons_printf ("f %s=0x%" PFMT64x "\n", r_str_get (name), core->offset);
+			} else if (mode == 'j') {
 				pj_o (pj);
 				pj_ks (pj, "name", f->name);
 				if (f->realname) {
@@ -1467,27 +1476,29 @@ static int cmd_an(RCore *core, bool use_json, const char *name) {
 				pj_ks (pj, "type", "flag");
 				pj_kn (pj, "offset", tgt_addr);
 				pj_end (pj);
+			} else {
+				r_cons_println (f->name);
 			}
 		} else {
 			if (name) {
 				ret = r_flag_set (core->flags, name, tgt_addr, 1)? 0: -1;
-			} else if (!use_json) {
-				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
-			} else {
+			}
+			if (mode == '*') {
+				r_cons_printf ("f %s=0x%" PFMT64x "\n", r_str_get (name), core->offset);
+			} else if (mode == 'j') {
 				pj_o (pj);
 				pj_ks (pj, "name", r_str_get (name));
 				pj_ks (pj, "type", "address");
 				pj_kn (pj, "offset", tgt_addr);
 				pj_end (pj);
+			} else {
+				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
 			}
 		}
 	}
-
-	if (use_json) {
+failure:
+	if (mode == 'j') {
 		pj_end (pj);
-	}
-
-	if (pj) {
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
@@ -11886,52 +11897,53 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		r_core_anal_fcn (core, core->offset, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 		break;
-case 'l':
-{
-RList *l = r_asm_cpus (core->rasm);
-RListIter *iter;
-char *c;
-r_list_foreach (l, iter, c) {
-eprintf ("- %s\n", c);
-}
-r_list_free (l);
-}
-break;
-	case 'f': // "af"
+	case 'l':
 		{
-		int res = cmd_anal_fcn (core, input);
-		if (!res) {
-			return false;
+			RList *l = r_asm_cpus (core->rasm);
+			RListIter *iter;
+			char *c;
+			r_list_foreach (l, iter, c) {
+				eprintf ("- %s\n", c);
+			}
+			r_list_free (l);
 		}
+		break;
+	case 'f': // "af"
+		if (!cmd_anal_fcn (core, input)) {
+			return false;
 		}
 		break;
 	case 'n': // "an"
 		{
 		const char *name = "";
-		bool use_json = false;
-
-		if (input[1] == '?') {
+		int mode = 0;
+		switch (input[1]) {
+		case '?':
 			r_core_cmd_help (core, help_msg_an);
+			mode = -1;
+			break;
+		case 'j':
+		case '*':
+			mode = input[1];
+			input++;
 			break;
 		}
-		if (input[1] == 'j') {
-			use_json = true;
-			input++;
-		}
-		if (input[1] == ' ') {
-			name = input + 1;
-			while (name[0] == ' ') {
-				name++;
+		if (mode >= 0) {
+			if (input[1] == ' ') {
+				name = input + 1;
+				while (name[0] == ' ') {
+					name++;
+				}
+				char *end = strchr (name, ' ');
+				if (end) {
+					*end = '\0';
+				}
 			}
-			char *end = strchr (name, ' ');
-			if (end) {
-				*end = '\0';
+			if (R_STR_ISEMPTY (name)) {
+				name = NULL;
 			}
+			cmd_an (core, name, mode);
 		}
-		if (R_STR_ISEMPTY (name)) {
-			name = NULL;
-		}
-		cmd_an (core, use_json, name);
 		}
 		break;
 	case 'g': // "ag"
