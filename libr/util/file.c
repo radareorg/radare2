@@ -1295,6 +1295,7 @@ R_API char *r_file_tmpdir(void) {
 R_API bool r_file_copy(const char *src, const char *dst) {
 	r_return_val_if_fail (R_STR_ISNOTEMPTY (src) && R_STR_ISNOTEMPTY (dst), false);
 	if (!strcmp (src, dst)) {
+		eprintf ("Cannot copy file '%s' to itself.\n", src);
 		return false;
 	}
 	/* TODO: implement in C */

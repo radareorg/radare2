@@ -480,32 +480,66 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 
 static int cmd_cp(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	if (input[1] == '.') {
-		char *file = r_core_cmd_strf (core, "ij~{core.file}");
-		r_str_trim (file);
-		char *newfile = r_str_newf ("%s.%s", file, input + 2);
-		r_file_copy (file, newfile);
-		free (file);
-		free (newfile);
-		return true;
-	}
-	if (strlen (input) < 3) {
-		eprintf ("Usage: cp src dst\n");
-		eprintf ("Usage: cp.orig  # cp $file $file.orig\n");
+	bool use_corefile;
+	const char *help_msg_cp[] = {
+		"cp", " src dst", "Standard file copy",
+		"cp", ".[ext]", "Copy current file <name> to <name>.ext",
+		NULL
+	};
+
+	if (*input == '?' || !*input) {
+		r_core_cmd_help (core, help_msg_cp);
 		return false;
 	}
-	char *cmd = strdup (input + 2);
-	if (cmd) {
-		char **files = r_str_argv (cmd, NULL);
+
+	use_corefile = (*input == '.');
+	input++;
+
+	if (!*input) {
+		r_core_cmd_help (core, help_msg_cp);
+		return false;
+	}
+
+	if (use_corefile) {
+		char *file = r_core_cmd_str (core, "ij~{core.file}");
+		bool ret;
+
+		if (!file) {
+			return false;
+		}
+		r_str_trim (file);
+
+		if (!r_file_exists (file)) {
+			eprintf ("%s is not a file on the disk. Can't copy.\n", file);
+			eprintf ("You may be looking for \"wt\".\n");
+			free (file);
+			return false;
+		}
+
+		char *newfile = r_str_newf ("%s.%s", file, input);
+		if (!newfile) {
+			free (file);
+			return false;
+		}
+
+		ret = r_file_copy (file, newfile);
+		free (file);
+		free (newfile);
+		return ret;
+	}
+
+	char **files = r_str_argv (input, NULL);
+	if (files) {
+		bool ret = false;
 		if (files[0] && files[1]) {
-			bool rc = r_file_copy (files[0], files[1]);
-			free (cmd);
-			r_str_argv_free (files);
-			return rc;
+			ret = r_file_copy (files[0], files[1]);
+		} else {
+			r_core_cmd_help (core, help_msg_cp);
 		}
 		r_str_argv_free (files);
+		return ret;
 	}
-	eprintf ("Usage: cp src dst\n");
+
 	return false;
 }
 
@@ -720,7 +754,7 @@ static int cmd_cmp(void *data, const char *input) {
 
 	switch (*input) {
 	case 'p':
-		return cmd_cp (data, input);
+		return cmd_cp (data, input + 1);
 		break;
 	case 'a': // "cat"
 		if (input[1] == 't') {
