@@ -28,9 +28,9 @@ int kvx_instr_print(insn_t *insn, ut64 offset, char *buf, size_t len) {
 			if (i < R_ARRAY_SIZE (insn->opc->decode) && insn->opc->decode[i]) {
 				insn->opc->decode[i] (&opr, insn->value);
 				if (opr.type == KVX_OPER_TYPE_IMM)
-					w = snprintf (buf + n, len - n, "0x%lx", opr.imm);
+					w = snprintf (buf + n, len - n, "0x%" PFMT64x, (ut64)opr.imm);
 				else if (opr.type == KVX_OPER_TYPE_OFF)
-					w = snprintf (buf + n, len - n, "0x%lx", opr.imm + offset);
+					w = snprintf (buf + n, len - n, "0x%" PFMT64x, (ut64)opr.imm + offset);
 				else if (opr.type == KVX_OPER_TYPE_REG)
 					w = snprintf (buf + n, len - n, "%s", opr.reg);
 				else
