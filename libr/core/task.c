@@ -644,7 +644,7 @@ R_API void r_core_task_break_all(RCoreTaskScheduler *scheduler) {
 	RCoreTask *task;
 	RListIter *iter;
 	r_list_foreach (scheduler->tasks, iter, task) {
-		if (task->state != R_CORE_TASK_STATE_DONE) {
+		if (task && task->state != R_CORE_TASK_STATE_DONE) {
 			r_cons_context_break (task->cons_context);
 		}
 	}

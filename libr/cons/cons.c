@@ -13,6 +13,9 @@
 
 R_LIB_VERSION (r_cons);
 
+// Stub function that cb_main_output gets pointed to in util/log.c by r_cons_new
+// This allows Iaito to set per-task logging redirection
+static R_TH_LOCAL RThreadLock *lock = NULL;
 static R_TH_LOCAL RConsContext r_cons_context_default = {{{{0}}}};
 static R_TH_LOCAL RCons g_cons_instance = {0};
 static R_TH_LOCAL RCons *r_cons_instance = NULL;
@@ -321,6 +324,9 @@ R_API RConsContext *r_cons_context(void) {
 }
 
 R_API RCons *r_cons_singleton(void) {
+	if (!I) {
+		r_cons_new ();
+	}
 	return I;
 }
 
@@ -593,9 +599,6 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 #endif
 }
 
-// Stub function that cb_main_output gets pointed to in util/log.c by r_cons_new
-// This allows Cutter to set per-task logging redirection
-static R_TH_LOCAL RThreadLock *lock = NULL;
 R_API RCons *r_cons_new(void) {
 	if (!r_cons_instance) {
 		r_cons_instance = &g_cons_instance;
