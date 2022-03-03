@@ -25,7 +25,6 @@ RUN
 
 NAME=mkdir -p
 FILE=-
-BROKEN=1
 CMDS=<<EOF
 rm /tmp/foo/bar/foo/fooz
 rm /tmp/foo/bar/foo

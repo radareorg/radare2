@@ -82,15 +82,15 @@ static const char *help_msg_dollar[] = {
 };
 
 static const char *help_msg_l[] = {
-	"Usage:", "l[erls] ([arg])", "# internal less (~..) and list files (!ls)",
+	"Usage:", "l[erls] [arg]", "Internal less (~..) and file listing (!ls)",
 	"ll", " [path]", "same as ls -l",
 	"lr", " [path]", "same as ls -r",
-	"ls", " ([-e,-l,-j,-q]) ([path])", "list files in current or given directory",
-	"ls", " -e ([path])", "list files using emojis",
-	"ls", " -l ([path])", "same as ll (list files with details)",
-	"ls", " -j ([path])", "list files in json format",
-	"ls", " -q ([path])", "quiet output (one file per line)",
-	"le", "[ss] ([path])", "same as cat file~.. (or less)",
+	"ls", " [-e,-l,-j,-q] [path]", "list files in current or given directory",
+	"ls", " -e [path]", "list files using emojis",
+	"ls", " -l [path]", "same as ll (list files with details)",
+	"ls", " -j [path]", "list files in json format",
+	"ls", " -q [path]", "quiet output (one file per line)",
+	"le", "[ss] [path]", "same as cat file~.. (or less)",
 	"TODO: last command should honor asm.bits", "", "",
 	NULL
 };
@@ -1356,7 +1356,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 	return ret;
 }
 
-static int cmd_lsr(RCore *core, const char *input) {
+static int cmd_lr(RCore *core, const char *input) { // "lr"
 	const char *path;
 	RListIter *iter;
 	const char *arg = R_STR_ISEMPTY (input)? ".": input;
@@ -1373,19 +1373,21 @@ static int cmd_lsr(RCore *core, const char *input) {
 	return 0;
 }
 
-static int cmd_ls(void *data, const char *input) { // "ls"
+static int cmd_l(void *data, const char *input) { // "l"
 	RCore *core = (RCore *)data;
 	const char *arg = strchr (input, ' ');
 	if (arg) {
 		arg = r_str_trim_head_ro (arg + 1);
 	}
+	arg = r_str_get (arg);
 	switch (*input) {
-	case 'r':
-		cmd_lsr (core, arg);
-		break;
-	case 'l':
+	case 'l': // "ll"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_l, "ll", true);
+			break;
+		}
 		{
-			char *carg = r_str_newf ("-l%s", r_str_get (arg));
+			char *carg = r_str_newf ("-l %s", arg);
 			int w = r_cons_get_size (NULL) - 8;
 			char *res = r_syscmd_ls (carg, w);
 			if (res) {
@@ -1395,30 +1397,51 @@ static int cmd_ls(void *data, const char *input) { // "ls"
 			free (carg);
 		}
 		break;
-	case '?': // "l?"
-		r_core_cmd_help (core, help_msg_l);
-		break;
 	case 'e': // "le"
-		if (arg) {
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_l, "le", true);
+			break;
+		}
+
+		if (*arg) {
 			r_core_cmdf (core, "cat %s~..", arg);
 		} else {
-			eprintf ("Usage: less [file]\n");
+			r_core_cmd_help_match (core, help_msg_l, "le", true);
 		}
 		break;
-	default: // "ls"
-		if (!arg) {
-			arg = "";
+	case 'r': // "lr"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_l, "lr", true);
+			break;
 		}
+		cmd_lr (core, arg);
+		break;
+	case 's': // "ls"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_l, "ls", true);
+			break;
+		}
+
 		if (r_fs_check (core->fs, arg)) {
 			r_core_cmdf (core, "md %s", arg);
 		} else {
 			int w = r_cons_get_size (NULL) - 8;
-			char *res = r_syscmd_ls (input + 1, w);
+			char *res;
+
+			if (*arg) {
+				//arg++;
+			}
+
+			res = r_syscmd_ls (arg, w);
 			if (res) {
 				r_cons_print (res);
 				free (res);
 			}
 		}
+		break;
+	case '?': // "l?"
+	default:
+		r_core_cmd_help (core, help_msg_l);
 		break;
 	}
 	return 0;
@@ -5728,7 +5751,7 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"g", "egg manipulation", cmd_egg },
 		{"i", "get file info", cmd_info },
 		{"k", "perform sdb query", cmd_kuery },
-		{"l", "list files and directories", cmd_ls },
+		{"l", "list files and directories", cmd_l },
 		{"j", "join the contents of the two files", cmd_join },
 		{"h", "show the top n number of line in file", cmd_head },
 		{"L", "manage dynamically loaded plugins", cmd_plugins },

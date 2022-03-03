@@ -170,7 +170,7 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	}
 	if (*input) {
 		if (!strncmp (input, "-h", 2) || *input == '?') {
-			eprintf ("Usage: ls ([-e,-l,-j,-q]) ([path]) # long, json, quiet\n");
+			eprintf ("Usage: ls [-e,-l,-j,-q] [path] # long, json, quiet\n");
 			return NULL;
 		}
 		if ((!strncmp (input, "-e", 2))) {
@@ -236,6 +236,9 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 		return res;
 	}
 	RList *files = r_sys_dir (path);
+	if (!files) {
+		return NULL;
+	}
 	r_list_sort (files, (RListComparator)strcmp);
 
 	if (path[strlen (path) - 1] == '/') {

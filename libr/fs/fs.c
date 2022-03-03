@@ -689,7 +689,7 @@ R_API bool r_fs_check(RFS *fs, const char *p) {
 	r_return_val_if_fail (fs && p, false);
 	RFSRoot *root;
 	RListIter *iter;
-	char* path = strdup (p);
+	char *path = strdup (p);
 	if (path) {
 		r_str_trim_path (path);
 		r_list_foreach (fs->roots, iter, root) {
