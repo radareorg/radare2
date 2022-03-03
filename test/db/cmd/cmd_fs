@@ -883,6 +883,7 @@ CMDS=<<EOF
 mg /root/bin/ls
 o ./ls
 i~size
+rm ls
 EOF
 EXPECT=<<EOF
 size     0x1ee78
@@ -897,6 +898,7 @@ cd /tmp/fsfat
 mg /root/bin/ls 0x0 5
 o ./ls
 i~size
+rm ls
 EOF
 EXPECT=<<EOF
 size     0x5

@@ -153,9 +153,9 @@ CMDS=<<EOF
 b 6
 wx 440044004400
 p8 6
-pr 6 > .null.bin
+pr 6 > $nullbin
 wx 121212121212
-wff .null.bin
+wff $nullbin
 p8 6
 EOF
 EXPECT=<<EOF
