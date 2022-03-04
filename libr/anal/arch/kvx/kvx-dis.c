@@ -94,9 +94,11 @@ static inline int kvx_is_tca_opcode(ut32 x) {
 	return (major > 1) && (major < 8);
 }
 
+#if UNUSED0
 static inline int kvx_is_nop_opcode(ut32 x) {
 	return ((x)<<1) == 0xFFFFFFFE;
 }
+#endif
 
 static inline int kvx_opc_match(const opc_t *opc, insn_t *insn) {
 	int i;

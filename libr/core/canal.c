@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2022 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -4727,7 +4727,7 @@ static bool myvalid(RIO *io, ut64 addr) {
 typedef struct {
 	RAnalOp *op;
 	RAnalFunction *fcn;
-	const char *spname;
+	char *spname;
 	ut64 initial_sp;
 } EsilBreakCtx;
 
@@ -5099,7 +5099,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool gp_fixed = r_config_get_i (core->config, "anal.gpfixed");
 	RAnalEsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
-	const char *pcname;
+	char *pcname = NULL;
 	RAnalOp op = R_EMPTY;
 	ut8 *buf = NULL;
 	bool end_address_set = false;
@@ -5188,11 +5188,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		r_core_cmd0 (core, "aeim");
 		ESIL = core->anal->esil;
 	}
-	const char *spname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	if (!spname) {
+	const char *kspname = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	if (R_STR_ISEMPTY (kspname)) {
 		eprintf ("Error: No =SP defined in the reg profile.\n");
 		return;
 	}
+	char *spname = strdup (kspname);
 	EsilBreakCtx ctx = {
 		&op,
 		fcn,
@@ -5210,11 +5211,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 	//eprintf ("Analyzing ESIL refs from 0x%"PFMT64x" - 0x%"PFMT64x"\n", addr, end);
 	// TODO: backup/restore register state before/after analysis
-	pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	if (!pcname || !*pcname) {
+	const char *kpcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	if (!kpcname || !*kpcname) {
 		eprintf ("Cannot find program counter register in the current profile.\n");
 		return;
 	}
+	pcname = strdup (kpcname);
 	esil_anal_stop = false;
 	r_cons_break_push (cccb, core);
 
@@ -5299,11 +5301,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		r_anal_op_fini (&op);
 		r_asm_set_pc (core->rasm, cur);
 		i_old = i;
-#if 1
 		if (i > iend) {
 			goto repeat;
 		}
-#endif
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT)) {
 			i += minopsize - 1; //   XXX dupe in op.size below
 		}
@@ -5544,6 +5544,8 @@ repeat:
 			break;
 		}
 	} while (get_next_i (&ictx, &i));
+	free (pcname);
+	free (spname);
 	r_list_free (ictx.bbl);
 	r_list_free (ictx.path);
 	r_list_free (ictx.switch_path);
