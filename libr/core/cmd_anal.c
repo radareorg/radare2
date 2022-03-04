@@ -668,6 +668,7 @@ static const char *help_msg_ag[] = {
 	"g", "", "Graph Modelling Language (gml)",
 	"j", "", "json ('J' for formatted disassembly)",
 	"k", "", "SDB key-value",
+	"m", "", "Mermaid",
 	"t", "", "Tiny ascii art",
 	"v", "", "Interactive ascii art",
 	"w", " [path]", "Write to path or display graph image (see graph.gv.format and graph.web)",
@@ -3648,7 +3649,7 @@ R_API char *fcnshowr(RAnalFunction *function) {
 	} else {
 		realname = function->name;
 	}
-	
+
 	char *args = strdup ("");
 	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
 	char *sdb_args = r_str_newf ("func.%s.args", realname);
@@ -4456,7 +4457,7 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 				sdb_close (db);
 				sdb_free (db);
 			} else {
-				eprintf ("Usage: afco [dbpath] - open calling conventions defined in local file.\n");	
+				eprintf ("Usage: afco [dbpath] - open calling conventions defined in local file.\n");
 			}
 			free (dbpath);
 			break;
@@ -4916,7 +4917,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 		r_cons_println (pj_string (pj));
 		pj_free (pj);
 	}
-	
+
 	core->dbg->reg = hack;
 }
 
@@ -9436,6 +9437,96 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 	}
 }
 
+static char *mermaid_sanitize_str(const char *str) {
+	if (!str) {
+		return NULL;
+	}
+	size_t len = strlen (str) * 4 + 1; // '\n' -> "\x0a"
+	char *buf = malloc (len);
+	if (buf) {
+		size_t i;
+		for (i = 0; i < len - 5 && *str;) {
+			char c = *str++;
+			if (c < ' ' || c > '~' || c == '\\' || c == '"' || c == '<') {
+				snprintf (buf + i, 5, "\\x%02x", c); // 5 b/c null byte
+				i += 4;
+			} else {
+				buf[i++] = c;
+			}
+		}
+		buf[i] = '\0';
+	}
+	// buffer wont live long enough to merit a realloc
+	return buf;
+}
+
+static inline char *mermaid_title_body_node_str(const char *title, const char *body) {
+	char *t = mermaid_sanitize_str (title);
+	char *b = mermaid_sanitize_str (body);
+	if (t && b) {
+		char *ret = r_str_newf ("[%s]\\n%s", t, b);
+		free (t);
+		free (b);
+		return ret;
+	}
+	return t? t: b;
+}
+
+static char *mermaid_anod_body(RGraphNode *n) {
+	RANode *an = (RANode *)n->data;
+	return mermaid_title_body_node_str (an->title, an->body);
+}
+
+static char *mermaid_nodeinfo_body(RGraphNode *n) {
+	RGraphNodeInfo *nfo = (RGraphNodeInfo *)n->data;
+	return mermaid_title_body_node_str (nfo->title, nfo->body);
+}
+
+typedef char *(*node_content_cb) (RGraphNode *);
+static void mermaid_graph(RGraph *graph, node_content_cb get_body) {
+	if (!graph) {
+		return;
+	}
+	if (r_list_empty (graph->nodes)) {
+		eprintf ("Graph is empty\n");
+		return;
+	}
+	bool printit = true;
+	RStrBuf *nodes = r_strbuf_new ("stateDiagram-v2\n");
+	RStrBuf *edges = r_strbuf_new ("");
+	RGraphNode *n;
+	RListIter *it;
+	r_list_foreach (graph->nodes, it, n) {
+		char *free_body = get_body (n);
+		char *body = free_body? free_body: "";
+		printit &= r_strbuf_appendf (nodes, "  state \"%s\" as node_%u\n", body, n->idx);
+		free (free_body);
+
+		// edgdes
+		RGraphNode *nxt;
+		RListIter *itt;
+		r_list_foreach (n->out_nodes, itt, nxt) {
+			printit &= r_strbuf_appendf (edges, "  node_%u --> node_%u\n", n->idx, nxt->idx);
+		}
+		if (!printit) {
+			break;
+		}
+	}
+
+	if (printit) {
+		char *n = r_strbuf_drain_nofree (nodes);
+		char *e = r_strbuf_drain_nofree (edges);
+		if (n && e) {
+			r_cons_print (n);
+			r_cons_print (e);
+		}
+		free (n);
+		free (e);
+	}
+	r_strbuf_free (nodes);
+	r_strbuf_free (edges);
+}
+
 R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 	if (use_utf != -1) {
 		r_config_set_i (core->config, "scr.utf8", use_utf);
@@ -9456,6 +9547,11 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		core->graph->is_tiny = false;
 		break;
 	}
+	case 'm': // "aggm"
+		if (core->graph) {
+			mermaid_graph (core->graph->graph, mermaid_anod_body);
+		}
+		break;
 	case 'k': // "aggk"
 	{
 		Sdb *db = r_agraph_get_sdb (core->graph);
@@ -9707,6 +9803,9 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		}
 		break;
 	}
+	case 'm':
+		mermaid_graph (graph, mermaid_nodeinfo_body);
+		break;
 	default:
 		eprintf ("Usage: see ag?\n");
 	}
@@ -9960,6 +10059,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 'C': // "agC"
 		switch (input[1]) {
+		case 'm':
 		case 'v':
 		case 't':
 		case 'k':
@@ -10054,6 +10154,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 't':
 		case 'k':
 		case 'w':
+		case 'm':
 		case ' ': {
 			core->graph->is_callgraph = true;
 			r_core_cmdf (core, "ag-; .agc* @ %" PFMT64u "; agg%s;", core->offset, input + 1);
@@ -10157,6 +10258,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 't':
 		case 'k':
 		case 'v':
+		case 'm':
 		case 'g': {
 				  ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
 				  r_core_cmdf (core, "ag-; .agd* @ %"PFMT64u"; agg%s;", addr, input + 1);
