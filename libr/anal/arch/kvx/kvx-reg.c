@@ -760,7 +760,10 @@ char *kv3_reg_arf_quad[] = {
 };
 
 inline static ut64 extract_field(int w, int o, ut64 v) {
-	ut64 m = (1 << w) - 1;
+	if (w > 63) {
+		return 0;
+	}
+	ut64 m = (1ULL << w) - 1;
 	return (v >> o) & m;
 }
 

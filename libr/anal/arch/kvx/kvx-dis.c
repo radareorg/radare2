@@ -27,14 +27,15 @@ int kvx_instr_print(insn_t *insn, ut64 offset, char *buf, size_t len) {
 			/* decode each operand in order */
 			if (i < R_ARRAY_SIZE (insn->opc->decode) && insn->opc->decode[i]) {
 				insn->opc->decode[i] (&opr, insn->value);
-				if (opr.type == KVX_OPER_TYPE_IMM)
+				if (opr.type == KVX_OPER_TYPE_IMM) {
 					w = snprintf (buf + n, len - n, "0x%" PFMT64x, (ut64)opr.imm);
-				else if (opr.type == KVX_OPER_TYPE_OFF)
+				} else if (opr.type == KVX_OPER_TYPE_OFF) {
 					w = snprintf (buf + n, len - n, "0x%" PFMT64x, (ut64)opr.imm + offset);
-				else if (opr.type == KVX_OPER_TYPE_REG)
+				} else if (opr.type == KVX_OPER_TYPE_REG) {
 					w = snprintf (buf + n, len - n, "%s", opr.reg);
-				else
+				} else {
 					w = 0;
+				}
 				n += R_MIN (w, len - n);
 
 				i++;
@@ -98,27 +99,26 @@ static inline int kvx_is_nop_opcode(ut32 x) {
 	return ((x)<<1) == 0xFFFFFFFE;
 }
 
-static inline int kvx_opc_match(const opc_t *opc, insn_t *insn) {
+static inline bool kvx_opc_match(const opc_t *opc, insn_t *insn) {
 	int i;
-
-	if (opc->len != insn->len)
-		return 0;
-
+	if (opc->len != insn->len) {
+		return false;
+	}
 	for (i = 0; i < insn->len; i++) {
 		if ((insn->value[i] & opc->mask[i]) != opc->value[i])
-			return 0;
+			return false;
 	}
-
-	return 1;
+	return true;
 }
 
 static int disassemble_bundle(bundle_t *bundle, const ut32 *words, int count) {
 	bool used[KVX_MAX_BUNDLE_ISSUE] = {0};
 	insn_t *insn;
 	ut32 word;
-	int issue, immx, extension;
+	int immx, extension;
 	int bcu = 0;
 	int i;
+	int issue = 0;
 
 	for (i = 0; i < count; i++) {
 		extension = 0;
@@ -234,7 +234,6 @@ insn_t *kvx_next_insn(bundle_t *bundle, ut64 addr, const ut8 *buf, int len) {
 	ut32 words[KVX_MAX_BUNDLE_WORDS];
 	ut64 start;
 	int count, issue = KVX_MAX_BUNDLE_ISSUE;
-	int ret;
 
 	if (bundle->addr <= addr && addr < (bundle->addr + bundle->size)) {
 		start = bundle->addr;
@@ -260,9 +259,9 @@ insn_t *kvx_next_insn(bundle_t *bundle, ut64 addr, const ut8 *buf, int len) {
 
 		bundle->addr = addr;
 		bundle->size = count * sizeof (ut32);
-		ret = disassemble_bundle (bundle, words, count);
-		if (ret)
+		if (disassemble_bundle (bundle, words, count)) {
 			return NULL;
+		}
 	}
 
 	while (issue < KVX_MAX_BUNDLE_ISSUE && bundle->issue[issue].len == 0) {
