@@ -1449,8 +1449,7 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 		if (fcn) {
 			if (name) {
 				ret = r_anal_function_rename (fcn, name)? 0: -1;
-			}
-			if (mode == '*') {
+			} else if (mode == '*') {
 				r_cons_printf ("f %s=0x%" PFMT64x "\n", fcn->name, core->offset);
 			} else if (mode == 'j') {
 				pj_o (pj);
@@ -1464,8 +1463,7 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 		} else if (f) {
 			if (name) {
 				ret = r_flag_rename (core->flags, f, name)? 0: -1;
-			}
-			if (mode == '*') {
+			} else if (mode == '*') {
 				r_cons_printf ("f %s=0x%" PFMT64x "\n", r_str_get (name), core->offset);
 			} else if (mode == 'j') {
 				pj_o (pj);
@@ -1482,8 +1480,7 @@ static int cmd_an(RCore *core, const char *name, int mode) {
 		} else {
 			if (name) {
 				ret = r_flag_set (core->flags, name, tgt_addr, 1)? 0: -1;
-			}
-			if (mode == '*') {
+			} else if (mode == '*') {
 				r_cons_printf ("f %s=0x%" PFMT64x "\n", r_str_get (name), core->offset);
 			} else if (mode == 'j') {
 				pj_o (pj);
