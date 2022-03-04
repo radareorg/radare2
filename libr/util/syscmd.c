@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2021 - pancake */
+/* radare - LGPL - Copyright 2013-2022 - pancake */
 
 #include <r_core.h>
 #include <errno.h>
@@ -237,6 +237,9 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	}
 	RList *files = r_sys_dir (path);
 	if (!files) {
+		free (homepath);
+		free (pattern);
+		free (d);
 		return NULL;
 	}
 	r_list_sort (files, (RListComparator)strcmp);
