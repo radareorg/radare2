@@ -638,6 +638,7 @@ char *kv3_reg_grf_quad[] = {
 	"$r56r57r58r59",
 	"$r60r61r62r63",
 };
+
 char *kv3_reg_arf[] = {
 	"$a0",
 	"$a1",
@@ -826,7 +827,7 @@ void kv3_decode_rr(operand_t *o, const ut32 *b) {
 }
 
 void kv3_decode_rt(operand_t *o, const ut32 *b) {
-	return kv3_decode_rw (o, b);
+	kv3_decode_rw (o, b);
 }
 
 void kv3_decode_ra(operand_t *o, const ut32 *b) {
@@ -918,15 +919,15 @@ void kv3_decode_rd(operand_t *o, const ut32 *b) {
 }
 
 void kv3_decode_re(operand_t *o, const ut32 *b) {
-	return kv3_decode_ra (o, b);
+	kv3_decode_ra (o, b);
 }
 
 void kv3_decode_rm(operand_t *o, const ut32 *b) {
-	return kv3_decode_ru (o, b);
+	kv3_decode_ru (o, b);
 }
 
 void kv3_decode_rn(operand_t *o, const ut32 *b) {
-	return kv3_decode_rv (o, b);
+	kv3_decode_rv (o, b);
 }
 
 void kv3_decode_ro(operand_t *o, const ut32 *b) {
@@ -1039,7 +1040,6 @@ void kv3_decode_pcrel17(operand_t *o, const ut32 *b) {
 void kv3_decode_pcrel27(operand_t *o, const ut32 *b) {
 	ut64 imm;
 	imm = extract_field (27, 0, b[0]);
-
 	o->imm = sx (27, imm) << 2;
 	o->type = KVX_OPER_TYPE_OFF;
 }
