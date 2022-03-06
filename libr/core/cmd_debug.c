@@ -5034,15 +5034,15 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'd': // "ddd"
+	case 'd': // "dd"
 		switch (input[1]) {
-		case '\0': // "ddd"
+		case '\0': // "dd"
 			r_debug_desc_list (core->dbg, 0);
 			break;
-		case '*': // "dtd*"
+		case '*': // "dd*"
 			r_debug_desc_list (core->dbg, 1);
 			break;
-		case 's': // "dtds"
+		case 's': // "dds"
 			{
 				ut64 off = UT64_MAX;
 				int fd = atoi (input + 2);
@@ -5055,7 +5055,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 't': // "ddt" <ttypath>
-			r_core_cmdf (core, "dd-0");
+			r_core_cmd0 (core, "dd-0");
 			break;
 		case 'd': // "ddd"
 			{
@@ -5073,7 +5073,7 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'r':
+		case 'r': // "ddr"
 			{
 				ut64 off = UT64_MAX;
 				ut64 len = UT64_MAX;
@@ -5089,7 +5089,7 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'w':
+		case 'w':  // "ddw"
 			{
 				ut64 off = UT64_MAX;
 				ut64 len = UT64_MAX;
@@ -5123,7 +5123,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			// open file
 			break;
-		case '?':
+		case '?': // "dd?"
 		default:
 			r_core_cmd_help (core, help_msg_dd);
 			break;
