@@ -5118,7 +5118,7 @@ static int cmd_debug(void *data, const char *input) {
 		case ' ': // "dd"
 			// TODO: handle read, readwrite, append
 			{
-				RBuffer *buf = r_core_syscallf (core, "open", "%s, %d, %d", input + 2, 2, 0644);
+				RBuffer *buf = r_core_syscallf (core, "open", "\"%s\", %d, %d", input + 2, 2, 0644);
 				consumeBuffer (buf, "dx ", "Cannot open");
 			}
 			// open file
