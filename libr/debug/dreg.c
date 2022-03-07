@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h> // just to get the RPrint instance
 #include <r_debug.h>
 #include <r_cons.h>
 #include <r_reg.h>
 
-R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
+R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	int i, n, size;
 	if (!dbg || !dbg->reg || !dbg->h) {
 		return false;
@@ -85,6 +85,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 }
 
 R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color) {
+	r_return_val_if_fail (dbg && dbg->reg, false);
 	int delta, cols, n = 0;
 	const char *fmt, *fmt2, *kwhites;
 	RPrint *pr = NULL;
@@ -95,13 +96,8 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 	ut64 diff;
 	char strvalue[256];
 	bool isJson = (rad == 'j' || rad == 'J');
-	if (isJson && !pj) {
-		eprintf ("rad=='j' requires pj != NULL\n");
-		return false;
-	}
-	if (!dbg || !dbg->reg) {
-		return false;
-	}
+	r_return_val_if_fail (!isJson || (isJson && pj), false);
+
 	if (dbg->corebind.core) {
 		pr = ((RCore*)dbg->corebind.core)->print;
 	}
@@ -153,6 +149,10 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 				continue;
 			}
 		}
+		// skip wired-to-ground registers
+		if (item->offset < 0) {
+			continue;
+		}
 		// Is this register being asked?
 		if (dbg->q_regs) {
 			if (!r_list_empty (dbg->q_regs)) {
@@ -194,21 +194,21 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 		} else {
 			value = r_reg_get_value_big (dbg->reg, item, &valueBig);
 			switch (regSize) {
-				case 80:
-					snprintf (strvalue, sizeof (strvalue), "0x%04x%016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
-					break;
-				case 96:
-					snprintf (strvalue, sizeof (strvalue), "0x%08x%016"PFMT64x"", valueBig.v96.High, valueBig.v96.Low);
-					break;
-				case 128:
-					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"", valueBig.v128.High, valueBig.v128.Low);
-					break;
-				case 256:
-					snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"",
-							valueBig.v256.High.High, valueBig.v256.High.Low, valueBig.v256.Low.High, valueBig.v256.Low.Low);
-					break;
-				default:
-					snprintf (strvalue, sizeof (strvalue), "ERROR");
+			case 80:
+				snprintf (strvalue, sizeof (strvalue), "0x%04x%016"PFMT64x"", valueBig.v80.High, valueBig.v80.Low);
+				break;
+			case 96:
+				snprintf (strvalue, sizeof (strvalue), "0x%08x%016"PFMT64x"", valueBig.v96.High, valueBig.v96.Low);
+				break;
+			case 128:
+				snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"", valueBig.v128.High, valueBig.v128.Low);
+				break;
+			case 256:
+				snprintf (strvalue, sizeof (strvalue), "0x%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"%016"PFMT64x"",
+						valueBig.v256.High.High, valueBig.v256.High.Low, valueBig.v256.Low.High, valueBig.v256.Low.Low);
+				break;
+			default:
+				snprintf (strvalue, sizeof (strvalue), "ERROR");
 			}
 			if (isJson) {
 				pj_ks (pj, item->name, strvalue);
@@ -221,68 +221,68 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 			continue;
 		}
 		switch (rad) {
-			case '-':
-				dbg->cb_printf ("f-%s\n", item->name);
-				break;
-			case 'R':
-				dbg->cb_printf ("aer %s = %s\n", item->name, strvalue);
-				break;
-			case 1:
-			case '*':
-				dbg->cb_printf ("f %s %d %s\n", item->name, item->size / 8, strvalue);
-				break;
-			case '.':
-				dbg->cb_printf ("dr %s=%s\n", item->name, strvalue);
-				break;
-			case '=':
-				{
-					int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
-					char whites[32], content[300];
-					const char *a = "", *b = "";
-					if (highlight) {
-						a = Color_INVERT;
-						b = Color_INVERT_RESET;
-						dbg->creg = item->name;
-					}
-					strcpy (whites, kwhites);
-					if (delta && use_color) {
-						dbg->cb_printf ("%s", use_color);
-					}
-					snprintf (content, sizeof (content),
-							fmt2, "", item->name, "", strvalue, "");
-					len = colwidth - strlen (content);
-					if (len < 0) {
-						len = 0;
-					}
-					memset (whites, ' ', sizeof (whites));
-					whites[len] = 0;
-					dbg->cb_printf (fmt2, a, item->name, b, strvalue,
-							((n+1)%cols)? whites: "\n");
-					if (highlight) {
-						dbg->cb_printf (Color_INVERT_RESET);
-					}
-					if (delta && use_color) {
-						dbg->cb_printf (Color_RESET);
-					}
+		case '-':
+			dbg->cb_printf ("f-%s\n", item->name);
+			break;
+		case 'R':
+			dbg->cb_printf ("aer %s = %s\n", item->name, strvalue);
+			break;
+		case 1:
+		case '*':
+			dbg->cb_printf ("f %s %d %s\n", item->name, item->size / 8, strvalue);
+			break;
+		case '.':
+			dbg->cb_printf ("dr %s=%s\n", item->name, strvalue);
+			break;
+		case '=':
+			{
+				int len, highlight = use_color && pr && pr->cur_enabled && itmidx == pr->cur;
+				char whites[32], content[300];
+				const char *a = "", *b = "";
+				if (highlight) {
+					a = Color_INVERT;
+					b = Color_INVERT_RESET;
+					dbg->creg = item->name;
 				}
-				break;
-			case 'd':
-			case 3:
-				if (delta) {
-					char woot[512];
-					snprintf (woot, sizeof (woot),
-							" was 0x%"PFMT64x" delta %d\n", diff, delta);
-					dbg->cb_printf (fmt, item->name, strvalue, woot);
-				}
-				break;
-			default:
+				strcpy (whites, kwhites);
 				if (delta && use_color) {
 					dbg->cb_printf ("%s", use_color);
-					dbg->cb_printf (fmt, item->name, strvalue, Color_RESET"\n");
-				} else {
-					dbg->cb_printf (fmt, item->name, strvalue, "\n");
 				}
-				break;
+				snprintf (content, sizeof (content),
+						fmt2, "", item->name, "", strvalue, "");
+				len = colwidth - strlen (content);
+				if (len < 0) {
+					len = 0;
+				}
+				memset (whites, ' ', sizeof (whites));
+				whites[len] = 0;
+				dbg->cb_printf (fmt2, a, item->name, b, strvalue,
+						((n+1)%cols)? whites: "\n");
+				if (highlight) {
+					dbg->cb_printf (Color_INVERT_RESET);
+				}
+				if (delta && use_color) {
+					dbg->cb_printf (Color_RESET);
+				}
+			}
+			break;
+		case 'd':
+		case 3:
+			if (delta) {
+				char woot[512];
+				snprintf (woot, sizeof (woot),
+						" was 0x%"PFMT64x" delta %d\n", diff, delta);
+				dbg->cb_printf (fmt, item->name, strvalue, woot);
+			}
+			break;
+		default:
+			if (delta && use_color) {
+				dbg->cb_printf ("%s", use_color);
+				dbg->cb_printf (fmt, item->name, strvalue, Color_RESET"\n");
+			} else {
+				dbg->cb_printf (fmt, item->name, strvalue, "\n");
+			}
+			break;
 		}
 		n++;
 	}
@@ -292,13 +292,14 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 beach:
 	if (isJson) {
 		pj_end (pj);
-	} else if (n > 0 && (rad == 2 || rad == '=') && ((n%cols))) {
+	} else if (n > 0 && (rad == 2 || rad == '=') && ((n % cols))) {
 		dbg->cb_printf ("\n");
 	}
 	return n != 0;
 }
 
-R_API int r_debug_reg_set(struct r_debug_t *dbg, const char *name, ut64 num) {
+R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
+	r_return_val_if_fail (dbg && name, false);
 	RRegItem *ri;
 	int role = r_reg_get_name_idx (name);
 	if (!dbg || !dbg->reg) {
