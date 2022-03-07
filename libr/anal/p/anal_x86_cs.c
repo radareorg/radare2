@@ -3585,6 +3585,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=A4	esi\n"
 		"=A5	edi\n"
 		"=SN	eax\n"
+		"gpr	eiz	.32	?	0\n"
 		"gpr	oeax	.32	44	0\n"
 		"gpr	eax	.32	24	0\n"
 		"gpr	ax	.16	24	0\n"
@@ -3790,6 +3791,7 @@ static char *get_reg_profile(RAnal *anal) {
 		 "flg	df	.1	.1162	0	direction\n"
 		 "flg	of	.1	.1163	0	overflow\n"
 
+		 "gpr	riz	.64	?	0\n"
 		 "gpr	rsp	.64	152	0\n"
 		 "gpr	esp	.32	152	0\n"
 		 "gpr	sp	.16	152	0\n"

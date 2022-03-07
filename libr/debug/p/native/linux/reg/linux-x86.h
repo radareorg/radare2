@@ -8,6 +8,7 @@ return strdup (
 "=A2	ecx\n"
 "=A3	edx\n"
 "=SN	oeax\n"
+"gpr	eiz	.32	?	0\n"
 "gpr	eax	.32	24	0\n"
 "gpr	ax	.16	24	0\n"
 "gpr	ah	.8	25	0\n"

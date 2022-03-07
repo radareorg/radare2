@@ -49,6 +49,7 @@ return strdup (
 	"gpr	df	.1	.490	0	direction\n"
 	"gpr	of	.1	.491	0	overflow\n"
 
+	"gpr	eiz	.32	?	0\n"
 	"gpr	esp	.32	64	0\n"
 	"gpr	sp	.16	64	0\n"
 	"seg	ss	.32	68	0\n"

@@ -12,6 +12,7 @@ return strdup (
 "=A5	r9\n"
 "=SN	orax\n"
 "# no profile defined for x86-64\n"
+"gpr	riz	.64	?	0\n"
 "gpr	rax	.64	80	0\n"
 "gpr	eax	.32	80	0\n"
 "gpr	ax	.16	80	0\n"

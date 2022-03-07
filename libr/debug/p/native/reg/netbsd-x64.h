@@ -9,6 +9,7 @@ return strdup (
 "=A4	r8\n"
 "=A5	r9\n"
 "# no profile defined for x86-64\n"
+"gpr	riz	.64	?	0\n"
 "gpr	rdi	.64	0	0\n"
 "gpr	edi	.32	0	0\n"
 "gpr	di	.16	0	0\n"

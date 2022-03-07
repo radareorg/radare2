@@ -38,6 +38,7 @@ return strdup(
 "mmx@gpr	mm6	.64	116	0\n"
 "mmx@gpr	mm7	.64	126	0\n"
 /* end floating area. */
+"gpr@gpr	eiz	.32	?	0\n"
 "gpr@gpr	edi	.32	156	0\n"
 "gpr@gpr	esi	.32	160	0\n"
 "gpr@gpr	ebx	.32	164	0\n"
