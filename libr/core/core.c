@@ -3909,8 +3909,6 @@ R_API RBuffer *r_core_syscallf(RCore *core, const char *name, const char *fmt, .
 R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 	RBuffer *b = NULL;
 	char code[1024];
-	char *str_arg_start, *str_arg_end;
-	int str_arg_size = 0;
 
 	//arch check
 	if (strcmp (core->anal->cur->arch, "x86")) {
@@ -3939,20 +3937,11 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 		return 0;
 	}
 
-	str_arg_start = strchr (args, '"');
-	if (str_arg_start) {
-		str_arg_start++;
-		str_arg_end = strchr (str_arg_start, '"');
-		if (str_arg_end) {
-			str_arg_size = (str_arg_end - str_arg_start) + 1;
-		}
-	}
-
 	snprintf (code, sizeof (code),
 			"sc@syscall(%d);\n"
-			"main@global(0,%d) { sc(%s);\n"
-			":int3\n" /// XXX USE trap
-			"}\n", num, str_arg_size, args);
+			"main@global(0,1024) { sc(%s);\n"
+			":int3\n"
+			"}\n", num, args);
 	r_egg_reset (core->egg);
 	// TODO: setup arch/bits/os?
 	r_egg_load (core->egg, code, 0);
