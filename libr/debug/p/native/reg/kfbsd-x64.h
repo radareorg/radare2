@@ -7,6 +7,7 @@ return strdup (
 "=A2	rcx\n"
 "=A3	rdx\n"
 "# no profile defined for x86-64\n"
+"gpr	riz	.64	?	0\n"
 "gpr	r15	.64	0	0\n"
 "gpr	r15d	.32	0	0\n"
 "gpr	r15w	.16	0	0\n"

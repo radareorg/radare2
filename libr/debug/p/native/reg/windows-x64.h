@@ -86,6 +86,7 @@ return strdup (
 "gpr	r15d	4	0x0F0	0	\n"
 "gpr	r15w	2	0x0F0	0	\n"
 "gpr	r15b	1	0x0F0	0	\n"
+"gpr	riz	8	?	0	\n"
 "gpr	rip	8	0x0F8	0	\n"
 "gpr	cf	.1	.544	0	carry\n"
 "gpr	pf	.1	.546	0	parity\n"

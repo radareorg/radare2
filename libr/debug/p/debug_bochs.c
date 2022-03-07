@@ -380,6 +380,7 @@ static const char *r_debug_bochs_reg_profile(RDebug *dbg) {
 				"seg	fs	2	0x040	0	\n"
 				"seg	gs	2	0x042	0	\n"
 
+				"gpr	riz	8	?	0	\n"
 				"gpr	rax	8	0x078	0	\n"
 				"gpr	eax	4	0x078	0	\n"
 				"gpr	ax	2	0x078	0	\n"
