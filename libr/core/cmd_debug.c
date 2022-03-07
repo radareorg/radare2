@@ -3008,7 +3008,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (!regname) {
 				regname = string;
 			}
-			r = r_reg_get (core->dbg->reg, regname, -1); //R_REG_TYPE_GPR);
+			r = r_reg_get (core->dbg->reg, regname, -1);
 			if (r) {
 				if (r->flags) {
 					r_cons_printf ("0x%08"PFMT64x" ->",
