@@ -2989,6 +2989,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					return;
 				}
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, pj, 'j', use_color);
+				char *s = pj_drain (pj);
+				r_cons_printf ("%s\n", s);
+				free (s);
 			} else {
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, NULL, 0, use_color);
 			}
