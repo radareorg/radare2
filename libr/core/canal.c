@@ -3488,6 +3488,12 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
+	if (core->anal->cur && core->anal->cur->arch) {
+		if (!strcmp (core->anal->cur->arch, "java") || !strcmp (core->anal->cur->arch, "dalvik")) {
+			// var/arg info in dalvik is provided by the bin format, same goes for java
+			return;
+		}
+	}
 	BlockRecurseCtx ctx = { 0, {{ 0 }}, argonly, fcn, core };
 	r_pvector_init (&ctx.reg_set, free);
 	int *reg_set = R_NEWS0 (int, REG_SET_SIZE);
