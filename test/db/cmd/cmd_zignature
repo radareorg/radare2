@@ -432,7 +432,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 (zigs) main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -441,7 +441,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -465,7 +465,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 (zigs) main:
   bytes: 554889e54883ec10897dfc488975f0bf13064000e8c2ffffffb800000000c9c3
@@ -474,7 +474,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -495,7 +495,7 @@ main:
   addr: 0x0040055b
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -518,7 +518,7 @@ foobar:
   realname: main
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -540,7 +540,7 @@ foobar:
   realname: main
   types: int main (int argc, char **argv)
   refs: sym.print
-  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr82:argc:int, tr78:argv:char **
+  vars: fb-12:var_4h:int64_t, fb-24:var_10h:int64_t, tr83:argc:int, tr79:argv:char **
   bbhash: 9890426532f35eb3a80fe773d887714fe27d13ea125ad7e90beab16a51b74496
 EOF
 RUN
@@ -1278,7 +1278,7 @@ za sym.__write g cc=6 nbbs=7 edges=7 ebbs=3 bbsum=148
 za sym.__write o 0x000ec800
 za sym.__write t void sym.__write (int64_t arg1, int64_t arg2, int64_t arg3)
 za sym.__write r sym.__libc_enable_asynccancel sym.__libc_disable_asynccancel
-za sym.__write v fs-32:var_8h:int64_t, tr72:arg3:int64_t, tr78:arg2:int64_t, tr82:arg1:int64_t
+za sym.__write v fs-32:var_8h:int64_t, tr73:arg3:int64_t, tr79:arg2:int64_t, tr83:arg1:int64_t
 za sym.__write h 4f2d194bae72345352b26e0a36531e7d6ff6cb5d6b50b92487246507b8dafdc5
 EOF
 RUN
@@ -1298,7 +1298,7 @@ za sym.bcopy g cc=1 nbbs=2 edges=1 ebbs=1 bbsum=23
 za sym.bcopy o 0x0008a900
 za sym.bcopy t void sym.bcopy (int64_t arg1)
 za sym.bcopy r sym..plt.sec
-za sym.bcopy v tr82:arg1:int64_t
+za sym.bcopy v tr83:arg1:int64_t
 za sym.bcopy h 7549556f94a4c26907f0304da9892c797a73e6c44907dc2030389392a9df8f69
 EOF
 RUN
@@ -2029,7 +2029,7 @@ CMDS=<<EOF
 s main
 af
 za new_main b 41574156415541545589fd534889f34883ec58488b3e64488b042528000000488944244831c067e8e4e40000488d351e480100bf06000000ff155ade0100488d354d490100488d3d2c490100ff158edc0100488d3d1f490100ff1561dc0100488d3d9a900000c70518e101000200000067e88a260100c605cbf101000148b8000000000000008048890572f201008b05dce00100c70502f101000000000048c70567f201000000000048c70554f20100ffffffffc605adf101000083f8020f84580e000083f8030f85e3010000c705f1f1010000000000be0700000031ff67e8fcfa0000c605d4f1010000488d3db2480100c705c8f1010000000000c705baf1010000000000c605b0f1010000c605a8f1010000c70586f1010000000000c60567f1010000c70559f1010001000000c60550f1010000c60548f1010000c70539f101000000000048c70526f101000000000048c70513f1010000000000c60591f1010000ff159eda01004989c44885c07438b904000000488d1592770100488d354bd801004889c767e86284000085c00f88df0800004898488d157177010031ff8b348267e836fa000048c7058bf0010050000000488d3df6470100ff1546da01004989c44885c074098038000f85d90800004c8d64243031c0be13540000bf010000004c89e2ff159bdb010083f8ff740e0fb7:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000ff000000000000ffffffffffff0000000000ff000000000000ff000000000000ff0000000000ff000000000000ff0000000000ff000000000000ff000000000000000000ffff00000000ff000000000000ffffffffffffffffffffff000000000000ff0000000000ff000000000000000000ff00000000000000000000ff00000000000000000000ff000000000000ff0000ffff00000000ff0000ffff00000000ff000000000000000000ffffffffffffffffff00000000ff000000000000ff000000000000ff000000000000000000ff000000000000000000ff000000000000ff000000000000ff000000000000000000ff000000000000ff000000000000000000ff000000000000ff000000000000ff000000000000000000ff00000000000000000000ff00000000000000000000ff000000000000ff0000000000ffffffffffffff00ffffffffffff000000000000ff000000000000ffffffffff00000000ffffffff00000000ffffff000000000000ffffffffffffff00000000ff00000000000000000000ff000000000000ff0000000000ffffffffffffff00ffffffffff00000000ffffffffffffffff00000000ffffffffffffffffff0000000000ffffffff00ffff
-za new_main v fs-64:XXX_48h:int64_t, fs-88:XXX_30h:int64_t, fs-113:XXX_17h:int64_t, fs-128:XXX_8h:int64_t, fs-96:XXX_28h:int64_t, fs-80:XXX_38h:int64_t, fs-67:XXX_45h:int64_t, fs-65:XXX_47h:int64_t, fs-66:XXX_46h:int64_t, fs-112:XXX_18h:int64_t, fs-86:XXX_32h:int64_t, tr82:ARGC:int, tr78:ARGV:char **
+za new_main v fs-64:XXX_48h:int64_t, fs-88:XXX_30h:int64_t, fs-113:XXX_17h:int64_t, fs-128:XXX_8h:int64_t, fs-96:XXX_28h:int64_t, fs-80:XXX_38h:int64_t, fs-67:XXX_45h:int64_t, fs-65:XXX_47h:int64_t, fs-66:XXX_46h:int64_t, fs-112:XXX_18h:int64_t, fs-86:XXX_32h:int64_t, tr83:ARGC:int, tr79:ARGV:char **
 z/f
 afv
 EOF
