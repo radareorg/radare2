@@ -152,7 +152,7 @@ static const char *help_msg_dcs[] = {
 
 static const char *help_msg_dcu[] = {
 	"Usage:", "dcu", " Continue until address",
-	"dcu.", "", "Alias for dcu $$ (continue until current address",
+	"dcu.", "", "Alias for dcu $$ (continue until current address)",
 	"dcu", " address", "Continue until address",
 	"dcu", " [..tail]", "Continue until the range",
 	"dcu", " [from] [to]", "Continue until the range",
@@ -162,7 +162,7 @@ static const char *help_msg_dcu[] = {
 static const char *help_msg_dd[] = {
 	"Usage: dd", "", "Descriptors commands",
 	"dd", "", "List file descriptors",
-	"dd", " <file>", "Open and map that file into the UI",
+	"dd", " <file>", "Open and map that file into the UI (may be addr of filename in memory)",
 	"dd-", "<fd>", "Close stdout fd",
 	"dd*", "", "List file descriptors (in radare commands)",
 	"dds", " <fd> <off>", "Seek given fd)",
@@ -5118,7 +5118,24 @@ static int cmd_debug(void *data, const char *input) {
 		case ' ': // "dd"
 			// TODO: handle read, readwrite, append
 			{
-				RBuffer *buf = r_core_syscallf (core, "open", "\"%s\", %d, %d", input + 2, 2, 0644);
+				RBuffer *buf;
+				ut64 addr;
+				char *filename;
+
+				addr = r_num_get (NULL, input + 2);
+
+				// filename can be a string literal or address in memory
+				if (addr < UT64_MAX) {
+					buf = r_core_syscallf (core, "open",
+							"%" PFMT64x ", %d, %d",
+							addr, 2, 0644);
+				} else {
+					filename = r_str_escape (strdup (input + 2));
+					buf = r_core_syscallf (core, "open",
+							"\"%s\", %d, %d",
+							filename, 2, 0644);
+					free (filename);
+				}
 				consumeBuffer (buf, "dx ", "Cannot open");
 			}
 			// open file
