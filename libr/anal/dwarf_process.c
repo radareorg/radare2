@@ -1,10 +1,8 @@
-/* radare - LGPL - Copyright 2012-2021 - houndthe */
+/* radare - LGPL - Copyright 2012-2022 - houndthe */
 
-#include "base_types.h"
-#include <sdb.h>
 #include <r_anal.h>
 #include <r_bin_dwarf.h>
-#include <string.h>
+#include "base_types.h"
 
 typedef struct dwarf_parse_context_t {
 	const RAnal *anal;
@@ -989,7 +987,7 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *
 	case 49: return "ldtr";
 
 	default:
-		eprintf ("Unhandled dwarf register reference number %d\n", reg_num);
+		eprintf ("Unhandled dwarf register reference number %d\n", (int)reg_num);
 		*kind = LOCATION_UNKNOWN;
 		return "unsupported_reg";
 	}
