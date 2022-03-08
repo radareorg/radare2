@@ -753,9 +753,9 @@ static int step_until(RCore *core, ut64 addr) {
 }
 
 static int step_until_esil(RCore *core, const char *esilstr) {
-	if (!core || !esilstr || !core->dbg || !core->dbg->anal
-			|| !core->dbg->anal->esil) {
-		eprintf ("Not initialized %p. Run 'aei' first.\n", core->anal->esil);
+	r_return_val_if_fail (core && core->dbg && core->dbg->anal && esilstr, false);
+	if (!core->dbg->anal->esil) {
+		eprintf ("esil is not initialized. Run 'aei' first.\n");
 		return false;
 	}
 	r_cons_break_push (NULL, NULL);
