@@ -63,6 +63,19 @@ static const char *help_msg_CC[] = {
 	NULL
 };
 
+// IMHO 'code-line' should be universal concept, instead of dbginfo/dwarf/...
+static const char *help_msg_CL[] = {
+	"Usage: CL", ".j-", "@addr - manage code-line references (loaded via bin.dbginfo and shown when asm.dwarf)",
+	"CL", "", "list all code line information (virtual address <-> source file:line)",
+	"CLj", "", "Same as above but in JSON format (See dir.source to change the path to find the referenced lines)",
+	"CL*", "", "Same as above but in r2 commands format",
+	"CL.", "", "Show list all code line information (virtual address <-> source file:line)",
+	"CL-", "*", "Remove all the cached codeline information",
+	"CL", " addr file:line", "Register new file:line source details, r2 will slurp the line",
+	"CL", " addr base64:text", "Register new source details for given address using base64",
+	NULL
+};
+
 static const char *help_msg_Ct[] = {
 	"Usage: Ct", "[.|-] [@ addr]", " # Manage comments for variable types",
 	"Ct", "", "list all variable type comments",
@@ -313,12 +326,9 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int all = false;
 	const char *p = input;
 	char *file_line = NULL;
-	char *pheap = NULL;
 
 	if (*p == '?') {
-		eprintf ("Usage: CL[.-*?] [addr] [file:line]\n");
-		eprintf ("or: CL [addr] base64:[string]\n");
-		free (pheap);
+		r_core_cmd_help (core, help_msg_CL);
 		return 0;
 	}
 	if (*p == '-') {
@@ -354,7 +364,6 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		} else {
 			sdb_foreach (core->bin->cur->sdb_addrinfo, print_addrinfo, NULL);
 		}
-		free (pheap);
 		return 0;
 	}
 
@@ -368,6 +377,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 			offset = r_num_math (core->num, myp);
 		}
 
+		char *pheap = NULL;
 		if (!strncmp (sp, "base64:", 7)) {
 			int len = 0;
 			ut8 *o = sdb_decode (sp + 7, &len);
@@ -411,12 +421,13 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 		if (use_json) {
 			pj_end (pj);
 			char *s = pj_drain (pj);
-			r_cons_printf ("%s\n", s);
-			free (s);
+			if (s) {
+				r_cons_printf ("%s\n", s);
+				free (s);
+			}
 		}
 		sdb_free (fscache);
 	}
-	free (pheap);
 	return 0;
 }
 
