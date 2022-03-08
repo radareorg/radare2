@@ -5046,7 +5046,6 @@ static int cmd_debug(void *data, const char *input) {
 							fd, off);
 					if (buf) {
 						print_buffer_hex (buf);
-						r_buf_free (buf);
 					} else {
 						eprintf ("Cannot seek\n");
 					}
@@ -5067,7 +5066,6 @@ static int cmd_debug(void *data, const char *input) {
 							fd, (int)newfd);
 					if (buf) {
 						print_buffer_hex (buf);
-						r_buf_free (buf);
 					} else {
 						eprintf ("Cannot dup %d -> %d\n", fd, (int)newfd);
 					}
@@ -5094,7 +5092,6 @@ static int cmd_debug(void *data, const char *input) {
 							fd, off, (int)len);
 					if (buf) {
 						print_buffer_hex (buf);
-						r_buf_free (buf);
 					} else {
 						eprintf ("Cannot read\n");
 					}
@@ -5116,7 +5113,6 @@ static int cmd_debug(void *data, const char *input) {
 							fd, off, (int)len);
 					if (buf) {
 						print_buffer_hex (buf);
-						r_buf_free (buf);
 					} else {
 						eprintf ("Cannot write\n");
 					}
@@ -5132,7 +5128,6 @@ static int cmd_debug(void *data, const char *input) {
 				RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
 				if (buf) {
 					print_buffer_hex (buf);
-					r_buf_free (buf);
 				} else {
 					eprintf ("Cannot close\n");
 				}
@@ -5162,7 +5157,6 @@ static int cmd_debug(void *data, const char *input) {
 
 				if (buf) {
 					print_buffer_hex (buf);
-					r_buf_free (buf);
 				} else {
 					eprintf ("Cannot open\n");
 				}
