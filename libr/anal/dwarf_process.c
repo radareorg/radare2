@@ -1,10 +1,8 @@
-/* radare - LGPL - Copyright 2012-2021 - houndthe */
+/* radare - LGPL - Copyright 2012-2022 - houndthe */
 
-#include "base_types.h"
-#include <sdb.h>
 #include <r_anal.h>
 #include <r_bin_dwarf.h>
-#include <string.h>
+#include "base_types.h"
 
 typedef struct dwarf_parse_context_t {
 	const RAnal *anal;
@@ -819,6 +817,7 @@ static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, cons
 }
 
 /* x86_64 https://software.intel.com/sites/default/files/article/402129/mpx-linux64-abi.pdf */
+// https://raw.githubusercontent.com/wiki/hjl-tools/x86-psABI/x86-64-psABI-1.0.pdf
 static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKind *kind) {
 	*kind = LOCATION_REGISTER;
 	switch (reg_num) {
@@ -842,6 +841,7 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKin
 	case 13: return "r13";
 	case 14: return "r14";
 	case 15: return "r15";
+	case 16: return "reserved"; // return address
 	case 17: return "xmm0";
 	case 18: return "xmm1";
 	case 19: return "xmm2";
@@ -850,6 +850,76 @@ static const char *map_dwarf_reg_to_x86_64_reg(ut64 reg_num, VariableLocationKin
 	case 22: return "xmm5";
 	case 23: return "xmm6";
 	case 24: return "xmm7";
+	case 25: return "xmm8";
+	case 26: return "xmm9";
+	case 27: return "xmm10";
+	case 28: return "xmm11";
+	case 29: return "xmm12";
+	case 30: return "xmm13";
+	case 31: return "xmm14";
+	case 32: return "xmm15";
+
+	case 33: return "st0";
+	case 34: return "st1";
+	case 35: return "st2";
+	case 36: return "st3";
+	case 37: return "st4";
+	case 38: return "st5";
+	case 39: return "st6";
+	case 40: return "st7";
+
+	case 41: return "mm4";
+	case 42: return "mm5";
+	case 43: return "mm6";
+	case 44: return "mm7";
+	case 45: return "mm8";
+	case 46: return "mm9";
+	case 47: return "mm10";
+	case 48: return "mm11";
+
+	case 49: return "rflags";
+	case 50: return "es";
+	case 51: return "cs";
+	case 52: return "ss";
+	case 53: return "ds";
+	case 54: return "fs";
+	case 55: return "gs";
+
+	case 58: return "fs.base";
+	case 59: return "gs.base";
+
+	case 62: return "tr";
+	case 63: return "ldtr";
+	case 64: return "mxcsr";
+	case 65: return "fcw";
+	case 66: return "fsw";
+
+	case 67: return "xmm16";
+	case 68: return "xmm17";
+	case 69: return "xmm18";
+	case 70: return "xmm19";
+	case 71: return "xmm20";
+	case 72: return "xmm21";
+	case 73: return "xmm22";
+	case 74: return "xmm23";
+	case 75: return "xmm24";
+	case 76: return "xmm25";
+	case 77: return "xmm26";
+	case 78: return "xmm27";
+	case 79: return "xmm28";
+	case 80: return "xmm29";
+	case 81: return "xmm30";
+	case 82: return "xmm31";
+
+	case 118: return "k0";
+	case 119: return "k1";
+	case 120: return "k2";
+	case 121: return "k3";
+	case 122: return "k4";
+	case 123: return "k5";
+	case 124: return "k6";
+	case 125: return "k7";
+
 	default:
 		*kind = LOCATION_UNKNOWN;
 		return "unsupported_reg";
@@ -872,6 +942,22 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *
 		return "ebp";
 	case 6: return "esi";
 	case 7: return "edi";
+	case 8: return "eip"; // return address register, should not be used
+	case 9: return "eflags";
+
+	case 10: return "reserved";
+	case 11: return "st0";
+	case 12: return "st1";
+	case 13: return "st2";
+	case 14: return "st3";
+	case 15: return "st4";
+	case 16: return "st5";
+	case 17: return "st6";
+	case 18: return "st7";
+
+	case 19: return "reserved";
+	case 20: return "reserved";
+
 	case 21: return "xmm0";
 	case 22: return "xmm1";
 	case 23: return "xmm2";
@@ -880,8 +966,28 @@ static const char *map_dwarf_reg_to_x86_reg(ut64 reg_num, VariableLocationKind *
 	case 26: return "xmm5";
 	case 27: return "xmm6";
 	case 28: return "xmm7";
+
+	case 29: return "mm0";
+	case 30: return "mm1";
+	case 31: return "mm2";
+	case 32: return "mm3";
+	case 33: return "mm4";
+	case 34: return "mm5";
+	case 35: return "mm6";
+	case 36: return "mm7";
+
+	case 40: return "es";
+	case 41: return "cs";
+	case 42: return "ss";
+	case 43: return "ds";
+	case 44: return "fs";
+	case 45: return "gs";
+
+	case 48: return "tr";
+	case 49: return "ldtr";
+
 	default:
-		r_warn_if_reached ();
+		eprintf ("Unhandled dwarf register reference number %d\n", (int)reg_num);
 		*kind = LOCATION_UNKNOWN;
 		return "unsupported_reg";
 	}
