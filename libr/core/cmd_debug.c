@@ -753,7 +753,7 @@ static int step_until(RCore *core, ut64 addr) {
 }
 
 static int step_until_esil(RCore *core, const char *esilstr) {
-	if (!core || !esilstr || !core->dbg || !core->dbg->anal \
+	if (!core || !esilstr || !core->dbg || !core->dbg->anal
 			|| !core->dbg->anal->esil) {
 		eprintf ("Not initialized %p. Run 'aei' first.\n", core->anal->esil);
 		return false;
@@ -1317,8 +1317,7 @@ show_help:
 			break;
 		case ':':
 		case '*':
-			if (mode == '*' || (mode == ':' && \
-				addr>=map->addr && addr < map->addr_end)) {
+			if (mode == '*' || (mode == ':' && R_BETWEEN (map->addr, addr, map->addr_end))) {
 				/* Escape backslashes (e.g. for Windows). */
 				char *escaped_path = r_str_escape (map->file);
 				char *filtered_name = strdup (map->name);
@@ -4755,22 +4754,16 @@ static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 	return out;
 }
 
-static void consumeBuffer(RBuffer *buf, const char *cmd, const char *errmsg) {
-	if (!buf) {
-		if (errmsg) {
-			r_cons_printf ("%s\n", errmsg);
-		}
-		return;
-	}
-	if (cmd) {
-		r_cons_printf ("%s", cmd);
-	}
+static void print_buffer_hex(RBuffer *buf) {
 	int i;
+	r_return_if_fail (buf);
+
+	r_cons_print ("dx ");
 	r_buf_seek (buf, 0, R_BUF_SET);
 	for (i = 0; i < r_buf_size (buf); i++) {
 		r_cons_printf ("%02x", r_buf_read8 (buf));
 	}
-	r_cons_printf ("\n");
+	r_cons_print ("\n");
 }
 
 static int cmd_debug(void *data, const char *input) {
@@ -5049,8 +5042,14 @@ static int cmd_debug(void *data, const char *input) {
 				char *str = strchr (input + 2, ' ');
 				if (str) off = r_num_math (core->num, str+1);
 				if (off == UT64_MAX || !r_debug_desc_seek (core->dbg, fd, off)) {
-					RBuffer *buf = r_core_syscallf (core, "lseek", "%d, 0x%"PFMT64x", %d", fd, off, 0);
-					consumeBuffer (buf, "dx ", "Cannot seek");
+					RBuffer *buf = r_core_syscallf (core, "lseek", "%d, 0x%" PFMT64x ", 0",
+							fd, off);
+					if (buf) {
+						print_buffer_hex (buf);
+						r_buf_free (buf);
+					} else {
+						eprintf ("Cannot seek\n");
+					}
 				}
 			}
 			break;
@@ -5064,11 +5063,13 @@ static int cmd_debug(void *data, const char *input) {
 				char *str = strchr (input + 3, ' ');
 				if (str) newfd = r_num_math (core->num, str+1);
 				if (newfd == UT64_MAX || !r_debug_desc_dup (core->dbg, fd, newfd)) {
-					RBuffer *buf = r_core_syscallf (core, "dup2", "%d, %d", fd, (int)newfd);
+					RBuffer *buf = r_core_syscallf (core, "dup2", "%d, %d",
+							fd, (int)newfd);
 					if (buf) {
-						consumeBuffer (buf, "dx ", NULL);
+						print_buffer_hex (buf);
+						r_buf_free (buf);
 					} else {
-						eprintf ("Cannot dup %d %d\n", fd, (int)newfd);
+						eprintf ("Cannot dup %d -> %d\n", fd, (int)newfd);
 					}
 				}
 			}
@@ -5079,13 +5080,24 @@ static int cmd_debug(void *data, const char *input) {
 				ut64 len = UT64_MAX;
 				int fd = atoi (input + 2);
 				char *str = strchr (input + 2, ' ');
-				if (str) off = r_num_math (core->num, str+1);
-				if (str) str = strchr (str+1, ' ');
-				if (str) len = r_num_math (core->num, str+1);
-				if (len == UT64_MAX || off == UT64_MAX || \
-						!r_debug_desc_read (core->dbg, fd, off, len)) {
-					consumeBuffer (r_core_syscallf (core, "read", "%d, 0x%"PFMT64x", %d",
-								fd, off, (int)len), "dx ", "Cannot read");
+				if (str) {
+					off = r_num_math (core->num, str+1);
+					str = strchr (str+1, ' ');
+					if (str) {
+						len = r_num_math (core->num, str+1);
+					}
+				}
+
+				if (len == UT64_MAX || off == UT64_MAX
+						|| !r_debug_desc_read (core->dbg, fd, off, len)) {
+					RBuffer *buf = r_core_syscallf (core, "read", "%d, 0x%"PFMT64x", %d",
+							fd, off, (int)len);
+					if (buf) {
+						print_buffer_hex (buf);
+						r_buf_free (buf);
+					} else {
+						eprintf ("Cannot read\n");
+					}
 				}
 			}
 			break;
@@ -5098,10 +5110,16 @@ static int cmd_debug(void *data, const char *input) {
 				if (str) off = r_num_math (core->num, str+1);
 				if (str) str = strchr (str+1, ' ');
 				if (str) len = r_num_math (core->num, str+1);
-				if (len == UT64_MAX || off == UT64_MAX || \
-						!r_debug_desc_write (core->dbg, fd, off, len)) {
-					RBuffer *buf = r_core_syscallf (core, "write", "%d, 0x%"PFMT64x", %d", fd, off, (int)len);
-					consumeBuffer (buf, "dx ", "Cannot write");
+				if (len == UT64_MAX || off == UT64_MAX
+						|| !r_debug_desc_write (core->dbg, fd, off, len)) {
+					RBuffer *buf = r_core_syscallf (core, "write", "%d, 0x%" PFMT64x ", %d",
+							fd, off, (int)len);
+					if (buf) {
+						print_buffer_hex (buf);
+						r_buf_free (buf);
+					} else {
+						eprintf ("Cannot write\n");
+					}
 				}
 			}
 			break;
@@ -5112,7 +5130,12 @@ static int cmd_debug(void *data, const char *input) {
 				int fd = atoi (input + 2);
 				//r_core_cmdf (core, "dxs close %d", (int)r_num_math ( core->num, input + 2));
 				RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
-				consumeBuffer (buf, "dx ", "Cannot close");
+				if (buf) {
+					print_buffer_hex (buf);
+					r_buf_free (buf);
+				} else {
+					eprintf ("Cannot close\n");
+				}
 			}
 			break;
 		case ' ': // "dd"
@@ -5136,7 +5159,13 @@ static int cmd_debug(void *data, const char *input) {
 							filename, 2, 0644);
 					free (filename);
 				}
-				consumeBuffer (buf, "dx ", "Cannot open");
+
+				if (buf) {
+					print_buffer_hex (buf);
+					r_buf_free (buf);
+				} else {
+					eprintf ("Cannot open\n");
+				}
 			}
 			// open file
 			break;
