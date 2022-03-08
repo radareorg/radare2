@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2021 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -43,9 +43,9 @@ static int file_stat(const char *file, struct stat* const pStat) {
 	int ret = _wstat (wfile, pStat);
 	free (wfile);
 	return ret;
-#else // __WINDOWS__
+#else
 	return stat (file, pStat);
-#endif // __WINDOWS__
+#endif
 }
 
 // r_file_new("", "bin", NULL) -> /bin
@@ -195,14 +195,20 @@ R_API bool r_file_fexists(const char *fmt, ...) {
 }
 
 R_API bool r_file_exists(const char *str) {
-	char *absfile = r_file_abspath (str);
 	struct stat buf = {0};
+#if 1
+	if (file_stat (str, &buf) == -1) {
+		return false;
+	}
+#else
+	char *absfile = r_file_abspath (str);
 	r_return_val_if_fail (!R_STR_ISEMPTY (str), false);
 	if (file_stat (absfile, &buf) == -1) {
 		free (absfile);
 		return false;
 	}
 	free (absfile);
+#endif
 	return S_IFREG == (S_IFREG & buf.st_mode);
 }
 
