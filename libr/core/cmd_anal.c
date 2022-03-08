@@ -1625,8 +1625,15 @@ static int var_cmd(RCore *core, const char *str) {
 		}
 	case 'a': // "afva"
 		if (fcn) {
-			r_anal_function_delete_all_vars (fcn);
-			r_core_recover_vars (core, fcn, false);
+			char *type = r_str_newf ("func.%s.ret", fcn->name);
+			if (sdb_exists (core->anal->sdb_types, type)) {
+				// if function type exists
+				// do not analize vars if function has a signature
+			} else {
+				r_anal_function_delete_all_vars (fcn);
+				r_core_recover_vars (core, fcn, false);
+			}
+			free (type);
 			free (p);
 			return true;
 		} else {
