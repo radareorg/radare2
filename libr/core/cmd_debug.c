@@ -5080,7 +5080,7 @@ static int cmd_debug(void *data, const char *input) {
 				char *str = strchr (input + 2, ' ');
 				if (str) {
 					off = r_num_math (core->num, str+1);
-					str = strchr (str+1, ' ');
+					str = strchr (str + 1, ' ');
 					if (str) {
 						len = r_num_math (core->num, str+1);
 					}
