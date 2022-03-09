@@ -1847,6 +1847,29 @@ R_API char *r_anal_function_get_json(RAnalFunction *function) {
 	return pj_drain (pj);
 }
 
+#define ALPH(x) \
+	(x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z')
+#define ISNUM(x) \
+	(x >= '0' && x <= '9')
+#define VALID_TOKEN_CHR(x) \
+	(ALPH (x) || ISNUM (x) || x == '_' || x == '.')
+static inline char *sanitize_fname(const char *name) {
+	char *sane = strdup (name);
+	if (sane) {
+		char *ptr = sane;
+		while (*ptr) {
+			if (!VALID_TOKEN_CHR (*ptr)) {
+				*ptr = '_';
+			}
+			ptr++;
+		}
+	}
+	return sane;
+}
+#undef ALPH
+#undef ISNUM
+#undef VALID_TOKEN_CHR
+
 R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 	RAnal *a = function->anal;
 	const char *realname = NULL, *import_substring = NULL;
@@ -1900,7 +1923,10 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 		free (arg_i);
 		free (sdb_arg_i);
 	}
+	char *sane = sanitize_fname (realname);
+	realname = sane? sane: realname;
 	ret = r_str_newf ("%s %s (%s);", r_str_get_fail (ret_type, "void"), realname, args);
+	free (sane);
 
 	free (sdb_args);
 	free (sdb_ret);
