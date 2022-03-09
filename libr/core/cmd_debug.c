@@ -4763,7 +4763,7 @@ static void print_buffer_hex(RBuffer *buf) {
 	for (i = 0; i < r_buf_size (buf); i++) {
 		r_cons_printf ("%02x", r_buf_read8 (buf));
 	}
-	r_cons_print ("\n");
+	r_cons_newline ();
 }
 
 static int cmd_debug(void *data, const char *input) {
