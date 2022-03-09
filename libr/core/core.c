@@ -3940,10 +3940,10 @@ R_API RBuffer *r_core_syscall(RCore *core, const char *name, const char *args) {
 	}
 
 	snprintf (code, sizeof (code),
-		"sc@syscall(%d);\n"
-		"main@global(0) { sc(%s);\n"
-		":int3\n" /// XXX USE trap
-		"}\n", num, args);
+			"sc@syscall(%d);\n"
+			"main@global(0,1024) { sc(%s);\n"
+			":int3\n"
+			"}\n", num, args);
 	r_egg_reset (core->egg);
 	// TODO: setup arch/bits/os?
 	r_egg_load (core->egg, code, 0);
