@@ -235,6 +235,7 @@ bool callback(RTokenizer *tok) {
 		{
 			char *h = r_str_ndup (tok->buf + tok->begin, tok->end - tok->begin);
 			if (data->pj) {
+				pj_ks (data->pj, "directive", h);
 			} else {
 				eprintf ("DIRECTIVE (%s)%c", h, 10);
 			}
@@ -245,10 +246,10 @@ bool callback(RTokenizer *tok) {
 		free (data->word);
 		data->word = r_str_ndup (tok->buf + tok->begin, tok->end - tok->begin);
 		// eprintf ("WORD (%s)%c", data->word, 10);
-		if (data->incase ) {
+		if (data->incase) {
 			// eprintf ("CASE WORD (%s)%c", data->word, 10);
+			// data->incase = false;
 			break;
-			data->incase = false;
 		}
 		if (!strcmp (data->word, "case")) {
 			R_FREE (data->word);
