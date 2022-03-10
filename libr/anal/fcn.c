@@ -1900,7 +1900,14 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 		free (arg_i);
 		free (sdb_arg_i);
 	}
+
+	char *sane = r_name_filter2 (realname);
+	if (sane) {
+		r_str_replace_ch (sane, ':', '_', true);
+		realname = sane;
+	}
 	ret = r_str_newf ("%s %s (%s);", r_str_get_fail (ret_type, "void"), realname, args);
+	free (sane);
 
 	free (sdb_args);
 	free (sdb_ret);
