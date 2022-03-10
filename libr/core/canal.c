@@ -3458,11 +3458,11 @@ int i;
 	ut64 endaddr = bb->addr + bb->size;
 	const int mask = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT;
 	// for (i = 0; i < bb->ninstr; i++) {
-i = 0;
+	i = 0;
 	while (opaddr < endaddr) {
+#if 0
 		ut64 pos = bb->op_pos[i];
 		ut64 addr = bb->addr + pos;
-#if 0
 		if (addr != opaddr) {
 		//	eprintf ("Inconsistency\n");
 		}
