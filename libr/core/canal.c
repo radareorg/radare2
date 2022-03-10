@@ -3463,7 +3463,7 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		ut64 addr = bb->addr + pos;
 		if (addr != opaddr) {
 			if (ctx->core->anal->verbose) {
-				eprintf ("Inconsistency 0x%llx vs 0x%llx\n", addr, opaddr);
+				eprintf ("Inconsistency 0x%" PFMT64x " vs 0x%" PFMT64x " \n", addr, opaddr);
 			}
 		}
 		if (addr < bb->addr || addr >= bb->addr + bb->size) {
