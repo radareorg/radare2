@@ -3443,7 +3443,6 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		return false;
 	}
 	(void) r_io_read_at (ctx->core->io, bb->addr, buf, bb->size);
-int i;
 
 	int *parent_reg_set = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
 	int *reg_set = R_NEWS (int, REG_SET_SIZE);
@@ -3455,20 +3454,24 @@ int i;
 	RAnalOp op;
 	// XXX this is very slow. RAnalBlock knows its size and the position of the instructions already
 	ut64 opaddr = bb->addr;
-	ut64 endaddr = bb->addr + bb->size;
 	const int mask = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT;
-	// for (i = 0; i < bb->ninstr; i++) {
-	i = 0;
-	while (opaddr < endaddr) {
-#if 0
-		ut64 pos = bb->op_pos[i];
+	int pos;
+#if 1
+	int i = 0;
+	for (i = 0; i < bb->ninstr; i++) {
+		pos = i? bb->op_pos[i - 1]: 0;
 		ut64 addr = bb->addr + pos;
 		if (addr != opaddr) {
-		//	eprintf ("Inconsistency\n");
+			if (ctx->core->anal->verbose) {
+				eprintf ("Inconsistency 0x%llx vs 0x%llx\n", addr, opaddr);
+			}
 		}
 		if (addr < bb->addr || addr >= bb->addr + bb->size) {
 			break;
 		}
+#else
+	ut64 endaddr = bb->addr + bb->size;
+	while (opaddr < endaddr) {
 #endif
 		if (opaddr < bb->addr || opaddr >= bb->addr + bb->size) {
 			break;
@@ -3476,7 +3479,7 @@ int i;
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-#if 1
+#if 0
 		RAnalOp *hop = r_core_anal_op (core, opaddr, mask);
 		if (!hop) {
 			break;
@@ -3484,7 +3487,8 @@ int i;
 		memcpy (&op, hop, sizeof (RAnalOp));
 		free (hop);
 #else
-		if (r_anal_op (core->anal, &op, addr, buf + pos, bb->size - pos, mask) < 1) {
+		pos = (opaddr - bb->addr);
+		if (r_anal_op (core->anal, &op, opaddr, buf + pos, bb->size - pos, mask) < 1) {
 			break;
 		}
 #endif
@@ -3512,7 +3516,6 @@ int i;
 			}
 		}
 		opaddr += opsize;
-i++;
 	}
 	free (buf);
 	return true;
