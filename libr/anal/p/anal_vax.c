@@ -64,8 +64,11 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case 0x19:
 	case 0x1e:
 		op->size = 2;
+		if (op->size > len) {
+			return -1;
+		}
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + op->size + ((char)buf[1]);
+		op->jump = op->addr + op->size + ((len > 1)? ((char)buf[1]): 0);
 		op->fail = op->addr + op->size;
 		break;
 	case 0xd0: // mcoml
@@ -97,17 +100,26 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case 0xc7:
 		op->size = 8;
 		op->type = R_ANAL_OP_TYPE_DIV;
+		if (op->size > len) {
+			return -1;
+		}
 		break;
 	case 0x94: // movb
 	case 0x7d: // movb
 		op->size = 3;
 		op->type = R_ANAL_OP_TYPE_MOV;
+		if (op->size > len) {
+			return -1;
+		}
 		break;
 	case 0x90:
 	case 0x9e:
 	case 0xde:
 		op->size = 7;
 		op->type = R_ANAL_OP_TYPE_MOV;
+		if (op->size > len) {
+			return -1;
+		}
 		break;
 	case 0xdd:
 	case 0x9f:
@@ -150,7 +162,7 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case 0xfb: // calls
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->size = 7;
-		if (len > 6) {
+		if (op->size <= len) {
 			int oa = 3;
 			ut32 delta = buf[oa];
 			delta |= (ut32)(buf[oa + 1]) << 8;
@@ -164,6 +176,9 @@ static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, 
 	case 0xff:
 		op->size = 2;
 		break;
+	}
+	if (op->size > len) {
+		return -1;
 	}
 	return op->size;
 }
