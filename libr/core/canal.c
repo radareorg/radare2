@@ -3438,6 +3438,12 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	if (bb->size > ctx->core->anal->opt.bb_max_size) {
 		return true;
 	}
+	ut8 *buf = malloc (bb->size);
+	if (!buf) {
+		return false;
+	}
+	(void) r_io_read_at (ctx->core->io, bb->addr, buf, bb->size);
+
 	int *parent_reg_set = r_pvector_at (&ctx->reg_set, r_pvector_len (&ctx->reg_set) - 1);
 	int *reg_set = R_NEWS (int, REG_SET_SIZE);
 	memcpy (reg_set, parent_reg_set, REG_SET_SIZE * sizeof (int));
@@ -3445,40 +3451,73 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	RCore *core = ctx->core;
 	RAnalFunction *fcn = ctx->fcn;
 	fcn->stack = bb->parent_stackptr;
-	ut64 pos = bb->addr;
-	while (pos < bb->addr + bb->size) {
+	RAnalOp op;
+	// XXX this is very slow. RAnalBlock knows its size and the position of the instructions already
+	ut64 opaddr = bb->addr;
+	const int mask = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT;
+	int pos;
+#if 1
+	int i = 0;
+	for (i = 0; i < bb->ninstr; i++) {
+		pos = i? bb->op_pos[i - 1]: 0;
+		ut64 addr = bb->addr + pos;
+		if (addr != opaddr) {
+			if (ctx->core->anal->verbose) {
+				eprintf ("Inconsistency 0x%" PFMT64x " vs 0x%" PFMT64x " \n", addr, opaddr);
+			}
+		}
+		if (addr < bb->addr || addr >= bb->addr + bb->size) {
+			break;
+		}
+#else
+	ut64 endaddr = bb->addr + bb->size;
+	while (opaddr < endaddr) {
+#endif
+		if (opaddr < bb->addr || opaddr >= bb->addr + bb->size) {
+			break;
+		}
 		if (r_cons_is_breaked ()) {
 			break;
 		}
-		RAnalOp *op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL | R_ANAL_OP_MASK_HINT);
-		if (!op) {
-			//eprintf ("Cannot get op\n");
+#if 0
+		RAnalOp *hop = r_core_anal_op (core, opaddr, mask);
+		if (!hop) {
 			break;
 		}
-		r_anal_extract_rarg (core->anal, op, fcn, reg_set, &ctx->count);
+		memcpy (&op, hop, sizeof (RAnalOp));
+		free (hop);
+#else
+		pos = (opaddr - bb->addr);
+		if (r_anal_op (core->anal, &op, opaddr, buf + pos, bb->size - pos, mask) < 1) {
+			break;
+		}
+#endif
+		r_anal_extract_rarg (core->anal, &op, fcn, reg_set, &ctx->count);
 		if (!ctx->argonly) {
-			if (op->stackop == R_ANAL_STACK_INC) {
-				fcn->stack += op->stackptr;
-			} else if (op->stackop == R_ANAL_STACK_RESET) {
+			if (op.stackop == R_ANAL_STACK_INC) {
+				fcn->stack += op.stackptr;
+			} else if (op.stackop == R_ANAL_STACK_RESET) {
 				fcn->stack = 0;
 			}
-			r_anal_extract_vars (core->anal, fcn, op);
+			r_anal_extract_vars (core->anal, fcn, &op);
 		}
-		int opsize = op->size;
-		int optype = op->type;
-		r_anal_op_free (op);
+		int opsize = op.size;
+		int optype = op.type;
+		r_anal_op_fini (&op);
+		//r_anal_op_free (op);
 		if (opsize < 1) {
 			break;
 		}
 		if (optype == R_ANAL_OP_TYPE_CALL) {
-			size_t i;
+			int i;
 			int max_count = fcn->cc ? r_anal_cc_max_arg (core->anal, fcn->cc) : 0;
 			for (i = 0; i < max_count; i++) {
 				reg_set[i] = 2;
 			}
 		}
-		pos += opsize;
+		opaddr += opsize;
 	}
+	free (buf);
 	return true;
 }
 
@@ -3500,7 +3539,8 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	r_pvector_push (&ctx.reg_set, reg_set);
 	int saved_stack = fcn->stack;
 	RAnalBlock *first_bb = r_anal_get_block_at (fcn->anal, fcn->addr);
-	r_anal_block_recurse_depth_first (first_bb, (RAnalBlockCb)anal_block_cb, (RAnalBlockCb)anal_block_on_exit, &ctx);
+	r_anal_block_recurse_depth_first (first_bb, (RAnalBlockCb)anal_block_cb,
+		(RAnalBlockCb)anal_block_on_exit, &ctx);
 	r_pvector_fini (&ctx.reg_set);
 	fcn->stack = saved_stack;
 }
