@@ -24,9 +24,9 @@ e asm.var=false
 pdb
 EOF
 EXPECT=<<EOF
-/ 337: entry0 (int32_t arg_40h, int32_t arg_44h);
+/ 337: entry0 (int32_t arg_4h, int32_t arg_1dh, int32_t arg_0h, int32_t arg_ch, int32_t arg_10h, int32_t arg_14h, int32_t arg_1ch, int32_t arg_24h, int32_t arg_2ch, int32_t arg_30h);
 |           0x006453a1      e8d8170000     call fcn.00646b7e
-|           0x006453a6      8d642444       lea esp, [arg_44h]
+|           0x006453a6      8d642444       lea esp, [esp + 0x44]
 |       ,=< 0x006453aa      0f85a6300000   jne 0x648456
 EOF
 RUN
