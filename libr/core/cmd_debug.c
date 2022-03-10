@@ -165,8 +165,9 @@ static const char *help_msg_dd[] = {
 	"dd", " <file>", "Open and map that file into the UI (may be addr of filename in memory)",
 	"dd-", "<fd>", "Close stdout fd",
 	"dd*", "", "List file descriptors (in radare commands)",
-	"dds", " <fd> <off>", "Seek given fd)",
+	"dds", " <fd> <off>", "(Seek given fd to offset)",
 	"ddd", " <fd1> <fd2>", "Dup2 from fd1 to fd2",
+	"ddf", " <addr>", "Create pipe and write fd to address",
 	"ddr", " <fd> <size>", "Read N bytes from fd",
 	"ddw", " <fd> <hexpairs>", "Write N bytes to fd",
 	NULL
@@ -5136,22 +5137,35 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
+		case 'f': // "ddf"
+			{
+				RBuffer *buf = NULL;
+				ut64 addr = r_num_get (NULL, input + 2);
+
+				if (addr && addr < UT64_MAX) {
+					buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
+				}
+
+				if (buf) {
+					print_buffer_hex (buf);
+				} else {
+					eprintf ("Cannot open pipe.\n");
+				}
+			}
+			break;
 		case ' ': // "dd"
 			// TODO: handle read, readwrite, append
 			{
 				RBuffer *buf;
-				ut64 addr;
-				char *filename;
-
-				addr = r_num_get (NULL, input + 2);
+				ut64 addr = r_num_get (NULL, input + 2);
 
 				// filename can be a string literal or address in memory
-				if (addr < UT64_MAX) {
+				if (addr && addr < UT64_MAX) {
 					buf = r_core_syscallf (core, "open",
 							"%" PFMT64x ", %d, %d",
 							addr, 2, 0644);
 				} else {
-					filename = r_str_escape (strdup (input + 2));
+					char *filename = r_str_escape (strdup (input + 2));
 					buf = r_core_syscallf (core, "open",
 							"\"%s\", %d, %d",
 							filename, 2, 0644);
