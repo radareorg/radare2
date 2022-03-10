@@ -251,7 +251,7 @@ rd_label (const char **p, int *exists, struct label **previous, int level,
   if (verbose >= 6)
     fprintf (stderr, "%5d (0x%04x): Starting to read label (string=%s).\n",
 	     stack[sp].line, addr, *p);
-  for (s = level; s >= 0; --s)
+  for (s = level; s >= 0; s--)
     {
       if (check_label (stack[s].labels, p, &l,
 		       (**p == '.' && s == sp) ? previous : NULL, 0))
