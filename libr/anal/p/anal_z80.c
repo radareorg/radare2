@@ -553,7 +553,7 @@ static int z80_anal_opasm(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int
 RAnalPlugin r_anal_plugin_z80 = {
 	.name = "z80",
 	.arch = "z80",
-	.license = "LGPL3",
+	.license = "GPL",
 	.bits = 16,
 	.set_reg_profile = &set_reg_profile,
 	.desc = "Z80 CPU code analysis plugin",
