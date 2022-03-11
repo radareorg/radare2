@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 #include <r_util/r_graph_drawable.h>
+#include "../anal/abi.inc"
 
 #define SLOW_ANALYSIS 1
 #define MAX_SCAN_SIZE 0x7ffffff
@@ -517,6 +518,7 @@ static const char *help_msg_afi[] = {
 	"afij", "", "function info in json format",
 	"afil", "", "verbose function info",
 	"afip", "", "show whether the function is pure or not",
+	"afiq", "", "show quite few info about the function",
 	"afis", "", "show function stats (opcode, meta)",
 	NULL
 };
@@ -4247,6 +4249,46 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					r_cons_printf ("is-pure: %s\n", r_str_bool (r_anal_function_purity (fcn)));
+				}
+			}
+			break;
+		case '=':
+		case 'q':
+			{
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+				if (fcn) {
+					// TODO: add info about xrefs and call counts
+					int nargs = r_type_func_args_count (core->anal->sdb_types, 0);
+					int nvars = r_anal_var_count_locals (fcn);
+					int nins = r_anal_function_instrcount (fcn);
+					int ebbs = 0;
+					int edges = r_anal_function_count_edges (fcn, &ebbs);
+					r_anal_function_count_edges (fcn, NULL);
+					r_cons_printf ("0x%08" PFMT64x " : %s\n", fcn->addr, fcn->name);
+					char *sig = r_core_cmd_strf (core, "afcf @ 0x%"PFMT64x, fcn->addr);
+					if (sig) {
+						r_str_trim (sig);
+						r_cons_printf ("  sign:  %s\n", sig);
+						free (sig);
+					}
+					r_cons_printf ("  stack: 0x%08x (vars:%d args:%d)\n",
+						fcn->maxstack, nvars , nargs);
+					r_cons_printf ("  size:  %d (0x%08" PFMT64x " .. 0x%08" PFMT64x ")\n",
+						(int)r_anal_function_realsize (fcn),
+						r_anal_function_min_addr (fcn),
+						r_anal_function_max_addr (fcn));
+					r_cons_printf ("  nbbs:  %d edges:%d ebbs:%d ninstr:%d\n",
+						r_list_length (fcn->bbs), edges, ebbs, nins);
+					r_cons_printf ("  cost:  %d complexity:%d\n",
+						r_anal_function_cost (fcn), r_anal_function_complexity (fcn));
+					r_cons_printf ("  attr:  ");
+					if (r_anal_function_islineal (fcn)) {
+						r_cons_printf ("lineal");
+					}
+					if (fcn->is_noreturn) {
+						r_cons_printf ("noreturn");
+					}
+					r_cons_newline ();
 				}
 			}
 			break;
