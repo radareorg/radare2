@@ -436,6 +436,7 @@ R_API char *r_file_slurp(const char *str, R_NULLABLE size_t *usz) {
 			char *nbuf = realloc (buf, size + 1);
 			if (!nbuf) {
 				free (buf);
+				fclose (fd);
 				return NULL;
 			}
 			buf = nbuf;
@@ -661,7 +662,7 @@ R_API char *r_file_slurp_lines_from_bottom(const char *file, int line) {
 			}
 		}
 		if (line > lines) {
-			return strdup (str);	// number of lines requested in more than present, return all
+			return str;	// number of lines requested in more than present, return all
 		}
 		i--;
 		for (; str[i] && line; i--) {
@@ -669,7 +670,7 @@ R_API char *r_file_slurp_lines_from_bottom(const char *file, int line) {
 				line--;
 			}
 		}
-		ptr = str+i;
+		ptr = str + i;
 		ptr = strdup (ptr);
 		free (str);
 	}

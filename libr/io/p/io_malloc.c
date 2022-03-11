@@ -22,6 +22,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			char *buf = r_file_slurp (pathname + 8, &size);
 			if (!buf || size < 1) {
 				free (mal);
+				free (buf);
 				return NULL;
 			}
 			mal->size = size;

@@ -71,6 +71,7 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 	} else {
 		name = ord;
 	}
+	free (path);
 	return name;
 }
 
