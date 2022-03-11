@@ -19,7 +19,7 @@ static bool lang_zig_file(RLang *lang, const char *file) {
 	if (a) {
 		*a = 0;
 		libpath = name;
-		libname = a+1;
+		libname = a + 1;
 	} else {
 		libpath = ".";
 		libname = name;
@@ -57,11 +57,13 @@ static bool lang_zig_file(RLang *lang, const char *file) {
 		r_lib_dl_close (lib);
 	} else {
 		eprintf ("Cannot open library\n");
+		free (name);
 		free (path);
 		free (cc);
 		return false;
 	}
 	r_file_rm (path); // remove lib
+	free (name);
 	free (path);
 	free (cc);
 	return true;

@@ -425,7 +425,8 @@ static int cmd_eval(void *data, const char *input) {
 			} else if (input[2] == '*') {
 				r_core_cmdf (core, "cat %s", core->themepath);
 			} else if (input[2] == '!') {
-				r_core_editor (core, core->themepath, NULL);
+				char *res = r_core_editor (core, core->themepath, NULL);
+				free (res);
 				cmd_load_theme (core, core->theme); // reload
 			} else if (input[2] == ' ') {
 				cmd_load_theme (core, input + 3);

@@ -119,6 +119,7 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 	free (dbdir);
 	char *data = r_file_slurp (path, NULL);
 	if (!data) {
+		free (path);
 		return NULL;
 	}
 	const char *needle = token; // "\nR2PM_DESC ";
@@ -202,6 +203,8 @@ static int r2pm_update(void) {
 	if (r_file_exists (pmpath)) {
 		if (git_pull (pmpath) != 0) {
 			eprintf ("Error\n");
+			free (pmpath);
+			free (gpath);
 			return 1;
 		}
 	} else {

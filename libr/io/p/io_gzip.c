@@ -171,10 +171,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		ut8 *data = (ut8 *)r_file_slurp (pathname+7, &len);	//memleak here?
 		int *size = (int*)&mal->size;
 		mal->buf = r_inflate (data, (int)len, NULL, size);
+		free (data);
 		if (mal->buf) {
 			return r_io_desc_new (io, &r_io_plugin_gzip, pathname, rw, mode, mal);
 		}
-		free (data);
 		eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname+9, mal->size);
 		free (mal);
 	}

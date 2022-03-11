@@ -976,7 +976,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		} else {
 			frame_off = ptr - fcn->bp_off;
 		}
-		if (maxstackframe && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
+		if (maxstackframe != 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
 			goto beach;
 		}
 		RAnalVar *var = get_stack_var (fcn, frame_off);
@@ -1027,9 +1027,12 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			}
 		}
 		if (varname) {
+#if 0
 			if (isarg && frame_off > 48) {
+				free (varname);
 				goto beach;
 			}
+#endif
 			RAnalVar *var = r_anal_function_set_var (fcn, frame_off, type, vartype, anal->bits / 8, isarg, varname);
 			if (var) {
 				r_anal_var_set_access (var, reg, op->addr, rw, ptr);
@@ -1039,7 +1042,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		free (vartype);
 	} else {
 		st64 frame_off = -(ptr + fcn->bp_off);
-		if (maxstackframe && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
+		if (maxstackframe != 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
 			goto beach;
 		}
 		RAnalVar *var = get_stack_var (fcn, frame_off);

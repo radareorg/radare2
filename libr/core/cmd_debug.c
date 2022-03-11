@@ -5165,7 +5165,7 @@ static int cmd_debug(void *data, const char *input) {
 							"%" PFMT64x ", %d, %d",
 							addr, 2, 0644);
 				} else {
-					char *filename = r_str_escape (strdup (input + 2));
+					char *filename = r_str_escape (input + 2);
 					buf = r_core_syscallf (core, "open",
 							"\"%s\", %d, %d",
 							filename, 2, 0644);
