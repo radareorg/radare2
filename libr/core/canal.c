@@ -22,19 +22,7 @@ enum {
 // 128M
 #define MAX_SCAN_SIZE 0x7ffffff
 
-#if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
-// the function is implemented in anal/fcn.c
-#else
-static int r_anal_function_instrcount(RAnalFunction *fcn) {
-	int count = 0;
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		count += bb->ninstr;
-	}
-	return count;
-}
-#endif
+#include "../anal/abi.inc"
 
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
@@ -2737,6 +2725,7 @@ static int fcn_list_verbose(RCore *core, RList *fcns, const char *sortby) {
 		}
 	}
 
+	// TODO: add ninstr and islineal?
 	r_cons_printf ("%-*s %4s %5s %5s %5s %4s %*s range %-*s %s %s %s %s %s %s\n",
 			headeraddr_width, "address", "size", "nbbs", "edges", "cc", "cost",
 			headeraddr_width, "min bound", headeraddr_width, "max bound", "calls",
@@ -2902,6 +2891,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	pj_ki (pj, "bits", fcn->bits);
 	pj_ks (pj, "type", r_anal_functiontype_tostring (fcn->type));
 	pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
+	pj_kb (pj, "is-lineal", r_anal_function_islineal (fcn));
 	pj_ki (pj, "ninstrs", r_anal_function_instrcount (fcn));
 	pj_ki (pj, "edges", r_anal_function_count_edges (fcn, &ebbs));
 	pj_ki (pj, "ebbs", ebbs);
@@ -3140,6 +3130,9 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\nnum-bbs: %d", r_list_length (fcn->bbs));
 	r_cons_printf ("\nnum-instrs: %d", r_anal_function_instrcount (fcn));
 	r_cons_printf ("\nedges: %d", r_anal_function_count_edges (fcn, &ebbs));
+	r_cons_printf ("\nminbound: 0x%08" PFMT64x, r_anal_function_min_addr (fcn));
+	r_cons_printf ("\nmaxbound: 0x%08" PFMT64x, r_anal_function_max_addr (fcn));
+	r_cons_printf ("\nis-lineal: %s" , r_str_bool (r_anal_function_islineal (fcn)));
 	r_cons_printf ("\nend-bbs: %d", ebbs);
 	r_cons_printf ("\ncall-refs:");
 	int outdegree = 0;

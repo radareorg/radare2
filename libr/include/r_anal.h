@@ -1709,6 +1709,7 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);
 R_API bool r_anal_function_purity(RAnalFunction *fcn);
 #if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
 R_API int r_anal_function_instrcount(RAnalFunction *fcn);
+R_API bool r_anal_function_islineal(RAnalFunction *fcn);
 #endif
 
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
