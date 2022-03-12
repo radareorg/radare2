@@ -756,8 +756,8 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'p':
 		return cmd_cp (data, input + 1);
 		break;
-	case 'a': // "cat"
-		if (input[1] == 't') {
+	case 'a': // "ca"
+		if (input[1] == 't') { // "cat"
 			const char *path = r_str_trim_head_ro (input + 2);
 			if (*path == '$' && !path[1]) {
 				eprintf ("No alias name given.\n");
@@ -770,7 +770,7 @@ static int cmd_cmp(void *data, const char *input) {
 				} else {
 					eprintf ("No such alias \"$%s\"\n", path+1);
 				}
-			} else {
+			} else if (*path) {
 				if (r_fs_check (core->fs, path)) {
 					r_core_cmdf (core, "mg %s", path);
 				} else {
@@ -780,7 +780,11 @@ static int cmd_cmp(void *data, const char *input) {
 						free (res);
 					}
 				}
+			} else {
+				r_core_cmd_help_match (core, help_msg_c, "cat", true);
 			}
+		} else { // "ca"
+			r_core_cmd_help_match (core, help_msg_c, "cat", true);
 		}
 		break;
 	case 'w':
