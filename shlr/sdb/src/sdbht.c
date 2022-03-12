@@ -19,7 +19,7 @@ static bool sdb_ht_internal_insert(HtPP* ht, const char* key, const char* value,
 	if (!ht || !key || !value) {
 		return false;
 	}
-	SdbKv kvp = {{ 0 }};
+	SdbKv kvp = {{0}};
 	kvp.base.key = strdup (key);
 	if (!kvp.base.key) {
 		goto err;

@@ -405,7 +405,7 @@ const unsigned alpha_num_operands = sizeof(alpha_operands)/sizeof(*alpha_operand
 #define MAX			AXP_OPCODE_MAX
 
 /* Common combinations of arguments.  */
-#define ARG_NONE		{ 0 }
+#define ARG_NONE		{0}
 #define ARG_BRA			{ RA, BDISP }
 #define ARG_FBRA		{ FA, BDISP }
 #define ARG_FP			{ FA, FB, DFC1 }
@@ -1068,7 +1068,7 @@ const struct alpha_opcode alpha_opcodes[] =
   { "jmp",		MBR(0x1A,0), BASE, { RA, CPRB, JMPHINT } },
   { "jsr",		MBR(0x1A,1), BASE, { RA, CPRB, JMPHINT } },
   { "ret",		MBR_(0x1A,2) | (31 << 21) | (26 << 16) | 1,/* pseudo */
-			0xFFFFFFFF, BASE, { 0 } },
+			0xFFFFFFFF, BASE, {0} },
   { "ret",		MBR(0x1A,2), BASE, { RA, CPRB, RETHINT } },
   { "jcr",		MBR(0x1A,3), BASE, { RA, CPRB, RETHINT } }, /* alias */
   { "jsr_coroutine",	MBR(0x1A,3), BASE, { RA, CPRB, RETHINT } },

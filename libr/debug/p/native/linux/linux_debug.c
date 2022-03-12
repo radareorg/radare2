@@ -81,7 +81,7 @@ static void linux_dbg_wait_break(RDebug *dbg);
 static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid);
 
 int linux_handle_signals(RDebug *dbg, int tid) {
-	siginfo_t siginfo = { 0 };
+	siginfo_t siginfo = {0};
 	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0, (r_ptrace_data_t)&siginfo);
 	if (ret == -1) {
 		/* ESRCH means the process already went away :-/ */
@@ -315,7 +315,7 @@ static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid) {
 				continue;
 			}
 			// Retrieve the signal without consuming it with PTRACE_GETSIGINFO
-			siginfo_t siginfo = { 0 };
+			siginfo_t siginfo = {0};
 			ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, th->pid, 0, (r_ptrace_data_t)(size_t)&siginfo);
 			// Skip if PTRACE_GETSIGINFO fails when the thread is running.
 			if (ret == -1) {
@@ -616,7 +616,7 @@ static bool linux_kill_thread(int tid, int signo) {
 
 static bool linux_stop_thread(RDebug *dbg, int tid) {
 	int status, ret;
-	siginfo_t siginfo = { 0 };
+	siginfo_t siginfo = {0};
 
 	// Return if the thread is already stopped
 	ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, tid, 0,
@@ -651,7 +651,7 @@ bool linux_stop_threads(RDebug *dbg, int except) {
 }
 
 static bool linux_attach_single_pid(RDebug *dbg, int pid) {
-	siginfo_t sig = { 0 };
+	siginfo_t sig = {0};
 
 	if (pid < 0) {
 		return false;

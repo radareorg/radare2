@@ -4,10 +4,10 @@
 #include <string.h>
 
 int avr_decode(RAsm *a, char *out, int out_len, ut64 addr, cut8 *buf, int len) {
-	formattingOptions opt = { 0 };
+	formattingOptions opt = {0};
 	disassembledInstruction dins;
 	assembledInstruction ins;
-	avrDisassembleContext context = { 0 };
+	avrDisassembleContext context = {0};
 	int opsize = 2;
 
 	if (len < 2) {
@@ -52,10 +52,10 @@ int avr_decode(RAsm *a, char *out, int out_len, ut64 addr, cut8 *buf, int len) {
 }
 
 int avr_anal(RAnal *a, char *out, int out_size, ut64 addr, cut8 *buf, int len) {
-	formattingOptions opt = { 0 };
+	formattingOptions opt = {0};
 	disassembledInstruction dins;
 	assembledInstruction ins;
-	avrDisassembleContext context = { 0 };
+	avrDisassembleContext context = {0};
 	int opsize = 2;
 
 	r_str_ncpy (out, "invalid", out_size);

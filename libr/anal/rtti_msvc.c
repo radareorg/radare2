@@ -439,7 +439,7 @@ R_API void r_anal_rtti_msvc_print_complete_object_locator(RVTableContext *contex
 }
 
 R_API void r_anal_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode) {
-	rtti_type_descriptor td = { 0 };
+	rtti_type_descriptor td = {0};
 	if (!rtti_msvc_read_type_descriptor (context, addr, &td)) {
 		eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", addr);
 		return;
@@ -521,7 +521,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 
 	// type descriptor
 	ut64 typeDescriptorAddr = rtti_msvc_addr (context, colAddr, col.object_base, col.type_descriptor_addr);
-	rtti_type_descriptor td = { 0 };
+	rtti_type_descriptor td = {0};
 	if (!rtti_msvc_read_type_descriptor (context, typeDescriptorAddr, &td)) {
 		if (!strict) {
 			eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", typeDescriptorAddr);
@@ -591,7 +591,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 		}
 
 		ut64 baseTypeDescriptorAddr = rtti_msvc_addr (context, colAddr, col.object_base, bcd->type_descriptor_addr);
-		rtti_type_descriptor btd = { 0 };
+		rtti_type_descriptor btd = {0};
 		if (rtti_msvc_read_type_descriptor (context, baseTypeDescriptorAddr, &btd)) {
 			if (use_json) {
 				pj_k (pj, "type_desc");

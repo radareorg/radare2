@@ -7,7 +7,7 @@
 #include <r_magic.h>
 
 static char *get_filetype(RBuffer *b) {
-	ut8 buf[4096] = { 0 };
+	ut8 buf[4096] = {0};
 	char *res = NULL;
 	RMagic *ck = r_magic_new (0);
 	if (!ck) {

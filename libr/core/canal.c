@@ -2132,7 +2132,7 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 		return false;
 	}
 	int id = 0;
-	HtUUOptions opt = { 0 };
+	HtUUOptions opt = {0};
 	HtUU *ht = ht_uu_new_opt (&opt);
 
 	r_cons_printf ("graph\n[\n" "hierarchic 1\n" "label \"\"\n" "directed 1\n");
@@ -3533,7 +3533,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 			return;
 		}
 	}
-	BlockRecurseCtx ctx = { 0, {{ 0 }}, argonly, fcn, core };
+	BlockRecurseCtx ctx = { 0, {{0}}, argonly, fcn, core };
 	r_pvector_init (&ctx.reg_set, free);
 	int *reg_set = R_NEWS0 (int, REG_SET_SIZE);
 	r_pvector_push (&ctx.reg_set, reg_set);
@@ -3827,7 +3827,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	}
 	int ptrdepth = r_config_get_i (core->config, "anal.ptrdepth");
 	int i, count = 0;
-	RAnalOp op = R_EMPTY;
+	RAnalOp op = {0};
 	ut64 at;
 	char bckwrds, do_bckwrd_srch;
 	int arch = -1;
@@ -4049,7 +4049,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	ut64 at;
 	int count = 0;
 	int bsz = 8096;
-	RAnalOp op = { 0 };
+	RAnalOp op = {0};
 
 	if (from == to) {
 		return -1;
@@ -4944,7 +4944,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	ut64 size;
 	int idx;
 	RAnalEsil esil_cpy;
-	RAnalOp op = R_EMPTY;
+	RAnalOp op = {0};
 	RAnalFunction *fcn = NULL;
 	ut8 *buf = NULL;
 	char *tmp_esil_str = NULL;
@@ -5146,7 +5146,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	RAnalEsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
 	char *pcname = NULL;
-	RAnalOp op = R_EMPTY;
+	RAnalOp op = {0};
 	ut8 *buf = NULL;
 	bool end_address_set = false;
 	int iend;

@@ -71,7 +71,7 @@ PIMAGE_DATA_DIRECTORY pe_get_directory_entry( PE* pe, int entry) {
 		? &pe->header64->OptionalHeader.DataDirectory[entry]
 		: &pe->header->OptionalHeader.DataDirectory[entry];
 #else
-	PIMAGE_DATA_DIRECTORY result = { 0 };
+	PIMAGE_DATA_DIRECTORY result = {0};
 #endif
 	return result;
 }

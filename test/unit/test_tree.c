@@ -23,8 +23,8 @@ void add_to_list(RTreeNode *n, RTreeVisitor *vis) {
 	} while (0)
 
 bool test_r_tree() {
-	RTreeVisitor calc = { 0 };
-	RTreeVisitor lister = { 0 };
+	RTreeVisitor calc = {0};
+	RTreeVisitor lister = {0};
 	RTree *t = r_tree_new();
 
 	calc.pre_visit = (RTreeNodeVisitCb)sum_node;

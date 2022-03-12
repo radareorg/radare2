@@ -270,7 +270,7 @@ static RList *libs(RBinFile *bf) {
 }
 
 static ut32 _read_le32(RBin *rbin, ut64 addr) {
-	ut8 data[4] = { 0 };
+	ut8 data[4] = {0};
 	if (!rbin->iob.read_at (rbin->iob.io, addr, data, sizeof (data))) {
 		return UT32_MAX;
 	}
@@ -278,7 +278,7 @@ static ut32 _read_le32(RBin *rbin, ut64 addr) {
 }
 
 static ut16 _read_le16(RBin *rbin, ut64 addr) {
-	ut8 data[2] = { 0 };
+	ut8 data[2] = {0};
 	if (!rbin->iob.read_at (rbin->iob.io, addr, data, sizeof (data))) {
 		return UT16_MAX;
 	}

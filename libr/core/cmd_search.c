@@ -694,7 +694,7 @@ static int _cb_hit_sz(RSearchKeyword *kw, int klen, void *user, ut64 addr) {
 }
 
 static int _cb_hit(R_NULLABLE RSearchKeyword *kw, void *user, ut64 addr) {
-	RSearchKeyword kw_fake = { 0 };
+	RSearchKeyword kw_fake = {0};
 	RSearchKeyword *kw_used = &kw_fake;
 	int klen = 0;
 	if (kw) {
@@ -1149,7 +1149,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 	int grep_find;
 	int search_hit;
 	char *rx = NULL;
-	HtUUOptions opt = { 0 };
+	HtUUOptions opt = {0};
 	HtUU *localbadstart = ht_uu_new_opt (&opt);
 	int count = 0;
 
@@ -1276,7 +1276,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	RList *ropList = NULL;
 	char *buf_asm = NULL;
 	unsigned int size = 0;
-	RAnalOp analop = R_EMPTY;
+	RAnalOp analop = {0};
 	RAsmOp asmop;
 	Sdb *db = NULL;
 	const bool colorize = r_config_get_i (core->config, "scr.color");
@@ -1518,7 +1518,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	r_cons_break_push (NULL, NULL);
 
 	r_list_foreach (param->boundaries, itermap, map) {
-		HtUUOptions opt = { 0 };
+		HtUUOptions opt = {0};
 		HtUU *badstart = ht_uu_new_opt (&opt);
 		if (!r_itv_overlap (search_itv, map->itv)) {
 			continue;
@@ -1538,7 +1538,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 
 		// Find the end gadgets.
 		for (i = 0; i + 32 < delta; i += increment) {
-			RAnalOp end_gadget = R_EMPTY;
+			RAnalOp end_gadget = {0};
 			// Disassemble one.
 			if (r_anal_op (core->anal, &end_gadget, from + i, buf + i,
 				    delta - i, R_ANAL_OP_MASK_BASIC) < 1) {
@@ -1726,7 +1726,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	const int hit_combo_limit = r_config_get_i (core->config, "search.esilcombo");
 	const bool cfgDebug = r_config_get_b (core->config, "cfg.debug");
 	RSearch *search = core->search;
-	RSearchKeyword kw = R_EMPTY;
+	RSearchKeyword kw = {0};
 	if (input[0] != 'E') {
 		return;
 	}

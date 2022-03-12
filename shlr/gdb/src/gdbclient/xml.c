@@ -14,7 +14,7 @@
 static char *gdbr_read_feature(libgdbr_t *g, const char *file, ut64 *tot_len) {
 	ut64 retlen = 0, retmax = 0, off = 0, len = g->stub_features.pkt_sz - 2,
 		blksz = g->data_max, subret_space = 0, subret_len = 0;
-	char *tmp, *tmp2, *tmp3, *ret = NULL, *subret = NULL, msg[128] = { 0 },
+	char *tmp, *tmp2, *tmp3, *ret = NULL, *subret = NULL, msg[128] = {0},
 		status, tmpchar;
 	while (1) {
 		snprintf (msg, sizeof (msg), "qXfer:features:read:%s:%"PFMT64x
@@ -110,7 +110,7 @@ exit_err:
 static char *gdbr_read_osdata(libgdbr_t *g, const char *file, ut64 *tot_len) {
 	ut64 retlen = 0, retmax = 0, off = 0, len = g->stub_features.pkt_sz - 2,
 		blksz = g->data_max;
-	char *tmp, *ret = NULL, msg[128] = { 0 }, status;
+	char *tmp, *ret = NULL, msg[128] = {0}, status;
 	while (1) {
 		snprintf (msg, sizeof (msg), "qXfer:osdata:read:%s:%" PFMT64x ",%" PFMT64x, file, off, len);
 		if (send_msg (g, msg) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {

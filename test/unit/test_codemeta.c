@@ -7,7 +7,7 @@
 
 static RCodeMetaItem make_code_annotation(int st, int en, RCodeMetaItemType typec,
 	ut64 offset, RSyntaxHighlightType types) {
-	RCodeMetaItem annotation = { 0 };
+	RCodeMetaItem annotation = {0};
 	annotation.start = st;
 	annotation.end = en;
 	annotation.type = typec;
@@ -22,7 +22,7 @@ static RCodeMetaItem make_code_annotation(int st, int en, RCodeMetaItemType type
 
 static RCodeMetaItem make_variable_annotation(int st, int en, RCodeMetaItemType typec,
 	const char *name) {
-	RCodeMetaItem annotation = { 0 };
+	RCodeMetaItem annotation = {0};
 	annotation.start = st;
 	annotation.end = en;
 	annotation.type = typec;
@@ -32,7 +32,7 @@ static RCodeMetaItem make_variable_annotation(int st, int en, RCodeMetaItemType 
 
 static RCodeMetaItem make_reference_annotation(int st, int en, RCodeMetaItemType typec,
 	ut64 offset, const char *name) {
-	RCodeMetaItem annotation = { 0 };
+	RCodeMetaItem annotation = {0};
 	annotation.start = st;
 	annotation.end = en;
 	annotation.type = typec;

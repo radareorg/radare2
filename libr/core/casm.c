@@ -311,7 +311,7 @@ static void add_hit_to_hits(RList* hits, ut64 addr, int len, ut8 is_valid) {
 }
 
 static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_valid) {
-	RCoreAsmHit hit = R_EMPTY;
+	RCoreAsmHit hit = {0};
 	hit.addr = addr;
 	hit.len = len;
 	hit.valid = is_valid;

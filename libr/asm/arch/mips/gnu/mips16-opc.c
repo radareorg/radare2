@@ -28,7 +28,7 @@
 #include "opcode/mips.h"
 #include "mips-formats.h"
 
-static unsigned char reg_0_map[] = { 0 };
+static unsigned char reg_0_map[] = {0};
 static unsigned char reg_29_map[] = { 29 };
 static unsigned char reg_31_map[] = { 31 };
 static unsigned char reg_m16_map[] = { 16, 17, 2, 3, 4, 5, 6, 7 };

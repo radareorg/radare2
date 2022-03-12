@@ -1028,7 +1028,7 @@ static int
 grub_hfs_dir_hook (struct grub_hfs_record *rec, void *closure)
 {
   struct grub_hfs_dir_closure *c = closure;
-  char fname[32] = { 0 };
+  char fname[32] = {0};
   char *filetype = rec->data;
   struct grub_hfs_catalog_key *ckey = rec->key;
   struct grub_dirhook_info info;

@@ -2132,7 +2132,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		} else if (fmt == '*') {
 			// TODO: ao* useful for wat? wx [bytes] ?
 		} else if (fmt == 'j') {
-			char strsub[128] = { 0 };
+			char strsub[128] = {0};
 			// pc+33
 			r_parse_subvar (core->parser, NULL,
 				core->offset + idx,
@@ -2286,7 +2286,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_anal_esil_stack_free (esil);
 			}
 		} else {
-		char disasm[128] = { 0 };
+		char disasm[128] = {0};
 		r_parse_subvar (core->parser, NULL,
 			core->offset + idx,
 			asmop.size, r_asm_op_get_asm (&asmop),
@@ -6172,7 +6172,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	ut64 addr_end;
 	AeaStats stats;
 	const char *esilstr;
-	RAnalOp aop = R_EMPTY;
+	RAnalOp aop = {0};
 	ut8 *buf;
 	RList* regnow;
 	PJ *pj = NULL;
@@ -7407,7 +7407,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			break;
 		}
 
-		RAnalOp aop = R_EMPTY;
+		RAnalOp aop = {0};
 		bufsz = r_hex_str2bin (hex, (ut8*)hex);
 		ret = r_anal_op (core->anal, &aop, core->offset,
 			(const ut8*)hex, bufsz, R_ANAL_OP_MASK_ESIL);
@@ -7608,7 +7608,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 	case 'f': // "aof"
 		if (strlen (input + 1) > 1) {
-			RAnalOp aop = R_EMPTY;
+			RAnalOp aop = {0};
 			ut8 data[32];
 			r_io_read_at (core->io, core->offset, data, sizeof (data));
 			int ret = r_anal_op (core->anal, &aop, core->offset, data, sizeof (data), R_ANAL_OP_MASK_ESIL);
@@ -9115,8 +9115,8 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			}
 			r_str_trim (type);
 			RAsmOp asmop;
-			RAnalOp op = { 0 };
-			ut8 code[128] = { 0 };
+			RAnalOp op = {0};
+			ut8 code[128] = {0};
 			(void)r_io_read_at (core->io, core->offset, code, sizeof (code));
 			r_asm_set_pc (core->rasm, addr);
 			(void)r_asm_disassemble (core->rasm, &asmop, code, core->blocksize);
@@ -9864,7 +9864,7 @@ static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes
 		return false;
 	}
 	RAnalOpMask mask = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_DISASM | R_ANAL_OP_HINT_MASK;
-	RAnalOp op = { 0 };
+	RAnalOp op = {0};
 
 	// escaped newline to get out of title line
 	bool ret = r_strbuf_append (nodes, "\\n");

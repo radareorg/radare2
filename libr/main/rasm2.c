@@ -131,7 +131,7 @@ static int show_analinfo(RAsmState *as, const char *arg, ut64 offset) {
 		return 0;
 	}
 	
-	RAnalOp aop = { 0 };
+	RAnalOp aop = {0};
 	
 	if (as->json) {
 		pj_a (pj);
@@ -451,7 +451,7 @@ static int rasm_disasm(RAsmState *as, ut64 addr, const char *buf, int len, int b
 	}
 
 	if (hex == 2) {
-		RAnalOp aop = { 0 };
+		RAnalOp aop = {0};
 		while (ret < len) {
 			aop.size = 0;
 			if (r_anal_op (as->anal, &aop, addr, data + ret, len - ret, R_ANAL_OP_MASK_ESIL) > 0) {

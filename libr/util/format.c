@@ -1363,7 +1363,7 @@ static void r_print_format_nulltermstring(const RPrint* p, int len, int endian, 
 		}
 		p->cb_printf ("\"");
 		for (; j < len && ((size == -1 || size-- > 0) && buf[j]) ; j++) {
-			char esc_str[5] = { 0 };
+			char esc_str[5] = {0};
 			char *ptr = esc_str;
 			r_print_byte_escape (p, (char *)&buf[j], &ptr, false);
 			p->cb_printf ("%s", esc_str);

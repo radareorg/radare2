@@ -1124,7 +1124,7 @@ R_IPI int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 					goto err;
 				}
 				op->len += 16;
-				ut8 bytes[16] = { 0 };
+				ut8 bytes[16] = {0};
 				int i;
 				for (i = 0; i < 16; i++) {
 					bytes[i] = buf[i + 1 + simdop_size];

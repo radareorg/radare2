@@ -834,7 +834,7 @@ static int build_member_format(STypeInfo *type_info, RStrBuf *format, RStrBuf *n
 	type_info = &under_type->type_data;
 
 	char *member_format = NULL;
-	char tmp_format[5] = { 0 }; // used as writable format buffer
+	char tmp_format[5] = {0}; // used as writable format buffer
 
 	switch (type_info->leaf_type) {
 	case eLF_SIMPLE_TYPE: {

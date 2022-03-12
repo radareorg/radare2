@@ -1296,7 +1296,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 	}
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
-	RAnalOp next_op = { 0 };
+	RAnalOp next_op = {0};
 	RStrBuf *io_port;
 
 	op->type2 = 0;

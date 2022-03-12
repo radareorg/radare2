@@ -133,7 +133,7 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg) {
 		}
 		case R_ANAL_VAL_MEM:
 		{
-			ut8 buf[32] = { 0 };
+			ut8 buf[32] = {0};
 			if (!dbg->iob.read_at (dbg->iob.io, val->base, buf, val->memref)) {
 				eprintf ("Error reading memory at 0x%"PFMT64x"\n", val->base);
 				break;

@@ -219,7 +219,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 #endif
 
 // TODO: Tuck this into RDebug; `void *user` seems like a good candidate.
-static xnu_exception_info ex = { { 0 } };
+static xnu_exception_info ex = { {0} };
 
 static bool xnu_restore_exception_ports(int pid) {
 	kern_return_t kr;

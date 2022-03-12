@@ -48,7 +48,7 @@ bool test_dwarf3_c_basic(void) { // this should work for dwarf2 aswell
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
@@ -172,7 +172,7 @@ bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 aswell
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_cpp.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
@@ -573,7 +573,7 @@ bool test_dwarf3_cpp_many_comp_units(void) {
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
@@ -690,7 +690,7 @@ bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf2 aswel
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/pe/hello_world_not_stripped.exe", &opt);
 	mu_assert ("couldn't open file", res);
 
@@ -757,7 +757,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
@@ -873,7 +873,7 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
 
@@ -981,7 +981,7 @@ bool test_big_endian_dwarf2(void) {
 	RIO *io = r_io_new ();
 	r_io_bind (io, &bin->iob);
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert ("couldn't open file", res);
 

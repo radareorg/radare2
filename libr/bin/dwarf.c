@@ -1039,7 +1039,7 @@ static bool parse_line_raw(const RBin *a, const ut8 *obuf, ut64 len, int mode) {
 	const ut8 *buf_end = obuf + len;
 	const ut8 *tmpbuf = NULL;
 
-	RBinDwarfLineHeader hdr = { 0 };
+	RBinDwarfLineHeader hdr = {0};
 	ut64 buf_size;
 
 	// each iteration we read one header AKA comp. unit

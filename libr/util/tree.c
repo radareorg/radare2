@@ -47,7 +47,7 @@ static void node_free(RTreeNode *n, RTreeVisitor *vis) {
 }
 
 static void free_all_children(RTree *t) {
-	RTreeVisitor vis = { 0 };
+	RTreeVisitor vis = {0};
 	vis.post_visit = (RTreeNodeVisitCb)node_free;
 	r_tree_bfs (t, &vis);
 }
@@ -96,7 +96,7 @@ R_API void r_tree_reset(RTree *t) {
  *       node */
 R_API RTreeNode *r_tree_add_node(RTree *t, RTreeNode *node, void *child_data) {
 	RTreeNode *child;
-	RTreeVisitor vis = { 0 };
+	RTreeVisitor vis = {0};
 
 	/* a NULL node is allowed only the first time, to set the root */
 	if (!t || (node && node->tree != t) || (t->root && !node)) {

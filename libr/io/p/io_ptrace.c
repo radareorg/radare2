@@ -189,14 +189,14 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 
 static inline bool is_pid_already_attached(RIO *io, int pid) {
 #if defined(__linux__)
-	siginfo_t sig = { 0 };
+	siginfo_t sig = {0};
 	return r_io_ptrace (io, PTRACE_GETSIGINFO, pid, NULL, &sig) != -1;
 #elif defined(__FreeBSD__)
-	struct ptrace_lwpinfo info = { 0 };
+	struct ptrace_lwpinfo info = {0};
 	int len = (int)sizeof (info);
 	return r_io_ptrace (io, PT_LWPINFO, pid, &info, len) != -1;
 #elif defined(__OpenBSD__) || defined(__NetBSD__)
-	ptrace_state_t state = { 0 };
+	ptrace_state_t state = {0};
 	int len = (int)sizeof (state);
 	return r_io_ptrace (io, PT_GET_PROCESS_STATE, pid, &state, len) != -1;
 #else

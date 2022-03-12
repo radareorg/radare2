@@ -3,7 +3,7 @@
 // return 1 on error
 static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
-	char headers[128] = R_EMPTY;
+	char headers[128] = {0};
 	RSocketHTTPRequest *rs;
 	char buf[32];
 	int ret = 0;

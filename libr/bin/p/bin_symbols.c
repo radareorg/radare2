@@ -42,7 +42,7 @@ typedef struct symbols_metadata_t { // 0x40
 // header starts at offset 0 and ends at offset 0x40
 static SymbolsHeader parseHeader(RBuffer *buf) {
 	ut8 b[64];
-	SymbolsHeader sh = { 0 };
+	SymbolsHeader sh = {0};
 	(void)r_buf_read_at (buf, 0, b, sizeof (b));
 	sh.magic = r_read_le32 (b);
 	sh.version = r_read_le32 (b + 4);
@@ -84,8 +84,8 @@ static const char *subtypeString(int n) {
 
 // metadata section starts at offset 0x40 and ends around 0xb0 depending on filenamelength
 static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
-	SymbolsMetadata sm = { 0 };
-	ut8 b[0x100] = { 0 };
+	SymbolsMetadata sm = {0};
+	ut8 b[0x100] = {0};
 	(void)r_buf_read_at (buf, off, b, sizeof (b));
 	sm.addr = off;
 	sm.cputype = r_read_le32 (b);

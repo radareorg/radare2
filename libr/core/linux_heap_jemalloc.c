@@ -60,7 +60,7 @@ static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 #else
 static GHT GH(je_get_va_symbol)(RCore *core, const char *path, const char *sym_name) {
 	GHT vaddr = GHT_MAX;
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	r_bin_file_options_init (&opt, -1, 0, 0, false);
 	RBinSymbol *s;
 	RListIter *iter;

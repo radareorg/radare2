@@ -199,8 +199,8 @@ R_API R2RSubprocess *r2r_subprocess_start(
 		goto error;
 	}
 
-	PROCESS_INFORMATION proc_info = { 0 };
-	STARTUPINFOA start_info = { 0 };
+	PROCESS_INFORMATION proc_info = {0};
+	STARTUPINFOA start_info = {0};
 	start_info.cb = sizeof (start_info);
 	start_info.hStdError = stderr_write;
 	start_info.hStdOutput = stdout_write;
@@ -250,12 +250,12 @@ error:
 }
 
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
-	OVERLAPPED stdout_overlapped = { 0 };
+	OVERLAPPED stdout_overlapped = {0};
 	stdout_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!stdout_overlapped.hEvent) {
 		return false;
 	}
-	OVERLAPPED stderr_overlapped = { 0 };
+	OVERLAPPED stderr_overlapped = {0};
 	stderr_overlapped.hEvent = CreateEvent (NULL, TRUE, FALSE, NULL);
 	if (!stderr_overlapped.hEvent) {
 		CloseHandle (stdout_overlapped.hEvent);

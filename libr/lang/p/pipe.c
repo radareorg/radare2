@@ -54,7 +54,7 @@ static void lang_pipe_run_win(RLang *lang) {
 			TerminateProcess (hproc, 0);
 			break;
 		}
-		OVERLAPPED oRead = { 0 };
+		OVERLAPPED oRead = {0};
 		oRead.hEvent = hRead;
 		memset (buf, 0, PIPE_BUF_SIZE);
 		ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, NULL, &oRead);
@@ -73,7 +73,7 @@ static void lang_pipe_run_win(RLang *lang) {
 		}
 		if (bSuccess && dwRead > 0) {
 			buf[sizeof (buf) - 1] = 0;
-			OVERLAPPED oWrite = { 0 };
+			OVERLAPPED oWrite = {0};
 			oWrite.hEvent = hWritten;
 			char *res = lang->cmd_str ((RCore*)lang->user, buf);
 			if (res) {
@@ -251,7 +251,7 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 		r_sys_perror ("lang_pipe_run/CreateEvent hConnected");
 		goto pipe_cleanup;
 	}
-	OVERLAPPED oConnect = { 0 };
+	OVERLAPPED oConnect = {0};
 	oConnect.hEvent = hConnected;
 	hproc = myCreateChildProcess (code);
 	BOOL connected = FALSE;

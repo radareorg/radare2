@@ -125,7 +125,7 @@ static bool __is_valid_ident(ELFOBJ *bin) {
 
 static bool init_ehdr(ELFOBJ *bin) {
 	ut8 e_ident[EI_NIDENT];
-	ut8 ehdr[sizeof (Elf_(Ehdr))] = { 0 };
+	ut8 ehdr[sizeof (Elf_(Ehdr))] = {0};
 	int i, len;
 	if (r_buf_read_at (bin->b, 0, e_ident, EI_NIDENT) == -1) {
 		bprintf ("read (magic)\n");
@@ -256,7 +256,7 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 #endif
 	ut64 phnum = Elf_(r_bin_elf_get_phnum) (bin);
 	for (i = 0; i < phnum; i++) {
-		ut8 phdr[sizeof (Elf_(Phdr))] = { 0 };
+		ut8 phdr[sizeof (Elf_(Phdr))] = {0};
 		int j = 0;
 		const size_t rsize = bin->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
 		int len = r_buf_read_at (bin->b, rsize, phdr, sizeof (Elf_(Phdr)));
@@ -366,7 +366,7 @@ static int init_phdr(ELFOBJ *bin) {
 
 static int init_shdr(ELFOBJ *bin) {
 	ut32 shdr_size;
-	ut8 shdr[sizeof (Elf_(Shdr))] = { 0 };
+	ut8 shdr[sizeof (Elf_(Shdr))] = {0};
 	size_t i, j, len;
 
 	r_return_val_if_fail (bin && !bin->shdr, false);
@@ -558,7 +558,7 @@ static size_t get_maximum_number_of_dynamic_entries(ut64 dyn_size) {
 }
 
 static bool fill_dynamic_entry(ELFOBJ *bin, ut64 entry_offset, Elf_(Dyn) *d) {
-	ut8 sdyn[sizeof (Elf_(Dyn))] = { 0 };
+	ut8 sdyn[sizeof (Elf_(Dyn))] = {0};
 	int j = 0;
 	int len = r_buf_read_at (bin->b, entry_offset, sdyn, sizeof (Elf_(Dyn)));
 	if (len < 1) {
@@ -572,7 +572,7 @@ static bool fill_dynamic_entry(ELFOBJ *bin, ut64 entry_offset, Elf_(Dyn) *d) {
 }
 
 static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size) {
-	Elf_(Dyn) d = { 0 };
+	Elf_(Dyn) d = {0};
 	size_t i;
 	size_t number_of_entries = get_maximum_number_of_dynamic_entries(dyn_size);
 
@@ -823,7 +823,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	for (i = 0; i < num_entries; i += 4) {
 		size_t j;
 		int check_def;
-		char key[32] = { 0 };
+		char key[32] = {0};
 
 		for (j = 0; (j < 4) && (i + j) < num_entries; j++) {
 			int k;
@@ -841,11 +841,11 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 				check_def = true;
 				if (bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
 					Elf_(Verneed) vn;
-					ut8 svn[sizeof (Elf_(Verneed))] = { 0 };
+					ut8 svn[sizeof (Elf_(Verneed))] = {0};
 					ut64 offset = Elf_(r_bin_elf_v2p) (bin, bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]);
 					do {
 						Elf_(Vernaux) vna;
-						ut8 svna[sizeof (Elf_(Vernaux))] = { 0 };
+						ut8 svna[sizeof (Elf_(Vernaux))] = {0};
 						ut64 a_off;
 						if (offset > bin->size || offset + sizeof (vn) > bin->size) {
 							goto beach;
@@ -895,7 +895,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 				ut64 vinfoaddr = bin->version_info[DT_VERSIONTAGIDX (DT_VERDEF)];
 				if (check_def && data[i + j] != 0x8001 && vinfoaddr) {
 					Elf_(Verdef) vd;
-					ut8 svd[sizeof (Elf_(Verdef))] = { 0 };
+					ut8 svd[sizeof (Elf_(Verdef))] = {0};
 					ut64 offset = Elf_(r_bin_elf_v2p) (bin, vinfoaddr);
 					if (offset > bin->size || offset + sizeof (vd) > bin->size) {
 						goto beach;
@@ -918,7 +918,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 
 					if (vd.vd_ndx == (data[i + j] & 0x7FFF)) {
 						Elf_(Verdaux) vda;
-						ut8 svda[sizeof (Elf_(Verdaux))] = { 0 };
+						ut8 svda[sizeof (Elf_(Verdaux))] = {0};
 						ut64 off_vda = offset - vd.vd_next + vd.vd_aux;
 						if (off_vda > bin->size || off_vda + sizeof (vda) > bin->size) {
 							goto beach;
@@ -955,7 +955,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	const char *section_name = "";
 	const char *link_section_name = "";
 	char *end = NULL;
-	ut8 dfs[sizeof (Elf_(Verdef))] = { 0 };
+	ut8 dfs[sizeof (Elf_(Verdef))] = {0};
 	ut32 cnt;
 	size_t i;
 	if (shdr->sh_link >= bin->ehdr.e_shnum) {
@@ -1011,9 +1011,9 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		Sdb *sdb_verdef = sdb_new0 ();
 		char *vstart = ((char*)defs) + i;
 		size_t vstart_off = i;
-		char key[32] = { 0 };
+		char key[32] = {0};
 		Elf_(Verdef) *verdef = (Elf_(Verdef)*)vstart;
-		Elf_(Verdaux) aux = { 0 };
+		Elf_(Verdaux) aux = {0};
 		int j = 0;
 		int isum = 0;
 
@@ -1170,12 +1170,12 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	for (i = 0, cnt = 0; cnt < shdr->sh_info; cnt++) {
 		int j, isum;
 		ut8 *vstart = need + i;
-		Elf_(Verneed) vvn = { 0 };
+		Elf_(Verneed) vvn = {0};
 		if (vstart + sizeof (Elf_(Verneed)) > end) {
 			goto beach;
 		}
 		Elf_(Verneed) *entry = &vvn;
-		char key[32] = { 0 };
+		char key[32] = {0};
 		sdb_version = sdb_new0 ();
 		if (!sdb_version) {
 			goto beach;
@@ -1600,7 +1600,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *bin, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut8 buf[sizeof (Elf_(Addr))] = { 0 };
+	ut8 buf[sizeof (Elf_(Addr))] = {0};
 
 	ut64 plt_addr = s->offset;
 	ut64 plt_sym_addr;
@@ -2708,7 +2708,7 @@ static bool read_reloc(ELFOBJ *bin, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 
 
 	size_t size_struct = get_size_rel_mode (rel_mode);
 
-	ut8 buf[sizeof (Elf_(Rela))] = { 0 };
+	ut8 buf[sizeof (Elf_(Rela))] = {0};
 	int res = r_buf_read_at (bin->b, offset, buf, size_struct);
 	if (res != size_struct) {
 		return false;
@@ -3599,7 +3599,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	size_t ret_size = 0, prev_ret_size = 0, import_ret_ctr = 0;
 	Elf_(Shdr) *strtab_section = NULL;
 	Elf_(Sym) *sym = NULL;
-	ut8 s[sizeof (Elf_(Sym))] = { 0 };
+	ut8 s[sizeof (Elf_(Sym))] = {0};
 	char *strtab = NULL;
 	HtPP *symbol_map = NULL;
 	HtPPOptions symbol_map_options = {

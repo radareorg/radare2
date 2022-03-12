@@ -97,7 +97,7 @@ static bool test_legacy_graph(void) {
 	mu_assert_eq (r_graph_adjacent (g, gn9, gn8), false, "is_adjacent.1");
 	mu_assert_eq (r_graph_adjacent (g, gn8, gn9), true, "is_adjacent.2");
 
-	RGraphVisitor vis = { 0 };
+	RGraphVisitor vis = {0};
 	vis.data = r_list_new ();
 	vis.finish_node = (RGraphNodeCallback)topo_sorting;
 	r_graph_dfs_node (g, gn, &vis);

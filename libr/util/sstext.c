@@ -229,7 +229,7 @@ static const SevenSegments ss_lc[] = {
 		" _  ",
 		" /_ "}
 	},
-	{ '\0', { 0 }}
+	{ '\0', {0}}
 };
 
 static const SevenSegments ss[] = {
@@ -449,7 +449,7 @@ static const SevenSegments ss[] = {
 		"  / ",
 		" /_ "}
 	},
-	{ '\0', { 0 }}
+	{ '\0', {0}}
 };
 
 R_API char *r_str_ss(const char* msg, const char *nl, int cs) {

@@ -426,7 +426,7 @@ static int r_core_rtr_gdb_cb(libgdbr_t *g, void *core_ptr, const char *cmd,
 			be = r_config_get_i (core->config, "cfg.bigendian");
 			if (isspace ((ut8)cmd[2])) { // dr reg
 				const char *name, *val_ptr;
-				char new_cmd[128] = { 0 };
+				char new_cmd[128] = {0};
 				int off = 0;
 				name = cmd + 3;
 				// Temporarily using new_cmd to store reg name

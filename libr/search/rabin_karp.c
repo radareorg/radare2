@@ -144,7 +144,7 @@ R_IPI int search_rk(RSearch *srch, ut64 from, ut64 to) {
 	}
 
 	// init hashes
-	RollData hay = { 0 };
+	RollData hay = {0};
 	rhash needle = hash_full (kw->bin_keyword, klen);
 	rdata_init (&hay, buf, klen);
 

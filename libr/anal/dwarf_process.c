@@ -549,7 +549,7 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 
 	base_type->size = get_die_size (die);
 
-	RAnalStructMember member = { 0 };
+	RAnalStructMember member = {0};
 	// Parse out all members, can this in someway be extracted to a function?
 	if (die->has_children) {
 		int child_depth = 1; // Direct children of the node
@@ -1476,7 +1476,7 @@ static void sdb_save_dwarf_function(Function *dwarf_fcn, RList/*<Variable*>*/ *v
 static void parse_function(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
 
-	Function fcn = { 0 };
+	Function fcn = {0};
 	bool has_linkage_name = false;
 	bool get_linkage_name = prefer_linkage_name (ctx->lang);
 	RStrBuf ret_type;

@@ -304,7 +304,7 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 		eprintf ("Invalid char found in filename\n");
 		return false;
 	}
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	r_bin_open (core->bin, file, &opt);
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf) {
@@ -403,7 +403,7 @@ static void _print_strings(RCore *r, RList *list, PJ *pj, int mode, int va) {
 		r_cons_println ("[Strings]");
 		r_table_set_columnsf (table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 	}
-	RBinString b64 = { 0 };
+	RBinString b64 = {0};
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr;
@@ -1237,7 +1237,7 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 		baddr = 0LL;
 	}
 
-	RPdb pdb = R_EMPTY;
+	RPdb pdb = {0};
 
 	pdb.cb_printf = r_cons_printf;
 	if (!init_pdb_parser (&pdb, file)) {

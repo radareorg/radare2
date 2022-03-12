@@ -363,13 +363,13 @@ static void vsetc(TCCState *s1, CType *type, int r, CValue *vc) {
 
 /* push constant of type "type" with useless value */
 void vpush(TCCState *s1, CType *type) {
-	CValue cval = { 0 };
+	CValue cval = {0};
 	vsetc (s1, type, VT_CONST, &cval);
 }
 
 /* push integer constant */
 ST_FUNC void vpushi(TCCState *s1, int v) {
-	CValue cval = { 0 };
+	CValue cval = {0};
 	cval.i = v;
 	vsetc (s1, &int32_type, VT_CONST, &cval);
 }
@@ -410,7 +410,7 @@ ST_FUNC void vset(TCCState *s1, CType *type, int r, int v) {
 }
 
 static void vseti(TCCState *s1, int r, int v) {
-	CType type = { 0 };
+	CType type = {0};
 	type.t = VT_INT32;
 	type.ref = NULL;
 	vset (s1, &type, r, v);
@@ -1781,7 +1781,7 @@ static void parse_type(TCCState *s1, CType *type) {
 }
 
 static void vpush_tokc(TCCState *s1, int t) {
-	CType type = { 0 };
+	CType type = {0};
 	type.t = t;
 	type.ref = NULL;
 	vsetc (s1, &type, VT_CONST, &s1->tokc);
@@ -1789,7 +1789,7 @@ static void vpush_tokc(TCCState *s1, int t) {
 
 static void unary(TCCState *s1) {
 	int n, t, align, size, r, sizeof_caller;
-	CType type = { 0 };
+	CType type = {0};
 	Sym *s;
 	AttributeDef ad;
 	static int in_sizeof = 0;
@@ -2885,7 +2885,7 @@ static void decl_initializer_alloc(TCCState *s1, CType *type, AttributeDef *ad, 
 				sym->asm_label = asm_label;
 			}
 		} else {
-			CValue cval = { 0 };
+			CValue cval = {0};
 			vsetc (s1, type, VT_CONST | VT_SYM, &cval);
 			s1->vtop->sym = sym;
 		}

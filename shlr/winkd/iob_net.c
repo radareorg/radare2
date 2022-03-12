@@ -400,7 +400,7 @@ bool _verifyhmac(iobnet_t *obj) {
 }
 
 static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int timeout) {
-	kdnet_packet_t pkt = { 0 };
+	kdnet_packet_t pkt = {0};
 	iobnet_t *obj = (iobnet_t *)p;
 
 	if (obj->size == 0) {

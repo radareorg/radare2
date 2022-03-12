@@ -225,7 +225,7 @@ R_API bool r_reg_cond_bits_set(RReg *r, int type, RRegFlags *f, bool v) {
 }
 
 R_API int r_reg_cond(RReg *r, int type) {
-	RRegFlags f = { 0 };
+	RRegFlags f = {0};
 	r_reg_cond_retrieve (r, &f);
 	return r_reg_cond_bits (r, type, &f);
 }

@@ -1509,7 +1509,7 @@ R_API bool r_cons_is_tty(void) {
 #if EMSCRIPTEN || __wasi__
 	return false;
 #elif __UNIX__
-	struct winsize win = { 0 };
+	struct winsize win = {0};
 	const char *tty;
 	struct stat sb;
 
@@ -1629,7 +1629,7 @@ R_API int r_cons_get_size(int *rows) {
 	I->columns = 80;
 	I->rows = 23;
 #elif __UNIX__
-	struct winsize win = { 0 };
+	struct winsize win = {0};
 	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
 		if ((!win.ws_col) || (!win.ws_row)) {
 			const char *tty = isatty (1)? ttyname (1): NULL;

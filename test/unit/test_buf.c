@@ -4,7 +4,7 @@
 #include "minunit.h"
 
 bool test_buf(RBuffer *b) {
-	ut8 buffer[1024] = { 0 };
+	ut8 buffer[1024] = {0};
 	const char *content = "Something To\nSay Here..";
 	const int length = 23;
 	int r;

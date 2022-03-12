@@ -57,7 +57,7 @@ R_API RDebugSession *r_debug_session_new(void) {
 R_API bool r_debug_add_checkpoint(RDebug *dbg) {
 	r_return_val_if_fail (dbg->session, false);
 	size_t i;
-	RDebugCheckpoint checkpoint = { 0 };
+	RDebugCheckpoint checkpoint = {0};
 
 	// Save current registers arena iter
 	r_debug_reg_sync (dbg, R_REG_TYPE_ALL, 0);
@@ -576,7 +576,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 	}
 
 	RVector *checkpoints = user;
-	RDebugCheckpoint checkpoint = { 0 };
+	RDebugCheckpoint checkpoint = {0};
 	checkpoint.cnum = (int)sdb_atoi (cnum);
 
 	// Extract RRegArena's from "registers"

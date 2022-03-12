@@ -1130,7 +1130,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 		return;
 	}
 
-	RANode *top = R_EMPTY, *chunk_node = R_EMPTY, *prev_node = R_EMPTY;
+	RANode *top = {0}, *chunk_node = {0}, *prev_node = {0};
 	char *top_title, *top_data, *node_title, *node_data;
 	bool first_node = true;
 
