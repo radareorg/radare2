@@ -186,7 +186,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 	RAnalOp mov_aop = {0};
 	RAnalOp add_aop = {0};
 	RRegItem *reg_src = NULL, *o_reg_dst = NULL;
-	RAnalValue cur_scr, cur_dst = { 0 };
+	RAnalValue cur_scr, cur_dst = {0};
 	read_ahead (anal, addr, (ut8*)buf, sizeof (buf));
 	bool isValid = false;
 	for (i = 0; i + 8 < JMPTBL_LEA_SEARCH_SZ; i++) {

@@ -414,8 +414,8 @@ static int __cons_readchar_w32(ut32 usec) {
 	I->is_arrow = false;
 	DWORD mode, out;
 	HANDLE h;
-	INPUT_RECORD irInBuf = { 0 };
-	CONSOLE_SCREEN_BUFFER_INFO info = { 0 };
+	INPUT_RECORD irInBuf = {0};
+	CONSOLE_SCREEN_BUFFER_INFO info = {0};
 	bool mouse_enabled = I->mouse;
 	bool click_n_drag = false;
 	void *bed;

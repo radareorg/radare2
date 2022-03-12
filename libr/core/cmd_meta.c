@@ -907,7 +907,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						break;
 					}
 				} else if (type == 's') { // "Cs"
-					char tmp[256] = R_EMPTY;
+					char tmp[256] = {0};
 					int i, j, name_len = 0;
 					if (input[1] == 'a' || input[1] == '8') {
 						(void)r_io_read_at (core->io, addr, (ut8*)name, sizeof (name) - 1);

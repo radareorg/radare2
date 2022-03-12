@@ -81,7 +81,7 @@ bool check(RBNode *tree) {
 }
 
 bool test_r_rbtree_bound_iterate() {
-	struct Node key = { 0 };
+	struct Node key = {0};
 	RBIter it;
 	RBNode *tree = NULL;
 	struct Node *x;
@@ -138,7 +138,7 @@ bool test_r_rbtree_bound_iterate() {
 }
 
 bool test_r_rbtree_bound() {
-	struct Node key = { 0 };
+	struct Node key = {0};
 	RBNode *tree = NULL;
 	struct Node *x;
 	int i;

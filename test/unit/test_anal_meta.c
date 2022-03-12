@@ -10,7 +10,7 @@ bool test_meta_set() {
 	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "summer of love");
 	r_meta_set_with_subtype (anal, R_META_TYPE_STRING, R_STRING_ENC_UTF8, 0x200, 0x30, "true confessions");
 
-	bool found[3] = { 0 };
+	bool found[3] = {0};
 	size_t count = 0;
 	RIntervalTreeIter it;
 	RAnalMetaItem *item;
@@ -220,7 +220,7 @@ bool test_meta_get_all_at() {
 	RPVector *items = r_meta_get_all_at (anal, 0x100);
 	mu_assert_eq (r_pvector_len (items), 2, "all count");
 	void **it;
-	bool found[2] = { 0 };
+	bool found[2] = {0};
 	r_pvector_foreach (items, it) {
 		RAnalMetaItem *item = ((RIntervalNode *)*it)->data;
 		switch (item->type) {
@@ -260,7 +260,7 @@ bool test_meta_get_all_in() {
 	RPVector *items = r_meta_get_all_in (anal, 0x100, R_META_TYPE_ANY);
 	mu_assert_eq (r_pvector_len (items), 2, "all count");
 	void **it;
-	bool found[2] = { 0 };
+	bool found[2] = {0};
 	r_pvector_foreach (items, it) {
 		RAnalMetaItem *item = ((RIntervalNode *)*it)->data;
 		switch (item->type) {
@@ -322,7 +322,7 @@ bool test_meta_get_all_intersect() {
 	RPVector *items = r_meta_get_all_intersect (anal, 0x100, 1, R_META_TYPE_ANY);
 	mu_assert_eq (r_pvector_len (items), 2, "all count");
 	void **it;
-	bool found[2] = { 0 };
+	bool found[2] = {0};
 	r_pvector_foreach (items, it) {
 		RAnalMetaItem *item = ((RIntervalNode *)*it)->data;
 		switch (item->type) {
@@ -449,7 +449,7 @@ bool test_meta_rebase() {
 	r_meta_set_with_subtype (anal, R_META_TYPE_STRING, R_STRING_ENC_UTF8, 0x300, 0x30, "true confessions");
 	r_meta_rebase (anal, -0x100);
 
-	bool found[3] = { 0 };
+	bool found[3] = {0};
 	size_t count = 0;
 	RIntervalTreeIter it;
 	RAnalMetaItem *item;
@@ -502,7 +502,7 @@ bool test_meta_spaces() {
 
 	r_meta_set_string (anal, R_META_TYPE_COMMENT, 0x100, "reaper");
 
-	bool found[4] = { 0 };
+	bool found[4] = {0};
 	size_t count = 0;
 	RIntervalTreeIter it;
 	RAnalMetaItem *item;

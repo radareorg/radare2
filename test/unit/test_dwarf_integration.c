@@ -19,7 +19,7 @@ static bool test_parse_dwarf_types(void) {
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	r_io_bind (io, &bin->iob);
 	anal->binb.demangle = r_bin_demangle;
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/pe/vista-glass.exe", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
 	anal->cpu = strdup ("x86");
@@ -87,7 +87,7 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	r_io_bind (io, &bin->iob);
 	anal->binb.demangle = r_bin_demangle;
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
 	anal->cpu = strdup ("x86");
@@ -143,7 +143,7 @@ static bool test_dwarf_function_parsing_go(void) {
 	r_io_bind (io, &bin->iob);
 	anal->binb.demangle = r_bin_demangle;
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf_go_tree", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
 	anal->cpu = strdup ("x86");
@@ -197,7 +197,7 @@ static bool test_dwarf_function_parsing_rust(void) {
 	r_io_bind (io, &bin->iob);
 	anal->binb.demangle = r_bin_demangle;
 
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf_rust_bubble", &opt);
 	// TODO fix, how to correctly promote binary info to the RAnal in unit tests?
 	anal->cpu = strdup ("x86");

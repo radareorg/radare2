@@ -5,7 +5,7 @@
 #include <r_cons.h>
 #include <r_th.h>
 
-static R_TH_LOCAL int color_table[256] = { 0 };
+static R_TH_LOCAL int color_table[256] = {0};
 static R_TH_LOCAL int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
 
 static void init_color_table(void) {

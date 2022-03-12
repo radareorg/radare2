@@ -3803,7 +3803,7 @@ Implicit_Field_brall_get (const xtensa_insnbuf insn ATTRIBUTE_UNUSED)
 /* Functional units.  */
 
 static xtensa_funcUnit_internal funcUnits[] = {
-  { 0 }
+  {0}
 };
 
 
@@ -3824,7 +3824,7 @@ static xtensa_regfile_internal regfiles[] = {
 /* Interfaces.  */
 
 static xtensa_interface_internal interfaces[] = {
-  { 0 }
+  {0}
 };
 
 
@@ -21384,7 +21384,7 @@ Format_xt_format2_encode (xtensa_insnbuf insn)
   insn[1] = 0;
 }
 
-static int Format_x24_slots[] = { 0 };
+static int Format_x24_slots[] = {0};
 
 static int Format_x16a_slots[] = { 1 };
 

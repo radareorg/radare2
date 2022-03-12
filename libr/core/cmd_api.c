@@ -162,7 +162,7 @@ static ut32 alias_hashfn(const void *k_in) {
 }
 
 R_API void r_cmd_alias_init(RCmd *cmd) {
-	HtPPOptions opt = { 0 };
+	HtPPOptions opt = {0};
 	opt.cmp = alias_cmp;
 	opt.hashfn = alias_hashfn;
 	opt.dupkey = alias_dupkey;

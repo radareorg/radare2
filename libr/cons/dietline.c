@@ -261,7 +261,7 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 #if __WINDOWS__
 static int r_line_readchar_win(ut8 *s, int slen) { // this function handle the input in console mode
 	r_sys_backtrace();
-	INPUT_RECORD irInBuf = { { 0 } };
+	INPUT_RECORD irInBuf = { {0} };
 	BOOL ret;
 	DWORD mode, out;
 	char buf[5] = {0};

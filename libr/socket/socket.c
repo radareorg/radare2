@@ -266,7 +266,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 	}
 #endif
 	int ret;
-	struct addrinfo hints = { 0 };
+	struct addrinfo hints = {0};
 	struct addrinfo *res, *rp;
 	if (proto == R_SOCKET_PROTO_NONE) {
 		proto = R_SOCKET_PROTO_DEFAULT;
@@ -538,7 +538,7 @@ R_API int r_socket_port_by_name(const char *name) {
 R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
 	int ret;
-	struct linger linger = { 0 };
+	struct linger linger = {0};
 
 	if (s->proto == R_SOCKET_PROTO_UNIX) {
 #if __UNIX__

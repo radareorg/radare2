@@ -51,7 +51,7 @@ RDebugSession *ref_session() {
 	r_debug_session_add_mem_change (s, 0x7ffffffff001, 0x01);
 
 	// Checkpoints
-	RDebugCheckpoint checkpoint = { 0 };
+	RDebugCheckpoint checkpoint = {0};
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = r_reg_arena_new (0x10);
 		memset (a->bytes, i, a->size);

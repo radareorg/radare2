@@ -318,7 +318,7 @@ R_PACKED (
 }) mmvad_short;
 
 int winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent) {
-	mmvad_short entry = { { 0 } };
+	mmvad_short entry = { {0} };
 	ut64 start, end;
 	ut32 prot;
 

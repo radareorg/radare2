@@ -721,7 +721,7 @@ error:
 
 ///////////////////////////////////////////////////////////////////////////////
 static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi) {
-	struct MACH0_(SProtocolList) pl = { 0 };
+	struct MACH0_(SProtocolList) pl = {0};
 	struct MACH0_(SProtocol) pc;
 	char *class_name = NULL;
 	ut32 offset, left, i, j;
@@ -1011,7 +1011,7 @@ static char *get_class_name(mach0_ut p, RBinFile *bf) {
 ///////////////////////////////////////////////////////////////////////////////
 static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi) {
 	struct MACH0_(obj_t) *bin;
-	struct MACH0_(SClassRoT) cro = { 0 };
+	struct MACH0_(SClassRoT) cro = {0};
 	ut32 offset, left, i;
 	ut64 r, s;
 	int len;
@@ -1135,7 +1135,7 @@ static mach0_ut get_isa_value(void) {
 }
 
 void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe, RSkipList *relocs, objc_cache_opt_info *oi) {
-	struct MACH0_(SClass) c = { 0 };
+	struct MACH0_(SClass) c = {0};
 	const int size = sizeof (struct MACH0_(SClass));
 	mach0_ut r = 0;
 	ut32 offset = 0, left = 0;
@@ -1443,7 +1443,7 @@ error:
 void MACH0_(get_category_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, RSkipList *relocs, objc_cache_opt_info *oi) {
 	r_return_if_fail (bf && bf->o && bf->o->info);
 
-	struct MACH0_(SCategory) c = { 0 };
+	struct MACH0_(SCategory) c = {0};
 	const int size = sizeof (struct MACH0_(SCategory));
 	mach0_ut r = 0;
 	ut32 offset = 0, left = 0;

@@ -11,7 +11,7 @@
 #include "../format/wasm/wasm.h"
 
 static bool check_buffer(RBinFile *bf, RBuffer *rbuf) {
-	ut8 buf[4] = { 0 };
+	ut8 buf[4] = {0};
 	return rbuf && r_buf_read_at (rbuf, 0, buf, 4) == 4 && !memcmp (buf, R_BIN_WASM_MAGIC_BYTES, 4);
 }
 

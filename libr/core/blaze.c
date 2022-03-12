@@ -545,7 +545,7 @@ R_API bool core_anal_bbs_range(RCore *core, const char* input) {
 	bb_t *block = NULL;
 	int invalid_instruction_barrier = -20000;
 	const bool debug = r_config_get_b (core->config, "cfg.debug");
-	ut64 lista[1024] = { 0 };
+	ut64 lista[1024] = {0};
 	int idx = 0;
 	int x;
 

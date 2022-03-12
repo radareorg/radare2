@@ -24,7 +24,7 @@ static void local_b64_encode(const ut8 in[3], char out[4], int len) {
 
 static int local_b64_decode(const char in[4], ut8 out[3]) {
 	int len = 3;
-	ut8 i, v[4] = { 0 };
+	ut8 i, v[4] = {0};
 	for (i = 0; i < 4; i++) {
 		if (in[i] < 43 || in[i] > 122) {
 			return -1;

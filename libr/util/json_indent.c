@@ -43,8 +43,8 @@ R_API char* r_print_json_path(const char* s, int pos) {
 	int indent = 0;
 #define DSZ 128
 	const char *words[DSZ] = { NULL };
-	int lengths[DSZ] = { 0 };
-	int indexs[DSZ] = { 0 };
+	int lengths[DSZ] = {0};
+	int indexs[DSZ] = {0};
 	int instr = 0;
 	bool isarr = false;
 	if (!s) {

@@ -20,8 +20,8 @@ bool test_r_event(void) {
 	mu_assert_notnull (ev, "r_event_new ()");
 	mu_assert_ptreq (ev->user, (void *)0x1337, "ev->user");
 
-	EventTestAcc acc_all = { 0 };
-	EventTestAcc acc_specific = { 0 };
+	EventTestAcc acc_all = {0};
+	EventTestAcc acc_specific = {0};
 
 	REventCallbackHandle handle_all = r_event_hook (ev, R_EVENT_ALL, callback_test, &acc_all);
 	REventCallbackHandle handle_specific = r_event_hook (ev, R_EVENT_META_SET, callback_test, &acc_specific);

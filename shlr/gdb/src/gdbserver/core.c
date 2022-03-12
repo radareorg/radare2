@@ -53,7 +53,7 @@ static int _server_handle_qOffsets(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void
 
 static int _server_handle_exec_file_read(libgdbr_t *g, gdbr_server_cmd_cb cb,
 					 void *core_ptr) {
-	char *buf, *ptr, cmd[64] = { 0 };
+	char *buf, *ptr, cmd[64] = {0};
 	size_t buflen = 512;
 	int ret;
 	if (send_ack (g) < 0) {
@@ -156,7 +156,7 @@ static int _server_handle_c(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 }
 
 static int _server_handle_ques(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	char message[64] = { 0 };
+	char message[64] = {0};
 	if (send_ack (g) < 0) {
 		return -1;
 	}
@@ -415,7 +415,7 @@ static int _server_handle_m(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_
 
 // Read register number
 static int _server_handle_p(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr) {
-	char message[128] = { 0 }, cmd[128] = { 0 };
+	char message[128] = {0}, cmd[128] = { 0 };
 	int regnum, i;
 	if (send_ack (g) < 0) {
 		return -1;

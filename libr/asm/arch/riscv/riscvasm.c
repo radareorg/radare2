@@ -98,7 +98,7 @@ static struct {
 	// Type 'J' not yet implemented
 	{ 0x67, "jr", 'I', 2, 0, 0 }, // alias for jalr zero, rX
 	{ 0x67, "jalr", 'I', 2, 0, 0 },
-	{ 0 }
+	{0}
 };
 
 // lui

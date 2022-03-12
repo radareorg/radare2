@@ -3127,7 +3127,7 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 	Pe_image_resource_directory *rs_directory = pe->resource_directory;
 	ut32 curRes = 0;
 	int totalRes = 0;
-	HtUUOptions opt = { 0 };
+	HtUUOptions opt = {0};
 	HtUU *dirs = ht_uu_new_opt (&opt); //to avoid infinite loops
 	if (!dirs) {
 		return;

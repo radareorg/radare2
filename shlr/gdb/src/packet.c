@@ -140,7 +140,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 }
 
 int read_packet(libgdbr_t *g, bool vcont) {
-	struct parse_ctx ctx = { 0 };
+	struct parse_ctx ctx = {0};
 	int ret, i;
 	if (!g) {
 		eprintf ("Initialize libgdbr_t first\n");

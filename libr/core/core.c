@@ -593,7 +593,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		if (ok) {
 			*ok = 1;
 		}
-		ut8 buf[sizeof (ut64)] = R_EMPTY;
+		ut8 buf[sizeof (ut64)] = {0};
 		(void)r_io_read_at (core->io, n, buf, R_MIN (sizeof (buf), refsz));
 		switch (refsz) {
 		case 8:

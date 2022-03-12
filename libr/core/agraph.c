@@ -5050,7 +5050,7 @@ R_API RAGraph *create_agraph_from_graph(const RGraph/*<RGraphNodeInfo>*/ *graph)
 	}
 	result_agraph->need_reload_nodes = false;
 	// Cache lookup to build edges
-	HtPPOptions pointer_options = { 0 };
+	HtPPOptions pointer_options = {0};
 	HtPP /*<RGraphNode *node, RANode *anode>*/ *hashmap = ht_pp_new_opt (&pointer_options);
 	
 	if (!hashmap) {

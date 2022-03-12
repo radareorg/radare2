@@ -660,7 +660,7 @@ static void dot_trace_discover_child(RTreeNode *n, RTreeVisitor *vis) {
 static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 	const char *gfont = r_config_get (core->config, "graph.font");
 	struct dot_trace_ght aux_data;
-	RTreeVisitor vis = { 0 };
+	RTreeVisitor vis = {0};
 	const RList *nodes;
 	RListIter *iter;
 	RGraphNode *n;
@@ -1448,7 +1448,7 @@ static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, PJ *pj, i
 	if ((fd = r_io_fd_open (core->io, file, R_PERM_R, 0)) == -1) {
 		return false;
 	}
-	RBinFileOptions opt = { 0 };
+	RBinFileOptions opt = {0};
 	opt.fd = fd;
 	opt.sz = r_io_fd_size (core->io, fd);
 	opt.baseaddr = baseaddr;
@@ -3874,7 +3874,7 @@ static void trace_traverse_pre(RTreeNode *n, RTreeVisitor *vis) {
 }
 
 static void trace_traverse(RTree *t) {
-	RTreeVisitor vis = { 0 };
+	RTreeVisitor vis = {0};
 
 	/* clear the line on stderr, because somebody has written there */
 	fprintf (stderr, "\x1b[2K\r");
@@ -4658,7 +4658,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 		break;
 	case 's': // "dss"
 		{
-			char delb[128] = R_EMPTY;
+			char delb[128] = {0};
 			addr = r_debug_reg_get (core->dbg, "PC");
 			RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
 			sprintf(delb, "db 0x%"PFMT64x"", addr);
@@ -4689,7 +4689,7 @@ static int cmd_debug_step(RCore *core, const char *input) {
 			r_core_cmdf (core, "dss%s", input + 2);
 		} else {
 			if (r_config_get_i (core->config, "cfg.debug")) {
-				char delb[128] = R_EMPTY;
+				char delb[128] = {0};
 				addr = r_debug_reg_get (core->dbg, "PC");
 				RBreakpointItem *bpi = r_bp_get_at (core->dbg->bp, addr);
 				sprintf(delb, "db 0x%"PFMT64x"", addr);

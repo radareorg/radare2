@@ -98,7 +98,7 @@ struct __createprocess_params {
 };
 
 static int __createprocess_wrap(void *params) {
-	STARTUPINFO si = { 0 };
+	STARTUPINFO si = {0};
 	// TODO: Add DEBUG_PROCESS to support child process debugging
 	struct __createprocess_params *p = params;
 	return CreateProcess (p->appname, p->cmdline, NULL, NULL, FALSE,
@@ -108,7 +108,7 @@ static int __createprocess_wrap(void *params) {
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
-	STARTUPINFO si = { 0 };
+	STARTUPINFO si = {0};
 	si.cb = sizeof (si);
 	DEBUG_EVENT de;
 	int pid, tid;

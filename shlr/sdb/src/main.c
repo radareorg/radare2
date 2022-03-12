@@ -456,7 +456,7 @@ static int sdb_dump(MainOptions *mo) {
 	const bool grep = mo->grep;
 
 	char *v = NULL;
-	char k[SDB_MAX_KEY] = { 0 };
+	char k[SDB_MAX_KEY] = {0};
 	const char *comma = "";
 	Sdb *db = sdb_new (NULL, dbname, 0);
 	if (!db) {

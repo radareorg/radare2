@@ -53,7 +53,7 @@ static RVector *get_cbs(REvent *ev, int type) {
 }
 
 R_API REventCallbackHandle r_event_hook(REvent *ev, int type, REventCallback cb, void *user) {
-	REventCallbackHandle handle = { 0 };
+	REventCallbackHandle handle = {0};
 	REventCallbackHook hook;
 
 	r_return_val_if_fail (ev, handle);

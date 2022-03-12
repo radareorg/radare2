@@ -56,7 +56,7 @@ bool test_r_anal_block_create() {
 }
 
 bool test_r_anal_block_contains() {
-	RAnalBlock dummy = { 0 };
+	RAnalBlock dummy = {0};
 	dummy.addr = 0x1337;
 	dummy.size = 42;
 	mu_assert ("contains before", !r_anal_block_contains (&dummy, 100));

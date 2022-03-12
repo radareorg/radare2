@@ -563,7 +563,7 @@ static int cmd_help(void *data, const char *input) {
 	RIOMap *map;
 	const char *k;
 	RListIter *iter;
-	char *p, out[128] = R_EMPTY;
+	char *p, out[128] = {0};
 	ut64 n;
 	int i;
 	RList *tmp;

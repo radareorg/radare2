@@ -304,7 +304,7 @@ bool test_cmd_help(void) {
 
 	const RCmdDescExample pd_help_examples[] = {
 		{ .example = "pd 10", .comment = "print 10 disassembled instructions" },
-		{ 0 },
+		{0},
 	};
 
 	const RCmdDescHelp pd_help = {
