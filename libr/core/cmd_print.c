@@ -411,6 +411,16 @@ static const char *help_msg_pi[] = {
 	NULL
 };
 
+static const char *help_msg_pie[] = {
+	"Usage:", "pie[fq]", " # print esil of N instructions",
+	"pie", "", "print esil of N instructions",
+	"pieq", "", "same as above but hiding the offset",
+	"pief", "", "print esil of all the function basic blocks",
+	"piefq", "", "same as above but hiding the offset",
+	// "piej", "", "same but in JSON format",
+	NULL
+};
+
 static const char *help_msg_pif[] = {
 	"Usage:", "pif[cj]", " # print instructions from function",
 	"pif", "", "print function instructions",
@@ -5007,8 +5017,36 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 		}
 		break;
 	case 'e': // "pie"
-		if (l != 0) {
-			r_core_disasm_pdi (core, l, 0, 'e');
+		if (strchr (input + 2, '?')) {
+			r_core_cmd_help (core, help_msg_pie);
+		} else if (input[2] == 'f') {
+			const bool asm_offset = r_config_get_b (core->config, "asm.offset");
+			if (input[3] == 'q') {
+				r_config_set_b (core->config, "asm.offset", false);
+			}
+			ut64 orig = core->offset;
+			RAnalBlock *bb;
+			RListIter *iter;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, orig, 0);
+			if (fcn) {
+				r_list_foreach (fcn->bbs, iter, bb) {
+					r_core_seek (core, orig, true);
+					r_core_disasm_pdi (core, bb->size, 0, 'e');
+				}
+				r_core_seek (core, orig, true);
+			}
+			r_config_set_b (core->config, "asm.offset", asm_offset);
+		} else if (input[2] == 'q') {
+			const bool orig = r_config_get_b (core->config, "asm.offset");
+			r_config_set_b (core->config, "asm.offset", false);
+			if (l != 0) {
+				r_core_disasm_pdi (core, l, 0, 'e');
+			}
+			r_config_set_b (core->config, "asm.offset", orig);
+		} else {
+			if (l != 0) {
+				r_core_disasm_pdi (core, l, 0, 'e');
+			}
 		}
 		break;
 	case 'f': // "pif"
