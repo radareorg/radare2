@@ -1707,6 +1707,9 @@ R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64
 R_API bool r_anal_function_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize);
 R_API bool r_anal_function_purity(RAnalFunction *fcn);
+#if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
+R_API int r_anal_function_instrcount(RAnalFunction *fcn);
+#endif
 
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
 R_API RList *r_anal_ref_list_new(void);

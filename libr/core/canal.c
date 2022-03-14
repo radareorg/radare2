@@ -22,6 +22,20 @@ enum {
 // 128M
 #define MAX_SCAN_SIZE 0x7ffffff
 
+#if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
+// the function is implemented in anal/fcn.c
+#else
+static int r_anal_function_instrcount(RAnalFunction *fcn) {
+	int count = 0;
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		count += bb->ninstr;
+	}
+	return count;
+}
+#endif
+
 static void loganal(ut64 from, ut64 to, int depth) {
 	r_cons_clear_line (1);
 	eprintf ("0x%08"PFMT64x" > 0x%08"PFMT64x" %d\r", from, to, depth);
@@ -2888,6 +2902,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, PJ *pj) {
 	pj_ki (pj, "bits", fcn->bits);
 	pj_ks (pj, "type", r_anal_functiontype_tostring (fcn->type));
 	pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
+	pj_ki (pj, "ninstrs", r_anal_function_instrcount (fcn));
 	pj_ki (pj, "edges", r_anal_function_count_edges (fcn, &ebbs));
 	pj_ki (pj, "ebbs", ebbs);
 	{
@@ -3123,6 +3138,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 	}
 	r_cons_printf ("\nnum-bbs: %d", r_list_length (fcn->bbs));
+	r_cons_printf ("\nnum-instrs: %d", r_anal_function_instrcount (fcn));
 	r_cons_printf ("\nedges: %d", r_anal_function_count_edges (fcn, &ebbs));
 	r_cons_printf ("\nend-bbs: %d", ebbs);
 	r_cons_printf ("\ncall-refs:");
@@ -3215,6 +3231,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "size", 0);
 	r_table_add_column (t, typeString, "name", 0);
 	r_table_add_column (t, typeNumber, "nbbs", 0);
+	r_table_add_column (t, typeNumber, "nins", 0);
 	r_table_add_column (t, typeNumber, "xref", 0);
 	r_table_add_column (t, typeNumber, "calls", 0);
 	r_table_add_column (t, typeNumber, "cc", 0);
@@ -3222,6 +3239,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_strf_var (fcnAddr, 32, "0x%08"PFMT64x, fcn->addr);
 		r_strf_var (fcnSize, 32, "%"PFMT64u, r_anal_function_linear_size (fcn)); // r_anal_function_size (fcn));
 		r_strf_var (nbbs, 32, "%d", r_list_length (fcn->bbs));
+		r_strf_var (nins, 32, "%d", r_anal_function_instrcount (fcn));
 		RList *xrefs = r_anal_function_get_xrefs (fcn);
 		snprintf (xref, sizeof (xref), "%d", r_list_length (xrefs));
 		r_list_free (xrefs);
@@ -3232,7 +3250,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		r_list_free (calls);
 		snprintf (ccstr, sizeof (ccstr), "%d", r_anal_function_complexity (fcn));
 
-		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, nbbs, xref, castr, ccstr, NULL);
+		r_table_add_row (t, fcnAddr, fcnSize, fcn->name, nbbs, nins, xref, castr, ccstr, NULL);
 	}
 	if (r_table_query (t, q)) {
 		char *s = (fmt == 'j')
@@ -5141,8 +5159,8 @@ static inline bool get_next_i(IterCtx *ctx, size_t *next_i) {
 
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
-	bool emu_lazy = r_config_get_i (core->config, "emu.lazy");
-	bool gp_fixed = r_config_get_i (core->config, "anal.gpfixed");
+	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
+	bool gp_fixed = r_config_get_b (core->config, "anal.gpfixed");
 	RAnalEsil *ESIL = core->anal->esil;
 	ut64 refptr = 0LL;
 	char *pcname = NULL;
