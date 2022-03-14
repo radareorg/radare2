@@ -657,7 +657,8 @@ R_API int r_main_rasm2(int argc, const char *argv[]) {
 	bool use_spp = false;
 	bool hexwords = false;
 	ut64 offset = 0;
-	int fd = -1, dis = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
+	int fd = -1, dis = 0, bin = 0, ret = 0, c, whatsop = 0;
+	int bits = (R_SYS_BITS & R_SYS_BITS_64)? 64: 32;
 	int help = 0;
 	ut64 len = 0, idx = 0, skip = 0;
 	bool analinfo = false;
