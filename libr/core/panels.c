@@ -900,9 +900,6 @@ static char *__find_cmd_str_cache(RCore *core, RPanel* panel) {
 
 static char *__handle_cmd_str_cache(RCore *core, RPanel *panel, bool force_cache) {
 	char *cmd = __apply_filter_cmd (core, panel);
-	if (!strcmp (cmd, "pdc")) {
-		panel->model->addr = core->offset;
-	}
 	bool b = core->print->cur_enabled && __get_cur_panel (core->panels) != panel;
 	char *out = NULL;
 	if (cmd) {
@@ -4114,13 +4111,13 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 	(void)r_cons_get_size (&h);
 	const int idx = __get_panel_idx_in_pos (core, x, y);
 	char *word = __get_word_from_canvas (core, panels, x, y);
-	if (idx == -1) {
+	if (idx == -1 || R_STR_ISEMPTY (word)) {
 		return false;
 	}
 	__set_curnode (core, idx);
 	__set_refresh_all (core, true, true);
-	RPanel *ppos = __get_panel(panels, idx);
-	if (word) {
+	RPanel *ppos = __get_panel (panels, idx);
+	if (R_STR_ISNOTEMPTY (word)) {
 		const ut64 addr = r_num_math (core->num, word);
 		if (__check_panel_type (panel, PANEL_CMD_FUNCTION) &&
 				__check_if_addr (word, strlen (word))) {
@@ -4129,16 +4126,14 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 		}
 		r_flag_set (core->flags, "panel.addr", addr, 1);
 		r_config_set (core->config, "scr.highlight", word);
-		{
-			ut64 addr = r_num_math (core->num, word);
-			if (addr > 0) {
-				// TODO implement proper panel offset sync
-				// __set_panel_addr (core, cur, addr);
-				__seek_all (core, addr);
-			}
+		if (addr > 0) {
+			// TODO implement proper panel offset sync
+			// __set_panel_addr (core, cur, addr);
+			r_io_sundo_push (core->io, core->offset, 0);
+			__seek_all (core, addr);
 		}
-		free (word);
 	}
+	free (word);
 	if (x >= ppos->view->pos.x && x < ppos->view->pos.x + 4) {
 		*key = 'c';
 		return false;
