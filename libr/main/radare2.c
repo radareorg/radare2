@@ -96,7 +96,7 @@ static int main_help(int line) {
 		" -b [bits]    set asm.bits\n"
 		" -B [baddr]   set base address for PIE binaries\n"
 		" -c 'cmd..'   execute radare command\n"
-		" -C           file is host:port (alias for -c+=https://%%s/cmd/)\n"
+		" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
 		" -d           debug the executable 'file' or running process 'pid'\n"
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -e k=v       evaluate config var\n"
@@ -874,7 +874,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (strstr (uri, "://")) {
 			r_core_cmdf (r, "=+ %s", uri);
 		} else {
-			argv[opt.ind] = r_str_newf ("https://%s/cmd/", argv[opt.ind]);
+			argv[opt.ind] = r_str_newf ("http://%s/cmd/", argv[opt.ind]);
 			r_core_cmdf (r, "=+ %s", argv[opt.ind]);
 		}
 		r_core_cmd0 (r, "=!=0");

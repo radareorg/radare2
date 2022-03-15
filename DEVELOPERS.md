@@ -481,9 +481,6 @@ single static library archive (`.a`) which you can link your own programs
 against to use radare2's libraries without depending on an existing system
 installation. See [doc/static.md](doc/static.md) for more info.
 
-[This presentation](https://radare.org/get/lacon-radare-2009/) gives a good
-overview of the libraries.
-
 ## API
 
 The external API is maintained in a different repository. The API function

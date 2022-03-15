@@ -7,7 +7,7 @@
 #include "../io_memory.h"
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return (!strncmp (pathname, "https://", 7));
+	return (!strncmp (pathname, "http://", 7));
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
@@ -32,7 +32,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_http = {
 	.name = "http",
 	.desc = "Make http get requests",
-	.uris = "https://",
+	.uris = "http://",
 	.license = "LGPL3",
 	.open = __open,
 	.close = io_memory_close,
