@@ -110,7 +110,7 @@ static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
 		return false;
 	}
 	if (!(bin->section_header = malloc (sections_size))) {
-		perror ("malloc (sections headers)");
+		r_sys_perror ("malloc (sections headers)");
 		return false;
 	}
 	if (r_buf_read_at (bin->b, sizeof(TE_image_file_header),
@@ -181,7 +181,7 @@ RBinAddr* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 		return NULL;
 	}
 	if (!(entry = malloc (sizeof (RBinAddr)))) {
-		perror("malloc (entrypoint)");
+		r_sys_perror("malloc (entrypoint)");
 		return NULL;
 	}
 	entry->vaddr = bin->header->AddressOfEntryPoint - r_bin_te_get_stripped_delta (bin);
@@ -341,7 +341,7 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 	sections_count = bin->header->NumberOfSections;
 
 	if (!(sections = calloc ((sections_count + 1), sizeof (struct r_bin_te_section_t)))) {
-		perror ("malloc (sections)");
+		r_sys_perror ("malloc (sections)");
 		return NULL;
 	}
 	for (i = 0; i < sections_count; i++) {

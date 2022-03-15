@@ -67,7 +67,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 					eprintf ("Operation not permitted\n");
 					break;
 				case EINVAL:
-					perror ("ptrace: Cannot attach");
+					r_sys_perror ("ptrace: Cannot attach");
 					eprintf ("ERRNO: %d (EINVAL)\n", errno);
 					break;
 				}

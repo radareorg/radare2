@@ -234,7 +234,7 @@ static void handle_posix_error(int err) {
 		break;
 	default:
 		eprintf ("posix_spawnp: unknown error %d\n", err);
-		perror ("posix_spawnp");
+		r_sys_perror ("posix_spawnp");
 		break;
 	}
 }
@@ -398,12 +398,12 @@ static int fork_and_ptraceme_for_unix(RIO *io, int bits, const char *cmd) {
 	child_data.cmd = cmd;
 	child_pid = r_io_ptrace_fork (io, fork_child_callback, &child_data);
 	if (child_pid == -1 || child_pid == 0) {
-		perror ("fork_and_ptraceme");
+		r_sys_perror ("fork_and_ptraceme");
 		return -1;
 	} do {
 		ret = waitpid (child_pid, &status, WNOHANG);
 		if (ret == -1) {
-			perror ("waitpid");
+			r_sys_perror ("waitpid");
 			return -1;
 		}
 		bed = r_cons_sleep_begin ();

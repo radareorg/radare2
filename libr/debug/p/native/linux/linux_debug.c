@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_userconf.h>
 
@@ -240,7 +240,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int ptid, int status, bool dow
 			// The new child has a pending SIGSTOP.  We can't affect it until it
 			// hits the SIGSTOP, but we're already attached.  */
 			if (waitpid ((int)data, &status, 0) == -1) {
-				perror ("waitpid");
+				r_sys_perror ("waitpid");
 			}
 		}
 
@@ -262,7 +262,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int ptid, int status, bool dow
 			// The new child has a pending SIGSTOP. We can't affect it until it
 			// hits the SIGSTOP, but we're already attached.  */
 			if (waitpid (dbg->forked_pid, &status, 0) == -1) {
-				perror ("waitpid");
+				r_sys_perror ("waitpid");
 			}
 		}
 		eprintf ("(%d) Created process %d\n", ptid, (int)data);
@@ -271,7 +271,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int ptid, int status, bool dow
 			// breakpoints are inherited from the parent
 			linux_remove_fork_bps (dbg);
 			if (r_debug_ptrace (dbg, PTRACE_DETACH, dbg->forked_pid, NULL, (r_ptrace_data_t)(size_t)NULL) == -1) {
-				perror ("PTRACE_DETACH");
+				r_sys_perror ("PTRACE_DETACH");
 			}
 		}
 		return R_DEBUG_REASON_NEW_PID;
@@ -349,7 +349,7 @@ int linux_step(RDebug *dbg) {
 	ret = r_debug_ptrace (dbg, PTRACE_SINGLESTEP, pid, 0, 0);
 	//XXX(jjd): why?? //linux_handle_signals (dbg);
 	if (ret == -1) {
-		perror ("native-singlestep");
+		r_sys_perror ("native-singlestep");
 		ret = false;
 	} else {
 		ret = true;
@@ -392,7 +392,7 @@ static void linux_detach_all(RDebug *dbg) {
 		r_list_foreach (th_list, it, th) {
 			if (th->pid != dbg->main_pid) {
 				if (r_debug_ptrace (dbg, PTRACE_DETACH, th->pid, NULL, (r_ptrace_data_t)(size_t)NULL) == -1) {
-					perror ("PTRACE_DETACH");
+					r_sys_perror ("PTRACE_DETACH");
 				}
 			}
 		}
@@ -400,7 +400,7 @@ static void linux_detach_all(RDebug *dbg) {
 
 	// Detaching from main proc
 	if (r_debug_ptrace (dbg, PTRACE_DETACH, dbg->main_pid, NULL, (r_ptrace_data_t)(size_t)NULL) == -1) {
-		perror ("PTRACE_DETACH");
+		r_sys_perror ("PTRACE_DETACH");
 	}
 }
 
@@ -509,7 +509,7 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 			if (errno == EINTR) {
 				continue;
 			}
-			perror ("waitpid");
+			r_sys_perror ("waitpid");
 			break;
 		} else if (ret == 0) {
 			// Unset WNOHANG to call next waitpid in blocking mode.
@@ -607,7 +607,7 @@ static bool linux_kill_thread(int tid, int signo) {
 	int ret = syscall (__NR_tkill, tid, signo);
 
 	if (ret == -1) {
-		perror ("tkill");
+		r_sys_perror ("tkill");
 		return false;
 	}
 
@@ -627,7 +627,7 @@ static bool linux_stop_thread(RDebug *dbg, int tid) {
 
 	if (linux_kill_thread (tid, SIGSTOP)) {
 		if ((ret = waitpid (tid, &status, 0)) == -1) {
-			perror ("waitpid");
+			r_sys_perror ("waitpid");
 		}
 		return ret == tid;
 	}
@@ -664,7 +664,7 @@ static bool linux_attach_single_pid(RDebug *dbg, int pid) {
 	if (r_debug_ptrace (dbg, PTRACE_GETSIGINFO, pid, NULL,
 		(r_ptrace_data_t)&sig) == -1) {
 		if (r_debug_ptrace (dbg, PTRACE_ATTACH, pid, NULL, NULL) == -1) {
-			perror ("ptrace (PT_ATTACH)");
+			r_sys_perror ("ptrace (PT_ATTACH)");
 			return false;
 		}
 

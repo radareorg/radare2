@@ -27,7 +27,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 	}
 
 	if (pipe (sp->fd0)==-1) {
-		perror ("pipe");
+		r_sys_perror ("pipe");
 		goto error;
 	}
 	if (fcntl (sp->fd0[0], flags) < 0) {
@@ -38,7 +38,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 	}
 
 	if (pipe (sp->fd1)==-1) {
-		perror ("pipe");
+		r_sys_perror ("pipe");
 		goto error;
 	}
 	if (fcntl (sp->fd1[0], flags) < 0) {
@@ -59,7 +59,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 		exit (1);
 		break;
 	case -1:
-		perror ("fork");
+		r_sys_perror ("fork");
 		r_socket_proc_close (sp);
 		goto error;
 		//r_socket_block_time (sp, false, 0);

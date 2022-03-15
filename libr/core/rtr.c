@@ -914,7 +914,7 @@ R_API void r_core_rtr_event(RCore *core, const char *input) {
 		errmsg_tmpfile = strdup (f);
 		int e = mkfifo (f, 0644);
 		if (e == -1) {
-			perror ("mkfifo");
+			r_sys_perror ("mkfifo");
 		} else {
 			int ff = open (f, O_RDWR);
 			if (ff != -1) {

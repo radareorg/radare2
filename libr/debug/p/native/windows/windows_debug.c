@@ -1185,7 +1185,7 @@ static void __w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 	}
 	tok_usr = (PTOKEN_USER)malloc (tok_len);
 	if (!tok_usr) {
-		perror ("__w32_info_user/malloc tok_usr");
+		r_sys_perror ("__w32_info_user/malloc tok_usr");
 		goto err___w32_info_user;
 	}
 	if (!GetTokenInformation (h_tok, TokenUser, (LPVOID)tok_usr, tok_len, &tok_len)) {
@@ -1194,13 +1194,13 @@ static void __w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 	}
 	usr = (LPTSTR)calloc (usr_len, sizeof (TCHAR));
 	if (!usr) {
-		perror ("__w32_info_user/malloc usr");
+		r_sys_perror ("__w32_info_user/malloc usr");
 		goto err___w32_info_user;
 	}
 	*usr = '\0';
 	usr_dom = (LPTSTR)calloc (usr_dom_len, sizeof (TCHAR));
 	if (!usr_dom) {
-		perror ("__w32_info_user/malloc usr_dom");
+		r_sys_perror ("__w32_info_user/malloc usr_dom");
 		goto err___w32_info_user;
 	}
 	*usr_dom = '\0';

@@ -125,7 +125,7 @@ static bool r_debug_native_step(RDebug *dbg) {
 #elif __BSD__
 	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0);
 	if (ret != 0) {
-		perror ("native-singlestep");
+		r_sys_perror ("native-singlestep");
 		return false;
 	}
 	return true;
@@ -146,14 +146,14 @@ static bool r_debug_native_attach(RDebug *dbg, int pid) {
 	return linux_attach (dbg, pid);
 #elif __KFBSD__
 	if (ptrace (PT_ATTACH, pid, 0, 0) != -1) {
-		perror ("ptrace (PT_ATTACH)");
+		r_sys_perror ("ptrace (PT_ATTACH)");
 	}
 	return true;
 #else
 	int ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 	if (ret != -1) {
 		eprintf ("Trying to attach to %d\n", pid);
-		perror ("ptrace (PT_ATTACH)");
+		r_sys_perror ("ptrace (PT_ATTACH)");
 	}
 	return true;
 #endif
@@ -1035,7 +1035,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	fd = r_sandbox_fopen (path, "r");
 	if (!fd) {
 		char *errstr = r_str_newf ("Cannot open '%s'", path);
-		perror (errstr);
+		r_sys_perror (errstr);
 		free (errstr);
 		return NULL;
 	}
@@ -1489,7 +1489,7 @@ static RList *xnu_desc_list(int pid) {
 			continue;
 		}
 		if (nb < sizeof (vi)) {
-			perror ("too few bytes");
+			r_sys_perror ("too few bytes");
 			break;
 		}
 		//printf ("FD %d RWX %x ", i, vi.pfi.fi_openflags);

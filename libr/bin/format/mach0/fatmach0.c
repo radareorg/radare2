@@ -11,7 +11,7 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	ut8 hdrbytes[sizeof (struct fat_header)] = {0};
 	int len = r_buf_read_at (bin->b, 0, &hdrbytes[0], sizeof (struct fat_header));
 	if (len != sizeof (struct fat_header)) {
-		perror ("read (fat_header)");
+		r_sys_perror ("read (fat_header)");
 		return false;
 	}
 	bin->hdr.magic = r_read_be32 (&hdrbytes[0]);
@@ -30,14 +30,14 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 		return false;
 	}
 	if (!(bin->archs = malloc (size))) {
-		perror ("malloc (fat_arch)");
+		r_sys_perror ("malloc (fat_arch)");
 		return false;
 	}
 	for (i = 0; i < bin->nfat_arch; i++) {
 		ut8 archbytes[sizeof (struct fat_arch)] = {0};
 		len = r_buf_read_at (bin->b, 8 + i * sizeof (struct fat_arch), &archbytes[0], sizeof (struct fat_arch));
 		if (len != sizeof (struct fat_arch)) {
-			perror ("read (fat_arch)");
+			r_sys_perror ("read (fat_arch)");
 			R_FREE (bin->archs);
 			return false;
 		}

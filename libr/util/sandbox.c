@@ -295,7 +295,7 @@ R_API int r_sandbox_system(const char *x, int n) {
 #endif
 	char *bin_sh = r_file_binsh ();
 	if (execl (bin_sh, "sh", "-c", x, (const char*)NULL) == -1) {
-		perror ("execl");
+		r_sys_perror ("execl");
 	}
 	free (bin_sh);
 	exit (1);

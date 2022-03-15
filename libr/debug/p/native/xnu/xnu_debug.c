@@ -171,7 +171,7 @@ bool xnu_step(RDebug *dbg) {
 #if XNU_USE_PTRACE
 	int ret = r_debug_ptrace (dbg, PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
 	if (!ret) {
-		perror ("ptrace-step");
+		r_sys_perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 	}
 	return ret;
@@ -205,7 +205,7 @@ bool xnu_attach(RDebug *dbg, int pid) {
 #  define MY_ATTACH PT_ATTACH
 # endif
 	if (r_debug_ptrace (dbg, MY_ATTACH, pid, 0, 0) == -1) {
-		perror ("ptrace (PT_ATTACH)");
+		r_sys_perror ("ptrace (PT_ATTACH)");
 		return false;
 	}
 #else
@@ -446,7 +446,7 @@ int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	}
 	int ret = vm_deallocate (th->port, (vm_address_t)addr, (vm_size_t)size);
 	if (ret != KERN_SUCCESS) {
-		perror ("vm_deallocate");
+		r_sys_perror ("vm_deallocate");
 		return false;
 	}
 	return true;
@@ -459,7 +459,7 @@ static int xnu_get_kinfo_proc(int pid, struct kinfo_proc *kp) {
 
 	mib[3] = pid;
 	if (sysctl (mib, len, kp, &kpl, NULL, 0) == -1) {
-		perror ("sysctl");
+		r_sys_perror ("sysctl");
 		return -1;
   	}
   	if (kpl < 1) {
@@ -566,7 +566,7 @@ int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 	int xnu_perms = xwr2rwx (perms);
 	ret = mach_vm_protect (task, (vm_address_t)addr, (vm_size_t)size, (boolean_t)0, xnu_perms); //VM_PROT_COPY | perms);
 	if (ret != KERN_SUCCESS) {
-		perror ("vm_protect");
+		r_sys_perror ("vm_protect");
 		return false;
 	}
 	return true;
@@ -682,12 +682,12 @@ static cpu_type_t xnu_get_cpu_type(pid_t pid) {
 	size_t cpu_type_len = sizeof (cpu_type_t);
 
 	if (sysctlnametomib ("sysctl.proc_cputype", mib, &len) == -1) {
-		perror ("sysctlnametomib");
+		r_sys_perror ("sysctlnametomib");
 		return -1;
 	}
 	mib[len++] = pid;
 	if (sysctl (mib, len, &cpu_type, &cpu_type_len, NULL, 0) == -1) {
-		perror ("sysctl");
+		r_sys_perror ("sysctl");
 		return -1;
 	}
 	if (cpu_type_len > 0) return cpu_type;
@@ -739,7 +739,7 @@ static int xnu_dealloc_threads(RList *threads) {
 
 	kr = task_threads (task_dbg, &thread_list, &thread_count);
 	if (kr != KERN_SUCCESS) {
-		perror ("task_threads");
+		r_sys_perror ("task_threads");
 	} else {
 		r_list_foreach_safe (threads, iter, iter2, thread) {
 			mach_port_deallocate (mach_task_self (), thread->port);
@@ -977,7 +977,7 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 		r_list_length (threads_list), command_size, dbg->pid);
 
 	if (!dbg->maps) {
-		perror ("There are not loaded maps");
+		r_sys_perror ("There are not loaded maps");
 	}
 	if (xnu_write_mem_maps_to_buffer (mem_maps_buffer, dbg->maps, round_page (header_size),
 		header, mach_header_sz, segment_command_sz, &hoffset) < 0) {

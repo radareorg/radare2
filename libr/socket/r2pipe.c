@@ -323,7 +323,7 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 R_API char *r2pipe_cmd(R2Pipe *r2p, const char *str) {
 	r_return_val_if_fail (r2p && str, NULL);
 	if (!*str || !r2pipe_write (r2p, str)) {
-		perror ("r2pipe_write");
+		r_sys_perror ("r2pipe_write");
 		return NULL;
 	}
 	return r2pipe_read (r2p);

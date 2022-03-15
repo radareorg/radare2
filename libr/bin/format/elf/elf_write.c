@@ -65,11 +65,11 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 			Elf_(Rel) *rel, *relp;
 			rel = (Elf_(Rel) *)malloc (1+shdrp->sh_size);
 			if (!rel) {
-				perror ("malloc");
+				r_sys_perror ("malloc");
 				return 0;
 			}
 			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
-				perror("read (rel)");
+				r_sys_perror("read (rel)");
 			}
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rel)), relp++) {
 				/* rewrite relp->r_offset */
@@ -77,7 +77,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 					relp->r_offset+=delta;
 					off = shdrp->sh_offset + j;
 					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rel))) == -1) {
-						perror("write (imports)");
+						r_sys_perror("write (imports)");
 					}
 				}
 			}
@@ -87,11 +87,11 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 			Elf_(Rela) *rel, *relp;
 			rel = (Elf_(Rela) *)malloc (shdrp->sh_size + 1);
 			if (!rel) {
-				perror("malloc");
+				r_sys_perror("malloc");
 				return 0;
 			}
 			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
-				perror("read (rel)");
+				r_sys_perror("read (rel)");
 			}
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rela)), relp++) {
 				/* rewrite relp->r_offset */
@@ -99,7 +99,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 					relp->r_offset+=delta;
 					off = shdrp->sh_offset + j;
 					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rela))) == -1) {
-						perror("write (imports)");
+						r_sys_perror("write (imports)");
 					}
 				}
 			}
@@ -121,7 +121,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		}
 		off = ehdr->e_shoff + i * sizeof (Elf_(Shdr));
 		if (r_buf_write_at (bin->b, off, (ut8*)shdrp, sizeof (Elf_(Shdr))) == -1) {
-			perror ("write (shdr)");
+			r_sys_perror ("write (shdr)");
 		}
 		printf ("-> elf section (%s)\n", &strtab[shdrp->sh_name]);
 	}
@@ -148,7 +148,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		}
 		off = ehdr->e_phoff + i * sizeof (Elf_(Phdr));
 		if (r_buf_write_at (bin->b, off, (ut8 *)phdrp, sizeof (Elf_ (Phdr))) == -1) {
-			perror ("write (phdr)");
+			r_sys_perror ("write (phdr)");
 		}
 		printf ("-> program header (0x%08"PFMT64x")\n", (ut64) phdrp->p_offset);
 	}
@@ -164,7 +164,7 @@ ut64 Elf_(r_bin_elf_resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		ehdr->e_shoff += delta;
 	}
 	if (r_buf_write_at (bin->b, 0, (ut8*)ehdr, sizeof (Elf_(Ehdr))) == -1) {
-		perror ("write (ehdr)");
+		r_sys_perror ("write (ehdr)");
 	}
 
 	/* inverse order to write bodies .. avoid overlapping here */
@@ -201,7 +201,7 @@ bool Elf_(r_bin_elf_del_rpath)(RBinFile *bf) {
 			continue;
 		}
 		if (!(dyn = malloc (bin->phdr[i].p_filesz + 1))) {
-			perror ("malloc (dyn)");
+			r_sys_perror ("malloc (dyn)");
 			return false;
 		}
 		if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {

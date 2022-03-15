@@ -657,7 +657,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode)) {
 					load_1 (ms, action, subfn, &errs, &marray, &marraycount);
 				}
-				//else perror (subfn);
+				//else r_sys_perror (subfn);
 			}
 			closedir (dir);
 		} else {

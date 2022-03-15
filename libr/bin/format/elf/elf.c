@@ -328,7 +328,7 @@ static int init_phdr(ELFOBJ *bin) {
 	}
 	ut64 phnum = Elf_(r_bin_elf_get_phnum) (bin);
 	if (!(bin->phdr = R_NEWS0 (Elf_(Phdr), phnum))) {
-		perror ("malloc (phdr)");
+		r_sys_perror ("malloc (phdr)");
 		return false;
 	}
 
@@ -387,7 +387,7 @@ static int init_shdr(ELFOBJ *bin) {
 		return false;
 	}
 	if (!(bin->shdr = R_NEWS0 (Elf_(Shdr), bin->ehdr.e_shnum))) {
-		perror ("malloc (shdr)");
+		r_sys_perror ("malloc (shdr)");
 		return false;
 	}
 	sdb_num_set (bin->kv, "elf_shdr.offset", bin->ehdr.e_shoff, 0);
@@ -472,7 +472,7 @@ static int init_strtab(ELFOBJ *bin) {
 	}
 
 	if (!(bin->shstrtab = calloc (1, bin->shstrtab_size + 1))) {
-		perror ("malloc");
+		r_sys_perror ("malloc");
 		bin->shstrtab = NULL;
 		return false;
 	}
@@ -2927,7 +2927,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 
 		RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
 		if (!r) {
-			perror ("realloc (libs)");
+			r_sys_perror ("realloc (libs)");
 			free (ret);
 			return NULL;
 		}
@@ -2946,7 +2946,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 
 	RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
 	if (!r) {
-		perror ("realloc (libs)");
+		r_sys_perror ("realloc (libs)");
 		free (ret);
 		return NULL;
 	}

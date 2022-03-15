@@ -4981,7 +4981,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 
 	buf = malloc (size + 2);
 	if (!buf) {
-		perror ("malloc");
+		r_sys_perror ("malloc");
 		return;
 	}
 
@@ -5230,7 +5230,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 	buf = malloc ((size_t)iend + 2);
 	if (!buf) {
-		perror ("malloc");
+		r_sys_perror ("malloc");
 		return;
 	}
 	esilbreak_last_read = UT64_MAX;

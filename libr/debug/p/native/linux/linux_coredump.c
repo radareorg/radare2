@@ -231,7 +231,7 @@ static prstatus_t *linux_get_prstatus(RDebug *dbg, int pid, int tid, proc_conten
 	p->pr_cstime.tv_usec = (proc_data->per_thread->cstime % 1000) / 1000;
 
 	if (r_debug_ptrace (dbg, PTRACE_GETREGS, tid, NULL, &regs) < 0) {
-		perror ("PTRACE_GETREGS");
+		r_sys_perror ("PTRACE_GETREGS");
 		R_FREE (proc_data->per_thread);
 		free (p);
 		return NULL;
@@ -245,7 +245,7 @@ static elf_fpregset_t *linux_get_fp_regset(RDebug *dbg, int pid) {
 	elf_fpregset_t *p = R_NEW0 (elf_fpregset_t);
 	if (p) {
 		if (r_debug_ptrace (dbg, PTRACE_GETFPREGS, pid, NULL, p) < 0) {
-			perror ("PTRACE_GETFPREGS");
+			r_sys_perror ("PTRACE_GETFPREGS");
 			free (p);
 			return NULL;
 		}
@@ -261,7 +261,7 @@ static siginfo_t *linux_get_siginfo(RDebug *dbg, int pid) {
 	}
 	int ret = r_debug_ptrace (dbg, PTRACE_GETSIGINFO, pid, 0, (r_ptrace_data_t)(size_t)siginfo);
 	if (ret == -1 || !siginfo->si_signo) {
-		perror ("PTRACE_GETSIGINFO");
+		r_sys_perror ("PTRACE_GETSIGINFO");
 		free (siginfo);
 		return NULL;
 	}
@@ -918,7 +918,7 @@ static elf_fpxregset_t *linux_get_fpx_regset(RDebug *dbg, int tid) {
 		transfer.iov_base = fpxregset;
 		transfer.iov_len = sizeof (elf_fpxregset_t);
 		if (r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_PRXFPREG, &transfer) < 0) {
-			perror ("linux_get_fpx_regset");
+			r_sys_perror ("linux_get_fpx_regset");
 			R_FREE (fpxregset);
 		}
 	}
@@ -940,7 +940,7 @@ void *linux_get_xsave_data (RDebug *dbg, int tid, ut32 size) {
 	transfer.iov_base = xsave_data;
 	transfer.iov_len = size;
 	if (r_debug_ptrace (dbg, PTRACE_GETREGSET, tid, (void *)NT_X86_XSTATE, &transfer) < 0) {
-		perror ("linux_get_xsave_data");
+		r_sys_perror ("linux_get_xsave_data");
 		free (xsave_data);
 		return NULL;
 	}
@@ -960,7 +960,7 @@ void *linux_get_arm_vfp_data (RDebug *dbg, int tid) {
 	}
 
 	if (r_debug_ptrace (dbg, PTRACE_GETVFPREGS, tid, 0, vfp_data) < 0) {
-		perror ("linux_get_arm_vfp_data");
+		r_sys_perror ("linux_get_arm_vfp_data");
 		free (vfp_data);
 		return NULL;
 	}
@@ -1067,7 +1067,7 @@ static int *get_unique_thread_id(RDebug *dbg, int n_threads) {
 					/* The main thread is already being traced */
 					if (th->pid != dbg->pid) {
 						if (r_debug_ptrace (dbg, PTRACE_ATTACH, thread_id[i], 0, 0) < 0) {
-							perror ("Could not attach to thread");
+							r_sys_perror ("Could not attach to thread");
 						}
 					}
 					i++;
@@ -1085,7 +1085,7 @@ void detach_threads (RDebug *dbg, int *thread_id, int n_threads) {
 	for(i = 0; i < n_threads ; i++) {
 		if (dbg->pid != thread_id[i]) {
 			if (r_debug_ptrace (dbg, PTRACE_DETACH, thread_id[i], 0, 0) < 0) {
-				perror ("PTRACE_DETACH");
+				r_sys_perror ("PTRACE_DETACH");
 			}
 		}
 	}
@@ -1350,7 +1350,7 @@ static int get_xsave_size(RDebug *dbg, int pid) {
 	local.iov_base = xstate_hdr;
 	local.iov_len = sizeof (xstate_hdr);
 	if (r_debug_ptrace (dbg, PTRACE_GETREGSET, pid, (void *)NT_X86_XSTATE, &local) < 0) {
-		perror ("NT_X86_XSTATE");
+		r_sys_perror ("NT_X86_XSTATE");
 		return 0;
 	}
 

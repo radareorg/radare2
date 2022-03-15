@@ -162,7 +162,7 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 				memcpy (mod->sect_hdr, sect_hdr, sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
 				mod_inf_fill = 0;
 			} else {
-				perror ("malloc set_mod_inf()");
+				r_sys_perror ("malloc set_mod_inf()");
 			}
 		}
 	}
@@ -211,7 +211,7 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 			if (sect_found) {
 				char *map_name = r_str_newf ("%s | %.8s", mod->map->name, sect_hdr->Name);
 				if (!map_name) {
-					perror ("r_str_newf");
+					r_sys_perror ("r_str_newf");
 					return;
 				}
 				if (sect_found == 1) {

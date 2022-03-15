@@ -1246,7 +1246,7 @@ R_API char *r_sys_whoami(void) {
 #if __WINDOWS__
 	char buf[256];
 	DWORD buf_sz = sizeof (buf);
-	if (!GetUserName ((LPWSTR)buf, (LPDWORD)&buf_sz) ) {
+	if (!GetUserName ((LPSTR)buf, (LPDWORD)&buf_sz) ) {
 		return strdup ("?");
 	}
 	return strdup (buf);
@@ -1274,7 +1274,7 @@ R_API int r_sys_uid(void) {
 	char buf[32];
 	DWORD buf_sz = sizeof (buf);
 	// TODO
-	if (!GetUserName ((LPWSTR)buf, (LPDWORD)&buf_sz) ) {
+	if (!GetUserName ((LPSTR)buf, (LPDWORD)&buf_sz) ) {
 		return 1; //
 	}
 	return 0;

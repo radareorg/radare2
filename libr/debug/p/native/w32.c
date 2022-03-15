@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2021 - pancake, xvilka, gustavo */
+/* radare - LGPL - Copyright 2010-2022 - pancake, xvilka, gustavo */
 
 #include "w32.h"
 
@@ -812,7 +812,7 @@ static void w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 	}
 	tok_usr = (PTOKEN_USER)malloc (tok_len);
 	if (!tok_usr) {
-		perror ("w32_info_user/malloc tok_usr");
+		r_sys_perror ("w32_info_user/malloc tok_usr");
 		goto err_w32_info_user;
 	}
 	if (!GetTokenInformation (h_tok, TokenUser, (LPVOID)tok_usr, tok_len, &tok_len)) {
@@ -821,13 +821,13 @@ static void w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 	}
 	usr = (LPTSTR)malloc (usr_len);
 	if (!usr) {
-		perror ("w32_info_user/malloc usr");
+		r_sys_perror ("w32_info_user/malloc usr");
 		goto err_w32_info_user;
 	}
 	*usr = '\0';
 	usr_dom = (LPTSTR)malloc (usr_dom_len);
 	if (!usr_dom) {
-		perror ("w32_info_user/malloc usr_dom");
+		r_sys_perror ("w32_info_user/malloc usr_dom");
 		goto err_w32_info_user;
 	}
 	*usr_dom = '\0';
@@ -860,7 +860,7 @@ static void w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
 	}
 	LPTSTR path = (LPTSTR)malloc (MAX_PATH + 1);
 	if (!path) {
-		perror ("w32_info_exe/malloc path");
+		r_sys_perror ("w32_info_exe/malloc path");
 		goto err_w32_info_exe;
 	}
 	DWORD len = MAX_PATH;
