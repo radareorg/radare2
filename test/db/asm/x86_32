@@ -14,6 +14,9 @@ d "btc dword [eax], eax" 0fbb00
 d "btr dword [eax], eax" 0fb300
 d "bts dword [eax], eax" 0fab00
 d "call 4" 66e80000
+ad "jecxz 2" e300
+ad "jecxz 0" e3fe
+ad "jcxz 0" e3fe
 dB "cdqe" 98
 d "cmova eax, dword [eax]" 0f4700
 d "cmovae eax, dword [eax]" 0f4300
