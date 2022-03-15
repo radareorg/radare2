@@ -11,9 +11,11 @@ r_socket_sources = [
 ]
 
 r_util_deps = [utl, r_util_dep, platform_deps]
+r_util_static_deps = [utl, r_util_static_dep, platform_deps]
 
 if use_sys_openssl
   r_util_deps += [sys_openssl]
+  r_util_static_deps += [sys_openssl]
 endif
 
 r_socket = library('r_socket', r_socket_sources,
@@ -33,8 +35,8 @@ r_socket_dep = declare_dependency(link_with: r_socket,
 
 r_socket_static = static_library('r_socket_static', r_socket_sources,
   include_directories: [platform_inc],
-  dependencies: r_util_deps,
-  link_with: [r_util],
+  dependencies: r_util_static_deps,
+  link_with: [r_util_static],
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,

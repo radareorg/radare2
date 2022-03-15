@@ -128,8 +128,8 @@ r_core_static_deps = [
   r_asm_static_dep,
   r_bp_static_dep,
   platform_deps,
-  gdb_dep,
-  java_dep,
+  gdb_static_dep,
+  java_static_dep,
   lrt
 ]
 

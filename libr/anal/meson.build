@@ -223,7 +223,7 @@ r_anal_static = static_library('r_anal_static', r_anal_sources,
     r_syscall_static_dep,
     r_flag_static_dep,
     r_hash_static_dep,
-    java_dep,
+    java_static_dep,
     capstone_dep
   ],
   install: true,

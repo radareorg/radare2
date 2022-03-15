@@ -8,10 +8,12 @@ r_fs_sources = [
 ]
 
 r_fs_deps = [ r_util_dep ]
+r_fs_static_deps = [ r_util_static_dep ]
 r_fs_cflags = [ library_cflags ]
 
 if not user_plugins.contains('nogrub') and not get_option('nogpl')
   r_fs_deps += [ grub_dep ]
+  r_fs_static_deps += [ grub_static_dep ]
   r_fs_sources += [
     'p/fs_cpio.c',
     'p/fs_ext2.c',
@@ -58,7 +60,7 @@ r_fs_dep = declare_dependency(link_with: r_fs,
 r_fs_static = static_library('r_fs_static', r_fs_sources,
   include_directories: platform_inc,
   c_args: r_fs_cflags,
-  dependencies: r_fs_deps,
+  dependencies: r_fs_static_deps,
   install: true,
   implicit_include_directories: false,
 )

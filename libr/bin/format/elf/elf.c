@@ -300,7 +300,7 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 static int init_phdr(ELFOBJ *bin) {
 	ut32 phdr_size;
 
-	r_return_val_if_fail (!bin->phdr, false);
+	r_return_val_if_fail (bin && !bin->phdr, false);
 
 	if (!bin->ehdr.e_phnum) {
 		return false;
