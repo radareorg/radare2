@@ -423,7 +423,7 @@ static bool __isDataSection(RBinFile *a, RBinSection *s) {
 		return true;
 	}
  	// Rust
-	return strstr (s->name, "_const") != NULL;
+	return strstr (s->name, "_const");
 }
 
 static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to, RBinSection *section) {
@@ -824,7 +824,7 @@ R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool st
 	} else {
 		bf->buf = r_buf_new_with_bytes (bytes, sz);
 	}
-	return bf->buf != NULL;
+	return bf->buf;
 }
 
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {

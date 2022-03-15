@@ -84,57 +84,57 @@ powerpc_init_dialect (struct disassemble_info *info)
 	  dialect |= PPC_OPCODE_64;
   }
 
-  if (info->disassembler_options && strstr (info->disassembler_options, "ppcps") != NULL) {
+  if (info->disassembler_options && strstr (info->disassembler_options, "ppcps")) {
 	  dialect |= PPC_OPCODE_PPCPS;
-  } else if (info->disassembler_options && strstr (info->disassembler_options, "booke") != NULL) {
+  } else if (info->disassembler_options && strstr (info->disassembler_options, "booke")) {
 	  dialect |= PPC_OPCODE_BOOKE | PPC_OPCODE_BOOKE64;
-  } else if ((info->mach == bfd_mach_ppc_e500mc) || (info->disassembler_options && strstr (info->disassembler_options, "e500mc") != NULL)) {
+  } else if ((info->mach == bfd_mach_ppc_e500mc) || (info->disassembler_options && strstr (info->disassembler_options, "e500mc"))) {
 	  dialect |= (PPC_OPCODE_BOOKE | PPC_OPCODE_ISEL | PPC_OPCODE_PMR | PPC_OPCODE_CACHELCK | PPC_OPCODE_RFMCI | PPC_OPCODE_E500MC);
-  } else if ((info->mach == bfd_mach_ppc_e500) || (info->disassembler_options && strstr (info->disassembler_options, "e500") != NULL)) {
+  } else if ((info->mach == bfd_mach_ppc_e500) || (info->disassembler_options && strstr (info->disassembler_options, "e500"))) {
 	  dialect |= (PPC_OPCODE_BOOKE | PPC_OPCODE_SPE | PPC_OPCODE_ISEL | PPC_OPCODE_EFS | PPC_OPCODE_BRLOCK | PPC_OPCODE_PMR | PPC_OPCODE_CACHELCK | PPC_OPCODE_RFMCI | PPC_OPCODE_E500MC);
-  } else if (info->disassembler_options && strstr (info->disassembler_options, "efs") != NULL) {
+  } else if (info->disassembler_options && strstr (info->disassembler_options, "efs")) {
 	  dialect |= PPC_OPCODE_EFS;
-  } else if (info->disassembler_options && strstr (info->disassembler_options, "e300") != NULL) {
+  } else if (info->disassembler_options && strstr (info->disassembler_options, "e300")) {
 	  dialect |= PPC_OPCODE_E300 | PPC_OPCODE_CLASSIC | PPC_OPCODE_COMMON;
-  } else if (info->disassembler_options && (strstr (info->disassembler_options, "440") != NULL || strstr (info->disassembler_options, "464") != NULL)) {
+  } else if (info->disassembler_options && (strstr (info->disassembler_options, "440") || strstr (info->disassembler_options, "464"))) {
 	  dialect |= PPC_OPCODE_BOOKE | PPC_OPCODE_32 | PPC_OPCODE_440 | PPC_OPCODE_ISEL | PPC_OPCODE_RFMCI;
   } else {
 	  dialect |= (PPC_OPCODE_403 | PPC_OPCODE_601 | PPC_OPCODE_CLASSIC | PPC_OPCODE_COMMON | PPC_OPCODE_ALTIVEC);
   }
 
-  if (info->disassembler_options && strstr (info->disassembler_options, "power4") != NULL) {
+  if (info->disassembler_options && strstr (info->disassembler_options, "power4")) {
 	  dialect |= PPC_OPCODE_POWER4;
   }
 
-  if (info->disassembler_options && strstr (info->disassembler_options, "power5") != NULL) {
+  if (info->disassembler_options && strstr (info->disassembler_options, "power5")) {
 	  dialect |= PPC_OPCODE_POWER4 | PPC_OPCODE_POWER5;
   }
 
-  if (info->disassembler_options && strstr (info->disassembler_options, "cell") != NULL) {
+  if (info->disassembler_options && strstr (info->disassembler_options, "cell")) {
 	  dialect |= PPC_OPCODE_POWER4 | PPC_OPCODE_CELL | PPC_OPCODE_ALTIVEC;
   }
 
-  if (info->disassembler_options && strstr (info->disassembler_options, "power6") != NULL) {
+  if (info->disassembler_options && strstr (info->disassembler_options, "power6")) {
 	  dialect |= PPC_OPCODE_POWER4 | PPC_OPCODE_POWER5 | PPC_OPCODE_POWER6 | PPC_OPCODE_ALTIVEC;
   }
 
-  if (info->disassembler_options && strstr (info->disassembler_options, "power7") != NULL) {
+  if (info->disassembler_options && strstr (info->disassembler_options, "power7")) {
 	  dialect |= PPC_OPCODE_POWER4 | PPC_OPCODE_POWER5 | PPC_OPCODE_POWER6 | PPC_OPCODE_ALTIVEC | PPC_OPCODE_VSX;
   }
 
-  if (info->disassembler_options && strstr (info->disassembler_options, "vsx") != NULL) {
+  if (info->disassembler_options && strstr (info->disassembler_options, "vsx")) {
 	  dialect |= PPC_OPCODE_VSX;
   }
 
-  if (info->disassembler_options && strstr (info->disassembler_options, "any") != NULL) {
+  if (info->disassembler_options && strstr (info->disassembler_options, "any")) {
 	  dialect |= PPC_OPCODE_ANY;
   }
 
   if (info->disassembler_options)
     {
-	  if (strstr (info->disassembler_options, "32") != NULL) {
+	  if (strstr (info->disassembler_options, "32")) {
 		  dialect &= ~PPC_OPCODE_64;
-	  } else if (strstr (info->disassembler_options, "64") != NULL) {
+	  } else if (strstr (info->disassembler_options, "64")) {
 		  dialect |= PPC_OPCODE_64;
 	  }
     }

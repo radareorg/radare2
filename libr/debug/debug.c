@@ -1157,7 +1157,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 			if (reg->cnum <= dbg->session->cnum) {
 				continue;
 			}
-			has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC) != NULL;
+			has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC);
 			if (has_bp) {
 				eprintf ("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);
 				r_debug_goto_cnum (dbg, reg->cnum);
@@ -1409,7 +1409,7 @@ static int r_debug_continue_until_internal(RDebug *dbg, ut64 addr, bool block) {
 		return false;
 	}
 	// Check if there was another breakpoint set at addr
-	bool has_bp = r_bp_get_in (dbg->bp, addr, R_BP_PROT_EXEC) != NULL;
+	bool has_bp = r_bp_get_in (dbg->bp, addr, R_BP_PROT_EXEC);
 	if (!has_bp) {
 		r_bp_add_sw (dbg->bp, addr, dbg->bpsize, R_BP_PROT_EXEC);
 	}
@@ -1459,7 +1459,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 		if (reg->cnum >= dbg->session->cnum) {
 			continue;
 		}
-		has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC) != NULL;
+		has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC);
 		if (has_bp) {
 			cnum = reg->cnum;
 			eprintf ("hit breakpoint at: 0x%" PFMT64x " cnum: %d\n", reg->data, reg->cnum);

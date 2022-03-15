@@ -176,7 +176,7 @@ R_API bool r_id_storage_get_highest(RIDStorage *storage, ut32 *id) {
 	if (storage->size > 0) {
 		for (i = storage->size - 1; !storage->data[i] && i > 0; i--);
 		*id = i;
-		return storage->data[i] != NULL;
+		return storage->data[i];
 	}
 	// *id = i;
 	return false;

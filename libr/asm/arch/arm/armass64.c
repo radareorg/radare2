@@ -1272,7 +1272,7 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 	space[0] = '\0';
 	op->mnemonic = in;
 	space ++;
-	op->writeback = strstr (space, "]!") != NULL;
+	op->writeback = strstr (space, "]!");
 	return parseOperands (space, op);
 }
 

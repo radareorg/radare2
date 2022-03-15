@@ -722,7 +722,7 @@ add_tstr:
 		type_to_str (s1, buf, buf_size, &s->type, varstr);
 		pstrcat (buf, buf_size, "(");
 		sa = s->next;
-		while (sa != NULL) {
+		while (sa) {
 			type_to_str (s1, buf1, sizeof (buf1), &sa->type, NULL);
 			pstrcat (buf, buf_size, buf1);
 			sa = sa->next;
@@ -1168,7 +1168,7 @@ do_decl:
 					}
 					if (v == 0 && is_structured (&type1)) {
 						ass = type1.ref;
-						while ((ass = ass->next) != NULL) {
+						while ((ass = ass->next)) {
 							ss = sym_push (s1, ass->v, &ass->type, 0, offset + ass->c);
 							if (!ss) {
 								return;
@@ -2092,7 +2092,7 @@ tok_identifier:
 			s = s1->vtop->type.ref;
 			/* find field */
 			s1->tok |= SYM_FIELD;
-			while ((s = s->next) != NULL) {
+			while ((s = s->next)) {
 				if (s->v == s1->tok) {
 					break;
 				}
@@ -2923,7 +2923,7 @@ static void func_decl_list(TCCState *s1, Sym *func_sym) {
 				/* find parameter in function parameter list */
 				s = func_sym;
 				found = 0;
-				while ((s = s->next) != NULL) {
+				while ((s = s->next)) {
 					if ((s->v & ~SYM_FIELD) == v) {
 						found = 1;
 						break;
@@ -3043,7 +3043,7 @@ static int decl0(TCCState *s1, int l, int is_for_loop_init) {
 				/* reject abstract declarators in function definition */
 				sym = type.ref;
 				if (sym) {
-					while ((sym = sym->next) != NULL)
+					while ((sym = sym->next))
 						if (!(sym->v & ~SYM_FIELD)) {
 							expect (s1, "identifier6");
 						}

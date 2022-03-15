@@ -1062,7 +1062,7 @@ aarch64_wide_constant_p (int64_t value, int is32, unsigned int *shift_amount)
       return FALSE;
     }
 
-  if (shift_amount != NULL)
+  if (shift_amount)
     *shift_amount = amount;
 
   DEBUG_TRACE ("exit TRUE with amount %d", amount);
@@ -1238,7 +1238,7 @@ aarch64_logical_immediate_p (uint64_t value, int esize, aarch64_insn *encoding)
       DEBUG_TRACE ("exit with FALSE");
       return FALSE;
     }
-  if (encoding != NULL)
+  if (encoding)
     *encoding = imm_encoding->encoding;
   DEBUG_TRACE ("exit with TRUE");
   return TRUE;
@@ -3626,7 +3626,7 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
       break;
 
     case AARCH64_OPND_PRFOP:
-      if (opnd->prfop->name != NULL)
+      if (opnd->prfop->name)
 	snprintf (buf, size, "%s", opnd->prfop->name);
       else
 	snprintf (buf, size, "0x%02x", opnd->prfop->value);

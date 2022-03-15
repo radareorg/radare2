@@ -37,7 +37,7 @@ static void fini_fi(fnditem* fi) {
 
 static void add_fi(fnditem* n, unsigned char* blk, int patlen) {
 	fnditem* p;
-	for (p = n; p->next != NULL; p = p->next) {
+	for (p = n; p->next; p = p->next) {
 		;
 	}
 	p->next = (fnditem*) malloc (sizeof (fnditem));
@@ -48,7 +48,7 @@ static void add_fi(fnditem* n, unsigned char* blk, int patlen) {
 
 static int is_fi_present(fnditem* n, unsigned char* blk , int patlen) {
 	fnditem* p;
-	for (p = n; p->next != NULL; p = p->next) {
+	for (p = n; p->next; p = p->next) {
 		if (!memcmp (blk, p->str, patlen)) {
 			return true;
 		}

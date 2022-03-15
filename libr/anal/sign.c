@@ -661,7 +661,7 @@ R_API bool r_sign_add_item(RAnal *a, RSignItem *it) {
 
 static RSignItem *item_new_named(RAnal *a, const char *n) {
 	RSignItem *it = r_sign_item_new ();
-	if (it && (it->name = strdup (n)) != NULL) {
+	if (it && (it->name = strdup (n))) {
 		it->space = r_spaces_current (&a->zign_spaces);
 		return it;
 	}

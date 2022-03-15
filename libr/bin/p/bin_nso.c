@@ -56,7 +56,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 		if (r_buf_read_at (b, 0, magic, sizeof (magic)) != 4) {
 			return false;
 		}
-		return fileType (magic) != NULL;
+		return fileType (magic);
 	}
 	return false;
 }

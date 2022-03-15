@@ -127,7 +127,7 @@ spec_reg_info (unsigned int sreg, enum cris_disass_family distype)
 {
   int i;
 
-  for (i = 0; cris_spec_regs[i].name != NULL; i++)
+  for (i = 0; cris_spec_regs[i].name; i++)
     {
       if (cris_spec_regs[i].number == sreg)
 	{
@@ -237,7 +237,7 @@ get_opcode_entry (unsigned int insn,
   if (prefix_insn != NO_CRIS_PREFIX)
     {
       const struct cris_opcode *popcodep
-	= (opc_table[prefix_insn] != NULL
+	= (opc_table[prefix_insn]
 	   ? opc_table[prefix_insn]
 	   : get_opcode_entry (prefix_insn, NO_CRIS_PREFIX, disdata));
 
@@ -282,16 +282,16 @@ get_opcode_entry (unsigned int insn,
       }
     }
 
-    if (prefix_insn != NO_CRIS_PREFIX && prefix_opc_table[insn] != NULL) {
+    if (prefix_insn != NO_CRIS_PREFIX && prefix_opc_table[insn]) {
 	    max_matchedp = prefix_opc_table[insn];
-    } else if (prefix_insn == NO_CRIS_PREFIX && opc_table[insn] != NULL) {
+    } else if (prefix_insn == NO_CRIS_PREFIX && opc_table[insn]) {
 	    max_matchedp = opc_table[insn];
     } else {
 	    const struct cris_opcode *opcodep;
 	    int max_level_of_match = -1;
 
 	    for (opcodep = cris_opcodes;
-		    opcodep->name != NULL;
+		    opcodep->name;
 		    opcodep++) {
 		    int level_of_match;
 
@@ -512,7 +512,7 @@ cris_constraint (const char *cs,
 	     for a move from a special register is matched in the
 	     register constraint.  */
 
-		  if (sregp != NULL) {
+		  if (sregp) {
 			  retval += 3;
 			  break;
 		  } else {
@@ -613,7 +613,7 @@ format_sup_reg (unsigned int regno,
 	  *outbuffer++ = REGISTER_PREFIX_CHAR;
   }
 
-  for (i = 0; cris_support_regs[i].name != NULL; i++) {
+  for (i = 0; cris_support_regs[i].name; i++) {
 	  if (cris_support_regs[i].number == regno) {
 		  sprintf (outbuffer, "%s", cris_support_regs[i].name);
 		  return outbuffer_start + strlen (outbuffer_start);
@@ -1480,7 +1480,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 
 		    /* Check if we're supposed to write out prefixes as address
 	     modes and if this was a prefix.  */
-		    if (matchedp != NULL && PARSE_PREFIX && matchedp->args[0] == 'p') {
+		    if (matchedp && PARSE_PREFIX && matchedp->args[0] == 'p') {
 			    /* If it's a prefix, put it into the prefix vars and get the
 		 main insn.  */
 			    prefix_size = bytes_to_skip (prefix_insn, matchedp,
@@ -1490,7 +1490,7 @@ print_insn_cris_generic (bfd_vma memaddr,
 			    insn = bufp[prefix_size] + bufp[prefix_size + 1] * 256;
 			    matchedp = get_opcode_entry (insn, prefix_insn, disdata);
 
-			    if (matchedp != NULL) {
+			    if (matchedp) {
 				    addr += prefix_size;
 				    bufp += prefix_size;
 				    advance += prefix_size;

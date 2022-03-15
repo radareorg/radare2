@@ -241,7 +241,7 @@ static int init_pdb7_root_stream(RPdb *pdb, int *root_page_list, int pages_amoun
 // pdb_stream->pdb_stream = (R_PDB_STREAM *) malloc(sizeof(R_PDB_STREAM));
 // init_r_pdb_stream(pdb_stream->pdb_stream, fp, pages, pages_amount, index, size, page_size);
 // pdb_stream->load = pLoad;
-// if (pLoad != NULL) {
+// if (pLoad) {
 // pLoad(pdb_stream, &(pdb_stream->pdb_stream->stream_file));
 // }
 // }

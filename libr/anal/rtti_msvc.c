@@ -781,7 +781,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col) {
 	RecoveryTypeDescriptor *td = ht_up_find (context->addr_td, addr, NULL);
 	if (td) {
-		if (col != NULL) {
+		if (col) {
 			td->col = col;
 		}
 		return td;
@@ -901,7 +901,7 @@ static const char *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *
 	RAnal *anal = context->vt_context->anal;
 
 	const char *existing = ht_up_find (context->col_td_classes, col->addr, NULL);
-	if (existing != NULL) {
+	if (existing) {
 		return existing;
 	}
 
@@ -942,7 +942,7 @@ static const char *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context,
 	RAnal *anal = context->vt_context->anal;
 
 	const char *existing = ht_up_find (context->col_td_classes, td->addr, NULL);
-	if (existing != NULL) {
+	if (existing) {
 		return existing;
 	}
 

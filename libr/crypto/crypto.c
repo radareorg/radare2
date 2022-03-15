@@ -128,7 +128,7 @@ R_API bool r_crypto_use(RCrypto *cry, const char *algo) {
 	r_list_foreach (cry->plugins, iter, h) {
 		if (h && h->use && h->use (algo)) {
 			cry->h = h;
-			return cry->h != NULL;
+			return cry->h;
 		}
 	}
 	return false;

@@ -976,7 +976,7 @@ static int cmd_cmp(void *data, const char *input) {
 			}
 			int col = core->cons->columns > 123;
 			ut8 *b = malloc (core->blocksize);
-			if (b != NULL) {
+			if (b) {
 				memset (b, 0xff, core->blocksize);
 				r_io_read_at (core->io, addr, b, core->blocksize);
 				r_print_hexdiff (core->print, core->offset, block,

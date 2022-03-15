@@ -513,7 +513,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 			p = group + 1;
 			if (r_str_delta (p, '(', ')') < 0) {
 				char *p2 = strchr (p, '(');
-				if (p2 != NULL) {
+				if (p2) {
 					*p2 = '\0';
 					ret = r_num_op (op, ret, r_num_math_internal (num, p));
 					ret = r_num_op (op, ret, r_num_math (num, p2 + 1));

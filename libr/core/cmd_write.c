@@ -1217,7 +1217,7 @@ static int wr_handler_old(void *data, const char *input) {
 	int len = (int)off;
 	if (len > 0) {
 		ut8 *buf = malloc (len);
-		if (buf != NULL) {
+		if (buf) {
 			int i;
 			r_num_irand ();
 			for (i = 0; i < len; i++)

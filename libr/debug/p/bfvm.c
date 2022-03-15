@@ -103,14 +103,14 @@ R_API ut8 bfvm_get(BfvmCPU *c) {
 
 R_API void bfvm_inc(BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr (c);
-	if (mem != NULL) {
+	if (mem) {
 		mem[0]++;
 	}
 }
 
 R_API void bfvm_dec(BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr (c);
-	if (mem != NULL) {
+	if (mem) {
 		mem[0]--;
 	}
 }

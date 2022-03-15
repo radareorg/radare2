@@ -172,9 +172,9 @@ static int or1k_op(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len, R
 
 	/* if name is null, but extra is present, it means 6 most significant bits
 	 * are not enough to decode instruction */
-	if ((insn_descr->name == NULL) && (insn_descr->extra != NULL)) {
+	if ((insn_descr->name == NULL) && (insn_descr->extra)) {
 		extra_descr = find_extra_descriptor(insn_descr->extra, insn);
-		if (extra_descr != NULL) {
+		if (extra_descr) {
 			insn_to_op(a, op, addr, insn_descr, extra_descr, insn);
 		}
 	}

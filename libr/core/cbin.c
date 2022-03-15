@@ -834,7 +834,7 @@ static int bin_info(RCore *r, PJ *pj, int mode, ut64 laddr) {
 		}
 		return false;
 	}
-	bool havecode = is_executable (obj) | (obj->entries != NULL);
+	bool havecode = is_executable (obj) | (!!obj->entries);
 	const char *compiled = get_compile_time (bf->sdb);
 
 	if (IS_MODE_SET (mode)) {
@@ -1736,6 +1736,13 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		}
 		relocs = r_bin_get_relocs (r->bin);
 	}
+	if (!relocs) {
+		if (pj) {
+			pj_a (pj);
+			pj_end (pj);
+		}
+		return false;
+	}
 	if (bin_cache) {
 		if (r_pvector_len (&r->io->cache) == 0) {
 			r_config_set (r->config, "io.cache", "false");
@@ -1879,10 +1886,10 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	db = NULL;
 
 	R_TIME_PROFILE_END;
-	if (IS_MODE_JSON (mode) && relocs == NULL) {
+	if (IS_MODE_JSON (mode)) {
 		return true;
 	}
-	return relocs != NULL;
+	return true;
 }
 
 #define MYDB 1
@@ -2155,7 +2162,7 @@ typedef struct {
 } SymName;
 
 static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
-	int bin_demangle = lang != NULL;
+	bool bin_demangle = !!lang;
 	bool keep_lib = r_config_get_b (r->config, "bin.demangle.libs");
 	if (!r || !sym || !sym->name) {
 		return;
@@ -2433,14 +2440,12 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 			pj_kb (pj, "is_imported", symbol->is_imported);
 			pj_end (pj);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			const char *name = sn.demname? sn.demname: r_symbol_name;
-			r_cons_printf ("0x%08"PFMT64x" %d %s%s%s\n",
-				addr, (int)symbol->size,
-				r_str_get (sn.libname), sn.libname ? " " : "",
-				name);
+			const char *n = sn.demname? sn.demname: r_symbol_name;
+			r_cons_printf ("0x%08"PFMT64x" %d %s%s%s\n", addr, (int)symbol->size,
+				r_str_get (sn.libname), sn.libname ? " " : "", n);
 		} else if (IS_MODE_SIMPLEST (mode)) {
-			const char *name = sn.demname? sn.demname: r_symbol_name;
-			r_cons_printf ("%s\n", name);
+			const char *n = sn.demname? sn.demname: r_symbol_name;
+			r_cons_printf ("%s\n", n);
 		} else if (IS_MODE_RAD (mode)) {
 			/* Skip special symbols because we do not flag them and
 			 * they shouldn't be printed in the rad format either */
@@ -2449,8 +2454,8 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 			}
 			RBinFile *binfile;
 			RBinPlugin *plugin;
-			const char *name = sn.demname? sn.demname: r_symbol_name;
-			if (!name) {
+			const char *n = sn.demname? sn.demname: r_symbol_name;
+			if (!n) {
 				goto next;
 			}
 			if (symbol->is_imported) {
@@ -2465,8 +2470,8 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 				}
 				lastfs = 's';
 			}
-			if (r->bin->prefix || *name) { // we don't want unnamed symbol flags
-				char *flagname = construct_symbol_flagname ("sym", sn.libname, name, MAXFLAG_LEN_DEFAULT);
+			if (r->bin->prefix || *n) { // we don't want unnamed symbol flags
+				char *flagname = construct_symbol_flagname ("sym", sn.libname, n, MAXFLAG_LEN_DEFAULT);
 				if (!flagname) {
 					goto next;
 				}
@@ -2501,7 +2506,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 		} else {
 			const char *bind = r_str_get_fail (symbol->bind, "NONE");
 			const char *type = r_str_get_fail (symbol->type, "NONE");
-			const char *name = r_str_getf (sn.demname? sn.demname: sn.name);
+			const char *n = r_str_getf (sn.demname? sn.demname: sn.name);
 			// const char *fwd = r_str_getf (symbol->forwarder);
 			r_table_add_rowf (table, "dXXssdss",
 					symbol->ordinal,
@@ -2511,7 +2516,7 @@ static int bin_symbols(RCore *r, PJ *pj, int mode, ut64 laddr, int va, ut64 at, 
 					type,
 					symbol->size,
 					r_str_get (symbol->libname),
-					name);
+					n);
 		}
 next:
 		snFini (&sn);
@@ -2559,7 +2564,7 @@ static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, 
 	char *chkstr = NULL, *aux = NULL, *ret = NULL;
 	RList *hashlist = r_str_split_duplist (chksum, ",", true);
 	RListIter *iter;
-	char *hashname;
+	const char *hashname;
 	r_list_foreach (hashlist, iter, hashname) {
 		chkstr = r_hash_to_string (NULL, hashname, data, datalen);
 		if (!chkstr) {

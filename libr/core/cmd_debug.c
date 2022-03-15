@@ -1766,7 +1766,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			r_list_foreach (list, iter, map) {
 				if ((!libname ||
 					 (addr != UT64_MAX && (addr >= map->addr && addr < map->addr_end)) ||
-					 (libname != NULL && (strstr (map->name, libname))))) {
+					 (libname && (strstr (map->name, libname))))) {
 					baddr = map->addr;
 					char *res;
 					const char *file = map->file? map->file: map->name;

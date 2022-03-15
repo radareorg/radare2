@@ -345,7 +345,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		}
 	}
 	free (code);
-	bool ret = (asmcode != NULL);
+	bool ret = (asmcode);
 	r_asm_code_free (asmcode);
 	return ret;
 }

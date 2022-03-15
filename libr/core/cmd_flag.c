@@ -1620,7 +1620,7 @@ rep:
 				RListIter *iter;
 				r_list_sort (temp, &cmpflag);
 				r_list_foreach (temp, iter, flag) {
-					if (strstr (flag->name , arg) != NULL) {
+					if (strstr (flag->name , arg)) {
 						if (flag->offset < core->offset) {
 							loff = flag->offset;
 							lmatch = flag->name;

@@ -15,7 +15,7 @@ static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	s->s_off = seek;
 	s->s_out = NULL;
 	d = next_inst(s);
-	if (d != NULL) {
+	if (d) {
 		xap_decode (s, d);
 		strcpy (str, d->d_asm);
 		free (d);

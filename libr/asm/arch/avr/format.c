@@ -169,7 +169,7 @@ static int formatDisassembledOperand(RAsm *a, avrDisassembleContext *context, ch
 #if 0
 		/* If we have an address label, print it, otherwise just print the
 		 * relative distance to the destination address. */
-		if ((fOptions.options & FORMAT_OPTION_ADDRESS_LABEL) && fOptions.addressLabelPrefix != NULL) {
+		if ((fOptions.options & FORMAT_OPTION_ADDRESS_LABEL) && fOptions.addressLabelPrefix) {
 			retVal = sprintf(strOperand, "%s%0*X",
 				fOptions.addressLabelPrefix,
 				fOptions.addressFieldWidth,
@@ -512,7 +512,7 @@ static int analFormatDisassembledOperand(RAnal *a, avrDisassembleContext *contex
 #if 0
 		/* If we have an address label, print it, otherwise just print the
 		 * relative distance to the destination address. */
-		if ((fOptions.options & FORMAT_OPTION_ADDRESS_LABEL) && fOptions.addressLabelPrefix != NULL) {
+		if ((fOptions.options & FORMAT_OPTION_ADDRESS_LABEL) && fOptions.addressLabelPrefix) {
 			retVal = sprintf(strOperand, "%s%0*X",
 				fOptions.addressLabelPrefix,
 				fOptions.addressFieldWidth,

@@ -3772,7 +3772,7 @@ static void
 parse_disassembler_options (char *options)
 {
   const char *p;
-  for (p = options; p != NULL; )
+  for (p = options; p; )
     {
 	  if (CONST_STRNEQ (p, "simd"))
 	    {
@@ -3785,7 +3785,7 @@ parse_disassembler_options (char *options)
 
 	  p = strchr (p, ',');
 
-	  if (p != NULL) {
+	  if (p) {
 		  p++;
 	  }
     }
@@ -3894,7 +3894,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
       }
 
     /* if the operand is actually in the instruction buffer */
-    if ((space != NULL) && (operand[0] == '\0'))
+    if ((space) && (operand[0] == '\0'))
       {
           *space  = '\0';
           operand = space + 1;

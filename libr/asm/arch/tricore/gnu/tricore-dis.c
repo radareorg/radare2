@@ -1143,7 +1143,7 @@ find_core_reg (addr)
   struct sfrlist *psfr;
   int idx = addr & 0xff;
 
-  for (psfr = sfrs[idx]; psfr != NULL; psfr = psfr->next) {
+  for (psfr = sfrs[idx]; psfr; psfr = psfr->next) {
 	  if ((psfr->sfr->addr == addr) && MATCHES_ISA (psfr->sfr->isa)) {
 		  return psfr->sfr->name;
 	  }
@@ -1556,7 +1556,7 @@ decode_tricore_insn (memaddr, insn, len32, info)
   tricore_fmt fmt;
 
   /* Try to find the instruction matching the given opcode.  */
-  for (pinsn = insns[idx]; pinsn != NULL; pinsn = pinsn->next)
+  for (pinsn = insns[idx]; pinsn; pinsn = pinsn->next)
     {
 	  if ((pinsn->code->len32 != len32) || (insn & pinsn->code->lose)) {
 		  continue;
@@ -1613,7 +1613,7 @@ decode_pcp_insn (memaddr, buffer, info)
   /* Try to find the PCP instruction matching the given opcode.  */
   insn = bfd_getl16 (buffer);
   idx = (insn >> 11) & 0x1f;
-  for (pinsn = pcpinsns[idx]; pinsn != NULL; pinsn = pinsn->next)
+  for (pinsn = pcpinsns[idx]; pinsn; pinsn = pinsn->next)
     {
 	  if (((insn & pinsn->code->opcode) != pinsn->code->opcode) || (insn & pinsn->code->lose)) {
 		  continue;

@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2008-2021 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2008-2022 - nibble, pancake, alvaro_fe */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "elf.h"
@@ -2500,24 +2497,25 @@ int Elf_(r_bin_elf_get_bits)(ELFOBJ *bin) {
 }
 
 static inline int noodle(ELFOBJ *bin, const char *s) {
-	if (r_buf_size (bin->b) <= 64)  {
-		return 0;
+	if (r_buf_size (bin->b) >= 64)  {
+		ut8 tmp[64] = {0};
+		if (r_buf_read_at (bin->b, r_buf_size (bin->b) - 64, tmp, 64) == 64) {
+			return (bool)r_mem_mem (tmp, 64, (const ut8 *)s, strlen (s));
+		}
 	}
-	ut8 tmp[64];
-	r_buf_read_at (bin->b, r_buf_size (bin->b) - 64, tmp, 64);
-	return r_mem_mem (tmp, 64, (const ut8 *)s, strlen (s)) != NULL;
+	return false;
 }
 
-static inline int needle(ELFOBJ *bin, const char *s) {
+static inline bool needle(ELFOBJ *bin, const char *s) {
 	if (bin->shstrtab) {
 		ut32 len = bin->shstrtab_size;
 		if (len > 4096) {
 			len = 4096; // avoid slow loading .. can be buggy?
 		}
-		return r_mem_mem ((const ut8*)bin->shstrtab, len,
-				(const ut8*)s, strlen (s)) != NULL;
+		return (bool)r_mem_mem ((const ut8*)bin->shstrtab, len,
+				(const ut8*)s, strlen (s));
 	}
-	return 0;
+	return false;
 }
 
 // TODO: must return const char * all those strings must be const char os[LINUX] or so

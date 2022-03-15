@@ -234,7 +234,7 @@ R_API bool r_cons_is_utf8(void) {
 #endif
 #if R_UTF8_DETECT_LOCALE
 	const char *ctype = setlocale (LC_CTYPE, NULL);
-	if ((ctype != NULL) && (ctype = strchr (ctype, '.')) && ctype++ &&
+	if ((ctype) && (ctype = strchr (ctype, '.')) && ctype++ &&
 		(!r_str_casecmp (ctype, "UTF-8") || !r_str_casecmp (ctype, "UTF8"))) {
 		return true;
 	}

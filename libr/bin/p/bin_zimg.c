@@ -14,7 +14,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 
 static bool load_buffer(RBinFile *bf, void **bin_obj, RBuffer *b, ut64 loadaddr, Sdb *sdb){
 	*bin_obj = r_bin_zimg_new_buf (b);
-	return *bin_obj != NULL;
+	return *bin_obj;
 }
 
 static ut64 baddr(RBinFile *bf) {

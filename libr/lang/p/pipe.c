@@ -289,7 +289,7 @@ beach:
 	free (r2pipe_var);
 	free (r2pipe_paz);
 	free (r2pipe_paz_);
-	return hproc != NULL;
+	return hproc;
 #endif
 #endif
 }

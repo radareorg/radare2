@@ -430,7 +430,7 @@ build_hash_table (const sparc_opcode **opcode_table,
 
   memset (hash_table, 0, HASH_SIZE * sizeof (hash_table[0]));
   memset (hash_count, 0, HASH_SIZE * sizeof (hash_count[0]));
-  if (hash_buf != NULL) {
+  if (hash_buf) {
 	  free (hash_buf);
   }
   hash_buf = calloc (sizeof (* hash_buf), num_opcodes);

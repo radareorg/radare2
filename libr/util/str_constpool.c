@@ -8,7 +8,7 @@ static void kv_fini(HtPPKv *kv) {
 
 R_API bool r_str_constpool_init(RStrConstPool *pool) {
 	pool->ht = ht_pp_new (NULL, kv_fini, NULL);
-	return pool->ht != NULL;
+	return pool->ht;
 }
 
 R_API void r_str_constpool_fini(RStrConstPool *pool) {

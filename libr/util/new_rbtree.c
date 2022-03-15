@@ -111,7 +111,7 @@ static RRBNode *_node_new(void *data, RRBNode *parent) {
 	return node;
 }
 
-#define IS_RED(n) ((n) != NULL && (n)->red == 1)
+#define IS_RED(n) ((n) && (n)->red == 1)
 
 static RRBNode *_rot_once(RRBNode *root, int dir) {
 	r_return_val_if_fail (root, NULL);

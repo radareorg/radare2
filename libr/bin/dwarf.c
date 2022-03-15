@@ -344,7 +344,7 @@ static bool is_printable_lang(ut64 attr_code) {
 	if (attr_code >= sizeof (dwarf_langs) / sizeof (dwarf_langs[0])) {
 		return false;
 	}
-	return dwarf_langs[attr_code] != NULL;
+	return dwarf_langs[attr_code];
 }
 
 static inline bool is_printable_attr(ut64 attr_code) {

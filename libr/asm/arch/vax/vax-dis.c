@@ -404,7 +404,7 @@ print_insn_vax (bfd_vma memaddr, disassemble_info *info)
   priv.insn_start = memaddr;
 
   if (! parsed_disassembler_options
-      && info->disassembler_options != NULL)
+      && info->disassembler_options)
     {
       parse_disassembler_options (info->disassembler_options);
 

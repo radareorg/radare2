@@ -359,7 +359,7 @@ static RList *__get_windows(RDebug *dbg) {
 			}
 			r_list_push (windows, win);
 		}
-	} while (hCurWnd != NULL);
+	} while (hCurWnd);
 	return windows;
 }
 

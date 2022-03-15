@@ -262,7 +262,7 @@ RIOZipFileObj* r_io_zip_alloc_zipfileobj(const char *archivename, const char *fi
 	for (i = 0; i < num_entries; i++) {
 		zip_stat_init (&sb);
 		zip_stat_index (zipArch, i, 0, &sb);
-		if (sb.name != NULL) {
+		if (sb.name) {
 			if (strcmp (sb.name, filename) == 0) {
 				zfo = r_io_zip_create_new_file (
 					archivename, filename, &sb,

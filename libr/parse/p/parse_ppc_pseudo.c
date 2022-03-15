@@ -1461,7 +1461,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	};
 
 	char ppc_mask[32] = {0}; // enough to represent max val of 0xffffffffffffffff
-	for (i = 0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr) {
 				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
@@ -1584,7 +1584,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 						} else if ((i == 44 && letter == 2) || (i == 45 && letter == 1)) { //spr
 							w = getspr (w);
 						}
-						if (w != NULL) {
+						if (w) {
 							strcpy (newstr + k, w);
 							k += strlen (w) - 1;
 						}

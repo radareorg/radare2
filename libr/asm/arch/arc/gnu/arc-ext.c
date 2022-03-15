@@ -460,7 +460,7 @@ build_ARC_extmap (void *text_bfd)
    */
   destroy_map();
 
-  for (sect = text_bfd->sections; sect != NULL; sect = sect->next)
+  for (sect = text_bfd->sections; sect; sect = sect->next)
     if (!strncmp (sect->name,
                   ".gnu.linkonce.arcextmap.",
           sizeof (".gnu.linkonce.arcextmap.") - 1)
@@ -497,7 +497,7 @@ void dump_ARC_extmap (void)
     {
         struct ExtInstruction *insn;
 
-	for (insn = arc_extension_map.instructions[i]; insn != NULL; insn = insn->next) {
+	for (insn = arc_extension_map.instructions[i]; insn; insn = insn->next) {
 		printf ("INST: %d %d %x %s\n", insn->major, insn->minor, insn->flags, insn->name);
 	}
     }

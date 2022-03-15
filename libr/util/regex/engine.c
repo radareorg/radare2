@@ -135,7 +135,7 @@ static int matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch p
 	}
 
 	/* prescreening; this does wonders for this rather slow code */
-	if (g->must != NULL) {
+	if (g->must) {
 		for (dp = start; dp < stop; dp++) {
 			if (*dp == g->must[0] && stop - dp >= g->mlen && !memcmp (dp, g->must, (size_t)g->mlen)) {
 				break;
@@ -236,7 +236,7 @@ static int matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch p
 			break;
 		}
 		for (;;) {
-			if (dp != NULL || endp <= m->coldp) {
+			if (dp || endp <= m->coldp) {
 				break;		/* defeat */
 			}
 			endp = slow (m, m->coldp, endp - 1, gf, gl);
@@ -256,7 +256,7 @@ static int matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch p
 #endif
 			dp = backref (m, m->coldp, endp, gf, gl, (sopno)0, 0);
 		}
-		if (dp != NULL || dp != endp) {	/* found a shorter one */
+		if (dp || dp != endp) {	/* found a shorter one */
 			break;
 		}
 
@@ -367,7 +367,7 @@ dissect(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 			ssub = ss + 1;
 			esub = es - 1;
 			/* did innards match? */
-			if (slow(m, sp, rest, ssub, esub) != NULL) {
+			if (slow(m, sp, rest, ssub, esub)) {
 				dp = dissect(m, sp, rest, ssub, esub);
 				if (dp != rest) return NULL;
 			} else if (sp != rest) return NULL;
@@ -378,7 +378,7 @@ dissect(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 			for (;;) {
 				/* how long could this one be? */
 				rest = slow(m, sp, stp, ss, es);
-				if (rest != NULL) {	/* it did match */
+				if (rest) {	/* it did match */
 					/* could the rest match the rest? */
 					tail = slow(m, rest, stop, es, stopst);
 					if (tail == stop)
@@ -634,7 +634,7 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 		}
 		for (;;) {	/* find first matching branch */
 			dp = backref(m, sp, stop, ssub, esub, lev, rec);
-			if (dp != NULL)
+			if (dp)
 				return dp;
 			/* that one missed, try next one */
 			if (OP (m->g->strip[esub]) == O_CH)
@@ -659,7 +659,7 @@ backref(struct match *m, char *start, char *stop, sopno startst, sopno stopst,
 			offsave = m->pmatch[i].rm_so;
 			m->pmatch[i].rm_so = sp - m->offp;
 			dp = backref(m, sp, stop, ss+1, stopst, lev, rec);
-			if (dp != NULL)
+			if (dp)
 				return(dp);
 			m->pmatch[i].rm_so = offsave;
 			return(NULL);

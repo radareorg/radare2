@@ -934,7 +934,7 @@ R_API bool r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	}
 	macro->args = strdup (args);
 	ptr = strchr (macro->name, ' ');
-	if (ptr != NULL) {
+	if (ptr) {
 		*ptr = '\0';
 		macro->nargs = r_str_word_set0 (ptr+1);
 	}

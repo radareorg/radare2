@@ -2032,7 +2032,7 @@ static void get_nesttype_print_type(void *type, char **name) {
 		tmp_name = base_type->type;
 	} else {
 		ti = &t->type_data;
-		if (ti->get_print_type != NULL) {
+		if (ti->get_print_type) {
 			ti->get_print_type (ti, &tmp_name);
 		} else {
 			// TODO: need to investigate why this branch can be...

@@ -268,7 +268,7 @@ rd_label (const char **p, int *exists, struct label **previous, int level,
 	  /* Return a value to discriminate between non-existing and invalid */
 	  if (verbose >= 7)
 	    fprintf (stderr, "rd_label returns invalid value\n");
-	  return l != NULL;
+	  return (int)(bool)l;
     }
   if (exists)
     *exists = 1;

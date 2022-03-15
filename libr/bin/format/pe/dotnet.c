@@ -451,7 +451,7 @@ void dotnet_parse_tilde_2(
             string_offset,
             DOTNET_STRING_INDEX(module_table->Name));
 
-        if (name != NULL)
+        if (name)
           set_string(name, pe->object, "module_name");
 
         table_offset += (
@@ -670,7 +670,7 @@ void dotnet_parse_tilde_2(
 
         row_size = (index_size + index_size2 + index_sizes.blob);
 
-        if (typeref_ptr != NULL && memberref_ptr != NULL)
+        if (typeref_ptr && memberref_ptr)
         {
           row_ptr = table_offset;
 
@@ -801,7 +801,7 @@ void dotnet_parse_tilde_2(
                   pe, string_offset, *(WORD*) typeref_row);
             }
 
-            if (name != NULL && strncmp(name, "GuidAttribute", 13) != 0)
+            if (name && strncmp(name, "GuidAttribute", 13) != 0)
             {
               row_ptr += row_size;
               continue;
@@ -1002,7 +1002,7 @@ void dotnet_parse_tilde_2(
               string_offset,
               DOTNET_STRING_INDEX(moduleref_table->Name));
 
-          if (name != NULL)
+          if (name)
           {
             set_string(name, pe->object, "modulerefs[%i]", counter);
             counter++;
@@ -1085,7 +1085,7 @@ void dotnet_parse_tilde_2(
                   row_ptr + 4 + 2 + 2 + 2 + 2 + 4 +
                   index_sizes.blob));
 
-        if (name != NULL)
+        if (name)
           set_string(name, pe->object, "assembly.name");
 
         // Culture comes after Name.
@@ -1112,7 +1112,7 @@ void dotnet_parse_tilde_2(
 
         // Sometimes it will be a zero length string. This is technically
         // against the specification but happens from time to time.
-        if (name != NULL && strlen(name) > 0)
+        if (name && strlen(name) > 0)
           set_string(name, pe->object, "assembly.culture");
 
         table_offset += row_size * num_rows;
@@ -1185,7 +1185,7 @@ void dotnet_parse_tilde_2(
                 string_offset,
                 *(WORD*) (row_ptr + 2 + 2 + 2 + 2 + 4 + index_sizes.blob));
 
-          if (name != NULL)
+          if (name)
             set_string(name, pe->object, "assembly_refs[%i].name", i);
 
           row_ptr += row_size;
@@ -1287,7 +1287,7 @@ void dotnet_parse_tilde_2(
               string_offset,
               DOTNET_STRING_INDEX(manifestresource_table->Name));
 
-          if (name != NULL)
+          if (name)
             set_string(name, pe->object, "resources[%i].name", counter);
 
           row_ptr += row_size;
@@ -1564,7 +1564,7 @@ void dotnet_parse_com(PE* pe, ut64 baddr) {
 	// 4. We need to exclude the terminator and the padding, so search for the
 	// first NULL byte.
 	end = (char*) memmem((void*) metadata->Version, metadata->Length, "\0", 1);
-	if (end != NULL)
+	if (end)
 		set_sized_string(metadata->Version,
 				(end - metadata->Version),
 				pe->object,

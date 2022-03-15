@@ -114,7 +114,7 @@ R_API bool r_io_map_exists(RIO *io, RIOMap *map) {
 // check if a map with specified id exists
 R_API bool r_io_map_exists_for_id(RIO *io, ut32 id) {
 	r_return_val_if_fail (io && io->maps, false);
-	return r_io_map_get (io, id) != NULL;
+	return r_io_map_get (io, id);
 }
 
 R_API RIOMap* r_io_map_get(RIO *io, ut32 id) {

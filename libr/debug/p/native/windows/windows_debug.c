@@ -188,7 +188,7 @@ static int __get_avx(HANDLE th, ut128 xmm[16], ut128 ymm[16]) {
 		ymm[index].Low = 0;
 		xmm[index].Low = 0;
 	}
-	if (newxmm != NULL) {
+	if (newxmm) {
 		for (index = 0; index < nregs; index++) {
 			xmm[index].High = newxmm[index].High;
 			xmm[index].Low = newxmm[index].Low;

@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
 		Vartype, Typeident, Decls, Args, Body, Comment, Linecomment, Asm, Procedure, CProcedure,
 		Sigdef, Sigbody, Includes, Smallc, NULL);
 
-	if (err != NULL) {
+	if (err) {
 		mpc_err_print (err);
 		mpc_err_delete (err);
 		return 1;

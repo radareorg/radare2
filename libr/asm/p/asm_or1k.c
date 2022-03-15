@@ -142,7 +142,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	/* if name is null, but extra is present, it means 6 most significant bits
 	 * are not enough to decode instruction */
 	if (!insn_descr->name && insn_descr->extra) {
-		if ((extra_descr = find_extra_descriptor(insn_descr->extra, insn)) != NULL) {
+		if ((extra_descr = find_extra_descriptor(insn_descr->extra, insn))) {
 			insn_to_str (a, &line, insn_descr, extra_descr, insn);
 		} else {
 			line = strdup ("invalid");

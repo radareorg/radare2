@@ -208,7 +208,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				if (mode == 'a') { // check for case sensitive
 					matches = !r_str_ncasecmp (opst, tokens[matchcount], strlen (tokens[matchcount]));
 				} else if (!regexp) {
-					matches = strstr (opst, tokens[matchcount]) != NULL;
+					matches = !!strstr (opst, tokens[matchcount]);
 				} else {
 					rx = r_regex_new (tokens[matchcount], "es");
 					matches = r_regex_exec (rx, opst, 0, 0, 0) == 0;

@@ -44,7 +44,7 @@ static void destroy(RBin *bin) {
 }
 
 static bool load(RBin *bin) {
-	return ((bin->cur->xtr_obj = r_bin_fatmach0_new (bin->file)) != NULL);
+	return ((bin->cur->xtr_obj = r_bin_fatmach0_new (bin->file)));
 }
 
 static int size(RBin *bin) {

@@ -134,7 +134,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 }
 
 static bool load(RBin *bin) {
-	return ((bin->cur->xtr_obj = sep64_xtr_ctx_new (bin->cur->buf)) != NULL);
+	return ((bin->cur->xtr_obj = sep64_xtr_ctx_new (bin->cur->buf)));
 }
 
 static void destroy(RBin *bin) {

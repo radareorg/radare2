@@ -20,7 +20,7 @@ static const char *r_io_get_individual_schema(const char *file) {
 static bool r_io_ar_plugin_open(RIO *io, const char *file, bool many) {
 	r_return_val_if_fail (io && file, false);
 	if (many) {
-		return (r_io_get_individual_schema (file) != NULL);
+		return (r_io_get_individual_schema (file));
 	}
 	return !strncmp ("ar://", file, 5) || !strncmp ("lib://", file, 6);
 }

@@ -256,7 +256,7 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 			ms->flags &= R_MAGIC_SYMLINK;
 			p = r_magic_file(ms, buf);
 			ms->flags |= R_MAGIC_SYMLINK;
-			return p != NULL ? 1 : -1;
+			return p ? 1 : -1;
 		} else { /* just print what it points to */
 			if (file_printf (ms, "symbolic link to `%s'", buf) == -1)
 				return -1;

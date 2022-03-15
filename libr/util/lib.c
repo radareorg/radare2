@@ -221,7 +221,7 @@ R_API int r_lib_close(RLib *lib, const char *file) {
 			}
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
-			if (file != NULL) {
+			if (file) {
 				return ret;
 			}
 		}

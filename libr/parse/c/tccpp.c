@@ -2995,7 +2995,7 @@ static void macro_subst(TCCState *s1, TokenString *tok_str, Sym **nested_list,
 			goto no_subst;
 		}
 		s = define_find (s1, t);
-		if (s != NULL) {
+		if (s) {
 			/* if nested substitution, do nothing */
 			if (sym_find2 (*nested_list, t)) {
 				/* and mark it as TOK_NOSUBST, so it doesn't get subst'd again */

@@ -377,7 +377,7 @@ static char *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_
 		hash_aux = 0x223;
 	}
 
-	if (ins_hash_code != NULL) {
+	if (ins_hash_code) {
 		*ins_hash_code = hash_code;
 	}
 

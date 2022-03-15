@@ -124,13 +124,13 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	for (i = 0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
-			if (newstr != NULL) {
+			if (newstr) {
 				for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 					if (ops[i].str[j] >= 'A' && ops[i].str[j] <= 'J') {
 						const char *w = argv[ops[i].str[j] - '@'];
-						if (w != NULL) {
+						if (w) {
 							strcpy (newstr + k, w);
 							k += strlen(w) - 1;
 						}
@@ -145,7 +145,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	}
 
 	/* TODO: this is slow */
-	if (newstr != NULL) {
+	if (newstr) {
 		newstr[0] = '\0';
 		for (i = 0; i < argc; i++) {
 			strcat (newstr, argv[i]);

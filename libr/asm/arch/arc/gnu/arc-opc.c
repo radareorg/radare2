@@ -1454,7 +1454,7 @@ insert_base (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
 	     long value,
 	     const char **errmsg)
 {
-  if (reg != NULL)
+  if (reg)
     {
       arc_insn myinsn;
       if (!arc_mach_a4 && ('g' == operand->fmt)) {
@@ -1511,7 +1511,7 @@ insert_offset (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
 {
   long minval, maxval;
 
-  if (reg != NULL)
+  if (reg)
     {
       if (arc_mach_a4)
         {
@@ -2243,7 +2243,7 @@ extract_reg (arc_insn *insn,
       if (!reg) {
 	      return 0;
       }
-      if (opval != NULL) {
+      if (opval) {
 	      *opval = reg;
       }
       value = regno;
@@ -2257,7 +2257,7 @@ extract_reg (arc_insn *insn,
 
       /* This is really a constant, but tell the caller it has a special
 	 name.  */
-      if (reg != NULL && opval != NULL) {
+      if (reg && opval) {
 	      *opval = reg;
       }
     }
@@ -2310,7 +2310,7 @@ extract_flag (arc_insn *insn,
   }
   flag_p = 1;
   val = arc_opcode_lookup_suffix (operand, 1);
-  if (opval != NULL && val != NULL) {
+  if (opval && val) {
 	  *opval = val;
   }
   return val?val->value:0;
@@ -2340,7 +2340,7 @@ extract_cond (arc_insn *insn,
 
   /* Ignore NULL values of `val'.  Several condition code values are
      reserved for extensions.  */
-  if (opval != NULL && val != NULL) {
+  if (opval && val) {
 	  *opval = val;
   }
   return cond;
@@ -2454,7 +2454,7 @@ extract_unopmacro (arc_insn *insn,
      C == ARC_REG_SHIMM (or vice versa).  No big deal.  Those insns will get
      printed as "and"s.  */
   if (((*insn >> ARC_SHIFT_REGB) & ARC_MASK_REG) != ((*insn >> ARC_SHIFT_REGC) & ARC_MASK_REG)) {
-	  if (invalid != NULL) {
+	  if (invalid) {
 		  *invalid = 1;
 	  }
   }
