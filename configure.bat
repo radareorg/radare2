@@ -8,7 +8,7 @@ if "%*" == "asan" (
 )
 
 if "%*" == "static" (
-  set MESON_FLAGS=%MESON_FLAGS% -Dstatic_runtime=true -Dblob=true
+  set MESON_FLAGS=%MESON_FLAGS% -Dstatic_runtime=true -Dblob=true -Denable_r2r=false -Denable_tests=false
 )
 
 set PATH=%CD%\prefix\bin;%PATH%
