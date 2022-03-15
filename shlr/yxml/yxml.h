@@ -30,7 +30,7 @@
 #define inline __inline
 #endif
 
-/* Full API documentation for this library can be found in the "yxml.pod" file
+/* Full API documentation for this library can be found in the "yxml.md" file
  * in the yxml git repository, or online at http://dev.yorhel.nl/yxml/man */
 
 typedef enum {

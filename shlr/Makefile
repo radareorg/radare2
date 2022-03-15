@@ -323,6 +323,13 @@ spp-sync sync-spp:
 spp: spp-sync
 	export CFLAGS="-DUSE_R2=1 -I../../libr/include -DHAVE_FORK=${HAVE_FORK} -fPIC";  $(MAKE) -C spp r2lib
 
+sync-yxml yxml-sync:
+	rm -rf yxml-git
+	git clone https://g.blicky.net/yxml.git/ yxml-git
+	cp -f yxml-git/yxml.c yxml/yxml.c
+	cp -f yxml-git/yxml.h yxml/yxml.h
+	rm -rf yxml-git
+
 SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a
 SHLRS+=capstone/libcapstone.a
