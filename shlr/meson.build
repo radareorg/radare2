@@ -227,6 +227,17 @@ bochs_dep = declare_dependency(
   include_directories: bochs_inc
 )
 
+libr2bochs_static = static_library('r2bochs_static', bochs_files,
+  dependencies: [r_util_static_dep],
+  include_directories: bochs_inc,
+  implicit_include_directories: false
+)
+
+bochs_static_dep = declare_dependency(
+  link_with: libr2bochs_static,
+  include_directories: bochs_inc
+)
+
 
 # handle java dependency
 java_files = [
@@ -269,6 +280,17 @@ libr2qnx = static_library('r2qnx', qnx_files,
 
 qnx_dep = declare_dependency(
   link_with: libr2qnx,
+  include_directories: qnx_inc
+)
+
+libr2qnx_static = static_library('r2qnx_static', qnx_files,
+  dependencies: [r_socket_static_dep],
+  include_directories: qnx_inc,
+  implicit_include_directories: false
+)
+
+qnx_static_dep = declare_dependency(
+  link_with: libr2qnx_static,
   include_directories: qnx_inc
 )
 
@@ -387,6 +409,17 @@ libr2ar = static_library('r2ar', ar_files,
 
 ar_dep = declare_dependency(
   link_with: libr2ar,
+  include_directories: ar_inc
+)
+
+libr2ar_static = static_library('r2ar_static', ar_files,
+  dependencies: [r_util_static_dep],
+  include_directories: ar_inc,
+  implicit_include_directories: false
+)
+
+ar_static_dep = declare_dependency(
+  link_with: libr2ar_static,
   include_directories: ar_inc
 )
 
