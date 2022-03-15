@@ -6,7 +6,6 @@
 R_LIB_VERSION(r_main);
 
 static RMain foo[] = {
-	{ "r2", r_main_radare2 },
 	{ "r2pm", r_main_r2pm },
 	{ "rax2", r_main_rax2 },
 	{ "radiff2", r_main_radiff2 },
@@ -16,13 +15,14 @@ static RMain foo[] = {
 	{ "ragg2", r_main_ragg2 },
 	{ "rabin2", r_main_rabin2 },
 	{ "radare2", r_main_radare2 },
+	{ "r2", r_main_radare2 },
 	{ NULL, NULL }
 };
 
 R_API RMain *r_main_new(const char *name) {
 	size_t i = 0;
 	while (foo[i].name) {
-		if (!strcmp (name, foo[i].name)) {
+		if (r_str_startswith (name, foo[i].name)) {
 			RMain *m = R_NEW0 (RMain);
 			if (m) {
 				m->name = strdup (foo[i].name);
