@@ -39,7 +39,11 @@ cyclomatic-complexity: 1
 bits: 32
 type: fcn [NEW]
 num-bbs: 5
+num-instrs: 19
 edges: 6
+minbound: 0x00004438
+maxbound: 0x00004476
+is-lineal: true
 end-bbs: 0
 call-refs: 0x00004558 C 0x0000447a C 0x00004484 C 0x00004558 C 0x0000446a J 0x00004558 C 0x0000449c C 0x00004470 J
 data-refs:
