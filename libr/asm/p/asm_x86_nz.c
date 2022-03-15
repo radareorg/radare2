@@ -1647,6 +1647,8 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 			|| !strcmp (op->mnemonic, "jnb")
 			|| !strcmp (op->mnemonic, "jnc")) {
 		data[l++] = 0x83;
+	} else if (!strcmp (op->mnemonic, "jecxz") || !strcmp (op->mnemonic, "jrcxz") || !strcmp (op->mnemonic, "jcxz")) {
+		data[l++] = 0xf3;
 	} else if (!strcmp (op->mnemonic, "jz")
 			|| !strcmp (op->mnemonic, "je")) {
 		data[l++] = 0x84;
@@ -4425,6 +4427,9 @@ LookupTable oplookup[] = {
 	{"jpo", 0, &opjc, 0},
 	{"js", 0, &opjc, 0},
 	{"jz", 0, &opjc, 0},
+	{"jcxz", 0, &opjc, 0},
+	{"jecxz", 0, &opjc, 0},
+	{"jrcxz", 0, &opjc, 0},
 	{"lahf", 0, NULL, 0x9f, 1},
 	{"lea", 0, &oplea, 0},
 	{"leave", 0, NULL, 0xc9, 1},
