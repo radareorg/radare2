@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2019 - pancake */
+/* radare - LGPL - Copyright 2011-2022 - pancake */
 
 #include <r_util.h>
 #include <stdbool.h>
@@ -32,11 +32,14 @@ R_API bool r_file_chmod(const char *file, const char *mod, int recursive) {
 /* copied from sbase/chmod.c (suckless.org) */
 static bool chmodr(const char *path, int rflag) {
 	struct stat st;
-
-	if (stat (path, &st) == -1) {
+	int fd = open (path, O_RDONLY);
+	if (fd == -1) {
 		return false;
 	}
-
+	if (fstat (fd, &st) == -1) {
+		close (fd);
+		return false;
+	}
 	switch (oper) {
 	case '+':
 		st.st_mode |= mode;
@@ -49,14 +52,16 @@ static bool chmodr(const char *path, int rflag) {
 		break;
 	}
 #if !__wasi__
-	if (chmod (path, st.st_mode) == -1) {
+	if (fchmod (fd, st.st_mode) == -1) {
 		eprintf ("chmod %s:", path);
+		close (fd);
 		return false;
 	}
 #endif
 	if (rflag) {
 		recurse (path, rflag, chmodr);
 	}
+	close (fd);
 	return true;
 }
 

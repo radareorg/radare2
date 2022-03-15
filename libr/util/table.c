@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2021 - pancake */
+/* radare - LGPL - Copyright 2019-2022 - pancake */
 
 #include <r_util/r_table.h>
 #include "r_cons.h"
@@ -659,7 +659,7 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 		}
 		if (!ST32_MUL_OVFCHK (page, page_items)) {
 			lrow = page_items * (page - 1);
-			uv = page_items * (page);
+			uv = ((ut64)page_items) * page;
 		}
 	}
 	size_t nrow = 0;
