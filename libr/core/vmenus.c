@@ -3787,7 +3787,8 @@ static void define_data_ntimes(RCore *core, ut64 off, int times, int type, int t
 	if (times < 1) {
 		times = 1;
 	}
-	r_meta_del (core->anal, R_META_TYPE_ANY, off, typesize * times);
+	ut64 amount = ((ut64)typesize) * times
+	r_meta_del (core->anal, R_META_TYPE_ANY, off, amount);
 	for (i = 0; i < times; i++, off += typesize) {
 		r_meta_set (core->anal, R_META_TYPE_DATA, off, type, "");
 	}

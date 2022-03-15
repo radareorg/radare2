@@ -1,10 +1,10 @@
-/* radare2 - LGPL - Copyright 2021 - pancake */
+/* radare2 - LGPL - Copyright 2021-2022 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
 
 R_API RConsPixel *r_cons_pixel_new(int w, int h) {
-	if (UT64_MUL_OVFCHK (w, h)) {
+	if (UT32_MUL_OVFCHK (w, h)) {
 		return NULL;
 	}
 	RConsPixel *p = R_NEW (RConsPixel);
@@ -13,7 +13,7 @@ R_API RConsPixel *r_cons_pixel_new(int w, int h) {
 	}
 	p->w = w;
 	p->h = h;
-	p->buf_size = w * h;
+	p->buf_size = ((size_t)w) * h;
 	p->buf = calloc (w, h);
 	if (!p->buf) {
 		free (p);
