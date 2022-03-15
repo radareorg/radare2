@@ -4111,12 +4111,11 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 	(void)r_cons_get_size (&h);
 	const int idx = __get_panel_idx_in_pos (core, x, y);
 	char *word = __get_word_from_canvas (core, panels, x, y);
+	__set_curnode (core, idx);
+	__set_refresh_all (core, true, true);
 	if (idx == -1 || R_STR_ISEMPTY (word)) {
 		return false;
 	}
-	__set_curnode (core, idx);
-	__set_refresh_all (core, true, true);
-	RPanel *ppos = __get_panel (panels, idx);
 	if (R_STR_ISNOTEMPTY (word)) {
 		const ut64 addr = r_num_math (core->num, word);
 		if (__check_panel_type (panel, PANEL_CMD_FUNCTION) &&
@@ -4124,16 +4123,17 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 			r_core_seek (core, addr, true);
 			__set_addr_by_type (core, PANEL_CMD_DISASSEMBLY, addr);
 		}
-		r_flag_set (core->flags, "panel.addr", addr, 1);
+	//	r_flag_set (core->flags, "panel.addr", addr, 1);
 		r_config_set (core->config, "scr.highlight", word);
-		if (addr > 0) {
+		if (addr != 0 && addr != UT64_MAX) {
 			// TODO implement proper panel offset sync
-			// __set_panel_addr (core, cur, addr);
+			// __set_panel_addr (core, idx, addr);
 			r_io_sundo_push (core->io, core->offset, 0);
 			__seek_all (core, addr);
 		}
 	}
 	free (word);
+	RPanel *ppos = __get_panel (panels, idx);
 	if (x >= ppos->view->pos.x && x < ppos->view->pos.x + 4) {
 		*key = 'c';
 		return false;
@@ -4441,7 +4441,14 @@ static void __print_decompiler_cb(void *user, void *p) {
 	}
 	RPanel *panel = (RPanel *)p;
 	char *cmdstr = NULL;
+#if 0
 	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
+	if (core->offset != panel->model->addr) {
+		update = true;
+	}
+#else
+	bool update = true;
+#endif
 	if (!update) {
 		cmdstr = __find_cmd_str_cache (core, panel);
 		if (R_STR_ISNOTEMPTY (cmdstr)) {
@@ -4748,11 +4755,7 @@ static void __set_pcb(RPanel *p) {
 		p->model->print_cb = __print_decompiler_cb;
 		return;
 	}
-	if (__check_panel_type (p, PANEL_CMD_GRAPH)) {
-		p->model->print_cb = __print_graph_cb;
-		return;
-	}
-	if (__check_panel_type (p, PANEL_CMD_TINYGRAPH)) {
+	if (__check_panel_type (p, PANEL_CMD_GRAPH) || __check_panel_type (p, PANEL_CMD_TINYGRAPH)) {
 		p->model->print_cb = __print_graph_cb;
 		return;
 	}
@@ -4960,7 +4963,8 @@ static char *__get_panels_config_dir_path(void) {
 
 static void __add_menu(RCore *core, const char *parent, const char *name, RPanelsMenuCallback cb) {
 	RPanels *panels = core->panels;
-	RPanelsMenuItem *p_item, *item = R_NEW0 (RPanelsMenuItem);
+	RPanelsMenuItem *p_item;
+	RPanelsMenuItem *item = R_NEW0 (RPanelsMenuItem);
 	if (!item) {
 		return;
 	}
