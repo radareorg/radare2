@@ -3246,7 +3246,7 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 		}
 		free ((void *)claimed_authentihash);
 	}
-	pe->is_signed = pe->cms != NULL;
+	pe->is_signed = pe->cms;
 	return true;
 }
 

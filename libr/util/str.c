@@ -1865,8 +1865,8 @@ R_API char *r_str_format_msvc_argv(size_t argc, const char **argv) {
 			r_strbuf_append (&sb, " ");
 		}
 		const char *arg = argv[i];
-		bool must_escape = strchr (arg, '\"') != NULL;
-		bool must_quote = strpbrk (arg, " \t") != NULL || !*arg;
+		bool must_escape = strchr (arg, '\"');
+		bool must_quote = strpbrk (arg, " \t") || !*arg;
 		if (!must_escape && must_quote && *arg && arg[strlen (arg) - 1] == '\\') {
 			// if the last char is a bs and we would quote it, we must also escape
 			must_escape = true;

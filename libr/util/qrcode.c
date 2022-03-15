@@ -286,7 +286,8 @@ static int getTextProperties(const char *text, bool *isNumeric, bool *isAlphanum
 		char c = *p;
 		if (c < '0' || c > '9') {
 			*isNumeric = false;
-			*isAlphanumeric &= strchr (ALPHANUMERIC_CHARSET, c) != NULL;
+			bool is_alpha = strchr (ALPHANUMERIC_CHARSET, c);
+			*isAlphanumeric &= is_alpha;
 		}
 	}
 

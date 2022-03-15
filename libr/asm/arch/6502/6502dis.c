@@ -137,7 +137,7 @@ static struct {
 static int _6502Disass(ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int i;
 	r_strf_buffer (64);
-	for (i = 0; ops[i].name != NULL; i++) {
+	for (i = 0; ops[i].name; i++) {
 		if (ops[i].op == buf[0]) {
 			const char *buf_asm = "invalid";
 			int len = ops[i].len;

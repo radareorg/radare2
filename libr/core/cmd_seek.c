@@ -348,7 +348,7 @@ static int cmd_seek(void *data, const char *input) {
 		return 0;
 	}
 	char *ptr;
-	if ((ptr = strstr (input, "+.")) != NULL) {
+	if ((ptr = strstr (input, "+."))) {
 		char *dup = strdup (input);
 		dup[ptr - input] = '\x00';
 		off = r_num_math (core->num, dup + 1);

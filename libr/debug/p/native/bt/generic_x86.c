@@ -60,7 +60,7 @@ static RList *backtrace_x86_32_anal(RDebug *dbg, ut64 at) {
 
 	eip = r_reg_get_value (reg, r_reg_get (reg, "eip", R_REG_TYPE_GPR));
 	fcn = r_anal_get_fcn_in (dbg->anal, eip, R_ANAL_FCN_TYPE_NULL);
-	if (fcn != NULL) {
+	if (fcn) {
 		frame = R_NEW0 (RDebugFrame);
 		frame->addr = eip;
 		frame->size = 0;

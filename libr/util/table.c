@@ -722,7 +722,7 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 			match = strstr (nn, un) == NULL;
 			break;
 		case '~':
-			match = strstr (nn, un) != NULL;
+			match = strstr (nn, un);
 			break;
 		case 's':
 			match = strlen (nn) == atoi (un);

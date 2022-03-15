@@ -3566,7 +3566,7 @@ static void __core_cmd_anal_fcn_allstats(RCore *core, const char *input) {
 	RList *dbs = r_list_newf ((RListFree)sdb_free);
 	Sdb *d = sdb_new0 ();
 	ut64 oseek = core->offset;
-	bool isJson = strchr (input, 'j') != NULL;
+	bool isJson = strchr (input, 'j');
 
 	char *inp = r_str_newf ("*%s", input);
 	r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -4449,14 +4449,14 @@ int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'C': // "afC"
 		if (input[2] == 'c') {
 			RAnalFunction *fcn;
-			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
+			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0))) {
 				r_cons_printf ("%i\n", r_anal_function_complexity (fcn));
 			} else {
 				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
 			}
 		} else if (input[2] == 'l') {
 			RAnalFunction *fcn;
-			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0)) != NULL) {
+			if ((fcn = r_anal_get_fcn_in (core->anal, core->offset, 0))) {
 				r_cons_printf ("%d\n", r_anal_function_loops (fcn));
 			} else {
 				eprintf ("Error: Cannot find function at 0x08%" PFMT64x "\n", core->offset);
@@ -10579,7 +10579,7 @@ static bool archIsThumbable(RCore *core) {
 }
 
 static void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
-	bool asterisk = user != NULL;
+	bool asterisk = user;
 	int arch_align = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	int searchAlign = r_config_get_i (core->config, "search.align");

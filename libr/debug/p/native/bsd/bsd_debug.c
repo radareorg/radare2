@@ -49,7 +49,7 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 	case AF_INET6:
 		sin6 = (struct sockaddr_in6 *)ss;
 		if (inet_ntop (AF_INET6, &sin6->sin6_addr, buffer2,
-				sizeof (buffer2)) != NULL) {
+				sizeof (buffer2))) {
 			snprintf (buffer, buflen, "%s.%d", buffer2,
 				ntohs (sin6->sin6_port));
 		} else {

@@ -98,7 +98,7 @@ nios2_init_opcode_hash (void)
     {
       nios2_opcode_hash *tmp_hash = nios2_hash[i];
       printf ("index: 0x%02X	ops: ", i);
-      while (tmp_hash != NULL)
+      while (tmp_hash)
 	{
 	  printf ("%s ", tmp_hash->opcode->name);
 	  tmp_hash = tmp_hash->next;
@@ -110,7 +110,7 @@ nios2_init_opcode_hash (void)
     {
       nios2_opcode_hash *tmp_hash = nios2_ps_hash[i];
       printf ("index: 0x%02X	ops: ", i);
-      while (tmp_hash != NULL)
+      while (tmp_hash)
 	{
 	  printf ("%s ", tmp_hash->opcode->name);
 	  tmp_hash = tmp_hash->next;
@@ -337,7 +337,7 @@ nios2_disassemble (bfd_vma address, unsigned long opcode,
      the instruction and its arguments.  */
   op = nios2_find_opcode_hash (opcode);
 
-  if (op != NULL)
+  if (op)
     {
       bfd_boolean is_nop = FALSE;
       if (op->pinfo == NIOS2_INSN_MACRO_MOV)
@@ -360,7 +360,7 @@ nios2_disassemble (bfd_vma address, unsigned long opcode,
       if (!is_nop)
 	{
 	  const char *argstr = op->args;
-	  if (argstr != NULL && *argstr != '\0')
+	  if (argstr && *argstr != '\0')
 	    {
 	      (*info->fprintf_func) (info->stream, " ");
 	      while (*argstr != '\0')

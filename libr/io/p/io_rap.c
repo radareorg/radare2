@@ -32,7 +32,7 @@ static int __rap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 static bool __rap_close(RIODesc *fd) {
 	int ret = false;
 	if (RIORAP_IS_VALID (fd)) {
-		if (RIORAP_FD (fd) != NULL) {
+		if (RIORAP_FD (fd)) {
 			RIORap *r = fd->data;
 			if (r && fd->fd != -1) {
 				if (r->fd) {

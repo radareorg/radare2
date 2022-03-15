@@ -760,7 +760,7 @@ choose_arch_by_number (unsigned long mach)
   /* We optimize this because even if the user specifies no
      flags, this will be done for every instruction!  */
   if (hint_bfd_mach == mach
-      && hint_arch_choice != NULL
+      && hint_arch_choice
       && hint_arch_choice->bfd_mach == hint_bfd_mach)
     return hint_arch_choice;
 
@@ -890,7 +890,7 @@ set_default_mips_dis_options (struct disassemble_info *info)
   mips_ase = mips_target_info.ase;
 #else
   chosen_arch = choose_arch_by_number (info->mach);
-  if (chosen_arch != NULL)
+  if (chosen_arch)
     {
       mips_processor = chosen_arch->processor;
       mips_isa = chosen_arch->isa;
@@ -903,7 +903,7 @@ set_default_mips_dis_options (struct disassemble_info *info)
     }
 
   /* Update settings according to the ELF file header flags.  */
-  if (info->flavour == bfd_target_elf_flavour && info->section != NULL)
+  if (info->flavour == bfd_target_elf_flavour && info->section)
     {
       struct bfd *abfd = info->section->owner;
       Elf_Internal_Ehdr *header = elf_elfheader (abfd);
@@ -1051,7 +1051,7 @@ parse_mips_dis_option (const char *option, unsigned int len)
       && strlen ("gpr-names") == optionlen)
     {
       chosen_abi = choose_abi_by_name (val, vallen);
-      if (chosen_abi != NULL)
+      if (chosen_abi)
 	mips_gpr_names = chosen_abi->gpr_names;
       return;
     }
@@ -1060,7 +1060,7 @@ parse_mips_dis_option (const char *option, unsigned int len)
       && strlen ("fpr-names") == optionlen)
     {
       chosen_abi = choose_abi_by_name (val, vallen);
-      if (chosen_abi != NULL)
+      if (chosen_abi)
 	mips_fpr_names = chosen_abi->fpr_names;
       return;
     }
@@ -1069,7 +1069,7 @@ parse_mips_dis_option (const char *option, unsigned int len)
       && strlen ("cp0-names") == optionlen)
     {
       chosen_arch = choose_arch_by_name (val, vallen);
-      if (chosen_arch != NULL)
+      if (chosen_arch)
 	{
 	  mips_cp0_names = chosen_arch->cp0_names;
 	  mips_cp0sel_names = chosen_arch->cp0sel_names;
@@ -1082,7 +1082,7 @@ parse_mips_dis_option (const char *option, unsigned int len)
       && strlen ("cp1-names") == optionlen)
     {
       chosen_arch = choose_arch_by_name (val, vallen);
-      if (chosen_arch != NULL)
+      if (chosen_arch)
 	mips_cp1_names = chosen_arch->cp1_names;
       return;
     }
@@ -1091,7 +1091,7 @@ parse_mips_dis_option (const char *option, unsigned int len)
       && strlen ("hwr-names") == optionlen)
     {
       chosen_arch = choose_arch_by_name (val, vallen);
-      if (chosen_arch != NULL)
+      if (chosen_arch)
 	mips_hwr_names = chosen_arch->hwr_names;
       return;
     }
@@ -1104,13 +1104,13 @@ parse_mips_dis_option (const char *option, unsigned int len)
 	 numeric register names for all registers.  Other than
 	 that, a given name probably won't match both.  */
       chosen_abi = choose_abi_by_name (val, vallen);
-      if (chosen_abi != NULL)
+      if (chosen_abi)
 	{
 	  mips_gpr_names = chosen_abi->gpr_names;
 	  mips_fpr_names = chosen_abi->fpr_names;
 	}
       chosen_arch = choose_arch_by_name (val, vallen);
-      if (chosen_arch != NULL)
+      if (chosen_arch)
 	{
 	  mips_cp0_names = chosen_arch->cp0_names;
 	  mips_cp0sel_names = chosen_arch->cp0sel_names;
@@ -1871,7 +1871,7 @@ print_insn_args (struct disassemble_info *info,
 	      n = lookup_mips_cp0sel_name (mips_cp0sel_names,
 					   mips_cp0sel_names_len,
 					   reg, sel);
-	      if (n != NULL)
+	      if (n)
 		infprintf (is, "%s", n->name);
 	      else
 		infprintf (is, "$%d,%d", reg, sel);
@@ -1955,7 +1955,7 @@ print_insn_mips (bfd_vma memaddr,
   info->target2 = 0;
 
   op = mips_hash[GET_OP (word, OP)];
-  if (op != NULL)
+  if (op)
     {
       for (; op < &mips_opcodes[NUMOPCODES]; op++)
 	{
@@ -2364,7 +2364,7 @@ print_insn_mips16 (bfd_vma memaddr, struct disassemble_info *info)
 		  n = lookup_mips_cp0sel_name (mips_cp0sel_names,
 					       mips_cp0sel_names_len,
 					       reg, sel);
-		  if (n != NULL)
+		  if (n)
 		    infprintf (is, "%s", n->name);
 		  else
 		    infprintf (is, "$%d,%d", reg, sel);

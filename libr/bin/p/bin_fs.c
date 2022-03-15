@@ -42,7 +42,7 @@ static char *fsname(RBuffer *b) {
 static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	r_return_val_if_fail (b, false);
 	char *p = fsname (b);
-	bool hasFs = p != NULL;
+	bool hasFs = p;
 	free (p);
 	return hasFs;
 }

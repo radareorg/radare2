@@ -48,7 +48,7 @@ int avr_encode(RAsm *a, RAsmOp *ao, const char *str) {
 	// simple tokenizer -- creates an array of maximum three tokens
 	// the delimiters are ' ' and ','
 	token = strtok ((char *)str, TOKEN_DELIM);
-	while (token != NULL && tokens_cnt < 3) {
+	while (token && tokens_cnt < 3) {
 		memset (tokens[tokens_cnt], 0, MAX_TOKEN_SIZE);
 		strncpy (tokens[tokens_cnt], token, MAX_TOKEN_SIZE-1);
 		token = strtok (NULL, TOKEN_DELIM);

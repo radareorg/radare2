@@ -243,7 +243,7 @@ static CPU_CONST *const_by_value(CPU_MODEL *cpu, int type, ut32 v) {
 static RStrBuf *__generic_io_dest(ut8 port, int write, CPU_MODEL *cpu) {
 	RStrBuf *r = r_strbuf_new ("");
 	CPU_CONST *c = const_by_value (cpu, CPU_CONST_REG, port);
-	if (c != NULL) {
+	if (c) {
 		r_strbuf_set (r, c->key);
 		if (write) {
 			r_strbuf_append (r, ",=");

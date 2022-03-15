@@ -1315,7 +1315,7 @@ aarch64_ext_hint (const aarch64_operand *self ATTRIBUTE_UNUSED,
 
   hint_number = extract_fields (code, 0, 2, FLD_CRm, FLD_op2);
 
-  for (i = 0; aarch64_hint_options[i].name != NULL; i++)
+  for (i = 0; aarch64_hint_options[i].name; i++)
     {
       if (hint_number == aarch64_hint_options[i].value)
 	{
@@ -2964,7 +2964,7 @@ aarch64_decode_insn (aarch64_insn insn, aarch64_inst *inst,
       const aarch64_opcode *tmp = opcode;
       printf ("\n");
       DEBUG_TRACE ("opcode lookup:");
-      while (tmp != NULL)
+      while (tmp)
 	{
 	  aarch64_verbose ("  %s", tmp->name);
 	  tmp = aarch64_find_next_opcode (tmp);
@@ -2977,7 +2977,7 @@ aarch64_decode_insn (aarch64_insn insn, aarch64_inst *inst,
      opcode field and value, apart from the difference that one of them has an
      extra field as part of the opcode, but such a field is used for operand
      encoding in other opcode(s) ('immh' in the case of the example).  */
-  while (opcode != NULL)
+  while (opcode)
     {
       /* But only one opcode can be decoded successfully for, as the
 	 decoding routine will check the constraint carefully.  */
@@ -3213,7 +3213,7 @@ get_sym_code_type (struct disassemble_info *info, int n,
   const char *name;
 
   /* If the symbol is in a different section, ignore it.  */
-  if (info->section != NULL && info->section != info->symtab[n]->section)
+  if (info->section && info->section != info->symtab[n]->section)
     return FALSE;
 
   es = *(elf_symbol_type **)(info->symtab + n);

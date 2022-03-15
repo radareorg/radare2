@@ -255,13 +255,13 @@ R_API bool r_magic_load(RMagic* ms, const char *magicfile) {
 R_API bool r_magic_compile(RMagic *ms, const char *magicfile) {
 	struct mlist *ml = file_apprentice (ms, magicfile, strlen (magicfile), FILE_COMPILE);
 	free_mlist (ml);
-	return ml != NULL;
+	return ml;
 }
 
 R_API bool r_magic_check(RMagic *ms, const char *magicfile) {
 	struct mlist *ml = file_apprentice (ms, magicfile, strlen (magicfile), FILE_CHECK);
 	free_mlist (ml);
-	return ml != NULL;
+	return ml;
 }
 
 R_API const char* r_magic_descriptor(RMagic *ms, int fd) {

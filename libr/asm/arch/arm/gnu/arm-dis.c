@@ -5014,7 +5014,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 						  sysm |= (given & 0x300) >> 4;
 						  name = banked_regname (sysm);
 
-						  if (name != NULL) {
+						  if (name) {
 							  func (stream, "%s", name);
 						  } else {
 							  func (stream, "(UNDEF: %lu)", (unsigned long)sysm);
@@ -5047,7 +5047,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 						  }
 					  } else {
 						  const char *opt = data_barrier_option (given & 0xf);
-						  if (opt != NULL) {
+						  if (opt) {
 							  func (stream, "%s", opt);
 						  } else {
 							  func (stream, "%d", (int)given & 0xf);
@@ -5184,7 +5184,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 						  sysm |= (given & 0x300) >> 4;
 						  name = banked_regname (sysm);
 
-						  if (name != NULL) {
+						  if (name) {
 							  func (stream, "%s", name);
 						  } else {
 							  func (stream, "(UNDEF: %lu)", (unsigned long)sysm);
@@ -5921,7 +5921,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 					  }
 				  } else {
 					  const char *opt = data_barrier_option (given & 0xf);
-					  if (opt != NULL) {
+					  if (opt) {
 						  func (stream, "%s", opt);
 					  } else {
 						  func (stream, "%d", (int)given & 0xf);
@@ -5952,7 +5952,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 					  sysm |= (given & 0x00100000) >> 14;
 					  name = banked_regname (sysm);
 
-					  if (name != NULL) {
+					  if (name) {
 						  func (stream, "%s", name);
 					  } else {
 						  func (stream, "(UNDEF: %lu)", (unsigned long)sysm);
@@ -5971,7 +5971,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 					  sm |= (given & 0x00100000) >> 14;
 					  name = banked_regname (sm);
 
-					  if (name != NULL) {
+					  if (name) {
 						  func (stream, "%s", name);
 					  } else {
 						  func (stream, "(UNDEF: %lu)", (unsigned long)sm);
@@ -6319,7 +6319,7 @@ get_map_sym_type (struct disassemble_info *info,
 		  enum map_type *map_type)
 {
   /* If the symbol is in a different section, ignore it.  */
-  if (info->section != NULL && info->section != info->symtab[n]->section) {
+  if (info->section && info->section != info->symtab[n]->section) {
 	  return FALSE;
   }
 
@@ -6340,7 +6340,7 @@ return FALSE;
   unsigned int type;
 
   /* If the symbol is in a different section, ignore it.  */
-  if (info->section != NULL && info->section != info->symtab[n]->section)
+  if (info->section && info->section != info->symtab[n]->section)
     return FALSE;
 
   es = *(elf_symbol_type **)(info->symtab + n);
@@ -6853,7 +6853,7 @@ print_insn_big_arm (bfd_vma pc, struct disassemble_info *info)
   /* Detect BE8-ness and record it in the disassembler info.  */
 #if 0
   if (info->flavour == bfd_target_elf_flavour
-      && info->section != NULL
+      && info->section
       && (elf_elfheader (info->section->owner)->e_flags & EF_ARM_BE8))
     info->endian_code = BFD_ENDIAN_LITTLE;
 #endif
@@ -6881,7 +6881,7 @@ disassembler_options_arm (void)
       for (i = 0; i < NUM_ARM_OPTIONS; i++)
 	{
 	  opts->name[i] = regnames[i].name;
-	  if (regnames[i].description != NULL) {
+	  if (regnames[i].description) {
 		  opts->description[i] = _ (regnames[i].description);
 	  } else {
 		  opts->description[i] = NULL;

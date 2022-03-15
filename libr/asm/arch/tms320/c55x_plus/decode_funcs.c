@@ -258,7 +258,7 @@ char *get_reg_pair(ut32 idx) {
 	default: res = NULL;
 	}
 
-	if (res != NULL) {
+	if (res) {
 		res = strdup (res);
 	}
 
@@ -323,7 +323,7 @@ char *get_reg_name_3(ut32 idx) {
 	default: res = NULL;
 	}
 
-	if (res != NULL) {
+	if (res) {
 		res = strdup (res);
 	}
 	return res;
@@ -379,7 +379,7 @@ char *get_reg_name_2(ut32 idx) {
 	default: res = NULL;
 	}
 
-	if (res != NULL) {
+	if (res) {
 		res = strdup (res);
 	}
 
@@ -634,7 +634,7 @@ char *get_reg_name_1(ut32 idx) {
 	default: res = NULL;
 	}
 
-	if (res != NULL) {
+	if (res) {
 		res = strdup (res);
 	}
 
@@ -850,7 +850,7 @@ char *get_status_regs_and_bits(char *reg_arg, int reg_bit) {
 		}
 	}
 
-	if (res != NULL) {
+	if (res) {
 	        res = strdup (res);
 	}
 

@@ -506,7 +506,7 @@ elf_xtensa_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
   unsigned int i;
 
   for (i = 0; i < sizeof (elf_howto_table) / sizeof (elf_howto_table[0]); i++)
-    if (elf_howto_table[i].name != NULL
+    if (elf_howto_table[i].name
 	&& r_str_casecmp (elf_howto_table[i].name, r_name) == 0)
       return &elf_howto_table[i];
 
@@ -623,7 +623,7 @@ struct elf_xtensa_obj_tdata
 
 #define is_xtensa_elf(bfd) \
   (bfd_get_flavour (bfd) == bfd_target_elf_flavour \
-   && elf_tdata (bfd) != NULL \
+   && elf_tdata (bfd) \
    && elf_object_id (bfd) == XTENSA_ELF_DATA)
 
 static bfd_boolean
@@ -684,7 +684,7 @@ elf_xtensa_link_hash_newfunc (struct bfd_hash_entry *entry,
 
   /* Call the allocation method of the superclass.  */
   entry = _bfd_elf_link_hash_newfunc (entry, table, string);
-  if (entry != NULL)
+  if (entry)
     {
       struct elf_xtensa_link_hash_entry *eh = elf_xtensa_hash_entry (entry);
       eh->tlsfunc_refcount = 0;
@@ -1124,8 +1124,8 @@ elf_xtensa_check_relocs (bfd *abfd,
 	case R_XTENSA_GNU_VTENTRY:
 	  /* This relocation describes which C++ vtable entries are actually
 	     used.  Record for later use during GC.  */
-	  BFD_ASSERT (h != NULL);
-	  if (h != NULL
+	  BFD_ASSERT (h);
+	  if (h
 	      && !bfd_elf_gc_record_vtentry (abfd, sec, h, rel->r_addend))
 	    return FALSE;
 	  continue;
@@ -1302,7 +1302,7 @@ elf_xtensa_gc_mark_hook (asection *sec,
   if (xtensa_is_property_section (sec))
     return NULL;
 
-  if (h != NULL)
+  if (h)
     switch (ELF32_R_TYPE (rel->r_info))
       {
       case R_XTENSA_GNU_VTINHERIT:
@@ -1675,11 +1675,11 @@ elf_xtensa_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 
   if (elf_hash_table (info)->dynamic_sections_created)
     {
-      BFD_ASSERT (htab->srelgot != NULL
-		  && htab->srelplt != NULL
-		  && htab->sgot != NULL
-		  && htab->spltlittbl != NULL
-		  && htab->sgotloc != NULL);
+      BFD_ASSERT (htab->srelgot
+		  && htab->srelplt
+		  && htab->sgot
+		  && htab->spltlittbl
+		  && htab->sgotloc);
 
       /* Set the contents of the .interp section to the interpreter.  */
       if (info->executable)
@@ -1721,13 +1721,13 @@ elf_xtensa_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 	 created earlier because the initial count of PLT relocations
 	 was an overestimate.  */
       for (chunk = 0;
-	   (splt = elf_xtensa_get_plt_section (info, chunk)) != NULL;
+	   (splt = elf_xtensa_get_plt_section (info, chunk));
 	   chunk++)
 	{
 	  int chunk_entries;
 
 	  sgotplt = elf_xtensa_get_gotplt_section (info, chunk);
-	  BFD_ASSERT (sgotplt != NULL);
+	  BFD_ASSERT (sgotplt);
 
 	  if (chunk < plt_chunks - 1)
 	    chunk_entries = PLT_ENTRIES_PER_CHUNK;
@@ -1754,11 +1754,11 @@ elf_xtensa_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
 	 literal tables.  */
       sgotloc = htab->sgotloc;
       sgotloc->size = spltlittbl->size;
-      for (abfd = info->input_bfds; abfd != NULL; abfd = abfd->link.next)
+      for (abfd = info->input_bfds; abfd; abfd = abfd->link.next)
 	{
 	  if (abfd->flags & DYNAMIC)
 	    continue;
-	  for (s = abfd->sections; s != NULL; s = s->next)
+	  for (s = abfd->sections; s; s = s->next)
 	    {
 	      if (! discarded_section (s)
 		  && xtensa_is_littable_section (s)
@@ -1771,7 +1771,7 @@ elf_xtensa_size_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
   /* Allocate memory for dynamic sections.  */
   relplt = FALSE;
   relgot = FALSE;
-  for (s = dynobj->sections; s != NULL; s = s->next)
+  for (s = dynobj->sections; s; s = s->next)
     {
       const char *name;
 
@@ -2227,7 +2227,7 @@ vsprint_msg (const char *origmsg, const char *fmt, int arglen, ...)
       message = (char *) bfd_realloc_or_free (message, len);
       alloc_size = len;
     }
-  if (message != NULL)
+  if (message)
     {
       if (!is_append)
 	memcpy (message, origmsg, orig_len);
@@ -2368,7 +2368,7 @@ elf_xtensa_create_plt_entry (struct bfd_link_info *info,
   chunk = reloc_index / PLT_ENTRIES_PER_CHUNK;
   splt = elf_xtensa_get_plt_section (info, chunk);
   sgotplt = elf_xtensa_get_gotplt_section (info, chunk);
-  BFD_ASSERT (splt != NULL && sgotplt != NULL);
+  BFD_ASSERT (splt && sgotplt);
 
   plt_base = splt->output_section->vma + splt->output_offset;
   got_base = sgotplt->output_section->vma + sgotplt->output_offset;
@@ -2706,7 +2706,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	  sym_type = h->type;
 	}
 
-      if (sec != NULL && discarded_section (sec))
+      if (sec && discarded_section (sec))
 	RELOC_AGAINST_DISCARDED_SECTION (info, input_bfd, input_section,
 					 rel, 1, relend, howto, 0, contents);
 
@@ -2830,7 +2830,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	  return FALSE;
 	}
 
-      if (h != NULL)
+      if (h)
 	name = h->root.root.string;
       else
 	{
@@ -2883,7 +2883,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
 	      else
 		srel = htab->srelgot;
 
-	      BFD_ASSERT (srel != NULL);
+	      BFD_ASSERT (srel);
 
 	      outrel.r_offset =
 		_bfd_elf_section_offset (output_bfd, info,
@@ -3135,7 +3135,7 @@ elf_xtensa_relocate_section (bfd *output_bfd,
       if (r != bfd_reloc_ok && !warned)
 	{
 	  BFD_ASSERT (r == bfd_reloc_dangerous || r == bfd_reloc_other);
-	  BFD_ASSERT (error_message != NULL);
+	  BFD_ASSERT (error_message);
 
 	  if (rel->r_addend == 0)
 	    error_message = vsprint_msg (error_message, ": %s",
@@ -3327,7 +3327,7 @@ elf_xtensa_finish_dynamic_sections (bfd *output_bfd,
 
   dynobj = elf_hash_table (info)->dynobj;
   sdyn = bfd_get_linker_section (dynobj, ".dynamic");
-  BFD_ASSERT (sdyn != NULL);
+  BFD_ASSERT (sdyn);
 
   /* Set the first entry in the global offset table to the address of
      the dynamic section.  */
@@ -3354,7 +3354,7 @@ elf_xtensa_finish_dynamic_sections (bfd *output_bfd,
 
       srelgot = htab->srelgot;
       spltlittbl = htab->spltlittbl;
-      BFD_ASSERT (srelgot != NULL && spltlittbl != NULL);
+      BFD_ASSERT (srelgot && spltlittbl);
 
       /* Find the first XTENSA_RTLD relocation.  Presumably the rest
 	 of them follow immediately after....  */
@@ -3376,7 +3376,7 @@ elf_xtensa_finish_dynamic_sections (bfd *output_bfd,
 	  int chunk_entries = 0;
 
 	  sgotplt = elf_xtensa_get_gotplt_section (info, chunk);
-	  BFD_ASSERT (sgotplt != NULL);
+	  BFD_ASSERT (sgotplt);
 
 	  /* Emit special RTLD relocations for the first two entries in
 	     each chunk of the .got.plt section.  */
@@ -3799,7 +3799,7 @@ elf_xtensa_discard_info (bfd *abfd,
   asection *sec;
   bfd_boolean changed = FALSE;
 
-  for (sec = abfd->sections; sec != NULL; sec = sec->next)
+  for (sec = abfd->sections; sec; sec = sec->next)
     {
       if (xtensa_is_property_section (sec))
 	{
@@ -5699,7 +5699,7 @@ removed_by_actions (text_action_list *action_list,
     {
       splay_tree_node node = splay_tree_lookup (action_list->tree,
 						(splay_tree_key)r);
-      BFD_ASSERT (node != NULL && r == (text_action *)node->value);
+      BFD_ASSERT (node && r == (text_action *)node->value);
     }
 
   while (r)
@@ -6072,7 +6072,7 @@ print_removed_literals (FILE *fp, removed_literal_list *removed_list)
   r = removed_list->head;
   if (r)
     fprintf (fp, "Removed Literals\n");
-  for (; r != NULL; r = r->next)
+  for (; r; r = r->next)
     {
       print_r_reloc (fp, &r->from);
       fprintf (fp, " => ");
@@ -6268,7 +6268,7 @@ cache_fix_array (asection *sec)
   if (relax_info->fix_list == NULL)
     return;
 
-  for (r = relax_info->fix_list; r != NULL; r = r->next)
+  for (r = relax_info->fix_list; r; r = r->next)
     count++;
 
   relax_info->fix_array =
@@ -6966,7 +6966,7 @@ elf_xtensa_relax_section (bfd *abfd,
     return TRUE;
 
   relax_info = get_xtensa_relax_info (sec);
-  BFD_ASSERT (relax_info != NULL);
+  BFD_ASSERT (relax_info);
 
   switch (relax_info->visited)
     {
@@ -7021,15 +7021,15 @@ analyze_relocations (struct bfd_link_info *link_info)
   bfd_boolean is_relaxable = FALSE;
 
   /* Initialize the per-section relaxation info.  */
-  for (abfd = link_info->input_bfds; abfd != NULL; abfd = abfd->link.next)
-    for (sec = abfd->sections; sec != NULL; sec = sec->next)
+  for (abfd = link_info->input_bfds; abfd; abfd = abfd->link.next)
+    for (sec = abfd->sections; sec; sec = sec->next)
       {
 	init_xtensa_relax_info (sec);
       }
 
   /* Mark relaxable sections (and count relocations against each one).  */
-  for (abfd = link_info->input_bfds; abfd != NULL; abfd = abfd->link.next)
-    for (sec = abfd->sections; sec != NULL; sec = sec->next)
+  for (abfd = link_info->input_bfds; abfd; abfd = abfd->link.next)
+    for (sec = abfd->sections; sec; sec = sec->next)
       {
 	if (!find_relaxable_sections (abfd, sec, link_info, &is_relaxable))
 	  return FALSE;
@@ -7040,8 +7040,8 @@ analyze_relocations (struct bfd_link_info *link_info)
     return TRUE;
 
   /* Allocate space for source_relocs.  */
-  for (abfd = link_info->input_bfds; abfd != NULL; abfd = abfd->link.next)
-    for (sec = abfd->sections; sec != NULL; sec = sec->next)
+  for (abfd = link_info->input_bfds; abfd; abfd = abfd->link.next)
+    for (sec = abfd->sections; sec; sec = sec->next)
       {
 	xtensa_relax_info *relax_info;
 
@@ -7057,16 +7057,16 @@ analyze_relocations (struct bfd_link_info *link_info)
       }
 
   /* Collect info on relocations against each relaxable section.  */
-  for (abfd = link_info->input_bfds; abfd != NULL; abfd = abfd->link.next)
-    for (sec = abfd->sections; sec != NULL; sec = sec->next)
+  for (abfd = link_info->input_bfds; abfd; abfd = abfd->link.next)
+    for (sec = abfd->sections; sec; sec = sec->next)
       {
 	if (!collect_source_relocs (abfd, sec, link_info))
 	  return FALSE;
       }
 
   /* Compute the text actions.  */
-  for (abfd = link_info->input_bfds; abfd != NULL; abfd = abfd->link.next)
-    for (sec = abfd->sections; sec != NULL; sec = sec->next)
+  for (abfd = link_info->input_bfds; abfd; abfd = abfd->link.next)
+    for (sec = abfd->sections; sec; sec = sec->next)
       {
 	if (!compute_text_actions (abfd, sec, link_info))
 	  return FALSE;
@@ -8359,7 +8359,7 @@ xlate_offset_with_removed_text (const xlate_map_t *map,
 	       sizeof (xlate_map_entry_t), &xlate_compare);
   e = (xlate_map_entry_t *) r;
 
-  BFD_ASSERT (e != NULL);
+  BFD_ASSERT (e);
   if (e == NULL)
     return offset;
   return e->new_address - e->orig_address + offset;
@@ -9571,7 +9571,7 @@ relax_section (bfd *abfd, asection *sec, struct bfd_link_info *link_info)
 	  if (! elf_xtensa_ignore_discarded_relocs (sec)
 	      && elf_xtensa_action_discarded (sec) == PRETEND
 	      && sec->sec_info_type != SEC_INFO_TYPE_STABS
-	      && target_sec != NULL
+	      && target_sec
 	      && discarded_section (target_sec))
 	    {
 	      /* It would be natural to call _bfd_elf_check_kept_section
@@ -9583,7 +9583,7 @@ relax_section (bfd *abfd, asection *sec, struct bfd_link_info *link_info)
 		 so just compare the section names to find the right group
 		 member.  */
 	      asection *kept = target_sec->kept_section;
-	      if (kept != NULL)
+	      if (kept)
 		{
 		  if ((kept->flags & SEC_GROUP) != 0)
 		    {
@@ -9591,7 +9591,7 @@ relax_section (bfd *abfd, asection *sec, struct bfd_link_info *link_info)
 		      asection *s = first;
 
 		      kept = NULL;
-		      while (s != NULL)
+		      while (s)
 			{
 			  if (strcmp (s->name, target_sec->name) == 0)
 			    {
@@ -9604,7 +9604,7 @@ relax_section (bfd *abfd, asection *sec, struct bfd_link_info *link_info)
 			}
 		    }
 		}
-	      if (kept != NULL
+	      if (kept
 		  && ((target_sec->rawsize != 0
 		       ? target_sec->rawsize : target_sec->size)
 		      == (kept->rawsize != 0 ? kept->rawsize : kept->size)))
@@ -9936,7 +9936,7 @@ translate_section_fixes (asection *sec)
   if (!relax_info)
     return TRUE;
 
-  for (r = relax_info->fix_list; r != NULL; r = r->next)
+  for (r = relax_info->fix_list; r; r = r->next)
     if (!translate_reloc_bfd_fix (r))
       return FALSE;
 
@@ -9999,7 +9999,7 @@ translate_reloc_bfd_fix (reloc_bfd_fix *fix)
 
       /* The fact that there is still a relocation to this literal indicates
 	 that the literal is being coalesced, not simply removed.  */
-      BFD_ASSERT (removed->to.abfd != NULL);
+      BFD_ASSERT (removed->to.abfd);
 
       /* This was moved to some other address (possibly another section).  */
       new_sec = r_reloc_get_section (&removed->to);
@@ -10069,7 +10069,7 @@ translate_reloc (const r_reloc *orig_rel, r_reloc *new_rel, asection *sec)
 
       /* The fact that there is still a relocation to this literal indicates
 	 that the literal is being coalesced, not simply removed.  */
-      BFD_ASSERT (removed->to.abfd != NULL);
+      BFD_ASSERT (removed->to.abfd);
 
       /* This was moved to some other address
 	 (possibly in another section).  */
@@ -10179,7 +10179,7 @@ shrink_dynamic_reloc_sections (struct bfd_link_info *info,
 	srel = htab->srelgot;
 
       /* Reduce size of the .rela.* section by one reloc.  */
-      BFD_ASSERT (srel != NULL);
+      BFD_ASSERT (srel);
       BFD_ASSERT (srel->size >= sizeof (Elf32_External_Rela));
       srel->size -= sizeof (Elf32_External_Rela);
 
@@ -10199,14 +10199,14 @@ shrink_dynamic_reloc_sections (struct bfd_link_info *info,
 	  chunk = reloc_index / PLT_ENTRIES_PER_CHUNK;
 	  splt = elf_xtensa_get_plt_section (info, chunk);
 	  sgotplt = elf_xtensa_get_gotplt_section (info, chunk);
-	  BFD_ASSERT (splt != NULL && sgotplt != NULL);
+	  BFD_ASSERT (splt && sgotplt);
 
 	  /* Check if an entire PLT chunk has just been eliminated.  */
 	  if (reloc_index % PLT_ENTRIES_PER_CHUNK == 0)
 	    {
 	      /* The two magic GOT entries for that chunk can go away.  */
 	      srelgot = htab->srelgot;
-	      BFD_ASSERT (srelgot != NULL);
+	      BFD_ASSERT (srelgot);
 	      srelgot->reloc_count -= 2;
 	      srelgot->size -= 2 * sizeof (Elf32_External_Rela);
 	      sgotplt->size -= 8;
@@ -11149,8 +11149,8 @@ match_section_group (bfd *abfd ATTRIBUTE_UNUSED, asection *sec, void *inf)
   const char *group_name = elf_group_name (sec);
 
   return (group_name == gname
-	  || (group_name != NULL
-	      && gname != NULL
+	  || (group_name
+	      && gname
 	      && strcmp (group_name, gname) == 0));
 }
 

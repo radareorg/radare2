@@ -44,7 +44,7 @@ static RList* entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = NULL;
 
-	if (bf && bf->buf != NULL) {
+	if (bf && bf->buf) {
 		if (!ret) {
 			return NULL;
 		}

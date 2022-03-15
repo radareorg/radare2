@@ -303,7 +303,7 @@ static bool update_blobs(const RList *ignore, RList *blobs, const RList *nh) {
 			continue;
 		}
 		blob->fhash = r_str_new (nh->tail->data);
-		return blob->fhash != NULL;
+		return blob->fhash;
 	}
 	blob = R_NEW (RvcBlob);
 	if (!blob) {

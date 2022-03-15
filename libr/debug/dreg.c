@@ -313,7 +313,7 @@ R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 		r_reg_set_value (dbg->reg, ri, num);
 		r_debug_reg_sync (dbg, R_REG_TYPE_ALL, true);
 	}
-	return (ri != NULL);
+	return (ri);
 }
 
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {

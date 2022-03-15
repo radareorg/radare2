@@ -74,7 +74,7 @@ static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
 		return false;
 	}
 
-	for (i = 0; ops[i].op != NULL; i++) {
+	for (i = 0; ops[i].op; i++) {
 		if (ops[i].narg) {
 			if (argc - 1 != ops[i].narg) {
 				continue;
@@ -84,7 +84,7 @@ static int replace(int argc, const char *argv[], char *newstr, ADDR_TYPE type) {
 			for (j = k = 0; ops[i].str[j] != '\0'; j++, k++) {
 				if (IS_DIGIT(ops[i].str[j])) {
 					const char *w = argv[ops[i].str[j] - '0'];
-					if (w != NULL) {
+					if (w) {
 						strcpy(newstr + k, w);
 						k += strlen(w) - 1;
 					}

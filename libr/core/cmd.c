@@ -1222,7 +1222,7 @@ R_API bool r_core_run_script(RCore *core, const char *file) {
 			sdb_query_lines (core->anal->sdb_types, out);
 			free (out);
 		}
-		ret = out != NULL;
+		ret = out;
 	} else {
 		p = r_lang_get_by_extension (core->lang, file);
 		if (p) {
@@ -3566,7 +3566,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 						op0 = *q;
 						*q = 0;
 					}
-					haveQuote = q != NULL;
+					haveQuote = q;
 					oseek = core->offset;
 					r_core_seek (core, r_num_math (core->num, p + 2), true);
 					if (q) {
@@ -3998,7 +3998,7 @@ escape_backtick:
 		ptr = NULL;
 	}
 
-	cmd_tmpseek = core->tmpseek = ptr != NULL;
+	cmd_tmpseek = core->tmpseek = ptr;
 	int rc = 0;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
@@ -5215,7 +5215,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					break;
 				}
 				r_cons_flush ();
-			} while (str != NULL);
+			} while (str);
 			free (out);
 		}
 		}

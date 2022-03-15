@@ -178,7 +178,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		mal->size = (ut32)rlen;
 		mal->buf = malloc (mal->size+1);
-		if (mal->buf != NULL) {
+		if (mal->buf) {
 			memcpy (mal->buf, out, rlen);
 			free (out);
 			return r_io_desc_new (io, &r_io_plugin_bfdbg,

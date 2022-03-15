@@ -25,9 +25,9 @@ static HANDLE w32_t2h(pid_t tid) {
 #endif
 
 inline static int w32_h2t(HANDLE h) {
-	if (w32_GetThreadId != NULL) // >= Windows Vista
+	if (w32_GetThreadId) // >= Windows Vista
 		return w32_GetThreadId (h);
-	if (w32_GetProcessId != NULL) // >= Windows XP1
+	if (w32_GetProcessId) // >= Windows XP1
 		return w32_GetProcessId (h);
 	return (int)(size_t)h; // XXX broken
 }
@@ -362,7 +362,7 @@ int w32_dbg_wait(RDebug *dbg, int pid) {
 		case UNLOAD_DLL_DEBUG_EVENT:
 			//eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
 			lstLibPtr = (PLIB_ITEM)r_debug_findlib (de.u.UnloadDll.lpBaseOfDll);
-			if (lstLibPtr != NULL) {
+			if (lstLibPtr) {
 				lstLibPtr->hFile = (HANDLE)-1;
 			} else {
 				r_debug_lstLibAdd (pid, de.u.UnloadDll.lpBaseOfDll, (HANDLE)-1, "not cached");

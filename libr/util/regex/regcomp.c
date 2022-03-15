@@ -802,7 +802,7 @@ static void p_bracket(struct parse *p) {
 				}
 			}
 		}
-		if (cs->multis != NULL) {
+		if (cs->multis) {
 			mccase (p, cs);
 		}
 	}
@@ -819,7 +819,7 @@ static void p_bracket(struct parse *p) {
 		if (p->g->cflags & R_REGEX_NEWLINE) {
 			CHsub (cs, '\n');
 		}
-		if (cs->multis != NULL) {
+		if (cs->multis) {
 			mcinvert (p, cs);
 		}
 	}
@@ -914,7 +914,7 @@ static void p_b_cclass(struct parse *p, cset *cs) {
 		NEXT ();
 	}
 	len = p->next - sp;
-	for (cp = cclasses; cp->name != NULL; cp++) {
+	for (cp = cclasses; cp->name; cp++) {
 		if (strncmp (cp->name, sp, len) == 0 && cp->name[len] == '\0') {
 			break;
 		}
@@ -984,7 +984,7 @@ p_b_coll_elem(struct parse *p,
 		return(0);
 	}
 	len = p->next - sp;
-	for (cp = cnames; cp->name != NULL; cp++) {
+	for (cp = cnames; cp->name; cp++) {
 		if (strncmp (cp->name, sp, len) == 0 && cp->name[len] == '\0') {
 			return (cp->code); /* known name */
 		}

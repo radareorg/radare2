@@ -100,7 +100,7 @@ static void __var_retype(RAnal *anal, RAnalVar *var, const char *vname, const ch
 		expand = "unsigned long long";
 	}
 	const char *tmp = strstr (expand, "int");
-	bool is_default = tmp != NULL;
+	bool is_default = tmp;
 	if (!is_default && strncmp (var->type, "void", 4)) {
 		// return since type is already propagated
 		// except for "void *", since "void *" => "char *" is possible
@@ -764,7 +764,7 @@ repeat:
 				if (prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
 					char reg[REGNAME_SIZE] = {0};
 					get_src_regname (core, addr, reg, sizeof (reg));
-					bool match = strstr (prev_dest, reg) != NULL;
+					bool match = strstr (prev_dest, reg);
 					if (str_flag && match) {
 						__var_retype (anal, var, NULL, "const char *", false, false);
 					}

@@ -110,7 +110,7 @@ R_API bool r_io_use_fd(RIO* io, int fd) {
 	r_return_val_if_fail (io, false);
 	if (!io->desc) {
 		io->desc = r_io_desc_get (io, fd);
-		return io->desc != NULL;
+		return io->desc;
 	}
 	if (io->desc->fd != fd) {
 		RIODesc* desc;

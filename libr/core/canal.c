@@ -4254,7 +4254,7 @@ R_API int r_core_anal_all(RCore *core) {
 
 	r_cons_break_push (NULL, NULL);
 	/* Symbols (Imports are already analyzed by rabin2 on init) */
-	if ((list = r_bin_get_symbols (core->bin)) != NULL) {
+	if ((list = r_bin_get_symbols (core->bin))) {
 		r_list_foreach (list, iter, symbol) {
 			if (r_cons_is_breaked ()) {
 				break;

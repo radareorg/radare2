@@ -172,11 +172,11 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data) {
 	RSearchKeyword *ks = NULL;
 	ut8 *kw, *bm;
-	if (kwstr != NULL) {
+	if (kwstr) {
 		int len = strlen (kwstr);
 		kw = malloc (len + 4);
 		bm = malloc (len + 4);
-		if (kw != NULL && bm != NULL) {
+		if (kw && bm) {
 			len = r_hex_str2binmask (kwstr, (ut8*)kw, (ut8*)bm);
 			if (len < 0) {
 				len = -len - 1;

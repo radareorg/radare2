@@ -1271,7 +1271,7 @@ static int cmd_info(void *data, const char *input) {
 						break;
 					}
 					if (input[2] && input[2] != '*' && input[2] != 'j' && !strstr (input, "qq")) {
-						bool radare2 = strstr (input, "**") != NULL;
+						bool radare2 = strstr (input, "**");
 						int idx = -1;
 						const char * cls_name = NULL;
 						if (radare2) {

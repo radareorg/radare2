@@ -2178,7 +2178,7 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 		if (b->jump > b->addr) {
 			RAnalBlock *jumpbb = r_anal_get_block_at (b->anal, b->jump);
 			if (jumpbb && r_list_contains (jumpbb->fcns, fcn)) {
-				if (emu && core->anal->last_disasm_reg != NULL && !jumpbb->parent_reg_arena) {
+				if (emu && core->anal->last_disasm_reg && !jumpbb->parent_reg_arena) {
 					jumpbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 				}
 				if (jumpbb->parent_stackptr == INT_MAX) {
@@ -2191,7 +2191,7 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 		if (b->fail > b->addr) {
 			RAnalBlock *failbb = r_anal_get_block_at (b->anal, b->fail);
 			if (failbb && r_list_contains (failbb->fcns, fcn)) {
-				if (emu && core->anal->last_disasm_reg != NULL && !failbb->parent_reg_arena) {
+				if (emu && core->anal->last_disasm_reg && !failbb->parent_reg_arena) {
 					failbb->parent_reg_arena = r_reg_arena_dup (core->anal->reg, core->anal->last_disasm_reg);
 				}
 				if (failbb->parent_stackptr == INT_MAX) {
@@ -2485,7 +2485,7 @@ static bool get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	refs = r_anal_function_get_refs (fcn);
 	r_list_foreach (refs, iter, ref) {
 		title = get_title (ref->addr);
-		if (r_agraph_get_node (g, title) != NULL) {
+		if (r_agraph_get_node (g, title)) {
 			continue;
 		}
 		free (title);
@@ -4328,7 +4328,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	grd->fs = is_interactive == 1;
 	grd->core = core;
 	grd->follow_offset = _fcn == NULL;
-	grd->fcn = fcn != NULL? &fcn: NULL;
+	grd->fcn = fcn? &fcn: NULL;
 	ret = agraph_refresh (grd);
 	if (!ret || is_interactive != 1) {
 		r_cons_newline ();

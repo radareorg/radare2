@@ -64,7 +64,7 @@ disassemble_init_s390 (struct disassemble_info *info)
   current_arch_mask = 1 << S390_OPCODE_ZARCH;
   option_use_insn_len_bits_p = 0;
 
-  for (p = info->disassembler_options; p != NULL; )
+  for (p = info->disassembler_options; p; )
     {
       if (CONST_STRNEQ (p, "esa"))
 	current_arch_mask = 1 << S390_OPCODE_ESA;
@@ -78,7 +78,7 @@ disassemble_init_s390 (struct disassemble_info *info)
       }
 
       p = strchr (p, ',');
-      if (p != NULL)
+      if (p)
 	p++;
     }
 }
@@ -328,7 +328,7 @@ print_insn_s390 (bfd_vma memaddr, struct disassemble_info *info)
 	    opcode = op;
 	}
 
-      if (opcode != NULL)
+      if (opcode)
 	{
 	  /* The instruction is valid.  Print it and return its size.  */
 	  s390_print_insn_with_opcode (memaddr, info, buffer, opcode);
@@ -340,7 +340,7 @@ print_insn_s390 (bfd_vma memaddr, struct disassemble_info *info)
      according to their length bits.  */
   if (status == 0
       && option_use_insn_len_bits_p
-      && info->section != NULL
+      && info->section
       && (info->section->flags & SEC_CODE))
     bytes_to_dump = opsize;
   else

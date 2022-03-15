@@ -947,7 +947,7 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 		free (res);
 	}
 	r_list_free (list);
-	return res != NULL;
+	return res;
 }
 
 static bool hudstuff_append(RFlagItem *fi, void *user) {
@@ -989,7 +989,7 @@ R_API bool r_core_visual_hudstuff(RCore *core) {
 		free (res);
 	}
 	r_list_free (list);
-	return res != NULL;
+	return res;
 }
 
 static bool r_core_visual_config_hud(RCore *core) {

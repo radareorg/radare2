@@ -1,9 +1,11 @@
-/* radare - LGPL - Copyright 2007-2021 - pancake & Skia */
+/* radare - LGPL - Copyright 2007-2022 - pancake & Skia */
 
-#include "r_cons.h"
-#include "r_util.h"
-#include "r_util/r_print.h"
-#include "r_reg.h"
+#include <r_cons.h>
+#include <r_util.h>
+#include <r_util/r_print.h>
+#include <r_reg.h>
+
+// W T F :D
 #define NOPTR 0
 #define PTRSEEK 1
 #define PTRBACK 2
@@ -2450,7 +2452,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					p->cb_printf ("*");
 				}
 				p->cb_printf ("\",\"offset\":%"PFMT64d",\"value\":",
-					isptr? (seek + nexti - (p->bits / 8)) : seek + i);
+					(isptr)? (seek + nexti - (p->bits / 8)) : seek + i);
 			}
 
 			/* c struct */
@@ -2539,14 +2541,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					if (MUSTSET) {
 						eprintf ("Set val not implemented yet for disassembler!\n");
 					}
-					if (isptr) {
-						if (p->bits == 64) {
-							i += r_print_format_disasm (p, addr64, size);
-						} else {
-							i += r_print_format_disasm (p, addr, size);
-						}
-					} else {
-						i += r_print_format_disasm (p, seeki, size);
+					{
+						ut64 at = isptr? ((p->bits == 64)? addr64: addr): seeki;
+						i += r_print_format_disasm (p, at, size);
 					}
 					break;
 				case 'o':

@@ -977,7 +977,7 @@ void collect_list(ArmOpcode *ao) {
 	int conc = 0;
 	int start = 0, end = 0;
 	int arrsz;
-	for (arrsz = 1; input[arrsz] != NULL; arrsz++) {
+	for (arrsz = 1; input[arrsz]; arrsz++) {
 		;
 	}
 

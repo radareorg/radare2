@@ -525,7 +525,7 @@ R_API int r_line_hist_load(const char *file) {
 		free (path);
 		return false;
 	}
-	while (fgets (buf, sizeof (buf), fd) != NULL) {
+	while (fgets (buf, sizeof (buf), fd)) {
 		r_str_trim_tail (buf);
 		r_line_hist_add (buf);
 	}
@@ -778,7 +778,7 @@ R_API void r_line_autocomplete(void) {
 	if (argc == 1) {
 		const char *end_word = r_sub_str_rchr (I.buffer.data,
 			I.buffer.index, strlen (I.buffer.data), ' ');
-		const char *t = end_word != NULL?
+		const char *t = end_word?
 				end_word: I.buffer.data + I.buffer.index;
 		int largv0 = strlen (r_str_get (argv[0]));
 		size_t len_t = strlen (t);

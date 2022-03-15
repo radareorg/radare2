@@ -610,7 +610,7 @@ static size_t get_namespace_and_name(const char *buf, STypeCodeStr *type_code_st
 		goto get_namespace_and_name_err;
 	}
 
-	while (curr_pos != NULL) {
+	while (curr_pos) {
 		len = curr_pos - prev_pos;
 		tmp = prev_pos;
 
