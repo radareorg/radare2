@@ -225,7 +225,7 @@ r_asm_static = static_library('r_asm_static', r_asm_sources,
     r_flag_static_dep,
     r_socket_static_dep,
     capstone_dep,
-    java_dep
+    java_static_dep
   ],
   install: true,
   implicit_include_directories: false,

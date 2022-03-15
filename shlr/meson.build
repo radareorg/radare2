@@ -260,6 +260,16 @@ java_dep = declare_dependency(
   include_directories: java_inc
 )
 
+libr2java_static = static_library('r2java_static', java_files,
+  dependencies: [r_util_static_dep],
+  include_directories: java_inc,
+  implicit_include_directories: false
+)
+
+java_static_dep = declare_dependency(
+  link_with: libr2java_static,
+  include_directories: java_inc
+)
 
 # handle qnx dependency
 qnx_files = [
@@ -358,6 +368,17 @@ libr2grub = static_library('r2grub', grub_files,
 
 grub_dep = declare_dependency(
   link_with: libr2grub,
+  include_directories: grub_inc
+)
+
+libr2grub_static = static_library('r2grub_static', grub_files,
+  dependencies: [r_util_static_dep],
+  include_directories: grub_inc,
+  implicit_include_directories: false
+)
+
+grub_static_dep = declare_dependency(
+  link_with: libr2grub_static,
   include_directories: grub_inc
 )
 

@@ -180,7 +180,7 @@ r_bin_static = static_library('r_bin_static', r_bin_sources,
     r_magic_static_dep,
     r_socket_static_dep,
     r_syscall_static_dep,
-    java_dep,
+    java_static_dep,
     lz4_dep,
     yxml_dep
   ],

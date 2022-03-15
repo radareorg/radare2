@@ -67,9 +67,9 @@ r_debug_static_deps = [
   r_egg_static_dep,
   r_socket_static_dep,
   winkd_static_dep,
-  qnx_dep,
-  gdb_dep,
-  bochs_dep,
+  qnx_static_dep,
+  gdb_static_dep,
+  bochs_static_dep,
 ]
 
 if host_machine.system() == 'linux' or host_machine.system() == 'android'
