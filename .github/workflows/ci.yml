@@ -264,6 +264,51 @@ jobs:
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
         make -C test fuzz-tests
 
+  w64-static:
+    runs-on: windows-2019
+    steps:
+    - name: Win configure Pagefile
+      uses: al-cheb/configure-pagefile-action@v1.2
+      with:
+          minimum-size: 16GB
+          maximum-size: 16GB
+          disk-root: "C:"
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+#      with:
+#        python-version: '3.7'
+    - name: Preparing nmake
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+        pip install ninja r2pipe wget r2env
+    - name: Build with meson + ninja
+      shell: cmd
+      run: |
+        REM preconfigure
+        call configure static
+        call make
+    - uses: actions/upload-artifact@v2
+      with:
+        name: w32-mingw
+        path: radare2*.zip
+    - name: Test executable
+      continue-on-error: true
+      shell: cmd
+      run: |
+        cd prefix\bin
+        r2blob -v
+    - uses: actions/upload-artifact@v2
+      continue-on-error: true
+      with:
+        name: w64-r2blob.static
+        path: prefix\bin\r2blob.static.exe
+
   w64-make:
     runs-on: windows-2019
     steps:
