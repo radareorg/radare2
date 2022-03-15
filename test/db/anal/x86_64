@@ -2798,7 +2798,11 @@ cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
+num-instrs: 1
 edges: 2
+minbound: 0x00000000
+maxbound: 0x00000007
+is-lineal: true
 end-bbs: 0
 call-refs:
 data-refs:
@@ -2857,7 +2861,11 @@ cyclomatic-complexity: 1
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
+num-instrs: 5
 edges: 1
+minbound: 0x00000000
+maxbound: 0x0000000d
+is-lineal: false
 end-bbs: 1
 call-refs: 0x00000004 J
 data-refs: 0x0000002c
@@ -2932,7 +2940,11 @@ cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
 num-bbs: 2
+num-instrs: 5
 edges: 2
+minbound: 0x00000000
+maxbound: 0x0000000e
+is-lineal: false
 end-bbs: 0
 call-refs: 0x00000004 J 0x00000004 J
 data-refs: 0x0000002c
@@ -3015,7 +3027,11 @@ cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
 num-bbs: 3
+num-instrs: 5
 edges: 3
+minbound: 0x00000000
+maxbound: 0x0000000e
+is-lineal: false
 end-bbs: 0
 call-refs: 0x00000004 J 0x00000005 J
 data-refs: 0x0000002c
@@ -3107,7 +3123,11 @@ cyclomatic-complexity: 0
 bits: 64
 type: fcn [NEW]
 num-bbs: 4
+num-instrs: 7
 edges: 4
+minbound: 0x00000000
+maxbound: 0x00000013
+is-lineal: false
 end-bbs: 0
 call-refs: 0x00000009 J 0x00000003 J
 data-refs: 0x0000002c

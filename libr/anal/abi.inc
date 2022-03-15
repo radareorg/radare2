@@ -2,9 +2,9 @@
 #define INCLUDE_ANAL_ABI
 
 #if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
-#define R_ABI
+#define R_ABI R_API
 #else
-#define R_ABI static
+#define R_ABI R_UNUSED static
 #endif
 
 R_ABI int r_anal_function_instrcount(RAnalFunction *fcn) {
