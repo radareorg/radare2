@@ -4114,6 +4114,7 @@ static bool __handle_mouse_on_panel(RCore *core, RPanel *panel, int x, int y, in
 	__set_curnode (core, idx);
 	__set_refresh_all (core, true, true);
 	if (idx == -1 || R_STR_ISEMPTY (word)) {
+		free (word);
 		return false;
 	}
 	if (R_STR_ISNOTEMPTY (word)) {
