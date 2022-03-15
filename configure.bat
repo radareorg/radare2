@@ -7,6 +7,10 @@ if "%*" == "asan" (
   set MESON_FLAGS=%MESON_FLAGS% -Dwasan=true
 )
 
+if "%*" == "static" (
+  set MESON_FLAGS=%MESON_FLAGS% -Dstatic_runtime=true -Dblob=true
+)
+
 set PATH=%CD%\prefix\bin;%PATH%
 set WORKS=0
 if EXIST vs (
