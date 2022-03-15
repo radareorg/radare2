@@ -1737,6 +1737,10 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 		relocs = r_bin_get_relocs (r->bin);
 	}
 	if (!relocs) {
+		if (pj) {
+			pj_a (pj);
+			pj_end (pj);
+		}
 		return false;
 	}
 	if (bin_cache) {
