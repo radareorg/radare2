@@ -1044,6 +1044,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 			pe64_bin->vaddr = module->base_of_image;
 			pe64_bin->paddr = paddr;
 			pe64_bin->bin = Pe64_r_bin_pe_new_buf (buf, 0);
+			buf = NULL;
 
 			r_list_append (obj->pe64_bins, pe64_bin);
 		}
