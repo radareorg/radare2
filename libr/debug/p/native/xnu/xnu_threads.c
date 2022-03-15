@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_userconf.h>
 #if DEBUGGER
@@ -60,7 +60,7 @@ static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 	rc = KERN_FAILURE;
 #endif
 	if (rc != KERN_SUCCESS) {
-		perror (__FUNCTION__);
+		r_sys_perror (__FUNCTION__);
 		thread->count = 0;
 		return false;
 	}
@@ -120,7 +120,7 @@ static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	thread->count = 0;
 #endif
 	if (rc != KERN_SUCCESS) {
-		perror (__FUNCTION__);
+		r_sys_perror (__FUNCTION__);
 		thread->count = 0;
 		return false;
 	}
@@ -174,7 +174,7 @@ static bool xnu_thread_set_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	rc = thread_set_state (thread->port, thread->flavor,
 			       (thread_state_t)regs, thread->count);
 	if (rc != KERN_SUCCESS) {
-		perror (__FUNCTION__);
+		r_sys_perror (__FUNCTION__);
 		thread->count = 0;
 		return false;
 	}
@@ -218,7 +218,7 @@ static bool xnu_thread_get_gpr(RDebug *dbg, xnu_thread_t *thread) {
 	rc = thread_get_state (thread->port, thread->flavor,
 			       (thread_state_t)regs, &thread->count);
 	if (rc != KERN_SUCCESS) {
-		perror (__FUNCTION__);
+		r_sys_perror (__FUNCTION__);
 		thread->count = 0;
 		return false;
 	}

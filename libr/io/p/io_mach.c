@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_userconf.h>
 
@@ -309,7 +309,7 @@ static bool tsk_setperm(RIO *io, task_t task, vm_address_t addr, int len, int pe
 	kern_return_t kr;
 	kr = vm_protect (task, addr, len, 0, perm);
 	if (kr != KERN_SUCCESS) {
-		perror ("tsk_setperm");
+		r_sys_perror ("tsk_setperm");
 		return false;
 	}
 	return true;
@@ -411,7 +411,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			eprintf ("Operation not permitted\n");
 			break;
 		case EINVAL:
-			perror ("ptrace: Cannot attach");
+			r_sys_perror ("ptrace: Cannot attach");
 			eprintf ("Possibly unsigned r2. Please see doc/macos.md\n");
 			eprintf ("ERRNO: %d (EINVAL)\n", errno);
 			break;
@@ -478,14 +478,15 @@ static bool __close(RIODesc *fd) {
 	task_t task = pid_to_task (fd, iodd->pid);
 	kern_return_t kr = mach_port_deallocate (mach_task_self (), task);
 	if (kr != KERN_SUCCESS) {
-		perror ("__close io_mach");
+		r_sys_perror ("__close io_mach");
 	}
 	R_FREE (fd->data);
 	return kr == KERN_SUCCESS;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	if (!io || !fd || !cmd || !fd->data) {
+	r_return_val_if_fail (io && fd, NULL)
+	if (!cmd || !fd->data) {
 		return NULL;
 	}
 	RIOMachData *iodd = fd->data;

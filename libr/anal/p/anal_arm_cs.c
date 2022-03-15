@@ -2128,7 +2128,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	{
 		int disp = (int)MEMDISP64 (2);
 		char sign = disp>=0?'+':'-';
-		ut64 abs = disp>=0? MEMDISP64 (2): -MEMDISP64 (2);
+		ut64 abs = disp>=0? MEMDISP64 (2): (ut64)(-MEMDISP64 (2));
 		int size = REGSIZE64 (0);
 		// Pre-index case
 		// x2,x8,32,+,=[8],x3,x8,32,+,8,+,=[8]
@@ -2737,7 +2737,7 @@ r6,r5,r4,3,sp,[*],12,sp,+=
 		}
 		if (OPCOUNT() == 2) {
 			if (ISMEM(1) && !HASMEMINDEX(1)) {
-				int disp = MEMDISP(1);
+				int disp = MEMDISP (1);
 				char sign = disp>=0?'+':'-';
 				disp = disp>=0?disp:-disp;
 				r_strbuf_appendf (&op->esil, "%s,0x%x,%s,%c,0xffffffff,&,=[%d]",
@@ -4034,7 +4034,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_SET;
 			op->stackptr = 0;
-			op->ptr = -MEMDISP(1);
+			op->ptr = (ut64)-MEMDISP (1);
 		}
 		break;
 	case ARM_INS_SXTB:
@@ -4082,15 +4082,15 @@ jmp $$ + 4 + ( [delta] * 2 )
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
-			op->ptr = -MEMDISP(1);
+			op->ptr = -MEMDISP (1);
 		} else if (REGBASE(1) == ARM_REG_PC) {
-			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
+			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1);
 			op->refptr = 4;
 			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
-				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
+				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP (1)) & UT64_MAX;
 				op->ireg = r_str_getf (cs_reg_name (handle, INSOP (1).mem.index));
 				break;
 			}

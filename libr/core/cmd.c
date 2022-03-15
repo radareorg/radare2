@@ -3043,7 +3043,7 @@ static void r_w32_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	}
 	fd_out = _open_osfhandle ((intptr_t)pipe[1], _O_WRONLY|_O_TEXT);
 	if (fd_out == -1) {
-		perror ("_open_osfhandle");
+		r_sys_perror ("_open_osfhandle");
 		goto err_r_w32_cmd_pipe;
 	}
 	cons_out = dup (1);

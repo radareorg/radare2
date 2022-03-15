@@ -1167,7 +1167,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 
 	str = strdup (name);
 	if (!str) {
-		perror ("strdup");
+		r_sys_perror ("strdup");
 		return false;
 	}
 	ptr = strchr (str, ')');

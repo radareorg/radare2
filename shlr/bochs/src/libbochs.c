@@ -48,7 +48,6 @@ bool bochs_cmd_stop(libbochs_t * b) {
 #if __WINDOWS__
 	HMODULE hKernel;
 	unsigned int ExitCode;
-	DWORD apiOffset = 0;
 	char buffer[] = {
 		0x68, 0x00, 0x00, 0x00, 0x00,	//push    0
 		0x68, 0x00, 0x00, 0x00, 0x00,	//push    0
@@ -60,7 +59,7 @@ bool bochs_cmd_stop(libbochs_t * b) {
 		0xeb, 0xfe			//jmp $
 	};
 	hKernel = GetModuleHandle (TEXT ("kernel32"));
-	apiOffset = (DWORD)GetProcAddress (hKernel, "GenerateConsoleCtrlEvent");
+	FARPROC apiOffset = (FARPROC)GetProcAddress (hKernel, "GenerateConsoleCtrlEvent");
 	*((DWORD *)&buffer[20]) = apiOffset;
 	ExitCode = RunRemoteThread_(b, (const ut8*)&buffer, 0x1Eu, 0, &ExitCode) && ExitCode;
 	return ExitCode;

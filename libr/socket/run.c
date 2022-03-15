@@ -698,7 +698,7 @@ static int fd_forward(int in_fd, int out_fd, char **buff) {
 	int size = 0;
 
 	if (ioctl (in_fd, FIONREAD, &size) == -1) {
-		perror ("ioctl");
+		r_sys_perror ("ioctl");
 		return -1;
 	}
 	if (!size) { // child process exited or socket is closed
@@ -712,11 +712,11 @@ static int fd_forward(int in_fd, int out_fd, char **buff) {
 	}
 	*buff = new_buff;
 	if (read (in_fd, *buff, size) != size) {
-		perror ("read");
+		r_sys_perror ("read");
 		return -1;
 	}
 	if (write (out_fd, *buff, size) != size) {
-		perror ("write");
+		r_sys_perror ("write");
 		return -1;
 	}
 
@@ -750,7 +750,7 @@ static int redirect_socket_to_pty(RSocket *sock) {
 	int fdm = -1, fds = -1;
 
 	if (dyn_openpty && dyn_openpty (&fdm, &fds, NULL, NULL, NULL) == -1) {
-		perror ("opening pty");
+		r_sys_perror ("opening pty");
 		return -1;
 	}
 
@@ -782,7 +782,7 @@ static int redirect_socket_to_pty(RSocket *sock) {
 			FD_SET (sockfd, &readfds);
 
 			if (select (max_fd + 1, &readfds, NULL, NULL, NULL) == -1) {
-				perror ("select error");
+				r_sys_perror ("select error");
 				break;
 			}
 
@@ -1171,7 +1171,7 @@ R_API int r_run_start(RRunProfile *p) {
 			break;
 		default:
 			eprintf ("posix_spawnp: unknown error %d\n", ret);
-			perror ("posix_spawnp");
+			r_sys_perror ("posix_spawnp");
 			break;
 		}
 		exit (ret);
@@ -1188,7 +1188,7 @@ R_API int r_run_start(RRunProfile *p) {
 #else
 			pid_t child = r_sys_fork ();
 			if (child == -1) {
-				perror ("fork");
+				r_sys_perror ("fork");
 				exit (1);
 			}
 			if (child) {
@@ -1306,7 +1306,7 @@ R_API int r_run_start(RRunProfile *p) {
 #else
 			pid_t child = r_sys_fork ();
 			if (child == -1) {
-				perror ("fork");
+				r_sys_perror ("fork");
 				exit (1);
 			}
 			if (child) {

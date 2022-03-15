@@ -113,7 +113,7 @@ R_API bool r_socket_is_connected(RSocket *s) {
 	socklen_t len = sizeof (error);
 	int ret = getsockopt (s->fd, SOL_SOCKET, SO_ERROR, &error, &len);
 	if (ret != 0) {
-		perror ("getsockopt");
+		r_sys_perror ("getsockopt");
 		return false;
 	}
 	return (error == 0);
@@ -358,7 +358,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 
 			s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s->fd == -1) {
-				perror ("socket");
+				r_sys_perror ("socket");
 				continue;
 			}
 
@@ -366,7 +366,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 			case R_SOCKET_PROTO_TCP:
 				ret = setsockopt (s->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof (flag));
 				if (ret < 0) {
-					perror ("setsockopt");
+					r_sys_perror ("setsockopt");
 					close (s->fd);
 					s->fd = -1;
 					continue;
@@ -416,7 +416,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 						goto success;
 					}
 				} else {
-					perror ("connect");
+					r_sys_perror ("connect");
 				}
 			}
 			r_socket_close (s);
@@ -703,7 +703,7 @@ R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout) {
 
 	int r = select (s->fd + 1, &read_fds, NULL, &except_fds, &t);
 	if(r < 0) {
-		perror ("select");
+		r_sys_perror ("select");
 	} else if (r > 0 && FD_ISSET (s->fd, &read_fds)) {
 		return r_socket_accept (s);
 	}
@@ -780,7 +780,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 				a[0], a[1], a[2], a[3], ntohs (sain->sin_port));
 		}
 	} else {
-		eprintf ("getperrname: failed\n"); //r_sys_perror ("getpeername");
+		r_sys_perror ("getpeername");
 	}
 	return str;
 #else

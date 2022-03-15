@@ -295,7 +295,7 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 		return false;
 	}
 	if (!(bin->segs = realloc (bin->segs, bin->nsegs * sizeof(struct MACH0_(segment_command))))) {
-		perror ("realloc (seg)");
+		r_sys_perror ("realloc (seg)");
 		return false;
 	}
 	j = bin->nsegs - 1;
@@ -384,7 +384,7 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 		}
 
 		if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
-			perror ("realloc (sects)");
+			r_sys_perror ("realloc (sects)");
 			bin->nsects = sect;
 			return false;
 		}
@@ -570,7 +570,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 	bin->ntoc = bin->dysymtab.ntoc;
 	if (bin->ntoc > 0) {
 		if (!(bin->toc = calloc (bin->ntoc, sizeof (struct dylib_table_of_contents)))) {
-			perror ("calloc (toc)");
+			r_sys_perror ("calloc (toc)");
 			return false;
 		}
 		if (!UT32_MUL (&size_tab, bin->ntoc, sizeof (struct dylib_table_of_contents))){
@@ -602,7 +602,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 	ut64 max_nmodtab = (bin->size - bin->dysymtab.modtaboff) / sizeof (struct MACH0_(dylib_module));
 	if (bin->nmodtab > 0 && bin->nmodtab <= max_nmodtab) {
 		if (!(bin->modtab = calloc (bin->nmodtab, sizeof (struct MACH0_(dylib_module))))) {
-			perror ("calloc (modtab)");
+			r_sys_perror ("calloc (modtab)");
 			return false;
 		}
 		if (!UT32_MUL (&size_tab, bin->nmodtab, sizeof (struct MACH0_(dylib_module)))){
@@ -651,7 +651,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) *bin, ut64 off) {
 	bin->nindirectsyms = bin->dysymtab.nindirectsyms;
 	if (bin->nindirectsyms > 0) {
 		if (!(bin->indirectsyms = calloc (bin->nindirectsyms, sizeof (ut32)))) {
-			perror ("calloc (indirectsyms)");
+			r_sys_perror ("calloc (indirectsyms)");
 			return false;
 		}
 		if (!UT32_MUL (&size_tab, bin->nindirectsyms, sizeof (ut32))){
@@ -1213,7 +1213,7 @@ static int parse_dylib(struct MACH0_(obj_t) *bin, ut64 off) {
 
 	void *relibs = realloc (bin->libs, bin->nlibs * R_BIN_MACH0_STRING_LENGTH);
 	if (!relibs) {
-		perror ("realloc (libs)");
+		r_sys_perror ("realloc (libs)");
 		return false;
 	}
 	bin->libs = relibs;
