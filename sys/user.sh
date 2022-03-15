@@ -1,6 +1,7 @@
 #!/bin/sh
 
 MAKE=make
+CFLAGS="${CFLAGS} -fPIC"
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
