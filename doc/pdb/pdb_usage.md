@@ -49,7 +49,7 @@ f pdb.__imp__printf = 0x192c8 # 0 .idata
 f pdb.__imp__system = 0x192c0 # 0 .idata
 f pdb._test_func__YAHHH_Z = 0x113e0 # 2 .text
 ...
-Check out this post for more information about pf: http://radare.today/types/
+Check out this post for more information about pf: https://radare.today/types/
 ````
 
 - To download PDB file for some binary (.exe, .dll):

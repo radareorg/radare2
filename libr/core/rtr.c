@@ -77,7 +77,7 @@ static void http_logf(RCore *core, const char *fmt, ...) {
 static char *rtrcmd(TextLog T, const char *str) {
 	char *res, *ptr2;
 	char *ptr = r_str_uri_encode (str);
-	char *uri = r_str_newf ("http://%s:%s/%s%s", T.host, T.port, T.file, ptr? ptr: str);
+	char *uri = r_str_newf ("https://%s:%s/%s%s", T.host, T.port, T.file, ptr? ptr: str);
 	int len;
 	free (ptr);
 	ptr2 = r_socket_http_get (uri, NULL, &len);
@@ -793,7 +793,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	case RTR_PROTOCOL_HTTP:
 		{
 			int len;
-			char *uri = r_str_newf ("http://%s:%s/%s", host, port, file);
+			char *uri = r_str_newf ("https://%s:%s/%s", host, port, file);
 			char *str = r_socket_http_get (uri, NULL, &len);
 			if (!str) {
 				eprintf ("Cannot find peer\n");
@@ -801,7 +801,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				return;
 			}
 			core->num->value = 0;
-			// eprintf ("Connected to: 'http://%s:%s'\n", host, port);
+			// eprintf ("Connected to: 'https://%s:%s'\n", host, port);
 			free (str);
 		}
 		break;
@@ -1066,7 +1066,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 			return;
 		}
 		int len;
-		char *uri = r_str_newf ("http://%s:%d/cmd/%s", rh->host, rh->port, cmd);
+		char *uri = r_str_newf ("https://%s:%d/cmd/%s", rh->host, rh->port, cmd);
 		char *str = r_socket_http_get (uri, NULL, &len);
 		if (!str) {
 			eprintf ("Cannot find '%s'\n", uri);

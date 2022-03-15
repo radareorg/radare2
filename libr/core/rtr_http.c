@@ -83,7 +83,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 
 	if (browse == 'H') {
 		const char *browser = r_config_get (core->config, "http.browser");
-		r_sys_cmdf ("%s http://%s:%d/%s &",
+		r_sys_cmdf ("%s https://%s:%d/%s &",
 			browser, host, atoi (port), r_str_get (path));
 	}
 
@@ -129,8 +129,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		restoreSandbox = true;
 	}
 	eprintf ("Starting http server...\n");
-	eprintf ("open http://%s:%d/\n", host, atoi (port));
-	eprintf ("r2 -C http://%s:%d/cmd/\n", host, atoi (port));
+	eprintf ("open https://%s:%d/\n", host, atoi (port));
+	eprintf ("r2 -C https://%s:%d/cmd/\n", host, atoi (port));
 	core->http_up = true;
 
 	ut64 newoff, origoff = core->offset;
@@ -311,7 +311,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 						if (strstr (httpref, "http")) {
 							refstr = strdup (httpref);
 						} else {
-							refstr = r_str_newf ("http://localhost:%d/", atoi (port));
+							refstr = r_str_newf ("https://localhost:%d/", atoi (port));
 						}
 					}
 

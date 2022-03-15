@@ -27,7 +27,7 @@ static bool check_buffer(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
-/* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
+/* inspired in https://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	ut32 hdrsize, p_start, p_opthdr, p_sections, p_lsrlc, n;
 	ut32 baddr = 0x400000;

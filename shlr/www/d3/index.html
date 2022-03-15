@@ -37,7 +37,7 @@ var line = d3.svg.line.radial()
     .radius(function(d) { return d.y; })
     .angle(function(d) { return d.x / 180 * Math.PI; });
 
-// Chrome 15 bug: <http://code.google.com/p/chromium/issues/detail?id=98951>
+// Chrome 15 bug: <https://code.google.com/p/chromium/issues/detail?id=98951>
 var div = d3.select("body").insert("div", "h2")
     .style("top", "-80px")
     .style("left", "-160px")

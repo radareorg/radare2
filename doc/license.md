@@ -2,11 +2,11 @@
 
 Before you try to statically link r2, you should know about the licenses that go along with it,
 
-http://stackoverflow.com/questions/10130143/gpl-lgpl-and-static-linking
+https://stackoverflow.com/questions/10130143/gpl-lgpl-and-static-linking
 
 Also this stackoverflow page explains the legal case of using it via r2pipe,
 
-http://stackoverflow.com/questions/1394623/can-i-dynamically-call-a-lgpl-gpl-software-in-my-closed-source-application
+https://stackoverflow.com/questions/1394623/can-i-dynamically-call-a-lgpl-gpl-software-in-my-closed-source-application
 
 LGPLv3 keeps the freedom to the user to switch to a different version of the r2 libraries, so static linking is not permitted unless the privative software is distributed with the object files needed to do the full static link, so the users will be able to upgrade or modify r2 libraries even if
 
@@ -48,7 +48,7 @@ MIT
 Please refer to the radare2-webui repository for a detailed list of all the javascript frameworks used on every webui shipped under the shlr/www directory. Read the following links for detailed understanding of licensing the web.
 
 * https://www.gnu.org/software/librejs/free-your-javascript.html
-* http://greendrake.info/#nfy0
+* https://greendrake.info/#nfy0
 
 ## Non-LGPL code shipped in r2
 

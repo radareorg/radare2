@@ -1,4 +1,4 @@
-from bochs: http://bochs.sourceforge.net/techspec/PORTS.LST
+from bochs: https://bochs.sourceforge.net/techspec/PORTS.LST
 
 0x0000-0x001F	The first legacy DMA controller, often used for transfers to floppies.
 0x0020-0x0021	The first Programmable Interrupt Controller

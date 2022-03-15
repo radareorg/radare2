@@ -4,8 +4,8 @@
 
 Documentation
 -------------
-http://developer.axis.com/old/documentation/hw/etraxfs/des_ref/des_ref.pdf
-http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
+https://developer.axis.com/old/documentation/hw/etraxfs/des_ref/des_ref.pdf
+https://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
 
 #endif
 

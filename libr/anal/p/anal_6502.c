@@ -1,11 +1,11 @@
 /* radare - LGPL - Copyright 2019-2020 - condret, riq */
 
-/* 6502 info taken from http://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
+/* 6502 info taken from https://unusedino.de/ec64/technical/aay/c64/bchrt651.htm
  *
  * Mnemonics logic based on:
- *	http://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
+ *	https://homepage.ntlworld.com/cyborgsystems/CS_Main/6502/6502.htm
  * and:
- *	http://vice-emu.sourceforge.net/
+ *	https://vice-emu.sourceforge.net/
  */
 
 #include <string.h>

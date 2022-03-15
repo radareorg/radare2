@@ -17,7 +17,7 @@
 
 #if CAPSTONE_HAS_M68K
 #include <m68k.h>
-// http://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
+// https://www.mrc.uidaho.edu/mrc/people/jff/digital/M68Kir.html
 
 #define OPERAND(x) insn->detail->m68k.operands[x]
 #define REG(x) cs_reg_name (*handle, insn->detail->m68k.operands[x].reg)

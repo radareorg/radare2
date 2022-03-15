@@ -219,8 +219,8 @@ EXPECT=<<EOF
 # port number for both TCP and UDP; hence, officially ports have two entries
 # even if the protocol doesn't support UDP operations.
 #
-# Updated from http://www.iana.org/assignments/port-numbers and other
-# sources like http://www.freebsd.org/cgi/cvsweb.cgi/src/etc/services .
+# Updated from https://www.iana.org/assignments/port-numbers and other
+# sources like https://www.freebsd.org/cgi/cvsweb.cgi/src/etc/services .
 # New ports will be added on request if they have been officially assigned
 # by IANA and used in the real-world or are needed by a debian package.
 # If you need a huge list of used numbers please install the nmap package.

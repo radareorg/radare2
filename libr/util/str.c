@@ -1853,7 +1853,7 @@ R_API char *r_str_escape_utf8_for_json(const char *buf, int buf_size) {
 	return new_buf;
 }
 
-// http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
+// https://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
 // https://docs.microsoft.com/en-us/cpp/cpp/main-function-command-line-args?redirectedfrom=MSDN&view=vs-2019#parsing-c-command-line-arguments
 R_API char *r_str_format_msvc_argv(size_t argc, const char **argv) {
 	RStrBuf sb;

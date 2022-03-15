@@ -775,7 +775,7 @@ static ut8 ebcdic_to_ascii[] = {
  * The following EBCDIC-to-ASCII table may relate more closely to reality,
  * or at least to modern reality.  It comes from
  *
- *   http://ftp.s390.ibm.com/products/oe/bpxqp9.html
+ *   https://ftp.s390.ibm.com/products/oe/bpxqp9.html
  *
  * and maps the characters of EBCDIC code page 1047 (the code used for
  * Unix-derived software on IBM's 390 systems) to the corresponding

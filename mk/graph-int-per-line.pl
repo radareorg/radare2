@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# $ hg clone http://hg.youterm.com/toys
+# $ hg clone https://hg.youterm.com/toys
 # lochist > lochist.txt
 # perl graph-int-per-line.pl
 #
@@ -31,7 +31,7 @@ sub meld {
 
 sub get_graph {
   my ($picfile, $type, $mode) = @_;
-  my $uri = "http://chart.apis.google.com/chart";
+  my $uri = "https://chart.apis.google.com/chart";
   my $data = "cht=lc&chs=800x300&chd=t:";
   my $avr;
 #$data.=meld("lochist.txt", 0);
@@ -51,5 +51,5 @@ get_graph("r2cdg.jpg", "r2 commit locdiff graph", 0);
 get_graph("r2clg.jpg", "r2 commit lines of code graph", 1);
 system("scp r2cdg.jpg radare.org:/srv/http/radareorg/get");
 system("scp r2clg.jpg radare.org:/srv/http/radareorg/get");
-print ("http://radare.org/get/r2cdg.jpg\n");
-print ("http://radare.org/get/r2clg.jpg\n");
+print ("https://radare.org/get/r2cdg.jpg\n");
+print ("https://radare.org/get/r2clg.jpg\n");

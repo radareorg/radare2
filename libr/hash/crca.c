@@ -1,6 +1,6 @@
 //author: Victor Mu~noz (vmunoz@ingenieria-inversa.cl
 //license: the very same than radare, blah, blah
-//some definitions and test cases borrowed from http://www.nightmare.com/~ryb/code/CrcMoose.py (Ray Burr)
+//some definitions and test cases borrowed from https://www.nightmare.com/~ryb/code/CrcMoose.py (Ray Burr)
 
 #include <r_hash.h>
 

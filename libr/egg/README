@@ -26,7 +26,7 @@ Preprocessor
 There's no standard preprocessor integrated with it. But if you feel
 the need to use one you may use cpp or spp*.
 
-  * hg clone http://hg.youterm.com/spp
+  * hg clone https://hg.youterm.com/spp
 
 Aliases
 -------

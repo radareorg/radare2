@@ -1,4 +1,4 @@
-# http://www.longpelaexpertise.com/toolsCode.php
+# https://www.longpelaexpertise.com/toolsCode.php
 0x0d=\r
 0x15=\n
 0x21=!

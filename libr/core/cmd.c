@@ -145,7 +145,7 @@ static const char *help_msg_equal[] = {
 	"=<", "[fd] cmd", "send output of local command to remote fd", // XXX may not be a special char
 	"=", "[fd] cmd", "exec cmd at remote 'fd' (last open is default one)",
 	"=!", " cmd", "run command via r_io_system",
-	"=+", " [proto://]host:port", "connect to remote host:port (*rap://, raps://, tcp://, udp://, http://)",
+	"=+", " [proto://]host:port", "connect to remote host:port (*rap://, raps://, tcp://, udp://, https://)",
 	"=-", "[fd]", "remove all hosts or host 'fd'",
 	"==", "[fd]", "open remote session with host 'fd', 'q' to quit",
 	"=!=", "", "disable remote cmd mode",
@@ -164,7 +164,7 @@ static const char *help_msg_equal[] = {
 	"=+", "tcp://localhost:9090/", "connect to: r2 -c.:9090 ./bin",
 	// "=+", "udp://localhost:9090/", "connect to: r2 -c.:9090 ./bin",
 	"=+", "rap://localhost:9090/", "connect to: r2 rap://:9090",
-	"=+", "http://localhost:9090/cmd/", "connect to: r2 -c'=h 9090' bin",
+	"=+", "https://localhost:9090/cmd/", "connect to: r2 -c'=h 9090' bin",
 	"o ", "rap://:9090/", "start the rap server on tcp port 9090",
 	NULL
 };
@@ -192,7 +192,7 @@ static const char *help_msg_equal_equal[] = {
 static const char *help_msg_equal_more[] = {
 	"Usage:", " =+ [proto://][host]:[port](/[path])", " # add connection to remote r2",
 	"=+", "tcp://localhost:9090", "communicates with another instance running '& .:9090'",
-	"=+", "http://localhost:9090/cmd", "talks to remote r2 webserver '& =h'",
+	"=+", "https://localhost:9090/cmd", "talks to remote r2 webserver '& =h'",
 	"=+", "rap://localhost:9090/cmd", "talks to remote r2 webserver 'r2 rap://:9090'",
 	NULL
 };

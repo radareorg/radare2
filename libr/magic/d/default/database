@@ -235,6 +235,6 @@
 >>7	byte		x		\b-%d
 
 # Type: Advanced Data Format (ADF) database
-# URL:  http://www.grc.nasa.gov/WWW/cgns/adf/
+# URL:  https://www.grc.nasa.gov/WWW/cgns/adf/
 # From: Nicolas Chauvat <nicolas.chauvat@logilab.fr>
 #0	string	@(#)ADF\ Database	CGNS Advanced Data Format

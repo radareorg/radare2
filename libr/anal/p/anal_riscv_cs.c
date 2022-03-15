@@ -7,7 +7,7 @@
 #if CS_API_MAJOR >= 5
 #include <riscv.h>
 
-// http://www.mrc.uidaho.edu/mrc/people/jff/digital/RISCVir.html
+// https://www.mrc.uidaho.edu/mrc/people/jff/digital/RISCVir.html
 
 #define OPERAND(x) insn->detail->riscv.operands[x]
 #define REGID(x) insn->detail->riscv.operands[x].reg

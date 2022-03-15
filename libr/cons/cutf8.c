@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2015-2021 - pancake */
 
-// Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
+// Copypasta from https://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <r_cons.h>
 
 #if __UNIX__

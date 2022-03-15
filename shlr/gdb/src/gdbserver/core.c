@@ -1,8 +1,8 @@
 // Notes and useful links:
 // This conversation (https://www.sourceware.org/ml/gdb/2009-02/msg00100.html) suggests GDB clients usually ignore error codes
-// Useful, but not to be blindly trusted - http://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html
+// Useful, but not to be blindly trusted - https://www.embecosm.com/appnotes/ean4/embecosm-howto-rsp-server-ean4-issue-2.html
 // https://github.com/llvm-mirror/lldb/blob/master/docs/lldb-gdb-remote.txt
-// http://www.cygwin.com/ml/gdb/2008-05/msg00166.html
+// https://www.cygwin.com/ml/gdb/2008-05/msg00166.html
 
 #include "gdbserver/core.h"
 #include "gdbr_common.h"

@@ -1,7 +1,7 @@
 Radare2 Regression Test Suite
 =============================
 
-A set of regression tests for Radare2 (http://radare.org).
+A set of regression tests for Radare2 (https://radare.org).
 
 Originally based on work by and now in collaboration with pancake.
 

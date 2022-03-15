@@ -167,7 +167,7 @@
 >>>>62	string	math			Math document
 
 # OpenDocument formats (for OpenOffice 2.x / StarOffice >= 8)
-# http://lists.oasis-open.org/archives/office/200505/msg00006.html
+# https://lists.oasis-open.org/archives/office/200505/msg00006.html
 >>>50	string	vnd.oasis.opendocument.	OpenDocument
 >>>>73	string	text
 >>>>>77	byte	!0x2d			Text
@@ -239,7 +239,7 @@
 >6	belong	x		(%d byte(s))
 
 # From: Dirk Jagdmann <doj@cubic.org>
-# xar archive format: http://code.google.com/p/xar/
+# xar archive format: https://code.google.com/p/xar/
 0	string	xar!		xar archive
 >6	beshort	x		- version %d
 

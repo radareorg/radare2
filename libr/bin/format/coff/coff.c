@@ -71,7 +71,7 @@ static int r_coff_rebase_sym(struct r_bin_coff_obj *obj, RBinAddr *addr, struct 
 }
 
 /* Try to get a valid entrypoint using the methods outlined in
- * http://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
+ * https://ftp.gnu.org/old-gnu/Manuals/ld-2.9.1/html_mono/ld.html#SEC24 */
 RBinAddr *r_coff_get_entry(struct r_bin_coff_obj *obj) {
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	int i;

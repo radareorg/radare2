@@ -1,6 +1,6 @@
 /* radare2 - LGPL - Copyright 2017-2021 - pancake, cgvwzq */
 
-// http://webassembly.org/docs/binary-encoding/#module-structure
+// https://webassembly.org/docs/binary-encoding/#module-structure
 
 #include <r_types.h>
 #include <r_util.h>
@@ -307,7 +307,7 @@ static ut64 size(RBinFile *bf) {
 	return r_buf_size (bf->buf);
 }
 
-/* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
+/* inspired in https://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
 #define B(x, y) r_buf_append_bytes (buf, (const ut8 *)(x), y)

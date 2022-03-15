@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# BasedOn: http://blog.coolaj86.com/articles/how-to-unpackage-and-repackage-pkg-osx.html
+# BasedOn: https://blog.coolaj86.com/articles/how-to-unpackage-and-repackage-pkg-osx.html
 # Also: https://gist.github.com/SchizoDuckie/2a1a1cc71284e6463b9a
 
 # to uninstall:

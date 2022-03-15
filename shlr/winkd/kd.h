@@ -87,7 +87,7 @@ enum KD_PACKET_MANIPULATE_TYPE {
 #define KD_MAX_PAYLOAD	0x800
 #define KD_PACKET_MAX_SIZE 4000 // Not used ? What is max payload ?
 
-// http://msdn.microsoft.com/en-us/library/cc704588.aspx
+// https://msdn.microsoft.com/en-us/library/cc704588.aspx
 #define KD_RET_OK		0x00000000
 #define KD_RET_ERR		0xC0000001
 #define KD_RET_ENOENT	0xC000000F
@@ -228,7 +228,7 @@ typedef struct kdnet_packet_t {
 #define KDNET_DATA_SEQNO_MASK 0xFFFFFF00
 
 // Compile time assertions macros taken from :
-// http://www.pixelbeat.org/programming/gcc/static_assert.html
+// https://www.pixelbeat.org/programming/gcc/static_assert.html
 #define ASSERT_CONCAT_(a, b) a##b
 #define ASSERT_CONCAT(a, b) ASSERT_CONCAT_(a, b)
 #define ct_assert(e) enum { ASSERT_CONCAT(assert_line_, __LINE__) = 1/(!!(e)) }

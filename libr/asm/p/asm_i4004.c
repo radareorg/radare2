@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2014-2020 - condret, eagleoflqj	*/
 
-// http://datasheets.chipdb.org/Intel/MCS-4/datashts/MCS4_Data_Sheet_Nov71.pdf
+// https://datasheets.chipdb.org/Intel/MCS-4/datashts/MCS4_Data_Sheet_Nov71.pdf
 // note: OPR of LD should be 1010 in the datasheet
 
 #include <r_types.h>

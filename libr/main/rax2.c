@@ -429,7 +429,7 @@ dotherax:
 		return true;
 	} else if (flags & (1 << 12)) { // -E
 		const int n = strlen (str);
-		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
+		/* https://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
 		char *out = calloc (1, (n + 2) / 3 * 4 + 1); // ceil(n/3)*4 plus 1 for NUL
 		if (out) {
 			r_base64_encode (out, (const ut8 *) str, n);

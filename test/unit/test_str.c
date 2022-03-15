@@ -416,7 +416,7 @@ bool test_r_str_constpool(void) {
 }
 
 bool test_r_str_format_msvc_argv() {
-	// Examples from http://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
+	// Examples from https://daviddeley.com/autohotkey/parameters/parameters.htm#WINCRULES
 	const char *a = "CallMePancake";
 	char *str = r_str_format_msvc_argv (1, &a);
 	mu_assert_streq (str, "CallMePancake", "no escaping");

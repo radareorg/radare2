@@ -115,7 +115,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 		return 1;
 	}
 
-	eprintf ("http://localhost:%d/\n", s->port);
+	eprintf ("https://localhost:%d/\n", s->port);
 	if (dosandbox && !r_sandbox_enable (true)) {
 		eprintf ("sandbox: Cannot be enabled.\n");
 		free (pfile);
@@ -179,7 +179,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 				sprintf (result_heap,
 				"<html><body>"
 				"<a href='/'>back</a><hr size=1/>"
-				" - <a target='_blank' href='http://localhost:%d/'>open</a><br />"
+				" - <a target='_blank' href='https://localhost:%d/'>open</a><br />"
 				" - <a href='/proc/kill/%d'>kill</a><br />"
 				"</body></html>", session_port, pid);
 				eprintf ("\nchild pid %d\n\n", pid);

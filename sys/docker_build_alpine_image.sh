@@ -130,7 +130,7 @@ gid="$(id -g)"
 gname="$(id -gn)"
 r2commit="$(
 	curl -Ls \
-	"http://api.github.com/repos/radare/radare2/commits/$r2branch" | \
+	"https://api.github.com/repos/radare/radare2/commits/$r2branch" | \
 	jq -cMrS ".sha"
 )"
 uid="$(id -u)"

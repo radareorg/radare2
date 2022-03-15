@@ -6,7 +6,7 @@
 #include <mips.h>
 
 static ut64 t9_pre = UT64_MAX;
-// http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
+// https://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
 #define OPERAND(x) insn->detail->mips.operands[x]
 #define REGID(x) insn->detail->mips.operands[x].reg

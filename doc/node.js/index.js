@@ -36,7 +36,7 @@ function runWebServer(r) {
 				});
 			});
 			app.use(express.static(wwwroot));
-			r.cmd ("?e http://localhost:`e http.port`/p", function (data) {
+			r.cmd ("?e https://localhost:`e http.port`/p", function (data) {
 				console.log (data.replace(' ','').trim());
 			})
 			app.listen (port);

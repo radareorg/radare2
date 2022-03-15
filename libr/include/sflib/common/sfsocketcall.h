@@ -1,6 +1,6 @@
 /*
  * sfsocketcall.h -- linux socket implementation
- *                   see http://www.secdev.org/projects/shellforge.html
+ *                   see https://www.secdev.org/projects/shellforge.html
  *                   for more informations
  *
  * Copyright (C) 2003  Philippe Biondi <biondi@cartel-securite.fr>

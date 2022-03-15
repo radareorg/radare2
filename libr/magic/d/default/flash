@@ -5,7 +5,7 @@
 #
 # See
 #
-#	http://www.macromedia.com/software/flash/open/
+#	https://www.macromedia.com/software/flash/open/
 #
 0	string		FWS		Macromedia Flash data,
 >3	byte		x		version %d

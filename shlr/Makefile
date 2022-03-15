@@ -26,7 +26,7 @@ endif
 ifeq ($(CS_RELEASE),1)
 CS_VER=4.0.2
 CS_TAR=https://codeload.github.com/capstone-engine/capstone/tar.gz/$(CS_VER)
-#CS_TAR=http://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
+#CS_TAR=https://capstone-engine.org/download/$(CS_VER)/capstone-$(CS_VER).tgz
 CS_PATCHES=0
 else
 CS_TAR=

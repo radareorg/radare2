@@ -31,7 +31,7 @@
 #endif
 
 /* Full API documentation for this library can be found in the "yxml.md" file
- * in the yxml git repository, or online at http://dev.yorhel.nl/yxml/man */
+ * in the yxml git repository, or online at https://dev.yorhel.nl/yxml/man */
 
 typedef enum {
 	YXML_EEOF        = -5, /* Unexpected EOF                             */

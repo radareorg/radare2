@@ -7,7 +7,7 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-/* Snapshot format for VICE: http://vice-emu.sourceforge.net/ */
+/* Snapshot format for VICE: https://vice-emu.sourceforge.net/ */
 
 R_PACKED (
 struct vsf_hdr {

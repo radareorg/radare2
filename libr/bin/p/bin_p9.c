@@ -391,7 +391,7 @@ static ut64 size(RBinFile *bf) {
 
 #if !R_BIN_P9
 
-/* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
+/* inspired in https://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	RBuffer *buf = r_buf_new ();
 #define B(x, y) r_buf_append_bytes (buf, (const ut8 *) (x), y)

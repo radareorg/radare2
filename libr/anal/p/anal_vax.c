@@ -9,7 +9,7 @@
 
 // XXX: this is just a PoC
 // XXX: do not hardcode size/type here, use proper decoding table
-// http://hotkosc.ru:8080/method-vax.doc
+// https://hotkosc.ru:8080/method-vax.doc
 
 static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	op->size = 1;

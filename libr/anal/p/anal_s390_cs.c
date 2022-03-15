@@ -4,7 +4,7 @@
 #include <r_lib.h>
 #include <capstone.h>
 #include <systemz.h>
-// instruction set: http://www.tachyonsoft.com/inst390m.htm
+// instruction set: https://www.tachyonsoft.com/inst390m.htm
 
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported

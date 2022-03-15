@@ -11,8 +11,8 @@ Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
 License:        LGPLv3
 URL:            https://www.radare.org/
-#Source0:        http://radare.org/get/%{name}-%{version}.tar.gz
-#Source0:        http://radare.org/get/%{name}-%{version}.tar.xz
+#Source0:        https://radare.org/get/%{name}-%{version}.tar.gz
+#Source0:        https://radare.org/get/%{name}-%{version}.tar.xz
 # Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-%{shortcommit}.tar.gz
 Source0:        https://github.com/%{gituser}/%{gitname}/archive/%{commit}/%{name}-%{version}-git.tar.gz
 

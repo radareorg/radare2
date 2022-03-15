@@ -1,4 +1,4 @@
-// minunit.h comes from http://www.jera.com/techinfo/jtns/jtn002.html
+// minunit.h comes from https://www.jera.com/techinfo/jtns/jtn002.html
 //
 // You may use the code in this tech note for any purpose,
 // with the understanding that it comes with NO WARRANTY.

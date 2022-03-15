@@ -2235,7 +2235,7 @@ char* Elf_(r_bin_elf_get_head_flag)(ELFOBJ *bin) {
 	return head_flag;
 }
 
-// http://www.sco.com/developers/gabi/latest/ch4.eheader.html
+// https://www.sco.com/developers/gabi/latest/ch4.eheader.html
 
 char* Elf_(r_bin_elf_get_machine_name)(ELFOBJ *bin) {
 	switch (bin->ehdr.e_machine) {

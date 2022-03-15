@@ -14,11 +14,11 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with GRUB.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /* HFS is documented at
-   http://developer.apple.com/documentation/mac/Files/Files-2.html */
+   https://developer.apple.com/documentation/mac/Files/Files-2.html */
 
 #include <grub/err.h>
 #include <grub/file.h>

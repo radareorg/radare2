@@ -7,7 +7,7 @@ RSyscallPort sysport_x86[] = {
 };
 
 // XXX: This is for Atmega8A, check other datasheets Register Summary to be sure about your MCU:
-// http://www.atmel.com/Images/Atmel-2486-8-bit-AVR-microcontroller-ATmega8_L_datasheet.pdf
+// https://www.atmel.com/Images/Atmel-2486-8-bit-AVR-microcontroller-ATmega8_L_datasheet.pdf
 RSyscallPort sysport_avr[] = {
 	{ 0x3f, "SREG: flags" },
 	{ 0x3e, "SPH: Stack higher bits SP8-SP10" },

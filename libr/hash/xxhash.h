@@ -2,7 +2,7 @@
    xxHash - Fast Hash algorithm
    Header File
    Copyright (C) 2012, Yann Collet.
-   BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+   BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php)
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -28,7 +28,7 @@
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 	You can contact the author at :
-	- xxHash source repository : http://code.google.com/p/xxhash/
+	- xxHash source repository : https://code.google.com/p/xxhash/
 */
 
 /* Notice extracted from xxHash homepage :

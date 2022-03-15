@@ -1,6 +1,6 @@
 /* radare2 - LGPL - Copyright 2013-2021 - pancake */
 
-// instruction set : http://www.tachyonsoft.com/inst390m.htm
+// instruction set : https://www.tachyonsoft.com/inst390m.htm
 
 #include <r_asm.h>
 #include <r_lib.h>

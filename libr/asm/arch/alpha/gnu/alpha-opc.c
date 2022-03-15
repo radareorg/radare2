@@ -41,7 +41,7 @@
 
    The information for the post-ev5 architecture extensions BWX, CIX and
    MAX came from version 3 of this same document, which is also available
-   on-line at http://ftp.digital.com/pub/Digital/info/semiconductor
+   on-line at https://ftp.digital.com/pub/Digital/info/semiconductor
    /literature/alphahb2.pdf
 
    The information for the EV4 PALcode instructions was compiled from
