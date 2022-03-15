@@ -4430,7 +4430,6 @@ LookupTable oplookup[] = {
 	{"jcxz", 0, &opjc, 0},
 	{"jecxz", 0, &opjc, 0},
 	{"jrcxz", 0, &opjc, 0},
-	{"jcxz", 0, &opjc, 0},
 	{"lahf", 0, NULL, 0x9f, 1},
 	{"lea", 0, &oplea, 0},
 	{"leave", 0, NULL, 0xc9, 1},
