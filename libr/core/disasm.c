@@ -3373,7 +3373,6 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	RCore* core = ds->core;
 	char pad[128];
 	size_t maxpad = sizeof (pad);
-	const size_t wrappad = 64;
 	char *nstr, *str = NULL;
 	char *flagstr = NULL;
 	int oldFlags = core->print->flags;
@@ -3389,13 +3388,16 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	}
 	int nb = R_MIN (100, ds->nb);
 	if (flagstr) {
+		if (nb > 3 && strlen (flagstr) >= nb) {
+			flagstr[nb - 3] = '.';
+			flagstr[nb - 2] = 0;
+		}
 		str = r_str_newf ("%s:", flagstr);
 		if (nb > 0) {
 			k = nb - r_str_ansi_len (str) - 1;
 			if (k < 0) {
-				str[nb - 1] = '\0';
-			}
-			if (k >= maxpad) {
+				k = 0;
+			} else if (k >= maxpad) {
 				k = maxpad - 1;
 			}
 			for (j = 0; j < k; j++) {
@@ -3410,7 +3412,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		if (ds->show_flag_in_bytes) {
 			k = nb - 1;
 			if (k < 0 || k > maxpad) {
-				k = 0;
+				k = maxpad;
 			}
 			for (j = 0; j < k; j++) {
 				pad[j] = ' ';
