@@ -9,6 +9,10 @@ See the [Releases](https://github.com/radareorg/radare2/releases) page for
 binary downloads. The current git `master` branch is `5.6.5`, and the next
 release will be `5.6.6`.
 
+We ensure ABI stability for all the patch releases, you can mix/swap libraries
+and plugins without the need to recompile them if major and minor numbers are
+the same (X.Y.?).
+
 r2 is a complete rewrite of radare. It provides a set of libraries, tools and
 plugins to ease reverse engineering tasks.
 
@@ -70,14 +74,15 @@ $ r2 /bin/ls   # open the binary in read-only mode
 
 ## Plugins
 
-Many plugins are included with r2 by default. You can find more plugins using
-the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
+Many plugins are included in r2 by default. But you can extend its capabilities
+by using the [r2pm](https://github.com/radareorg/radare2-pm) package manager.
 
 ```sh
+r2pm -s <word> # search package by word
 r2pm -ci <pkg> # install a package
 ```
 
-Some of the most installed packages are:
+Most popular packages are:
 
 * [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3.
 * [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface.
@@ -132,7 +137,7 @@ V850, CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller,
 Tricore, CHIP-8, LH5801, T8200, GameBoy, SNES, SPC700, MSP430, Xtensa,
 NIOS II, Java, Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x,
 c55+, c66), Hexagon, Brainfuck, Malbolge, whitespace, DCPU16, LANAI,
-MCORE, mcs96, RSP, SuperH-4, VAX, AMD Am29000, LOONGARCH.
+MCORE, mcs96, RSP, SuperH-4, VAX, KVX, Am29000, LOONGARCH.
 
 ## File Formats
 
