@@ -128,6 +128,10 @@ R_API int r_reg_get_name_idx(const char *type) {
 	case 'R' + ('1' << 8): return R_REG_NAME_R1;
 	case 'R' + ('2' << 8): return R_REG_NAME_R2;
 	case 'R' + ('3' << 8): return R_REG_NAME_R3;
+	case 'F' + ('0' << 8): return R_REG_NAME_F0;
+	case 'F' + ('1' << 8): return R_REG_NAME_F1;
+	case 'F' + ('2' << 8): return R_REG_NAME_F2;
+	case 'F' + ('3' << 8): return R_REG_NAME_F3;
 	}
 	return -1;
 }
@@ -151,7 +155,7 @@ R_API const char *r_reg_get_name(RReg *reg, int role) {
 static const char *roles[R_REG_NAME_LAST + 1] = {
 	"PC", "SP", "SR", "BP", "LR", "RS",
 	"A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
-	"R0", "R1", "R2", "R3",
+	"R0", "R1", "R2", "R3", "F0", "F1", "F2", "F3",
 	"ZF", "SF", "CF", "OF",
 	"SN",
 	NULL

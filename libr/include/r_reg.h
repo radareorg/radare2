@@ -56,6 +56,10 @@ typedef enum {
 	R_REG_NAME_R1,
 	R_REG_NAME_R2,
 	R_REG_NAME_R3,
+	R_REG_NAME_F0, // float return registers
+	R_REG_NAME_F1,
+	R_REG_NAME_F2,
+	R_REG_NAME_F3,
 	/* flags */
 	R_REG_NAME_ZF,
 	R_REG_NAME_SF,
