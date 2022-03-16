@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2018-2020 - ret2libc */
+/* radare2 - LGPL - Copyright 2018-2022 - ret2libc */
 
 #include <r_util.h>
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2021 - pancake */
+/* radare - LGPL - Copyright 2008-2022 - pancake */
 
 #ifndef R2_UTIL_H
 #define R2_UTIL_H
@@ -87,7 +87,7 @@ int gettimeofday (struct timeval* p, void* tz);
 extern "C" {
 #endif
 
-R_LIB_VERSION_HEADER(r_util);
+R_LIB_VERSION_HEADER (r_util);
 #ifdef __cplusplus
 }
 #endif
