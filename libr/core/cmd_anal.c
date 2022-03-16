@@ -68,6 +68,7 @@ static const char *help_msg_afu[] = {
 static const char *help_msg_aae[] = {
 	"Usage:", "aae", "[pf] ([addr]) # analyze all kind of stuff using esil",
 	"aaep", "", "Same as aepa@@@i - define anal pins by import flag names",
+	"aaep", "a", "Run 'aep ret0@@@i' and then 'aaep' - all unknown imports are faked to return 0",
 	"aaef", "", "Emulate all functions using esil to find out computed references (same as aef@@@F)",
 	"aae", " [addr]", "Same as aepa@@@i - define anal pins by import flag names",
 	"aae", "", "Honor anal.{in,from,to} and emulate all executable regions",
@@ -11311,6 +11312,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		} else if (input[1] == '?') { // "aae?"
 			r_core_cmd_help (core, help_msg_aae);
 		} else if (input[1] == 'p') { // "aaep" // auto define all esil pins
+			r_core_cmd0 (core, "aep ret0@@@i");
 			r_core_cmd0 (core, "aepa@@@i");
 		} else if (input[1] == ' ') {
 			const char *len = (char *)input + 1;
