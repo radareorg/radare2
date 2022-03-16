@@ -212,6 +212,14 @@ typedef struct _utX {
 #define R_PACKED( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif
 
+#ifdef __GNUC__
+#define R_UNUSED __attribute__((__unused__))
+#define R_WEAK __attribute__ ((weak))
+#else
+#define R_UNUSED /* unused */
+#define R_WEAK /* weak */
+#endif
+
 #if APPLE_SDK_IPHONESIMULATOR
 #undef LIBC_HAVE_FORK
 #define LIBC_HAVE_FORK 0

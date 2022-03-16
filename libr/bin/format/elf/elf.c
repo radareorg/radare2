@@ -2013,10 +2013,10 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 			st32 maindelta = (st32)r_read_le32 (p);
 			ut64 vmain = (ut64)(entry + bo + maindelta) + 7;
 			ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry);
-			if (vmain>>16 == ventry>>16) {
+			if ((vmain >> 16) == (ventry >> 16)) {
 				return (ut64)vmain;
 			}
-		} else if (0xc7) { // mov rdi, 0xADDR
+		} else if (ch == 0xc7) { // mov rdi, 0xADDR
 			ut8 *p = buf + bo + 3;
 			return (ut64)(ut32)r_read_le32 (p);
 		}
@@ -3778,7 +3778,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					} else if (st_name <= 0 || st_name >= maxsize) {
 						ret[ret_ctr].name[0] = 0;
 					} else {
-						r_str_ncpy(ret[ret_ctr].name, &strtab[st_name], ELF_STRING_LENGTH - 1);
+						r_str_ncpy (ret[ret_ctr].name, &strtab[st_name], ELF_STRING_LENGTH - 1);
 						ret[ret_ctr].type = type2str (bin, &ret[ret_ctr], &sym[k]);
 
 						if (ht_pp_find (symbol_map, &ret[ret_ctr], NULL)) {

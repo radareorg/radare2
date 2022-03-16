@@ -338,6 +338,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	opt->filename = fname;
 	bool res = r_bin_open_buf (bin, buf, opt);
 	r_buf_free (buf);
+	//if (!res) { r_buf_free (buf); }
 	return res;
 }
 
