@@ -21,6 +21,15 @@ static const char *help_msg_pa[] = {
 	NULL
 };
 
+static const char *help_msg_psz[] = {
+	"Usage: psz[jl]", "", "print zero-terminated string",
+	"psz", "", "print zero-terminated string",
+	"psz*", "", "r2 command to write the null-terminated string in here",
+	"pszj", "", "print zero-terminated string as json",
+	"pszl", "", "print strlen of zero-terminated string in current address",
+	NULL
+};
+
 static const char *help_msg_pdf[] = {
 	"Usage: pdf[bf]", "", "disassemble function",
 	"pdf", "", "disassemble function",
@@ -468,7 +477,7 @@ static const char *help_msg_ps[] = {
 	"psw", "[j]", "print 16bit wide string",
 	"psW", "[j]", "print 32bit wide string",
 	"psx", "", "show string with escaped chars",
-	"psz", "[j]", "print zero-terminated string",
+	"psz", "[?] [lj]", "print zero-terminated string",
 	NULL
 };
 

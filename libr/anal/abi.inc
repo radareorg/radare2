@@ -8,13 +8,13 @@
 #endif
 
 R_ABI int r_anal_function_instrcount(RAnalFunction *fcn) {
-	int count = 0;
+	int amount = 0;
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		count += bb->ninstr;
+		amount += bb->ninstr;
 	}
-	return count;
+	return amount;
 }
 
 R_ABI bool r_anal_function_islineal(RAnalFunction *fcn) {
