@@ -5,26 +5,6 @@
 
 typedef void (*RAnalEsilPin)(RAnal *a);
 
-#if 0
-// TODO: those hardcoded functions should go
-/* default pins from libc */
-static void pin_strlen(RAnal *a) {
-	// get a0 register
-	// read memory and interpret it as a string
-	// set a0 to the result of strlen;
-	eprintf ("esilpin: strlen\n");
-}
-
-static void pin_write(RAnal *a) {
-	// get a0 register for fd
-	// get a1 register for data
-	// get a2 register for len
-	// read len bytes from data and print them to screen + fd
-	// set a0 to the result of write;
-	eprintf ("esilpin: write\n");
-}
-#endif
-
 /* pin api */
 
 #define DB a->sdb_pins
@@ -35,6 +15,7 @@ R_API void r_anal_pin_init(RAnal *a) {
 	r_anal_pin_set (a, "strlen", "dr R0=`pszl@r:A0`;aexa ret");
 	r_anal_pin_set (a, "memcpy", "wf `dr?A1` `dr?A2` @ `dr?A0`;aexa ret");
 	r_anal_pin_set (a, "puts", "psz@r:A0; aexa ret");
+	r_anal_pin_set (a, "ret0", "dr A0=0;aexa ret");
 //	sdb_ptr_set (DB, "strlen", pin_strlen, 0);
 //	sdb_ptr_set (DB, "write", pin_write, 0);
 }
