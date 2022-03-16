@@ -13,7 +13,7 @@ extern "C" {
 	case (x):;\
 	}
 
-R_API void r_assert_log(RLogLevel level, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
+R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 
 #if defined (__GNUC__) && defined (__cplusplus)
 #define R_FUNCTION ((const char*) (__PRETTY_FUNCTION__))
@@ -28,14 +28,14 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...) R_PRINTF_CHECK(2,
 
 #define r_warn_if_reached() \
 	do { \
-		r_assert_log (R_LOGLVL_WARN, "(%s:%d):%s%s code should not be reached\n", \
+		r_assert_log (R_LOGLVL_WARN, R_LOG_ORIGIN, "(%s:%d):%s%s code should not be reached\n", \
 			__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : ""); \
 	} while (0)
 
 #define r_warn_if_fail(expr) \
 	do { \
 		if (!(expr)) { \
-			r_assert_log (R_LOGLVL_WARN, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
+			r_assert_log (R_LOGLVL_WARN, R_LOG_ORIGIN, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
 				__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : "", #expr); \
 		} \
 	} while (0)
@@ -64,7 +64,7 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...) R_PRINTF_CHECK(2,
 #if R_CHECKS_LEVEL == 1
 #define H_LOG_(loglevel, fmt, ...)
 #else
-#define H_LOG_(loglevel, fmt, ...) r_assert_log (loglevel, fmt, __VA_ARGS__)
+#define H_LOG_(loglevel, fmt, ...) r_assert_log (loglevel, R_LOG_ORIGIN, fmt, __VA_ARGS__)
 #endif
 
 /**

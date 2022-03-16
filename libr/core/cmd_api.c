@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
+#define R_LOG_ORIGIN "cmdapi"
 #include <r_core.h>
 #include "ht_pp.h"
 

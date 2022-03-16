@@ -1611,6 +1611,7 @@ static bool cb_color(void *user, void *data) {
 		? COLOR_MODE_16M: node->i_value;
 	r_cons_pal_update_event ();
 	r_print_set_flags (core->print, core->print->flags);
+	r_log_set_colors (node->i_value);
 	return true;
 }
 
@@ -2002,13 +2003,6 @@ static bool cb_hex_hdroff(void *user, void *data) {
 	} else {
 		core->print->flags &= ~R_PRINT_FLAGS_HDROFF;
 	}
-	return true;
-}
-
-static bool cb_log_events(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->log_events = node->i_value;
 	return true;
 }
 
@@ -3207,6 +3201,19 @@ static bool cb_log_config_traplevel(void *coreptr, void *nodeptr) {
 	return true;
 }
 
+static bool cb_log_config_ts(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	r_log_set_ts (node->i_value);
+	return true;
+}
+
+static bool cb_log_config_filter(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	r_log_set_filter (value);
+	return true;
+}
+
 static bool cb_log_config_file(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
@@ -3214,31 +3221,15 @@ static bool cb_log_config_file(void *coreptr, void *nodeptr) {
 	return true;
 }
 
-static bool cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
+static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
-	const char *value = node->value;
-	switch (value[0]) {
-	case 't':
-	case 'T':
-		r_log_set_srcinfo (true);
-		break;
-	default:
-		r_log_set_srcinfo (false);
-	}
+	r_log_set_colors (r_str_is_true (node->value));
 	return true;
 }
 
-static bool cb_log_config_colors(void *coreptr, void *nodeptr) {
+static bool cb_log_config_quiet(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
-	const char *value = node->value;
-	switch (value[0]) {
-	case 't':
-	case 'T':
-		r_log_set_colors (true);
-		break;
-	default:
-		r_log_set_colors (false);
-	}
+	r_log_set_quiet (r_str_is_true (node->value));
 	return true;
 }
 
@@ -3696,6 +3687,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* log */
 	// R2_LOGLEVEL / log.level
+#if 0
 	p = r_sys_getenv ("R2_LOGLEVEL");
 	SETICB ("log.level", p? atoi(p): R_DEFAULT_LOGLVL, cb_log_config_level, "target log level/severity"\
 	 " (0:SILLY, 1:DEBUG, 2:VERBOSE, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
@@ -3721,6 +3713,18 @@ R_API int r_core_config_init(RCore *core) {
 	free (p);
 
 	SETCB ("log.events", "false", &cb_log_events, "remote HTTP server to sync events with");
+#endif
+	SETICB ("log.level", R_LOGLVL_DEFAULT, cb_log_config_level, "Target log level/severity"\
+	 " (0:NONE, 1:INFO, 2:WARN, 3:DEBUG, 4:ERROR, 5:FATAL)"
+	);
+
+	SETCB ("log.ts", "false", cb_log_config_ts, "Show timestamp in log messages");
+
+	SETICB ("log.traplevel", 0, cb_log_config_traplevel, "Log level for trapping R2 when hit");
+	SETCB ("log.file", "", cb_log_config_file, "Logging output filename / path");
+	SETCB ("log.filter", "", cb_log_config_filter, "Filter only messages matching given origin");
+	SETCB ("log.color", "false", cb_log_config_colors, "Should the log output use colors");
+	SETCB ("log.quiet", "false", cb_log_config_quiet, "Be quiet, dont log anything to console");
 
 	// zign
 	SETPREF ("zign.prefix", "sign", "default prefix for zignatures matches");

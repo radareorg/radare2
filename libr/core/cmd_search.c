@@ -1187,7 +1187,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		// opsz = r_strbuf_length (asmop.buf);
 		char *opst = aop.mnemonic;
 		if (!opst) {
-			R_LOG_WARN ("Anal plugin %s did not return disassembly\n", core->anal->cur->name);
+			eprintf ("Missing mnemonic after disasm with '%s'\n", core->anal->cur->name);
 			RAsmOp asmop;
 			r_asm_set_pc (core->rasm, addr);
 			if (r_asm_disassemble (core->rasm, &asmop, buf + idx, buflen - idx) < 0) {

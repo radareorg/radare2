@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2008-2022 - nibble, pancake, alvaro_fe */
 
+#define R_LOG_ORIGIN "elf"
 #include <r_types.h>
 #include <r_util.h>
 #include "elf.h"
@@ -21,8 +22,6 @@
 #define R_ELF_NO_RELRO 0
 #define R_ELF_PART_RELRO 1
 #define R_ELF_FULL_RELRO 2
-
-#define bprintf if(bin->verbose) R_LOG_WARN
 
 #define MAX_REL_RELA_SZ (sizeof (Elf_(Rel)) > sizeof (Elf_(Rela))? sizeof (Elf_(Rel)): sizeof (Elf_(Rela)))
 
@@ -125,7 +124,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	ut8 ehdr[sizeof (Elf_(Ehdr))] = {0};
 	int i, len;
 	if (r_buf_read_at (bin->b, 0, e_ident, EI_NIDENT) == -1) {
-		bprintf ("read (magic)\n");
+		R_LOG_ERROR ("read (magic)");
 		return false;
 	}
 	sdb_set (bin->kv, "elf_type.cparse", "enum elf_type { ET_NONE=0, ET_REL=1,"
@@ -189,7 +188,7 @@ static bool init_ehdr(ELFOBJ *bin) {
 	memset (&bin->ehdr, 0, sizeof (Elf_(Ehdr)));
 	len = r_buf_read_at (bin->b, 0, ehdr, sizeof (ehdr));
 	if (len < 32) { // tinyelf != sizeof (Elf_(Ehdr))) {
-		bprintf ("read (ehdr)\n");
+		R_LOG_ERROR ("read (ehdr)");
 		return false;
 	}
 	// XXX no need to check twice
@@ -258,7 +257,7 @@ static bool read_phdr(ELFOBJ *bin, bool linux_kernel_hack) {
 		const size_t rsize = bin->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
 		int len = r_buf_read_at (bin->b, rsize, phdr, sizeof (Elf_(Phdr)));
 		if (len < 1) {
-			bprintf ("read (phdr)\n");
+			R_LOG_ERROR ("read (phdr)");
 			R_FREE (bin->phdr);
 			return false;
 		}
@@ -398,7 +397,7 @@ static int init_shdr(ELFOBJ *bin) {
 		j = 0;
 		len = r_buf_read_at (bin->b, bin->ehdr.e_shoff + i * sizeof (Elf_(Shdr)), shdr, sizeof (Elf_(Shdr)));
 		if (len < 1) {
-			bprintf ("read (shdr) at 0x%" PFMT64x "\n", (ut64) bin->ehdr.e_shoff);
+			R_LOG_ERROR ("read (shdr) at 0x%" PFMT64x, (ut64) bin->ehdr.e_shoff);
 			R_FREE (bin->shdr);
 			return false;
 		}
@@ -476,7 +475,7 @@ static int init_strtab(ELFOBJ *bin) {
 	int res = r_buf_read_at (bin->b, bin->shstrtab_section->sh_offset, (ut8*)bin->shstrtab,
 		bin->shstrtab_section->sh_size);
 	if (res < 1) {
-		bprintf ("read (shstrtab) at 0x%" PFMT64x "\n", (ut64) bin->shstrtab_section->sh_offset);
+		R_LOG_ERROR ("read (shstrtab) at 0x%" PFMT64x, (ut64) bin->shstrtab_section->sh_offset);
 		R_FREE (bin->shstrtab);
 		return false;
 	}
@@ -666,7 +665,7 @@ static void fill_dynamic_entries(ELFOBJ *bin, ut64 loaded_offset, ut64 dyn_size)
 			if ((d.d_tag >= DT_VERSYM) && (d.d_tag <= DT_VERNEEDNUM)) {
 				bin->version_info[DT_VERSIONTAGIDX (d.d_tag)] = d.d_un.d_val;
 			} else {
-				R_LOG_DEBUG ("Dynamic tag %" PFMT64d " not handled\n", (ut64) d.d_tag);
+				R_LOG_DEBUG ("Dynamic tag %" PFMT64d " not handled", (ut64) d.d_tag);
 			}
 			break;
 		}
@@ -716,7 +715,7 @@ static int init_dynamic_section(ELFOBJ *bin) {
 
 	if (strtabaddr == UT64_MAX || strtabaddr > bin->size || strsize > ST32_MAX || !strsize || strsize > bin->size || strtabaddr + strsize > bin->size) {
 		if (!strtabaddr) {
-			bprintf ("DT_STRTAB not found or invalid\n");
+			R_LOG_DEBUG ("DT_STRTAB not found or invalid");
 		}
 		return false;
 	}
@@ -848,7 +847,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 							goto beach;
 						}
 						if (r_buf_read_at (bin->b, offset, svn, sizeof (svn)) < 0) {
-							bprintf ("Cannot read Verneed for Versym\n");
+							R_LOG_DEBUG ("Cannot read Verneed for Versym");
 							goto beach;
 						}
 						k = 0;
@@ -863,7 +862,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 								goto beach;
 							}
 							if (r_buf_read_at (bin->b, a_off, svna, sizeof (svna)) < 0) {
-								bprintf ("Cannot read Vernaux for Versym\n");
+								R_LOG_DEBUG ("Cannot read Vernaux for Versym");
 								goto beach;
 							}
 							k = 0;
@@ -899,7 +898,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 					}
 					do {
 						if (r_buf_read_at (bin->b, offset, svd, sizeof (svd)) < 0) {
-							bprintf ("Cannot read Verdef for Versym\n");
+							R_LOG_DEBUG ("Cannot read Verdef for Versym");
 							goto beach;
 						}
 						k = 0;
@@ -921,7 +920,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 							goto beach;
 						}
 						if (r_buf_read_at (bin->b, off_vda, svda, sizeof (svda)) < 0) {
-							bprintf ("Cannot read Verdaux for Versym\n");
+							R_LOG_DEBUG ("Cannot read Verdaux for Versym");
 							goto beach;
 						}
 						k = 0;
@@ -971,7 +970,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	}
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, 1);
 	if (!defs) {
-		bprintf ("Cannot allocate memory (Check Elf_(Verdef))\n");
+		R_LOG_ERROR ("Cannot allocate memory (Check Elf_(Verdef))");
 		return false;
 	}
 	if (bin->shstrtab && shdr->sh_name < bin->shstrtab_size) {
@@ -1092,7 +1091,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 			goto out_error;
 		}
 		if ((st32)verdef->vd_next < 1) {
-			bprintf ("Invalid vd_next in the ELF version\n");
+			R_LOG_DEBUG ("Invalid vd_next in the ELF version");
 			break;
 		}
 		i += verdef->vd_next;
@@ -1141,7 +1140,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 		link_section_name = &bin->shstrtab[link_shdr->sh_name];
 	}
 	if (!(need = (ut8*) calloc (R_MAX (1, shdr->sh_size), sizeof (ut8)))) {
-		bprintf ("Cannot allocate memory for Elf_(Verneed)\n");
+		R_LOG_ERROR ("Cannot allocate memory for Elf_(Verneed)");
 		goto beach;
 	}
 	end = need + shdr->sh_size;
@@ -1242,7 +1241,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 #endif
 		}
 		if ((int)entry->vn_next < 0) {
-			bprintf ("Invalid vn_next\n");
+			R_LOG_DEBUG ("Invalid vn_next at 0x%08" PFMT64x, shdr->sh_offset);
 			break;
 		}
 		i += entry->vn_next;
@@ -1328,7 +1327,7 @@ static bool init_dynstr(ELFOBJ *bin) {
 		section_name = &bin->shstrtab[bin->shdr[i].sh_name];
 		if (bin->shdr[i].sh_type == SHT_STRTAB && !strcmp (section_name, ".dynstr")) {
 			if (!(bin->dynstr = (char*) calloc (bin->shdr[i].sh_size + 1, sizeof (char)))) {
-				bprintf("Cannot allocate memory for dynamic strings\n");
+				R_LOG_ERROR ("Cannot allocate memory for dynamic strings\n");
 				return false;
 			}
 			if (bin->shdr[i].sh_offset > bin->size) {
@@ -1375,24 +1374,23 @@ static bool elf_init(ELFOBJ *bin) {
 		return false;
 	}
 	if (!init_phdr (bin) && !is_bin_etrel (bin)) {
-		bprintf ("Cannot initialize program headers\n");
+		R_LOG_DEBUG ("Cannot initialize program headers\n");
 	}
 	if (bin->ehdr.e_type != ET_CORE) {
 		if (!init_shdr (bin)) {
-			bprintf ("Cannot initialize section headers\n");
+			R_LOG_DEBUG ("Cannot initialize section headers\n");
 		}
 		if (!init_strtab (bin)) {
-			bprintf ("Cannot initialize strings table\n");
+			R_LOG_DEBUG ("Cannot initialize strings table\n");
 		}
 		if (!init_dynstr (bin) && !is_bin_etrel (bin)) {
-			bprintf ("Cannot initialize dynamic strings\n");
+			R_LOG_DEBUG ("Cannot initialize dynamic strings\n");
 		}
 		bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
 		if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_is_static) (bin) && !is_bin_etrel (bin)) {
-			bprintf ("Cannot initialize dynamic section\n");
+			R_LOG_DEBUG ("Cannot initialize dynamic section\n");
 		}
 	}
-
 	bin->imports_by_ord_size = 0;
 	bin->imports_by_ord = NULL;
 	bin->symbols_by_ord_size = 0;
@@ -1456,7 +1454,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 		}
 		return plt_addr;
 	case R_AARCH64_RELATIVE:
-		eprintf ("Unsupported relocation type for imports %d\n", rel->type);
+		R_LOG_WARN ("Unsupported relocation type for imports %d", rel->type);
 		return UT64_MAX;
 	case R_AARCH64_IRELATIVE:
 		if (rel->addend > plt_addr) { // start
@@ -1467,7 +1465,7 @@ static ut64 get_import_addr_arm(ELFOBJ *bin, RBinElfReloc *rel) {
 	case R_AARCH64_JUMP_SLOT:
 		return plt_addr + pos * 16 + 32;
 	default:
-		bprintf ("Unsupported relocation type for imports %d\n", rel->type);
+		R_LOG_WARN ("Unsupported relocation type for imports %d", rel->type);
 		return UT64_MAX;
 	}
 	return UT64_MAX;
@@ -1542,7 +1540,7 @@ static ut64 get_import_addr_loongarch(ELFOBJ *bin, RBinElfReloc *rel) {
 }
 static ut64 get_import_addr_sparc(ELFOBJ *bin, RBinElfReloc *rel) {
 	if (rel->type != R_SPARC_JMP_SLOT) {
-		bprintf ("Unknown sparc reloc type %d\n", rel->type);
+		R_LOG_DEBUG ("Unknown sparc reloc type %d", rel->type);
 		return UT64_MAX;
 	}
 	ut64 tmp = get_got_entry (bin, rel);
@@ -1800,7 +1798,7 @@ ut64 Elf_(r_bin_elf_get_init_offset)(ELFOBJ *bin) {
 		return UT64_MAX;
 	}
 	if (r_buf_read_at (bin->b, entry + 16, buf, sizeof (buf)) < 1) {
-		bprintf ("read (init_offset)\n");
+		R_LOG_ERROR ("read (init_offset)");
 		return 0;
 	}
 	if (buf[0] == 0x68) { // push // x86 only
@@ -1820,7 +1818,7 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 	}
 	ut8 buf[512];
 	if (r_buf_read_at (bin->b, entry + 11, buf, sizeof (buf)) == -1) {
-		bprintf ("read (get_fini)\n");
+		R_LOG_ERROR ("read (get_fini)");
 		return 0;
 	}
 	if (*buf == 0x68) { // push // x86/32 only
@@ -1876,7 +1874,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	}
 	// unnecessary to read 512 bytes imho
 	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) < 1) {
-		bprintf ("read (main)\n");
+		R_LOG_ERROR ("read (main)");
 		return UT64_MAX;
 	}
 	// ARM64
@@ -1972,7 +1970,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 			ut8 n32s[sizeof (ut32)] = {0};
 			maddr = entry + 0x24 + r_read_le32 (buf + 0x20);
 			if (r_buf_read_at (bin->b, maddr, n32s, sizeof (ut32)) == -1) {
-				bprintf ("read (maddr) 2\n");
+				R_LOG_ERROR ("read (maddr) 2");
 				return 0;
 			}
 			maddr = (ut64)r_read_le32 (&n32s[0]);
@@ -2072,7 +2070,7 @@ char *Elf_(r_bin_elf_intrp)(ELFOBJ *bin) {
 				return NULL;
 			}
 			if (r_buf_read_at (bin->b, addr, (ut8*)str, sz) < 1) {
-				bprintf ("read (main)\n");
+				R_LOG_ERROR ("read (main)");
 				free (str);
 				return 0;
 			}
@@ -2581,7 +2579,7 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 				int ret;
 				ret = r_buf_read_at (bin->b, bin->phdr[i].p_offset + offset, elf_nhdr, elf_nhdr_size);
 				if (ret != elf_nhdr_size) {
-					bprintf ("Cannot read NOTES hdr from CORE file\n");
+					R_LOG_DEBUG ("Cannot read NOTES hdr from CORE file");
 					free (elf_nhdr);
 					return NULL;
 				}
@@ -2625,7 +2623,7 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 			ut8 *buf = malloc (regsize);
 			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset + offset + regdelta, buf, regsize) != regsize) {
 				free (buf);
-				bprintf ("Cannot read register state from CORE file\n");
+				R_LOG_DEBUG ("Cannot read register state from CORE file");
 				return NULL;
 			}
 			if (len) {
@@ -2634,7 +2632,7 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 			return buf;
 		}
 	}
-	bprintf ("Cannot find NOTE section\n");
+	R_LOG_DEBUG ("Cannot find NOTE section.");
 	return NULL;
 }
 
@@ -3641,14 +3639,14 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			}
 			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
 			if (strtab_section->sh_size > ST32_MAX || strtab_section->sh_size+8 > bin->size) {
-				bprintf ("size (syms strtab)");
+				R_LOG_ERROR ("size (syms strtab)");
 				free (ret);
 				free (strtab);
 				return NULL;
 			}
 			if (!strtab) {
 				if (!(strtab = (char *)calloc (1, 8 + strtab_section->sh_size))) {
-					bprintf ("malloc (syms strtab)");
+					R_LOG_ERROR ("malloc (syms strtab)");
 					goto beach;
 				}
 				if (strtab_section->sh_offset > bin->size ||
@@ -3657,14 +3655,14 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				}
 				if (r_buf_read_at (bin->b, strtab_section->sh_offset,
 							(ut8*)strtab, strtab_section->sh_size) == -1) {
-					bprintf ("read (syms strtab)\n");
+					R_LOG_ERROR ("read (syms strtab)");
 					goto beach;
 				}
 			}
 
 			newsize = 1 + bin->shdr[i].sh_size;
 			if (newsize < 0 || newsize > bin->size) {
-				bprintf ("invalid shdr %d size\n", i);
+				R_LOG_ERROR ("invalid shdr %d size", i);
 				goto beach;
 			}
 			nsym = (int)(bin->shdr[i].sh_size / sizeof (Elf_(Sym)));
@@ -3683,7 +3681,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				}
 			}
 			if (!(sym = (Elf_(Sym) *)calloc (nsym, sizeof (Elf_(Sym))))) {
-				bprintf ("calloc (syms)");
+				R_LOG_ERROR ("calloc (syms)");
 				goto beach;
 			}
 			if (!UT32_MUL (&size, nsym, sizeof (Elf_(Sym)))) {
@@ -3702,7 +3700,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				int k = 0;
 				r = r_buf_read_at (bin->b, bin->shdr[i].sh_offset + j * sizeof (Elf_(Sym)), s, sizeof (Elf_(Sym)));
 				if (r < 1) {
-					bprintf ("read (sym)\n");
+					R_LOG_ERROR ("read (sym)");
 					goto beach;
 				}
 #if R_BIN_ELF64
@@ -3723,7 +3721,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			}
 			void *rett = realloc (ret, (ret_size + nsym) * sizeof (RBinElfSymbol));
 			if (!rett) {
-				bprintf ("Cannot allocate %d symbols\n", (int)(nsym + ret_size));
+				R_LOG_ERROR ("Cannot allocate %d symbols.", (int)(nsym + ret_size));
 				goto beach;
 			}
 			ret = rett;
@@ -3766,7 +3764,8 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				}
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name + 1 > strtab_section->sh_size) {
-					bprintf ("index out of strtab range\n");
+					R_LOG_DEBUG ("index out of strtab range (%d / %d)\n",
+						(int)sym[k].st_name, strtab_section->sh_size);
 					continue;
 				}
 				{
@@ -3841,7 +3840,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		bin->symbols_by_ord = (RBinSymbol**)calloc (R_MAX (1, nsym + 1), sizeof (RBinSymbol*));
 		import_ret = calloc (import_ret_ctr + 1, sizeof (RBinElfSymbol));
 		if (!import_ret) {
-			bprintf ("Cannot allocate %d symbols\n", nsym);
+			R_LOG_DEBUG ("Cannot allocate %d symbols", nsym);
 			goto beach;
 		}
 		import_ret_ctr = 0;

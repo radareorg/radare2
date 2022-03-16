@@ -4139,7 +4139,23 @@ vaddr=0x00000f50 paddr=0x00000f50 haddr=0x00000018 hvaddr=0x00000018 type=progra
 
 1 entrypoints
 EOF
+EXPECT_ERR=
+RUN
+
+NAME=auto entry (log.level test)
+ARGS=-e io.cache=true -e log.level=5
+FILE=bins/elf/libexploit.so
+CMDS=<<EOF
+i~elf
+EOF
+EXPECT=<<EOF
+file     bins/elf/libexploit.so
+format   elf
+bintype  elf
+EOF
 EXPECT_ERR=<<EOF
+[DEBUG] [elf] Dynamic tag 16 not handled
+Cannot determine entrypoint, using 0x00000d28.
 EOF
 RUN
 

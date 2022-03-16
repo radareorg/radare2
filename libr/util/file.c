@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake */
 
+#define R_LOG_ORIGIN "filter"
+
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>

@@ -140,28 +140,34 @@ static int main_help(int line) {
 		const char *dirPrefix = r_sys_prefix (NULL);
 		printf (
 		"Scripts:\n"
-		" system       ${R2_PREFIX}/share/radare2/radare2rc\n"
-		" user         ~/.radare2rc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
-		" file         ${filename}.r2\n"
+		" system          ${R2_PREFIX}/share/radare2/radare2rc\n"
+		" user            ~/.radare2rc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
+		" file            ${filename}.r2\n"
 		"Plugins:\n"
-		" binrc        " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
-		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
+		" binrc           " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
 		" R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-		" R2_USER_ZIGNS " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
+		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
+		" R2_USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" R2_DEBUG      if defined, show error messages and crash signal.\n"
-		" R2_DEBUG_ASSERT=1 set a breakpoint when hitting an assert.\n"
-		" R2_IGNVER=1   load plugins ignoring the specified version. (be careful)\n"
-		" R2_MAGICPATH " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
-		" R2_NOPLUGINS do not load r2 shared plugins\n"
-		" R2_RCFILE    ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
-		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
-		" R2_VERSION   contains the current version of r2\n"
+		" R2_DEBUG        if defined, show error messages and crash signal.\n"
+		" R2_DEBUG_ASSERT set a breakpoint when hitting an assert.\n"
+		" R2_IGNVER       load plugins ignoring the specified version. (be careful)\n"
+		" R2_MAGICPATH    " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
+		" R2_NOPLUGINS    do not load r2 shared plugins\n"
+		" R2_RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
+		" R2_RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
+		" R2_VERSION      contains the current version of r2\n"
+		" R2_LOG_LEVEL    numeric value of the max level of messages to show\n"
+		" R2_LOG_FILE     dump all logs to a file\n"
+#if 0
+		" R2_LOGCOLOR     \n"
+		" R2_COLOR     \n"
+#endif
 		"Paths:\n"
-		" R2_PREFIX    "R2_PREFIX"\n"
 		" R2_INCDIR    "R2_INCDIR"\n"
 		" R2_LIBDIR    "R2_LIBDIR"\n"
 		" R2_LIBEXT    "R_LIB_EXT"\n"
+		" R2_PREFIX    "R2_PREFIX"\n"
 		, dirPrefix, datahome, dirPrefix);
 		free (datahome);
 	}
@@ -320,6 +326,16 @@ static void set_color_default(RCore *r) {
 		return;
 	}
 #endif
+	char *log_level = r_sys_getenv ("R2_LOG_LEVEL");
+	if (R_STR_ISNOTEMPTY (log_level)) {
+		r_config_set (r->config, "log.level", log_level);
+	}
+	R_FREE (log_level);
+	char *log_file = r_sys_getenv ("R2_LOG_FILE");
+	if (R_STR_ISNOTEMPTY (log_file)) {
+		r_config_set (r->config, "log.file", log_file);
+	}
+	R_FREE (log_file);
 	char *tmp = r_sys_getenv ("COLORTERM");
 	if (tmp) {
 		if ((r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
