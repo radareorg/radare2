@@ -6876,16 +6876,16 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 	}
 }
 
-static void cmd_anal_esil(RCore *core, const char *input) {
+static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
 	ut64 adr ;
 	char *n, *n1;
 	int off;
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	int iotrap = r_config_get_i (core->config, "esil.iotrap");
-	int romem = r_config_get_i (core->config, "esil.romem");
-	int stats = r_config_get_i (core->config, "esil.stats");
+	bool iotrap = r_config_get_b (core->config, "esil.iotrap");
+	bool romem = r_config_get_b (core->config, "esil.romem");
+	bool stats = r_config_get_b (core->config, "esil.stats");
 	bool nonull = r_config_get_b (core->config, "esil.nonull");
 	ut64 until_addr = UT64_MAX;
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
@@ -6983,6 +6983,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case ' ':
+	case 'q':
 		//r_anal_esil_eval (core->anal, input+1);
 		if (!esil && !(core->anal->esil = esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 			return;
@@ -6990,7 +6991,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		r_anal_esil_setup (esil, core->anal, romem, stats, nonull); // setup io
 		r_anal_esil_set_pc (esil, core->offset);
 		r_anal_esil_parse (esil, input + 1);
-		r_anal_esil_dumpstack (esil);
+		if (verbose && *input != 'q') {
+			r_anal_esil_dumpstack (esil);
+		}
 		r_anal_esil_stack_free (esil);
 		break;
 	case 's': // "aes"
@@ -7143,25 +7146,29 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		} else if (input[1] == 's') { // "aecs"
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			for (;;) {
-				if (!r_core_esil_step (core, UT64_MAX, NULL, NULL, false)) {
-					break;
-				}
+				// ignore return value is not an error, should 0, 1, -1 imho
+				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_num_get (core->num, pc);
 				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 				if (!op) {
+					eprintf ("invalid instruction at 0x%08" PFMT64x "\n", addr);
 					break;
 				}
 				if (op->type == R_ANAL_OP_TYPE_SWI) {
-					eprintf ("syscall at 0x%08" PFMT64x "\n", addr);
+					eprintf ("syscall instruction at 0x%08" PFMT64x "\n", addr);
 					break;
 				} else if (op->type == R_ANAL_OP_TYPE_TRAP) {
-					eprintf ("trap at 0x%08" PFMT64x "\n", addr);
+					eprintf ("trap instruction at 0x%08" PFMT64x "\n", addr);
 					break;
 				}
 				r_anal_op_free (op);
 				op = NULL;
 				if (core->anal->esil->trap || core->anal->esil->trap_code) {
+					eprintf ("esil trap '%s' (%d) at 0x%08" PFMT64x "\n",
+							r_anal_esil_trapstr (core->anal->esil->trap),
+							core->anal->esil->trap_code,
+							addr);
 					break;
 				}
 			}
@@ -7172,9 +7179,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		} else if (input[1] == 'c') { // "aecc"
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
 			for (;;) {
-				if (!r_core_esil_step (core, UT64_MAX, NULL, NULL, false)) {
-					break;
-				}
+				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_num_get (core->num, pc);
 				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
@@ -7182,7 +7187,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 					break;
 				}
 				if (op->type == R_ANAL_OP_TYPE_CALL || op->type == R_ANAL_OP_TYPE_UCALL) {
-					eprintf ("call at 0x%08" PFMT64x "\n", addr);
+					eprintf ("stop in call instruction at 0x%08" PFMT64x "\n", addr);
 					break;
 				}
 				r_anal_op_free (op);
@@ -7531,8 +7536,12 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			if (ret > 0) {
 				const char *str = R_STRBUF_SAFEGET (&aop.esil);
 				char *str2 = r_str_newf (" %s", str);
-				cmd_anal_esil (core, str2);
+				cmd_anal_esil (core, str2, false);
 				free (str2);
+				core->num->value = 1;
+			} else {
+				// fail to exevute, update code
+				core->num->value = 0;
 			}
 			r_anal_op_fini (&aop);
 		} else if (input[1] == 'a') { // "aexa"
@@ -12129,7 +12138,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
-	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"
+	case 'e': cmd_anal_esil (core, input + 1, true); break; // "ae"
 	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
 	case 'o': cmd_anal_opcode (core, input + 1); break; // "ao"
 	case 'O': cmd_anal_bytes (core, input + 1); break; // "aO"

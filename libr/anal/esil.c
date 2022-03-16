@@ -300,8 +300,7 @@ R_API bool r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	if (!ret && esil->cb.mem_read) {
-		ret = esil->cb.mem_read (esil, addr, buf, len);
-		if (ret != len) {
+		if (!esil->cb.mem_read (esil, addr, buf, len)) {
 			if (esil->iotrap) {
 				esil->trap = R_ANAL_TRAP_READ_ERR;
 				esil->trap_code = addr;
