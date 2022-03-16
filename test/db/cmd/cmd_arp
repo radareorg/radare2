@@ -38,7 +38,7 @@ arp~?
 EOF
 EXPECT=<<EOF
 160
-148
+149
 64
 88
 68
@@ -73,7 +73,7 @@ Aliases (Reg->name)
 13 A7 r11
 14 A8 ?
 15 A9 ?
-16 R0 ?
+16 R0 rax
 17 R1 ?
 18 R2 ?
 19 R3 ?
