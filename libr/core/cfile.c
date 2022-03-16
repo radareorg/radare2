@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2022 - pancake */
 
+#define R_LOG_ORIGIN "cfile"
 #include <r_core.h>
 #include <stdlib.h>
 #include <string.h>
@@ -439,7 +440,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	binfile = r_bin_cur (r->bin);
 	if (r_core_bin_set_env (r, binfile)) {
 		if (r->anal->verbose && !sdb_const_get (r->anal->sdb_cc, "default.cc", 0)) {
-			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate.\n");
+			R_LOG_WARN ("No calling convention defined for this file, analysis may be inaccurate.");
 		}
 	}
 	plugin = r_bin_file_cur_plugin (binfile);

@@ -61,9 +61,9 @@ static void __panels_refresh(RCore *core);
 #define COUNT(x) (sizeof((x)) / sizeof((*x)) - 1)
 
 // TODO: kill mutable globals
-static bool firstRun = true;
-static bool fromVisual = false;
-static char *menus_Colors[128];
+static R_TH_LOCAL bool firstRun = true;
+static R_TH_LOCAL bool fromVisual = false;
+static R_TH_LOCAL char *menus_Colors[128];
 
 typedef enum {
 	LEFT,

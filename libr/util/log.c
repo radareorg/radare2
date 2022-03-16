@@ -1,147 +1,175 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake, ret2libc */
 
-#define LOG_CONFIGSTR_SIZE 128
-#define LOG_OUTPUTBUF_SIZE 512
+#define R_LOG_ORIGIN "util.log"
 
 #include <r_core.h>
 #include <stdarg.h>
 
-// TODO: Use thread-local storage to make these variables thread-safe
-static R_TH_LOCAL RList *log_cbs = NULL; // Functions to call when outputting log string
-static R_TH_LOCAL int cfg_loglvl = R_LOGLVL_ERROR; // Log level output
-static R_TH_LOCAL int cfg_logtraplvl = R_LOGLVL_FATAL; // Log trap level
-static R_TH_LOCAL bool cfg_logsrcinfo = false; // Print out debug source info with the output
-static R_TH_LOCAL bool cfg_logcolors = false; // Output colored log text based on level
-static R_TH_LOCAL char cfg_logfile[LOG_CONFIGSTR_SIZE] = ""; // Output text to filename
 static const char *level_tags[] = { // Log level to tag string lookup array
-	[R_LOGLVL_SILLY]     = "SILLY",
-	[R_LOGLVL_VERBOSE]   = "VERBOSE",
-	[R_LOGLVL_DEBUG]     = "DEBUG",
+	[R_LOGLVL_NONE]      = "NONE",
 	[R_LOGLVL_INFO]      = "INFO",
 	[R_LOGLVL_WARN]      = "WARNING",
+	[R_LOGLVL_DEBUG]     = "DEBUG",
 	[R_LOGLVL_ERROR]     = "ERROR",
 	[R_LOGLVL_FATAL]     = "FATAL"
 };
 
-// cconfig.c configuration callback functions below
+static const char *level_name(int i) {
+	if (i >= 0 && i < 6) {
+		return level_tags[i];
+	}
+	return "UNKNOWN";
+}
+
+static R_TH_LOCAL RLog *log = NULL;
+
+// shouldnt be necessary as global thread-local instance
+R_API void r_log_init(void) {
+	if (!log) {
+		log = R_NEW0 (RLog);
+	}
+}
+
+R_API void r_log_fini(void) {
+	if (log) {
+		free (log->file);
+		free (log->filter);
+		free (log);
+		log = NULL;
+	}
+}
+
+R_API void r_log_set_ts(bool ts) {
+	r_log_init ();
+	log->ts = ts;
+}
+
 R_API void r_log_set_level(RLogLevel level) {
-	cfg_loglvl = level;
+	r_log_init ();
+	log->level = level;
 }
 
 R_API void r_log_set_traplevel(RLogLevel level) {
-	cfg_logtraplvl = level;
+	r_log_init ();
+	log->traplevel = level;
+}
+
+R_API void r_log_set_filter(const char *s) {
+	r_log_init ();
+	R_FREE (log->filter);
+	if (R_STR_ISNOTEMPTY (s)) {
+		log->filter = strdup (s);
+	}
 }
 
 R_API void r_log_set_file(const char *filename) {
-	int value_len = r_str_nlen (filename, LOG_CONFIGSTR_SIZE) + 1;
-	strncpy (cfg_logfile, filename, value_len);
+	r_log_init ();
+	free (log->file);
+	log->file = strdup (filename);
 }
 
-R_API void r_log_set_srcinfo(bool show_info) {
-	cfg_logsrcinfo = show_info;
+R_API void r_log_set_colors(bool color) {
+	r_log_init ();
+	log->color = color;
 }
 
-R_API void r_log_set_colors(bool show_info) {
-	cfg_logcolors = show_info;
+R_API void r_log_set_quiet(bool bq) {
+	r_log_init ();
+	log->quiet = bq;
 }
 
-/**
- * \brief Add a logging callback
- * \param cbfunc RLogCallback style function to be called
- */
-R_API void r_log_add_callback(RLogCallback cbfunc) {
-	if (!log_cbs) {
-		log_cbs = r_list_new ();
+R_API bool r_log_match(int level, const char *origin) { // , const char *sub_origin, const char *fmt, ...) {
+	r_log_init ();
+	if (R_STR_ISNOTEMPTY (log->filter)) {
+		if (strstr (origin, log->filter)) {
+			return false;
+		}
 	}
-	if (!r_list_contains (log_cbs, cbfunc)) {
-		r_list_append (log_cbs, cbfunc);
-	}
-}
-
-/**
- * \brief Remove a logging callback
- * \param cbfunc RLogCallback style function to be called
- */
-R_API void r_log_del_callback(RLogCallback cbfunc) {
-	if (log_cbs) {
-		r_list_delete_data (log_cbs, cbfunc);
-	}
-}
-
-R_API void r_vlog(const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args) {
-	va_list args_copy;
-	va_copy (args_copy, args);
-
-	if (level < cfg_loglvl && level < cfg_logtraplvl) {
-		// Don't print if output level is lower than current level
-		// Don't ignore fatal/trap errors
-		va_end (args_copy);
-		return;
-	}
-
-	// TODO: Colors
-
-	// Build output string with src info, and formatted output
-	char output_buf[LOG_OUTPUTBUF_SIZE] = ""; // Big buffer for building the output string
-	if (!tag) {
-		tag = R_BETWEEN (0, level, R_ARRAY_SIZE (level_tags) - 1)? level_tags[level]: "";
-	}
-	int offset = snprintf (output_buf, LOG_OUTPUTBUF_SIZE, "%s: ", tag);
-	if (cfg_logsrcinfo) {
-		offset += snprintf (output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, "%s in %s:%i: ", funcname, filename, lineno);
-	}
-	vsnprintf (output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, fmtstr, args);
-
-	// Actually print out the string with our callbacks
-	if (log_cbs && r_list_length (log_cbs) > 0) {
-		RListIter *it;
+	if (log->cbs) {
+		RListIter *iter;
 		RLogCallback cb;
+		r_list_foreach (log->cbs, iter, cb) {
+			if (cb (log->user, level, origin, NULL)) {
+				return true;
+			}
+		}
+	}
+	
+	return level < log->level;
+}
 
-		r_list_foreach (log_cbs, it, cb) {
-			cb (output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
+R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *fmt, va_list ap) {
+	char out[512];
+	r_log_init ();
+	int type = 3;
+	vsnprintf (out, sizeof (out), fmt, ap);
+	if (log->cbs) {
+		RListIter *iter;
+		RLogCallback cb;
+		r_list_foreach (log->cbs, iter, cb) {
+			cb (log->user, type, NULL, out);
+		}
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	if (log->color) {
+		if (level > 3) {
+			r_strbuf_appendf (sb, Color_RED "[%s] " Color_YELLOW "[%s] " Color_RESET, level_name (level), origin);
+		} else {
+			r_strbuf_appendf (sb, Color_GREEN "[%s] " Color_YELLOW "[%s] " Color_RESET, level_name (level), origin);
 		}
 	} else {
-		fprintf (stderr, "%s", output_buf);
+		r_strbuf_appendf (sb, "[%s] [%s] ", level_name (level), origin);
 	}
-	va_end (args_copy);
-
-	// Log to file if enabled
-	if (cfg_logfile[0] != 0x00) {
-		FILE *file = r_sandbox_fopen (cfg_logfile, "a+"); // TODO: Optimize (static? Needs to remake on cfg change though)
-		if (!file) {
-			file = r_sandbox_fopen (cfg_logfile, "w+");
-		}
-		if (file) {
-			fprintf (file, "%s", output_buf);
-			fclose (file);
+	char ts[32] = {0};
+	if (log->ts) {
+		ut64 now = r_time_now ();
+		if (log->color) {
+			r_strbuf_appendf (sb, ts, sizeof (ts), Color_CYAN "[ts:%" PFMT64u "] " Color_RESET, now);
 		} else {
-			eprintf ("%s failed to write to file: %s\n", MACRO_LOG_FUNC, cfg_logfile);
+			r_strbuf_appendf (sb, ts, sizeof (ts), "[ts:%" PFMT64u "] ", now);
 		}
 	}
-
-	if (level >= cfg_logtraplvl && level != R_LOGLVL_NONE) {
-		fflush (stdout); // We're about to exit HARD, flush buffers before dying
-		fflush (stderr);
-		// TODO: call r_cons_flush if libr_cons is being used
-		r_sys_breakpoint (); // *oof*
+	r_strbuf_appendf (sb, "%s%s\n", ts, out);
+	char * s = r_strbuf_drain (sb);
+	sb = NULL;
+	if (!log->quiet) {
+		eprintf ("%s", s);
+	}
+	if (R_STR_ISNOTEMPTY (log->file)) {
+		r_file_dump (log->file, (const ut8*)s, strlen (s), true);
+	}
+	if (log->traplevel && (level >= log->traplevel || level == R_LOGLVL_FATAL)) {
+		r_sys_backtrace ();
+		r_sys_breakpoint ();
 	}
 }
 
-/**
- * \brief Internal logging function used by preprocessor macros
- * \param funcname Contains the function name of the calling function
- * \param filename Contains the filename that funcname is defined in
- * \param lineno The line number that this log call is being made from in filename
- * \param lvl Logging level for output
- * \param fmtstr A printf like string
+R_API void r_log_message(RLogLevel level, const char *origin, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	r_log_vmessage (level, origin, fmt, ap);
+	va_end (ap);
+}
 
-  This function is used by the R_LOG_* preprocessor macros for logging
-*/
-R_API void r_log(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
+R_API void r_log_add_callback(RLogCallback cb) {
+	r_log_init ();
+	if (!log->cbs) {
+		log->cbs = r_list_new ();
+	}
+	if (!r_list_contains (log->cbs, cb)) {
+		r_list_append (log->cbs, cb);
+	}
+}
+
+R_API void r_log_del_callback(RLogCallback cb) {
+	r_log_init ();
+	r_list_delete_data (log->cbs, cb);
+}
+
+R_API void r_log(const char *funcname, const char *filename, ut32 lineno, RLogLevel level, const char *origin, const char *fmtstr, ...) {
 	va_list args;
-
 	va_start (args, fmtstr);
-	r_vlog (funcname, filename, lineno, level, tag, fmtstr, args);
+	// r_vlog (funcname, filename, lineno, level, tag, fmtstr, args);
+	r_log_vmessage (level, origin, fmtstr, args);
 	va_end (args);
 }

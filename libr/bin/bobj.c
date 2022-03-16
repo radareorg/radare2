@@ -1,5 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2022 - pancake, nibble, dso */
 
+#define R_LOG_ORIGIN "bin.obj"
+
 #include <r_bin.h>
 #include <r_util.h>
 #include "i/private.h"
@@ -153,7 +155,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 			return NULL;
 		}
 	} else {
-		R_LOG_WARN ("Plugin %s should implement load_buffer method.\n", plugin->name);
+		R_LOG_WARN ("Plugin %s should implement load_buffer method.", plugin->name);
 		sdb_free (bo->kv);
 		free (bo);
 		return NULL;
