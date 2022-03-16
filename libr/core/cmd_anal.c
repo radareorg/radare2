@@ -15,6 +15,13 @@ static const char *help_msg_af_plus[] = {
 	NULL
 };
 
+static const char *help_msg_aex[] = {
+	"Usage:", "aex", "[a] [9090]",
+	"aex", " 90", "decode the given hexpairs and execute them",
+	"aexa", " mov rax, 33", "assemble instruction and execute it",
+	NULL
+};
+
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"a", "", "alias for aai - analysis information",
@@ -57,6 +64,16 @@ static const char *help_msg_afu[] = {
 	"afu", " 0x100004093", "Resize and analyze function from current address until 0x100004093",
 	NULL
 };
+
+static const char *help_msg_aae[] = {
+	"Usage:", "aae", "[pf] ([addr]) # analyze all kind of stuff using esil",
+	"aaep", "", "Same as aepa@@@i - define anal pins by import flag names",
+	"aaef", "", "Emulate all functions using esil to find out computed references (same as aef@@@F)",
+	"aae", " [addr]", "Same as aepa@@@i - define anal pins by import flag names",
+	"aae", "", "Honor anal.{in,from,to} and emulate all executable regions",
+	NULL
+};
+
 
 static const char *help_msg_aan[] = {
 	"Usage:", "aan", "[rg]   # automatically name functions.",
@@ -289,15 +306,12 @@ static const char *help_msg_ae[] = {
 	"aeg", " [expr]", "esil data flow graph",
 	"aegf", " [expr] [register]", "esil data flow graph filter",
 	"aei", "[?]", "initialize ESIL VM state (aei- to deinitialize)",
-	"aek", " [query]", "perform sdb query on ESIL.info",
-	"aek-", "", "resets the ESIL.info sdb instance",
+	"aek", "[?] [query]", "perform sdb query on ESIL.info",
 	"aeL", "", "list ESIL plugins",
 	"aep", "[?] [addr]", "manage esil pin hooks (see 'e cmd.esil.pin')",
 	"aepc", " [addr]", "change esil PC to this address",
-	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
+	"aer", "[?] [..]", "handle ESIL registers like 'ar' or 'dr' does",
 	"aes", "[?]", "perform emulated debugger step",
-#if 0
-#endif
 	"aets", "[?]", "ESIL Trace session",
 	"aev", " [esil]", "visual esil debugger for the given expression or current instruction",
 	"aex", " [hex]", "evaluate opcode expression",
@@ -419,13 +433,26 @@ static const char *help_msg_aeg[] = {
 };
 
 static const char *help_msg_aep[] = {
-	"Usage:", "aep[-*c] ", " [...]",
+	"Usage:", "aep[-*c] ", " [...] manage esil pins, run r2 commands instead of esil",
 	"aepc", " [addr]", "change program counter for esil",
 	"aep*", "", "list pins in r2 commands",
 	"aep-", "*", "remove all pins",
 	"aep-", "[addr]", "remove pin",
+	"aep-", "[name]", "remove pin command",
+	"aepa", " ([addr])", "auto set pin in current or given address by flag name (see aaep)",
 	"aep", " [name] @ [addr]", "set pin",
+	"aep ", "memcpy=wf `dr?A1` `dr?A2` @r:A0", "override esil.cmd.pin for this pin name",
 	"aep", "", "list pins",
+	"aep.", "", "show pin name in current address if any",
+	"aepk", " [query]", "kuery the sdb of pins",
+	NULL
+};
+
+static const char *help_msg_aek[] = {
+	"Usage:", "aek ", " [...]",
+	"aek", "", "Dump the esil.stats database contents",
+	"aek ", "sdb.query", "Evaluate sdb query on esil.stats db",
+	"aek-", "", "Clear the esil.stats sdb instance",
 	NULL
 };
 
@@ -6770,6 +6797,7 @@ static void print_esil_dfg_as_commands(RCore *core, RAnalEsilDFG *dfg) {
 }
 
 static void cmd_aeg(RCore *core, int argc, char *argv[]) {
+	r_return_if_fail (core && argc >= 0 && argv);
 	if (argc == 0) {
 		r_core_cmd0 (core, ".aeg*;agg");
 		return;
@@ -6799,7 +6827,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			r_anal_esil_dfg_free (dfg);
 		}
 	}
-	break;
+		break;
 	case 'i':	// "aegi"
 	case 'v':	// "aegv"
 	{
@@ -6812,7 +6840,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		r_core_cmd0 (core, ".aeg*;aggv");
 		r_config_hold_free (hc);
 	}
-	break;
+		break;
 	case 'f':	// "aegf"
 	{
 		RStrBuf *filtered = r_anal_esil_dfg_filter_expr (core->anal, argv[1], argv[2]);
@@ -6821,7 +6849,7 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 			r_strbuf_free (filtered);
 		}
 	}
-	break;
+		break;
 	case 'c':	// "aegc"
 	{
 		RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (core->anal, NULL, argv[1]);
@@ -6840,10 +6868,11 @@ static void cmd_aeg(RCore *core, int argc, char *argv[]) {
 		}
 		r_anal_esil_dfg_free (dfg);
 	}
-	break;
-	case '?':	// "aeg?"
+		break;
+	case '?': // "aeg?"
 	default:
 		r_core_cmd_help (core, help_msg_aeg);
+		break;
 	}
 }
 
@@ -7253,6 +7282,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				sdb_reset (esil->stats);
 			}
 			break;
+		default:
+			r_core_cmd_help (core, help_msg_aek);
+			break;
 		}
 		break;
 	case 'L': // aeL commands
@@ -7361,7 +7393,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			cmd_aea (core, 1, core->offset, (int)r_num_math (core->num, input[1]?input+2:input+1));
 		}
 		break;
-	case 'a': {// "aea"
+	case 'a': { // "aea"
 		RReg *reg = core->anal->reg;
 		ut64 pc = r_reg_getv (reg, "PC");
 		RAnalOp *op = r_core_anal_op (core, pc, 0);
@@ -7417,6 +7449,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				break;
 			}
 		}
+			break;
 		case 'b': { // "aeab"
 			RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
 			if (bb) {
@@ -11216,6 +11249,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				// __anal_esil_function (core, fcn->addr);
 			}
 			r_core_seek (core, cur_seek, true);
+		} else if (input[1] == '?') { // "aae?"
+			r_core_cmd_help (core, help_msg_aae);
+		} else if (input[1] == 'p') { // "aaep" // auto define all esil pins
+			r_core_cmd0 (core, "aepa@@@i");
 		} else if (input[1] == ' ') {
 			const char *len = (char *)input + 1;
 			char *addr = strchr (input + 2, ' ');
