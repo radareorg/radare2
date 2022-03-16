@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2015 - pancake, nibble */
+/* radare - LGPL - Copyright 2015-2022 - pancake, nibble */
 
 #include <r_anal.h>
+#include "abi.inc"
 
 typedef void (*RAnalEsilPin)(RAnal *a);
 
@@ -31,6 +32,9 @@ static void pin_write(RAnal *a) {
 R_API void r_anal_pin_init(RAnal *a) {
 	sdb_free (DB);
 	DB = sdb_new0();
+	r_anal_pin_set (a, "strlen", "dr R0=`pszl@r:A0`;aexa ret");
+	r_anal_pin_set (a, "memcpy", "wf `dr?A1` `dr?A2` @ `dr?A0`;aexa ret");
+	r_anal_pin_set (a, "puts", "psz@r:A0; aexa ret");
 //	sdb_ptr_set (DB, "strlen", pin_strlen, 0);
 //	sdb_ptr_set (DB, "write", pin_write, 0);
 }
@@ -43,8 +47,17 @@ R_API void r_anal_pin_fini(RAnal *a) {
 
 R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name) {
 	char buf[64];
-	const char *key = sdb_itoa (addr, buf, 16);
-	sdb_set (DB, key, name, 0);
+	const char *eq = strchr (name, '=');
+	if (eq) {
+		char *n = r_str_ndup (name, (int)(size_t)(eq -name));
+		char *key = r_str_newf ("cmd.%s", n);
+		free (n);
+		sdb_set (DB, key, eq + 1, 0);
+		free (key);
+	} else {
+		const char *key = sdb_itoa (addr, buf, 16);
+		sdb_set (DB, key, name, 0);
+	}
 }
 
 R_API void r_anal_pin_unset(RAnal *a, ut64 addr) {
@@ -57,14 +70,19 @@ R_API const char *r_anal_pin_call(RAnal *a, ut64 addr) {
 	char buf[64];
 	const char *key = sdb_itoa (addr, buf, 16);
 	if (key) {
+		r_strf_buffer (128);
 		const char *name = sdb_const_get (DB, key, NULL);
-		// printf ("CALL %llx (%s) (cmd:%s)%c", addr, name, a->pincmd, 10);
-		if (name && a->pincmd) {
-			// printf ("%s %s", a->pincmd, name);
+		char *ckey = r_strf ("cmd.%s", name);
+		const char *cmd = sdb_const_get (DB, ckey, NULL);
+		if (R_STR_ISNOTEMPTY (cmd)) {
+			a->coreb.cmdf (a->coreb.core, "%s", cmd);
+			r_cons_flush ();
+		} else { if (name && a->pincmd) {
 			a->coreb.cmdf (a->coreb.core, "%s %s", a->pincmd, name);
 			r_cons_flush ();
 		}
 		return name;
+	}
 #if 0
 		const char *name;
 		if (name) {
@@ -87,8 +105,11 @@ static bool cb_list(void *user, const char *k, const char *v) {
 		a->cb_printf ("aep %s @ %s\n", v, k);
 	//	a->cb_printf ("%s = %s\n", k, v);
 	} else {
-		// ptr
-		a->cb_printf ("PIN %s\n", k);
+		if (!strncmp (k, "cmd.", 4)) {
+			a->cb_printf ("\"aep %s=%s\"\n", k + 4, v);
+		} else {
+			a->cb_printf ("\"aep %s\"\n", k);
+		}
 	}
 	return true;
 }

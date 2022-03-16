@@ -810,6 +810,15 @@ R_DEPRECATE typedef struct r_anal_var_field_t {
 	st64 delta;
 	bool field;
 } RAnalVarField;
+// TO DEPRECATE
+// Use r_anal_get_functions_in¿() instead
+R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type);
+R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
+R_API R_DEPRECATE RList/*<RAnalVar *>*/ *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
+R_API R_DEPRECATE RList/*<RAnalVarField *>*/ *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind);
+// There could be multiple vars used in multiple functions. Use r_anal_get_functions_in()+r_anal_function_get_vars_used_at() instead.
+R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr);
+
 
 typedef enum {
 	R_ANAL_ACC_UNKNOWN = 0,
@@ -1653,17 +1662,13 @@ R_API void r_anal_esil_trace_restore(RAnalEsil *esil, int idx);
 R_API void r_anal_pin_init(RAnal *a);
 R_API void r_anal_pin_fini(RAnal *a);
 R_API void r_anal_pin(RAnal *a, ut64 addr, const char *name);
-R_API void r_anal_pin_unset(RAnal *a, ut64 addr);
 R_API const char *r_anal_pin_call(RAnal *a, ut64 addr);
 R_API void r_anal_pin_list(RAnal *a);
+R_API void r_anal_pin_unset(RAnal *a, ut64 addr);
 
 /* fcn.c */
 R_API ut32 r_anal_function_cost(RAnalFunction *fcn);
 R_API int r_anal_function_count_edges(const RAnalFunction *fcn, R_NULLABLE int *ebbs);
-
-// Use r_anal_get_functions_in¿() instead
-R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type);
-R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
 
 R_API RAnalFunction *r_anal_get_function_byname(RAnal *anal, const char *name);
 
@@ -1710,6 +1715,9 @@ R_API bool r_anal_function_purity(RAnalFunction *fcn);
 #if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
 R_API int r_anal_function_instrcount(RAnalFunction *fcn);
 R_API bool r_anal_function_islineal(RAnalFunction *fcn);
+R_ABI const char *r_anal_pin_get(RAnal *a, const char *name);
+R_ABI const char *r_anal_pin_at(RAnal *a, ut64 addr);
+R_API bool r_anal_pin_set(RAnal *a, const char *name, const char *cmd);
 #endif
 
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
@@ -1751,9 +1759,6 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn);
 R_API st64 r_anal_function_get_var_stackptr_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta, ut64 addr);
 R_API R_BORROW RPVector *r_anal_function_get_vars_used_at(RAnalFunction *fcn, ut64 op_addr);
-
-// There could be multiple vars used in multiple functions. Use r_anal_get_functions_in()+r_anal_function_get_vars_used_at() instead.
-R_API R_DEPRECATE RAnalVar *r_anal_get_used_function_var(RAnal *anal, ut64 addr);
 
 R_API bool r_anal_var_rename(RAnalVar *var, const char *new_name, bool verbose);
 R_API void r_anal_var_set_type(RAnalVar *var, const char *type);
@@ -1845,8 +1850,6 @@ R_API void r_anal_reflines_str_free(RAnalRefStr *refstr);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int mode, PJ* pj);
 R_API RList *r_anal_var_list(RAnal *anal, RAnalFunction *fcn, int kind);
-R_API R_DEPRECATE RList/*<RAnalVar *>*/ *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
-R_API R_DEPRECATE RList/*<RAnalVarField *>*/ *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind);
 
 // calling conventions API
 R_API bool r_anal_cc_exist(RAnal *anal, const char *convention);

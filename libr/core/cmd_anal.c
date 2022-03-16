@@ -6899,13 +6899,52 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'p': // "aep"
 		switch (input[1]) {
+		case 'a': // "aepa"
+			{
+				ut64 at = core->offset;
+				if (input[2] == ' ') {
+					at = r_num_math (core->num, input + 2);
+				}
+				// get flag in current offset
+				// find a pin named like the flag, skip dots if any
+				RFlagItem *f = r_flag_get_by_spaces (core->flags, at, R_FLAGS_FS_SYMBOLS, R_FLAGS_FS_IMPORTS, NULL);
+				if (!f) {
+					f = r_flag_get_i (core->flags, at);
+				}
+				if (f) {
+					const char *last = r_str_rchr (f->name, NULL, '.');
+					const char *pin_name = last? last + 1: f->name;
+					const char *havepin = r_anal_pin_get (core->anal, pin_name);
+					if (havepin) {
+						r_core_cmdf (core, "aep %s @ 0x%08" PFMT64x, pin_name, at);
+					}
+				}
+			}
+			break;
+		case '.': // "aep."
+			{
+			const char *n = r_anal_pin_at (core->anal, core->offset);
+			if (R_STR_ISNOTEMPTY (n)) {
+				r_cons_printf ("%s\n", n);
+			}
+			}
+			break;
 		case 'c': // "aepc"
 			if (input[2] == ' ' || input[2] == '=') {
 				// seek to this address
 				r_core_cmdf (core, "ar PC=%s", r_str_trim_head_ro (input + 3));
 				r_core_cmd0 (core, ".ar*");
 			} else {
-				eprintf ("Missing argument\n");
+				eprintf ("Usage: aepc [address]  # same as 'ar PC=..'\n");
+			}
+			break;
+		case 'k':
+			{
+				char *out = sdb_querys (core->anal->sdb_pins, NULL, 0, r_str_trim_head_ro (input + 3));
+				if (out) {
+					r_cons_printf ("%s\n", out);
+					free (out);
+				}
 			}
 			break;
 		case '*':
@@ -7264,7 +7303,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	case 'k': // "aek"
 		switch (input[1]) {
 		case '\0':
-			input = "123*";
+			input = "*";
 			/* fall through */
 		case ' ':
 			if (esil && esil->stats) {
@@ -7463,38 +7502,49 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				}
 			}
 			}
+			break;
 		default: {
 			const char *arg = input[1]? input + 2: "";
 			ut64 len = r_num_math (core->num, arg);
 			cmd_aea (core, 0, core->offset, len);
 			}
+			break;
 		}
 		r_reg_setv (reg, "PC", pc);
 		break;
-	}
-	case 'x': { // "aex"
-		char *hex;
-		int ret, bufsz;
+		  }
+	case 'x': 
+		if (input[1] == ' ') { // "aex"
+			char *hex;
+			int ret, bufsz;
 
-		input = r_str_trim_head_ro (input + 1);
-		hex = strdup (input);
-		if (!hex) {
-			break;
-		}
+			input = r_str_trim_head_ro (input + 1);
+			hex = strdup (input);
+			if (!hex) {
+				break;
+			}
 
-		RAnalOp aop = {0};
-		bufsz = r_hex_str2bin (hex, (ut8*)hex);
-		ret = r_anal_op (core->anal, &aop, core->offset,
-			(const ut8*)hex, bufsz, R_ANAL_OP_MASK_ESIL);
-		if (ret>0) {
-			const char *str = R_STRBUF_SAFEGET (&aop.esil);
-			char *str2 = r_str_newf (" %s", str);
-			cmd_anal_esil (core, str2);
-			free (str2);
+			RAnalOp aop = {0};
+			bufsz = r_hex_str2bin (hex, (ut8*)hex);
+			ret = r_anal_op (core->anal, &aop, core->offset,
+				(const ut8*)hex, bufsz, R_ANAL_OP_MASK_ESIL);
+			if (ret > 0) {
+				const char *str = R_STRBUF_SAFEGET (&aop.esil);
+				char *str2 = r_str_newf (" %s", str);
+				cmd_anal_esil (core, str2);
+				free (str2);
+			}
+			r_anal_op_fini (&aop);
+		} else if (input[1] == 'a') { // "aexa"
+			char *bytes = r_core_cmd_strf (core, "\"pa %s\"", r_str_trim_head_ro (input + 2));
+			if (R_STR_ISNOTEMPTY (bytes)) {
+				r_core_cmdf (core, "aex %s", bytes);
+			}
+			free (bytes);
+		} else { // "aex?"
+			r_core_cmd_help (core, help_msg_aex);
 		}
-		r_anal_op_fini (&aop);
 		break;
-	}
 	case '?': // "ae?"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_detail_ae);

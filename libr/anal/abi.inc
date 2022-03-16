@@ -42,4 +42,26 @@ R_ABI bool r_anal_function_islineal(RAnalFunction *fcn) {
 	return true;
 }
 
+// pin.c
+
+#define DB a->sdb_pins
+R_ABI const char *r_anal_pin_get(RAnal *a, const char *name) {
+	r_strf_buffer (128);
+	char *ckey = r_strf ("cmd.%s", name);
+	return sdb_const_get (DB, ckey, NULL);
+}
+
+R_ABI const char *r_anal_pin_at(RAnal *a, ut64 addr) {
+	char buf[64];
+	const char *key = sdb_itoa (addr, buf, 16);
+	return sdb_const_get (DB, key, NULL);
+}
+
+R_ABI bool r_anal_pin_set(RAnal *a, const char *name, const char *cmd) {
+	r_strf_buffer (128);
+	char *ckey = r_strf ("cmd.%s", name);
+	return sdb_add (DB, ckey, cmd, 0);
+}
+#undef DB
+
 #endif
