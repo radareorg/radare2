@@ -294,6 +294,17 @@ static const char *help_msg_panels_zoom[] = {
 	NULL
 };
 
+static void print_notch(RCore *core) {
+	if (!core) {
+		return;
+	}
+	int notch = r_config_get_i (core->config, "scr.notch");
+	int i;
+	for (i = 0; i < notch; i++) {
+		r_cons_printf (R_CONS_CLEAR_LINE"\n");
+	}
+}
+
 static RPanel *__get_panel(RPanels *panels, int i) {
 	return (panels && i < PANEL_NUM_LIMIT)? panels->panel[i]: NULL;
 }
@@ -941,6 +952,7 @@ static void __panel_all_clear(RPanels *panels) {
 			r_cons_canvas_fill (panels->can, panel->view->pos.x, panel->view->pos.y, panel->view->pos.w, panel->view->pos.h, ' ');
 		}
 	}
+	print_notch (NULL);
 	r_cons_canvas_print (panels->can);
 	r_cons_flush ();
 }
@@ -3670,6 +3682,7 @@ static bool __drag_and_resize(RCore *core) {
 	if (panels->mouse_on_edge_x || panels->mouse_on_edge_y) {
 		int x, y;
 		if (r_cons_get_click (&x, &y)) {
+			y -= r_config_get_i (core->config, "scr.notch");;
 			if (panels->mouse_on_edge_x) {
 				__update_edge_x (core, x - panels->mouse_orig_x);
 			}
@@ -3942,6 +3955,7 @@ static void __update_modal(RCore *core, Sdb *menu_db, RModal *modal) {
 
 	r_cons_canvas_box (can, modal->pos.x, modal->pos.y, modal->pos.w + 2, modal->pos.h + 2, core->cons->context->pal.graph_box2);
 
+	print_notch (core);
 	r_cons_canvas_print (can);
 	r_cons_flush ();
 	show_cursor (core);
@@ -4007,6 +4021,7 @@ static void __create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 		word = NULL;
 		if (key == INT8_MAX - 1) {
 			if (r_cons_get_click (&cx, &cy)) {
+				cy -= r_config_get_i (core->config, "scr.notch");;
 				if ((cx < x || x + w < cx) || ((cy < y || y + h < cy))) {
 					key = 'q';
 				} else {
@@ -4152,6 +4167,7 @@ static bool __handle_mouse(RCore *core, RPanel *panel, int *key) {
 		if (!r_cons_get_click (&x, &y)) {
 			return false;
 		}
+		y -= r_config_get_i (core->config, "scr.notch");;
 		if (y == MENU_Y && __handle_mouse_on_top (core, x, y)) {
 			return true;
 		}
@@ -4396,6 +4412,7 @@ static void __call_visual_graph(RCore *core) {
 		r_config_set_i (core->config, "scr.color", ocolor);
 
 		int h, w = r_cons_get_size (&h);
+		h -= r_config_get_i (core->config, "scr.notch");;
 		panels->can = __create_new_canvas (core, w, h);
 	}
 }
@@ -4525,6 +4542,7 @@ static void __do_panels_resize(RCore *core) {
 	RPanels *panels = core->panels;
 	int i;
 	int h, w = r_cons_get_size (&h);
+	h -= r_config_get_i (core->config, "scr.notch");;
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = __get_panel (panels, i);
 		if ((panel->view->edge & (1 << PANEL_EDGE_BOTTOM))
@@ -5783,6 +5801,7 @@ static void demo_begin(RCore *core, RConsCanvas *can) {
 		// TODO drop utf8!!
 		r_str_ansi_filter (s, NULL, NULL, -1);
 		int i, h, w = r_cons_get_size (&h);
+		h -= r_config_get_i (core->config, "scr.notch");;
 		for (i = 0; i < 40; i+= (1 + (i/30))) {
 			int H = (int)(i * ((double)h / 40));
 			char *r = r_str_scale (s, w, H);
@@ -5811,6 +5830,7 @@ static void demo_end(RCore *core, RConsCanvas *can) {
 		// TODO drop utf8!!
 		r_str_ansi_filter (s, NULL, NULL, -1);
 		int i, h, w = r_cons_get_size (&h);
+		h -= r_config_get_i (core->config, "scr.notch");;
 		for (i = h; i > 0; i--) {
 			int H = i;
 			char *r = r_str_scale (s, w, H);
@@ -5875,6 +5895,7 @@ static void __panels_refresh(RCore *core) {
 	}
 	r_cons_gotoxy (0, 0);
 	int i, h, w = r_cons_get_size (&h);
+	h -= r_config_get_i (core->config, "scr.notch");;
 	if (!r_cons_canvas_resize (can, w, h)) {
 		return;
 	}
@@ -5980,6 +6001,7 @@ static void __panels_refresh(RCore *core) {
 		__panels_refresh (core);
 		return;
 	}
+	print_notch (core);
 	r_cons_canvas_print (can);
 	if (core->scr_gadgets) {
 		r_core_cmd0 (core, "pg");
@@ -6452,6 +6474,7 @@ static void __panels_process(RCore *core, RPanels *panels) {
 	core->panels = panels;
 	panels->autoUpdate = true;
 	int h, w = r_cons_get_size (&h);
+	h -= r_config_get_i (core->config, "scr.notch");;
 	panels->can = __create_new_canvas (core, w, h);
 	__set_refresh_all (core, false, true);
 
@@ -7023,6 +7046,7 @@ virtualmouse:
 			__replace_cmd (core, PANEL_TITLE_DECOMPILER, PANEL_CMD_DECOMPILER);
 
 			int h, w = r_cons_get_size (&h);
+			h -= r_config_get_i (core->config, "scr.notch");;
 			panels->can = __create_new_canvas (core, w, h);
 		}
 		break;

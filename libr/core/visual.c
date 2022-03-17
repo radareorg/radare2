@@ -4141,6 +4141,7 @@ static void visual_refresh(RCore *core) {
 	}
 	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
 	core->cons->blankline = true;
+	int notch = r_config_get_i (core->config, "scr.notch");
 
 	int w = visual_responsive (core);
 
@@ -4185,6 +4186,10 @@ static void visual_refresh(RCore *core) {
 			}
 		}
 		r_cons_gotoxy (0, 0);
+	}
+	int i;
+	for (i = 0; i < notch; i++) {
+		r_cons_printf (R_CONS_CLEAR_LINE"\n");
 	}
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi && *vi) {

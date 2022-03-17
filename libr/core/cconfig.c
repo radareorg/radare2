@@ -4054,6 +4054,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.optimize", 0, &cb_scroptimize, "Optimize the amount of ansi escapes and spaces (0, 1, 2 passes)");
 	SETBPREF ("scr.dumpcols", "false", "Prefer pC commands before p ones");
 	SETCB ("scr.rows", "0", &cb_scrrows, "Force console row count (height) ");
+	SETI ("scr.notch", 0, "Force console row count (height) (duplicate?)");
 	SETICB ("scr.rows", 0, &cb_rows, "Force console row count (height) (duplicate?)");
 	SETCB ("scr.fps", "false", &cb_fps, "Show FPS in Visual");
 	SETICB ("scr.fix.rows", 0, &cb_fixrows, "Workaround for Linux TTY");
