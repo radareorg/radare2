@@ -1,7 +1,5 @@
 /* radare2 - LGPL - Copyright 2009-2022 - nibble, pancake, maijin */
 
-#include <stdio.h>
-#include <r_types.h>
 #include <r_parse.h>
 #include <config.h>
 
@@ -35,11 +33,14 @@ R_API RParse *r_parse_new(void) {
 }
 
 R_API void r_parse_free(RParse *p) {
-	r_list_free (p->parsers);
-	free (p);
+	if (p) {
+		r_list_free (p->parsers);
+		free (p);
+	}
 }
 
 R_API bool r_parse_add(RParse *p, RParsePlugin *foo) {
+	r_return_val_if_fail (p && foo, false);
 	bool itsFine = foo->init? foo->init (p, p->user): true;
 	if (itsFine) {
 		r_list_append (p->parsers, foo);
@@ -85,6 +86,7 @@ R_API bool r_parse_use(RParse *p, const char *name) {
 // this function is a bit confussing, assembles C code into wat?, whehres theh input and wheres the output
 // and its unused. so imho it sshould be DEPRECATED this conflicts with rasm.assemble imhoh
 R_API bool r_parse_assemble(RParse *p, char *data, char *str) {
+	r_return_val_if_fail (p && data && str, false);
 	char *in = strdup (str);
 	bool ret = false;
 	char *s, *o;
@@ -152,7 +154,8 @@ R_API char *r_parse_immtrim(char *opstr) {
 	return opstr;
 }
 
-R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+R_API bool r_parse_subvar(RParse *p, R_NULLABLE RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
+	r_return_val_if_fail (p, false);
 	if (p->cur && p->cur->subvar) {
 		return p->cur->subvar (p, f, addr, oplen, data, str, len);
 	}
@@ -161,5 +164,6 @@ R_API bool r_parse_subvar(RParse *p, RAnalFunction *f, ut64 addr, int oplen, cha
 
 /* setters */
 R_API void r_parse_set_user_ptr(RParse *p, void *user) {
+	r_return_if_fail (p && user);
 	p->user = user;
 }

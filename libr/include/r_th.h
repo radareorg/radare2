@@ -15,8 +15,7 @@
 #define WANT_THREADS 1
 #endif
 
-#ifdef __GNUC__
-# define HAVE_TH_LOCAL 1
+#if defined (__GNUC__) && !__TINYC__
 # define R_TH_LOCAL __thread
 
 # define HAVE_STDATOMIC_H 0

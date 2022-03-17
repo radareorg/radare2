@@ -2522,14 +2522,8 @@ static void decl_initializer(TCCState *s1, CType *type, unsigned long c, int fir
 
 		/* only parse strings here if correct type (otherwise: handle
 		   them as ((w)char *) expressions */
-		if ((s1->tok == TOK_LSTR &&
-/* FIXME: Handle platform here ! */
-#ifdef TCC_TARGET_PE
-		     (t1->t & VT_BTYPE) == VT_INT16 && (t1->t & VT_UNSIGNED)
-#else
-		     (t1->t & VT_BTYPE) == VT_INT32
-#endif
-		    ) || (s1->tok == TOK_STR && (t1->t & VT_BTYPE) == VT_INT8)) {
+		// TARGET_PE ?? (t1->t & VT_BTYPE) == VT_INT16 && (t1->t & VT_UNSIGNED)
+		if ((s1->tok == TOK_LSTR && (t1->t & VT_BTYPE) == VT_INT32) || (s1->tok == TOK_STR && (t1->t & VT_BTYPE) == VT_INT8)) {
 			while (tcc_nerr (s1) == 0 && (s1->tok == TOK_STR || s1->tok == TOK_LSTR)) {
 				CString *cstr = s1->tokc.cstr;
 				/* compute maximum number of chars wanted */
@@ -3023,7 +3017,7 @@ static int decl0(TCCState *s1, int l, int is_for_loop_init) {
 			if (ad.weak) {
 				type.t |= VT_WEAK;
 			}
-#ifdef TCC_TARGET_PE
+#if 0
 			if (ad.func_import) {
 				type.t |= VT_IMPORT;
 			}

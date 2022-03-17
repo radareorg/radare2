@@ -3,14 +3,13 @@
 
 #include <r_crypto.h>
 #include <r_crypto/r_aes.h>
-#include <memory.h>
 
-struct aes_state {
-    ut8 key[32];
-    int key_size;
-    int columns;
-    int rounds;
-};
+typedef struct aes_state {
+	ut8 key[32];
+	int key_size;
+	int columns;
+	int rounds;
+} RCryptoAESState;
 
 /* forward tables */
 
@@ -267,7 +266,7 @@ static const ut32 U3[256] = { UT };
 #undef V
 #undef UT
 
-void aes_encrypt (struct aes_state*, ut8*, ut8*);
-void aes_decrypt (struct aes_state*, ut8*, ut8*);
+void aes_encrypt(RCryptoAESState*, ut8*, ut8*);
+void aes_decrypt(RCryptoAESState*, ut8*, ut8*);
 
 #endif

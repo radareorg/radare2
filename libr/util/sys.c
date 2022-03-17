@@ -1317,8 +1317,9 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
+static R_TH_LOCAL char *prefix = NULL;
+
 R_API const char *r_sys_prefix(const char *pfx) {
-	static R_TH_LOCAL char *prefix = NULL;
 	if (!prefix) {
 #if __WINDOWS__
 		prefix = r_sys_get_src_dir_w32 ();
