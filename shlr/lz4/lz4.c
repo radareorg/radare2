@@ -535,9 +535,9 @@ static unsigned LZ4_NbCommonBytes (reg_t val)
             unsigned long r = 0;
             _BitScanForward64(&r, (U64)val);
             return (unsigned)r >> 3;
-#       elif (defined(__clang__) || (defined(__GNUC__) && ((__GNUC__ > 3) || \
+#       elif (!__TINYC__ && (defined(__clang__) || (defined(__GNUC__) && ((__GNUC__ > 3) || \
                             ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4))))) && \
-                                        !defined(LZ4_FORCE_SW_BITCOUNT)
+                                        !defined(LZ4_FORCE_SW_BITCOUNT))
             return (unsigned)__builtin_ctzll((U64)val) >> 3;
 #       else
             const U64 m = 0x0101010101010101ULL;
@@ -560,7 +560,7 @@ static unsigned LZ4_NbCommonBytes (reg_t val)
         }
     } else   /* Big Endian CPU */ {
         if (sizeof(val)==8) {
-#       if (defined(__clang__) || (defined(__GNUC__) && ((__GNUC__ > 3) || \
+#       if (!__TINYC__ && defined(__clang__) || (defined(__GNUC__) && ((__GNUC__ > 3) || \
                             ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4))))) && \
                         !defined(__TINYC__) && !defined(LZ4_FORCE_SW_BITCOUNT)
             return (unsigned)__builtin_clzll((U64)val) >> 3;
@@ -596,9 +596,9 @@ static unsigned LZ4_NbCommonBytes (reg_t val)
 #endif
 #       endif
         } else /* 32 bits */ {
-#       if (defined(__clang__) || (defined(__GNUC__) && ((__GNUC__ > 3) || \
+#       if (!__TINYC__ && (defined(__clang__) || (defined(__GNUC__) && ((__GNUC__ > 3) || \
                             ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4))))) && \
-                                        !defined(LZ4_FORCE_SW_BITCOUNT)
+                                        !defined(LZ4_FORCE_SW_BITCOUNT))
             return (unsigned)__builtin_clz((U32)val) >> 3;
 #       else
             val >>= 8;
