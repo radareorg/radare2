@@ -1485,7 +1485,7 @@ static RList *xnu_desc_list(int pid) {
 
 	for (i=0 ; i<maxfd; i++) {
 		nb = proc_pidfdinfo (pid, i, PROC_PIDFDVNODEPATHINFO, &vi, sizeof (vi));
-		if (nb<1) {
+		if (nb < 1) {
 			continue;
 		}
 		if (nb < sizeof (vi)) {

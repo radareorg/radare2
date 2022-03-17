@@ -1341,7 +1341,7 @@ RList *linux_desc_list (int pid) {
 		}
 		memcpy (file, path, len);
 		memcpy (file + len, de->d_name, len2 + 1);
-		buf[0] = 0;
+		memset (buf, 0, sizeof (buf));
 		if (readlink (file, buf, sizeof (buf) - 1) == -1) {
 			return NULL;
 		}
