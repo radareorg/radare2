@@ -5,6 +5,11 @@
 extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 
 
+typedef struct {
+	char ens[3][MAX_TOKEN_SIZE];
+} AvrToken;
+static int search_instruction(RAsm *a, AvrToken *tok, int args);
+// char instr[3][MAX_TOKEN_SIZE], int args);
 /* the next few functions and structures uses for detecting
    AVR special regs, like X+, -Y, Z+3 in st(d), ld(d) and
    (e)lpm instructions */
@@ -37,7 +42,7 @@ specialregs RegsTable[REGS_TABLE] = {
 
 
 int avr_encode(RAsm *a, RAsmOp *ao, const char *str) {
-	char tokens[3][MAX_TOKEN_SIZE];
+	AvrToken tok;
 	char *token;
 	uint32_t coded = 0;
 	int len  = 0;
@@ -49,15 +54,15 @@ int avr_encode(RAsm *a, RAsmOp *ao, const char *str) {
 	// the delimiters are ' ' and ','
 	token = strtok ((char *)str, TOKEN_DELIM);
 	while (token && tokens_cnt < 3) {
-		memset (tokens[tokens_cnt], 0, MAX_TOKEN_SIZE);
-		strncpy (tokens[tokens_cnt], token, MAX_TOKEN_SIZE-1);
+		memset (tok.ens[tokens_cnt], 0, MAX_TOKEN_SIZE);
+		strncpy (tok.ens[tokens_cnt], token, MAX_TOKEN_SIZE-1);
 		token = strtok (NULL, TOKEN_DELIM);
 		tokens_cnt += 1;
 	}
 
 	if (tokens_cnt > 0) {
 		// find nearest instruction that looks like supplied
-		instr_idx = search_instruction (a, tokens, tokens_cnt - 1);
+		instr_idx = search_instruction (a, &tok, tokens_cnt - 1);
 
 		if (instr_idx >= 0) {
 			// no operands -- just return opcode mask
@@ -73,7 +78,7 @@ int avr_encode(RAsm *a, RAsmOp *ao, const char *str) {
 				ORing with the last 16 bits(/2 for jmp/call) */
 			} else if (instructionSet[instr_idx].numOperands == 1 && tokens_cnt == 2) {
 
-				if (assemble_operand (a, tokens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0) {
+				if (assemble_operand (a, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0) {
 					// jmp and call has 4-byte opcode
 					if (instructionSet[instr_idx].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 						op1 = op1/2;
@@ -99,8 +104,8 @@ int avr_encode(RAsm *a, RAsmOp *ao, const char *str) {
 				}
 
 			} else if (instructionSet[instr_idx].numOperands == 2 && tokens_cnt == 3) {
-				if (assemble_operand(a, tokens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0 &&
-				   assemble_operand(a, tokens[2], instructionSet[instr_idx].operandTypes[1], &op2) >= 0) {
+				if (assemble_operand(a, tok.ens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0 &&
+				   assemble_operand(a, tok.ens[2], instructionSet[instr_idx].operandTypes[1], &op2) >= 0) {
 
 					coded = instructionSet[instr_idx].opcodeMask
 						| packDataByMask(op1, instructionSet[instr_idx].operandMasks[0])
@@ -233,7 +238,7 @@ int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *res) {
 		break;
 	case OPERAND_YPQ:
 	case OPERAND_ZPQ:
-		if (strlen(operand) > 2) {
+		if (strlen (operand) > 2) {
 			/* return argument after '+' sign
 			   we've already checked presence of '+' in parse_specialreg */
 			*res = getnum (operand + 2);
@@ -241,7 +246,7 @@ int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *res) {
 		}
 		break;
 	case OPERAND_REGISTER:
-		if (strlen(operand) > 1) {
+		if (strlen (operand) > 1) {
 			// returns register number (r__)
 			*res = getnum (operand + 1);
 			if (*res <= 32) {
@@ -250,7 +255,7 @@ int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *res) {
 		}
 		break;
 	case OPERAND_REGISTER_STARTR16:
-		if (strlen(operand) > 1) {
+		if (strlen (operand) > 1) {
 			// returns register number (r__)
 			*res = getnum (operand + 1);
 			if (*res >= 16 && *res <= 32) {
@@ -291,12 +296,12 @@ uint16_t packDataByMask(uint16_t data, uint16_t mask) {
 /* this function searches from instruction in instructionSet table
    (see avr_disasm.h for more info)
    returns index of the instruction in the table */
-int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) {
+static int search_instruction(RAsm *a, AvrToken *tok, int args) {
 	int i, op1 = 0, op2 = 0;
 
 	for (i = 0; i < AVR_TOTAL_INSTRUCTIONS - 1; i++) {
 		// check instruction mnemonic
-		if (!strncmp (instr[0], instructionSet[i].mnemonic, MAX_TOKEN_SIZE)) {
+		if (!strncmp (tok->ens[0], instructionSet[i].mnemonic, MAX_TOKEN_SIZE)) {
 			// in AVR instructions could have different opcodes based on number of arguments
 			if (instructionSet[i].numOperands == args) {
 				/* because st Z+ and st Z (and so on...) are instructions with DIFFERENT opcodes
@@ -307,14 +312,14 @@ int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) {
 				// handling (e)lpm instruction with 2 args
 				if (instructionSet[i].opcodeMask >= 0x9004 &&
 					instructionSet[i].opcodeMask <= 0x9007) {
-					if (instructionSet[i].operandTypes[1] == parse_specialreg (instr[2])) {
+					if (instructionSet[i].operandTypes[1] == parse_specialreg (tok->ens[2])) {
 						return i;
 					}
 					// handling ld & ldd instruction with 2 args
 				} else if (instructionSet[i].mnemonic[0] == 'l'
 					&& instructionSet[i].mnemonic[1] == 'd'
 					&& (instructionSet[i].mnemonic[2] == 'd' || instructionSet[i].mnemonic[2] == '\0')) {
-					if (instructionSet[i].operandTypes[1] == parse_specialreg (instr[2])) {
+					if (instructionSet[i].operandTypes[1] == parse_specialreg (tok->ens[2])) {
 						return i;
 					}
 					// handling lds command, distinguishing long from 16-bit version
@@ -323,8 +328,8 @@ int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) {
 					&& instructionSet[i].mnemonic[2] == 's'
 					&& instructionSet[i].operandTypes[1] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 					// ineffective, but needed for lds/sts and other cases
-					if (strlen(instr[2]) > 0) {
-						op2 = getnum (instr[2]);
+					if (strlen (tok->ens[2]) > 0) {
+						op2 = getnum (tok->ens[2]);
 						if (op2 > 127) {
 							return i;
 						}
@@ -334,7 +339,7 @@ int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) {
 					&& instructionSet[i].mnemonic[1] == 't'
 					&& (instructionSet[i].mnemonic[2] == 'd' || instructionSet[i].mnemonic[2] == '\0')) {
 
-					if (instructionSet[i].operandTypes[0] == parse_specialreg (instr[1])) {
+					if (instructionSet[i].operandTypes[0] == parse_specialreg (tok->ens[1])) {
 						return i;
 					}
 					// handling sts long command
@@ -343,8 +348,8 @@ int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) {
 					&& instructionSet[i].mnemonic[2] == 's'
 					&& instructionSet[i].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 					// same for 1st operand of sts
-					if (strlen(instr[1]) > 0) {
-						op1 = getnum (instr[1]);
+					if (strlen (tok->ens[1]) > 0) {
+						op1 = getnum (tok->ens[1]);
 						if (op1 > 127) {
 							return i;
 						}
