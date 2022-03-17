@@ -22,35 +22,28 @@ static const ut8 Rcon[30] = {
 	0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91
 };
 
+#ifdef __GNUC__
+#define Nr_AES256 (st->rounds)
+#else
+// defined(_MSC_VER) || defined(__TINYC__)
+#define Nr_AES256 (6 + ((256 / 8) / 4))
+#endif
 // Expand a user-supplied key material into a session key.
 // key        - The 128/192/256-bit user-key to use.
 //expkey[2][Nr + 1][Nb]
 //void aes_expkey (const struct aes_state *st, ut32 ***expkey) { //expkey[2][st->rounds + 1][Nb]) {
-#if defined (__GNUC__)
-void aes_expkey (const struct aes_state *st, ut32 expkey[2][st->rounds + 1][Nb])
-#else
-// XXX this is wrong, but at least it compiles
-#ifdef _MSC_VER
-#pragma message ("AES broken for non-gcc compilers")
-#else
-#warning AES broken for non-gcc compilers
-#endif
-#define Nr_AES256 (6 + ((256 / 8) / 4))
-void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
-#endif
-{
+void aes_expkey(const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb]) {
 	// ut32 expkey[2][st->rounds + 1][Nb];
 	// memcpy (&expkey, _expkey, 2 * (st->rounds + 1) * Nb);
 	int ROUND_KEY_COUNT = 4 * (1 + st->rounds);
-#ifdef _MSC_VER
 	ut32 *tk = (ut32*)malloc (sizeof (ut32) * st->columns);
-#else
-	ut32 tk[st->columns];
-#endif
 	ut32 tt;
 	st32 idx = 0, t = 0;
 	const ut8 *key = st->key;
 	st32 i, j, r;
+	if (!tk) {
+		return;
+	}
 
 	for (i = 0; i <= st->rounds; i++) {
 		for (j = 0; j < Nb; j++) {
@@ -115,9 +108,7 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 				U2[(ut8)(tt >> 8)] ^ U3[(ut8)tt];
 		}
 	}
-#ifdef _MSC_VER
 	free (tk);
-#endif
 }
 
 // Convenience method to encrypt exactly one block of plaintext, assuming
@@ -125,11 +116,7 @@ void aes_expkey (const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb])
 // in         - The plaintext
 // result     - The ciphertext generated from a plaintext using the key
 void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
-#if defined(_MSC_VER) || defined(__TINYC__)
 	ut32 expkey[2][Nr_AES256 + 1][Nb];
-#else
-	ut32 expkey[2][st->rounds + 1][Nb];
-#endif
 	aes_expkey(st, expkey);
 
 	ut32 t0, t1, t2, t3, tt;
@@ -207,11 +194,7 @@ void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 // in         - The ciphertext.
 // result     - The plaintext generated from a ciphertext using the session key.
 void aes_decrypt (struct aes_state *st, ut8 *in, ut8 *result) {
-#if defined(_MSC_VER) || defined(__TINYC__)
 	ut32 expkey[2][Nr_AES256 + 1][Nb];
-#else
-	ut32 expkey[2][st->rounds + 1][Nb];
-#endif
 
 	aes_expkey(st, expkey);
 
