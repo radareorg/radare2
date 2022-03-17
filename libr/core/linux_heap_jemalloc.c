@@ -134,7 +134,7 @@ static bool GH(r_resolve_jemalloc)(RCore *core, char *symname, ut64 *symbol) {
 	ut64 n = r_num_get (NULL, va);
 	if (n && n != UT64_MAX) {
 		*symbol = n;
-		eprintf ("0x%08"PFMT64x"\n", n);
+		eprintf ("0x%08"PFMT64x" 0x%08" PFMT64x"\n", n, jemalloc_addr);
 	} else {
 		eprintf ("NOT FOUND\n");
 	}

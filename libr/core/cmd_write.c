@@ -1783,7 +1783,6 @@ static int wa_handler_old(void *data, const char *input) {
 		acode = r_asm_massemble (core->rasm, file);
 		if (acode) {
 			if (input[0] == 'n') { // "wan"
-				int patchsize = acode->len;
 				int delta = 0;
 				RAnalOp analop;
 				ut64 at = core->offset;
@@ -1795,7 +1794,6 @@ repeat:
 				if (delta < acode->len) {
 					delta += analop.size;
 					at += analop.size;
-					patchsize += analop.size;
 					r_anal_op_fini (&analop);
 					r_core_cmdf (core, "wao nop @ 0x%08"PFMT64x, at);
 					goto repeat;

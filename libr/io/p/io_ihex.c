@@ -222,7 +222,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 	ut32 sec_start = 0;	//addr for next section write
 	ut32 segreg = 0;	//basis for addr fields
 	ut32 addr_tmp = 0;	//addr for record
-	ut16 next_addr = 0;	//for checking if records are sequential
+	// ut16 next_addr = 0;	//for checking if records are sequential
 	char *eol;
 	ut8 cksum;
 	int extH, extL;
@@ -268,7 +268,8 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 				}
 				cksum += byte;
 			}
-			if (1) { //  || (next_addr != addr_tmp) || ((sec_size + bc) > SEC_MAX)) {
+			if (1) { //  || 
+				//bool is_seq = (next_addr != addr_tmp) || ((sec_size + bc) > SEC_MAX);
 				//previous block is not contiguous, or
 				//section buffer is full => write a sparse chunk
 				//if (sec_size && sec_size < UT16_MAX) {
@@ -286,12 +287,12 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 				//}
 				//advance cursor, reset section
 			//	sec_start = segreg + addr_tmp;
-				next_addr = addr_tmp;
+				//next_addr = addr_tmp;
 				sec_size = 0;
 			}
 
 			sec_size += bc;
-			next_addr += bc;
+			//next_addr += bc;
 			if (eol) {
 				// checksum
 				if (sscanf (str + 9 + (i * 2), "%02x", &byte) !=1) {
@@ -356,7 +357,7 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 
 			//segment rec(02) gives bits 4..19; linear rec(04) is bits 16..31
 			segreg = segreg << ((type == 2)? 4: 16);
-			next_addr = 0;
+			//next_addr = 0;
 			sec_start = segreg;
 
 			if (eol) {

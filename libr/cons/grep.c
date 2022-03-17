@@ -503,7 +503,7 @@ R_API void r_cons_grepbuf(void) {
 	const int len = cons->context->buffer_len;
 	RConsGrep *grep = &cons->context->grep;
 	const char *in = buf;
-	int ret, total_lines = 0, buffer_len = 0, l = 0, tl = 0;
+	int ret, total_lines = 0, l = 0, tl = 0;
 	bool show = false;
 	if (cons->context->filter) {
 		cons->context->buffer_len = 0;
@@ -715,7 +715,6 @@ R_API void r_cons_grepbuf(void) {
 						r_strbuf_append (ob, str);
 						r_strbuf_append (ob, "\n");
 					}
-					buffer_len += ret + 1;
 					free (str);
 				}
 				if (!grep->range_line) {

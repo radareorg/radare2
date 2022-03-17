@@ -243,7 +243,6 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	}
 	if (io->mask) {
 		ut64 p = addr;
-		ut8 *b = buf;
 		size_t q = 0;
 		while (q < len) {
 			p &= io->mask;
@@ -256,7 +255,6 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 				return false;
 			}
 			q += sz;
-			b += sz;
 			p = 0;
 		}
 		return true;

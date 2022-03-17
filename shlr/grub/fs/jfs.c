@@ -527,7 +527,7 @@ grub_jfs_getent (struct grub_jfs_diropen *diro)
       return grub_jfs_getent (diro);
     }
 
-  addstr (leaf->namepart, len < 11 ? len : 11, filename, &strpos);
+  addstr ((grub_uint16_t*)leaf->namepart, len < 11 ? len : 11, filename, &strpos);
   diro->ino = grub_le_to_cpu32 (leaf->inode);
   len -= 11;
 
@@ -537,7 +537,7 @@ grub_jfs_getent (struct grub_jfs_diropen *diro)
     do
       {
  	next_leaf = &diro->next_leaf[nextent];
-	addstr (next_leaf->namepart, len < 15 ? len : 15, filename, &strpos);
+	addstr ((grub_uint16_t*)next_leaf->namepart, len < 15 ? len : 15, filename, &strpos);
 
 	len -= 15;
 	nextent = next_leaf->next;
