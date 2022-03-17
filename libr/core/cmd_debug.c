@@ -160,12 +160,13 @@ static const char *help_msg_dcu[] = {
 };
 
 static const char *help_msg_dd[] = {
-	"Usage: dd", "", "Descriptors commands",
+	"Usage: dd", "", "Manage child process files (prepend '.' to inject it)",
 	"dd", "", "List file descriptors",
-	"dd", " <file>", "Open and map that file into the UI (may be addr of filename in memory)",
+	"dd", " <file>", "Open file in child process as O_RDONLY)",
 	"dd-", "<fd>", "Close stdout fd",
+	"dd+", "<file>", "Open file in read-write (O_RDWR)",
 	"dd*", "", "List file descriptors (in radare commands)",
-	"dds", " <fd> <off>", "(Seek given fd to offset)",
+	"dds", " <fd> <off>", "Seek given fd to offset",
 	"ddd", " <fd1> <fd2>", "Dup2 from fd1 to fd2",
 	"ddf", " <addr>", "Create pipe and write fd to address",
 	"ddr", " <fd> <size>", "Read N bytes from fd",
@@ -5032,6 +5033,10 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'd': // "dd"
+		if (strchr (input, '?')) {
+			r_core_cmd_help (core, help_msg_dd);
+			break;
+		}
 		switch (input[1]) {
 		case '\0': // "dd"
 			r_debug_desc_list (core->dbg, 0);
@@ -5187,15 +5192,15 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 's':
+	case 's': // "ds"
 		if (cmd_debug_step (core, input)) {
 			follow = r_config_get_i (core->config, "dbg.follow");
 		}
 		break;
-	case 'b':
+	case 'b': // "db"
 		r_core_cmd_bp (core, input);
 		break;
-	case 'H':
+	case 'H': // "dH"
 		eprintf ("TODO: transplant process\n");
 		break;
 	case 'c': // "dc"

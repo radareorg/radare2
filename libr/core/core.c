@@ -998,7 +998,7 @@ static const char *radare_argv[] = {
 	"db?", "dbi", "dbi.", "dbix", "dbic", "dbie", "dbid", "dbis", "dbite", "dbitd", "dbits", "dbh", "dbh-",
 	"dbt", "dbt*", "dbt=", "dbtv", "dbtj", "dbta", "dbte", "dbtd", "dbts", "dbx", "dbw",
 	"dc?", "dc", "dca", "dcb", "dcc", "dccu", "dcf", "dck", "dcp", "dcr", "dcs", "dcs*", "dct", "dcu", "dcu.",
-	"dd?", "dd", "dd-", "dd*", "dds", "ddd", "ddr", "ddw",
+	"dd?", "dd", "dd-", "dd+", "dd*", "dds", "ddd", "ddr", "ddw",
 	"de",
 	"dg",
 	"dH",
@@ -2655,7 +2655,7 @@ static void __init_autocomplete_default(RCore* core) {
 		"#!rust", "#!zig", "#!pipe", "#!python", "aeli", "arp", "arpg", "dmd", "drp", "drpg", "o",
 		"idp", "idpi", "L", "obf", "o+", "oc", "r2", "rabin2", "rasm2", "rahash2", "rax2",
 		"rafind2", "cd", "ls", "on", "wf", "rm", "wF", "wp", "Sd", "Sl", "to", "pm",
-		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml",
+		"/m", "zos", "zfd", "zfs", "zfz", "cat", "wta", "wtf", "wxf", "dml", "dd", "dd+",
 		"vi", "vim", "nvi", "neovim", "nvim", "nano",
 #if __WINDOWS__
 		"notepad",
