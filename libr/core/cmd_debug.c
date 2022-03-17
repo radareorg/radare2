@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_core.h>
 #include <r_debug.h>
@@ -5153,22 +5153,23 @@ static int cmd_debug(void *data, const char *input) {
 				}
 			}
 			break;
+		case '+': // "dd+"
 		case ' ': // "dd"
-			// TODO: handle read, readwrite, append
 			{
 				RBuffer *buf;
+				int flags = (input[1] == '+')? 2: 0; // O_RDWR: O_RDONLY
 				ut64 addr = r_num_get (NULL, input + 2);
 
 				// filename can be a string literal or address in memory
 				if (addr && addr < UT64_MAX) {
 					buf = r_core_syscallf (core, "open",
 							"%" PFMT64x ", %d, %d",
-							addr, 2, 0644);
+							addr, flags, 0644);
 				} else {
 					char *filename = r_str_escape (input + 2);
 					buf = r_core_syscallf (core, "open",
 							"\"%s\", %d, %d",
-							filename, 2, 0644);
+							filename, flags, 0644);
 					free (filename);
 				}
 
