@@ -33,7 +33,7 @@ static bool lock_init(RThreadLock *thl, bool recursive) {
 static bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
 #if HAVE_STDATOMIC_H
 	return atomic_exchange_explicit (data, v, memory_order_acquire);
-#elif __GNUC__
+#elif __GNUC__ && !__TINYC__
 	int orig;
 	int conv = (int)v;
 	__atomic_exchange (data, &conv, &orig, __ATOMIC_ACQUIRE);
@@ -51,7 +51,7 @@ static bool r_atomic_exchange(volatile R_ATOMIC_BOOL *data, bool v) {
 static void r_atomic_store(volatile R_ATOMIC_BOOL *data, bool v) {
 #if HAVE_STDATOMIC_H
 	atomic_store_explicit (data, v, memory_order_release);
-#elif __GNUC__
+#elif __GNUC__ && !__TINYC__
 	int conv = (int)v;
 	__atomic_store (data, &conv, __ATOMIC_RELEASE);
 #elif _MSC_VER

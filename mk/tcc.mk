@@ -17,7 +17,6 @@ ifeq ($(OSTYPE),darwin)
 PARTIALLD=${LD} -r -all_load
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-soname
-# LDFLAGS_SONAME=-Wl,-install_name,
 else
 PARTIALLD=${LD} -r --whole-archive
 LDFLAGS_LIB=-shared
