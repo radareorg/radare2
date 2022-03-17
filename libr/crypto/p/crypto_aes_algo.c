@@ -31,16 +31,20 @@ static const ut8 Rcon[30] = {
 // Expand a user-supplied key material into a session key.
 // key        - The 128/192/256-bit user-key to use.
 //expkey[2][Nr + 1][Nb]
-//void aes_expkey (const struct aes_state *st, ut32 ***expkey) { //expkey[2][st->rounds + 1][Nb]) {
-void aes_expkey(const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb]) {
+//void aes_expkey (const RCryptoAESState *st, ut32 ***expkey) { //expkey[2][st->rounds + 1][Nb]) {
+void aes_expkey(const RCryptoAESState *st, ut32 expkey[2][Nr_AES256 + 1][Nb]) {
+	if (!st) {
+		return;
+	}
 	// ut32 expkey[2][st->rounds + 1][Nb];
 	// memcpy (&expkey, _expkey, 2 * (st->rounds + 1) * Nb);
 	int ROUND_KEY_COUNT = 4 * (1 + st->rounds);
-	ut32 *tk = (ut32*)malloc (sizeof (ut32) * st->columns);
 	ut32 tt;
 	st32 idx = 0, t = 0;
 	const ut8 *key = st->key;
 	st32 i, j, r;
+
+	ut32 *tk = (ut32*)malloc (sizeof (ut32) * st->columns);
 	if (!tk) {
 		return;
 	}
@@ -115,7 +119,7 @@ void aes_expkey(const struct aes_state *st, ut32 expkey[2][Nr_AES256 + 1][Nb]) {
 // Rijndael's default block size (128-bit).
 // in         - The plaintext
 // result     - The ciphertext generated from a plaintext using the key
-void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
+void aes_encrypt(RCryptoAESState *st, ut8 *in, ut8 *result) {
 	ut32 expkey[2][Nr_AES256 + 1][Nb];
 	aes_expkey(st, expkey);
 
@@ -193,7 +197,7 @@ void aes_encrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 // Rijndael's default block size (128-bit).
 // in         - The ciphertext.
 // result     - The plaintext generated from a ciphertext using the session key.
-void aes_decrypt (struct aes_state *st, ut8 *in, ut8 *result) {
+void aes_decrypt(RCryptoAESState *st, ut8 *in, ut8 *result) {
 	ut32 expkey[2][Nr_AES256 + 1][Nb];
 
 	aes_expkey(st, expkey);
