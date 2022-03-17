@@ -16,7 +16,7 @@ jobs:
           git clone https://github.com/mirror/tinycc.git
           cd tinycc
           git checkout mob
-          git reset --hard HEAD~30
+          git reset --hard 917aad3bcfbb534875aa6d66609bdb36459460a4
 
     - name: Compiling and installing TinyCC
       working-directory: tinycc
