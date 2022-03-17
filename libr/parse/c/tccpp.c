@@ -1937,7 +1937,7 @@ num_too_long:
 				s1->tokc.f = (float) d;
 			} else if (t == 'L') {
 				ch = *p++;
-#ifdef TCC_TARGET_PE
+#if 0 // TARGET_PE
 				s1->tok = TOK_CDOUBLE;
 				s1->tokc.d = d;
 #else
