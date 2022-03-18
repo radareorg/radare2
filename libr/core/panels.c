@@ -4480,9 +4480,6 @@ static void __print_decompiler_cb(void *user, void *p) {
 	if (core->offset != panel->model->addr) {
 		update = true;
 	}
-#else
-	bool update = true;
-#endif
 	if (!update) {
 		cmdstr = __find_cmd_str_cache (core, panel);
 		if (R_STR_ISNOTEMPTY (cmdstr)) {
@@ -4490,6 +4487,9 @@ static void __print_decompiler_cb(void *user, void *p) {
 		}
 		return;
 	}
+#else
+	bool update = true;
+#endif
 	// RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (func && core->panels_root->cur_pdc_cache) {
 		cmdstr = r_str_new ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,

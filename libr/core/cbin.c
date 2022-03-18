@@ -1741,6 +1741,7 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 			pj_a (pj);
 			pj_end (pj);
 		}
+		r_table_free (table);
 		return false;
 	}
 	if (bin_cache) {
@@ -1886,9 +1887,6 @@ static int bin_relocs(RCore *r, PJ *pj, int mode, int va) {
 	db = NULL;
 
 	R_TIME_PROFILE_END;
-	if (IS_MODE_JSON (mode)) {
-		return true;
-	}
 	return true;
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #define USE_THREADS 1
 #define ALLOW_THREADED 0
@@ -858,6 +858,8 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	if (project_name) {
 		if (!r_core_project_open (r, project_name)) {
 			eprintf ("Cannot find project.\n");
+			free (debugbackend);
+			free (envprofile);
 			return 1;
 		}
 	}
@@ -867,7 +869,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (opt.ind >= argc) {
 			eprintf ("Missing URI for -C\n");
 			LISTS_FREE ();
-			R_FREE (debugbackend);
+			free (debugbackend);
 			free (envprofile);
 			return 1;
 		}
@@ -981,6 +983,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (buf);
 			LISTS_FREE ();
 			free (envprofile);
+			free (debugbackend);
 			return 1;
 		}
 	} else if (strcmp (argv[opt.ind - 1], "--") && !project_name) {
@@ -994,7 +997,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			if (opt.ind >= argc) {
 				eprintf ("No program given to -d\n");
 				LISTS_FREE ();
-				R_FREE (debugbackend);
+				free (debugbackend);
 				free (envprofile);
 				return 1;
 			}
