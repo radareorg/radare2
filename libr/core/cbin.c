@@ -2005,6 +2005,7 @@ static int bin_imports(RCore *r, PJ *pj, int mode, int va, const char *name) {
 			pj_a (pj);
 			pj_end (pj);
 		}
+		r_table_free (table);
 		return false;
 	}
 

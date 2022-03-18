@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2022 - nibble, pancake, dso, lazula */
 
 #include "r_core.h"
+#include "../anal/abi.inc"
 
 #define HASRETRY 1
 #define HAVE_LOCALS 1
@@ -320,8 +321,11 @@ static void ds_atabs_option(RDisasmState *ds);
 static void ds_show_functions(RDisasmState *ds);
 static void ds_control_flow_comments(RDisasmState *ds);
 static void ds_adistrick_comments(RDisasmState *ds);
+
+// TODO: if those two functions do the same should be unified
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_show_comments_right(RDisasmState *ds);
+
 static void ds_show_flags(RDisasmState *ds, bool overlapped);
 static void ds_update_ref_lines(RDisasmState *ds);
 static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len);
@@ -474,9 +478,7 @@ R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
 	return section;
 }
 
-// up means if this lines go up, it controls whether to insert `_
-// nl if we have to insert new line, it controls whether to insert \n
-static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
+static void ds_comment_align(RDisasmState *ds) {
 	if (ds->show_comment_right) {
 		if (ds->show_color) {
 			r_cons_print (ds->pal_comment);
@@ -485,17 +487,15 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 	}
 	const char *sn = ds->show_section ? r_core_get_section_name (ds->core, ds->at) : "";
 	ds_align_comment (ds);
-	// ds_align_comment (ds);
 	r_cons_print (COLOR_RESET (ds));
 	ds_print_pre (ds, true);
-	r_cons_printf ("%s%s", nl? "\n": "", sn);
+	r_cons_printf ("%s", sn);
 	ds_print_ref_lines (ds->refline, ds->line_col, ds);
-	r_cons_printf ("  %s %s",up? "": ".-", COLOR (ds, color_comment));
+	r_cons_printf ("   %s", COLOR (ds, color_comment));
 }
-#define CMT_ALIGN _ds_comment_align_ (ds, true, false)
 
 static void ds_comment_lineup(RDisasmState *ds) {
-	CMT_ALIGN;
+	ds_comment_align (ds);
 }
 
 static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *format, va_list ap) {
@@ -1312,10 +1312,18 @@ static void ds_begin_cont(RDisasmState *ds) {
 
 static void ds_begin_comment(RDisasmState *ds) {
 	if (ds->show_comment_right) {
-		CMT_ALIGN;
+		ds_comment_align (ds);
 	} else {
 		ds_begin_line (ds);
 		ds_pre_xrefs (ds, false);
+	}
+}
+
+static void ds_print_pins(RDisasmState *ds) {
+	const char *lepin = r_anal_pin_at (ds->core->anal, ds->at);
+	if (R_STR_ISNOTEMPTY (lepin)) {
+	 	ds_begin_comment (ds);
+		ds_comment (ds, true, "; [aep: %s]", lepin);
 	}
 }
 
@@ -2349,9 +2357,9 @@ static RList *custom_sorted_flags(const RList *flaglist) {
 
 #define printPre (outline || !*comma)
 static void ds_show_flags(RDisasmState *ds, bool overlapped) {
-	//const char *beginch;
 	RFlagItem *flag;
 	RListIter *iter;
+
 	if (!ds->show_flags) {
 		return;
 	}
@@ -3580,7 +3588,7 @@ static void ds_print_sysregs(RDisasmState *ds) {
 			RSyscall *sc = core->anal->syscall;
 			const char *ioname = r_syscall_get_io (sc, imm);
 			if (ioname && *ioname) {
-				CMT_ALIGN;
+				ds_comment_align (ds);
 				ds_comment (ds, true, "; IO %s", ioname);
 				ds->has_description = true;
 			}
@@ -3595,7 +3603,7 @@ static void ds_print_sysregs(RDisasmState *ds) {
 			const int imm = (int)ds->analop.ptr;
 			const char *sr = r_syscall_sysreg (core->anal->syscall, "reg", imm);
 			if (sr) {
-				CMT_ALIGN;
+				ds_comment_align (ds);
 				ds_comment (ds, true, "; REG %s - %s", sr, "");
 				// TODO: add register description description
 				ds->has_description = true;
@@ -5152,6 +5160,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 	char *desc = NULL;
 	RCore *core = ds->core;
 	ds_print_relocs (ds);
+	ds_print_pins (ds);
 	bool is_code = (!ds->hint) || (ds->hint && ds->hint->type != 'd');
 	RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, NULL);
 	if (mi) {
@@ -5226,8 +5235,14 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		}
 	}
 	free (desc);
-	if ((ds->analop.type == R_ANAL_OP_TYPE_CALL || ds->analop.type & R_ANAL_OP_TYPE_UCALL) && ds->show_calls) {
-		ds_print_calls_hints (ds);
+	if (ds->show_calls) {
+		switch (ds->analop.type) {
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_RCALL:
+			ds_print_calls_hints (ds);
+			break;
+		}
 	}
 }
 
@@ -5711,8 +5726,8 @@ toro:
 		if (skip_bytes_flag && ds->midflags == R_MIDFLAGS_SHOW &&
 				(!ds->midbb || !skip_bytes_bb || skip_bytes_bb > skip_bytes_flag)) {
 			ds->at += skip_bytes_flag;
-			ds_show_flags(ds, true);
-			ds_show_xrefs(ds);
+			ds_show_flags (ds, true);
+			ds_show_xrefs (ds);
 			ds->at -= skip_bytes_flag;
 		}
 		if (ds->pdf) {
@@ -5746,6 +5761,7 @@ toro:
 			ds_print_sysregs (ds);
 			ds_print_fcn_name (ds);
 			ds_print_demangled (ds);
+			ds_print_pins (ds);
 			ds_print_color_reset (ds);
 			if (!ds->pseudo) {
 				R_FREE (ds->opstr);
