@@ -1,13 +1,15 @@
 #!/bin/sh
-if [ ! -f config-user.mk ]; then
-  printf "[*] Configuring the build system ... "
-  ./configure || exit 1
-fi
-
 # env setup
 MAKE=make
 gmake --version > /dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
+
+printf "[*] Finding `type ${MAKE}` OK"
+
+if [ ! -f config-user.mk ]; then
+  printf "[*] Configuring the build system ... "
+  ./configure > /dev/null 2>&1 || exit 1
+fi
 
 # checks
 printf "[*] Checking out capstone... "
@@ -29,8 +31,11 @@ if [ ! -d "${V35WD}/arch-armv7/.git" ]; then
 	${MAKE} -C ${V35WD} arch-armv7 > /dev/null || exit 1
 fi
 echo OK
+printf "[*] Running configure... "
 if [ `uname` = Linux ]; then
-	./configure  --with-rpath
+	./configure --with-rpath > /dev/null 2>&1
 else
-	./configure
+	./configure > /dev/null 2>&1
 fi
+echo OK
+echo "[*] Ready. You can now run 'make'."
