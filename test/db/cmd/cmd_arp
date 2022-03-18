@@ -42,9 +42,9 @@ EXPECT=<<EOF
 64
 88
 68
-127
+128
 808
-407
+419
 EOF
 RUN
 
@@ -77,11 +77,15 @@ Aliases (Reg->name)
 17 R1 ?
 18 R2 ?
 19 R3 ?
-20 ZF ?
-21 SF ?
-22 CF ?
-23 OF ?
-24 SN rax
+20 F0 ?
+21 F1 ?
+22 F2 ?
+23 F3 ?
+24 ZF ?
+25 SF ?
+26 CF ?
+27 OF ?
+28 SN rax
 regset 0 (gpr)
 * arena gpr size 160
    rax gpr @ gpr (offset: 80  size: 8)

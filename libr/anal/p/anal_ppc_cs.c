@@ -215,6 +215,7 @@ static bool set_reg_profile(RAnal *anal) {
 			"=BP	r31\n"
 			"=SR	srr1\n" // status register ??
 			"=SN	r3\n" // also for ret
+			"=R0	r3\n" // ret
 			"=A0	r3\n" // also for ret
 			"=A1	r4\n"
 			"=A2	r5\n"
@@ -315,6 +316,7 @@ static bool set_reg_profile(RAnal *anal) {
 			"=SP	r1\n"
 			"=SR	srr1\n" // status register ??
 			"=SN	r0\n" // also for ret
+			"=R0	r3\n" // ret
 			"=A0	r3\n" // also for ret
 			"=A1	r4\n"
 			"=A2	r5\n"
