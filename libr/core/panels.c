@@ -4487,8 +4487,6 @@ static void __print_decompiler_cb(void *user, void *p) {
 		}
 		return;
 	}
-#else
-	bool update = true;
 #endif
 	// RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (func && core->panels_root->cur_pdc_cache) {
