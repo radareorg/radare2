@@ -5058,6 +5058,10 @@ static int cmd_debug(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_dd);
 			break;
 		}
+		if (!r_config_get_b (core->config, "cfg.debug")) {
+			eprintf ("No child process to manage files for.\n");
+			break;
+		}
 		switch (input[1]) {
 		case '\0': // "dd"
 			r_debug_desc_list (core->dbg, 0);
