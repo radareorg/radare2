@@ -816,7 +816,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		if (opt.ind >= argc && !haveRarunProfile) {
 			eprintf ("Missing argument for -d\n");
 			LISTS_FREE ();
-			R_FREE (debugbackend);
+			free (debugbackend);
 			free (envprofile);
 			return 1;
 		}
@@ -930,6 +930,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			free (pfile);
 			R_FREE (debugbackend);
 			free (envprofile);
+			free (debugbackend);
 			return 1;
 		}
 		if (r_sys_chdir (argv[opt.ind])) {
