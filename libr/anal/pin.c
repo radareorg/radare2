@@ -15,7 +15,7 @@ R_API void r_anal_pin_init(RAnal *a) {
 	r_anal_pin_set (a, "strlen", "dr R0=`pszl@r:A0`;aexa ret");
 	r_anal_pin_set (a, "memcpy", "wf `dr?A1` `dr?A2` @ `dr?A0`;aexa ret");
 	r_anal_pin_set (a, "puts", "psz@r:A0; aexa ret");
-	r_anal_pin_set (a, "ret0", "dr A0=0;aexa ret");
+	r_anal_pin_set (a, "ret0", "dr R0=0;aexa ret");
 //	sdb_ptr_set (DB, "strlen", pin_strlen, 0);
 //	sdb_ptr_set (DB, "write", pin_write, 0);
 }
