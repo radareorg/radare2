@@ -5235,15 +5235,24 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		}
 	}
 	free (desc);
+#if 1
+	if ((ds->analop.type == R_ANAL_OP_TYPE_CALL || ds->analop.type & R_ANAL_OP_TYPE_UCALL) && ds->show_calls) {
+		ds_print_calls_hints (ds);
+	}
+#else
 	if (ds->show_calls) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_ICALL:
+		case R_ANAL_OP_TYPE_CCALL:
+		case R_ANAL_OP_TYPE_UCCALL:
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_RCALL:
 			ds_print_calls_hints (ds);
 			break;
 		}
 	}
+#endif
 }
 
 static void ds_print_as_string(RDisasmState *ds) {
