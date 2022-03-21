@@ -140,7 +140,6 @@ anal_plugins += [
   'ebc',
   'gb',
   'h8300',
-  'hexagon',
   'i4004',
   'i8080',
   'java',
