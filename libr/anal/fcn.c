@@ -815,7 +815,7 @@ repeat:
 			// note, we have still increased size of basic block
 			// (and function)
 			if (anal->verbose) {
-				eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%"PFMT64u"\n", at - oplen, bb->size);
+				eprintf ("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%"PFMT64u"\n", at - oplen, bb->size);
 			}
 			delay.idx = idx - oplen;
 			delay.cnt = op->delay;
@@ -882,6 +882,12 @@ repeat:
 			// swapped parameters wtf
 			r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA);
 		}
+		if (anal->opt.vars && !varset) {
+			// XXX uses op.src/dst and fails because regprofile invalidates the regitems
+			// lets just call this BEFORE retpoline() to avoid such issue
+			r_anal_extract_vars (anal, fcn, op);
+		}
+		// this call may cause regprofile changes which cause ranalop.regitem references to be invalid
 		analyze_retpoline (anal, op);
 		switch (op->type & R_ANAL_OP_TYPE_MASK) {
 		case R_ANAL_OP_TYPE_CMOV:
@@ -973,7 +979,7 @@ repeat:
 				fcn->bp_off = fcn->stack - op->src[0]->delta;
 			}
 			if (op->dst && op->dst->reg && op->dst->reg->name && op->ptr > 0 && op->ptr != UT64_MAX) {
-				free(last_reg_mov_lea_name);
+				free (last_reg_mov_lea_name);
 				if ((last_reg_mov_lea_name = strdup(op->dst->reg->name))) {
 					last_reg_mov_lea_val = op->ptr;
 					last_is_reg_mov_lea = true;
@@ -1404,10 +1410,13 @@ analopfinish:
 				}
 			}
 		}
+#if 0
 		if (anal->opt.vars && !varset) {
 			// XXX uses op.src/dst and fails because regprofile invalidates the regitems
+			// we must ranalop in here to avoid uaf
 			r_anal_extract_vars (anal, fcn, op);
 		}
+#endif
 		if (op->type != R_ANAL_OP_TYPE_MOV && op->type != R_ANAL_OP_TYPE_CMOV && op->type != R_ANAL_OP_TYPE_LEA) {
 			last_is_reg_mov_lea = false;
 		}

@@ -1048,7 +1048,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		free (vartype);
 	} else {
 		st64 frame_off = -(ptr + fcn->bp_off);
-		if (maxstackframe != 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
+		if (maxstackframe > 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
 			goto beach;
 		}
 		RAnalVar *var = get_stack_var (fcn, frame_off);
