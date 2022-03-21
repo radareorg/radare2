@@ -1562,7 +1562,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				}
 			} else {
 				const char *struct_name = r_str_trim_head_ro (_input);
-				const char *val = sdb_get (core->print->formats, struct_name, NULL);
+				const char *val = sdb_const_get (core->print->formats, struct_name, NULL);
 				if (val) {
 					r_cons_printf ("%s\n", val);
 				} else {
