@@ -4,7 +4,7 @@ MAKE=make
 gmake --version > /dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
-printf "[*] Finding `type ${MAKE}` OK"
+echo "[*] Finding `type ${MAKE}` OK"
 
 if [ ! -f config-user.mk ]; then
   printf "[*] Configuring the build system ... "
