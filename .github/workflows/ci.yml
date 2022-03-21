@@ -111,7 +111,7 @@ jobs:
         export LD_LIBRARY_PATH=/usr/local/lib
         make tests
   linux-static-meson:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
@@ -125,6 +125,19 @@ jobs:
         sudo pip3 install meson ninja
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
+  macos-m1-test:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        arch -arch arm64 python -m pip install --upgrade pip
+        arch -arch arm64 pip install r2pipe
+    - name: Building Radare2
+      run: export CFLAGS="-O2"; arch -arch arm64 sys/install.sh
+    - name: Running tests
+      run: pip3 install r2pipe; make tests
   macos-test:
     runs-on: macos-latest
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
