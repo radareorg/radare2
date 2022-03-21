@@ -832,7 +832,7 @@ typedef enum {
 	R_ANAL_VAL_IMM,
 } RAnalValueType;
 
-// base+reg+regdelta*mul+delta
+// base + reg + regdelta * mul + delta
 typedef struct r_anal_value_t {
 	RAnalValueType type;
 	RAnalValueAccess access;
@@ -842,9 +842,10 @@ typedef struct r_anal_value_t {
 	st64 delta; // numeric delta
 	st64 imm; // immediate value
 	int mul; // multiplier (reg*4+base)
+	// XXX can be invalidated if regprofile changes causing an UAF
 	RRegItem *seg; // segment selector register
-	RRegItem *reg; // register / register base used (-1 if no reg)
-	RRegItem *regdelta; // register index used (-1 if no reg)
+	RRegItem *reg; // register item reference
+	RRegItem *regdelta; // register index used
 } RAnalValue;
 
 typedef enum {

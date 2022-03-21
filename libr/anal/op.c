@@ -104,8 +104,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	int ret = R_MIN (2, len);
 	if (len > 0 && anal->cur && anal->cur->op) {
-		//use core binding to set asm.bits correctly based on the addr
-		//this is because of the hassle of arm/thumb
+		// use core binding to set asm.bits correctly based on the addr
+		// this is because of the hassle of arm/thumb
+		// this causes the reg profile to be invalidated
 		if (anal && anal->coreb.archbits) {
 			anal->coreb.archbits (anal->coreb.core, addr);
 		}

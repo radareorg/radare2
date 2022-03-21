@@ -520,11 +520,9 @@ static void analyze_retpoline(RAnal *anal, RAnalOp *op) {
 	}
 }
 
-static inline bool op_is_set_bp(RAnalOp *op, const char *bp_reg, const char *sp_reg) {
-	bool has_dst_reg = op->dst && op->dst->reg && op->dst->reg->name;
-	bool has_src_reg = op->src[0] && op->src[0]->reg && op->src[0]->reg->name;
-	if (has_dst_reg && has_src_reg) {
-		return !strcmp (bp_reg, op->dst->reg->name) && !strcmp (sp_reg, op->src[0]->reg->name);
+static inline bool op_is_set_bp(const char *op_dst, const char *op_src, const char *bp_reg, const char *sp_reg) {
+	if (op_dst && op_src) {
+		return !strcmp (bp_reg, op_dst) && !strcmp (sp_reg, op_src);
 	}
 	return false;
 }
@@ -542,6 +540,10 @@ static inline bool has_vars(RAnal *anal, ut64 addr) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
+	char *bp_reg = NULL;
+	char *sp_reg = NULL;
+	char *op_dst = NULL;
+	char *op_src = NULL;
 	if (depth < 1) {
 		if (anal->verbose) {
 			eprintf ("Too deep fcn_recurse at 0x%"PFMT64x "\n", addr);
@@ -576,7 +578,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const bool is_v850 = is_arm ? false: (anal->cur->arch && (!strncmp (anal->cur->arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (anal->coreb.core, "asm.cpu"), "v850", 4)));
 	const bool is_x86 = is_arm ? false: anal->cur->arch && !strncmp (anal->cur->arch, "x86", 3);
 	const bool is_amd64 = is_x86 ? fcn->cc && !strcmp (fcn->cc, "amd64") : false;
-	const bool is_dalvik = is_x86? false: anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
+	const bool is_dalvik = is_x86 ? false : anal->cur->arch && !strncmp (anal->cur->arch, "dalvik", 6);
 	RRegItem *variadic_reg = NULL;
 	if (is_amd64) {
 		variadic_reg = r_reg_get (anal->reg, "rax", R_REG_TYPE_GPR);
@@ -672,6 +674,13 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		}
 		maxlen = 0;
 	}
+	const char *_bp_reg = anal->reg->name[R_REG_NAME_BP];
+	const char *_sp_reg = anal->reg->name[R_REG_NAME_SP];
+	const bool has_stack_regs = _bp_reg && _sp_reg;
+	if (has_stack_regs) {
+		bp_reg = strdup (_bp_reg);
+		sp_reg = strdup (_sp_reg);
+	}
 
 	op = r_anal_op_new ();
 	while (addrbytes * idx < maxlen) {
@@ -711,9 +720,10 @@ repeat:
 			// RET_END causes infinite loops somehow
 			gotoBeach (R_ANAL_RET_END);
 		}
-		const char *bp_reg = anal->reg->name[R_REG_NAME_BP];
-		const char *sp_reg = anal->reg->name[R_REG_NAME_SP];
-		const bool has_stack_regs = bp_reg && sp_reg;
+		free (op_dst);
+		op_dst = (op->dst && op->dst->reg && op->dst->reg->name)? strdup (op->dst->reg->name): NULL;
+		free (op_src);
+		op_src = (op->src[0] && op->src[0]->reg && op->src[0]->reg->name) ? strdup (op->src[0]->reg->name): NULL;
 
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
@@ -820,7 +830,7 @@ repeat:
 			delay.cnt--;
 			if (!delay.cnt) {
 				if (anal->verbose) {
-					eprintf("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%"PFMT64u"\n", addr + idx - oplen, bb->size);
+					eprintf ("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%"PFMT64u"\n", addr + idx - oplen, bb->size);
 				}
 				delay.after = idx;
 				idx = delay.idx;
@@ -883,7 +893,7 @@ repeat:
 					last_is_mov_lr_pc = true;
 				}
 			}
-			if (has_stack_regs && op_is_set_bp (op, bp_reg, sp_reg)) {
+			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)) {
 				fcn->bp_off = fcn->stack;
 			}
 			// Is this a mov of immediate value into a register?
@@ -959,7 +969,7 @@ repeat:
 				lea_cnt++;
 				r_list_append (anal->leaddrs, pair);
 			}
-			if (has_stack_regs && op_is_set_bp (op, bp_reg, sp_reg)     ) {
+			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)     ) {
 				fcn->bp_off = fcn->stack - op->src[0]->delta;
 			}
 			if (op->dst && op->dst->reg && op->dst->reg->name && op->ptr > 0 && op->ptr != UT64_MAX) {
@@ -1382,7 +1392,8 @@ analopfinish:
 			break;
 		}
 		if (has_stack_regs && arch_destroys_dst) {
-			if (op_is_set_bp (op, bp_reg, sp_reg) && op->src[1]) {
+			// op->dst->reg->name is invalid pointer
+			if (op_is_set_bp (op_dst, op_src, bp_reg, sp_reg) && op->src[1]) {
 				switch (op->type & R_ANAL_OP_TYPE_MASK) {
 				case R_ANAL_OP_TYPE_ADD:
 					fcn->bp_off = fcn->stack - op->src[1]->imm;
@@ -1394,6 +1405,7 @@ analopfinish:
 			}
 		}
 		if (anal->opt.vars && !varset) {
+			// XXX uses op.src/dst and fails because regprofile invalidates the regitems
 			r_anal_extract_vars (anal, fcn, op);
 		}
 		if (op->type != R_ANAL_OP_TYPE_MOV && op->type != R_ANAL_OP_TYPE_CMOV && op->type != R_ANAL_OP_TYPE_LEA) {
@@ -1420,6 +1432,10 @@ analopfinish:
 		}
 	}
 beach:
+	free (op_src);
+	free (op_dst);
+	free (bp_reg);
+	free (sp_reg);
 	while (lea_cnt > 0) {
 		r_list_delete (anal->leaddrs, r_list_tail (anal->leaddrs));
 		lea_cnt--;
