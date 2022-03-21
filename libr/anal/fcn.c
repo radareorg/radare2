@@ -723,8 +723,8 @@ repeat:
 		}
 		free (op_dst);
 		free (op_src);
-		char *op_dst = (op->dst && op->dst->reg && op->dst->reg->name)? strdup (op->dst->reg->name): NULL;
-		char *op_src = (op->src[0] && op->src[0]->reg && op->src[0]->reg->name) ? strdup (op->src[0]->reg->name): NULL;
+		op_dst = (op->dst && op->dst->reg && op->dst->reg->name)? strdup (op->dst->reg->name): NULL;
+		op_src = (op->src[0] && op->src[0]->reg && op->src[0]->reg->name) ? strdup (op->src[0]->reg->name): NULL;
 
 		if (anal->opt.nopskip && fcn->addr == at) {
 			RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
