@@ -721,16 +721,18 @@ R_API void r_anal_block_update_hash(RAnalBlock *block) {
 	if (!block->anal->iob.read_at) {
 		return;
 	}
+	if (block->size < 1) {
+		return;
+	}
 	ut8 *buf = malloc (block->size);
-	if (!buf) {
-		return;
-	}
-	if (!block->anal->iob.read_at (block->anal->iob.io, block->addr, buf, block->size)) {
+	if (buf) {
+		if (!block->anal->iob.read_at (block->anal->iob.io, block->addr, buf, block->size)) {
+			free (buf);
+			return;
+		}
+		block->bbhash = r_hash_xxhash (buf, block->size);
 		free (buf);
-		return;
 	}
-	block->bbhash = r_hash_xxhash (buf, block->size);
-	free (buf);
 }
 
 typedef struct {

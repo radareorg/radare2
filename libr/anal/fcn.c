@@ -521,7 +521,6 @@ static void analyze_retpoline(RAnal *anal, RAnalOp *op) {
 }
 
 static inline bool op_is_set_bp(const char *op_dst, const char *op_src, const char *bp_reg, const char *sp_reg) {
-	
 	if (op_dst && op_src) {
 		return !strcmp (bp_reg, op_dst) && !strcmp (sp_reg, op_src);
 	}
@@ -541,6 +540,10 @@ static inline bool has_vars(RAnal *anal, ut64 addr) {
 }
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
+	char *bp_reg = NULL;
+	char *sp_reg = NULL;
+	char *op_dst = NULL;
+	char *op_src = NULL;
 	if (depth < 1) {
 		if (anal->verbose) {
 			eprintf ("Too deep fcn_recurse at 0x%"PFMT64x "\n", addr);
@@ -557,8 +560,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	int ret = R_ANAL_RET_END, skip_ret = 0;
 	bool overlapped = false;
 	int oplen, idx = 0;
-	char *bp_reg = NULL;
-	char *sp_reg = NULL;
 	size_t lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
 	static ut64 cmpval = UT64_MAX; // inherited across functions, otherwise it breaks :?
@@ -681,8 +682,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		sp_reg = strdup (_sp_reg);
 	}
 
-	char *op_dst = NULL;
-	char *op_src = NULL;
 	op = r_anal_op_new ();
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
@@ -722,8 +721,8 @@ repeat:
 			gotoBeach (R_ANAL_RET_END);
 		}
 		free (op_dst);
-		free (op_src);
 		op_dst = (op->dst && op->dst->reg && op->dst->reg->name)? strdup (op->dst->reg->name): NULL;
+		free (op_src);
 		op_src = (op->src[0] && op->src[0]->reg && op->src[0]->reg->name) ? strdup (op->src[0]->reg->name): NULL;
 
 		if (anal->opt.nopskip && fcn->addr == at) {
