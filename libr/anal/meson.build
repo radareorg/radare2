@@ -58,7 +58,6 @@ r_anal_sources = [
   join_paths('p','anal_ebc.c'),
   join_paths('p','anal_gb.c'),
   join_paths('p','anal_h8300.c'),
-  join_paths('p','anal_hexagon.c'),
   join_paths('p','anal_i4004.c'),
   join_paths('p','anal_i8080.c'),
   join_paths('p','anal_java.c'),
@@ -106,9 +105,6 @@ r_anal_sources = [
   join_paths('arch','ebc','ebc_disas.c'),
   join_paths('arch','wasm','wasm.c'),
   join_paths('arch','v850np','v850dis.c'),
-  join_paths('arch','hexagon','hexagon.c'),
-  join_paths('arch','hexagon','hexagon_anal.c'),
-  join_paths('arch','hexagon','hexagon_disas.c'),
   join_paths('arch','kvx','kvx-dis.c'),
   join_paths('arch','kvx','kvx-reg.c'),
   join_paths('arch','loongarch','gnu','loongarch-coder.c'),
@@ -149,8 +145,7 @@ r_anal_sources = [
 ]
 incdirs = [
     'arch/gb',
-    'arch/kvx',
-    'arch/hexagon'
+    'arch/kvx'
 ]
 
 if get_option('use_v35')
