@@ -71,42 +71,42 @@ static void format12x(int len, const unsigned char* data, ut32* dst, ut32* src) 
 
 /*static void format20t(int len, const unsigned char* data, ut32* dst) {
 	if (len > 3) {
-		*dst = r_read_le16(data+2);
+		*dst = r_read_le16 (data + 2);
 	}
 }*/
 
 static void format21t(int len, const unsigned char* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
-		*src = 2*r_read_le16(data+2);
+		*src = 2*r_read_le16 (data + 2);
 	}
 }
 
 static void format21s(int len, const unsigned char* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
-		*src = (st32)(st16)r_read_le16(data+2);
+		*src = (st32)(st16)r_read_le16 (data + 2);
 	}
 }
 
 static void format21hw(int len, const unsigned char* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
-		*src = ((st32)(st16)r_read_le16(data+2) << 16);
+		*src = (ut32)((st16)r_read_le16 (data + 2)) << 16;
 	}
 }
 
 static void format21hd(int len, const unsigned char* data, ut32* dst, st64* src) {
 	if (len > 3) {
 		*dst = data[1];
-		*src = ((st64)(st16)r_read_le16(data+2) << 48);
+		*src = (ut64)((st64)(st16)r_read_le16 (data + 2)) << 48;
 	}
 }
 
 static void format21c(int len, const unsigned char* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
-		*src = r_read_le16(data+2);
+		*src = r_read_le16 (data + 2);
 	}
 }
 
@@ -114,7 +114,7 @@ static void format22c(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
-		*ref = r_read_le16(data+2);
+		*ref = r_read_le16 (data + 2);
 	}
 }
 
@@ -122,7 +122,7 @@ static void format22c(int len, const unsigned char* data, ut32* dst, ut32* src, 
 static void format22x(int len, const unsigned char* data, ut32* dst, ut32* src) {
 	if (len > 3) {
 		*dst = data[1];
-		*src = r_read_le16(data+2);
+		*src = r_read_le16 (data + 2);
 	}
 }
 
@@ -130,7 +130,7 @@ static void format22t(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
-		*ref = 2*r_read_le16(data+2);
+		*ref = 2*r_read_le16 (data + 2);
 	}
 }
 
@@ -138,7 +138,7 @@ static void format22s(int len, const unsigned char* data, ut32* dst, ut32* src, 
 	if (len > 3) {
 		*dst = data[1] & 0x0F;
 		*src = (data[1] & 0xF0) >> 4;
-		*ref = (st32)(st16)r_read_le16(data+2);
+		*ref = (st32)(st16)r_read_le16 (data + 2);
 	}
 }
 
@@ -180,32 +180,32 @@ static void format31c(int len, const unsigned char* data, ut32* dst, ut32* src) 
 
 static void format32x(int len, const unsigned char* data, ut32* dst, ut32* src) {
 	if (len > 5) {
-		*dst = r_read_le16(data+2);
-		*src = r_read_le16(data+4);
+		*dst = r_read_le16 (data + 2);
+		*src = r_read_le16 (data + 4);
 	}
 }
 
 /*static void format3rc(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref) {
 	if (len > 5) {
 		*src = data[1] - 1;
-		*dst = r_read_le16(data+2);
-		*ref = r_read_le16(data+4);
+		*dst = r_read_le16 (data + 2);
+		*ref = r_read_le16 (data + 4);
 	}
 }
 
 static void format4rcc(int len, const unsigned char* data, ut32* dst, ut32* src, ut32* ref1, ut32* ref2) {
 	if (len > 7) {
 		*src  = data[1] - 1;
-		*dst  = r_read_le16(data+2);
-		*ref1 = r_read_le16(data+4);
-		*ref2 = r_read_le16(data+6);
+		*dst  = r_read_le16 (data + 2);
+		*ref1 = r_read_le16 (data + 4);
+		*ref2 = r_read_le16 (data + 6);
 	}
 }*/
 
 static void format51l(int len, const unsigned char* data, ut32* dst, st64* src) {
 	if (len > 9) {
 		*dst = data[1];
-		*src = (st64)r_read_le64(data+2);
+		*src = (st64)r_read_le64 (data + 2);
 	}
 }
 
