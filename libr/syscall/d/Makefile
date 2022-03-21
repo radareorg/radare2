@@ -21,6 +21,7 @@ F+= openbsd-x86-32
 F+= openbsd-x86-64
 F+= windows-x86-32
 F+= windows-x86-64
+CFLAGS+=-fPIC
 
 include $(TOP)/config-user.mk
 HOST_CC?=gcc
