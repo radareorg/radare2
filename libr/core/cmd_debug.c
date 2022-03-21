@@ -4763,7 +4763,7 @@ static void print_buffer_hex(RBuffer *buf) {
 	int i;
 	r_return_if_fail (buf);
 
-	r_cons_print ("dx ");
+	r_cons_print ("dxr ");
 	r_buf_seek (buf, 0, R_BUF_SET);
 	for (i = 0; i < r_buf_size (buf); i++) {
 		r_cons_printf ("%02x", r_buf_read8 (buf));
@@ -5532,17 +5532,29 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'x': // "dx"
 		switch (input[1]) {
+		case 'r':   // "dxr"
+			if (input[2] != ' ') {
+				r_core_cmd_help_match (core, help_msg_dx, "dxr", true);
+				break;
+			}
+			/* fall through */
 		case ' ': { // "dx "
 			ut8 bytes[4096];
-			if (strlen (input + 2) < 4096){
-				int bytes_len = r_hex_str2bin (input + 2, bytes);
+			const bool is_dxr = input[1] == 'r';
+			const char *hexpairs = input + 2;
+			if (is_dxr) {
+				hexpairs++;
+			}
+
+			if (strlen (hexpairs) < 8192){
+				int bytes_len = r_hex_str2bin (hexpairs, bytes);
 				if (bytes_len > 0) {
-					r_debug_execute (core->dbg, bytes, bytes_len, 0);
+					r_debug_execute (core->dbg, bytes, bytes_len, is_dxr);
 				} else {
-					eprintf ("Invalid hexpairs\n");
+					eprintf ("Failed to parse hex pairs.\n");
 				}
 			} else {
-				eprintf ("Injection opcodes so long\n");
+				eprintf ("Cannot inject more than 4096 bytes at once.\n");
 			}
 			break;
 		}
@@ -5585,24 +5597,6 @@ static int cmd_debug(void *data, const char *input) {
 				}
 				r_reg_arena_pop (core->dbg->reg);
 			}
-			break;
-		case 'r': // "dxr"
-			r_reg_arena_push (core->dbg->reg);
-			if (input[2] == ' ') {
-				ut8 bytes[4096];
-				if (strlen (input + 2) < 4096){
-					int bytes_len = r_hex_str2bin (input + 2,
-							bytes);
-					if (bytes_len > 0) {
-						r_debug_execute (core->dbg,
-								bytes, bytes_len,
-								0);
-					} else {
-						eprintf ("Invalid hexpairs\n");
-					}
-				} else eprintf ("Injection opcodes so long\n");
-			}
-			r_reg_arena_pop (core->dbg->reg);
 			break;
 		case 's': // "dxs"
 			if (input[2]) {
