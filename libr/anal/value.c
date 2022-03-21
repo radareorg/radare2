@@ -18,14 +18,24 @@ R_API RAnalValue *r_anal_value_copy(RAnalValue *ov) {
 	if (!v) {
 		return NULL;
 	}
-
 	memcpy (v, ov, sizeof (RAnalValue));
 	// reference to reg and regdelta should be kept
 	return v;
 }
 
+R_API void r_anal_value_ref(RAnalValue *value) {
+	if (value->reg) {
+		r_reg_item_ref (value->seg);
+		r_reg_item_ref (value->reg);
+		r_reg_item_ref (value->regdelta);
+	}
+}
+
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RAnalValue *value) {
+	r_reg_item_unref (value->seg);
+	r_reg_item_unref (value->reg);
+	r_reg_item_unref (value->regdelta);
 	free (value);
 #if 0
 	ut64 pval = (ut64)(size_t)value;

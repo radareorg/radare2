@@ -90,10 +90,34 @@ R_API int r_reg_type_by_name(const char *str) {
 	return -1;
 }
 
+R_API void r_reg_item_ref(RRegItem *item) {
+	item->refcount++;
+}
+
+R_API void r_reg_item_unref(RRegItem *item) {
+	if (item) {
+		if (item->refcount > 0) {
+			item->refcount--;
+			if (item->refcount == 0) {
+				free (item->name);
+				free (item->flags);
+				free (item);
+			}
+		}
+	}
+}
+
+R_API RRegItem *r_reg_item_new(void) {
+	RRegItem *item = R_NEW0 (RRegItem);
+	if (item) {
+		item->refcount = 1;
+	}
+	return item;
+}
+
 R_API void r_reg_item_free(RRegItem *item) {
-	free (item->name);
-	free (item->flags);
-	free (item);
+	// XXX this is semantically incorrect, but will save some transitional crashes
+	r_reg_item_unref (item);
 }
 
 R_API int r_reg_get_name_idx(const char *type) {

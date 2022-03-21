@@ -65,7 +65,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 #endif
 
-	RRegItem *item = R_NEW0 (RRegItem);
+	RRegItem *item = r_reg_item_new ();
 	if (!item) {
 		return "Unable to allocate memory";
 	}

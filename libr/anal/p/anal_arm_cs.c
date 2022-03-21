@@ -4357,6 +4357,13 @@ static void create_src_dst(RAnalOp *op) {
 	op->dst = r_anal_value_new ();
 }
 
+static void srcdst_ref(RAnalOp *op) {
+	r_reg_item_ref (op->src[0]);
+	r_reg_item_ref (op->src[1]);
+	r_reg_item_ref (op->src[2]);
+	r_reg_item_ref (op->dst);
+}
+
 static void op_fillval(RAnal *anal, RAnalOp *op, csh handle, cs_insn *insn, int bits) {
 	create_src_dst (op);
 	int i, j;
@@ -4506,6 +4513,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		set_opdir (op);
 		if (mask & R_ANAL_OP_MASK_VAL) {
 			op_fillval (a, op, handle, insn, a->bits);
+			srcdst_ref (op);
 		}
 		cs_free (insn, n);
 	}

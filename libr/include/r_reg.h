@@ -102,6 +102,7 @@ typedef struct r_reg_item_t {
 	char *comment;
 	int index;
 	int arena; /* in which arena is this reg living */
+	int refcount;
 } RRegItem;
 
 typedef struct r_reg_arena_t {
@@ -174,6 +175,9 @@ R_API void r_reg_reindex(RReg *reg);
 R_API RRegItem *r_reg_index_get(RReg *reg, int idx);
 
 /* Item */
+R_API RRegItem *r_reg_item_new(void);
+R_API void r_reg_item_ref(RRegItem *item);
+R_API void r_reg_item_unref(RRegItem *item);
 R_API void r_reg_item_free(RRegItem *item);
 
 /* XXX: dupped ?? */
