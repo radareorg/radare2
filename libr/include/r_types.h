@@ -722,11 +722,7 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 }
 
 #ifndef container_of
-# ifdef _MSC_VER
-#  define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
-# else
-#  define container_of(ptr, type, member) ((type *)((char *)(__typeof__(((type *)0)->member) *){ptr} - offsetof(type, member)))
-# endif
+#define container_of(ptr, type, member) (ptr? ((type *)((char *)(ptr) - r_offsetof(type, member))): NULL)
 #endif
 
 // reference counter

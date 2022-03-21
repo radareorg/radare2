@@ -257,14 +257,18 @@ R_API void r_anal_function_delete_vars_by_kind(RAnalFunction *fcn, RAnalVarKind 
 }
 
 R_API void r_anal_function_delete_all_vars(RAnalFunction *fcn) {
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
-		var_free (*it);
+	r_return_if_fail (fcn);
+	if (fcn->vars.v.len > 0) {
+		void **it;
+		r_pvector_foreach (&fcn->vars, it) {
+			var_free (*it);
+		}
 	}
 	r_pvector_clear (&fcn->vars);
 }
 
 R_API void r_anal_function_delete_unused_vars(RAnalFunction *fcn) {
+	r_return_if_fail (fcn);
 	void **v;
 	RPVector *vars_clone = (RPVector *)r_vector_clone ((RVector *)&fcn->vars);
 	r_pvector_foreach (vars_clone, v) {
@@ -283,6 +287,7 @@ R_API void r_anal_function_delete_var(RAnalFunction *fcn, RAnalVar *var) {
 }
 
 R_API RList *r_anal_var_deserialize(const char *ser) {
+	r_return_val_if_fail (ser, NULL);
 	RList *ret = r_list_newf ((RListFree)r_anal_var_proto_free);
 	while (*ser) {
 		RAnalVarProt *v = R_NEW0 (RAnalVarProt);
@@ -381,6 +386,7 @@ static inline void sanitize_var_serial(char *name, bool colon) {
 }
 
 static inline bool serialize_single_var(RAnalVarProt *vp, RStrBuf *sb) {
+	r_return_val_if_fail (vp && sb, false);
 	// shouldn't have special chars in them anyways, so replace in place
 	sanitize_var_serial (vp->name, false);
 	sanitize_var_serial (vp->type, true);
@@ -1364,11 +1370,13 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind) {
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
 	}
-	void **it;
-	r_pvector_foreach (&fcn->vars, it) {
-		RAnalVar *var = *it;
-		if (var->kind == kind) {
-			r_list_push (list, var);
+	if (fcn->vars.v.len > 0) {
+		void **it;
+		r_pvector_foreach (&fcn->vars, it) {
+			RAnalVar *var = *it;
+			if (var->kind == kind) {
+				r_list_push (list, var);
+			}
 		}
 	}
 	return list;
