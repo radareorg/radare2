@@ -42,7 +42,7 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	if (!val) {
 		return 0LL;
 	}
-	num = val->base + (val->delta*(val->mul?val->mul:1));
+	num = val->base + (val->delta * (val->mul ? val->mul : 1));
 	if (val->reg) {
 		num += r_reg_get_value (anal->reg, val->reg);
 	}
