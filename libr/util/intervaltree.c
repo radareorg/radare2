@@ -168,6 +168,7 @@ R_API bool r_interval_tree_resize(RIntervalTree *tree, RIntervalNode *node, ut64
 // This must always return the topmost node that matches start!
 // Otherwise r_interval_tree_first_at will break!!!
 R_API RIntervalNode *r_interval_tree_node_at(RIntervalTree *tree, ut64 start) {
+	r_return_val_if_fail (tree, NULL);
 	RIntervalNode *node = tree->root;
 	while (node) {
 		if (start < node->start) {

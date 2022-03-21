@@ -1436,10 +1436,12 @@ beach:
 }
 
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
+	r_return_val_if_fail (anal && fcn, -1);
 	return fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
 }
 
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {
+	r_return_val_if_fail (anal && buf, false);
 	RAnalOp op = {
 		0
 	};
@@ -1480,6 +1482,7 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 }
 
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
+	r_return_if_fail (anal && fcn);
 	RAnalRef *ref;
 	RList *refs = r_anal_function_get_refs (fcn);
 	RListIter *iter;
@@ -1495,6 +1498,7 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
+	r_return_if_fail (anal && fcn);
 	RAnalRef *ref;
 	RList *refs = r_anal_function_get_refs (fcn);
 	RListIter *iter;
@@ -1509,21 +1513,24 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int reftype) {
-	RPVector *metas = r_meta_get_all_in(anal, addr, R_META_TYPE_ANY);
-	void **it;
-	r_pvector_foreach (metas, it) {
-		RAnalMetaItem *meta = ((RIntervalNode *)*it)->data;
-		switch (meta->type) {
-		case R_META_TYPE_DATA:
-		case R_META_TYPE_STRING:
-		case R_META_TYPE_FORMAT:
-			r_pvector_free (metas);
-			return 0;
-		default:
-			break;
+	r_return_val_if_fail (anal && fcn, 0);
+	RPVector *metas = r_meta_get_all_in (anal, addr, R_META_TYPE_ANY);
+	if (metas) {
+		void **it;
+		r_pvector_foreach (metas, it) {
+			RAnalMetaItem *meta = ((RIntervalNode *)*it)->data;
+			switch (meta->type) {
+			case R_META_TYPE_DATA:
+			case R_META_TYPE_STRING:
+			case R_META_TYPE_FORMAT:
+				r_pvector_free (metas);
+				return 0;
+			default:
+				break;
+			}
 		}
+		r_pvector_free (metas);
 	}
-	r_pvector_free (metas);
 	if (anal->opt.norevisit) {
 		if (!anal->visited) {
 			anal->visited = set_u_new ();
