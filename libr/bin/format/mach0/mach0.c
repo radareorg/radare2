@@ -1511,7 +1511,7 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) *bin, ut32 offset, ut32 si
 		return false;
 	}
 	ut32 segs_count = r_buf_read_le32_at (bin->b, starts_at);
-	if (segs_count == UT32_MAX) {
+	if (segs_count == UT32_MAX || segs_count == 0) {
 		return false;
 	}
 	bin->segs_count = segs_count;
