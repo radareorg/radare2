@@ -1604,7 +1604,7 @@ static bool __xterm_get_size(void) {
 		I->rows = rows;
 		I->columns = columns;
 	} // otherwise reuse previous values
-	if (write (I->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE) != sizeof (R_CONS_CURSOR_RESTORE)) {
+	if (write (I->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE) != sizeof (R_CONS_CURSOR_RESTORE))) {
 		return false;
 	}
 	return true;

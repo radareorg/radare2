@@ -9,6 +9,7 @@ echo "[*] Finding `type ${MAKE}` OK"
 if [ ! -f config-user.mk ]; then
   printf "[*] Configuring the build system ... "
   ./configure > /dev/null 2>&1 || exit 1
+  echo OK
 fi
 
 # checks
