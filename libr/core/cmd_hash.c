@@ -2,6 +2,19 @@
 
 #include <r_core.h>
 
+const char *help_msg_hash[] = {
+	"Usage:", "#!<interpreter>", "[<args>] [<file] [<<eof]",
+	"#", "", "comment - do nothing",
+	"#!", "", "list all available interpreters",
+	"#!v?", "", "show vlang script example",
+	"#!python?", "", "show python script example",
+	"#!python", "", "run python commandline",
+	"#!python", " foo.py", "run foo.py python script (same as '. foo.py')",
+	//"#!python <<EOF        get python code until 'EOF' mark\n"
+	"#!python", " arg0 a1 <<q", "set arg0 and arg1 and read until 'q'",
+	NULL
+};
+
 typedef void (*HashHandler)(const ut8 *block, int len);
 
 typedef struct {
@@ -353,7 +366,11 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 					eprintf ("%s plugin does not provide an example.\n", name);
 				}
 			} else {
-				eprintf ("Unknown rlang plugin '%s'.\n", name);
+				if (*name) {
+					eprintf ("Unknown rlang plugin '%s'.\n", name);
+				} else {
+					r_core_cmd_help_match (core, help_msg_hash, "#!", false);
+				}
 			}
 			free (name);
 		}
@@ -403,18 +420,7 @@ static int cmd_hash(void *data, const char *input) {
 		return cmd_hash_bang (core, input);
 	}
 	if (*input == '?') {
-		const char *helpmsg3[] = {
-		"Usage #!interpreter [<args>] [<file] [<<eof]","","",
-		" #", "", "comment - do nothing",
-		" #!","","list all available interpreters",
-		" #!v?","","show vlang script example",
-		" #!python?","","show python script example",
-		" #!python","","run python commandline",
-		" #!python"," foo.py","run foo.py python script (same as '. foo.py')",
-		//" #!python <<EOF        get python code until 'EOF' mark\n"
-		" #!python"," arg0 a1 <<q","set arg0 and arg1 and read until 'q'",
-		NULL};
-		r_core_cmd_help (core, helpmsg3);
+		r_core_cmd_help (core, help_msg_hash);
 		return false;
 	}
 	/* this is a comment - captain obvious
