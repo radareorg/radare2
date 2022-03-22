@@ -1700,7 +1700,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 	}
 	R_FREE (opcodes);
 
-    bin->segs_count = bin->nsegs;
+	bin->segs_count = bin->nsegs;
 	return true;
 }
 
