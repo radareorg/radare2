@@ -325,6 +325,50 @@ jobs:
         path: |
           radare2-${{ steps.r2v.outputs.branch }}-w32.zip
 #          radare2-win-installer\Output\radare2.exe
+  w64-static:
+    runs-on: windows-2019
+    steps:
+    - name: Win configure Pagefile
+      uses: al-cheb/configure-pagefile-action@v1.2
+      with:
+          minimum-size: 16GB
+          maximum-size: 16GB
+          disk-root: "C:"
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+#      with:
+#        python-version: '3.7'
+    - name: Preparing nmake
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install git+https://github.com/frida/meson.git@f7f25b19a8d71cebf8e2934733eb041eb6862eee
+        pip install ninja r2pipe wget r2env
+    - name: Build with meson + ninja
+      shell: cmd
+      run: |
+        REM preconfigure
+        call configure static
+        call make
+    - uses: actions/upload-artifact@v2
+      with:
+        name: w32-mingw
+        path: radare2*.zip
+    - name: Test executable
+      continue-on-error: true
+      shell: cmd
+      run: |
+        cd prefix\bin
+        r2blob -v
+    - uses: actions/upload-artifact@v2
+      continue-on-error: true
+      with:
+        name: r2blob-w64.exe
+        path: prefix\bin\r2blob.static.exe
 
   w64-meson:
     runs-on: windows-2019
@@ -420,6 +464,7 @@ jobs:
     needs:
       - linux-acr-deb-64
       - linux-acr-deb-32
+      - w64-static
       - w64-meson
       - w32-meson
       - macos-acr
@@ -509,6 +554,15 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: dist/artifacts/w32-meson/radare2-${{ steps.r2v.outputs.branch }}-w32.zip
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
+          asset_content_type: application/zip
+      - name: Upload asset for Windows (w64-blob)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/artifacts/w64-static/r2blob-w64.exe
+          asset_name: r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
           asset_content_type: application/zip
       - name: Upload asset for macOS
         uses: actions/upload-release-asset@v1
