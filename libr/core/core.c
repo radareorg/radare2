@@ -1258,7 +1258,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
 	char *home = NULL, *filename = NULL, *p = NULL;
 	int n = 0;
-	bool is_pipe = false;
+	bool is_pipe = false; // currently unused, might help complete without space after '>'
 
 	if (!path) {
 		goto out;
@@ -1907,20 +1907,33 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		// accept "> " and ">"
 		char *pipe_space = pipe[1] == ' '
 			? strchr (pipe+2, ' ')
-			: strchr (pipe+1, ' ');
+			: strchr (pipe, ' ');
 		bool should_complete = buf->data + buf->index >= pipe;
 		if (pipe_space) {
 			should_complete &= buf->data + buf->index < pipe_space;
 		}
 		if (should_complete) {
-			autocomplete_filename (completion, buf, core->rcmd, NULL, 0);
+			if (pipe[1] == ' '){
+				autocomplete_filename (completion, buf, core->rcmd, NULL, 0);
+			} else {
+				r_line_completion_push (completion, ">");
+			}
 		}
-	} else if (ptr && buf->data + buf->index >= ptr) {
-		int sdelta, n;
-		ptr = (char *)r_str_trim_head_ro (ptr + 1);
-		n = strlen (ptr);//(buf->data+sdelta);
-		sdelta = (int)(size_t)(ptr - buf->data);
-		r_flag_foreach_prefix (core->flags, buf->data + sdelta, n, add_argv, completion);
+	} else if (ptr) {
+		char *ptr_space = ptr[1] == ' '
+			? strchr (ptr+2, ' ')
+			: strchr (ptr, ' ');
+		bool should_complete = buf->data + buf->index >= ptr;
+		if (ptr_space) {
+			should_complete &= buf->data + buf->index < ptr_space;
+		}
+		if (should_complete) {
+			if (ptr[1] == ' ') {
+				autocomplete_flags (core, completion, ptr+2);
+			} else {
+				r_line_completion_push (completion, "@");
+			}
+		}
 	} else if (!strncmp (buf->data, "#!pipe ", 7)) {
 		if (strchr (buf->data + 7, ' ')) {
 			autocomplete_filename (completion, buf, core->rcmd, NULL, 2);
