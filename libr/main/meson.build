@@ -41,6 +41,21 @@ r_main_deps = [
   r_crypto_dep
 ]
 
+r_main = library('r_main', r_main_sources,
+  include_directories: [platform_inc],
+  c_args: library_cflags,
+  dependencies: r_main_deps,
+  install: true,
+  implicit_include_directories: false,
+  install_rpath: rpath_lib,
+  soversion: r2_libversion
+)
+
+r_main_dep = declare_dependency(link_with: r_main,
+  include_directories: [platform_inc],
+  dependencies: r_main_deps)
+
+if get_option('blob')
 r_main_static_deps = [
   r_config_static_dep,
   r_cons_static_dep,
@@ -66,35 +81,18 @@ r_main_static_deps = [
   r_magic_static_dep,
   r_crypto_static_dep
 ]
-
-r_main = library('r_main', r_main_sources,
-  include_directories: [platform_inc],
-  c_args: library_cflags,
-  dependencies: r_main_deps,
-  install: true,
-  implicit_include_directories: false,
-  install_rpath: rpath_lib,
-  soversion: r2_libversion
-)
-
-r_main_dep = declare_dependency(link_with: r_main,
-                                include_directories: [platform_inc],
-                                dependencies: r_main_deps)
-
-if get_option('blob')
-r_main_static = static_library('r_main_static', r_main_sources,
-  include_directories: [platform_inc],
-  c_args: library_cflags,
-  dependencies: r_main_static_deps,
-  install: true,
-  implicit_include_directories: false,
-)
-
-r_main_static_dep = declare_dependency(
-  link_with: r_main_static,
-  include_directories: [platform_inc],
-  dependencies: r_main_static_deps
-)
+  r_main_static = static_library('r_main_static', r_main_sources,
+    include_directories: [platform_inc],
+    c_args: library_cflags,
+    dependencies: r_main_static_deps,
+    install: true,
+    implicit_include_directories: false,
+  )
+  r_main_static_dep = declare_dependency(
+    link_with: r_main_static,
+    include_directories: [platform_inc],
+    dependencies: r_main_static_deps
+  )
 endif
 
 pkgconfig_mod.generate(r_main,

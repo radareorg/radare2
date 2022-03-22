@@ -24,6 +24,7 @@ r_syscall = library('r_syscall', r_syscall_sources,
 
 r_syscall_dep = declare_dependency(link_with: r_syscall, include_directories: [platform_inc])
 
+if get_option('blob')
 r_syscall_static = static_library('r_syscall_static', r_syscall_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
@@ -37,6 +38,7 @@ r_syscall_static = static_library('r_syscall_static', r_syscall_sources,
 
 r_syscall_static_dep = declare_dependency(link_with: r_syscall_static,
   include_directories: [platform_inc])
+endif
 
 pkgconfig_mod.generate(r_syscall,
   subdirs: 'libr',

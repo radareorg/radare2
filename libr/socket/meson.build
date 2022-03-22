@@ -11,7 +11,12 @@ r_socket_sources = [
 ]
 
 r_util_deps = [utl, r_util_dep, platform_deps]
-r_util_static_deps = [utl, r_util_static_dep, platform_deps]
+if get_option('blob')
+  r_util_static_deps = [utl, r_util_static_dep, platform_deps]
+  if use_sys_openssl
+    r_util_static_deps += [sys_openssl]
+  endif
+endif
 
 if use_sys_openssl
   r_util_deps += [sys_openssl]
@@ -33,6 +38,7 @@ r_socket_dep = declare_dependency(link_with: r_socket,
   dependencies: [r_util_dep],
   include_directories: [platform_inc])
 
+if get_option('blob')
 r_socket_static = static_library('r_socket_static', r_socket_sources,
   include_directories: [platform_inc],
   dependencies: r_util_static_deps,
@@ -46,6 +52,7 @@ r_socket_static = static_library('r_socket_static', r_socket_sources,
 r_socket_static_dep = declare_dependency(link_with: r_socket_static,
   dependencies: [r_util_static_dep],
   include_directories: [platform_inc])
+endif
 
 pkgconfig_mod.generate(r_socket,
   subdirs: 'libr',

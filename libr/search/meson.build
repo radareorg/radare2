@@ -23,6 +23,7 @@ r_search = library('r_search', r_search_sources,
 r_search_dep = declare_dependency(link_with: r_search,
   include_directories: [platform_inc])
 
+if get_option('blob')
 r_search_static = static_library('r_search_static', r_search_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
@@ -33,6 +34,7 @@ r_search_static = static_library('r_search_static', r_search_sources,
 
 r_search_static_dep = declare_dependency(link_with: r_search_static,
   include_directories: [platform_inc])
+endif
 
 pkgconfig_mod.generate(r_search,
   subdirs: 'libr',

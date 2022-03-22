@@ -19,6 +19,7 @@ r_flag = library('r_flag', r_flag_sources,
 r_flag_dep = declare_dependency(link_with: r_flag,
                                 include_directories: [platform_inc])
 
+if get_option('blob')
 r_flag_static = static_library('r_flag_static', r_flag_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
@@ -32,6 +33,7 @@ r_flag_static = static_library('r_flag_static', r_flag_sources,
 
 r_flag_static_dep = declare_dependency(link_with: r_flag_static,
                                 include_directories: [platform_inc])
+endif
 
 pkgconfig_mod.generate(r_flag,
   subdirs: 'libr',

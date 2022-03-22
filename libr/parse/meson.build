@@ -61,6 +61,7 @@ r_parse = library('r_parse', r_parse_sources,
 r_parse_dep = declare_dependency(link_with: r_parse,
                                  include_directories: platform_inc)
 
+if get_option('blob')
 r_parse_static = static_library('r_parse_static', r_parse_sources,
   include_directories: platform_inc,
   c_args: library_cflags,
@@ -78,7 +79,8 @@ r_parse_static = static_library('r_parse_static', r_parse_sources,
 )
 
 r_parse_static_dep = declare_dependency(link_with: r_parse_static,
-                                 include_directories: platform_inc)
+  include_directories: platform_inc)
+endif
 
 pkgconfig_mod.generate(r_parse,
   subdirs: 'libr',

@@ -18,6 +18,7 @@ r_config = library('r_config', r_config_sources,
 r_config_dep = declare_dependency(link_with: r_config,
                                   include_directories: [platform_inc])
 
+if get_option('blob')
 r_config_static = static_library('r_config_static', r_config_sources,
   include_directories: [platform_inc],
   dependencies: [
@@ -29,7 +30,8 @@ r_config_static = static_library('r_config_static', r_config_sources,
 )
 
 r_config_static_dep = declare_dependency(link_with: r_config_static,
-                                  include_directories: [platform_inc])
+  include_directories: [platform_inc])
+endif
 
 pkgconfig_mod.generate(r_config,
   subdirs: 'libr',
