@@ -1258,9 +1258,15 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 	char *lpath = NULL, *dirname = NULL , *basename = NULL;
 	char *home = NULL, *filename = NULL, *p = NULL;
 	int n = 0;
+	bool is_pipe = false;
 
 	if (!path) {
 		goto out;
+	}
+
+	if (path[0] == '>') {
+		is_pipe = true;
+		path++;
 	}
 
 	lpath = r_str_new (path);
@@ -1314,8 +1320,10 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 			if (*filename == '.') {
 				continue;
 			}
-			if (!basename[0] || !strncmp (filename, basename, n))  {
-				char *tmpstring = r_str_newf ("%s%s", dirname, filename);
+			if (!basename[0] || !strncmp (filename, basename, n)) {
+				char *tmpstring = r_str_newf ("%s%s%s", is_pipe? ">": "",
+						dirname, filename);
+
 				if (r_file_is_directory (tmpstring)) {
 					char *s = r_str_newf ("%s%s", tmpstring, R_SYS_DIR);
 					r_line_completion_push (completion, s);
@@ -1338,11 +1346,16 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 	char *args = NULL, *input = NULL;
 	int n = 0, i = 0;
 	char *pipe = strchr (buf->data, '>');
+
 	if (pipe) {
-		args = r_str_new (pipe + 1);
+		args = r_str_new (pipe);
+		if (pipe[1] == ' ') {
+			narg++;
+		}
 	} else {
 		args = r_str_new (buf->data);
 	}
+
 	if (!args) {
 		goto out;
 	}
@@ -1888,9 +1901,21 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 	r_line_completion_clear (completion);
 	char *pipe = strchr (buf->data, '>');
 	char *ptr = strchr (buf->data, '@');
-	if (pipe && ptr && *ptr && strchr (ptr + 1, ' ') && buf->data + buf->index >= pipe) {
-		autocomplete_filename (completion, buf, core->rcmd, NULL, 1);
-	} else if (ptr && strchr (ptr + 1, ' ') && buf->data + buf->index >= ptr) {
+
+	if (pipe) {
+		/* XXX this doesn't handle filenames with spaces */
+		// accept "> " and ">"
+		char *pipe_space = pipe[1] == ' '
+			? strchr (pipe+2, ' ')
+			: strchr (pipe+1, ' ');
+		bool should_complete = buf->data + buf->index >= pipe;
+		if (pipe_space) {
+			should_complete &= buf->data + buf->index < pipe_space;
+		}
+		if (should_complete) {
+			autocomplete_filename (completion, buf, core->rcmd, NULL, 0);
+		}
+	} else if (ptr && buf->data + buf->index >= ptr) {
 		int sdelta, n;
 		ptr = (char *)r_str_trim_head_ro (ptr + 1);
 		n = strlen (ptr);//(buf->data+sdelta);
