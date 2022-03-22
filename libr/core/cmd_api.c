@@ -391,7 +391,7 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k) {
 	r_return_val_if_fail (cmd && cmd->aliases && k, NULL);
-	return ht_pp_find(cmd->aliases, k, NULL);
+	return ht_pp_find (cmd->aliases, k, NULL);
 }
 
 static ut8 *alias_append_internal(int *out_szp, const RCmdAliasVal *first, const ut8 *second, int second_sz) {
