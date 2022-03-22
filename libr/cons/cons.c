@@ -1595,13 +1595,18 @@ static bool __xterm_get_size(void) {
 		return false;
 	}
 	int rows, columns;
-	(void)write (I->fdout, "\x1b[999;999H", sizeof ("\x1b[999;999H"));
+	const char nainnain[] = "\x1b[999;999H";
+	if (write (I->fdout, nainnain, sizeof (nainnain)) != sizeof (nainnain)) {
+		return false;
+	}
 	rows = __xterm_get_cur_pos (&columns);
 	if (rows) {
 		I->rows = rows;
 		I->columns = columns;
 	} // otherwise reuse previous values
-	(void)write (I->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE));
+	if (write (I->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE) != sizeof (R_CONS_CURSOR_RESTORE)) {
+		return false;
+	}
 	return true;
 }
 
@@ -1749,7 +1754,9 @@ R_API void r_cons_show_cursor(int cursor) {
 #if __WINDOWS__
 	if (I->vtmode) {
 #endif
-		(void) write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6);
+		if (write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6) != 6) {
+			C->breaked = true;
+		}
 #if __WINDOWS__
 	} else {
 		static HANDLE hStdout = NULL;
@@ -1930,7 +1937,9 @@ R_API void r_cons_zero(void) {
 	if (I->line) {
 		I->line->zerosep = true;
 	}
-	(void)write (1, "", 1);
+	if (write (1, "", 1) != 1) {
+		C->breaked = true;
+	}
 }
 
 R_API void r_cons_highlight(const char *word) {
@@ -2240,7 +2249,9 @@ R_API void r_cons_cmd_help_match(const char *help[], bool use_color, R_BORROW R_
 
 R_API void r_cons_clear_buffer(void) {
 	if (I->vtmode) {
-		(void)write (1, "\x1b" "c\x1b[3J", 6);
+		if (write (1, "\x1b" "c\x1b[3J", 6) != 6) {
+			C->breaked = true;
+		}
 	}
 }
 

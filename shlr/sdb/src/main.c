@@ -59,8 +59,10 @@ static void terminate(int sig UNUSED) {
 	exit (sig < 2? sig: 0);
 }
 
-static void write_null(void) {
-	(void)write (1, "", 1);
+static int write_null(void) {
+	// success = write returns 1 == 1 -> 0
+	// failure = write returns 0 != 1 -> 1
+	return write (1, "", 1) != 1;
 }
 
 #define BS 128
@@ -456,7 +458,7 @@ static int sdb_dump(MainOptions *mo) {
 	const bool grep = mo->grep;
 
 	char *v = NULL;
-	char k[SDB_MAX_KEY] = {0};
+	char k[SDB_MAX_KEY] = { 0 };
 	const char *comma = "";
 	Sdb *db = sdb_new (NULL, dbname, 0);
 	if (!db) {
@@ -478,6 +480,7 @@ static int sdb_dump(MainOptions *mo) {
 		break;
 	}
 
+	int ret = 0;
 	if (db->fd == -1) {
 		SdbList *l = sdb_foreach_list (db, true);
 		if (!mo->textmode && mo->format == cgen && ls_length (l) > SDB_MAX_GPERF_KEYS) {
@@ -511,31 +514,31 @@ static int sdb_dump(MainOptions *mo) {
 			free (v);
 			if (!mo->textmode && mo->format == cgen && count++ > SDB_MAX_GPERF_KEYS) {
 				eprintf ("Error: gperf doesn't work with datasets with more than 15.000 keys.\n");
-				free (name);
-				free (cname);
-				return -1;
+				ret = -1;
 			}
 		}
 	}
-	switch (mo->format) {
-	case zero:
-		fflush (stdout);
-		write_null ();
-		break;
-	case perf:
-	case cgen:
-		cgen_footer (mo, name, cname);
-		break;
-	case json:
-		printf ("}\n");
-		break;
-	default:
-		break;
+	if (ret == 0) {
+		switch (mo->format) {
+		case zero:
+			fflush (stdout);
+			ret = write_null ();
+			break;
+		case perf:
+		case cgen:
+			cgen_footer (mo, name, cname);
+			break;
+		case json:
+			printf ("}\n");
+			break;
+		default:
+			break;
+		}
 	}
 	sdb_free (db);
 	free (cname);
 	free (name);
-	return 0;
+	return ret;
 }
 
 static int insertkeys(Sdb *s, const char **args, int nargs, int mode) {
@@ -667,8 +670,7 @@ static int base64decode(void) {
 		int declen;
 		out = sdb_decode (in, &declen);
 		if (out && declen >= 0) {
-			(void)write (1, out, declen);
-			ret = 0;
+			ret = (write (1, out, declen) == declen)? 0: 1;
 		}
 		free (out);
 		free (in);
@@ -759,6 +761,8 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 		wd = open (out, O_RDWR | O_CREAT, 0644);
 	} else {
 		if (ftruncate (wd, 0) == -1) {
+			free (out);
+			free (buf);
 			close (wd);
 			return -1;
 		}
@@ -811,7 +815,7 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 
 static const char *main_argparse_getarg(MainOptions *mo) {
 	int cur = mo->argi;
-	if (mo->argi + 1>= mo->argc) {
+	if (mo->argi + 1 >= mo->argc) {
 		return NULL;
 	}
 	mo->argi++;
@@ -1010,7 +1014,7 @@ int main(int argc, const char **argv) {
 					save |= sdb_query (s, mo->argv[i]);
 					if (mo->format) {
 						fflush (stdout);
-						write_null ();
+						ret = write_null ();
 					}
 				}
 			} else {
@@ -1021,7 +1025,7 @@ int main(int argc, const char **argv) {
 					save |= sdb_query (s, line);
 					if (mo->format) {
 						fflush (stdout);
-						write_null ();
+						ret = write_null ();
 					}
 					free (line);
 				}
@@ -1049,7 +1053,7 @@ int main(int argc, const char **argv) {
 				save |= sdb_query (s, mo->argv[i]);
 				if (mo->format) {
 					fflush (stdout);
-					write_null ();
+					ret = write_null ();
 				}
 			}
 		} else {

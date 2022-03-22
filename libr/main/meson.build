@@ -81,6 +81,7 @@ r_main_dep = declare_dependency(link_with: r_main,
                                 include_directories: [platform_inc],
                                 dependencies: r_main_deps)
 
+if get_option('blob')
 r_main_static = static_library('r_main_static', r_main_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
@@ -94,6 +95,7 @@ r_main_static_dep = declare_dependency(
   include_directories: [platform_inc],
   dependencies: r_main_static_deps
 )
+endif
 
 pkgconfig_mod.generate(r_main,
   subdirs: 'libr',
