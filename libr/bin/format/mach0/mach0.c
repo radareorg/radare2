@@ -1700,6 +1700,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 	}
 	R_FREE (opcodes);
 
+    bin->segs_count = bin->nsegs;
 	return true;
 }
 
@@ -4559,7 +4560,7 @@ struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
 
 void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *bin, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void * context) {
 	int i = 0;
-	for (; i < bin->nsegs && bin->segs_count; i++) {
+	for (; i < bin->nsegs && i < bin->segs_count; i++) {
 		if (!bin->chained_starts[i]) {
 			continue;
 		}
