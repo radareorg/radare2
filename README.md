@@ -36,7 +36,7 @@ radare2/sys/install.sh
 ```
 
 ```sh
-pip install r2env
+pip install -U r2env
 r2env init
 r2env add radare2@git
 ```
