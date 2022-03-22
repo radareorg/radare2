@@ -4469,17 +4469,17 @@ static void __print_decompiler_cb(void *user, void *p) {
 	//TODO: Refactoring
 	//TODO: Also, __check_func_diff should use addr not name
 	RCore *core = (RCore *)user;
+	RPanel *panel = (RPanel *)p;
+	char *cmdstr = NULL;
 	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (!func) {
 		return;
 	}
-	RPanel *panel = (RPanel *)p;
-	char *cmdstr = NULL;
-#if 0
+#if 1
+	// fixes scroll in decompiler pane
 	bool update = core->panels->autoUpdate && __check_func_diff (core, panel);
-	if (core->offset != panel->model->addr) {
-		update = true;
-	}
+	// TODO should chk if fcn is the same not the offset
+	// if (core->offset != panel->model->addr) { update = true; }
 	if (!update) {
 		cmdstr = __find_cmd_str_cache (core, panel);
 		if (R_STR_ISNOTEMPTY (cmdstr)) {
@@ -4488,8 +4488,7 @@ static void __print_decompiler_cb(void *user, void *p) {
 		return;
 	}
 #endif
-	// RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-	if (func && core->panels_root->cur_pdc_cache) {
+	if (core->panels_root->cur_pdc_cache) {
 		cmdstr = r_str_new ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
 					r_num_as_string (NULL, func->addr, false), 0));
 		if (cmdstr) {
