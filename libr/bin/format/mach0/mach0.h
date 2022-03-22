@@ -130,6 +130,7 @@ struct MACH0_(obj_t) {
 	char *intrp;
 	char *compiler;
 	int nsegs;
+	int segs_count;
 	struct r_dyld_chained_starts_in_segment **chained_starts;
 	struct dyld_chained_fixups_header fixups_header;
 	ut64 fixups_offset;

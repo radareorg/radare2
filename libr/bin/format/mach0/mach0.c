@@ -1510,10 +1510,11 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) *bin, ut32 offset, ut32 si
 	if (header.starts_offset > size) {
 		return false;
 	}
-	ut32 segs_count;
-	if ((segs_count = r_buf_read_le32_at (bin->b, starts_at)) == UT32_MAX) {
+	ut32 segs_count = r_buf_read_le32_at (bin->b, starts_at);
+	if (segs_count == UT32_MAX || segs_count == 0) {
 		return false;
 	}
+	bin->segs_count = segs_count;
 	bin->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, segs_count);
 	if (!bin->chained_starts) {
 		return false;
@@ -1699,6 +1700,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *bin) {
 	}
 	R_FREE (opcodes);
 
+	bin->segs_count = bin->nsegs;
 	return true;
 }
 
@@ -2124,7 +2126,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->intrp);
 	free (mo->compiler);
 	if (mo->chained_starts) {
-		for (i = 0; i < mo->nsegs; i++) {
+		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
 			if (mo->chained_starts[i]) {
 				free (mo->chained_starts[i]->page_start);
 				free (mo->chained_starts[i]);
@@ -4558,7 +4560,7 @@ struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
 
 void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *bin, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void * context) {
 	int i = 0;
-	for (; i < bin->nsegs; i++) {
+	for (; i < bin->nsegs && i < bin->segs_count; i++) {
 		if (!bin->chained_starts[i]) {
 			continue;
 		}
