@@ -344,18 +344,18 @@ static int cmd_hash_bang(RCore *core, const char *input) {
 	if (r_str_endswith (input, "?")) {
 		char *ex = strchr (input, '!');
 		if (ex) {
-			char *foo = r_str_ndup (ex + 1, strlen (ex) - 2);
-			RLangPlugin *lp = r_lang_get_by_name (core->lang, foo);
+			char *name = r_str_ndup (ex + 1, strlen (ex) - 2);
+			RLangPlugin *lp = r_lang_get_by_name (core->lang, name);
 			if (lp) {
 				if (lp->example) {
 					r_cons_println (lp->example);
 				} else {
-					eprintf ("This language plugin doesnt provide any example.\n");
+					eprintf ("%s plugin does not provide an example.\n", name);
 				}
 			} else {
-				eprintf ("Unknown rlang plugin '%s'.\n", foo);
+				eprintf ("Unknown rlang plugin '%s'.\n", name);
 			}
-			free (foo);
+			free (name);
 		}
 		return false;
 	}
