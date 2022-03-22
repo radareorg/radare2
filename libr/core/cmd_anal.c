@@ -300,6 +300,7 @@ static const char *help_msg_ae[] = {
 	"ae??", "", "show ESIL help",
 	"aea", "[f] [count]", "analyse n esil instructions accesses (regs, mem..)",
 	"aeA", "[f] [count]", "analyse n bytes for their esil accesses (regs, mem..)",
+	"aeb", " ([addr])", "emulate block in current or given address",
 	"aeC", "[arg0 arg1..] @ addr", "appcall in esil",
 	"aec", "[?]", "continue until ^C",
 	"aef", " [addr]", "emulate function",
@@ -6461,7 +6462,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int off) {
 
 	// eprintf ("   aesB %llx %llx %d\n", addr, until_addr, off); // 0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
 	if (!esil) {
-		eprintf ("Warning: cmd_espc: creating new esil instance\n");
+		// eprintf ("Warning: cmd_espc: creating new esil instance\n");
 		if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 			return;
 		}
@@ -6485,7 +6486,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int off) {
 		}
 		if (i >= (bsize - 32)) {
 			i = 0;
-			eprintf ("Warning: Chomp\n");
+			eprintf ("Warning: Chomp %d of %d\n", i, bsize);
 		}
 		if (!i) {
 			r_io_read_at (core->io, addr, buf, bsize);
@@ -7355,8 +7356,25 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		}
 		break;
 	case 'b': // "aeb"
+		{
+			ut64 addr = r_num_math (core->num, input + 1);
+			if (!addr || addr == UT64_MAX) {
+				addr = core->offset;
+			}
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+			if (fcn) {
+				RAnalBlock *bb = r_anal_function_bbget_in (core->anal, fcn, addr);
+				if (bb) {
+					cmd_aespc (core, bb->addr, bb->addr + bb->size, bb->ninstr);
+					// r_core_cmdf (core, "aesp `ab~addr[1]` `ab~ninstr[1]`");
+				} else {
+					eprintf ("No basic block in this address\n");
+				}
+			} else {
+				eprintf ("No function in this address\n");
+			}
 		// ab~ninstr[1]
-		r_core_cmdf (core, "aesp `ab~addr[1]` `ab~ninstr[1]`");
+		}
 		break;
 	case 'f': // "aef"
 		if (input[1] == 'a') { // "aefa"
