@@ -159,15 +159,18 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 		r_sys_perror ("pipe run");
 	} else if (!child) {
 		/* children */
+		int rc = 0;
 		r_sandbox_system (code, 1);
-		write (input[1], "", 1);
+		if (write (input[1], "", 1) != 1) {
+			rc = 1;
+		}
 		close (input[0]);
 		close (input[1]);
 		close (output[0]);
 		close (output[1]);
 		fflush (stdout);
 		fflush (stderr);
-		r_sys_exit (0, true);
+		r_sys_exit (rc, true);
 		return false;
 	} else {
 		/* parent */
@@ -194,11 +197,16 @@ static bool lang_pipe_run(RLang *lang, const char *code, int len) {
 			res = lang->cmd_str ((RCore*)lang->user, buf);
 			if (res) {
 				// r_cons_print (res);
-				(void) write (input[1], res, strlen (res) + 1);
+				size_t res_len = strlen (res) + 1;
+				if (write (input[1], res, res_len) != res_len) {
+					break;
+				}
 				free (res);
 			} else {
 				eprintf ("r_lang_pipe: NULL reply for (%s)\n", buf);
-				(void) write (input[1], "", 1); // NULL byte
+				if (write (input[1], "", 1) != 1) {
+					break;
+				}
 			}
 		}
 		r_cons_break_pop ();
