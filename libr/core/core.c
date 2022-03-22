@@ -1334,7 +1334,7 @@ out:
 	free (basename);
 }
 
-static void autocompleteFilename(RLineCompletion *completion, RLineBuffer *buf, RCmd *cmd, char **extra_paths, int narg) {
+static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf, RCmd *cmd, char **extra_paths, int narg) {
 	char *args = NULL, *input = NULL;
 	int n = 0, i = 0;
 	char *pipe = strchr (buf->data, '>');
@@ -1875,7 +1875,9 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		return;
 	}
 	if (r_config_get_b (core->config, "scr.prompt.tabhelp")) {
-		if (buf->data[0] && buf->data[0] != '$' && !strchr (buf->data, ' ')) {
+		if (buf->data[0] != '$' // handle aliases below
+				&& strncmp(buf->data, "#!", 2) // rlang help fails
+				&& !strchr (buf->data, ' ')) {
 			r_line_completion_clear (completion);
 			char *s = r_core_cmd_strf (core, "%s?", buf->data);
 			eprintf ("%s%s\n%s", core->cons->line->prompt, buf->data, s);
@@ -1887,7 +1889,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 	char *pipe = strchr (buf->data, '>');
 	char *ptr = strchr (buf->data, '@');
 	if (pipe && ptr && *ptr && strchr (ptr + 1, ' ') && buf->data + buf->index >= pipe) {
-		autocompleteFilename (completion, buf, core->rcmd, NULL, 1);
+		autocomplete_filename (completion, buf, core->rcmd, NULL, 1);
 	} else if (ptr && strchr (ptr + 1, ' ') && buf->data + buf->index >= ptr) {
 		int sdelta, n;
 		ptr = (char *)r_str_trim_head_ro (ptr + 1);
@@ -1896,7 +1898,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		r_flag_foreach_prefix (core->flags, buf->data + sdelta, n, add_argv, completion);
 	} else if (!strncmp (buf->data, "#!pipe ", 7)) {
 		if (strchr (buf->data + 7, ' ')) {
-			autocompleteFilename (completion, buf, core->rcmd, NULL, 2);
+			autocomplete_filename (completion, buf, core->rcmd, NULL, 2);
 		} else {
 			int chr = 7;
 			ADDARG ("node");
@@ -1908,7 +1910,7 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		}
 	} else if (!strncmp (buf->data, "ec ", 3)) {
 		if (strchr (buf->data + 3, ' ')) {
-			autocompleteFilename (completion, buf, core->rcmd, NULL, 2);
+			autocomplete_filename (completion, buf, core->rcmd, NULL, 2);
 		} else {
 			int chr = 3;
 			ADDARG ("comment");
@@ -2062,10 +2064,10 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 		if (core->anal->zign_path && core->anal->zign_path[0]) {
 			char *zignpath = r_file_abspath (core->anal->zign_path);
 			char *paths[2] = { zignpath, NULL };
-			autocompleteFilename (completion, buf, core->rcmd, paths, 1);
+			autocomplete_filename (completion, buf, core->rcmd, paths, 1);
 			free (zignpath);
 		} else {
-			autocompleteFilename (completion, buf, core->rcmd, NULL, 1);
+			autocomplete_filename (completion, buf, core->rcmd, NULL, 1);
 		}
 	} else if (find_e_opts (core, completion, buf)) {
 		return;
