@@ -204,6 +204,7 @@ r_anal = library('r_anal', r_anal_sources,
 r_anal_dep = declare_dependency(link_with: r_anal,
   include_directories: r_anal_inc)
 
+if get_option('blob')
 r_anal_static = static_library('r_anal_static', r_anal_sources,
   include_directories: r_anal_inc,
   c_args: library_cflags,
@@ -227,6 +228,7 @@ r_anal_static = static_library('r_anal_static', r_anal_sources,
 
 r_anal_static_dep = declare_dependency(link_with: r_anal_static,
   include_directories: r_anal_inc)
+endif
 
 pkgconfig_mod.generate(r_anal,
   subdirs: 'libr',

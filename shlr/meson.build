@@ -227,16 +227,17 @@ bochs_dep = declare_dependency(
   include_directories: bochs_inc
 )
 
+if get_option('blob')
 libr2bochs_static = static_library('r2bochs_static', bochs_files,
   dependencies: [r_util_static_dep],
   include_directories: bochs_inc,
   implicit_include_directories: false
 )
-
 bochs_static_dep = declare_dependency(
   link_with: libr2bochs_static,
   include_directories: bochs_inc
 )
+endif
 
 
 # handle java dependency
@@ -260,6 +261,7 @@ java_dep = declare_dependency(
   include_directories: java_inc
 )
 
+if get_option('blob')
 libr2java_static = static_library('r2java_static', java_files,
   dependencies: [r_util_static_dep],
   include_directories: java_inc,
@@ -270,6 +272,7 @@ java_static_dep = declare_dependency(
   link_with: libr2java_static,
   include_directories: java_inc
 )
+endif
 
 # handle qnx dependency
 qnx_files = [
@@ -293,6 +296,7 @@ qnx_dep = declare_dependency(
   include_directories: qnx_inc
 )
 
+if get_option('blob')
 libr2qnx_static = static_library('r2qnx_static', qnx_files,
   dependencies: [r_socket_static_dep],
   include_directories: qnx_inc,
@@ -303,6 +307,7 @@ qnx_static_dep = declare_dependency(
   link_with: libr2qnx_static,
   include_directories: qnx_inc
 )
+endif
 
 
 # handle grub dependency
@@ -371,6 +376,7 @@ grub_dep = declare_dependency(
   include_directories: grub_inc
 )
 
+if get_option('blob')
 libr2grub_static = static_library('r2grub_static', grub_files,
   dependencies: [r_util_static_dep],
   include_directories: grub_inc,
@@ -381,6 +387,7 @@ grub_static_dep = declare_dependency(
   link_with: libr2grub_static,
   include_directories: grub_inc
 )
+endif
 
 # handle winkd dependency
 winkd_files = [
@@ -404,6 +411,7 @@ winkd_dep = declare_dependency(
   include_directories: winkd_inc
 )
 
+if get_option('blob')
 libr2winkd_static = static_library('r2winkd_static', winkd_files,
   dependencies: [r_hash_static_dep, r_crypto_static_dep, r_socket_static_dep, r_util_static_dep],
   include_directories: winkd_inc,
@@ -414,6 +422,7 @@ winkd_static_dep = declare_dependency(
   link_with: libr2winkd_static,
   include_directories: winkd_inc
 )
+endif
 
 # handle ar dependency
 ar_files = [
@@ -433,6 +442,7 @@ ar_dep = declare_dependency(
   include_directories: ar_inc
 )
 
+if get_option('blob')
 libr2ar_static = static_library('r2ar_static', ar_files,
   dependencies: [r_util_static_dep],
   include_directories: ar_inc,
@@ -443,6 +453,7 @@ ar_static_dep = declare_dependency(
   link_with: libr2ar_static,
   include_directories: ar_inc
 )
+endif
 
 # handle mpc dependency
 mpc_files = [

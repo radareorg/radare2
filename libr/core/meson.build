@@ -105,6 +105,24 @@ r_core_deps = [
   lrt
 ]
 
+if use_libuv
+  r_core_deps += libuv_dep
+endif
+
+r_core = library('r_core', r_core_sources,
+  include_directories: r_core_inc,
+  c_args: library_cflags,
+  dependencies: r_core_deps,
+  install: true,
+  implicit_include_directories: false,
+  install_rpath: rpath_lib,
+  soversion: r2_libversion
+)
+
+r_core_dep = declare_dependency(link_with: r_core, include_directories: r_core_inc)
+
+if get_option('blob')
+
 r_core_static_deps = [
   r_util_static_dep,
   r_reg_static_dep,
@@ -132,23 +150,6 @@ r_core_static_deps = [
   java_static_dep,
   lrt
 ]
-
-if use_libuv
-  r_core_deps += libuv_dep
-endif
-
-r_core = library('r_core', r_core_sources,
-  include_directories: r_core_inc,
-  c_args: library_cflags,
-  dependencies: r_core_deps,
-  install: true,
-  implicit_include_directories: false,
-  install_rpath: rpath_lib,
-  soversion: r2_libversion
-)
-
-r_core_dep = declare_dependency(link_with: r_core, include_directories: r_core_inc)
-
 r_core_static = static_library('r_core_static', r_core_sources,
   include_directories: r_core_inc,
   c_args: library_cflags,
@@ -156,9 +157,9 @@ r_core_static = static_library('r_core_static', r_core_sources,
   install: true,
   implicit_include_directories: false,
 )
-
 r_core_static_dep = declare_dependency(link_with: r_core_static,
   include_directories: r_core_inc)
+endif
 
 pkgconfig_mod.generate(
   r_core,

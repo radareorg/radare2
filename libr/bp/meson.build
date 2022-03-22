@@ -25,6 +25,7 @@ r_bp = library('r_bp', r_bp_sources,
 r_bp_dep = declare_dependency(link_with: r_bp,
                               include_directories: [platform_inc])
 
+if get_option('blob')
 r_bp_static = static_library('r_bp_static', r_bp_sources,
   include_directories: [platform_inc],
   c_args: library_cflags,
@@ -35,6 +36,7 @@ r_bp_static = static_library('r_bp_static', r_bp_sources,
 
 r_bp_static_dep = declare_dependency(link_with: r_bp_static,
   include_directories: [platform_inc])
+endif
 
 pkgconfig_mod.generate(r_bp,
   subdirs: 'libr',

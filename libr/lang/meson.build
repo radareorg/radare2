@@ -26,6 +26,7 @@ r_lang = library('r_lang', r_lang_sources,
 r_lang_dep = declare_dependency(link_with: r_lang,
                                 include_directories: [platform_inc])
 
+if get_option('blob')
 r_lang_static = static_library('r_lang_static', r_lang_sources,
   include_directories: [platform_inc, spp_inc],
   c_args: library_cflags,
@@ -36,6 +37,7 @@ r_lang_static = static_library('r_lang_static', r_lang_sources,
 
 r_lang_static_dep = declare_dependency(link_with: r_lang_static,
   include_directories: [platform_inc])
+endif
 
 pkgconfig_mod.generate(r_lang,
   subdirs: 'libr',

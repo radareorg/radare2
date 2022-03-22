@@ -214,6 +214,7 @@ r_asm = library('r_asm', r_asm_sources,
 r_asm_dep = declare_dependency(link_with: r_asm,
                                include_directories: r_asm_inc)
 
+if get_option('blob')
 r_asm_static = static_library('r_asm_static', r_asm_sources,
   include_directories: r_asm_inc,
   c_args: library_cflags,
@@ -234,6 +235,7 @@ r_asm_static = static_library('r_asm_static', r_asm_sources,
 
 r_asm_static_dep = declare_dependency(link_with: r_asm_static,
                                include_directories: r_asm_inc)
+endif
 
 pkgconfig_mod.generate(r_asm,
   subdirs: 'libr',

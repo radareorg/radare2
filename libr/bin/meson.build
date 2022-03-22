@@ -169,6 +169,7 @@ r_bin = library('r_bin', r_bin_sources,
 r_bin_dep = declare_dependency(link_with: r_bin,
                                include_directories: r_bin_inc)
 
+if get_option('blob')
 r_bin_static = static_library('r_bin_static', r_bin_sources,
   include_directories: r_bin_inc,
   c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
@@ -190,6 +191,7 @@ r_bin_static = static_library('r_bin_static', r_bin_sources,
 
 r_bin_static_dep = declare_dependency(link_with: r_bin_static,
   include_directories: r_bin_inc)
+endif
 
 pkgconfig_mod.generate(r_bin,
   subdirs: 'libr',
