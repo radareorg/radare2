@@ -316,6 +316,7 @@ R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 	return (ri);
 }
 
+// XXX deprecate
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {
 	// ignores errors
 	return r_debug_reg_get_err (dbg, name, NULL, NULL);
@@ -338,7 +339,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
 		if (!name || *name == '\0') {
-			eprintf ("No debug register profile defined for '%s'.\n", pname);
+			eprintf ("No debug register named '%s' found.\n", pname);
 			if (err) {
 				*err = 1;
 			}
@@ -354,7 +355,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 			}
 			ret = r_reg_get_value_big (dbg->reg, ri, value);
 		} else {
-		    ret = r_reg_get_value (dbg->reg, ri);
+			ret = r_reg_get_value (dbg->reg, ri);
 		}
 	} else {
 		if (err) {

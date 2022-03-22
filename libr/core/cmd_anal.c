@@ -5630,7 +5630,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 			bool isNextFall = false;
 			if (op.type == R_ANAL_OP_TYPE_CJMP) {
-				ut64 pc = r_debug_reg_get (core->dbg, "PC");
+				int err = 0;
+				ut64 pc = r_debug_reg_get_err (core->dbg, "PC", &err, NULL);
+				if (err) {
+					eprintf ("Missing PC register in the current profile.\n");
+					break;
+				}
 				if (pc == addr + op.size) {
 					// do not opdelay here
 					isNextFall = true;

@@ -62,7 +62,7 @@ if not no_user_plugins
   endif
   if user_plugins.contains('arm')
     asm_plugins += [ 'arm_cs' ]
-    anal_plugins += [ 'x86_cs' ]
+    anal_plugins += [ 'arm_cs' ]
     bp_plugins += [ 'arm' ]
     parse_plugins += [ 'arm_pseudo' ]
   endif

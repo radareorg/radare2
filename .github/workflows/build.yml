@@ -367,7 +367,7 @@ jobs:
     - uses: actions/upload-artifact@v2
       continue-on-error: true
       with:
-        name: r2blob-w64.exe
+        name: w64-static
         path: prefix\bin\r2blob.static.exe
 
   w64-meson:
@@ -555,15 +555,6 @@ jobs:
           asset_path: dist/artifacts/w32-meson/radare2-${{ steps.r2v.outputs.branch }}-w32.zip
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-w32.zip
           asset_content_type: application/zip
-      - name: Upload asset for Windows (w64-blob)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/artifacts/w64-static/r2blob-w64.exe
-          asset_name: r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
-          asset_content_type: application/zip
       - name: Upload asset for macOS
         uses: actions/upload-release-asset@v1
         env:
@@ -672,3 +663,13 @@ jobs:
           asset_path: dist/artifacts/freebsd/radare2-freebsd.tgz
           asset_name: radare2-${{ steps.r2v.outputs.branch }}-freebsd.tgz
           asset_content_type: application/gzip
+      - name: Upload asset for Windows (w64-blob)
+        continue-on-error: true
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/artifacts/w64-static/r2blob.static.exe
+          asset_name: r2blob-${{ steps.r2v.outputs.branch }}-w64.zip
+          asset_content_type: application/zip
