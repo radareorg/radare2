@@ -69,9 +69,9 @@ ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
 endif
-SDB_URL=git://github.com/radareorg/sdb
+SDB_URL=https://github.com/radareorg/sdb
 #SDB_URL=/Users/pancake/prg/sdb
-SPP_URL=git://github.com/trufae/spp
+SPP_URL=https://github.com/trufae/spp
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 

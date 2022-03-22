@@ -306,7 +306,9 @@ R_API R2Pipe *r2pipe_open(const char *cmd) {
 				eprintf ("return code %d for %s\n", rc, cmd);
 			}
 			// trigger the blocking read
-			write (1, "\xff", 1);
+			if (write (1, "\xff", 1) != 1) {
+				rc = -1;
+			}
 			close (r2p->output[1]);
 			close (0);
 			close (1);

@@ -217,7 +217,10 @@ static bool print_reglist(RStrBuf *sb, v850np_inst *inst, const struct v850_oper
 
 				if (last > first + 1) {
 					for (i = first + 1; i < last ; i++) {
-						r_strbuf_appendf (sb, ", %s", get_v850_reg_name (i)); // last - 1));
+						const char *rn = get_v850_reg_name (i);
+						if (rn) {
+							r_strbuf_appendf (sb, ", %s", rn);
+						}
 					}
 					//r_strbuf_appendf (sb, " - %s", get_v850_reg_name (last - 1));
 				}

@@ -8,7 +8,7 @@
 
 /* XXX: this code must be rewritten . too slow */
 bool cdb_getkvlen(struct cdb *c, ut32 *klen, ut32 *vlen, ut32 pos) {
-	ut8 buf[4] = {0};
+	ut8 buf[4] = { 0 };
 	*klen = *vlen = 0;
 	if (!cdb_read (c, (char *)buf, sizeof (buf), pos)) {
 		return false;

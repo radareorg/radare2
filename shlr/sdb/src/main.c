@@ -456,7 +456,7 @@ static int sdb_dump(MainOptions *mo) {
 	const bool grep = mo->grep;
 
 	char *v = NULL;
-	char k[SDB_MAX_KEY] = {0};
+	char k[SDB_MAX_KEY] = { 0 };
 	const char *comma = "";
 	Sdb *db = sdb_new (NULL, dbname, 0);
 	if (!db) {
@@ -759,6 +759,8 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 		wd = open (out, O_RDWR | O_CREAT, 0644);
 	} else {
 		if (ftruncate (wd, 0) == -1) {
+			free (out);
+			free (buf);
 			close (wd);
 			return -1;
 		}
