@@ -1264,10 +1264,12 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 		goto out;
 	}
 
+#if 0
 	if (path[0] == '>') {
 		is_pipe = true;
 		path++;
 	}
+#endif
 
 	lpath = r_str_new (path);
 #if __WINDOWS__
@@ -1349,9 +1351,12 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 
 	if (pipe) {
 		args = r_str_new (pipe);
+#if 0
 		if (pipe[1] == ' ') {
+			// currently unreachable
 			narg++;
 		}
+#endif
 	} else {
 		args = r_str_new (buf->data);
 	}
@@ -1913,11 +1918,11 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			should_complete &= buf->data + buf->index < pipe_space;
 		}
 		if (should_complete) {
-			if (pipe[1] == ' '){
-				autocomplete_filename (completion, buf, core->rcmd, NULL, 0);
-			} else {
+			if (pipe[1] != ' '){
 				r_line_completion_push (completion, ">");
+				return;
 			}
+			autocomplete_filename (completion, buf, core->rcmd, NULL, 1);
 		}
 	} else if (ptr) {
 		char *ptr_space = ptr[1] == ' '
@@ -1928,11 +1933,11 @@ R_API void r_core_autocomplete(R_NULLABLE RCore *core, RLineCompletion *completi
 			should_complete &= buf->data + buf->index < ptr_space;
 		}
 		if (should_complete) {
-			if (ptr[1] == ' ') {
-				autocomplete_flags (core, completion, ptr+2);
-			} else {
+			if (ptr[1] != ' ') {
 				r_line_completion_push (completion, "@");
+				return;
 			}
+			autocomplete_flags (core, completion, ptr+2);
 		}
 	} else if (!strncmp (buf->data, "#!pipe ", 7)) {
 		if (strchr (buf->data + 7, ' ')) {
