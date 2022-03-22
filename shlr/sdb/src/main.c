@@ -670,8 +670,7 @@ static int base64decode(void) {
 		int declen;
 		out = sdb_decode (in, &declen);
 		if (out && declen >= 0) {
-			(void)write (1, out, declen);
-			ret = 0;
+			ret = (write (1, out, declen) == declen)? 0: 1;
 		}
 		free (out);
 		free (in);
@@ -816,7 +815,7 @@ static int gen_gperf(MainOptions *mo, const char *file, const char *name) {
 
 static const char *main_argparse_getarg(MainOptions *mo) {
 	int cur = mo->argi;
-	if (mo->argi + 1>= mo->argc) {
+	if (mo->argi + 1 >= mo->argc) {
 		return NULL;
 	}
 	mo->argi++;

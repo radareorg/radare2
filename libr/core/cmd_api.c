@@ -391,7 +391,6 @@ R_API int r_cmd_alias_set_raw(RCmd *cmd, const char *k, const ut8 *v, int sz) {
 
 R_API RCmdAliasVal *r_cmd_alias_get(RCmd *cmd, const char *k) {
 	r_return_val_if_fail (cmd && cmd->aliases && k, NULL);
-
 	return ht_pp_find(cmd->aliases, k, NULL);
 }
 
@@ -427,20 +426,16 @@ R_API int r_cmd_alias_append_str(RCmd *cmd, const char *k, const char *a) {
 		if (!v_old->is_data) {
 			return 1;
 		}
-
-		int new_len;
+		int new_len = 0;
 		ut8* new = alias_append_internal (&new_len, v_old, (ut8 *)a, strlen (a) + 1);
-
 		if (!new) {
 			return 1;
 		}
-
 		r_cmd_alias_set_raw (cmd, k, new, new_len);
 		free (new);
 	} else {
 		r_cmd_alias_set_str (cmd, k, a);
 	}
-
 	return 0;
 }
 
@@ -450,16 +445,16 @@ R_API int r_cmd_alias_append_raw(RCmd *cmd, const char *k, const ut8 *a, int sz)
 		if (!v_old->is_data) {
 			return 1;
 		}
-
-		int new_len;
+		int new_len = 0;
 		ut8 *new = alias_append_internal (&new_len, v_old, a, sz);
-
+		if (!new) {
+			return 1;
+		}
 		r_cmd_alias_set_raw (cmd, k, new, new_len);
 		free (new);
 	} else {
 		r_cmd_alias_set_raw (cmd, k, a, sz);
 	}
-
 	return 0;
 }
 
@@ -468,7 +463,6 @@ R_API char *r_cmd_alias_val_strdup(RCmdAliasVal *v) {
 	if (v->is_str) {
 		return strdup ((char *)v->data);
 	}
-
 	return r_str_escape_raw (v->data, v->sz);
 }
 
