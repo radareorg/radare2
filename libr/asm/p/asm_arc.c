@@ -85,7 +85,7 @@ RAsmPlugin r_asm_plugin_arc = {
 	.arch = "arc",
 	.bits = 16 | 32,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
-	.desc = "Argonaut RISC Core",
+	.desc = "Argonaut RISC Core, ARC (-b 32) and ARCCompact (-b 16)",
 	.disassemble = &disassemble,
 	.license = "GPL3"
 };
