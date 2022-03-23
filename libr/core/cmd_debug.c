@@ -847,10 +847,13 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 	ut8 buf[32];
 	ut64 pc;
 	int res = true;
+	st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
+	ut64 countsteps = 0;
 
 	RList *optypes_list = NULL;
 	RListIter *iter;
-	char *optype, *optypes = strdup (r_str_trim_head_ro ((char *) _optypes));
+	char *optype = NULL;
+	char *optypes = strdup (r_str_trim_head_ro ((char *) _optypes));
 
 	if (!core || !core->dbg) {
 		eprintf ("Wrong state\n");
@@ -867,7 +870,7 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 	optypes_list = r_str_split_list (optypes, " ", 0);
 
 	r_cons_break_push (NULL, NULL);
-	for (;;) {
+	for (; !maxsteps || countsteps < maxsteps; countsteps++) {
 		if (r_cons_is_breaked ()) {
 			core->break_loop = true;
 			break;
