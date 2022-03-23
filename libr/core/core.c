@@ -3165,7 +3165,6 @@ R_API void r_core_fini(RCore *c) {
 	r_event_free (c->ev);
 	free (c->cmdlog);
 	free (c->lastsearch);
-	R_FREE (c->cons->pager);
 	r_list_free (c->cmdqueue);
 	free (c->lastcmd);
 	free (c->stkcmd);
