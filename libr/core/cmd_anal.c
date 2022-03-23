@@ -5678,6 +5678,10 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		// esil->verbose ?
 		// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
 		ut64 pc = r_reg_getv (core->anal->reg, name);
+		if (pc == UT64_MAX) {
+			eprintf ("Invalid program counter PC=-1\n");
+			break;
+		}
 		if (core->anal->pcalign > 0) {
 			pc -= (pc % core->anal->pcalign);
 			r_reg_setv (core->anal->reg, name, pc);
@@ -5685,9 +5689,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 		if (follow > 0) {
-			ut64 pc = r_debug_reg_get (core->dbg, "PC");
 			if ((pc < core->offset) || (pc > (core->offset + follow))) {
-				r_core_cmd0 (core, "sr PC");
+				r_core_seek (core, pc, true);
 			}
 		}
 		// check breakpoints
