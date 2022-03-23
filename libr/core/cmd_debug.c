@@ -896,6 +896,9 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 		} else {
 			r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 			pc = r_reg_getv (core->anal->reg, "PC");
+			if (pc == UT64_MAX) {
+				break;
+			}
 		}
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
 
