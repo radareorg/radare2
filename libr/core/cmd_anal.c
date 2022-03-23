@@ -5488,12 +5488,17 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut8 code[32];
 	RAnalOp op = {0};
 	RAnalEsil *esil = core->anal->esil;
-	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	ut64 addr = r_reg_getv (core->anal->reg, name);
+	const char *_pcname = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	if (R_STR_ISEMPTY (_pcname)) {
+		eprintf ("Cannot find =PC in current reg profile.\n");
+		return 0;
+	}
+	char *pcname = strdup (_pcname);
+	ut64 addr = r_reg_getv (core->anal->reg, pcname);
 	bool r2wars = r_config_get_b (core->config, "cfg.r2wars");
 	bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
 	int esiltimeout = r_config_get_i (core->config, "esil.timeout");
-	ut64 startTime;
+	ut64 startTime = 0;
 
 	if (esiltimeout > 0) {
 		startTime = r_time_now_mono ();
@@ -5521,7 +5526,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		} else {
 			esil->trap = 0;
-			addr = r_reg_getv (core->anal->reg, name);
+			addr = r_reg_getv (core->anal->reg, pcname);
 			//eprintf ("PC=0x%"PFMT64x"\n", (ut64)addr);
 		}
 		if (prev_addr) {
@@ -5540,7 +5545,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		const char *pincmd = r_anal_pin_call (core->anal, addr);
 		if (pincmd) {
 			r_core_cmd0 (core, pincmd);
-			ut64 pc = r_debug_reg_get (core->dbg, "PC");
+			ut64 pc = r_reg_getv (core->anal->reg, pcname);
 			if (addr != pc) {
 				return_tail (1);
 			}
@@ -5588,8 +5593,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				if (addr == until_addr) {
 					return_tail (0);
 				} else {
-					r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
-					r_reg_setv (core->dbg->reg, "PC", op.addr + op.size);
+					r_reg_setv (core->anal->reg, pcname, op.addr + op.size);
+					r_reg_setv (core->dbg->reg, pcname, op.addr + op.size);
 				}
 				r_anal_op_fini(&op);
 				return 1;
@@ -5605,13 +5610,13 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 					tmp[0] = 0;
 					op.esil.len -= 7; //16;
 				} else {
-					r_reg_setv (core->anal->reg, name, addr + op.size);
+					r_reg_setv (core->anal->reg, pcname, addr + op.size);
 				}
 			} else {
-				r_reg_setv (core->anal->reg, name, addr + op.size);
+				r_reg_setv (core->anal->reg, pcname, addr + op.size);
 			}
 		} else {
-			r_reg_setv (core->anal->reg, name, addr + op.size);
+			r_reg_setv (core->anal->reg, pcname, addr + op.size);
 		}
 		if (ret) {
 			r_anal_esil_set_pc (esil, addr);
@@ -5631,7 +5636,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			bool isNextFall = false;
 			if (op.type == R_ANAL_OP_TYPE_CJMP) {
 				int err = 0;
-				ut64 pc = r_debug_reg_get_err (core->dbg, "PC", &err, NULL);
+				ut64 pc = r_reg_getv (core->anal->reg, pcname);
 				if (err) {
 					eprintf ("Missing PC register in the current profile.\n");
 					break;
@@ -5677,15 +5682,15 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		// esil->verbose ?
 		// eprintf ("REPE 0x%llx %s => 0x%llx\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
-		ut64 pc = r_reg_getv (core->anal->reg, name);
+		ut64 pc = r_reg_getv (core->anal->reg, pcname);
 		if (pc == UT64_MAX) {
 			eprintf ("Invalid program counter PC=-1\n");
 			break;
 		}
 		if (core->anal->pcalign > 0) {
 			pc -= (pc % core->anal->pcalign);
-			r_reg_setv (core->anal->reg, name, pc);
-			r_reg_setv (core->dbg->reg, name, pc);
+			r_reg_setv (core->anal->reg, pcname, pc);
+			r_reg_setv (core->dbg->reg, pcname, pc);
 		}
 		st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
 		if (follow > 0) {
@@ -5726,6 +5731,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 tail_return:
 	r_anal_op_fini (&op);
 	r_cons_break_pop ();
+	free (pcname);
 	return tail_return_value;
 }
 
@@ -5740,16 +5746,11 @@ R_API int r_core_esil_step_back(RCore *core) {
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
-	ut64 addr, type;
-	if (!addrstr || !*addrstr) {
-		addr = core->offset;
-	} else {
-		addr = r_num_math (core->num, addrstr);
-	}
-	type = r_core_anal_address (core, addr);
+	ut64 addr = R_STR_ISEMPTY (addrstr)? core->offset: r_num_math (core->num, addrstr);
+	ut64 type = r_core_anal_address (core, addr);
 	switch (fmt) {
 	case 'j': {
-		PJ *pj = pj_new ();
+		PJ *pj = r_core_pj_new (core);
 		if (!pj) {
 			return;
 		}
@@ -7172,12 +7173,14 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 		if (input[1] == '?') { // "aec?"
 			r_core_cmd_help (core, help_msg_aec);
 		} else if (input[1] == 's') { // "aecs"
+			st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
+			ut64 countsteps = 0;
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-			for (;;) {
+			for (; !maxsteps || countsteps < maxsteps; countsteps++) {
 				// ignore return value is not an error, should 0, 1, -1 imho
 				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
-				addr = r_num_get (core->num, pc);
+				addr = r_reg_getv (core->anal->reg, pc);
 				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT);
 				if (!op) {
 					eprintf ("invalid instruction at 0x%08" PFMT64x "\n", addr);
@@ -7195,8 +7198,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 				if (core->anal->esil->trap || core->anal->esil->trap_code) {
 					eprintf ("esil trap '%s' (%d) at 0x%08" PFMT64x "\n",
 							r_anal_esil_trapstr (core->anal->esil->trap),
-							core->anal->esil->trap_code,
-							addr);
+							core->anal->esil->trap_code, addr);
 					break;
 				}
 			}
@@ -7206,7 +7208,9 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			}
 		} else if (input[1] == 'c') { // "aecc"
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-			for (;;) {
+			st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
+			ut64 countsteps = 0;
+			for (; !maxsteps || countsteps < maxsteps; countsteps++) {
 				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_num_get (core->num, pc);
