@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -490,20 +490,19 @@ static RList *libs(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	struct MACH0_(obj_t) *bin = NULL;
-	char *str;
-
 	r_return_val_if_fail (bf && bf->o, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 
-	bin = bf->o->bin_obj;
+	struct MACH0_(obj_t) *bin = bf->o->bin_obj;
 	if (bf->file) {
 		ret->file = strdup (bf->file);
 	}
-	if ((str = MACH0_(get_class) (bf->o->bin_obj))) {
+
+	char *str = MACH0_(get_class) (bf->o->bin_obj);
+	if (str) {
 		ret->bclass = str;
 	}
 	if (bin) {
@@ -514,7 +513,7 @@ static RBinInfo *info(RBinFile *bf) {
 		ret->lang = bin->lang;
 	}
 	ret->intrp = r_str_dup (NULL, MACH0_(get_intrp)(bf->o->bin_obj));
-	ret->compiler = r_str_dup (NULL, "");
+	ret->compiler = strdup ("clang");
 	ret->rclass = strdup ("mach0");
 	ret->os = strdup (MACH0_(get_os)(bf->o->bin_obj));
 	ret->subsystem = strdup ("darwin");

@@ -123,17 +123,17 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_TYPE_SPECIAL_SYM_STR "SPCL"
 #define R_BIN_TYPE_UNKNOWN_STR "UNK"
 
-enum {
+typedef enum {
 	R_BIN_SYM_ENTRY,
 	R_BIN_SYM_INIT,
 	R_BIN_SYM_MAIN,
 	R_BIN_SYM_FINI,
 	R_BIN_SYM_LAST
-};
+} RBinSym;
 
 // name mangling types
 // TODO: Rename to R_BIN_LANG_
-enum {
+typedef enum {
 	R_BIN_NM_NONE = 0,
 	R_BIN_NM_JAVA = 1,
 	R_BIN_NM_C = 1<<1,
@@ -147,40 +147,40 @@ enum {
 	R_BIN_NM_KOTLIN = 1<<9,
 	R_BIN_NM_BLOCKS = 1<<31,
 	R_BIN_NM_ANY = -1,
-};
+} RBinNameMangling;
 
-enum {
+typedef enum {
 	R_STRING_TYPE_DETECT = '?',
 	R_STRING_TYPE_ASCII = 'a',
 	R_STRING_TYPE_UTF8 = 'u',
 	R_STRING_TYPE_WIDE = 'w', // utf16 / widechar string
 	R_STRING_TYPE_WIDE32 = 'W', // utf32
 	R_STRING_TYPE_BASE64 = 'b',
-};
+} RStringType;
 
-enum {
+typedef enum {
 	R_BIN_CLASS_PRIVATE,
 	R_BIN_CLASS_PUBLIC,
 	R_BIN_CLASS_FRIENDLY,
 	R_BIN_CLASS_PROTECTED,
-};
+} RBinClassVisibility;
 
-enum {
+typedef enum {
 	R_BIN_RELOC_1 = 1,
 	R_BIN_RELOC_2 = 2,
 	R_BIN_RELOC_4 = 4,
 	R_BIN_RELOC_8 = 8,
 	R_BIN_RELOC_16 = 16,
-	R_BIN_RELOC_24= 24,
+	R_BIN_RELOC_24 = 24,
 	R_BIN_RELOC_32 = 32,
-	R_BIN_RELOC_48= 48,
+	R_BIN_RELOC_48 = 48,
 	R_BIN_RELOC_64 = 64
-};
+} RBinRelocType;
 
-enum {
+typedef enum {
 	R_BIN_TYPE_DEFAULT = 0,
 	R_BIN_TYPE_CORE = 1
-};
+} RBinType;
 
 typedef struct r_bin_addr_t {
 	ut64 vaddr;
