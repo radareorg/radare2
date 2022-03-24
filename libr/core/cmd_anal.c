@@ -11207,6 +11207,15 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
+				bool isPreludableArch = core->rasm->bits == 64 && r_str_startswith (r_config_get (core->config, "asm.arch"), "arm");
+				
+				if (!didAap && isPreludableArch) {
+					didAap = true;
+					oldstr = r_print_rowlog (core->print, "Finding function preludes");
+					(void)r_core_search_preludes (core, false); // "aap"
+					r_print_rowlog_done (core->print, oldstr);
+					r_core_task_yield (&core->tasks);
+				}
 				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 					r_core_cmd0 (core, "aav");
 					r_core_task_yield (&core->tasks);
@@ -11285,12 +11294,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 
 				if (input[1] == 'a') { // "aaaa"
 					if (!didAap) {
+						didAap = true;
 						oldstr = r_print_rowlog (core->print, "Finding function preludes");
 						(void)r_core_search_preludes (core, false); // "aap"
 						r_print_rowlog_done (core->print, oldstr);
 						r_core_task_yield (&core->tasks);
 					}
-
 					oldstr = r_print_rowlog (core->print, "Enable constraint types analysis for variables");
 					r_config_set (core->config, "anal.types.constraint", "true");
 					r_print_rowlog_done (core->print, oldstr);
