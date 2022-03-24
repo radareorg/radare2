@@ -181,12 +181,15 @@ static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSy
 
 static RCoreSymCacheElement *parseDragons(RBinFile *bf, RBuffer *buf, int off, int bits, R_OWN char *file_name) {
 	D eprintf ("Dragons at 0x%x\n", off);
-	ut64 size = r_buf_size (buf);
+	st64 size = r_buf_size (buf);
 	if (off >= size) {
 		return NULL;
 	}
 	size -= off;
 	if (!size) {
+		return NULL;
+	}
+	if (size < 32) {
 		return NULL;
 	}
 	ut8 *b = malloc (size);
