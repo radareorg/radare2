@@ -3931,15 +3931,17 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_MOV:
 		if (REGID(0) == ARM_REG_PC) {
 			if (REGID(1) == ARM_REG_LR) {
-				op->type = R_ANAL_OP_TYPE_RET;
+				op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_RET : R_ANAL_OP_TYPE_CRET;
 			} else {
-				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_UJMP : R_ANAL_OP_TYPE_UCJMP;
 			}
+		} else {
+			op->type = op->cond == R_ANAL_COND_AL ? R_ANAL_OP_TYPE_MOV : R_ANAL_OP_TYPE_CMOV;
 		}
 		if (ISIMM(1)) {
 			op->val = IMM(1);
 		}
-		/* fall-thru */
+		break;
 	case ARM_INS_MOVT:
 	case ARM_INS_MOVW:
 	case ARM_INS_VMOVL:
