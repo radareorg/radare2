@@ -327,7 +327,7 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	RBuffer *slice = buf;
 	if (!is_debugger && (opt->loadaddr != 0 || opt->sz != r_buf_size (buf))) {
 		slice = r_buf_new_slice (buf, opt->loadaddr, opt->sz);
-	} else if (is_debugger && opt->baseaddr != UT64_MAX && opt->baseaddr != 0) {
+	} else if (is_debugger && opt->baseaddr != UT64_MAX) {
 		slice = r_buf_new_slice (buf, opt->baseaddr, opt->sz);
 	}
 	if (slice != buf) {
