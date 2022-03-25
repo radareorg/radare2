@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2017-2022 - pancake */
+
 #include "crypto_serpent_algo.h"
 #include "r_util/r_assert.h"
 
@@ -75,7 +77,7 @@ static void apply_IP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 	for (i = 0; i < DW_BY_BLOCK * 32; i++) {
 		index = IPTable[i];
 		out[i / 32] ^= (ut32)(-(ut32)get_bit (index % 32, in[index / 32]) ^ out[i / 32])
-			& (1 << (i & 0x1f));
+			& ((ut32)1 << (i & 0x1f));
 	}
 }
 
@@ -85,7 +87,7 @@ static void apply_FP(ut32 in[DW_BY_BLOCK], ut32 out[DW_BY_BLOCK]) {
 	for (i = 0; i < DW_BY_BLOCK * 32; i++) {
 		index = FPTable[i];
 		out[i / 32] ^= (ut32)(-(ut32)get_bit (index % 32, in[index / 32]) ^ out[i / 32])
-			& (1 << (i & 0x1f));
+			& ((ut32)1 << (i & 0x1f));
 	}
 }
 
@@ -129,7 +131,7 @@ static bool serpent_keyschedule(struct serpent_state st, ut32 subkeys[NB_SUBKEYS
 				| get_bit (j, tmpkeys[3 + DW_BY_BLOCK * i + DW_BY_USERKEY]) << 3;
 			out = apply_sbox (si, in);
 			for (l = 0; l < DW_BY_BLOCK; l++) {
-				subkeys[l + DW_BY_BLOCK * i] |= get_bit (l, (ut32)out) << j;
+				subkeys[l + DW_BY_BLOCK * i] |= (ut32)get_bit (l, (ut32)out) << j;
 			}
 		}
 	}
@@ -217,7 +219,7 @@ static void apply_round_inv(int round, ut32 block[DW_BY_BLOCK],
 	for (i = 0; i < DW_BY_BLOCK; i++) {
 		res = 0;
 		for (j = 0; j < 8; j++) {
-			res |= apply_sbox_inv (round%8, (block[i] >> 4 * j) & 0xf) << 4 * j;
+			res |= (ut32)apply_sbox_inv (round % 8, (block[i] >> 4 * j) & 0xf) << (4 * j);
 		}
 		block[i] = res;
 	}
