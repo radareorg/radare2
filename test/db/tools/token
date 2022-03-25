@@ -63,5 +63,6 @@ EXPECT=<<EOF
             "type": "Hello"
           }
         ]
-      }EOF
+      }
+EOF
 RUN
