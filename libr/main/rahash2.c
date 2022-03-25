@@ -88,6 +88,8 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, PJ *pj, int rad) {
 	}
 	if (rad == 'j') {
 		pj_ks (pj, "hash", buf);
+	} else if (rad == 'J') {
+		pj_s (pj, buf);
 	} else {
 		printf ("%s%s", buf, rad == 'n' ? "" : "\n");
 	}
@@ -128,6 +130,10 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, PJ *pj, int rad, int 
 		pj_ks (pj, "name", hname);
 		do_hash_hexprint (c, dlen, ule, pj, rad);
 		pj_end (pj);
+		break;
+	case 'J':
+		pj_k (pj, hname);
+		do_hash_hexprint (c, dlen, ule, pj, rad);
 		break;
 	default:
 		o = r_print_randomart (c, dlen, from);
@@ -189,13 +195,17 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		return 1;
 	}
 	PJ *pj = NULL;
-	if (rad == 'j') {
+	if (rad == 'j' || rad == 'J') {
 		pj = pj_new ();
 		if (!pj) {
 			free (buf);
 			return 1;
 		}
-		pj_a (pj);
+		if (rad == 'J') {
+			pj_o (pj);
+		} else {
+			pj_a (pj);
+		}
 	}
 	ctx = r_hash_new (true, algobit);
 
@@ -297,6 +307,7 @@ static int do_help(int line) {
 		" -i num      repeat hash N iterations\n"
 		" -I iv       use give initialization vector (IV) (hexa or s:string)\n"
 		" -j          output in json\n"
+		" -J          new simplified json output (same as -jj)\n"
 		" -S seed     use given seed (hexa or s:string) use ^ to prefix (key for -E)\n"
 		"             (- will slurp the key from stdin, the @ prefix points to a file\n"
 		" -k          show hash using the openssh's randomkey algorithm\n"
@@ -337,10 +348,10 @@ static void algolist(void) {
 #define setHashString(x, y) {\
 	if (hashstr) {\
 		eprintf ("Hashstring already defined\n");\
-		return 1;\
+		ret (1);\
 	}\
 	hashstr_hex = y;\
-	hashstr = (char*)x;\
+	hashstr = strdup (x);\
 }
 
 static bool is_power_of_two(const ut64 x) {
@@ -479,7 +490,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 // #define ret(x) {_ret=x;printf("%d\n", __LINE__);goto beach;}
 #define ret(x) {_ret=x;goto beach;}
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
+	r_getopt_init (&opt, argc, argv, "p:jJD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
@@ -490,7 +501,8 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				ret(1);
 			}
 			break;
-		case 'j': rad = 'j'; break;
+		case 'j': rad = (rad == 'j')? 'J': 'j'; break;
+		case 'J': rad = 'J'; break;
 		case 'S': seed = opt.arg; break;
 		case 'I': ivseed = opt.arg; break;
 		case 'n': numblocks = 1; break;
@@ -679,7 +691,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				ret (1);
 			}
 			PJ *pj = NULL;
-			if (rad == 'j') {
+			if (rad == 'j' || rad == 'J') {
 				pj = pj_new ();
 				if (!pj) {
 					if (str != nhashstr) {
@@ -688,7 +700,11 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					free (iv);
 					ret (1);
 				}
-				pj_a (pj);
+				if (rad == 'J') {
+					pj_o (pj);
+				} else {
+					pj_a (pj);
+				}
 			}
 			for (i = 1; i < R_HASH_ALL; i <<= 1) {
 				if (algobit & i) {
@@ -701,7 +717,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					r_hash_free (ctx);
 				}
 			}
-			if (rad == 'j') {
+			if (rad == 'j' || rad == 'J') {
 				pj_end (pj);
 				printf ("%s\n", pj_string (pj));
 				pj_free (pj);
@@ -795,4 +811,5 @@ beach:
 	free (iv);
 
 	return _ret;
+#undef ret
 }
