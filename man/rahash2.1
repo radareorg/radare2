@@ -1,4 +1,4 @@
-.Dd Feb 6, 2022
+.Dd Mar 12, 2022
 .Dt RAHASH2 1
 .Sh NAME
 .Nm rahash2
@@ -49,7 +49,9 @@ Apply the hash Iters times to itself+seed
 .It Fl I Ar [^]s:string|hexstr
 Set initialization vector (IV) for the cryptographic functions.
 .It Fl j
-Show output in JSON (see -r)
+Show output in JSON (see -r and -J). If passed more than once results in -J
+.It Fl j
+New simplified JSON output, maybe this format will replace -j, but it's added as a new flag to not break backward compat until proper discussion
 .It Fl B
 Show per-block hash
 .It Fl k
