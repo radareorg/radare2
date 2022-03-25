@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2021 - pancake */
+/* radare - LGPL - Copyright 2007-2022 - pancake */
 
 #if 0
 Very simple code parser in C
@@ -150,7 +150,7 @@ static bool is_token_char(RTokenizer *tok, char ch) {
 }
 
 R_API void r_str_tokenize(const char *buf, RTokenizerCallback cb, void *user) {
-	eprintf ("tokenize(%s)%c", buf, 10);
+	// eprintf ("tokenize(%s)%c", buf, 10);
 	RTokenizer *tok = R_NEW0 (RTokenizer);
 	tok->cb = cb;
 	tok->user = user;
@@ -214,7 +214,6 @@ typedef struct {
 	char *s;
 	PJ *pj;
 } Data;
-
 
 static void indent(RTokenizer *tok) {
 	Data *data = tok->user;
@@ -343,7 +342,9 @@ bool callback(RTokenizer *tok) {
 					data->args = NULL;
 					R_FREE (data->s);
 				}
-			}
+			} else {
+			R_FREE (data->s);
+}
 			pj_ka (data->pj, "body");
 		} else if (tok->ch == '(') {
 			data->parlevel++;
@@ -407,6 +408,7 @@ bool callback(RTokenizer *tok) {
 			data->incase = false;
 			R_FREE (data->word);
 		}
+break;
 		// fallthru
 	case R_TOKEN_MATH:
 		if (data->incase) {
@@ -418,15 +420,19 @@ bool callback(RTokenizer *tok) {
 			// eprintf ("PAR %d %c", data->parlevel, 10);
 			if (data->parlevel == 0) {
 				indent (tok);
-				eprintf ("ASSIGN (%s)%c", data->word, 10);
 				data->inassign = true;
 				if (data->word && data->pj) {
 					pj_o (data->pj);
 					pj_ks (data->pj, "node", "assign");
-					pj_ks (data->pj, "var", data->word);
+					if (strchr (data->s, '>') || strchr (data->s, '<')) {
+						pj_ks (data->pj, "var", data->word);
+					} else {
+						pj_ks (data->pj, "var", data->word);
+						//pj_ks (data->pj, "type", data->s);
+						R_FREE (data->s);
+					}
 				}
 				R_FREE (data->word);
-				R_FREE (data->s);
 			}
 			break;
 		case ':':
@@ -437,7 +443,7 @@ bool callback(RTokenizer *tok) {
 		case ';':
 			if (data->inreturn) {
 				indent(tok);
-				eprintf ("-- ARG (%s)%c", data->s, 10);
+				// eprintf ("-- ARG (%s)%c", data->s, 10);
 				if (data->pj) {
 					pj_ks (data->pj, "value", data->s);
 					pj_end (data->pj);
@@ -445,7 +451,7 @@ bool callback(RTokenizer *tok) {
 			}
 			if (data->inassign) {
 				indent(tok);
-				eprintf ("-- ARG (%s)%c", data->s, 10);
+				// eprintf ("-- ARG (%s)%c", data->s, 10);
 				data->inassign = false;
 				if (data->pj) {
 					pj_ks (data->pj, "value", data->s);
@@ -453,6 +459,7 @@ bool callback(RTokenizer *tok) {
 				}
 			}
 			R_FREE (data->word);
+			R_FREE (data->s);
 			break;
 		case '*':
 		case '+':
@@ -462,7 +469,6 @@ bool callback(RTokenizer *tok) {
 		case '|':
 		case '<':
 		case '>':
-			R_FREE (data->word);
 			data->s = r_str_appendlen (data->s, tok->buf + tok->begin, tok->end - tok->begin);
 			break;
 		case ',':
@@ -474,13 +480,17 @@ bool callback(RTokenizer *tok) {
 			}
 			R_FREE (data->word);
 			break;
+		default:
+			R_FREE (data->word);
+			R_FREE (data->s);
+			break;
 		}
 		// eprintf ("ARG%c%c",tok->ch, 10);
 		break;
 	case R_TOKEN_BEGIN:
 	case R_TOKEN_END:
 		// free the data
-		eprintf ("DONE%c", 10);
+		// eprintf ("DONE%c", 10);
 		break;
 	}
 	return true;
@@ -489,12 +499,12 @@ bool callback(RTokenizer *tok) {
 R_API char *r_str_tokenize_json(const char *buf) {
 	Data data = {0};
 	data.pj = pj_new ();
-	pj_a (data.pj);
+	pj_o (data.pj);
 	r_str_tokenize (buf, (RTokenizerCallback)callback, &data);
 	pj_end (data.pj);
 	data.pj->level = 0; // force level 0 to permit invalid jsons for now
 	char *o = pj_drain (data.pj);
-	char *p = r_str_newf ("%s%c", o, 10);
+	char *p = r_str_newf ("%s\n", o);
 	free (o);
 	return p;
 }
