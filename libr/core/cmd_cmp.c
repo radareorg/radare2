@@ -34,7 +34,7 @@ static const char *help_msg_c[] = {
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
 	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte (silent return in $?)",
 	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
-	"cw", "[?] [us?] [...]", "Compare memory watchers",
+	"cw", "[*dru?] [addr]", "Compare memory watchers",
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
@@ -42,15 +42,37 @@ static const char *help_msg_c[] = {
 };
 
 static const char *help_msg_cw[] = {
-	"Usage: cw", "[args]", "Manage comparison watchers; See if and how memory changes",
-	"cw", " [addr]", "Show compare watchers (all or at addr)",
-	"cw", "* [addr]", "Show compare watchers in r2 commands (all or at addr)",
-	"cw ", "addr sz cmd", "Add a compare watcher (addr and sz are passed to cmd)",
-	"cwd", " [addr]", "Delete watchers (all or at addr)",
-	"cwr", " [addr]", "Reset/revert watchers (all or at addr)",
-	"cwu", " [addr]", "Update watchers (all or at addr)",
+	"Usage: cw", "[args]", "Manage compare watchers; See if and how memory changes",
+	"cw??", "", "Show more info about watchers",
+	"cw ", "addr sz cmd", "Add a compare watcher",
+	"cw", "[*] [addr]", "Show compare watchers (* for r2 commands)",
+	"cwd", " [addr]", "Delete watcher",
+	"cwr", " [addr]", "Revert watcher",
+	"cwu", " [addr]", "Update watcher",
 	NULL
 };
+
+static const char *verbose_help_cw =
+	"Watchers are used to record memory at 2 different points in time, then\n"
+	"report if and how it changed. First, create one with `cw addr sz cmd`. This\n"
+	"will record sz bytes at addr. To record the second state, use `cwu`. Now, when\n"
+	"you run `cw`, the watcher will report if the bytes changed and run the command given\n"
+	"at creation with the size and address. You can pass any command when creating the\n"
+	"watcher. You may overwrite any watcher by creating another at the same address. This\n"
+	"will completely overwrite the original watcher's state.\n"
+	"\n"
+	"When you create a watcher, the data read from memory is marked as \"new\". Updating\n"
+	"the watcher with `cwu` will mark this data as \"old\", and then read the \"new\" data.\n"
+	"`cwr` will mark the current \"old\" state as being \"new\", letting you reuse it as\n"
+	"your new base state when updating with `cwu`. Any existing \"new\" state from running\n"
+	"`cwu` previously is lost in this process. Watched memory areas may overlap with no ill\n"
+	"effects, but may have unexpected results if you update some but not others.\n"
+	"\n"
+	"Showing a watcher without updating will still run the command, but it will not report\n"
+	"changes.\n"
+	"\n"
+	"When an address is an optional argument, the command will apply to all watchers if\n"
+	"you don't pass one.\n";
 
 R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w) {
 	free (w->ndata);
@@ -59,8 +81,8 @@ R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w) {
 }
 
 R_API RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
-	RListIter *iter;
 	RCoreCmpWatcher *w;
+	RListIter *iter;
 	r_list_foreach (core->watchers, iter, w) {
 		if (addr == w->addr) {
 			return w;
@@ -71,9 +93,12 @@ R_API RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
 
 R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd) {
 	RCoreCmpWatcher *cmpw;
-	if (size < 1) {
-		return false;
-	}
+	bool found = false;
+	r_return_val_if_fail (core, false);
+	r_return_val_if_fail (cmd, false);
+	r_return_val_if_fail (strlen (cmd) < sizeof (cmpw->cmd), false);
+	r_return_val_if_fail (size > 0, false);
+
 	cmpw = r_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
 		cmpw = R_NEW (RCoreCmpWatcher);
@@ -81,9 +106,16 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 			return false;
 		}
 		cmpw->addr = addr;
+	} else {
+		free (cmpw->odata);
+		free (cmpw->ndata);
+		found = true;
 	}
 	cmpw->size = size;
-	snprintf (cmpw->cmd, sizeof (cmpw->cmd), "%s", cmd);
+
+	// Size is checked in caller
+	strcpy (cmpw->cmd, cmd);
+
 	cmpw->odata = NULL;
 	cmpw->ndata = malloc (size);
 	if (!cmpw->ndata) {
@@ -91,7 +123,12 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 		return false;
 	}
 	r_io_read_at (core->io, addr, cmpw->ndata, size);
-	r_list_append (core->watchers, cmpw);
+
+	// Don't append a duplicate
+	if (!found) {
+		r_list_append (core->watchers, cmpw);
+	}
+
 	return true;
 }
 
@@ -99,86 +136,141 @@ R_API bool r_core_cmpwatch_del(RCore *core, ut64 addr) {
 	bool ret = false;
 	RCoreCmpWatcher *w;
 	RListIter *iter, *iter2;
-	r_list_foreach_safe (core->watchers, iter, iter2, w) {
-		if (w->addr == addr || addr == UT64_MAX) {
+
+	if (addr == UT64_MAX) { // match all
+		r_list_foreach_safe (core->watchers, iter, iter2, w) {
 			r_list_delete (core->watchers, iter);
 			ret = true;
+		}
+		return ret;
+	}
+
+	// Can't use r_core_cmpwatch_get() here since we need the iter
+	r_list_foreach_safe (core->watchers, iter, iter2, w) {
+		if (w->addr == addr) {
+			/* Only one watcher per address - we can leave early */
+			r_list_delete (core->watchers, iter);
+			ret = true;
+			break;
 		}
 	}
 	return ret;
 }
 
 R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
-	char cmd[128];
 	RListIter *iter;
 	RCoreCmpWatcher *w;
-#if 0
-	bool ret;
-#endif
-	/* XXX addr arg is unused - check it and return true if matched */
+	bool ret = false;
+
 	r_list_foreach (core->watchers, iter, w) {
-#if 0
-		if (addr == w->addr || addr == UT64_MAX) {
-			ret = true;
+		bool changed = w->odata? memcmp (w->odata, w->ndata, w->size): false;
+
+		if (addr != UT64_MAX && addr != w->addr) {
+			continue;
 		}
-#endif
-		bool differs = w->odata? memcmp (w->odata, w->ndata, w->size): false;
+
 		switch (mode) {
 		case '*': // print watchers as r2 commands
 			r_cons_printf ("cw 0x%08" PFMT64x " %d %s%s\n",
-					w->addr, w->size, w->cmd, differs? " # differs": "");
+					w->addr, w->size, w->cmd,
+					changed? " # differs": "");
 			break;
+		// XXX: these case names should change, they arent very
+		// descriptive. 'd' -> 'q' quiet?
+		// XXX: this case is unused - call from `cwq`?
 		case 'd': // diff
-			if (differs) {
+			if (changed) {
 				r_cons_printf ("0x%08" PFMT64x " has changed\n", w->addr);
 			}
 			break;
+		//  XXX: this is only used as default, never as 'o'
 		case 'o': // old contents
+		/// XXX: what is this comment referencing? check the blame log
+		// for changes that may explain it
 		// use tmpblocksize
 		default:
-			r_cons_printf ("0x%08" PFMT64x "%s\n", w->addr, differs? " modified": "");
-			snprintf (cmd, sizeof (cmd), "%s@%" PFMT64d "!%d",
-					w->cmd, w->addr, w->size);
-			r_core_cmd0 (core, cmd);
+			r_cons_printf ("0x%08" PFMT64x "%s\n", w->addr, changed? " modified": "");
+			r_core_cmdf (core, "%s %d @%" PFMT64d, w->cmd, w->size, w->addr);
 			break;
 		}
+
+		ret = true;
 	}
-#if 0
 	return ret;
-#else
-	return false;
-#endif
 }
 
+static bool update_watcher(RIO *io, RCoreCmpWatcher *w) {
+	r_return_val_if_fail (io, false);
+	r_return_val_if_fail (w, false);
+
+	free (w->odata);
+	w->odata = w->ndata;
+	w->ndata = malloc (w->size);
+	if (!w->ndata) {
+		return false;
+	}
+	r_io_read_at (io, w->addr, w->ndata, w->size);
+	return true;
+}
+
+/* Replace old data with current new data, then read IO into new data */
 R_API bool r_core_cmpwatch_update(RCore *core, ut64 addr) {
 	RCoreCmpWatcher *w;
 	RListIter *iter;
-	r_list_foreach (core->watchers, iter, w) {
-		free (w->odata);
-		w->odata = w->ndata;
-		w->ndata = malloc (w->size);
-		if (!w->ndata) {
-			return false;
+	bool ret = false;
+
+	if (addr != UT64_MAX) {
+		w = r_core_cmpwatch_get (core, addr);
+		if (w) {
+			return update_watcher (core->io, w);
 		}
-		r_io_read_at (core->io, w->addr, w->ndata, w->size);
+
+		return false;
 	}
-	return !r_list_empty (core->watchers);
+
+	r_list_foreach (core->watchers, iter, w) {
+		if (update_watcher (core->io, w)) {
+			ret = true;
+		}
+	}
+
+	return ret;
 }
 
+static bool revert_watcher(RCoreCmpWatcher *w) {
+	r_return_val_if_fail (w, false);
+	if (w->odata) {
+		free (w->ndata);
+		w->ndata = w->odata;
+		w->odata = NULL;
+		return true;
+	}
+
+	return false;
+}
+
+/* Mark the current old state as new, discarding the original new state */
 R_API bool r_core_cmpwatch_revert(RCore *core, ut64 addr) {
 	RCoreCmpWatcher *w;
-	bool ret = false;
 	RListIter *iter;
+	bool ret = false;
+
+	if (addr != UT64_MAX) {
+		w = r_core_cmpwatch_get (core, addr);
+		if (w) {
+			return revert_watcher (w);
+		}
+
+		return false;
+	}
+
+
 	r_list_foreach (core->watchers, iter, w) {
-		if (w->addr == addr || addr == UT64_MAX) {
-			if (w->odata) {
-				free (w->ndata);
-				w->ndata = w->odata;
-				w->odata = NULL;
-				ret = true;
-			}
+		if (revert_watcher (w)) {
+			ret = true;
 		}
 	}
+
 	return ret;
 }
 
@@ -328,10 +420,11 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 	return len - eq;
 }
 
+// TODO: this command needs tests!
 static void cmd_cmp_watcher(RCore *core, const char *input) {
 	ut64 addr = UT64_MAX;
 	switch (*input) {
-	case ' ': {
+	case ' ': { // "cw "
 		int argc, size;
 		char **argv;
 
@@ -343,14 +436,22 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 		if (argc == 1) { // "cw [addr]"
 			addr = r_num_get (core->num, argv[0]);
 			r_core_cmpwatch_show (core, addr, 0);
-			return;
-		}
-
-		if (argc == 3) { // "cw addr sz cmd"
+		} else if (argc == 3) { // "cw addr sz cmd"
 			addr = r_num_get (core->num, argv[0]);
 			size = atoi (argv[1]);
-			/* XXX same addr/size but different command overwrites
-			 * previous ones - POC: `cw 0 1 pd; cw 0 1 pD; cw` */
+			if (size < 1) {
+				eprintf ("Can't create a watcher with size less than 1.\n");
+				goto out_free_argv;
+			}
+
+			// No good way to get sizeof(RCoreCmpWatcher.cmd)
+			// here, so this is hardcoded. There's an accurate
+			// debug check inside cmpwatch_add()
+			if (strlen (argv[2]) >= 32) {
+				eprintf ("Command must be less than 32 characters.\n");
+				goto out_free_argv;
+			}
+
 			if (!r_core_cmpwatch_add (core, addr, size, argv[2])) {
 				eprintf ("Failed to add watcher.\n");
 			}
@@ -358,40 +459,96 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_cw, "cw ", true);
 		}
 
+out_free_argv:
 		r_str_argv_free (argv);
 		break;
 	}
-	case 'd':
+	case 'd': // "cwd"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_cw, "cwd", true);
+			break;
+		}
+
 		if (input[1]) {
 			addr = r_num_get (core->num, input + 2);
 		}
-		if (!r_core_cmpwatch_del (core, addr)) {
-			eprintf ("Watcher query has no matches.\n");
+
+		if (!r_core_cmpwatch_del (core, addr) && addr) {
+			if (addr == UT64_MAX) {
+				eprintf ("No watchers exist.\n");
+			} else {
+				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
+			}
 		}
-	case 'r':
+		break;
+	case 'r': // "cwr"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_cw, "cwr", true);
+			break;
+		}
+
 		if (input[1]) {
 			addr = r_num_get (core->num, input + 2);
 		}
 		if (r_core_cmpwatch_revert (core, addr)) {
-			eprintf ("Watcher query has no matches.\n");
+			if (addr == UT64_MAX) {
+				eprintf ("No watchers exist.\n");
+			} else {
+				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
+			}
 		}
 		break;
-	case 'u':
+	case 'u': // "cwu"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_cw, "cwu", true);
+			break;
+		}
+
 		if (input[1]) {
 			addr = r_num_get (core->num, input + 2);
 		}
-		r_core_cmpwatch_update (core, addr);
+		if (!r_core_cmpwatch_update (core, addr)) {
+			if (addr == UT64_MAX) {
+				eprintf ("No watchers exist.\n");
+			} else {
+				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
+			}
+		}
 		break;
-	case '*':
-		r_core_cmpwatch_show (core, UT64_MAX, '*');
+	case '*': // "cw*"
+		if (input[1] == '?') {
+			r_core_cmd_help_match (core, help_msg_cw, "cw*", true);
+			break;
+		}
+
+		if (!r_core_cmpwatch_show (core, UT64_MAX, '*')) {
+			if (addr == UT64_MAX) {
+				eprintf ("No watchers exist.\n");
+			} else {
+				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
+			}
+		}
 		break;
-	case '\0':
-		r_core_cmpwatch_show (core, UT64_MAX, 0);
+	case '\0': // "cw"
+		// don't check for ?, would be out of bounds
+		if (!r_core_cmpwatch_show (core, UT64_MAX, 0)) {
+			if (addr == UT64_MAX) {
+				eprintf ("No watchers exist.\n");
+			} else {
+				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
+			}
+		}
 		break;
-	case '?': {
-		r_core_cmd_help (core, help_msg_cw);
+	case '?': // "cw?"
+	default:
+		if (input[1] == '?') {
+			// this command really needs explaining
+			// so it's strongly signposted
+			r_cons_printf ("%s", verbose_help_cw);
+		} else {
+			r_core_cmd_help (core, help_msg_cw);
+		}
 		break;
-	}
 	}
 }
 
