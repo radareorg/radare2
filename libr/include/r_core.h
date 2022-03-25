@@ -817,11 +817,11 @@ R_API void r_core_clippy(RCore *core, const char *msg);
 /* watchers */
 R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w);
 R_API RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr);
-R_API int r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd);
-R_API int r_core_cmpwatch_del(RCore *core, ut64 addr);
-R_API int r_core_cmpwatch_update(RCore *core, ut64 addr);
-R_API int r_core_cmpwatch_show(RCore *core, ut64 addr, int mode);
-R_API int r_core_cmpwatch_revert(RCore *core, ut64 addr);
+R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd);
+R_API bool r_core_cmpwatch_del(RCore *core, ut64 addr);
+R_API bool r_core_cmpwatch_update(RCore *core, ut64 addr);
+R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode);
+R_API bool r_core_cmpwatch_revert(RCore *core, ut64 addr);
 
 /* undo */
 R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *revert);
