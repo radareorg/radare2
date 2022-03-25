@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2017-2022 - pancake */
+
 #include <r_lib.h>
 #include <r_crypto.h>
 #include "crypto_serpent_algo.h"
