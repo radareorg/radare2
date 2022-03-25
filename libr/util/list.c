@@ -1,7 +1,4 @@
 /* radare - LGPL - Copyright 2007-2022 - pancake, alvarofe */
-// TODO: RRef - reference counting
-
-#include <stdio.h>
 
 #define _R_LIST_C_
 #include "r_util.h"
