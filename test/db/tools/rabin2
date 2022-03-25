@@ -823,6 +823,7 @@ bintype  mach0
 bits     64
 canary   false
 class    MACH064
+compiler clang
 crypto   false
 endian   little
 havecode true
