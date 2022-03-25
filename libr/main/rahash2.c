@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -159,12 +159,12 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	int ret = 0;
 	ut64 i;
 	if (algobit == R_HASH_NONE) {
-		eprintf ("rahash2: Invalid hashing algorithm specified\n");
+		eprintf ("rahash2: Invalid hashing algorithm specified. Use rahash2 -L\n");
 		return 1;
 	}
 	fsize = r_io_desc_size (io->desc);
 	if (fsize < 1) {
-		eprintf ("rahash2: Invalid file size\n");
+		eprintf ("rahash2: Invalid file size.\n");
 		return 1;
 	}
 	if (bsize < 0) {
@@ -435,11 +435,28 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, const char *
 	return 1;
 }
 
+static void add_algo(RList *algos, const char *a) {
+	if (R_STR_ISEMPTY (a)) {
+		return;
+	}
+	RListIter *iter;
+	const char *ua;
+	char *ha = strdup (a);
+	RList *words = r_str_split_list (ha, ",", 0);
+	r_list_foreach (words, iter, ua) {
+		if (!r_list_find (algos, ua, (RListComparator)strcmp)) {
+			r_list_append (algos, strdup (ua));
+		}
+	}
+	r_list_free (words);
+	free (ha);
+}
+
 R_API int r_main_rahash2(int argc, const char **argv) {
 	ut64 i;
-	int ret, c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
+	int c, rad = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *file = NULL;
-	const char *algo = "sha256"; /* default hashing algorithm */
+	char *algo = NULL;
 	const char *seed = NULL;
 	const char *decrypt = NULL;
 	const char *encrypt = NULL;
@@ -453,10 +470,14 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	int hashstr_len = -1;
 	int hashstr_hex = 0;
 	size_t bytes_read = 0;// bytes read from stdin
+	RList *algos = r_list_newf (free);
 	ut64 algobit;
 	RHash *ctx;
-	RIO *io;
+	RIO *io = NULL;
+	int _ret = 0;
 
+// #define ret(x) {_ret=x;printf("%d\n", __LINE__);goto beach;}
+#define ret(x) {_ret=x;goto beach;}
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:");
 	while ((c = r_getopt_next (&opt)) != -1) {
@@ -466,7 +487,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			iterations = atoi (opt.arg);
 			if (iterations < 0) {
 				eprintf ("error: -i argument must be positive\n");
-				return 1;
+				ret(1);
 			}
 			break;
 		case 'j': rad = 'j'; break;
@@ -475,33 +496,34 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		case 'n': numblocks = 1; break;
 		case 'D': decrypt = opt.arg; break;
 		case 'E': encrypt = opt.arg; break;
-		case 'L': algolist (); return 0;
+		case 'L': algolist (); ret(0);
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
 		case 'p': ptype = opt.arg; break;
-		case 'a': algo = opt.arg; break;
+		case 'a': add_algo (algos, opt.arg); break;
 		case 'B': incremental = false; break;
 		case 'b': bsize = (int) r_num_math (NULL, opt.arg); break;
 		case 'f': from = r_num_math (NULL, opt.arg); break;
 		case 't': to = 1 + r_num_math (NULL, opt.arg); break;
-		case 'v': return r_main_version_print ("rahash2");
-		case 'h': return do_help (0);
+		case 'v': ret (r_main_version_print ("rahash2"));
+		case 'h': ret (do_help (0));
 		case 's': setHashString (opt.arg, 0); break;
 		case 'x': setHashString (opt.arg, 1); break;
 		case 'c': compareStr = opt.arg; break;
-		default: return do_help (0);
+		default: ret (do_help (0));
 		}
 	}
+	algo = r_list_empty (algos) ? strdup ("sha1") : r_str_list_join (algos, ",");
 	if (encrypt && decrypt) {
 		eprintf ("rahash2: Option -E and -D are incompatible with each other.\n");
-		return 1;
+		ret (1);
 	}
 	if (compareStr) {
 		int compareBin_len;
 		if (bsize && !incremental) {
 			eprintf ("rahash2: Option -c incompatible with -b and -B options.\n");
-			return 1;
+			ret (1);
 		}
 		bool flag = false;
 		if (encrypt) {
@@ -511,30 +533,31 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		}
 		if (flag) {
 			eprintf ("rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.\n");
-			return 1;
+			ret (1);
 		}
 		algobit = r_hash_name_to_bits (algo);
 		// if algobit represents a single algorithm then it's a power of 2
 		if (!is_power_of_two (algobit)) {
 			eprintf ("rahash2: Option -c incompatible with multiple algorithms in -a.\n");
-			return 1;
+			ret (1);
 		}
 		compareBin = malloc ((strlen (compareStr) + 1) * 2);
 		if (!compareBin) {
-			return 1;
+			ret (1);
 		}
 		compareBin_len = r_hex_str2bin (compareStr, compareBin);
 		if (compareBin_len < 1) {
 			eprintf ("rahash2: Invalid -c hex hash\n");
 			free (compareBin);
-			return 1;
-		} else if (compareBin_len != r_hash_size (algobit))   {
+			ret (1);
+		}
+		if (compareBin_len != r_hash_size (algobit))   {
 			eprintf (
 				"rahash2: Given -c hash has %d byte(s) but the selected algorithm returns %d byte(s).\n",
 				compareBin_len,
 				r_hash_size (algobit));
 			free (compareBin);
-			return 1;
+			ret (1);
 		}
 	}
 	if ((st64) from >= 0 && (st64) to < 0) {
@@ -543,7 +566,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	if (from || to) {
 		if (to && from >= to) {
 			eprintf ("Invalid -f or -t offsets\n");
-			return 1;
+			ret (1);
 		}
 	}
 	if (ptype) {
@@ -554,7 +577,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			printf ("%s:\n", argv[i]);
 			r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
 		}
-		return 0;
+		ret (0);
 	}
 	// convert iv to hex or string.
 	if (ivseed) {
@@ -573,12 +596,13 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	do_hash_seed (seed);
 	if (hashstr) {
 #define INSIZE 32768
-		ret = 0;
+		_ret = 0;
 		if (!strcmp (hashstr, "-")) {
+			free (hashstr);
 			hashstr = malloc (INSIZE);
 			if (!hashstr) {
 				free (iv);
-				return 1;
+				ret (1);
 			}
 			bytes_read = fread ((void *) hashstr, 1, INSIZE - 1, stdin);
 			if (bytes_read < 1) {
@@ -594,8 +618,9 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				eprintf ("Invalid hex string\n");
 				free (out);
 				free (iv);
-				return 1;
+				ret (1);
 			}
+			free (hashstr);
 			hashstr = (char *) out;
 			/* out memleaks here, hashstr can't be freed */
 		} else {
@@ -607,38 +632,38 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			if (from >= hashstr_len) {
 				eprintf ("Invalid -f.\n");
 				free (iv);
-				return 1;
+				ret (1);
 			}
 		}
 		if (to) {
 			if (to > hashstr_len) {
 				eprintf ("Invalid -t.\n");
-				return 1;
+				ret (1);
 			}
 		} else {
 			to = hashstr_len;
 		}
-		hashstr = hashstr + from;
+		char *nhashstr = hashstr + from;
 		hashstr_len = to - from;
-		hashstr[hashstr_len] = '\0';
+		nhashstr[hashstr_len] = '\0';
 		if (!bytes_read && !hashstr_hex) {
-			hashstr_len = r_str_unescape (hashstr);
+			hashstr_len = r_str_unescape (nhashstr);
 		}
 		if (encrypt) {
-			return encrypt_or_decrypt (encrypt, 0, hashstr, hashstr_len, iv, ivlen, 0);
+			ret (encrypt_or_decrypt (encrypt, 0, nhashstr, hashstr_len, iv, ivlen, 0));
 		} else if (decrypt) {
-			return encrypt_or_decrypt (decrypt, 1, hashstr, hashstr_len, iv, ivlen, 0);
+			ret (encrypt_or_decrypt (decrypt, 1, nhashstr, hashstr_len, iv, ivlen, 0));
 		} else {
-			char *str = (char *) hashstr;
+			char *str = (char *) nhashstr;
 			int strsz = hashstr_len;
 			if (_s) {
 				// alloc/concat/resize
 				str = malloc (strsz + s.len);
 				if (s.prefix) {
 					memcpy (str, s.buf, s.len);
-					memcpy (str + s.len, hashstr, hashstr_len);
+					memcpy (str + s.len, nhashstr, hashstr_len);
 				} else {
-					memcpy (str, hashstr, hashstr_len);
+					memcpy (str, nhashstr, hashstr_len);
 					memcpy (str + strsz, s.buf, s.len);
 				}
 				strsz += s.len;
@@ -647,21 +672,21 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			algobit = r_hash_name_to_bits (algo);
 			if (algobit == 0) {
 				eprintf ("Invalid algorithm. See -E, -D maybe?\n");
-				if (str != hashstr) {
+				if (str != nhashstr) {
 					free (str);
 				}
 				free (iv);
-				return 1;
+				ret (1);
 			}
 			PJ *pj = NULL;
 			if (rad == 'j') {
 				pj = pj_new ();
 				if (!pj) {
-					if (str != hashstr) {
+					if (str != nhashstr) {
 						free (str);
 					}
 					free (iv);
-					return 1;
+					ret (1);
 				}
 				pj_a (pj);
 			}
@@ -672,7 +697,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					from = 0;
 					to = strsz;
 					do_hash_internal (ctx, hashbit, (const ut8 *) str, strsz, pj, rad, 1, ule);
-					compare_hashes (ctx, compareBin, r_hash_size (algobit), &ret);
+					compare_hashes (ctx, compareBin, r_hash_size (algobit), &_ret);
 					r_hash_free (ctx);
 				}
 			}
@@ -681,50 +706,52 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				printf ("%s\n", pj_string (pj));
 				pj_free (pj);
 			}
-			if (_s) {
-				if (str != hashstr) {
-					free (str);
-				}
-				free (s.buf);
+			if (str != nhashstr) {
+				hashstr = NULL;
 			}
-			return ret;
+			if (_s) {
+				if (str != nhashstr) {
+					R_FREE (str);
+				}
+				R_FREE (s.buf);
+			}
+			hashstr = NULL;
+			ret (_ret);
 		}
 	}
 	if (opt.ind >= argc) {
 		free (iv);
-		return do_help (1);
+		ret (do_help (1));
 	}
 	if (numblocks) {
 		bsize = -bsize;
 	} else if (bsize < 0) {
 		eprintf ("rahash2: Invalid block size\n");
 		free (iv);
-		return 1;
+		ret (1);
 	}
 
 	io = r_io_new ();
-	for (ret = 0, i = opt.ind; i < argc; i++) {
+	for (_ret = 0, i = opt.ind; i < argc; i++) {
 		file = argv[i];
 
 		if (file && !*file) {
 			eprintf ("Cannot open empty path\n");
-			return 1;
+			ret (1);
 		}
 
 		if (encrypt) {// for encrytion when files are provided
 			int rt = encrypt_or_decrypt_file (encrypt, 0, argv[i], iv, ivlen, 0);
 			if (rt == -1) {
 				continue;
-			} else {
-				return rt;
 			}
+			ret (rt);
 		} else if (decrypt) {
 			int rt = encrypt_or_decrypt_file (decrypt, 1, argv[i], iv, ivlen, 0);
 			if (rt == -1) {
 				continue;
-			} else {
-				return rt;
 			}
+			ret (rt);
 		} else {
 			RIODesc *desc = NULL;
 			if (!strcmp (argv[i], "-")) {
@@ -736,7 +763,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					if (!desc) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
 						free (iv);
-						return 1;
+						ret (1);
 					}
 					r_io_pwrite_at (io, 0, buf, sz);
 				}
@@ -746,23 +773,26 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				if (r_file_is_directory (argv[i])) {
 					eprintf ("rahash2: Cannot hash directories\n");
 					free (iv);
-					return 1;
+					ret (1);
 				}
 				desc = r_io_open_nomap (io, argv[i], R_PERM_R, 0);
 				if (!desc) {
 					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
 					free (iv);
-					return 1;
+					ret (1);
 				}
 			}
-			ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
+			_ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
 			to = 0;
 			r_io_desc_close (desc);
 		}
 	}
+beach:
+	r_list_free (algos);
+	free (algo);
 	free (hashstr);
 	r_io_free (io);
 	free (iv);
 
-	return ret;
+	return _ret;
 }

@@ -1,4 +1,4 @@
-.Dd Feb 6, 2015
+.Dd Feb 6, 2022
 .Dt RAHASH2 1
 .Sh NAME
 .Nm rahash2
@@ -33,7 +33,7 @@ This command can be used to calculate hashes of a certain part of a file or a co
 This is the command used by the 'ph' command of radare.
 .Bl -tag -width Fl
 .It Fl a Ar algo
-Select an algorithm for the hashing. Valid values are listed in: rahash2 -L
+Comma separated list of algorithms to use when hashing files or strings. See -L to list the supported hashing algorithms. This flag can be passed multiple times instead of separating them by commas.
 .It Fl b Ar blocksize
 Define the block size
 .It Fl c Ar hash
