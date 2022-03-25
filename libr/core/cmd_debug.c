@@ -842,24 +842,24 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 	return true;
 }
 
-static int step_until_optype(RCore *core, const char *_optypes) {
-	RAnalOp op;
-	ut8 buf[32];
-	ut64 pc;
-	int res = true;
-	st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
-	ut64 countsteps = 0;
-
+static bool step_until_optype(RCore *core, const char *_optypes) {
+	r_return_val_if_fail (core && core->dbg && _optypes, false);
 	RList *optypes_list = NULL;
 	RListIter *iter;
 	char *optype = NULL;
 	char *optypes = strdup (r_str_trim_head_ro ((char *) _optypes));
+	RAnalOp op;
+	ut8 buf[32];
+	ut64 pc;
+	bool res = true;
 
 	if (!core || !core->dbg) {
 		eprintf ("Wrong state\n");
 		res = false;
 		goto end;
 	}
+	st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
+	ut64 countsteps = 0;
 	if (!optypes || !*optypes) {
 		eprintf ("Missing optypes. Usage example: 'dsuo ucall ujmp'\n");
 		res = false;
