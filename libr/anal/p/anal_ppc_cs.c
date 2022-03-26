@@ -929,8 +929,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->type = R_ANAL_OP_TYPE_ADD;
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
-		case PPC_INS_ADDE:
 		case PPC_INS_ADDIS:
+			op->type = R_ANAL_OP_TYPE_ADD;
+			esilprintf (op, "16,%s,<<,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_ADDE:
 		case PPC_INS_ADDME:
 		case PPC_INS_ADDZE:
 			op->type = R_ANAL_OP_TYPE_ADD;
