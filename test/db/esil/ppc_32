@@ -42,3 +42,33 @@ bdnz 0xfffffffffffffff0
 0x00000000 1,ctr,-=,$z,!,?{,0xfffffffffffffff0,pc,=,}
 EOF
 RUN
+
+NAME=addis with positive number ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 3c4c0002)
+EOF
+EXPECT=<<EOF
+addis r2, r12, 2
+0x00000000 16,0x2,<<,r12,+,r2,=
+EOF
+RUN
+
+NAME=addis with negative number ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 3c4cfffd)
+EOF
+EXPECT=<<EOF
+addis r2, r12, -3
+0x00000000 16,0xfffffffffffffffd,<<,r12,+,r2,=
+EOF
+RUN
