@@ -62,6 +62,7 @@ EOF
 RUN
 
 NAME=mach0 swift-x86-64 aav
+ARGS=-e bin.demangle=false
 FILE=bins/mach0/swift-main
 CMDS=<<EOF
 C*~?^Cd
@@ -70,13 +71,14 @@ C*~?^Cd
 Cd~?
 EOF
 EXPECT=<<EOF
-114
-134
-134
+304
+324
+324
 EOF
 RUN
 
 NAME=swift-x86-64 calling convention
+ARGS=-e bin.demangle=false
 FILE=bins/mach0/swift5.1-throwError
 CMDS=<<EOF
 s sym.__s10throwError7ThrowerC0a2MyB0yyKF
@@ -111,6 +113,7 @@ EOF
 RUN
 
 NAME=swift-x86-64 calling convention json
+ARGS=-e bin.demangle=false
 FILE=bins/mach0/swift5.1-throwError
 CMDS=<<EOF
 s sym.__s10throwError7ThrowerC0a2MyB0yyKF
