@@ -155,7 +155,7 @@ static char *swift_demangle_cmd(const char *s) {
 static char *swift_demangle_lib(const char *s) {
 #if __UNIX__
 	static bool haveSwiftCore = false;
-	static char *(*swift_demangle)(const char *sym, int symlen, void *out, int *outlen, int flags) = NULL;
+	static char *(*swift_demangle)(const char *sym, int symlen, void *out, int *outlen, int flags, int unk) = NULL;
 	if (!haveSwiftCore) {
 		void *lib = r_lib_dl_open ("/usr/lib/swift/libswiftCore.dylib");
 		if (lib) {
@@ -164,7 +164,8 @@ static char *swift_demangle_lib(const char *s) {
 		haveSwiftCore = true;
 	}
 	if (swift_demangle) {
-		return swift_demangle (s, strlen (s), NULL, NULL, 0);
+		char *r = swift_demangle (s, strlen (s), NULL, NULL, 0, 0);
+		return r;
 	}
 #endif
 	return NULL;
@@ -184,12 +185,6 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 		s = s + 6;
 	}
 
-	if (*s != 'T' && strncmp (s, "_T", 2) && strncmp (s, "__T", 3)) {
-		// modern swift symbols
-		if (strncmp (s, "$s", 2)) {
-			return NULL;
-		}
-	}
 	if (!strncmp (s, "__", 2)) {
 		s = s + 2;
 	}
@@ -198,6 +193,12 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 		res = swift_demangle_lib (s);
 		if (res) {
 			return res;
+		}
+	}
+	if (*s != 'T' && strncmp (s, "_T", 2) && strncmp (s, "__T", 3)) {
+		// modern swift symbols not yet supported in this parser (only via trylib)
+		if (strncmp (s, "$s", 2)) {
+			return NULL;
 		}
 	}
 	const char *attr = NULL;
