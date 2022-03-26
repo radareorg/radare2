@@ -125,6 +125,13 @@ jobs:
         sudo pip3 install meson ninja
         CFLAGS="-static" LDFLAGS="-static" meson --prefix=${HOME}/.local --buildtype release --default-library static build
         ninja -C build && ninja -C build install
+  macos-m1:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Building Radare2
+      run: export CFLAGS="-O2"; export CC="gcc -target arm64" ; sys/install.sh
   macos-test:
     runs-on: macos-latest
     if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
