@@ -514,6 +514,10 @@ R_API void r_cons_grepbuf(void) {
 		char *buf = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
 		if (buf) {
 			char *res = r_str_tokenize_json (buf);
+			char *nres = r_print_json_indent (res, I(context->color_mode), "  ", NULL);
+			free (res);
+			res = r_str_newf ("%s\n", nres);
+			free (nres);
 			free (buf);
 			if (res) {
 				cons->context->buffer_len = strlen (res);

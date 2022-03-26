@@ -1,0 +1,69 @@
+NAME=smily punk token test
+FILE=bins/src/tokentest.c
+ARGS=-f
+CMDS=pr~:)
+EXPECT=<<EOF
+{
+  "main": {
+    "type": "symbol",
+    "name": "main",
+    "args": [
+      
+    ],
+    "body": [
+      {
+        "node": "assign",
+        "var": "a",
+        "value": "32"
+      },
+      {
+        "node": "assign",
+        "var": "a",
+        "value": "b<<4"
+      },
+      {
+        "node": "assign",
+        "var": "a",
+        "value": "a<<32"
+      }
+    ]
+  }
+}
+
+EOF
+RUN
+
+NAME=smily punk token test 2
+FILE=-
+CMDS=<<EOF
+w int function(int argc, char **argv) { puts("Hello World"); return 32; }
+prz~:)
+EOF
+EXPECT=<<EOF
+c(K[0m[J[?25h{
+  "function": {
+    "type": "symbol",
+    "name": "function",
+    "args": [
+      {
+        "name": "argc",
+        "type": "int"
+      },
+      {
+        "name": "argv",
+        "type": "char**"
+      }
+    ],
+    "body": [
+      {
+        "type": "call",
+        "name": "puts",
+        "args": [
+          {
+            "name": "World",
+            "type": "Hello"
+          }
+        ]
+      }
+EOF
+RUN
