@@ -1181,11 +1181,11 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 }
 
 static void r_print_format_word(const RPrint* p, int endian, int mode,
-		const char *setval, ut64 seeki, ut8* buf, int i, int size) {
+		const char *setval, ut64 seeki, ut8* buf, int i, int size, bool sign) {
 	ut64 addr;
 	int elem = -1;
 	if (size >= ARRAYINDEX_COEF) {
-		elem = size/ARRAYINDEX_COEF-1;
+		elem = size/ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
 	addr = endian
@@ -1195,12 +1195,19 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 		p->cb_printf ("wv2 %s @ 0x%08"PFMT64x"\n", setval, seeki+((elem>=0)?elem*2:0));
 	} else if ((mode & R_PRINT_DOT) || MUSTSEESTRUCT) {
 		if (size == -1) {
-			p->cb_printf ("0x%04"PFMT64x, addr);
+			if (sign) {
+				p->cb_printf ("%d", (int)(short)addr);
+			} else {
+				p->cb_printf ("0x%04"PFMT64x, addr);
+			}
 		}
 		while ((size -= 2) > 0) {
 			addr = endian
 				? (*(buf+i))<<8 | (*(buf+i+1))
 				: (*(buf+i+1))<<8 | (*(buf+i));
+			if (sign) {
+				addr = (st64)(short)addr;
+			}
 			if (elem == -1 || elem == 0) {
 				p->cb_printf ("%"PFMT64d, addr);
 				if (elem == 0) {
@@ -1219,8 +1226,12 @@ static void r_print_format_word(const RPrint* p, int endian, int mode,
 		if (!SEEVALUE && !ISQUIET) {
 			p->cb_printf ("0x%08"PFMT64x" = ", seeki+((elem>=0)?elem*2:0));
 		}
-		if (size==-1) {
-			p->cb_printf ("0x%04"PFMT64x, addr);
+		if (size == -1) {
+			if (sign) {
+				p->cb_printf ("%"PFMT64d, (st64)(short)addr);
+			} else {
+				p->cb_printf ("0x%04"PFMT64x, addr);
+			}
 		} else {
 			if (!SEEVALUE) {
 				p->cb_printf ("[ ");
@@ -1982,6 +1993,9 @@ static char *get_format_type(const char fmt, const char arg) {
 	case 'w':
 		type = strdup ("uint16_t");
 		break;
+	case 'W':
+		type = strdup ("int16_t");
+		break;
 	case 'X':
 		type = strdup ("uint8_t[]");
 		break;
@@ -2377,7 +2391,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				} else if (*(arg + 1) == '8') {
 					tmp = 'q';
 					arg++;
-				} else {	//If pointer reference is not mentioned explicitly
+				} else { // If pointer reference is not mentioned explicitly
 					switch (p->bits) {
 					case 16: tmp = 'w'; break;
 					case 32: tmp = 'x'; break;
@@ -2569,7 +2583,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i += (size == -1)? 4: 4*size;
 					break;
 				case 'w':
-					r_print_format_word (p, endian, mode, setval, seeki, buf, i, size);
+					r_print_format_word (p, endian, mode, setval, seeki, buf, i, size, false);
+					i += (size == -1)? 2: 2 * size;
+					break;
+				case 'W':
+					r_print_format_word (p, endian, mode, setval, seeki, buf, i, size, true);
 					i += (size == -1)? 2: 2 * size;
 					break;
 				case 'z': // zero terminated string
