@@ -1,4 +1,56 @@
 NAME=mach0 swift demangle methods
+FILE=bins/mach0/swift/klass.orig
+ARGS=-e bin.verbose=true
+CMDS=q
+EXPECT=<<EOF
+f sym.swift.SomeClass.init = 0x100002a80
+f sym.swift.SomeClass.method.0 = 0x100003cff
+f sym.swift.SomeClass.method.1 = 0x100003d08
+f sym.swift.SomeClass.method.2 = 0x100003d0e
+f sym.swift.SomeClass.method.3 = 0x100003d17
+f sym.swift.SomeClass.method.4 = 0x100003d20
+f sym.swift.SomeClass.method.5 = 0x100003d24
+f sym.swift.SomeClass.method.6 = 0x100003d1d
+f sym.swift.SomeClass.method.__s5klass10SuperKlassCACycfCTq = 0x100003d90
+f sym.swift.SomeClass.method.8 = 0x100003d2c
+f sym.swift.SomeClass.method.9 = 0x100003d34
+f sym.swift.SomeClass.field.meh = 0x100003e8d
+f sym.swift.SomeClass.field.cow = 0x100003e91
+f sym.swift.SuperKlass.init = 0x100002440
+f sym.swift.SuperKlass.method.__s5klass10SuperKlassC10superfieldSivg = 0x1000028f0
+f sym.swift.SuperKlass.method.__s5klass10SuperKlassC10superfieldSivs = 0x100002950
+f sym.swift.SuperKlass.method.__s5klass10SuperKlassC10superfieldSivM = 0x1000029b0
+f sym.swift.SuperKlass.method.__s5klass10SuperKlassCACycfC = 0x100002a10
+f sym.swift.SuperKlass.method.4 = 0x100003d9c
+f sym.swift.SuperKlass.field.superfield = 0x100003e95
+EOF
+EXPECT_ERR=<<EOF
+data-in-code at 0xc360 size 8
+Cd 4 4 @ 0x1000031d8
+0x00003cb0 swift_type_entry:
+  flags:   0xc0000050
+  parent:  0x00003c98
+  name:    0x00003ca4 (SomeClass)
+  access:  0x100002a80
+  fields:  0x00003ea0
+  super:   0x00003e7e
+  members: 0x00003cd9
+  fields:  0x00003cd6
+  fieldsat:0x00003ce7
+0x00003d44 swift_type_entry:
+  flags:   0x80000050
+  parent:  0x00003c98
+  name:    0x00003d38 (SuperKlass)
+  access:  0x100002440
+  fields:  0x00003ec8
+  super:   0x00003d58
+  members: 0x00003d69
+  fields:  0x00003d69
+  fieldsat:0x00003d76
+EOF
+RUN
+
+NAME=mach0 swift demangle methods
 FILE=bins/mach0/swift-main
 CMDS=isq~&FooClass,method
 EXPECT=<<EOF
