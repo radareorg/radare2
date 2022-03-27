@@ -75,6 +75,12 @@ static const char *help_msg_aae[] = {
 	NULL
 };
 
+static const char *help_msg_aav[] = {
+	"Usage:", "aav", "[sat] # find values referencing a specific section or map",
+	"aav", "", "find absolute reference values",
+	"aavr", "", "find relative reference values (address + 4 byte signed int)",
+	NULL
+};
 
 static const char *help_msg_aan[] = {
 	"Usage:", "aan", "[rg]   # automatically name functions.",
@@ -174,7 +180,7 @@ static const char *help_msg_aa[] = {
 	"aat", " [fcn]", "Analyze all/given function to convert immediate to linked structure offsets (see tl?)",
 	"aaT", " [len]", "analyze code after trap-sleds",
 	"aau", " [len]", "list mem areas (larger than len bytes) not covered by functions",
-	"aav", " [sat]", "find values referencing a specific section or map",
+	"aav", "[?] [sat]", "find values referencing a specific section or map",
 	"aaw", "", "analyze all meta words (Cd) and add r. named flags for referenced pointers",
 	NULL
 };
@@ -10789,6 +10795,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 #define seti(x,y) r_config_set_i(core->config, x, y);
 #define geti(x) r_config_get_i(core->config, x);
 	r_return_if_fail (*input == 'v');
+	bool relative = input[1] == 'r';
 	ut64 o_align = geti ("search.align");
 	const char *analin = r_config_get (core->config, "anal.in");
 	char *tmp = strdup (analin);
@@ -10823,7 +10830,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			r_strf_var (msg, 128, "... from 0x%"PFMT64x" to 0x%"PFMT64x"", r_io_map_begin (map), r_io_map_end (map));
 			oldstr = r_print_rowlog (core->print, msg);
 			r_print_rowlog_done (core->print, oldstr);
-			(void)r_core_search_value_in_range (core, map->itv,
+			(void)r_core_search_value_in_range (core, relative, map->itv,
 				r_io_map_begin (map), r_io_map_end (map), vsize, _CbInRangeAav, (void *)(size_t)asterisk);
 		}
 		r_list_free (list);
@@ -10865,7 +10872,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 				r_strf_var (msg2, 128, "0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x" (aav)", from, to, begin, end);
 				oldstr = r_print_rowlog (core->print, msg2);
 				r_print_rowlog_done (core->print, oldstr);
-				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, _CbInRangeAav, (void *)(size_t)asterisk);
+				(void)r_core_search_value_in_range (core, relative, map->itv, from, to, vsize, _CbInRangeAav, (void *)(size_t)asterisk);
 			}
 		}
 		r_list_free (list);
@@ -11048,7 +11055,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		cmd_anal_aad (core, input);
 		break;
 	case 'v': // "aav"
-		cmd_anal_aav (core, input);
+		if (strchr (input + 1, '?')) {
+			r_core_cmd_help (core, help_msg_aav);
+		} else {
+			cmd_anal_aav (core, input);
+		}
 		break;
 	case 'w': // "aaw"
 		cmd_anal_aaw (core, input);

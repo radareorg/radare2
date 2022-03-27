@@ -5649,12 +5649,15 @@ static bool stringAt(RCore *core, ut64 addr) {
 	return is_string (buf + 1, 31, NULL);
 }
 
-R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 vmin,
+R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval search_itv, ut64 vmin,
 					 ut64 vmax, int vsize, inRangeCb cb, void *cb_user) {
 	int i, align = core->search->align, hitctr = 0;
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
 	bool analStrings = r_config_get_i (core->config, "anal.strings");
+	if (relative) {
+		align = 4;
+	}
 	mycore = core;
 	ut8 buf[4096];
 	ut64 v64, value = 0, size;
@@ -5717,12 +5720,23 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 			if (vsize > left) {
 				break;
 			}
-			switch (vsize) {
-			case 1: value = *(ut8 *)v; match = (buf[i] >= vmin && buf[i] <= vmax); break;
-			case 2: v16 = *(uut16 *)v; match = (v16 >= vmin && v16 <= vmax); value = v16; break;
-			case 4: v32 = *(uut32 *)v; match = (v32 >= vmin && v32 <= vmax); value = v32; break;
-			case 8: v64 = *(uut64 *)v; match = (v64 >= vmin && v64 <= vmax); value = v64; break;
-			default: eprintf ("Unknown vsize %d\n", vsize); return -1;
+			if (relative) {
+				st32 sw = (st32)r_read_le32 (buf + i);
+				if (sw) {
+					v16 = addr + sw;
+					v32 = addr + sw;
+					v64 = addr + sw;
+					value = addr + sw;
+					match = r_io_is_valid_offset (core->io, value, false);
+				}
+			} else {
+				switch (vsize) {
+				case 1: value = *(ut8 *)v; match = (buf[i] >= vmin && buf[i] <= vmax); break;
+				case 2: v16 = *(uut16 *)v; match = (v16 >= vmin && v16 <= vmax); value = v16; break;
+				case 4: v32 = *(uut32 *)v; match = (v32 >= vmin && v32 <= vmax); value = v32; break;
+				case 8: v64 = *(uut64 *)v; match = (v64 >= vmin && v64 <= vmax); value = v64; break;
+				default: eprintf ("Unknown vsize %d\n", vsize); return -1;
+				}
 			}
 			if (match && !vinfun) {
 				if (vinfunr) {
@@ -5737,11 +5751,13 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 			}
 			if (match && value) {
 				bool isValidMatch = true;
-				if (align && (value % align)) {
-					// ignored .. unless we are analyzing arm/thumb and lower bit is 1
-					isValidMatch = false;
-					if (maybeThumb && (value & 1)) {
-						isValidMatch = true;
+				if (!relative) {
+					if (align && (value % align)) {
+						// ignored .. unless we are analyzing arm/thumb and lower bit is 1
+						isValidMatch = false;
+						if (maybeThumb && (value & 1)) {
+							isValidMatch = true;
+						}
 					}
 				}
 				if (isValidMatch) {
@@ -5753,10 +5769,10 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 				}
 			}
 		}
-		if (size == to-from) {
+		if (size == to - from) {
 			break;
 		}
-		from += size-vsize+1;
+		from += size - vsize + 1;
 	}
 beach:
 	r_cons_break_pop ();
@@ -5795,7 +5811,7 @@ static bool printAnalPaths(RCoreAnalPaths *p, PJ *pj) {
 		}
 	}
 
-	if(pj) {
+	if (pj) {
 		pj_end (pj);
 	} else {
 		r_cons_printf ("\n");
