@@ -4869,6 +4869,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 			return;
 		}
 	}
+	ut64 o_offset = core->offset;
 	if (mode == 'j' || mode == ',' || mode == '*' || mode == 'q') {
 		size_t i;
 		const int be = core->anal->big_endian;
@@ -4879,6 +4880,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 
 		bool withref = false;
 		int end = R_MIN (core->blocksize, len);
+		ut64 at = core->offset;
 		for (i = 0; i + wordsize < end; i += wordsize) {
 			ut64 addr = core->offset + i;
 			ut64 val = read_value (buf + i, wordsize, be);
@@ -4891,6 +4893,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 			// XXX: this only works in little endian
 			withref = false;
 			char *refs = NULL;
+			core->offset = at + i;
 			if (core->print->hasrefs) {
 				char *rstr = core->print->hasrefs (core->print->user, val, true);
 				if (R_STR_ISNOTEMPTY (rstr)) {
@@ -4922,6 +4925,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 				pj_end (pj);
 			}
 		}
+		core->offset = at;
 		if (t) {
 			r_table_query (t, arg? arg + 1: NULL);
 			char *s = r_table_tostring (t);
@@ -4951,6 +4955,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 		core->print->flags &= ~R_PRINT_FLAGS_REFS;
 		core->print->cols = ocols;
 	}
+	core->offset = o_offset;
 }
 
 static ut8 *decode_text(RCore *core, ut64 offset, size_t len, bool zeroend) {
