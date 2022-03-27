@@ -125,7 +125,7 @@ book](https://book.rada.re), here are some methods to contact us:
 
 ## Operating Systems
 
-Windows (since XP), Linux, Darwin, GNU/Hurd, Apple's {Mac,i,iPad,watch}OS, Android
+Windows (since XP), GNU+{Linux,HURD} Darwin, Apple's {Mac,i,iPad,watch}OS, Android
 [Dragonfly, Net, Free, Open] BSD, Z/OS, QNX, SerenityOS, Solaris, Haiku, Vinix, FirefoxOS.
 
 ## Architectures
