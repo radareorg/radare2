@@ -410,7 +410,6 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 	return len - eq;
 }
 
-// TODO: this command needs tests!
 static void cmd_cmp_watcher(RCore *core, const char *input) {
 	ut64 addr = UT64_MAX;
 	switch (*input) {

@@ -1,0 +1,83 @@
+NAME=basic cw usage
+CMDS=<<EOF
+cw 0 4 p8
+cw 100 4 p8
+cw # show all
+?e ---
+cw 100 # show at addr
+?e ---
+cwq # show quiet - no output yet
+?e ---
+cw* # show commands
+?e ---
+cw 0 8 px # overwrite
+cw*
+?e ---
+cwd 0 # delete
+cw*
+EOF
+EXPECT=<<EOF
+0x00000000
+00000000
+0x00000064
+00000000
+---
+0x00000064
+00000000
+---
+---
+cw 0x00000000 4 p8
+cw 0x00000064 4 p8
+---
+cw 0x00000000 8 px
+cw 0x00000064 4 p8
+---
+cw 0x00000064 4 p8
+EOF
+RUN
+
+NAME=cw with cwu update
+CMDS=<<EOF
+cw 0 4 p8
+cw*
+?e ---
+wx 11223344
+cwu # update
+cw
+?e ---
+cw*
+?e ---
+cwq
+EOF
+EXPECT=<<EOF
+cw 0x00000000 4 p8
+---
+0x00000000 modified
+11223344
+---
+cw 0x00000000 4 p8 # differs
+---
+0x00000000 has changed
+EOF
+RUN
+
+NAME=cw with update and cwr revert
+CMDS=<<EOF
+cw 0 4 p8
+cw*
+?e ---
+wx 11223344
+cwu # update
+cw*
+?e ---
+cwr # revert
+cw* # no longer updated internally
+EOF
+EXPECT=<<EOF
+cw 0x00000000 4 p8
+---
+cw 0x00000000 4 p8 # differs
+---
+cw 0x00000000 4 p8
+EOF
+RUN
