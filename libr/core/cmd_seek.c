@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake */
+/* radare - LGPL - Copyright 2009-2022 - pancake */
 
 #include "r_types.h"
 #include "r_config.h"
@@ -486,8 +486,8 @@ static int cmd_seek(void *data, const char *input) {
 			for (input++; *input == '.'; input++) {
 				;
 			}
-			r_core_seek_base (core, input);
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+			r_core_seek_base (core, input);
 		} else {
 			// just re-read the current block
 			r_core_seek (core, core->offset, true);
