@@ -1856,6 +1856,10 @@ R_API int r_print_format_struct_size(RPrint *p, const char *f, int mode, int n) 
 			}
 			i++;
 			break;
+		case 'P':
+			size += 4;
+			i++;
+			break;
 		case 'r':
 			break;
 		case 'n':
@@ -2381,6 +2385,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			case '.': // skip 1 byte
 				i += (size == -1)? 1: size;
 				continue;
+			case 'P': // self-relative pointer reference
+				tmp = 'P';
+				arg++;
+				break;
 			case 'p': // pointer reference
 				if (*(arg + 1) == '2') {
 					tmp = 'w';
@@ -2500,6 +2508,19 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				case 't':
 					r_print_format_time (p, endian, mode, setval, seeki, buf, i, size);
 					i += (size==-1)? 4: 4 * size;
+					break;
+				case 'P':
+					{
+						st32 sw = (st32) r_read_le32 (buf + i);
+						if (MUSTSEEJSON) {
+							p->cb_printf ("\"0x%"PFMT64x"\"}", (ut64)seeki + sw);
+						} else if (MUSTSEE) {
+							p->cb_printf ("0x%"PFMT64x, (ut64)seeki + sw);
+						} else {
+							p->cb_printf ("0x%"PFMT64x"\n", (ut64)seeki + sw);
+						}
+						i += 4;
+					}
 					break;
 				case 'q':
 					r_print_format_quadword (p, endian, mode, setval, seeki, buf, i, size);
