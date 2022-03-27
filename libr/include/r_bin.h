@@ -287,10 +287,10 @@ typedef struct r_bin_file_t {
 	int strmode;
 	ut32 id;
 	RBuffer *buf;
-	ut64 offset;
+	ut64 offset; // XXX
 	RBinObject *o;
 	void *xtr_obj;
-	ut64 loadaddr;
+	ut64 loadaddr; // XXX
 	/* values used when searching the strings */
 	int minstrlen;
 	int maxstrlen;

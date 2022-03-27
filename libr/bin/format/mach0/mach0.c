@@ -2229,7 +2229,7 @@ static int prot2perm(int x) {
 	return r;
 }
 
-static bool __isDataSection(RBinSection *sect) {
+static bool is_data_section(RBinSection *sect) {
 	if (strstr (sect->name, "_cstring")) {
 		return true;
 	}
@@ -2302,7 +2302,10 @@ RList *MACH0_(get_segments)(RBinFile *bf) {
 			char *section_name = r_str_ndup (bin->sects[i].sectname, 16);
 			char *segment_name = r_str_newf ("%u.%s", (ut32)i, bin->segs[segment_index].segname);
 			s->name = r_str_newf ("%s.%s", segment_name, section_name);
-			s->is_data = __isDataSection (s);
+			if (strstr (s->name, "__const")) {
+				s->format = r_str_newf ("Cd 4[%"PFMT64d"]", s->size / 4);
+			}
+			s->is_data = is_data_section (s);
 			if (strstr (section_name, "interpos") || strstr (section_name, "__mod_")) {
 #if R_BIN_MACH064
 				const int ws = 8;
