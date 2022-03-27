@@ -1358,8 +1358,8 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	mach0_ut p = 0;
 	ut32 left = 0;
 	int len;
-	ut64 paddr;
-	ut64 s_size;
+	ut64 paddr = UT64_MAX;
+	ut64 s_size = 0;
 	bool bigendian;
 	ut8 pp[sizeof (mach0_ut)] = {0};
 
@@ -1432,6 +1432,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			}
 			free (fieldmd);
 		}
+	}
+	if (!s_size || paddr == UT64_MAX) {
+		goto get_classes_error;
 	}
 
 	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
