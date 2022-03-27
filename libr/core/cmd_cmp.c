@@ -510,7 +510,7 @@ out_free_argv:
 	case '\0': { // "cw"
 		int mode;
 		if (*input) {
-			mode = input[1];
+			mode = *input;
 			if (input[1]) {
 				addr = r_num_get (core->num, input + 2);
 			}
