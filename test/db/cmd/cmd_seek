@@ -445,3 +445,23 @@ EXPECT=<<EOF
 0x543a0
 EOF
 RUN
+
+NAME=partial seek history issue
+FILE=-
+CMDS=<<EOF
+s
+s..33
+s..44
+s
+s-
+s
+s-
+s
+EOF
+EXPECT=<<EOF
+0x0
+0x44
+0x33
+0x0
+EOF
+RUN
