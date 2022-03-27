@@ -948,7 +948,7 @@ R_API void r_core_task_del_all_done(RCoreTaskScheduler *scheduler);
 R_API RCoreTask *r_core_task_self(RCoreTaskScheduler *scheduler);
 R_API void r_core_task_join(RCoreTaskScheduler *scheduler, RCoreTask *current, int id);
 typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize, void *cb_user);
-R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
+R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval search_itv, ut64 vmin, ut64 vmax, int vsize, inRangeCb cb, void *cb_user);
 
 R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, int type, bool lock);
 R_API void r_core_autocomplete_free(RCoreAutocomplete *obj);

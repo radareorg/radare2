@@ -3929,7 +3929,7 @@ reread:
 						RListIter *iter;
 						r_list_foreach (param.boundaries, iter, map) {
 							err = 0;
-							int hits = r_core_search_value_in_range (core, map->itv,
+							int hits = r_core_search_value_in_range (core, false, map->itv,
 									vmin, vmax, vsize,
 									_CbInRangeSearchV, &param);
 							if (param.outmode != R_MODE_JSON) {
