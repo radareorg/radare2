@@ -4880,9 +4880,9 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 
 		bool withref = false;
 		int end = R_MIN (core->blocksize, len);
-		ut64 at = core->offset;
+		ut64 at = o_offset;
 		for (i = 0; i + wordsize < end; i += wordsize) {
-			ut64 addr = core->offset + i;
+			ut64 addr = o_offset + i;
 			ut64 val = read_value (buf + i, wordsize, be);
 			if (pj) {
 				pj_o (pj);
