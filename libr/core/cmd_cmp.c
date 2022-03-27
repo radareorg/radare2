@@ -234,10 +234,9 @@ static bool revert_watcher(RCoreCmpWatcher *w) {
 		free (w->ndata);
 		w->ndata = w->odata;
 		w->odata = NULL;
-		return true;
 	}
 
-	return false;
+	return true;
 }
 
 /* Mark the current old state as new, discarding the original new state */
@@ -481,7 +480,7 @@ out_free_argv:
 		if (input[1]) {
 			addr = r_num_get (core->num, input + 2);
 		}
-		if (r_core_cmpwatch_revert (core, addr)) {
+		if (!r_core_cmpwatch_revert (core, addr)) {
 			if (addr == UT64_MAX) {
 				eprintf ("No watchers exist.\n");
 			} else {
