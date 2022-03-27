@@ -46,7 +46,7 @@ jobs:
         path: r2-static.tar.xz
 
   linux-acr-deb-64:
-    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
+    # if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     runs-on: ubuntu-18.04
     steps:
     - name: Checkout
