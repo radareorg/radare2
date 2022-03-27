@@ -1932,8 +1932,10 @@ R_API void r_core_debug_ri(RCore *core, RReg *reg, int mode) {
 				r_cons_printf (" %s", r);
 			}
 			r_cons_strcat (Color_RESET);
+			ut64 o_offset = core->offset;
 			char *rrstr = r_core_anal_hasrefs (core, *addr, true);
-			if (rrstr && *rrstr && strchr (rrstr, 'R')) {
+			core->offset = o_offset;
+			if (R_STR_ISNOTEMPTY (rrstr) && strchr (rrstr, 'R')) {
 				r_cons_printf ("    ;%s"Color_RESET, rrstr);
 			}
 			r_cons_newline ();
@@ -2005,7 +2007,10 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 			valuestr = r_str_newf ("%"PFMT64x, value);
 		}
 
+		r_cons_strcat (Color_RESET);
+		ut64 o_offset = core->offset;
 		char *rrstr = r_core_anal_hasrefs (core, value, true);
+		core->offset = o_offset;
 		if (!rrstr) {
 			rrstr = strdup ("");
 		}
