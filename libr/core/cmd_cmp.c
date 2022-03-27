@@ -34,7 +34,7 @@ static const char *help_msg_c[] = {
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
 	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte (silent return in $?)",
 	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
-	"cw", "[*dru?] [addr]", "Compare memory watchers",
+	"cw", "[*dqru?] [addr]", "Compare memory watchers",
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
@@ -45,7 +45,7 @@ static const char *help_msg_cw[] = {
 	"Usage: cw", "[args]", "Manage compare watchers; See if and how memory changes",
 	"cw??", "", "Show more info about watchers",
 	"cw ", "addr sz cmd", "Add a compare watcher",
-	"cw", "[*] [addr]", "Show compare watchers (* for r2 commands)",
+	"cw", "[*q] [addr]", "Show compare watchers (*=r2 commands, q=quiet)",
 	"cwd", " [addr]", "Delete watcher",
 	"cwr", " [addr]", "Revert watcher",
 	"cwu", " [addr]", "Update watcher",
@@ -57,9 +57,8 @@ static const char *verbose_help_cw =
 	"report if and how it changed. First, create one with `cw addr sz cmd`. This\n"
 	"will record sz bytes at addr. To record the second state, use `cwu`. Now, when\n"
 	"you run `cw`, the watcher will report if the bytes changed and run the command given\n"
-	"at creation with the size and address. You can pass any command when creating the\n"
-	"watcher. You may overwrite any watcher by creating another at the same address. This\n"
-	"will completely overwrite the original watcher's state.\n"
+	"at creation with the size and address. You may overwrite any watcher by creating\n"
+	"another at the same address. This will discard the existing watcher completely.\n"
 	"\n"
 	"When you create a watcher, the data read from memory is marked as \"new\". Updating\n"
 	"the watcher with `cwu` will mark this data as \"old\", and then read the \"new\" data.\n"
@@ -175,19 +174,11 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 					w->addr, w->size, w->cmd,
 					changed? " # differs": "");
 			break;
-		// XXX: these case names should change, they arent very
-		// descriptive. 'd' -> 'q' quiet?
-		// XXX: this case is unused - call from `cwq`?
-		case 'd': // diff
+		case 'q': // quiet
 			if (changed) {
 				r_cons_printf ("0x%08" PFMT64x " has changed\n", w->addr);
 			}
 			break;
-		//  XXX: this is only used as default, never as 'o'
-		case 'o': // old contents
-		/// XXX: what is this comment referencing? check the blame log
-		// for changes that may explain it
-		// use tmpblocksize
 		default:
 			r_cons_printf ("0x%08" PFMT64x "%s\n", w->addr, changed? " modified": "");
 			r_core_cmdf (core, "%s %d @%" PFMT64d, w->cmd, w->size, w->addr);
@@ -516,12 +507,19 @@ out_free_argv:
 		}
 		break;
 	case '*': // "cw*"
-		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_cw, "cw*", true);
-			break;
+	case 'q': // "cwq"
+	case '\0': { // "cw"
+		int mode;
+		if (*input) {
+			mode = input[1];
+			if (input[1]) {
+				addr = r_num_get (core->num, input + 2);
+			}
+		} else {
+			mode = 0;
 		}
 
-		if (!r_core_cmpwatch_show (core, UT64_MAX, '*')) {
+		if (!r_core_cmpwatch_show (core, addr, mode)) {
 			if (addr == UT64_MAX) {
 				eprintf ("No watchers exist.\n");
 			} else {
@@ -529,16 +527,7 @@ out_free_argv:
 			}
 		}
 		break;
-	case '\0': // "cw"
-		// don't check for ?, would be out of bounds
-		if (!r_core_cmpwatch_show (core, UT64_MAX, 0)) {
-			if (addr == UT64_MAX) {
-				eprintf ("No watchers exist.\n");
-			} else {
-				eprintf ("No watcher exists at address %" PFMT64x ".\n", addr);
-			}
-		}
-		break;
+	}
 	case '?': // "cw?"
 	default:
 		if (input[1] == '?') {
