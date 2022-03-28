@@ -73,7 +73,7 @@ wx 11223344
 cwu # update
 cw*
 ?e ---
-cwr # revert
+cwr 0 # revert
 cw* # no longer updated internally
 EOF
 EXPECT=<<EOF
