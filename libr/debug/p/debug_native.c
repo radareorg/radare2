@@ -1616,7 +1616,11 @@ RDebugPlugin r_debug_plugin_native = {
 #elif __aarch64__ || __arm64__
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",
+#if __APPLE__
+	.canstep = true,
+#else
 	.canstep = false,
+#endif
 #elif __arm__
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.arch = "arm",
