@@ -1070,7 +1070,7 @@ static int cmd_cmp(void *data, const char *input) {
 	const ut8* block = core->block;
 
 	switch (*input) {
-	case 'p':
+	case 'p': // "cp"
 		return cmd_cp (data, input + 1);
 		break;
 	case 'a': // "ca"
@@ -1107,7 +1107,7 @@ static int cmd_cmp(void *data, const char *input) {
 	case 'w':
 		return cmd_cmp_watcher (core, input + 1);
 		break;
-	case '*':
+	case '*': // c*"
 		if (!input[2]) {
 			eprintf ("Usage: cx* 00..22'\n");
 			return 0;
@@ -1116,16 +1116,14 @@ static int cmd_cmp(void *data, const char *input) {
 		val = radare_compare (core, block, (ut8 *) input + 2,
 			strlen (input + 2) + 1, '*');
 		break;
-	case ' ':
-	{
+	case ' ': { // "c"
 		char *str = strdup (input + 1);
 		int len = r_str_unescape (str);
 		val = radare_compare (core, block, (ut8 *) str, len, 0);
 		free (str);
+		break;
 	}
-	break;
-	case 'j':
-	{
+	case 'j': // "cj"
 		if (input[1] != ' ') {
 			eprintf ("Usage: cj [string]\n");
 		} else {
@@ -1134,9 +1132,8 @@ static int cmd_cmp(void *data, const char *input) {
 			val = radare_compare (core, block, (ut8 *) str, len, 'j');
 			free (str);
 		}
-	}
-	break;
-	case 'x':
+		break;
+	case 'x': // "cx"
 		switch (input[1]) {
 		case ' ':
 			mode = 0;
@@ -1190,7 +1187,7 @@ static int cmd_cmp(void *data, const char *input) {
 			free (buf);
 		}
 		break;
-	case 'f':
+	case 'f': // "cf"
 		if (input[1] != ' ') {
 			eprintf ("Please. use 'cf [file]'\n");
 			return false;
