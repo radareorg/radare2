@@ -219,6 +219,7 @@ static const char *help_msg_ab[] = {
 	"ab-", "[addr]", "delete basic block at given address",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
+	"abf", " [addr]", "address of incoming (from) basic blocks",
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[?] [.-cqj]", "list all basic blocks",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
@@ -12094,6 +12095,37 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	free (s);
 }
 
+R_API bool core_anal_abf(RCore *core, const char* input) {
+	if (strchr (input, '?')) {
+		eprintf ("Usage: abf ([addr])  # list incoming/from basic blocks\n");
+		return false;
+	}
+	ut64 addr = r_num_math (core->num, input);
+	if (!addr || addr == UT64_MAX) {
+		addr = core->offset;
+	}
+	
+	RAnalBlock *bb, *bb2;
+	RListIter *iter, *iter2;
+	RAnalFunction *fcn;
+	bb = r_anal_get_block_at (core->anal, addr);
+	r_list_foreach (bb->fcns, iter, fcn) {
+		r_list_foreach (fcn->bbs, iter2, bb2) {
+			if (bb == bb2) {
+				continue;
+			}
+			if (bb2->jump != UT64_MAX && bb2->jump == bb->addr) {
+				r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
+			}
+			if (bb2->fail != UT64_MAX && bb2->fail == bb->addr) {
+				r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
+			}
+		}
+		break;
+	}
+	return true;
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *r;
 	RCore *core = (RCore *)data;
@@ -12151,6 +12183,9 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'b': // "abb"
 			core_anal_bbs (core, input + 2);
+			break;
+		case 'f': // "abf"
+			core_anal_abf (core, input + 2);
 			break;
 		case 'r': // "abr"
 			core_anal_bbs_range (core, input + 2);
