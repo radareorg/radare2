@@ -12095,7 +12095,7 @@ static void cmd_anal_aC(RCore *core, const char *input) {
 	free (s);
 }
 
-R_API bool core_anal_abf(RCore *core, const char* input) {
+static bool core_anal_abf(RCore *core, const char* input) {
 	if (strchr (input, '?')) {
 		eprintf ("Usage: abf ([addr])  # list incoming/from basic blocks\n");
 		return false;
@@ -12109,6 +12109,10 @@ R_API bool core_anal_abf(RCore *core, const char* input) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn;
 	bb = r_anal_get_block_at (core->anal, addr);
+	if (!bb) {
+		eprintf ("Cannot find basic block\n");
+		return false;
+	}
 	r_list_foreach (bb->fcns, iter, fcn) {
 		r_list_foreach (fcn->bbs, iter2, bb2) {
 			if (bb == bb2) {
