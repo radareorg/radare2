@@ -410,8 +410,10 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 	return len - eq;
 }
 
-static void cmd_cmp_watcher(RCore *core, const char *input) {
+/* Returns 0 if operation succeeded, 1 otherwise */
+static int cmd_cmp_watcher(RCore *core, const char *input) {
 	ut64 addr = UT64_MAX;
+	int ret = 0;
 	switch (*input) {
 	case ' ': { // "cw "
 		int argc, size;
@@ -419,7 +421,7 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 
 		argv = r_str_argv (input + 1, &argc);
 		if (!argv) {
-			return;
+			return 1;
 		}
 
 		if (argc == 1) { // "cw [addr]"
@@ -429,6 +431,7 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 			addr = r_num_get (core->num, argv[0]);
 			size = atoi (argv[1]);
 			if (size < 1) {
+				ret = 1;
 				eprintf ("Can't create a watcher with size less than 1.\n");
 				goto out_free_argv;
 			}
@@ -437,11 +440,13 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 			// here, so this is hardcoded. There's an accurate
 			// debug check inside cmpwatch_add()
 			if (strlen (argv[2]) >= 32) {
+				ret = 1;
 				eprintf ("Command must be less than 32 characters.\n");
 				goto out_free_argv;
 			}
 
 			if (!r_core_cmpwatch_add (core, addr, size, argv[2])) {
+				ret = 1;
 				eprintf ("Failed to add watcher.\n");
 			}
 		} else {
@@ -455,7 +460,7 @@ out_free_argv:
 	case 'd': // "cwd"
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_cw, "cwd", true);
-			break;
+			return 0;
 		}
 
 		if (input[1]) {
@@ -463,6 +468,7 @@ out_free_argv:
 		}
 
 		if (!r_core_cmpwatch_del (core, addr) && addr) {
+			ret = 1;
 			if (addr == UT64_MAX) {
 				eprintf ("No watchers exist.\n");
 			} else {
@@ -473,13 +479,15 @@ out_free_argv:
 	case 'r': // "cwr"
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_cw, "cwr", true);
-			break;
+			return 0;
 		}
 
 		if (input[1]) {
 			addr = r_num_get (core->num, input + 2);
 		}
+
 		if (!r_core_cmpwatch_revert (core, addr)) {
+			ret = 0;
 			if (addr == UT64_MAX) {
 				eprintf ("No watchers exist.\n");
 			} else {
@@ -490,13 +498,15 @@ out_free_argv:
 	case 'u': // "cwu"
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_cw, "cwu", true);
-			break;
+			return 0;
 		}
 
 		if (input[1]) {
 			addr = r_num_get (core->num, input + 2);
 		}
+
 		if (!r_core_cmpwatch_update (core, addr)) {
+			ret = 1;
 			if (addr == UT64_MAX) {
 				eprintf ("No watchers exist.\n");
 			} else {
@@ -518,6 +528,7 @@ out_free_argv:
 		}
 
 		if (!r_core_cmpwatch_show (core, addr, mode)) {
+			ret = 1;
 			if (addr == UT64_MAX) {
 				eprintf ("No watchers exist.\n");
 			} else {
@@ -537,6 +548,8 @@ out_free_argv:
 		}
 		break;
 	}
+
+	return ret;
 }
 
 static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
@@ -968,7 +981,7 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		break;
 	case 'w':
-		cmd_cmp_watcher (core, input + 1);
+		return cmd_cmp_watcher (core, input + 1);
 		break;
 	case '*':
 		if (!input[2]) {
