@@ -6,6 +6,8 @@ cw # show all
 ?e ---
 cw 100 # show at addr
 ?e ---
+cw 200 # doesn't exist
+?e ---
 cwq # show quiet - no output yet
 ?e ---
 cw* # show commands
@@ -24,6 +26,7 @@ EXPECT=<<EOF
 ---
 0x00000064
 00000000
+---
 ---
 ---
 cw 0x00000000 4 p8
