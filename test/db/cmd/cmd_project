@@ -648,3 +648,20 @@ EXPECT=<<EOF
 |           0x00400506      55             push rbp                    ; test
 EOF
 RUN
+
+NAME=Reopening project with changes loading
+FILE=bins/elf/analysis/main
+CMDS=<<EOF
+e prj.vc=false
+aaa > /dev/null
+e dir.projects = .tmp/
+Pc aabb 
+?v $?
+Ps hello
+Pc hello
+EOF
+EXPECT=<<EOF
+0x1
+0x0
+EOF
+RUN
