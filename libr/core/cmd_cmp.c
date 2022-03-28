@@ -41,38 +41,6 @@ static const char *help_msg_c[] = {
 	NULL
 };
 
-static const char *help_msg_cw[] = {
-	"Usage: cw", "[args]", "Manage compare watchers; See if and how memory changes",
-	"cw??", "", "Show more info about watchers",
-	"cw ", "addr sz cmd", "Add a compare watcher",
-	"cw", "[*q] [addr]", "Show compare watchers (*=r2 commands, q=quiet)",
-	"cwd", " [addr]", "Delete watcher",
-	"cwr", " [addr]", "Revert watcher",
-	"cwu", " [addr]", "Update watcher",
-	NULL
-};
-
-static const char *verbose_help_cw =
-	"Watchers are used to record memory at 2 different points in time, then\n"
-	"report if and how it changed. First, create one with `cw addr sz cmd`. This\n"
-	"will record sz bytes at addr. To record the second state, use `cwu`. Now, when\n"
-	"you run `cw`, the watcher will report if the bytes changed and run the command given\n"
-	"at creation with the size and address. You may overwrite any watcher by creating\n"
-	"another at the same address. This will discard the existing watcher completely.\n"
-	"\n"
-	"When you create a watcher, the data read from memory is marked as \"new\". Updating\n"
-	"the watcher with `cwu` will mark this data as \"old\", and then read the \"new\" data.\n"
-	"`cwr` will mark the current \"old\" state as being \"new\", letting you reuse it as\n"
-	"your new base state when updating with `cwu`. Any existing \"new\" state from running\n"
-	"`cwu` previously is lost in this process. Watched memory areas may overlap with no ill\n"
-	"effects, but may have unexpected results if you update some but not others.\n"
-	"\n"
-	"Showing a watcher without updating will still run the command, but it will not report\n"
-	"changes.\n"
-	"\n"
-	"When an address is an optional argument, the command will apply to all watchers if\n"
-	"you don't pass one.\n";
-
 R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w) {
 	free (w->ndata);
 	free (w->odata);
@@ -412,8 +380,40 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 
 /* Returns 0 if operation succeeded, 1 otherwise */
 static int cmd_cmp_watcher(RCore *core, const char *input) {
+	static const char *help_msg_cw[] = {
+		"Usage: cw", "[args]", "Manage compare watchers; See if and how memory changes",
+		"cw??", "", "Show more info about watchers",
+		"cw ", "addr sz cmd", "Add a compare watcher",
+		"cw", "[*q] [addr]", "Show compare watchers (*=r2 commands, q=quiet)",
+		"cwd", " [addr]", "Delete watcher",
+		"cwr", " [addr]", "Revert watcher",
+		"cwu", " [addr]", "Update watcher",
+		NULL
+	};
+	static const char *verbose_help_cw =
+		"Watchers are used to record memory at 2 different points in time, then\n"
+		"report if and how it changed. First, create one with `cw addr sz cmd`. This\n"
+		"will record sz bytes at addr. To record the second state, use `cwu`. Now, when\n"
+		"you run `cw`, the watcher will report if the bytes changed and run the command given\n"
+		"at creation with the size and address. You may overwrite any watcher by creating\n"
+		"another at the same address. This will discard the existing watcher completely.\n"
+		"\n"
+		"When you create a watcher, the data read from memory is marked as \"new\". Updating\n"
+		"the watcher with `cwu` will mark this data as \"old\", and then read the \"new\" data.\n"
+		"`cwr` will mark the current \"old\" state as being \"new\", letting you reuse it as\n"
+		"your new base state when updating with `cwu`. Any existing \"new\" state from running\n"
+		"`cwu` previously is lost in this process. Watched memory areas may overlap with no ill\n"
+		"effects, but may have unexpected results if you update some but not others.\n"
+		"\n"
+		"Showing a watcher without updating will still run the command, but it will not report\n"
+		"changes.\n"
+		"\n"
+		"When an address is an optional argument, the command will apply to all watchers if\n"
+		"you don't pass one.\n";
+
 	ut64 addr = UT64_MAX;
 	int ret = 0;
+
 	switch (*input) {
 	case ' ': { // "cw "
 		int argc, size;
