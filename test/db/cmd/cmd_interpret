@@ -32,7 +32,6 @@ EOF
 RUN
 
 NAME=$foo=#!pipe
-ARGS=-ecfg.newshell=true
 FILE=-
 CMDS=<<EOF
 #!pipe echo hello

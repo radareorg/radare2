@@ -1303,24 +1303,9 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pdJ string - oldshell
-ARGS=-ecfg.newshell=false
-FILE=malloc://128
+NAME=pdJ string
 CMDS=<<EOF
 w Snoo"ping as" usual,
-Cs 30
-pdJ 1
-EOF
-EXPECT=<<EOF
-[{"offset":0,"text":"            0x00000000     .string \"Snoo\\\"ping as\\\" usual,\" ; len=30"}]
-EOF
-RUN
-
-NAME=pdJ string - newshell
-ARGS=-ecfg.newshell=true
-FILE=malloc://128
-CMDS=<<EOF
-w "Snoo\"ping as\" usual,"
 Cs 30
 pdJ 1
 EOF

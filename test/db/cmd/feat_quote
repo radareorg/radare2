@@ -1,6 +1,4 @@
-NAME=Double quotes - newshell
-ARGS=-e cfg.newshell=true
-FILE=-
+NAME=Double quotes
 CMDS=<<EOF
 w "Hello World"
 ps
@@ -22,9 +20,7 @@ Hello@World
 EOF
 RUN
 
-NAME=Single quotes - newshell
-ARGS=-e cfg.newshell=true
-FILE=-
+NAME=Single quotes
 CMDS=<<EOF
 w 'Hello World'
 ps
@@ -50,9 +46,7 @@ Hello@World
 EOF
 RUN
 
-NAME=Quotes and substitution - newshell
-ARGS=-e cfg.newshell=true
-FILE=-
+NAME=Quotes and substitution
 CMDS=<<EOF
 w "Hello $(?e World)"
 ps
