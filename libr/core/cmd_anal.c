@@ -12106,26 +12106,28 @@ static bool core_anal_abf(RCore *core, const char* input) {
 	}
 	
 	RAnalBlock *bb, *bb2;
-	RListIter *iter, *iter2;
+	RListIter *iter, *iter2, *bbiter;
 	RAnalFunction *fcn;
-	bb = r_anal_get_block_at (core->anal, addr);
-	if (!bb) {
-		eprintf ("Cannot find basic block\n");
-		return false;
-	}
-	r_list_foreach (bb->fcns, iter, fcn) {
-		r_list_foreach (fcn->bbs, iter2, bb2) {
-			if (bb == bb2) {
-				continue;
-			}
-			if (bb2->jump != UT64_MAX && bb2->jump == bb->addr) {
-				r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
-			}
-			if (bb2->fail != UT64_MAX && bb2->fail == bb->addr) {
-				r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
-			}
+	RList *bbs = r_anal_get_blocks_in (core->anal, addr);
+	r_list_foreach (bbs, bbiter, bb) {
+		if (!bb) {
+			eprintf ("Cannot find basic block\n");
+			return false;
 		}
-		break;
+		r_list_foreach (bb->fcns, iter, fcn) {
+			r_list_foreach (fcn->bbs, iter2, bb2) {
+				if (bb == bb2) {
+					continue;
+				}
+				if (bb2->jump != UT64_MAX && bb2->jump == bb->addr) {
+					r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
+				}
+				if (bb2->fail != UT64_MAX && bb2->fail == bb->addr) {
+					r_cons_printf ("0x%"PFMT64x"\n", bb2->addr);
+				}
+			}
+			break;
+		}
 	}
 	return true;
 }
