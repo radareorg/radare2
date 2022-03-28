@@ -649,7 +649,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Reopening project with changes loading
+NAME=Check Pc's return value
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e prj.vc=false
