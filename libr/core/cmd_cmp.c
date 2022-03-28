@@ -409,7 +409,9 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 		"changes.\n"
 		"\n"
 		"When an address is an optional argument, the command will apply to all watchers if\n"
-		"you don't pass one.\n";
+		"you don't pass one.\n"
+		"\n"
+		"For more details, see section 4.10 of the radare2 book.\n";
 
 	ut64 addr = UT64_MAX;
 	int ret = 0;
