@@ -1063,9 +1063,7 @@ static int cmd_cmp(void *data, const char *input) {
 	ut64 val = UT64_MAX;
 	char *filled;
 	ut8 *buf;
-	ut16 v16;
-	ut32 v32;
-	ut64 v64;
+	utAny wordcmp;
 	FILE *fd;
 	const ut8* block = core->block;
 
@@ -1261,16 +1259,16 @@ static int cmd_cmp(void *data, const char *input) {
 		__core_cmp_bits (core, r_num_math (core->num, input + 1));
 		break;
 	case '2': // "c2"
-		v16 = (ut16) r_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &v16, sizeof (v16), 0);
+		wordcmp.v16 = (ut16) r_num_math (core->num, input + 1);
+		val = radare_compare (core, block, (ut8 *) &wordcmp.v16, sizeof (wordcmp.v16), 0);
 		break;
 	case '4': // "c4"
-		v32 = (ut32) r_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &v32, sizeof (v32), 0);
+		wordcmp.v32 = (ut32) r_num_math (core->num, input + 1);
+		val = radare_compare (core, block, (ut8 *) &wordcmp.v32, sizeof (wordcmp.v32), 0);
 		break;
 	case '8': // "c8"
-		v64 = (ut64) r_num_math (core->num, input + 1);
-		val = radare_compare (core, block, (ut8 *) &v64, sizeof (v64), 0);
+		wordcmp.v64 = r_num_math (core->num, input + 1);
+		val = radare_compare (core, block, (ut8 *) &wordcmp.v64, sizeof (wordcmp.v64), 0);
 		break;
 	case 'c': // "cc"
 		if (input[1] == '?') { // "cc?"
