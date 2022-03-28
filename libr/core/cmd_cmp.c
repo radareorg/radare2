@@ -418,8 +418,9 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 
 	switch (*input) {
 	case ' ': { // "cw "
-		int argc, size;
 		char **argv;
+		int argc;
+		ut64 size;
 
 		argv = r_str_argv (input + 1, &argc);
 		if (!argv) {
@@ -431,10 +432,15 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 			r_core_cmpwatch_show (core, addr, 0);
 		} else if (argc == 3) { // "cw addr sz cmd"
 			addr = r_num_get (core->num, argv[0]);
-			size = atoi (argv[1]);
+			size = r_num_get (core->num, argv[1]);
+
 			if (size < 1) {
 				ret = 1;
 				eprintf ("Can't create a watcher with size less than 1.\n");
+				goto out_free_argv;
+			} else if (size > INT_MAX) {
+				ret = 1;
+				eprintf ("Can't create a watcher with size larger than an int.\n");
 				goto out_free_argv;
 			}
 
@@ -447,7 +453,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 				goto out_free_argv;
 			}
 
-			if (!r_core_cmpwatch_add (core, addr, size, argv[2])) {
+			if (!r_core_cmpwatch_add (core, addr, (int)size, argv[2])) {
 				ret = 1;
 				eprintf ("Failed to add watcher.\n");
 			}
