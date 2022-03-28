@@ -655,10 +655,11 @@ CMDS=<<EOF
 e prj.vc=false
 aaa > /dev/null
 e dir.projects = .tmp/
-Pc aabb 
+Pc aabb
 ?v $?
 Ps hello
 Pc hello
+?v $?
 EOF
 EXPECT=<<EOF
 0x1
