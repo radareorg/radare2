@@ -469,6 +469,11 @@ out_free_argv:
 			addr = r_num_get (core->num, input + 2);
 		}
 
+		if (addr == UT64_MAX &&
+				!r_cons_yesno ('n', "Delete all watchers? (y/N)")) {
+			return 1;
+		}
+
 		if (!r_core_cmpwatch_del (core, addr) && addr) {
 			ret = 1;
 			if (addr == UT64_MAX) {
@@ -486,6 +491,11 @@ out_free_argv:
 
 		if (input[1]) {
 			addr = r_num_get (core->num, input + 2);
+		}
+
+		if (addr == UT64_MAX &&
+				!r_cons_yesno ('n', "Revert all watchers? (y/N)")) {
+			return 1;
 		}
 
 		if (!r_core_cmpwatch_revert (core, addr)) {
