@@ -41,9 +41,7 @@ RUN
 # this test fails on newshell and windows better to mark it as broken
 NAME=r2 remote webserver two
 BROKEN=1
-FILE=--
 CMDS=<<EOF
-e cfg.newshell=true
 & !rarun2 timeout=3 daemon=1 system="r2 -e http.root=/404 -e http.port=9292 -c=h -qcq -"
 sleep 1
 =+ http://127.0.0.1:9292/cmd/
