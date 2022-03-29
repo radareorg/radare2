@@ -44,6 +44,7 @@ static const char *help_msg_c[] = {
 R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w) {
 	free (w->ndata);
 	free (w->odata);
+	free (w->cmd);
 	free (w);
 }
 
@@ -61,10 +62,7 @@ R_API RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
 R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd) {
 	RCoreCmpWatcher *cmpw;
 	bool found = false;
-	r_return_val_if_fail (core, false);
-	r_return_val_if_fail (cmd, false);
-	r_return_val_if_fail (strlen (cmd) < sizeof (cmpw->cmd), false);
-	r_return_val_if_fail (size > 0, false);
+	r_return_val_if_fail (core && cmd && size > 0, false);
 
 	cmpw = r_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
@@ -76,16 +74,20 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 	} else {
 		free (cmpw->odata);
 		free (cmpw->ndata);
+		free (cmpw->cmd);
 		found = true;
 	}
 	cmpw->size = size;
-
-	// Size is checked in caller
-	strcpy (cmpw->cmd, cmd);
+	cmpw->cmd = r_str_new (cmd);
+	if (!cmpw->cmd) {
+		free (cmpw);
+		return false;
+	}
 
 	cmpw->odata = NULL;
 	cmpw->ndata = malloc (size);
 	if (!cmpw->ndata) {
+		free (cmpw->cmd);
 		free (cmpw);
 		return false;
 	}
@@ -159,8 +161,7 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 }
 
 static bool update_watcher(RIO *io, RCoreCmpWatcher *w) {
-	r_return_val_if_fail (io, false);
-	r_return_val_if_fail (w, false);
+	r_return_val_if_fail (io && w, false);
 
 	free (w->odata);
 	w->odata = w->ndata;
@@ -441,15 +442,6 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 			} else if (size > INT_MAX) {
 				ret = 1;
 				eprintf ("Can't create a watcher with size larger than an int.\n");
-				goto out_free_argv;
-			}
-
-			// No good way to get sizeof(RCoreCmpWatcher.cmd)
-			// here, so this is hardcoded. There's an accurate
-			// debug check inside cmpwatch_add()
-			if (strlen (argv[2]) >= 32) {
-				ret = 1;
-				eprintf ("Command must be less than 32 characters.\n");
 				goto out_free_argv;
 			}
 

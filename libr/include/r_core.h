@@ -387,7 +387,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd);
 typedef struct r_core_cmpwatch_t {
 	ut64 addr;
 	int size;
-	char cmd[32];
+	char *cmd;
 	ut8 *odata;
 	ut8 *ndata;
 } RCoreCmpWatcher;
