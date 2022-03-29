@@ -6,9 +6,11 @@ cw # show all
 ?e ---
 cw 100 # show at addr
 ?e ---
-cw 200 # doesn't exist
+cw 200 # doesn't exist - no output
 ?e ---
 cwq # show quiet - no output yet
+?e ---
+cwj~{} # show json
 ?e ---
 cw* # show commands
 ?e ---
@@ -28,6 +30,21 @@ EXPECT=<<EOF
 00000000
 ---
 ---
+---
+[
+  {
+    "addr": 0,
+    "changed": false,
+    "cmd": "p8",
+    "cmd_out": "00000000\n"
+  },
+  {
+    "addr": 100,
+    "changed": false,
+    "cmd": "p8",
+    "cmd_out": "00000000\n"
+  }
+]
 ---
 cw 0x00000000 4 p8
 cw 0x00000064 4 p8
@@ -51,6 +68,8 @@ cw
 cw*
 ?e ---
 cwq
+?e ---
+cwj~{}
 EOF
 EXPECT=<<EOF
 cw 0x00000000 4 p8
@@ -61,6 +80,15 @@ cw 0x00000000 4 p8
 cw 0x00000000 4 p8 # differs
 ---
 0x00000000 has changed
+---
+[
+  {
+    "addr": 0,
+    "changed": true,
+    "cmd": "p8",
+    "cmd_out": "11223344\n"
+  }
+]
 EOF
 RUN
 

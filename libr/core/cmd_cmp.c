@@ -34,7 +34,7 @@ static const char *help_msg_c[] = {
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
 	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte (silent return in $?)",
 	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
-	"cw", "[*dqru?] [addr]", "Compare memory watchers",
+	"cw", "[*dqjru?] [addr]", "Compare memory watchers",
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
@@ -129,7 +129,16 @@ R_API bool r_core_cmpwatch_del(RCore *core, ut64 addr) {
 R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 	RListIter *iter;
 	RCoreCmpWatcher *w;
+	PJ *pj = NULL;
 	bool ret = false;
+
+	if (mode == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			return false;
+		}
+		pj_a (pj);
+	}
 
 	r_list_foreach (core->watchers, iter, w) {
 		bool changed = w->odata? memcmp (w->odata, w->ndata, w->size): false;
@@ -149,6 +158,17 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 				r_cons_printf ("0x%08" PFMT64x " has changed\n", w->addr);
 			}
 			break;
+		case 'j': { // json
+			char *cmd_output = r_core_cmd_strf (core, "%s %d @%" PFMT64d,
+					w->cmd, w->size, w->addr);
+			pj_o (pj);
+			pj_kn (pj, "addr", w->addr);
+			pj_kb (pj, "changed", changed);
+			pj_ks (pj, "cmd", w->cmd);
+			pj_ks (pj, "cmd_out", r_str_get (cmd_output));
+			pj_end (pj);
+			break;
+		}
 		default:
 			r_cons_printf ("0x%08" PFMT64x "%s\n", w->addr, changed? " modified": "");
 			r_core_cmdf (core, "%s %d @%" PFMT64d, w->cmd, w->size, w->addr);
@@ -157,6 +177,12 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 
 		ret = true;
 	}
+
+	if (pj) {
+		pj_end (pj);
+		r_cons_printf ("%s\n", pj_drain (pj));
+	}
+
 	return ret;
 }
 
@@ -385,7 +411,7 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 		"Usage: cw", "[args]", "Manage compare watchers; See if and how memory changes",
 		"cw??", "", "Show more info about watchers",
 		"cw ", "addr sz cmd", "Add a compare watcher",
-		"cw", "[*q] [addr]", "Show compare watchers (*=r2 commands, q=quiet)",
+		"cw", "[*qj] [addr]", "Show compare watchers (*=r2 commands, q=quiet, j=json)",
 		"cwd", " [addr]", "Delete watcher",
 		"cwr", " [addr]", "Revert watcher",
 		"cwu", " [addr]", "Update watcher",
@@ -526,19 +552,21 @@ out_free_argv:
 		break;
 	case '*': // "cw*"
 	case 'q': // "cwq"
+	case 'j': // "cwj"
 	case '\0': { // "cw"
-		int mode;
-		if (*input) {
-			mode = *input;
-			if (input[1]) {
-				addr = r_num_get (core->num, input + 2);
-			}
-		} else {
-			mode = 0;
+		int mode = *input;
+		if (*input && input[1]) {
+			addr = r_num_get (core->num, input + 2);
 		}
 
 		if (!r_core_cmpwatch_show (core, addr, mode)) {
 			ret = 1;
+
+			/* Skip error message for json, it will still show [] */
+			if (mode == 'j') {
+				break;
+			}
+
 			if (addr == UT64_MAX) {
 				eprintf ("No watchers exist.\n");
 			} else {
