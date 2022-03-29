@@ -639,12 +639,23 @@ static bool shortest_path_successor_cb(ut64 addr, void *user) {
 	return addr != ctx->dst; // break if we found our destination
 }
 
+static ut64 bb_addr_for(RAnal *a, ut64 n) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	RList *blocks = r_anal_get_blocks_in (a, n);
+	r_list_foreach (blocks, iter, bb) {
+		return bb->addr;
+	}
+	return n;
+}
 
 R_API R_NULLABLE RList/*<RAnalBlock *>*/ *r_anal_block_shortest_path(RAnalBlock *block, ut64 dst) {
+	ut64 dstbb_addr = bb_addr_for (block->anal, dst);
+
 	RList *ret = NULL;
 	PathContext ctx;
 	ctx.anal = block->anal;
-	ctx.dst = dst;
+	ctx.dst = dstbb_addr
 
 	// two vectors to swap cur_visit/next_visit
 	RPVector visit_a;
@@ -678,8 +689,8 @@ R_API R_NULLABLE RList/*<RAnalBlock *>*/ *r_anal_block_shortest_path(RAnalBlock 
 
 	// reconstruct the path
 	bool found = false;
-	RAnalBlock *prev = ht_up_find (ctx.visited, dst, &found);
-	RAnalBlock *dst_block = r_anal_get_block_at (block->anal, dst);
+	RAnalBlock *prev = ht_up_find (ctx.visited, dstbb_addr, &found);
+	RAnalBlock *dst_block = r_anal_get_block_at (block->anal, dstbb_addr);
 	if (found && dst_block) {
 		ret = r_list_newf ((RListFree)r_anal_block_unref);
 		r_anal_block_ref (dst_block);

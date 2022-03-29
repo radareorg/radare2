@@ -3621,6 +3621,7 @@ static RList *anal_graph_to(RCore *core, ut64 addr, int depth, HtUP *avoid) {
 		return NULL;
 	}
 
+
 	// forward search
 	if (anal_path_exists (core, core->offset, addr, list, depth - 1, state, avoid)) {
 		ht_up_free (state);
@@ -6089,6 +6090,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 
 			// Find the block that has an instruction at exactly the xref addr
 			RList *blocks = r_anal_get_blocks_in (core->anal, call_addr);
+
 			if (!blocks) {
 				continue;
 			}
