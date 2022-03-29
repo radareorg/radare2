@@ -655,7 +655,7 @@ R_API R_NULLABLE RList/*<RAnalBlock *>*/ *r_anal_block_shortest_path(RAnalBlock 
 	RList *ret = NULL;
 	PathContext ctx;
 	ctx.anal = block->anal;
-	ctx.dst = dstbb_addr
+	ctx.dst = dstbb_addr;
 
 	// two vectors to swap cur_visit/next_visit
 	RPVector visit_a;
