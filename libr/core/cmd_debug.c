@@ -25,7 +25,7 @@ static const char *help_msg_d[] = {
 	"db", "[?]", "breakpoints commands",
 	"dbt", "[?]", "display backtrace based on dbg.btdepth and dbg.btalgo",
 	"dc", "[?]", "continue execution",
-	"dd", "[?]", "file descriptors (!fd in r1)",
+	"dd", "[?]", "manage file descriptors for child process",
 	"de", "[-sc] [perm] [rm] [e]", "debug with ESIL (see de?)",
 	"dg", " <file>", "generate a core-file (WIP)",
 	"dH", " [handler]", "transplant process to a new handler",
