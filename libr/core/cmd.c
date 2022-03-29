@@ -4480,7 +4480,10 @@ fuji:
 		r_str_trim_head (cmd);
 		rc = r_cmd_call (core->rcmd, cmd);
 	} else {
-		rc = false;
+		rc = 0;
+	}
+	if (rc == 1) {
+		r_core_return_code (core, rc);
 	}
 beach:
 	if (grep) {

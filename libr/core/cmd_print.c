@@ -465,7 +465,7 @@ static const char *help_msg_pq[] = {
 };
 
 static const char *help_msg_ps[] = {
-	"Usage:", "psa[bijqpsuwWxz+] [N]", "Print String",
+	"Usage:", "ps[abijqpsuwWxz+] [N]", "Print String",
 	"ps", "", "print string",
 	"ps+", "[j]", "print libc++ std::string (same-endian, ascii, zero-terminated)",
 	"psa", "", "print any type of string (psp/psw/psW/psz/..)",
@@ -5174,7 +5174,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				func_walk_blocks (core, f, input[2], 'I', input[2] == '.');
 			} else {
 				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
-				core->num->value = 0;
+				r_core_return_code (core, 0);
 			}
 		}
 		break;
@@ -5185,7 +5185,7 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				r_core_print_disasm_instructions (core, b->size - (core->offset - b->addr), 0);
 			} else {
 				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
-				core->num->value = 0;
+				r_core_return_code (core, 0);
 			}
 		}
 		break;
