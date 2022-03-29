@@ -1409,7 +1409,13 @@ static void recursive_glob(const char *path, const char *glob, RList* list, int 
 		if (!strcmp (file, ".") || !strcmp (file, "..")) {
 			continue;
 		}
-		char *filename = r_str_newf ("%s%s", path, file);
+		char *filename;
+		if (!r_str_endswith(path, "/") && !r_str_startswith(file, "/")) {
+			filename = r_file_new (path, file, NULL);
+		} else {
+			filename = r_str_newf ("%s%s", path, file);
+		}
+
 		if (r_file_is_directory (filename)) {
 			recursive_glob (filename, glob, list, depth - 1);
 			free (filename);

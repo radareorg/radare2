@@ -2350,22 +2350,47 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 	}
 	while (*str) {
 		if (!*glob) {
-			return true;
+			return false;
 		}
 		switch (*glob) {
 		case '*':
 			if (!*++glob) {
 				return true;
 			}
+			// Advance glob an additional time if it is a '**'
+			if (*glob == '*') {
+				if (!*++glob) {
+					return true;
+				}
+			}
+			// Check if there are additional wildcards
+			// if so, we need to search for the substring in between the wildcards
+			const char *needle_end = glob;
+			while (true) {
+				if (*needle_end == '*' ||
+					*needle_end == '?' ||
+					*needle_end == '$' ||
+					*needle_end == '^' ||
+					*needle_end == '\0') {
+					break;
+				}
+				needle_end++;
+			}
+			char *needle = strndup (glob, needle_end - glob);
+			// Find the pattern in between wildcards
+			char *advance_to = strstr (str, needle);
+			free (needle);
+			if (!advance_to) {
+				return false;
+			}
+			// Advance str to found pattern
 			while (*str) {
-				if (*glob == *str) {
+				if (str == advance_to) {
 					break;
 				}
 				str++;
 			}
 			break;
-		case '$':
-			return (*++glob == '\x00');
 		case '?':
 			str++;
 			glob++;
