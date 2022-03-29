@@ -6536,8 +6536,10 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 			break;
 		}
 		// skip calls and such
-		if (aop.type == R_ANAL_OP_TYPE_CALL) {
-			// nothing
+		if ((aop.type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL) {
+			// skip
+		} else if ((aop.type & R_ANAL_OP_TYPE_UCALL) == R_ANAL_OP_TYPE_UCALL) {
+			// skip
 		} else {
 			r_reg_setv (core->anal->reg, "PC", aop.addr + aop.size);
 			r_reg_setv (core->dbg->reg, "PC", aop.addr + aop.size);
@@ -6546,6 +6548,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 				 // eprintf ("   0x%08llx %d  %s\n", aop.addr, ret, aop.mnemonic);
 				(void)r_anal_esil_parse (esil, e);
 			}
+			break;
 		}
 		int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 		if (inc < 0) {
