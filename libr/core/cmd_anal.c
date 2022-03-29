@@ -6481,7 +6481,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	return true;
 }
 
-static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int off) {
+static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	RAnalEsil *esil = core->anal->esil;
 	int i, j = 0;
 	ut8 *buf;
@@ -6514,7 +6514,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int off) {
 	ut64 cursp = r_reg_getv (core->dbg->reg, "SP");
 	ut64 oldoff = core->offset;
 	const ut64 flags = R_ANAL_OP_MASK_BASIC | R_ANAL_OP_MASK_HINT | R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_DISASM;
-	for (i = 0, j = 0; j < off ; i++, j++) {
+	for (i = 0, j = 0; j < ninstr; i++, j++) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
@@ -6550,7 +6550,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int off) {
 			inc = minopcode;
 		}
 		i += inc;
-		addr += ret; // aop.size;
+		addr += aop.size;
 		r_anal_op_fini (&aop);
 	}
 	free (buf);
