@@ -5384,20 +5384,20 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			ut64 n = r_num_math (core->num, arg + 1);
 			char *ostr = r_str_trim_dup (str + 1);
 			char *regname = r_str_trim_nc (ostr);
-			r = r_reg_get (core->dbg->reg, regname, -1);
+			r = r_reg_get (core->anal->reg, regname, -1);
 			if (!r) {
 				int role = r_reg_get_name_idx (regname);
 				if (role != -1) {
-					const char *alias = r_reg_get_name (core->dbg->reg, role);
+					const char *alias = r_reg_get_name (core->anal->reg, role);
 					if (alias) {
-						r = r_reg_get (core->dbg->reg, alias, -1);
+						r = r_reg_get (core->anal->reg, alias, -1);
 					}
 				}
 			}
 			if (r) {
 				//eprintf ("%s 0x%08"PFMT64x" -> ", str,
 				//	r_reg_get_value (core->dbg->reg, r));
-				r_reg_set_value (core->dbg->reg, r, n);
+				r_reg_set_value (core->anal->reg, r, n);
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
 				//eprintf ("0x%08"PFMT64x"\n",
 				//	r_reg_get_value (core->dbg->reg, r));
