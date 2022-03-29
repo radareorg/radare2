@@ -758,7 +758,7 @@ static const char *help_msg_ah[] = {
 	"ahh", " 0x804840", "highlight this address offset in disasm",
 	"ahi", "[?] 10", "define numeric base for immediates (2, 8, 10, 10u, 16, i, p, S, s)",
 	"ahj", "", "list hints in JSON",
-	"aho", " call", "change opcode type (see aho?) (deprecated, moved to \"ahd\")",
+	"aho", " call", "change opcode type (see aho?)",
 	"ahp", " addr", "set pointer hint",
 	"ahr", " val", "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
