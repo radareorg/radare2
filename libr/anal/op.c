@@ -228,7 +228,7 @@ R_API bool r_anal_op_ismemref(int t) {
 }
 
 static struct optype {
-	int type;
+	const int type;
 	const char *name;
 } optypes[] = {
 	{ R_ANAL_OP_TYPE_IO, "io" },
@@ -241,7 +241,6 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_CJMP, "cjmp" },
 	{ R_ANAL_OP_TYPE_MJMP, "mjmp" },
 	{ R_ANAL_OP_TYPE_CMP, "cmp" },
-	{ R_ANAL_OP_TYPE_IO, "cret" },
 	{ R_ANAL_OP_TYPE_ILL, "ill" },
 	{ R_ANAL_OP_TYPE_JMP, "jmp" },
 	{ R_ANAL_OP_TYPE_LEA, "lea" },
@@ -256,41 +255,42 @@ static struct optype {
 	{ R_ANAL_OP_TYPE_DIV, "div" },
 	{ R_ANAL_OP_TYPE_NOP, "nop" },
 	{ R_ANAL_OP_TYPE_NOT, "not" },
-	{ R_ANAL_OP_TYPE_NULL  , "null" },
-	{ R_ANAL_OP_TYPE_OR    , "or" },
-	{ R_ANAL_OP_TYPE_POP   , "pop" },
-	{ R_ANAL_OP_TYPE_PUSH  , "push" },
-	{ R_ANAL_OP_TYPE_REP   , "rep" },
-	{ R_ANAL_OP_TYPE_RET   , "ret" },
-	{ R_ANAL_OP_TYPE_ROL   , "rol" },
-	{ R_ANAL_OP_TYPE_ROR   , "ror" },
-	{ R_ANAL_OP_TYPE_SAL   , "sal" },
-	{ R_ANAL_OP_TYPE_SAR   , "sar" },
-	{ R_ANAL_OP_TYPE_SHL   , "shl" },
-	{ R_ANAL_OP_TYPE_SHR   , "shr" },
-	{ R_ANAL_OP_TYPE_STORE , "store" },
-	{ R_ANAL_OP_TYPE_SUB   , "sub" },
-	{ R_ANAL_OP_TYPE_SWI   , "swi" },
-	{ R_ANAL_OP_TYPE_CSWI  , "cswi" },
+	{ R_ANAL_OP_TYPE_NULL, "null" },
+	{ R_ANAL_OP_TYPE_OR, "or" },
+	{ R_ANAL_OP_TYPE_POP, "pop" },
+	{ R_ANAL_OP_TYPE_PUSH, "push" },
+	{ R_ANAL_OP_TYPE_REP, "rep" },
+	{ R_ANAL_OP_TYPE_RET, "ret" },
+	{ R_ANAL_OP_TYPE_CRET, "cret" },
+	{ R_ANAL_OP_TYPE_ROL, "rol" },
+	{ R_ANAL_OP_TYPE_ROR, "ror" },
+	{ R_ANAL_OP_TYPE_SAL, "sal" },
+	{ R_ANAL_OP_TYPE_SAR, "sar" },
+	{ R_ANAL_OP_TYPE_SHL, "shl" },
+	{ R_ANAL_OP_TYPE_SHR, "shr" },
+	{ R_ANAL_OP_TYPE_STORE, "store" },
+	{ R_ANAL_OP_TYPE_SUB, "sub" },
+	{ R_ANAL_OP_TYPE_SWI, "swi" },
+	{ R_ANAL_OP_TYPE_CSWI, "cswi" },
 	{ R_ANAL_OP_TYPE_SWITCH, "switch" },
-	{ R_ANAL_OP_TYPE_TRAP  , "trap" },
-	{ R_ANAL_OP_TYPE_UCALL , "ucall" },
-	{ R_ANAL_OP_TYPE_RCALL , "rcall" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_ICALL , "ucall" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_IRCALL, "ucall" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_UCCALL, "uccall" },
-	{ R_ANAL_OP_TYPE_UCJMP , "ucjmp" },
-	{ R_ANAL_OP_TYPE_UJMP  , "ujmp" },
-	{ R_ANAL_OP_TYPE_RJMP  , "rjmp" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_IJMP  , "ujmp" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_IRJMP , "ujmp" }, // needs to be changed
-	{ R_ANAL_OP_TYPE_UNK   , "unk" },
-	{ R_ANAL_OP_TYPE_UPUSH , "upush" },
-	{ R_ANAL_OP_TYPE_RPUSH , "rpush" },
-	{ R_ANAL_OP_TYPE_XCHG  , "xchg" },
-	{ R_ANAL_OP_TYPE_XOR   , "xor" },
-	{ R_ANAL_OP_TYPE_CASE  , "case" },
-	{ R_ANAL_OP_TYPE_CPL   , "cpl" },
+	{ R_ANAL_OP_TYPE_TRAP, "trap" },
+	{ R_ANAL_OP_TYPE_UCALL, "ucall" },
+	{ R_ANAL_OP_TYPE_RCALL, "rcall" },
+	{ R_ANAL_OP_TYPE_ICALL, "icall" },
+	{ R_ANAL_OP_TYPE_IRCALL, "ircall" },
+	{ R_ANAL_OP_TYPE_UCCALL, "ucccall" },
+	{ R_ANAL_OP_TYPE_UCJMP, "ucjmp" },
+	{ R_ANAL_OP_TYPE_UJMP, "ujmp" },
+	{ R_ANAL_OP_TYPE_RJMP, "rjmp" },
+	{ R_ANAL_OP_TYPE_IJMP, "ijmp" },
+	{ R_ANAL_OP_TYPE_IRJMP, "irjmp" },
+	{ R_ANAL_OP_TYPE_UNK, "unk" },
+	{ R_ANAL_OP_TYPE_UPUSH, "upush" },
+	{ R_ANAL_OP_TYPE_RPUSH, "rpush" },
+	{ R_ANAL_OP_TYPE_XCHG, "xchg" },
+	{ R_ANAL_OP_TYPE_XOR, "xor" },
+	{ R_ANAL_OP_TYPE_CASE, "case" },
+	{ R_ANAL_OP_TYPE_CPL, "cpl" },
 	{ R_ANAL_OP_TYPE_CRYPTO, "crypto" },
 	{0,NULL}
 };

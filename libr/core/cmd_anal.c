@@ -9034,7 +9034,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_unset_bits (core->anal, off);
 		} else if (input[1] == ' ') {
 			const char *arg = r_str_trim_head_ro (input + 1);
-			int type = r_anal_optype_from_string (arg);
+			const int type = r_anal_optype_from_string (arg);
 			if (type != -1) {
 				r_anal_hint_set_type (core->anal, core->offset, type);
 			} else {
