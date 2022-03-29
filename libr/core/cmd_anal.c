@@ -10953,17 +10953,22 @@ static void cmd_anal_abt(RCore *core, const char *input) {
 	}
 	case ' ': {
 		ut64 addr = r_num_math (core->num, input + 1);
-		RAnalBlock *block = r_anal_get_block_at (core->anal, core->offset);
-		if (!block) {
-			break;
-		}
-		RList *path = r_anal_block_shortest_path (block, addr);
-		if (path) {
-			RListIter *it;
-			r_list_foreach (path, it, block) {
-				r_cons_printf ("0x%08" PFMT64x "\n", block->addr);
+		if (addr == UT64_MAX || addr == 0) {
+			eprintf ("Invalid or missing address passed as argument\n");
+		} else {
+			RAnalBlock *block = r_anal_get_block_at (core->anal, core->offset);
+			if (!block) {
+				eprintf ("No basic block at\n");
+				break;
 			}
-			r_list_free (path);
+			RList *path = r_anal_block_shortest_path (block, addr);
+			if (path) {
+				RListIter *it;
+				r_list_foreach (path, it, block) {
+					r_cons_printf ("0x%08" PFMT64x "\n", block->addr);
+				}
+				r_list_free (path);
+			}
 		}
 		break;
 	}
@@ -12198,7 +12203,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case ',': // "ab,"
 		case 't': // "abt"
-			cmd_anal_abt (core, input+2);
+			cmd_anal_abt (core, input + 2);
 			break;
 		case 'l': // "abl"
 			if (input[2] == '?') {
