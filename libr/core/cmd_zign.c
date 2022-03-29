@@ -466,8 +466,7 @@ static int searchBytesHitCB(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *
 	struct ctxSearchCB *ctx = (struct ctxSearchCB *)user;
 	RAnalFunction *fcn = r_anal_get_fcn_in (ctx->core->anal, addr, 0);
 	if (!fcn) {
-		RCore *c = ctx->core;
-		r_core_af (c, c->offset, NULL, false);
+		r_core_af (ctx->core, addr, NULL, false);
 		fcn = r_anal_get_fcn_in (ctx->core->anal, addr, 0);
 		ctx->newfuncs++;
 		ctx->count++;
