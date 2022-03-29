@@ -5899,7 +5899,6 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	ut32 size = 0xf0000;
 	char name[128];
 	RFlagItem *fi;
-	const char *sp, *bp, *pc;
 	char uri[32];
 	char nomalloc[256];
 	char *p;
@@ -5953,7 +5952,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	}
 
 	if (!*input) {
-		char *fi = sdb_get(core->sdb, "aeim.fd", 0);
+		char *fi = sdb_get (core->sdb, "aeim.fd", 0);
 		if (fi) {
 			// Close the fd associated with the aeim stack
 			ut64 fd = sdb_atoi (fi);
@@ -6020,7 +6019,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	// r_flag_set (core->flags, name, addr, size);	//why is this here?
 	char val[128], *v;
 	v = sdb_itoa (esil->stack_fd, val, 10);
-	sdb_set(core->sdb, "aeim.fd", v, 0);
+	sdb_set (core->sdb, "aeim.fd", v, 0);
 
 	r_config_set_i (core->config, "io.va", true);
 	if (patt && *patt) {
@@ -6040,20 +6039,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		}
 	}
 	// SP
-	sp = r_reg_get_name (core->dbg->reg, R_REG_NAME_SP);
-	if (sp) {
-		r_debug_reg_set (core->dbg, sp, addr + (size / 2));
-	}
-	// BP
-	bp = r_reg_get_name (core->dbg->reg, R_REG_NAME_BP);
-	if (bp) {
-		r_debug_reg_set (core->dbg, bp, addr + (size / 2));
-	}
-	// PC
-	pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	if (pc) {
-		r_debug_reg_set (core->dbg, pc, curoff);
-	}
+	ut64 sp = addr + (size / 2);
+	r_reg_setv (core->anal->reg, "SP", sp);
+	r_reg_setv (core->anal->reg, "BP", sp);
+	r_reg_setv (core->anal->reg, "PC", curoff);
 	r_core_cmd0 (core, ".ar*");
 	if (esil) {
 		esil->stack_addr = addr;
