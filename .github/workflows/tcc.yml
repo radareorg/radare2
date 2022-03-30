@@ -54,3 +54,43 @@ jobs:
         export R2R_SKIP_ASM=1
         export R2R_SKIP_ARCHOS=1
         make -C test
+  nodbg:
+    name: ubuntu-tcc-nodbg
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout TinyCC repository
+      run: |
+          git clone https://github.com/mirror/tinycc.git
+          cd tinycc && git checkout mob
+          git reset --hard 917aad3bcfbb534875aa6d66609bdb36459460a4
+          sudo apt-get --assume-yes install gperf wheel setuptools || true
+          sudo python -m pip install --upgrade pip
+          pip install r2pipe
+    - name: Compiling and installing TinyCC
+      working-directory: tinycc
+      run: |
+          sh ./configure --prefix=/usr --without-debugger
+          make && sudo make install
+    - uses: actions/checkout@v2
+    - name: Checkout our Testsuite Binaries
+      uses: actions/checkout@v2
+      with:
+          repository: radareorg/radare2-testbins
+          path: test/bins
+    - name: Configure, build and install
+      env:
+          CC: tcc
+      run: |
+          ./configure --prefix=/usr --with-compiler=tcc
+          make
+          sudo make install
+
+    - name: Run tests
+      env:
+        PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
+      run: |
+        r2 -v
+        r2r -v
+        export R2R_SKIP_ASM=1
+        export R2R_SKIP_ARCHOS=1
+        make -C test
