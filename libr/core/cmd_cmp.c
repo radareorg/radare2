@@ -48,7 +48,7 @@ R_API void r_core_cmpwatch_free(RCoreCmpWatcher *w) {
 	free (w);
 }
 
-R_API RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
+R_API R_BORROW RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
 	RCoreCmpWatcher *w;
 	RListIter *iter;
 	r_list_foreach (core->watchers, iter, w) {
@@ -66,7 +66,7 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 
 	cmpw = r_core_cmpwatch_get (core, addr);
 	if (!cmpw) {
-		cmpw = R_NEW (RCoreCmpWatcher);
+		cmpw = R_NEW0 (RCoreCmpWatcher);
 		if (!cmpw) {
 			return false;
 		}
@@ -87,11 +87,14 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 	cmpw->odata = NULL;
 	cmpw->ndata = malloc (size);
 	if (!cmpw->ndata) {
-		free (cmpw->cmd);
-		free (cmpw);
+		r_core_cmpwatch_free (cmpw);
 		return false;
 	}
-	r_io_read_at (core->io, addr, cmpw->ndata, size);
+
+	if (r_io_nread_at (core->io, addr, cmpw->ndata, size) != size) {
+		r_core_cmpwatch_free (cmpw);
+		return false;
+	}
 
 	// Don't append a duplicate
 	if (!found) {
@@ -133,7 +136,7 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 	bool ret = false;
 
 	if (mode == 'j') {
-		pj = pj_new ();
+		pj = r_core_pj_new (core);
 		if (!pj) {
 			return false;
 		}
@@ -179,8 +182,11 @@ R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 	}
 
 	if (pj) {
+		char *out;
 		pj_end (pj);
-		r_cons_printf ("%s\n", pj_drain (pj));
+		out = pj_drain (pj);
+		r_cons_println (out);
+		free (out);
 	}
 
 	return ret;
@@ -210,7 +216,6 @@ R_API bool r_core_cmpwatch_update(RCore *core, ut64 addr) {
 		if (w) {
 			return update_watcher (core->io, w);
 		}
-
 		return false;
 	}
 
@@ -455,17 +460,18 @@ static int cmd_cmp_watcher(RCore *core, const char *input) {
 		}
 
 		if (argc == 1) { // "cw [addr]"
-			addr = r_num_get (core->num, argv[0]);
+			addr = r_num_math (core->num, argv[0]);
 			r_core_cmpwatch_show (core, addr, 0);
 		} else if (argc == 3) { // "cw addr sz cmd"
-			addr = r_num_get (core->num, argv[0]);
-			size = r_num_get (core->num, argv[1]);
+			addr = r_num_math (core->num, argv[0]);
+			size = r_num_math (core->num, argv[1]);
 
 			if (size < 1) {
 				ret = 1;
 				eprintf ("Can't create a watcher with size less than 1.\n");
 				goto out_free_argv;
-			} else if (size > INT_MAX) {
+			}
+			if (size > INT_MAX) {
 				ret = 1;
 				eprintf ("Can't create a watcher with size larger than an int.\n");
 				goto out_free_argv;
@@ -490,7 +496,7 @@ out_free_argv:
 		}
 
 		if (input[1]) {
-			addr = r_num_get (core->num, input + 2);
+			addr = r_num_math (core->num, input + 2);
 		}
 
 		if (addr == UT64_MAX &&
@@ -514,7 +520,7 @@ out_free_argv:
 		}
 
 		if (input[1]) {
-			addr = r_num_get (core->num, input + 2);
+			addr = r_num_math (core->num, input + 2);
 		}
 
 		if (addr == UT64_MAX &&
@@ -538,7 +544,7 @@ out_free_argv:
 		}
 
 		if (input[1]) {
-			addr = r_num_get (core->num, input + 2);
+			addr = r_num_math (core->num, input + 2);
 		}
 
 		if (!r_core_cmpwatch_update (core, addr)) {
@@ -556,7 +562,7 @@ out_free_argv:
 	case '\0': { // "cw"
 		int mode = *input;
 		if (*input && input[1]) {
-			addr = r_num_get (core->num, input + 2);
+			addr = r_num_math (core->num, input + 2);
 		}
 
 		if (!r_core_cmpwatch_show (core, addr, mode)) {
