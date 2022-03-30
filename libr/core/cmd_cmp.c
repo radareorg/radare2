@@ -34,7 +34,7 @@ static const char *help_msg_c[] = {
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
 	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte (silent return in $?)",
 	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
-	"cw", "[*dqjru?] [addr]", "Compare memory watchers",
+	"cw", "[?][*dqjru] [addr]", "Compare memory watchers",
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
