@@ -1,0 +1,149 @@
+NAME=emu ret0
+FILE=bins/mach0/ret0ret1restr
+ARGS=-2
+CMDS=<<EOF
+aaa
+aeim
+?e ret0
+s sym._ret0
+aeb
+dr?R0
+?e ---
+?e ret1
+s sym._ret1
+aeb
+ar?R0
+?e ---
+?e retstr
+s sym._retstr
+aeb
+psz@R0
+EOF
+EXPECT=<<EOF
+ret0
+0x00000000
+---
+ret1
+0x00000001
+---
+retstr
+Hello World
+EOF
+RUN
+
+NAME=emu paths
+FILE=bins/mach0/ret0ret1restr
+ARGS=-2
+CMDS=<<EOF
+aeim
+?e ret paths
+s sym._retbool
+af
+agf
+?e path
+abt $$ 0x100007f1c
+?e fromblocks
+f final.block=0x100007f1c
+abf final.block
+?e walk path one mustt be one
+afbe $$ 0x100007f00;aeb 0x100007f00;aeb final.block
+dr?R0
+?e walk path two must be zero
+aeim
+afbe $$ 0x100007f10;aeb 0x100007f10;aeb final.block
+dr?R0
+EOF
+EXPECT=<<EOF
+ret paths
+[0x100007ed8]>  # sym._retbool (int64_t arg_20h);
+         .-------------------------------------.
+         |  0x100007ed8                        |
+         |   ;-- func.100007ed8:               |
+         | 92: sym._retbool (int64_t arg_20h); |
+         | ; var int64_t var_10h @ sp+0x10     |
+         | ; arg int64_t arg_20h @ sp+0x40     |
+         | sub sp, sp, 0x20                    |
+         | stp x29, x30, [sp, 0x10]            |
+         | add x29, var_10h                    |
+         | mov w8, 1                           |
+         | mov x0, x8                          |
+         | mov w9, 0                           |
+         | mov x1, x9                          |
+         | mov x2, x8                          |
+         | bl sym.imp.write;[oa]               |
+         | cbz w0, 0x100007f10                 |
+         `-------------------------------------'
+                 f t
+                 | |
+                 | '--------------.
+    .------------'                |
+    |                             |
+.------------------------.    .------------------------.
+|  0x100007f00           |    |  0x100007f10           |
+| mov w8, 1              |    | mov w8, 0              |
+| and w8, w8, 1          |    | and w8, w8, 1          |
+| sturb w8, [x29, -1]    |    | sturb w8, [x29, -1]    |
+| b 0x100007f1c          |    `------------------------'
+`------------------------'        v
+    v                             |
+    |                             |
+    '------.                      |
+           | .--------------------'
+           | |
+     .---------------------------------------------.
+     |  0x100007f1c                                |
+     | ; CODE XREF from sym._retbool @ 0x100007f0c |
+     | ldurb w8, [x29, -1]                         |
+     | and w8, w8, 1                               |
+     | and w0, w8, 0xff                            |
+     | ldp x29, x30, [var_10h]                     |
+     | add sp, arg_20h                             |
+     | ret                                         |
+     `---------------------------------------------'
+path
+0x100007ed8
+fromblocks
+0x100007f00
+0x100007f10
+walk path one mustt be one
+0x00000001
+walk path two must be zero
+0x00000000
+EOF
+RUN
+
+NAME=emu paths with a macro
+FILE=bins/mach0/ret0ret1restr
+ARGS=-2
+CMDS=<<EOF
+aeim
+?e ret paths
+s sym._retbool
+af
+?e path
+abt $$ 0x100007f1c
+?e fromblocks
+f final.block=0x100007f1c
+abf final.block
+"(emu x;aeim;afbe $$ $0;aeb $0;aeb final.block)"
+?e walk path one mustt be one
+.(emu 0x100007f00)
+dr?R0
+?e walk path two must be zero
+.(emu 0x100007f10)
+dr?R0
+EOF
+EXPECT=<<EOF
+ret paths
+path
+0x100007ed8
+fromblocks
+0x100007f10
+0x100007f00
+walk path one mustt be one
+0x00000001
+walk path two must be zero
+0x00000000
+EOF
+RUN
+

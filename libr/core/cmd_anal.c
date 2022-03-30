@@ -219,6 +219,7 @@ static const char *help_msg_ab[] = {
 	"ab-", "[addr]", "delete basic block at given address",
 	"aba", " [addr]", "analyze esil accesses in basic block (see aea?)",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
+	"abe", " [addr]", "emulate basic block (alias for aeb)",
 	"abf", " [addr]", "address of incoming (from) basic blocks",
 	"abj", " [addr]", "display basic block information in JSON",
 	"abl", "[?] [.-cqj]", "list all basic blocks",
@@ -12180,6 +12181,9 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'a': // "aba"
 			r_core_cmdf (core, "aeab%s", input + 1);
+			break;
+		case 'e': // "aeb"
+			r_core_cmdf (core, "aeb%s", input + 2);
 			break;
 		case 'b': // "abb"
 			core_anal_bbs (core, input + 2);
