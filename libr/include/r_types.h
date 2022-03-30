@@ -463,7 +463,22 @@ static inline void *r_new_copy(int size, void *data) {
 #define eprintf(...) fprintf (stderr, __VA_ARGS__)
 #endif
 
-#ifndef NO_EPRINT_MACROS
+#ifdef NO_EPRINT_MACROS
+#define EPRINT_STR
+#define EPRINT_CHAR
+#define EPRINT_INT
+#define EPRINT_BOOL
+#define EPRINT_PTR
+
+#define EPRINT_UT64
+#define EPRINT_ST64
+#define EPRINT_UT32
+#define EPRINT_ST32
+#define EPRINT_UT16
+#define EPRINT_ST16
+#define EPRINT_UT8
+#define EPRINT_ST8
+#else
 /* Pass R2_SUPPRESS_VAR_EPRINT=1 as an environment variable to disable these
  * macros at runtime. Used by r2r to prevent interference with tests. */
 #define EPRINT_VAR_WRAPPER(name, fmt, ...) {				\
