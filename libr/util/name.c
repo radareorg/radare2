@@ -136,6 +136,9 @@ R_API bool r_name_filter_print(char *s) {
 }
 
 R_API bool r_name_filter(char *s, int maxlen) {
+	if (R_STR_ISEMPTY (s)) {
+		return false;
+	}
 	// if maxlen == -1 : R_FLAG_NAME_SIZE
 	// maxlen is ignored, the function signature must change
 	// char *os = s;

@@ -1735,8 +1735,8 @@ static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out) {
 static char *readstr(RBinFile *bf, ut64 addr) {
 	r_return_val_if_fail (bf, NULL);
 
-	int name_len = 128;
-	char *name = calloc (1, name_len);
+	int name_len = 256;
+	char *name = calloc (1, name_len + 1);
 	int len = r_buf_read_at (bf->buf, addr, (ut8 *)name, name_len);
 	if (len < 2) {
 		R_FREE (name);
