@@ -59,7 +59,11 @@ R_API R_BORROW RCoreCmpWatcher *r_core_cmpwatch_get(RCore *core, ut64 addr) {
 	return NULL;
 }
 
+#if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
 R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd) {
+#else
+R_API int r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd) {
+#endif
 	RCoreCmpWatcher *cmpw;
 	bool found = false;
 	r_return_val_if_fail (core && cmd && size > 0, false);
@@ -104,7 +108,11 @@ R_API bool r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd
 	return true;
 }
 
+#if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
 R_API bool r_core_cmpwatch_del(RCore *core, ut64 addr) {
+#else
+R_API int r_core_cmpwatch_del(RCore *core, ut64 addr) {
+#endif
 	bool ret = false;
 	RCoreCmpWatcher *w;
 	RListIter *iter, *iter2;
@@ -129,7 +137,11 @@ R_API bool r_core_cmpwatch_del(RCore *core, ut64 addr) {
 	return ret;
 }
 
+#if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
 R_API bool r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
+#else
+R_API int r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
+#endif
 	RListIter *iter;
 	RCoreCmpWatcher *w;
 	PJ *pj = NULL;
@@ -206,7 +218,11 @@ static bool update_watcher(RIO *io, RCoreCmpWatcher *w) {
 }
 
 /* Replace old data with current new data, then read IO into new data */
+#if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
 R_API bool r_core_cmpwatch_update(RCore *core, ut64 addr) {
+#else
+R_API int r_core_cmpwatch_update(RCore *core, ut64 addr) {
+#endif
 	RCoreCmpWatcher *w;
 	RListIter *iter;
 	bool ret = false;
@@ -240,7 +256,11 @@ static bool revert_watcher(RCoreCmpWatcher *w) {
 }
 
 /* Mark the current old state as new, discarding the original new state */
+#if R2_VERSION_MAJOR >= 5 && R2_VERSION_MINOR >= 7
 R_API bool r_core_cmpwatch_revert(RCore *core, ut64 addr) {
+#else
+R_API int r_core_cmpwatch_revert(RCore *core, ut64 addr) {
+#endif
 	RCoreCmpWatcher *w;
 	RListIter *iter;
 	bool ret = false;
