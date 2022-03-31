@@ -404,15 +404,15 @@ static bool parse_segments(struct MACH0_(obj_t) *bin, ut64 off) {
 			memcpy (&bin->sects[k].segname, &sec[i], 16);
 			i += 16;
 			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.offset",
-						bin->sects[k].segname, bin->sects[k].sectname);			
+						bin->sects[k].segname, bin->sects[k].sectname);
 			sdb_num_set (bin->kv, section_flagname, offset, 0);
 #if R_BIN_MACH064
 			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format",
-						bin->sects[k].segname, bin->sects[k].sectname);		
+						bin->sects[k].segname, bin->sects[k].sectname);
 			sdb_set (bin->kv, section_flagname, "mach0_section64", 0);
 #else
 			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format",
-						bin->sects[k].segname, bin->sects[k].sectname);		
+						bin->sects[k].segname, bin->sects[k].sectname);
 			sdb_set (bin->kv, section_flagname, "mach0_section", 0);
 #endif
 
@@ -3789,7 +3789,7 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin) {
 
 void MACH0_(kv_loadlibs)(struct MACH0_(obj_t) *bin) {
 	int i;
-	char lib_flagname[128];	
+	char lib_flagname[128];
 	for (i = 0; i < bin->nlibs; i++) {
 		snprintf (lib_flagname, sizeof (lib_flagname), "libs.%d.name", i);
 		sdb_set (bin->kv, lib_flagname, bin->libs[i], 0);
@@ -4698,7 +4698,10 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *bin, ut64 limit_start,
 								(struct dyld_chained_ptr_64_rebase *) &raw_ptr;
 							event = R_FIXUP_EVENT_REBASE;
 							delta = p->next;
-							ptr_value = bin->baddr + (((ut64)p->high8 << 56) | p->target);
+							ptr_value = ((ut64)p->high8 << 56) | p->target;
+							if (pointer_format == DYLD_CHAINED_PTR_64_OFFSET) {
+								ptr_value += bin->baddr;
+							}
 						}
 						}
 						break;
