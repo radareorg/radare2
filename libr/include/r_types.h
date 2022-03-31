@@ -479,10 +479,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define EPRINT_UT8
 #define EPRINT_ST8
 #else
-/* Pass R2_SUPPRESS_VAR_EPRINT=1 as an environment variable to disable these
+/* Pass R2_NO_EPRINT_MACROS=1 as an environment variable to disable these
  * macros at runtime. Used by r2r to prevent interference with tests. */
 #define EPRINT_VAR_WRAPPER(name, fmt, ...) {				\
-	char *eprint_env = r_sys_getenv ("R2_SUPPRESS_VAR_EPRINT");	\
+	char *eprint_env = r_sys_getenv ("R2_NO_EPRINT_MACROS");	\
 	if (!eprint_env || strcmp (eprint_env, "1")) {			\
 		eprintf (#name ": " fmt "\n", __VA_ARGS__);		\
 	}								\
