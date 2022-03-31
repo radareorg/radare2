@@ -2366,19 +2366,16 @@ R_API bool r_str_glob(const char* str, const char *glob) {
 			// Check if there are additional wildcards
 			// if so, we need to search for the substring in between the wildcards
 			const char *needle_end = glob;
-			while (true) {
-				if (*needle_end == '*' ||
-					*needle_end == '?' ||
-					*needle_end == '$' ||
-					*needle_end == '^' ||
-					*needle_end == '\0') {
-					break;
-				}
+			while (*needle_end != '*' &&
+					*needle_end != '?' &&
+					*needle_end != '$' &&
+					*needle_end != '^' &&
+					*needle_end != '\0') {
 				needle_end++;
 			}
-			char *needle = strndup (glob, needle_end - glob);
 			// Find the pattern in between wildcards
-			char *advance_to = strstr (str, needle);
+			char* needle = r_str_ndup(glob, needle_end - glob);
+			const char *advance_to = strstr (str, needle);
 			free (needle);
 			if (!advance_to) {
 				return false;
