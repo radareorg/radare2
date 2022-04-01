@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2015 - pancake */
+/* radare2 - LGPL - Copyright 2014-2022 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -7,6 +7,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 	int opsize = -1;
 	op->type = -1;
 	opsize = 2;
+	if (len < 1) {
+		return -1;
+	}
 	switch (buf[0]) {
 	case 0x3f:
 	case 0x4f:
@@ -21,9 +24,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->type = R_ANAL_OP_TYPE_LEA;
 		if (len > 5) {
 			op->ptr = buf[2];
-			op->ptr |= buf[3]<<8;
-			op->ptr |= buf[4]<<16;
-			op->ptr |= ((ut32)(0xff&buf[5]))<<24;
+			op->ptr |= buf[3] << 8;
+			op->ptr |= buf[4] << 16;
+			op->ptr |= ((ut32)(0xff & buf[5])) << 24;
 			op->ptr += addr;
 			opsize = 6;
 		} else {
@@ -35,9 +38,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		op->type = R_ANAL_OP_TYPE_CALL;
 		if (len > 5) {
 			st32 delta = buf[2];
-			delta |= buf[3]<<8;
-			delta |= buf[4]<<16;
-			delta |= buf[5]<<24;
+			delta |= buf[3] << 8;
+			delta |= buf[4] << 16;
+			delta |= buf[5] << 24;
 			op->jump = addr + delta;
 		} else {
 			op->jump = UT64_MAX;
@@ -46,6 +49,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		opsize = 6;
 		break;
 	case 0x00:
+		if (len < 2) {
+			break;
+		}
 		if (buf[1] == 0x00) {
 			op->type = R_ANAL_OP_TYPE_TRAP;
 		} else {
@@ -57,11 +63,17 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 		}
 		break;
 	case 0xf0:
-		if (buf[1]==0xb9) {
+		if (len < 2) {
+			break;
+		}
+		if (buf[1] == 0xb9) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		}
 		break;
 	default:
+		if (len < 2) {
+			break;
+		}
 		switch (buf[1]) {
 		case 0x00:
 			op->type = R_ANAL_OP_TYPE_CJMP; // BCC
@@ -70,7 +82,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAn
 			op->type = R_ANAL_OP_TYPE_SHR;
 			break;
 		case 0x96: // move.d r, r
-			if (buf[0] >=0xc0) {
+			if (buf[0] >= 0xc0) {
 				op->type = R_ANAL_OP_TYPE_CMP;
 			} else {
 				op->type = R_ANAL_OP_TYPE_MOV;
@@ -242,6 +254,7 @@ static bool set_reg_profile(RAnal *anal) {
 		"=PC	pc\n"
 		"=SP	r14\n" // XXX
 		"=BP	srp\n" // XXX
+		"=SN	r0\n"
 		"=A0	r0\n"
 		"=A1	r1\n"
 		"=A2	r2\n"
