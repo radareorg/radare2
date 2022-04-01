@@ -284,6 +284,31 @@ static bool mustSaveHistory(RConfig *c) {
 	return true;
 }
 
+static inline void autoload_zigns(RCore *r) {
+	if (r_config_get_i (r->config, "zign.autoload")) {
+		char *path = r_file_abspath (r_config_get (r->config, "dir.zigns"));
+		if (!path) {
+			return;
+		}
+		RList *list = r_sys_dir (path);
+		RListIter *iter;
+		char *file;
+		r_list_foreach (list, iter, file) {
+			if (file && *file && *file != '.') {
+				char *complete_path = r_str_newf ("%s" R_SYS_DIR "%s", path, file);
+				if (r_str_endswith (complete_path, "gz")) {
+					r_sign_load_gz (r->anal, complete_path, false);
+				} else {
+					r_sign_load (r->anal, complete_path, false);
+				}
+				free (complete_path);
+			}
+		}
+		r_list_free (list);
+		free (path);
+	}
+}
+
 // Try to set the correct scr.color for the current terminal.
 static void set_color_default(RCore *r) {
 #ifdef __WINDOWS__
@@ -901,26 +926,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_config_set (r->config, "scr.utf8", "false");
 	}
 
-	if (r_config_get_i (r->config, "zign.autoload")) {
-		char *path = r_file_abspath (r_config_get (r->config, "dir->zigns"));
-		char *complete_path = NULL;
-		RList *list = r_sys_dir (path);
-		RListIter *iter;
-		char *file = NULL;
-		r_list_foreach (list, iter, file) {
-			if (file && *file && *file != '.') {
-				complete_path = r_str_newf ("%s"R_SYS_DIR"%s", path, file);
-				if (r_str_endswith (complete_path, "gz")) {
-					r_sign_load_gz (r->anal, complete_path, false);
-				} else {
-					r_sign_load (r->anal, complete_path, false);
-				}
-				free (complete_path);
-			}
-		}
-		r_list_free (list);
-		free (path);
-	}
+	autoload_zigns (r);
 
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
