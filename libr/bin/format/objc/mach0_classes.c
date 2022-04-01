@@ -1295,8 +1295,8 @@ static void parse_type(RBinFile *bf, SwiftType st) {
 		ut8 buf[512];
 		int i = 0;
 		r_buf_read_at (bf->buf, st.members, buf, sizeof (buf));
-		ut32 count = r_read_le32 (buf + 3);
-		for (i = 0; i < count && i < 16; i++) {
+		ut32 count = R_MIN (32, r_read_le32 (buf + 3));
+		for (i = 0; i < count; i++) {
 			int pos = (i * 8) + 3 + 8 + 8;
 			st32 n = r_read_le32 (buf + pos);
 			ut64 method_addr = st.members + pos + n;

@@ -5724,9 +5724,11 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 			if (relative) {
 				st32 sw = (st32)r_read_le32 (buf + i);
 				if (sw) {
+#if 0
 					v16 = addr + sw;
 					v32 = addr + sw;
 					v64 = addr + sw;
+#endif
 					value = addr + sw;
 					match = r_io_is_valid_offset (core->io, value, false);
 				}

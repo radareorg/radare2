@@ -157,11 +157,9 @@ R_API int r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 
 	r_list_foreach (core->watchers, iter, w) {
 		bool changed = w->odata? memcmp (w->odata, w->ndata, w->size): false;
-
 		if (addr != UT64_MAX && addr != w->addr) {
 			continue;
 		}
-
 		switch (mode) {
 		case '*': // print watchers as r2 commands
 			r_cons_printf ("cw 0x%08" PFMT64x " %d %s%s\n",
@@ -173,7 +171,8 @@ R_API int r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 				r_cons_printf ("0x%08" PFMT64x " has changed\n", w->addr);
 			}
 			break;
-		case 'j': { // json
+		case 'j': // "cw"
+			{
 			char *cmd_output = r_core_cmd_strf (core, "%s %d @%" PFMT64d,
 					w->cmd, w->size, w->addr);
 			pj_o (pj);
@@ -182,8 +181,9 @@ R_API int r_core_cmpwatch_show(RCore *core, ut64 addr, int mode) {
 			pj_ks (pj, "cmd", w->cmd);
 			pj_ks (pj, "cmd_out", r_str_get (cmd_output));
 			pj_end (pj);
+			free (cmd_output);
+			}
 			break;
-		}
 		default:
 			r_cons_printf ("0x%08" PFMT64x "%s\n", w->addr, changed? " modified": "");
 			r_core_cmdf (core, "%s %d @%" PFMT64d, w->cmd, w->size, w->addr);
