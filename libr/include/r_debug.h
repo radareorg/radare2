@@ -517,7 +517,7 @@ R_API int r_debug_desc_dup(RDebug *dbg, int fd, int newfd);
 R_API int r_debug_desc_read(RDebug *dbg, int fd, ut64 addr, int len);
 R_API int r_debug_desc_seek(RDebug *dbg, int fd, ut64 addr); // TODO: whence?
 R_API int r_debug_desc_write(RDebug *dbg, int fd, ut64 addr, int len);
-R_API int r_debug_desc_list(RDebug *dbg, int rad);
+R_API int r_debug_desc_list(RDebug *dbg, bool show_commands);
 
 /* registers */
 R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write);

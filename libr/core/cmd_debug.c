@@ -167,17 +167,17 @@ static const char *help_msg_dcu[] = {
 };
 
 static const char *help_msg_dd[] = {
-	"Usage: dd", "", "Manage child process files (prepend '.' to inject it)",
-	"dd", "", "list file descriptors",
-	"dd", " <file>", "open file in child process as O_RDONLY)",
-	"dd-", "<fd>", "close stdout fd",
-	"dd+", "<file>", "open file in read-write (O_RDWR)",
-	"dd*", "", "list file descriptors (in radare commands)",
-	"dds", " <fd> <off>", "seek given fd to offset",
-	"ddd", " <fd1> <fd2>", "dup2 from fd1 to fd2",
-	"ddf", " <addr>", "create pipe and write fd to address",
-	"ddr", " <fd> <size>", "Read N bytes from fd",
-	"ddw", " <fd> <hexpairs>", "Write N bytes to fd",
+	"Usage: dd", "", "Manage file descriptors for child process (* for r2 commands)",
+	"dd", "[*]", "list file descriptors",
+	"dd", "[*] file", "open file as read-only (r--)",
+	"dd+", "[*] file", "open file as read-write (rw-)",
+	"dd-", "[*] fd", "close stdout fd",
+	"ddt", "[*]", "close terminal fd (alias for dd-0)",
+	"dds", "[*] fd off", "seek given fd to offset",
+	"ddd", "[*] fd1 fd2", "dup2 from fd1 to fd2",
+	"ddf", "[*] addr", "create pipe and write fd to address",
+	"ddr", "[*] fd size", "read N bytes from fd",
+	"ddw", "[*] fd hexpairs", "write N bytes to fd",
 	NULL
 };
 
@@ -4780,16 +4780,32 @@ static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
 	return out;
 }
 
-static void print_buffer_hex(RBuffer *buf) {
-	int i;
+static void run_buffer_dxr(RBuffer *buf, bool print) {
+	ut8 *raw;
+	int raw_len;
+	char *hexpairs;
 	r_return_if_fail (buf);
 
-	r_cons_print ("dxr ");
 	r_buf_seek (buf, 0, R_BUF_SET);
-	for (i = 0; i < r_buf_size (buf); i++) {
-		r_cons_printf ("%02x", r_buf_read8 (buf));
+	raw = r_buf_read_all (buf, &raw_len);
+	if (!raw) {
+		return;
 	}
-	r_cons_newline ();
+
+	hexpairs = malloc ((raw_len * 2) + 1);
+	if (!hexpairs) {
+		free (raw);
+		return;
+	}
+
+	r_hex_bin2str (raw, raw_len, hexpairs);
+	if (print) {
+		r_cons_printf ("dxr %s\n", hexpairs);
+	} else {
+		r_core_cmdf ("dxr %s", hexpairs);
+	}
+	free (hexpairs);
+	free (raw);
 }
 
 static int cmd_debug(void *data, const char *input) {
@@ -5053,41 +5069,45 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
+	// TODO: dd commands needs tests in archos/linux-x64/cmd_dd
 	case 'd': // "dd"
-		if (strchr (input, '?')) {
-			r_core_cmd_help (core, help_msg_dd);
-			break;
-		}
 		if (!r_config_get_b (core->config, "cfg.debug")) {
 			eprintf ("No child process to manage files for.\n");
 			break;
 		}
 		switch (input[1]) {
 		case '\0': // "dd"
-			r_debug_desc_list (core->dbg, 0);
+			r_debug_desc_list (core->dbg, false);
 			break;
 		case '*': // "dd*"
-			r_debug_desc_list (core->dbg, 1);
+			if (input[2] == '?') {
+				r_core_cmd_help (core, help_msg_dd);
+			} else {
+				r_debug_desc_list (core->dbg, true);
+			}
 			break;
-		case 's': // "dds"
-			{
-				ut64 off = UT64_MAX;
-				int fd = atoi (input + 2);
-				char *str = strchr (input + 2, ' ');
-				if (str) off = r_num_math (core->num, str+1);
-				if (off == UT64_MAX || !r_debug_desc_seek (core->dbg, fd, off)) {
-					RBuffer *buf = r_core_syscallf (core, "lseek", "%d, 0x%" PFMT64x ", 0",
-							fd, off);
-					if (buf) {
-						print_buffer_hex (buf);
-					} else {
-						eprintf ("Cannot seek\n");
-					}
+		case 's': { // "dds"
+			ut64 off = UT64_MAX;
+			int fd = atoi (input + 2);
+			char *str = strchr (input + 2, ' ');
+			if (str) off = r_num_math (core->num, str+1);
+			if (off == UT64_MAX || !r_debug_desc_seek (core->dbg, fd, off)) {
+				RBuffer *buf = r_core_syscallf (core, "lseek", "%d, 0x%" PFMT64x ", 0",
+						fd, off);
+				if (buf) {
+					run_buffer_dxr (buf, false);
+				} else {
+					eprintf ("Cannot seek\n");
 				}
 			}
 			break;
-		case 't': // "ddt" <ttypath>
-			r_core_cmd0 (core, "dd-0");
+		}
+		case 't': // "ddt"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_dd, "ddt", true);
+			} else {
+				r_core_cmd0 (core, "dd-0");
+			}
 			break;
 		case 'd': // "ddd"
 			{
@@ -5099,7 +5119,7 @@ static int cmd_debug(void *data, const char *input) {
 					RBuffer *buf = r_core_syscallf (core, "dup2", "%d, %d",
 							fd, (int)newfd);
 					if (buf) {
-						print_buffer_hex (buf);
+						run_buffer_dxr (buf, false);
 					} else {
 						eprintf ("Cannot dup %d -> %d\n", fd, (int)newfd);
 					}
@@ -5125,92 +5145,84 @@ static int cmd_debug(void *data, const char *input) {
 					RBuffer *buf = r_core_syscallf (core, "read", "%d, 0x%"PFMT64x", %d",
 							fd, off, (int)len);
 					if (buf) {
-						print_buffer_hex (buf);
+						run_buffer_dxr (buf, false);
 					} else {
 						eprintf ("Cannot read\n");
 					}
 				}
 			}
 			break;
-		case 'w':  // "ddw"
-			{
-				ut64 off = UT64_MAX;
-				ut64 len = UT64_MAX;
-				int fd = atoi (input + 2);
-				char *str = strchr (input + 2, ' ');
-				if (str) off = r_num_math (core->num, str+1);
-				if (str) str = strchr (str+1, ' ');
-				if (str) len = r_num_math (core->num, str+1);
-				if (len == UT64_MAX || off == UT64_MAX
-						|| !r_debug_desc_write (core->dbg, fd, off, len)) {
-					RBuffer *buf = r_core_syscallf (core, "write", "%d, 0x%" PFMT64x ", %d",
-							fd, off, (int)len);
-					if (buf) {
-						print_buffer_hex (buf);
-					} else {
-						eprintf ("Cannot write\n");
-					}
-				}
-			}
-			break;
-		case '-': // "dd-"
-			// close file
-			//r_core_syscallf (core, "close", "%d", atoi (input + 2));
-			{
-				int fd = atoi (input + 2);
-				//r_core_cmdf (core, "dxs close %d", (int)r_num_math ( core->num, input + 2));
-				RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
+		case 'w': { // "ddw"
+			ut64 off = UT64_MAX;
+			ut64 len = UT64_MAX;
+			int fd = atoi (input + 2);
+			char *str = strchr (input + 2, ' ');
+			if (str) off = r_num_math (core->num, str+1);
+			if (str) str = strchr (str+1, ' ');
+			if (str) len = r_num_math (core->num, str+1);
+			if (len == UT64_MAX || off == UT64_MAX
+					|| !r_debug_desc_write (core->dbg, fd, off, len)) {
+				RBuffer *buf = r_core_syscallf (core, "write", "%d, 0x%" PFMT64x ", %d",
+						fd, off, (int)len);
 				if (buf) {
-					print_buffer_hex (buf);
+					run_buffer_dxr (buf, false);
 				} else {
-					eprintf ("Cannot close\n");
+					eprintf ("Cannot write\n");
 				}
 			}
 			break;
-		case 'f': // "ddf"
-			{
-				RBuffer *buf = NULL;
-				ut64 addr = r_num_get (NULL, input + 2);
-
-				if (addr && addr < UT64_MAX) {
-					buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
-				}
-
-				if (buf) {
-					print_buffer_hex (buf);
-				} else {
-					eprintf ("Cannot open pipe.\n");
-				}
+		}
+		case '-': { // "dd-"
+			int fd = atoi (input + 2);
+			RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
+			if (buf) {
+				run_buffer_dxr (buf, false);
+			} else {
+				eprintf ("Cannot close\n");
 			}
 			break;
+		}
+		case 'f': { // "ddf"
+			RBuffer *buf = NULL;
+			ut64 addr = r_num_get (NULL, input + 2);
+
+			if (addr && addr < UT64_MAX) {
+				buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
+			}
+
+			if (buf) {
+				run_buffer_dxr (buf, false);
+			} else {
+				eprintf ("Cannot open pipe.\n");
+			}
+			break;
+		}
 		case '+': // "dd+"
-		case ' ': // "dd"
-			{
-				RBuffer *buf;
-				int flags = (input[1] == '+')? 2: 0; // O_RDWR: O_RDONLY
-				ut64 addr = r_num_get (NULL, input + 2);
+		case ' ': { // "dd"
+			RBuffer *buf;
+			int flags = (input[1] == '+')? O_RDWR: O_RDONLY;
+			ut64 addr = r_num_math (core->num, input + 2);
 
-				// filename can be a string literal or address in memory
-				if (addr && addr < UT64_MAX) {
-					buf = r_core_syscallf (core, "open",
-							"%" PFMT64x ", %d, %d",
-							addr, flags, 0644);
-				} else {
-					char *filename = r_str_escape (input + 2);
-					buf = r_core_syscallf (core, "open",
-							"\"%s\", %d, %d",
-							filename, flags, 0644);
-					free (filename);
-				}
-
-				if (buf) {
-					print_buffer_hex (buf);
-				} else {
-					eprintf ("Cannot open\n");
-				}
+			// filename can be a string literal or address in memory
+			if (addr && addr < UT64_MAX) {
+				buf = r_core_syscallf (core, "open",
+						"%" PFMT64x ", %d, %d",
+						addr, flags, 0644);
+			} else {
+				char *filename = r_str_escape (input + 2);
+				buf = r_core_syscallf (core, "open",
+						"\"%s\", %d, %d",
+						filename, flags, 0644);
+				free (filename);
 			}
-			// open file
+
+			if (buf) {
+				run_buffer_dxr (buf, false);
+			} else {
+				eprintf ("Cannot open\n");
+			}
 			break;
+		}
 		case '?': // "dd?"
 		default:
 			r_core_cmd_help (core, help_msg_dd);
