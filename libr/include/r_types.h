@@ -463,7 +463,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define eprintf(...) fprintf (stderr, __VA_ARGS__)
 #endif
 
-#ifdef NO_EPRINT_MACROS
+#ifndef R2_DEBUG_EPRINT
+#define R2_DEBUG_EPRINT 0
+#endif
+#if !R2_DEBUG_EPRINT
 #define EPRINT_STR
 #define EPRINT_CHAR
 #define EPRINT_INT
