@@ -360,7 +360,10 @@ struct duplicate_flag_t {
 static bool duplicate_flag(RFlagItem *flag, void *u) {
 	struct duplicate_flag_t *user = (struct duplicate_flag_t *)u;
 	/* filter per flag spaces */
-	if (r_str_glob (flag->name, user->word)) {
+	bool valid = strchr (user->word, '*')
+		? r_str_glob (flag->name, user->word)
+		: strstr (flag->name, user->word) != NULL;
+	if (valid) {
 		RFlagItem *cloned_item = r_flag_item_clone (flag);
 		if (!cloned_item) {
 			return false;
