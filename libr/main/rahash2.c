@@ -613,7 +613,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			free (hashstr);
 			hashstr = malloc (INSIZE);
 			if (!hashstr) {
-				free (iv);
 				ret (1);
 			}
 			bytes_read = fread ((void *) hashstr, 1, INSIZE - 1, stdin);
@@ -629,7 +628,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			if (hashstr_len < 1) {
 				eprintf ("Invalid hex string\n");
 				free (out);
-				free (iv);
 				ret (1);
 			}
 			free (hashstr);
@@ -643,7 +641,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		if (from) {
 			if (from >= hashstr_len) {
 				eprintf ("Invalid -f.\n");
-				free (iv);
 				ret (1);
 			}
 		}
@@ -687,7 +684,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				if (str != nhashstr) {
 					free (str);
 				}
-				free (iv);
 				ret (1);
 			}
 			PJ *pj = NULL;
@@ -697,7 +693,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					if (str != nhashstr) {
 						free (str);
 					}
-					free (iv);
 					ret (1);
 				}
 				if (rad == 'J') {
@@ -736,14 +731,12 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		}
 	}
 	if (opt.ind >= argc) {
-		free (iv);
 		ret (do_help (1));
 	}
 	if (numblocks) {
 		bsize = -bsize;
 	} else if (bsize < 0) {
 		eprintf ("rahash2: Invalid block size\n");
-		free (iv);
 		ret (1);
 	}
 
@@ -778,7 +771,6 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 					desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
 					if (!desc) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
-						free (iv);
 						ret (1);
 					}
 					r_io_pwrite_at (io, 0, buf, sz);
@@ -788,13 +780,11 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			} else {
 				if (r_file_is_directory (argv[i])) {
 					eprintf ("rahash2: Cannot hash directories\n");
-					free (iv);
 					ret (1);
 				}
 				desc = r_io_open_nomap (io, argv[i], R_PERM_R, 0);
 				if (!desc) {
 					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
-					free (iv);
 					ret (1);
 				}
 			}
