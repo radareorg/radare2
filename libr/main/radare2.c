@@ -285,11 +285,8 @@ static bool mustSaveHistory(RConfig *c) {
 }
 
 static inline void autoload_zigns(RCore *r) {
-	if (r_config_get_i (r->config, "zign.autoload")) {
-		char *path = r_file_abspath (r_config_get (r->config, "dir.zigns"));
-		if (!path) {
-			return;
-		}
+	char *path = r_file_abspath (r_config_get (r->config, "dir.zigns"));
+	if (R_STR_ISNOTEMPTY (path)) {
 		RList *list = r_sys_dir (path);
 		RListIter *iter;
 		char *file;
@@ -305,8 +302,8 @@ static inline void autoload_zigns(RCore *r) {
 			}
 		}
 		r_list_free (list);
-		free (path);
 	}
+	free (path);
 }
 
 // Try to set the correct scr.color for the current terminal.
@@ -926,7 +923,9 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_config_set (r->config, "scr.utf8", "false");
 	}
 
-	autoload_zigns (r);
+	if (r_config_get_b (r->config, "zign.autoload")) {
+		autoload_zigns (r);
+	}
 
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
