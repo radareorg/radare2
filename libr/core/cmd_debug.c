@@ -4783,8 +4783,9 @@ static void run_buffer_dxr(RBuffer *buf, bool print) {
 static int cmd_debug_desc(RCore *core, const char *input) {
 	if (!r_config_get_b (core->config, "cfg.debug")) {
 		eprintf ("No child process to manage files for.\n");
-		break;
+		return 1;
 	}
+
 	switch (input[0]) {
 	case '\0': // "dd"
 		r_debug_desc_list (core->dbg, false);
