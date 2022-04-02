@@ -4783,26 +4783,53 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print) {
 }
 
 // TODO: dd commands need tests in archos/linux-x64/cmd_dd
+// TODO: update the book page at src/debugger/files.html
+// TODO: update help_msg_d
 static int cmd_debug_desc(RCore *core, const char *input) {
+	int argc;
+	char **argv;
+	const char *cmd_ptr;
+	bool print = false; // enabled with *, print the command instead of running it
+	int ret = 0;
+
 	if (input[0] == '?') { // "dd?"
 		r_core_cmd_help (core, help_msg_dd);
+		return 0;
 	}
 
-	if (!r_config_get_b (core->config, "cfg.debug")) {
-		eprintf ("No child process to manage files for.\n");
+	argv = r_str_argv (input, &argc);
+	if (!argv) {
 		return 1;
 	}
+	input = argv[0]; // input is now NULL-terminated
 
+	// Process modifiers
+	for (cmd_ptr = argv[0]; *cmd_ptr; cmd_ptr++) {
+		// Need to know if we're printing help before the cfg.debug check
+		// NB: cmd_ptr[0] will never start at '?', handled above
+		if (cmd_ptr[1] == '?') {
+			r_core_cmd_help_match_spec (core, help_msg_dd, "dd", cmd_ptr[0], true);
+			ret = 0;
+			goto out_free_argv;
+		}
+
+		if (*cmd_ptr == '*') {
+			print = true;
+		}
+	}
+
+	// We won't attempt to reach into the child if we're only printing
+	if (!print && !r_config_get_b (core->config, "cfg.debug")) {
+		eprintf ("No child process to manage files for.\n");
+		ret = 1;
+		goto out_free_argv;
+	}
+
+	// All help is handled in the modifier check
 	switch (input[0]) {
 	case '\0': // "dd"
-		r_debug_desc_list (core->dbg, false);
-		break;
 	case '*': // "dd*"
-		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_dd);
-		} else {
-			r_debug_desc_list (core->dbg, true);
-		}
+		r_debug_desc_list (core->dbg, print);
 		break;
 	case 's': { // "dds"
 		ut64 off = UT64_MAX;
@@ -4813,7 +4840,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			RBuffer *buf = r_core_syscallf (core, "lseek", "%d, 0x%" PFMT64x ", 0",
 					fd, off);
 			if (buf) {
-				return run_buffer_dxr (core, buf, false);
+				ret = run_buffer_dxr (core, buf, print);
 			} else {
 				eprintf ("Cannot seek\n");
 			}
@@ -4837,7 +4864,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				RBuffer *buf = r_core_syscallf (core, "dup2", "%d, %d",
 						fd, (int)newfd);
 				if (buf) {
-					return run_buffer_dxr (core, buf, false);
+					ret = run_buffer_dxr (core, buf, print);
 				} else {
 					eprintf ("Cannot dup %d -> %d\n", fd, (int)newfd);
 				}
@@ -4863,7 +4890,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				RBuffer *buf = r_core_syscallf (core, "read", "%d, 0x%"PFMT64x", %d",
 						fd, off, (int)len);
 				if (buf) {
-					return run_buffer_dxr (core, buf, false);
+					ret = run_buffer_dxr (core, buf, print);
 				} else {
 					eprintf ("Cannot read\n");
 				}
@@ -4883,7 +4910,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			RBuffer *buf = r_core_syscallf (core, "write", "%d, 0x%" PFMT64x ", %d",
 					fd, off, (int)len);
 			if (buf) {
-				return run_buffer_dxr (core, buf, false);
+				ret = run_buffer_dxr (core, buf, print);
 			} else {
 				eprintf ("Cannot write\n");
 			}
@@ -4894,7 +4921,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		int fd = atoi (input + 1);
 		RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
 		if (buf) {
-			return run_buffer_dxr (core, buf, false);
+			ret = run_buffer_dxr (core, buf, print);
 		} else {
 			eprintf ("Cannot close\n");
 		}
@@ -4909,7 +4936,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		}
 
 		if (buf) {
-			return run_buffer_dxr (core, buf, false);
+			ret = run_buffer_dxr (core, buf, print);
 		} else {
 			eprintf ("Cannot open pipe.\n");
 		}
@@ -4935,7 +4962,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		}
 
 		if (buf) {
-			return run_buffer_dxr (core, buf, false);
+			ret = run_buffer_dxr (core, buf, print);
 		} else {
 			eprintf ("Cannot open\n");
 		}
@@ -4946,7 +4973,9 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		break;
 	}
 
-	return 0;
+out_free_argv:
+	r_str_argv_free (argv);
+	return ret;
 }
 
 static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
