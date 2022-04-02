@@ -104,6 +104,7 @@ stackptr: 8
     "delay": 0,
     "stack": "set",
     "stackptr": 8,
+    "direction": "write",
     "family": "cpu"
   }
 ]
