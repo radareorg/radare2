@@ -4981,6 +4981,7 @@ static int cmd_debug(void *data, const char *input) {
 	RDebugPid *p;
 	RDebugTracepoint *trace;
 	RAnalOp *op;
+	int ret = 0;
 
 	if (r_sandbox_enable (0)) {
 		eprintf ("Debugger commands disabled in sandbox mode\n");
@@ -5232,7 +5233,7 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	// TODO: dd commands needs tests in archos/linux-x64/cmd_dd
 	case 'd': // "dd"
-		cmd_debug_desc (core, input); // TODO: input+1
+		ret = cmd_debug_desc (core, input); // TODO: input+1
 		break;
 	case 's': // "ds"
 		if (cmd_debug_step (core, input)) {
@@ -5684,5 +5685,5 @@ static int cmd_debug(void *data, const char *input) {
 			r_core_cmd0 (core, "sr PC");
 		}
 	}
-	return 0;
+	return ret;
 }
