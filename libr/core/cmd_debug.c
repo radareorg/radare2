@@ -4751,36 +4751,43 @@ static int cmd_debug_step(RCore *core, const char *input) {
 	return 1;
 }
 
-static void run_buffer_dxr(RBuffer *buf, bool print) {
+static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print) {
 	ut8 *raw;
 	int raw_len;
 	char *hexpairs;
-	r_return_if_fail (buf);
+	int ret = 0;
+	r_return_val_if_fail (core && buf, 1);
 
 	r_buf_seek (buf, 0, R_BUF_SET);
 	raw = r_buf_read_all (buf, &raw_len);
 	if (!raw) {
-		return;
+		return 1;
 	}
 
 	hexpairs = malloc ((raw_len * 2) + 1);
 	if (!hexpairs) {
 		free (raw);
-		return;
+		return 1;
 	}
 
 	r_hex_bin2str (raw, raw_len, hexpairs);
 	if (print) {
 		r_cons_printf ("dxr %s\n", hexpairs);
 	} else {
-		r_core_cmdf ("dxr %s", hexpairs);
+		ret = r_core_cmdf (core, "dxr %s", hexpairs);
 	}
 	free (hexpairs);
 	free (raw);
+
+	return ret;
 }
 
 // TODO: dd commands need tests in archos/linux-x64/cmd_dd
 static int cmd_debug_desc(RCore *core, const char *input) {
+	if (input[0] == '?') { // "dd?"
+		r_core_cmd_help (core, help_msg_dd);
+	}
+
 	if (!r_config_get_b (core->config, "cfg.debug")) {
 		eprintf ("No child process to manage files for.\n");
 		return 1;
@@ -4806,7 +4813,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			RBuffer *buf = r_core_syscallf (core, "lseek", "%d, 0x%" PFMT64x ", 0",
 					fd, off);
 			if (buf) {
-				run_buffer_dxr (buf, false);
+				return run_buffer_dxr (core, buf, false);
 			} else {
 				eprintf ("Cannot seek\n");
 			}
@@ -4830,7 +4837,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				RBuffer *buf = r_core_syscallf (core, "dup2", "%d, %d",
 						fd, (int)newfd);
 				if (buf) {
-					run_buffer_dxr (buf, false);
+					return run_buffer_dxr (core, buf, false);
 				} else {
 					eprintf ("Cannot dup %d -> %d\n", fd, (int)newfd);
 				}
@@ -4856,7 +4863,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				RBuffer *buf = r_core_syscallf (core, "read", "%d, 0x%"PFMT64x", %d",
 						fd, off, (int)len);
 				if (buf) {
-					run_buffer_dxr (buf, false);
+					return run_buffer_dxr (core, buf, false);
 				} else {
 					eprintf ("Cannot read\n");
 				}
@@ -4876,7 +4883,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			RBuffer *buf = r_core_syscallf (core, "write", "%d, 0x%" PFMT64x ", %d",
 					fd, off, (int)len);
 			if (buf) {
-				run_buffer_dxr (buf, false);
+				return run_buffer_dxr (core, buf, false);
 			} else {
 				eprintf ("Cannot write\n");
 			}
@@ -4887,7 +4894,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		int fd = atoi (input + 1);
 		RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
 		if (buf) {
-			run_buffer_dxr (buf, false);
+			return run_buffer_dxr (core, buf, false);
 		} else {
 			eprintf ("Cannot close\n");
 		}
@@ -4902,7 +4909,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		}
 
 		if (buf) {
-			run_buffer_dxr (buf, false);
+			return run_buffer_dxr (core, buf, false);
 		} else {
 			eprintf ("Cannot open pipe.\n");
 		}
@@ -4928,17 +4935,18 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		}
 
 		if (buf) {
-			run_buffer_dxr (buf, false);
+			return run_buffer_dxr (core, buf, false);
 		} else {
 			eprintf ("Cannot open\n");
 		}
 		break;
 	}
-	case '?': // "dd?"
 	default:
 		r_core_cmd_help (core, help_msg_dd);
 		break;
 	}
+
+	return 0;
 }
 
 static ut8 *getFileData(RCore *core, const char *arg, int *sz) {
