@@ -12,9 +12,15 @@ bool test_r_glob(void) {
 	mu_assert_eq (r_str_glob ("foo.c", "f*d"), 0, "foo.c -> f*d -> 0");
 	mu_assert_eq (r_str_glob ("foo.c", "*"), 1, "foo.c -> * -> 1");
 	mu_assert_eq (r_str_glob ("foo.c", "fo?.c"), 1, "foo.c -> fo?.c -> 1");
-	mu_assert_eq (r_str_glob ("foo.c", "^f"), 1, "foo.c -> ^f -> 1");
+	mu_assert_eq (r_str_glob ("foo.c", "^f"), 0, "foo.c -> ^f -> 0");
+	mu_assert_eq (r_str_glob ("foo.c", "^f*"), 1, "foo.c -> ^f* -> 1");
 	mu_assert_eq (r_str_glob ("foo.c", "foo.c$"), 1, "foo.c -> foo.c$ -> 1");
 	mu_assert_eq (r_str_glob ("foo.c", "fooooooo"), 0, "foo.c -> fooooooo -> 0");
+	mu_assert_eq (r_str_glob ("foo.bar.baz", "*.baz"), 1, "foo.bar.baz -> *.baz -> 1");
+	mu_assert_eq (r_str_glob ("foo.bar.baz", "*.bar"), 0, "foo.bar.baz -> *.bar -> 0");
+	mu_assert_eq (r_str_glob ("foo.bar.baz", "*.bar.*"), 1, "foo.bar.baz -> *.bar.* -> 1");
+	mu_assert_eq (r_str_glob ("foo.bar.baz", "*.baz$"), 1, "foo.bar.baz -> *.baz$ -> 1");
+	mu_assert_eq (r_str_glob ("foo.bar.baz", "$"), 0, "foo.bar.baz -> $ -> 0");
 	mu_end;
 }
 
