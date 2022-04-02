@@ -4779,18 +4779,18 @@ static void run_buffer_dxr(RBuffer *buf, bool print) {
 	free (raw);
 }
 
-// TODO: dd commands needs tests in archos/linux-x64/cmd_dd
+// TODO: dd commands need tests in archos/linux-x64/cmd_dd
 static int cmd_debug_desc(RCore *core, const char *input) {
 	if (!r_config_get_b (core->config, "cfg.debug")) {
 		eprintf ("No child process to manage files for.\n");
 		break;
 	}
-	switch (input[1]) {
+	switch (input[0]) {
 	case '\0': // "dd"
 		r_debug_desc_list (core->dbg, false);
 		break;
 	case '*': // "dd*"
-		if (input[2] == '?') {
+		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_dd);
 		} else {
 			r_debug_desc_list (core->dbg, true);
@@ -4798,8 +4798,8 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		break;
 	case 's': { // "dds"
 		ut64 off = UT64_MAX;
-		int fd = atoi (input + 2);
-		char *str = strchr (input + 2, ' ');
+		int fd = atoi (input + 1);
+		char *str = strchr (input + 1, ' ');
 		if (str) off = r_num_math (core->num, str+1);
 		if (off == UT64_MAX || !r_debug_desc_seek (core->dbg, fd, off)) {
 			RBuffer *buf = r_core_syscallf (core, "lseek", "%d, 0x%" PFMT64x ", 0",
@@ -4813,7 +4813,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		break;
 	}
 	case 't': // "ddt"
-		if (input[2] == '?') {
+		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_dd, "ddt", true);
 		} else {
 			r_core_cmd0 (core, "dd-0");
@@ -4822,8 +4822,8 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	case 'd': // "ddd"
 		{
 			ut64 newfd = UT64_MAX;
-			int fd = atoi (input + 2);
-			char *str = strchr (input + 3, ' ');
+			int fd = atoi (input + 1);
+			char *str = strchr (input + 1, ' ');
 			if (str) newfd = r_num_math (core->num, str+1);
 			if (newfd == UT64_MAX || !r_debug_desc_dup (core->dbg, fd, newfd)) {
 				RBuffer *buf = r_core_syscallf (core, "dup2", "%d, %d",
@@ -4840,8 +4840,8 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		{
 			ut64 off = UT64_MAX;
 			ut64 len = UT64_MAX;
-			int fd = atoi (input + 2);
-			char *str = strchr (input + 2, ' ');
+			int fd = atoi (input + 1);
+			char *str = strchr (input + 1, ' ');
 			if (str) {
 				off = r_num_math (core->num, str+1);
 				str = strchr (str + 1, ' ');
@@ -4865,8 +4865,8 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	case 'w': { // "ddw"
 		ut64 off = UT64_MAX;
 		ut64 len = UT64_MAX;
-		int fd = atoi (input + 2);
-		char *str = strchr (input + 2, ' ');
+		int fd = atoi (input + 1);
+		char *str = strchr (input + 1, ' ');
 		if (str) off = r_num_math (core->num, str+1);
 		if (str) str = strchr (str+1, ' ');
 		if (str) len = r_num_math (core->num, str+1);
@@ -4883,7 +4883,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		break;
 	}
 	case '-': { // "dd-"
-		int fd = atoi (input + 2);
+		int fd = atoi (input + 1);
 		RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
 		if (buf) {
 			run_buffer_dxr (buf, false);
@@ -4894,7 +4894,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	}
 	case 'f': { // "ddf"
 		RBuffer *buf = NULL;
-		ut64 addr = r_num_get (NULL, input + 2);
+		ut64 addr = r_num_get (NULL, input + 1);
 
 		if (addr && addr < UT64_MAX) {
 			buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
@@ -4910,8 +4910,8 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	case '+': // "dd+"
 	case ' ': { // "dd"
 		RBuffer *buf;
-		int flags = (input[1] == '+')? O_RDWR: O_RDONLY;
-		ut64 addr = r_num_math (core->num, input + 2);
+		int flags = (input[0] == '+')? O_RDWR: O_RDONLY;
+		ut64 addr = r_num_math (core->num, input + 1);
 
 		// filename can be a string literal or address in memory
 		if (addr && addr < UT64_MAX) {
@@ -4919,7 +4919,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 					"%" PFMT64x ", %d, %d",
 					addr, flags, 0644);
 		} else {
-			char *filename = r_str_escape (input + 2);
+			char *filename = r_str_escape (input + 1);
 			buf = r_core_syscallf (core, "open",
 					"\"%s\", %d, %d",
 					filename, flags, 0644);
@@ -5231,9 +5231,8 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		}
 		break;
-	// TODO: dd commands needs tests in archos/linux-x64/cmd_dd
 	case 'd': // "dd"
-		ret = cmd_debug_desc (core, input); // TODO: input+1
+		ret = cmd_debug_desc (core, input + 1);
 		break;
 	case 's': // "ds"
 		if (cmd_debug_step (core, input)) {
