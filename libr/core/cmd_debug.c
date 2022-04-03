@@ -167,7 +167,7 @@ static const char *help_msg_dcu[] = {
 };
 
 static const char *help_msg_dd[] = {
-	"Usage: dd", "", "Manage file descriptors for child process (* for r2 commands)",
+	"Usage: dd", "", "Manage file descriptors for child process (* to show r2 commands)",
 	"dd", "[*]", "list file descriptors",
 	"dd", "[*] file", "open file as read-only (r--)",
 	"dd+", "[*] file", "open file as read-write (rw-)",
@@ -4801,15 +4801,13 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	if (!argv) {
 		return 1;
 	}
-	input = argv[0]; // input is now NULL-terminated
 
 	// Process modifiers
 	for (cmd_ptr = argv[0]; *cmd_ptr; cmd_ptr++) {
 		// Need to know if we're printing help before the cfg.debug check
 		// NB: cmd_ptr[0] will never start at '?', handled above
-		if (cmd_ptr[1] == '?') {
+		if (*cmd_ptr && cmd_ptr[1] == '?') {
 			r_core_cmd_help_match_spec (core, help_msg_dd, "dd", cmd_ptr[0], true);
-			ret = 0;
 			goto out_free_argv;
 		}
 
@@ -4829,7 +4827,39 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '\0': // "dd"
 	case '*': // "dd*"
-		r_debug_desc_list (core->dbg, print);
+	case '+': // "dd+"
+	case ' ': { // "dd"
+		RBuffer *buf;
+		int flags;
+		ut64 addr;
+
+		if (argc < 2) { // No filename given
+			ret = r_debug_desc_list (core->dbg, print);
+			goto out_free_argv;
+		}
+
+		// TODO: should dd+ be (O_RDWR | O_CREAT) ?
+		flags = (input[0] == '+')? O_RDWR: O_RDONLY;
+		addr = r_num_math (core->num, argv[1]);
+
+		// Filename can be a string literal or address in memory
+		if (addr && addr < UT64_MAX) {
+			buf = r_core_syscallf (core, "open",
+					"%" PFMT64x ", %d, 0644",
+					addr, flags);
+		} else {
+			char *filename = r_str_escape (argv[1]);
+			buf = r_core_syscallf (core, "open",
+					"\"%s\", %d, 0644",
+					filename, flags);
+			free (filename);
+		}
+
+		if (buf) {
+			ret = run_buffer_dxr (core, buf, print);
+		} else {
+			eprintf ("Cannot open\n");
+		}
 		break;
 	case 's': { // "dds"
 		ut64 off = UT64_MAX;
@@ -4942,31 +4972,6 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		}
 		break;
 	}
-	case '+': // "dd+"
-	case ' ': { // "dd"
-		RBuffer *buf;
-		int flags = (input[0] == '+')? O_RDWR: O_RDONLY;
-		ut64 addr = r_num_math (core->num, input + 1);
-
-		// filename can be a string literal or address in memory
-		if (addr && addr < UT64_MAX) {
-			buf = r_core_syscallf (core, "open",
-					"%" PFMT64x ", %d, %d",
-					addr, flags, 0644);
-		} else {
-			char *filename = r_str_escape (input + 1);
-			buf = r_core_syscallf (core, "open",
-					"\"%s\", %d, %d",
-					filename, flags, 0644);
-			free (filename);
-		}
-
-		if (buf) {
-			ret = run_buffer_dxr (core, buf, print);
-		} else {
-			eprintf ("Cannot open\n");
-		}
-		break;
 	}
 	default:
 		r_core_cmd_help (core, help_msg_dd);
