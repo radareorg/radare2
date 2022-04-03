@@ -4788,12 +4788,16 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print) {
 static int cmd_debug_desc(RCore *core, const char *input) {
 	int argc;
 	char **argv;
-	const char *cmd_ptr;
 	bool print = false; // enabled with *, print the command instead of running it
 	int ret = 0;
 
-	if (input[0] == '?') { // "dd?"
+	if (input[1] == '?') { // "dd?"
 		r_core_cmd_help (core, help_msg_dd);
+		return 0;
+	}
+
+	if (!strncmp (input, "d*?", 3)) { // "dd*?"
+		r_core_cmd_help_match (core, help_msg_dd, "dd", true);
 		return 0;
 	}
 
@@ -4802,19 +4806,34 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		return 1;
 	}
 
+	/* Wait to move the first arg forward past the first 'd' until after argv creation.
+	 * "dd filename" results in {"", "filename"} instead of {"filename"}.
+	 *
+	 * This mimics passing input+1 but allows a possible empty argv[0]
+	 * to preserve argument positions.
+	 * NOTE: we cannot move argv[0] forward, since it needs to be freed
+	 * later, so input borrows instead */
+
 	// Process modifiers
-	for (cmd_ptr = argv[0]; *cmd_ptr; cmd_ptr++) {
+	for (input = argv[0] + 1; *input; input++) {
 		// Need to know if we're printing help before the cfg.debug check
-		// NB: cmd_ptr[0] will never start at '?', handled above
-		if (*cmd_ptr && cmd_ptr[1] == '?') {
-			r_core_cmd_help_match_spec (core, help_msg_dd, "dd", cmd_ptr[0], true);
+		// NB: input[0] will never start at '?', handled above
+		if (*input && input[1] == '?') {
+			if (*input == '*') {
+				/* "ddt*?" -> "ddt?" */
+				input--;
+			}
+			r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0], true);
 			goto out_free_argv;
 		}
 
-		if (*cmd_ptr == '*') {
+		if (*input == '*') {
 			print = true;
 		}
 	}
+
+	// See the comment above
+	input = R_BORROW argv[0] + 1;
 
 	// We won't attempt to reach into the child if we're only printing
 	if (!print && !r_config_get_b (core->config, "cfg.debug")) {
@@ -5275,7 +5294,7 @@ static int cmd_debug(void *data, const char *input) {
 		}
 		break;
 	case 'd': // "dd"
-		ret = cmd_debug_desc (core, input + 1);
+		ret = cmd_debug_desc (core, input);
 		break;
 	case 's': // "ds"
 		if (cmd_debug_step (core, input)) {
