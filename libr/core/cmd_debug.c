@@ -168,16 +168,16 @@ static const char *help_msg_dcu[] = {
 
 static const char *help_msg_dd[] = {
 	"Usage: dd", "", "Manage file descriptors for child process (* to show r2 commands)",
-	"dd", "[*]", "list file descriptors",
-	"dd", "[*] file", "open file as read-only (r--)",
-	"dd+", "[*] file", "open file as read-write (rw-)",
-	"dd-", "[*] fd", "close fd",
-	"ddt", "[*]", "close terminal fd (alias for dd- 0)",
-	"dds", "[*] fd off", "seek fd to offset",
-	"ddd", "[*] fd1 fd2", "copy fd1 to fd2 with dup2",
-	"ddf", "[*] addr", "create pipe and write fd to address",
-	"ddr", "[*] fd size", "read N bytes from fd",
-	"ddw", "[*] fd hexpairs", "write N bytes to fd",
+	"dd", "[*]", "List file descriptors",
+	"dd", "[*] file", "Open file as read-only (r--)",
+	"dd+", "[*] file", "Open file as read-write (rw-)",
+	"dd-", "[*] fd", "Close fd",
+	"ddt", "[*]", "Close terminal fd (alias for dd- 0)",
+	"dds", "[*] fd [offset]", "Seek fd to offset (no offset = seek to beginning)",
+	"ddd", "[*] fd1 fd2", "Copy fd1 to fd2 with dup2",
+	"ddf", "[*] addr", "Create pipe and write fd to address",
+	"ddr", "[*] fd size", "Read N bytes from fd",
+	"ddw", "[*] fd hexpairs", "Write N bytes to fd",
 	NULL
 };
 
@@ -4893,13 +4893,25 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		break;
 	}
 	case 's': { // "dds"
-		ut64 off = UT64_MAX;
-		int fd = atoi (input + 1);
-		char *str = strchr (input + 1, ' ');
-		if (str) off = r_num_math (core->num, str+1);
-		if (off == UT64_MAX || !r_debug_desc_seek (core->dbg, fd, off)) {
-			RBuffer *buf = r_core_syscallf (core, "lseek", "%d, 0x%" PFMT64x ", 0",
-					fd, off);
+		int fd;
+		ut64 offset;
+
+		if (argc < 2) {
+			r_core_cmd_help_match (core, help_msg_dd, "dds", true);
+		}
+
+		fd = (int) r_num_math (core->num, argv[1]);
+		if (argc > 2) {
+			offset = r_num_math (core->num, argv[2]);
+		} else {
+			// default to 0 if not given
+			offset = 0;
+		}
+
+		if (print || !r_debug_desc_seek (core->dbg, fd, offset)) {
+			RBuffer *buf = r_core_syscallf (core, "lseek",
+					"%d, 0x%" PFMT64x ", 0",
+					fd, offset);
 			if (buf) {
 				ret = run_buffer_dxr (core, buf, print);
 			} else {
