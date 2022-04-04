@@ -5001,12 +5001,25 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	}
 	case 't': // "ddt"
 	case '-': { // "dd-"
-		int fd = (input[0] == 't')? 0: atoi (input + 1);
-		RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
-		if (buf) {
-			ret = run_buffer_dxr (core, buf, print);
+		int fd;
+
+		if (input[0] == 't') {
+			fd = 0;
 		} else {
-			eprintf ("Cannot close\n");
+			if (argc < 2) {
+				r_core_cmd_help_match (core, help_msg_dd, "dd-", true);
+				break;
+			}
+			fd = (int) r_num_math (core->num, argv[1]);
+		}
+
+		if (print || !r_debug_desc_close (core->dbg, fd)) {
+			RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
+			if (buf) {
+				ret = run_buffer_dxr (core, buf, print);
+			} else {
+				eprintf ("Cannot close %d\n", fd);
+			}
 		}
 		break;
 	}
