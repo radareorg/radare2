@@ -176,8 +176,8 @@ static const char *help_msg_dd[] = {
 	"dds", "[*] fd [offset]", "Seek fd to offset (no offset = seek to beginning)",
 	"ddd", "[*] fd1 fd2", "Copy fd1 to fd2 with dup2",
 	"ddf", "[*] addr", "Create pipe and write fd to address",
-	"ddr", "[*] fd addr size", "Read bytes from fd into char* at addr",
-	"ddw", "[*] fd hexpairs", "Write bytes to fd",
+	"ddr", "[*] fd addr size", "Read bytes from fd into (char*)addr",
+	"ddw", "[*] fd addr size", "Write bytes from (const char*)addr to fd",
 	NULL
 };
 
@@ -4966,27 +4966,35 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			if (buf) {
 				ret = run_buffer_dxr (core, buf, print);
 			} else {
-				eprintf ("Cannot read\n");
+				eprintf ("Cannot read %" PFMT64d "bytes from %d into 0x%" PFMT64x "\n",
+		i				count, fd, addr);
 			}
 		}
 		break;
 	}
 	case 'w': { // "ddw"
-		ut64 off = UT64_MAX;
-		ut64 len = UT64_MAX;
-		int fd = atoi (input + 1);
-		char *str = strchr (input + 1, ' ');
-		if (str) off = r_num_math (core->num, str+1);
-		if (str) str = strchr (str+1, ' ');
-		if (str) len = r_num_math (core->num, str+1);
-		if (len == UT64_MAX || off == UT64_MAX
-				|| !r_debug_desc_write (core->dbg, fd, off, len)) {
-			RBuffer *buf = r_core_syscallf (core, "write", "%d, 0x%" PFMT64x ", %d",
-					fd, off, (int)len);
+		int fd;
+		ut64 addr;
+		ut64 count;
+
+		if (argc < 4) {
+			r_core_cmd_help_match (core, help_msg_dd, "ddw", true);
+			break;
+		}
+
+		fd = (int) r_num_math (core->num, argv[1]);
+		addr = r_num_math (core->num, argv[2]);
+		count = r_num_math (core->num, argv[3]);
+
+		if (print || !r_debug_desc_write (core->dbg, fd, addr, count)) {
+			RBuffer *buf = r_core_syscallf (core, "write",
+					"%d, 0x%" PFMT64x ", %" PFMT64d,
+					fd, addr, count);
 			if (buf) {
 				ret = run_buffer_dxr (core, buf, print);
 			} else {
-				eprintf ("Cannot write\n");
+				eprintf ("Cannot write %" PFMT64d "bytes into %d from 0x%" PFMT64x "\n",
+						count, fd, addr);
 			}
 		}
 		break;
