@@ -4908,11 +4908,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		break;
 	}
 	case 't': // "ddt"
-		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_dd, "ddt", true);
-		} else {
-			r_core_cmd0 (core, "dd-0");
-		}
+		r_core_cmdf (core, "dd-0%s", print? "*": "");
 		break;
 	case 'd': // "ddd"
 		{
