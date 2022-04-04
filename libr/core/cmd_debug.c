@@ -5024,17 +5024,21 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		break;
 	}
 	case 'f': { // "ddf"
-		RBuffer *buf = NULL;
-		ut64 addr = r_num_get (NULL, input + 1);
+		RBuffer *buf;
+		ut64 addr;
 
-		if (addr && addr < UT64_MAX) {
-			buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
+		if (argc < 2) {
+			r_core_cmd_help_match (core, help_msg_dd, "ddf", true);
+			break;
 		}
 
+		addr = r_num_math (core->num, argv[1]);
+
+		buf = r_core_syscallf (core, "pipe", "0x%" PFMT64x, addr);
 		if (buf) {
 			ret = run_buffer_dxr (core, buf, print);
 		} else {
-			eprintf ("Cannot open pipe.\n");
+			eprintf ("Cannot open pipe and write fd to %" PFMT64x ".\n", addr);
 		}
 		break;
 	}
