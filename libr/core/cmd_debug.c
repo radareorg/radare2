@@ -172,7 +172,7 @@ static const char *help_msg_dd[] = {
 	"dd", "[*] file", "open file as read-only (r--)",
 	"dd+", "[*] file", "open file as read-write (rw-)",
 	"dd-", "[*] fd", "close fd",
-	"ddt", "[*]", "close terminal fd (alias for dd-0)",
+	"ddt", "[*]", "close terminal fd (alias for dd- 0)",
 	"dds", "[*] fd off", "seek fd to offset",
 	"ddd", "[*] fd1 fd2", "copy fd1 to fd2 with dup2",
 	"ddf", "[*] addr", "create pipe and write fd to address",
@@ -4891,6 +4891,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			eprintf ("Cannot open\n");
 		}
 		break;
+	}
 	case 's': { // "dds"
 		ut64 off = UT64_MAX;
 		int fd = atoi (input + 1);
@@ -4907,9 +4908,6 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		}
 		break;
 	}
-	case 't': // "ddt"
-		r_core_cmdf (core, "dd-0%s", print? "*": "");
-		break;
 	case 'd': // "ddd"
 		{
 			ut64 newfd = UT64_MAX;
@@ -4973,8 +4971,9 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		}
 		break;
 	}
+	case 't': // "ddt"
 	case '-': { // "dd-"
-		int fd = atoi (input + 1);
+		int fd = (input[0] == 't')? 0: atoi (input + 1);
 		RBuffer *buf = r_core_syscallf (core, "close", "%d", fd);
 		if (buf) {
 			ret = run_buffer_dxr (core, buf, print);
@@ -4997,7 +4996,6 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			eprintf ("Cannot open pipe.\n");
 		}
 		break;
-	}
 	}
 	default:
 		r_core_cmd_help (core, help_msg_dd);
