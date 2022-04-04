@@ -1967,7 +1967,7 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	RTable *t = r_core_table (core, "regs");
 
 	if (mode == 'j') {
-		r_config_set_i (core->config, "scr.color", false);
+		r_config_set_i (core->config, "scr.color", 0);
 		use_colors = 0;
 	}
 
