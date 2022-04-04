@@ -73,8 +73,10 @@ R_API int r_debug_desc_list(RDebug *dbg, bool show_commands) {
 		RList *list = dbg->h->desc.list (dbg->pid);
 		r_list_foreach (list, iter, p) {
 			if (show_commands) {
+				// Skip over std streams
+				// TODO: option to select which fd to start at?
 				if (p->fd < 3) {
-					dbg->cb_printf ("# dd %s\n", p->path);
+					dbg->cb_printf ("#dd %s\n", p->path);
 				} else {
 					dbg->cb_printf ("dd %s\n", p->path);
 				}
