@@ -170,7 +170,7 @@ static const char *help_msg_dd[] = {
 	"Usage: dd", "", "Manage file descriptors for child process (* to show r2 commands)",
 	"dd", "[*]", "List file descriptors",
 	"dd", "[*] file", "Open file as read-only (r--)",
-	"dd+", "[*] file", "Open file as read-write (rw-)",
+	"dd+", "[*] file", "Open/create file as read-write (rw-)",
 	"dd-", "[*] fd", "Close fd",
 	"ddt", "[*]", "Close terminal fd (alias for dd- 0)",
 	"dds", "[*] fd [offset]", "Seek fd to offset (no offset = seek to beginning)",
@@ -4868,8 +4868,11 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			break;
 		}
 
-		// TODO: should dd+ be (O_RDWR | O_CREAT) ?
-		flags = (input[0] == '+')? O_RDWR: O_RDONLY;
+		if (input[0] == '+') {
+			flags = O_RDWR | O_CREAT;
+		} else {
+			flags = O_RDONLY;
+		}
 		addr = r_num_math (core->num, argv[1]);
 
 		// Filename can be a string literal or address in memory
