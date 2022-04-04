@@ -4788,6 +4788,7 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print) {
 static int cmd_debug_desc(RCore *core, const char *input) {
 	int argc;
 	char **argv;
+	bool needs_live_process = false;
 	bool print = false; // enabled with *, print the command instead of running it
 	int ret = 0;
 
@@ -4835,14 +4836,19 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 	// See the comment above
 	input = R_BORROW argv[0] + 1;
 
-	// We won't attempt to reach into the child if we're only printing
-	if (!print && !r_config_get_b (core->config, "cfg.debug")) {
+	// "dd" and "dd*" always need a live process
+	if (!print || !input[0] || (input[0] == '*' && !input[1])) {
+		needs_live_process = true;
+	}
+
+	// Error out if we need a live process and there isn't one
+	if (needs_live_process && !r_config_get_b (core->config, "cfg.debug")) {
 		eprintf ("No child process to manage files for.\n");
 		ret = 1;
 		goto out_free_argv;
 	}
 
-	// All help is handled in the modifier check
+	// All ? help is handled in the modifier check
 	switch (input[0]) {
 	case '\0': // "dd"
 	case '*': // "dd*"
@@ -4852,8 +4858,13 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		int flags;
 		ut64 addr;
 
-		if (argc < 2) { // No filename given
-			ret = r_debug_desc_list (core->dbg, print);
+		if (argc < 2) {
+			// only dd and dd* can have 1 arg here, others should error out
+			if (!input[0] || input[0] == '*') {
+				ret = r_debug_desc_list (core->dbg, print);
+			} else {
+				r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0], true);
+			}
 			goto out_free_argv;
 		}
 
