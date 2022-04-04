@@ -25,7 +25,7 @@ static const char *help_msg_d[] = {
 	"db", "[?]", "breakpoints commands",
 	"dbt", "[?]", "display backtrace based on dbg.btdepth and dbg.btalgo",
 	"dc", "[?]", "continue execution",
-	"dd", "[?]", "manage file descriptors for child process",
+	"dd", "[?][*+-tsdfrw]", "manage file descriptors for child process",
 	"de", "[-sc] [perm] [rm] [e]", "debug with ESIL (see de?)",
 	"dg", " <file>", "generate a core-file (WIP)",
 	"dH", " [handler]", "transplant process to a new handler",
@@ -4784,7 +4784,6 @@ static int run_buffer_dxr(RCore *core, RBuffer *buf, bool print) {
 
 // TODO: dd commands need tests in archos/linux-x64/cmd_dd
 // TODO: update the book page at src/debugger/files.html
-// TODO: update help_msg_d
 static int cmd_debug_desc(RCore *core, const char *input) {
 	int argc;
 	char **argv;
