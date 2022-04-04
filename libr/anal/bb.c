@@ -43,7 +43,7 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	return ret;
 }
 
-/* return the offset of the i-th instruction in the basicblock bb.
+/* returns the offset of the i-th instruction in the basicblock bb.
  * If the index of the instruction is not valid, it returns UT16_MAX */
 R_API ut16 r_anal_bb_offset_inst(const RAnalBlock *bb, int i) {
 	if (i < 0 || i >= bb->ninstr) {
@@ -52,7 +52,7 @@ R_API ut16 r_anal_bb_offset_inst(const RAnalBlock *bb, int i) {
 	return (i > 0 && (i - 1) < bb->op_pos_size)? bb->op_pos[i - 1]: 0;
 }
 
-/* return the address of the i-th instruction in the basicblock bb.
+/* returns the address of the i-th instruction in the basicblock bb.
  * If the index of the instruction is not valid, it returns UT64_MAX */
 R_API ut64 r_anal_bb_opaddr_i(RAnalBlock *bb, int i) {
 	ut16 offset = r_anal_bb_offset_inst (bb, i);
@@ -81,7 +81,7 @@ R_API bool r_anal_bb_set_offset(RAnalBlock *bb, int i, ut16 v) {
 	return true;
 }
 
-/* return the address of the instruction that occupy a given offset.
+/* returns the address of the instruction that occupies a given offset.
  * If the offset is not part of the given basicblock, UT64_MAX is returned. */
 R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 	ut16 delta, delta_off, last_delta;
@@ -102,7 +102,7 @@ R_API ut64 r_anal_bb_opaddr_at(RAnalBlock *bb, ut64 off) {
 	return bb->addr + last_delta;
 }
 
-// returns the size of the i-th instruction in a basic block
+// returns the size of the i-th instruction in a basicblock
 R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i) {
 	if (i < 0 || i >= bb->ninstr) {
 		return UT64_MAX;
@@ -112,7 +112,7 @@ R_API ut64 r_anal_bb_size_i(RAnalBlock *bb, int i) {
 	return idx_next != UT16_MAX? idx_next - idx_cur: bb->size - idx_cur;
 }
 
-/* returns the address of the basic block that contains addr or UT64_MAX if
+/* returns the address of the basicblock that contains addr or UT64_MAX if
  * there is no such basic block */
 R_API ut64 r_anal_get_bbaddr(RAnal *anal, ut64 addr) {
 	RAnalBlock *bb = r_anal_bb_from_offset (anal, addr);
