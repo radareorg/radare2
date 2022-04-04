@@ -4935,14 +4935,14 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		oldfd = (int) r_num_math (core->num, argv[1]);
 		newfd = (int) r_num_math (core->num, argv[2]);
 
-		if (print || !r_debug_desc_dup (core->dbg, fd, newfd)) {
+		if (print || !r_debug_desc_dup (core->dbg, oldfd, newfd)) {
 			RBuffer *buf = r_core_syscallf (core, "dup2",
 					"%d, %d",
-					fd, newfd);
+					oldfd, newfd);
 			if (buf) {
 				ret = run_buffer_dxr (core, buf, print);
 			} else {
-				eprintf ("Cannot dup %d -> %d\n", fd, (int)newfd);
+				eprintf ("Cannot dup %d -> %d\n", oldfd, newfd);
 			}
 		}
 		break;
@@ -4969,7 +4969,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 				ret = run_buffer_dxr (core, buf, print);
 			} else {
 				eprintf ("Cannot read %" PFMT64d "bytes from %d into 0x%" PFMT64x "\n",
-		i				count, fd, addr);
+						count, fd, addr);
 			}
 		}
 		break;
