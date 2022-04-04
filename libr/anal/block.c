@@ -235,7 +235,7 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 		return true;
 	}
 	if (r_anal_get_block_at (block->anal, addr)) {
-		// Two blocks at the same addr is illegle you know...
+		// Two blocks at the same addr is illegal you know...
 		return false;
 	}
 
@@ -274,7 +274,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	RAnal *anal = bbi->anal;
 	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
 	if (addr == bbi->addr) {
-		r_anal_block_ref (bbi); // ref to be consistent with splitted return refcount
+		r_anal_block_ref (bbi); // ref to be consistent with splitted return ref-count
 		return bbi;
 	}
 
@@ -401,7 +401,7 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 		RAnal *anal = bb->anal;
 		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 		block_free (bb);
-	//	r_return_if_fail (r_list_empty (bb->fcns));
+		// r_return_if_fail (r_list_empty (bb->fcns));
 	}
 }
 
@@ -846,16 +846,16 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	r_anal_block_unref (block);
 	ht_up_free (succs);
 
-	ut64 block_addr = block->addr; // save the addr to identify the block. the automerge might free it so we must not use the pointer!
+	ut64 block_addr = block->addr; // Save the addr to identify the block. The automerge might free it so we must not use the pointer!
 
 	// Do the actual merge
 	r_anal_block_automerge (&merge_blocks);
 
-	// No try to recover the pointer to the block if it still exists
+	// Now try to recover the pointer to the block if it still exists
 	RAnalBlock *ret = NULL;
 	for (it = merge_blocks.head; it && (block = it->data, 1); it = it->n) {
 		if (block->addr == block_addr) {
-			// block is still there
+			// Block is still there
 			ret = block;
 			break;
 		}
@@ -866,9 +866,9 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 }
 
 typedef struct {
-	HtUP *predecessors; // maps a block to its predecessor if it has exactly one, or NULL if there are multiple or the predecessor has multiple successors
-	HtUP *visited_blocks; // during predecessor search, mark blocks whose successors we already checked. Value is void *-casted count of successors
-	HtUP *blocks; // adresses of the blocks we might want to merge with their predecessors => RAnalBlock *
+	HtUP *predecessors; // Maps a block to its predecessor if it has exactly one, or NULL if there are multiple or the predecessor has multiple successors
+	HtUP *visited_blocks; // During predecessor search, mark blocks whose successors we already checked. Value is void *-casted count of successors
+	HtUP *blocks; // Adresses of the blocks we might want to merge with their predecessors => RAnalBlock *
 
 	RAnalBlock *cur_pred;
 	size_t cur_succ_count;
@@ -885,18 +885,18 @@ static bool automerge_predecessor_successor_cb(ut64 addr, void *user) {
 	ctx->cur_succ_count++;
 	RAnalBlock *block = ht_up_find (ctx->blocks, addr, NULL);
 	if (!block) {
-		// we shouldn't merge this one so GL_DONT_CARE
+		// We shouldn't merge this one so GL_DONT_CARE
 		return true;
 	}
 	bool found;
 	RAnalBlock *pred = ht_up_find (ctx->predecessors, (ut64)(size_t)block, &found);
 	if (found) {
 		if (pred) {
-			// only one predecessor found so far, but we are the second so there are multiple now
+			// Only one predecessor found so far, but we are the second so there are multiple now
 			ht_up_update (ctx->predecessors, (ut64)(size_t) block, NULL);
-		} // else: already found multiple predecessors, nothing to do
+		} // Else: already found multiple predecessors, nothing to do
 	} else {
-		// no predecessor found yet, this is the only one until now
+		// No predecessor found yet, this is the only one until now
 		ht_up_insert (ctx->predecessors, (ut64)(size_t) block, ctx->cur_pred);
 	}
 	return true;
@@ -932,7 +932,7 @@ R_API void r_anal_block_automerge(RList *blocks) {
 	};
 
 	SetU *relevant_fcns = set_u_new ();
-	RList *fixup_candidates = r_list_new (); // used further down
+	RList *fixup_candidates = r_list_new (); // Used further down
 	if (!ctx.predecessors || !ctx.visited_blocks || !ctx.blocks || !relevant_fcns || !fixup_candidates) {
 		goto beach;
 	}
@@ -961,7 +961,7 @@ R_API void r_anal_block_automerge(RList *blocks) {
 		}
 		size_t pred_succs_count = (size_t)ht_up_find (ctx.visited_blocks, (ut64)(size_t)predecessor, NULL);
 		if (pred_succs_count != 1) {
-			// we can only merge this predecessor if it has exactly one successor
+			// We can only merge this predecessor if it has exactly one successor
 			continue;
 		}
 
@@ -977,8 +977,8 @@ R_API void r_anal_block_automerge(RList *blocks) {
 			}
 		}
 
-		if (r_anal_block_merge (predecessor, block)) { // r_anal_block_merge() does checks like contiguous, to that's fine
-			// block was merged into predecessor, it is now freed!
+		if (r_anal_block_merge (predecessor, block)) { // r_anal_block_merge() does checks like contiguous, too that's fine
+			// Block was merged into predecessor, it is now freed!
 			// Update number of successors of the predecessor
 			ctx.cur_succ_count = 0;
 			r_anal_block_successor_addrs_foreach (predecessor, count_successors_cb, &ctx);
