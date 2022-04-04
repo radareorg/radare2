@@ -4865,7 +4865,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			} else {
 				r_core_cmd_help_match_spec (core, help_msg_dd, "dd", input[0], true);
 			}
-			goto out_free_argv;
+			break;
 		}
 
 		// TODO: should dd+ be (O_RDWR | O_CREAT) ?
@@ -4873,7 +4873,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 		addr = r_num_math (core->num, argv[1]);
 
 		// Filename can be a string literal or address in memory
-		if (addr && addr < UT64_MAX) {
+		if (addr) {
 			buf = r_core_syscallf (core, "open",
 					"%" PFMT64x ", %d, 0644",
 					addr, flags);
@@ -4898,6 +4898,7 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 
 		if (argc < 2) {
 			r_core_cmd_help_match (core, help_msg_dd, "dds", true);
+			break;
 		}
 
 		fd = (int) r_num_math (core->num, argv[1]);
@@ -4915,28 +4916,35 @@ static int cmd_debug_desc(RCore *core, const char *input) {
 			if (buf) {
 				ret = run_buffer_dxr (core, buf, print);
 			} else {
-				eprintf ("Cannot seek\n");
+				eprintf ("Cannot seek %d to %" PFMT64x "\n", fd, offset);
 			}
 		}
 		break;
 	}
-	case 'd': // "ddd"
-		{
-			ut64 newfd = UT64_MAX;
-			int fd = atoi (input + 1);
-			char *str = strchr (input + 1, ' ');
-			if (str) newfd = r_num_math (core->num, str+1);
-			if (newfd == UT64_MAX || !r_debug_desc_dup (core->dbg, fd, newfd)) {
-				RBuffer *buf = r_core_syscallf (core, "dup2", "%d, %d",
-						fd, (int)newfd);
-				if (buf) {
-					ret = run_buffer_dxr (core, buf, print);
-				} else {
-					eprintf ("Cannot dup %d -> %d\n", fd, (int)newfd);
-				}
+	case 'd': { // "ddd"
+		int oldfd;
+		int newfd;
+
+		if (argc < 3) {
+			r_core_cmd_help_match (core, help_msg_dd, "ddd", true);
+			break;
+		}
+
+		oldfd = (int) r_num_math (core->num, argv[1]);
+		newfd = (int) r_num_math (core->num, argv[2]);
+
+		if (print || !r_debug_desc_dup (core->dbg, fd, newfd)) {
+			RBuffer *buf = r_core_syscallf (core, "dup2",
+					"%d, %d",
+					fd, newfd);
+			if (buf) {
+				ret = run_buffer_dxr (core, buf, print);
+			} else {
+				eprintf ("Cannot dup %d -> %d\n", fd, (int)newfd);
 			}
 		}
 		break;
+	}
 	case 'r': // "ddr"
 		{
 			ut64 off = UT64_MAX;
