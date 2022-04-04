@@ -1,0 +1,108 @@
+NAME=basic dd usage
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+# cut off the pipe:[<unpredictable number>] part
+dd~[0-2]
+?e ---
+dd*~[0]
+?e ---
+dd bins/elf/ls-focal
+dd~[0-2]
+?e ---
+# will print full file path, so just check if it exists
+dd~bins/elf/ls-focal~?
+?e ---
+dd*~bins/elf/ls-focal~[0]
+doc # kill the process to avoid actual ls output
+EOF
+EXPECT=<<EOF
+0 0x0 r-P
+1 0x0 r-P
+2 0x0 r-P
+---
+#dd
+#dd
+#dd
+---
+0 0x0 r-P
+1 0x0 r-P
+2 0x0 r-P
+3 0x0 r-S
+---
+1
+---
+dd
+EOF
+RUN
+
+NAME=fd manipulation
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+doc
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=dd while not debugging
+CMDS=<<EOF
+# no separators needed, nothing should go to stdout
+dd
+dd filename
+dd+ filename
+dd- 1
+ddt
+dds 4 0x200
+ddd 4 0
+ddf 0x100
+ddr 4 0x100 0x20
+ddw 4 0x300 0x40
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=dd* while not debugging
+CMDS=<<EOF
+dd*
+?e ---
+dd* filename
+?e ---
+dd+* filename
+?e ---
+dd-* 1
+?e ---
+ddt*
+?e ---
+dds* 4 0x200
+?e ---
+ddd* 4 0
+?e ---
+ddf* 0x100
+?e ---
+ddr* 4 0x100 0x20
+?e ---
+ddw* 4 0x300 0x40
+EOF
+EXPECT=<<EOF
+---
+---
+dxr 554889e54881ec0008000048c7c0a40100005048c7c04200000050c7453066696c65c745346e616d65c7453800000000c7453c00000000c7454000000000488d453048898528000000488b452850488b3c24488b742408488b54241048c7c0020000000f054883c418cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c00100000050488b3c2448c7c0030000000f054883c408cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c00000000050488b3c2448c7c0030000000f054883c408cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c0000000005048c7c0000200005048c7c00400000050488b3c24488b742408488b54241048c7c0080000000f054883c418cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c0000000005048c7c00400000050488b3c24488b74240848c7c0210000000f054883c410cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c00001000050488b3c2448c7c0160000000f054883c408cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c0200000005048c7c0000100005048c7c00400000050488b3c24488b742408488b54241048c7c0800000000f054883c418cc4881c4000800005dc3
+---
+dxr 554889e54881ec0008000048c7c0400000005048c7c0000300005048c7c00400000050488b3c24488b742408488b54241048c7c0010000000f054883c418cc4881c4000800005dc3
+EOF
+RUN
