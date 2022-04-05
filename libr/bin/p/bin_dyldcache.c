@@ -1247,7 +1247,8 @@ static RList *create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 			if (deps && !deps[j]) {
 				continue;
 			}
-			ut64 pa = va2pa (img[j].address, hdr->mappingCount, &cache->maps[maps_index], cache->buf, 0, NULL, NULL);
+			// ut64 pa = va2pa (img[j].address, hdr->mappingCount, &cache->maps[maps_index], cache->buf, 0, NULL, NULL);
+			ut64 pa = va2pa (img[j].address, cache->n_maps, &cache->maps[maps_index], cache->buf, 0, NULL, NULL);
 			if (pa == UT64_MAX) {
 				continue;
 			}
