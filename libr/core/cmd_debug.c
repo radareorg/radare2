@@ -174,7 +174,7 @@ static const char *help_msg_dd[] = {
 	"dd-", "[*] <fd>", "Close fd",
 	"ddt", "[*]", "Close terminal fd (alias for `dd- 0`)",
 	"dds", "[*] <fd> [offset]", "Seek fd to offset (no offset = seek to beginning)",
-	"ddd", "[*] <fd1> <fd2>", "Copy fd1 to fd2 with dup2",
+	"ddd", "[*] <oldfd> <newfd>", "Copy oldfd to newfd with dup2",
 	"ddf", "[*] <addr>", "Create pipe and write fd to (int*)addr",
 	"ddr", "[*] <fd> <addr> <size>", "Read bytes from fd into (char*)addr",
 	"ddw", "[*] <fd> <addr> <size>", "Write bytes from (const char*)addr to fd",
