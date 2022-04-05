@@ -28,7 +28,7 @@ EXPECT=<<EOF
 0 0x0 r-P
 1 0x0 r-P
 2 0x0 r-P
-3 0x0 r-S
+3 0x0 r--
 ---
 1
 ---
@@ -58,11 +58,11 @@ EXPECT=<<EOF
 0 r-P
 1 r-P
 2 r-P
-3 r-S
-4 rwS
+3 r--
+4 rw-
 ---
-3 rwS
-4 rwS
+3 rw-
+4 rw-
 EOF
 RUN
 

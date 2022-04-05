@@ -1348,11 +1348,25 @@ RList *linux_desc_list (int pid) {
 		buf[sizeof (buf) - 1] = 0;
 		type = perm = 0;
 		if (stat (file, &st) != -1) {
-			type  = st.st_mode & S_IFIFO  ? 'P':
+			bool isfifo = st.st_mode & S_IFIFO;
 #ifdef S_IFSOCK
-				st.st_mode & S_IFSOCK ? 'S':
+			/* Do *not* remove the == here. S_IFSOCK can be multiple
+			 * bits, and we must match all of them. */
+			bool issock = (st.st_mode & S_IFSOCK) == S_IFSOCK;
 #endif
-				st.st_mode & S_IFCHR  ? 'C':'-';
+			bool ischr = st.st_mode & S_IFCHR;
+
+			if (isfifo) {
+				type = 'P';
+#ifdef S_IFSOCK
+			} else if (issock) {
+				type = 'S';
+#endif
+			} else if (ischr) {
+				type = 'C';
+			} else {
+				type = '-';
+			}
 		}
 		if (lstat(path, &st) != -1) {
 			if (st.st_mode & S_IRUSR) {
