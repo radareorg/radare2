@@ -36,13 +36,33 @@ dd
 EOF
 RUN
 
-NAME=fd manipulation
+NAME=dd open, close, duplicate
+BROKEN=1 # dd+ fails to open in rw
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF
+# open 2 files, one in read-write
+dd bins/elf/ls-focal
+dd+ .tmp_dd
+dd~[0,2]
+?e ---
+# copy over the read-only fd
+ddd 4 3
+dd~tmp_dd~[0,2]
+# ?e ---
+# cleanup
+rm .tmp_dd
 doc
 EOF
 EXPECT=<<EOF
+0 r-P
+1 r-P
+2 r-P
+3 r-S
+4 rwS
+---
+3 rwS
+4 rwS
 EOF
 RUN
 
