@@ -235,7 +235,7 @@ R_API bool r_anal_block_relocate(RAnalBlock *block, ut64 addr, ut64 size) {
 		return true;
 	}
 	if (r_anal_get_block_at (block->anal, addr)) {
-		// Two blocks at the same addr is illegle you know...
+		// Two blocks at the same addr is illegal you know...
 		return false;
 	}
 
@@ -274,7 +274,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	RAnal *anal = bbi->anal;
 	r_return_val_if_fail (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
 	if (addr == bbi->addr) {
-		r_anal_block_ref (bbi); // ref to be consistent with splitted return refcount
+		r_anal_block_ref (bbi); // ref to be consistent with splitted return ref-count
 		return bbi;
 	}
 
@@ -401,7 +401,7 @@ R_API void r_anal_block_unref(RAnalBlock *bb) {
 		RAnal *anal = bb->anal;
 		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
 		block_free (bb);
-	//	r_return_if_fail (r_list_empty (bb->fcns));
+		// r_return_if_fail (r_list_empty (bb->fcns));
 	}
 }
 
