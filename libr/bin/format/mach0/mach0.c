@@ -3178,7 +3178,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) *bin, RSkipList *relocs, 
 	for (i = 0; i < num; i++) {
 		struct relocation_info a_info = info[i];
 		ut32 sym_num = a_info.r_symbolnum;
-		if (sym_num > bin->nsymtab) {
+		if (sym_num >= bin->nsymtab) {
 			continue;
 		}
 
