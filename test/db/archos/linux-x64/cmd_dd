@@ -66,6 +66,73 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=dd should not affect program registers
+FILE=bins/elf/ls-focal
+ARGS=-d
+CMDS=<<EOF
+dr~!rsp~!rip~!rflags # rsp/rip vary - ignore
+?e ---
+dd test/bins/elf/ls-focal
+dr~!rsp~!rip~!rflags
+doc
+EOF
+EXPECT=<<EOF
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+---
+rax = 0x00000000
+rbx = 0x00000000
+rcx = 0x00000000
+rdx = 0x00000000
+r8 = 0x00000000
+r9 = 0x00000000
+r10 = 0x00000000
+r11 = 0x00000000
+r12 = 0x00000000
+r13 = 0x00000000
+r14 = 0x00000000
+r15 = 0x00000000
+rsi = 0x00000000
+rdi = 0x00000000
+rbp = 0x00000000
+orax = 0x0000003b
+EOF
+RUN
+
+# FIXME: This is not a dd bug. RDebug fails to restore rflags. Collapse into
+# above test when fixed by removing the ~!rflags in the dr commands.
+NAME=dd should not change rflags
+FILE=bins/elf/ls-focal
+BROKEN=1
+ARGS=-d
+CMDS=<<EOF
+dr~rflags
+?e ---
+dd test/bins/ls-focal
+dr~rflags
+doc
+EOF
+EXPECT=<<EOF
+rflags = 0x00000200
+---
+rflags = 0x00000200
+EOF
+RUN
+
 NAME=dd while not debugging
 CMDS=<<EOF
 # no separators needed, nothing should go to stdout
