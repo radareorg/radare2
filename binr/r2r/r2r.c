@@ -334,6 +334,7 @@ int main(int argc, char **argv) {
 	}
 	atexit (r2r_subprocess_fini);
 
+	r_sys_setenv ("ASAN_OPTIONS", "detect_leaks=false");
 	r_sys_setenv ("RABIN2_TRYLIB", "0");
 	r_sys_setenv ("R2_DEBUG_ASSERT", "1");
 	r_sys_setenv ("R2_DEBUG_EPRINT", "0");
