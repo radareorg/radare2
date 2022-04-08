@@ -5242,8 +5242,6 @@ static bool check_string_at(RCore *core, ut64 addr) {
 	int i;
 	// bool is_utf32le = false;
 	// bool is_utf32be = false;
-	bool is_utf16le = false;
-	bool is_utf16be = false;
 	bool is_pascal1 = false;
 	bool is_pascal2 = false;
 	bool is_utf8 = false;
@@ -5295,10 +5293,9 @@ static bool check_string_at(RCore *core, ut64 addr) {
 			if (IS_PRINTABLE (buf[4]) && !buf[5]) {
 				if (IS_PRINTABLE (buf[6]) && !buf[7]) {
 					if (IS_PRINTABLE (buf[8]) && !buf[9]) {
-						is_utf16le = true;
 						out = malloc (len + 1);
 						if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, true) < 1) {
-							is_utf16le = false;
+							R_FREE (out);
 						}
 					}
 				}
@@ -5311,10 +5308,9 @@ static bool check_string_at(RCore *core, ut64 addr) {
 			if (IS_PRINTABLE (buf[5]) && !buf[4]) {
 				if (IS_PRINTABLE (buf[7]) && !buf[6]) {
 					if (IS_PRINTABLE (buf[9]) && !buf[8]) {
-						is_utf16be = true;
 						out = malloc (len + 1);
 						if (r_str_utf16_to_utf8 ((ut8*)out, len, buf, len, false) < 1) {
-							is_utf16be = false;
+							R_FREE (out);
 						}
 					}
 				}
