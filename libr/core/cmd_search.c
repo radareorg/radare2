@@ -3227,7 +3227,8 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
-	int ret = 0;
+	RCmdReturnCode ret = R_CMD_RC_SUCCESS;
+	int errcode = -1;
 	RCore *core = (RCore *) data;
 	struct search_parameters param = {
 		.core = core,
@@ -3271,7 +3272,7 @@ static int cmd_search(void *data, const char *input) {
 	const ut64 search_to = r_config_get_i (core->config, "search.to");
 	if (search_from > search_to && search_to) {
 		eprintf ("Invalid search range where search.from > search.to.\n");
-		ret = false;
+		errcode = 0;
 		goto beach;
 	}
 	// {.addr = UT64_MAX, .size = 0} means search range is unspecified
@@ -3279,7 +3280,7 @@ static int cmd_search(void *data, const char *input) {
 	bool empty_search_itv = search_from == search_to && search_from != UT64_MAX;
 	if (empty_search_itv) {
 		eprintf ("Warning: from == to?\n");
-		ret = false;
+		errcode = 0;
 		goto beach;
 	}
 	// TODO full address cannot be represented, shrink 1 byte to [0, UT64_MAX)
@@ -3337,7 +3338,6 @@ reread:
 		if (core->offset) {
 			RInterval itv = {0, core->offset};
 			if (!r_itv_overlap (search_itv, itv)) {
-				ret = false;
 				goto beach;
 			} else {
 				search_itv = r_itv_intersect (search_itv, itv);
@@ -3589,7 +3589,6 @@ reread:
 			if (input[param_offset - 1]) {
 				char *kwd = r_core_asm_search (core, input + param_offset);
 				if (!kwd) {
-					ret = false;
 					goto beach;
 				}
 				dosearch = true;
@@ -3664,7 +3663,6 @@ reread:
 			}
 		case 'c': // "/cc"
 			{
-				ret = false;
 				char *space = strchr (input, ' ');
 				const char *arg = space? r_str_trim_head_ro (space + 1): NULL;
 				if (!arg || input[2] == '?') {
@@ -3701,10 +3699,11 @@ reread:
 							}
 						}
 						free (hashValue);
+						r_core_return_code (core, 0);
 					} else {
 						eprintf ("Cannot allocate memory.\n");
+						r_core_return_code (core, 1);
 					}
-					ret = true;
 				} else {
 					eprintf ("Usage: /cc [hashname] [hexpairhashvalue]\n");
 					eprintf ("Usage: /CC to search ascii collisions\n");
@@ -4418,7 +4417,11 @@ again:
 		r_search_maps (search, param.boundaries);
 	}
 beach:
-	r_core_return_code (core, search->nhits);
+	if (errcode != -1) {
+		r_core_return_code (core, errcode);
+	} else {
+		r_core_return_code (core, search->nhits);
+	}
 	core->in_search = false;
 	r_flag_space_pop (core->flags);
 	if (param.outmode == R_MODE_JSON) {
