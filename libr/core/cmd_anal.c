@@ -6536,11 +6536,17 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 			break;
 		}
 		// skip calls and such
-		if ((aop.type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL) {
+		switch (aop.type) {
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_UCALL:
+		case R_ANAL_OP_TYPE_RCALL:
+		case R_ANAL_OP_TYPE_ICALL:
+		case R_ANAL_OP_TYPE_IRCALL:
+		case R_ANAL_OP_TYPE_CCALL:
+		case R_ANAL_OP_TYPE_UCCALL:
 			// skip
-		} else if ((aop.type & R_ANAL_OP_TYPE_UCALL) == R_ANAL_OP_TYPE_UCALL) {
-			// skip
-		} else {
+			break;
+		default:
 			r_reg_setv (core->anal->reg, "PC", aop.addr + aop.size);
 			r_reg_setv (core->dbg->reg, "PC", aop.addr + aop.size);
 			const char *e = R_STRBUF_SAFEGET (&aop.esil);
